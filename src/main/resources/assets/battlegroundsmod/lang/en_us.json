@@ -1,9 +1,12 @@
 {
   "itemGroup.battlegroundsmod": "Battlegrounds",
-  "item.battlegroundsmod.power_book": "Book of Powers",
+  "item.battlegroundsmod.power_book": "Book of Souls",
+  "item.battlegroundsmod.soul": "Soul: %s",
+  "item.battlegroundsmod.soul.hint": "Right click to absorb",
+  "message.battlegroundsmod.same_soul": "This soul is already joined with you.",
 
-  "screen.battlegroundsmod.select_power": "Choose your power",
-  "screen.battlegroundsmod.select_power.hint": "Hover a power to see its moves",
+  "screen.battlegroundsmod.select_power": "Choose your soul",
+  "screen.battlegroundsmod.select_power.hint": "Hover a soul to see its powers",
 
   "key.categories.battlegroundsmod": "Battlegrounds",
   "key.battlegroundsmod.ability_1": "Ability 1",
@@ -19,15 +22,15 @@
   "hud.battlegroundsmod.strong_attack": "Strong Attack",
   "hud.battlegroundsmod.barrage": "Attack Barrage",
 
-  "message.battlegroundsmod.welcome": "§6You received the Book of Powers! §7Right click it to choose your power.",
-  "message.battlegroundsmod.power_selected": "Your power is now: %s",
-  "message.battlegroundsmod.no_power": "You don't have a power yet. Use the Book of Powers!",
-  "message.battlegroundsmod.need_book": "You need the Book of Powers to change your power.",
+  "message.battlegroundsmod.welcome": "§6You received the Book of Souls! §7Right click it to choose the soul that will join you.",
+  "message.battlegroundsmod.power_selected": "You became one with the soul: %s",
+  "message.battlegroundsmod.no_power": "You don't have a soul yet. Use the Book of Souls!",
+  "message.battlegroundsmod.need_book": "You need the Book of Souls to change your soul.",
   "message.battlegroundsmod.no_energy": "Out of energy!",
   "message.battlegroundsmod.ult_not_ready": "Your ult isn't charged yet!",
   "message.battlegroundsmod.no_target": "No target in sight.",
   "message.battlegroundsmod.blocked": "Path blocked.",
-  "message.battlegroundsmod.unknown_power": "Unknown power.",
+  "message.battlegroundsmod.unknown_power": "Unknown soul.",
 
   "power.battlegroundsmod.uchiha_ghost": "Ghost of the Uchiha",
   "power.battlegroundsmod.uchiha_ghost.desc": "Masters fire and calls meteors from the sky.",

@@ -1,5 +1,6 @@
 package com.starkinhon.battlegroundsmod.client;
 
+import com.starkinhon.battlegroundsmod.ModItems;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
 import com.starkinhon.battlegroundsmod.power.Power;
 import com.starkinhon.battlegroundsmod.power.PowerData;
@@ -12,9 +13,10 @@ import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.network.PacketDistributor;
 
-// Opened by the power book: one button per power, hover shows its moves.
+// Opened by the Book of Souls: one button per soul, hover shows its moves.
 public class PowerSelectScreen extends Screen {
     private static final int BUTTON_WIDTH = 220;
     private static final int BUTTON_HEIGHT = 20;
@@ -60,6 +62,14 @@ public class PowerSelectScreen extends Screen {
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         super.render(graphics, mouseX, mouseY, partialTick);
+        // Each power's soul crystal next to its button.
+        int y = top;
+        for (Power power : Powers.all()) {
+            ItemStack soul = new ItemStack(ModItems.SOULS.get(power.id()).get());
+            graphics.renderItem(soul, width / 2 - BUTTON_WIDTH / 2 - 20, y + 2);
+            graphics.renderItem(soul, width / 2 + BUTTON_WIDTH / 2 + 4, y + 2);
+            y += SPACING;
+        }
         graphics.drawCenteredString(font, title, width / 2, top - 24, 0xFFFFFFFF);
         graphics.drawCenteredString(font, Component.translatable("screen.battlegroundsmod.select_power.hint"), width / 2, top - 12, 0xFFAAAAAA);
     }

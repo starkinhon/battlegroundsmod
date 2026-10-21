@@ -1,9 +1,12 @@
 {
   "itemGroup.battlegroundsmod": "Battlegrounds",
-  "item.battlegroundsmod.power_book": "Livro dos Poderes",
+  "item.battlegroundsmod.power_book": "Livro das Almas",
+  "item.battlegroundsmod.soul": "Alma: %s",
+  "item.battlegroundsmod.soul.hint": "Clique com o botão direito para absorver",
+  "message.battlegroundsmod.same_soul": "Essa alma já está unida a você.",
 
-  "screen.battlegroundsmod.select_power": "Escolha seu poder",
-  "screen.battlegroundsmod.select_power.hint": "Passe o mouse em cima para ver as habilidades",
+  "screen.battlegroundsmod.select_power": "Escolha sua alma",
+  "screen.battlegroundsmod.select_power.hint": "Passe o mouse em cima de uma alma para ver os poderes dela",
 
   "key.categories.battlegroundsmod": "Battlegrounds",
   "key.battlegroundsmod.ability_1": "Habilidade 1",
@@ -19,15 +22,15 @@
   "hud.battlegroundsmod.strong_attack": "Ataque Forte",
   "hud.battlegroundsmod.barrage": "Barragem de Ataques",
 
-  "message.battlegroundsmod.welcome": "§6Você recebeu o Livro dos Poderes! §7Clique com o botão direito para escolher seu poder.",
-  "message.battlegroundsmod.power_selected": "Você agora tem o poder: %s",
-  "message.battlegroundsmod.no_power": "Você ainda não tem um poder. Use o Livro dos Poderes!",
-  "message.battlegroundsmod.need_book": "Você precisa do Livro dos Poderes para trocar de poder.",
+  "message.battlegroundsmod.welcome": "§6Você recebeu o Livro das Almas! §7Clique com o botão direito para escolher a alma que vai se unir a você.",
+  "message.battlegroundsmod.power_selected": "Você se tornou um com a alma: %s",
+  "message.battlegroundsmod.no_power": "Você ainda não tem uma alma. Use o Livro das Almas!",
+  "message.battlegroundsmod.need_book": "Você precisa do Livro das Almas para trocar de alma.",
   "message.battlegroundsmod.no_energy": "Sem energia!",
   "message.battlegroundsmod.ult_not_ready": "A ult ainda não está carregada!",
   "message.battlegroundsmod.no_target": "Nenhum alvo na mira.",
   "message.battlegroundsmod.blocked": "Caminho bloqueado.",
-  "message.battlegroundsmod.unknown_power": "Poder desconhecido.",
+  "message.battlegroundsmod.unknown_power": "Alma desconhecida.",
 
   "power.battlegroundsmod.uchiha_ghost": "Fantasma dos Uchiha",
   "power.battlegroundsmod.uchiha_ghost.desc": "Domina o fogo e invoca meteoros do céu.",

@@ -23,13 +23,13 @@ public final class ModPayloads {
     private ModPayloads() {
     }
 
-    private static <T extends CustomPacketPayload> CustomPacketPayload.Type<T> type(String name) {
+    private static <T extends CustomPacketPayload> CustomPacketPayload.Type<T> payloadType(String name) {
         return new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, name));
     }
 
     // Client -> server: the player pressed an ability key.
     public record UseAbility(int slot) implements CustomPacketPayload {
-        public static final Type<UseAbility> TYPE = type("use_ability");
+        public static final Type<UseAbility> TYPE = payloadType("use_ability");
         public static final StreamCodec<ByteBuf, UseAbility> STREAM_CODEC = StreamCodec.composite(
                 ByteBufCodecs.VAR_INT, UseAbility::slot, UseAbility::new);
 
@@ -41,7 +41,7 @@ public final class ModPayloads {
 
     // Client -> server: the player picked a power in the book.
     public record SelectPower(String power) implements CustomPacketPayload {
-        public static final Type<SelectPower> TYPE = type("select_power");
+        public static final Type<SelectPower> TYPE = payloadType("select_power");
         public static final StreamCodec<ByteBuf, SelectPower> STREAM_CODEC = StreamCodec.composite(
                 ByteBufCodecs.STRING_UTF8, SelectPower::power, SelectPower::new);
 
@@ -53,7 +53,7 @@ public final class ModPayloads {
 
     // Server -> client: power state for the HUD.
     public record SyncPower(String power, float energy, float ult, List<Integer> cooldowns) implements CustomPacketPayload {
-        public static final Type<SyncPower> TYPE = type("sync_power");
+        public static final Type<SyncPower> TYPE = payloadType("sync_power");
         public static final StreamCodec<ByteBuf, SyncPower> STREAM_CODEC = StreamCodec.composite(
                 ByteBufCodecs.STRING_UTF8, SyncPower::power,
                 ByteBufCodecs.FLOAT, SyncPower::energy,

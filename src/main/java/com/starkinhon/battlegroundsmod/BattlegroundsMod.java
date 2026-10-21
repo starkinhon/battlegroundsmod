@@ -33,7 +33,7 @@ public class BattlegroundsMod {
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> BATTLEGROUNDS_TAB = CREATIVE_MODE_TABS.register("battlegrounds_tab", () -> CreativeModeTab.builder()
             .title(Component.translatable("itemGroup.battlegroundsmod"))
             .withTabsBefore(CreativeModeTabs.COMBAT)
-            .icon(() -> ModItems.POWER_BOOK.get().getDefaultInstance())
+            .icon(() -> ModItems.SOULS.get("uchiha_ghost").get().getDefaultInstance())
             .displayItems((parameters, output) -> ITEMS.getEntries().forEach(item -> output.accept(item.get())))
             .build());
 
