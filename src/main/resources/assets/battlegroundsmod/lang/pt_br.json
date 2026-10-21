@@ -1,3 +1,66 @@
 {
-  "itemGroup.battlegroundsmod": "Battlegrounds"
+  "itemGroup.battlegroundsmod": "Battlegrounds",
+  "item.battlegroundsmod.power_book": "Livro dos Poderes",
+
+  "screen.battlegroundsmod.select_power": "Escolha seu poder",
+  "screen.battlegroundsmod.select_power.hint": "Passe o mouse em cima para ver as habilidades",
+
+  "key.categories.battlegroundsmod": "Battlegrounds",
+  "key.battlegroundsmod.ability_1": "Habilidade 1",
+  "key.battlegroundsmod.ability_2": "Habilidade 2",
+  "key.battlegroundsmod.ability_3": "Habilidade 3",
+  "key.battlegroundsmod.ultimate": "Ultimate",
+  "key.battlegroundsmod.strong_attack": "Ataque forte",
+  "key.battlegroundsmod.barrage": "Barragem de ataques",
+
+  "hud.battlegroundsmod.energy": "Energia",
+  "hud.battlegroundsmod.ult": "Ult",
+  "hud.battlegroundsmod.ult_ready": "ULT PRONTA!",
+  "hud.battlegroundsmod.strong_attack": "Ataque Forte",
+  "hud.battlegroundsmod.barrage": "Barragem de Ataques",
+
+  "message.battlegroundsmod.welcome": "§6Você recebeu o Livro dos Poderes! §7Clique com o botão direito para escolher seu poder.",
+  "message.battlegroundsmod.power_selected": "Você agora tem o poder: %s",
+  "message.battlegroundsmod.no_power": "Você ainda não tem um poder. Use o Livro dos Poderes!",
+  "message.battlegroundsmod.need_book": "Você precisa do Livro dos Poderes para trocar de poder.",
+  "message.battlegroundsmod.no_energy": "Sem energia!",
+  "message.battlegroundsmod.ult_not_ready": "A ult ainda não está carregada!",
+  "message.battlegroundsmod.no_target": "Nenhum alvo na mira.",
+  "message.battlegroundsmod.blocked": "Caminho bloqueado.",
+  "message.battlegroundsmod.unknown_power": "Poder desconhecido.",
+
+  "power.battlegroundsmod.uchiha_ghost": "Fantasma dos Uchiha",
+  "power.battlegroundsmod.uchiha_ghost.desc": "Domina o fogo e invoca meteoros do céu.",
+  "ability.battlegroundsmod.uchiha_ghost.0": "Grande Bola de Fogo",
+  "ability.battlegroundsmod.uchiha_ghost.1": "Onda de Chamas",
+  "ability.battlegroundsmod.uchiha_ghost.2": "Armadura Espectral",
+  "ability.battlegroundsmod.uchiha_ghost.3": "Chuva de Meteoros",
+
+  "power.battlegroundsmod.manipulator": "Como Manipulador",
+  "power.battlegroundsmod.manipulator.desc": "Feitiços, ilusões e uma forma transcendente.",
+  "ability.battlegroundsmod.manipulator.0": "Raio Branco",
+  "ability.battlegroundsmod.manipulator.1": "Caixão Negro",
+  "ability.battlegroundsmod.manipulator.2": "Hipnose Completa",
+  "ability.battlegroundsmod.manipulator.3": "Transcendência",
+
+  "power.battlegroundsmod.rubber_boy": "Garoto Borracha",
+  "power.battlegroundsmod.rubber_boy.desc": "Um corpo de borracha que estica até onde precisar.",
+  "ability.battlegroundsmod.rubber_boy.0": "Pistola de Borracha",
+  "ability.battlegroundsmod.rubber_boy.1": "Metralhadora de Borracha",
+  "ability.battlegroundsmod.rubber_boy.2": "Foguete de Borracha",
+  "ability.battlegroundsmod.rubber_boy.3": "Pistola Gigante",
+
+  "power.battlegroundsmod.destruction_god": "Deus da Destruição",
+  "power.battlegroundsmod.destruction_god.desc": "Apaga qualquer coisa da existência.",
+  "ability.battlegroundsmod.destruction_god.0": "Esfera da Destruição",
+  "ability.battlegroundsmod.destruction_god.1": "Toque da Destruição",
+  "ability.battlegroundsmod.destruction_god.2": "Passo Divino",
+  "ability.battlegroundsmod.destruction_god.3": "Sol da Destruição",
+
+  "power.battlegroundsmod.one_punch": "Cara de um Soco",
+  "power.battlegroundsmod.one_punch.desc": "Treinou tanto que qualquer soco é o último.",
+  "ability.battlegroundsmod.one_punch.0": "Soco Normal",
+  "ability.battlegroundsmod.one_punch.1": "Socos Consecutivos Normais",
+  "ability.battlegroundsmod.one_punch.2": "Salto Sério",
+  "ability.battlegroundsmod.one_punch.3": "Soco Sério"
 }

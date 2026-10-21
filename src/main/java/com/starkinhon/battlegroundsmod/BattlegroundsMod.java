@@ -3,16 +3,19 @@ package com.starkinhon.battlegroundsmod;
 import org.slf4j.Logger;
 
 import com.mojang.logging.LogUtils;
+import com.starkinhon.battlegroundsmod.command.PowerCommand;
+import com.starkinhon.battlegroundsmod.network.ModPayloads;
+import com.starkinhon.battlegroundsmod.power.PowerEvents;
 
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
-import net.minecraft.world.item.Items;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
@@ -30,15 +33,21 @@ public class BattlegroundsMod {
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> BATTLEGROUNDS_TAB = CREATIVE_MODE_TABS.register("battlegrounds_tab", () -> CreativeModeTab.builder()
             .title(Component.translatable("itemGroup.battlegroundsmod"))
             .withTabsBefore(CreativeModeTabs.COMBAT)
-            .icon(() -> Items.NETHERITE_SWORD.getDefaultInstance())
+            .icon(() -> ModItems.POWER_BOOK.get().getDefaultInstance())
             .displayItems((parameters, output) -> ITEMS.getEntries().forEach(item -> output.accept(item.get())))
             .build());
 
     public BattlegroundsMod(IEventBus modEventBus, ModContainer modContainer) {
         modEventBus.addListener(this::commonSetup);
+        modEventBus.addListener(ModPayloads::register);
 
+        ModItems.init();
         ITEMS.register(modEventBus);
         CREATIVE_MODE_TABS.register(modEventBus);
+        ModAttachments.ATTACHMENT_TYPES.register(modEventBus);
+
+        PowerEvents.register();
+        NeoForge.EVENT_BUS.addListener(PowerCommand::register);
     }
 
     private void commonSetup(FMLCommonSetupEvent event) {

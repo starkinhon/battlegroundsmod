@@ -1,3 +1,66 @@
 {
-  "itemGroup.battlegroundsmod": "Battlegrounds"
+  "itemGroup.battlegroundsmod": "Battlegrounds",
+  "item.battlegroundsmod.power_book": "Book of Powers",
+
+  "screen.battlegroundsmod.select_power": "Choose your power",
+  "screen.battlegroundsmod.select_power.hint": "Hover a power to see its moves",
+
+  "key.categories.battlegroundsmod": "Battlegrounds",
+  "key.battlegroundsmod.ability_1": "Ability 1",
+  "key.battlegroundsmod.ability_2": "Ability 2",
+  "key.battlegroundsmod.ability_3": "Ability 3",
+  "key.battlegroundsmod.ultimate": "Ultimate",
+  "key.battlegroundsmod.strong_attack": "Strong attack",
+  "key.battlegroundsmod.barrage": "Attack barrage",
+
+  "hud.battlegroundsmod.energy": "Energy",
+  "hud.battlegroundsmod.ult": "Ult",
+  "hud.battlegroundsmod.ult_ready": "ULT READY!",
+  "hud.battlegroundsmod.strong_attack": "Strong Attack",
+  "hud.battlegroundsmod.barrage": "Attack Barrage",
+
+  "message.battlegroundsmod.welcome": "§6You received the Book of Powers! §7Right click it to choose your power.",
+  "message.battlegroundsmod.power_selected": "Your power is now: %s",
+  "message.battlegroundsmod.no_power": "You don't have a power yet. Use the Book of Powers!",
+  "message.battlegroundsmod.need_book": "You need the Book of Powers to change your power.",
+  "message.battlegroundsmod.no_energy": "Out of energy!",
+  "message.battlegroundsmod.ult_not_ready": "Your ult isn't charged yet!",
+  "message.battlegroundsmod.no_target": "No target in sight.",
+  "message.battlegroundsmod.blocked": "Path blocked.",
+  "message.battlegroundsmod.unknown_power": "Unknown power.",
+
+  "power.battlegroundsmod.uchiha_ghost": "Ghost of the Uchiha",
+  "power.battlegroundsmod.uchiha_ghost.desc": "Masters fire and calls meteors from the sky.",
+  "ability.battlegroundsmod.uchiha_ghost.0": "Great Fireball",
+  "ability.battlegroundsmod.uchiha_ghost.1": "Flame Wave",
+  "ability.battlegroundsmod.uchiha_ghost.2": "Spectral Armor",
+  "ability.battlegroundsmod.uchiha_ghost.3": "Meteor Fall",
+
+  "power.battlegroundsmod.manipulator": "The Manipulator",
+  "power.battlegroundsmod.manipulator.desc": "Spells, illusions and a transcendent form.",
+  "ability.battlegroundsmod.manipulator.0": "White Lightning",
+  "ability.battlegroundsmod.manipulator.1": "Black Coffin",
+  "ability.battlegroundsmod.manipulator.2": "Complete Hypnosis",
+  "ability.battlegroundsmod.manipulator.3": "Transcendence",
+
+  "power.battlegroundsmod.rubber_boy": "Rubber Boy",
+  "power.battlegroundsmod.rubber_boy.desc": "A rubber body that stretches as far as it needs.",
+  "ability.battlegroundsmod.rubber_boy.0": "Rubber Pistol",
+  "ability.battlegroundsmod.rubber_boy.1": "Rubber Gatling",
+  "ability.battlegroundsmod.rubber_boy.2": "Rubber Rocket",
+  "ability.battlegroundsmod.rubber_boy.3": "Giant Pistol",
+
+  "power.battlegroundsmod.destruction_god": "God of Destruction",
+  "power.battlegroundsmod.destruction_god.desc": "Erases anything from existence.",
+  "ability.battlegroundsmod.destruction_god.0": "Destruction Orb",
+  "ability.battlegroundsmod.destruction_god.1": "Destruction Touch",
+  "ability.battlegroundsmod.destruction_god.2": "Divine Step",
+  "ability.battlegroundsmod.destruction_god.3": "Sun of Destruction",
+
+  "power.battlegroundsmod.one_punch": "One Punch Guy",
+  "power.battlegroundsmod.one_punch.desc": "Trained so hard that any punch is the last one.",
+  "ability.battlegroundsmod.one_punch.0": "Normal Punch",
+  "ability.battlegroundsmod.one_punch.1": "Consecutive Normal Punches",
+  "ability.battlegroundsmod.one_punch.2": "Serious Jump",
+  "ability.battlegroundsmod.one_punch.3": "Serious Punch"
 }
