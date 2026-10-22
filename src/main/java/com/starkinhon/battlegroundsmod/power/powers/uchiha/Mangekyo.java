@@ -53,6 +53,8 @@ public final class Mangekyo {
         CutsceneSpec cutscene = spec.cutscene();
         Area area = Area.of(spec.forma(), player);
         List<LivingEntity> targets = area.targets();
+        // The eyes start trailing light (client side, see Aura).
+        Fx.effects(level, SKILL, data.awakened, "olhos", player, 0);
 
         // Everyone involved stays frozen until both the wait and the cutscene are over.
         int frozen = cutscene.ativa() ? Math.max(delay, cutscene.duracaoTicks()) : delay;

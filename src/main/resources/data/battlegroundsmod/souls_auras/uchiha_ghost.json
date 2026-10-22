@@ -40,6 +40,8 @@
   },
   "olhos": {
     "aPartirDaFase": 1,
+    "ativarSkill": "madara.mangekyo",
+    "jogadorTicks": 600,
     "cor": "#ff0a0a",
     "cor2": "#ffe0e0",
     "rastroTicks": 7,
