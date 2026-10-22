@@ -85,5 +85,13 @@
   "message.battlegroundsmod.boss_debug_off": "Boss thoughts hidden.",
   "message.battlegroundsmod.bossbar_on": "Custom boss bar on.",
   "message.battlegroundsmod.bossbar_off": "Custom boss bar off (vanilla bar).",
-  "effect.battlegroundsmod.medo": "Fear"
+  "effect.battlegroundsmod.medo": "Fear",
+
+  "battlegroundsmod.configuration.title": "Battlegrounds effects",
+  "battlegroundsmod.configuration.impactFrames": "Impact frames",
+  "battlegroundsmod.configuration.reducedFlash": "Reduced flashing",
+  "battlegroundsmod.configuration.distortion": "Space distortion",
+  "battlegroundsmod.configuration.radialBlur": "Radial blur",
+  "battlegroundsmod.configuration.bloom": "Bloom",
+  "battlegroundsmod.configuration.shake": "Camera shake"
 }

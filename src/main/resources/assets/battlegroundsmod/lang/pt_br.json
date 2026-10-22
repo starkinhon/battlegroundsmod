@@ -85,5 +85,13 @@
   "message.battlegroundsmod.boss_debug_off": "Pensamento dos bosses escondido.",
   "message.battlegroundsmod.bossbar_on": "Barra de boss personalizada ligada.",
   "message.battlegroundsmod.bossbar_off": "Barra de boss personalizada desligada (barra normal do Minecraft).",
-  "effect.battlegroundsmod.medo": "Medo"
+  "effect.battlegroundsmod.medo": "Medo",
+
+  "battlegroundsmod.configuration.title": "Efeitos do Battlegrounds",
+  "battlegroundsmod.configuration.impactFrames": "Impact frames",
+  "battlegroundsmod.configuration.reducedFlash": "Menos flashes",
+  "battlegroundsmod.configuration.distortion": "Distorção do espaço",
+  "battlegroundsmod.configuration.radialBlur": "Blur radial",
+  "battlegroundsmod.configuration.bloom": "Brilho (bloom)",
+  "battlegroundsmod.configuration.shake": "Tremor da câmera"
 }

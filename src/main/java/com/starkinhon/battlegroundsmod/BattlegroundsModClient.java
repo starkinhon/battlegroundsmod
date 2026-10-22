@@ -6,7 +6,12 @@ import com.starkinhon.battlegroundsmod.client.BossBars;
 import com.starkinhon.battlegroundsmod.client.BossCutscene;
 import com.starkinhon.battlegroundsmod.client.FaceCutscene;
 import com.starkinhon.battlegroundsmod.client.Fear;
+import com.starkinhon.battlegroundsmod.client.fx.FxConfig;
+import com.starkinhon.battlegroundsmod.client.fx.FxShaders;
+import com.starkinhon.battlegroundsmod.client.fx.FxWorld;
 import com.starkinhon.battlegroundsmod.client.fx.MeteorRenderer;
+import com.starkinhon.battlegroundsmod.client.fx.ScreenFx;
+import com.starkinhon.battlegroundsmod.client.fx.SkillEffects;
 import com.starkinhon.battlegroundsmod.client.fx.SoulParticle;
 import com.starkinhon.battlegroundsmod.fx.ModParticles;
 import com.starkinhon.battlegroundsmod.client.Keybinds;
@@ -20,12 +25,15 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.MovementInputUpdateEvent;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.neoforged.neoforge.client.event.RegisterParticleProvidersEvent;
+import net.neoforged.neoforge.client.gui.ConfigurationScreen;
+import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.common.NeoForge;
 
@@ -39,7 +47,12 @@ public class BattlegroundsModClient {
         modEventBus.addListener(BattlegroundsModClient::onRegisterGuiLayers);
         modEventBus.addListener(BattlegroundsModClient::onRegisterParticles);
         modEventBus.addListener(BattlegroundsModClient::onRegisterRenderers);
+        modEventBus.addListener(FxShaders::onRegisterShaders);
+        modContainer.registerConfig(ModConfig.Type.CLIENT, FxConfig.SPEC);
+        modContainer.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
         NeoForge.EVENT_BUS.addListener(MeteorRenderer::onRenderLevel);
+        NeoForge.EVENT_BUS.addListener(FxWorld::onRenderLevel);
+        NeoForge.EVENT_BUS.addListener(ScreenFx::onComputeFov);
         NeoForge.EVENT_BUS.addListener(BattlegroundsModClient::onClientTickPre);
         NeoForge.EVENT_BUS.addListener(BattlegroundsModClient::onClientTick);
         NeoForge.EVENT_BUS.addListener(BossBars::onBossBar);
@@ -57,6 +70,8 @@ public class BattlegroundsModClient {
 
     private static void onRegisterGuiLayers(RegisterGuiLayersEvent event) {
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "power_hud"), PowerHud::render);
+        // Impact frames and flashes cover the world and the hand, but not the HUD.
+        event.registerBelowAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "screen_fx"), ScreenFx::renderGui);
     }
 
     private static void onRegisterParticles(RegisterParticleProvidersEvent event) {
@@ -81,6 +96,9 @@ public class BattlegroundsModClient {
         FaceCutscene.tick();
         BossCutscene.tick();
         ScreenShake.tick();
+        ScreenFx.tick();
+        FxWorld.tick();
+        SkillEffects.tick();
         BossBars.tick();
         Fear.tick();
     }

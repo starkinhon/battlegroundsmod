@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.combat.Combat;
+import com.starkinhon.battlegroundsmod.combat.Fx;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
 import com.starkinhon.battlegroundsmod.power.PowerData;
@@ -79,6 +80,7 @@ public final class Meteoro {
         player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, prep, 2, false, false, false));
         PacketDistributor.sendToPlayersTrackingEntityAndSelf(player, new ModPayloads.PlaySkillAnimation(player.getId(), SKILL, data.awakened));
         MeteoroFx.call(level, player);
+        Fx.effects(level, SKILL, data.awakened, "uso", player.position(), fall.dir());
         // The ball itself is drawn on the clients (client/fx/MeteorRenderer), following the same path.
         for (ServerPlayer viewer : level.players()) {
             if (viewer.distanceToSqr(target) < VIEW_DISTANCE * VIEW_DISTANCE) {
@@ -121,6 +123,7 @@ public final class Meteoro {
             }
         }
         MeteoroFx.impact(level, spec, pos);
+        Fx.effects(level, SKILL, player.getData(ModAttachments.POWER).awakened, "impacto", pos, new Vec3(0, 1, 0));
     }
 
     // Digs a round bowl: radius across, depth down (and as high up, for trees and walls in the way), with a ragged

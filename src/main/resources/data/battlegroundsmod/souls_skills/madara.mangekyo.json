@@ -68,6 +68,49 @@
       "onde": "olhos"
     }
   ],
+  "vfx": [
+    {
+      "tipo": "impactFrame",
+      "momento": "particulas",
+      "sequencia": [
+        "mangaInvertido",
+        "nada",
+        "mangaInvertido"
+      ],
+      "ticksPorQuadro": 1,
+      "cor": "#d10a0a",
+      "alcance": 30
+    },
+    {
+      "tipo": "clarao",
+      "momento": "particulas",
+      "tamanho": 0.8,
+      "quantidade": 3,
+      "cor": "#d10a0a",
+      "cor2": "#ffd0d0",
+      "deslocamento": 0.3,
+      "vidaTicks": 14
+    },
+    {
+      "tipo": "distorcao",
+      "momento": "stun",
+      "modo": "redemoinho",
+      "raio": 2.5,
+      "forca": 0.8,
+      "cor": "#d10a0a",
+      "tinta": 0.3,
+      "vidaTicks": 40
+    },
+    {
+      "tipo": "anel",
+      "momento": "stun",
+      "raio": 1.6,
+      "tamanho": 0.25,
+      "cor": "#d10a0a",
+      "altura": 0.4,
+      "vidaTicks": 20
+    }
+  ],
   "despertado": {
     "efeitos": {
       "duracaoTicks": 300,

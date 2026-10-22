@@ -1,0 +1,10 @@
+{
+    "vertex": "battlegroundsmod:fx_blit",
+    "fragment": "battlegroundsmod:fx_radial",
+    "samplers": [ { "name": "DiffuseSampler" } ],
+    "uniforms": [
+        { "name": "Screen", "type": "float", "count": 2, "values": [ 1.0, 1.0 ] },
+        { "name": "Center", "type": "float", "count": 2, "values": [ 0.5, 0.5 ] },
+        { "name": "Strength", "type": "float", "count": 1, "values": [ 0.0 ] }
+    ]
+}

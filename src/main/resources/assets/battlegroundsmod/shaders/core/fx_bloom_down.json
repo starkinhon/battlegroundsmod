@@ -1,0 +1,28 @@
+{
+    "vertex": "battlegroundsmod:fx_blit",
+    "fragment": "battlegroundsmod:fx_bloom_down",
+    "samplers": [
+        {
+            "name": "DiffuseSampler"
+        }
+    ],
+    "uniforms": [
+        {
+            "name": "Texel",
+            "type": "float",
+            "count": 2,
+            "values": [
+                0.001,
+                0.001
+            ]
+        },
+        {
+            "name": "Threshold",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0.0
+            ]
+        }
+    ]
+}

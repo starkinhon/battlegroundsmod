@@ -79,6 +79,7 @@ public final class Katon {
             Cone cone = cone(player, level, spec, age);
             if (age == 0) {
                 UchihaFx.katonStart(level, spec, cone);
+                Fx.effects(level, SKILL, data.awakened, "fogo", cone.origin(), cone.dir());
             }
             UchihaFx.katonStream(level, spec, cone, age);
             for (LivingEntity target : cone.targets()) {
