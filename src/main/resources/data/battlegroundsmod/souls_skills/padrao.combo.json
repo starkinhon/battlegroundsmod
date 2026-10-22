@@ -1,0 +1,432 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "padrao.combo",
+  "nome": "Combo de socos",
+  "alcance": 3.4,
+  "resetTicks": 26,
+  "bufferTicks": 5,
+  "passo": {
+    "distanciaMax": 6.5,
+    "impulso": 0.85,
+    "cone": 0.8,
+    "ticksMax": 6
+  },
+  "atordoado": {
+    "lentidao": 0.7,
+    "pulo": 0.6,
+    "multiplicadorBoss": 0.5
+  },
+  "golpes": [
+    {
+      "nome": "Jab",
+      "dano": 3.5,
+      "empurrao": 0.25,
+      "subida": 0.05,
+      "avanco": 0.12,
+      "stunTicks": 10,
+      "hitstopTicks": 2,
+      "tremor": 0.12,
+      "recuperacaoTicks": 5,
+      "momento": "golpe",
+      "tempo": {
+        "atrasoTicks": 1,
+        "duracaoTicks": 3
+      },
+      "animacao": {
+        "transicaoTicks": 1,
+        "retornoTicks": 4,
+        "preparo": {
+          "cabeca": 0,
+          "tronco": 3,
+          "bracoDir": {
+            "frente": 60,
+            "abrir": -28
+          },
+          "bracoEsq": {
+            "frente": 45,
+            "abrir": -20
+          },
+          "giro": 12
+        },
+        "sopro": {
+          "cabeca": 0,
+          "tronco": 8,
+          "bracoDir": {
+            "frente": 55,
+            "abrir": -30
+          },
+          "bracoEsq": {
+            "frente": 92,
+            "abrir": -6
+          },
+          "giro": -24
+        }
+      }
+    },
+    {
+      "nome": "Direto",
+      "dano": 3.5,
+      "empurrao": 0.3,
+      "subida": 0.05,
+      "avanco": 0.15,
+      "stunTicks": 10,
+      "hitstopTicks": 2,
+      "tremor": 0.15,
+      "recuperacaoTicks": 5,
+      "momento": "golpe",
+      "tempo": {
+        "atrasoTicks": 2,
+        "duracaoTicks": 3
+      },
+      "animacao": {
+        "transicaoTicks": 1,
+        "retornoTicks": 4,
+        "preparo": {
+          "cabeca": 0,
+          "tronco": 2,
+          "bracoDir": {
+            "frente": 40,
+            "abrir": -15
+          },
+          "bracoEsq": {
+            "frente": 62,
+            "abrir": -26
+          },
+          "giro": -16
+        },
+        "sopro": {
+          "cabeca": 0,
+          "tronco": 10,
+          "bracoDir": {
+            "frente": 95,
+            "abrir": -8
+          },
+          "bracoEsq": {
+            "frente": 48,
+            "abrir": -30
+          },
+          "giro": 30
+        }
+      }
+    },
+    {
+      "nome": "Gancho",
+      "dano": 4,
+      "empurrao": 0.2,
+      "subida": 0.38,
+      "avanco": 0.15,
+      "stunTicks": 12,
+      "hitstopTicks": 3,
+      "tremor": 0.2,
+      "recuperacaoTicks": 6,
+      "momento": "golpe",
+      "tempo": {
+        "atrasoTicks": 2,
+        "duracaoTicks": 3
+      },
+      "animacao": {
+        "transicaoTicks": 1,
+        "retornoTicks": 5,
+        "preparo": {
+          "cabeca": 0,
+          "tronco": 14,
+          "bracoDir": {
+            "frente": 60,
+            "abrir": -28
+          },
+          "bracoEsq": {
+            "frente": 15,
+            "abrir": -8
+          },
+          "giro": 20
+        },
+        "sopro": {
+          "cabeca": -10,
+          "tronco": -6,
+          "bracoDir": {
+            "frente": 50,
+            "abrir": -30
+          },
+          "bracoEsq": {
+            "frente": 155,
+            "abrir": -12
+          },
+          "giro": -22
+        }
+      }
+    },
+    {
+      "nome": "Joelhada",
+      "dano": 4.5,
+      "empurrao": 0.35,
+      "subida": 0.3,
+      "avanco": 0.1,
+      "stunTicks": 14,
+      "hitstopTicks": 3,
+      "tremor": 0.25,
+      "recuperacaoTicks": 6,
+      "momento": "golpe",
+      "tempo": {
+        "atrasoTicks": 2,
+        "duracaoTicks": 3
+      },
+      "animacao": {
+        "transicaoTicks": 1,
+        "retornoTicks": 5,
+        "preparo": {
+          "cabeca": 0,
+          "tronco": -4,
+          "bracoDir": {
+            "frente": 75,
+            "abrir": -10
+          },
+          "bracoEsq": {
+            "frente": 75,
+            "abrir": -10
+          },
+          "giro": 0
+        },
+        "sopro": {
+          "cabeca": 0,
+          "tronco": 16,
+          "bracoDir": {
+            "frente": 45,
+            "abrir": 18
+          },
+          "bracoEsq": {
+            "frente": 45,
+            "abrir": 18
+          },
+          "giro": 0,
+          "pernaDir": {
+            "frente": 88,
+            "abrir": 0
+          }
+        }
+      }
+    },
+    {
+      "nome": "Chute final",
+      "dano": 7,
+      "empurrao": 1.9,
+      "subida": 0.5,
+      "avanco": 0.25,
+      "stunTicks": 20,
+      "hitstopTicks": 5,
+      "tremor": 0.55,
+      "recuperacaoTicks": 14,
+      "momento": "final",
+      "tempo": {
+        "atrasoTicks": 3,
+        "duracaoTicks": 5
+      },
+      "animacao": {
+        "transicaoTicks": 1,
+        "retornoTicks": 7,
+        "preparo": {
+          "cabeca": 0,
+          "tronco": 6,
+          "bracoDir": {
+            "frente": 40,
+            "abrir": 30
+          },
+          "bracoEsq": {
+            "frente": 60,
+            "abrir": -25
+          },
+          "giro": -35,
+          "pernaDir": {
+            "frente": 20,
+            "abrir": 0
+          }
+        },
+        "sopro": {
+          "cabeca": 0,
+          "tronco": -22,
+          "bracoDir": {
+            "frente": 30,
+            "abrir": 55
+          },
+          "bracoEsq": {
+            "frente": 65,
+            "abrir": -30
+          },
+          "giro": 40,
+          "pernaDir": {
+            "frente": 100,
+            "abrir": 14
+          }
+        }
+      }
+    }
+  ],
+  "sons": [
+    {
+      "nome": "Avanço",
+      "som": "minecraft:entity.player.attack.sweep",
+      "momento": "passo",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 0.5,
+      "pitch": 0.8,
+      "pitchFim": 0.8,
+      "onde": "pes"
+    },
+    {
+      "nome": "Vento do soco",
+      "som": "minecraft:entity.player.attack.sweep",
+      "momento": "erro",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 0.45,
+      "pitch": 1.8,
+      "pitchFim": 1.8,
+      "onde": "mao"
+    },
+    {
+      "nome": "Soco",
+      "som": "minecraft:entity.player.attack.strong",
+      "momento": "golpe",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 0.9,
+      "pitch": 1.25,
+      "pitchFim": 1.25,
+      "onde": "alvo"
+    },
+    {
+      "nome": "Estalo",
+      "som": "minecraft:entity.player.attack.crit",
+      "momento": "golpe",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 0.5,
+      "pitch": 1.6,
+      "pitchFim": 1.6,
+      "onde": "alvo"
+    },
+    {
+      "nome": "Chute",
+      "som": "minecraft:entity.player.attack.knockback",
+      "momento": "final",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.3,
+      "pitch": 0.7,
+      "pitchFim": 0.7,
+      "onde": "alvo"
+    },
+    {
+      "nome": "Estouro",
+      "som": "minecraft:entity.generic.explode",
+      "momento": "final",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 0.5,
+      "pitch": 1.7,
+      "pitchFim": 1.7,
+      "onde": "alvo"
+    },
+    {
+      "nome": "Peso",
+      "som": "minecraft:entity.iron_golem.attack",
+      "momento": "final",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.0,
+      "pitch": 0.6,
+      "pitchFim": 0.6,
+      "onde": "alvo"
+    }
+  ],
+  "vfx": [
+    {
+      "tipo": "clarao",
+      "momento": "golpe",
+      "tamanho": 0.9,
+      "quantidade": 5,
+      "cor": "#ffffff",
+      "cor2": "#fff6e0",
+      "vidaTicks": 5,
+      "alcance": 40
+    },
+    {
+      "tipo": "faiscas",
+      "momento": "golpe",
+      "quantidade": 7,
+      "velocidade": 0.35,
+      "comprimento": 0.5,
+      "tamanho": 0.6,
+      "cor": "#fff0d0",
+      "cor2": "#ffffff",
+      "vidaTicks": 7,
+      "alcance": 40
+    },
+    {
+      "tipo": "impactFrame",
+      "momento": "final",
+      "sequencia": [
+        "branco",
+        "invertido"
+      ],
+      "ticksPorQuadro": 1,
+      "cor": "#ffffff",
+      "alcance": 14
+    },
+    {
+      "tipo": "clarao",
+      "momento": "final",
+      "tamanho": 2.2,
+      "quantidade": 7,
+      "cor": "#ffffff",
+      "cor2": "#fff6e0",
+      "vidaTicks": 8,
+      "alcance": 48
+    },
+    {
+      "tipo": "estrela",
+      "momento": "final",
+      "quantidade": 12,
+      "comprimento": 3.5,
+      "tamanho": 1.2,
+      "cor": "#fff4e0",
+      "vidaTicks": 8,
+      "alcance": 48
+    },
+    {
+      "tipo": "anel",
+      "momento": "final",
+      "raio": 3,
+      "tamanho": 0.5,
+      "cor": "#ffffff",
+      "vidaTicks": 10,
+      "alcance": 48
+    },
+    {
+      "tipo": "distorcao",
+      "momento": "final",
+      "modo": "onda",
+      "raio": 4,
+      "forca": 0.45,
+      "velocidade": 10,
+      "cor": "#ffffff",
+      "tinta": 0.05,
+      "vidaTicks": 16,
+      "alcance": 40
+    },
+    {
+      "tipo": "blurRadial",
+      "momento": "final",
+      "forca": 0.5,
+      "vidaTicks": 8,
+      "alcance": 16
+    }
+  ]
+}

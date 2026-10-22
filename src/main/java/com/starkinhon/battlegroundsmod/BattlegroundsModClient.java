@@ -18,6 +18,7 @@ import com.starkinhon.battlegroundsmod.fx.ModParticles;
 import com.starkinhon.battlegroundsmod.client.Keybinds;
 import com.starkinhon.battlegroundsmod.client.MovementInput;
 import com.starkinhon.battlegroundsmod.client.PowerHud;
+import com.starkinhon.battlegroundsmod.client.PunchInput;
 import com.starkinhon.battlegroundsmod.client.ScreenShake;
 import com.starkinhon.battlegroundsmod.client.ShoulderCutscene;
 import com.starkinhon.battlegroundsmod.client.SoulBossRenderer;
@@ -31,6 +32,7 @@ import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
+import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.client.event.MovementInputUpdateEvent;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.neoforged.neoforge.client.event.RegisterParticleProvidersEvent;
@@ -61,6 +63,7 @@ public class BattlegroundsModClient {
         NeoForge.EVENT_BUS.addListener(BattlegroundsModClient::onClientTickPre);
         NeoForge.EVENT_BUS.addListener(BattlegroundsModClient::onClientTick);
         NeoForge.EVENT_BUS.addListener(BossBars::onBossBar);
+        NeoForge.EVENT_BUS.addListener(InputEvent.InteractionKeyMappingTriggered.class, PunchInput::onInteraction);
         NeoForge.EVENT_BUS.addListener(MovementInputUpdateEvent.class, FaceCutscene::onMovementInput);
         NeoForge.EVENT_BUS.addListener(MovementInputUpdateEvent.class, BossCutscene::onMovementInput);
     }

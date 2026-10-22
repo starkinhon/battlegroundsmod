@@ -21,5 +21,7 @@ public abstract class PlayerModelMixin {
         model.leftSleeve.copyFrom(model.leftArm);
         model.rightSleeve.copyFrom(model.rightArm);
         model.jacket.copyFrom(model.body);
+        model.leftPants.copyFrom(model.leftLeg);
+        model.rightPants.copyFrom(model.rightLeg);
     }
 }

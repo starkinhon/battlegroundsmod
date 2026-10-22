@@ -61,20 +61,29 @@ public record SkillSpec(String skill, String nome, Tempo tempo, Origem origem, D
     public record Animacao(int transicaoTicks, Pose preparo, Pose sopro) {
     }
 
+    // Also used for the legs: frente swings the leg forward, abrir opens it to the side.
     public record Braco(double frente, double abrir) {
-        static final Braco ZERO = new Braco(0, 0);
+        public static final Braco ZERO = new Braco(0, 0);
 
         Braco lerp(Braco to, double t) {
-            return new Braco(frente + (to.frente - frente) * t, abrir + (to.abrir - abrir) * t);
+            Braco to2 = to != null ? to : ZERO;
+            return new Braco(frente + (to2.frente - frente) * t, abrir + (to2.abrir - abrir) * t);
+        }
+
+        static Braco of(Braco braco) {
+            return braco != null ? braco : ZERO;
         }
     }
 
-    public record Pose(double cabeca, double tronco, Braco bracoDir, Braco bracoEsq) {
-        public static final Pose ZERO = new Pose(0, 0, Braco.ZERO, Braco.ZERO);
+    // giro turns the upper body around the spine (positive brings the right shoulder forward, for a right punch).
+    // The legs and giro are newer than the Forja, so older files leave them out and they stay still.
+    public record Pose(double cabeca, double tronco, Braco bracoDir, Braco bracoEsq, double giro, Braco pernaDir, Braco pernaEsq) {
+        public static final Pose ZERO = new Pose(0, 0, Braco.ZERO, Braco.ZERO, 0, Braco.ZERO, Braco.ZERO);
 
-        Pose lerp(Pose to, double t) {
+        public Pose lerp(Pose to, double t) {
             return new Pose(cabeca + (to.cabeca - cabeca) * t, tronco + (to.tronco - tronco) * t,
-                    bracoDir.lerp(to.bracoDir, t), bracoEsq.lerp(to.bracoEsq, t));
+                    Braco.of(bracoDir).lerp(to.bracoDir, t), Braco.of(bracoEsq).lerp(to.bracoEsq, t), giro + (to.giro - giro) * t,
+                    Braco.of(pernaDir).lerp(to.pernaDir, t), Braco.of(pernaEsq).lerp(to.pernaEsq, t));
         }
     }
 }

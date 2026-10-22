@@ -1,5 +1,6 @@
 package com.starkinhon.battlegroundsmod;
 
+import com.starkinhon.battlegroundsmod.skill.ComboSpec;
 import com.starkinhon.battlegroundsmod.skill.MedoSpec;
 
 import net.minecraft.core.registries.Registries;
@@ -26,6 +27,16 @@ public final class ModEffects {
                 .addAttributeModifier(Attributes.MOVEMENT_SPEED, ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "medo_speed"),
                         -spec.lentidao(), AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL)
                 .addAttributeModifier(Attributes.JUMP_STRENGTH, ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "medo_jump"),
+                        -spec.pulo(), AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
+    });
+
+    // Stunned by a hit: slow, no jump, no attacks, skills or dodges (combat/Stun). Values in padrao.combo.json.
+    public static final DeferredHolder<MobEffect, MobEffect> ATORDOADO = MOB_EFFECTS.register("atordoado", () -> {
+        ComboSpec.Atordoado spec = ComboSpec.get().atordoado();
+        return new Harmful(0xF2D24B)
+                .addAttributeModifier(Attributes.MOVEMENT_SPEED, ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "atordoado_speed"),
+                        -spec.lentidao(), AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL)
+                .addAttributeModifier(Attributes.JUMP_STRENGTH, ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "atordoado_jump"),
                         -spec.pulo(), AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
     });
 

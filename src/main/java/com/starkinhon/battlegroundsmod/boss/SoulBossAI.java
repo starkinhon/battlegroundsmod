@@ -822,8 +822,9 @@ public class SoulBossAI extends Goal {
             return false;
         }
         face(Combat.center(target), 360);
-        boss.swing(InteractionHand.MAIN_HAND);
-        Melee.normalHit(boss, target);
+        if (!Melee.normalHit(boss, target)) {
+            return false;
+        }
         punchCooldown = Math.max(1, boss.spec().distancias().intervaloSocoTicks());
         return true;
     }

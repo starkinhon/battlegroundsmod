@@ -7,6 +7,7 @@ import java.util.UUID;
 import com.starkinhon.battlegroundsmod.BattlegroundsMod;
 import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.client.ClientHooks;
+import com.starkinhon.battlegroundsmod.combat.Melee;
 import com.starkinhon.battlegroundsmod.movement.Movement;
 import com.starkinhon.battlegroundsmod.power.PowerData;
 import com.starkinhon.battlegroundsmod.power.PowerLogic;
@@ -55,6 +56,17 @@ public final class ModPayloads {
 
         @Override
         public Type<UseMovement> type() {
+            return TYPE;
+        }
+    }
+
+    // Client -> server: left click with an empty hand: the next punch of the combo, even into the air.
+    public record Punch() implements CustomPacketPayload {
+        public static final Type<Punch> TYPE = payloadType("punch");
+        public static final StreamCodec<ByteBuf, Punch> STREAM_CODEC = StreamCodec.unit(new Punch());
+
+        @Override
+        public Type<Punch> type() {
             return TYPE;
         }
     }
@@ -116,6 +128,34 @@ public final class ModPayloads {
 
         @Override
         public Type<PlaySkillAnimation> type() {
+            return TYPE;
+        }
+    }
+
+    // Server -> client: entityId threw hit number step of the punch combo (its pose is in padrao.combo.json).
+    public record ComboAnimation(int entityId, int step) implements CustomPacketPayload {
+        public static final Type<ComboAnimation> TYPE = payloadType("combo_animation");
+        public static final StreamCodec<ByteBuf, ComboAnimation> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, ComboAnimation::entityId,
+                ByteBufCodecs.VAR_INT, ComboAnimation::step,
+                ComboAnimation::new);
+
+        @Override
+        public Type<ComboAnimation> type() {
+            return TYPE;
+        }
+    }
+
+    // Server -> client: entityId's punch connected; its animation stands still for ticks (hitstop).
+    public record Hitstop(int entityId, int ticks) implements CustomPacketPayload {
+        public static final Type<Hitstop> TYPE = payloadType("hitstop");
+        public static final StreamCodec<ByteBuf, Hitstop> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, Hitstop::entityId,
+                ByteBufCodecs.VAR_INT, Hitstop::ticks,
+                Hitstop::new);
+
+        @Override
+        public Type<Hitstop> type() {
             return TYPE;
         }
     }
@@ -283,6 +323,12 @@ public final class ModPayloads {
                 Movement.onPlayerMove(player, payload.kind(), payload.forward(), payload.strafe());
             }
         }));
+        registrar.playToServer(Punch.TYPE, Punch.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
+            if (context.player() instanceof ServerPlayer player && player.getMainHandItem().isEmpty()
+                    && player.getData(ModAttachments.POWER).hasPower() && !player.isSpectator()) {
+                Melee.punch(player, null);
+            }
+        }));
         registrar.playToServer(SelectPower.TYPE, SelectPower.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer player) {
                 PowerLogic.selectFromBook(player, payload.power());
@@ -291,6 +337,10 @@ public final class ModPayloads {
         registrar.playToClient(SyncPower.TYPE, SyncPower.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> payload.applyTo(context.player())));
         registrar.playToClient(PlaySkillAnimation.TYPE, PlaySkillAnimation.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.playSkillAnimation(payload.entityId(), payload.skill(), payload.awakened())));
+        registrar.playToClient(ComboAnimation.TYPE, ComboAnimation.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.comboAnimation(payload.entityId(), payload.step())));
+        registrar.playToClient(Hitstop.TYPE, Hitstop.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.hitstop(payload.entityId(), payload.ticks())));
         registrar.playToClient(FaceCutscene.TYPE, FaceCutscene.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.startFaceCutscene(payload.entityId(), payload.skill(), payload.awakened())));
         registrar.playToClient(ScreenShake.TYPE, ScreenShake.STREAM_CODEC, (payload, context) -> context.enqueueWork(
