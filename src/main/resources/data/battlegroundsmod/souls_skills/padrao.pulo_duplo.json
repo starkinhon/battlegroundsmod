@@ -1,0 +1,34 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "padrao.pulo_duplo",
+  "nome": "Pulo duplo",
+  "recargaTicks": 12,
+  "impulsoHorizontal": 0.35,
+  "impulsoVertical": 0.95,
+  "manterVelocidade": 0.6,
+  "invencivelTicks": 0,
+  "semDanoDeQueda": true,
+  "funcionaNoCriativo": false,
+  "poeira": {
+    "ativa": true,
+    "quantidade": 14,
+    "tamanho": 0.8,
+    "vidaTicks": 16,
+    "velocidade": 0.22,
+    "cor": "#e8e8f0"
+  },
+  "sons": [
+    {
+      "nome": "Super pulo",
+      "som": "minecraft:entity.wind_charge.wind_burst",
+      "momento": "uso",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 0.7,
+      "pitch": 1.2,
+      "pitchFim": 1.2,
+      "onde": "pes"
+    }
+  ]
+}
