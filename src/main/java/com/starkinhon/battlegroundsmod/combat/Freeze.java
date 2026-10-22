@@ -2,6 +2,7 @@ package com.starkinhon.battlegroundsmod.combat;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.IntFunction;
 
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
@@ -28,6 +29,12 @@ public final class Freeze {
     }
 
     public static void hold(LivingEntity entity, int ticks) {
+        Vec3 pos = entity.position();
+        hold(entity, ticks, age -> pos);
+    }
+
+    // Same, but the entity is kept at anchor(age) each tick instead of where it stood (used to carry someone around).
+    public static void hold(LivingEntity entity, int ticks, IntFunction<Vec3> anchor) {
         if (ticks <= 0) {
             return;
         }
@@ -36,7 +43,6 @@ public final class Freeze {
             hold.hadNoAi = mob.isNoAi();
             mob.setNoAi(true);
         }
-        Vec3 pos = entity.position();
         float yRot = entity.getYRot();
         float xRot = entity.getXRot();
         Tasks.add(age -> {
@@ -45,6 +51,7 @@ public final class Freeze {
                 return true;
             }
             entity.setDeltaMovement(Vec3.ZERO);
+            Vec3 pos = anchor.apply(age);
             boolean moved = entity.position().distanceToSqr(pos) > 1.0E-4 || entity.getYRot() != yRot || entity.getXRot() != xRot;
             if (moved) {
                 if (entity instanceof ServerPlayer player) {

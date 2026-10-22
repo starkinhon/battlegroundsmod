@@ -1,0 +1,27 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "madara.susanoo",
+  "nome": "Susanoo: Contra-ataque",
+  "janela": {
+    "duracaoTicks": 40,
+    "alcanceMax": 12
+  },
+  "agarrar": {
+    "alcancarTicks": 8,
+    "frente": 3,
+    "altura": 3
+  },
+  "esmagar": {
+    "duracaoTicks": 30,
+    "golpes": 3,
+    "dano": 3
+  },
+  "arremesso": {
+    "forca": 3.5,
+    "altura": 0.9,
+    "dano": 4
+  },
+  "visual": {
+    "cor": "#3a6bff"
+  }
+}

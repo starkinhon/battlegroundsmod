@@ -6,6 +6,7 @@ import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.combat.Intangible;
 import com.starkinhon.battlegroundsmod.combat.Melee;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
+import com.starkinhon.battlegroundsmod.power.powers.uchiha.Susanoo;
 
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -57,6 +58,7 @@ public final class PowerEvents {
         Tasks.clear();
         Freeze.clear();
         Intangible.clear();
+        Susanoo.clear();
     }
 
     private static void onPlayerTick(PlayerTickEvent.Post event) {
@@ -118,6 +120,10 @@ public final class PowerEvents {
     private static void onIncomingDamage(LivingIncomingDamageEvent event) {
         if (Intangible.is(event.getEntity()) && !event.getSource().is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
             event.setCanceled(true);
+            return;
+        }
+        if (event.getEntity() instanceof ServerPlayer player) {
+            Susanoo.onIncomingDamage(player, event);
         }
     }
 

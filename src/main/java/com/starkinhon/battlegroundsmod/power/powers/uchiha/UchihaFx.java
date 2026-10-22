@@ -2,12 +2,15 @@ package com.starkinhon.battlegroundsmod.power.powers.uchiha;
 
 import java.util.List;
 
+import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Cone;
 import com.starkinhon.battlegroundsmod.combat.Fx;
 import com.starkinhon.battlegroundsmod.skill.SkillSpec;
+import com.starkinhon.battlegroundsmod.skill.SusanooSpec;
 
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.LivingEntity;
@@ -96,6 +99,70 @@ public final class UchihaFx {
         Vec3 head = target.getEyePosition();
         Fx.ring(level, Fx.dust(0xD10A0A, 1.5f), head.add(0, 0.4, 0), 0.6, 16, 0);
         Fx.burst(level, Fx.dust(0x1A0000, 2f), head, 20, 0.4, 0);
+    }
+
+    // Susanoo counter is ready: a blue flare and a low hum.
+    public static void susanooReady(ServerLevel level, ServerPlayer player, SusanooSpec spec) {
+        Vec3 pos = player.position();
+        Fx.ring(level, Fx.dust(parseColor(spec.visual().cor()), 2f), pos.add(0, 0.2, 0), 1.6, 24, 0);
+        Fx.burst(level, ParticleTypes.SOUL_FIRE_FLAME, pos.add(0, 1, 0), 20, 0.6, 0.05);
+        Fx.sound(level, pos, SoundEvents.BEACON_ACTIVATE, 1.5f, 0.6f);
+        Fx.sound(level, pos, SoundEvents.WITHER_SHOOT, 0.6f, 0.4f);
+    }
+
+    // While the window is open: faint spectral ribs around the caster.
+    public static void susanooAura(ServerLevel level, ServerPlayer player, SusanooSpec spec, int age) {
+        if (age % 2 != 0) {
+            return;
+        }
+        Vec3 base = player.position();
+        for (int ring = 0; ring < 4; ring++) {
+            double radius = 1.5 - Math.abs(ring - 1.5) * 0.2;
+            Fx.ring(level, Fx.dust(parseColor(spec.visual().cor()), 1.4f), base.add(0, 0.3 + ring * 0.6, 0), radius, 12, age * 0.08 + ring);
+        }
+        Fx.burst(level, ParticleTypes.SOUL_FIRE_FLAME, base.add(0, 1.2, 0), 2, 0.8, 0.02);
+    }
+
+    public static void susanooGrab(ServerLevel level, ServerPlayer player, LivingEntity target, SusanooSpec spec) {
+        Fx.sound(level, player.position(), SoundEvents.WARDEN_SONIC_CHARGE, 1.5f, 1.4f);
+        Fx.sound(level, target.position(), SoundEvents.IRON_GOLEM_ATTACK, 1.5f, 0.5f);
+        Fx.burst(level, ParticleTypes.SOUL, Combat.center(target), 15, 0.5, 0.05);
+    }
+
+    // The spectral arm, from behind the shoulder in an arc up to the fist. progress 0..1 is how far it has reached.
+    public static void susanooArm(ServerLevel level, ServerPlayer player, LivingEntity target, SusanooSpec spec, double progress) {
+        var color = Fx.dust(parseColor(spec.visual().cor()), 2f);
+        Vec3 from = Susanoo.shoulder(player);
+        Vec3 to = Susanoo.hand(player, spec);
+        Vec3 control = from.add(to.subtract(from).scale(0.3)).add(0, 1.5, 0);
+        int points = Math.max(4, (int) (to.distanceTo(from) / 0.3));
+        for (int i = 0; i <= points * progress; i++) {
+            double t = i / (double) points;
+            double u = 1 - t;
+            Vec3 point = from.scale(u * u).add(control.scale(2 * u * t)).add(to.scale(t * t));
+            Fx.burst(level, color, point, 2, 0.12, 0);
+        }
+        if (progress >= 1) {
+            double radius = Math.max(0.7, target.getBbWidth() * 0.9);
+            Fx.sphere(level, color, Combat.center(target), radius, 36);
+            Fx.burst(level, ParticleTypes.SOUL_FIRE_FLAME, Combat.center(target), 2, radius * 0.6, 0.01);
+        }
+    }
+
+    public static void susanooCrush(ServerLevel level, LivingEntity target, SusanooSpec spec) {
+        Vec3 center = Combat.center(target);
+        Fx.sphere(level, Fx.dust(parseColor(spec.visual().cor()), 2.5f), center, 0.5, 30);
+        Fx.burst(level, ParticleTypes.CRIT, center, 25, 0.4, 0.4);
+        Fx.sound(level, center, SoundEvents.ANVIL_LAND, 0.8f, 0.6f);
+        Fx.sound(level, center, SoundEvents.SKELETON_HURT, 1f, 0.5f);
+    }
+
+    public static void susanooThrow(ServerLevel level, LivingEntity target, SusanooSpec spec) {
+        Vec3 center = Combat.center(target);
+        Fx.burst(level, Fx.dust(parseColor(spec.visual().cor()), 3f), center, 30, 0.8, 0);
+        Fx.burst(level, ParticleTypes.SOUL_FIRE_FLAME, center, 25, 0.6, 0.15);
+        Fx.sound(level, center, SoundEvents.PLAYER_ATTACK_KNOCKBACK, 2f, 0.5f);
+        Fx.sound(level, center, SoundEvents.WARDEN_ATTACK_IMPACT, 1.5f, 0.7f);
     }
 
     // "#ff7a10" -> 0xFF7A10. Falls back to orange on a bad value.
