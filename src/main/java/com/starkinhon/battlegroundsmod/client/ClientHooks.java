@@ -4,6 +4,7 @@ import java.util.UUID;
 
 import com.starkinhon.battlegroundsmod.client.fx.MeteorRenderer;
 import com.starkinhon.battlegroundsmod.client.fx.AshDeath;
+import com.starkinhon.battlegroundsmod.client.fx.Aura;
 import com.starkinhon.battlegroundsmod.client.fx.SkillEffects;
 import com.starkinhon.battlegroundsmod.skill.ComboSpec;
 import com.starkinhon.battlegroundsmod.skill.CutsceneSpec;
@@ -74,6 +75,10 @@ public final class ClientHooks {
 
     public static void bossCutscene(int entityId, int zoom, int sky, int back, Vec3 lookAt) {
         BossCutscene.start(entityId, zoom, sky, back, lookAt);
+    }
+
+    public static void auraState(int entityId, String power) {
+        Aura.state(entityId, power);
     }
 
     public static void openPowerSelect() {

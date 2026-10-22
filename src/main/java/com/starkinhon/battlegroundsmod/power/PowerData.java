@@ -59,6 +59,8 @@ public class PowerData {
     public int interrupts = 0;
     // Players: the key that uses the picked base attack is held down (a held Forte charges, a held Barragem lasts longer).
     public boolean attackHeld = false;
+    // Players: the aura state the watchers were last told (the power while in combat, "" when off; null = never sent).
+    public String auraSent = null;
 
     public PowerData() {
     }

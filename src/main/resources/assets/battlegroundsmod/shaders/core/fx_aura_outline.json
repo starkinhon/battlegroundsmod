@@ -1,0 +1,13 @@
+{
+    "vertex": "battlegroundsmod:fx_blit",
+    "fragment": "battlegroundsmod:fx_aura_outline",
+    "samplers": [ { "name": "MaskSampler" } ],
+    "uniforms": [
+        { "name": "ScreenSize", "type": "float", "count": 2, "values": [ 1920.0, 1080.0 ] },
+        { "name": "Radius", "type": "float", "count": 1, "values": [ 96.0 ] },
+        { "name": "Time", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "Flames", "type": "float", "count": 1, "values": [ 0.5 ] },
+        { "name": "Speed", "type": "float", "count": 1, "values": [ 1.0 ] },
+        { "name": "Edge", "type": "float", "count": 1, "values": [ 0.5 ] }
+    ]
+}

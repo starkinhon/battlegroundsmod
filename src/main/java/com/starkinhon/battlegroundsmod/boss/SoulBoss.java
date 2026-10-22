@@ -13,6 +13,9 @@ import com.starkinhon.battlegroundsmod.power.PowerLogic;
 import com.starkinhon.battlegroundsmod.power.Tiers;
 
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerBossEvent;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -41,6 +44,8 @@ import net.neoforged.neoforge.network.PacketDistributor;
 // How it fights comes from its souls_bosses file and SoulBossAI. Phases follow its life; the entrance and each phase
 // change are short untouchable moments with a title, made to look good on video.
 public abstract class SoulBoss extends Monster {
+    // The phase, mirrored to clients (the aura shows the sharingan's eye trail from a given phase on).
+    private static final EntityDataAccessor<Integer> DATA_PHASE = SynchedEntityData.defineId(SoulBoss.class, EntityDataSerializers.INT);
     private final ServerBossEvent bossEvent = new ServerBossEvent(getDisplayName(), BossEvent.BossBarColor.RED, BossEvent.BossBarOverlay.NOTCHED_10);
     private boolean configured;
     private int phase;
@@ -71,7 +76,13 @@ public abstract class SoulBoss extends Monster {
     }
 
     public int phase() {
-        return phase;
+        return level().isClientSide() ? entityData.get(DATA_PHASE) : phase;
+    }
+
+    @Override
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(DATA_PHASE, 0);
     }
 
     // Entrance, phase change, final ult, or waiting to start it: the AI holds still.
@@ -129,6 +140,7 @@ public abstract class SoulBoss extends Monster {
             startPhase(level, spec.fase(phase));
         }
         data.awakened = fase().despertado();
+        entityData.set(DATA_PHASE, phase);
         BossSpec.UltFinal ult = spec.ultFinal();
         ultPending = ult != null && ult.ativa() && !ultUsed && isAlive() && getHealth() / getMaxHealth() <= ult.vida();
         // It finishes whatever move it is in first, so nothing else is flying when the meteor comes.
