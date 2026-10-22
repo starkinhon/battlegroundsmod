@@ -46,7 +46,7 @@ public final class Mangekyo {
     private Mangekyo() {
     }
 
-    public static boolean use(ServerPlayer player, ServerLevel level) {
+    public static boolean use(LivingEntity player, ServerLevel level) {
         PowerData data = player.getData(ModAttachments.POWER);
         MangekyoSpec spec = SkillSpecs.get(SKILL, MangekyoSpec.class, data.awakened);
         int delay = spec.tempo().atrasoTicks();
@@ -71,7 +71,9 @@ public final class Mangekyo {
             area.draw(Fx.dust(0xFFFFFF, 0.6f));
         }
         if (cutscene.ativa()) {
-            startCutscene(player, player, data.awakened);
+            if (player instanceof ServerPlayer self) {
+                startCutscene(player, self, data.awakened);
+            }
             for (LivingEntity target : targets) {
                 if (target instanceof ServerPlayer hitPlayer) {
                     startCutscene(player, hitPlayer, data.awakened);
@@ -96,7 +98,7 @@ public final class Mangekyo {
     }
 
     // Moments: uso (on press), zoom (camera goes to the face), particulas (eyes flash), stun (it lands).
-    private static void sounds(ServerLevel level, ServerPlayer player, MangekyoSpec spec, List<LivingEntity> targets) {
+    private static void sounds(ServerLevel level, LivingEntity player, MangekyoSpec spec, List<LivingEntity> targets) {
         List<Som> sons = spec.sons() != null ? spec.sons() : DEFAULT_SOUNDS;
         CutsceneSpec cutscene = spec.cutscene();
         Function<String, Vec3> where = onde -> switch (onde == null ? "" : onde) {
@@ -106,7 +108,9 @@ public final class Mangekyo {
         };
         // "tela" is heard by everyone who watches the cutscene: Madara and the players caught.
         List<ServerPlayer> screen = new ArrayList<>();
-        screen.add(player);
+        if (player instanceof ServerPlayer self) {
+            screen.add(self);
+        }
         for (LivingEntity target : targets) {
             if (target instanceof ServerPlayer hitPlayer) {
                 screen.add(hitPlayer);
@@ -127,12 +131,15 @@ public final class Mangekyo {
         effect(target, MobEffects.BLINDNESS, duration, efeitos.cegueira());
         effect(target, MobEffects.MOVEMENT_SLOWDOWN, duration, efeitos.lentidao());
         Freeze.hold(target, efeitos.atordoarTicks());
-        if (efeitos.travarSkills() && target instanceof ServerPlayer hitPlayer) {
-            PowerData data = hitPlayer.getData(ModAttachments.POWER);
+        // Bosses carry power data too, so their skills get locked the same way.
+        if (efeitos.travarSkills() && target.hasData(ModAttachments.POWER)) {
+            PowerData data = target.getData(ModAttachments.POWER);
             for (int i = 0; i < data.cooldowns.length; i++) {
                 data.cooldowns[i] = Math.max(data.cooldowns[i], duration);
             }
-            PowerLogic.sync(hitPlayer);
+            if (target instanceof ServerPlayer hitPlayer) {
+                PowerLogic.sync(hitPlayer);
+            }
         }
     }
 
@@ -144,7 +151,7 @@ public final class Mangekyo {
     }
 
     // The client reads the cutscene timing from the same skill file.
-    private static void startCutscene(ServerPlayer caster, ServerPlayer viewer, boolean awakened) {
+    private static void startCutscene(LivingEntity caster, ServerPlayer viewer, boolean awakened) {
         PacketDistributor.sendToPlayer(viewer, new ModPayloads.FaceCutscene(caster.getId(), SKILL, awakened));
     }
 }

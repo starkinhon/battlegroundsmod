@@ -53,7 +53,7 @@ public final class Meteoro {
         }
     }
 
-    public static boolean use(ServerPlayer player, ServerLevel level) {
+    public static boolean use(LivingEntity player, ServerLevel level) {
         PowerData data = player.getData(ModAttachments.POWER);
         MeteoroSpec spec = SkillSpecs.get(SKILL, MeteoroSpec.class, data.awakened);
         int prep = spec.tempo().preparoTicks();
@@ -86,7 +86,7 @@ public final class Meteoro {
         return true;
     }
 
-    private static void impact(ServerPlayer player, ServerLevel level, MeteoroSpec spec, Vec3 pos) {
+    private static void impact(LivingEntity player, ServerLevel level, MeteoroSpec spec, Vec3 pos) {
         MeteoroSpec.Impacto impacto = spec.impacto();
         double radius = Math.max(1, impacto.raio());
         if (impacto.quebrarBlocos() && level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
@@ -152,7 +152,7 @@ public final class Meteoro {
         }
     }
 
-    private static Vec3 target(ServerPlayer player, ServerLevel level, MeteoroSpec.Mira mira) {
+    private static Vec3 target(LivingEntity player, ServerLevel level, MeteoroSpec.Mira mira) {
         Vec3 aimed = "frente".equals(mira.modo())
                 ? player.position().add(Combat.flatLook(player).scale(mira.distanciaFrente())).add(0, 1, 0)
                 : Combat.raycastPoint(player, mira.distanciaMax());
@@ -167,7 +167,7 @@ public final class Meteoro {
     }
 
     // The meteor comes from high up, tilted anguloQueda from vertical, from behind the caster (turned by giroOrigem).
-    private static Fall fall(ServerPlayer player, Vec3 target, MeteoroSpec.Corpo corpo, int ticks) {
+    private static Fall fall(LivingEntity player, Vec3 target, MeteoroSpec.Corpo corpo, int ticks) {
         double height = corpo.alturaInicio();
         double side = height * Math.tan(Math.toRadians(corpo.anguloQueda()));
         Vec3 back = Combat.flatLook(player).reverse().yRot((float) Math.toRadians(-corpo.giroOrigem()));

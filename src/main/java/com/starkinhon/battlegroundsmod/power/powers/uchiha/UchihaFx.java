@@ -10,7 +10,6 @@ import com.starkinhon.battlegroundsmod.skill.SusanooSpec;
 
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.LivingEntity;
@@ -94,7 +93,7 @@ public final class UchihaFx {
     }
 
     // Susanoo counter is ready: a blue flare and a low hum.
-    public static void susanooReady(ServerLevel level, ServerPlayer player, SusanooSpec spec) {
+    public static void susanooReady(ServerLevel level, LivingEntity player, SusanooSpec spec) {
         Vec3 pos = player.position();
         Fx.ring(level, Fx.dust(parseColor(spec.visual().cor()), 2f), pos.add(0, 0.2, 0), 1.6, 24, 0);
         Fx.burst(level, ParticleTypes.SOUL_FIRE_FLAME, pos.add(0, 1, 0), 20, 0.6, 0.05);
@@ -103,7 +102,7 @@ public final class UchihaFx {
     }
 
     // While the window is open: faint spectral ribs around the caster.
-    public static void susanooAura(ServerLevel level, ServerPlayer player, SusanooSpec spec, int age) {
+    public static void susanooAura(ServerLevel level, LivingEntity player, SusanooSpec spec, int age) {
         if (age % 2 != 0) {
             return;
         }
@@ -115,14 +114,14 @@ public final class UchihaFx {
         Fx.burst(level, ParticleTypes.SOUL_FIRE_FLAME, base.add(0, 1.2, 0), 2, 0.8, 0.02);
     }
 
-    public static void susanooGrab(ServerLevel level, ServerPlayer player, LivingEntity target, SusanooSpec spec) {
+    public static void susanooGrab(ServerLevel level, LivingEntity player, LivingEntity target, SusanooSpec spec) {
         Fx.sound(level, player.position(), SoundEvents.WARDEN_SONIC_CHARGE, 1.5f, 1.4f);
         Fx.sound(level, target.position(), SoundEvents.IRON_GOLEM_ATTACK, 1.5f, 0.5f);
         Fx.burst(level, ParticleTypes.SOUL, Combat.center(target), 15, 0.5, 0.05);
     }
 
     // The spectral arm, from behind the shoulder in an arc up to the fist. progress 0..1 is how far it has reached.
-    public static void susanooArm(ServerLevel level, ServerPlayer player, LivingEntity target, SusanooSpec spec, double progress) {
+    public static void susanooArm(ServerLevel level, LivingEntity player, LivingEntity target, SusanooSpec spec, double progress) {
         var color = Fx.dust(parseColor(spec.visual().cor()), 2f);
         Vec3 from = Susanoo.shoulder(player);
         Vec3 to = Susanoo.hand(player, spec);

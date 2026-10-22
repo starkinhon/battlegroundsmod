@@ -8,7 +8,6 @@ import com.starkinhon.battlegroundsmod.power.Powers;
 
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -27,23 +26,23 @@ public final class Melee {
     private Melee() {
     }
 
-    private static float multiplier(ServerPlayer player) {
+    private static float multiplier(LivingEntity player) {
         Power power = Powers.get(player.getData(ModAttachments.POWER).power);
         return power == null ? 1f : power.meleeMultiplier();
     }
 
-    private static int fistColor(ServerPlayer player) {
+    private static int fistColor(LivingEntity player) {
         Power power = Powers.get(player.getData(ModAttachments.POWER).power);
         return power == null ? 0xFFFFFF : power.color();
     }
 
-    // Left click on an entity. The last hit of the combo launches the target.
-    public static void normalHit(ServerPlayer player, LivingEntity target) {
+    // Left click on an entity (or a boss's punch). The last hit of the combo launches the target.
+    public static void normalHit(LivingEntity player, LivingEntity target) {
         PowerData data = player.getData(ModAttachments.POWER);
         if (data.punchDelay > 0 || data.busyTicks > 0) {
             return;
         }
-        ServerLevel level = player.serverLevel();
+        ServerLevel level = Combat.level(player);
         float mult = multiplier(player);
         data.comboStep = data.comboStep % COMBO_LENGTH + 1;
         data.comboResetTicks = COMBO_RESET_TICKS;
@@ -69,7 +68,7 @@ public final class Melee {
     }
 
     // Short wind-up, then a heavy punch that sends the target flying.
-    private static boolean strong(ServerPlayer player, ServerLevel level) {
+    private static boolean strong(LivingEntity player, ServerLevel level) {
         PowerData data = player.getData(ModAttachments.POWER);
         float mult = multiplier(player);
         int color = fistColor(player);
@@ -110,15 +109,15 @@ public final class Melee {
         return true;
     }
 
-    private static boolean barrageMove(ServerPlayer player, ServerLevel level) {
+    private static boolean barrageMove(LivingEntity player, ServerLevel level) {
         barrage(player, 20, 4.0, 1.5f * multiplier(player), 6f * multiplier(player), fistColor(player));
         return true;
     }
 
     // Rapid punches in a cone in front of the player, ending with a finisher that launches whoever is in front.
     // Also used by powers whose own moves are bigger barrages.
-    public static void barrage(ServerPlayer player, int ticks, double range, float hitDamage, float finisherDamage, int fistColor) {
-        ServerLevel level = player.serverLevel();
+    public static void barrage(LivingEntity player, int ticks, double range, float hitDamage, float finisherDamage, int fistColor) {
+        ServerLevel level = Combat.level(player);
         PowerData data = player.getData(ModAttachments.POWER);
         data.busyTicks = ticks + 4;
         player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, ticks, 1, false, false));

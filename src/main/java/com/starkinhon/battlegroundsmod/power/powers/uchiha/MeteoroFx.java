@@ -5,7 +5,7 @@ import com.starkinhon.battlegroundsmod.fx.ModParticles;
 import com.starkinhon.battlegroundsmod.skill.MeteoroSpec;
 
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.phys.Vec3;
@@ -18,13 +18,13 @@ final class MeteoroFx {
     private MeteoroFx() {
     }
 
-    static void call(ServerLevel level, ServerPlayer player) {
+    static void call(ServerLevel level, LivingEntity player) {
         Fx.sound(level, player.position(), SoundEvents.WITHER_SPAWN, 2f, 0.5f);
         Fx.sound(level, player.position(), SoundEvents.BEACON_POWER_SELECT, 1.5f, 0.4f);
     }
 
     // Dark red dust swirling up around the caster.
-    static void prepare(ServerLevel level, ServerPlayer player, MeteoroSpec spec) {
+    static void prepare(ServerLevel level, LivingEntity player, MeteoroSpec spec) {
         MeteoroSpec.Preparo preparo = spec.preparo();
         if (!preparo.ativa()) {
             return;

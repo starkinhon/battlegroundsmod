@@ -2,6 +2,7 @@ package com.starkinhon.battlegroundsmod.power;
 
 import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.ModItems;
+import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.combat.Fx;
 import com.starkinhon.battlegroundsmod.combat.Melee;
@@ -13,8 +14,10 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket;
 import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
 import net.minecraft.network.protocol.game.ClientboundSetTitlesAnimationPacket;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -45,10 +48,7 @@ public final class PowerLogic {
             player.displayClientMessage(Component.translatable("message.battlegroundsmod.no_power"), true);
             return;
         }
-        if (slot < 0 || slot >= PowerData.SLOT_COUNT || player.isSpectator() || !player.isAlive()) {
-            return;
-        }
-        if (data.cooldowns[slot] > 0 || data.busyTicks > 0 || Freeze.isFrozen(player)) {
+        if (slot < 0 || slot >= PowerData.SLOT_COUNT || !canCast(player, data, slot)) {
             return;
         }
         Ability ability = ability(power, slot);
@@ -63,7 +63,7 @@ public final class PowerLogic {
             player.displayClientMessage(Component.translatable("message.battlegroundsmod.no_energy"), true);
             return;
         }
-        if (!ability.action().use(player, player.serverLevel())) {
+        if (!cast(player, slot)) {
             return;
         }
         if (!free) {
@@ -76,17 +76,38 @@ public final class PowerLogic {
         if (!data.noCooldown) {
             data.cooldowns[slot] = ability.cooldown();
         }
-        if (ultimate) {
-            announceUlt(player, power);
-        }
         sync(player);
     }
 
+    private static boolean canCast(LivingEntity caster, PowerData data, int slot) {
+        return !caster.isSpectator() && caster.isAlive() && data.cooldowns[slot] <= 0 && data.busyTicks <= 0 && !Freeze.isFrozen(caster);
+    }
+
+    // Runs a move of the caster's power, with no costs and no cooldown set: players go through tryUse, bosses set
+    // their own cooldowns. Returns false when the move did not happen.
+    public static boolean cast(LivingEntity caster, int slot) {
+        PowerData data = caster.getData(ModAttachments.POWER);
+        Power power = Powers.get(data.power);
+        if (power == null || slot < 0 || slot >= PowerData.SLOT_COUNT || !canCast(caster, data, slot)) {
+            return false;
+        }
+        ServerLevel level = Combat.level(caster);
+        if (!ability(power, slot).action().use(caster, level)) {
+            return false;
+        }
+        data.lastCastSlot = slot;
+        data.lastCastTime = level.getGameTime();
+        if (slot == PowerData.SLOT_ULT) {
+            announceUlt(caster, power);
+        }
+        return true;
+    }
+
     // Big title on the screen of everyone nearby. Makes ults read well on video.
-    private static void announceUlt(ServerPlayer player, Power power) {
+    private static void announceUlt(LivingEntity player, Power power) {
         Component title = power.abilityName(PowerData.SLOT_ULT).copy().withStyle(s -> s.withColor(power.color()).withBold(true));
         Component subtitle = player.getDisplayName().copy().withStyle(ChatFormatting.GRAY);
-        for (ServerPlayer other : player.serverLevel().players()) {
+        for (ServerPlayer other : Combat.level(player).players()) {
             if (other.distanceTo(player) <= ULT_TITLE_RANGE) {
                 other.connection.send(new ClientboundSetTitlesAnimationPacket(5, 30, 10));
                 other.connection.send(new ClientboundSetTitleTextPacket(title));
@@ -139,7 +160,7 @@ public final class PowerLogic {
         }
     }
 
-    public static void tick(ServerPlayer player) {
+    public static void tick(LivingEntity player) {
         PowerData data = player.getData(ModAttachments.POWER);
         for (int i = 0; i < data.cooldowns.length; i++) {
             if (data.cooldowns[i] > 0) {
@@ -162,8 +183,8 @@ public final class PowerLogic {
             data.energy = Math.min(PowerData.MAX_ENERGY, data.energy + ENERGY_REGEN_PER_TICK);
             data.ult = Math.min(PowerData.MAX_ULT, data.ult + ULT_PASSIVE_PER_TICK);
         }
-        if (player.tickCount % SYNC_INTERVAL == 0) {
-            sync(player);
+        if (player instanceof ServerPlayer serverPlayer && player.tickCount % SYNC_INTERVAL == 0) {
+            sync(serverPlayer);
         }
     }
 

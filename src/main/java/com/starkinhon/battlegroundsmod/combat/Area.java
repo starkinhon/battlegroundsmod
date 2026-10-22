@@ -6,7 +6,6 @@ import com.starkinhon.battlegroundsmod.skill.SkillSpec;
 
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
 
@@ -28,8 +27,8 @@ public interface Area {
     // tipo "esfera": a ball around the middle of the caster's body (raio).
     // tipo "anel": like circulo, but the middle up to raioInterno is left out (raioInterno, raio, altura).
     // tipo "alvo": a cylinder on the block the caster aims at, up to distanciaMax away (distanciaMax, raio, altura).
-    static Area of(SkillSpec.Forma forma, ServerPlayer caster) {
-        ServerLevel level = caster.serverLevel();
+    static Area of(SkillSpec.Forma forma, LivingEntity caster) {
+        ServerLevel level = Combat.level(caster);
         Vec3 eyes = caster.getEyePosition();
         Vec3 look = caster.getLookAngle();
         double radius = orDefault(forma.raio(), DEFAULT_RADIUS);

@@ -4,6 +4,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 // Per-player power state. Stored as a data attachment on the player and mirrored to the client for the HUD.
+// Bosses carry one too, so they use the same moves, cooldowns and busy time.
 public class PowerData {
     public static final float MAX_ENERGY = 100f;
     public static final float MAX_ULT = 100f;
@@ -37,6 +38,9 @@ public class PowerData {
     public boolean noCooldown = false;
     // Awakened mode: skills use the "despertado" values of their spec. Toggled by /soul despertar for now.
     public boolean awakened = false;
+    // Last move used and when (game time), so bosses can read what their target just did. -1 = nothing yet.
+    public int lastCastSlot = -1;
+    public long lastCastTime = -1;
 
     public PowerData() {
     }

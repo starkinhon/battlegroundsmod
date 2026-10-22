@@ -2,6 +2,8 @@ package com.starkinhon.battlegroundsmod.power;
 
 import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.ModItems;
+import com.starkinhon.battlegroundsmod.boss.SoulBoss;
+import com.starkinhon.battlegroundsmod.command.BossCommand;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.combat.Intangible;
 import com.starkinhon.battlegroundsmod.combat.Melee;
@@ -81,6 +83,7 @@ public final class PowerEvents {
                 player.displayClientMessage(Component.translatable("message.battlegroundsmod.welcome"), false);
             }
             PowerLogic.sync(player);
+            BossCommand.syncBossBar(player);
         }
     }
 
@@ -137,8 +140,10 @@ public final class PowerEvents {
             event.setCanceled(true);
             return;
         }
-        if (event.getEntity() instanceof ServerPlayer player) {
-            Susanoo.onIncomingDamage(player, event);
+        Susanoo.onIncomingDamage(event.getEntity(), event);
+        // Bosses hit as hard as their file says.
+        if (!event.isCanceled() && event.getSource().getEntity() instanceof SoulBoss boss) {
+            event.setAmount(event.getAmount() * boss.spec().atributos().multDano());
         }
     }
 

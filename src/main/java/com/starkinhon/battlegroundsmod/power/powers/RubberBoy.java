@@ -31,10 +31,10 @@ public final class RubberBoy {
 
     public static Power create() {
         return new Power("rubber_boy", 0xC0392B, 1.15f, List.of(
-                new Ability(40, 12, RubberBoy::pistol),
-                new Ability(160, 25, RubberBoy::gatling),
-                new Ability(120, 20, RubberBoy::rocket),
-                new Ability(100, 0, RubberBoy::giantPistol)));
+                Ability.player(40, 12, RubberBoy::pistol),
+                Ability.player(160, 25, RubberBoy::gatling),
+                Ability.player(120, 20, RubberBoy::rocket),
+                Ability.player(100, 0, RubberBoy::giantPistol)));
     }
 
     private static void arm(ServerLevel level, Vec3 from, Vec3 to, float scale) {

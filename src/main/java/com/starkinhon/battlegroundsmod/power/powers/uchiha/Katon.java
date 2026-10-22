@@ -44,7 +44,7 @@ public final class Katon {
     private Katon() {
     }
 
-    public static boolean use(ServerPlayer player, ServerLevel level) {
+    public static boolean use(LivingEntity player, ServerLevel level) {
         PowerData data = player.getData(ModAttachments.POWER);
         SkillSpec spec = SkillSpecs.get(SKILL, SkillSpec.class, data.awakened);
         SkillSpec.Tempo tempo = spec.tempo();
@@ -64,7 +64,7 @@ public final class Katon {
             double length = level.getGameTime() - start < tempo.atrasoTicks() ? 0 : cone.length();
             return "meio".equals(onde) ? cone.pointAt(length / 2) : "ponta".equals(onde) ? cone.pointAt(length) : cone.origin();
         };
-        List<ServerPlayer> screen = List.of(player);
+        List<ServerPlayer> screen = player instanceof ServerPlayer self ? List.of(self) : List.of();
         SkillSounds.play(level, sons, "uso", 0, tempo.atrasoTicks(), where, screen);
         SkillSounds.play(level, sons, "fogo", tempo.atrasoTicks(), tempo.duracaoTicks(), where, screen);
         SkillSounds.play(level, sons, "fim", tempo.totalTicks(), 0, where, screen);
@@ -97,7 +97,7 @@ public final class Katon {
     }
 
     // The fire travels out over crescimentoTicks instead of appearing at full length.
-    private static Cone cone(ServerPlayer player, ServerLevel level, SkillSpec spec, int age) {
+    private static Cone cone(LivingEntity player, ServerLevel level, SkillSpec spec, int age) {
         SkillSpec.Forma forma = spec.forma();
         double length = forma.comprimento() * Math.min(1, (age + 1) / (double) Math.max(1, spec.tempo().crescimentoTicks()));
         // Minecraft pitch is negative when looking up, so tilting up subtracts.
@@ -106,7 +106,7 @@ public final class Katon {
         return new Cone(level, player, mouth(player, spec.origem(), dir), dir, length, forma.comprimento(), forma.raioInicio(), forma.raioFim());
     }
 
-    private static void burn(ServerPlayer player, LivingEntity target, Cone cone) {
+    private static void burn(LivingEntity player, LivingEntity target, Cone cone) {
         // Keep the target in the fire: drop the vanilla hit knockback and only nudge them along the stream.
         Vec3 motion = target.getDeltaMovement();
         Combat.hurt(player, target, DAMAGE);
@@ -115,11 +115,11 @@ public final class Katon {
         target.hurtMarked = true;
         target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, SLOW_TICKS, 0));
         target.igniteForSeconds(2);
-        UchihaFx.katonBurn(player.serverLevel(), Combat.center(target));
+        UchihaFx.katonBurn(Combat.level(player), Combat.center(target));
     }
 
     // Measured from the eyes like in the Forja page: forward along the aim, straight up, and to the player's right.
-    private static Vec3 mouth(ServerPlayer player, SkillSpec.Origem origem, Vec3 dir) {
+    private static Vec3 mouth(LivingEntity player, SkillSpec.Origem origem, Vec3 dir) {
         Vec3 right = dir.cross(Math.abs(dir.y) > 0.99 ? new Vec3(1, 0, 0) : new Vec3(0, 1, 0)).normalize();
         return player.getEyePosition().add(dir.scale(origem.frente())).add(0, origem.altura(), 0).add(right.scale(origem.lado()));
     }
