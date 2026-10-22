@@ -101,17 +101,14 @@ public final class ModPayloads {
         }
     }
 
-    // Server -> client: point this player's camera at someone's face for a moment (Mangekyo and similar moves).
-    public record FaceCutscene(int entityId, int ticks, float startDistance, float endDistance, float height, boolean hideHud)
-            implements CustomPacketPayload {
+    // Server -> client: point this player's camera at someone's face for a moment. The timing is the "cutscene"
+    // block of the skill's spec, which the client reads itself.
+    public record FaceCutscene(int entityId, String skill, boolean awakened) implements CustomPacketPayload {
         public static final Type<FaceCutscene> TYPE = payloadType("face_cutscene");
         public static final StreamCodec<ByteBuf, FaceCutscene> STREAM_CODEC = StreamCodec.composite(
                 ByteBufCodecs.VAR_INT, FaceCutscene::entityId,
-                ByteBufCodecs.VAR_INT, FaceCutscene::ticks,
-                ByteBufCodecs.FLOAT, FaceCutscene::startDistance,
-                ByteBufCodecs.FLOAT, FaceCutscene::endDistance,
-                ByteBufCodecs.FLOAT, FaceCutscene::height,
-                ByteBufCodecs.BOOL, FaceCutscene::hideHud,
+                ByteBufCodecs.STRING_UTF8, FaceCutscene::skill,
+                ByteBufCodecs.BOOL, FaceCutscene::awakened,
                 FaceCutscene::new);
 
         @Override
@@ -136,7 +133,6 @@ public final class ModPayloads {
         registrar.playToClient(PlaySkillAnimation.TYPE, PlaySkillAnimation.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.playSkillAnimation(payload.entityId(), payload.skill(), payload.awakened())));
         registrar.playToClient(FaceCutscene.TYPE, FaceCutscene.STREAM_CODEC, (payload, context) -> context.enqueueWork(
-                () -> ClientHooks.startFaceCutscene(payload.entityId(), payload.ticks(), payload.startDistance(),
-                        payload.endDistance(), payload.height(), payload.hideHud())));
+                () -> ClientHooks.startFaceCutscene(payload.entityId(), payload.skill(), payload.awakened())));
     }
 }

@@ -13,7 +13,7 @@ import net.minecraft.world.phys.Vec3;
 
 // A cone hitbox for breath and spray moves: starts at origin, opens along dir, cut short by walls.
 // The width at a distance only depends on maxLength, so a cone stopped by a wall keeps the same shape.
-public final class Cone {
+public final class Cone implements Area {
     // Toggled by /poder hitbox: draws every cone so hitboxes can be checked in game.
     public static boolean debug = false;
 
@@ -76,6 +76,7 @@ public final class Cone {
         return hit.getType() == HitResult.Type.MISS || hit.getLocation().distanceToSqr(closest) < 0.04;
     }
 
+    @Override
     public List<LivingEntity> targets() {
         Vec3 end = pointAt(length);
         double r = radiusAt(length);
@@ -84,6 +85,7 @@ public final class Cone {
     }
 
     // Outline of the hitbox: rings along the axis and four edge lines.
+    @Override
     public void draw(ParticleOptions particle) {
         Vec3 side = dir.cross(Math.abs(dir.y) > 0.99 ? new Vec3(1, 0, 0) : new Vec3(0, 1, 0)).normalize();
         Vec3 up = side.cross(dir).normalize();
