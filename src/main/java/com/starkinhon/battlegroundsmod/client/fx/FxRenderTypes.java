@@ -86,8 +86,22 @@ public final class FxRenderTypes extends RenderType {
         return DECALS.computeIfAbsent(texture, t -> create("battlegroundsmod_decal_" + t.getPath().replace('/', '_'), DefaultVertexFormat.POSITION_TEX_COLOR,
                 VertexFormat.Mode.QUADS, 4096, false, true, CompositeState.builder()
                         .setShaderState(FLAT_SHADER)
-                        .setTextureState(new TextureStateShard(t, false, false))
+                        .setTextureState(new TextureStateShard(t, true, false))
                         .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                        .setWriteMaskState(COLOR_WRITE)
+                        .setCullState(NO_CULL)
+                        .createCompositeState(false)));
+    }
+
+    // The same picture added as light on top of itself, so its bright parts glow.
+    private static final java.util.Map<ResourceLocation, RenderType> DECAL_GLOWS = new java.util.HashMap<>();
+
+    public static RenderType decalGlow(ResourceLocation texture) {
+        return DECAL_GLOWS.computeIfAbsent(texture, t -> create("battlegroundsmod_decal_glow_" + t.getPath().replace('/', '_'),
+                DefaultVertexFormat.POSITION_TEX_COLOR, VertexFormat.Mode.QUADS, 4096, false, false, CompositeState.builder()
+                        .setShaderState(FLAT_SHADER)
+                        .setTextureState(new TextureStateShard(t, true, false))
+                        .setTransparencyState(LIGHTNING_TRANSPARENCY)
                         .setWriteMaskState(COLOR_WRITE)
                         .setCullState(NO_CULL)
                         .createCompositeState(false)));

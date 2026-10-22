@@ -329,8 +329,18 @@ public final class FxWorld {
                     FxDraw.billboard(spark, radius * 0.5f, 0, FxDraw.FLARE, 4 / 32f, cor2, hold, true);
                 }
             }
-            case "olhoChao" -> FxDraw.disk(decal(e), new Vector3f(at).add(0, 0.06f, 0), new Vector3f(0, 1, 0),
-                    size, -spin, FxDraw.SOLID, 0, new float[] {1, 1, 1}, hold);
+            case "olhoChao" -> {
+                // The eye on the ground, glowing: a red halo bleeding onto the floor (bloomed), a hot rim, the eye
+                // itself and a brighter copy added on top that breathes slowly.
+                Vector3f floor = new Vector3f(at).add(0, 0.06f, 0);
+                Vector3f up = new Vector3f(0, 1, 0);
+                float[] glow = FxDraw.rgb(FxDraw.parse(e.cor(), 0xFF1A1A));
+                float breathe = 0.75f + 0.25f * Mth.sin(age * 0.22f);
+                FxDraw.disk(new Vector3f(floor).add(0, -0.01f, 0), up, size * 1.7f, FxDraw.SOFT, 0, glow, hold * 0.55f * breathe, true);
+                FxDraw.disk(new Vector3f(floor).add(0, 0.012f, 0), up, size * 1.04f, FxDraw.RING, 0.05f, glow, hold * 0.9f * breathe, true);
+                FxDraw.disk(decal(e), floor, up, size, -spin, FxDraw.SOLID, 0, new float[] {1, 1, 1}, hold);
+                FxDraw.disk(decalGlow(e), new Vector3f(floor).add(0, 0.006f, 0), up, size, -spin, FxDraw.SOLID, 0, glow, hold * 0.6f * breathe);
+            }
             case "olho" -> FxDraw.billboard(decal(e), at, size, spin, new float[] {1, 1, 1}, hold);
             default -> {
             }
@@ -341,6 +351,12 @@ public final class FxWorld {
 
     private static com.mojang.blaze3d.vertex.VertexConsumer decal(Efeito e) {
         RenderType type = FxRenderTypes.decal(texture(e));
+        USED_DECALS.add(type);
+        return buffers.getBuffer(type);
+    }
+
+    private static com.mojang.blaze3d.vertex.VertexConsumer decalGlow(Efeito e) {
+        RenderType type = FxRenderTypes.decalGlow(texture(e));
         USED_DECALS.add(type);
         return buffers.getBuffer(type);
     }
