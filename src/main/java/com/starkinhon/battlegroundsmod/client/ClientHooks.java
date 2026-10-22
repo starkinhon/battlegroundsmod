@@ -8,6 +8,10 @@ public final class ClientHooks {
     private ClientHooks() {
     }
 
+    public static void playSkillAnimation(int entityId, String skill) {
+        SkillAnimations.play(entityId, skill);
+    }
+
     public static void openPowerSelect() {
         Minecraft.getInstance().setScreen(new PowerSelectScreen());
     }

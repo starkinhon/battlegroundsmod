@@ -1,7 +1,10 @@
 package com.starkinhon.battlegroundsmod.power.powers.uchiha;
 
+import java.util.List;
+
 import com.starkinhon.battlegroundsmod.combat.Cone;
 import com.starkinhon.battlegroundsmod.combat.Fx;
+import com.starkinhon.battlegroundsmod.skill.SkillSpec;
 
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
@@ -11,48 +14,64 @@ import net.minecraft.world.phys.Vec3;
 
 // Visuals and sounds of the Uchiha moves. Vanilla particles for now: each method is one effect,
 // so moving to Photon means replacing a method body with a call to the matching Photon effect.
+// The particle layers follow the Forja de Skills page, which simulates the same emitters.
 public final class UchihaFx {
-    // Yellow at the mouth, orange in the middle, red at the tip, like a real flame.
-    private static final int[] FIRE_COLORS = {0xFFE14A, 0xFFB020, 0xFF7A10, 0xFF4A0A, 0xE5200A};
-    // Speed of the moving flames, in blocks per tick. With vanilla flame friction they reach the end of the cone.
-    private static final double FLAME_SPEED = 0.8;
     private static final RandomSource RANDOM = RandomSource.create();
 
     private UchihaFx() {
     }
 
-    public static void katonStart(ServerLevel level, Vec3 mouth) {
-        Fx.sound(level, mouth, SoundEvents.BLAZE_SHOOT, 2f, 0.5f);
-        Fx.sound(level, mouth, SoundEvents.FIRECHARGE_USE, 2f, 0.6f);
-        Fx.burst(level, ParticleTypes.FLAME, mouth, 20, 0.2, 0.15);
+    // Burst of flames at the mouth when the fire comes out.
+    public static void katonStart(ServerLevel level, SkillSpec spec, Cone cone) {
+        Fx.sound(level, cone.origin(), SoundEvents.BLAZE_SHOOT, 2f, 0.5f);
+        Fx.sound(level, cone.origin(), SoundEvents.FIRECHARGE_USE, 2f, 0.6f);
+        SkillSpec.Explosao inicio = spec.camadas().inicio();
+        if (inicio.ativa()) {
+            Fx.burst(level, ParticleTypes.FLAME, cone.origin(), inicio.quantidade(), inicio.espalhamento(), inicio.velocidade());
+        }
     }
 
-    public static void katonStream(ServerLevel level, Cone cone, int age) {
+    public static void katonStream(ServerLevel level, SkillSpec spec, Cone cone, int age) {
+        SkillSpec.Camadas camadas = spec.camadas();
         Vec3 dir = cone.dir();
         Vec3 side = dir.cross(Math.abs(dir.y) > 0.99 ? new Vec3(1, 0, 0) : new Vec3(0, 1, 0)).normalize();
         Vec3 up = side.cross(dir).normalize();
         double length = cone.length();
 
         // Flames shot out of the mouth: they fly along the cone and fade, which sells the motion.
-        for (int i = 0; i < 20; i++) {
-            Vec3 spread = randomInDisk(side, up, cone.radiusAt(length) / Math.max(length, 1));
-            Vec3 velocity = dir.add(spread).normalize().scale(FLAME_SPEED * (0.75 + RANDOM.nextDouble() * 0.35));
-            Fx.moving(level, ParticleTypes.FLAME, cone.origin(), velocity);
+        SkillSpec.Jato chamas = camadas.chamas();
+        if (chamas.ativa()) {
+            double spread = cone.radiusAt(length) / Math.max(length, 1) * chamas.abertura();
+            for (int i = 0; i < chamas.porTick(); i++) {
+                Vec3 velocity = dir.add(randomInDisk(side, up, spread)).normalize()
+                        .scale(chamas.velocidade() * (0.75 + RANDOM.nextDouble() * 0.35));
+                Fx.moving(level, ParticleTypes.FLAME, cone.origin(), velocity);
+            }
         }
 
-        // Big colored puffs fill the volume, growing and reddening towards the tip.
-        for (int i = 0; i < 45; i++) {
-            double f = Math.sqrt(RANDOM.nextDouble());
-            double t = f * length;
-            Vec3 pos = cone.pointAt(t).add(randomInDisk(side, up, cone.radiusAt(t) * 0.9));
-            int color = FIRE_COLORS[Math.min(FIRE_COLORS.length - 1, (int) (f * FIRE_COLORS.length))];
-            Fx.burst(level, Fx.dust(color, 1.5f + (float) f * 2.5f), pos, 1, 0, 0);
+        // Colored puffs fill the volume, growing and changing color from the mouth to the tip.
+        SkillSpec.Volume fogo = camadas.fogo();
+        List<String> cores = fogo.cores();
+        if (fogo.ativa() && cores != null && !cores.isEmpty()) {
+            for (int i = 0; i < fogo.porTick(); i++) {
+                double k = Math.pow(RANDOM.nextDouble(), fogo.concentracao());
+                double t = k * length;
+                Vec3 pos = cone.pointAt(t).add(randomInDisk(side, up, cone.radiusAt(t) * fogo.preenchimento()));
+                int color = parseColor(cores.get(Math.min(cores.size() - 1, (int) (k * cores.size()))));
+                float size = fogo.tamanhoInicio() + (float) k * (fogo.tamanhoFim() - fogo.tamanhoInicio());
+                Fx.burst(level, Fx.dust(color, size), pos, 1, 0, 0);
+            }
         }
 
-        if (age % 2 == 0) {
-            Vec3 tip = cone.pointAt(length);
-            Fx.burst(level, ParticleTypes.LARGE_SMOKE, tip.add(0, 0.5, 0), 2, cone.radiusAt(length) * 0.5, 0.02);
-            Fx.burst(level, ParticleTypes.LAVA, tip, 1, cone.radiusAt(length) * 0.4, 0);
+        Vec3 tip = cone.pointAt(length);
+        double tipRadius = cone.radiusAt(length);
+        SkillSpec.Fumaca fumaca = camadas.fumaca();
+        if (fumaca.ativa() && age % Math.max(1, fumaca.intervaloTicks()) == 0) {
+            Fx.burst(level, ParticleTypes.LARGE_SMOKE, tip.add(0, fumaca.altura(), 0), fumaca.quantidade(), tipRadius * fumaca.espalhamento(), 0.02);
+        }
+        SkillSpec.Lava lava = camadas.lava();
+        if (lava.ativa() && age % Math.max(1, lava.intervaloTicks()) == 0) {
+            Fx.burst(level, ParticleTypes.LAVA, tip, lava.quantidade(), tipRadius * lava.espalhamento(), 0);
         }
         if (age % 8 == 0) {
             Fx.sound(level, cone.origin(), SoundEvents.FIRE_AMBIENT, 2f, 0.6f);
@@ -62,6 +81,15 @@ public final class UchihaFx {
 
     public static void katonBurn(ServerLevel level, Vec3 pos) {
         Fx.burst(level, ParticleTypes.FLAME, pos, 6, 0.3, 0.03);
+    }
+
+    // "#ff7a10" -> 0xFF7A10. Falls back to orange on a bad value.
+    private static int parseColor(String hex) {
+        try {
+            return Integer.parseInt(hex.startsWith("#") ? hex.substring(1) : hex, 16);
+        } catch (NumberFormatException e) {
+            return 0xFF7A10;
+        }
     }
 
     // Uniform random point in a disk of the given radius, perpendicular to the cone axis.
