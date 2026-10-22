@@ -28,11 +28,11 @@ public final class SkillAnimations {
     private SkillAnimations() {
     }
 
-    public static void play(int entityId, String skill) {
+    public static void play(int entityId, String skill, boolean awakened) {
         var level = Minecraft.getInstance().level;
         Entity entity = level == null ? null : level.getEntity(entityId);
         if (entity != null) {
-            PLAYING.put(entityId, new Playing(SkillSpecs.get(skill), entity.tickCount));
+            PLAYING.put(entityId, new Playing(SkillSpecs.get(skill, SkillSpec.class, awakened), entity.tickCount));
         }
     }
 

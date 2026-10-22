@@ -1,8 +1,6 @@
 package com.starkinhon.battlegroundsmod.power.powers;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Fx;
@@ -11,6 +9,7 @@ import com.starkinhon.battlegroundsmod.combat.Tasks;
 import com.starkinhon.battlegroundsmod.power.Ability;
 import com.starkinhon.battlegroundsmod.power.Power;
 import com.starkinhon.battlegroundsmod.power.powers.uchiha.Katon;
+import com.starkinhon.battlegroundsmod.power.powers.uchiha.Mangekyo;
 
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
@@ -21,7 +20,7 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
 
-// Fantasma dos Uchiha (Madara). Being remade move by move: Z is the new Katon, X/C/V are still the first version.
+// Fantasma dos Uchiha (Madara). Being remade move by move: Z is the new Katon, X the Mangekyo, C/V are still the first version.
 public final class UchihaGhost {
     private static final int SPECTRAL = 0x3A6BFF;
 
@@ -31,41 +30,9 @@ public final class UchihaGhost {
     public static Power create() {
         return new Power("uchiha_ghost", 0xD12F2F, 1.1f, List.of(
                 new Ability(300, 30, Katon::use),
-                new Ability(160, 25, UchihaGhost::flameWave),
+                new Ability(400, 35, Mangekyo::use),
                 new Ability(300, 30, UchihaGhost::spectralArmor),
                 new Ability(100, 0, UchihaGhost::meteor)));
-    }
-
-    // X: a wave of fire that spreads forward in a 120 degree arc.
-    private static boolean flameWave(ServerPlayer player, ServerLevel level) {
-        Vec3 look = Combat.flatLook(player);
-        Vec3 origin = player.position().add(0, 0.3, 0);
-        Set<LivingEntity> hit = new HashSet<>();
-        Fx.sound(level, origin, SoundEvents.FIRECHARGE_USE, 1.5f, 0.5f);
-        Fx.sound(level, origin, SoundEvents.BLAZE_SHOOT, 1.5f, 0.4f);
-        Tasks.repeat(14, age -> {
-            double radius = 1.5 + age * 0.75;
-            for (int i = -6; i <= 6; i++) {
-                Vec3 dir = look.yRot((float) (i * Math.PI / 18));
-                Vec3 pos = origin.add(dir.scale(radius));
-                Fx.burst(level, ParticleTypes.FLAME, pos, 4, 0.25, 0.04);
-                if (age % 2 == 0) {
-                    Fx.burst(level, ParticleTypes.LARGE_SMOKE, pos.add(0, 0.6, 0), 1, 0.2, 0.01);
-                }
-            }
-            for (LivingEntity target : Combat.inRadius(level, origin, radius + 1, player)) {
-                Vec3 to = target.position().subtract(origin);
-                if (to.horizontalDistance() > 0.1 && new Vec3(to.x, 0, to.z).normalize().dot(look) < 0.45) {
-                    continue;
-                }
-                if (hit.add(target)) {
-                    Combat.hurt(player, target, 7f);
-                    target.igniteForSeconds(6);
-                    Combat.push(target, look, 1.0, 0.4);
-                }
-            }
-        });
-        return true;
     }
 
     // C: spectral ribcage armor. Big damage reduction and extra hearts for 8 seconds.

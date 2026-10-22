@@ -1,5 +1,6 @@
 package com.starkinhon.battlegroundsmod;
 
+import com.starkinhon.battlegroundsmod.client.FaceCutscene;
 import com.starkinhon.battlegroundsmod.client.Keybinds;
 import com.starkinhon.battlegroundsmod.client.PowerHud;
 
@@ -12,6 +13,7 @@ import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
+import net.neoforged.neoforge.client.event.ViewportEvent;
 import net.neoforged.neoforge.common.NeoForge;
 
 // This class will not load on dedicated servers. Accessing client side code from here is safe.
@@ -23,6 +25,7 @@ public class BattlegroundsModClient {
         modEventBus.addListener(BattlegroundsModClient::onRegisterKeys);
         modEventBus.addListener(BattlegroundsModClient::onRegisterGuiLayers);
         NeoForge.EVENT_BUS.addListener(BattlegroundsModClient::onClientTick);
+        NeoForge.EVENT_BUS.addListener(ViewportEvent.ComputeCameraAngles.class, FaceCutscene::onCameraAngles);
     }
 
     private static void onClientSetup(FMLClientSetupEvent event) {
@@ -39,5 +42,6 @@ public class BattlegroundsModClient {
 
     private static void onClientTick(ClientTickEvent.Post event) {
         Keybinds.tick();
+        FaceCutscene.tick();
     }
 }

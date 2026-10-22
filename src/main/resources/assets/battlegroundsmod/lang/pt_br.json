@@ -24,6 +24,8 @@
 
   "message.battlegroundsmod.no_cooldown_on": "Sem cooldown e sem custo.",
   "message.battlegroundsmod.no_cooldown_off": "Cooldown e custo de volta.",
+  "message.battlegroundsmod.awakened_on": "Modo despertado ligado.",
+  "message.battlegroundsmod.awakened_off": "Modo despertado desligado.",
   "message.battlegroundsmod.hitbox_on": "Hitboxes visíveis.",
   "message.battlegroundsmod.hitbox_off": "Hitboxes escondidas.",
   "message.battlegroundsmod.welcome": "§6Você recebeu o Livro das Almas! §7Clique com o botão direito para escolher a alma que vai se unir a você.",
@@ -39,7 +41,7 @@
   "power.battlegroundsmod.uchiha_ghost": "Fantasma dos Uchiha",
   "power.battlegroundsmod.uchiha_ghost.desc": "Domina o fogo e invoca meteoros do céu.",
   "ability.battlegroundsmod.uchiha_ghost.0": "Katon: Rajada de Fogo",
-  "ability.battlegroundsmod.uchiha_ghost.1": "Onda de Chamas",
+  "ability.battlegroundsmod.uchiha_ghost.1": "Mangekyo",
   "ability.battlegroundsmod.uchiha_ghost.2": "Armadura Espectral",
   "ability.battlegroundsmod.uchiha_ghost.3": "Chuva de Meteoros",
 

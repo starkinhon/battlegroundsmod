@@ -1,0 +1,40 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "madara.mangekyo",
+  "nome": "Mangekyo",
+  "tempo": {
+    "atrasoTicks": 30
+  },
+  "forma": {
+    "tipo": "cone",
+    "comprimento": 12,
+    "raioInicio": 0.5,
+    "raioFim": 6
+  },
+  "efeitos": {
+    "duracaoTicks": 200,
+    "fadiga": 3,
+    "cegueira": 1,
+    "lentidao": 0,
+    "travarSkills": true,
+    "atordoarTicks": 0
+  },
+  "cutscene": {
+    "ativa": true,
+    "duracaoTicks": 30,
+    "distanciaInicio": 2.4,
+    "distanciaFim": 0.8,
+    "altura": 0,
+    "esconderHud": true
+  },
+  "despertado": {
+    "forma": {
+      "comprimento": 18,
+      "raioFim": 9
+    },
+    "efeitos": {
+      "duracaoTicks": 300,
+      "atordoarTicks": 40
+    }
+  }
+}

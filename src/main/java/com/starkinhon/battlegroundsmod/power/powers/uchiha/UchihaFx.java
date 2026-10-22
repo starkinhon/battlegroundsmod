@@ -10,6 +10,7 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
 
 // Visuals and sounds of the Uchiha moves. Vanilla particles for now: each method is one effect,
@@ -81,6 +82,20 @@ public final class UchihaFx {
 
     public static void katonBurn(ServerLevel level, Vec3 pos) {
         Fx.burst(level, ParticleTypes.FLAME, pos, 6, 0.3, 0.03);
+    }
+
+    // Placeholder look: a red flash in the eyes and a low hum. To be swapped for the real effect later.
+    public static void mangekyoStart(ServerLevel level, LivingEntity caster) {
+        Vec3 eyes = caster.getEyePosition().add(caster.getLookAngle().scale(0.3));
+        Fx.burst(level, Fx.dust(0xD10A0A, 1.2f), eyes, 12, 0.15, 0);
+        Fx.sound(level, eyes, SoundEvents.ELDER_GUARDIAN_CURSE, 1.2f, 0.6f);
+        Fx.sound(level, eyes, SoundEvents.BEACON_POWER_SELECT, 1f, 0.5f);
+    }
+
+    public static void mangekyoHit(ServerLevel level, LivingEntity target) {
+        Vec3 head = target.getEyePosition();
+        Fx.ring(level, Fx.dust(0xD10A0A, 1.5f), head.add(0, 0.4, 0), 0.6, 16, 0);
+        Fx.burst(level, Fx.dust(0x1A0000, 2f), head, 20, 0.4, 0);
     }
 
     // "#ff7a10" -> 0xFF7A10. Falls back to orange on a bad value.
