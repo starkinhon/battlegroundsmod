@@ -24,4 +24,7 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew build
       - name: Check dev-only mods resolve
-        run: "! ./gradlew dependencies --configuration runtimeClasspath | grep -n 'FAILED'"
+        run: |
+          ./gradlew dependencies --configuration runtimeClasspath > deps.txt
+          ! grep -n 'FAILED' deps.txt
+          grep -n 'freecam' deps.txt
