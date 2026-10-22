@@ -6,6 +6,7 @@ import java.util.List;
 import com.starkinhon.battlegroundsmod.BattlegroundsMod;
 import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.client.ClientHooks;
+import com.starkinhon.battlegroundsmod.movement.Movement;
 import com.starkinhon.battlegroundsmod.power.PowerData;
 import com.starkinhon.battlegroundsmod.power.PowerLogic;
 
@@ -37,6 +38,21 @@ public final class ModPayloads {
 
         @Override
         public Type<UseAbility> type() {
+            return TYPE;
+        }
+    }
+
+    // Client -> server: the player started a standard move (Movement.Kind index) with this move input.
+    public record UseMovement(int kind, float forward, float strafe) implements CustomPacketPayload {
+        public static final Type<UseMovement> TYPE = payloadType("use_movement");
+        public static final StreamCodec<ByteBuf, UseMovement> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, UseMovement::kind,
+                ByteBufCodecs.FLOAT, UseMovement::forward,
+                ByteBufCodecs.FLOAT, UseMovement::strafe,
+                UseMovement::new);
+
+        @Override
+        public Type<UseMovement> type() {
             return TYPE;
         }
     }
@@ -161,6 +177,11 @@ public final class ModPayloads {
         registrar.playToServer(UseAbility.TYPE, UseAbility.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer player) {
                 PowerLogic.tryUse(player, payload.slot());
+            }
+        }));
+        registrar.playToServer(UseMovement.TYPE, UseMovement.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
+            if (context.player() instanceof ServerPlayer player) {
+                Movement.onPlayerMove(player, payload.kind(), payload.forward(), payload.strafe());
             }
         }));
         registrar.playToServer(SelectPower.TYPE, SelectPower.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
