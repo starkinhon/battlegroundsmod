@@ -1,9 +1,11 @@
 package com.starkinhon.battlegroundsmod.client;
 
+import com.starkinhon.battlegroundsmod.ModSounds;
 import com.starkinhon.battlegroundsmod.skill.CutsceneSpec;
 
 import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.client.player.Input;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.util.Mth;
@@ -37,6 +39,7 @@ public final class FaceCutscene {
         if (spec.esconderHud()) {
             minecraft.options.hideGui = true;
         }
+        minecraft.getSoundManager().play(SimpleSoundInstance.forUI(ModSounds.SHARINGAN.get(), 1f, 1f));
     }
 
     public static void tick() {

@@ -1,0 +1,10 @@
+{
+  "katon": {
+    "subtitle": "subtitles.battlegroundsmod.katon",
+    "sounds": ["battlegroundsmod:katon"]
+  },
+  "sharingan": {
+    "subtitle": "subtitles.battlegroundsmod.sharingan",
+    "sounds": ["battlegroundsmod:sharingan"]
+  }
+}

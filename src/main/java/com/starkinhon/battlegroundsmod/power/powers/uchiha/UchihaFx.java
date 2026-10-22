@@ -2,6 +2,7 @@ package com.starkinhon.battlegroundsmod.power.powers.uchiha;
 
 import java.util.List;
 
+import com.starkinhon.battlegroundsmod.ModSounds;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Cone;
 import com.starkinhon.battlegroundsmod.combat.Fx;
@@ -27,8 +28,7 @@ public final class UchihaFx {
 
     // Burst of flames at the mouth when the fire comes out.
     public static void katonStart(ServerLevel level, SkillSpec spec, Cone cone) {
-        Fx.sound(level, cone.origin(), SoundEvents.BLAZE_SHOOT, 2f, 0.5f);
-        Fx.sound(level, cone.origin(), SoundEvents.FIRECHARGE_USE, 2f, 0.6f);
+        Fx.sound(level, cone.origin(), ModSounds.KATON.get(), 3f, 1f);
         SkillSpec.Explosao inicio = spec.camadas().inicio();
         if (inicio.ativa()) {
             Fx.burst(level, ParticleTypes.FLAME, cone.origin(), inicio.quantidade(), inicio.espalhamento(), inicio.velocidade());
