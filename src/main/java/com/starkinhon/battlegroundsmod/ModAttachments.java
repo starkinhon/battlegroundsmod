@@ -2,6 +2,7 @@ package com.starkinhon.battlegroundsmod;
 
 import java.util.function.Supplier;
 
+import com.starkinhon.battlegroundsmod.movement.MovementData;
 import com.starkinhon.battlegroundsmod.power.PowerData;
 
 import net.neoforged.neoforge.attachment.AttachmentType;
@@ -14,6 +15,10 @@ public final class ModAttachments {
     // The player's chosen power, energy and ult charge. Kept on death.
     public static final Supplier<AttachmentType<PowerData>> POWER = ATTACHMENT_TYPES.register("power",
             () -> AttachmentType.builder(() -> new PowerData()).serialize(PowerData.CODEC).copyOnDeath().build());
+
+    // Standard moves (dodge, air jump) for any fighter, players and bosses. Not saved.
+    public static final Supplier<AttachmentType<MovementData>> MOVEMENT = ATTACHMENT_TYPES.register("movement",
+            () -> AttachmentType.builder(() -> new MovementData()).build());
 
     private ModAttachments() {
     }

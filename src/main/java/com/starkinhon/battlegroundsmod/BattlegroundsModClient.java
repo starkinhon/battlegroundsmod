@@ -7,6 +7,7 @@ import com.starkinhon.battlegroundsmod.client.fx.MeteorRenderer;
 import com.starkinhon.battlegroundsmod.client.fx.SoulParticle;
 import com.starkinhon.battlegroundsmod.fx.ModParticles;
 import com.starkinhon.battlegroundsmod.client.Keybinds;
+import com.starkinhon.battlegroundsmod.client.MovementInput;
 import com.starkinhon.battlegroundsmod.client.PowerHud;
 import com.starkinhon.battlegroundsmod.client.ScreenShake;
 
@@ -33,6 +34,7 @@ public class BattlegroundsModClient {
         modEventBus.addListener(BattlegroundsModClient::onRegisterGuiLayers);
         modEventBus.addListener(BattlegroundsModClient::onRegisterParticles);
         NeoForge.EVENT_BUS.addListener(MeteorRenderer::onRenderLevel);
+        NeoForge.EVENT_BUS.addListener(BattlegroundsModClient::onClientTickPre);
         NeoForge.EVENT_BUS.addListener(BattlegroundsModClient::onClientTick);
         NeoForge.EVENT_BUS.addListener(MovementInputUpdateEvent.class, FaceCutscene::onMovementInput);
     }
@@ -56,7 +58,12 @@ public class BattlegroundsModClient {
         }
     }
 
+    private static void onClientTickPre(ClientTickEvent.Pre event) {
+        MovementInput.tickPre();
+    }
+
     private static void onClientTick(ClientTickEvent.Post event) {
+        MovementInput.tickPost();
         Keybinds.tick();
         FaceCutscene.tick();
         ScreenShake.tick();

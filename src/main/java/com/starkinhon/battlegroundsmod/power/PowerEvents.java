@@ -6,6 +6,7 @@ import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.combat.Intangible;
 import com.starkinhon.battlegroundsmod.combat.Melee;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
+import com.starkinhon.battlegroundsmod.movement.Movement;
 import com.starkinhon.battlegroundsmod.power.powers.uchiha.Susanoo;
 
 import net.minecraft.network.chat.Component;
@@ -66,6 +67,7 @@ public final class PowerEvents {
     private static void onPlayerTick(PlayerTickEvent.Post event) {
         if (event.getEntity() instanceof ServerPlayer player) {
             PowerLogic.tick(player);
+            Movement.tick(player);
         }
     }
 
@@ -120,6 +122,10 @@ public final class PowerEvents {
     }
 
     private static void onFall(LivingFallEvent event) {
+        if (Movement.ignoresFall(event.getEntity())) {
+            event.setCanceled(true);
+            return;
+        }
         if (event.getEntity() instanceof ServerPlayer player && player.getData(ModAttachments.POWER).noFallTicks > 0) {
             event.setCanceled(true);
         }
