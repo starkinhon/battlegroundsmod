@@ -6,7 +6,6 @@ import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.combat.Intangible;
 import com.starkinhon.battlegroundsmod.combat.Melee;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
-import com.starkinhon.battlegroundsmod.power.powers.uchiha.MeteoroClouds;
 import com.starkinhon.battlegroundsmod.power.powers.uchiha.Susanoo;
 
 import net.minecraft.network.chat.Component;
@@ -113,9 +112,9 @@ public final class PowerEvents {
         }
     }
 
-    // Meteor clouds left in the world by a crash or a restart are thrown away when they load.
+    // The Meteoro used to make clouds out of block displays; any left in a world are thrown away when they load.
     private static void onEntityJoin(EntityJoinLevelEvent event) {
-        if (MeteoroClouds.isStray(event.getEntity())) {
+        if (event.getEntity().getTags().contains("battlegroundsmod_meteor_cloud")) {
             event.setCanceled(true);
         }
     }

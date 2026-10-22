@@ -1,9 +1,11 @@
 package com.starkinhon.battlegroundsmod.client;
 
+import com.starkinhon.battlegroundsmod.client.fx.MeteorRenderer;
 import com.starkinhon.battlegroundsmod.skill.CutsceneSpec;
 import com.starkinhon.battlegroundsmod.skill.SkillSpecs;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.world.phys.Vec3;
 
 // Client-only entry points called from common code. Only call these behind a level.isClientSide check.
 public final class ClientHooks {
@@ -21,6 +23,10 @@ public final class ClientHooks {
 
     public static void screenShake(float strength, int ticks) {
         ScreenShake.start(strength, ticks);
+    }
+
+    public static void meteorFall(String skill, boolean awakened, Vec3 start, Vec3 end, int delay) {
+        MeteorRenderer.start(skill, awakened, start, end, delay);
     }
 
     public static void openPowerSelect() {

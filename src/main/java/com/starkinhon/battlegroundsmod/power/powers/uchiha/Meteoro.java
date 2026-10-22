@@ -1,5 +1,8 @@
 package com.starkinhon.battlegroundsmod.power.powers.uchiha;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
@@ -8,16 +11,19 @@ import com.starkinhon.battlegroundsmod.power.PowerData;
 import com.starkinhon.battlegroundsmod.skill.MeteoroSpec;
 import com.starkinhon.battlegroundsmod.skill.SkillSpecs;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.ClipContext;
-import net.minecraft.world.level.ExplosionDamageCalculator;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.Explosion;
+import net.minecraft.world.level.GameRules;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -26,20 +32,10 @@ import net.neoforged.neoforge.network.PacketDistributor;
 // souls_skills/madara.meteoro.json; the look lives in MeteoroFx so it can move to a model or Photon later.
 public final class Meteoro {
     public static final String SKILL = "madara.meteoro";
-    // The vanilla explosion only digs the crater; damage and knockback are ours.
-    private static final ExplosionDamageCalculator BLOCKS_ONLY = new ExplosionDamageCalculator() {
-        @Override
-        public boolean shouldDamageEntity(Explosion explosion, Entity entity) {
-            return false;
-        }
-
-        @Override
-        public float getKnockbackMultiplier(Entity entity) {
-            return 0;
-        }
-    };
-    // Bigger vanilla explosions get very slow and the crater stops looking round.
-    private static final float MAX_CRATER_POWER = 12;
+    // How many ticks the crater takes to open, from the middle out (spread out so the server doesn't freeze).
+    private static final int CRATER_TICKS = 6;
+    // Players this far from the target still see the meteor fall.
+    private static final double VIEW_DISTANCE = 512;
 
     private Meteoro() {
     }
@@ -55,13 +51,6 @@ public final class Meteoro {
         double speed(double age) {
             return at(age + 1).distanceTo(at(age));
         }
-
-        // Where the (straight) path passes a given height.
-        Vec3 crossing(double y) {
-            double drop = start.y - end.y;
-            double t = drop <= 0 ? 0 : Math.max(0, Math.min(1, (start.y - y) / drop));
-            return start.lerp(end, t);
-        }
     }
 
     public static boolean use(ServerPlayer player, ServerLevel level) {
@@ -76,24 +65,23 @@ public final class Meteoro {
         player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, prep, 2, false, false, false));
         PacketDistributor.sendToPlayersTrackingEntityAndSelf(player, new ModPayloads.PlaySkillAnimation(player.getId(), SKILL, data.awakened));
         MeteoroFx.call(level, player);
-        MeteoroClouds clouds = MeteoroClouds.form(level, spec.nuvens(), fall, target);
+        // The ball itself is drawn on the clients (client/fx/MeteorRenderer), following the same path.
+        for (ServerPlayer viewer : level.players()) {
+            if (viewer.distanceToSqr(target) < VIEW_DISTANCE * VIEW_DISTANCE) {
+                PacketDistributor.sendToPlayer(viewer, new ModPayloads.MeteorFall(SKILL, data.awakened, fall.start(), fall.end(), prep));
+            }
+        }
         Tasks.repeat(prep + fallTicks + 1, age -> {
             if (age < prep) {
                 MeteoroFx.prepare(level, player, spec, age);
             } else if (age < prep + fallTicks) {
                 MeteoroFx.fall(level, spec, fall, age - prep);
-                if (clouds != null) {
-                    clouds.pierce(fall.at(age - prep), spec.meteoro().raio());
-                }
             }
             if (age < prep + fallTicks) {
                 MeteoroFx.warning(level, spec, target, (age + 1) / (double) (prep + fallTicks), age);
             } else {
                 // Once it is falling it lands, even if the caster died or swapped powers.
                 impact(player, level, spec, target);
-                if (clouds != null) {
-                    clouds.fade();
-                }
             }
         });
         return true;
@@ -102,9 +90,8 @@ public final class Meteoro {
     private static void impact(ServerPlayer player, ServerLevel level, MeteoroSpec spec, Vec3 pos) {
         MeteoroSpec.Impacto impacto = spec.impacto();
         double radius = Math.max(1, impacto.raio());
-        if (impacto.quebrarBlocos()) {
-            float power = (float) Math.min(MAX_CRATER_POWER, spec.meteoro().raio() * 0.8);
-            level.explode(player, null, BLOCKS_ONLY, pos.x, pos.y, pos.z, power, false, Level.ExplosionInteraction.MOB);
+        if (impacto.quebrarBlocos() && level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
+            crater(level, pos, impacto.raioCratera(), impacto.profundidadeCratera());
         }
         for (LivingEntity target : Combat.inRadius(level, pos, radius, player)) {
             double edge = Math.min(1, Combat.center(target).distanceTo(pos) / radius);
@@ -121,6 +108,49 @@ public final class Meteoro {
             }
         }
         MeteoroFx.impact(level, spec, pos);
+    }
+
+    // Digs a round bowl: radius across, depth down (and as high up, for trees and walls in the way), with a ragged
+    // edge. Unbreakable blocks stay. No drops and no neighbor updates, so it stays fast even when it is huge.
+    private static void crater(ServerLevel level, Vec3 pos, double radius, double depth) {
+        if (radius <= 0 || depth <= 0) {
+            return;
+        }
+        BlockPos center = BlockPos.containing(pos);
+        int r = (int) Math.ceil(radius * 1.1);
+        int d = (int) Math.ceil(depth * 1.1);
+        List<List<BlockPos>> waves = new ArrayList<>();
+        for (int i = 0; i < CRATER_TICKS; i++) {
+            waves.add(new ArrayList<>());
+        }
+        RandomSource random = level.getRandom();
+        for (int x = -r; x <= r; x++) {
+            for (int z = -r; z <= r; z++) {
+                double across = (x * x + z * z) / (radius * radius);
+                if (across > 1.21) {
+                    continue;
+                }
+                for (int y = -d; y <= d; y++) {
+                    double shape = across + y * y / (depth * depth);
+                    if (shape > 0.85 + random.nextDouble() * 0.3) {
+                        continue;
+                    }
+                    int wave = (int) Math.min(CRATER_TICKS - 1, Math.sqrt(across) * CRATER_TICKS);
+                    waves.get(wave).add(center.offset(x, y, z));
+                }
+            }
+        }
+        for (int i = 0; i < CRATER_TICKS; i++) {
+            List<BlockPos> wave = waves.get(i);
+            Tasks.later(i, () -> {
+                for (BlockPos block : wave) {
+                    BlockState state = level.getBlockState(block);
+                    if (!state.isAir() && state.getDestroySpeed(level, block) >= 0) {
+                        level.setBlock(block, Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS);
+                    }
+                }
+            });
+        }
     }
 
     private static Vec3 target(ServerPlayer player, ServerLevel level, MeteoroSpec.Mira mira) {

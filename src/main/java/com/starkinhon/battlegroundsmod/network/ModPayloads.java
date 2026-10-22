@@ -16,6 +16,7 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
@@ -131,6 +132,30 @@ public final class ModPayloads {
         }
     }
 
+    private static final StreamCodec<ByteBuf, Vec3> VEC3 = StreamCodec.composite(
+            ByteBufCodecs.DOUBLE, Vec3::x,
+            ByteBufCodecs.DOUBLE, Vec3::y,
+            ByteBufCodecs.DOUBLE, Vec3::z,
+            Vec3::new);
+
+    // Server -> client: a meteor's body falls from start to end, starting after delay ticks. Its size, speed curve and
+    // colors are read from the skill's spec on the client.
+    public record MeteorFall(String skill, boolean awakened, Vec3 start, Vec3 end, int delay) implements CustomPacketPayload {
+        public static final Type<MeteorFall> TYPE = payloadType("meteor_fall");
+        public static final StreamCodec<ByteBuf, MeteorFall> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.STRING_UTF8, MeteorFall::skill,
+                ByteBufCodecs.BOOL, MeteorFall::awakened,
+                VEC3, MeteorFall::start,
+                VEC3, MeteorFall::end,
+                ByteBufCodecs.VAR_INT, MeteorFall::delay,
+                MeteorFall::new);
+
+        @Override
+        public Type<MeteorFall> type() {
+            return TYPE;
+        }
+    }
+
     public static void register(RegisterPayloadHandlersEvent event) {
         PayloadRegistrar registrar = event.registrar("1");
         registrar.playToServer(UseAbility.TYPE, UseAbility.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
@@ -150,5 +175,7 @@ public final class ModPayloads {
                 () -> ClientHooks.startFaceCutscene(payload.entityId(), payload.skill(), payload.awakened())));
         registrar.playToClient(ScreenShake.TYPE, ScreenShake.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.screenShake(payload.strength(), payload.ticks())));
+        registrar.playToClient(MeteorFall.TYPE, MeteorFall.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.meteorFall(payload.skill(), payload.awakened(), payload.start(), payload.end(), payload.delay())));
     }
 }

@@ -5,7 +5,7 @@ import java.util.List;
 // Meteoro (Madara's ult): a giant meteor falls on the aimed spot. Same "souls-skill/1" layout as the other skills,
 // tuned in the Forja de Skills page. Colors are "#rrggbb". In awakened mode the fumacas list is replaced as a whole.
 public record MeteoroSpec(String skill, String nome, Tempo tempo, Mira mira, Corpo meteoro, List<Fumaca> fumacas, Riscos riscos,
-        Preparo preparo, Aviso aviso, Impacto impacto, Nuvens nuvens) {
+        Preparo preparo, Aviso aviso, Impacto impacto) {
 
     public record Tempo(int preparoTicks, int quedaTicks) {
     }
@@ -40,20 +40,13 @@ public record MeteoroSpec(String skill, String nome, Tempo tempo, Mira mira, Cor
     }
 
     // Damage goes linearly from danoCentro at the center to danoBorda at the edge. tremerTela scales the camera shake.
+    // quebrarBlocos digs a crater raioCratera blocks across and profundidadeCratera deep (needs the mobGriefing rule).
     public record Impacto(double raio, float danoCentro, float danoBorda, double empurrao, double alturaEmpurrao, boolean quebrarBlocos,
-            double tremerTela, Onda onda, Explosao explosao) {
+            double raioCratera, double profundidadeCratera, double tremerTela, Onda onda, Explosao explosao) {
     }
 
     // Shockwave ring along the ground: velocidade in blocks per tick, tamanho is the particle size.
     public record Onda(boolean ativa, double velocidade, float tamanho, String cor) {
-    }
-
-    // Cloud layer the meteor falls through. altura: blocks above the target; raio: how far it spreads; tamanho: size of
-    // each puff; densidade 0..1: how much of the sky is covered; bloco: block the puffs are made of. buraco: the meteor
-    // pops the puffs it touches, folgaBuraco widens that hole (fraction of the meteor radius). Timing in ticks:
-    // formarTicks to appear, then after the impact manterTicks before sumirTicks of fading out.
-    public record Nuvens(boolean ativa, double altura, double raio, double tamanho, double espessura, double densidade, String bloco,
-            boolean buraco, double folgaBuraco, int formarTicks, int manterTicks, int sumirTicks) {
     }
 
     public record Explosao(boolean ativa, int quantidade, int fumaca, String cor) {

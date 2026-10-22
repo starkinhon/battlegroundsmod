@@ -1,6 +1,9 @@
 package com.starkinhon.battlegroundsmod;
 
 import com.starkinhon.battlegroundsmod.client.FaceCutscene;
+import com.starkinhon.battlegroundsmod.client.fx.MeteorRenderer;
+import com.starkinhon.battlegroundsmod.client.fx.SoulParticle;
+import com.starkinhon.battlegroundsmod.fx.ModParticles;
 import com.starkinhon.battlegroundsmod.client.Keybinds;
 import com.starkinhon.battlegroundsmod.client.PowerHud;
 import com.starkinhon.battlegroundsmod.client.ScreenShake;
@@ -14,6 +17,7 @@ import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.MovementInputUpdateEvent;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
+import net.neoforged.neoforge.client.event.RegisterParticleProvidersEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.common.NeoForge;
 
@@ -25,6 +29,8 @@ public class BattlegroundsModClient {
         modEventBus.addListener(BattlegroundsModClient::onClientSetup);
         modEventBus.addListener(BattlegroundsModClient::onRegisterKeys);
         modEventBus.addListener(BattlegroundsModClient::onRegisterGuiLayers);
+        modEventBus.addListener(BattlegroundsModClient::onRegisterParticles);
+        NeoForge.EVENT_BUS.addListener(MeteorRenderer::onRenderLevel);
         NeoForge.EVENT_BUS.addListener(BattlegroundsModClient::onClientTick);
         NeoForge.EVENT_BUS.addListener(MovementInputUpdateEvent.class, FaceCutscene::onMovementInput);
     }
@@ -39,6 +45,11 @@ public class BattlegroundsModClient {
 
     private static void onRegisterGuiLayers(RegisterGuiLayersEvent event) {
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "power_hud"), PowerHud::render);
+    }
+
+    private static void onRegisterParticles(RegisterParticleProvidersEvent event) {
+        event.registerSpriteSet(ModParticles.GLOW.get(), SoulParticle.Provider::new);
+        event.registerSpriteSet(ModParticles.SMOKE.get(), SoulParticle.Provider::new);
     }
 
     private static void onClientTick(ClientTickEvent.Post event) {

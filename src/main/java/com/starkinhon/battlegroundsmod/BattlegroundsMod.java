@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 
 import com.mojang.logging.LogUtils;
 import com.starkinhon.battlegroundsmod.command.PowerCommand;
+import com.starkinhon.battlegroundsmod.fx.ModParticles;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
 import com.starkinhon.battlegroundsmod.power.PowerEvents;
 
@@ -45,6 +46,7 @@ public class BattlegroundsMod {
         ITEMS.register(modEventBus);
         CREATIVE_MODE_TABS.register(modEventBus);
         ModAttachments.ATTACHMENT_TYPES.register(modEventBus);
+        ModParticles.PARTICLE_TYPES.register(modEventBus);
 
         PowerEvents.register();
         NeoForge.EVENT_BUS.addListener(PowerCommand::register);
