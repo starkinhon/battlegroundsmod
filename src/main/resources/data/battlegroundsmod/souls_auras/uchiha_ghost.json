@@ -7,7 +7,7 @@
   "fadeEntrarTicks": 45,
   "fadeSairTicks": 20,
   "contorno": {
-    "ativo": true,
+    "ativo": false,
     "espessura": 0.16,
     "chamas": 0.55,
     "brilho": 1.35,
