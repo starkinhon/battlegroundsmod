@@ -22,6 +22,8 @@
   "hud.battlegroundsmod.strong_attack": "Strong Attack",
   "hud.battlegroundsmod.barrage": "Attack Barrage",
 
+  "message.battlegroundsmod.hitbox_on": "Hitboxes visible.",
+  "message.battlegroundsmod.hitbox_off": "Hitboxes hidden.",
   "message.battlegroundsmod.welcome": "§6You received the Book of Souls! §7Right click it to choose the soul that will join you.",
   "message.battlegroundsmod.power_selected": "You became one with the soul: %s",
   "message.battlegroundsmod.no_power": "You don't have a soul yet. Use the Book of Souls!",
@@ -34,7 +36,7 @@
 
   "power.battlegroundsmod.uchiha_ghost": "Ghost of the Uchiha",
   "power.battlegroundsmod.uchiha_ghost.desc": "Masters fire and calls meteors from the sky.",
-  "ability.battlegroundsmod.uchiha_ghost.0": "Great Fireball",
+  "ability.battlegroundsmod.uchiha_ghost.0": "Katon: Great Fire Stream",
   "ability.battlegroundsmod.uchiha_ghost.1": "Flame Wave",
   "ability.battlegroundsmod.uchiha_ghost.2": "Spectral Armor",
   "ability.battlegroundsmod.uchiha_ghost.3": "Meteor Fall",
