@@ -22,9 +22,6 @@
   "hud.battlegroundsmod.strong_attack": "Ataque Forte",
   "hud.battlegroundsmod.barrage": "Barragem de Ataques",
 
-  "key.battlegroundsmod.freecam": "Câmera livre",
-  "message.battlegroundsmod.freecam_on": "Câmera livre ligada (F6 pra voltar)",
-  "message.battlegroundsmod.freecam_off": "Câmera livre desligada",
   "message.battlegroundsmod.no_cooldown_on": "Sem cooldown e sem custo.",
   "message.battlegroundsmod.no_cooldown_off": "Cooldown e custo de volta.",
   "message.battlegroundsmod.hitbox_on": "Hitboxes visíveis.",
