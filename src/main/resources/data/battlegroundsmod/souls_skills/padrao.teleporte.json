@@ -3,7 +3,7 @@
   "skill": "padrao.teleporte",
   "nome": "Teleporte até o alvo",
   "recargaTicks": 60,
-  "alcance": 24,
+  "alcance": 50,
   "distanciaFrente": 1.6,
   "toquesJanelaTicks": 7,
   "lembrarAlvoTicks": 200,

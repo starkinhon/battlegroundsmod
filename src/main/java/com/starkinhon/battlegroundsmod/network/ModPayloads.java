@@ -87,7 +87,7 @@ public final class ModPayloads {
         }
     }
 
-    // Client -> server: Ctrl + double tap forward: appear in front of whoever the player fights or aims at.
+    // Client -> server: double tap of the sprint key (Ctrl): appear in front of whoever the player fights or aims at.
     public record Teleport() implements CustomPacketPayload {
         public static final Type<Teleport> TYPE = payloadType("teleport");
         public static final StreamCodec<ByteBuf, Teleport> STREAM_CODEC = StreamCodec.unit(new Teleport());
