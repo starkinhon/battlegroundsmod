@@ -6,10 +6,9 @@
     "atrasoTicks": 40
   },
   "forma": {
-    "tipo": "cone",
-    "comprimento": 20,
-    "raioInicio": 4,
-    "raioFim": 13
+    "tipo": "linha",
+    "comprimento": 40,
+    "largura": 3
   },
   "efeitos": {
     "duracaoTicks": 210,
@@ -21,7 +20,10 @@
   },
   "cutscene": {
     "ativa": true,
-    "duracaoTicks": 40,
+    "duracaoTicks": 50,
+    "aproximarTicks": 19,
+    "voltarTicks": 15,
+    "particulasTicks": 20,
     "distanciaInicio": 3,
     "distanciaFim": 0.6,
     "altura": 0.05,
@@ -29,8 +31,7 @@
   },
   "despertado": {
     "forma": {
-      "comprimento": 18,
-      "raioFim": 9
+      "comprimento": 18
     },
     "efeitos": {
       "duracaoTicks": 300,

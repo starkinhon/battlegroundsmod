@@ -41,10 +41,12 @@ public final class Mangekyo {
         Area area = Area.of(spec.forma(), player);
         List<LivingEntity> targets = area.targets();
 
-        data.busyTicks = delay;
-        Freeze.hold(player, delay);
+        // Everyone involved stays frozen until both the wait and the cutscene are over.
+        int frozen = cutscene.ativa() ? Math.max(delay, cutscene.duracaoTicks()) : delay;
+        data.busyTicks = frozen;
+        Freeze.hold(player, frozen);
         for (LivingEntity target : targets) {
-            Freeze.hold(target, delay);
+            Freeze.hold(target, frozen);
         }
         if (Cone.debug) {
             area.draw(Fx.dust(0xFFFFFF, 0.6f));
