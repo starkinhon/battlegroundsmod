@@ -34,6 +34,8 @@ public final class Meteoro {
     public static final String SKILL = "madara.meteoro";
     // How many ticks the crater takes to open, from the middle out (spread out so the server doesn't freeze).
     private static final int CRATER_TICKS = 6;
+    // Players this far from the target still see the meteor fall.
+    private static final double VIEW_DISTANCE = 512;
 
     private Meteoro() {
     }
@@ -63,6 +65,12 @@ public final class Meteoro {
         player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, prep, 2, false, false, false));
         PacketDistributor.sendToPlayersTrackingEntityAndSelf(player, new ModPayloads.PlaySkillAnimation(player.getId(), SKILL, data.awakened));
         MeteoroFx.call(level, player);
+        // The ball itself is drawn on the clients (client/fx/MeteorRenderer), following the same path.
+        for (ServerPlayer viewer : level.players()) {
+            if (viewer.distanceToSqr(target) < VIEW_DISTANCE * VIEW_DISTANCE) {
+                PacketDistributor.sendToPlayer(viewer, new ModPayloads.MeteorFall(SKILL, data.awakened, fall.start(), fall.end(), prep));
+            }
+        }
         Tasks.repeat(prep + fallTicks + 1, age -> {
             if (age < prep) {
                 MeteoroFx.prepare(level, player, spec, age);
