@@ -22,7 +22,7 @@ import net.minecraft.world.phys.Vec3;
 // Client side of the mod's particles, a copy of the Forja's particle shader: solid pixel shapes (no blur, no
 // transparency), always bright, sized and shrunk over their life the same way the Forja does it.
 public class SoulParticle extends TextureSheetParticle {
-    private enum Kind { FLAME, DUST, SMOKE, LAVA, PUFF, STREAK }
+    private enum Kind { FLAME, DUST, SMOKE, LAVA, PUFF, STREAK, FIST, RING }
 
     private final SpriteSet sprites;
     private final Kind kind;
@@ -48,7 +48,7 @@ public class SoulParticle extends TextureSheetParticle {
         this.rCol = Math.min(1, ((options.color() >> 16) & 0xFF) / 255f * boost);
         this.gCol = Math.min(1, ((options.color() >> 8) & 0xFF) / 255f * boost);
         this.bCol = Math.min(1, (options.color() & 0xFF) / 255f * boost);
-        this.flip = kind != Kind.FLAME && random.nextBoolean();
+        this.flip = kind != Kind.FLAME && kind != Kind.FIST && random.nextBoolean();
         Vec3 velocity = new Vec3(xd, yd, zd);
         this.axis = velocity.lengthSqr() > 1.0E-8 ? velocity.normalize().toVector3f() : new Vector3f(0, 1, 0);
         setSpriteFromAge(sprites);
@@ -65,6 +65,10 @@ public class SoulParticle extends TextureSheetParticle {
             return Kind.PUFF;
         } else if (type == ModParticles.STREAK.get()) {
             return Kind.STREAK;
+        } else if (type == ModParticles.FIST.get()) {
+            return Kind.FIST;
+        } else if (type == ModParticles.RING.get()) {
+            return Kind.RING;
         }
         return Kind.FLAME;
     }
@@ -86,6 +90,8 @@ public class SoulParticle extends TextureSheetParticle {
             case FLAME -> size * (1 - f * f * 0.5f);
             case PUFF -> size * Math.min(1, age / 4);
             case STREAK -> size;
+            case FIST -> size * Math.min(1, age / 2) * (f < 0.7f ? 1 : 1 - (f - 0.7f) / 0.3f);
+            case RING -> size * (float) Math.sqrt(f);
             case LAVA -> size * (1 - f * f);
             default -> size * Math.min(1, f * 32);
         };

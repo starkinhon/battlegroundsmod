@@ -5,6 +5,7 @@ import com.starkinhon.battlegroundsmod.ModItems;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.combat.Intangible;
+import com.starkinhon.battlegroundsmod.combat.Stun;
 import com.starkinhon.battlegroundsmod.movement.Movement;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
 import com.starkinhon.battlegroundsmod.power.PowerData;
@@ -131,7 +132,7 @@ public abstract class SoulBoss extends Monster {
         BossSpec.UltFinal ult = spec.ultFinal();
         ultPending = ult != null && ult.ativa() && !ultUsed && isAlive() && getHealth() / getMaxHealth() <= ult.vida();
         // It finishes whatever move it is in first, so nothing else is flying when the meteor comes.
-        if (ultPending && stagedTicks == 0 && data.busyTicks <= 0 && !Freeze.isFrozen(this)) {
+        if (ultPending && stagedTicks == 0 && data.busyTicks <= 0 && !Freeze.isFrozen(this) && !PowerLogic.sealed(this) && Stun.canAttack(this)) {
             ultPending = false;
             ultUsed = true;
             if (ai != null) {

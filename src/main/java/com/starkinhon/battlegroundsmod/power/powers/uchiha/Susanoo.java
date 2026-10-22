@@ -53,6 +53,11 @@ public final class Susanoo {
         return true;
     }
 
+    // A sealed or interrupted caster loses the counter window.
+    public static void cancel(LivingEntity entity) {
+        READY.remove(entity);
+    }
+
     // True while the counter window is open (bosses read this to know their guard is up).
     public static boolean isReady(LivingEntity entity) {
         return READY.containsKey(entity);

@@ -11,10 +11,11 @@ public class PowerData {
 
     // Slots 0-3 are the power's abilities (Z, X, C, V), 4-5 are the shared melee moves (strong attack, barrage), picked
     // in the base attack selector above the hotbar.
-    public static final int SLOT_COUNT = 6;
+    public static final int SLOT_COUNT = 7;
     public static final int SLOT_ULT = 3;
     public static final int SLOT_STRONG = 4;
     public static final int SLOT_BARRAGE = 5;
+    public static final int SLOT_DASH_ATTACK = 6;
 
     public static final Codec<PowerData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.STRING.optionalFieldOf("power", "").forGetter(d -> d.power),
@@ -51,6 +52,13 @@ public class PowerData {
     public int foughtId = -1;
     public long foughtAt = -1;
     public boolean combat = false;
+    // No skills until this game time (the Mangekyo seals them; see PowerLogic.seal).
+    public long sealedUntil = 0;
+    // Goes up each time the fighter's moves are cut off (PowerLogic.interrupt): a move running over several ticks
+    // keeps the value it started with and stops when it changes.
+    public int interrupts = 0;
+    // Players: the key that uses the picked base attack is held down (a held Forte charges, a held Barragem lasts longer).
+    public boolean attackHeld = false;
 
     public PowerData() {
     }

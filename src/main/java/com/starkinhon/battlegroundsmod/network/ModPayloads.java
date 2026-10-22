@@ -87,6 +87,19 @@ public final class ModPayloads {
         }
     }
 
+    // Client -> server: the key that uses the picked base attack went down or up (a held Forte charges, a held
+    // Barragem lasts longer).
+    public record AttackHold(boolean down) implements CustomPacketPayload {
+        public static final Type<AttackHold> TYPE = payloadType("attack_hold");
+        public static final StreamCodec<ByteBuf, AttackHold> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.BOOL, AttackHold::down, AttackHold::new);
+
+        @Override
+        public Type<AttackHold> type() {
+            return TYPE;
+        }
+    }
+
     // Client -> server: double tap of the sprint key (Ctrl): appear in front of whoever the player fights or aims at.
     public record Teleport() implements CustomPacketPayload {
         public static final Type<Teleport> TYPE = payloadType("teleport");
@@ -380,6 +393,11 @@ public final class ModPayloads {
         registrar.playToServer(Guard.TYPE, Guard.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer player) {
                 Defense.setGuard(player, payload.down());
+            }
+        }));
+        registrar.playToServer(AttackHold.TYPE, AttackHold.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
+            if (context.player() instanceof ServerPlayer player) {
+                player.getData(ModAttachments.POWER).attackHeld = payload.down();
             }
         }));
         registrar.playToServer(Teleport.TYPE, Teleport.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {

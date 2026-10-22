@@ -14,17 +14,18 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.neoforged.neoforge.network.PacketDistributor;
 
-// The base attack selector, every power has it: Ataque rápido (next punch of the combo), Ataque Forte and Ataque de
-// barragem. R picks the next one (Shift + R the one before), G uses; using one starts combat mode. Drawn above the
+// The base attack selector, every power has it: Dash Attack (see combat/DashAttack), Ataque Forte (charges while G is
+// held) and Ataque de barragem (lasts longer while G is held). R picks the next one (Shift + R the one before), G uses;
+// using one starts combat mode. Drawn above the
 // hearts and food (and the held item's name), over the hotbar: the picked attack's name with a dot for each choice. The GUI scale setting scales it like the rest of the HUD.
 public final class BaseAttacks {
     private static final String[] NAMES = {
-            "hud.battlegroundsmod.quick_attack",
+            "hud.battlegroundsmod.dash_attack",
             "hud.battlegroundsmod.strong_attack",
             "hud.battlegroundsmod.barrage"
     };
-    // The ability slot each one uses; -1 is the punch.
-    private static final int[] SLOTS = {-1, PowerData.SLOT_STRONG, PowerData.SLOT_BARRAGE};
+    // The ability slot each one uses.
+    private static final int[] SLOTS = {PowerData.SLOT_DASH_ATTACK, PowerData.SLOT_STRONG, PowerData.SLOT_BARRAGE};
     private static final int SWITCH_FLASH_TICKS = 8;
     private static final int ITEM_NAME_SPACE = 12;
     // Souls whose name shows next to "Ultimate" over the ult bar.
@@ -32,6 +33,7 @@ public final class BaseAttacks {
 
     private static int selected = 0;
     private static int switchedAt = -100;
+    private static boolean heldSent = false;
 
     private BaseAttacks() {
     }
@@ -43,8 +45,15 @@ public final class BaseAttacks {
     }
 
     public static void use() {
-        int slot = SLOTS[selected];
-        PacketDistributor.sendToServer(slot < 0 ? new ModPayloads.Punch(true) : new ModPayloads.UseAbility(slot));
+        PacketDistributor.sendToServer(new ModPayloads.UseAbility(SLOTS[selected]));
+    }
+
+    // Tells the server when the use key goes down or up, so a held Forte charges and a held Barragem lasts longer.
+    public static void holdKey(boolean down) {
+        if (down != heldSent && Minecraft.getInstance().getConnection() != null) {
+            heldSent = down;
+            PacketDistributor.sendToServer(new ModPayloads.AttackHold(down));
+        }
     }
 
     public static void render(GuiGraphics graphics, DeltaTracker deltaTracker) {
@@ -66,7 +75,7 @@ public final class BaseAttacks {
             top = ultTitle(graphics, font, data, player.tickCount, center, top);
         }
         int slot = SLOTS[selected];
-        int cooldown = slot < 0 ? 0 : data.cooldowns[slot];
+        int cooldown = data.cooldowns[slot];
         Component name = Component.translatable(NAMES[selected]);
         int width = font.width(name);
         float flash = Mth.clamp(1 - (player.tickCount - switchedAt) / (float) SWITCH_FLASH_TICKS, 0, 1);

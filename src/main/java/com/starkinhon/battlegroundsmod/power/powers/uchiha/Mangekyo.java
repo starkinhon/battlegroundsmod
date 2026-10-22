@@ -135,15 +135,9 @@ public final class Mangekyo {
         effect(target, MobEffects.BLINDNESS, duration, efeitos.cegueira());
         effect(target, MobEffects.MOVEMENT_SLOWDOWN, duration, efeitos.lentidao());
         Freeze.hold(target, efeitos.atordoarTicks());
-        // Bosses carry power data too, so their skills get locked the same way.
+        // Bosses carry power data too, so their skills get sealed the same way, and what they had going is cut off.
         if (efeitos.travarSkills() && target.hasData(ModAttachments.POWER)) {
-            PowerData data = target.getData(ModAttachments.POWER);
-            for (int i = 0; i < data.cooldowns.length; i++) {
-                data.cooldowns[i] = Math.max(data.cooldowns[i], duration);
-            }
-            if (target instanceof ServerPlayer hitPlayer) {
-                PowerLogic.sync(hitPlayer);
-            }
+            PowerLogic.seal(target, duration);
         }
     }
 
