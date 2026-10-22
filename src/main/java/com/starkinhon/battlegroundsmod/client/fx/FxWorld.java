@@ -160,8 +160,8 @@ public final class FxWorld {
         float[] cor2 = FxDraw.rgb(FxDraw.parse(e.cor2(), 0xFFFFFF));
         float size = (float) d(e.tamanho(), 2);
         // Long effects (an indicator for as long as a stun lasts) fade in and out instead of shrinking away.
-        float age0 = Math.min(1, age / 5), end = Math.min(1, (p.life() - age) / 10);
-        float hold = age0 * end * opacity;
+        float fadeIn = Math.min(1, age / 5), fadeOut = Math.min(1, (p.life() - age) / 10);
+        float hold = fadeIn * fadeOut * opacity;
         float fade = (1 - t) * (1 - t) * opacity;
         float spin = age * (float) d(e.girar(), 0.08);
         switch (e.tipo()) {
