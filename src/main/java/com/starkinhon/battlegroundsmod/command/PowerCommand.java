@@ -18,7 +18,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 
-// /poder escolher <poder> | /poder limpar | /poder carregar | /poder hitbox | /poder livro
+// /poder escolher <poder> | /poder limpar | /poder carregar | /poder semcooldown | /poder hitbox | /poder livro
 public final class PowerCommand {
 
     private PowerCommand() {
@@ -52,6 +52,17 @@ public final class PowerCommand {
                     data.resetCombat();
                     data.ult = PowerData.MAX_ULT;
                     PowerLogic.sync(player);
+                    return 1;
+                }))
+                // Toggles cooldowns and costs off for this player, to test and record moves back to back.
+                .then(Commands.literal("semcooldown").executes(context -> {
+                    ServerPlayer player = context.getSource().getPlayerOrException();
+                    PowerData data = player.getData(ModAttachments.POWER);
+                    data.noCooldown = !data.noCooldown;
+                    data.cooldowns = new int[PowerData.SLOT_COUNT];
+                    PowerLogic.sync(player);
+                    context.getSource().sendSuccess(() -> Component.translatable(data.noCooldown
+                            ? "message.battlegroundsmod.no_cooldown_on" : "message.battlegroundsmod.no_cooldown_off"), false);
                     return 1;
                 }))
                 // Shows the hitboxes of cone moves as white particles.

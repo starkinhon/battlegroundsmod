@@ -22,6 +22,11 @@
   "hud.battlegroundsmod.strong_attack": "Strong Attack",
   "hud.battlegroundsmod.barrage": "Attack Barrage",
 
+  "key.battlegroundsmod.freecam": "Free camera",
+  "message.battlegroundsmod.freecam_on": "Free camera on (F6 to go back)",
+  "message.battlegroundsmod.freecam_off": "Free camera off",
+  "message.battlegroundsmod.no_cooldown_on": "Cooldowns and costs off.",
+  "message.battlegroundsmod.no_cooldown_off": "Cooldowns and costs back on.",
   "message.battlegroundsmod.hitbox_on": "Hitboxes visible.",
   "message.battlegroundsmod.hitbox_off": "Hitboxes hidden.",
   "message.battlegroundsmod.welcome": "§6You received the Book of Souls! §7Right click it to choose the soul that will join you.",
