@@ -14,6 +14,8 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.starkinhon.battlegroundsmod.boss.BossSpec;
 import com.starkinhon.battlegroundsmod.boss.SoulBoss;
 import com.starkinhon.battlegroundsmod.fx.ModParticles;
+import com.starkinhon.battlegroundsmod.power.Power;
+import com.starkinhon.battlegroundsmod.power.Powers;
 import com.starkinhon.battlegroundsmod.skill.AuraSpec;
 
 import net.minecraft.client.Camera;
@@ -60,6 +62,13 @@ public final class Aura {
     private static final Map<Integer, String> PLAYERS = new HashMap<>();
     private static final Map<Integer, State> STATES = new HashMap<>();
     private static final Map<Integer, ArrayDeque<EyeSample>> EYES = new HashMap<>();
+    // Whose eye trail is drawn with which aura's look (bosses in their phase, players after their trigger skill).
+    private static final Map<Integer, AuraSpec> EYE_LOOK = new HashMap<>();
+    // Players (or anyone) whose eyes trail for a while after a skill (the Mangekyo): entity id -> power and end time.
+    private record EyesOn(String power, long until) {
+    }
+
+    private static final Map<Integer, EyesOn> EYES_ON = new HashMap<>();
     private static final RandomSource RANDOM = RandomSource.create();
     private static MultiBufferSource.BufferSource buffers;
     private static ClientLevel lastLevel;
@@ -79,7 +88,7 @@ public final class Aura {
     }
 
     static boolean active() {
-        return !STATES.isEmpty();
+        return !STATES.isEmpty() || !EYES.isEmpty();
     }
 
     private static String wanted(Entity entity) {
@@ -98,6 +107,8 @@ public final class Aura {
         if (level != lastLevel) {
             STATES.clear();
             EYES.clear();
+            EYE_LOOK.clear();
+            EYES_ON.clear();
             if (level == null) {
                 PLAYERS.clear();
             }
@@ -154,7 +165,9 @@ public final class Aura {
             }
             breathe(level, (LivingEntity) entity, spec, ease(state.level), now);
         }
-        EYES.keySet().removeIf(id -> !STATES.containsKey(id));
+        EYES_ON.values().removeIf(on -> on.until() < now);
+        EYES.entrySet().removeIf(e -> e.getValue().isEmpty() || e.getValue().peekLast().time() < now - 40);
+        EYE_LOOK.keySet().removeIf(id -> !EYES.containsKey(id));
     }
 
     // Slow at first, like the power is waking up.
@@ -243,16 +256,44 @@ public final class Aura {
 
     // ---- Eyes ----
 
-    // Called while a boss is drawn (AuraEyesLayer), with the pose of its model: where its eyes are right now.
-    public static void recordEyes(SoulBoss boss, PoseStack pose, ModelPart head) {
-        if (drawing) {
+    // A skill was used (the server's "olhos" moment): if an aura's eyes are switched on by it, they trail for a while.
+    public static void skillUsed(String skill, int entityId) {
+        for (Power power : Powers.all()) {
+            AuraSpec spec = AuraSpec.get(power.id());
+            AuraSpec.Olhos eyes = spec == null ? null : spec.olhos();
+            if (eyes != null && skill.equals(eyes.ativarSkill()) && eyes.jogadorTicks() > 0) {
+                EYES_ON.put(entityId, new EyesOn(power.id(), ScreenFx.now() + eyes.jogadorTicks()));
+            }
+        }
+    }
+
+    // Whose eyes trail right now, with which look: a boss from its phase on, anyone else while a trigger skill lasts.
+    private static AuraSpec eyeLook(LivingEntity entity) {
+        if (entity instanceof SoulBoss boss) {
+            AuraSpec spec = AuraSpec.get(BossSpec.get(boss.bossId()).poder());
+            if (spec != null && spec.olhos() != null && boss.phase() >= spec.olhos().aPartirDaFase()) {
+                return spec;
+            }
+        }
+        EyesOn on = EYES_ON.get(entity.getId());
+        if (on != null && on.until() >= ScreenFx.now()) {
+            AuraSpec spec = AuraSpec.get(on.power());
+            return spec != null && spec.olhos() != null ? spec : null;
+        }
+        return null;
+    }
+
+    // Called while a body is drawn (AuraEyesLayer), with the pose of its model: where its eyes are right now.
+    public static void recordEyes(LivingEntity entity, PoseStack pose, ModelPart head) {
+        if (drawing || !entity.isAlive() || FxAnchor.firstPersonSelf(entity.getId())) {
             return;
         }
-        AuraSpec spec = AuraSpec.get(BossSpec.get(boss.bossId()).poder());
-        AuraSpec.Olhos eyes = spec == null ? null : spec.olhos();
-        if (eyes == null || boss.phase() < eyes.aPartirDaFase() || !boss.isAlive()) {
+        AuraSpec spec = eyeLook(entity);
+        if (spec == null) {
             return;
         }
+        AuraSpec.Olhos eyes = spec.olhos();
+        EYE_LOOK.put(entity.getId(), spec);
         pose.pushPose();
         head.translateAndRotate(pose);
         Matrix4f m = pose.last().pose();
@@ -262,7 +303,7 @@ public final class Aura {
         Minecraft minecraft = Minecraft.getInstance();
         Vec3 camera = minecraft.gameRenderer.getMainCamera().getPosition();
         double time = ScreenFx.now() + minecraft.getTimer().getGameTimeDeltaPartialTick(false);
-        ArrayDeque<EyeSample> samples = EYES.computeIfAbsent(boss.getId(), id -> new ArrayDeque<>());
+        ArrayDeque<EyeSample> samples = EYES.computeIfAbsent(entity.getId(), id -> new ArrayDeque<>());
         if (!samples.isEmpty() && samples.peekLast().time() >= time) {
             samples.pollLast();
         }
@@ -298,9 +339,9 @@ public final class Aura {
             if (!FxAnchor.firstPersonSelf(entity.getId())) {
                 lines(spec, feet, entity.getBbHeight(), now, k, seed, cor, cor2);
             }
-            if (entity instanceof SoulBoss) {
-                eyes(spec, entry.getKey(), camera, now);
-            }
+        }
+        for (Map.Entry<Integer, AuraSpec> entry : EYE_LOOK.entrySet()) {
+            eyes(entry.getValue(), entry.getKey(), camera, now);
         }
     }
 

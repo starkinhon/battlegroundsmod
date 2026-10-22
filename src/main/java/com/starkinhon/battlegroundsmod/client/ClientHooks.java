@@ -55,6 +55,9 @@ public final class ClientHooks {
 
     public static void playEffects(String skill, boolean awakened, String momento, Vec3 pos, Vec3 dir, int entityId, int ticks) {
         SkillEffects.play(skill, awakened, momento, pos, dir, entityId, ticks);
+        if ("olhos".equals(momento)) {
+            Aura.skillUsed(skill, entityId);
+        }
     }
 
     public static void shoulderCutscene(int casterId, int targetId, int ticks) {

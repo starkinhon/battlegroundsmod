@@ -18,7 +18,8 @@ import com.starkinhon.battlegroundsmod.BattlegroundsMod;
 // fios: wavy lines of power rising around the body. chao: glow on the floor under the feet.
 // particulas: what it breathes out each tick (tipo poeira, risco, fumaca, anel), porTick can be a fraction.
 // primeiraPessoa: how much is left when it is your own aura seen in first person (nothing covers the view).
-// olhos: bosses only, a light trail following the eyes from phase aPartirDaFase on (Madara's sharingan).
+// olhos: a light trail following the eyes: bosses from phase aPartirDaFase on (Madara's sharingan), anyone for
+// jogadorTicks after using ativarSkill (the Mangekyo).
 public record AuraSpec(String poder, String cor, String cor2, String corEscura, int fadeEntrarTicks, int fadeSairTicks, Contorno contorno,
         Fios fios, Chao chao, List<Particula> particulas, Entrada entrada, PrimeiraPessoa primeiraPessoa, Olhos olhos) {
 
@@ -41,8 +42,9 @@ public record AuraSpec(String poder, String cor, String cor2, String corEscura, 
     public record PrimeiraPessoa(double particulas, double bordaTela) {
     }
 
-    public record Olhos(int aPartirDaFase, String cor, String cor2, int rastroTicks, double largura, double brilho, double x, double y,
-            double z) {
+    // ativarSkill / jogadorTicks: anyone with this power (players too) gets the trail for that long after using that skill.
+    public record Olhos(int aPartirDaFase, String ativarSkill, int jogadorTicks, String cor, String cor2, int rastroTicks, double largura,
+            double brilho, double x, double y, double z) {
     }
 
     private static final Gson GSON = new Gson();

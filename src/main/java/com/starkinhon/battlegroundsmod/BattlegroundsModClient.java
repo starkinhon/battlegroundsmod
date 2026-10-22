@@ -8,6 +8,7 @@ import com.starkinhon.battlegroundsmod.client.FaceCutscene;
 import com.starkinhon.battlegroundsmod.client.Fear;
 import com.starkinhon.battlegroundsmod.client.fx.AshDeath;
 import com.starkinhon.battlegroundsmod.client.fx.Aura;
+import com.starkinhon.battlegroundsmod.client.fx.AuraEyesLayer;
 import com.starkinhon.battlegroundsmod.client.fx.FxConfig;
 import com.starkinhon.battlegroundsmod.client.fx.FxShaders;
 import com.starkinhon.battlegroundsmod.client.fx.FxWorld;
@@ -27,6 +28,8 @@ import com.starkinhon.battlegroundsmod.client.ScreenShake;
 import com.starkinhon.battlegroundsmod.client.ShoulderCutscene;
 import com.starkinhon.battlegroundsmod.client.SoulBossRenderer;
 
+import net.minecraft.client.renderer.entity.player.PlayerRenderer;
+import net.minecraft.client.resources.PlayerSkin;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
@@ -57,6 +60,7 @@ public class BattlegroundsModClient {
         modEventBus.addListener(BattlegroundsModClient::onRegisterGuiLayers);
         modEventBus.addListener(BattlegroundsModClient::onRegisterParticles);
         modEventBus.addListener(BattlegroundsModClient::onRegisterRenderers);
+        modEventBus.addListener(BattlegroundsModClient::onAddLayers);
         modEventBus.addListener(FxShaders::onRegisterShaders);
         modContainer.registerConfig(ModConfig.Type.CLIENT, FxConfig.SPEC);
         modContainer.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
@@ -105,6 +109,15 @@ public class BattlegroundsModClient {
     // The Madara skin uses slim (3 pixel) arms.
     private static void onRegisterRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerEntityRenderer(ModEntities.MADARA.get(), context -> new SoulBossRenderer<>(context, "madara", true));
+    }
+
+    // Players' eyes can trail light too (Mangekyo, see Aura), so their renderers learn where the eyes are.
+    private static void onAddLayers(EntityRenderersEvent.AddLayers event) {
+        for (PlayerSkin.Model model : event.getSkins()) {
+            if (event.getSkin(model) instanceof PlayerRenderer renderer) {
+                renderer.addLayer(new AuraEyesLayer<>(renderer));
+            }
+        }
     }
 
     private static void onClientTick(ClientTickEvent.Post event) {
