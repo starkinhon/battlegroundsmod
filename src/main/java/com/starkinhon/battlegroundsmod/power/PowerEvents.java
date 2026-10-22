@@ -4,6 +4,8 @@ import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.ModItems;
 import com.starkinhon.battlegroundsmod.boss.SoulBoss;
 import com.starkinhon.battlegroundsmod.command.BossCommand;
+import com.starkinhon.battlegroundsmod.combat.CombatMode;
+import com.starkinhon.battlegroundsmod.combat.Defense;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.combat.Intangible;
 import com.starkinhon.battlegroundsmod.combat.Melee;
@@ -65,6 +67,7 @@ public final class PowerEvents {
         Tasks.clear();
         Freeze.clear();
         Intangible.clear();
+        Defense.clear();
         Susanoo.clear();
     }
 
@@ -72,6 +75,7 @@ public final class PowerEvents {
         if (event.getEntity() instanceof ServerPlayer player) {
             PowerLogic.tick(player);
             Movement.tick(player);
+            Defense.tick(player);
         }
     }
 
@@ -96,7 +100,7 @@ public final class PowerEvents {
         }
     }
 
-    // Left click with an empty hand runs the power's punch combo instead of the vanilla hit.
+    // In combat mode, left click with an empty hand runs the punch combo instead of the vanilla hit.
     private static void onAttack(AttackEntityEvent event) {
         if (Freeze.isFrozen(event.getEntity()) || Stun.is(event.getEntity())) {
             event.setCanceled(true);
@@ -105,17 +109,29 @@ public final class PowerEvents {
         if (!(event.getEntity() instanceof ServerPlayer player) || !(event.getTarget() instanceof LivingEntity target)) {
             return;
         }
-        if (!player.getMainHandItem().isEmpty() || !player.getData(ModAttachments.POWER).hasPower()) {
+        if (!player.getMainHandItem().isEmpty() || !player.getData(ModAttachments.POWER).hasPower() || !CombatMode.in(player)) {
             return;
         }
         event.setCanceled(true);
         Melee.punch(player, target);
     }
 
-    // Dealing damage charges the ultimate.
+    // Dealing damage charges the ultimate, and fighting keeps combat mode going for both sides.
     private static void onDamage(LivingDamageEvent.Post event) {
         if (event.getSource().getEntity() instanceof ServerPlayer player && player != event.getEntity()) {
-            PowerLogic.addUltCharge(player, event.getNewDamage());
+            // Measured at human strength, so higher tiers don't fill the ult in one combo.
+            PowerLogic.addUltCharge(player, event.getNewDamage() / Tiers.damageMultiplier(player));
+        }
+        if (event.getSource().getEntity() instanceof LivingEntity attacker && attacker != event.getEntity()) {
+            CombatMode.refresh(attacker);
+            CombatMode.refresh(event.getEntity());
+            long now = attacker.level().getGameTime();
+            PowerData attackerData = attacker.getData(ModAttachments.POWER);
+            attackerData.foughtId = event.getEntity().getId();
+            attackerData.foughtAt = now;
+            PowerData victimData = event.getEntity().getData(ModAttachments.POWER);
+            victimData.foughtId = attacker.getId();
+            victimData.foughtAt = now;
         }
     }
 
@@ -145,6 +161,10 @@ public final class PowerEvents {
         // A stunned mob's swing does nothing (players are stopped in onAttack, bosses in Melee).
         if (event.getSource().is(DamageTypes.MOB_ATTACK) && Stun.is(event.getSource().getDirectEntity())) {
             event.setCanceled(true);
+            return;
+        }
+        Defense.onIncomingDamage(event.getEntity(), event);
+        if (event.isCanceled()) {
             return;
         }
         Susanoo.onIncomingDamage(event.getEntity(), event);

@@ -1,18 +1,23 @@
 package com.starkinhon.battlegroundsmod.client;
 
+import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.movement.Movement;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
+import com.starkinhon.battlegroundsmod.skill.TeleporteSpec;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Options;
 import net.minecraft.client.player.LocalPlayer;
 import net.neoforged.neoforge.network.PacketDistributor;
 
-// Turns the jump key into the standard moves: back + jump on the ground is the dodge, jump again in the air is the
-// air jump. Runs before the player ticks, so the dodge replaces the normal jump of that same tick. The player is
-// moved here right away and the server is told (see Movement).
+// Turns the keys into the standard moves: back + jump on the ground is the dodge, jump again in the air is the air
+// jump, and in combat mode left/right + jump on the ground is the side dodge, the dash key dashes and Ctrl + double tap
+// forward teleports to the target. Runs before the player ticks, so a dodge replaces the normal jump of that same tick.
+// The player is moved here right away and the server is told (see Movement); the teleport is done by the server.
 public final class MovementInput {
     private static boolean jumpWasDown = false;
+    private static boolean forwardWasDown = false;
+    private static int lastForwardTap = -100;
     // Creative players toggle flying with a double tap; when the air jump is on in creative, that toggle is undone.
     private static boolean undoFlight = false;
 
@@ -26,16 +31,39 @@ public final class MovementInput {
         boolean down = options.keyJump.isDown();
         boolean pressed = down && !jumpWasDown;
         jumpWasDown = down;
+        boolean forwardDown = options.keyUp.isDown();
+        boolean forwardTap = forwardDown && !forwardWasDown;
+        forwardWasDown = forwardDown;
+        boolean dash = false;
+        while (Keybinds.DASH.consumeClick()) {
+            dash = true;
+        }
         if (player == null) {
             return;
         }
         Movement.tick(player);
-        if (!pressed || minecraft.screen != null) {
+        if (minecraft.screen != null) {
             return;
+        }
+        boolean combat = player.getData(ModAttachments.POWER).combat;
+        if (forwardTap && options.keySprint.isDown() && combat) {
+            if (player.tickCount - lastForwardTap <= TeleporteSpec.get().toquesJanelaTicks()) {
+                PacketDistributor.sendToServer(new ModPayloads.Teleport());
+                lastForwardTap = -100;
+            } else {
+                lastForwardTap = player.tickCount;
+            }
         }
         float forward = (options.keyUp.isDown() ? 1 : 0) - (options.keyDown.isDown() ? 1 : 0);
         float strafe = (options.keyLeft.isDown() ? 1 : 0) - (options.keyRight.isDown() ? 1 : 0);
-        Movement.Kind kind = player.onGround() ? (forward < 0 ? Movement.Kind.ESQUIVA : null) : Movement.Kind.PULO_DUPLO;
+        Movement.Kind kind = null;
+        if (dash) {
+            kind = Movement.Kind.DASH;
+        } else if (pressed && player.onGround()) {
+            kind = forward < 0 ? Movement.Kind.ESQUIVA : forward == 0 && strafe != 0 && combat ? Movement.Kind.DESVIO : null;
+        } else if (pressed) {
+            kind = Movement.Kind.PULO_DUPLO;
+        }
         if (kind == null || !Movement.allowed(player, kind, 0)) {
             return;
         }

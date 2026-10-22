@@ -1,0 +1,14 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "padrao.tiers",
+  "nome": "Tiers de poder",
+  "vidaPorTier": 50,
+  "forcaPorTier": 5,
+  "multiplicadorPorForca": 0.1,
+  "armaduraMax": 20,
+  "tierArmaduraCheia": 1,
+  "velocidadeAndarPorTier": 0.02,
+  "speedCorrendoPorTier": 1,
+  "tierVelocidadeMax": 5,
+  "nomes": ["Deus", "Multiversal", "Universal", "Galáctico", "Estelar", "Planetário", "Continental", "Cidade", "Quarteirão", "Rua", "Humano"]
+}

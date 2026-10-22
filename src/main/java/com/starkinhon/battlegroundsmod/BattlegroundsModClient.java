@@ -19,6 +19,9 @@ import com.starkinhon.battlegroundsmod.client.Keybinds;
 import com.starkinhon.battlegroundsmod.client.MovementInput;
 import com.starkinhon.battlegroundsmod.client.PowerHud;
 import com.starkinhon.battlegroundsmod.client.PunchInput;
+import com.starkinhon.battlegroundsmod.client.BaseAttacks;
+import com.starkinhon.battlegroundsmod.client.CombatInput;
+import com.starkinhon.battlegroundsmod.client.StatusBars;
 import com.starkinhon.battlegroundsmod.client.ScreenShake;
 import com.starkinhon.battlegroundsmod.client.ShoulderCutscene;
 import com.starkinhon.battlegroundsmod.client.SoulBossRenderer;
@@ -35,6 +38,7 @@ import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.client.event.MovementInputUpdateEvent;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
+import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
 import net.neoforged.neoforge.client.event.RegisterParticleProvidersEvent;
 import net.neoforged.neoforge.client.event.RenderLivingEvent;
 import net.neoforged.neoforge.client.gui.ConfigurationScreen;
@@ -64,6 +68,7 @@ public class BattlegroundsModClient {
         NeoForge.EVENT_BUS.addListener(BattlegroundsModClient::onClientTick);
         NeoForge.EVENT_BUS.addListener(BossBars::onBossBar);
         NeoForge.EVENT_BUS.addListener(InputEvent.InteractionKeyMappingTriggered.class, PunchInput::onInteraction);
+        NeoForge.EVENT_BUS.addListener(RenderGuiLayerEvent.Pre.class, StatusBars::onRenderLayer);
         NeoForge.EVENT_BUS.addListener(MovementInputUpdateEvent.class, FaceCutscene::onMovementInput);
         NeoForge.EVENT_BUS.addListener(MovementInputUpdateEvent.class, BossCutscene::onMovementInput);
     }
@@ -78,6 +83,8 @@ public class BattlegroundsModClient {
 
     private static void onRegisterGuiLayers(RegisterGuiLayersEvent event) {
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "power_hud"), PowerHud::render);
+        // After every vanilla bar, so it knows how tall the hearts, armor and food stand.
+        event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "base_attacks"), BaseAttacks::render);
         // Impact frames and flashes cover the world and the hand, but not the HUD.
         event.registerBelowAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "screen_fx"), ScreenFx::renderGui);
     }
@@ -91,6 +98,7 @@ public class BattlegroundsModClient {
 
     private static void onClientTickPre(ClientTickEvent.Pre event) {
         MovementInput.tickPre();
+        CombatInput.tickPre();
     }
 
     // The Madara skin uses slim (3 pixel) arms.

@@ -1,0 +1,67 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "padrao.teleporte",
+  "nome": "Teleporte até o alvo",
+  "recargaTicks": 60,
+  "alcance": 24,
+  "distanciaFrente": 1.6,
+  "toquesJanelaTicks": 7,
+  "lembrarAlvoTicks": 200,
+  "sons": [
+    {
+      "nome": "Sumir",
+      "som": "minecraft:entity.enderman.teleport",
+      "momento": "saida",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 0.7,
+      "pitch": 1.6,
+      "pitchFim": 1.6,
+      "onde": "saida"
+    },
+    {
+      "nome": "Aparecer",
+      "som": "minecraft:entity.player.attack.sweep",
+      "momento": "chegada",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 0.8,
+      "pitch": 0.7,
+      "pitchFim": 0.7,
+      "onde": "chegada"
+    }
+  ],
+  "vfx": [
+    {
+      "tipo": "clarao",
+      "momento": "saida",
+      "tamanho": 1.2,
+      "quantidade": 6,
+      "cor": "#ffffff",
+      "cor2": "#d0e8ff",
+      "vidaTicks": 6,
+      "alcance": 48
+    },
+    {
+      "tipo": "clarao",
+      "momento": "chegada",
+      "tamanho": 1.4,
+      "quantidade": 6,
+      "cor": "#ffffff",
+      "cor2": "#d0e8ff",
+      "vidaTicks": 6,
+      "alcance": 48
+    },
+    {
+      "tipo": "anel",
+      "momento": "chegada",
+      "raio": 2,
+      "tamanho": 0.35,
+      "cor": "#ffffff",
+      "vidaTicks": 8,
+      "alcance": 48
+    }
+  ]
+}

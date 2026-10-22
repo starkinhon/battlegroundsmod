@@ -1,0 +1,34 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "padrao.desvio",
+  "nome": "Desvio lateral",
+  "recargaTicks": 16,
+  "impulsoHorizontal": 1.4,
+  "impulsoVertical": 0.22,
+  "manterVelocidade": 0,
+  "invencivelTicks": 5,
+  "semDanoDeQueda": true,
+  "funcionaNoCriativo": true,
+  "poeira": {
+    "ativa": true,
+    "quantidade": 8,
+    "tamanho": 0.7,
+    "vidaTicks": 14,
+    "velocidade": 0.18,
+    "cor": "#d8d2c4"
+  },
+  "sons": [
+    {
+      "nome": "Desvio",
+      "som": "minecraft:entity.player.attack.sweep",
+      "momento": "uso",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 0.6,
+      "pitch": 1.8,
+      "pitchFim": 1.8,
+      "onde": "pes"
+    }
+  ]
+}

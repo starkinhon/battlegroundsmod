@@ -4,12 +4,13 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 // Per-player power state. Stored as a data attachment on the player and mirrored to the client for the HUD.
+// There is no energy for now: moves only have cooldowns (an exhaustion system will come later).
 // Bosses carry one too, so they use the same moves, cooldowns and busy time.
 public class PowerData {
-    public static final float MAX_ENERGY = 100f;
     public static final float MAX_ULT = 100f;
 
-    // Slots 0-3 are the power's abilities (Z, X, C, V), 4-5 are the shared melee moves (strong attack, barrage).
+    // Slots 0-3 are the power's abilities (Z, X, C, V), 4-5 are the shared melee moves (strong attack, barrage), picked
+    // in the base attack selector above the hotbar.
     public static final int SLOT_COUNT = 6;
     public static final int SLOT_ULT = 3;
     public static final int SLOT_STRONG = 4;
@@ -17,15 +18,16 @@ public class PowerData {
 
     public static final Codec<PowerData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.STRING.optionalFieldOf("power", "").forGetter(d -> d.power),
-            Codec.FLOAT.optionalFieldOf("energy", MAX_ENERGY).forGetter(d -> d.energy),
             Codec.FLOAT.optionalFieldOf("ult", 0f).forGetter(d -> d.ult),
-            Codec.BOOL.optionalFieldOf("received_book", false).forGetter(d -> d.receivedBook)
+            Codec.BOOL.optionalFieldOf("received_book", false).forGetter(d -> d.receivedBook),
+            Codec.INT.optionalFieldOf("tier", Tiers.HUMANO).forGetter(d -> d.tier)
     ).apply(instance, PowerData::new));
 
     public String power = "";
-    public float energy = MAX_ENERGY;
     public float ult = 0f;
     public boolean receivedBook = false;
+    // Power tier, 0 (god) to 10 (human): health, strength, armor and speed (see Tiers).
+    public int tier = Tiers.HUMANO;
 
     // Not saved: these only matter while the player is online.
     public int[] cooldowns = new int[SLOT_COUNT];
@@ -36,22 +38,28 @@ public class PowerData {
     // A click that came in just before the next punch was allowed; it is thrown as soon as it can be.
     public boolean punchQueued = false;
     public int busyTicks = 0;
-    // Set by /soul semcooldown: no cooldowns and no energy or ult cost, for testing and recording.
+    // Set by /soul semcooldown: no cooldowns and no ult cost, for testing and recording.
     public boolean noCooldown = false;
     // Awakened mode: skills use the "despertado" values of their spec. Toggled by /soul despertar for now.
     public boolean awakened = false;
     // Last move used and when (game time), so bosses can read what their target just did. -1 = nothing yet.
     public int lastCastSlot = -1;
     public long lastCastTime = -1;
+    // Combat mode lasts until this game time (see CombatMode). On the client, combat is the synced flag instead.
+    public long combatUntil = 0;
+    // Who this fighter last hit or was hit by, and when (game time): the teleport goes to them.
+    public int foughtId = -1;
+    public long foughtAt = -1;
+    public boolean combat = false;
 
     public PowerData() {
     }
 
-    private PowerData(String power, float energy, float ult, boolean receivedBook) {
+    private PowerData(String power, float ult, boolean receivedBook, int tier) {
         this.power = power;
-        this.energy = energy;
         this.ult = ult;
         this.receivedBook = receivedBook;
+        this.tier = tier;
     }
 
     public boolean hasPower() {
@@ -60,7 +68,6 @@ public class PowerData {
 
     public void resetCombat() {
         cooldowns = new int[SLOT_COUNT];
-        energy = MAX_ENERGY;
         comboStep = 0;
         comboResetTicks = 0;
         punchDelay = 0;

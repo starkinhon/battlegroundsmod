@@ -1,0 +1,34 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "padrao.defesa",
+  "nome": "Defesa",
+  "reducao": 0.8,
+  "frente": 0.0,
+  "parryTicks": 5,
+  "parryStunTicks": 25,
+  "quebraStunTicks": 40,
+  "recargaQuebraTicks": 40,
+  "lentidao": 0.6,
+  "empurraoBloqueio": 0.25,
+  "pose": {
+    "cabeca": 8,
+    "tronco": 10,
+    "giro": 0,
+    "bracoDir": {"frente": 100, "abrir": -38},
+    "bracoEsq": {"frente": 110, "abrir": -38}
+  },
+  "sons": [
+    {"nome": "Bloqueio", "som": "minecraft:item.shield.block", "momento": "bloqueio", "atrasoTicks": 0, "repetirACadaTicks": 0, "vezes": 1, "volume": 0.9, "pitch": 1.3, "pitchFim": 1.3, "onde": "alvo"},
+    {"nome": "Parry", "som": "minecraft:block.anvil.land", "momento": "parry", "atrasoTicks": 0, "repetirACadaTicks": 0, "vezes": 1, "volume": 0.6, "pitch": 1.8, "pitchFim": 1.8, "onde": "alvo"},
+    {"nome": "Parry brilho", "som": "minecraft:block.amethyst_block.hit", "momento": "parry", "atrasoTicks": 0, "repetirACadaTicks": 0, "vezes": 1, "volume": 1.2, "pitch": 1.4, "pitchFim": 1.4, "onde": "alvo"},
+    {"nome": "Quebra de guarda", "som": "minecraft:item.shield.break", "momento": "quebra", "atrasoTicks": 0, "repetirACadaTicks": 0, "vezes": 1, "volume": 1.2, "pitch": 0.8, "pitchFim": 0.8, "onde": "alvo"}
+  ],
+  "vfx": [
+    {"tipo": "faiscas", "momento": "bloqueio", "quantidade": 8, "velocidade": 0.3, "comprimento": 0.4, "tamanho": 0.5, "cor": "#bfe0ff", "cor2": "#ffffff", "vidaTicks": 6, "alcance": 40},
+    {"tipo": "clarao", "momento": "parry", "tamanho": 1.8, "quantidade": 10, "cor": "#7fd0ff", "cor2": "#ffffff", "vidaTicks": 8, "alcance": 48},
+    {"tipo": "anel", "momento": "parry", "raio": 2.5, "tamanho": 0.4, "cor": "#bfe8ff", "vidaTicks": 10, "alcance": 48},
+    {"tipo": "impactFrame", "momento": "parry", "sequencia": ["invertido"], "ticksPorQuadro": 1, "cor": "#7fd0ff", "alcance": 12},
+    {"tipo": "faiscas", "momento": "quebra", "quantidade": 20, "velocidade": 0.5, "comprimento": 0.7, "tamanho": 0.9, "cor": "#ffd27f", "cor2": "#ffffff", "vidaTicks": 12, "alcance": 48},
+    {"tipo": "estrela", "momento": "quebra", "quantidade": 10, "comprimento": 2.5, "tamanho": 1, "cor": "#ffe0a0", "vidaTicks": 8, "alcance": 48}
+  ]
+}

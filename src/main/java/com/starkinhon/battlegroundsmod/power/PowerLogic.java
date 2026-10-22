@@ -3,6 +3,8 @@ package com.starkinhon.battlegroundsmod.power;
 import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.ModItems;
 import com.starkinhon.battlegroundsmod.combat.Combat;
+import com.starkinhon.battlegroundsmod.combat.CombatMode;
+import com.starkinhon.battlegroundsmod.combat.Defense;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.combat.Fx;
 import com.starkinhon.battlegroundsmod.combat.Melee;
@@ -19,13 +21,13 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
 
-// Server-side rules: using abilities, energy and ult charge, picking a power.
+// Server-side rules: using abilities, ult charge, picking a power.
 public final class PowerLogic {
-    private static final float ENERGY_REGEN_PER_TICK = 0.4f;
     private static final float ULT_PASSIVE_PER_TICK = 0.03f;
     private static final float ULT_PER_DAMAGE = 2.0f;
     private static final int SYNC_INTERVAL = 4;
@@ -60,19 +62,11 @@ public final class PowerLogic {
             player.displayClientMessage(Component.translatable("message.battlegroundsmod.ult_not_ready"), true);
             return;
         }
-        if (!free && data.energy < ability.energyCost()) {
-            player.displayClientMessage(Component.translatable("message.battlegroundsmod.no_energy"), true);
-            return;
-        }
         if (!cast(player, slot)) {
             return;
         }
-        if (!free) {
-            if (ultimate) {
-                data.ult = 0;
-            } else {
-                data.energy -= ability.energyCost();
-            }
+        if (!free && ultimate) {
+            data.ult = 0;
         }
         if (!data.noCooldown) {
             data.cooldowns[slot] = ability.cooldown();
@@ -82,7 +76,7 @@ public final class PowerLogic {
 
     private static boolean canCast(LivingEntity caster, PowerData data, int slot) {
         return !caster.isSpectator() && caster.isAlive() && data.cooldowns[slot] <= 0 && data.busyTicks <= 0 && !Freeze.isFrozen(caster)
-                && !Stun.is(caster);
+                && !Stun.is(caster) && !Defense.isGuarding(caster);
     }
 
     // Runs a move of the caster's power, with no costs and no cooldown set: players go through tryUse, bosses set
@@ -99,6 +93,7 @@ public final class PowerLogic {
         }
         data.lastCastSlot = slot;
         data.lastCastTime = level.getGameTime();
+        CombatMode.enter(caster);
         if (slot == PowerData.SLOT_ULT) {
             announceUlt(caster, power);
         }
@@ -152,6 +147,7 @@ public final class PowerLogic {
         data.power = "";
         data.ult = 0;
         data.resetCombat();
+        CombatMode.leave(player);
         sync(player);
     }
 
@@ -184,8 +180,12 @@ public final class PowerLogic {
         if (data.comboResetTicks > 0 && --data.comboResetTicks == 0) {
             data.comboStep = 0;
         }
+        CombatMode.tick(player);
+        // Bosses get their tier's damage only; their health and armor come from their own file.
+        if (player instanceof Player) {
+            Tiers.apply(player);
+        }
         if (data.hasPower()) {
-            data.energy = Math.min(PowerData.MAX_ENERGY, data.energy + ENERGY_REGEN_PER_TICK);
             data.ult = Math.min(PowerData.MAX_ULT, data.ult + ULT_PASSIVE_PER_TICK);
         }
         if (player instanceof ServerPlayer serverPlayer && player.tickCount % SYNC_INTERVAL == 0) {
