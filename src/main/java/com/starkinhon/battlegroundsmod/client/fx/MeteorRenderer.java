@@ -25,7 +25,7 @@ public final class MeteorRenderer {
     private static final int SEGMENTS = 40;
     private static final int CIRCLE = 64;
 
-    private record Falling(MeteoroSpec spec, Vec3 start, Vec3 end, Vec3 dir, long startTick) {
+    private record Falling(MeteoroSpec spec, Vec3 start, Vec3 end, Vec3 dir, long startTick, int ticks) {
     }
 
     private static final List<Falling> FALLING = new ArrayList<>();
@@ -33,13 +33,13 @@ public final class MeteorRenderer {
     private MeteorRenderer() {
     }
 
-    public static void start(String skill, boolean awakened, Vec3 start, Vec3 end, int delay) {
+    public static void start(String skill, boolean awakened, Vec3 start, Vec3 end, int delay, int fallTicks) {
         var level = Minecraft.getInstance().level;
         if (level == null) {
             return;
         }
         MeteoroSpec spec = SkillSpecs.get(skill, MeteoroSpec.class, awakened);
-        FALLING.add(new Falling(spec, start, end, end.subtract(start).normalize(), level.getGameTime() + delay));
+        FALLING.add(new Falling(spec, start, end, end.subtract(start).normalize(), level.getGameTime() + delay, Math.max(1, fallTicks)));
     }
 
     public static void onRenderLevel(RenderLevelStageEvent event) {
@@ -56,10 +56,10 @@ public final class MeteorRenderer {
         PoseStack pose = event.getPoseStack();
         MultiBufferSource.BufferSource buffers = Minecraft.getInstance().renderBuffers().bufferSource();
         long now = level.getGameTime();
-        FALLING.removeIf(falling -> now - falling.startTick() > falling.spec().tempo().quedaTicks() + 1);
+        FALLING.removeIf(falling -> now - falling.startTick() > falling.ticks() + 1);
         for (Falling falling : FALLING) {
             double age = now - falling.startTick() + partial;
-            int ticks = Math.max(1, falling.spec().tempo().quedaTicks());
+            int ticks = falling.ticks();
             if (age < 0 || age > ticks) {
                 continue;
             }

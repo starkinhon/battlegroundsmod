@@ -7,9 +7,11 @@ import java.util.Deque;
 import java.util.EnumSet;
 import java.util.List;
 
+import com.starkinhon.battlegroundsmod.BattlegroundsMod;
 import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
+import com.starkinhon.battlegroundsmod.combat.Intangible;
 import com.starkinhon.battlegroundsmod.combat.Melee;
 import com.starkinhon.battlegroundsmod.movement.Movement;
 import com.starkinhon.battlegroundsmod.power.PowerData;
@@ -17,6 +19,7 @@ import com.starkinhon.battlegroundsmod.power.PowerLogic;
 import com.starkinhon.battlegroundsmod.power.powers.uchiha.Susanoo;
 
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
@@ -25,6 +28,9 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.phys.Vec3;
@@ -36,8 +42,9 @@ import net.minecraft.world.phys.Vec3;
 // - before a move it stops and telegraphs it for avisoTicks, so a good player can react;
 // - it reacts to the target after a human-like delay: back dodge out of skills and projectiles, Susanoo counter when it
 //   is being comboed or sees a heavy hit coming, a dodge and a punish window when the target uses their ult;
-// - between moves it positions itself: rushes in with dashes and punches when it feels aggressive, keeps range and
-//   strafes otherwise, double jumps to targets standing up high, and reappears behind a target it can't reach.
+// - between moves it positions itself like a ninja: it switches between walking calmly and moving insanely fast,
+//   blinks behind the target (shadow step) and rushes in with dashes and punches when it feels aggressive, keeps
+//   range and strafes otherwise, double jumps to targets standing up high, and reappears behind a target it can't reach.
 // Every number comes from the boss file (BossSpec). /soul boss debug shows what it is thinking.
 public class SoulBossAI extends Goal {
     // Toggled by /soul boss debug: each boss shows its state and best options on the action bar of players nearby.
@@ -47,10 +54,12 @@ public class SoulBossAI extends Goal {
     private static final int STEP_TIMEOUT = 50;
     private static final int REACTION_EXPIRY = 10;
     private static final int REPATH_TICKS = 8;
+    private static final int SHADOW_CHECK_TICKS = 10;
+    private static final ResourceLocation FAST = ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "boss_fast");
 
     private enum State { IDLE, TELL, ACTION }
 
-    private enum Reaction { DODGE_SIDE, DODGE_BACK, COUNTER }
+    private enum Reaction { DODGE_SIDE, DODGE_BACK, COUNTER, ESCAPE }
 
     private enum Mood { CLOSE, RANGE }
 
@@ -77,10 +86,14 @@ public class SoulBossAI extends Goal {
     private int strafeAge;
     private int repath;
     private int dashCooldown;
+    private int shadowCooldown;
+    private boolean fast;
+    private int paceLeft;
     private int punchCooldown;
     private int stuck;
     private int punishLeft;
     private boolean jumpPending;
+    private boolean jumpBack;
     private final Deque<Long> pressure = new ArrayDeque<>();
     private long seenCast = -1;
     private boolean targetWasSwinging;
@@ -119,12 +132,14 @@ public class SoulBossAI extends Goal {
     @Override
     public void stop() {
         reset();
+        setPace(false, 0);
         boss.getNavigation().stop();
         boss.getMoveControl().strafe(0, 0);
     }
 
     // Drops whatever it was doing (new phase, new target).
     public void reset() {
+        paceLeft = 0;
         state = State.IDLE;
         plan.clear();
         comboName = null;
@@ -212,13 +227,38 @@ public class SoulBossAI extends Goal {
         if (punchCooldown > 0) {
             punchCooldown--;
         }
+        if (shadowCooldown > 0) {
+            shadowCooldown--;
+        }
+        if (--paceLeft <= 0) {
+            BossSpec.Ritmo ritmo = boss.spec().ritmo();
+            boolean nowFast = !fast;
+            int min = nowFast ? ritmo.rapidoMinTicks() : ritmo.calmoMinTicks();
+            int max = nowFast ? ritmo.rapidoMaxTicks() : ritmo.calmoMaxTicks();
+            setPace(nowFast, min + random.nextInt(Math.max(1, max - min + 1)));
+        }
         if (punishLeft > 0) {
             punishLeft--;
         }
         if (jumpPending && !boss.onGround()) {
             jumpPending = false;
-            Movement.doubleJump(boss);
+            Movement.tryPerform(boss, Movement.Kind.PULO_DUPLO, jumpBack ? -1 : 1, 0);
+            jumpBack = false;
         }
+    }
+
+    // Calm or insanely fast: a speed modifier on top of the boss's base speed.
+    private void setPace(boolean fastNow, int ticks) {
+        fast = fastNow;
+        paceLeft = ticks;
+        AttributeInstance speed = boss.getAttribute(Attributes.MOVEMENT_SPEED);
+        if (speed == null) {
+            return;
+        }
+        BossSpec.Ritmo ritmo = boss.spec().ritmo();
+        double phase = boss.fase().multVelocidade() > 0 ? boss.fase().multVelocidade() : 1;
+        double mult = (fastNow ? ritmo.velocidadeRapido() : ritmo.velocidadeCalmo()) * phase;
+        speed.addOrUpdateTransientModifier(new AttributeModifier(FAST, mult - 1, AttributeModifier.Operation.ADD_MULTIPLIED_BASE));
     }
 
     // ---------------------------------------------------------------- reading the target
@@ -242,8 +282,12 @@ public class SoulBossAI extends Goal {
             pressure.addLast(now);
         }
         targetWasSwinging = swinging;
-        if (pressure.size() >= reacoes.golpesParaContra() && reaction == null && state != State.ACTION) {
+        // Being beaten up: counter if it can, otherwise get out (back dodge, air jump, step behind them...).
+        if (pressure.size() >= reacoes.golpesParaFugir() && reaction == null && state != State.ACTION) {
             schedule(Reaction.COUNTER, reacoes.chanceContraAtaque(), fase);
+            if (reaction == null) {
+                schedule(Reaction.ESCAPE, reacoes.chanceFugirAoApanhar(), fase);
+            }
             pressure.clear();
         }
         if (now % 2 == 0 && projectileIncoming()) {
@@ -289,10 +333,17 @@ public class SoulBossAI extends Goal {
                 state = State.IDLE;
                 return begin(spec, counter);
             }
-            r = Reaction.DODGE_BACK;
+            r = Reaction.ESCAPE;
+        }
+        if (r == Reaction.ESCAPE) {
+            return escape(spec, distance);
         }
         if (state == State.TELL && r != Reaction.COUNTER) {
             state = State.IDLE;
+        }
+        if (random.nextDouble() < spec.passoSombra().chanceNaEsquiva() && shadowStep(spec, distance)) {
+            plan.clear();
+            return true;
         }
         face(Combat.center(target), 360);
         float side = r == Reaction.DODGE_SIDE ? (random.nextBoolean() ? 1 : -1) : 0;
@@ -302,6 +353,30 @@ public class SoulBossAI extends Goal {
             return true;
         }
         return false;
+    }
+
+    // Getting out of a beating, picked at random so it can't be read: back dodge into a backwards air jump, a side
+    // dodge, or a shadow step behind the attacker.
+    private boolean escape(BossSpec spec, double distance) {
+        if (state == State.TELL) {
+            state = State.IDLE;
+        }
+        plan.clear();
+        int pick = random.nextInt(3);
+        if (pick == 2 && shadowStep(spec, Math.max(distance, spec.passoSombra().distanciaMin()))) {
+            return true;
+        }
+        face(Combat.center(target), 360);
+        float side = pick == 1 ? (random.nextBoolean() ? 1 : -1) : 0;
+        if (Movement.tryPerform(boss, Movement.Kind.ESQUIVA, -1, side)) {
+            if (pick == 0) {
+                jumpPending = true;
+                jumpBack = true;
+            }
+            thinking = "fugindo";
+            return true;
+        }
+        return dash(spec);
     }
 
     private boolean facesBoss(LivingEntity entity) {
@@ -390,6 +465,8 @@ public class SoulBossAI extends Goal {
         return switch (step) {
             case "soco" -> distance <= spec.distancias().soco() + 1 ? 1 : 0.5 * fase.agressividade();
             case "investida", "aproximar" -> distance > spec.investida().distanciaMin() && dashCooldown == 0 ? 0.9 : 0.3;
+            case "sombra" -> shadowCooldown == 0 && distance >= spec.passoSombra().distanciaMin()
+                    && distance <= spec.passoSombra().distanciaMax() ? (fast ? 1.2 : 0.6) : 0.2;
             case "esquiva", "pulo" -> 0.2;
             default -> spec.skills().containsKey(step) ? score(spec, fase, step, distance) : 0;
         };
@@ -522,7 +599,10 @@ public class SoulBossAI extends Goal {
             state = State.IDLE;
             return false;
         }
-        boss.powerData().cooldowns[skill.slot()] = (int) Math.round(skill.recargaTicks() * boss.fase().multRecarga());
+        int cooldown = skill.recargaTicks() + (skill.recargaMaxTicks() > skill.recargaTicks()
+                ? random.nextInt(skill.recargaMaxTicks() - skill.recargaTicks() + 1) : 0);
+        BossSpec.Fase fase = boss.fase();
+        boss.powerData().cooldowns[skill.slot()] = Math.max(20, (int) Math.round(cooldown * fase.multRecarga()) - fase.menosRecargaTicks());
         if ("golpe".equals(skill.tipo()) || "barragem".equals(skill.tipo())) {
             boss.swing(InteractionHand.MAIN_HAND);
         }
@@ -605,6 +685,20 @@ public class SoulBossAI extends Goal {
                 }
                 return true;
             }
+            case "sombra" -> {
+                if (distance <= reach || shadowStep(spec, distance)) {
+                    nextStep();
+                } else if (stepAge > 20 && distance > reach + 1) {
+                    if (dash(spec)) {
+                        nextStep();
+                    } else {
+                        approach(spec, distance, true);
+                    }
+                } else {
+                    approach(spec, distance, true);
+                }
+                return true;
+            }
             case "esquiva" -> {
                 face(Combat.center(target), 360);
                 if (Movement.backstep(boss) || stepAge > 10) {
@@ -675,6 +769,12 @@ public class SoulBossAI extends Goal {
         if (heightGap >= spec.puloDuplo().alturaMin() && horizontal(distance) <= spec.puloDuplo().distanciaMax() && jump()) {
             return;
         }
+        if (close && sees && boss.tickCount % SHADOW_CHECK_TICKS == 0) {
+            BossSpec.PassoSombra sombra = spec.passoSombra();
+            if (random.nextDouble() < (fast ? sombra.chance() : sombra.chanceCalmo()) && shadowStep(spec, distance)) {
+                return;
+            }
+        }
         if (close) {
             if (distance > spec.investida().distanciaMin() && sees && dash(spec)) {
                 return;
@@ -740,10 +840,39 @@ public class SoulBossAI extends Goal {
         boss.setDeltaMovement(dir.x * investida.forca(), investida.altura(), dir.z * investida.forca());
         boss.hasImpulse = true;
         boss.hurtMarked = true;
-        dashCooldown = investida.recargaTicks();
+        dashCooldown = fast ? spec.ritmo().recargaInvestidaRapido() : investida.recargaTicks();
         BossFx.dash(level(), boss, BossFx.color(boss.spec().intro().cor()));
         thinking = "investida";
         return true;
+    }
+
+    // Shadow step: a blink to just behind the target, leaving an afterimage trail, then straight into punches.
+    private boolean shadowStep(BossSpec spec, double distance) {
+        BossSpec.PassoSombra sombra = spec.passoSombra();
+        if (shadowCooldown > 0 || distance < sombra.distanciaMin() || distance > sombra.distanciaMax() || Freeze.isFrozen(boss)) {
+            return false;
+        }
+        Vec3 from = boss.position();
+        Vec3 back = Combat.flatLook(target).reverse();
+        for (double turn : new double[] {0, 35, -35}) {
+            Vec3 spot = target.position().add(back.yRot((float) Math.toRadians(turn)).scale(sombra.atras()));
+            if (!boss.level().noCollision(boss, boss.getBoundingBox().move(spot.subtract(from)))
+                    || boss.level().noCollision(boss, boss.getBoundingBox().move(spot.subtract(from)).move(0, -1.5, 0))) {
+                // Blocked, or nothing to stand on.
+                continue;
+            }
+            boss.teleportTo(spot.x, spot.y, spot.z);
+            boss.getNavigation().stop();
+            face(Combat.center(target), 360);
+            Intangible.hold(boss, 3);
+            BossFx.shadowStep(level(), from, spot, BossFx.color(spec.intro().cor()));
+            shadowCooldown = sombra.recargaTicks();
+            punchCooldown = 0;
+            mood = Mood.CLOSE;
+            thinking = "passo sombra";
+            return true;
+        }
+        return false;
     }
 
     // Jump now, air jump as soon as it leaves the ground (countDown does it).
@@ -809,8 +938,8 @@ public class SoulBossAI extends Goal {
             case ACTION -> "usando " + move;
             default -> comboName != null ? "combo " + comboName + " > " + plan.peekFirst() : mood == Mood.CLOSE ? "perto" : "distancia";
         };
-        Component line = Component.literal(String.format("§cFase %d §7| §f%s §7| dist %.1f | pressao %d%s §7| %s",
-                boss.phase() + 1, what, distance, pressure.size(), punishLeft > 0 ? " §6PUNIR" : "", thinking));
+        Component line = Component.literal(String.format("§cFase %d §7| %s §7| §f%s §7| dist %.1f | pressao %d%s §7| %s",
+                boss.phase() + 1, fast ? "§eRAPIDO" : "§acalmo", what, distance, pressure.size(), punishLeft > 0 ? " §6PUNIR" : "", thinking));
         for (ServerPlayer player : level().players()) {
             if (player.distanceTo(boss) <= DEBUG_RANGE) {
                 player.displayClientMessage(line, true);

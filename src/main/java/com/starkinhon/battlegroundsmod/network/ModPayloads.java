@@ -156,9 +156,9 @@ public final class ModPayloads {
             ByteBufCodecs.DOUBLE, Vec3::z,
             Vec3::new);
 
-    // Server -> client: a meteor's body falls from start to end, starting after delay ticks. Its size, speed curve and
-    // colors are read from the skill's spec on the client.
-    public record MeteorFall(String skill, boolean awakened, Vec3 start, Vec3 end, int delay) implements CustomPacketPayload {
+    // Server -> client: a meteor's body falls from start to end over fallTicks, starting after delay ticks. Its size,
+    // speed curve and colors are read from the skill's spec on the client.
+    public record MeteorFall(String skill, boolean awakened, Vec3 start, Vec3 end, int delay, int fallTicks) implements CustomPacketPayload {
         public static final Type<MeteorFall> TYPE = payloadType("meteor_fall");
         public static final StreamCodec<ByteBuf, MeteorFall> STREAM_CODEC = StreamCodec.composite(
                 ByteBufCodecs.STRING_UTF8, MeteorFall::skill,
@@ -166,10 +166,28 @@ public final class ModPayloads {
                 VEC3, MeteorFall::start,
                 VEC3, MeteorFall::end,
                 ByteBufCodecs.VAR_INT, MeteorFall::delay,
+                ByteBufCodecs.VAR_INT, MeteorFall::fallTicks,
                 MeteorFall::new);
 
         @Override
         public Type<MeteorFall> type() {
+            return TYPE;
+        }
+    }
+
+    // Server -> client: a boss's ult cutscene (zoom on its face, then look up at lookAt in the sky, then back).
+    public record BossCutscene(int entityId, int zoomTicks, int skyTicks, int backTicks, Vec3 lookAt) implements CustomPacketPayload {
+        public static final Type<BossCutscene> TYPE = payloadType("boss_cutscene");
+        public static final StreamCodec<ByteBuf, BossCutscene> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, BossCutscene::entityId,
+                ByteBufCodecs.VAR_INT, BossCutscene::zoomTicks,
+                ByteBufCodecs.VAR_INT, BossCutscene::skyTicks,
+                ByteBufCodecs.VAR_INT, BossCutscene::backTicks,
+                VEC3, BossCutscene::lookAt,
+                BossCutscene::new);
+
+        @Override
+        public Type<BossCutscene> type() {
             return TYPE;
         }
     }
@@ -228,9 +246,11 @@ public final class ModPayloads {
         registrar.playToClient(ScreenShake.TYPE, ScreenShake.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.screenShake(payload.strength(), payload.ticks())));
         registrar.playToClient(MeteorFall.TYPE, MeteorFall.STREAM_CODEC, (payload, context) -> context.enqueueWork(
-                () -> ClientHooks.meteorFall(payload.skill(), payload.awakened(), payload.start(), payload.end(), payload.delay())));
+                () -> ClientHooks.meteorFall(payload.skill(), payload.awakened(), payload.start(), payload.end(), payload.delay(), payload.fallTicks())));
         registrar.playToClient(BossBarStyle.TYPE, BossBarStyle.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.bossBarStyle(payload.barId(), payload.texture(), payload.frames(), payload.width(), payload.height())));
+        registrar.playToClient(BossCutscene.TYPE, BossCutscene.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.bossCutscene(payload.entityId(), payload.zoomTicks(), payload.skyTicks(), payload.backTicks(), payload.lookAt())));
         registrar.playToClient(BossBarToggle.TYPE, BossBarToggle.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.bossBarToggle(payload.on())));
     }

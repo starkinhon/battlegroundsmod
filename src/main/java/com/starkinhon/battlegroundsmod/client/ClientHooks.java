@@ -27,8 +27,8 @@ public final class ClientHooks {
         ScreenShake.start(strength, ticks);
     }
 
-    public static void meteorFall(String skill, boolean awakened, Vec3 start, Vec3 end, int delay) {
-        MeteorRenderer.start(skill, awakened, start, end, delay);
+    public static void meteorFall(String skill, boolean awakened, Vec3 start, Vec3 end, int delay, int fallTicks) {
+        MeteorRenderer.start(skill, awakened, start, end, delay, fallTicks);
     }
 
     public static void bossBarStyle(UUID barId, String texture, int frames, int width, int height) {
@@ -37,6 +37,10 @@ public final class ClientHooks {
 
     public static void bossBarToggle(boolean on) {
         BossBars.enabled = on;
+    }
+
+    public static void bossCutscene(int entityId, int zoom, int sky, int back, Vec3 lookAt) {
+        BossCutscene.start(entityId, zoom, sky, back, lookAt);
     }
 
     public static void openPowerSelect() {
