@@ -84,6 +84,7 @@ public final class Mangekyo {
         Tasks.later(cutscene.particlesTick(), () -> {
             if (player.isAlive()) {
                 UchihaFx.mangekyoEyes(level, player);
+                Fx.effects(level, SKILL, data.awakened, "particulas", player.getEyePosition(), player.getLookAngle());
             }
         });
         Tasks.later(delay, () -> {
@@ -91,6 +92,7 @@ public final class Mangekyo {
                 if (target.isAlive() && !target.isRemoved()) {
                     stun(target, spec.efeitos());
                     UchihaFx.mangekyoHit(level, target);
+                    Fx.effects(level, SKILL, data.awakened, "stun", target.getEyePosition(), player.getLookAngle());
                 }
             }
         });

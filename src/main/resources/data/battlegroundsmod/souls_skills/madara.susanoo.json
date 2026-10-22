@@ -24,5 +24,147 @@
   "visual": {
     "cor": "#38bdff"
   },
+  "vfx": [
+    {
+      "tipo": "distorcao",
+      "momento": "pronto",
+      "modo": "onda",
+      "raio": 4,
+      "forca": 0.7,
+      "velocidade": 5,
+      "altura": 1.2,
+      "cor": "#38bdff",
+      "tinta": 0.25,
+      "vidaTicks": 30
+    },
+    {
+      "tipo": "anelChao",
+      "momento": "pronto",
+      "raio": 4,
+      "tamanho": 0.6,
+      "cor": "#38bdff",
+      "vidaTicks": 18
+    },
+    {
+      "tipo": "clarao",
+      "momento": "pronto",
+      "tamanho": 3,
+      "quantidade": 6,
+      "cor": "#38bdff",
+      "cor2": "#e8f8ff",
+      "altura": 1.1,
+      "vidaTicks": 12
+    },
+    {
+      "tipo": "impactFrame",
+      "momento": "agarrar",
+      "sequencia": [
+        "cor",
+        "manga"
+      ],
+      "ticksPorQuadro": 1,
+      "cor": "#38bdff",
+      "alcance": 40
+    },
+    {
+      "tipo": "blurRadial",
+      "momento": "agarrar",
+      "forca": 0.8,
+      "vidaTicks": 10,
+      "alcance": 40
+    },
+    {
+      "tipo": "raios",
+      "momento": "agarrar",
+      "quantidade": 5,
+      "comprimento": 3,
+      "tamanho": 1,
+      "cor": "#38bdff",
+      "cor2": "#e8f8ff",
+      "vidaTicks": 12
+    },
+    {
+      "tipo": "esfera",
+      "momento": "agarrar",
+      "tamanho": 2.2,
+      "quantidade": 6,
+      "cor": "#1f7fd6",
+      "cor2": "#bfeaff",
+      "vidaTicks": 64
+    },
+    {
+      "tipo": "clarao",
+      "momento": "esmagar",
+      "tamanho": 2.5,
+      "quantidade": 4,
+      "cor": "#38bdff",
+      "cor2": "#ffffff",
+      "vidaTicks": 8
+    },
+    {
+      "tipo": "faiscas",
+      "momento": "esmagar",
+      "quantidade": 18,
+      "velocidade": 0.5,
+      "comprimento": 0.8,
+      "tamanho": 1.5,
+      "cor": "#38bdff",
+      "cor2": "#ffffff",
+      "vidaTicks": 14
+    },
+    {
+      "tipo": "tremor",
+      "momento": "esmagar",
+      "forca": 0.25,
+      "vidaTicks": 6,
+      "alcance": 24
+    },
+    {
+      "tipo": "impactFrame",
+      "momento": "arremesso",
+      "sequencia": [
+        "branco",
+        "invertido"
+      ],
+      "ticksPorQuadro": 1,
+      "cor": "#38bdff",
+      "alcance": 40
+    },
+    {
+      "tipo": "anel",
+      "momento": "arremesso",
+      "raio": 5,
+      "tamanho": 0.8,
+      "cor": "#9fdcff",
+      "vidaTicks": 12
+    },
+    {
+      "tipo": "estrela",
+      "momento": "arremesso",
+      "quantidade": 18,
+      "comprimento": 6,
+      "tamanho": 2,
+      "cor": "#38bdff",
+      "vidaTicks": 10
+    },
+    {
+      "tipo": "distorcao",
+      "momento": "arremesso",
+      "modo": "onda",
+      "raio": 8,
+      "forca": 1,
+      "velocidade": 14,
+      "cor": "#38bdff",
+      "tinta": 0.15,
+      "vidaTicks": 24
+    },
+    {
+      "tipo": "tremor",
+      "momento": "arremesso",
+      "forca": 0.6,
+      "vidaTicks": 12,
+      "alcance": 30
+    }
+  ],
   "despertado": {}
 }

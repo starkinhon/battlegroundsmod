@@ -5,6 +5,7 @@ import java.util.Map;
 
 import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.combat.Combat;
+import com.starkinhon.battlegroundsmod.combat.Fx;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
 import com.starkinhon.battlegroundsmod.power.PowerData;
@@ -33,6 +34,7 @@ public final class Susanoo {
         Object window = new Object();
         READY.put(player, window);
         UchihaFx.susanooReady(level, player, spec);
+        Fx.effects(level, SKILL, awakened(player), "pronto", player.position(), player.getLookAngle());
         Tasks.add(age -> {
             if (READY.get(player) != window) {
                 return true;
@@ -84,6 +86,7 @@ public final class Susanoo {
             return start.lerp(held, smooth(age / (double) reach));
         });
         UchihaFx.susanooGrab(level, player, target, spec);
+        Fx.effects(level, SKILL, awakened(player), "agarrar", Combat.center(target), Combat.flatLook(player));
         Tasks.repeat(total, age -> UchihaFx.susanooArm(level, player, target, spec, age < reach ? age / (double) reach : 1));
 
         int hits = Math.max(1, esmagar.golpes());
@@ -92,6 +95,7 @@ public final class Susanoo {
                 if (target.isAlive() && player.isAlive()) {
                     Combat.hurt(player, target, esmagar.dano());
                     UchihaFx.susanooCrush(level, target, spec);
+                    Fx.effects(level, SKILL, awakened(player), "esmagar", Combat.center(target), Combat.flatLook(player));
                 }
             });
         }
@@ -101,6 +105,7 @@ public final class Susanoo {
                 Combat.hurt(player, target, arremesso.dano());
                 Combat.push(target, Combat.flatLook(player), arremesso.forca(), arremesso.altura());
                 UchihaFx.susanooThrow(level, target, spec);
+                Fx.effects(level, SKILL, awakened(player), "arremesso", Combat.center(target), Combat.flatLook(player));
             }
         });
     }
@@ -119,6 +124,10 @@ public final class Susanoo {
 
     public static void clear() {
         READY.clear();
+    }
+
+    private static boolean awakened(LivingEntity player) {
+        return player.getData(ModAttachments.POWER).awakened;
     }
 
     private static SusanooSpec spec(LivingEntity player) {

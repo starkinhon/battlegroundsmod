@@ -97,5 +97,46 @@
       "pitchFim": 1,
       "onde": "boca"
     }
+  ],
+  "vfx": [
+    {
+      "tipo": "clarao",
+      "momento": "fogo",
+      "tamanho": 3,
+      "quantidade": 6,
+      "cor": "#ff6a10",
+      "cor2": "#fff0b0",
+      "vidaTicks": 10
+    },
+    {
+      "tipo": "fogo",
+      "momento": "fogo",
+      "quantidade": 10,
+      "raio": 1.5,
+      "tamanho": 1.6,
+      "deslocamento": 1,
+      "cor": "#d0401a",
+      "cor2": "#fff0a0",
+      "vidaTicks": 20
+    },
+    {
+      "tipo": "distorcao",
+      "momento": "fogo",
+      "modo": "onda",
+      "raio": 3,
+      "forca": 0.5,
+      "velocidade": 6,
+      "deslocamento": 1.5,
+      "cor": "#ff9050",
+      "tinta": 0.1,
+      "vidaTicks": 24
+    },
+    {
+      "tipo": "fov",
+      "momento": "fogo",
+      "forca": 3,
+      "vidaTicks": 10,
+      "alcance": 20
+    }
   ]
 }

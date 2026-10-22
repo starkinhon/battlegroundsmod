@@ -2,6 +2,8 @@ package com.starkinhon.battlegroundsmod.combat;
 
 import org.joml.Vector3f;
 
+import com.starkinhon.battlegroundsmod.network.ModPayloads;
+
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.server.level.ServerLevel;
@@ -10,11 +12,13 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.network.PacketDistributor;
 
-// Particle and sound helpers. Vanilla particles for now; this is the place to swap in Photon effects later.
+// Particle, sound and effect helpers. Big looks go through effects(), which the client draws with its own shaders.
 public final class Fx {
     // Particles are sent with the long-distance flag so far-away cameras still see big moves.
     private static final double VIEW_DISTANCE_SQR = 128 * 128;
+    private static final double EFFECTS_DISTANCE_SQR = 256 * 256;
     private static final double GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5));
 
     private Fx() {
@@ -76,6 +80,17 @@ public final class Fx {
         for (double x : xs) {
             for (double z : zs) {
                 line(level, particle, new Vec3(x, box.minY, z), new Vec3(x, box.maxY, z), step);
+            }
+        }
+    }
+
+    // Plays the skill file's "vfx" for this moment on every client close enough to see it (screen effects
+    // like impact frames and bending, and the shader-drawn world effects).
+    public static void effects(ServerLevel level, String skill, boolean awakened, String momento, Vec3 pos, Vec3 dir) {
+        var payload = new ModPayloads.PlayEffects(skill, awakened, momento, pos, dir);
+        for (ServerPlayer player : level.players()) {
+            if (player.distanceToSqr(pos) < EFFECTS_DISTANCE_SQR) {
+                PacketDistributor.sendToPlayer(player, payload);
             }
         }
     }

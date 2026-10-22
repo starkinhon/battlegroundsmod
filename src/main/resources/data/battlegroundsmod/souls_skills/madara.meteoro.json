@@ -114,5 +114,143 @@
       }
     }
   },
+  "vfx": [
+    {
+      "tipo": "distorcao",
+      "momento": "uso",
+      "modo": "onda",
+      "raio": 5,
+      "forca": 0.5,
+      "velocidade": 6,
+      "altura": 1,
+      "vidaTicks": 30
+    },
+    {
+      "tipo": "fov",
+      "momento": "uso",
+      "forca": -4,
+      "vidaTicks": 16
+    },
+    {
+      "tipo": "impactFrame",
+      "momento": "impacto",
+      "sequencia": [
+        "branco",
+        "invertido",
+        "cor",
+        "manga"
+      ],
+      "ticksPorQuadro": 1,
+      "cor": "#ff3020",
+      "alcance": 120
+    },
+    {
+      "tipo": "flash",
+      "momento": "impacto",
+      "inicio": 4,
+      "cor": "#ffe6c8",
+      "forca": 0.5,
+      "vidaTicks": 12,
+      "alcance": 120
+    },
+    {
+      "tipo": "blurRadial",
+      "momento": "impacto",
+      "inicio": 4,
+      "forca": 1.2,
+      "vidaTicks": 16,
+      "alcance": 120
+    },
+    {
+      "tipo": "fov",
+      "momento": "impacto",
+      "inicio": 4,
+      "forca": 10,
+      "vidaTicks": 14,
+      "alcance": 100
+    },
+    {
+      "tipo": "distorcao",
+      "momento": "impacto",
+      "modo": "onda",
+      "raio": 60,
+      "forca": 1.3,
+      "velocidade": 30,
+      "altura": 3,
+      "cor": "#ff8060",
+      "tinta": 0.12,
+      "vidaTicks": 45
+    },
+    {
+      "tipo": "clarao",
+      "momento": "impacto",
+      "tamanho": 24,
+      "quantidade": 8,
+      "cor": "#ff5020",
+      "cor2": "#fff2e0",
+      "altura": 4,
+      "vidaTicks": 20
+    },
+    {
+      "tipo": "estrela",
+      "momento": "impacto",
+      "quantidade": 40,
+      "comprimento": 45,
+      "tamanho": 8,
+      "cor": "#ffb070",
+      "altura": 4,
+      "vidaTicks": 14
+    },
+    {
+      "tipo": "anelChao",
+      "momento": "impacto",
+      "raio": 48,
+      "tamanho": 5,
+      "cor": "#ff6a30",
+      "vidaTicks": 28
+    },
+    {
+      "tipo": "anelChao",
+      "momento": "impacto",
+      "inicio": 3,
+      "raio": 30,
+      "tamanho": 2.5,
+      "cor": "#fff0d0",
+      "vidaTicks": 20
+    },
+    {
+      "tipo": "fogo",
+      "momento": "impacto",
+      "quantidade": 22,
+      "raio": 14,
+      "tamanho": 10,
+      "cor": "#d0301a",
+      "cor2": "#fff0a0",
+      "altura": 1,
+      "vidaTicks": 40
+    },
+    {
+      "tipo": "faiscas",
+      "momento": "impacto",
+      "quantidade": 80,
+      "velocidade": 1.6,
+      "comprimento": 3,
+      "tamanho": 5,
+      "cor": "#ff6020",
+      "cor2": "#fff0c0",
+      "altura": 2,
+      "vidaTicks": 34
+    },
+    {
+      "tipo": "fumaca",
+      "momento": "impacto",
+      "inicio": 4,
+      "quantidade": 22,
+      "raio": 26,
+      "tamanho": 14,
+      "cor": "#2c2426",
+      "vidaTicks": 80
+    }
+  ],
   "despertado": {}
 }

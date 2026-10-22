@@ -1,5 +1,7 @@
 package com.starkinhon.battlegroundsmod.client;
 
+import com.starkinhon.battlegroundsmod.client.fx.FxConfig;
+
 import net.minecraft.util.RandomSource;
 
 // Camera shake from big impacts. strength 1 is about a degree and a half of jitter, fading out over the ticks.
@@ -16,6 +18,10 @@ public final class ScreenShake {
     }
 
     public static void start(float newStrength, int duration) {
+        newStrength *= FxConfig.shake();
+        if (newStrength <= 0) {
+            return;
+        }
         if (newStrength >= current()) {
             strength = newStrength;
             ticks = Math.max(1, duration);

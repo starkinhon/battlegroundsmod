@@ -175,6 +175,24 @@ public final class ModPayloads {
         }
     }
 
+    // Server -> client: moment momento of a skill happened at pos facing dir; the client plays the matching entries
+    // of the skill's "vfx" list (client/fx/SkillEffects).
+    public record PlayEffects(String skill, boolean awakened, String momento, Vec3 pos, Vec3 dir) implements CustomPacketPayload {
+        public static final Type<PlayEffects> TYPE = payloadType("play_effects");
+        public static final StreamCodec<ByteBuf, PlayEffects> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.STRING_UTF8, PlayEffects::skill,
+                ByteBufCodecs.BOOL, PlayEffects::awakened,
+                ByteBufCodecs.STRING_UTF8, PlayEffects::momento,
+                VEC3, PlayEffects::pos,
+                VEC3, PlayEffects::dir,
+                PlayEffects::new);
+
+        @Override
+        public Type<PlayEffects> type() {
+            return TYPE;
+        }
+    }
+
     // Server -> client: a boss's ult cutscene (zoom on its face, then look up at lookAt in the sky, then back).
     public record BossCutscene(int entityId, int zoomTicks, int skyTicks, int backTicks, Vec3 lookAt) implements CustomPacketPayload {
         public static final Type<BossCutscene> TYPE = payloadType("boss_cutscene");
@@ -247,6 +265,8 @@ public final class ModPayloads {
                 () -> ClientHooks.screenShake(payload.strength(), payload.ticks())));
         registrar.playToClient(MeteorFall.TYPE, MeteorFall.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.meteorFall(payload.skill(), payload.awakened(), payload.start(), payload.end(), payload.delay(), payload.fallTicks())));
+        registrar.playToClient(PlayEffects.TYPE, PlayEffects.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.playEffects(payload.skill(), payload.awakened(), payload.momento(), payload.pos(), payload.dir())));
         registrar.playToClient(BossBarStyle.TYPE, BossBarStyle.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.bossBarStyle(payload.barId(), payload.texture(), payload.frames(), payload.width(), payload.height())));
         registrar.playToClient(BossCutscene.TYPE, BossCutscene.STREAM_CODEC, (payload, context) -> context.enqueueWork(
