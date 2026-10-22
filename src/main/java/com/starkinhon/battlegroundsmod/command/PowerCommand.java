@@ -4,6 +4,7 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.ModItems;
+import com.starkinhon.battlegroundsmod.combat.Cone;
 import com.starkinhon.battlegroundsmod.power.Power;
 import com.starkinhon.battlegroundsmod.power.PowerData;
 import com.starkinhon.battlegroundsmod.power.PowerLogic;
@@ -17,7 +18,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 
-// /poder escolher <poder> | /poder limpar | /poder carregar | /poder livro
+// /poder escolher <poder> | /poder limpar | /poder carregar | /poder hitbox | /poder livro
 public final class PowerCommand {
 
     private PowerCommand() {
@@ -51,6 +52,13 @@ public final class PowerCommand {
                     data.resetCombat();
                     data.ult = PowerData.MAX_ULT;
                     PowerLogic.sync(player);
+                    return 1;
+                }))
+                // Shows the hitboxes of cone moves as white particles.
+                .then(Commands.literal("hitbox").executes(context -> {
+                    Cone.debug = !Cone.debug;
+                    context.getSource().sendSuccess(() -> Component.translatable(Cone.debug
+                            ? "message.battlegroundsmod.hitbox_on" : "message.battlegroundsmod.hitbox_off"), false);
                     return 1;
                 }))
                 .then(Commands.literal("livro").executes(context -> {

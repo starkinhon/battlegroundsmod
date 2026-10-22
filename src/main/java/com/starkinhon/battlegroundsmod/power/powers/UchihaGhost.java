@@ -10,6 +10,7 @@ import com.starkinhon.battlegroundsmod.combat.Projectile;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
 import com.starkinhon.battlegroundsmod.power.Ability;
 import com.starkinhon.battlegroundsmod.power.Power;
+import com.starkinhon.battlegroundsmod.power.powers.uchiha.Katon;
 
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
@@ -20,9 +21,8 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
 
-// Fantasma dos Uchiha: fire jutsu, a spectral armor and a meteor from the sky.
+// Fantasma dos Uchiha (Madara). Being remade move by move: Z is the new Katon, X/C/V are still the first version.
 public final class UchihaGhost {
-    private static final int FIRE = 0xFF6A00;
     private static final int SPECTRAL = 0x3A6BFF;
 
     private UchihaGhost() {
@@ -30,40 +30,10 @@ public final class UchihaGhost {
 
     public static Power create() {
         return new Power("uchiha_ghost", 0xD12F2F, 1.1f, List.of(
-                new Ability(60, 15, UchihaGhost::fireball),
+                new Ability(300, 30, Katon::use),
                 new Ability(160, 25, UchihaGhost::flameWave),
                 new Ability(300, 30, UchihaGhost::spectralArmor),
                 new Ability(100, 0, UchihaGhost::meteor)));
-    }
-
-    // Z: big fireball that explodes on contact.
-    private static boolean fireball(ServerPlayer player, ServerLevel level) {
-        Vec3 look = player.getLookAngle();
-        Vec3 start = player.getEyePosition().add(look.scale(1.5));
-        Fx.sound(level, start, SoundEvents.BLAZE_SHOOT, 1.5f, 0.6f);
-        new Projectile(player, start, look.scale(1.1), 1.3, 40)
-                .trail(pos -> {
-                    Fx.burst(level, ParticleTypes.FLAME, pos, 10, 0.5, 0.02);
-                    Fx.burst(level, Fx.dust(FIRE, 2.5f), pos, 3, 0.6, 0);
-                    Fx.burst(level, ParticleTypes.LARGE_SMOKE, pos, 1, 0.4, 0.01);
-                })
-                .onHit(target -> {
-                    Combat.hurt(player, target, 9f);
-                    target.igniteForSeconds(5);
-                    Combat.push(target, look, 0.8, 0.3);
-                })
-                .onImpact(pos -> {
-                    Fx.burst(level, ParticleTypes.EXPLOSION, pos, 3, 0.8, 0);
-                    Fx.burst(level, ParticleTypes.FLAME, pos, 60, 1.2, 0.15);
-                    Fx.sound(level, pos, SoundEvents.GENERIC_EXPLODE.value(), 1f, 1.2f);
-                    for (LivingEntity target : Combat.inRadius(level, pos, 2.5, player)) {
-                        Combat.hurt(player, target, 4f);
-                        target.igniteForSeconds(3);
-                    }
-                })
-                .impactOnExpire()
-                .launch();
-        return true;
     }
 
     // X: a wave of fire that spreads forward in a 120 degree arc.
