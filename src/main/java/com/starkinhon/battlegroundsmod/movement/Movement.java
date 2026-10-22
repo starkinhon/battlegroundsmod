@@ -30,7 +30,7 @@ import net.minecraft.world.phys.Vec3;
 
 // The standard moves every fighter has, separate from the powers: the back dodge (back + jump on the ground), the air
 // jump (jump again in the air) and, in combat mode, the side dodge (left/right + jump on the ground), the dash (dash key,
-// towards the move input) and the teleport to the target (Ctrl + double tap forward). Values come from
+// towards the move input) and the teleport to the target (double tap of the sprint key (Ctrl)). Values come from
 // souls_skills/padrao.esquiva.json, padrao.pulo_duplo.json, padrao.desvio.json, padrao.dash.json and padrao.teleporte.json.
 //
 // Players: the client starts the move itself so it feels instant (client/MovementInput) and tells the server, which
@@ -188,7 +188,7 @@ public final class Movement {
         effects(player.serverLevel(), player, kind, velocity(player, kind, Mth.clamp(forward, -1, 1), Mth.clamp(strafe, -1, 1)));
     }
 
-    // Server: Ctrl + double tap forward. Appears in front of the target, facing it.
+    // Server: double tap of the sprint key (Ctrl). Appears in front of the target, facing it.
     public static void teleport(ServerPlayer player) {
         TeleporteSpec spec = TeleporteSpec.get();
         MovementData data = data(player);

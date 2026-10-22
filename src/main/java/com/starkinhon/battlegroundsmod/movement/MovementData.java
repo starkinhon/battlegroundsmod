@@ -8,6 +8,6 @@ public class MovementData {
     public boolean airJumpUsed = false;
     // When the last move started: landing checks wait a few ticks so the take-off tick doesn't count as landing.
     public long lastMoveAt = Long.MIN_VALUE / 2;
-    // When the teleport to the target (Ctrl + double tap forward) is ready again.
+    // When the teleport to the target (double tap of the sprint key) is ready again.
     public long teleportReadyAt = 0;
 }
