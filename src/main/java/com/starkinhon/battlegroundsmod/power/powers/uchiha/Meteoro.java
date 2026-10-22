@@ -41,8 +41,8 @@ public final class Meteoro {
     }
 
     // Path of the meteor's center, from the sky to the ground.
-    record Fall(Vec3 start, Vec3 end, Vec3 dir, MeteoroSpec.Corpo corpo, int ticks) {
-        Vec3 at(double age) {
+    public record Fall(Vec3 start, Vec3 end, Vec3 dir, MeteoroSpec.Corpo corpo, int ticks) {
+        public Vec3 at(double age) {
             double k = Math.min(1, age / ticks);
             double a = corpo.aceleracao();
             return start.lerp(end, k * (1 - a) + k * k * a);
@@ -54,11 +54,25 @@ public final class Meteoro {
     }
 
     public static boolean use(LivingEntity player, ServerLevel level) {
+        MeteoroSpec spec = SkillSpecs.get(SKILL, MeteoroSpec.class, player.getData(ModAttachments.POWER).awakened);
+        launch(player, level, target(player, level, spec.mira()), spec.tempo().quedaTicks(), 1f);
+        return true;
+    }
+
+    // Where the meteor would fall from and to if cast now on target over fallTicks (bosses use it to aim their camera).
+    public static Fall plan(LivingEntity caster, Vec3 target, int fallTicks) {
+        MeteoroSpec spec = SkillSpecs.get(SKILL, MeteoroSpec.class, caster.getData(ModAttachments.POWER).awakened);
+        return fall(caster, ground(Combat.level(caster), target, caster), spec.meteoro(), Math.max(1, fallTicks));
+    }
+
+    // The meteor itself: prep with the raised arm, then the fall over fallTicks, then the impact with its damage
+    // multiplied by damageMult. Players get it from use(); bosses call it with their own timing and target.
+    public static Fall launch(LivingEntity player, ServerLevel level, Vec3 aimed, int quedaTicks, float damageMult) {
         PowerData data = player.getData(ModAttachments.POWER);
         MeteoroSpec spec = SkillSpecs.get(SKILL, MeteoroSpec.class, data.awakened);
         int prep = spec.tempo().preparoTicks();
-        int fallTicks = Math.max(1, spec.tempo().quedaTicks());
-        Vec3 target = target(player, level, spec.mira());
+        int fallTicks = Math.max(1, quedaTicks);
+        Vec3 target = ground(level, aimed, player);
         Fall fall = fall(player, target, spec.meteoro(), fallTicks);
 
         data.busyTicks = prep;
@@ -68,7 +82,7 @@ public final class Meteoro {
         // The ball itself is drawn on the clients (client/fx/MeteorRenderer), following the same path.
         for (ServerPlayer viewer : level.players()) {
             if (viewer.distanceToSqr(target) < VIEW_DISTANCE * VIEW_DISTANCE) {
-                PacketDistributor.sendToPlayer(viewer, new ModPayloads.MeteorFall(SKILL, data.awakened, fall.start(), fall.end(), prep));
+                PacketDistributor.sendToPlayer(viewer, new ModPayloads.MeteorFall(SKILL, data.awakened, fall.start(), fall.end(), prep, fallTicks));
             }
         }
         Tasks.repeat(prep + fallTicks + 1, age -> {
@@ -80,13 +94,13 @@ public final class Meteoro {
             }
             if (age >= prep + fallTicks) {
                 // Once it is falling it lands, even if the caster died or swapped powers.
-                impact(player, level, spec, target);
+                impact(player, level, spec, target, damageMult);
             }
         });
-        return true;
+        return fall;
     }
 
-    private static void impact(LivingEntity player, ServerLevel level, MeteoroSpec spec, Vec3 pos) {
+    private static void impact(LivingEntity player, ServerLevel level, MeteoroSpec spec, Vec3 pos, float damageMult) {
         MeteoroSpec.Impacto impacto = spec.impacto();
         double radius = Math.max(1, impacto.raio());
         if (impacto.quebrarBlocos() && level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
@@ -94,7 +108,7 @@ public final class Meteoro {
         }
         for (LivingEntity target : Combat.inRadius(level, pos, radius, player)) {
             double edge = Math.min(1, Combat.center(target).distanceTo(pos) / radius);
-            Combat.hurt(player, target, (float) (impacto.danoCentro() + (impacto.danoBorda() - impacto.danoCentro()) * edge));
+            Combat.hurt(player, target, (float) (impacto.danoCentro() + (impacto.danoBorda() - impacto.danoCentro()) * edge) * damageMult);
             Combat.pushFrom(target, pos, impacto.empurrao(), impacto.alturaEmpurrao());
         }
         if (impacto.tremerTela() > 0) {
@@ -153,10 +167,9 @@ public final class Meteoro {
     }
 
     private static Vec3 target(LivingEntity player, ServerLevel level, MeteoroSpec.Mira mira) {
-        Vec3 aimed = "frente".equals(mira.modo())
+        return "frente".equals(mira.modo())
                 ? player.position().add(Combat.flatLook(player).scale(mira.distanciaFrente())).add(0, 1, 0)
                 : Combat.raycastPoint(player, mira.distanciaMax());
-        return ground(level, aimed, player);
     }
 
     // First solid block under a point, so aiming at the sky still lands on the floor.

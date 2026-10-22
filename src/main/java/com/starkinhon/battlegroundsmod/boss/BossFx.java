@@ -87,6 +87,18 @@ final class BossFx {
         Fx.sound(level, center, SoundEvents.PLAYER_ATTACK_SWEEP, 1f, 1.4f);
     }
 
+    // Shadow step: a dark afterimage trail from where it was to where it appears, and a sharp whoosh.
+    static void shadowStep(ServerLevel level, Vec3 from, Vec3 to, int color) {
+        Vec3 a = from.add(0, 1, 0);
+        Vec3 b = to.add(0, 1, 0);
+        Fx.line(level, ModParticles.dust(color, 1.2f, 10, 0.85f), a, b, 0.4);
+        Fx.line(level, ModParticles.dust(0x111111, 1.6f, 12, 0.85f), a.add(0, 0.5, 0), b.add(0, 0.5, 0), 0.6);
+        Fx.burst(level, ModParticles.smoke(), a, 12, 0.35, 0.03);
+        Fx.burst(level, ModParticles.dust(color, 1.4f, 10, 0.8f), b, 16, 0.4, 0.04);
+        Fx.sound(level, a, SoundEvents.ILLUSIONER_MIRROR_MOVE, 1.2f, 1.4f);
+        Fx.sound(level, b, SoundEvents.PLAYER_ATTACK_SWEEP, 1f, 1.8f);
+    }
+
     static void teleport(ServerLevel level, Vec3 from, Vec3 to) {
         for (Vec3 pos : new Vec3[] {from, to}) {
             Fx.burst(level, ModParticles.smoke(), pos.add(0, 1, 0), 25, 0.5, 0.05);

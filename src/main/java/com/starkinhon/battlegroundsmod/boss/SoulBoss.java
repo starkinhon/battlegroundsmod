@@ -13,6 +13,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerBossEvent;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.BossEvent;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
@@ -43,6 +44,8 @@ public abstract class SoulBoss extends Monster {
     // Entrance or phase change in progress: the AI waits.
     private int stagedTicks;
     private int stagedAge;
+    private boolean ultUsed;
+    private boolean lethalBypass;
     private SoulBossAI ai;
 
     protected SoulBoss(EntityType<? extends SoulBoss> type, Level level) {
@@ -121,6 +124,14 @@ public abstract class SoulBoss extends Monster {
             startPhase(level, spec.fase(phase));
         }
         data.awakened = fase().despertado();
+        BossSpec.UltFinal ult = spec.ultFinal();
+        if (ult != null && ult.ativa() && !ultUsed && stagedTicks == 0 && isAlive() && getHealth() / getMaxHealth() <= ult.vida()) {
+            ultUsed = true;
+            if (ai != null) {
+                ai.reset();
+            }
+            stage(FinalUlt.start(level, this, ult), false);
+        }
         if (stagedTicks > 0) {
             stagedTicks--;
             getNavigation().stop();
@@ -147,7 +158,7 @@ public abstract class SoulBoss extends Monster {
         setHealth(getMaxHealth());
         phase = 0;
         BossSpec.Intro intro = spec.intro();
-        stage(intro.duracaoTicks());
+        stage(intro.duracaoTicks(), true);
         BossFx.title(level, this, intro.titulo(), intro.subtitulo(), BossFx.color(intro.cor()));
         bossEvent.setColor(barColor(fase().corBarra()));
     }
@@ -162,7 +173,7 @@ public abstract class SoulBoss extends Monster {
     private void startPhase(ServerLevel level, BossSpec.Fase fase) {
         // A new phase shakes off slows and stuns.
         removeAllEffects();
-        stage(fase.transicaoTicks());
+        stage(fase.transicaoTicks(), true);
         BossFx.title(level, this, fase.titulo(), fase.subtitulo(), BossFx.color(spec().intro().cor()));
         bossEvent.setColor(barColor(fase.corBarra()));
         if (ai != null) {
@@ -170,22 +181,37 @@ public abstract class SoulBoss extends Monster {
         }
     }
 
-    private void stage(int ticks) {
+    private void stage(int ticks, boolean untouchable) {
         if (ticks <= 0) {
             return;
         }
         stagedTicks = ticks;
         stagedAge = 0;
-        Intangible.hold(this, ticks);
+        if (untouchable) {
+            Intangible.hold(this, ticks);
+        }
     }
 
     private static BossEvent.BossBarColor barColor(String name) {
         return name == null ? BossEvent.BossBarColor.RED : BossEvent.BossBarColor.byName(name);
     }
 
+    // A hit that would kill it before its final ult leaves it at 1 life instead, so the ult always happens
+    // (/kill and the void still work).
+    @Override
+    public void setHealth(float health) {
+        BossSpec.UltFinal ult = level().isClientSide ? null : spec().ultFinal();
+        if (health <= 0 && configured && !ultUsed && !lethalBypass && ult != null && ult.ativa()) {
+            health = 1;
+        }
+        super.setHealth(health);
+    }
+
     @Override
     public boolean hurt(DamageSource source, float amount) {
+        lethalBypass = source.is(DamageTypeTags.BYPASSES_INVULNERABILITY);
         boolean hurt = super.hurt(source, amount);
+        lethalBypass = false;
         if (hurt && ai != null && source.getEntity() instanceof LivingEntity attacker) {
             ai.onHurt(attacker);
         }
@@ -244,6 +270,7 @@ public abstract class SoulBoss extends Monster {
         super.addAdditionalSaveData(tag);
         tag.putBoolean("BossConfigured", configured);
         tag.putInt("BossPhase", phase);
+        tag.putBoolean("BossUltUsed", ultUsed);
     }
 
     @Override
@@ -251,6 +278,7 @@ public abstract class SoulBoss extends Monster {
         super.readAdditionalSaveData(tag);
         configured = tag.getBoolean("BossConfigured");
         phase = tag.getInt("BossPhase");
+        ultUsed = tag.getBoolean("BossUltUsed");
         if (hasCustomName()) {
             bossEvent.setName(getDisplayName());
         }

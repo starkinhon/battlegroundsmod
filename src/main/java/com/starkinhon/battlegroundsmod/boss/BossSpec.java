@@ -13,7 +13,8 @@ import com.starkinhon.battlegroundsmod.BattlegroundsMod;
 // How a boss fights, read from data/battlegroundsmod/souls_bosses/<boss>.json ("souls-boss/1"). The moves themselves
 // are the power's skills (souls_skills/), so a boss and a player with the same soul hit exactly the same.
 public record BossSpec(String boss, String poder, boolean dropAlma, Atributos atributos, Intro intro, Percepcao percepcao,
-        Barra barra, Distancias distancias, Movimento movimento, Investida investida, PuloDuplo puloDuplo, Teleporte teleporte, Reacoes reacoes,
+        Barra barra, Distancias distancias, Movimento movimento, Ritmo ritmo, Investida investida, PassoSombra passoSombra, PuloDuplo puloDuplo,
+        Teleporte teleporte, Reacoes reacoes, UltFinal ultFinal,
         Map<String, Skill> skills, Map<String, Combo> combos, List<Fase> fases) {
 
     // vida, armadura and velocidade become the entity's attributes. multDano scales every hit the boss lands.
@@ -41,6 +42,18 @@ public record BossSpec(String boss, String poder, boolean dropAlma, Atributos at
     public record Movimento(double velocidadeAndar, double velocidadeCorrer, int trocarLadoTicks) {
     }
 
+    // The boss switches between walking calmly and moving insanely fast. Each mode lasts a random time between its min
+    // and max; velocidade multiplies its speed in that mode. In the fast mode dashes recharge recargaInvestidaRapido.
+    public record Ritmo(int calmoMinTicks, int calmoMaxTicks, int rapidoMinTicks, int rapidoMaxTicks, double velocidadeCalmo,
+            double velocidadeRapido, int recargaInvestidaRapido) {
+    }
+
+    // Shadow step: a blink to atras blocks behind the target, from up to distanciaMax away. chance is checked every
+    // 10 ticks (chanceCalmo in the calm mode); chanceNaEsquiva is the chance a dodge becomes a step behind them.
+    public record PassoSombra(int recargaTicks, double distanciaMin, double distanciaMax, double atras, double chance, double chanceCalmo,
+            double chanceNaEsquiva) {
+    }
+
     // A forward dash to close the gap, used when the target is farther than distanciaMin.
     public record Investida(int recargaTicks, double distanciaMin, double forca, double altura) {
     }
@@ -55,16 +68,24 @@ public record BossSpec(String boss, String poder, boolean dropAlma, Atributos at
 
     // Chances (0 to 1) of reacting to what the target does. golpesParaContra: hits or swings within janelaPressaoTicks
     // that make it answer with the counter. After the target uses an ult, punirTicks of punishing, with combos and
-    // controle moves multPunir times more likely.
+    // controle moves multPunir times more likely. golpesParaFugir hits in a row make it try to escape (chanceFugirAoApanhar).
     public record Reacoes(double chanceEsquivarSkill, double chanceEsquivarProjetil, double chanceContraAtaque, double chanceEsquivarUlt,
-            int golpesParaContra, int janelaPressaoTicks, int punirTicks, double multPunir) {
+            int golpesParaContra, int janelaPressaoTicks, int punirTicks, double multPunir, int golpesParaFugir, double chanceFugirAoApanhar) {
+    }
+
+    // The boss-only ult when it is about to die (vida = life fraction, once per fight): everyone within raio freezes,
+    // the camera zooms on its face (zoomTicks) then turns to the sky (ceuTicks) as the Meteoro appears, falling
+    // multQueda times slower and hitting multDano times harder. It waits still until the impact plus esperaDepoisTicks.
+    public record UltFinal(boolean ativa, double vida, int zoomTicks, int ceuTicks, int voltarTicks, double multQueda, float multDano,
+            double raio, int esperaDepoisTicks, String titulo, String subtitulo) {
     }
 
     // slot: which move of the power (0-3 = Z X C V, 4 = strong attack, 5 = barrage).
     // tipo tells the AI what the move is for: alcance (ranged), controle (stun), contra (counter), ult, golpe (heavy hit),
     // barragem (multi-hit). avisoTicks: the warning before it is used. giroGrausPorTick: how fast it turns to follow the
     // target while the move plays (low = easier to dodge).
-    public record Skill(int slot, String tipo, double peso, int recargaTicks, int avisoTicks, double distanciaMin, double distanciaMax,
+    // recargaTicks..recargaMaxTicks: the cooldown is a random value in between (no max = always recargaTicks).
+    public record Skill(int slot, String tipo, double peso, int recargaTicks, int recargaMaxTicks, int avisoTicks, double distanciaMin, double distanciaMax,
             float giroGrausPorTick, String avisoCor, String avisoSom) {
     }
 
@@ -73,7 +94,9 @@ public record BossSpec(String boss, String poder, boolean dropAlma, Atributos at
     }
 
     // comecaEm: the life fraction where the phase starts (1 = full life). Phases only go forward.
-    public record Fase(double comecaEm, List<String> skills, List<String> combos, double agressividade, double multRecarga, double multAviso,
+    // Cooldowns: x multRecarga, minus menosRecargaTicks (e.g. 80 = 4 s shorter). multVelocidade speeds up both paces.
+    public record Fase(double comecaEm, List<String> skills, List<String> combos, double agressividade, double multRecarga,
+            int menosRecargaTicks, double multVelocidade, double multAviso,
             int reacaoTicks, double chanceReacao, int pausaTicks, boolean despertado, String corBarra, int transicaoTicks, String titulo,
             String subtitulo) {
     }
