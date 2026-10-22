@@ -21,8 +21,11 @@ public final class SkillSpecs {
     private SkillSpecs() {
     }
 
+    // The key includes the type: in singleplayer the server and the client share this cache and read
+    // the same file as different records (e.g. MangekyoSpec on the server, CutsceneSpec.Holder on the client).
     public static synchronized <T> T get(String id, Class<T> type, boolean awakened) {
-        return type.cast(CACHE.computeIfAbsent(id + (awakened ? "#despertado" : ""), key -> GSON.fromJson(json(id, awakened), type)));
+        String key = type.getName() + ":" + id + (awakened ? "#despertado" : "");
+        return type.cast(CACHE.computeIfAbsent(key, k -> GSON.fromJson(json(id, awakened), type)));
     }
 
     private static JsonObject json(String id, boolean awakened) {
