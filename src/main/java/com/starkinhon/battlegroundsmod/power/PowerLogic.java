@@ -2,6 +2,7 @@ package com.starkinhon.battlegroundsmod.power;
 
 import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.ModItems;
+import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.combat.Fx;
 import com.starkinhon.battlegroundsmod.combat.Melee;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
@@ -47,7 +48,7 @@ public final class PowerLogic {
         if (slot < 0 || slot >= PowerData.SLOT_COUNT || player.isSpectator() || !player.isAlive()) {
             return;
         }
-        if (data.cooldowns[slot] > 0 || data.busyTicks > 0) {
+        if (data.cooldowns[slot] > 0 || data.busyTicks > 0 || Freeze.isFrozen(player)) {
             return;
         }
         Ability ability = ability(power, slot);

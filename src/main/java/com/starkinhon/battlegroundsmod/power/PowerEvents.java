@@ -2,6 +2,7 @@ package com.starkinhon.battlegroundsmod.power;
 
 import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.ModItems;
+import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.combat.Melee;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
 
@@ -14,6 +15,7 @@ import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingFallEvent;
 import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
@@ -33,6 +35,9 @@ public final class PowerEvents {
         NeoForge.EVENT_BUS.addListener(PowerEvents::onAttack);
         NeoForge.EVENT_BUS.addListener(PowerEvents::onDamage);
         NeoForge.EVENT_BUS.addListener(PowerEvents::onFall);
+        NeoForge.EVENT_BUS.addListener(PowerEvents::onRightClickItem);
+        NeoForge.EVENT_BUS.addListener(PowerEvents::onRightClickBlock);
+        NeoForge.EVENT_BUS.addListener(PowerEvents::onLeftClickBlock);
     }
 
     private static void onServerTick(ServerTickEvent.Post event) {
@@ -41,6 +46,7 @@ public final class PowerEvents {
 
     private static void onServerStopped(ServerStoppedEvent event) {
         Tasks.clear();
+        Freeze.clear();
     }
 
     private static void onPlayerTick(PlayerTickEvent.Post event) {
@@ -71,6 +77,10 @@ public final class PowerEvents {
 
     // Left click with an empty hand runs the power's punch combo instead of the vanilla hit.
     private static void onAttack(AttackEntityEvent event) {
+        if (Freeze.isFrozen(event.getEntity())) {
+            event.setCanceled(true);
+            return;
+        }
         if (!(event.getEntity() instanceof ServerPlayer player) || !(event.getTarget() instanceof LivingEntity target)) {
             return;
         }
@@ -90,6 +100,25 @@ public final class PowerEvents {
 
     private static void onFall(LivingFallEvent event) {
         if (event.getEntity() instanceof ServerPlayer player && player.getData(ModAttachments.POWER).noFallTicks > 0) {
+            event.setCanceled(true);
+        }
+    }
+
+    // Frozen players can't use or break anything.
+    private static void onRightClickItem(PlayerInteractEvent.RightClickItem event) {
+        if (Freeze.isFrozen(event.getEntity())) {
+            event.setCanceled(true);
+        }
+    }
+
+    private static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
+        if (Freeze.isFrozen(event.getEntity())) {
+            event.setCanceled(true);
+        }
+    }
+
+    private static void onLeftClickBlock(PlayerInteractEvent.LeftClickBlock event) {
+        if (Freeze.isFrozen(event.getEntity())) {
             event.setCanceled(true);
         }
     }

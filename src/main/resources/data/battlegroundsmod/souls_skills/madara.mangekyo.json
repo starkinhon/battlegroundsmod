@@ -3,35 +3,33 @@
   "skill": "madara.mangekyo",
   "nome": "Mangekyo",
   "tempo": {
-    "atrasoTicks": 30
+    "atrasoTicks": 40
   },
   "forma": {
-    "tipo": "cone",
-    "comprimento": 12,
-    "raioInicio": 0.5,
-    "raioFim": 6
+    "tipo": "linha",
+    "comprimento": 40,
+    "largura": 3
   },
   "efeitos": {
-    "duracaoTicks": 200,
-    "fadiga": 3,
-    "cegueira": 1,
-    "lentidao": 0,
+    "duracaoTicks": 210,
+    "fadiga": 5,
+    "cegueira": 3,
+    "lentidao": 5,
     "travarSkills": true,
-    "atordoarTicks": 0
+    "atordoarTicks": 100
   },
   "cutscene": {
     "ativa": true,
-    "duracaoTicks": 30,
-    "distanciaInicio": 2.4,
-    "distanciaFim": 0.8,
-    "altura": 0,
+    "duracaoTicks": 50,
+    "aproximarTicks": 19,
+    "voltarTicks": 15,
+    "particulasTicks": 20,
+    "distanciaInicio": 3,
+    "distanciaFim": 0.6,
+    "altura": 0.05,
     "esconderHud": true
   },
   "despertado": {
-    "forma": {
-      "comprimento": 18,
-      "raioFim": 9
-    },
     "efeitos": {
       "duracaoTicks": 300,
       "atordoarTicks": 40

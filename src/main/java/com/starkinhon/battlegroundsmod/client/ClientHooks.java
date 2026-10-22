@@ -1,5 +1,8 @@
 package com.starkinhon.battlegroundsmod.client;
 
+import com.starkinhon.battlegroundsmod.skill.CutsceneSpec;
+import com.starkinhon.battlegroundsmod.skill.SkillSpecs;
+
 import net.minecraft.client.Minecraft;
 
 // Client-only entry points called from common code. Only call these behind a level.isClientSide check.
@@ -12,8 +15,8 @@ public final class ClientHooks {
         SkillAnimations.play(entityId, skill, awakened);
     }
 
-    public static void startFaceCutscene(int entityId, int ticks, float startDistance, float endDistance, float height, boolean hideHud) {
-        FaceCutscene.start(entityId, ticks, startDistance, endDistance, height, hideHud);
+    public static void startFaceCutscene(int entityId, String skill, boolean awakened) {
+        FaceCutscene.start(entityId, SkillSpecs.get(skill, CutsceneSpec.Holder.class, awakened).cutscene());
     }
 
     public static void openPowerSelect() {

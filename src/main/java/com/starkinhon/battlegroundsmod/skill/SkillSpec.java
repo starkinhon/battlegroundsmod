@@ -21,7 +21,10 @@ public record SkillSpec(String skill, String nome, Tempo tempo, Origem origem, D
     public record Direcao(double giro, double inclinacao) {
     }
 
-    public record Forma(String tipo, double comprimento, double raioInicio, double raioFim) {
+    // tipo: "cone", "linha", "circulo", "esfera", "anel" or "alvo" (see combat/Area). The Forja only exports the
+    // fields of the chosen shape, so the others may be missing.
+    public record Forma(String tipo, double comprimento, double raioInicio, double raioFim, Double largura, Double raio,
+            Double raioInterno, Double altura, Double distanciaMax) {
     }
 
     public record Camadas(Explosao inicio, Jato chamas, Volume fogo, Fumaca fumaca, Lava lava) {

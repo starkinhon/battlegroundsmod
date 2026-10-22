@@ -84,8 +84,8 @@ public final class UchihaFx {
         Fx.burst(level, ParticleTypes.FLAME, pos, 6, 0.3, 0.03);
     }
 
-    // Placeholder look: a red flash in the eyes and a low hum. To be swapped for the real effect later.
-    public static void mangekyoStart(ServerLevel level, LivingEntity caster) {
+    // Placeholder look: a red flash in the eyes and a low hum, right after the cutscene zooms in.
+    public static void mangekyoEyes(ServerLevel level, LivingEntity caster) {
         Vec3 eyes = caster.getEyePosition().add(caster.getLookAngle().scale(0.3));
         Fx.burst(level, Fx.dust(0xD10A0A, 1.2f), eyes, 12, 0.15, 0);
         Fx.sound(level, eyes, SoundEvents.ELDER_GUARDIAN_CURSE, 1.2f, 0.6f);
