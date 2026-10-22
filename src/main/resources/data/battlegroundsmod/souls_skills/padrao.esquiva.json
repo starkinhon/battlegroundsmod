@@ -3,11 +3,11 @@
   "skill": "padrao.esquiva",
   "nome": "Pulo pra trás",
   "recargaTicks": 20,
-  "impulsoHorizontal": 1.1,
+  "impulsoHorizontal": 2.2,
   "impulsoVertical": 0.42,
   "manterVelocidade": 0,
   "invencivelTicks": 6,
-  "semDanoDeQueda": false,
+  "semDanoDeQueda": true,
   "funcionaNoCriativo": true,
   "poeira": {
     "ativa": true,
