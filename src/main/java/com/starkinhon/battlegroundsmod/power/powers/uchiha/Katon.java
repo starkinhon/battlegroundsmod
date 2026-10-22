@@ -25,7 +25,7 @@ public final class Katon {
     private static final int GROW_TICKS = 8;
     private static final double MAX_LENGTH = 14;
     private static final double START_RADIUS = 0.4;
-    private static final double END_RADIUS = 3.2;
+    private static final double END_RADIUS = 6.4;
     // Each target is burned at most once per interval, so the damage does not depend on the tick rate.
     private static final int HIT_INTERVAL = 5;
     private static final float DAMAGE = 1.5f;

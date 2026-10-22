@@ -34,14 +34,14 @@ public final class UchihaFx {
         double length = cone.length();
 
         // Flames shot out of the mouth: they fly along the cone and fade, which sells the motion.
-        for (int i = 0; i < 14; i++) {
+        for (int i = 0; i < 20; i++) {
             Vec3 spread = randomInDisk(side, up, cone.radiusAt(length) / Math.max(length, 1));
             Vec3 velocity = dir.add(spread).normalize().scale(FLAME_SPEED * (0.75 + RANDOM.nextDouble() * 0.35));
             Fx.moving(level, ParticleTypes.FLAME, cone.origin(), velocity);
         }
 
         // Big colored puffs fill the volume, growing and reddening towards the tip.
-        for (int i = 0; i < 26; i++) {
+        for (int i = 0; i < 45; i++) {
             double f = Math.sqrt(RANDOM.nextDouble());
             double t = f * length;
             Vec3 pos = cone.pointAt(t).add(randomInDisk(side, up, cone.radiusAt(t) * 0.9));

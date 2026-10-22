@@ -53,7 +53,7 @@ public final class PowerLogic {
         Ability ability = ability(power, slot);
         boolean ultimate = slot == PowerData.SLOT_ULT;
         // Creative mode skips the costs so moves can be recorded freely.
-        boolean free = player.isCreative();
+        boolean free = player.isCreative() || data.noCooldown;
         if (!free && ultimate && data.ult < PowerData.MAX_ULT) {
             player.displayClientMessage(Component.translatable("message.battlegroundsmod.ult_not_ready"), true);
             return;
@@ -72,7 +72,9 @@ public final class PowerLogic {
                 data.energy -= ability.energyCost();
             }
         }
-        data.cooldowns[slot] = ability.cooldown();
+        if (!data.noCooldown) {
+            data.cooldowns[slot] = ability.cooldown();
+        }
         if (ultimate) {
             announceUlt(player, power);
         }
