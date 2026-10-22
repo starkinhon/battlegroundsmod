@@ -14,7 +14,7 @@ import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
 import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 
 // Vanilla status bars changed by the mod:
-// - In combat mode the XP bar becomes the ult bar: the same bar tinted red, with "ULT" over it when it is full.
+// - In combat mode the XP bar becomes the ult bar: the same bar tinted red (its title is drawn by BaseAttacks).
 // - Above Tier 10 health goes past 20, so the hearts row stays one row of 10 hearts, each one a tenth of the max,
 //   with the real numbers next to it (vanilla would stack dozens of rows).
 public final class StatusBars {
@@ -41,8 +41,8 @@ public final class StatusBars {
             event.setCanceled(true);
             ultBar(event.getGuiGraphics(), data);
         } else if (combat && name.equals(VanillaGuiLayers.EXPERIENCE_LEVEL)) {
+            // The ult's name goes above the hearts instead (BaseAttacks), the XP level is hidden.
             event.setCanceled(true);
-            ultLabel(event.getGuiGraphics(), minecraft.font, data, player.tickCount);
         } else if (name.equals(VanillaGuiLayers.PLAYER_HEALTH) && player.getMaxHealth() > 20.5f && minecraft.gameMode != null
                 && minecraft.gameMode.canHurtPlayer()) {
             event.setCanceled(true);
@@ -61,22 +61,6 @@ public final class StatusBars {
             graphics.blitSprite(XP_PROGRESS, BAR_WIDTH, 5, 0, 0, x, y, filled, 5);
         }
         RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
-    }
-
-    // Where the XP level number goes: "ULT" blinking when it is full, nothing before.
-    private static void ultLabel(GuiGraphics graphics, Font font, PowerData data, int tick) {
-        if (data.ult < PowerData.MAX_ULT) {
-            return;
-        }
-        String text = "ULT";
-        int x = (graphics.guiWidth() - font.width(text)) / 2;
-        int y = graphics.guiHeight() - 31 - 4;
-        int color = (tick / 5) % 2 == 0 ? 0xFFFF3B30 : 0xFFFFD0C8;
-        graphics.drawString(font, text, x + 1, y, 0xFF000000, false);
-        graphics.drawString(font, text, x - 1, y, 0xFF000000, false);
-        graphics.drawString(font, text, x, y + 1, 0xFF000000, false);
-        graphics.drawString(font, text, x, y - 1, 0xFF000000, false);
-        graphics.drawString(font, text, x, y, color, false);
     }
 
     private static void hearts(GuiGraphics graphics, Minecraft minecraft, Player player) {

@@ -2,7 +2,9 @@ package com.starkinhon.battlegroundsmod.client;
 
 import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
+import com.starkinhon.battlegroundsmod.power.Power;
 import com.starkinhon.battlegroundsmod.power.PowerData;
+import com.starkinhon.battlegroundsmod.power.Powers;
 
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
@@ -13,7 +15,7 @@ import net.minecraft.util.Mth;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 // The base attack selector, every power has it: Ataque rápido (next punch of the combo), Ataque Forte and Ataque de
-// barragem. R picks, G uses; using one starts combat mode. Drawn just above the hearts and food, over the hotbar: the
+// barragem. R picks the next one (Shift + R the one before), G uses; using one starts combat mode. Drawn just above the hearts and food, over the hotbar: the
 // picked attack's name with a dot for each choice. The GUI scale setting scales it like the rest of the HUD.
 public final class BaseAttacks {
     private static final String[] NAMES = {
@@ -24,6 +26,8 @@ public final class BaseAttacks {
     // The ability slot each one uses; -1 is the punch.
     private static final int[] SLOTS = {-1, PowerData.SLOT_STRONG, PowerData.SLOT_BARRAGE};
     private static final int SWITCH_FLASH_TICKS = 8;
+    // Souls whose name shows next to "Ultimate" over the ult bar.
+    private static final String ULT_TITLE_WITH_SOUL = "uchiha_ghost";
 
     private static int selected = 0;
     private static int switchedAt = -100;
@@ -31,8 +35,8 @@ public final class BaseAttacks {
     private BaseAttacks() {
     }
 
-    public static void cycle() {
-        selected = (selected + 1) % NAMES.length;
+    public static void cycle(boolean back) {
+        selected = Math.floorMod(selected + (back ? -1 : 1), NAMES.length);
         var player = Minecraft.getInstance().player;
         switchedAt = player == null ? 0 : player.tickCount;
     }
@@ -56,6 +60,9 @@ public final class BaseAttacks {
         int center = graphics.guiWidth() / 2;
         // Above whichever side of the status bars stands taller (hearts and armor on the left, food and air on the right).
         int top = graphics.guiHeight() - Math.max(minecraft.gui.leftHeight, minecraft.gui.rightHeight) - 2;
+        if (data.combat) {
+            top = ultTitle(graphics, font, data, player.tickCount, center, top);
+        }
         int slot = SLOTS[selected];
         int cooldown = slot < 0 ? 0 : data.cooldowns[slot];
         Component name = Component.translatable(NAMES[selected]);
@@ -75,6 +82,22 @@ public final class BaseAttacks {
             String seconds = String.format(" %.1fs", cooldown / 20f);
             graphics.drawString(font, seconds, center + width / 2 + 5, textY, 0xFFFF6B6B, true);
         }
+    }
+
+    // In combat mode, the red ult bar's title, just over the hearts and food (the gap right above the bar is too
+    // narrow for it): "Ultimate", plus the soul's name for the Uchiha ghost. Blinks when the ult is ready.
+    // Returns where the selector goes, above it.
+    private static int ultTitle(GuiGraphics graphics, Font font, PowerData data, int tick, int center, int top) {
+        Power power = Powers.get(data.power);
+        Component title = Component.translatable("hud.battlegroundsmod.ultimate");
+        if (power != null && ULT_TITLE_WITH_SOUL.equals(power.id())) {
+            title = title.copy().append(" | ").append(power.name());
+        }
+        boolean ready = data.ult >= PowerData.MAX_ULT;
+        int color = ready && (tick / 5) % 2 == 0 ? 0xFFFFD0C8 : 0xFFFF4A3D;
+        int y = top - font.lineHeight;
+        graphics.drawString(font, title, center - font.width(title) / 2, y, color, true);
+        return y - 3;
     }
 
     private static int lerp(int from, int to, float t) {
