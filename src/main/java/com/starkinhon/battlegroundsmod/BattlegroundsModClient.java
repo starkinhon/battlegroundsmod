@@ -91,7 +91,7 @@ public class BattlegroundsModClient {
 
     private static void onRegisterParticles(RegisterParticleProvidersEvent event) {
         for (var type : List.of(ModParticles.FLAME, ModParticles.SOUL_FLAME, ModParticles.DUST, ModParticles.SMOKE, ModParticles.LAVA,
-                ModParticles.PUFF, ModParticles.STREAK)) {
+                ModParticles.PUFF, ModParticles.STREAK, ModParticles.FIST, ModParticles.RING)) {
             event.registerSpriteSet(type.get(), SoulParticle.Provider::new);
         }
     }

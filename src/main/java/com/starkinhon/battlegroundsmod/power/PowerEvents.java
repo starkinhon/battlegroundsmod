@@ -13,6 +13,7 @@ import com.starkinhon.battlegroundsmod.combat.Stun;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
 import com.starkinhon.battlegroundsmod.movement.Movement;
 import com.starkinhon.battlegroundsmod.power.powers.uchiha.Susanoo;
+import com.starkinhon.battlegroundsmod.skill.ComboSpec;
 
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -102,7 +103,7 @@ public final class PowerEvents {
 
     // In combat mode, left click with an empty hand runs the punch combo instead of the vanilla hit.
     private static void onAttack(AttackEntityEvent event) {
-        if (Freeze.isFrozen(event.getEntity()) || Stun.is(event.getEntity())) {
+        if (Freeze.isFrozen(event.getEntity()) || !Stun.canAttack(event.getEntity())) {
             event.setCanceled(true);
             return;
         }
@@ -116,7 +117,8 @@ public final class PowerEvents {
         Melee.punch(player, target);
     }
 
-    // Dealing damage charges the ultimate, and fighting keeps combat mode going for both sides.
+    // Dealing damage charges the ultimate, fighting keeps combat mode going for both sides, and whoever took the hit
+    // gets the Cooldown effect (unless they blocked it).
     private static void onDamage(LivingDamageEvent.Post event) {
         if (event.getSource().getEntity() instanceof ServerPlayer player && player != event.getEntity()) {
             // Measured at human strength, so higher tiers don't fill the ult in one combo.
@@ -132,6 +134,9 @@ public final class PowerEvents {
             PowerData victimData = event.getEntity().getData(ModAttachments.POWER);
             victimData.foughtId = attacker.getId();
             victimData.foughtAt = now;
+            if (!Defense.blockedThisTick(event.getEntity())) {
+                Stun.cooldown(event.getEntity(), ComboSpec.get().cooldownAoApanharTicks());
+            }
         }
     }
 
@@ -158,8 +163,8 @@ public final class PowerEvents {
             event.setCanceled(true);
             return;
         }
-        // A stunned mob's swing does nothing (players are stopped in onAttack, bosses in Melee).
-        if (event.getSource().is(DamageTypes.MOB_ATTACK) && Stun.is(event.getSource().getDirectEntity())) {
+        // A stunned mob's swing (or one with the Cooldown) does nothing (players are stopped in onAttack, bosses in Melee).
+        if (event.getSource().is(DamageTypes.MOB_ATTACK) && !Stun.canAttack(event.getSource().getDirectEntity())) {
             event.setCanceled(true);
             return;
         }

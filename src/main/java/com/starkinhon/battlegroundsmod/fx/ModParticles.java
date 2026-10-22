@@ -33,6 +33,10 @@ public final class ModParticles {
     public static final Supplier<ParticleType<SoulParticleOptions>> PUFF = PARTICLE_TYPES.register("puff", ModParticles::type);
     // Thin line along its movement, size is half its length. Used for light streaks.
     public static final Supplier<ParticleType<SoulParticleOptions>> STREAK = PARTICLE_TYPES.register("streak", ModParticles::type);
+    // A fist seen from the front, tinted by the color: pops in, holds and shrinks away. The barrage's afterimages.
+    public static final Supplier<ParticleType<SoulParticleOptions>> FIST = PARTICLE_TYPES.register("fist", ModParticles::type);
+    // A circle outline that grows from nothing to its size while it lives: wind rings and impact waves.
+    public static final Supplier<ParticleType<SoulParticleOptions>> RING = PARTICLE_TYPES.register("ring", ModParticles::type);
 
     private static final RandomSource RANDOM = RandomSource.create();
 
@@ -99,6 +103,14 @@ public final class ModParticles {
 
     public static SoulParticleOptions streak(int color, float halfLength, int lifetime) {
         return new SoulParticleOptions(STREAK.get(), color, halfLength, lifetime, 1, 0);
+    }
+
+    public static SoulParticleOptions fist(int color, float size, int lifetime) {
+        return new SoulParticleOptions(FIST.get(), color, size, lifetime, 0.8f, 0);
+    }
+
+    public static SoulParticleOptions ring(int color, float size, int lifetime) {
+        return new SoulParticleOptions(RING.get(), color, size, lifetime, 1, 0);
     }
 
     // The Forja's dustColor: each channel a bit random, then the whole color 60-100% as bright.

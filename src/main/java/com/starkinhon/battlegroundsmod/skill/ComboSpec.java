@@ -8,8 +8,9 @@ import java.util.List;
 // runs at them first (impulso blocks per tick, for at most ticksMax ticks; cone: how close to the aim they must be). bufferTicks: a click this close to the end of the previous hit
 // is kept and played as soon as it can, so mashing never drops a hit.
 // atordoado: the stun every hit leaves (lentidao and pulo take that fraction off; bosses get multiplicadorBoss of the time).
+// cooldownAoApanharTicks: after any hit (punch, skill, mob) the one hit can't punch or use skills for this long.
 public record ComboSpec(String skill, String nome, double alcance, int resetTicks, int bufferTicks, Passo passo, Atordoado atordoado,
-        List<Golpe> golpes, List<Som> sons) {
+        int cooldownAoApanharTicks, List<Golpe> golpes, List<Som> sons) {
 
     public record Passo(double distanciaMax, double impulso, double cone, int ticksMax) {
     }

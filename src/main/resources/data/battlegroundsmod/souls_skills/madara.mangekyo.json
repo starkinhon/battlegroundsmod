@@ -11,7 +11,7 @@
     "largura": 3
   },
   "efeitos": {
-    "duracaoTicks": 210,
+    "duracaoTicks": 100,
     "fadiga": 5,
     "cegueira": 3,
     "lentidao": 5,
@@ -141,7 +141,7 @@
   ],
   "despertado": {
     "efeitos": {
-      "duracaoTicks": 300,
+      "duracaoTicks": 100,
       "atordoarTicks": 40
     }
   }

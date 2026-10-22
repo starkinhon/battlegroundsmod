@@ -1,0 +1,105 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "padrao.dash_ataque",
+  "nome": "Dash Attack",
+  "recargaTicks": 40,
+  "duracaoMaxTicks": 14,
+  "velocidade": 1.15,
+  "curva": 0.35,
+  "raioGrudar": 2.2,
+  "raioGrudarAlvo": 4.0,
+  "distanciaGrudar": 0.9,
+  "golpeDoCombo": 1,
+  "golpe": {
+    "multiplicadorDano": 1.6,
+    "empurrao": 0.25,
+    "subida": 0.1,
+    "stunTicks": 18,
+    "hitstopTicks": 4,
+    "tremor": 0.35
+  },
+  "rastro": {
+    "cor": "#eef6ff",
+    "linhas": 4,
+    "comprimentoLinha": 0.7,
+    "vidaTicks": 6,
+    "puffs": 2,
+    "anelACadaTicks": 3,
+    "tamanhoAnel": 1.3,
+    "rastroACadaTicks": 4
+  },
+  "tempo": {
+    "atrasoTicks": 0,
+    "duracaoTicks": 14
+  },
+  "animacao": {
+    "transicaoTicks": 2,
+    "retornoTicks": 4,
+    "sopro": {
+      "cabeca": -10,
+      "tronco": 28,
+      "bracoDir": {"frente": -55, "abrir": -12},
+      "bracoEsq": {"frente": -55, "abrir": 12},
+      "giro": 0,
+      "pernaDir": {"frente": 20, "abrir": 0},
+      "pernaEsq": {"frente": -25, "abrir": 0}
+    }
+  },
+  "sons": [
+    {
+      "nome": "Arrancada",
+      "som": "minecraft:entity.breeze.wind_burst",
+      "momento": "uso",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 0.8,
+      "pitch": 1.1,
+      "pitchFim": 1.1,
+      "onde": "pes"
+    },
+    {
+      "nome": "Vento",
+      "som": "minecraft:item.trident.riptide_1",
+      "momento": "uso",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 0.4,
+      "pitch": 1.5,
+      "pitchFim": 1.5,
+      "onde": "pes"
+    },
+    {
+      "nome": "Impacto",
+      "som": "minecraft:entity.player.attack.knockback",
+      "momento": "golpe",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.0,
+      "pitch": 0.9,
+      "pitchFim": 0.9,
+      "onde": "alvo"
+    },
+    {
+      "nome": "Rajada no golpe",
+      "som": "minecraft:entity.wind_charge.wind_burst",
+      "momento": "golpe",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 0.7,
+      "pitch": 1.2,
+      "pitchFim": 1.2,
+      "onde": "alvo"
+    }
+  ],
+  "vfx": [
+    {"tipo": "fov", "momento": "uso", "forca": 0.18, "vidaTicks": 12, "alcance": 2},
+    {"tipo": "blurRadial", "momento": "uso", "forca": 0.35, "vidaTicks": 8, "alcance": 2},
+    {"tipo": "anel", "momento": "golpe", "raio": 2, "tamanho": 0.45, "cor": "#ffffff", "vidaTicks": 8, "alcance": 40},
+    {"tipo": "clarao", "momento": "golpe", "tamanho": 1.3, "quantidade": 5, "cor": "#ffffff", "cor2": "#eef6ff", "vidaTicks": 6, "alcance": 40},
+    {"tipo": "tremor", "momento": "golpe", "forca": 0.3, "vidaTicks": 6, "alcance": 6}
+  ]
+}

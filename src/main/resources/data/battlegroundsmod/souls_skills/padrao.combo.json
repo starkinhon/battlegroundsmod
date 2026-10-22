@@ -16,6 +16,7 @@
     "pulo": 0.6,
     "multiplicadorBoss": 0.5
   },
+  "cooldownAoApanharTicks": 10,
   "golpes": [
     {
       "nome": "Jab",

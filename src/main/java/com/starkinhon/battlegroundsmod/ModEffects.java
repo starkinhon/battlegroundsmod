@@ -40,6 +40,10 @@ public final class ModEffects {
                         -spec.pulo(), AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
     });
 
+    // Cooldown: just took a hit, so no attacks or skills for a moment; moving, guarding and dodging still work
+    // (combat/Stun). Keeps a fight from turning into both sides spamming. Length in padrao.combo.json.
+    public static final DeferredHolder<MobEffect, MobEffect> COOLDOWN = MOB_EFFECTS.register("cooldown", () -> new Harmful(0x78AAE6));
+
     private ModEffects() {
     }
 

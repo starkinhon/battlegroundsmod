@@ -53,6 +53,8 @@ public final class Keybinds {
                 BaseAttacks.cycle(minecraft.options.keyShift.isDown());
             }
         }
+        // Down before the use, so the server already knows the key is held when the attack starts.
+        BaseAttacks.holdKey(hasPower && USE_ATTACK.isDown());
         while (USE_ATTACK.consumeClick()) {
             if (hasPower) {
                 BaseAttacks.use();

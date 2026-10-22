@@ -4,12 +4,14 @@ import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.ModItems;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.CombatMode;
+import com.starkinhon.battlegroundsmod.combat.DashAttack;
 import com.starkinhon.battlegroundsmod.combat.Defense;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.combat.Fx;
 import com.starkinhon.battlegroundsmod.combat.Melee;
 import com.starkinhon.battlegroundsmod.combat.Stun;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
+import com.starkinhon.battlegroundsmod.power.powers.uchiha.Susanoo;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.particles.ParticleTypes;
@@ -40,6 +42,7 @@ public final class PowerLogic {
         return switch (slot) {
             case PowerData.SLOT_STRONG -> Melee.STRONG;
             case PowerData.SLOT_BARRAGE -> Melee.BARRAGE;
+            case PowerData.SLOT_DASH_ATTACK -> DashAttack.ability();
             default -> power.abilities().get(slot);
         };
     }
@@ -76,7 +79,34 @@ public final class PowerLogic {
 
     private static boolean canCast(LivingEntity caster, PowerData data, int slot) {
         return !caster.isSpectator() && caster.isAlive() && data.cooldowns[slot] <= 0 && data.busyTicks <= 0 && !Freeze.isFrozen(caster)
-                && !Stun.is(caster) && !Defense.isGuarding(caster);
+                && Stun.canAttack(caster) && !Defense.isGuarding(caster) && !sealed(caster);
+    }
+
+    public static boolean sealed(LivingEntity caster) {
+        return caster.getData(ModAttachments.POWER).sealedUntil > caster.level().getGameTime();
+    }
+
+    // No skills for ticks: every slot shows the lock as its cooldown, and whatever the fighter was doing stops.
+    public static void seal(LivingEntity target, int ticks) {
+        PowerData data = target.getData(ModAttachments.POWER);
+        data.sealedUntil = Math.max(data.sealedUntil, target.level().getGameTime() + ticks);
+        for (int i = 0; i < data.cooldowns.length; i++) {
+            data.cooldowns[i] = Math.max(data.cooldowns[i], ticks);
+        }
+        interrupt(target);
+        if (target instanceof ServerPlayer player) {
+            sync(player);
+        }
+    }
+
+    // Cuts off the moves the fighter has going: wind-ups, fire still pouring out, a counter waiting, a queued punch.
+    public static void interrupt(LivingEntity target) {
+        PowerData data = target.getData(ModAttachments.POWER);
+        data.interrupts++;
+        data.busyTicks = 0;
+        data.punchDelay = 0;
+        data.punchQueued = false;
+        Susanoo.cancel(target);
     }
 
     // Runs a move of the caster's power, with no costs and no cooldown set: players go through tryUse, bosses set
