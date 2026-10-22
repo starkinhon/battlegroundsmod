@@ -5,14 +5,22 @@ import java.util.List;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Cone;
 import com.starkinhon.battlegroundsmod.combat.Fx;
+import com.starkinhon.battlegroundsmod.combat.Tasks;
 import com.starkinhon.battlegroundsmod.skill.SkillSpec;
 import com.starkinhon.battlegroundsmod.skill.SusanooSpec;
 
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.GameRules;
+import net.minecraft.world.level.block.BaseFireBlock;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.FireBlock;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
 // Visuals and sounds of the Uchiha moves. Vanilla particles for now: each method is one effect,
@@ -76,6 +84,78 @@ public final class UchihaFx {
         }
     }
 
+    // The weak start: only Minecraft's own flames, coming out short and sputtering, a little smoke at the tip.
+    public static void katonWeak(ServerLevel level, SkillSpec spec, Cone cone, int age) {
+        Vec3 dir = cone.dir();
+        Vec3 side = dir.cross(Math.abs(dir.y) > 0.99 ? new Vec3(1, 0, 0) : new Vec3(0, 1, 0)).normalize();
+        Vec3 up = side.cross(dir).normalize();
+        SkillSpec.Jato chamas = spec.camadas().chamas();
+        double length = Math.max(1, cone.length());
+        double spread = cone.radiusAt(length) / length * (chamas.ativa() ? chamas.abertura() : 1);
+        int count = Math.max(2, (chamas.ativa() ? chamas.porTick() : 10) / 3);
+        double speed = (chamas.ativa() ? chamas.velocidade() : 1) * Math.sqrt(length / Math.max(1, spec.forma().comprimento()));
+        for (int i = 0; i < count; i++) {
+            Vec3 velocity = dir.add(randomInDisk(side, up, spread)).normalize().scale(speed * (0.5 + RANDOM.nextDouble() * 0.5));
+            Fx.moving(level, ParticleTypes.FLAME, cone.origin(), velocity);
+        }
+        if (age % 4 == 0) {
+            Fx.burst(level, ParticleTypes.SMOKE, cone.pointAt(length), 2, cone.radiusAt(length) * 0.5, 0.02);
+        }
+    }
+
+    // The real blast: the fire itself is drawn on the clients with the shader flames (jatoFogo in the vfx list);
+    // here only lava drops and smoke at the tip, from the file's layers.
+    public static void katonBlast(ServerLevel level, SkillSpec spec, Cone cone, int age) {
+        SkillSpec.Camadas camadas = spec.camadas();
+        double length = cone.length();
+        Vec3 tip = cone.pointAt(length);
+        double tipRadius = cone.radiusAt(length);
+        SkillSpec.Fumaca fumaca = camadas.fumaca();
+        if (fumaca.ativa() && age % Math.max(1, fumaca.intervaloTicks()) == 0) {
+            Fx.burst(level, ParticleTypes.LARGE_SMOKE, tip.add(0, fumaca.altura(), 0), fumaca.quantidade(), tipRadius * fumaca.espalhamento(), 0.02);
+        }
+        SkillSpec.Lava lava = camadas.lava();
+        if (lava.ativa() && age % Math.max(1, lava.intervaloTicks()) == 0) {
+            Fx.burst(level, ParticleTypes.LAVA, cone.pointAt(length * (0.4 + RANDOM.nextDouble() * 0.6)), lava.quantidade(), tipRadius * lava.espalhamento(), 0);
+        }
+    }
+
+    // Ground the fire passes over catches a short fire that doesn't stay: it is put out again a moment later.
+    public static void katonIgnite(ServerLevel level, Cone cone) {
+        if (!level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
+            return;
+        }
+        Vec3 dir = cone.dir();
+        Vec3 side = dir.cross(Math.abs(dir.y) > 0.99 ? new Vec3(1, 0, 0) : new Vec3(0, 1, 0)).normalize();
+        Vec3 up = side.cross(dir).normalize();
+        double length = cone.length();
+        for (int i = 0; i < 5; i++) {
+            double t = length * (0.25 + RANDOM.nextDouble() * 0.75);
+            BlockPos at = BlockPos.containing(cone.pointAt(t).add(randomInDisk(side, up, cone.radiusAt(t))));
+            for (int down = 0; down < 6; down++, at = at.below()) {
+                BlockState state = level.getBlockState(at);
+                if (state.isAir()) {
+                    continue;
+                }
+                BlockPos above = at.above();
+                if (state.isFaceSturdy(level, at, Direction.UP) && level.getBlockState(above).isAir()) {
+                    BlockState fire = BaseFireBlock.getState(level, above);
+                    if (fire.hasProperty(FireBlock.AGE)) {
+                        fire = fire.setValue(FireBlock.AGE, 15);
+                    }
+                    level.setBlock(above, fire, Block.UPDATE_ALL);
+                    BlockPos placed = above;
+                    Tasks.later(30 + RANDOM.nextInt(40), () -> {
+                        if (level.getBlockState(placed).getBlock() instanceof BaseFireBlock) {
+                            level.removeBlock(placed, false);
+                        }
+                    });
+                }
+                break;
+            }
+        }
+    }
+
     public static void katonBurn(ServerLevel level, Vec3 pos) {
         Fx.burst(level, ParticleTypes.FLAME, pos, 6, 0.3, 0.03);
     }
@@ -92,26 +172,12 @@ public final class UchihaFx {
         Fx.burst(level, Fx.dust(0x1A0000, 2f), head, 20, 0.4, 0);
     }
 
-    // Susanoo counter is ready: a blue flare and a low hum.
+    // Susanoo counter is ready: a low hum. The blue wall around the caster is drawn on the clients (parede in the
+    // vfx list) for as long as the window stays open.
     public static void susanooReady(ServerLevel level, LivingEntity player, SusanooSpec spec) {
         Vec3 pos = player.position();
-        Fx.ring(level, Fx.dust(parseColor(spec.visual().cor()), 2f), pos.add(0, 0.2, 0), 1.6, 24, 0);
-        Fx.burst(level, ParticleTypes.SOUL_FIRE_FLAME, pos.add(0, 1, 0), 20, 0.6, 0.05);
         Fx.sound(level, pos, SoundEvents.BEACON_ACTIVATE, 1.5f, 0.6f);
         Fx.sound(level, pos, SoundEvents.WITHER_SHOOT, 0.6f, 0.4f);
-    }
-
-    // While the window is open: faint spectral ribs around the caster.
-    public static void susanooAura(ServerLevel level, LivingEntity player, SusanooSpec spec, int age) {
-        if (age % 2 != 0) {
-            return;
-        }
-        Vec3 base = player.position();
-        for (int ring = 0; ring < 4; ring++) {
-            double radius = 1.5 - Math.abs(ring - 1.5) * 0.2;
-            Fx.ring(level, Fx.dust(parseColor(spec.visual().cor()), 1.4f), base.add(0, 0.3 + ring * 0.6, 0), radius, 12, age * 0.08 + ring);
-        }
-        Fx.burst(level, ParticleTypes.SOUL_FIRE_FLAME, base.add(0, 1.2, 0), 2, 0.8, 0.02);
     }
 
     public static void susanooGrab(ServerLevel level, LivingEntity player, LivingEntity target, SusanooSpec spec) {
@@ -134,9 +200,8 @@ public final class UchihaFx {
             Fx.burst(level, color, point, 2, 0.12, 0);
         }
         if (progress >= 1) {
-            double radius = Math.max(0.7, target.getBbWidth() * 0.9);
-            Fx.sphere(level, color, Combat.center(target), radius, 36);
-            Fx.burst(level, ParticleTypes.SOUL_FIRE_FLAME, Combat.center(target), 2, radius * 0.6, 0.01);
+            // The ball of light around the fist is the client's esfera, stuck to the held target.
+            Fx.burst(level, ParticleTypes.SOUL_FIRE_FLAME, Combat.center(target), 1, Math.max(0.7, target.getBbWidth() * 0.9) * 0.6, 0.01);
         }
     }
 

@@ -176,19 +176,51 @@ public final class ModPayloads {
     }
 
     // Server -> client: moment momento of a skill happened at pos facing dir; the client plays the matching entries
-    // of the skill's "vfx" list (client/fx/SkillEffects).
-    public record PlayEffects(String skill, boolean awakened, String momento, Vec3 pos, Vec3 dir) implements CustomPacketPayload {
+    // of the skill's "vfx" list (client/fx/SkillEffects). entityId (-1 for none) is who the effects can follow, and
+    // ticks how long this moment lasts (0 when it has no length).
+    public record PlayEffects(String skill, boolean awakened, String momento, Vec3 pos, Vec3 dir, int entityId, int ticks)
+            implements CustomPacketPayload {
         public static final Type<PlayEffects> TYPE = payloadType("play_effects");
-        public static final StreamCodec<ByteBuf, PlayEffects> STREAM_CODEC = StreamCodec.composite(
-                ByteBufCodecs.STRING_UTF8, PlayEffects::skill,
-                ByteBufCodecs.BOOL, PlayEffects::awakened,
-                ByteBufCodecs.STRING_UTF8, PlayEffects::momento,
-                VEC3, PlayEffects::pos,
-                VEC3, PlayEffects::dir,
-                PlayEffects::new);
+        public static final StreamCodec<ByteBuf, PlayEffects> STREAM_CODEC = StreamCodec.of((buf, p) -> {
+            ByteBufCodecs.STRING_UTF8.encode(buf, p.skill());
+            ByteBufCodecs.BOOL.encode(buf, p.awakened());
+            ByteBufCodecs.STRING_UTF8.encode(buf, p.momento());
+            VEC3.encode(buf, p.pos());
+            VEC3.encode(buf, p.dir());
+            ByteBufCodecs.VAR_INT.encode(buf, p.entityId());
+            ByteBufCodecs.VAR_INT.encode(buf, p.ticks());
+        }, buf -> new PlayEffects(ByteBufCodecs.STRING_UTF8.decode(buf), ByteBufCodecs.BOOL.decode(buf), ByteBufCodecs.STRING_UTF8.decode(buf),
+                VEC3.decode(buf), VEC3.decode(buf), ByteBufCodecs.VAR_INT.decode(buf), ByteBufCodecs.VAR_INT.decode(buf)));
 
         @Override
         public Type<PlayEffects> type() {
+            return TYPE;
+        }
+    }
+
+    // Server -> client: a short over-the-shoulder shot of casterId looking at targetId (the Susanoo counter).
+    public record ShoulderCutscene(int casterId, int targetId, int ticks) implements CustomPacketPayload {
+        public static final Type<ShoulderCutscene> TYPE = payloadType("shoulder_cutscene");
+        public static final StreamCodec<ByteBuf, ShoulderCutscene> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, ShoulderCutscene::casterId,
+                ByteBufCodecs.VAR_INT, ShoulderCutscene::targetId,
+                ByteBufCodecs.VAR_INT, ShoulderCutscene::ticks,
+                ShoulderCutscene::new);
+
+        @Override
+        public Type<ShoulderCutscene> type() {
+            return TYPE;
+        }
+    }
+
+    // Server -> client: this entity was killed by fire (Katon, Meteoro): it turns to ash instead of the normal death.
+    public record AshDeath(int entityId) implements CustomPacketPayload {
+        public static final Type<AshDeath> TYPE = payloadType("ash_death");
+        public static final StreamCodec<ByteBuf, AshDeath> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, AshDeath::entityId, AshDeath::new);
+
+        @Override
+        public Type<AshDeath> type() {
             return TYPE;
         }
     }
@@ -266,7 +298,12 @@ public final class ModPayloads {
         registrar.playToClient(MeteorFall.TYPE, MeteorFall.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.meteorFall(payload.skill(), payload.awakened(), payload.start(), payload.end(), payload.delay(), payload.fallTicks())));
         registrar.playToClient(PlayEffects.TYPE, PlayEffects.STREAM_CODEC, (payload, context) -> context.enqueueWork(
-                () -> ClientHooks.playEffects(payload.skill(), payload.awakened(), payload.momento(), payload.pos(), payload.dir())));
+                () -> ClientHooks.playEffects(payload.skill(), payload.awakened(), payload.momento(), payload.pos(), payload.dir(),
+                        payload.entityId(), payload.ticks())));
+        registrar.playToClient(ShoulderCutscene.TYPE, ShoulderCutscene.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.shoulderCutscene(payload.casterId(), payload.targetId(), payload.ticks())));
+        registrar.playToClient(AshDeath.TYPE, AshDeath.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.ashDeath(payload.entityId())));
         registrar.playToClient(BossBarStyle.TYPE, BossBarStyle.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.bossBarStyle(payload.barId(), payload.texture(), payload.frames(), payload.width(), payload.height())));
         registrar.playToClient(BossCutscene.TYPE, BossCutscene.STREAM_CODEC, (payload, context) -> context.enqueueWork(

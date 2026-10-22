@@ -26,40 +26,51 @@
   },
   "vfx": [
     {
+      "tipo": "parede",
+      "momento": "pronto",
+      "seguir": "pes",
+      "duraMomento": true,
+      "raio": 1.7,
+      "comprimento": 2.8,
+      "quantidade": 22,
+      "girar": 0.05,
+      "cor": "#38bdff",
+      "primeiraPessoa": 0.15
+    },
+    {
       "tipo": "distorcao",
       "momento": "pronto",
       "modo": "onda",
       "raio": 4,
-      "forca": 0.7,
+      "forca": 0.4,
       "velocidade": 5,
       "altura": 1.2,
       "cor": "#38bdff",
-      "tinta": 0.25,
-      "vidaTicks": 30
-    },
-    {
-      "tipo": "anelChao",
-      "momento": "pronto",
-      "raio": 4,
-      "tamanho": 0.6,
-      "cor": "#38bdff",
-      "vidaTicks": 18
+      "tinta": 0.15,
+      "vidaTicks": 24
     },
     {
       "tipo": "clarao",
       "momento": "pronto",
-      "tamanho": 3,
+      "tamanho": 2.5,
       "quantidade": 6,
       "cor": "#38bdff",
       "cor2": "#e8f8ff",
       "altura": 1.1,
-      "vidaTicks": 12
+      "vidaTicks": 10,
+      "primeiraPessoa": 0.2
+    },
+    {
+      "tipo": "parar",
+      "momento": "fimJanela"
     },
     {
       "tipo": "impactFrame",
       "momento": "agarrar",
       "sequencia": [
         "cor",
+        "manga",
+        "invertido",
         "manga"
       ],
       "ticksPorQuadro": 1,
@@ -69,7 +80,7 @@
     {
       "tipo": "blurRadial",
       "momento": "agarrar",
-      "forca": 0.8,
+      "forca": 0.6,
       "vidaTicks": 10,
       "alcance": 40
     },
@@ -86,11 +97,12 @@
     {
       "tipo": "esfera",
       "momento": "agarrar",
+      "seguir": "centro",
+      "duraMomento": true,
       "tamanho": 2.2,
       "quantidade": 6,
       "cor": "#1f7fd6",
-      "cor2": "#bfeaff",
-      "vidaTicks": 64
+      "cor2": "#bfeaff"
     },
     {
       "tipo": "clarao",
@@ -120,11 +132,17 @@
       "alcance": 24
     },
     {
+      "tipo": "parar",
+      "momento": "solto"
+    },
+    {
       "tipo": "impactFrame",
       "momento": "arremesso",
       "sequencia": [
         "branco",
-        "invertido"
+        "invertido",
+        "manga",
+        "branco"
       ],
       "ticksPorQuadro": 1,
       "cor": "#38bdff",
@@ -152,10 +170,10 @@
       "momento": "arremesso",
       "modo": "onda",
       "raio": 8,
-      "forca": 1,
+      "forca": 0.7,
       "velocidade": 14,
       "cor": "#38bdff",
-      "tinta": 0.15,
+      "tinta": 0.12,
       "vidaTicks": 24
     },
     {

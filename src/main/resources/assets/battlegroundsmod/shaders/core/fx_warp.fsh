@@ -34,15 +34,19 @@ vec2 screenOf(vec3 view) {
 void main() {
     mat4 sources[8] = mat4[](Src0, Src1, Src2, Src3, Src4, Src5, Src6, Src7);
     vec2 ndc = uv * 2.0 - 1.0;
+    // The projection carries the walking bob (a small move of the eye), so the ray starts where the eye really
+    // is: the point on the near plane, heading to a point deeper along the same pixel.
     vec4 nearPoint = InverseProj * vec4(ndc, -1.0, 1.0);
-    vec3 rd = normalize(nearPoint.xyz / nearPoint.w);
+    vec4 deepPoint = InverseProj * vec4(ndc, 0.5, 1.0);
+    vec3 ro = nearPoint.xyz / nearPoint.w;
+    vec3 rd = normalize(deepPoint.xyz / deepPoint.w - ro);
 
     float sceneDist = 1.0e9;
     if (DepthOn > 0.5) {
         float d = texture(DepthSampler, uv).r;
         if (d < 1.0) {
             vec4 scene = InverseProj * vec4(ndc, d * 2.0 - 1.0, 1.0);
-            sceneDist = length(scene.xyz / scene.w);
+            sceneDist = length(scene.xyz / scene.w - ro);
         }
     }
 
@@ -70,8 +74,9 @@ void main() {
             continue;
         }
 
-        float b = dot(rd, c);
-        float h = b * b - dot(c, c) + radius * radius;
+        vec3 oc = c - ro;
+        float b = dot(rd, oc);
+        float h = b * b - dot(oc, oc) + radius * radius;
         if (h < 0.0) {
             continue;
         }
@@ -81,12 +86,18 @@ void main() {
         if (t1 < 0.0) {
             continue;
         }
+        // From inside the sphere (your own Susanoo, say) the bending would sit on your eyes and smear the whole
+        // screen, so it fades out as the eye gets near the middle and is never measured closer than a block.
+        float inside = smoothstep(radius * 0.55, radius * 1.05, length(oc));
+        if (inside <= 0.0) {
+            continue;
+        }
         float entry = max(t0, 0.0);
         if (sceneDist < entry) {
             continue; // a wall is in front of the sphere
         }
         // The point of the ray closest to the center: the middle of the sphere is where it bends most.
-        vec3 q = rd * clamp(b, entry, t1);
+        vec3 q = ro + rd * max(clamp(b, entry, t1), 1.0);
         vec3 rel = q - c;
         float dist = length(rel) / radius;
         float fade = 1.0 - smoothstep(0.65, 1.0, dist);
@@ -110,10 +121,15 @@ void main() {
             vec3 around = normalize(cross(vec3(0.0, 0.0, 1.0), rel) + vec3(0.00001));
             world = (-rel * k * 0.45) + around * k * radius * 0.08 * sin(age * 3.0);
         }
-        off += (screenOf(q + world) - screenOf(q)) * strength * fade;
-        tint = mix(tint, s[3].rgb, s[3].a * fade);
+        off += (screenOf(q + world) - screenOf(q)) * strength * fade * inside;
+        tint = mix(tint, s[3].rgb, s[3].a * fade * inside);
     }
 
+    // Never more than a few percent of the screen, whatever the sources add up to.
+    float pull = length(off);
+    if (pull > 0.06) {
+        off *= 0.06 / pull;
+    }
     vec2 at = clamp(uv + off, 0.001, 0.999);
     // A hair of color split along the bend, like light through glass.
     vec2 split = off * 0.08;

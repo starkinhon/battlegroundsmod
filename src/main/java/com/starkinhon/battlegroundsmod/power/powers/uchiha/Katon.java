@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 import com.starkinhon.battlegroundsmod.ModAttachments;
+import com.starkinhon.battlegroundsmod.combat.AshKill;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Cone;
 import com.starkinhon.battlegroundsmod.combat.Fx;
@@ -65,9 +66,13 @@ public final class Katon {
             return "meio".equals(onde) ? cone.pointAt(length / 2) : "ponta".equals(onde) ? cone.pointAt(length) : cone.origin();
         };
         List<ServerPlayer> screen = player instanceof ServerPlayer self ? List.of(self) : List.of();
+        int weak = tempo.weakTicks();
+        int blast = tempo.atrasoTicks() + weak;
         SkillSounds.play(level, sons, "uso", 0, tempo.atrasoTicks(), where, screen);
-        SkillSounds.play(level, sons, "fogo", tempo.atrasoTicks(), tempo.duracaoTicks(), where, screen);
+        SkillSounds.play(level, sons, "fogo", tempo.atrasoTicks(), weak + tempo.duracaoTicks(), where, screen);
+        SkillSounds.play(level, sons, "explosao", blast, tempo.duracaoTicks(), where, screen);
         SkillSounds.play(level, sons, "fim", tempo.totalTicks(), 0, where, screen);
+        boolean awakened = data.awakened;
         Tasks.add(tick -> {
             if (!player.isAlive() || player.isRemoved() || !power.equals(player.getData(ModAttachments.POWER).power)) {
                 return true;
@@ -76,41 +81,72 @@ public final class Katon {
             if (age < 0) {
                 return false;
             }
-            Cone cone = cone(player, level, spec, age);
+            // First it comes out weak, as if held back; after fracoTicks the real fire bursts out.
+            boolean strong = age >= weak;
+            int phaseAge = strong ? age - weak : age;
+            Cone cone = cone(player, level, spec, phaseAge, strong ? 1 : weakSize(spec));
             if (age == 0) {
                 UchihaFx.katonStart(level, spec, cone);
-                Fx.effects(level, SKILL, data.awakened, "fogo", cone.origin(), cone.dir());
+                Fx.effects(level, SKILL, awakened, "fogo", cone.origin(), cone.dir());
             }
-            UchihaFx.katonStream(level, spec, cone, age);
+            if (strong && phaseAge == 0) {
+                Fx.effects(level, SKILL, awakened, "explosao", player, tempo.duracaoTicks());
+            }
+            if (strong) {
+                UchihaFx.katonBlast(level, spec, cone, phaseAge);
+                if (phaseAge % 3 == 0) {
+                    UchihaFx.katonIgnite(level, cone);
+                }
+            } else {
+                UchihaFx.katonWeak(level, spec, cone, phaseAge);
+            }
+            float damage = DAMAGE * (strong ? 1 : (float) weakDamage(spec));
             for (LivingEntity target : cone.targets()) {
                 Integer last = lastHit.get(target);
                 if (last == null || age - last >= HIT_INTERVAL) {
                     lastHit.put(target, age);
-                    burn(player, target, cone);
+                    burn(player, target, cone, damage, awakened);
                 }
             }
             if (Cone.debug && age % 2 == 0) {
                 cone.draw(Fx.dust(0xFFFFFF, 0.6f));
             }
-            return age >= tempo.duracaoTicks() - 1;
+            return age >= weak + tempo.duracaoTicks() - 1;
         });
         return true;
     }
 
+    private static double weakSize(SkillSpec spec) {
+        return spec.fraco() == null ? 1 : spec.fraco().tamanho();
+    }
+
+    private static double weakDamage(SkillSpec spec) {
+        return spec.fraco() == null ? 1 : spec.fraco().dano();
+    }
+
     // The fire travels out over crescimentoTicks instead of appearing at full length.
     private static Cone cone(LivingEntity player, ServerLevel level, SkillSpec spec, int age) {
+        return cone(player, level, spec, age, 1);
+    }
+
+    // scale shrinks the whole cone (the weak start).
+    private static Cone cone(LivingEntity player, ServerLevel level, SkillSpec spec, int age, double scale) {
         SkillSpec.Forma forma = spec.forma();
-        double length = forma.comprimento() * Math.min(1, (age + 1) / (double) Math.max(1, spec.tempo().crescimentoTicks()));
+        double full = forma.comprimento() * scale;
+        double length = full * Math.min(1, (age + 1) / (double) Math.max(1, spec.tempo().crescimentoTicks()));
         // Minecraft pitch is negative when looking up, so tilting up subtracts.
         Vec3 dir = Vec3.directionFromRotation(player.getXRot() - (float) spec.direcao().inclinacao(),
                 player.getYRot() + (float) spec.direcao().giro());
-        return new Cone(level, player, mouth(player, spec.origem(), dir), dir, length, forma.comprimento(), forma.raioInicio(), forma.raioFim());
+        return new Cone(level, player, mouth(player, spec.origem(), dir), dir, length, full, forma.raioInicio() * scale, forma.raioFim() * scale);
     }
 
-    private static void burn(LivingEntity player, LivingEntity target, Cone cone) {
+    private static void burn(LivingEntity player, LivingEntity target, Cone cone, float damage, boolean awakened) {
         // Keep the target in the fire: drop the vanilla hit knockback and only nudge them along the stream.
         Vec3 motion = target.getDeltaMovement();
-        Combat.hurt(player, target, DAMAGE);
+        AshKill.hurt(player, target, damage);
+        if (target instanceof ServerPlayer burned) {
+            Fx.effectsTo(burned, SKILL, awakened, "queimando", 0);
+        }
         Vec3 nudge = cone.dir().scale(0.05);
         target.setDeltaMovement(motion.x + nudge.x, motion.y, motion.z + nudge.z);
         target.hurtMarked = true;

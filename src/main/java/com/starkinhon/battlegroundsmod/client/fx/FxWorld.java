@@ -11,8 +11,11 @@ import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.VertexSorting;
 import com.starkinhon.battlegroundsmod.skill.VfxSpec.Efeito;
 
+import com.starkinhon.battlegroundsmod.BattlegroundsMod;
+
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
@@ -21,7 +24,8 @@ import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 // fixed random number per part (hash), like the big anime mods do. Nothing is simulated, so a hundred rays cost
 // the same as one and they never drift between frames.
 public final class FxWorld {
-    private record Piece(Efeito e, Vec3 pos, Vec3 dir, long start, int life, int seed) {
+    // follow: the entity it sticks to (-1 for none). life covers the whole show, emission stops at emitFor.
+    private record Piece(String skill, Efeito e, Vec3 pos, Vec3 dir, long start, int life, int emitFor, int seed, int follow) {
     }
 
     private static final List<Piece> PIECES = new ArrayList<>();
@@ -37,13 +41,27 @@ public final class FxWorld {
             for (RenderType type : List.of(FxRenderTypes.VFX_ALPHA, FxRenderTypes.VFX_ADD, FxRenderTypes.FLAT_ALPHA, FxRenderTypes.FLAT_ADD)) {
                 FIXED.put(type, new ByteBufferBuilder(type.bufferSize()));
             }
-            buffers = MultiBufferSource.immediateWithBuffers(FIXED, new ByteBufferBuilder(256));
+            buffers = MultiBufferSource.immediateWithBuffers(FIXED, new ByteBufferBuilder(16384));
         }
         return buffers;
     }
 
-    public static void spawn(Efeito e, Vec3 pos, Vec3 dir, int life) {
-        PIECES.add(new Piece(e, pos, dir.lengthSqr() < 1.0E-6 ? new Vec3(0, 1, 0) : dir.normalize(), ScreenFx.now(), Math.max(1, life), seeds++ * 7919));
+    public static void spawn(String skill, Efeito e, Vec3 pos, Vec3 dir, int life, int follow) {
+        life = Math.max(1, life);
+        int total = life;
+        if ("jatoFogo".equals(e.tipo())) {
+            // Flames already in the air keep flying after the breath stops.
+            total += (int) Math.ceil(d(e.comprimento(), 25) / Math.max(0.1, d(e.velocidade(), 1.4))) + 2;
+        }
+        PIECES.add(new Piece(skill, e, pos, dir.lengthSqr() < 1.0E-6 ? new Vec3(0, 1, 0) : dir.normalize(), ScreenFx.now(), total, life, seeds++ * 7919,
+                follow));
+    }
+
+    // Fades out every effect of this skill stuck to this entity (a counter window that closed early, say).
+    public static void stopFollowing(String skill, int follow) {
+        long now = ScreenFx.now();
+        PIECES.replaceAll(p -> p.follow() == follow && p.skill().equals(skill) && now - p.start() < p.life() - 10
+                ? new Piece(p.skill(), p.e(), p.pos(), p.dir(), now - p.life() + 10, p.life(), p.emitFor(), p.seed(), p.follow()) : p);
     }
 
     public static void tick() {
@@ -62,14 +80,15 @@ public final class FxWorld {
         }
         FxPost.newFrame();
         ScreenFx.capture(event);
-        if (PIECES.isEmpty() && !ScreenFx.needsScene()) {
+        boolean world = !PIECES.isEmpty() || MeteorRenderer.hasTrails();
+        if (!world && !ScreenFx.needsScene()) {
             return;
         }
         boolean flat = FxShaders.flat();
         if (!flat) {
             FxPost.captureScene();
         }
-        if (!PIECES.isEmpty()) {
+        if (world) {
             draw(event, flat);
         }
         if (!flat) {
@@ -88,18 +107,28 @@ public final class FxWorld {
         MultiBufferSource.BufferSource source = buffers();
         FxDraw.begin(source, event.getCamera(), flat);
         Vec3 camera = event.getCamera().getPosition();
-        double now = ScreenFx.now() + event.getPartialTick().getGameTimeDeltaPartialTick(false);
+        float partial = event.getPartialTick().getGameTimeDeltaPartialTick(false);
+        double now = ScreenFx.now() + partial;
         for (Piece piece : PIECES) {
             double age = now - piece.start();
             if (age >= 0 && age < piece.life()) {
-                render(piece, piece.pos().subtract(camera).toVector3f(), (float) age, (float) (age / piece.life()));
+                Vec3 at = FxAnchor.point(piece.follow(), piece.e().seguir(), partial);
+                Vec3 look = FxAnchor.look(piece.follow(), piece.e().seguir(), partial);
+                float opacity = FxAnchor.firstPersonSelf(piece.follow()) ? (float) d(piece.e().primeiraPessoa(), 1) : 1;
+                if (opacity > 0) {
+                    render(piece, (at == null ? piece.pos() : at).subtract(camera).toVector3f(), (look == null ? piece.dir() : look).toVector3f(),
+                            (float) age, (float) (age / piece.life()), opacity);
+                }
             }
         }
+        MeteorRenderer.emitTrails(camera, now, partial);
         if (flat) {
             source.endBatch(FxRenderTypes.FLAT_ALPHA);
             source.endBatch(FxRenderTypes.FLAT_ADD);
+            endDecals(source);
         } else {
             source.endBatch(FxRenderTypes.VFX_ALPHA);
+            endDecals(source);
             FxPost.beginGlow();
             source.endBatch(FxRenderTypes.VFX_ADD);
             FxPost.endGlow(FxConfig.on(FxConfig.BLOOM));
@@ -110,14 +139,31 @@ public final class FxWorld {
         RenderSystem.applyModelViewMatrix();
     }
 
-    private static void render(Piece p, Vector3f at, float age, float t) {
+    private static final ResourceLocation MANGEKYO = ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "textures/fx/mangekyo.png");
+
+    private static void endDecals(MultiBufferSource.BufferSource source) {
+        for (RenderType type : USED_DECALS) {
+            source.endBatch(type);
+        }
+        USED_DECALS.clear();
+    }
+
+    private static void render(Piece p, Vector3f at, Vector3f dir, float age, float t, float opacity) {
         Efeito e = p.e();
-        Vector3f dir = p.dir().toVector3f();
-        at.add(new Vector3f(dir).mul((float) d(e.deslocamento(), 0))).add(0, (float) d(e.altura(), 0), 0);
+        if (!"jatoFogo".equals(e.tipo()) && !"rastroBoca".equals(e.tipo())) {
+            Vector3f flat = new Vector3f(dir.x, 0, dir.z);
+            Vector3f along = "olho".equals(e.tipo()) && flat.lengthSquared() > 1.0E-4f ? flat.normalize() : dir;
+            at.add(new Vector3f(along).mul((float) d(e.deslocamento(), 0)));
+        }
+        at.add(0, (float) d(e.altura(), 0), 0);
         float[] cor = FxDraw.rgb(FxDraw.parse(e.cor(), 0xFF5020));
         float[] cor2 = FxDraw.rgb(FxDraw.parse(e.cor2(), 0xFFFFFF));
         float size = (float) d(e.tamanho(), 2);
-        float fade = (1 - t) * (1 - t);
+        // Long effects (an indicator for as long as a stun lasts) fade in and out instead of shrinking away.
+        float age0 = Math.min(1, age / 5), end = Math.min(1, (p.life() - age) / 10);
+        float hold = age0 * end * opacity;
+        float fade = (1 - t) * (1 - t) * opacity;
+        float spin = age * (float) d(e.girar(), 0.08);
         switch (e.tipo()) {
             case "clarao" -> {
                 // A punch of light: blows up fast, then dies away.
@@ -140,7 +186,8 @@ public final class FxWorld {
             }
             case "anelChao" -> {
                 // Shock ring running over the ground.
-                float radius = (float) d(e.raio(), 8) * easeOut(t);
+                // With a speed it runs out at that pace (matching the server's shockwave), else it eases out.
+                float radius = e.velocidade() != null ? Math.min((float) d(e.raio(), 8), (float) (e.velocidade() * age)) : (float) d(e.raio(), 8) * easeOut(t);
                 float thick = Mth.clamp(size / Math.max(0.5f, radius * 2), 0.03f, 1);
                 FxDraw.disk(new Vector3f(at).add(0, 0.08f, 0), new Vector3f(0, 1, 0), radius * 2, FxDraw.RING, thick, cor, (1 - t), true);
                 FxDraw.disk(new Vector3f(at).add(0, 0.06f, 0), new Vector3f(0, 1, 0), radius * 1.4f, FxDraw.SOFT, 0, cor, fade * 0.35f, true);
@@ -226,9 +273,135 @@ public final class FxWorld {
                             1, true);
                 }
             }
+            case "jatoFogo" -> fireStream(p, e, at, dir, age, cor, cor2, size, opacity);
+            case "rastroBoca" -> mouthTrail(p, e, at, dir, age, cor, cor2, hold);
+            case "parede" -> {
+                // Wall of light pillars around the body, slowly turning, bright at the middle height.
+                int count = i(e.quantidade(), 22);
+                float radius = (float) d(e.raio(), 1.7);
+                float height = (float) d(e.comprimento(), 2.8);
+                float width = Mth.TWO_PI * radius / count * 1.7f;
+                for (int k = 0; k < count; k++) {
+                    float a = k * Mth.TWO_PI / count + spin * 0.4f;
+                    float flicker = 0.65f + 0.35f * Mth.sin(age * 0.5f + k * 2.3f);
+                    Vector3f base = new Vector3f(Mth.cos(a) * radius, -0.1f, Mth.sin(a) * radius).add(at);
+                    Vector3f top = new Vector3f(base).add(0, height * (0.85f + 0.15f * hash(p.seed(), k, 1)), 0);
+                    FxDraw.ribbon(base, top, width, FxDraw.STREAK, 0.35f, cor, hold * 0.55f * flicker, true);
+                }
+                FxDraw.disk(new Vector3f(at).add(0, 0.05f, 0), new Vector3f(0, 1, 0), radius * 2.3f, FxDraw.RING, 0.12f, cor, hold * 0.8f, true);
+                FxDraw.disk(new Vector3f(at).add(0, 0.04f, 0), new Vector3f(0, 1, 0), radius * 2.6f, FxDraw.SOFT, 0.1f, cor, hold * 0.35f, true);
+            }
+            case "anelCabeca" -> {
+                // Ring of light around the head, tilting a little as it turns, with three sparks running on it.
+                float radius = (float) d(e.raio(), 0.8);
+                Vector3f normal = new Vector3f(Mth.sin(spin) * 0.18f, 1, Mth.cos(spin) * 0.18f);
+                FxDraw.disk(new Vector3f(at), normal, radius * 2, FxDraw.RING, Mth.clamp(size / (radius * 2), 0.03f, 1), cor, hold, true);
+                for (int k = 0; k < 3; k++) {
+                    float a = spin * 3 + k * Mth.TWO_PI / 3;
+                    Vector3f spark = new Vector3f(Mth.cos(a) * radius, -Mth.sin(spin) * 0.18f * Mth.cos(a) * radius, Mth.sin(a) * radius).add(at);
+                    FxDraw.billboard(spark, radius * 0.5f, 0, FxDraw.FLARE, 4 / 32f, cor2, hold, true);
+                }
+            }
+            case "olhoChao" -> FxDraw.disk(decal(e), new Vector3f(at).add(0, 0.06f, 0), new Vector3f(0, 1, 0),
+                    size, -spin, FxDraw.SOLID, 0, new float[] {1, 1, 1}, hold);
+            case "olho" -> FxDraw.billboard(decal(e), at, size, spin, new float[] {1, 1, 1}, hold);
             default -> {
             }
         }
+    }
+
+    private static final java.util.Set<RenderType> USED_DECALS = new java.util.LinkedHashSet<>();
+
+    private static com.mojang.blaze3d.vertex.VertexConsumer decal(Efeito e) {
+        RenderType type = FxRenderTypes.decal(texture(e));
+        USED_DECALS.add(type);
+        return buffers.getBuffer(type);
+    }
+
+    private static ResourceLocation texture(Efeito e) {
+        ResourceLocation rl = e.textura() == null ? null : ResourceLocation.tryParse(e.textura());
+        return rl == null ? MANGEKYO : rl;
+    }
+
+    // Katon made only of shader fire: flames leave the mouth at velocidade, swell from small white-yellow to big red,
+    // burn out at the tip, a few going dark as smoke. Each flame is a fixed hash of its birth tick, so the stream
+    // costs nothing to keep and never jitters.
+    private static void fireStream(Piece p, Efeito e, Vector3f mouth, Vector3f dir, float age, float[] cor, float[] cor2, float size,
+            float opacity) {
+        float length = (float) d(e.comprimento(), 25);
+        float radius = (float) d(e.raio(), 10);
+        float speed = (float) Math.max(0.1, d(e.velocidade(), 1.4));
+        int perTick = i(e.quantidade(), 14);
+        float travel = length / speed;
+        Vector3f d = new Vector3f(dir).normalize();
+        Vector3f side = new Vector3f(d).cross(Math.abs(d.y) > 0.99f ? new Vector3f(1, 0, 0) : new Vector3f(0, 1, 0)).normalize();
+        Vector3f up = new Vector3f(side).cross(d).normalize();
+        float[] smoke = FxDraw.rgb(0x2A2224);
+        int newest = (int) Math.floor(age);
+        for (int born = Math.max(0, newest - (int) travel - 1); born <= newest && born < p.emitFor(); born++) {
+            for (int k = 0; k < perTick; k++) {
+                float h = hash(p.seed() + born, k, 0);
+                float a = age - born - h;
+                float life = travel * (0.8f + 0.35f * hash(p.seed() + born, k, 1));
+                if (a < 0 || a > life) {
+                    continue;
+                }
+                float k01 = a / life;
+                float dist = speed * a;
+                float ang = hash(p.seed() + born, k, 2) * Mth.TWO_PI;
+                float rr = Mth.sqrt(hash(p.seed() + born, k, 3)) * radius * Math.min(1, dist / length) * 0.85f;
+                Vector3f pos = new Vector3f(d).mul(dist).add(mouth)
+                        .add(new Vector3f(side).mul(Mth.cos(ang) * rr)).add(new Vector3f(up).mul(Mth.sin(ang) * rr + k01 * k01 * 1.2f));
+                float s = Mth.lerp(k01, 0.35f, size) * (0.7f + 0.6f * hash(p.seed() + born, k, 4));
+                float[] c = k01 < 0.35f ? FxDraw.mix(cor2, cor, k01 / 0.35f) : FxDraw.mix(cor, FxDraw.mix(cor, smoke, 0.6f), (k01 - 0.35f) / 0.65f);
+                float o = opacity * (1 - smoothstep(0.7f, 1, k01));
+                if (k % 7 == 0 && k01 > 0.55f) {
+                    FxDraw.billboard(pos, s * 1.3f, h * 6, FxDraw.SMOKE, k01, smoke, o * 0.6f, false);
+                } else {
+                    FxDraw.billboard(pos, s, h * 6 + a * 0.05f, FxDraw.FIRE, k01 * 0.85f, c, o, true);
+                }
+            }
+        }
+    }
+
+    // Thin flames blown back from the mouth around both sides of the face, as if the force of the breath pushed them.
+    private static void mouthTrail(Piece p, Efeito e, Vector3f eyes, Vector3f look, float age, float[] cor, float[] cor2, float opacity) {
+        Vector3f f = new Vector3f(look.x, 0, look.z);
+        if (f.lengthSquared() < 1.0E-4f) {
+            return;
+        }
+        f.normalize();
+        Vector3f r = new Vector3f(f).cross(0, 1, 0).normalize();
+        Vector3f u = new Vector3f(0, 1, 0);
+        int lines = i(e.quantidade(), 6);
+        float back = (float) d(e.comprimento(), 1.2);
+        int segments = 12;
+        for (int k = 0; k < lines; k++) {
+            float s = k % 2 == 0 ? 1 : -1;
+            float tilt = (hash(p.seed(), k, 1) - 0.5f) * 0.32f;
+            Vector3f last = null;
+            for (int j = 0; j <= segments; j++) {
+                float t = j / (float) segments;
+                float theta = t * Mth.PI * 0.8f;
+                float rr = 0.3f + 0.12f * t;
+                float wave = Mth.sin(t * 9 - age * 0.9f + k * 1.7f) * 0.05f * t;
+                Vector3f point = new Vector3f(eyes)
+                        .add(new Vector3f(f).mul(Mth.cos(theta) * rr - t * t * back))
+                        .add(new Vector3f(r).mul(s * Mth.sin(theta) * rr))
+                        .add(new Vector3f(u).mul(-0.12f + tilt * t + wave + 0.08f * t * t));
+                if (last != null) {
+                    float flicker = 0.7f + 0.3f * Mth.sin(age * 1.3f + k + t * 5);
+                    FxDraw.ribbon(last, point, 0.07f * (1 - t) + 0.015f, FxDraw.BEAM, 0.6f, FxDraw.mix(cor2, cor, t), opacity * (1 - t * 0.85f) * flicker,
+                            true);
+                }
+                last = point;
+            }
+        }
+    }
+
+    private static float smoothstep(float a, float b, float x) {
+        float t = Mth.clamp((x - a) / (b - a), 0, 1);
+        return t * t * (3 - 2 * t);
     }
 
     // Jagged lightning from the point outwards, re-rolled every two ticks so it crackles.
@@ -271,7 +444,7 @@ public final class FxWorld {
         return new Vector3f(Mth.cos(a) * r, y, Mth.sin(a) * r);
     }
 
-    private static float hash(int seed, int k, int salt) {
+    static float hash(int seed, int k, int salt) {
         int h = seed * 374761393 + k * 668265263 + salt * 1274126177;
         h = (h ^ (h >>> 13)) * 1103515245;
         h ^= h >>> 16;

@@ -3,6 +3,7 @@ package com.starkinhon.battlegroundsmod.client;
 import java.util.UUID;
 
 import com.starkinhon.battlegroundsmod.client.fx.MeteorRenderer;
+import com.starkinhon.battlegroundsmod.client.fx.AshDeath;
 import com.starkinhon.battlegroundsmod.client.fx.SkillEffects;
 import com.starkinhon.battlegroundsmod.skill.CutsceneSpec;
 import com.starkinhon.battlegroundsmod.skill.SkillSpecs;
@@ -32,8 +33,16 @@ public final class ClientHooks {
         MeteorRenderer.start(skill, awakened, start, end, delay, fallTicks);
     }
 
-    public static void playEffects(String skill, boolean awakened, String momento, Vec3 pos, Vec3 dir) {
-        SkillEffects.play(skill, awakened, momento, pos, dir);
+    public static void playEffects(String skill, boolean awakened, String momento, Vec3 pos, Vec3 dir, int entityId, int ticks) {
+        SkillEffects.play(skill, awakened, momento, pos, dir, entityId, ticks);
+    }
+
+    public static void shoulderCutscene(int casterId, int targetId, int ticks) {
+        ShoulderCutscene.start(casterId, targetId, ticks);
+    }
+
+    public static void ashDeath(int entityId) {
+        AshDeath.start(entityId);
     }
 
     public static void bossBarStyle(UUID barId, String texture, int frames, int width, int height) {

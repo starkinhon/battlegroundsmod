@@ -92,18 +92,7 @@ final class MeteoroFx {
         Fx.sound(level, pos, SoundEvents.LIGHTNING_BOLT_THUNDER, 5f, 0.6f);
         Fx.sound(level, pos, SoundEvents.WARDEN_SONIC_BOOM, 4f, 0.5f);
         double radius = impacto.raio();
-        MeteoroSpec.Onda onda = impacto.onda();
-        if (onda.ativa() && onda.velocidade() > 0) {
-            int color = UchihaFx.parseColor(onda.cor());
-            int points = (int) Math.max(24, Math.round(radius * 8));
-            int life = (int) Math.ceil(radius * 1.2 / onda.velocidade());
-            for (double y : new double[] {0.3, 1.2}) {
-                for (int i = 0; i < points; i++) {
-                    double a = i * Math.PI * 2 / points;
-                    Fx.moving(level, ModParticles.dust(color, onda.tamanho(), life, 1), pos.add(0, y, 0), new Vec3(Math.cos(a), 0, Math.sin(a)).scale(onda.velocidade()));
-                }
-            }
-        }
+        // The shockwave ring is drawn on the clients (anelChao in the vfx list) and does its damage in Meteoro.
         MeteoroSpec.Explosao explosao = impacto.explosao();
         if (explosao.ativa()) {
             int color = UchihaFx.parseColor(explosao.cor());

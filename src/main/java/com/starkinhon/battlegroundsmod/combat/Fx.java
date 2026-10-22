@@ -10,6 +10,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -87,7 +88,22 @@ public final class Fx {
     // Plays the skill file's "vfx" for this moment on every client close enough to see it (screen effects
     // like impact frames and bending, and the shader-drawn world effects).
     public static void effects(ServerLevel level, String skill, boolean awakened, String momento, Vec3 pos, Vec3 dir) {
-        var payload = new ModPayloads.PlayEffects(skill, awakened, momento, pos, dir);
+        broadcast(level, pos, new ModPayloads.PlayEffects(skill, awakened, momento, pos, dir, -1, 0));
+    }
+
+    // Same, with effects that can stick to entity (seguir in the file) for ticks (duraMomento).
+    public static void effects(ServerLevel level, String skill, boolean awakened, String momento, Entity entity, int ticks) {
+        Vec3 pos = entity.position().add(0, entity.getBbHeight() / 2, 0);
+        broadcast(level, pos, new ModPayloads.PlayEffects(skill, awakened, momento, pos, entity.getLookAngle(), entity.getId(), ticks));
+    }
+
+    // Only for one player's screen (the one being burned, say).
+    public static void effectsTo(ServerPlayer player, String skill, boolean awakened, String momento, int ticks) {
+        PacketDistributor.sendToPlayer(player, new ModPayloads.PlayEffects(skill, awakened, momento, player.getEyePosition(), player.getLookAngle(),
+                player.getId(), ticks));
+    }
+
+    private static void broadcast(ServerLevel level, Vec3 pos, ModPayloads.PlayEffects payload) {
         for (ServerPlayer player : level.players()) {
             if (player.distanceToSqr(pos) < EFFECTS_DISTANCE_SQR) {
                 PacketDistributor.sendToPlayer(player, payload);

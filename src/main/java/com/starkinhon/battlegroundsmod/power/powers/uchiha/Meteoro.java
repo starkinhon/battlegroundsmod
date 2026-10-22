@@ -1,9 +1,12 @@
 package com.starkinhon.battlegroundsmod.power.powers.uchiha;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import com.starkinhon.battlegroundsmod.ModAttachments;
+import com.starkinhon.battlegroundsmod.combat.AshKill;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Fx;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
@@ -13,8 +16,11 @@ import com.starkinhon.battlegroundsmod.skill.MeteoroSpec;
 import com.starkinhon.battlegroundsmod.skill.SkillSpecs;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.BlockParticleOption;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -110,7 +116,7 @@ public final class Meteoro {
         }
         for (LivingEntity target : Combat.inRadius(level, pos, radius, player)) {
             double edge = Math.min(1, Combat.center(target).distanceTo(pos) / radius);
-            Combat.hurt(player, target, (float) (impacto.danoCentro() + (impacto.danoBorda() - impacto.danoCentro()) * edge) * damageMult);
+            AshKill.hurt(player, target, (float) (impacto.danoCentro() + (impacto.danoBorda() - impacto.danoCentro()) * edge) * damageMult);
             Combat.pushFrom(target, pos, impacto.empurrao(), impacto.alturaEmpurrao());
         }
         if (impacto.tremerTela() > 0) {
@@ -122,8 +128,72 @@ public final class Meteoro {
                 }
             }
         }
+        shockwave(player, level, pos, impacto, damageMult);
         MeteoroFx.impact(level, spec, pos);
         Fx.effects(level, SKILL, player.getData(ModAttachments.POWER).awakened, "impacto", pos, new Vec3(0, 1, 0));
+    }
+
+    // The shockwave: a ring running out along the ground at velocidade blocks per tick. Everyone its front passes is
+    // hit once and thrown outwards, and (with quebrarBlocos and mobGriefing) the ground it runs over is torn up in a
+    // ring, shallower towards the end. Like the crater, no drops and no neighbor updates.
+    private static void shockwave(LivingEntity player, ServerLevel level, Vec3 center, MeteoroSpec.Impacto impacto, float damageMult) {
+        MeteoroSpec.Onda onda = impacto.onda();
+        if (onda == null || !onda.ativa() || onda.velocidade() <= 0 || onda.alcance() <= 0) {
+            return;
+        }
+        double speed = onda.velocidade();
+        double reach = onda.alcance();
+        int ticks = (int) Math.ceil(reach / speed);
+        boolean grief = onda.quebrarBlocos() && level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING);
+        Set<LivingEntity> hit = new HashSet<>();
+        RandomSource random = level.getRandom();
+        int groundY = BlockPos.containing(center).getY();
+        Tasks.repeat(ticks + 1, age -> {
+            double inner = age * speed;
+            double outer = Math.min(reach, inner + speed);
+            for (LivingEntity target : Combat.inRadius(level, center, outer + 1.5, player)) {
+                double flat = Math.hypot(target.getX() - center.x, target.getZ() - center.z);
+                if (flat < inner - 1.5 || Math.abs(target.getY() - center.y) > 8 || !hit.add(target)) {
+                    continue;
+                }
+                AshKill.hurt(player, target, onda.dano() * (float) (1 - 0.5 * flat / reach) * damageMult);
+                Combat.pushFrom(target, center, onda.empurrao(), 0.5);
+            }
+            if (!grief || outer <= impacto.raioCratera() * 0.9) {
+                return;
+            }
+            double width = Math.max(0, onda.largura());
+            double from = Math.max(impacto.raioCratera() * 0.9, inner - width / 2);
+            double to = outer + width / 2;
+            int up = Math.max(0, onda.altura());
+            int down = (int) Math.round(Math.max(0, onda.profundidade()) * (1 - 0.7 * inner / reach));
+            Set<Long> columns = new HashSet<>();
+            for (double r = from; r <= to; r += 0.7) {
+                int steps = (int) Math.ceil(Mth.TWO_PI * r / 0.7);
+                for (int i = 0; i < steps; i++) {
+                    double a = i * Mth.TWO_PI / steps;
+                    int x = Mth.floor(center.x + Math.cos(a) * r);
+                    int z = Mth.floor(center.z + Math.sin(a) * r);
+                    if (!columns.add(BlockPos.asLong(x, 0, z))) {
+                        continue;
+                    }
+                    int bottom = groundY - down - (random.nextInt(4) == 0 ? 1 : 0);
+                    boolean dust = columns.size() % 3 == 0;
+                    for (int y = groundY + up; y >= bottom; y--) {
+                        BlockPos block = new BlockPos(x, y, z);
+                        BlockState state = level.getBlockState(block);
+                        if (state.isAir() || state.getDestroySpeed(level, block) < 0) {
+                            continue;
+                        }
+                        if (dust) {
+                            level.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, state), x + 0.5, y + 1, z + 0.5, 4, 0.4, 0.3, 0.4, 0.2);
+                            dust = false;
+                        }
+                        level.setBlock(block, Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS);
+                    }
+                }
+            }
+        });
     }
 
     // Digs a round bowl: radius across, depth down (and as high up, for trees and walls in the way), with a ragged

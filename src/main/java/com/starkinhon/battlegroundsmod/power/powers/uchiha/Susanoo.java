@@ -8,20 +8,25 @@ import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Fx;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
+import com.starkinhon.battlegroundsmod.network.ModPayloads;
 import com.starkinhon.battlegroundsmod.power.PowerData;
 import com.starkinhon.battlegroundsmod.skill.SkillSpecs;
 import com.starkinhon.battlegroundsmod.skill.SusanooSpec;
 
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 // C: Susanoo counter. Opens a short window; the first hit taken in it is blocked, and a spectral arm grabs the
 // attacker, crushes them and throws them away. Timing and damage come from madara.susanoo.json.
 public final class Susanoo {
     public static final String SKILL = "madara.susanoo";
+    // The over-the-shoulder look at the held enemy: short, so it never gets in the way of a real fight.
+    private static final int CUTSCENE_TICKS = 34;
 
     // Casters with the counter ready. The value tells a window apart from a later one, so an old timer can't close it.
     private static final Map<LivingEntity, Object> READY = new HashMap<>();
@@ -34,7 +39,7 @@ public final class Susanoo {
         Object window = new Object();
         READY.put(player, window);
         UchihaFx.susanooReady(level, player, spec);
-        Fx.effects(level, SKILL, awakened(player), "pronto", player.position(), player.getLookAngle());
+        Fx.effects(level, SKILL, awakened(player), "pronto", player, spec.janela().duracaoTicks());
         Tasks.add(age -> {
             if (READY.get(player) != window) {
                 return true;
@@ -43,7 +48,6 @@ public final class Susanoo {
                 READY.remove(player);
                 return true;
             }
-            UchihaFx.susanooAura(level, player, spec, age);
             return false;
         });
         return true;
@@ -86,7 +90,12 @@ public final class Susanoo {
             return start.lerp(held, smooth(age / (double) reach));
         });
         UchihaFx.susanooGrab(level, player, target, spec);
-        Fx.effects(level, SKILL, awakened(player), "agarrar", Combat.center(target), Combat.flatLook(player));
+        // The wall goes down, the ball of light holds the target, and the caster's camera looks over his shoulder.
+        Fx.effects(level, SKILL, awakened(player), "fimJanela", player, 0);
+        Fx.effects(level, SKILL, awakened(player), "agarrar", target, total);
+        if (player instanceof ServerPlayer caster) {
+            PacketDistributor.sendToPlayer(caster, new ModPayloads.ShoulderCutscene(player.getId(), target.getId(), CUTSCENE_TICKS));
+        }
         Tasks.repeat(total, age -> UchihaFx.susanooArm(level, player, target, spec, age < reach ? age / (double) reach : 1));
 
         int hits = Math.max(1, esmagar.golpes());
@@ -95,7 +104,7 @@ public final class Susanoo {
                 if (target.isAlive() && player.isAlive()) {
                     Combat.hurt(player, target, esmagar.dano());
                     UchihaFx.susanooCrush(level, target, spec);
-                    Fx.effects(level, SKILL, awakened(player), "esmagar", Combat.center(target), Combat.flatLook(player));
+                    Fx.effects(level, SKILL, awakened(player), "esmagar", target, 0);
                 }
             });
         }
@@ -106,6 +115,7 @@ public final class Susanoo {
                 Combat.push(target, Combat.flatLook(player), arremesso.forca(), arremesso.altura());
                 UchihaFx.susanooThrow(level, target, spec);
                 Fx.effects(level, SKILL, awakened(player), "arremesso", Combat.center(target), Combat.flatLook(player));
+                Fx.effects(level, SKILL, awakened(player), "solto", target, 0);
             }
         });
     }

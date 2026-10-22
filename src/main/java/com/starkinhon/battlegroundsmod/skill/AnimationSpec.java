@@ -4,13 +4,13 @@ package com.starkinhon.battlegroundsmod.skill;
 // "animacao" blocks, which come in two shapes: atraso/duracao + preparo/sopro (Katon) or preparo/queda (Meteoro).
 public record AnimationSpec(Tempo tempo, Animacao animacao) {
 
-    public record Tempo(Integer atrasoTicks, Integer duracaoTicks, Integer preparoTicks, Integer quedaTicks) {
+    public record Tempo(Integer atrasoTicks, Integer duracaoTicks, Integer preparoTicks, Integer quedaTicks, Integer fracoTicks) {
         int windUp() {
             return atrasoTicks != null ? atrasoTicks : orZero(preparoTicks);
         }
 
         int end() {
-            return windUp() + (duracaoTicks != null ? duracaoTicks : orZero(quedaTicks));
+            return windUp() + orZero(fracoTicks) + (duracaoTicks != null ? duracaoTicks : orZero(quedaTicks));
         }
     }
 
