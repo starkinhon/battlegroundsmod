@@ -12,11 +12,12 @@ import com.starkinhon.battlegroundsmod.BattlegroundsMod;
 
 // How a boss fights, read from data/battlegroundsmod/souls_bosses/<boss>.json ("souls-boss/1"). The moves themselves
 // are the power's skills (souls_skills/), so a boss and a player with the same soul hit exactly the same.
-public record BossSpec(String boss, String poder, boolean dropAlma, Atributos atributos, Intro intro, Percepcao percepcao,
+public record BossSpec(String boss, String poder, Integer tier, boolean dropAlma, Atributos atributos, Intro intro, Percepcao percepcao,
         Barra barra, Distancias distancias, Movimento movimento, Ritmo ritmo, Investida investida, PassoSombra passoSombra, PuloDuplo puloDuplo,
         Teleporte teleporte, Reacoes reacoes, UltFinal ultFinal,
         Map<String, Skill> skills, Map<String, Combo> combos, List<Fase> fases) {
 
+    // tier: the power tier the boss is made for (see Tiers); its moves hit like that tier. Missing = 10 (human).
     // vida, armadura and velocidade become the entity's attributes. multDano scales every hit the boss lands.
     public record Atributos(double vida, double armadura, double velocidade, double resistenciaEmpurrao, double alcanceVisao, float multDano) {
     }

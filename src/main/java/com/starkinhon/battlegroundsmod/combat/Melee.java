@@ -50,7 +50,7 @@ public final class Melee {
     public static boolean punch(LivingEntity attacker, LivingEntity target) {
         PowerData data = attacker.getData(ModAttachments.POWER);
         ComboSpec spec = ComboSpec.get();
-        if (!attacker.isAlive() || data.busyTicks > 0 || Freeze.isFrozen(attacker) || Stun.is(attacker)) {
+        if (!attacker.isAlive() || data.busyTicks > 0 || Freeze.isFrozen(attacker) || Stun.is(attacker) || Defense.isGuarding(attacker)) {
             return false;
         }
         if (data.punchDelay > 0) {
@@ -109,6 +109,7 @@ public final class Melee {
         data.comboStep = step + 1 >= spec.golpes().size() ? 0 : step + 1;
         data.comboResetTicks = spec.resetTicks();
         data.punchDelay = golpe.windUp() + golpe.recuperacaoTicks();
+        CombatMode.enter(attacker);
         PacketDistributor.sendToPlayersTrackingEntityAndSelf(attacker, new ModPayloads.ComboAnimation(attacker.getId(), step));
         if (golpe.avanco() > 0) {
             Vec3 look = Combat.flatLook(attacker).scale(golpe.avanco());
@@ -133,6 +134,10 @@ public final class Melee {
             return;
         }
         LivingEntity hit = target;
+        // Guarded: the defense already played its effects; no stun, no hitstop.
+        if (Defense.blockedThisTick(hit)) {
+            return;
+        }
         // On the side of the body facing the puncher.
         Vec3 toAttacker = attacker.getEyePosition().subtract(Combat.center(hit));
         Vec3 hitPos = Combat.center(hit).add(toAttacker.lengthSqr() < 1.0E-4 ? Vec3.ZERO : toAttacker.normalize().scale(hit.getBbWidth() * 0.5));
@@ -206,6 +211,7 @@ public final class Melee {
             Fx.sound(level, front, SoundEvents.PLAYER_ATTACK_STRONG, 1.5f, 0.6f);
             if (target != null) {
                 Vec3 hitPos = Combat.center(target);
+                Defense.breakGuard(target, player);
                 Combat.hurt(player, target, 10f * mult);
                 Combat.push(target, look, 2.6, 0.6);
                 Fx.burst(level, ParticleTypes.EXPLOSION, hitPos, 2, 0.3, 0);

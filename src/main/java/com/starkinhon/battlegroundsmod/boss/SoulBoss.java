@@ -9,6 +9,7 @@ import com.starkinhon.battlegroundsmod.movement.Movement;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
 import com.starkinhon.battlegroundsmod.power.PowerData;
 import com.starkinhon.battlegroundsmod.power.PowerLogic;
+import com.starkinhon.battlegroundsmod.power.Tiers;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerBossEvent;
@@ -166,6 +167,7 @@ public abstract class SoulBoss extends Monster {
         setBase(Attributes.KNOCKBACK_RESISTANCE, atributos.resistenciaEmpurrao());
         setBase(Attributes.FOLLOW_RANGE, atributos.alcanceVisao());
         setHealth(getMaxHealth());
+        powerData().tier = spec.tier() != null ? Tiers.clamp(spec.tier()) : Tiers.HUMANO;
         phase = 0;
         BossSpec.Intro intro = spec.intro();
         stage(intro.duracaoTicks(), true);

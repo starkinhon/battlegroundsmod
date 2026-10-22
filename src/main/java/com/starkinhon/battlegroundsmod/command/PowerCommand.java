@@ -2,6 +2,7 @@ package com.starkinhon.battlegroundsmod.command;
 
 import java.util.List;
 
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.starkinhon.battlegroundsmod.ModAttachments;
@@ -11,18 +12,29 @@ import com.starkinhon.battlegroundsmod.power.Power;
 import com.starkinhon.battlegroundsmod.power.PowerData;
 import com.starkinhon.battlegroundsmod.power.PowerLogic;
 import com.starkinhon.battlegroundsmod.power.Powers;
+import com.starkinhon.battlegroundsmod.power.Tiers;
 
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
+import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 
-// The power subcommands of /soul (see SoulCommand): escolher <poder> | limpar | carregar | semcooldown | despertar | hitbox | livro
+// The power subcommands of /soul (see SoulCommand): escolher <poder> | limpar | carregar | semcooldown | despertar | hitbox | tier | livro
 public final class PowerCommand {
 
     private PowerCommand() {
+    }
+
+    private static int setTier(CommandSourceStack source, ServerPlayer player, int tier) {
+        player.getData(ModAttachments.POWER).tier = tier;
+        Tiers.apply(player);
+        player.setHealth(player.getMaxHealth());
+        PowerLogic.sync(player);
+        source.sendSuccess(() -> Component.translatable("message.battlegroundsmod.tier_set", player.getDisplayName(), tier, Tiers.name(tier)), true);
+        return 1;
     }
 
     public static List<LiteralArgumentBuilder<CommandSourceStack>> subcommands() {
@@ -44,7 +56,7 @@ public final class PowerCommand {
                     PowerLogic.clear(context.getSource().getPlayerOrException());
                     return 1;
                 }),
-                // Fills energy and ult and clears cooldowns. Handy for recording.
+                // Fills the ult and clears cooldowns. Handy for recording.
                 Commands.literal("carregar").executes(context -> {
                     ServerPlayer player = context.getSource().getPlayerOrException();
                     PowerData data = player.getData(ModAttachments.POWER);
@@ -80,6 +92,21 @@ public final class PowerCommand {
                             ? "message.battlegroundsmod.hitbox_on" : "message.battlegroundsmod.hitbox_off"), false);
                     return 1;
                 }),
+                // Power tier: /soul tier shows it, /soul tier <0-10> [jogador] sets it (0 Deus ... 10 Humano).
+                Commands.literal("tier")
+                        .executes(context -> {
+                            ServerPlayer player = context.getSource().getPlayerOrException();
+                            int tier = Tiers.of(player);
+                            context.getSource().sendSuccess(() -> Component.translatable("message.battlegroundsmod.tier_is", tier, Tiers.name(tier)), false);
+                            return 1;
+                        })
+                        .then(Commands.argument("tier", IntegerArgumentType.integer(Tiers.DEUS, Tiers.HUMANO))
+                                .executes(context -> setTier(context.getSource(), context.getSource().getPlayerOrException(),
+                                        IntegerArgumentType.getInteger(context, "tier")))
+                                .then(Commands.argument("jogador", EntityArgument.player())
+                                        .requires(source -> source.hasPermission(2))
+                                        .executes(context -> setTier(context.getSource(), EntityArgument.getPlayer(context, "jogador"),
+                                                IntegerArgumentType.getInteger(context, "tier"))))),
                 Commands.literal("livro").executes(context -> {
                     context.getSource().getPlayerOrException().getInventory().add(new ItemStack(ModItems.POWER_BOOK.get()));
                     return 1;

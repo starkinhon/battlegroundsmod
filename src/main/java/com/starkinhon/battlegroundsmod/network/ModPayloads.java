@@ -7,6 +7,8 @@ import java.util.UUID;
 import com.starkinhon.battlegroundsmod.BattlegroundsMod;
 import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.client.ClientHooks;
+import com.starkinhon.battlegroundsmod.combat.CombatMode;
+import com.starkinhon.battlegroundsmod.combat.Defense;
 import com.starkinhon.battlegroundsmod.combat.Melee;
 import com.starkinhon.battlegroundsmod.movement.Movement;
 import com.starkinhon.battlegroundsmod.power.PowerData;
@@ -60,13 +62,52 @@ public final class ModPayloads {
         }
     }
 
-    // Client -> server: left click with an empty hand: the next punch of the combo, even into the air.
-    public record Punch() implements CustomPacketPayload {
+    // Client -> server: the next punch of the combo, even into the air. key: the "Ataque rápido" of the base attack
+    // selector (works with anything in hand and starts combat mode); otherwise a left click with an empty hand in combat.
+    public record Punch(boolean key) implements CustomPacketPayload {
         public static final Type<Punch> TYPE = payloadType("punch");
-        public static final StreamCodec<ByteBuf, Punch> STREAM_CODEC = StreamCodec.unit(new Punch());
+        public static final StreamCodec<ByteBuf, Punch> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.BOOL, Punch::key, Punch::new);
 
         @Override
         public Type<Punch> type() {
+            return TYPE;
+        }
+    }
+
+    // Client -> server: the defense key went down or up.
+    public record Guard(boolean down) implements CustomPacketPayload {
+        public static final Type<Guard> TYPE = payloadType("guard");
+        public static final StreamCodec<ByteBuf, Guard> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.BOOL, Guard::down, Guard::new);
+
+        @Override
+        public Type<Guard> type() {
+            return TYPE;
+        }
+    }
+
+    // Client -> server: Ctrl + double tap forward: appear in front of whoever the player fights or aims at.
+    public record Teleport() implements CustomPacketPayload {
+        public static final Type<Teleport> TYPE = payloadType("teleport");
+        public static final StreamCodec<ByteBuf, Teleport> STREAM_CODEC = StreamCodec.unit(new Teleport());
+
+        @Override
+        public Type<Teleport> type() {
+            return TYPE;
+        }
+    }
+
+    // Server -> client: entityId is guarding (arms up) or stopped.
+    public record GuardPose(int entityId, boolean on) implements CustomPacketPayload {
+        public static final Type<GuardPose> TYPE = payloadType("guard_pose");
+        public static final StreamCodec<ByteBuf, GuardPose> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, GuardPose::entityId,
+                ByteBufCodecs.BOOL, GuardPose::on,
+                GuardPose::new);
+
+        @Override
+        public Type<GuardPose> type() {
             return TYPE;
         }
     }
@@ -84,13 +125,14 @@ public final class ModPayloads {
     }
 
     // Server -> client: power state for the HUD.
-    public record SyncPower(String power, float energy, float ult, List<Integer> cooldowns) implements CustomPacketPayload {
+    public record SyncPower(String power, float ult, List<Integer> cooldowns, boolean combat, int tier) implements CustomPacketPayload {
         public static final Type<SyncPower> TYPE = payloadType("sync_power");
         public static final StreamCodec<ByteBuf, SyncPower> STREAM_CODEC = StreamCodec.composite(
                 ByteBufCodecs.STRING_UTF8, SyncPower::power,
-                ByteBufCodecs.FLOAT, SyncPower::energy,
                 ByteBufCodecs.FLOAT, SyncPower::ult,
                 ByteBufCodecs.VAR_INT.apply(ByteBufCodecs.list()), SyncPower::cooldowns,
+                ByteBufCodecs.BOOL, SyncPower::combat,
+                ByteBufCodecs.VAR_INT, SyncPower::tier,
                 SyncPower::new);
 
         public static SyncPower of(PowerData data) {
@@ -98,14 +140,15 @@ public final class ModPayloads {
             for (int cooldown : data.cooldowns) {
                 cooldowns.add(cooldown);
             }
-            return new SyncPower(data.power, data.energy, data.ult, cooldowns);
+            return new SyncPower(data.power, data.ult, cooldowns, data.combat, data.tier);
         }
 
         void applyTo(Player player) {
             PowerData data = player.getData(ModAttachments.POWER);
             data.power = power;
-            data.energy = energy;
             data.ult = ult;
+            data.combat = combat;
+            data.tier = tier;
             for (int i = 0; i < data.cooldowns.length && i < cooldowns.size(); i++) {
                 data.cooldowns[i] = cooldowns.get(i);
             }
@@ -324,9 +367,24 @@ public final class ModPayloads {
             }
         }));
         registrar.playToServer(Punch.TYPE, Punch.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
-            if (context.player() instanceof ServerPlayer player && player.getMainHandItem().isEmpty()
-                    && player.getData(ModAttachments.POWER).hasPower() && !player.isSpectator()) {
+            if (!(context.player() instanceof ServerPlayer player) || !player.getData(ModAttachments.POWER).hasPower() || player.isSpectator()) {
+                return;
+            }
+            if (payload.key()) {
+                CombatMode.enter(player);
                 Melee.punch(player, null);
+            } else if (player.getMainHandItem().isEmpty() && CombatMode.in(player)) {
+                Melee.punch(player, null);
+            }
+        }));
+        registrar.playToServer(Guard.TYPE, Guard.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
+            if (context.player() instanceof ServerPlayer player) {
+                Defense.setGuard(player, payload.down());
+            }
+        }));
+        registrar.playToServer(Teleport.TYPE, Teleport.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
+            if (context.player() instanceof ServerPlayer player) {
+                Movement.teleport(player);
             }
         }));
         registrar.playToServer(SelectPower.TYPE, SelectPower.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
@@ -339,6 +397,8 @@ public final class ModPayloads {
                 () -> ClientHooks.playSkillAnimation(payload.entityId(), payload.skill(), payload.awakened())));
         registrar.playToClient(ComboAnimation.TYPE, ComboAnimation.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.comboAnimation(payload.entityId(), payload.step())));
+        registrar.playToClient(GuardPose.TYPE, GuardPose.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.guardPose(payload.entityId(), payload.on())));
         registrar.playToClient(Hitstop.TYPE, Hitstop.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.hitstop(payload.entityId(), payload.ticks())));
         registrar.playToClient(FaceCutscene.TYPE, FaceCutscene.STREAM_CODEC, (payload, context) -> context.enqueueWork(

@@ -4,14 +4,18 @@ import java.util.List;
 
 import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.ModEffects;
+import com.starkinhon.battlegroundsmod.combat.Combat;
+import com.starkinhon.battlegroundsmod.combat.CombatMode;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.combat.Fx;
 import com.starkinhon.battlegroundsmod.combat.Intangible;
 import com.starkinhon.battlegroundsmod.combat.SkillSounds;
 import com.starkinhon.battlegroundsmod.combat.Stun;
 import com.starkinhon.battlegroundsmod.fx.ModParticles;
+import com.starkinhon.battlegroundsmod.power.PowerData;
 import com.starkinhon.battlegroundsmod.skill.MovementSpec;
 import com.starkinhon.battlegroundsmod.skill.SkillSpecs;
+import com.starkinhon.battlegroundsmod.skill.TeleporteSpec;
 
 import net.minecraft.core.Holder;
 import net.minecraft.server.level.ServerLevel;
@@ -24,8 +28,10 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 
-// The standard moves every fighter has, separate from the powers: the back dodge (back + jump on the ground) and the
-// air jump (jump again in the air). Values come from souls_skills/padrao.esquiva.json and padrao.pulo_duplo.json.
+// The standard moves every fighter has, separate from the powers: the back dodge (back + jump on the ground), the air
+// jump (jump again in the air) and, in combat mode, the side dodge (left/right + jump on the ground), the dash (dash key,
+// towards the move input) and the teleport to the target (Ctrl + double tap forward). Values come from
+// souls_skills/padrao.esquiva.json, padrao.pulo_duplo.json, padrao.desvio.json, padrao.dash.json and padrao.teleporte.json.
 //
 // Players: the client starts the move itself so it feels instant (client/MovementInput) and tells the server, which
 // checks it and adds the rest (dodge window, fall protection, puffs, sounds).
@@ -42,7 +48,9 @@ public final class Movement {
 
     public enum Kind {
         ESQUIVA("padrao.esquiva"),
-        PULO_DUPLO("padrao.pulo_duplo");
+        PULO_DUPLO("padrao.pulo_duplo"),
+        DESVIO("padrao.desvio"),
+        DASH("padrao.dash");
 
         public final String skill;
 
@@ -52,7 +60,7 @@ public final class Movement {
 
         // The effect shown while the move keeps fall damage off.
         public Holder<MobEffect> effect() {
-            return this == ESQUIVA ? ModEffects.ESQUIVA : ModEffects.PULO_DUPLO;
+            return this == PULO_DUPLO ? ModEffects.PULO_DUPLO : ModEffects.ESQUIVA;
         }
 
         public MovementSpec spec() {
@@ -91,11 +99,16 @@ public final class Movement {
         if (!spec.funcionaNoCriativo() && entity instanceof Player player && player.getAbilities().mayfly) {
             return false;
         }
+        // The side dodge and the dash are fight moves: players only get them in combat mode.
+        if ((kind == Kind.DESVIO || kind == Kind.DASH) && entity instanceof Player && !CombatMode.in(entity)) {
+            return false;
+        }
         return switch (kind) {
             // For players the server only checks the cooldown: it sees their take-off and landing a moment late,
             // and the client already checked the ground and the spent air jump.
-            case ESQUIVA -> slack > 0 || entity.onGround();
+            case ESQUIVA, DESVIO -> slack > 0 || entity.onGround();
             case PULO_DUPLO -> slack > 0 || !data.airJumpUsed && !entity.onGround();
+            case DASH -> true;
         };
     }
 
@@ -105,6 +118,11 @@ public final class Movement {
         MovementSpec spec = kind.spec();
         if (kind == Kind.ESQUIVA) {
             forward = -1;
+        } else if (kind == Kind.DESVIO) {
+            forward = 0;
+            strafe = strafe >= 0 ? 1 : -1;
+        } else if (kind == Kind.DASH && forward == 0 && strafe == 0) {
+            forward = 1;
         }
         Vec3 dir = inputDirection(entity.getYRot(), forward, strafe);
         Vec3 current = entity.getDeltaMovement();
@@ -168,6 +186,72 @@ public final class Movement {
         }
         spend(player, kind);
         effects(player.serverLevel(), player, kind, velocity(player, kind, Mth.clamp(forward, -1, 1), Mth.clamp(strafe, -1, 1)));
+    }
+
+    // Server: Ctrl + double tap forward. Appears in front of the target, facing it.
+    public static void teleport(ServerPlayer player) {
+        TeleporteSpec spec = TeleporteSpec.get();
+        MovementData data = data(player);
+        long now = player.level().getGameTime();
+        if (!CombatMode.in(player) || !free(player) || Freeze.isFrozen(player) || now + COOLDOWN_SLACK < data.teleportReadyAt) {
+            return;
+        }
+        LivingEntity target = teleportTarget(player, spec);
+        if (target == null) {
+            return;
+        }
+        Vec3 spot = spotInFront(player, target, spec.distanciaFrente());
+        if (spot == null) {
+            return;
+        }
+        data.teleportReadyAt = now + spec.recargaTicks();
+        ServerLevel level = player.serverLevel();
+        Vec3 from = player.position().add(0, 1, 0);
+        Vec3 look = Combat.center(target).subtract(spot.add(0, player.getEyeHeight(), 0));
+        float yRot = (float) (Mth.atan2(-look.x, look.z) * Mth.RAD_TO_DEG);
+        float xRot = (float) (-Mth.atan2(look.y, Math.sqrt(look.x * look.x + look.z * look.z)) * Mth.RAD_TO_DEG);
+        player.connection.teleport(spot.x, spot.y, spot.z, yRot, xRot);
+        player.setYHeadRot(yRot);
+        player.setDeltaMovement(Vec3.ZERO);
+        player.hurtMarked = true;
+        player.resetFallDistance();
+        CombatMode.enter(player);
+        Vec3 to = spot.add(0, 1, 0);
+        SkillSounds.play(level, spec.sons(), "saida", 0, 0, onde -> from, List.of());
+        SkillSounds.play(level, spec.sons(), "chegada", 0, 0, onde -> to, List.of());
+        Fx.effects(level, "padrao.teleporte", false, "saida", from, look.normalize());
+        Fx.effects(level, "padrao.teleporte", false, "chegada", to, look.normalize());
+    }
+
+    // Who the player aims at, else who they fought last.
+    private static LivingEntity teleportTarget(ServerPlayer player, TeleporteSpec spec) {
+        LivingEntity aimed = Combat.raycastTarget(player, spec.alcance());
+        if (aimed != null) {
+            return aimed;
+        }
+        PowerData power = player.getData(ModAttachments.POWER);
+        if (power.foughtId >= 0 && player.level().getGameTime() - power.foughtAt <= spec.lembrarAlvoTicks()
+                && player.level().getEntity(power.foughtId) instanceof LivingEntity fought && Combat.isTarget(fought, player)
+                && fought.distanceTo(player) <= spec.alcance()) {
+            return fought;
+        }
+        return null;
+    }
+
+    // Where to stand in front of target (where it faces), or to its sides or back when that is blocked.
+    private static Vec3 spotInFront(ServerPlayer player, LivingEntity target, double distance) {
+        Vec3 facing = Combat.flatLook(target);
+        for (double angle : new double[] {0, 50, -50, 100, -100, 180}) {
+            Vec3 dir = facing.yRot((float) Math.toRadians(angle));
+            Vec3 spot = target.position().add(dir.scale(distance + target.getBbWidth() * 0.5));
+            for (double up : new double[] {0, 1, -1}) {
+                Vec3 feet = spot.add(0, up, 0);
+                if (Combat.canStandAt(player, feet)) {
+                    return feet;
+                }
+            }
+        }
+        return null;
     }
 
     private static void effects(ServerLevel level, LivingEntity entity, Kind kind, Vec3 velocity) {

@@ -14,8 +14,8 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 
-// Left click with an empty hand and a power throws the next punch of the combo, also into the air (vanilla only
-// attacks when the crosshair is on someone). The server picks the target. Clicking a block still mines it, unless
+// In combat mode, left click with an empty hand throws the next punch of the combo, also into the air (vanilla only
+// attacks when the crosshair is on someone). Out of combat mode left click is vanilla. The server picks the target. Clicking a block still mines it, unless
 // someone is standing in front, closer than the block.
 public final class PunchInput {
     private PunchInput() {
@@ -25,7 +25,8 @@ public final class PunchInput {
         Minecraft minecraft = Minecraft.getInstance();
         LocalPlayer player = minecraft.player;
         if (!event.isAttack() || event.getHand() != InteractionHand.MAIN_HAND || player == null || player.isSpectator()
-                || !player.getMainHandItem().isEmpty() || !player.getData(ModAttachments.POWER).hasPower()) {
+                || !player.getMainHandItem().isEmpty() || !player.getData(ModAttachments.POWER).hasPower()
+                || !player.getData(ModAttachments.POWER).combat) {
             return;
         }
         HitResult hit = minecraft.hitResult;
@@ -35,7 +36,7 @@ public final class PunchInput {
         }
         event.setCanceled(true);
         event.setSwingHand(false);
-        PacketDistributor.sendToServer(new ModPayloads.Punch());
+        PacketDistributor.sendToServer(new ModPayloads.Punch(false));
     }
 
     private static boolean someoneAhead(LocalPlayer player, double blockDistance) {

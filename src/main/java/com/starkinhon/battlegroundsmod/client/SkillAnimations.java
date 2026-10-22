@@ -2,11 +2,13 @@ package com.starkinhon.battlegroundsmod.client;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
 
 import com.starkinhon.battlegroundsmod.skill.AnimationSpec;
+import com.starkinhon.battlegroundsmod.skill.DefesaSpec;
 import com.starkinhon.battlegroundsmod.skill.SkillSpec;
 import com.starkinhon.battlegroundsmod.skill.SkillSpecs;
 
@@ -32,6 +34,8 @@ public final class SkillAnimations {
     }
 
     private static final double BLEND_TICKS = 1.5;
+    // Entities holding their guard up (Defense); they stand in the guard pose when no move is playing.
+    private static final Set<Integer> GUARDING = new HashSet<>();
 
     private static final Map<Integer, Playing> PLAYING = new HashMap<>();
     private static final Set<HumanoidModel<?>> SHIFTED = Collections.newSetFromMap(new WeakHashMap<>());
@@ -48,6 +52,14 @@ public final class SkillAnimations {
         Entity entity = entity(entityId);
         if (entity != null) {
             PLAYING.put(entityId, new Playing(spec, entity.tickCount, current(entity), 0, 0));
+        }
+    }
+
+    public static void guard(int entityId, boolean on) {
+        if (on) {
+            GUARDING.add(entityId);
+        } else {
+            GUARDING.remove(entityId);
         }
     }
 
@@ -88,11 +100,13 @@ public final class SkillAnimations {
             PLAYING.remove(entity.getId());
         }
         // First person hands are posed with ageInTicks 0, which lands here as t < 0 and leaves the animation running.
-        if (raw < 0 || raw > playing.end()) {
+        boolean animating = raw >= 0 && raw <= playing.end();
+        boolean guard = ageInTicks != 0 && GUARDING.contains(entity.getId());
+        if (!animating && !guard) {
             unshift(model);
             return;
         }
-        SkillSpec.Pose pose = pose(playing, playing.time(raw), raw);
+        SkillSpec.Pose pose = animating ? pose(playing, playing.time(raw), raw) : DefesaSpec.get().pose();
         float lean = (float) pose.tronco() * DEG;
         // Lean around the hips like the page does: the neck and shoulders swing with the body.
         float cos = (float) Math.cos(lean);
