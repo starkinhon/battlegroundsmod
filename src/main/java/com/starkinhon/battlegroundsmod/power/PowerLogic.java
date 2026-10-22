@@ -77,9 +77,12 @@ public final class PowerLogic {
         sync(player);
     }
 
+    // Being hit (stun, Cooldown effect) blocks every move but a counter.
     private static boolean canCast(LivingEntity caster, PowerData data, int slot) {
+        Power power = Powers.get(data.power);
+        boolean counter = power != null && ability(power, slot).counter();
         return !caster.isSpectator() && caster.isAlive() && data.cooldowns[slot] <= 0 && data.busyTicks <= 0 && !Freeze.isFrozen(caster)
-                && Stun.canAttack(caster) && !Defense.isGuarding(caster) && !sealed(caster);
+                && (counter || Stun.canAttack(caster)) && !Defense.isGuarding(caster) && !sealed(caster);
     }
 
     public static boolean sealed(LivingEntity caster) {
