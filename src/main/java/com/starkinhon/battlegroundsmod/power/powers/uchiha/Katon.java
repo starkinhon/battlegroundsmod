@@ -22,7 +22,8 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 // Katon: a huge stream of fire from the mouth. The player can aim while breathing.
-// Timing, shape and particles come from souls_skills/madara.katon.json (tuned in the Forja de Skills page).
+// Timing, shape and particles come from souls_skills/madara.katon.json (tuned in the Forja de Skills page),
+// with its "despertado" block laid over them in awakened mode.
 // Gameplay lives here, visuals in UchihaFx so they can be swapped for Photon later.
 public final class Katon {
     public static final String SKILL = "madara.katon";
@@ -35,14 +36,14 @@ public final class Katon {
     }
 
     public static boolean use(ServerPlayer player, ServerLevel level) {
-        SkillSpec spec = SkillSpecs.get(SKILL);
-        SkillSpec.Tempo tempo = spec.tempo();
         PowerData data = player.getData(ModAttachments.POWER);
+        SkillSpec spec = SkillSpecs.get(SKILL, SkillSpec.class, data.awakened);
+        SkillSpec.Tempo tempo = spec.tempo();
         String power = data.power;
         data.busyTicks = tempo.totalTicks();
         // The caster is rooted during the wind-up and while breathing fire, but can still turn to aim.
         player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, tempo.totalTicks(), 2, false, false, false));
-        PacketDistributor.sendToPlayersTrackingEntityAndSelf(player, new ModPayloads.PlaySkillAnimation(player.getId(), SKILL));
+        PacketDistributor.sendToPlayersTrackingEntityAndSelf(player, new ModPayloads.PlaySkillAnimation(player.getId(), SKILL, data.awakened));
         Map<LivingEntity, Integer> lastHit = new HashMap<>();
         Tasks.add(tick -> {
             if (!player.isAlive() || player.isRemoved() || !power.equals(player.getData(ModAttachments.POWER).power)) {

@@ -87,15 +87,35 @@ public final class ModPayloads {
     }
 
     // Server -> client: a player started a skill with a body animation (timing comes from the skill's spec).
-    public record PlaySkillAnimation(int entityId, String skill) implements CustomPacketPayload {
+    public record PlaySkillAnimation(int entityId, String skill, boolean awakened) implements CustomPacketPayload {
         public static final Type<PlaySkillAnimation> TYPE = payloadType("play_skill_animation");
         public static final StreamCodec<ByteBuf, PlaySkillAnimation> STREAM_CODEC = StreamCodec.composite(
                 ByteBufCodecs.VAR_INT, PlaySkillAnimation::entityId,
                 ByteBufCodecs.STRING_UTF8, PlaySkillAnimation::skill,
+                ByteBufCodecs.BOOL, PlaySkillAnimation::awakened,
                 PlaySkillAnimation::new);
 
         @Override
         public Type<PlaySkillAnimation> type() {
+            return TYPE;
+        }
+    }
+
+    // Server -> client: point this player's camera at someone's face for a moment (Mangekyo and similar moves).
+    public record FaceCutscene(int entityId, int ticks, float startDistance, float endDistance, float height, boolean hideHud)
+            implements CustomPacketPayload {
+        public static final Type<FaceCutscene> TYPE = payloadType("face_cutscene");
+        public static final StreamCodec<ByteBuf, FaceCutscene> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, FaceCutscene::entityId,
+                ByteBufCodecs.VAR_INT, FaceCutscene::ticks,
+                ByteBufCodecs.FLOAT, FaceCutscene::startDistance,
+                ByteBufCodecs.FLOAT, FaceCutscene::endDistance,
+                ByteBufCodecs.FLOAT, FaceCutscene::height,
+                ByteBufCodecs.BOOL, FaceCutscene::hideHud,
+                FaceCutscene::new);
+
+        @Override
+        public Type<FaceCutscene> type() {
             return TYPE;
         }
     }
@@ -114,6 +134,9 @@ public final class ModPayloads {
         }));
         registrar.playToClient(SyncPower.TYPE, SyncPower.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> payload.applyTo(context.player())));
         registrar.playToClient(PlaySkillAnimation.TYPE, PlaySkillAnimation.STREAM_CODEC, (payload, context) -> context.enqueueWork(
-                () -> ClientHooks.playSkillAnimation(payload.entityId(), payload.skill())));
+                () -> ClientHooks.playSkillAnimation(payload.entityId(), payload.skill(), payload.awakened())));
+        registrar.playToClient(FaceCutscene.TYPE, FaceCutscene.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.startFaceCutscene(payload.entityId(), payload.ticks(), payload.startDistance(),
+                        payload.endDistance(), payload.height(), payload.hideHud())));
     }
 }

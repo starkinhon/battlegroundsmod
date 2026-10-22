@@ -18,7 +18,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 
-// /poder escolher <poder> | /poder limpar | /poder carregar | /poder semcooldown | /poder hitbox | /poder livro
+// /poder escolher <poder> | /poder limpar | /poder carregar | /poder semcooldown | /poder despertar | /poder hitbox | /poder livro
 public final class PowerCommand {
 
     private PowerCommand() {
@@ -63,6 +63,15 @@ public final class PowerCommand {
                     PowerLogic.sync(player);
                     context.getSource().sendSuccess(() -> Component.translatable(data.noCooldown
                             ? "message.battlegroundsmod.no_cooldown_on" : "message.battlegroundsmod.no_cooldown_off"), false);
+                    return 1;
+                }))
+                // Awakened mode: skills switch to their stronger "despertado" values.
+                .then(Commands.literal("despertar").executes(context -> {
+                    ServerPlayer player = context.getSource().getPlayerOrException();
+                    PowerData data = player.getData(ModAttachments.POWER);
+                    data.awakened = !data.awakened;
+                    context.getSource().sendSuccess(() -> Component.translatable(data.awakened
+                            ? "message.battlegroundsmod.awakened_on" : "message.battlegroundsmod.awakened_off"), false);
                     return 1;
                 }))
                 // Shows the hitboxes of cone moves as white particles.

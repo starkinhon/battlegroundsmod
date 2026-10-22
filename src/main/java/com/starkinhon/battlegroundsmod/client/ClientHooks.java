@@ -8,8 +8,12 @@ public final class ClientHooks {
     private ClientHooks() {
     }
 
-    public static void playSkillAnimation(int entityId, String skill) {
-        SkillAnimations.play(entityId, skill);
+    public static void playSkillAnimation(int entityId, String skill, boolean awakened) {
+        SkillAnimations.play(entityId, skill, awakened);
+    }
+
+    public static void startFaceCutscene(int entityId, int ticks, float startDistance, float endDistance, float height, boolean hideHud) {
+        FaceCutscene.start(entityId, ticks, startDistance, endDistance, height, hideHud);
     }
 
     public static void openPowerSelect() {

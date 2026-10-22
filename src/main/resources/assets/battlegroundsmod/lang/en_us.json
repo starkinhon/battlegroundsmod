@@ -24,6 +24,8 @@
 
   "message.battlegroundsmod.no_cooldown_on": "Cooldowns and costs off.",
   "message.battlegroundsmod.no_cooldown_off": "Cooldowns and costs back on.",
+  "message.battlegroundsmod.awakened_on": "Awakened mode on.",
+  "message.battlegroundsmod.awakened_off": "Awakened mode off.",
   "message.battlegroundsmod.hitbox_on": "Hitboxes visible.",
   "message.battlegroundsmod.hitbox_off": "Hitboxes hidden.",
   "message.battlegroundsmod.welcome": "§6You received the Book of Souls! §7Right click it to choose the soul that will join you.",
@@ -39,7 +41,7 @@
   "power.battlegroundsmod.uchiha_ghost": "Ghost of the Uchiha",
   "power.battlegroundsmod.uchiha_ghost.desc": "Masters fire and calls meteors from the sky.",
   "ability.battlegroundsmod.uchiha_ghost.0": "Katon: Great Fire Stream",
-  "ability.battlegroundsmod.uchiha_ghost.1": "Flame Wave",
+  "ability.battlegroundsmod.uchiha_ghost.1": "Mangekyo",
   "ability.battlegroundsmod.uchiha_ghost.2": "Spectral Armor",
   "ability.battlegroundsmod.uchiha_ghost.3": "Meteor Fall",
 
