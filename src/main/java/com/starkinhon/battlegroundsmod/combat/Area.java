@@ -19,7 +19,7 @@ public interface Area {
 
     List<LivingEntity> targets();
 
-    // Outline in particles, for /poder hitbox.
+    // Outline in particles, for /soul hitbox.
     void draw(ParticleOptions particle);
 
     // tipo "cone": opens from the eyes along the aim (comprimento, raioInicio, raioFim).
