@@ -1,19 +1,17 @@
 package com.starkinhon.battlegroundsmod.power.powers.uchiha;
 
 import com.starkinhon.battlegroundsmod.combat.Fx;
-import com.starkinhon.battlegroundsmod.combat.Tasks;
 import com.starkinhon.battlegroundsmod.fx.ModParticles;
 import com.starkinhon.battlegroundsmod.skill.MeteoroSpec;
 
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.phys.Vec3;
 
-// Look of the Meteoro, with the mod's own particles (fx/ModParticles). The ball is drawn on the client by
-// client/fx/MeteorRenderer; everything around it is here.
+// Look of the Meteoro, a copy of the Forja's emit() with the mod's own particles (fx/ModParticles). The ball and the
+// warning circle on the ground are drawn on the client by client/fx/MeteorRenderer; everything around them is here.
 final class MeteoroFx {
     private static final RandomSource RANDOM = RandomSource.create();
 
@@ -25,35 +23,19 @@ final class MeteoroFx {
         Fx.sound(level, player.position(), SoundEvents.BEACON_POWER_SELECT, 1.5f, 0.4f);
     }
 
-    // Dark red energy pulled up from the raised right hand.
-    static void prepare(ServerLevel level, ServerPlayer player, MeteoroSpec spec, int age) {
+    // Dark red dust swirling up around the caster.
+    static void prepare(ServerLevel level, ServerPlayer player, MeteoroSpec spec) {
         MeteoroSpec.Preparo preparo = spec.preparo();
         if (!preparo.ativa()) {
             return;
         }
-        Vec3 flat = Vec3.directionFromRotation(0, player.getYRot());
-        Vec3 right = new Vec3(-flat.z, 0, flat.x);
-        Vec3 hand = player.position().add(right.scale(0.4)).add(0, 2.6, 0);
-        var glow = ModParticles.glow(UchihaFx.parseColor(preparo.cor()), 0.5f, 0.1f, 18, 0.9f);
+        int color = UchihaFx.parseColor(preparo.cor());
         for (int i = 0; i < preparo.porTick(); i++) {
-            double angle = age * 0.4 + i * Math.PI * 2 / Math.max(1, preparo.porTick());
-            double radius = 0.4 + RANDOM.nextDouble() * 0.5;
-            Vec3 pos = hand.add(Math.cos(angle) * radius, RANDOM.nextDouble() * 0.6, Math.sin(angle) * radius);
-            Fx.moving(level, glow, pos, new Vec3(-Math.cos(angle) * 0.03, 0.25 + RANDOM.nextDouble() * 0.2, -Math.sin(angle) * 0.03));
+            double a = RANDOM.nextDouble() * Math.PI * 2;
+            double r = 0.7 + RANDOM.nextDouble() * 0.5;
+            Vec3 pos = player.position().add(Math.cos(a) * r, RANDOM.nextDouble() * 2.2, Math.sin(a) * r);
+            Fx.moving(level, ModParticles.dust(color, 1.3f), pos, new Vec3(-Math.sin(a) * 0.08, 0.06, Math.cos(a) * 0.08));
         }
-    }
-
-    // Circle on the ground with a second one closing in as the meteor gets near.
-    static void warning(ServerLevel level, MeteoroSpec spec, Vec3 target, double progress, int age) {
-        if (!spec.aviso().ativo() || age % 3 != 0) {
-            return;
-        }
-        double radius = spec.impacto().raio();
-        var glow = ModParticles.glow(UchihaFx.parseColor(spec.aviso().cor()), 1.2f, 1.0f, 8, 0.8f);
-        Vec3 center = target.add(0, 0.3, 0);
-        int points = (int) Math.min(200, Math.max(24, radius * 4));
-        Fx.ring(level, glow, center, radius, points, 0);
-        Fx.ring(level, glow, center, Math.max(0.5, radius * (1 - progress)), Math.max(12, (int) (points * (1 - progress))), age * 0.02);
     }
 
     static void fall(ServerLevel level, MeteoroSpec spec, Meteoro.Fall fall, int age) {
@@ -64,59 +46,42 @@ final class MeteoroFx {
         if (age % 10 == 0) {
             Fx.sound(level, fall.end(), SoundEvents.FIRECHARGE_USE, 3f, 0.4f + age / (float) fall.ticks() * 0.4f);
         }
-        heat(level, spec.meteoro(), fall.dir(), center);
-        double speed = fall.speed(age);
-        for (MeteoroSpec.Fumaca fumaca : spec.fumacas()) {
-            if (fumaca.ativa()) {
-                smoke(level, spec.meteoro(), fumaca, fall.dir(), center, speed);
-            }
-        }
-        if (spec.riscos().ativa()) {
-            streaks(level, spec.meteoro(), spec.riscos(), fall.dir(), center, speed);
-        }
-    }
-
-    // Hot air rippling off the leading face.
-    private static void heat(ServerLevel level, MeteoroSpec.Corpo corpo, Vec3 dir, Vec3 center) {
-        var glow = ModParticles.glow(UchihaFx.parseColor(corpo.corBrilho()), (float) corpo.raio() * 0.35f, (float) corpo.raio() * 0.6f, 6,
-                (float) Math.min(1, 0.25 * corpo.brilho()));
-        for (int i = 0; i < 6; i++) {
-            Fx.burst(level, glow, center.add(dir.scale(corpo.raio() * 0.8)).add(spread(corpo.raio() * 0.8)), 1, 0, 0);
-        }
-    }
-
-    // Puffs left behind around the meteor, slowed by friction like the Forja's clouds. Each trail drifts sideways,
-    // so a pair of trails opens into a V.
-    private static void smoke(ServerLevel level, MeteoroSpec.Corpo corpo, MeteoroSpec.Fumaca fumaca, Vec3 dir, Vec3 center, double speed) {
+        Vec3 dir = fall.dir();
         Vec3 side = dir.cross(new Vec3(0, 1, 0));
         side = side.lengthSqr() < 1.0E-4 ? new Vec3(1, 0, 0) : side.normalize();
         Vec3 up = side.cross(dir).normalize();
-        int sides = Math.max(1, fumaca.lados());
-        double drift = speed * Math.tan(Math.toRadians(fumaca.abertura() / 2));
-        float size = (float) fumaca.largura();
-        var puff = ModParticles.smoke(UchihaFx.parseColor(fumaca.cor()), size, size * 1.8f, Math.max(1, fumaca.duracaoTicks()), 0.85f);
-        for (int s = 0; s < sides; s++) {
-            double angle = s * Math.PI * 2 / sides;
-            Vec3 out = sides == 1 ? Vec3.ZERO : side.scale(Math.cos(angle)).add(up.scale(Math.sin(angle)));
-            Vec3 base = center.add(out.scale(corpo.raio() * fumaca.deslocamento()));
-            for (int i = 0; i < fumaca.densidade(); i++) {
-                Vec3 pos = base.add(spread(size * 0.6)).subtract(dir.scale(RANDOM.nextDouble() * speed));
-                Fx.moving(level, puff, pos, out.scale(drift).add(spread(0.05)));
+        double speed = fall.speed(age);
+        double radius = spec.meteoro().raio();
+        for (MeteoroSpec.Fumaca fumaca : spec.fumacas()) {
+            if (fumaca.ativa()) {
+                smoke(level, fumaca, center, dir, side, up, radius, speed);
+            }
+        }
+        MeteoroSpec.Riscos riscos = spec.riscos();
+        if (riscos.ativa()) {
+            int color = UchihaFx.parseColor(riscos.cor());
+            for (int i = 0; i < riscos.porTick(); i++) {
+                Vec3 pos = center.subtract(dir.scale(radius * (0.7 + RANDOM.nextDouble() * 0.8))).add(disk(side, up, radius * riscos.espalhamento()));
+                Fx.moving(level, ModParticles.streak(color, (float) riscos.comprimento() / 2, 6 + RANDOM.nextInt(10)), pos, dir.scale(-riscos.velocidade()));
             }
         }
     }
 
-    // Thin red streaks pulled out behind the meteor: each spark flies backwards, so together they draw lines.
-    private static void streaks(ServerLevel level, MeteoroSpec.Corpo corpo, MeteoroSpec.Riscos riscos, Vec3 dir, Vec3 center, double speed) {
-        double velocity = Math.max(0.1, riscos.velocidade());
-        int life = (int) Math.max(2, riscos.comprimento() / velocity);
-        var spark = ModParticles.glow(UchihaFx.parseColor(riscos.cor()), 0.35f, 0.15f, life, 1f);
-        Vec3 back = center.subtract(dir.scale(corpo.raio() * 0.8));
-        double spread = corpo.raio() * riscos.espalhamento();
-        for (int i = 0; i < riscos.porTick(); i++) {
-            for (int j = 0; j < 4; j++) {
-                Vec3 pos = back.add(spread(spread)).subtract(dir.scale(RANDOM.nextDouble() * speed));
-                Fx.moving(level, spark, pos, dir.scale(-velocity));
+    // One smoke set: lados trails around the meteor, each puff drifting outwards so a pair opens into a V.
+    private static void smoke(ServerLevel level, MeteoroSpec.Fumaca fumaca, Vec3 center, Vec3 dir, Vec3 side, Vec3 up, double radius, double speed) {
+        int sides = Math.max(1, fumaca.lados());
+        double drift = speed * Math.tan(Math.toRadians(Math.min(fumaca.abertura(), 170) / 2));
+        int color = UchihaFx.parseColor(fumaca.cor());
+        for (int j = 0; j < sides; j++) {
+            double a = sides == 1 ? Math.PI / 2 : j * Math.PI * 2 / sides;
+            Vec3 out = side.scale(Math.cos(a)).add(up.scale(Math.sin(a)));
+            Vec3 base = center.add(out.scale(radius * fumaca.deslocamento())).subtract(dir.scale(radius * 0.3));
+            for (int k = 0; k < fumaca.densidade(); k++) {
+                Vec3 pos = base.add(gauss().scale(fumaca.largura() * 0.18));
+                int life = (int) Math.round(fumaca.duracaoTicks() * (0.8 + RANDOM.nextDouble() * 0.4));
+                float size = (float) (fumaca.largura() / 2 * (0.7 + RANDOM.nextDouble() * 0.6));
+                Fx.moving(level, ModParticles.puff(scale(color, 0.86 + RANDOM.nextDouble() * 0.14), size, life, 0.97f), pos,
+                        out.scale(drift * (0.6 + RANDOM.nextDouble() * 0.5)));
             }
         }
     }
@@ -126,40 +91,59 @@ final class MeteoroFx {
         Fx.sound(level, pos, SoundEvents.GENERIC_EXPLODE.value(), 6f, 0.5f);
         Fx.sound(level, pos, SoundEvents.LIGHTNING_BOLT_THUNDER, 5f, 0.6f);
         Fx.sound(level, pos, SoundEvents.WARDEN_SONIC_BOOM, 4f, 0.5f);
-        MeteoroSpec.Explosao explosao = impacto.explosao();
-        double size = spec.meteoro().raio();
-        if (explosao.ativa()) {
-            int color = UchihaFx.parseColor(explosao.cor());
-            var fire = ModParticles.with(ModParticles.glow(color, (float) size * 0.5f, (float) size * 0.15f, 30, 1f), 0.9f, 0f);
-            for (int i = 0; i < explosao.quantidade(); i++) {
-                Vec3 out = spread(2).normalize();
-                Fx.moving(level, fire, pos.add(0, size * 0.3, 0).add(out.scale(size * 0.3)), out.scale(0.8 + RANDOM.nextDouble() * 1.6).add(0, 0.4, 0));
-            }
-            var dust = ModParticles.smoke(0x4A403C, (float) size * 0.6f, (float) size * 1.4f, 120, 0.9f);
-            for (int i = 0; i < explosao.fumaca(); i++) {
-                Vec3 out = spread(2).normalize();
-                Fx.moving(level, dust, pos.add(0, size * 0.2, 0).add(out.scale(size * 0.4)), out.multiply(1, 0.3, 1).scale(0.5 + RANDOM.nextDouble() * 1.5).add(0, 0.3, 0));
-            }
-            Fx.burst(level, ModParticles.glow(0xFFF2E0, (float) size * 4, (float) size * 6, 12, 0.9f), pos.add(0, size * 0.4, 0), 2, 0, 0);
-        }
+        double radius = impacto.raio();
         MeteoroSpec.Onda onda = impacto.onda();
         if (onda.ativa() && onda.velocidade() > 0) {
-            var wave = ModParticles.glow(UchihaFx.parseColor(onda.cor()), onda.tamanho(), onda.tamanho() * 1.5f, 10, 0.9f);
-            var ground = ModParticles.smoke(0x8A7A6A, onda.tamanho() * 1.2f, onda.tamanho() * 2.2f, 40, 0.7f);
-            int ticks = (int) Math.ceil(impacto.raio() / onda.velocidade());
-            Tasks.repeat(ticks, age -> {
-                double radius = onda.velocidade() * (age + 1);
-                int points = (int) Math.min(240, Math.max(16, radius * 3));
-                Fx.ring(level, wave, pos.add(0, 0.6, 0), radius, points, age * 0.1);
-                if (age % 2 == 0) {
-                    Fx.ring(level, ground, pos.add(0, 0.8, 0), radius, points / 3, 0);
+            int color = UchihaFx.parseColor(onda.cor());
+            int points = (int) Math.max(24, Math.round(radius * 8));
+            int life = (int) Math.ceil(radius * 1.2 / onda.velocidade());
+            for (double y : new double[] {0.3, 1.2}) {
+                for (int i = 0; i < points; i++) {
+                    double a = i * Math.PI * 2 / points;
+                    Fx.moving(level, ModParticles.dust(color, onda.tamanho(), life, 1), pos.add(0, y, 0), new Vec3(Math.cos(a), 0, Math.sin(a)).scale(onda.velocidade()));
                 }
-            });
+            }
         }
-        Fx.burst(level, ParticleTypes.EXPLOSION_EMITTER, pos, 3, size * 0.4, 0);
+        MeteoroSpec.Explosao explosao = impacto.explosao();
+        if (explosao.ativa()) {
+            int color = UchihaFx.parseColor(explosao.cor());
+            for (int i = 0; i < explosao.quantidade(); i++) {
+                Vec3 velocity = new Vec3(RANDOM.nextGaussian() * 0.5, Math.abs(RANDOM.nextGaussian()) * 0.6 + 0.2, RANDOM.nextGaussian() * 0.5);
+                if (i % 3 == 0) {
+                    Fx.moving(level, ModParticles.flame(), pos.add(RANDOM.nextGaussian() * 2, 1 + RANDOM.nextDouble() * 2, RANDOM.nextGaussian() * 2), velocity);
+                } else {
+                    Vec3 at = pos.add(RANDOM.nextGaussian() * radius * 0.25, 1 + RANDOM.nextDouble() * 3, RANDOM.nextGaussian() * radius * 0.25);
+                    Fx.moving(level, ModParticles.dust(color, 4), at, velocity);
+                }
+            }
+            for (int i = 0; i < explosao.fumaca(); i++) {
+                double a = RANDOM.nextDouble() * Math.PI * 2;
+                double r = RANDOM.nextDouble() * radius * 0.5;
+                double g = 0.75 + RANDOM.nextDouble() * 0.2;
+                int gray = rgb(g, g * 0.95, g * 0.92);
+                Fx.moving(level, ModParticles.puff(gray, (float) (2 + RANDOM.nextDouble() * 2.5), 60 + RANDOM.nextInt(40), 0.95f),
+                        pos.add(Math.cos(a) * r, 1 + RANDOM.nextDouble() * 4, Math.sin(a) * r),
+                        new Vec3(Math.cos(a) * 0.25, 0.08 + RANDOM.nextDouble() * 0.1, Math.sin(a) * 0.25));
+            }
+        }
     }
 
-    private static Vec3 spread(double size) {
-        return new Vec3(RANDOM.nextGaussian(), RANDOM.nextGaussian(), RANDOM.nextGaussian()).scale(size * 0.5);
+    private static Vec3 gauss() {
+        return new Vec3(RANDOM.nextGaussian(), RANDOM.nextGaussian(), RANDOM.nextGaussian());
+    }
+
+    // Random point in a disk of radius r across the fall.
+    private static Vec3 disk(Vec3 side, Vec3 up, double r) {
+        double rr = Math.sqrt(RANDOM.nextDouble()) * r;
+        double a = RANDOM.nextDouble() * Math.PI * 2;
+        return side.scale(Math.cos(a) * rr).add(up.scale(Math.sin(a) * rr));
+    }
+
+    private static int scale(int color, double k) {
+        return rgb(((color >> 16) & 0xFF) / 255.0 * k, ((color >> 8) & 0xFF) / 255.0 * k, (color & 0xFF) / 255.0 * k);
+    }
+
+    private static int rgb(double r, double g, double b) {
+        return (int) (r * 255) << 16 | (int) (g * 255) << 8 | (int) (b * 255);
     }
 }

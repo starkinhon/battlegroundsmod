@@ -1,17 +1,21 @@
 package com.starkinhon.battlegroundsmod.power.powers.uchiha;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Cone;
 import com.starkinhon.battlegroundsmod.combat.Fx;
+import com.starkinhon.battlegroundsmod.combat.SkillSounds;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
 import com.starkinhon.battlegroundsmod.power.PowerData;
 import com.starkinhon.battlegroundsmod.skill.SkillSpec;
 import com.starkinhon.battlegroundsmod.skill.SkillSpecs;
+import com.starkinhon.battlegroundsmod.skill.Som;
 
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -24,13 +28,18 @@ import net.neoforged.neoforge.network.PacketDistributor;
 // Katon: a huge stream of fire from the mouth. The player can aim while breathing.
 // Timing, shape and particles come from souls_skills/madara.katon.json (tuned in the Forja de Skills page),
 // with its "despertado" block laid over them in awakened mode.
-// Gameplay lives here, visuals in UchihaFx so they can be swapped for Photon later.
+// Gameplay lives here, visuals in UchihaFx. Sounds come from the file's "sons" list (moments uso, fogo, fim).
 public final class Katon {
     public static final String SKILL = "madara.katon";
     // Each target is burned at most once per interval, so the damage does not depend on the tick rate.
     private static final int HIT_INTERVAL = 5;
     private static final float DAMAGE = 1.5f;
     private static final int SLOW_TICKS = 30;
+    // Used when the file has no "sons" list: the Forja's starting sounds.
+    private static final List<Som> DEFAULT_SOUNDS = List.of(
+            Som.of("Katon", "battlegroundsmod:katon", "fogo", 3, 1, "boca"),
+            Som.of("Fogo crepitando", "minecraft:block.fire.ambient", "fogo", 2, 0.6f, "boca").repeating(8),
+            Som.of("Blaze queimando", "minecraft:entity.blaze.burn", "fogo", 1.2f, 0.5f, "meio").repeating(8));
 
     private Katon() {
     }
@@ -45,6 +54,20 @@ public final class Katon {
         player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, tempo.totalTicks(), 2, false, false, false));
         PacketDistributor.sendToPlayersTrackingEntityAndSelf(player, new ModPayloads.PlaySkillAnimation(player.getId(), SKILL, data.awakened));
         Map<LivingEntity, Integer> lastHit = new HashMap<>();
+        List<Som> sons = spec.sons() != null ? spec.sons() : DEFAULT_SOUNDS;
+        long start = level.getGameTime();
+        Function<String, Vec3> where = onde -> {
+            if ("usuario".equals(onde)) {
+                return player.position().add(0, 1, 0);
+            }
+            Cone cone = cone(player, level, spec, (int) Math.max(0, level.getGameTime() - start - tempo.atrasoTicks()));
+            double length = level.getGameTime() - start < tempo.atrasoTicks() ? 0 : cone.length();
+            return "meio".equals(onde) ? cone.pointAt(length / 2) : "ponta".equals(onde) ? cone.pointAt(length) : cone.origin();
+        };
+        List<ServerPlayer> screen = List.of(player);
+        SkillSounds.play(level, sons, "uso", 0, tempo.atrasoTicks(), where, screen);
+        SkillSounds.play(level, sons, "fogo", tempo.atrasoTicks(), tempo.duracaoTicks(), where, screen);
+        SkillSounds.play(level, sons, "fim", tempo.totalTicks(), 0, where, screen);
         Tasks.add(tick -> {
             if (!player.isAlive() || player.isRemoved() || !power.equals(player.getData(ModAttachments.POWER).power)) {
                 return true;

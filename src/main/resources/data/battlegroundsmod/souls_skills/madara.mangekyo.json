@@ -30,6 +30,44 @@
     "esconderHud": true,
     "intangivel": true
   },
+  "sons": [
+    {
+      "nome": "Sharingan",
+      "som": "battlegroundsmod:sharingan",
+      "momento": "uso",
+      "atrasoTicks": 10,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 0.7,
+      "pitch": 1,
+      "pitchFim": 1,
+      "onde": "tela"
+    },
+    {
+      "nome": "Maldição",
+      "som": "minecraft:entity.elder_guardian.curse",
+      "momento": "particulas",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.2,
+      "pitch": 0.6,
+      "pitchFim": 0.6,
+      "onde": "olhos"
+    },
+    {
+      "nome": "Brilho",
+      "som": "minecraft:block.beacon.power_select",
+      "momento": "particulas",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1,
+      "pitch": 0.5,
+      "pitchFim": 0.5,
+      "onde": "olhos"
+    }
+  ],
   "despertado": {
     "efeitos": {
       "duracaoTicks": 300,

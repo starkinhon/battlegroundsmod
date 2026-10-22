@@ -3,9 +3,9 @@
   "skill": "madara.katon",
   "nome": "Katon",
   "tempo": {
-    "atrasoTicks": 10,
-    "duracaoTicks": 100,
-    "crescimentoTicks": 10
+    "atrasoTicks": 40,
+    "duracaoTicks": 111,
+    "crescimentoTicks": 18
   },
   "origem": {
     "ancora": "boca",
@@ -83,5 +83,19 @@
       "bracoDir": { "frente": 20, "abrir": 18 },
       "bracoEsq": { "frente": 20, "abrir": 18 }
     }
-  }
+  },
+  "sons": [
+    {
+      "nome": "Katon",
+      "som": "battlegroundsmod:katon",
+      "momento": "uso",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.8,
+      "pitch": 1,
+      "pitchFim": 1,
+      "onde": "boca"
+    }
+  ]
 }

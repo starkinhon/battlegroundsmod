@@ -1,7 +1,10 @@
 package com.starkinhon.battlegroundsmod.skill;
 
+import java.util.List;
+
 // Mangekyo: an eye-contact stun. Same "souls-skill/1" layout as the other skills, tuned in the Forja de Skills page.
-public record MangekyoSpec(String skill, String nome, Tempo tempo, SkillSpec.Forma forma, Efeitos efeitos, CutsceneSpec cutscene) {
+public record MangekyoSpec(String skill, String nome, Tempo tempo, SkillSpec.Forma forma, Efeitos efeitos, CutsceneSpec cutscene,
+        List<Som> sons) {
 
     // atraso: ticks between pressing the key and the stun landing. Caster and targets are frozen meanwhile.
     public record Tempo(int atrasoTicks) {

@@ -1,5 +1,7 @@
 package com.starkinhon.battlegroundsmod;
 
+import java.util.List;
+
 import com.starkinhon.battlegroundsmod.client.FaceCutscene;
 import com.starkinhon.battlegroundsmod.client.fx.MeteorRenderer;
 import com.starkinhon.battlegroundsmod.client.fx.SoulParticle;
@@ -48,8 +50,10 @@ public class BattlegroundsModClient {
     }
 
     private static void onRegisterParticles(RegisterParticleProvidersEvent event) {
-        event.registerSpriteSet(ModParticles.GLOW.get(), SoulParticle.Provider::new);
-        event.registerSpriteSet(ModParticles.SMOKE.get(), SoulParticle.Provider::new);
+        for (var type : List.of(ModParticles.FLAME, ModParticles.SOUL_FLAME, ModParticles.DUST, ModParticles.SMOKE, ModParticles.LAVA,
+                ModParticles.PUFF, ModParticles.STREAK)) {
+            event.registerSpriteSet(type.get(), SoulParticle.Provider::new);
+        }
     }
 
     private static void onClientTick(ClientTickEvent.Post event) {
