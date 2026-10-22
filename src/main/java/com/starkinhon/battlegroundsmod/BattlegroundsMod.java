@@ -47,6 +47,7 @@ public class BattlegroundsMod {
         CREATIVE_MODE_TABS.register(modEventBus);
         ModAttachments.ATTACHMENT_TYPES.register(modEventBus);
         ModParticles.PARTICLE_TYPES.register(modEventBus);
+        ModSounds.SOUND_EVENTS.register(modEventBus);
 
         PowerEvents.register();
         NeoForge.EVENT_BUS.addListener(PowerCommand::register);
