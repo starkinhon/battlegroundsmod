@@ -18,7 +18,7 @@ public final class UchihaGhost {
         return new Power("uchiha_ghost", 0xD12F2F, 1.1f, List.of(
                 new Ability(300, 30, Katon::use),
                 new Ability(400, 35, Mangekyo::use),
-                new Ability(300, 30, Susanoo::use),
+                new Ability(300, 30, Susanoo::use).asCounter(),
                 new Ability(100, 0, Meteoro::use)));
     }
 }
