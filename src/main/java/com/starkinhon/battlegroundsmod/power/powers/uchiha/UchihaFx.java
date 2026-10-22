@@ -2,7 +2,6 @@ package com.starkinhon.battlegroundsmod.power.powers.uchiha;
 
 import java.util.List;
 
-import com.starkinhon.battlegroundsmod.ModSounds;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Cone;
 import com.starkinhon.battlegroundsmod.combat.Fx;
@@ -26,9 +25,8 @@ public final class UchihaFx {
     private UchihaFx() {
     }
 
-    // Burst of flames at the mouth when the fire comes out.
+    // Burst of flames at the mouth when the fire comes out. Sounds come from the file (Katon).
     public static void katonStart(ServerLevel level, SkillSpec spec, Cone cone) {
-        Fx.sound(level, cone.origin(), ModSounds.KATON.get(), 3f, 1f);
         SkillSpec.Explosao inicio = spec.camadas().inicio();
         if (inicio.ativa()) {
             Fx.burst(level, ParticleTypes.FLAME, cone.origin(), inicio.quantidade(), inicio.espalhamento(), inicio.velocidade());
@@ -77,22 +75,16 @@ public final class UchihaFx {
         if (lava.ativa() && age % Math.max(1, lava.intervaloTicks()) == 0) {
             Fx.burst(level, ParticleTypes.LAVA, tip, lava.quantidade(), tipRadius * lava.espalhamento(), 0);
         }
-        if (age % 8 == 0) {
-            Fx.sound(level, cone.origin(), SoundEvents.FIRE_AMBIENT, 2f, 0.6f);
-            Fx.sound(level, cone.pointAt(length * 0.5), SoundEvents.BLAZE_BURN, 1.2f, 0.5f);
-        }
     }
 
     public static void katonBurn(ServerLevel level, Vec3 pos) {
         Fx.burst(level, ParticleTypes.FLAME, pos, 6, 0.3, 0.03);
     }
 
-    // Placeholder look: a red flash in the eyes and a low hum, right after the cutscene zooms in.
+    // Placeholder look: a red flash in the eyes, right after the cutscene zooms in.
     public static void mangekyoEyes(ServerLevel level, LivingEntity caster) {
         Vec3 eyes = caster.getEyePosition().add(caster.getLookAngle().scale(0.3));
         Fx.burst(level, Fx.dust(0xD10A0A, 1.2f), eyes, 12, 0.15, 0);
-        Fx.sound(level, eyes, SoundEvents.ELDER_GUARDIAN_CURSE, 1.2f, 0.6f);
-        Fx.sound(level, eyes, SoundEvents.BEACON_POWER_SELECT, 1f, 0.5f);
     }
 
     public static void mangekyoHit(ServerLevel level, LivingEntity target) {

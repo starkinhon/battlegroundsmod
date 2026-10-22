@@ -29,7 +29,7 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 // V (ult): Madara raises his arm and a giant meteor falls on the aimed spot. Everything comes from
-// souls_skills/madara.meteoro.json; the look lives in MeteoroFx so it can move to a model or Photon later.
+// souls_skills/madara.meteoro.json; the look lives in MeteoroFx.
 public final class Meteoro {
     public static final String SKILL = "madara.meteoro";
     // How many ticks the crater takes to open, from the middle out (spread out so the server doesn't freeze).
@@ -72,14 +72,13 @@ public final class Meteoro {
             }
         }
         Tasks.repeat(prep + fallTicks + 1, age -> {
-            if (age < prep) {
-                MeteoroFx.prepare(level, player, spec, age);
-            } else if (age < prep + fallTicks) {
+            if (age < prep + 10) {
+                MeteoroFx.prepare(level, player, spec);
+            }
+            if (age >= prep && age < prep + fallTicks) {
                 MeteoroFx.fall(level, spec, fall, age - prep);
             }
-            if (age < prep + fallTicks) {
-                MeteoroFx.warning(level, spec, target, (age + 1) / (double) (prep + fallTicks), age);
-            } else {
+            if (age >= prep + fallTicks) {
                 // Once it is falling it lands, even if the caster died or swapped powers.
                 impact(player, level, spec, target);
             }

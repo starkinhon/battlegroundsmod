@@ -4,7 +4,8 @@ import java.util.List;
 
 // A skill tuned in the Forja de Skills page ("souls-skill/1" format). Field names match the JSON the page exports,
 // so a new export can be pasted over the file in data/battlegroundsmod/souls_skills/ as is.
-public record SkillSpec(String skill, String nome, Tempo tempo, Origem origem, Direcao direcao, Forma forma, Camadas camadas, Animacao animacao) {
+public record SkillSpec(String skill, String nome, Tempo tempo, Origem origem, Direcao direcao, Forma forma, Camadas camadas, Animacao animacao,
+        List<Som> sons) {
 
     // atraso: wind-up before the effect starts; duracao: how long it lasts; crescimento: ticks to reach full length.
     public record Tempo(int atrasoTicks, int duracaoTicks, int crescimentoTicks) {
