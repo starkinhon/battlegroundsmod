@@ -117,6 +117,20 @@ public final class ModPayloads {
         }
     }
 
+    // Server -> client: shake this player's camera (big impacts).
+    public record ScreenShake(float strength, int ticks) implements CustomPacketPayload {
+        public static final Type<ScreenShake> TYPE = payloadType("screen_shake");
+        public static final StreamCodec<ByteBuf, ScreenShake> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.FLOAT, ScreenShake::strength,
+                ByteBufCodecs.VAR_INT, ScreenShake::ticks,
+                ScreenShake::new);
+
+        @Override
+        public Type<ScreenShake> type() {
+            return TYPE;
+        }
+    }
+
     public static void register(RegisterPayloadHandlersEvent event) {
         PayloadRegistrar registrar = event.registrar("1");
         registrar.playToServer(UseAbility.TYPE, UseAbility.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
@@ -134,5 +148,7 @@ public final class ModPayloads {
                 () -> ClientHooks.playSkillAnimation(payload.entityId(), payload.skill(), payload.awakened())));
         registrar.playToClient(FaceCutscene.TYPE, FaceCutscene.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.startFaceCutscene(payload.entityId(), payload.skill(), payload.awakened())));
+        registrar.playToClient(ScreenShake.TYPE, ScreenShake.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.screenShake(payload.strength(), payload.ticks())));
     }
 }

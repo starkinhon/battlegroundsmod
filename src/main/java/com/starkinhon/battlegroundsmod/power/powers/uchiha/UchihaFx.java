@@ -166,7 +166,7 @@ public final class UchihaFx {
     }
 
     // "#ff7a10" -> 0xFF7A10. Falls back to orange on a bad value.
-    private static int parseColor(String hex) {
+    static int parseColor(String hex) {
         try {
             return Integer.parseInt(hex.startsWith("#") ? hex.substring(1) : hex, 16);
         } catch (NumberFormatException e) {

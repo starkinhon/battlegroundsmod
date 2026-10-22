@@ -7,6 +7,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.starkinhon.battlegroundsmod.client.FaceCutscene;
+import com.starkinhon.battlegroundsmod.client.ScreenShake;
 
 import net.minecraft.client.Camera;
 import net.minecraft.world.entity.Entity;
@@ -14,6 +15,7 @@ import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.phys.Vec3;
 
 // Places the cutscene camera after vanilla is done, so the third person pull back can't move it again.
+// Screen shake is added on top.
 @Mixin(Camera.class)
 public abstract class CameraMixin {
     @Shadow
@@ -29,6 +31,11 @@ public abstract class CameraMixin {
         if (shot != null) {
             setRotation(shot.yaw(), shot.pitch());
             setPosition(shot.position());
+        }
+        float[] shake = ScreenShake.offsets();
+        if (shake != null) {
+            Camera camera = (Camera) (Object) this;
+            setRotation(camera.getYRot() + shake[0], camera.getXRot() + shake[1]);
         }
     }
 }

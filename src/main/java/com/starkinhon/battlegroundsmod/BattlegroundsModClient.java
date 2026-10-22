@@ -3,6 +3,7 @@ package com.starkinhon.battlegroundsmod;
 import com.starkinhon.battlegroundsmod.client.FaceCutscene;
 import com.starkinhon.battlegroundsmod.client.Keybinds;
 import com.starkinhon.battlegroundsmod.client.PowerHud;
+import com.starkinhon.battlegroundsmod.client.ScreenShake;
 
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.api.distmarker.Dist;
@@ -43,5 +44,6 @@ public class BattlegroundsModClient {
     private static void onClientTick(ClientTickEvent.Post event) {
         Keybinds.tick();
         FaceCutscene.tick();
+        ScreenShake.tick();
     }
 }

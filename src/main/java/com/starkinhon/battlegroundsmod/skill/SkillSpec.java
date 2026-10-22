@@ -67,28 +67,4 @@ public record SkillSpec(String skill, String nome, Tempo tempo, Origem origem, D
                     bracoDir.lerp(to.bracoDir, t), bracoEsq.lerp(to.bracoEsq, t));
         }
     }
-
-    // Body pose at a time in ticks since the skill started, blending smoothly between the phases (same as the page).
-    public Pose poseAt(double t) {
-        int at = tempo.atrasoTicks();
-        int end = tempo.totalTicks();
-        double tr = Math.max(1, animacao.transicaoTicks());
-        if (t < at) {
-            return Pose.ZERO.lerp(animacao.preparo(), smooth(t / Math.min(tr, at)));
-        }
-        if (t < end) {
-            return (at > 0 ? animacao.preparo() : Pose.ZERO).lerp(animacao.sopro(), smooth((t - at) / tr));
-        }
-        return animacao.sopro().lerp(Pose.ZERO, smooth((t - end) / tr));
-    }
-
-    // Ticks until the body is back to normal after the skill starts.
-    public double animationEnd() {
-        return tempo.totalTicks() + Math.max(1, animacao.transicaoTicks());
-    }
-
-    private static double smooth(double x) {
-        x = Math.max(0, Math.min(1, x));
-        return x * x * (3 - 2 * x);
-    }
 }
