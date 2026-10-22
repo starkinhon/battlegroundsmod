@@ -55,6 +55,13 @@ public final class Meteoro {
         double speed(double age) {
             return at(age + 1).distanceTo(at(age));
         }
+
+        // Where the (straight) path passes a given height.
+        Vec3 crossing(double y) {
+            double drop = start.y - end.y;
+            double t = drop <= 0 ? 0 : Math.max(0, Math.min(1, (start.y - y) / drop));
+            return start.lerp(end, t);
+        }
     }
 
     public static boolean use(ServerPlayer player, ServerLevel level) {
@@ -69,17 +76,24 @@ public final class Meteoro {
         player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, prep, 2, false, false, false));
         PacketDistributor.sendToPlayersTrackingEntityAndSelf(player, new ModPayloads.PlaySkillAnimation(player.getId(), SKILL, data.awakened));
         MeteoroFx.call(level, player);
+        MeteoroClouds clouds = MeteoroClouds.form(level, spec.nuvens(), fall, target);
         Tasks.repeat(prep + fallTicks + 1, age -> {
             if (age < prep) {
                 MeteoroFx.prepare(level, player, spec, age);
             } else if (age < prep + fallTicks) {
                 MeteoroFx.fall(level, spec, fall, age - prep);
+                if (clouds != null) {
+                    clouds.pierce(fall.at(age - prep), spec.meteoro().raio());
+                }
             }
             if (age < prep + fallTicks) {
                 MeteoroFx.warning(level, spec, target, (age + 1) / (double) (prep + fallTicks), age);
             } else {
                 // Once it is falling it lands, even if the caster died or swapped powers.
                 impact(player, level, spec, target);
+                if (clouds != null) {
+                    clouds.fade();
+                }
             }
         });
         return true;
