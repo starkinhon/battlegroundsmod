@@ -30,9 +30,6 @@
     "esconderHud": true
   },
   "despertado": {
-    "forma": {
-      "comprimento": 18
-    },
     "efeitos": {
       "duracaoTicks": 300,
       "atordoarTicks": 40
