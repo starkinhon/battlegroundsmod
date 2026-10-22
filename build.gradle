@@ -28,6 +28,11 @@ sourceSets.main.resources {
 
 repositories {
     // Add here additional repositories if required by some of the dependencies below.
+    // CurseForge files as Maven dependencies, used for dev-only tools below.
+    maven {
+        url = "https://cursemaven.com"
+        content { includeGroup "curse.maven" }
+    }
 }
 
 base {
@@ -116,6 +121,10 @@ configurations {
 }
 
 dependencies {
+    // FreeCam by Zergatul (MIT, NeoForge 1.21 build), only in runClient for watching and recording moves.
+    // F6 toggles it. Not shipped with the mod and not a dependency of it.
+    localRuntime "curse.maven:freecam-by-zergatul-618947:5591136"
+
     // Example optional mod dependency with JEI
     // The JEI API is declared for compile time use, while the full JEI artifact is used at runtime
     // compileOnly "mezz.jei:jei-${mc_version}-common-api:${jei_version}"
