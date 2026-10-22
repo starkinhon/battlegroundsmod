@@ -18,6 +18,7 @@ import com.starkinhon.battlegroundsmod.skill.SkillSpecs;
 import com.starkinhon.battlegroundsmod.skill.TeleporteSpec;
 
 import net.minecraft.core.Holder;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
@@ -188,20 +189,27 @@ public final class Movement {
         effects(player.serverLevel(), player, kind, velocity(player, kind, Mth.clamp(forward, -1, 1), Mth.clamp(strafe, -1, 1)));
     }
 
-    // Server: double tap of the sprint key (Ctrl). Appears in front of the target, facing it.
+    // Server: double tap of the sprint key (Ctrl). Appears in front of the target, facing it, and starts combat mode.
     public static void teleport(ServerPlayer player) {
         TeleporteSpec spec = TeleporteSpec.get();
         MovementData data = data(player);
         long now = player.level().getGameTime();
-        if (!CombatMode.in(player) || !free(player) || Freeze.isFrozen(player) || now + COOLDOWN_SLACK < data.teleportReadyAt) {
+        if (!free(player) || Freeze.isFrozen(player)) {
+            return;
+        }
+        // Says on the action bar why it didn't go, so a miss doesn't look like a broken key.
+        if (now + COOLDOWN_SLACK < data.teleportReadyAt) {
+            player.displayClientMessage(Component.translatable("message.battlegroundsmod.teleport_cooldown"), true);
             return;
         }
         LivingEntity target = teleportTarget(player, spec);
         if (target == null) {
+            player.displayClientMessage(Component.translatable("message.battlegroundsmod.teleport_no_target", (int) spec.alcance()), true);
             return;
         }
         Vec3 spot = spotInFront(player, target, spec.distanciaFrente());
         if (spot == null) {
+            player.displayClientMessage(Component.translatable("message.battlegroundsmod.teleport_blocked"), true);
             return;
         }
         data.teleportReadyAt = now + spec.recargaTicks();

@@ -86,5 +86,8 @@
   "hud.battlegroundsmod.quick_attack": "Quick Attack",
   "message.battlegroundsmod.tier_is": "Your tier: %s (%s)",
   "message.battlegroundsmod.tier_set": "%s is now Tier %s (%s)",
-  "hud.battlegroundsmod.ultimate": "Ultimate"
+  "hud.battlegroundsmod.ultimate": "Ultimate",
+  "message.battlegroundsmod.teleport_cooldown": "Teleport recharging",
+  "message.battlegroundsmod.teleport_no_target": "No target within %s blocks: aim at one or hit one first",
+  "message.battlegroundsmod.teleport_blocked": "No room in front of the target"
 }
