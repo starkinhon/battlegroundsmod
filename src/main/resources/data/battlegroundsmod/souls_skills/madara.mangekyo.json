@@ -27,7 +27,8 @@
     "distanciaInicio": 3,
     "distanciaFim": 0.6,
     "altura": 0.05,
-    "esconderHud": true
+    "esconderHud": true,
+    "intangivel": true
   },
   "despertado": {
     "efeitos": {

@@ -4,6 +4,7 @@
   "package": "com.starkinhon.battlegroundsmod.mixin",
   "compatibilityLevel": "JAVA_21",
   "client": [
+    "CameraMixin",
     "PlayerModelMixin"
   ],
   "injectors": {

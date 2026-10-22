@@ -1,11 +1,7 @@
 package com.starkinhon.battlegroundsmod.client;
 
-import java.lang.reflect.Method;
-
-import com.starkinhon.battlegroundsmod.BattlegroundsMod;
 import com.starkinhon.battlegroundsmod.skill.CutsceneSpec;
 
-import net.minecraft.client.Camera;
 import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.Input;
@@ -13,16 +9,12 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.fml.util.ObfuscationReflectionHelper;
 import net.neoforged.neoforge.client.event.MovementInputUpdateEvent;
-import net.neoforged.neoforge.client.event.ViewportEvent;
 
 // A short cutscene: the camera jumps in front of someone's face, pushes in, holds, then glides back to the
 // player's own view. Uses the third person camera so the local player's body is drawn when they are the one filmed.
 // The server freezes everyone involved; here the movement keys are also ignored so nothing jitters.
 public final class FaceCutscene {
-    private static final Method SET_POSITION = ObfuscationReflectionHelper.findMethod(Camera.class, "setPosition", Vec3.class);
-
     private static int entityId = -1;
     private static CutsceneSpec spec;
     private static int age;
@@ -78,14 +70,18 @@ public final class FaceCutscene {
         input.shiftKeyDown = false;
     }
 
-    public static void onCameraAngles(ViewportEvent.ComputeCameraAngles event) {
+    public record Shot(Vec3 position, float yaw, float pitch) {
+    }
+
+    // Where the camera goes this frame, or null when no cutscene is playing. Applied by CameraMixin at the end of
+    // Camera.setup; moving it from the camera event instead got undone by the third person pull back.
+    public static Shot shot(float partialTick) {
         Minecraft minecraft = Minecraft.getInstance();
         Entity entity = entityId < 0 || minecraft.level == null ? null : minecraft.level.getEntity(entityId);
         LocalPlayer viewer = minecraft.player;
         if (entity == null || viewer == null) {
-            return;
+            return null;
         }
-        float partialTick = (float) event.getPartialTick();
         double t = age + partialTick;
         int zoom = Math.max(1, spec.zoomTicks());
         int back = Math.max(1, spec.returnTicks());
@@ -105,16 +101,7 @@ public final class FaceCutscene {
             yaw += (float) (Mth.wrapDegrees(viewer.getViewYRot(partialTick) - yaw) * out);
             pitch = (float) Mth.lerp(out, pitch, viewer.getViewXRot(partialTick));
         }
-        try {
-            SET_POSITION.invoke(event.getCamera(), position);
-        } catch (ReflectiveOperationException e) {
-            BattlegroundsMod.LOGGER.error("Cutscene could not move the camera", e);
-            stop(minecraft);
-            return;
-        }
-        event.setYaw(yaw);
-        event.setPitch(pitch);
-        event.setRoll(0);
+        return new Shot(position, yaw, pitch);
     }
 
     private static double smooth(double x) {

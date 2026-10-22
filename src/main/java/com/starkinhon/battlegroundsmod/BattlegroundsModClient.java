@@ -14,7 +14,6 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.MovementInputUpdateEvent;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
-import net.neoforged.neoforge.client.event.ViewportEvent;
 import net.neoforged.neoforge.common.NeoForge;
 
 // This class will not load on dedicated servers. Accessing client side code from here is safe.
@@ -26,7 +25,6 @@ public class BattlegroundsModClient {
         modEventBus.addListener(BattlegroundsModClient::onRegisterKeys);
         modEventBus.addListener(BattlegroundsModClient::onRegisterGuiLayers);
         NeoForge.EVENT_BUS.addListener(BattlegroundsModClient::onClientTick);
-        NeoForge.EVENT_BUS.addListener(ViewportEvent.ComputeCameraAngles.class, FaceCutscene::onCameraAngles);
         NeoForge.EVENT_BUS.addListener(MovementInputUpdateEvent.class, FaceCutscene::onMovementInput);
     }
 

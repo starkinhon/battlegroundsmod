@@ -25,7 +25,8 @@ public final class Combat {
                 && entity != owner
                 && living.isAlive()
                 && !entity.isSpectator()
-                && !(entity instanceof ArmorStand);
+                && !(entity instanceof ArmorStand)
+                && !Intangible.is(entity);
     }
 
     public static Vec3 center(Entity entity) {

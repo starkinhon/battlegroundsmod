@@ -6,6 +6,7 @@ import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.combat.Area;
 import com.starkinhon.battlegroundsmod.combat.Cone;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
+import com.starkinhon.battlegroundsmod.combat.Intangible;
 import com.starkinhon.battlegroundsmod.combat.Fx;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
@@ -47,6 +48,12 @@ public final class Mangekyo {
         Freeze.hold(player, frozen);
         for (LivingEntity target : targets) {
             Freeze.hold(target, frozen);
+        }
+        if (cutscene.ativa() && cutscene.intangible()) {
+            Intangible.hold(player, cutscene.duracaoTicks());
+            for (LivingEntity target : targets) {
+                Intangible.hold(target, cutscene.duracaoTicks());
+            }
         }
         if (Cone.debug) {
             area.draw(Fx.dust(0xFFFFFF, 0.6f));

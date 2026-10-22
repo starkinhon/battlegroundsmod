@@ -3,16 +3,22 @@ package com.starkinhon.battlegroundsmod.power;
 import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.ModItems;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
+import com.starkinhon.battlegroundsmod.combat.Intangible;
 import com.starkinhon.battlegroundsmod.combat.Melee;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
 
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.EntityHitResult;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
+import net.neoforged.neoforge.event.entity.ProjectileImpactEvent;
 import net.neoforged.neoforge.event.entity.living.LivingFallEvent;
+import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
+import net.neoforged.neoforge.event.entity.living.LivingKnockBackEvent;
 import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
@@ -35,6 +41,9 @@ public final class PowerEvents {
         NeoForge.EVENT_BUS.addListener(PowerEvents::onAttack);
         NeoForge.EVENT_BUS.addListener(PowerEvents::onDamage);
         NeoForge.EVENT_BUS.addListener(PowerEvents::onFall);
+        NeoForge.EVENT_BUS.addListener(PowerEvents::onIncomingDamage);
+        NeoForge.EVENT_BUS.addListener(PowerEvents::onKnockBack);
+        NeoForge.EVENT_BUS.addListener(PowerEvents::onProjectileImpact);
         NeoForge.EVENT_BUS.addListener(PowerEvents::onRightClickItem);
         NeoForge.EVENT_BUS.addListener(PowerEvents::onRightClickBlock);
         NeoForge.EVENT_BUS.addListener(PowerEvents::onLeftClickBlock);
@@ -47,6 +56,7 @@ public final class PowerEvents {
     private static void onServerStopped(ServerStoppedEvent event) {
         Tasks.clear();
         Freeze.clear();
+        Intangible.clear();
     }
 
     private static void onPlayerTick(PlayerTickEvent.Post event) {
@@ -100,6 +110,25 @@ public final class PowerEvents {
 
     private static void onFall(LivingFallEvent event) {
         if (event.getEntity() instanceof ServerPlayer player && player.getData(ModAttachments.POWER).noFallTicks > 0) {
+            event.setCanceled(true);
+        }
+    }
+
+    // Intangible entities take no damage, knockback or projectile hits (arrows fly through them).
+    private static void onIncomingDamage(LivingIncomingDamageEvent event) {
+        if (Intangible.is(event.getEntity()) && !event.getSource().is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
+            event.setCanceled(true);
+        }
+    }
+
+    private static void onKnockBack(LivingKnockBackEvent event) {
+        if (Intangible.is(event.getEntity())) {
+            event.setCanceled(true);
+        }
+    }
+
+    private static void onProjectileImpact(ProjectileImpactEvent event) {
+        if (event.getRayTraceResult() instanceof EntityHitResult hit && Intangible.is(hit.getEntity())) {
             event.setCanceled(true);
         }
     }
