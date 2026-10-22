@@ -19,6 +19,10 @@ public final class ClientHooks {
         FaceCutscene.start(entityId, SkillSpecs.get(skill, CutsceneSpec.Holder.class, awakened).cutscene());
     }
 
+    public static void screenShake(float strength, int ticks) {
+        ScreenShake.start(strength, ticks);
+    }
+
     public static void openPowerSelect() {
         Minecraft.getInstance().setScreen(new PowerSelectScreen());
     }

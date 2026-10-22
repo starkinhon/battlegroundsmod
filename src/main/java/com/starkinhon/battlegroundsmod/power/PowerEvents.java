@@ -6,6 +6,7 @@ import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.combat.Intangible;
 import com.starkinhon.battlegroundsmod.combat.Melee;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
+import com.starkinhon.battlegroundsmod.power.powers.uchiha.MeteoroClouds;
 import com.starkinhon.battlegroundsmod.power.powers.uchiha.Susanoo;
 
 import net.minecraft.network.chat.Component;
@@ -16,6 +17,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.EntityHitResult;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
+import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.ProjectileImpactEvent;
 import net.neoforged.neoforge.event.entity.living.LivingFallEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
@@ -42,6 +44,7 @@ public final class PowerEvents {
         NeoForge.EVENT_BUS.addListener(PowerEvents::onAttack);
         NeoForge.EVENT_BUS.addListener(PowerEvents::onDamage);
         NeoForge.EVENT_BUS.addListener(PowerEvents::onFall);
+        NeoForge.EVENT_BUS.addListener(PowerEvents::onEntityJoin);
         NeoForge.EVENT_BUS.addListener(PowerEvents::onIncomingDamage);
         NeoForge.EVENT_BUS.addListener(PowerEvents::onKnockBack);
         NeoForge.EVENT_BUS.addListener(PowerEvents::onProjectileImpact);
@@ -107,6 +110,13 @@ public final class PowerEvents {
     private static void onDamage(LivingDamageEvent.Post event) {
         if (event.getSource().getEntity() instanceof ServerPlayer player && player != event.getEntity()) {
             PowerLogic.addUltCharge(player, event.getNewDamage());
+        }
+    }
+
+    // Meteor clouds left in the world by a crash or a restart are thrown away when they load.
+    private static void onEntityJoin(EntityJoinLevelEvent event) {
+        if (MeteoroClouds.isStray(event.getEntity())) {
+            event.setCanceled(true);
         }
     }
 

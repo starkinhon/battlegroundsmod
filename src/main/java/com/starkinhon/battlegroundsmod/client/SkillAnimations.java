@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
 
+import com.starkinhon.battlegroundsmod.skill.AnimationSpec;
 import com.starkinhon.battlegroundsmod.skill.SkillSpec;
 import com.starkinhon.battlegroundsmod.skill.SkillSpecs;
 
@@ -18,7 +19,7 @@ import net.minecraft.world.entity.LivingEntity;
 // Body poses of skills on the client. The server says who started which skill; the pose over time
 // comes from the skill's spec, so it matches the Forja de Skills page.
 public final class SkillAnimations {
-    private record Playing(SkillSpec spec, int startTick) {
+    private record Playing(AnimationSpec spec, int startTick) {
     }
 
     private static final Map<Integer, Playing> PLAYING = new HashMap<>();
@@ -32,7 +33,7 @@ public final class SkillAnimations {
         var level = Minecraft.getInstance().level;
         Entity entity = level == null ? null : level.getEntity(entityId);
         if (entity != null) {
-            PLAYING.put(entityId, new Playing(SkillSpecs.get(skill, SkillSpec.class, awakened), entity.tickCount));
+            PLAYING.put(entityId, new Playing(SkillSpecs.get(skill, AnimationSpec.class, awakened), entity.tickCount));
         }
     }
 
