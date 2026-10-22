@@ -6,6 +6,7 @@ import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.combat.Fx;
 import com.starkinhon.battlegroundsmod.combat.Melee;
+import com.starkinhon.battlegroundsmod.combat.Stun;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
 
 import net.minecraft.ChatFormatting;
@@ -80,7 +81,8 @@ public final class PowerLogic {
     }
 
     private static boolean canCast(LivingEntity caster, PowerData data, int slot) {
-        return !caster.isSpectator() && caster.isAlive() && data.cooldowns[slot] <= 0 && data.busyTicks <= 0 && !Freeze.isFrozen(caster);
+        return !caster.isSpectator() && caster.isAlive() && data.cooldowns[slot] <= 0 && data.busyTicks <= 0 && !Freeze.isFrozen(caster)
+                && !Stun.is(caster);
     }
 
     // Runs a move of the caster's power, with no costs and no cooldown set: players go through tryUse, bosses set
@@ -172,6 +174,9 @@ public final class PowerLogic {
         }
         if (data.punchDelay > 0) {
             data.punchDelay--;
+        }
+        if (data.punchQueued && data.punchDelay <= 0) {
+            Melee.punch(player, null);
         }
         if (data.busyTicks > 0) {
             data.busyTicks--;

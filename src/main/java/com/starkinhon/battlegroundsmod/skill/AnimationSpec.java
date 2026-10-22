@@ -5,7 +5,7 @@ package com.starkinhon.battlegroundsmod.skill;
 public record AnimationSpec(Tempo tempo, Animacao animacao) {
 
     public record Tempo(Integer atrasoTicks, Integer duracaoTicks, Integer preparoTicks, Integer quedaTicks, Integer fracoTicks) {
-        int windUp() {
+        public int windUp() {
             return atrasoTicks != null ? atrasoTicks : orZero(preparoTicks);
         }
 
@@ -14,13 +14,19 @@ public record AnimationSpec(Tempo tempo, Animacao animacao) {
         }
     }
 
-    public record Animacao(int transicaoTicks, SkillSpec.Pose preparo, SkillSpec.Pose sopro, SkillSpec.Pose queda) {
+    // retornoTicks: how long the way back to normal takes, when it should differ from transicaoTicks (a snappy punch
+    // that eases back).
+    public record Animacao(int transicaoTicks, Integer retornoTicks, SkillSpec.Pose preparo, SkillSpec.Pose sopro, SkillSpec.Pose queda) {
         SkillSpec.Pose main() {
             return sopro != null ? sopro : queda != null ? queda : SkillSpec.Pose.ZERO;
         }
 
         SkillSpec.Pose windUp() {
             return preparo != null ? preparo : SkillSpec.Pose.ZERO;
+        }
+
+        double back() {
+            return Math.max(1, retornoTicks != null ? retornoTicks : transicaoTicks);
         }
     }
 
@@ -35,12 +41,12 @@ public record AnimationSpec(Tempo tempo, Animacao animacao) {
         if (t < end) {
             return (at > 0 ? animacao.windUp() : SkillSpec.Pose.ZERO).lerp(animacao.main(), smooth((t - at) / tr));
         }
-        return animacao.main().lerp(SkillSpec.Pose.ZERO, smooth((t - end) / tr));
+        return animacao.main().lerp(SkillSpec.Pose.ZERO, smooth((t - end) / animacao.back()));
     }
 
     // Ticks until the body is back to normal after the skill starts.
     public double animationEnd() {
-        return tempo.end() + Math.max(1, animacao.transicaoTicks());
+        return tempo.end() + animacao.back();
     }
 
     private static int orZero(Integer value) {

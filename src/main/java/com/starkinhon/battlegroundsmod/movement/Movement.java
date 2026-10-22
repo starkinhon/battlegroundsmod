@@ -8,6 +8,7 @@ import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.combat.Fx;
 import com.starkinhon.battlegroundsmod.combat.Intangible;
 import com.starkinhon.battlegroundsmod.combat.SkillSounds;
+import com.starkinhon.battlegroundsmod.combat.Stun;
 import com.starkinhon.battlegroundsmod.fx.ModParticles;
 import com.starkinhon.battlegroundsmod.skill.MovementSpec;
 import com.starkinhon.battlegroundsmod.skill.SkillSpecs;
@@ -74,7 +75,7 @@ public final class Movement {
     // Can this entity move on its own right now? Both sides (the client can't see Freeze, the server checks that).
     public static boolean free(LivingEntity entity) {
         if (!entity.isAlive() || entity.isPassenger() || entity.isSpectator() || entity.isFallFlying() || entity.onClimbable()
-                || entity.isInWater() || entity.isInLava() || entity.isSleeping()) {
+                || entity.isInWater() || entity.isInLava() || entity.isSleeping() || Stun.is(entity)) {
             return false;
         }
         return !(entity instanceof Player player && player.getAbilities().flying);

@@ -1,25 +1,29 @@
 package com.starkinhon.battlegroundsmod.combat;
 
+import java.util.Comparator;
+import java.util.List;
+
 import com.starkinhon.battlegroundsmod.ModAttachments;
+import com.starkinhon.battlegroundsmod.network.ModPayloads;
 import com.starkinhon.battlegroundsmod.power.Ability;
 import com.starkinhon.battlegroundsmod.power.Power;
 import com.starkinhon.battlegroundsmod.power.PowerData;
 import com.starkinhon.battlegroundsmod.power.Powers;
+import com.starkinhon.battlegroundsmod.skill.ComboSpec;
 
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.network.PacketDistributor;
 
-// Hand-to-hand moves every power shares: a 4-hit combo on left click, a charged strong punch and a barrage.
+// Hand-to-hand moves every power shares: the punch combo on left click (values in souls_skills/padrao.combo.json),
+// a charged strong punch and a barrage.
 public final class Melee {
-    private static final int COMBO_LENGTH = 4;
-    private static final int COMBO_RESET_TICKS = 25;
-    private static final int PUNCH_DELAY_TICKS = 5;
-
     public static final Ability STRONG = new Ability(60, 0, Melee::strong);
     public static final Ability BARRAGE = new Ability(140, 10, Melee::barrageMove);
 
@@ -36,35 +40,139 @@ public final class Melee {
         return power == null ? 0xFFFFFF : power.color();
     }
 
-    // Left click on an entity (or a boss's punch). The last hit of the combo launches the target.
-    public static void normalHit(LivingEntity player, LivingEntity target) {
-        PowerData data = player.getData(ModAttachments.POWER);
-        if (data.punchDelay > 0 || data.busyTicks > 0) {
+    // A boss's punch at the target it chose.
+    public static boolean normalHit(LivingEntity attacker, LivingEntity target) {
+        return punch(attacker, target);
+    }
+
+    // Next hit of the combo. Players click (target null: whoever is in front, or nobody, and the punch whiffs); a click
+    // during the end of the previous hit is kept for later. Someone a bit too far in front gets chased first.
+    public static boolean punch(LivingEntity attacker, LivingEntity target) {
+        PowerData data = attacker.getData(ModAttachments.POWER);
+        ComboSpec spec = ComboSpec.get();
+        if (!attacker.isAlive() || data.busyTicks > 0 || Freeze.isFrozen(attacker) || Stun.is(attacker)) {
+            return false;
+        }
+        if (data.punchDelay > 0) {
+            data.punchQueued = target == null && data.punchDelay <= spec.bufferTicks();
+            return false;
+        }
+        data.punchQueued = false;
+        if (target == null) {
+            target = closestInFront(attacker, spec.alcance(), 0.55);
+        }
+        ComboSpec.Passo passo = spec.passo();
+        if (target == null) {
+            target = closestInFront(attacker, passo.distanciaMax(), passo.cone());
+            if (target != null) {
+                chase(attacker, target, spec);
+                return true;
+            }
+        } else if (attacker.distanceTo(target) > spec.alcance() + 0.5) {
+            chase(attacker, target, spec);
+            return true;
+        }
+        swing(attacker, target, spec);
+        return true;
+    }
+
+    // Runs at the target for up to ticksMax ticks, then throws the punch.
+    private static void chase(LivingEntity attacker, LivingEntity target, ComboSpec spec) {
+        PowerData data = attacker.getData(ModAttachments.POWER);
+        ComboSpec.Passo passo = spec.passo();
+        data.punchDelay = passo.ticksMax() + 1;
+        SkillSounds.play(Combat.level(attacker), spec.sons(), "passo", 0, 0, onde -> attacker.position(), List.of());
+        Tasks.add(age -> {
+            if (!attacker.isAlive() || Stun.is(attacker) || Freeze.isFrozen(attacker)) {
+                data.punchDelay = 0;
+                return true;
+            }
+            Vec3 to = target.position().subtract(attacker.position());
+            Vec3 flat = new Vec3(to.x, 0, to.z);
+            if (!target.isAlive() || flat.length() <= spec.alcance() - 0.6 || age >= passo.ticksMax()) {
+                data.punchDelay = 0;
+                swing(attacker, target.isAlive() ? target : null, spec);
+                return true;
+            }
+            Vec3 step = flat.normalize().scale(passo.impulso());
+            attacker.setDeltaMovement(step.x, Math.min(attacker.getDeltaMovement().y, 0.1), step.z);
+            attacker.hurtMarked = true;
+            return false;
+        });
+    }
+
+    // Plays the next hit's animation and lands it after its wind-up.
+    private static void swing(LivingEntity attacker, LivingEntity target, ComboSpec spec) {
+        PowerData data = attacker.getData(ModAttachments.POWER);
+        int step = Math.floorMod(data.comboStep, spec.golpes().size());
+        ComboSpec.Golpe golpe = spec.golpe(step);
+        data.comboStep = step + 1 >= spec.golpes().size() ? 0 : step + 1;
+        data.comboResetTicks = spec.resetTicks();
+        data.punchDelay = golpe.windUp() + golpe.recuperacaoTicks();
+        PacketDistributor.sendToPlayersTrackingEntityAndSelf(attacker, new ModPayloads.ComboAnimation(attacker.getId(), step));
+        if (golpe.avanco() > 0) {
+            Vec3 look = Combat.flatLook(attacker).scale(golpe.avanco());
+            Vec3 now = attacker.getDeltaMovement();
+            attacker.setDeltaMovement(now.x + look.x, now.y, now.z + look.z);
+            attacker.hurtMarked = true;
+        }
+        Tasks.later(golpe.windUp(), () -> land(attacker, target, golpe, spec));
+    }
+
+    private static void land(LivingEntity attacker, LivingEntity target, ComboSpec.Golpe golpe, ComboSpec spec) {
+        // Hit out of the wind-up: the punch never comes out.
+        if (!attacker.isAlive() || Stun.is(attacker) || Freeze.isFrozen(attacker)) {
             return;
         }
-        ServerLevel level = Combat.level(player);
-        float mult = multiplier(player);
-        data.comboStep = data.comboStep % COMBO_LENGTH + 1;
-        data.comboResetTicks = COMBO_RESET_TICKS;
-        data.punchDelay = PUNCH_DELAY_TICKS;
-        Vec3 hitPos = Combat.center(target);
-        Vec3 look = player.getLookAngle();
-
-        if (data.comboStep < COMBO_LENGTH) {
-            Combat.hurt(player, target, 4f * mult);
-            Combat.push(target, look, 0.35, 0.1);
-            Fx.burst(level, ParticleTypes.CRIT, hitPos, 8, 0.2, 0.3);
-            Fx.burst(level, Fx.dust(fistColor(player), 1.2f), hitPos, 5, 0.2, 0);
-            Fx.sound(level, hitPos, SoundEvents.PLAYER_ATTACK_WEAK, 1f, 0.9f + data.comboStep * 0.1f);
-        } else {
-            Combat.hurt(player, target, 7f * mult);
-            Combat.push(target, look, 1.8, 0.5);
-            Fx.burst(level, ParticleTypes.EXPLOSION, hitPos, 1, 0, 0);
-            Fx.burst(level, ParticleTypes.SWEEP_ATTACK, hitPos, 2, 0.3, 0);
-            Fx.burst(level, ParticleTypes.CLOUD, hitPos, 15, 0.3, 0.15);
-            Fx.sound(level, hitPos, SoundEvents.PLAYER_ATTACK_KNOCKBACK, 1.2f, 0.8f);
-            data.comboStep = 0;
+        ServerLevel level = Combat.level(attacker);
+        if (target == null || !Combat.isTarget(target, attacker) || attacker.distanceTo(target) > spec.alcance() + 1.2) {
+            target = closestInFront(attacker, spec.alcance(), 0.55);
         }
+        if (target == null || !Combat.hurt(attacker, target, (float) golpe.dano() * multiplier(attacker))) {
+            SkillSounds.play(level, spec.sons(), "erro", 0, 0, onde -> Combat.handPos(attacker), List.of());
+            return;
+        }
+        LivingEntity hit = target;
+        // On the side of the body facing the puncher.
+        Vec3 toAttacker = attacker.getEyePosition().subtract(Combat.center(hit));
+        Vec3 hitPos = Combat.center(hit).add(toAttacker.lengthSqr() < 1.0E-4 ? Vec3.ZERO : toAttacker.normalize().scale(hit.getBbWidth() * 0.5));
+        Vec3 look = attacker.getLookAngle();
+        Stun.apply(hit, golpe.stunTicks());
+        SkillSounds.play(level, spec.sons(), golpe.momento(), 0, 0, onde -> "alvo".equals(onde) ? hitPos : Combat.handPos(attacker), List.of());
+        Fx.effects(level, spec.skill(), false, golpe.momento(), hitPos, look);
+        Fx.burst(level, Fx.dust(fistColor(attacker), 1.1f), hitPos, 5, 0.15, 0);
+        int stop = golpe.hitstopTicks();
+        if (stop > 0) {
+            Freeze.hold(hit, stop);
+            PacketDistributor.sendToPlayersTrackingEntityAndSelf(attacker, new ModPayloads.Hitstop(attacker.getId(), stop));
+        }
+        shake(attacker, golpe.tremor(), stop + 4);
+        shake(hit, golpe.tremor() * 1.3f, stop + 4);
+        Tasks.later(stop, () -> {
+            if (hit.isAlive()) {
+                Combat.push(hit, look, golpe.empurrao(), golpe.subida());
+            }
+        });
+    }
+
+    private static void shake(LivingEntity entity, float strength, int ticks) {
+        if (strength > 0 && entity instanceof ServerPlayer player) {
+            PacketDistributor.sendToPlayer(player, new ModPayloads.ScreenShake(strength, ticks));
+        }
+    }
+
+    // The target in front that the aim points at most, within range.
+    private static LivingEntity closestInFront(LivingEntity attacker, double range, double minDot) {
+        LivingEntity aimed = Combat.raycastTarget(attacker, range);
+        if (aimed != null) {
+            return aimed;
+        }
+        Vec3 eye = attacker.getEyePosition();
+        Vec3 look = attacker.getLookAngle();
+        return Combat.inCone(attacker, range, minDot).stream()
+                .filter(attacker::hasLineOfSight)
+                .max(Comparator.comparingDouble(e -> Combat.center(e).subtract(eye).normalize().dot(look) - e.distanceTo(attacker) * 0.05))
+                .orElse(null);
     }
 
     // Short wind-up, then a heavy punch that sends the target flying.

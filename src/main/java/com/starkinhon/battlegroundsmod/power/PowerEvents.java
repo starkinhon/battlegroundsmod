@@ -7,6 +7,7 @@ import com.starkinhon.battlegroundsmod.command.BossCommand;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.combat.Intangible;
 import com.starkinhon.battlegroundsmod.combat.Melee;
+import com.starkinhon.battlegroundsmod.combat.Stun;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
 import com.starkinhon.battlegroundsmod.movement.Movement;
 import com.starkinhon.battlegroundsmod.power.powers.uchiha.Susanoo;
@@ -14,6 +15,7 @@ import com.starkinhon.battlegroundsmod.power.powers.uchiha.Susanoo;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.DamageTypeTags;
+import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.EntityHitResult;
@@ -96,7 +98,7 @@ public final class PowerEvents {
 
     // Left click with an empty hand runs the power's punch combo instead of the vanilla hit.
     private static void onAttack(AttackEntityEvent event) {
-        if (Freeze.isFrozen(event.getEntity())) {
+        if (Freeze.isFrozen(event.getEntity()) || Stun.is(event.getEntity())) {
             event.setCanceled(true);
             return;
         }
@@ -107,7 +109,7 @@ public final class PowerEvents {
             return;
         }
         event.setCanceled(true);
-        Melee.normalHit(player, target);
+        Melee.punch(player, target);
     }
 
     // Dealing damage charges the ultimate.
@@ -137,6 +139,11 @@ public final class PowerEvents {
     // Intangible entities take no damage, knockback or projectile hits (arrows fly through them).
     private static void onIncomingDamage(LivingIncomingDamageEvent event) {
         if (Intangible.is(event.getEntity()) && !event.getSource().is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
+            event.setCanceled(true);
+            return;
+        }
+        // A stunned mob's swing does nothing (players are stopped in onAttack, bosses in Melee).
+        if (event.getSource().is(DamageTypes.MOB_ATTACK) && Stun.is(event.getSource().getDirectEntity())) {
             event.setCanceled(true);
             return;
         }

@@ -33,6 +33,8 @@ public class PowerData {
     public int comboStep = 0;
     public int comboResetTicks = 0;
     public int punchDelay = 0;
+    // A click that came in just before the next punch was allowed; it is thrown as soon as it can be.
+    public boolean punchQueued = false;
     public int busyTicks = 0;
     // Set by /soul semcooldown: no cooldowns and no energy or ult cost, for testing and recording.
     public boolean noCooldown = false;
@@ -62,6 +64,7 @@ public class PowerData {
         comboStep = 0;
         comboResetTicks = 0;
         punchDelay = 0;
+        punchQueued = false;
         busyTicks = 0;
     }
 }
