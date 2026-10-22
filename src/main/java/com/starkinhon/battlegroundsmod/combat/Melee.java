@@ -162,14 +162,11 @@ public final class Melee {
         if (Defense.blockedThisTick(hit)) {
             return true;
         }
-        // On the side of the body facing the puncher.
-        Vec3 toAttacker = attacker.getEyePosition().subtract(Combat.center(hit));
-        Vec3 hitPos = Combat.center(hit).add(toAttacker.lengthSqr() < 1.0E-4 ? Vec3.ZERO : toAttacker.normalize().scale(hit.getBbWidth() * 0.5));
+        Vec3 hitPos = hitPos(attacker, hit);
         Vec3 look = attacker.getLookAngle();
         Stun.apply(hit, golpe.stunTicks());
         SkillSounds.play(level, spec.sons(), golpe.momento(), 0, 0, onde -> "alvo".equals(onde) ? hitPos : Combat.handPos(attacker), List.of());
-        Fx.effects(level, spec.skill(), false, golpe.momento(), hitPos, look);
-        Fx.burst(level, Fx.dust(fistColor(attacker), 1.1f), hitPos, 5, 0.15, 0);
+        hitFx(attacker, hit, golpe.momento());
         int stop = golpe.hitstopTicks();
         if (stop > 0) {
             Freeze.hold(hit, stop);
@@ -183,6 +180,21 @@ public final class Melee {
             }
         });
         return true;
+    }
+
+    // On the side of the body facing the puncher.
+    private static Vec3 hitPos(LivingEntity attacker, LivingEntity hit) {
+        Vec3 toAttacker = attacker.getEyePosition().subtract(Combat.center(hit));
+        return Combat.center(hit).add(toAttacker.lengthSqr() < 1.0E-4 ? Vec3.ZERO : toAttacker.normalize().scale(hit.getBbWidth() * 0.5));
+    }
+
+    // The combo's hit look (padrao.combo.json vfx of that momento, "golpe" or "final", plus a burst in the fist color),
+    // shared by every punch: combo, Dash Attack, Forte and Barragem.
+    private static void hitFx(LivingEntity attacker, LivingEntity hit, String momento) {
+        ServerLevel level = Combat.level(attacker);
+        Vec3 at = hitPos(attacker, hit);
+        Fx.effects(level, ComboSpec.get().skill(), false, momento, at, attacker.getLookAngle());
+        Fx.burst(level, Fx.dust(fistColor(attacker), 1.1f), at, 5, 0.15, 0);
     }
 
     private static void shake(LivingEntity entity, float strength, int ticks) {
@@ -248,12 +260,15 @@ public final class Melee {
             LivingEntity target = Combat.raycastTarget(player, 4.5);
             Fx.burst(level, ParticleTypes.SWEEP_ATTACK, front, 1, 0, 0);
             Fx.line(level, ParticleTypes.CLOUD, hand, front.add(look.scale(2)), 0.4);
-            Fx.burst(level, ModParticles.fist(lighter(color), 0.6f + charge * 0.5f, 5), front, 1, 0, 0);
+            Fx.burst(level, ModParticles.ring(0xFFFFFF, 1.2f + charge, 6), front, 1, 0, 0);
             Fx.sound(level, front, SoundEvents.PLAYER_ATTACK_STRONG, 1.5f, 0.6f - charge * 0.15f);
             if (target != null) {
                 Vec3 hitPos = Combat.center(target);
                 Defense.breakGuard(target, player);
-                Combat.hurt(player, target, 10f * mult * power);
+                if (Combat.hurt(player, target, 10f * mult * power)) {
+                    hitFx(player, target, "final");
+                    shake(target, 0.5f + charge * 0.5f, 8);
+                }
                 Combat.push(target, look, 2.6 * (1 + 0.8 * charge), 0.6 + 0.3 * charge);
                 Fx.burst(level, ParticleTypes.EXPLOSION, hitPos, 2 + (int) (charge * 3), 0.3, 0);
                 Fx.burst(level, Fx.dust(color, 2f), hitPos, 25, 0.5, 0);
@@ -276,12 +291,12 @@ public final class Melee {
 
     // Rapid punches in a cone in front of the player, ending with a finisher that launches whoever is in front.
     // Lasts ticks, or up to maxTicks while the base attack key is held. Also used by powers whose own moves are bigger
-    // barrages. Drawn as fists flying out and wind lines along the punches.
+    // barrages. Drawn as wind and speed lines along the punches.
     public static void barrage(LivingEntity player, int ticks, int maxTicks, double range, float hitDamage, float finisherDamage, int fistColor) {
         ServerLevel level = Combat.level(player);
         PowerData data = player.getData(ModAttachments.POWER);
         int interrupts = data.interrupts;
-        int fist = lighter(fistColor);
+        int wind = lighter(fistColor);
         data.busyTicks = ticks + 4;
         Tasks.add(age -> {
             if (!player.isAlive() || data.interrupts != interrupts || !Stun.canAttack(player)) {
@@ -292,13 +307,13 @@ public final class Melee {
             if (age < ticks || data.attackHeld && age < maxTicks) {
                 data.busyTicks = 3;
                 player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 3, 1, false, false));
-                Vec3 hand = Combat.handPos(player);
                 for (int i = 0; i < 2; i++) {
                     Vec3 offset = new Vec3(level.random.nextDouble() - 0.5, level.random.nextDouble() - 0.5, level.random.nextDouble() - 0.5).scale(1.3);
                     Vec3 at = eye.add(look.scale(range * 0.35 + level.random.nextDouble() * range * 0.4)).add(offset);
-                    Fx.moving(level, ModParticles.fist(fist, 0.28f + level.random.nextFloat() * 0.18f, 4), at, look.scale(0.18));
-                    Vec3 from = hand.add(offset.scale(0.5));
-                    Fx.moving(level, ModParticles.streak(0xFFFFFF, 0.55f, 3), from.add(look.scale(0.6)), look.scale(0.9));
+                    Fx.moving(level, ModParticles.streak(0xFFFFFF, 0.5f, 3), at, look.scale(0.9));
+                    if (level.random.nextInt(3) == 0) {
+                        Fx.moving(level, ModParticles.puff(wind, 0.2f + level.random.nextFloat() * 0.15f, 6, 0.85f), at, look.scale(0.15));
+                    }
                 }
                 if (age % 2 == 0) {
                     if (age % 4 == 0) {
@@ -306,7 +321,8 @@ public final class Melee {
                     }
                     for (LivingEntity target : Combat.inCone(player, range, 0.55)) {
                         if (Combat.hurt(player, target, hitDamage)) {
-                            Fx.burst(level, ModParticles.fist(fist, 0.4f, 3), Combat.center(target).subtract(look.scale(target.getBbWidth() * 0.5)), 1, 0.15, 0);
+                            hitFx(player, target, "golpe");
+                            shake(target, 0.15f, 4);
                         }
                         // Keeps the target in front of the player for the whole barrage.
                         Combat.push(target, look, 0.2, 0.05);
@@ -318,7 +334,6 @@ public final class Melee {
             Vec3 front = eye.add(look.scale(2));
             Fx.burst(level, ParticleTypes.EXPLOSION, front, 1, 0, 0);
             Fx.burst(level, ParticleTypes.GUST, front, 1, 0, 0);
-            Fx.burst(level, ModParticles.fist(fist, 0.9f, 6), front, 1, 0, 0);
             Fx.burst(level, ModParticles.ring(0xFFFFFF, 2.2f, 8), front, 1, 0, 0);
             for (int i = 0; i < 8; i++) {
                 Vec3 offset = new Vec3(level.random.nextDouble() - 0.5, level.random.nextDouble() - 0.5, level.random.nextDouble() - 0.5).scale(1.6);
@@ -326,7 +341,10 @@ public final class Melee {
             }
             Fx.sound(level, front, SoundEvents.PLAYER_ATTACK_KNOCKBACK, 1.5f, 0.6f);
             for (LivingEntity target : Combat.inCone(player, range, 0.55)) {
-                Combat.hurt(player, target, finisherDamage);
+                if (Combat.hurt(player, target, finisherDamage)) {
+                    hitFx(player, target, "final");
+                    shake(target, 0.6f, 8);
+                }
                 Combat.push(target, look, 2.2, 0.6);
             }
             data.busyTicks = 4;
@@ -334,7 +352,7 @@ public final class Melee {
         });
     }
 
-    // The fist color pulled towards white, so fists and rings read as light even for dark powers.
+    // The fist color pulled towards white, so wind and rings read as light even for dark powers.
     private static int lighter(int color) {
         int r = (color >> 16 & 0xFF) + (255 - (color >> 16 & 0xFF)) * 3 / 5;
         int g = (color >> 8 & 0xFF) + (255 - (color >> 8 & 0xFF)) * 3 / 5;
