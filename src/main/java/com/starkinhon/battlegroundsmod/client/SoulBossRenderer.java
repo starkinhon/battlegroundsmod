@@ -19,4 +19,9 @@ public class SoulBossRenderer<T extends SoulBoss> extends HumanoidMobRenderer<T,
         this.skin = ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "textures/entity/" + skin + ".png");
         addLayer(new AuraEyesLayer<>(this));
     }
+
+    @Override
+    public ResourceLocation getTextureLocation(T entity) {
+        return skin;
+    }
 }
