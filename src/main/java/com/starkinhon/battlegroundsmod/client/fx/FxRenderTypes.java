@@ -6,6 +6,7 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 import com.starkinhon.battlegroundsmod.BattlegroundsMod;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.resources.ResourceLocation;
@@ -60,9 +61,10 @@ public final class FxRenderTypes extends RenderType {
 
     // Fallback with a shader pack on: one soft dot texture with vanilla's shader, so packs that replace shaders still draw it.
     private static final ResourceLocation SOFT = ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "textures/fx/soft.png");
+    private static final ShaderStateShard FLAT_SHADER = new ShaderStateShard(GameRenderer::getPositionTexColorShader);
     public static final RenderType FLAT_ADD = create("battlegroundsmod_flat_add", DefaultVertexFormat.POSITION_TEX_COLOR, VertexFormat.Mode.QUADS, 262144,
             false, false, CompositeState.builder()
-                    .setShaderState(POSITION_TEX_COLOR_SHADER)
+                    .setShaderState(FLAT_SHADER)
                     .setTextureState(new TextureStateShard(SOFT, true, false))
                     .setTransparencyState(LIGHTNING_TRANSPARENCY)
                     .setWriteMaskState(COLOR_WRITE)
@@ -70,7 +72,7 @@ public final class FxRenderTypes extends RenderType {
                     .createCompositeState(false));
     public static final RenderType FLAT_ALPHA = create("battlegroundsmod_flat_alpha", DefaultVertexFormat.POSITION_TEX_COLOR, VertexFormat.Mode.QUADS, 131072,
             false, true, CompositeState.builder()
-                    .setShaderState(POSITION_TEX_COLOR_SHADER)
+                    .setShaderState(FLAT_SHADER)
                     .setTextureState(new TextureStateShard(SOFT, true, false))
                     .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
                     .setWriteMaskState(COLOR_WRITE)
