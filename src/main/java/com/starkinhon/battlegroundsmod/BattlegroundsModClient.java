@@ -7,6 +7,7 @@ import com.starkinhon.battlegroundsmod.client.BossCutscene;
 import com.starkinhon.battlegroundsmod.client.FaceCutscene;
 import com.starkinhon.battlegroundsmod.client.Fear;
 import com.starkinhon.battlegroundsmod.client.fx.AshDeath;
+import com.starkinhon.battlegroundsmod.client.fx.Aura;
 import com.starkinhon.battlegroundsmod.client.fx.FxConfig;
 import com.starkinhon.battlegroundsmod.client.fx.FxShaders;
 import com.starkinhon.battlegroundsmod.client.fx.FxWorld;
@@ -116,6 +117,7 @@ public class BattlegroundsModClient {
         ScreenFx.tick();
         FxWorld.tick();
         AshDeath.tick();
+        Aura.tick();
         SkillEffects.tick();
         BossBars.tick();
         Fear.tick();

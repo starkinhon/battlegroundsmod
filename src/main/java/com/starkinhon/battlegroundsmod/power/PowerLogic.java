@@ -221,6 +221,24 @@ public final class PowerLogic {
         if (player instanceof ServerPlayer serverPlayer && player.tickCount % SYNC_INTERVAL == 0) {
             sync(serverPlayer);
         }
+        if (player instanceof ServerPlayer serverPlayer) {
+            String aura = auraOf(serverPlayer);
+            if (!aura.equals(data.auraSent)) {
+                data.auraSent = aura;
+                PacketDistributor.sendToPlayersTrackingEntityAndSelf(serverPlayer, new ModPayloads.AuraState(serverPlayer.getId(), aura));
+            }
+        }
+    }
+
+    // The aura other players should see on this one: their power while in combat mode, else none.
+    public static String auraOf(ServerPlayer player) {
+        PowerData data = player.getData(ModAttachments.POWER);
+        return data.hasPower() && CombatMode.in(player) && player.isAlive() ? data.power : "";
+    }
+
+    // Someone just started seeing this player: tell them about the aura.
+    public static void sendAura(ServerPlayer player, ServerPlayer watcher) {
+        PacketDistributor.sendToPlayer(watcher, new ModPayloads.AuraState(player.getId(), auraOf(player)));
     }
 
     public static void sync(ServerPlayer player) {

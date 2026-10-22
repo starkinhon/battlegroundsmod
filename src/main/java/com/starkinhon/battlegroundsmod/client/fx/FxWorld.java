@@ -106,7 +106,7 @@ public final class FxWorld {
         }
         FxPost.newFrame();
         ScreenFx.capture(event);
-        boolean world = !PIECES.isEmpty() || MeteorRenderer.hasTrails();
+        boolean world = !PIECES.isEmpty() || MeteorRenderer.hasTrails() || Aura.active();
         if (!world && !ScreenFx.needsScene()) {
             return;
         }
@@ -149,6 +149,7 @@ public final class FxWorld {
             }
         }
         MeteorRenderer.emitTrails(camera, now, partial);
+        Aura.render(event.getCamera(), now, partial);
         if (flat) {
             source.endBatch(FxRenderTypes.FLAT_ALPHA);
             source.endBatch(FxRenderTypes.FLAT_ADD);
@@ -156,7 +157,11 @@ public final class FxWorld {
         } else {
             source.endBatch(FxRenderTypes.VFX_ALPHA);
             endDecals(source);
+            boolean outline = Aura.drawMask(event, camera, partial);
             FxPost.beginGlow();
+            if (outline) {
+                Aura.outline(now);
+            }
             source.endBatch(FxRenderTypes.VFX_ADD);
             FxPost.endGlow(FxConfig.on(FxConfig.BLOOM));
         }

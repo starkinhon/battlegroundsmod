@@ -167,6 +167,14 @@ public final class ScreenFx {
                 FxPost.endPasses();
             }
         }
+        float[] edge = Aura.screenEdge(delta.getGameTimeDeltaPartialTick(false));
+        if (edge != null) {
+            com.mojang.blaze3d.systems.RenderSystem.enableBlend();
+            graphics.setColor(edge[0], edge[1], edge[2], edge[3]);
+            graphics.blit(VIGNETTE, 0, 0, 0, 0, graphics.guiWidth(), graphics.guiHeight(), graphics.guiWidth(), graphics.guiHeight());
+            graphics.setColor(1, 1, 1, 1);
+            com.mojang.blaze3d.systems.RenderSystem.disableBlend();
+        }
         if (vignette != null) {
             double t = (now - vignette.start()) / vignette.life();
             float a = t < 0 || t >= 1 ? 0 : (float) (vignette.amount() * Math.min(1, t * 8) * (t < 0.6 ? 1 : 1 - (t - 0.6) / 0.4));

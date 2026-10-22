@@ -58,6 +58,7 @@ public final class PowerEvents {
         NeoForge.EVENT_BUS.addListener(PowerEvents::onRightClickItem);
         NeoForge.EVENT_BUS.addListener(PowerEvents::onRightClickBlock);
         NeoForge.EVENT_BUS.addListener(PowerEvents::onLeftClickBlock);
+        NeoForge.EVENT_BUS.addListener(PowerEvents::onStartTracking);
     }
 
     private static void onServerTick(ServerTickEvent.Post event) {
@@ -91,6 +92,12 @@ public final class PowerEvents {
             }
             PowerLogic.sync(player);
             BossCommand.syncBossBar(player);
+        }
+    }
+
+    private static void onStartTracking(PlayerEvent.StartTracking event) {
+        if (event.getTarget() instanceof ServerPlayer target && event.getEntity() instanceof ServerPlayer watcher) {
+            PowerLogic.sendAura(target, watcher);
         }
     }
 

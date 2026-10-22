@@ -20,6 +20,8 @@ public final class FxShaders {
     static ShaderInstance bloomComp;
     static ShaderInstance vfx;
     static ShaderInstance ash;
+    static ShaderInstance aura;
+    static ShaderInstance auraOutline;
 
     private static Boolean irisPresent;
 
@@ -43,6 +45,8 @@ public final class FxShaders {
         register(event, "fx_bloom_comp", DefaultVertexFormat.POSITION, s -> bloomComp = s);
         register(event, "souls_vfx", DefaultVertexFormat.PARTICLE, s -> vfx = s);
         register(event, "souls_ash", DefaultVertexFormat.NEW_ENTITY, s -> ash = s);
+        register(event, "souls_aura", DefaultVertexFormat.NEW_ENTITY, s -> aura = s);
+        register(event, "fx_aura_outline", DefaultVertexFormat.POSITION, s -> auraOutline = s);
     }
 
     private static void register(RegisterShadersEvent event, String name, VertexFormat format, java.util.function.Consumer<ShaderInstance> sink)

@@ -25,6 +25,7 @@ public final class FxPost {
 
     private static TextureTarget scene;
     private static TextureTarget glow;
+    private static TextureTarget auraMask;
     private static final TextureTarget[] BLOOM = new TextureTarget[BLOOM_LEVELS];
     private static boolean depthThisFrame;
 
@@ -119,6 +120,42 @@ public final class FxPost {
         glow.setClearColor(0, 0, 0, 0);
         glow.clear(Minecraft.ON_OSX);
         glow.copyDepthFrom(main);
+        glow.bindWrite(false);
+    }
+
+    // The aura mask, at half size (the outline only needs its shape): cleared, with the scene's depth so bodies behind
+    // walls stay hidden. Draw the bodies, then endAuraMask.
+    static void beginAuraMask() {
+        RenderTarget main = main();
+        auraMask = fit(auraMask, Math.max(1, main.width / 2), Math.max(1, main.height / 2), true);
+        auraMask.setClearColor(0, 0, 0, 0);
+        auraMask.clear(Minecraft.ON_OSX);
+        auraMask.copyDepthFrom(main);
+        auraMask.bindWrite(true);
+    }
+
+    static void endAuraMask() {
+        main().bindWrite(true);
+    }
+
+    // The outline read from the mask, added into the glow layer (call between beginGlow and endGlow).
+    static void auraOutline(ShaderInstance shader) {
+        if (auraMask == null) {
+            return;
+        }
+        RenderSystem.disableDepthTest();
+        RenderSystem.depthMask(false);
+        RenderSystem.disableCull();
+        RenderSystem.enableBlend();
+        RenderSystem.blendFunc(GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ONE);
+        shader.setSampler("MaskSampler", auraMask.getColorTextureId());
+        shader.safeGetUniform("ScreenSize").set((float) main().width, (float) main().height);
+        fullScreen(shader);
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.disableBlend();
+        RenderSystem.enableCull();
+        RenderSystem.depthMask(true);
+        RenderSystem.enableDepthTest();
         glow.bindWrite(false);
     }
 

@@ -367,6 +367,21 @@ public final class ModPayloads {
         }
     }
 
+    // Server -> client: this fighter's aura is on with this power's look, or off (empty power). Players send it when
+    // combat mode starts or ends, and to anyone who starts seeing them.
+    public record AuraState(int entityId, String power) implements CustomPacketPayload {
+        public static final Type<AuraState> TYPE = payloadType("aura_state");
+        public static final StreamCodec<ByteBuf, AuraState> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, AuraState::entityId,
+                ByteBufCodecs.STRING_UTF8, AuraState::power,
+                AuraState::new);
+
+        @Override
+        public Type<AuraState> type() {
+            return TYPE;
+        }
+    }
+
     public static void register(RegisterPayloadHandlersEvent event) {
         PayloadRegistrar registrar = event.registrar("1");
         registrar.playToServer(UseAbility.TYPE, UseAbility.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
@@ -438,5 +453,7 @@ public final class ModPayloads {
                 () -> ClientHooks.bossCutscene(payload.entityId(), payload.zoomTicks(), payload.skyTicks(), payload.backTicks(), payload.lookAt())));
         registrar.playToClient(BossBarToggle.TYPE, BossBarToggle.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.bossBarToggle(payload.on())));
+        registrar.playToClient(AuraState.TYPE, AuraState.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.auraState(payload.entityId(), payload.power())));
     }
 }

@@ -120,6 +120,21 @@ public final class FxRenderTypes extends RenderType {
                         .createCompositeState(false)));
     }
 
+    // A body with an aura, drawn flat into the aura mask (see Aura): its own texture only to skip see-through pixels.
+    // Pulled a hair toward the camera so it isn't hidden by the same body already in the depth it tests against.
+    private static final ShaderStateShard AURA_SHADER = new ShaderStateShard(() -> FxShaders.aura);
+    private static final java.util.Map<ResourceLocation, RenderType> AURA = new java.util.HashMap<>();
+
+    public static RenderType auraMask(ResourceLocation texture) {
+        return AURA.computeIfAbsent(texture, t -> create("battlegroundsmod_aura_" + t.getNamespace() + "_" + t.getPath().replace('/', '_'),
+                DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 1536, false, false, CompositeState.builder()
+                        .setShaderState(AURA_SHADER)
+                        .setTextureState(new TextureStateShard(t, false, false))
+                        .setCullState(NO_CULL)
+                        .setLayeringState(VIEW_OFFSET_Z_LAYERING)
+                        .createCompositeState(false)));
+    }
+
     // The texture a vanilla render type draws with, or null when it has none or can't be read.
     private static final java.util.Map<RenderType, java.util.Optional<ResourceLocation>> TEXTURES = new java.util.HashMap<>();
 

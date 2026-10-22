@@ -1,0 +1,58 @@
+{
+  "formato": "souls-aura/1",
+  "poder": "uchiha_ghost",
+  "cor": "#ff1c1c",
+  "cor2": "#ffd2c4",
+  "corEscura": "#3a0610",
+  "fadeEntrarTicks": 45,
+  "fadeSairTicks": 20,
+  "contorno": {
+    "ativo": true,
+    "espessura": 0.16,
+    "chamas": 0.55,
+    "brilho": 1.35,
+    "velocidade": 1.0,
+    "borda": 0.5
+  },
+  "fios": {
+    "quantidade": 9,
+    "raio": 0.8,
+    "altura": 2.9,
+    "largura": 0.08,
+    "ondulacao": 0.22,
+    "velocidade": 0.035,
+    "opacidade": 0.85
+  },
+  "chao": {
+    "raio": 1.5,
+    "opacidade": 0.55,
+    "anel": 0.9
+  },
+  "particulas": [
+    { "tipo": "poeira", "cor": "#ff2a2a", "porTick": 3.0, "tamanho": 1.1, "vidaTicks": 26, "subida": 0.07, "raio": 0.45, "altura": 1.0 },
+    { "tipo": "poeira", "cor": "#5a0a14", "porTick": 1.5, "tamanho": 1.5, "vidaTicks": 30, "subida": 0.05, "raio": 0.5, "altura": 0.8 },
+    { "tipo": "risco", "cor": "#ff5a4a", "porTick": 0.8, "tamanho": 0.35, "vidaTicks": 10, "subida": 0.22, "raio": 0.55, "altura": 1.0 },
+    { "tipo": "fumaca", "cor": "#2a050a", "porTick": 0.25, "tamanho": 0.45, "vidaTicks": 30, "subida": 0.03, "raio": 0.4, "altura": 0.1 },
+    { "tipo": "anel", "cor": "#ff2020", "porTick": 0.06, "tamanho": 1.3, "vidaTicks": 14, "subida": 0.0, "raio": 0.0, "altura": 0.05 }
+  ],
+  "entrada": {
+    "raioAnel": 3.5,
+    "vidaTicks": 22,
+    "particulas": 40
+  },
+  "primeiraPessoa": {
+    "particulas": 0.35,
+    "bordaTela": 0.16
+  },
+  "olhos": {
+    "aPartirDaFase": 1,
+    "cor": "#ff0a0a",
+    "cor2": "#ffe0e0",
+    "rastroTicks": 7,
+    "largura": 0.07,
+    "brilho": 0.45,
+    "x": 1.5,
+    "y": -2.0,
+    "z": -4.3
+  }
+}
