@@ -41,7 +41,9 @@ public class BattlegroundsMod {
     public BattlegroundsMod(IEventBus modEventBus, ModContainer modContainer) {
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(ModPayloads::register);
+        modEventBus.addListener(ModEntities::onAttributes);
 
+        ModEntities.ENTITY_TYPES.register(modEventBus);
         ModItems.init();
         ITEMS.register(modEventBus);
         CREATIVE_MODE_TABS.register(modEventBus);

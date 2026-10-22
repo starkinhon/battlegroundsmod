@@ -4,6 +4,7 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.ModItems;
+import com.starkinhon.battlegroundsmod.boss.SoulBossAI;
 import com.starkinhon.battlegroundsmod.combat.Cone;
 import com.starkinhon.battlegroundsmod.power.Power;
 import com.starkinhon.battlegroundsmod.power.PowerData;
@@ -18,7 +19,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 
-// /poder escolher <poder> | /poder limpar | /poder carregar | /poder semcooldown | /poder despertar | /poder hitbox | /poder livro
+// /poder escolher <poder> | /poder limpar | /poder carregar | /poder semcooldown | /poder despertar | /poder hitbox | /poder boss debug
+// | /poder livro
 public final class PowerCommand {
 
     private PowerCommand() {
@@ -81,6 +83,13 @@ public final class PowerCommand {
                             ? "message.battlegroundsmod.hitbox_on" : "message.battlegroundsmod.hitbox_off"), false);
                     return 1;
                 }))
+                // Shows what every boss is thinking on the action bar (phase, move, distance, best options).
+                .then(Commands.literal("boss").then(Commands.literal("debug").executes(context -> {
+                    SoulBossAI.debug = !SoulBossAI.debug;
+                    context.getSource().sendSuccess(() -> Component.translatable(SoulBossAI.debug
+                            ? "message.battlegroundsmod.boss_debug_on" : "message.battlegroundsmod.boss_debug_off"), false);
+                    return 1;
+                })))
                 .then(Commands.literal("livro").executes(context -> {
                     context.getSource().getPlayerOrException().getInventory().add(new ItemStack(ModItems.POWER_BOOK.get()));
                     return 1;

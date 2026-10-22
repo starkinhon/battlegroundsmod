@@ -74,5 +74,10 @@
   "ability.battlegroundsmod.one_punch.3": "Soco Sério",
 
   "subtitles.battlegroundsmod.katon": "Katon ruge",
-  "subtitles.battlegroundsmod.sharingan": "Sharingan desperta"
+  "subtitles.battlegroundsmod.sharingan": "Sharingan desperta",
+
+  "entity.battlegroundsmod.madara": "Fantasma dos Uchiha",
+  "item.battlegroundsmod.madara_spawn_egg": "Ovo Gerador do Fantasma dos Uchiha",
+  "message.battlegroundsmod.boss_debug_on": "Pensamento dos bosses visível na barra de ação.",
+  "message.battlegroundsmod.boss_debug_off": "Pensamento dos bosses escondido."
 }

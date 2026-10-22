@@ -10,6 +10,7 @@ import com.starkinhon.battlegroundsmod.client.Keybinds;
 import com.starkinhon.battlegroundsmod.client.MovementInput;
 import com.starkinhon.battlegroundsmod.client.PowerHud;
 import com.starkinhon.battlegroundsmod.client.ScreenShake;
+import com.starkinhon.battlegroundsmod.client.SoulBossRenderer;
 
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.api.distmarker.Dist;
@@ -18,6 +19,7 @@ import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.MovementInputUpdateEvent;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.neoforged.neoforge.client.event.RegisterParticleProvidersEvent;
@@ -33,6 +35,7 @@ public class BattlegroundsModClient {
         modEventBus.addListener(BattlegroundsModClient::onRegisterKeys);
         modEventBus.addListener(BattlegroundsModClient::onRegisterGuiLayers);
         modEventBus.addListener(BattlegroundsModClient::onRegisterParticles);
+        modEventBus.addListener(BattlegroundsModClient::onRegisterRenderers);
         NeoForge.EVENT_BUS.addListener(MeteorRenderer::onRenderLevel);
         NeoForge.EVENT_BUS.addListener(BattlegroundsModClient::onClientTickPre);
         NeoForge.EVENT_BUS.addListener(BattlegroundsModClient::onClientTick);
@@ -60,6 +63,11 @@ public class BattlegroundsModClient {
 
     private static void onClientTickPre(ClientTickEvent.Pre event) {
         MovementInput.tickPre();
+    }
+
+    // The Madara skin uses slim (3 pixel) arms.
+    private static void onRegisterRenderers(EntityRenderersEvent.RegisterRenderers event) {
+        event.registerEntityRenderer(ModEntities.MADARA.get(), context -> new SoulBossRenderer<>(context, "madara", true));
     }
 
     private static void onClientTick(ClientTickEvent.Post event) {

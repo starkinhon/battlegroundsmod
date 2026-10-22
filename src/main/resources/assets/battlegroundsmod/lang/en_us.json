@@ -74,5 +74,10 @@
   "ability.battlegroundsmod.one_punch.3": "Serious Punch",
 
   "subtitles.battlegroundsmod.katon": "Katon roars",
-  "subtitles.battlegroundsmod.sharingan": "Sharingan awakens"
+  "subtitles.battlegroundsmod.sharingan": "Sharingan awakens",
+
+  "entity.battlegroundsmod.madara": "Uchiha Ghost",
+  "item.battlegroundsmod.madara_spawn_egg": "Uchiha Ghost Spawn Egg",
+  "message.battlegroundsmod.boss_debug_on": "Boss thoughts shown on the action bar.",
+  "message.battlegroundsmod.boss_debug_off": "Boss thoughts hidden."
 }

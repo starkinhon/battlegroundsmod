@@ -1,0 +1,124 @@
+{
+  "formato": "souls-boss/1",
+  "boss": "madara",
+  "poder": "uchiha_ghost",
+  "dropAlma": true,
+  "atributos": {
+    "vida": 400,
+    "armadura": 8,
+    "velocidade": 0.32,
+    "resistenciaEmpurrao": 0.6,
+    "alcanceVisao": 48,
+    "multDano": 1.0
+  },
+  "intro": {
+    "duracaoTicks": 50,
+    "titulo": "Fantasma dos Uchiha",
+    "subtitulo": "Acorde para a realidade",
+    "cor": "#d12f2f"
+  },
+  "percepcao": {
+    "intervaloDecisaoTicks": 5,
+    "aleatoriedade": 0.25,
+    "trocarHumorTicks": 60
+  },
+  "distancias": {
+    "soco": 3.0,
+    "ideal": 8,
+    "intervaloSocoTicks": 7
+  },
+  "movimento": {
+    "velocidadeAndar": 1.0,
+    "velocidadeCorrer": 1.4,
+    "trocarLadoTicks": 40
+  },
+  "investida": {
+    "recargaTicks": 60,
+    "distanciaMin": 7,
+    "forca": 1.1,
+    "altura": 0.25
+  },
+  "puloDuplo": {
+    "alturaMin": 2.5,
+    "distanciaMax": 6
+  },
+  "teleporte": {
+    "ativo": true,
+    "presoTicks": 100,
+    "distancia": 3
+  },
+  "reacoes": {
+    "chanceEsquivarSkill": 0.6,
+    "chanceEsquivarProjetil": 0.45,
+    "chanceContraAtaque": 0.6,
+    "chanceEsquivarUlt": 0.85,
+    "golpesParaContra": 3,
+    "janelaPressaoTicks": 30,
+    "punirTicks": 100,
+    "multPunir": 3
+  },
+  "skills": {
+    "katon": {
+      "slot": 0, "tipo": "alcance", "peso": 1.0,
+      "recargaTicks": 220, "avisoTicks": 6, "distanciaMin": 3, "distanciaMax": 18,
+      "giroGrausPorTick": 1.5, "avisoCor": "#ff7a10", "avisoSom": "minecraft:item.firecharge.use"
+    },
+    "mangekyo": {
+      "slot": 1, "tipo": "controle", "peso": 0.9,
+      "recargaTicks": 400, "avisoTicks": 16, "distanciaMin": 0, "distanciaMax": 18,
+      "giroGrausPorTick": 30, "avisoCor": "#d10a0a", "avisoSom": "minecraft:block.beacon.activate"
+    },
+    "susanoo": {
+      "slot": 2, "tipo": "contra", "peso": 1.0,
+      "recargaTicks": 200, "avisoTicks": 0, "distanciaMin": 0, "distanciaMax": 5,
+      "giroGrausPorTick": 30, "avisoCor": "#38bdff", "avisoSom": ""
+    },
+    "meteoro": {
+      "slot": 3, "tipo": "ult", "peso": 0.8,
+      "recargaTicks": 900, "avisoTicks": 10, "distanciaMin": 0, "distanciaMax": 45,
+      "giroGrausPorTick": 30, "avisoCor": "#7a1020", "avisoSom": "minecraft:entity.wither.ambient"
+    },
+    "forte": {
+      "slot": 4, "tipo": "golpe", "peso": 0.8,
+      "recargaTicks": 70, "avisoTicks": 4, "distanciaMin": 0, "distanciaMax": 4,
+      "giroGrausPorTick": 20, "avisoCor": "#ffffff", "avisoSom": "minecraft:entity.player.attack.sweep"
+    },
+    "barragem": {
+      "slot": 5, "tipo": "barragem", "peso": 0.8,
+      "recargaTicks": 160, "avisoTicks": 5, "distanciaMin": 0, "distanciaMax": 3.5,
+      "giroGrausPorTick": 10, "avisoCor": "#ffffff", "avisoSom": "minecraft:entity.player.attack.sweep"
+    }
+  },
+  "combos": {
+    "fogo_cruzado": { "peso": 1.0, "passos": ["soco", "soco", "soco", "forte", "katon"] },
+    "investida_uchiha": { "peso": 0.9, "passos": ["investida", "barragem", "esquiva", "katon"] },
+    "olhar_do_inferno": { "peso": 1.2, "passos": ["mangekyo", "investida", "barragem", "forte"] },
+    "fim_do_mundo": { "peso": 1.5, "passos": ["mangekyo", "meteoro", "esquiva"] }
+  },
+  "fases": [
+    {
+      "comecaEm": 1.0,
+      "skills": ["katon", "susanoo", "forte", "barragem"],
+      "combos": ["fogo_cruzado"],
+      "agressividade": 0.55, "multRecarga": 1.0, "multAviso": 1.0, "reacaoTicks": 5, "chanceReacao": 0.7,
+      "pausaTicks": 12, "despertado": false, "corBarra": "red",
+      "transicaoTicks": 0, "titulo": "", "subtitulo": ""
+    },
+    {
+      "comecaEm": 0.6,
+      "skills": ["katon", "mangekyo", "susanoo", "forte", "barragem"],
+      "combos": ["fogo_cruzado", "investida_uchiha", "olhar_do_inferno"],
+      "agressividade": 0.7, "multRecarga": 0.8, "multAviso": 0.85, "reacaoTicks": 4, "chanceReacao": 0.85,
+      "pausaTicks": 8, "despertado": false, "corBarra": "purple",
+      "transicaoTicks": 40, "titulo": "Sharingan", "subtitulo": "Agora eu estou falando sério"
+    },
+    {
+      "comecaEm": 0.3,
+      "skills": ["katon", "mangekyo", "susanoo", "meteoro", "forte", "barragem"],
+      "combos": ["fogo_cruzado", "investida_uchiha", "olhar_do_inferno", "fim_do_mundo"],
+      "agressividade": 0.85, "multRecarga": 0.6, "multAviso": 0.7, "reacaoTicks": 2, "chanceReacao": 1.0,
+      "pausaTicks": 4, "despertado": false, "corBarra": "white",
+      "transicaoTicks": 60, "titulo": "Despertar", "subtitulo": "Sinta a dor do mundo"
+    }
+  ]
+}
