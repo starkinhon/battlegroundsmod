@@ -51,6 +51,7 @@ public class BattlegroundsMod {
         ModAttachments.ATTACHMENT_TYPES.register(modEventBus);
         ModParticles.PARTICLE_TYPES.register(modEventBus);
         ModSounds.SOUND_EVENTS.register(modEventBus);
+        ModEffects.MOB_EFFECTS.register(modEventBus);
 
         PowerEvents.register();
         SoulCommand.addSubcommand(BossCommand::bossbar);
