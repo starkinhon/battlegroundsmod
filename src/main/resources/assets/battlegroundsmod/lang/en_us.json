@@ -85,5 +85,6 @@
   "key.battlegroundsmod.dash": "Dash",
   "hud.battlegroundsmod.quick_attack": "Quick Attack",
   "message.battlegroundsmod.tier_is": "Your tier: %s (%s)",
-  "message.battlegroundsmod.tier_set": "%s is now Tier %s (%s)"
+  "message.battlegroundsmod.tier_set": "%s is now Tier %s (%s)",
+  "hud.battlegroundsmod.ultimate": "Ultimate"
 }
