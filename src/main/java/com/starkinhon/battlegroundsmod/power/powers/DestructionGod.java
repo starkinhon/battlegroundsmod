@@ -29,10 +29,10 @@ public final class DestructionGod {
 
     public static Power create() {
         return new Power("destruction_god", 0x9B30FF, 1.3f, List.of(
-                new Ability(40, 12, DestructionGod::orb),
-                new Ability(240, 35, DestructionGod::destructionTouch),
-                new Ability(80, 15, DestructionGod::divineStep),
-                new Ability(100, 0, DestructionGod::destructionSun)));
+                Ability.player(40, 12, DestructionGod::orb),
+                Ability.player(240, 35, DestructionGod::destructionTouch),
+                Ability.player(80, 15, DestructionGod::divineStep),
+                Ability.player(100, 0, DestructionGod::destructionSun)));
     }
 
     // Z: a fast destruction orb that withers whoever it hits.

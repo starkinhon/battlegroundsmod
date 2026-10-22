@@ -5,9 +5,11 @@ import java.util.List;
 
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.decoration.ArmorStand;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
@@ -29,6 +31,11 @@ public final class Combat {
                 && !Intangible.is(entity);
     }
 
+    // The server level an entity lives in. Only call this for server-side entities.
+    public static ServerLevel level(Entity entity) {
+        return (ServerLevel) entity.level();
+    }
+
     public static Vec3 center(Entity entity) {
         return entity.position().add(0, entity.getBbHeight() / 2, 0);
     }
@@ -38,7 +45,7 @@ public final class Combat {
         return Vec3.directionFromRotation(0, entity.getYRot());
     }
 
-    public static Vec3 handPos(ServerPlayer player) {
+    public static Vec3 handPos(LivingEntity player) {
         return player.getEyePosition().add(player.getLookAngle().scale(0.6)).add(0, -0.35, 0);
     }
 
@@ -47,10 +54,10 @@ public final class Combat {
                 e -> isTarget(e, owner) && center(e).distanceToSqr(center) <= radius * radius);
     }
 
-    public static List<LivingEntity> inCone(ServerPlayer player, double range, double minDot) {
+    public static List<LivingEntity> inCone(LivingEntity player, double range, double minDot) {
         Vec3 eye = player.getEyePosition();
         Vec3 look = player.getLookAngle();
-        return inRadius(player.serverLevel(), eye, range + 1, player).stream()
+        return inRadius(level(player), eye, range + 1, player).stream()
                 .filter(e -> {
                     Vec3 to = center(e).subtract(eye);
                     return to.length() <= range + e.getBbWidth() && (to.lengthSqr() < 1 || to.normalize().dot(look) >= minDot);
@@ -70,7 +77,7 @@ public final class Combat {
     }
 
     // Where the player's view hits a block, or the point at max range.
-    public static Vec3 raycastPoint(ServerPlayer player, double range) {
+    public static Vec3 raycastPoint(LivingEntity player, double range) {
         Vec3 eye = player.getEyePosition();
         Vec3 end = eye.add(player.getLookAngle().scale(range));
         var hit = player.level().clip(new ClipContext(eye, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player));
@@ -78,22 +85,25 @@ public final class Combat {
     }
 
     // The closest target in the player's view, stopped by walls. Slightly generous so moves feel good to land.
-    public static LivingEntity raycastTarget(ServerPlayer player, double range) {
+    public static LivingEntity raycastTarget(LivingEntity player, double range) {
         Vec3 eye = player.getEyePosition();
         Vec3 end = raycastPoint(player, range);
-        return alongLine(player.serverLevel(), eye, end, 0.6, player).stream()
+        return alongLine(level(player), eye, end, 0.6, player).stream()
                 .min(Comparator.comparingDouble(e -> e.distanceToSqr(eye)))
                 .orElse(null);
     }
 
-    public static boolean hurt(ServerPlayer player, LivingEntity target, float damage) {
+    public static boolean hurt(LivingEntity attacker, LivingEntity target, float damage) {
         // Clear hit immunity so fast multi-hit moves land every hit.
         target.invulnerableTime = 0;
-        return target.hurt(player.damageSources().playerAttack(player), damage);
+        DamageSource source = attacker instanceof Player player
+                ? attacker.damageSources().playerAttack(player)
+                : attacker.damageSources().mobAttack(attacker);
+        return target.hurt(source, damage);
     }
 
     // Magic damage ignores armor.
-    public static boolean hurtMagic(ServerPlayer player, LivingEntity target, float damage) {
+    public static boolean hurtMagic(LivingEntity player, LivingEntity target, float damage) {
         target.invulnerableTime = 0;
         return target.hurt(player.damageSources().indirectMagic(player, player), damage);
     }

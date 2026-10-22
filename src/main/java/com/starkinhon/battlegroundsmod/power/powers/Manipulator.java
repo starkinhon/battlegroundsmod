@@ -31,10 +31,10 @@ public final class Manipulator {
 
     public static Power create() {
         return new Power("manipulator", 0x8E44FF, 1.0f, List.of(
-                new Ability(50, 15, Manipulator::whiteLightning),
-                new Ability(200, 30, Manipulator::blackCoffin),
-                new Ability(260, 25, Manipulator::hypnosis),
-                new Ability(100, 0, Manipulator::transcendence)));
+                Ability.player(50, 15, Manipulator::whiteLightning),
+                Ability.player(200, 30, Manipulator::blackCoffin),
+                Ability.player(260, 25, Manipulator::hypnosis),
+                Ability.player(100, 0, Manipulator::transcendence)));
     }
 
     // Z: a piercing beam of white lightning.

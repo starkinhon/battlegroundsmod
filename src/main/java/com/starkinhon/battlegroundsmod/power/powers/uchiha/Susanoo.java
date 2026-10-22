@@ -12,7 +12,6 @@ import com.starkinhon.battlegroundsmod.skill.SkillSpecs;
 import com.starkinhon.battlegroundsmod.skill.SusanooSpec;
 
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
@@ -23,13 +22,13 @@ import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 public final class Susanoo {
     public static final String SKILL = "madara.susanoo";
 
-    // Players with the counter ready. The value tells a window apart from a later one, so an old timer can't close it.
-    private static final Map<ServerPlayer, Object> READY = new HashMap<>();
+    // Casters with the counter ready. The value tells a window apart from a later one, so an old timer can't close it.
+    private static final Map<LivingEntity, Object> READY = new HashMap<>();
 
     private Susanoo() {
     }
 
-    public static boolean use(ServerPlayer player, ServerLevel level) {
+    public static boolean use(LivingEntity player, ServerLevel level) {
         SusanooSpec spec = spec(player);
         Object window = new Object();
         READY.put(player, window);
@@ -48,8 +47,13 @@ public final class Susanoo {
         return true;
     }
 
-    // Called for every hit a player is about to take.
-    public static void onIncomingDamage(ServerPlayer player, LivingIncomingDamageEvent event) {
+    // True while the counter window is open (bosses read this to know their guard is up).
+    public static boolean isReady(LivingEntity entity) {
+        return READY.containsKey(entity);
+    }
+
+    // Called for every hit a living entity is about to take.
+    public static void onIncomingDamage(LivingEntity player, LivingIncomingDamageEvent event) {
         if (!READY.containsKey(player) || !(event.getSource().getEntity() instanceof LivingEntity attacker)
                 || attacker == player || !attacker.isAlive()) {
             return;
@@ -63,8 +67,8 @@ public final class Susanoo {
         grab(player, attacker, spec);
     }
 
-    private static void grab(ServerPlayer player, LivingEntity target, SusanooSpec spec) {
-        ServerLevel level = player.serverLevel();
+    private static void grab(LivingEntity player, LivingEntity target, SusanooSpec spec) {
+        ServerLevel level = Combat.level(player);
         SusanooSpec.Agarrar agarrar = spec.agarrar();
         SusanooSpec.Esmagar esmagar = spec.esmagar();
         int reach = Math.max(1, agarrar.alcancarTicks());
@@ -102,12 +106,12 @@ public final class Susanoo {
     }
 
     // Where the Susanoo's fist is: ahead of the caster and up in the air.
-    public static Vec3 hand(ServerPlayer player, SusanooSpec spec) {
+    public static Vec3 hand(LivingEntity player, SusanooSpec spec) {
         return player.position().add(Combat.flatLook(player).scale(spec.agarrar().frente())).add(0, spec.agarrar().altura(), 0);
     }
 
     // The arm comes out from behind the caster's right shoulder, as if a giant stood behind them.
-    public static Vec3 shoulder(ServerPlayer player) {
+    public static Vec3 shoulder(LivingEntity player) {
         Vec3 flat = Combat.flatLook(player);
         Vec3 right = new Vec3(-flat.z, 0, flat.x);
         return player.position().add(flat.scale(-0.8)).add(right.scale(1.2)).add(0, 2.6, 0);
@@ -117,7 +121,7 @@ public final class Susanoo {
         READY.clear();
     }
 
-    private static SusanooSpec spec(ServerPlayer player) {
+    private static SusanooSpec spec(LivingEntity player) {
         return SkillSpecs.get(SKILL, SusanooSpec.class, player.getData(ModAttachments.POWER).awakened);
     }
 

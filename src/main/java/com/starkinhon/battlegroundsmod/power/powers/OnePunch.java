@@ -33,10 +33,10 @@ public final class OnePunch {
 
     public static Power create() {
         return new Power("one_punch", 0xF2C94C, 1.6f, List.of(
-                new Ability(50, 10, OnePunch::normalPunch),
-                new Ability(160, 25, OnePunch::consecutivePunches),
-                new Ability(140, 20, OnePunch::seriousJump),
-                new Ability(100, 0, OnePunch::seriousPunch)));
+                Ability.player(50, 10, OnePunch::normalPunch),
+                Ability.player(160, 25, OnePunch::consecutivePunches),
+                Ability.player(140, 20, OnePunch::seriousJump),
+                Ability.player(100, 0, OnePunch::seriousPunch)));
     }
 
     // Z: one normal punch. Sends the target flying.

@@ -131,9 +131,7 @@ public final class PowerEvents {
             event.setCanceled(true);
             return;
         }
-        if (event.getEntity() instanceof ServerPlayer player) {
-            Susanoo.onIncomingDamage(player, event);
-        }
+        Susanoo.onIncomingDamage(event.getEntity(), event);
     }
 
     private static void onKnockBack(LivingKnockBackEvent event) {
