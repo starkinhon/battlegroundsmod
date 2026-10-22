@@ -15,8 +15,8 @@ import net.minecraft.util.Mth;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 // The base attack selector, every power has it: Ataque rápido (next punch of the combo), Ataque Forte and Ataque de
-// barragem. R picks the next one (Shift + R the one before), G uses; using one starts combat mode. Drawn just above the hearts and food, over the hotbar: the
-// picked attack's name with a dot for each choice. The GUI scale setting scales it like the rest of the HUD.
+// barragem. R picks the next one (Shift + R the one before), G uses; using one starts combat mode. Drawn above the
+// hearts and food (and the held item's name), over the hotbar: the picked attack's name with a dot for each choice. The GUI scale setting scales it like the rest of the HUD.
 public final class BaseAttacks {
     private static final String[] NAMES = {
             "hud.battlegroundsmod.quick_attack",
@@ -26,6 +26,7 @@ public final class BaseAttacks {
     // The ability slot each one uses; -1 is the punch.
     private static final int[] SLOTS = {-1, PowerData.SLOT_STRONG, PowerData.SLOT_BARRAGE};
     private static final int SWITCH_FLASH_TICKS = 8;
+    private static final int ITEM_NAME_SPACE = 12;
     // Souls whose name shows next to "Ultimate" over the ult bar.
     private static final String ULT_TITLE_WITH_SOUL = "uchiha_ghost";
 
@@ -58,8 +59,9 @@ public final class BaseAttacks {
         }
         Font font = minecraft.font;
         int center = graphics.guiWidth() / 2;
-        // Above whichever side of the status bars stands taller (hearts and armor on the left, food and air on the right).
-        int top = graphics.guiHeight() - Math.max(minecraft.gui.leftHeight, minecraft.gui.rightHeight) - 2;
+        // Above whichever side of the status bars stands taller (hearts and armor on the left, food and air on the right),
+        // leaving a line free for the held item's name that vanilla shows there.
+        int top = graphics.guiHeight() - Math.max(minecraft.gui.leftHeight, minecraft.gui.rightHeight) - 2 - ITEM_NAME_SPACE;
         if (data.combat) {
             top = ultTitle(graphics, font, data, player.tickCount, center, top);
         }
