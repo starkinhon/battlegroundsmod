@@ -13,7 +13,7 @@ import net.minecraft.util.Mth;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 // The base attack selector, every power has it: Ataque rápido (next punch of the combo), Ataque Forte and Ataque de
-// barragem. R picks, G uses; using one starts combat mode. Drawn just above the hearts and food, over the hotbar: the
+// barragem. R picks the next one (Shift + R the one before), G uses; using one starts combat mode. Drawn just above the hearts and food, over the hotbar: the
 // picked attack's name with a dot for each choice. The GUI scale setting scales it like the rest of the HUD.
 public final class BaseAttacks {
     private static final String[] NAMES = {
@@ -31,8 +31,8 @@ public final class BaseAttacks {
     private BaseAttacks() {
     }
 
-    public static void cycle() {
-        selected = (selected + 1) % NAMES.length;
+    public static void cycle(boolean back) {
+        selected = Math.floorMod(selected + (back ? -1 : 1), NAMES.length);
         var player = Minecraft.getInstance().player;
         switchedAt = player == null ? 0 : player.tickCount;
     }

@@ -13,7 +13,7 @@ import net.minecraft.client.Minecraft;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 // The power's skills (Z, X, C, V: index in ABILITIES = ability slot) and the base fighting keys: R cycles the base
-// attack selector, G uses the selected base attack, F holds the guard and Left Alt dashes. All can be changed in Controls.
+// attack selector (Shift + R goes back), G uses the selected base attack, F holds the guard and Left Alt dashes. All can be changed in Controls.
 public final class Keybinds {
     private static final String CATEGORY = "key.categories.battlegroundsmod";
 
@@ -50,7 +50,7 @@ public final class Keybinds {
         boolean hasPower = ready && minecraft.player.getData(ModAttachments.POWER).hasPower();
         while (CYCLE_ATTACK.consumeClick()) {
             if (hasPower) {
-                BaseAttacks.cycle();
+                BaseAttacks.cycle(minecraft.options.keyShift.isDown());
             }
         }
         while (USE_ATTACK.consumeClick()) {
