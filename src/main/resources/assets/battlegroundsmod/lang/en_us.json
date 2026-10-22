@@ -37,6 +37,7 @@
   "message.battlegroundsmod.no_target": "No target in sight.",
   "message.battlegroundsmod.blocked": "Path blocked.",
   "message.battlegroundsmod.unknown_power": "Unknown soul.",
+  "message.battlegroundsmod.soul_help": "Souls commands:",
 
   "power.battlegroundsmod.uchiha_ghost": "Ghost of the Uchiha",
   "power.battlegroundsmod.uchiha_ghost.desc": "Masters fire and calls meteors from the sky.",

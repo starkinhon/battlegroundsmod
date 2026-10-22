@@ -1,7 +1,9 @@
 package com.starkinhon.battlegroundsmod.command;
 
-import com.mojang.brigadier.CommandDispatcher;
+import java.util.List;
+
 import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.ModItems;
 import com.starkinhon.battlegroundsmod.combat.Cone;
@@ -16,19 +18,16 @@ import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.event.RegisterCommandsEvent;
 
-// /poder escolher <poder> | /poder limpar | /poder carregar | /poder semcooldown | /poder despertar | /poder hitbox | /poder livro
+// The power subcommands of /soul (see SoulCommand): escolher <poder> | limpar | carregar | semcooldown | despertar | hitbox | livro
 public final class PowerCommand {
 
     private PowerCommand() {
     }
 
-    public static void register(RegisterCommandsEvent event) {
-        CommandDispatcher<CommandSourceStack> dispatcher = event.getDispatcher();
-        dispatcher.register(Commands.literal("poder")
-                .requires(source -> source.hasPermission(2))
-                .then(Commands.literal("escolher")
+    public static List<LiteralArgumentBuilder<CommandSourceStack>> subcommands() {
+        return List.of(
+                Commands.literal("escolher")
                         .then(Commands.argument("poder", StringArgumentType.word())
                                 .suggests((context, builder) -> SharedSuggestionProvider.suggest(Powers.all().stream().map(Power::id), builder))
                                 .executes(context -> {
@@ -40,22 +39,22 @@ public final class PowerCommand {
                                     }
                                     PowerLogic.select(player, power);
                                     return 1;
-                                })))
-                .then(Commands.literal("limpar").executes(context -> {
+                                })),
+                Commands.literal("limpar").executes(context -> {
                     PowerLogic.clear(context.getSource().getPlayerOrException());
                     return 1;
-                }))
+                }),
                 // Fills energy and ult and clears cooldowns. Handy for recording.
-                .then(Commands.literal("carregar").executes(context -> {
+                Commands.literal("carregar").executes(context -> {
                     ServerPlayer player = context.getSource().getPlayerOrException();
                     PowerData data = player.getData(ModAttachments.POWER);
                     data.resetCombat();
                     data.ult = PowerData.MAX_ULT;
                     PowerLogic.sync(player);
                     return 1;
-                }))
+                }),
                 // Toggles cooldowns and costs off for this player, to test and record moves back to back.
-                .then(Commands.literal("semcooldown").executes(context -> {
+                Commands.literal("semcooldown").executes(context -> {
                     ServerPlayer player = context.getSource().getPlayerOrException();
                     PowerData data = player.getData(ModAttachments.POWER);
                     data.noCooldown = !data.noCooldown;
@@ -64,26 +63,26 @@ public final class PowerCommand {
                     context.getSource().sendSuccess(() -> Component.translatable(data.noCooldown
                             ? "message.battlegroundsmod.no_cooldown_on" : "message.battlegroundsmod.no_cooldown_off"), false);
                     return 1;
-                }))
+                }),
                 // Awakened mode: skills switch to their stronger "despertado" values.
-                .then(Commands.literal("despertar").executes(context -> {
+                Commands.literal("despertar").executes(context -> {
                     ServerPlayer player = context.getSource().getPlayerOrException();
                     PowerData data = player.getData(ModAttachments.POWER);
                     data.awakened = !data.awakened;
                     context.getSource().sendSuccess(() -> Component.translatable(data.awakened
                             ? "message.battlegroundsmod.awakened_on" : "message.battlegroundsmod.awakened_off"), false);
                     return 1;
-                }))
+                }),
                 // Shows the hitboxes of cone moves as white particles.
-                .then(Commands.literal("hitbox").executes(context -> {
+                Commands.literal("hitbox").executes(context -> {
                     Cone.debug = !Cone.debug;
                     context.getSource().sendSuccess(() -> Component.translatable(Cone.debug
                             ? "message.battlegroundsmod.hitbox_on" : "message.battlegroundsmod.hitbox_off"), false);
                     return 1;
-                }))
-                .then(Commands.literal("livro").executes(context -> {
+                }),
+                Commands.literal("livro").executes(context -> {
                     context.getSource().getPlayerOrException().getInventory().add(new ItemStack(ModItems.POWER_BOOK.get()));
                     return 1;
-                })));
+                }));
     }
 }

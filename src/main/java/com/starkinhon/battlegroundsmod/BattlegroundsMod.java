@@ -3,7 +3,7 @@ package com.starkinhon.battlegroundsmod;
 import org.slf4j.Logger;
 
 import com.mojang.logging.LogUtils;
-import com.starkinhon.battlegroundsmod.command.PowerCommand;
+import com.starkinhon.battlegroundsmod.command.SoulCommand;
 import com.starkinhon.battlegroundsmod.fx.ModParticles;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
 import com.starkinhon.battlegroundsmod.power.PowerEvents;
@@ -52,7 +52,7 @@ public class BattlegroundsMod {
         ModSounds.SOUND_EVENTS.register(modEventBus);
 
         PowerEvents.register();
-        NeoForge.EVENT_BUS.addListener(PowerCommand::register);
+        NeoForge.EVENT_BUS.addListener(SoulCommand::register);
     }
 
     private void commonSetup(FMLCommonSetupEvent event) {
