@@ -67,10 +67,36 @@ public final class FxWorld {
     public static void tick() {
         long now = ScreenFx.now();
         PIECES.removeIf(p -> now - p.start() > p.life());
+        BIRTHS.keySet().removeIf(seed -> PIECES.stream().noneMatch(p -> p.seed() == seed));
+        for (Piece p : PIECES) {
+            if ("jatoFogo".equals(p.e().tipo())) {
+                recordBirth(p, (int) (now - p.start()));
+            }
+        }
     }
 
     public static void clear() {
         PIECES.clear();
+        BIRTHS.clear();
+    }
+
+    // Where the mouth was and where it aimed on each tick of a fire stream (world space), so flames already out keep
+    // the path they were born on instead of swinging with the camera.
+    private static final java.util.Map<Integer, Vec3[]> BIRTHS = new java.util.HashMap<>();
+    private static Vec3 camera = Vec3.ZERO;
+
+    private static void recordBirth(Piece p, int tick) {
+        if (tick < 0 || tick >= p.emitFor()) {
+            return;
+        }
+        Vec3[] births = BIRTHS.computeIfAbsent(p.seed(), k -> new Vec3[p.emitFor() * 2]);
+        if (births[tick * 2] != null) {
+            return;
+        }
+        Vec3 at = FxAnchor.point(p.follow(), p.e().seguir(), 1);
+        Vec3 look = FxAnchor.look(p.follow(), p.e().seguir(), 1);
+        births[tick * 2] = (at == null ? p.pos() : at).add(0, d(p.e().altura(), 0), 0);
+        births[tick * 2 + 1] = look == null ? p.dir() : look.normalize();
     }
 
     // End of the level: world effects, then the screen bending and blur on top of them.
@@ -107,6 +133,7 @@ public final class FxWorld {
         MultiBufferSource.BufferSource source = buffers();
         FxDraw.begin(source, event.getCamera(), flat);
         Vec3 camera = event.getCamera().getPosition();
+        FxWorld.camera = camera;
         float partial = event.getPartialTick().getGameTimeDeltaPartialTick(false);
         double now = ScreenFx.now() + partial;
         for (Piece piece : PIECES) {
@@ -302,8 +329,18 @@ public final class FxWorld {
                     FxDraw.billboard(spark, radius * 0.5f, 0, FxDraw.FLARE, 4 / 32f, cor2, hold, true);
                 }
             }
-            case "olhoChao" -> FxDraw.disk(decal(e), new Vector3f(at).add(0, 0.06f, 0), new Vector3f(0, 1, 0),
-                    size, -spin, FxDraw.SOLID, 0, new float[] {1, 1, 1}, hold);
+            case "olhoChao" -> {
+                // The eye on the ground, glowing: a red halo bleeding onto the floor (bloomed), a hot rim, the eye
+                // itself and a brighter copy added on top that breathes slowly.
+                Vector3f floor = new Vector3f(at).add(0, 0.06f, 0);
+                Vector3f up = new Vector3f(0, 1, 0);
+                float[] glow = FxDraw.rgb(FxDraw.parse(e.cor(), 0xFF1A1A));
+                float breathe = 0.75f + 0.25f * Mth.sin(age * 0.22f);
+                FxDraw.disk(new Vector3f(floor).add(0, -0.01f, 0), up, size * 1.7f, FxDraw.SOFT, 0, glow, hold * 0.55f * breathe, true);
+                FxDraw.disk(new Vector3f(floor).add(0, 0.012f, 0), up, size * 1.04f, FxDraw.RING, 0.05f, glow, hold * 0.9f * breathe, true);
+                FxDraw.disk(decal(e), floor, up, size, -spin, FxDraw.SOLID, 0, new float[] {1, 1, 1}, hold);
+                FxDraw.disk(decalGlow(e), new Vector3f(floor).add(0, 0.006f, 0), up, size, -spin, FxDraw.SOLID, 0, glow, hold * 0.6f * breathe);
+            }
             case "olho" -> FxDraw.billboard(decal(e), at, size, spin, new float[] {1, 1, 1}, hold);
             default -> {
             }
@@ -314,6 +351,12 @@ public final class FxWorld {
 
     private static com.mojang.blaze3d.vertex.VertexConsumer decal(Efeito e) {
         RenderType type = FxRenderTypes.decal(texture(e));
+        USED_DECALS.add(type);
+        return buffers.getBuffer(type);
+    }
+
+    private static com.mojang.blaze3d.vertex.VertexConsumer decalGlow(Efeito e) {
+        RenderType type = FxRenderTypes.decalGlow(texture(e));
         USED_DECALS.add(type);
         return buffers.getBuffer(type);
     }
@@ -333,12 +376,19 @@ public final class FxWorld {
         float speed = (float) Math.max(0.1, d(e.velocidade(), 1.4));
         int perTick = i(e.quantidade(), 14);
         float travel = length / speed;
-        Vector3f d = new Vector3f(dir).normalize();
-        Vector3f side = new Vector3f(d).cross(Math.abs(d.y) > 0.99f ? new Vector3f(1, 0, 0) : new Vector3f(0, 1, 0)).normalize();
-        Vector3f up = new Vector3f(side).cross(d).normalize();
         float[] smoke = FxDraw.rgb(0x2A2224);
+        Vec3[] births = BIRTHS.get(p.seed());
         int newest = (int) Math.floor(age);
         for (int born = Math.max(0, newest - (int) travel - 1); born <= newest && born < p.emitFor(); born++) {
+            // Older flames fly on from where the mouth was when they left it; only the newest follow the aim.
+            Vector3f from = mouth;
+            Vector3f d = new Vector3f(dir).normalize();
+            if (births != null && born < newest && births[born * 2] != null) {
+                from = births[born * 2].subtract(camera).toVector3f();
+                d = births[born * 2 + 1].toVector3f();
+            }
+            Vector3f side = new Vector3f(d).cross(Math.abs(d.y) > 0.99f ? new Vector3f(1, 0, 0) : new Vector3f(0, 1, 0)).normalize();
+            Vector3f up = new Vector3f(side).cross(d).normalize();
             for (int k = 0; k < perTick; k++) {
                 float h = hash(p.seed() + born, k, 0);
                 float a = age - born - h;
@@ -350,7 +400,7 @@ public final class FxWorld {
                 float dist = speed * a;
                 float ang = hash(p.seed() + born, k, 2) * Mth.TWO_PI;
                 float rr = Mth.sqrt(hash(p.seed() + born, k, 3)) * radius * Math.min(1, dist / length) * 0.85f;
-                Vector3f pos = new Vector3f(d).mul(dist).add(mouth)
+                Vector3f pos = new Vector3f(d).mul(dist).add(from)
                         .add(new Vector3f(side).mul(Mth.cos(ang) * rr)).add(new Vector3f(up).mul(Mth.sin(ang) * rr + k01 * k01 * 1.2f));
                 float s = Mth.lerp(k01, 0.35f, size) * (0.7f + 0.6f * hash(p.seed() + born, k, 4));
                 float[] c = k01 < 0.35f ? FxDraw.mix(cor2, cor, k01 / 0.35f) : FxDraw.mix(cor, FxDraw.mix(cor, smoke, 0.6f), (k01 - 0.35f) / 0.65f);
