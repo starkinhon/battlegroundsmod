@@ -188,12 +188,12 @@ public final class Movement {
         effects(player.serverLevel(), player, kind, velocity(player, kind, Mth.clamp(forward, -1, 1), Mth.clamp(strafe, -1, 1)));
     }
 
-    // Server: double tap of the sprint key (Ctrl). Appears in front of the target, facing it.
+    // Server: double tap of the sprint key (Ctrl). Appears in front of the target, facing it, and starts combat mode.
     public static void teleport(ServerPlayer player) {
         TeleporteSpec spec = TeleporteSpec.get();
         MovementData data = data(player);
         long now = player.level().getGameTime();
-        if (!CombatMode.in(player) || !free(player) || Freeze.isFrozen(player) || now + COOLDOWN_SLACK < data.teleportReadyAt) {
+        if (!free(player) || Freeze.isFrozen(player) || now + COOLDOWN_SLACK < data.teleportReadyAt) {
             return;
         }
         LivingEntity target = teleportTarget(player, spec);
