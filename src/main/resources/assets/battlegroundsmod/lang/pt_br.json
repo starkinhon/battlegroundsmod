@@ -84,5 +84,6 @@
   "message.battlegroundsmod.boss_debug_on": "Pensamento dos bosses visível na barra de ação.",
   "message.battlegroundsmod.boss_debug_off": "Pensamento dos bosses escondido.",
   "message.battlegroundsmod.bossbar_on": "Barra de boss personalizada ligada.",
-  "message.battlegroundsmod.bossbar_off": "Barra de boss personalizada desligada (barra normal do Minecraft)."
+  "message.battlegroundsmod.bossbar_off": "Barra de boss personalizada desligada (barra normal do Minecraft).",
+  "effect.battlegroundsmod.medo": "Medo"
 }

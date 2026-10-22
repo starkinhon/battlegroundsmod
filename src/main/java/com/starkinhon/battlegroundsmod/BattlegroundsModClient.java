@@ -5,6 +5,7 @@ import java.util.List;
 import com.starkinhon.battlegroundsmod.client.BossBars;
 import com.starkinhon.battlegroundsmod.client.BossCutscene;
 import com.starkinhon.battlegroundsmod.client.FaceCutscene;
+import com.starkinhon.battlegroundsmod.client.Fear;
 import com.starkinhon.battlegroundsmod.client.fx.MeteorRenderer;
 import com.starkinhon.battlegroundsmod.client.fx.SoulParticle;
 import com.starkinhon.battlegroundsmod.fx.ModParticles;
@@ -81,5 +82,6 @@ public class BattlegroundsModClient {
         BossCutscene.tick();
         ScreenShake.tick();
         BossBars.tick();
+        Fear.tick();
     }
 }

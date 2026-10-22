@@ -3,6 +3,7 @@ package com.starkinhon.battlegroundsmod.boss;
 import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.ModItems;
 import com.starkinhon.battlegroundsmod.combat.Combat;
+import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.combat.Intangible;
 import com.starkinhon.battlegroundsmod.movement.Movement;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
@@ -45,6 +46,7 @@ public abstract class SoulBoss extends Monster {
     private int stagedTicks;
     private int stagedAge;
     private boolean ultUsed;
+    private boolean ultPending;
     private boolean lethalBypass;
     private SoulBossAI ai;
 
@@ -70,8 +72,9 @@ public abstract class SoulBoss extends Monster {
         return phase;
     }
 
+    // Entrance, phase change, final ult, or waiting to start it: the AI holds still.
     public boolean staged() {
-        return stagedTicks > 0;
+        return stagedTicks > 0 || ultPending;
     }
 
     public PowerData powerData() {
@@ -125,7 +128,10 @@ public abstract class SoulBoss extends Monster {
         }
         data.awakened = fase().despertado();
         BossSpec.UltFinal ult = spec.ultFinal();
-        if (ult != null && ult.ativa() && !ultUsed && stagedTicks == 0 && isAlive() && getHealth() / getMaxHealth() <= ult.vida()) {
+        ultPending = ult != null && ult.ativa() && !ultUsed && isAlive() && getHealth() / getMaxHealth() <= ult.vida();
+        // It finishes whatever move it is in first, so nothing else is flying when the meteor comes.
+        if (ultPending && stagedTicks == 0 && data.busyTicks <= 0 && !Freeze.isFrozen(this)) {
+            ultPending = false;
             ultUsed = true;
             if (ai != null) {
                 ai.reset();
@@ -143,6 +149,10 @@ public abstract class SoulBoss extends Monster {
                     Combat.pushFrom(near, position(), 1.6, 0.5);
                 }
             }
+        }
+        LivingEntity target = getTarget();
+        if (target != null && !stillHunting(target)) {
+            super.setTarget(null);
         }
         bossEvent.setProgress(getHealth() / getMaxHealth());
     }
@@ -216,6 +226,25 @@ public abstract class SoulBoss extends Monster {
             ai.onHurt(attacker);
         }
         return hurt;
+    }
+
+    // Relentless: once it has a target it never lets go because of distance or losing sight (the vanilla target goals
+    // try to clear it). It only switches to someone else, or drops a target that died, left, changed dimension or
+    // went creative/spectator. Unreachable targets are handled by the AI's teleport.
+    @Override
+    public void setTarget(LivingEntity target) {
+        LivingEntity current = getTarget();
+        if (target == null && current != null && stillHunting(current)) {
+            return;
+        }
+        super.setTarget(target);
+    }
+
+    private boolean stillHunting(LivingEntity target) {
+        if (!target.isAlive() || target.isRemoved() || target.level() != level()) {
+            return false;
+        }
+        return !(target instanceof Player player) || !(player.isCreative() || player.isSpectator());
     }
 
     @Override

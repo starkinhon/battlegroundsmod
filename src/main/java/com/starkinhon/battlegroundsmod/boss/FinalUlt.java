@@ -1,5 +1,6 @@
 package com.starkinhon.battlegroundsmod.boss;
 
+import com.starkinhon.battlegroundsmod.ModEffects;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.combat.Fx;
@@ -14,13 +15,14 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 // The boss-only ult near death (madara.json "ultFinal"): everything stops, the camera zooms on its face and turns to
 // the sky as the Meteoro appears, falling many times slower than the player's version so there is time to run, and
-// hitting much harder. The boss itself waits, still, until it lands.
+// hitting much harder, while everyone near is struck with fear (MEDO). The boss itself waits, still, until it lands.
 final class FinalUlt {
     private FinalUlt() {
     }
@@ -58,6 +60,13 @@ final class FinalUlt {
         Tasks.later(cfg.zoomTicks(), () -> {
             if (boss.isAlive()) {
                 Meteoro.launch(boss, level, aim, fallTicks, cfg.multDano());
+                // Fear until it lands: slow, heavy jumps, shaking screen and a racing heart.
+                int fear = spec.tempo().preparoTicks() + fallTicks + 10;
+                for (ServerPlayer player : level.players()) {
+                    if (!player.isSpectator() && player.distanceTo(boss) <= cfg.raio()) {
+                        player.addEffect(new MobEffectInstance(ModEffects.MEDO, fear, 0, false, false, true));
+                    }
+                }
             }
         });
         // The title shows once the HUD comes back.
