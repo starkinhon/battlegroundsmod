@@ -75,7 +75,10 @@
       "sequencia": [
         "mangaInvertido",
         "nada",
-        "mangaInvertido"
+        "mangaInvertido",
+        "cor",
+        "mangaInvertido",
+        "nada"
       ],
       "ticksPorQuadro": 1,
       "cor": "#d10a0a",
@@ -92,8 +95,20 @@
       "vidaTicks": 14
     },
     {
+      "tipo": "olho",
+      "momento": "cutscene",
+      "seguir": "cabeca",
+      "duraMomento": true,
+      "deslocamento": -0.6,
+      "altura": 0.05,
+      "tamanho": 1.7,
+      "girar": 0.06,
+      "primeiraPessoa": 0
+    },
+    {
       "tipo": "distorcao",
       "momento": "stun",
+      "seguir": "cabeca",
       "modo": "redemoinho",
       "raio": 2.5,
       "forca": 0.8,
@@ -102,13 +117,26 @@
       "vidaTicks": 40
     },
     {
-      "tipo": "anel",
+      "tipo": "anelCabeca",
       "momento": "stun",
-      "raio": 1.6,
-      "tamanho": 0.25,
-      "cor": "#d10a0a",
-      "altura": 0.4,
-      "vidaTicks": 20
+      "seguir": "cabeca",
+      "duraMomento": true,
+      "raio": 0.75,
+      "altura": 0.45,
+      "tamanho": 0.09,
+      "girar": 0.07,
+      "cor": "#ff3030",
+      "cor2": "#ffd0d0",
+      "primeiraPessoa": 0.3
+    },
+    {
+      "tipo": "olhoChao",
+      "momento": "stun",
+      "seguir": "pes",
+      "duraMomento": true,
+      "tamanho": 2.6,
+      "girar": 0.05,
+      "primeiraPessoa": 0.6
     }
   ],
   "despertado": {

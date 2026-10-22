@@ -9,6 +9,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import com.starkinhon.battlegroundsmod.client.BossCutscene;
 import com.starkinhon.battlegroundsmod.client.FaceCutscene;
 import com.starkinhon.battlegroundsmod.client.ScreenShake;
+import com.starkinhon.battlegroundsmod.client.ShoulderCutscene;
 
 import net.minecraft.client.Camera;
 import net.minecraft.world.entity.Entity;
@@ -28,7 +29,8 @@ public abstract class CameraMixin {
     @Inject(method = "setup", at = @At("TAIL"))
     private void battlegroundsmod$cutscene(BlockGetter level, Entity entity, boolean detached, boolean thirdPersonReverse,
             float partialTick, CallbackInfo ci) {
-        FaceCutscene.Shot shot = BossCutscene.active() ? BossCutscene.shot(partialTick) : FaceCutscene.shot(partialTick);
+        FaceCutscene.Shot shot = BossCutscene.active() ? BossCutscene.shot(partialTick)
+                : ShoulderCutscene.active() ? ShoulderCutscene.shot(partialTick) : FaceCutscene.shot(partialTick);
         if (shot != null) {
             setRotation(shot.yaw(), shot.pitch());
             setPosition(shot.position());

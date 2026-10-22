@@ -5,13 +5,22 @@ import java.util.List;
 // A skill tuned in the Forja de Skills page ("souls-skill/1" format). Field names match the JSON the page exports,
 // so a new export can be pasted over the file in data/battlegroundsmod/souls_skills/ as is.
 public record SkillSpec(String skill, String nome, Tempo tempo, Origem origem, Direcao direcao, Forma forma, Camadas camadas, Animacao animacao,
-        List<Som> sons) {
+        List<Som> sons, Fraco fraco) {
 
-    // atraso: wind-up before the effect starts; duracao: how long it lasts; crescimento: ticks to reach full length.
-    public record Tempo(int atrasoTicks, int duracaoTicks, int crescimentoTicks) {
-        public int totalTicks() {
-            return atrasoTicks + duracaoTicks;
+    // atraso: wind-up before the effect starts; fraco: ticks it comes out weak before the real blast (Katon);
+    // duracao: how long the full effect lasts; crescimento: ticks to reach full length.
+    public record Tempo(int atrasoTicks, int duracaoTicks, int crescimentoTicks, Integer fracoTicks) {
+        public int weakTicks() {
+            return fracoTicks == null ? 0 : Math.max(0, fracoTicks);
         }
+
+        public int totalTicks() {
+            return atrasoTicks + weakTicks() + duracaoTicks;
+        }
+    }
+
+    // The weak start: the shape scaled by tamanho, the damage by dano.
+    public record Fraco(double tamanho, double dano) {
     }
 
     // Offset from the eyes, in blocks, along the aim direction, straight up, and to the right.

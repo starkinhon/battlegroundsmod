@@ -26,7 +26,7 @@
   "fumacas": [
     {
       "nome": "Rastro branco",
-      "ativa": true,
+      "ativa": false,
       "lados": 4,
       "abertura": 35,
       "deslocamento": 1,
@@ -37,7 +37,7 @@
     },
     {
       "nome": "Fumaça 2",
-      "ativa": true,
+      "ativa": false,
       "lados": 1,
       "abertura": 1,
       "deslocamento": 1,
@@ -48,15 +48,26 @@
     }
   ],
   "riscos": {
-    "ativa": true,
+    "ativa": false,
     "porTick": 5,
     "comprimento": 10,
     "velocidade": 1,
     "espalhamento": 0.7,
     "cor": "#d0163a"
   },
-  "preparo": {
+  "rabeta": {
     "ativa": true,
+    "cor": "#ff4a10",
+    "cor2": "#fff0b0",
+    "tamanho": 1.6,
+    "comprimento": 30,
+    "fumacaCor": "#3a3436",
+    "fumacaTamanho": 1.1,
+    "fumacaVidaTicks": 90,
+    "fumacaPorTick": 3
+  },
+  "preparo": {
+    "ativa": false,
     "porTick": 8,
     "cor": "#7a1020"
   },
@@ -76,9 +87,16 @@
     "tremerTela": 1.1,
     "onda": {
       "ativa": true,
-      "velocidade": 1.5,
+      "velocidade": 2,
       "tamanho": 3.3,
-      "cor": "#ffb070"
+      "cor": "#ffb070",
+      "alcance": 60,
+      "dano": 12,
+      "empurrao": 2.2,
+      "quebrarBlocos": true,
+      "altura": 3,
+      "profundidade": 2,
+      "largura": 2
     },
     "explosao": {
       "ativa": true,
@@ -116,28 +134,16 @@
   },
   "vfx": [
     {
-      "tipo": "distorcao",
-      "momento": "uso",
-      "modo": "onda",
-      "raio": 5,
-      "forca": 0.5,
-      "velocidade": 6,
-      "altura": 1,
-      "vidaTicks": 30
-    },
-    {
-      "tipo": "fov",
-      "momento": "uso",
-      "forca": -4,
-      "vidaTicks": 16
-    },
-    {
       "tipo": "impactFrame",
       "momento": "impacto",
       "sequencia": [
         "branco",
         "invertido",
         "cor",
+        "manga",
+        "mangaInvertido",
+        "branco",
+        "invertido",
         "manga"
       ],
       "ticksPorQuadro": 1,
@@ -204,10 +210,11 @@
     {
       "tipo": "anelChao",
       "momento": "impacto",
-      "raio": 48,
+      "raio": 60,
       "tamanho": 5,
       "cor": "#ff6a30",
-      "vidaTicks": 28
+      "vidaTicks": 34,
+      "velocidade": 2
     },
     {
       "tipo": "anelChao",

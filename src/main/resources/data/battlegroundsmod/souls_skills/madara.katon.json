@@ -5,7 +5,12 @@
   "tempo": {
     "atrasoTicks": 40,
     "duracaoTicks": 111,
-    "crescimentoTicks": 18
+    "crescimentoTicks": 18,
+    "fracoTicks": 100
+  },
+  "fraco": {
+    "tamanho": 0.35,
+    "dano": 0.3
   },
   "origem": {
     "ancora": "boca",
@@ -49,7 +54,13 @@
       "tamanhoFim": 4,
       "preenchimento": 1,
       "concentracao": 0.95,
-      "cores": ["#ffe14a", "#ffb020", "#ff7a10", "#ff4a0a", "#e5200a"]
+      "cores": [
+        "#ffe14a",
+        "#ffb020",
+        "#ff7a10",
+        "#ff4a0a",
+        "#e5200a"
+      ]
     },
     "fumaca": {
       "ativa": true,
@@ -74,14 +85,26 @@
     "preparo": {
       "cabeca": -28,
       "tronco": -14,
-      "bracoDir": { "frente": 95, "abrir": -32 },
-      "bracoEsq": { "frente": 95, "abrir": -32 }
+      "bracoDir": {
+        "frente": 95,
+        "abrir": -32
+      },
+      "bracoEsq": {
+        "frente": 95,
+        "abrir": -32
+      }
     },
     "sopro": {
       "cabeca": 6,
       "tronco": 12,
-      "bracoDir": { "frente": 20, "abrir": 18 },
-      "bracoEsq": { "frente": 20, "abrir": 18 }
+      "bracoDir": {
+        "frente": 20,
+        "abrir": 18
+      },
+      "bracoEsq": {
+        "frente": 20,
+        "abrir": 18
+      }
     }
   },
   "sons": [
@@ -96,47 +119,131 @@
       "pitch": 1,
       "pitchFim": 1,
       "onde": "boca"
+    },
+    {
+      "nome": "Explosão de chamas",
+      "som": "minecraft:entity.generic.explode",
+      "momento": "explosao",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 2.5,
+      "pitch": 0.7,
+      "pitchFim": 0.7,
+      "onde": "boca"
+    },
+    {
+      "nome": "Rugido do fogo",
+      "som": "minecraft:entity.blaze.shoot",
+      "momento": "explosao",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 2.5,
+      "pitch": 0.5,
+      "pitchFim": 0.5,
+      "onde": "boca"
     }
   ],
   "vfx": [
     {
       "tipo": "clarao",
       "momento": "fogo",
-      "tamanho": 3,
+      "tamanho": 1.4,
       "quantidade": 6,
       "cor": "#ff6a10",
       "cor2": "#fff0b0",
-      "vidaTicks": 10
+      "vidaTicks": 8
     },
     {
-      "tipo": "fogo",
-      "momento": "fogo",
-      "quantidade": 10,
-      "raio": 1.5,
-      "tamanho": 1.6,
-      "deslocamento": 1,
-      "cor": "#d0401a",
-      "cor2": "#fff0a0",
-      "vidaTicks": 20
+      "tipo": "impactFrame",
+      "momento": "explosao",
+      "sequencia": [
+        "branco",
+        "cor",
+        "invertido",
+        "manga",
+        "cor",
+        "branco"
+      ],
+      "ticksPorQuadro": 1,
+      "cor": "#ff5a10",
+      "alcance": 40
     },
     {
-      "tipo": "distorcao",
-      "momento": "fogo",
-      "modo": "onda",
-      "raio": 3,
-      "forca": 0.5,
-      "velocidade": 6,
-      "deslocamento": 1.5,
-      "cor": "#ff9050",
-      "tinta": 0.1,
-      "vidaTicks": 24
+      "tipo": "tremor",
+      "momento": "explosao",
+      "forca": 0.7,
+      "vidaTicks": 40,
+      "alcance": 40
+    },
+    {
+      "tipo": "blurRadial",
+      "momento": "explosao",
+      "forca": 1.1,
+      "vidaTicks": 30,
+      "alcance": 30
     },
     {
       "tipo": "fov",
-      "momento": "fogo",
-      "forca": 3,
-      "vidaTicks": 10,
+      "momento": "explosao",
+      "forca": 7,
+      "vidaTicks": 16,
       "alcance": 20
+    },
+    {
+      "tipo": "clarao",
+      "momento": "explosao",
+      "seguir": "boca",
+      "tamanho": 4,
+      "quantidade": 8,
+      "cor": "#ff6a10",
+      "cor2": "#fff6d0",
+      "vidaTicks": 14
+    },
+    {
+      "tipo": "distorcao",
+      "momento": "explosao",
+      "seguir": "boca",
+      "modo": "onda",
+      "raio": 4,
+      "forca": 0.6,
+      "velocidade": 10,
+      "cor": "#ff9050",
+      "tinta": 0.1,
+      "vidaTicks": 20
+    },
+    {
+      "tipo": "jatoFogo",
+      "momento": "explosao",
+      "seguir": "boca",
+      "duraMomento": true,
+      "comprimento": 25,
+      "raio": 10,
+      "velocidade": 1.4,
+      "quantidade": 16,
+      "tamanho": 4.5,
+      "cor": "#ff4a0a",
+      "cor2": "#fff3b0",
+      "primeiraPessoa": 0.8
+    },
+    {
+      "tipo": "rastroBoca",
+      "momento": "explosao",
+      "seguir": "cabeca",
+      "duraMomento": true,
+      "quantidade": 6,
+      "comprimento": 1.3,
+      "cor": "#ff3a08",
+      "cor2": "#ffe080",
+      "primeiraPessoa": 0
+    },
+    {
+      "tipo": "vinheta",
+      "momento": "queimando",
+      "cor": "#ff6a00",
+      "forca": 0.85,
+      "vidaTicks": 30
     }
   ]
 }

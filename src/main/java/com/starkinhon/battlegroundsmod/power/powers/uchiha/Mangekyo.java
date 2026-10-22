@@ -71,6 +71,7 @@ public final class Mangekyo {
             area.draw(Fx.dust(0xFFFFFF, 0.6f));
         }
         if (cutscene.ativa()) {
+            Fx.effects(level, SKILL, data.awakened, "cutscene", player, cutscene.duracaoTicks());
             if (player instanceof ServerPlayer self) {
                 startCutscene(player, self, data.awakened);
             }
@@ -92,7 +93,8 @@ public final class Mangekyo {
                 if (target.isAlive() && !target.isRemoved()) {
                     stun(target, spec.efeitos());
                     UchihaFx.mangekyoHit(level, target);
-                    Fx.effects(level, SKILL, data.awakened, "stun", target.getEyePosition(), player.getLookAngle());
+                    // Ring over the head and the eye under the feet stay for as long as the stun does.
+                    Fx.effects(level, SKILL, data.awakened, "stun", target, spec.efeitos().duracaoTicks());
                 }
             }
         });

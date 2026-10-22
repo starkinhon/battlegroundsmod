@@ -21,6 +21,8 @@ import net.neoforged.neoforge.client.event.ViewportEvent;
 // (so the hand and HUD stay sharp); impact frames and flashes run under the HUD, over the hand.
 public final class ScreenFx {
     public static final int MAX_WARPS = 8;
+    // Every bending is scaled by this: the files were tuned too strong.
+    private static final float WARP_SCALE = 0.5f;
 
     private record Impact(int[] modes, int ticksPerFrame, float[] tint, Vec3 pos, long start) {
     }
@@ -33,7 +35,9 @@ public final class ScreenFx {
     }
 
     // Space bending in a sphere: mode 0 ripple, 1 swirl, 2 lens, 3 whole screen.
-    public record Warp(Vec3 pos, float radius, float strength, float speed, int mode, Vec3 axis, float[] tint, float tintAmount, long start, int life) {
+    // follow/seguir keep it on an entity (lifted by up); otherwise it stays at pos.
+    public record Warp(Vec3 pos, float radius, float strength, float speed, int mode, Vec3 axis, float[] tint, float tintAmount, long start, int life,
+            int follow, String seguir, float up) {
         float envelope(double now) {
             double t = (now - start) / life;
             if (t < 0 || t >= 1) {
@@ -48,6 +52,9 @@ public final class ScreenFx {
     private static Timed flash;
     private static Timed radial;
     private static Timed fov;
+    private static Timed vignette;
+    private static final net.minecraft.resources.ResourceLocation VIGNETTE = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(
+            com.starkinhon.battlegroundsmod.BattlegroundsMod.MODID, "textures/fx/vignette.png");
     private static final List<Warp> WARPS = new ArrayList<>();
 
     private static final Matrix4f VIEW = new Matrix4f();
@@ -88,8 +95,19 @@ public final class ScreenFx {
         fov = new Timed(degrees, null, Vec3.ZERO, ticks, Math.max(1, life));
     }
 
-    public static void warp(Vec3 pos, float radius, float strength, float speed, int mode, Vec3 axis, int tint, float tintAmount, int life) {
-        WARPS.add(new Warp(pos, radius, strength, speed, mode, axis, rgb(tint), tintAmount, ticks, Math.max(1, life)));
+    public static void warp(Vec3 pos, float radius, float strength, float speed, int mode, Vec3 axis, int tint, float tintAmount, int life,
+            int follow, String seguir, float up) {
+        WARPS.add(new Warp(pos, radius, strength * WARP_SCALE, speed, mode, axis, rgb(tint), tintAmount, ticks, Math.max(1, life), follow, seguir, up));
+    }
+
+    // Orange edges of the screen (being burned): comes in fast, holds, fades over the last part.
+    public static void vignette(int color, float strength, int life) {
+        float a = Mth.clamp(strength, 0, 1);
+        if (vignette == null || vignette.k(ticks) < a * 0.8f) {
+            vignette = new Timed(a, rgb(color), Vec3.ZERO, ticks, Math.max(1, life));
+        } else {
+            vignette = new Timed(vignette.amount(), vignette.color(), Vec3.ZERO, ticks - Math.max(1, life) / 8, Math.max(1, life));
+        }
     }
 
     static boolean needsScene() {
@@ -147,6 +165,18 @@ public final class ScreenFx {
                     impactPass(mode, reduced);
                 }
                 FxPost.endPasses();
+            }
+        }
+        if (vignette != null) {
+            double t = (now - vignette.start()) / vignette.life();
+            float a = t < 0 || t >= 1 ? 0 : (float) (vignette.amount() * Math.min(1, t * 8) * (t < 0.6 ? 1 : 1 - (t - 0.6) / 0.4));
+            if (a > 0.004f) {
+                float[] c = vignette.color();
+                com.mojang.blaze3d.systems.RenderSystem.enableBlend();
+                graphics.setColor(c[0], c[1], c[2], a);
+                graphics.blit(VIGNETTE, 0, 0, 0, 0, graphics.guiWidth(), graphics.guiHeight(), graphics.guiWidth(), graphics.guiHeight());
+                graphics.setColor(1, 1, 1, 1);
+                com.mojang.blaze3d.systems.RenderSystem.disableBlend();
             }
         }
         if (flash != null) {
@@ -218,7 +248,9 @@ public final class ScreenFx {
             if (env <= 0) {
                 continue;
             }
-            Vector3f c = VIEW.transformPosition(w.pos().subtract(camera).toVector3f(), new Vector3f());
+            Vec3 at = FxAnchor.point(w.follow(), w.seguir(), levelPartial);
+            at = at == null ? w.pos() : at.add(0, w.up(), 0);
+            Vector3f c = VIEW.transformPosition(at.subtract(camera).toVector3f(), new Vector3f());
             Vector3f axis = VIEW.transformDirection(w.axis().toVector3f(), new Vector3f());
             float age = (float) ((now - w.start()) / 20.0);
             Matrix4f m = new Matrix4f(

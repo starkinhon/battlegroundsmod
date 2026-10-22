@@ -1,0 +1,14 @@
+{
+    "vertex": "battlegroundsmod:souls_ash",
+    "fragment": "battlegroundsmod:souls_ash",
+    "samplers": [ { "name": "Sampler0" } ],
+    "uniforms": [
+        { "name": "ModelViewMat", "type": "matrix4x4", "count": 16, "values": [ 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 ] },
+        { "name": "ProjMat", "type": "matrix4x4", "count": 16, "values": [ 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 ] },
+        { "name": "GameTime", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "AshOrigin", "type": "float", "count": 3, "values": [ 0.0, 0.0, 0.0 ] },
+        { "name": "AshHeight", "type": "float", "count": 1, "values": [ 1.8 ] },
+        { "name": "Burn", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "Progress", "type": "float", "count": 1, "values": [ 0.0 ] }
+    ]
+}

@@ -15,7 +15,7 @@ import net.minecraft.world.phys.Vec3;
 // Plays a skill's "vfx" list on this client: the server says which moment happened where, the timing and look
 // come from the skill file. Screen effects get weaker with distance (alcance) and are skipped past it.
 public final class SkillEffects {
-    private record Pending(Efeito e, Vec3 pos, Vec3 dir, long at) {
+    private record Pending(String skill, Efeito e, Vec3 pos, Vec3 dir, int entity, int ticks, long at) {
     }
 
     private static final List<Pending> PENDING = new ArrayList<>();
@@ -23,7 +23,7 @@ public final class SkillEffects {
     private SkillEffects() {
     }
 
-    public static void play(String skill, boolean awakened, String momento, Vec3 pos, Vec3 dir) {
+    public static void play(String skill, boolean awakened, String momento, Vec3 pos, Vec3 dir, int entity, int ticks) {
         List<Efeito> efeitos;
         try {
             VfxSpec spec = SkillSpecs.get(skill, VfxSpec.class, awakened);
@@ -41,9 +41,9 @@ public final class SkillEffects {
             }
             int delay = Math.max(0, FxWorld.i(e.inicio(), 0));
             if (delay == 0) {
-                start(e, pos, dir);
+                start(skill, e, pos, dir, entity, ticks);
             } else {
-                PENDING.add(new Pending(e, pos, dir, ScreenFx.now() + delay));
+                PENDING.add(new Pending(skill, e, pos, dir, entity, ticks, ScreenFx.now() + delay));
             }
         }
     }
@@ -64,16 +64,21 @@ public final class SkillEffects {
             return false;
         });
         for (Pending p : due) {
-            start(p.e(), p.pos(), p.dir());
+            start(p.skill(), p.e(), p.pos(), p.dir(), p.entity(), p.ticks());
         }
     }
 
-    private static void start(Efeito e, Vec3 pos, Vec3 dir) {
+    private static void start(String skill, Efeito e, Vec3 pos, Vec3 dir, int entity, int ticks) {
         var player = Minecraft.getInstance().player;
+        // Effects tied to someone start on them, wherever the server measured.
+        Vec3 anchored = FxAnchor.point(entity, e.seguir(), 1);
+        if (anchored != null) {
+            pos = anchored;
+        }
         double distance = player == null ? 0 : player.getEyePosition().distanceTo(pos);
         double reach = FxWorld.d(e.alcance(), 64);
         float near = (float) Math.max(0, 1 - distance / Math.max(1, reach));
-        int life = Math.max(1, FxWorld.i(e.vidaTicks(), 20));
+        int life = Boolean.TRUE.equals(e.duraMomento()) && ticks > 0 ? ticks : Math.max(1, FxWorld.i(e.vidaTicks(), 20));
         int cor = FxDraw.parse(e.cor(), 0xFFFFFF);
         float forca = (float) FxWorld.d(e.forca(), 1);
         switch (e.tipo()) {
@@ -97,6 +102,8 @@ public final class SkillEffects {
                     ScreenShake.start(forca * near, life);
                 }
             }
+            case "parar" -> FxWorld.stopFollowing(skill, entity);
+            case "vinheta" -> ScreenFx.vignette(FxDraw.parse(e.cor(), 0xFF7A10), forca, life);
             case "fov" -> {
                 if (near > 0) {
                     ScreenFx.fovKick(forca * near, life);
@@ -105,9 +112,9 @@ public final class SkillEffects {
             case "distorcao" -> {
                 Vec3 at = pos.add(dir.scale(FxWorld.d(e.deslocamento(), 0))).add(0, FxWorld.d(e.altura(), 0), 0);
                 ScreenFx.warp(at, (float) FxWorld.d(e.raio(), 6), forca, (float) FxWorld.d(e.velocidade(), 8), warpMode(e.modo()), dir, cor,
-                        (float) FxWorld.d(e.tinta(), 0), life);
+                        (float) FxWorld.d(e.tinta(), 0), life, entity, e.seguir(), (float) FxWorld.d(e.altura(), 0));
             }
-            default -> FxWorld.spawn(e, pos, dir, life);
+            default -> FxWorld.spawn(skill, e, pos, dir, life, entity);
         }
     }
 
@@ -126,7 +133,7 @@ public final class SkillEffects {
     // "branco", "cor", "invertido", "manga", "mangaInvertido"; anything else is a normal frame in between.
     private static int[] modes(List<String> sequencia) {
         if (sequencia == null || sequencia.isEmpty()) {
-            return new int[] {0, 2, 1};
+            return new int[] {0, 2, 1, 3, 4, 0};
         }
         int[] modes = new int[sequencia.size()];
         for (int i = 0; i < modes.length; i++) {

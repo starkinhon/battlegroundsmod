@@ -56,7 +56,7 @@ public final class MeteorRenderer {
         PoseStack pose = event.getPoseStack();
         MultiBufferSource.BufferSource buffers = Minecraft.getInstance().renderBuffers().bufferSource();
         long now = level.getGameTime();
-        FALLING.removeIf(falling -> now - falling.startTick() > falling.ticks() + 1);
+        FALLING.removeIf(falling -> now - falling.startTick() > falling.ticks() + 1 + smokeLife(falling));
         for (Falling falling : FALLING) {
             double age = now - falling.startTick() + partial;
             int ticks = falling.ticks();
@@ -82,6 +82,98 @@ public final class MeteorRenderer {
         buffers.endBatch(FxRenderTypes.SOLID);
         buffers.endBatch(FxRenderTypes.GLOW);
         buffers.endBatch(FxRenderTypes.AREA);
+    }
+
+    private static int smokeLife(Falling falling) {
+        MeteoroSpec.Rabeta rabeta = falling.spec().rabeta();
+        return rabeta != null && rabeta.ativa() ? Math.max(1, rabeta.fumacaVidaTicks()) : 0;
+    }
+
+    public static boolean hasTrails() {
+        for (Falling falling : FALLING) {
+            if (falling.spec().rabeta() != null && falling.spec().rabeta().ativa()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static Vec3 at(Falling falling, double age) {
+        double k = Math.max(0, Math.min(1, age / falling.ticks()));
+        double acc = falling.spec().meteoro().aceleracao();
+        return falling.start().lerp(falling.end(), k * (1 - acc) + k * k * acc);
+    }
+
+    // The tail, drawn with the shader effects (FxWorld calls this inside its own pass): a column of fire licking
+    // behind the rock, and smoke puffs left along the path that swell and thin out. Like every effect there, each
+    // puff is a fixed function of when the rock passed, so nothing is stored.
+    static void emitTrails(Vec3 camera, double unused, float partial) {
+        var level = Minecraft.getInstance().level;
+        if (level == null) {
+            return;
+        }
+        double now = level.getGameTime() + partial;
+        for (Falling falling : FALLING) {
+            MeteoroSpec.Rabeta rabeta = falling.spec().rabeta();
+            if (rabeta == null || !rabeta.ativa()) {
+                continue;
+            }
+            double age = now - falling.startTick();
+            if (age < 0) {
+                continue;
+            }
+            float radius = (float) falling.spec().meteoro().raio();
+            int seed = (int) (falling.startTick() * 31);
+            float[] hot = FxDraw.rgb(parse(rabeta.cor2(), 0xFFF0B0));
+            float[] fire = FxDraw.rgb(parse(rabeta.cor(), 0xFF4A10));
+            Vec3 dir = falling.dir();
+            if (age <= falling.ticks()) {
+                Vector3f ball = at(falling, age).subtract(camera).toVector3f();
+                FxDraw.billboard(ball, radius * 3.4f, 0, FxDraw.SOFT, 0.25f, fire, 0.75f, true);
+                int count = Math.max(4, rabeta.comprimento());
+                float size = (float) rabeta.tamanho() * radius;
+                for (int j = 0; j < count; j++) {
+                    float f = j / (float) count;
+                    double back = age - j * 0.55;
+                    if (back < 0) {
+                        break;
+                    }
+                    Vec3 p = at(falling, back).subtract(dir.scale(radius * (0.4 + f * 0.6)));
+                    float jx = (FxWorld.hash(seed, j, 1) - 0.5f) * radius * f, jz = (FxWorld.hash(seed, j, 2) - 0.5f) * radius * f;
+                    Vector3f pos = p.subtract(camera).toVector3f().add(jx, 0, jz);
+                    float s = size * (1.1f - f * 0.6f) * (0.8f + 0.4f * FxWorld.hash(seed + (int) age, j, 3));
+                    FxDraw.billboard(pos, s, FxWorld.hash(seed, j, 4) * 6 + (float) age * 0.1f, FxDraw.FIRE, f * 0.8f, FxDraw.mix(hot, fire, Math.min(1, f * 1.8f)),
+                            1 - f * 0.6f, true);
+                }
+            }
+            int life = Math.max(1, rabeta.fumacaVidaTicks());
+            int perTick = Math.max(1, rabeta.fumacaPorTick());
+            float[] smoke = FxDraw.rgb(parse(rabeta.fumacaCor(), 0x3A3436));
+            int last = (int) Math.min(age, falling.ticks());
+            for (int born = Math.max(0, (int) age - life); born <= last; born++) {
+                for (int k = 0; k < perTick; k++) {
+                    double puffAge = age - born - FxWorld.hash(seed + born, k, 0);
+                    if (puffAge < 0 || puffAge > life) {
+                        continue;
+                    }
+                    float t = (float) (puffAge / life);
+                    float a = FxWorld.hash(seed + born, k, 1) * Mth.TWO_PI;
+                    float out = radius * (0.5f + 0.6f * FxWorld.hash(seed + born, k, 2)) + (float) puffAge * 0.04f;
+                    Vec3 base = at(falling, born).subtract(dir.scale(radius * 0.8));
+                    Vector3f side = new Vector3f((float) -dir.z, 0, (float) dir.x);
+                    if (side.lengthSquared() < 1.0E-4f) {
+                        side.set(1, 0, 0);
+                    }
+                    side.normalize();
+                    Vector3f up = new Vector3f(side).cross(dir.toVector3f()).normalize();
+                    Vector3f pos = base.subtract(camera).toVector3f()
+                            .add(new Vector3f(side).mul(Mth.cos(a) * out)).add(new Vector3f(up).mul(Mth.sin(a) * out)).add(0, (float) puffAge * 0.02f, 0);
+                    float s = (float) rabeta.fumacaTamanho() * radius * (0.6f + t * 1.4f);
+                    float o = 0.55f * (1 - t) * Math.min(1, (float) puffAge / 3);
+                    FxDraw.billboard(pos, s, FxWorld.hash(seed + born, k, 3) * 6, FxDraw.SMOKE, t * 0.9f, smoke, o, false);
+                }
+            }
+        }
     }
 
     private static void drawBall(PoseStack pose, MultiBufferSource buffers, MeteoroSpec.Corpo corpo, Vec3 dir, float spin, Vector3f toBall) {

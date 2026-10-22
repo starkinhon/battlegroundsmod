@@ -38,10 +38,13 @@ final class FxDraw {
 
     // A quad with uv (0,0) at a, (1,0) at b, (1,1) at c and (0,1) at d.
     static void quad(Vector3f a, Vector3f b, Vector3f c, Vector3f d, int shape, float param, float[] rgb, float opacity, boolean glow) {
+        quad(glow ? additive : alpha, a, b, c, d, shape, param, rgb, opacity);
+    }
+
+    static void quad(VertexConsumer out, Vector3f a, Vector3f b, Vector3f c, Vector3f d, int shape, float param, float[] rgb, float opacity) {
         if (opacity <= 0.002f) {
             return;
         }
-        VertexConsumer out = glow ? additive : alpha;
         int p = Math.round(Math.max(0, Math.min(1, param)) * 255);
         float o = Math.min(1, opacity);
         vertex(out, a, 0, 0, shape, p, rgb, o);
@@ -82,11 +85,24 @@ final class FxDraw {
 
     // Square lying across normal (a ring on the ground has normal straight up).
     static void disk(Vector3f center, Vector3f normal, float size, int shape, float param, float[] rgb, float opacity, boolean glow) {
+        disk(glow ? additive : alpha, center, normal, size, 0, shape, param, rgb, opacity);
+    }
+
+    // Same, turned by spin radians around its normal, into any buffer (textured decals use their own).
+    static void disk(VertexConsumer out, Vector3f center, Vector3f normal, float size, float spin, int shape, float param, float[] rgb, float opacity) {
         Vector3f n = new Vector3f(normal).normalize();
-        Vector3f x = new Vector3f(n).cross(Math.abs(n.y) > 0.9f ? new Vector3f(1, 0, 0) : new Vector3f(0, 1, 0)).normalize(size / 2);
-        Vector3f y = new Vector3f(n).cross(x).normalize(size / 2);
-        quad(new Vector3f(center).sub(x).sub(y), new Vector3f(center).add(x).sub(y), new Vector3f(center).add(x).add(y),
-                new Vector3f(center).sub(x).add(y), shape, param, rgb, opacity, glow);
+        Vector3f x0 = new Vector3f(n).cross(Math.abs(n.y) > 0.9f ? new Vector3f(1, 0, 0) : new Vector3f(0, 1, 0)).normalize();
+        Vector3f y0 = new Vector3f(n).cross(x0);
+        float cos = (float) Math.cos(spin) * size / 2, sin = (float) Math.sin(spin) * size / 2;
+        Vector3f x = new Vector3f(x0).mul(cos).add(new Vector3f(y0).mul(sin));
+        Vector3f y = new Vector3f(y0).mul(cos).sub(new Vector3f(x0).mul(sin));
+        quad(out, new Vector3f(center).sub(x).sub(y), new Vector3f(center).add(x).sub(y), new Vector3f(center).add(x).add(y),
+                new Vector3f(center).sub(x).add(y), shape, param, rgb, opacity);
+    }
+
+    // Camera-facing square into any buffer.
+    static void billboard(VertexConsumer out, Vector3f center, float size, float spin, float[] rgb, float opacity) {
+        disk(out, center, new Vector3f(LOOK).negate(), size, spin, SOLID, 0, rgb, opacity);
     }
 
     static float[] rgb(int color) {

@@ -5,7 +5,7 @@ import java.util.List;
 // Meteoro (Madara's ult): a giant meteor falls on the aimed spot. Same "souls-skill/1" layout as the other skills,
 // tuned in the Forja de Skills page. Colors are "#rrggbb". In awakened mode the fumacas list is replaced as a whole.
 public record MeteoroSpec(String skill, String nome, Tempo tempo, Mira mira, Corpo meteoro, List<Fumaca> fumacas, Riscos riscos,
-        Preparo preparo, Aviso aviso, Impacto impacto) {
+        Preparo preparo, Aviso aviso, Impacto impacto, Rabeta rabeta) {
 
     public record Tempo(int preparoTicks, int quedaTicks) {
     }
@@ -31,6 +31,12 @@ public record MeteoroSpec(String skill, String nome, Tempo tempo, Mira mira, Cor
     public record Riscos(boolean ativa, int porTick, double comprimento, double velocidade, double espalhamento, String cor) {
     }
 
+    // Tail drawn on the client with the shader effects: fire behind the rock (cor2 hot near it, cor further back) and
+    // smoke left in the sky along the path, which lingers fumacaVidaTicks after the rock went by.
+    public record Rabeta(boolean ativa, String cor, String cor2, double tamanho, int comprimento, String fumacaCor, double fumacaTamanho,
+            int fumacaVidaTicks, int fumacaPorTick) {
+    }
+
     // Particles around the raised hand while calling the meteor.
     public record Preparo(boolean ativa, int porTick, String cor) {
     }
@@ -45,8 +51,11 @@ public record MeteoroSpec(String skill, String nome, Tempo tempo, Mira mira, Cor
             double raioCratera, double profundidadeCratera, double tremerTela, Onda onda, Explosao explosao) {
     }
 
-    // Shockwave ring along the ground: velocidade in blocks per tick, tamanho is the particle size.
-    public record Onda(boolean ativa, double velocidade, float tamanho, String cor) {
+    // Shockwave ring along the ground: velocidade in blocks per tick, tamanho is the particle size. Out to alcance blocks
+    // it hits whoever the front passes (dano, empurrao) and, with quebrarBlocos, tears up the ground it runs over
+    // (altura blocks high, profundidade deep, largura wide at the front).
+    public record Onda(boolean ativa, double velocidade, float tamanho, String cor, double alcance, float dano, double empurrao,
+            boolean quebrarBlocos, int altura, int profundidade, double largura) {
     }
 
     public record Explosao(boolean ativa, int quantidade, int fumaca, String cor) {

@@ -79,6 +79,82 @@ public final class FxRenderTypes extends RenderType {
                     .setCullState(NO_CULL)
                     .createCompositeState(false));
 
+    // A picture drawn as is (the Mangekyo eye), see-through where the texture is.
+    private static final java.util.Map<ResourceLocation, RenderType> DECALS = new java.util.HashMap<>();
+
+    public static RenderType decal(ResourceLocation texture) {
+        return DECALS.computeIfAbsent(texture, t -> create("battlegroundsmod_decal_" + t.getPath().replace('/', '_'), DefaultVertexFormat.POSITION_TEX_COLOR,
+                VertexFormat.Mode.QUADS, 4096, false, true, CompositeState.builder()
+                        .setShaderState(FLAT_SHADER)
+                        .setTextureState(new TextureStateShard(t, false, false))
+                        .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                        .setWriteMaskState(COLOR_WRITE)
+                        .setCullState(NO_CULL)
+                        .createCompositeState(false)));
+    }
+
+    // A body burning to ash (AshDeath): the entity's own texture through the souls_ash shader.
+    private static final ShaderStateShard ASH_SHADER = new ShaderStateShard(() -> FxShaders.ash);
+    private static final java.util.Map<ResourceLocation, RenderType> ASH = new java.util.HashMap<>();
+
+    public static RenderType ash(ResourceLocation texture) {
+        return ASH.computeIfAbsent(texture, t -> create("battlegroundsmod_ash_" + t.getNamespace() + "_" + t.getPath().replace('/', '_'),
+                DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 1536, false, false, CompositeState.builder()
+                        .setShaderState(ASH_SHADER)
+                        .setTextureState(new TextureStateShard(t, false, false))
+                        .setCullState(NO_CULL)
+                        .createCompositeState(false)));
+    }
+
+    // The texture a vanilla render type draws with, or null when it has none or can't be read.
+    private static final java.util.Map<RenderType, java.util.Optional<ResourceLocation>> TEXTURES = new java.util.HashMap<>();
+
+    public static ResourceLocation textureOf(RenderType type) {
+        return TEXTURES.computeIfAbsent(type, FxRenderTypes::readTexture).orElse(null);
+    }
+
+    // Vanilla keeps it private (CompositeRenderType.state.textureState.cutoutTexture()), so it is read by name.
+    private static java.util.Optional<ResourceLocation> readTexture(RenderType type) {
+        try {
+            Object state = field(type, "state");
+            Object texture = state == null ? null : field(state, "textureState");
+            java.lang.reflect.Method cutout = texture == null ? null : method(texture.getClass(), "cutoutTexture");
+            if (cutout == null) {
+                return java.util.Optional.empty();
+            }
+            return cutout.invoke(texture) instanceof java.util.Optional<?> found && found.orElse(null) instanceof ResourceLocation location
+                    ? java.util.Optional.of(location) : java.util.Optional.empty();
+        } catch (ReflectiveOperationException | RuntimeException e) {
+            return java.util.Optional.empty();
+        }
+    }
+
+    private static Object field(Object owner, String name) throws IllegalAccessException {
+        for (Class<?> c = owner.getClass(); c != null; c = c.getSuperclass()) {
+            try {
+                java.lang.reflect.Field f = c.getDeclaredField(name);
+                f.setAccessible(true);
+                return f.get(owner);
+            } catch (NoSuchFieldException e) {
+                // keep looking up the hierarchy
+            }
+        }
+        return null;
+    }
+
+    private static java.lang.reflect.Method method(Class<?> owner, String name) {
+        for (Class<?> c = owner; c != null; c = c.getSuperclass()) {
+            try {
+                java.lang.reflect.Method m = c.getDeclaredMethod(name);
+                m.setAccessible(true);
+                return m;
+            } catch (NoSuchMethodException e) {
+                // keep looking up the hierarchy
+            }
+        }
+        return null;
+    }
+
     // Scene depth for the soft edges, plus the numbers to read it.
     private static void vfxInputs() {
         ShaderInstance shader = FxShaders.vfx;
