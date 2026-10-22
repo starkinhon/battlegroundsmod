@@ -38,6 +38,8 @@
   "message.battlegroundsmod.blocked": "Path blocked.",
   "message.battlegroundsmod.unknown_power": "Unknown soul.",
   "message.battlegroundsmod.soul_help": "Souls commands:",
+  "effect.battlegroundsmod.pulo_duplo": "Double Jump",
+  "effect.battlegroundsmod.esquiva": "Dodge",
 
   "power.battlegroundsmod.uchiha_ghost": "Ghost of the Uchiha",
   "power.battlegroundsmod.uchiha_ghost.desc": "Masters fire and calls meteors from the sky.",

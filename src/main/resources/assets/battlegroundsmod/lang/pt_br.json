@@ -38,6 +38,8 @@
   "message.battlegroundsmod.blocked": "Caminho bloqueado.",
   "message.battlegroundsmod.unknown_power": "Alma desconhecida.",
   "message.battlegroundsmod.soul_help": "Comandos do Souls:",
+  "effect.battlegroundsmod.pulo_duplo": "Pulo Duplo",
+  "effect.battlegroundsmod.esquiva": "Esquiva",
 
   "power.battlegroundsmod.uchiha_ghost": "Fantasma dos Uchiha",
   "power.battlegroundsmod.uchiha_ghost.desc": "Domina o fogo e invoca meteoros do céu.",

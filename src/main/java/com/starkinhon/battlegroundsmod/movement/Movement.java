@@ -3,6 +3,7 @@ package com.starkinhon.battlegroundsmod.movement;
 import java.util.List;
 
 import com.starkinhon.battlegroundsmod.ModAttachments;
+import com.starkinhon.battlegroundsmod.ModEffects;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.combat.Fx;
 import com.starkinhon.battlegroundsmod.combat.Intangible;
@@ -11,10 +12,13 @@ import com.starkinhon.battlegroundsmod.fx.ModParticles;
 import com.starkinhon.battlegroundsmod.skill.MovementSpec;
 import com.starkinhon.battlegroundsmod.skill.SkillSpecs;
 
+import net.minecraft.core.Holder;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
@@ -26,8 +30,11 @@ import net.minecraft.world.phys.Vec3;
 // checks it and adds the rest (dodge window, fall protection, puffs, sounds).
 // Mobs and bosses: call tryPerform on the server and tick every tick; it pushes the mob too.
 public final class Movement {
-    // Grace for the cooldown check on the server: the client's clock can be a tick or two ahead.
-    private static final int COOLDOWN_SLACK = 2;
+    // Grace for the cooldown check on the server: the client's clock can be a few ticks ahead.
+    private static final int COOLDOWN_SLACK = 5;
+    // The no-fall effect lasts at least this long, then ends on landing, and never longer than the max.
+    private static final int SAFE_FALL_MIN_TICKS = 20;
+    private static final int SAFE_FALL_MAX_TICKS = 200;
     // A move's take-off tick still reads as "on the ground", so landing only counts after this.
     private static final int LANDING_DELAY = 3;
     private static final RandomSource RANDOM = RandomSource.create();
@@ -40,6 +47,11 @@ public final class Movement {
 
         Kind(String skill) {
             this.skill = skill;
+        }
+
+        // The effect shown while the move keeps fall damage off.
+        public Holder<MobEffect> effect() {
+            return this == ESQUIVA ? ModEffects.ESQUIVA : ModEffects.PULO_DUPLO;
         }
 
         public MovementSpec spec() {
@@ -79,9 +91,10 @@ public final class Movement {
             return false;
         }
         return switch (kind) {
-            // The server can see the client's take-off a moment late, so it doesn't insist on the ground.
+            // For players the server only checks the cooldown: it sees their take-off and landing a moment late,
+            // and the client already checked the ground and the spent air jump.
             case ESQUIVA -> slack > 0 || entity.onGround();
-            case PULO_DUPLO -> !data.airJumpUsed && (slack > 0 || !entity.onGround());
+            case PULO_DUPLO -> slack > 0 || !data.airJumpUsed && !entity.onGround();
         };
     }
 
@@ -158,13 +171,13 @@ public final class Movement {
 
     private static void effects(ServerLevel level, LivingEntity entity, Kind kind, Vec3 velocity) {
         MovementSpec spec = kind.spec();
-        MovementData data = data(entity);
         if (spec.invencivelTicks() > 0) {
             Intangible.hold(entity, spec.invencivelTicks());
         }
         if (spec.semDanoDeQueda()) {
-            data.safeFall = true;
             entity.resetFallDistance();
+            entity.removeEffect(kind.effect());
+            entity.addEffect(new MobEffectInstance(kind.effect(), SAFE_FALL_MAX_TICKS, 0, false, false, true));
         }
         puffs(level, entity, spec.poeira(), velocity);
         Vec3 feet = entity.position();
@@ -190,21 +203,34 @@ public final class Movement {
         }
     }
 
-    // Every tick, both sides: landing gives the air jump back and ends the fall protection.
+    // Every tick, both sides: landing gives the air jump back. On the server it also ends the no-fall effect once
+    // the entity stands still on the ground (fall distance back to 0) and the minimum time has passed.
     public static void tick(LivingEntity entity) {
         MovementData data = data(entity);
-        if (!data.airJumpUsed && !data.safeFall) {
-            return;
-        }
-        boolean landed = entity.onGround() && entity.level().getGameTime() - data.lastMoveAt >= LANDING_DELAY;
-        if (landed || entity.isInWater() || entity.onClimbable()) {
+        long sinceMove = entity.level().getGameTime() - data.lastMoveAt;
+        if (data.airJumpUsed && (entity.onGround() && sinceMove >= LANDING_DELAY || entity.isInWater() || entity.onClimbable())) {
             data.airJumpUsed = false;
-            data.safeFall = false;
+        }
+        if (!entity.level().isClientSide() && sinceMove >= SAFE_FALL_MIN_TICKS && entity.onGround() && entity.fallDistance == 0) {
+            for (Kind kind : Kind.values()) {
+                if (entity.hasEffect(kind.effect())) {
+                    entity.removeEffect(kind.effect());
+                }
+            }
         }
     }
 
-    // Fall damage is skipped while protected. Called from LivingFallEvent before tick clears the flag.
+    // LivingFallEvent: a landing under the no-fall effect deals no damage and ends the effect.
     public static boolean ignoresFall(LivingEntity entity) {
-        return entity.hasData(ModAttachments.MOVEMENT) && data(entity).safeFall;
+        boolean safe = false;
+        for (Kind kind : Kind.values()) {
+            if (entity.hasEffect(kind.effect())) {
+                safe = true;
+                if (!entity.level().isClientSide()) {
+                    entity.removeEffect(kind.effect());
+                }
+            }
+        }
+        return safe;
     }
 }
