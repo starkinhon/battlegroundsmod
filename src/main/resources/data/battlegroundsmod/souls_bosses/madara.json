@@ -6,9 +6,9 @@
   "atributos": {
     "vida": 400,
     "armadura": 8,
-    "velocidade": 0.36,
+    "velocidade": 0.42,
     "resistenciaEmpurrao": 0.6,
-    "alcanceVisao": 48,
+    "alcanceVisao": 64,
     "multDano": 1.0
   },
   "intro": {
@@ -24,7 +24,7 @@
     "altura": 38
   },
   "percepcao": {
-    "intervaloDecisaoTicks": 5,
+    "intervaloDecisaoTicks": 3,
     "aleatoriedade": 0.25,
     "trocarHumorTicks": 60
   },
@@ -39,27 +39,27 @@
     "trocarLadoTicks": 30
   },
   "ritmo": {
-    "calmoMinTicks": 40,
-    "calmoMaxTicks": 90,
-    "rapidoMinTicks": 80,
-    "rapidoMaxTicks": 160,
-    "velocidadeCalmo": 0.6,
-    "velocidadeRapido": 2.0,
-    "recargaInvestidaRapido": 20
+    "calmoMinTicks": 30,
+    "calmoMaxTicks": 60,
+    "rapidoMinTicks": 100,
+    "rapidoMaxTicks": 180,
+    "velocidadeCalmo": 0.8,
+    "velocidadeRapido": 2.3,
+    "recargaInvestidaRapido": 14
   },
   "investida": {
-    "recargaTicks": 50,
+    "recargaTicks": 35,
     "distanciaMin": 6,
-    "forca": 1.4,
+    "forca": 1.7,
     "altura": 0.25
   },
   "passoSombra": {
-    "recargaTicks": 70,
+    "recargaTicks": 50,
     "distanciaMin": 3,
     "distanciaMax": 16,
     "atras": 2.0,
-    "chance": 0.35,
-    "chanceCalmo": 0.08,
+    "chance": 0.5,
+    "chanceCalmo": 0.15,
     "chanceNaEsquiva": 0.4
   },
   "puloDuplo": {
@@ -68,7 +68,7 @@
   },
   "teleporte": {
     "ativo": true,
-    "presoTicks": 100,
+    "presoTicks": 60,
     "distancia": 3
   },
   "reacoes": {
@@ -230,7 +230,7 @@
       "multAviso": 1.0,
       "reacaoTicks": 5,
       "chanceReacao": 0.7,
-      "pausaTicks": 12,
+      "pausaTicks": 6,
       "despertado": false,
       "corBarra": "red",
       "transicaoTicks": 0,
@@ -258,7 +258,7 @@
       "multAviso": 0.85,
       "reacaoTicks": 4,
       "chanceReacao": 0.85,
-      "pausaTicks": 8,
+      "pausaTicks": 4,
       "despertado": false,
       "corBarra": "purple",
       "transicaoTicks": 40,
@@ -286,7 +286,7 @@
       "multAviso": 0.7,
       "reacaoTicks": 2,
       "chanceReacao": 1.0,
-      "pausaTicks": 4,
+      "pausaTicks": 2,
       "despertado": false,
       "corBarra": "white",
       "transicaoTicks": 60,
