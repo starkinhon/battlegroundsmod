@@ -14,7 +14,7 @@ import net.minecraft.world.phys.Vec3;
 // A cone hitbox for breath and spray moves: starts at origin, opens along dir, cut short by walls.
 // The width at a distance only depends on maxLength, so a cone stopped by a wall keeps the same shape.
 public final class Cone implements Area {
-    // Toggled by /poder hitbox: draws every cone so hitboxes can be checked in game.
+    // Toggled by /soul hitbox: draws every cone so hitboxes can be checked in game.
     public static boolean debug = false;
 
     private final ServerLevel level;

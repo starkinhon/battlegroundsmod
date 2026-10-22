@@ -33,9 +33,9 @@ public class PowerData {
     public int comboResetTicks = 0;
     public int punchDelay = 0;
     public int busyTicks = 0;
-    // Set by /poder semcooldown: no cooldowns and no energy or ult cost, for testing and recording.
+    // Set by /soul semcooldown: no cooldowns and no energy or ult cost, for testing and recording.
     public boolean noCooldown = false;
-    // Awakened mode: skills use the "despertado" values of their spec. Toggled by /poder despertar for now.
+    // Awakened mode: skills use the "despertado" values of their spec. Toggled by /soul despertar for now.
     public boolean awakened = false;
 
     public PowerData() {
