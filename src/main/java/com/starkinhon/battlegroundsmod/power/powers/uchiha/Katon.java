@@ -8,7 +8,10 @@ import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Cone;
 import com.starkinhon.battlegroundsmod.combat.Fx;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
+import com.starkinhon.battlegroundsmod.network.ModPayloads;
 import com.starkinhon.battlegroundsmod.power.PowerData;
+import com.starkinhon.battlegroundsmod.skill.SkillSpec;
+import com.starkinhon.battlegroundsmod.skill.SkillSpecs;
 
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -16,16 +19,13 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.network.PacketDistributor;
 
-// Katon: a huge stream of fire from the mouth for about 5 seconds. The player can aim while breathing.
+// Katon: a huge stream of fire from the mouth. The player can aim while breathing.
+// Timing, shape and particles come from souls_skills/madara.katon.json (tuned in the Forja de Skills page).
 // Gameplay lives here, visuals in UchihaFx so they can be swapped for Photon later.
 public final class Katon {
-    public static final int DURATION = 100;
-    // The fire travels out over the first ticks instead of appearing at full length.
-    private static final int GROW_TICKS = 8;
-    private static final double MAX_LENGTH = 14;
-    private static final double START_RADIUS = 0.4;
-    private static final double END_RADIUS = 6.4;
+    public static final String SKILL = "madara.katon";
     // Each target is burned at most once per interval, so the damage does not depend on the tick rate.
     private static final int HIT_INTERVAL = 5;
     private static final float DAMAGE = 1.5f;
@@ -35,20 +35,28 @@ public final class Katon {
     }
 
     public static boolean use(ServerPlayer player, ServerLevel level) {
+        SkillSpec spec = SkillSpecs.get(SKILL);
+        SkillSpec.Tempo tempo = spec.tempo();
         PowerData data = player.getData(ModAttachments.POWER);
         String power = data.power;
-        data.busyTicks = DURATION;
-        // The caster is rooted while breathing fire, but can still turn to aim.
-        player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, DURATION, 2, false, false, false));
-        UchihaFx.katonStart(level, mouth(player));
+        data.busyTicks = tempo.totalTicks();
+        // The caster is rooted during the wind-up and while breathing fire, but can still turn to aim.
+        player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, tempo.totalTicks(), 2, false, false, false));
+        PacketDistributor.sendToPlayersTrackingEntityAndSelf(player, new ModPayloads.PlaySkillAnimation(player.getId(), SKILL));
         Map<LivingEntity, Integer> lastHit = new HashMap<>();
-        Tasks.add(age -> {
+        Tasks.add(tick -> {
             if (!player.isAlive() || player.isRemoved() || !power.equals(player.getData(ModAttachments.POWER).power)) {
                 return true;
             }
-            double length = MAX_LENGTH * Math.min(1, (age + 1) / (double) GROW_TICKS);
-            Cone cone = new Cone(level, player, mouth(player), player.getLookAngle(), length, MAX_LENGTH, START_RADIUS, END_RADIUS);
-            UchihaFx.katonStream(level, cone, age);
+            int age = tick - tempo.atrasoTicks();
+            if (age < 0) {
+                return false;
+            }
+            Cone cone = cone(player, level, spec, age);
+            if (age == 0) {
+                UchihaFx.katonStart(level, spec, cone);
+            }
+            UchihaFx.katonStream(level, spec, cone, age);
             for (LivingEntity target : cone.targets()) {
                 Integer last = lastHit.get(target);
                 if (last == null || age - last >= HIT_INTERVAL) {
@@ -59,9 +67,19 @@ public final class Katon {
             if (Cone.debug && age % 2 == 0) {
                 cone.draw(Fx.dust(0xFFFFFF, 0.6f));
             }
-            return age >= DURATION - 1;
+            return age >= tempo.duracaoTicks() - 1;
         });
         return true;
+    }
+
+    // The fire travels out over crescimentoTicks instead of appearing at full length.
+    private static Cone cone(ServerPlayer player, ServerLevel level, SkillSpec spec, int age) {
+        SkillSpec.Forma forma = spec.forma();
+        double length = forma.comprimento() * Math.min(1, (age + 1) / (double) Math.max(1, spec.tempo().crescimentoTicks()));
+        // Minecraft pitch is negative when looking up, so tilting up subtracts.
+        Vec3 dir = Vec3.directionFromRotation(player.getXRot() - (float) spec.direcao().inclinacao(),
+                player.getYRot() + (float) spec.direcao().giro());
+        return new Cone(level, player, mouth(player, spec.origem(), dir), dir, length, forma.comprimento(), forma.raioInicio(), forma.raioFim());
     }
 
     private static void burn(ServerPlayer player, LivingEntity target, Cone cone) {
@@ -76,8 +94,9 @@ public final class Katon {
         UchihaFx.katonBurn(player.serverLevel(), Combat.center(target));
     }
 
-    // Just below the eyes and a bit in front, so the fire comes out of the mouth in third person too.
-    private static Vec3 mouth(ServerPlayer player) {
-        return player.getEyePosition().add(player.getLookAngle().scale(0.4)).add(0, -0.18, 0);
+    // Measured from the eyes like in the Forja page: forward along the aim, straight up, and to the player's right.
+    private static Vec3 mouth(ServerPlayer player, SkillSpec.Origem origem, Vec3 dir) {
+        Vec3 right = dir.cross(Math.abs(dir.y) > 0.99 ? new Vec3(1, 0, 0) : new Vec3(0, 1, 0)).normalize();
+        return player.getEyePosition().add(dir.scale(origem.frente())).add(0, origem.altura(), 0).add(right.scale(origem.lado()));
     }
 }

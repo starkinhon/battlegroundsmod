@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.starkinhon.battlegroundsmod.BattlegroundsMod;
 import com.starkinhon.battlegroundsmod.ModAttachments;
+import com.starkinhon.battlegroundsmod.client.ClientHooks;
 import com.starkinhon.battlegroundsmod.power.PowerData;
 import com.starkinhon.battlegroundsmod.power.PowerLogic;
 
@@ -85,6 +86,20 @@ public final class ModPayloads {
         }
     }
 
+    // Server -> client: a player started a skill with a body animation (timing comes from the skill's spec).
+    public record PlaySkillAnimation(int entityId, String skill) implements CustomPacketPayload {
+        public static final Type<PlaySkillAnimation> TYPE = payloadType("play_skill_animation");
+        public static final StreamCodec<ByteBuf, PlaySkillAnimation> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, PlaySkillAnimation::entityId,
+                ByteBufCodecs.STRING_UTF8, PlaySkillAnimation::skill,
+                PlaySkillAnimation::new);
+
+        @Override
+        public Type<PlaySkillAnimation> type() {
+            return TYPE;
+        }
+    }
+
     public static void register(RegisterPayloadHandlersEvent event) {
         PayloadRegistrar registrar = event.registrar("1");
         registrar.playToServer(UseAbility.TYPE, UseAbility.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
@@ -98,5 +113,7 @@ public final class ModPayloads {
             }
         }));
         registrar.playToClient(SyncPower.TYPE, SyncPower.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> payload.applyTo(context.player())));
+        registrar.playToClient(PlaySkillAnimation.TYPE, PlaySkillAnimation.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.playSkillAnimation(payload.entityId(), payload.skill())));
     }
 }
