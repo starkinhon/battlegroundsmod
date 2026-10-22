@@ -38,9 +38,9 @@ import net.minecraft.world.phys.Vec3;
 //   is being comboed or sees a heavy hit coming, a dodge and a punish window when the target uses their ult;
 // - between moves it positions itself: rushes in with dashes and punches when it feels aggressive, keeps range and
 //   strafes otherwise, double jumps to targets standing up high, and reappears behind a target it can't reach.
-// Every number comes from the boss file (BossSpec). /poder boss debug shows what it is thinking.
+// Every number comes from the boss file (BossSpec). /soul boss debug shows what it is thinking.
 public class SoulBossAI extends Goal {
-    // Toggled by /poder boss debug: each boss shows its state and best options on the action bar of players nearby.
+    // Toggled by /soul boss debug: each boss shows its state and best options on the action bar of players nearby.
     public static boolean debug = false;
 
     private static final double DEBUG_RANGE = 40;

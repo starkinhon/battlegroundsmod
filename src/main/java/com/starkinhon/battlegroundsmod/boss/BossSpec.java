@@ -13,7 +13,7 @@ import com.starkinhon.battlegroundsmod.BattlegroundsMod;
 // How a boss fights, read from data/battlegroundsmod/souls_bosses/<boss>.json ("souls-boss/1"). The moves themselves
 // are the power's skills (souls_skills/), so a boss and a player with the same soul hit exactly the same.
 public record BossSpec(String boss, String poder, boolean dropAlma, Atributos atributos, Intro intro, Percepcao percepcao,
-        Distancias distancias, Movimento movimento, Investida investida, PuloDuplo puloDuplo, Teleporte teleporte, Reacoes reacoes,
+        Barra barra, Distancias distancias, Movimento movimento, Investida investida, PuloDuplo puloDuplo, Teleporte teleporte, Reacoes reacoes,
         Map<String, Skill> skills, Map<String, Combo> combos, List<Fase> fases) {
 
     // vida, armadura and velocidade become the entity's attributes. multDano scales every hit the boss lands.
@@ -22,6 +22,11 @@ public record BossSpec(String boss, String poder, boolean dropAlma, Atributos at
 
     // The entrance when it spawns: untouchable and still for duracaoTicks, with a title on nearby screens.
     public record Intro(int duracaoTicks, String titulo, String subtitulo, String cor) {
+    }
+
+    // Custom boss bar: textures/gui/bossbar/<textura>/0.png (full life) to <frames>.png (empty), drawn largura x altura
+    // GUI pixels. Players can switch it off with /soul bossbar.
+    public record Barra(String textura, int frames, int largura, int altura) {
     }
 
     // intervaloDecisao: how often a new move is picked. aleatoriedade 0 always takes the best move, 1 picks by weight.

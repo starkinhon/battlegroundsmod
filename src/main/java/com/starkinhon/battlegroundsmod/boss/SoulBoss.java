@@ -5,6 +5,7 @@ import com.starkinhon.battlegroundsmod.ModItems;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Intangible;
 import com.starkinhon.battlegroundsmod.movement.Movement;
+import com.starkinhon.battlegroundsmod.network.ModPayloads;
 import com.starkinhon.battlegroundsmod.power.PowerData;
 import com.starkinhon.battlegroundsmod.power.PowerLogic;
 
@@ -30,6 +31,7 @@ import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 // A boss that carries a soul: it has the power's PowerData, so it casts the same skills as a player with that soul.
 // How it fights comes from its souls_bosses file and SoulBossAI. Phases follow its life; the entrance and each phase
@@ -218,6 +220,11 @@ public abstract class SoulBoss extends Monster {
     public void startSeenByPlayer(ServerPlayer player) {
         super.startSeenByPlayer(player);
         bossEvent.addPlayer(player);
+        BossSpec.Barra barra = spec().barra();
+        if (barra != null && barra.textura() != null) {
+            PacketDistributor.sendToPlayer(player, new ModPayloads.BossBarStyle(bossEvent.getId(), barra.textura(), barra.frames(),
+                    barra.largura(), barra.altura()));
+        }
     }
 
     @Override

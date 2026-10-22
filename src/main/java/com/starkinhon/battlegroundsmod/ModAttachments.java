@@ -2,6 +2,7 @@ package com.starkinhon.battlegroundsmod;
 
 import java.util.function.Supplier;
 
+import com.mojang.serialization.Codec;
 import com.starkinhon.battlegroundsmod.movement.MovementData;
 import com.starkinhon.battlegroundsmod.power.PowerData;
 
@@ -19,6 +20,10 @@ public final class ModAttachments {
     // Standard moves (dodge, air jump) for any fighter, players and bosses. Not saved.
     public static final Supplier<AttachmentType<MovementData>> MOVEMENT = ATTACHMENT_TYPES.register("movement",
             () -> AttachmentType.builder(() -> new MovementData()).build());
+
+    // The player turned the custom boss bars off (/soul bossbar). Saved and kept on death.
+    public static final Supplier<AttachmentType<Boolean>> BOSS_BAR_OFF = ATTACHMENT_TYPES.register("boss_bar_off",
+            () -> AttachmentType.builder(() -> false).serialize(Codec.BOOL).copyOnDeath().build());
 
     private ModAttachments() {
     }

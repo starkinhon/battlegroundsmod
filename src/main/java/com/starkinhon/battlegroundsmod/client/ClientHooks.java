@@ -1,5 +1,7 @@
 package com.starkinhon.battlegroundsmod.client;
 
+import java.util.UUID;
+
 import com.starkinhon.battlegroundsmod.client.fx.MeteorRenderer;
 import com.starkinhon.battlegroundsmod.skill.CutsceneSpec;
 import com.starkinhon.battlegroundsmod.skill.SkillSpecs;
@@ -27,6 +29,14 @@ public final class ClientHooks {
 
     public static void meteorFall(String skill, boolean awakened, Vec3 start, Vec3 end, int delay) {
         MeteorRenderer.start(skill, awakened, start, end, delay);
+    }
+
+    public static void bossBarStyle(UUID barId, String texture, int frames, int width, int height) {
+        BossBars.style(barId, texture, frames, width, height);
+    }
+
+    public static void bossBarToggle(boolean on) {
+        BossBars.enabled = on;
     }
 
     public static void openPowerSelect() {

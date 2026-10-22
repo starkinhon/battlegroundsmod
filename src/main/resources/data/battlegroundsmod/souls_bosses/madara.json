@@ -17,6 +17,12 @@
     "subtitulo": "Acorde para a realidade",
     "cor": "#d12f2f"
   },
+  "barra": {
+    "textura": "madara",
+    "frames": 16,
+    "largura": 220,
+    "altura": 38
+  },
   "percepcao": {
     "intervaloDecisaoTicks": 5,
     "aleatoriedade": 0.25,

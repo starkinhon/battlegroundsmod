@@ -2,6 +2,7 @@ package com.starkinhon.battlegroundsmod.network;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import com.starkinhon.battlegroundsmod.BattlegroundsMod;
 import com.starkinhon.battlegroundsmod.ModAttachments;
@@ -11,6 +12,7 @@ import com.starkinhon.battlegroundsmod.power.PowerData;
 import com.starkinhon.battlegroundsmod.power.PowerLogic;
 
 import io.netty.buffer.ByteBuf;
+import net.minecraft.core.UUIDUtil;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -172,6 +174,35 @@ public final class ModPayloads {
         }
     }
 
+    // Server -> client: draw this boss bar with the boss's own frames (textures/gui/bossbar/<texture>/).
+    public record BossBarStyle(UUID barId, String texture, int frames, int width, int height) implements CustomPacketPayload {
+        public static final Type<BossBarStyle> TYPE = payloadType("boss_bar_style");
+        public static final StreamCodec<ByteBuf, BossBarStyle> STREAM_CODEC = StreamCodec.composite(
+                UUIDUtil.STREAM_CODEC, BossBarStyle::barId,
+                ByteBufCodecs.STRING_UTF8, BossBarStyle::texture,
+                ByteBufCodecs.VAR_INT, BossBarStyle::frames,
+                ByteBufCodecs.VAR_INT, BossBarStyle::width,
+                ByteBufCodecs.VAR_INT, BossBarStyle::height,
+                BossBarStyle::new);
+
+        @Override
+        public Type<BossBarStyle> type() {
+            return TYPE;
+        }
+    }
+
+    // Server -> client: custom boss bars on or off for this player (/soul bossbar).
+    public record BossBarToggle(boolean on) implements CustomPacketPayload {
+        public static final Type<BossBarToggle> TYPE = payloadType("boss_bar_toggle");
+        public static final StreamCodec<ByteBuf, BossBarToggle> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.BOOL, BossBarToggle::on, BossBarToggle::new);
+
+        @Override
+        public Type<BossBarToggle> type() {
+            return TYPE;
+        }
+    }
+
     public static void register(RegisterPayloadHandlersEvent event) {
         PayloadRegistrar registrar = event.registrar("1");
         registrar.playToServer(UseAbility.TYPE, UseAbility.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
@@ -198,5 +229,9 @@ public final class ModPayloads {
                 () -> ClientHooks.screenShake(payload.strength(), payload.ticks())));
         registrar.playToClient(MeteorFall.TYPE, MeteorFall.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.meteorFall(payload.skill(), payload.awakened(), payload.start(), payload.end(), payload.delay())));
+        registrar.playToClient(BossBarStyle.TYPE, BossBarStyle.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.bossBarStyle(payload.barId(), payload.texture(), payload.frames(), payload.width(), payload.height())));
+        registrar.playToClient(BossBarToggle.TYPE, BossBarToggle.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.bossBarToggle(payload.on())));
     }
 }

@@ -2,6 +2,7 @@ package com.starkinhon.battlegroundsmod;
 
 import java.util.List;
 
+import com.starkinhon.battlegroundsmod.client.BossBars;
 import com.starkinhon.battlegroundsmod.client.FaceCutscene;
 import com.starkinhon.battlegroundsmod.client.fx.MeteorRenderer;
 import com.starkinhon.battlegroundsmod.client.fx.SoulParticle;
@@ -39,6 +40,7 @@ public class BattlegroundsModClient {
         NeoForge.EVENT_BUS.addListener(MeteorRenderer::onRenderLevel);
         NeoForge.EVENT_BUS.addListener(BattlegroundsModClient::onClientTickPre);
         NeoForge.EVENT_BUS.addListener(BattlegroundsModClient::onClientTick);
+        NeoForge.EVENT_BUS.addListener(BossBars::onBossBar);
         NeoForge.EVENT_BUS.addListener(MovementInputUpdateEvent.class, FaceCutscene::onMovementInput);
     }
 
@@ -75,5 +77,6 @@ public class BattlegroundsModClient {
         Keybinds.tick();
         FaceCutscene.tick();
         ScreenShake.tick();
+        BossBars.tick();
     }
 }

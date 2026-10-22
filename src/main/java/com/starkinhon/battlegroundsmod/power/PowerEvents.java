@@ -3,6 +3,7 @@ package com.starkinhon.battlegroundsmod.power;
 import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.ModItems;
 import com.starkinhon.battlegroundsmod.boss.SoulBoss;
+import com.starkinhon.battlegroundsmod.command.BossCommand;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.combat.Intangible;
 import com.starkinhon.battlegroundsmod.combat.Melee;
@@ -82,6 +83,7 @@ public final class PowerEvents {
                 player.displayClientMessage(Component.translatable("message.battlegroundsmod.welcome"), false);
             }
             PowerLogic.sync(player);
+            BossCommand.syncBossBar(player);
         }
     }
 

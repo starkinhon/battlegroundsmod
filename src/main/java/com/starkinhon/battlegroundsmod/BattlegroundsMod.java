@@ -3,6 +3,7 @@ package com.starkinhon.battlegroundsmod;
 import org.slf4j.Logger;
 
 import com.mojang.logging.LogUtils;
+import com.starkinhon.battlegroundsmod.command.BossCommand;
 import com.starkinhon.battlegroundsmod.command.SoulCommand;
 import com.starkinhon.battlegroundsmod.fx.ModParticles;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
@@ -52,6 +53,8 @@ public class BattlegroundsMod {
         ModSounds.SOUND_EVENTS.register(modEventBus);
 
         PowerEvents.register();
+        SoulCommand.addSubcommand(BossCommand::bossbar);
+        SoulCommand.addSubcommand(BossCommand::boss);
         NeoForge.EVENT_BUS.addListener(SoulCommand::register);
     }
 
