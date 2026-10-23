@@ -3,48 +3,48 @@
   "skill": "madara.agarrao",
   "nome": "Agarrão no Pescoço",
   "tempo": {
-    "preparoTicks": 5
+    "preparoTicks": 4
   },
   "dash": {
-    "velocidade": 3.5,
+    "velocidade": 2.25,
     "distanciaMax": 40,
-    "raioPegar": 2.6,
-    "distanciaAgarrar": 2,
+    "raioPegar": 3,
+    "distanciaAgarrar": 1.05,
     "invisivel": true,
     "seguirAlvo": true
   },
   "rastro": {
     "ativa": true,
-    "densidade": 5,
+    "densidade": 6,
     "cor": "#ffffff",
-    "fumacaSumir": 30,
-    "corFumaca": "#2a2633"
+    "fumacaSumir": 15,
+    "corFumaca": "#4f4f4f"
   },
   "agarrar": {
     "levantarTicks": 0,
     "segurarTicks": 30,
-    "altura": 0.35,
-    "distancia": 0.85,
-    "lado": 0.25,
+    "altura": 0.45,
+    "distancia": 0.65,
+    "lado": -0.05,
     "dano": 5
   },
   "esmagar": {
     "descidaTicks": 3,
-    "dano": 25,
+    "dano": 20,
     "presoTicks": 50,
     "quebrarBlocos": true,
-    "raioCratera": 5,
-    "profundidadeCratera": 3
+    "raioCratera": 4,
+    "profundidadeCratera": 1
   },
   "impacto": {
-    "tremerTela": 1.5,
-    "impactFrameTicks": 6,
+    "tremerTela": 2,
+    "impactFrameTicks": 5,
     "onda": {
       "ativa": true,
       "velocidade": 0.7,
       "cor": "#b8a58a"
     },
-    "poeira": 30
+    "poeira": 15
   },
   "cutscene": {
     "ativa": true,
@@ -59,10 +59,10 @@
     "dash": {
       "corpo": 0,
       "pernas": 0,
-      "cabeca": 2,
-      "tronco": 45,
+      "cabeca": -10,
+      "tronco": 28,
       "bracoDir": {
-        "frente": -40,
+        "frente": -55,
         "abrir": -12
       },
       "bracoEsq": {
@@ -73,11 +73,11 @@
     "agarrar": {
       "corpo": 70,
       "pernas": 90,
-      "cabeca": -10,
-      "tronco": 0,
+      "cabeca": 0,
+      "tronco": 10,
       "bracoDir": {
-        "frente": 0,
-        "abrir": 135
+        "frente": 90,
+        "abrir": -8
       },
       "bracoEsq": {
         "frente": 10,
@@ -87,15 +87,15 @@
     "levantar": {
       "corpo": 70,
       "pernas": 90,
-      "cabeca": -10,
-      "tronco": 0,
+      "cabeca": -15,
+      "tronco": -6,
       "bracoDir": {
-        "frente": 0,
-        "abrir": 135
+        "frente": 150,
+        "abrir": -10
       },
       "bracoEsq": {
-        "frente": 10,
-        "abrir": 10
+        "frente": 20,
+        "abrir": 15
       }
     },
     "esmagar": {
@@ -271,8 +271,7 @@
         "invertido",
         "manga",
         "mangaInvertido",
-        "invertido",
-        "manga"
+        "invertido"
       ],
       "ticksPorQuadro": 1,
       "cor": "#ffffff",
@@ -281,7 +280,7 @@
     {
       "tipo": "tremor",
       "momento": "esmagar",
-      "forca": 1.5,
+      "forca": 2,
       "vidaTicks": 14,
       "alcance": 32
     },
