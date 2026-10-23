@@ -43,8 +43,10 @@ public record AuraSpec(String poder, String cor, String cor2, String corEscura, 
     }
 
     // ativarSkill / jogadorTicks: anyone with this power (players too) gets the trail for that long after using that skill.
-    public record Olhos(int aPartirDaFase, String ativarSkill, int jogadorTicks, String cor, String cor2, int rastroTicks, double largura,
-            double brilho, double x, double y, double z) {
+    // duranteSkills: moves that light the eyes only while they run (the neck-grab dash), then fade out over sumirTicks.
+    // Only one trail ever: if the eyes already trail (Mangekyo, a boss's phase), these add nothing.
+    public record Olhos(int aPartirDaFase, String ativarSkill, int jogadorTicks, List<String> duranteSkills, int sumirTicks, String cor,
+            String cor2, int rastroTicks, double largura, double brilho, double x, double y, double z) {
     }
 
     private static final Gson GSON = new Gson();

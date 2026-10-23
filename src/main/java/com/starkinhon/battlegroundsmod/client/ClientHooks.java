@@ -57,6 +57,8 @@ public final class ClientHooks {
         SkillEffects.play(skill, awakened, momento, pos, dir, entityId, ticks);
         if ("olhos".equals(momento)) {
             Aura.skillUsed(skill, entityId);
+        } else if ("olhosLigar".equals(momento) || "olhosDesligar".equals(momento)) {
+            Aura.skillEyes(skill, entityId, "olhosLigar".equals(momento), ticks);
         }
     }
 

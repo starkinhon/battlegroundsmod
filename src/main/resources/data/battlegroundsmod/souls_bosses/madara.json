@@ -175,6 +175,20 @@
       "giroGrausPorTick": 10,
       "avisoCor": "#ffffff",
       "avisoSom": "minecraft:entity.player.attack.sweep"
+    },
+    "agarrao": {
+      "slot": 7,
+      "tipo": "controle",
+      "peso": 1.3,
+      "recargaTicks": 400,
+      "recargaMaxTicks": 400,
+      "avisoTicks": 4,
+      "distanciaMin": 3,
+      "distanciaMax": 25,
+      "giroGrausPorTick": 30,
+      "avisoCor": "#d10a0a",
+      "avisoSom": "",
+      "fala": "Estou decepcionado. Esperava Mais"
     }
   },
   "combos": {
@@ -218,7 +232,8 @@
         "katon",
         "susanoo",
         "forte",
-        "barragem"
+        "barragem",
+        "agarrao"
       ],
       "combos": [
         "fogo_cruzado",
@@ -245,7 +260,8 @@
         "mangekyo",
         "susanoo",
         "forte",
-        "barragem"
+        "barragem",
+        "agarrao"
       ],
       "combos": [
         "fogo_cruzado",
@@ -273,7 +289,8 @@
         "mangekyo",
         "susanoo",
         "forte",
-        "barragem"
+        "barragem",
+        "agarrao"
       ],
       "combos": [
         "fogo_cruzado",

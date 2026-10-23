@@ -14,7 +14,7 @@
     "seguirAlvo": true
   },
   "rastro": {
-    "ativa": true,
+    "ativa": false,
     "densidade": 6,
     "cor": "#ffffff",
     "fumacaSumir": 15,
