@@ -126,7 +126,7 @@ public final class GrabCutscene {
             case "alvo" -> {
                 // Riding the victim's head: up in the air, then slammed down.
                 int slam = impact - Math.max(1, spec.esmagar().descidaTicks());
-                double k = t < slam ? smooth(t / Math.max(1, agarrar.levantarTicks())) : 1 - Math.min(1, (t - slam) / Math.max(1, impact - slam));
+                double k = t < slam ? (agarrar.levantarTicks() <= 0 ? 1 : smooth(t / (double) agarrar.levantarTicks())) : 1 - Math.min(1, (t - slam) / Math.max(1, impact - slam));
                 pos = world(0, 0.4 + 1.2 * k, 1.5);
                 look = world(0, 2.4 * k + 0.6, -0.5);
             }

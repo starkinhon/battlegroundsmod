@@ -90,7 +90,12 @@ public final class Mangekyo {
                 Fx.effects(level, SKILL, data.awakened, "particulas", player.getEyePosition(), player.getLookAngle());
             }
         });
+        int interrupts = data.interrupts;
         Tasks.later(delay, () -> {
+            // Cut off while still staring (grabbed, sealed): the curse never lands.
+            if (data.interrupts != interrupts) {
+                return;
+            }
             for (LivingEntity target : targets) {
                 if (target.isAlive() && !target.isRemoved()) {
                     stun(target, spec.efeitos());

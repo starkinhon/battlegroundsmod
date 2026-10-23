@@ -17,6 +17,7 @@ import com.starkinhon.battlegroundsmod.fx.SoulParticleOptions;
 import com.starkinhon.battlegroundsmod.movement.Movement;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
 import com.starkinhon.battlegroundsmod.power.PowerData;
+import com.starkinhon.battlegroundsmod.power.PowerLogic;
 import com.starkinhon.battlegroundsmod.skill.AgarraoSpec;
 
 import net.minecraft.core.BlockPos;
@@ -38,7 +39,6 @@ import net.neoforged.neoforge.network.PacketDistributor;
 public final class Agarrao {
     public static final String SKILL = AgarraoSpec.SKILL;
     // Space between the two bodies while he holds the target up.
-    private static final double HOLD_GAP = 0.3;
     // Madara stays still a little after the slam, standing over the hole.
     private static final int AFTER_SLAM_TICKS = 8;
     // The hole opens from the middle out over this many ticks.
@@ -160,7 +160,7 @@ public final class Agarrao {
         reappear(caster, level, spec);
         AgarraoSpec.Agarrar agarrar = spec.agarrar();
         AgarraoSpec.Esmagar esmagar = spec.esmagar();
-        int lift = Math.max(1, agarrar.levantarTicks());
+        int lift = Math.max(0, agarrar.levantarTicks());
         int held = lift + Math.max(0, agarrar.segurarTicks());
         int impact = spec.slamTick();
         data.busyTicks = impact + AFTER_SLAM_TICKS;
@@ -178,15 +178,26 @@ public final class Agarrao {
         caster.hurtMarked = true;
         Freeze.hold(caster, impact + AFTER_SLAM_TICKS);
 
-        // Held by the neck right in front of him: up over the lift, kept up, then slammed straight down.
-        Vec3 base = caster.position().add(forward.scale(caster.getBbWidth() / 2 + target.getBbWidth() / 2 + HOLD_GAP));
+        // Held by the neck where the Forja puts them: up over the lift, kept up, then slammed straight down.
+        Vec3 right = new Vec3(-forward.z, 0, forward.x);
+        Vec3 base = caster.position().add(forward.scale(agarrar.distancia())).add(right.scale(agarrar.lado()));
         Vec3 start = target.position();
         double height = agarrar.altura();
+        // The target always faces Madara, looking at his eyes from where it is held (Freeze keeps this turn).
+        Vec3 eyes = base.add(0, height + target.getEyeHeight(), 0);
+        Vec3 look = caster.getEyePosition().subtract(eyes);
+        float targetYaw = yRot + 180;
+        float targetPitch = (float) (-Mth.atan2(look.y, Math.max(0.1, look.horizontalDistance())) * Mth.RAD_TO_DEG);
+        target.setYRot(targetYaw);
+        target.setXRot(targetPitch);
+        target.setYHeadRot(targetYaw);
+        target.setYBodyRot(targetYaw);
         Freeze.hold(target, impact, age -> {
             if (age < lift) {
                 double k = smooth(age / (double) lift);
                 return start.lerp(base, Math.min(1, age / 2.0)).add(0, height * k, 0);
             }
+            // With no lift he comes out of the dash already holding them up.
             if (age < held) {
                 return base.add(0, height, 0);
             }
@@ -194,6 +205,8 @@ public final class Agarrao {
             return base.add(0, height * (1 - k * k), 0);
         });
         Stun.apply(target, impact + Math.max(0, esmagar.presoTicks()));
+        // Whatever the target was charging is cut off, and no skill (not even a counter) until they get out of the hole.
+        PowerLogic.seal(target, impact + Math.max(0, esmagar.presoTicks()));
         if (spec.cutscene().intangivel()) {
             int ticks = impact + Math.max(0, spec.cutscene().depoisTicks());
             Intangible.hold(caster, ticks);
