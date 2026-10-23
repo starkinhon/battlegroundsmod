@@ -2,7 +2,7 @@ package com.starkinhon.battlegroundsmod.skill;
 
 // The body animation of any skill: a wind-up pose, then a main pose, then back to normal. Reads only the "tempo" and
 // "animacao" blocks, which come in two shapes: atraso/duracao + preparo/sopro (Katon) or preparo/queda (Meteoro).
-public record AnimationSpec(Tempo tempo, Animacao animacao) {
+public record AnimationSpec(Tempo tempo, Animacao animacao) implements PoseTimeline {
 
     public record Tempo(Integer atrasoTicks, Integer duracaoTicks, Integer preparoTicks, Integer quedaTicks, Integer fracoTicks) {
         public int windUp() {
@@ -31,6 +31,7 @@ public record AnimationSpec(Tempo tempo, Animacao animacao) {
     }
 
     // Body pose at a time in ticks since the skill started, blending smoothly between the phases (same as the page).
+    @Override
     public SkillSpec.Pose poseAt(double t) {
         int at = tempo.windUp();
         int end = tempo.end();
@@ -45,6 +46,7 @@ public record AnimationSpec(Tempo tempo, Animacao animacao) {
     }
 
     // Ticks until the body is back to normal after the skill starts.
+    @Override
     public double animationEnd() {
         return tempo.end() + animacao.back();
     }

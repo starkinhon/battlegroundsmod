@@ -309,6 +309,36 @@ public final class ModPayloads {
         }
     }
 
+    // Server -> client: the neck grab's cutscene for the two fighters. The camera cuts in now; the slam lands at impactTick.
+    public record GrabCutscene(int casterId, int targetId, boolean awakened, int impactTick) implements CustomPacketPayload {
+        public static final Type<GrabCutscene> TYPE = payloadType("grab_cutscene");
+        public static final StreamCodec<ByteBuf, GrabCutscene> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, GrabCutscene::casterId,
+                ByteBufCodecs.VAR_INT, GrabCutscene::targetId,
+                ByteBufCodecs.BOOL, GrabCutscene::awakened,
+                ByteBufCodecs.VAR_INT, GrabCutscene::impactTick,
+                GrabCutscene::new);
+
+        @Override
+        public Type<GrabCutscene> type() {
+            return TYPE;
+        }
+    }
+
+    // Server -> client: don't draw this entity for ticks (an invisible dash); 0 shows it again.
+    public record HideEntity(int entityId, int ticks) implements CustomPacketPayload {
+        public static final Type<HideEntity> TYPE = payloadType("hide_entity");
+        public static final StreamCodec<ByteBuf, HideEntity> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, HideEntity::entityId,
+                ByteBufCodecs.VAR_INT, HideEntity::ticks,
+                HideEntity::new);
+
+        @Override
+        public Type<HideEntity> type() {
+            return TYPE;
+        }
+    }
+
     // Server -> client: this entity was killed by fire (Katon, Meteoro): it turns to ash instead of the normal death.
     public record AshDeath(int entityId) implements CustomPacketPayload {
         public static final Type<AshDeath> TYPE = payloadType("ash_death");
@@ -445,6 +475,10 @@ public final class ModPayloads {
                         payload.entityId(), payload.ticks())));
         registrar.playToClient(ShoulderCutscene.TYPE, ShoulderCutscene.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.shoulderCutscene(payload.casterId(), payload.targetId(), payload.ticks())));
+        registrar.playToClient(GrabCutscene.TYPE, GrabCutscene.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.grabCutscene(payload.casterId(), payload.targetId(), payload.awakened(), payload.impactTick())));
+        registrar.playToClient(HideEntity.TYPE, HideEntity.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.hideEntity(payload.entityId(), payload.ticks())));
         registrar.playToClient(AshDeath.TYPE, AshDeath.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.ashDeath(payload.entityId())));
         registrar.playToClient(BossBarStyle.TYPE, BossBarStyle.STREAM_CODEC, (payload, context) -> context.enqueueWork(

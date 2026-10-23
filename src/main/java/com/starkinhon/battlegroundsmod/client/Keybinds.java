@@ -7,12 +7,13 @@ import org.lwjgl.glfw.GLFW;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
+import com.starkinhon.battlegroundsmod.power.PowerData;
 
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.neoforged.neoforge.network.PacketDistributor;
 
-// The power's skills (Z, X, C, V: index in ABILITIES = ability slot) and the base fighting keys: R cycles the base
+// The power's skills (Z, X, C, V: index in ABILITIES = ability slot; B for a fifth skill) and the base fighting keys: R cycles the base
 // attack selector (Shift + R goes back), G uses the selected base attack, F holds the guard and Left Alt dashes. All can be changed in Controls.
 public final class Keybinds {
     private static final String CATEGORY = "key.categories.battlegroundsmod";
@@ -22,15 +23,21 @@ public final class Keybinds {
             key("ability_2", GLFW.GLFW_KEY_X),
             key("ability_3", GLFW.GLFW_KEY_C),
             key("ultimate", GLFW.GLFW_KEY_V));
+    public static final KeyMapping EXTRA_ABILITY = key("ability_4", GLFW.GLFW_KEY_B);
     public static final KeyMapping CYCLE_ATTACK = key("cycle_attack", GLFW.GLFW_KEY_R);
     public static final KeyMapping USE_ATTACK = key("use_attack", GLFW.GLFW_KEY_G);
     public static final KeyMapping GUARD = key("guard", GLFW.GLFW_KEY_F);
     public static final KeyMapping DASH = key("dash", GLFW.GLFW_KEY_LEFT_ALT);
 
     public static final List<KeyMapping> ALL = List.of(ABILITIES.get(0), ABILITIES.get(1), ABILITIES.get(2), ABILITIES.get(3),
-            CYCLE_ATTACK, USE_ATTACK, GUARD, DASH);
+            EXTRA_ABILITY, CYCLE_ATTACK, USE_ATTACK, GUARD, DASH);
 
     private Keybinds() {
+    }
+
+    // The key of a skill slot.
+    public static KeyMapping forSlot(int slot) {
+        return slot == PowerData.SLOT_EXTRA ? EXTRA_ABILITY : ABILITIES.get(slot);
     }
 
     private static KeyMapping key(String name, int defaultKey) {
@@ -45,6 +52,11 @@ public final class Keybinds {
                 if (ready) {
                     PacketDistributor.sendToServer(new ModPayloads.UseAbility(slot));
                 }
+            }
+        }
+        while (EXTRA_ABILITY.consumeClick()) {
+            if (ready) {
+                PacketDistributor.sendToServer(new ModPayloads.UseAbility(PowerData.SLOT_EXTRA));
             }
         }
         boolean hasPower = ready && minecraft.player.getData(ModAttachments.POWER).hasPower();

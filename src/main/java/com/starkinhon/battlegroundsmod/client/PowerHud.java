@@ -35,7 +35,7 @@ public final class PowerHud {
             return;
         }
         Font font = minecraft.font;
-        int rows = PowerData.SLOT_ULT + 1;
+        int rows = power.slots().size();
         graphics.fill(X - 3, Y - 3, X + WIDTH, Y + 14 + rows * ROW_HEIGHT, 0x88000000);
         Component tier = Component.literal(" [" + Tiers.name(data.tier) + "]");
         graphics.drawString(font, power.name(), X, Y, 0xFF000000 | power.color(), true);
@@ -43,8 +43,8 @@ public final class PowerHud {
 
         boolean ultReady = data.ult >= PowerData.MAX_ULT;
         int y = Y + 13;
-        for (int slot = 0; slot < rows; slot++) {
-            Component key = Keybinds.ABILITIES.get(slot).getTranslatedKeyMessage();
+        for (int slot : power.slots()) {
+            Component key = Keybinds.forSlot(slot).getTranslatedKeyMessage();
             int cooldown = data.cooldowns[slot];
             boolean blocked = cooldown > 0 || (slot == PowerData.SLOT_ULT && !ultReady);
             int color = blocked ? 0xFF777777 : slot == PowerData.SLOT_ULT ? ULT_COLOR : 0xFFFFFFFF;

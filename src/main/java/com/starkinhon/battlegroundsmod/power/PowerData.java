@@ -9,13 +9,14 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 public class PowerData {
     public static final float MAX_ULT = 100f;
 
-    // Slots 0-3 are the power's abilities (Z, X, C, V), 4-5 are the shared melee moves (strong attack, barrage), picked
-    // in the base attack selector above the hotbar.
-    public static final int SLOT_COUNT = 7;
+    // Slots 0-3 are the power's abilities (Z, X, C, V), 4-6 are the shared base attacks (strong attack, barrage, dash
+    // attack), picked in the base attack selector above the hotbar, and 7 is a fifth ability (B) for powers that have one.
+    public static final int SLOT_COUNT = 8;
     public static final int SLOT_ULT = 3;
     public static final int SLOT_STRONG = 4;
     public static final int SLOT_BARRAGE = 5;
     public static final int SLOT_DASH_ATTACK = 6;
+    public static final int SLOT_EXTRA = 7;
 
     public static final Codec<PowerData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.STRING.optionalFieldOf("power", "").forGetter(d -> d.power),

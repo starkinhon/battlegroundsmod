@@ -6,6 +6,7 @@ import com.starkinhon.battlegroundsmod.client.BossBars;
 import com.starkinhon.battlegroundsmod.client.BossCutscene;
 import com.starkinhon.battlegroundsmod.client.FaceCutscene;
 import com.starkinhon.battlegroundsmod.client.Fear;
+import com.starkinhon.battlegroundsmod.client.GrabCutscene;
 import com.starkinhon.battlegroundsmod.client.fx.AshDeath;
 import com.starkinhon.battlegroundsmod.client.fx.Aura;
 import com.starkinhon.battlegroundsmod.client.fx.AuraEyesLayer;
@@ -26,6 +27,7 @@ import com.starkinhon.battlegroundsmod.client.CombatInput;
 import com.starkinhon.battlegroundsmod.client.StatusBars;
 import com.starkinhon.battlegroundsmod.client.ScreenShake;
 import com.starkinhon.battlegroundsmod.client.ShoulderCutscene;
+import com.starkinhon.battlegroundsmod.client.Vanish;
 import com.starkinhon.battlegroundsmod.client.SoulBossRenderer;
 
 import net.minecraft.client.renderer.entity.player.PlayerRenderer;
@@ -68,6 +70,7 @@ public class BattlegroundsModClient {
         NeoForge.EVENT_BUS.addListener(FxWorld::onRenderLevel);
         NeoForge.EVENT_BUS.addListener(AshDeath::onRenderLevel);
         NeoForge.EVENT_BUS.addListener(RenderLivingEvent.Pre.class, AshDeath::onRenderLiving);
+        NeoForge.EVENT_BUS.addListener(RenderLivingEvent.Pre.class, Vanish::onRenderLiving);
         NeoForge.EVENT_BUS.addListener(ScreenFx::onComputeFov);
         NeoForge.EVENT_BUS.addListener(BattlegroundsModClient::onClientTickPre);
         NeoForge.EVENT_BUS.addListener(BattlegroundsModClient::onClientTick);
@@ -76,6 +79,7 @@ public class BattlegroundsModClient {
         NeoForge.EVENT_BUS.addListener(RenderGuiLayerEvent.Pre.class, StatusBars::onRenderLayer);
         NeoForge.EVENT_BUS.addListener(MovementInputUpdateEvent.class, FaceCutscene::onMovementInput);
         NeoForge.EVENT_BUS.addListener(MovementInputUpdateEvent.class, BossCutscene::onMovementInput);
+        NeoForge.EVENT_BUS.addListener(MovementInputUpdateEvent.class, GrabCutscene::onMovementInput);
     }
 
     private static void onClientSetup(FMLClientSetupEvent event) {
@@ -92,6 +96,7 @@ public class BattlegroundsModClient {
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "base_attacks"), BaseAttacks::render);
         // Impact frames and flashes cover the world and the hand, but not the HUD.
         event.registerBelowAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "screen_fx"), ScreenFx::renderGui);
+        event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "cutscene_bars"), GrabCutscene::renderGui);
     }
 
     private static void onRegisterParticles(RegisterParticleProvidersEvent event) {
@@ -126,6 +131,8 @@ public class BattlegroundsModClient {
         FaceCutscene.tick();
         BossCutscene.tick();
         ShoulderCutscene.tick();
+        GrabCutscene.tick();
+        Vanish.tick();
         ScreenShake.tick();
         ScreenFx.tick();
         FxWorld.tick();

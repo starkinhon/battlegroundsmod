@@ -7,8 +7,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
 
+import com.starkinhon.battlegroundsmod.skill.AgarraoSpec;
 import com.starkinhon.battlegroundsmod.skill.AnimationSpec;
 import com.starkinhon.battlegroundsmod.skill.DefesaSpec;
+import com.starkinhon.battlegroundsmod.skill.PoseTimeline;
 import com.starkinhon.battlegroundsmod.skill.SkillSpec;
 import com.starkinhon.battlegroundsmod.skill.SkillSpecs;
 
@@ -23,7 +25,7 @@ import net.minecraft.world.entity.LivingEntity;
 public final class SkillAnimations {
     // from: the pose the body was in when this started, blended out over BLEND_TICKS so back-to-back moves (a punch
     // combo) flow into each other. holdAt/holdTicks: a hitstop, the animation stands still for holdTicks from holdAt.
-    private record Playing(AnimationSpec spec, int startTick, SkillSpec.Pose from, double holdAt, int holdTicks) {
+    private record Playing(PoseTimeline spec, int startTick, SkillSpec.Pose from, double holdAt, int holdTicks) {
         double time(double raw) {
             return holdTicks <= 0 || raw <= holdAt ? raw : Math.max(holdAt, raw - holdTicks);
         }
@@ -44,11 +46,19 @@ public final class SkillAnimations {
     private SkillAnimations() {
     }
 
+    // "skill#part" plays one part of a move with several steps, timed by the server (see AgarraoSpec.phase); the
+    // number after a second # is how long the part runs, when only the server knows (a dash until it reaches someone).
     public static void play(int entityId, String skill, boolean awakened) {
+        String[] parts = skill.split("#");
+        if (parts.length > 1 && AgarraoSpec.SKILL.equals(parts[0])) {
+            int ticks = parts.length > 2 ? Integer.parseInt(parts[2]) : 0;
+            play(entityId, AgarraoSpec.get(awakened).phase(parts[1], ticks));
+            return;
+        }
         play(entityId, SkillSpecs.get(skill, AnimationSpec.class, awakened));
     }
 
-    public static void play(int entityId, AnimationSpec spec) {
+    public static void play(int entityId, PoseTimeline spec) {
         Entity entity = entity(entityId);
         if (entity != null) {
             PLAYING.put(entityId, new Playing(spec, entity.tickCount, current(entity), 0, 0));

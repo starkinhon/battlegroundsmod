@@ -8,6 +8,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.starkinhon.battlegroundsmod.client.BossCutscene;
 import com.starkinhon.battlegroundsmod.client.FaceCutscene;
+import com.starkinhon.battlegroundsmod.client.GrabCutscene;
 import com.starkinhon.battlegroundsmod.client.ScreenShake;
 import com.starkinhon.battlegroundsmod.client.ShoulderCutscene;
 
@@ -30,6 +31,7 @@ public abstract class CameraMixin {
     private void battlegroundsmod$cutscene(BlockGetter level, Entity entity, boolean detached, boolean thirdPersonReverse,
             float partialTick, CallbackInfo ci) {
         FaceCutscene.Shot shot = BossCutscene.active() ? BossCutscene.shot(partialTick)
+                : GrabCutscene.active() ? GrabCutscene.shot(partialTick)
                 : ShoulderCutscene.active() ? ShoulderCutscene.shot(partialTick) : FaceCutscene.shot(partialTick);
         if (shot != null) {
             setRotation(shot.yaw(), shot.pitch());

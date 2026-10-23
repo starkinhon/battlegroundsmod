@@ -43,6 +43,7 @@ public final class PowerLogic {
             case PowerData.SLOT_STRONG -> Melee.STRONG;
             case PowerData.SLOT_BARRAGE -> Melee.BARRAGE;
             case PowerData.SLOT_DASH_ATTACK -> DashAttack.ability();
+            case PowerData.SLOT_EXTRA -> power.abilities().size() > 4 ? power.abilities().get(4) : null;
             default -> power.abilities().get(slot);
         };
     }
@@ -80,7 +81,11 @@ public final class PowerLogic {
     // Being hit (stun, Cooldown effect) blocks every move but a counter.
     private static boolean canCast(LivingEntity caster, PowerData data, int slot) {
         Power power = Powers.get(data.power);
-        boolean counter = power != null && ability(power, slot).counter();
+        Ability ability = power == null ? null : ability(power, slot);
+        if (ability == null) {
+            return false;
+        }
+        boolean counter = ability.counter();
         return !caster.isSpectator() && caster.isAlive() && data.cooldowns[slot] <= 0 && data.busyTicks <= 0 && !Freeze.isFrozen(caster)
                 && (counter || Stun.canAttack(caster)) && !Defense.isGuarding(caster) && !sealed(caster);
     }

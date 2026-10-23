@@ -1,0 +1,340 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "madara.agarrao",
+  "nome": "Agarrão no Pescoço",
+  "tempo": {
+    "preparoTicks": 5
+  },
+  "dash": {
+    "velocidade": 3.5,
+    "distanciaMax": 40,
+    "raioPegar": 2.6,
+    "distanciaAgarrar": 2,
+    "invisivel": true,
+    "seguirAlvo": true
+  },
+  "rastro": {
+    "ativa": true,
+    "densidade": 5,
+    "cor": "#ffffff",
+    "fumacaSumir": 30,
+    "corFumaca": "#2a2633"
+  },
+  "agarrar": {
+    "levantarTicks": 30,
+    "segurarTicks": 30,
+    "altura": 0.5,
+    "dano": 5
+  },
+  "esmagar": {
+    "descidaTicks": 3,
+    "dano": 25,
+    "presoTicks": 50,
+    "quebrarBlocos": true,
+    "raioCratera": 5,
+    "profundidadeCratera": 3
+  },
+  "impacto": {
+    "tremerTela": 1.5,
+    "impactFrameTicks": 6,
+    "onda": {
+      "ativa": true,
+      "velocidade": 0.7,
+      "cor": "#b8a58a"
+    },
+    "poeira": 30
+  },
+  "cutscene": {
+    "ativa": true,
+    "camera": "baixo",
+    "depoisTicks": 20,
+    "voltarTicks": 10,
+    "barrasPretas": true,
+    "intangivel": true
+  },
+  "animacao": {
+    "transicaoTicks": 2,
+    "dash": {
+      "cabeca": 2,
+      "tronco": 45,
+      "bracoDir": {
+        "frente": -40,
+        "abrir": -12
+      },
+      "bracoEsq": {
+        "frente": -55,
+        "abrir": 12
+      }
+    },
+    "agarrar": {
+      "cabeca": -10,
+      "tronco": 10,
+      "bracoDir": {
+        "frente": 109,
+        "abrir": -8
+      },
+      "bracoEsq": {
+        "frente": 10,
+        "abrir": 10
+      }
+    },
+    "levantar": {
+      "cabeca": -15,
+      "tronco": -6,
+      "bracoDir": {
+        "frente": 150,
+        "abrir": -10
+      },
+      "bracoEsq": {
+        "frente": 20,
+        "abrir": 15
+      }
+    },
+    "esmagar": {
+      "cabeca": 20,
+      "tronco": 35,
+      "bracoDir": {
+        "frente": 40,
+        "abrir": -10
+      },
+      "bracoEsq": {
+        "frente": -20,
+        "abrir": 20
+      }
+    }
+  },
+  "sons": [
+    {
+      "nome": "Sumir",
+      "som": "minecraft:entity.breeze.wind_burst",
+      "momento": "dash",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1,
+      "pitch": 0.8,
+      "pitchFim": 0.8,
+      "onde": "usuario"
+    },
+    {
+      "nome": "Vento do dash",
+      "som": "minecraft:item.trident.riptide_1",
+      "momento": "dash",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 0.8,
+      "pitch": 1.4,
+      "pitchFim": 1.4,
+      "onde": "usuario"
+    },
+    {
+      "nome": "Agarrão",
+      "som": "minecraft:entity.player.attack.strong",
+      "momento": "agarrar",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.2,
+      "pitch": 0.7,
+      "pitchFim": 0.7,
+      "onde": "alvo"
+    },
+    {
+      "nome": "Pescoço",
+      "som": "minecraft:entity.skeleton.hurt",
+      "momento": "agarrar",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1,
+      "pitch": 0.5,
+      "pitchFim": 0.5,
+      "onde": "alvo"
+    },
+    {
+      "nome": "Impacto",
+      "som": "minecraft:entity.warden.attack_impact",
+      "momento": "esmagar",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 2,
+      "pitch": 0.6,
+      "pitchFim": 0.6,
+      "onde": "impacto"
+    },
+    {
+      "nome": "Estouro",
+      "som": "minecraft:entity.generic.explode",
+      "momento": "esmagar",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.5,
+      "pitch": 0.8,
+      "pitchFim": 0.8,
+      "onde": "impacto"
+    },
+    {
+      "nome": "Chão quebrando",
+      "som": "minecraft:block.gravel.break",
+      "momento": "esmagar",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 2,
+      "pitch": 0.6,
+      "pitchFim": 0.6,
+      "onde": "impacto"
+    }
+  ],
+  "vfx": [
+    {
+      "tipo": "fov",
+      "momento": "dash",
+      "forca": 0.25,
+      "vidaTicks": 8,
+      "alcance": 4
+    },
+    {
+      "tipo": "blurRadial",
+      "momento": "dash",
+      "forca": 0.4,
+      "vidaTicks": 6,
+      "alcance": 4
+    },
+    {
+      "tipo": "distorcao",
+      "momento": "dash",
+      "modo": "onda",
+      "raio": 3,
+      "forca": 0.4,
+      "velocidade": 12,
+      "cor": "#ffffff",
+      "tinta": 0.03,
+      "vidaTicks": 8,
+      "alcance": 40
+    },
+    {
+      "tipo": "distorcao",
+      "momento": "reaparecer",
+      "modo": "onda",
+      "raio": 2.5,
+      "forca": 0.3,
+      "velocidade": 10,
+      "cor": "#ffffff",
+      "tinta": 0.03,
+      "vidaTicks": 8,
+      "alcance": 40
+    },
+    {
+      "tipo": "clarao",
+      "momento": "agarrar",
+      "tamanho": 1.2,
+      "quantidade": 5,
+      "cor": "#ffffff",
+      "cor2": "#fff6e0",
+      "vidaTicks": 5,
+      "alcance": 40
+    },
+    {
+      "tipo": "flash",
+      "momento": "agarrar",
+      "cor": "#ffffff",
+      "forca": 0.25,
+      "vidaTicks": 4,
+      "alcance": 16
+    },
+    {
+      "tipo": "tremor",
+      "momento": "agarrar",
+      "forca": 0.3,
+      "vidaTicks": 6,
+      "alcance": 12
+    },
+    {
+      "tipo": "impactFrame",
+      "momento": "esmagar",
+      "sequencia": [
+        "branco",
+        "invertido",
+        "manga",
+        "mangaInvertido",
+        "invertido",
+        "manga"
+      ],
+      "ticksPorQuadro": 1,
+      "cor": "#ffffff",
+      "alcance": 48
+    },
+    {
+      "tipo": "tremor",
+      "momento": "esmagar",
+      "forca": 1.5,
+      "vidaTicks": 14,
+      "alcance": 32
+    },
+    {
+      "tipo": "fov",
+      "momento": "esmagar",
+      "inicio": 1,
+      "forca": 6,
+      "vidaTicks": 10,
+      "alcance": 32
+    },
+    {
+      "tipo": "blurRadial",
+      "momento": "esmagar",
+      "inicio": 1,
+      "forca": 0.8,
+      "vidaTicks": 10,
+      "alcance": 32
+    },
+    {
+      "tipo": "distorcao",
+      "momento": "esmagar",
+      "modo": "onda",
+      "raio": 10,
+      "forca": 0.8,
+      "velocidade": 14,
+      "altura": 0.5,
+      "cor": "#b8a58a",
+      "tinta": 0.08,
+      "vidaTicks": 18,
+      "alcance": 64
+    },
+    {
+      "tipo": "clarao",
+      "momento": "esmagar",
+      "tamanho": 3,
+      "quantidade": 6,
+      "cor": "#ffffff",
+      "cor2": "#fff2d8",
+      "vidaTicks": 6,
+      "alcance": 64
+    },
+    {
+      "tipo": "anelChao",
+      "momento": "esmagar",
+      "raio": 8,
+      "tamanho": 1.2,
+      "cor": "#d8c8a8",
+      "vidaTicks": 14,
+      "velocidade": 1,
+      "alcance": 64
+    },
+    {
+      "tipo": "fumaca",
+      "momento": "esmagar",
+      "inicio": 1,
+      "quantidade": 10,
+      "raio": 4,
+      "tamanho": 3,
+      "cor": "#7a6a58",
+      "vidaTicks": 50,
+      "alcance": 64
+    }
+  ],
+  "despertado": {}
+}
