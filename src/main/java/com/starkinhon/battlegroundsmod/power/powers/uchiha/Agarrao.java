@@ -183,6 +183,15 @@ public final class Agarrao {
         Vec3 base = caster.position().add(forward.scale(agarrar.distancia())).add(right.scale(agarrar.lado()));
         Vec3 start = target.position();
         double height = agarrar.altura();
+        // The target always faces Madara, looking at his eyes from where it is held (Freeze keeps this turn).
+        Vec3 eyes = base.add(0, height + target.getEyeHeight(), 0);
+        Vec3 look = caster.getEyePosition().subtract(eyes);
+        float targetYaw = yRot + 180;
+        float targetPitch = (float) (-Mth.atan2(look.y, Math.max(0.1, look.horizontalDistance())) * Mth.RAD_TO_DEG);
+        target.setYRot(targetYaw);
+        target.setXRot(targetPitch);
+        target.setYHeadRot(targetYaw);
+        target.setYBodyRot(targetYaw);
         Freeze.hold(target, impact, age -> {
             if (age < lift) {
                 double k = smooth(age / (double) lift);
