@@ -259,7 +259,7 @@ public final class Melee {
             Vec3 front = player.getEyePosition().add(look.scale(2.5));
             LivingEntity target = Combat.raycastTarget(player, 4.5);
             Fx.burst(level, ParticleTypes.SWEEP_ATTACK, front, 1, 0, 0);
-            Fx.line(level, ParticleTypes.CLOUD, hand, front.add(look.scale(2)), 0.4);
+            Fx.line(level, ModParticles.puff(0xEEEEEE, 0.25f, 10, 0.9f), hand, front.add(look.scale(2)), 0.4);
             Fx.burst(level, ModParticles.ring(0xFFFFFF, 1.2f + charge, 6), front, 1, 0, 0);
             Fx.sound(level, front, SoundEvents.PLAYER_ATTACK_STRONG, 1.5f, 0.6f - charge * 0.15f);
             if (target != null) {
@@ -310,7 +310,7 @@ public final class Melee {
                 for (int i = 0; i < 2; i++) {
                     Vec3 offset = new Vec3(level.random.nextDouble() - 0.5, level.random.nextDouble() - 0.5, level.random.nextDouble() - 0.5).scale(1.3);
                     Vec3 at = eye.add(look.scale(range * 0.35 + level.random.nextDouble() * range * 0.4)).add(offset);
-                    Fx.moving(level, ModParticles.streak(0xFFFFFF, 0.5f, 3), at, look.scale(0.9));
+                    Fx.moving(level, ModParticles.streak(0xFFFFFF, 1.1f, 5), at, look.scale(0.9));
                     if (level.random.nextInt(3) == 0) {
                         Fx.moving(level, ModParticles.puff(wind, 0.2f + level.random.nextFloat() * 0.15f, 6, 0.85f), at, look.scale(0.15));
                     }
@@ -337,7 +337,7 @@ public final class Melee {
             Fx.burst(level, ModParticles.ring(0xFFFFFF, 2.2f, 8), front, 1, 0, 0);
             for (int i = 0; i < 8; i++) {
                 Vec3 offset = new Vec3(level.random.nextDouble() - 0.5, level.random.nextDouble() - 0.5, level.random.nextDouble() - 0.5).scale(1.6);
-                Fx.moving(level, ModParticles.streak(0xFFFFFF, 0.8f, 5), front.add(offset), look.scale(1.1));
+                Fx.moving(level, ModParticles.streak(0xFFFFFF, 1.8f, 7), front.add(offset), look.scale(1.1));
             }
             Fx.sound(level, front, SoundEvents.PLAYER_ATTACK_KNOCKBACK, 1.5f, 0.6f);
             for (LivingEntity target : Combat.inCone(player, range, 0.55)) {

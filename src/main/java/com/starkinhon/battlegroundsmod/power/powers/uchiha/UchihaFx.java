@@ -6,6 +6,7 @@ import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Cone;
 import com.starkinhon.battlegroundsmod.combat.Fx;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
+import com.starkinhon.battlegroundsmod.fx.ModParticles;
 import com.starkinhon.battlegroundsmod.skill.SkillSpec;
 import com.starkinhon.battlegroundsmod.skill.SusanooSpec;
 
@@ -76,7 +77,7 @@ public final class UchihaFx {
         double tipRadius = cone.radiusAt(length);
         SkillSpec.Fumaca fumaca = camadas.fumaca();
         if (fumaca.ativa() && age % Math.max(1, fumaca.intervaloTicks()) == 0) {
-            Fx.burst(level, ParticleTypes.LARGE_SMOKE, tip.add(0, fumaca.altura(), 0), fumaca.quantidade(), tipRadius * fumaca.espalhamento(), 0.02);
+            Fx.burst(level, ModParticles.smoke(0x2E2A2A, 0.8f, 40), tip.add(0, fumaca.altura(), 0), fumaca.quantidade(), tipRadius * fumaca.espalhamento(), 0.02);
         }
         SkillSpec.Lava lava = camadas.lava();
         if (lava.ativa() && age % Math.max(1, lava.intervaloTicks()) == 0) {
@@ -99,7 +100,7 @@ public final class UchihaFx {
             Fx.moving(level, ParticleTypes.FLAME, cone.origin(), velocity);
         }
         if (age % 4 == 0) {
-            Fx.burst(level, ParticleTypes.SMOKE, cone.pointAt(length), 2, cone.radiusAt(length) * 0.5, 0.02);
+            Fx.burst(level, ModParticles.smoke(0x3A3434, 0.35f, 24), cone.pointAt(length), 2, cone.radiusAt(length) * 0.5, 0.02);
         }
     }
 
@@ -112,7 +113,7 @@ public final class UchihaFx {
         double tipRadius = cone.radiusAt(length);
         SkillSpec.Fumaca fumaca = camadas.fumaca();
         if (fumaca.ativa() && age % Math.max(1, fumaca.intervaloTicks()) == 0) {
-            Fx.burst(level, ParticleTypes.LARGE_SMOKE, tip.add(0, fumaca.altura(), 0), fumaca.quantidade(), tipRadius * fumaca.espalhamento(), 0.02);
+            Fx.burst(level, ModParticles.smoke(0x2E2A2A, 0.8f, 40), tip.add(0, fumaca.altura(), 0), fumaca.quantidade(), tipRadius * fumaca.espalhamento(), 0.02);
         }
         SkillSpec.Lava lava = camadas.lava();
         if (lava.ativa() && age % Math.max(1, lava.intervaloTicks()) == 0) {

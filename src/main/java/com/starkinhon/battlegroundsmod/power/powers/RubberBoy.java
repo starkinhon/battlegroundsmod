@@ -9,6 +9,7 @@ import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Fx;
 import com.starkinhon.battlegroundsmod.combat.Melee;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
+import com.starkinhon.battlegroundsmod.fx.ModParticles;
 import com.starkinhon.battlegroundsmod.power.Ability;
 import com.starkinhon.battlegroundsmod.power.Power;
 
@@ -56,7 +57,7 @@ public final class RubberBoy {
             Vec3 hand = Combat.handPos(player);
             arm(level, hand, hand.add(reach.subtract(hand).scale(t)), 1.2f);
             if (age == 2) {
-                Fx.burst(level, ParticleTypes.POOF, reach, 10, 0.3, 0.1);
+                Fx.burst(level, ModParticles.puff(0xEEEEEE, 0.3f, 12, 0.85f), reach, 10, 0.3, 0.1);
                 Fx.burst(level, ParticleTypes.CRIT, reach, 10, 0.3, 0.3);
                 if (target != null && target.isAlive()) {
                     Combat.hurt(player, target, 8f);
@@ -84,7 +85,7 @@ public final class RubberBoy {
         Fx.sound(level, anchor, SoundEvents.SLIME_JUMP, 2f, 0.5f);
         Tasks.repeat(20, age -> {
             Vec3 pos = Combat.center(player);
-            Fx.burst(level, ParticleTypes.CLOUD, pos, 3, 0.3, 0.02);
+            Fx.burst(level, ModParticles.puff(0xEEEEEE, 0.3f, 16, 0.9f), pos, 3, 0.3, 0.02);
             if (age < 4) {
                 // Arms stretch back to where the rocket started.
                 arm(level, pos, anchor, 1f);
@@ -117,7 +118,7 @@ public final class RubberBoy {
             if (age < windup) {
                 // Steam and a swelling fist while charging.
                 Vec3 base = player.position();
-                Fx.burst(level, ParticleTypes.CLOUD, base.add(0, 1, 0), 4, 0.6, 0.05);
+                Fx.burst(level, ModParticles.smoke(0xF2F2F2, 0.35f, 20), base.add(0, 1, 0), 4, 0.6, 0.05);
                 Fx.sphere(level, Fx.dust(SKIN, 2f), Combat.handPos(player), 0.3 + age * 0.08, 16);
                 if (age == windup - 1) {
                     line[0] = Combat.handPos(player);
@@ -132,7 +133,7 @@ public final class RubberBoy {
             Vec3 from = start.add(dir.scale(length * step / travel));
             Vec3 to = start.add(dir.scale(length * (step + 1) / travel));
             Fx.sphere(level, Fx.dust(SKIN, 4f), to, radius, 50);
-            Fx.burst(level, ParticleTypes.CLOUD, to, 20, radius, 0.1);
+            Fx.burst(level, ModParticles.puff(0xE8E8E8, 0.5f, 20, 0.9f), to, 20, radius, 0.1);
             arm(level, start, to, 3f);
             for (LivingEntity target : Combat.alongLine(level, from, to, radius, player)) {
                 if (hit.add(target)) {

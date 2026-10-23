@@ -1,12 +1,28 @@
 {
   "textures": [
-    "battlegroundsmod:smoke_0",
-    "battlegroundsmod:smoke_1",
-    "battlegroundsmod:smoke_2",
-    "battlegroundsmod:smoke_3",
-    "battlegroundsmod:smoke_4",
-    "battlegroundsmod:smoke_5",
-    "battlegroundsmod:smoke_6",
-    "battlegroundsmod:smoke_7"
+    "battlegroundsmod:cloud_0",
+    "battlegroundsmod:cloud_1",
+    "battlegroundsmod:cloud_2",
+    "battlegroundsmod:cloud_3",
+    "battlegroundsmod:cloud_4",
+    "battlegroundsmod:cloud_5",
+    "battlegroundsmod:cloud_6",
+    "battlegroundsmod:cloud_7",
+    "battlegroundsmod:cloud_8",
+    "battlegroundsmod:cloud_9",
+    "battlegroundsmod:cloud_10",
+    "battlegroundsmod:cloud_11",
+    "battlegroundsmod:cloud_12",
+    "battlegroundsmod:cloud_13",
+    "battlegroundsmod:cloud_14",
+    "battlegroundsmod:cloud_15",
+    "battlegroundsmod:cloud_16",
+    "battlegroundsmod:cloud_17",
+    "battlegroundsmod:cloud_18",
+    "battlegroundsmod:cloud_19",
+    "battlegroundsmod:cloud_20",
+    "battlegroundsmod:cloud_21",
+    "battlegroundsmod:cloud_22",
+    "battlegroundsmod:cloud_23"
   ]
 }
