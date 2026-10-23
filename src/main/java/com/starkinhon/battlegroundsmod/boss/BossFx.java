@@ -102,7 +102,7 @@ final class BossFx {
     static void teleport(ServerLevel level, Vec3 from, Vec3 to) {
         for (Vec3 pos : new Vec3[] {from, to}) {
             Fx.burst(level, ModParticles.smoke(), pos.add(0, 1, 0), 25, 0.5, 0.05);
-            Fx.burst(level, ParticleTypes.LARGE_SMOKE, pos.add(0, 1, 0), 10, 0.4, 0.02);
+            Fx.burst(level, ModParticles.smoke(0x1E1C22, 0.6f, 30), pos.add(0, 1, 0), 10, 0.4, 0.02);
             Fx.sound(level, pos, SoundEvents.ENDERMAN_TELEPORT, 1f, 0.6f);
         }
     }

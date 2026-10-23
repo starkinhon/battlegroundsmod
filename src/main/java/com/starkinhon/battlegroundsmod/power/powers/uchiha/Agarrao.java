@@ -364,7 +364,7 @@ public final class Agarrao {
         Vec3 back = dir.scale(-1);
         for (int i = 0; i < count; i++) {
             Vec3 at = from.add(dir.scale(step * i / count)).add(random.nextGaussian() * 0.12, (random.nextDouble() - 0.5) * 0.9, random.nextGaussian() * 0.12);
-            Fx.moving(level, ModParticles.streak(color, 0.5f, 5 + random.nextInt(3)), at, back.scale(0.15));
+            Fx.moving(level, ModParticles.streak(color, 1.1f, 6 + random.nextInt(3)), at, back.scale(0.15));
         }
         Vec3 feet = caster.position().add(0, 0.1, 0);
         for (int i = 0; i < 2; i++) {

@@ -25,13 +25,14 @@ public final class ModParticles {
     public static final Supplier<ParticleType<SoulParticleOptions>> SOUL_FLAME = PARTICLE_TYPES.register("soul_flame", ModParticles::type);
     // Round speck tinted by the color, shrinking to 45%.
     public static final Supplier<ParticleType<SoulParticleOptions>> DUST = PARTICLE_TYPES.register("dust", ModParticles::type);
-    // Round dark smoke, shrinking to half.
+    // Soft dark smoke cloud that rises a little, billows out, turns and tears apart as it fades.
     public static final Supplier<ParticleType<SoulParticleOptions>> SMOKE = PARTICLE_TYPES.register("smoke", ModParticles::type);
     // Hot drop, yellow to orange, that falls with gravity.
     public static final Supplier<ParticleType<SoulParticleOptions>> LAVA = PARTICLE_TYPES.register("lava", ModParticles::type);
-    // Big cloud puff: grows in 4 ticks, keeps its size and only shrinks in the last 20% of its life.
+    // Soft cloud puff (dust, wind, smoke) tinted by the color: billows out fast, keeps spreading and thins out over
+    // the second half of its life.
     public static final Supplier<ParticleType<SoulParticleOptions>> PUFF = PARTICLE_TYPES.register("puff", ModParticles::type);
-    // Thin line along its movement, size is half its length. Used for light streaks.
+    // Thin soft line of light along its movement, size is half its length: stretches out and fades. Speed lines.
     public static final Supplier<ParticleType<SoulParticleOptions>> STREAK = PARTICLE_TYPES.register("streak", ModParticles::type);
     // A fist seen from the front, tinted by the color: pops in, holds and shrinks away. The barrage's afterimages.
     public static final Supplier<ParticleType<SoulParticleOptions>> FIST = PARTICLE_TYPES.register("fist", ModParticles::type);
@@ -91,6 +92,11 @@ public final class ModParticles {
     public static SoulParticleOptions smoke() {
         int gray = (int) (RANDOM.nextFloat() * 0.3f * 255);
         return new SoulParticleOptions(SMOKE.get(), gray << 16 | gray << 8 | gray, baseQuad() * 0.75f * 2.5f, (int) (vanillaLife() * 2.5f), 0.96f, -0.1f);
+    }
+
+    // Smoke of a chosen color and size (half the width in blocks) that drifts up slowly: fire smoke, vanishing.
+    public static SoulParticleOptions smoke(int color, float size, int lifetime) {
+        return new SoulParticleOptions(SMOKE.get(), color, size, lifetime, 0.94f, -0.02f);
     }
 
     public static SoulParticleOptions lava() {

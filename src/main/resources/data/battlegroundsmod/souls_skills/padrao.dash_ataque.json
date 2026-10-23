@@ -19,10 +19,10 @@
     "tremor": 0.35
   },
   "rastro": {
-    "cor": "#eef6ff",
-    "linhas": 4,
-    "comprimentoLinha": 0.7,
-    "vidaTicks": 6,
+    "cor": "#ffffff",
+    "linhas": 5,
+    "comprimentoLinha": 1.4,
+    "vidaTicks": 7,
     "puffs": 2,
     "anelACadaTicks": 3,
     "tamanhoAnel": 1.3,

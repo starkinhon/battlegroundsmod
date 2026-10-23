@@ -9,6 +9,7 @@ import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Fx;
 import com.starkinhon.battlegroundsmod.combat.Melee;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
+import com.starkinhon.battlegroundsmod.fx.ModParticles;
 import com.starkinhon.battlegroundsmod.power.Ability;
 import com.starkinhon.battlegroundsmod.power.Power;
 
@@ -44,7 +45,7 @@ public final class OnePunch {
         Vec3 look = player.getLookAngle();
         Vec3 front = player.getEyePosition().add(look.scale(2.5));
         LivingEntity target = Combat.raycastTarget(player, 5);
-        Fx.line(level, ParticleTypes.CLOUD, Combat.handPos(player), front.add(look.scale(3)), 0.3);
+        Fx.line(level, ModParticles.puff(0xEEEEEE, 0.3f, 12, 0.9f), Combat.handPos(player), front.add(look.scale(3)), 0.3);
         Fx.burst(level, ParticleTypes.SWEEP_ATTACK, front, 1, 0, 0);
         Fx.sound(level, front, SoundEvents.PLAYER_ATTACK_STRONG, 1.5f, 0.5f);
         if (target != null) {
@@ -68,7 +69,7 @@ public final class OnePunch {
     private static boolean seriousJump(ServerPlayer player, ServerLevel level) {
         player.getData(ModAttachments.POWER).noFallTicks = 200;
         Combat.launchSelf(player, Combat.flatLook(player).scale(0.6).add(0, 2.2, 0));
-        Fx.burst(level, ParticleTypes.CLOUD, player.position(), 30, 0.6, 0.1);
+        Fx.burst(level, ModParticles.puff(0xD8D2C4, 0.45f, 20, 0.9f), player.position(), 30, 0.6, 0.1);
         Fx.sound(level, player.position(), SoundEvents.GENERIC_EXPLODE.value(), 1f, 1.5f);
         Tasks.add(age -> {
             if (!player.isAlive()) {
@@ -90,7 +91,7 @@ public final class OnePunch {
             Fx.burst(level, new BlockParticleOption(ParticleTypes.BLOCK, ground), pos, 120, 3, 0.3);
         }
         for (int r = 2; r <= 8; r += 2) {
-            Fx.ring(level, ParticleTypes.CLOUD, pos.add(0, 0.2, 0), r, r * 6, 0);
+            Fx.ring(level, ModParticles.puff(0xD8D2C4, 0.6f, 30, 0.9f), pos.add(0, 0.2, 0), r, r * 6, 0);
         }
         Fx.burst(level, ParticleTypes.EXPLOSION_EMITTER, pos, 1, 0, 0);
         Combat.explode(player, pos.add(0, -0.5, 0), 2.5f);
@@ -133,7 +134,7 @@ public final class OnePunch {
             Vec3 from = start.add(dir.scale(length * step / travel));
             Vec3 to = start.add(dir.scale(length * (step + 1) / travel));
             Fx.line(level, ParticleTypes.SONIC_BOOM, from, to, 1.5);
-            Fx.burst(level, ParticleTypes.CLOUD, to, 60, radius, 0.3);
+            Fx.burst(level, ModParticles.puff(0xE8E8E8, 0.7f, 25, 0.9f), to, 60, radius, 0.3);
             Fx.burst(level, ParticleTypes.EXPLOSION, to, 3, radius, 0);
             for (LivingEntity target : Combat.alongLine(level, from, to, radius, player)) {
                 if (hit.add(target)) {
