@@ -24,6 +24,8 @@
     "levantarTicks": 0,
     "segurarTicks": 30,
     "altura": 0.5,
+    "distancia": 0.9,
+    "lado": 0,
     "dano": 5
   },
   "esmagar": {

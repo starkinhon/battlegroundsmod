@@ -39,7 +39,6 @@ import net.neoforged.neoforge.network.PacketDistributor;
 public final class Agarrao {
     public static final String SKILL = AgarraoSpec.SKILL;
     // Space between the two bodies while he holds the target up.
-    private static final double HOLD_GAP = 0.3;
     // Madara stays still a little after the slam, standing over the hole.
     private static final int AFTER_SLAM_TICKS = 8;
     // The hole opens from the middle out over this many ticks.
@@ -179,8 +178,9 @@ public final class Agarrao {
         caster.hurtMarked = true;
         Freeze.hold(caster, impact + AFTER_SLAM_TICKS);
 
-        // Held by the neck right in front of him: up over the lift, kept up, then slammed straight down.
-        Vec3 base = caster.position().add(forward.scale(caster.getBbWidth() / 2 + target.getBbWidth() / 2 + HOLD_GAP));
+        // Held by the neck where the Forja puts them: up over the lift, kept up, then slammed straight down.
+        Vec3 right = new Vec3(-forward.z, 0, forward.x);
+        Vec3 base = caster.position().add(forward.scale(agarrar.distancia())).add(right.scale(agarrar.lado()));
         Vec3 start = target.position();
         double height = agarrar.altura();
         Freeze.hold(target, impact, age -> {

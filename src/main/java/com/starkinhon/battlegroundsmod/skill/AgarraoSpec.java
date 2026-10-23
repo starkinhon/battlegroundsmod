@@ -22,8 +22,9 @@ public record AgarraoSpec(String skill, String nome, Tempo tempo, Dash dash, Ras
     }
 
     // Lifted over levantarTicks until the target's feet are altura blocks up (0 = he comes out of the dash already holding
-    // them up), then held segurarTicks. dano lands on the grab.
-    public record Agarrar(int levantarTicks, int segurarTicks, double altura, float dano) {
+    // them up), then held segurarTicks. Held distancia blocks in front of his center and lado blocks to his right (negative
+    // = left); the slam goes straight down from there. dano lands on the grab.
+    public record Agarrar(int levantarTicks, int segurarTicks, double altura, double distancia, double lado, float dano) {
     }
 
     // The slam takes descidaTicks; then the target lies stuck in the hole for presoTicks.
