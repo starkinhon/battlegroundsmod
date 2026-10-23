@@ -20,6 +20,9 @@ import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
+
 // Body poses of skills on the client. The server says who started which skill; the pose over time
 // comes from the skill's spec, so it matches the Forja de Skills page.
 public final class SkillAnimations {
@@ -66,7 +69,8 @@ public final class SkillAnimations {
     public static void play(int entityId, PoseTimeline spec) {
         Entity entity = entity(entityId);
         if (entity != null) {
-            PLAYING.put(entityId, new Playing(spec, entity.tickCount, current(entity), 0, 0));
+            // Always from Minecraft's standing pose, never from whatever was showing, so poses can't stack up.
+            PLAYING.put(entityId, new Playing(spec, entity.tickCount, SkillSpec.Pose.ZERO, 0, 0));
         }
     }
 
@@ -93,15 +97,6 @@ public final class SkillAnimations {
         return level == null ? null : level.getEntity(entityId);
     }
 
-    private static SkillSpec.Pose current(Entity entity) {
-        Playing playing = PLAYING.get(entity.getId());
-        if (playing == null) {
-            return SkillSpec.Pose.ZERO;
-        }
-        double t = playing.time(entity.tickCount - playing.startTick());
-        return t > playing.spec().animationEnd() ? SkillSpec.Pose.ZERO : pose(playing, t, entity.tickCount - playing.startTick());
-    }
-
     private static SkillSpec.Pose pose(Playing playing, double t, double raw) {
         SkillSpec.Pose pose = playing.spec().poseAt(t);
         return raw < BLEND_TICKS ? playing.from().lerp(pose, raw / BLEND_TICKS) : pose;
@@ -121,6 +116,9 @@ public final class SkillAnimations {
             unshift(model);
             return;
         }
+        if (animating) {
+            standStill(model);
+        }
         SkillSpec.Pose pose = animating ? pose(playing, playing.time(raw), raw) : DefesaSpec.get().pose();
         float lean = (float) pose.tronco() * DEG;
         // Lean around the hips like the page does: the neck and shoulders swing with the body.
@@ -135,10 +133,26 @@ public final class SkillAnimations {
         arm(model.rightArm, pose.bracoDir(), lean, cos, sin, 1);
         arm(model.leftArm, pose.bracoEsq(), lean, cos, sin, -1);
         twist(model, (float) pose.giro() * DEG, sin);
+        turn(model, (float) pose.corpo() * DEG);
         leg(model.rightLeg, pose.pernaDir(), 1);
         leg(model.leftLeg, pose.pernaEsq(), -1);
         model.hat.copyFrom(model.head);
         SHIFTED.add(model);
+    }
+
+    // While a move plays, the vanilla pose underneath (walking, punching, sneaking, looking around) is cleared, so the
+    // move's pose always starts from Minecraft's default stance with everything at zero.
+    private static void standStill(HumanoidModel<?> model) {
+        for (ModelPart part : new ModelPart[] {model.head, model.body, model.rightArm, model.leftArm, model.rightLeg, model.leftLeg}) {
+            part.setRotation(0, 0, 0);
+        }
+        model.head.setPos(0, 0, 0);
+        model.body.setPos(0, 0, 0);
+        model.rightArm.setPos(-5, 2, 0);
+        model.leftArm.setPos(5, 2, 0);
+        model.rightLeg.setPos(-1.9f, 12, 0);
+        model.leftLeg.setPos(1.9f, 12, 0);
+        model.crouching = false;
     }
 
     // Turns the chest and carries the shoulders around with it, the way vanilla's attack swing does.
@@ -156,6 +170,32 @@ public final class SkillAnimations {
         model.leftArm.z = -s * 5 - 10 * leanSin;
         model.rightArm.yRot -= giro;
         model.leftArm.yRot -= giro;
+    }
+
+    // Turns the posed upper body (chest and arms, as set above) around the vertical, like the Forja's corpo; the head
+    // stays as it is so it keeps looking ahead.
+    private static void turn(HumanoidModel<?> model, float corpo) {
+        if (corpo == 0) {
+            return;
+        }
+        model.body.yRot -= corpo;
+        float s = (float) Math.sin(corpo);
+        float c = (float) Math.cos(corpo);
+        // The neck goes around with the chest (it is off-center when leaning); the head itself does not turn.
+        float hx = model.head.x;
+        model.head.x = hx * c - model.head.z * s;
+        model.head.z = hx * s + model.head.z * c;
+        for (ModelPart arm : new ModelPart[] {model.rightArm, model.leftArm}) {
+            float x = arm.x;
+            float z = arm.z;
+            arm.x = x * c - z * s;
+            arm.z = x * s + z * c;
+            Quaternionf q = new Quaternionf().rotationY(-corpo).rotateZYX(arm.zRot, arm.yRot, arm.xRot);
+            Vector3f euler = q.getEulerAnglesZYX(new Vector3f());
+            arm.xRot = euler.x;
+            arm.yRot = euler.y;
+            arm.zRot = euler.z;
+        }
     }
 
     private static void leg(ModelPart leg, SkillSpec.Braco perna, int outward) {

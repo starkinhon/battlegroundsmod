@@ -23,9 +23,9 @@
   "agarrar": {
     "levantarTicks": 0,
     "segurarTicks": 30,
-    "altura": 0.5,
-    "distancia": 0.9,
-    "lado": 0,
+    "altura": 0.35,
+    "distancia": 0.85,
+    "lado": 0.25,
     "dano": 5
   },
   "esmagar": {
@@ -57,6 +57,7 @@
   "animacao": {
     "transicaoTicks": 2,
     "dash": {
+      "corpo": 0,
       "cabeca": 2,
       "tronco": 45,
       "bracoDir": {
@@ -69,11 +70,12 @@
       }
     },
     "agarrar": {
+      "corpo": 70,
       "cabeca": -10,
-      "tronco": 10,
+      "tronco": 0,
       "bracoDir": {
-        "frente": 109,
-        "abrir": -8
+        "frente": 0,
+        "abrir": 135
       },
       "bracoEsq": {
         "frente": 10,
@@ -81,18 +83,20 @@
       }
     },
     "levantar": {
-      "cabeca": -15,
-      "tronco": -6,
+      "corpo": 70,
+      "cabeca": -10,
+      "tronco": 0,
       "bracoDir": {
-        "frente": 150,
-        "abrir": -10
+        "frente": 0,
+        "abrir": 135
       },
       "bracoEsq": {
-        "frente": 20,
-        "abrir": 15
+        "frente": 10,
+        "abrir": 10
       }
     },
     "esmagar": {
+      "corpo": 30,
       "cabeca": 20,
       "tronco": 35,
       "bracoDir": {
