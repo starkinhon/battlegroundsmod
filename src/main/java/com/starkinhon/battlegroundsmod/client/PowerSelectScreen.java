@@ -50,9 +50,9 @@ public class PowerSelectScreen extends Screen {
                 .append(power.name().copy().withStyle(s -> s.withColor(power.color()).withBold(true)))
                 .append("\n")
                 .append(power.description().copy().withStyle(ChatFormatting.GRAY));
-        for (int slot = 0; slot <= PowerData.SLOT_ULT; slot++) {
+        for (int slot : power.slots()) {
             text.append("\n")
-                    .append(Component.literal("[").append(Keybinds.ABILITIES.get(slot).getTranslatedKeyMessage()).append("] ")
+                    .append(Component.literal("[").append(Keybinds.forSlot(slot).getTranslatedKeyMessage()).append("] ")
                             .withStyle(slot == PowerData.SLOT_ULT ? ChatFormatting.GOLD : ChatFormatting.YELLOW))
                     .append(power.abilityName(slot));
         }

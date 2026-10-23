@@ -64,6 +64,14 @@ public final class ClientHooks {
         ShoulderCutscene.start(casterId, targetId, ticks);
     }
 
+    public static void grabCutscene(int casterId, int targetId, boolean awakened, int impactTick) {
+        GrabCutscene.start(casterId, targetId, awakened, impactTick);
+    }
+
+    public static void hideEntity(int entityId, int ticks) {
+        Vanish.hide(entityId, ticks);
+    }
+
     public static void ashDeath(int entityId) {
         AshDeath.start(entityId);
     }
