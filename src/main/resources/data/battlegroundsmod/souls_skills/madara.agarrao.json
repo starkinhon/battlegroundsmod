@@ -21,7 +21,7 @@
     "corFumaca": "#2a2633"
   },
   "agarrar": {
-    "levantarTicks": 30,
+    "levantarTicks": 0,
     "segurarTicks": 30,
     "altura": 0.5,
     "dano": 5

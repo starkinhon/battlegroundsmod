@@ -21,7 +21,8 @@ public record AgarraoSpec(String skill, String nome, Tempo tempo, Dash dash, Ras
     public record Rastro(boolean ativa, int densidade, String cor, int fumacaSumir, String corFumaca) {
     }
 
-    // Lifted over levantarTicks until the target's feet are altura blocks up, then held segurarTicks. dano lands on the grab.
+    // Lifted over levantarTicks until the target's feet are altura blocks up (0 = he comes out of the dash already holding
+    // them up), then held segurarTicks. dano lands on the grab.
     public record Agarrar(int levantarTicks, int segurarTicks, double altura, float dano) {
     }
 
@@ -51,7 +52,7 @@ public record AgarraoSpec(String skill, String nome, Tempo tempo, Dash dash, Ras
 
     // Ticks from the grab to the slam landing.
     public int slamTick() {
-        return Math.max(1, agarrar.levantarTicks()) + Math.max(0, agarrar.segurarTicks()) + Math.max(1, esmagar.descidaTicks());
+        return Math.max(0, agarrar.levantarTicks()) + Math.max(0, agarrar.segurarTicks()) + Math.max(1, esmagar.descidaTicks());
     }
 
     // The body animation of one part of the move, same timing as the page: "dash" (wind-up into the dash pose, held
@@ -68,7 +69,7 @@ public record AgarraoSpec(String skill, String nome, Tempo tempo, Dash dash, Ras
                 return t < end ? animacao.dash() : animacao.dash().lerp(SkillSpec.Pose.ZERO, smooth((t - end) / (tr * 3)));
             });
         }
-        int lift = Math.max(1, agarrar.levantarTicks());
+        int lift = Math.max(0, agarrar.levantarTicks());
         int held = lift + Math.max(0, agarrar.segurarTicks());
         int impact = slamTick();
         double down = impact + 10;

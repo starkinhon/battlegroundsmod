@@ -17,6 +17,7 @@ import com.starkinhon.battlegroundsmod.fx.SoulParticleOptions;
 import com.starkinhon.battlegroundsmod.movement.Movement;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
 import com.starkinhon.battlegroundsmod.power.PowerData;
+import com.starkinhon.battlegroundsmod.power.PowerLogic;
 import com.starkinhon.battlegroundsmod.skill.AgarraoSpec;
 
 import net.minecraft.core.BlockPos;
@@ -160,7 +161,7 @@ public final class Agarrao {
         reappear(caster, level, spec);
         AgarraoSpec.Agarrar agarrar = spec.agarrar();
         AgarraoSpec.Esmagar esmagar = spec.esmagar();
-        int lift = Math.max(1, agarrar.levantarTicks());
+        int lift = Math.max(0, agarrar.levantarTicks());
         int held = lift + Math.max(0, agarrar.segurarTicks());
         int impact = spec.slamTick();
         data.busyTicks = impact + AFTER_SLAM_TICKS;
@@ -187,6 +188,7 @@ public final class Agarrao {
                 double k = smooth(age / (double) lift);
                 return start.lerp(base, Math.min(1, age / 2.0)).add(0, height * k, 0);
             }
+            // With no lift he comes out of the dash already holding them up.
             if (age < held) {
                 return base.add(0, height, 0);
             }
@@ -194,6 +196,8 @@ public final class Agarrao {
             return base.add(0, height * (1 - k * k), 0);
         });
         Stun.apply(target, impact + Math.max(0, esmagar.presoTicks()));
+        // Whatever the target was charging is cut off, and no skill (not even a counter) until they get out of the hole.
+        PowerLogic.seal(target, impact + Math.max(0, esmagar.presoTicks()));
         if (spec.cutscene().intangivel()) {
             int ticks = impact + Math.max(0, spec.cutscene().depoisTicks());
             Intangible.hold(caster, ticks);

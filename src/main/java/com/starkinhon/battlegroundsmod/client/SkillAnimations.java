@@ -48,7 +48,12 @@ public final class SkillAnimations {
 
     // "skill#part" plays one part of a move with several steps, timed by the server (see AgarraoSpec.phase); the
     // number after a second # is how long the part runs, when only the server knows (a dash until it reaches someone).
+    // An empty skill stops whatever is playing (the move was cut off).
     public static void play(int entityId, String skill, boolean awakened) {
+        if (skill.isEmpty()) {
+            PLAYING.remove(entityId);
+            return;
+        }
         String[] parts = skill.split("#");
         if (parts.length > 1 && AgarraoSpec.SKILL.equals(parts[0])) {
             int ticks = parts.length > 2 ? Integer.parseInt(parts[2]) : 0;

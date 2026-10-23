@@ -87,13 +87,22 @@ public final class Meteoro {
         PacketDistributor.sendToPlayersTrackingEntityAndSelf(player, new ModPayloads.PlaySkillAnimation(player.getId(), SKILL, data.awakened));
         MeteoroFx.call(level, player);
         Fx.effects(level, SKILL, data.awakened, "uso", player.position(), fall.dir());
-        // The ball itself is drawn on the clients (client/fx/MeteorRenderer), following the same path.
-        for (ServerPlayer viewer : level.players()) {
-            if (viewer.distanceToSqr(target) < VIEW_DISTANCE * VIEW_DISTANCE) {
-                PacketDistributor.sendToPlayer(viewer, new ModPayloads.MeteorFall(SKILL, data.awakened, fall.start(), fall.end(), prep, fallTicks));
-            }
-        }
+        int interrupts = data.interrupts;
+        boolean[] cut = {false};
         Tasks.repeat(prep + fallTicks + 1, age -> {
+            // Cut off during the prep (grabbed, sealed), nothing is thrown.
+            if (cut[0] || age < prep && data.interrupts != interrupts) {
+                cut[0] = true;
+                return;
+            }
+            if (age == prep) {
+                // The ball itself is drawn on the clients (client/fx/MeteorRenderer), following the same path.
+                for (ServerPlayer viewer : level.players()) {
+                    if (viewer.distanceToSqr(target) < VIEW_DISTANCE * VIEW_DISTANCE) {
+                        PacketDistributor.sendToPlayer(viewer, new ModPayloads.MeteorFall(SKILL, data.awakened, fall.start(), fall.end(), 0, fallTicks));
+                    }
+                }
+            }
             if (age < prep + 10) {
                 MeteoroFx.prepare(level, player, spec);
             }

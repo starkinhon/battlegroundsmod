@@ -57,7 +57,12 @@ public final class Katon {
         Map<LivingEntity, Integer> lastHit = new HashMap<>();
         List<Som> sons = spec.sons() != null ? spec.sons() : DEFAULT_SOUNDS;
         long start = level.getGameTime();
+        int interrupts = data.interrupts;
+        // Once the fire is cut off (grabbed, sealed) its sounds stop too.
         Function<String, Vec3> where = onde -> {
+            if (player.getData(ModAttachments.POWER).interrupts != interrupts) {
+                return null;
+            }
             if ("usuario".equals(onde)) {
                 return player.position().add(0, 1, 0);
             }
@@ -73,7 +78,6 @@ public final class Katon {
         SkillSounds.play(level, sons, "explosao", blast, tempo.duracaoTicks(), where, screen);
         SkillSounds.play(level, sons, "fim", tempo.totalTicks(), 0, where, screen);
         boolean awakened = data.awakened;
-        int interrupts = data.interrupts;
         Tasks.add(tick -> {
             if (!player.isAlive() || player.isRemoved() || !power.equals(player.getData(ModAttachments.POWER).power)
                     || player.getData(ModAttachments.POWER).interrupts != interrupts) {

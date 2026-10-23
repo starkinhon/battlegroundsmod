@@ -107,7 +107,8 @@ public final class PowerLogic {
         }
     }
 
-    // Cuts off the moves the fighter has going: wind-ups, fire still pouring out, a counter waiting, a queued punch.
+    // Cuts off the moves the fighter has going: wind-ups, fire still pouring out, a meteor not yet thrown, a counter
+    // waiting, a queued punch, and the body animation that went with them.
     public static void interrupt(LivingEntity target) {
         PowerData data = target.getData(ModAttachments.POWER);
         data.interrupts++;
@@ -115,6 +116,7 @@ public final class PowerLogic {
         data.punchDelay = 0;
         data.punchQueued = false;
         Susanoo.cancel(target);
+        PacketDistributor.sendToPlayersTrackingEntityAndSelf(target, new ModPayloads.PlaySkillAnimation(target.getId(), "", false));
     }
 
     // Runs a move of the caster's power, with no costs and no cooldown set: players go through tryUse, bosses set
