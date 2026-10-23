@@ -5,6 +5,8 @@ import java.util.Comparator;
 import java.util.List;
 
 import com.starkinhon.battlegroundsmod.ModAttachments;
+import com.starkinhon.battlegroundsmod.boss.BossSpec;
+import com.starkinhon.battlegroundsmod.boss.SoulBoss;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.combat.Fx;
@@ -21,6 +23,7 @@ import com.starkinhon.battlegroundsmod.power.PowerLogic;
 import com.starkinhon.battlegroundsmod.skill.AgarraoSpec;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
@@ -137,6 +140,19 @@ public final class Agarrao {
         smoke(level, caster, spec);
         SkillSounds.play(level, spec.sons(), "dash", 0, maxDash, onde -> caster.position(), screens(caster, null));
         Fx.effects(level, SKILL, awakened, "dash", caster, maxDash);
+        // The red line of the eyes while he rushes in (souls_auras: duranteSkills), cut off with a fade when it ends.
+        Fx.effects(level, SKILL, awakened, "olhosLigar", caster, maxDash + 4);
+    }
+
+    // A boss says its line (souls_bosses: fala) in the chat of the player it grabbed.
+    private static void taunt(LivingEntity caster, LivingEntity target) {
+        if (!(caster instanceof SoulBoss boss) || !(target instanceof ServerPlayer player)) {
+            return;
+        }
+        BossSpec.Skill skill = boss.spec().skillForSlot(PowerData.SLOT_EXTRA);
+        if (skill != null && skill.fala() != null && !skill.fala().isEmpty()) {
+            player.sendSystemMessage(Component.literal("<").append(boss.getDisplayName()).append("> " + skill.fala()));
+        }
     }
 
     private static void reappear(LivingEntity caster, ServerLevel level, AgarraoSpec spec) {
@@ -147,6 +163,7 @@ public final class Agarrao {
     private static void miss(LivingEntity caster, ServerLevel level, AgarraoSpec spec, boolean awakened, PowerData data) {
         data.busyTicks = 0;
         reappear(caster, level, spec);
+        Fx.effects(level, SKILL, awakened, "olhosDesligar", caster, 0);
         if (caster.isAlive()) {
             Vec3 now = caster.getDeltaMovement();
             caster.setDeltaMovement(now.x * 0.2, now.y, now.z * 0.2);
@@ -158,6 +175,7 @@ public final class Agarrao {
 
     private static void grab(LivingEntity caster, LivingEntity target, ServerLevel level, AgarraoSpec spec, boolean awakened, PowerData data) {
         reappear(caster, level, spec);
+        Fx.effects(level, SKILL, awakened, "olhosDesligar", caster, 0);
         AgarraoSpec.Agarrar agarrar = spec.agarrar();
         AgarraoSpec.Esmagar esmagar = spec.esmagar();
         int lift = Math.max(0, agarrar.levantarTicks());
@@ -219,6 +237,7 @@ public final class Agarrao {
         }
 
         animation(caster, "agarrar", awakened);
+        taunt(caster, target);
         Combat.hurt(caster, target, agarrar.dano());
         Vec3 neck = Combat.center(target).add(0, target.getBbHeight() * 0.3, 0);
         SkillSounds.play(level, spec.sons(), "agarrar", 0, held, onde -> "alvo".equals(onde) ? Combat.center(target) : caster.position(),

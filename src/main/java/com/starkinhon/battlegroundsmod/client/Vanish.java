@@ -23,6 +23,12 @@ public final class Vanish {
         HIDDEN.put(entityId, level.getGameTime() + ticks);
     }
 
+    public static boolean isHidden(int entityId) {
+        Long until = HIDDEN.get(entityId);
+        var level = Minecraft.getInstance().level;
+        return until != null && level != null && level.getGameTime() < until;
+    }
+
     public static void onRenderLiving(RenderLivingEvent.Pre<?, ?> event) {
         Long until = HIDDEN.get(event.getEntity().getId());
         if (until == null) {

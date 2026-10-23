@@ -81,13 +81,24 @@ public record BossSpec(String boss, String poder, Integer tier, boolean dropAlma
             double raio, int esperaDepoisTicks, String titulo, String subtitulo) {
     }
 
-    // slot: which move of the power (0-3 = Z X C V, 4 = strong attack, 5 = barrage).
+    // slot: which move of the power (0-3 = Z X C V, 4 = strong attack, 5 = barrage, 7 = the fifth skill on B).
     // tipo tells the AI what the move is for: alcance (ranged), controle (stun), contra (counter), ult, golpe (heavy hit),
     // barragem (multi-hit). avisoTicks: the warning before it is used. giroGrausPorTick: how fast it turns to follow the
     // target while the move plays (low = easier to dodge).
     // recargaTicks..recargaMaxTicks: the cooldown is a random value in between (no max = always recargaTicks).
+    // fala: what the boss says in the chat of whoever the move catches (the neck grab), empty = nothing.
     public record Skill(int slot, String tipo, double peso, int recargaTicks, int recargaMaxTicks, int avisoTicks, double distanciaMin, double distanciaMax,
-            float giroGrausPorTick, String avisoCor, String avisoSom) {
+            float giroGrausPorTick, String avisoCor, String avisoSom, String fala) {
+    }
+
+    // The skill entry that uses this slot, or null.
+    public Skill skillForSlot(int slot) {
+        for (Skill skill : skills().values()) {
+            if (skill.slot() == slot) {
+                return skill;
+            }
+        }
+        return null;
     }
 
     // Steps: a skill name from "skills", or soco, investida, esquiva, pulo, aproximar.

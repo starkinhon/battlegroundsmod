@@ -13,6 +13,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.starkinhon.battlegroundsmod.boss.BossSpec;
 import com.starkinhon.battlegroundsmod.boss.SoulBoss;
+import com.starkinhon.battlegroundsmod.client.Vanish;
 import com.starkinhon.battlegroundsmod.fx.ModParticles;
 import com.starkinhon.battlegroundsmod.power.Power;
 import com.starkinhon.battlegroundsmod.power.Powers;
@@ -65,10 +66,13 @@ public final class Aura {
     // Whose eye trail is drawn with which aura's look (bosses in their phase, players after their trigger skill).
     private static final Map<Integer, AuraSpec> EYE_LOOK = new HashMap<>();
     // Players (or anyone) whose eyes trail for a while after a skill (the Mangekyo): entity id -> power and end time.
-    private record EyesOn(String power, long until) {
+    // whileSkill: lit by a move that is still running (duranteSkills), switched off when it ends.
+    private record EyesOn(String power, long until, boolean whileSkill) {
     }
 
     private static final Map<Integer, EyesOn> EYES_ON = new HashMap<>();
+    // Eyes switched off with a fade: entity id -> when (the trail left behind fades, and so does the glow).
+    private static final Map<Integer, Long> FADING = new HashMap<>();
     private static final RandomSource RANDOM = RandomSource.create();
     private static MultiBufferSource.BufferSource buffers;
     private static ClientLevel lastLevel;
@@ -109,6 +113,7 @@ public final class Aura {
             EYES.clear();
             EYE_LOOK.clear();
             EYES_ON.clear();
+            FADING.clear();
             if (level == null) {
                 PLAYERS.clear();
             }
@@ -166,6 +171,7 @@ public final class Aura {
             breathe(level, (LivingEntity) entity, spec, ease(state.level), now);
         }
         EYES_ON.values().removeIf(on -> on.until() < now);
+        FADING.values().removeIf(when -> when < now - 40);
         EYES.entrySet().removeIf(e -> e.getValue().isEmpty() || e.getValue().peekLast().time() < now - 40);
         EYE_LOOK.keySet().removeIf(id -> !EYES.containsKey(id));
     }
@@ -262,7 +268,35 @@ public final class Aura {
             AuraSpec spec = AuraSpec.get(power.id());
             AuraSpec.Olhos eyes = spec == null ? null : spec.olhos();
             if (eyes != null && skill.equals(eyes.ativarSkill()) && eyes.jogadorTicks() > 0) {
-                EYES_ON.put(entityId, new EyesOn(power.id(), ScreenFx.now() + eyes.jogadorTicks()));
+                EYES_ON.put(entityId, new EyesOn(power.id(), ScreenFx.now() + eyes.jogadorTicks(), false));
+                FADING.remove(entityId);
+            }
+        }
+    }
+
+    // A move that lights the eyes only while it runs (duranteSkills): on for at most ticks, or off with a fade. If the
+    // eyes already trail for something else (the Mangekyo), that one stays and this does nothing, so there is one trail.
+    public static void skillEyes(String skill, int entityId, boolean on, int ticks) {
+        long now = ScreenFx.now();
+        EyesOn current = EYES_ON.get(entityId);
+        boolean other = current != null && !current.whileSkill() && current.until() >= now;
+        if (!on) {
+            if (current != null && current.whileSkill()) {
+                EYES_ON.remove(entityId);
+                FADING.put(entityId, now);
+            }
+            return;
+        }
+        if (other) {
+            return;
+        }
+        for (Power power : Powers.all()) {
+            AuraSpec spec = AuraSpec.get(power.id());
+            AuraSpec.Olhos eyes = spec == null ? null : spec.olhos();
+            if (eyes != null && eyes.duranteSkills() != null && eyes.duranteSkills().contains(skill)) {
+                EYES_ON.put(entityId, new EyesOn(power.id(), now + Math.max(1, ticks), true));
+                FADING.remove(entityId);
+                return;
             }
         }
     }
@@ -302,12 +336,37 @@ public final class Aura {
         pose.popPose();
         Minecraft minecraft = Minecraft.getInstance();
         Vec3 camera = minecraft.gameRenderer.getMainCamera().getPosition();
+        addEyeSample(entity.getId(), eyes, camera.add(left.x, left.y, left.z), camera.add(right.x, right.y, right.z));
+    }
+
+    // A body that is not drawn (the invisible dash) has no model to read the eyes from: they are put where its head
+    // looks, at the same spacing.
+    private static void recordHiddenEyes(LivingEntity entity, float partial) {
+        if (!entity.isAlive() || FxAnchor.firstPersonSelf(entity.getId())) {
+            return;
+        }
+        AuraSpec spec = eyeLook(entity);
+        if (spec == null) {
+            return;
+        }
+        AuraSpec.Olhos eyes = spec.olhos();
+        EYE_LOOK.put(entity.getId(), spec);
+        float yaw = entity.getViewYRot(partial) * Mth.DEG_TO_RAD;
+        Vec3 forward = new Vec3(-Mth.sin(yaw), 0, Mth.cos(yaw));
+        Vec3 right = new Vec3(-Mth.cos(yaw), 0, -Mth.sin(yaw));
+        Vec3 middle = entity.getEyePosition(partial).add(forward.scale(-eyes.z() / 16 * 0.9375));
+        Vec3 side = right.scale(eyes.x() / 16 * 0.9375);
+        addEyeSample(entity.getId(), eyes, middle.subtract(side), middle.add(side));
+    }
+
+    private static void addEyeSample(int id, AuraSpec.Olhos eyes, Vec3 left, Vec3 right) {
+        Minecraft minecraft = Minecraft.getInstance();
         double time = ScreenFx.now() + minecraft.getTimer().getGameTimeDeltaPartialTick(false);
-        ArrayDeque<EyeSample> samples = EYES.computeIfAbsent(entity.getId(), id -> new ArrayDeque<>());
+        ArrayDeque<EyeSample> samples = EYES.computeIfAbsent(id, key -> new ArrayDeque<>());
         if (!samples.isEmpty() && samples.peekLast().time() >= time) {
             samples.pollLast();
         }
-        samples.addLast(new EyeSample(time, camera.add(left.x, left.y, left.z), camera.add(right.x, right.y, right.z)));
+        samples.addLast(new EyeSample(time, left, right));
         while (samples.size() > MAX_EYE_SAMPLES || samples.peekFirst().time() < time - eyes.rastroTicks() - 1) {
             samples.pollFirst();
         }
@@ -338,6 +397,11 @@ public final class Aura {
             floor(spec, state, feet, now, k, cor);
             if (!FxAnchor.firstPersonSelf(entity.getId())) {
                 lines(spec, feet, entity.getBbHeight(), now, k, seed, cor, cor2);
+            }
+        }
+        for (Integer id : EYES_ON.keySet()) {
+            if (Vanish.isHidden(id) && level.getEntity(id) instanceof LivingEntity hidden) {
+                recordHiddenEyes(hidden, partial);
             }
         }
         for (Map.Entry<Integer, AuraSpec> entry : EYE_LOOK.entrySet()) {
@@ -416,8 +480,13 @@ public final class Aura {
         float[] cor = FxDraw.rgb(FxDraw.parse(eyes.cor(), 0xFF0A0A));
         float[] cor2 = FxDraw.rgb(FxDraw.parse(eyes.cor2(), 0xFFFFFF));
         EyeSample newest = samples.peekLast();
-        if (now - newest.time() > 2) {
-            return; // not drawn lately (behind the camera, say): no trail hanging in the air
+        double stale = now - newest.time();
+        // Switched off: what is left fades out; otherwise, not drawn lately (behind the camera, say): no trail hanging.
+        Long off = FADING.get(id);
+        float sumir = Math.max(1, eyes.sumirTicks());
+        float alive = off == null ? 1 : 1 - (float) Math.max(0, now - Math.max(off, newest.time())) / sumir;
+        if (off == null ? stale > 2 : alive <= 0) {
+            return;
         }
         for (int side = 0; side < 2; side++) {
             Vector3f prev = null;
@@ -430,7 +499,7 @@ public final class Aura {
                 }
                 Vector3f point = (side == 0 ? s.left() : s.right()).subtract(camera).toVector3f();
                 if (prev != null && prev.distanceSquared(point) > 1.0E-6f) {
-                    float fade = (1 - t) * (1 - t);
+                    float fade = (1 - t) * (1 - t) * alive;
                     float width = (float) eyes.largura() * (1 - 0.7f * t);
                     FxDraw.ribbon(point, prev, width * 2.4f, FxDraw.BEAM, 0.2f, cor, fade * 0.7f, true);
                     FxDraw.ribbon(point, prev, width, FxDraw.BEAM, 0.8f, FxDraw.mix(cor2, cor, Math.min(1, t * 2)), fade, true);
@@ -439,8 +508,8 @@ public final class Aura {
             }
             Vector3f at = (side == 0 ? newest.left() : newest.right()).subtract(camera).toVector3f();
             float flicker = 0.85f + 0.15f * Mth.sin((float) now * 1.7f + side);
-            FxDraw.billboard(at, (float) eyes.brilho() * flicker, (float) now * 0.05f, FxDraw.FLARE, 4 / 32f, cor, 0.9f, true);
-            FxDraw.billboard(at, (float) eyes.brilho() * 0.35f, 0, FxDraw.SOFT, 0.8f, cor2, 1, true);
+            FxDraw.billboard(at, (float) eyes.brilho() * flicker * alive, (float) now * 0.05f, FxDraw.FLARE, 4 / 32f, cor, 0.9f, true);
+            FxDraw.billboard(at, (float) eyes.brilho() * 0.35f * alive, 0, FxDraw.SOFT, 0.8f, cor2, 1, true);
         }
     }
 
