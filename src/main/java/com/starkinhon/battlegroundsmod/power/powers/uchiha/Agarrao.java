@@ -144,6 +144,17 @@ public final class Agarrao {
         Fx.effects(level, SKILL, awakened, "olhosLigar", caster, maxDash + 4);
     }
 
+    // Where Madara can stand at spot (same height, else a step up or down), or where he already is.
+    private static Vec3 standSpot(ServerLevel level, LivingEntity caster, Vec3 spot) {
+        for (double dy : new double[] {0, 1, -1}) {
+            Vec3 at = spot.add(0, dy, 0);
+            if (level.noCollision(caster, caster.getBoundingBox().move(at.subtract(caster.position())))) {
+                return at;
+            }
+        }
+        return caster.position();
+    }
+
     // A boss says its line (souls_bosses: fala) in the chat of the player it grabbed.
     private static void taunt(LivingEntity caster, LivingEntity target) {
         if (!(caster instanceof SoulBoss boss) || !(target instanceof ServerPlayer player)) {
@@ -183,14 +194,18 @@ public final class Agarrao {
         int impact = spec.slamTick();
         data.busyTicks = impact + AFTER_SLAM_TICKS;
 
-        // Madara stops dead, facing the target.
+        // The dash ends right where the target was: Madara comes out at the spot from which his hold point (distancia
+        // ahead, lado to the side) is the target's own block, facing it. If that spot is blocked, he stops where he is.
         Vec3 forward = flatTo(caster, target);
         float yRot = (float) (Mth.atan2(-forward.x, forward.z) * Mth.RAD_TO_DEG);
+        Vec3 side = new Vec3(-forward.z, 0, forward.x);
+        Vec3 stand = standSpot(level, caster, target.position().subtract(forward.scale(spec.agarrar().distancia()))
+                .subtract(side.scale(spec.agarrar().lado())));
         caster.setDeltaMovement(Vec3.ZERO);
         if (caster instanceof ServerPlayer player) {
-            player.connection.teleport(caster.getX(), caster.getY(), caster.getZ(), yRot, 0);
+            player.connection.teleport(stand.x, stand.y, stand.z, yRot, 0);
         } else {
-            caster.moveTo(caster.getX(), caster.getY(), caster.getZ(), yRot, 0);
+            caster.moveTo(stand.x, stand.y, stand.z, yRot, 0);
             caster.setYHeadRot(yRot);
         }
         caster.hurtMarked = true;
