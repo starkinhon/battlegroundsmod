@@ -130,8 +130,11 @@ public final class SkillAnimations {
         model.head.xRot += (float) pose.cabeca() * DEG;
         model.head.y += 12 - 12 * cos;
         model.head.z = -12 * sin;
-        arm(model.rightArm, pose.bracoDir(), lean, cos, sin, 1);
-        arm(model.leftArm, pose.bracoEsq(), lean, cos, sin, -1);
+        // Skill poses (all made in the Forja) open the arm before raising it, like the page; combo punches that twist
+        // the chest (giro) and the guard keep the older order they were tuned with.
+        boolean forja = animating && pose.giro() == 0;
+        arm(model.rightArm, pose.bracoDir(), lean, cos, sin, 1, forja);
+        arm(model.leftArm, pose.bracoEsq(), lean, cos, sin, -1, forja);
         twist(model, (float) pose.giro() * DEG, sin);
         turn(model, (float) pose.corpo() * DEG);
         leg(model.rightLeg, pose.pernaDir(), 1);
@@ -217,9 +220,16 @@ public final class SkillAnimations {
     }
 
     // frente raises the arm forward; abrir opens it to the side (negative closes it towards the chest).
-    private static void arm(ModelPart arm, SkillSpec.Braco braco, float lean, float cos, float sin, int outward) {
+    // forja: opened first, then raised (the page's X-then-Z), turned into Minecraft's Z-Y-X angles.
+    private static void arm(ModelPart arm, SkillSpec.Braco braco, float lean, float cos, float sin, int outward, boolean forja) {
         arm.xRot += lean - (float) braco.frente() * DEG;
         arm.zRot += outward * (float) braco.abrir() * DEG;
+        if (forja) {
+            Vector3f euler = new Quaternionf().rotationY(arm.yRot).rotateX(arm.xRot).rotateZ(arm.zRot).getEulerAnglesZYX(new Vector3f());
+            arm.xRot = euler.x;
+            arm.yRot = euler.y;
+            arm.zRot = euler.z;
+        }
         arm.y += 10 - 10 * cos;
         arm.z = -10 * sin;
     }
