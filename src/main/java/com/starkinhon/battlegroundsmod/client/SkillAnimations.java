@@ -136,6 +136,7 @@ public final class SkillAnimations {
         turn(model, (float) pose.corpo() * DEG);
         leg(model.rightLeg, pose.pernaDir(), 1);
         leg(model.leftLeg, pose.pernaEsq(), -1);
+        turn((float) pose.pernas() * DEG, model.rightLeg, model.leftLeg);
         model.hat.copyFrom(model.head);
         SHIFTED.add(model);
     }
@@ -185,16 +186,26 @@ public final class SkillAnimations {
         float hx = model.head.x;
         model.head.x = hx * c - model.head.z * s;
         model.head.z = hx * s + model.head.z * c;
-        for (ModelPart arm : new ModelPart[] {model.rightArm, model.leftArm}) {
-            float x = arm.x;
-            float z = arm.z;
-            arm.x = x * c - z * s;
-            arm.z = x * s + z * c;
-            Quaternionf q = new Quaternionf().rotationY(-corpo).rotateZYX(arm.zRot, arm.yRot, arm.xRot);
+        turn(corpo, model.rightArm, model.leftArm);
+    }
+
+    // Carries limbs, already posed, around the vertical through the middle of the body.
+    private static void turn(float angle, ModelPart... parts) {
+        if (angle == 0) {
+            return;
+        }
+        float s = (float) Math.sin(angle);
+        float c = (float) Math.cos(angle);
+        for (ModelPart part : parts) {
+            float x = part.x;
+            float z = part.z;
+            part.x = x * c - z * s;
+            part.z = x * s + z * c;
+            Quaternionf q = new Quaternionf().rotationY(-angle).rotateZYX(part.zRot, part.yRot, part.xRot);
             Vector3f euler = q.getEulerAnglesZYX(new Vector3f());
-            arm.xRot = euler.x;
-            arm.yRot = euler.y;
-            arm.zRot = euler.z;
+            part.xRot = euler.x;
+            part.yRot = euler.y;
+            part.zRot = euler.z;
         }
     }
 

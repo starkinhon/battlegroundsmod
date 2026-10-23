@@ -78,15 +78,17 @@ public record SkillSpec(String skill, String nome, Tempo tempo, Origem origem, D
     // giro turns the upper body around the spine (positive brings the right shoulder forward, for a right punch).
     // The legs and giro are newer than the Forja, so older files leave them out and they stay still.
     // corpo turns the whole upper body sideways (same sign as giro) while the head keeps looking ahead; unlike giro, the
-    // arms are raised and opened from the turned body, so with corpo 90 "abrir" points them straight ahead.
+    // arms are raised and opened from the turned body, so with corpo 90 "abrir" points them straight ahead. pernas turns
+    // the legs the same way around the hips.
     public record Pose(double cabeca, double tronco, Braco bracoDir, Braco bracoEsq, double giro, Braco pernaDir, Braco pernaEsq,
-            double corpo) {
-        public static final Pose ZERO = new Pose(0, 0, Braco.ZERO, Braco.ZERO, 0, Braco.ZERO, Braco.ZERO, 0);
+            double corpo, double pernas) {
+        public static final Pose ZERO = new Pose(0, 0, Braco.ZERO, Braco.ZERO, 0, Braco.ZERO, Braco.ZERO, 0, 0);
 
         public Pose lerp(Pose to, double t) {
             return new Pose(cabeca + (to.cabeca - cabeca) * t, tronco + (to.tronco - tronco) * t,
                     Braco.of(bracoDir).lerp(to.bracoDir, t), Braco.of(bracoEsq).lerp(to.bracoEsq, t), giro + (to.giro - giro) * t,
-                    Braco.of(pernaDir).lerp(to.pernaDir, t), Braco.of(pernaEsq).lerp(to.pernaEsq, t), corpo + (to.corpo - corpo) * t);
+                    Braco.of(pernaDir).lerp(to.pernaDir, t), Braco.of(pernaEsq).lerp(to.pernaEsq, t), corpo + (to.corpo - corpo) * t,
+                    pernas + (to.pernas - pernas) * t);
         }
     }
 }

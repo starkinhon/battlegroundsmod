@@ -58,6 +58,7 @@
     "transicaoTicks": 2,
     "dash": {
       "corpo": 0,
+      "pernas": 0,
       "cabeca": 2,
       "tronco": 45,
       "bracoDir": {
@@ -71,6 +72,7 @@
     },
     "agarrar": {
       "corpo": 70,
+      "pernas": 90,
       "cabeca": -10,
       "tronco": 0,
       "bracoDir": {
@@ -84,6 +86,7 @@
     },
     "levantar": {
       "corpo": 70,
+      "pernas": 90,
       "cabeca": -10,
       "tronco": 0,
       "bracoDir": {
@@ -97,6 +100,7 @@
     },
     "esmagar": {
       "corpo": 30,
+      "pernas": 40,
       "cabeca": 20,
       "tronco": 35,
       "bracoDir": {
