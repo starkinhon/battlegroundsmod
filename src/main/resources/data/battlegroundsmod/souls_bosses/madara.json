@@ -25,14 +25,14 @@
     "altura": 38
   },
   "percepcao": {
-    "intervaloDecisaoTicks": 3,
+    "intervaloDecisaoTicks": 5,
     "aleatoriedade": 0.25,
     "trocarHumorTicks": 60
   },
   "distancias": {
     "soco": 3.0,
     "ideal": 7,
-    "intervaloSocoTicks": 6
+    "intervaloSocoTicks": 9
   },
   "movimento": {
     "velocidadeAndar": 0.9,
@@ -40,28 +40,28 @@
     "trocarLadoTicks": 30
   },
   "ritmo": {
-    "calmoMinTicks": 30,
-    "calmoMaxTicks": 60,
-    "rapidoMinTicks": 100,
-    "rapidoMaxTicks": 180,
+    "calmoMinTicks": 50,
+    "calmoMaxTicks": 90,
+    "rapidoMinTicks": 60,
+    "rapidoMaxTicks": 110,
     "velocidadeCalmo": 0.8,
-    "velocidadeRapido": 2.3,
-    "recargaInvestidaRapido": 14
+    "velocidadeRapido": 1.6,
+    "recargaInvestidaRapido": 28
   },
   "investida": {
-    "recargaTicks": 35,
+    "recargaTicks": 55,
     "distanciaMin": 6,
     "forca": 1.7,
     "altura": 0.25
   },
   "passoSombra": {
-    "recargaTicks": 50,
+    "recargaTicks": 90,
     "distanciaMin": 3,
     "distanciaMax": 16,
     "atras": 2.0,
-    "chance": 0.5,
-    "chanceCalmo": 0.15,
-    "chanceNaEsquiva": 0.4
+    "chance": 0.3,
+    "chanceCalmo": 0.1,
+    "chanceNaEsquiva": 0.3
   },
   "puloDuplo": {
     "alturaMin": 2.5,
@@ -73,7 +73,7 @@
     "distancia": 3
   },
   "reacoes": {
-    "chanceEsquivarSkill": 0.6,
+    "chanceEsquivarSkill": 0.45,
     "chanceEsquivarProjetil": 0.45,
     "chanceContraAtaque": 0.6,
     "chanceEsquivarUlt": 0.85,
@@ -82,7 +82,7 @@
     "punirTicks": 100,
     "multPunir": 3,
     "golpesParaFugir": 2,
-    "chanceFugirAoApanhar": 0.75
+    "chanceFugirAoApanhar": 0.5
   },
   "ultFinal": {
     "ativa": true,
@@ -296,9 +296,9 @@
       "menosRecargaTicks": 0,
       "multVelocidade": 1.0,
       "multAviso": 1.0,
-      "reacaoTicks": 5,
+      "reacaoTicks": 6,
       "chanceReacao": 0.7,
-      "pausaTicks": 6,
+      "pausaTicks": 8,
       "despertado": false,
       "corBarra": "red",
       "transicaoTicks": 0,
@@ -323,11 +323,11 @@
       "agressividade": 0.85,
       "multRecarga": 1.0,
       "menosRecargaTicks": 80,
-      "multVelocidade": 1.15,
+      "multVelocidade": 1.1,
       "multAviso": 0.85,
-      "reacaoTicks": 4,
+      "reacaoTicks": 5,
       "chanceReacao": 0.85,
-      "pausaTicks": 4,
+      "pausaTicks": 6,
       "despertado": false,
       "corBarra": "purple",
       "transicaoTicks": 40,
@@ -356,11 +356,11 @@
       "agressividade": 0.85,
       "multRecarga": 1.0,
       "menosRecargaTicks": 80,
-      "multVelocidade": 1.15,
+      "multVelocidade": 1.1,
       "multAviso": 0.85,
-      "reacaoTicks": 4,
+      "reacaoTicks": 5,
       "chanceReacao": 0.85,
-      "pausaTicks": 4,
+      "pausaTicks": 6,
       "despertado": false,
       "corBarra": "purple",
       "transicaoTicks": 0,
@@ -389,11 +389,11 @@
       "agressividade": 0.95,
       "multRecarga": 1.0,
       "menosRecargaTicks": 160,
-      "multVelocidade": 1.3,
+      "multVelocidade": 1.2,
       "multAviso": 0.7,
-      "reacaoTicks": 2,
+      "reacaoTicks": 4,
       "chanceReacao": 1.0,
-      "pausaTicks": 2,
+      "pausaTicks": 4,
       "despertado": false,
       "corBarra": "white",
       "transicaoTicks": 60,
