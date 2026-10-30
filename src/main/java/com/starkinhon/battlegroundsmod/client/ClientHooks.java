@@ -70,6 +70,17 @@ public final class ClientHooks {
         GrabCutscene.start(casterId, targetId, awakened, impactTick);
     }
 
+    public static void katonBall(int id, int casterId, int mode, Vec3 pos, Vec3 velocity, float radius, float maxRadius, int ticks) {
+        com.starkinhon.battlegroundsmod.client.fx.KatonBallRenderer.update(id, casterId, mode, pos, velocity, radius, maxRadius, ticks);
+    }
+
+    // The Izanami turned time back: whatever skill effects were still showing never happened.
+    public static void rewind() {
+        SkillEffects.clear();
+        MeteorRenderer.clear();
+        com.starkinhon.battlegroundsmod.client.fx.KatonBallRenderer.clear();
+    }
+
     public static void hideEntity(int entityId, int ticks) {
         Vanish.hide(entityId, ticks);
     }

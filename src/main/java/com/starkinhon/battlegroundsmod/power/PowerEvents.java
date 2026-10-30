@@ -12,6 +12,7 @@ import com.starkinhon.battlegroundsmod.combat.Melee;
 import com.starkinhon.battlegroundsmod.combat.Stun;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
 import com.starkinhon.battlegroundsmod.movement.Movement;
+import com.starkinhon.battlegroundsmod.power.powers.uchiha.Izanami;
 import com.starkinhon.battlegroundsmod.power.powers.uchiha.Susanoo;
 import com.starkinhon.battlegroundsmod.skill.ComboSpec;
 
@@ -59,6 +60,8 @@ public final class PowerEvents {
         NeoForge.EVENT_BUS.addListener(PowerEvents::onRightClickBlock);
         NeoForge.EVENT_BUS.addListener(PowerEvents::onLeftClickBlock);
         NeoForge.EVENT_BUS.addListener(PowerEvents::onStartTracking);
+        NeoForge.EVENT_BUS.addListener(Izanami::onEntityJoin);
+        NeoForge.EVENT_BUS.addListener(Izanami::onDeath);
     }
 
     private static void onServerTick(ServerTickEvent.Post event) {
@@ -71,6 +74,7 @@ public final class PowerEvents {
         Intangible.clear();
         Defense.clear();
         Susanoo.clear();
+        Izanami.clear();
     }
 
     private static void onPlayerTick(PlayerTickEvent.Post event) {

@@ -296,7 +296,7 @@ public class SoulBossAI extends Goal {
     }
 
     private void onTargetCast(int slot, double distance, BossSpec.Reacoes reacoes, BossSpec.Fase fase) {
-        if (slot == PowerData.SLOT_ULT) {
+        if (PowerData.isUlt(slot)) {
             // They spent their ult: get out of it, then make them pay.
             punishLeft = reacoes.punirTicks();
             schedule(Reaction.DODGE_BACK, reacoes.chanceEsquivarUlt(), fase);
@@ -509,6 +509,13 @@ public class SoulBossAI extends Goal {
                 }
                 score *= 1.5;
             }
+            case "izanami" -> {
+                // The escape from death: only from half life down, and best while being pressed.
+                if (boss.getHealth() / boss.getMaxHealth() > 0.5) {
+                    return 0;
+                }
+                score *= pressure.isEmpty() ? 1 : 2;
+            }
             case "ult" -> {
                 score *= stunned ? 3 : distance < 8 ? 0.3 : 1;
                 score *= boss.getHealth() / boss.getMaxHealth() < 0.5 ? 1.5 : 1;
@@ -602,7 +609,9 @@ public class SoulBossAI extends Goal {
         int cooldown = skill.recargaTicks() + (skill.recargaMaxTicks() > skill.recargaTicks()
                 ? random.nextInt(skill.recargaMaxTicks() - skill.recargaTicks() + 1) : 0);
         BossSpec.Fase fase = boss.fase();
-        boss.powerData().cooldowns[skill.slot()] = Math.max(20, (int) Math.round(cooldown * fase.multRecarga()) - fase.menosRecargaTicks());
+        // Shift variants keep the player's cooldowns: the phases don't shorten them.
+        boss.powerData().cooldowns[skill.slot()] = skill.slot() >= PowerData.SLOT_SHIFT ? cooldown
+                : Math.max(20, (int) Math.round(cooldown * fase.multRecarga()) - fase.menosRecargaTicks());
         if ("golpe".equals(skill.tipo()) || "barragem".equals(skill.tipo())) {
             boss.swing(InteractionHand.MAIN_HAND);
         }

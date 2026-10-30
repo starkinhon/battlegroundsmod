@@ -1,0 +1,307 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "madara.katon_gigante",
+  "nome": "Katon: Grande Bola de Fogo",
+  "tempo": {
+    "atrasoTicks": 8,
+    "duracaoTicks": 80
+  },
+  "pulo": {
+    "forca": 1.3,
+    "subirTicks": 8
+  },
+  "carga": {
+    "minTicks": 10,
+    "maxTicks": 80,
+    "raioMin": 1.2,
+    "raioMax": 6.5,
+    "acima": 1.0
+  },
+  "voo": {
+    "velocidade": 1.3,
+    "alcance": 90
+  },
+  "explosao": {
+    "raioMult": 2.4,
+    "danoMin": 12,
+    "danoMax": 55,
+    "empurrao": 2.6,
+    "quebrarBlocos": true,
+    "crateraMult": 1.2,
+    "fogo": true
+  },
+  "planarTicks": 60,
+  "animacao": {
+    "transicaoTicks": 6,
+    "preparo": {
+      "cabeca": -20,
+      "tronco": -6,
+      "bracoDir": {
+        "frente": 165,
+        "abrir": -18
+      },
+      "bracoEsq": {
+        "frente": 165,
+        "abrir": -18
+      }
+    },
+    "sopro": {
+      "cabeca": -35,
+      "tronco": -8,
+      "bracoDir": {
+        "frente": 175,
+        "abrir": -25
+      },
+      "bracoEsq": {
+        "frente": 175,
+        "abrir": -25
+      }
+    }
+  },
+  "vfx": [
+    {
+      "tipo": "anelChao",
+      "momento": "pulo",
+      "raio": 4,
+      "tamanho": 0.8,
+      "cor": "#ff7a10",
+      "vidaTicks": 12
+    },
+    {
+      "tipo": "fumaca",
+      "momento": "pulo",
+      "quantidade": 10,
+      "raio": 3,
+      "tamanho": 2,
+      "cor": "#3a3436",
+      "vidaTicks": 30
+    },
+    {
+      "tipo": "distorcao",
+      "momento": "carga",
+      "seguir": "cabeca",
+      "modo": "lente",
+      "raio": 5,
+      "forca": 0.35,
+      "altura": 4,
+      "cor": "#ff9050",
+      "tinta": 0.06,
+      "duraMomento": true
+    },
+    {
+      "tipo": "clarao",
+      "momento": "lancar",
+      "tamanho": 6,
+      "quantidade": 10,
+      "cor": "#ff6a10",
+      "cor2": "#fff6d0",
+      "vidaTicks": 10
+    },
+    {
+      "tipo": "anel",
+      "momento": "lancar",
+      "raio": 8,
+      "tamanho": 0.9,
+      "cor": "#ffb070",
+      "vidaTicks": 12
+    },
+    {
+      "tipo": "fov",
+      "momento": "lancar",
+      "forca": 5,
+      "vidaTicks": 10,
+      "alcance": 20
+    },
+    {
+      "tipo": "impactFrame",
+      "momento": "explosao",
+      "sequencia": [
+        "branco",
+        "cor",
+        "invertido",
+        "manga",
+        "cor",
+        "branco"
+      ],
+      "ticksPorQuadro": 1,
+      "cor": "#ff5a10",
+      "alcance": 80
+    },
+    {
+      "tipo": "flash",
+      "momento": "explosao",
+      "inicio": 3,
+      "cor": "#ffe0b0",
+      "forca": 0.45,
+      "vidaTicks": 10,
+      "alcance": 90
+    },
+    {
+      "tipo": "blurRadial",
+      "momento": "explosao",
+      "inicio": 3,
+      "forca": 1.1,
+      "vidaTicks": 18,
+      "alcance": 80
+    },
+    {
+      "tipo": "fov",
+      "momento": "explosao",
+      "inicio": 3,
+      "forca": 8,
+      "vidaTicks": 14,
+      "alcance": 60
+    },
+    {
+      "tipo": "distorcao",
+      "momento": "explosao",
+      "modo": "onda",
+      "raio": 30,
+      "forca": 1.0,
+      "velocidade": 18,
+      "altura": 2,
+      "cor": "#ff8040",
+      "tinta": 0.12,
+      "vidaTicks": 35
+    },
+    {
+      "tipo": "clarao",
+      "momento": "explosao",
+      "tamanho": 16,
+      "quantidade": 10,
+      "cor": "#ff6a10",
+      "cor2": "#fff6d0",
+      "altura": 2,
+      "vidaTicks": 18
+    },
+    {
+      "tipo": "estrela",
+      "momento": "explosao",
+      "quantidade": 32,
+      "comprimento": 28,
+      "tamanho": 5,
+      "cor": "#ffb070",
+      "altura": 2,
+      "vidaTicks": 12
+    },
+    {
+      "tipo": "anelChao",
+      "momento": "explosao",
+      "raio": 34,
+      "tamanho": 3,
+      "cor": "#ff6a20",
+      "vidaTicks": 26,
+      "velocidade": 1.8
+    },
+    {
+      "tipo": "fogo",
+      "momento": "explosao",
+      "quantidade": 28,
+      "raio": 12,
+      "tamanho": 8,
+      "cor": "#d0301a",
+      "cor2": "#fff0a0",
+      "altura": 1,
+      "vidaTicks": 44
+    },
+    {
+      "tipo": "faiscas",
+      "momento": "explosao",
+      "quantidade": 70,
+      "velocidade": 1.3,
+      "comprimento": 2.5,
+      "tamanho": 4,
+      "cor": "#ff6020",
+      "cor2": "#fff0c0",
+      "altura": 2,
+      "vidaTicks": 30
+    },
+    {
+      "tipo": "fumaca",
+      "momento": "explosao",
+      "inicio": 4,
+      "quantidade": 18,
+      "raio": 18,
+      "tamanho": 10,
+      "cor": "#2c2426",
+      "vidaTicks": 70
+    },
+    {
+      "tipo": "impactFrame",
+      "momento": "explosaoPequena",
+      "sequencia": [
+        "branco",
+        "cor",
+        "invertido",
+        "branco"
+      ],
+      "ticksPorQuadro": 1,
+      "cor": "#ff5a10",
+      "alcance": 40
+    },
+    {
+      "tipo": "clarao",
+      "momento": "explosaoPequena",
+      "tamanho": 7,
+      "quantidade": 8,
+      "cor": "#ff6a10",
+      "cor2": "#fff6d0",
+      "altura": 1,
+      "vidaTicks": 14
+    },
+    {
+      "tipo": "distorcao",
+      "momento": "explosaoPequena",
+      "modo": "onda",
+      "raio": 12,
+      "forca": 0.7,
+      "velocidade": 12,
+      "altura": 1,
+      "cor": "#ff8040",
+      "tinta": 0.1,
+      "vidaTicks": 24
+    },
+    {
+      "tipo": "anelChao",
+      "momento": "explosaoPequena",
+      "raio": 14,
+      "tamanho": 2,
+      "cor": "#ff6a20",
+      "vidaTicks": 18
+    },
+    {
+      "tipo": "fogo",
+      "momento": "explosaoPequena",
+      "quantidade": 14,
+      "raio": 5,
+      "tamanho": 4,
+      "cor": "#d0301a",
+      "cor2": "#fff0a0",
+      "altura": 1,
+      "vidaTicks": 34
+    },
+    {
+      "tipo": "faiscas",
+      "momento": "explosaoPequena",
+      "quantidade": 35,
+      "velocidade": 0.9,
+      "comprimento": 1.6,
+      "tamanho": 2.5,
+      "cor": "#ff6020",
+      "cor2": "#fff0c0",
+      "altura": 1,
+      "vidaTicks": 24
+    },
+    {
+      "tipo": "fumaca",
+      "momento": "explosaoPequena",
+      "inicio": 3,
+      "quantidade": 10,
+      "raio": 8,
+      "tamanho": 5,
+      "cor": "#2c2426",
+      "vidaTicks": 50
+    }
+  ],
+  "despertado": {}
+}

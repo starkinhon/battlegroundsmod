@@ -11,12 +11,17 @@ public class PowerData {
 
     // Slots 0-3 are the power's abilities (Z, X, C, V), 4-6 are the shared base attacks (strong attack, barrage, dash
     // attack), picked in the base attack selector above the hotbar, and 7 is a fifth ability (B) for powers that have one.
-    public static final int SLOT_COUNT = 8;
+    // 8-11 are the Shift variants of Z, X, C and V (11 is a second ult), for powers that have them.
+    public static final int SLOT_COUNT = 12;
     public static final int SLOT_ULT = 3;
     public static final int SLOT_STRONG = 4;
     public static final int SLOT_BARRAGE = 5;
     public static final int SLOT_DASH_ATTACK = 6;
     public static final int SLOT_EXTRA = 7;
+    public static final int SLOT_SHIFT = 8;
+    public static final int SLOT_SHIFT_ULT = 11;
+    // A cooldown this long means the move is spent until death or a power swap (the Izanami). The HUD shows it as used.
+    public static final int SPENT = 1_000_000_000;
 
     public static final Codec<PowerData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.STRING.optionalFieldOf("power", "").forGetter(d -> d.power),
@@ -60,6 +65,8 @@ public class PowerData {
     public int interrupts = 0;
     // Players: the key that uses the picked base attack is held down (a held Forte charges, a held Barragem lasts longer).
     public boolean attackHeld = false;
+    // Players: a skill key is held down (a charged skill like the giant Katon is thrown when it comes up).
+    public boolean abilityHeld = false;
     // Players: the aura state the watchers were last told (the power while in combat, "" when off; null = never sent).
     public String auraSent = null;
 
@@ -71,6 +78,15 @@ public class PowerData {
         this.ult = ult;
         this.receivedBook = receivedBook;
         this.tier = tier;
+    }
+
+    public static boolean isUlt(int slot) {
+        return slot == SLOT_ULT || slot == SLOT_SHIFT_ULT;
+    }
+
+    // The normal skill a Shift variant belongs to (8 -> 0), or the slot itself.
+    public static int baseSlot(int slot) {
+        return slot >= SLOT_SHIFT ? slot - SLOT_SHIFT : slot;
     }
 
     public boolean hasPower() {

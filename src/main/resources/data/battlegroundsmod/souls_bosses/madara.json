@@ -189,6 +189,58 @@
       "avisoCor": "#d10a0a",
       "avisoSom": "",
       "fala": "Estou decepcionado. Esperava Mais"
+    },
+    "katon_gigante": {
+      "slot": 8,
+      "tipo": "alcance",
+      "peso": 1.3,
+      "recargaTicks": 1000,
+      "recargaMaxTicks": 1000,
+      "avisoTicks": 8,
+      "distanciaMin": 10,
+      "distanciaMax": 45,
+      "giroGrausPorTick": 4,
+      "avisoCor": "#ff7a10",
+      "avisoSom": "minecraft:item.firecharge.use"
+    },
+    "izanami": {
+      "slot": 9,
+      "tipo": "izanami",
+      "peso": 2.0,
+      "recargaTicks": 1000000000,
+      "recargaMaxTicks": 1000000000,
+      "avisoTicks": 10,
+      "distanciaMin": 0,
+      "distanciaMax": 40,
+      "giroGrausPorTick": 30,
+      "avisoCor": "#d10a0a",
+      "avisoSom": "minecraft:block.beacon.activate"
+    },
+    "susanoo_corte": {
+      "slot": 10,
+      "tipo": "alcance",
+      "peso": 1.4,
+      "recargaTicks": 2000,
+      "recargaMaxTicks": 2000,
+      "avisoTicks": 6,
+      "distanciaMin": 5,
+      "distanciaMax": 60,
+      "giroGrausPorTick": 6,
+      "avisoCor": "#38bdff",
+      "avisoSom": "minecraft:block.beacon.activate"
+    },
+    "meteoro_duplo": {
+      "slot": 11,
+      "tipo": "ult",
+      "peso": 1.0,
+      "recargaTicks": 3000,
+      "recargaMaxTicks": 3000,
+      "avisoTicks": 12,
+      "distanciaMin": 0,
+      "distanciaMax": 50,
+      "giroGrausPorTick": 30,
+      "avisoCor": "#7a1020",
+      "avisoSom": "minecraft:entity.wither.ambient"
     }
   },
   "combos": {
@@ -283,6 +335,39 @@
       "subtitulo": "Agora eu estou falando sério"
     },
     {
+      "comecaEm": 0.5,
+      "skills": [
+        "katon",
+        "mangekyo",
+        "susanoo",
+        "forte",
+        "barragem",
+        "agarrao",
+        "katon_gigante",
+        "izanami",
+        "susanoo_corte",
+        "meteoro_duplo"
+      ],
+      "combos": [
+        "fogo_cruzado",
+        "passo_sombra",
+        "olhar_do_inferno"
+      ],
+      "agressividade": 0.85,
+      "multRecarga": 1.0,
+      "menosRecargaTicks": 80,
+      "multVelocidade": 1.15,
+      "multAviso": 0.85,
+      "reacaoTicks": 4,
+      "chanceReacao": 0.85,
+      "pausaTicks": 4,
+      "despertado": false,
+      "corBarra": "purple",
+      "transicaoTicks": 0,
+      "titulo": "",
+      "subtitulo": ""
+    },
+    {
       "comecaEm": 0.3,
       "skills": [
         "katon",
@@ -290,7 +375,11 @@
         "susanoo",
         "forte",
         "barragem",
-        "agarrao"
+        "agarrao",
+        "katon_gigante",
+        "izanami",
+        "susanoo_corte",
+        "meteoro_duplo"
       ],
       "combos": [
         "fogo_cruzado",

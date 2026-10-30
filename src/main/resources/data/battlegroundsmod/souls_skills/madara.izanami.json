@@ -1,0 +1,153 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "madara.izanami",
+  "nome": "Izanami",
+  "gravacaoTicks": 300,
+  "raio": 80,
+  "voltarTicks": 60,
+  "cutscene": {
+    "ativa": true,
+    "duracaoTicks": 50,
+    "aproximarTicks": 19,
+    "voltarTicks": 12,
+    "particulasTicks": 22,
+    "distanciaInicio": 3,
+    "distanciaFim": 0.55,
+    "altura": 0.05,
+    "esconderHud": true,
+    "intangivel": true
+  },
+  "vfx": [
+    {
+      "tipo": "impactFrame",
+      "momento": "uso",
+      "sequencia": [
+        "mangaInvertido",
+        "nada",
+        "mangaInvertido",
+        "cor",
+        "nada"
+      ],
+      "ticksPorQuadro": 1,
+      "cor": "#d10a0a",
+      "alcance": 30
+    },
+    {
+      "tipo": "clarao",
+      "momento": "uso",
+      "seguir": "cabeca",
+      "tamanho": 0.9,
+      "quantidade": 4,
+      "cor": "#d10a0a",
+      "cor2": "#ffd0d0",
+      "deslocamento": 0.3,
+      "vidaTicks": 14
+    },
+    {
+      "tipo": "distorcao",
+      "momento": "uso",
+      "seguir": "cabeca",
+      "modo": "redemoinho",
+      "raio": 3,
+      "forca": 0.7,
+      "cor": "#d10a0a",
+      "tinta": 0.25,
+      "vidaTicks": 30
+    },
+    {
+      "tipo": "anelCabeca",
+      "momento": "gravando",
+      "seguir": "cabeca",
+      "duraMomento": true,
+      "raio": 0.7,
+      "altura": 0.45,
+      "tamanho": 0.06,
+      "girar": 0.04,
+      "cor": "#ff3030",
+      "cor2": "#ffffff",
+      "primeiraPessoa": 0.2
+    },
+    {
+      "tipo": "olho",
+      "momento": "cutscene",
+      "seguir": "cabeca",
+      "duraMomento": true,
+      "deslocamento": -0.6,
+      "altura": 0.05,
+      "tamanho": 1.7,
+      "girar": 0.06,
+      "primeiraPessoa": 0
+    },
+    {
+      "tipo": "impactFrame",
+      "momento": "olhos",
+      "sequencia": [
+        "mangaInvertido",
+        "nada",
+        "mangaInvertido",
+        "cor",
+        "mangaInvertido",
+        "nada"
+      ],
+      "ticksPorQuadro": 1,
+      "cor": "#d10a0a",
+      "alcance": 100
+    },
+    {
+      "tipo": "clarao",
+      "momento": "olhos",
+      "seguir": "cabeca",
+      "tamanho": 0.8,
+      "quantidade": 3,
+      "cor": "#d10a0a",
+      "cor2": "#ffd0d0",
+      "deslocamento": 0.3,
+      "vidaTicks": 14
+    },
+    {
+      "tipo": "vinheta",
+      "momento": "voltar",
+      "cor": "#4a0818",
+      "forca": 0.9,
+      "duraMomento": true
+    },
+    {
+      "tipo": "distorcao",
+      "momento": "voltar",
+      "modo": "tela",
+      "raio": 40,
+      "forca": 0.5,
+      "cor": "#d10a0a",
+      "tinta": 0.18,
+      "duraMomento": true
+    },
+    {
+      "tipo": "blurRadial",
+      "momento": "voltar",
+      "forca": 0.8,
+      "duraMomento": true,
+      "alcance": 160
+    },
+    {
+      "tipo": "impactFrame",
+      "momento": "fim",
+      "sequencia": [
+        "branco",
+        "invertido",
+        "branco"
+      ],
+      "ticksPorQuadro": 1,
+      "cor": "#d10a0a",
+      "alcance": 160
+    },
+    {
+      "tipo": "flash",
+      "momento": "fim",
+      "cor": "#ffffff",
+      "forca": 0.5,
+      "vidaTicks": 12,
+      "alcance": 160
+    }
+  ],
+  "despertado": {}
+}

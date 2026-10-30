@@ -45,7 +45,7 @@ public final class Freeze {
         }
         float yRot = entity.getYRot();
         float xRot = entity.getXRot();
-        Tasks.add(age -> {
+        Tasks.addSystem(age -> {
             if (age >= ticks || !entity.isAlive() || entity.isRemoved()) {
                 release(entity);
                 return true;

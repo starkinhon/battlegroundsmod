@@ -39,6 +39,11 @@ import net.neoforged.neoforge.network.PacketDistributor;
 // souls_skills/madara.meteoro.json; the look lives in MeteoroFx.
 public final class Meteoro {
     public static final String SKILL = "madara.meteoro";
+    // Shift + V: a first meteor, then a second, bigger one right behind it on the same path.
+    public static final String DOUBLE = "madara.meteoro_duplo";
+    public static final String DOUBLE_SECOND = "madara.meteoro_duplo_2";
+    // Ticks between the first meteor being thrown and the second appearing.
+    private static final int SECOND_DELAY = 40;
     // How many ticks the crater takes to open, from the middle out (spread out so the server doesn't freeze).
     private static final int CRATER_TICKS = 6;
     // Players this far from the target still see the meteor fall.
@@ -66,27 +71,57 @@ public final class Meteoro {
         return true;
     }
 
+    // Shift + V. Both fall slower than the normal one (their files' quedaTicks) and dig much deeper.
+    public static boolean useDouble(LivingEntity player, ServerLevel level) {
+        PowerData data = player.getData(ModAttachments.POWER);
+        MeteoroSpec first = SkillSpecs.get(DOUBLE, MeteoroSpec.class, data.awakened);
+        MeteoroSpec second = SkillSpecs.get(DOUBLE_SECOND, MeteoroSpec.class, data.awakened);
+        Vec3 aimed = target(player, level, first.mira());
+        Fall fall = launch(DOUBLE, player, level, aimed, first.tempo().quedaTicks(), 1f, null);
+        Vec3 from = fall.start().subtract(fall.end());
+        Vec3 back = new Vec3(from.x, 0, from.z);
+        int interrupts = data.interrupts;
+        int prep = first.tempo().preparoTicks();
+        Tasks.later(prep, () -> {
+            // Only if the first one was really thrown.
+            if (data.interrupts != interrupts) {
+                return;
+            }
+            Tasks.later(SECOND_DELAY, () -> launch(DOUBLE_SECOND, player, level, aimed, second.tempo().quedaTicks(), 1f,
+                    back.lengthSqr() < 1.0E-6 ? null : back.normalize()));
+        });
+        return true;
+    }
+
     // Where the meteor would fall from and to if cast now on target over fallTicks (bosses use it to aim their camera).
     public static Fall plan(LivingEntity caster, Vec3 target, int fallTicks) {
         MeteoroSpec spec = SkillSpecs.get(SKILL, MeteoroSpec.class, caster.getData(ModAttachments.POWER).awakened);
-        return fall(caster, ground(Combat.level(caster), target, caster), spec.meteoro(), Math.max(1, fallTicks));
+        return fall(caster, ground(Combat.level(caster), target, caster), spec.meteoro(), Math.max(1, fallTicks), null);
     }
 
     // The meteor itself: prep with the raised arm, then the fall over fallTicks, then the impact with its damage
     // multiplied by damageMult. Players get it from use(); bosses call it with their own timing and target.
     public static Fall launch(LivingEntity player, ServerLevel level, Vec3 aimed, int quedaTicks, float damageMult) {
+        return launch(SKILL, player, level, aimed, quedaTicks, damageMult, null);
+    }
+
+    // Same with the meteor of any file. A file with no prep (preparoTicks 0) leaves the caster alone. from: the
+    // direction the meteor comes from, flat (null = from behind the caster).
+    public static Fall launch(String skill, LivingEntity player, ServerLevel level, Vec3 aimed, int quedaTicks, float damageMult, Vec3 from) {
         PowerData data = player.getData(ModAttachments.POWER);
-        MeteoroSpec spec = SkillSpecs.get(SKILL, MeteoroSpec.class, data.awakened);
+        MeteoroSpec spec = SkillSpecs.get(skill, MeteoroSpec.class, data.awakened);
         int prep = spec.tempo().preparoTicks();
         int fallTicks = Math.max(1, quedaTicks);
         Vec3 target = ground(level, aimed, player);
-        Fall fall = fall(player, target, spec.meteoro(), fallTicks);
+        Fall fall = fall(player, target, spec.meteoro(), fallTicks, from);
 
-        data.busyTicks = prep;
-        player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, prep, 2, false, false, false));
-        PacketDistributor.sendToPlayersTrackingEntityAndSelf(player, new ModPayloads.PlaySkillAnimation(player.getId(), SKILL, data.awakened));
+        if (prep > 0) {
+            data.busyTicks = prep;
+            player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, prep, 2, false, false, false));
+            PacketDistributor.sendToPlayersTrackingEntityAndSelf(player, new ModPayloads.PlaySkillAnimation(player.getId(), skill, data.awakened));
+        }
         MeteoroFx.call(level, player);
-        Fx.effects(level, SKILL, data.awakened, "uso", player.position(), fall.dir());
+        Fx.effects(level, skill, data.awakened, "uso", player.position(), fall.dir());
         int interrupts = data.interrupts;
         boolean[] cut = {false};
         Tasks.repeat(prep + fallTicks + 1, age -> {
@@ -99,7 +134,7 @@ public final class Meteoro {
                 // The ball itself is drawn on the clients (client/fx/MeteorRenderer), following the same path.
                 for (ServerPlayer viewer : level.players()) {
                     if (viewer.distanceToSqr(target) < VIEW_DISTANCE * VIEW_DISTANCE) {
-                        PacketDistributor.sendToPlayer(viewer, new ModPayloads.MeteorFall(SKILL, data.awakened, fall.start(), fall.end(), 0, fallTicks));
+                        PacketDistributor.sendToPlayer(viewer, new ModPayloads.MeteorFall(skill, data.awakened, fall.start(), fall.end(), 0, fallTicks));
                     }
                 }
             }
@@ -111,13 +146,13 @@ public final class Meteoro {
             }
             if (age >= prep + fallTicks) {
                 // Once it is falling it lands, even if the caster died or swapped powers.
-                impact(player, level, spec, target, damageMult);
+                impact(skill, player, level, spec, target, damageMult);
             }
         });
         return fall;
     }
 
-    private static void impact(LivingEntity player, ServerLevel level, MeteoroSpec spec, Vec3 pos, float damageMult) {
+    private static void impact(String skill, LivingEntity player, ServerLevel level, MeteoroSpec spec, Vec3 pos, float damageMult) {
         MeteoroSpec.Impacto impacto = spec.impacto();
         double radius = Math.max(1, impacto.raio());
         if (impacto.quebrarBlocos() && level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
@@ -139,7 +174,7 @@ public final class Meteoro {
         }
         shockwave(player, level, pos, impacto, damageMult);
         MeteoroFx.impact(level, spec, pos);
-        Fx.effects(level, SKILL, player.getData(ModAttachments.POWER).awakened, "impacto", pos, new Vec3(0, 1, 0));
+        Fx.effects(level, skill, player.getData(ModAttachments.POWER).awakened, "impacto", pos, new Vec3(0, 1, 0));
     }
 
     // The shockwave: a ring running out along the ground at velocidade blocks per tick. Everyone its front passes is
@@ -262,10 +297,10 @@ public final class Meteoro {
     }
 
     // The meteor comes from high up, tilted anguloQueda from vertical, from behind the caster (turned by giroOrigem).
-    private static Fall fall(LivingEntity player, Vec3 target, MeteoroSpec.Corpo corpo, int ticks) {
+    private static Fall fall(LivingEntity player, Vec3 target, MeteoroSpec.Corpo corpo, int ticks, Vec3 from) {
         double height = corpo.alturaInicio();
         double side = height * Math.tan(Math.toRadians(corpo.anguloQueda()));
-        Vec3 back = Combat.flatLook(player).reverse().yRot((float) Math.toRadians(-corpo.giroOrigem()));
+        Vec3 back = from != null ? from : Combat.flatLook(player).reverse().yRot((float) Math.toRadians(-corpo.giroOrigem()));
         Vec3 end = target.add(0, corpo.raio() * (1 - corpo.afundar()), 0);
         Vec3 start = end.add(back.scale(side)).add(0, height, 0);
         return new Fall(start, end, end.subtract(start).normalize(), corpo, ticks);
