@@ -7,13 +7,15 @@ import org.joml.Vector3f;
 
 import com.starkinhon.battlegroundsmod.skill.EsferaSpec;
 
+import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 
-// Bills' sphere of destruction, a small sun drawn only with shader light (no textures): a white-hot core, a boiling
-// orange-yellow body with darker spots, a bright rim and a cross of light through it. The same look in space
+// Bills' sphere of destruction, a sun drawn only with shader light (no textures): a boiling star (shape SUN, white-hot
+// middle, orange cells, yellow streaks, glowing rim, flames past it), a red-orange corona, loops of fire rising off
+// the rim and white lightning crackling around it. The same look in space
 // (SpaceScene) and when it falls on the target, following its head on the path the server lands it with.
 public final class EsferaRenderer {
     private record Fall(int target, Vec3 start, Vec3 lastHead, int ticks, float radius, long born) {
@@ -24,7 +26,9 @@ public final class EsferaRenderer {
     private static final float[] HOT = FxDraw.rgb(0xFFE65A);
     private static final float[] BODY = FxDraw.rgb(0xFF9A1E);
     private static final float[] EMBER = FxDraw.rgb(0xD8420E);
-    private static final float[] SPOT = FxDraw.rgb(0x5A1606);
+    private static final float[] WHITE = {1, 1, 1};
+    // How far the flames reach past the rim, as a share of the radius.
+    private static final float FLAMES = 0.35f;
 
     private EsferaRenderer() {
     }
@@ -73,36 +77,51 @@ public final class EsferaRenderer {
 
     // dir: where it flies (fire and light left behind it), or null when it stays still.
     static void drawSun(Vector3f at, Vector3f dir, float r, float age, int seed) {
-        // Corona, wide and soft, then the body.
-        FxDraw.billboard(at, r * 4.2f, 0, FxDraw.SOFT, 0.05f, EMBER, 0.4f, true);
-        FxDraw.billboard(at, r * 3.0f, 0, FxDraw.SOFT, 0.2f, BODY, 0.55f, true);
-        int count = Mth.clamp((int) (40 + r * 10), 40, 110);
-        Vector3f axis = new Vector3f(0.2f, 1, 0.3f).normalize();
-        for (int k = 0; k < count; k++) {
-            float layer = FxWorld.hash(seed, k, 1);
-            Vector3f d = FxWorld.sphere(seed, k);
-            d.rotateAxis(age * (0.05f - 0.03f * layer) + FxWorld.hash(seed, k, 2) * 6, axis.x, axis.y, axis.z);
-            float boil = 1 + 0.12f * Mth.sin(age * 0.3f + k * 1.3f);
-            Vector3f pos = new Vector3f(d).mul(r * (0.3f + 0.55f * layer)).add(at);
-            float[] color = layer < 0.45f ? FxDraw.mix(HOT, BODY, layer / 0.45f) : FxDraw.mix(BODY, EMBER, (layer - 0.45f) / 0.55f * 0.6f);
-            FxDraw.billboard(pos, r * (0.5f + 0.4f * layer) * boil, FxWorld.hash(seed, k, 3) * 6 + age * 0.03f, FxDraw.FIRE, 0.1f + 0.35f * layer,
-                    color, 0.95f, true);
+        Camera view = Minecraft.getInstance().gameRenderer.getMainCamera();
+        Vector3f left = new Vector3f(view.getLeftVector());
+        Vector3f up = new Vector3f(view.getUpVector());
+        // Corona into the bloom: wide red-orange, then hot yellow hugging the rim.
+        FxDraw.billboard(at, r * 5.0f, 0, FxDraw.SOFT, 0, EMBER, 0.3f, true);
+        FxDraw.billboard(at, r * 3.0f, 0, FxDraw.SOFT, 0.1f, BODY, 0.45f, true);
+        // The star itself, on the alpha layer so the bloom doesn't wash its surface out (shape SUN in souls_vfx).
+        FxDraw.billboard(at, r * 2 * (1 + FLAMES), age * 0.002f, FxDraw.SUN, FLAMES, WHITE, 1, false);
+        // A touch of light over the middle and the rim.
+        FxDraw.billboard(at, r * 1.1f, 0, FxDraw.SOFT, 0.7f, CORE, 0.3f, true);
+        FxDraw.billboard(at, r * 2.06f, 0, FxDraw.RING, 0.04f, HOT, 0.55f, true);
+        // Loops of fire rising off the rim and falling back, each on its own cycle.
+        for (int k = 0; k < 9; k++) {
+            float life = 50 + 40 * FxWorld.hash(seed, k, 1);
+            float u = ((age + FxWorld.hash(seed, k, 2) * life) % life) / life;
+            float base = FxWorld.hash(seed, k, 3) * Mth.TWO_PI + age * 0.003f;
+            float span = 0.18f + 0.22f * FxWorld.hash(seed, k, 4);
+            float height = r * (0.15f + 0.35f * FxWorld.hash(seed, k, 5)) * Mth.sin(u * Mth.PI);
+            Vector3f last = null;
+            for (int j = 0; j <= 10; j++) {
+                float s = j / 10f;
+                float a = base - span / 2 + span * s;
+                float out = r * 0.98f + height * Mth.sin(s * Mth.PI);
+                Vector3f point = new Vector3f(left).mul(Mth.cos(a) * out).add(new Vector3f(up).mul(Mth.sin(a) * out)).add(at);
+                if (last != null) {
+                    FxDraw.ribbon(last, point, r * 0.07f, FxDraw.STREAK, 0.4f, s > 0.3f && s < 0.7f ? HOT : BODY, 0.8f * Mth.sin(u * Mth.PI), true);
+                }
+                last = point;
+            }
         }
-        // Dark spots drifting over the surface, like the burnt patches of the reference.
-        for (int k = 0; k < 14; k++) {
-            Vector3f d = FxWorld.sphere(seed + 3, k);
-            d.rotateAxis(age * 0.02f, axis.x, axis.y, axis.z);
-            Vector3f pos = new Vector3f(d).mul(r * 0.9f).add(at);
-            FxDraw.billboard(pos, r * (0.12f + 0.12f * FxWorld.hash(seed, k, 9)), k, FxDraw.SMOKE, 0.3f, SPOT, 0.55f, false);
-        }
-        // Bright rim and the white core.
-        FxDraw.billboard(at, r * 2.05f, 0, FxDraw.RING, 0.08f, HOT, 0.9f, true);
-        FxDraw.billboard(at, r * 1.3f, 0, FxDraw.SOFT, 0.85f, CORE, 0.95f, true);
-        // A cross of light through the middle, slowly turning.
-        for (int k = 0; k < 2; k++) {
-            float a = age * 0.01f + k * 1.9f;
-            Vector3f across = new Vector3f(Mth.cos(a), Mth.sin(a) * 0.6f, Mth.sin(a) * 0.8f).normalize().mul(r * 2.6f);
-            FxDraw.ribbon(new Vector3f(at).sub(across), new Vector3f(at).add(across), r * 0.16f, FxDraw.STREAK, 0.9f, CORE, 0.8f, true);
+        // White lightning crackling around the edge, a new shape every couple of ticks.
+        int flick = (int) (age / 2);
+        for (int k = 0; k < 7; k++) {
+            if (FxWorld.hash(seed + flick, k, 6) < 0.45f) {
+                continue;
+            }
+            float a = FxWorld.hash(seed + flick, k, 7) * Mth.TWO_PI;
+            Vector3f last = new Vector3f(left).mul(Mth.cos(a) * r).add(new Vector3f(up).mul(Mth.sin(a) * r)).add(at);
+            for (int j = 1; j <= 6; j++) {
+                float aj = a + (FxWorld.hash(seed + flick, k * 8 + j, 8) - 0.5f) * 0.25f + j * 0.04f;
+                float out = r * (1 + j * 0.05f + 0.04f * FxWorld.hash(seed + flick, k * 8 + j, 9));
+                Vector3f point = new Vector3f(left).mul(Mth.cos(aj) * out).add(new Vector3f(up).mul(Mth.sin(aj) * out)).add(at);
+                FxDraw.ribbon(last, point, r * 0.025f, FxDraw.STREAK, 0.9f, CORE, 0.9f, true);
+                last = point;
+            }
         }
         if (dir != null) {
             // Fire and light trailing behind it.
@@ -110,10 +129,9 @@ public final class EsferaRenderer {
                 float f = j / 12f;
                 Vector3f pos = new Vector3f(dir).mul(-r * (0.5f + f * 3.2f)).add(at)
                         .add((FxWorld.hash(seed, j, 5) - 0.5f) * r * 0.6f, (FxWorld.hash(seed, j, 6) - 0.5f) * r * 0.6f, (FxWorld.hash(seed, j, 7) - 0.5f) * r * 0.6f);
-                FxDraw.billboard(pos, r * (1.3f - f * 0.7f), age * 0.1f + j, FxDraw.FIRE, 0.25f + f * 0.6f, FxDraw.mix(BODY, EMBER, f), 1 - f * 0.8f,
+                FxDraw.billboard(pos, r * (1.3f - f * 0.7f), age * 0.1f + j, FxDraw.FIRE, 0.25f + f * 0.6f, FxDraw.mix(BODY, EMBER, f), 0.8f - f * 0.7f,
                         true);
             }
-            FxDraw.ribbon(at, new Vector3f(dir).mul(-r * 5).add(at), r * 1.2f, FxDraw.BEAM, 0.3f, HOT, 0.5f, true);
         }
     }
 }

@@ -4,19 +4,19 @@
   "nome": "Esfera da Destruição",
   "tempo": {
     "subirTicks": 20,
-    "cargaTicks": 80,
+    "cargaTicks": 140,
     "lancarTicks": 24,
-    "quedaTicks": 30,
-    "atrasoTicks": 100,
+    "quedaTicks": 240,
+    "atrasoTicks": 160,
     "duracaoTicks": 20
   },
   "alvo": {
     "alcance": 40
   },
   "esfera": {
-    "raioEspaco": 6,
-    "raioQueda": 3.5,
-    "alturaQueda": 70
+    "raioEspaco": 10,
+    "raioQueda": 26,
+    "alturaQueda": 300
   },
   "espaco": {
     "tamanho": 160,
@@ -28,19 +28,19 @@
     "corHorizonte": "#1d2f8a"
   },
   "impacto": {
-    "danoCentro": 35,
-    "danoBorda": 10,
-    "raio": 7,
-    "empurrao": 2.2,
+    "danoCentro": 60,
+    "danoBorda": 15,
+    "raio": 200,
+    "empurrao": 3,
     "quebrarBlocos": true,
-    "raioCratera": 5,
-    "profundidadeCratera": 3
+    "raioCratera": 30,
+    "profundidadeCratera": 14
   },
   "legenda": {
     "texto": "Agora, eu vou destruir a terra...",
     "cor": "#ffffff",
-    "inicioTick": 62,
-    "fimTick": 98,
+    "inicioTick": 105,
+    "fimTick": 158,
     "tamanho": 1.6
   },
   "cutscene": {
@@ -255,16 +255,6 @@
       "alcance": 64
     },
     {
-      "tipo": "anelChao",
-      "momento": "queda",
-      "seguir": "pes",
-      "raio": 3,
-      "tamanho": 0.6,
-      "cor": "#ff7a10",
-      "duraMomento": true,
-      "alcance": 64
-    },
-    {
       "tipo": "impactFrame",
       "momento": "impacto",
       "sequencia": [
@@ -279,113 +269,127 @@
       ],
       "ticksPorQuadro": 1,
       "cor": "#ff6a00",
-      "alcance": 64
+      "alcance": 200
     },
     {
       "tipo": "flash",
       "momento": "impacto",
       "cor": "#fff2c0",
-      "forca": 0.8,
+      "forca": 0.9,
       "vidaTicks": 8,
-      "alcance": 48
+      "alcance": 256
     },
     {
       "tipo": "clarao",
       "momento": "impacto",
-      "tamanho": 6,
+      "tamanho": 45,
       "quantidade": 12,
       "cor": "#ff8a10",
       "cor2": "#ffffff",
       "vidaTicks": 14,
-      "alcance": 96
+      "alcance": 300
     },
     {
       "tipo": "estrela",
       "momento": "impacto",
-      "quantidade": 40,
-      "comprimento": 16,
-      "tamanho": 2,
+      "quantidade": 60,
+      "comprimento": 90,
+      "tamanho": 5,
       "cor": "#ffc040",
       "cor2": "#ffffff",
       "vidaTicks": 16,
-      "alcance": 96
+      "alcance": 300
     },
     {
       "tipo": "fogo",
       "momento": "impacto",
-      "quantidade": 24,
-      "raio": 6,
-      "tamanho": 3,
+      "quantidade": 60,
+      "raio": 30,
+      "tamanho": 10,
       "cor": "#d8300a",
       "cor2": "#ffe080",
       "vidaTicks": 30,
-      "alcance": 96
+      "alcance": 300
     },
     {
       "tipo": "faiscas",
       "momento": "impacto",
-      "quantidade": 70,
-      "velocidade": 0.9,
-      "comprimento": 2,
-      "tamanho": 1.5,
+      "quantidade": 320,
+      "velocidade": 2.5,
+      "comprimento": 4,
+      "tamanho": 3,
       "cor": "#ff7a10",
       "cor2": "#fff6d0",
       "vidaTicks": 24,
-      "alcance": 96
+      "alcance": 300
     },
     {
       "tipo": "fumaca",
       "momento": "impacto",
       "inicio": 2,
-      "quantidade": 16,
-      "raio": 7,
-      "tamanho": 4,
+      "quantidade": 30,
+      "raio": 30,
+      "tamanho": 12,
       "cor": "#3a2a24",
       "vidaTicks": 60,
-      "alcance": 96
+      "alcance": 300
     },
     {
       "tipo": "anelChao",
       "momento": "impacto",
-      "raio": 14,
-      "tamanho": 1.4,
+      "raio": 140,
+      "tamanho": 4,
       "cor": "#ffb040",
-      "vidaTicks": 18,
-      "velocidade": 1.0,
-      "alcance": 96
+      "vidaTicks": 40,
+      "velocidade": 4,
+      "alcance": 300
     },
     {
       "tipo": "distorcao",
       "momento": "impacto",
       "modo": "onda",
-      "raio": 14,
+      "raio": 60,
       "forca": 0.7,
-      "velocidade": 14,
+      "velocidade": 20,
       "cor": "#ff9a30",
       "tinta": 0.06,
-      "vidaTicks": 20,
-      "alcance": 96
+      "vidaTicks": 30,
+      "alcance": 300
     },
     {
       "tipo": "tremor",
       "momento": "impacto",
-      "forca": 2.0,
-      "vidaTicks": 16,
-      "alcance": 48
+      "forca": 2.5,
+      "vidaTicks": 30,
+      "alcance": 256
     },
     {
       "tipo": "fov",
       "momento": "impacto",
       "forca": 7,
       "vidaTicks": 12,
-      "alcance": 48
+      "alcance": 200
     },
     {
       "tipo": "blurRadial",
       "momento": "impacto",
       "forca": 0.9,
       "vidaTicks": 12,
-      "alcance": 48
+      "alcance": 200
+    },
+    {
+      "tipo": "vinheta",
+      "momento": "aviso",
+      "cor": "#ff6a00",
+      "forca": 0.7,
+      "vidaTicks": 30
+    },
+    {
+      "tipo": "tremor",
+      "momento": "aviso",
+      "forca": 0.25,
+      "vidaTicks": 24,
+      "alcance": 256
     }
   ],
   "despertado": {}

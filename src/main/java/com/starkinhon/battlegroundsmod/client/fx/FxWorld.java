@@ -146,8 +146,13 @@ public final class FxWorld {
         FxWorld.camera = camera;
         float partial = event.getPartialTick().getGameTimeDeltaPartialTick(false);
         double now = ScreenFx.now() + partial;
+        // In the Esfera's outer space only the scene's own effects show: nothing from the world below follows him there.
+        boolean space = SpaceScene.active();
         for (Piece piece : PIECES) {
             double age = now - piece.start();
+            if (space && !SpaceScene.owns(piece.skill())) {
+                continue;
+            }
             if (age >= 0 && age < piece.life()) {
                 Vec3 at = FxAnchor.point(piece.follow(), piece.e().seguir(), partial);
                 Vec3 look = FxAnchor.look(piece.follow(), piece.e().seguir(), partial);
@@ -158,14 +163,15 @@ public final class FxWorld {
                 }
             }
         }
-        MeteorRenderer.emitTrails(camera, now, partial);
-        KatonBallRenderer.render(camera, now, partial);
-        Aura.render(event.getCamera(), now, partial);
-        AshDeath.sparks(camera, now, partial);
-        EsferaRenderer.render(camera, now, partial);
-        HakaiRenderer.render(camera, now, partial);
-        if (SpaceScene.active()) {
+        if (space) {
             SpaceScene.render(camera, now, partial);
+        } else {
+            MeteorRenderer.emitTrails(camera, now, partial);
+            KatonBallRenderer.render(camera, now, partial);
+            Aura.render(event.getCamera(), now, partial);
+            AshDeath.sparks(camera, now, partial);
+            EsferaRenderer.render(camera, now, partial);
+            HakaiRenderer.render(camera, now, partial);
         }
         if (flat) {
             source.endBatch(FxRenderTypes.FLAT_ALPHA);
@@ -174,7 +180,7 @@ public final class FxWorld {
         } else {
             source.endBatch(FxRenderTypes.VFX_ALPHA);
             endDecals(source);
-            boolean outline = Aura.drawMask(event, camera, partial);
+            boolean outline = !space && Aura.drawMask(event, camera, partial);
             FxPost.beginGlow();
             if (outline) {
                 Aura.outline(now);
@@ -182,7 +188,7 @@ public final class FxWorld {
             source.endBatch(FxRenderTypes.VFX_ADD);
             FxPost.endGlow(FxConfig.on(FxConfig.BLOOM));
         }
-        if (HakaiRenderer.active()) {
+        if (!space && HakaiRenderer.active()) {
             // Dark lines on top of the glow, so the light doesn't wash them out.
             FxDraw.begin(source, event.getCamera(), flat);
             HakaiRenderer.overlay(camera, now, partial);
