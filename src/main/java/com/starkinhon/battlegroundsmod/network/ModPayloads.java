@@ -465,6 +465,56 @@ public final class ModPayloads {
         }
     }
 
+    // Server -> client: an attack in flight was erased (Bills' hakaizinho): stop drawing what skill had around pos.
+    public record EraseAttack(String skill, Vec3 pos, float radius) implements CustomPacketPayload {
+        public static final Type<EraseAttack> TYPE = payloadType("erase_attack");
+        public static final StreamCodec<ByteBuf, EraseAttack> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.STRING_UTF8, EraseAttack::skill,
+                VEC3, EraseAttack::pos,
+                ByteBufCodecs.FLOAT, EraseAttack::radius,
+                EraseAttack::new);
+
+        @Override
+        public Type<EraseAttack> type() {
+            return TYPE;
+        }
+    }
+
+    // Server -> client: Bills' hakai ball, every tick while it lives. mode 0 chasing, 1 with targetId trapped inside, 2
+    // gone (it blew up, or the chase ran out).
+    public record HakaiBall(int id, int mode, Vec3 pos, int targetId, float radius, boolean awakened) implements CustomPacketPayload {
+        public static final Type<HakaiBall> TYPE = payloadType("hakai_ball");
+        public static final StreamCodec<ByteBuf, HakaiBall> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, HakaiBall::id,
+                ByteBufCodecs.VAR_INT, HakaiBall::mode,
+                VEC3, HakaiBall::pos,
+                ByteBufCodecs.VAR_INT, HakaiBall::targetId,
+                ByteBufCodecs.FLOAT, HakaiBall::radius,
+                ByteBufCodecs.BOOL, HakaiBall::awakened,
+                HakaiBall::new);
+
+        @Override
+        public Type<HakaiBall> type() {
+            return TYPE;
+        }
+    }
+
+    // Server -> client: the hakaizinho, flying straight from start at velocity per tick for ticks.
+    public record HakaiShot(Vec3 start, Vec3 velocity, int ticks, boolean awakened) implements CustomPacketPayload {
+        public static final Type<HakaiShot> TYPE = payloadType("hakai_shot");
+        public static final StreamCodec<ByteBuf, HakaiShot> STREAM_CODEC = StreamCodec.composite(
+                VEC3, HakaiShot::start,
+                VEC3, HakaiShot::velocity,
+                ByteBufCodecs.VAR_INT, HakaiShot::ticks,
+                ByteBufCodecs.BOOL, HakaiShot::awakened,
+                HakaiShot::new);
+
+        @Override
+        public Type<HakaiShot> type() {
+            return TYPE;
+        }
+    }
+
     // Server -> client: a boss's ult cutscene (zoom on its face, then look up at lookAt in the sky, then back).
     public record BossCutscene(int entityId, int zoomTicks, int skyTicks, int backTicks, Vec3 lookAt) implements CustomPacketPayload {
         public static final Type<BossCutscene> TYPE = payloadType("boss_cutscene");
@@ -608,6 +658,12 @@ public final class ModPayloads {
                 () -> ClientHooks.esferaCutscene(payload.casterId(), payload.awakened())));
         registrar.playToClient(EsferaFall.TYPE, EsferaFall.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.esferaFall(payload.targetId(), payload.start(), payload.lastHead(), payload.awakened())));
+        registrar.playToClient(EraseAttack.TYPE, EraseAttack.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.eraseAttack(payload.skill(), payload.pos(), payload.radius())));
+        registrar.playToClient(HakaiBall.TYPE, HakaiBall.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.hakaiBall(payload.id(), payload.mode(), payload.pos(), payload.targetId(), payload.radius(), payload.awakened())));
+        registrar.playToClient(HakaiShot.TYPE, HakaiShot.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.hakaiShot(payload.start(), payload.velocity(), payload.ticks(), payload.awakened())));
         registrar.playToClient(BossBarStyle.TYPE, BossBarStyle.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.bossBarStyle(payload.barId(), payload.texture(), payload.frames(), payload.width(), payload.height())));
         registrar.playToClient(BossCutscene.TYPE, BossCutscene.STREAM_CODEC, (payload, context) -> context.enqueueWork(

@@ -6,6 +6,7 @@ import java.util.function.Function;
 
 import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.combat.Combat;
+import com.starkinhon.battlegroundsmod.combat.Destructible;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.combat.Fx;
 import com.starkinhon.battlegroundsmod.combat.Intangible;
@@ -82,12 +83,20 @@ public final class Esfera {
         Fx.effects(level, SKILL, awakened, "uso", caster, space);
 
         Vec3[] start = {Vec3.ZERO};
+        Destructible.Attack[] attack = {null};
         Tasks.add(age -> {
             if (victim.isAlive() && !victim.isRemoved()) {
                 lastHead[0] = head(victim);
             }
             if (age < fall) {
                 return false;
+            }
+            if (attack[0] != null) {
+                // Erased on the way down (a hakaizinho): no impact.
+                if (attack[0].gone()) {
+                    return true;
+                }
+                attack[0].move(EsferaSpec.fallAt(start[0], lastHead[0], (age - fall) / (double) Math.max(1, impact - fall)));
             }
             if (age == fall) {
                 // Back in the world: the sphere comes down from high above, a little from where Bills stands.
@@ -97,6 +106,8 @@ public final class Esfera {
                 double height = spec.esfera().alturaQueda();
                 start[0] = lastHead[0].add(side.scale(height * 0.35)).add(0, height, 0);
                 PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new ModPayloads.HideEntity(caster.getId(), 0));
+                attack[0] = Destructible.track(level, caster, start[0], spec.esfera().raioQueda(),
+                        () -> Destructible.sendErase(level, SKILL, attack[0].pos(), attack[0].radius()));
                 Fx.effects(level, SKILL, awakened, "voltar", caster, 0);
                 for (ServerPlayer player : level.players()) {
                     if (player.distanceToSqr(lastHead[0]) < 200 * 200) {
@@ -111,6 +122,7 @@ public final class Esfera {
             if (age < impact) {
                 return false;
             }
+            attack[0].end();
             Vec3 at = lastHead[0];
             explode(caster, level, spec, at);
             SkillSounds.play(level, spec.sons(), "impacto", 0, 0, onde -> at, screen);

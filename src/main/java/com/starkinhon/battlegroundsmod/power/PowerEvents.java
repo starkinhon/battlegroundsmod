@@ -6,6 +6,7 @@ import com.starkinhon.battlegroundsmod.boss.SoulBoss;
 import com.starkinhon.battlegroundsmod.command.BossCommand;
 import com.starkinhon.battlegroundsmod.combat.CombatMode;
 import com.starkinhon.battlegroundsmod.combat.Defense;
+import com.starkinhon.battlegroundsmod.combat.Destructible;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.combat.Intangible;
 import com.starkinhon.battlegroundsmod.combat.Melee;
@@ -72,6 +73,7 @@ public final class PowerEvents {
         Tasks.clear();
         Freeze.clear();
         Intangible.clear();
+        Destructible.clear();
         Defense.clear();
         Susanoo.clear();
         Izanami.clear();

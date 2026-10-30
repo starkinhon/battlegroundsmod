@@ -26,6 +26,7 @@ public class Projectile implements Tasks.Task {
     private Consumer<Vec3> trail = p -> {};
     private Consumer<LivingEntity> onHit = t -> {};
     private Consumer<Vec3> onImpact = p -> {};
+    private Destructible.Attack attack;
 
     public Projectile(ServerPlayer owner, Vec3 start, Vec3 velocity, double radius, int maxAge) {
         this.owner = owner;
@@ -63,11 +64,28 @@ public class Projectile implements Tasks.Task {
     }
 
     public void launch() {
+        // Particles only, so erasing it (the hakaizinho) just stops it.
+        attack = Destructible.track(level, owner, pos, radius, () -> {});
         Tasks.add(this);
     }
 
     @Override
     public boolean tick(int age) {
+        if (attack != null && attack.gone()) {
+            return true;
+        }
+        boolean done = step(age);
+        if (attack != null) {
+            if (done) {
+                attack.end();
+            } else {
+                attack.move(pos);
+            }
+        }
+        return done;
+    }
+
+    private boolean step(int age) {
         Vec3 next = pos.add(velocity);
         if (!level.isLoaded(BlockPos.containing(next))) {
             return true;

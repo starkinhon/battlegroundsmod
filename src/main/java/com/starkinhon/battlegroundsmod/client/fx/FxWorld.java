@@ -64,6 +64,11 @@ public final class FxWorld {
                 ? new Piece(p.skill(), p.e(), p.pos(), p.dir(), now - p.life() + 10, p.life(), p.emitFor(), p.seed(), p.follow()) : p);
     }
 
+    // Every moving piece of this skill (a slash in flight) is gone at once: the attack was pulverized.
+    public static void erase(String skill) {
+        PIECES.removeIf(p -> p.skill().equals(skill) && "corte".equals(p.e().tipo()));
+    }
+
     public static void tick() {
         long now = ScreenFx.now();
         PIECES.removeIf(p -> now - p.start() > p.life());
@@ -107,7 +112,7 @@ public final class FxWorld {
         FxPost.newFrame();
         ScreenFx.capture(event);
         boolean world = !PIECES.isEmpty() || MeteorRenderer.hasTrails() || Aura.active() || KatonBallRenderer.active() || AshDeath.hasSparks()
-                || SpaceScene.active() || EsferaRenderer.active();
+                || SpaceScene.active() || EsferaRenderer.active() || HakaiRenderer.active();
         if (!world && !ScreenFx.needsScene()) {
             return;
         }
@@ -158,6 +163,7 @@ public final class FxWorld {
         Aura.render(event.getCamera(), now, partial);
         AshDeath.sparks(camera, now, partial);
         EsferaRenderer.render(camera, now, partial);
+        HakaiRenderer.render(camera, now, partial);
         if (SpaceScene.active()) {
             SpaceScene.render(camera, now, partial);
         }
@@ -175,6 +181,12 @@ public final class FxWorld {
             }
             source.endBatch(FxRenderTypes.VFX_ADD);
             FxPost.endGlow(FxConfig.on(FxConfig.BLOOM));
+        }
+        if (HakaiRenderer.active()) {
+            // Dark lines on top of the glow, so the light doesn't wash them out.
+            FxDraw.begin(source, event.getCamera(), flat);
+            HakaiRenderer.overlay(camera, now, partial);
+            source.endBatch(flat ? FxRenderTypes.FLAT_ALPHA : FxRenderTypes.VFX_ALPHA);
         }
 
         RenderSystem.restoreProjectionMatrix();

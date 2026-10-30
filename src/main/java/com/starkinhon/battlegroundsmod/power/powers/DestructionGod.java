@@ -1,5 +1,6 @@
 package com.starkinhon.battlegroundsmod.power.powers;
 
+import java.util.Arrays;
 import java.util.List;
 
 import com.starkinhon.battlegroundsmod.combat.Combat;
@@ -10,6 +11,7 @@ import com.starkinhon.battlegroundsmod.power.Ability;
 import com.starkinhon.battlegroundsmod.power.Power;
 import com.starkinhon.battlegroundsmod.power.powers.bills.Esfera;
 import com.starkinhon.battlegroundsmod.power.powers.bills.Hakai;
+import com.starkinhon.battlegroundsmod.power.powers.bills.Hakaizinho;
 
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
@@ -22,7 +24,8 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
 
 // Deus da Destruição (Bills). Being remade move by move, starting with the ult: C is the Esfera da Destruição and V the
-// Hakai. Z and X are still the first prototypes.
+// Hakai (the hakai ball when the target still has too much life), Shift + V the hakaizinho. Z and X are still the
+// first prototypes.
 public final class DestructionGod {
     private static final int PURPLE = 0x9B30FF;
 
@@ -34,7 +37,9 @@ public final class DestructionGod {
                 Ability.player(40, 12, DestructionGod::orb),
                 Ability.player(240, 35, DestructionGod::destructionTouch),
                 new Ability(400, 0, Esfera::use),
-                new Ability(100, 0, Hakai::use)));
+                new Ability(600, 0, Hakai::use)),
+                // Only V has a Shift variant; Shift + Z, X or C still use the normal skill.
+                Arrays.asList(null, null, null, new Ability(600, 0, Hakaizinho::use)));
     }
 
     // Z: a fast destruction orb that withers whoever it hits.

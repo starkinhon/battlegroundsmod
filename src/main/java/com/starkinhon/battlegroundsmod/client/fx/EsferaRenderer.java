@@ -38,6 +38,20 @@ public final class EsferaRenderer {
         return !FALLS.isEmpty();
     }
 
+    // Pulverized on the way down (a hakaizinho): the sphere near pos is gone.
+    public static void erase(Vec3 pos, double radius) {
+        var level = Minecraft.getInstance().level;
+        if (level == null) {
+            return;
+        }
+        long now = ScreenFx.now();
+        FALLS.removeIf(f -> {
+            Entity target = level.getEntity(f.target());
+            Vec3 head = target != null && target.isAlive() ? target.position().add(0, target.getBbHeight(), 0) : f.lastHead();
+            return EsferaSpec.fallAt(f.start(), head, (now - f.born()) / (double) f.ticks()).distanceTo(pos) < radius + f.radius() + 3;
+        });
+    }
+
     static void render(Vec3 camera, double now, float partial) {
         var level = Minecraft.getInstance().level;
         if (level == null) {

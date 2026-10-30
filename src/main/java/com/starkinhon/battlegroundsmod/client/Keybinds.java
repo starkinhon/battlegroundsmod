@@ -63,7 +63,7 @@ public final class Keybinds {
         for (int slot = 0; slot < ABILITIES.size(); slot++) {
             while (ABILITIES.get(slot).consumeClick()) {
                 if (ready) {
-                    PacketDistributor.sendToServer(new ModPayloads.UseAbility(shift ? PowerData.SLOT_SHIFT + slot : slot));
+                    PacketDistributor.sendToServer(new ModPayloads.UseAbility(shift ? power.shiftSlot(slot) : slot));
                 }
             }
         }

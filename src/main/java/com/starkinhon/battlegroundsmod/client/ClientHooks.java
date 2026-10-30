@@ -79,6 +79,7 @@ public final class ClientHooks {
         SkillEffects.clear();
         MeteorRenderer.clear();
         com.starkinhon.battlegroundsmod.client.fx.KatonBallRenderer.clear();
+        com.starkinhon.battlegroundsmod.client.fx.HakaiRenderer.clear();
     }
 
     public static void hideEntity(int entityId, int ticks) {
@@ -103,6 +104,18 @@ public final class ClientHooks {
 
     public static void esferaFall(int targetId, Vec3 start, Vec3 lastHead, boolean awakened) {
         com.starkinhon.battlegroundsmod.client.fx.EsferaRenderer.fall(targetId, start, lastHead, awakened);
+    }
+
+    public static void eraseAttack(String skill, Vec3 pos, float radius) {
+        com.starkinhon.battlegroundsmod.client.fx.HakaiRenderer.erase(skill, pos, radius);
+    }
+
+    public static void hakaiBall(int id, int mode, Vec3 pos, int targetId, float radius, boolean awakened) {
+        com.starkinhon.battlegroundsmod.client.fx.HakaiRenderer.ball(id, mode, pos, targetId, radius, awakened);
+    }
+
+    public static void hakaiShot(Vec3 start, Vec3 velocity, int ticks, boolean awakened) {
+        com.starkinhon.battlegroundsmod.client.fx.HakaiRenderer.shot(start, velocity, ticks, awakened);
     }
 
     public static void bossBarStyle(UUID barId, String texture, int frames, int width, int height) {

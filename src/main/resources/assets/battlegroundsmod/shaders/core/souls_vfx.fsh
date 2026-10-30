@@ -9,6 +9,7 @@
 //   5 smoke   lumpy blob for the alpha layer, param = how dissolved it is
 //   6 flare   glow with sharp rays, param = number of rays / 32
 //   7 solid   the plain color
+//   8 disc    a filled circle with a soft edge, param = how wide the edge is
 // Near walls and the ground the effect fades out instead of cutting a hard line (soft particles).
 uniform sampler2D Sampler1;
 uniform vec2 Screen;
@@ -90,6 +91,8 @@ void main() {
         float ray = pow(abs(cos(a * rays * 0.5)), 24.0) * pow(max(0.0, 1.0 - r), 1.5);
         alpha = pow(max(0.0, 1.0 - r), 3.0) + ray;
         core = smoothstep(0.35, 0.0, r);
+    } else if (shape == 8) {
+        alpha = smoothstep(1.0, 1.0 - max(0.02, param), r);
     } else {
         alpha = 1.0;
     }

@@ -8,6 +8,7 @@ import java.util.Set;
 import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.combat.AshKill;
 import com.starkinhon.battlegroundsmod.combat.Combat;
+import com.starkinhon.battlegroundsmod.combat.Destructible;
 import com.starkinhon.battlegroundsmod.combat.Fx;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
@@ -124,11 +125,23 @@ public final class Meteoro {
         Fx.effects(level, skill, data.awakened, "uso", player.position(), fall.dir());
         int interrupts = data.interrupts;
         boolean[] cut = {false};
+        Destructible.Attack[] attack = {null};
         Tasks.repeat(prep + fallTicks + 1, age -> {
-            // Cut off during the prep (grabbed, sealed), nothing is thrown.
-            if (cut[0] || age < prep && data.interrupts != interrupts) {
+            // Cut off during the prep (grabbed, sealed), nothing is thrown; erased while falling (the hakaizinho), it
+            // never lands.
+            if (cut[0] || age < prep && data.interrupts != interrupts || attack[0] != null && attack[0].gone()) {
                 cut[0] = true;
                 return;
+            }
+            if (age >= prep) {
+                double k = Math.min(1, (age - prep) / (double) fallTicks);
+                MeteoroSpec.Corpo corpo = spec.meteoro();
+                Vec3 center = fall.start().lerp(fall.end(), k * (1 - corpo.aceleracao()) + k * k * corpo.aceleracao());
+                if (attack[0] == null) {
+                    attack[0] = Destructible.track(level, player, center, corpo.raio(),
+                            () -> Destructible.sendErase(level, skill, attack[0].pos(), attack[0].radius()));
+                }
+                attack[0].move(center);
             }
             if (age == prep) {
                 // The ball itself is drawn on the clients (client/fx/MeteorRenderer), following the same path.
@@ -147,6 +160,7 @@ public final class Meteoro {
             if (age >= prep + fallTicks) {
                 // Once it is falling it lands, even if the caster died or swapped powers.
                 impact(skill, player, level, spec, target, damageMult);
+                attack[0].end();
             }
         });
         return fall;
