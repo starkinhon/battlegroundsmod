@@ -125,7 +125,9 @@ public final class HakaiCutscene {
             // From the side, both of them in the shot and his hand between, drifting a little.
             double k = (t - touch) / Math.max(1, dissolve - touch);
             Vec3 middle = feet.lerp(target, 0.5).add(0, 1.2, 0);
-            double side = Math.max(2, c.distanciaMao());
+            // The touch kicks the camera back: it starts close and is thrown out to its distance in a few ticks.
+            double kick = 1 - Math.pow(1 - Mth.clamp((t - touch) / 5, 0, 1), 3);
+            double side = Math.max(2, c.distanciaMao()) * (0.6 + 0.4 * kick);
             pos = middle.add(right.scale(side)).add(forward.scale(-0.4 - 0.3 * k)).add(0, 0.1, 0);
             look = middle.add(forward.scale(0.15));
         } else {
