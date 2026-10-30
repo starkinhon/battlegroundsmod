@@ -1,7 +1,9 @@
 package com.starkinhon.battlegroundsmod.power.powers.bills;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Function;
 
 import com.starkinhon.battlegroundsmod.BattlegroundsMod;
@@ -36,11 +38,15 @@ import net.neoforged.neoforge.network.PacketDistributor;
 // while he says "Hakai.", he opens his hand at them in a white and purple flash and they are erased: the body lights up
 // and falls apart into purple sparks from the head down (client/fx/AshDeath, hakai style). The strongest move of the
 // mod: once the hand has opened nothing stops it, and the kill goes through everything (the hakai damage type is in
-// every bypass tag, so armor, shields, totems, creative, intangibility and a boss's last life don't count).
+// every bypass tag, so armor, shields, totems, creative, intangibility and a boss's last life don't count). Only a
+// target already under hitkill.limiteVida of its life is erased; anyone else gets the hakai ball (HakaiBola).
 public final class Hakai {
     public static final String SKILL = HakaiSpec.SKILL;
     public static final ResourceKey<DamageType> DAMAGE = ResourceKey.create(Registries.DAMAGE_TYPE,
             ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "hakai"));
+
+    // Whoever is falling apart right now, so a second hit doesn't start it again.
+    private static final Set<LivingEntity> ERASING = new HashSet<>();
 
     private Hakai() {
     }
@@ -55,6 +61,10 @@ public final class Hakai {
                 player.displayClientMessage(Component.translatable("message.battlegroundsmod.no_target"), true);
             }
             return false;
+        }
+        if (!spec.canErase(target)) {
+            // Still too much life to erase: the hakai ball instead.
+            return HakaiBola.use(caster, level, target);
         }
         int touch = Math.max(1, spec.tempo().atrasoTicks());
         int dissolve = spec.dissolveTick();
@@ -125,6 +135,27 @@ public final class Hakai {
             erase(caster, target);
         });
         return true;
+    }
+
+    // Erases target without the cutscene (the hakaizinho finishing someone low on life): it stops where it is, lights up
+    // and falls apart into purple sparks like under the Hakai, and is gone at the end.
+    public static void disintegrate(LivingEntity caster, LivingEntity target, boolean awakened) {
+        if (!target.isAlive() || !ERASING.add(target)) {
+            return;
+        }
+        HakaiSpec spec = HakaiSpec.get(awakened);
+        int ticks = spec.killTick() - spec.dissolveTick();
+        Freeze.hold(target, ticks + 1);
+        Stun.apply(target, ticks + 1);
+        PowerLogic.seal(target, ticks + 1);
+        Intangible.hold(target, ticks + 1);
+        PacketDistributor.sendToPlayersTrackingEntityAndSelf(target, new ModPayloads.HakaiDeath(target.getId(), awakened));
+        Fx.effects((ServerLevel) target.level(), SKILL, awakened, "hakai", target, ticks);
+        Tasks.later(ticks, () -> {
+            ERASING.remove(target);
+            Fx.effects((ServerLevel) target.level(), SKILL, awakened, "fim", Combat.center(target), Vec3.ZERO);
+            erase(caster, target);
+        });
     }
 
     // Kills it no matter what: the hakai damage first (credited to Bills, with its own death message), then /kill's,

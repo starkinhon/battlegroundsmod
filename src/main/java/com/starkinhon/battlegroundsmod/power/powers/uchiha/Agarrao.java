@@ -284,7 +284,7 @@ public final class Agarrao {
 
     // A round bowl broken the vanilla way (block particles and sounds, no drops), from the middle out. Unbreakable
     // blocks and blocks holding things (chests, furnaces) stay.
-    private static void crater(ServerLevel level, Vec3 pos, double radius, double depth) {
+    public static void crater(ServerLevel level, Vec3 pos, double radius, double depth) {
         if (radius <= 0 || depth <= 0) {
             return;
         }

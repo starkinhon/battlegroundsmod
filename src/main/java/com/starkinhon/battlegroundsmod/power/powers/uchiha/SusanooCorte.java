@@ -5,6 +5,7 @@ import java.util.Set;
 
 import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.combat.Combat;
+import com.starkinhon.battlegroundsmod.combat.Destructible;
 import com.starkinhon.battlegroundsmod.combat.Fx;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
@@ -78,11 +79,21 @@ public final class SusanooCorte {
         boolean grief = corte.quebrarBlocos() && level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING);
         Set<LivingEntity> hit = new HashSet<>();
         int ticks = (int) Math.ceil(reach / speed);
+        // Erased in flight (the hakaizinho): the crescent stops cutting and the clients stop drawing it.
+        Destructible.Attack attack = Destructible.track(level, caster, origin, half,
+                () -> Destructible.sendErase(level, SKILL, origin, reach));
         Tasks.repeat(ticks, age -> {
+            if (attack.gone()) {
+                return;
+            }
+            if (age == ticks - 1) {
+                attack.end();
+            }
             double from = age * speed;
             double to = Math.min(reach, from + speed);
             // Enemies inside the strip the crescent swept this tick.
             Vec3 middle = origin.add(dir.scale((from + to) / 2));
+            attack.move(middle);
             for (LivingEntity target : Combat.inRadius(level, middle, half + speed + bow, caster)) {
                 Vec3 rel = Combat.center(target).subtract(origin);
                 double across = rel.dot(sideAxis);

@@ -1,0 +1,350 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "bills.hakai_bola",
+  "nome": "Hakai (bola)",
+  "tempo": {
+    "atrasoTicks": 16,
+    "duracaoTicks": 10
+  },
+  "alvo": {
+    "alcance": 25
+  },
+  "bola": {
+    "raio": 2.7,
+    "acima": 0.4,
+    "velocidade": 0.2,
+    "curva": 0.08,
+    "perseguirTicks": 300,
+    "pegar": 0.75
+  },
+  "prisao": {
+    "duracaoTicks": 140,
+    "intervaloTicks": 5,
+    "dano": 3
+  },
+  "explosao": {
+    "dano": 25,
+    "raio": 7,
+    "empurrao": 2.4,
+    "altura": 0.7
+  },
+  "animacao": {
+    "transicaoTicks": 3,
+    "preparo": {
+      "cabeca": -10,
+      "tronco": 0,
+      "bracoDir": {
+        "frente": 170,
+        "abrir": -8
+      },
+      "bracoEsq": {
+        "frente": -10,
+        "abrir": 5
+      }
+    },
+    "sopro": {
+      "cabeca": 0,
+      "tronco": 6,
+      "bracoDir": {
+        "frente": 110,
+        "abrir": 0
+      },
+      "bracoEsq": {
+        "frente": -15,
+        "abrir": 5
+      }
+    }
+  },
+  "sons": [
+    {
+      "nome": "Formar",
+      "som": "minecraft:block.beacon.activate",
+      "momento": "uso",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.2,
+      "pitch": 0.5,
+      "pitchFim": 0.5,
+      "onde": "usuario"
+    },
+    {
+      "nome": "Energia",
+      "som": "minecraft:block.respawn_anchor.charge",
+      "momento": "uso",
+      "atrasoTicks": 6,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.0,
+      "pitch": 0.6,
+      "pitchFim": 0.6,
+      "onde": "usuario"
+    },
+    {
+      "nome": "Soltar",
+      "som": "minecraft:entity.warden.sonic_charge",
+      "momento": "lancar",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.4,
+      "pitch": 0.6,
+      "pitchFim": 0.6,
+      "onde": "bola"
+    },
+    {
+      "nome": "Zumbido",
+      "som": "minecraft:block.beacon.ambient",
+      "momento": "lancar",
+      "atrasoTicks": 10,
+      "repetirACadaTicks": 40,
+      "vezes": 7,
+      "volume": 1.6,
+      "pitch": 0.5,
+      "pitchFim": 0.5,
+      "onde": "bola"
+    },
+    {
+      "nome": "Prender",
+      "som": "minecraft:entity.elder_guardian.curse",
+      "momento": "prender",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.4,
+      "pitch": 0.7,
+      "pitchFim": 0.7,
+      "onde": "alvo"
+    },
+    {
+      "nome": "Pressao",
+      "som": "minecraft:block.respawn_anchor.ambient",
+      "momento": "prender",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 20,
+      "vezes": 7,
+      "volume": 1.4,
+      "pitch": 0.6,
+      "pitchFim": 0.6,
+      "onde": "alvo"
+    },
+    {
+      "nome": "Explodir",
+      "som": "minecraft:entity.generic.explode",
+      "momento": "explosao",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 2.5,
+      "pitch": 0.55,
+      "pitchFim": 0.55,
+      "onde": "bola"
+    },
+    {
+      "nome": "Estouro",
+      "som": "minecraft:entity.warden.sonic_boom",
+      "momento": "explosao",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 2.0,
+      "pitch": 1.3,
+      "pitchFim": 1.3,
+      "onde": "bola"
+    }
+  ],
+  "vfx": [
+    {
+      "tipo": "clarao",
+      "momento": "uso",
+      "seguir": "cabeca",
+      "altura": 1.6,
+      "tamanho": 2.2,
+      "quantidade": 6,
+      "cor": "#ff4fe6",
+      "cor2": "#ffffff",
+      "vidaTicks": 16
+    },
+    {
+      "tipo": "distorcao",
+      "momento": "uso",
+      "modo": "redemoinho",
+      "raio": 4,
+      "forca": 0.35,
+      "velocidade": 6,
+      "cor": "#d81ecf",
+      "tinta": 0.05,
+      "altura": 3,
+      "vidaTicks": 16,
+      "alcance": 40
+    },
+    {
+      "tipo": "distorcao",
+      "momento": "lancar",
+      "modo": "onda",
+      "raio": 8,
+      "forca": 0.5,
+      "velocidade": 12,
+      "cor": "#d81ecf",
+      "tinta": 0.06,
+      "vidaTicks": 14,
+      "alcance": 48
+    },
+    {
+      "tipo": "anel",
+      "momento": "lancar",
+      "raio": 6,
+      "tamanho": 0.6,
+      "cor": "#ff7bea",
+      "vidaTicks": 12
+    },
+    {
+      "tipo": "impactFrame",
+      "momento": "prender",
+      "sequencia": [
+        "cor",
+        "mangaInvertido",
+        "invertido",
+        "cor"
+      ],
+      "ticksPorQuadro": 1,
+      "cor": "#d81ecf",
+      "alcance": 40
+    },
+    {
+      "tipo": "tremor",
+      "momento": "prender",
+      "forca": 0.6,
+      "vidaTicks": 12,
+      "alcance": 32
+    },
+    {
+      "tipo": "clarao",
+      "momento": "prender",
+      "tamanho": 7,
+      "quantidade": 8,
+      "cor": "#ff4fe6",
+      "cor2": "#ffffff",
+      "vidaTicks": 14
+    },
+    {
+      "tipo": "faiscas",
+      "momento": "dano",
+      "quantidade": 24,
+      "velocidade": 0.5,
+      "comprimento": 0.8,
+      "tamanho": 1.4,
+      "cor": "#d81ecf",
+      "cor2": "#ffc4f6",
+      "vidaTicks": 12
+    },
+    {
+      "tipo": "flash",
+      "momento": "explosao",
+      "cor": "#ffffff",
+      "forca": 0.7,
+      "vidaTicks": 8,
+      "alcance": 48
+    },
+    {
+      "tipo": "impactFrame",
+      "momento": "explosao",
+      "sequencia": [
+        "branco",
+        "mangaInvertido",
+        "cor",
+        "invertido",
+        "branco"
+      ],
+      "ticksPorQuadro": 1,
+      "cor": "#d81ecf",
+      "alcance": 64
+    },
+    {
+      "tipo": "clarao",
+      "momento": "explosao",
+      "tamanho": 14,
+      "quantidade": 10,
+      "cor": "#ff4fe6",
+      "cor2": "#ffffff",
+      "vidaTicks": 20
+    },
+    {
+      "tipo": "estrela",
+      "momento": "explosao",
+      "quantidade": 36,
+      "comprimento": 16,
+      "tamanho": 2,
+      "cor": "#d81ecf",
+      "vidaTicks": 18
+    },
+    {
+      "tipo": "anel",
+      "momento": "explosao",
+      "raio": 14,
+      "tamanho": 1.2,
+      "cor": "#ff7bea",
+      "vidaTicks": 16
+    },
+    {
+      "tipo": "anelChao",
+      "momento": "explosao",
+      "raio": 12,
+      "tamanho": 1.5,
+      "cor": "#d81ecf",
+      "altura": -2,
+      "vidaTicks": 20
+    },
+    {
+      "tipo": "faiscas",
+      "momento": "explosao",
+      "quantidade": 260,
+      "velocidade": 1.1,
+      "comprimento": 1.6,
+      "tamanho": 2,
+      "cor": "#d81ecf",
+      "cor2": "#ffffff",
+      "vidaTicks": 30
+    },
+    {
+      "tipo": "distorcao",
+      "momento": "explosao",
+      "modo": "onda",
+      "raio": 16,
+      "forca": 0.9,
+      "velocidade": 16,
+      "cor": "#d81ecf",
+      "tinta": 0.1,
+      "vidaTicks": 22,
+      "alcance": 64
+    },
+    {
+      "tipo": "tremor",
+      "momento": "explosao",
+      "forca": 1.3,
+      "vidaTicks": 18,
+      "alcance": 64
+    },
+    {
+      "tipo": "clarao",
+      "momento": "sumir",
+      "tamanho": 6,
+      "quantidade": 6,
+      "cor": "#ff7bea",
+      "cor2": "#ffffff",
+      "vidaTicks": 14
+    },
+    {
+      "tipo": "faiscas",
+      "momento": "sumir",
+      "quantidade": 80,
+      "velocidade": 0.5,
+      "comprimento": 1,
+      "tamanho": 1.6,
+      "cor": "#d81ecf",
+      "cor2": "#ffc4f6",
+      "vidaTicks": 24
+    }
+  ],
+  "despertado": {}
+}

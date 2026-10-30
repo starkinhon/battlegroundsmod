@@ -11,6 +11,9 @@
     "aparecer": true,
     "distancia": 1.6
   },
+  "hitkill": {
+    "limiteVida": 0.2
+  },
   "desintegrar": {
     "atrasoTicks": 6,
     "brilhoTicks": 16,

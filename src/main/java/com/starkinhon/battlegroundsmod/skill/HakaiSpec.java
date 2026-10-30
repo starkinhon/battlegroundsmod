@@ -10,8 +10,10 @@ import java.util.List;
 // the flash), then desintegrar.atrasoTicks later "hakai" (the body starts to go), and "fim" when nothing is left.
 // The "tempo" and "animacao" blocks are also read as an AnimationSpec: the palm goes out at atrasoTicks and is held
 // for duracaoTicks.
-public record HakaiSpec(String skill, String nome, Tempo tempo, Alvo alvo, Desintegrar desintegrar, Cutscene cutscene, Legenda legenda,
-        List<Som> sons) {
+// Only a target already low on life is erased (hitkill.limiteVida, 0.2 = under 20%); anyone else gets the hakai ball
+// instead (HakaiBolaSpec, bills.hakai_bola.json).
+public record HakaiSpec(String skill, String nome, Tempo tempo, Alvo alvo, Hitkill hitkill, Desintegrar desintegrar, Cutscene cutscene,
+        Legenda legenda, List<Som> sons) {
 
     public record Tempo(int atrasoTicks, int duracaoTicks) {
     }
@@ -19,6 +21,10 @@ public record HakaiSpec(String skill, String nome, Tempo tempo, Alvo alvo, Desin
     // alcance: how far away the target can be (in view, or the one he is fighting if in front of him).
     // aparecer: he shows up distancia blocks in front of them, facing them, instead of touching them from afar.
     public record Alvo(double alcance, boolean aparecer, double distancia) {
+    }
+
+    // limiteVida: the share of max life (0 to 1) under which the hand erases; at or above it Bills throws the ball.
+    public record Hitkill(double limiteVida) {
     }
 
     // brilhoTicks: the body lights up white and purple; then it falls apart over duracaoTicks.
@@ -43,6 +49,12 @@ public record HakaiSpec(String skill, String nome, Tempo tempo, Alvo alvo, Desin
 
     public static HakaiSpec get(boolean awakened) {
         return SkillSpecs.get(SKILL, HakaiSpec.class, awakened);
+    }
+
+    // Whether this target is low enough on life to be erased on the spot.
+    public boolean canErase(net.minecraft.world.entity.LivingEntity target) {
+        double limit = hitkill == null ? 0.2 : hitkill.limiteVida();
+        return target.getHealth() < target.getMaxHealth() * limit;
     }
 
     // When the body starts to light up and fall apart.

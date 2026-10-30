@@ -36,7 +36,7 @@ public final class FxWorld {
     private FxWorld() {
     }
 
-    private static MultiBufferSource.BufferSource buffers() {
+    static MultiBufferSource.BufferSource buffers() {
         if (buffers == null) {
             for (RenderType type : List.of(FxRenderTypes.VFX_ALPHA, FxRenderTypes.VFX_ADD, FxRenderTypes.FLAT_ALPHA, FxRenderTypes.FLAT_ADD)) {
                 FIXED.put(type, new ByteBufferBuilder(type.bufferSize()));
@@ -62,6 +62,11 @@ public final class FxWorld {
         long now = ScreenFx.now();
         PIECES.replaceAll(p -> p.follow() == follow && p.skill().equals(skill) && now - p.start() < p.life() - 10
                 ? new Piece(p.skill(), p.e(), p.pos(), p.dir(), now - p.life() + 10, p.life(), p.emitFor(), p.seed(), p.follow()) : p);
+    }
+
+    // Every moving piece of this skill (a slash in flight) is gone at once: the attack was pulverized.
+    public static void erase(String skill) {
+        PIECES.removeIf(p -> p.skill().equals(skill) && "corte".equals(p.e().tipo()));
     }
 
     public static void tick() {
@@ -106,9 +111,14 @@ public final class FxWorld {
         }
         FxPost.newFrame();
         ScreenFx.capture(event);
-        boolean world = !PIECES.isEmpty() || MeteorRenderer.hasTrails() || Aura.active() || KatonBallRenderer.active() || AshDeath.hasSparks();
+        boolean world = !PIECES.isEmpty() || MeteorRenderer.hasTrails() || Aura.active() || KatonBallRenderer.active() || AshDeath.hasSparks()
+                || SpaceScene.active() || EsferaRenderer.active() || HakaiRenderer.active();
         if (!world && !ScreenFx.needsScene()) {
             return;
+        }
+        if (SpaceScene.active()) {
+            // The Esfera's space cutscene covers the world before anything else is drawn on it.
+            SpaceScene.backdrop(event);
         }
         boolean flat = FxShaders.flat();
         if (!flat) {
@@ -152,6 +162,11 @@ public final class FxWorld {
         KatonBallRenderer.render(camera, now, partial);
         Aura.render(event.getCamera(), now, partial);
         AshDeath.sparks(camera, now, partial);
+        EsferaRenderer.render(camera, now, partial);
+        HakaiRenderer.render(camera, now, partial);
+        if (SpaceScene.active()) {
+            SpaceScene.render(camera, now, partial);
+        }
         if (flat) {
             source.endBatch(FxRenderTypes.FLAT_ALPHA);
             source.endBatch(FxRenderTypes.FLAT_ADD);
@@ -166,6 +181,12 @@ public final class FxWorld {
             }
             source.endBatch(FxRenderTypes.VFX_ADD);
             FxPost.endGlow(FxConfig.on(FxConfig.BLOOM));
+        }
+        if (HakaiRenderer.active()) {
+            // Dark lines on top of the glow, so the light doesn't wash them out.
+            FxDraw.begin(source, event.getCamera(), flat);
+            HakaiRenderer.overlay(camera, now, partial);
+            source.endBatch(flat ? FxRenderTypes.FLAT_ALPHA : FxRenderTypes.VFX_ALPHA);
         }
 
         RenderSystem.restoreProjectionMatrix();

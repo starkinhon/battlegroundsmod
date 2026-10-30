@@ -46,6 +46,16 @@ public final class MeteorRenderer {
         FALLING.clear();
     }
 
+    // Pulverized in the air (Bills' hakaizinho): the meteor near pos is gone, trail and all.
+    public static void erase(Vec3 pos, double radius) {
+        var level = Minecraft.getInstance().level;
+        if (level == null) {
+            return;
+        }
+        long now = level.getGameTime();
+        FALLING.removeIf(falling -> at(falling, now - falling.startTick()).distanceTo(pos) < radius + falling.spec().meteoro().raio() + 3);
+    }
+
     public static void onRenderLevel(RenderLevelStageEvent event) {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS || FALLING.isEmpty()) {
             return;

@@ -6,6 +6,7 @@ import java.util.List;
 import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.combat.AshKill;
 import com.starkinhon.battlegroundsmod.combat.Combat;
+import com.starkinhon.battlegroundsmod.combat.Destructible;
 import com.starkinhon.battlegroundsmod.combat.Fx;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
@@ -132,12 +133,16 @@ public final class KatonGigante {
         // Touches ground a bit inside its radius, so it looks like it sinks in before it blows.
         double touch = radius * 0.6;
         boolean[] done = {false};
+        // Erased in flight (the hakaizinho): the ball is gone with no explosion.
+        Destructible.Attack attack = Destructible.track(level, caster, start, radius,
+                () -> send(level, new ModPayloads.KatonBall(id, caster.getId(), 2, start, Vec3.ZERO, 0, 0, 0)));
         Tasks.repeat(ticks + 1, age -> {
-            if (done[0]) {
+            if (done[0] || attack.gone()) {
                 return;
             }
             Vec3 from = start.add(velocity.scale(age));
             Vec3 to = start.add(velocity.scale(age + 1));
+            attack.move(from);
             boolean hit = age == ticks;
             Vec3 at = to;
             var clip = level.clip(new ClipContext(from, to.add(dir.scale(touch)), ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, caster));
@@ -154,6 +159,7 @@ public final class KatonGigante {
             }
             if (hit) {
                 done[0] = true;
+                attack.end();
                 send(level, new ModPayloads.KatonBall(id, caster.getId(), 2, at, Vec3.ZERO, 0, 0, 0));
                 explode(caster, level, spec, at, radius, charge, awakened);
                 return;

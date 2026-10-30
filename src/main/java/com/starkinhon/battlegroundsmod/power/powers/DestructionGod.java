@@ -1,5 +1,6 @@
 package com.starkinhon.battlegroundsmod.power.powers;
 
+import java.util.Arrays;
 import java.util.List;
 
 import com.starkinhon.battlegroundsmod.combat.Combat;
@@ -8,7 +9,9 @@ import com.starkinhon.battlegroundsmod.combat.Projectile;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
 import com.starkinhon.battlegroundsmod.power.Ability;
 import com.starkinhon.battlegroundsmod.power.Power;
+import com.starkinhon.battlegroundsmod.power.powers.bills.Esfera;
 import com.starkinhon.battlegroundsmod.power.powers.bills.Hakai;
+import com.starkinhon.battlegroundsmod.power.powers.bills.Hakaizinho;
 
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
@@ -20,7 +23,8 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
 
-// Deus da Destruição (Bills). Being remade move by move, starting with the ult: V is the Hakai. Z, X and C are still the
+// Deus da Destruição (Bills). Being remade move by move, starting with the ult: C is the Esfera da Destruição and V the
+// Hakai (the hakai ball when the target still has too much life), Shift + V the hakaizinho. Z and X are still the
 // first prototypes.
 public final class DestructionGod {
     private static final int PURPLE = 0x9B30FF;
@@ -32,8 +36,10 @@ public final class DestructionGod {
         return new Power("destruction_god", 0x9B30FF, 1.3f, List.of(
                 Ability.player(40, 12, DestructionGod::orb),
                 Ability.player(240, 35, DestructionGod::destructionTouch),
-                Ability.player(80, 15, DestructionGod::divineStep),
-                new Ability(100, 0, Hakai::use)));
+                new Ability(400, 0, Esfera::use),
+                new Ability(600, 0, Hakai::use)),
+                // Only V has a Shift variant; Shift + Z, X or C still use the normal skill.
+                Arrays.asList(null, null, null, new Ability(600, 0, Hakaizinho::use)));
     }
 
     // Z: a fast destruction orb that withers whoever it hits.
@@ -93,34 +99,6 @@ public final class DestructionGod {
             Fx.sound(level, pos, SoundEvents.WITHER_SHOOT, 1f, 0.5f);
             return true;
         });
-        return true;
-    }
-
-    // C: teleports behind the target being looked at, or 12 blocks forward.
-    private static boolean divineStep(ServerPlayer player, ServerLevel level) {
-        Vec3 from = player.position();
-        LivingEntity target = Combat.raycastTarget(player, 24);
-        Vec3 dest;
-        float yaw = player.getYRot();
-        if (target != null) {
-            dest = target.position().subtract(Combat.flatLook(target).scale(1.5));
-            Vec3 to = target.position().subtract(dest);
-            yaw = (float) Math.toDegrees(Math.atan2(-to.x, to.z));
-        } else {
-            Vec3 point = Combat.raycastPoint(player, 12);
-            dest = point.subtract(player.getLookAngle().scale(0.8)).subtract(0, player.getEyeHeight(), 0);
-        }
-        if (!Combat.canStandAt(player, dest)) {
-            player.displayClientMessage(Component.translatable("message.battlegroundsmod.blocked"), true);
-            return false;
-        }
-        Fx.burst(level, ParticleTypes.PORTAL, from.add(0, 1, 0), 60, 0.4, 0.5);
-        Fx.burst(level, Fx.dust(PURPLE, 1.5f), from.add(0, 1, 0), 25, 0.4, 0);
-        player.connection.teleport(dest.x, dest.y, dest.z, yaw, player.getXRot());
-        player.resetFallDistance();
-        Fx.burst(level, ParticleTypes.REVERSE_PORTAL, dest.add(0, 1, 0), 60, 0.4, 0.3);
-        Fx.sound(level, from, SoundEvents.ENDERMAN_TELEPORT, 1f, 0.8f);
-        Fx.sound(level, dest, SoundEvents.ENDERMAN_TELEPORT, 1f, 1.2f);
         return true;
     }
 }
