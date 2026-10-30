@@ -172,7 +172,7 @@ public final class SpaceScene {
     }
 
     // The square Earth: a cube planet-sized, wrapped in Stark's earth texture (textures/fx/earth.png, six 256 pixel faces
-    // side by side, 3 by 2). On top, where the sphere lands, a face of green land and ocean; the icy, cloudy one is
+    // side by side, 3 by 2). On top, where the sphere lands, the face with the big green continent; the icy, cloudy one is
     // underneath. Turning slowly with a little tilt. Fully lit.
     private static void planet(MultiBufferSource buffers, Vec3 camera, EsferaSpec.Espaco espaco, double age) {
         Vec3 rel = EsferaCutscene.planetCenter().subtract(camera);
@@ -186,10 +186,10 @@ public final class SpaceScene {
         PoseStack.Pose last = pose.last();
         // Corners of each face and its tile in the texture (drawn both ways, so the winding does not matter).
         face(out, last, 0, new float[] {-1, -1, -1, 1, -1, -1, 1, 1, -1, -1, 1, -1}, 0, 0, -1);
-        face(out, last, 3, new float[] {1, -1, -1, 1, -1, 1, 1, 1, 1, 1, 1, -1}, 1, 0, 0);
+        face(out, last, 1, new float[] {1, -1, -1, 1, -1, 1, 1, 1, 1, 1, 1, -1}, 1, 0, 0);
         face(out, last, 2, new float[] {1, -1, 1, -1, -1, 1, -1, 1, 1, 1, 1, 1}, 0, 0, 1);
         face(out, last, 4, new float[] {-1, -1, 1, -1, -1, -1, -1, 1, -1, -1, 1, 1}, -1, 0, 0);
-        face(out, last, 1, new float[] {-1, 1, -1, 1, 1, -1, 1, 1, 1, -1, 1, 1}, 0, 1, 0);
+        face(out, last, 3, new float[] {-1, 1, -1, 1, 1, -1, 1, 1, 1, -1, 1, 1}, 0, 1, 0);
         face(out, last, 5, new float[] {-1, -1, 1, 1, -1, 1, 1, -1, -1, -1, -1, -1}, 0, -1, 0);
     }
 
