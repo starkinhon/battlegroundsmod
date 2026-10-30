@@ -8,6 +8,7 @@ import com.starkinhon.battlegroundsmod.combat.Projectile;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
 import com.starkinhon.battlegroundsmod.power.Ability;
 import com.starkinhon.battlegroundsmod.power.Power;
+import com.starkinhon.battlegroundsmod.power.powers.bills.Hakai;
 
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
@@ -19,10 +20,10 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
 
-// Deus da Destruição: destruction orbs, the destruction touch, divine steps and a sun of destruction.
+// Deus da Destruição (Bills). Being remade move by move, starting with the ult: V is the Hakai. Z, X and C are still the
+// first prototypes.
 public final class DestructionGod {
     private static final int PURPLE = 0x9B30FF;
-    private static final int ORANGE = 0xFF8C1A;
 
     private DestructionGod() {
     }
@@ -32,7 +33,7 @@ public final class DestructionGod {
                 Ability.player(40, 12, DestructionGod::orb),
                 Ability.player(240, 35, DestructionGod::destructionTouch),
                 Ability.player(80, 15, DestructionGod::divineStep),
-                Ability.player(100, 0, DestructionGod::destructionSun)));
+                new Ability(100, 0, Hakai::use)));
     }
 
     // Z: a fast destruction orb that withers whoever it hits.
@@ -121,54 +122,5 @@ public final class DestructionGod {
         Fx.sound(level, from, SoundEvents.ENDERMAN_TELEPORT, 1f, 0.8f);
         Fx.sound(level, dest, SoundEvents.ENDERMAN_TELEPORT, 1f, 1.2f);
         return true;
-    }
-
-    // V (ult): charges a sun of destruction above the head, then throws it. Huge explosion.
-    private static boolean destructionSun(ServerPlayer player, ServerLevel level) {
-        int charge = 40;
-        player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, charge, 2, false, false));
-        Fx.sound(level, player.position(), SoundEvents.BEACON_POWER_SELECT, 2f, 0.5f);
-        Tasks.add(age -> {
-            if (!player.isAlive()) {
-                return true;
-            }
-            Vec3 center = player.position().add(0, player.getBbHeight() + 2.5, 0);
-            double radius = 0.4 + 2.6 * age / charge;
-            if (age < charge) {
-                Fx.sphere(level, Fx.dust(ORANGE, 2.5f), center, radius, 40);
-                Fx.sphere(level, Fx.dust(PURPLE, 2f), center, radius * 0.6, 20);
-                Fx.burst(level, ParticleTypes.FLAME, center, 4, radius * 0.5, 0.02);
-                if (age % 10 == 0) {
-                    Fx.sound(level, center, SoundEvents.FIRE_AMBIENT, 2f, 0.5f);
-                }
-                return false;
-            }
-            Vec3 look = player.getLookAngle();
-            Fx.sound(level, center, SoundEvents.BLAZE_SHOOT, 2f, 0.3f);
-            new Projectile(player, center, look.scale(0.9), 3.0, 80)
-                    .trail(pos -> {
-                        Fx.sphere(level, Fx.dust(ORANGE, 3f), pos, 3, 40);
-                        Fx.burst(level, ParticleTypes.FLAME, pos, 10, 2, 0.02);
-                    })
-                    .onImpact(pos -> sunImpact(player, level, pos))
-                    .impactOnExpire()
-                    .launch();
-            return true;
-        });
-        return true;
-    }
-
-    private static void sunImpact(ServerPlayer player, ServerLevel level, Vec3 pos) {
-        Combat.explode(player, pos, 8f);
-        Fx.burst(level, ParticleTypes.EXPLOSION_EMITTER, pos, 5, 2.5, 0);
-        Fx.burst(level, Fx.dust(ORANGE, 4f), pos, 200, 4, 0);
-        Fx.burst(level, Fx.dust(PURPLE, 3f), pos, 120, 3, 0);
-        Fx.burst(level, ParticleTypes.FLAME, pos, 200, 4, 0.3);
-        Fx.sound(level, pos, SoundEvents.GENERIC_EXPLODE.value(), 4f, 0.5f);
-        for (LivingEntity target : Combat.inRadius(level, pos, 9, player)) {
-            double falloff = 1 - Combat.center(target).distanceTo(pos) / 12;
-            Combat.hurt(player, target, (float) (32 * falloff));
-            Combat.pushFrom(target, pos, 2.2, 1.0);
-        }
     }
 }

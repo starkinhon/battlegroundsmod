@@ -1,0 +1,352 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "bills.hakai",
+  "nome": "Hakai",
+  "tempo": {
+    "atrasoTicks": 26,
+    "duracaoTicks": 50
+  },
+  "alvo": {
+    "alcance": 25,
+    "aparecer": true,
+    "distancia": 1.6
+  },
+  "desintegrar": {
+    "atrasoTicks": 3,
+    "brilhoTicks": 8,
+    "duracaoTicks": 40,
+    "faiscas": 900,
+    "subida": 0.06,
+    "vento": 0.35,
+    "cor": "#a040ff",
+    "cor2": "#ffffff"
+  },
+  "cutscene": {
+    "ativa": true,
+    "distanciaOlhos": 0.75,
+    "ladoOlhos": 0.35,
+    "distanciaMao": 3.6,
+    "distanciaAlvo": 2.6,
+    "depoisTicks": 8,
+    "voltarTicks": 12,
+    "barrasPretas": true,
+    "intangivel": true
+  },
+  "legenda": {
+    "texto": "Hakai.",
+    "cor": "#ffffff",
+    "inicioTick": 8,
+    "fimTick": 26,
+    "tamanho": 2
+  },
+  "animacao": {
+    "transicaoTicks": 3,
+    "preparo": {
+      "cabeca": 5,
+      "tronco": 0,
+      "bracoDir": {
+        "frente": -20,
+        "abrir": -5
+      },
+      "bracoEsq": {
+        "frente": -20,
+        "abrir": 5
+      }
+    },
+    "sopro": {
+      "cabeca": 0,
+      "tronco": 6,
+      "bracoDir": {
+        "frente": 90,
+        "abrir": 0
+      },
+      "bracoEsq": {
+        "frente": -15,
+        "abrir": 5
+      }
+    }
+  },
+  "sons": [
+    {
+      "nome": "Aparecer",
+      "som": "minecraft:entity.enderman.teleport",
+      "momento": "uso",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 0.8,
+      "pitch": 0.6,
+      "pitchFim": 0.6,
+      "onde": "usuario"
+    },
+    {
+      "nome": "Olhar",
+      "som": "minecraft:block.respawn_anchor.charge",
+      "momento": "uso",
+      "atrasoTicks": 6,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.0,
+      "pitch": 0.6,
+      "pitchFim": 0.6,
+      "onde": "olhos"
+    },
+    {
+      "nome": "Estouro",
+      "som": "minecraft:entity.warden.sonic_boom",
+      "momento": "mao",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.4,
+      "pitch": 1.6,
+      "pitchFim": 1.6,
+      "onde": "mao"
+    },
+    {
+      "nome": "Brilho",
+      "som": "minecraft:block.beacon.activate",
+      "momento": "mao",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.5,
+      "pitch": 1.8,
+      "pitchFim": 1.8,
+      "onde": "mao"
+    },
+    {
+      "nome": "Ressoar",
+      "som": "minecraft:block.amethyst_block.resonate",
+      "momento": "mao",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 2.0,
+      "pitch": 0.5,
+      "pitchFim": 0.5,
+      "onde": "alvo"
+    },
+    {
+      "nome": "Quebrar",
+      "som": "minecraft:block.amethyst_cluster.break",
+      "momento": "hakai",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.5,
+      "pitch": 0.6,
+      "pitchFim": 0.6,
+      "onde": "alvo"
+    },
+    {
+      "nome": "Feitiço",
+      "som": "minecraft:entity.illusioner.cast_spell",
+      "momento": "hakai",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.2,
+      "pitch": 0.7,
+      "pitchFim": 0.7,
+      "onde": "alvo"
+    },
+    {
+      "nome": "Faíscas",
+      "som": "minecraft:block.amethyst_block.chime",
+      "momento": "hakai",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 3,
+      "vezes": 0,
+      "volume": 1.0,
+      "pitch": 1.2,
+      "pitchFim": 2.0,
+      "onde": "alvo"
+    },
+    {
+      "nome": "Sumiu",
+      "som": "minecraft:block.beacon.deactivate",
+      "momento": "fim",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.2,
+      "pitch": 1.4,
+      "pitchFim": 1.4,
+      "onde": "alvo"
+    }
+  ],
+  "vfx": [
+    {
+      "tipo": "distorcao",
+      "momento": "sumir",
+      "modo": "onda",
+      "raio": 2.5,
+      "forca": 0.3,
+      "velocidade": 10,
+      "cor": "#a040ff",
+      "tinta": 0.03,
+      "vidaTicks": 8,
+      "alcance": 40
+    },
+    {
+      "tipo": "distorcao",
+      "momento": "uso",
+      "modo": "onda",
+      "raio": 2.5,
+      "forca": 0.3,
+      "velocidade": 10,
+      "cor": "#a040ff",
+      "tinta": 0.03,
+      "vidaTicks": 8,
+      "alcance": 40
+    },
+    {
+      "tipo": "flash",
+      "momento": "mao",
+      "cor": "#ffffff",
+      "forca": 0.55,
+      "vidaTicks": 5,
+      "alcance": 40
+    },
+    {
+      "tipo": "impactFrame",
+      "momento": "mao",
+      "inicio": 1,
+      "sequencia": [
+        "branco",
+        "cor",
+        "invertido",
+        "cor"
+      ],
+      "ticksPorQuadro": 1,
+      "cor": "#8a2be2",
+      "alcance": 48
+    },
+    {
+      "tipo": "clarao",
+      "momento": "mao",
+      "tamanho": 2.2,
+      "quantidade": 8,
+      "cor": "#b45cff",
+      "cor2": "#ffffff",
+      "vidaTicks": 10,
+      "alcance": 64
+    },
+    {
+      "tipo": "estrela",
+      "momento": "mao",
+      "quantidade": 28,
+      "comprimento": 7,
+      "tamanho": 1.2,
+      "cor": "#c38bff",
+      "cor2": "#ffffff",
+      "vidaTicks": 12,
+      "alcance": 64
+    },
+    {
+      "tipo": "raios",
+      "momento": "mao",
+      "quantidade": 7,
+      "comprimento": 3.5,
+      "tamanho": 0.6,
+      "cor": "#9b30ff",
+      "cor2": "#f3e3ff",
+      "vidaTicks": 10,
+      "alcance": 64
+    },
+    {
+      "tipo": "blurRadial",
+      "momento": "mao",
+      "forca": 0.6,
+      "vidaTicks": 8,
+      "alcance": 40
+    },
+    {
+      "tipo": "tremor",
+      "momento": "mao",
+      "forca": 0.8,
+      "vidaTicks": 8,
+      "alcance": 24
+    },
+    {
+      "tipo": "fov",
+      "momento": "mao",
+      "forca": 4,
+      "vidaTicks": 8,
+      "alcance": 24
+    },
+    {
+      "tipo": "distorcao",
+      "momento": "mao",
+      "modo": "lente",
+      "raio": 4,
+      "forca": 0.35,
+      "velocidade": 8,
+      "cor": "#b45cff",
+      "tinta": 0.05,
+      "vidaTicks": 10,
+      "alcance": 48
+    },
+    {
+      "tipo": "clarao",
+      "momento": "hakai",
+      "seguir": "centro",
+      "tamanho": 2.8,
+      "quantidade": 6,
+      "cor": "#9b30ff",
+      "cor2": "#ffffff",
+      "vidaTicks": 8,
+      "alcance": 64
+    },
+    {
+      "tipo": "anelChao",
+      "momento": "hakai",
+      "seguir": "pes",
+      "raio": 5,
+      "tamanho": 0.8,
+      "cor": "#a040ff",
+      "vidaTicks": 16,
+      "velocidade": 0.6,
+      "alcance": 64
+    },
+    {
+      "tipo": "distorcao",
+      "momento": "hakai",
+      "modo": "onda",
+      "raio": 6,
+      "forca": 0.4,
+      "velocidade": 10,
+      "cor": "#a040ff",
+      "tinta": 0.05,
+      "vidaTicks": 14,
+      "alcance": 48
+    },
+    {
+      "tipo": "tremor",
+      "momento": "hakai",
+      "forca": 0.4,
+      "vidaTicks": 6,
+      "alcance": 24
+    },
+    {
+      "tipo": "clarao",
+      "momento": "fim",
+      "tamanho": 1.4,
+      "quantidade": 4,
+      "cor": "#c38bff",
+      "cor2": "#ffffff",
+      "vidaTicks": 8,
+      "alcance": 64
+    },
+    {
+      "tipo": "flash",
+      "momento": "fim",
+      "cor": "#c38bff",
+      "forca": 0.2,
+      "vidaTicks": 6,
+      "alcance": 24
+    }
+  ],
+  "despertado": {}
+}

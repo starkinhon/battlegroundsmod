@@ -406,6 +406,35 @@ public final class ModPayloads {
         }
     }
 
+    // Server -> client: Bills' Hakai cutscene for him and his target (the shots and timing come from bills.hakai.json).
+    public record HakaiCutscene(int casterId, int targetId, boolean awakened) implements CustomPacketPayload {
+        public static final Type<HakaiCutscene> TYPE = payloadType("hakai_cutscene");
+        public static final StreamCodec<ByteBuf, HakaiCutscene> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, HakaiCutscene::casterId,
+                ByteBufCodecs.VAR_INT, HakaiCutscene::targetId,
+                ByteBufCodecs.BOOL, HakaiCutscene::awakened,
+                HakaiCutscene::new);
+
+        @Override
+        public Type<HakaiCutscene> type() {
+            return TYPE;
+        }
+    }
+
+    // Server -> client: this entity is being erased by the Hakai: it lights up and falls apart into purple sparks.
+    public record HakaiDeath(int entityId, boolean awakened) implements CustomPacketPayload {
+        public static final Type<HakaiDeath> TYPE = payloadType("hakai_death");
+        public static final StreamCodec<ByteBuf, HakaiDeath> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, HakaiDeath::entityId,
+                ByteBufCodecs.BOOL, HakaiDeath::awakened,
+                HakaiDeath::new);
+
+        @Override
+        public Type<HakaiDeath> type() {
+            return TYPE;
+        }
+    }
+
     // Server -> client: a boss's ult cutscene (zoom on its face, then look up at lookAt in the sky, then back).
     public record BossCutscene(int entityId, int zoomTicks, int skyTicks, int backTicks, Vec3 lookAt) implements CustomPacketPayload {
         public static final Type<BossCutscene> TYPE = payloadType("boss_cutscene");
@@ -541,6 +570,10 @@ public final class ModPayloads {
                 () -> ClientHooks.hideEntity(payload.entityId(), payload.ticks())));
         registrar.playToClient(AshDeath.TYPE, AshDeath.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.ashDeath(payload.entityId())));
+        registrar.playToClient(HakaiCutscene.TYPE, HakaiCutscene.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.hakaiCutscene(payload.casterId(), payload.targetId(), payload.awakened())));
+        registrar.playToClient(HakaiDeath.TYPE, HakaiDeath.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.hakaiDeath(payload.entityId(), payload.awakened())));
         registrar.playToClient(BossBarStyle.TYPE, BossBarStyle.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.bossBarStyle(payload.barId(), payload.texture(), payload.frames(), payload.width(), payload.height())));
         registrar.playToClient(BossCutscene.TYPE, BossCutscene.STREAM_CODEC, (payload, context) -> context.enqueueWork(

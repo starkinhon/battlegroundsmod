@@ -89,6 +89,14 @@ public final class ClientHooks {
         AshDeath.start(entityId);
     }
 
+    public static void hakaiCutscene(int casterId, int targetId, boolean awakened) {
+        HakaiCutscene.start(casterId, targetId, awakened);
+    }
+
+    public static void hakaiDeath(int entityId, boolean awakened) {
+        AshDeath.startHakai(entityId, awakened);
+    }
+
     public static void bossBarStyle(UUID barId, String texture, int frames, int width, int height) {
         BossBars.style(barId, texture, frames, width, height);
     }
