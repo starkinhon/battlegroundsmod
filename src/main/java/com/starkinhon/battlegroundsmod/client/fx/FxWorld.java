@@ -106,7 +106,7 @@ public final class FxWorld {
         }
         FxPost.newFrame();
         ScreenFx.capture(event);
-        boolean world = !PIECES.isEmpty() || MeteorRenderer.hasTrails() || Aura.active() || KatonBallRenderer.active();
+        boolean world = !PIECES.isEmpty() || MeteorRenderer.hasTrails() || Aura.active() || KatonBallRenderer.active() || AshDeath.hasSparks();
         if (!world && !ScreenFx.needsScene()) {
             return;
         }
@@ -151,6 +151,7 @@ public final class FxWorld {
         MeteorRenderer.emitTrails(camera, now, partial);
         KatonBallRenderer.render(camera, now, partial);
         Aura.render(event.getCamera(), now, partial);
+        AshDeath.sparks(camera, now, partial);
         if (flat) {
             source.endBatch(FxRenderTypes.FLAT_ALPHA);
             source.endBatch(FxRenderTypes.FLAT_ADD);

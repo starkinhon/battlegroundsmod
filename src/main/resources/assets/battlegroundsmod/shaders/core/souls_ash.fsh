@@ -2,11 +2,16 @@
 
 // Burn: 0 = the normal skin, 1 = charred black with glowing cracks.
 // Progress: 0 = whole body, 1 = all crumbled away, top first, along a ragged glowing edge.
+// Style 1 (the Hakai): instead of charring, the body lights up white with purple veins, and the edge breaks into
+// pixel-sized bits (1/16 of a block, like the skins) burning white in the middle and purple outside.
 uniform sampler2D Sampler0;
 uniform float GameTime;
 uniform float AshHeight;
 uniform float Burn;
 uniform float Progress;
+uniform float Style;
+uniform vec3 GlowColor;
+uniform vec3 EdgeColor;
 
 in vec2 texCoord;
 in vec4 vertexColor;
@@ -43,6 +48,29 @@ void main() {
         discard;
     }
     vec3 base = tex.rgb * vertexColor.rgb;
+    if (Style > 0.5) {
+        float t1 = GameTime * 24000.0;
+        // Pixels near the edge drop out one by one before the edge gets to them, so it crumbles into specks.
+        vec3 cell = floor(local * 16.0 + 0.001);
+        float bit = hash(cell + vec3(3.1, 7.7, 1.3));
+        if (Progress > 0.001 && d > -0.16 && bit < smoothstep(-0.16, 0.0, d)) {
+            discard;
+        }
+        float lit = 0.55 + 0.45 * max(dot(normalize(normal), normalize(vec3(0.3, 1.0, 0.2))), 0.0);
+        vec3 white = mix(base * lit, EdgeColor * (0.85 + 0.15 * lit), Burn * 0.8);
+        // Purple veins crawling over the body, brighter as it goes.
+        float vein = 1.0 - smoothstep(0.0, 0.06, abs(noise(local * 6.0 + vec3(0.0, -t1 * 0.03, 0.0)) - 0.5));
+        float pulse = 0.75 + 0.25 * sin(t1 * 0.5 + n * 6.28);
+        vec3 color = white + GlowColor * vein * pulse * Burn * (0.9 + Progress);
+        // Wide purple band, white-hot right at the edge; bits about to fall shine.
+        float outer = smoothstep(-0.2, -0.05, d) * step(0.001, Progress);
+        float inner = smoothstep(-0.06, 0.0, d) * step(0.001, Progress);
+        color = mix(color, GlowColor * 1.7, outer);
+        color = mix(color, EdgeColor * 1.6, inner);
+        color += GlowColor * step(0.93, bit) * outer * 1.5;
+        fragColor = vec4(color, 1.0);
+        return;
+    }
     float shade = 0.55 + 0.45 * max(dot(normalize(normal), normalize(vec3(0.3, 1.0, 0.2))), 0.0);
     vec3 charred = vec3(0.04, 0.032, 0.028) + base * 0.05;
     vec3 color = mix(base, charred, Burn) * shade;

@@ -63,7 +63,7 @@
   "ability.battlegroundsmod.destruction_god.0": "Esfera da Destruição",
   "ability.battlegroundsmod.destruction_god.1": "Toque da Destruição",
   "ability.battlegroundsmod.destruction_god.2": "Passo Divino",
-  "ability.battlegroundsmod.destruction_god.3": "Sol da Destruição",
+  "ability.battlegroundsmod.destruction_god.3": "Hakai",
   "power.battlegroundsmod.one_punch": "Cara de um Soco",
   "power.battlegroundsmod.one_punch.desc": "Treinou tanto que qualquer soco é o último.",
   "ability.battlegroundsmod.one_punch.0": "Soco Normal",
@@ -97,5 +97,8 @@
   "message.battlegroundsmod.teleport_cooldown": "Teleporte recarregando",
   "message.battlegroundsmod.teleport_no_target": "Sem alvo a até %s blocos: mire em alguém ou acerte alguém antes",
   "message.battlegroundsmod.teleport_blocked": "Sem espaço na frente do alvo",
-  "hud.battlegroundsmod.spent": "usado"
+  "hud.battlegroundsmod.spent": "usado",
+  "death.attack.battlegroundsmod.hakai": "%1$s foi apagado da existência por %2$s",
+  "death.attack.battlegroundsmod.hakai.player": "%1$s foi apagado da existência por %2$s",
+  "death.attack.battlegroundsmod.hakai.item": "%1$s foi apagado da existência por %2$s"
 }
