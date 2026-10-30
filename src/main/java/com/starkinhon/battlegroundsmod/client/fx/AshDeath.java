@@ -205,7 +205,8 @@ public final class AshDeath {
             // The body breaking into sparks along the edge.
             for (int k = 0; k < look.sparks(); k++) {
                 float born = ash.crumbleStart() + FxWorld.hash(seed, k, 1) * span - 2;
-                float life = 18 + 34 * FxWorld.hash(seed, k, 2);
+                // A slower crumble keeps its sparks around longer too.
+                float life = (18 + 34 * FxWorld.hash(seed, k, 2)) * Mth.clamp(span / 40f, 1, 1.6f);
                 float s = (float) (age - born);
                 if (s < 0 || s >= life) {
                     continue;
