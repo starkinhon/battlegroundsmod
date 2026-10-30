@@ -36,7 +36,7 @@ public final class FxWorld {
     private FxWorld() {
     }
 
-    private static MultiBufferSource.BufferSource buffers() {
+    static MultiBufferSource.BufferSource buffers() {
         if (buffers == null) {
             for (RenderType type : List.of(FxRenderTypes.VFX_ALPHA, FxRenderTypes.VFX_ADD, FxRenderTypes.FLAT_ALPHA, FxRenderTypes.FLAT_ADD)) {
                 FIXED.put(type, new ByteBufferBuilder(type.bufferSize()));
@@ -106,9 +106,14 @@ public final class FxWorld {
         }
         FxPost.newFrame();
         ScreenFx.capture(event);
-        boolean world = !PIECES.isEmpty() || MeteorRenderer.hasTrails() || Aura.active() || KatonBallRenderer.active() || AshDeath.hasSparks();
+        boolean world = !PIECES.isEmpty() || MeteorRenderer.hasTrails() || Aura.active() || KatonBallRenderer.active() || AshDeath.hasSparks()
+                || SpaceScene.active() || EsferaRenderer.active();
         if (!world && !ScreenFx.needsScene()) {
             return;
+        }
+        if (SpaceScene.active()) {
+            // The Esfera's space cutscene covers the world before anything else is drawn on it.
+            SpaceScene.backdrop(event);
         }
         boolean flat = FxShaders.flat();
         if (!flat) {
@@ -152,6 +157,10 @@ public final class FxWorld {
         KatonBallRenderer.render(camera, now, partial);
         Aura.render(event.getCamera(), now, partial);
         AshDeath.sparks(camera, now, partial);
+        EsferaRenderer.render(camera, now, partial);
+        if (SpaceScene.active()) {
+            SpaceScene.render(camera, now, partial);
+        }
         if (flat) {
             source.endBatch(FxRenderTypes.FLAT_ALPHA);
             source.endBatch(FxRenderTypes.FLAT_ADD);

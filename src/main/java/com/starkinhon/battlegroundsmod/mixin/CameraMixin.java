@@ -7,6 +7,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.starkinhon.battlegroundsmod.client.BossCutscene;
+import com.starkinhon.battlegroundsmod.client.EsferaCutscene;
 import com.starkinhon.battlegroundsmod.client.FaceCutscene;
 import com.starkinhon.battlegroundsmod.client.GrabCutscene;
 import com.starkinhon.battlegroundsmod.client.HakaiCutscene;
@@ -33,6 +34,7 @@ public abstract class CameraMixin {
             float partialTick, CallbackInfo ci) {
         FaceCutscene.Shot shot = BossCutscene.active() ? BossCutscene.shot(partialTick)
                 : HakaiCutscene.active() ? HakaiCutscene.shot(partialTick)
+                : EsferaCutscene.active() ? EsferaCutscene.shot(partialTick)
                 : GrabCutscene.active() ? GrabCutscene.shot(partialTick)
                 : ShoulderCutscene.active() ? ShoulderCutscene.shot(partialTick) : FaceCutscene.shot(partialTick);
         if (shot != null) {

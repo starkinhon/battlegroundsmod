@@ -1,0 +1,392 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "bills.esfera",
+  "nome": "Esfera da Destruição",
+  "tempo": {
+    "subirTicks": 20,
+    "cargaTicks": 80,
+    "lancarTicks": 24,
+    "quedaTicks": 30,
+    "atrasoTicks": 100,
+    "duracaoTicks": 20
+  },
+  "alvo": {
+    "alcance": 40
+  },
+  "esfera": {
+    "raioEspaco": 6,
+    "raioQueda": 3.5,
+    "alturaQueda": 70
+  },
+  "espaco": {
+    "tamanho": 160,
+    "distancia": 140,
+    "abaixo": 130,
+    "girar": 0.15,
+    "estrelas": 700,
+    "corCeu": "#0b0626",
+    "corHorizonte": "#1d2f8a"
+  },
+  "impacto": {
+    "danoCentro": 35,
+    "danoBorda": 10,
+    "raio": 7,
+    "empurrao": 2.2,
+    "quebrarBlocos": true,
+    "raioCratera": 5,
+    "profundidadeCratera": 3
+  },
+  "legenda": {
+    "texto": "Agora, eu vou destruir a terra...",
+    "cor": "#ffffff",
+    "inicioTick": 62,
+    "fimTick": 98,
+    "tamanho": 1.6
+  },
+  "cutscene": {
+    "ativa": true,
+    "barrasPretas": true,
+    "intangivel": true
+  },
+  "animacao": {
+    "transicaoTicks": 4,
+    "preparo": {
+      "cabeca": -20,
+      "tronco": -4,
+      "bracoDir": {
+        "frente": 170,
+        "abrir": -10
+      },
+      "bracoEsq": {
+        "frente": -10,
+        "abrir": 8
+      }
+    },
+    "sopro": {
+      "cabeca": 10,
+      "tronco": 20,
+      "bracoDir": {
+        "frente": 60,
+        "abrir": -5
+      },
+      "bracoEsq": {
+        "frente": -20,
+        "abrir": 10
+      }
+    }
+  },
+  "sons": [
+    {
+      "nome": "Subir",
+      "som": "minecraft:entity.firework_rocket.launch",
+      "momento": "uso",
+      "atrasoTicks": 16,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.2,
+      "pitch": 0.6,
+      "pitchFim": 0.6,
+      "onde": "usuario"
+    },
+    {
+      "nome": "Vento",
+      "som": "minecraft:entity.breeze.wind_burst",
+      "momento": "uso",
+      "atrasoTicks": 18,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.0,
+      "pitch": 0.7,
+      "pitchFim": 0.7,
+      "onde": "usuario"
+    },
+    {
+      "nome": "Carregar",
+      "som": "minecraft:block.respawn_anchor.charge",
+      "momento": "espaco",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.0,
+      "pitch": 0.6,
+      "pitchFim": 0.6,
+      "onde": "tela"
+    },
+    {
+      "nome": "Fogo",
+      "som": "minecraft:entity.blaze.burn",
+      "momento": "espaco",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 8,
+      "vezes": 0,
+      "volume": 1.0,
+      "pitch": 0.6,
+      "pitchFim": 1.4,
+      "onde": "tela"
+    },
+    {
+      "nome": "Arremesso",
+      "som": "minecraft:entity.blaze.shoot",
+      "momento": "lancar",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.5,
+      "pitch": 0.5,
+      "pitchFim": 0.5,
+      "onde": "tela"
+    },
+    {
+      "nome": "Estrondo",
+      "som": "minecraft:entity.warden.sonic_boom",
+      "momento": "lancar",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.0,
+      "pitch": 0.7,
+      "pitchFim": 0.7,
+      "onde": "tela"
+    },
+    {
+      "nome": "Assobio",
+      "som": "minecraft:item.elytra.flying",
+      "momento": "queda",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.2,
+      "pitch": 1.4,
+      "pitchFim": 1.4,
+      "onde": "alvo"
+    },
+    {
+      "nome": "Explosão",
+      "som": "minecraft:entity.generic.explode",
+      "momento": "impacto",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 3.0,
+      "pitch": 0.6,
+      "pitchFim": 0.6,
+      "onde": "alvo"
+    },
+    {
+      "nome": "Impacto",
+      "som": "minecraft:entity.warden.attack_impact",
+      "momento": "impacto",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 2.0,
+      "pitch": 0.5,
+      "pitchFim": 0.5,
+      "onde": "alvo"
+    },
+    {
+      "nome": "Trovão",
+      "som": "minecraft:entity.lightning_bolt.impact",
+      "momento": "impacto",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.5,
+      "pitch": 0.7,
+      "pitchFim": 0.7,
+      "onde": "alvo"
+    }
+  ],
+  "vfx": [
+    {
+      "tipo": "distorcao",
+      "momento": "uso",
+      "inicio": 16,
+      "modo": "onda",
+      "raio": 3,
+      "forca": 0.3,
+      "velocidade": 10,
+      "cor": "#ffd040",
+      "tinta": 0.04,
+      "vidaTicks": 8,
+      "alcance": 40
+    },
+    {
+      "tipo": "clarao",
+      "momento": "espaco",
+      "tamanho": 2.5,
+      "quantidade": 8,
+      "cor": "#ffb020",
+      "cor2": "#ffffff",
+      "vidaTicks": 10,
+      "alcance": 64
+    },
+    {
+      "tipo": "estrela",
+      "momento": "espaco",
+      "quantidade": 24,
+      "comprimento": 8,
+      "tamanho": 1,
+      "cor": "#ffd040",
+      "cor2": "#ffffff",
+      "vidaTicks": 10,
+      "alcance": 64
+    },
+    {
+      "tipo": "distorcao",
+      "momento": "espaco",
+      "modo": "onda",
+      "raio": 5,
+      "forca": 0.4,
+      "velocidade": 12,
+      "cor": "#ffd040",
+      "tinta": 0.05,
+      "vidaTicks": 10,
+      "alcance": 48
+    },
+    {
+      "tipo": "clarao",
+      "momento": "voltar",
+      "tamanho": 2,
+      "quantidade": 6,
+      "cor": "#ffb020",
+      "cor2": "#ffffff",
+      "vidaTicks": 8,
+      "alcance": 64
+    },
+    {
+      "tipo": "anelChao",
+      "momento": "queda",
+      "seguir": "pes",
+      "raio": 3,
+      "tamanho": 0.6,
+      "cor": "#ff7a10",
+      "duraMomento": true,
+      "alcance": 64
+    },
+    {
+      "tipo": "impactFrame",
+      "momento": "impacto",
+      "sequencia": [
+        "branco",
+        "branco",
+        "cor",
+        "invertido",
+        "manga",
+        "mangaInvertido",
+        "cor",
+        "branco"
+      ],
+      "ticksPorQuadro": 1,
+      "cor": "#ff6a00",
+      "alcance": 64
+    },
+    {
+      "tipo": "flash",
+      "momento": "impacto",
+      "cor": "#fff2c0",
+      "forca": 0.8,
+      "vidaTicks": 8,
+      "alcance": 48
+    },
+    {
+      "tipo": "clarao",
+      "momento": "impacto",
+      "tamanho": 6,
+      "quantidade": 12,
+      "cor": "#ff8a10",
+      "cor2": "#ffffff",
+      "vidaTicks": 14,
+      "alcance": 96
+    },
+    {
+      "tipo": "estrela",
+      "momento": "impacto",
+      "quantidade": 40,
+      "comprimento": 16,
+      "tamanho": 2,
+      "cor": "#ffc040",
+      "cor2": "#ffffff",
+      "vidaTicks": 16,
+      "alcance": 96
+    },
+    {
+      "tipo": "fogo",
+      "momento": "impacto",
+      "quantidade": 24,
+      "raio": 6,
+      "tamanho": 3,
+      "cor": "#d8300a",
+      "cor2": "#ffe080",
+      "vidaTicks": 30,
+      "alcance": 96
+    },
+    {
+      "tipo": "faiscas",
+      "momento": "impacto",
+      "quantidade": 70,
+      "velocidade": 0.9,
+      "comprimento": 2,
+      "tamanho": 1.5,
+      "cor": "#ff7a10",
+      "cor2": "#fff6d0",
+      "vidaTicks": 24,
+      "alcance": 96
+    },
+    {
+      "tipo": "fumaca",
+      "momento": "impacto",
+      "inicio": 2,
+      "quantidade": 16,
+      "raio": 7,
+      "tamanho": 4,
+      "cor": "#3a2a24",
+      "vidaTicks": 60,
+      "alcance": 96
+    },
+    {
+      "tipo": "anelChao",
+      "momento": "impacto",
+      "raio": 14,
+      "tamanho": 1.4,
+      "cor": "#ffb040",
+      "vidaTicks": 18,
+      "velocidade": 1.0,
+      "alcance": 96
+    },
+    {
+      "tipo": "distorcao",
+      "momento": "impacto",
+      "modo": "onda",
+      "raio": 14,
+      "forca": 0.7,
+      "velocidade": 14,
+      "cor": "#ff9a30",
+      "tinta": 0.06,
+      "vidaTicks": 20,
+      "alcance": 96
+    },
+    {
+      "tipo": "tremor",
+      "momento": "impacto",
+      "forca": 2.0,
+      "vidaTicks": 16,
+      "alcance": 48
+    },
+    {
+      "tipo": "fov",
+      "momento": "impacto",
+      "forca": 7,
+      "vidaTicks": 12,
+      "alcance": 48
+    },
+    {
+      "tipo": "blurRadial",
+      "momento": "impacto",
+      "forca": 0.9,
+      "vidaTicks": 12,
+      "alcance": 48
+    }
+  ],
+  "despertado": {}
+}

@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.starkinhon.battlegroundsmod.client.BossBars;
 import com.starkinhon.battlegroundsmod.client.BossCutscene;
+import com.starkinhon.battlegroundsmod.client.EsferaCutscene;
 import com.starkinhon.battlegroundsmod.client.FaceCutscene;
 import com.starkinhon.battlegroundsmod.client.Fear;
 import com.starkinhon.battlegroundsmod.client.GrabCutscene;
@@ -82,6 +83,7 @@ public class BattlegroundsModClient {
         NeoForge.EVENT_BUS.addListener(MovementInputUpdateEvent.class, BossCutscene::onMovementInput);
         NeoForge.EVENT_BUS.addListener(MovementInputUpdateEvent.class, GrabCutscene::onMovementInput);
         NeoForge.EVENT_BUS.addListener(MovementInputUpdateEvent.class, HakaiCutscene::onMovementInput);
+        NeoForge.EVENT_BUS.addListener(MovementInputUpdateEvent.class, EsferaCutscene::onMovementInput);
     }
 
     private static void onClientSetup(FMLClientSetupEvent event) {
@@ -100,6 +102,7 @@ public class BattlegroundsModClient {
         event.registerBelowAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "screen_fx"), ScreenFx::renderGui);
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "cutscene_bars"), GrabCutscene::renderGui);
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "hakai_cutscene"), HakaiCutscene::renderGui);
+        event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "esfera_cutscene"), EsferaCutscene::renderGui);
     }
 
     private static void onRegisterParticles(RegisterParticleProvidersEvent event) {
@@ -136,6 +139,7 @@ public class BattlegroundsModClient {
         ShoulderCutscene.tick();
         GrabCutscene.tick();
         HakaiCutscene.tick();
+        EsferaCutscene.tick();
         Vanish.tick();
         ScreenShake.tick();
         ScreenFx.tick();

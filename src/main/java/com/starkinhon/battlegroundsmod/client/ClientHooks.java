@@ -97,6 +97,14 @@ public final class ClientHooks {
         AshDeath.startHakai(entityId, awakened);
     }
 
+    public static void esferaCutscene(int casterId, boolean awakened) {
+        EsferaCutscene.start(casterId, awakened);
+    }
+
+    public static void esferaFall(int targetId, Vec3 start, Vec3 lastHead, boolean awakened) {
+        com.starkinhon.battlegroundsmod.client.fx.EsferaRenderer.fall(targetId, start, lastHead, awakened);
+    }
+
     public static void bossBarStyle(UUID barId, String texture, int frames, int width, int height) {
         BossBars.style(barId, texture, frames, width, height);
     }

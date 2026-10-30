@@ -435,6 +435,36 @@ public final class ModPayloads {
         }
     }
 
+    // Server -> client: Bills' trip to outer space (Esfera da Destruição), for Bills only; timing from bills.esfera.json.
+    public record EsferaCutscene(int casterId, boolean awakened) implements CustomPacketPayload {
+        public static final Type<EsferaCutscene> TYPE = payloadType("esfera_cutscene");
+        public static final StreamCodec<ByteBuf, EsferaCutscene> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, EsferaCutscene::casterId,
+                ByteBufCodecs.BOOL, EsferaCutscene::awakened,
+                EsferaCutscene::new);
+
+        @Override
+        public Type<EsferaCutscene> type() {
+            return TYPE;
+        }
+    }
+
+    // Server -> client: the sphere of destruction falls from start onto the target's head (EsferaSpec.fallAt).
+    public record EsferaFall(int targetId, Vec3 start, Vec3 lastHead, boolean awakened) implements CustomPacketPayload {
+        public static final Type<EsferaFall> TYPE = payloadType("esfera_fall");
+        public static final StreamCodec<ByteBuf, EsferaFall> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, EsferaFall::targetId,
+                VEC3, EsferaFall::start,
+                VEC3, EsferaFall::lastHead,
+                ByteBufCodecs.BOOL, EsferaFall::awakened,
+                EsferaFall::new);
+
+        @Override
+        public Type<EsferaFall> type() {
+            return TYPE;
+        }
+    }
+
     // Server -> client: a boss's ult cutscene (zoom on its face, then look up at lookAt in the sky, then back).
     public record BossCutscene(int entityId, int zoomTicks, int skyTicks, int backTicks, Vec3 lookAt) implements CustomPacketPayload {
         public static final Type<BossCutscene> TYPE = payloadType("boss_cutscene");
@@ -574,6 +604,10 @@ public final class ModPayloads {
                 () -> ClientHooks.hakaiCutscene(payload.casterId(), payload.targetId(), payload.awakened())));
         registrar.playToClient(HakaiDeath.TYPE, HakaiDeath.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.hakaiDeath(payload.entityId(), payload.awakened())));
+        registrar.playToClient(EsferaCutscene.TYPE, EsferaCutscene.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.esferaCutscene(payload.casterId(), payload.awakened())));
+        registrar.playToClient(EsferaFall.TYPE, EsferaFall.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.esferaFall(payload.targetId(), payload.start(), payload.lastHead(), payload.awakened())));
         registrar.playToClient(BossBarStyle.TYPE, BossBarStyle.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.bossBarStyle(payload.barId(), payload.texture(), payload.frames(), payload.width(), payload.height())));
         registrar.playToClient(BossCutscene.TYPE, BossCutscene.STREAM_CODEC, (payload, context) -> context.enqueueWork(
