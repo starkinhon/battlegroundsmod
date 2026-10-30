@@ -16,23 +16,52 @@ public final class Tasks {
         boolean tick(int age);
     }
 
+    // seq: order of creation, so the Izanami can cancel what was started after a point. system: bookkeeping (freezes,
+    // intangibility) that must always run to its end, never cancelled.
     private static final class Entry {
         final Task task;
+        final long seq;
+        final boolean system;
         int age;
+        boolean cancelled;
 
-        Entry(Task task) {
+        Entry(Task task, boolean system) {
             this.task = task;
+            this.system = system;
+            this.seq = nextSeq++;
         }
     }
 
     private static final List<Entry> ACTIVE = new ArrayList<>();
     private static final List<Entry> PENDING = new ArrayList<>();
+    private static long nextSeq;
 
     private Tasks() {
     }
 
     public static void add(Task task) {
-        PENDING.add(new Entry(task));
+        PENDING.add(new Entry(task, false));
+    }
+
+    // A task cancelSince never stops.
+    public static void addSystem(Task task) {
+        PENDING.add(new Entry(task, true));
+    }
+
+    // Marks this point: cancelSince(mark) later drops every (non system) task started after it.
+    public static long mark() {
+        return nextSeq;
+    }
+
+    // Can be called from inside a task: the entries are only flagged here and dropped by tick().
+    public static void cancelSince(long mark) {
+        for (List<Entry> list : List.of(ACTIVE, PENDING)) {
+            for (Entry entry : list) {
+                if (!entry.system && entry.seq >= mark) {
+                    entry.cancelled = true;
+                }
+            }
+        }
     }
 
     // Runs body every tick for the given number of ticks.
@@ -59,6 +88,10 @@ public final class Tasks {
         Iterator<Entry> it = ACTIVE.iterator();
         while (it.hasNext()) {
             Entry entry = it.next();
+            if (entry.cancelled) {
+                it.remove();
+                continue;
+            }
             boolean done;
             try {
                 done = entry.task.tick(entry.age++);

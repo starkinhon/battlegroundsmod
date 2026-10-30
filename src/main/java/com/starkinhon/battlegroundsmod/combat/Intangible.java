@@ -23,7 +23,13 @@ public final class Intangible {
             return;
         }
         HELD.merge(entity, 1, Integer::sum);
-        Tasks.later(ticks, () -> HELD.computeIfPresent(entity, (e, count) -> count > 1 ? count - 1 : null));
+        Tasks.addSystem(age -> {
+            if (age < ticks) {
+                return false;
+            }
+            HELD.computeIfPresent(entity, (e, count) -> count > 1 ? count - 1 : null);
+            return true;
+        });
     }
 
     public static void clear() {

@@ -42,6 +42,10 @@ public final class MeteorRenderer {
         FALLING.add(new Falling(spec, start, end, end.subtract(start).normalize(), level.getGameTime() + delay, Math.max(1, fallTicks)));
     }
 
+    public static void clear() {
+        FALLING.clear();
+    }
+
     public static void onRenderLevel(RenderLevelStageEvent event) {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS || FALLING.isEmpty()) {
             return;

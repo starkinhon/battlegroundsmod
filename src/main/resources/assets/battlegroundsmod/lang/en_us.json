@@ -42,6 +42,10 @@
   "ability.battlegroundsmod.uchiha_ghost.2": "Susanoo: Counter",
   "ability.battlegroundsmod.uchiha_ghost.3": "Meteor",
   "ability.battlegroundsmod.uchiha_ghost.4": "Neck Grab",
+  "ability.battlegroundsmod.uchiha_ghost.5": "Katon: Great Fireball",
+  "ability.battlegroundsmod.uchiha_ghost.6": "Izanami",
+  "ability.battlegroundsmod.uchiha_ghost.7": "Susanoo: Slash",
+  "ability.battlegroundsmod.uchiha_ghost.8": "Twin Meteors",
   "power.battlegroundsmod.manipulator": "The Manipulator",
   "power.battlegroundsmod.manipulator.desc": "Spells, illusions and a transcendent form.",
   "ability.battlegroundsmod.manipulator.0": "White Lightning",
@@ -92,5 +96,6 @@
   "hud.battlegroundsmod.ultimate": "Ultimate",
   "message.battlegroundsmod.teleport_cooldown": "Teleport recharging",
   "message.battlegroundsmod.teleport_no_target": "No target within %s blocks: aim at one or hit one first",
-  "message.battlegroundsmod.teleport_blocked": "No room in front of the target"
+  "message.battlegroundsmod.teleport_blocked": "No room in front of the target",
+  "hud.battlegroundsmod.spent": "used"
 }

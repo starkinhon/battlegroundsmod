@@ -1,0 +1,263 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "madara.meteoro_duplo",
+  "nome": "Meteoro Duplo",
+  "tempo": {
+    "preparoTicks": 20,
+    "quedaTicks": 120
+  },
+  "mira": {
+    "modo": "mira",
+    "distanciaMax": 60,
+    "distanciaFrente": 20
+  },
+  "meteoro": {
+    "raio": 13,
+    "alturaInicio": 150,
+    "anguloQueda": 29,
+    "giroOrigem": 0,
+    "aceleracao": 0.7,
+    "girar": 2,
+    "afundar": 0.7,
+    "corEscura": "#1c1012",
+    "corBrilho": "#ffe6dc",
+    "brilho": 1.75
+  },
+  "fumacas": [
+    {
+      "nome": "Rastro branco",
+      "ativa": false,
+      "lados": 4,
+      "abertura": 35,
+      "deslocamento": 1,
+      "largura": 5,
+      "densidade": 8,
+      "duracaoTicks": 100,
+      "cor": "#ececec"
+    },
+    {
+      "nome": "Fumaça 2",
+      "ativa": false,
+      "lados": 1,
+      "abertura": 1,
+      "deslocamento": 1,
+      "largura": 8,
+      "densidade": 6,
+      "duracaoTicks": 80,
+      "cor": "#e3e3e3"
+    }
+  ],
+  "riscos": {
+    "ativa": false,
+    "porTick": 5,
+    "comprimento": 10,
+    "velocidade": 1,
+    "espalhamento": 0.7,
+    "cor": "#d0163a"
+  },
+  "rabeta": {
+    "ativa": true,
+    "cor": "#ff4a10",
+    "cor2": "#fff0b0",
+    "tamanho": 1.6,
+    "comprimento": 30,
+    "fumacaCor": "#3a3436",
+    "fumacaTamanho": 1.1,
+    "fumacaVidaTicks": 90,
+    "fumacaPorTick": 3
+  },
+  "preparo": {
+    "ativa": false,
+    "porTick": 8,
+    "cor": "#7a1020"
+  },
+  "aviso": {
+    "ativo": true,
+    "cor": "#ff3020"
+  },
+  "impacto": {
+    "raio": 46,
+    "danoCentro": 70,
+    "danoBorda": 30,
+    "empurrao": 3,
+    "alturaEmpurrao": 1.3,
+    "quebrarBlocos": true,
+    "raioCratera": 26,
+    "profundidadeCratera": 13,
+    "tremerTela": 1.3,
+    "onda": {
+      "ativa": true,
+      "velocidade": 2,
+      "tamanho": 3.3,
+      "cor": "#ffb070",
+      "alcance": 75,
+      "dano": 14,
+      "empurrao": 2.2,
+      "quebrarBlocos": true,
+      "altura": 3,
+      "profundidade": 3,
+      "largura": 3
+    },
+    "explosao": {
+      "ativa": true,
+      "quantidade": 170,
+      "fumaca": 50,
+      "cor": "#ff8a3a"
+    }
+  },
+  "animacao": {
+    "transicaoTicks": 6,
+    "preparo": {
+      "cabeca": -25,
+      "tronco": -6,
+      "bracoDir": {
+        "frente": 170,
+        "abrir": 12
+      },
+      "bracoEsq": {
+        "frente": 0,
+        "abrir": 0
+      }
+    },
+    "queda": {
+      "cabeca": -12,
+      "tronco": 2,
+      "bracoDir": {
+        "frente": 140,
+        "abrir": 10
+      },
+      "bracoEsq": {
+        "frente": 0,
+        "abrir": 0
+      }
+    }
+  },
+  "vfx": [
+    {
+      "tipo": "impactFrame",
+      "momento": "impacto",
+      "sequencia": [
+        "branco",
+        "invertido",
+        "cor",
+        "manga",
+        "mangaInvertido",
+        "branco",
+        "invertido",
+        "manga"
+      ],
+      "ticksPorQuadro": 1,
+      "cor": "#ff3020",
+      "alcance": 120
+    },
+    {
+      "tipo": "flash",
+      "momento": "impacto",
+      "inicio": 4,
+      "cor": "#ffe6c8",
+      "forca": 0.5,
+      "vidaTicks": 12,
+      "alcance": 120
+    },
+    {
+      "tipo": "blurRadial",
+      "momento": "impacto",
+      "inicio": 4,
+      "forca": 1.2,
+      "vidaTicks": 16,
+      "alcance": 120
+    },
+    {
+      "tipo": "fov",
+      "momento": "impacto",
+      "inicio": 4,
+      "forca": 10,
+      "vidaTicks": 14,
+      "alcance": 100
+    },
+    {
+      "tipo": "distorcao",
+      "momento": "impacto",
+      "modo": "onda",
+      "raio": 60,
+      "forca": 1.3,
+      "velocidade": 30,
+      "altura": 3,
+      "cor": "#ff8060",
+      "tinta": 0.12,
+      "vidaTicks": 45
+    },
+    {
+      "tipo": "clarao",
+      "momento": "impacto",
+      "tamanho": 24,
+      "quantidade": 8,
+      "cor": "#ff5020",
+      "cor2": "#fff2e0",
+      "altura": 4,
+      "vidaTicks": 20
+    },
+    {
+      "tipo": "estrela",
+      "momento": "impacto",
+      "quantidade": 40,
+      "comprimento": 45,
+      "tamanho": 8,
+      "cor": "#ffb070",
+      "altura": 4,
+      "vidaTicks": 14
+    },
+    {
+      "tipo": "anelChao",
+      "momento": "impacto",
+      "raio": 60,
+      "tamanho": 5,
+      "cor": "#ff6a30",
+      "vidaTicks": 34,
+      "velocidade": 2
+    },
+    {
+      "tipo": "anelChao",
+      "momento": "impacto",
+      "inicio": 3,
+      "raio": 30,
+      "tamanho": 2.5,
+      "cor": "#fff0d0",
+      "vidaTicks": 20
+    },
+    {
+      "tipo": "fogo",
+      "momento": "impacto",
+      "quantidade": 22,
+      "raio": 14,
+      "tamanho": 10,
+      "cor": "#d0301a",
+      "cor2": "#fff0a0",
+      "altura": 1,
+      "vidaTicks": 40
+    },
+    {
+      "tipo": "faiscas",
+      "momento": "impacto",
+      "quantidade": 80,
+      "velocidade": 1.6,
+      "comprimento": 3,
+      "tamanho": 5,
+      "cor": "#ff6020",
+      "cor2": "#fff0c0",
+      "altura": 2,
+      "vidaTicks": 34
+    },
+    {
+      "tipo": "fumaca",
+      "momento": "impacto",
+      "inicio": 4,
+      "quantidade": 22,
+      "raio": 26,
+      "tamanho": 14,
+      "cor": "#2c2426",
+      "vidaTicks": 80
+    }
+  ],
+  "despertado": {}
+}

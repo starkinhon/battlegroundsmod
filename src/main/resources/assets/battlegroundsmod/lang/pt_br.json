@@ -42,6 +42,10 @@
   "ability.battlegroundsmod.uchiha_ghost.2": "Susanoo: Contra-ataque",
   "ability.battlegroundsmod.uchiha_ghost.3": "Meteoro",
   "ability.battlegroundsmod.uchiha_ghost.4": "Agarrão no Pescoço",
+  "ability.battlegroundsmod.uchiha_ghost.5": "Katon: Grande Bola de Fogo",
+  "ability.battlegroundsmod.uchiha_ghost.6": "Izanami",
+  "ability.battlegroundsmod.uchiha_ghost.7": "Susanoo: Corte",
+  "ability.battlegroundsmod.uchiha_ghost.8": "Meteoro Duplo",
   "power.battlegroundsmod.manipulator": "Como Manipulador",
   "power.battlegroundsmod.manipulator.desc": "Feitiços, ilusões e uma forma transcendente.",
   "ability.battlegroundsmod.manipulator.0": "Raio Branco",
@@ -92,5 +96,6 @@
   "hud.battlegroundsmod.ultimate": "Ultimate",
   "message.battlegroundsmod.teleport_cooldown": "Teleporte recarregando",
   "message.battlegroundsmod.teleport_no_target": "Sem alvo a até %s blocos: mire em alguém ou acerte alguém antes",
-  "message.battlegroundsmod.teleport_blocked": "Sem espaço na frente do alvo"
+  "message.battlegroundsmod.teleport_blocked": "Sem espaço na frente do alvo",
+  "hud.battlegroundsmod.spent": "usado"
 }

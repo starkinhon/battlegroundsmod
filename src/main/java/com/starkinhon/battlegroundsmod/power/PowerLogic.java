@@ -39,6 +39,10 @@ public final class PowerLogic {
     }
 
     public static Ability ability(Power power, int slot) {
+        if (slot >= PowerData.SLOT_SHIFT) {
+            int index = slot - PowerData.SLOT_SHIFT;
+            return index < power.shiftAbilities().size() ? power.shiftAbilities().get(index) : null;
+        }
         return switch (slot) {
             case PowerData.SLOT_STRONG -> Melee.STRONG;
             case PowerData.SLOT_BARRAGE -> Melee.BARRAGE;
@@ -59,7 +63,7 @@ public final class PowerLogic {
             return;
         }
         Ability ability = ability(power, slot);
-        boolean ultimate = slot == PowerData.SLOT_ULT;
+        boolean ultimate = PowerData.isUlt(slot);
         // Creative mode skips the costs so moves can be recorded freely.
         boolean free = player.isCreative() || data.noCooldown;
         if (!free && ultimate && data.ult < PowerData.MAX_ULT) {
@@ -134,15 +138,15 @@ public final class PowerLogic {
         data.lastCastSlot = slot;
         data.lastCastTime = level.getGameTime();
         CombatMode.enter(caster);
-        if (slot == PowerData.SLOT_ULT) {
-            announceUlt(caster, power);
+        if (PowerData.isUlt(slot)) {
+            announceUlt(caster, power, slot);
         }
         return true;
     }
 
     // Big title on the screen of everyone nearby. Makes ults read well on video.
-    private static void announceUlt(LivingEntity player, Power power) {
-        Component title = power.abilityName(PowerData.SLOT_ULT).copy().withStyle(s -> s.withColor(power.color()).withBold(true));
+    private static void announceUlt(LivingEntity player, Power power, int slot) {
+        Component title = power.abilityName(slot).copy().withStyle(s -> s.withColor(power.color()).withBold(true));
         Component subtitle = player.getDisplayName().copy().withStyle(ChatFormatting.GRAY);
         for (ServerPlayer other : Combat.level(player).players()) {
             if (other.distanceTo(player) <= ULT_TITLE_RANGE) {

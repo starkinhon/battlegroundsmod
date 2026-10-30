@@ -48,6 +48,11 @@ public final class SkillEffects {
         }
     }
 
+    public static void clear() {
+        PENDING.clear();
+        FxWorld.clear();
+    }
+
     public static void tick() {
         if (Minecraft.getInstance().level == null) {
             PENDING.clear();

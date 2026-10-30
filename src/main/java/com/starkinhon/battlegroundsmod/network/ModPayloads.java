@@ -100,6 +100,61 @@ public final class ModPayloads {
         }
     }
 
+    // Client -> server: a skill key went down or up (the giant Katon is thrown when it comes up).
+    public record AbilityHold(boolean down) implements CustomPacketPayload {
+        public static final Type<AbilityHold> TYPE = payloadType("ability_hold");
+        public static final StreamCodec<ByteBuf, AbilityHold> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.BOOL, AbilityHold::down, AbilityHold::new);
+
+        @Override
+        public Type<AbilityHold> type() {
+            return TYPE;
+        }
+    }
+
+    // Server -> client: the giant fireball. mode 0: growing over the caster's head, from radius to maxRadius over
+    // ticks; 1: flying from pos at velocity per tick for ticks; 2: gone (it blew up).
+    public record KatonBall(int id, int casterId, int mode, Vec3 pos, Vec3 velocity, float radius, float maxRadius, int ticks)
+            implements CustomPacketPayload {
+        public static final Type<KatonBall> TYPE = payloadType("katon_ball");
+        public static final StreamCodec<ByteBuf, KatonBall> STREAM_CODEC = new StreamCodec<>() {
+            @Override
+            public KatonBall decode(ByteBuf buf) {
+                return new KatonBall(ByteBufCodecs.VAR_INT.decode(buf), ByteBufCodecs.VAR_INT.decode(buf), ByteBufCodecs.VAR_INT.decode(buf),
+                        VEC3.decode(buf), VEC3.decode(buf), ByteBufCodecs.FLOAT.decode(buf), ByteBufCodecs.FLOAT.decode(buf),
+                        ByteBufCodecs.VAR_INT.decode(buf));
+            }
+
+            @Override
+            public void encode(ByteBuf buf, KatonBall b) {
+                ByteBufCodecs.VAR_INT.encode(buf, b.id());
+                ByteBufCodecs.VAR_INT.encode(buf, b.casterId());
+                ByteBufCodecs.VAR_INT.encode(buf, b.mode());
+                VEC3.encode(buf, b.pos());
+                VEC3.encode(buf, b.velocity());
+                ByteBufCodecs.FLOAT.encode(buf, b.radius());
+                ByteBufCodecs.FLOAT.encode(buf, b.maxRadius());
+                ByteBufCodecs.VAR_INT.encode(buf, b.ticks());
+            }
+        };
+
+        @Override
+        public Type<KatonBall> type() {
+            return TYPE;
+        }
+    }
+
+    // Server -> client: the Izanami turned time back. Every effect still on screen is wiped (it never happened).
+    public record Rewind() implements CustomPacketPayload {
+        public static final Type<Rewind> TYPE = payloadType("rewind");
+        public static final StreamCodec<ByteBuf, Rewind> STREAM_CODEC = StreamCodec.unit(new Rewind());
+
+        @Override
+        public Type<Rewind> type() {
+            return TYPE;
+        }
+    }
+
     // Client -> server: double tap of the sprint key (Ctrl): appear in front of whoever the player fights or aims at.
     public record Teleport() implements CustomPacketPayload {
         public static final Type<Teleport> TYPE = payloadType("teleport");
@@ -445,6 +500,11 @@ public final class ModPayloads {
                 player.getData(ModAttachments.POWER).attackHeld = payload.down();
             }
         }));
+        registrar.playToServer(AbilityHold.TYPE, AbilityHold.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
+            if (context.player() instanceof ServerPlayer player) {
+                player.getData(ModAttachments.POWER).abilityHeld = payload.down();
+            }
+        }));
         registrar.playToServer(Teleport.TYPE, Teleport.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer player) {
                 Movement.teleport(player);
@@ -487,6 +547,10 @@ public final class ModPayloads {
                 () -> ClientHooks.bossCutscene(payload.entityId(), payload.zoomTicks(), payload.skyTicks(), payload.backTicks(), payload.lookAt())));
         registrar.playToClient(BossBarToggle.TYPE, BossBarToggle.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.bossBarToggle(payload.on())));
+        registrar.playToClient(KatonBall.TYPE, KatonBall.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.katonBall(payload.id(), payload.casterId(), payload.mode(), payload.pos(), payload.velocity(), payload.radius(),
+                        payload.maxRadius(), payload.ticks())));
+        registrar.playToClient(Rewind.TYPE, Rewind.STREAM_CODEC, (payload, context) -> context.enqueueWork(ClientHooks::rewind));
         registrar.playToClient(AuraState.TYPE, AuraState.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.auraState(payload.entityId(), payload.power())));
     }
