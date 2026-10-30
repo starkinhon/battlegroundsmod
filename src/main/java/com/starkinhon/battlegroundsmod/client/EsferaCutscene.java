@@ -182,8 +182,10 @@ public final class EsferaCutscene {
                 // Wide, slowly going around him: Bills, the growing sphere and the planet below.
                 double a = -0.7 + 0.6 * s / (charge * 0.5);
                 Vec3 around = forward.yRot((float) a);
-                pos = feet.add(around.scale(11)).add(0, 4, 0);
-                look = feet.add(0, 2.2, 0).lerp(ball, 0.25);
+                // Far enough back that the full-grown sphere over his hand still fits.
+                double back = 9 + 2.2 * spec.esfera().raioEspaco();
+                pos = feet.add(around.scale(back)).add(0, back * 0.35, 0);
+                look = feet.add(0, 2.2, 0).lerp(ball, 0.4);
             } else if (s < charge) {
                 // His face, close, while he says it.
                 double k = smooth((s - charge * 0.5) / (charge * 0.5));
@@ -191,7 +193,8 @@ public final class EsferaCutscene {
                 look = eyes.add(0, 0.05, 0);
             } else {
                 // From behind and above, following the sphere down to the planet.
-                pos = feet.subtract(forward.scale(7)).add(right.scale(2.5)).add(0, 6.5, 0);
+                double back = 5 + spec.esfera().raioEspaco();
+                pos = feet.subtract(forward.scale(back)).add(right.scale(2.5)).add(0, back * 0.9, 0);
                 look = ball;
             }
         }

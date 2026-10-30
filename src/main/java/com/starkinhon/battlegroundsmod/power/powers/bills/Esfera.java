@@ -26,8 +26,9 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 // C: Esfera da Destruição (bills.esfera.json). Bills leaves for outer space in a cutscene only he sees (client/
 // EsferaCutscene): over the square Earth he charges a sun of destruction, says his line and throws it at the planet.
-// Everyone else sees him vanish in a flash. When he is back, the sphere falls from the sky following the target's head
-// (client/fx/EsferaRenderer draws it with the same path) and blows up on it.
+// Everyone else sees him vanish in a flash. When he is back, a sun the size of two meteors comes down slowly from 300
+// blocks up following the target's head (client/fx/EsferaRenderer draws it with the same path), shaking the screen
+// and burning it orange at the edges, and blows up on it with a reach of 200 blocks.
 public final class Esfera {
     public static final String SKILL = EsferaSpec.SKILL;
 
@@ -104,13 +105,13 @@ public final class Esfera {
                 Vec3 side = new Vec3(-from.x, 0, -from.z);
                 side = side.lengthSqr() < 1.0E-4 ? Vec3.ZERO : side.normalize();
                 double height = spec.esfera().alturaQueda();
-                start[0] = lastHead[0].add(side.scale(height * 0.35)).add(0, height, 0);
+                start[0] = lastHead[0].add(side.scale(height * 0.15)).add(0, height, 0);
                 PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new ModPayloads.HideEntity(caster.getId(), 0));
                 attack[0] = Destructible.track(level, caster, start[0], spec.esfera().raioQueda(),
                         () -> Destructible.sendErase(level, SKILL, attack[0].pos(), attack[0].radius()));
                 Fx.effects(level, SKILL, awakened, "voltar", caster, 0);
                 for (ServerPlayer player : level.players()) {
-                    if (player.distanceToSqr(lastHead[0]) < 200 * 200) {
+                    if (player.distanceToSqr(lastHead[0]) < 400 * 400) {
                         PacketDistributor.sendToPlayer(player, new ModPayloads.EsferaFall(victim.getId(), start[0], lastHead[0], awakened));
                     }
                 }
@@ -120,6 +121,10 @@ public final class Esfera {
                 return false;
             }
             if (age < impact) {
+                // Everyone around feels it coming: the screen shakes a little and burns orange at the edges.
+                if ((age - fall) % 20 == 0) {
+                    Fx.effects(level, SKILL, awakened, "aviso", lastHead[0], new Vec3(0, -1, 0));
+                }
                 return false;
             }
             attack[0].end();

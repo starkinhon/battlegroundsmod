@@ -65,10 +65,10 @@ public record EsferaSpec(String skill, String nome, Tempo tempo, Alvo alvo, Esfe
         return fallTick() + Math.max(1, tempo.quedaTicks());
     }
 
-    // Where the falling sphere's center is after k (0 to 1) of the fall: from start towards the head it follows, faster and
-    // faster. The server lands it with the same numbers the clients draw.
+    // Where the falling sphere's center is after k (0 to 1) of the fall: from start towards the head it follows, slow
+    // and heavy, a little faster at the end. The server lands it with the same numbers the clients draw.
     public static Vec3 fallAt(Vec3 start, Vec3 head, double k) {
         k = Math.max(0, Math.min(1, k));
-        return start.lerp(head, k * k);
+        return start.lerp(head, k * 0.6 + k * k * 0.4);
     }
 }

@@ -11,36 +11,45 @@ import com.mojang.blaze3d.vertex.BufferUploader;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexSorting;
 import com.mojang.math.Axis;
+import com.starkinhon.battlegroundsmod.BattlegroundsMod;
 import com.starkinhon.battlegroundsmod.client.EsferaCutscene;
 import com.starkinhon.battlegroundsmod.skill.EsferaSpec;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 
 // Outer space for the Esfera da Destruição cutscene (client/EsferaCutscene), drawn over the whole world at the end of the
-// level: a deep blue-purple sky, stars and soft nebulas, the square Earth (a giant grass block, turning slowly) below,
+// level: a deep blue-purple sky, stars and soft nebulas, the square Earth (a giant textured cube, turning slowly) below,
 // Bills himself floating, and the sun of destruction over his hand. Only the player in the cutscene sees it.
 public final class SpaceScene {
     private static final float[] WHITE = {1, 1, 1};
     private static final float[] BLUE_STAR = FxDraw.rgb(0xBFD8FF);
     private static final float[][] NEBULA = {FxDraw.rgb(0x6A2BD9), FxDraw.rgb(0x2B5BD9), FxDraw.rgb(0xD96A2B), FxDraw.rgb(0x9B30FF)};
     private static final float[] ATMOSPHERE = FxDraw.rgb(0x59A8FF);
+    private static final ResourceLocation EARTH = ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "textures/fx/earth.png");
 
     private SpaceScene() {
     }
 
     public static boolean active() {
         return EsferaCutscene.inSpace();
+    }
+
+    // Effects of this skill still show in space (his own flash and charge); everything else stays in the world below.
+    static boolean owns(String skill) {
+        return EsferaSpec.SKILL.equals(skill);
     }
 
     // First part, before the other world effects: covers the world with the sky, then draws the stars, the planet and
@@ -162,7 +171,9 @@ public final class SpaceScene {
         }
     }
 
-    // The square Earth: a grass block blown up to planet size, turning slowly with a little tilt.
+    // The square Earth: a cube planet-sized, wrapped in Stark's earth texture (textures/fx/earth.png, six 256 pixel faces
+    // side by side, 3 by 2: four sides on the top row and the first of the bottom one, the cloudy one on top), turning
+    // slowly with a little tilt. Fully lit.
     private static void planet(MultiBufferSource buffers, Vec3 camera, EsferaSpec.Espaco espaco, double age) {
         Vec3 rel = EsferaCutscene.planetCenter().subtract(camera);
         float size = (float) espaco.tamanho();
@@ -170,9 +181,30 @@ public final class SpaceScene {
         pose.translate(rel.x, rel.y, rel.z);
         pose.mulPose(Axis.YP.rotationDegrees((float) (age * espaco.girar()) + 30));
         pose.mulPose(Axis.XP.rotationDegrees(8));
-        pose.scale(size, size, size);
-        pose.translate(-0.5, -0.5, -0.5);
-        Minecraft.getInstance().getBlockRenderer().renderSingleBlock(Blocks.GRASS_BLOCK.defaultBlockState(), pose, buffers, 0xF000F0,
-                OverlayTexture.NO_OVERLAY);
+        pose.scale(size / 2, size / 2, size / 2);
+        VertexConsumer out = buffers.getBuffer(RenderType.entityCutoutNoCull(EARTH));
+        PoseStack.Pose last = pose.last();
+        // Corners of each face and its tile in the texture (drawn both ways, so the winding does not matter).
+        face(out, last, 0, new float[] {-1, -1, -1, 1, -1, -1, 1, 1, -1, -1, 1, -1}, 0, 0, -1);
+        face(out, last, 1, new float[] {1, -1, -1, 1, -1, 1, 1, 1, 1, 1, 1, -1}, 1, 0, 0);
+        face(out, last, 2, new float[] {1, -1, 1, -1, -1, 1, -1, 1, 1, 1, 1, 1}, 0, 0, 1);
+        face(out, last, 3, new float[] {-1, -1, 1, -1, -1, -1, -1, 1, -1, -1, 1, 1}, -1, 0, 0);
+        face(out, last, 5, new float[] {-1, 1, -1, 1, 1, -1, 1, 1, 1, -1, 1, 1}, 0, 1, 0);
+        face(out, last, 4, new float[] {-1, -1, 1, 1, -1, 1, 1, -1, -1, -1, -1, -1}, 0, -1, 0);
+    }
+
+    // One face: corners bottom-left, bottom-right, top-right, top-left; tile 0-5 in reading order. A few pixels are
+    // left off each tile's edge so the grey lines between them don't show.
+    private static void face(VertexConsumer out, PoseStack.Pose pose, int tile, float[] c, float nx, float ny, float nz) {
+        float inset = 4 / 768f;
+        float u0 = (tile % 3) / 3f + inset;
+        float u1 = (tile % 3 + 1) / 3f - inset;
+        float v0 = (tile / 3) / 2f + inset * 1.5f;
+        float v1 = (tile / 3 + 1) / 2f - inset * 1.5f;
+        float[][] uv = {{u0, v1}, {u1, v1}, {u1, v0}, {u0, v0}};
+        for (int i = 0; i < 4; i++) {
+            out.addVertex(pose, c[i * 3], c[i * 3 + 1], c[i * 3 + 2]).setColor(0xFFFFFFFF).setUv(uv[i][0], uv[i][1])
+                    .setOverlay(OverlayTexture.NO_OVERLAY).setLight(0xF000F0).setNormal(pose, nx, ny, nz);
+        }
     }
 }

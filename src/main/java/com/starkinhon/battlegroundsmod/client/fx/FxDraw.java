@@ -19,6 +19,7 @@ final class FxDraw {
     static final int FLARE = 6;
     static final int SOLID = 7;
     static final int DISC = 8;
+    static final int SUN = 9;
 
     private static VertexConsumer additive;
     private static VertexConsumer alpha;
