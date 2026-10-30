@@ -115,7 +115,10 @@ public abstract class SoulBoss extends Monster {
         goalSelector.addGoal(8, new LookAtPlayerGoal(this, Player.class, 16f));
         goalSelector.addGoal(8, new RandomLookAroundGoal(this));
         targetSelector.addGoal(1, new HurtByTargetGoal(this));
-        targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, true));
+        // Bosses of different souls fight each other on sight (Bills against the Uchiha Ghost), before players.
+        targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, SoulBoss.class, 10, true, false,
+                other -> other.getType() != getType()));
+        targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Player.class, true));
     }
 
     @Override

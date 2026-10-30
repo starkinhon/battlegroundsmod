@@ -1,0 +1,228 @@
+{
+  "formato": "souls-boss/1",
+  "boss": "bills",
+  "poder": "destruction_god",
+  "tier": 0,
+  "estilo": "deus",
+  "dropAlma": true,
+  "atributos": {
+    "vida": 1000,
+    "armadura": 20,
+    "velocidade": 0.3,
+    "resistenciaEmpurrao": 0.9,
+    "alcanceVisao": 64,
+    "multDano": 1.0
+  },
+  "intro": {
+    "duracaoTicks": 60,
+    "titulo": "God of Destruction",
+    "subtitulo": "Prepare-se para ser destruído",
+    "cor": "#9b30ff"
+  },
+  "percepcao": {
+    "intervaloDecisaoTicks": 6,
+    "aleatoriedade": 0.2,
+    "trocarHumorTicks": 60
+  },
+  "distancias": {
+    "soco": 3.0,
+    "ideal": 6,
+    "intervaloSocoTicks": 12
+  },
+  "movimento": {
+    "velocidadeAndar": 0.9,
+    "velocidadeCorrer": 0.9,
+    "trocarLadoTicks": 40
+  },
+  "ritmo": {
+    "calmoMinTicks": 100,
+    "calmoMaxTicks": 200,
+    "rapidoMinTicks": 100,
+    "rapidoMaxTicks": 200,
+    "velocidadeCalmo": 1.0,
+    "velocidadeRapido": 1.0,
+    "recargaInvestidaRapido": 1000
+  },
+  "investida": {
+    "recargaTicks": 1000,
+    "distanciaMin": 999,
+    "forca": 0,
+    "altura": 0
+  },
+  "passoSombra": {
+    "recargaTicks": 100,
+    "distanciaMin": 3,
+    "distanciaMax": 24,
+    "atras": 1.6,
+    "chance": 0.12,
+    "chanceCalmo": 0.12,
+    "chanceNaEsquiva": 0.35
+  },
+  "puloDuplo": {
+    "alturaMin": 999,
+    "distanciaMax": 0
+  },
+  "teleporte": {
+    "ativo": true,
+    "presoTicks": 40,
+    "distancia": 2
+  },
+  "reacoes": {
+    "chanceEsquivarSkill": 0.3,
+    "chanceEsquivarProjetil": 0.3,
+    "chanceContraAtaque": 0.5,
+    "chanceEsquivarUlt": 0.8,
+    "golpesParaContra": 3,
+    "janelaPressaoTicks": 30,
+    "punirTicks": 100,
+    "multPunir": 2,
+    "golpesParaFugir": 3,
+    "chanceFugirAoApanhar": 0.5
+  },
+  "ultFinal": {
+    "ativa": false
+  },
+  "skills": {
+    "hakai": {
+      "slot": 3,
+      "tipo": "hakai",
+      "peso": 1.2,
+      "recargaTicks": 600,
+      "recargaMaxTicks": 600,
+      "avisoTicks": 8,
+      "distanciaMin": 7,
+      "distanciaMax": 24,
+      "giroGrausPorTick": 30,
+      "avisoCor": "#9b30ff",
+      "avisoSom": "minecraft:block.beacon.activate"
+    },
+    "hakaizinho": {
+      "slot": 11,
+      "tipo": "anti",
+      "peso": 1.0,
+      "recargaTicks": 200,
+      "recargaMaxTicks": 200,
+      "avisoTicks": 0,
+      "distanciaMin": 0,
+      "distanciaMax": 100,
+      "giroGrausPorTick": 360,
+      "avisoCor": "#ff7ad9",
+      "avisoSom": ""
+    },
+    "esfera": {
+      "slot": 2,
+      "tipo": "ult",
+      "peso": 0.9,
+      "recargaTicks": 1200,
+      "recargaMaxTicks": 1600,
+      "avisoTicks": 12,
+      "distanciaMin": 12,
+      "distanciaMax": 40,
+      "giroGrausPorTick": 30,
+      "avisoCor": "#ff9a1f",
+      "avisoSom": "minecraft:entity.wither.ambient"
+    },
+    "forte": {
+      "slot": 4,
+      "tipo": "golpe",
+      "peso": 1.0,
+      "recargaTicks": 300,
+      "recargaMaxTicks": 400,
+      "avisoTicks": 4,
+      "distanciaMin": 0,
+      "distanciaMax": 4,
+      "giroGrausPorTick": 20,
+      "avisoCor": "#ffffff",
+      "avisoSom": "minecraft:entity.player.attack.sweep"
+    },
+    "barragem": {
+      "slot": 5,
+      "tipo": "barragem",
+      "peso": 1.0,
+      "recargaTicks": 300,
+      "recargaMaxTicks": 400,
+      "avisoTicks": 5,
+      "distanciaMin": 0,
+      "distanciaMax": 3.5,
+      "giroGrausPorTick": 10,
+      "avisoCor": "#ffffff",
+      "avisoSom": "minecraft:entity.player.attack.sweep"
+    }
+  },
+  "combos": {
+    "julgamento": {
+      "peso": 1.0,
+      "passos": [
+        "soco",
+        "soco",
+        "soco",
+        "forte"
+      ]
+    },
+    "punho_divino": {
+      "peso": 1.0,
+      "passos": [
+        "sombra",
+        "soco",
+        "soco",
+        "barragem",
+        "forte"
+      ]
+    }
+  },
+  "fases": [
+    {
+      "comecaEm": 1.0,
+      "skills": [
+        "hakai",
+        "hakaizinho",
+        "forte",
+        "barragem"
+      ],
+      "combos": [
+        "julgamento",
+        "punho_divino"
+      ],
+      "agressividade": 0.8,
+      "multRecarga": 1.0,
+      "menosRecargaTicks": 0,
+      "multVelocidade": 1.0,
+      "multAviso": 1.0,
+      "reacaoTicks": 6,
+      "chanceReacao": 0.8,
+      "pausaTicks": 12,
+      "despertado": false,
+      "corBarra": "purple",
+      "transicaoTicks": 0,
+      "titulo": "",
+      "subtitulo": ""
+    },
+    {
+      "comecaEm": 0.5,
+      "skills": [
+        "hakai",
+        "hakaizinho",
+        "esfera",
+        "forte",
+        "barragem"
+      ],
+      "combos": [
+        "julgamento",
+        "punho_divino"
+      ],
+      "agressividade": 0.85,
+      "multRecarga": 1.0,
+      "menosRecargaTicks": 100,
+      "multVelocidade": 1.0,
+      "multAviso": 0.85,
+      "reacaoTicks": 5,
+      "chanceReacao": 1.0,
+      "pausaTicks": 10,
+      "despertado": false,
+      "corBarra": "white",
+      "transicaoTicks": 50,
+      "titulo": "Deus da Destruição",
+      "subtitulo": "Agora você me irritou"
+    }
+  ]
+}

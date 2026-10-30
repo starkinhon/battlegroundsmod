@@ -2,7 +2,7 @@
   "formato": "souls-boss/1",
   "boss": "madara",
   "poder": "uchiha_ghost",
-  "tier": 6,
+  "tier": 5,
   "dropAlma": true,
   "atributos": {
     "vida": 400,

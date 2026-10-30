@@ -75,6 +75,8 @@
   "subtitles.battlegroundsmod.sharingan": "Sharingan awakens",
   "entity.battlegroundsmod.madara": "Uchiha Ghost",
   "item.battlegroundsmod.madara_spawn_egg": "Uchiha Ghost Spawn Egg",
+  "entity.battlegroundsmod.bills": "God of Destruction",
+  "item.battlegroundsmod.bills_spawn_egg": "God of Destruction Spawn Egg",
   "message.battlegroundsmod.boss_debug_on": "Boss thoughts shown on the action bar.",
   "message.battlegroundsmod.boss_debug_off": "Boss thoughts hidden.",
   "message.battlegroundsmod.bossbar_on": "Custom boss bar on.",

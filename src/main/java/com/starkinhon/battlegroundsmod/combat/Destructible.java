@@ -98,6 +98,24 @@ public final class Destructible {
         return erased;
     }
 
+    // The closest attack in flight that is not me's own and whose body comes within range of me, or null.
+    public static Attack nearestThreat(ServerLevel level, Entity me, double range) {
+        prune();
+        Attack best = null;
+        double bestGap = range;
+        for (Attack attack : LIVE) {
+            if (attack.level != level || attack.gone || attack.ended || attack.owner == me) {
+                continue;
+            }
+            double gap = attack.pos.distanceTo(me.position()) - attack.radius;
+            if (gap <= bestGap) {
+                bestGap = gap;
+                best = attack;
+            }
+        }
+        return best;
+    }
+
     // Tells the clients near pos to stop drawing what skill had there (a meteor, a slash, a falling sphere).
     public static void sendErase(ServerLevel level, String skill, Vec3 pos, double radius) {
         for (ServerPlayer player : level.players()) {
