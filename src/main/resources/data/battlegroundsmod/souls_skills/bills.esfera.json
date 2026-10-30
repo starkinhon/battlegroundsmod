@@ -30,7 +30,7 @@
   "impacto": {
     "danoCentro": 60,
     "danoBorda": 15,
-    "raio": 200,
+    "raio": 80,
     "empurrao": 3,
     "quebrarBlocos": true,
     "raioCratera": 30,
@@ -337,7 +337,7 @@
     {
       "tipo": "anelChao",
       "momento": "impacto",
-      "raio": 140,
+      "raio": 80,
       "tamanho": 4,
       "cor": "#ffb040",
       "vidaTicks": 40,

@@ -28,7 +28,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 // EsferaCutscene): over the square Earth he charges a sun of destruction, says his line and throws it at the planet.
 // Everyone else sees him vanish in a flash. When he is back, a sun the size of two meteors comes down slowly from 300
 // blocks up following the target's head (client/fx/EsferaRenderer draws it with the same path), shaking the screen
-// and burning it orange at the edges, and blows up on it with a reach of 200 blocks.
+// and burning it orange at the edges, and blows up on it with twice the meteor's reach (80 blocks).
 public final class Esfera {
     public static final String SKILL = EsferaSpec.SKILL;
 
