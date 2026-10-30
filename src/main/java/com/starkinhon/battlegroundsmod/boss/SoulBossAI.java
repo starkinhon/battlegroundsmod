@@ -10,13 +10,16 @@ import java.util.List;
 import com.starkinhon.battlegroundsmod.BattlegroundsMod;
 import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.combat.Combat;
+import com.starkinhon.battlegroundsmod.combat.Destructible;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.combat.Intangible;
 import com.starkinhon.battlegroundsmod.combat.Melee;
 import com.starkinhon.battlegroundsmod.movement.Movement;
 import com.starkinhon.battlegroundsmod.power.PowerData;
 import com.starkinhon.battlegroundsmod.power.PowerLogic;
+import com.starkinhon.battlegroundsmod.power.powers.bills.Hakaizinho;
 import com.starkinhon.battlegroundsmod.power.powers.uchiha.Susanoo;
+import com.starkinhon.battlegroundsmod.skill.HakaiSpec;
 
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -44,7 +47,9 @@ import net.minecraft.world.phys.Vec3;
 //   is being comboed or sees a heavy hit coming, a dodge and a punish window when the target uses their ult;
 // - between moves it positions itself like a ninja: it switches between walking calmly and moving insanely fast,
 //   blinks behind the target (shadow step) and rushes in with dashes and punches when it feels aggressive, keeps
-//   range and strafes otherwise, double jumps to targets standing up high, and reappears behind a target it can't reach.
+//   range and strafes otherwise, double jumps to targets standing up high, and reappears behind a target it can't reach;
+// - a god (estilo "deus", Bills) has none of the ninja moves: he walks calmly at the target, never dodges, dashes or
+//   jumps, and now and then blinks behind it; attacks flying at him are shot down with the hakaizinho.
 // Every number comes from the boss file (BossSpec). /soul boss debug shows what it is thinking.
 public class SoulBossAI extends Goal {
     // Toggled by /soul boss debug: each boss shows its state and best options on the action bar of players nearby.
@@ -101,6 +106,8 @@ public class SoulBossAI extends Goal {
     private long reactAt;
     private final Deque<String> recent = new ArrayDeque<>();
     private String thinking = "";
+    // The attack the hakaizinho is being shot at (the spark follows it until it leaves the finger).
+    private Destructible.Attack antiTarget;
 
     public SoulBossAI(SoulBoss boss) {
         this.boss = boss;
@@ -194,6 +201,9 @@ public class SoulBossAI extends Goal {
         }
         if (busy) {
             keepAiming(null);
+            return;
+        }
+        if (spec.god() && shootDown(spec, fase)) {
             return;
         }
         if (reaction != null && now >= reactAt) {
@@ -335,6 +345,16 @@ public class SoulBossAI extends Goal {
             }
             r = Reaction.ESCAPE;
         }
+        if (spec.god()) {
+            // A god doesn't dodge or run: at most he reappears behind whoever is bothering him.
+            boolean step = r == Reaction.ESCAPE || random.nextDouble() < spec.passoSombra().chanceNaEsquiva();
+            if (step && shadowStep(spec, Math.max(distance, spec.passoSombra().distanciaMin()))) {
+                plan.clear();
+                state = State.IDLE;
+                return true;
+            }
+            return false;
+        }
         if (r == Reaction.ESCAPE) {
             return escape(spec, distance);
         }
@@ -377,6 +397,43 @@ public class SoulBossAI extends Goal {
             return true;
         }
         return dash(spec);
+    }
+
+    // Something thrown at him (a meteor, a giant fireball, a slash, another sphere): the hakaizinho goes straight at it
+    // and pulverizes it. Returns true when he started the shot.
+    private boolean shootDown(BossSpec spec, BossSpec.Fase fase) {
+        String anti = firstOfType(spec, fase, "anti");
+        if (anti == null || !ready(spec, anti) || now % 2 != 0) {
+            return false;
+        }
+        BossSpec.Skill skill = spec.skills().get(anti);
+        Destructible.Attack attack = Destructible.nearestThreat(level(), boss, skill.distanciaMax());
+        if (attack == null) {
+            return false;
+        }
+        plan.clear();
+        comboName = null;
+        state = State.IDLE;
+        antiTarget = attack;
+        Hakaizinho.aimAt(boss, attack::pos);
+        move = anti;
+        boss.getNavigation().stop();
+        boss.getMoveControl().strafe(0, 0);
+        if (!execute(spec)) {
+            Hakaizinho.aimAt(boss, null);
+            antiTarget = null;
+            return false;
+        }
+        thinking = "hakaizinho no ataque";
+        return true;
+    }
+
+    private boolean erasable() {
+        return HakaiSpec.get(boss.powerData().awakened).canErase(target);
+    }
+
+    private double lifeOf(LivingEntity entity) {
+        return entity.getHealth() / Math.max(1, entity.getMaxHealth());
     }
 
     private boolean facesBoss(LivingEntity entity) {
@@ -480,6 +537,11 @@ public class SoulBossAI extends Goal {
         }
         String tipo = skill.tipo();
         boolean melee = "golpe".equals(tipo) || "barragem".equals(tipo);
+        if ("hakai".equals(tipo) && erasable()) {
+            // Low enough to be erased: nothing is worth more, from as far as the Hakai reaches.
+            double reach = HakaiSpec.get(boss.powerData().awakened).alvo().alcance();
+            return distance <= reach && boss.hasLineOfSight(target) ? skill.peso() * 10 : 0;
+        }
         if (!"contra".equals(tipo) && (distance < skill.distanciaMin() || distance > skill.distanciaMax() || !boss.hasLineOfSight(target))) {
             return 0;
         }
@@ -508,6 +570,22 @@ public class SoulBossAI extends Goal {
                     return 0;
                 }
                 score *= 1.5;
+            }
+            case "hakai" -> {
+                // The hakai ball: kept for when it is far enough to matter and they still have plenty of life (lower
+                // than that he waits to erase them instead).
+                if (lifeOf(target) < 0.35) {
+                    return 0;
+                }
+                score *= punishLeft > 0 ? 1.5 : 1;
+                score *= targetBusy() ? 1.3 : 1;
+            }
+            case "anti" -> {
+                // Shot at attacks on its own (shootDown); as a move only to finish someone low who is far away.
+                if (lifeOf(target) >= 0.2 || distance < 8) {
+                    return 0;
+                }
+                score *= 2;
             }
             case "izanami" -> {
                 // The escape from death: only from half life down, and best while being pressed.
@@ -639,6 +717,9 @@ public class SoulBossAI extends Goal {
 
     // The ult aims at the feet (it lands on the ground); everything else at the body.
     private Vec3 aimPoint(BossSpec.Skill skill) {
+        if (skill != null && "anti".equals(skill.tipo()) && antiTarget != null && !antiTarget.gone()) {
+            return antiTarget.pos();
+        }
         return skill != null && "ult".equals(skill.tipo()) ? target.position() : Combat.center(target);
     }
 
@@ -761,6 +842,10 @@ public class SoulBossAI extends Goal {
     // ---------------------------------------------------------------- moving around
 
     private void position(BossSpec spec, BossSpec.Fase fase, double distance) {
+        if (spec.god()) {
+            walkCalmly(spec, distance);
+            return;
+        }
         if (--moodAge <= 0) {
             moodAge = Math.max(20, spec.percepcao().trocarHumorTicks());
             mood = random.nextDouble() < fase.agressividade() ? Mood.CLOSE : Mood.RANGE;
@@ -817,7 +902,30 @@ public class SoulBossAI extends Goal {
         }
     }
 
+    // A god between moves: no strafing, no dashes. He walks straight at the target, punches when it is in reach, and
+    // now and then simply appears behind it.
+    private void walkCalmly(BossSpec spec, double distance) {
+        boolean sees = boss.hasLineOfSight(target);
+        if (unreachable(spec, sees, distance)) {
+            return;
+        }
+        double reach = spec.distancias().soco();
+        if (sees && boss.tickCount % SHADOW_CHECK_TICKS == 0 && distance > reach + 1
+                && random.nextDouble() < spec.passoSombra().chanceCalmo() && shadowStep(spec, distance)) {
+            return;
+        }
+        if (distance > reach) {
+            approach(spec, distance, false);
+            return;
+        }
+        boss.getNavigation().stop();
+        boss.getMoveControl().strafe(0, 0);
+        face(Combat.center(target), 30);
+        punch();
+    }
+
     private void approach(BossSpec spec, double distance, boolean run) {
+        run &= !spec.god();
         boss.getLookControl().setLookAt(target, 30, 30);
         if (--repath <= 0 || boss.getNavigation().isDone()) {
             repath = REPATH_TICKS;
@@ -841,7 +949,7 @@ public class SoulBossAI extends Goal {
     // A forward dash to close the gap fast.
     private boolean dash(BossSpec spec) {
         BossSpec.Investida investida = spec.investida();
-        if (dashCooldown > 0 || !boss.onGround() || !Movement.free(boss)) {
+        if (spec.god() || dashCooldown > 0 || !boss.onGround() || !Movement.free(boss)) {
             return false;
         }
         face(Combat.center(target), 360);
@@ -887,7 +995,7 @@ public class SoulBossAI extends Goal {
 
     // Jump now, air jump as soon as it leaves the ground (countDown does it).
     private boolean jump() {
-        if (!boss.onGround() || !Movement.free(boss) || boss.getData(ModAttachments.MOVEMENT).airJumpUsed) {
+        if (boss.spec().god() || !boss.onGround() || !Movement.free(boss) || boss.getData(ModAttachments.MOVEMENT).airJumpUsed) {
             return false;
         }
         face(Combat.center(target), 360);

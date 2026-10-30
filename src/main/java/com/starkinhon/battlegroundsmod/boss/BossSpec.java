@@ -15,7 +15,13 @@ import com.starkinhon.battlegroundsmod.BattlegroundsMod;
 public record BossSpec(String boss, String poder, Integer tier, boolean dropAlma, Atributos atributos, Intro intro, Percepcao percepcao,
         Barra barra, Distancias distancias, Movimento movimento, Ritmo ritmo, Investida investida, PassoSombra passoSombra, PuloDuplo puloDuplo,
         Teleporte teleporte, Reacoes reacoes, UltFinal ultFinal,
-        Map<String, Skill> skills, Map<String, Combo> combos, List<Fase> fases) {
+        Map<String, Skill> skills, Map<String, Combo> combos, List<Fase> fases, String estilo) {
+
+    // estilo: how it moves between moves. Missing or "ninja" = dashes, back dodges and double jumps (Madara);
+    // "deus" = walks calmly at the target, never dodges or dashes, only blinks behind it (Bills).
+    public boolean god() {
+        return "deus".equals(estilo);
+    }
 
     // tier: the power tier the boss is made for (see Tiers); its moves hit like that tier. Missing = 10 (human).
     // vida, armadura and velocidade become the entity's attributes. multDano scales every hit the boss lands.
@@ -83,7 +89,8 @@ public record BossSpec(String boss, String poder, Integer tier, boolean dropAlma
 
     // slot: which move of the power (0-3 = Z X C V, 4 = strong attack, 5 = barrage, 7 = the fifth skill on B).
     // tipo tells the AI what the move is for: alcance (ranged), controle (stun), contra (counter), ult, golpe (heavy hit),
-    // barragem (multi-hit). avisoTicks: the warning before it is used. giroGrausPorTick: how fast it turns to follow the
+    // barragem (multi-hit), hakai (Bills' V: erases a target low on life, else throws the hakai ball), anti (Bills'
+// hakaizinho: shot at attacks flying at it, or to finish someone low and far). avisoTicks: the warning before it is used. giroGrausPorTick: how fast it turns to follow the
     // target while the move plays (low = easier to dodge).
     // recargaTicks..recargaMaxTicks: the cooldown is a random value in between (no max = always recargaTicks).
     // fala: what the boss says in the chat of whoever the move catches (the neck grab), empty = nothing.

@@ -2,8 +2,11 @@ package com.starkinhon.battlegroundsmod.power.powers.bills;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.WeakHashMap;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.combat.Combat;
@@ -35,7 +38,19 @@ import net.neoforged.neoforge.network.PacketDistributor;
 public final class Hakaizinho {
     public static final String SKILL = HakaizinhoSpec.SKILL;
 
+    // A boss aiming at something else than its target (an attack flying at it), read when the spark leaves the finger.
+    private static final Map<LivingEntity, Supplier<Vec3>> AIM = new WeakHashMap<>();
+
     private Hakaizinho() {
+    }
+
+    // The next spark of this caster goes at point (followed until it is shot); null goes back to its target.
+    public static void aimAt(LivingEntity caster, Supplier<Vec3> point) {
+        if (point == null) {
+            AIM.remove(caster);
+        } else {
+            AIM.put(caster, point);
+        }
     }
 
     public static boolean use(LivingEntity caster, ServerLevel level) {
@@ -56,6 +71,7 @@ public final class Hakaizinho {
                 return;
             }
             Vec3 dir = aim(caster);
+            AIM.remove(caster);
             Vec3 start = fingertip(caster, dir);
             SkillSounds.play(level, spec.sons(), "lancar", 0, 0, where, screen);
             Fx.effects(level, SKILL, awakened, "lancar", start, dir);
@@ -137,6 +153,10 @@ public final class Hakaizinho {
 
     // Where he aims: his look, or at the one he is fighting for a caster without a crosshair (a boss).
     private static Vec3 aim(LivingEntity caster) {
+        Supplier<Vec3> at = AIM.get(caster);
+        if (at != null && at.get() != null) {
+            return at.get().subtract(caster.getEyePosition()).normalize();
+        }
         PowerData data = caster.getData(ModAttachments.POWER);
         if (!(caster instanceof ServerPlayer) && data.foughtId >= 0 && caster.level().getEntity(data.foughtId) instanceof LivingEntity fought) {
             return Combat.center(fought).subtract(caster.getEyePosition()).normalize();

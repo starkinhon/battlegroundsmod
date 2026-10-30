@@ -2,6 +2,7 @@ package com.starkinhon.battlegroundsmod;
 
 import java.util.function.Supplier;
 
+import com.starkinhon.battlegroundsmod.boss.BillsEntity;
 import com.starkinhon.battlegroundsmod.boss.MadaraEntity;
 import com.starkinhon.battlegroundsmod.boss.SoulBoss;
 
@@ -23,10 +24,20 @@ public final class ModEntities {
                     .clientTrackingRange(16)
                     .build("madara"));
 
+    // God of Destruction: player sized, nothing burns him.
+    public static final Supplier<EntityType<BillsEntity>> BILLS = ENTITY_TYPES.register("bills",
+            () -> EntityType.Builder.of(BillsEntity::new, MobCategory.MONSTER)
+                    .sized(0.6f, 1.8f)
+                    .eyeHeight(1.62f)
+                    .fireImmune()
+                    .clientTrackingRange(16)
+                    .build("bills"));
+
     private ModEntities() {
     }
 
     public static void onAttributes(EntityAttributeCreationEvent event) {
         event.put(MADARA.get(), SoulBoss.createAttributes().build());
+        event.put(BILLS.get(), SoulBoss.createAttributes().build());
     }
 }
