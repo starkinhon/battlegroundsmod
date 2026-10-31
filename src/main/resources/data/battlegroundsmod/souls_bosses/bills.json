@@ -19,6 +19,13 @@
     "subtitulo": "Prepare-se para ser destruído",
     "cor": "#9b30ff"
   },
+  "barra": {
+    "textura": "bills",
+    "frames": 20,
+    "largura": 260,
+    "altura": 60,
+    "brilho": "#9b30ff"
+  },
   "percepcao": {
     "intervaloDecisaoTicks": 6,
     "aleatoriedade": 0.2,
