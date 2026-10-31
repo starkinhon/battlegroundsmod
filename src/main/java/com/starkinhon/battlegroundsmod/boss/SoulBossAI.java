@@ -580,6 +580,10 @@ public class SoulBossAI extends Goal {
                 score *= punishLeft > 0 ? 1.5 : 1;
                 score *= targetBusy() ? 1.3 : 1;
             }
+            case "livre" -> {
+                // No rules: whenever it is ready and in range, a random weight that changes every decision.
+                return skill.peso() * (0.5 + random.nextDouble());
+            }
             case "anti" -> {
                 // Shot at attacks on its own (shootDown); as a move only to finish someone low who is far away.
                 if (lifeOf(target) >= 0.2 || distance < 8) {
