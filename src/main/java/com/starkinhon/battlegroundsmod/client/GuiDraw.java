@@ -4,11 +4,18 @@ import org.joml.Matrix4f;
 
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.BufferUploader;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.MeshData;
+import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.blaze3d.vertex.VertexFormat;
 import com.starkinhon.battlegroundsmod.BattlegroundsMod;
 
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -106,6 +113,35 @@ public final class GuiDraw {
         quad(graphics, x, y - radius, x + radius, y, x, y + radius, x - radius, y, color, color, color, color);
     }
 
+    // Additive colored quads (light that adds up instead of covering): begin, add quads with additiveQuad, end.
+    public static BufferBuilder beginAdditive(GuiGraphics graphics) {
+        graphics.flush();
+        return Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+    }
+
+    public static void additiveQuad(GuiGraphics graphics, BufferBuilder buffer, float x1, float y1, float x2, float y2, float x3, float y3,
+                                    float x4, float y4, int c1, int c2, int c3, int c4) {
+        Matrix4f pose = graphics.pose().last().pose();
+        buffer.addVertex(pose, x1, y1, 0).setColor(c1);
+        buffer.addVertex(pose, x2, y2, 0).setColor(c2);
+        buffer.addVertex(pose, x3, y3, 0).setColor(c3);
+        buffer.addVertex(pose, x4, y4, 0).setColor(c4);
+    }
+
+    public static void endAdditive(BufferBuilder buffer) {
+        MeshData mesh = buffer.build();
+        if (mesh == null) {
+            return;
+        }
+        RenderSystem.enableBlend();
+        RenderSystem.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE);
+        RenderSystem.disableCull();
+        RenderSystem.setShader(GameRenderer::getPositionColorShader);
+        BufferUploader.drawWithShader(mesh);
+        RenderSystem.enableCull();
+        RenderSystem.defaultBlendFunc();
+    }
+
     // A soft round glow (additive), centered on x, y.
     public static void glow(GuiGraphics graphics, float x, float y, float radius, int rgb, float strength) {
         if (strength <= 0.003f) {
@@ -123,6 +159,34 @@ public final class GuiDraw {
         graphics.pose().popPose();
         RenderSystem.setShaderColor(1, 1, 1, 1);
         RenderSystem.defaultBlendFunc();
+    }
+
+    // A soft round shadow (normal blending): darkens what is under it, for smoke and clouds.
+    public static void shade(GuiGraphics graphics, float x, float y, float radius, int rgb, float strength) {
+        if (strength <= 0.003f) {
+            return;
+        }
+        graphics.flush();
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.setShaderColor(((rgb >> 16) & 0xFF) / 255f, ((rgb >> 8) & 0xFF) / 255f, (rgb & 0xFF) / 255f, Mth.clamp(strength, 0, 1));
+        graphics.pose().pushPose();
+        graphics.pose().translate(x - radius, y - radius, 0);
+        float scale = radius * 2 / 64f;
+        graphics.pose().scale(scale, scale, 1);
+        graphics.blit(SOFT, 0, 0, 0, 0, 64, 64, 64, 64);
+        graphics.pose().popPose();
+        RenderSystem.setShaderColor(1, 1, 1, 1);
+    }
+
+    // A filled circle made of thin rows (batched like rect).
+    public static void disc(GuiGraphics graphics, float x, float y, float radius, int color) {
+        float step = radius > 12 ? 1 : 0.5f;
+        for (float dy = -radius; dy < radius; dy += step) {
+            float mid = dy + step / 2;
+            float half = Mth.sqrt(Math.max(0, radius * radius - mid * mid));
+            rect(graphics, x - half, y + dy, x + half, y + dy + step, color);
+        }
     }
 
     // A 1 pixel frame around a box.

@@ -174,10 +174,23 @@ public class ConstellationScreen extends Screen {
 
     private void sky(GuiGraphics graphics, int mouseX, int mouseY, float t) {
         int color = power.color();
-        graphics.fillGradient(0, 0, width, height, 0xFF000000 | GuiDraw.mix(0x040308, color, 0.06f),
-                0xFF000000 | GuiDraw.mix(0x0A0610, color, 0.24f));
+        boolean tsukuyomi = power.id().equals("uchiha_ghost");
+        if (tsukuyomi) {
+            graphics.fillGradient(0, 0, width, height, TsukuyomiSky.top(), TsukuyomiSky.bottom());
+        } else {
+            graphics.fillGradient(0, 0, width, height, 0xFF000000 | GuiDraw.mix(0x040308, color, 0.06f),
+                    0xFF000000 | GuiDraw.mix(0x0A0610, color, 0.24f));
+        }
         float fade = Mth.clamp(t / 0.35f, 0, 1);
         float cx = (areaLeft + areaRight) / 2f;
+
+        if (tsukuyomi) {
+            stars(graphics, mouseX, mouseY, t, fade * 0.45f, 0xFF4030);
+            float coreY = pointY(SkillTree.CORE_Y);
+            float radius = Math.min((areaRight - areaLeft) * 0.42f, (coreY - areaTop) * 0.5f);
+            TsukuyomiSky.draw(graphics, width, height, cx, coreY - radius * 1.05f, radius, pointX(SkillTree.CORE_X), coreY, t, fade);
+            return;
+        }
 
         // Nebula: big soft clouds of the power's color drifting slowly.
         GuiDraw.glow(graphics, cx + Mth.sin(t * 0.07f) * 30, height * 0.45f, width * 0.42f, color, 0.16f * fade);
@@ -185,7 +198,12 @@ public class ConstellationScreen extends Screen {
         GuiDraw.glow(graphics, width * 0.78f, height * 0.7f + Mth.sin(t * 0.06f) * 20, width * 0.32f, GuiDraw.mix(color, 0xFF3070, 0.3f), 0.09f * fade);
         GuiDraw.glow(graphics, pointX(SkillTree.CORE_X), pointY(SkillTree.CORE_Y), width * 0.22f, color, 0.22f * fade);
 
-        // Stars, with a little parallax from the mouse.
+        stars(graphics, mouseX, mouseY, t, fade, color);
+        drawPlanet(graphics, cx, color, fade);
+    }
+
+    // Stars, with a little parallax from the mouse.
+    private void stars(GuiGraphics graphics, int mouseX, int mouseY, float t, float fade, int color) {
         float px = (mouseX - width / 2f) / width;
         float py = (mouseY - height / 2f) / height;
         for (Star star : stars) {
@@ -201,8 +219,10 @@ public class ConstellationScreen extends Screen {
             GuiDraw.rect(graphics, x - s, y - s, x + s, y + s, GuiDraw.argb(alpha, tint));
         }
         graphics.flush();
+    }
 
-        // A planet's curve under the core, its rim lit by the power.
+    // A planet's curve under the core, its rim lit by the power.
+    private void drawPlanet(GuiGraphics graphics, float cx, int color, float fade) {
         float radius = width * 0.9f;
         float crest = pointY(SkillTree.CORE_Y) + nodeSize * 0.9f;
         float centerY = crest + radius;
