@@ -18,7 +18,8 @@ public record HakaiBolaSpec(String skill, String nome, Tempo tempo, Alvo alvo, B
     public record Alvo(double alcance) {
     }
 
-    // raio: the sphere's radius (2.7 = three times as tall as a player). acima: how high over his hand it forms.
+    // raio: the sphere's radius (2.7 = three times as tall as a player). acima: how high over his eyes its center forms (keep it equal to the
+    // "altura" of the "uso" clarao so the ball sits on the light).
     // velocidade: blocks per tick it chases at; curva: how fast it turns towards the target (0 to 1 each tick).
     // perseguirTicks: how long it chases before it fades; pegar: how deep the target has to be in it to be caught (0 to
     // 1 of the radius).

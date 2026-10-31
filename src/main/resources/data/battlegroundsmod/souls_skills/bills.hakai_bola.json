@@ -11,7 +11,7 @@
   },
   "bola": {
     "raio": 2.7,
-    "acima": 0.4,
+    "acima": 1.6,
     "velocidade": 0.2,
     "curva": 0.08,
     "perseguirTicks": 300,
