@@ -2,6 +2,7 @@ package com.starkinhon.battlegroundsmod.power.powers.uchiha;
 
 import java.util.List;
 
+import com.starkinhon.battlegroundsmod.combat.BlockRules;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Cone;
 import com.starkinhon.battlegroundsmod.combat.Fx;
@@ -17,7 +18,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.block.BaseFireBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.FireBlock;
@@ -123,7 +123,7 @@ public final class UchihaFx {
 
     // Ground the fire passes over catches a short fire that doesn't stay: it is put out again a moment later.
     public static void katonIgnite(ServerLevel level, Cone cone) {
-        if (!level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
+        if (!BlockRules.canBreak(level)) {
             return;
         }
         Vec3 dir = cone.dir();

@@ -130,9 +130,11 @@ public final class Combat {
         player.hurtMarked = true;
     }
 
-    // Respects the mobGriefing gamerule for block damage. The caster is never hurt by their own explosion.
+    // Breaks blocks only under mobGriefing and soulsBlockDestruction (BlockRules). The caster is never hurt by their
+    // own explosion.
     public static void explode(ServerPlayer player, Vec3 pos, float power) {
-        player.serverLevel().explode(player, pos.x, pos.y, pos.z, power, Level.ExplosionInteraction.MOB);
+        Level.ExplosionInteraction blocks = BlockRules.canBreak(player.level()) ? Level.ExplosionInteraction.MOB : Level.ExplosionInteraction.NONE;
+        player.serverLevel().explode(player, pos.x, pos.y, pos.z, power, blocks);
     }
 
     public static boolean canStandAt(ServerPlayer player, Vec3 feet) {

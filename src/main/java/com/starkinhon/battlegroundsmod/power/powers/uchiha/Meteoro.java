@@ -7,6 +7,7 @@ import java.util.Set;
 
 import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.combat.AshKill;
+import com.starkinhon.battlegroundsmod.combat.BlockRules;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Destructible;
 import com.starkinhon.battlegroundsmod.combat.Fx;
@@ -28,7 +29,6 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.ClipContext;
-import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -169,7 +169,7 @@ public final class Meteoro {
     private static void impact(String skill, LivingEntity player, ServerLevel level, MeteoroSpec spec, Vec3 pos, float damageMult) {
         MeteoroSpec.Impacto impacto = spec.impacto();
         double radius = Math.max(1, impacto.raio());
-        if (impacto.quebrarBlocos() && level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
+        if (impacto.quebrarBlocos() && BlockRules.canBreak(level)) {
             crater(level, pos, impacto.raioCratera(), impacto.profundidadeCratera());
         }
         for (LivingEntity target : Combat.inRadius(level, pos, radius, player)) {
@@ -202,7 +202,7 @@ public final class Meteoro {
         double speed = onda.velocidade();
         double reach = onda.alcance();
         int ticks = (int) Math.ceil(reach / speed);
-        boolean grief = onda.quebrarBlocos() && level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING);
+        boolean grief = onda.quebrarBlocos() && BlockRules.canBreak(level);
         Set<LivingEntity> hit = new HashSet<>();
         RandomSource random = level.getRandom();
         int groundY = BlockPos.containing(center).getY();

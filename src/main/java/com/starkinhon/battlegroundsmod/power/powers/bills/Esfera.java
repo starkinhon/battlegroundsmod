@@ -6,6 +6,7 @@ import java.util.function.Function;
 
 import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.combat.AshKill;
+import com.starkinhon.battlegroundsmod.combat.BlockRules;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.combat.Fx;
@@ -24,7 +25,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.ClipContext;
-import net.minecraft.world.level.GameRules;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -212,7 +212,7 @@ public final class Esfera {
         PacketDistributor.sendToPlayersTrackingEntityAndSelf(victim, new ModPayloads.PlaySkillAnimation(victim.getId(), "", false));
         Fx.effects(level, SKILL, awakened, "impacto", at, new Vec3(0, 1, 0));
         SkillSounds.play(level, spec.sons(), "impacto", 0, 0, onde -> at, screen);
-        if (queda.quebrarBlocos() && level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
+        if (queda.quebrarBlocos() && BlockRules.canBreak(level)) {
             Agarrao.crater(level, at.add(0, 0.5, 0), queda.raioCratera(), queda.profundidadeCratera());
             // The crater opens under it: it ends up at the bottom.
             Tasks.later(2, () -> victim.setDeltaMovement(0, -1.5, 0));

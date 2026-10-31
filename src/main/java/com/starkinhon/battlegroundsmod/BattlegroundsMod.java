@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 
 import com.mojang.logging.LogUtils;
 import com.starkinhon.battlegroundsmod.boss.BossRules;
+import com.starkinhon.battlegroundsmod.combat.BlockRules;
 import com.starkinhon.battlegroundsmod.command.BossCommand;
 import com.starkinhon.battlegroundsmod.command.SoulCommand;
 import com.starkinhon.battlegroundsmod.fx.ModParticles;
@@ -56,6 +57,7 @@ public class BattlegroundsMod {
         ModEffects.MOB_EFFECTS.register(modEventBus);
 
         BossRules.init();
+        BlockRules.init();
         PowerEvents.register();
         FightRod.register();
         SoulCommand.addSubcommand(BossCommand::bossbar);
