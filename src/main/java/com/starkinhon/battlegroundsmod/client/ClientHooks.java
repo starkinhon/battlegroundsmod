@@ -2,6 +2,7 @@ package com.starkinhon.battlegroundsmod.client;
 
 import java.util.UUID;
 
+import com.starkinhon.battlegroundsmod.client.cutscene.CutscenePlayer;
 import com.starkinhon.battlegroundsmod.client.fx.MeteorRenderer;
 import com.starkinhon.battlegroundsmod.client.fx.AshDeath;
 import com.starkinhon.battlegroundsmod.client.fx.Aura;
@@ -41,7 +42,14 @@ public final class ClientHooks {
         SkillAnimations.hold(entityId, ticks);
     }
 
+    // Each skill's cutscene first looks for one made in the Editor de Cutscenes (client/cutscene); with none, the
+    // hand-made one plays.
     public static void startFaceCutscene(int entityId, String skill, boolean awakened) {
+        var player = Minecraft.getInstance().player;
+        int watcher = player != null && player.getId() != entityId ? player.getId() : -1;
+        if (CutscenePlayer.start(skill, entityId, watcher, false)) {
+            return;
+        }
         FaceCutscene.start(entityId, SkillSpecs.get(skill, CutsceneSpec.Holder.class, awakened).cutscene());
     }
 
@@ -67,14 +75,23 @@ public final class ClientHooks {
     }
 
     public static void shoulderCutscene(int casterId, int targetId, int ticks) {
+        if (CutscenePlayer.start("madara.susanoo", casterId, targetId, false)) {
+            return;
+        }
         ShoulderCutscene.start(casterId, targetId, ticks);
     }
 
     public static void bopCutscene(int casterId, int targetId, boolean awakened, int endTick) {
+        if (CutscenePlayer.start("bills.destruction_bop", casterId, targetId, false)) {
+            return;
+        }
         BopCutscene.start(casterId, targetId, awakened, endTick);
     }
 
     public static void grabCutscene(int casterId, int targetId, boolean awakened, int impactTick) {
+        if (CutscenePlayer.start("madara.agarrao", casterId, targetId, false)) {
+            return;
+        }
         GrabCutscene.start(casterId, targetId, awakened, impactTick);
     }
 
@@ -100,6 +117,9 @@ public final class ClientHooks {
     }
 
     public static void hakaiCutscene(int casterId, int targetId, boolean awakened) {
+        if (CutscenePlayer.start("bills.hakai", casterId, targetId, false)) {
+            return;
+        }
         HakaiCutscene.start(casterId, targetId, awakened);
     }
 
@@ -108,7 +128,13 @@ public final class ClientHooks {
     }
 
     public static void esferaCutscene(int casterId, boolean awakened) {
+        // The trip to space keeps running (it draws the space, its bars and its line); only the camera is the editor's.
+        var before = Minecraft.getInstance().options.getCameraType();
         EsferaCutscene.start(casterId, awakened);
+        if (EsferaCutscene.active() && CutscenePlayer.start("bills.esfera", casterId, -1, true)) {
+            // The trip already switched to third person: give back the view the player had before it.
+            CutscenePlayer.restoreTo(before);
+        }
     }
 
     public static void esferaFall(int targetId, Vec3 start, Vec3 lastHead, boolean awakened) {
@@ -140,6 +166,10 @@ public final class ClientHooks {
     }
 
     public static void bossCutscene(int entityId, int zoom, int sky, int back, Vec3 lookAt) {
+        var player = Minecraft.getInstance().player;
+        if (CutscenePlayer.start("madara.boss_meteoro", entityId, player != null ? player.getId() : -1, false)) {
+            return;
+        }
         BossCutscene.start(entityId, zoom, sky, back, lookAt);
     }
 

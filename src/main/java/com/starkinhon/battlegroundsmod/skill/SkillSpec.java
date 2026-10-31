@@ -73,6 +73,11 @@ public record SkillSpec(String skill, String nome, Tempo tempo, Origem origem, D
         static Braco of(Braco braco) {
             return braco != null ? braco : ZERO;
         }
+
+        Braco plus(Braco other) {
+            Braco o = of(other);
+            return new Braco(frente + o.frente, abrir + o.abrir);
+        }
     }
 
     // giro turns the upper body around the spine (positive brings the right shoulder forward, for a right punch).
@@ -89,6 +94,12 @@ public record SkillSpec(String skill, String nome, Tempo tempo, Origem origem, D
                     Braco.of(bracoDir).lerp(to.bracoDir, t), Braco.of(bracoEsq).lerp(to.bracoEsq, t), giro + (to.giro - giro) * t,
                     Braco.of(pernaDir).lerp(to.pernaDir, t), Braco.of(pernaEsq).lerp(to.pernaEsq, t), corpo + (to.corpo - corpo) * t,
                     pernas + (to.pernas - pernas) * t);
+        }
+
+        // Every angle of the other pose added on top (the Editor de Cutscenes' "somar").
+        public Pose plus(Pose o) {
+            return new Pose(cabeca + o.cabeca, tronco + o.tronco, Braco.of(bracoDir).plus(o.bracoDir), Braco.of(bracoEsq).plus(o.bracoEsq),
+                    giro + o.giro, Braco.of(pernaDir).plus(o.pernaDir), Braco.of(pernaEsq).plus(o.pernaEsq), corpo + o.corpo, pernas + o.pernas);
         }
     }
 }

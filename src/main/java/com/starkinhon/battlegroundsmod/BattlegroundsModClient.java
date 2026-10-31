@@ -54,6 +54,8 @@ import net.neoforged.neoforge.client.gui.ConfigurationScreen;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.bus.api.EventPriority;
+import com.starkinhon.battlegroundsmod.client.cutscene.CutscenePlayer;
 
 // This class will not load on dedicated servers. Accessing client side code from here is safe.
 @Mod(value = BattlegroundsMod.MODID, dist = Dist.CLIENT)
@@ -86,6 +88,12 @@ public class BattlegroundsModClient {
         NeoForge.EVENT_BUS.addListener(MovementInputUpdateEvent.class, BopCutscene::onMovementInput);
         NeoForge.EVENT_BUS.addListener(MovementInputUpdateEvent.class, HakaiCutscene::onMovementInput);
         NeoForge.EVENT_BUS.addListener(MovementInputUpdateEvent.class, EsferaCutscene::onMovementInput);
+        NeoForge.EVENT_BUS.addListener(MovementInputUpdateEvent.class, CutscenePlayer::onMovementInput);
+        NeoForge.EVENT_BUS.addListener(CutscenePlayer::onCameraAngles);
+        NeoForge.EVENT_BUS.addListener(CutscenePlayer::onComputeFov);
+        // Last, so a body hidden by another listener never gets its pose stack pushed without the pop.
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, false, RenderLivingEvent.Pre.class, CutscenePlayer::onRenderPre);
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, true, RenderLivingEvent.Post.class, CutscenePlayer::onRenderPost);
     }
 
     private static void onClientSetup(FMLClientSetupEvent event) {
@@ -106,6 +114,7 @@ public class BattlegroundsModClient {
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "bop_cutscene"), BopCutscene::renderGui);
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "hakai_cutscene"), HakaiCutscene::renderGui);
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "esfera_cutscene"), EsferaCutscene::renderGui);
+        event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "editor_cutscene"), CutscenePlayer::renderGui);
     }
 
     private static void onRegisterParticles(RegisterParticleProvidersEvent event) {
@@ -145,6 +154,7 @@ public class BattlegroundsModClient {
         BopCutscene.tick();
         HakaiCutscene.tick();
         EsferaCutscene.tick();
+        CutscenePlayer.tick();
         Vanish.tick();
         ScreenShake.tick();
         ScreenFx.tick();

@@ -14,6 +14,7 @@ import com.starkinhon.battlegroundsmod.client.GrabCutscene;
 import com.starkinhon.battlegroundsmod.client.HakaiCutscene;
 import com.starkinhon.battlegroundsmod.client.ScreenShake;
 import com.starkinhon.battlegroundsmod.client.ShoulderCutscene;
+import com.starkinhon.battlegroundsmod.client.cutscene.CutscenePlayer;
 
 import net.minecraft.client.Camera;
 import net.minecraft.world.entity.Entity;
@@ -33,7 +34,9 @@ public abstract class CameraMixin {
     @Inject(method = "setup", at = @At("TAIL"))
     private void battlegroundsmod$cutscene(BlockGetter level, Entity entity, boolean detached, boolean thirdPersonReverse,
             float partialTick, CallbackInfo ci) {
-        FaceCutscene.Shot shot = BossCutscene.active() ? BossCutscene.shot(partialTick)
+        // A cutscene from the Editor de Cutscenes has the camera to itself (null between its stretches: the player's view).
+        FaceCutscene.Shot shot = CutscenePlayer.active() ? CutscenePlayer.shot(partialTick)
+                : BossCutscene.active() ? BossCutscene.shot(partialTick)
                 : HakaiCutscene.active() ? HakaiCutscene.shot(partialTick)
                 : EsferaCutscene.active() ? EsferaCutscene.shot(partialTick)
                 : GrabCutscene.active() ? GrabCutscene.shot(partialTick)
