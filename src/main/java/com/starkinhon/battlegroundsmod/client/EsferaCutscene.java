@@ -208,32 +208,30 @@ public final class EsferaCutscene {
             return hands;
         }
         Vec3 aim = targetPos(partialTick).add(0, 0.4, 0);
-        Vec3 out = hands.add(aim.subtract(hands).normalize().scale(4));
-        if (t < spec.flyTick()) {
-            // Thrown: out of his hands, still small.
-            double k = (t - spec.throwTick()) / Math.max(1, spec.flyTick() - spec.throwTick());
-            radius[0] = charge;
-            return hands.lerp(out, 1 - (1 - k) * (1 - k));
-        }
+        double big = Math.max(charge, e.raioGigante());
+        Vec3 from = aim.subtract(hands).normalize();
+        Vec3 contact = aim.subtract(from.scale(big * 0.85));
         if (t < spec.blastTick()) {
+            // Out of his hands and on to the target at one steady speed the whole way (no slowing down), imploding into
+            // the giant sun on the way.
+            double k = (t - spec.throwTick()) / Math.max(1, spec.blastTick() - spec.throwTick());
+            Vec3 at = hands.lerp(contact, k);
             double s = t - spec.flyTick();
             int implode = implodeTicks();
-            double big = Math.max(charge, e.raioGigante());
-            if (s < implode) {
+            if (s < 0) {
+                radius[0] = charge;
+            } else if (s < implode) {
                 // In to a point, then all at once a giant sun.
                 radius[0] = charge * (1 - 0.7 * smooth(s / implode));
-                return out;
+            } else {
+                double grow = (s - implode) / 3;
+                radius[0] = grow < 1 ? Mth.lerp(grow, charge * 0.3, big * 1.12) : big * (1 + 0.12 * Math.max(0, 1 - (grow - 1) / 3));
             }
-            double grow = (s - implode) / 3;
-            radius[0] = grow < 1 ? Mth.lerp(grow, charge * 0.3, big * 1.12) : big * (1 + 0.12 * Math.max(0, 1 - (grow - 1) / 3));
-            double k = (s - implode) / Math.max(1, spec.blastTick() - spec.flyTick() - implode);
-            Vec3 contact = aim.add(out.subtract(aim).normalize().scale(big * 0.85));
-            return out.lerp(contact, k * k * (1.6 - 0.6 * k));
+            return at;
         }
         // On the target, pushing it down.
-        double big = Math.max(charge, e.raioGigante());
         radius[0] = big;
-        return aim.add(out.subtract(aim).normalize().scale(big * 0.85));
+        return contact;
     }
 
     // ---------- the camera ----------

@@ -17,6 +17,7 @@
   "esfera": {
     "raioCarga": 0.45,
     "raioGigante": 6,
+    "raioQueda": 12,
     "raioExplosao": 12
   },
   "espaco": {
@@ -44,14 +45,14 @@
   "queda": {
     "altura": 150,
     "distancia": 40,
-    "velocidade": 5,
+    "velocidade": 1.67,
     "dano": 50,
-    "raio": 22,
+    "raio": 44,
     "danoArea": 20,
-    "empurrao": 2.5,
+    "empurrao": 3.5,
     "quebrarBlocos": true,
-    "raioCratera": 20,
-    "profundidadeCratera": 10
+    "raioCratera": 40,
+    "profundidadeCratera": 20
   },
   "danoEspaco": 0,
   "legenda": {
@@ -528,17 +529,17 @@
     {
       "tipo": "chamas",
       "momento": "impacto",
-      "raio": 18,
-      "vidaTicks": 44,
+      "raio": 36,
+      "vidaTicks": 56,
       "alcance": 300
     },
     {
       "tipo": "faiscas",
       "momento": "impacto",
-      "quantidade": 200,
-      "velocidade": 2,
-      "comprimento": 3,
-      "tamanho": 2.5,
+      "quantidade": 320,
+      "velocidade": 4,
+      "comprimento": 6,
+      "tamanho": 5,
       "cor": "#ff7a10",
       "cor2": "#fff6d0",
       "vidaTicks": 22,
@@ -548,9 +549,9 @@
       "tipo": "fumaca",
       "momento": "impacto",
       "inicio": 2,
-      "quantidade": 26,
-      "raio": 22,
-      "tamanho": 10,
+      "quantidade": 40,
+      "raio": 44,
+      "tamanho": 20,
       "cor": "#3a2a24",
       "vidaTicks": 60,
       "alcance": 250
@@ -558,18 +559,18 @@
     {
       "tipo": "anelChao",
       "momento": "impacto",
-      "raio": 45,
-      "tamanho": 3,
+      "raio": 90,
+      "tamanho": 6,
       "cor": "#ffb040",
       "vidaTicks": 30,
-      "velocidade": 3,
+      "velocidade": 5,
       "alcance": 250
     },
     {
       "tipo": "distorcao",
       "momento": "impacto",
       "modo": "onda",
-      "raio": 30,
+      "raio": 60,
       "forca": 0.6,
       "velocidade": 16,
       "cor": "#ff9a30",
@@ -580,7 +581,7 @@
     {
       "tipo": "tremor",
       "momento": "impacto",
-      "forca": 2.6,
+      "forca": 3,
       "vidaTicks": 26,
       "alcance": 200
     },
