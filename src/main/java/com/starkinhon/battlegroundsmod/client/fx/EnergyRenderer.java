@@ -82,7 +82,7 @@ public final class EnergyRenderer {
         Vector3f dir = step.normalize().toVector3f();
         float length = (float) Math.min(step.length() * (small ? 2.5 : 3.5), Math.max(1.5f, r * 14));
         Vector3f back = new Vector3f(dir).mul(-length).add(at);
-        FxDraw.ribbon(back, at, r * 1.4f, FxDraw.STREAK, 0.1f, PURPLE, 0.4f, true);
+        FxDraw.ribbon(back, at, r * 1.4f, FxDraw.STREAK, 0, PURPLE, 0.6f, false);
         FxDraw.ribbon(new Vector3f(dir).mul(-length * 0.6f).add(at), at, r * 0.45f, FxDraw.STREAK, 0.4f, LILAC, 0.6f, true);
     }
 
@@ -92,10 +92,12 @@ public final class EnergyRenderer {
         float g = smooth(grow);
         float pulse = 1 + 0.04f * Mth.sin(age * 0.25f) + 0.02f * Mth.sin(age * 0.71f);
         rings(at, r, age, seed, grow, light, look);
-        // The ball of light: a purple glow, violet body and a small lilac-white heart.
-        FxDraw.billboard(at, r * 1.8f * pulse, 0, FxDraw.SOFT, 0, PURPLE, 0.5f * g, true);
-        FxDraw.billboard(at, r * 1.2f * pulse, 0, FxDraw.SOFT, 0.4f, VIOLET, 0.8f * g, true);
-        FxDraw.billboard(at, r * 0.55f, 0, FxDraw.SOFT, 0.8f, LILAC, 0.9f * g, true);
+        // The ball of light: a purple and violet body on the alpha layer (added light over a bright sky would turn
+        // white), a little purple glow and a small lilac heart.
+        FxDraw.billboard(at, r * 2.2f * pulse, 0, FxDraw.SOFT, 0, PURPLE, g, false);
+        FxDraw.billboard(at, r * 1.4f * pulse, 0, FxDraw.SOFT, 0, VIOLET, g, false);
+        FxDraw.billboard(at, r * 1.4f * pulse, 0, FxDraw.SOFT, 0, PURPLE, 0.35f * g, true);
+        FxDraw.billboard(at, r * 0.5f, 0, FxDraw.SOFT, 0.6f, LILAC, 0.85f * g, true);
     }
 
     // Each ring on its own tilted plane that slowly turns; the light runs along it, strong at the head and fading to the
@@ -132,17 +134,18 @@ public final class EnergyRenderer {
                     if (depth > 0 && new Vector3f(off).sub(new Vector3f(look).mul(depth)).length() < r * 1.1f) {
                         bright *= 0.35f;
                     }
-                    FxDraw.ribbon(last, point, width * 4, FxDraw.BEAM, 0, PURPLE, 0.35f * bright * open, true);
+                    // Purple and violet on the alpha layer so they stay purple in daylight, a thin lilac light in the middle.
+                    FxDraw.ribbon(last, point, width * 3.2f, FxDraw.BEAM, 0, PURPLE, 0.55f * bright * open, false);
                     if (!light) {
-                        FxDraw.ribbon(last, point, width * 2.2f, FxDraw.BEAM, 0.1f, VIOLET, 0.6f * bright * open, true);
+                        FxDraw.ribbon(last, point, width * 1.8f, FxDraw.BEAM, 0, VIOLET, 0.75f * bright * open, false);
                     }
-                    FxDraw.ribbon(last, point, width, FxDraw.BEAM, 0.3f, LILAC, 0.95f * bright * open, true);
+                    FxDraw.ribbon(last, point, width * 0.8f, FxDraw.BEAM, 0.2f, LILAC, 0.7f * bright * open, true);
                 }
                 last = point;
             }
             // The bright head of the ring.
             Vector3f tip = new Vector3f(u).mul(Mth.cos(head) * ring).add(new Vector3f(v).mul(Mth.sin(head) * ring)).add(at);
-            FxDraw.billboard(tip, r * 0.5f, 0, FxDraw.SOFT, 0.4f, VIOLET, 0.6f * open, true);
+            FxDraw.billboard(tip, r * 0.5f, 0, FxDraw.SOFT, 0, VIOLET, 0.8f * open, false);
         }
     }
 
