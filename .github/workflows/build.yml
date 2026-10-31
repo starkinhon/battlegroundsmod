@@ -43,7 +43,7 @@ jobs:
         run: |
           mkdir -p run
           echo "eula=true" > run/eula.txt
-          ./gradlew runServer > server.log 2>&1 &
+          ./gradlew runServer -PnoDevMods > server.log 2>&1 &
           PID=$!
           for i in $(seq 1 120); do
             if grep -q 'Done (' server.log; then
