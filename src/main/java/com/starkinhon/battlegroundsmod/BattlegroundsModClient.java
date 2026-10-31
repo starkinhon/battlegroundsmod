@@ -76,6 +76,10 @@ public class BattlegroundsModClient {
         NeoForge.EVENT_BUS.addListener(AshDeath::onRenderLevel);
         NeoForge.EVENT_BUS.addListener(RenderLivingEvent.Pre.class, AshDeath::onRenderLiving);
         NeoForge.EVENT_BUS.addListener(RenderLivingEvent.Pre.class, Vanish::onRenderLiving);
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOW, false, RenderLivingEvent.Pre.class,
+                com.starkinhon.battlegroundsmod.client.fx.EsferaRenderer::onRenderPre);
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, true, RenderLivingEvent.Post.class,
+                com.starkinhon.battlegroundsmod.client.fx.EsferaRenderer::onRenderPost);
         NeoForge.EVENT_BUS.addListener(ScreenFx::onComputeFov);
         NeoForge.EVENT_BUS.addListener(BattlegroundsModClient::onClientTickPre);
         NeoForge.EVENT_BUS.addListener(BattlegroundsModClient::onClientTick);

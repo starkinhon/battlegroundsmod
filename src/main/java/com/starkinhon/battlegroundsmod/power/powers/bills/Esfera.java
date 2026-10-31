@@ -10,6 +10,7 @@ import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.combat.Fx;
 import com.starkinhon.battlegroundsmod.combat.Intangible;
 import com.starkinhon.battlegroundsmod.combat.SkillSounds;
+import com.starkinhon.battlegroundsmod.combat.Stun;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
 import com.starkinhon.battlegroundsmod.power.PowerData;
@@ -136,10 +137,13 @@ public final class Esfera {
                 SkillSounds.play(level, spec.sons(), "voltar", 0, 0, onde -> caster.position().add(0, 1, 0), screen);
             }
             PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new ModPayloads.PlaySkillAnimation(caster.getId(), "", false));
-            PacketDistributor.sendToPlayersTrackingEntityAndSelf(victim, new ModPayloads.PlaySkillAnimation(victim.getId(), "", false));
             if (!victim.isAlive() || victim.isRemoved()) {
+                PacketDistributor.sendToPlayersTrackingEntityAndSelf(victim, new ModPayloads.PlaySkillAnimation(victim.getId(), "", false));
                 return;
             }
+            // Still lying adrift and stunned while the sun carries it down.
+            PacketDistributor.sendToPlayersTrackingEntityAndSelf(victim, new ModPayloads.PlaySkillAnimation(victim.getId(), SKILL + "#queda", awakened));
+            Stun.apply(victim, (int) Math.ceil(queda.altura() / Math.max(0.2, queda.velocidade())) + 20);
             Vec3 from = caster.isAlive() ? caster.position() : home;
             float yaw = (float) (Mth.atan2(spot.z - from.z, spot.x - from.x) * Mth.RAD_TO_DEG) - 90;
             if (caster instanceof ServerPlayer player) {
@@ -204,6 +208,7 @@ public final class Esfera {
             Combat.hurt(caster, hit, (float) (queda.danoArea() * (1 - k * 0.6)));
             Combat.pushFrom(hit, at, queda.empurrao() * (1 - k * 0.5), 0.5 + 0.4 * (1 - k));
         }
+        PacketDistributor.sendToPlayersTrackingEntityAndSelf(victim, new ModPayloads.PlaySkillAnimation(victim.getId(), "", false));
         Fx.effects(level, SKILL, awakened, "impacto", at, new Vec3(0, 1, 0));
         SkillSounds.play(level, spec.sons(), "impacto", 0, 0, onde -> at, screen);
         if (queda.quebrarBlocos() && level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
