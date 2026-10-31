@@ -51,12 +51,14 @@ public final class SkillEffects {
     public static void clear() {
         PENDING.clear();
         FxWorld.clear();
+        SusanooArm.clear();
     }
 
     public static void tick() {
         if (Minecraft.getInstance().level == null) {
             PENDING.clear();
             FxWorld.clear();
+            SusanooArm.clear();
             return;
         }
         long now = ScreenFx.now();

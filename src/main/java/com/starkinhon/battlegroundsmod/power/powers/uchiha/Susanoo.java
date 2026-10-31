@@ -39,6 +39,7 @@ public final class Susanoo {
         Object window = new Object();
         READY.put(player, window);
         UchihaFx.susanooReady(level, player, spec);
+        arm(player, -1, SusanooArmPhase.GUARD, spec.janela().duracaoTicks(), 0);
         Fx.effects(level, SKILL, awakened(player), "pronto", player, spec.janela().duracaoTicks());
         Tasks.add(age -> {
             if (READY.get(player) != window) {
@@ -46,6 +47,7 @@ public final class Susanoo {
             }
             if (age >= spec.janela().duracaoTicks() || !player.isAlive()) {
                 READY.remove(player);
+                arm(player, -1, SusanooArmPhase.END, 0, 0);
                 return true;
             }
             return false;
@@ -55,7 +57,9 @@ public final class Susanoo {
 
     // A sealed or interrupted caster loses the counter window.
     public static void cancel(LivingEntity entity) {
-        READY.remove(entity);
+        if (READY.remove(entity) != null) {
+            arm(entity, -1, SusanooArmPhase.END, 0, 0);
+        }
     }
 
     // True while the counter window is open (bosses read this to know their guard is up).
@@ -75,6 +79,9 @@ public final class Susanoo {
         }
         event.setCanceled(true);
         READY.remove(player);
+        // The hit lands on the shield in front of him.
+        Fx.effects(Combat.level(player), SKILL, awakened(player), "bloqueio",
+                player.position().add(Combat.flatLook(player).scale(3.0)).add(0, 2.1, 0), Combat.flatLook(player));
         grab(player, attacker, spec);
     }
 
@@ -101,19 +108,22 @@ public final class Susanoo {
         if (player instanceof ServerPlayer caster) {
             PacketDistributor.sendToPlayer(caster, new ModPayloads.ShoulderCutscene(player.getId(), target.getId(), CUTSCENE_TICKS));
         }
-        Tasks.repeat(total, age -> UchihaFx.susanooArm(level, player, target, spec, age < reach ? age / (double) reach : 1));
+        // The arm itself is drawn on the clients (client/fx/SusanooArm): it reaches, holds, squeezes and throws.
+        arm(player, target.getId(), SusanooArmPhase.GRAB, reach, esmagar.duracaoTicks());
 
         int hits = Math.max(1, esmagar.golpes());
         for (int i = 1; i <= hits; i++) {
             Tasks.later(reach + esmagar.duracaoTicks() * i / (hits + 1), () -> {
                 if (target.isAlive() && player.isAlive()) {
                     Combat.hurt(player, target, esmagar.dano());
+                    arm(player, target.getId(), SusanooArmPhase.HIT, 0, 0);
                     UchihaFx.susanooCrush(level, target, spec);
                     Fx.effects(level, SKILL, awakened(player), "esmagar", target, 0);
                 }
             });
         }
         Tasks.later(total, () -> {
+            arm(player, target.getId(), target.isAlive() && player.isAlive() ? SusanooArmPhase.THROW : SusanooArmPhase.END, 0, 0);
             if (target.isAlive() && player.isAlive()) {
                 SusanooSpec.Arremesso arremesso = spec.arremesso();
                 Combat.hurt(player, target, arremesso.dano());
@@ -139,6 +149,15 @@ public final class Susanoo {
 
     public static void clear() {
         READY.clear();
+    }
+
+    // Phases of the arm the clients draw (ModPayloads.SusanooArm, client/fx/SusanooArm).
+    private static final class SusanooArmPhase {
+        static final int GUARD = 0, GRAB = 1, HIT = 2, THROW = 3, END = 4;
+    }
+
+    private static void arm(LivingEntity player, int target, int phase, int a, int b) {
+        PacketDistributor.sendToPlayersTrackingEntityAndSelf(player, new ModPayloads.SusanooArm(player.getId(), target, phase, a, b));
     }
 
     private static boolean awakened(LivingEntity player) {

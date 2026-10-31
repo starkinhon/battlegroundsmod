@@ -7,9 +7,9 @@
     "duracaoTicks": 10
   },
   "corte": {
-    "largura": 10,
-    "alcance": 70,
-    "velocidade": 3.5,
+    "largura": 40,
+    "alcance": 200,
+    "velocidade": 5,
     "espessura": 3,
     "dano": 30,
     "empurrao": 2.2,
@@ -84,10 +84,10 @@
     {
       "tipo": "corte",
       "momento": "corte",
-      "vidaTicks": 26,
-      "tamanho": 10,
-      "comprimento": 70,
-      "velocidade": 3.5,
+      "vidaTicks": 48,
+      "tamanho": 40,
+      "comprimento": 200,
+      "velocidade": 5,
       "cor": "#2f8fff",
       "cor2": "#e8f8ff"
     },
@@ -95,31 +95,51 @@
       "tipo": "impactFrame",
       "momento": "corte",
       "sequencia": [
+        "branco",
+        "branco",
+        "mangaInvertido",
         "cor",
-        "manga",
         "invertido",
-        "manga"
+        "manga",
+        "mangaInvertido",
+        "cor",
+        "branco"
       ],
       "ticksPorQuadro": 1,
-      "cor": "#38bdff",
+      "cor": "#2f8fff",
       "alcance": 40
+    },
+    {
+      "tipo": "blurRadial",
+      "momento": "corte",
+      "forca": 1.0,
+      "vidaTicks": 12,
+      "alcance": 48
+    },
+    {
+      "tipo": "flash",
+      "momento": "corte",
+      "cor": "#dff4ff",
+      "forca": 0.4,
+      "vidaTicks": 6,
+      "alcance": 48
     },
     {
       "tipo": "anel",
       "momento": "corte",
-      "raio": 7,
-      "tamanho": 0.8,
+      "raio": 22,
+      "tamanho": 2,
       "cor": "#9fdcff",
-      "deslocamento": 3,
-      "vidaTicks": 12
+      "deslocamento": 6,
+      "vidaTicks": 14
     },
     {
       "tipo": "distorcao",
       "momento": "corte",
       "modo": "onda",
-      "raio": 10,
-      "forca": 0.7,
-      "velocidade": 14,
+      "raio": 30,
+      "forca": 0.9,
+      "velocidade": 20,
       "cor": "#38bdff",
       "tinta": 0.12,
       "vidaTicks": 24
@@ -127,8 +147,8 @@
     {
       "tipo": "tremor",
       "momento": "corte",
-      "forca": 0.5,
-      "vidaTicks": 12,
+      "forca": 1.2,
+      "vidaTicks": 18,
       "alcance": 40
     },
     {

@@ -35,6 +35,8 @@ public final class SusanooCorte {
     public static final String SKILL = "madara.susanoo_corte";
     // How far the slash's tips trail behind its middle, as a fraction of its width (same as the client's corte).
     private static final double BOW = 0.18;
+    // The crescent is tilted like a sword swing by this many radians around its flight (same as the client's corte).
+    static final double ROLL = 0.35;
 
     private SusanooCorte() {
     }
@@ -74,8 +76,9 @@ public final class SusanooCorte {
         double bow = corte.largura() * BOW;
         Vec3 side = dir.cross(new Vec3(0, 1, 0));
         side = side.lengthSqr() < 1.0E-4 ? new Vec3(1, 0, 0) : side.normalize();
-        Vec3 normal = side.cross(dir).normalize();
-        Vec3 sideAxis = side;
+        Vec3 flatNormal = side.cross(dir).normalize();
+        Vec3 sideAxis = side.scale(Math.cos(ROLL)).add(flatNormal.scale(Math.sin(ROLL))).normalize();
+        Vec3 normal = sideAxis.cross(dir).normalize();
         boolean grief = corte.quebrarBlocos() && level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING);
         Set<LivingEntity> hit = new HashSet<>();
         int ticks = (int) Math.ceil(reach / speed);

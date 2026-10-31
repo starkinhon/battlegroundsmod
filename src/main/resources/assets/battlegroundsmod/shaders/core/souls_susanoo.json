@@ -1,0 +1,15 @@
+{
+    "vertex": "battlegroundsmod:souls_susanoo",
+    "fragment": "battlegroundsmod:souls_susanoo",
+    "samplers": [],
+    "uniforms": [
+        { "name": "ModelViewMat", "type": "matrix4x4", "count": 16, "values": [ 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 ] },
+        { "name": "ProjMat", "type": "matrix4x4", "count": 16, "values": [ 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 ] },
+        { "name": "CamPos", "type": "float", "count": 3, "values": [ 0.0, 0.0, 0.0 ] },
+        { "name": "Time", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "GlowOnly", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "Deep", "type": "float", "count": 3, "values": [ 0.043, 0.165, 0.478 ] },
+        { "name": "Mid", "type": "float", "count": 3, "values": [ 0.184, 0.561, 1.0 ] },
+        { "name": "Rim", "type": "float", "count": 3, "values": [ 0.749, 0.918, 1.0 ] }
+    ]
+}

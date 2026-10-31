@@ -59,6 +59,56 @@ public final class FxRenderTypes extends RenderType {
                     .setTexturingState(VFX_INPUTS)
                     .createCompositeState(false));
 
+    // The Susanoo's armored arm (SusanooArm): a depth-only pass first, so only its front surface gets colored (no
+    // stacked glass), then the translucent color, then a copy into the glow layer for the bloom. All three use
+    // souls_susanoo; the texturing shard hands it the time, the camera and which of the passes it is.
+    private static final ShaderStateShard SUSANOO_SHADER = new ShaderStateShard(() -> FxShaders.susanoo);
+    public static final RenderType SUS_DEPTH = create("battlegroundsmod_susanoo_depth", DefaultVertexFormat.POSITION_COLOR_NORMAL,
+            VertexFormat.Mode.TRIANGLES, 524288, false, false, CompositeState.builder()
+                    .setShaderState(SUSANOO_SHADER)
+                    .setWriteMaskState(DEPTH_WRITE)
+                    .setCullState(NO_CULL)
+                    .setTexturingState(susanooInputs(false))
+                    .createCompositeState(false));
+    public static final RenderType SUS_COLOR = create("battlegroundsmod_susanoo_color", DefaultVertexFormat.POSITION_COLOR_NORMAL,
+            VertexFormat.Mode.TRIANGLES, 524288, false, false, CompositeState.builder()
+                    .setShaderState(SUSANOO_SHADER)
+                    .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                    .setWriteMaskState(COLOR_WRITE)
+                    .setCullState(NO_CULL)
+                    .setTexturingState(susanooInputs(false))
+                    .createCompositeState(false));
+    public static final RenderType SUS_GLOW = create("battlegroundsmod_susanoo_glow", DefaultVertexFormat.POSITION_COLOR_NORMAL,
+            VertexFormat.Mode.TRIANGLES, 524288, false, false, CompositeState.builder()
+                    .setShaderState(SUSANOO_SHADER)
+                    .setTransparencyState(LIGHTNING_TRANSPARENCY)
+                    .setWriteMaskState(COLOR_WRITE)
+                    .setCullState(NO_CULL)
+                    .setTexturingState(susanooInputs(true))
+                    .createCompositeState(false));
+    // With a shader pack on: plain see-through color.
+    public static final RenderType SUS_FLAT = create("battlegroundsmod_susanoo_flat", DefaultVertexFormat.POSITION_COLOR,
+            VertexFormat.Mode.TRIANGLES, 262144, false, false, CompositeState.builder()
+                    .setShaderState(POSITION_COLOR_SHADER)
+                    .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                    .setWriteMaskState(COLOR_WRITE)
+                    .setCullState(NO_CULL)
+                    .createCompositeState(false));
+
+    private static TexturingStateShard susanooInputs(boolean glow) {
+        return new TexturingStateShard("battlegroundsmod_susanoo_inputs_" + glow, () -> {
+            ShaderInstance shader = FxShaders.susanoo;
+            if (shader == null) {
+                return;
+            }
+            net.minecraft.world.phys.Vec3 cam = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
+            shader.safeGetUniform("CamPos").set((float) cam.x, (float) cam.y, (float) cam.z);
+            shader.safeGetUniform("Time").set((float) (SusanooArm.time() / 20.0));
+            shader.safeGetUniform("GlowOnly").set(glow ? 1f : 0f);
+        }, () -> {
+        });
+    }
+
     // Fallback with a shader pack on: one soft dot texture with vanilla's shader, so packs that replace shaders still draw it.
     private static final ResourceLocation SOFT = ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "textures/fx/soft.png");
     private static final ShaderStateShard FLAT_SHADER = new ShaderStateShard(GameRenderer::getPositionTexColorShader);

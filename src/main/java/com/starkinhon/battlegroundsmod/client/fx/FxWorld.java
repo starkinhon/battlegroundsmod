@@ -38,7 +38,8 @@ public final class FxWorld {
 
     static MultiBufferSource.BufferSource buffers() {
         if (buffers == null) {
-            for (RenderType type : List.of(FxRenderTypes.VFX_ALPHA, FxRenderTypes.VFX_ADD, FxRenderTypes.FLAT_ALPHA, FxRenderTypes.FLAT_ADD)) {
+            for (RenderType type : List.of(FxRenderTypes.VFX_ALPHA, FxRenderTypes.VFX_ADD, FxRenderTypes.FLAT_ALPHA, FxRenderTypes.FLAT_ADD,
+                    FxRenderTypes.SUS_DEPTH, FxRenderTypes.SUS_COLOR, FxRenderTypes.SUS_GLOW, FxRenderTypes.SUS_FLAT)) {
                 FIXED.put(type, new ByteBufferBuilder(type.bufferSize()));
             }
             buffers = MultiBufferSource.immediateWithBuffers(FIXED, new ByteBufferBuilder(16384));
@@ -114,7 +115,7 @@ public final class FxWorld {
         FxPost.newFrame();
         ScreenFx.capture(event);
         boolean world = !PIECES.isEmpty() || MeteorRenderer.hasTrails() || Aura.active() || KatonBallRenderer.active() || AshDeath.hasSparks()
-                || SpaceScene.active() || EsferaRenderer.active() || HakaiRenderer.active() || EnergyRenderer.active();
+                || SpaceScene.active() || EsferaRenderer.active() || HakaiRenderer.active() || EnergyRenderer.active() || SusanooArm.active();
         if (!world && !ScreenFx.needsScene()) {
             return;
         }
@@ -175,12 +176,17 @@ public final class FxWorld {
             EsferaRenderer.render(camera, now, partial);
             HakaiRenderer.render(camera, now, partial);
             EnergyRenderer.render(camera, now, partial);
+            SusanooArm.render(source, flat, camera, now, partial);
         }
         if (flat) {
+            source.endBatch(FxRenderTypes.SUS_FLAT);
             source.endBatch(FxRenderTypes.FLAT_ALPHA);
             source.endBatch(FxRenderTypes.FLAT_ADD);
             endDecals(source);
         } else {
+            // The Susanoo arm's depth goes in first, so its color only lands on the front surface.
+            source.endBatch(FxRenderTypes.SUS_DEPTH);
+            source.endBatch(FxRenderTypes.SUS_COLOR);
             source.endBatch(FxRenderTypes.VFX_ALPHA);
             endDecals(source);
             boolean outline = !space && Aura.drawMask(event, camera, partial);
@@ -188,6 +194,7 @@ public final class FxWorld {
             if (outline) {
                 Aura.outline(now);
             }
+            source.endBatch(FxRenderTypes.SUS_GLOW);
             source.endBatch(FxRenderTypes.VFX_ADD);
             FxPost.endGlow(FxConfig.on(FxConfig.BLOOM));
         }
@@ -379,7 +386,8 @@ public final class FxWorld {
                 FxDraw.disk(decalGlow(e), new Vector3f(floor).add(0, 0.006f, 0), up, size, -spin, FxDraw.SOLID, 0, glow, hold * 0.6f * breathe);
             }
             case "olho" -> FxDraw.billboard(decal(e), at, size, spin, new float[] {1, 1, 1}, hold);
-            case "bracoEspada" -> swordArm(e, at, dir, age, cor, cor2, hold);
+            case "bracoEspada" -> SusanooArm.sword(buffers(), FxShaders.flat(), at, dir, age, p.life(), i(e.golpeTicks(), 9), (float) d(e.tamanho(), 1),
+                    opacity, p.seed());
             case "corte" -> slash(e, at, dir, age, t, cor, cor2, size, opacity);
             case "bolinha" -> DestructionFx.ball(e, at, dir, age, cor, cor2, size, opacity);
             case "rachaduras" -> DestructionFx.cracks(e, p.seed(), p.pos(), at, age, t, cor, cor2, size, opacity);
@@ -493,76 +501,22 @@ public final class FxWorld {
         }
     }
 
-    // The Susanoo's giant arm behind the caster, swinging its sword across from right to left: it pulls back until
-    // golpeTicks, sweeps fast, then fades. The blade leaves a smear of fading copies along its arc, like an anime swing.
-    private static void swordArm(Efeito e, Vector3f feet, Vector3f look, float age, float[] cor, float[] cor2, float opacity) {
-        Vector3f f = new Vector3f(look.x, 0, look.z);
-        if (f.lengthSquared() < 1.0E-4f) {
-            return;
-        }
-        f.normalize();
-        Vector3f left = new Vector3f(f.z, 0, -f.x);
-        float scale = (float) d(e.tamanho(), 1);
-        float blade = (float) d(e.comprimento(), 11);
-        float hit = i(e.golpeTicks(), 9);
-        Vector3f shoulder = new Vector3f(feet).add(0, 4.2f * scale, 0).add(new Vector3f(f).mul(-0.6f * scale)).sub(new Vector3f(left).mul(1.6f * scale));
-        float back = -2.1f, across = 1.4f;
-        // The angle (around up, 0 = straight ahead, positive = to the left) at a given age.
-        java.util.function.DoubleUnaryOperator angle = a -> {
-            if (a < hit) {
-                return Mth.lerp(easeOut((float) (a / hit)), -1.0f, back);
-            }
-            return Mth.lerp(easeOut((float) Math.min(1, (a - hit) / 4)), back, across);
-        };
-        float theta = (float) angle.applyAsDouble(age);
-        float[] arm = FxDraw.mix(cor, cor2, 0.25f);
-        Vector3f hand = drawArm(shoulder, f, left, theta, scale, arm, opacity);
-        FxDraw.billboard(hand, 1.6f * scale, age * 0.2f, FxDraw.FLARE, 0.2f, cor, opacity * 0.8f, true);
-        // Smear of the blade over the last ticks of the swing.
-        int smear = age > hit ? 7 : 0;
-        for (int j = smear; j >= 0; j--) {
-            float a = age - j * 0.45f;
-            if (j > 0 && a < hit) {
-                continue;
-            }
-            float th = (float) angle.applyAsDouble(a);
-            Vector3f d = new Vector3f(f).mul(Mth.cos(th)).add(new Vector3f(left).mul(Mth.sin(th)));
-            Vector3f h = j == 0 ? hand : handAt(shoulder, f, left, th, scale);
-            Vector3f tip = new Vector3f(d).mul(blade * scale).add(h).add(0, -0.6f * scale, 0);
-            float o = opacity * (j == 0 ? 1 : 0.5f * (1 - j / 8f));
-            FxDraw.ribbon(h, tip, 1.0f * scale, FxDraw.BEAM, 0.2f, cor, o * 0.85f, true);
-            FxDraw.ribbon(h, tip, 0.32f * scale, FxDraw.BEAM, 0.85f, cor2, o, true);
-        }
-    }
-
-    private static Vector3f handAt(Vector3f shoulder, Vector3f f, Vector3f left, float theta, float scale) {
-        Vector3f d = new Vector3f(f).mul(Mth.cos(theta)).add(new Vector3f(left).mul(Mth.sin(theta)));
-        return new Vector3f(d).mul(3.0f * scale).add(shoulder).add(0, -0.4f * scale, 0);
-    }
-
-    private static Vector3f drawArm(Vector3f shoulder, Vector3f f, Vector3f left, float theta, float scale, float[] cor, float opacity) {
-        float te = theta - 0.5f;
-        Vector3f de = new Vector3f(f).mul(Mth.cos(te)).add(new Vector3f(left).mul(Mth.sin(te)));
-        Vector3f elbow = new Vector3f(de).mul(1.6f * scale).add(shoulder).add(0, -0.7f * scale, 0);
-        Vector3f hand = handAt(shoulder, f, left, theta, scale);
-        FxDraw.ribbon(shoulder, elbow, 1.15f * scale, FxDraw.BEAM, 0.1f, cor, opacity * 0.55f, true);
-        FxDraw.ribbon(elbow, hand, 0.95f * scale, FxDraw.BEAM, 0.1f, cor, opacity * 0.55f, true);
-        FxDraw.billboard(shoulder, 1.4f * scale, 0, FxDraw.SOFT, 0.3f, cor, opacity * 0.5f, true);
-        FxDraw.billboard(elbow, 1.1f * scale, 0, FxDraw.SOFT, 0.3f, cor, opacity * 0.5f, true);
-        return hand;
-    }
-
     // A crescent of blue energy flying away along dir at velocidade, tamanho wide, out to comprimento blocks. Its tips
     // trail behind the middle; a few fading echoes follow it. The server sweeps the very same shape (SusanooCorte).
+    private static final float SLASH_ROLL = 0.35f;
+
     private static void slash(Efeito e, Vector3f origin, Vector3f dir, float age, float t, float[] cor, float[] cor2, float width, float opacity) {
         float reach = (float) d(e.comprimento(), 70);
         float speed = (float) d(e.velocidade(), 3.5);
         Vector3f d = new Vector3f(dir).normalize();
-        Vector3f side = new Vector3f(d).cross(0, 1, 0);
-        if (side.lengthSquared() < 1.0E-4f) {
-            side.set(1, 0, 0);
+        Vector3f flatSide = new Vector3f(d).cross(0, 1, 0);
+        if (flatSide.lengthSquared() < 1.0E-4f) {
+            flatSide.set(1, 0, 0);
         }
-        side.normalize();
+        flatSide.normalize();
+        // Tilted like a sword swing; the server cuts the same tilted strip (SusanooCorte.ROLL).
+        Vector3f normal = new Vector3f(flatSide).cross(d).normalize();
+        Vector3f side = new Vector3f(flatSide).mul(Mth.cos(SLASH_ROLL)).add(normal.mul(Mth.sin(SLASH_ROLL))).normalize();
         float travel = Math.min(reach, speed * age);
         float fade = opacity * (speed * age > reach ? Math.max(0, 1 - (speed * age - reach) / (speed * 4)) : 1) * Math.min(1, age / 1.5f);
         float half = width / 2;
@@ -582,6 +536,9 @@ public final class FxWorld {
                 if (last != null) {
                     float um = (s - 0.5f) / segments * 2 - 1;
                     float thick = (1 - um * um) * 0.9f + 0.1f;
+                    if (echo == 0) {
+                        FxDraw.ribbon(last, p, width * 0.45f * thick, FxDraw.BEAM, 0, cor, o * 0.25f, true);
+                    }
                     FxDraw.ribbon(last, p, width * 0.2f * thick, FxDraw.BEAM, 0.15f, cor, o * 0.8f, true);
                     if (echo == 0) {
                         FxDraw.ribbon(last, p, width * 0.06f * thick, FxDraw.BEAM, 0.9f, cor2, o, true);

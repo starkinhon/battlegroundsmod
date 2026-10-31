@@ -8,8 +8,8 @@
   },
   "agarrar": {
     "alcancarTicks": 4,
-    "frente": 3,
-    "altura": 3
+    "frente": 3.4,
+    "altura": 3.6
   },
   "esmagar": {
     "duracaoTicks": 60,
@@ -26,16 +26,47 @@
   },
   "vfx": [
     {
-      "tipo": "parede",
-      "momento": "pronto",
-      "seguir": "pes",
-      "duraMomento": true,
-      "raio": 1.7,
-      "comprimento": 2.8,
-      "quantidade": 22,
-      "girar": 0.05,
+      "tipo": "clarao",
+      "momento": "bloqueio",
+      "tamanho": 4,
+      "quantidade": 8,
       "cor": "#38bdff",
-      "primeiraPessoa": 0.15
+      "cor2": "#ffffff",
+      "vidaTicks": 10
+    },
+    {
+      "tipo": "faiscas",
+      "momento": "bloqueio",
+      "quantidade": 40,
+      "velocidade": 0.7,
+      "comprimento": 1.2,
+      "tamanho": 1.6,
+      "cor": "#38bdff",
+      "cor2": "#ffffff",
+      "vidaTicks": 14
+    },
+    {
+      "tipo": "anel",
+      "momento": "bloqueio",
+      "raio": 3.5,
+      "tamanho": 0.5,
+      "cor": "#bfeaff",
+      "vidaTicks": 10
+    },
+    {
+      "tipo": "flash",
+      "momento": "bloqueio",
+      "cor": "#dff4ff",
+      "forca": 0.35,
+      "vidaTicks": 5,
+      "alcance": 24
+    },
+    {
+      "tipo": "tremor",
+      "momento": "bloqueio",
+      "forca": 0.5,
+      "vidaTicks": 8,
+      "alcance": 24
     },
     {
       "tipo": "distorcao",
@@ -93,16 +124,6 @@
       "cor": "#38bdff",
       "cor2": "#e8f8ff",
       "vidaTicks": 12
-    },
-    {
-      "tipo": "esfera",
-      "momento": "agarrar",
-      "seguir": "centro",
-      "duraMomento": true,
-      "tamanho": 2.2,
-      "quantidade": 6,
-      "cor": "#1f7fd6",
-      "cor2": "#bfeaff"
     },
     {
       "tipo": "clarao",

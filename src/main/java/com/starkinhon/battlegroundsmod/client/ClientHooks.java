@@ -62,6 +62,10 @@ public final class ClientHooks {
         }
     }
 
+    public static void susanooArm(int casterId, int targetId, int phase, int a, int b) {
+        com.starkinhon.battlegroundsmod.client.fx.SusanooArm.update(casterId, targetId, phase, a, b);
+    }
+
     public static void shoulderCutscene(int casterId, int targetId, int ticks) {
         ShoulderCutscene.start(casterId, targetId, ticks);
     }
