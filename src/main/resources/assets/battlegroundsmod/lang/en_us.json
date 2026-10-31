@@ -172,5 +172,7 @@
   "ability.battlegroundsmod.uchiha_ghost.7.desc": "The Susanoo's sword cuts a huge line ahead, splitting blocks and enemies.",
   "ability.battlegroundsmod.uchiha_ghost.7.tags": "Slash,Destruction",
   "ability.battlegroundsmod.uchiha_ghost.8.desc": "Two meteors fall one after the other on the target.",
-  "ability.battlegroundsmod.uchiha_ghost.8.tags": "Area"
+  "ability.battlegroundsmod.uchiha_ghost.8.tags": "Area",
+  "gamerule.soulsBlockDestruction": "Souls skills break blocks",
+  "gamerule.soulsBlockDestruction.description": "When off, no skill or boss from the mod breaks or changes blocks. Effects and damage stay. mobGriefing off also stops it."
 }

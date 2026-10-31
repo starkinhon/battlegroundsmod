@@ -7,6 +7,7 @@ import java.util.function.Function;
 
 import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.ModEffects;
+import com.starkinhon.battlegroundsmod.combat.BlockRules;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Destructible;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
@@ -32,7 +33,6 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ClipContext;
-import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -357,7 +357,7 @@ public final class DestructionEnergy {
                 }
             }
         }
-        if (explosao.raioBlocos() > 0 && level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
+        if (explosao.raioBlocos() > 0 && BlockRules.canBreak(level)) {
             crater(level, at, explosao.raioBlocos());
         }
     }

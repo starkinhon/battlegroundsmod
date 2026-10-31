@@ -7,6 +7,7 @@ import java.util.List;
 import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.boss.BossSpec;
 import com.starkinhon.battlegroundsmod.boss.SoulBoss;
+import com.starkinhon.battlegroundsmod.combat.BlockRules;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.combat.Fx;
@@ -285,7 +286,7 @@ public final class Agarrao {
     // A round bowl broken the vanilla way (block particles and sounds, no drops), from the middle out. Unbreakable
     // blocks and blocks holding things (chests, furnaces) stay.
     public static void crater(ServerLevel level, Vec3 pos, double radius, double depth) {
-        if (radius <= 0 || depth <= 0) {
+        if (radius <= 0 || depth <= 0 || !BlockRules.canBreak(level)) {
             return;
         }
         BlockPos center = BlockPos.containing(pos);

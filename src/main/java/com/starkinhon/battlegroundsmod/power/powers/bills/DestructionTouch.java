@@ -7,6 +7,7 @@ import java.util.function.Function;
 import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.ModEffects;
 import com.starkinhon.battlegroundsmod.combat.AshKill;
+import com.starkinhon.battlegroundsmod.combat.BlockRules;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Destructible;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
@@ -27,7 +28,6 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.ClipContext;
-import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -197,7 +197,7 @@ public final class DestructionTouch {
         for (Destructible.Attack erased : Destructible.eraseAlong(level, at, at, radius, caster)) {
             Fx.effects(level, Hakaizinho.SKILL, awakened, "pulverizar", erased.pos(), Vec3.ZERO);
         }
-        if (explosao.quebrarBlocos() && level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
+        if (explosao.quebrarBlocos() && BlockRules.canBreak(level)) {
             crater(level, at, explosao.raioCratera(), explosao.profundidadeCratera(), Math.max(1, explosao.crateraTicks()));
         }
     }

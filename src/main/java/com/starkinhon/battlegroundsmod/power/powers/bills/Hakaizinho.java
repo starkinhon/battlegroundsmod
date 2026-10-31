@@ -9,6 +9,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import com.starkinhon.battlegroundsmod.ModAttachments;
+import com.starkinhon.battlegroundsmod.combat.BlockRules;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Destructible;
 import com.starkinhon.battlegroundsmod.combat.Fx;
@@ -23,7 +24,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -93,7 +93,7 @@ public final class Hakaizinho {
                 PacketDistributor.sendToPlayer(player, new ModPayloads.HakaiShot(start, velocity, ticks, awakened));
             }
         }
-        boolean grief = destruir.raioBlocos() > 0 && level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING);
+        boolean grief = destruir.raioBlocos() > 0 && BlockRules.canBreak(level);
         HakaiSpec hakai = HakaiSpec.get(awakened);
         Set<LivingEntity> hit = new HashSet<>();
         Tasks.repeat(ticks, age -> {

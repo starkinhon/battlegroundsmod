@@ -4,6 +4,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import com.starkinhon.battlegroundsmod.ModAttachments;
+import com.starkinhon.battlegroundsmod.combat.BlockRules;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Destructible;
 import com.starkinhon.battlegroundsmod.combat.Fx;
@@ -21,7 +22,6 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -79,7 +79,7 @@ public final class SusanooCorte {
         Vec3 flatNormal = side.cross(dir).normalize();
         Vec3 sideAxis = side.scale(Math.cos(ROLL)).add(flatNormal.scale(Math.sin(ROLL))).normalize();
         Vec3 normal = sideAxis.cross(dir).normalize();
-        boolean grief = corte.quebrarBlocos() && level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING);
+        boolean grief = corte.quebrarBlocos() && BlockRules.canBreak(level);
         Set<LivingEntity> hit = new HashSet<>();
         int ticks = (int) Math.ceil(reach / speed);
         // Erased in flight (the hakaizinho): the crescent stops cutting and the clients stop drawing it.

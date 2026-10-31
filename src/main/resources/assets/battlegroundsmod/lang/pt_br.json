@@ -172,5 +172,7 @@
   "ability.battlegroundsmod.uchiha_ghost.7.desc": "A espada do Susanoo corta uma linha enorme à frente, partindo blocos e inimigos.",
   "ability.battlegroundsmod.uchiha_ghost.7.tags": "Corte,Destruição",
   "ability.battlegroundsmod.uchiha_ghost.8.desc": "Dois meteoros caem em sequência sobre o alvo.",
-  "ability.battlegroundsmod.uchiha_ghost.8.tags": "Área"
+  "ability.battlegroundsmod.uchiha_ghost.8.tags": "Área",
+  "gamerule.soulsBlockDestruction": "Skills do Souls quebram blocos",
+  "gamerule.soulsBlockDestruction.description": "Desligado, nenhuma skill ou boss do mod quebra ou altera blocos. Efeitos e dano continuam. mobGriefing desligado também impede."
 }

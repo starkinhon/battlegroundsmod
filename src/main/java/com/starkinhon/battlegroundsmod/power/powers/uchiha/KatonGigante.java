@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.combat.AshKill;
+import com.starkinhon.battlegroundsmod.combat.BlockRules;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Destructible;
 import com.starkinhon.battlegroundsmod.combat.Fx;
@@ -26,7 +27,6 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ClipContext;
-import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -187,7 +187,7 @@ public final class KatonGigante {
                 PacketDistributor.sendToPlayer(viewer, new ModPayloads.ScreenShake((float) ((0.4 + charge * 0.6) * (1 - distance / (radius * 3))), 20));
             }
         }
-        if (explosao.quebrarBlocos() && level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
+        if (explosao.quebrarBlocos() && BlockRules.canBreak(level)) {
             hole(level, pos, ball * explosao.crateraMult());
             if (explosao.fogo()) {
                 int crater = (int) Math.ceil(ball * explosao.crateraMult());
