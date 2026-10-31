@@ -18,15 +18,53 @@ import net.minecraft.world.phys.Vec3;
 // age and fixed random numbers per part:
 // bolinha: the tiny white ball falling from his finger, at velocidade blocks per tick along the direction.
 // rachaduras: a web of glowing lava cracks over the ground, raio blocks wide, opening from the middle out and following
-// the terrain's height, yellow-orange at first, red and dark at the end, with little flames on the joints.
+// the terrain's height, yellow-orange at first, red and dark at the end, with little flames on the joints. A crack
+// whose block is gone (the crater) goes with it, so nothing is left hanging in the air.
 // pilares: columns of yellow light bursting out of the ground all around, one after another.
 // plasma: the explosion, like the anime's: white-hot core, pink and magenta fibers of plasma shooting out on every side
 // and puffs that go from magenta to orange and peach as it dies out.
 // nuvem: the soft pink and peach cloud left hanging after it.
 final class DestructionFx {
     private static final float[] WHITE = {1, 1, 1};
-    // The crack web of each piece, laid on the terrain once (strips, see STRIP) plus the flame spots (x, y, z, distance).
-    private record Web(float[] segments, float[] flames) {
+    // The crack web of each piece, laid on the terrain once (strips, see STRIP) plus the flame spots (x, y, z, distance,
+    // support), and the block each one lies on (supports, packed BlockPos) with whether it is still there.
+    private static final class Web {
+        final float[] segments;
+        final float[] flames;
+        final long[] supports;
+        final boolean[] standing;
+        // The support right under the middle: once the crater takes it, the glow under the web goes too.
+        final int middle;
+        int checked = -1;
+
+        Web(float[] segments, float[] flames, long[] supports, int middle) {
+            this.segments = segments;
+            this.flames = flames;
+            this.supports = supports;
+            this.middle = middle;
+            this.standing = new boolean[supports.length];
+            java.util.Arrays.fill(standing, true);
+        }
+
+        // Looks again every few ticks which blocks are still there.
+        void check(float age) {
+            int now = (int) (age / 3);
+            if (now == checked) {
+                return;
+            }
+            checked = now;
+            var level = Minecraft.getInstance().level;
+            if (level == null) {
+                return;
+            }
+            var pos = new net.minecraft.core.BlockPos.MutableBlockPos();
+            for (int i = 0; i < supports.length; i++) {
+                if (standing[i]) {
+                    pos.set(net.minecraft.core.BlockPos.of(supports[i]));
+                    standing[i] = !level.getBlockState(pos).isAir();
+                }
+            }
+        }
     }
 
     private static final Map<Integer, Web> WEBS = new HashMap<>();
@@ -56,20 +94,22 @@ final class DestructionFx {
 
     static void cracks(Efeito e, int seed, Vec3 world, Vector3f at, float age, float t, float[] cor, float[] cor2, float size, float opacity) {
         Web web = WEBS.computeIfAbsent(seed, k -> buildWeb(e, seed, world));
+        web.check(age);
+        boolean[] standing = web.standing;
         float radius = (float) FxWorld.d(e.raio(), 60);
-        // Opens fast from the middle out, holds, then cools down to dark red and fades.
+        // Opens fast from the middle out, holds, then cools down to dark red and fades as the explosion hits.
         float reach = radius * FxWorld.easeOut(Math.min(1, t * 4)) + 1;
-        float heat = 1 - smooth(0.45f, 1, t);
+        float heat = 1 - smooth(0.6f, 1, t);
         float fade = 1 - smooth(0.8f, 1, t);
         float[] hot = FxDraw.mix(cor, cor2, 0.35f);
         float[] line = FxDraw.mix(FxDraw.rgb(0x5A0A04), cor, heat);
         float[] core = FxDraw.mix(FxDraw.rgb(0x8A1A06), hot, heat);
         float flicker = 0.9f + 0.1f * Mth.sin(age * 0.9f);
         Vector3f origin = new Vector3f(at).sub((float) world.x, (float) world.y, (float) world.z);
-        float[] s = web.segments();
+        float[] s = web.segments;
         for (int i = 0; i < s.length; i += STRIP) {
             float far = s[i + 7];
-            if (far > reach) {
+            if (far > reach || !standing[(int) s[i + 8]]) {
                 continue;
             }
             // Thinner and dimmer towards the rim, and each crack glows in as the opening runs past it.
@@ -82,13 +122,13 @@ final class DestructionFx {
             strip(a, b, axis, size * 2.4f * rim, FxDraw.BEAM, 0.12f, line, o * 0.55f);
             strip(a, b, axis, size * rim, FxDraw.BEAM, 0.6f, FxDraw.mix(core, WHITE, 0.25f * heat), o);
         }
-        float[] f = web.flames();
-        for (int i = 0; i < f.length; i += 4) {
+        float[] f = web.flames;
+        for (int i = 0; i < f.length; i += FLAME) {
             float far = f[i + 3];
-            if (far > reach) {
+            if (far > reach || !standing[(int) f[i + 4]]) {
                 continue;
             }
-            int k = i / 4;
+            int k = i / FLAME;
             Vector3f base = new Vector3f(f[i], f[i + 1], f[i + 2]).add(origin);
             // Little flames licking up out of the cracks, each on its own beat.
             float beat = (age * (0.05f + 0.04f * FxWorld.hash(seed, k, 31)) + FxWorld.hash(seed, k, 32)) % 1;
@@ -107,7 +147,9 @@ final class DestructionFx {
             }
         }
         // The ground glowing hot under the web.
-        FxDraw.disk(new Vector3f(at).add(0, 0.05f, 0), new Vector3f(0, 1, 0), reach * 1.4f, FxDraw.SOFT, 0, cor, 0.15f * heat * fade * opacity, true);
+        if (standing[web.middle]) {
+                FxDraw.disk(new Vector3f(at).add(0, 0.05f, 0), new Vector3f(0, 1, 0), reach * 1.4f, FxDraw.SOFT, 0, cor, 0.15f * heat * fade * opacity, true);
+        }
     }
 
     // A crack strip from a to b: lying on the ground (axis 0), or standing on a block's side whose width runs along x
@@ -126,8 +168,10 @@ final class DestructionFx {
                 opacity, true);
     }
 
-    // x, y, z of both ends, the axis (see strip) and the distance of the far end from the middle.
-    private static final int STRIP = 8;
+    // x, y, z of both ends, the axis (see strip), the distance of the far end from the middle and its support.
+    private static final int STRIP = 9;
+    // x, y, z, distance from the middle and support.
+    private static final int FLAME = 5;
 
     // Rings of jittered points around the middle, joined to their neighbors on the same ring and to the next ring out,
     // like dried mud, every join a little jagged. The cracks run over the blocks one column at a time: on the top of
@@ -163,17 +207,22 @@ final class DestructionFx {
                     jagged(ground, p, ring[(k + 1) % ring.length], seed, r * 191 + k);
                 }
                 if (FxWorld.hash(seed, r * 211 + k, 5) < 0.4f) {
-                    float h = ground.top(Mth.floor(world.x + p[0]), Mth.floor(world.z + p[1]));
+                    int fx = Mth.floor(world.x + p[0]), fz = Mth.floor(world.z + p[1]);
+                    float h = ground.top(fx, fz);
                     if (!Float.isNaN(h)) {
                         ground.flames.add(p[0]);
                         ground.flames.add(h);
                         ground.flames.add(p[1]);
                         ground.flames.add((float) Math.hypot(p[0], p[1]));
+                        ground.flames.add((float) ground.under(fx, fz));
                     }
                 }
             }
         }
-        return new Web(toArray(ground.strips), toArray(ground.flames));
+        int middle = ground.under(Mth.floor(world.x), Mth.floor(world.z));
+        long[] supports = new long[ground.supports.size()];
+        ground.supports.forEach((pos, index) -> supports[index] = pos);
+        return new Web(toArray(ground.strips), toArray(ground.flames), supports, middle);
     }
 
     private static float[] toArray(List<Float> list) {
@@ -209,6 +258,7 @@ final class DestructionFx {
         private final java.util.Set<Long> trunks = new java.util.HashSet<>();
         final List<Float> strips = new ArrayList<>();
         final List<Float> flames = new ArrayList<>();
+        final Map<Long, Integer> supports = new HashMap<>();
 
         Ground(Vec3 world, int seed) {
             this.world = world;
@@ -222,11 +272,20 @@ final class DestructionFx {
             return column(x, z)[0];
         }
 
+        // The support index of the block a crack lies on: the top block of the column, or the lowest log of a trunk.
+        int under(int x, int z) {
+            return support(x, (int) column(x, z)[2] - 1, z);
+        }
+
+        private int support(int x, int y, int z) {
+            return supports.computeIfAbsent(net.minecraft.core.BlockPos.asLong(x, y, z), k -> supports.size());
+        }
+
         private float[] column(int x, int z) {
             return columns.computeIfAbsent(((long) x << 32) ^ (z & 0xFFFFFFFFL), key -> {
                 var level = Minecraft.getInstance().level;
                 if (level == null) {
-                    return new float[] {0.05f, 0};
+                    return new float[] {0.05f, 0, baseY + 1};
                 }
                 int top = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
                 int trunk = 0;
@@ -237,9 +296,9 @@ final class DestructionFx {
                 }
                 top -= trunk;
                 if (Math.abs(top - baseY) > 10) {
-                    return new float[] {Float.NaN, 0};
+                    return new float[] {Float.NaN, 0, top};
                 }
-                return new float[] {(float) (top - world.y) + 0.04f, trunk};
+                return new float[] {(float) (top - world.y) + 0.04f, trunk, top};
             });
         }
 
@@ -260,7 +319,7 @@ final class DestructionFx {
                 boolean step = !Float.isNaN(h) && !Float.isNaN(nh) && Math.abs(nh - h) > 0.01f;
                 if (i == steps && !step || Float.isNaN(nh) || Float.isNaN(h)) {
                     if (!Float.isNaN(h)) {
-                        add(sx, h, sz, px, h, pz, 0);
+                        add(sx, h, sz, px, h, pz, 0, under(cx, cz));
                     }
                     sx = px;
                     sz = pz;
@@ -268,7 +327,7 @@ final class DestructionFx {
                     // Into the next column: to the edge between them, then down or up its side if the ground steps.
                     float ex = nx != cx ? (float) (Math.max(nx, cx) - world.x) : px;
                     float ez = nx == cx ? (float) (Math.max(nz, cz) - world.z) : pz;
-                    add(sx, h, sz, ex, h, ez, 0);
+                    add(sx, h, sz, ex, h, ez, 0, under(cx, cz));
                     if (step) {
                         // On the face of the higher block, a hair out from it towards the lower one.
                         boolean upward = nh > h;
@@ -279,12 +338,12 @@ final class DestructionFx {
                         } else {
                             fz += (upward ? (nz > cz ? -push : push) : (nz > cz ? push : -push));
                         }
-                        add(fx, h, fz, fx, nh, fz, nx != cx ? 2 : 1);
+                        add(fx, h, fz, fx, nh, fz, nx != cx ? 2 : 1, upward ? under(nx, nz) : under(cx, cz));
                     }
                     sx = ex;
                     sz = ez;
                     if (i == steps && !Float.isNaN(nh)) {
-                        add(sx, nh, sz, px, nh, pz, 0);
+                        add(sx, nh, sz, px, nh, pz, 0, under(nx, nz));
                     }
                 }
                 if (!Float.isNaN(nh) && column(nx, nz)[1] > 0) {
@@ -310,11 +369,12 @@ final class DestructionFx {
             float lean = (FxWorld.hash(seed, x * 31 + z, 41) - 0.5f) * 0.6f;
             float mx = fx + (alongX ? 0 : lean), mz = fz + (alongX ? lean : 0);
             int axis = alongX ? 2 : 1;
-            add(fx, h, fz, mx, h + up * 0.5f, mz, axis);
-            add(mx, h + up * 0.5f, mz, fx, h + up, fz, axis);
+            int log = support(x, (int) column(x, z)[2], z);
+            add(fx, h, fz, mx, h + up * 0.5f, mz, axis, log);
+            add(mx, h + up * 0.5f, mz, fx, h + up, fz, axis, log);
         }
 
-        private void add(float ax, float ay, float az, float bx, float by, float bz, int axis) {
+        private void add(float ax, float ay, float az, float bx, float by, float bz, int axis, int support) {
             strips.add(ax);
             strips.add(ay);
             strips.add(az);
@@ -323,6 +383,7 @@ final class DestructionFx {
             strips.add(bz);
             strips.add((float) axis);
             strips.add((float) Math.max(Math.hypot(ax, az), Math.hypot(bx, bz)));
+            strips.add((float) support);
         }
     }
 
