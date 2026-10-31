@@ -139,7 +139,10 @@ public final class ClientHooks {
     }
 
     public static void esferaFall(int targetId, Vec3 start, Vec3 lastHead, boolean awakened) {
-        com.starkinhon.battlegroundsmod.client.fx.EsferaRenderer.fall(targetId, start, lastHead, 240, 26);
+        // The Esfera da Destruição Planetária: the sun comes down from the sky on top of the target, until it lands.
+        var spec = com.starkinhon.battlegroundsmod.skill.EsferaSpec.get(awakened);
+        int ticks = (int) Math.ceil(spec.queda().altura() / Math.max(0.2, spec.queda().velocidade())) + 1;
+        com.starkinhon.battlegroundsmod.client.fx.EsferaRenderer.ride(targetId, lastHead, ticks, (float) spec.esfera().raioGigante());
     }
 
     public static void eraseAttack(String skill, Vec3 pos, float radius) {

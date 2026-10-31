@@ -20,9 +20,9 @@
     "raioExplosao": 12
   },
   "espaco": {
-    "tamanho": 120,
-    "distancia": 130,
-    "abaixo": 120,
+    "tamanho": 240,
+    "distancia": 260,
+    "abaixo": 240,
     "lado": 0,
     "girar": 0.12,
     "estrelas": 1400,
@@ -42,18 +42,18 @@
     "giro": 0.25
   },
   "queda": {
-    "altura": 100,
+    "altura": 150,
     "distancia": 40,
-    "velocidade": 2.5,
-    "dano": 30,
-    "raio": 20,
-    "danoArea": 15,
+    "velocidade": 5,
+    "dano": 50,
+    "raio": 22,
+    "danoArea": 20,
     "empurrao": 2.5,
     "quebrarBlocos": true,
     "raioCratera": 20,
     "profundidadeCratera": 10
   },
-  "danoEspaco": 40,
+  "danoEspaco": 0,
   "legenda": {
     "texto": "",
     "cor": "#ffffff",
@@ -257,34 +257,10 @@
       "onde": "tela"
     },
     {
-      "nome": "Explosão",
-      "som": "minecraft:entity.generic.explode",
-      "momento": "explosao",
+      "nome": "Impacto do sol",
+      "som": "minecraft:entity.warden.attack_impact",
+      "momento": "contato",
       "atrasoTicks": 0,
-      "repetirACadaTicks": 0,
-      "vezes": 1,
-      "volume": 2.0,
-      "pitch": 0.5,
-      "pitchFim": 0.5,
-      "onde": "tela"
-    },
-    {
-      "nome": "Chamas",
-      "som": "minecraft:entity.dragon_fireball.explode",
-      "momento": "explosao",
-      "atrasoTicks": 0,
-      "repetirACadaTicks": 0,
-      "vezes": 1,
-      "volume": 1.5,
-      "pitch": 0.7,
-      "pitchFim": 0.7,
-      "onde": "tela"
-    },
-    {
-      "nome": "Labareda",
-      "som": "minecraft:item.firecharge.use",
-      "momento": "explosao",
-      "atrasoTicks": 3,
       "repetirACadaTicks": 0,
       "vezes": 1,
       "volume": 1.5,
@@ -350,6 +326,30 @@
       "volume": 1.5,
       "pitch": 0.7,
       "pitchFim": 0.7,
+      "onde": "alvo"
+    },
+    {
+      "nome": "Chamas",
+      "som": "minecraft:entity.dragon_fireball.explode",
+      "momento": "impacto",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 2.0,
+      "pitch": 0.7,
+      "pitchFim": 0.7,
+      "onde": "alvo"
+    },
+    {
+      "nome": "Sol caindo",
+      "som": "minecraft:block.fire.ambient",
+      "momento": "queda",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 5,
+      "vezes": 0,
+      "volume": 2.0,
+      "pitch": 0.6,
+      "pitchFim": 0.6,
       "onde": "alvo"
     }
   ],
@@ -453,48 +453,28 @@
       "alcance": 128
     },
     {
-      "tipo": "impactFrame",
-      "momento": "explosaoEspaco",
-      "sequencia": [
-        "branco",
-        "cor",
-        "invertido",
-        "manga",
-        "mangaInvertido",
-        "cor",
-        "branco"
-      ],
-      "ticksPorQuadro": 1,
-      "cor": "#ff6a00",
-      "alcance": 200
-    },
-    {
       "tipo": "flash",
-      "momento": "explosaoEspaco",
+      "momento": "contato",
       "cor": "#fff2c0",
-      "forca": 0.85,
-      "vidaTicks": 8,
+      "forca": 0.6,
+      "vidaTicks": 6,
       "alcance": 256
     },
     {
       "tipo": "tremor",
-      "momento": "explosaoEspaco",
-      "forca": 2.0,
-      "vidaTicks": 26,
+      "momento": "contato",
+      "forca": 1.2,
+      "vidaTicks": 14,
       "alcance": 256
     },
     {
-      "tipo": "fov",
-      "momento": "explosaoEspaco",
-      "forca": 6,
-      "vidaTicks": 12,
-      "alcance": 200
-    },
-    {
-      "tipo": "blurRadial",
-      "momento": "explosaoEspaco",
-      "forca": 0.8,
-      "vidaTicks": 12,
+      "tipo": "clarao",
+      "momento": "contato",
+      "tamanho": 10,
+      "quantidade": 10,
+      "cor": "#ffb020",
+      "cor2": "#ffffff",
+      "vidaTicks": 10,
       "alcance": 200
     },
     {
@@ -521,29 +501,17 @@
       "alcance": 40
     },
     {
-      "tipo": "esfera",
-      "momento": "queda",
-      "seguir": "centro",
-      "duraMomento": true,
-      "tamanho": 2.2,
-      "quantidade": 6,
-      "cor": "#ff6a10",
-      "cor2": "#fff2c0",
-      "alcance": 300
-    },
-    {
-      "tipo": "parar",
-      "momento": "pousar"
-    },
-    {
       "tipo": "impactFrame",
       "momento": "impacto",
       "sequencia": [
         "branco",
+        "branco",
         "cor",
         "invertido",
         "manga",
-        "cor"
+        "mangaInvertido",
+        "cor",
+        "branco"
       ],
       "ticksPorQuadro": 1,
       "cor": "#ff6a00",
@@ -558,25 +526,11 @@
       "alcance": 200
     },
     {
-      "tipo": "clarao",
+      "tipo": "chamas",
       "momento": "impacto",
-      "tamanho": 20,
-      "quantidade": 10,
-      "cor": "#ff8a10",
-      "cor2": "#ffffff",
-      "vidaTicks": 12,
-      "alcance": 250
-    },
-    {
-      "tipo": "fogo",
-      "momento": "impacto",
-      "quantidade": 40,
-      "raio": 14,
-      "tamanho": 6,
-      "cor": "#d8300a",
-      "cor2": "#ffe080",
-      "vidaTicks": 26,
-      "alcance": 250
+      "raio": 18,
+      "vidaTicks": 44,
+      "alcance": 300
     },
     {
       "tipo": "faiscas",
@@ -626,8 +580,22 @@
     {
       "tipo": "tremor",
       "momento": "impacto",
-      "forca": 2.0,
+      "forca": 2.6,
       "vidaTicks": 26,
+      "alcance": 200
+    },
+    {
+      "tipo": "fov",
+      "momento": "impacto",
+      "forca": 6,
+      "vidaTicks": 12,
+      "alcance": 200
+    },
+    {
+      "tipo": "blurRadial",
+      "momento": "impacto",
+      "forca": 0.8,
+      "vidaTicks": 12,
       "alcance": 200
     }
   ],

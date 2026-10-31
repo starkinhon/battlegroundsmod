@@ -21,7 +21,7 @@ import net.neoforged.neoforge.client.event.MovementInputUpdateEvent;
 // seen from the front as he appears there, then from over his shoulder looking down at the target lying adrift below
 // him, slowly falling towards the Earth; close from the front while he charges the sphere between his hands; from the
 // side as he throws it; over his shoulder again as it implodes into a giant sun and flies down to the target, and the
-// explosion of flames. A flash and the players are back in their own view. Timing from bills.esfera.json; space is
+// sun hitting it and carrying it down towards the Earth. A flash and the players are back in their own view. Timing from bills.esfera.json; space is
 // laid out from where he stood and faced when it started (the server lays out the landing the same way).
 public final class EsferaCutscene {
     private static final double BAR_HEIGHT = 0.11;
@@ -123,7 +123,9 @@ public final class EsferaCutscene {
             double[] r = {1};
             SkillEffects.play(EsferaSpec.SKILL, awakened, "implodir", spherePos(caster, 0, r), forward, -1, 0);
         } else if (age == spec.blastTick()) {
-            SkillEffects.play(EsferaSpec.SKILL, awakened, "explosaoEspaco", targetPos(0), forward, -1, spec.endTick() - spec.blastTick());
+            // The sun hits the target and carries it down towards the Earth (no explosion up here: it blows up when they
+            // land, back in the world).
+            SkillEffects.play(EsferaSpec.SKILL, awakened, "contato", targetPos(0), forward, -1, spec.endTick() - spec.blastTick());
         }
         if (age >= spec.endTick()) {
             ScreenFx.flash(0xFFFFFF, 0.9f, 8);
@@ -172,7 +174,9 @@ public final class EsferaCutscene {
         double s = Math.max(0, spaceAge(partialTick));
         // A slow sway on top of the sinking, like floating.
         Vec3 sway = right().scale(Math.sin(s * 0.03) * 0.4).add(0, Math.sin(s * 0.045) * 0.25, 0);
-        return start.add(down.scale(s * d.velocidade())).add(sway);
+        // Once the sun hits it, pushed down towards the Earth faster and faster.
+        double pushed = Math.max(0, time(partialTick) - spec.blastTick());
+        return start.add(down.scale(s * d.velocidade() + pushed * pushed * 0.07)).add(sway);
     }
 
     // How the target is turned lying there (degrees around the vertical).
@@ -223,10 +227,13 @@ public final class EsferaCutscene {
             double grow = (s - implode) / 3;
             radius[0] = grow < 1 ? Mth.lerp(grow, charge * 0.3, big * 1.12) : big * (1 + 0.12 * Math.max(0, 1 - (grow - 1) / 3));
             double k = (s - implode) / Math.max(1, spec.blastTick() - spec.flyTick() - implode);
-            return out.lerp(aim, k * k * (1.6 - 0.6 * k));
+            Vec3 contact = aim.add(out.subtract(aim).normalize().scale(big * 0.85));
+            return out.lerp(contact, k * k * (1.6 - 0.6 * k));
         }
-        radius[0] = 0;
-        return aim;
+        // On the target, pushing it down.
+        double big = Math.max(charge, e.raioGigante());
+        radius[0] = big;
+        return aim.add(out.subtract(aim).normalize().scale(big * 0.85));
     }
 
     // ---------- the camera ----------
@@ -277,7 +284,7 @@ public final class EsferaCutscene {
             pos = eyes.subtract(forward.scale(back)).add(right.scale(1.4)).add(0, 2.2, 0);
             look = ball.lerp(target, 0.45);
         } else {
-            // Pulling back from the explosion.
+            // Pulling back as the sun carries the target down towards the Earth.
             double k = smooth((t - spec.blastTick()) / Math.max(1, spec.endTick() - spec.blastTick()));
             pos = eyes.subtract(forward.scale(Mth.lerp(k, 4, 8))).add(right.scale(2)).add(0, Mth.lerp(k, 3, 5), 0);
             look = target;

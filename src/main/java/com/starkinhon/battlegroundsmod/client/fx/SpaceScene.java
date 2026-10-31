@@ -35,8 +35,8 @@ import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 // Outer space for the Esfera da Destruição Planetária cutscene (client/EsferaCutscene), drawn over the whole world at the
 // end of the level: a deep navy sky, a band of small stars, soft nebulas in the espaco.corNebulosa colors, the square
 // Earth (a giant textured cube, turning slowly) far below, Bills floating, the target lying adrift between him and the
-// Earth, the sphere of destruction (charging between his hands, thrown, imploding into a giant sun) and the explosion of
-// flames. Only the two players in the cutscene see it.
+// Earth and the sphere of destruction (charging between his hands, thrown, imploding into a giant sun, then carrying the
+// target down). Only the two players in the cutscene see it.
 public final class SpaceScene {
     private static final float[] WHITE = {1, 1, 1};
     private static final float[] BLUE_STAR = FxDraw.rgb(0xBFD8FF);
@@ -141,32 +141,16 @@ public final class SpaceScene {
         Vec3 ballWorld = EsferaCutscene.spherePos(caster, partial, radius);
         Vector3f ball = ballWorld.subtract(camera).toVector3f();
         float r = (float) radius[0];
-        Vec3 targetWorld = EsferaCutscene.targetPos(partial);
         if (t >= spec.chargeTick() && t < spec.throwTick()) {
             charging(ball, r, (float) (t - spec.chargeTick()), (float) ((t - spec.chargeTick()) / Math.max(1, spec.throwTick() - spec.chargeTick())));
         }
         if (r > 0.001f) {
-            Vec3 fly = targetWorld.subtract(ballWorld);
-            Vector3f dir = t < spec.throwTick() || fly.lengthSqr() < 1.0E-4 ? null : fly.normalize().toVector3f();
             double implodeEnd = spec.flyTick() + EsferaCutscene.implodeTicks();
             if (t >= spec.flyTick() && t < implodeEnd) {
                 imploding(ball, r, (float) ((t - spec.flyTick()) / EsferaCutscene.implodeTicks()), (float) now);
             }
-            EsferaRenderer.drawSun(ball, dir, r, (float) now, 4441);
-            if (dir != null && t >= implodeEnd) {
-                // Fire left behind it on the way down.
-                for (int k = 0; k < 14; k++) {
-                    float back = r * (0.8f + k * 0.55f);
-                    Vector3f at = new Vector3f(dir).mul(-back).add(ball).add(FxWorld.sphere(91, k + (int) now % 3).mul(r * 0.25f));
-                    float fade = 1 - k / 14f;
-                    FxDraw.billboard(at, r * (1.6f - k * 0.06f), (float) now * 0.05f + k, FxDraw.FIRE, k / 14f, FxDraw.mix(FIRE_HOT, FIRE_DEEP, k / 14f),
-                            fade * 0.9f, true);
-                }
-            }
-        }
-        if (t >= spec.blastTick() && t < spec.endTick()) {
-            float u = (float) ((t - spec.blastTick()) / Math.max(1, spec.endTick() - spec.blastTick()));
-            flames(targetWorld.subtract(camera).toVector3f(), (float) Math.max(1, spec.esfera().raioExplosao()), u, (float) (t - spec.blastTick()));
+            // Just the ball, no trail behind it (Stark: the trail gets in the way of the view).
+            EsferaRenderer.drawSun(ball, null, r, (float) now, 4441);
         }
     }
 
@@ -209,9 +193,9 @@ public final class SpaceScene {
         FxDraw.billboard(ball, 0.6f + 2 * k, now * 0.1f, FxDraw.FLARE, 0.25f, WHITE, k, true);
     }
 
-    // The explosion of flames around the target, once: a white flash, a burning core, balls of fire rolling out, tongues
+    // The explosion of flames, once (vfx "chamas", where the target lands with the sun): a white flash, a burning core, balls of fire rolling out, tongues
     // of flame, a shock ring, sparks, and dark soot left as it burns out. u runs 0 to 1 over its life.
-    private static void flames(Vector3f at, float big, float u, float age) {
+    static void flames(Vector3f at, float big, float u, float age) {
         float in = FxWorld.easeOut(Math.min(1, u * 4));
         float out = 1 - u;
         // Flash and the hot core.

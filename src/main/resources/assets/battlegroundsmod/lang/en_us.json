@@ -151,7 +151,7 @@
   "ability.battlegroundsmod.destruction_god.4.tags": "Area,Destruction",
   "ability.battlegroundsmod.destruction_god.5.desc": "Rises into the air, intangible, and fires a rain of energy spheres from the whole body at the target, then glides down. A strong stun cancels it.",
   "ability.battlegroundsmod.destruction_god.5.tags": "Projectile,Intangible",
-  "ability.battlegroundsmod.destruction_god.7.desc": "Takes the target to space, where it drifts helplessly while Bills charges a sphere of destruction between his hands and blows it up in flames. Back on Earth, the target falls from the sky into a crater.",
+  "ability.battlegroundsmod.destruction_god.7.desc": "Takes the target to space, where it drifts helplessly while Bills charges a sphere of destruction between his hands and throws it. The sphere carries the target back down to Earth from high in the sky and blows up in flames on impact.",
   "ability.battlegroundsmod.destruction_god.7.tags": "Cutscene,Area",
   "ability.battlegroundsmod.destruction_god.8.desc": "A tiny spark that flies straight and pulverizes everything it touches, even other powers' attacks. Anyone under 20% health is disintegrated.",
   "ability.battlegroundsmod.destruction_god.8.tags": "Projectile,Erases attacks",

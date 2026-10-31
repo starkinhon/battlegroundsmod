@@ -16,7 +16,9 @@ import net.minecraft.world.phys.Vec3;
 // the rim and white lightning crackling around it. The same look in space
 // (SpaceScene) and when it falls on the target, following its head on the path the server lands it with.
 public final class EsferaRenderer {
-    private record Fall(int target, Vec3 start, Vec3 lastHead, int ticks, float radius, long born) {
+    // ride: the sun sits on the target and comes down with it (the Esfera da Destruição Planetária) instead of
+    // falling onto its head from start.
+    private record Fall(int target, Vec3 start, Vec3 lastHead, int ticks, float radius, long born, boolean ride) {
     }
 
     private static final List<Fall> FALLS = new ArrayList<>();
@@ -33,7 +35,16 @@ public final class EsferaRenderer {
 
     // A sun falling from start onto a target's head over ticks (the old Shift + C fall; kept for anything that sends one).
     public static void fall(int targetId, Vec3 start, Vec3 lastHead, int ticks, float radius) {
-        FALLS.add(new Fall(targetId, start, lastHead, Math.max(1, ticks), radius, ScreenFx.now()));
+        FALLS.add(new Fall(targetId, start, lastHead, Math.max(1, ticks), radius, ScreenFx.now(), false));
+    }
+
+    // A sun on top of the target, pushing it down for ticks (gone when it lands).
+    public static void ride(int targetId, Vec3 lastHead, int ticks, float radius) {
+        FALLS.add(new Fall(targetId, lastHead, lastHead, Math.max(1, ticks), radius, ScreenFx.now(), true));
+    }
+
+    private static Vec3 center(Fall f, Vec3 head, double k) {
+        return f.ride() ? head.add(0, f.radius() * 0.85, 0) : fallAt(f.start(), head, k);
     }
 
     // From start towards the head it follows, slow and heavy, a little faster at the end.
@@ -56,7 +67,7 @@ public final class EsferaRenderer {
         FALLS.removeIf(f -> {
             Entity target = level.getEntity(f.target());
             Vec3 head = target != null && target.isAlive() ? target.position().add(0, target.getBbHeight(), 0) : f.lastHead();
-            return fallAt(f.start(), head, (now - f.born()) / (double) f.ticks()).distanceTo(pos) < radius + f.radius() + 3;
+            return center(f, head, (now - f.born()) / (double) f.ticks()).distanceTo(pos) < radius + f.radius() + 3;
         });
     }
 
@@ -71,9 +82,8 @@ public final class EsferaRenderer {
             Entity target = level.getEntity(f.target());
             Vec3 head = target != null && target.isAlive() ? target.getPosition(partial).add(0, target.getBbHeight(), 0) : f.lastHead();
             double k = (now - f.born()) / f.ticks();
-            Vec3 center = fallAt(f.start(), head, k);
-            Vec3 ahead = fallAt(f.start(), head, Math.min(1, k + 0.02));
-            Vec3 dir = ahead.subtract(center);
+            Vec3 center = center(f, head, k);
+            Vec3 dir = f.ride() ? new Vec3(0, -1, 0) : fallAt(f.start(), head, Math.min(1, k + 0.02)).subtract(center);
             drawSun(center.subtract(camera).toVector3f(), dir.lengthSqr() < 1.0E-6 ? new Vector3f(0, -1, 0) : dir.normalize().toVector3f(), f.radius(),
                     (float) (now - f.born()), f.target() * 131 + 7);
         }
