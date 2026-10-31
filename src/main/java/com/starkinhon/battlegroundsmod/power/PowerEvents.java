@@ -24,6 +24,7 @@ import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.EntityHitResult;
+import net.neoforged.bus.api.EventPriority;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
@@ -62,7 +63,7 @@ public final class PowerEvents {
         NeoForge.EVENT_BUS.addListener(PowerEvents::onLeftClickBlock);
         NeoForge.EVENT_BUS.addListener(PowerEvents::onStartTracking);
         NeoForge.EVENT_BUS.addListener(Izanami::onEntityJoin);
-        NeoForge.EVENT_BUS.addListener(Izanami::onDeath);
+        NeoForge.EVENT_BUS.addListener(EventPriority.HIGHEST, Izanami::onDeath);
     }
 
     private static void onServerTick(ServerTickEvent.Post event) {
