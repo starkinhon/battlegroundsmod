@@ -14,7 +14,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec3;
 
-// The world effects of Bills' Destruction Touch (bills.destruction_touch.json), drawn like the rest of FxWorld from the
+// The world effects of Bills' Destruição Planetária (bills.destruction_touch.json), drawn like the rest of FxWorld from the
 // age and fixed random numbers per part:
 // bolinha: the tiny white ball falling from his finger, at velocidade blocks per tick along the direction.
 // rachaduras: a web of glowing lava cracks over the ground, raio blocks wide, opening from the middle out and following

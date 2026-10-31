@@ -9,13 +9,7 @@ import net.minecraft.network.chat.Component;
 // A selectable power: four abilities (the fourth is the ultimate), sometimes a fifth on its own key, plus a multiplier
 // for the shared melee moves. shiftAbilities (empty, four or five) are the variants used with Shift held: Z, X, C, V (ult)
 // and the fifth skill. A null entry (Arrays.asList) means that key has no variant: with Shift it still uses the normal skill.
-// ultOnB swaps the two last keys: the fifth skill goes on V and the ult (with its Shift variant) on B. The slots stay the
-// same, so bosses and cooldowns don't change.
-public record Power(String id, int color, float meleeMultiplier, List<Ability> abilities, List<Ability> shiftAbilities, boolean ultOnB) {
-
-    public Power(String id, int color, float meleeMultiplier, List<Ability> abilities, List<Ability> shiftAbilities) {
-        this(id, color, meleeMultiplier, abilities, shiftAbilities, false);
-    }
+public record Power(String id, int color, float meleeMultiplier, List<Ability> abilities, List<Ability> shiftAbilities) {
 
     public Power(String id, int color, float meleeMultiplier, List<Ability> abilities) {
         this(id, color, meleeMultiplier, abilities, List.of());
@@ -47,16 +41,11 @@ public record Power(String id, int color, float meleeMultiplier, List<Ability> a
         if (shiftAbilities.size() < 4) {
             return List.of();
         }
-        return ultOnB
-                ? List.of(shiftSlot(0), shiftSlot(1), shiftSlot(2), shiftSlot(4), shiftSlot(3))
-                : List.of(shiftSlot(0), shiftSlot(1), shiftSlot(2), shiftSlot(3));
+        return List.of(shiftSlot(0), shiftSlot(1), shiftSlot(2), shiftSlot(3));
     }
 
     // The slot a key uses (0-3: Z, X, C, V; 4: B), with or without Shift held.
     public int keySlot(int key, boolean shift) {
-        if (ultOnB && key >= 3) {
-            key = key == 3 ? 4 : 3;
-        }
         if (!shift) {
             return key == 4 ? PowerData.SLOT_EXTRA : key;
         }
@@ -66,8 +55,7 @@ public record Power(String id, int color, float meleeMultiplier, List<Ability> a
     // The key (0-3: Z, X, C, V; 4: B) that uses a slot. A Shift variant uses its normal skill's key.
     public int slotKey(int slot) {
         int base = PowerData.baseSlot(slot);
-        int key = base == PowerData.SLOT_EXTRA ? 4 : base;
-        return ultOnB && key >= 3 ? (key == 3 ? 4 : 3) : key;
+        return base == PowerData.SLOT_EXTRA ? 4 : base;
     }
 
     // The slot a skill key (0-3: Z, X, C, V; 4: the fifth skill) uses with Shift held: its variant, or the normal skill
