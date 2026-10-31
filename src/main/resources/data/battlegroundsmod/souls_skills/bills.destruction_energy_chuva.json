@@ -20,7 +20,7 @@
     "criarTicks": 40,
     "distanciaMin": 2.5,
     "distanciaMax": 6,
-    "raio": 0.55,
+    "raio": 0.16,
     "pausaTicks": 10,
     "intervaloTicks": 2
   },
@@ -164,7 +164,7 @@
     {
       "tipo": "clarao",
       "momento": "criar",
-      "tamanho": 1.4,
+      "tamanho": 0.8,
       "quantidade": 4,
       "cor": "#9a5cff",
       "cor2": "#ffffff",
@@ -181,7 +181,7 @@
     {
       "tipo": "clarao",
       "momento": "explosao",
-      "tamanho": 6,
+      "tamanho": 3.3,
       "quantidade": 10,
       "cor": "#9a5cff",
       "cor2": "#ffffff",
@@ -192,8 +192,8 @@
       "tipo": "estrela",
       "momento": "explosao",
       "quantidade": 18,
-      "comprimento": 7,
-      "tamanho": 1.1,
+      "comprimento": 4.9,
+      "tamanho": 0.7,
       "cor": "#cdb0ff",
       "cor2": "#ffffff",
       "vidaTicks": 12,
@@ -241,7 +241,7 @@
     {
       "tipo": "clarao",
       "momento": "sumir",
-      "tamanho": 1.8,
+      "tamanho": 1.1,
       "quantidade": 6,
       "cor": "#9a5cff",
       "cor2": "#ffffff",
@@ -261,7 +261,7 @@
     {
       "tipo": "clarao",
       "momento": "cancelar",
-      "tamanho": 4,
+      "tamanho": 2.4,
       "quantidade": 8,
       "cor": "#9a5cff",
       "cor2": "#ffffff",
