@@ -1,7 +1,7 @@
 # Aviso / Notice
 
-**PT-BR.** Souls / Battlegrounds Mod é um mod **feito por fãs**, sem fins de
-afiliação. Não é oficial e não tem nenhuma ligação com Mojang, Microsoft,
+**PT-BR.** Souls / Battlegrounds Mod é um mod **feito por fãs**.
+Não é oficial e não tem nenhuma ligação com Mojang, Microsoft,
 Masashi Kishimoto, Shueisha, Studio Pierrot (Naruto), Akira Toriyama,
 Bird Studio, Toei Animation (Dragon Ball) ou qualquer outro dono das obras
 que inspiraram os poderes. Os personagens, nomes e técnicas citados pertencem
