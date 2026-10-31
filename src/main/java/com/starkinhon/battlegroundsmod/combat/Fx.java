@@ -19,7 +19,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 public final class Fx {
     // Particles are sent with the long-distance flag so far-away cameras still see big moves.
     private static final double VIEW_DISTANCE_SQR = 128 * 128;
-    private static final double EFFECTS_DISTANCE_SQR = 256 * 256;
+    private static final double EFFECTS_DISTANCE_SQR = 448 * 448;
     private static final double GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5));
 
     private Fx() {

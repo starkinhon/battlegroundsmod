@@ -34,7 +34,7 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
 
-// V: Destruction Touch (bills.destruction_touch.json, see DestructionTouchSpec). Bills rises over the ground, lets a
+// B: Planetary Destruction (bills.destruction_touch.json, see DestructionTouchSpec). Bills rises over the ground, lets a
 // tiny white ball drop from his finger, and where it lands the ground glows, cracks, shoots up pillars of light and
 // then goes off in a giant pink plasma explosion that pulverizes everything around. All the light is drawn from the
 // skill's vfx list (client/fx/FxWorld: bolinha, rachaduras, pilares, plasma).
@@ -176,9 +176,9 @@ public final class DestructionTouch {
         });
     }
 
-    // The blast, shared with the planet version (DestructionPlanet): damage falling off from the middle, anyone left
-    // under the Hakai's life limit pulverized, attacks in flight inside it erased, and the crater.
-    static void explode(LivingEntity caster, ServerLevel level, DestructionTouchSpec.Explosao explosao, Vec3 at, boolean awakened) {
+    // The blast: damage falling off from the middle, anyone left under the Hakai's life limit pulverized, attacks in
+    // flight inside it erased, and the crater.
+    private static void explode(LivingEntity caster, ServerLevel level, DestructionTouchSpec.Explosao explosao, Vec3 at, boolean awakened) {
         double radius = Math.max(1, explosao.raio());
         HakaiSpec hakai = HakaiSpec.get(awakened);
         for (LivingEntity hit : Combat.inRadius(level, at, radius, caster)) {

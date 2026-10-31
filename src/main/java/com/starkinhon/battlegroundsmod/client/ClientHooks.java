@@ -107,10 +107,6 @@ public final class ClientHooks {
         EsferaCutscene.start(casterId, awakened);
     }
 
-    public static void planetCutscene(int casterId, boolean awakened) {
-        PlanetCutscene.start(casterId, awakened);
-    }
-
     public static void esferaFall(int targetId, Vec3 start, Vec3 lastHead, boolean awakened) {
         com.starkinhon.battlegroundsmod.client.fx.EsferaRenderer.fall(targetId, start, lastHead, awakened);
     }

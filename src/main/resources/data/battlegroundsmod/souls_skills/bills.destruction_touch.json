@@ -1,7 +1,7 @@
 {
   "formato": "souls-skill/1",
   "skill": "bills.destruction_touch",
-  "nome": "Destruction Touch",
+  "nome": "Planetary Destruction",
   "tempo": {
     "atrasoTicks": 30,
     "duracaoTicks": 14
@@ -27,12 +27,12 @@
   "explosao": {
     "danoCentro": 70,
     "danoBorda": 15,
-    "raio": 200,
+    "raio": 400,
     "empurrao": 3,
     "quebrarBlocos": true,
-    "raioCratera": 34,
-    "profundidadeCratera": 14,
-    "crateraTicks": 12
+    "raioCratera": 50,
+    "profundidadeCratera": 20,
+    "crateraTicks": 24
   },
   "cancelarStunTicks": 25,
   "animacao": {
@@ -106,7 +106,7 @@
       "atrasoTicks": 0,
       "repetirACadaTicks": 0,
       "vezes": 1,
-      "volume": 3.0,
+      "volume": 4.5,
       "pitch": 0.5,
       "pitchFim": 0.5,
       "onde": "alvo"
@@ -118,7 +118,7 @@
       "atrasoTicks": 6,
       "repetirACadaTicks": 0,
       "vezes": 1,
-      "volume": 3.0,
+      "volume": 4.5,
       "pitch": 0.6,
       "pitchFim": 0.6,
       "onde": "alvo"
@@ -130,7 +130,7 @@
       "atrasoTicks": 4,
       "repetirACadaTicks": 0,
       "vezes": 1,
-      "volume": 2.0,
+      "volume": 3.0,
       "pitch": 0.6,
       "pitchFim": 0.6,
       "onde": "alvo"
@@ -142,7 +142,7 @@
       "atrasoTicks": 0,
       "repetirACadaTicks": 0,
       "vezes": 1,
-      "volume": 3.0,
+      "volume": 4.5,
       "pitch": 0.7,
       "pitchFim": 0.7,
       "onde": "alvo"
@@ -154,7 +154,7 @@
       "atrasoTicks": 0,
       "repetirACadaTicks": 6,
       "vezes": 0,
-      "volume": 2.0,
+      "volume": 3.0,
       "pitch": 0.6,
       "pitchFim": 1.4,
       "onde": "alvo"
@@ -166,7 +166,7 @@
       "atrasoTicks": 0,
       "repetirACadaTicks": 0,
       "vezes": 1,
-      "volume": 4.0,
+      "volume": 6.0,
       "pitch": 0.5,
       "pitchFim": 0.5,
       "onde": "alvo"
@@ -190,7 +190,7 @@
       "atrasoTicks": 0,
       "repetirACadaTicks": 0,
       "vezes": 1,
-      "volume": 3.0,
+      "volume": 4.5,
       "pitch": 0.6,
       "pitchFim": 0.6,
       "onde": "alvo"
@@ -202,7 +202,7 @@
       "atrasoTicks": 0,
       "repetirACadaTicks": 0,
       "vezes": 1,
-      "volume": 3.0,
+      "volume": 4.5,
       "pitch": 0.6,
       "pitchFim": 0.6,
       "onde": "alvo"
@@ -266,12 +266,12 @@
     {
       "tipo": "clarao",
       "momento": "toque",
-      "tamanho": 7,
+      "tamanho": 12,
       "quantidade": 12,
       "cor": "#ffe0a0",
       "cor2": "#ffffff",
       "vidaTicks": 16,
-      "alcance": 200
+      "alcance": 400
     },
     {
       "tipo": "flash",
@@ -279,28 +279,28 @@
       "cor": "#fff6e0",
       "forca": 0.35,
       "vidaTicks": 6,
-      "alcance": 160
+      "alcance": 320
     },
     {
       "tipo": "anelChao",
       "momento": "toque",
-      "raio": 24,
-      "tamanho": 2,
+      "raio": 48,
+      "tamanho": 3,
       "cor": "#ffd8a0",
       "vidaTicks": 24,
-      "velocidade": 2,
-      "alcance": 200
+      "velocidade": 3,
+      "alcance": 400
     },
     {
       "tipo": "rachaduras",
       "momento": "toque",
-      "raio": 70,
-      "quantidade": 10,
-      "tamanho": 0.45,
+      "raio": 140,
+      "quantidade": 14,
+      "tamanho": 0.6,
       "cor": "#ff6a08",
       "cor2": "#ffd040",
-      "vidaTicks": 150,
-      "alcance": 250
+      "vidaTicks": 170,
+      "alcance": 500
     },
     {
       "tipo": "distorcao",
@@ -312,26 +312,26 @@
       "cor": "#ffb060",
       "tinta": 0.04,
       "vidaTicks": 14,
-      "alcance": 160
+      "alcance": 320
     },
     {
       "tipo": "tremor",
       "momento": "toque",
       "forca": 0.35,
       "vidaTicks": 25,
-      "alcance": 200
+      "alcance": 400
     },
     {
       "tipo": "pilares",
       "momento": "pilares",
       "duraMomento": true,
-      "raio": 60,
-      "quantidade": 55,
-      "comprimento": 90,
-      "tamanho": 2.2,
+      "raio": 120,
+      "quantidade": 110,
+      "comprimento": 160,
+      "tamanho": 3.2,
       "cor": "#ffaa00",
       "cor2": "#fff4a0",
-      "alcance": 250
+      "alcance": 500
     },
     {
       "tipo": "vinheta",
@@ -345,7 +345,7 @@
       "momento": "pilares",
       "forca": 0.9,
       "vidaTicks": 30,
-      "alcance": 250
+      "alcance": 500
     },
     {
       "tipo": "impactFrame",
@@ -362,7 +362,7 @@
       ],
       "ticksPorQuadro": 1,
       "cor": "#ff40c8",
-      "alcance": 250
+      "alcance": 450
     },
     {
       "tipo": "flash",
@@ -370,96 +370,96 @@
       "cor": "#ffe8ff",
       "forca": 0.95,
       "vidaTicks": 10,
-      "alcance": 300
+      "alcance": 450
     },
     {
       "tipo": "plasma",
       "momento": "explosao",
-      "raio": 55,
-      "quantidade": 180,
-      "tamanho": 1.4,
+      "raio": 110,
+      "quantidade": 260,
+      "tamanho": 2.4,
       "cor": "#e030b0",
       "cor2": "#ffa070",
       "vidaTicks": 70,
-      "alcance": 300
+      "alcance": 450
     },
     {
       "tipo": "nuvem",
       "momento": "explosao",
       "inicio": 30,
-      "raio": 60,
-      "quantidade": 40,
-      "tamanho": 30,
+      "raio": 120,
+      "quantidade": 60,
+      "tamanho": 55,
       "cor": "#f0a0d8",
       "cor2": "#ffc8a0",
       "vidaTicks": 160,
-      "alcance": 300
+      "alcance": 450
     },
     {
       "tipo": "estrela",
       "momento": "explosao",
       "quantidade": 70,
-      "comprimento": 110,
-      "tamanho": 5,
+      "comprimento": 220,
+      "tamanho": 8,
       "cor": "#ff70d8",
       "cor2": "#ffffff",
       "vidaTicks": 18,
-      "alcance": 300
+      "alcance": 450
     },
     {
       "tipo": "faiscas",
       "momento": "explosao",
       "quantidade": 320,
-      "velocidade": 2.5,
-      "comprimento": 4,
-      "tamanho": 3,
+      "velocidade": 4,
+      "comprimento": 7,
+      "tamanho": 5,
       "cor": "#ff50c8",
       "cor2": "#fff0ff",
       "vidaTicks": 26,
-      "alcance": 300
+      "alcance": 450
     },
     {
       "tipo": "anelChao",
       "momento": "explosao",
-      "raio": 200,
-      "tamanho": 6,
+      "raio": 400,
+      "tamanho": 10,
       "cor": "#ff8ae0",
-      "vidaTicks": 40,
-      "velocidade": 8,
-      "alcance": 300
+      "vidaTicks": 45,
+      "velocidade": 14,
+      "alcance": 450
     },
     {
       "tipo": "distorcao",
       "momento": "explosao",
       "modo": "onda",
-      "raio": 70,
+      "raio": 140,
       "forca": 0.8,
-      "velocidade": 22,
+      "velocidade": 30,
       "cor": "#ff70d8",
       "tinta": 0.07,
       "vidaTicks": 30,
-      "alcance": 300
+      "alcance": 450
     },
     {
       "tipo": "tremor",
       "momento": "explosao",
       "forca": 2.6,
       "vidaTicks": 35,
-      "alcance": 300
+      "alcance": 450
     },
     {
       "tipo": "fov",
       "momento": "explosao",
       "forca": 7,
       "vidaTicks": 12,
-      "alcance": 250
+      "alcance": 450
     },
     {
       "tipo": "blurRadial",
       "momento": "explosao",
       "forca": 0.9,
       "vidaTicks": 12,
-      "alcance": 250
+      "alcance": 450
     },
     {
       "tipo": "clarao",

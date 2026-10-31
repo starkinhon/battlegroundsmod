@@ -148,6 +148,19 @@
       "avisoCor": "#9b30ff",
       "avisoSom": ""
     },
+    "destruction_touch": {
+      "slot": 7,
+      "tipo": "livre",
+      "peso": 0.7,
+      "recargaTicks": 700,
+      "recargaMaxTicks": 1000,
+      "avisoTicks": 8,
+      "distanciaMin": 6,
+      "distanciaMax": 60,
+      "giroGrausPorTick": 20,
+      "avisoCor": "#ff70d8",
+      "avisoSom": "minecraft:block.amethyst_block.chime"
+    },
     "esfera": {
       "slot": 2,
       "tipo": "ult",
