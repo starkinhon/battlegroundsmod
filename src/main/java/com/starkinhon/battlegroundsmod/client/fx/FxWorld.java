@@ -66,13 +66,14 @@ public final class FxWorld {
 
     // Every moving piece of this skill (a slash in flight) is gone at once: the attack was pulverized.
     public static void erase(String skill) {
-        PIECES.removeIf(p -> p.skill().equals(skill) && "corte".equals(p.e().tipo()));
+        PIECES.removeIf(p -> p.skill().equals(skill) && ("corte".equals(p.e().tipo()) || "bolinha".equals(p.e().tipo())));
     }
 
     public static void tick() {
         long now = ScreenFx.now();
         PIECES.removeIf(p -> now - p.start() > p.life());
         BIRTHS.keySet().removeIf(seed -> PIECES.stream().noneMatch(p -> p.seed() == seed));
+        DestructionFx.forget(seed -> PIECES.stream().anyMatch(p -> p.seed() == seed));
         for (Piece p : PIECES) {
             if ("jatoFogo".equals(p.e().tipo())) {
                 recordBirth(p, (int) (now - p.start()));
@@ -83,6 +84,7 @@ public final class FxWorld {
     public static void clear() {
         PIECES.clear();
         BIRTHS.clear();
+        DestructionFx.clear();
     }
 
     // Where the mouth was and where it aimed on each tick of a fire stream (world space), so flames already out keep
@@ -379,6 +381,11 @@ public final class FxWorld {
             case "olho" -> FxDraw.billboard(decal(e), at, size, spin, new float[] {1, 1, 1}, hold);
             case "bracoEspada" -> swordArm(e, at, dir, age, cor, cor2, hold);
             case "corte" -> slash(e, at, dir, age, t, cor, cor2, size, opacity);
+            case "bolinha" -> DestructionFx.ball(e, at, dir, age, cor, cor2, size, opacity);
+            case "rachaduras" -> DestructionFx.cracks(e, p.seed(), p.pos(), at, age, t, cor, cor2, size, opacity);
+            case "pilares" -> DestructionFx.pillars(e, p.seed(), at, age, t, cor, cor2, size, opacity);
+            case "plasma" -> DestructionFx.plasma(e, p.seed(), at, age, t, cor, cor2, size, opacity);
+            case "nuvem" -> DestructionFx.cloud(e, p.seed(), at, age, t, cor, cor2, size, opacity);
             default -> {
             }
         }

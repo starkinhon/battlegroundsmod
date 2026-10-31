@@ -7,14 +7,17 @@ import com.starkinhon.battlegroundsmod.power.Ability;
 import com.starkinhon.battlegroundsmod.power.Power;
 import com.starkinhon.battlegroundsmod.power.powers.bills.DestructionBop;
 import com.starkinhon.battlegroundsmod.power.powers.bills.DestructionEnergy;
+import com.starkinhon.battlegroundsmod.power.powers.bills.DestructionPlanet;
+import com.starkinhon.battlegroundsmod.power.powers.bills.DestructionTouch;
 import com.starkinhon.battlegroundsmod.power.powers.bills.Esfera;
 import com.starkinhon.battlegroundsmod.power.powers.bills.Hakai;
 import com.starkinhon.battlegroundsmod.power.powers.bills.Hakaizinho;
 
-// Deus da Destruição (Bills). Being remade move by move, starting with the ult: C is the Esfera da Destruição and V the
-// Hakai (the hakai ball when the target still has too much life), Shift + V the hakaizinho. Z is the Destruction
-// Energy (held to charge, let go to throw) and Shift + Z its rain of balls. X is the Destruction Bop (flick up, slap
-// down).
+// Deus da Destruição (Bills). Being remade move by move, starting with the ult: C is the Esfera da Destruição and the
+// ult, on B for him (ultOnB), is the Hakai (the hakai ball when the target still has too much life), Shift + B the
+// hakaizinho. Z is the Destruction Energy (held to charge, let go to throw) and Shift + Z its rain of balls. X is the
+// Destruction Bop (flick up, slap down). V is the Destruction Touch (a tiny ball dropped from up high that blows up the
+// ground in a giant plasma explosion) and Shift + V its planet version (he goes to space and blows half the Earth up).
 public final class DestructionGod {
     private DestructionGod() {
     }
@@ -24,8 +27,11 @@ public final class DestructionGod {
                 new Ability(80, 0, DestructionEnergy::use),
                 new Ability(300, 0, DestructionBop::use),
                 new Ability(400, 0, Esfera::use),
-                new Ability(600, 0, Hakai::use)),
-                // Z and V have a Shift variant; Shift + X or C still use the normal skill.
-                Arrays.asList(new Ability(500, 0, DestructionEnergy::rain), null, null, new Ability(600, 0, Hakaizinho::use)));
+                new Ability(600, 0, Hakai::use),
+                new Ability(500, 0, DestructionTouch::use)),
+                // Z, the ult and V have a Shift variant; Shift + X or C still use the normal skill.
+                Arrays.asList(new Ability(500, 0, DestructionEnergy::rain), null, null, new Ability(600, 0, Hakaizinho::use),
+                        new Ability(900, 0, DestructionPlanet::use)),
+                true);
     }
 }

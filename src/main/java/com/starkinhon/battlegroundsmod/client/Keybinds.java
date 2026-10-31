@@ -41,8 +41,9 @@ public final class Keybinds {
     private static boolean abilityHeld;
 
     // The key of a skill slot (a Shift variant uses its normal skill's key).
-    public static KeyMapping forSlot(int slot) {
-        return slot == PowerData.SLOT_EXTRA ? EXTRA_ABILITY : ABILITIES.get(PowerData.baseSlot(slot));
+    public static KeyMapping forSlot(Power power, int slot) {
+        int key = power.slotKey(slot);
+        return key == 4 ? EXTRA_ABILITY : ABILITIES.get(key);
     }
 
     private static KeyMapping key(String name, int defaultKey) {
@@ -63,13 +64,13 @@ public final class Keybinds {
         for (int slot = 0; slot < ABILITIES.size(); slot++) {
             while (ABILITIES.get(slot).consumeClick()) {
                 if (ready) {
-                    PacketDistributor.sendToServer(new ModPayloads.UseAbility(shift ? power.shiftSlot(slot) : slot));
+                    PacketDistributor.sendToServer(new ModPayloads.UseAbility(power == null ? slot : power.keySlot(slot, shift)));
                 }
             }
         }
         while (EXTRA_ABILITY.consumeClick()) {
             if (ready) {
-                PacketDistributor.sendToServer(new ModPayloads.UseAbility(PowerData.SLOT_EXTRA));
+                PacketDistributor.sendToServer(new ModPayloads.UseAbility(power == null ? PowerData.SLOT_EXTRA : power.keySlot(4, shift)));
             }
         }
         boolean hasPower = ready && minecraft.player.getData(ModAttachments.POWER).hasPower();

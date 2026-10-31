@@ -1,0 +1,489 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "bills.destruction_touch_planeta",
+  "nome": "Destruction Touch: Planeta",
+  "tempo": {
+    "subirTicks": 16,
+    "auraTicks": 50,
+    "claraoTicks": 24,
+    "pausaTicks": 20,
+    "explosaoTicks": 90,
+    "costasTicks": 40,
+    "avisoTicks": 16,
+    "atrasoTicks": 8,
+    "duracaoTicks": 8
+  },
+  "alvo": {
+    "alcance": 60
+  },
+  "espaco": {
+    "tamanho": 160,
+    "distancia": 330,
+    "abaixo": 40,
+    "girar": 0.03,
+    "estrelas": 700,
+    "corCeu": "#0b0626",
+    "corHorizonte": "#1d2f8a"
+  },
+  "planeta": {
+    "pedacos": 6,
+    "voo": 1.6,
+    "nuvem": 1.4,
+    "rochas": 90
+  },
+  "explosao": {
+    "danoCentro": 70,
+    "danoBorda": 15,
+    "raio": 200,
+    "empurrao": 3,
+    "quebrarBlocos": true,
+    "raioCratera": 34,
+    "profundidadeCratera": 14,
+    "crateraTicks": 12
+  },
+  "cutscene": {
+    "ativa": true,
+    "barrasPretas": true,
+    "intangivel": true
+  },
+  "animacao": {
+    "transicaoTicks": 4,
+    "preparo": {
+      "cabeca": 0,
+      "tronco": 0,
+      "bracoDir": {
+        "frente": 95,
+        "abrir": 35
+      },
+      "bracoEsq": {
+        "frente": 0,
+        "abrir": 0
+      }
+    },
+    "sopro": {
+      "cabeca": -5,
+      "tronco": -3,
+      "bracoDir": {
+        "frente": 105,
+        "abrir": 20
+      },
+      "bracoEsq": {
+        "frente": 0,
+        "abrir": 0
+      }
+    }
+  },
+  "sons": [
+    {
+      "nome": "Estalo",
+      "som": "minecraft:block.note_block.snare",
+      "momento": "uso",
+      "atrasoTicks": 8,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.6,
+      "pitch": 1.9,
+      "pitchFim": 1.9,
+      "onde": "usuario"
+    },
+    {
+      "nome": "Estalo eco",
+      "som": "minecraft:block.note_block.hat",
+      "momento": "uso",
+      "atrasoTicks": 8,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.0,
+      "pitch": 1.4,
+      "pitchFim": 1.4,
+      "onde": "usuario"
+    },
+    {
+      "nome": "Sumir",
+      "som": "minecraft:entity.breeze.wind_burst",
+      "momento": "uso",
+      "atrasoTicks": 14,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.0,
+      "pitch": 0.8,
+      "pitchFim": 0.8,
+      "onde": "usuario"
+    },
+    {
+      "nome": "Espaço",
+      "som": "minecraft:block.beacon.ambient",
+      "momento": "espaco",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 20,
+      "vezes": 0,
+      "volume": 1.0,
+      "pitch": 0.6,
+      "pitchFim": 0.6,
+      "onde": "tela"
+    },
+    {
+      "nome": "Carga",
+      "som": "minecraft:block.respawn_anchor.charge",
+      "momento": "espaco",
+      "atrasoTicks": 10,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.0,
+      "pitch": 1.2,
+      "pitchFim": 1.2,
+      "onde": "tela"
+    },
+    {
+      "nome": "Ponto",
+      "som": "minecraft:block.amethyst_block.resonate",
+      "momento": "clarao",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.2,
+      "pitch": 1.4,
+      "pitchFim": 1.4,
+      "onde": "tela"
+    },
+    {
+      "nome": "Brilho",
+      "som": "minecraft:entity.firework_rocket.twinkle",
+      "momento": "clarao",
+      "atrasoTicks": 8,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.0,
+      "pitch": 0.8,
+      "pitchFim": 0.8,
+      "onde": "tela"
+    },
+    {
+      "nome": "Disco",
+      "som": "minecraft:entity.warden.sonic_boom",
+      "momento": "planeta",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.2,
+      "pitch": 0.5,
+      "pitchFim": 0.5,
+      "onde": "tela"
+    },
+    {
+      "nome": "Planeta",
+      "som": "minecraft:entity.generic.explode",
+      "momento": "planeta",
+      "atrasoTicks": 4,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.5,
+      "pitch": 0.4,
+      "pitchFim": 0.4,
+      "onde": "tela"
+    },
+    {
+      "nome": "Trovão",
+      "som": "minecraft:entity.lightning_bolt.thunder",
+      "momento": "planeta",
+      "atrasoTicks": 6,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.0,
+      "pitch": 0.5,
+      "pitchFim": 0.5,
+      "onde": "tela"
+    },
+    {
+      "nome": "Aviso",
+      "som": "minecraft:block.beacon.power_select",
+      "momento": "aviso",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 3.0,
+      "pitch": 0.5,
+      "pitchFim": 0.5,
+      "onde": "alvo"
+    },
+    {
+      "nome": "Explosão",
+      "som": "minecraft:entity.generic.explode",
+      "momento": "impacto",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 4.0,
+      "pitch": 0.5,
+      "pitchFim": 0.5,
+      "onde": "alvo"
+    },
+    {
+      "nome": "Explosão (tela)",
+      "som": "minecraft:entity.generic.explode",
+      "momento": "impacto",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.0,
+      "pitch": 0.5,
+      "pitchFim": 0.5,
+      "onde": "tela"
+    },
+    {
+      "nome": "Estrondo",
+      "som": "minecraft:entity.warden.sonic_boom",
+      "momento": "impacto",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 3.0,
+      "pitch": 0.6,
+      "pitchFim": 0.6,
+      "onde": "alvo"
+    },
+    {
+      "nome": "Trovão",
+      "som": "minecraft:entity.lightning_bolt.thunder",
+      "momento": "impacto",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 3.0,
+      "pitch": 0.6,
+      "pitchFim": 0.6,
+      "onde": "alvo"
+    }
+  ],
+  "vfx": [
+    {
+      "tipo": "clarao",
+      "momento": "uso",
+      "inicio": 8,
+      "seguir": "cabeca",
+      "tamanho": 0.9,
+      "quantidade": 8,
+      "cor": "#d8a0ff",
+      "cor2": "#ffffff",
+      "vidaTicks": 8,
+      "alcance": 64
+    },
+    {
+      "tipo": "estrela",
+      "momento": "uso",
+      "inicio": 8,
+      "seguir": "cabeca",
+      "quantidade": 10,
+      "comprimento": 1.5,
+      "tamanho": 0.3,
+      "cor": "#d8a0ff",
+      "cor2": "#ffffff",
+      "vidaTicks": 8,
+      "alcance": 64
+    },
+    {
+      "tipo": "clarao",
+      "momento": "espaco",
+      "tamanho": 2.5,
+      "quantidade": 8,
+      "cor": "#b060ff",
+      "cor2": "#ffffff",
+      "vidaTicks": 10,
+      "alcance": 64
+    },
+    {
+      "tipo": "distorcao",
+      "momento": "espaco",
+      "modo": "onda",
+      "raio": 5,
+      "forca": 0.4,
+      "velocidade": 12,
+      "cor": "#c080ff",
+      "tinta": 0.05,
+      "vidaTicks": 10,
+      "alcance": 48
+    },
+    {
+      "tipo": "clarao",
+      "momento": "voltar",
+      "tamanho": 2,
+      "quantidade": 6,
+      "cor": "#b060ff",
+      "cor2": "#ffffff",
+      "vidaTicks": 8,
+      "alcance": 64
+    },
+    {
+      "tipo": "esfera",
+      "momento": "aviso",
+      "duraMomento": true,
+      "seguir": "centro",
+      "tamanho": 2.2,
+      "quantidade": 6,
+      "cor": "#a040f0",
+      "cor2": "#ffe0ff",
+      "alcance": 200
+    },
+    {
+      "tipo": "anelChao",
+      "momento": "aviso",
+      "raio": 14,
+      "tamanho": 1.5,
+      "cor": "#c080ff",
+      "vidaTicks": 16,
+      "velocidade": 1.5,
+      "alcance": 200
+    },
+    {
+      "tipo": "vinheta",
+      "momento": "aviso",
+      "cor": "#9a30ff",
+      "forca": 0.6,
+      "vidaTicks": 16
+    },
+    {
+      "tipo": "tremor",
+      "momento": "aviso",
+      "forca": 0.5,
+      "vidaTicks": 16,
+      "alcance": 200
+    },
+    {
+      "tipo": "impactFrame",
+      "momento": "impacto",
+      "sequencia": [
+        "branco",
+        "branco",
+        "cor",
+        "invertido",
+        "manga",
+        "mangaInvertido",
+        "cor",
+        "branco"
+      ],
+      "ticksPorQuadro": 1,
+      "cor": "#9a30ff",
+      "alcance": 250
+    },
+    {
+      "tipo": "flash",
+      "momento": "impacto",
+      "cor": "#f6e8ff",
+      "forca": 0.95,
+      "vidaTicks": 10,
+      "alcance": 300
+    },
+    {
+      "tipo": "anelChao",
+      "momento": "impacto",
+      "raio": 200,
+      "tamanho": 8,
+      "cor": "#ffffff",
+      "vidaTicks": 40,
+      "velocidade": 8,
+      "alcance": 300
+    },
+    {
+      "tipo": "anelChao",
+      "momento": "impacto",
+      "inicio": 3,
+      "raio": 150,
+      "tamanho": 5,
+      "cor": "#d8a8ff",
+      "vidaTicks": 40,
+      "velocidade": 6,
+      "alcance": 300
+    },
+    {
+      "tipo": "plasma",
+      "momento": "impacto",
+      "raio": 50,
+      "quantidade": 160,
+      "tamanho": 1.4,
+      "cor": "#9a28e8",
+      "cor2": "#e8b8ff",
+      "vidaTicks": 60,
+      "alcance": 300
+    },
+    {
+      "tipo": "raios",
+      "momento": "impacto",
+      "quantidade": 16,
+      "comprimento": 45,
+      "tamanho": 5,
+      "cor": "#a040f0",
+      "cor2": "#f4d8ff",
+      "vidaTicks": 20,
+      "alcance": 300
+    },
+    {
+      "tipo": "nuvem",
+      "momento": "impacto",
+      "inicio": 12,
+      "raio": 60,
+      "quantidade": 45,
+      "tamanho": 34,
+      "cor": "#ebc6f7",
+      "cor2": "#a070d0",
+      "vidaTicks": 170,
+      "alcance": 300
+    },
+    {
+      "tipo": "estrela",
+      "momento": "impacto",
+      "quantidade": 60,
+      "comprimento": 110,
+      "tamanho": 5,
+      "cor": "#cfe0ff",
+      "cor2": "#ffffff",
+      "vidaTicks": 18,
+      "alcance": 300
+    },
+    {
+      "tipo": "faiscas",
+      "momento": "impacto",
+      "quantidade": 300,
+      "velocidade": 2.5,
+      "comprimento": 4,
+      "tamanho": 3,
+      "cor": "#a040f0",
+      "cor2": "#f4e0ff",
+      "vidaTicks": 26,
+      "alcance": 300
+    },
+    {
+      "tipo": "distorcao",
+      "momento": "impacto",
+      "modo": "onda",
+      "raio": 70,
+      "forca": 0.8,
+      "velocidade": 22,
+      "cor": "#b070ff",
+      "tinta": 0.07,
+      "vidaTicks": 30,
+      "alcance": 300
+    },
+    {
+      "tipo": "tremor",
+      "momento": "impacto",
+      "forca": 2.6,
+      "vidaTicks": 35,
+      "alcance": 300
+    },
+    {
+      "tipo": "fov",
+      "momento": "impacto",
+      "forca": 7,
+      "vidaTicks": 12,
+      "alcance": 250
+    },
+    {
+      "tipo": "blurRadial",
+      "momento": "impacto",
+      "forca": 0.9,
+      "vidaTicks": 12,
+      "alcance": 250
+    }
+  ],
+  "despertado": {}
+}

@@ -52,7 +52,7 @@ public class PowerSelectScreen extends Screen {
                 .append(power.description().copy().withStyle(ChatFormatting.GRAY));
         for (int slot : power.slots()) {
             text.append("\n")
-                    .append(Component.literal("[").append(Keybinds.forSlot(slot).getTranslatedKeyMessage()).append("] ")
+                    .append(Component.literal("[").append(Keybinds.forSlot(power, slot).getTranslatedKeyMessage()).append("] ")
                             .withStyle(slot == PowerData.SLOT_ULT ? ChatFormatting.GOLD : ChatFormatting.YELLOW))
                     .append(power.abilityName(slot));
         }
