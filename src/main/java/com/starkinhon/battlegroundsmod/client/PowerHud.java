@@ -50,7 +50,7 @@ public final class PowerHud {
         boolean ultReady = data.ult >= PowerData.MAX_ULT;
         int y = Y + 13;
         for (int slot : slots) {
-            Component key = Keybinds.forSlot(slot).getTranslatedKeyMessage();
+            Component key = Keybinds.forSlot(power, slot).getTranslatedKeyMessage();
             int cooldown = data.cooldowns[slot];
             boolean ult = PowerData.isUlt(slot);
             boolean blocked = cooldown > 0 || (ult && !ultReady);
