@@ -465,6 +465,20 @@ public final class ModPayloads {
         }
     }
 
+    // Server -> the caster: Bills' trip to outer space to blow half the planet up (Destruction Touch, Shift + V).
+    public record PlanetCutscene(int casterId, boolean awakened) implements CustomPacketPayload {
+        public static final Type<PlanetCutscene> TYPE = payloadType("planet_cutscene");
+        public static final StreamCodec<ByteBuf, PlanetCutscene> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, PlanetCutscene::casterId,
+                ByteBufCodecs.BOOL, PlanetCutscene::awakened,
+                PlanetCutscene::new);
+
+        @Override
+        public Type<PlanetCutscene> type() {
+            return TYPE;
+        }
+    }
+
     // Server -> client: the sphere of destruction falls from start onto the target's head (EsferaSpec.fallAt).
     public record EsferaFall(int targetId, Vec3 start, Vec3 lastHead, boolean awakened) implements CustomPacketPayload {
         public static final Type<EsferaFall> TYPE = payloadType("esfera_fall");
@@ -694,6 +708,8 @@ public final class ModPayloads {
                 () -> ClientHooks.hakaiDeath(payload.entityId(), payload.awakened())));
         registrar.playToClient(EsferaCutscene.TYPE, EsferaCutscene.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.esferaCutscene(payload.casterId(), payload.awakened())));
+        registrar.playToClient(PlanetCutscene.TYPE, PlanetCutscene.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.planetCutscene(payload.casterId(), payload.awakened())));
         registrar.playToClient(EsferaFall.TYPE, EsferaFall.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.esferaFall(payload.targetId(), payload.start(), payload.lastHead(), payload.awakened())));
         registrar.playToClient(EraseAttack.TYPE, EraseAttack.STREAM_CODEC, (payload, context) -> context.enqueueWork(

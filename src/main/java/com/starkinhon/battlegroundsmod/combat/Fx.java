@@ -91,6 +91,11 @@ public final class Fx {
         broadcast(level, pos, new ModPayloads.PlayEffects(skill, awakened, momento, pos, dir, -1, 0));
     }
 
+    // Same, lasting ticks for the effects that last as long as the moment (duraMomento).
+    public static void effects(ServerLevel level, String skill, boolean awakened, String momento, Vec3 pos, Vec3 dir, int ticks) {
+        broadcast(level, pos, new ModPayloads.PlayEffects(skill, awakened, momento, pos, dir, -1, ticks));
+    }
+
     // Same, with effects that can stick to entity (seguir in the file) for ticks (duraMomento).
     public static void effects(ServerLevel level, String skill, boolean awakened, String momento, Entity entity, int ticks) {
         Vec3 pos = entity.position().add(0, entity.getBbHeight() / 2, 0);

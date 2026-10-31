@@ -11,8 +11,9 @@ public class PowerData {
 
     // Slots 0-3 are the power's abilities (Z, X, C, V), 4-6 are the shared base attacks (strong attack, barrage, dash
     // attack), picked in the base attack selector above the hotbar, and 7 is a fifth ability (B) for powers that have one.
-    // 8-11 are the Shift variants of Z, X, C and V (11 is a second ult), for powers that have them.
-    public static final int SLOT_COUNT = 12;
+    // 8-11 are the Shift variants of Z, X, C and V (11 is a second ult), for powers that have them, and 12 the Shift
+    // variant of the fifth ability.
+    public static final int SLOT_COUNT = 13;
     public static final int SLOT_ULT = 3;
     public static final int SLOT_STRONG = 4;
     public static final int SLOT_BARRAGE = 5;
@@ -20,6 +21,7 @@ public class PowerData {
     public static final int SLOT_EXTRA = 7;
     public static final int SLOT_SHIFT = 8;
     public static final int SLOT_SHIFT_ULT = 11;
+    public static final int SLOT_SHIFT_EXTRA = 12;
     // A cooldown this long means the move is spent until death or a power swap (the Izanami). The HUD shows it as used.
     public static final int SPENT = 1_000_000_000;
 
@@ -84,9 +86,9 @@ public class PowerData {
         return slot == SLOT_ULT || slot == SLOT_SHIFT_ULT;
     }
 
-    // The normal skill a Shift variant belongs to (8 -> 0), or the slot itself.
+    // The normal skill a Shift variant belongs to (8 -> 0, 12 -> 7), or the slot itself.
     public static int baseSlot(int slot) {
-        return slot >= SLOT_SHIFT ? slot - SLOT_SHIFT : slot;
+        return slot == SLOT_SHIFT_EXTRA ? SLOT_EXTRA : slot >= SLOT_SHIFT ? slot - SLOT_SHIFT : slot;
     }
 
     public boolean hasPower() {

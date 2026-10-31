@@ -17,6 +17,8 @@ import com.mojang.blaze3d.vertex.VertexSorting;
 import com.mojang.math.Axis;
 import com.starkinhon.battlegroundsmod.BattlegroundsMod;
 import com.starkinhon.battlegroundsmod.client.EsferaCutscene;
+import com.starkinhon.battlegroundsmod.client.PlanetCutscene;
+import com.starkinhon.battlegroundsmod.skill.DestructionPlanetSpec;
 import com.starkinhon.battlegroundsmod.skill.EsferaSpec;
 
 import net.minecraft.client.Minecraft;
@@ -38,29 +40,32 @@ public final class SpaceScene {
     private static final float[] BLUE_STAR = FxDraw.rgb(0xBFD8FF);
     private static final float[][] NEBULA = {FxDraw.rgb(0x6A2BD9), FxDraw.rgb(0x2B5BD9), FxDraw.rgb(0xD96A2B), FxDraw.rgb(0x9B30FF)};
     private static final float[] ATMOSPHERE = FxDraw.rgb(0x59A8FF);
-    private static final ResourceLocation EARTH = ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "textures/fx/earth.png");
+    static final ResourceLocation EARTH = ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "textures/fx/earth.png");
 
     private SpaceScene() {
     }
 
     public static boolean active() {
-        return EsferaCutscene.inSpace();
+        return EsferaCutscene.inSpace() || PlanetCutscene.inSpace();
     }
 
     // Effects of this skill still show in space (his own flash and charge); everything else stays in the world below.
     static boolean owns(String skill) {
-        return EsferaSpec.SKILL.equals(skill);
+        return EsferaSpec.SKILL.equals(skill) || DestructionPlanetSpec.SKILL.equals(skill);
     }
 
     // First part, before the other world effects: covers the world with the sky, then draws the stars, the planet and
     // Bills on a clean depth buffer.
     static void backdrop(RenderLevelStageEvent event) {
         Minecraft minecraft = Minecraft.getInstance();
-        Entity caster = minecraft.level == null ? null : minecraft.level.getEntity(EsferaCutscene.casterId());
+        // The Destruction Touch's planet (Shift + V) uses the same space and Earth; PlanetScene draws it breaking.
+        boolean breaking = PlanetCutscene.inSpace();
+        int casterId = breaking ? PlanetCutscene.casterId() : EsferaCutscene.casterId();
+        Entity caster = minecraft.level == null ? null : minecraft.level.getEntity(casterId);
         if (caster == null) {
             return;
         }
-        EsferaSpec.Espaco espaco = EsferaCutscene.spec().espaco();
+        EsferaSpec.Espaco espaco = breaking ? PlanetCutscene.spec().espaco() : EsferaCutscene.spec().espaco();
         sky(FxDraw.parse(espaco.corCeu(), 0x0B0626), FxDraw.parse(espaco.corHorizonte(), 0x1D2F8A));
         RenderSystem.clear(GL11.GL_DEPTH_BUFFER_BIT, Minecraft.ON_OSX);
 
@@ -81,7 +86,11 @@ public final class SpaceScene {
             fx.endBatch(flat ? FxRenderTypes.FLAT_ADD : FxRenderTypes.VFX_ADD);
 
             MultiBufferSource.BufferSource buffers = minecraft.renderBuffers().bufferSource();
-            planet(buffers, camera, espaco, EsferaCutscene.spaceAge(partial));
+            if (breaking) {
+                PlanetScene.solid(buffers, camera, partial);
+            } else {
+                planet(buffers, camera, espaco, EsferaCutscene.spaceAge(partial));
+            }
             buffers.endBatch();
             Vec3 rel = caster.getPosition(partial).subtract(camera);
             minecraft.getEntityRenderDispatcher().render(caster, rel.x, rel.y, rel.z, Mth.lerp(partial, caster.yRotO, caster.getYRot()), partial,
@@ -96,6 +105,10 @@ public final class SpaceScene {
 
     // Second part, with the other world effects (additive, into the bloom): the planet's glow and the sphere.
     static void render(Vec3 camera, double now, float partial) {
+        if (PlanetCutscene.inSpace()) {
+            PlanetScene.render(camera, now, partial);
+            return;
+        }
         Minecraft minecraft = Minecraft.getInstance();
         Entity caster = minecraft.level == null ? null : minecraft.level.getEntity(EsferaCutscene.casterId());
         if (caster == null) {
@@ -195,7 +208,7 @@ public final class SpaceScene {
 
     // One face: corners bottom-left, bottom-right, top-right, top-left; tile 0-5 in reading order. A few pixels are
     // left off each tile's edge so the grey lines between them don't show.
-    private static void face(VertexConsumer out, PoseStack.Pose pose, int tile, float[] c, float nx, float ny, float nz) {
+    static void face(VertexConsumer out, PoseStack.Pose pose, int tile, float[] c, float nx, float ny, float nz) {
         float inset = 4 / 768f;
         float u0 = (tile % 3) / 3f + inset;
         float u1 = (tile % 3 + 1) / 3f - inset;

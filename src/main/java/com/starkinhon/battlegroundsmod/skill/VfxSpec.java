@@ -8,7 +8,8 @@ import java.util.List;
 //
 // tipo: screen effects impactFrame, flash, blurRadial, distorcao, tremor, fov, vinheta; world effects clarao, estrela,
 // anelChao, anel, raios, feixe, esfera, fumaca, faiscas, fogo, jatoFogo, rastroBoca, parede, anelCabeca, olhoChao, olho,
-// bracoEspada (the Susanoo arm swinging its sword), corte (the energy slash flying away).
+// bracoEspada (the Susanoo arm swinging its sword), corte (the energy slash flying away), and Bills' bolinha, rachaduras,
+// pilares, plasma and nuvem (client/fx/DestructionFx).
 // seguir ("centro", "cabeca", "pes", "boca") keeps the effect on the entity the server named, facing where it looks.
 // duraMomento: lasts as long as the server says this moment lasts (a stun, a counter window) instead of vidaTicks.
 // golpeTicks: when the swing of bracoEspada lands (ticks after it appears).
