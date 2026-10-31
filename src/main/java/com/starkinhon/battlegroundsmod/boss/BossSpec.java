@@ -34,7 +34,18 @@ public record BossSpec(String boss, String poder, Integer tier, boolean dropAlma
 
     // Custom boss bar: textures/gui/bossbar/<textura>/0.png (full life) to <frames>.png (empty), drawn largura x altura
     // GUI pixels. Players can switch it off with /soul bossbar.
-    public record Barra(String textura, int frames, int largura, int altura) {
+    // brilho: color of the light that circles the bar ("#9b30ff"), or none.
+    public record Barra(String textura, int frames, int largura, int altura, String brilho) {
+        public int glowColor() {
+            if (brilho == null || brilho.isBlank()) {
+                return -1;
+            }
+            try {
+                return Integer.parseInt(brilho.startsWith("#") ? brilho.substring(1) : brilho, 16) & 0xFFFFFF;
+            } catch (NumberFormatException e) {
+                return -1;
+            }
+        }
     }
 
     // intervaloDecisao: how often a new move is picked. aleatoriedade 0 always takes the best move, 1 picks by weight.

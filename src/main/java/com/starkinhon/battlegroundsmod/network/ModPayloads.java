@@ -569,7 +569,8 @@ public final class ModPayloads {
     }
 
     // Server -> client: draw this boss bar with the boss's own frames (textures/gui/bossbar/<texture>/).
-    public record BossBarStyle(UUID barId, String texture, int frames, int width, int height) implements CustomPacketPayload {
+    // glow: color of the light circling the bar, -1 for none.
+    public record BossBarStyle(UUID barId, String texture, int frames, int width, int height, int glow) implements CustomPacketPayload {
         public static final Type<BossBarStyle> TYPE = payloadType("boss_bar_style");
         public static final StreamCodec<ByteBuf, BossBarStyle> STREAM_CODEC = StreamCodec.composite(
                 UUIDUtil.STREAM_CODEC, BossBarStyle::barId,
@@ -577,6 +578,7 @@ public final class ModPayloads {
                 ByteBufCodecs.VAR_INT, BossBarStyle::frames,
                 ByteBufCodecs.VAR_INT, BossBarStyle::width,
                 ByteBufCodecs.VAR_INT, BossBarStyle::height,
+                ByteBufCodecs.INT, BossBarStyle::glow,
                 BossBarStyle::new);
 
         @Override
@@ -705,7 +707,7 @@ public final class ModPayloads {
         registrar.playToClient(EnergyBall.TYPE, EnergyBall.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.energyBall(payload.id(), payload.mode(), payload.pos(), payload.radius(), payload.grow(), payload.small())));
         registrar.playToClient(BossBarStyle.TYPE, BossBarStyle.STREAM_CODEC, (payload, context) -> context.enqueueWork(
-                () -> ClientHooks.bossBarStyle(payload.barId(), payload.texture(), payload.frames(), payload.width(), payload.height())));
+                () -> ClientHooks.bossBarStyle(payload.barId(), payload.texture(), payload.frames(), payload.width(), payload.height(), payload.glow())));
         registrar.playToClient(BossCutscene.TYPE, BossCutscene.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.bossCutscene(payload.entityId(), payload.zoomTicks(), payload.skyTicks(), payload.backTicks(), payload.lookAt())));
         registrar.playToClient(BossBarToggle.TYPE, BossBarToggle.STREAM_CODEC, (payload, context) -> context.enqueueWork(

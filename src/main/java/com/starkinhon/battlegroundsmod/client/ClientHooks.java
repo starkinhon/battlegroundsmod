@@ -127,8 +127,8 @@ public final class ClientHooks {
         com.starkinhon.battlegroundsmod.client.fx.EnergyRenderer.ball(id, mode, pos, radius, grow, small);
     }
 
-    public static void bossBarStyle(UUID barId, String texture, int frames, int width, int height) {
-        BossBars.style(barId, texture, frames, width, height);
+    public static void bossBarStyle(UUID barId, String texture, int frames, int width, int height, int glow) {
+        BossBars.style(barId, texture, frames, width, height, glow);
     }
 
     public static void bossBarToggle(boolean on) {

@@ -312,7 +312,7 @@ public abstract class SoulBoss extends Monster {
         BossSpec.Barra barra = spec().barra();
         if (barra != null && barra.textura() != null) {
             PacketDistributor.sendToPlayer(player, new ModPayloads.BossBarStyle(bossEvent.getId(), barra.textura(), barra.frames(),
-                    barra.largura(), barra.altura()));
+                    barra.largura(), barra.altura(), barra.glowColor()));
         }
     }
 
