@@ -3,11 +3,12 @@ package com.starkinhon.battlegroundsmod.skill;
 import java.util.List;
 
 // Bills' Destruction Bop (bills.destruction_bop.json): he appears in front of the target and freezes them, flicks them
-// up into the air with one finger, vanishes, comes back above and behind them and slaps them down into the ground.
+// up into the air with one finger, vanishes and comes back behind them up there. In a close shot his hand slowly
+// reaches their shoulder, then the camera cuts and the slap sends them diagonally down and forward into the ground.
 // The target is stunned and sealed the whole time, just taking it.
 // Sound and vfx momentos: "uso" (start), "sumir" / "aparecer" (each time he vanishes and comes back), "parar" (the
-// target freezes), "peteleco" (the flick), "subir" (the target flying up), "tapa" (the slap), "chao" (the target hits
-// the ground), "pousar" (he is back on the ground).
+// target freezes), "peteleco" (the flick), "subir" (the target flying up), "aproximar" (the close shot of the hand
+// starts), "tapa" (the slap), "chao" (the target hits the ground), "pousar" (he is back on the ground).
 public record DestructionBopSpec(String skill, String nome, Alvo alvo, Tempo tempo, Peteleco peteleco, Tapa tapa, Chao chao,
         Rastro rastro, Cutscene cutscene, Animacao animacao, List<Som> sons) {
 
@@ -16,9 +17,11 @@ public record DestructionBopSpec(String skill, String nome, Alvo alvo, Tempo tem
     }
 
     // From the moment he appears: pararTicks frozen before the flick, subirTicks flying up, pairarTicks hanging up there
-    // (he vanishes at the start of it and comes back aparecerAntesTicks before the slap), descidaTicks falling down,
-    // depoisTapaTicks he stays up in the air after the slap before landing.
-    public record Tempo(int pararTicks, int subirTicks, int pairarTicks, int aparecerAntesTicks, int descidaTicks, int depoisTapaTicks) {
+    // (he vanishes at the start of it and comes back aparecerDepoisTicks later; the last aproximarTicks are the close
+    // shot of his hand reaching the shoulder), descidaTicks falling, depoisTapaTicks he stays up in the air after the
+    // slap before landing.
+    public record Tempo(int pararTicks, int subirTicks, int pairarTicks, int aparecerDepoisTicks, int aproximarTicks, int descidaTicks,
+            int depoisTapaTicks) {
     }
 
     // altura: how many blocks the flick sends the target up (less if there's a ceiling).
@@ -26,7 +29,8 @@ public record DestructionBopSpec(String skill, String nome, Alvo alvo, Tempo tem
     }
 
     // Where he comes back for the slap: atras blocks behind the target (seen from where he was) and acima blocks above.
-    public record Tapa(float dano, double atras, double acima) {
+    // The slap throws them diagonally: down to the ground and frente blocks forward, away from him.
+    public record Tapa(float dano, double atras, double acima, double frente) {
     }
 
     // The fall: dano on landing, presoTicks stuck in the hole, the hole itself and poeira dust specks.
@@ -42,10 +46,11 @@ public record DestructionBopSpec(String skill, String nome, Alvo alvo, Tempo tem
     public record Cutscene(boolean ativa, int depoisTicks, int voltarTicks, boolean barrasPretas, boolean intangivel) {
     }
 
-    // Bills: preparo (finger ready), peteleco (the flick), olhar (watching them go up), tapaPreparo (hand up, in the
-    // air), tapa (the slap). The target: alvoSubir (thrown up) and alvoCair (falling).
+    // Bills: preparo (finger ready), peteleco (the flick), olhar (watching them go up), tapaPreparo (back in the air,
+    // hand low), encostar (hand on the shoulder, reached slowly over the close shot), tapa (the slap). The target:
+    // alvoSubir (thrown up) and alvoCair (falling).
     public record Animacao(int transicaoTicks, SkillSpec.Pose preparo, SkillSpec.Pose peteleco, SkillSpec.Pose olhar, SkillSpec.Pose tapaPreparo,
-            SkillSpec.Pose tapa, SkillSpec.Pose alvoSubir, SkillSpec.Pose alvoCair) {
+            SkillSpec.Pose encostar, SkillSpec.Pose tapa, SkillSpec.Pose alvoSubir, SkillSpec.Pose alvoCair) {
     }
 
     public static final String SKILL = "bills.destruction_bop";
@@ -72,7 +77,12 @@ public record DestructionBopSpec(String skill, String nome, Alvo alvo, Tempo tem
     }
 
     public int appearTick() {
-        return Math.max(vanishTick() + 1, slapTick() - Math.max(1, tempo.aparecerAntesTicks()));
+        return Math.min(slapTick() - 1, vanishTick() + Math.max(1, tempo.aparecerDepoisTicks()));
+    }
+
+    // When the close shot of his hand starts.
+    public int closeTick() {
+        return Math.max(appearTick(), slapTick() - Math.max(1, tempo.aproximarTicks()));
     }
 
     public int groundTick() {
@@ -89,6 +99,7 @@ public record DestructionBopSpec(String skill, String nome, Alvo alvo, Tempo tem
         int flick = flickTick();
         int vanish = vanishTick();
         int appear = appearTick();
+        int close = closeTick();
         int slap = slapTick();
         int land = landTick();
         if ("alvo".equals(name)) {
@@ -116,12 +127,15 @@ public record DestructionBopSpec(String skill, String nome, Alvo alvo, Tempo tem
                 double after = flick + tr + 3;
                 return t < after ? hit : animacao.peteleco().lerp(animacao.olhar(), smooth((t - after) / (tr * 2)));
             }
-            if (t < slap) {
-                // Hidden until he comes back with the hand already up.
+            if (t < close) {
+                // Hidden until he comes back, then waiting behind them.
                 return t < appear ? animacao.olhar() : animacao.tapaPreparo();
             }
+            if (t < slap) {
+                return animacao.tapaPreparo().lerp(animacao.encostar(), smooth((t - close) / Math.max(1, slap - close)));
+            }
             if (t < land) {
-                return animacao.tapaPreparo().lerp(animacao.tapa(), smooth((t - slap) / tr));
+                return animacao.encostar().lerp(animacao.tapa(), smooth((t - slap) / tr));
             }
             return animacao.tapa().lerp(SkillSpec.Pose.ZERO, smooth((t - land) / (tr * 4)));
         });

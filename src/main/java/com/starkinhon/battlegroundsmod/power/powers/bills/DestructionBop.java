@@ -31,8 +31,9 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 // X: Destruction Bop (bills.destruction_bop.json). Bills appears in front of whoever he aims at and the target freezes
-// in place. One flick of his finger sends them flying up; he vanishes, comes back above and behind them and slaps
-// them straight down into the ground, which breaks open the vanilla way. The target is stunned and sealed (no skills,
+// in place. One flick of his finger sends them flying up; he vanishes and comes back behind them up there, his hand
+// slowly reaches their shoulder and the slap sends them diagonally down and forward into the ground, which breaks
+// open the vanilla way. The target is stunned and sealed (no skills,
 // not even a counter) from the freeze until they get out of the hole. Only the two fighters get the cutscene.
 public final class DestructionBop {
     public static final String SKILL = DestructionBopSpec.SKILL;
@@ -56,6 +57,7 @@ public final class DestructionBop {
         int top = spec.topTick();
         int vanish = spec.vanishTick();
         int appear = spec.appearTick();
+        int close = spec.closeTick();
         int slap = spec.slapTick();
         int ground = spec.groundTick();
         int land = spec.landTick();
@@ -69,11 +71,14 @@ public final class DestructionBop {
         Vec3 start = target.position();
         Vec3 floor = floor(level, start, target);
         Vec3 high = ceiling(level, floor, spec.peteleco().altura(), target);
+        // The slap throws them away from him: down and forward, back over where he first stood.
+        Vec3 away = forward.scale(-1);
+        Vec3 groundAt = landing(level, high, away, spec.tapa().frente(), target);
 
         // In front of the target first, then up behind it for the slap, then back down beside the hole.
         Vec3 front = standSpot(level, caster, floor.subtract(forward.scale(Math.max(0.8, spec.alvo().distancia()))), caster.position());
         Vec3 air = high.add(forward.scale(spec.tapa().atras())).add(0, spec.tapa().acima(), 0);
-        Vec3 beside = standSpot(level, caster, floor.subtract(forward.scale(Math.max(2.5, spec.chao().raioCratera() * 0.7))), front);
+        Vec3 beside = standSpot(level, caster, groundAt.subtract(away.scale(Math.max(2.5, spec.chao().raioCratera() * 0.8))), front);
 
         smoke(level, caster.position(), caster.getBbHeight());
         Fx.effects(level, SKILL, awakened, "sumir", caster, 0);
@@ -90,7 +95,6 @@ public final class DestructionBop {
         target.setYHeadRot(faceCaster);
         target.setYBodyRot(faceCaster);
         target.setXRot(0);
-        Vec3 groundAt = floor;
         Freeze.hold(target, ground, age -> {
             if (age < flick) {
                 return start;
@@ -105,8 +109,9 @@ public final class DestructionBop {
                 // A little float while hanging.
                 return high.add(0, 0.15 * Math.sin((age - top) * 0.6), 0);
             }
+            // Straight along the diagonal, speeding up.
             double k = (age - slap) / (double) Math.max(1, ground - slap);
-            return high.lerp(groundAt, k * k);
+            return high.lerp(groundAt, k * (0.4 + 0.6 * k));
         });
         Stun.apply(target, ground + stuck);
         // Whatever the target was doing is cut off (this also stops its animation, so its own goes after).
@@ -145,12 +150,12 @@ public final class DestructionBop {
             if (age >= flick && age < top) {
                 streaks(level, target, new Vec3(0, -1, 0), spec);
             } else if (age >= slap) {
-                streaks(level, target, new Vec3(0, 1, 0), spec);
+                streaks(level, target, high.subtract(groundAt).normalize(), spec);
             }
             return false;
         });
 
-        // Gone from the ground, back up in the air behind them with the hand up.
+        // Gone from the ground, back up in the air behind them.
         Tasks.later(vanish, () -> {
             if (!caster.isAlive()) {
                 return;
@@ -171,6 +176,16 @@ public final class DestructionBop {
             SkillSounds.play(level, spec.sons(), "aparecer", 0, 0, onde -> caster.position(), screens(caster, target));
         });
 
+        // The close shot: his hand slowly reaching their shoulder.
+        Tasks.later(close, () -> {
+            if (!caster.isAlive() || !target.isAlive()) {
+                return;
+            }
+            Vec3 shoulder = Combat.center(target).add(0, target.getBbHeight() * 0.25, 0);
+            Fx.effects(level, SKILL, awakened, "aproximar", shoulder, away);
+            SkillSounds.play(level, spec.sons(), "aproximar", 0, slap - close, onde -> shoulder, screens(caster, target));
+        });
+
         // The slap.
         Tasks.later(slap, () -> {
             if (!target.isAlive()) {
@@ -178,7 +193,7 @@ public final class DestructionBop {
             }
             Combat.hurt(caster, target, spec.tapa().dano());
             Vec3 hand = Combat.center(target).add(0, target.getBbHeight() * 0.5, 0);
-            Fx.effects(level, SKILL, awakened, "tapa", hand, new Vec3(0, -1, 0));
+            Fx.effects(level, SKILL, awakened, "tapa", hand, groundAt.subtract(high).normalize());
             SkillSounds.play(level, spec.sons(), "tapa", 0, 0, onde -> hand, screens(caster, target));
         });
 
@@ -207,7 +222,7 @@ public final class DestructionBop {
             }
             smoke(level, caster.position(), caster.getBbHeight());
             Fx.effects(level, SKILL, awakened, "sumir", caster, 0);
-            place(caster, beside, faceTarget, 20);
+            place(caster, beside, yaw(away), 20);
             caster.resetFallDistance();
             Fx.effects(level, SKILL, awakened, "pousar", caster, 0);
             SkillSounds.play(level, spec.sons(), "pousar", 0, 0, onde -> caster.position(), screens(caster, target));
@@ -260,6 +275,20 @@ public final class DestructionBop {
     private static Vec3 floor(ServerLevel level, Vec3 from, LivingEntity owner, double depth) {
         var hit = level.clip(new ClipContext(from, from.add(0, -depth, 0), ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, owner));
         return hit.getType() == HitResult.Type.MISS ? from.subtract(0, 0.5, 0) : hit.getLocation();
+    }
+
+    // Where the slap lands them: frente blocks out along away and down to the floor there, or wherever a wall or the
+    // ground stops the straight line first.
+    private static Vec3 landing(ServerLevel level, Vec3 high, Vec3 away, double frente, LivingEntity target) {
+        Vec3 out = high.add(away.scale(Math.max(0, frente)));
+        Vec3 end = floor(level, out.add(0, 1, 0), target, 60);
+        Vec3 from = high.add(0, 0.5, 0);
+        var hit = level.clip(new ClipContext(from, end.add(0, 0.5, 0), ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, target));
+        if (hit.getType() == HitResult.Type.MISS) {
+            return end;
+        }
+        Vec3 dir = end.subtract(from).normalize();
+        return floor(level, hit.getLocation().subtract(dir.scale(0.4)), target, 60);
     }
 
     // How high the flick gets them: height blocks up, or just under a ceiling.

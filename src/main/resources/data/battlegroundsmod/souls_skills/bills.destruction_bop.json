@@ -7,12 +7,13 @@
     "distancia": 1.3
   },
   "tempo": {
-    "pararTicks": 12,
-    "subirTicks": 8,
-    "pairarTicks": 7,
-    "aparecerAntesTicks": 4,
-    "descidaTicks": 4,
-    "depoisTapaTicks": 10
+    "pararTicks": 16,
+    "subirTicks": 12,
+    "pairarTicks": 70,
+    "aparecerDepoisTicks": 6,
+    "aproximarTicks": 36,
+    "descidaTicks": 8,
+    "depoisTapaTicks": 14
   },
   "peteleco": {
     "dano": 4,
@@ -20,8 +21,9 @@
   },
   "tapa": {
     "dano": 6,
-    "atras": 0.9,
-    "acima": 1.4
+    "atras": 0.8,
+    "acima": 0.3,
+    "frente": 9
   },
   "chao": {
     "dano": 14,
@@ -41,7 +43,7 @@
   },
   "cutscene": {
     "ativa": true,
-    "depoisTicks": 22,
+    "depoisTicks": 30,
     "voltarTicks": 10,
     "barrasPretas": true,
     "intangivel": true
@@ -113,15 +115,36 @@
     },
     "tapaPreparo": {
       "corpo": 0,
-      "cabeca": 10,
-      "tronco": -10,
+      "cabeca": 15,
+      "tronco": 5,
       "bracoDir": {
-        "frente": 170,
-        "abrir": -20
+        "frente": 15,
+        "abrir": -5
       },
       "bracoEsq": {
-        "frente": -20,
-        "abrir": 10
+        "frente": -15,
+        "abrir": 5
+      },
+      "pernaDir": {
+        "frente": 0,
+        "abrir": 0
+      },
+      "pernaEsq": {
+        "frente": 0,
+        "abrir": 0
+      }
+    },
+    "encostar": {
+      "corpo": 0,
+      "cabeca": 20,
+      "tronco": 10,
+      "bracoDir": {
+        "frente": 80,
+        "abrir": -8
+      },
+      "bracoEsq": {
+        "frente": -15,
+        "abrir": 5
       },
       "pernaDir": {
         "frente": 0,
@@ -134,10 +157,10 @@
     },
     "tapa": {
       "corpo": 0,
-      "cabeca": 20,
-      "tronco": 35,
+      "cabeca": 25,
+      "tronco": 40,
       "bracoDir": {
-        "frente": 20,
+        "frente": 35,
         "abrir": -5
       },
       "bracoEsq": {
@@ -279,6 +302,30 @@
       "volume": 0.9,
       "pitch": 1.3,
       "pitchFim": 1.3,
+      "onde": "alvo"
+    },
+    {
+      "nome": "Mão chegando",
+      "som": "minecraft:block.beacon.ambient",
+      "momento": "aproximar",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1,
+      "pitch": 0.6,
+      "pitchFim": 0.6,
+      "onde": "tela"
+    },
+    {
+      "nome": "Toque no ombro",
+      "som": "minecraft:block.amethyst_block.chime",
+      "momento": "aproximar",
+      "atrasoTicks": 32,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.2,
+      "pitch": 0.7,
+      "pitchFim": 0.7,
       "onde": "alvo"
     },
     {
@@ -501,6 +548,38 @@
       "tipo": "blurRadial",
       "momento": "peteleco",
       "forca": 0.5,
+      "vidaTicks": 6,
+      "alcance": 24
+    },
+    {
+      "tipo": "vinheta",
+      "momento": "aproximar",
+      "cor": "#1a0630",
+      "forca": 0.55,
+      "vidaTicks": 36,
+      "alcance": 24
+    },
+    {
+      "tipo": "clarao",
+      "momento": "aproximar",
+      "inicio": 32,
+      "tamanho": 0.6,
+      "quantidade": 3,
+      "cor": "#9a5cff",
+      "cor2": "#ffffff",
+      "vidaTicks": 6,
+      "alcance": 24
+    },
+    {
+      "tipo": "distorcao",
+      "momento": "aproximar",
+      "inicio": 32,
+      "modo": "onda",
+      "raio": 1.5,
+      "forca": 0.2,
+      "velocidade": 6,
+      "cor": "#9a5cff",
+      "tinta": 0.03,
       "vidaTicks": 6,
       "alcance": 24
     },
