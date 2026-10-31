@@ -6,6 +6,7 @@ import java.util.function.Function;
 
 import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.ModEffects;
+import com.starkinhon.battlegroundsmod.combat.AshKill;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Destructible;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
@@ -240,7 +241,7 @@ public final class DestructionSphere {
                     double d = Combat.center(hitBy).distanceTo(at);
                     if (d > explosao.raio2()) {
                         double k = (d - explosao.raio2()) / (explosao.raioOnda() - explosao.raio2());
-                        Combat.hurt(caster, hitBy, (float) (explosao.danoOnda() * (1 - k)));
+                        AshKill.hurt(caster, hitBy, (float) (explosao.danoOnda() * (1 - k)));
                         Combat.pushFrom(hitBy, at, explosao.empurrao() * (1 - k), 0.4);
                     }
                 }
@@ -344,10 +345,11 @@ public final class DestructionSphere {
         for (LivingEntity hit : Combat.inRadius(level, at, radius, caster)) {
             double k = Math.min(1, Combat.center(hit).distanceTo(at) / radius);
             if (erase && hakai.canErase(hit)) {
-                Hakai.disintegrate(caster, hit, awakened);
+                // Burnt to ash like Madara's Katon (Stark: no pulverizing for the sphere).
+                AshKill.hurt(caster, hit, Math.max(hit.getMaxHealth(), hit.getHealth()) * 10);
                 continue;
             }
-            Combat.hurt(caster, hit, (float) (dano * (1 - k * 0.5)));
+            AshKill.hurt(caster, hit, (float) (dano * (1 - k * 0.5)));
             Combat.pushFrom(hit, at, push * (1 - k * 0.5), 0.5 + 0.4 * (1 - k));
         }
     }
