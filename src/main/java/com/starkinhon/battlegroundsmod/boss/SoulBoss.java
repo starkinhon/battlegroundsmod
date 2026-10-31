@@ -6,6 +6,7 @@ import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.combat.Intangible;
 import com.starkinhon.battlegroundsmod.combat.Stun;
+import com.starkinhon.battlegroundsmod.combat.Tasks;
 import com.starkinhon.battlegroundsmod.movement.Movement;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
 import com.starkinhon.battlegroundsmod.power.PowerData;
@@ -129,6 +130,11 @@ public abstract class SoulBoss extends Monster {
 
     @Override
     public void tick() {
+        // Every task the boss's moves start is its own (the Izanami only cuts off the moves of those caught in it).
+        Tasks.as(this, this::tickAsOwner);
+    }
+
+    private void tickAsOwner() {
         super.tick();
         if (!(level() instanceof ServerLevel level)) {
             return;

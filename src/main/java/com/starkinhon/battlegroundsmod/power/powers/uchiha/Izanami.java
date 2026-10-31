@@ -213,7 +213,8 @@ public final class Izanami {
     // Time stops: everyone is frozen and untouchable, what was going on is cut off, and the camera goes to the eyes.
     private static void stop(Recording r, int scene, int back, boolean awakened) {
         r.recording = false;
-        Tasks.cancelSince(r.taskMark);
+        // Only the moves of those caught in it (a player across the map keeps theirs).
+        Tasks.cancelSince(r.taskMark, owner -> owner instanceof LivingEntity living && r.tracks.containsKey(living));
         int last = Math.max(1, r.spec.gravacaoTicks()) - 1;
         for (Track track : r.tracks.values()) {
             LivingEntity entity = track.entity;
