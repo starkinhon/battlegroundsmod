@@ -90,7 +90,8 @@ public record BossSpec(String boss, String poder, Integer tier, boolean dropAlma
     // slot: which move of the power (0-3 = Z X C V, 4 = strong attack, 5 = barrage, 7 = the fifth skill on B).
     // tipo tells the AI what the move is for: alcance (ranged), controle (stun), contra (counter), ult, golpe (heavy hit),
     // barragem (multi-hit), hakai (Bills' V: erases a target low on life, else throws the hakai ball), anti (Bills'
-// hakaizinho: shot at attacks flying at it, or to finish someone low and far). avisoTicks: the warning before it is used. giroGrausPorTick: how fast it turns to follow the
+// hakaizinho: shot at attacks flying at it, or to finish someone low and far), livre (used almost at random whenever it is ready and
+// in range). avisoTicks: the warning before it is used. giroGrausPorTick: how fast it turns to follow the
     // target while the move plays (low = easier to dodge).
     // recargaTicks..recargaMaxTicks: the cooldown is a random value in between (no max = always recargaTicks).
     // fala: what the boss says in the chat of whoever the move catches (the neck grab), empty = nothing.

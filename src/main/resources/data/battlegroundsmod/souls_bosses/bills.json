@@ -109,9 +109,35 @@
       "avisoCor": "#ff7ad9",
       "avisoSom": ""
     },
+    "destruction_energy": {
+      "slot": 0,
+      "tipo": "livre",
+      "peso": 1.0,
+      "recargaTicks": 100,
+      "recargaMaxTicks": 200,
+      "avisoTicks": 0,
+      "distanciaMin": 4,
+      "distanciaMax": 40,
+      "giroGrausPorTick": 20,
+      "avisoCor": "#9b30ff",
+      "avisoSom": ""
+    },
+    "destruction_energy_chuva": {
+      "slot": 8,
+      "tipo": "livre",
+      "peso": 1.0,
+      "recargaTicks": 500,
+      "recargaMaxTicks": 700,
+      "avisoTicks": 6,
+      "distanciaMin": 6,
+      "distanciaMax": 40,
+      "giroGrausPorTick": 10,
+      "avisoCor": "#9b30ff",
+      "avisoSom": ""
+    },
     "destruction_bop": {
       "slot": 1,
-      "tipo": "controle",
+      "tipo": "livre",
       "peso": 1.2,
       "recargaTicks": 400,
       "recargaMaxTicks": 500,
@@ -190,6 +216,8 @@
         "hakai",
         "hakaizinho",
         "destruction_bop",
+        "destruction_energy",
+        "destruction_energy_chuva",
         "forte",
         "barragem"
       ],
@@ -217,6 +245,8 @@
         "hakai",
         "hakaizinho",
         "destruction_bop",
+        "destruction_energy",
+        "destruction_energy_chuva",
         "esfera",
         "forte",
         "barragem"
