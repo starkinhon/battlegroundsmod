@@ -95,6 +95,18 @@
       "onde": "olhos"
     },
     {
+      "nome": "Voz",
+      "som": "battlegroundsmod:hakai_voz",
+      "momento": "uso",
+      "atrasoTicks": 16,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.6,
+      "pitch": 1.0,
+      "pitchFim": 1.0,
+      "onde": "olhos"
+    },
+    {
       "nome": "Estouro",
       "som": "minecraft:entity.warden.sonic_boom",
       "momento": "mao",
@@ -128,42 +140,6 @@
       "volume": 2.0,
       "pitch": 0.5,
       "pitchFim": 0.5,
-      "onde": "alvo"
-    },
-    {
-      "nome": "Quebrar",
-      "som": "minecraft:block.amethyst_cluster.break",
-      "momento": "hakai",
-      "atrasoTicks": 0,
-      "repetirACadaTicks": 0,
-      "vezes": 1,
-      "volume": 1.5,
-      "pitch": 0.6,
-      "pitchFim": 0.6,
-      "onde": "alvo"
-    },
-    {
-      "nome": "Feitiço",
-      "som": "minecraft:entity.illusioner.cast_spell",
-      "momento": "hakai",
-      "atrasoTicks": 0,
-      "repetirACadaTicks": 0,
-      "vezes": 1,
-      "volume": 1.2,
-      "pitch": 0.7,
-      "pitchFim": 0.7,
-      "onde": "alvo"
-    },
-    {
-      "nome": "Faíscas",
-      "som": "minecraft:block.amethyst_block.chime",
-      "momento": "hakai",
-      "atrasoTicks": 0,
-      "repetirACadaTicks": 3,
-      "vezes": 0,
-      "volume": 1.0,
-      "pitch": 1.2,
-      "pitchFim": 2.0,
       "onde": "alvo"
     },
     {
@@ -212,6 +188,18 @@
       "volume": 1.8,
       "pitch": 0.5,
       "pitchFim": 0.5,
+      "onde": "alvo"
+    },
+    {
+      "nome": "Pulverizar",
+      "som": "battlegroundsmod:hakai_pulverizar",
+      "momento": "hakai",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.6,
+      "pitch": 1.0,
+      "pitchFim": 1.0,
       "onde": "alvo"
     }
   ],
