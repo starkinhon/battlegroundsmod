@@ -14,10 +14,10 @@
     "formarTicks": 14,
     "minTicks": 8,
     "maxTicks": 100,
-    "acima": 0.4
+    "acima": 0.2
   },
   "bola": {
-    "raio": 0.9,
+    "raio": 0.2,
     "velocidade": 1.6,
     "curva": 0.22,
     "alcance": 140
@@ -156,14 +156,14 @@
       "tipo": "flash",
       "momento": "explosao",
       "cor": "#e6d4ff",
-      "forca": 0.35,
+      "forca": 0.15,
       "vidaTicks": 6,
       "alcance": 32
     },
     {
       "tipo": "clarao",
       "momento": "explosao",
-      "tamanho": 9,
+      "tamanho": 5.0,
       "quantidade": 12,
       "cor": "#9a5cff",
       "cor2": "#ffffff",
@@ -174,8 +174,8 @@
       "tipo": "estrela",
       "momento": "explosao",
       "quantidade": 32,
-      "comprimento": 11,
-      "tamanho": 1.4,
+      "comprimento": 7.7,
+      "tamanho": 0.8,
       "cor": "#cdb0ff",
       "cor2": "#ffffff",
       "vidaTicks": 14,
@@ -245,7 +245,7 @@
     {
       "tipo": "clarao",
       "momento": "sumir",
-      "tamanho": 2.5,
+      "tamanho": 1.5,
       "quantidade": 6,
       "cor": "#9a5cff",
       "cor2": "#ffffff",
