@@ -17,8 +17,8 @@ import net.minecraft.world.phys.Vec3;
 // rings open one after another, spinning fast, and settle. Flying, it leaves a lilac streak behind.
 // The many small balls of the Shift + Z are drawn lighter (fewer rings and rays, shorter rings).
 public final class EnergyRenderer {
-    // prev/pos: the last two positions the server sent (one per tick), to slide between them.
-    private record Ball(Vec3 prev, Vec3 pos, float prevRadius, float radius, float prevGrow, float grow, boolean small, long updated, long born) {
+    // track: the positions the server sent (one per tick), smoothed (SmoothTrack).
+    private record Ball(SmoothTrack track, float prevGrow, float grow, boolean small, long updated, long born) {
     }
 
     private static final Map<Integer, Ball> BALLS = new HashMap<>();
@@ -41,9 +41,12 @@ public final class EnergyRenderer {
         }
         long now = ScreenFx.now();
         Ball old = BALLS.get(id);
-        BALLS.put(id, old == null
-                ? new Ball(pos, pos, radius, radius, grow, grow, small, now, now)
-                : new Ball(old.pos(), pos, old.radius(), radius, old.grow(), grow, small, now, old.born()));
+        if (old == null) {
+            BALLS.put(id, new Ball(new SmoothTrack(pos, radius), grow, grow, small, now, now));
+            return;
+        }
+        old.track().push(pos, radius);
+        BALLS.put(id, new Ball(old.track(), old.grow(), grow, small, now, old.born()));
     }
 
     public static boolean active() {
@@ -68,13 +71,14 @@ public final class EnergyRenderer {
         for (Map.Entry<Integer, Ball> entry : BALLS.entrySet()) {
             Ball b = entry.getValue();
             float age = (float) (now - b.born());
-            float r = Mth.lerp(partial, b.prevRadius(), b.radius());
+            b.track().sample(now);
+            float r = b.track().radius();
             float grow = Mth.lerp(partial, b.prevGrow(), b.grow());
-            Vec3 world = b.prev().lerp(b.pos(), partial);
+            Vec3 world = b.track().pos();
             Vector3f at = world.subtract(camera).toVector3f();
             int seed = entry.getKey() * 2027 + 7;
             boolean light = b.small() || world.distanceTo(camera) > FAR;
-            Vec3 step = b.pos().subtract(b.prev());
+            Vec3 step = b.track().velocity();
             if (step.lengthSqr() > 0.04 && grow >= 1) {
                 trail(at, step, r, b.small());
             }
