@@ -110,6 +110,12 @@ public record EsferaSpec(String skill, String nome, Tempo tempo, Alvo alvo, Esfe
     public PoseTimeline phase(String name) {
         double tr = Math.max(1, animacao.transicaoTicks());
         SkillSpec.Pose zero = SkillSpec.Pose.ZERO;
+        if ("queda".equals(name)) {
+            // Still lying adrift while the sun carries it down in the world.
+            SkillSpec.Pose drift = pose(animacao.deriva());
+            double hold = Math.ceil(queda.altura() / Math.max(0.2, queda.velocidade())) + 2;
+            return PoseTimeline.of(hold + tr, t -> t < hold ? drift : drift.lerp(zero, smooth((t - hold) / tr)));
+        }
         if ("alvo".equals(name)) {
             SkillSpec.Pose drift = pose(animacao.deriva());
             double hold = endTick() - tpTick();

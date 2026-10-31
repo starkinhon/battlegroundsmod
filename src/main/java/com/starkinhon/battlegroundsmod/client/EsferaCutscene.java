@@ -33,6 +33,7 @@ public final class EsferaCutscene {
     private static int age;
     private static Vec3 origin = Vec3.ZERO;
     private static Vec3 forward = new Vec3(0, 0, 1);
+    private static float yaw;
     private static CameraType previousCameraType = CameraType.FIRST_PERSON;
     private static boolean previousHideGui;
 
@@ -57,6 +58,7 @@ public final class EsferaCutscene {
         age = 0;
         origin = entity.position();
         forward = Vec3.directionFromRotation(0, entity.getYRot());
+        yaw = entity.getYRot();
         minecraft.options.setCameraType(CameraType.THIRD_PERSON_BACK);
         minecraft.options.hideGui = true;
     }
@@ -88,6 +90,12 @@ public final class EsferaCutscene {
 
     public static Vec3 forward() {
         return forward;
+    }
+
+    // The way he faced when it started: in space he and the target are always drawn turned this way, whatever their
+    // body and head were doing, so the scene is laid out the same every time.
+    public static float yaw() {
+        return yaw;
     }
 
     public static Vec3 right() {

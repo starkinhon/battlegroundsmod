@@ -5,11 +5,13 @@ import java.util.List;
 import java.util.function.Function;
 
 import com.starkinhon.battlegroundsmod.ModAttachments;
+import com.starkinhon.battlegroundsmod.combat.AshKill;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.combat.Fx;
 import com.starkinhon.battlegroundsmod.combat.Intangible;
 import com.starkinhon.battlegroundsmod.combat.SkillSounds;
+import com.starkinhon.battlegroundsmod.combat.Stun;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
 import com.starkinhon.battlegroundsmod.power.PowerData;
@@ -124,7 +126,7 @@ public final class Esfera {
         Tasks.later(blast, () -> {
             // The sun hits it in space (no explosion up there; danoEspaco 0 by default).
             if (victim.isAlive() && spec.danoEspaco() > 0) {
-                Combat.hurt(caster, victim, spec.danoEspaco());
+                AshKill.hurt(caster, victim, spec.danoEspaco());
             }
         });
 
@@ -136,10 +138,13 @@ public final class Esfera {
                 SkillSounds.play(level, spec.sons(), "voltar", 0, 0, onde -> caster.position().add(0, 1, 0), screen);
             }
             PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new ModPayloads.PlaySkillAnimation(caster.getId(), "", false));
-            PacketDistributor.sendToPlayersTrackingEntityAndSelf(victim, new ModPayloads.PlaySkillAnimation(victim.getId(), "", false));
             if (!victim.isAlive() || victim.isRemoved()) {
+                PacketDistributor.sendToPlayersTrackingEntityAndSelf(victim, new ModPayloads.PlaySkillAnimation(victim.getId(), "", false));
                 return;
             }
+            // Still lying adrift and stunned while the sun carries it down.
+            PacketDistributor.sendToPlayersTrackingEntityAndSelf(victim, new ModPayloads.PlaySkillAnimation(victim.getId(), SKILL + "#queda", awakened));
+            Stun.apply(victim, (int) Math.ceil(queda.altura() / Math.max(0.2, queda.velocidade())) + 20);
             Vec3 from = caster.isAlive() ? caster.position() : home;
             float yaw = (float) (Mth.atan2(spot.z - from.z, spot.x - from.x) * Mth.RAD_TO_DEG) - 90;
             if (caster instanceof ServerPlayer player) {
@@ -194,16 +199,17 @@ public final class Esfera {
     private static void land(LivingEntity caster, ServerLevel level, EsferaSpec spec, LivingEntity victim, Vec3 at, boolean awakened,
             List<ServerPlayer> screen) {
         EsferaSpec.Queda queda = spec.queda();
-        Combat.hurt(caster, victim, queda.dano());
+        AshKill.hurt(caster, victim, queda.dano());
         double radius = Math.max(1, queda.raio());
         for (LivingEntity hit : Combat.inRadius(level, at, radius, caster)) {
             if (hit == victim) {
                 continue;
             }
             double k = Math.min(1, Combat.center(hit).distanceTo(at) / radius);
-            Combat.hurt(caster, hit, (float) (queda.danoArea() * (1 - k * 0.6)));
+            AshKill.hurt(caster, hit, (float) (queda.danoArea() * (1 - k * 0.6)));
             Combat.pushFrom(hit, at, queda.empurrao() * (1 - k * 0.5), 0.5 + 0.4 * (1 - k));
         }
+        PacketDistributor.sendToPlayersTrackingEntityAndSelf(victim, new ModPayloads.PlaySkillAnimation(victim.getId(), "", false));
         Fx.effects(level, SKILL, awakened, "impacto", at, new Vec3(0, 1, 0));
         SkillSounds.play(level, spec.sons(), "impacto", 0, 0, onde -> at, screen);
         if (queda.quebrarBlocos() && level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {

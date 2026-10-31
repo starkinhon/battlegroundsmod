@@ -5,11 +5,15 @@ import java.util.List;
 
 import org.joml.Vector3f;
 
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.math.Axis;
+
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.client.event.RenderLivingEvent;
 
 // Bills' sphere of destruction, a sun drawn only with shader light (no textures): a boiling star (shape SUN, white-hot
 // middle, orange cells, yellow streaks, glowing rim, flames past it), a red-orange corona, loops of fire rising off
@@ -44,7 +48,49 @@ public final class EsferaRenderer {
     }
 
     private static Vec3 center(Fall f, Vec3 head, double k) {
-        return f.ride() ? head.add(0, f.radius() * 0.85, 0) : fallAt(f.start(), head, k);
+        return f.ride() ? head.add(0, f.radius() * 0.8, 0) : fallAt(f.start(), head, k);
+    }
+
+    // The target the sun is carrying down is drawn lying on its back, turning slowly, being swallowed by the sun from
+    // below (its drifting pose comes from the "bills.esfera#queda" animation).
+    private static final java.util.Set<Integer> LAID = new java.util.HashSet<>();
+
+    private static Fall riding(int entityId) {
+        long now = ScreenFx.now();
+        for (Fall f : FALLS) {
+            if (f.ride() && f.target() == entityId && now - f.born() <= f.ticks() + 1) {
+                return f;
+            }
+        }
+        return null;
+    }
+
+    public static void onRenderPre(RenderLivingEvent.Pre<?, ?> event) {
+        if (event.isCanceled()) {
+            return;
+        }
+        var entity = event.getEntity();
+        Fall f = riding(entity.getId());
+        if (f == null) {
+            return;
+        }
+        float half = entity.getBbHeight() / 2;
+        float age = (float) (ScreenFx.now() - f.born()) + event.getPartialTick();
+        PoseStack pose = event.getPoseStack();
+        pose.pushPose();
+        pose.translate(0, half, 0);
+        pose.mulPose(Axis.YP.rotationDegrees(age * 0.6f + 25));
+        pose.mulPose(Axis.XP.rotationDegrees(-90));
+        pose.translate(0, -half, 0);
+        // Cancel the renderer's own turn by its body yaw, so the face ends up looking up.
+        pose.mulPose(Axis.YP.rotationDegrees(Mth.lerp(event.getPartialTick(), entity.yBodyRotO, entity.yBodyRot)));
+        LAID.add(entity.getId());
+    }
+
+    public static void onRenderPost(RenderLivingEvent.Post<?, ?> event) {
+        if (LAID.remove(event.getEntity().getId())) {
+            event.getPoseStack().popPose();
+        }
     }
 
     // From start towards the head it follows, slow and heavy, a little faster at the end.

@@ -98,8 +98,12 @@ public final class SpaceScene {
             buffers.endBatch();
             dispatcher.setRenderShadow(false);
             Vec3 rel = caster.getPosition(partial).subtract(camera);
-            dispatcher.render(caster, rel.x, rel.y, rel.z, Mth.lerp(partial, caster.yRotO, caster.getYRot()), partial, new PoseStack(), buffers,
-                    0xF000F0);
+            float[] casterTurn = straighten(caster, EsferaCutscene.yaw());
+            try {
+                dispatcher.render(caster, rel.x, rel.y, rel.z, EsferaCutscene.yaw(), partial, new PoseStack(), buffers, 0xF000F0);
+            } finally {
+                restore(caster, casterTurn);
+            }
             if (target != null && target != caster) {
                 // Lying on its back, adrift, slowly turning.
                 Vec3 drift = EsferaCutscene.targetPos(partial).subtract(camera);
@@ -109,9 +113,14 @@ public final class SpaceScene {
                 pose.mulPose(Axis.XP.rotationDegrees(-90));
                 pose.translate(0, -target.getBbHeight() / 2, 0);
                 // Cancel the renderer's own turn by its body yaw, so the face ends up looking up.
-                float body = target instanceof LivingEntity living ? Mth.lerp(partial, living.yBodyRotO, living.yBodyRot) : target.getYRot();
+                float body = EsferaCutscene.yaw() + 180;
                 pose.mulPose(Axis.YP.rotationDegrees(body));
-                dispatcher.render(target, 0, 0, 0, target.getYRot(), partial, pose, buffers, 0xF000F0);
+                float[] targetTurn = straighten(target, body);
+                try {
+                    dispatcher.render(target, 0, 0, 0, body, partial, pose, buffers, 0xF000F0);
+                } finally {
+                    restore(target, targetTurn);
+                }
             }
             buffers.endBatch();
         } finally {
@@ -251,6 +260,37 @@ public final class SpaceScene {
                 Vector3f pos = new Vector3f(d).mul(big * (0.5f + 0.6f * su) * (0.6f + 0.5f * FxWorld.hash(304, k, 1))).add(at);
                 FxDraw.billboard(pos, big * (0.7f + 0.6f * su), FxWorld.hash(304, k, 2) * 6, FxDraw.SMOKE, su, SOOT, 0.55f * su * (1 - su) * 4, false);
             }
+        }
+    }
+
+    // Turns body, head and look to one fixed yaw (level, head straight) just for drawing; gives back the old values.
+    private static float[] straighten(Entity entity, float yaw) {
+        float[] old = {entity.getYRot(), entity.yRotO, entity.getXRot(), entity.xRotO, 0, 0, 0, 0};
+        entity.setYRot(yaw);
+        entity.yRotO = yaw;
+        entity.setXRot(0);
+        entity.xRotO = 0;
+        if (entity instanceof LivingEntity living) {
+            old[4] = living.yBodyRot;
+            old[5] = living.yBodyRotO;
+            old[6] = living.yHeadRot;
+            old[7] = living.yHeadRotO;
+            living.yBodyRot = living.yBodyRotO = yaw;
+            living.yHeadRot = living.yHeadRotO = yaw;
+        }
+        return old;
+    }
+
+    private static void restore(Entity entity, float[] old) {
+        entity.setYRot(old[0]);
+        entity.yRotO = old[1];
+        entity.setXRot(old[2]);
+        entity.xRotO = old[3];
+        if (entity instanceof LivingEntity living) {
+            living.yBodyRot = old[4];
+            living.yBodyRotO = old[5];
+            living.yHeadRot = old[6];
+            living.yHeadRotO = old[7];
         }
     }
 
