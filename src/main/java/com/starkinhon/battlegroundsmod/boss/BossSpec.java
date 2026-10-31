@@ -39,7 +39,12 @@ public record BossSpec(String boss, String poder, Integer tier, boolean dropAlma
 
     // intervaloDecisao: how often a new move is picked. aleatoriedade 0 always takes the best move, 1 picks by weight.
     // trocarHumor: how often the boss rethinks whether it wants to fight up close or from range.
-    public record Percepcao(int intervaloDecisaoTicks, double aleatoriedade, int trocarHumorTicks) {
+    // intervaloTecnicasTicks: the least time between two special techniques (anything but strong and barrage); in between
+    // it fights with punches, dashes, strong and barrage. Missing = 100 (5 s).
+    public record Percepcao(int intervaloDecisaoTicks, double aleatoriedade, int trocarHumorTicks, Integer intervaloTecnicasTicks) {
+        public int techniqueGap() {
+            return intervaloTecnicasTicks != null ? Math.max(0, intervaloTecnicasTicks) : 100;
+        }
     }
 
     // soco: punch reach. ideal: the distance it keeps when fighting from range.
