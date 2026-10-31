@@ -398,16 +398,30 @@ public final class Izanami {
         }
     }
 
-    // Nobody dies while it records: they are held as ghosts until time turns back.
-    public static void onDeath(LivingDeathEvent event) {
-        LivingEntity entity = event.getEntity();
+    // True while an Izanami would turn this one's death back: whoever kills it no matter what (the Hakai) must leave
+    // the body in the world, or there is nothing to bring back.
+    public static boolean holds(LivingEntity entity) {
+        return covering(entity) != null;
+    }
+
+    private static Recording covering(LivingEntity entity) {
         if (ACTIVE.isEmpty() || entity.level().isClientSide()) {
-            return;
+            return null;
         }
         for (Recording r : ACTIVE) {
-            if (r.level != entity.level() || !r.tracks.containsKey(entity) && !r.near(entity.position())) {
-                continue;
+            if (r.level == entity.level() && (r.tracks.containsKey(entity) || r.near(entity.position()))) {
+                return r;
             }
+        }
+        return null;
+    }
+
+    // Nobody dies while it records: they are held as ghosts until time turns back. Runs first (EventPriority.HIGHEST)
+    // so nothing else treats it as a death.
+    public static void onDeath(LivingDeathEvent event) {
+        LivingEntity entity = event.getEntity();
+        Recording r = covering(entity);
+        if (r != null) {
             event.setCanceled(true);
             entity.setHealth(1);
             entity.clearFire();
@@ -424,7 +438,6 @@ public final class Izanami {
                     PowerLogic.interrupt(entity);
                 }
             }
-            return;
         }
     }
 

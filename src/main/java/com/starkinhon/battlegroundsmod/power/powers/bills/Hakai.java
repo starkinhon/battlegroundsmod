@@ -18,6 +18,7 @@ import com.starkinhon.battlegroundsmod.combat.Tasks;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
 import com.starkinhon.battlegroundsmod.power.PowerData;
 import com.starkinhon.battlegroundsmod.power.PowerLogic;
+import com.starkinhon.battlegroundsmod.power.powers.uchiha.Izanami;
 import com.starkinhon.battlegroundsmod.skill.HakaiSpec;
 
 import net.minecraft.core.registries.Registries;
@@ -172,7 +173,8 @@ public final class Hakai {
         if (target.isAlive()) {
             target.kill();
         }
-        if (target.isAlive() && !(target instanceof Player)) {
+        // Under Madara's Izanami the death was turned into a ghost: the body has to stay for time to bring it back.
+        if (target.isAlive() && !(target instanceof Player) && !Izanami.holds(target)) {
             target.discard();
         }
     }
