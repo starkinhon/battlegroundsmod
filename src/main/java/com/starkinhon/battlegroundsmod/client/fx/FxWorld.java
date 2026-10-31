@@ -396,6 +396,7 @@ public final class FxWorld {
             case "rachaduras" -> DestructionFx.cracks(e, p.seed(), p.pos(), at, age, t, cor, cor2, size, opacity);
             case "pilares" -> DestructionFx.pillars(e, p.seed(), at, age, t, cor, cor2, size, opacity);
             case "plasma" -> DestructionFx.plasma(e, p.seed(), at, age, t, cor, cor2, size, opacity);
+            case "riscosTp" -> TeleportFx.streaks(e, p.seed(), at, age, t, cor, size, opacity);
             case "nuvem" -> DestructionFx.cloud(e, p.seed(), at, age, t, cor, cor2, size, opacity);
             default -> {
             }

@@ -10,6 +10,7 @@ import java.util.WeakHashMap;
 import com.starkinhon.battlegroundsmod.client.cutscene.CutscenePlayer;
 import com.starkinhon.battlegroundsmod.skill.AgarraoSpec;
 import com.starkinhon.battlegroundsmod.skill.DestructionBopSpec;
+import com.starkinhon.battlegroundsmod.skill.EsferaSpec;
 import com.starkinhon.battlegroundsmod.skill.AnimationSpec;
 import com.starkinhon.battlegroundsmod.skill.DefesaSpec;
 import com.starkinhon.battlegroundsmod.skill.PoseTimeline;
@@ -67,6 +68,10 @@ public final class SkillAnimations {
         if (parts.length > 1 && AgarraoSpec.SKILL.equals(parts[0])) {
             int ticks = parts.length > 2 ? Integer.parseInt(parts[2]) : 0;
             play(entityId, AgarraoSpec.get(awakened).phase(parts[1], ticks));
+            return;
+        }
+        if (parts.length > 1 && EsferaSpec.SKILL.equals(parts[0])) {
+            play(entityId, EsferaSpec.get(awakened).phase(parts[1]));
             return;
         }
         if (parts.length > 1 && DestructionBopSpec.SKILL.equals(parts[0])) {

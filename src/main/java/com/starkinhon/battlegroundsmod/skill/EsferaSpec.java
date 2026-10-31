@@ -2,38 +2,51 @@ package com.starkinhon.battlegroundsmod.skill;
 
 import java.util.List;
 
-import net.minecraft.world.phys.Vec3;
+// Bills' Shift + C, Esfera da Destruição Planetária (bills.esfera.json). He puts both hands behind his back and is
+// gone in a flash of black streaks: he and the target are in outer space (a cutscene only the two of them see, see
+// client/EsferaCutscene). Seen from the front as he appears there, then from over his shoulder looking down: the target
+// lies below him, adrift, slowly falling towards the Earth far below. He charges the sphere between his hands, throws
+// it, it implodes into a giant sun on the way and blows the target up in one explosion of flames. Back in the world he
+// lands with the same black streaks and the target falls from the sky (queda.altura blocks up, queda.distancia blocks
+// in front of him), straight down into a crater.
+// Everyone else sees both of them vanish and come back.
+// Timeline in ticks from the press: 0 "uso" (hands behind his back), tempo.costasTicks "tp" (gone), then in space:
+// tempo.chegadaTicks (he appears, seen from the front), tempo.alvoTicks (over his shoulder, the target adrift),
+// tempo.cargaTicks (charging), tempo.lancarTicks (the throw), tempo.vooTicks (the sun flies to the target),
+// tempo.explosaoTicks (the explosion, "explosao"), then "voltar" (back in the world) and "impacto" when the target hits
+// the ground. The client-only moments of the cutscene ("chegada", "implodir", "explosaoEspaco") are played on the two
+// clients from the same vfx list.
+public record EsferaSpec(String skill, String nome, Tempo tempo, Alvo alvo, Esfera esfera, Espaco espaco, Deriva deriva, Queda queda,
+        Legenda legenda, Cutscene cutscene, Animacao animacao, float danoEspaco, List<Som> sons) {
 
-// Bills' C, Esfera da Destruição (bills.esfera.json). Bills looks up and leaves for outer space (only he sees it): he
-// floats over the square Earth, charges a huge sun of destruction over his raised hand, says "Agora, eu vou destruir a
-// terra..." and throws it at the planet. Back in the normal view, the sphere is falling from the sky and lands right on
-// the target's head. Everyone else just sees him vanish in a flash and come back.
-// Timeline in ticks from the press: 0 "uso", tempo.subirTicks "espaco" (he is gone), + tempo.cargaTicks "lancar" (the
-// throw), + tempo.lancarTicks "queda" (back in the world, the sphere starts falling), + tempo.quedaTicks "impacto".
-// The "tempo" and "animacao" blocks are also read as an AnimationSpec: the arm goes up at once (preparo) and throws
-// (sopro) at atrasoTicks for duracaoTicks.
-public record EsferaSpec(String skill, String nome, Tempo tempo, Alvo alvo, Esfera esfera, Espaco espaco, Impacto impacto, Legenda legenda,
-        Cutscene cutscene, List<Som> sons) {
-
-    public record Tempo(int subirTicks, int cargaTicks, int lancarTicks, int quedaTicks, int atrasoTicks, int duracaoTicks) {
+    public record Tempo(int costasTicks, int chegadaTicks, int alvoTicks, int cargaTicks, int lancarTicks, int vooTicks, int explosaoTicks) {
     }
 
     public record Alvo(double alcance) {
     }
 
-    // raioEspaco: the sphere's radius when fully charged in space; raioQueda: its radius falling on the target, from
-    // alturaQueda blocks up, following the target's head the whole way.
-    public record Esfera(double raioEspaco, double raioQueda, double alturaQueda) {
+    // raioCarga: between his hands, fully charged; raioGigante: after it implodes on the way; raioExplosao: how big the
+    // explosion of flames grows.
+    public record Esfera(double raioCarga, double raioGigante, double raioExplosao) {
     }
 
-    // The square Earth: a giant grass block tamanho blocks wide, distancia blocks ahead and abaixo blocks below him,
-    // turning slowly (girar, degrees per tick). estrelas: how many stars.
-    public record Espaco(double tamanho, double distancia, double abaixo, double girar, int estrelas, String corCeu, String corHorizonte) {
+    // The square Earth: a cube tamanho blocks wide, distancia blocks ahead of him, abaixo blocks below and lado blocks to
+    // his left, turning slowly (girar, degrees per tick). estrelas: how many stars. The sky goes from corCeu (top) to
+    // corHorizonte; the nebulas are drawn in the corNebulosa colors.
+    public record Espaco(double tamanho, double distancia, double abaixo, double lado, double girar, int estrelas, String corCeu,
+            String corHorizonte, List<String> corNebulosa) {
     }
 
-    // Damage falls from danoCentro on the target's head to danoBorda at raio. The ground breaks open the vanilla way.
-    public record Impacto(float danoCentro, float danoBorda, double raio, double empurrao, boolean quebrarBlocos, double raioCratera,
-            double profundidadeCratera) {
+    // Where the target floats in space, lying down: frente blocks ahead of him and abaixo blocks below, drifting towards
+    // the Earth at velocidade blocks per tick and slowly turning (giro, degrees per tick).
+    public record Deriva(double frente, double abaixo, double velocidade, double giro) {
+    }
+
+    // After the cutscene the target falls from altura blocks over the ground, distancia blocks in front of Bills, at
+    // velocidade blocks per tick. Landing: dano to it, danoArea falling off to anyone else within raio, and a crater
+    // raioCratera wide and profundidadeCratera deep.
+    public record Queda(double altura, double distancia, double velocidade, float dano, double raio, float danoArea, double empurrao,
+            boolean quebrarBlocos, double raioCratera, double profundidadeCratera) {
     }
 
     public record Legenda(String texto, String cor, int inicioTick, int fimTick, double tamanho) {
@@ -42,33 +55,89 @@ public record EsferaSpec(String skill, String nome, Tempo tempo, Alvo alvo, Esfe
     public record Cutscene(boolean ativa, boolean barrasPretas, boolean intangivel) {
     }
 
+    // The poses: costas (hands behind his back), carregar (the sphere between his hands), lancar (the throw) and deriva
+    // (the target lying adrift).
+    public record Animacao(int transicaoTicks, SkillSpec.Pose costas, SkillSpec.Pose carregar, SkillSpec.Pose lancar, SkillSpec.Pose deriva) {
+    }
+
     public static final String SKILL = "bills.esfera";
 
     public static EsferaSpec get(boolean awakened) {
         return SkillSpecs.get(SKILL, EsferaSpec.class, awakened);
     }
 
+    // Gone from the world (the black streaks).
+    public int tpTick() {
+        return Math.max(1, tempo.costasTicks());
+    }
+
+    // In space from here (a few ticks of streaks first).
     public int spaceTick() {
-        return Math.max(1, tempo.subirTicks());
+        return tpTick() + 4;
+    }
+
+    public int aimTick() {
+        return spaceTick() + Math.max(1, tempo.chegadaTicks());
+    }
+
+    public int chargeTick() {
+        return aimTick() + Math.max(1, tempo.alvoTicks());
     }
 
     public int throwTick() {
-        return spaceTick() + Math.max(1, tempo.cargaTicks());
+        return chargeTick() + Math.max(1, tempo.cargaTicks());
     }
 
-    // The cutscene ends here: back in the world, the sphere starts to fall.
-    public int fallTick() {
+    public int flyTick() {
         return throwTick() + Math.max(1, tempo.lancarTicks());
     }
 
-    public int impactTick() {
-        return fallTick() + Math.max(1, tempo.quedaTicks());
+    public int blastTick() {
+        return flyTick() + Math.max(1, tempo.vooTicks());
     }
 
-    // Where the falling sphere's center is after k (0 to 1) of the fall: from start towards the head it follows, slow
-    // and heavy, a little faster at the end. The server lands it with the same numbers the clients draw.
-    public static Vec3 fallAt(Vec3 start, Vec3 head, double k) {
-        k = Math.max(0, Math.min(1, k));
-        return start.lerp(head, k * 0.6 + k * k * 0.4);
+    // The cutscene ends here: back in the world, the target starts to fall.
+    public int endTick() {
+        return blastTick() + Math.max(1, tempo.explosaoTicks());
+    }
+
+    // The body animations, timed like the cutscene: "bills" (hands behind his back, charging, the throw, held until he is
+    // back) and "alvo" (the target lying adrift, from the moment it is taken to space).
+    public PoseTimeline phase(String name) {
+        double tr = Math.max(1, animacao.transicaoTicks());
+        SkillSpec.Pose zero = SkillSpec.Pose.ZERO;
+        if ("alvo".equals(name)) {
+            SkillSpec.Pose drift = pose(animacao.deriva());
+            double hold = endTick() - tpTick();
+            return PoseTimeline.of(hold + tr, t -> t < hold ? zero.lerp(drift, smooth(t / tr)) : drift.lerp(zero, smooth((t - hold) / tr)));
+        }
+        SkillSpec.Pose back = pose(animacao.costas());
+        SkillSpec.Pose charge = pose(animacao.carregar());
+        SkillSpec.Pose thrown = pose(animacao.lancar());
+        int charging = chargeTick();
+        int throwing = throwTick();
+        int end = endTick();
+        return PoseTimeline.of(end + tr, t -> {
+            if (t < charging) {
+                return zero.lerp(back, smooth(t / tr));
+            }
+            if (t < throwing) {
+                return back.lerp(charge, smooth((t - charging) / (tr * 2)));
+            }
+            if (t < end) {
+                // The throw is a snap.
+                return charge.lerp(thrown, smooth((t - throwing) / 3));
+            }
+            return thrown.lerp(zero, smooth((t - end) / tr));
+        });
+    }
+
+    private static SkillSpec.Pose pose(SkillSpec.Pose pose) {
+        return pose != null ? pose : SkillSpec.Pose.ZERO;
+    }
+
+    private static double smooth(double x) {
+        x = Math.max(0, Math.min(1, x));
+        return x * x * (3 - 2 * x);
     }
 }

@@ -469,11 +469,13 @@ public final class ModPayloads {
         }
     }
 
-    // Server -> client: Bills' trip to outer space (Esfera da Destruição), for Bills only; timing from bills.esfera.json.
-    public record EsferaCutscene(int casterId, boolean awakened) implements CustomPacketPayload {
+    // Server -> client: Bills' trip to outer space with his target (Esfera da Destruição Planetária, Shift + C), for the
+    // two of them; timing from bills.esfera.json.
+    public record EsferaCutscene(int casterId, int targetId, boolean awakened) implements CustomPacketPayload {
         public static final Type<EsferaCutscene> TYPE = payloadType("esfera_cutscene");
         public static final StreamCodec<ByteBuf, EsferaCutscene> STREAM_CODEC = StreamCodec.composite(
                 ByteBufCodecs.VAR_INT, EsferaCutscene::casterId,
+                ByteBufCodecs.VAR_INT, EsferaCutscene::targetId,
                 ByteBufCodecs.BOOL, EsferaCutscene::awakened,
                 EsferaCutscene::new);
 
@@ -483,7 +485,7 @@ public final class ModPayloads {
         }
     }
 
-    // Server -> client: the sphere of destruction falls from start onto the target's head (EsferaSpec.fallAt).
+    // Server -> client: a sphere of destruction falls from start onto the target's head (client/fx/EsferaRenderer).
     public record EsferaFall(int targetId, Vec3 start, Vec3 lastHead, boolean awakened) implements CustomPacketPayload {
         public static final Type<EsferaFall> TYPE = payloadType("esfera_fall");
         public static final StreamCodec<ByteBuf, EsferaFall> STREAM_CODEC = StreamCodec.composite(
@@ -748,7 +750,7 @@ public final class ModPayloads {
         registrar.playToClient(HakaiDeath.TYPE, HakaiDeath.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.hakaiDeath(payload.entityId(), payload.awakened())));
         registrar.playToClient(EsferaCutscene.TYPE, EsferaCutscene.STREAM_CODEC, (payload, context) -> context.enqueueWork(
-                () -> ClientHooks.esferaCutscene(payload.casterId(), payload.awakened())));
+                () -> ClientHooks.esferaCutscene(payload.casterId(), payload.targetId(), payload.awakened())));
         registrar.playToClient(EsferaFall.TYPE, EsferaFall.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.esferaFall(payload.targetId(), payload.start(), payload.lastHead(), payload.awakened())));
         registrar.playToClient(EraseAttack.TYPE, EraseAttack.STREAM_CODEC, (payload, context) -> context.enqueueWork(

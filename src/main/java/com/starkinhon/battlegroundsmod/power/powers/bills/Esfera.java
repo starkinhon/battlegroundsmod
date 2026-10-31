@@ -6,7 +6,6 @@ import java.util.function.Function;
 
 import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.combat.Combat;
-import com.starkinhon.battlegroundsmod.combat.Destructible;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.combat.Fx;
 import com.starkinhon.battlegroundsmod.combat.Intangible;
@@ -20,17 +19,24 @@ import com.starkinhon.battlegroundsmod.skill.EsferaSpec;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.level.GameRules;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
 
-// Shift + C: Esfera da Destruição, the space version (bills.esfera.json; the normal C is DestructionSphere). Bills leaves for outer space in a cutscene only he sees (client/
-// EsferaCutscene): over the square Earth he charges a sun of destruction, says his line and throws it at the planet.
-// Everyone else sees him vanish in a flash. When he is back, a sun the size of two meteors comes down slowly from 300
-// blocks up following the target's head (client/fx/EsferaRenderer draws it with the same path), shaking the screen
-// and burning it orange at the edges, and blows up on it with a reach of 200 blocks.
+// Shift + C: Esfera da Destruição Planetária (bills.esfera.json, see EsferaSpec; the normal C is DestructionSphere).
+// Bills puts his hands behind his back and vanishes in black streaks, taking the target with him to outer space: a
+// cutscene only the two of them see (client/EsferaCutscene, client/fx/SpaceScene), where the target lies adrift below
+// him, he charges the sphere between his hands and throws it, and it blows the target up in flames. Everyone else sees
+// both of them gone (frozen, untouchable and hidden where they stood). Back in the world Bills lands where he was,
+// facing the spot queda.distancia blocks ahead of him, and the target falls from queda.altura blocks up straight down
+// onto it, opening a crater.
 public final class Esfera {
     public static final String SKILL = EsferaSpec.SKILL;
+    private static final double VIEW_DISTANCE = 256;
 
     private Esfera() {
     }
@@ -44,6 +50,10 @@ public final class Esfera {
                 && fought.distanceTo(caster) <= spec.alvo().alcance()) {
             target = fought;
         }
+        if (target == null && caster instanceof net.minecraft.world.entity.Mob mob && mob.getTarget() != null
+                && Combat.isTarget(mob.getTarget(), caster) && mob.getTarget().distanceTo(caster) <= spec.alvo().alcance()) {
+            target = mob.getTarget();
+        }
         if (target == null) {
             if (caster instanceof ServerPlayer player) {
                 player.displayClientMessage(Component.translatable("message.battlegroundsmod.no_target"), true);
@@ -51,106 +61,167 @@ public final class Esfera {
             return false;
         }
         LivingEntity victim = target;
-        int space = spec.spaceTick();
-        int fall = spec.fallTick();
-        int impact = spec.impactTick();
+        int tp = spec.tpTick();
+        int blast = spec.blastTick();
+        int end = spec.endTick();
+        // Laid out from where he stands and faces now, the same way on the clients.
+        Vec3 forward = Vec3.directionFromRotation(0, caster.getYRot());
+        Vec3 home = caster.position();
 
-        // Away in space: he stands still where he was, untouchable, and the others don't see him.
-        data.busyTicks = fall;
-        Freeze.hold(caster, fall);
+        // Away in space: both stand still where they were, untouchable, and the others don't see them.
+        data.busyTicks = end + 2;
+        // (Let go a tick before the end, so the landing below can move and turn them.)
+        Freeze.hold(caster, end - 1);
+        Freeze.hold(victim, end - 1);
         if (spec.cutscene().intangivel()) {
-            Intangible.hold(caster, fall);
+            Intangible.hold(caster, end);
+            Intangible.hold(victim, end);
         }
-        if (spec.cutscene().ativa() && caster instanceof ServerPlayer player) {
-            PacketDistributor.sendToPlayer(player, new ModPayloads.EsferaCutscene(caster.getId(), awakened));
-        }
-        PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new ModPayloads.PlaySkillAnimation(caster.getId(), SKILL, awakened));
-        Tasks.later(space, () -> {
-            if (caster.isAlive()) {
-                PacketDistributor.sendToPlayersTrackingEntity(caster, new ModPayloads.HideEntity(caster.getId(), fall - space));
-                Fx.effects(level, SKILL, awakened, "espaco", caster, fall - space);
-            }
-        });
-
-        Vec3[] lastHead = {head(victim)};
-        Function<String, Vec3> where = onde -> "alvo".equals(onde) ? lastHead[0] : caster.position().add(0, 1, 0);
         List<ServerPlayer> screen = new ArrayList<>();
         if (caster instanceof ServerPlayer player) {
             screen.add(player);
         }
-        SkillSounds.play(level, spec.sons(), "uso", 0, space, where, screen);
-        SkillSounds.play(level, spec.sons(), "espaco", space, spec.throwTick() - space, where, screen);
-        SkillSounds.play(level, spec.sons(), "lancar", spec.throwTick(), fall - spec.throwTick(), where, screen);
-        Fx.effects(level, SKILL, awakened, "uso", caster, space);
+        if (victim instanceof ServerPlayer player) {
+            screen.add(player);
+        }
+        if (spec.cutscene().ativa()) {
+            for (ServerPlayer player : screen) {
+                PacketDistributor.sendToPlayer(player, new ModPayloads.EsferaCutscene(caster.getId(), victim.getId(), awakened));
+            }
+        }
+        PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new ModPayloads.PlaySkillAnimation(caster.getId(), SKILL + "#bills", awakened));
+        Function<String, Vec3> where = onde -> "alvo".equals(onde) ? victim.position().add(0, 1, 0) : caster.position().add(0, 1, 0);
+        SkillSounds.play(level, spec.sons(), "uso", 0, tp, where, screen);
+        Fx.effects(level, SKILL, awakened, "uso", caster, tp);
 
-        Vec3[] start = {Vec3.ZERO};
-        Destructible.Attack[] attack = {null};
-        Tasks.add(age -> {
-            if (victim.isAlive() && !victim.isRemoved()) {
-                lastHead[0] = head(victim);
+        Tasks.later(tp, () -> {
+            if (!caster.isAlive()) {
+                return;
             }
-            if (age < fall) {
-                return false;
+            // Gone in black streaks, the target with him.
+            Fx.effects(level, SKILL, awakened, "tp", caster.position(), forward);
+            Fx.effects(level, SKILL, awakened, "tp", victim.position(), forward);
+            SkillSounds.play(level, spec.sons(), "tp", 0, 0, where, screen);
+            hideFromOthers(level, caster, victim, end - tp);
+            PacketDistributor.sendToPlayersTrackingEntityAndSelf(victim, new ModPayloads.PlaySkillAnimation(victim.getId(), SKILL + "#alvo", awakened));
+            SkillSounds.play(level, spec.sons(), "espaco", spec.spaceTick() - tp, end - spec.spaceTick(), where, screen);
+        });
+        SkillSounds.play(level, spec.sons(), "carga", spec.chargeTick(), spec.throwTick() - spec.chargeTick(), where, screen);
+        SkillSounds.play(level, spec.sons(), "lancar", spec.throwTick(), spec.flyTick() - spec.throwTick(), where, screen);
+        SkillSounds.play(level, spec.sons(), "implodir", spec.flyTick(), blast - spec.flyTick(), where, screen);
+        SkillSounds.play(level, spec.sons(), "explosao", blast, end - blast, where, screen);
+
+        Tasks.later(blast, () -> {
+            // The explosion in space.
+            if (victim.isAlive() && spec.danoEspaco() > 0) {
+                Combat.hurt(caster, victim, spec.danoEspaco());
             }
-            if (attack[0] != null) {
-                // Erased on the way down (a hakaizinho): no impact.
-                if (attack[0].gone()) {
-                    return true;
-                }
-                attack[0].move(EsferaSpec.fallAt(start[0], lastHead[0], (age - fall) / (double) Math.max(1, impact - fall)));
+        });
+
+        Tasks.later(end, () -> {
+            hideFromOthers(level, caster, victim, 0);
+            if (caster.isAlive()) {
+                // Back on the ground in black streaks, facing where the target will come down.
+                Fx.effects(level, SKILL, awakened, "voltar", caster.position(), forward);
+                SkillSounds.play(level, spec.sons(), "voltar", 0, 0, onde -> caster.position().add(0, 1, 0), screen);
             }
-            if (age == fall) {
-                // Back in the world: the sphere comes down from high above, a little from where Bills stands.
-                Vec3 from = victim.position().subtract(caster.position());
-                Vec3 side = new Vec3(-from.x, 0, -from.z);
-                side = side.lengthSqr() < 1.0E-4 ? Vec3.ZERO : side.normalize();
-                double height = spec.esfera().alturaQueda();
-                start[0] = lastHead[0].add(side.scale(height * 0.15)).add(0, height, 0);
-                PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new ModPayloads.HideEntity(caster.getId(), 0));
-                attack[0] = Destructible.track(level, caster, start[0], spec.esfera().raioQueda(),
-                        () -> Destructible.sendErase(level, SKILL, attack[0].pos(), attack[0].radius()));
-                Fx.effects(level, SKILL, awakened, "voltar", caster, 0);
-                for (ServerPlayer player : level.players()) {
-                    if (player.distanceToSqr(lastHead[0]) < 400 * 400) {
-                        PacketDistributor.sendToPlayer(player, new ModPayloads.EsferaFall(victim.getId(), start[0], lastHead[0], awakened));
-                    }
-                }
-                // The whistle of the fall is heard where the target is (the sphere is too high up at first to be heard).
-                SkillSounds.play(level, spec.sons(), "queda", 0, impact - fall, onde -> lastHead[0], screen);
-                Fx.effects(level, SKILL, awakened, "queda", victim, impact - fall);
-                return false;
+            PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new ModPayloads.PlaySkillAnimation(caster.getId(), "", false));
+            PacketDistributor.sendToPlayersTrackingEntityAndSelf(victim, new ModPayloads.PlaySkillAnimation(victim.getId(), "", false));
+            if (!victim.isAlive() || victim.isRemoved()) {
+                return;
             }
-            if (age < impact) {
-                // Everyone around feels it coming: the screen shakes a little and burns orange at the edges.
-                if ((age - fall) % 20 == 0) {
-                    Fx.effects(level, SKILL, awakened, "aviso", lastHead[0], new Vec3(0, -1, 0));
-                }
-                return false;
+            Vec3 from = caster.isAlive() ? caster.position() : home;
+            EsferaSpec.Queda queda = spec.queda();
+            Vec3 spot = from.add(forward.scale(queda.distancia()));
+            double groundY = ground(level, new Vec3(spot.x, from.y + 40, spot.z), 120);
+            Vec3 top = new Vec3(spot.x, groundY + queda.altura(), spot.z);
+            float yaw = (float) (Mth.atan2(spot.z - from.z, spot.x - from.x) * Mth.RAD_TO_DEG) - 90;
+            if (caster instanceof ServerPlayer player) {
+                player.teleportTo(level, from.x, from.y, from.z, yaw, -10);
+            } else if (caster.isAlive()) {
+                caster.setYRot(yaw);
+                caster.setYHeadRot(yaw);
+                caster.setYBodyRot(yaw);
             }
-            attack[0].end();
-            Vec3 at = lastHead[0];
-            explode(caster, level, spec, at);
-            SkillSounds.play(level, spec.sons(), "impacto", 0, 0, onde -> at, screen);
-            Fx.effects(level, SKILL, awakened, "impacto", at, new Vec3(0, -1, 0));
-            return true;
+            if (victim instanceof ServerPlayer player) {
+                player.teleportTo(level, top.x, top.y, top.z, yaw + 180, 60);
+            } else {
+                victim.teleportTo(top.x, top.y, top.z);
+            }
+            fall(caster, level, spec, victim, groundY, awakened, screen);
         });
         return true;
     }
 
-    private static void explode(LivingEntity caster, ServerLevel level, EsferaSpec spec, Vec3 at) {
-        EsferaSpec.Impacto impacto = spec.impacto();
-        double radius = Math.max(1, impacto.raio());
+    // The target coming down from the sky, straight, into a crater.
+    private static void fall(LivingEntity caster, ServerLevel level, EsferaSpec spec, LivingEntity victim, double groundY, boolean awakened,
+            List<ServerPlayer> screen) {
+        EsferaSpec.Queda queda = spec.queda();
+        double speed = Math.max(0.2, queda.velocidade());
+        int max = (int) Math.ceil(queda.altura() / speed) + 60;
+        Fx.effects(level, SKILL, awakened, "queda", victim, max);
+        SkillSounds.play(level, spec.sons(), "queda", 0, (int) Math.ceil(queda.altura() / speed), onde -> victim.position(), screen);
+        Tasks.add(age -> {
+            if (!victim.isAlive() || victim.isRemoved()) {
+                return true;
+            }
+            victim.fallDistance = 0;
+            Vec3 pos = victim.position();
+            var below = level.clip(new ClipContext(pos, pos.subtract(0, speed + 0.5, 0), ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, victim));
+            boolean landed = victim.onGround() || below.getType() != HitResult.Type.MISS || age >= max;
+            if (!landed) {
+                victim.setDeltaMovement(0, -speed, 0);
+                victim.hurtMarked = true;
+                return false;
+            }
+            Vec3 at = below.getType() != HitResult.Type.MISS ? below.getLocation() : pos;
+            victim.setDeltaMovement(0, 0, 0);
+            victim.hurtMarked = true;
+            land(caster, level, spec, victim, at, awakened, screen);
+            return true;
+        });
+    }
+
+    private static void land(LivingEntity caster, ServerLevel level, EsferaSpec spec, LivingEntity victim, Vec3 at, boolean awakened,
+            List<ServerPlayer> screen) {
+        EsferaSpec.Queda queda = spec.queda();
+        Combat.hurt(caster, victim, queda.dano());
+        double radius = Math.max(1, queda.raio());
         for (LivingEntity hit : Combat.inRadius(level, at, radius, caster)) {
+            if (hit == victim) {
+                continue;
+            }
             double k = Math.min(1, Combat.center(hit).distanceTo(at) / radius);
-            Combat.hurt(caster, hit, (float) (impacto.danoCentro() + (impacto.danoBorda() - impacto.danoCentro()) * k));
-            Combat.pushFrom(hit, at, impacto.empurrao() * (1 - k * 0.5), 0.5 + 0.4 * (1 - k));
+            Combat.hurt(caster, hit, (float) (queda.danoArea() * (1 - k * 0.6)));
+            Combat.pushFrom(hit, at, queda.empurrao() * (1 - k * 0.5), 0.5 + 0.4 * (1 - k));
         }
-        if (impacto.quebrarBlocos()) {
-            Agarrao.crater(level, at.subtract(0, 1.6, 0), impacto.raioCratera(), impacto.profundidadeCratera());
+        // The fire around the falling body goes out.
+        Fx.effects(level, SKILL, awakened, "pousar", victim, 1);
+        Fx.effects(level, SKILL, awakened, "impacto", at, new Vec3(0, 1, 0));
+        SkillSounds.play(level, spec.sons(), "impacto", 0, 0, onde -> at, screen);
+        if (queda.quebrarBlocos() && level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
+            Agarrao.crater(level, at.add(0, 0.5, 0), queda.raioCratera(), queda.profundidadeCratera());
+            // The crater opens under it: it ends up at the bottom.
+            Tasks.later(2, () -> victim.setDeltaMovement(0, -1.5, 0));
         }
     }
 
-    private static Vec3 head(LivingEntity entity) {
-        return entity.position().add(0, entity.getBbHeight(), 0);
+    // While they are in space nobody else sees them (0 ticks: back again). Neither of them is hidden from the two
+    // screens in the cutscene, which draw them in space.
+    private static void hideFromOthers(ServerLevel level, LivingEntity caster, LivingEntity victim, int ticks) {
+        for (ServerPlayer player : level.players()) {
+            if (player == caster || player == victim || player.distanceToSqr(caster) > VIEW_DISTANCE * VIEW_DISTANCE) {
+                continue;
+            }
+            PacketDistributor.sendToPlayer(player, new ModPayloads.HideEntity(caster.getId(), ticks));
+            PacketDistributor.sendToPlayer(player, new ModPayloads.HideEntity(victim.getId(), ticks));
+        }
+    }
+
+    // The top of the ground under a point, looking down up to reach blocks (the point less 40 when there is none).
+    private static double ground(ServerLevel level, Vec3 from, double reach) {
+        var hit = level.clip(new ClipContext(from, from.subtract(0, reach, 0), ClipContext.Block.COLLIDER, ClipContext.Fluid.ANY,
+                net.minecraft.world.phys.shapes.CollisionContext.empty()));
+        return hit.getType() == HitResult.Type.MISS ? from.y - 40 : hit.getLocation().y;
     }
 }

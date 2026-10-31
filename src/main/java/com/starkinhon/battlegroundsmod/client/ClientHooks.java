@@ -128,18 +128,18 @@ public final class ClientHooks {
         AshDeath.startHakai(entityId, awakened);
     }
 
-    public static void esferaCutscene(int casterId, boolean awakened) {
+    public static void esferaCutscene(int casterId, int targetId, boolean awakened) {
         // The trip to space keeps running (it draws the space, its bars and its line); only the camera is the editor's.
         var before = Minecraft.getInstance().options.getCameraType();
-        EsferaCutscene.start(casterId, awakened);
-        if (EsferaCutscene.active() && CutscenePlayer.start("bills.esfera", casterId, -1, true)) {
+        EsferaCutscene.start(casterId, targetId, awakened);
+        if (EsferaCutscene.active() && CutscenePlayer.start("bills.esfera", casterId, targetId, true)) {
             // The trip already switched to third person: give back the view the player had before it.
             CutscenePlayer.restoreTo(before);
         }
     }
 
     public static void esferaFall(int targetId, Vec3 start, Vec3 lastHead, boolean awakened) {
-        com.starkinhon.battlegroundsmod.client.fx.EsferaRenderer.fall(targetId, start, lastHead, awakened);
+        com.starkinhon.battlegroundsmod.client.fx.EsferaRenderer.fall(targetId, start, lastHead, 240, 26);
     }
 
     public static void eraseAttack(String skill, Vec3 pos, float radius) {
