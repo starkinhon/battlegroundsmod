@@ -9,7 +9,8 @@ import java.util.List;
 // his hand, or as soon as it runs into something, it implodes: it shrinks for bola.encolherTicks and bursts to
 // bola.raioGigante in bola.crescerTicks (impact frame, the screen shakes for whoever is near it, see tremor), then keeps
 // going at bola.velocidadeGigante. Where it touches the ground or a body it blows up (explosao): an anime explosion of
-// fire that turns to smoke and rises (idaTicks), hangs there (pausaTicks), runs back into a point (voltaTicks), waits
+// fire that turns to smoke and rises (idaTicks), hangs there (pausaTicks), runs back into a point pulling everything
+// around in like a black hole (voltaTicks, see sucao), waits
 // (esperaTicks) and blows up again, bigger, with a shockwave (segundaTicks). bola.vidaMaxTicks after release it blows
 // up wherever it is.
 // Timeline: "uso" on the press (the ball forms at his finger), "soltar" when it leaves, "implodir" when it bursts to
@@ -18,7 +19,7 @@ import java.util.List;
 // (client/fx/SphereRenderer), so the explosion timings must stay the same on both sides.
 // The "tempo" and "animacao" blocks are also read as an AnimationSpec (tempo.atrasoTicks holds the raised arm).
 public record DestructionSphereSpec(String skill, String nome, Tempo tempo, Alvo alvo, Carga carga, Bola bola, Tremor tremor,
-        Explosao explosao, int cancelarStunTicks, List<Som> sons) {
+        Explosao explosao, Sucao sucao, int cancelarStunTicks, List<Som> sons) {
 
     public record Tempo(int atrasoTicks, int duracaoTicks) {
     }
@@ -35,6 +36,13 @@ public record DestructionSphereSpec(String skill, String nome, Tempo tempo, Alvo
     // curva: how fast it turns towards where he aims (0 to 1 each tick).
     public record Bola(double raio, double raioGigante, double velocidade,
             double velocidadeGigante, double curva, int implodirTicks, int encolherTicks, int crescerTicks, int vidaMaxTicks) {
+    }
+
+    // While the explosion runs back (from rebobinar to the second blast) it pulls like a black hole: everything closer
+    // than raio blocks (players, mobs, items; not Bills) is dragged into the middle at up to forca blocks per tick,
+    // stronger the closer it is. blocosPorTick blocks off the top of the ground within raioBlocos are torn loose and
+    // sucked in too, and are gone in the second blast (no drops; needs the mobGriefing gamerule).
+    public record Sucao(double raio, double forca, double raioBlocos, int blocosPorTick) {
     }
 
     // The screen shakes with forca for whoever is closer than alcance blocks to the big ball (less the farther away).

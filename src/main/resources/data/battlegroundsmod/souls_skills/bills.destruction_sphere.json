@@ -46,6 +46,12 @@
     "raioCratera": 22,
     "profundidadeCratera": 10
   },
+  "sucao": {
+    "raio": 60,
+    "forca": 2.2,
+    "raioBlocos": 30,
+    "blocosPorTick": 6
+  },
   "cancelarStunTicks": 25,
   "animacao": {
     "transicaoTicks": 4,
