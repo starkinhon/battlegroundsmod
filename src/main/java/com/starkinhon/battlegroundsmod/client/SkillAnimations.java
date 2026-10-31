@@ -44,6 +44,9 @@ public final class SkillAnimations {
     private static final Set<Integer> GUARDING = new HashSet<>();
 
     private static final Map<Integer, Playing> PLAYING = new HashMap<>();
+    // Entities whose body is kept square with where they look while their move plays (a teleport that turns them
+    // around would otherwise leave the body turned sideways, since vanilla only drags it along once the head is far off).
+    private static final Set<Integer> SQUARE = new HashSet<>();
     private static final Set<HumanoidModel<?>> SHIFTED = Collections.newSetFromMap(new WeakHashMap<>());
     private static final float DEG = (float) (Math.PI / 180);
 
@@ -54,6 +57,7 @@ public final class SkillAnimations {
     // number after a second # is how long the part runs, when only the server knows (a dash until it reaches someone).
     // An empty skill stops whatever is playing (the move was cut off).
     public static void play(int entityId, String skill, boolean awakened) {
+        SQUARE.remove(entityId);
         if (skill.isEmpty()) {
             PLAYING.remove(entityId);
             return;
@@ -66,6 +70,7 @@ public final class SkillAnimations {
         }
         if (parts.length > 1 && DestructionBopSpec.SKILL.equals(parts[0])) {
             play(entityId, DestructionBopSpec.get(awakened).phase(parts[1]));
+            SQUARE.add(entityId);
             return;
         }
         play(entityId, SkillSpecs.get(skill, AnimationSpec.class, awakened));
@@ -117,6 +122,11 @@ public final class SkillAnimations {
         // First person hands are posed with ageInTicks 0, which lands here as t < 0 and leaves the animation running.
         boolean animating = raw >= 0 && raw <= playing.end();
         boolean guard = ageInTicks != 0 && GUARDING.contains(entity.getId());
+        if (!animating) {
+            SQUARE.remove(entity.getId());
+        } else if (SQUARE.contains(entity.getId())) {
+            entity.yBodyRot = entity.yBodyRotO = entity.getYHeadRot();
+        }
         if (!animating && !guard) {
             unshift(model);
             return;
