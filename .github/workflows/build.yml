@@ -5,6 +5,8 @@ on: [push, pull_request]
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -28,3 +30,47 @@ jobs:
           ./gradlew dependencies --configuration runtimeClasspath > deps.txt
           ! grep -n 'FAILED' deps.txt
           grep -n 'freecam' deps.txt
+
+      # The mod jar, downloadable from the run page (Actions tab > run > Artifacts).
+      - name: Upload mod jar
+        uses: actions/upload-artifact@v4
+        with:
+          name: souls-mod-jar
+          path: build/libs/*.jar
+
+      # Boots a real dedicated server with the mod to catch client-only code loaded on the server.
+      - name: Dedicated server smoke test
+        run: |
+          mkdir -p run
+          echo "eula=true" > run/eula.txt
+          ./gradlew runServer -PnoDevMods > server.log 2>&1 &
+          PID=$!
+          for i in $(seq 1 120); do
+            if grep -q 'Done (' server.log; then
+              echo "Dedicated server started fine."
+              kill $PID || true
+              exit 0
+            fi
+            if ! kill -0 $PID 2>/dev/null; then
+              echo "Server stopped before finishing startup:"
+              tail -200 server.log
+              exit 1
+            fi
+            sleep 5
+          done
+          echo "Server did not start in time:"
+          tail -200 server.log
+          exit 1
+
+      # Every push to main refreshes the "latest" release with the new jar.
+      - name: Publish latest release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release delete latest --cleanup-tag -y || true
+          gh release create latest build/libs/*.jar \
+            --target "$GITHUB_SHA" \
+            --prerelease \
+            --title "Souls - versão de teste mais recente" \
+            --notes "Jar gerado automaticamente a partir da main (commit $GITHUB_SHA). Coloque na pasta mods de um Minecraft 1.21.1 com NeoForge."

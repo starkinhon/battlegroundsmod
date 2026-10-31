@@ -123,7 +123,10 @@ configurations {
 dependencies {
     // FreeCam by Zergatul (MIT, NeoForge 1.21 build), only in runClient for watching and recording moves.
     // F6 toggles it. Not shipped with the mod and not a dependency of it.
-    localRuntime "curse.maven:freecam-by-zergatul-618947:5591136"
+    // It is client-only, so the dedicated server smoke test in CI passes -PnoDevMods to leave it out.
+    if (!project.hasProperty('noDevMods')) {
+        localRuntime "curse.maven:freecam-by-zergatul-618947:5591136"
+    }
 
     // Example optional mod dependency with JEI
     // The JEI API is declared for compile time use, while the full JEI artifact is used at runtime
