@@ -1,0 +1,25 @@
+All Rights Reserved
+
+Copyright (c) 2026 starkinhon (Stark) and Jao
+
+This mod (source code, compiled jar, textures, sounds, shaders, models and
+all other assets in this repository) is the property of its authors.
+
+You MAY:
+  - download and play the mod;
+  - use it in videos, streams and screenshots (monetized or not);
+  - include it in a modpack, as long as the jar is downloaded from an
+    official page of the mod (GitHub release or CurseForge) and credit is given.
+
+You may NOT, without written permission from the authors:
+  - re-upload or redistribute the jar or its source on any other site;
+  - copy the code or assets into another project;
+  - publish modified versions;
+  - claim the mod or any part of it as your own work.
+
+Exception: the build template files that came from the NeoForge MDK
+(gradlew, gradlew.bat, gradle/wrapper/*, and the template structure of
+build.gradle, settings.gradle and gradle.properties) stay under the MIT
+license described in TEMPLATE_LICENSE.txt.
+
+THE MOD IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
