@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.starkinhon.battlegroundsmod.BattlegroundsMod;
 
 import net.minecraft.Util;
@@ -96,34 +97,68 @@ public final class BossBars {
         event.setIncrement(style.height() + GAP);
     }
 
-    // Light leaking around the bar: a soft breathing halo along it and two bright spots slowly circling it, each
-    // with a fading tail. Drawn behind the frame, then once more, faint, over it so the light spills onto the art.
+    // Light bursting from behind the bar: purple and violet beams fanning out from the middle ornament, each slowly
+    // breathing, the fan turning very slowly, with a bright core. Drawn behind the frame, then once more, faint, over it
+    // so the light spills onto the art.
+    private static final int RAYS = 14;
+
     private static void glow(GuiGraphics graphics, int x, int y, Style style, boolean over) {
         float t = Util.getMillis() / 1000f;
         int color = style.glow();
-        int hot = GuiDraw.mix(color, 0xFFFFFF, 0.35f);
+        int hot = GuiDraw.mix(color, 0xFFFFFF, 0.55f);
+        int cool = GuiDraw.mix(color, 0x4A5CFF, 0.45f);
         float cx = x + style.width() / 2f;
         float cy = y + style.height() * 0.5f;
-        float rx = style.width() * 0.47f;
-        float ry = style.height() * 0.42f;
+        float k = over ? 0.22f : 1f;
+        float reach = style.width() * 0.62f;
+
+        // Two passes over the same beams: a plain see-through purple layer first, so they keep their color over a
+        // bright day sky (light alone turns white there), then the light itself.
+        for (int pass = over ? 1 : 0; pass < 2; pass++) {
+            BufferBuilder buffer = pass == 1 ? GuiDraw.beginAdditive(graphics) : null;
+            java.util.Random random = new java.util.Random(4242);
+            for (int i = 0; i < RAYS; i++) {
+                float base = i / (float) RAYS * Mth.TWO_PI + (random.nextFloat() - 0.5f) * 0.25f;
+                float spread = 0.035f + random.nextFloat() * 0.09f;
+                float phase = random.nextFloat() * Mth.TWO_PI;
+                float speed = 0.6f + random.nextFloat() * 1.2f;
+                float length = reach * (0.45f + random.nextFloat() * 0.55f) * (0.8f + 0.2f * Mth.sin(t * speed + phase));
+                float bright = (0.22f + 0.18f * random.nextFloat()) * (0.65f + 0.35f * Mth.sin(t * speed * 1.3f + phase * 2));
+                float angle = base + t * 0.04f + 0.03f * Mth.sin(t * 0.5f + phase);
+                int tint = random.nextFloat() < 0.35f ? cool : color;
+                float dx = Mth.cos(angle);
+                float dy = Mth.sin(angle);
+                float nx = -dy;
+                float ny = dx;
+                float start = 1.5f;
+                float end = length * spread * 3;
+                float ex = cx + dx * length;
+                float ey = cy + dy * length;
+                int outer = tint & 0xFFFFFF;
+                if (pass == 0) {
+                    int paint = GuiDraw.argb(Math.round(110 * bright / 0.4f), tint);
+                    GuiDraw.quad(graphics, cx + nx * start, cy + ny * start, ex + nx * end, ey + ny * end,
+                            ex - nx * end, ey - ny * end, cx - nx * start, cy - ny * start, paint, outer, outer, paint);
+                    continue;
+                }
+                int inner = GuiDraw.argb(Math.round(255 * bright * k), GuiDraw.mix(tint, 0xFFFFFF, 0.3f));
+                GuiDraw.additiveQuad(graphics, buffer, cx + nx * start, cy + ny * start, ex + nx * end, ey + ny * end,
+                        ex - nx * end, ey - ny * end, cx - nx * start, cy - ny * start, inner, outer, outer, inner);
+                // A thin bright core down the middle of the wider beams.
+                if (spread > 0.07f) {
+                    float core = end * 0.25f;
+                    int coreColor = GuiDraw.argb(Math.round(200 * bright * k), hot);
+                    GuiDraw.additiveQuad(graphics, buffer, cx + nx * 0.6f, cy + ny * 0.6f, ex + nx * core, ey + ny * core,
+                            ex - nx * core, ey - ny * core, cx - nx * 0.6f, cy - ny * 0.6f, coreColor, hot & 0xFFFFFF, hot & 0xFFFFFF, coreColor);
+                }
+            }
+            if (buffer != null) {
+                GuiDraw.endAdditive(buffer);
+            }
+        }
         float breathe = 0.5f + 0.5f * Mth.sin(t * 1.6f);
-        float k = over ? 0.3f : 1f;
-        if (!over) {
-            for (int i = 0; i < 5; i++) {
-                float px = cx + (i - 2) * style.width() * 0.2f;
-                GuiDraw.glow(graphics, px, cy, style.height() * 0.85f, color, (0.16f + 0.08f * breathe) * k);
-            }
-        }
-        for (int spot = 0; spot < 2; spot++) {
-            float base = t * 0.55f + spot * Mth.PI;
-            for (int tail = 0; tail < 7; tail++) {
-                float a = base - tail * 0.09f;
-                float fade = 1 - tail / 7f;
-                float px = cx + Mth.cos(a) * rx;
-                float py = cy + Mth.sin(a) * ry;
-                GuiDraw.glow(graphics, px, py, style.height() * (0.55f + 0.25f * fade), tail == 0 ? hot : color, 0.42f * fade * fade * k);
-            }
-        }
+        GuiDraw.glow(graphics, cx, cy, style.height() * 1.1f, color, (0.28f + 0.1f * breathe) * k);
+        GuiDraw.glow(graphics, cx, cy, style.height() * 0.45f, hot, (0.3f + 0.12f * breathe) * k);
     }
 
     // Full life shows frame 0; any damage moves to frame 1, and the last frame only shows at zero.
