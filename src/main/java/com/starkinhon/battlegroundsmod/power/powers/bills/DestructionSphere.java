@@ -24,14 +24,18 @@ import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.item.FallingBlockEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -225,6 +229,7 @@ public final class DestructionSphere {
         Tasks.later(rewind, () -> {
             Fx.effects(level, SKILL, awakened, "rebobinar", at, new Vec3(0, 1, 0), second - rewind);
             SkillSounds.play(level, spec.sons(), "rebobinar", 0, second - rewind, onde -> at, heard);
+            suck(caster, level, spec.sucao(), at, second - rewind);
         });
         Tasks.later(second, () -> {
             Fx.effects(level, SKILL, awakened, "explosao2", at, new Vec3(0, 1, 0));
@@ -247,6 +252,87 @@ public final class DestructionSphere {
             if (explosao.quebrarBlocos() && explosao.raioCratera() > 0 && level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
                 crater(level, at, explosao.raioCratera(), explosao.profundidadeCratera(), 10);
             }
+        });
+    }
+
+    // The black hole while the explosion runs back: everything around dragged into the middle, blocks torn off the ground
+    // and sucked in with it. The blocks are gone when it is over (the second blast pulverizes them).
+    private static void suck(LivingEntity caster, ServerLevel level, DestructionSphereSpec.Sucao sucao, Vec3 at, int ticks) {
+        if (sucao == null || ticks <= 0) {
+            return;
+        }
+        double radius = Math.max(1, sucao.raio());
+        double pull = Math.max(0, sucao.forca());
+        Vec3 heart = at.add(0, 3, 0);
+        boolean blocks = sucao.blocosPorTick() > 0 && sucao.raioBlocos() > 0 && level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING);
+        List<FallingBlockEntity> torn = new ArrayList<>();
+        Tasks.add(age -> {
+            if (age >= ticks) {
+                for (FallingBlockEntity block : torn) {
+                    block.discard();
+                }
+                return true;
+            }
+            // Everything around, pulled harder the closer it is and held in the middle once there.
+            AABB box = new AABB(heart, heart).inflate(radius);
+            for (Entity e : level.getEntities(caster, box, x -> !(x instanceof FallingBlockEntity) && !x.isSpectator() && x.isAlive())) {
+                Vec3 to = heart.subtract(e.position().add(0, e.getBbHeight() * 0.5, 0));
+                double d = to.length();
+                if (d > radius) {
+                    continue;
+                }
+                if (e instanceof Player player && player.getAbilities().flying && player.isCreative()) {
+                    continue;
+                }
+                double speed = pull * (0.35 + 0.65 * (1 - d / radius));
+                Vec3 want = d < 1.5 ? to.scale(0.5) : to.normalize().scale(Math.min(speed, d * 0.5));
+                e.setDeltaMovement(e.getDeltaMovement().lerp(want, 0.6));
+                e.fallDistance = 0;
+                e.hurtMarked = true;
+            }
+            // Blocks torn off the top of the ground and sucked in, spinning into the middle.
+            if (blocks) {
+                for (int i = 0; i < sucao.blocosPorTick(); i++) {
+                    double a = RANDOM.nextDouble() * Mth.TWO_PI;
+                    double r = Math.sqrt(RANDOM.nextDouble()) * sucao.raioBlocos();
+                    int x = Mth.floor(at.x + Math.cos(a) * r);
+                    int z = Mth.floor(at.z + Math.sin(a) * r);
+                    BlockPos pos = level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, new BlockPos(x, 0, z)).below();
+                    if (!level.isLoaded(pos) || Math.abs(pos.getY() - at.y) > sucao.raioBlocos()) {
+                        continue;
+                    }
+                    BlockState state = level.getBlockState(pos);
+                    if (state.isAir() || !state.getFluidState().isEmpty() || state.hasBlockEntity() || state.getDestroySpeed(level, pos) < 0) {
+                        continue;
+                    }
+                    FallingBlockEntity block = FallingBlockEntity.fall(level, pos, state);
+                    block.dropItem = false;
+                    block.setNoGravity(true);
+                    block.noPhysics = true;
+                    block.setDeltaMovement(0, 0.6 + RANDOM.nextDouble() * 0.5, 0);
+                    torn.add(block);
+                }
+            }
+            for (FallingBlockEntity block : torn) {
+                if (block.isRemoved()) {
+                    continue;
+                }
+                Vec3 to = heart.subtract(block.position());
+                double d = to.length();
+                if (d < 2) {
+                    // Swallowed.
+                    block.discard();
+                    continue;
+                }
+                Vec3 in = to.normalize();
+                // A little swirl around the middle on the way in.
+                Vec3 swirl = new Vec3(-in.z, 0, in.x).scale(0.35);
+                Vec3 want = in.add(swirl).normalize().scale(Math.min(pull * 1.2, d * 0.4));
+                block.setDeltaMovement(block.getDeltaMovement().lerp(want, 0.25));
+                block.time = 1;
+            }
+            torn.removeIf(Entity::isRemoved);
+            return false;
         });
     }
 

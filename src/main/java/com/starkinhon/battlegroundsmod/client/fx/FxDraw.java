@@ -107,6 +107,15 @@ final class FxDraw {
         disk(out, center, new Vector3f(LOOK).negate(), size, spin, SOLID, 0, rgb, opacity);
     }
 
+    // The camera's left and up (for effects laid flat on the screen).
+    static Vector3f left() {
+        return new Vector3f(LEFT);
+    }
+
+    static Vector3f up() {
+        return new Vector3f(UP);
+    }
+
     static float[] rgb(int color) {
         return new float[] {((color >> 16) & 0xFF) / 255f, ((color >> 8) & 0xFF) / 255f, (color & 0xFF) / 255f};
     }

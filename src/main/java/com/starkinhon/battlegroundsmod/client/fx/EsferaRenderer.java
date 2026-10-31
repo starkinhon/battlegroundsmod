@@ -5,8 +5,6 @@ import java.util.List;
 
 import org.joml.Vector3f;
 
-import com.starkinhon.battlegroundsmod.skill.EsferaSpec;
-
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.Mth;
@@ -33,9 +31,15 @@ public final class EsferaRenderer {
     private EsferaRenderer() {
     }
 
-    public static void fall(int targetId, Vec3 start, Vec3 lastHead, boolean awakened) {
-        EsferaSpec spec = EsferaSpec.get(awakened);
-        FALLS.add(new Fall(targetId, start, lastHead, Math.max(1, spec.tempo().quedaTicks()), (float) spec.esfera().raioQueda(), ScreenFx.now()));
+    // A sun falling from start onto a target's head over ticks (the old Shift + C fall; kept for anything that sends one).
+    public static void fall(int targetId, Vec3 start, Vec3 lastHead, int ticks, float radius) {
+        FALLS.add(new Fall(targetId, start, lastHead, Math.max(1, ticks), radius, ScreenFx.now()));
+    }
+
+    // From start towards the head it follows, slow and heavy, a little faster at the end.
+    private static Vec3 fallAt(Vec3 start, Vec3 head, double k) {
+        k = Math.max(0, Math.min(1, k));
+        return start.lerp(head, k * 0.6 + k * k * 0.4);
     }
 
     public static boolean active() {
@@ -52,7 +56,7 @@ public final class EsferaRenderer {
         FALLS.removeIf(f -> {
             Entity target = level.getEntity(f.target());
             Vec3 head = target != null && target.isAlive() ? target.position().add(0, target.getBbHeight(), 0) : f.lastHead();
-            return EsferaSpec.fallAt(f.start(), head, (now - f.born()) / (double) f.ticks()).distanceTo(pos) < radius + f.radius() + 3;
+            return fallAt(f.start(), head, (now - f.born()) / (double) f.ticks()).distanceTo(pos) < radius + f.radius() + 3;
         });
     }
 
@@ -67,8 +71,8 @@ public final class EsferaRenderer {
             Entity target = level.getEntity(f.target());
             Vec3 head = target != null && target.isAlive() ? target.getPosition(partial).add(0, target.getBbHeight(), 0) : f.lastHead();
             double k = (now - f.born()) / f.ticks();
-            Vec3 center = EsferaSpec.fallAt(f.start(), head, k);
-            Vec3 ahead = EsferaSpec.fallAt(f.start(), head, Math.min(1, k + 0.02));
+            Vec3 center = fallAt(f.start(), head, k);
+            Vec3 ahead = fallAt(f.start(), head, Math.min(1, k + 0.02));
             Vec3 dir = ahead.subtract(center);
             drawSun(center.subtract(camera).toVector3f(), dir.lengthSqr() < 1.0E-6 ? new Vector3f(0, -1, 0) : dir.normalize().toVector3f(), f.radius(),
                     (float) (now - f.born()), f.target() * 131 + 7);

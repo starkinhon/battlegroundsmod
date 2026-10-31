@@ -1,6 +1,7 @@
 package com.starkinhon.battlegroundsmod.client;
 
 import com.starkinhon.battlegroundsmod.client.fx.ScreenFx;
+import com.starkinhon.battlegroundsmod.client.fx.SkillEffects;
 import com.starkinhon.battlegroundsmod.skill.EsferaSpec;
 
 import net.minecraft.client.CameraType;
@@ -15,29 +16,32 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.client.event.MovementInputUpdateEvent;
 
-// Bills' trip to outer space (Esfera da Destruição), seen by Bills only. First the camera looks up at him; a white flash
-// and he is in space (client/fx/SpaceScene draws it over the world): a wide shot over the square Earth while the sphere
-// grows over his hand, a close shot of his face while he says his line, then from behind as he throws it at the planet.
-// A last flash and the player is back in their own view, with the sphere falling from the sky. Timing from
-// bills.esfera.json; the space is laid out from where he stood and faced when it started.
+// Bills' Esfera da Destruição Planetária (Shift + C), seen by Bills and his target. In front of him as he puts his
+// hands behind his back and vanishes in black streaks; then outer space (client/fx/SpaceScene draws it over the world):
+// seen from the front as he appears there, then from over his shoulder looking down at the target lying adrift below
+// him, slowly falling towards the Earth; close from the front while he charges the sphere between his hands; from the
+// side as he throws it; over his shoulder again as it implodes into a giant sun and flies down to the target, and the
+// explosion of flames. A flash and the players are back in their own view. Timing from bills.esfera.json; space is
+// laid out from where he stood and faced when it started (the server lays out the landing the same way).
 public final class EsferaCutscene {
     private static final double BAR_HEIGHT = 0.11;
 
     private static int casterId = -1;
+    private static int targetId = -1;
+    private static boolean awakened;
     private static EsferaSpec spec;
     private static int age;
     private static Vec3 origin = Vec3.ZERO;
     private static Vec3 forward = new Vec3(0, 0, 1);
     private static CameraType previousCameraType = CameraType.FIRST_PERSON;
     private static boolean previousHideGui;
-    private static boolean flashedIn;
 
     private EsferaCutscene() {
     }
 
-    public static void start(int caster, boolean awakened) {
+    public static void start(int caster, int target, boolean isAwakened) {
         Minecraft minecraft = Minecraft.getInstance();
-        EsferaSpec next = EsferaSpec.get(awakened);
+        EsferaSpec next = EsferaSpec.get(isAwakened);
         Entity entity = minecraft.level == null ? null : minecraft.level.getEntity(caster);
         if (!next.cutscene().ativa() || entity == null) {
             return;
@@ -47,9 +51,10 @@ public final class EsferaCutscene {
             previousHideGui = minecraft.options.hideGui;
         }
         casterId = caster;
+        targetId = target;
+        awakened = isAwakened;
         spec = next;
         age = 0;
-        flashedIn = false;
         origin = entity.position();
         forward = Vec3.directionFromRotation(0, entity.getYRot());
         minecraft.options.setCameraType(CameraType.THIRD_PERSON_BACK);
@@ -60,13 +65,17 @@ public final class EsferaCutscene {
         return casterId >= 0;
     }
 
-    // The space scene is up (between the two flashes).
+    // The space scene is up.
     public static boolean inSpace() {
-        return casterId >= 0 && age >= spec.spaceTick() && age < spec.fallTick();
+        return casterId >= 0 && age >= spec.spaceTick() && age < spec.endTick();
     }
 
     public static int casterId() {
         return casterId;
+    }
+
+    public static int targetId() {
+        return targetId;
     }
 
     public static EsferaSpec spec() {
@@ -79,6 +88,15 @@ public final class EsferaCutscene {
 
     public static Vec3 forward() {
         return forward;
+    }
+
+    public static Vec3 right() {
+        return new Vec3(-forward.z, 0, forward.x);
+    }
+
+    // Ticks since the cutscene started, with the frame's fraction.
+    public static double time(float partialTick) {
+        return age + partialTick;
     }
 
     // Ticks since he got to space, with the frame's fraction.
@@ -96,12 +114,19 @@ public final class EsferaCutscene {
             return;
         }
         age++;
-        if (!flashedIn && age >= spec.spaceTick() - 2) {
-            flashedIn = true;
-            ScreenFx.flash(0xFFFFFF, 1, 7);
+        Entity caster = minecraft.level.getEntity(casterId);
+        // The moments only the two screens in space see.
+        if (age == spec.spaceTick()) {
+            ScreenFx.flash(0xFFFFFF, 0.8f, 6);
+            SkillEffects.play(EsferaSpec.SKILL, awakened, "chegada", caster.position(), forward, -1, 0);
+        } else if (age == spec.flyTick() + implodeTicks()) {
+            double[] r = {1};
+            SkillEffects.play(EsferaSpec.SKILL, awakened, "implodir", spherePos(caster, 0, r), forward, -1, 0);
+        } else if (age == spec.blastTick()) {
+            SkillEffects.play(EsferaSpec.SKILL, awakened, "explosaoEspaco", targetPos(0), forward, -1, spec.endTick() - spec.blastTick());
         }
-        if (age >= spec.fallTick()) {
-            ScreenFx.flash(0xFFF2D0, 0.9f, 8);
+        if (age >= spec.endTick()) {
+            ScreenFx.flash(0xFFFFFF, 0.9f, 8);
             stop(minecraft);
             return;
         }
@@ -110,6 +135,7 @@ public final class EsferaCutscene {
 
     private static void stop(Minecraft minecraft) {
         casterId = -1;
+        targetId = -1;
         minecraft.options.setCameraType(previousCameraType);
         minecraft.options.hideGui = previousHideGui;
     }
@@ -126,34 +152,84 @@ public final class EsferaCutscene {
         input.shiftKeyDown = false;
     }
 
-    // Where the sphere is in space: growing over his raised hand while he charges, then flying down to the planet.
-    // Also tells its radius (out[0]).
-    public static Vec3 spherePos(Entity caster, float partialTick, double[] radius) {
-        double s = spaceAge(partialTick);
-        int charge = Math.max(1, spec.tempo().cargaTicks());
-        int throwTicks = Math.max(1, spec.tempo().lancarTicks());
-        double full = spec.esfera().raioEspaco();
-        double k = smooth(s / charge);
-        double r = Mth.lerp(k, 0.25, full);
-        Vec3 right = new Vec3(-forward.z, 0, forward.x);
-        Vec3 overHand = caster.getEyePosition(partialTick).add(right.scale(0.35)).add(forward.scale(0.3)).add(0, 1.1 + full, 0);
-        Vec3 held = overHand.subtract(0, full - r, 0);
-        radius[0] = r;
-        if (s < charge) {
-            return held;
-        }
-        double f = Math.min(1, (s - charge) / throwTicks);
-        return overHand.lerp(planetTop(), Math.pow(f, 1.6));
-    }
+    // ---------- where things are in space ----------
 
     public static Vec3 planetCenter() {
         EsferaSpec.Espaco e = spec.espaco();
-        return origin.add(forward.scale(e.distancia())).add(0, -e.abaixo(), 0);
+        return origin.add(forward.scale(e.distancia())).subtract(right().scale(e.lado())).add(0, -e.abaixo(), 0);
     }
 
     public static Vec3 planetTop() {
         return planetCenter().add(0, spec.espaco().tamanho() / 2, 0);
     }
+
+    // The target adrift: below and ahead of him, sinking slowly towards the Earth.
+    public static Vec3 targetPos(float partialTick) {
+        EsferaSpec.Deriva d = spec.deriva();
+        Vec3 start = origin.add(forward.scale(d.frente())).add(0, -d.abaixo(), 0);
+        Vec3 down = planetTop().subtract(start);
+        down = down.lengthSqr() < 1.0E-6 ? new Vec3(0, -1, 0) : down.normalize();
+        double s = Math.max(0, spaceAge(partialTick));
+        // A slow sway on top of the sinking, like floating.
+        Vec3 sway = right().scale(Math.sin(s * 0.03) * 0.4).add(0, Math.sin(s * 0.045) * 0.25, 0);
+        return start.add(down.scale(s * d.velocidade())).add(sway);
+    }
+
+    // How the target is turned lying there (degrees around the vertical).
+    public static float targetSpin(float partialTick) {
+        return (float) (Math.max(0, spaceAge(partialTick)) * spec.deriva().giro()) + 25;
+    }
+
+    public static Vec3 chest(Entity caster, float partialTick) {
+        return caster.getPosition(partialTick).add(0, caster.getBbHeight() * 0.62, 0);
+    }
+
+    public static int implodeTicks() {
+        return Math.min(8, Math.max(2, spec.tempo().vooTicks() / 5));
+    }
+
+    // Where the sphere is and how big (radius[0]); radius 0 when there is none.
+    public static Vec3 spherePos(Entity caster, float partialTick, double[] radius) {
+        double t = time(partialTick);
+        EsferaSpec.Esfera e = spec.esfera();
+        Vec3 hands = chest(caster, partialTick).add(forward.scale(0.75));
+        double charge = Math.max(0.05, e.raioCarga());
+        if (t < spec.chargeTick()) {
+            radius[0] = 0;
+            return hands;
+        }
+        if (t < spec.throwTick()) {
+            double k = (t - spec.chargeTick()) / Math.max(1, spec.throwTick() - spec.chargeTick());
+            radius[0] = Mth.lerp(smooth(Math.min(1, k * 1.4)), 0.04, charge);
+            return hands;
+        }
+        Vec3 aim = targetPos(partialTick).add(0, 0.4, 0);
+        Vec3 out = hands.add(aim.subtract(hands).normalize().scale(4));
+        if (t < spec.flyTick()) {
+            // Thrown: out of his hands, still small.
+            double k = (t - spec.throwTick()) / Math.max(1, spec.flyTick() - spec.throwTick());
+            radius[0] = charge;
+            return hands.lerp(out, 1 - (1 - k) * (1 - k));
+        }
+        if (t < spec.blastTick()) {
+            double s = t - spec.flyTick();
+            int implode = implodeTicks();
+            double big = Math.max(charge, e.raioGigante());
+            if (s < implode) {
+                // In to a point, then all at once a giant sun.
+                radius[0] = charge * (1 - 0.7 * smooth(s / implode));
+                return out;
+            }
+            double grow = (s - implode) / 3;
+            radius[0] = grow < 1 ? Mth.lerp(grow, charge * 0.3, big * 1.12) : big * (1 + 0.12 * Math.max(0, 1 - (grow - 1) / 3));
+            double k = (s - implode) / Math.max(1, spec.blastTick() - spec.flyTick() - implode);
+            return out.lerp(aim, k * k * (1.6 - 0.6 * k));
+        }
+        radius[0] = 0;
+        return aim;
+    }
+
+    // ---------- the camera ----------
 
     public static FaceCutscene.Shot shot(float partialTick) {
         Minecraft minecraft = Minecraft.getInstance();
@@ -162,41 +238,49 @@ public final class EsferaCutscene {
         if (caster == null || viewer == null) {
             return null;
         }
-        double t = age + partialTick;
+        double t = time(partialTick);
         Vec3 eyes = caster.getEyePosition(partialTick);
-        Vec3 feet = caster.getPosition(partialTick);
-        Vec3 right = new Vec3(-forward.z, 0, forward.x);
-        int charge = Math.max(1, spec.tempo().cargaTicks());
+        Vec3 chest = chest(caster, partialTick);
+        Vec3 right = right();
+        Vec3 target = targetPos(partialTick);
         Vec3 pos;
         Vec3 look;
         if (t < spec.spaceTick()) {
-            // From low in front, looking up at him as he looks up.
+            // From the front, a little low, as he puts his hands behind his back.
             double k = smooth(t / spec.spaceTick());
-            pos = eyes.add(forward.scale(Mth.lerp(k, 2.6, 1.7))).add(right.scale(0.5)).add(0, -0.9, 0);
-            look = eyes.add(0, 0.4 + 0.6 * k, 0);
-        } else {
-            double s = t - spec.spaceTick();
+            pos = eyes.add(forward.scale(Mth.lerp(k, 3.4, 2.8))).add(right.scale(0.35)).add(0, -0.35, 0);
+            look = eyes.add(0, -0.3, 0);
+        } else if (t < spec.aimTick()) {
+            // In space, from the front: he has just appeared.
+            double k = smooth((t - spec.spaceTick()) / (spec.aimTick() - spec.spaceTick()));
+            pos = eyes.add(forward.scale(Mth.lerp(k, 4.2, 3.0))).add(right.scale(-0.4)).add(0, Mth.lerp(k, -0.6, -0.2), 0);
+            look = eyes.add(0, -0.35, 0);
+        } else if (t < spec.chargeTick()) {
+            // Over his shoulder, high, looking down past him at the target adrift and the Earth far below.
+            double k = smooth((t - spec.aimTick()) / (spec.chargeTick() - spec.aimTick()));
+            pos = eyes.subtract(forward.scale(Mth.lerp(k, 2.6, 1.9))).add(right.scale(0.95)).add(0, Mth.lerp(k, 1.9, 1.5), 0);
+            look = target.add(0, 0.3, 0);
+        } else if (t < spec.throwTick()) {
+            // Close from the front, a little low: the sphere forming between his hands.
+            double k = smooth((t - spec.chargeTick()) / (spec.throwTick() - spec.chargeTick()));
+            pos = chest.add(forward.scale(Mth.lerp(k, 3.0, 2.3))).add(right.scale(0.55)).add(0, -0.45, 0);
+            look = chest.add(forward.scale(0.5)).add(0, 0.15, 0);
+        } else if (t < spec.flyTick()) {
+            // From the side as he throws it.
+            pos = chest.add(right.scale(4.6)).add(forward.scale(1.2)).add(0, 0.5, 0);
+            look = chest.add(forward.scale(1.8));
+        } else if (t < spec.blastTick()) {
+            // Over his shoulder again, the sun flying down to the target.
             double[] r = {1};
             Vec3 ball = spherePos(caster, partialTick, r);
-            if (s < charge * 0.5) {
-                // Wide, slowly going around him: Bills, the growing sphere and the planet below.
-                double a = -0.7 + 0.6 * s / (charge * 0.5);
-                Vec3 around = forward.yRot((float) a);
-                // Far enough back that the full-grown sphere over his hand still fits.
-                double back = 9 + 2.2 * spec.esfera().raioEspaco();
-                pos = feet.add(around.scale(back)).add(0, back * 0.35, 0);
-                look = feet.add(0, 2.2, 0).lerp(ball, 0.4);
-            } else if (s < charge) {
-                // His face, close, while he says it.
-                double k = smooth((s - charge * 0.5) / (charge * 0.5));
-                pos = eyes.add(forward.scale(Mth.lerp(k, 1.9, 1.35))).add(right.scale(0.45)).add(0, -0.2, 0);
-                look = eyes.add(0, 0.05, 0);
-            } else {
-                // From behind and above, following the sphere down to the planet.
-                double back = 5 + spec.esfera().raioEspaco();
-                pos = feet.subtract(forward.scale(back)).add(right.scale(2.5)).add(0, back * 0.9, 0);
-                look = ball;
-            }
+            double back = 3 + Math.max(0, r[0]) * 0.25;
+            pos = eyes.subtract(forward.scale(back)).add(right.scale(1.4)).add(0, 2.2, 0);
+            look = ball.lerp(target, 0.45);
+        } else {
+            // Pulling back from the explosion.
+            double k = smooth((t - spec.blastTick()) / Math.max(1, spec.endTick() - spec.blastTick()));
+            pos = eyes.subtract(forward.scale(Mth.lerp(k, 4, 8))).add(right.scale(2)).add(0, Mth.lerp(k, 3, 5), 0);
+            look = target;
         }
         Vec3 dir = look.subtract(pos);
         float yaw = (float) (Mth.atan2(dir.z, dir.x) * Mth.RAD_TO_DEG) - 90;
