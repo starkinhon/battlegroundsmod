@@ -154,8 +154,10 @@ public final class HakaiBola {
         }
     }
 
+    // Centered on the "uso" light (the clarao over his head: seguir "cabeca", altura = bola.acima), so the ball grows
+    // right out of the flash instead of floating above it.
     private static Vec3 overHand(LivingEntity caster, HakaiBolaSpec.Bola bola, double radius) {
-        return caster.position().add(0, caster.getBbHeight() + 0.6 + bola.acima() + radius, 0).add(Combat.flatLook(caster).scale(0.3));
+        return caster.getEyePosition().add(0, bola.acima(), 0).add(Combat.flatLook(caster).scale(0.3));
     }
 
     private static void send(ServerLevel level, int id, int mode, Vec3 pos, int targetId, float radius, boolean awakened) {
