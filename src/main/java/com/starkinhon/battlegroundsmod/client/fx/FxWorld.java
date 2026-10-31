@@ -116,7 +116,7 @@ public final class FxWorld {
         ScreenFx.capture(event);
         boolean world = !PIECES.isEmpty() || MeteorRenderer.hasTrails() || Aura.active() || KatonBallRenderer.active() || AshDeath.hasSparks()
                 || SpaceScene.active() || EsferaRenderer.active() || HakaiRenderer.active() || EnergyRenderer.active()
-                || PlanetaryRenderer.active() || SusanooArm.active();
+                || SphereRenderer.active() || SusanooArm.active();
         if (!world && !ScreenFx.needsScene()) {
             return;
         }
@@ -177,7 +177,7 @@ public final class FxWorld {
             EsferaRenderer.render(camera, now, partial);
             HakaiRenderer.render(camera, now, partial);
             EnergyRenderer.render(camera, now, partial);
-            PlanetaryRenderer.render(camera, now, partial);
+            SphereRenderer.render(camera, now, partial);
             SusanooArm.render(source, flat, camera, now, partial);
         }
         if (flat) {

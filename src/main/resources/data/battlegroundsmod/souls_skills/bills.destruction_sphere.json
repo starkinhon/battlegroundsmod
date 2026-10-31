@@ -1,14 +1,13 @@
 {
   "formato": "souls-skill/1",
-  "skill": "bills.planetary_destruction",
-  "nome": "Planetary Destruction",
+  "skill": "bills.destruction_sphere",
+  "nome": "Esfera da Destruição",
   "tempo": {
     "atrasoTicks": 200,
     "duracaoTicks": 8
   },
   "alvo": {
-    "alcance": 90,
-    "detectar": 24
+    "alcance": 120
   },
   "carga": {
     "formarTicks": 8,
@@ -18,12 +17,9 @@
   "bola": {
     "raio": 0.125,
     "raioGigante": 8.7,
-    "subir": 10,
-    "subirTicks": 16,
-    "alturaSobreAlvo": 10,
-    "velocidade": 0.5,
+    "velocidade": 0.6,
     "velocidadeGigante": 0.45,
-    "curva": 0.15,
+    "curva": 0.2,
     "implodirTicks": 80,
     "encolherTicks": 6,
     "crescerTicks": 4,

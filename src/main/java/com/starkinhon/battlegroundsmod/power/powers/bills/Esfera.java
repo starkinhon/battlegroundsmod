@@ -24,7 +24,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
 
-// C: Esfera da Destruição (bills.esfera.json). Bills leaves for outer space in a cutscene only he sees (client/
+// Shift + C: Esfera da Destruição, the space version (bills.esfera.json; the normal C is DestructionSphere). Bills leaves for outer space in a cutscene only he sees (client/
 // EsferaCutscene): over the square Earth he charges a sun of destruction, says his line and throws it at the planet.
 // Everyone else sees him vanish in a flash. When he is back, a sun the size of two meteors comes down slowly from 300
 // blocks up following the target's head (client/fx/EsferaRenderer draws it with the same path), shaking the screen

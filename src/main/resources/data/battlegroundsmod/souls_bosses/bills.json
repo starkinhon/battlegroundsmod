@@ -156,21 +156,8 @@
       "avisoCor": "#9b30ff",
       "avisoSom": ""
     },
-    "planetary_destruction": {
-      "slot": 7,
-      "tipo": "livre",
-      "peso": 0.8,
-      "recargaTicks": 600,
-      "recargaMaxTicks": 900,
-      "avisoTicks": 6,
-      "distanciaMin": 8,
-      "distanciaMax": 60,
-      "giroGrausPorTick": 20,
-      "avisoCor": "#ffb040",
-      "avisoSom": "minecraft:block.beacon.activate"
-    },
     "destruction_touch": {
-      "slot": 12,
+      "slot": 7,
       "tipo": "livre",
       "peso": 0.7,
       "recargaTicks": 700,
@@ -182,8 +169,21 @@
       "avisoCor": "#ff70d8",
       "avisoSom": "minecraft:block.amethyst_block.chime"
     },
-    "esfera": {
+    "destruction_sphere": {
       "slot": 2,
+      "tipo": "livre",
+      "peso": 0.9,
+      "recargaTicks": 500,
+      "recargaMaxTicks": 800,
+      "avisoTicks": 6,
+      "distanciaMin": 8,
+      "distanciaMax": 60,
+      "giroGrausPorTick": 20,
+      "avisoCor": "#ffb040",
+      "avisoSom": "minecraft:block.beacon.activate"
+    },
+    "esfera": {
+      "slot": 10,
       "tipo": "ult",
       "peso": 0.9,
       "recargaTicks": 1200,
@@ -252,8 +252,8 @@
         "destruction_bop",
         "destruction_energy",
         "destruction_energy_chuva",
-        "planetary_destruction",
         "destruction_touch",
+        "destruction_sphere",
         "forte",
         "barragem"
       ],
@@ -283,8 +283,8 @@
         "destruction_bop",
         "destruction_energy",
         "destruction_energy_chuva",
-        "planetary_destruction",
         "destruction_touch",
+        "destruction_sphere",
         "esfera",
         "forte",
         "barragem"

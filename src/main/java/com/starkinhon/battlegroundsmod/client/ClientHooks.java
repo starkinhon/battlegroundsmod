@@ -106,7 +106,7 @@ public final class ClientHooks {
         com.starkinhon.battlegroundsmod.client.fx.KatonBallRenderer.clear();
         com.starkinhon.battlegroundsmod.client.fx.HakaiRenderer.clear();
         com.starkinhon.battlegroundsmod.client.fx.EnergyRenderer.clear();
-        com.starkinhon.battlegroundsmod.client.fx.PlanetaryRenderer.clear();
+        com.starkinhon.battlegroundsmod.client.fx.SphereRenderer.clear();
     }
 
     public static void hideEntity(int entityId, int ticks) {
@@ -159,11 +159,11 @@ public final class ClientHooks {
     }
 
     public static void planetSphere(int id, int mode, Vec3 pos, float radius, boolean giant) {
-        com.starkinhon.battlegroundsmod.client.fx.PlanetaryRenderer.sphere(id, mode, pos, radius, giant);
+        com.starkinhon.battlegroundsmod.client.fx.SphereRenderer.sphere(id, mode, pos, radius, giant);
     }
 
     public static void planetBlast(Vec3 pos, boolean awakened) {
-        com.starkinhon.battlegroundsmod.client.fx.PlanetaryRenderer.blast(pos, awakened);
+        com.starkinhon.battlegroundsmod.client.fx.SphereRenderer.blast(pos, awakened);
     }
 
     public static void bossBarStyle(UUID barId, String texture, int frames, int width, int height, int glow) {

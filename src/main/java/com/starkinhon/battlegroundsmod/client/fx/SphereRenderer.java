@@ -8,14 +8,14 @@ import java.util.Map;
 import org.joml.Vector3f;
 
 import com.starkinhon.battlegroundsmod.client.ScreenShake;
-import com.starkinhon.battlegroundsmod.skill.PlanetaryDestructionSpec;
+import com.starkinhon.battlegroundsmod.skill.DestructionSphereSpec;
 
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 
-// Bills' Planetary Destruction (power/powers/bills/PlanetaryDestruction), drawn with shader shapes only (no textures).
+// Bills' Esfera da Destruição on C (power/powers/bills/DestructionSphere), drawn with shader shapes only (no textures).
 // The ball is the Esfera's sun (EsferaRenderer.drawSun) at any size: tiny at his finger and while it chases the target,
 // lines of light rushing into it while it implodes, a white shell and a ring blown out when it bursts to full size, and
 // the screen shaking for whoever is close to it while it is huge.
@@ -24,7 +24,7 @@ import net.minecraft.world.phys.Vec3;
 // mushroom. Then all of it runs back into a point (time rewinding, light sucked in), waits a moment and blows up again,
 // bigger, with a shockwave running out along the ground. The whole explosion is a function of how far along it is, so
 // rewinding is just running that backwards.
-public final class PlanetaryRenderer {
+public final class SphereRenderer {
     // prev/pos: the last two positions the server sent (one per tick), to slide between them.
     private record Ball(Vec3 prev, Vec3 pos, float prevRadius, float radius, boolean giant, long updated, long born, long burst) {
     }
@@ -49,7 +49,7 @@ public final class PlanetaryRenderer {
     private static final float[] SKY = FxDraw.rgb(0xDDEBFF);
     private static final float[] REWIND = FxDraw.rgb(0xB8D4FF);
 
-    private PlanetaryRenderer() {
+    private SphereRenderer() {
     }
 
     public static void sphere(int id, int mode, Vec3 pos, float radius, boolean giant) {
@@ -95,8 +95,8 @@ public final class PlanetaryRenderer {
         }
     }
 
-    private static PlanetaryDestructionSpec spec(boolean awakened) {
-        return PlanetaryDestructionSpec.get(awakened);
+    private static DestructionSphereSpec spec(boolean awakened) {
+        return DestructionSphereSpec.get(awakened);
     }
 
     // ---------- the ball ----------
@@ -147,7 +147,7 @@ public final class PlanetaryRenderer {
                 FxDraw.disk(new Vector3f(at), new Vector3f(0.15f, 1, 0.1f), r * (2.5f + 7 * out), FxDraw.RING, 0.03f, PALE, (1 - k) * 0.7f, true);
             }
             // Close to it while it is huge, the screen shakes (less the farther away).
-            PlanetaryDestructionSpec.Tremor tremor = spec(false).tremor();
+            DestructionSphereSpec.Tremor tremor = spec(false).tremor();
             double reach = Math.max(1, tremor.alcance()) + r;
             if (b.giant() && distance < reach && tremor.forca() > 0) {
                 ScreenShake.start((float) (tremor.forca() * (1 - distance / reach)), 4);
@@ -158,7 +158,7 @@ public final class PlanetaryRenderer {
     // ---------- the explosion ----------
 
     private static void drawBlast(Blast b, Vec3 camera, float age) {
-        PlanetaryDestructionSpec.Explosao e = spec(b.awakened()).explosao();
+        DestructionSphereSpec.Explosao e = spec(b.awakened()).explosao();
         Vector3f at = b.pos().subtract(camera).toVector3f();
         float r1 = (float) Math.max(2, e.raio());
         float r2 = (float) Math.max(r1, e.raio2());

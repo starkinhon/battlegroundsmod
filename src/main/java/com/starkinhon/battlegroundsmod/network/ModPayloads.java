@@ -553,7 +553,7 @@ public final class ModPayloads {
         }
     }
 
-    // Server -> client: the sphere of Bills' Planetary Destruction (power/powers/bills/PlanetaryDestruction), sent every
+    // Server -> client: the sphere of Bills' Esfera da Destruição on C (power/powers/bills/DestructionSphere), sent every
     // tick it exists. mode 0 = there at pos with radius, 2 = gone. giant: past the implosion (the screen shakes near it).
     public record PlanetSphere(int id, int mode, Vec3 pos, float radius, boolean giant) implements CustomPacketPayload {
         public static final Type<PlanetSphere> TYPE = payloadType("planet_sphere");
@@ -571,8 +571,8 @@ public final class ModPayloads {
         }
     }
 
-    // Server -> client: the Planetary Destruction hit the ground at pos. The whole explosion (the blast, the smoke
-    // rising, the rewind and the second blast) plays from here on the timing in bills.planetary_destruction.json.
+    // Server -> client: the Esfera da Destruição (C) hit the ground at pos. The whole explosion (the blast, the smoke
+    // rising, the rewind and the second blast) plays from here on the timing in bills.destruction_sphere.json.
     public record PlanetBlast(Vec3 pos, boolean awakened) implements CustomPacketPayload {
         public static final Type<PlanetBlast> TYPE = payloadType("planet_blast");
         public static final StreamCodec<ByteBuf, PlanetBlast> STREAM_CODEC = StreamCodec.composite(
