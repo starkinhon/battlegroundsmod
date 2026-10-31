@@ -7,6 +7,7 @@ import com.starkinhon.battlegroundsmod.client.BossCutscene;
 import com.starkinhon.battlegroundsmod.client.EsferaCutscene;
 import com.starkinhon.battlegroundsmod.client.FaceCutscene;
 import com.starkinhon.battlegroundsmod.client.Fear;
+import com.starkinhon.battlegroundsmod.client.BopCutscene;
 import com.starkinhon.battlegroundsmod.client.GrabCutscene;
 import com.starkinhon.battlegroundsmod.client.HakaiCutscene;
 import com.starkinhon.battlegroundsmod.client.fx.AshDeath;
@@ -82,6 +83,7 @@ public class BattlegroundsModClient {
         NeoForge.EVENT_BUS.addListener(MovementInputUpdateEvent.class, FaceCutscene::onMovementInput);
         NeoForge.EVENT_BUS.addListener(MovementInputUpdateEvent.class, BossCutscene::onMovementInput);
         NeoForge.EVENT_BUS.addListener(MovementInputUpdateEvent.class, GrabCutscene::onMovementInput);
+        NeoForge.EVENT_BUS.addListener(MovementInputUpdateEvent.class, BopCutscene::onMovementInput);
         NeoForge.EVENT_BUS.addListener(MovementInputUpdateEvent.class, HakaiCutscene::onMovementInput);
         NeoForge.EVENT_BUS.addListener(MovementInputUpdateEvent.class, EsferaCutscene::onMovementInput);
     }
@@ -101,6 +103,7 @@ public class BattlegroundsModClient {
         // Impact frames and flashes cover the world and the hand, but not the HUD.
         event.registerBelowAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "screen_fx"), ScreenFx::renderGui);
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "cutscene_bars"), GrabCutscene::renderGui);
+        event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "bop_cutscene"), BopCutscene::renderGui);
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "hakai_cutscene"), HakaiCutscene::renderGui);
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "esfera_cutscene"), EsferaCutscene::renderGui);
     }
@@ -139,6 +142,7 @@ public class BattlegroundsModClient {
         BossCutscene.tick();
         ShoulderCutscene.tick();
         GrabCutscene.tick();
+        BopCutscene.tick();
         HakaiCutscene.tick();
         EsferaCutscene.tick();
         Vanish.tick();
