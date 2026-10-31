@@ -142,6 +142,13 @@ public final class Defense {
         Fx.effects(level, "padrao.defesa", false, momento, between, dir.lengthSqr() < 1.0E-4 ? attacker.getLookAngle() : dir.normalize());
     }
 
+    // Drops whoever left the world (logged out, died, unloaded), so a long-running server doesn't keep them around.
+    public static void prune() {
+        GUARDING.keySet().removeIf(Entity::isRemoved);
+        BROKEN_UNTIL.keySet().removeIf(Entity::isRemoved);
+        BLOCKED_AT.keySet().removeIf(Entity::isRemoved);
+    }
+
     public static void clear() {
         GUARDING.clear();
         BROKEN_UNTIL.clear();

@@ -10,6 +10,7 @@ import com.starkinhon.battlegroundsmod.client.ClientHooks;
 import com.starkinhon.battlegroundsmod.combat.CombatMode;
 import com.starkinhon.battlegroundsmod.combat.Defense;
 import com.starkinhon.battlegroundsmod.combat.Melee;
+import com.starkinhon.battlegroundsmod.combat.Tasks;
 import com.starkinhon.battlegroundsmod.movement.Movement;
 import com.starkinhon.battlegroundsmod.power.PowerData;
 import com.starkinhon.battlegroundsmod.power.PowerLogic;
@@ -672,12 +673,12 @@ public final class ModPayloads {
         PayloadRegistrar registrar = event.registrar("1");
         registrar.playToServer(UseAbility.TYPE, UseAbility.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer player) {
-                PowerLogic.tryUse(player, payload.slot());
+                Tasks.as(player, () -> PowerLogic.tryUse(player, payload.slot()));
             }
         }));
         registrar.playToServer(UseMovement.TYPE, UseMovement.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer player) {
-                Movement.onPlayerMove(player, payload.kind(), payload.forward(), payload.strafe());
+                Tasks.as(player, () -> Movement.onPlayerMove(player, payload.kind(), payload.forward(), payload.strafe()));
             }
         }));
         registrar.playToServer(Punch.TYPE, Punch.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
@@ -686,14 +687,14 @@ public final class ModPayloads {
             }
             if (payload.key()) {
                 CombatMode.enter(player);
-                Melee.punch(player, null);
+                Tasks.as(player, () -> Melee.punch(player, null));
             } else if (player.getMainHandItem().isEmpty() && CombatMode.in(player)) {
-                Melee.punch(player, null);
+                Tasks.as(player, () -> Melee.punch(player, null));
             }
         }));
         registrar.playToServer(Guard.TYPE, Guard.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer player) {
-                Defense.setGuard(player, payload.down());
+                Tasks.as(player, () -> Defense.setGuard(player, payload.down()));
             }
         }));
         registrar.playToServer(AttackHold.TYPE, AttackHold.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
@@ -708,7 +709,7 @@ public final class ModPayloads {
         }));
         registrar.playToServer(Teleport.TYPE, Teleport.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer player) {
-                Movement.teleport(player);
+                Tasks.as(player, () -> Movement.teleport(player));
             }
         }));
         registrar.playToServer(SelectPower.TYPE, SelectPower.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {

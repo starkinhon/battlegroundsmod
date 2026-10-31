@@ -67,6 +67,9 @@ public final class PowerEvents {
 
     private static void onServerTick(ServerTickEvent.Post event) {
         Tasks.tick();
+        if (event.getServer().getTickCount() % 200 == 0) {
+            Defense.prune();
+        }
     }
 
     private static void onServerStopped(ServerStoppedEvent event) {
@@ -81,9 +84,11 @@ public final class PowerEvents {
 
     private static void onPlayerTick(PlayerTickEvent.Post event) {
         if (event.getEntity() instanceof ServerPlayer player) {
-            PowerLogic.tick(player);
-            Movement.tick(player);
-            Defense.tick(player);
+            Tasks.as(player, () -> {
+                PowerLogic.tick(player);
+                Movement.tick(player);
+                Defense.tick(player);
+            });
         }
     }
 
