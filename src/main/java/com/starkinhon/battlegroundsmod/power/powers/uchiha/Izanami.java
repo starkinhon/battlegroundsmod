@@ -42,7 +42,7 @@ import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 
-// Shift + X: Izanami. From the moment it is used, everything within raio is recorded for gravacaoTicks (15 s): where
+// Shift + X: Izanami. From the moment it is used, everything within raio is recorded for gravacaoTicks (30 s): where
 // every living thing goes, its life, effects, fire and hunger, every block that changes, everything that appears.
 // Nobody dies in that time: whoever would is held as a ghost (hidden, frozen, untouchable). Then the world stops, the
 // camera goes to the caster's eyes, and it all plays backwards until it is as it was: damage, moves, deaths, blocks.

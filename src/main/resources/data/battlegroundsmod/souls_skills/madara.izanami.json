@@ -2,7 +2,7 @@
   "formato": "souls-skill/1",
   "skill": "madara.izanami",
   "nome": "Izanami",
-  "gravacaoTicks": 300,
+  "gravacaoTicks": 600,
   "raio": 80,
   "voltarTicks": 60,
   "cutscene": {
