@@ -10,5 +10,11 @@
   "velocidadeAndarPorTier": 0.02,
   "speedCorrendoPorTier": 1,
   "tierVelocidadeMax": 5,
-  "nomes": ["Deus", "Multiversal", "Universal", "Galáctico", "Estelar", "Planetário", "Continental", "Cidade", "Quarteirão", "Rua", "Humano"]
+  "nomes": ["Deus", "Multiversal", "Universal", "Galáctico", "Estelar", "Planetário", "Continental", "Cidade", "Quarteirão", "Rua", "Humano"],
+  "bossTier0": {
+    "vida": 1000,
+    "armadura": 20,
+    "resistenciaEmpurrao": 0.9,
+    "multDano": 1.0
+  }
 }

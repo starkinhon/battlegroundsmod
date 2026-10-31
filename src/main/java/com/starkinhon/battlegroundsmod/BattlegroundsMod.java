@@ -3,6 +3,7 @@ package com.starkinhon.battlegroundsmod;
 import org.slf4j.Logger;
 
 import com.mojang.logging.LogUtils;
+import com.starkinhon.battlegroundsmod.boss.BossRules;
 import com.starkinhon.battlegroundsmod.command.BossCommand;
 import com.starkinhon.battlegroundsmod.command.SoulCommand;
 import com.starkinhon.battlegroundsmod.fx.ModParticles;
@@ -53,6 +54,7 @@ public class BattlegroundsMod {
         ModSounds.SOUND_EVENTS.register(modEventBus);
         ModEffects.MOB_EFFECTS.register(modEventBus);
 
+        BossRules.init();
         PowerEvents.register();
         SoulCommand.addSubcommand(BossCommand::bossbar);
         SoulCommand.addSubcommand(BossCommand::boss);
