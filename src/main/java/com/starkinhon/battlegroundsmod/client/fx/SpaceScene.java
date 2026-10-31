@@ -159,7 +159,7 @@ public final class SpaceScene {
                     float back = r * (0.8f + k * 0.55f);
                     Vector3f at = new Vector3f(dir).mul(-back).add(ball).add(FxWorld.sphere(91, k + (int) now % 3).mul(r * 0.25f));
                     float fade = 1 - k / 14f;
-                    FxDraw.billboard(at, r * (1.6f - k * 0.06f), now * 0.05f + k, FxDraw.FIRE, k / 14f, FxDraw.mix(FIRE_HOT, FIRE_DEEP, k / 14f),
+                    FxDraw.billboard(at, r * (1.6f - k * 0.06f), (float) now * 0.05f + k, FxDraw.FIRE, k / 14f, FxDraw.mix(FIRE_HOT, FIRE_DEEP, k / 14f),
                             fade * 0.9f, true);
                 }
             }
