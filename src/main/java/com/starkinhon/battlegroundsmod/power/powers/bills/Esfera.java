@@ -30,10 +30,10 @@ import net.neoforged.neoforge.network.PacketDistributor;
 // Shift + C: Esfera da Destruição Planetária (bills.esfera.json, see EsferaSpec; the normal C is DestructionSphere).
 // Bills puts his hands behind his back and vanishes in black streaks, taking the target with him to outer space: a
 // cutscene only the two of them see (client/EsferaCutscene, client/fx/SpaceScene), where the target lies adrift below
-// him, he charges the sphere between his hands and throws it, and it blows the target up in flames. Everyone else sees
+// him, he charges the sphere between his hands and throws it, and it hits the target and carries it down. Everyone else sees
 // both of them gone (frozen, untouchable and hidden where they stood). Back in the world Bills lands where he was,
 // facing the spot queda.distancia blocks ahead of him, and the target falls from queda.altura blocks up straight down
-// onto it, opening a crater.
+// onto it with the sun on top of it: it blows up in flames, opening a crater.
 public final class Esfera {
     public static final String SKILL = EsferaSpec.SKILL;
     private static final double VIEW_DISTANCE = 256;
@@ -109,10 +109,10 @@ public final class Esfera {
         SkillSounds.play(level, spec.sons(), "carga", spec.chargeTick(), spec.throwTick() - spec.chargeTick(), where, screen);
         SkillSounds.play(level, spec.sons(), "lancar", spec.throwTick(), spec.flyTick() - spec.throwTick(), where, screen);
         SkillSounds.play(level, spec.sons(), "implodir", spec.flyTick(), blast - spec.flyTick(), where, screen);
-        SkillSounds.play(level, spec.sons(), "explosao", blast, end - blast, where, screen);
+        SkillSounds.play(level, spec.sons(), "contato", blast, end - blast, where, screen);
 
         Tasks.later(blast, () -> {
-            // The explosion in space.
+            // The sun hits it in space (no explosion up there; danoEspaco 0 by default).
             if (victim.isAlive() && spec.danoEspaco() > 0) {
                 Combat.hurt(caster, victim, spec.danoEspaco());
             }
@@ -160,6 +160,9 @@ public final class Esfera {
         double speed = Math.max(0.2, queda.velocidade());
         int max = (int) Math.ceil(queda.altura() / speed) + 60;
         Fx.effects(level, SKILL, awakened, "queda", victim, max);
+        // The sun comes down with it, on top of it.
+        Vec3 head = victim.position().add(0, victim.getBbHeight(), 0);
+        PacketDistributor.sendToPlayersTrackingEntityAndSelf(victim, new ModPayloads.EsferaFall(victim.getId(), head, head, awakened));
         SkillSounds.play(level, spec.sons(), "queda", 0, (int) Math.ceil(queda.altura() / speed), onde -> victim.position(), screen);
         Tasks.add(age -> {
             if (!victim.isAlive() || victim.isRemoved()) {
@@ -195,8 +198,6 @@ public final class Esfera {
             Combat.hurt(caster, hit, (float) (queda.danoArea() * (1 - k * 0.6)));
             Combat.pushFrom(hit, at, queda.empurrao() * (1 - k * 0.5), 0.5 + 0.4 * (1 - k));
         }
-        // The fire around the falling body goes out.
-        Fx.effects(level, SKILL, awakened, "pousar", victim, 1);
         Fx.effects(level, SKILL, awakened, "impacto", at, new Vec3(0, 1, 0));
         SkillSounds.play(level, spec.sons(), "impacto", 0, 0, onde -> at, screen);
         if (queda.quebrarBlocos() && level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {

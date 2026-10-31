@@ -6,15 +6,15 @@ import java.util.List;
 // gone in a flash of black streaks: he and the target are in outer space (a cutscene only the two of them see, see
 // client/EsferaCutscene). Seen from the front as he appears there, then from over his shoulder looking down: the target
 // lies below him, adrift, slowly falling towards the Earth far below. He charges the sphere between his hands, throws
-// it, it implodes into a giant sun on the way and blows the target up in one explosion of flames. Back in the world he
+// it, it implodes into a giant sun on the way, hits the target and carries it down towards the Earth. Back in the world he
 // lands with the same black streaks and the target falls from the sky (queda.altura blocks up, queda.distancia blocks
-// in front of him), straight down into a crater.
+// in front of him), fast, with the sun on top of it, and blows up in flames (vfx "chamas") into a crater.
 // Everyone else sees both of them vanish and come back.
 // Timeline in ticks from the press: 0 "uso" (hands behind his back), tempo.costasTicks "tp" (gone), then in space:
 // tempo.chegadaTicks (he appears, seen from the front), tempo.alvoTicks (over his shoulder, the target adrift),
 // tempo.cargaTicks (charging), tempo.lancarTicks (the throw), tempo.vooTicks (the sun flies to the target),
-// tempo.explosaoTicks (the explosion, "explosao"), then "voltar" (back in the world) and "impacto" when the target hits
-// the ground. The client-only moments of the cutscene ("chegada", "implodir", "explosaoEspaco") are played on the two
+// tempo.explosaoTicks (the sun hits the target, "contato", and carries it down), then "voltar" (back in the world) and "impacto" when the target hits
+// the ground. The client-only moments of the cutscene ("chegada", "implodir", "contato") are played on the two
 // clients from the same vfx list.
 public record EsferaSpec(String skill, String nome, Tempo tempo, Alvo alvo, Esfera esfera, Espaco espaco, Deriva deriva, Queda queda,
         Legenda legenda, Cutscene cutscene, Animacao animacao, float danoEspaco, List<Som> sons) {

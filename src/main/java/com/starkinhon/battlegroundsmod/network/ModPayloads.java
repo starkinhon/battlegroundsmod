@@ -485,7 +485,8 @@ public final class ModPayloads {
         }
     }
 
-    // Server -> client: a sphere of destruction falls from start onto the target's head (client/fx/EsferaRenderer).
+    // Server -> client: the sphere of destruction comes down from the sky on top of the target (Esfera da Destruição
+    // Planetária, client/fx/EsferaRenderer.ride).
     public record EsferaFall(int targetId, Vec3 start, Vec3 lastHead, boolean awakened) implements CustomPacketPayload {
         public static final Type<EsferaFall> TYPE = payloadType("esfera_fall");
         public static final StreamCodec<ByteBuf, EsferaFall> STREAM_CODEC = StreamCodec.composite(
