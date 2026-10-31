@@ -112,7 +112,7 @@ public final class FxWorld {
         FxPost.newFrame();
         ScreenFx.capture(event);
         boolean world = !PIECES.isEmpty() || MeteorRenderer.hasTrails() || Aura.active() || KatonBallRenderer.active() || AshDeath.hasSparks()
-                || SpaceScene.active() || EsferaRenderer.active() || HakaiRenderer.active();
+                || SpaceScene.active() || EsferaRenderer.active() || HakaiRenderer.active() || EnergyRenderer.active();
         if (!world && !ScreenFx.needsScene()) {
             return;
         }
@@ -172,6 +172,7 @@ public final class FxWorld {
             AshDeath.sparks(camera, now, partial);
             EsferaRenderer.render(camera, now, partial);
             HakaiRenderer.render(camera, now, partial);
+            EnergyRenderer.render(camera, now, partial);
         }
         if (flat) {
             source.endBatch(FxRenderTypes.FLAT_ALPHA);

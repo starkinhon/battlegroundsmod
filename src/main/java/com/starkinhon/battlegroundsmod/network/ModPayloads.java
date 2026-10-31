@@ -499,6 +499,26 @@ public final class ModPayloads {
         }
     }
 
+    // Server -> client: a ball of Bills' Destruction Energy (power/powers/bills/DestructionEnergy), sent every tick it
+    // exists. mode 0 = there at pos, 2 = gone. grow: 0 to 1 while it forms (the rings open one after another); small: one
+    // of the many balls of the Shift + Z, drawn lighter.
+    public record EnergyBall(int id, int mode, Vec3 pos, float radius, float grow, boolean small) implements CustomPacketPayload {
+        public static final Type<EnergyBall> TYPE = payloadType("energy_ball");
+        public static final StreamCodec<ByteBuf, EnergyBall> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, EnergyBall::id,
+                ByteBufCodecs.VAR_INT, EnergyBall::mode,
+                VEC3, EnergyBall::pos,
+                ByteBufCodecs.FLOAT, EnergyBall::radius,
+                ByteBufCodecs.FLOAT, EnergyBall::grow,
+                ByteBufCodecs.BOOL, EnergyBall::small,
+                EnergyBall::new);
+
+        @Override
+        public Type<EnergyBall> type() {
+            return TYPE;
+        }
+    }
+
     // Server -> client: the hakaizinho, flying straight from start at velocity per tick for ticks.
     public record HakaiShot(Vec3 start, Vec3 velocity, int ticks, boolean awakened) implements CustomPacketPayload {
         public static final Type<HakaiShot> TYPE = payloadType("hakai_shot");
@@ -664,6 +684,8 @@ public final class ModPayloads {
                 () -> ClientHooks.hakaiBall(payload.id(), payload.mode(), payload.pos(), payload.targetId(), payload.radius(), payload.awakened())));
         registrar.playToClient(HakaiShot.TYPE, HakaiShot.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.hakaiShot(payload.start(), payload.velocity(), payload.ticks(), payload.awakened())));
+        registrar.playToClient(EnergyBall.TYPE, EnergyBall.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.energyBall(payload.id(), payload.mode(), payload.pos(), payload.radius(), payload.grow(), payload.small())));
         registrar.playToClient(BossBarStyle.TYPE, BossBarStyle.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.bossBarStyle(payload.barId(), payload.texture(), payload.frames(), payload.width(), payload.height())));
         registrar.playToClient(BossCutscene.TYPE, BossCutscene.STREAM_CODEC, (payload, context) -> context.enqueueWork(
