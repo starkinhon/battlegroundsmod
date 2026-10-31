@@ -112,11 +112,14 @@ public final class Hakaizinho {
                 if (!hakai.canErase(target)) {
                     Combat.hurt(caster, target, destruir.dano());
                 }
-                if (target.isAlive() && hakai.canErase(target)) {
-                    Hakai.disintegrate(caster, target, awakened);
-                }
                 Fx.effects(level, SKILL, awakened, "acerto", Combat.center(target), dir);
-                SkillSounds.play(level, spec.sons(), "acerto", 0, 0, onde -> Combat.center(target), screen);
+                if (target.isAlive() && hakai.canErase(target)) {
+                    // Pulverized: the same sound as an attack it erases.
+                    Hakai.disintegrate(caster, target, awakened);
+                    SkillSounds.play(level, spec.sons(), "pulverizar", 0, 0, onde -> Combat.center(target), screen);
+                } else {
+                    SkillSounds.play(level, spec.sons(), "acerto", 0, 0, onde -> Combat.center(target), screen);
+                }
             }
             if (grief) {
                 dig(level, from, to, destruir.raioBlocos());

@@ -57,63 +57,15 @@
       "onde": "usuario"
     },
     {
-      "nome": "Peteleco",
-      "som": "minecraft:entity.warden.sonic_boom",
+      "nome": "Lancar",
+      "som": "battlegroundsmod:hakaizinho",
       "momento": "lancar",
       "atrasoTicks": 0,
       "repetirACadaTicks": 0,
       "vezes": 1,
-      "volume": 0.7,
-      "pitch": 2.0,
-      "pitchFim": 2.0,
-      "onde": "usuario"
-    },
-    {
-      "nome": "Zunido",
-      "som": "minecraft:block.amethyst_block.resonate",
-      "momento": "lancar",
-      "atrasoTicks": 0,
-      "repetirACadaTicks": 0,
-      "vezes": 1,
-      "volume": 1.2,
-      "pitch": 2.0,
-      "pitchFim": 2.0,
-      "onde": "usuario"
-    },
-    {
-      "nome": "Pulverizar",
-      "som": "minecraft:entity.warden.sonic_boom",
-      "momento": "pulverizar",
-      "atrasoTicks": 0,
-      "repetirACadaTicks": 0,
-      "vezes": 1,
-      "volume": 2.2,
-      "pitch": 1.1,
-      "pitchFim": 1.1,
-      "onde": "usuario"
-    },
-    {
-      "nome": "Explodir",
-      "som": "minecraft:entity.generic.explode",
-      "momento": "pulverizar",
-      "atrasoTicks": 0,
-      "repetirACadaTicks": 0,
-      "vezes": 1,
-      "volume": 2.5,
-      "pitch": 0.5,
-      "pitchFim": 0.5,
-      "onde": "usuario"
-    },
-    {
-      "nome": "Cristal",
-      "som": "minecraft:block.amethyst_cluster.break",
-      "momento": "pulverizar",
-      "atrasoTicks": 0,
-      "repetirACadaTicks": 0,
-      "vezes": 1,
-      "volume": 2.0,
-      "pitch": 0.5,
-      "pitchFim": 0.5,
+      "volume": 1.5,
+      "pitch": 1.0,
+      "pitchFim": 1.0,
       "onde": "usuario"
     },
     {
@@ -126,6 +78,18 @@
       "volume": 1.5,
       "pitch": 0.6,
       "pitchFim": 0.6,
+      "onde": "usuario"
+    },
+    {
+      "nome": "Pulverizar",
+      "som": "battlegroundsmod:hakaizinho_pulverizar",
+      "momento": "pulverizar",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 2.0,
+      "pitch": 1.0,
+      "pitchFim": 1.0,
       "onde": "usuario"
     }
   ],

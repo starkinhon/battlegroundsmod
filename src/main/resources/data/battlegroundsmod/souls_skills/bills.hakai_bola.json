@@ -3,7 +3,7 @@
   "skill": "bills.hakai_bola",
   "nome": "Hakai (bola)",
   "tempo": {
-    "atrasoTicks": 16,
+    "atrasoTicks": 96,
     "duracaoTicks": 10
   },
   "alvo": {
@@ -57,27 +57,15 @@
   },
   "sons": [
     {
-      "nome": "Formar",
-      "som": "minecraft:block.beacon.activate",
+      "nome": "Carregar",
+      "som": "battlegroundsmod:hakai_bola",
       "momento": "uso",
       "atrasoTicks": 0,
       "repetirACadaTicks": 0,
       "vezes": 1,
-      "volume": 1.2,
-      "pitch": 0.5,
-      "pitchFim": 0.5,
-      "onde": "usuario"
-    },
-    {
-      "nome": "Energia",
-      "som": "minecraft:block.respawn_anchor.charge",
-      "momento": "uso",
-      "atrasoTicks": 6,
-      "repetirACadaTicks": 0,
-      "vezes": 1,
-      "volume": 1.0,
-      "pitch": 0.6,
-      "pitchFim": 0.6,
+      "volume": 1.6,
+      "pitch": 1.0,
+      "pitchFim": 1.0,
       "onde": "usuario"
     },
     {
@@ -163,7 +151,7 @@
       "quantidade": 6,
       "cor": "#ff4fe6",
       "cor2": "#ffffff",
-      "vidaTicks": 16
+      "vidaTicks": 96
     },
     {
       "tipo": "distorcao",
@@ -175,7 +163,7 @@
       "cor": "#d81ecf",
       "tinta": 0.05,
       "altura": 3,
-      "vidaTicks": 16,
+      "vidaTicks": 96,
       "alcance": 40
     },
     {

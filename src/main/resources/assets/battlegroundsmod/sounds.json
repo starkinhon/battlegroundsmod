@@ -1,10 +1,44 @@
 {
   "katon": {
     "subtitle": "subtitles.battlegroundsmod.katon",
-    "sounds": ["battlegroundsmod:katon"]
+    "sounds": [
+      "battlegroundsmod:katon"
+    ]
   },
   "sharingan": {
     "subtitle": "subtitles.battlegroundsmod.sharingan",
-    "sounds": ["battlegroundsmod:sharingan"]
+    "sounds": [
+      "battlegroundsmod:sharingan"
+    ]
+  },
+  "hakai_voz": {
+    "subtitle": "subtitles.battlegroundsmod.hakai_voz",
+    "sounds": [
+      "battlegroundsmod:hakai_voz"
+    ]
+  },
+  "hakai_pulverizar": {
+    "subtitle": "subtitles.battlegroundsmod.hakai_pulverizar",
+    "sounds": [
+      "battlegroundsmod:hakai_pulverizar"
+    ]
+  },
+  "hakai_bola": {
+    "subtitle": "subtitles.battlegroundsmod.hakai_bola",
+    "sounds": [
+      "battlegroundsmod:hakai_bola"
+    ]
+  },
+  "hakaizinho": {
+    "subtitle": "subtitles.battlegroundsmod.hakaizinho",
+    "sounds": [
+      "battlegroundsmod:hakaizinho"
+    ]
+  },
+  "hakaizinho_pulverizar": {
+    "subtitle": "subtitles.battlegroundsmod.hakaizinho_pulverizar",
+    "sounds": [
+      "battlegroundsmod:hakaizinho_pulverizar"
+    ]
   }
 }
