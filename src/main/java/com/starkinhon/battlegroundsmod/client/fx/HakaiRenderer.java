@@ -20,8 +20,8 @@ import net.minecraft.world.phys.Vec3;
 // hakaizinho (Hakaizinho): a tiny pink four-pointed sparkle with a thin streak behind it.
 // The dark rim and the black arcs are drawn in overlay(), after the glow layer, so the light doesn't wash them out.
 public final class HakaiRenderer {
-    // prev/pos: the last two positions the server sent (one per tick), to slide between them.
-    private record Ball(int mode, Vec3 prev, Vec3 pos, int target, float prevRadius, float radius, long updated, long born) {
+    // track: the positions the server sent (one per tick), smoothed (SmoothTrack).
+    private record Ball(int mode, SmoothTrack track, int target, long updated, long born) {
     }
 
     private record Shot(Vec3 start, Vec3 velocity, int ticks, long born) {
@@ -53,9 +53,12 @@ public final class HakaiRenderer {
         }
         long now = ScreenFx.now();
         Ball old = BALLS.get(id);
-        BALLS.put(id, old == null
-                ? new Ball(mode, pos, pos, target, radius, radius, now, now)
-                : new Ball(mode, old.pos(), pos, target, old.radius(), radius, now, old.born()));
+        if (old == null) {
+            BALLS.put(id, new Ball(mode, new SmoothTrack(pos, radius), target, now, now));
+            return;
+        }
+        old.track().push(pos, radius);
+        BALLS.put(id, new Ball(mode, old.track(), target, now, old.born()));
     }
 
     public static void shot(Vec3 start, Vec3 velocity, int ticks, boolean awakened) {
@@ -95,8 +98,9 @@ public final class HakaiRenderer {
         for (Map.Entry<Integer, Ball> entry : BALLS.entrySet()) {
             Ball b = entry.getValue();
             float age = (float) (now - b.born());
-            float r = Mth.lerp(partial, b.prevRadius(), b.radius());
-            Vector3f at = b.prev().lerp(b.pos(), partial).subtract(camera).toVector3f();
+            b.track().sample(now);
+            float r = b.track().radius();
+            Vector3f at = b.track().pos().subtract(camera).toVector3f();
             int seed = entry.getKey() * 977 + 13;
             boolean trapped = b.mode() == 1;
             drawBall(at, r, age, seed, left, up, look, trapped);
@@ -122,8 +126,9 @@ public final class HakaiRenderer {
         for (Map.Entry<Integer, Ball> entry : BALLS.entrySet()) {
             Ball b = entry.getValue();
             float age = (float) (now - b.born());
-            float r = Mth.lerp(partial, b.prevRadius(), b.radius());
-            Vector3f at = b.prev().lerp(b.pos(), partial).subtract(camera).toVector3f();
+            b.track().sample(now);
+            float r = b.track().radius();
+            Vector3f at = b.track().pos().subtract(camera).toVector3f();
             int seed = entry.getKey() * 977 + 13;
             // A wide band darkening the inside of the edge, then the thin black outline.
             FxDraw.billboard(layer(at, look, r, 0), r * 2.0f, 0, FxDraw.RING, 0.22f, EDGE, 0.8f, false);

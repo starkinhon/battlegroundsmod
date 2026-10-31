@@ -25,8 +25,9 @@ import net.minecraft.world.phys.Vec3;
 // bigger, with a shockwave running out along the ground. The whole explosion is a function of how far along it is, so
 // rewinding is just running that backwards.
 public final class SphereRenderer {
-    // prev/pos: the last two positions the server sent (one per tick), to slide between them.
-    private record Ball(Vec3 prev, Vec3 pos, float prevRadius, float radius, boolean giant, long updated, long born, long burst) {
+    // track: the positions the server sent (one per tick), smoothed (SmoothTrack). prevRadius/radius: the last two sizes
+    // sent, to tell when it is imploding.
+    private record Ball(SmoothTrack track, float prevRadius, float radius, boolean giant, long updated, long born, long burst) {
     }
 
     private record Blast(Vec3 pos, boolean awakened, long born, int seed) {
@@ -60,11 +61,12 @@ public final class SphereRenderer {
         long now = ScreenFx.now();
         Ball old = BALLS.get(id);
         if (old == null) {
-            BALLS.put(id, new Ball(pos, pos, radius, radius, giant, now, now, -1));
+            BALLS.put(id, new Ball(new SmoothTrack(pos, radius), radius, radius, giant, now, now, -1));
             return;
         }
         long burst = giant && !old.giant() ? now : old.burst();
-        BALLS.put(id, new Ball(old.pos(), pos, old.radius(), radius, giant, now, old.born(), burst));
+        old.track().push(pos, radius);
+        BALLS.put(id, new Ball(old.track(), old.radius(), radius, giant, now, old.born(), burst));
     }
 
     public static void blast(Vec3 pos, boolean awakened) {
@@ -103,10 +105,11 @@ public final class SphereRenderer {
 
     private static void drawBall(Ball b, int seed, Vec3 camera, double now, float partial) {
         float age = (float) (now - b.born());
-        float r = Mth.lerp(partial, b.prevRadius(), b.radius());
-        Vec3 world = b.prev().lerp(b.pos(), partial);
+        b.track().sample(now);
+        float r = b.track().radius();
+        Vec3 world = b.track().pos();
         Vector3f at = world.subtract(camera).toVector3f();
-        Vec3 step = b.pos().subtract(b.prev());
+        Vec3 step = b.track().velocity();
         Vector3f dir = step.lengthSqr() > 0.01 ? step.normalize().toVector3f() : null;
         float distance = (float) world.distanceTo(camera);
 

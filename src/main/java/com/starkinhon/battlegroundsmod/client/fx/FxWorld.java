@@ -150,6 +150,7 @@ public final class FxWorld {
         FxWorld.camera = camera;
         float partial = event.getPartialTick().getGameTimeDeltaPartialTick(false);
         double now = ScreenFx.now() + partial;
+        SmoothTrack.frame(now);
         // In the Esfera's outer space only the scene's own effects show: nothing from the world below follows him there.
         boolean space = SpaceScene.active();
         for (Piece piece : PIECES) {
