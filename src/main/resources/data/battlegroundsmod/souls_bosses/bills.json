@@ -109,6 +109,19 @@
       "avisoCor": "#ff7ad9",
       "avisoSom": ""
     },
+    "destruction_bop": {
+      "slot": 1,
+      "tipo": "controle",
+      "peso": 1.2,
+      "recargaTicks": 400,
+      "recargaMaxTicks": 500,
+      "avisoTicks": 4,
+      "distanciaMin": 2,
+      "distanciaMax": 18,
+      "giroGrausPorTick": 30,
+      "avisoCor": "#9b30ff",
+      "avisoSom": ""
+    },
     "esfera": {
       "slot": 2,
       "tipo": "ult",
@@ -176,6 +189,7 @@
       "skills": [
         "hakai",
         "hakaizinho",
+        "destruction_bop",
         "forte",
         "barragem"
       ],
@@ -202,6 +216,7 @@
       "skills": [
         "hakai",
         "hakaizinho",
+        "destruction_bop",
         "esfera",
         "forte",
         "barragem"

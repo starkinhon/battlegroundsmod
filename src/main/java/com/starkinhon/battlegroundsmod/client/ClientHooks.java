@@ -66,6 +66,10 @@ public final class ClientHooks {
         ShoulderCutscene.start(casterId, targetId, ticks);
     }
 
+    public static void bopCutscene(int casterId, int targetId, boolean awakened, int endTick) {
+        BopCutscene.start(casterId, targetId, awakened, endTick);
+    }
+
     public static void grabCutscene(int casterId, int targetId, boolean awakened, int impactTick) {
         GrabCutscene.start(casterId, targetId, awakened, impactTick);
     }

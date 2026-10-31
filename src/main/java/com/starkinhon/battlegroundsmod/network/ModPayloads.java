@@ -380,6 +380,22 @@ public final class ModPayloads {
         }
     }
 
+    // Server -> client: the Destruction Bop's cutscene for the two fighters; endTick is when the camera starts going back.
+    public record BopCutscene(int casterId, int targetId, boolean awakened, int endTick) implements CustomPacketPayload {
+        public static final Type<BopCutscene> TYPE = payloadType("bop_cutscene");
+        public static final StreamCodec<ByteBuf, BopCutscene> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, BopCutscene::casterId,
+                ByteBufCodecs.VAR_INT, BopCutscene::targetId,
+                ByteBufCodecs.BOOL, BopCutscene::awakened,
+                ByteBufCodecs.VAR_INT, BopCutscene::endTick,
+                BopCutscene::new);
+
+        @Override
+        public Type<BopCutscene> type() {
+            return TYPE;
+        }
+    }
+
     // Server -> client: don't draw this entity for ticks (an invisible dash); 0 shows it again.
     public record HideEntity(int entityId, int ticks) implements CustomPacketPayload {
         public static final Type<HideEntity> TYPE = payloadType("hide_entity");
@@ -666,6 +682,8 @@ public final class ModPayloads {
                 () -> ClientHooks.shoulderCutscene(payload.casterId(), payload.targetId(), payload.ticks())));
         registrar.playToClient(GrabCutscene.TYPE, GrabCutscene.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.grabCutscene(payload.casterId(), payload.targetId(), payload.awakened(), payload.impactTick())));
+        registrar.playToClient(BopCutscene.TYPE, BopCutscene.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.bopCutscene(payload.casterId(), payload.targetId(), payload.awakened(), payload.endTick())));
         registrar.playToClient(HideEntity.TYPE, HideEntity.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.hideEntity(payload.entityId(), payload.ticks())));
         registrar.playToClient(AshDeath.TYPE, AshDeath.STREAM_CODEC, (payload, context) -> context.enqueueWork(
