@@ -5,10 +5,10 @@ import java.util.List;
 
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Fx;
-import com.starkinhon.battlegroundsmod.combat.Projectile;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
 import com.starkinhon.battlegroundsmod.power.Ability;
 import com.starkinhon.battlegroundsmod.power.Power;
+import com.starkinhon.battlegroundsmod.power.powers.bills.DestructionEnergy;
 import com.starkinhon.battlegroundsmod.power.powers.bills.Esfera;
 import com.starkinhon.battlegroundsmod.power.powers.bills.Hakai;
 import com.starkinhon.battlegroundsmod.power.powers.bills.Hakaizinho;
@@ -24,8 +24,8 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
 
 // Deus da Destruição (Bills). Being remade move by move, starting with the ult: C is the Esfera da Destruição and V the
-// Hakai (the hakai ball when the target still has too much life), Shift + V the hakaizinho. Z and X are still the
-// first prototypes.
+// Hakai (the hakai ball when the target still has too much life), Shift + V the hakaizinho. Z is the Destruction
+// Energy (held to charge, let go to throw) and Shift + Z its rain of balls. X is still the first prototype.
 public final class DestructionGod {
     private static final int PURPLE = 0x9B30FF;
 
@@ -34,36 +34,12 @@ public final class DestructionGod {
 
     public static Power create() {
         return new Power("destruction_god", 0x9B30FF, 1.3f, List.of(
-                Ability.player(40, 12, DestructionGod::orb),
+                new Ability(80, 0, DestructionEnergy::use),
                 Ability.player(240, 35, DestructionGod::destructionTouch),
                 new Ability(400, 0, Esfera::use),
                 new Ability(600, 0, Hakai::use)),
-                // Only V has a Shift variant; Shift + Z, X or C still use the normal skill.
-                Arrays.asList(null, null, null, new Ability(600, 0, Hakaizinho::use)));
-    }
-
-    // Z: a fast destruction orb that withers whoever it hits.
-    private static boolean orb(ServerPlayer player, ServerLevel level) {
-        Vec3 look = player.getLookAngle();
-        Vec3 start = Combat.handPos(player).add(look.scale(0.5));
-        Fx.sound(level, start, SoundEvents.EVOKER_CAST_SPELL, 1.2f, 1.4f);
-        new Projectile(player, start, look.scale(1.5), 0.8, 40)
-                .trail(pos -> {
-                    Fx.burst(level, Fx.dust(PURPLE, 1.6f), pos, 4, 0.2, 0);
-                    Fx.burst(level, ParticleTypes.PORTAL, pos, 4, 0.2, 0.3);
-                    Fx.burst(level, ParticleTypes.WITCH, pos, 1, 0.1, 0);
-                })
-                .onHit(target -> {
-                    Combat.hurt(player, target, 8f);
-                    target.addEffect(new MobEffectInstance(MobEffects.WITHER, 60, 1));
-                })
-                .onImpact(pos -> {
-                    Fx.burst(level, ParticleTypes.REVERSE_PORTAL, pos, 40, 0.4, 0.3);
-                    Fx.burst(level, Fx.dust(PURPLE, 2f), pos, 20, 0.5, 0);
-                    Fx.sound(level, pos, SoundEvents.AMETHYST_BLOCK_BREAK, 1.5f, 0.6f);
-                })
-                .launch();
-        return true;
+                // Z and V have a Shift variant; Shift + X or C still use the normal skill.
+                Arrays.asList(new Ability(500, 0, DestructionEnergy::rain), null, null, new Ability(600, 0, Hakaizinho::use)));
     }
 
     // X: marks a close target, holds them for a moment, then erases them. Ignores armor.

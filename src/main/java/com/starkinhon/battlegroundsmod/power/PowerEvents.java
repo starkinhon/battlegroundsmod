@@ -170,9 +170,9 @@ public final class PowerEvents {
         }
     }
 
-    // Intangible entities take no damage, knockback or projectile hits (arrows fly through them).
+    // Intangible or shielded entities take no damage, knockback or projectile hits (arrows fly through them).
     private static void onIncomingDamage(LivingIncomingDamageEvent event) {
-        if (Intangible.is(event.getEntity()) && !event.getSource().is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
+        if (Intangible.untouchable(event.getEntity()) && !event.getSource().is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
             event.setCanceled(true);
             return;
         }
@@ -193,13 +193,13 @@ public final class PowerEvents {
     }
 
     private static void onKnockBack(LivingKnockBackEvent event) {
-        if (Intangible.is(event.getEntity())) {
+        if (Intangible.untouchable(event.getEntity())) {
             event.setCanceled(true);
         }
     }
 
     private static void onProjectileImpact(ProjectileImpactEvent event) {
-        if (event.getRayTraceResult() instanceof EntityHitResult hit && Intangible.is(hit.getEntity())) {
+        if (event.getRayTraceResult() instanceof EntityHitResult hit && Intangible.untouchable(hit.getEntity())) {
             event.setCanceled(true);
         }
     }

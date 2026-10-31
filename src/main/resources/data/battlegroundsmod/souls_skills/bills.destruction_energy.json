@@ -1,0 +1,267 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "bills.destruction_energy",
+  "nome": "Destruction Energy",
+  "tempo": {
+    "atrasoTicks": 100,
+    "duracaoTicks": 6
+  },
+  "alvo": {
+    "alcance": 80,
+    "detectar": 10
+  },
+  "carga": {
+    "formarTicks": 14,
+    "minTicks": 8,
+    "maxTicks": 100,
+    "acima": 0.4
+  },
+  "bola": {
+    "raio": 0.9,
+    "velocidade": 1.6,
+    "curva": 0.22,
+    "alcance": 140
+  },
+  "explosao": {
+    "dano": 14,
+    "raio": 5,
+    "empurrao": 1.4,
+    "altura": 0.5,
+    "raioBlocos": 5,
+    "tremor": 0
+  },
+  "animacao": {
+    "transicaoTicks": 4,
+    "preparo": {
+      "cabeca": -15,
+      "tronco": -3,
+      "bracoDir": {
+        "frente": 172,
+        "abrir": -6
+      },
+      "bracoEsq": {
+        "frente": -10,
+        "abrir": 6
+      }
+    },
+    "sopro": {
+      "cabeca": 0,
+      "tronco": 8,
+      "bracoDir": {
+        "frente": 95,
+        "abrir": 0
+      },
+      "bracoEsq": {
+        "frente": -15,
+        "abrir": 6
+      }
+    }
+  },
+  "sons": [
+    {
+      "nome": "Acender",
+      "som": "minecraft:block.beacon.activate",
+      "momento": "uso",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.4,
+      "pitch": 1.6,
+      "pitchFim": 1.6,
+      "onde": "bola"
+    },
+    {
+      "nome": "Zumbido",
+      "som": "minecraft:block.beacon.ambient",
+      "momento": "uso",
+      "atrasoTicks": 6,
+      "repetirACadaTicks": 20,
+      "vezes": 0,
+      "volume": 1.4,
+      "pitch": 1.4,
+      "pitchFim": 1.4,
+      "onde": "bola"
+    },
+    {
+      "nome": "Soltar",
+      "som": "minecraft:entity.firework_rocket.launch",
+      "momento": "lancar",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.6,
+      "pitch": 0.7,
+      "pitchFim": 0.7,
+      "onde": "bola"
+    },
+    {
+      "nome": "Energia",
+      "som": "minecraft:entity.illusioner.cast_spell",
+      "momento": "lancar",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.4,
+      "pitch": 1.5,
+      "pitchFim": 1.5,
+      "onde": "bola"
+    },
+    {
+      "nome": "Explodir",
+      "som": "minecraft:entity.generic.explode",
+      "momento": "explosao",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 2.6,
+      "pitch": 1.1,
+      "pitchFim": 1.1,
+      "onde": "bola"
+    },
+    {
+      "nome": "Estilhacar",
+      "som": "minecraft:block.amethyst_block.break",
+      "momento": "explosao",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 2.2,
+      "pitch": 0.6,
+      "pitchFim": 0.6,
+      "onde": "bola"
+    }
+  ],
+  "vfx": [
+    {
+      "tipo": "distorcao",
+      "momento": "lancar",
+      "modo": "onda",
+      "raio": 4,
+      "forca": 0.35,
+      "velocidade": 12,
+      "cor": "#9a5cff",
+      "tinta": 0.04,
+      "vidaTicks": 10,
+      "alcance": 48
+    },
+    {
+      "tipo": "anel",
+      "momento": "lancar",
+      "raio": 3,
+      "tamanho": 0.35,
+      "cor": "#cdb0ff",
+      "vidaTicks": 10
+    },
+    {
+      "tipo": "flash",
+      "momento": "explosao",
+      "cor": "#e6d4ff",
+      "forca": 0.35,
+      "vidaTicks": 6,
+      "alcance": 32
+    },
+    {
+      "tipo": "clarao",
+      "momento": "explosao",
+      "tamanho": 9,
+      "quantidade": 12,
+      "cor": "#9a5cff",
+      "cor2": "#ffffff",
+      "vidaTicks": 16,
+      "alcance": 96
+    },
+    {
+      "tipo": "estrela",
+      "momento": "explosao",
+      "quantidade": 32,
+      "comprimento": 11,
+      "tamanho": 1.4,
+      "cor": "#cdb0ff",
+      "cor2": "#ffffff",
+      "vidaTicks": 14,
+      "alcance": 96
+    },
+    {
+      "tipo": "anel",
+      "momento": "explosao",
+      "raio": 8,
+      "tamanho": 0.9,
+      "cor": "#f1e6ff",
+      "vidaTicks": 14,
+      "alcance": 96
+    },
+    {
+      "tipo": "anelChao",
+      "momento": "explosao",
+      "raio": 7,
+      "tamanho": 1.2,
+      "cor": "#9a5cff",
+      "altura": -1,
+      "vidaTicks": 18,
+      "alcance": 96
+    },
+    {
+      "tipo": "faiscas",
+      "momento": "explosao",
+      "quantidade": 140,
+      "velocidade": 0.9,
+      "comprimento": 1.4,
+      "tamanho": 1.6,
+      "cor": "#9a5cff",
+      "cor2": "#ffffff",
+      "vidaTicks": 24,
+      "alcance": 96
+    },
+    {
+      "tipo": "fumaca",
+      "momento": "explosao",
+      "inicio": 2,
+      "quantidade": 12,
+      "raio": 5,
+      "tamanho": 4,
+      "cor": "#3a2f40",
+      "vidaTicks": 40,
+      "alcance": 96
+    },
+    {
+      "tipo": "distorcao",
+      "momento": "explosao",
+      "modo": "onda",
+      "raio": 10,
+      "forca": 0.7,
+      "velocidade": 16,
+      "cor": "#9a5cff",
+      "tinta": 0.06,
+      "vidaTicks": 18,
+      "alcance": 64
+    },
+    {
+      "tipo": "tremor",
+      "momento": "explosao",
+      "forca": 0.7,
+      "vidaTicks": 12,
+      "alcance": 40
+    },
+    {
+      "tipo": "clarao",
+      "momento": "sumir",
+      "tamanho": 2.5,
+      "quantidade": 6,
+      "cor": "#9a5cff",
+      "cor2": "#ffffff",
+      "vidaTicks": 10
+    },
+    {
+      "tipo": "faiscas",
+      "momento": "sumir",
+      "quantidade": 30,
+      "velocidade": 0.4,
+      "comprimento": 0.8,
+      "tamanho": 1.2,
+      "cor": "#9a5cff",
+      "cor2": "#ffffff",
+      "vidaTicks": 16
+    }
+  ],
+  "despertado": {}
+}
