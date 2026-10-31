@@ -24,6 +24,8 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.HitResult;
@@ -37,6 +39,9 @@ import net.neoforged.neoforge.network.PacketDistributor;
 // not even a counter) from the freeze until they get out of the hole. Only the two fighters get the cutscene.
 public final class DestructionBop {
     public static final String SKILL = DestructionBopSpec.SKILL;
+
+    // Longest the glide down after the slap may take (Slow Falling keeps him safe all the way).
+    private static final int GLIDE_MAX_TICKS = 400;
 
     private DestructionBop() {
     }
@@ -75,10 +80,9 @@ public final class DestructionBop {
         Vec3 away = forward.scale(-1);
         Vec3 groundAt = landing(level, high, away, spec.tapa().frente(), target);
 
-        // In front of the target first, then up behind it for the slap, then back down beside the hole.
+        // In front of the target first, then up behind it for the slap (from there he glides down).
         Vec3 front = standSpot(level, caster, floor.subtract(forward.scale(Math.max(0.8, spec.alvo().distancia()))), caster.position());
         Vec3 air = high.add(forward.scale(spec.tapa().atras())).add(0, spec.tapa().acima(), 0);
-        Vec3 beside = standSpot(level, caster, groundAt.subtract(away.scale(Math.max(2.5, spec.chao().raioCratera() * 0.8))), front);
 
         smoke(level, caster.position(), caster.getBbHeight());
         Fx.effects(level, SKILL, awakened, "sumir", caster, 0);
@@ -106,8 +110,8 @@ public final class DestructionBop {
                 return start.lerp(high, eased);
             }
             if (age < slap) {
-                // A little float while hanging.
-                return high.add(0, 0.15 * Math.sin((age - top) * 0.6), 0);
+                // Hanging still up there until the slap.
+                return high;
             }
             // Straight along the diagonal, speeding up.
             double k = (age - slap) / (double) Math.max(1, ground - slap);
@@ -215,17 +219,26 @@ public final class DestructionBop {
             dust(level, groundAt, spec);
         });
 
-        // Back down beside the hole, calm, looking at what he did.
+        // Then he glides down from up there to the ground, slowly, and never takes fall damage.
         Tasks.later(land, () -> {
             if (!caster.isAlive()) {
                 return;
             }
-            smoke(level, caster.position(), caster.getBbHeight());
-            Fx.effects(level, SKILL, awakened, "sumir", caster, 0);
-            place(caster, beside, yaw(away), 20);
             caster.resetFallDistance();
-            Fx.effects(level, SKILL, awakened, "pousar", caster, 0);
-            SkillSounds.play(level, spec.sons(), "pousar", 0, 0, onde -> caster.position(), screens(caster, target));
+            caster.addEffect(new MobEffectInstance(MobEffects.SLOW_FALLING, GLIDE_MAX_TICKS, 0, false, false, false));
+            Tasks.add(age -> {
+                if (!caster.isAlive()) {
+                    return true;
+                }
+                caster.resetFallDistance();
+                if (caster.onGround() || age >= GLIDE_MAX_TICKS) {
+                    caster.removeEffect(MobEffects.SLOW_FALLING);
+                    Fx.effects(level, SKILL, awakened, "pousar", caster, 0);
+                    SkillSounds.play(level, spec.sons(), "pousar", 0, 0, onde -> caster.position(), screens(caster, target));
+                    return true;
+                }
+                return false;
+            });
         });
         return true;
     }

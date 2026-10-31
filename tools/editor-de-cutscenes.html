@@ -426,10 +426,10 @@ const SK = {
     alvoAt(t) {
       const A = this.A;
       if (t < 16) return A;
-      if (t < 28) return add(A, v3(0, 12 * (1 - Math.pow(1 - (t - 16) / 12, 2)), 0));
-      if (t < 98) return add(A, v3(0, 12 + 0.12 * Math.sin((t - 28) * 0.15), 0));
+      if (t < 28) return add(A, v3(0, 12 * (1 - Math.pow(1 - (t - 16) / 12, 3)), 0));
+      if (t < 98) return add(A, v3(0, 12, 0));
       const top = add(A, v3(0, 12, 0)), end = add(A, v3(0, 0, -9));
-      if (t < 106) return vlerp(top, end, (t - 98) / 8);
+      if (t < 106) { const k = (t - 98) / 8; return vlerp(top, end, k * (0.4 + 0.6 * k)); }
       return vlerp(end, add(end, v3(0, -1, 0)), smooth((t - 106) / 6));
     },
     base(t) {

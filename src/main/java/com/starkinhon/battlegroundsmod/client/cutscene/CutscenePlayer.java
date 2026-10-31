@@ -33,6 +33,7 @@ public final class CutscenePlayer {
     private static final double BAR_HEIGHT = 0.11;
     private static final double DEFAULT_FOV = 70;
     private static final double DEFAULT_AIM_HEIGHT = 1.5;
+    private static final int SETTLE_TICKS = 4;
 
     private static CutsceneData data;
     private static String skill = "";
@@ -121,6 +122,15 @@ public final class CutscenePlayer {
         if (minecraft.level == null || ++age >= data.end() || minecraft.level.getEntity(casterId) == null) {
             stop(minecraft);
             return;
+        }
+        // A cutscene measured from the target settles its origin on where the target really stands once the skill has
+        // pinned it: the first position seen can still be mid-jump or catching up on this client.
+        if (age <= SETTLE_TICKS && data.fromTarget() && targetId >= 0) {
+            Entity target = minecraft.level.getEntity(targetId);
+            if (target != null) {
+                targetStart = targetLast = target.position();
+                origin = targetStart;
+            }
         }
         apply(minecraft, age);
     }

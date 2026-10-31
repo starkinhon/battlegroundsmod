@@ -246,7 +246,7 @@
       "t": 29,
       "pos": [
         7.362,
-        1.865,
+        -10.153,
         -3.428
       ],
       "rot": [
@@ -255,13 +255,14 @@
         0
       ],
       "fov": 70,
-      "suave": "linear"
+      "suave": "linear",
+      "seguir": "alvo"
     },
     {
       "t": 30,
       "pos": [
         7.004,
-        3.579,
+        -8.456,
         -3.242
       ],
       "rot": [
@@ -270,13 +271,14 @@
         0
       ],
       "fov": 70,
-      "suave": "linear"
+      "suave": "linear",
+      "seguir": "alvo"
     },
     {
       "t": 31,
       "pos": [
         6.516,
-        5.923,
+        -6.129,
         -2.988
       ],
       "rot": [
@@ -285,13 +287,14 @@
         0
       ],
       "fov": 70,
-      "suave": "linear"
+      "suave": "linear",
+      "seguir": "alvo"
     },
     {
       "t": 32,
       "pos": [
         5.984,
-        8.477,
+        -3.591,
         -2.712
       ],
       "rot": [
@@ -300,13 +303,14 @@
         0
       ],
       "fov": 70,
-      "suave": "linear"
+      "suave": "linear",
+      "seguir": "alvo"
     },
     {
       "t": 33,
       "pos": [
         5.496,
-        10.821,
+        -1.261,
         -2.458
       ],
       "rot": [
@@ -315,13 +319,14 @@
         0
       ],
       "fov": 70,
-      "suave": "linear"
+      "suave": "linear",
+      "seguir": "alvo"
     },
     {
       "t": 34,
       "pos": [
         5.138,
-        12.535,
+        0.441,
         -2.272
       ],
       "rot": [
@@ -330,13 +335,14 @@
         0
       ],
       "fov": 70,
-      "suave": "linear"
+      "suave": "linear",
+      "seguir": "alvo"
     },
     {
       "t": 35,
       "pos": [
         5.35,
-        13.9,
+        1.796,
         -1.95
       ],
       "rot": [
@@ -345,13 +351,14 @@
         0
       ],
       "fov": 16,
-      "suave": "linear"
+      "suave": "linear",
+      "seguir": "alvo"
     },
     {
       "t": 62,
       "pos": [
         1.95,
-        13.35,
+        1.461,
         -0.25
       ],
       "rot": [
@@ -360,13 +367,14 @@
         0
       ],
       "fov": 25,
-      "suave": "linear"
+      "suave": "linear",
+      "seguir": "alvo"
     },
     {
       "t": 96,
       "pos": [
         1.439,
-        13.506,
+        1.59,
         -0.1
       ],
       "rot": [
@@ -375,13 +383,14 @@
         0
       ],
       "fov": 70,
-      "suave": "linear"
+      "suave": "linear",
+      "seguir": "alvo"
     },
     {
       "t": 97.95,
       "pos": [
         1.401,
-        13.5,
+        1.605,
         -0.1
       ],
       "rot": [
@@ -390,7 +399,8 @@
         0
       ],
       "fov": 70,
-      "suave": "corte"
+      "suave": "corte",
+      "seguir": "alvo"
     },
     {
       "t": 98,
