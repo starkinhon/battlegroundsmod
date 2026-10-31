@@ -364,6 +364,24 @@ public final class ModPayloads {
         }
     }
 
+    // Server -> client: the Susanoo counter's arm (client/fx/SusanooArm). phase: 0 guard with the shield up, 1 grab
+    // (target, a = ticks to reach, b = ticks of crushing), 2 a squeeze, 3 the throw, 4 gone (window closed, cut off).
+    public record SusanooArm(int casterId, int targetId, int phase, int a, int b) implements CustomPacketPayload {
+        public static final Type<SusanooArm> TYPE = payloadType("susanoo_arm");
+        public static final StreamCodec<ByteBuf, SusanooArm> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, SusanooArm::casterId,
+                ByteBufCodecs.VAR_INT, SusanooArm::targetId,
+                ByteBufCodecs.VAR_INT, SusanooArm::phase,
+                ByteBufCodecs.VAR_INT, SusanooArm::a,
+                ByteBufCodecs.VAR_INT, SusanooArm::b,
+                SusanooArm::new);
+
+        @Override
+        public Type<SusanooArm> type() {
+            return TYPE;
+        }
+    }
+
     // Server -> client: the neck grab's cutscene for the two fighters. The camera cuts in now; the slam lands at impactTick.
     public record GrabCutscene(int casterId, int targetId, boolean awakened, int impactTick) implements CustomPacketPayload {
         public static final Type<GrabCutscene> TYPE = payloadType("grab_cutscene");
@@ -680,6 +698,8 @@ public final class ModPayloads {
         registrar.playToClient(PlayEffects.TYPE, PlayEffects.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.playEffects(payload.skill(), payload.awakened(), payload.momento(), payload.pos(), payload.dir(),
                         payload.entityId(), payload.ticks())));
+        registrar.playToClient(SusanooArm.TYPE, SusanooArm.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.susanooArm(payload.casterId(), payload.targetId(), payload.phase(), payload.a(), payload.b())));
         registrar.playToClient(ShoulderCutscene.TYPE, ShoulderCutscene.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.shoulderCutscene(payload.casterId(), payload.targetId(), payload.ticks())));
         registrar.playToClient(GrabCutscene.TYPE, GrabCutscene.STREAM_CODEC, (payload, context) -> context.enqueueWork(

@@ -173,8 +173,8 @@ public final class UchihaFx {
         Fx.burst(level, Fx.dust(0x1A0000, 2f), head, 20, 0.4, 0);
     }
 
-    // Susanoo counter is ready: a low hum. The blue wall around the caster is drawn on the clients (parede in the
-    // vfx list) for as long as the window stays open.
+    // Susanoo counter is ready: a low hum. The arm with its shield is drawn on the clients (client/fx/SusanooArm)
+    // for as long as the window stays open.
     public static void susanooReady(ServerLevel level, LivingEntity player, SusanooSpec spec) {
         Vec3 pos = player.position();
         Fx.sound(level, pos, SoundEvents.BEACON_ACTIVATE, 1.5f, 0.6f);
@@ -185,25 +185,6 @@ public final class UchihaFx {
         Fx.sound(level, player.position(), SoundEvents.WARDEN_SONIC_CHARGE, 1.5f, 1.4f);
         Fx.sound(level, target.position(), SoundEvents.IRON_GOLEM_ATTACK, 1.5f, 0.5f);
         Fx.burst(level, ParticleTypes.SOUL, Combat.center(target), 15, 0.5, 0.05);
-    }
-
-    // The spectral arm, from behind the shoulder in an arc up to the fist. progress 0..1 is how far it has reached.
-    public static void susanooArm(ServerLevel level, LivingEntity player, LivingEntity target, SusanooSpec spec, double progress) {
-        var color = Fx.dust(parseColor(spec.visual().cor()), 2f);
-        Vec3 from = Susanoo.shoulder(player);
-        Vec3 to = Susanoo.hand(player, spec);
-        Vec3 control = from.add(to.subtract(from).scale(0.3)).add(0, 1.5, 0);
-        int points = Math.max(4, (int) (to.distanceTo(from) / 0.3));
-        for (int i = 0; i <= points * progress; i++) {
-            double t = i / (double) points;
-            double u = 1 - t;
-            Vec3 point = from.scale(u * u).add(control.scale(2 * u * t)).add(to.scale(t * t));
-            Fx.burst(level, color, point, 2, 0.12, 0);
-        }
-        if (progress >= 1) {
-            // The ball of light around the fist is the client's esfera, stuck to the held target.
-            Fx.burst(level, ParticleTypes.SOUL_FIRE_FLAME, Combat.center(target), 1, Math.max(0.7, target.getBbWidth() * 0.9) * 0.6, 0.01);
-        }
     }
 
     public static void susanooCrush(ServerLevel level, LivingEntity target, SusanooSpec spec) {
