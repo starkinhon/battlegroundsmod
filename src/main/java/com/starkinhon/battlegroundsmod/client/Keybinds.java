@@ -16,7 +16,7 @@ import net.minecraft.client.Minecraft;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 // The power's skills (Z, X, C, V: index in ABILITIES = ability slot, with Shift held the Shift variant; B for a fifth skill) and the base fighting keys: R cycles the base
-// attack selector (Shift + R goes back), G uses the selected base attack, F holds the guard and Left Alt dashes. All can be changed in Controls.
+// attack selector (Shift + R goes back), G uses the selected base attack, F holds the guard, Left Alt dashes and U opens the skill constellation. All can be changed in Controls.
 public final class Keybinds {
     private static final String CATEGORY = "key.categories.battlegroundsmod";
 
@@ -30,9 +30,11 @@ public final class Keybinds {
     public static final KeyMapping USE_ATTACK = key("use_attack", GLFW.GLFW_KEY_G);
     public static final KeyMapping GUARD = key("guard", GLFW.GLFW_KEY_F);
     public static final KeyMapping DASH = key("dash", GLFW.GLFW_KEY_LEFT_ALT);
+    // Opens the power's constellation (its skills with names and descriptions).
+    public static final KeyMapping SKILLS_MENU = key("skills_menu", GLFW.GLFW_KEY_U);
 
     public static final List<KeyMapping> ALL = List.of(ABILITIES.get(0), ABILITIES.get(1), ABILITIES.get(2), ABILITIES.get(3),
-            EXTRA_ABILITY, CYCLE_ATTACK, USE_ATTACK, GUARD, DASH);
+            EXTRA_ABILITY, CYCLE_ATTACK, USE_ATTACK, GUARD, DASH, SKILLS_MENU);
 
     private Keybinds() {
     }
@@ -74,6 +76,11 @@ public final class Keybinds {
             }
         }
         boolean hasPower = ready && minecraft.player.getData(ModAttachments.POWER).hasPower();
+        while (SKILLS_MENU.consumeClick()) {
+            if (ready) {
+                ConstellationScreen.open();
+            }
+        }
         while (CYCLE_ATTACK.consumeClick()) {
             if (hasPower) {
                 BaseAttacks.cycle(minecraft.options.keyShift.isDown());
