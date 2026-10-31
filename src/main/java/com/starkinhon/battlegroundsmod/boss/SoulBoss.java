@@ -10,7 +10,6 @@ import com.starkinhon.battlegroundsmod.movement.Movement;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
 import com.starkinhon.battlegroundsmod.power.PowerData;
 import com.starkinhon.battlegroundsmod.power.PowerLogic;
-import com.starkinhon.battlegroundsmod.power.Tiers;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -48,6 +47,8 @@ public abstract class SoulBoss extends Monster {
     private static final EntityDataAccessor<Integer> DATA_PHASE = SynchedEntityData.defineId(SoulBoss.class, EntityDataSerializers.INT);
     private final ServerBossEvent bossEvent = new ServerBossEvent(getDisplayName(), BossEvent.BossBarColor.RED, BossEvent.BossBarOverlay.NOTCHED_10);
     private boolean configured;
+    // The allbossestier0 rule as last applied, so flipping it changes bosses already in the world.
+    private boolean tier0Applied;
     private int phase;
     // Entrance or phase change in progress: the AI waits.
     private int stagedTicks;
@@ -69,6 +70,11 @@ public abstract class SoulBoss extends Monster {
 
     public BossSpec spec() {
         return BossSpec.get(bossId());
+    }
+
+    // Its attributes from the file, or the shared Tier 0 ones under /gamerule allbossestier0.
+    public BossSpec.Atributos atributos() {
+        return BossRules.atributos(level(), spec());
     }
 
     public BossSpec.Fase fase() {
@@ -134,6 +140,8 @@ public abstract class SoulBoss extends Monster {
         }
         if (!configured) {
             configure(level, spec);
+        } else if (BossRules.allTier0(level) != tier0Applied) {
+            applyStats(level, spec);
         }
         PowerLogic.tick(this);
         Movement.tick(this);
@@ -176,19 +184,27 @@ public abstract class SoulBoss extends Monster {
 
     private void configure(ServerLevel level, BossSpec spec) {
         configured = true;
-        BossSpec.Atributos atributos = spec.atributos();
-        setBase(Attributes.MAX_HEALTH, atributos.vida());
-        setBase(Attributes.ARMOR, atributos.armadura());
-        setBase(Attributes.MOVEMENT_SPEED, atributos.velocidade());
-        setBase(Attributes.KNOCKBACK_RESISTANCE, atributos.resistenciaEmpurrao());
-        setBase(Attributes.FOLLOW_RANGE, atributos.alcanceVisao());
+        applyStats(level, spec);
         setHealth(getMaxHealth());
-        powerData().tier = spec.tier() != null ? Tiers.clamp(spec.tier()) : Tiers.HUMANO;
         phase = 0;
         BossSpec.Intro intro = spec.intro();
         stage(intro.duracaoTicks(), true);
         BossFx.title(level, this, intro.titulo(), intro.subtitulo(), BossFx.color(intro.cor()));
         bossEvent.setColor(barColor(fase().corBarra()));
+    }
+
+    // Attributes and tier, from the file or the allbossestier0 rule. Health keeps its fraction when the max changes.
+    private void applyStats(ServerLevel level, BossSpec spec) {
+        tier0Applied = BossRules.allTier0(level);
+        float healthFraction = getHealth() / Math.max(1, getMaxHealth());
+        BossSpec.Atributos atributos = BossRules.atributos(level, spec);
+        setBase(Attributes.MAX_HEALTH, atributos.vida());
+        setBase(Attributes.ARMOR, atributos.armadura());
+        setBase(Attributes.MOVEMENT_SPEED, atributos.velocidade());
+        setBase(Attributes.KNOCKBACK_RESISTANCE, atributos.resistenciaEmpurrao());
+        setBase(Attributes.FOLLOW_RANGE, atributos.alcanceVisao());
+        setHealth(Math.max(1, healthFraction * getMaxHealth()));
+        powerData().tier = BossRules.tier(level, spec);
     }
 
     private void setBase(net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> attribute, double value) {

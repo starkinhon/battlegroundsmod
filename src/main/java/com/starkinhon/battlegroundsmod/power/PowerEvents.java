@@ -188,7 +188,7 @@ public final class PowerEvents {
         Susanoo.onIncomingDamage(event.getEntity(), event);
         // Bosses hit as hard as their file says.
         if (!event.isCanceled() && event.getSource().getEntity() instanceof SoulBoss boss) {
-            event.setAmount(event.getAmount() * boss.spec().atributos().multDano());
+            event.setAmount(event.getAmount() * boss.atributos().multDano());
         }
     }
 
