@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
 
+import com.starkinhon.battlegroundsmod.client.cutscene.CutscenePlayer;
 import com.starkinhon.battlegroundsmod.skill.AgarraoSpec;
 import com.starkinhon.battlegroundsmod.skill.DestructionBopSpec;
 import com.starkinhon.battlegroundsmod.skill.AnimationSpec;
@@ -122,19 +123,24 @@ public final class SkillAnimations {
         // First person hands are posed with ageInTicks 0, which lands here as t < 0 and leaves the animation running.
         boolean animating = raw >= 0 && raw <= playing.end();
         boolean guard = ageInTicks != 0 && GUARDING.contains(entity.getId());
+        // The Editor de Cutscenes can pose the body too, on top of the move or in its place.
+        CutscenePlayer.PoseOverride cut = ageInTicks != 0 ? CutscenePlayer.pose(entity) : null;
         if (!animating) {
             SQUARE.remove(entity.getId());
         } else if (SQUARE.contains(entity.getId())) {
             entity.yBodyRot = entity.yBodyRotO = entity.getYHeadRot();
         }
-        if (!animating && !guard) {
+        if (!animating && !guard && cut == null) {
             unshift(model);
             return;
         }
-        if (animating) {
+        if (animating || cut != null) {
             standStill(model);
         }
-        SkillSpec.Pose pose = animating ? pose(playing, playing.time(raw), raw) : DefesaSpec.get().pose();
+        SkillSpec.Pose pose = animating ? pose(playing, playing.time(raw), raw) : guard ? DefesaSpec.get().pose() : SkillSpec.Pose.ZERO;
+        if (cut != null) {
+            pose = cut.replace() ? cut.pose() : pose.plus(cut.pose());
+        }
         float lean = (float) pose.tronco() * DEG;
         // Lean around the hips like the page does: the neck and shoulders swing with the body.
         float cos = (float) Math.cos(lean);
@@ -147,7 +153,7 @@ public final class SkillAnimations {
         model.head.z = -12 * sin;
         // Skill poses (all made in the Forja) open the arm before raising it, like the page; combo punches that twist
         // the chest (giro) and the guard keep the older order they were tuned with.
-        boolean forja = animating && pose.giro() == 0;
+        boolean forja = (animating || cut != null) && pose.giro() == 0;
         arm(model.rightArm, pose.bracoDir(), lean, cos, sin, 1, forja);
         arm(model.leftArm, pose.bracoEsq(), lean, cos, sin, -1, forja);
         twist(model, (float) pose.giro() * DEG, sin);

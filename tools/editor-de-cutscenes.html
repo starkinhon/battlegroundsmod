@@ -1,0 +1,1592 @@
+<title>Editor de Cutscenes</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Mesa de edição de filme: viewport no centro, cenas à esquerda, inspetor à direita, linha do tempo embaixo. */
+:root {
+  --bg: #0e0c11;
+  --panel: #16131b;
+  --panel2: #1d1924;
+  --line: #2c2735;
+  --fg: #ece6f2;
+  --muted: #9a90a8;
+  --cam: #f2b134;
+  --usr: #ff6a55;
+  --alv: #3fc8b5;
+  --cut: #8f1f2c;
+  --leg: #b9a6ff;
+  --accent: #f2b134;
+  --danger: #ff5a6a;
+  --display: "Saira Condensed", "Arial Narrow", system-ui, sans-serif;
+  --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 13px; overflow: hidden; }
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+button, select, input, textarea { font: inherit; color: inherit; }
+button { background: var(--panel2); border: 1px solid var(--line); border-radius: 4px; padding: 5px 10px; cursor: pointer; }
+button:hover { border-color: #4a4257; }
+button:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+button.primary { background: var(--accent); color: #1a1205; border-color: var(--accent); font-weight: 600; }
+button.on { border-color: var(--accent); color: var(--accent); }
+button.danger { color: var(--danger); }
+select { min-width: 0; width: 100%; }
+#speed { width: auto; }
+select, input[type=number], input[type=text], textarea { background: var(--bg); border: 1px solid var(--line); border-radius: 4px; padding: 4px 6px; }
+input[type=number] { width: 100%; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+input[type=range] { width: 100%; accent-color: var(--accent); }
+label { color: var(--muted); }
+
+.app { height: 100%; display: grid; grid-template-rows: auto 1fr auto; padding-left: env(safe-area-inset-left, 0px); padding-right: env(safe-area-inset-right, 0px); }
+header { display: flex; align-items: center; gap: 14px; padding: 8px 16px; border-bottom: 1px solid var(--line); background: var(--panel); flex-wrap: wrap; }
+.brand { font-family: var(--display); font-weight: 700; font-size: 20px; letter-spacing: 0.04em; text-transform: uppercase; display: flex; align-items: baseline; gap: 8px; }
+.brand small { font-family: var(--mono); font-size: 11px; color: var(--muted); letter-spacing: 0; text-transform: none; font-weight: 400; }
+header .spacer { flex: 1; }
+header .group { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.main { display: grid; grid-template-columns: 230px minmax(0, 1fr) 290px; min-height: 0; }
+aside { background: var(--panel); border-right: 1px solid var(--line); overflow-y: auto; min-height: 0; }
+aside.right { border-right: 0; border-left: 1px solid var(--line); }
+.sec { padding: 12px 14px; border-bottom: 1px solid var(--line); display: grid; gap: 8px; }
+.sec h3 { margin: 0; font-family: var(--display); font-weight: 600; font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.skill { display: grid; gap: 2px; text-align: left; width: 100%; padding: 8px 10px; background: transparent; border: 1px solid transparent; }
+.skill b { font-weight: 600; font-size: 13px; }
+.skill span { font-size: 11px; color: var(--muted); }
+.skill.sel { background: var(--panel2); border-color: var(--line); box-shadow: inset 3px 0 0 var(--accent); }
+.skill .mod { font-family: var(--mono); font-size: 10px; color: var(--accent); }
+.row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.field { display: grid; gap: 3px; min-width: 0; }
+.field > label { font-size: 11px; }
+.slider { display: grid; grid-template-columns: 74px 1fr 70px; gap: 6px; align-items: center; }
+.slider label { font-size: 11px; }
+.check { display: flex; align-items: center; gap: 8px; color: var(--fg); }
+.hint { color: var(--muted); font-size: 12px; line-height: 1.45; margin: 0; }
+.hint b { color: var(--fg); font-weight: 500; }
+.kbd { font-family: var(--mono); font-size: 11px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 3px; padding: 0 4px; color: var(--fg); }
+
+.stage { position: relative; min-width: 0; min-height: 0; background: #07060a; }
+.stage canvas { display: block; width: 100%; height: 100%; }
+.overlay { position: absolute; inset: 0; pointer-events: none; }
+.bar { position: absolute; left: 0; right: 0; background: #000; height: 0; }
+.bar.top { top: 0; } .bar.bot { bottom: 0; }
+.subtitle { position: absolute; left: 0; right: 0; text-align: center; font-family: "Minecraft", var(--body); font-weight: 600; color: #fff; text-shadow: 2px 2px 0 #3f3f3f; white-space: pre; }
+.viewtabs { position: absolute; top: 10px; left: 10px; display: flex; gap: 4px; pointer-events: auto; flex-wrap: wrap; max-width: calc(100% - 20px); }
+.viewtabs button { background: rgba(14, 12, 17, 0.82); backdrop-filter: blur(4px); }
+.readout { position: absolute; right: 10px; top: 10px; font-family: var(--mono); font-size: 11px; color: var(--muted); background: rgba(14, 12, 17, 0.82); border: 1px solid var(--line); border-radius: 4px; padding: 6px 8px; line-height: 1.5; white-space: pre; pointer-events: none; }
+.tag { position: absolute; left: 10px; bottom: 10px; font-family: var(--display); letter-spacing: 0.1em; text-transform: uppercase; font-size: 12px; padding: 3px 8px; border-radius: 3px; background: rgba(14, 12, 17, 0.82); border: 1px solid var(--line); }
+.tag.live { color: var(--cam); border-color: var(--cam); }
+.pip-label { position: absolute; font-family: var(--display); letter-spacing: 0.1em; text-transform: uppercase; font-size: 11px; color: var(--cam); }
+.flash { position: absolute; inset: 0; background: #fff; opacity: 0; }
+
+footer { border-top: 1px solid var(--line); background: var(--panel); display: grid; grid-template-rows: auto 1fr; height: 252px; min-height: 0; }
+.transport { display: flex; align-items: center; gap: 6px; padding: 6px 12px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.time { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 13px; min-width: 150px; }
+.time b { color: var(--accent); font-weight: 500; }
+.tlwrap { position: relative; min-height: 0; display: grid; grid-template-columns: 112px minmax(0, 1fr); }
+.tlnames { border-right: 1px solid var(--line); display: grid; align-content: start; }
+.tlnames div { height: 30px; display: flex; align-items: center; padding: 0 10px; font-family: var(--display); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid #221e29; gap: 6px; }
+.tlnames div:first-child { height: 24px; }
+.tlnames i { width: 8px; height: 8px; transform: rotate(45deg); display: inline-block; }
+#tl { width: 100%; height: 100%; display: block; cursor: default; }
+.tlscroll { overflow: hidden; min-width: 0; position: relative; }
+
+.modal { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.6); display: grid; place-items: center; padding: 16px; z-index: 20; }
+.modal .box { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; width: min(760px, 100%); max-height: calc(100% - 32px); display: grid; grid-template-rows: auto 1fr auto; overflow: hidden; }
+.modal .box > div { padding: 12px 16px; }
+.modal h2 { margin: 0; font-family: var(--display); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; font-size: 18px; }
+.modal textarea { width: 100%; height: 340px; font-family: var(--mono); font-size: 11px; resize: vertical; }
+.modal .actions { display: flex; gap: 8px; justify-content: flex-end; border-top: 1px solid var(--line); flex-wrap: wrap; }
+.path { font-family: var(--mono); font-size: 12px; background: var(--bg); border: 1px solid var(--line); border-radius: 4px; padding: 6px 8px; user-select: all; overflow-x: auto; white-space: nowrap; }
+.toast { position: fixed; left: 50%; bottom: 270px; transform: translateX(-50%); background: var(--panel2); border: 1px solid var(--accent); color: var(--fg); padding: 8px 14px; border-radius: 4px; z-index: 30; opacity: 0; transition: opacity 0.2s; pointer-events: none; }
+.toast.show { opacity: 1; }
+.events { display: grid; gap: 2px; font-size: 12px; }
+.events div { display: grid; grid-template-columns: 44px 1fr; gap: 6px; color: var(--muted); }
+.events div b { font-family: var(--mono); font-weight: 400; color: var(--fg); font-variant-numeric: tabular-nums; }
+
+@media (max-width: 980px) {
+  body { overflow: auto; }
+  .app { height: auto; }
+  .main { grid-template-columns: 1fr; }
+  aside { border-right: 0; border-bottom: 1px solid var(--line); max-height: none; }
+  .stage { height: 56vh; }
+  aside.left .sec.skills { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+}
+@media (prefers-reduced-motion: reduce) { .toast { transition: none; } }
+</style>
+
+<div class="app">
+  <header>
+    <div class="brand">Editor de Cutscenes <small>souls-cutscene/1</small></div>
+    <div class="spacer"></div>
+    <div class="group">
+      <button id="btnImport">Carregar JSON</button>
+      <button id="btnReset">Voltar pra câmera original</button>
+      <button id="btnHelp">Como usar</button>
+      <button id="btnExport" class="primary">Exportar pro mod</button>
+    </div>
+  </header>
+
+  <div class="main">
+    <aside class="left">
+      <div class="sec skills" id="skillList"><h3>Skills com cutscene</h3></div>
+      <div class="sec" id="eventsSec"><h3>Momentos da skill</h3><div class="events" id="events"></div></div>
+      <div class="sec"><h3>Nota</h3><p class="hint" id="skillNote"></p></div>
+    </aside>
+
+    <div class="stage" id="stage">
+      <canvas id="view"></canvas>
+      <div class="overlay" id="overlay">
+        <div class="flash" id="flash"></div>
+        <div class="bar top" id="barTop"></div>
+        <div class="bar bot" id="barBot"></div>
+        <div id="subs"></div>
+        <div class="pip-label" id="pipLabel" hidden>Câmera da cutscene</div>
+        <div class="viewtabs">
+          <button id="vCam" class="on">Câmera da cutscene</button>
+          <button id="vFree">Visão livre</button>
+          <button id="vPilot" title="Arraste pra girar, roda do mouse = zoom, WASD/Espaço/Shift pra mover, Q/E inclina">Pilotar câmera</button>
+          <button id="vOrig" title="Mostra a câmera que o mod usa hoje, pra comparar">Comparar com original</button>
+        </div>
+        <div class="readout" id="readout"></div>
+        <div class="tag" id="tag">Visão do jogador</div>
+      </div>
+    </div>
+
+    <aside class="right" id="inspector"></aside>
+  </div>
+
+  <footer>
+    <div class="transport">
+      <button id="tStart" title="Início (Home)">⏮</button>
+      <button id="tPrev" title="Tick anterior (←)">◀ 1</button>
+      <button id="tPlay" class="primary" title="Tocar (Espaço)">▶ Tocar</button>
+      <button id="tNext" title="Próximo tick (→)">1 ▶</button>
+      <span class="time" id="time"></span>
+      <select id="speed" title="Velocidade">
+        <option value="0.25">0,25x</option><option value="0.5">0,5x</option><option value="1" selected>1x</option><option value="2">2x</option>
+      </select>
+      <button id="tLoop" class="on">Repetir</button>
+      <span style="flex:1"></span>
+      <button id="kCam" title="Chave de câmera no tick atual (K)">+ Chave de câmera</button>
+      <button id="kUsr">+ Usuário</button>
+      <button id="kAlv">+ Alvo</button>
+      <button id="kCut">+ Trecho</button>
+      <button id="kLeg">+ Legenda</button>
+      <button id="tFit" title="Ajustar a linha do tempo na tela">Ajustar</button>
+    </div>
+    <div class="tlwrap">
+      <div class="tlnames" id="tlnames"></div>
+      <div class="tlscroll" id="tlscroll"><canvas id="tl"></canvas></div>
+    </div>
+  </footer>
+</div>
+<div class="toast" id="toast"></div>
+<div class="modal" id="modal" hidden><div class="box"><div id="mHead"></div><div id="mBody" style="overflow:auto"></div><div class="actions" id="mActs"></div></div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/TransformControls.js"></script>
+<script>
+"use strict";
+// ======================================================================================================
+// Matemática compartilhada com o mod (client/cutscene/CutscenePlayer.java). Mudou aqui, muda lá.
+// Espaço da cena: x pra esquerda, y pra cima, z pra frente (de quem usa pro alvo), em blocos, a partir dos pés
+// da "origem" no começo. Tempo em ticks (20 por segundo) desde que o mod começa a cutscene da skill.
+// ======================================================================================================
+const D2R = Math.PI / 180, R2D = 180 / Math.PI;
+const EYE = 1.62, DEFAULT_FOV = 70, AIM_H = 1.5, BAR_H = 0.11;
+const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
+const lerp = (a, b, k) => a + (b - a) * k;
+const smooth = x => { x = clamp(x, 0, 1); return x * x * (3 - 2 * x); };
+const wrapDeg = a => { a = a % 360; if (a >= 180) a -= 360; if (a < -180) a += 360; return a; };
+const v3 = (x = 0, y = 0, z = 0) => [x, y, z];
+const add = (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
+const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+const mul = (a, k) => [a[0] * k, a[1] * k, a[2] * k];
+const vlerp = (a, b, k) => [lerp(a[0], b[0], k), lerp(a[1], b[1], k), lerp(a[2], b[2], k)];
+const len = a => Math.hypot(a[0], a[1], a[2]);
+function ease(type, x) {
+  x = clamp(x, 0, 1);
+  switch (type) {
+    case "linear": return x;
+    case "entrada": return x * x * x;
+    case "saida": return 1 - Math.pow(1 - x, 3);
+    case "corte": return x >= 1 ? 1 : 0;
+    default: return smooth(x);
+  }
+}
+const catmull = (p0, p1, p2, p3, u) => { const u2 = u * u, u3 = u2 * u; return 0.5 * (2 * p1 + (-p0 + p2) * u + (2 * p0 - 5 * p1 + 4 * p2 - p3) * u2 + (-p0 + 3 * p1 - 3 * p2 + p3) * u3); };
+function segmentIndex(keys, t) { let i = 0; while (i + 1 < keys.length && keys[i + 1].t <= t) i++; return i; }
+function curve(keys, t, values, angle) {
+  const n = keys.length;
+  if (n === 1 || t <= keys[0].t) return values(keys[0]);
+  if (t >= keys[n - 1].t) return values(keys[n - 1]);
+  const i = segmentIndex(keys, t), a = keys[i], b = keys[i + 1];
+  const span = b.t - a.t, u = span <= 0 ? 1 : ease(a.suave, (t - a.t) / span);
+  const p1 = values(a), p2 = values(b);
+  let p0 = i > 0 ? values(keys[i - 1]) : p1, p3 = i + 2 < n ? values(keys[i + 2]) : p2;
+  if (a.suave === "corte") return p1;
+  if (i > 0 && keys[i - 1].suave === "corte") p0 = p1;
+  if (b.suave === "corte") p3 = p2;
+  return p1.map((v1, c) => {
+    let v0 = p0[c], v2 = p2[c], v3_ = p3[c];
+    if (angle[c]) { v0 = v1 + wrapDeg(v0 - v1); v2 = v1 + wrapDeg(v2 - v1); v3_ = v2 + wrapDeg(v3_ - v2); }
+    return catmull(v0, v1, v2, v3_, u);
+  });
+}
+function weight(doc, t) {
+  let best = 0;
+  for (const s of doc.trechos) {
+    let w = 0;
+    if (t >= s.inicio && t <= s.fim) w = s.entradaTicks > 0 ? smooth((t - s.inicio) / s.entradaTicks) : 1;
+    else if (t > s.fim && s.saidaTicks > 0 && t < s.fim + s.saidaTicks) w = 1 - smooth((t - s.fim) / s.saidaTicks);
+    best = Math.max(best, w);
+  }
+  return best;
+}
+const ZERO_POSE = () => ({ cabeca: 0, tronco: 0, bracoDir: { frente: 0, abrir: 0 }, bracoEsq: { frente: 0, abrir: 0 }, giro: 0, pernaDir: { frente: 0, abrir: 0 }, pernaEsq: { frente: 0, abrir: 0 }, corpo: 0, pernas: 0 });
+const BR = b => ({ frente: (b && b.frente) || 0, abrir: (b && b.abrir) || 0 });
+function poseLerp(a, b, k) {
+  a = a || ZERO_POSE(); b = b || ZERO_POSE();
+  const br = (x, y) => ({ frente: lerp(BR(x).frente, BR(y).frente, k), abrir: lerp(BR(x).abrir, BR(y).abrir, k) });
+  return { cabeca: lerp(a.cabeca || 0, b.cabeca || 0, k), tronco: lerp(a.tronco || 0, b.tronco || 0, k), bracoDir: br(a.bracoDir, b.bracoDir), bracoEsq: br(a.bracoEsq, b.bracoEsq),
+    giro: lerp(a.giro || 0, b.giro || 0, k), pernaDir: br(a.pernaDir, b.pernaDir), pernaEsq: br(a.pernaEsq, b.pernaEsq), corpo: lerp(a.corpo || 0, b.corpo || 0, k), pernas: lerp(a.pernas || 0, b.pernas || 0, k) };
+}
+function posePlus(a, b) {
+  const br = (x, y) => ({ frente: BR(x).frente + BR(y).frente, abrir: BR(x).abrir + BR(y).abrir });
+  return { cabeca: (a.cabeca || 0) + (b.cabeca || 0), tronco: (a.tronco || 0) + (b.tronco || 0), bracoDir: br(a.bracoDir, b.bracoDir), bracoEsq: br(a.bracoEsq, b.bracoEsq),
+    giro: (a.giro || 0) + (b.giro || 0), pernaDir: br(a.pernaDir, b.pernaDir), pernaEsq: br(a.pernaEsq, b.pernaEsq), corpo: (a.corpo || 0) + (b.corpo || 0), pernas: (a.pernas || 0) + (b.pernas || 0) };
+}
+function actorState(doc, name, t) {
+  const actor = doc.atores[name];
+  const keys = actor ? actor.chaves : [];
+  if (!keys.length || t < keys[0].t || t > keys[keys.length - 1].t) return null;
+  const v = curve(keys, t, k => [k.pos[0], k.pos[1], k.pos[2], k.giro], [false, false, false, true]);
+  const i = segmentIndex(keys, t), a = keys[i], b = keys[Math.min(i + 1, keys.length - 1)];
+  const span = b.t - a.t, u = span <= 0 ? 0 : ease(a.suave, (t - a.t) / span);
+  return { off: [v[0], v[1], v[2]], giro: v[3], pose: poseLerp(a.pose, b.pose, u), replace: actor.modo === "substituir" };
+}
+
+// ======================================================================================================
+// As skills que têm cutscene no mod. base(t): o que a skill faz com os personagens (aproximado, só pra prévia; isso
+// NÃO vai no JSON). original(t): a câmera que o mod usa hoje, portada dos arquivos client/*Cutscene.java.
+// Tudo em "espaço do usuário": pés de quem usa no começo, z pro alvo.
+// ======================================================================================================
+const F = v3(0, 0, 1), LEFT = v3(1, 0, 0), RIGHT = v3(-1, 0, 0);
+const rest = (p, yaw = 0, extra = {}) => Object.assign({ p, yaw, pose: ZERO_POSE(), vis: true }, extra);
+const P = o => posePlus(ZERO_POSE(), o);
+function holdPose(t, keys) { // keys: [[t, pose]] com transição suave de 3 ticks
+  let cur = ZERO_POSE(), from = ZERO_POSE(), at = -1e9;
+  for (const [kt, pose] of keys) { if (t >= kt) { from = cur; cur = pose; at = kt; } }
+  return poseLerp(from, cur, smooth((t - at) / 3));
+}
+
+function faceSkill(o) {
+  return {
+    nome: o.nome, poder: "Madara", dur: o.dur, alvo: true, origem: "usuario", viewer: "usuario", travar: true,
+    gancho: o.gancho,
+    events: [[0, "Começa (todo mundo congela)"], [o.zoom, "Fim do zoom no rosto"], [o.part, "Partículas"], [o.dur - o.back, "Volta pra visão"], [o.freeze, "Fim do congelamento"]].filter(e => e[0] <= o.dur),
+    base: t => ({ usuario: rest(v3(0, 0, 0), 0, { pose: holdPose(t, [[0, P({ cabeca: -4 })]]) }), alvo: rest(v3(0, 0, 5), 180) }),
+    original: t => {
+      const k = smooth(t / o.zoom), d = lerp(o.d0, o.d1, k);
+      return { pos: v3(0, EYE + o.alt, d), look: v3(0, EYE, 0) };
+    },
+    trechos: [{ nome: "Rosto", inicio: 0, fim: o.dur - o.back, entradaTicks: 0, saidaTicks: o.back }],
+    cuts: [], legendas: [], note: o.note,
+    fx: (t, F) => { F.eyes("usuario", t >= o.part - 2 && t < o.dur ? 1 : 0, 0xff1a1a); }
+  };
+}
+
+const SK = {
+  "madara.mangekyo": faceSkill({ nome: "Mangekyo", dur: 50, zoom: 19, back: 15, part: 20, d0: 3, d1: 0.6, alt: 0.05, freeze: 40,
+    gancho: "Quando o Madara usa o Mangekyo (tecla da skill).",
+    note: "A cutscene aparece pro Madara e pra quem foi pego. O \"alvo\" aqui é quem está assistindo; quando é o próprio Madara vendo, não tem alvo e o alvo vira ele mesmo." }),
+  "madara.izanami": faceSkill({ nome: "Izanami", dur: 50, zoom: 19, back: 12, part: 22, d0: 3, d1: 0.55, alt: 0.05, freeze: 50,
+    gancho: "Quando o Izanami volta o tempo (a hora do rosto).",
+    note: "Mesmo esquema do Mangekyo: começa no momento em que o tempo volta. O alvo é quem está assistindo." }),
+  "madara.susanoo": {
+    nome: "Susanoo (contra-ataque)", poder: "Madara", dur: 34, alvo: true, origem: "usuario", viewer: "usuario", travar: false,
+    gancho: "Quando o contra-ataque do Susanoo pega alguém.",
+    events: [[0, "Pegou (braço alcança)"], [8, "Alvo na mão"], [26, "Volta pra visão"]],
+    base: t => {
+      const hand = v3(-0.9, 1.5, 2.6), k = smooth(t / 8);
+      return { usuario: rest(v3(0, 0, 0), 0, { pose: holdPose(t, [[0, P({ cabeca: -8, bracoDir: { frente: 40, abrir: 10 } })]]) }), alvo: rest(vlerp(v3(0, 0, 4), hand, k), 180) };
+    },
+    trechos: [{ nome: "Ombro", inicio: 0, fim: 26, entradaTicks: 6, saidaTicks: 8 }],
+    cuts: [], legendas: [],
+    note: "Só o Madara vê. No original o jogador continua podendo andar; por isso \"Travar movimento\" começa desligado.",
+    fx: (t, F) => { F.susanoo(t); }
+  },
+  "madara.agarrao": {
+    nome: "Agarrão no Pescoço", poder: "Madara", dur: 63, alvo: true, origem: "usuario", viewer: "usuario", travar: true,
+    gancho: "Na hora que o Madara agarra (fim do dash).",
+    events: [[0, "Agarrou"], [30, "Desce"], [33, "Impacto (cratera)"], [53, "Volta pra visão"]],
+    base: t => {
+      const held = v3(0, 0.45, 1.0), down = v3(0, -1.2, 1.0);
+      const p = t < 30 ? held : vlerp(held, down, smooth((t - 30) / 3));
+      const pose = holdPose(t, [[0, P({ bracoDir: { frente: 115, abrir: 0 }, tronco: -4 })], [30, P({ bracoDir: { frente: 60, abrir: 0 }, tronco: 25 })], [43, P({ bracoDir: { frente: 20 }, tronco: 8 })]]);
+      return { usuario: rest(v3(0, 0, 0), 0, { pose }), alvo: rest(p, 180, { pose: P({ cabeca: -20, bracoDir: { frente: 30, abrir: 25 }, bracoEsq: { frente: 30, abrir: 25 } }) }) };
+    },
+    original: t => {
+      let pos = v3(3.6, 0.35, -0.6), look = v3(-0.2, 1.7, 0.8);
+      if (t >= 33) { const k = smooth((t - 33) / 5); pos = vlerp(pos, v3(6.5, 3, -2.5), k); look = vlerp(look, v3(0, 0.4, 1.3), k); }
+      return { pos, look };
+    },
+    trechos: [{ nome: "Agarrão", inicio: 0, fim: 53, entradaTicks: 0, saidaTicks: 10 }],
+    cuts: [], legendas: [],
+    note: "A câmera original é a \"baixo\" (a que está no JSON da skill). Começa no agarrão; o dash antes não faz parte.",
+    fx: (t, F) => { F.crater(v3(0, 0.02, 1.0), t >= 33 ? 2.6 : 0); F.flashAt(t, 33, 0.5); }
+  },
+  "madara.boss_meteoro": {
+    nome: "Meteoro (boss)", poder: "Boss Madara", dur: 120, alvo: true, origem: "usuario", viewer: "alvo", travar: true,
+    gancho: "Quando o boss Madara solta a ult final (Meteoro).",
+    events: [[0, "Boss começa a ult"], [45, "Chama o meteoro"], [105, "Volta pra visão"]],
+    sky: v3(7.2, 54, -35),
+    base: t => ({ usuario: rest(v3(0, 0, 0), 0, { pose: holdPose(t, [[0, P({ cabeca: -5 })], [45, P({ cabeca: -25, bracoDir: { frente: 170, abrir: 8 } })]]) }), alvo: rest(v3(0, 0, 10), 180) }),
+    original(t) {
+      const eyes = v3(0, EYE, 0), face = v3(0, EYE, lerp(3.5, 1.1, smooth(t / 45)));
+      const sky = add(add(add(eyes, mul(F, -2.2)), mul(RIGHT, 0.9)), v3(0, -0.4, 0));
+      const turn = smooth((t - 45) / 18);
+      return { pos: vlerp(face, sky, turn), look: vlerp(eyes, this.sky, turn) };
+    },
+    trechos: [{ nome: "Ult", inicio: 0, fim: 105, entradaTicks: 0, saidaTicks: 15 }],
+    cuts: [], legendas: [],
+    note: "Quem vê é o jogador que está perto do boss (o \"alvo\" aqui). O usuário é o boss.",
+    fx: (t, F) => { F.meteor(t >= 45 ? vlerp(SK["madara.boss_meteoro"].sky, v3(0, 0, 10), clamp((t - 45) / 240, 0, 1)) : null); }
+  },
+  "bills.hakai": {
+    nome: "Hakai", poder: "Bills", dur: 194, alvo: true, origem: "usuario", viewer: "usuario", travar: true,
+    gancho: "Quando o Bills usa o Hakai num alvo com pouca vida.",
+    events: [[0, "Olhos (fala)"], [16, "Legenda \"Hakai.\""], [52, "Toque da mão"], [58, "Alvo começa a sumir"], [154, "Alvo morre"], [170, "Volta pra visão"]],
+    base: t => {
+      const pose = t < 52 ? poseLerp(ZERO_POSE(), P({ cabeca: 5, bracoDir: { frente: -20, abrir: -5 }, bracoEsq: { frente: -20, abrir: 5 } }), smooth(t / 3))
+        : t < 80 ? poseLerp(P({ cabeca: 5, bracoDir: { frente: -20, abrir: -5 }, bracoEsq: { frente: -20, abrir: 5 } }), P({ tronco: 6, bracoDir: { frente: 90 }, bracoEsq: { frente: -15, abrir: 5 } }), smooth((t - 52) / 3))
+        : poseLerp(P({ tronco: 6, bracoDir: { frente: 90 }, bracoEsq: { frente: -15, abrir: 5 } }), ZERO_POSE(), smooth((t - 80) / 9));
+      return { usuario: rest(v3(0, 0, 0), 0, { pose }), alvo: rest(v3(0, 0, 1.6), 180, { ash: clamp((t - 58) / (154 - 58), 0, 1), glow: t >= 58 }) };
+    },
+    original: t => {
+      const feet = v3(0, 0, 0), eyes = v3(0, EYE, 0), target = v3(0, 0, 1.6);
+      if (t < 52) {
+        const k = smooth(t / 52), d = lerp(0.75 * 1.35, 0.75, k);
+        return { pos: add(add(add(eyes, mul(F, d)), mul(RIGHT, 0.35)), v3(0, 0.05, 0)), look: add(eyes, mul(RIGHT, 0.35 * 0.15)) };
+      }
+      if (t < 58) {
+        const k = (t - 52) / 6, middle = add(vlerp(feet, target, 0.5), v3(0, 1.2, 0));
+        const kick = 1 - Math.pow(1 - clamp((t - 52) / 5, 0, 1), 3), side = 3.6 * (0.6 + 0.4 * kick);
+        return { pos: add(add(add(middle, mul(RIGHT, side)), mul(F, -0.4 - 0.3 * k)), v3(0, 0.1, 0)), look: add(middle, mul(F, 0.15)) };
+      }
+      const k = smooth((t - 58) / (154 - 58)), chest = add(target, v3(0, 1.8 * 0.6, 0)), d = 2.6 * (1 + 0.45 * k);
+      return { pos: add(add(add(chest, mul(F, -d)), mul(RIGHT, d * 0.35)), v3(0, 0.2 + 0.9 * k, 0)), look: add(chest, v3(0, 0.5 * k, 0)) };
+    },
+    trechos: [{ nome: "Hakai", inicio: 0, fim: 170, entradaTicks: 0, saidaTicks: 24 }],
+    cuts: [52, 58], legendas: [{ texto: "Hakai.", inicio: 16, fim: 52, cor: "#ffffff", tamanho: 2 }],
+    note: "Só o Bills e o alvo veem. A legenda \"Hakai.\" agora fica neste editor (trilha Legendas).",
+    fx: (t, F) => { F.flashAt(t, 52, 0.7); F.sparks(t >= 58 && t < 160 ? (t - 58) / 96 : 0); }
+  },
+  "bills.esfera": {
+    nome: "Esfera da Destruição", poder: "Bills", dur: 184, alvo: false, origem: "usuario", viewer: "usuario", travar: true, cameraOnly: true,
+    gancho: "Quando o Bills usa a Esfera (C).",
+    events: [[0, "Olha pra cima"], [20, "Clarão: espaço"], [90, "Close no rosto"], [105, "Legenda (do mod)"], [160, "Joga a esfera"], [184, "Clarão: volta"]],
+    space: t => t >= 20 && t < 184,
+    base: t => ({ usuario: rest(v3(0, 0, 0), 0, { pose: holdPose(t, [[0, P({ cabeca: -25 })], [20, P({ cabeca: -10, bracoDir: { frente: 175, abrir: -12 } })], [160, P({ tronco: 12, bracoDir: { frente: 70 } })]]) }), alvo: null }),
+    ball(t) {
+      const s = t - 20, full = 10, k = smooth(s / 140), r = lerp(0.25, full, k);
+      const eyes = v3(0, EYE, 0), overHand = add(add(add(eyes, mul(RIGHT, 0.35)), mul(F, 0.3)), v3(0, 1.1 + full, 0));
+      if (s < 140) return { p: sub(overHand, v3(0, full - r, 0)), r };
+      const f = Math.min(1, (s - 140) / 24), top = v3(0, -130 + 80, 140);
+      return { p: vlerp(overHand, top, Math.pow(f, 1.6)), r };
+    },
+    original(t) {
+      const eyes = v3(0, EYE, 0), feet = v3(0, 0, 0);
+      if (t < 20) { const k = smooth(t / 20); return { pos: add(add(add(eyes, mul(F, lerp(2.6, 1.7, k))), mul(RIGHT, 0.5)), v3(0, -0.9, 0)), look: add(eyes, v3(0, 0.4 + 0.6 * k, 0)) }; }
+      const s = t - 20, ball = this.ball(t).p;
+      if (s < 70) {
+        const a = -0.7 + 0.6 * s / 70, c = Math.cos(a), sn = Math.sin(a);
+        const around = v3(F[0] * c + F[2] * sn, 0, F[2] * c - F[0] * sn), back = 9 + 2.2 * 10;
+        return { pos: add(add(feet, mul(around, back)), v3(0, back * 0.35, 0)), look: vlerp(add(feet, v3(0, 2.2, 0)), ball, 0.4) };
+      }
+      if (s < 140) { const k = smooth((s - 70) / 70); return { pos: add(add(add(eyes, mul(F, lerp(1.9, 1.35, k))), mul(RIGHT, 0.45)), v3(0, -0.2, 0)), look: add(eyes, v3(0, 0.05, 0)) }; }
+      return { pos: add(add(sub(feet, mul(F, 15)), mul(RIGHT, 2.5)), v3(0, 13.5, 0)), look: ball };
+    },
+    trechos: [{ nome: "Espaço", inicio: 0, fim: 184, entradaTicks: 0, saidaTicks: 0 }],
+    cuts: [20, 90, 160], legendas: [], modLegend: { texto: "Agora, eu vou destruir a terra...", inicio: 105, fim: 158, tamanho: 1.6 },
+    note: "Só o Bills vê. Aqui o editor manda só na câmera: o espaço, os clarões, as barras e a legenda continuam vindo da skill (por isso Barras e Legendas ficam de fora nesta).",
+    fx: (t, F) => { F.flashAt(t, 18, 1); F.flashAt(t, 182, 0.9); const b = SK["bills.esfera"].ball(t); F.sun(t >= 20 && t < 184 ? b : null); }
+  },
+  "bills.destruction_bop": {
+    nome: "Destruction Bop", poder: "Bills", dur: 152, alvo: true, origem: "alvo", viewer: "usuario", travar: true,
+    gancho: "Quando o Bills aparece na frente do alvo (começo do peteleco).",
+    events: [[0, "Bills aparece, congela"], [16, "Peteleco"], [28, "Bills some"], [34, "Bills atrás do alvo"], [62, "Close na mão"], [98, "Tapa"], [106, "Bate no chão"], [142, "Volta pra visão"]],
+    A: v3(0, 0, 1.6),
+    alvoAt(t) {
+      const A = this.A;
+      if (t < 16) return A;
+      if (t < 28) return add(A, v3(0, 12 * (1 - Math.pow(1 - (t - 16) / 12, 2)), 0));
+      if (t < 98) return add(A, v3(0, 12 + 0.12 * Math.sin((t - 28) * 0.15), 0));
+      const top = add(A, v3(0, 12, 0)), end = add(A, v3(0, 0, -9));
+      if (t < 106) return vlerp(top, end, (t - 98) / 8);
+      return vlerp(end, add(end, v3(0, -1, 0)), smooth((t - 106) / 6));
+    },
+    base(t) {
+      const bills = t < 28 ? rest(v3(0, 0, 0), 0) : t < 34 ? rest(v3(0, 0, 0), 0, { vis: false }) : rest(add(this.A, v3(0, 12.3, 0.8)), 180);
+      bills.pose = holdPose(t, [[0, ZERO_POSE()], [12, P({ bracoDir: { frente: 95, abrir: -10 } })], [20, ZERO_POSE()], [34, P({ cabeca: 5 })], [62, P({ cabeca: 10, bracoDir: { frente: 70, abrir: -15 } })], [96, P({ tronco: 10, bracoDir: { frente: 110, abrir: -25 } })], [104, P({ cabeca: 10 })]]);
+      return { usuario: bills, alvo: rest(this.alvoAt(t), 180, { pose: t >= 16 ? P({ cabeca: -25, bracoDir: { frente: 20, abrir: 30 }, bracoEsq: { frente: 20, abrir: 30 } }) : ZERO_POSE() }) };
+    },
+    original(t) {
+      const A = this.A, W = (x, y, z) => add(A, v3(x, y, z));
+      const up = t < 16 ? 0 : t < 28 ? this.alvoAt(t)[1] : 12;
+      const live = add(this.alvoAt(t), v3(0, 0.9, 0));
+      const freezePos = W(3.2, 0.7, -1.4), freezeLook = W(0, 1.3, -0.5), risePos = W(7.5, 1.2, -3.5), airPos = W(5, up + 1.2, -2.2);
+      if (t < 16) return { pos: freezePos, look: freezeLook };
+      if (t < 28) { const k = smooth((t - 16) / 4); return { pos: vlerp(freezePos, risePos, k), look: vlerp(freezeLook, live, k) }; }
+      if (t < 62) { const k = smooth((t - 28) / 7); return { pos: vlerp(risePos, airPos, k), look: live }; }
+      if (t < 98) { const k = (t - 62) / 36, z = 0.4; return { pos: W(2.1 - 0.7 * k, up + 1.6 - 0.1 * k, z - 0.5), look: W(0, up + 1.45, z) }; }
+      const throwEnd = W(0, 0, -9), middle = W(0, up * 0.5, -4.5);
+      const fallPos = add(add(middle, mul(LEFT, 11 + up * 0.4)), v3(0, 1.5, 0));
+      const hole = t >= 106 ? this.alvoAt(106) : throwEnd;
+      const holePos = add(add(add(hole, mul(LEFT, 7)), mul(F, 4)), v3(0, 4.5, 0));
+      return { pos: vlerp(fallPos, holePos, smooth((t - 106) / 10)), look: vlerp(live, add(hole, v3(0, 0.3, 0)), smooth((t - 106) / 6)) };
+    },
+    trechos: [{ nome: "Peteleco + tapa", inicio: 0, fim: 142, entradaTicks: 0, saidaTicks: 10 }],
+    cuts: [62, 98], legendas: [],
+    note: "A origem aqui é o alvo (igual ao código original). O Bills e o alvo veem.",
+    fx: (t, F) => { F.crater(v3(0, 0.02, 1.6 - 9), t >= 106 ? 2.4 : 0); F.flashAt(t, 16, 0.35); F.flashAt(t, 98, 0.6); }
+  }
+};
+const SKILL_IDS = Object.keys(SK);
+// O original do Susanoo: atrás do ombro direito, baixo, olhando o alvo.
+SK["madara.susanoo"].original = function (t, b) {
+  const eyes = v3(0, EYE, 0), aim = add(b.alvo.p, v3(0, 0.9, 0));
+  let f = sub(aim, eyes); f[1] = 0; const l = len(f); f = l < 1e-3 ? F : mul(f, 1 / l);
+  const right = v3(-f[2], 0, f[0]);
+  return { pos: add(add(sub(eyes, mul(f, 2.1)), mul(right, 0.85)), v3(0, -0.15, 0)), look: aim };
+};
+
+// ======================================================================================================
+// Documento (o JSON que vai pro mod)
+// ======================================================================================================
+const round = (x, n = 3) => Math.round(x * 10 ** n) / 10 ** n;
+function lookToRot(pos, look) {
+  const d = sub(look, pos);
+  return [Math.atan2(d[0], d[2]) * R2D, Math.atan2(d[1], Math.hypot(d[0], d[2])) * R2D, 0];
+}
+function sceneOrigin(id, doc) { const s = SK[id]; return doc.origem === "alvo" && s.alvo ? s.base(0).alvo.p : v3(); }
+// Converte a câmera original em chaves (a cada 4 ticks, com cortes onde o original corta).
+function originalKeys(id, origem) {
+  const s = SK[id], o = origem === "alvo" && s.alvo ? s.base(0).alvo.p : v3();
+  const keys = [], tr = s.trechos, end = Math.max(...tr.map(x => x.fim + x.saidaTicks));
+  const times = new Set();
+  for (let t = 0; t <= end; t += 4) times.add(t);
+  times.add(end);
+  s.cuts.forEach(c => { times.add(c - 0.05); times.add(c); [...times].forEach(x => { if (x > c - 2 && x < c - 0.05) times.delete(x); }); });
+  const make = t => {
+    const b = s.base(t), sh = s.original(t, b);
+    return { t: round(t, 2), pos: sub(sh.pos, o).map(x => round(x)), rot: lookToRot(sh.pos, sh.look).map(x => round(x, 2)), fov: 70, seguir: "", mirar: "", mirarAltura: AIM_H,
+      suave: s.cuts.some(c => Math.abs(t - (c - 0.05)) < 1e-6) ? "corte" : "linear" };
+  };
+  [...times].sort((a, b) => a - b).forEach(t => keys.push(make(t)));
+  // Onde a curva entre as chaves foge do original, põe mais chaves (até 1 por tick).
+  const vals = k => [k.pos[0], k.pos[1], k.pos[2], k.rot[0], k.rot[1]];
+  for (let pass = 0; pass < 3; pass++) {
+    const extra = [];
+    for (let i = 0; i + 1 < keys.length; i++) {
+      const a = keys[i], b = keys[i + 1];
+      if (a.suave === "corte" || b.t - a.t < 1.5) continue;
+      for (const f of [0.25, 0.5, 0.75]) {
+        const t = a.t + (b.t - a.t) * f, c = curve(keys, t, vals, [false, false, false, true, false]), want = make(t);
+        const err = Math.hypot(c[0] - want.pos[0], c[1] - want.pos[1], c[2] - want.pos[2]) + Math.abs(wrapDeg(c[3] - want.rot[0])) * 0.02 + Math.abs(c[4] - want.rot[1]) * 0.02;
+        if (err > 0.06) { extra.push(make(round(a.t + (b.t - a.t) / 2, 2))); break; }
+      }
+    }
+    if (!extra.length) break;
+    keys.push(...extra); keys.sort((a, b) => a.t - b.t);
+  }
+  return keys;
+}
+function defaultDoc(id) {
+  const s = SK[id];
+  return {
+    formato: "souls-cutscene/1", skill: id, ativa: true, duracaoTicks: s.dur, origem: s.origem,
+    travarMovimento: s.travar, esconderHud: true, barrasPretas: !s.cameraOnly,
+    trechos: s.trechos.map(x => ({ ...x })),
+    camera: originalKeys(id, s.origem),
+    atores: { usuario: { modo: "somar", chaves: [] }, alvo: { modo: "somar", chaves: [] } },
+    legendas: s.legendas.map(x => ({ ...x }))
+  };
+}
+function normalize(doc, id) {
+  const d = Object.assign(defaultDoc(id), doc);
+  d.skill = id;
+  d.trechos = (d.trechos || []).map(x => ({ nome: x.nome || "Trecho", inicio: +x.inicio || 0, fim: +x.fim || 0, entradaTicks: +x.entradaTicks || 0, saidaTicks: +x.saidaTicks || 0 }));
+  d.camera = (d.camera || []).filter(k => k && k.pos).map(k => ({ t: +k.t || 0, pos: [0, 1, 2].map(i => +k.pos[i] || 0), rot: [0, 1, 2].map(i => +(k.rot || [])[i] || 0), fov: +k.fov || 70,
+    seguir: k.seguir || "", mirar: k.mirar || "", mirarAltura: k.mirarAltura == null ? AIM_H : +k.mirarAltura, suave: k.suave || "suave" }));
+  d.atores = d.atores || {};
+  for (const n of ["usuario", "alvo"]) {
+    const a = d.atores[n] || { modo: "somar", chaves: [] };
+    d.atores[n] = { modo: a.modo === "substituir" ? "substituir" : "somar", chaves: (a.chaves || []).map(k => ({ t: +k.t || 0, pos: [0, 1, 2].map(i => +(k.pos || [])[i] || 0), giro: +k.giro || 0, pose: poseLerp(k.pose, k.pose, 0), suave: k.suave || "suave" })) };
+  }
+  d.legendas = (d.legendas || []).map(l => ({ texto: l.texto || "", inicio: +l.inicio || 0, fim: +l.fim || 0, cor: l.cor || "#ffffff", tamanho: +l.tamanho || 1 }));
+  sortKeys(d);
+  return d;
+}
+function sortKeys(d) { d.camera.sort((a, b) => a.t - b.t); for (const n in d.atores) d.atores[n].chaves.sort((a, b) => a.t - b.t); }
+function exportDoc(d) {
+  const r = x => round(x);
+  const pose = p => {
+    const o = {};
+    for (const k of ["cabeca", "tronco", "giro", "corpo", "pernas"]) if (Math.abs(p[k]) > 1e-4) o[k] = r(p[k]);
+    for (const k of ["bracoDir", "bracoEsq", "pernaDir", "pernaEsq"]) if (Math.abs(p[k].frente) > 1e-4 || Math.abs(p[k].abrir) > 1e-4) o[k] = { frente: r(p[k].frente), abrir: r(p[k].abrir) };
+    return o;
+  };
+  const out = {
+    formato: "souls-cutscene/1", skill: d.skill, ativa: d.ativa, duracaoTicks: Math.round(d.duracaoTicks), origem: d.origem,
+    travarMovimento: d.travarMovimento, esconderHud: d.esconderHud, barrasPretas: d.barrasPretas,
+    trechos: d.trechos.map(s => ({ nome: s.nome, inicio: r(s.inicio), fim: r(s.fim), entradaTicks: r(s.entradaTicks), saidaTicks: r(s.saidaTicks) })),
+    camera: d.camera.map(k => { const o = { t: r(k.t), pos: k.pos.map(r), rot: k.rot.map(x => round(x, 2)), fov: r(k.fov), suave: k.suave };
+      if (k.seguir) o.seguir = k.seguir; if (k.mirar) { o.mirar = k.mirar; o.mirarAltura = r(k.mirarAltura); } return o; }),
+    atores: {}, legendas: d.legendas.map(l => ({ texto: l.texto, inicio: r(l.inicio), fim: r(l.fim), cor: l.cor, tamanho: r(l.tamanho) }))
+  };
+  for (const n of ["usuario", "alvo"]) {
+    const a = d.atores[n];
+    if (a && a.chaves.length) out.atores[n] = { modo: a.modo, chaves: a.chaves.map(k => ({ t: r(k.t), pos: k.pos.map(r), giro: r(k.giro), pose: pose(k.pose), suave: k.suave })) };
+  }
+  return out;
+}
+
+// ======================================================================================================
+// Estado
+// ======================================================================================================
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (e) { } }
+};
+const S = { id: SKILL_IDS[0], doc: null, t: 0, playing: false, speed: 1, loop: true, view: "cam", pilot: false, orig: false, sel: null, viewer: "usuario", pxPerTick: 4, scroll: 0 };
+const undoStack = [];
+function save() { store.set("cutscenes1:" + S.id, JSON.stringify(S.doc)); }
+function pushUndo() { undoStack.push(JSON.stringify({ id: S.id, doc: S.doc })); if (undoStack.length > 80) undoStack.shift(); }
+function loadSkill(id) {
+  S.id = id;
+  let doc = null;
+  try { const raw = store.get("cutscenes1:" + id); if (raw) doc = JSON.parse(raw); } catch (e) { doc = null; }
+  S.doc = normalize(doc || defaultDoc(id), id);
+  S.viewer = SK[id].viewer;
+  S.sel = null; S.t = 0; S.playing = false;
+  store.set("cutscenes1:last", id);
+  buildSkillList(); buildEvents(); fitTimeline(); renderInspector(); buildScene();
+}
+
+// ======================================================================================================
+// Cena 3D
+// ======================================================================================================
+const canvas = document.getElementById("view");
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+renderer.autoClear = false;
+const scene = new THREE.Scene();
+const V = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z);
+const tv = a => V(a[0], a[1], a[2]);
+const sky = new THREE.Color(0x8fb8ea), spaceCol = new THREE.Color(0x0b0626);
+scene.background = sky.clone();
+scene.fog = new THREE.Fog(0x8fb8ea, 60, 260);
+scene.add(new THREE.HemisphereLight(0xdfeaff, 0x4a3b2a, 0.95));
+const sunLight = new THREE.DirectionalLight(0xffffff, 0.7); sunLight.position.set(30, 60, 20); scene.add(sunLight);
+
+function pixelTex(draw, size) {
+  const c = document.createElement("canvas"); c.width = c.height = size; const g = c.getContext("2d"); draw(g, size);
+  const t = new THREE.CanvasTexture(c); t.magFilter = THREE.NearestFilter; t.minFilter = THREE.NearestFilter; return t;
+}
+const grassTex = pixelTex((g, n) => { for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) { const v = 0.85 + Math.random() * 0.25; g.fillStyle = `rgb(${88 * v | 0},${140 * v | 0},${58 * v | 0})`; g.fillRect(x, y, 1, 1); } }, 16);
+grassTex.wrapS = grassTex.wrapT = THREE.RepeatWrapping; grassTex.repeat.set(400, 400);
+const world = new THREE.Group(); scene.add(world);
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.MeshLambertMaterial({ map: grassTex }));
+ground.rotation.x = -Math.PI / 2; world.add(ground);
+const grid = new THREE.GridHelper(40, 40, 0x2f5a2a, 0x3e6e35); grid.position.y = 0.01; grid.material.transparent = true; grid.material.opacity = 0.35; world.add(grid);
+const blockMat = [new THREE.MeshLambertMaterial({ color: 0x7a7a7a }), new THREE.MeshLambertMaterial({ color: 0x6b4a2b }), new THREE.MeshLambertMaterial({ color: 0x3f7a2a })];
+[[6, 0, 6, 0], [7, 0, 6, 0], [6, 1, 6, 0], [-9, 0, 14, 1], [-9, 1, 14, 1], [-9, 2, 14, 1], [-9, 3, 14, 2], [-10, 3, 14, 2], [-8, 3, 14, 2], [-9, 4, 14, 2], [10, 0, -8, 0], [-6, 0, -7, 0], [-5, 0, -7, 0]]
+  .forEach(([x, y, z, m]) => { const b = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), blockMat[m]); b.position.set(x + 0.5, y + 0.5, z + 0.5); world.add(b); });
+const craterMesh = new THREE.Mesh(new THREE.CircleGeometry(1, 40), new THREE.MeshBasicMaterial({ color: 0x1a120e, transparent: true, opacity: 0.85 }));
+craterMesh.rotation.x = -Math.PI / 2; craterMesh.visible = false; scene.add(craterMesh);
+
+// Espaço da Esfera: estrelas, Terra cubo e o sol de destruição.
+const space = new THREE.Group(); space.visible = false; scene.add(space);
+{
+  const n = 900, pos = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++) { const v = V(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize().multiplyScalar(500); pos.set([v.x, v.y, v.z], i * 3); }
+  const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+  space.add(new THREE.Points(g, new THREE.PointsMaterial({ color: 0xffffff, size: 1.6, sizeAttenuation: false, fog: false })));
+  const earth = new THREE.Mesh(new THREE.BoxGeometry(160, 160, 160), [0x1f4fb0, 0x1f4fb0, 0x3f9a3a, 0x16337a, 0x1f4fb0, 0x1f4fb0].map(c => new THREE.MeshLambertMaterial({ color: c, fog: false })));
+  earth.position.set(0, -130, 140); space.add(earth);
+  const cont = new THREE.Mesh(new THREE.BoxGeometry(70, 1, 50), new THREE.MeshLambertMaterial({ color: 0x4fbf45, fog: false })); cont.position.set(-10, -49.5, 130); space.add(cont);
+  const plat = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.2, 0.2, 24), new THREE.MeshBasicMaterial({ color: 0x241c35, fog: false })); plat.position.y = -0.1; space.add(plat);
+}
+function glowTex() {
+  const c = document.createElement("canvas"); c.width = c.height = 128; const g = c.getContext("2d");
+  const gr = g.createRadialGradient(64, 64, 0, 64, 64, 64); gr.addColorStop(0, "rgba(255,255,255,1)"); gr.addColorStop(0.25, "rgba(255,230,170,0.9)"); gr.addColorStop(0.6, "rgba(255,140,40,0.25)"); gr.addColorStop(1, "rgba(255,120,30,0)");
+  g.fillStyle = gr; g.fillRect(0, 0, 128, 128); return new THREE.CanvasTexture(c);
+}
+const GLOW = glowTex();
+const sunObj = new THREE.Group(); sunObj.visible = false; scene.add(sunObj);
+sunObj.add(new THREE.Mesh(new THREE.SphereGeometry(1, 32, 16), new THREE.MeshBasicMaterial({ color: 0xfff4d8, fog: false })));
+const sunGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map: GLOW, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })); sunGlow.scale.set(4, 4, 1); sunObj.add(sunGlow);
+const meteorObj = new THREE.Group(); meteorObj.visible = false; scene.add(meteorObj);
+meteorObj.add(new THREE.Mesh(new THREE.IcosahedronGeometry(6, 1), new THREE.MeshLambertMaterial({ color: 0x3a2a22, emissive: 0x5a1a05 })));
+{ const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: GLOW, blending: THREE.AdditiveBlending, depthWrite: false, color: 0xff7a30 })); s.scale.set(26, 26, 1); meteorObj.add(s); }
+const sparkObj = new THREE.Points(new THREE.BufferGeometry(), new THREE.PointsMaterial({ color: 0xb060ff, size: 0.07, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
+{ const n = 600, p = new Float32Array(n * 3), seed = new Float32Array(n * 3); for (let i = 0; i < n * 3; i++) seed[i] = Math.random(); sparkObj.geometry.setAttribute("position", new THREE.BufferAttribute(p, 3)); sparkObj.userData.seed = seed; }
+sparkObj.visible = false; scene.add(sparkObj);
+const susArm = new THREE.Group(); susArm.visible = false; scene.add(susArm);
+{
+  const mat = new THREE.MeshLambertMaterial({ color: 0x4a7dff, emissive: 0x1a3aa0, transparent: true, opacity: 0.55, depthWrite: false });
+  const upper = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.7, 2.2), mat); upper.position.z = 1.1; susArm.add(upper);
+  const fist = new THREE.Mesh(new THREE.BoxGeometry(1.1, 1.1, 1.1), mat); fist.position.z = 2.5; susArm.add(fist);
+}
+
+// Bonecos (mesmo modelo do Visualizador).
+const PX = 1 / 16 * 0.9375;
+function faceTex(rows, pal) { return pixelTex(g => { rows.forEach((r, y) => [...r].forEach((ch, x) => { g.fillStyle = pal[ch]; g.fillRect(x, y, 1, 1); })); }, 8); }
+const FACES = {
+  steve: faceTex(["hhhhhhhh", "hhhhhhhh", "hsssssshh".slice(0, 8), "ssssssss", "swbssbws", "ssskksss", "ssmmmmss", "ssssssss"], { h: "#3b2a1a", s: "#c69c7a", w: "#ffffff", b: "#4a3fa0", k: "#94664f", m: "#6b4232" }),
+  bills: faceTex(["kkkkkkkk", "pppppppp", "pkppppkp", "pyypyypp", "pppppppp", "pppnnppp", "ppkkkkpp", "pppppppp"], { k: "#2a1b33", p: "#9f86b8", y: "#ffd23a", n: "#7c6496" }),
+  madara: faceTex(["hhhhhhhh", "hhhhhhhh", "hshhhhsh", "ssssssss", "srksskrs", "ssssssss", "sssmmsss", "ssssssss"], { h: "#120e16", s: "#d9b493", r: "#e01818", k: "#1a0a0a", m: "#8a5a48" })
+};
+const SKINS = {
+  bills: { head: "#9f86b8", hair: "#9f86b8", body: "#16121c", collar: "#d9a520", belt: "#c0392b", arms: "#9f86b8", cuffs: "#d9a520", legs: "#e9e2d0", shoes: "#d9a520", ears: true },
+  steve: { head: "#c69c7a", hair: "#3b2a1a", body: "#00a8a8", arms: "#c69c7a", legs: "#3c3caa", shoes: "#4a4a4a" },
+  madara: { head: "#d9b493", hair: "#120e16", body: "#8a2020", collar: "#5a1414", belt: "#2a1f1a", arms: "#8a2020", cuffs: "#5a1414", legs: "#2b2530", shoes: "#16121a" }
+};
+function box(w, h, d, mat, x, y, z) { const m = new THREE.Mesh(new THREE.BoxGeometry(w * PX, h * PX, d * PX), mat); m.position.set(x * PX, y * PX, z * PX); return m; }
+function humanoid(skin) {
+  const c = SKINS[skin], root = new THREE.Group(), body = new THREE.Group(); root.add(body);
+  const M = col => new THREE.MeshLambertMaterial({ color: col, transparent: true });
+  const headMats = [M(c.head), M(c.head), M(c.hair || c.head), M(c.head), new THREE.MeshLambertMaterial({ map: FACES[skin], transparent: true }), M(c.head)];
+  const legL = new THREE.Group(), legR = new THREE.Group(); legL.position.set(2 * PX, 12 * PX, 0); legR.position.set(-2 * PX, 12 * PX, 0);
+  legL.add(box(4, 12, 4, M(c.legs), 0, -6, 0)); legR.add(box(4, 12, 4, M(c.legs), 0, -6, 0));
+  if (c.shoes) { legL.add(box(4.1, 2, 4.1, M(c.shoes), 0, -11, 0)); legR.add(box(4.1, 2, 4.1, M(c.shoes), 0, -11, 0)); }
+  root.add(legL, legR);
+  body.position.set(0, 12 * PX, 0); body.rotation.order = "YXZ";
+  body.add(box(8, 12, 4, M(c.body), 0, 6, 0));
+  if (c.belt) body.add(box(8.2, 2, 4.2, M(c.belt), 0, 1, 0));
+  if (c.collar) body.add(box(8.3, 3, 4.3, M(c.collar), 0, 10.6, 0));
+  const head = new THREE.Group(); head.position.set(0, 12 * PX, 0); body.add(head);
+  const hm = new THREE.Mesh(new THREE.BoxGeometry(8 * PX, 8 * PX, 8 * PX), headMats); hm.position.set(0, 4 * PX, 0); head.add(hm);
+  if (c.ears) { head.add(box(2, 4, 1.5, M(c.head), 2.6, 9.5, 0)); head.add(box(2, 4, 1.5, M(c.head), -2.6, 9.5, 0)); }
+  const eyeGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map: GLOW, color: 0xff2020, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0 }));
+  eyeGlow.position.set(0, 4.6 * PX, 4.3 * PX); eyeGlow.scale.set(0.35, 0.18, 1); head.add(eyeGlow);
+  const armL = new THREE.Group(), armR = new THREE.Group(); armL.position.set(6 * PX, 10 * PX, 0); armR.position.set(-6 * PX, 10 * PX, 0);
+  armL.add(box(4, 12, 4, M(c.arms), 0, -4, 0)); armR.add(box(4, 12, 4, M(c.arms), 0, -4, 0));
+  if (c.cuffs) { armL.add(box(4.2, 2, 4.2, M(c.cuffs), 0, -7, 0)); armR.add(box(4.2, 2, 4.2, M(c.cuffs), 0, -7, 0)); }
+  body.add(armL, armR);
+  const mats = []; root.traverse(o => { if (o.isMesh) (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => mats.push(m)); });
+  scene.add(root);
+  return { root, body, head, armL, armR, legL, legR, mats, eyeGlow, skin };
+}
+// A mesma ordem do mod (SkillAnimations): abre o braço e depois levanta; tronco inclina no quadril; corpo gira o
+// peito com os braços; pernas giram as pernas.
+function applyPose(h, p) {
+  h.head.rotation.set(p.cabeca * D2R, 0, 0);
+  h.body.rotation.set(p.tronco * D2R, (p.corpo + p.giro) * D2R, 0);
+  h.armR.rotation.set(-p.bracoDir.frente * D2R, 0, -p.bracoDir.abrir * D2R);
+  h.armL.rotation.set(-p.bracoEsq.frente * D2R, 0, p.bracoEsq.abrir * D2R);
+  h.legR.rotation.set(-p.pernaDir.frente * D2R, p.pernas * D2R, -p.pernaDir.abrir * D2R);
+  h.legL.rotation.set(-p.pernaEsq.frente * D2R, p.pernas * D2R, p.pernaEsq.abrir * D2R);
+}
+let actors = {};
+function buildScene() {
+  Object.values(actors).forEach(a => a && scene.remove(a.root));
+  const s = SK[S.id];
+  const userSkin = s.poder.includes("Madara") ? "madara" : "bills";
+  actors = { usuario: humanoid(userSkin), alvo: s.alvo ? humanoid("steve") : null };
+  freeCam.position.set(9, 6, -7); orbit.target.set(0, 1.4, 1.5); orbit.update();
+  if (S.id === "bills.esfera") { freeCam.position.set(14, 10, -16); orbit.target.set(0, 4, 0); orbit.update(); }
+  if (S.id === "bills.destruction_bop") { freeCam.position.set(18, 10, -10); orbit.target.set(0, 6, -2); orbit.update(); }
+  if (S.id === "madara.boss_meteoro") { freeCam.position.set(16, 12, -14); orbit.target.set(0, 6, 3); orbit.update(); }
+  pathDirty = true;
+}
+
+// Câmeras
+const camPreview = new THREE.PerspectiveCamera(70, 16 / 9, 0.05, 2000);
+const freeCam = new THREE.PerspectiveCamera(55, 1, 0.05, 3000);
+const orbit = new THREE.OrbitControls(freeCam, canvas);
+orbit.enableDamping = true;
+const gizmo = new THREE.TransformControls(freeCam, canvas);
+gizmo.setSize(0.8);
+scene.add(gizmo);
+const gizmoTarget = new THREE.Object3D(); scene.add(gizmoTarget);
+gizmo.addEventListener("dragging-changed", e => { orbit.enabled = !e.value; if (e.value) pushUndo(); else { save(); pathDirty = true; renderInspector(); } });
+gizmo.addEventListener("objectChange", onGizmoMove);
+// Proxy desenhado na visão livre: o "corpo" da câmera da cutscene.
+const camProxy = new THREE.PerspectiveCamera(70, 16 / 9, 0.12, 1.4);
+const camHelper = new THREE.CameraHelper(camProxy); scene.add(camHelper);
+const camBody = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.2, 0.36), new THREE.MeshBasicMaterial({ color: 0xf2b134 })); scene.add(camBody);
+const pathLine = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0xf2b134 })); scene.add(pathLine);
+const origLine = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineDashedMaterial({ color: 0xbbbbbb, dashSize: 0.25, gapSize: 0.18, transparent: true, opacity: 0.6 })); scene.add(origLine);
+const keyDots = new THREE.Group(); scene.add(keyDots);
+const helpersFree = [camHelper, camBody, pathLine, origLine, keyDots];
+
+// ======================================================================================================
+// Avaliação de um instante: personagens, câmera da cutscene, câmera do jogador
+// ======================================================================================================
+function evalActors(t) {
+  const s = SK[S.id], b = s.base(t), o = sceneOrigin(S.id, S.doc), out = {};
+  for (const n of ["usuario", "alvo"]) {
+    const bb = b[n];
+    if (!bb) { out[n] = null; continue; }
+    const st = actorState(S.doc, n, t);
+    let pose = bb.pose || ZERO_POSE();
+    if (st) pose = st.replace ? st.pose : posePlus(pose, st.pose);
+    const p = sub(bb.p, o);
+    out[n] = { base: p, p: st ? add(p, st.off) : p, yaw: bb.yaw + (st ? st.giro : 0), pose, vis: bb.vis !== false, ash: bb.ash || 0, glow: bb.glow, st };
+  }
+  return out;
+}
+function actorLocal(name, t) { const a = evalActors(t); return (a[name] || a.usuario).p; }
+function actorStart(name) { const s = SK[S.id], o = sceneOrigin(S.id, S.doc), b = s.base(0); return sub((b[name] || b.usuario).p, o); }
+function camValues(k, t) {
+  let p = k.pos.slice();
+  const fol = k.seguir === "alvo" && !SK[S.id].alvo ? "usuario" : k.seguir;
+  if (fol === "usuario" || fol === "alvo") p = add(p, sub(actorLocal(fol, t), actorStart(fol)));
+  let yaw = k.rot[0], pitch = k.rot[1];
+  const aim = k.mirar === "alvo" && !SK[S.id].alvo ? "usuario" : k.mirar;
+  if (aim === "usuario" || aim === "alvo") {
+    const at = add(actorLocal(aim, t), v3(0, k.mirarAltura, 0)), d = sub(at, p);
+    if (len(d) > 1e-3) { yaw = Math.atan2(d[0], d[2]) * R2D; pitch = Math.atan2(d[1], Math.hypot(d[0], d[2])) * R2D; }
+  }
+  return [p[0], p[1], p[2], yaw, pitch, k.rot[2], k.fov > 0 ? k.fov : DEFAULT_FOV];
+}
+function cutCam(t) {
+  const keys = S.doc.camera;
+  if (!keys.length) return null;
+  return curve(keys, t, k => camValues(k, t), [false, false, false, true, false, true, false]);
+}
+function origCam(t) {
+  const s = SK[S.id], b = s.base(t), sh = s.original(t, b), o = sceneOrigin(S.id, S.doc), pos = sub(sh.pos, o), r = lookToRot(sh.pos, sh.look);
+  return [pos[0], pos[1], pos[2], r[0], r[1], 0, 70];
+}
+function origWeight(t) {
+  const s = SK[S.id]; let best = 0;
+  for (const x of s.trechos) {
+    let w = 0;
+    if (t >= x.inicio && t <= x.fim) w = x.entradaTicks > 0 ? smooth((t - x.inicio) / x.entradaTicks) : 1;
+    else if (t > x.fim && x.saidaTicks > 0 && t < x.fim + x.saidaTicks) w = 1 - smooth((t - x.fim) / x.saidaTicks);
+    best = Math.max(best, w);
+  }
+  return best;
+}
+// Câmera final que o jogador vê no tick t (mesma regra do mod: dentro dos trechos é a da cutscene).
+function finalCam(t, act) {
+  const orig = S.orig;
+  const w = orig ? origWeight(t) : weight(S.doc, t);
+  const own = viewerCam(act);
+  if (w <= 0) return { c: own, w: 0 };
+  let c = orig ? origCam(t) : cutCam(t);
+  if (!c) return { c: own, w: 0 };
+  if (w < 1) {
+    c = [lerp(own[0], c[0], w), lerp(own[1], c[1], w), lerp(own[2], c[2], w), own[3] + wrapDeg(c[3] - own[3]) * w, lerp(own[4], c[4], w), c[5] * w, lerp(own[6], c[6], w)];
+  }
+  return { c, w };
+}
+function viewerCam(act) {
+  const v = act[S.viewer] || act.usuario, e = add(v.p, v3(0, EYE, 0));
+  return [e[0], e[1], e[2], v.yaw, 0, 0, DEFAULT_FOV];
+}
+function applyCam(cam, c) {
+  const pos = V(c[0], c[1], c[2]), y = c[3] * D2R, p = c[4] * D2R;
+  const dir = V(Math.sin(y) * Math.cos(p), Math.sin(p), Math.cos(y) * Math.cos(p));
+  cam.position.copy(pos); cam.up.set(0, 1, 0); cam.lookAt(pos.clone().add(dir)); cam.rotateZ(c[5] * D2R);
+  cam.fov = c[6]; cam.updateProjectionMatrix();
+}
+
+// Efeitos simples da prévia (pra dar referência de tempo, não é o visual final do mod).
+let flashLevel = 0;
+const toScene = p => sub(p, sceneOrigin(S.id, S.doc));
+const FX = {
+  eyes(name, k, color) { const a = actors[name]; if (a) { a.eyeGlow.material.opacity = k; a.eyeGlow.material.color.setHex(color); } },
+  crater(p, r) { craterMesh.visible = r > 0; if (r > 0) { p = toScene(p); craterMesh.position.set(p[0], p[1], p[2]); craterMesh.scale.setScalar(r); } },
+  flashAt(t, at, k) { if (t >= at && t < at + 6) flashLevel = Math.max(flashLevel, k * (1 - (t - at) / 6)); },
+  sun(b) { sunObj.visible = !!b; if (b) { const p = toScene(b.p); sunObj.position.set(p[0], p[1], p[2]); sunObj.scale.setScalar(b.r); } },
+  meteor(p) { meteorObj.visible = !!p; if (p) { p = toScene(p); meteorObj.position.set(p[0], p[1], p[2]); } },
+  sparks(k) {
+    sparkObj.visible = k > 0; if (!k) return;
+    const a = actors.alvo, pos = sparkObj.geometry.attributes.position, seed = sparkObj.userData.seed, base = a.root.position;
+    for (let i = 0; i < pos.count; i++) {
+      const sx = seed[i * 3], sy = seed[i * 3 + 1], sz = seed[i * 3 + 2], life = (k * 3 + sx) % 1;
+      pos.setXYZ(i, base.x + (sx - 0.5) * 0.7 + life * 0.8 * (sz - 0.3), base.y + sy * 1.8 + life * 1.6, base.z + (sz - 0.5) * 0.5 + life * 0.6);
+    }
+    pos.needsUpdate = true;
+  },
+  susanoo(t) {
+    const a = actors.usuario, b = actors.alvo; susArm.visible = !!(a && b);
+    if (!susArm.visible) return;
+    const shoulder = a.root.position.clone().add(V(-1.2, 2.6, -0.8)), hand = b.root.position.clone().add(V(0, 0.9, 0));
+    susArm.position.copy(shoulder); susArm.lookAt(hand); const d = shoulder.distanceTo(hand); susArm.scale.set(1, 1, d / 2.6);
+  }
+};
+function updateWorld(t) {
+  const s = SK[S.id], act = evalActors(t);
+  flashLevel = 0;
+  for (const n of ["usuario", "alvo"]) {
+    const h = actors[n], a = act[n];
+    if (!h) continue;
+    h.root.visible = !!a && a.vis && a.ash < 1;
+    if (!a) continue;
+    h.root.position.set(a.p[0], a.p[1], a.p[2]);
+    h.root.rotation.set(0, a.yaw * D2R, 0);
+    applyPose(h, a.pose);
+    const fade = 1 - a.ash;
+    h.mats.forEach(m => { m.opacity = fade; m.emissive && m.emissive.setRGB(a.glow ? 0.35 * (1 - a.ash * 0.5) : 0, 0, a.glow ? 0.6 : 0); });
+    h.eyeGlow.material.opacity = 0;
+  }
+  craterMesh.visible = false; sunObj.visible = false; meteorObj.visible = false; sparkObj.visible = false; susArm.visible = false;
+  s.fx && s.fx(t, FX);
+  const inSpace = s.space && s.space(t);
+  space.visible = !!inSpace; world.visible = !inSpace;
+  scene.background = inSpace ? spaceCol : sky; scene.fog.color.copy(inSpace ? spaceCol : sky); scene.fog.far = inSpace ? 5000 : 260;
+  if (inSpace) space.position.set(0, 0, 0);
+  return act;
+}
+
+// Caminho da câmera, pontos das chaves e o caminho original (só na visão livre).
+let pathDirty = true;
+function rebuildPaths() {
+  pathDirty = false;
+  const pts = [], d = S.doc, ks = d.camera;
+  if (ks.length) {
+    const t0 = ks[0].t, t1 = ks[ks.length - 1].t;
+    for (let t = t0; t <= t1 + 1e-6; t += 0.5) { const c = cutCam(t); pts.push(V(c[0], c[1], c[2])); }
+  }
+  pathLine.geometry.dispose(); pathLine.geometry = new THREE.BufferGeometry().setFromPoints(pts.length ? pts : [V(), V()]);
+  const op = [], s = SK[S.id], end = Math.max(...s.trechos.map(x => x.fim + x.saidaTicks));
+  for (let t = 0; t <= end; t += 0.5) { const c = origCam(t); op.push(V(c[0], c[1], c[2])); }
+  origLine.geometry.dispose(); origLine.geometry = new THREE.BufferGeometry().setFromPoints(op); origLine.computeLineDistances();
+  while (keyDots.children.length) keyDots.remove(keyDots.children[0]);
+  ks.forEach((k, i) => {
+    const c = camValues(k, k.t);
+    const m = new THREE.Mesh(new THREE.OctahedronGeometry(0.13), new THREE.MeshBasicMaterial({ color: isSel("camera", i) ? 0xffffff : 0xf2b134, depthTest: false, transparent: true }));
+    m.position.set(c[0], c[1], c[2]); m.renderOrder = 5; m.userData = { track: "camera", i }; keyDots.add(m);
+  });
+}
+
+// ======================================================================================================
+// Render
+// ======================================================================================================
+const stage = document.getElementById("stage");
+const overlayEls = { top: document.getElementById("barTop"), bot: document.getElementById("barBot"), subs: document.getElementById("subs"), flash: document.getElementById("flash"), tag: document.getElementById("tag"), readout: document.getElementById("readout"), pip: document.getElementById("pipLabel") };
+let W = 1, H = 1;
+function resize() {
+  const r = stage.getBoundingClientRect(); W = Math.max(1, r.width); H = Math.max(1, r.height);
+  renderer.setSize(W, H, false); freeCam.aspect = W / H; freeCam.updateProjectionMatrix();
+  sizeTimeline();
+}
+new ResizeObserver(resize).observe(stage);
+new ResizeObserver(() => sizeTimeline()).observe(document.getElementById("tlscroll"));
+function frameRect() { // 16:9 dentro do palco
+  let w = W, h = W * 9 / 16; if (h > H) { h = H; w = H * 16 / 9; }
+  return { x: (W - w) / 2, y: (H - h) / 2, w, h };
+}
+let lastFrame = performance.now();
+function loop(now) {
+  const dt = Math.min(0.1, (now - lastFrame) / 1000); lastFrame = now;
+  if (S.playing) {
+    S.t += dt * 20 * S.speed;
+    const end = S.doc.duracaoTicks;
+    if (S.t >= end) { if (S.loop) S.t = 0; else { S.t = end; S.playing = false; updatePlayBtn(); } }
+  }
+  try {
+    if (S.pilot) pilotStep(dt);
+    orbit.update();
+    draw();
+    drawTimeline();
+  } finally {
+    requestAnimationFrame(loop);
+  }
+}
+function draw() {
+  const t = S.t, act = updateWorld(t), fc = finalCam(t, act);
+  applyCam(camPreview, fc.c);
+  // O jogador que está vendo não aparece na própria visão em primeira pessoa.
+  const viewerActor = actors[S.viewer] || actors.usuario;
+  const fr = frameRect();
+  renderer.setScissorTest(true);
+  renderer.setViewport(0, 0, W, H); renderer.setScissor(0, 0, W, H); renderer.setClearColor(0x07060a); renderer.clear();
+  if (S.view === "cam") {
+    helpersFree.forEach(o => o.visible = false); gizmo.visible = false;
+    const hide = fc.w <= 0 && viewerActor; if (hide) viewerActor.root.visible = false;
+    camPreview.aspect = fr.w / fr.h; camPreview.updateProjectionMatrix();
+    renderer.setViewport(fr.x, H - fr.y - fr.h, fr.w, fr.h); renderer.setScissor(fr.x, H - fr.y - fr.h, fr.w, fr.h);
+    renderer.render(scene, camPreview);
+    placeOverlay(fr, fc.w, t);
+    overlayEls.pip.hidden = true;
+  } else {
+    if (pathDirty) rebuildPaths();
+    helpersFree.forEach(o => o.visible = true);
+    gizmo.visible = !!gizmo.object;
+        camProxy.position.copy(camPreview.position); camProxy.quaternion.copy(camPreview.quaternion); camProxy.fov = camPreview.fov; camProxy.updateProjectionMatrix(); camProxy.updateMatrixWorld(); camHelper.update();
+    camBody.position.copy(camPreview.position); camBody.quaternion.copy(camPreview.quaternion);
+    camHelper.visible = camBody.visible = fc.w > 0;
+    renderer.render(scene, freeCam);
+    // Miniatura: o que a câmera da cutscene vê.
+    helpersFree.forEach(o => o.visible = false); gizmo.visible = false;
+    const hide = fc.w <= 0 && viewerActor; if (hide) viewerActor.root.visible = false;
+    const pw = Math.round(Math.min(W * 0.34, 360)), ph = Math.round(pw * 9 / 16), px = W - pw - 12, py = H - ph - 12;
+    camPreview.aspect = 16 / 9; camPreview.updateProjectionMatrix();
+    renderer.setViewport(px, 12, pw, ph); renderer.setScissor(px, 12, pw, ph); renderer.render(scene, camPreview);
+    placeOverlay({ x: px, y: py, w: pw, h: ph }, fc.w, t);
+    overlayEls.pip.hidden = false; overlayEls.pip.style.left = px + "px"; overlayEls.pip.style.top = (py - 16) + "px";
+  }
+  renderer.setScissorTest(false);
+  const c = fc.c;
+  overlayEls.readout.textContent = `pos  ${c[0].toFixed(2)}  ${c[1].toFixed(2)}  ${c[2].toFixed(2)}\nrot  ${wrapDeg(c[3]).toFixed(1)}°  ${c[4].toFixed(1)}°  ${c[5].toFixed(1)}°\nfov  ${c[6].toFixed(1)}°   cut ${(fc.w * 100).toFixed(0)}%`;
+  overlayEls.tag.textContent = S.orig ? "Comparando: câmera original" : fc.w > 0 ? (S.pilot ? "Pilotando a câmera" : "Câmera da cutscene") : "Visão do jogador";
+  overlayEls.tag.classList.toggle("live", fc.w > 0);
+}
+function placeOverlay(fr, w, t) {
+  const doc = S.doc, s = SK[S.id];
+  const bars = S.orig ? true : doc.barrasPretas || s.cameraOnly;
+  const bh = bars ? fr.h * BAR_H * (s.cameraOnly ? (w > 0 ? 1 : 0) : w) : 0;
+  Object.assign(overlayEls.top.style, { left: fr.x + "px", width: fr.w + "px", top: fr.y + "px", height: bh + "px" });
+  Object.assign(overlayEls.bot.style, { left: fr.x + "px", width: fr.w + "px", top: (fr.y + fr.h - bh) + "px", height: bh + "px" });
+  Object.assign(overlayEls.flash.style, { left: fr.x + "px", width: fr.w + "px", top: fr.y + "px", height: fr.h + "px", inset: "auto", opacity: flashLevel });
+  const list = s.cameraOnly ? (s.modLegend ? [s.modLegend] : []) : (S.orig ? s.legendas : doc.legendas);
+  let html = "";
+  const scale = fr.h / 240; // GUI do Minecraft ~240 px de altura com escala automática
+  for (const l of list) {
+    if (!l.texto || t < l.inicio || t > l.fim) continue;
+    const a = clamp(Math.min(t - l.inicio, l.fim - t) / 2, 0, 1);
+    const size = 8 * Math.max(0.5, l.tamanho || 1) * scale;
+    const y = fr.y + fr.h - Math.max(bh, 8 * scale) - 10 * scale - size;
+    html += `<div class="subtitle" style="left:${fr.x}px;width:${fr.w}px;top:${y}px;font-size:${size}px;line-height:${size}px;color:${l.cor || "#fff"};opacity:${a}">${esc(l.texto)}</div>`;
+  }
+  overlayEls.subs.innerHTML = html;
+}
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+// ======================================================================================================
+// Seleção, chaves e gizmo
+// ======================================================================================================
+function isSel(track, i) { return S.sel && S.sel.track === track && S.sel.i === i; }
+function selected() {
+  if (!S.sel) return null;
+  const d = S.doc, { track, i } = S.sel;
+  if (track === "camera") return d.camera[i];
+  if (track === "usuario" || track === "alvo") return d.atores[track].chaves[i];
+  if (track === "trecho") return d.trechos[i];
+  if (track === "legenda") return d.legendas[i];
+  return null;
+}
+function select(track, i, jump = true) {
+  S.sel = track == null ? null : { track, i };
+  const k = selected();
+  if (k && jump && k.t != null) S.t = k.t;
+  pathDirty = true; renderInspector(); attachGizmo();
+}
+function attachGizmo() {
+  const k = selected();
+  if (!k || !S.sel || S.view !== "free" || !["camera", "usuario", "alvo"].includes(S.sel.track) || Math.abs(S.t - k.t) > 0.01) { gizmo.detach(); return; }
+  syncGizmo();
+  gizmo.attach(gizmoTarget);
+}
+function syncGizmo() {
+  const k = selected(); if (!k) return;
+  if (S.sel.track === "camera") { const c = camValues(k, k.t); gizmoTarget.position.set(c[0], c[1], c[2]); }
+  else { const a = evalActors(k.t)[S.sel.track]; if (a) gizmoTarget.position.set(a.p[0], a.p[1], a.p[2]); }
+}
+function onGizmoMove() {
+  const k = selected(); if (!k) return;
+  const g = [gizmoTarget.position.x, gizmoTarget.position.y, gizmoTarget.position.z];
+  if (S.sel.track === "camera") {
+    const fol = k.seguir;
+    const disp = fol === "usuario" || fol === "alvo" ? sub(actorLocal(fol, k.t), actorStart(fol)) : v3();
+    k.pos = sub(g, disp).map(x => round(x));
+  } else {
+    const a = evalActors(k.t)[S.sel.track];
+    const off = sub(g, a.base);
+    k.pos = off.map(x => round(x));
+  }
+  pathDirty = true; save();
+  updateInspectorValues();
+}
+function keyAtPlayhead(list) { return list.findIndex(k => Math.abs(k.t - S.t) < 0.5); }
+function addCameraKey(fromValues) {
+  pushUndo();
+  const c = fromValues || (cutCam(S.t) || finalCam(S.t, evalActors(S.t)).c);
+  const t = round(S.t, 2);
+  const i0 = keyAtPlayhead(S.doc.camera);
+  const prev = S.doc.camera.filter(k => k.t <= t).pop();
+  const k = { t, pos: [c[0], c[1], c[2]].map(x => round(x)), rot: [c[3], c[4], c[5]].map(x => round(x, 2)), fov: round(c[6], 2), seguir: "", mirar: prev ? prev.mirar : "", mirarAltura: prev ? prev.mirarAltura : AIM_H, suave: prev ? prev.suave : "suave" };
+  if (k.mirar) k.mirar = "";
+  if (i0 >= 0) S.doc.camera[i0] = Object.assign(S.doc.camera[i0], { pos: k.pos, rot: k.rot, fov: k.fov, mirar: "" });
+  else S.doc.camera.push(k);
+  sortKeys(S.doc); save(); pathDirty = true;
+  select("camera", S.doc.camera.indexOf(i0 >= 0 ? S.doc.camera[i0] : k), false);
+  toast(i0 >= 0 ? "Chave atualizada" : "Chave de câmera criada");
+}
+function addActorKey(name) {
+  if (name === "alvo" && !SK[S.id].alvo) return toast("Esta skill não tem alvo");
+  pushUndo();
+  const list = S.doc.atores[name].chaves, t = round(S.t, 2), st = actorState(S.doc, name, S.t);
+  const i0 = keyAtPlayhead(list);
+  if (i0 >= 0) { select(name, i0); return; }
+  const k = { t, pos: st ? st.off.map(x => round(x)) : [0, 0, 0], giro: st ? round(st.giro) : 0, pose: st ? st.pose : ZERO_POSE(), suave: "suave" };
+  list.push(k); sortKeys(S.doc); save();
+  select(name, list.indexOf(k), false);
+  toast(name === "usuario" ? "Chave do usuário criada" : "Chave do alvo criada");
+}
+function addTrecho() {
+  pushUndo();
+  const t = round(S.t, 1), s = { nome: "Trecho " + (S.doc.trechos.length + 1), inicio: t, fim: Math.min(S.doc.duracaoTicks, t + 20), entradaTicks: 0, saidaTicks: 8 };
+  S.doc.trechos.push(s); save(); select("trecho", S.doc.trechos.length - 1, false);
+}
+function addLegenda() {
+  if (SK[S.id].cameraOnly) return toast("Nesta skill a legenda vem do próprio mod");
+  pushUndo();
+  const t = round(S.t, 1), l = { texto: "Fala", inicio: t, fim: t + 30, cor: "#ffffff", tamanho: 1.5 };
+  S.doc.legendas.push(l); save(); select("legenda", S.doc.legendas.length - 1, false);
+}
+function deleteSelected() {
+  if (!S.sel) return;
+  pushUndo();
+  const d = S.doc, { track, i } = S.sel;
+  if (track === "camera") d.camera.splice(i, 1);
+  else if (track === "usuario" || track === "alvo") d.atores[track].chaves.splice(i, 1);
+  else if (track === "trecho") d.trechos.splice(i, 1);
+  else if (track === "legenda") d.legendas.splice(i, 1);
+  save(); select(null); pathDirty = true;
+}
+function duplicateSelected() {
+  const k = selected(); if (!k || k.t == null) return;
+  pushUndo();
+  const copy = JSON.parse(JSON.stringify(k)); copy.t = round(S.t === k.t ? k.t + 10 : S.t, 2);
+  const list = S.sel.track === "camera" ? S.doc.camera : S.doc.atores[S.sel.track].chaves;
+  list.push(copy); sortKeys(S.doc); save(); select(S.sel.track, list.indexOf(copy));
+}
+function undo() {
+  const raw = undoStack.pop(); if (!raw) return toast("Nada pra desfazer");
+  const u = JSON.parse(raw); if (u.id !== S.id) return;
+  S.doc = u.doc; save(); S.sel = null; pathDirty = true; renderInspector(); gizmo.detach();
+}
+
+// ======================================================================================================
+// Pilotar a câmera (na visão da cutscene): mexe direto na chave do tick atual (cria se não tiver).
+// ======================================================================================================
+const keys = {};
+let pilotDrag = null;
+function pilotKey() {
+  let i = keyAtPlayhead(S.doc.camera);
+  if (i < 0) { addCameraKey(); i = keyAtPlayhead(S.doc.camera); }
+  return S.doc.camera[i];
+}
+function pilotStep(dt) {
+  const moving = ["KeyW", "KeyA", "KeyS", "KeyD", "Space", "ShiftLeft", "ShiftRight", "KeyQ", "KeyE"].some(k => keys[k]);
+  if (!moving || S.playing) return;
+  const k = pilotKey(); if (!k) return;
+  const sp = (keys.ControlLeft ? 0.6 : 3) * dt, y = k.rot[0] * D2R;
+  const fwd = [Math.sin(y), 0, Math.cos(y)], left = [Math.cos(y), 0, -Math.sin(y)];
+  let m = v3();
+  if (keys.KeyW) m = add(m, fwd); if (keys.KeyS) m = sub(m, fwd);
+  if (keys.KeyA) m = add(m, left); if (keys.KeyD) m = sub(m, left);
+  if (keys.Space) m[1] += 1; if (keys.ShiftLeft || keys.ShiftRight) m[1] -= 1;
+  k.pos = add(k.pos, mul(m, sp)).map(x => round(x));
+  if (keys.KeyQ) k.rot[2] = round(k.rot[2] - 40 * dt, 2);
+  if (keys.KeyE) k.rot[2] = round(k.rot[2] + 40 * dt, 2);
+  pathDirty = true; saveSoon(); updateInspectorValues();
+}
+let saveTimer = 0;
+function saveSoon() { clearTimeout(saveTimer); saveTimer = setTimeout(save, 300); }
+canvas.addEventListener("pointerdown", e => {
+  if (S.view === "cam" && S.pilot) {
+    const k = pilotKey(); if (!k) return;
+    pushUndo();
+    if (k.mirar) { k.mirar = ""; toast("Mirar desligado nesta chave (você girou a câmera)"); }
+    pilotDrag = { x: e.clientX, y: e.clientY, yaw: k.rot[0], pitch: k.rot[1] };
+    canvas.setPointerCapture(e.pointerId);
+  } else if (S.view === "free" && !gizmo.dragging) {
+    pickDown = { x: e.clientX, y: e.clientY };
+  }
+});
+let pickDown = null;
+canvas.addEventListener("pointermove", e => {
+  if (!pilotDrag) return;
+  const k = pilotKey();
+  k.rot[0] = round(pilotDrag.yaw - (e.clientX - pilotDrag.x) * 0.25, 2);
+  k.rot[1] = round(clamp(pilotDrag.pitch - (e.clientY - pilotDrag.y) * 0.25, -89, 89), 2);
+  pathDirty = true; saveSoon(); updateInspectorValues();
+});
+canvas.addEventListener("pointerup", e => {
+  if (pilotDrag) { pilotDrag = null; save(); renderInspector(); return; }
+  if (pickDown && Math.hypot(e.clientX - pickDown.x, e.clientY - pickDown.y) < 4) pick(e);
+  pickDown = null;
+});
+canvas.addEventListener("wheel", e => {
+  if (S.view === "cam" && S.pilot) {
+    e.preventDefault();
+    const k = pilotKey(); k.fov = round(clamp(k.fov + Math.sign(e.deltaY) * 2, 5, 140), 2);
+    pathDirty = true; saveSoon(); updateInspectorValues();
+  }
+}, { passive: false });
+function pick(e) {
+  const r = canvas.getBoundingClientRect(), m = new THREE.Vector2((e.clientX - r.left) / r.width * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+  const ray = new THREE.Raycaster(); ray.setFromCamera(m, freeCam);
+  const hit = ray.intersectObjects(keyDots.children)[0];
+  if (hit) return select(hit.object.userData.track, hit.object.userData.i);
+  for (const n of ["usuario", "alvo"]) {
+    const a = actors[n]; if (!a || !a.root.visible) continue;
+    if (ray.intersectObject(a.root, true).length) {
+      const list = S.doc.atores[n].chaves, i = keyAtPlayhead(list);
+      if (i >= 0) select(n, i); else { toast("Clique em \"+ " + (n === "usuario" ? "Usuário" : "Alvo") + "\" pra criar uma chave aqui"); }
+      return;
+    }
+  }
+}
+
+// ======================================================================================================
+// Linha do tempo
+// ======================================================================================================
+const tl = document.getElementById("tl"), tlctx = tl.getContext("2d"), tlscroll = document.getElementById("tlscroll");
+const ROW_RULER = 24, ROW = 30;
+function rows() {
+  const r = [{ id: "eventos", name: "Momentos", color: "#7a7088" }, { id: "trecho", name: "Cutscene", color: "#c8323f" }, { id: "camera", name: "Câmera", color: "#f2b134" }, { id: "usuario", name: "Usuário", color: "#ff6a55" }];
+  if (SK[S.id].alvo) r.push({ id: "alvo", name: "Alvo", color: "#3fc8b5" });
+  if (!SK[S.id].cameraOnly) r.push({ id: "legenda", name: "Legendas", color: "#b9a6ff" });
+  return r;
+}
+let TLW = 1, TLH = 1;
+function sizeTimeline() {
+  const r = tlscroll.getBoundingClientRect(); TLW = Math.max(1, r.width); TLH = Math.max(1, r.height);
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  tl.width = TLW * dpr; tl.height = TLH * dpr; tl.style.width = TLW + "px"; tl.style.height = TLH + "px";
+  tlctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const names = document.getElementById("tlnames");
+  names.innerHTML = "<div></div>" + rows().map(r => `<div><i style="background:${r.color}"></i>${r.name}</div>`).join("");
+}
+function fitTimeline() { sizeTimeline(); S.pxPerTick = Math.max(0.5, (TLW - 24) / S.doc.duracaoTicks); S.scroll = 0; }
+const xOf = t => 12 + (t - S.scroll) * S.pxPerTick;
+const tOf = x => (x - 12) / S.pxPerTick + S.scroll;
+function rowY(id) { const i = rows().findIndex(r => r.id === id); return i < 0 ? -1 : ROW_RULER + i * ROW; }
+function drawTimeline() {
+  const g = tlctx, d = S.doc, s = SK[S.id];
+  g.clearRect(0, 0, TLW, TLH);
+  g.fillStyle = "#16131b"; g.fillRect(0, 0, TLW, TLH);
+  // fundo depois do fim
+  const xe = xOf(d.duracaoTicks);
+  g.fillStyle = "rgba(0,0,0,0.35)"; g.fillRect(xe, 0, TLW - xe, TLH);
+  // linhas das trilhas
+  rows().forEach((r, i) => { g.fillStyle = i % 2 ? "#18151e" : "#1a1720"; g.fillRect(0, ROW_RULER + i * ROW, TLW, ROW); });
+  // régua
+  g.fillStyle = "#121016"; g.fillRect(0, 0, TLW, ROW_RULER);
+  const step = S.pxPerTick > 14 ? 1 : S.pxPerTick > 6 ? 5 : S.pxPerTick > 2.5 ? 10 : 20;
+  g.font = "11px 'IBM Plex Mono', monospace"; g.textBaseline = "middle";
+  const tStart = Math.floor(tOf(0) / step) * step, tEnd = tOf(TLW);
+  for (let t = Math.max(0, tStart); t <= tEnd; t += step) {
+    const x = xOf(t), major = t % (step * 2) === 0 || step === 20;
+    g.fillStyle = major ? "#3a3444" : "#2a2532"; g.fillRect(Math.round(x), major ? 12 : 17, 1, TLH);
+    if (major) { const sec = t % 20 === 0; g.fillStyle = sec ? "#f2b134" : "#9a90a8"; g.fillText(sec && t > 0 ? (t / 20) + "s" : String(t), x + 3, 9); }
+  }
+  // eventos da skill
+  const ye = rowY("eventos");
+  g.font = "11px 'IBM Plex Sans', sans-serif";
+  const evs = s.events.slice().sort((a, b) => a[0] - b[0]);
+  evs.forEach(([t, name], i) => {
+    const x = xOf(t), room = (i + 1 < evs.length ? xOf(evs[i + 1][0]) : TLW) - x - 8;
+    g.fillStyle = "#6a6078"; g.fillRect(Math.round(x), ye + 4, 1, ROW - 8);
+    if (room < 14) return;
+    let label = name;
+    while (label.length > 1 && g.measureText(label).width > room) label = label.slice(0, -2) + "…";
+    g.fillStyle = "#c9c0d6"; g.fillText(label, x + 4, ye + ROW / 2);
+  });
+  // trechos
+  const yt = rowY("trecho");
+  d.trechos.forEach((tr, i) => {
+    const x0 = xOf(tr.inicio), x1 = xOf(tr.fim), sel = isSel("trecho", i);
+    const xin = xOf(tr.inicio + tr.entradaTicks), xout = xOf(tr.fim + tr.saidaTicks);
+    g.fillStyle = "rgba(200,50,63,0.85)"; g.fillRect(x0, yt + 5, x1 - x0, ROW - 10);
+    // sprockets de película
+    g.fillStyle = "rgba(20,8,10,0.55)"; for (let x = x0 + 4; x < x1 - 4; x += 9) { g.fillRect(x, yt + 7, 4, 3); g.fillRect(x, yt + ROW - 10, 4, 3); }
+    if (tr.entradaTicks > 0) { const gr = g.createLinearGradient(x0, 0, xin, 0); gr.addColorStop(0, "rgba(22,19,27,0.9)"); gr.addColorStop(1, "rgba(22,19,27,0)"); g.fillStyle = gr; g.fillRect(x0, yt + 5, xin - x0, ROW - 10); }
+    if (tr.saidaTicks > 0) { const gr = g.createLinearGradient(x1, 0, xout, 0); gr.addColorStop(0, "rgba(200,50,63,0.7)"); gr.addColorStop(1, "rgba(200,50,63,0)"); g.fillStyle = gr; g.fillRect(x1, yt + 5, xout - x1, ROW - 10); }
+    g.strokeStyle = sel ? "#fff" : "rgba(255,255,255,0.25)"; g.lineWidth = sel ? 1.5 : 1; g.strokeRect(x0 + 0.5, yt + 5.5, x1 - x0 - 1, ROW - 11);
+    g.fillStyle = "#fff"; g.font = "600 11px 'Saira Condensed', sans-serif"; g.fillText(tr.nome.toUpperCase(), x0 + 6, yt + ROW / 2);
+  });
+  // chaves
+  const diamond = (x, y, c, sel, cut) => {
+    g.save(); g.translate(x, y); g.rotate(Math.PI / 4); g.fillStyle = sel ? "#fff" : c; const r = sel ? 6 : 5;
+    if (cut) g.fillRect(-r, -r, r * 2, r * 2); else { g.fillRect(-r, -r, r * 2, r * 2); g.fillStyle = "rgba(0,0,0,0.35)"; g.fillRect(-r + 3, -r + 3, r * 2 - 6, r * 2 - 6); }
+    g.restore();
+  };
+  const yc = rowY("camera") + ROW / 2;
+  for (let i = 1; i < d.camera.length; i++) { g.fillStyle = "rgba(242,177,52,0.25)"; g.fillRect(xOf(d.camera[i - 1].t), yc - 1, xOf(d.camera[i].t) - xOf(d.camera[i - 1].t), 2); }
+  d.camera.forEach((k, i) => diamond(xOf(k.t), yc, "#f2b134", isSel("camera", i), k.suave === "corte"));
+  for (const n of ["usuario", "alvo"]) {
+    const y = rowY(n); if (y < 0) continue;
+    const ks = d.atores[n].chaves, col = n === "usuario" ? "#ff6a55" : "#3fc8b5";
+    if (ks.length > 1) { g.fillStyle = col + "40"; g.fillRect(xOf(ks[0].t), y + ROW / 2 - 1, xOf(ks[ks.length - 1].t) - xOf(ks[0].t), 2); }
+    ks.forEach((k, i) => diamond(xOf(k.t), y + ROW / 2, col, isSel(n, i), k.suave === "corte"));
+  }
+  const yl = rowY("legenda");
+  if (yl >= 0) d.legendas.forEach((l, i) => {
+    const x0 = xOf(l.inicio), x1 = xOf(l.fim), sel = isSel("legenda", i);
+    g.fillStyle = "rgba(185,166,255,0.5)"; g.fillRect(x0, yl + 7, x1 - x0, ROW - 14);
+    g.strokeStyle = sel ? "#fff" : "rgba(185,166,255,0.9)"; g.strokeRect(x0 + 0.5, yl + 7.5, x1 - x0 - 1, ROW - 15);
+    g.fillStyle = "#fff"; g.font = "11px 'IBM Plex Sans', sans-serif"; g.fillText(l.texto, x0 + 5, yl + ROW / 2);
+  });
+  // cabeça de leitura
+  const xp = xOf(S.t);
+  g.fillStyle = "#f2b134"; g.fillRect(Math.round(xp), 0, 1.5, TLH);
+  g.beginPath(); g.moveTo(xp - 6, 0); g.lineTo(xp + 6, 0); g.lineTo(xp, 9); g.closePath(); g.fill();
+  document.getElementById("time").innerHTML = `<b>${S.t.toFixed(1)}</b> / ${d.duracaoTicks} ticks · ${(S.t / 20).toFixed(2)} s`;
+}
+let tlDrag = null;
+function hitTimeline(x, y) {
+  const d = S.doc, t = tOf(x);
+  const near = (kt) => Math.abs(xOf(kt) - x) <= 7;
+  if (y < ROW_RULER) return { kind: "scrub" };
+  const row = rows()[Math.floor((y - ROW_RULER) / ROW)];
+  if (!row) return { kind: "scrub" };
+  if (row.id === "camera") { const i = d.camera.findIndex(k => near(k.t)); if (i >= 0) return { kind: "key", track: "camera", i }; }
+  if (row.id === "usuario" || row.id === "alvo") { const i = d.atores[row.id].chaves.findIndex(k => near(k.t)); if (i >= 0) return { kind: "key", track: row.id, i }; }
+  if (row.id === "trecho") {
+    for (let i = d.trechos.length - 1; i >= 0; i--) {
+      const s = d.trechos[i];
+      if (Math.abs(xOf(s.inicio) - x) < 6) return { kind: "edge", track: "trecho", i, edge: "inicio" };
+      if (Math.abs(xOf(s.fim) - x) < 6) return { kind: "edge", track: "trecho", i, edge: "fim" };
+      if (t > s.inicio && t < s.fim) return { kind: "body", track: "trecho", i };
+    }
+  }
+  if (row.id === "legenda") {
+    for (let i = d.legendas.length - 1; i >= 0; i--) {
+      const s = d.legendas[i];
+      if (Math.abs(xOf(s.inicio) - x) < 6) return { kind: "edge", track: "legenda", i, edge: "inicio" };
+      if (Math.abs(xOf(s.fim) - x) < 6) return { kind: "edge", track: "legenda", i, edge: "fim" };
+      if (t > s.inicio && t < s.fim) return { kind: "body", track: "legenda", i };
+    }
+  }
+  return { kind: "scrub", row: row.id };
+}
+const snap = t => Math.max(0, Math.round(t * 2) / 2);
+tl.addEventListener("pointerdown", e => {
+  const r = tl.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top, h = hitTimeline(x, y);
+  tl.setPointerCapture(e.pointerId);
+  if (h.kind === "scrub") { S.t = clamp(snap(tOf(x)), 0, S.doc.duracaoTicks); tlDrag = { kind: "scrub" }; attachGizmo(); return; }
+  pushUndo();
+  select(h.track, h.i, h.kind === "key");
+  const item = selected();
+  tlDrag = { ...h, x0: x, t0: item.t != null ? item.t : item.inicio, a: item.inicio, b: item.fim, moved: false };
+});
+tl.addEventListener("pointermove", e => {
+  const r = tl.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+  if (!tlDrag) { const h = hitTimeline(x, y); tl.style.cursor = h.kind === "edge" ? "ew-resize" : h.kind === "key" || h.kind === "body" ? "grab" : "default"; return; }
+  const dt = (x - (tlDrag.x0 || x)) / S.pxPerTick;
+  if (tlDrag.kind === "scrub") { S.t = clamp(snap(tOf(x)), 0, S.doc.duracaoTicks); attachGizmo(); return; }
+  const item = selected(); if (!item) return;
+  tlDrag.moved = true;
+  if (tlDrag.kind === "key") { item.t = clamp(snap(tlDrag.t0 + dt), 0, S.doc.duracaoTicks); S.t = item.t; }
+  else if (tlDrag.kind === "body") { const w = tlDrag.b - tlDrag.a; item.inicio = clamp(snap(tlDrag.a + dt), 0, S.doc.duracaoTicks - w); item.fim = item.inicio + w; }
+  else if (tlDrag.kind === "edge") {
+    if (tlDrag.edge === "inicio") item.inicio = clamp(snap(tlDrag.a + dt), 0, item.fim - 0.5);
+    else item.fim = clamp(snap(tlDrag.b + dt), item.inicio + 0.5, S.doc.duracaoTicks);
+  }
+  pathDirty = true; updateInspectorValues();
+});
+tl.addEventListener("pointerup", () => {
+  if (tlDrag && tlDrag.kind === "key" && tlDrag.moved) {
+    const k = selected(); sortKeys(S.doc);
+    const list = S.sel.track === "camera" ? S.doc.camera : S.doc.atores[S.sel.track].chaves;
+    S.sel.i = list.indexOf(k);
+  }
+  if (tlDrag && tlDrag.kind !== "scrub") { save(); renderInspector(); attachGizmo(); }
+  if (tlDrag && tlDrag.kind !== "scrub" && !tlDrag.moved) undoStack.pop();
+  tlDrag = null;
+});
+tl.addEventListener("dblclick", e => {
+  const r = tl.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top, h = hitTimeline(x, y);
+  if (h.kind !== "scrub" || !h.row) return;
+  S.t = clamp(snap(tOf(x)), 0, S.doc.duracaoTicks);
+  if (h.row === "camera") addCameraKey();
+  else if (h.row === "usuario" || h.row === "alvo") addActorKey(h.row);
+  else if (h.row === "trecho") addTrecho();
+  else if (h.row === "legenda") addLegenda();
+});
+tl.addEventListener("wheel", e => {
+  e.preventDefault();
+  const r = tl.getBoundingClientRect(), x = e.clientX - r.left;
+  if (e.ctrlKey || e.metaKey || Math.abs(e.deltaY) > Math.abs(e.deltaX) && !e.shiftKey) {
+    const t = tOf(x); S.pxPerTick = clamp(S.pxPerTick * (e.deltaY > 0 ? 0.88 : 1.14), 0.4, 60); S.scroll = Math.max(0, t - (x - 12) / S.pxPerTick);
+  } else S.scroll = Math.max(0, S.scroll + (e.deltaX || e.deltaY) / S.pxPerTick);
+}, { passive: false });
+
+// ======================================================================================================
+// Inspetor
+// ======================================================================================================
+const insp = document.getElementById("inspector");
+const num = (id, label, val, step = 0.05) => `<div class="field"><label for="${id}">${label}</label><input type="number" id="${id}" step="${step}" value="${round(val, 3)}"></div>`;
+const slider = (id, label, val, min, max, step = 1) => `<div class="slider"><label for="${id}">${label}</label><input type="range" id="${id}" min="${min}" max="${max}" step="${step}" value="${val}"><input type="number" id="${id}_n" step="${step}" value="${round(val, 2)}"></div>`;
+const sel = (id, label, val, opts) => `<div class="field"><label for="${id}">${label}</label><select id="${id}">${opts.map(([v, l]) => `<option value="${v}"${v === val ? " selected" : ""}>${l}</option>`).join("")}</select></div>`;
+const EASES = [["suave", "Suave (acelera e freia)"], ["linear", "Linear (velocidade constante)"], ["entrada", "Entrada (começa devagar)"], ["saida", "Saída (termina devagar)"], ["corte", "Corte seco (pula pra próxima)"]];
+function actorOpts() { const o = [["", "Nada (fixo na cena)"], ["usuario", "Usuário"]]; if (SK[S.id].alvo) o.push(["alvo", "Alvo"]); return o; }
+function renderInspector() {
+  const k = selected(), d = S.doc, s = SK[S.id];
+  let h = "";
+  if (!k) {
+    h += `<div class="sec"><h3>Cena · ${esc(s.nome)}</h3>
+      <p class="hint">${esc(s.gancho)} O tick 0 da linha do tempo é esse momento.</p>
+      <label class="check"><input type="checkbox" id="g_ativa"${d.ativa ? " checked" : ""}> Usar esta cutscene no jogo</label>
+      <div class="row2">${num("g_dur", "Duração (ticks)", d.duracaoTicks, 1)}${sel("g_origem", "Origem da cena", d.origem, s.alvo ? [["usuario", "Pés do usuário"], ["alvo", "Pés do alvo"]] : [["usuario", "Pés do usuário"]])}</div>
+      ${sel("g_viewer", "Prévia vista por", S.viewer, s.alvo ? [["usuario", "Usuário"], ["alvo", "Alvo"]] : [["usuario", "Usuário"]])}
+      <label class="check"><input type="checkbox" id="g_travar"${d.travarMovimento ? " checked" : ""}> Travar movimento do jogador</label>
+      <label class="check"><input type="checkbox" id="g_hud"${d.esconderHud ? " checked" : ""}${s.cameraOnly ? " disabled" : ""}> Esconder HUD nos trechos</label>
+      <label class="check"><input type="checkbox" id="g_barras"${d.barrasPretas ? " checked" : ""}${s.cameraOnly ? " disabled" : ""}> Barras pretas de cinema</label>
+    </div>
+    <div class="sec"><h3>Como mexer</h3>
+      <p class="hint"><b>Trechos vermelhos</b> são onde a câmera é da cutscene; fora deles o jogador vê a própria visão. <b>Chaves</b> marcam como a câmera ou o personagem está naquele tick; entre elas o movimento é suave.</p>
+      <p class="hint">Clique duas vezes numa trilha pra criar. Arraste chaves e bordas dos trechos. <span class="kbd">K</span> chave de câmera, <span class="kbd">Del</span> apaga, <span class="kbd">Ctrl Z</span> desfaz, <span class="kbd">Espaço</span> toca.</p>
+      <p class="hint"><b>Pilotar câmera</b>: arraste pra girar, roda do mouse dá zoom (FOV), <span class="kbd">W A S D</span> anda, <span class="kbd">Espaço</span>/<span class="kbd">Shift</span> sobe e desce, <span class="kbd">Q</span>/<span class="kbd">E</span> inclina. Mexe na chave do tick atual (cria uma se não tiver).</p>
+      <p class="hint"><b>Visão livre</b>: arraste a seta colorida pra mover a chave selecionada. A linha amarela é o caminho da câmera; a tracejada é o original.</p>
+    </div>
+    <div class="sec"><h3>Resumo</h3><p class="hint">${d.camera.length} chaves de câmera · ${d.atores.usuario.chaves.length} do usuário${s.alvo ? " · " + d.atores.alvo.chaves.length + " do alvo" : ""} · ${d.trechos.length} trecho(s)${s.cameraOnly ? "" : " · " + d.legendas.length + " legenda(s)"}</p></div>`;
+  } else if (S.sel.track === "camera") {
+    h += `<div class="sec"><h3>Chave de câmera</h3>
+      <div class="row2">${num("k_t", "Tick", k.t, 0.5)}${sel("k_suave", "Até a próxima", k.suave, EASES)}</div>
+      <div class="row">${num("k_x", "X (esq.)", k.pos[0])}${num("k_y", "Y (cima)", k.pos[1])}${num("k_z", "Z (frente)", k.pos[2])}</div>
+      ${slider("k_yaw", "Giro", k.rot[0], -180, 180, 0.5)}
+      ${slider("k_pitch", "Inclinação", k.rot[1], -89, 89, 0.5)}
+      ${slider("k_roll", "Roll", k.rot[2], -90, 90, 0.5)}
+      ${slider("k_fov", "Zoom (FOV)", k.fov, 5, 140, 0.5)}
+      <p class="hint">FOV menor = mais zoom. O padrão do Minecraft é 70.</p>
+    </div>
+    <div class="sec"><h3>Movimento</h3>
+      ${sel("k_seguir", "Seguir (a posição anda junto com)", k.seguir, actorOpts())}
+      ${sel("k_mirar", "Mirar em (ignora Giro e Inclinação)", k.mirar, actorOpts())}
+      ${k.mirar ? slider("k_mirarAltura", "Altura da mira", k.mirarAltura, 0, 2.5, 0.05) : ""}
+      <div class="row2"><button id="b_lookU">Olhar pro usuário</button>${s.alvo ? `<button id="b_lookA">Olhar pro alvo</button>` : "<span></span>"}</div>
+    </div>`;
+  } else if (S.sel.track === "usuario" || S.sel.track === "alvo") {
+    const a = d.atores[S.sel.track];
+    const P_ = k.pose;
+    h += `<div class="sec"><h3>${S.sel.track === "usuario" ? "Usuário" : "Alvo"} · chave</h3>
+      <div class="row2">${num("k_t", "Tick", k.t, 0.5)}${sel("k_suave", "Até a próxima", k.suave, EASES)}</div>
+      ${sel("a_modo", "Pose desta trilha", a.modo, [["somar", "Somar à pose da skill"], ["substituir", "Substituir a pose da skill"]])}
+      <p class="hint">Deslocamento a partir de onde a skill deixa o personagem (só visual: no jogo ele não sai do lugar de verdade).</p>
+      <div class="row">${num("k_x", "X (esq.)", k.pos[0])}${num("k_y", "Y (cima)", k.pos[1])}${num("k_z", "Z (frente)", k.pos[2])}</div>
+      ${slider("k_giro", "Virar", k.giro, -180, 180, 1)}
+    </div>
+    <div class="sec"><h3>Pose (graus)</h3>
+      ${slider("p_cabeca", "Cabeça", P_.cabeca, -90, 90)}
+      ${slider("p_tronco", "Tronco", P_.tronco, -60, 90)}
+      ${slider("p_corpo", "Peito gira", P_.corpo, -90, 90)}
+      ${slider("p_pernas", "Pernas giram", P_.pernas, -90, 90)}
+      ${slider("p_bdf", "Braço D ↑", P_.bracoDir.frente, -60, 180)}
+      ${slider("p_bda", "Braço D ↔", P_.bracoDir.abrir, -90, 120)}
+      ${slider("p_bef", "Braço E ↑", P_.bracoEsq.frente, -60, 180)}
+      ${slider("p_bea", "Braço E ↔", P_.bracoEsq.abrir, -90, 120)}
+      ${slider("p_pdf", "Perna D ↑", P_.pernaDir.frente, -90, 120)}
+      ${slider("p_pda", "Perna D ↔", P_.pernaDir.abrir, -30, 90)}
+      ${slider("p_pef", "Perna E ↑", P_.pernaEsq.frente, -90, 120)}
+      ${slider("p_pea", "Perna E ↔", P_.pernaEsq.abrir, -30, 90)}
+      <button id="b_zeroPose">Zerar pose</button>
+    </div>`;
+  } else if (S.sel.track === "trecho") {
+    h += `<div class="sec"><h3>Trecho de cutscene</h3>
+      <div class="field"><label for="s_nome">Nome</label><input type="text" id="s_nome" value="${esc(k.nome)}"></div>
+      <div class="row2">${num("s_inicio", "Começa (tick)", k.inicio, 0.5)}${num("s_fim", "Termina (tick)", k.fim, 0.5)}</div>
+      <div class="row2">${num("s_entrada", "Entrada suave", k.entradaTicks, 1)}${num("s_saida", "Saída suave", k.saidaTicks, 1)}</div>
+      <p class="hint">Entrada e saída em ticks: quanto tempo a câmera leva pra sair da visão do jogador e pra voltar pra ela. 0 = corte seco.</p>
+    </div>`;
+  } else if (S.sel.track === "legenda") {
+    h += `<div class="sec"><h3>Legenda</h3>
+      <div class="field"><label for="l_texto">Texto</label><input type="text" id="l_texto" value="${esc(k.texto)}"></div>
+      <div class="row2">${num("l_inicio", "Aparece (tick)", k.inicio, 0.5)}${num("l_fim", "Some (tick)", k.fim, 0.5)}</div>
+      <div class="row2"><div class="field"><label for="l_cor">Cor</label><input type="color" id="l_cor" value="${k.cor}"></div>${num("l_tam", "Tamanho", k.tamanho, 0.1)}</div>
+    </div>`;
+  }
+  if (k) h += `<div class="sec"><div class="row2">${k.t != null ? `<button id="b_dup">Duplicar</button>` : "<span></span>"}<button id="b_del" class="danger">Apagar</button></div><button id="b_desel">Voltar pra cena</button></div>`;
+  insp.innerHTML = h;
+  wireInspector();
+}
+function wireInspector() {
+  const $ = id => document.getElementById(id);
+  const on = (id, fn, ev = "input") => { const el = $(id); if (el) el.addEventListener(ev, () => { fn(el); pathDirty = true; saveSoon(); }); };
+  const linkSlider = (id, fn) => {
+    const r = $(id), n = $(id + "_n"); if (!r) return;
+    r.addEventListener("input", () => { n.value = r.value; fn(+r.value); pathDirty = true; saveSoon(); });
+    n.addEventListener("input", () => { r.value = n.value; fn(+n.value); pathDirty = true; saveSoon(); });
+  };
+  const k = selected(), d = S.doc;
+  [...insp.querySelectorAll("input,select")].forEach(el => el.addEventListener("focus", () => pushUndo(), { once: true }));
+  if (!k) {
+    on("g_ativa", el => d.ativa = el.checked, "change");
+    on("g_dur", el => { d.duracaoTicks = Math.max(5, Math.round(+el.value || 5)); }, "change");
+    on("g_origem", el => { convertOrigin(el.value); }, "change");
+    on("g_viewer", el => S.viewer = el.value, "change");
+    on("g_travar", el => d.travarMovimento = el.checked, "change");
+    on("g_hud", el => d.esconderHud = el.checked, "change");
+    on("g_barras", el => d.barrasPretas = el.checked, "change");
+  } else if (S.sel.track === "camera") {
+    on("k_t", el => { k.t = Math.max(0, +el.value); resortSel(); }, "change");
+    on("k_suave", el => k.suave = el.value, "change");
+    on("k_x", el => k.pos[0] = +el.value); on("k_y", el => k.pos[1] = +el.value); on("k_z", el => k.pos[2] = +el.value);
+    linkSlider("k_yaw", v => k.rot[0] = v); linkSlider("k_pitch", v => k.rot[1] = v); linkSlider("k_roll", v => k.rot[2] = v); linkSlider("k_fov", v => k.fov = v);
+    linkSlider("k_mirarAltura", v => k.mirarAltura = v);
+    on("k_seguir", el => { const before = camValues(k, k.t); k.seguir = el.value; const after = camValues(k, k.t); k.pos = add(k.pos, sub(before.slice(0, 3), after.slice(0, 3))).map(x => round(x)); renderInspector(); }, "change");
+    on("k_mirar", el => { k.mirar = el.value; renderInspector(); }, "change");
+    const look = name => { pushUndo(); const c = camValues(k, k.t), at = add(actorLocal(name, k.t), v3(0, k.mirarAltura || AIM_H, 0)), r = lookToRot(c.slice(0, 3), at); k.rot[0] = round(r[0], 2); k.rot[1] = round(r[1], 2); k.mirar = ""; save(); pathDirty = true; renderInspector(); };
+    const bu = $("b_lookU"); if (bu) bu.onclick = () => look("usuario");
+    const ba = $("b_lookA"); if (ba) ba.onclick = () => look("alvo");
+  } else if (S.sel.track === "usuario" || S.sel.track === "alvo") {
+    const a = d.atores[S.sel.track];
+    on("k_t", el => { k.t = Math.max(0, +el.value); resortSel(); }, "change");
+    on("k_suave", el => k.suave = el.value, "change");
+    on("a_modo", el => a.modo = el.value, "change");
+    on("k_x", el => k.pos[0] = +el.value); on("k_y", el => k.pos[1] = +el.value); on("k_z", el => k.pos[2] = +el.value);
+    linkSlider("k_giro", v => k.giro = v);
+    const p = k.pose;
+    linkSlider("p_cabeca", v => p.cabeca = v); linkSlider("p_tronco", v => p.tronco = v); linkSlider("p_corpo", v => p.corpo = v); linkSlider("p_pernas", v => p.pernas = v);
+    linkSlider("p_bdf", v => p.bracoDir.frente = v); linkSlider("p_bda", v => p.bracoDir.abrir = v);
+    linkSlider("p_bef", v => p.bracoEsq.frente = v); linkSlider("p_bea", v => p.bracoEsq.abrir = v);
+    linkSlider("p_pdf", v => p.pernaDir.frente = v); linkSlider("p_pda", v => p.pernaDir.abrir = v);
+    linkSlider("p_pef", v => p.pernaEsq.frente = v); linkSlider("p_pea", v => p.pernaEsq.abrir = v);
+    const z = $("b_zeroPose"); if (z) z.onclick = () => { pushUndo(); k.pose = ZERO_POSE(); save(); renderInspector(); };
+  } else if (S.sel.track === "trecho") {
+    on("s_nome", el => k.nome = el.value);
+    on("s_inicio", el => k.inicio = Math.max(0, +el.value)); on("s_fim", el => k.fim = Math.max(k.inicio, +el.value));
+    on("s_entrada", el => k.entradaTicks = Math.max(0, +el.value)); on("s_saida", el => k.saidaTicks = Math.max(0, +el.value));
+  } else if (S.sel.track === "legenda") {
+    on("l_texto", el => k.texto = el.value);
+    on("l_inicio", el => k.inicio = Math.max(0, +el.value)); on("l_fim", el => k.fim = Math.max(k.inicio, +el.value));
+    on("l_cor", el => k.cor = el.value); on("l_tam", el => k.tamanho = Math.max(0.5, +el.value));
+  }
+  const dup = $("b_dup"); if (dup) dup.onclick = duplicateSelected;
+  const del = $("b_del"); if (del) del.onclick = deleteSelected;
+  const ds = $("b_desel"); if (ds) ds.onclick = () => select(null);
+}
+function resortSel() { const k = selected(); sortKeys(S.doc); const list = S.sel.track === "camera" ? S.doc.camera : S.doc.atores[S.sel.track].chaves; S.sel.i = list.indexOf(k); S.t = k.t; }
+// Atualiza só os números do inspetor (enquanto pilota ou arrasta), sem redesenhar.
+function updateInspectorValues() {
+  const k = selected(); if (!k || !S.sel) return;
+  const setv = (id, v) => { const el = document.getElementById(id); if (el && document.activeElement !== el) el.value = round(v, 3); const n = document.getElementById(id + "_n"); if (n && document.activeElement !== n) n.value = round(v, 2); };
+  if (S.sel.track === "camera") { setv("k_t", k.t); setv("k_x", k.pos[0]); setv("k_y", k.pos[1]); setv("k_z", k.pos[2]); setv("k_yaw", k.rot[0]); setv("k_pitch", k.rot[1]); setv("k_roll", k.rot[2]); setv("k_fov", k.fov); }
+  else if (S.sel.track === "usuario" || S.sel.track === "alvo") { setv("k_t", k.t); setv("k_x", k.pos[0]); setv("k_y", k.pos[1]); setv("k_z", k.pos[2]); }
+  else if (S.sel.track === "trecho") { setv("s_inicio", k.inicio); setv("s_fim", k.fim); }
+  else if (S.sel.track === "legenda") { setv("l_inicio", k.inicio); setv("l_fim", k.fim); }
+}
+// Trocar a origem mantém a câmera no mesmo lugar do mundo.
+function convertOrigin(next) {
+  const s = SK[S.id];
+  const before = sceneOrigin(S.id, S.doc);
+  S.doc.origem = next;
+  const after = sceneOrigin(S.id, S.doc), shift = sub(before, after);
+  S.doc.camera.forEach(k => k.pos = add(k.pos, shift).map(x => round(x)));
+  save(); pathDirty = true;
+}
+
+// ======================================================================================================
+// Painel da esquerda
+// ======================================================================================================
+function buildSkillList() {
+  const box = document.getElementById("skillList");
+  box.innerHTML = "<h3>Skills com cutscene</h3>" + SKILL_IDS.map(id => {
+    const s = SK[id], saved = store.get("cutscenes1:" + id);
+    return `<button class="skill${id === S.id ? " sel" : ""}" data-id="${id}"><b>${esc(s.nome)}</b><span>${esc(s.poder)} · ${s.dur} ticks${saved ? ' · <span class="mod">editada</span>' : ""}</span></button>`;
+  }).join("");
+  box.querySelectorAll(".skill").forEach(b => b.onclick = () => loadSkill(b.dataset.id));
+  document.getElementById("skillNote").textContent = SK[S.id].note;
+}
+function buildEvents() {
+  document.getElementById("events").innerHTML = SK[S.id].events.map(([t, n]) => `<div><b>${t}</b><span>${esc(n)}</span></div>`).join("");
+}
+
+// ======================================================================================================
+// Botões, teclado, modais
+// ======================================================================================================
+const $ = id => document.getElementById(id);
+function updatePlayBtn() { $("tPlay").textContent = S.playing ? "❚❚ Pausar" : "▶ Tocar"; }
+function setView(v) { S.view = v; $("vCam").classList.toggle("on", v === "cam"); $("vFree").classList.toggle("on", v === "free"); if (v === "free") { S.pilot = false; $("vPilot").classList.remove("on"); } orbit.enabled = v === "free"; attachGizmo(); }
+$("vCam").onclick = () => setView("cam");
+$("vFree").onclick = () => setView("free");
+$("vPilot").onclick = () => { S.pilot = !S.pilot; if (S.pilot) { setView("cam"); S.playing = false; updatePlayBtn(); S.orig = false; $("vOrig").classList.remove("on"); toast("Pilotando: arraste, roda do mouse, WASD, Q/E"); } $("vPilot").classList.toggle("on", S.pilot); };
+$("vOrig").onclick = () => { S.orig = !S.orig; $("vOrig").classList.toggle("on", S.orig); if (S.orig) { S.pilot = false; $("vPilot").classList.remove("on"); } };
+$("tPlay").onclick = () => { S.playing = !S.playing; if (S.playing && S.t >= S.doc.duracaoTicks) S.t = 0; updatePlayBtn(); gizmo.detach(); };
+$("tStart").onclick = () => { S.t = 0; attachGizmo(); };
+$("tPrev").onclick = () => { S.t = Math.max(0, Math.round(S.t) - 1); attachGizmo(); };
+$("tNext").onclick = () => { S.t = Math.min(S.doc.duracaoTicks, Math.round(S.t) + 1); attachGizmo(); };
+$("speed").onchange = e => S.speed = +e.target.value;
+$("tLoop").onclick = () => { S.loop = !S.loop; $("tLoop").classList.toggle("on", S.loop); };
+$("tFit").onclick = fitTimeline;
+$("kCam").onclick = () => addCameraKey();
+$("kUsr").onclick = () => addActorKey("usuario");
+$("kAlv").onclick = () => addActorKey("alvo");
+$("kCut").onclick = addTrecho;
+$("kLeg").onclick = addLegenda;
+window.addEventListener("keydown", e => {
+  if (e.target.matches("input,textarea,select")) return;
+  keys[e.code] = true;
+  if (S.pilot && ["KeyW", "KeyA", "KeyS", "KeyD", "Space", "KeyQ", "KeyE"].includes(e.code)) { e.preventDefault(); if (!e.repeat) pushUndo(); return; }
+  if (e.code === "Space") { e.preventDefault(); $("tPlay").click(); }
+  else if (e.code === "KeyK") addCameraKey();
+  else if (e.code === "Delete" || e.code === "Backspace") deleteSelected();
+  else if (e.code === "ArrowLeft") $("tPrev").click();
+  else if (e.code === "ArrowRight") $("tNext").click();
+  else if (e.code === "Home") $("tStart").click();
+  else if (e.code === "KeyZ" && (e.ctrlKey || e.metaKey)) undo();
+  else if (e.code === "Escape") select(null);
+});
+window.addEventListener("keyup", e => { keys[e.code] = false; if (S.pilot && !["ControlLeft"].includes(e.code)) { save(); renderInspector(); } });
+window.addEventListener("blur", () => { for (const k in keys) keys[k] = false; });
+
+let toastTimer = 0;
+function toast(msg) { const el = $("toast"); el.textContent = msg; el.classList.add("show"); clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove("show"), 1800); }
+function modal(head, body, actions) {
+  $("mHead").innerHTML = head; $("mBody").innerHTML = body; $("mActs").innerHTML = "";
+  actions.forEach(([label, fn, cls]) => { const b = document.createElement("button"); b.textContent = label; if (cls) b.className = cls; b.onclick = fn; $("mActs").appendChild(b); });
+  $("modal").hidden = false;
+}
+const closeModal = () => $("modal").hidden = true;
+$("modal").addEventListener("click", e => { if (e.target.id === "modal") closeModal(); });
+$("btnExport").onclick = () => {
+  const json = JSON.stringify(exportDoc(S.doc), null, 2), s = SK[S.id];
+  modal(`<h2>Exportar · ${esc(s.nome)}</h2>`,
+    `<p class="hint">Salve este texto num arquivo com o nome abaixo, dentro da pasta <b>config</b> do Minecraft (no <span class="kbd">gradlew runClient</span> é a pasta <b>run/config</b> do projeto). Crie a pasta <b>souls_cutscenes</b> se não existir. O mod lê o arquivo toda vez que a skill começa, então dá pra trocar com o jogo aberto.</p>
+     <div class="path">config/souls_cutscenes/${esc(S.id)}.json</div>
+     <p class="hint">Pra voltar pra cutscene original, apague o arquivo ou desmarque "Usar esta cutscene no jogo". Também pode me mandar esse JSON no chat que eu coloco dentro do mod.</p>
+     <textarea id="exportText" readonly>${esc(json)}</textarea>`,
+    [["Fechar", closeModal], ["Copiar JSON", () => { const ta = $("exportText"); const done = () => toast("JSON copiado"); try { navigator.clipboard.writeText(json).then(done, () => { ta.select(); toast("Selecionei o texto: aperte Ctrl+C"); }); } catch (e) { ta.select(); toast("Selecionei o texto: aperte Ctrl+C"); } }, "primary"]]);
+};
+$("btnImport").onclick = () => {
+  modal(`<h2>Carregar JSON</h2>`, `<p class="hint">Cole um JSON souls-cutscene/1 (um que você exportou ou que eu mandei). Ele vai pra skill que estiver no campo "skill".</p><textarea id="importText" placeholder='{"formato": "souls-cutscene/1", ...}'></textarea>`,
+    [["Cancelar", closeModal], ["Carregar", () => {
+      try {
+        const j = JSON.parse($("importText").value);
+        const id = SK[j.skill] ? j.skill : S.id;
+        pushUndo(); store.set("cutscenes1:" + id, JSON.stringify(normalize(j, id))); closeModal(); loadSkill(id); toast("Cutscene carregada");
+      } catch (e) { toast("Esse texto não é um JSON válido: " + e.message); }
+    }, "primary"]]);
+};
+$("btnReset").onclick = () => {
+  modal(`<h2>Voltar pra câmera original?</h2>`, `<p class="hint">Apaga as suas mudanças nesta skill (${esc(SK[S.id].nome)}) e recria as chaves a partir da câmera que o mod usa hoje. Dá pra desfazer com Ctrl+Z enquanto a página estiver aberta.</p>`,
+    [["Cancelar", closeModal], ["Voltar pro original", () => { pushUndo(); S.doc = defaultDoc(S.id); S.doc = normalize(S.doc, S.id); save(); closeModal(); S.sel = null; pathDirty = true; renderInspector(); buildSkillList(); toast("Câmera original restaurada"); }, "danger"]]);
+};
+$("btnHelp").onclick = () => {
+  modal(`<h2>Como usar</h2>`, `<div class="sec" style="border:0;padding:0">
+    <p class="hint"><b>1.</b> Escolha a skill na esquerda. Ela já abre com a câmera que o mod usa hoje, convertida em chaves (a cada 4 ticks), pra você partir dela.</p>
+    <p class="hint"><b>2.</b> Toque (Espaço) e veja pela <b>Câmera da cutscene</b>. Use <b>Comparar com original</b> pra ver a de hoje.</p>
+    <p class="hint"><b>3.</b> Pra mudar um plano: pare no tick, clique em <b>Pilotar câmera</b> e enquadre. Ou selecione uma chave e mexa nos números à direita. Na <b>Visão livre</b> dá pra arrastar a chave pela seta.</p>
+    <p class="hint"><b>4.</b> <b>Seguir</b> faz a câmera andar junto com um personagem (bom pra quando o alvo voa). <b>Mirar</b> deixa a câmera sempre apontada pra ele.</p>
+    <p class="hint"><b>5.</b> Os <b>trechos vermelhos</b> dizem quando a câmera é da cutscene. Entrada e saída suaves fazem a câmera deslizar da visão do jogador e voltar pra ela.</p>
+    <p class="hint"><b>6.</b> Nas trilhas <b>Usuário</b> e <b>Alvo</b> você anima os personagens: deslocamento, virar e pose. "Somar" mexe por cima da animação da skill; "Substituir" troca a pose enquanto as chaves durarem.</p>
+    <p class="hint"><b>7.</b> <b>Exportar pro mod</b> e salve em <b>config/souls_cutscenes/&lt;skill&gt;.json</b>. Pronto: na próxima vez que usar a skill, é a sua cutscene.</p>
+    <p class="hint">Os personagens e efeitos da prévia são uma aproximação do que a skill faz, só pra dar referência de tempo e lugar. Tudo fica salvo neste navegador.</p></div>`, [["Entendi", closeModal, "primary"]]);
+};
+
+// ======================================================================================================
+// Começo
+// ======================================================================================================
+window.__cut = { S, SK, cutCam, origCam, weight, curve, exportDoc };
+const last = store.get("cutscenes1:last");
+loadSkill(SK[last] ? last : "bills.destruction_bop");
+resize();
+setView("cam");
+requestAnimationFrame(loop);
+</script>
