@@ -107,6 +107,7 @@ final class DestructionFx {
         float flicker = 0.9f + 0.1f * Mth.sin(age * 0.9f);
         Vector3f origin = new Vector3f(at).sub((float) world.x, (float) world.y, (float) world.z);
         float[] s = web.segments;
+        float view = loadedReach();
         for (int i = 0; i < s.length; i += STRIP) {
             float far = s[i + 7];
             if (far > reach || !standing[(int) s[i + 8]]) {
@@ -117,6 +118,9 @@ final class DestructionFx {
             float open = Mth.clamp((reach - far) / 4, 0, 1);
             Vector3f a = new Vector3f(s[i], s[i + 1], s[i + 2]).add(origin);
             Vector3f b = new Vector3f(s[i + 3], s[i + 4], s[i + 5]).add(origin);
+            if (a.lengthSquared() > view * view) {
+                continue;
+            }
             int axis = (int) s[i + 6];
             float o = open * fade * opacity * flicker;
             strip(a, b, axis, size * 2.4f * rim, FxDraw.BEAM, 0.12f, line, o * 0.55f);
@@ -130,6 +134,9 @@ final class DestructionFx {
             }
             int k = i / FLAME;
             Vector3f base = new Vector3f(f[i], f[i + 1], f[i + 2]).add(origin);
+            if (base.lengthSquared() > view * view) {
+                continue;
+            }
             // Little flames licking up out of the cracks, each on its own beat.
             float beat = (age * (0.05f + 0.04f * FxWorld.hash(seed, k, 31)) + FxWorld.hash(seed, k, 32)) % 1;
             float h = size * (1.5f + 3 * FxWorld.hash(seed, k, 33)) * (1 - 0.5f * far / radius);
@@ -391,6 +398,7 @@ final class DestructionFx {
         int count = FxWorld.i(e.quantidade(), 40);
         float radius = (float) FxWorld.d(e.raio(), 60);
         float tall = (float) FxWorld.d(e.comprimento(), 90);
+        float view = loadedReach();
         for (int k = 0; k < count; k++) {
             // Each one bursts out at its own moment, shoots up fast and burns for a while.
             float born = FxWorld.hash(seed, k, 1) * 0.6f;
@@ -403,12 +411,22 @@ final class DestructionFx {
             float w = size * (0.5f + FxWorld.hash(seed, k, 4)) * (lt < 0.8f ? 1 : (1 - lt) / 0.2f);
             float h = tall * (0.6f + 0.4f * FxWorld.hash(seed, k, 5)) * FxWorld.easeOut(Math.min(1, lt * 5));
             Vector3f foot = new Vector3f(Mth.cos(a) * d, -4, Mth.sin(a) * d).add(at);
+            if (foot.lengthSquared() > view * view) {
+                continue;
+            }
             Vector3f top = new Vector3f(foot).add(0, h, 0);
             float flicker = 0.85f + 0.15f * Mth.sin(age * 1.7f + k);
             FxDraw.ribbon(foot, top, w * 2.4f, FxDraw.BEAM, 0.15f, cor, 0.6f * flicker * opacity, true);
             FxDraw.ribbon(foot, top, w, FxDraw.BEAM, 0.7f, cor2, flicker * opacity, true);
             FxDraw.disk(new Vector3f(foot).add(0, 4.1f, 0), new Vector3f(0, 1, 0), w * 5, FxDraw.SOFT, 0, cor, 0.5f * flicker * opacity, true);
         }
+    }
+
+    // How far the real, loaded chunks reach from the camera. Past that the ground may be drawn by a far-terrain mod
+    // (Distant Horizons, with its Earth curvature bending it down), so anything laid on the ground out there would float
+    // in the sky: the cracks, their flames and the pillars are left out beyond it.
+    private static float loadedReach() {
+        return Math.max(32, Minecraft.getInstance().options.getEffectiveRenderDistance() * 16 - 8);
     }
 
     static void plasma(Efeito e, int seed, Vector3f at, float age, float t, float[] cor, float[] cor2, float size, float opacity) {
