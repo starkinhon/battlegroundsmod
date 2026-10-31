@@ -7,6 +7,7 @@ import com.starkinhon.battlegroundsmod.command.BossCommand;
 import com.starkinhon.battlegroundsmod.command.SoulCommand;
 import com.starkinhon.battlegroundsmod.fx.ModParticles;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
+import com.starkinhon.battlegroundsmod.fight.FightRod;
 import com.starkinhon.battlegroundsmod.power.PowerEvents;
 
 import net.minecraft.core.registries.Registries;
@@ -54,6 +55,7 @@ public class BattlegroundsMod {
         ModEffects.MOB_EFFECTS.register(modEventBus);
 
         PowerEvents.register();
+        FightRod.register();
         SoulCommand.addSubcommand(BossCommand::bossbar);
         SoulCommand.addSubcommand(BossCommand::boss);
         NeoForge.EVENT_BUS.addListener(SoulCommand::register);
