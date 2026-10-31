@@ -10,21 +10,24 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 
-// Bills' Destruction Energy (power/powers/bills/DestructionEnergy), drawn with shader shapes only (no textures), like
-// the Skill Visualizer's "Esfera de anéis" without its halo and rays (Stark's pick after testing in game): a purple
-// ball of light with a small lilac heart and rings of purple-lilac energy turning around it, each on its own tilted
-// plane that slowly turns, with the light running along it and a tail that fades. While it forms the rings open one
-// after another, spinning fast, and settle. Flying, it leaves a purple streak behind.
-// The many small balls of the Shift + Z are drawn lighter (fewer rings, shorter rings).
+// Bills' Destruction Energy (power/powers/bills/DestructionEnergy), drawn with shader shapes only (no textures), the
+// same as the Skill Visualizer's "Esfera de anéis": a white ball of light with a lilac edge, rings of white-lilac energy
+// turning around it, each on its own tilted plane that slowly turns, with the light running along it and a tail that
+// fades; behind it a soft purple glow, two starbursts turning opposite ways and short rays flickering. While it forms the
+// rings open one after another, spinning fast, and settle. Flying, it leaves a lilac streak behind.
+// The many small balls of the Shift + Z are drawn lighter (fewer rings and rays, shorter rings).
 public final class EnergyRenderer {
     // prev/pos: the last two positions the server sent (one per tick), to slide between them.
     private record Ball(Vec3 prev, Vec3 pos, float prevRadius, float radius, float prevGrow, float grow, boolean small, long updated, long born) {
     }
 
     private static final Map<Integer, Ball> BALLS = new HashMap<>();
+    private static final float[] WHITE = {1, 1, 1};
+    private static final float[] DEEP = FxDraw.rgb(0x2A0A6E);
     private static final float[] PURPLE = FxDraw.rgb(0x6A22E0);
     private static final float[] VIOLET = FxDraw.rgb(0x9A5CFF);
     private static final float[] LILAC = FxDraw.rgb(0xCDB0FF);
+    private static final float[] PALE = FxDraw.rgb(0xF1E6FF);
     // Past this many blocks a big ball is drawn like a small one.
     private static final double FAR = 48;
 
@@ -59,6 +62,8 @@ public final class EnergyRenderer {
         // A ball the server stopped talking about (out of range, say) goes away on its own.
         BALLS.values().removeIf(b -> now - b.updated() > 6);
         Camera view = Minecraft.getInstance().gameRenderer.getMainCamera();
+        Vector3f left = new Vector3f(view.getLeftVector());
+        Vector3f up = new Vector3f(view.getUpVector());
         Vector3f look = new Vector3f(view.getLookVector());
         for (Map.Entry<Integer, Ball> entry : BALLS.entrySet()) {
             Ball b = entry.getValue();
@@ -73,31 +78,47 @@ public final class EnergyRenderer {
             if (step.lengthSqr() > 0.04 && grow >= 1) {
                 trail(at, step, r, b.small());
             }
-            draw(at, r, age, seed, grow, light, look);
+            draw(at, r, age, seed, grow, light, left, up, look);
         }
     }
 
-    // The streak it leaves flying: a wide purple glow and a thin lilac core, longer the faster it goes.
+    // The streak it leaves flying: a wide lilac glow and a thin white core, longer the faster it goes.
     private static void trail(Vector3f at, Vec3 step, float r, boolean small) {
         Vector3f dir = step.normalize().toVector3f();
         float length = (float) Math.min(step.length() * (small ? 2.5 : 3.5), Math.max(1.5f, r * 14));
         Vector3f back = new Vector3f(dir).mul(-length).add(at);
-        FxDraw.ribbon(back, at, r * 1.4f, FxDraw.STREAK, 0, PURPLE, 0.6f, false);
-        FxDraw.ribbon(new Vector3f(dir).mul(-length * 0.6f).add(at), at, r * 0.45f, FxDraw.STREAK, 0.4f, LILAC, 0.6f, true);
+        FxDraw.ribbon(back, at, r * 1.4f, FxDraw.STREAK, 0.2f, VIOLET, 0.35f, true);
+        FxDraw.ribbon(new Vector3f(dir).mul(-length * 0.6f).add(at), at, r * 0.45f, FxDraw.STREAK, 0.8f, PALE, 0.6f, true);
     }
 
-    // grow: 0 to 1 while it forms. light: fewer rings and ring segments (the small balls, or a big one far away).
-    // Only the ball and its rings: no halo or rays around it (in game they hid everything), all of it purple.
-    private static void draw(Vector3f at, float r, float age, int seed, float grow, boolean light, Vector3f look) {
+    // grow: 0 to 1 while it forms. light: fewer rings, rays and ring segments (the small balls, or a big one far away).
+    private static void draw(Vector3f at, float r, float age, int seed, float grow, boolean light, Vector3f left, Vector3f up, Vector3f look) {
         float g = smooth(grow);
         float pulse = 1 + 0.04f * Mth.sin(age * 0.25f) + 0.02f * Mth.sin(age * 0.71f);
+        // The purple glow and halo behind it, kept small and soft so it doesn't wash the screen out in game.
+        FxDraw.billboard(at, r * (light ? 4 : 6) * g, 0, FxDraw.SOFT, 0, DEEP, 0.22f * g, true);
+        FxDraw.billboard(at, r * (light ? 3 : 4) * g * pulse, 0, FxDraw.SOFT, 0, PURPLE, 0.22f * g, true);
+        FxDraw.billboard(at, r * 2.6f * pulse, 0, FxDraw.SOFT, 0, VIOLET, 0.25f * g, true);
+        // Rays of light: two starbursts turning opposite ways, and short rays flickering.
+        FxDraw.billboard(at, r * (light ? 3.5f : 5) * g, age * 0.004f, FxDraw.FLARE, 0.5f, VIOLET, 0.16f * g, true);
+        if (!light) {
+            FxDraw.billboard(at, r * 4 * g, -age * 0.006f + 0.3f, FxDraw.FLARE, 0.75f, LILAC, 0.1f * g, true);
+        }
+        int rays = light ? 6 : 16;
+        for (int k = 0; k < rays; k++) {
+            float a = FxWorld.hash(seed, k, 1) * Mth.TWO_PI + age * 0.002f * (FxWorld.hash(seed, k, 2) - 0.5f);
+            float flick = 0.55f + 0.45f * Mth.sin(age * (0.08f + 0.12f * FxWorld.hash(seed, k, 3)) + k * 1.7f);
+            float length = r * (light ? 1.6f + 1.2f * FxWorld.hash(seed, k, 4) : 2 + 2 * FxWorld.hash(seed, k, 4)) * (0.7f + 0.3f * flick) * g;
+            Vector3f d = new Vector3f(left).mul(Mth.cos(a)).add(new Vector3f(up).mul(Mth.sin(a)));
+            FxDraw.ribbon(new Vector3f(d).mul(r * 0.9f).add(at), new Vector3f(d).mul(length).add(at), r * (0.08f + 0.1f * FxWorld.hash(seed, k, 5)),
+                    FxDraw.STREAK, 0.5f, FxWorld.hash(seed, k, 6) < 0.4f ? PALE : LILAC, 0.25f * flick * g, true);
+        }
         rings(at, r, age, seed, grow, light, look);
-        // The ball of light: a purple and violet body on the alpha layer (added light over a bright sky would turn
-        // white), a little purple glow and a small lilac heart.
-        FxDraw.billboard(at, r * 2.2f * pulse, 0, FxDraw.SOFT, 0, PURPLE, g, false);
-        FxDraw.billboard(at, r * 1.4f * pulse, 0, FxDraw.SOFT, 0, VIOLET, g, false);
-        FxDraw.billboard(at, r * 1.4f * pulse, 0, FxDraw.SOFT, 0, PURPLE, 0.35f * g, true);
-        FxDraw.billboard(at, r * 0.5f, 0, FxDraw.SOFT, 0.6f, LILAC, 0.85f * g, true);
+        // The ball of light: a blown out white core with a lilac edge.
+        FxDraw.billboard(at, r * 1.8f * pulse, 0, FxDraw.SOFT, 0.3f, LILAC, 0.45f * g, true);
+        FxDraw.billboard(at, r * 1.2f * pulse, 0, FxDraw.SOFT, 0.7f, PALE, 0.75f * g, true);
+        FxDraw.billboard(at, r * 0.7f, 0, FxDraw.SOFT, 1, WHITE, 0.9f * g, true);
+        FxDraw.billboard(at, r * 2.2f * g, age * 0.02f, FxDraw.FLARE, 6 / 32f, PALE, 0.22f * g, true);
     }
 
     // Each ring on its own tilted plane that slowly turns; the light runs along it, strong at the head and fading to the
@@ -134,18 +155,17 @@ public final class EnergyRenderer {
                     if (depth > 0 && new Vector3f(off).sub(new Vector3f(look).mul(depth)).length() < r * 1.1f) {
                         bright *= 0.35f;
                     }
-                    // Purple and violet on the alpha layer so they stay purple in daylight, a thin lilac light in the middle.
-                    FxDraw.ribbon(last, point, width * 3.2f, FxDraw.BEAM, 0, PURPLE, 0.55f * bright * open, false);
+                    FxDraw.ribbon(last, point, width * 4, FxDraw.BEAM, 0, VIOLET, 0.25f * bright * open, true);
                     if (!light) {
-                        FxDraw.ribbon(last, point, width * 1.8f, FxDraw.BEAM, 0, VIOLET, 0.75f * bright * open, false);
+                        FxDraw.ribbon(last, point, width * 2.2f, FxDraw.BEAM, 0.2f, LILAC, 0.45f * bright * open, true);
                     }
-                    FxDraw.ribbon(last, point, width * 0.8f, FxDraw.BEAM, 0.2f, LILAC, 0.7f * bright * open, true);
+                    FxDraw.ribbon(last, point, width, FxDraw.BEAM, 0.7f, WHITE, bright * open, true);
                 }
                 last = point;
             }
             // The bright head of the ring.
             Vector3f tip = new Vector3f(u).mul(Mth.cos(head) * ring).add(new Vector3f(v).mul(Mth.sin(head) * ring)).add(at);
-            FxDraw.billboard(tip, r * 0.5f, 0, FxDraw.SOFT, 0, VIOLET, 0.8f * open, false);
+            FxDraw.billboard(tip, r * 0.5f, 0, FxDraw.SOFT, 0.6f, PALE, 0.5f * open, true);
         }
     }
 
