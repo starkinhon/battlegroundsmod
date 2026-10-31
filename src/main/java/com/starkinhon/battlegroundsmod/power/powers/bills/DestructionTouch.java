@@ -6,6 +6,7 @@ import java.util.function.Function;
 
 import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.ModEffects;
+import com.starkinhon.battlegroundsmod.combat.AshKill;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Destructible;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
@@ -184,11 +185,12 @@ public final class DestructionTouch {
         for (LivingEntity hit : Combat.inRadius(level, at, radius, caster)) {
             double k = Math.min(1, Combat.center(hit).distanceTo(at) / radius);
             if (!hakai.canErase(hit)) {
-                Combat.hurt(caster, hit, (float) (explosao.danoCentro() + (explosao.danoBorda() - explosao.danoCentro()) * k));
+                AshKill.hurt(caster, hit, (float) (explosao.danoCentro() + (explosao.danoBorda() - explosao.danoCentro()) * k));
                 Combat.pushFrom(hit, at, explosao.empurrao() * (1 - k * 0.5), 0.5 + 0.4 * (1 - k));
             }
             if (hit.isAlive() && hakai.canErase(hit)) {
-                Hakai.disintegrate(caster, hit, awakened);
+                // Burnt to ash like Madara's Katon (Stark: no pulverizing here).
+                AshKill.hurt(caster, hit, Math.max(hit.getMaxHealth(), hit.getHealth()) * 10);
             }
         }
         // Attacks in flight inside it are gone too.
