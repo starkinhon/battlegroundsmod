@@ -72,7 +72,17 @@ public final class Esfera {
         data.busyTicks = end + 2;
         // (Let go a tick before the end, so the landing below can move and turn them.)
         Freeze.hold(caster, end - 1);
-        Freeze.hold(victim, end - 1);
+        // Where the target will come down from, laid out now: queda.distancia blocks ahead of him, queda.altura over
+        // the ground there. It is moved up there while it is still away in space (hidden from everyone, drawn adrift by
+        // the two screens in the cutscene), so when the cutscene ends it is already in the sky and nobody sees it
+        // standing on the ground for a moment first.
+        EsferaSpec.Queda queda = spec.queda();
+        Vec3 spot = home.add(forward.scale(queda.distancia()));
+        double groundY = ground(level, new Vec3(spot.x, home.y + 40, spot.z), 120);
+        Vec3 top = new Vec3(spot.x, groundY + queda.altura(), spot.z);
+        Vec3 stood = victim.position();
+        int moveUp = Math.max(tp + 2, blast);
+        Freeze.hold(victim, end - 1, age -> age < moveUp ? stood : top);
         if (spec.cutscene().intangivel()) {
             Intangible.hold(caster, end);
             Intangible.hold(victim, end);
@@ -131,10 +141,6 @@ public final class Esfera {
                 return;
             }
             Vec3 from = caster.isAlive() ? caster.position() : home;
-            EsferaSpec.Queda queda = spec.queda();
-            Vec3 spot = from.add(forward.scale(queda.distancia()));
-            double groundY = ground(level, new Vec3(spot.x, from.y + 40, spot.z), 120);
-            Vec3 top = new Vec3(spot.x, groundY + queda.altura(), spot.z);
             float yaw = (float) (Mth.atan2(spot.z - from.z, spot.x - from.x) * Mth.RAD_TO_DEG) - 90;
             if (caster instanceof ServerPlayer player) {
                 player.teleportTo(level, from.x, from.y, from.z, yaw, -10);

@@ -25,9 +25,13 @@ public record EsferaSpec(String skill, String nome, Tempo tempo, Alvo alvo, Esfe
     public record Alvo(double alcance) {
     }
 
-    // raioCarga: between his hands, fully charged; raioGigante: after it implodes on the way; raioExplosao: how big the
+    // raioCarga: between his hands, fully charged; raioGigante: after it implodes on the way; raioQueda: on top of the
+    // target as they come down from the sky in the world (raioGigante when left out); raioExplosao: how big the
     // explosion of flames grows.
-    public record Esfera(double raioCarga, double raioGigante, double raioExplosao) {
+    public record Esfera(double raioCarga, double raioGigante, double raioQueda, double raioExplosao) {
+        public double fallRadius() {
+            return raioQueda > 0 ? raioQueda : raioGigante;
+        }
     }
 
     // The square Earth: a cube tamanho blocks wide, distancia blocks ahead of him, abaixo blocks below and lado blocks to
