@@ -1,7 +1,7 @@
 {
   "formato": "souls-skill/1",
   "skill": "bills.destruction_touch",
-  "nome": "Destruição Planetária",
+  "nome": "Planetary Destruction",
   "tempo": {
     "atrasoTicks": 30,
     "duracaoTicks": 14

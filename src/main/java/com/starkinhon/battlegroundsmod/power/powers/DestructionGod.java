@@ -15,7 +15,7 @@ import com.starkinhon.battlegroundsmod.power.powers.bills.Hakaizinho;
 // Deus da Destruição (Bills). Being remade move by move, starting with the ult: C is the Esfera da Destruição and V the
 // Hakai (the hakai ball when the target still has too much life), Shift + V the hakaizinho. Z is the Destruction
 // Energy (held to charge, let go to throw) and Shift + Z its rain of balls. X is the Destruction Bop (flick up, slap
-// down). B is the Destruição Planetária (a tiny ball dropped from up high that blows up the ground in a giant plasma
+// down). B is the Planetary Destruction (a tiny ball dropped from up high that blows up the ground in a giant plasma
 // explosion).
 public final class DestructionGod {
     private DestructionGod() {

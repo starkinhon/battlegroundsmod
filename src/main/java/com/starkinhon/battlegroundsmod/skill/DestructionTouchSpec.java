@@ -2,7 +2,7 @@ package com.starkinhon.battlegroundsmod.skill;
 
 import java.util.List;
 
-// B, the Destruição Planetária (bills.destruction_touch.json). Bills rises voo.altura blocks over the ground in
+// B, the Planetary Destruction (bills.destruction_touch.json). Bills rises voo.altura blocks over the ground in
 // voo.subirTicks and hangs up there, untouchable (no damage or knockback, but skills still catch him). After
 // tempo.atrasoTicks he lets a tiny white ball drop from his finger: it falls at bola.velocidade blocks per tick to the
 // ground under the target (or under him with nobody around) and lands softly. The ground lights up and cracks for
