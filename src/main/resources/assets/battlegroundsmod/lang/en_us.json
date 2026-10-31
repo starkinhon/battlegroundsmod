@@ -157,6 +157,7 @@
   "ability.battlegroundsmod.uchiha_ghost.1.desc": "The Mangekyo eyes catch whoever is in front: stuns, blinds and seals the target's abilities for a few seconds.",
   "ability.battlegroundsmod.uchiha_ghost.1.tags": "Stun,Seals skills",
   "ability.battlegroundsmod.uchiha_ghost.2.desc": "Stands guard for a moment. Whoever strikes is grabbed by the Susanoo's arm, crushed and thrown.",
+  "ability.battlegroundsmod.uchiha_ghost.2.tags": "Counter,Grab",
   "ability.battlegroundsmod.uchiha_ghost.3.desc": "Calls a giant meteor that tears through the clouds and falls on the target.",
   "ability.battlegroundsmod.uchiha_ghost.3.tags": "Area,Cutscene",
   "ability.battlegroundsmod.uchiha_ghost.4.desc": "Rushes the target and grabs it by the neck in a cinematic strike.",
