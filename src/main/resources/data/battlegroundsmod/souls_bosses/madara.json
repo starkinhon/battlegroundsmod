@@ -27,7 +27,8 @@
   "percepcao": {
     "intervaloDecisaoTicks": 5,
     "aleatoriedade": 0.25,
-    "trocarHumorTicks": 60
+    "trocarHumorTicks": 60,
+    "intervaloTecnicasTicks": 100
   },
   "distancias": {
     "soco": 3.0,

@@ -95,6 +95,8 @@ public class SoulBossAI extends Goal {
     private boolean fast;
     private int paceLeft;
     private int punchCooldown;
+    // Ticks until it may use another special technique (see Percepcao.intervaloTecnicasTicks).
+    private int techniqueGap;
     private int stuck;
     private int punishLeft;
     private boolean jumpPending;
@@ -240,6 +242,9 @@ public class SoulBossAI extends Goal {
         if (shadowCooldown > 0) {
             shadowCooldown--;
         }
+        if (techniqueGap > 0) {
+            techniqueGap--;
+        }
         if (--paceLeft <= 0) {
             BossSpec.Ritmo ritmo = boss.spec().ritmo();
             boolean nowFast = !fast;
@@ -338,7 +343,7 @@ public class SoulBossAI extends Goal {
     private boolean react(Reaction r, BossSpec spec, BossSpec.Fase fase, double distance) {
         if (r == Reaction.COUNTER) {
             String counter = firstOfType(spec, fase, "contra");
-            if (counter != null && ready(spec, counter) && distance <= spec.skills().get(counter).distanciaMax()) {
+            if (counter != null && off(spec, counter) && distance <= spec.skills().get(counter).distanciaMax()) {
                 plan.clear();
                 state = State.IDLE;
                 return begin(spec, counter);
@@ -403,7 +408,7 @@ public class SoulBossAI extends Goal {
     // and pulverizes it. Returns true when he started the shot.
     private boolean shootDown(BossSpec spec, BossSpec.Fase fase) {
         String anti = firstOfType(spec, fase, "anti");
-        if (anti == null || !ready(spec, anti) || now % 2 != 0) {
+        if (anti == null || !off(spec, anti) || now % 2 != 0) {
             return false;
         }
         BossSpec.Skill skill = spec.skills().get(anti);
@@ -636,9 +641,21 @@ public class SoulBossAI extends Goal {
         return sorted.get(0);
     }
 
+    // Off cooldown and, for a special technique, past the gap since the last one.
     private boolean ready(BossSpec spec, String name) {
         BossSpec.Skill skill = spec.skills().get(name);
+        return off(spec, name) && (techniqueGap <= 0 || basic(skill));
+    }
+
+    // Only the skill's own cooldown: the defenses (counter, hakaizinho on an attack) don't wait for the gap.
+    private boolean off(BossSpec spec, String name) {
+        BossSpec.Skill skill = spec.skills().get(name);
         return skill != null && boss.powerData().cooldowns[skill.slot()] <= 0;
+    }
+
+    // Strong and barrage are base attacks everyone has, not techniques.
+    private static boolean basic(BossSpec.Skill skill) {
+        return skill.slot() == PowerData.SLOT_STRONG || skill.slot() == PowerData.SLOT_BARRAGE;
     }
 
     private static String firstOfType(BossSpec spec, BossSpec.Fase fase, String tipo) {
@@ -656,7 +673,7 @@ public class SoulBossAI extends Goal {
     // Starts the warning for a move; the move itself fires when the warning ends.
     private boolean begin(BossSpec spec, String name) {
         BossSpec.Skill skill = spec.skills().get(name);
-        if (skill == null || !ready(spec, name)) {
+        if (skill == null || !off(spec, name)) {
             return false;
         }
         move = name;
@@ -696,6 +713,9 @@ public class SoulBossAI extends Goal {
                 : Math.max(20, (int) Math.round(cooldown * fase.multRecarga()) - fase.menosRecargaTicks());
         if ("golpe".equals(skill.tipo()) || "barragem".equals(skill.tipo())) {
             boss.swing(InteractionHand.MAIN_HAND);
+        }
+        if (!basic(skill)) {
+            techniqueGap = spec.percepcao().techniqueGap();
         }
         remember(move);
         state = State.ACTION;
