@@ -231,6 +231,7 @@
         "destruction_bop",
         "destruction_energy",
         "destruction_energy_chuva",
+        "destruction_touch",
         "forte",
         "barragem"
       ],
@@ -260,6 +261,7 @@
         "destruction_bop",
         "destruction_energy",
         "destruction_energy_chuva",
+        "destruction_touch",
         "esfera",
         "forte",
         "barragem"
