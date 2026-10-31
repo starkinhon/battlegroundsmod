@@ -1,6 +1,13 @@
 {
   "itemGroup.battlegroundsmod": "Battlegrounds",
   "item.battlegroundsmod.power_book": "Book of Souls",
+  "item.battlegroundsmod.fight_rod": "Fight Rod",
+  "item.battlegroundsmod.fight_rod.tip1": "Right click two mobs to make them fight",
+  "item.battlegroundsmod.fight_rod.tip2": "Sneak + right click in the air: clear the pick",
+  "message.battlegroundsmod.fight_rod.selected": "%s selected (1/2). Now pick its opponent",
+  "message.battlegroundsmod.fight_rod.deselected": "%s deselected",
+  "message.battlegroundsmod.fight_rod.cleared": "Fight Rod pick cleared",
+  "message.battlegroundsmod.fight_rod.fight": "%s VS %s!",
   "item.battlegroundsmod.soul": "Soul: %s",
   "item.battlegroundsmod.soul.hint": "Right click to absorb",
   "message.battlegroundsmod.same_soul": "This soul is already joined with you.",

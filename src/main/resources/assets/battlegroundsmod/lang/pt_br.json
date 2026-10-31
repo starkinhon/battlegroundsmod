@@ -1,6 +1,13 @@
 {
   "itemGroup.battlegroundsmod": "Battlegrounds",
   "item.battlegroundsmod.power_book": "Livro das Almas",
+  "item.battlegroundsmod.fight_rod": "Fight Rod",
+  "item.battlegroundsmod.fight_rod.tip1": "Clique direito em dois mobs pra fazê-los lutar",
+  "item.battlegroundsmod.fight_rod.tip2": "Shift + clique direito no ar: limpa a seleção",
+  "message.battlegroundsmod.fight_rod.selected": "%s selecionado (1/2). Agora escolha o oponente",
+  "message.battlegroundsmod.fight_rod.deselected": "%s desmarcado",
+  "message.battlegroundsmod.fight_rod.cleared": "Seleção da Fight Rod limpa",
+  "message.battlegroundsmod.fight_rod.fight": "%s VS %s!",
   "item.battlegroundsmod.soul": "Alma: %s",
   "item.battlegroundsmod.soul.hint": "Clique com o botão direito para absorver",
   "message.battlegroundsmod.same_soul": "Essa alma já está unida a você.",
