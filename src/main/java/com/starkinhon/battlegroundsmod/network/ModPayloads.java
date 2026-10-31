@@ -553,6 +553,39 @@ public final class ModPayloads {
         }
     }
 
+    // Server -> client: the sphere of Bills' Planetary Destruction (power/powers/bills/PlanetaryDestruction), sent every
+    // tick it exists. mode 0 = there at pos with radius, 2 = gone. giant: past the implosion (the screen shakes near it).
+    public record PlanetSphere(int id, int mode, Vec3 pos, float radius, boolean giant) implements CustomPacketPayload {
+        public static final Type<PlanetSphere> TYPE = payloadType("planet_sphere");
+        public static final StreamCodec<ByteBuf, PlanetSphere> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, PlanetSphere::id,
+                ByteBufCodecs.VAR_INT, PlanetSphere::mode,
+                VEC3, PlanetSphere::pos,
+                ByteBufCodecs.FLOAT, PlanetSphere::radius,
+                ByteBufCodecs.BOOL, PlanetSphere::giant,
+                PlanetSphere::new);
+
+        @Override
+        public Type<PlanetSphere> type() {
+            return TYPE;
+        }
+    }
+
+    // Server -> client: the Planetary Destruction hit the ground at pos. The whole explosion (the blast, the smoke
+    // rising, the rewind and the second blast) plays from here on the timing in bills.planetary_destruction.json.
+    public record PlanetBlast(Vec3 pos, boolean awakened) implements CustomPacketPayload {
+        public static final Type<PlanetBlast> TYPE = payloadType("planet_blast");
+        public static final StreamCodec<ByteBuf, PlanetBlast> STREAM_CODEC = StreamCodec.composite(
+                VEC3, PlanetBlast::pos,
+                ByteBufCodecs.BOOL, PlanetBlast::awakened,
+                PlanetBlast::new);
+
+        @Override
+        public Type<PlanetBlast> type() {
+            return TYPE;
+        }
+    }
+
     // Server -> client: the hakaizinho, flying straight from start at velocity per tick for ticks.
     public record HakaiShot(Vec3 start, Vec3 velocity, int ticks, boolean awakened) implements CustomPacketPayload {
         public static final Type<HakaiShot> TYPE = payloadType("hakai_shot");
@@ -726,6 +759,10 @@ public final class ModPayloads {
                 () -> ClientHooks.hakaiShot(payload.start(), payload.velocity(), payload.ticks(), payload.awakened())));
         registrar.playToClient(EnergyBall.TYPE, EnergyBall.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.energyBall(payload.id(), payload.mode(), payload.pos(), payload.radius(), payload.grow(), payload.small())));
+        registrar.playToClient(PlanetSphere.TYPE, PlanetSphere.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.planetSphere(payload.id(), payload.mode(), payload.pos(), payload.radius(), payload.giant())));
+        registrar.playToClient(PlanetBlast.TYPE, PlanetBlast.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.planetBlast(payload.pos(), payload.awakened())));
         registrar.playToClient(BossBarStyle.TYPE, BossBarStyle.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.bossBarStyle(payload.barId(), payload.texture(), payload.frames(), payload.width(), payload.height(), payload.glow())));
         registrar.playToClient(BossCutscene.TYPE, BossCutscene.STREAM_CODEC, (payload, context) -> context.enqueueWork(
