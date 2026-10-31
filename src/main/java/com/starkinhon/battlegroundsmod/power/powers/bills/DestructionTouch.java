@@ -34,7 +34,8 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
 
-// B: Planetary Destruction (bills.destruction_touch.json, see DestructionTouchSpec). Bills rises over the ground, lets a
+// Shift + B: Planetary Destruction, the sky version (bills.destruction_touch.json, see DestructionTouchSpec; the normal B is
+// PlanetaryDestruction). Bills rises over the ground, lets a
 // tiny white ball drop from his finger, and where it lands the ground glows, cracks, shoots up pillars of light and
 // then goes off in a giant pink plasma explosion that pulverizes everything around. All the light is drawn from the
 // skill's vfx list (client/fx/FxWorld: bolinha, rachaduras, pilares, plasma).
