@@ -290,6 +290,12 @@ public final class CutscenePlayer {
         double x = p[0];
         double y = p[1];
         double z = p[2];
+        if (isActor(key.de())) {
+            Vec3 from = actorStart(key.de());
+            x += from.x;
+            y += from.y;
+            z += from.z;
+        }
         if (isActor(key.seguir())) {
             Vec3 moved = actorLocal(key.seguir(), partialTick).subtract(actorStart(key.seguir()));
             x += moved.x;

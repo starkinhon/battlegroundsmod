@@ -53,8 +53,10 @@ import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 //   flying away, and the world is back.
 // Those caught (everyone but Gojo) also get, on their own screen only, the information pouring in (DomainScreen): lines
 // of light and letters rushing into their mind, flashes of nature and senses, a slow zoom on the black hole, a heart
-// slowing down and a high whine; their bodies show grey with a white outline flickering, light threads and glyphs
-// flying into their heads. A kill inside turns the screen to red and white ink (fx_impact mode 5).
+// slowing down and a high whine; their bodies show grey, light threads and glyphs flying into their heads.
+// The sign and the white are seen in game, from everyone's own view (Gojo sees his white dome growing out towards his
+// target); only the tunnel is a cutscene (the editor's gojo.dominio), on Gojo's screen, the two of them standing still
+// face to face. A kill inside turns the screen to red and white ink (fx_impact mode 5).
 // Everything is a function of the time since it started (no state but the start), smooth at any frame rate.
 public final class DomainScene {
     private static final float[] WHITE = {1, 1, 1};
@@ -89,7 +91,7 @@ public final class DomainScene {
         final DominioSpec spec;
         final double start;
         // Where Gojo faced when he started: the black hole is far behind him, the tunnel runs towards it.
-        final Vec3 forward;
+        Vec3 forward;
         final Set<String> fired = new HashSet<>();
         double closeStart = -1;
         double nextBeat;
@@ -183,6 +185,13 @@ public final class DomainScene {
                     d.closeStart = now;
                 }
             }
+            if (CutscenePlayer.active() && DominioSpec.SKILL.equals(CutscenePlayer.skill())) {
+                CutscenePlayer.stop();
+            }
+            return;
+        }
+        if (mode == 3) {
+            tunnel(casterId, other);
             return;
         }
         if (mode == 2) {
@@ -197,9 +206,40 @@ public final class DomainScene {
         d.nextWhine = d.spec.voidTick() + 20;
         d.nextStutter = d.spec.tunnelTick() + 50;
         DOMAINS.add(d);
-        if (minecraft.player != null && minecraft.player.getId() == casterId) {
-            CutscenePlayer.start(DominioSpec.SKILL, casterId, -1, false);
+    }
+
+    // The tunnel starts: Gojo and his target stand face to face (the server turned them), the black hole is behind him
+    // as seen from the target, and on Gojo's screen the tunnel's cutscene plays.
+    private static void tunnel(int casterId, int targetId) {
+        Minecraft minecraft = Minecraft.getInstance();
+        Entity caster = minecraft.level.getEntity(casterId);
+        Entity target = targetId >= 0 ? minecraft.level.getEntity(targetId) : null;
+        for (Domain d : DOMAINS) {
+            if (d.caster == casterId && caster != null && target != null) {
+                Vec3 to = target.position().subtract(caster.position());
+                if (to.horizontalDistanceSqr() > 1.0E-4) {
+                    d.forward = new Vec3(to.x, 0, to.z).normalize();
+                }
+            }
         }
+        if (minecraft.player != null && minecraft.player.getId() == casterId) {
+            CutscenePlayer.start(DominioSpec.SKILL, casterId, target != null ? targetId : -1, false);
+        }
+    }
+
+    // The local player is inside an open domain that is not their own: no other skill's cutscene plays there.
+    public static boolean blocksCutscenes() {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (DOMAINS.isEmpty() || minecraft.player == null) {
+            return false;
+        }
+        for (Domain d : DOMAINS) {
+            double t = time(d, 0);
+            if (t >= d.spec.whiteTick() && t < d.goneAt() && d.contains(minecraft.player.position())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     // The killing blow inside the domain: a white blink, then the frame turns to sumi-e, red and white ink.
@@ -297,16 +337,6 @@ public final class DomainScene {
             Stage stage = d.stage(camera, t);
             boolean victim = !caster && d.contains(minecraft.player.getEyePosition()) && t >= spec.tunnelTick() && t < d.shatterAt();
 
-            // Impact frames on the cutscene's cuts: the hand, the eye, the smile.
-            if (caster && t >= 31 && d.once("sign")) {
-                ScreenFx.impactFrame(new int[] {0}, 1, 0xBFEFFF, d.center.add(0, 1.6, 0), 0);
-            }
-            if (caster && t >= 91 && d.once("eye")) {
-                ScreenFx.impactFrame(new int[] {4}, 1, 0x7FE8FF, d.center.add(0, 1.6, 0), 0);
-            }
-            if (caster && t >= 121 && d.once("smile")) {
-                ScreenFx.impactFrame(new int[] {3}, 1, 0xFFFFFF, d.center.add(0, 1.6, 0), 0);
-            }
             if (t >= spec.ondaTick() && d.once("onda") && dist < 110) {
                 ScreenFx.impactFrame(new int[] {4, 3, 4}, 2, 0x9FE8FF, d.center.add(0, 1.4, 0), 0);
                 ScreenFx.warp(d.center.add(0, 1.2, 0), (float) spec.dominio().raioChoque(), 0.55f, 26, 0, new Vec3(0, 1, 0), 0xCFF4FF, 0.08f, 20, -1,
@@ -394,7 +424,7 @@ public final class DomainScene {
     }
 
     // ------------------------------------------------------------------------------------------------------------------
-    // Outlines drawn by Aura's mask pass: Gojo's white glow during the sign, those caught flickering white.
+    // Outlines drawn by Aura's mask pass: Gojo's white glow during the sign (none on those caught).
 
     static List<Outline> outlines(float partial) {
         if (DOMAINS.isEmpty()) {
@@ -408,15 +438,6 @@ public final class DomainScene {
             if (caster instanceof LivingEntity gojo && t < d.spec.tunnelTick() + 6) {
                 float k = (float) (Mth.clamp((t - 20) / 30.0, 0, 1) * Mth.clamp((d.spec.tunnelTick() + 6 - t) / 8.0, 0, 1));
                 out.add(new Outline(gojo, WHITE, k * (0.85f + 0.15f * Mth.sin((float) t * 0.9f)), 0.09));
-            }
-            if (t >= d.spec.tunnelTick() && t < d.shatterAt()) {
-                for (Entity entity : minecraft.level.entitiesForRendering()) {
-                    if (entity instanceof LivingEntity living && entity.getId() != d.caster && living.isAlive() && d.contains(entity.position())) {
-                        float flick = (float) Math.pow(Math.max(0, Mth.sin((float) t * 0.7f + entity.getId() * 1.3f)), 6);
-                        float jitter = FxWorld.hash((int) t, entity.getId(), 4) > 0.8f ? 1 : 0;
-                        out.add(new Outline(living, WHITE, Math.max(flick, jitter) * 0.9f, 0.05));
-                    }
-                }
             }
         }
         return out;
@@ -681,15 +702,17 @@ public final class DomainScene {
     // A sphere of soft white light like a cloud: the white shell, cloud puffs bulging out of its skin, a halo, and the
     // front running along the ground.
     private static void whiteDome(Vector3f c, float r, double t, float now, float k, boolean outside, float dist) {
-        sphere(c, r, WHITE, 0.94f * k, 18, 32);
+        // From inside (Gojo watching it grow) it is a veil, so what it is about to swallow still shows through it.
+        float skin = outside ? 1 : 0.55f;
+        sphere(c, r, WHITE, 0.94f * k * skin, 18, 32);
         for (int n = 0; n < 150; n++) {
             Vector3f dir = FxWorld.sphere(921, n);
             float bulge = 1 + 0.03f * Mth.sin(now * 0.2f + n);
             Vector3f p = new Vector3f(dir).mul(r * bulge).add(c);
             float size = r * (0.22f + 0.24f * FxWorld.hash(921, n, 1));
             float[] col = n % 5 == 0 ? FxDraw.rgb(0xF2EEFF) : WHITE;
-            FxDraw.billboard(p, size, FxWorld.hash(921, n, 2) * 6 + now * 0.01f, FxDraw.SMOKE, 0.15f + 0.1f * Mth.sin(now * 0.1f + n), col, 0.95f * k,
-                    false);
+            FxDraw.billboard(p, size, FxWorld.hash(921, n, 2) * 6 + now * 0.01f, FxDraw.SMOKE, 0.15f + 0.1f * Mth.sin(now * 0.1f + n), col,
+                    0.95f * k * skin, false);
         }
         if (outside) {
             FxDraw.billboard(c, r * 2.9f, 0, FxDraw.SOFT, 0.2f, WHITE, 0.35f * k, true);
@@ -1096,13 +1119,18 @@ public final class DomainScene {
             double t = time(d, partial);
             Stage stage = d.stage(camera, t);
             DominioSpec spec = d.spec;
+            boolean gojo = minecraft.player.getId() == d.caster;
             if (stage == Stage.WHITE) {
-                float a = (float) Mth.clamp((spec.whiteRadius(t) - camera.distanceTo(d.center)) / 7, 0, 1);
+                // Gojo is not swallowed: he only gets a faint milky tint, and watches his dome grow out to them.
+                float a = (float) Mth.clamp((spec.whiteRadius(t) - camera.distanceTo(d.center)) / 7, 0, 1) * (gojo ? 0.12f : 1);
                 DomainScreen.whiteout(graphics, a, t);
             } else if (stage == Stage.TUNNEL && t < spec.tunnelTick() + 10) {
                 DomainScreen.inkOpening(graphics, (float) ((t - spec.tunnelTick()) / 10), t);
             }
-            boolean victim = minecraft.player.getId() != d.caster && d.contains(minecraft.player.getEyePosition(partial))
+            if (t < spec.tunnelTick() && t < d.closeAt() && camera.distanceTo(d.center) < d.radius() + 40) {
+                caption(graphics, minecraft, d, t);
+            }
+            boolean victim = !gojo && d.contains(minecraft.player.getEyePosition(partial))
                     && (stage == Stage.TUNNEL || stage == Stage.VOID);
             if (victim) {
                 float strength = (float) Mth.clamp(spec.visual().telaVitima(), 0, 2) * (FxConfig.on(FxConfig.REDUCED_FLASH) ? 0.4f : 1);
@@ -1111,5 +1139,44 @@ public final class DomainScene {
                 DomainScreen.information(graphics, t, u, strength, stage == Stage.VOID, (int) d.start);
             }
         }
+    }
+
+    // Gojo's words, in game: "Expansão de Domínio:" during the sign, "Vazio Infinito." as the white comes out.
+    private static void caption(GuiGraphics graphics, Minecraft minecraft, Domain d, double t) {
+        DominioSpec spec = d.spec;
+        double first = Math.max(4, spec.ondaTick() - 46);
+        double second = spec.whiteTick() + 2;
+        String text;
+        double from;
+        double to;
+        int color;
+        float size;
+        if (t >= first && t < spec.ondaTick()) {
+            text = "Expansão de Domínio:";
+            from = first;
+            to = spec.ondaTick();
+            color = 0xFFFFFF;
+            size = 1.6f;
+        } else if (t >= second && t < second + 60) {
+            text = "Vazio Infinito.";
+            from = second;
+            to = second + 60;
+            color = 0xBFEFFF;
+            size = 2.1f;
+        } else {
+            return;
+        }
+        float a = (float) Math.min(Mth.clamp((t - from) / 6, 0, 1), Mth.clamp((to - t) / 8, 0, 1));
+        int alpha = (int) (a * 255);
+        if (alpha < 8) {
+            return;
+        }
+        Font font = minecraft.font;
+        var pose = graphics.pose();
+        pose.pushPose();
+        pose.translate(graphics.guiWidth() / 2f, graphics.guiHeight() * 0.74f, 0);
+        pose.scale(size, size, 1);
+        graphics.drawString(font, text, -font.width(text) / 2, 0, (alpha << 24) | color, true);
+        pose.popPose();
     }
 }
