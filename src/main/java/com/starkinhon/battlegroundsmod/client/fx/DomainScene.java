@@ -748,12 +748,10 @@ public final class DomainScene {
         if (black > 0) {
             sphere(c, (float) d.radius(), BLACK, black, 22, 40);
             if (outside) {
-                // Smooth black: only a soft hint of light on top and a faint edge.
+                // Smooth black: only a soft hint of light on top, no ring around it.
                 Vector3f toCam = new Vector3f(c).negate().normalize();
                 Vector3f shine = new Vector3f(toCam).add(0, 0.9f, 0).normalize().mul(r * 0.98f).add(c);
                 FxDraw.billboard(shine, r * 0.9f, 0, FxDraw.SOFT, 0.0f, SILVER, 0.05f * black, true);
-                float apparent = (float) (r * dist / Math.sqrt(Math.max(1.0E-3, dist * dist - r * r)));
-                FxDraw.billboard(c, apparent * 2.01f, 0, FxDraw.RING, Mth.clamp(0.25f / apparent, 0.005f, 0.1f), SILVER, 0.1f * black, true);
             }
         }
     }
