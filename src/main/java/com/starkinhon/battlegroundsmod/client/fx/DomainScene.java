@@ -54,9 +54,8 @@ import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 // Those caught (everyone but Gojo) also get, on their own screen only, the information pouring in (DomainScreen): lines
 // of light and letters rushing into their mind, flashes of nature and senses, a slow zoom on the black hole, a heart
 // slowing down and a high whine; their bodies show grey, light threads and glyphs flying into their heads.
-// The sign and the white are seen in game, from everyone's own view (Gojo sees his white dome growing out towards his
-// target); only the tunnel is a cutscene (the editor's gojo.dominio), on Gojo's screen, the two of them standing still
-// face to face. A kill inside turns the screen to red and white ink (fx_impact mode 5).
+// The whole skill is seen in game, from everyone's own view, with no cutscene (Gojo sees his white dome growing out
+// towards his target); in the tunnel the two of them stand still face to face, 20 blocks apart. A kill inside turns the screen to red and white ink (fx_impact mode 5).
 // Everything is a function of the time since it started (no state but the start), smooth at any frame rate.
 public final class DomainScene {
     private static final float[] WHITE = {1, 1, 1};
@@ -208,8 +207,8 @@ public final class DomainScene {
         DOMAINS.add(d);
     }
 
-    // The tunnel starts: Gojo and his target stand face to face (the server turned them), the black hole is behind him
-    // as seen from the target, and on Gojo's screen the tunnel's cutscene plays.
+    // The tunnel starts: Gojo and his target stand face to face, 20 blocks apart (the server put them there), and the
+    // black hole is behind him as seen from the target. No cutscene: everyone keeps their own view.
     private static void tunnel(int casterId, int targetId) {
         Minecraft minecraft = Minecraft.getInstance();
         Entity caster = minecraft.level.getEntity(casterId);
@@ -221,9 +220,6 @@ public final class DomainScene {
                     d.forward = new Vec3(to.x, 0, to.z).normalize();
                 }
             }
-        }
-        if (minecraft.player != null && minecraft.player.getId() == casterId) {
-            CutscenePlayer.start(DominioSpec.SKILL, casterId, target != null ? targetId : -1, false);
         }
     }
 
@@ -424,23 +420,10 @@ public final class DomainScene {
     }
 
     // ------------------------------------------------------------------------------------------------------------------
-    // Outlines drawn by Aura's mask pass: Gojo's white glow during the sign (none on those caught).
+    // Outlines drawn by Aura's mask pass: none any more (no glow on Gojo, none on those caught).
 
     static List<Outline> outlines(float partial) {
-        if (DOMAINS.isEmpty()) {
-            return List.of();
-        }
-        Minecraft minecraft = Minecraft.getInstance();
-        List<Outline> out = new ArrayList<>();
-        for (Domain d : DOMAINS) {
-            double t = time(d, partial);
-            Entity caster = minecraft.level.getEntity(d.caster);
-            if (caster instanceof LivingEntity gojo && t < d.spec.tunnelTick() + 6) {
-                float k = (float) (Mth.clamp((t - 20) / 30.0, 0, 1) * Mth.clamp((d.spec.tunnelTick() + 6 - t) / 8.0, 0, 1));
-                out.add(new Outline(gojo, WHITE, k * (0.85f + 0.15f * Mth.sin((float) t * 0.9f)), 0.09));
-            }
-        }
-        return out;
+        return List.of();
     }
 
     // ------------------------------------------------------------------------------------------------------------------
