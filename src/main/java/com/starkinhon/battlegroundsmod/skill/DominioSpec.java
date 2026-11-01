@@ -9,7 +9,8 @@ import java.util.List;
 // - branco (fases.branco): a dome of soft white light, like a cloud, takes shape around Gojo and slowly grows out over
 //   everything within dominio.raio blocks, the ground too: a full sphere, its lower half shows if the ground around it
 //   is gone. Seen in game by everyone. The frozen attacks are erased. Everyone the white reaches is caught.
-// - tunel (fases.tunel): Gojo and his target stand still face to face, and the cutscene plays. Inside, streaks of violet, magenta, red and blue light rush past into a far vanishing point,
+// - tunel (fases.tunel): Gojo and his target stand still face to face, 20 blocks apart (no cutscene). Inside,
+//   streaks of violet, magenta, red and blue light rush past into a far vanishing point,
 //   faster and faster, with the screen stretching with speed. From outside it is already a smooth black ball.
 // - vazio (fases.vazio): the void. No walls, no floor, endless depth, a black hole turning far away, white ink drifting
 //   by, a ring of water under everyone every 2 s. Those caught are paralyzed and get infinite information on their screen

@@ -32,8 +32,8 @@ import net.neoforged.neoforge.network.PacketDistributor;
 // in flight around him, then the white erasing them; everyone the white reaches paralyzed (and their moves cut off) until
 // the domain shatters, also anyone who walks in later. Inside, only Gojo acts: any other attack is erased, nobody else can
 // use a skill (blocks), and nobody but Gojo can hurt those caught. When the tunnel starts, Gojo and his target are turned
-// face to face where they stand, and the clients are told who the target is (the tunnel's cutscene, the editor's file
-// gojo.dominio, plays on Gojo's screen). A kill inside is told to the clients, whose screens go to red and white ink, and
+// face to face, the target 20 blocks straight in front of Gojo, and the clients are told who the target is. No cutscene.
+// A kill inside is told to the clients, whose screens go to red and white ink, and
 // when the target dies the domain shatters. Everything seen is on the clients (client/fx/DomainScene). If Gojo falls, it
 // shatters early too.
 public final class InfiniteVoid {
@@ -44,6 +44,11 @@ public final class InfiniteVoid {
     private static final int HOLD_STEP = 10;
     // The domain shatters this long after its target dies, once the red and white ink has played.
     private static final int KILL_CLOSE_DELAY = 30;
+    // In the tunnel the target stands this far straight in front of Gojo.
+    private static final double TARGET_GAP = 20;
+    // How long the clients wait to hear of the tunnel's places, so the target has been seen where it was put (the
+    // tunnel's direction is measured from it).
+    private static final int PLACE_SYNC_TICKS = 4;
 
     // A domain open right now: for the kills inside it and Gojo's Infinity.
     private static final class Active {
@@ -199,7 +204,9 @@ public final class InfiniteVoid {
         return false;
     }
 
-    // The tunnel starts: Gojo and his target turned face to face where they stand, in a straight line, and held so.
+    // The tunnel starts: Gojo stands straight where he is and his target is put TARGET_GAP blocks in front of him, the two
+    // face to face in a straight line, held so. The clients hear of it a few ticks later, once the target's new place
+    // has reached them.
     private static void faceOff(Active active) {
         LivingEntity caster = active.caster;
         LivingEntity target = null;
@@ -219,14 +226,17 @@ public final class InfiniteVoid {
         active.target = target;
         if (target != null && caster.isAlive()) {
             Vec3 to = target.position().subtract(caster.position());
-            if (to.horizontalDistanceSqr() > 1.0E-4) {
-                float yaw = (float) (Mth.atan2(to.z, to.x) * Mth.RAD_TO_DEG) - 90;
-                Freeze.face(caster, yaw, 0);
-                Freeze.face(target, Mth.wrapDegrees(yaw + 180), 0);
-            }
+            Vec3 dir = to.horizontalDistanceSqr() > 1.0E-4 ? new Vec3(to.x, 0, to.z).normalize() : Vec3.directionFromRotation(0, caster.getYRot());
+            float yaw = (float) (Mth.atan2(dir.z, dir.x) * Mth.RAD_TO_DEG) - 90;
+            Freeze.face(caster, yaw, 0);
+            Freeze.place(target, caster.position().add(dir.scale(TARGET_GAP)), Mth.wrapDegrees(yaw + 180), 0);
         }
-        send(active.level, active.center,
-                new ModPayloads.GojoDomain(caster.getId(), active.center, active.awakened, 3, target != null ? target.getId() : -1));
+        int targetId = target != null ? target.getId() : -1;
+        Tasks.later(PLACE_SYNC_TICKS, () -> {
+            if (ACTIVE.contains(active)) {
+                send(active.level, active.center, new ModPayloads.GojoDomain(caster.getId(), active.center, active.awakened, 3, targetId));
+            }
+        });
     }
 
     // Someone dies inside an open domain (the tunnel or the void): everyone inside sees the red and white ink.

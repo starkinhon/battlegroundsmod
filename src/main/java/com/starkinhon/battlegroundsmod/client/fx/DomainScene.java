@@ -54,9 +54,8 @@ import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 // Those caught (everyone but Gojo) also get, on their own screen only, the information pouring in (DomainScreen): lines
 // of light and letters rushing into their mind, flashes of nature and senses, a slow zoom on the black hole, a heart
 // slowing down and a high whine; their bodies show grey, light threads and glyphs flying into their heads.
-// The sign and the white are seen in game, from everyone's own view (Gojo sees his white dome growing out towards his
-// target); only the tunnel is a cutscene (the editor's gojo.dominio), on Gojo's screen, the two of them standing still
-// face to face. A kill inside turns the screen to red and white ink (fx_impact mode 5).
+// The whole skill is seen in game, from everyone's own view, with no cutscene (Gojo sees his white dome growing out
+// towards his target); in the tunnel the two of them stand still face to face, 20 blocks apart. A kill inside turns the screen to red and white ink (fx_impact mode 5).
 // Everything is a function of the time since it started (no state but the start), smooth at any frame rate.
 public final class DomainScene {
     private static final float[] WHITE = {1, 1, 1};
@@ -163,6 +162,8 @@ public final class DomainScene {
     // When each body inside the void last left a ripple.
     private static final Map<Integer, Long> STILL = new HashMap<>();
     private static final int RIPPLE_EVERY = 40;
+    // How long the white takes to tear open into the tunnel, in ticks.
+    private static final int BURST_TICKS = 16;
     private static float lastPartial;
     // The shards' corners on a unit sphere, jittered (made once).
     private static Vector3f[][] grid;
@@ -208,8 +209,8 @@ public final class DomainScene {
         DOMAINS.add(d);
     }
 
-    // The tunnel starts: Gojo and his target stand face to face (the server turned them), the black hole is behind him
-    // as seen from the target, and on Gojo's screen the tunnel's cutscene plays.
+    // The tunnel starts: Gojo and his target stand face to face, 20 blocks apart (the server put them there), and the
+    // black hole is behind him as seen from the target. No cutscene: everyone keeps their own view.
     private static void tunnel(int casterId, int targetId) {
         Minecraft minecraft = Minecraft.getInstance();
         Entity caster = minecraft.level.getEntity(casterId);
@@ -221,9 +222,6 @@ public final class DomainScene {
                     d.forward = new Vec3(to.x, 0, to.z).normalize();
                 }
             }
-        }
-        if (minecraft.player != null && minecraft.player.getId() == casterId) {
-            CutscenePlayer.start(DominioSpec.SKILL, casterId, target != null ? targetId : -1, false);
         }
     }
 
@@ -285,7 +283,31 @@ public final class DomainScene {
 
     // The world is replaced by the tunnel or the void (FxWorld draws the backdrop first).
     public static boolean inVoid() {
-        return !DOMAINS.isEmpty() && around(cameraPos(), lastPartial) != null;
+        if (DOMAINS.isEmpty()) {
+            return false;
+        }
+        Vec3 camera = cameraPos();
+        return around(camera, lastPartial) != null || flooded(camera, lastPartial) != null;
+    }
+
+    // The domain whose white has flooded the camera's view (it is all white but the people), or null.
+    private static Domain flooded(Vec3 camera, float partial) {
+        for (Domain d : DOMAINS) {
+            double t = time(d, partial);
+            if (d.stage(camera, t) == Stage.WHITE && fill(d, t) > 0) {
+                return d;
+            }
+        }
+        return null;
+    }
+
+    // How white the world is for someone the white has reached: after the white has poured over the ground and fallen
+    // from the sky for a while, what is left of the world fades out behind it, until only the people show.
+    private static float fill(Domain d, double t) {
+        double from = d.spec.whiteTick() + d.spec.fases().branco() * 0.45;
+        double to = d.spec.whiteTick() + d.spec.fases().branco() * 0.82;
+        float k = (float) Mth.clamp((t - from) / Math.max(1, to - from), 0, 1);
+        return k * k * (3 - 2 * k);
     }
 
     // ---- the shockwave holding attacks in the air ----------------------------------------------------------------------
@@ -343,8 +365,8 @@ public final class DomainScene {
                         null, 0);
                 ScreenFx.fovKick(caster ? -4 : 9, 14);
             }
-            if (t >= spec.whiteTick() && d.once("white") && dist < 160 && d.closeAt() > spec.whiteTick()) {
-                ScreenFx.flash(0xFFFFFF, dist < d.radius() ? 0.3f : 0.55f, 16);
+            if (t >= spec.whiteTick() && d.once("white") && dist >= d.radius() && dist < 160 && d.closeAt() > spec.whiteTick()) {
+                ScreenFx.flash(0xFFFFFF, 0.55f, 16);
             }
             if (stage == Stage.TUNNEL) {
                 double u = Mth.clamp((t - spec.tunnelTick()) / Math.max(1, spec.fases().tunel()), 0, 1);
@@ -353,6 +375,8 @@ public final class DomainScene {
                 ScreenFx.sustainFov((float) (4 + 30 * u * u));
                 if (d.once("tunnelIn")) {
                     ScreenFx.fovKick(-14, 10);
+                    // The screen shakes as the white tears open.
+                    com.starkinhon.battlegroundsmod.client.ScreenShake.start(2.2f, 22);
                 }
             }
             if (stage == Stage.VOID && d.once("apex")) {
@@ -424,23 +448,10 @@ public final class DomainScene {
     }
 
     // ------------------------------------------------------------------------------------------------------------------
-    // Outlines drawn by Aura's mask pass: Gojo's white glow during the sign (none on those caught).
+    // Outlines drawn by Aura's mask pass: none any more (no glow on Gojo, none on those caught).
 
     static List<Outline> outlines(float partial) {
-        if (DOMAINS.isEmpty()) {
-            return List.of();
-        }
-        Minecraft minecraft = Minecraft.getInstance();
-        List<Outline> out = new ArrayList<>();
-        for (Domain d : DOMAINS) {
-            double t = time(d, partial);
-            Entity caster = minecraft.level.getEntity(d.caster);
-            if (caster instanceof LivingEntity gojo && t < d.spec.tunnelTick() + 6) {
-                float k = (float) (Mth.clamp((t - 20) / 30.0, 0, 1) * Mth.clamp((d.spec.tunnelTick() + 6 - t) / 8.0, 0, 1));
-                out.add(new Outline(gojo, WHITE, k * (0.85f + 0.15f * Mth.sin((float) t * 0.9f)), 0.09));
-            }
-        }
-        return out;
+        return List.of();
     }
 
     // ------------------------------------------------------------------------------------------------------------------
@@ -452,7 +463,14 @@ public final class DomainScene {
         float partial = event.getPartialTick().getGameTimeDeltaPartialTick(false);
         Vec3 camera = event.getCamera().getPosition();
         Domain d = around(camera, partial);
-        if (d == null || minecraft.level == null) {
+        if (minecraft.level == null) {
+            return;
+        }
+        if (d == null) {
+            Domain white = flooded(camera, partial);
+            if (white != null) {
+                whiteBackdrop(event, white, time(white, partial), partial);
+            }
             return;
         }
         double t = time(d, partial);
@@ -504,6 +522,43 @@ public final class DomainScene {
             glyphs(event.getCamera(), caught, camera, t, partial, buffers);
         } finally {
             RenderSystem.setShaderColor(1, 1, 1, 1);
+            dispatcher.setRenderShadow(true);
+            RenderSystem.restoreProjectionMatrix();
+            modelView.popMatrix();
+            RenderSystem.applyModelViewMatrix();
+        }
+    }
+
+    // The white drawn over the world (as much as fill says), and the people the white has reached drawn again on top
+    // of it, still hidden by whatever stands in front of them (the depth of the world is kept).
+    private static void whiteBackdrop(RenderLevelStageEvent event, Domain d, double t, float partial) {
+        Minecraft minecraft = Minecraft.getInstance();
+        Vec3 camera = event.getCamera().getPosition();
+        sky(0xFFFFFF, 0xF4F6FB, fill(d, t));
+        double reach = d.spec.whiteRadius(t);
+        Matrix4fStack modelView = RenderSystem.getModelViewStack();
+        modelView.pushMatrix();
+        modelView.set(event.getModelViewMatrix());
+        RenderSystem.applyModelViewMatrix();
+        RenderSystem.backupProjectionMatrix();
+        RenderSystem.setProjectionMatrix(event.getProjectionMatrix(), VertexSorting.DISTANCE_TO_ORIGIN);
+        EntityRenderDispatcher dispatcher = minecraft.getEntityRenderDispatcher();
+        MultiBufferSource.BufferSource buffers = minecraft.renderBuffers().bufferSource();
+        Entity viewer = event.getCamera().getEntity();
+        boolean detached = event.getCamera().isDetached();
+        try {
+            dispatcher.setRenderShadow(false);
+            for (Entity entity : minecraft.level.entitiesForRendering()) {
+                if (!(entity instanceof LivingEntity) || entity.isInvisible() || (entity == viewer && !detached)
+                        || entity.getPosition(partial).distanceTo(d.center) > reach) {
+                    continue;
+                }
+                Vec3 rel = entity.getPosition(partial).subtract(camera);
+                float yaw = Mth.rotLerp(partial, entity.yRotO, entity.getYRot());
+                dispatcher.render(entity, rel.x, rel.y, rel.z, yaw, partial, new PoseStack(), buffers, 0xF000F0);
+            }
+            buffers.endBatch();
+        } finally {
             dispatcher.setRenderShadow(true);
             RenderSystem.restoreProjectionMatrix();
             modelView.popMatrix();
@@ -684,17 +739,19 @@ public final class DomainScene {
         double dist = camera.distanceTo(d.center);
         boolean outside = dist > r;
         if (black < 1) {
-            whiteDome(c, r, t, now, 1 - black, outside, (float) dist);
+            if (outside) {
+                whiteDome(c, r, t, now, 1 - black, true, (float) dist);
+            } else {
+                pour(d, c, t, now, 1 - black);
+            }
         }
         if (black > 0) {
             sphere(c, (float) d.radius(), BLACK, black, 22, 40);
             if (outside) {
-                // Smooth black: only a soft hint of light on top and a faint edge.
+                // Smooth black: only a soft hint of light on top, no ring around it.
                 Vector3f toCam = new Vector3f(c).negate().normalize();
                 Vector3f shine = new Vector3f(toCam).add(0, 0.9f, 0).normalize().mul(r * 0.98f).add(c);
                 FxDraw.billboard(shine, r * 0.9f, 0, FxDraw.SOFT, 0.0f, SILVER, 0.05f * black, true);
-                float apparent = (float) (r * dist / Math.sqrt(Math.max(1.0E-3, dist * dist - r * r)));
-                FxDraw.billboard(c, apparent * 2.01f, 0, FxDraw.RING, Mth.clamp(0.25f / apparent, 0.005f, 0.1f), SILVER, 0.1f * black, true);
             }
         }
     }
@@ -770,7 +827,7 @@ public final class DomainScene {
             float fade = in * smooth(400, 230, (float) z) * smooth(-200, -40, (float) z);
             float width = (0.05f + 0.2f * FxWorld.hash(931, k, 6)) * (0.6f + rr / 30f);
             float pick = FxWorld.hash(931, k, 7);
-            float[] col = pick < 0.35f ? PURPLE : pick < 0.6f ? MAGENTA : pick < 0.75f ? RED : pick < 0.9f ? BLUE : PINK;
+            float[] col = pick < 0.38f ? MAGENTA : pick < 0.6f ? PINK : pick < 0.78f ? RED : pick < 0.92f ? PURPLE : BLUE;
             FxDraw.ribbon(from, to, width, FxDraw.STREAK, 0.7f, col, fade * 0.9f, true);
         }
         // Clouds of dark violet giving it volume, and white flecks, all streaming the same way, slower.
@@ -1077,6 +1134,13 @@ public final class DomainScene {
 
     // A screen-wide gradient.
     private static void sky(int top, int bottom) {
+        sky(top, bottom, 1);
+    }
+
+    private static void sky(int top, int bottom, float alpha) {
+        if (alpha <= 0) {
+            return;
+        }
         Matrix4fStack modelView = RenderSystem.getModelViewStack();
         modelView.pushMatrix();
         modelView.identity();
@@ -1085,17 +1149,23 @@ public final class DomainScene {
         RenderSystem.setProjectionMatrix(new Matrix4f().setOrtho(0, 1, 0, 1, -1, 1), VertexSorting.ORTHOGRAPHIC_Z);
         RenderSystem.disableDepthTest();
         RenderSystem.depthMask(false);
-        RenderSystem.disableBlend();
+        if (alpha < 1) {
+            RenderSystem.enableBlend();
+            RenderSystem.defaultBlendFunc();
+        } else {
+            RenderSystem.disableBlend();
+        }
         RenderSystem.disableCull();
         RenderSystem.setShader(GameRenderer::getPositionColorShader);
         BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
         float[] low = FxDraw.rgb(bottom);
         float[] high = FxDraw.rgb(top);
-        builder.addVertex(0, 0, 0).setColor(low[0], low[1], low[2], 1);
-        builder.addVertex(1, 0, 0).setColor(low[0], low[1], low[2], 1);
-        builder.addVertex(1, 1, 0).setColor(high[0], high[1], high[2], 1);
-        builder.addVertex(0, 1, 0).setColor(high[0], high[1], high[2], 1);
+        builder.addVertex(0, 0, 0).setColor(low[0], low[1], low[2], alpha);
+        builder.addVertex(1, 0, 0).setColor(low[0], low[1], low[2], alpha);
+        builder.addVertex(1, 1, 0).setColor(high[0], high[1], high[2], alpha);
+        builder.addVertex(0, 1, 0).setColor(high[0], high[1], high[2], alpha);
         BufferUploader.drawWithShader(builder.buildOrThrow());
+        RenderSystem.disableBlend();
         RenderSystem.enableCull();
         RenderSystem.depthMask(true);
         RenderSystem.enableDepthTest();
@@ -1105,6 +1175,90 @@ public final class DomainScene {
     }
 
     // ---- the screen --------------------------------------------------------------------------------------------------
+
+    // ---- inside the white: it pours over everything like water ------------------------------------------------------
+
+    // Seen from inside the white: from the sky, white falls like water in heavy cloudy curtains and floods the ground,
+    // running out from Gojo towards the edge; the front is a rolling wall of foam. (fill then washes the rest out.)
+    private static void pour(Domain d, Vector3f c, double t, float now, float k) {
+        DominioSpec spec = d.spec;
+        float r = (float) spec.whiteRadius(t);
+        float big = (float) d.radius();
+        Vector3f up = new Vector3f(0, 1, 0);
+        // The flooded ground: a sheet of white out to the front, and foam patches drifting on it.
+        FxDraw.disk(new Vector3f(c).add(0, 0.06f, 0), up, r * 2.05f, FxDraw.SOFT, 0.75f, WHITE, 0.92f * k, false);
+        for (int n = 0; n < 140; n++) {
+            float dist = big * (float) Math.sqrt(FxWorld.hash(941, n, 1));
+            if (dist > r) {
+                continue;
+            }
+            float ang = FxWorld.hash(941, n, 2) * Mth.TWO_PI + now * 0.002f;
+            Vector3f p = new Vector3f(c).add(Mth.cos(ang) * dist, 0.1f + 0.05f * (n % 4), Mth.sin(ang) * dist);
+            float size = 3 + 6 * FxWorld.hash(941, n, 3);
+            FxDraw.disk(p, up, size, FxDraw.SMOKE, 0.2f, n % 4 == 0 ? MILK : WHITE, 0.9f * k, false);
+        }
+        // The front: a wall of foam rolling over the ground, with spray thrown up.
+        int ring = 110;
+        for (int n = 0; n < ring; n++) {
+            float ang = n / (float) ring * Mth.TWO_PI + FxWorld.hash(942, n, 1) * 0.05f;
+            float wob = 1 + 0.05f * Mth.sin(ang * 7 + now * 0.15f) + 0.03f * Mth.sin(ang * 13 - now * 0.11f);
+            float rr = r * wob;
+            float h = 0.6f + 2.2f * FxWorld.hash(942, n, 2) + 0.6f * Mth.sin(now * 0.3f + n);
+            Vector3f p = new Vector3f(c).add(Mth.cos(ang) * rr, h, Mth.sin(ang) * rr);
+            FxDraw.billboard(p, 2.4f + 3.2f * FxWorld.hash(942, n, 3), FxWorld.hash(942, n, 4) * 6 + now * 0.02f, FxDraw.SMOKE, 0.2f, WHITE,
+                    0.95f * k, false);
+        }
+        // From the sky: puffs of white pour down where the white has reached, swelling as they fall, like water poured
+        // from above, and settle on the ground as more foam.
+        int falls = 190;
+        for (int n = 0; n < falls; n++) {
+            float dist = big * (float) Math.sqrt(FxWorld.hash(943, n, 1));
+            double reached = reachedAt(spec, dist) + 14 * FxWorld.hash(943, n, 2);
+            double age = t - reached;
+            if (age < 0) {
+                continue;
+            }
+            float drop = (float) Mth.clamp(age / (22 + 18 * FxWorld.hash(943, n, 3)), 0, 1);
+            float ang = FxWorld.hash(943, n, 4) * Mth.TWO_PI;
+            float top = 18 + 22 * FxWorld.hash(943, n, 5);
+            float y = top * (1 - drop * drop) + 1.2f * drop;
+            Vector3f p = new Vector3f(c).add(Mth.cos(ang) * dist, y, Mth.sin(ang) * dist);
+            float size = (4 + 7 * FxWorld.hash(943, n, 6)) * (0.6f + 0.8f * drop);
+            FxDraw.billboard(p, size, FxWorld.hash(943, n, 7) * 6 + now * 0.01f, FxDraw.SMOKE, 0.18f, n % 5 == 0 ? MILK : WHITE, 0.95f * k,
+                    false);
+            if (drop < 1) {
+                // The stream behind it, like a waterfall.
+                Vector3f tail = new Vector3f(p).add(0, Math.min(top - y, 10), 0);
+                FxDraw.ribbon(p, tail, size * 0.45f, FxDraw.STREAK, 0.5f, WHITE, 0.7f * k * (1 - drop * 0.6f), false);
+            }
+        }
+        // Overhead, the white closing over the sky above the flood.
+        float roof = (float) Mth.clamp((t - spec.whiteTick()) / Math.max(1, spec.fases().branco() * 0.6), 0, 1);
+        for (int n = 0; n < 60; n++) {
+            float dist = r * (float) Math.sqrt(FxWorld.hash(944, n, 1));
+            float ang = FxWorld.hash(944, n, 2) * Mth.TWO_PI + now * 0.003f;
+            Vector3f p = new Vector3f(c).add(Mth.cos(ang) * dist, 24 + 16 * FxWorld.hash(944, n, 3), Mth.sin(ang) * dist);
+            FxDraw.billboard(p, 12 + 16 * FxWorld.hash(944, n, 4), FxWorld.hash(944, n, 5) * 6, FxDraw.SMOKE, 0.25f, WHITE, 0.9f * k * roof, false);
+        }
+    }
+
+    // When the white's front reaches dist from the center, in ticks since the press.
+    private static double reachedAt(DominioSpec spec, double dist) {
+        double lo = spec.whiteTick();
+        double hi = spec.whiteTick() + Math.max(4, spec.fases().branco() * 0.85);
+        if (spec.whiteRadius(hi) <= dist) {
+            return hi;
+        }
+        for (int i = 0; i < 14; i++) {
+            double mid = (lo + hi) / 2;
+            if (spec.whiteRadius(mid) < dist) {
+                lo = mid;
+            } else {
+                hi = mid;
+            }
+        }
+        return hi;
+    }
 
     // Under the HUD: the white swallowing the view, the ink tearing it open into the tunnel, and for those caught the
     // information pouring in (DomainScreen).
@@ -1120,12 +1274,9 @@ public final class DomainScene {
             Stage stage = d.stage(camera, t);
             DominioSpec spec = d.spec;
             boolean gojo = minecraft.player.getId() == d.caster;
-            if (stage == Stage.WHITE) {
-                // Gojo is not swallowed: he only gets a faint milky tint, and watches his dome grow out to them.
-                float a = (float) Mth.clamp((spec.whiteRadius(t) - camera.distanceTo(d.center)) / 7, 0, 1) * (gojo ? 0.12f : 1);
-                DomainScreen.whiteout(graphics, a, t);
-            } else if (stage == Stage.TUNNEL && t < spec.tunnelTick() + 10) {
-                DomainScreen.inkOpening(graphics, (float) ((t - spec.tunnelTick()) / 10), t);
+            if (stage == Stage.TUNNEL && t < spec.tunnelTick() + BURST_TICKS) {
+                // The white (the world is all white by now) tears open into the tunnel.
+                DomainScreen.whiteBurst(graphics, (float) ((t - spec.tunnelTick()) / BURST_TICKS), t);
             }
             if (t < spec.tunnelTick() && t < d.closeAt() && camera.distanceTo(d.center) < d.radius() + 40) {
                 caption(graphics, minecraft, d, t);

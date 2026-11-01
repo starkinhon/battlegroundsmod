@@ -20,6 +20,8 @@ public final class Freeze {
         // Set by face: the way they are kept looking, over the one each hold started with.
         float faceYaw = Float.NaN;
         float facePitch;
+        // Set by place: where they are kept, over the anchor each hold started with.
+        Vec3 at;
     }
 
     private static final Map<Entity, Hold> HELD = new HashMap<>();
@@ -57,7 +59,7 @@ public final class Freeze {
             boolean faced = !Float.isNaN(hold.faceYaw);
             float yRot = faced ? hold.faceYaw : startYaw;
             float xRot = faced ? hold.facePitch : startPitch;
-            Vec3 pos = anchor.apply(age);
+            Vec3 pos = hold.at != null ? hold.at : anchor.apply(age);
             boolean moved = entity.position().distanceToSqr(pos) > 1.0E-4 || entity.getYRot() != yRot || entity.getXRot() != xRot;
             if (moved) {
                 if (entity instanceof ServerPlayer player) {
@@ -85,6 +87,20 @@ public final class Freeze {
         if (entity instanceof ServerPlayer player) {
             player.connection.teleport(entity.getX(), entity.getY(), entity.getZ(), yaw, pitch);
         }
+    }
+
+    // Puts someone held still at pos looking this way, and keeps them there while the hold lasts.
+    public static void place(LivingEntity entity, Vec3 pos, float yaw, float pitch) {
+        Hold hold = HELD.get(entity);
+        if (hold != null) {
+            hold.at = pos;
+        }
+        if (entity instanceof ServerPlayer player) {
+            player.connection.teleport(pos.x, pos.y, pos.z, yaw, pitch);
+        } else {
+            entity.moveTo(pos.x, pos.y, pos.z, yaw, pitch);
+        }
+        face(entity, yaw, pitch);
     }
 
     private static void release(Entity entity) {
