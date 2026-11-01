@@ -12,7 +12,7 @@ import java.util.List;
 // - tunel (fases.tunel): inside, streaks of violet, magenta, red and blue light rush past into a far vanishing point,
 //   faster and faster, with the screen stretching with speed. From outside it is already a smooth black ball.
 // - vazio (fases.vazio): the void. No walls, no floor, endless depth, a black hole turning far away, white ink drifting
-//   by, ripples of water under every step. Those caught are paralyzed, take acerto.dano every acerto.aCadaTicks and get
+//   by, a ring of water under everyone every 2 s. Those caught are paralyzed, take acerto.dano every acerto.aCadaTicks and get
 //   infinite information on their screen (only them, never Gojo).
 // - quebra (fases.quebra): it cracks everywhere and shatters like glowing glass, black and white, until nothing is left.
 public record DominioSpec(String skill, String nome, Tempo tempo, Fases fases, Dominio dominio, Acerto acerto, Visual visual, List<Som> sons) {

@@ -48,7 +48,7 @@ import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 //   a far dark point past the camera, faster and faster, the screen stretching with the speed;
 // - the void (only inside): no walls and no floor, endless depth: stars and a blue haze on every side, far behind Gojo a
 //   black hole turning in rings of blue light with black ink and sparks pulled into it, white ink drifting by, and
-//   rings of water under every step. From outside, all this time, a smooth black ball;
+//   a ring of water under everyone every 2 seconds. From outside, all this time, a smooth black ball;
 // - the end: cracks of light run all over the sphere, then it shatters like glowing glass, black and white shards
 //   flying away, and the world is back.
 // Those caught (everyone but Gojo) also get, on their own screen only, the information pouring in (DomainScreen): lines
@@ -158,9 +158,9 @@ public final class DomainScene {
 
     private static final List<Domain> DOMAINS = new ArrayList<>();
     private static final List<Ripple> RIPPLES = new ArrayList<>();
-    // Where each body inside the void last left a ripple.
-    private static final Map<Integer, Vec3> STEPS = new HashMap<>();
+    // When each body inside the void last left a ripple.
     private static final Map<Integer, Long> STILL = new HashMap<>();
+    private static final int RIPPLE_EVERY = 40;
     private static float lastPartial;
     // The shards' corners on a unit sphere, jittered (made once).
     private static Vector3f[][] grid;
@@ -217,7 +217,6 @@ public final class DomainScene {
     public static void clear() {
         DOMAINS.clear();
         RIPPLES.clear();
-        STEPS.clear();
         STILL.clear();
     }
 
@@ -284,9 +283,8 @@ public final class DomainScene {
             return;
         }
         DOMAINS.removeIf(d -> time(d, 0) > d.goneAt() + 1 || minecraft.player.position().distanceToSqr(d.center) > VIEW * VIEW * 4);
-        RIPPLES.removeIf(r -> ScreenFx.now() - r.born() > 70);
+        RIPPLES.removeIf(r -> ScreenFx.now() - r.born() > RIPPLE_EVERY);
         if (DOMAINS.isEmpty()) {
-            STEPS.clear();
             STILL.clear();
             return;
         }
@@ -331,7 +329,6 @@ public final class DomainScene {
                 ScreenFx.flash(0xFFFFFF, 1, 16);
                 ScreenFx.impactFrame(new int[] {2, 4}, 2, 0xB070FF, camera.add(d.holeDir().x * 50, d.holeDir().y * 50, d.holeDir().z * 50), 0);
                 ScreenFx.fovKick(-28, 20);
-                ripple(d.center, 3.5f);
             }
             if (victim && t >= spec.voidTick()) {
                 // Frozen, the view sinks slowly into the black hole.
@@ -377,32 +374,17 @@ public final class DomainScene {
         }
     }
 
-    // Rings of water under every step in the void, and now and then under whoever stands still.
+    // One ring of water every 2 seconds under each body in the void, wherever it is.
     private static void steps(Domain d, Minecraft minecraft) {
         long now = ScreenFx.now();
         for (Entity entity : minecraft.level.entitiesForRendering()) {
             if (!(entity instanceof LivingEntity living) || !living.isAlive() || !d.contains(entity.position())) {
                 continue;
             }
-            Vec3 feet = entity.position();
-            Vec3 last = STEPS.get(entity.getId());
-            if (last == null) {
-                STEPS.put(entity.getId(), feet);
+            Long last = STILL.get(entity.getId());
+            if (last == null || now - last >= RIPPLE_EVERY) {
+                ripple(entity.position(), 1);
                 STILL.put(entity.getId(), now);
-                continue;
-            }
-            double moved = Math.hypot(feet.x - last.x, feet.z - last.z);
-            boolean landed = entity.onGround() && last.y - feet.y > 0.6;
-            if (entity.onGround() && moved > 0.85 || landed) {
-                ripple(feet, landed ? 1.8f : 1);
-                STEPS.put(entity.getId(), feet);
-                STILL.put(entity.getId(), now);
-            } else if (now - STILL.getOrDefault(entity.getId(), now) > 45) {
-                ripple(feet, 0.7f);
-                STILL.put(entity.getId(), now);
-            }
-            if (!entity.onGround()) {
-                STEPS.put(entity.getId(), new Vec3(last.x, Math.max(last.y, feet.y), last.z));
             }
         }
     }
@@ -802,11 +784,21 @@ public final class DomainScene {
         Vector3f y = new Vector3f(x).cross(dir).normalize();
 
         sky(v, dir, size, now, in, haze);
-        // The galaxy band through the hole, like the reference: long soft light across the sky.
+        // The galaxy band through the hole, like the reference: long soft light across the sky, laid on the sky sphere
+        // (so it is never cut by the far plane) in short pieces that fade out towards both ends.
+        int pieces = 28;
+        float span = 1.5f;
         for (int k = 0; k < 3; k++) {
             float w = 8 + k * 10;
-            FxDraw.ribbon(new Vector3f(eye).sub(new Vector3f(x).mul(260)), new Vector3f(eye).add(new Vector3f(x).mul(260)), w, FxDraw.BEAM, 0.3f,
-                    k == 0 ? SILVER : haze, (0.16f - k * 0.04f) * in, true);
+            for (int i = 0; i < pieces; i++) {
+                float a0 = -span + 2 * span * i / pieces;
+                float a1 = -span + 2 * span * (i + 1) / pieces;
+                float mid = (a0 + a1) / 2 / span;
+                float fade = (1 - mid * mid) * (1 - mid * mid);
+                Vector3f p0 = new Vector3f(dir).mul(Mth.cos(a0)).add(new Vector3f(x).mul(Mth.sin(a0))).normalize().mul(92);
+                Vector3f p1 = new Vector3f(dir).mul(Mth.cos(a1)).add(new Vector3f(x).mul(Mth.sin(a1))).normalize().mul(92);
+                FxDraw.ribbon(p0, p1, w * (0.5f + 0.5f * fade), FxDraw.BEAM, 0.3f, k == 0 ? SILVER : haze, (0.16f - k * 0.04f) * fade * in, true);
+            }
         }
         // The black hole: its glow, the turning rings (shape 10) and sparks spiralling in.
         FxDraw.billboard(eye, size * 2.4f, 0, FxDraw.SOFT, 0.05f, haze, 0.35f * in, true);
@@ -896,19 +888,11 @@ public final class DomainScene {
         for (Ripple r : RIPPLES) {
             float age = (float) (ScreenFx.now() + partial - r.born());
             Vector3f at = r.pos().subtract(camera).toVector3f().add(0, 0.03f, 0);
-            for (int ring = 0; ring < 4; ring++) {
-                float a = age - ring * 6;
-                if (a < 0) {
-                    continue;
-                }
-                float u = Math.min(1, a / 55);
-                float rad = (0.4f + 3.6f * r.size()) * FxWorld.easeOut(u);
-                if (rad < 0.05f) {
-                    continue;
-                }
-                float fade = (1 - u) * (1 - u) * (1 - ring * 0.2f);
-                FxDraw.disk(at, up, rad * 2, FxDraw.RING, Mth.clamp(0.06f / Math.max(0.3f, rad), 0.008f, 0.12f), ring == 0 ? WHITE : SILVER,
-                        0.7f * fade * in, true);
+            float u0 = Math.min(1, age / RIPPLE_EVERY);
+            float rad = (0.4f + 3.6f * r.size()) * FxWorld.easeOut(u0);
+            if (rad >= 0.05f) {
+                float fade = (1 - u0) * (1 - u0);
+                FxDraw.disk(at, up, rad * 2, FxDraw.RING, Mth.clamp(0.06f / Math.max(0.3f, rad), 0.008f, 0.12f), WHITE, 0.7f * fade * in, true);
             }
             float u = Math.min(1, age / 20);
             FxDraw.disk(at, up, 1.6f * r.size(), FxDraw.SOFT, 0.1f, SILVER, 0.25f * (1 - u) * in, true);
