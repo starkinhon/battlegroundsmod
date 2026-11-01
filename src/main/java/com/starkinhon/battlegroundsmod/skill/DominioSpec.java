@@ -41,9 +41,8 @@ public record DominioSpec(String skill, String nome, Tempo tempo, Fases fases, D
     }
 
     public static final String SKILL = "gojo.dominio";
-    // How long the shockwave takes to reach raioChoque, and the white to reach raio.
-    public static final int WAVE_TICKS = 10;
-    public static final int WHITE_TICKS = 14;
+    // How long the shockwave takes to reach raioChoque. The white takes most of its phase to reach raio, then holds.
+    public static final int WAVE_TICKS = 14;
 
     public static DominioSpec get(boolean awakened) {
         return SkillSpecs.get(SKILL, DominioSpec.class, awakened);
@@ -93,7 +92,7 @@ public record DominioSpec(String skill, String nome, Tempo tempo, Fases fases, D
 
     // How far the white dome has grown t ticks after the press.
     public double whiteRadius(double t) {
-        double k = (t - whiteTick()) / WHITE_TICKS;
+        double k = (t - whiteTick()) / Math.max(4, fases.branco() * 0.7);
         if (k < 0) {
             return 0;
         }

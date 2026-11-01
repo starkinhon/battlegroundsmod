@@ -299,8 +299,15 @@ public final class DomainScene {
             Stage stage = d.stage(camera, t);
             boolean victim = !caster && d.contains(minecraft.player.getEyePosition()) && t >= spec.tunnelTick() && t < d.shatterAt();
 
-            if (caster && t >= 9 && d.once("sign")) {
+            // Impact frames on the cutscene's cuts: the hand, the eye, the smile.
+            if (caster && t >= 31 && d.once("sign")) {
                 ScreenFx.impactFrame(new int[] {0}, 1, 0xBFEFFF, d.center.add(0, 1.6, 0), 0);
+            }
+            if (caster && t >= 91 && d.once("eye")) {
+                ScreenFx.impactFrame(new int[] {4}, 1, 0x7FE8FF, d.center.add(0, 1.6, 0), 0);
+            }
+            if (caster && t >= 121 && d.once("smile")) {
+                ScreenFx.impactFrame(new int[] {3}, 1, 0xFFFFFF, d.center.add(0, 1.6, 0), 0);
             }
             if (t >= spec.ondaTick() && d.once("onda") && dist < 110) {
                 ScreenFx.impactFrame(new int[] {4, 3, 4}, 2, 0x9FE8FF, d.center.add(0, 1.4, 0), 0);
@@ -417,7 +424,7 @@ public final class DomainScene {
             double t = time(d, partial);
             Entity caster = minecraft.level.getEntity(d.caster);
             if (caster instanceof LivingEntity gojo && t < d.spec.tunnelTick() + 6) {
-                float k = (float) (Mth.clamp((t - 4) / 12.0, 0, 1) * Mth.clamp((d.spec.tunnelTick() + 6 - t) / 8.0, 0, 1));
+                float k = (float) (Mth.clamp((t - 20) / 30.0, 0, 1) * Mth.clamp((d.spec.tunnelTick() + 6 - t) / 8.0, 0, 1));
                 out.add(new Outline(gojo, WHITE, k * (0.85f + 0.15f * Mth.sin((float) t * 0.9f)), 0.09));
             }
             if (t >= d.spec.tunnelTick() && t < d.shatterAt()) {
