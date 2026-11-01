@@ -59,6 +59,7 @@ public final class SkillEffects {
             PENDING.clear();
             FxWorld.clear();
             SusanooArm.clear();
+            DomainScene.clear();
             return;
         }
         long now = ScreenFx.now();

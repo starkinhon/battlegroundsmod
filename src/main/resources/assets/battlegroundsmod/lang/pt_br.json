@@ -174,5 +174,17 @@
   "ability.battlegroundsmod.uchiha_ghost.8.desc": "Dois meteoros caem em sequência sobre o alvo.",
   "ability.battlegroundsmod.uchiha_ghost.8.tags": "Área",
   "gamerule.soulsBlockDestruction": "Skills do Souls quebram blocos",
-  "gamerule.soulsBlockDestruction.description": "Desligado, nenhuma skill ou boss do mod quebra ou altera blocos. Efeitos e dano continuam. mobGriefing desligado também impede."
+  "gamerule.soulsBlockDestruction.description": "Desligado, nenhuma skill ou boss do mod quebra ou altera blocos. Efeitos e dano continuam. mobGriefing desligado também impede.",
+  "power.battlegroundsmod.strongest": "O Mais Forte",
+  "power.battlegroundsmod.strongest.desc": "Por toda a terra e céu, só ele é o honrado.",
+  "ability.battlegroundsmod.strongest.0": "Azul",
+  "ability.battlegroundsmod.strongest.1": "Vermelho",
+  "ability.battlegroundsmod.strongest.2": "Roxo",
+  "ability.battlegroundsmod.strongest.3": "Expansão de Domínio: Vazio Infinito",
+  "ability.battlegroundsmod.strongest.0.desc": "Em breve.",
+  "ability.battlegroundsmod.strongest.1.desc": "Em breve.",
+  "ability.battlegroundsmod.strongest.2.desc": "Em breve.",
+  "ability.battlegroundsmod.strongest.3.desc": "Faz o selo de mão e expande o domínio: uma esfera preta engole tudo em volta. Lá dentro só existe o vazio, e quem foi pego recebe informação infinita, ficando paralisado até o domínio quebrar.",
+  "ability.battlegroundsmod.strongest.3.tags": "Domínio,Área,Acerto garantido,Cutscene",
+  "message.battlegroundsmod.soon": "Em breve!"
 }

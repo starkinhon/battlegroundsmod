@@ -114,6 +114,8 @@ public class BattlegroundsModClient {
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "base_attacks"), BaseAttacks::render);
         // Impact frames and flashes cover the world and the hand, but not the HUD.
         event.registerBelowAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "screen_fx"), ScreenFx::renderGui);
+        event.registerBelowAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "domain_void"),
+                com.starkinhon.battlegroundsmod.client.fx.DomainScene::renderGui);
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "cutscene_bars"), GrabCutscene::renderGui);
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "bop_cutscene"), BopCutscene::renderGui);
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "hakai_cutscene"), HakaiCutscene::renderGui);
@@ -166,6 +168,7 @@ public class BattlegroundsModClient {
         AshDeath.tick();
         Aura.tick();
         SkillEffects.tick();
+        com.starkinhon.battlegroundsmod.client.fx.DomainScene.tick();
         BossBars.tick();
         Fear.tick();
     }
