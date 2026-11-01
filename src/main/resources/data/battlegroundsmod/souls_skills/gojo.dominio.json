@@ -4,19 +4,19 @@
   "nome": "Expansão de Domínio: Vazio Infinito",
   "tempo": {
     "atrasoTicks": 10,
-    "duracaoTicks": 50
+    "duracaoTicks": 150
   },
   "fases": {
-    "choque": 40,
-    "branco": 20,
-    "tunel": 140,
+    "choque": 160,
+    "branco": 60,
+    "tunel": 170,
     "vazio": 600,
     "quebra": 40
   },
   "dominio": {
     "raio": 40,
     "raioChoque": 30,
-    "ondaTick": 24,
+    "ondaTick": 136,
     "pararUsuario": true
   },
   "acerto": {
@@ -84,7 +84,7 @@
       "nome": "Selo",
       "som": "minecraft:block.beacon.activate",
       "momento": "uso",
-      "atrasoTicks": 4,
+      "atrasoTicks": 30,
       "repetirACadaTicks": 0,
       "vezes": 1,
       "volume": 1.4,
@@ -96,7 +96,7 @@
       "nome": "Brilho na mão",
       "som": "minecraft:block.amethyst_block.resonate",
       "momento": "uso",
-      "atrasoTicks": 16,
+      "atrasoTicks": 92,
       "repetirACadaTicks": 0,
       "vezes": 1,
       "volume": 2.0,
@@ -108,7 +108,7 @@
       "nome": "Brilho na mão 2",
       "som": "minecraft:block.amethyst_cluster.break",
       "momento": "uso",
-      "atrasoTicks": 20,
+      "atrasoTicks": 126,
       "repetirACadaTicks": 0,
       "vezes": 1,
       "volume": 1.6,
@@ -193,7 +193,7 @@
       "som": "minecraft:block.respawn_anchor.charge",
       "momento": "tunel",
       "atrasoTicks": 20,
-      "repetirACadaTicks": 24,
+      "repetirACadaTicks": 32,
       "vezes": 5,
       "volume": 1.5,
       "pitch": 0.6,

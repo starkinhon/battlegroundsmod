@@ -2,7 +2,7 @@
   "formato": "souls-cutscene/1",
   "skill": "gojo.dominio",
   "ativa": true,
-  "duracaoTicks": 62,
+  "duracaoTicks": 210,
   "origem": "usuario",
   "travarMovimento": true,
   "esconderHud": true,
@@ -11,9 +11,9 @@
     {
       "nome": "Selo, onda de choque e luz branca",
       "inicio": 0,
-      "fim": 58,
+      "fim": 198,
       "entradaTicks": 0,
-      "saidaTicks": 6
+      "saidaTicks": 8
     }
   ],
   "camera": [
@@ -36,7 +36,7 @@
       "suave": "suave"
     },
     {
-      "t": 8,
+      "t": 30,
       "pos": [
         0.45,
         1.0,
@@ -54,7 +54,7 @@
       "suave": "corte"
     },
     {
-      "t": 9,
+      "t": 31,
       "pos": [
         0.16,
         1.58,
@@ -72,7 +72,7 @@
       "suave": "suave"
     },
     {
-      "t": 18,
+      "t": 90,
       "pos": [
         0.1,
         1.62,
@@ -90,7 +90,7 @@
       "suave": "corte"
     },
     {
-      "t": 19,
+      "t": 91,
       "pos": [
         -0.06,
         1.66,
@@ -108,25 +108,61 @@
       "suave": "suave"
     },
     {
-      "t": 23,
+      "t": 120,
       "pos": [
         -0.05,
         1.66,
-        0.48
+        0.46
       ],
       "rot": [
         0,
         0,
         0
       ],
-      "fov": 15,
+      "fov": 14,
       "seguir": "usuario",
       "mirar": "usuario",
       "mirarAltura": 1.62,
       "suave": "corte"
     },
     {
-      "t": 24,
+      "t": 121,
+      "pos": [
+        0.3,
+        1.5,
+        1.4
+      ],
+      "rot": [
+        0,
+        0,
+        0
+      ],
+      "fov": 40,
+      "seguir": "usuario",
+      "mirar": "usuario",
+      "mirarAltura": 1.55,
+      "suave": "suave"
+    },
+    {
+      "t": 135,
+      "pos": [
+        0.25,
+        1.5,
+        1.2
+      ],
+      "rot": [
+        0,
+        0,
+        0
+      ],
+      "fov": 37,
+      "seguir": "usuario",
+      "mirar": "usuario",
+      "mirarAltura": 1.55,
+      "suave": "corte"
+    },
+    {
+      "t": 136,
       "pos": [
         -3.4,
         0.9,
@@ -144,7 +180,7 @@
       "suave": "saida"
     },
     {
-      "t": 40,
+      "t": 160,
       "pos": [
         -7.0,
         3.0,
@@ -162,7 +198,7 @@
       "suave": "suave"
     },
     {
-      "t": 58,
+      "t": 198,
       "pos": [
         -14.0,
         8.0,
@@ -184,15 +220,15 @@
   "legendas": [
     {
       "texto": "Expansão de Domínio:",
-      "inicio": 9,
-      "fim": 23,
+      "inicio": 31,
+      "fim": 90,
       "cor": "#ffffff",
       "tamanho": 1.5
     },
     {
       "texto": "Vazio Infinito.",
-      "inicio": 25,
-      "fim": 56,
+      "inicio": 121,
+      "fim": 180,
       "cor": "#bfefff",
       "tamanho": 2
     }
