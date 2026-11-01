@@ -92,6 +92,8 @@
   "item.battlegroundsmod.madara_spawn_egg": "Ovo Gerador do Fantasma dos Uchiha",
   "entity.battlegroundsmod.bills": "Deus da Destruição",
   "item.battlegroundsmod.bills_spawn_egg": "Ovo Gerador do Deus da Destruição",
+  "entity.battlegroundsmod.gojo": "O Mais Forte",
+  "item.battlegroundsmod.gojo_spawn_egg": "Ovo Gerador do Mais Forte",
   "message.battlegroundsmod.boss_debug_on": "Pensamento dos bosses visível na barra de ação.",
   "message.battlegroundsmod.boss_debug_off": "Pensamento dos bosses escondido.",
   "message.battlegroundsmod.bossbar_on": "Barra de boss personalizada ligada.",
