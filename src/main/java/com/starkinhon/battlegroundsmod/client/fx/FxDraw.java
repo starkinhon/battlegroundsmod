@@ -20,6 +20,8 @@ final class FxDraw {
     static final int SOLID = 7;
     static final int DISC = 8;
     static final int SUN = 9;
+    // Infinite Void's far eye (DomainScene): a ring of light with turning arms; param = the ring's radius.
+    static final int VOID_EYE = 10;
 
     private static VertexConsumer additive;
     private static VertexConsumer alpha;

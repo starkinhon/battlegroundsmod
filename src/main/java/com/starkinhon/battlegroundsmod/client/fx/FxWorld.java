@@ -116,13 +116,16 @@ public final class FxWorld {
         ScreenFx.capture(event);
         boolean world = !PIECES.isEmpty() || MeteorRenderer.hasTrails() || Aura.active() || KatonBallRenderer.active() || AshDeath.hasSparks()
                 || SpaceScene.active() || EsferaRenderer.active() || HakaiRenderer.active() || EnergyRenderer.active()
-                || SphereRenderer.active() || SusanooArm.active();
+                || SphereRenderer.active() || SusanooArm.active() || DomainScene.active();
         if (!world && !ScreenFx.needsScene()) {
             return;
         }
         if (SpaceScene.active()) {
             // The Esfera's space cutscene covers the world before anything else is drawn on it.
             SpaceScene.backdrop(event);
+        } else if (DomainScene.inVoid()) {
+            // Inside Gojo's domain the void takes the place of the world.
+            DomainScene.backdrop(event);
         }
         boolean flat = FxShaders.flat();
         if (!flat) {
@@ -180,6 +183,7 @@ public final class FxWorld {
             EnergyRenderer.render(camera, now, partial);
             SphereRenderer.render(camera, now, partial);
             SusanooArm.render(source, flat, camera, now, partial);
+            DomainScene.render(camera, now, partial);
         }
         if (flat) {
             source.endBatch(FxRenderTypes.SUS_FLAT);

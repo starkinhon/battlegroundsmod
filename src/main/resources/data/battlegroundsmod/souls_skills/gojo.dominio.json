@@ -1,0 +1,144 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "gojo.dominio",
+  "nome": "Expansão de Domínio: Vazio Infinito",
+  "tempo": {
+    "atrasoTicks": 6,
+    "duracaoTicks": 44
+  },
+  "dominio": {
+    "raio": 28,
+    "inicioTick": 36,
+    "expandirTicks": 16,
+    "duracaoTicks": 240,
+    "fecharTicks": 26,
+    "pararUsuario": true
+  },
+  "acerto": {
+    "paralisar": true,
+    "dano": 1.0,
+    "aCadaTicks": 20
+  },
+  "visual": {
+    "corAnel": "#ffffff",
+    "corBrilho": "#6fd8ff",
+    "corFundo": "#5a3cff",
+    "estrelas": 1500,
+    "olhoTamanho": 90,
+    "olhoAltura": 10,
+    "telaVitima": 1.0
+  },
+  "animacao": {
+    "transicaoTicks": 4,
+    "preparo": {
+      "cabeca": 0,
+      "tronco": 0,
+      "bracoDir": {
+        "frente": 20,
+        "abrir": -10
+      },
+      "bracoEsq": {
+        "frente": 0,
+        "abrir": 4
+      }
+    },
+    "sopro": {
+      "cabeca": 0,
+      "tronco": 0,
+      "bracoDir": {
+        "frente": 112,
+        "abrir": -38
+      },
+      "bracoEsq": {
+        "frente": 0,
+        "abrir": 5
+      }
+    }
+  },
+  "sons": [
+    {
+      "nome": "Selo",
+      "som": "minecraft:block.beacon.activate",
+      "momento": "uso",
+      "atrasoTicks": 6,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.2,
+      "pitch": 1.4,
+      "pitchFim": 1.4,
+      "onde": "usuario"
+    },
+    {
+      "nome": "Carga",
+      "som": "minecraft:block.respawn_anchor.charge",
+      "momento": "uso",
+      "atrasoTicks": 24,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.2,
+      "pitch": 0.5,
+      "pitchFim": 0.5,
+      "onde": "usuario"
+    },
+    {
+      "nome": "Expandir",
+      "som": "minecraft:block.end_portal.spawn",
+      "momento": "expandir",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 2.5,
+      "pitch": 0.7,
+      "pitchFim": 0.7,
+      "onde": "usuario"
+    },
+    {
+      "nome": "Acerto garantido",
+      "som": "minecraft:entity.warden.sonic_boom",
+      "momento": "acerto",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 2.0,
+      "pitch": 0.5,
+      "pitchFim": 0.5,
+      "onde": "usuario"
+    },
+    {
+      "nome": "Vazio",
+      "som": "minecraft:block.beacon.ambient",
+      "momento": "acerto",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 40,
+      "vezes": 0,
+      "volume": 2.0,
+      "pitch": 0.5,
+      "pitchFim": 0.5,
+      "onde": "usuario"
+    },
+    {
+      "nome": "Rachar",
+      "som": "minecraft:block.glass.break",
+      "momento": "fechar",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 4,
+      "vezes": 3,
+      "volume": 2.0,
+      "pitch": 0.5,
+      "pitchFim": 0.8,
+      "onde": "usuario"
+    },
+    {
+      "nome": "Quebrar",
+      "som": "minecraft:block.respawn_anchor.deplete",
+      "momento": "fechar",
+      "atrasoTicks": 13,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 2.0,
+      "pitch": 0.6,
+      "pitchFim": 0.6,
+      "onde": "usuario"
+    }
+  ]
+}

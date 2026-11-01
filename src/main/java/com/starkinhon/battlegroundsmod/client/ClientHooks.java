@@ -124,6 +124,10 @@ public final class ClientHooks {
         HakaiCutscene.start(casterId, targetId, awakened);
     }
 
+    public static void gojoDomain(int casterId, net.minecraft.world.phys.Vec3 center, boolean awakened, boolean close) {
+        com.starkinhon.battlegroundsmod.client.fx.DomainScene.start(casterId, center, awakened, close);
+    }
+
     public static void hakaiDeath(int entityId, boolean awakened) {
         AshDeath.startHakai(entityId, awakened);
     }

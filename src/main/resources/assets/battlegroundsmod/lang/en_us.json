@@ -174,5 +174,17 @@
   "ability.battlegroundsmod.uchiha_ghost.8.desc": "Two meteors fall one after the other on the target.",
   "ability.battlegroundsmod.uchiha_ghost.8.tags": "Area",
   "gamerule.soulsBlockDestruction": "Souls skills break blocks",
-  "gamerule.soulsBlockDestruction.description": "When off, no skill or boss from the mod breaks or changes blocks. Effects and damage stay. mobGriefing off also stops it."
+  "gamerule.soulsBlockDestruction.description": "When off, no skill or boss from the mod breaks or changes blocks. Effects and damage stay. mobGriefing off also stops it.",
+  "power.battlegroundsmod.strongest": "The Strongest",
+  "power.battlegroundsmod.strongest.desc": "Throughout heaven and earth, he alone is the honored one.",
+  "ability.battlegroundsmod.strongest.0": "Blue",
+  "ability.battlegroundsmod.strongest.1": "Red",
+  "ability.battlegroundsmod.strongest.2": "Purple",
+  "ability.battlegroundsmod.strongest.3": "Domain Expansion: Infinite Void",
+  "ability.battlegroundsmod.strongest.0.desc": "Coming soon.",
+  "ability.battlegroundsmod.strongest.1.desc": "Coming soon.",
+  "ability.battlegroundsmod.strongest.2.desc": "Coming soon.",
+  "ability.battlegroundsmod.strongest.3.desc": "Makes the hand sign and expands the domain: a black sphere swallows everything around. Inside there is only the void, and whoever is caught gets infinite information, paralyzed until the domain breaks.",
+  "ability.battlegroundsmod.strongest.3.tags": "Domain,Area,Sure hit,Cutscene",
+  "message.battlegroundsmod.soon": "Coming soon!"
 }

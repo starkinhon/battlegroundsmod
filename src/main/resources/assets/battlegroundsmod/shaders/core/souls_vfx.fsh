@@ -128,6 +128,26 @@ void main() {
         vec3 flameColor = mix(vec3(1.0, 0.3, 0.04), vec3(1.0, 0.82, 0.35), pow(flame, 1.5));
         base = mix(flameColor, surf, disc) * color.rgb;
         alpha = max(disc, flame * 0.95);
+    } else if (shape == 10) {
+        // Infinite Void's far eye: a thin white-hot ring, the glow around it, arms of blue and violet light winding
+        // into it on a log spiral, and a faint haze inside. param: the ring's radius on the quad.
+        float a = atan(p.y, p.x);
+        float t = time * 0.04;
+        float ringR = max(0.1, param);
+        float lr = log(max(r, 0.001));
+        float sw = a * 2.0 + lr * 5.0 - t * 3.0;
+        float n = fbm(vec2(sw * 0.8 + seed, lr * 3.0 - t));
+        float arms = pow(0.5 + 0.5 * sin(sw + n * 4.0), 3.0);
+        float ring = exp(-pow((r - ringR) / 0.012, 2.0));
+        float glow = exp(-pow((r - ringR) / 0.07, 2.0));
+        float outside = smoothstep(ringR, ringR + 0.04, r) * pow(max(0.0, 1.0 - (r - ringR) / (1.0 - ringR)), 1.6);
+        float swirl = outside * (0.15 + 0.85 * arms) * (0.4 + 0.9 * n);
+        float haze = smoothstep(ringR, 0.0, r) * 0.12 * n;
+        vec3 violet = vec3(0.45, 0.25, 1.0);
+        vec3 cyan = vec3(0.35, 0.8, 1.0);
+        base = mix(violet, cyan, clamp(glow + swirl * 0.8, 0.0, 1.0)) * color.rgb;
+        alpha = ring * 1.4 + glow * 0.55 + swirl * 0.8 + haze;
+        core = ring + glow * 0.25;
     } else {
         alpha = 1.0;
     }
