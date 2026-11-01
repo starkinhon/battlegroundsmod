@@ -15,7 +15,7 @@ import net.minecraft.world.phys.Vec3;
 // hash of its index, moved by the ball's age, so it never jitters. The server says when it grows, flies and blows up.
 public final class KatonBallRenderer {
     // mode 0: growing over the caster's head (offset = pos); 1: flying from pos at velocity per tick.
-    private record Ball(int caster, int mode, Vec3 pos, Vec3 velocity, float radius, float maxRadius, int ticks, long start) {
+    private record Ball(int caster, int mode, Vec3 pos, Vec3 velocity, float radius, float maxRadius, int ticks, long start, AttackClock clock) {
     }
 
     private static final Map<Integer, Ball> BALLS = new HashMap<>();
@@ -32,7 +32,7 @@ public final class KatonBallRenderer {
             BALLS.remove(id);
             return;
         }
-        BALLS.put(id, new Ball(caster, mode, pos, velocity, radius, maxRadius, Math.max(1, ticks), ScreenFx.now()));
+        BALLS.put(id, new Ball(caster, mode, pos, velocity, radius, maxRadius, Math.max(1, ticks), ScreenFx.now(), new AttackClock()));
     }
 
     public static boolean active() {
@@ -50,7 +50,7 @@ public final class KatonBallRenderer {
             BALLS.clear();
             return;
         }
-        BALLS.values().removeIf(b -> b.mode() == 1 && now - b.start() > b.ticks() + 2 || now - b.start() > 20 * 60);
+        BALLS.values().removeIf(b -> b.mode() == 1 && b.clock().peek(now - b.start()) > b.ticks() + 2 || now - b.start() > 20 * 60);
         for (var entry : BALLS.entrySet()) {
             Ball b = entry.getValue();
             float age = (float) (now - b.start());
@@ -66,6 +66,8 @@ public final class KatonBallRenderer {
                 radius = Mth.lerp(k * k * (3 - 2 * k), b.radius(), b.maxRadius());
                 center = caster.getEyePosition(partial).add(b.pos()).add(0, radius, 0);
             } else {
+                // Stopped in the air by Gojo's shockwave, like on the server.
+                age = (float) b.clock().age(age, a -> b.pos().add(b.velocity().scale(Math.min(a, b.ticks()))));
                 radius = b.radius();
                 center = b.pos().add(b.velocity().scale(Math.min(age, b.ticks())));
                 dir = b.velocity().normalize();

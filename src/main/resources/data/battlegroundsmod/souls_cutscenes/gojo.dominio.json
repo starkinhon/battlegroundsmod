@@ -2,98 +2,134 @@
   "formato": "souls-cutscene/1",
   "skill": "gojo.dominio",
   "ativa": true,
-  "duracaoTicks": 72,
+  "duracaoTicks": 62,
   "origem": "usuario",
   "travarMovimento": true,
   "esconderHud": true,
   "barrasPretas": true,
   "trechos": [
     {
-      "nome": "Selo e expansão",
+      "nome": "Selo, onda de choque e luz branca",
       "inicio": 0,
-      "fim": 62,
+      "fim": 58,
       "entradaTicks": 0,
-      "saidaTicks": 10
+      "saidaTicks": 6
     }
   ],
   "camera": [
     {
       "t": 0,
       "pos": [
-        0.3,
-        1.55,
-        1.3
+        0.7,
+        0.8,
+        2.8
       ],
       "rot": [
         0,
         0,
         0
       ],
-      "fov": 45,
+      "fov": 55,
       "seguir": "usuario",
       "mirar": "usuario",
-      "mirarAltura": 1.55,
+      "mirarAltura": 1.35,
       "suave": "suave"
     },
     {
-      "t": 16,
+      "t": 8,
       "pos": [
-        0.12,
-        1.6,
-        0.85
+        0.45,
+        1.0,
+        2.1
       ],
       "rot": [
         0,
         0,
         0
       ],
-      "fov": 38,
+      "fov": 48,
       "seguir": "usuario",
       "mirar": "usuario",
-      "mirarAltura": 1.55,
+      "mirarAltura": 1.4,
       "suave": "corte"
     },
     {
-      "t": 17,
+      "t": 9,
       "pos": [
-        -1.6,
-        0.35,
-        3.0
+        0.16,
+        1.58,
+        0.78
       ],
       "rot": [
         0,
         0,
         0
       ],
-      "fov": 70,
+      "fov": 30,
       "seguir": "usuario",
       "mirar": "usuario",
       "mirarAltura": 1.55,
       "suave": "suave"
     },
     {
-      "t": 34,
+      "t": 18,
       "pos": [
-        -1.9,
-        0.5,
-        3.6
+        0.1,
+        1.62,
+        0.66
       ],
       "rot": [
         0,
         0,
         0
       ],
-      "fov": 72,
+      "fov": 25,
       "seguir": "usuario",
       "mirar": "usuario",
-      "mirarAltura": 1.55,
+      "mirarAltura": 1.56,
+      "suave": "corte"
+    },
+    {
+      "t": 19,
+      "pos": [
+        -0.06,
+        1.66,
+        0.52
+      ],
+      "rot": [
+        0,
+        0,
+        0
+      ],
+      "fov": 18,
+      "seguir": "usuario",
+      "mirar": "usuario",
+      "mirarAltura": 1.62,
       "suave": "suave"
     },
     {
-      "t": 48,
+      "t": 23,
       "pos": [
-        -3.2,
-        1.2,
+        -0.05,
+        1.66,
+        0.48
+      ],
+      "rot": [
+        0,
+        0,
+        0
+      ],
+      "fov": 15,
+      "seguir": "usuario",
+      "mirar": "usuario",
+      "mirarAltura": 1.62,
+      "suave": "corte"
+    },
+    {
+      "t": 24,
+      "pos": [
+        -3.4,
+        0.9,
         6.5
       ],
       "rot": [
@@ -101,44 +137,62 @@
         0,
         0
       ],
-      "fov": 80,
+      "fov": 78,
       "seguir": "usuario",
       "mirar": "usuario",
-      "mirarAltura": 1.55,
-      "suave": "suave"
+      "mirarAltura": 1.3,
+      "suave": "saida"
     },
     {
-      "t": 62,
+      "t": 40,
       "pos": [
-        -3.6,
-        1.6,
-        7.5
+        -7.0,
+        3.0,
+        14.0
       ],
       "rot": [
         0,
         0,
         0
       ],
-      "fov": 80,
+      "fov": 82,
       "seguir": "usuario",
       "mirar": "usuario",
-      "mirarAltura": 1.55,
+      "mirarAltura": 1.3,
+      "suave": "suave"
+    },
+    {
+      "t": 58,
+      "pos": [
+        -14.0,
+        8.0,
+        30.0
+      ],
+      "rot": [
+        0,
+        0,
+        0
+      ],
+      "fov": 86,
+      "seguir": "usuario",
+      "mirar": "usuario",
+      "mirarAltura": 1.2,
       "suave": "suave"
     }
   ],
   "atores": {},
   "legendas": [
     {
-      "texto": "Expansão de Domínio...",
-      "inicio": 6,
-      "fim": 26,
+      "texto": "Expansão de Domínio:",
+      "inicio": 9,
+      "fim": 23,
       "cor": "#ffffff",
       "tamanho": 1.5
     },
     {
       "texto": "Vazio Infinito.",
-      "inicio": 30,
-      "fim": 54,
+      "inicio": 25,
+      "fim": 56,
       "cor": "#bfefff",
       "tamanho": 2
     }

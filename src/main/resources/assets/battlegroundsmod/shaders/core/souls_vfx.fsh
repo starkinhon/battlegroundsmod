@@ -12,6 +12,8 @@
 //   8 disc    a filled circle with a soft edge, param = how wide the edge is
 //   9 sun     a boiling star: white-hot middle, orange cells and bright streaks, a glowing rim and flames licking out
 //             past it (the color tints it, white for a real sun), param = how far the flames reach
+//  10 black hole  Infinite Void's: photon ring and swirling blue rings around an empty middle, param = the hole's size
+//  11 splat   an ink splash with tendrils and droplets (black blots, white ink), param = which one
 // A very dark color never burns white (dark rims and lines stay dark).
 // Near walls and the ground the effect fades out instead of cutting a hard line (soft particles).
 uniform sampler2D Sampler1;
@@ -129,25 +131,42 @@ void main() {
         base = mix(flameColor, surf, disc) * color.rgb;
         alpha = max(disc, flame * 0.95);
     } else if (shape == 10) {
-        // Infinite Void's far eye: a thin white-hot ring, the glow around it, arms of blue and violet light winding
-        // into it on a log spiral, and a faint haze inside. param: the ring's radius on the quad.
+        // Infinite Void's black hole (the hole itself is a black disc drawn over it): a thin white-hot photon ring at the
+        // hole's edge, then a disk of concentric blue and cyan rings swirling around it, the inner ones faster, torn
+        // into streaks, and two faint outer rings. param: the hole's radius on the quad.
+        float hole = max(0.05, param);
         float a = atan(p.y, p.x);
-        float t = time * 0.04;
-        float ringR = max(0.1, param);
-        float lr = log(max(r, 0.001));
-        float sw = a * 2.0 + lr * 5.0 - t * 3.0;
-        float n = fbm(vec2(sw * 0.8 + seed, lr * 3.0 - t));
-        float arms = pow(0.5 + 0.5 * sin(sw + n * 4.0), 3.0);
-        float ring = exp(-pow((r - ringR) / 0.012, 2.0));
-        float glow = exp(-pow((r - ringR) / 0.07, 2.0));
-        float outside = smoothstep(ringR, ringR + 0.04, r) * pow(max(0.0, 1.0 - (r - ringR) / (1.0 - ringR)), 1.6);
-        float swirl = outside * (0.15 + 0.85 * arms) * (0.4 + 0.9 * n);
-        float haze = smoothstep(ringR, 0.0, r) * 0.12 * n;
-        vec3 violet = vec3(0.45, 0.25, 1.0);
-        vec3 cyan = vec3(0.35, 0.8, 1.0);
-        base = mix(violet, cyan, clamp(glow + swirl * 0.8, 0.0, 1.0)) * color.rgb;
-        alpha = ring * 1.4 + glow * 0.55 + swirl * 0.8 + haze;
-        core = ring + glow * 0.25;
+        float t = time * 0.05;
+        float x = (r - hole) / (1.0 - hole);
+        float spin = a + t * (1.6 / (0.25 + max(x, 0.0)));
+        float n = fbm(vec2(spin * 1.2 + seed, x * 6.0));
+        float n2 = fbm(vec2(spin * 3.0 - seed, x * 18.0 - t));
+        float bands = 0.55 + 0.45 * sin(x * 38.0 + n * 5.0);
+        float disk = smoothstep(0.0, 0.04, x) * pow(max(0.0, 1.0 - x), 1.4);
+        float streaks = pow(n2, 2.0) * 1.6;
+        float photon = exp(-pow((r - hole) / 0.012, 2.0));
+        float glowIn = exp(-pow((r - hole) / 0.06, 2.0));
+        float outer = exp(-pow((x - 0.55) / 0.05, 2.0)) * 0.5 + exp(-pow((x - 0.8) / 0.03, 2.0)) * 0.35;
+        float body = disk * (0.35 + 0.65 * bands) * (0.5 + streaks) + outer * (0.6 + 0.4 * n);
+        vec3 deep = vec3(0.1, 0.35, 0.85);
+        vec3 cyan = vec3(0.6, 0.92, 1.0);
+        base = mix(deep, cyan, clamp(body * 0.8 + glowIn, 0.0, 1.0)) * color.rgb;
+        alpha = (body * 0.9 + photon * 1.5 + glowIn * 0.6) * step(hole * 0.97, r) * step(r, 1.0);
+        core = photon + glowIn * 0.3;
+    } else if (shape == 11) {
+        // An ink splash: a lumpy blot with tendrils thrown out and droplets around it. param picks which one (0 to 1).
+        float s = param * 37.0 + seed;
+        float a = atan(p.y, p.x);
+        float lumps = fbm(vec2(a * 1.6 + s, s * 0.3));
+        float spikes = pow(fbm(vec2(a * 5.0 - s, s + 4.0)), 3.0) * 1.8;
+        float edge = 0.36 + 0.25 * lumps + spikes * 0.45;
+        float body = smoothstep(edge, edge - 0.04, r);
+        vec2 g = p * 6.0 + s;
+        vec2 f = fract(g) - 0.5;
+        float h = hash(floor(g));
+        float drop = step(0.82, h) * smoothstep(0.18 * h, 0.12 * h, length(f)) * smoothstep(1.0, 0.5, r) * step(edge, r);
+        float tex = 0.85 + 0.15 * fbm(p * 5.0 + s);
+        alpha = max(body * tex, drop);
     } else {
         alpha = 1.0;
     }

@@ -27,6 +27,8 @@ public final class Destructible {
         private double radius;
         private boolean gone;
         private boolean ended;
+        // Stopped in the air (Gojo's shockwave) until this game time: the task moving it does not run meanwhile.
+        private long holdUntil;
 
         private Attack(ServerLevel level, Entity owner, Vec3 pos, double radius, Runnable onErase) {
             this.level = level;
@@ -65,6 +67,15 @@ public final class Destructible {
         public void end() {
             ended = true;
         }
+
+        // Stopped in the air right now: Tasks skips the moves linked to it, so it neither moves nor ages.
+        public boolean held() {
+            return !gone && !ended && level.getGameTime() < holdUntil;
+        }
+
+        public void hold(int ticks) {
+            holdUntil = Math.max(holdUntil, level.getGameTime() + ticks);
+        }
     }
 
     private static final List<Attack> LIVE = new ArrayList<>();
@@ -76,6 +87,8 @@ public final class Destructible {
         prune();
         Attack attack = new Attack(level, owner, pos, radius, onErase);
         LIVE.add(attack);
+        // The task that moves it is started right after this (or is the one running now): Tasks ties it to the attack.
+        Tasks.link(attack);
         return attack;
     }
 
@@ -96,6 +109,18 @@ public final class Destructible {
         }
         LIVE.removeAll(erased);
         return erased;
+    }
+
+    // Stops in the air, for ticks more, every attack whose body is within radius of center (Gojo's shockwave), except
+    // the ones of spare. Their moves resume where they were when the hold runs out, unless they are erased first.
+    public static void holdAround(ServerLevel level, Vec3 center, double radius, int ticks, Entity spare) {
+        prune();
+        for (Attack attack : LIVE) {
+            if (attack.level == level && !attack.gone && !attack.ended && (spare == null || attack.owner != spare)
+                    && attack.pos.distanceTo(center) <= attack.radius + radius) {
+                attack.hold(ticks);
+            }
+        }
     }
 
     // The closest attack in flight that is not me's own and whose body comes within range of me, or null.

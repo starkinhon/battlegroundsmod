@@ -27,6 +27,8 @@ public final class Tasks {
         final boolean system;
         // Whose move started it (null: unknown). Tasks a task starts belong to the same one.
         final Entity owner;
+        // The attack in flight this task moves (Destructible): while it is held in the air the task waits.
+        Destructible.Attack link;
         int age;
         boolean cancelled;
 
@@ -35,6 +37,9 @@ public final class Tasks {
             this.system = system;
             this.seq = nextSeq++;
             this.owner = current;
+            if (!system && linking != null && (current == null || current == linking.owner())) {
+                this.link = linking;
+            }
         }
     }
 
@@ -43,6 +48,9 @@ public final class Tasks {
     private static long nextSeq;
     // The entity whose code is running now (a player's key press, a boss's AI tick, a task of theirs), for Entry.owner.
     private static Entity current;
+    // The entry running now, and the attack just tracked by the code running now: the tasks it starts next move it.
+    private static Entry running;
+    private static Destructible.Attack linking;
 
     private Tasks() {
     }
@@ -54,6 +62,15 @@ public final class Tasks {
     // A task cancelSince never stops.
     public static void addSystem(Task task) {
         PENDING.add(new Entry(task, true));
+    }
+
+    // Called by Destructible.track: ties the attack to the task running now (if it has none yet) and to the tasks the same
+    // code starts after it, so holding the attack in the air pauses them.
+    static void link(Destructible.Attack attack) {
+        linking = attack;
+        if (running != null && running.link == null && !running.system) {
+            running.link = attack;
+        }
     }
 
     // Marks this point: cancelSince(mark) later drops every (non system) task started after it.
@@ -69,6 +86,7 @@ public final class Tasks {
             body.run();
         } finally {
             current = before;
+            linking = null;
         }
     }
 
@@ -103,6 +121,7 @@ public final class Tasks {
     }
 
     public static void tick() {
+        linking = null;
         ACTIVE.addAll(PENDING);
         PENDING.clear();
         Iterator<Entry> it = ACTIVE.iterator();
@@ -112,9 +131,13 @@ public final class Tasks {
                 it.remove();
                 continue;
             }
+            if (entry.link != null && entry.link.held()) {
+                continue;
+            }
             boolean done;
             Entity before = current;
             current = entry.owner;
+            running = entry;
             try {
                 done = entry.task.tick(entry.age++);
             } catch (Exception e) {
@@ -122,6 +145,8 @@ public final class Tasks {
                 done = true;
             } finally {
                 current = before;
+                running = null;
+                linking = null;
             }
             if (done) {
                 it.remove();
@@ -133,5 +158,7 @@ public final class Tasks {
         ACTIVE.clear();
         PENDING.clear();
         current = null;
+        running = null;
+        linking = null;
     }
 }

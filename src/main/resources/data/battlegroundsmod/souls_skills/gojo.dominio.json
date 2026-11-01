@@ -3,15 +3,20 @@
   "skill": "gojo.dominio",
   "nome": "Expansão de Domínio: Vazio Infinito",
   "tempo": {
-    "atrasoTicks": 6,
-    "duracaoTicks": 44
+    "atrasoTicks": 10,
+    "duracaoTicks": 50
+  },
+  "fases": {
+    "choque": 40,
+    "branco": 20,
+    "tunel": 140,
+    "vazio": 600,
+    "quebra": 40
   },
   "dominio": {
-    "raio": 28,
-    "inicioTick": 36,
-    "expandirTicks": 16,
-    "duracaoTicks": 240,
-    "fecharTicks": 26,
+    "raio": 40,
+    "raioChoque": 30,
+    "ondaTick": 24,
     "pararUsuario": true
   },
   "acerto": {
@@ -20,38 +25,57 @@
     "aCadaTicks": 20
   },
   "visual": {
-    "corAnel": "#ffffff",
-    "corBrilho": "#6fd8ff",
-    "corFundo": "#5a3cff",
-    "estrelas": 1500,
-    "olhoTamanho": 90,
-    "olhoAltura": 10,
+    "corBuraco": "#8fe6ff",
+    "corNevoa": "#2f5cff",
+    "estrelas": 1400,
+    "buracoTamanho": 70,
+    "buracoAltura": 8,
     "telaVitima": 1.0
   },
   "animacao": {
-    "transicaoTicks": 4,
+    "transicaoTicks": 5,
     "preparo": {
-      "cabeca": 0,
-      "tronco": 0,
+      "corpo": 0,
+      "cabeca": 4,
+      "tronco": 4,
+      "giro": 6,
       "bracoDir": {
-        "frente": 20,
-        "abrir": -10
+        "frente": 70,
+        "abrir": -20
       },
       "bracoEsq": {
-        "frente": 0,
-        "abrir": 4
+        "frente": 20,
+        "abrir": -6
+      },
+      "pernaDir": {
+        "frente": -6,
+        "abrir": 6
+      },
+      "pernaEsq": {
+        "frente": 6,
+        "abrir": 6
       }
     },
     "sopro": {
-      "cabeca": 0,
-      "tronco": 0,
+      "corpo": 0,
+      "cabeca": 8,
+      "tronco": 6,
+      "giro": 20,
       "bracoDir": {
-        "frente": 112,
-        "abrir": -38
+        "frente": 122,
+        "abrir": -48
       },
       "bracoEsq": {
-        "frente": 0,
-        "abrir": 5
+        "frente": 48,
+        "abrir": -16
+      },
+      "pernaDir": {
+        "frente": -10,
+        "abrir": 12
+      },
+      "pernaEsq": {
+        "frente": 10,
+        "abrir": 12
       }
     }
   },
@@ -60,42 +84,138 @@
       "nome": "Selo",
       "som": "minecraft:block.beacon.activate",
       "momento": "uso",
-      "atrasoTicks": 6,
+      "atrasoTicks": 4,
       "repetirACadaTicks": 0,
       "vezes": 1,
-      "volume": 1.2,
+      "volume": 1.4,
+      "pitch": 1.5,
+      "pitchFim": 1.5,
+      "onde": "usuario"
+    },
+    {
+      "nome": "Brilho na mão",
+      "som": "minecraft:block.amethyst_block.resonate",
+      "momento": "uso",
+      "atrasoTicks": 16,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 2.0,
+      "pitch": 1.6,
+      "pitchFim": 1.6,
+      "onde": "usuario"
+    },
+    {
+      "nome": "Brilho na mão 2",
+      "som": "minecraft:block.amethyst_cluster.break",
+      "momento": "uso",
+      "atrasoTicks": 20,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.6,
+      "pitch": 0.6,
+      "pitchFim": 0.6,
+      "onde": "usuario"
+    },
+    {
+      "nome": "Onda de choque",
+      "som": "minecraft:entity.warden.sonic_boom",
+      "momento": "onda",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 2.5,
       "pitch": 1.4,
       "pitchFim": 1.4,
       "onde": "usuario"
     },
     {
-      "nome": "Carga",
-      "som": "minecraft:block.respawn_anchor.charge",
-      "momento": "uso",
-      "atrasoTicks": 24,
+      "nome": "Tempo parado",
+      "som": "minecraft:block.beacon.deactivate",
+      "momento": "onda",
+      "atrasoTicks": 0,
       "repetirACadaTicks": 0,
       "vezes": 1,
-      "volume": 1.2,
+      "volume": 2.5,
+      "pitch": 0.6,
+      "pitchFim": 0.6,
+      "onde": "usuario"
+    },
+    {
+      "nome": "Luz branca",
+      "som": "minecraft:block.end_portal.spawn",
+      "momento": "branco",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 3.0,
+      "pitch": 1.2,
+      "pitchFim": 1.2,
+      "onde": "usuario"
+    },
+    {
+      "nome": "Luz branca 2",
+      "som": "minecraft:block.beacon.activate",
+      "momento": "branco",
+      "atrasoTicks": 2,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 3.0,
       "pitch": 0.5,
       "pitchFim": 0.5,
       "onde": "usuario"
     },
     {
-      "nome": "Expandir",
-      "som": "minecraft:block.end_portal.spawn",
-      "momento": "expandir",
+      "nome": "Túnel",
+      "som": "minecraft:item.elytra.flying",
+      "momento": "tunel",
       "atrasoTicks": 0,
       "repetirACadaTicks": 0,
       "vezes": 1,
-      "volume": 2.5,
-      "pitch": 0.7,
-      "pitchFim": 0.7,
+      "volume": 1.6,
+      "pitch": 1.5,
+      "pitchFim": 1.5,
       "onde": "usuario"
     },
     {
-      "nome": "Acerto garantido",
+      "nome": "Túnel zumbido",
+      "som": "minecraft:block.portal.trigger",
+      "momento": "tunel",
+      "atrasoTicks": 10,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.2,
+      "pitch": 1.6,
+      "pitchFim": 1.6,
+      "onde": "usuario"
+    },
+    {
+      "nome": "Túnel pulso",
+      "som": "minecraft:block.respawn_anchor.charge",
+      "momento": "tunel",
+      "atrasoTicks": 20,
+      "repetirACadaTicks": 24,
+      "vezes": 5,
+      "volume": 1.5,
+      "pitch": 0.6,
+      "pitchFim": 1.8,
+      "onde": "usuario"
+    },
+    {
+      "nome": "Ápice",
       "som": "minecraft:entity.warden.sonic_boom",
-      "momento": "acerto",
+      "momento": "vazio",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 3.0,
+      "pitch": 0.5,
+      "pitchFim": 0.5,
+      "onde": "usuario"
+    },
+    {
+      "nome": "Ápice 2",
+      "som": "minecraft:entity.generic.explode",
+      "momento": "vazio",
       "atrasoTicks": 0,
       "repetirACadaTicks": 0,
       "vezes": 1,
@@ -107,8 +227,8 @@
     {
       "nome": "Vazio",
       "som": "minecraft:block.beacon.ambient",
-      "momento": "acerto",
-      "atrasoTicks": 0,
+      "momento": "vazio",
+      "atrasoTicks": 10,
       "repetirACadaTicks": 40,
       "vezes": 0,
       "volume": 2.0,
@@ -119,11 +239,23 @@
     {
       "nome": "Rachar",
       "som": "minecraft:block.glass.break",
-      "momento": "fechar",
+      "momento": "quebra",
       "atrasoTicks": 0,
+      "repetirACadaTicks": 3,
+      "vezes": 5,
+      "volume": 2.5,
+      "pitch": 0.5,
+      "pitchFim": 0.9,
+      "onde": "usuario"
+    },
+    {
+      "nome": "Rachar 2",
+      "som": "minecraft:block.amethyst_block.break",
+      "momento": "quebra",
+      "atrasoTicks": 4,
       "repetirACadaTicks": 4,
       "vezes": 3,
-      "volume": 2.0,
+      "volume": 2.5,
       "pitch": 0.5,
       "pitchFim": 0.8,
       "onde": "usuario"
@@ -131,13 +263,25 @@
     {
       "nome": "Quebrar",
       "som": "minecraft:block.respawn_anchor.deplete",
-      "momento": "fechar",
-      "atrasoTicks": 13,
+      "momento": "quebra",
+      "atrasoTicks": 14,
       "repetirACadaTicks": 0,
       "vezes": 1,
-      "volume": 2.0,
+      "volume": 3.0,
       "pitch": 0.6,
       "pitchFim": 0.6,
+      "onde": "usuario"
+    },
+    {
+      "nome": "Quebrar vidro",
+      "som": "minecraft:block.glass.break",
+      "momento": "quebra",
+      "atrasoTicks": 14,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 3.0,
+      "pitch": 0.4,
+      "pitchFim": 0.4,
       "onde": "usuario"
     }
   ]

@@ -25,7 +25,7 @@ public final class MeteorRenderer {
     private static final int SEGMENTS = 40;
     private static final int CIRCLE = 64;
 
-    private record Falling(MeteoroSpec spec, Vec3 start, Vec3 end, Vec3 dir, long startTick, int ticks) {
+    private record Falling(MeteoroSpec spec, Vec3 start, Vec3 end, Vec3 dir, long startTick, int ticks, AttackClock clock) {
     }
 
     private static final List<Falling> FALLING = new ArrayList<>();
@@ -39,7 +39,7 @@ public final class MeteorRenderer {
             return;
         }
         MeteoroSpec spec = SkillSpecs.get(skill, MeteoroSpec.class, awakened);
-        FALLING.add(new Falling(spec, start, end, end.subtract(start).normalize(), level.getGameTime() + delay, Math.max(1, fallTicks)));
+        FALLING.add(new Falling(spec, start, end, end.subtract(start).normalize(), level.getGameTime() + delay, Math.max(1, fallTicks), new AttackClock()));
     }
 
     public static void clear() {
@@ -53,7 +53,7 @@ public final class MeteorRenderer {
             return;
         }
         long now = level.getGameTime();
-        FALLING.removeIf(falling -> at(falling, now - falling.startTick()).distanceTo(pos) < radius + falling.spec().meteoro().raio() + 3);
+        FALLING.removeIf(falling -> at(falling, falling.clock().peek(now - falling.startTick())).distanceTo(pos) < radius + falling.spec().meteoro().raio() + 3);
     }
 
     public static void onRenderLevel(RenderLevelStageEvent event) {
@@ -70,9 +70,10 @@ public final class MeteorRenderer {
         PoseStack pose = event.getPoseStack();
         MultiBufferSource.BufferSource buffers = Minecraft.getInstance().renderBuffers().bufferSource();
         long now = level.getGameTime();
-        FALLING.removeIf(falling -> now - falling.startTick() > falling.ticks() + 1 + smokeLife(falling));
+        FALLING.removeIf(falling -> falling.clock().peek(now - falling.startTick()) > falling.ticks() + 1 + smokeLife(falling));
         for (Falling falling : FALLING) {
-            double age = now - falling.startTick() + partial;
+            // Stopped in the air by Gojo's shockwave, like on the server.
+            double age = falling.clock().age(now - falling.startTick() + partial, a -> at(falling, a));
             int ticks = falling.ticks();
             if (age < 0 || age > ticks) {
                 continue;
@@ -132,7 +133,7 @@ public final class MeteorRenderer {
             if (rabeta == null || !rabeta.ativa()) {
                 continue;
             }
-            double age = now - falling.startTick();
+            double age = falling.clock().peek(now - falling.startTick());
             if (age < 0) {
                 continue;
             }

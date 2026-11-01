@@ -79,6 +79,8 @@ public final class Aura {
     private static boolean drawing;
     // Outline look of the nearest aura this frame (the outline pass draws them all in one go).
     private static AuraSpec.Contorno outlineLook;
+    // The look of an outline that is not an aura: smooth, no flames.
+    private static final AuraSpec.Contorno DOMAIN_OUTLINE = new AuraSpec.Contorno(true, 0.1, 0.0, 2.0, 1.0, 0.6);
 
     private Aura() {
     }
@@ -517,7 +519,8 @@ public final class Aura {
     static boolean drawMask(RenderLevelStageEvent event, Vec3 camera, float partial) {
         Minecraft minecraft = Minecraft.getInstance();
         ShaderInstance shader = FxShaders.aura;
-        if (STATES.isEmpty() || shader == null || FxShaders.auraOutline == null || minecraft.level == null) {
+        java.util.List<DomainScene.Outline> extra = DomainScene.outlines(partial);
+        if (STATES.isEmpty() && extra.isEmpty() || shader == null || FxShaders.auraOutline == null || minecraft.level == null) {
             return false;
         }
         if (buffers == null) {
@@ -555,6 +558,31 @@ public final class Aura {
                 float[] c = FxDraw.rgb(FxDraw.parse(spec.cor(), 0xFF2020));
                 float bright = (float) Mth.clamp(spec.contorno().brilho() / 2, 0, 1) * k;
                 float reach = (float) (spec.contorno().espessura() * pxPerBlock / distance) / radius * (0.35f + 0.65f * k);
+                shader.safeGetUniform("AuraColor").set(c[0] * bright, c[1] * bright, c[2] * bright, Mth.clamp(reach, 0.03f, 1));
+                draw(dispatcher, living, rel, partial);
+                buffers.endBatch();
+            }
+            // Outlines that are not an aura (Gojo's domain): a thin light hugging the body, no flames.
+            for (DomainScene.Outline o : extra) {
+                LivingEntity living = o.entity();
+                if (FxAnchor.firstPersonSelf(living.getId()) || !living.isAlive() || o.strength() <= 0.01f) {
+                    continue;
+                }
+                Vec3 rel = living.getPosition(partial).subtract(camera);
+                double distance = Math.max(0.5, rel.add(0, living.getBbHeight() / 2, 0).length());
+                if (distance > RANGE) {
+                    continue;
+                }
+                if (!any) {
+                    FxPost.beginAuraMask();
+                    any = true;
+                }
+                if (outlineLook == null) {
+                    outlineLook = DOMAIN_OUTLINE;
+                }
+                float[] c = o.rgb();
+                float bright = Mth.clamp(o.strength(), 0, 1);
+                float reach = (float) (o.thickness() * pxPerBlock / distance) / radius;
                 shader.safeGetUniform("AuraColor").set(c[0] * bright, c[1] * bright, c[2] * bright, Mth.clamp(reach, 0.03f, 1));
                 draw(dispatcher, living, rel, partial);
                 buffers.endBatch();
