@@ -45,6 +45,10 @@ public final class ClientHooks {
     // Each skill's cutscene first looks for one made in the Editor de Cutscenes (client/cutscene); with none, the
     // hand-made one plays.
     public static void startFaceCutscene(int entityId, String skill, boolean awakened) {
+        // Inside Gojo's domain only Gojo's moves show.
+        if (!skill.startsWith("gojo.") && com.starkinhon.battlegroundsmod.client.fx.DomainScene.blocksCutscenes()) {
+            return;
+        }
         var player = Minecraft.getInstance().player;
         int watcher = player != null && player.getId() != entityId ? player.getId() : -1;
         if (CutscenePlayer.start(skill, entityId, watcher, false)) {
@@ -75,6 +79,9 @@ public final class ClientHooks {
     }
 
     public static void shoulderCutscene(int casterId, int targetId, int ticks) {
+        if (com.starkinhon.battlegroundsmod.client.fx.DomainScene.blocksCutscenes()) {
+            return;
+        }
         if (CutscenePlayer.start("madara.susanoo", casterId, targetId, false)) {
             return;
         }
@@ -82,6 +89,9 @@ public final class ClientHooks {
     }
 
     public static void bopCutscene(int casterId, int targetId, boolean awakened, int endTick) {
+        if (com.starkinhon.battlegroundsmod.client.fx.DomainScene.blocksCutscenes()) {
+            return;
+        }
         if (CutscenePlayer.start("bills.destruction_bop", casterId, targetId, false)) {
             return;
         }
@@ -89,6 +99,9 @@ public final class ClientHooks {
     }
 
     public static void grabCutscene(int casterId, int targetId, boolean awakened, int impactTick) {
+        if (com.starkinhon.battlegroundsmod.client.fx.DomainScene.blocksCutscenes()) {
+            return;
+        }
         if (CutscenePlayer.start("madara.agarrao", casterId, targetId, false)) {
             return;
         }
@@ -118,6 +131,9 @@ public final class ClientHooks {
     }
 
     public static void hakaiCutscene(int casterId, int targetId, boolean awakened) {
+        if (com.starkinhon.battlegroundsmod.client.fx.DomainScene.blocksCutscenes()) {
+            return;
+        }
         if (CutscenePlayer.start("bills.hakai", casterId, targetId, false)) {
             return;
         }
@@ -133,6 +149,9 @@ public final class ClientHooks {
     }
 
     public static void esferaCutscene(int casterId, int targetId, boolean awakened) {
+        if (com.starkinhon.battlegroundsmod.client.fx.DomainScene.blocksCutscenes()) {
+            return;
+        }
         // The trip to space keeps running (it draws the space, its bars and its line); only the camera is the editor's.
         var before = Minecraft.getInstance().options.getCameraType();
         EsferaCutscene.start(casterId, targetId, awakened);
@@ -182,6 +201,9 @@ public final class ClientHooks {
     }
 
     public static void bossCutscene(int entityId, int zoom, int sky, int back, Vec3 lookAt) {
+        if (com.starkinhon.battlegroundsmod.client.fx.DomainScene.blocksCutscenes()) {
+            return;
+        }
         var player = Minecraft.getInstance().player;
         if (CutscenePlayer.start("madara.boss_meteoro", entityId, player != null ? player.getId() : -1, false)) {
             return;

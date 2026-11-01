@@ -41,8 +41,10 @@ public record CutsceneData(String formato, String skill, Boolean ativa, int dura
     // seguir: "usuario"/"alvo" carries the point along with that character as they move ("" or "cena" = fixed).
     // mirar: "usuario"/"alvo" points the camera at that character, mirarAltura blocks above their feet (rot's yaw and
     // pitch are then ignored). suave: how it travels to the next key, "suave", "linear", "entrada", "saida" or "corte".
+    // de: "usuario"/"alvo" measures pos from where that character stood when it started instead of from origem, in the
+    // same directions (for shots near the one whose distance from origem is not known, like the target's).
     public record CamKey(double t, double[] pos, double[] rot, double fov, String seguir, String mirar, Double mirarAltura,
-            String suave) {
+            String suave, String de) {
     }
 
     // modo "somar": the pose is added on top of the skill's own; "substituir": the skill's pose is replaced while the

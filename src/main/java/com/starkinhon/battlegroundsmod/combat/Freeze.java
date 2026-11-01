@@ -17,6 +17,9 @@ public final class Freeze {
     private static final class Hold {
         int count;
         boolean hadNoAi;
+        // Set by face: the way they are kept looking, over the one each hold started with.
+        float faceYaw = Float.NaN;
+        float facePitch;
     }
 
     private static final Map<Entity, Hold> HELD = new HashMap<>();
@@ -43,14 +46,17 @@ public final class Freeze {
             hold.hadNoAi = mob.isNoAi();
             mob.setNoAi(true);
         }
-        float yRot = entity.getYRot();
-        float xRot = entity.getXRot();
+        float startYaw = entity.getYRot();
+        float startPitch = entity.getXRot();
         Tasks.addSystem(age -> {
             if (age >= ticks || !entity.isAlive() || entity.isRemoved()) {
                 release(entity);
                 return true;
             }
             entity.setDeltaMovement(Vec3.ZERO);
+            boolean faced = !Float.isNaN(hold.faceYaw);
+            float yRot = faced ? hold.faceYaw : startYaw;
+            float xRot = faced ? hold.facePitch : startPitch;
             Vec3 pos = anchor.apply(age);
             boolean moved = entity.position().distanceToSqr(pos) > 1.0E-4 || entity.getYRot() != yRot || entity.getXRot() != xRot;
             if (moved) {
@@ -63,6 +69,22 @@ public final class Freeze {
             entity.hurtMarked = true;
             return false;
         });
+    }
+
+    // Turns someone held still to look this way, and keeps them so while the hold lasts.
+    public static void face(LivingEntity entity, float yaw, float pitch) {
+        Hold hold = HELD.get(entity);
+        if (hold != null) {
+            hold.faceYaw = yaw;
+            hold.facePitch = pitch;
+        }
+        entity.setYRot(yaw);
+        entity.setXRot(pitch);
+        entity.setYHeadRot(yaw);
+        entity.setYBodyRot(yaw);
+        if (entity instanceof ServerPlayer player) {
+            player.connection.teleport(entity.getX(), entity.getY(), entity.getZ(), yaw, pitch);
+        }
     }
 
     private static void release(Entity entity) {

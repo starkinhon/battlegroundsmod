@@ -3,17 +3,17 @@ package com.starkinhon.battlegroundsmod.skill;
 import java.util.List;
 
 // Gojo's ult, Expansão de Domínio: Vazio Infinito (gojo.dominio.json). It plays out in five phases, in ticks from the press:
-// - choque (fases.choque): Gojo makes the hand sign (the cutscene closes in on his face and hand). At dominio.ondaTick a
+// - choque (fases.choque): Gojo makes the hand sign, in game (no cutscene), saying the words. At dominio.ondaTick a
 //   shockwave leaves him and stops in the air every attack in flight within dominio.raioChoque blocks (fireballs, slashes,
 //   meteors, Hakai balls, energy, spheres), and he takes no damage (Infinity) until the void is complete.
-// - branco (fases.branco): a dome of soft white light, like a cloud, swallows everything within dominio.raio blocks,
-//   the ground too: a full sphere, its lower half shows if the ground around it is gone. The frozen attacks are erased.
-//   Everyone the white reaches is caught.
-// - tunel (fases.tunel): inside, streaks of violet, magenta, red and blue light rush past into a far vanishing point,
+// - branco (fases.branco): a dome of soft white light, like a cloud, takes shape around Gojo and slowly grows out over
+//   everything within dominio.raio blocks, the ground too: a full sphere, its lower half shows if the ground around it
+//   is gone. Seen in game by everyone. The frozen attacks are erased. Everyone the white reaches is caught.
+// - tunel (fases.tunel): Gojo and his target stand still face to face, and the cutscene plays. Inside, streaks of violet, magenta, red and blue light rush past into a far vanishing point,
 //   faster and faster, with the screen stretching with speed. From outside it is already a smooth black ball.
 // - vazio (fases.vazio): the void. No walls, no floor, endless depth, a black hole turning far away, white ink drifting
-//   by, a ring of water under everyone every 2 s. Those caught are paralyzed, take acerto.dano every acerto.aCadaTicks and get
-//   infinite information on their screen (only them, never Gojo).
+//   by, a ring of water under everyone every 2 s. Those caught are paralyzed and get infinite information on their screen
+//   (only them, never Gojo); only Gojo can hurt them. If his target dies, it shatters right away.
 // - quebra (fases.quebra): it cracks everywhere and shatters like glowing glass, black and white, until nothing is left.
 public record DominioSpec(String skill, String nome, Tempo tempo, Fases fases, Dominio dominio, Acerto acerto, Visual visual, List<Som> sons) {
 
@@ -90,13 +90,14 @@ public record DominioSpec(String skill, String nome, Tempo tempo, Fases fases, D
         return Math.max(1, dominio.raioChoque()) * (1 - Math.pow(1 - k, 3));
     }
 
-    // How far the white dome has grown t ticks after the press.
+    // How far the white dome has grown t ticks after the press: it takes shape slowly, rolls out, and settles at raio.
     public double whiteRadius(double t) {
-        double k = (t - whiteTick()) / Math.max(4, fases.branco() * 0.7);
+        double k = (t - whiteTick()) / Math.max(4, fases.branco() * 0.85);
         if (k < 0) {
             return 0;
         }
         k = Math.min(1, k);
-        return radius() * (1 - Math.pow(1 - k, 2.4));
+        double ease = k * k * (3 - 2 * k);
+        return radius() * (0.04 + 0.96 * (0.25 * k + 0.75 * ease));
     }
 }

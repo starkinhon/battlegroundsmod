@@ -2,135 +2,46 @@
   "formato": "souls-cutscene/1",
   "skill": "gojo.dominio",
   "ativa": true,
-  "duracaoTicks": 210,
+  "duracaoTicks": 170,
   "origem": "usuario",
   "travarMovimento": true,
   "esconderHud": true,
   "barrasPretas": true,
   "trechos": [
     {
-      "nome": "Selo, onda de choque e luz branca",
+      "nome": "Túnel de luz",
       "inicio": 0,
-      "fim": 198,
+      "fim": 168,
       "entradaTicks": 0,
-      "saidaTicks": 8
+      "saidaTicks": 2
     }
   ],
   "camera": [
     {
       "t": 0,
       "pos": [
-        0.7,
-        0.8,
-        2.8
+        -0.7,
+        1.95,
+        2.6
       ],
       "rot": [
         0,
         0,
         0
       ],
-      "fov": 55,
-      "seguir": "usuario",
+      "fov": 52,
+      "de": "alvo",
+      "seguir": "alvo",
       "mirar": "usuario",
-      "mirarAltura": 1.35,
+      "mirarAltura": 1.6,
       "suave": "suave"
     },
     {
-      "t": 30,
+      "t": 40,
       "pos": [
-        0.45,
-        1.0,
-        2.1
-      ],
-      "rot": [
-        0,
-        0,
-        0
-      ],
-      "fov": 48,
-      "seguir": "usuario",
-      "mirar": "usuario",
-      "mirarAltura": 1.4,
-      "suave": "corte"
-    },
-    {
-      "t": 31,
-      "pos": [
-        0.16,
-        1.58,
-        0.78
-      ],
-      "rot": [
-        0,
-        0,
-        0
-      ],
-      "fov": 30,
-      "seguir": "usuario",
-      "mirar": "usuario",
-      "mirarAltura": 1.55,
-      "suave": "suave"
-    },
-    {
-      "t": 90,
-      "pos": [
-        0.1,
-        1.62,
-        0.66
-      ],
-      "rot": [
-        0,
-        0,
-        0
-      ],
-      "fov": 25,
-      "seguir": "usuario",
-      "mirar": "usuario",
-      "mirarAltura": 1.56,
-      "suave": "corte"
-    },
-    {
-      "t": 91,
-      "pos": [
-        -0.06,
-        1.66,
-        0.52
-      ],
-      "rot": [
-        0,
-        0,
-        0
-      ],
-      "fov": 18,
-      "seguir": "usuario",
-      "mirar": "usuario",
-      "mirarAltura": 1.62,
-      "suave": "suave"
-    },
-    {
-      "t": 120,
-      "pos": [
-        -0.05,
-        1.66,
-        0.46
-      ],
-      "rot": [
-        0,
-        0,
-        0
-      ],
-      "fov": 14,
-      "seguir": "usuario",
-      "mirar": "usuario",
-      "mirarAltura": 1.62,
-      "suave": "corte"
-    },
-    {
-      "t": 121,
-      "pos": [
-        0.3,
-        1.5,
-        1.4
+        -0.55,
+        1.85,
+        1.9
       ],
       "rot": [
         0,
@@ -138,99 +49,127 @@
         0
       ],
       "fov": 40,
-      "seguir": "usuario",
+      "de": "alvo",
+      "seguir": "alvo",
       "mirar": "usuario",
-      "mirarAltura": 1.55,
-      "suave": "suave"
-    },
-    {
-      "t": 135,
-      "pos": [
-        0.25,
-        1.5,
-        1.2
-      ],
-      "rot": [
-        0,
-        0,
-        0
-      ],
-      "fov": 37,
-      "seguir": "usuario",
-      "mirar": "usuario",
-      "mirarAltura": 1.55,
+      "mirarAltura": 1.6,
       "suave": "corte"
     },
     {
-      "t": 136,
+      "t": 41,
       "pos": [
-        -3.4,
-        0.9,
-        6.5
+        -3.2,
+        0.5,
+        -4.5
       ],
       "rot": [
         0,
         0,
         0
       ],
-      "fov": 78,
+      "fov": 72,
+      "de": "usuario",
       "seguir": "usuario",
-      "mirar": "usuario",
-      "mirarAltura": 1.3,
-      "suave": "saida"
-    },
-    {
-      "t": 160,
-      "pos": [
-        -7.0,
-        3.0,
-        14.0
-      ],
-      "rot": [
-        0,
-        0,
-        0
-      ],
-      "fov": 82,
-      "seguir": "usuario",
-      "mirar": "usuario",
-      "mirarAltura": 1.3,
+      "mirar": "alvo",
+      "mirarAltura": 1.2,
       "suave": "suave"
     },
     {
-      "t": 198,
+      "t": 84,
       "pos": [
-        -14.0,
-        8.0,
-        30.0
+        -2.2,
+        0.7,
+        -3.0
       ],
       "rot": [
         0,
         0,
         0
       ],
-      "fov": 86,
+      "fov": 66,
+      "de": "usuario",
+      "seguir": "usuario",
+      "mirar": "alvo",
+      "mirarAltura": 1.2,
+      "suave": "corte"
+    },
+    {
+      "t": 85,
+      "pos": [
+        0.25,
+        1.68,
+        1.15
+      ],
+      "rot": [
+        0,
+        0,
+        0
+      ],
+      "fov": 30,
+      "de": "usuario",
       "seguir": "usuario",
       "mirar": "usuario",
-      "mirarAltura": 1.2,
+      "mirarAltura": 1.62,
+      "suave": "suave"
+    },
+    {
+      "t": 124,
+      "pos": [
+        0.12,
+        1.66,
+        0.78
+      ],
+      "rot": [
+        0,
+        0,
+        0
+      ],
+      "fov": 22,
+      "de": "usuario",
+      "seguir": "usuario",
+      "mirar": "usuario",
+      "mirarAltura": 1.62,
+      "suave": "corte"
+    },
+    {
+      "t": 125,
+      "pos": [
+        0.75,
+        1.95,
+        -2.4
+      ],
+      "rot": [
+        0,
+        0,
+        0
+      ],
+      "fov": 60,
+      "de": "usuario",
+      "seguir": "usuario",
+      "mirar": "alvo",
+      "mirarAltura": 1.5,
+      "suave": "entrada"
+    },
+    {
+      "t": 168,
+      "pos": [
+        0.45,
+        1.8,
+        -1.4
+      ],
+      "rot": [
+        0,
+        0,
+        0
+      ],
+      "fov": 100,
+      "de": "usuario",
+      "seguir": "usuario",
+      "mirar": "alvo",
+      "mirarAltura": 1.5,
       "suave": "suave"
     }
   ],
   "atores": {},
-  "legendas": [
-    {
-      "texto": "Expansão de Domínio:",
-      "inicio": 31,
-      "fim": 90,
-      "cor": "#ffffff",
-      "tamanho": 1.5
-    },
-    {
-      "texto": "Vazio Infinito.",
-      "inicio": 121,
-      "fim": 180,
-      "cor": "#bfefff",
-      "tamanho": 2
-    }
-  ]
+  "legendas": []
 }

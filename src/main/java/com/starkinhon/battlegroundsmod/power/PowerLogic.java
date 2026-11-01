@@ -91,7 +91,8 @@ public final class PowerLogic {
         }
         boolean counter = ability.counter();
         return !caster.isSpectator() && caster.isAlive() && data.cooldowns[slot] <= 0 && data.busyTicks <= 0 && !Freeze.isFrozen(caster)
-                && (counter || Stun.canAttack(caster)) && !Defense.isGuarding(caster) && !sealed(caster);
+                && (counter || Stun.canAttack(caster)) && !Defense.isGuarding(caster) && !sealed(caster)
+                && !com.starkinhon.battlegroundsmod.power.powers.gojo.InfiniteVoid.blocks(caster);
     }
 
     public static boolean sealed(LivingEntity caster) {
