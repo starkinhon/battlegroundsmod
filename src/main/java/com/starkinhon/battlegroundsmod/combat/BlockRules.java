@@ -21,6 +21,6 @@ public final class BlockRules {
     }
 
     public static boolean canBreak(Level level) {
-        return BlockRules.canBreak(level) && level.getGameRules().getBoolean(SOULS_BLOCK_DESTRUCTION);
+        return level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING) && level.getGameRules().getBoolean(SOULS_BLOCK_DESTRUCTION);
     }
 }
