@@ -529,13 +529,38 @@ public final class DomainScene {
         }
     }
 
-    // The white drawn over the world (as much as fill says), and the people the white has reached drawn again on top
-    // of it, still hidden by whatever stands in front of them (the depth of the world is kept).
+    // The white drawn over the world (as much as fill says). The people come back on top of it later, after the
+    // bubbles and their glow (peopleOverWhite); the depth of the world is kept for them.
     private static void whiteBackdrop(RenderLevelStageEvent event, Domain d, double t, float partial) {
-        Minecraft minecraft = Minecraft.getInstance();
-        Vec3 camera = event.getCamera().getPosition();
         sky(0xFFFFFF, 0xF4F6FB, fill(d, t));
-        double reach = d.spec.whiteRadius(t);
+    }
+
+    // After all the effects and the glow: the players and mobs the white has reached drawn again, so they show over the
+    // bubbles of light (still hidden by walls in front of them: the world's depth is kept). The camera's own body only
+    // in third person.
+    public static void peopleOverWhite(RenderLevelStageEvent event) {
+        if (DOMAINS.isEmpty()) {
+            return;
+        }
+        float partial = event.getPartialTick().getGameTimeDeltaPartialTick(false);
+        for (Domain d : DOMAINS) {
+            double t = time(d, partial);
+            boolean whiteShows = t >= d.spec.whiteTick() && t < d.shatterAt() && (t < d.spec.tunnelTick() + 8 || d.closeAt() < d.spec.tunnelTick());
+            Vec3 camera = event.getCamera().getPosition();
+            Stage stage = d.stage(camera, t);
+            if (whiteShows && stage != Stage.TUNNEL && stage != Stage.VOID) {
+                drawPeople(event, d, d.spec.whiteRadius(t) + 1.5, partial);
+                return;
+            }
+        }
+    }
+
+    private static void drawPeople(RenderLevelStageEvent event, Domain d, double reach, float partial) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level == null) {
+            return;
+        }
+        Vec3 camera = event.getCamera().getPosition();
         Matrix4fStack modelView = RenderSystem.getModelViewStack();
         modelView.pushMatrix();
         modelView.set(event.getModelViewMatrix());
@@ -1217,6 +1242,8 @@ public final class DomainScene {
                 p = new Vector3f(c).add(Mth.cos(ang) * dist, height + wobble, Mth.sin(ang) * dist);
                 FxDraw.billboard(p, size * grow, 0, FxDraw.DISC, 0.3f, n % 6 == 0 ? MILK : WHITE, k, false);
             }
+            // Glow: a soft white halo on each bubble, so the white shines (bloom).
+            FxDraw.billboard(p, size * 1.5f * grow, 0, FxDraw.SOFT, 0.35f, WHITE, 0.45f * k, true);
             if (grow < 1) {
                 // A bright pop where each one is born.
                 FxDraw.billboard(p, size * 0.6f * (1 - grow), 0, FxDraw.SOFT, 0.9f, WHITE, k * (1 - grow), true);
