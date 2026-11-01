@@ -29,6 +29,8 @@ public final class FxWorld {
     }
 
     private static final List<Piece> PIECES = new ArrayList<>();
+    // The Susanoo's flying slashes, by seed: stopped in the air by Gojo's shockwave (AttackClock).
+    private static final java.util.Map<Integer, AttackClock> CLOCKS = new java.util.HashMap<>();
     private static final java.util.SequencedMap<RenderType, ByteBufferBuilder> FIXED = new java.util.LinkedHashMap<>();
     private static MultiBufferSource.BufferSource buffers;
     private static int seeds;
@@ -72,7 +74,8 @@ public final class FxWorld {
 
     public static void tick() {
         long now = ScreenFx.now();
-        PIECES.removeIf(p -> now - p.start() > p.life());
+        PIECES.removeIf(p -> age(p, now - p.start()) > p.life());
+        CLOCKS.keySet().removeIf(seed -> PIECES.stream().noneMatch(p -> p.seed() == seed));
         BIRTHS.keySet().removeIf(seed -> PIECES.stream().noneMatch(p -> p.seed() == seed));
         DestructionFx.forget(seed -> PIECES.stream().anyMatch(p -> p.seed() == seed));
         for (Piece p : PIECES) {
@@ -84,6 +87,7 @@ public final class FxWorld {
 
     public static void clear() {
         PIECES.clear();
+        CLOCKS.clear();
         BIRTHS.clear();
         DestructionFx.clear();
     }
@@ -157,7 +161,7 @@ public final class FxWorld {
         // In the Esfera's outer space only the scene's own effects show: nothing from the world below follows him there.
         boolean space = SpaceScene.active();
         for (Piece piece : PIECES) {
-            double age = now - piece.start();
+            double age = flying(piece, now - piece.start());
             if (space && !SpaceScene.owns(piece.skill())) {
                 continue;
             }
@@ -211,6 +215,12 @@ public final class FxWorld {
             HakaiRenderer.overlay(camera, now, partial);
             source.endBatch(flat ? FxRenderTypes.FLAT_ALPHA : FxRenderTypes.VFX_ALPHA);
         }
+        if (!space && DomainScene.active()) {
+            // The black hole and the ink falling into it, over the glow.
+            FxDraw.begin(source, event.getCamera(), flat);
+            DomainScene.overlay(camera, now, partial);
+            source.endBatch(flat ? FxRenderTypes.FLAT_ALPHA : FxRenderTypes.VFX_ALPHA);
+        }
 
         RenderSystem.restoreProjectionMatrix();
         modelView.popMatrix();
@@ -218,6 +228,20 @@ public final class FxWorld {
     }
 
     private static final ResourceLocation MANGEKYO = ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "textures/fx/mangekyo.png");
+
+    // A flying slash's age, stopped while Gojo's shockwave holds it (other pieces: raw).
+    private static double flying(Piece p, double raw) {
+        if (!"corte".equals(p.e().tipo())) {
+            return raw;
+        }
+        float speed = (float) d(p.e().velocidade(), 3.5);
+        return CLOCKS.computeIfAbsent(p.seed(), s -> new AttackClock()).age(raw, a -> p.pos().add(p.dir().scale(speed * a)));
+    }
+
+    private static double age(Piece p, double raw) {
+        AttackClock clock = CLOCKS.get(p.seed());
+        return clock == null ? raw : clock.peek(raw);
+    }
 
     private static void endDecals(MultiBufferSource.BufferSource source) {
         for (RenderType type : USED_DECALS) {

@@ -503,15 +503,17 @@ public final class ModPayloads {
         }
     }
 
-    // Server -> client: Gojo's domain (Vazio Infinito) started around center, or (close) is cracking open early because he
-    // fell. See client/fx/DomainScene.
-    public record GojoDomain(int casterId, Vec3 center, boolean awakened, boolean close) implements CustomPacketPayload {
+    // Server -> client: Gojo's domain (Vazio Infinito). mode 0: it started around center; 1: it is cracking open early
+    // because he fell; 2: other (an entity id) was killed inside it, the screen goes to red and white ink.
+    // See client/fx/DomainScene.
+    public record GojoDomain(int casterId, Vec3 center, boolean awakened, int mode, int other) implements CustomPacketPayload {
         public static final Type<GojoDomain> TYPE = payloadType("gojo_domain");
         public static final StreamCodec<ByteBuf, GojoDomain> STREAM_CODEC = StreamCodec.composite(
                 ByteBufCodecs.VAR_INT, GojoDomain::casterId,
                 VEC3, GojoDomain::center,
                 ByteBufCodecs.BOOL, GojoDomain::awakened,
-                ByteBufCodecs.BOOL, GojoDomain::close,
+                ByteBufCodecs.VAR_INT, GojoDomain::mode,
+                ByteBufCodecs.VAR_INT, GojoDomain::other,
                 GojoDomain::new);
 
         @Override
@@ -773,7 +775,7 @@ public final class ModPayloads {
         registrar.playToClient(EsferaFall.TYPE, EsferaFall.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.esferaFall(payload.targetId(), payload.start(), payload.lastHead(), payload.awakened())));
         registrar.playToClient(GojoDomain.TYPE, GojoDomain.STREAM_CODEC, (payload, context) -> context.enqueueWork(
-                () -> ClientHooks.gojoDomain(payload.casterId(), payload.center(), payload.awakened(), payload.close())));
+                () -> ClientHooks.gojoDomain(payload.casterId(), payload.center(), payload.awakened(), payload.mode(), payload.other())));
         registrar.playToClient(EraseAttack.TYPE, EraseAttack.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.eraseAttack(payload.skill(), payload.pos(), payload.radius())));
         registrar.playToClient(HakaiBall.TYPE, HakaiBall.STREAM_CODEC, (payload, context) -> context.enqueueWork(

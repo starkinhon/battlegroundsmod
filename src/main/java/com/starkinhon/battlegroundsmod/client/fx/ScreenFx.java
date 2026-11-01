@@ -56,6 +56,12 @@ public final class ScreenFx {
     private static final net.minecraft.resources.ResourceLocation VIGNETTE = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(
             com.starkinhon.battlegroundsmod.BattlegroundsMod.MODID, "textures/fx/vignette.png");
     private static final List<Warp> WARPS = new ArrayList<>();
+    // Kept on by someone calling every tick (Gojo's tunnel of speed, the slow zoom of those caught in the void).
+    private static float holdBlur;
+    private static Vec3 holdBlurPos = Vec3.ZERO;
+    private static long holdBlurAt = -10;
+    private static float holdFov;
+    private static long holdFovAt = -10;
 
     private static final Matrix4f VIEW = new Matrix4f();
     private static final Matrix4f PROJ = new Matrix4f();
@@ -110,8 +116,34 @@ public final class ScreenFx {
         }
     }
 
+    // Radial blur towards pos for as long as this is called every tick.
+    public static void sustainBlur(Vec3 pos, float strength) {
+        holdBlur = strength;
+        holdBlurPos = pos;
+        holdBlurAt = ticks;
+    }
+
+    // FOV change (degrees) for as long as this is called every tick.
+    public static void sustainFov(float degrees) {
+        holdFov = degrees;
+        holdFovAt = ticks;
+    }
+
+    private static float heldBlur() {
+        return ticks - holdBlurAt <= 1 ? holdBlur : 0;
+    }
+
+    // The blur this frame and where it points.
+    private static float blurAt(double now) {
+        return Math.max(radial != null ? radial.k(now) : 0, heldBlur());
+    }
+
+    private static Vec3 blurPos(double now) {
+        return heldBlur() > (radial != null ? radial.k(now) : 0) ? holdBlurPos : radial.pos();
+    }
+
     static boolean needsScene() {
-        return impact != null || !WARPS.isEmpty() || radial != null && radial.k(ticks) > 0;
+        return impact != null || !WARPS.isEmpty() || radial != null && radial.k(ticks) > 0 || heldBlur() > 0;
     }
 
     // The level's camera for this frame, so world positions can be found on screen later (also from the GUI).
@@ -129,7 +161,7 @@ public final class ScreenFx {
         }
         double now = ticks + levelPartial;
         boolean warp = FxConfig.on(FxConfig.DISTORTION) && !WARPS.isEmpty();
-        float blur = FxConfig.on(FxConfig.RADIAL_BLUR) && radial != null ? radial.k(now) : 0;
+        float blur = FxConfig.on(FxConfig.RADIAL_BLUR) ? blurAt(now) : 0;
         if (!warp && blur <= 0) {
             return;
         }
@@ -138,7 +170,7 @@ public final class ScreenFx {
             warpPass(now);
         }
         if (blur > 0) {
-            radialPass(blur);
+            radialPass(blur, blurPos(now));
         }
         FxPost.endPasses();
     }
@@ -151,7 +183,7 @@ public final class ScreenFx {
             int mode = impactMode();
             boolean flat = FxShaders.flat();
             boolean warp = flat && FxConfig.on(FxConfig.DISTORTION) && !WARPS.isEmpty();
-            float blur = flat && FxConfig.on(FxConfig.RADIAL_BLUR) && radial != null ? radial.k(now) : 0;
+            float blur = flat && FxConfig.on(FxConfig.RADIAL_BLUR) ? blurAt(now) : 0;
             if (mode >= 0 || warp || blur > 0) {
                 graphics.flush();
                 FxPost.beginPasses();
@@ -159,10 +191,10 @@ public final class ScreenFx {
                     warpPass(now);
                 }
                 if (blur > 0) {
-                    radialPass(blur);
+                    radialPass(blur, blurPos(now));
                 }
                 if (mode >= 0) {
-                    impactPass(mode, reduced);
+                    impactPass(mode, reduced, now);
                 }
                 FxPost.endPasses();
             }
@@ -198,6 +230,9 @@ public final class ScreenFx {
     }
 
     public static void onComputeFov(ViewportEvent.ComputeFov event) {
+        if (ticks - holdFovAt <= 1 && event.usedConfiguredFov()) {
+            event.setFOV(Mth.clamp(event.getFOV() + holdFov, 10, 150));
+        }
         if (fov != null && event.usedConfiguredFov()) {
             float k = fov.k(ticks + event.getPartialTick());
             if (k != 0) {
@@ -218,7 +253,7 @@ public final class ScreenFx {
         return frame < impact.modes().length ? impact.modes()[frame] : -1;
     }
 
-    private static void impactPass(int mode, boolean reduced) {
+    private static void impactPass(int mode, boolean reduced, double now) {
         var shader = FxShaders.impact;
         var target = Minecraft.getInstance().getMainRenderTarget();
         float[] center = toScreen(impact.pos());
@@ -230,13 +265,16 @@ public final class ScreenFx {
         shader.safeGetUniform("DepthOn").set(FxPost.sceneDepth() > 0 ? 1f : 0f);
         shader.safeGetUniform("DepthRange").set(0.05f, Minecraft.getInstance().gameRenderer.getDepthFar());
         shader.safeGetUniform("Reduced").set(reduced ? 1f : 0f);
+        // How far through the whole impact (0 to 1): the ink of mode 5 spreads with it.
+        double total = (double) impact.modes().length * impact.ticksPerFrame();
+        shader.safeGetUniform("Age").set((float) Mth.clamp((now - impact.start()) / total, 0, 1));
         FxPost.pass(shader);
     }
 
-    private static void radialPass(float strength) {
+    private static void radialPass(float strength, Vec3 pos) {
         var shader = FxShaders.radial;
         var target = Minecraft.getInstance().getMainRenderTarget();
-        float[] center = toScreen(radial.pos());
+        float[] center = toScreen(pos);
         shader.safeGetUniform("Screen").set((float) target.width, (float) target.height);
         shader.safeGetUniform("Center").set(center[0], center[1]);
         shader.safeGetUniform("Strength").set(strength);

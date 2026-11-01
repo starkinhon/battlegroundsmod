@@ -64,6 +64,7 @@ public final class PowerEvents {
         NeoForge.EVENT_BUS.addListener(PowerEvents::onStartTracking);
         NeoForge.EVENT_BUS.addListener(Izanami::onEntityJoin);
         NeoForge.EVENT_BUS.addListener(EventPriority.HIGHEST, Izanami::onDeath);
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOW, com.starkinhon.battlegroundsmod.power.powers.gojo.InfiniteVoid::onDeath);
     }
 
     private static void onServerTick(ServerTickEvent.Post event) {
@@ -81,6 +82,7 @@ public final class PowerEvents {
         Defense.clear();
         Susanoo.clear();
         Izanami.clear();
+        com.starkinhon.battlegroundsmod.power.powers.gojo.InfiniteVoid.clear();
     }
 
     private static void onPlayerTick(PlayerTickEvent.Post event) {
@@ -185,6 +187,10 @@ public final class PowerEvents {
         // A stunned mob's swing (or one with the Cooldown) does nothing (players are stopped in onAttack, bosses in Melee).
         if (event.getSource().is(DamageTypes.MOB_ATTACK) && !Stun.canAttack(event.getSource().getDirectEntity())) {
             event.setCanceled(true);
+            return;
+        }
+        com.starkinhon.battlegroundsmod.power.powers.gojo.InfiniteVoid.onIncomingDamage(event);
+        if (event.isCanceled()) {
             return;
         }
         Defense.onIncomingDamage(event.getEntity(), event);
