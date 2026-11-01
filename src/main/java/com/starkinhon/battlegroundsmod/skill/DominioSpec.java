@@ -6,9 +6,9 @@ import java.util.List;
 // - choque (fases.choque): Gojo makes the hand sign, in game (no cutscene), saying the words. At dominio.ondaTick a
 //   shockwave leaves him and stops in the air every attack in flight within dominio.raioChoque blocks (fireballs, slashes,
 //   meteors, Hakai balls, energy, spheres), and he takes no damage (Infinity) until the void is complete.
-// - branco (fases.branco): a dome of soft white light, like a cloud, takes shape around Gojo and slowly grows out over
-//   everything within dominio.raio blocks, the ground too: a full sphere, its lower half shows if the ground around it
-//   is gone. Seen in game by everyone. The frozen attacks are erased. Everyone the white reaches is caught.
+// - branco (fases.branco): a line of light runs out along the ground from Gojo and round bubbles of white pop up
+//   everywhere behind it, swell and merge, until everything within dominio.raio blocks is white but the people. Seen in
+//   game by everyone. The frozen attacks are erased. Everyone the white reaches is caught.
 // - tunel (fases.tunel): Gojo and his target stand still face to face, 20 blocks apart (no cutscene). Inside,
 //   streaks of violet, magenta, red and blue light rush past into a far vanishing point,
 //   faster and faster, with the screen stretching with speed. From outside it is already a smooth black ball.
@@ -44,6 +44,8 @@ public record DominioSpec(String skill, String nome, Tempo tempo, Fases fases, D
     public static final String SKILL = "gojo.dominio";
     // How long the shockwave takes to reach raioChoque. The white takes most of its phase to reach raio, then holds.
     public static final int WAVE_TICKS = 14;
+    // The share of the white phase the white takes to cover everything out to raio; the rest of it is all white.
+    public static final double WHITE_SPREAD = 0.5;
 
     public static DominioSpec get(boolean awakened) {
         return SkillSpecs.get(SKILL, DominioSpec.class, awakened);
@@ -93,7 +95,7 @@ public record DominioSpec(String skill, String nome, Tempo tempo, Fases fases, D
 
     // How far the white dome has grown t ticks after the press: it takes shape slowly, rolls out, and settles at raio.
     public double whiteRadius(double t) {
-        double k = (t - whiteTick()) / Math.max(4, fases.branco() * 0.85);
+        double k = (t - whiteTick()) / Math.max(4, fases.branco() * WHITE_SPREAD);
         if (k < 0) {
             return 0;
         }

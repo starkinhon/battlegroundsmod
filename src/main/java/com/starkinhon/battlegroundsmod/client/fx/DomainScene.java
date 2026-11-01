@@ -42,8 +42,8 @@ import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 // Gojo's Expansão de Domínio: Vazio Infinito (DominioSpec, gojo.dominio.json), seen by everyone near it. In order:
 // - the sign: a white glow hugging Gojo's body and a star of light at his hand; then the shockwave, a ring of bent air
 //   and light running out of him that stops every attack in flight in the air (AttackClock asks heldAt);
-// - the white: a sphere of soft cloudy light swallowing everything within the radius, the ground too (its lower half is
-//   underground, it shows wherever the ground is gone); whoever it reaches sees only white;
+// - the white: a line of light running out along the ground with sparkles, then round bubbles of white popping up
+//   everywhere and merging until all is white but the people; then it tears open into the tunnel;
 // - the tunnel (only inside): black ink eats the white, then streaks of violet, magenta, red and blue light rush out of
 //   a far dark point past the camera, faster and faster, the screen stretching with the speed;
 // - the void (only inside): no walls and no floor, endless depth: stars and a blue haze on every side, far behind Gojo a
@@ -301,11 +301,11 @@ public final class DomainScene {
         return null;
     }
 
-    // How white the world is for someone the white has reached: after the white has poured over the ground and fallen
-    // from the sky for a while, what is left of the world fades out behind it, until only the people show.
+    // How white the world is for someone the white has reached: once the bubbles have covered most of it, what is left
+    // of the world fades out behind them, until only the people show on white.
     private static float fill(Domain d, double t) {
-        double from = d.spec.whiteTick() + d.spec.fases().branco() * 0.45;
-        double to = d.spec.whiteTick() + d.spec.fases().branco() * 0.82;
+        double from = d.spec.whiteTick() + d.spec.fases().branco() * DominioSpec.WHITE_SPREAD * 0.7;
+        double to = d.spec.whiteTick() + d.spec.fases().branco() * (DominioSpec.WHITE_SPREAD + 0.1);
         float k = (float) Mth.clamp((t - from) / Math.max(1, to - from), 0, 1);
         return k * k * (3 - 2 * k);
     }
@@ -721,7 +721,7 @@ public final class DomainScene {
         }
     }
 
-    // ---- outside: the white dome, then the black ball ---------------------------------------------------------------
+    // ---- the white bubbles, then (from outside) the black ball ---------------------------------------------------------------
 
     private static void shell(Domain d, Vec3 camera, double t, float now) {
         DominioSpec spec = d.spec;
@@ -739,11 +739,7 @@ public final class DomainScene {
         double dist = camera.distanceTo(d.center);
         boolean outside = dist > r;
         if (black < 1) {
-            if (outside) {
-                whiteDome(c, r, t, now, 1 - black, true, (float) dist);
-            } else {
-                pour(d, c, t, now, 1 - black);
-            }
+            bubbles(d, c, t, now, 1 - black);
         }
         if (black > 0) {
             sphere(c, (float) d.radius(), BLACK, black, 22, 40);
@@ -756,30 +752,6 @@ public final class DomainScene {
         }
     }
 
-    // A sphere of soft white light like a cloud: the white shell, cloud puffs bulging out of its skin, a halo, and the
-    // front running along the ground.
-    private static void whiteDome(Vector3f c, float r, double t, float now, float k, boolean outside, float dist) {
-        // From inside (Gojo watching it grow) it is a veil, so what it is about to swallow still shows through it.
-        float skin = outside ? 1 : 0.55f;
-        sphere(c, r, WHITE, 0.94f * k * skin, 18, 32);
-        for (int n = 0; n < 150; n++) {
-            Vector3f dir = FxWorld.sphere(921, n);
-            float bulge = 1 + 0.03f * Mth.sin(now * 0.2f + n);
-            Vector3f p = new Vector3f(dir).mul(r * bulge).add(c);
-            float size = r * (0.22f + 0.24f * FxWorld.hash(921, n, 1));
-            float[] col = n % 5 == 0 ? FxDraw.rgb(0xF2EEFF) : WHITE;
-            FxDraw.billboard(p, size, FxWorld.hash(921, n, 2) * 6 + now * 0.01f, FxDraw.SMOKE, 0.15f + 0.1f * Mth.sin(now * 0.1f + n), col,
-                    0.95f * k * skin, false);
-        }
-        if (outside) {
-            FxDraw.billboard(c, r * 2.9f, 0, FxDraw.SOFT, 0.2f, WHITE, 0.35f * k, true);
-        }
-        float grow = (float) Mth.clamp(1 - r / 40.0, 0, 1);
-        Vector3f up = new Vector3f(0, 1, 0);
-        FxDraw.disk(new Vector3f(c).add(0, 0.06f, 0), up, r * 2.2f, FxDraw.RING, 0.25f, WHITE, (0.4f + 0.6f * grow) * k, true);
-    }
-
-    // A sphere of quads, seen from both sides.
     private static void sphere(Vector3f c, float r, float[] rgb, float opacity, int rings, int segments) {
         for (int i = 0; i < rings; i++) {
             float t0 = Mth.PI * i / rings - Mth.HALF_PI;
@@ -827,7 +799,7 @@ public final class DomainScene {
             float fade = in * smooth(400, 230, (float) z) * smooth(-200, -40, (float) z);
             float width = (0.05f + 0.2f * FxWorld.hash(931, k, 6)) * (0.6f + rr / 30f);
             float pick = FxWorld.hash(931, k, 7);
-            float[] col = pick < 0.38f ? MAGENTA : pick < 0.6f ? PINK : pick < 0.78f ? RED : pick < 0.92f ? PURPLE : BLUE;
+            float[] col = pick < 0.3f ? RED : pick < 0.5f ? PURPLE : pick < 0.66f ? BLUE : pick < 0.86f ? PINK : MAGENTA;
             FxDraw.ribbon(from, to, width, FxDraw.STREAK, 0.7f, col, fade * 0.9f, true);
         }
         // Clouds of dark violet giving it volume, and white flecks, all streaming the same way, slower.
@@ -839,6 +811,15 @@ public final class DomainScene {
             float s = 18 + 26 * FxWorld.hash(932, k, 3);
             FxDraw.billboard(p, s, FxWorld.hash(932, k, 5) * 6, FxDraw.SMOKE, 0.3f, k % 3 == 0 ? FxDraw.rgb(0x1A0630) : FxDraw.rgb(0x3A0F5A),
                     0.4f * in * smooth(400, 260, (float) z), false);
+        }
+        // The torn white still flying past in puffs, for the first second or two.
+        float torn = (float) Mth.clamp(1 - tau / 40, 0, 1);
+        for (int k = 0; k < 70 && torn > 0; k++) {
+            float ang = FxWorld.hash(934, k, 1) * Mth.TWO_PI;
+            float rr = 3 + 30 * FxWorld.hash(934, k, 2);
+            double z = 120 - ((run * 1.2 + FxWorld.hash(934, k, 4) * 200) % 200);
+            Vector3f p = new Vector3f(a).mul((float) z).add(new Vector3f(x).mul(Mth.cos(ang) * rr)).add(new Vector3f(y).mul(Mth.sin(ang) * rr));
+            FxDraw.billboard(p, 2 + 5 * FxWorld.hash(934, k, 3), 0, FxDraw.DISC, 0.35f, WHITE, torn * smooth(120, 80, (float) z), false);
         }
         for (int k = 0; k < 26; k++) {
             float ang = FxWorld.hash(933, k, 1) * Mth.TWO_PI;
@@ -1176,76 +1157,77 @@ public final class DomainScene {
 
     // ---- the screen --------------------------------------------------------------------------------------------------
 
-    // ---- inside the white: it pours over everything like water ------------------------------------------------------
+    // ---- the white: bubbles of white light popping up everywhere ---------------------------------------------------
 
-    // Seen from inside the white: from the sky, white falls like water in heavy cloudy curtains and floods the ground,
-    // running out from Gojo towards the edge; the front is a rolling wall of foam. (fill then washes the rest out.)
-    private static void pour(Domain d, Vector3f c, double t, float now, float k) {
+    // The white, as in Stark's reference: a bright line of light runs out along the ground with sparkles rising from
+    // it, and behind it round bubbles of white pop up everywhere (on the ground, on things, in the sky), swell and merge,
+    // until nothing is left but white (fill then washes out what still shows between them, the people stay).
+    private static void bubbles(Domain d, Vector3f c, double t, float now, float k) {
         DominioSpec spec = d.spec;
         float r = (float) spec.whiteRadius(t);
         float big = (float) d.radius();
+        float spread = (float) Mth.clamp((t - spec.whiteTick()) / Math.max(1, spec.fases().branco() * DominioSpec.WHITE_SPREAD), 0, 1);
         Vector3f up = new Vector3f(0, 1, 0);
-        // The flooded ground: a sheet of white out to the front, and foam patches drifting on it.
-        FxDraw.disk(new Vector3f(c).add(0, 0.06f, 0), up, r * 2.05f, FxDraw.SOFT, 0.75f, WHITE, 0.92f * k, false);
-        for (int n = 0; n < 140; n++) {
-            float dist = big * (float) Math.sqrt(FxWorld.hash(941, n, 1));
-            if (dist > r) {
+        if (spread < 1) {
+            // The line of light on the ground, running out ahead of the bubbles.
+            float line = 1 - spread * spread;
+            FxDraw.disk(new Vector3f(c).add(0, 0.12f, 0), up, (r + 1.5f) * 2, FxDraw.RING, Mth.clamp(1.2f / Math.max(1, r), 0.01f, 0.2f), WHITE,
+                    line, true);
+            FxDraw.disk(new Vector3f(c).add(0, 0.1f, 0), up, (r + 1.5f) * 2.08f, FxDraw.RING, 0.12f, SILVER, 0.6f * line, true);
+        }
+        // Sparkles rising where the line has passed.
+        for (int n = 0; n < 120; n++) {
+            float dist = big * (float) Math.sqrt(FxWorld.hash(951, n, 1));
+            double age = t - reachedAt(spec, dist) - 4 * FxWorld.hash(951, n, 2);
+            float life = 26 + 20 * FxWorld.hash(951, n, 3);
+            if (age < 0 || age > life) {
                 continue;
             }
-            float ang = FxWorld.hash(941, n, 2) * Mth.TWO_PI + now * 0.002f;
-            Vector3f p = new Vector3f(c).add(Mth.cos(ang) * dist, 0.1f + 0.05f * (n % 4), Mth.sin(ang) * dist);
-            float size = 3 + 6 * FxWorld.hash(941, n, 3);
-            FxDraw.disk(p, up, size, FxDraw.SMOKE, 0.2f, n % 4 == 0 ? MILK : WHITE, 0.9f * k, false);
+            float u = (float) (age / life);
+            float ang = FxWorld.hash(951, n, 4) * Mth.TWO_PI;
+            Vector3f p = new Vector3f(c).add(Mth.cos(ang) * dist, 0.4f + u * (3 + 6 * FxWorld.hash(951, n, 5)), Mth.sin(ang) * dist);
+            FxDraw.billboard(p, 0.35f + 0.5f * FxWorld.hash(951, n, 6), 0, FxDraw.SOFT, 0.8f, WHITE, k * (1 - u) * Mth.clamp(u * 6, 0, 1), true);
         }
-        // The front: a wall of foam rolling over the ground, with spray thrown up.
-        int ring = 110;
-        for (int n = 0; n < ring; n++) {
-            float ang = n / (float) ring * Mth.TWO_PI + FxWorld.hash(942, n, 1) * 0.05f;
-            float wob = 1 + 0.05f * Mth.sin(ang * 7 + now * 0.15f) + 0.03f * Mth.sin(ang * 13 - now * 0.11f);
-            float rr = r * wob;
-            float h = 0.6f + 2.2f * FxWorld.hash(942, n, 2) + 0.6f * Mth.sin(now * 0.3f + n);
-            Vector3f p = new Vector3f(c).add(Mth.cos(ang) * rr, h, Mth.sin(ang) * rr);
-            FxDraw.billboard(p, 2.4f + 3.2f * FxWorld.hash(942, n, 3), FxWorld.hash(942, n, 4) * 6 + now * 0.02f, FxDraw.SMOKE, 0.2f, WHITE,
-                    0.95f * k, false);
-        }
-        // From the sky: puffs of white pour down where the white has reached, swelling as they fall, like water poured
-        // from above, and settle on the ground as more foam.
-        int falls = 190;
-        for (int n = 0; n < falls; n++) {
-            float dist = big * (float) Math.sqrt(FxWorld.hash(943, n, 1));
-            double reached = reachedAt(spec, dist) + 14 * FxWorld.hash(943, n, 2);
-            double age = t - reached;
+        // The bubbles: soft-edged round discs of white that pop up and swell. Ground ones sit low and spread over the
+        // floor as patches; the rest hang everywhere up to the sky.
+        int count = 420;
+        for (int n = 0; n < count; n++) {
+            float dist = big * (float) Math.sqrt(FxWorld.hash(952, n, 1));
+            double age = t - reachedAt(spec, dist) - 18 * FxWorld.hash(952, n, 2);
             if (age < 0) {
                 continue;
             }
-            float drop = (float) Mth.clamp(age / (22 + 18 * FxWorld.hash(943, n, 3)), 0, 1);
-            float ang = FxWorld.hash(943, n, 4) * Mth.TWO_PI;
-            float top = 18 + 22 * FxWorld.hash(943, n, 5);
-            float y = top * (1 - drop * drop) + 1.2f * drop;
-            Vector3f p = new Vector3f(c).add(Mth.cos(ang) * dist, y, Mth.sin(ang) * dist);
-            float size = (4 + 7 * FxWorld.hash(943, n, 6)) * (0.6f + 0.8f * drop);
-            FxDraw.billboard(p, size, FxWorld.hash(943, n, 7) * 6 + now * 0.01f, FxDraw.SMOKE, 0.18f, n % 5 == 0 ? MILK : WHITE, 0.95f * k,
-                    false);
-            if (drop < 1) {
-                // The stream behind it, like a waterfall.
-                Vector3f tail = new Vector3f(p).add(0, Math.min(top - y, 10), 0);
-                FxDraw.ribbon(p, tail, size * 0.45f, FxDraw.STREAK, 0.5f, WHITE, 0.7f * k * (1 - drop * 0.6f), false);
+            float grow = (float) Mth.clamp(age / (10 + 10 * FxWorld.hash(952, n, 3)), 0, 1);
+            grow = 1 - (1 - grow) * (1 - grow) * (1 - grow);
+            float ang = FxWorld.hash(952, n, 4) * Mth.TWO_PI;
+            boolean ground = n % 5 < 2;
+            float size;
+            Vector3f p;
+            if (ground) {
+                size = (2.5f + 5 * FxWorld.hash(952, n, 5)) * (0.6f + dist / big);
+                p = new Vector3f(c).add(Mth.cos(ang) * dist, 0.15f + 0.02f * (n % 7), Mth.sin(ang) * dist);
+                FxDraw.disk(p, up, size * 2 * grow, FxDraw.DISC, 0.35f, WHITE, k, false);
+                // A bubble sitting on the patch.
+                p.add(0, size * 0.35f * grow, 0);
+                FxDraw.billboard(p, size * 0.9f * grow, 0, FxDraw.DISC, 0.3f, WHITE, k, false);
+            } else {
+                float height = 1 + 34 * (float) Math.pow(FxWorld.hash(952, n, 6), 1.3);
+                size = (3 + 8 * FxWorld.hash(952, n, 5)) * (0.7f + height / 30);
+                float wobble = 0.15f * Mth.sin(now * 0.08f + n);
+                p = new Vector3f(c).add(Mth.cos(ang) * dist, height + wobble, Mth.sin(ang) * dist);
+                FxDraw.billboard(p, size * grow, 0, FxDraw.DISC, 0.3f, n % 6 == 0 ? MILK : WHITE, k, false);
             }
-        }
-        // Overhead, the white closing over the sky above the flood.
-        float roof = (float) Mth.clamp((t - spec.whiteTick()) / Math.max(1, spec.fases().branco() * 0.6), 0, 1);
-        for (int n = 0; n < 60; n++) {
-            float dist = r * (float) Math.sqrt(FxWorld.hash(944, n, 1));
-            float ang = FxWorld.hash(944, n, 2) * Mth.TWO_PI + now * 0.003f;
-            Vector3f p = new Vector3f(c).add(Mth.cos(ang) * dist, 24 + 16 * FxWorld.hash(944, n, 3), Mth.sin(ang) * dist);
-            FxDraw.billboard(p, 12 + 16 * FxWorld.hash(944, n, 4), FxWorld.hash(944, n, 5) * 6, FxDraw.SMOKE, 0.25f, WHITE, 0.9f * k * roof, false);
+            if (grow < 1) {
+                // A bright pop where each one is born.
+                FxDraw.billboard(p, size * 0.6f * (1 - grow), 0, FxDraw.SOFT, 0.9f, WHITE, k * (1 - grow), true);
+            }
         }
     }
 
     // When the white's front reaches dist from the center, in ticks since the press.
     private static double reachedAt(DominioSpec spec, double dist) {
         double lo = spec.whiteTick();
-        double hi = spec.whiteTick() + Math.max(4, spec.fases().branco() * 0.85);
+        double hi = spec.whiteTick() + Math.max(4, spec.fases().branco() * DominioSpec.WHITE_SPREAD);
         if (spec.whiteRadius(hi) <= dist) {
             return hi;
         }
