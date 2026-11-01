@@ -221,6 +221,10 @@ public final class FxWorld {
             DomainScene.overlay(camera, now, partial);
             source.endBatch(flat ? FxRenderTypes.FLAT_ALPHA : FxRenderTypes.VFX_ALPHA);
         }
+        if (!space && DomainScene.active()) {
+            // The players and mobs caught in the white, over the bubbles and their glow.
+            DomainScene.peopleOverWhite(event);
+        }
 
         RenderSystem.restoreProjectionMatrix();
         modelView.popMatrix();

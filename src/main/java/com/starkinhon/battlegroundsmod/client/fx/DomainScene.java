@@ -164,6 +164,10 @@ public final class DomainScene {
     private static final int RIPPLE_EVERY = 40;
     // How long the white takes to tear open into the tunnel, in ticks.
     private static final int BURST_TICKS = 16;
+    // The tunnel opens on impact frames, white, black, then purple (IMPACT_TICKS each), before the white tears.
+    private static final int IMPACT_TICKS = 2;
+    private static final int[] TUNNEL_IMPACT = {0, 4, 1};
+    private static final int TUNNEL_FRAMES = IMPACT_TICKS * TUNNEL_IMPACT.length;
     private static float lastPartial;
     // The shards' corners on a unit sphere, jittered (made once).
     private static Vector3f[][] grid;
@@ -377,6 +381,7 @@ public final class DomainScene {
                     ScreenFx.fovKick(-14, 10);
                     // The screen shakes as the white tears open.
                     com.starkinhon.battlegroundsmod.client.ScreenShake.start(2.2f, 22);
+                    ScreenFx.impactFrame(TUNNEL_IMPACT, IMPACT_TICKS, 0xA040FF, d.center.add(0, 1.4, 0), 0);
                 }
             }
             if (stage == Stage.VOID && d.once("apex")) {
@@ -529,13 +534,38 @@ public final class DomainScene {
         }
     }
 
-    // The white drawn over the world (as much as fill says), and the people the white has reached drawn again on top
-    // of it, still hidden by whatever stands in front of them (the depth of the world is kept).
+    // The white drawn over the world (as much as fill says). The people come back on top of it later, after the
+    // bubbles and their glow (peopleOverWhite); the depth of the world is kept for them.
     private static void whiteBackdrop(RenderLevelStageEvent event, Domain d, double t, float partial) {
-        Minecraft minecraft = Minecraft.getInstance();
-        Vec3 camera = event.getCamera().getPosition();
         sky(0xFFFFFF, 0xF4F6FB, fill(d, t));
-        double reach = d.spec.whiteRadius(t);
+    }
+
+    // After all the effects and the glow: the players and mobs the white has reached drawn again, so they show over the
+    // bubbles of light (still hidden by walls in front of them: the world's depth is kept). The camera's own body only
+    // in third person.
+    public static void peopleOverWhite(RenderLevelStageEvent event) {
+        if (DOMAINS.isEmpty()) {
+            return;
+        }
+        float partial = event.getPartialTick().getGameTimeDeltaPartialTick(false);
+        for (Domain d : DOMAINS) {
+            double t = time(d, partial);
+            boolean whiteShows = t >= d.spec.whiteTick() && t < d.shatterAt() && (t < d.spec.tunnelTick() + 8 || d.closeAt() < d.spec.tunnelTick());
+            Vec3 camera = event.getCamera().getPosition();
+            Stage stage = d.stage(camera, t);
+            if (whiteShows && stage != Stage.TUNNEL && stage != Stage.VOID) {
+                drawPeople(event, d, d.spec.whiteRadius(t) + 1.5, partial);
+                return;
+            }
+        }
+    }
+
+    private static void drawPeople(RenderLevelStageEvent event, Domain d, double reach, float partial) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level == null) {
+            return;
+        }
+        Vec3 camera = event.getCamera().getPosition();
         Matrix4fStack modelView = RenderSystem.getModelViewStack();
         modelView.pushMatrix();
         modelView.set(event.getModelViewMatrix());
@@ -1217,6 +1247,8 @@ public final class DomainScene {
                 p = new Vector3f(c).add(Mth.cos(ang) * dist, height + wobble, Mth.sin(ang) * dist);
                 FxDraw.billboard(p, size * grow, 0, FxDraw.DISC, 0.3f, n % 6 == 0 ? MILK : WHITE, k, false);
             }
+            // Glow: a soft white halo on each bubble, so the white shines (bloom).
+            FxDraw.billboard(p, size * 1.5f * grow, 0, FxDraw.SOFT, 0.35f, WHITE, 0.45f * k, true);
             if (grow < 1) {
                 // A bright pop where each one is born.
                 FxDraw.billboard(p, size * 0.6f * (1 - grow), 0, FxDraw.SOFT, 0.9f, WHITE, k * (1 - grow), true);
@@ -1256,9 +1288,10 @@ public final class DomainScene {
             Stage stage = d.stage(camera, t);
             DominioSpec spec = d.spec;
             boolean gojo = minecraft.player.getId() == d.caster;
-            if (stage == Stage.TUNNEL && t < spec.tunnelTick() + BURST_TICKS) {
-                // The white (the world is all white by now) tears open into the tunnel.
-                DomainScreen.whiteBurst(graphics, (float) ((t - spec.tunnelTick()) / BURST_TICKS), t);
+            double burst = t - spec.tunnelTick() - TUNNEL_FRAMES;
+            if (stage == Stage.TUNNEL && burst >= 0 && burst < BURST_TICKS) {
+                // After the impact frames the white (the world is all white by now) tears open into the tunnel.
+                DomainScreen.whiteBurst(graphics, (float) (burst / BURST_TICKS), t);
             }
             if (t < spec.tunnelTick() && t < d.closeAt() && camera.distanceTo(d.center) < d.radius() + 40) {
                 caption(graphics, minecraft, d, t);
