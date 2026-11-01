@@ -85,6 +85,57 @@ final class DomainScreen {
         end(b);
     }
 
+    // The white tearing open into the tunnel (k from 0 to 1): dark holes with streaks of light open in it, from the
+    // middle out, and it breaks into round puffs of white that shrink and fly off the screen, showing the tunnel behind.
+    static void whiteBurst(GuiGraphics graphics, float k, double t) {
+        k = Mth.clamp(k, 0, 1);
+        int w = graphics.guiWidth();
+        int h = graphics.guiHeight();
+        float cx = w / 2f;
+        float cy = h / 2f;
+        float diag = (float) Math.hypot(w, h);
+        graphics.flush();
+        BufferBuilder b = begin();
+        Matrix4f m = graphics.pose().last().pose();
+        int cols = 9;
+        int rows = 6;
+        float cell = Math.max(w / (float) cols, h / (float) rows);
+        for (int i = -1; i <= cols; i++) {
+            for (int j = -1; j <= rows; j++) {
+                int id = (i + 2) * 31 + j + 2;
+                float x = (i + 0.5f) * w / cols + (FxWorld.hash(1301, id, 1) - 0.5f) * cell * 0.6f;
+                float y = (j + 0.5f) * h / rows + (FxWorld.hash(1301, id, 2) - 0.5f) * cell * 0.6f;
+                float from = (float) Math.hypot(x - cx, y - cy) / (diag * 0.5f);
+                // The middle tears first; each puff then shrinks and is flung outwards.
+                float start = 0.05f + 0.4f * from + 0.12f * FxWorld.hash(1301, id, 3);
+                float u = Mth.clamp((k - start) / 0.45f, 0, 1);
+                if (u >= 1) {
+                    continue;
+                }
+                float ease = u * u;
+                float dx = x - cx;
+                float dy = y - cy;
+                float len = Math.max(1, (float) Math.hypot(dx, dy));
+                float fling = diag * 0.35f * ease;
+                float r = cell * (0.85f + 0.3f * FxWorld.hash(1301, id, 4)) * (1 - ease);
+                blob(b, m, x + dx / len * fling, y + dy / len * fling, r, 0.18f, 1310 + id, (float) t * 0.2f, argb(1, 0xFFFFFF), argb(1, 0xFFFFFF));
+            }
+        }
+        // Torn edges: small drops of white thrown off.
+        for (int n = 0; n < 60; n++) {
+            float ang = FxWorld.hash(1302, n, 1) * Mth.TWO_PI;
+            float start = 0.1f + 0.5f * FxWorld.hash(1302, n, 2);
+            float u = Mth.clamp((k - start) / 0.4f, 0, 1);
+            if (u <= 0 || u >= 1) {
+                continue;
+            }
+            float d = diag * (0.1f + 0.6f * u) * (0.5f + 0.5f * FxWorld.hash(1302, n, 3));
+            float r = diag * 0.012f * (1 - u) * (0.5f + FxWorld.hash(1302, n, 4));
+            blob(b, m, cx + Mth.cos(ang) * d, cy + Mth.sin(ang) * d, r, 0.1f, 1400 + n, 0, argb(1, 0xFFFFFF), argb(1, 0xFFFFFF));
+        }
+        end(b);
+    }
+
     // Those caught: the mind flooded. u is how far through it they are (0 to 1); everything comes faster with it.
     static void information(GuiGraphics graphics, double t, float u, float strength, boolean inVoid, int seed) {
         if (strength <= 0) {
