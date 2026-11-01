@@ -26,6 +26,8 @@ public final class ModItems {
             () -> new DeferredSpawnEggItem(ModEntities.MADARA, 0x1A1A1F, 0xD12F2F, new Item.Properties()));
     public static final DeferredItem<DeferredSpawnEggItem> BILLS_SPAWN_EGG = BattlegroundsMod.ITEMS.register("bills_spawn_egg",
             () -> new DeferredSpawnEggItem(ModEntities.BILLS, 0x9B30FF, 0xF2C94C, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> GOJO_SPAWN_EGG = BattlegroundsMod.ITEMS.register("gojo_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.GOJO, 0x14161C, 0x4FC3FF, new Item.Properties()));
 
     // One soul crystal per power, registered as soul_<power id>.
     public static final Map<String, DeferredItem<SoulItem>> SOULS = new LinkedHashMap<>();

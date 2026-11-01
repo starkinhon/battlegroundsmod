@@ -139,6 +139,7 @@ public class BattlegroundsModClient {
     private static void onRegisterRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerEntityRenderer(ModEntities.MADARA.get(), context -> new SoulBossRenderer<>(context, "madara", true));
         event.registerEntityRenderer(ModEntities.BILLS.get(), context -> new SoulBossRenderer<>(context, "bills", true));
+        event.registerEntityRenderer(ModEntities.GOJO.get(), context -> new SoulBossRenderer<>(context, "gojo", true));
     }
 
     // Players' eyes can trail light too (Mangekyo, see Aura), so their renderers learn where the eyes are.

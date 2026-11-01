@@ -1,0 +1,213 @@
+{
+  "formato": "souls-boss/1",
+  "boss": "gojo",
+  "poder": "strongest",
+  "tier": 4,
+  "estilo": "deus",
+  "dropAlma": true,
+  "atributos": {
+    "vida": 600,
+    "armadura": 14,
+    "velocidade": 0.32,
+    "resistenciaEmpurrao": 0.8,
+    "alcanceVisao": 64,
+    "multDano": 1.0
+  },
+  "intro": {
+    "duracaoTicks": 60,
+    "titulo": "The Strongest",
+    "subtitulo": "Entre o céu e a terra, só eu sou o honrado",
+    "cor": "#4fc3ff"
+  },
+  "percepcao": {
+    "intervaloDecisaoTicks": 6,
+    "aleatoriedade": 0.2,
+    "trocarHumorTicks": 60,
+    "intervaloTecnicasTicks": 100
+  },
+  "distancias": {
+    "soco": 3.0,
+    "ideal": 6,
+    "intervaloSocoTicks": 12
+  },
+  "movimento": {
+    "velocidadeAndar": 0.9,
+    "velocidadeCorrer": 0.9,
+    "trocarLadoTicks": 40
+  },
+  "ritmo": {
+    "calmoMinTicks": 100,
+    "calmoMaxTicks": 200,
+    "rapidoMinTicks": 100,
+    "rapidoMaxTicks": 200,
+    "velocidadeCalmo": 1.0,
+    "velocidadeRapido": 1.0,
+    "recargaInvestidaRapido": 1000
+  },
+  "investida": {
+    "recargaTicks": 1000,
+    "distanciaMin": 999,
+    "forca": 0,
+    "altura": 0
+  },
+  "passoSombra": {
+    "recargaTicks": 70,
+    "distanciaMin": 3,
+    "distanciaMax": 24,
+    "atras": 1.8,
+    "chance": 0.2,
+    "chanceCalmo": 0.15,
+    "chanceNaEsquiva": 0.5
+  },
+  "puloDuplo": {
+    "alturaMin": 999,
+    "distanciaMax": 0
+  },
+  "teleporte": {
+    "ativo": true,
+    "presoTicks": 40,
+    "distancia": 2
+  },
+  "reacoes": {
+    "chanceEsquivarSkill": 0.3,
+    "chanceEsquivarProjetil": 0.3,
+    "chanceContraAtaque": 0.5,
+    "chanceEsquivarUlt": 0.8,
+    "golpesParaContra": 3,
+    "janelaPressaoTicks": 30,
+    "punirTicks": 100,
+    "multPunir": 2,
+    "golpesParaFugir": 3,
+    "chanceFugirAoApanhar": 0.5
+  },
+  "ultFinal": {
+    "ativa": false
+  },
+  "skills": {
+    "dominio": {
+      "slot": 3,
+      "tipo": "ult",
+      "peso": 1.5,
+      "recargaTicks": 2400,
+      "recargaMaxTicks": 3000,
+      "avisoTicks": 20,
+      "distanciaMin": 0,
+      "distanciaMax": 30,
+      "giroGrausPorTick": 30,
+      "avisoCor": "#4fc3ff",
+      "avisoSom": "minecraft:block.beacon.power_select"
+    },
+    "forte": {
+      "slot": 4,
+      "tipo": "golpe",
+      "peso": 1.0,
+      "recargaTicks": 300,
+      "recargaMaxTicks": 400,
+      "avisoTicks": 4,
+      "distanciaMin": 0,
+      "distanciaMax": 4,
+      "giroGrausPorTick": 20,
+      "avisoCor": "#ffffff",
+      "avisoSom": "minecraft:entity.player.attack.sweep"
+    },
+    "barragem": {
+      "slot": 5,
+      "tipo": "barragem",
+      "peso": 1.0,
+      "recargaTicks": 300,
+      "recargaMaxTicks": 400,
+      "avisoTicks": 5,
+      "distanciaMin": 0,
+      "distanciaMax": 3.5,
+      "giroGrausPorTick": 10,
+      "avisoCor": "#ffffff",
+      "avisoSom": "minecraft:entity.player.attack.sweep"
+    }
+  },
+  "combos": {
+    "infinito": {
+      "peso": 1.0,
+      "passos": [
+        "soco",
+        "soco",
+        "soco",
+        "forte"
+      ]
+    },
+    "teletransporte": {
+      "peso": 1.2,
+      "passos": [
+        "sombra",
+        "soco",
+        "soco",
+        "barragem",
+        "forte"
+      ]
+    },
+    "o_mais_forte": {
+      "peso": 0.8,
+      "passos": [
+        "sombra",
+        "soco",
+        "soco",
+        "soco",
+        "sombra",
+        "barragem",
+        "forte"
+      ]
+    }
+  },
+  "fases": [
+    {
+      "comecaEm": 1.0,
+      "skills": [
+        "dominio",
+        "forte",
+        "barragem"
+      ],
+      "combos": [
+        "infinito",
+        "teletransporte"
+      ],
+      "agressividade": 0.8,
+      "multRecarga": 1.0,
+      "menosRecargaTicks": 0,
+      "multVelocidade": 1.0,
+      "multAviso": 1.0,
+      "reacaoTicks": 6,
+      "chanceReacao": 0.8,
+      "pausaTicks": 12,
+      "despertado": false,
+      "corBarra": "blue",
+      "transicaoTicks": 0,
+      "titulo": "",
+      "subtitulo": ""
+    },
+    {
+      "comecaEm": 0.5,
+      "skills": [
+        "dominio",
+        "forte",
+        "barragem"
+      ],
+      "combos": [
+        "infinito",
+        "teletransporte",
+        "o_mais_forte"
+      ],
+      "agressividade": 0.85,
+      "multRecarga": 1.0,
+      "menosRecargaTicks": 600,
+      "multVelocidade": 1.0,
+      "multAviso": 0.85,
+      "reacaoTicks": 5,
+      "chanceReacao": 1.0,
+      "pausaTicks": 10,
+      "despertado": false,
+      "corBarra": "white",
+      "transicaoTicks": 50,
+      "titulo": "O Mais Forte",
+      "subtitulo": "Nah, I'd win"
+    }
+  ]
+}
