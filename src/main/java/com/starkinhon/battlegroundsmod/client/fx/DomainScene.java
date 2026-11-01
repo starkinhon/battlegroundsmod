@@ -164,6 +164,10 @@ public final class DomainScene {
     private static final int RIPPLE_EVERY = 40;
     // How long the white takes to tear open into the tunnel, in ticks.
     private static final int BURST_TICKS = 16;
+    // The tunnel opens on impact frames, white, black, then purple (IMPACT_TICKS each), before the white tears.
+    private static final int IMPACT_TICKS = 2;
+    private static final int[] TUNNEL_IMPACT = {0, 4, 1};
+    private static final int TUNNEL_FRAMES = IMPACT_TICKS * TUNNEL_IMPACT.length;
     private static float lastPartial;
     // The shards' corners on a unit sphere, jittered (made once).
     private static Vector3f[][] grid;
@@ -377,6 +381,7 @@ public final class DomainScene {
                     ScreenFx.fovKick(-14, 10);
                     // The screen shakes as the white tears open.
                     com.starkinhon.battlegroundsmod.client.ScreenShake.start(2.2f, 22);
+                    ScreenFx.impactFrame(TUNNEL_IMPACT, IMPACT_TICKS, 0xA040FF, d.center.add(0, 1.4, 0), 0);
                 }
             }
             if (stage == Stage.VOID && d.once("apex")) {
@@ -1283,9 +1288,10 @@ public final class DomainScene {
             Stage stage = d.stage(camera, t);
             DominioSpec spec = d.spec;
             boolean gojo = minecraft.player.getId() == d.caster;
-            if (stage == Stage.TUNNEL && t < spec.tunnelTick() + BURST_TICKS) {
-                // The white (the world is all white by now) tears open into the tunnel.
-                DomainScreen.whiteBurst(graphics, (float) ((t - spec.tunnelTick()) / BURST_TICKS), t);
+            double burst = t - spec.tunnelTick() - TUNNEL_FRAMES;
+            if (stage == Stage.TUNNEL && burst >= 0 && burst < BURST_TICKS) {
+                // After the impact frames the white (the world is all white by now) tears open into the tunnel.
+                DomainScreen.whiteBurst(graphics, (float) (burst / BURST_TICKS), t);
             }
             if (t < spec.tunnelTick() && t < d.closeAt() && camera.distanceTo(d.center) < d.radius() + 40) {
                 caption(graphics, minecraft, d, t);
