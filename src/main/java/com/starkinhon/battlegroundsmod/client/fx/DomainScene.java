@@ -1364,7 +1364,8 @@ public final class DomainScene {
         Font font = minecraft.font;
         var pose = graphics.pose();
         pose.pushPose();
-        pose.translate(graphics.guiWidth() / 2f, graphics.guiHeight() * 0.74f, 0);
+        // Above the combat HUD (attack name, "Ultimate") so they never overlap.
+        pose.translate(graphics.guiWidth() / 2f, graphics.guiHeight() * 0.6f, 0);
         pose.scale(size, size, 1);
         graphics.drawString(font, text, -font.width(text) / 2, 0, (alpha << 24) | color, true);
         pose.popPose();

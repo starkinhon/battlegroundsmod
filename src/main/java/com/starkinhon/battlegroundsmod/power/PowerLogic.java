@@ -34,6 +34,8 @@ public final class PowerLogic {
     private static final float ULT_PER_DAMAGE = 2.0f;
     private static final int SYNC_INTERVAL = 4;
     private static final double ULT_TITLE_RANGE = 48;
+    // Powers whose ult draws its own title, so the vanilla one is not sent.
+    private static final java.util.Set<String> OWN_ULT_TITLE = java.util.Set.of("strongest");
 
     private PowerLogic() {
     }
@@ -147,6 +149,11 @@ public final class PowerLogic {
 
     // Big title on the screen of everyone nearby. Makes ults read well on video.
     private static void announceUlt(LivingEntity player, Power power, int slot) {
+        // Gojo's Domain Expansion writes its own words on the screen ("Expansão de Domínio:" then "Vazio Infinito."),
+        // and its long name in the big vanilla title runs off the screen.
+        if (OWN_ULT_TITLE.contains(power.id())) {
+            return;
+        }
         Component title = power.abilityName(slot).copy().withStyle(s -> s.withColor(power.color()).withBold(true));
         Component subtitle = player.getDisplayName().copy().withStyle(ChatFormatting.GRAY);
         for (ServerPlayer other : Combat.level(player).players()) {
