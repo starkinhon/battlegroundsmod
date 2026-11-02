@@ -34,7 +34,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 // V (ult): Expansão de Domínio: Vazio Infinito (gojo.dominio.json, see DominioSpec for the phases). The server side:
 // Gojo held still in his pose and untouchable (Infinity) until the tunnel is over; the shockwave stopping every attack
-// in flight around him, then the white erasing them; everyone the white reaches paralyzed (and their moves cut off) until
+// in flight around him, then the white erasing them; everyone within raio paralyzed from the press (and their moves cut off) until
 // the domain shatters, also anyone who walks in later. Inside, only Gojo acts: any other attack is erased, nobody else can
 // use a skill (blocks), and nobody but Gojo can hurt those caught. When the tunnel starts, Gojo and his target are turned
 // face to face, the target 20 blocks straight in front of Gojo, and the clients are told who the target is. No cutscene.
@@ -185,8 +185,9 @@ public final class InfiniteVoid {
                 closing[0] = true;
                 SkillSounds.play(level, spec.sons(), "quebra", 0, spec.closeTicks(), onde -> center.add(0, 1, 0), screen);
             }
-            if (age >= white && age < release) {
-                double reach = spec.whiteRadius(age);
+            if (age < release) {
+                // Everyone within the domain's reach is paralyzed from the press, not only once the white reaches them.
+                double reach = radius;
                 DominioSpec.Acerto acerto = spec.acerto();
                 for (LivingEntity victim : Combat.inRadius(level, center, reach, caster)) {
                     if (!caught.add(victim)) {
@@ -208,11 +209,11 @@ public final class InfiniteVoid {
                     if (!victim.isAlive() || victim.isRemoved() || victim.level() != level) {
                         continue;
                     }
-                    if (acerto.paralisar() && (age - white) % HOLD_STEP == 0) {
+                    if (acerto.paralisar() && age % HOLD_STEP == 0) {
                         // A tick of overlap so they never slip free in between.
                         Freeze.hold(victim, Math.min(HOLD_STEP + 1, release - age));
                     }
-                    if ((age - white) % HOLD_STEP == 0 && !active.braindamaged) {
+                    if (age % HOLD_STEP == 0 && !active.braindamaged) {
                         victim.addEffect(new MobEffectInstance(ModEffects.BRAIN_DAMAGE, HOLD_STEP * 3, 0, false, false, true));
                     }
                     if (age >= voidTick && age < close && acerto.dano() > 0 && acerto.aCadaTicks() > 0
