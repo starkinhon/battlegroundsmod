@@ -1148,14 +1148,17 @@ public final class DomainScene {
 
     // ------------------------------------------------------------------------------------------------------------------
 
-    // One of Stark's ink splashes, picked by pick (0 to 1), facing the camera. The picture fills its square, where the
-    // old drawn splash only filled the middle, so it is drawn a bit smaller.
+    // One of Stark's ink splashes, picked by pick (0 to 1), facing the camera. The pictures (512 px, smoothed) have a
+    // soft halo around the splash, so the quad is drawn larger than the splash. White ink also gets a glow in the bloom.
     private static void ink(Vector3f at, float size, float spin, float pick, float[] rgb, float opacity) {
         if (opacity <= 0.003f) {
             return;
         }
         int i = Math.min(INK.length - 1, Math.max(0, (int) (pick * INK.length)));
-        FxDraw.billboard(FxWorld.decal(INK[i]), at, size * 0.75f, spin, rgb, Math.min(1, opacity));
+        FxDraw.billboard(FxWorld.decal(INK[i]), at, size * 1.25f, spin, rgb, Math.min(1, opacity));
+        if (rgb[0] > 0.5f) {
+            FxDraw.billboard(at, size * 1.1f, 0, FxDraw.SOFT, 0.2f, SILVER, 0.35f * Math.min(1, opacity), true);
+        }
     }
 
     private static float smooth(float a, float b, float x) {

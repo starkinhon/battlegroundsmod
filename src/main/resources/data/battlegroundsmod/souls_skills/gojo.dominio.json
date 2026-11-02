@@ -4,11 +4,11 @@
   "nome": "Expansão de Domínio: Vazio Infinito",
   "tempo": {
     "atrasoTicks": 10,
-    "duracaoTicks": 250
+    "duracaoTicks": 190
   },
   "fases": {
     "choque": 80,
-    "branco": 180,
+    "branco": 120,
     "tunel": 170,
     "vazio": 600,
     "quebra": 40
@@ -40,41 +40,41 @@
       "tronco": 0,
       "giro": 0,
       "bracoDir": {
-        "frente": -6,
-        "abrir": 6
+        "frente": -4,
+        "abrir": 8
       },
       "bracoEsq": {
-        "frente": 60,
-        "abrir": 20
+        "frente": 15,
+        "abrir": 70
       },
       "pernaDir": {
-        "frente": 4,
+        "frente": 0,
         "abrir": 4
       },
       "pernaEsq": {
-        "frente": -4,
+        "frente": 0,
         "abrir": 4
       }
     },
     "sopro": {
-      "corpo": 15,
-      "cabeca": 4,
-      "tronco": 2,
+      "corpo": 0,
+      "cabeca": -4,
+      "tronco": 0,
       "giro": 0,
       "bracoDir": {
-        "frente": -12,
-        "abrir": 10
+        "frente": -6,
+        "abrir": 12
       },
       "bracoEsq": {
-        "frente": 115,
-        "abrir": 32
+        "frente": 25,
+        "abrir": 125
       },
       "pernaDir": {
-        "frente": 8,
+        "frente": 0,
         "abrir": 5
       },
       "pernaEsq": {
-        "frente": -8,
+        "frente": 0,
         "abrir": 5
       }
     }
