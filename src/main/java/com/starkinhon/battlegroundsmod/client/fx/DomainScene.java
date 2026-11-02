@@ -68,6 +68,16 @@ public final class DomainScene {
     private static final float[] PINK = FxDraw.rgb(0xFFD6FF);
     private static final float[] SILVER = FxDraw.rgb(0xCFE8FF);
     private static final int VIEW = 192;
+    // Stark's ink splashes (textures/fx/gojo_ink/1..12.png, white on clear), tinted black or white, used for every
+    // splash of ink inside the domain.
+    private static final net.minecraft.resources.ResourceLocation[] INK = new net.minecraft.resources.ResourceLocation[12];
+
+    static {
+        for (int i = 0; i < INK.length; i++) {
+            INK[i] = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(com.starkinhon.battlegroundsmod.BattlegroundsMod.MODID,
+                    "textures/fx/gojo_ink/" + (i + 1) + ".png");
+        }
+    }
     // The cracks run for this long before it shatters.
     private static final int CRACK_TICKS = 14;
     // The shards: the sphere cut on a grid of LAT x LON cells, two triangles each.
@@ -164,9 +174,10 @@ public final class DomainScene {
     private static final int RIPPLE_EVERY = 40;
     // How long the white takes to tear open into the tunnel, in ticks.
     private static final int BURST_TICKS = 16;
-    // The tunnel opens on impact frames, white, black, then purple (IMPACT_TICKS each), before the white tears.
+    // The tunnel opens on a long run of black and white impact frames (IMPACT_TICKS each) with a hard shake, before the
+    // white tears: manga (black ink on white) and black paper with white ink, back and forth.
     private static final int IMPACT_TICKS = 2;
-    private static final int[] TUNNEL_IMPACT = {0, 4, 1};
+    private static final int[] TUNNEL_IMPACT = {3, 4, 3, 4, 3, 4, 3};
     private static final int TUNNEL_FRAMES = IMPACT_TICKS * TUNNEL_IMPACT.length;
     private static float lastPartial;
     // The shards' corners on a unit sphere, jittered (made once).
@@ -364,7 +375,6 @@ public final class DomainScene {
             boolean victim = !caster && d.contains(minecraft.player.getEyePosition()) && t >= spec.tunnelTick() && t < d.shatterAt();
 
             if (t >= spec.ondaTick() && d.once("onda") && dist < 110) {
-                ScreenFx.impactFrame(new int[] {4, 3, 4}, 2, 0x9FE8FF, d.center.add(0, 1.4, 0), 0);
                 ScreenFx.warp(d.center.add(0, 1.2, 0), (float) spec.dominio().raioChoque(), 0.55f, 26, 0, new Vec3(0, 1, 0), 0xCFF4FF, 0.08f, 20, -1,
                         null, 0);
                 ScreenFx.fovKick(caster ? -4 : 9, 14);
@@ -378,10 +388,10 @@ public final class DomainScene {
                 ScreenFx.sustainBlur(camera.add(a.x * 120, 0, a.z * 120), (float) (0.25 + 1.7 * u * u));
                 ScreenFx.sustainFov((float) (4 + 30 * u * u));
                 if (d.once("tunnelIn")) {
-                    ScreenFx.fovKick(-14, 10);
+                    ScreenFx.fovKick(-18, 14);
                     // The screen shakes as the white tears open.
-                    com.starkinhon.battlegroundsmod.client.ScreenShake.start(2.2f, 22);
-                    ScreenFx.impactFrame(TUNNEL_IMPACT, IMPACT_TICKS, 0xA040FF, d.center.add(0, 1.4, 0), 0);
+                    com.starkinhon.battlegroundsmod.client.ScreenShake.start(3.5f, 34);
+                    ScreenFx.impactFrame(TUNNEL_IMPACT, IMPACT_TICKS, 0xFFFFFF, d.center.add(0, 1.4, 0), 0);
                 }
             }
             if (stage == Stage.VOID && d.once("apex")) {
@@ -695,7 +705,7 @@ public final class DomainScene {
             Vector3f p = new Vector3f(eye).add(new Vector3f(x).mul(Mth.cos(ang) * rr)).add(new Vector3f(y).mul(Mth.sin(ang) * rr * 0.8f));
             float s = size * (0.07f + 0.12f * FxWorld.hash(811 + round, k, 4)) * (1 - 0.6f * u);
             float fade = Math.min(1, u * 6) * Math.min(1, (1 - u) * 5);
-            FxDraw.billboard(p, s, ang + u, FxDraw.SPLAT, FxWorld.hash(811 + round, k, 5), BLACK, 0.95f * fade * in, false);
+            ink(p, s, ang + u, FxWorld.hash(811 + round, k, 5), BLACK, 0.95f * fade * in);
         }
     }
 
@@ -856,8 +866,8 @@ public final class DomainScene {
             float rr = 5 + 25 * FxWorld.hash(933, k, 2);
             double z = 400 - ((run * 0.8 + FxWorld.hash(933, k, 4) * range) % range);
             Vector3f p = new Vector3f(a).mul((float) z).add(new Vector3f(x).mul(Mth.cos(ang) * rr)).add(new Vector3f(y).mul(Mth.sin(ang) * rr));
-            FxDraw.billboard(p, 1.5f + 4 * FxWorld.hash(933, k, 3), FxWorld.hash(933, k, 5) * 6, FxDraw.SPLAT, FxWorld.hash(933, k, 6), WHITE,
-                    0.85f * in * smooth(400, 230, (float) z), false);
+            ink(p, 1.5f + 4 * FxWorld.hash(933, k, 3), FxWorld.hash(933, k, 5) * 6, FxWorld.hash(933, k, 6), WHITE,
+                    0.85f * in * smooth(400, 230, (float) z));
         }
     }
 
@@ -969,7 +979,7 @@ public final class DomainScene {
             Vector3f p = new Vector3f(c).add(base).add(drift).add(0, 4, 0);
             float fade = smooth(0, 0.15f, u) * smooth(1, 0.7f, u);
             float s = 4 + 12 * FxWorld.hash(seed, k, 4);
-            FxDraw.billboard(p, s, FxWorld.hash(seed, k, 5) * 6 + u * 0.6f, FxDraw.SPLAT, FxWorld.hash(seed, k, 6), WHITE, 0.9f * fade * in, false);
+            ink(p, s, FxWorld.hash(seed, k, 5) * 6 + u * 0.6f, FxWorld.hash(seed, k, 6), WHITE, 0.9f * fade * in);
         }
     }
 
@@ -1137,6 +1147,16 @@ public final class DomainScene {
     }
 
     // ------------------------------------------------------------------------------------------------------------------
+
+    // One of Stark's ink splashes, picked by pick (0 to 1), facing the camera. The picture fills its square, where the
+    // old drawn splash only filled the middle, so it is drawn a bit smaller.
+    private static void ink(Vector3f at, float size, float spin, float pick, float[] rgb, float opacity) {
+        if (opacity <= 0.003f) {
+            return;
+        }
+        int i = Math.min(INK.length - 1, Math.max(0, (int) (pick * INK.length)));
+        FxDraw.billboard(FxWorld.decal(INK[i]), at, size * 0.75f, spin, rgb, Math.min(1, opacity));
+    }
 
     private static float smooth(float a, float b, float x) {
         float t = Mth.clamp((x - a) / (b - a), 0, 1);
@@ -1310,17 +1330,18 @@ public final class DomainScene {
     // Gojo's words, in game: "Expansão de Domínio:" during the sign, "Vazio Infinito." as the white comes out.
     private static void caption(GuiGraphics graphics, Minecraft minecraft, Domain d, double t) {
         DominioSpec spec = d.spec;
-        double first = Math.max(4, spec.ondaTick() - 46);
+        // The shockwave goes off the instant the skill is used; the words come after it.
+        double first = spec.ondaTick() + 10;
         double second = spec.whiteTick() + 2;
         String text;
         double from;
         double to;
         int color;
         float size;
-        if (t >= first && t < spec.ondaTick()) {
+        if (t >= first && t < spec.whiteTick() - 4) {
             text = "Expansão de Domínio:";
             from = first;
-            to = spec.ondaTick();
+            to = spec.whiteTick() - 4;
             color = 0xFFFFFF;
             size = 1.6f;
         } else if (t >= second && t < second + 60) {

@@ -4,11 +4,11 @@
   "nome": "Expansão de Domínio: Vazio Infinito",
   "tempo": {
     "atrasoTicks": 10,
-    "duracaoTicks": 150
+    "duracaoTicks": 250
   },
   "fases": {
     "choque": 80,
-    "branco": 120,
+    "branco": 180,
     "tunel": 170,
     "vazio": 600,
     "quebra": 40
@@ -16,7 +16,7 @@
   "dominio": {
     "raio": 40,
     "raioChoque": 30,
-    "ondaTick": 56,
+    "ondaTick": 0,
     "pararUsuario": true
   },
   "acerto": {
@@ -36,46 +36,46 @@
     "transicaoTicks": 5,
     "preparo": {
       "corpo": 0,
-      "cabeca": 4,
-      "tronco": 4,
-      "giro": 6,
+      "cabeca": 0,
+      "tronco": 0,
+      "giro": 0,
       "bracoDir": {
-        "frente": 70,
-        "abrir": -20
-      },
-      "bracoEsq": {
-        "frente": 20,
-        "abrir": -6
-      },
-      "pernaDir": {
         "frente": -6,
         "abrir": 6
       },
+      "bracoEsq": {
+        "frente": 60,
+        "abrir": 20
+      },
+      "pernaDir": {
+        "frente": 4,
+        "abrir": 4
+      },
       "pernaEsq": {
-        "frente": 6,
-        "abrir": 6
+        "frente": -4,
+        "abrir": 4
       }
     },
     "sopro": {
-      "corpo": 0,
-      "cabeca": 8,
-      "tronco": 6,
-      "giro": 20,
+      "corpo": 15,
+      "cabeca": 4,
+      "tronco": 2,
+      "giro": 0,
       "bracoDir": {
-        "frente": 122,
-        "abrir": -48
+        "frente": -12,
+        "abrir": 10
       },
       "bracoEsq": {
-        "frente": 48,
-        "abrir": -16
+        "frente": 115,
+        "abrir": 32
       },
       "pernaDir": {
-        "frente": -10,
-        "abrir": 12
+        "frente": 8,
+        "abrir": 5
       },
       "pernaEsq": {
-        "frente": 10,
-        "abrir": 12
+        "frente": -8,
+        "abrir": 5
       }
     }
   },
