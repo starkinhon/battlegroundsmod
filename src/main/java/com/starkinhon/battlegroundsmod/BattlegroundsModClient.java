@@ -81,6 +81,7 @@ public class BattlegroundsModClient {
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, true, RenderLivingEvent.Post.class,
                 com.starkinhon.battlegroundsmod.client.fx.EsferaRenderer::onRenderPost);
         NeoForge.EVENT_BUS.addListener(ScreenFx::onComputeFov);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.FirstPersonAnimation::onRenderHand);
         NeoForge.EVENT_BUS.addListener(BattlegroundsModClient::onClientTickPre);
         NeoForge.EVENT_BUS.addListener(BattlegroundsModClient::onClientTick);
         NeoForge.EVENT_BUS.addListener(BossBars::onBossBar);
