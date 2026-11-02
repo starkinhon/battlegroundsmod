@@ -178,6 +178,9 @@ public final class DomainScene {
 
     private static final List<Domain> DOMAINS = new ArrayList<>();
     private static final List<Ripple> RIPPLES = new ArrayList<>();
+    // Who has Brain Damage (the server tells, mode 4) and until when (ScreenFx time): the letters and numbers rush into
+    // their heads as long as it lasts, inside the domain and after it.
+    private static final Map<Integer, Double> BRAIN = new HashMap<>();
     // When each body inside the void last left a ripple.
     private static final Map<Integer, Long> STILL = new HashMap<>();
     private static final int RIPPLE_EVERY = 40;
@@ -204,6 +207,11 @@ public final class DomainScene {
             return;
         }
         double now = ScreenFx.now();
+        if (mode == 4) {
+            // casterId is the one with Brain Damage, other how many ticks it lasts.
+            BRAIN.put(casterId, now + other);
+            return;
+        }
         if (mode == 1) {
             for (Domain d : DOMAINS) {
                 if (d.caster == casterId && d.closeStart < 0) {
@@ -277,6 +285,7 @@ public final class DomainScene {
     }
 
     public static void clear() {
+        BRAIN.clear();
         DOMAINS.clear();
         RIPPLES.clear();
         STILL.clear();
@@ -370,6 +379,7 @@ public final class DomainScene {
         }
         DOMAINS.removeIf(d -> time(d, 0) > d.goneAt() + 1 || minecraft.player.position().distanceToSqr(d.hub(minecraft.player.position())) > VIEW * VIEW * 4);
         RIPPLES.removeIf(r -> ScreenFx.now() - r.born() > RIPPLE_EVERY);
+        BRAIN.values().removeIf(until -> until < ScreenFx.now());
         if (DOMAINS.isEmpty()) {
             STILL.clear();
             return;
@@ -548,7 +558,7 @@ public final class DomainScene {
                     if (isVictim != (pass == 1)) {
                         continue;
                     }
-                    if (isVictim) {
+                    if (isVictim && brainDamaged(living)) {
                         caught.add(living);
                     }
                     Vec3 rel = entity.getPosition(partial).subtract(camera);
@@ -629,6 +639,50 @@ public final class DomainScene {
             buffers.endBatch();
         } finally {
             dispatcher.setRenderShadow(true);
+            RenderSystem.restoreProjectionMatrix();
+            modelView.popMatrix();
+            RenderSystem.applyModelViewMatrix();
+        }
+    }
+
+    static boolean brainDamaged(Entity entity) {
+        Double until = BRAIN.get(entity.getId());
+        return until != null && until >= ScreenFx.now();
+    }
+
+    // Out in the world (the domain closed, or seen from outside): the letters and numbers keep rushing into the heads of
+    // everyone with Brain Damage. Inside the tunnel and the void, backdrop draws them.
+    public static void brainGlyphs(RenderLevelStageEvent event) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (BRAIN.isEmpty() || minecraft.level == null) {
+            return;
+        }
+        float partial = event.getPartialTick().getGameTimeDeltaPartialTick(false);
+        Vec3 camera = event.getCamera().getPosition();
+        if (around(camera, partial) != null) {
+            return;
+        }
+        Entity viewer = event.getCamera().getEntity();
+        boolean detached = event.getCamera().isDetached();
+        List<LivingEntity> heads = new ArrayList<>();
+        for (Entity entity : minecraft.level.entitiesForRendering()) {
+            if (entity instanceof LivingEntity living && living.isAlive() && !entity.isInvisible() && (entity != viewer || detached)
+                    && brainDamaged(entity)) {
+                heads.add(living);
+            }
+        }
+        if (heads.isEmpty()) {
+            return;
+        }
+        Matrix4fStack modelView = RenderSystem.getModelViewStack();
+        modelView.pushMatrix();
+        modelView.set(event.getModelViewMatrix());
+        RenderSystem.applyModelViewMatrix();
+        RenderSystem.backupProjectionMatrix();
+        RenderSystem.setProjectionMatrix(event.getProjectionMatrix(), VertexSorting.DISTANCE_TO_ORIGIN);
+        try {
+            glyphs(event.getCamera(), heads, camera, ScreenFx.now() + partial, partial, minecraft.renderBuffers().bufferSource());
+        } finally {
             RenderSystem.restoreProjectionMatrix();
             modelView.popMatrix();
             RenderSystem.applyModelViewMatrix();
