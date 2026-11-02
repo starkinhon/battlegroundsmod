@@ -2,6 +2,9 @@ package com.starkinhon.battlegroundsmod.skill;
 
 import java.util.List;
 
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
+
 // Gojo's ult, Expansão de Domínio: Vazio Infinito (gojo.dominio.json). It plays out in five phases, in ticks from the press:
 // - choque (fases.choque): Gojo makes the hand sign, in game (no cutscene), saying the words. At dominio.ondaTick a
 //   shockwave leaves him and stops in the air every attack in flight within dominio.raioChoque blocks (fireballs, slashes,
@@ -12,7 +15,8 @@ import java.util.List;
 // - tunel (fases.tunel): Gojo and his target stand still face to face, 20 blocks apart (no cutscene). Inside,
 //   streaks of violet, magenta, red and blue light rush past into a far vanishing point,
 //   faster and faster, with the screen stretching with speed. From outside it is already a smooth black ball.
-// - vazio (fases.vazio): the void. No walls, no floor, endless depth, a black hole turning far away, white ink drifting
+// - vazio (fases.vazio): the void, a space of its own above the world (see arena). No walls, a still mirror of water
+//   for a floor, endless depth, a black hole turning far away, white ink drifting
 //   by, a ring of water under everyone every 2 s. Those caught are paralyzed and get infinite information on their screen
 //   (only them, never Gojo); only Gojo can hurt them. If his target dies, it shatters right away.
 // - quebra (fases.quebra): it cracks everywhere and shatters like glowing glass, black and white, until nothing is left.
@@ -46,6 +50,22 @@ public record DominioSpec(String skill, String nome, Tempo tempo, Fases fases, D
     public static final int WAVE_TICKS = 14;
     // The share of the white phase the white takes to cover everything out to raio; the rest of it is all white.
     public static final double WHITE_SPREAD = 0.5;
+
+    // The inside is a space of its own: when the tunnel starts, everyone in it is taken straight up above the world's
+    // build height (no blocks can be there, so no hills, trees or walls inside), onto a flat floor of its own, and
+    // brought back where they were when it shatters. Works the same if Gojo opens it while flying.
+    public static final int ARENA_LIFT = 64;
+    // How long after the cracking starts it shatters (and everyone is back in the world).
+    public static final int CRACK_TICKS = 14;
+
+    // The floor of the inside, straight above center.
+    public static Vec3 arena(Level level, Vec3 center) {
+        return new Vec3(center.x, Math.max(center.y, level.getMaxBuildHeight() + ARENA_LIFT), center.z);
+    }
+
+    public int shatterDelay() {
+        return Math.min(CRACK_TICKS, closeTicks() / 2);
+    }
 
     public static DominioSpec get(boolean awakened) {
         return SkillSpecs.get(SKILL, DominioSpec.class, awakened);

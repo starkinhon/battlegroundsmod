@@ -2,7 +2,9 @@ package com.starkinhon.battlegroundsmod.power.powers.gojo;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -17,6 +19,7 @@ import com.starkinhon.battlegroundsmod.power.PowerData;
 import com.starkinhon.battlegroundsmod.power.PowerLogic;
 import com.starkinhon.battlegroundsmod.skill.DominioSpec;
 
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
@@ -33,6 +36,11 @@ import net.neoforged.neoforge.network.PacketDistributor;
 // the domain shatters, also anyone who walks in later. Inside, only Gojo acts: any other attack is erased, nobody else can
 // use a skill (blocks), and nobody but Gojo can hurt those caught. When the tunnel starts, Gojo and his target are turned
 // face to face, the target 20 blocks straight in front of Gojo, and the clients are told who the target is. No cutscene.
+// The inside is a space of its own (DominioSpec.arena): when the tunnel starts, Gojo and everyone caught are taken
+// straight up above the build height, the same places relative to each other, onto a floor of their own that holds them
+// up (no blocks there, so it works the same opened in the air, on a hill or in a forest), and are brought back where they
+// were when it shatters. Players up there may fly for the server (so it never kicks them for floating) but are kept on
+// the floor; if the server stops while someone is up there, they are put back on their next login.
 // A kill inside is told to the clients, whose screens go to red and white ink, and
 // when the target dies the domain shatters. Everything seen is on the clients (client/fx/DomainScene). If Gojo falls, it
 // shatters early too.
@@ -49,6 +57,10 @@ public final class InfiniteVoid {
     // How long the clients wait to hear of the tunnel's places, so the target has been seen where it was put (the
     // tunnel's direction is measured from it).
     private static final int PLACE_SYNC_TICKS = 4;
+    // Someone below the floor by more than this (lag, a knockback) is put back on it.
+    private static final double FLOOR_SLACK = 1.5;
+    // Saved on players taken inside, so a server stop never leaves them in the sky (see onLogin).
+    private static final String BACK_TAG = "battlegroundsmod_void_back";
 
     // A domain open right now: for the kills inside it and Gojo's Infinity.
     private static final class Active {
@@ -58,6 +70,13 @@ public final class InfiniteVoid {
         final DominioSpec spec;
         final boolean awakened;
         final Set<LivingEntity> caught = new HashSet<>();
+        // The floor of the inside, straight above center.
+        final Vec3 arena;
+        // Everyone taken inside, and where each was in the world.
+        final Map<LivingEntity, Vec3> back = new LinkedHashMap<>();
+        // Players who were allowed to fly only for this (so the server never kicks them for floating).
+        final Set<ServerPlayer> granted = new HashSet<>();
+        boolean inside;
         LivingEntity target;
         int age;
         // When the target (or the last one caught) died, -1 while they live.
@@ -69,6 +88,7 @@ public final class InfiniteVoid {
             this.center = center;
             this.spec = spec;
             this.awakened = awakened;
+            this.arena = DominioSpec.arena(level, center);
         }
     }
 
@@ -122,7 +142,11 @@ public final class InfiniteVoid {
                 closing[0] = true;
                 send(level, center, new ModPayloads.GojoDomain(caster.getId(), center, awakened, 1, 0));
                 SkillSounds.play(level, spec.sons(), "quebra", 0, spec.closeTicks(), onde -> center.add(0, 1, 0), screen);
-                ACTIVE.remove(active);
+                // Everyone inside is back in the world when it shatters.
+                Tasks.later(spec.shatterDelay(), () -> {
+                    comeBack(active);
+                    ACTIVE.remove(active);
+                });
                 return true;
             }
             if (age >= wave && age < white) {
@@ -137,6 +161,13 @@ public final class InfiniteVoid {
             if (age == tunnel) {
                 faceOff(active);
             }
+            if (active.inside) {
+                if (age >= close + spec.shatterDelay()) {
+                    comeBack(active);
+                } else {
+                    floor(active);
+                }
+            }
             if (age == voidTick) {
                 SkillSounds.play(level, spec.sons(), "vazio", 0, close - voidTick, where, screen);
             }
@@ -148,12 +179,26 @@ public final class InfiniteVoid {
                 double reach = spec.whiteRadius(age);
                 DominioSpec.Acerto acerto = spec.acerto();
                 for (LivingEntity victim : Combat.inRadius(level, center, reach, caster)) {
-                    boolean fresh = caught.add(victim);
-                    if (fresh && victim.hasData(ModAttachments.POWER)) {
+                    if (!caught.add(victim)) {
+                        continue;
+                    }
+                    if (victim.hasData(ModAttachments.POWER)) {
                         // Swallowed by the white: whatever they were doing is cut off.
                         PowerLogic.interrupt(victim);
                     }
-                    if (acerto.paralisar() && (fresh || (age - white) % HOLD_STEP == 0)) {
+                    if (acerto.paralisar()) {
+                        Freeze.hold(victim, Math.min(HOLD_STEP + 1, release - age));
+                    }
+                    if (active.inside) {
+                        // Walked into the black ball later: taken inside too.
+                        takeInside(active, victim);
+                    }
+                }
+                for (LivingEntity victim : caught) {
+                    if (!victim.isAlive() || victim.isRemoved() || victim.level() != level) {
+                        continue;
+                    }
+                    if (acerto.paralisar() && (age - white) % HOLD_STEP == 0) {
                         // A tick of overlap so they never slip free in between.
                         Freeze.hold(victim, Math.min(HOLD_STEP + 1, release - age));
                     }
@@ -209,6 +254,16 @@ public final class InfiniteVoid {
     // has reached them.
     private static void faceOff(Active active) {
         LivingEntity caster = active.caster;
+        // Into the space of its own, everyone where they were relative to each other.
+        active.inside = true;
+        if (caster.isAlive()) {
+            takeInside(active, caster);
+        }
+        for (LivingEntity victim : active.caught) {
+            if (victim.isAlive() && !victim.isRemoved() && victim.level() == active.level) {
+                takeInside(active, victim);
+            }
+        }
         LivingEntity target = null;
         if (caster instanceof Mob mob && mob.getTarget() != null && active.caught.contains(mob.getTarget()) && mob.getTarget().isAlive()) {
             target = mob.getTarget();
@@ -229,7 +284,8 @@ public final class InfiniteVoid {
             Vec3 dir = to.horizontalDistanceSqr() > 1.0E-4 ? new Vec3(to.x, 0, to.z).normalize() : Vec3.directionFromRotation(0, caster.getYRot());
             float yaw = (float) (Mth.atan2(dir.z, dir.x) * Mth.RAD_TO_DEG) - 90;
             Freeze.face(caster, yaw, 0);
-            Freeze.place(target, caster.position().add(dir.scale(TARGET_GAP)), Mth.wrapDegrees(yaw + 180), 0);
+            Vec3 spot = caster.position().add(dir.scale(TARGET_GAP));
+            Freeze.place(target, new Vec3(spot.x, active.arena.y, spot.z), Mth.wrapDegrees(yaw + 180), 0);
         }
         int targetId = target != null ? target.getId() : -1;
         Tasks.later(PLACE_SYNC_TICKS, () -> {
@@ -237,6 +293,115 @@ public final class InfiniteVoid {
                 send(active.level, active.center, new ModPayloads.GojoDomain(caster.getId(), active.center, active.awakened, 3, targetId));
             }
         });
+    }
+
+    // Takes someone up into the inside: straight above where they stand, onto its floor.
+    private static void takeInside(Active active, LivingEntity entity) {
+        if (active.back.containsKey(entity)) {
+            return;
+        }
+        Vec3 from = entity.position();
+        active.back.put(entity, from);
+        if (entity instanceof ServerPlayer player) {
+            CompoundTag tag = new CompoundTag();
+            tag.putDouble("x", from.x);
+            tag.putDouble("y", from.y);
+            tag.putDouble("z", from.z);
+            player.getPersistentData().put(BACK_TAG, tag);
+            if (!player.getAbilities().mayfly) {
+                // Standing on nothing for the server: allowed to fly so it never kicks them, kept on the floor below.
+                player.getAbilities().mayfly = true;
+                player.onUpdateAbilities();
+                active.granted.add(player);
+            }
+        }
+        put(entity, new Vec3(from.x, active.arena.y, from.z));
+    }
+
+    // The floor of the inside holds up everyone in it (no blocks there). Players move themselves (their client keeps
+    // them on it, DomainScene.floor); here they never take fall damage and never fly, and fall back up if they sink.
+    private static void floor(Active active) {
+        double y = active.arena.y;
+        for (LivingEntity entity : active.back.keySet()) {
+            if (!entity.isAlive() || entity.isRemoved() || entity.level() != active.level) {
+                continue;
+            }
+            entity.resetFallDistance();
+            if (entity instanceof ServerPlayer player) {
+                if (player.getAbilities().flying && active.granted.contains(player)) {
+                    player.getAbilities().flying = false;
+                    player.onUpdateAbilities();
+                }
+                if (player.getY() < y - FLOOR_SLACK) {
+                    put(player, new Vec3(player.getX(), y, player.getZ()));
+                }
+                continue;
+            }
+            if (Freeze.isFrozen(entity)) {
+                continue;
+            }
+            if (entity.getY() < y) {
+                entity.setPos(entity.getX(), y, entity.getZ());
+            }
+            if (entity.getY() <= y + 1.0E-3) {
+                Vec3 v = entity.getDeltaMovement();
+                entity.setDeltaMovement(v.x, Math.max(0, v.y), v.z);
+                entity.setOnGround(true);
+            }
+        }
+    }
+
+    // It shattered: everyone taken inside is put back where they were in the world.
+    private static void comeBack(Active active) {
+        if (!active.inside) {
+            return;
+        }
+        active.inside = false;
+        for (Map.Entry<LivingEntity, Vec3> entry : active.back.entrySet()) {
+            LivingEntity entity = entry.getKey();
+            if (entity instanceof ServerPlayer player) {
+                player.getPersistentData().remove(BACK_TAG);
+                if (active.granted.contains(player)) {
+                    player.getAbilities().mayfly = player.isCreative() || player.isSpectator();
+                    player.getAbilities().flying = false;
+                    player.onUpdateAbilities();
+                }
+            }
+            if (entity.isAlive() && !entity.isRemoved() && entity.level() == active.level) {
+                entity.resetFallDistance();
+                put(entity, entry.getValue());
+            }
+        }
+        active.back.clear();
+        active.granted.clear();
+    }
+
+    // Moves someone, held still or not, keeping how they look.
+    private static void put(LivingEntity entity, Vec3 pos) {
+        if (Freeze.isFrozen(entity)) {
+            Freeze.place(entity, pos, entity.getYRot(), entity.getXRot());
+        } else if (entity instanceof ServerPlayer player) {
+            player.connection.teleport(pos.x, pos.y, pos.z, player.getYRot(), player.getXRot());
+        } else {
+            entity.teleportTo(pos.x, pos.y, pos.z);
+        }
+        entity.setDeltaMovement(Vec3.ZERO);
+        entity.hurtMarked = true;
+    }
+
+    // A player who logs in still up in a domain's inside (the server stopped while it was open) is put back where they
+    // were, and can no longer fly unless they could before.
+    public static void onLogin(ServerPlayer player) {
+        if (!player.getPersistentData().contains(BACK_TAG)) {
+            return;
+        }
+        CompoundTag tag = player.getPersistentData().getCompound(BACK_TAG);
+        player.getPersistentData().remove(BACK_TAG);
+        player.getAbilities().mayfly = player.isCreative() || player.isSpectator();
+        player.getAbilities().flying = player.isSpectator();
+        player.onUpdateAbilities();
+        player.resetFallDistance();
+        player.connection.teleport(tag.getDouble("x"), tag.getDouble("y"), tag.getDouble("z"), player.getYRot(), player.getXRot());
     }
 
     // Someone dies inside an open domain (the tunnel or the void): everyone inside sees the red and white ink.
@@ -247,7 +412,7 @@ public final class InfiniteVoid {
         LivingEntity dead = event.getEntity();
         for (Active active : List.copyOf(ACTIVE)) {
             if (dead.level() != active.level || dead == active.caster || active.age < active.spec.tunnelTick()
-                    || active.age >= active.spec.closeTick() || dead.position().distanceTo(active.center) > active.spec.radius() + 1) {
+                    || active.age >= active.spec.closeTick() || !near(active, dead.position(), active.spec.radius() + 1)) {
                 continue;
             }
             if (dead == active.target && active.killedAt < 0) {
@@ -255,7 +420,7 @@ public final class InfiniteVoid {
             }
             ModPayloads.GojoDomain payload = new ModPayloads.GojoDomain(active.caster.getId(), active.center, active.awakened, 2, dead.getId());
             for (ServerPlayer player : active.level.players()) {
-                if (player.position().distanceTo(active.center) <= active.spec.radius() + 4 || player == active.caster) {
+                if (near(active, player.position(), active.spec.radius() + 4) || player == active.caster) {
                     PacketDistributor.sendToPlayer(player, payload);
                 }
             }
@@ -263,13 +428,21 @@ public final class InfiniteVoid {
         }
     }
 
+    // pos is within range of the domain, out in the world or inside.
+    private static boolean near(Active active, Vec3 pos, double range) {
+        return pos.distanceTo(active.center) <= range || pos.distanceTo(active.arena) <= range;
+    }
+
+    // The server stopped: anyone still inside is put back on their next login (onLogin).
     public static void clear() {
         ACTIVE.clear();
     }
 
     private static void send(ServerLevel level, Vec3 center, ModPayloads.GojoDomain payload) {
+        Vec3 arena = DominioSpec.arena(level, center);
         for (ServerPlayer player : level.players()) {
-            if (player.position().distanceToSqr(center) <= VIEW_DISTANCE * VIEW_DISTANCE) {
+            if (player.position().distanceToSqr(center) <= VIEW_DISTANCE * VIEW_DISTANCE
+                    || player.position().distanceToSqr(arena) <= VIEW_DISTANCE * VIEW_DISTANCE) {
                 PacketDistributor.sendToPlayer(player, payload);
             }
         }

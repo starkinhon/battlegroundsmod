@@ -104,6 +104,7 @@ public final class PowerEvents {
                 player.getInventory().add(new ItemStack(ModItems.POWER_BOOK.get()));
                 player.displayClientMessage(Component.translatable("message.battlegroundsmod.welcome"), false);
             }
+            com.starkinhon.battlegroundsmod.power.powers.gojo.InfiniteVoid.onLogin(player);
             PowerLogic.sync(player);
             BossCommand.syncBossBar(player);
         }
