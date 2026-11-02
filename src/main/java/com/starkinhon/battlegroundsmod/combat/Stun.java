@@ -36,6 +36,6 @@ public final class Stun {
     }
 
     public static boolean is(Entity entity) {
-        return entity instanceof LivingEntity living && living.hasEffect(ModEffects.ATORDOADO);
+        return entity instanceof LivingEntity living && (living.hasEffect(ModEffects.ATORDOADO) || living.hasEffect(ModEffects.BRAIN_DAMAGE));
     }
 }

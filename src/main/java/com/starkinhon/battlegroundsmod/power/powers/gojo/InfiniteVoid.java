@@ -9,6 +9,7 @@ import java.util.Set;
 import java.util.function.Function;
 
 import com.starkinhon.battlegroundsmod.ModAttachments;
+import com.starkinhon.battlegroundsmod.ModEffects;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Destructible;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
@@ -23,6 +24,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.phys.Vec3;
@@ -59,6 +61,8 @@ public final class InfiniteVoid {
     private static final int PLACE_SYNC_TICKS = 4;
     // Someone below the floor by more than this (lag, a knockback) is put back on it.
     private static final double FLOOR_SLACK = 1.5;
+    // Brain Damage (ModEffects): those caught have it the whole domain and this long after it ends, held still.
+    private static final int BRAIN_DAMAGE_AFTER = 200;
     // Saved on players taken inside, so a server stop never leaves them in the sky (see onLogin).
     private static final String BACK_TAG = "battlegroundsmod_void_back";
 
@@ -79,6 +83,8 @@ public final class InfiniteVoid {
         boolean inside;
         // Gojo pressed V again: it shatters now.
         boolean cancelled;
+        // The domain is over and Brain Damage has been given for after it.
+        boolean braindamaged;
         LivingEntity target;
         int age;
         // When the target (or the last one caught) died, -1 while they live.
@@ -147,6 +153,7 @@ public final class InfiniteVoid {
                 // Everyone inside is back in the world when it shatters.
                 Tasks.later(spec.shatterDelay(), () -> {
                     comeBack(active);
+                    brainDamage(active);
                     ACTIVE.remove(active);
                 });
                 return true;
@@ -166,6 +173,7 @@ public final class InfiniteVoid {
             if (active.inside) {
                 if (age >= close + spec.shatterDelay()) {
                     comeBack(active);
+                    brainDamage(active);
                 } else {
                     floor(active);
                 }
@@ -203,6 +211,9 @@ public final class InfiniteVoid {
                     if (acerto.paralisar() && (age - white) % HOLD_STEP == 0) {
                         // A tick of overlap so they never slip free in between.
                         Freeze.hold(victim, Math.min(HOLD_STEP + 1, release - age));
+                    }
+                    if ((age - white) % HOLD_STEP == 0 && !active.braindamaged) {
+                        victim.addEffect(new MobEffectInstance(ModEffects.BRAIN_DAMAGE, HOLD_STEP * 3, 0, false, false, true));
                     }
                     if (age >= voidTick && age < close && acerto.dano() > 0 && acerto.aCadaTicks() > 0
                             && (age - voidTick) % acerto.aCadaTicks() == 0) {
@@ -391,6 +402,22 @@ public final class InfiniteVoid {
         }
         active.back.clear();
         active.granted.clear();
+    }
+
+    // The domain is over: everyone it caught keeps Brain Damage for 10 s more, held still where they stand.
+    private static void brainDamage(Active active) {
+        if (active.braindamaged) {
+            return;
+        }
+        active.braindamaged = true;
+        for (LivingEntity victim : active.caught) {
+            if (victim == active.caster || !victim.isAlive() || victim.isRemoved() || victim.level() != active.level) {
+                continue;
+            }
+            victim.removeEffect(ModEffects.BRAIN_DAMAGE);
+            victim.addEffect(new MobEffectInstance(ModEffects.BRAIN_DAMAGE, BRAIN_DAMAGE_AFTER, 0, false, false, true));
+            Freeze.hold(victim, BRAIN_DAMAGE_AFTER);
+        }
     }
 
     // Moves someone, held still or not, keeping how they look.

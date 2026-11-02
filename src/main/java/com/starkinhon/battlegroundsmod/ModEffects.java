@@ -44,6 +44,15 @@ public final class ModEffects {
     // (combat/Stun). Keeps a fight from turning into both sides spamming. Length in padrao.combo.json.
     public static final DeferredHolder<MobEffect, MobEffect> COOLDOWN = MOB_EFFECTS.register("cooldown", () -> new Harmful(0x78AAE6));
 
+    // Brain Damage: caught in Gojo's domain, the infinite information leaves the brain fried. No moving, no jumping,
+    // no attacks or skills: through the whole domain and for 10 s after it ends (power/powers/gojo/InfiniteVoid).
+    public static final DeferredHolder<MobEffect, MobEffect> BRAIN_DAMAGE = MOB_EFFECTS.register("brain_damage",
+            () -> new Harmful(0xD68CBE)
+                    .addAttributeModifier(Attributes.MOVEMENT_SPEED, ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "brain_damage_speed"),
+                            -1, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL)
+                    .addAttributeModifier(Attributes.JUMP_STRENGTH, ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "brain_damage_jump"),
+                            -1, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
+
     private ModEffects() {
     }
 
