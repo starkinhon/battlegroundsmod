@@ -11,7 +11,7 @@ import net.minecraft.world.phys.Vec3;
 //   meteors, Hakai balls, energy, spheres), and he takes no damage (Infinity) until the void is complete.
 // - branco (fases.branco): a line of light runs out along the ground from Gojo and round bubbles of white pop up
 //   everywhere behind it, swell and merge, until everything within dominio.raio blocks is white but the people. Seen in
-//   game by everyone. The frozen attacks are erased. Everyone the white reaches is caught.
+//   game by everyone. The frozen attacks are erased. Everyone within raio was caught (held still) at the press.
 // - tunel (fases.tunel): Gojo and his target stand still face to face, 20 blocks apart (no cutscene). Inside,
 //   streaks of violet, magenta, red and blue light rush past into a far vanishing point,
 //   faster and faster, with the screen stretching with speed. From outside it is already a smooth black ball.
@@ -34,7 +34,7 @@ public record DominioSpec(String skill, String nome, Tempo tempo, Fases fases, D
     public record Dominio(double raio, double raioChoque, int ondaTick, boolean pararUsuario) {
     }
 
-    // paralisar: everyone inside is held still (Freeze) from when the white reaches them to the end, also anyone who
+    // paralisar: everyone inside is held still (Freeze) from the press to the end, also anyone who
     // walks in later. dano: damage every aCadaTicks to each of them during the void (0 = none, Gojo does the beating).
     public record Acerto(boolean paralisar, double dano, int aCadaTicks) {
     }
