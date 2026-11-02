@@ -63,7 +63,7 @@
       "giro": 0,
       "bracoDir": {
         "frente": -6,
-        "abrir": 12
+        "abrir": 4
       },
       "bracoEsq": {
         "frente": 25,
