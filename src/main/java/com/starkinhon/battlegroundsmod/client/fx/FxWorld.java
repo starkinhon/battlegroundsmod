@@ -220,6 +220,7 @@ public final class FxWorld {
             FxDraw.begin(source, event.getCamera(), flat);
             DomainScene.overlay(camera, now, partial);
             source.endBatch(flat ? FxRenderTypes.FLAT_ALPHA : FxRenderTypes.VFX_ALPHA);
+            endDecals(source);
         }
         if (!space && DomainScene.active()) {
             // The players and mobs caught in the white, over the bubbles and their glow.
@@ -446,6 +447,13 @@ public final class FxWorld {
 
     private static com.mojang.blaze3d.vertex.VertexConsumer decalGlow(Efeito e) {
         RenderType type = FxRenderTypes.decalGlow(texture(e));
+        USED_DECALS.add(type);
+        return buffers.getBuffer(type);
+    }
+
+    // A picture by its own texture (Gojo's ink splashes), drawn with the other decals.
+    static com.mojang.blaze3d.vertex.VertexConsumer decal(ResourceLocation texture) {
+        RenderType type = FxRenderTypes.decal(texture);
         USED_DECALS.add(type);
         return buffers.getBuffer(type);
     }

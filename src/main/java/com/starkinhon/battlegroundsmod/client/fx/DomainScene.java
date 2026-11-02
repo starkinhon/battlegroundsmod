@@ -68,6 +68,16 @@ public final class DomainScene {
     private static final float[] PINK = FxDraw.rgb(0xFFD6FF);
     private static final float[] SILVER = FxDraw.rgb(0xCFE8FF);
     private static final int VIEW = 192;
+    // Stark's ink splashes (textures/fx/gojo_ink/1..12.png, white on clear), tinted black or white, used for every
+    // splash of ink inside the domain.
+    private static final net.minecraft.resources.ResourceLocation[] INK = new net.minecraft.resources.ResourceLocation[12];
+
+    static {
+        for (int i = 0; i < INK.length; i++) {
+            INK[i] = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(com.starkinhon.battlegroundsmod.BattlegroundsMod.MODID,
+                    "textures/fx/gojo_ink/" + (i + 1) + ".png");
+        }
+    }
     // The cracks run for this long before it shatters.
     private static final int CRACK_TICKS = 14;
     // The shards: the sphere cut on a grid of LAT x LON cells, two triangles each.
@@ -695,7 +705,7 @@ public final class DomainScene {
             Vector3f p = new Vector3f(eye).add(new Vector3f(x).mul(Mth.cos(ang) * rr)).add(new Vector3f(y).mul(Mth.sin(ang) * rr * 0.8f));
             float s = size * (0.07f + 0.12f * FxWorld.hash(811 + round, k, 4)) * (1 - 0.6f * u);
             float fade = Math.min(1, u * 6) * Math.min(1, (1 - u) * 5);
-            FxDraw.billboard(p, s, ang + u, FxDraw.SPLAT, FxWorld.hash(811 + round, k, 5), BLACK, 0.95f * fade * in, false);
+            ink(p, s, ang + u, FxWorld.hash(811 + round, k, 5), BLACK, 0.95f * fade * in);
         }
     }
 
@@ -856,8 +866,8 @@ public final class DomainScene {
             float rr = 5 + 25 * FxWorld.hash(933, k, 2);
             double z = 400 - ((run * 0.8 + FxWorld.hash(933, k, 4) * range) % range);
             Vector3f p = new Vector3f(a).mul((float) z).add(new Vector3f(x).mul(Mth.cos(ang) * rr)).add(new Vector3f(y).mul(Mth.sin(ang) * rr));
-            FxDraw.billboard(p, 1.5f + 4 * FxWorld.hash(933, k, 3), FxWorld.hash(933, k, 5) * 6, FxDraw.SPLAT, FxWorld.hash(933, k, 6), WHITE,
-                    0.85f * in * smooth(400, 230, (float) z), false);
+            ink(p, 1.5f + 4 * FxWorld.hash(933, k, 3), FxWorld.hash(933, k, 5) * 6, FxWorld.hash(933, k, 6), WHITE,
+                    0.85f * in * smooth(400, 230, (float) z));
         }
     }
 
@@ -969,7 +979,7 @@ public final class DomainScene {
             Vector3f p = new Vector3f(c).add(base).add(drift).add(0, 4, 0);
             float fade = smooth(0, 0.15f, u) * smooth(1, 0.7f, u);
             float s = 4 + 12 * FxWorld.hash(seed, k, 4);
-            FxDraw.billboard(p, s, FxWorld.hash(seed, k, 5) * 6 + u * 0.6f, FxDraw.SPLAT, FxWorld.hash(seed, k, 6), WHITE, 0.9f * fade * in, false);
+            ink(p, s, FxWorld.hash(seed, k, 5) * 6 + u * 0.6f, FxWorld.hash(seed, k, 6), WHITE, 0.9f * fade * in);
         }
     }
 
@@ -1137,6 +1147,16 @@ public final class DomainScene {
     }
 
     // ------------------------------------------------------------------------------------------------------------------
+
+    // One of Stark's ink splashes, picked by pick (0 to 1), facing the camera. The picture fills its square, where the
+    // old drawn splash only filled the middle, so it is drawn a bit smaller.
+    private static void ink(Vector3f at, float size, float spin, float pick, float[] rgb, float opacity) {
+        if (opacity <= 0.003f) {
+            return;
+        }
+        int i = Math.min(INK.length - 1, Math.max(0, (int) (pick * INK.length)));
+        FxDraw.billboard(FxWorld.decal(INK[i]), at, size * 0.75f, spin, rgb, Math.min(1, opacity));
+    }
 
     private static float smooth(float a, float b, float x) {
         float t = Mth.clamp((x - a) / (b - a), 0, 1);
