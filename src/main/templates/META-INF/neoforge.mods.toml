@@ -39,11 +39,11 @@ displayName="${mod_name}" #mandatory
 #logoFile="battlegroundsmod.png" #optional
 
 # A text field displayed in the mod UI
-credits="Stark (starkinhon) e Jao. Mod feito por fãs, sem ligação oficial com Naruto, Dragon Ball ou seus donos."
+credits="Stark (starkinhon) e Claude. Mod feito por fãs, sem ligação oficial com Naruto, Dragon Ball ou seus donos."
 
 # The authors of the mod, displayed in the mod UI (optional)
 #authors=""
-authors="starkinhon, Jao"
+authors="starkinhon, Claude"
 
 # The description text for the mod (multi line!) (#mandatory)
 description='''

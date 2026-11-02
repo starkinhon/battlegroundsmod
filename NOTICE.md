@@ -16,7 +16,6 @@ techniques belong to their respective owners.
 ## Créditos / Credits
 
 - Ideia, direção, sons e texturas: **Stark** (starkinhon)
-- Colaboração: **Jao**
 - Código e efeitos escritos com a ajuda do Claude (Anthropic)
 - Template de build: NeoForge MDK (MIT, ver `TEMPLATE_LICENSE.txt`)
 
