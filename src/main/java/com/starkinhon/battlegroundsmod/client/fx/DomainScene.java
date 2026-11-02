@@ -46,7 +46,7 @@ import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 //   everywhere and merging until all is white but the people; then it tears open into the tunnel;
 // - the tunnel (only inside): black ink eats the white, then streaks of violet, magenta, red and blue light rush out of
 //   a far dark point past the camera, faster and faster, the screen stretching with the speed;
-// - the void (only inside): no walls and no floor, endless depth: stars and a blue haze on every side, far behind Gojo a
+// - the void (only inside, a space of its own above the world): no walls, a still mirror of water for a floor, endless depth: stars and a blue haze on every side, far behind Gojo a
 //   black hole turning in rings of blue light with black ink and sparks pulled into it, white ink drifting by, and
 //   a ring of water under everyone every 2 seconds. From outside, all this time, a smooth black ball;
 // - the end: cracks of light run all over the sphere, then it shatters like glowing glass, black and white shards
@@ -97,6 +97,9 @@ public final class DomainScene {
     static final class Domain {
         final int caster;
         final Vec3 center;
+        // The floor of the inside, a space of its own straight above center (DominioSpec.arena): from the tunnel to the
+        // shatter everyone in the domain is up there.
+        final Vec3 inner;
         final DominioSpec spec;
         final double start;
         // Where Gojo faced when he started: the black hole is far behind him, the tunnel runs towards it.
@@ -110,6 +113,7 @@ public final class DomainScene {
         Domain(int caster, Vec3 center, DominioSpec spec, double start, Vec3 forward) {
             this.caster = caster;
             this.center = center;
+            this.inner = DominioSpec.arena(Minecraft.getInstance().level, center);
             this.spec = spec;
             this.start = start;
             this.forward = forward;
@@ -136,8 +140,13 @@ public final class DomainScene {
             return fired.add(key);
         }
 
+        // The domain's middle nearest pos: up inside, or out in the world.
+        Vec3 hub(Vec3 pos) {
+            return pos.distanceToSqr(inner) < pos.distanceToSqr(center) ? inner : center;
+        }
+
         boolean contains(Vec3 pos) {
-            return pos.distanceToSqr(center) < radius() * radius();
+            return pos.distanceToSqr(hub(pos)) < radius() * radius();
         }
 
         // What a camera at pos sees at time t.
@@ -149,7 +158,7 @@ public final class DomainScene {
             if (t < spec.tunnelTick() || closeAt() < spec.tunnelTick()) {
                 return dist < spec.whiteRadius(t) ? Stage.WHITE : Stage.NONE;
             }
-            if (dist >= radius()) {
+            if (pos.distanceTo(hub(pos)) >= radius()) {
                 return Stage.NONE;
             }
             return t < spec.voidTick() ? Stage.TUNNEL : Stage.VOID;
@@ -359,7 +368,7 @@ public final class DomainScene {
             clear();
             return;
         }
-        DOMAINS.removeIf(d -> time(d, 0) > d.goneAt() + 1 || minecraft.player.position().distanceToSqr(d.center) > VIEW * VIEW * 4);
+        DOMAINS.removeIf(d -> time(d, 0) > d.goneAt() + 1 || minecraft.player.position().distanceToSqr(d.hub(minecraft.player.position())) > VIEW * VIEW * 4);
         RIPPLES.removeIf(r -> ScreenFx.now() - r.born() > RIPPLE_EVERY);
         if (DOMAINS.isEmpty()) {
             STILL.clear();
@@ -370,7 +379,7 @@ public final class DomainScene {
             double t = time(d, 0);
             DominioSpec spec = d.spec;
             boolean caster = minecraft.player.getId() == d.caster;
-            double dist = camera.distanceTo(d.center);
+            double dist = camera.distanceTo(d.hub(camera));
             Stage stage = d.stage(camera, t);
             boolean victim = !caster && d.contains(minecraft.player.getEyePosition()) && t >= spec.tunnelTick() && t < d.shatterAt();
 
@@ -391,7 +400,7 @@ public final class DomainScene {
                     ScreenFx.fovKick(-18, 14);
                     // The screen shakes as the white tears open.
                     com.starkinhon.battlegroundsmod.client.ScreenShake.start(3.5f, 34);
-                    ScreenFx.impactFrame(TUNNEL_IMPACT, IMPACT_TICKS, 0xFFFFFF, d.center.add(0, 1.4, 0), 0);
+                    ScreenFx.impactFrame(TUNNEL_IMPACT, IMPACT_TICKS, 0xFFFFFF, d.hub(camera).add(0, 1.4, 0), 0);
                 }
             }
             if (stage == Stage.VOID && d.once("apex")) {
@@ -408,7 +417,7 @@ public final class DomainScene {
                 victimSounds(d, t, minecraft);
             }
             if (t >= d.closeAt() && d.once("crack") && dist < d.radius() + 30) {
-                ScreenFx.impactFrame(new int[] {3}, 2, 0xFFFFFF, d.center.add(0, 2, 0), 0);
+                ScreenFx.impactFrame(new int[] {3}, 2, 0xFFFFFF, d.hub(camera).add(0, 2, 0), 0);
             }
             if (t >= d.shatterAt() && d.once("shatter") && dist < d.radius() + 60) {
                 ScreenFx.flash(0xFFFFFF, dist < d.radius() ? 0.9f : 0.5f, 12);
@@ -418,7 +427,27 @@ public final class DomainScene {
             if (t >= spec.voidTick() && t < d.shatterAt()) {
                 steps(d, minecraft);
             }
+            if (t >= spec.tunnelTick() - 2 && t < d.shatterAt() + 4) {
+                floor(d, minecraft.player);
+            }
         }
+    }
+
+    // The inside's own floor holds the local player up (there are no blocks up there): never below it, standing on it,
+    // so they walk and jump on it like on the ground. The server keeps the same floor (InfiniteVoid.floor).
+    private static void floor(Domain d, net.minecraft.client.player.LocalPlayer player) {
+        Vec3 pos = player.position();
+        if (d.hub(pos) != d.inner || d.inner == d.center || pos.distanceTo(d.inner) > d.radius() + 8 || pos.y > d.inner.y + 0.001) {
+            return;
+        }
+        if (player.getAbilities().flying) {
+            player.getAbilities().flying = false;
+        }
+        player.setPos(pos.x, d.inner.y, pos.z);
+        Vec3 v = player.getDeltaMovement();
+        player.setDeltaMovement(v.x, Math.max(0, v.y), v.z);
+        player.setOnGround(true);
+        player.resetFallDistance();
     }
 
     // On the screen of those caught: a heart slowing down, a high whine now and then, and a frame that stutters.
@@ -437,7 +466,7 @@ public final class DomainScene {
         }
         if (t >= d.nextStutter) {
             if (!FxConfig.on(FxConfig.REDUCED_FLASH)) {
-                ScreenFx.impactFrame(new int[] {2}, 1, 0x7FD8FF, d.center.add(0, 1, 0), 0);
+                ScreenFx.impactFrame(new int[] {2}, 1, 0x7FD8FF, d.hub(minecraft.player.position()).add(0, 1, 0), 0);
             }
             d.nextStutter = t + 40 + 40 * FxWorld.hash((int) t, 3, 1);
         }
@@ -918,7 +947,8 @@ public final class DomainScene {
                     in * Mth.sin(u * Mth.PI), true);
         }
         // Dust hanging in the void around them (fixed in the world, so it slides past as they look around).
-        Vector3f c = d.center.subtract(camera).toVector3f();
+        Vector3f c = d.hub(camera).subtract(camera).toVector3f();
+        waterFloor(d, c, eye, size, now, in, haze, ringColor);
         for (int k = 0; k < 170; k++) {
             Vector3f p = FxWorld.sphere(951, k).mul(4 + 34 * FxWorld.hash(951, k, 1)).add(c).add(0, 2, 0);
             p.add(Mth.sin(now * 0.01f + k) * 0.6f, Mth.sin(now * 0.013f + k * 2) * 0.4f, Mth.cos(now * 0.011f + k) * 0.6f);
@@ -928,6 +958,25 @@ public final class DomainScene {
         whiteInk(d, c, t, now, in);
         ripples(camera, now, partial, in);
         people(d, camera, now, partial, in);
+    }
+
+    // The inside's own floor: a still, dark mirror of water under everyone, glowing faintly blue and fading out into the
+    // depth at its edges, with the black hole and its rings mirrored in it. c is the floor's middle (camera-relative).
+    private static void waterFloor(Domain d, Vector3f c, Vector3f hole, float size, float now, float in, float[] haze, float[] ringColor) {
+        Vector3f up = new Vector3f(0, 1, 0);
+        float r = (float) d.radius();
+        Vector3f g = new Vector3f(c).add(0, 0.02f, 0);
+        FxDraw.disk(g, up, r * 2.6f, FxDraw.SOFT, 0.05f, haze, 0.16f * in, true);
+        FxDraw.disk(g, up, r * 1.2f, FxDraw.SOFT, 0.1f, SILVER, 0.05f * in, true);
+        // Slow wide rings of calm water running out from the middle.
+        for (int k = 0; k < 4; k++) {
+            float u = ((now * 0.004f) + k / 4f) % 1f;
+            FxDraw.disk(g, up, r * 2.4f * u, FxDraw.RING, 0.04f, SILVER, 0.08f * in * (1 - u) * Math.min(1, u * 6), true);
+        }
+        // The hole mirrored in the water: as far below the floor as it is above it.
+        Vector3f mirror = new Vector3f(hole.x, 2 * g.y - hole.y, hole.z);
+        FxDraw.billboard(mirror, size * 1.3f, 0, FxDraw.SOFT, 0.1f, ringColor, 0.08f * in, true);
+        FxDraw.billboard(mirror, size, -now * 0.01f, FxDraw.BLACK_HOLE, 0.27f, ringColor, 0.22f * in, true);
     }
 
     // Stars on every side, a few big ones, and a blue haze (none in front of the hole).
@@ -1067,7 +1116,7 @@ public final class DomainScene {
         Vector3f[][] g = grid();
         float k = (float) Mth.clamp((t - d.closeAt()) / (d.shatterAt() - d.closeAt()), 0, 1);
         float r = (float) d.radius() * 1.004f;
-        Vector3f c = d.center.subtract(camera).toVector3f();
+        Vector3f c = d.hub(camera).subtract(camera).toVector3f();
         boolean inside = d.contains(camera);
         int edge = 0;
         for (int i = 0; i < LAT; i++) {
