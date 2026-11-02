@@ -164,9 +164,10 @@ public final class DomainScene {
     private static final int RIPPLE_EVERY = 40;
     // How long the white takes to tear open into the tunnel, in ticks.
     private static final int BURST_TICKS = 16;
-    // The tunnel opens on impact frames, white, black, then purple (IMPACT_TICKS each), before the white tears.
+    // The tunnel opens on a long run of black and white impact frames (IMPACT_TICKS each) with a hard shake, before the
+    // white tears: manga (black ink on white) and black paper with white ink, back and forth.
     private static final int IMPACT_TICKS = 2;
-    private static final int[] TUNNEL_IMPACT = {0, 4, 1};
+    private static final int[] TUNNEL_IMPACT = {3, 4, 3, 4, 3, 4, 3};
     private static final int TUNNEL_FRAMES = IMPACT_TICKS * TUNNEL_IMPACT.length;
     private static float lastPartial;
     // The shards' corners on a unit sphere, jittered (made once).
@@ -364,7 +365,6 @@ public final class DomainScene {
             boolean victim = !caster && d.contains(minecraft.player.getEyePosition()) && t >= spec.tunnelTick() && t < d.shatterAt();
 
             if (t >= spec.ondaTick() && d.once("onda") && dist < 110) {
-                ScreenFx.impactFrame(new int[] {4, 3, 4}, 2, 0x9FE8FF, d.center.add(0, 1.4, 0), 0);
                 ScreenFx.warp(d.center.add(0, 1.2, 0), (float) spec.dominio().raioChoque(), 0.55f, 26, 0, new Vec3(0, 1, 0), 0xCFF4FF, 0.08f, 20, -1,
                         null, 0);
                 ScreenFx.fovKick(caster ? -4 : 9, 14);
@@ -378,10 +378,10 @@ public final class DomainScene {
                 ScreenFx.sustainBlur(camera.add(a.x * 120, 0, a.z * 120), (float) (0.25 + 1.7 * u * u));
                 ScreenFx.sustainFov((float) (4 + 30 * u * u));
                 if (d.once("tunnelIn")) {
-                    ScreenFx.fovKick(-14, 10);
+                    ScreenFx.fovKick(-18, 14);
                     // The screen shakes as the white tears open.
-                    com.starkinhon.battlegroundsmod.client.ScreenShake.start(2.2f, 22);
-                    ScreenFx.impactFrame(TUNNEL_IMPACT, IMPACT_TICKS, 0xA040FF, d.center.add(0, 1.4, 0), 0);
+                    com.starkinhon.battlegroundsmod.client.ScreenShake.start(3.5f, 34);
+                    ScreenFx.impactFrame(TUNNEL_IMPACT, IMPACT_TICKS, 0xFFFFFF, d.center.add(0, 1.4, 0), 0);
                 }
             }
             if (stage == Stage.VOID && d.once("apex")) {
@@ -1310,17 +1310,18 @@ public final class DomainScene {
     // Gojo's words, in game: "Expansão de Domínio:" during the sign, "Vazio Infinito." as the white comes out.
     private static void caption(GuiGraphics graphics, Minecraft minecraft, Domain d, double t) {
         DominioSpec spec = d.spec;
-        double first = Math.max(4, spec.ondaTick() - 46);
+        // The shockwave goes off the instant the skill is used; the words come after it.
+        double first = spec.ondaTick() + 10;
         double second = spec.whiteTick() + 2;
         String text;
         double from;
         double to;
         int color;
         float size;
-        if (t >= first && t < spec.ondaTick()) {
+        if (t >= first && t < spec.whiteTick() - 4) {
             text = "Expansão de Domínio:";
             from = first;
-            to = spec.ondaTick();
+            to = spec.whiteTick() - 4;
             color = 0xFFFFFF;
             size = 1.6f;
         } else if (t >= second && t < second + 60) {
