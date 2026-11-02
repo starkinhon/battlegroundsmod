@@ -51,6 +51,10 @@ public final class Freeze {
         float startYaw = entity.getYRot();
         float startPitch = entity.getXRot();
         Tasks.addSystem(age -> {
+            if (HELD.get(entity) != hold) {
+                // Let go early (free).
+                return true;
+            }
             if (age >= ticks || !entity.isAlive() || entity.isRemoved()) {
                 release(entity);
                 return true;
@@ -101,6 +105,14 @@ public final class Freeze {
             entity.moveTo(pos.x, pos.y, pos.z, yaw, pitch);
         }
         face(entity, yaw, pitch);
+    }
+
+    // Lets someone go right away, whatever holds they still have.
+    public static void free(Entity entity) {
+        Hold hold = HELD.remove(entity);
+        if (hold != null && entity instanceof Mob mob) {
+            mob.setNoAi(hold.hadNoAi);
+        }
     }
 
     private static void release(Entity entity) {

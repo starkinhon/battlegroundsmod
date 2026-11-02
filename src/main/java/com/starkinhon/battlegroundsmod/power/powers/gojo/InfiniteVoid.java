@@ -77,6 +77,8 @@ public final class InfiniteVoid {
         // Players who were allowed to fly only for this (so the server never kicks them for floating).
         final Set<ServerPlayer> granted = new HashSet<>();
         boolean inside;
+        // Gojo pressed V again: it shatters now.
+        boolean cancelled;
         LivingEntity target;
         int age;
         // When the target (or the last one caught) died, -1 while they live.
@@ -137,7 +139,7 @@ public final class InfiniteVoid {
             boolean gone = !caster.isAlive() || caster.isRemoved() || caster.level() != level;
             // The target died (the ink plays first), or everyone caught is dead.
             boolean done = active.killedAt >= 0 && age >= active.killedAt + KILL_CLOSE_DELAY;
-            if ((gone || done) && !closing[0] && age < close) {
+            if ((gone || done || active.cancelled) && !closing[0] && age < close) {
                 // It shatters now.
                 closing[0] = true;
                 send(level, center, new ModPayloads.GojoDomain(caster.getId(), center, awakened, 1, 0));
@@ -218,6 +220,21 @@ public final class InfiniteVoid {
             return false;
         });
         return true;
+    }
+
+    // V again with the domain open: Gojo closes it himself, it shatters right away (everyone back in the world) and he can
+    // move again. Returns true when there was one to close.
+    public static boolean cancel(LivingEntity caster) {
+        for (Active active : ACTIVE) {
+            if (active.caster == caster && !active.cancelled && active.age < active.spec.closeTick()) {
+                active.cancelled = true;
+                caster.getData(ModAttachments.POWER).busyTicks = 0;
+                Freeze.free(caster);
+                PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new ModPayloads.PlaySkillAnimation(caster.getId(), "", false));
+                return true;
+            }
+        }
+        return false;
     }
 
     // Infinity: nothing touches Gojo while he makes the sign and the white closes. And nobody but Gojo hurts those caught.

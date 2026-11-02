@@ -61,6 +61,10 @@ public final class PowerLogic {
             player.displayClientMessage(Component.translatable("message.battlegroundsmod.no_power"), true);
             return;
         }
+        if (PowerData.isUlt(slot) && com.starkinhon.battlegroundsmod.power.powers.gojo.InfiniteVoid.cancel(player)) {
+            // V with his domain open: Gojo closes it.
+            return;
+        }
         if (slot < 0 || slot >= PowerData.SLOT_COUNT || !canCast(player, data, slot)) {
             return;
         }
