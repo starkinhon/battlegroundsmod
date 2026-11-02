@@ -214,7 +214,7 @@ public final class InfiniteVoid {
                         Freeze.hold(victim, Math.min(HOLD_STEP + 1, release - age));
                     }
                     if (age % HOLD_STEP == 0 && !active.braindamaged) {
-                        victim.addEffect(new MobEffectInstance(ModEffects.BRAIN_DAMAGE, HOLD_STEP * 3, 0, false, false, true));
+                        brainDamage(victim, HOLD_STEP * 3);
                     }
                     if (age >= voidTick && age < close && acerto.dano() > 0 && acerto.aCadaTicks() > 0
                             && (age - voidTick) % acerto.aCadaTicks() == 0) {
@@ -416,9 +416,16 @@ public final class InfiniteVoid {
                 continue;
             }
             victim.removeEffect(ModEffects.BRAIN_DAMAGE);
-            victim.addEffect(new MobEffectInstance(ModEffects.BRAIN_DAMAGE, BRAIN_DAMAGE_AFTER, 0, false, false, true));
+            brainDamage(victim, BRAIN_DAMAGE_AFTER);
             Freeze.hold(victim, BRAIN_DAMAGE_AFTER);
         }
+    }
+
+    // Gives Brain Damage for ticks, and tells those who see them, so the letters and numbers rush into their head as long
+    // as it lasts (DomainScene.brainGlyphs).
+    private static void brainDamage(LivingEntity victim, int ticks) {
+        victim.addEffect(new MobEffectInstance(ModEffects.BRAIN_DAMAGE, ticks, 0, false, false, true));
+        PacketDistributor.sendToPlayersTrackingEntityAndSelf(victim, new ModPayloads.GojoDomain(victim.getId(), victim.position(), false, 4, ticks));
     }
 
     // Moves someone, held still or not, keeping how they look.

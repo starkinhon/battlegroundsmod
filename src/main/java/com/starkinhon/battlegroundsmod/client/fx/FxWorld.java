@@ -226,6 +226,10 @@ public final class FxWorld {
             // The players and mobs caught in the white, over the bubbles and their glow.
             DomainScene.peopleOverWhite(event);
         }
+        if (!space) {
+            // Letters and numbers rushing into the heads of those with Brain Damage.
+            DomainScene.brainGlyphs(event);
+        }
 
         RenderSystem.restoreProjectionMatrix();
         modelView.popMatrix();
