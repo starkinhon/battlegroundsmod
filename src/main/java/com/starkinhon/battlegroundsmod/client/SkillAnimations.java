@@ -140,6 +140,16 @@ public final class SkillAnimations {
         return raw < BLEND_TICKS ? playing.from().lerp(pose, raw / BLEND_TICKS) : pose;
     }
 
+    // True while the entity has a keyframe animation on screen (FirstPersonAnimation draws the arms from it).
+    public static boolean keyframed(LivingEntity entity, float ageInTicks) {
+        Keyframed keyframed = KEYFRAMED.get(entity.getId());
+        if (keyframed == null) {
+            return false;
+        }
+        double raw = ageInTicks - keyframed.startTick();
+        return raw >= -1 && raw <= keyframed.endTicks() + KEYFRAME_OUT;
+    }
+
     // Called after the vanilla pose is set up. Angles are added on top, so the head still follows the aim.
     public static void apply(LivingEntity entity, HumanoidModel<?> model, float ageInTicks) {
         Keyframed keyframed = KEYFRAMED.get(entity.getId());
