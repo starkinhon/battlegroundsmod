@@ -955,9 +955,87 @@ public final class DomainScene {
             float tw = 0.4f + 0.6f * Math.max(0, Mth.sin(now * (0.05f + 0.08f * FxWorld.hash(951, k, 2)) + k));
             FxDraw.billboard(p, 0.06f + 0.12f * FxWorld.hash(951, k, 3), 0, FxDraw.SOFT, 0.9f, k % 3 == 0 ? ringColor : WHITE, tw * 0.8f * in, true);
         }
+        winds(c, now, in, ringColor);
         whiteInk(d, c, t, now, in);
         ripples(camera, now, partial, in);
         people(d, camera, now, partial, in);
+    }
+
+    // Wind among the ink, like the references: long thin threads of light streaking round the people, quick dashes
+    // that blink in and out, and wide soft sheets of air sweeping round in slow arcs. Everything turns the same way
+    // round the middle, appears, flies and fades. c is the middle (camera-relative).
+    private static void winds(Vector3f c, float now, float in, float[] ringColor) {
+        if (in <= 0) {
+            return;
+        }
+        // Threads: curved streaks flying fast round the middle.
+        for (int k = 0; k < 70; k++) {
+            float life = 18 + 22 * FxWorld.hash(971, k, 1);
+            double cycle = (now + FxWorld.hash(971, k, 2) * life) / life;
+            int round = (int) Math.floor(cycle);
+            float u = (float) (cycle - round);
+            float r = 5 + 32 * FxWorld.hash(971 + round, k, 3);
+            float h = -1 + 15 * FxWorld.hash(971 + round, k, 4);
+            float len = (3 + 9 * FxWorld.hash(971 + round, k, 5)) / r;
+            float a = FxWorld.hash(971 + round, k, 6) * Mth.TWO_PI + u * 40 / r;
+            float fade = Mth.sin(u * Mth.PI) * in;
+            float[] color = k % 4 == 0 ? ringColor : k % 3 == 0 ? SILVER : WHITE;
+            float w = 0.03f + 0.07f * FxWorld.hash(971 + round, k, 7);
+            Vector3f prev = null;
+            for (int i = 0; i <= 3; i++) {
+                float ang = a - len * i / 3f;
+                Vector3f p = new Vector3f(Mth.cos(ang) * r, h + 0.4f * Mth.sin(ang * 3 + k), Mth.sin(ang) * r).add(c);
+                if (prev != null) {
+                    float tail = 1 - (i - 1) / 3f;
+                    FxDraw.ribbon(p, prev, w * (0.4f + 0.6f * tail), FxDraw.STREAK, 0.9f, color, 0.9f * fade * tail, true);
+                }
+                prev = p;
+            }
+        }
+        // Dashes: short sparks of light blinking on and off where the wind passes.
+        for (int k = 0; k < 60; k++) {
+            float life = 6 + 8 * FxWorld.hash(973, k, 1);
+            double cycle = (now + FxWorld.hash(973, k, 2) * life) / life;
+            int round = (int) Math.floor(cycle);
+            float u = (float) (cycle - round);
+            float r = 3 + 36 * FxWorld.hash(973 + round, k, 3);
+            float ang = FxWorld.hash(973 + round, k, 4) * Mth.TWO_PI + u * 6 / r;
+            float h = -1 + 16 * FxWorld.hash(973 + round, k, 5);
+            Vector3f p = new Vector3f(Mth.cos(ang) * r, h, Mth.sin(ang) * r).add(c);
+            Vector3f along = new Vector3f(-Mth.sin(ang), 0, Mth.cos(ang)).mul(0.5f + 0.9f * FxWorld.hash(973 + round, k, 6));
+            float blink = Mth.sin(u * Mth.PI);
+            blink *= blink;
+            FxDraw.ribbon(new Vector3f(p).sub(along), new Vector3f(p).add(along), 0.09f, FxDraw.STREAK, 0.9f, k % 3 == 0 ? ringColor : WHITE,
+                    blink * in, true);
+            FxDraw.billboard(p, 0.5f, 0, FxDraw.SOFT, 0.5f, WHITE, 0.35f * blink * in, true);
+        }
+        // Sheets of air: wide soft ribbons sweeping round in long arcs, slowly, fading at both ends.
+        for (int k = 0; k < 9; k++) {
+            float life = 70 + 50 * FxWorld.hash(977, k, 1);
+            double cycle = (now + FxWorld.hash(977, k, 2) * life) / life;
+            int round = (int) Math.floor(cycle);
+            float u = (float) (cycle - round);
+            float r = 9 + 26 * FxWorld.hash(977 + round, k, 3);
+            float h = 0 + 12 * FxWorld.hash(977 + round, k, 4);
+            float tilt = (FxWorld.hash(977 + round, k, 5) - 0.5f) * 0.5f;
+            float span = 1.2f + 1.4f * FxWorld.hash(977 + round, k, 6);
+            float start = FxWorld.hash(977 + round, k, 7) * Mth.TWO_PI + u * 1.6f;
+            float w = 1.2f + 2.2f * FxWorld.hash(977 + round, k, 8);
+            float life01 = Mth.sin(u * Mth.PI) * in;
+            int pieces = 16;
+            Vector3f prev = null;
+            for (int i = 0; i <= pieces; i++) {
+                float f = i / (float) pieces;
+                float ang = start - span * f;
+                Vector3f p = new Vector3f(Mth.cos(ang) * r, h + Mth.sin(ang) * r * tilt, Mth.sin(ang) * r).add(c);
+                if (prev != null) {
+                    float edge = Mth.sin(f * Mth.PI);
+                    FxDraw.ribbon(p, prev, w * (0.5f + 0.5f * edge), FxDraw.BEAM, 0.25f, k % 2 == 0 ? SILVER : ringColor, 0.09f * edge * life01, true);
+                    FxDraw.ribbon(p, prev, w * 0.15f, FxDraw.BEAM, 0.6f, WHITE, 0.12f * edge * life01, true);
+                }
+                prev = p;
+            }
+        }
     }
 
     // The inside's own floor: a still, dark mirror of water under everyone, glowing faintly blue and fading out into the
