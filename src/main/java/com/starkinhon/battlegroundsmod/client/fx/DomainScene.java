@@ -80,6 +80,8 @@ public final class DomainScene {
     }
     // The cracks run for this long before it shatters.
     private static final int CRACK_TICKS = 14;
+    // "Expansão de Domínio:" shows when Gojo starts the hand sign.
+    private static final int CAPTION_TICK = 46;
     // The shards: the sphere cut on a grid of LAT x LON cells, two triangles each.
     private static final int LAT = 9;
     private static final int LON = 18;
@@ -1514,8 +1516,9 @@ public final class DomainScene {
     // Gojo's words, in game: "Expansão de Domínio:" during the sign, "Vazio Infinito." as the white comes out.
     private static void caption(GuiGraphics graphics, Minecraft minecraft, Domain d, double t) {
         DominioSpec spec = d.spec;
-        // The shockwave goes off the instant the skill is used; the words come after it.
-        double first = spec.ondaTick() + 10;
+        // The shockwave goes off the instant the skill is used; the words come with Gojo's hand sign (his hand-made
+        // animation, animations/gojo.dominio.json, starts the sign at 2.375 s).
+        double first = Math.max(spec.ondaTick() + 10, CAPTION_TICK);
         double second = spec.whiteTick() + 2;
         String text;
         double from;
