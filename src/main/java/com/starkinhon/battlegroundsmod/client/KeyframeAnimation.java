@@ -23,7 +23,7 @@ import net.minecraft.util.Mth;
 // assets/battlegroundsmod/animations/<skill>.json, in the same shape as Minecraft's own animations:
 // {"length": s, "animations": [{"bone": "Right Arm", "target": "rotation" | "position",
 //   "keyframes": [{"timestamp": s, "target": [x, y, z], "interpolation": "linear" | "catmullrom"}]}]}
-// Rotations are degrees added to the bone; positions are pixels (y up, as in the editor). Before the first keyframe a
+// Rotations are degrees and positions pixels, as the editor shows them (x and y flipped into Minecraft's axes). Before the first keyframe a
 // channel holds its first value, after the last its last, so the final pose stays as long as the skill wants it.
 // Bones: Head, Body, Right Arm, Left Arm, Right Leg, Left Leg (spaces, underscores and case don't matter).
 public final class KeyframeAnimation {
@@ -88,13 +88,15 @@ public final class KeyframeAnimation {
                 continue;
             }
             float[] v = sample(channel.keys(), seconds);
+            // The editor's axes are Minecraft's turned half round the forward axis (its x and y point the other way, as
+            // in Blockbench), so x and y flip, for both turning and moving.
             if (channel.position()) {
-                part.x += v[0] * weight;
+                part.x -= v[0] * weight;
                 part.y -= v[1] * weight;
                 part.z += v[2] * weight;
             } else {
-                part.xRot += v[0] * DEG * weight;
-                part.yRot += v[1] * DEG * weight;
+                part.xRot -= v[0] * DEG * weight;
+                part.yRot -= v[1] * DEG * weight;
                 part.zRot += v[2] * DEG * weight;
             }
         }
