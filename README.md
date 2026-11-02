@@ -1,5 +1,5 @@
 # battlegroundsmod
-Colaboração | Jao e Stark 
+Feito por Stark e Claude
 
 ## Licença
 
