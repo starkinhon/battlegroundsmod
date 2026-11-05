@@ -91,7 +91,7 @@ public class OutfitLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<A
 
         for (OutfitDefs.Piece piece : def.pieces()) {
             ModelPart part = part(model, piece.bone());
-            if (!part.visible) {
+            if (!part.visible || piece.bone() == Rig.Bone.HAND_R && !player.getMainHandItem().isEmpty()) {
                 continue;
             }
             poseStack.pushPose();
@@ -119,7 +119,7 @@ public class OutfitLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<A
         return switch (bone) {
             case HEAD -> model.head;
             case BODY -> model.body;
-            case ARM_R -> model.rightArm;
+            case ARM_R, HAND_R -> model.rightArm;
             case ARM_L -> model.leftArm;
             case LEG_R -> model.rightLeg;
             case LEG_L -> model.leftLeg;
@@ -178,7 +178,7 @@ public class OutfitLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<A
     // leg pivots sit a little off the vanilla ones, so those get nudged sideways.
     private static float offX(Rig.Bone bone) {
         return switch (bone) {
-            case ARM_R -> -1;
+            case ARM_R, HAND_R -> -1;
             case ARM_L -> 1;
             case LEG_R -> -0.1f;
             case LEG_L -> 0.1f;

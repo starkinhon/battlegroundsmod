@@ -27,6 +27,8 @@ final class OutfitDefs {
     static final ResourceLocation LACQUER = tex("lacquer");
     static final ResourceLocation DOU = tex("dou");
     static final ResourceLocation NAVY = tex("navy");
+    static final ResourceLocation SWORD_WRAP = tex("sword_wrap");
+    static final ResourceLocation SWORD_WRAP_SIDE = tex("sword_wrap_side");
 
     record Piece(Rig.Bone bone, ResourceLocation texture, float[] tris) {
     }
@@ -304,6 +306,182 @@ final class OutfitDefs {
         return pts.toArray(new float[0][]);
     }
 
+
+    // ================================================= AIZEN: SWORD ==================================================
+    // The sword from the Armario/Guarda-roupa viewer ("Espada do Aizen"), approved by Stark on 2026-11-05 as final.
+    // Built in its own space (+y = tip, x = blade width with the edge at +x, z = thickness, origin = top of the guard),
+    // then placed in the right fist: edge forward and down, blade forward and up about 44 degrees with the arm hanging.
+
+    // One ring of a low-poly prism: a convex polygon of (x, z) points at height y.
+    private record Ring(float y, float[][] pts) {
+    }
+
+    private interface FaceGeo {
+        Geo at(int face);
+    }
+
+    private static float[][] oct(float hx, float hz, float c) {
+        return new float[][] {{hx - c, -hz}, {hx, -hz + c}, {hx, hz - c}, {hx - c, hz}, {-hx + c, hz}, {-hx, hz - c}, {-hx, -hz + c}, {-hx + c, -hz}};
+    }
+
+    private static float[][] scaled(float[][] pts, float k) {
+        float[][] out = new float[pts.length][];
+        for (int i = 0; i < pts.length; i++) {
+            out[i] = new float[] {pts[i][0] * k, pts[i][1] * k};
+        }
+        return out;
+    }
+
+    // Pulls a convex counter-clockwise polygon in by d.
+    private static float[][] inset(float[][] pts, float d) {
+        int n = pts.length;
+        float[][] lines = new float[n][];
+        for (int i = 0; i < n; i++) {
+            float[] a = pts[i], b = pts[(i + 1) % n];
+            float ex = b[0] - a[0], ey = b[1] - a[1], l = (float) Math.hypot(ex, ey);
+            lines[i] = new float[] {a[0] - ey / l * d, a[1] + ex / l * d, ex, ey};
+        }
+        float[][] out = new float[n][];
+        for (int i = 0; i < n; i++) {
+            float[] l = lines[i], m = lines[(i + n - 1) % n];
+            float den = m[2] * l[3] - m[3] * l[2];
+            float t = ((l[0] - m[0]) * l[3] - (l[1] - m[1]) * l[2]) / den;
+            out[i] = new float[] {m[0] + m[2] * t, m[1] + m[3] * t};
+        }
+        return out;
+    }
+
+    // Flat sides from ring to ring, one grid per side so the edges stay sharp. Texture u goes across a side, v down it.
+    private static void prism(Ring[] rings, FaceGeo geoOf) {
+        int n = rings[0].pts().length, last = rings.length - 1;
+        float y0 = rings[0].y(), y1 = rings[last].y();
+        float cx = 0, cz = 0;
+        for (float[] q : rings[0].pts()) {
+            cx += q[0] / n;
+            cz += q[1] / n;
+        }
+        for (int i = 0; i < n; i++) {
+            Geo g = geoOf.at(i);
+            if (g == null) {
+                continue;
+            }
+            int fi = i, i2 = (i + 1) % n;
+            float[] a0 = rings[0].pts()[i], b0 = rings[0].pts()[i2];
+            float hx = (a0[0] + b0[0]) / 2 - cx, hz = (a0[1] + b0[1]) / 2 - cz;
+            g.grid(1, last, (u, v) -> {
+                Ring r = rings[Math.round(v * last)];
+                float[] a = r.pts()[fi], b = r.pts()[i2];
+                return new float[] {a[0] + (b[0] - a[0]) * u, r.y(), a[1] + (b[1] - a[1]) * u, u, 1 - (r.y() - y0) / (y1 - y0)};
+            }, null, (x, y, z) -> new Vector3f(hx, 0, hz));
+        }
+    }
+
+    private static void capRing(Geo g, Ring r, float up) {
+        int first = g.size();
+        float[][] p = r.pts();
+        for (int i = 0; i <= p.length; i++) {
+            float[] q = p[i % p.length];
+            g.vertex(q[0], r.y(), q[1], 0.5f, 0.5f, 1);
+        }
+        g.cap(first, p.length + 1, (x, y, z) -> new Vector3f(0, up, 0));
+    }
+
+    // The flat band between an outer and an inner polygon at height y (top of the guard's raised frame).
+    private static void band(Geo g, float[][] out, float[][] in, float y, float up) {
+        int n = out.length;
+        for (int i = 0; i < n; i++) {
+            float[] a = out[i], b = out[(i + 1) % n], c = in[i], d = in[(i + 1) % n];
+            g.grid(1, 1, (u, v) -> {
+                float ox = a[0] + (b[0] - a[0]) * u, oz = a[1] + (b[1] - a[1]) * u;
+                float ix = c[0] + (d[0] - c[0]) * u, iz = c[1] + (d[1] - c[1]) * u;
+                return new float[] {ox + (ix - ox) * v, y, oz + (iz - oz) * v, u, v};
+            }, null, (x, yy, z) -> new Vector3f(0, up, 0));
+        }
+    }
+
+    static final float SWORD_TSUKA = 6.6f, SWORD_BLADE = 21, SWORD_W = 0.95f, SWORD_T = 0.24f;
+    // How far the blade points up from straight ahead, in the arm's own space (arm hanging down).
+    static final float SWORD_TILT = 0.77f;
+
+    static Def aizen() {
+        Builder b = new Builder();
+        Rig.Bone hand = Rig.Bone.HAND_R;
+        Geo flat = b.geo(hand, SWORD_WRAP).color(0xFFFFFF), side = b.geo(hand, SWORD_WRAP_SIDE).color(0xFFFFFF), w = b.geo(hand, WHITE);
+        int wrapEdge = 0x1C4637, khaki = 0x8B7E5B, khakiDark = 0x5E5440, panel = 0x5A605A, under = 0x3D3427;
+        int steel = 0xB3BAC7, steelEdge = 0xD5DBE5, steelBack = 0x6B707E;
+
+        // Grip (tsuka): 8 sides, the wrap's diamonds on the wide ones, slanted bands on the narrow ones, 6% thinner at the end.
+        float tk = SWORD_TSUKA;
+        float[][] grip = oct(0.62f, 0.5f, 0.13f);
+        prism(new Ring[] {new Ring(-tk, scaled(grip, 0.94f)), new Ring(-tk / 2, scaled(grip, 0.975f)), new Ring(0, grip)},
+                i -> i == 3 || i == 7 ? flat : i == 1 || i == 5 ? side : w.color(wrapEdge));
+        // Pommel (kashira): khaki cap with a lip at the top and a bevel at the bottom.
+        float[][] kb = oct(0.66f, 0.54f, 0.15f);
+        float ky = -tk;
+        Ring kBot = new Ring(ky - 0.98f, scaled(kb, 0.8f));
+        prism(new Ring[] {kBot, new Ring(ky - 0.78f, kb), new Ring(ky - 0.12f, kb), new Ring(ky + 0.12f, scaled(kb, 0.97f))},
+                i -> w.color(i == 3 || i == 7 ? khaki : khakiDark));
+        capRing(w.color(khaki), kBot, -1);
+        Ring lipBot = new Ring(ky - 0.16f, scaled(kb, 1.07f)), lipTop = new Ring(ky + 0.04f, scaled(kb, 1.07f));
+        prism(new Ring[] {lipBot, lipTop}, i -> w.color(khakiDark));
+        capRing(w, lipBot, -1);
+        capRing(w, lipTop, 1);
+
+        // Guard (tsuba): a long hexagon across the blade's width, raised khaki frame, grey middle, dark brown underside.
+        float[][] hex = {{2.15f, 0}, {1.45f, 0.92f}, {-1.45f, 0.92f}, {-2.15f, 0}, {-1.45f, -0.92f}, {1.45f, -0.92f}};
+        float tb = -0.26f;
+        Ring pBot = new Ring(tb, hex), pTop = new Ring(0, hex);
+        prism(new Ring[] {pBot, pTop}, i -> w.color(khaki));
+        capRing(w, pBot, -1);
+        capRing(w, pTop, 1);
+        float[][] in15 = inset(hex, 0.15f), in07 = inset(hex, 0.07f);
+        Ring mid = new Ring(0.023f, in15);
+        prism(new Ring[] {new Ring(0.003f, in15), mid}, i -> w.color(panel));
+        capRing(w, mid, 1);
+        prism(new Ring[] {new Ring(0, hex), new Ring(0.07f, hex)}, i -> w.color(khaki));
+        prism(new Ring[] {new Ring(0, in15), new Ring(0.07f, in15)}, i -> w);
+        band(w, hex, in15, 0.07f, 1);
+        Ring uTop = new Ring(tb, in07), uBot = new Ring(tb - 0.02f, in07);
+        prism(new Ring[] {uBot, uTop}, i -> w.color(under));
+        capRing(w, uBot, -1);
+        // the line from point to point, on top and underneath
+        w.color(khaki);
+        Geo.box(w, 4.0f, 0.05f, 0.07f, new Matrix4f().translation(0, 0.055f, 0));
+        Geo.box(w, 4.0f, 0.03f, 0.07f, new Matrix4f().translation(0, tb - 0.03f, 0));
+        // Seppa (low plate) and habaki (the block that holds the blade).
+        float[][] seppa = oct(0.82f, 0.4f, 0.2f);
+        Ring sTop = new Ring(0.08f, seppa);
+        prism(new Ring[] {new Ring(0, seppa), sTop}, i -> w.color(khaki));
+        capRing(w, sTop, 1);
+        Geo.box(w.color(khakiDark), 1.04f, 0.62f, 0.5f, new Matrix4f().translation(0, 0.39f, 0));
+        Geo.box(w.color(khaki), 1.0f, 0.06f, 0.46f, new Matrix4f().translation(0, 0.73f, 0));
+
+        // Blade: thick back, ridge line (shinogi), thin edge, the tip (kissaki) rounding off on the edge side.
+        float len = SWORD_BLADE, kiss = 2.3f, by0 = 0.6f;
+        Ring[] rings = new Ring[27];
+        for (int k = 0; k <= 26; k++) {
+            float s = k / 26f;
+            float y = s < 0.85f ? by0 + (len - kiss - by0) * (s / 0.85f) : len - kiss + (s - 0.85f) / 0.15f * kiss;
+            y = Math.min(len, y);
+            float tap = 1 - 0.13f * (y - by0) / (len - by0), bw = SWORD_W * tap, bt = SWORD_T * tap;
+            float u = Math.max(0, (y - (len - kiss)) / kiss), back = -bw / 2;
+            float ex = u >= 1 ? back + 0.001f : back + bw * (float) Math.sqrt(Math.max(0, 1 - u * u));
+            float sx = Math.min(back + 0.55f * bw, ex - 0.02f * (1 - u)), tt = bt * (1 - 0.7f * u);
+            rings[k] = new Ring(y, new float[][] {{ex, 0}, {sx, tt * 0.42f}, {back, tt * 0.5f}, {back, -tt * 0.5f}, {sx, -tt * 0.42f}});
+        }
+        prism(rings, i -> w.color(i == 0 || i == 4 ? steelEdge : i == 2 ? steelBack : steel));
+        capRing(w.color(steel), rings[0], -1);
+
+        // Into the fist: grip across the hand, 2.2 px under the guard.
+        float a = SWORD_TILT;
+        Matrix4f hold = new Matrix4f().translation(0, -9.3f + (float) Math.sin(a) * 2.2f, (float) Math.cos(a) * 2.2f)
+                .rotateX(PI / 2 - a).rotateY(-PI / 2);
+        for (Geo g : new Geo[] {flat, side, w}) {
+            g.transform(0, hold);
+        }
+        return b.build();
+    }
+
     // ===================================================== LOOKUP ====================================================
 
     private static Map<String, Def> defs;
@@ -313,11 +491,12 @@ final class OutfitDefs {
             defs = new LinkedHashMap<>();
             defs.put("destruction_god", bills());
             defs.put("uchiha_ghost", madara());
+            defs.put("manipulator", aizen());
         }
         return defs.get(power);
     }
 
     static boolean has(String power) {
-        return "destruction_god".equals(power) || "uchiha_ghost".equals(power);
+        return "destruction_god".equals(power) || "uchiha_ghost".equals(power) || "manipulator".equals(power);
     }
 }
