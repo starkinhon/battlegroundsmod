@@ -32,7 +32,7 @@ public class AizenIllusionRenderer extends HumanoidMobRenderer<AizenIllusion, Pl
     private PlayerSkin skin(AizenIllusion entity) {
         var connection = Minecraft.getInstance().getConnection();
         PlayerInfo info = connection == null ? null : entity.owner().map(connection::getPlayerInfo).orElse(null);
-        return info != null ? info.getSkin() : entity.owner().map(DefaultPlayerSkin::get).orElse(DefaultPlayerSkin.getDefaultSkin());
+        return info != null ? info.getSkin() : entity.owner().map(DefaultPlayerSkin::get).orElseGet(() -> DefaultPlayerSkin.get(entity.getUUID()));
     }
 
     @Override
