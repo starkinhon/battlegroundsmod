@@ -18,5 +18,8 @@ techniques belong to their respective owners.
 - Ideia, direção, sons e texturas: **Stark** (starkinhon)
 - Código e efeitos escritos com a ajuda do Claude (Anthropic)
 - Template de build: NeoForge MDK (MIT, ver `TEMPLATE_LICENSE.txt`)
+- Realismo (`fx_realismo.fsh`, `Realismo.java`): técnica de volumes por depth + raymarch aprendida com o
+  [Orbital Laser](https://github.com/Stink-O/orbital-laser) de Stink-O (MIT License, Copyright (c) 2026 Stink-O).
+  Nenhum arquivo dele foi copiado; o código daqui foi escrito do zero pra GLSL/NeoForge.
 
 Licença do mod: ver [`LICENSE`](LICENSE) (All Rights Reserved).

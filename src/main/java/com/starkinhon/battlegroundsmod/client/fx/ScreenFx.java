@@ -143,7 +143,7 @@ public final class ScreenFx {
     }
 
     static boolean needsScene() {
-        return impact != null || !WARPS.isEmpty() || radial != null && radial.k(ticks) > 0 || heldBlur() > 0;
+        return Realismo.active() || impact != null || !WARPS.isEmpty() || radial != null && radial.k(ticks) > 0 || heldBlur() > 0;
     }
 
     // The level's camera for this frame, so world positions can be found on screen later (also from the GUI).
@@ -162,10 +162,15 @@ public final class ScreenFx {
         double now = ticks + levelPartial;
         boolean warp = FxConfig.on(FxConfig.DISTORTION) && !WARPS.isEmpty();
         float blur = FxConfig.on(FxConfig.RADIAL_BLUR) ? blurAt(now) : 0;
-        if (!warp && blur <= 0) {
+        boolean real = Realismo.active();
+        if (!warp && blur <= 0 && !real) {
             return;
         }
         FxPost.beginPasses();
+        // (the volumes first, so the bending and the blur carry them too)
+        if (real) {
+            Realismo.pass(VIEW, PROJ, camera, levelPartial);
+        }
         if (warp) {
             warpPass(now);
         }
@@ -184,9 +189,14 @@ public final class ScreenFx {
             boolean flat = FxShaders.flat();
             boolean warp = flat && FxConfig.on(FxConfig.DISTORTION) && !WARPS.isEmpty();
             float blur = flat && FxConfig.on(FxConfig.RADIAL_BLUR) ? blurAt(now) : 0;
-            if (mode >= 0 || warp || blur > 0) {
+            // (with a shader pack the volumes go over its finished picture, lit by the same sun and sky)
+            boolean real = flat && Realismo.active();
+            if (mode >= 0 || warp || blur > 0 || real) {
                 graphics.flush();
                 FxPost.beginPasses();
+                if (real) {
+                    Realismo.pass(VIEW, PROJ, camera, delta.getGameTimeDeltaPartialTick(false));
+                }
                 if (warp) {
                     warpPass(now);
                 }

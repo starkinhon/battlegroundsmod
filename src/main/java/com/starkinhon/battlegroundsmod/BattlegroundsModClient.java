@@ -85,6 +85,7 @@ public class BattlegroundsModClient {
         NeoForge.EVENT_BUS.addListener(BattlegroundsModClient::onClientTickPre);
         NeoForge.EVENT_BUS.addListener(BattlegroundsModClient::onClientTick);
         NeoForge.EVENT_BUS.addListener(BossBars::onBossBar);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.RealismoCommand::register);
         NeoForge.EVENT_BUS.addListener(InputEvent.InteractionKeyMappingTriggered.class, PunchInput::onInteraction);
         NeoForge.EVENT_BUS.addListener(RenderGuiLayerEvent.Pre.class, StatusBars::onRenderLayer);
         NeoForge.EVENT_BUS.addListener(MovementInputUpdateEvent.class, FaceCutscene::onMovementInput);
@@ -170,6 +171,7 @@ public class BattlegroundsModClient {
         AshDeath.tick();
         Aura.tick();
         SkillEffects.tick();
+        com.starkinhon.battlegroundsmod.client.fx.Realismo.tick();
         com.starkinhon.battlegroundsmod.client.fx.DomainScene.tick();
         BossBars.tick();
         Fear.tick();

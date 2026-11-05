@@ -10,6 +10,8 @@ import java.util.List;
 // anelChao, anel, raios, feixe, esfera, fumaca, faiscas, fogo, jatoFogo, rastroBoca, parede, anelCabeca, olhoChao, olho,
 // bracoEspada (the Susanoo arm swinging its sword), corte (the energy slash flying away), and Bills' bolinha, rachaduras,
 // pilares, plasma and nuvem (client/fx/DestructionFx).
+// realismo: a realistic volume (client/fx/Realismo), modo tornado, fogo, fumaca, explosao, lava or vento; raio, comprimento
+// (its height), forca (intensity), velocidade (how fast it travels along the skill's direction), cor (tint, FFFFFF natural).
 // seguir ("centro", "cabeca", "pes", "boca") keeps the effect on the entity the server named, facing where it looks.
 // duraMomento: lasts as long as the server says this moment lasts (a stun, a counter window) instead of vidaTicks.
 // golpeTicks: when the swing of bracoEspada lands (ticks after it appears).
