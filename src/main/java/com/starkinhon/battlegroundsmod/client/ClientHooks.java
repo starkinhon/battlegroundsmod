@@ -120,6 +120,7 @@ public final class ClientHooks {
         com.starkinhon.battlegroundsmod.client.fx.HakaiRenderer.clear();
         com.starkinhon.battlegroundsmod.client.fx.EnergyRenderer.clear();
         com.starkinhon.battlegroundsmod.client.fx.SphereRenderer.clear();
+        com.starkinhon.battlegroundsmod.client.fx.BlackBoxRenderer.clear();
     }
 
     public static void hideEntity(int entityId, int ticks) {
@@ -178,6 +179,10 @@ public final class ClientHooks {
 
     public static void hakaiShot(Vec3 start, Vec3 velocity, int ticks, boolean awakened) {
         com.starkinhon.battlegroundsmod.client.fx.HakaiRenderer.shot(start, velocity, ticks, awakened);
+    }
+
+    public static void blackBox(int id, int mode, Vec3 base, Vec3 size, boolean awakened) {
+        com.starkinhon.battlegroundsmod.client.fx.BlackBoxRenderer.box(id, mode, base, size, awakened);
     }
 
     public static void energyBall(int id, int mode, Vec3 pos, float radius, float grow, boolean small) {

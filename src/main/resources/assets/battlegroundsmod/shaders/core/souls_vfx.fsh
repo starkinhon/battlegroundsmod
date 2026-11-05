@@ -14,6 +14,11 @@
 //             past it (the color tints it, white for a real sun), param = how far the flames reach
 //  10 black hole  Infinite Void's: photon ring and swirling blue rings around an empty middle, param = the hole's size
 //  11 splat   an ink splash with tendrils and droplets (black blots, white ink), param = which one
+//  12 coffin  a wall of Aizen's Black Box: black light with faint violet veins and a crisp violet rim (alpha layer);
+//             param < 0.5: a wall rising from the bottom (rise = param * 2) with a ragged burning top,
+//             param >= 0.5: the lid shutting from the edges in ((param - 0.5) * 2 shut)
+//  13 lance   a lance of black light on a ribbon (u from base to tip); param < 0.5: the black body with a violet rim
+//             (alpha layer), param >= 0.5: its soft glow (additive)
 // A very dark color never burns white (dark rims and lines stay dark).
 // Near walls and the ground the effect fades out instead of cutting a hard line (soft particles).
 uniform sampler2D Sampler1;
@@ -167,6 +172,53 @@ void main() {
         float drop = step(0.82, h) * smoothstep(0.18 * h, 0.12 * h, length(f)) * smoothstep(1.0, 0.5, r) * step(edge, r);
         float tex = 0.85 + 0.15 * fbm(p * 5.0 + s);
         alpha = max(body * tex, drop);
+    } else if (shape == 12) {
+        // Time in steps of 12 a second, like a drawing: the burning edge boils instead of sliding.
+        float tq = floor(time * 12.0) / 12.0;
+        float e = min(min(uv.x, 1.0 - uv.x), min(uv.y, 1.0 - uv.y));
+        float front;
+        if (param < 0.5) {
+            float rise = param * 2.0;
+            float jag = (fbm(vec2(uv.x * 7.0 + seed, tq * 1.7)) - 0.5) * 0.16 * (1.0 - smoothstep(0.85, 1.0, rise));
+            front = rise * 1.08 + jag - uv.y;
+        } else {
+            float k = (param - 0.5) * 2.0;
+            float a = atan(uv.y - 0.5, uv.x - 0.5);
+            float jag = (fbm(vec2(a * 3.0 + seed, tq * 1.7)) - 0.5) * 0.08 * (1.0 - smoothstep(0.85, 1.0, k));
+            front = k * 0.56 + jag - e;
+        }
+        float fw = max(fwidth(front), 1.0e-4);
+        float cover = smoothstep(0.0, 1.5 * fw, front);
+        float burn = 1.0 - smoothstep(0.0, 9.0 * fw, front);
+        float n = fbm(uv * 5.0 + vec2(seed, tq * 0.35));
+        float vein = (1.0 - smoothstep(0.0, 0.035, abs(n - 0.5))) * 0.3;
+        float ew = max(fwidth(e), 1.0e-4);
+        float rim = 1.0 - smoothstep(1.0, 6.0, e / ew);
+        float rimHot = 1.0 - smoothstep(0.5, 2.5, e / ew);
+        float rimSoft = exp(-e * 9.0) * 0.45;
+        vec3 black = vec3(0.02, 0.012, 0.035);
+        vec3 violet = vec3(0.55, 0.16, 1.0);
+        vec3 lilac = vec3(0.86, 0.66, 1.0);
+        vec3 c = black + violet * (vein + rimSoft);
+        c = mix(c, violet, rim * 0.9);
+        c = mix(c, lilac, rimHot * 0.8);
+        c = mix(c, mix(violet, lilac, 0.5), burn * 0.9);
+        base = c;
+        alpha = cover * 0.97;
+    } else if (shape == 13) {
+        float hw = pow(max(0.0, 1.0 - uv.x), 0.9);
+        float across = abs(p.y) / max(hw, 1.0e-3);
+        if (param < 0.5) {
+            float d = 1.0 - across;
+            float fw = max(fwidth(d), 1.0e-4);
+            alpha = smoothstep(0.0, 1.5 * fw, d) * step(uv.x, 0.995);
+            float rim = 1.0 - smoothstep(1.0, 4.0, d / fw);
+            base = mix(vec3(0.02, 0.012, 0.035), vec3(0.62, 0.25, 1.0), rim);
+        } else {
+            float soft = max(0.0, 1.0 - across * 0.5);
+            alpha = pow(soft, 2.0) * smoothstep(0.0, 0.06, uv.x) * (1.0 - smoothstep(0.75, 1.0, uv.x));
+            core = pow(soft, 8.0) * (1.0 - uv.x) * 0.5;
+        }
     } else {
         alpha = 1.0;
     }
@@ -175,7 +227,8 @@ void main() {
     }
 
     float fade = 1.0;
-    if (SoftOn > 0.5) {
+    // The Black Box's walls and lances stay solid right in front of whoever is inside (no soft fade).
+    if (SoftOn > 0.5 && shape != 12 && shape != 13) {
         float scene = linearDepth(texture(Sampler1, gl_FragCoord.xy / Screen).r);
         fade = clamp((scene - viewDist) / 0.6, 0.0, 1.0);
     }
