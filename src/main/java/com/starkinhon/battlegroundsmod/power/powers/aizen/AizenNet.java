@@ -26,6 +26,9 @@ public final class AizenNet {
     // ...and breaks like a mirror.
     public static final int MIRROR_BREAK = 7;
 
+    // A sword crescent around pos (the swinger's middle) toward dir: a = reach, b = ticks the sweep takes.
+    public static final int SLASH = 8;
+
     private static final double VIEW_DISTANCE = 160;
 
     private AizenNet() {

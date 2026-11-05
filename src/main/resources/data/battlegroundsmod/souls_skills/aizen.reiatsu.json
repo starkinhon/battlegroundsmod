@@ -2,16 +2,15 @@
   "formato": "souls-skill/1",
   "skill": "aizen.reiatsu",
   "nome": "Reiatsu Esmagadora",
-  "cliqueTicks": 4,
-  "raioClique": 4,
-  "raioMax": 12,
+  "cliqueTicks": 2,
+  "raioClique": 8,
+  "raioMax": 24,
   "carregarTicks": 60,
-  "maxTicks": 90,
-  "danoClique": 3,
+  "maxTicks": 100,
   "danoMin": 4,
-  "danoMax": 12,
-  "ajoelharCliqueTicks": 20,
-  "ajoelharTicks": 30,
+  "danoMax": 14,
+  "ajoelharCliqueTicks": 16,
+  "ajoelharTicks": 36,
   "tempo": {
     "atrasoTicks": 4,
     "duracaoTicks": 100
@@ -46,27 +45,15 @@
   },
   "sons": [
     {
-      "nome": "Pulso",
+      "nome": "Pressão começa",
       "som": "minecraft:entity.warden.sonic_charge",
-      "momento": "pulso",
+      "momento": "uso",
       "atrasoTicks": 0,
       "repetirACadaTicks": 0,
       "vezes": 1,
-      "volume": 1.2,
-      "pitch": 1.4,
-      "pitchFim": 1.4,
-      "onde": "usuario"
-    },
-    {
-      "nome": "Pressão",
-      "som": "minecraft:block.beacon.ambient",
-      "momento": "carregar",
-      "atrasoTicks": 0,
-      "repetirACadaTicks": 20,
-      "vezes": 0,
-      "volume": 1.6,
-      "pitch": 0.5,
-      "pitchFim": 0.5,
+      "volume": 1.4,
+      "pitch": 0.8,
+      "pitchFim": 0.8,
       "onde": "usuario"
     },
     {
@@ -74,8 +61,8 @@
       "som": "minecraft:entity.warden.heartbeat",
       "momento": "carregar",
       "atrasoTicks": 0,
-      "repetirACadaTicks": 10,
-      "vezes": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
       "volume": 1.6,
       "pitch": 0.6,
       "pitchFim": 0.6,
@@ -104,47 +91,25 @@
       "pitch": 0.5,
       "pitchFim": 0.5,
       "onde": "usuario"
+    },
+    {
+      "nome": "Pressão",
+      "som": "minecraft:block.beacon.ambient",
+      "momento": "uso",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.6,
+      "pitch": 0.5,
+      "pitchFim": 0.5,
+      "onde": "usuario"
     }
   ],
   "vfx": [
     {
       "tipo": "anelChao",
-      "momento": "pulso",
-      "raio": 4,
-      "tamanho": 0.6,
-      "cor": "#7a2cff",
-      "vidaTicks": 12
-    },
-    {
-      "tipo": "distorcao",
-      "momento": "pulso",
-      "modo": "onda",
-      "raio": 5,
-      "forca": 0.4,
-      "velocidade": 10,
-      "cor": "#7a2cff",
-      "vidaTicks": 10
-    },
-    {
-      "tipo": "tremor",
-      "momento": "pulso",
-      "forca": 0.25,
-      "vidaTicks": 6
-    },
-    {
-      "tipo": "clarao",
-      "momento": "pulso",
-      "tamanho": 1.6,
-      "quantidade": 6,
-      "cor": "#7a2cff",
-      "cor2": "#e6d4ff",
-      "altura": 1,
-      "vidaTicks": 8
-    },
-    {
-      "tipo": "anelChao",
       "momento": "soltar",
-      "raio": 14,
+      "raio": 28,
       "tamanho": 1.4,
       "cor": "#7a2cff",
       "vidaTicks": 20
@@ -153,7 +118,7 @@
       "tipo": "anelChao",
       "momento": "soltar",
       "inicio": 3,
-      "raio": 9,
+      "raio": 18,
       "tamanho": 0.8,
       "cor": "#c79bff",
       "vidaTicks": 16
@@ -162,7 +127,7 @@
       "tipo": "distorcao",
       "momento": "soltar",
       "modo": "onda",
-      "raio": 14,
+      "raio": 28,
       "forca": 0.8,
       "velocidade": 16,
       "cor": "#7a2cff",
@@ -171,8 +136,9 @@
     {
       "tipo": "tremor",
       "momento": "soltar",
-      "forca": 0.9,
-      "vidaTicks": 16
+      "forca": 1.1,
+      "vidaTicks": 18,
+      "alcance": 60
     },
     {
       "tipo": "flash",
@@ -185,8 +151,10 @@
       "tipo": "impactFrame",
       "momento": "soltar",
       "sequencia": [
+        "branco",
+        "mangaInvertido",
         "cor",
-        "manga",
+        "invertido",
         "cor"
       ],
       "ticksPorQuadro": 1,
@@ -195,8 +163,8 @@
     {
       "tipo": "estrela",
       "momento": "soltar",
-      "quantidade": 30,
-      "comprimento": 10,
+      "quantidade": 40,
+      "comprimento": 20,
       "tamanho": 1,
       "cor": "#7a2cff",
       "cor2": "#f1e6ff",
@@ -208,6 +176,35 @@
       "momento": "soltar",
       "forca": 0.6,
       "vidaTicks": 10
+    },
+    {
+      "tipo": "tremor",
+      "momento": "tremer",
+      "forca": 0.12,
+      "vidaTicks": 5,
+      "alcance": 30
+    },
+    {
+      "tipo": "tremor",
+      "momento": "tremerForte",
+      "forca": 0.3,
+      "vidaTicks": 5,
+      "alcance": 40
+    },
+    {
+      "tipo": "flash",
+      "momento": "soltar",
+      "cor": "#ffffff",
+      "forca": 0.25,
+      "vidaTicks": 4
+    },
+    {
+      "tipo": "vinheta",
+      "momento": "soltar",
+      "cor": "#3a0f8f",
+      "forca": 0.5,
+      "vidaTicks": 20
     }
-  ]
+  ],
+  "danoClique": 0
 }

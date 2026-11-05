@@ -25,13 +25,13 @@ import net.minecraft.world.entity.Mob;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
 
-// Kyoka Suigetsu, Aizen's X (aizen.kyoka.json). He raises the sword; then a clone of him stays standing in his place
+// Kyoka Suigetsu, Aizen's X (aizen.kyoka.json). With no pose, sound or light (so no one can tell when), a clone of him
+// stays standing in his place
 // (AizenIllusion) while the real one turns invisible to everyone else and walks free, for up to limiteTicks. Pressing X
 // again (or the time running out, or anyone hitting the clone) breaks it: the clone cracks and shatters like a mirror
 // and he shows up wherever he is. Mobs that were after him go after the clone. It is not a counter: the clone never
 // hits back. The cooldown starts when it breaks.
-// Timeline: 0 "uso", usarTicks "trocar" (the clone takes his place), on the press "rachar", quebrarTicks later
-// "quebrar" (at the clone) and "aparecer" (at him).
+// Timeline: on the press again "rachar", quebrarTicks later "quebrar" (at the clone) and "aparecer" (at him).
 public final class KyokaSuigetsu {
     public static final String SKILL = AizenSpecs.KYOKA;
     public static final int SLOT = 1;
@@ -62,30 +62,18 @@ public final class KyokaSuigetsu {
         State state = new State(caster);
         ACTIVE.put(caster, state);
         String power = data.power;
-        int interrupts = data.interrupts;
-        int swap = Math.max(1, spec.usarTicks()) + 2;
         int limit = Math.max(20, spec.limiteTicks());
-        data.busyTicks = swap;
-        PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new ModPayloads.PlaySkillAnimation(caster.getId(), SKILL, awakened));
         Function<String, Vec3> where = onde -> "alvo".equals(onde) && state.clone != null ? Combat.center(state.clone) : Combat.center(caster);
-        SkillSounds.play(level, spec.sons(), "uso", 0, 0, where, List.of());
-        Fx.effects(level, SKILL, awakened, "uso", caster.position().add(0, 0.05, 0), new Vec3(0, 1, 0));
+        // No pose, no sound, no light: the clone takes his place right where he stands, exactly as he stands, so no one
+        // can tell when he used it.
+        swapIn(caster, level, state, limit);
+        if (state.clone == null) {
+            return false;
+        }
 
         Tasks.add(age -> {
             PowerData now = caster.getData(ModAttachments.POWER);
             boolean gone = !caster.isAlive() || caster.isRemoved() || !power.equals(now.power);
-            if (state.clone == null) {
-                // Still raising the sword: hit out of it, nothing happens.
-                if (gone || now.interrupts != interrupts) {
-                    ACTIVE.remove(caster);
-                    return true;
-                }
-                if (age < swap) {
-                    return false;
-                }
-                swapIn(caster, level, state, spec, awakened, where, limit);
-                return false;
-            }
             if (state.breaking) {
                 return true;
             }
@@ -111,8 +99,7 @@ public final class KyokaSuigetsu {
         return true;
     }
 
-    private static void swapIn(LivingEntity caster, ServerLevel level, State state, AizenSpecs.Kyoka spec, boolean awakened,
-            Function<String, Vec3> where, int limit) {
+    private static void swapIn(LivingEntity caster, ServerLevel level, State state, int limit) {
         AizenIllusion clone = ModEntities.AIZEN_ILLUSION.get().create(level);
         if (clone == null) {
             ACTIVE.remove(caster);
@@ -121,15 +108,11 @@ public final class KyokaSuigetsu {
         clone.copy(caster);
         level.addFreshEntity(clone);
         state.clone = clone;
-        // A tick later, once the clients know the clone: it holds the pose he had.
-        Tasks.later(1, () -> PacketDistributor.sendToPlayersTrackingEntity(clone, new ModPayloads.PlaySkillAnimation(clone.getId(), SKILL, awakened)));
         hide(caster, limit + 4);
         caster.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, limit + 4, 0, false, false, false));
         for (Mob mob : level.getEntitiesOfClass(Mob.class, caster.getBoundingBox().inflate(40), m -> m.getTarget() == caster)) {
             mob.setTarget(clone);
         }
-        SkillSounds.play(level, spec.sons(), "trocar", 0, 0, where, List.of());
-        Fx.effects(level, SKILL, awakened, "trocar", Combat.center(clone), Combat.flatLook(clone));
     }
 
     // X again while it is up. True when there was an illusion to break (the key press is used up either way).

@@ -2,7 +2,7 @@
   "formato": "souls-skill/1",
   "skill": "aizen.kyoka",
   "nome": "Kyōka Suigetsu",
-  "usarTicks": 12,
+  "usarTicks": 0,
   "limiteTicks": 140,
   "quebrarTicks": 4,
   "recargaTicks": 160,
@@ -41,42 +41,6 @@
     "retornoTicks": 6
   },
   "sons": [
-    {
-      "nome": "Kudakero",
-      "som": "minecraft:entity.illusioner.prepare_mirror",
-      "momento": "uso",
-      "atrasoTicks": 0,
-      "repetirACadaTicks": 0,
-      "vezes": 1,
-      "volume": 1.4,
-      "pitch": 0.7,
-      "pitchFim": 0.7,
-      "onde": "usuario"
-    },
-    {
-      "nome": "Água",
-      "som": "minecraft:block.amethyst_block.resonate",
-      "momento": "uso",
-      "atrasoTicks": 4,
-      "repetirACadaTicks": 0,
-      "vezes": 1,
-      "volume": 1.2,
-      "pitch": 0.6,
-      "pitchFim": 0.6,
-      "onde": "usuario"
-    },
-    {
-      "nome": "Troca",
-      "som": "minecraft:entity.illusioner.mirror_move",
-      "momento": "trocar",
-      "atrasoTicks": 0,
-      "repetirACadaTicks": 0,
-      "vezes": 1,
-      "volume": 1.2,
-      "pitch": 0.8,
-      "pitchFim": 0.8,
-      "onde": "alvo"
-    },
     {
       "nome": "Racha",
       "som": "minecraft:block.glass.hit",
@@ -127,69 +91,6 @@
     }
   ],
   "vfx": [
-    {
-      "tipo": "anelChao",
-      "momento": "uso",
-      "raio": 5,
-      "tamanho": 0.35,
-      "cor": "#b58cff",
-      "velocidade": 0.5,
-      "vidaTicks": 20
-    },
-    {
-      "tipo": "anelChao",
-      "momento": "uso",
-      "inicio": 4,
-      "raio": 4,
-      "tamanho": 0.3,
-      "cor": "#8a4dff",
-      "velocidade": 0.45,
-      "vidaTicks": 18
-    },
-    {
-      "tipo": "anelChao",
-      "momento": "uso",
-      "inicio": 8,
-      "raio": 3,
-      "tamanho": 0.25,
-      "cor": "#e6d4ff",
-      "velocidade": 0.4,
-      "vidaTicks": 16
-    },
-    {
-      "tipo": "clarao",
-      "momento": "uso",
-      "tamanho": 0.9,
-      "quantidade": 6,
-      "cor": "#9a4dff",
-      "cor2": "#ffffff",
-      "vidaTicks": 10
-    },
-    {
-      "tipo": "anel",
-      "momento": "trocar",
-      "raio": 1.4,
-      "tamanho": 0.12,
-      "cor": "#e6d4ff",
-      "vidaTicks": 10
-    },
-    {
-      "tipo": "distorcao",
-      "momento": "trocar",
-      "modo": "onda",
-      "raio": 3,
-      "forca": 0.3,
-      "velocidade": 8,
-      "cor": "#7a2cff",
-      "vidaTicks": 10
-    },
-    {
-      "tipo": "flash",
-      "momento": "trocar",
-      "cor": "#c79bff",
-      "forca": 0.12,
-      "vidaTicks": 5
-    },
     {
       "tipo": "impactFrame",
       "momento": "quebrar",

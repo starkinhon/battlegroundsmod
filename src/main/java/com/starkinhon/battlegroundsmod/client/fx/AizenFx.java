@@ -63,12 +63,16 @@ public final class AizenFx {
     private record Cut(Vec3 center, Vector3f dir, double born, float len, float big) {
     }
 
+    private record Slash(Vec3 center, Vector3f dir, double born, float reach, float sweep) {
+    }
+
     private record Mirror(Vec3 feet, double crackAt, float crackTicks, double[] breakAt, Vector3f[] frame) {
     }
 
     private static final Map<Integer, Pressure> PRESSURE = new HashMap<>();
     private static final Map<Integer, Evolution> EVOLVED = new HashMap<>();
     private static final List<Cut> CUTS = new ArrayList<>();
+    private static final List<Slash> SLASHES = new ArrayList<>();
     private static final Map<Integer, Mirror> MIRRORS = new HashMap<>();
 
     private AizenFx() {
@@ -119,6 +123,7 @@ public final class AizenFx {
                 }
             }
             case AizenNet.CUT -> CUTS.add(new Cut(pos, dir.toVector3f().normalize(), now, a, b));
+            case AizenNet.SLASH -> SLASHES.add(new Slash(pos, dir.toVector3f().normalize(), now, a, Math.max(1, b)));
             case AizenNet.MIRROR_CRACK -> MIRRORS.put(entityId, new Mirror(pos, now, Math.max(1, a), new double[] {-1}, new Vector3f[2]));
             case AizenNet.MIRROR_BREAK -> {
                 Mirror m = MIRRORS.computeIfAbsent(entityId, k -> new Mirror(pos, now - 1, 1, new double[] {-1}, new Vector3f[2]));
@@ -130,13 +135,14 @@ public final class AizenFx {
     }
 
     public static boolean active() {
-        return !PRESSURE.isEmpty() || !EVOLVED.isEmpty() || !CUTS.isEmpty() || !MIRRORS.isEmpty();
+        return !PRESSURE.isEmpty() || !EVOLVED.isEmpty() || !CUTS.isEmpty() || !SLASHES.isEmpty() || !MIRRORS.isEmpty();
     }
 
     public static void clear() {
         PRESSURE.clear();
         EVOLVED.clear();
         CUTS.clear();
+        SLASHES.clear();
         MIRRORS.clear();
     }
 
@@ -162,6 +168,7 @@ public final class AizenFx {
             return e.endAt >= 0 ? now - e.endAt > 12 : now - e.start > e.total + 40;
         });
         CUTS.removeIf(c -> now - c.born() > 14);
+        SLASHES.removeIf(c -> now - c.born() > c.sweep() + 14);
         MIRRORS.values().removeIf(m -> m.breakAt()[0] >= 0 ? now - m.breakAt()[0] > 32 : now - m.crackAt() > 60);
     }
 
@@ -179,59 +186,110 @@ public final class AizenFx {
             }
             spaceCut(rel(c.center(), camera), c.dir(), age, c.len(), c.big(), glow);
         }
+        for (Slash sl : SLASHES) {
+            drawSlash(sl, camera, (float) (now - sl.born()), glow);
+        }
         for (Map.Entry<Integer, Mirror> en : MIRRORS.entrySet()) {
             drawMirror(en.getValue(), camera, now, glow);
         }
     }
 
+    // A heavy sword crescent: it sweeps slowly from high on one side down across the front, a black edge inside violet
+    // light, and lingers a moment before fading.
+    private static void drawSlash(Slash sl, Vec3 camera, float age, boolean glow) {
+        if (age < 0) {
+            return;
+        }
+        Vector3f center = rel(sl.center(), camera);
+        Vector3f f = new Vector3f(sl.dir().x, sl.dir().y * 0.3f, sl.dir().z);
+        if (f.lengthSquared() < 1.0E-4f) {
+            f.set(0, 0, 1);
+        }
+        f.normalize();
+        Vector3f side = new Vector3f(f).cross(0, 1, 0);
+        if (side.lengthSquared() < 1.0E-4f) {
+            side.set(1, 0, 0);
+        }
+        side.normalize();
+        Vector3f diag = new Vector3f(side).add(0, 0.9f, 0).normalize();
+        float from = 1.35f;
+        float to = -1.35f;
+        float head = Mth.lerp(smooth(age / sl.sweep()), from, to);
+        float fade = 1 - smooth((age - sl.sweep()) / 12);
+        if (fade <= 0) {
+            return;
+        }
+        int steps = 28;
+        Vector3f last = null;
+        for (int i = 0; i <= steps; i++) {
+            float th = Mth.lerp(i / (float) steps, from, head);
+            float r = sl.reach() * (0.92f + 0.08f * Mth.cos(th));
+            Vector3f p = new Vector3f(center).add(new Vector3f(f).mul(Mth.cos(th) * r)).add(new Vector3f(diag).mul(Mth.sin(th) * r));
+            if (last != null) {
+                float k = i / (float) steps;
+                // Thicker and brighter toward the blade.
+                float w = (0.25f + 0.85f * k) * fade;
+                if (glow) {
+                    FxDraw.ribbon(last, p, 1.1f * w, FxDraw.BEAM, 0.1f, VIOLET, 0.6f * fade * (0.4f + 0.6f * k), true);
+                    FxDraw.ribbon(last, p, 0.4f * w, FxDraw.BEAM, 0.6f, LILAC, 0.85f * fade * (0.3f + 0.7f * k), true);
+                } else {
+                    FxDraw.ribbon(last, p, 0.11f * w, FxDraw.BEAM, 0.5f, DARK, fade, false);
+                }
+            }
+            last = p;
+        }
+        if (glow && age < sl.sweep() + 2) {
+            FxDraw.billboard(last, 1.4f, age * 0.3f, FxDraw.FLARE, 8 / 32f, PALE, 0.8f * fade, true);
+        }
+    }
+
     // ---------- Reiatsu ----------
 
+    // Held: grows with the charge. Let go: the aura blows up into a round burst of its own black-violet that spreads
+    // out and fades. The flame stands behind him (seen from the camera), so his body stays in front of it.
     private static void drawPressure(int id, Pressure p, Vec3 camera, double now, float partial, boolean glow) {
         Entity owner = FxAnchor.entity(id);
         Vec3 feetWorld = owner != null ? owner.getPosition(partial) : p.feet;
         Vector3f feet = rel(feetWorld, camera);
         float t = (float) now;
-        float radius;
-        float power;
-        float vis;
-        if (p.mode == AizenNet.REIATSU_CLICK) {
-            float s = (float) (now - p.burstAt);
-            radius = p.radius * easeOut(s / 4);
-            power = 0.25f;
-            vis = s < 2 ? smooth(s / 2) : 1 - smooth((s - 4) / 16);
-        } else if (p.burstAt >= 0) {
-            float s = (float) (now - p.burstAt);
-            if (p.mode < 0) {
-                radius = p.radius;
-                power = p.power;
-                vis = 1 - smooth(s / 6);
-            } else {
-                radius = p.radius * (1 + 0.15f * easeOut(s / 10));
-                power = 1;
-                vis = 1 - smooth(s / 30);
-            }
-        } else {
-            radius = p.radius;
-            power = p.power;
-            vis = smooth((float) (now - p.born) / 6);
-        }
         boolean self = FxAnchor.firstPersonSelf(id);
-        drawReiatsu(feet, Math.max(0.3f, radius), power, t, 41 + id * 7, vis, glow, self);
+        int seed = 41 + id * 7;
+        if (p.burstAt < 0) {
+            float vis = smooth((float) (now - p.born) / 4);
+            drawReiatsu(feet, Math.max(0.3f, p.radius), p.power, t, seed, vis, 1, glow, self);
+            return;
+        }
+        float s = (float) (now - p.burstAt);
+        if (p.mode < 0) {
+            // Cut short: it just fades.
+            drawReiatsu(feet, p.radius, p.power, t, seed, 1 - smooth(s / 6), 1, glow, self);
+            return;
+        }
+        // The aura swells for a moment and dies out...
+        drawReiatsu(feet, p.radius * (1 + 0.2f * easeOut(s / 8)), p.power, t, seed, 1 - smooth(s / 10), 1 + 0.8f * easeOut(s / 5), glow, self);
+        // ...as it blows up into a round burst of itself.
+        float size = (3 + p.radius * 0.6f) * easeOut(s / 7);
+        float fade = 1 - smooth((s - 8) / 22);
+        if (fade > 0 && size > 0.1f) {
+            Vector3f middle = new Vector3f(feet).add(0, Math.min(size * 0.3f, 2.5f), 0);
+            FxDraw.billboard(middle, size * 2, s * 0.01f, FxDraw.AURA, glow ? 0.85f : 0.3f, glow ? VIOLET : DARK, fade, glow);
+            if (glow) {
+                FxDraw.billboard(middle, size * 2.8f, 0, FxDraw.SOFT, 0, DEEP, 0.5f * fade, true);
+                FxDraw.disk(new Vector3f(feet).add(0, 0.08f, 0), new Vector3f(0, 1, 0), p.radius * 2.4f * easeOut(s / 10), FxDraw.RING, 0.06f, LILAC,
+                        0.8f * fade, true);
+            }
+        }
     }
 
-    private static void drawReiatsu(Vector3f feet, float radius, float power, float t, int seed, float vis, boolean glow, boolean self) {
+    private static void drawReiatsu(Vector3f feet, float radius, float power, float t, int seed, float vis, float swell, boolean glow,
+            boolean self) {
         if (vis <= 0.01f) {
             return;
         }
         if (!self) {
-            darkAura(feet, 2.4f + power * 2.5f, t, power, seed, vis, glow);
+            aura(feet, (2.4f + 2.6f * power) * swell, (3.4f + 4.6f * power) * swell, vis, glow);
         }
-        Vector3f top = new Vector3f(feet).add(0, 4 + 8 * power, 0);
         if (glow) {
-            if (!self) {
-                FxDraw.ribbon(feet, top, 1.6f + power * 2, FxDraw.BEAM, 0, DEEP, 0.35f * vis, true);
-                FxDraw.ribbon(feet, top, 0.6f + power * 0.8f, FxDraw.BEAM, 0, VIOLET, 0.25f * vis, true);
-            }
             // The dome of pressure: faint rings of latitude and the ring on the ground.
             for (int k = 1; k <= 5; k++) {
                 float lat = k / 6f * Mth.HALF_PI;
@@ -243,7 +301,7 @@ public final class AizenFx {
             FxDraw.disk(new Vector3f(feet).add(0, 0.06f, 0), new Vector3f(0, 1, 0), radius * 2, FxDraw.RING,
                     Mth.clamp(0.5f / (radius * 2), 0.02f, 0.4f), VIOLET, 0.4f * vis, true);
             // Lines of pressure falling: the air turning heavy.
-            int lines = (int) (12 + 40 * power);
+            int lines = (int) (16 + 50 * power);
             for (int k = 0; k < lines; k++) {
                 float period = 6 + 4 * FxWorld.hash(seed, k, 11);
                 float ph = (t + FxWorld.hash(seed, k, 12) * period) / period;
@@ -251,36 +309,57 @@ public final class AizenFx {
                 int cycle = (int) Math.floor(ph);
                 float a = FxWorld.hash(seed + cycle, k, 13) * TWO_PI;
                 float r = radius * Mth.sqrt(FxWorld.hash(seed + cycle, k, 14));
-                float y = Mth.lerp(life, radius * 0.7f + 1, 0);
+                float y = Mth.lerp(life, radius * 0.5f + 1, 0);
                 Vector3f at = new Vector3f(feet).add(Mth.cos(a) * r, y, Mth.sin(a) * r);
                 FxDraw.ribbon(at, new Vector3f(at).add(0, 1.2f + power, 0), 0.05f + 0.03f * power, FxDraw.STREAK, 0.6f, LILAC,
                         0.35f * vis * Mth.sin(life * Mth.PI), true);
             }
-        } else {
+            // Sparks of reiatsu rising off him.
             if (!self) {
-                FxDraw.ribbon(feet, top, 0.25f + power * 0.3f, FxDraw.BEAM, 0, DARK, 0.7f * vis, false);
+                int sparks = (int) (8 + 16 * power);
+                for (int k = 0; k < sparks; k++) {
+                    float period = 14 + 10 * FxWorld.hash(seed, k, 21);
+                    float ph = (t + FxWorld.hash(seed, k, 22) * period) / period;
+                    float life = ph % 1;
+                    int cycle = (int) Math.floor(ph);
+                    float a = FxWorld.hash(seed + cycle, k, 23) * TWO_PI;
+                    float r = (0.4f + 1.4f * FxWorld.hash(seed + cycle, k, 24)) * (0.6f + power);
+                    Vector3f at = new Vector3f(feet).add(Mth.cos(a) * r, 0.2f + life * (3 + 4 * power), Mth.sin(a) * r);
+                    FxDraw.billboard(at, 0.25f + 0.2f * FxWorld.hash(seed, k, 25), t * 0.05f, FxDraw.FLARE, 4 / 32f, PALE,
+                            0.8f * vis * Mth.sin(life * Mth.PI), true);
+                }
             }
-            FxDraw.disk(new Vector3f(feet).add(0, 0.04f, 0), new Vector3f(0, 1, 0), radius * 2, FxDraw.DISC, 0.5f, DARK, 0.3f * vis, false);
+        } else {
+            FxDraw.disk(new Vector3f(feet).add(0, 0.04f, 0), new Vector3f(0, 1, 0), radius * 2, FxDraw.DISC, 0.5f, DARK, 0.18f * vis, false);
         }
     }
 
-    // Black flames with violet edges rising off the body.
-    private static void darkAura(Vector3f feet, float height, float t, float power, int seed, float vis, boolean glow) {
-        int count = 10 + (int) (power * 14);
-        for (int k = 0; k < count; k++) {
-            float period = 12 + 8 * FxWorld.hash(seed, k, 1);
-            float ph = (t + FxWorld.hash(seed, k, 2) * period) / period;
-            float life = ph % 1;
-            int cycle = (int) Math.floor(ph);
-            float a = FxWorld.hash(seed + cycle, k, 3) * TWO_PI;
-            float r = (0.3f + 0.35f * FxWorld.hash(seed + cycle, k, 4)) * (1 + power * 0.4f);
-            Vector3f at = new Vector3f(feet).add(Mth.cos(a) * r, 0.1f + life * height, Mth.sin(a) * r);
-            float s = (0.6f + 0.5f * FxWorld.hash(seed, k, 5)) * (1 - 0.5f * life) * (0.8f + power * 0.7f);
-            if (glow) {
-                FxDraw.billboard(at, s * 1.9f, 0, FxDraw.FIRE, Math.min(0.95f, 0.35f + life * 0.6f), VIOLET, 0.4f * vis, true);
-            } else {
-                FxDraw.billboard(at, s * 0.85f, 0, FxDraw.FIRE, Math.min(0.95f, 0.15f + life * 0.8f), DARK, 0.75f * vis * (1 - life * 0.5f), false);
-            }
+    // The cartoon aura (shader shape 17): an upright flame standing a little behind him as seen from the camera, its
+    // black-violet body in the dark pass and its rim and spilling glow in the glow pass.
+    private static void aura(Vector3f feet, float width, float height, float vis, boolean glow) {
+        Vector3f away = new Vector3f(feet.x, 0, feet.z);
+        if (away.lengthSquared() < 1.0E-4f) {
+            return;
+        }
+        away.normalize();
+        Vector3f right = new Vector3f(0, 1, 0).cross(away).normalize();
+        Vector3f base = new Vector3f(feet).add(new Vector3f(away).mul(0.7f)).add(0, -0.2f, 0);
+        Vector3f half = new Vector3f(right).mul(width / 2);
+        Vector3f up = new Vector3f(0, height, 0);
+        Vector3f a = new Vector3f(base).sub(half);
+        Vector3f b = new Vector3f(base).add(half);
+        Vector3f c = new Vector3f(b).add(up);
+        Vector3f d = new Vector3f(a).add(up);
+        if (glow) {
+            // The glow spreads wider than the body.
+            Vector3f wide = new Vector3f(right).mul(width * 0.62f);
+            Vector3f ga = new Vector3f(base).sub(wide).add(0, -0.1f, 0);
+            Vector3f gb = new Vector3f(base).add(wide).add(0, -0.1f, 0);
+            Vector3f tall = new Vector3f(0, height * 1.15f, 0);
+            FxDraw.quad(ga, gb, new Vector3f(gb).add(tall), new Vector3f(ga).add(tall), FxDraw.AURA, 0.6f, VIOLET, vis, true);
+            FxDraw.quad(a, b, c, d, FxDraw.AURA, 0.6f, LILAC, 0.6f * vis, true);
+        } else {
+            FxDraw.quad(a, b, c, d, FxDraw.AURA, 0.1f, DARK, vis, false);
         }
     }
 
@@ -315,9 +394,10 @@ public final class AizenFx {
         boolean self = FxAnchor.firstPersonSelf(id);
         if (T < 140) {
             float awake = smooth((T - 4) / 20);
-            orb(b, awake * end, (float) now, glow);
+            // Hidden once the cocoon has closed over it.
+            orb(b, awake * end * (1 - smooth((T - 55) / 20)), (float) now, glow);
             if (glow) {
-                veins(b, smooth((T - 8) / 20) * end, (float) now);
+                veins(b, smooth((T - 8) / 20) * end * (1 - smooth((T - 55) / 20)), (float) now);
             }
             cocoon(b, T, (float) now, glow, self, end);
             return;
@@ -331,38 +411,40 @@ public final class AizenFx {
         }
         if (!self) {
             wings(b, unfold, (float) now, glow);
-            darkAura(b.at(0, -0.1f, 0), 2.6f, (float) now, 0.5f * unfold, 57 + id, unfold, glow);
+            aura(b.feet(), 2.2f * unfold, 3.6f * unfold, 0.8f * unfold, glow);
         }
         orb(b, unfold, (float) now, glow);
         if (glow && !self) {
-            FxDraw.billboard(b.at(0, 1.0f, 0), 3.2f, 0, FxDraw.SOFT, 0, DEEP, 0.25f * unfold, true);
+            FxDraw.billboard(b.at(0, 1.3f, 0), 2.4f, 0, FxDraw.ORB, 0, DEEP, 0.25f * unfold, true);
         }
     }
 
     private static Vector3f chest(Body b) {
-        return b.at(0, 1.27f, 0.16f);
+        return b.at(0, 1.3f, 0.2f);
     }
 
+    // The Hogyoku in his chest (shape 16: never faded for sitting right on the body).
     private static void orb(Body b, float a, float t, boolean glow) {
         if (a <= 0.01f) {
             return;
         }
         Vector3f at = chest(b);
+        float beat = 0.85f + 0.15f * Mth.sin(t * 0.3f);
         if (glow) {
-            FxDraw.billboard(at, 0.9f * a, 0, FxDraw.SOFT, 0.2f, VIOLET, 0.6f * a, true);
-            FxDraw.billboard(at, 0.7f * a, t * 0.03f, FxDraw.FLARE, 6 / 32f, LILAC, 0.7f * a, true);
+            FxDraw.billboard(at, 1.1f * a * beat, 0, FxDraw.ORB, 0.15f, VIOLET, 0.75f * a, true);
+            FxDraw.billboard(at, 0.45f * a, 0, FxDraw.ORB, 0.6f, LILAC, 0.9f * a, true);
         } else {
-            FxDraw.billboard(at, 0.16f, 0, FxDraw.DISC, 0.3f, DARK, a, false);
-            FxDraw.billboard(at, 0.08f, 0, FxDraw.SOFT, 0.9f, PALE, a, true);
+            FxDraw.billboard(at, 0.26f, 0, FxDraw.ORB, 0, DARK, a, false);
+            FxDraw.billboard(at, 0.16f, 0, FxDraw.ORB, 0.9f, PALE, a, true);
         }
     }
 
-    // Veins of light running from the Hogyoku over the body.
+    // Veins of light running from the Hogyoku over the body: chains of small glowing dots just off the skin.
     private static void veins(Body b, float k, float t) {
         if (k <= 0.01f) {
             return;
         }
-        Vector3f center = new Vector3f(chest(b)).add(new Vector3f(b.z()).mul(0.01f));
+        Vector3f center = chest(b);
         for (int i = 0; i < 9; i++) {
             float a = FxWorld.hash(3, i, 1) * TWO_PI;
             Vector3f last = center;
@@ -371,17 +453,25 @@ public final class AizenFx {
             for (int s = 1; s <= steps; s++) {
                 dir.rotateAxis((FxWorld.hash(3 + (int) Math.floor(t / 3), i * 8 + s, 2) - 0.5f) * 0.9f, b.z().x, b.z().y, b.z().z);
                 Vector3f next = new Vector3f(last).add(new Vector3f(dir).mul(0.08f + 0.02f * s));
-                FxDraw.ribbon(last, next, 0.03f, FxDraw.BEAM, 0.7f, PALE, 0.8f * (1 - s / 8f), true);
-                FxDraw.ribbon(last, next, 0.12f, FxDraw.BEAM, 0.1f, VIOLET, 0.5f, true);
+                for (int q = 0; q < 4; q++) {
+                    Vector3f dot = new Vector3f(last).lerp(next, q / 4f);
+                    FxDraw.billboard(dot, 0.16f, 0, FxDraw.ORB, 0, VIOLET, 0.35f * k, true);
+                    FxDraw.billboard(dot, 0.06f, 0, FxDraw.ORB, 0.8f, PALE, 0.8f * k * (1 - s / 8f), true);
+                }
                 last = next;
             }
         }
     }
 
-    // The cocoon: threads winding up around him, closing into a white egg that pulses and cracks with violet light.
+    // The cocoon: threads winding up around him, closing into a smooth white egg of silk that pulses and cracks with
+    // violet light. A fine mesh with a color at each corner (smooth shading, silk stripes, a violet rim as it cracks);
+    // only the side facing the camera is drawn, before the glow, so the cracks and the light shine over it.
     private static final float CY = 1.0f;
     private static final float RX = 0.66f;
     private static final float RY = 1.25f;
+    private static final int RINGS = 40;
+    private static final int SEGS = 72;
+    private static final Vector3f LIGHT = new Vector3f(0.3f, 1, 0.4f).normalize();
 
     private static void cocoon(Body b, float T, float now, boolean glow, boolean self, float end) {
         float reveal = smooth((T - 40) / 50);
@@ -389,7 +479,10 @@ public final class AizenFx {
         float pulse = T > 90 ? 0.5f + 0.5f * Mth.sin((T - 90) * (0.25f + (T - 90) * 0.006f)) : 0;
         float swell = 1 + (T > 90 ? 0.03f * pulse : 0);
         Vector3f center = new Vector3f(b.feet()).add(0, CY, 0);
-        if (glow && T >= 34 && T < 96) {
+        if (!glow) {
+            return;
+        }
+        if (T >= 34 && T < 96) {
             float top = CY - RY + 2 * RY * smooth((T - 34) / 40);
             for (int k = 0; k < 7; k++) {
                 Vector3f last = null;
@@ -409,76 +502,86 @@ public final class AizenFx {
         if (T < 40) {
             return;
         }
-        int rows = 18;
-        int cols = 28;
-        if (!glow && !self) {
-            // The shell, lit from above, built up from the bottom along the threads.
-            Vector3f light = new Vector3f(0.3f, 1, 0.4f).normalize();
-            for (int i = 0; i < rows; i++) {
-                float v0 = i / (float) rows;
-                float v1 = (i + 1) / (float) rows;
+        if (!self) {
+            for (int i = 0; i < RINGS; i++) {
+                float v0 = i / (float) RINGS;
+                float v1 = (i + 1) / (float) RINGS;
                 float h = (v0 + v1) / 2;
                 if (h > reveal * 1.5f) {
                     continue;
                 }
-                for (int j = 0; j < cols; j++) {
-                    float u0 = j / (float) cols;
-                    float u1 = (j + 1) / (float) cols;
+                for (int j = 0; j < SEGS; j++) {
+                    float u0 = j / (float) SEGS;
+                    float u1 = (j + 1) / (float) SEGS;
                     float ang = (u0 + u1) * Mth.PI;
-                    float yMid = Mth.lerp(h, -1, 1);
-                    float strand = (ang / TWO_PI * 9 + yMid * 1.4f) % 1;
+                    float strand = (ang / TWO_PI * 9 + Mth.lerp(h, -1, 1) * 1.4f) % 1;
                     if (strand < 0) {
                         strand += 1;
                     }
-                    if (strand > reveal * 1.1f + 0.05f) {
+                    if (strand > reveal * 1.1f + 0.04f) {
                         continue;
                     }
-                    Vector3f n = shell(ang, h);
-                    float lit = 0.62f + 0.38f * Math.max(0, n.dot(light));
-                    float silk = 0.88f + 0.12f * Math.abs(Mth.sin(ang * 18 + yMid * 9));
-                    float[] c = {SILK[0] * lit * silk, SILK[1] * lit * silk, SILK[2] * lit * silk};
-                    c = FxDraw.mix(c, new float[] {0.7f, 0.5f, 1f}, 0.25f * pulse * crack);
-                    FxDraw.quad(point(center, u0, v0, swell), point(center, u1, v0, swell), point(center, u1, v1, swell), point(center, u0, v1, swell),
-                            FxDraw.SOLID, 0, c, end, false);
+                    Vector3f mid = point(center, (u0 + u1) / 2, h, swell);
+                    if (shell(ang, h).dot(new Vector3f(mid).negate()) < 0) {
+                        continue;
+                    }
+                    FxDraw.quad(point(center, u0, v0, swell), point(center, u1, v0, swell), point(center, u1, v1, swell),
+                            point(center, u0, v1, swell), FxDraw.SOLID, 0, silk(center, u0, v0, swell, pulse, crack),
+                            silk(center, u1, v0, swell, pulse, crack), silk(center, u1, v1, swell, pulse, crack),
+                            silk(center, u0, v1, swell, pulse, crack), end, false);
                 }
             }
         }
-        if (glow && crack > 0.01f) {
-            // Cracks of violet light over it, more and more, and the glow through them.
-            for (int k = 0; k < 14; k++) {
+        if (crack > 0.01f) {
+            // Cracks of violet light over it, more and more, branching; only those on the side that faces the camera.
+            for (int k = 0; k < 22; k++) {
                 if (FxWorld.hash(17, k, 30) > crack * 1.15f) {
                     continue;
                 }
                 float ang = FxWorld.hash(17, k, 31) * TWO_PI;
-                float h = 0.15f + 0.7f * FxWorld.hash(17, k, 32);
-                Vector3f last = point(center, ang / TWO_PI, h, swell * 1.01f);
-                for (int s = 1; s <= 6; s++) {
-                    ang += (FxWorld.hash(17, k * 8 + s, 33) - 0.5f) * 0.7f;
-                    h = Mth.clamp(h + (FxWorld.hash(17, k * 8 + s, 34) - 0.5f) * 0.14f, 0.05f, 0.95f);
-                    Vector3f next = point(center, ang / TWO_PI, h, swell * 1.01f);
-                    FxDraw.ribbon(last, next, 0.05f, FxDraw.BEAM, 0.7f, PALE, (0.6f + 0.4f * pulse) * end, true);
-                    FxDraw.ribbon(last, next, 0.22f, FxDraw.BEAM, 0.1f, VIOLET, (0.5f + 0.4f * pulse) * end, true);
+                float h = 0.12f + 0.76f * FxWorld.hash(17, k, 32);
+                float hot = (0.6f + 0.4f * pulse) * end;
+                Vector3f last = point(center, ang / TWO_PI, h, swell * 1.012f);
+                for (int s = 1; s <= 7; s++) {
+                    ang += (FxWorld.hash(17, k * 8 + s, 33) - 0.5f) * 0.6f;
+                    h = Mth.clamp(h + (FxWorld.hash(17, k * 8 + s, 34) - 0.5f) * 0.12f, 0.04f, 0.96f);
+                    Vector3f next = point(center, ang / TWO_PI, h, swell * 1.012f);
+                    if (shell(ang, h).dot(new Vector3f(next).negate()) > 0) {
+                        FxDraw.ribbon(last, next, 0.035f, FxDraw.BEAM, 0.8f, PALE, hot, true);
+                        FxDraw.ribbon(last, next, 0.16f, FxDraw.BEAM, 0.1f, VIOLET, 0.7f * hot, true);
+                    }
                     last = next;
                 }
             }
-            for (int i = 0; i < 10; i++) {
-                Vector3f d = FxWorld.sphere(17, i);
-                FxDraw.billboard(new Vector3f(center).add(d.x * RX, d.y * RY, d.z * RX), 0.6f + crack, 0, FxDraw.SOFT, 0.3f, VIOLET,
-                        0.35f * crack * (0.6f + 0.4f * pulse) * end, true);
-            }
-            FxDraw.billboard(center, 3.5f, 0, FxDraw.SOFT, 0, DEEP, 0.3f * crack * end, true);
+            // The light inside showing through.
+            FxDraw.billboard(center, 2.4f + crack, 0, FxDraw.ORB, 0, VIOLET, 0.22f * crack * (0.6f + 0.4f * pulse) * end, true);
         }
     }
 
+    // The silk's color at a corner of the mesh: lit from above, fine stripes, a violet rim as it cracks and pulses.
+    private static float[] silk(Vector3f center, float u, float v, float scale, float pulse, float crack) {
+        float ang = u * TWO_PI;
+        float y = Mth.lerp(v, -1, 1);
+        Vector3f n = shell(ang, v);
+        float lit = 0.66f + 0.34f * Math.max(0, n.dot(LIGHT));
+        float stripes = 0.9f + 0.1f * Math.abs(Mth.sin(ang * 18 + y * 9));
+        Vector3f toCamera = point(center, u, v, scale).negate().normalize();
+        float rim = (float) Math.pow(1 - Math.max(0, n.dot(toCamera)), 3);
+        float k = lit * stripes;
+        float[] c = {SILK[0] * k, SILK[1] * k, SILK[2] * k};
+        c = FxDraw.mix(c, new float[] {0.86f, 0.8f, 0.98f}, rim * 0.5f);
+        return FxDraw.mix(c, new float[] {0.72f, 0.45f, 1f}, Math.min(1, rim * 1.5f + 0.15f) * crack * (0.4f + 0.6f * pulse));
+    }
+
     private static Vector3f shell(float ang, float h) {
-        float y = Mth.lerp(h, -1, 1);
+        float y = -Mth.cos(h * Mth.PI);
         float r = Mth.sqrt(Math.max(0, 1 - y * y));
         return new Vector3f(Mth.cos(ang) * r / RX, y / RY, Mth.sin(ang) * r / RX).normalize();
     }
 
     private static Vector3f point(Vector3f center, float u, float v, float scale) {
         float ang = u * TWO_PI;
-        float y = Mth.lerp(v, -1, 1);
+        float y = -Mth.cos(v * Mth.PI);
         float r = Mth.sqrt(Math.max(0, 1 - y * y));
         return new Vector3f(center).add(Mth.cos(ang) * r * RX * scale, y * RY * scale, Mth.sin(ang) * r * RX * scale);
     }

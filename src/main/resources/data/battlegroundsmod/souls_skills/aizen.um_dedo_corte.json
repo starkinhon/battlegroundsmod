@@ -3,11 +3,11 @@
   "skill": "aizen.um_dedo_corte",
   "nome": "Um Dedo (corte)",
   "tempo": {
-    "atrasoTicks": 10,
-    "duracaoTicks": 14
+    "atrasoTicks": 12,
+    "duracaoTicks": 20
   },
   "animacao": {
-    "transicaoTicks": 3,
+    "transicaoTicks": 8,
     "preparo": {
       "cabeca": -5,
       "tronco": -6,
@@ -32,6 +32,6 @@
         "abrir": 5
       }
     },
-    "retornoTicks": 10
+    "retornoTicks": 14
   }
 }

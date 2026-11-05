@@ -19,6 +19,12 @@
 //             param >= 0.5: the lid shutting from the edges in ((param - 0.5) * 2 shut)
 //  13 lance   a lance of black light on a ribbon (u from base to tip); param < 0.5: the black body with a violet rim
 //             (alpha layer), param >= 0.5: its soft glow (additive)
+//  14 shard   a shard of glass or eggshell; param < 0.5 a quad, else a triangle; fract(param * 2) slides the glint
+//  15 wing    a black butterfly wing (u root to tip); param < 0.5 the body, else its glow
+//  16 orb     the soft glow of shape 0 that is never faded near surfaces (something sitting right on a body)
+//  17 aura    Aizen's reiatsu, cartoon: a black-violet mass full of stars with a sharp, boiling violet rim and glow
+//             spilling out past it; param < 0.5 the body (alpha layer), else the glow (additive);
+//             fract(param * 2) < 0.5 a flame rising from the bottom of the quad, else a round burst
 // A very dark color never burns white (dark rims and lines stay dark).
 // Near walls and the ground the effect fades out instead of cutting a hard line (soft particles).
 uniform sampler2D Sampler1;
@@ -263,6 +269,56 @@ void main() {
             alpha = body * (rim * 0.9 + vein * 0.5 + eyeRing * 0.7 + 0.08) + (1.0 - body) * exp(-max(0.0, -d) * 14.0) * 0.35;
             core = rim * body * 0.3;
         }
+    } else if (shape == 16) {
+        alpha = pow(max(0.0, 1.0 - r), 2.2);
+        core = smoothstep(1.0 - param, 0.0, r) * param;
+    } else if (shape == 17) {
+        // Drawn on twos-and-threes like the anime: the outline boils 10 times a second instead of sliding.
+        float tq = floor(time * 10.0) / 10.0;
+        bool burst = fract(param * 2.0) >= 0.5;
+        float d;
+        if (!burst) {
+            float x = (uv.x - 0.5) * 2.0;
+            float y = uv.y;
+            float n = fbm(vec2(x * 2.5 + seed, y * 3.0 - tq * 2.2));
+            float n2 = fbm(vec2(x * 7.0 - seed, y * 5.0 - tq * 3.5));
+            float width = 0.6 * pow(max(0.0, 1.0 - y), 0.65) * (0.7 + 0.6 * n) + 0.1 * (n2 - 0.5);
+            d = width - abs(x) * (1.0 + 0.5 * y);
+        } else {
+            float a = atan(p.y, p.x);
+            float n = fbm(vec2(a * 2.2 + seed, r * 2.0 - tq * 1.5));
+            float n2 = fbm(vec2(a * 6.0 - seed, tq * 2.0));
+            d = 0.7 + 0.3 * (n - 0.5) + 0.1 * (n2 - 0.5) - r;
+        }
+        float fw = max(fwidth(d), 1.0e-4);
+        float inside = smoothstep(0.0, 1.5 * fw, d);
+        float rimW = 0.075;
+        float rim = inside * (1.0 - smoothstep(rimW * 0.55, rimW, d));
+        float rimHot = inside * (1.0 - smoothstep(rimW * 0.15, rimW * 0.35, d));
+        // A second, broken outline just outside the first: the light spilling out of the contour.
+        float wisp = fbm(vec2(uv.x * 9.0 + seed, uv.y * 6.0 - tq * 4.0));
+        float d2 = d + 0.1 + 0.08 * wisp;
+        float spill = (1.0 - inside) * smoothstep(0.0, 1.5 * fw, d2) * (1.0 - smoothstep(0.03, 0.06, d2)) * step(0.45, wisp);
+        vec2 g = uv * vec2(26.0, 38.0);
+        float h = hash(floor(g) + vec2(seed, 3.0));
+        float twinkle = 0.5 + 0.5 * sin(time * 5.0 + h * 40.0);
+        float star = step(0.92, h) * smoothstep(0.38, 0.0, length(fract(g) - 0.5)) * twinkle * smoothstep(0.0, 0.12, d);
+        vec3 black = vec3(0.04, 0.01, 0.08);
+        vec3 deep = vec3(0.24, 0.05, 0.46);
+        vec3 violet = vec3(0.66, 0.24, 1.0);
+        vec3 pink = vec3(1.0, 0.7, 1.0);
+        if (param < 0.5) {
+            vec3 c = mix(deep, black, smoothstep(0.0, 0.3, d));
+            c = mix(c, vec3(0.9, 0.75, 1.0), star);
+            c = mix(c, violet, rim);
+            c = mix(c, pink, rimHot);
+            base = c;
+            alpha = inside;
+        } else {
+            float outside = (1.0 - inside) * exp(-max(0.0, -d) * 7.0);
+            alpha = rim + spill * 0.9 + outside * 0.55 + star * 0.5;
+            core = rimHot * 0.7 + spill * 0.3;
+        }
     } else {
         alpha = 1.0;
     }
@@ -271,8 +327,9 @@ void main() {
     }
 
     float fade = 1.0;
-    // The Black Box's walls and lances stay solid right in front of whoever is inside (no soft fade).
-    if (SoftOn > 0.5 && shape != 12 && shape != 13) {
+    // The Black Box's walls and lances stay solid right in front of whoever is inside, and shards, wings and orbs sit
+    // right on bodies (no soft fade).
+    if (SoftOn > 0.5 && (shape < 12 || shape > 16)) {
         float scene = linearDepth(texture(Sampler1, gl_FragCoord.xy / Screen).r);
         fade = clamp((scene - viewDist) / 0.6, 0.0, 1.0);
     }
