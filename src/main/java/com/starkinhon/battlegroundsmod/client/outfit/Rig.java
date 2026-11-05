@@ -10,7 +10,8 @@ import net.minecraft.client.model.geom.ModelPart;
 // Body points are written as on a standing player (the body's pivot is at height 24), leg points from the leg's pivot.
 final class Rig {
     enum Bone {
-        HEAD, BODY, ARM_R, ARM_L, LEG_R, LEG_L
+        // HAND_R rides the right arm like ARM_R, but is only drawn while the main hand is empty (the sword).
+        HEAD, BODY, ARM_R, ARM_L, LEG_R, LEG_L, HAND_R
     }
 
     private final float[][] pivot = new float[Bone.values().length][3];

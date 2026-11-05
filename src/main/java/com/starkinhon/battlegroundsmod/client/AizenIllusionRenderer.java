@@ -27,6 +27,8 @@ public class AizenIllusionRenderer extends HumanoidMobRenderer<AizenIllusion, Pl
         this.slim = new PlayerModel<>(context.bakeLayer(ModelLayers.PLAYER_SLIM), true);
         addLayer(new HumanoidArmorLayer<>(this, new HumanoidArmorModel<>(context.bakeLayer(ModelLayers.PLAYER_INNER_ARMOR)),
                 new HumanoidArmorModel<>(context.bakeLayer(ModelLayers.PLAYER_OUTER_ARMOR)), context.getModelManager()));
+        // The owner's outfit too (Aizen's sword), or the clone without it would give away which one is fake.
+        addLayer(new com.starkinhon.battlegroundsmod.client.outfit.IllusionOutfitLayer(this));
     }
 
     private PlayerSkin skin(AizenIllusion entity) {
