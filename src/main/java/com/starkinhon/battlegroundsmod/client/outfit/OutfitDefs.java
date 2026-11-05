@@ -308,9 +308,9 @@ final class OutfitDefs {
 
 
     // ================================================= AIZEN: SWORD ==================================================
-    // The sword from the Armario/Guarda-roupa viewer ("Espada do Aizen"), approved by Stark on 2026-11-05 as final.
-    // Built in its own space (+y = tip, x = blade width with the edge at +x, z = thickness, origin = top of the guard),
-    // then placed in the right fist: edge forward and down, blade forward and up about 44 degrees with the arm hanging.
+    // The sword from the Armario/Guarda-roupa viewer ("Espada do Aizen"), approved by Stark on 2026-11-05 as final. It is
+    // a normal item (ModItems.AIZEN_SWORD) drawn by AizenSwordRenderer. Built in its own space, in player pixels:
+    // +y = tip, x = blade width with the edge at +x, z = thickness, origin = top of the guard.
 
     // One ring of a low-poly prism: a convex polygon of (x, z) points at height y.
     private record Ring(float y, float[][] pts) {
@@ -400,12 +400,13 @@ final class OutfitDefs {
     }
 
     static final float SWORD_TSUKA = 6.6f, SWORD_BLADE = 21, SWORD_W = 0.95f, SWORD_T = 0.24f;
-    // How far the blade points up from straight ahead, in the arm's own space (arm hanging down).
-    static final float SWORD_TILT = 0.77f;
+    // Where the hand holds the grip (2.2 px under the guard) and the middle of the whole sword, on its axis.
+    static final float SWORD_GRIP = -2.2f, SWORD_MIDDLE = (SWORD_BLADE - SWORD_TSUKA - 0.98f) / 2;
 
-    static Def aizen() {
+    // The sword in its own space, for the item renderer (AizenSwordRenderer).
+    static List<Piece> sword() {
         Builder b = new Builder();
-        Rig.Bone hand = Rig.Bone.HAND_R;
+        Rig.Bone hand = Rig.Bone.BODY;
         Geo flat = b.geo(hand, SWORD_WRAP).color(0xFFFFFF), side = b.geo(hand, SWORD_WRAP_SIDE).color(0xFFFFFF), w = b.geo(hand, WHITE);
         int wrapEdge = 0x1C4637, khaki = 0x8B7E5B, khakiDark = 0x5E5440, panel = 0x5A605A, under = 0x3D3427;
         int steel = 0xB3BAC7, steelEdge = 0xD5DBE5, steelBack = 0x6B707E;
@@ -472,14 +473,7 @@ final class OutfitDefs {
         prism(rings, i -> w.color(i == 0 || i == 4 ? steelEdge : i == 2 ? steelBack : steel));
         capRing(w.color(steel), rings[0], -1);
 
-        // Into the fist: grip across the hand, 2.2 px under the guard.
-        float a = SWORD_TILT;
-        Matrix4f hold = new Matrix4f().translation(0, -9.3f + (float) Math.sin(a) * 2.2f, (float) Math.cos(a) * 2.2f)
-                .rotateX(PI / 2 - a).rotateY(-PI / 2);
-        for (Geo g : new Geo[] {flat, side, w}) {
-            g.transform(0, hold);
-        }
-        return b.build();
+        return b.build().pieces();
     }
 
     // ===================================================== LOOKUP ====================================================
@@ -491,12 +485,11 @@ final class OutfitDefs {
             defs = new LinkedHashMap<>();
             defs.put("destruction_god", bills());
             defs.put("uchiha_ghost", madara());
-            defs.put("manipulator", aizen());
         }
         return defs.get(power);
     }
 
     static boolean has(String power) {
-        return "destruction_god".equals(power) || "uchiha_ghost".equals(power) || "manipulator".equals(power);
+        return "destruction_god".equals(power) || "uchiha_ghost".equals(power);
     }
 }

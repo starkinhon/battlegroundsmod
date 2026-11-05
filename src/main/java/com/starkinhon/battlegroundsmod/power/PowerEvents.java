@@ -135,7 +135,7 @@ public final class PowerEvents {
         if (!(event.getEntity() instanceof ServerPlayer player) || !(event.getTarget() instanceof LivingEntity target)) {
             return;
         }
-        if (!player.getMainHandItem().isEmpty() || !player.getData(ModAttachments.POWER).hasPower() || !CombatMode.in(player)) {
+        if (!CombatMode.freeHand(player) || !player.getData(ModAttachments.POWER).hasPower() || !CombatMode.in(player)) {
             return;
         }
         event.setCanceled(true);
