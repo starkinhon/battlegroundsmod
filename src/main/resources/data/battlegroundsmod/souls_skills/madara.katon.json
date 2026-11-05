@@ -3,10 +3,10 @@
   "skill": "madara.katon",
   "nome": "Katon",
   "tempo": {
-    "atrasoTicks": 20,
+    "atrasoTicks": 53,
     "duracaoTicks": 111,
     "crescimentoTicks": 18,
-    "fracoTicks": 33
+    "fracoTicks": 0
   },
   "fraco": {
     "tamanho": 0.35,
