@@ -1,0 +1,230 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "aizen.black_box",
+  "nome": "Black Box",
+  "tempo": {
+    "atrasoTicks": 100,
+    "duracaoTicks": 6
+  },
+  "alvo": {
+    "alcance": 32
+  },
+  "caixa": {
+    "folga": 0.2,
+    "subirTicks": 14,
+    "minTicks": 6,
+    "crescerTicks": 60,
+    "maxTicks": 70,
+    "escalaMax": 3,
+    "fecharTicks": 6
+  },
+  "lancas": {
+    "golpes": 6,
+    "duracaoTicks": 26,
+    "quebrarTicks": 5
+  },
+  "dano": {
+    "minimo": 14,
+    "maximo": 42,
+    "lancas": 0.6
+  },
+  "animacao": {
+    "transicaoTicks": 4,
+    "preparo": {
+      "cabeca": 0,
+      "tronco": 0,
+      "bracoDir": {
+        "frente": 88,
+        "abrir": 4
+      },
+      "bracoEsq": {
+        "frente": 0,
+        "abrir": 4
+      }
+    },
+    "sopro": {
+      "cabeca": 0,
+      "tronco": 3,
+      "bracoDir": {
+        "frente": 96,
+        "abrir": 0
+      },
+      "bracoEsq": {
+        "frente": 0,
+        "abrir": 4
+      }
+    }
+  },
+  "sons": [
+    {
+      "nome": "Conjurar",
+      "som": "minecraft:entity.illusioner.prepare_blindness",
+      "momento": "uso",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.4,
+      "pitch": 0.6,
+      "pitchFim": 0.6,
+      "onde": "alvo"
+    },
+    {
+      "nome": "Paredes subindo",
+      "som": "minecraft:block.respawn_anchor.charge",
+      "momento": "uso",
+      "atrasoTicks": 2,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.0,
+      "pitch": 0.5,
+      "pitchFim": 0.5,
+      "onde": "alvo"
+    },
+    {
+      "nome": "Fechar",
+      "som": "minecraft:block.iron_door.close",
+      "momento": "fechar",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 2.0,
+      "pitch": 0.5,
+      "pitchFim": 0.5,
+      "onde": "alvo"
+    },
+    {
+      "nome": "Gravidade",
+      "som": "minecraft:entity.warden.sonic_charge",
+      "momento": "fechar",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.6,
+      "pitch": 0.7,
+      "pitchFim": 0.7,
+      "onde": "alvo"
+    },
+    {
+      "nome": "Lanca",
+      "som": "minecraft:item.trident.hit",
+      "momento": "lanca",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.6,
+      "pitch": 0.6,
+      "pitchFim": 0.6,
+      "onde": "alvo"
+    },
+    {
+      "nome": "Quebrar",
+      "som": "minecraft:block.glass.break",
+      "momento": "quebrar",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 2.4,
+      "pitch": 0.5,
+      "pitchFim": 0.5,
+      "onde": "alvo"
+    },
+    {
+      "nome": "Implodir",
+      "som": "minecraft:entity.warden.sonic_boom",
+      "momento": "quebrar",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.6,
+      "pitch": 0.8,
+      "pitchFim": 0.8,
+      "onde": "alvo"
+    }
+  ],
+  "vfx": [
+    {
+      "tipo": "anelChao",
+      "momento": "uso",
+      "raio": 3,
+      "tamanho": 0.5,
+      "cor": "#7a2cff",
+      "altura": 0,
+      "vidaTicks": 12,
+      "alcance": 64
+    },
+    {
+      "tipo": "distorcao",
+      "momento": "fechar",
+      "modo": "onda",
+      "raio": 5,
+      "forca": 0.3,
+      "velocidade": 10,
+      "cor": "#7a2cff",
+      "tinta": 0.04,
+      "vidaTicks": 10,
+      "alcance": 48
+    },
+    {
+      "tipo": "tremor",
+      "momento": "fechar",
+      "forca": 0.35,
+      "vidaTicks": 6,
+      "alcance": 24
+    },
+    {
+      "tipo": "tremor",
+      "momento": "lanca",
+      "forca": 0.2,
+      "vidaTicks": 3,
+      "alcance": 16
+    },
+    {
+      "tipo": "flash",
+      "momento": "quebrar",
+      "cor": "#c79bff",
+      "forca": 0.12,
+      "vidaTicks": 5,
+      "alcance": 32
+    },
+    {
+      "tipo": "estrela",
+      "momento": "quebrar",
+      "quantidade": 20,
+      "comprimento": 6,
+      "tamanho": 0.6,
+      "cor": "#9a4dff",
+      "cor2": "#f1e6ff",
+      "vidaTicks": 12,
+      "alcance": 96
+    },
+    {
+      "tipo": "anel",
+      "momento": "quebrar",
+      "raio": 6,
+      "tamanho": 0.7,
+      "cor": "#c79bff",
+      "vidaTicks": 12,
+      "alcance": 96
+    },
+    {
+      "tipo": "distorcao",
+      "momento": "quebrar",
+      "modo": "onda",
+      "raio": 8,
+      "forca": 0.5,
+      "velocidade": 14,
+      "cor": "#7a2cff",
+      "tinta": 0.05,
+      "vidaTicks": 14,
+      "alcance": 64
+    },
+    {
+      "tipo": "tremor",
+      "momento": "quebrar",
+      "forca": 0.6,
+      "vidaTicks": 10,
+      "alcance": 32
+    }
+  ],
+  "despertado": {}
+}

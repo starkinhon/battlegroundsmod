@@ -7,10 +7,10 @@ import com.starkinhon.battlegroundsmod.combat.Fx;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
 import com.starkinhon.battlegroundsmod.power.Ability;
 import com.starkinhon.battlegroundsmod.power.Power;
+import com.starkinhon.battlegroundsmod.power.powers.aizen.BlackBox;
 
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -21,7 +21,8 @@ import net.minecraft.world.entity.Mob;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
 
-// Como Manipulador: kido spells, total hypnosis and a transcendent form.
+// O Manipulador (Aizen): kido spells, total hypnosis and a transcendent form. Z is the Black Box (Hado #90, Kurohitsugi:
+// held to grow the box around the target, let go to shut it; see aizen/BlackBox), X the white lightning.
 public final class Manipulator {
     private static final int PURPLE = 0x8E44FF;
     private static final int PALE = 0xE8DAFF;
@@ -31,13 +32,13 @@ public final class Manipulator {
 
     public static Power create() {
         return new Power("manipulator", 0x8E44FF, 1.0f, List.of(
+                new Ability(160, 0, BlackBox::use),
                 Ability.player(50, 15, Manipulator::whiteLightning),
-                Ability.player(200, 30, Manipulator::blackCoffin),
                 Ability.player(260, 25, Manipulator::hypnosis),
                 Ability.player(100, 0, Manipulator::transcendence)));
     }
 
-    // Z: a piercing beam of white lightning.
+    // X: a piercing beam of white lightning.
     private static boolean whiteLightning(ServerPlayer player, ServerLevel level) {
         Vec3 start = Combat.handPos(player);
         Vec3 end = Combat.raycastPoint(player, 32);
@@ -50,42 +51,6 @@ public final class Manipulator {
             Combat.hurt(player, target, 9f);
             Fx.burst(level, ParticleTypes.ELECTRIC_SPARK, Combat.center(target), 20, 0.4, 0.3);
         }
-        return true;
-    }
-
-    // X: traps the target in a black coffin, holds them still, then crushes them.
-    private static boolean blackCoffin(ServerPlayer player, ServerLevel level) {
-        LivingEntity target = Combat.raycastTarget(player, 30);
-        if (target == null) {
-            player.displayClientMessage(Component.translatable("message.battlegroundsmod.no_target"), true);
-            return false;
-        }
-        int duration = 40;
-        target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, duration + 5, 9, false, false));
-        Fx.sound(level, target.position(), SoundEvents.ELDER_GUARDIAN_CURSE, 1f, 0.6f);
-        Tasks.add(age -> {
-            if (!target.isAlive()) {
-                return true;
-            }
-            target.setDeltaMovement(0, Math.min(0, target.getDeltaMovement().y), 0);
-            target.hurtMarked = true;
-            double grow = Math.min(1, (age + 1) / 15.0);
-            var box = target.getBoundingBox().inflate(0.6);
-            box = box.setMaxY(box.minY + (box.maxY - box.minY) * grow);
-            if (age % 2 == 0) {
-                Fx.box(level, Fx.dust(0x111111, 2f), box, 0.3);
-                Fx.box(level, Fx.dust(PURPLE, 1f), box.inflate(0.1), 0.6);
-            }
-            if (age < duration) {
-                return false;
-            }
-            Vec3 pos = Combat.center(target);
-            Combat.hurtMagic(player, target, 18f);
-            Fx.burst(level, ParticleTypes.SQUID_INK, pos, 80, 0.8, 0.2);
-            Fx.burst(level, Fx.dust(PURPLE, 2f), pos, 60, 1, 0);
-            Fx.sound(level, pos, SoundEvents.WITHER_BREAK_BLOCK, 1f, 0.6f);
-            return true;
-        });
         return true;
     }
 

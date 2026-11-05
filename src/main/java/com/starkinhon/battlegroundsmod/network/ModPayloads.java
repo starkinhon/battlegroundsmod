@@ -559,6 +559,24 @@ public final class ModPayloads {
     // Server -> client: a ball of Bills' Destruction Energy (power/powers/bills/DestructionEnergy), sent every tick it
     // exists. mode 0 = there at pos, 2 = gone. grow: 0 to 1 while it forms (the rings open one after another); small: one
     // of the many balls of the Shift + Z, drawn lighter.
+    // Server -> client: Aizen's Black Box (power/powers/aizen/BlackBox). mode 0 held (every tick), 1 shut (once), 2 gone.
+    // base: the bottom middle of the box; size: x = half its width, y = its height, z = the charge (0 to 1).
+    public record BlackBox(int id, int mode, Vec3 base, Vec3 size, boolean awakened) implements CustomPacketPayload {
+        public static final Type<BlackBox> TYPE = payloadType("black_box");
+        public static final StreamCodec<ByteBuf, BlackBox> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, BlackBox::id,
+                ByteBufCodecs.VAR_INT, BlackBox::mode,
+                VEC3, BlackBox::base,
+                VEC3, BlackBox::size,
+                ByteBufCodecs.BOOL, BlackBox::awakened,
+                BlackBox::new);
+
+        @Override
+        public Type<BlackBox> type() {
+            return TYPE;
+        }
+    }
+
     public record EnergyBall(int id, int mode, Vec3 pos, float radius, float grow, boolean small) implements CustomPacketPayload {
         public static final Type<EnergyBall> TYPE = payloadType("energy_ball");
         public static final StreamCodec<ByteBuf, EnergyBall> STREAM_CODEC = StreamCodec.composite(
@@ -809,6 +827,8 @@ public final class ModPayloads {
                 () -> ClientHooks.hakaiBall(payload.id(), payload.mode(), payload.pos(), payload.targetId(), payload.radius(), payload.awakened())));
         registrar.playToClient(HakaiShot.TYPE, HakaiShot.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.hakaiShot(payload.start(), payload.velocity(), payload.ticks(), payload.awakened())));
+        registrar.playToClient(BlackBox.TYPE, BlackBox.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.blackBox(payload.id(), payload.mode(), payload.base(), payload.size(), payload.awakened())));
         registrar.playToClient(EnergyBall.TYPE, EnergyBall.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.energyBall(payload.id(), payload.mode(), payload.pos(), payload.radius(), payload.grow(), payload.small())));
         registrar.playToClient(PlanetSphere.TYPE, PlanetSphere.STREAM_CODEC, (payload, context) -> context.enqueueWork(

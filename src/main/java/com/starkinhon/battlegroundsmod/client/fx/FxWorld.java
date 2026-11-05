@@ -119,7 +119,7 @@ public final class FxWorld {
         FxPost.newFrame();
         ScreenFx.capture(event);
         boolean world = !PIECES.isEmpty() || MeteorRenderer.hasTrails() || Aura.active() || KatonBallRenderer.active() || AshDeath.hasSparks()
-                || SpaceScene.active() || EsferaRenderer.active() || HakaiRenderer.active() || EnergyRenderer.active()
+                || SpaceScene.active() || EsferaRenderer.active() || HakaiRenderer.active() || EnergyRenderer.active() || BlackBoxRenderer.active()
                 || SphereRenderer.active() || SusanooArm.active() || DomainScene.active();
         if (!world && !ScreenFx.needsScene()) {
             return;
@@ -185,6 +185,7 @@ public final class FxWorld {
             EsferaRenderer.render(camera, now, partial);
             HakaiRenderer.render(camera, now, partial);
             EnergyRenderer.render(camera, now, partial);
+            BlackBoxRenderer.render(camera, now, partial);
             SphereRenderer.render(camera, now, partial);
             SusanooArm.render(source, flat, camera, now, partial);
             DomainScene.render(camera, now, partial);
@@ -214,6 +215,14 @@ public final class FxWorld {
             FxDraw.begin(source, event.getCamera(), flat);
             HakaiRenderer.overlay(camera, now, partial);
             source.endBatch(flat ? FxRenderTypes.FLAT_ALPHA : FxRenderTypes.VFX_ALPHA);
+        }
+        if (!space && BlackBoxRenderer.active()) {
+            // The Black Box's black walls and lances over the glow (the light of the edges behind it stays hidden), and
+            // the thin hot lines on top of them.
+            FxDraw.begin(source, event.getCamera(), flat);
+            BlackBoxRenderer.overlay(camera, now, partial);
+            source.endBatch(flat ? FxRenderTypes.FLAT_ALPHA : FxRenderTypes.VFX_ALPHA);
+            source.endBatch(flat ? FxRenderTypes.FLAT_ADD : FxRenderTypes.VFX_ADD);
         }
         if (!space && DomainScene.active()) {
             // The black hole and the ink falling into it, over the glow.
