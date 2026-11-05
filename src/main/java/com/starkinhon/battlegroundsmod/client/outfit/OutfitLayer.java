@@ -9,6 +9,7 @@ import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.starkinhon.battlegroundsmod.BattlegroundsMod;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
 import net.minecraft.client.model.PlayerModel;
@@ -59,9 +60,24 @@ public class OutfitLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<A
         super(parent);
     }
 
+    // Set when drawing an outfit failed once: outfits stop drawing instead of taking the game down every frame.
+    private static boolean broken;
+
     @Override
     public void render(PoseStack poseStack, MultiBufferSource buffer, int light, AbstractClientPlayer player, float limbSwing,
             float limbSwingAmount, float partialTick, float ageInTicks, float netHeadYaw, float headPitch) {
+        if (broken) {
+            return;
+        }
+        try {
+            draw(poseStack, buffer, light, player, partialTick);
+        } catch (RuntimeException e) {
+            broken = true;
+            BattlegroundsMod.LOGGER.error("Outfit drawing failed; outfits are off until the game restarts", e);
+        }
+    }
+
+    private void draw(PoseStack poseStack, MultiBufferSource buffer, int light, AbstractClientPlayer player, float partialTick) {
         if (player.isInvisible() || player.isSpectator()) {
             return;
         }
@@ -224,14 +240,16 @@ public class OutfitLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<A
     }
 
     private static void emitPlates(MultiBufferSource buffer, PoseStack.Pose pose, Cloth cloth, OutfitDefs.Plates plates, int light, int overlay) {
-        VertexConsumer lacq = buffer.getBuffer(RenderType.entityCutoutNoCull(OutfitDefs.LACQUER));
-        VertexConsumer gold = buffer.getBuffer(RenderType.entityCutoutNoCull(OutfitDefs.WHITE));
+        // One buffer at a time: asking the buffer source for another render type closes the one before, so the plates
+        // and their laces are drawn in two passes (writing to a closed buffer crashed the game).
         Vector3f[] L = cloth.p[0], R = cloth.p[1];
         Vector3f a = new Vector3f(), b = new Vector3f(), up = new Vector3f(), right = new Vector3f(), n = new Vector3f(), c = new Vector3f();
-        Matrix4f m = new Matrix4f();
-        Matrix3f nm = new Matrix3f();
         int lames = cloth.spec.rows() - 1;
+        Matrix4f[] ms = new Matrix4f[lames];
+        Matrix3f[] nms = new Matrix3f[lames];
         for (int i = 0; i < lames; i++) {
+            Matrix4f m = ms[i] = new Matrix4f();
+            Matrix3f nm = nms[i] = new Matrix3f();
             a.set(L[i]).add(R[i]).mul(0.5f);
             b.set(L[i + 1]).add(R[i + 1]).mul(0.5f);
             up.set(a).sub(b).normalize();
@@ -241,8 +259,14 @@ public class OutfitLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<A
             c.set(a).add(b).mul(0.5f).add(n.x * 0.16f * i, n.y * 0.16f * i, n.z * 0.16f * i);
             m.set(right.x, right.y, right.z, 0, up.x, up.y, up.z, 0, n.x, n.y, n.z, 0, c.x, c.y, c.z, 1).rotateX(-0.13f);
             m.normal(nm);
-            emitMoved(lacq, pose, plates.lame(), m, nm, light, overlay);
-            emitMoved(gold, pose, plates.laces(), m, nm, light, overlay);
+        }
+        VertexConsumer lacq = buffer.getBuffer(RenderType.entityCutoutNoCull(OutfitDefs.LACQUER));
+        for (int i = 0; i < lames; i++) {
+            emitMoved(lacq, pose, plates.lame(), ms[i], nms[i], light, overlay);
+        }
+        VertexConsumer gold = buffer.getBuffer(RenderType.entityCutoutNoCull(OutfitDefs.WHITE));
+        for (int i = 0; i < lames; i++) {
+            emitMoved(gold, pose, plates.laces(), ms[i], nms[i], light, overlay);
         }
     }
 
