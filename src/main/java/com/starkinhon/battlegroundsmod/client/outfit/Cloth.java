@@ -25,6 +25,10 @@ final class Cloth {
         }
     }
 
+    private static final float DAMPING = 0.96f;
+    private static final float MAX_STEP = 0.5f;
+    private static final float MAX_SWING = (float) Math.toRadians(55);
+
     final Spec spec;
     final int n;
     final Vector3f[][] p;
@@ -83,7 +87,15 @@ final class Cloth {
         for (int c = 0; c < n; c++) {
             for (int r = 1; r < rows; r++) {
                 Vector3f q = p[c][r], old = o[c][r];
-                float vx = (q.x - old.x) * 0.985f, vy = (q.y - old.y) * 0.985f, vz = (q.z - old.z) * 0.985f;
+                float vx = (q.x - old.x) * DAMPING, vy = (q.y - old.y) * DAMPING, vz = (q.z - old.z) * DAMPING;
+                // No point moves faster than MAX_STEP per step: a hard kick never flings the cloth away.
+                float speed = (float) Math.sqrt(vx * vx + vy * vy + vz * vz);
+                if (speed > MAX_STEP) {
+                    float f = MAX_STEP / speed;
+                    vx *= f;
+                    vy *= f;
+                    vz *= f;
+                }
                 old.set(q);
                 q.add(vx + force.x * d2, vy + force.y * d2, vz + force.z * d2);
             }
@@ -108,16 +120,41 @@ final class Cloth {
             for (int c = 0; c < n; c++) {
                 for (int r = 1; r < rows; r++) {
                     for (ColliderSpec k : colliders) {
-                        push(rig, k, p[c][r], spec.margin(), tmp);
+                        Vector3f q = p[c][r];
+                        float bx = q.x, by = q.y, bz = q.z;
+                        push(rig, k, q, spec.margin(), tmp);
+                        // Being pushed out of a leg moves the point but gives it no speed (else every step kicks it).
+                        o[c][r].add(q.x - bx, q.y - by, q.z - bz);
                     }
                 }
             }
             if (spec.rigidRight() != null) {
                 keepWidth(rig);
             }
+            limitSwing();
         }
         for (int c = 0; c < n; c++) {
             p[c][0].set(anchor[c]);
+        }
+    }
+
+    // Each link may lean at most MAX_SWING from hanging straight down, so nothing flies up over the body.
+    private void limitSwing() {
+        float minDrop = spec.seg() * (float) Math.cos(MAX_SWING);
+        for (int c = 0; c < n; c++) {
+            for (int r = 1; r < spec.rows(); r++) {
+                Vector3f a = p[c][r - 1], b = p[c][r];
+                float dx = b.x - a.x, dz = b.z - a.z, drop = a.y - b.y;
+                if (drop < minDrop) {
+                    float side = (float) Math.sqrt(Math.max(0, spec.seg() * spec.seg() - minDrop * minDrop));
+                    float h = (float) Math.sqrt(dx * dx + dz * dz);
+                    if (h < 1e-5f) {
+                        b.set(a.x, a.y - spec.seg(), a.z);
+                    } else {
+                        b.set(a.x + dx / h * side, a.y - minDrop, a.z + dz / h * side);
+                    }
+                }
+            }
         }
     }
 
