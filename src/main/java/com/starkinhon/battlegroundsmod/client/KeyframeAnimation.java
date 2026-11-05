@@ -21,7 +21,7 @@ import net.minecraft.util.Mth;
 
 // A body animation made by hand in an animation editor, keyframe by keyframe, for a skill:
 // assets/battlegroundsmod/animations/<skill>.json, in the same shape as Minecraft's own animations:
-// {"length": s, "animations": [{"bone": "Right Arm", "target": "rotation" | "position",
+// {"length": s, "animations": [{"bone": "Right Arm", "target": "rotation" | "position" | "scale",
 //   "keyframes": [{"timestamp": s, "target": [x, y, z], "interpolation": "linear" | "catmullrom"}]}]}
 // Rotations are degrees and positions pixels, as the editor shows them (x and y flipped into Minecraft's axes). Before the first keyframe a
 // channel holds its first value, after the last its last, so the final pose stays as long as the skill wants it.
@@ -30,7 +30,8 @@ public final class KeyframeAnimation {
     private record Keyframe(float time, float x, float y, float z, boolean smooth) {
     }
 
-    private record Channel(String bone, boolean position, Keyframe[] keys) {
+    // target: 0 rotation, 1 position, 2 scale.
+    private record Channel(String bone, int target, Keyframe[] keys) {
     }
 
     private static final Map<String, Optional<KeyframeAnimation>> CACHE = new HashMap<>();
@@ -59,7 +60,8 @@ public final class KeyframeAnimation {
             for (JsonElement element : root.getAsJsonArray("animations")) {
                 JsonObject anim = element.getAsJsonObject();
                 String bone = anim.get("bone").getAsString().toLowerCase().replace(" ", "").replace("_", "");
-                boolean position = "position".equals(anim.get("target").getAsString());
+                String targetName = anim.get("target").getAsString();
+                int target = "position".equals(targetName) ? 1 : "scale".equals(targetName) ? 2 : 0;
                 List<Keyframe> keys = new ArrayList<>();
                 for (JsonElement k : anim.getAsJsonArray("keyframes")) {
                     JsonObject key = k.getAsJsonObject();
@@ -70,7 +72,7 @@ public final class KeyframeAnimation {
                 }
                 keys.sort((a, b) -> Float.compare(a.time(), b.time()));
                 if (!keys.isEmpty()) {
-                    channels.add(new Channel(bone, position, keys.toArray(new Keyframe[0])));
+                    channels.add(new Channel(bone, target, keys.toArray(new Keyframe[0])));
                 }
             }
             return Optional.of(new KeyframeAnimation(channels));
@@ -90,7 +92,12 @@ public final class KeyframeAnimation {
             float[] v = sample(channel.keys(), seconds);
             // The editor's axes are Minecraft's turned half round the forward axis (its x and y point the other way, as
             // in Blockbench), so x and y flip, for both turning and moving.
-            if (channel.position()) {
+            if (channel.target() == 2) {
+                // (scale is the same on every axis, so nothing flips; 1 is the normal size)
+                part.xScale = 1 + (v[0] - 1) * weight;
+                part.yScale = 1 + (v[1] - 1) * weight;
+                part.zScale = 1 + (v[2] - 1) * weight;
+            } else if (channel.target() == 1) {
                 part.x -= v[0] * weight;
                 part.y -= v[1] * weight;
                 part.z += v[2] * weight;

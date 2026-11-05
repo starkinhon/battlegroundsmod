@@ -3,10 +3,10 @@
   "skill": "madara.katon",
   "nome": "Katon",
   "tempo": {
-    "atrasoTicks": 40,
+    "atrasoTicks": 53,
     "duracaoTicks": 111,
     "crescimentoTicks": 18,
-    "fracoTicks": 33
+    "fracoTicks": 0
   },
   "fraco": {
     "tamanho": 0.35,
@@ -244,6 +244,17 @@
       "cor": "#ff6a00",
       "forca": 0.85,
       "vidaTicks": 30
+    },
+    {
+      "tipo": "realismo",
+      "momento": "fumacaRealismo",
+      "modo": "fumaca",
+      "raio": 3.5,
+      "comprimento": 22,
+      "forca": 1,
+      "cor": "#b0a8a4",
+      "vidaTicks": 170,
+      "alcance": 128
     }
   ]
 }

@@ -84,7 +84,8 @@ public final class Movement {
     // Can this entity move on its own right now? Both sides (the client can't see Freeze, the server checks that).
     public static boolean free(LivingEntity entity) {
         if (!entity.isAlive() || entity.isPassenger() || entity.isSpectator() || entity.isFallFlying() || entity.onClimbable()
-                || entity.isInWater() || entity.isInLava() || entity.isSleeping() || Stun.is(entity)) {
+                || entity.isInWater() || entity.isInLava() || entity.isSleeping() || Stun.is(entity)
+                || entity.hasEffect(com.starkinhon.battlegroundsmod.ModEffects.ENRAIZADO)) {
             return false;
         }
         return !(entity instanceof Player player && player.getAbilities().flying);
