@@ -154,7 +154,7 @@ public class OutfitLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<A
         float vx = (float) (player.getX() - player.xo) * 320, vy = (float) (player.getY() - player.yo) * 320, vz = (float) (player.getZ() - player.zo) * 320;
         float c = Mth.cos(yaw), s = Mth.sin(yaw);
         float lx = vx * c + vz * s, lz = -vx * s + vz * c;
-        float k = 1.6f;
+        float k = 0.7f;
         Vector3f force = new Vector3f(-lx * k, GRAVITY - vy * k, -lz * k);
 
         state.acc += dt;
