@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.function.DoubleFunction;
 
 import org.joml.Matrix4f;
 
@@ -32,13 +33,21 @@ public final class Realismo {
     private static final int MAX = 8;
 
     // speed: how fast it travels along dir (blocks a second); a tornado also wanders round its path.
+    // path: where it is each frame (given the partial tick), for a volume riding something that moves on its own (the
+    // meteor's tail); null to stay at pos. owner: what it belongs to, so it can be taken away with it (remove).
     private record Vol(int type, Vec3 pos, Vec3 dir, float speed, float radius, float height, float intensity, float[] tint, float seed,
-            long start, int life, int follow, String seguir) {
+            long start, int life, int follow, String seguir, DoubleFunction<Vec3> path, Object owner) {
         double age(double now) {
             return (now - start) / 20.0;
         }
 
         Vec3 at(double now, float partial) {
+            if (path != null) {
+                Vec3 p = path.apply(partial);
+                if (p != null) {
+                    return p;
+                }
+            }
             Vec3 base = pos;
             if (follow >= 0) {
                 Vec3 anchored = FxAnchor.point(follow, seguir, partial);
@@ -113,16 +122,37 @@ public final class Realismo {
     // follow: an entity to stay on (-1 none), seguir as in the skill files.
     public static void add(int type, Vec3 pos, Vec3 dir, float speed, float radius, float height, float intensity, int tint, int lifeTicks,
             int follow, String seguir) {
+        add(type, pos, dir, speed, radius, height, intensity, tint, lifeTicks, follow, seguir, null, null, 0);
+    }
+
+    // A volume that rides path (see Vol) and belongs to owner. preAgeTicks: it starts as if it had already been going that
+    // long (a smoke column already at its full height, no fading in); it still lasts lifeTicks from now.
+    public static void ride(int type, DoubleFunction<Vec3> path, Vec3 dir, float radius, float height, float intensity, int tint, int lifeTicks,
+            int preAgeTicks, Object owner) {
+        Vec3 pos = path.apply(0);
+        add(type, pos == null ? Vec3.ZERO : pos, dir, 0, radius, height, intensity, tint, lifeTicks, -1, null, path, owner, preAgeTicks);
+    }
+
+    // Takes away every volume that belongs to owner (the meteor pulverized in the air).
+    public static void remove(Object owner) {
+        if (owner != null) {
+            VOLS.removeIf(v -> v.owner() == owner);
+        }
+    }
+
+    private static void add(int type, Vec3 pos, Vec3 dir, float speed, float radius, float height, float intensity, int tint, int lifeTicks,
+            int follow, String seguir, DoubleFunction<Vec3> path, Object owner, int preAgeTicks) {
         if (type < 0) {
             return;
         }
+        int pre = Math.max(0, preAgeTicks);
         float[] d = defaults(type);
         if (VOLS.size() >= MAX) {
             VOLS.remove(0);
         }
         float seed = RANDOM.nextFloat() * 97f;
         VOLS.add(new Vol(type, pos, dir == null ? Vec3.ZERO : dir, speed, radius > 0 ? radius : d[0], height > 0 ? height : d[1],
-                intensity > 0 ? intensity : 1, rgb(tint), seed, ScreenFx.now(), Math.max(1, lifeTicks), follow, seguir));
+                intensity > 0 ? intensity : 1, rgb(tint), seed, ScreenFx.now() - pre, Math.max(1, lifeTicks) + pre, follow, seguir, path, owner));
     }
 
     public static void clear() {

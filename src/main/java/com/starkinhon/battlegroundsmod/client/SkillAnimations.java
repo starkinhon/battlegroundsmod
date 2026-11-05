@@ -221,6 +221,7 @@ public final class SkillAnimations {
     private static void standStill(HumanoidModel<?> model) {
         for (ModelPart part : new ModelPart[] {model.head, model.body, model.rightArm, model.leftArm, model.rightLeg, model.leftLeg}) {
             part.setRotation(0, 0, 0);
+            part.xScale = part.yScale = part.zScale = 1;
         }
         model.head.setPos(0, 0, 0);
         model.body.setPos(0, 0, 0);
@@ -313,6 +314,10 @@ public final class SkillAnimations {
         }
         model.body.z = 0;
         model.head.z = 0;
+        // (a hand-made animation may have scaled parts; the model is shared by everyone drawn with it)
+        for (ModelPart part : new ModelPart[] {model.head, model.body, model.rightArm, model.leftArm, model.rightLeg, model.leftLeg}) {
+            part.xScale = part.yScale = part.zScale = 1;
+        }
         model.hat.copyFrom(model.head);
         // The attack swing sets the arm z itself.
         if (model.attackTime <= 0) {

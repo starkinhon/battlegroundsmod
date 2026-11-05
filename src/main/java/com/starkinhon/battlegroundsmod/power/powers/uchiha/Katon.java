@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 import com.starkinhon.battlegroundsmod.ModAttachments;
+import com.starkinhon.battlegroundsmod.ModEffects;
 import com.starkinhon.battlegroundsmod.combat.AshKill;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Cone;
@@ -23,6 +24,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
 
@@ -36,6 +39,9 @@ public final class Katon {
     private static final int HIT_INTERVAL = 5;
     private static final float DAMAGE = 1.5f;
     private static final int SLOW_TICKS = 30;
+    // A new column of Realismo smoke every this many ticks of the full fire, and how far down it looks for the ground.
+    private static final int SMOKE_EVERY = 28;
+    private static final double SMOKE_DROP = 8;
     // Used when the file has no "sons" list: the Forja's starting sounds.
     private static final List<Som> DEFAULT_SOUNDS = List.of(
             Som.of("Katon", "battlegroundsmod:katon", "fogo", 3, 1, "boca"),
@@ -51,8 +57,9 @@ public final class Katon {
         SkillSpec.Tempo tempo = spec.tempo();
         String power = data.power;
         data.busyTicks = tempo.totalTicks();
-        // The caster is rooted during the wind-up and while breathing fire, but can still turn to aim.
-        player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, tempo.totalTicks(), 2, false, false, false));
+        // The caster stands still the whole time (no walking, jumping or dodging) but can still turn to aim.
+        // Taken away early if the fire is cut off (grabbed, sealed).
+        player.addEffect(new MobEffectInstance(ModEffects.ENRAIZADO, tempo.totalTicks(), 0, false, false, false));
         PacketDistributor.sendToPlayersTrackingEntityAndSelf(player, new ModPayloads.PlaySkillAnimation(player.getId(), SKILL, data.awakened));
         Map<LivingEntity, Integer> lastHit = new HashMap<>();
         List<Som> sons = spec.sons() != null ? spec.sons() : DEFAULT_SOUNDS;
@@ -81,6 +88,7 @@ public final class Katon {
         Tasks.add(tick -> {
             if (!player.isAlive() || player.isRemoved() || !power.equals(player.getData(ModAttachments.POWER).power)
                     || player.getData(ModAttachments.POWER).interrupts != interrupts) {
+                player.removeEffect(ModEffects.ENRAIZADO);
                 return true;
             }
             int age = tick - tempo.atrasoTicks();
@@ -97,6 +105,11 @@ public final class Katon {
             }
             if (strong && phaseAge == 0) {
                 Fx.effects(level, SKILL, awakened, "explosao", player, tempo.duracaoTicks());
+            }
+            // Realismo: real smoke rising where the fire ends (on the ground under it if it is close), drifting the way
+            // the fire goes; a new column every so often, so it follows the aim.
+            if (strong && phaseAge % SMOKE_EVERY == SMOKE_EVERY / 3) {
+                Fx.effects(level, SKILL, awakened, "fumacaRealismo", smokeFoot(level, player, cone), cone.dir());
             }
             if (strong) {
                 UchihaFx.katonBlast(level, spec, cone, phaseAge);
@@ -117,9 +130,20 @@ public final class Katon {
             if (Cone.debug && age % 2 == 0) {
                 cone.draw(Fx.dust(0xFFFFFF, 0.6f));
             }
-            return age >= weak + tempo.duracaoTicks() - 1;
+            boolean done = age >= weak + tempo.duracaoTicks() - 1;
+            if (done) {
+                Fx.effects(level, SKILL, awakened, "fumacaRealismo", smokeFoot(level, player, cone), cone.dir());
+            }
+            return done;
         });
         return true;
+    }
+
+    // Where the fire ends, dropped to the ground when the ground is a few blocks under it.
+    private static Vec3 smokeFoot(ServerLevel level, LivingEntity player, Cone cone) {
+        Vec3 tip = cone.pointAt(cone.length());
+        var hit = level.clip(new ClipContext(tip, tip.add(0, -SMOKE_DROP, 0), ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player));
+        return hit.getType() == HitResult.Type.MISS ? tip : hit.getLocation();
     }
 
     private static double weakSize(SkillSpec spec) {

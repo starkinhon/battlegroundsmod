@@ -53,6 +53,15 @@ public final class ModEffects {
                     .addAttributeModifier(Attributes.JUMP_STRENGTH, ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "brain_damage_jump"),
                             -1, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
 
+    // Rooted: standing still to use a move (Madara's Katon). No walking, jumping or dodging, but the camera still turns.
+    // No icon; taken away as soon as the move ends.
+    public static final DeferredHolder<MobEffect, MobEffect> ENRAIZADO = MOB_EFFECTS.register("enraizado",
+            () -> new Marker(0xC0602A)
+                    .addAttributeModifier(Attributes.MOVEMENT_SPEED, ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "enraizado_speed"),
+                            -1, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL)
+                    .addAttributeModifier(Attributes.JUMP_STRENGTH, ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "enraizado_jump"),
+                            -1, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
+
     private ModEffects() {
     }
 
