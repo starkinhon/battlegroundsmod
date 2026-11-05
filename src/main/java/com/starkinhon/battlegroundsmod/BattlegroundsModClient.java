@@ -31,6 +31,8 @@ import com.starkinhon.battlegroundsmod.client.StatusBars;
 import com.starkinhon.battlegroundsmod.client.ScreenShake;
 import com.starkinhon.battlegroundsmod.client.ShoulderCutscene;
 import com.starkinhon.battlegroundsmod.client.Vanish;
+import com.starkinhon.battlegroundsmod.client.AizenIllusionRenderer;
+import com.starkinhon.battlegroundsmod.client.DummyRenderer;
 import com.starkinhon.battlegroundsmod.client.SoulBossRenderer;
 
 import net.minecraft.client.renderer.entity.player.PlayerRenderer;
@@ -145,6 +147,9 @@ public class BattlegroundsModClient {
         event.registerEntityRenderer(ModEntities.MADARA.get(), context -> new SoulBossRenderer<>(context, "madara", true));
         event.registerEntityRenderer(ModEntities.BILLS.get(), context -> new SoulBossRenderer<>(context, "bills", true));
         event.registerEntityRenderer(ModEntities.GOJO.get(), context -> new SoulBossRenderer<>(context, "gojo", true));
+        event.registerEntityRenderer(ModEntities.DUMMY.get(), context -> new DummyRenderer<>(context, "steve"));
+        event.registerEntityRenderer(ModEntities.DUMMY_ATTACKER.get(), context -> new DummyRenderer<>(context, "kai"));
+        event.registerEntityRenderer(ModEntities.AIZEN_ILLUSION.get(), AizenIllusionRenderer::new);
     }
 
     // Players' eyes can trail light too (Mangekyo, see Aura), so their renderers learn where the eyes are.

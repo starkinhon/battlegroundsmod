@@ -219,6 +219,50 @@ void main() {
             alpha = pow(soft, 2.0) * smoothstep(0.0, 0.06, uv.x) * (1.0 - smoothstep(0.75, 1.0, uv.x));
             core = pow(soft, 8.0) * (1.0 - uv.x) * 0.5;
         }
+    } else if (shape == 14) {
+        // A shard of glass or eggshell (Kyoka Suigetsu's mirror, the Hogyoku cocoon): param < 0.5 a quad, else a
+        // triangle (a, b, c); bright rim and a glint that slides across with fract(param * 2).
+        float e = param >= 0.5 ? min(min(uv.y, 1.0 - uv.x), (uv.x - uv.y) * 0.7071) : min(min(uv.x, 1.0 - uv.x), min(uv.y, 1.0 - uv.y));
+        float ew = max(fwidth(e), 1.0e-4);
+        float rim = 1.0 - smoothstep(0.5, 3.0, e / ew);
+        float k = fract(param * 2.0);
+        float glint = pow(max(0.0, 1.0 - abs(uv.x + uv.y - 0.6 - k) * 5.0), 3.0);
+        base = mix(color.rgb, vec3(1.0), clamp(rim * 0.85 + glint * 0.5, 0.0, 1.0));
+        alpha = (0.8 + 0.2 * rim) * step(0.0, e);
+    } else if (shape == 15) {
+        // A black butterfly wing (the Hogyoku evolution), root at u = 0 and tip at u = 1: veins, an eye spot and a
+        // violet rim. param < 0.5 the dark body (fract(param * 2) varies the outline), else its glow.
+        vec2 q = vec2(uv.x, uv.y - 0.5);
+        float a = atan(q.y, max(q.x, 1.0e-4));
+        float rr = length(q);
+        float vr = fract(param * 2.0);
+        float R = 0.97 * pow(max(0.0, cos(a)), 0.55) * (1.0 - 0.07 * pow(abs(sin(a * 5.0 + vr * 2.0)), 3.0));
+        R = min(R, 0.5 / max(abs(sin(a)), 1.0e-3));
+        float d = R - rr;
+        float fw = max(fwidth(d), 1.0e-4);
+        float body = smoothstep(0.0, 1.5 * fw, d);
+        float rim = 1.0 - smoothstep(0.0, 0.07, d);
+        float vein = pow(abs(cos(a * 8.0 + sin(rr * 6.0) * 0.4)), 30.0) * smoothstep(0.08, 0.35, rr);
+        float eye = length((q - vec2(0.62, 0.06 * (vr - 0.5))) / vec2(1.0, 0.8));
+        float eyeRing = 1.0 - smoothstep(0.0, 0.025, abs(eye - 0.11));
+        float eyeIn = smoothstep(0.08, 0.05, eye);
+        float n = fbm(q * 6.0 + vec2(seed, time * 0.2));
+        if (param < 0.5) {
+            vec3 black = vec3(0.02, 0.012, 0.035);
+            vec3 deep = vec3(0.23, 0.06, 0.56);
+            vec3 violet = vec3(0.55, 0.16, 1.0);
+            vec3 lilac = vec3(0.86, 0.66, 1.0);
+            vec3 c = mix(black, deep, smoothstep(0.3, 1.0, rr / max(R, 1.0e-3)) * 0.6 + n * 0.15);
+            c = mix(c, violet, vein * 0.7);
+            c = mix(c, violet, eyeRing);
+            c = mix(c, lilac, eyeIn * 0.6);
+            c = mix(c, lilac, rim * 0.85);
+            base = c;
+            alpha = body * 0.96;
+        } else {
+            alpha = body * (rim * 0.9 + vein * 0.5 + eyeRing * 0.7 + 0.08) + (1.0 - body) * exp(-max(0.0, -d) * 14.0) * 0.35;
+            core = rim * body * 0.3;
+        }
     } else {
         alpha = 1.0;
     }

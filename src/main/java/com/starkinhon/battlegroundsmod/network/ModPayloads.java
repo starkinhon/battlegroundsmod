@@ -559,6 +559,25 @@ public final class ModPayloads {
     // Server -> client: a ball of Bills' Destruction Energy (power/powers/bills/DestructionEnergy), sent every tick it
     // exists. mode 0 = there at pos, 2 = gone. grow: 0 to 1 while it forms (the rings open one after another); small: one
     // of the many balls of the Shift + Z, drawn lighter.
+    // Server -> client: one of Aizen's other effects (client/fx/AizenFx; kinds there): the Reiatsu around entityId, the
+    // Hogyoku evolution on entityId, a cut in space at pos along dir, or Kyoka Suigetsu's clone cracking and breaking.
+    public record AizenFx(int kind, int entityId, Vec3 pos, Vec3 dir, float a, float b) implements CustomPacketPayload {
+        public static final Type<AizenFx> TYPE = payloadType("aizen_fx");
+        public static final StreamCodec<ByteBuf, AizenFx> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, AizenFx::kind,
+                ByteBufCodecs.VAR_INT, AizenFx::entityId,
+                VEC3, AizenFx::pos,
+                VEC3, AizenFx::dir,
+                ByteBufCodecs.FLOAT, AizenFx::a,
+                ByteBufCodecs.FLOAT, AizenFx::b,
+                AizenFx::new);
+
+        @Override
+        public Type<AizenFx> type() {
+            return TYPE;
+        }
+    }
+
     // Server -> client: Aizen's Black Box (power/powers/aizen/BlackBox). mode 0 held (every tick), 1 shut (once), 2 gone.
     // base: the bottom middle of the box; size: x = half its width, y = its height, z = the charge (0 to 1).
     public record BlackBox(int id, int mode, Vec3 base, Vec3 size, boolean awakened) implements CustomPacketPayload {
@@ -829,6 +848,8 @@ public final class ModPayloads {
                 () -> ClientHooks.hakaiShot(payload.start(), payload.velocity(), payload.ticks(), payload.awakened())));
         registrar.playToClient(BlackBox.TYPE, BlackBox.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.blackBox(payload.id(), payload.mode(), payload.base(), payload.size(), payload.awakened())));
+        registrar.playToClient(AizenFx.TYPE, AizenFx.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.aizenFx(payload.kind(), payload.entityId(), payload.pos(), payload.dir(), payload.a(), payload.b())));
         registrar.playToClient(EnergyBall.TYPE, EnergyBall.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.energyBall(payload.id(), payload.mode(), payload.pos(), payload.radius(), payload.grow(), payload.small())));
         registrar.playToClient(PlanetSphere.TYPE, PlanetSphere.STREAM_CODEC, (payload, context) -> context.enqueueWork(

@@ -121,6 +121,7 @@ public final class ClientHooks {
         com.starkinhon.battlegroundsmod.client.fx.EnergyRenderer.clear();
         com.starkinhon.battlegroundsmod.client.fx.SphereRenderer.clear();
         com.starkinhon.battlegroundsmod.client.fx.BlackBoxRenderer.clear();
+        com.starkinhon.battlegroundsmod.client.fx.AizenFx.clear();
     }
 
     public static void hideEntity(int entityId, int ticks) {
@@ -183,6 +184,10 @@ public final class ClientHooks {
 
     public static void blackBox(int id, int mode, Vec3 base, Vec3 size, boolean awakened) {
         com.starkinhon.battlegroundsmod.client.fx.BlackBoxRenderer.box(id, mode, base, size, awakened);
+    }
+
+    public static void aizenFx(int kind, int entityId, Vec3 pos, Vec3 dir, float a, float b) {
+        com.starkinhon.battlegroundsmod.client.fx.AizenFx.receive(kind, entityId, pos, dir, a, b);
     }
 
     public static void energyBall(int id, int mode, Vec3 pos, float radius, float grow, boolean small) {

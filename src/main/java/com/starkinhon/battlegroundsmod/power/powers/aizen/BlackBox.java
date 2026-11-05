@@ -172,7 +172,7 @@ public final class BlackBox {
 
     // Bosses go for their own target; players for whoever they last fought if it is in front of them and in sight, else
     // whoever is under the crosshair.
-    private static LivingEntity lock(LivingEntity caster, double range) {
+    static LivingEntity lock(LivingEntity caster, double range) {
         if (caster instanceof Mob mob) {
             LivingEntity target = mob.getTarget();
             return target != null && Combat.isTarget(target, caster) && target.distanceTo(caster) <= range ? target : null;

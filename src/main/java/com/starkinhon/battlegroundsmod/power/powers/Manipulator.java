@@ -1,41 +1,43 @@
 package com.starkinhon.battlegroundsmod.power.powers;
 
+import java.util.Arrays;
 import java.util.List;
 
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Fx;
-import com.starkinhon.battlegroundsmod.combat.Tasks;
 import com.starkinhon.battlegroundsmod.power.Ability;
 import com.starkinhon.battlegroundsmod.power.Power;
 import com.starkinhon.battlegroundsmod.power.powers.aizen.BlackBox;
+import com.starkinhon.battlegroundsmod.power.powers.aizen.Hogyoku;
+import com.starkinhon.battlegroundsmod.power.powers.aizen.KyokaSuigetsu;
+import com.starkinhon.battlegroundsmod.power.powers.aizen.Reiatsu;
+import com.starkinhon.battlegroundsmod.power.powers.aizen.UmDedo;
 
-import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
-import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.Mob;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
 
-// O Manipulador (Aizen): kido spells, total hypnosis and a transcendent form. Z is the Black Box (Hado #90, Kurohitsugi:
-// held to grow the box around the target, let go to shut it; see aizen/BlackBox), X the white lightning.
+// O Manipulador (Aizen). Z the Black Box (Hado #90, Kurohitsugi: held to grow the box around the target, let go to shut
+// it; see aizen/BlackBox), X Kyoka Suigetsu (a clone stays, he walks unseen; X again breaks it), C the Reiatsu (tap: a
+// small pulse; held: it grows and crushes everyone to their knees), B Um Dedo (a counter: one finger stops the hit, the
+// sword answers), V the special, the Evolucao do Hogyoku (cocoon, six wings; V again is the dash of cuts while it lasts).
+// Shift + X is the white lightning.
 public final class Manipulator {
-    private static final int PURPLE = 0x8E44FF;
-    private static final int PALE = 0xE8DAFF;
-
     private Manipulator() {
     }
 
     public static Power create() {
         return new Power("manipulator", 0x8E44FF, 1.0f, List.of(
                 new Ability(160, 0, BlackBox::use),
-                Ability.player(50, 15, Manipulator::whiteLightning),
-                Ability.player(260, 25, Manipulator::hypnosis),
-                Ability.player(100, 0, Manipulator::transcendence)));
+                // The real cooldown starts when the illusion breaks (KyokaSuigetsu).
+                new Ability(20, 0, KyokaSuigetsu::use),
+                new Ability(120, 0, Reiatsu::use),
+                new Ability(100, 0, Hogyoku::use),
+                new Ability(80, 0, UmDedo::use).asCounter()),
+                Arrays.asList(null, Ability.player(50, 15, Manipulator::whiteLightning), null, null));
     }
 
     // X: a piercing beam of white lightning.
@@ -51,83 +53,6 @@ public final class Manipulator {
             Combat.hurt(player, target, 9f);
             Fx.burst(level, ParticleTypes.ELECTRIC_SPARK, Combat.center(target), 20, 0.4, 0.3);
         }
-        return true;
-    }
-
-    // C: everyone nearby is blinded and confused, mobs lose track of the player,
-    // and the player reappears behind the closest enemy.
-    private static boolean hypnosis(ServerPlayer player, ServerLevel level) {
-        Vec3 origin = player.position();
-        List<LivingEntity> targets = Combat.inRadius(level, Combat.center(player), 14, player);
-        var glass = new BlockParticleOption(ParticleTypes.BLOCK, Blocks.GLASS.defaultBlockState());
-        Fx.burst(level, glass, origin.add(0, 1, 0), 80, 1.5, 0.2);
-        Fx.sphere(level, Fx.dust(PALE, 1.5f), origin.add(0, 1, 0), 3, 60);
-        Fx.sound(level, origin, SoundEvents.ILLUSIONER_MIRROR_MOVE, 2f, 0.8f);
-        Fx.sound(level, origin, SoundEvents.GLASS_BREAK, 1.5f, 0.6f);
-        LivingEntity closest = null;
-        for (LivingEntity target : targets) {
-            target.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 80, 0));
-            target.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 140, 0));
-            target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 60, 1));
-            if (target instanceof Mob mob && mob.getTarget() == player) {
-                mob.setTarget(null);
-            }
-            Fx.burst(level, glass, Combat.center(target), 30, 0.5, 0.15);
-            if (closest == null || target.distanceToSqr(player) < closest.distanceToSqr(player)) {
-                closest = target;
-            }
-        }
-        player.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, 80, 0, false, false));
-        player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 80, 1, false, false));
-        if (closest != null) {
-            Vec3 behind = closest.position().subtract(Combat.flatLook(closest).scale(1.5));
-            if (Combat.canStandAt(player, behind)) {
-                Vec3 to = closest.position().subtract(behind);
-                float yaw = (float) Math.toDegrees(Math.atan2(-to.x, to.z));
-                player.connection.teleport(behind.x, behind.y, behind.z, yaw, player.getXRot());
-            }
-        }
-        return true;
-    }
-
-    // V (ult): transcendent form for 12 seconds. Initial shockwave, then spiritual pressure crushes enemies nearby.
-    private static boolean transcendence(ServerPlayer player, ServerLevel level) {
-        int duration = 240;
-        Vec3 origin = Combat.center(player);
-        player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, duration, 1));
-        player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, duration, 1));
-        player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, duration, 0));
-        player.addEffect(new MobEffectInstance(MobEffects.REGENERATION, duration, 1));
-        Fx.sphere(level, Fx.dust(PALE, 3f), origin, 4, 120);
-        Fx.sphere(level, ParticleTypes.END_ROD, origin, 6, 80);
-        Fx.burst(level, ParticleTypes.FLASH, origin, 1, 0, 0);
-        Fx.sound(level, origin, SoundEvents.TOTEM_USE, 2f, 0.6f);
-        Fx.sound(level, origin, SoundEvents.WARDEN_SONIC_BOOM, 2f, 0.7f);
-        for (LivingEntity target : Combat.inRadius(level, origin, 10, player)) {
-            Combat.hurt(player, target, 8f);
-            Combat.pushFrom(target, origin, 2.0, 0.8);
-        }
-        Tasks.add(age -> {
-            if (!player.isAlive()) {
-                return true;
-            }
-            Vec3 base = player.position();
-            double angle = age * 0.4;
-            for (int i = 0; i < 2; i++) {
-                double a = angle + i * Math.PI;
-                Fx.burst(level, Fx.dust(PURPLE, 1.5f), base.add(Math.cos(a) * 0.9, (age % 20) * 0.1, Math.sin(a) * 0.9), 1, 0, 0);
-            }
-            Fx.burst(level, ParticleTypes.WITCH, base.add(0, 1, 0), 1, 0.5, 0);
-            if (age % 20 == 0) {
-                Fx.ring(level, Fx.dust(PALE, 1.5f), base.add(0, 0.1, 0), 8, 40, 0);
-                for (LivingEntity target : Combat.inRadius(level, Combat.center(player), 8, player)) {
-                    target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 30, 1));
-                    Combat.hurtMagic(player, target, 2f);
-                    Fx.burst(level, Fx.dust(PURPLE, 1f), Combat.center(target), 10, 0.4, 0);
-                }
-            }
-            return age >= duration;
-        });
         return true;
     }
 }

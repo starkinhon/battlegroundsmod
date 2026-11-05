@@ -119,7 +119,7 @@ public final class FxWorld {
         FxPost.newFrame();
         ScreenFx.capture(event);
         boolean world = !PIECES.isEmpty() || MeteorRenderer.hasTrails() || Aura.active() || KatonBallRenderer.active() || AshDeath.hasSparks()
-                || SpaceScene.active() || EsferaRenderer.active() || HakaiRenderer.active() || EnergyRenderer.active() || BlackBoxRenderer.active()
+                || SpaceScene.active() || EsferaRenderer.active() || HakaiRenderer.active() || EnergyRenderer.active() || BlackBoxRenderer.active() || AizenFx.active()
                 || SphereRenderer.active() || SusanooArm.active() || DomainScene.active();
         if (!world && !ScreenFx.needsScene()) {
             return;
@@ -186,6 +186,7 @@ public final class FxWorld {
             HakaiRenderer.render(camera, now, partial);
             EnergyRenderer.render(camera, now, partial);
             BlackBoxRenderer.render(camera, now, partial);
+            AizenFx.render(camera, now, partial);
             SphereRenderer.render(camera, now, partial);
             SusanooArm.render(source, flat, camera, now, partial);
             DomainScene.render(camera, now, partial);
@@ -221,6 +222,13 @@ public final class FxWorld {
             // the thin hot lines on top of them.
             FxDraw.begin(source, event.getCamera(), flat);
             BlackBoxRenderer.overlay(camera, now, partial);
+            source.endBatch(flat ? FxRenderTypes.FLAT_ALPHA : FxRenderTypes.VFX_ALPHA);
+            source.endBatch(flat ? FxRenderTypes.FLAT_ADD : FxRenderTypes.VFX_ADD);
+        }
+        if (!space && AizenFx.active()) {
+            // Aizen's dark parts (black flames, wings, the slits of the cuts, cocoon and shards) over the glow.
+            FxDraw.begin(source, event.getCamera(), flat);
+            AizenFx.overlay(camera, now, partial);
             source.endBatch(flat ? FxRenderTypes.FLAT_ALPHA : FxRenderTypes.VFX_ALPHA);
             source.endBatch(flat ? FxRenderTypes.FLAT_ADD : FxRenderTypes.VFX_ADD);
         }
