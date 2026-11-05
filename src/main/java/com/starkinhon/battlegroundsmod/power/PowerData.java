@@ -29,7 +29,8 @@ public class PowerData {
             Codec.STRING.optionalFieldOf("power", "").forGetter(d -> d.power),
             Codec.FLOAT.optionalFieldOf("ult", 0f).forGetter(d -> d.ult),
             Codec.BOOL.optionalFieldOf("received_book", false).forGetter(d -> d.receivedBook),
-            Codec.INT.optionalFieldOf("tier", Tiers.HUMANO).forGetter(d -> d.tier)
+            Codec.INT.optionalFieldOf("tier", Tiers.HUMANO).forGetter(d -> d.tier),
+            Codec.BOOL.optionalFieldOf("outfit", true).forGetter(d -> d.outfit)
     ).apply(instance, PowerData::new));
 
     public String power = "";
@@ -37,6 +38,8 @@ public class PowerData {
     public boolean receivedBook = false;
     // Power tier, 0 (god) to 10 (human): health, strength, armor and speed (see Tiers).
     public int tier = Tiers.HUMANO;
+    // The power's 3D outfit is on (put on when a power is picked, taken off in the abilities menu).
+    public boolean outfit = true;
 
     // Not saved: these only matter while the player is online.
     public int[] cooldowns = new int[SLOT_COUNT];
@@ -71,11 +74,14 @@ public class PowerData {
     public boolean abilityHeld = false;
     // Players: the aura state the watchers were last told (the power while in combat, "" when off; null = never sent).
     public String auraSent = null;
+    // Players: the outfit the watchers were last told (the power, "" when off; null = never sent).
+    public String outfitSent = null;
 
     public PowerData() {
     }
 
-    private PowerData(String power, float ult, boolean receivedBook, int tier) {
+    private PowerData(String power, float ult, boolean receivedBook, int tier, boolean outfit) {
+        this.outfit = outfit;
         this.power = power;
         this.ult = ult;
         this.receivedBook = receivedBook;

@@ -7,6 +7,7 @@ import java.util.Random;
 import org.lwjgl.glfw.GLFW;
 
 import com.starkinhon.battlegroundsmod.ModAttachments;
+import com.starkinhon.battlegroundsmod.client.outfit.Outfits;
 import com.starkinhon.battlegroundsmod.power.Ability;
 import com.starkinhon.battlegroundsmod.power.Power;
 import com.starkinhon.battlegroundsmod.power.PowerData;
@@ -430,6 +431,7 @@ public class ConstellationScreen extends Screen {
         GuiDraw.frame(graphics, 8, 7, 8 + kw, 18, 0xFF000000 | color);
         graphics.drawString(font, key, 11, 9, 0xFFFFFFFF, false);
         graphics.drawString(font, Component.translatable("screen.battlegroundsmod.skills.title"), 12 + kw, 9, TEXT, true);
+        outfitButton(graphics, color);
 
         // Top right: how many skills are open.
         int open = 0;
@@ -446,6 +448,30 @@ public class ConstellationScreen extends Screen {
         GuiDraw.star(graphics, bx + box / 2f, 6 + box / 2f, 6, 1.2f, t * 0.8f, 0xFF000000 | GuiDraw.mix(color, 0xFFFFFF, 0.5f));
         graphics.flush();
         GuiDraw.rightText(graphics, font, count, bx - 6, 10, 1, TEXT, true);
+    }
+
+    // Top left, under the hint: the power's 3D outfit on or off (only for powers that have one).
+    private int[] outfitBox() {
+        if (!Outfits.exists(power.id())) {
+            return null;
+        }
+        int w = font.width(outfitLabel()) + 10;
+        return new int[] {8, 22, 8 + w, 35};
+    }
+
+    private Component outfitLabel() {
+        return Component.translatable(Outfits.selfOn() ? "screen.battlegroundsmod.skills.outfit_on" : "screen.battlegroundsmod.skills.outfit_off");
+    }
+
+    private void outfitButton(GuiGraphics graphics, int color) {
+        int[] box = outfitBox();
+        if (box == null) {
+            return;
+        }
+        boolean on = Outfits.selfOn();
+        graphics.fill(box[0], box[1], box[2], box[3], on ? GuiDraw.argb(200, GuiDraw.mix(0x050308, color, 0.35f)) : 0xF0050308);
+        GuiDraw.frame(graphics, box[0], box[1], box[2], box[3], 0xFF000000 | (on ? GuiDraw.mix(color, 0xFFFFFF, 0.4f) : GuiDraw.mix(color, 0x000000, 0.4f)));
+        graphics.drawString(font, outfitLabel(), box[0] + 5, box[1] + 3, on ? 0xFFFFFFFF : MUTED, true);
     }
 
     private void panel(GuiGraphics graphics, float t) {
@@ -703,6 +729,12 @@ public class ConstellationScreen extends Screen {
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         layout();
+        int[] box = outfitBox();
+        if (box != null && button == GLFW.GLFW_MOUSE_BUTTON_LEFT && mouseX >= box[0] && mouseX < box[2] && mouseY >= box[1] && mouseY < box[3]) {
+            Outfits.toggleSelf(power.id());
+            Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.ARMOR_EQUIP_LEATHER.value(), 1f, 0.8f));
+            return true;
+        }
         int index = nodeAt(mouseX, mouseY);
         if (index >= 0 && button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
             select(index);

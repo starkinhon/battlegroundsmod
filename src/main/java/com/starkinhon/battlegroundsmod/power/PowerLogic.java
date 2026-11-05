@@ -188,6 +188,7 @@ public final class PowerLogic {
         PowerData data = player.getData(ModAttachments.POWER);
         data.power = power.id();
         data.ult = 0;
+        data.outfit = true;
         data.resetCombat();
         Vec3 pos = player.position().add(0, 1, 0);
         Fx.burst(player.serverLevel(), Fx.dust(power.color(), 2f), pos, 60, 0.6, 0);
@@ -253,6 +254,11 @@ public final class PowerLogic {
                 data.auraSent = aura;
                 PacketDistributor.sendToPlayersTrackingEntityAndSelf(serverPlayer, new ModPayloads.AuraState(serverPlayer.getId(), aura));
             }
+            String outfit = outfitOf(serverPlayer);
+            if (!outfit.equals(data.outfitSent)) {
+                data.outfitSent = outfit;
+                PacketDistributor.sendToPlayersTrackingEntityAndSelf(serverPlayer, new ModPayloads.OutfitState(serverPlayer.getId(), outfit));
+            }
         }
     }
 
@@ -262,9 +268,17 @@ public final class PowerLogic {
         return data.hasPower() && CombatMode.in(player) && player.isAlive() ? data.power : "";
     }
 
-    // Someone just started seeing this player: tell them about the aura.
+    // Someone just started seeing this player: tell them about the aura and the outfit.
     public static void sendAura(ServerPlayer player, ServerPlayer watcher) {
         PacketDistributor.sendToPlayer(watcher, new ModPayloads.AuraState(player.getId(), auraOf(player)));
+        PacketDistributor.sendToPlayer(watcher, new ModPayloads.OutfitState(player.getId(), outfitOf(player)));
+    }
+
+    // The 3D outfit others should draw on this player: the power's, unless they took it off. Powers without an
+    // outfit send their id too; the clients just have nothing to draw for them.
+    public static String outfitOf(ServerPlayer player) {
+        PowerData data = player.getData(ModAttachments.POWER);
+        return data.hasPower() && data.outfit ? data.power : "";
     }
 
     public static void sync(ServerPlayer player) {

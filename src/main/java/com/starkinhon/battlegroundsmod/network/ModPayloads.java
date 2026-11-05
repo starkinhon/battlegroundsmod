@@ -675,6 +675,33 @@ public final class ModPayloads {
 
     // Server -> client: this fighter's aura is on with this power's look, or off (empty power). Players send it when
     // combat mode starts or ends, and to anyone who starts seeing them.
+    // Server -> clients: the 3D outfit a player is wearing (the power's id, "" when off).
+    public record OutfitState(int entityId, String power) implements CustomPacketPayload {
+        public static final Type<OutfitState> TYPE = payloadType("outfit_state");
+        public static final StreamCodec<ByteBuf, OutfitState> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, OutfitState::entityId,
+                ByteBufCodecs.STRING_UTF8, OutfitState::power,
+                OutfitState::new);
+
+        @Override
+        public Type<OutfitState> type() {
+            return TYPE;
+        }
+    }
+
+    // Client -> server: put the power's outfit on or take it off (abilities menu).
+    public record ToggleOutfit(boolean on) implements CustomPacketPayload {
+        public static final Type<ToggleOutfit> TYPE = payloadType("toggle_outfit");
+        public static final StreamCodec<ByteBuf, ToggleOutfit> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.BOOL, ToggleOutfit::on,
+                ToggleOutfit::new);
+
+        @Override
+        public Type<ToggleOutfit> type() {
+            return TYPE;
+        }
+    }
+
     public record AuraState(int entityId, String power) implements CustomPacketPayload {
         public static final Type<AuraState> TYPE = payloadType("aura_state");
         public static final StreamCodec<ByteBuf, AuraState> STREAM_CODEC = StreamCodec.composite(
@@ -800,5 +827,12 @@ public final class ModPayloads {
         registrar.playToClient(Rewind.TYPE, Rewind.STREAM_CODEC, (payload, context) -> context.enqueueWork(ClientHooks::rewind));
         registrar.playToClient(AuraState.TYPE, AuraState.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.auraState(payload.entityId(), payload.power())));
+        registrar.playToClient(OutfitState.TYPE, OutfitState.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.outfitState(payload.entityId(), payload.power())));
+        registrar.playToServer(ToggleOutfit.TYPE, ToggleOutfit.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
+            if (context.player() instanceof ServerPlayer player) {
+                player.getData(ModAttachments.POWER).outfit = payload.on();
+            }
+        }));
     }
 }
