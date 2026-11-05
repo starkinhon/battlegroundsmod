@@ -35,7 +35,11 @@ import com.starkinhon.battlegroundsmod.client.AizenIllusionRenderer;
 import com.starkinhon.battlegroundsmod.client.DummyRenderer;
 import com.starkinhon.battlegroundsmod.client.SoulBossRenderer;
 
+import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.client.renderer.entity.player.PlayerRenderer;
+import com.starkinhon.battlegroundsmod.client.outfit.AizenSwordRenderer;
+import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
+import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
 import net.minecraft.client.resources.PlayerSkin;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.api.distmarker.Dist;
@@ -71,6 +75,7 @@ public class BattlegroundsModClient {
         modEventBus.addListener(BattlegroundsModClient::onRegisterRenderers);
         modEventBus.addListener(BattlegroundsModClient::onAddLayers);
         modEventBus.addListener(FxShaders::onRegisterShaders);
+        modEventBus.addListener(BattlegroundsModClient::onRegisterClientExtensions);
         modContainer.registerConfig(ModConfig.Type.CLIENT, FxConfig.SPEC);
         modContainer.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
         NeoForge.EVENT_BUS.addListener(MeteorRenderer::onRenderLevel);
@@ -102,6 +107,20 @@ public class BattlegroundsModClient {
         // Last, so a body hidden by another listener never gets its pose stack pushed without the pop.
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, false, RenderLivingEvent.Pre.class, CutscenePlayer::onRenderPre);
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, true, RenderLivingEvent.Post.class, CutscenePlayer::onRenderPost);
+    }
+
+    // Aizen's sword item is drawn by its own renderer (the 3D model from the Armario Souls viewer).
+    private static void onRegisterClientExtensions(RegisterClientExtensionsEvent event) {
+        AizenSwordRenderer[] renderer = new AizenSwordRenderer[1];
+        event.registerItem(new IClientItemExtensions() {
+            @Override
+            public BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                if (renderer[0] == null) {
+                    renderer[0] = new AizenSwordRenderer();
+                }
+                return renderer[0];
+            }
+        }, ModItems.AIZEN_SWORD.get());
     }
 
     private static void onClientSetup(FMLClientSetupEvent event) {

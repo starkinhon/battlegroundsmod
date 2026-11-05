@@ -1,6 +1,7 @@
 package com.starkinhon.battlegroundsmod.client;
 
 import com.starkinhon.battlegroundsmod.ModAttachments;
+import com.starkinhon.battlegroundsmod.combat.CombatMode;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
 import com.starkinhon.battlegroundsmod.skill.ComboSpec;
 
@@ -25,7 +26,7 @@ public final class PunchInput {
         Minecraft minecraft = Minecraft.getInstance();
         LocalPlayer player = minecraft.player;
         if (!event.isAttack() || event.getHand() != InteractionHand.MAIN_HAND || player == null || player.isSpectator()
-                || !player.getMainHandItem().isEmpty() || !player.getData(ModAttachments.POWER).hasPower()
+                || !CombatMode.freeHand(player) || !player.getData(ModAttachments.POWER).hasPower()
                 || !player.getData(ModAttachments.POWER).combat) {
             return;
         }

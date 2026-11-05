@@ -3,14 +3,17 @@ package com.starkinhon.battlegroundsmod;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import com.starkinhon.battlegroundsmod.item.AizenSwordItem;
 import com.starkinhon.battlegroundsmod.item.FightRodItem;
 import com.starkinhon.battlegroundsmod.item.PowerBookItem;
 import com.starkinhon.battlegroundsmod.item.SoulItem;
 import com.starkinhon.battlegroundsmod.power.Power;
 import com.starkinhon.battlegroundsmod.power.Powers;
 
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Rarity;
+import net.minecraft.world.item.component.Unbreakable;
 import net.neoforged.neoforge.common.DeferredSpawnEggItem;
 import net.neoforged.neoforge.registries.DeferredItem;
 
@@ -21,6 +24,10 @@ public final class ModItems {
     // Pick two mobs and make them fight (fight/FightRod).
     public static final DeferredItem<FightRodItem> FIGHT_ROD = BattlegroundsMod.ITEMS.registerItem("fight_rod",
             FightRodItem::new, new Item.Properties().stacksTo(1).rarity(Rarity.EPIC));
+
+    // Aizen's sword: the model from the Armario Souls viewer, as a normal (unbreakable) sword.
+    public static final DeferredItem<AizenSwordItem> AIZEN_SWORD = BattlegroundsMod.ITEMS.registerItem("aizen_sword",
+            AizenSwordItem::new, new Item.Properties().rarity(Rarity.EPIC).fireResistant().component(DataComponents.UNBREAKABLE, new Unbreakable(true)));
 
     public static final DeferredItem<DeferredSpawnEggItem> MADARA_SPAWN_EGG = BattlegroundsMod.ITEMS.register("madara_spawn_egg",
             () -> new DeferredSpawnEggItem(ModEntities.MADARA, 0x1A1A1F, 0xD12F2F, new Item.Properties()));

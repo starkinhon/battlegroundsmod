@@ -771,7 +771,7 @@ public final class ModPayloads {
             if (payload.key()) {
                 CombatMode.enter(player);
                 Tasks.as(player, () -> Melee.punch(player, null));
-            } else if (player.getMainHandItem().isEmpty() && CombatMode.in(player)) {
+            } else if (CombatMode.freeHand(player) && CombatMode.in(player)) {
                 Tasks.as(player, () -> Melee.punch(player, null));
             }
         }));

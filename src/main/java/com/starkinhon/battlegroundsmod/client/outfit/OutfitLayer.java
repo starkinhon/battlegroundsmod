@@ -91,7 +91,7 @@ public class OutfitLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<A
 
         for (OutfitDefs.Piece piece : def.pieces()) {
             ModelPart part = part(model, piece.bone());
-            if (!part.visible || piece.bone() == Rig.Bone.HAND_R && !player.getMainHandItem().isEmpty()) {
+            if (!part.visible) {
                 continue;
             }
             poseStack.pushPose();
@@ -115,11 +115,11 @@ public class OutfitLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<A
         }
     }
 
-    static ModelPart part(PlayerModel<?> model, Rig.Bone bone) {
+    private static ModelPart part(PlayerModel<?> model, Rig.Bone bone) {
         return switch (bone) {
             case HEAD -> model.head;
             case BODY -> model.body;
-            case ARM_R, HAND_R -> model.rightArm;
+            case ARM_R -> model.rightArm;
             case ARM_L -> model.leftArm;
             case LEG_R -> model.rightLeg;
             case LEG_L -> model.leftLeg;
@@ -178,7 +178,7 @@ public class OutfitLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<A
     // leg pivots sit a little off the vanilla ones, so those get nudged sideways.
     private static float offX(Rig.Bone bone) {
         return switch (bone) {
-            case ARM_R, HAND_R -> -1;
+            case ARM_R -> -1;
             case ARM_L -> 1;
             case LEG_R -> -0.1f;
             case LEG_L -> 0.1f;
@@ -186,7 +186,7 @@ public class OutfitLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<A
         };
     }
 
-    static void emitStatic(VertexConsumer out, PoseStack.Pose pose, Rig.Bone bone, float[] t, int light, int overlay) {
+    private static void emitStatic(VertexConsumer out, PoseStack.Pose pose, Rig.Bone bone, float[] t, int light, int overlay) {
         float dx = offX(bone), y0 = bone == Rig.Bone.BODY ? 24 : 0;
         for (int i = 0; i < t.length; i += 33) {
             for (int v = 0; v < 4; v++) {
