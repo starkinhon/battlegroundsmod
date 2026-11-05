@@ -22,6 +22,12 @@ public final class FxConfig {
     public static final ModConfigSpec.BooleanValue BLOOM = BUILDER
             .comment("Light from fire, flares and beams spills around them.")
             .define("bloom", true);
+    public static final ModConfigSpec.BooleanValue REALISMO = BUILDER
+            .comment("Realistic volumes (tornado, fire, smoke, fireball, lava, wind) drawn over the world.")
+            .define("realism", true);
+    public static final ModConfigSpec.IntValue REALISMO_QUALITY = BUILDER
+            .comment("Quality of the realistic volumes: 1 fast, 2 normal, 3 high (more steps and detail, heavier).")
+            .defineInRange("realismQuality", 2, 1, 3);
     public static final ModConfigSpec.DoubleValue SHAKE = BUILDER
             .comment("How much the camera shakes (0 turns it off).")
             .defineInRange("shake", 1.0, 0.0, 2.0);
@@ -37,6 +43,14 @@ public final class FxConfig {
             return value.get();
         } catch (IllegalStateException e) {
             return value.getDefault();
+        }
+    }
+
+    public static int realismQuality() {
+        try {
+            return REALISMO_QUALITY.get();
+        } catch (IllegalStateException e) {
+            return REALISMO_QUALITY.getDefault();
         }
     }
 

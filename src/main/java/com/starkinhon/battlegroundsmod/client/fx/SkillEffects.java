@@ -52,6 +52,7 @@ public final class SkillEffects {
         PENDING.clear();
         FxWorld.clear();
         SusanooArm.clear();
+        Realismo.clear();
     }
 
     public static void tick() {
@@ -121,6 +122,15 @@ public final class SkillEffects {
                 Vec3 at = pos.add(dir.scale(FxWorld.d(e.deslocamento(), 0))).add(0, FxWorld.d(e.altura(), 0), 0);
                 ScreenFx.warp(at, (float) FxWorld.d(e.raio(), 6), forca, (float) FxWorld.d(e.velocidade(), 8), warpMode(e.modo()), dir, cor,
                         (float) FxWorld.d(e.tinta(), 0), life, entity, e.seguir(), (float) FxWorld.d(e.altura(), 0));
+            }
+            case "realismo" -> {
+                Vec3 at = pos.add(dir.scale(FxWorld.d(e.deslocamento(), 0))).add(0, FxWorld.d(e.altura(), 0), 0);
+                int type = Realismo.type(e.modo());
+                // (left without vidaTicks, a volume lasts as long as its kind usually does)
+                int span = e.vidaTicks() == null && !Boolean.TRUE.equals(e.duraMomento()) && type >= 0 ? Math.round(Realismo.defaults(type)[2] * 20) : life;
+                Realismo.add(type, at, dir, (float) FxWorld.d(e.velocidade(), 0), (float) FxWorld.d(e.raio(), 0),
+                        (float) FxWorld.d(e.comprimento(), 0), forca, FxDraw.parse(e.cor(), 0xFFFFFF), span,
+                        e.seguir() == null ? -1 : entity, e.seguir());
             }
             default -> FxWorld.spawn(skill, e, pos, dir, life, entity);
         }

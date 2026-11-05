@@ -23,6 +23,7 @@ public final class FxShaders {
     static ShaderInstance aura;
     static ShaderInstance auraOutline;
     static ShaderInstance susanoo;
+    static ShaderInstance realismo;
 
     private static Boolean irisPresent;
 
@@ -49,6 +50,7 @@ public final class FxShaders {
         register(event, "souls_aura", DefaultVertexFormat.NEW_ENTITY, s -> aura = s);
         register(event, "fx_aura_outline", DefaultVertexFormat.POSITION, s -> auraOutline = s);
         register(event, "souls_susanoo", DefaultVertexFormat.POSITION_COLOR_NORMAL, s -> susanoo = s);
+        register(event, "fx_realismo", DefaultVertexFormat.POSITION, s -> realismo = s);
     }
 
     private static void register(RegisterShadersEvent event, String name, VertexFormat format, java.util.function.Consumer<ShaderInstance> sink)
