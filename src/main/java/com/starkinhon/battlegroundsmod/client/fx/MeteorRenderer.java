@@ -44,18 +44,14 @@ public final class MeteorRenderer {
         realismo(falling, delay);
     }
 
-    // Realismo on the way down: real fire wrapped round the back of the rock, a column of smoke trailing up behind it
-    // (bent back along the path it came down), and the air over the target already being shoved aside by it, tearing up
-    // the real ground. The fire and smoke ride the meteor (held with it by Gojo's shockwave) and stay over the crater
+    // Realismo on the way down: real fire wrapped round the back of the rock and a column of smoke trailing up behind it
+    // (bent back along the path it came down). The fire and smoke ride the meteor (held with it by Gojo's shockwave) and stay over the crater
     // a moment after it lands, fading; the impact's own fireball, smoke and lava are in the skill file (momento impacto).
     private static void realismo(Falling falling, int delay) {
         MeteoroSpec.Corpo corpo = falling.spec().meteoro();
         float r = (float) corpo.raio();
         int fall = falling.ticks() + Math.max(0, delay);
         Vec3 back = new Vec3(-falling.dir().x, 0, -falling.dir().z);
-        Vec3 ahead = back.reverse();
-        Vec3 ground = falling.end().subtract(0, r * (1 - corpo.afundar()), 0);
-        Realismo.ride(Realismo.VENTO, partial -> ground, ahead, Math.max(30, r * 3.6f), 16, 1.3f, 0xFFFFFF, fall + 80, 0, falling);
         if (falling.spec().rabeta() == null || !falling.spec().rabeta().ativa()) {
             return;
         }
