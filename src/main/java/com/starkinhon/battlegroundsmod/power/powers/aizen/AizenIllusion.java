@@ -43,6 +43,8 @@ public class AizenIllusion extends PathfinderMob {
         moveTo(owner.getX(), owner.getY(), owner.getZ(), owner.getYRot(), owner.getXRot());
         setYHeadRot(owner.getYHeadRot());
         yBodyRot = owner.yBodyRot;
+        setShiftKeyDown(owner.isShiftKeyDown());
+        setPose(owner.getPose());
         for (var slot : net.minecraft.world.entity.EquipmentSlot.values()) {
             setItemSlot(slot, owner.getItemBySlot(slot).copy());
             setDropChance(slot, 0);

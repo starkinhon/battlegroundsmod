@@ -30,6 +30,10 @@ import net.neoforged.neoforge.network.PacketDistributor;
 public final class UmDedo {
     public static final String SKILL = AizenSpecs.UM_DEDO;
 
+    // How long the sword's crescent takes to sweep, and the stop when it lands.
+    private static final int SWEEP = 8;
+    private static final int IMPACT_STOP = 5;
+
     private record Ready(int interrupts, long until) {
     }
 
@@ -79,11 +83,11 @@ public final class UmDedo {
         Vec3 dir = toAttacker.lengthSqr() < 1.0E-4 ? Combat.flatLook(caster) : toAttacker.normalize();
         // Whatever the attacker was doing stops; both freeze on the finger.
         PowerLogic.interrupt(attacker);
-        Freeze.hold(attacker, cut + 2);
+        Freeze.hold(attacker, cut + SWEEP);
         Freeze.hold(caster, stop);
         PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new ModPayloads.Hitstop(caster.getId(), stop));
         PacketDistributor.sendToPlayersTrackingEntityAndSelf(attacker, new ModPayloads.Hitstop(attacker.getId(), stop));
-        caster.getData(ModAttachments.POWER).busyTicks = cut + 8;
+        caster.getData(ModAttachments.POWER).busyTicks = cut + SWEEP + IMPACT_STOP + 4;
         SkillSounds.play(level, spec.sons(), "bloqueio", 0, 0, onde -> contact, List.of());
         Fx.effects(level, SKILL, awakened, "bloqueio", contact, dir);
         Tasks.later(stop, () -> PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster,
@@ -96,19 +100,28 @@ public final class UmDedo {
             Vec3 middle = Combat.center(caster).add(dir.scale(0.8));
             SkillSounds.play(level, spec.sons(), "corte", 0, 0, onde -> Combat.center(caster), List.of());
             Fx.effects(level, SKILL, awakened, "corte", middle, dir);
-            // The cut: a diagonal slit in front of him.
-            Vec3 side = dir.cross(new Vec3(0, 1, 0));
-            Vec3 slash = side.lengthSqr() < 1.0E-4 ? new Vec3(1, 0, 0) : side.normalize().add(0, 0.8, 0).normalize();
-            AizenNet.send(level, AizenNet.CUT, caster.getId(), Combat.center(attacker), slash, 1.6f, 1.2f);
+            // The sword sweeps a slow crescent from high on one side down across the attacker.
+            AizenNet.send(level, AizenNet.SLASH, caster.getId(), Combat.center(caster), dir, 2.8f, SWEEP);
+        });
+        Tasks.later(cut + SWEEP / 2, () -> {
             Freeze.free(attacker);
-            if (!attacker.isAlive() || !Combat.isTarget(attacker, caster)) {
+            if (!caster.isAlive() || !attacker.isAlive() || !Combat.isTarget(attacker, caster)) {
                 return;
             }
             Combat.hurtMagic(caster, attacker, spec.dano());
             Stun.apply(attacker, spec.atordoarTicks());
-            Combat.push(attacker, dir, spec.empurrao(), spec.subida());
+            // The hit lands heavy: both stop a moment before the attacker flies.
+            Freeze.hold(attacker, IMPACT_STOP);
+            Freeze.hold(caster, IMPACT_STOP);
+            PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new ModPayloads.Hitstop(caster.getId(), IMPACT_STOP));
+            PacketDistributor.sendToPlayersTrackingEntityAndSelf(attacker, new ModPayloads.Hitstop(attacker.getId(), IMPACT_STOP));
             SkillSounds.play(level, spec.sons(), "acerto", 0, 0, onde -> Combat.center(attacker), List.of());
             Fx.effects(level, SKILL, awakened, "acerto", Combat.center(attacker), new Vec3(0, 1, 0));
+            Tasks.later(IMPACT_STOP, () -> {
+                if (attacker.isAlive()) {
+                    Combat.push(attacker, dir, spec.empurrao(), spec.subida());
+                }
+            });
         });
     }
 

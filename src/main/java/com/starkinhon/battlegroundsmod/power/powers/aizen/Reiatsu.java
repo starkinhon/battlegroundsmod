@@ -24,14 +24,15 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 // Reiatsu Esmagadora, Aizen's C (aizen.reiatsu.json): his spiritual pressure crushes everyone around him to their knees.
-// A tap is a quick small pulse (raioClique). Held, the pressure grows from raioClique to raioMax: whoever is inside is
-// pressed down (can't attack or use skills, barely moves); let go and it bursts, hitting them harder the longer it was
-// held and keeping them down a while longer. Drawn on the clients by client/fx/AizenFx (black flames with violet
-// edges, a dark column, a dome and pressure lines falling).
-// Timeline: tap "pulso"; held "carregar" while held, "soltar" on the burst.
+// The press starts it right away at raioClique; held, it grows to raioMax over carregarTicks, pressing down whoever is
+// inside (can't attack or use skills, barely moves) and shaking the screens of those near. Let go (or at maxTicks) it
+// blows up in its own aura, hitting harder the longer it was held and keeping them down a while longer. Drawn on the
+// clients by client/fx/AizenFx (a cartoon black-violet aura with a boiling rim, the dome, pressure lines falling).
+// Timeline: "carregar" while held (tremor "tremer", then "tremerForte" past half charge), "soltar" on the burst.
 public final class Reiatsu {
     public static final String SKILL = AizenSpecs.REIATSU;
     private static final RandomSource RANDOM = RandomSource.create();
+    private static final int SHAKE_EVERY = 4;
 
     private Reiatsu() {
     }
@@ -42,15 +43,15 @@ public final class Reiatsu {
         AizenSpecs.Reiatsu spec = AizenSpecs.Reiatsu.get(awakened);
         String power = data.power;
         int interrupts = data.interrupts;
-        int tap = Math.max(1, spec.cliqueTicks());
         int grow = Math.max(1, spec.carregarTicks());
-        int most = Math.max(tap + 1, spec.maxTicks());
-        // Bosses don't hold keys: a pulse now and then, a long press other times.
-        int bossHold = RANDOM.nextBoolean() ? 0 : tap + 20 + RANDOM.nextInt(grow);
-        data.busyTicks = tap + 1;
+        int least = Math.max(1, spec.cliqueTicks());
+        int most = Math.max(least + 1, spec.maxTicks());
+        // Bosses don't hold keys: a quick one now and then, a long one other times.
+        int bossHold = RANDOM.nextBoolean() ? least : least + 20 + RANDOM.nextInt(grow);
+        data.busyTicks = least + 1;
         PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new ModPayloads.PlaySkillAnimation(caster.getId(), SKILL, awakened));
         Function<String, Vec3> where = onde -> Combat.center(caster);
-        float[] radius = {(float) spec.raioClique()};
+        SkillSounds.play(level, spec.sons(), "uso", 0, 0, where, List.of());
 
         Tasks.add(age -> {
             PowerData now = caster.getData(ModAttachments.POWER);
@@ -60,44 +61,27 @@ public final class Reiatsu {
                 return true;
             }
             boolean held = caster instanceof Player ? now.abilityHeld : age < bossHold;
-            if (age < tap) {
-                now.busyTicks = Math.max(now.busyTicks, 2);
-                if (held || age == 0) {
-                    return false;
-                }
-                pulse(caster, level, spec, awakened, where);
-                return true;
-            }
-            if (age == tap) {
-                SkillSounds.play(level, spec.sons(), "carregar", 0, most - tap, where, List.of());
-            }
-            float charge = Math.min(1, (age - tap) / (float) grow);
-            radius[0] = (float) Mth.lerp(smooth(charge), spec.raioClique(), spec.raioMax());
+            float charge = Math.min(1, age / (float) grow);
+            float radius = (float) Mth.lerp(smooth(charge), spec.raioClique(), spec.raioMax());
             float strength = 0.3f + 0.7f * smooth(charge);
             now.busyTicks = Math.max(now.busyTicks, 2);
-            AizenNet.send(level, AizenNet.REIATSU_HELD, caster.getId(), caster.position(), Vec3.ZERO, radius[0], strength);
-            for (LivingEntity target : Combat.inRadius(level, caster.position(), radius[0], caster)) {
+            AizenNet.send(level, AizenNet.REIATSU_HELD, caster.getId(), caster.position(), Vec3.ZERO, radius, strength);
+            for (LivingEntity target : Combat.inRadius(level, caster.position(), radius, caster)) {
                 crush(target, 3, strength);
             }
-            if (held && age < most) {
+            if (age % 10 == 0) {
+                SkillSounds.play(level, spec.sons(), "carregar", 0, 0, where, List.of());
+            }
+            if (age % SHAKE_EVERY == 0) {
+                Fx.effects(level, SKILL, awakened, charge < 0.5f ? "tremer" : "tremerForte", caster.position(), new Vec3(0, 1, 0));
+            }
+            if ((held || age < least) && age < most) {
                 return false;
             }
-            burst(caster, level, spec, awakened, where, radius[0], charge);
+            burst(caster, level, spec, awakened, where, radius, charge);
             return true;
         });
         return true;
-    }
-
-    private static void pulse(LivingEntity caster, ServerLevel level, AizenSpecs.Reiatsu spec, boolean awakened, Function<String, Vec3> where) {
-        float r = (float) spec.raioClique();
-        AizenNet.send(level, AizenNet.REIATSU_CLICK, caster.getId(), caster.position(), Vec3.ZERO, r, 0.25f);
-        SkillSounds.play(level, spec.sons(), "pulso", 0, 0, where, List.of());
-        Fx.effects(level, SKILL, awakened, "pulso", caster.position().add(0, 0.05, 0), new Vec3(0, 1, 0));
-        for (LivingEntity target : Combat.inRadius(level, caster.position(), r, caster)) {
-            Combat.hurtMagic(caster, target, spec.danoClique());
-            crush(target, spec.ajoelharCliqueTicks(), 0.5f);
-        }
-        Tasks.later(Math.max(10, spec.ajoelharCliqueTicks()), () -> stopPose(caster));
     }
 
     private static void burst(LivingEntity caster, ServerLevel level, AizenSpecs.Reiatsu spec, boolean awakened, Function<String, Vec3> where,
@@ -108,7 +92,7 @@ public final class Reiatsu {
         float damage = Mth.lerp(charge, spec.danoMin(), spec.danoMax());
         for (LivingEntity target : Combat.inRadius(level, caster.position(), radius * 1.1, caster)) {
             Combat.hurtMagic(caster, target, damage);
-            crush(target, spec.ajoelharTicks(), 1);
+            crush(target, Math.round(Mth.lerp(charge, spec.ajoelharCliqueTicks(), spec.ajoelharTicks())), 1);
         }
         Tasks.later(20, () -> stopPose(caster));
     }

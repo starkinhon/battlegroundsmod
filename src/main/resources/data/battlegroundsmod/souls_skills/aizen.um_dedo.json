@@ -5,11 +5,11 @@
   "janelaTicks": 10,
   "alcance": 4.5,
   "hitstopTicks": 6,
-  "corteTicks": 10,
-  "dano": 10,
-  "empurrao": 1.8,
-  "subida": 0.5,
-  "atordoarTicks": 24,
+  "corteTicks": 18,
+  "dano": 12,
+  "empurrao": 2.6,
+  "subida": 0.6,
+  "atordoarTicks": 30,
   "tempo": {
     "atrasoTicks": 3,
     "duracaoTicks": 10
@@ -114,6 +114,18 @@
       "pitch": 0.8,
       "pitchFim": 0.8,
       "onde": "alvo"
+    },
+    {
+      "nome": "Impacto",
+      "som": "minecraft:entity.warden.sonic_boom",
+      "momento": "acerto",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.2,
+      "pitch": 1.4,
+      "pitchFim": 1.4,
+      "onde": "alvo"
     }
   ],
   "vfx": [
@@ -212,7 +224,7 @@
     {
       "tipo": "faiscas",
       "momento": "acerto",
-      "quantidade": 50,
+      "quantidade": 80,
       "velocidade": 0.6,
       "comprimento": 0.9,
       "tamanho": 1.2,
@@ -229,6 +241,46 @@
       ],
       "ticksPorQuadro": 1,
       "cor": "#7a2cff"
+    },
+    {
+      "tipo": "tremor",
+      "momento": "acerto",
+      "forca": 0.9,
+      "vidaTicks": 12,
+      "alcance": 32
+    },
+    {
+      "tipo": "flash",
+      "momento": "acerto",
+      "cor": "#c79bff",
+      "forca": 0.3,
+      "vidaTicks": 5
+    },
+    {
+      "tipo": "blurRadial",
+      "momento": "acerto",
+      "forca": 0.6,
+      "vidaTicks": 8
+    },
+    {
+      "tipo": "distorcao",
+      "momento": "acerto",
+      "modo": "onda",
+      "raio": 7,
+      "forca": 0.6,
+      "velocidade": 14,
+      "cor": "#7a2cff",
+      "vidaTicks": 12
+    },
+    {
+      "tipo": "estrela",
+      "momento": "acerto",
+      "quantidade": 26,
+      "comprimento": 6,
+      "tamanho": 0.8,
+      "cor": "#9a4dff",
+      "cor2": "#f1e6ff",
+      "vidaTicks": 12
     }
   ]
 }

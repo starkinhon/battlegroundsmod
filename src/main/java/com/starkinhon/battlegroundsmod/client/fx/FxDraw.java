@@ -24,6 +24,10 @@ final class FxDraw {
     static final int BLACK_HOLE = 10;
     // An ink splash with tendrils and droplets; param = which one.
     static final int SPLAT = 11;
+    // A soft glow (like SOFT) that is never faded near surfaces: for something sitting right on a body.
+    static final int ORB = 16;
+    // Aizen's cartoon reiatsu (souls_vfx.fsh shape 17).
+    static final int AURA = 17;
 
     private static VertexConsumer additive;
     private static VertexConsumer alpha;
@@ -57,6 +61,21 @@ final class FxDraw {
         vertex(out, b, 1, 0, shape, p, rgb, o);
         vertex(out, c, 1, 1, shape, p, rgb, o);
         vertex(out, d, 0, 1, shape, p, rgb, o);
+    }
+
+    // Same, with its own color at each corner (smooth shading across a mesh).
+    static void quad(Vector3f a, Vector3f b, Vector3f c, Vector3f d, int shape, float param, float[] ca, float[] cb, float[] cc, float[] cd,
+            float opacity, boolean glow) {
+        if (opacity <= 0.002f) {
+            return;
+        }
+        VertexConsumer out = glow ? additive : alpha;
+        int p = Math.round(Math.max(0, Math.min(1, param)) * 255);
+        float o = Math.min(1, opacity);
+        vertex(out, a, 0, 0, shape, p, ca, o);
+        vertex(out, b, 1, 0, shape, p, cb, o);
+        vertex(out, c, 1, 1, shape, p, cc, o);
+        vertex(out, d, 0, 1, shape, p, cd, o);
     }
 
     private static void vertex(VertexConsumer out, Vector3f pos, float u, float v, int shape, int param, float[] rgb, float opacity) {
