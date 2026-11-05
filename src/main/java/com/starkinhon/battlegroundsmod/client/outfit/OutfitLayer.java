@@ -115,7 +115,7 @@ public class OutfitLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<A
         }
     }
 
-    private static ModelPart part(PlayerModel<?> model, Rig.Bone bone) {
+    static ModelPart part(PlayerModel<?> model, Rig.Bone bone) {
         return switch (bone) {
             case HEAD -> model.head;
             case BODY -> model.body;
@@ -186,7 +186,7 @@ public class OutfitLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<A
         };
     }
 
-    private static void emitStatic(VertexConsumer out, PoseStack.Pose pose, Rig.Bone bone, float[] t, int light, int overlay) {
+    static void emitStatic(VertexConsumer out, PoseStack.Pose pose, Rig.Bone bone, float[] t, int light, int overlay) {
         float dx = offX(bone), y0 = bone == Rig.Bone.BODY ? 24 : 0;
         for (int i = 0; i < t.length; i += 33) {
             for (int v = 0; v < 4; v++) {
