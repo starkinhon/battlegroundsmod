@@ -149,6 +149,7 @@ public class BattlegroundsModClient {
         for (PlayerSkin.Model model : event.getSkins()) {
             if (event.getSkin(model) instanceof PlayerRenderer renderer) {
                 renderer.addLayer(new AuraEyesLayer<>(renderer));
+                renderer.addLayer(new com.starkinhon.battlegroundsmod.client.outfit.OutfitLayer(renderer));
             }
         }
     }

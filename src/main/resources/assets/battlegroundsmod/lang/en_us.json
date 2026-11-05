@@ -125,6 +125,8 @@
   "death.attack.battlegroundsmod.hakai.item": "%1$s was erased from existence by %2$s",
   "key.battlegroundsmod.skills_menu": "Skill constellation",
   "screen.battlegroundsmod.skills": "Constellation",
+  "screen.battlegroundsmod.skills.outfit_on": "Outfit: On",
+  "screen.battlegroundsmod.skills.outfit_off": "Outfit: Off",
   "screen.battlegroundsmod.skills.title": "Abilities",
   "screen.battlegroundsmod.skills.click": "Click: see details",
   "screen.battlegroundsmod.skills.browse": "← →: browse",

@@ -215,6 +215,10 @@ public final class ClientHooks {
         Aura.state(entityId, power);
     }
 
+    public static void outfitState(int entityId, String power) {
+        com.starkinhon.battlegroundsmod.client.outfit.Outfits.set(entityId, power);
+    }
+
     public static void openPowerSelect() {
         Minecraft.getInstance().setScreen(new PowerSelectScreen());
     }

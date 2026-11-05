@@ -125,6 +125,8 @@
   "death.attack.battlegroundsmod.hakai.item": "%1$s foi apagado da existência por %2$s",
   "key.battlegroundsmod.skills_menu": "Constelação de habilidades",
   "screen.battlegroundsmod.skills": "Constelação",
+  "screen.battlegroundsmod.skills.outfit_on": "Roupa: Ligada",
+  "screen.battlegroundsmod.skills.outfit_off": "Roupa: Desligada",
   "screen.battlegroundsmod.skills.title": "Habilidades",
   "screen.battlegroundsmod.skills.click": "Clique: ver detalhes",
   "screen.battlegroundsmod.skills.browse": "← →: navegar",
