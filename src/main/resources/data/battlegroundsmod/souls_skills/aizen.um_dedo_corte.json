@@ -1,0 +1,37 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "aizen.um_dedo_corte",
+  "nome": "Um Dedo (corte)",
+  "tempo": {
+    "atrasoTicks": 10,
+    "duracaoTicks": 14
+  },
+  "animacao": {
+    "transicaoTicks": 3,
+    "preparo": {
+      "cabeca": -5,
+      "tronco": -6,
+      "bracoDir": {
+        "frente": 160,
+        "abrir": -45
+      },
+      "bracoEsq": {
+        "frente": 0,
+        "abrir": 5
+      }
+    },
+    "sopro": {
+      "cabeca": 0,
+      "tronco": 10,
+      "bracoDir": {
+        "frente": 45,
+        "abrir": 35
+      },
+      "bracoEsq": {
+        "frente": -10,
+        "abrir": 5
+      }
+    },
+    "retornoTicks": 10
+  }
+}

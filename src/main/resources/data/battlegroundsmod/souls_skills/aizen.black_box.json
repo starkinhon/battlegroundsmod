@@ -226,5 +226,20 @@
       "alcance": 32
     }
   ],
-  "despertado": {}
+  "despertado": {
+    "nome": "Kurohitsugi (encantamento completo)",
+    "caixa": {
+      "crescerTicks": 40,
+      "maxTicks": 50,
+      "escalaMax": 4
+    },
+    "lancas": {
+      "golpes": 9,
+      "duracaoTicks": 32
+    },
+    "dano": {
+      "minimo": 20,
+      "maximo": 60
+    }
+  }
 }

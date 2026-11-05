@@ -1,0 +1,213 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "aizen.reiatsu",
+  "nome": "Reiatsu Esmagadora",
+  "cliqueTicks": 4,
+  "raioClique": 4,
+  "raioMax": 12,
+  "carregarTicks": 60,
+  "maxTicks": 90,
+  "danoClique": 3,
+  "danoMin": 4,
+  "danoMax": 12,
+  "ajoelharCliqueTicks": 20,
+  "ajoelharTicks": 30,
+  "tempo": {
+    "atrasoTicks": 4,
+    "duracaoTicks": 100
+  },
+  "animacao": {
+    "transicaoTicks": 5,
+    "preparo": {
+      "cabeca": -8,
+      "tronco": -3,
+      "bracoDir": {
+        "frente": 10,
+        "abrir": -18
+      },
+      "bracoEsq": {
+        "frente": 10,
+        "abrir": 18
+      }
+    },
+    "sopro": {
+      "cabeca": -8,
+      "tronco": -3,
+      "bracoDir": {
+        "frente": 10,
+        "abrir": -18
+      },
+      "bracoEsq": {
+        "frente": 10,
+        "abrir": 18
+      }
+    },
+    "retornoTicks": 8
+  },
+  "sons": [
+    {
+      "nome": "Pulso",
+      "som": "minecraft:entity.warden.sonic_charge",
+      "momento": "pulso",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.2,
+      "pitch": 1.4,
+      "pitchFim": 1.4,
+      "onde": "usuario"
+    },
+    {
+      "nome": "Pressão",
+      "som": "minecraft:block.beacon.ambient",
+      "momento": "carregar",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 20,
+      "vezes": 0,
+      "volume": 1.6,
+      "pitch": 0.5,
+      "pitchFim": 0.5,
+      "onde": "usuario"
+    },
+    {
+      "nome": "Pressão grave",
+      "som": "minecraft:entity.warden.heartbeat",
+      "momento": "carregar",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 10,
+      "vezes": 0,
+      "volume": 1.6,
+      "pitch": 0.6,
+      "pitchFim": 0.6,
+      "onde": "usuario"
+    },
+    {
+      "nome": "Estouro",
+      "som": "minecraft:entity.warden.sonic_boom",
+      "momento": "soltar",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.8,
+      "pitch": 0.6,
+      "pitchFim": 0.6,
+      "onde": "usuario"
+    },
+    {
+      "nome": "Estouro chão",
+      "som": "minecraft:entity.generic.explode",
+      "momento": "soltar",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.2,
+      "pitch": 0.5,
+      "pitchFim": 0.5,
+      "onde": "usuario"
+    }
+  ],
+  "vfx": [
+    {
+      "tipo": "anelChao",
+      "momento": "pulso",
+      "raio": 4,
+      "tamanho": 0.6,
+      "cor": "#7a2cff",
+      "vidaTicks": 12
+    },
+    {
+      "tipo": "distorcao",
+      "momento": "pulso",
+      "modo": "onda",
+      "raio": 5,
+      "forca": 0.4,
+      "velocidade": 10,
+      "cor": "#7a2cff",
+      "vidaTicks": 10
+    },
+    {
+      "tipo": "tremor",
+      "momento": "pulso",
+      "forca": 0.25,
+      "vidaTicks": 6
+    },
+    {
+      "tipo": "clarao",
+      "momento": "pulso",
+      "tamanho": 1.6,
+      "quantidade": 6,
+      "cor": "#7a2cff",
+      "cor2": "#e6d4ff",
+      "altura": 1,
+      "vidaTicks": 8
+    },
+    {
+      "tipo": "anelChao",
+      "momento": "soltar",
+      "raio": 14,
+      "tamanho": 1.4,
+      "cor": "#7a2cff",
+      "vidaTicks": 20
+    },
+    {
+      "tipo": "anelChao",
+      "momento": "soltar",
+      "inicio": 3,
+      "raio": 9,
+      "tamanho": 0.8,
+      "cor": "#c79bff",
+      "vidaTicks": 16
+    },
+    {
+      "tipo": "distorcao",
+      "momento": "soltar",
+      "modo": "onda",
+      "raio": 14,
+      "forca": 0.8,
+      "velocidade": 16,
+      "cor": "#7a2cff",
+      "vidaTicks": 18
+    },
+    {
+      "tipo": "tremor",
+      "momento": "soltar",
+      "forca": 0.9,
+      "vidaTicks": 16
+    },
+    {
+      "tipo": "flash",
+      "momento": "soltar",
+      "cor": "#7a2cff",
+      "forca": 0.15,
+      "vidaTicks": 6
+    },
+    {
+      "tipo": "impactFrame",
+      "momento": "soltar",
+      "sequencia": [
+        "cor",
+        "manga",
+        "cor"
+      ],
+      "ticksPorQuadro": 1,
+      "cor": "#3a0f8f"
+    },
+    {
+      "tipo": "estrela",
+      "momento": "soltar",
+      "quantidade": 30,
+      "comprimento": 10,
+      "tamanho": 1,
+      "cor": "#7a2cff",
+      "cor2": "#f1e6ff",
+      "altura": 1,
+      "vidaTicks": 14
+    },
+    {
+      "tipo": "blurRadial",
+      "momento": "soltar",
+      "forca": 0.6,
+      "vidaTicks": 10
+    }
+  ]
+}

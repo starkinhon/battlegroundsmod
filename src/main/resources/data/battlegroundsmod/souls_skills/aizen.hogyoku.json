@@ -1,0 +1,300 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "aizen.hogyoku",
+  "nome": "Evolução do Hōgyoku",
+  "casuloTicks": 34,
+  "eclosaoTicks": 140,
+  "duracaoTicks": 600,
+  "ondaRaio": 10,
+  "ondaDano": 10,
+  "forca": 1,
+  "velocidade": 1,
+  "resistencia": 1,
+  "tempo": {
+    "atrasoTicks": 20,
+    "duracaoTicks": 120
+  },
+  "animacao": {
+    "transicaoTicks": 10,
+    "preparo": {
+      "cabeca": -12,
+      "tronco": -4,
+      "bracoDir": {
+        "frente": 15,
+        "abrir": -35
+      },
+      "bracoEsq": {
+        "frente": 15,
+        "abrir": 35
+      }
+    },
+    "sopro": {
+      "cabeca": -12,
+      "tronco": -4,
+      "bracoDir": {
+        "frente": 15,
+        "abrir": -35
+      },
+      "bracoEsq": {
+        "frente": 15,
+        "abrir": 35
+      }
+    },
+    "retornoTicks": 20
+  },
+  "sons": [
+    {
+      "nome": "Hōgyoku",
+      "som": "minecraft:block.beacon.activate",
+      "momento": "despertar",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.6,
+      "pitch": 0.6,
+      "pitchFim": 0.6,
+      "onde": "usuario"
+    },
+    {
+      "nome": "Pulso",
+      "som": "minecraft:entity.warden.heartbeat",
+      "momento": "despertar",
+      "atrasoTicks": 10,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.4,
+      "pitch": 0.8,
+      "pitchFim": 0.8,
+      "onde": "usuario"
+    },
+    {
+      "nome": "Fios",
+      "som": "minecraft:block.amethyst_block.resonate",
+      "momento": "casulo",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.4,
+      "pitch": 0.8,
+      "pitchFim": 0.8,
+      "onde": "usuario"
+    },
+    {
+      "nome": "Fios 2",
+      "som": "minecraft:block.wool.place",
+      "momento": "casulo",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 8,
+      "vezes": 6,
+      "volume": 1.0,
+      "pitch": 0.6,
+      "pitchFim": 0.6,
+      "onde": "usuario"
+    },
+    {
+      "nome": "Racha",
+      "som": "minecraft:block.glass.hit",
+      "momento": "casulo",
+      "atrasoTicks": 60,
+      "repetirACadaTicks": 8,
+      "vezes": 6,
+      "volume": 1.4,
+      "pitch": 0.6,
+      "pitchFim": 1.0,
+      "onde": "usuario"
+    },
+    {
+      "nome": "Coração",
+      "som": "minecraft:entity.warden.heartbeat",
+      "momento": "casulo",
+      "atrasoTicks": 56,
+      "repetirACadaTicks": 10,
+      "vezes": 5,
+      "volume": 1.8,
+      "pitch": 0.6,
+      "pitchFim": 0.9,
+      "onde": "usuario"
+    },
+    {
+      "nome": "Eclosão",
+      "som": "minecraft:block.glass.break",
+      "momento": "eclosao",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 2.0,
+      "pitch": 0.5,
+      "pitchFim": 0.5,
+      "onde": "usuario"
+    },
+    {
+      "nome": "Eclosão onda",
+      "som": "minecraft:entity.warden.sonic_boom",
+      "momento": "eclosao",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 2.0,
+      "pitch": 0.5,
+      "pitchFim": 0.5,
+      "onde": "usuario"
+    },
+    {
+      "nome": "Eclosão sino",
+      "som": "minecraft:block.bell.resonate",
+      "momento": "eclosao",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 2.0,
+      "pitch": 0.6,
+      "pitchFim": 0.6,
+      "onde": "usuario"
+    },
+    {
+      "nome": "Fim",
+      "som": "minecraft:block.beacon.deactivate",
+      "momento": "fim",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.4,
+      "pitch": 0.6,
+      "pitchFim": 0.6,
+      "onde": "usuario"
+    }
+  ],
+  "vfx": [
+    {
+      "tipo": "distorcao",
+      "momento": "despertar",
+      "modo": "onda",
+      "raio": 3,
+      "forca": 0.3,
+      "velocidade": 8,
+      "cor": "#7a2cff",
+      "vidaTicks": 12
+    },
+    {
+      "tipo": "clarao",
+      "momento": "despertar",
+      "tamanho": 1,
+      "quantidade": 6,
+      "cor": "#7a2cff",
+      "cor2": "#ffffff",
+      "vidaTicks": 10
+    },
+    {
+      "tipo": "anelChao",
+      "momento": "casulo",
+      "raio": 4,
+      "tamanho": 0.4,
+      "cor": "#e6d4ff",
+      "velocidade": 0.3,
+      "vidaTicks": 16
+    },
+    {
+      "tipo": "distorcao",
+      "momento": "casulo",
+      "modo": "redemoinho",
+      "raio": 4,
+      "forca": 0.3,
+      "velocidade": 6,
+      "cor": "#c79bff",
+      "vidaTicks": 40
+    },
+    {
+      "tipo": "vinheta",
+      "momento": "casulo",
+      "cor": "#3a0f8f",
+      "forca": 0.6,
+      "vidaTicks": 100
+    },
+    {
+      "tipo": "flash",
+      "momento": "eclosao",
+      "cor": "#ffffff",
+      "forca": 0.8,
+      "vidaTicks": 10
+    },
+    {
+      "tipo": "impactFrame",
+      "momento": "eclosao",
+      "sequencia": [
+        "branco",
+        "branco",
+        "mangaInvertido",
+        "cor",
+        "invertido",
+        "branco"
+      ],
+      "ticksPorQuadro": 1,
+      "cor": "#7a2cff"
+    },
+    {
+      "tipo": "clarao",
+      "momento": "eclosao",
+      "tamanho": 8,
+      "quantidade": 12,
+      "cor": "#7a2cff",
+      "cor2": "#ffffff",
+      "vidaTicks": 18
+    },
+    {
+      "tipo": "estrela",
+      "momento": "eclosao",
+      "quantidade": 40,
+      "comprimento": 14,
+      "tamanho": 1.4,
+      "cor": "#9a4dff",
+      "cor2": "#f1e6ff",
+      "vidaTicks": 16
+    },
+    {
+      "tipo": "anelChao",
+      "momento": "eclosao",
+      "raio": 16,
+      "tamanho": 1.2,
+      "cor": "#7a2cff",
+      "vidaTicks": 22,
+      "velocidade": 1.2,
+      "altura": -1
+    },
+    {
+      "tipo": "anel",
+      "momento": "eclosao",
+      "raio": 7,
+      "tamanho": 0.8,
+      "cor": "#c79bff",
+      "vidaTicks": 14
+    },
+    {
+      "tipo": "distorcao",
+      "momento": "eclosao",
+      "modo": "onda",
+      "raio": 16,
+      "forca": 0.9,
+      "velocidade": 16,
+      "cor": "#7a2cff",
+      "vidaTicks": 18
+    },
+    {
+      "tipo": "tremor",
+      "momento": "eclosao",
+      "forca": 1.2,
+      "vidaTicks": 16
+    },
+    {
+      "tipo": "blurRadial",
+      "momento": "eclosao",
+      "forca": 0.9,
+      "vidaTicks": 12
+    },
+    {
+      "tipo": "fov",
+      "momento": "eclosao",
+      "forca": 6,
+      "vidaTicks": 12
+    }
+  ]
+}

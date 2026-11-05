@@ -61,6 +61,15 @@ public final class PowerLogic {
             player.displayClientMessage(Component.translatable("message.battlegroundsmod.no_power"), true);
             return;
         }
+        if (PowerData.isUlt(slot) && com.starkinhon.battlegroundsmod.power.powers.aizen.Hogyoku.dash(player)) {
+            // V while evolved: Aizen's dash of cuts.
+            return;
+        }
+        if (slot == com.starkinhon.battlegroundsmod.power.powers.aizen.KyokaSuigetsu.SLOT
+                && com.starkinhon.battlegroundsmod.power.powers.aizen.KyokaSuigetsu.breakIllusion(player)) {
+            // X with the illusion up: it breaks and he shows up.
+            return;
+        }
         if (PowerData.isUlt(slot) && com.starkinhon.battlegroundsmod.power.powers.gojo.InfiniteVoid.cancel(player)) {
             // V with his domain open: Gojo closes it.
             return;

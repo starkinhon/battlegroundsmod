@@ -83,6 +83,9 @@ public final class PowerEvents {
         Susanoo.clear();
         Izanami.clear();
         com.starkinhon.battlegroundsmod.power.powers.gojo.InfiniteVoid.clear();
+        com.starkinhon.battlegroundsmod.power.powers.aizen.KyokaSuigetsu.clear();
+        com.starkinhon.battlegroundsmod.power.powers.aizen.UmDedo.clear();
+        com.starkinhon.battlegroundsmod.power.powers.aizen.Hogyoku.clear();
     }
 
     private static void onPlayerTick(PlayerTickEvent.Post event) {
@@ -191,6 +194,10 @@ public final class PowerEvents {
             return;
         }
         com.starkinhon.battlegroundsmod.power.powers.gojo.InfiniteVoid.onIncomingDamage(event);
+        if (event.isCanceled()) {
+            return;
+        }
+        com.starkinhon.battlegroundsmod.power.powers.aizen.UmDedo.onIncomingDamage(event.getEntity(), event);
         if (event.isCanceled()) {
             return;
         }
