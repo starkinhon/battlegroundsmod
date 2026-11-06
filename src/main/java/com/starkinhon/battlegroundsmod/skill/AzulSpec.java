@@ -9,7 +9,8 @@ import java.util.List;
 // pulls much harder, tears blocks out of the ground and crushes them in the middle (only with the gamerule
 // soulsBlockDestruction), bends the space around it, then implodes. Charged less than full, everything is in between.
 // Held longer than segurado.decidirTicks counts as held. visual.estilo: the orb's look in souls_vfx shape 18 (0 mod glow,
-// 1 cartoon, 2 realism, 3 mix/glass); Shift + Z is the same Blue with visual.estiloShift.
+// 1 cartoon, 2 realism (kept for later), 3 mix/glass, the one in the game). visual.estiloShift is unused while
+// Shift + Z has no variant (Azul.useMix draws it).
 // Timeline: "uso" (press), "lancar" (the tap's orb leaves), "travar" (it locks), "fim" (the tap's orb is gone),
 // "carregar" (held), "soltar" (let go), "esmagar" (a block crushed), "fimForte" (the held one implodes).
 // The "tempo" and "animacao" blocks are also read as an AnimationSpec (the aim and push of the hand).
