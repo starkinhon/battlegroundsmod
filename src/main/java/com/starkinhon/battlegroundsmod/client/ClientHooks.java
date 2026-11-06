@@ -122,6 +122,7 @@ public final class ClientHooks {
         com.starkinhon.battlegroundsmod.client.fx.SphereRenderer.clear();
         com.starkinhon.battlegroundsmod.client.fx.BlackBoxRenderer.clear();
         com.starkinhon.battlegroundsmod.client.fx.AzulRenderer.clear();
+        com.starkinhon.battlegroundsmod.client.fx.VermelhoRenderer.clear();
         com.starkinhon.battlegroundsmod.client.fx.AizenFx.clear();
     }
 
@@ -193,6 +194,10 @@ public final class ClientHooks {
 
     public static void azul(int id, int mode, Vec3 pos, float radius, float charge, int style) {
         com.starkinhon.battlegroundsmod.client.fx.AzulRenderer.orb(id, mode, pos, radius, charge, style);
+    }
+
+    public static void vermelho(int id, int owner, int mode) {
+        com.starkinhon.battlegroundsmod.client.fx.VermelhoRenderer.orb(id, owner, mode);
     }
 
     public static void aizenFx(int kind, int entityId, Vec3 pos, Vec3 dir, float a, float b) {

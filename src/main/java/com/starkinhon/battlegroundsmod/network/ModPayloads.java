@@ -615,6 +615,22 @@ public final class ModPayloads {
         }
     }
 
+    // Server -> client: Gojo's Red (power/powers/gojo/Vermelho), every tick while it lives at owner's fingertip.
+    // mode 0 alive, 1 over (it fades). The client places it on the owner's hand itself, so it never lags behind him.
+    public record Vermelho(int id, int owner, int mode) implements CustomPacketPayload {
+        public static final Type<Vermelho> TYPE = payloadType("vermelho");
+        public static final StreamCodec<ByteBuf, Vermelho> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, Vermelho::id,
+                ByteBufCodecs.VAR_INT, Vermelho::owner,
+                ByteBufCodecs.VAR_INT, Vermelho::mode,
+                Vermelho::new);
+
+        @Override
+        public Type<Vermelho> type() {
+            return TYPE;
+        }
+    }
+
     // Server -> client (the owner only), every tick while his held Blue is under his control: the mouse wheel steers it
     // (and the hotbar doesn't scroll). false when it no longer is.
     public record AzulControl(boolean on) implements CustomPacketPayload {
@@ -901,6 +917,8 @@ public final class ModPayloads {
                 () -> ClientHooks.azulControl(payload.on())));
         registrar.playToClient(Azul.TYPE, Azul.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.azul(payload.id(), payload.mode(), payload.pos(), payload.radius(), payload.charge(), payload.style())));
+        registrar.playToClient(Vermelho.TYPE, Vermelho.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.vermelho(payload.id(), payload.owner(), payload.mode())));
         registrar.playToClient(AizenFx.TYPE, AizenFx.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.aizenFx(payload.kind(), payload.entityId(), payload.pos(), payload.dir(), payload.a(), payload.b())));
         registrar.playToClient(EnergyBall.TYPE, EnergyBall.STREAM_CODEC, (payload, context) -> context.enqueueWork(

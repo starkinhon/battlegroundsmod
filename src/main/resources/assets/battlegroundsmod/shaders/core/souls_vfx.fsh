@@ -28,6 +28,10 @@
 //  18 azul    Gojo's Blue: param byte = style * 64 + charge * 63; style 0 mod glow (additive), 1 cartoon (alpha
 //             layer), 2 realism, a glowing volume (additive; the one in the game), 3 mix, a glass ball (alpha layer, kept
 //             for later)
+//  19 vermelho tail  one tail of Gojo's Red, a ribbon with u from the orb (0) to the tip (1); param < 0.3 the body with
+//             a dark ink edge (alpha layer), < 0.5 the wide smear behind it (alpha layer), else its glow (additive)
+//  20 vermelho orb   Gojo's Red itself, drawn over the glow; param < 0.5 dark core (kept), else the bright core (the one
+//             in the game)
 // A very dark color never burns white (dark rims and lines stay dark).
 // Near walls and the ground the effect fades out instead of cutting a hard line (soft particles).
 uniform sampler2D Sampler1;
@@ -211,6 +215,97 @@ vec4 azul(vec2 p, float param, float seed, float time) {
         alpha = max(disc * 0.8, line) + frost * (0.6 + 0.4 * ch) + halo;
     }
     return vec4(col, clamp(alpha, 0.0, 1.0));
+}
+
+// ---- shapes 19 and 20: Gojo's Red (Vermelho). The same text runs in souls_vfx.fsh and in the Visualizador. ----
+// 19 = one tail. uv.x runs from the orb (0) to the tip (1), uv.y across the strip.
+//      param < 0.3: the body with a dark ink edge leaking along it (alpha layer).
+//      param < 0.5: the wide smear behind it, no ink (alpha layer). param >= 0.5: the glow copy (additive, feeds the bloom).
+// 20 = the orb. It fills the middle half of the quad; outside is halo. param < 0.5 dark core, >= 0.5 bright core.
+float vmGrain(vec2 px, float time) {
+    vec2 k = floor(px) + floor(time * 24.0) * vec2(7.1, 3.7);
+    return fract(sin(dot(k, vec2(12.9898, 78.233))) * 43758.5453);
+}
+
+vec4 vermelhoRabo(vec2 uv, float param, float seed, float time) {
+    float u = uv.x;
+    float y = uv.y * 2.0 - 1.0;
+    // The energy runs along the tail into the orb.
+    float flow = time * 1.8;
+    float n1 = fbm(vec2(u * 5.0 + flow + seed, y * 1.2 + seed * 0.7));
+    float n2 = fbm(vec2(u * 13.0 + flow * 1.6, y * 2.6 - seed));
+    // The band wanders across the strip and its edge frays, more at the tip.
+    float bend = (n1 - 0.5) * 0.45;
+    float e = abs(y - bend) + (n2 - 0.5) * (0.35 + 0.5 * u);
+    float body = 1.0 - smoothstep(0.1, 1.0, e);
+    float core = 1.0 - smoothstep(0.0, 0.16 + 0.12 * n2, abs(y - bend * 1.1));
+    // Brush strands along the length.
+    float strands = smoothstep(0.42, 0.78, fbm(vec2(u * 2.2 + flow * 0.8, y * 6.0 + seed * 3.0)));
+    float tip = 1.0 - smoothstep(0.5, 1.0, u + (n1 - 0.5) * 0.35);
+    float root = smoothstep(0.0, 0.05, u);
+    float grain = vmGrain(gl_FragCoord.xy * 0.5, time);
+    vec3 deep = vec3(0.32, 0.0, 0.03);
+    vec3 red = vec3(1.0, 0.06, 0.1);
+    vec3 hot = vec3(1.0, 0.62, 0.66);
+    float heat = clamp(core * (0.65 + 0.35 * strands) * (1.0 - 0.55 * u), 0.0, 1.0);
+    vec3 col = mix(deep, red, smoothstep(0.0, 0.6, body));
+    col = mix(col, hot, smoothstep(0.35, 0.75, heat));
+    col = mix(col, vec3(1.0), smoothstep(0.75, 1.0, heat));
+    float a;
+    if (param < 0.3) {
+        // Dark ink leaking along the frayed edge.
+        float rim = smoothstep(0.45, 0.7, e) * (1.0 - smoothstep(0.8, 1.05, e + (n1 - 0.5) * 0.3));
+        col = mix(col, vec3(0.1, 0.0, 0.03), rim * 0.85);
+        a = max(body * (0.45 + 0.55 * strands) + core, rim * 0.75) * tip * root * (0.85 + 0.3 * (grain - 0.5));
+    } else if (param < 0.5) {
+        a = (body * (0.45 + 0.55 * strands) + core) * tip * root * (0.85 + 0.3 * (grain - 0.5));
+    } else {
+        col = mix(red, hot, heat);
+        a = (body * 0.35 + heat) * tip * root;
+    }
+    return vec4(col, clamp(a, 0.0, 1.0));
+}
+
+vec4 vermelhoOrbe(vec2 p, float param, float seed, float time) {
+    float r = length(p);
+    vec2 q = p * 2.0;
+    float rr = length(q);
+    float ang = atan(q.y, q.x);
+    // Spins clockwise on screen, the same way and speed as the tails (giro 0.24 rad/tick = 4.8 rad/s).
+    float spinA = time * 4.8;
+    float cs = cos(spinA);
+    float sn = sin(spinA);
+    vec2 qr = vec2(q.x * cs - q.y * sn, q.x * sn + q.y * cs);
+    float n = fbm(qr * 1.6 + vec2(seed, seed * 0.5));
+    float n2 = fbm(qr * 3.5 + vec2(-seed, time * 0.3));
+    // The surface boils a little.
+    float d = rr + (n - 0.5) * 0.14;
+    vec3 black = vec3(0.03, 0.0, 0.01);
+    vec3 deep = vec3(0.4, 0.0, 0.04);
+    vec3 red = vec3(1.0, 0.05, 0.1);
+    vec3 hot = vec3(1.0, 0.6, 0.62);
+    float swirl = 0.5 + 0.5 * sin((ang + spinA) * 3.0 - rr * 6.0 + n * 4.0);
+    vec3 col;
+    if (param < 0.5) {
+        // Dark core: a black hole ringed by white-hot light, then the red body.
+        float hole = 1.0 - smoothstep(0.52, 0.58, d);
+        float ring = exp(-pow((d - 0.63) / 0.06, 2.0));
+        col = mix(red, hot, swirl * 0.5 * n2);
+        col = mix(col, deep, smoothstep(0.75, 1.0, d) * 0.6);
+        col = mix(col, vec3(1.0, 0.85, 0.86), ring);
+        col = mix(col, black, hole);
+    } else {
+        // Bright core: white in the middle, pink, then red bands.
+        float c = 1.0 - smoothstep(0.0, 0.5, d);
+        col = mix(red, hot, smoothstep(0.35, 0.75, 1.0 - d + 0.2 * n2));
+        col = mix(col, vec3(1.0), smoothstep(0.55, 0.85, c + 0.1 * n2));
+        col = mix(col, deep, smoothstep(0.8, 1.0, d) * 0.5);
+    }
+    // The red halo outside (no outline on the orb: the ink lives on the tails).
+    float body = 1.0 - smoothstep(0.96, 1.04, d);
+    float halo = pow(max(0.0, 1.0 - r), 2.4) * (0.55 + 0.25 * n);
+    col = mix(mix(deep, red, 0.6 + 0.4 * n2), col, body);
+    return vec4(col, clamp(max(body, halo), 0.0, 1.0));
 }
 
 float linearDepth(float d) {
@@ -473,6 +568,14 @@ void main() {
         vec4 az = azul(p, param, seed, time);
         base = az.rgb;
         alpha = az.a;
+    } else if (shape == 19) {
+        vec4 vm = vermelhoRabo(uv, param, seed, time);
+        base = vm.rgb;
+        alpha = vm.a;
+    } else if (shape == 20) {
+        vec4 vm = vermelhoOrbe(p, param, seed, time);
+        base = vm.rgb;
+        alpha = vm.a;
     } else {
         alpha = 1.0;
     }
@@ -482,8 +585,8 @@ void main() {
 
     float fade = 1.0;
     // The Black Box's walls and lances stay solid right in front of whoever is inside, and shards, wings and orbs sit
-    // right on bodies (no soft fade).
-    if (SoftOn > 0.5 && (shape < 12 || shape > 16)) {
+    // right on bodies (no soft fade), and so does the Red's orb at Gojo's fingertip.
+    if (SoftOn > 0.5 && (shape < 12 || shape > 16) && shape != 20) {
         float scene = linearDepth(texture(Sampler1, gl_FragCoord.xy / Screen).r);
         fade = clamp((scene - viewDist) / 0.6, 0.0, 1.0);
     }
