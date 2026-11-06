@@ -1,6 +1,9 @@
 package com.starkinhon.battlegroundsmod.power.powers.gojo;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 import java.util.List;
 import java.util.function.Function;
 
@@ -38,6 +41,10 @@ import net.neoforged.neoforge.network.PacketDistributor;
 // growing up to orbe.escalaMax times; let go (or held too long) it follows his aim for segurado.duracaoTicks, pulls much
 // harder (whoever reaches it is held spinning inside), tears blocks out of the ground and crushes them in the middle,
 // then implodes. The orb is drawn on the clients (client/fx/AzulRenderer) from what is sent here every tick.
+// While the held one is out, Z again (PowerLogic sends it here, see press): a tap parks it where it is, or sends a parked
+// one back to following; held while it follows, it is shot towards the aim, chases whoever is there and explodes; held
+// while parked, it circles him (orbita) pulling everything until let go. The mouse wheel moves it away or closer
+// (scroll, sent by the client while it is told the orb is under control).
 public final class Azul {
     public static final String SKILL = AzulSpec.SKILL;
     // The held one's body animation (both hands on the orb while it charges).
@@ -50,13 +57,41 @@ public final class Azul {
     public static final int IMPLODED = 1;
     public static final int GONE = 2;
 
-    private enum Phase { DECIDE, FLY, LOCKED, CHARGE, FOLLOW }
+    private enum Phase { DECIDE, FLY, LOCKED, CHARGE, FOLLOW, PARKED, ORBIT, SHOT }
+
+    // The held one under a player's control: Z presses and wheel turns land here, the task reads them.
+    private static final class Control {
+        boolean pressed;
+        int holdStart = -1;
+        double reach;
+        int scroll;
+    }
+
+    private static final Map<UUID, Control> CONTROLS = new HashMap<>();
 
     private Azul() {
     }
 
     public static boolean use(LivingEntity caster, ServerLevel level) {
         return use(caster, level, false);
+    }
+
+    // Z pressed while his held Blue is out: it is a command to it, not a new Blue. Returns false when there is none.
+    public static boolean press(ServerPlayer player) {
+        Control control = CONTROLS.get(player.getUUID());
+        if (control == null) {
+            return false;
+        }
+        control.pressed = true;
+        return true;
+    }
+
+    // The mouse wheel while his Blue follows the aim: up (+) sends it away, down (-) brings it closer.
+    public static void scroll(ServerPlayer player, int steps) {
+        Control control = CONTROLS.get(player.getUUID());
+        if (control != null && steps != 0) {
+            control.scroll += Mth.clamp(steps, -5, 5);
+        }
     }
 
     // Shift + Z: the very same Blue, drawn with the mix look (the glass ball) instead of the realism one.
@@ -96,6 +131,17 @@ public final class Azul {
         Vec3[] flyTo = {orb[0]};
         int[] flyTicks = {1};
         boolean[] following = {true};
+        int[] lifeStart = {0};
+        Vec3[] velocity = {Vec3.ZERO};
+        double[] orbitAngle = {0};
+        LivingEntity[] chased = {null};
+        Vec3[] shotDir = {Vec3.ZERO};
+        double[] shotSpeed = {0};
+        double[] shotFlown = {0};
+        Control control = new Control();
+        AzulSpec.Controle controle = spec.controle();
+        AzulSpec.Orbita orbita = spec.orbita();
+        AzulSpec.Tiro tiro = spec.tiro();
         List<FallingBlockEntity> torn = new ArrayList<>();
         int[] tornCount = {0};
         int[] lastCrushFx = {-10};
@@ -114,6 +160,7 @@ public final class Azul {
                 // Cut short: it fades without imploding.
                 send(level, id, GONE, orb[0], radius[0], (float) charge[0], style);
                 release(torn);
+                endControl(caster, control);
                 PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new ModPayloads.PlaySkillAnimation(caster.getId(), "", false));
                 return true;
             }
@@ -171,9 +218,15 @@ public final class Azul {
                     radius[0] = baseRadius * (1 + (scaleMax - 1) * smooth(charge[0]));
                     orb[0] = holdAt(caster, smooth(charge[0]), radius[0]);
                     now.busyTicks = Math.max(now.busyTicks, 2);
-                    if (!held || t + 1 >= maxHold) {
+                    // Players let it go only when they let go of Z, however long that is; bosses after their charge.
+                    if (!held || !(caster instanceof Player) && t + 1 >= maxHold) {
                         phase[0] = Phase.FOLLOW;
                         phaseStart[0] = age + 1;
+                        lifeStart[0] = age + 1;
+                        control.reach = segurado.miraMax() != null ? Mth.lerp(charge[0], segurado.mira(), segurado.miraMax()) : segurado.mira();
+                        if (caster instanceof ServerPlayer player) {
+                            CONTROLS.put(player.getUUID(), control);
+                        }
                         caster.swing(InteractionHand.MAIN_HAND, true);
                         // The push of the hand that sends it out.
                         PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new ModPayloads.PlaySkillAnimation(caster.getId(), SKILL, awakened));
@@ -181,14 +234,129 @@ public final class Azul {
                         Fx.effects(level, SKILL, awakened, "soltar", orb[0], caster.getLookAngle());
                     }
                 }
-                case FOLLOW -> {
-                    if (following[0]) {
-                        // The longer it was held, the further out it goes: segurado.mira at the lightest charge, up to
-                        // segurado.miraMax fully charged.
-                        double reach = segurado.miraMax() != null ? Mth.lerp(charge[0], segurado.mira(), segurado.miraMax()) : segurado.mira();
-                        orb[0] = orb[0].lerp(followTarget(caster, reach), t < 6 ? 0.3 : Mth.clamp(segurado.seguir(), 0, 1));
-                    }
+                case FOLLOW, PARKED, ORBIT, SHOT -> {
                     double c = charge[0];
+                    if (cut && phase[0] == Phase.FOLLOW) {
+                        // Stunned while it follows: it stays where it is.
+                        phase[0] = Phase.PARKED;
+                    }
+                    // Z again: a tap parks it or sends it back to following; held, it is shot (following) or circles
+                    // him (parked) until let go.
+                    if (control.pressed) {
+                        control.pressed = false;
+                        control.holdStart = age;
+                    }
+                    if (control.holdStart >= 0 && phase[0] != Phase.SHOT) {
+                        boolean down = now.abilityHeld;
+                        if (!down) {
+                            if (phase[0] == Phase.ORBIT) {
+                                phase[0] = Phase.PARKED;
+                                velocity[0] = Vec3.ZERO;
+                                SkillSounds.play(level, spec.sons(), "travarControle", 0, 0, where, screen);
+                                Fx.effects(level, SKILL, awakened, "travarControle", orb[0], Vec3.ZERO);
+                            } else if (age - control.holdStart < decide) {
+                                boolean park = phase[0] == Phase.FOLLOW;
+                                phase[0] = park ? Phase.PARKED : Phase.FOLLOW;
+                                velocity[0] = Vec3.ZERO;
+                                String momento = park ? "travarControle" : "seguirDeNovo";
+                                SkillSounds.play(level, spec.sons(), momento, 0, 0, where, screen);
+                                Fx.effects(level, SKILL, awakened, momento, orb[0], Vec3.ZERO);
+                            }
+                            control.holdStart = -1;
+                        } else if (age - control.holdStart >= decide && phase[0] != Phase.ORBIT) {
+                            caster.swing(InteractionHand.MAIN_HAND, true);
+                            PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new ModPayloads.PlaySkillAnimation(caster.getId(), SKILL, awakened));
+                            if (phase[0] == Phase.FOLLOW) {
+                                phase[0] = Phase.SHOT;
+                                phaseStart[0] = age;
+                                chased[0] = Combat.raycastTarget(caster, tiro.alcance());
+                                Vec3 aim = chased[0] != null ? Combat.center(chased[0]) : Combat.raycastPoint(caster, tiro.alcance());
+                                Vec3 to = aim.subtract(orb[0]);
+                                shotDir[0] = to.lengthSqr() > 1.0E-4 ? to.normalize() : caster.getLookAngle();
+                                shotSpeed[0] = tiro.velocidade();
+                                shotFlown[0] = 0;
+                                control.holdStart = -1;
+                                endControl(caster, control);
+                                SkillSounds.play(level, spec.sons(), "atirar", 0, 0, where, screen);
+                                Fx.effects(level, SKILL, awakened, "atirar", orb[0], shotDir[0]);
+                            } else {
+                                phase[0] = Phase.ORBIT;
+                                Vec3 from = orb[0].subtract(caster.position());
+                                orbitAngle[0] = Math.atan2(from.z, from.x);
+                                SkillSounds.play(level, spec.sons(), "orbitar", 0, 0, where, screen);
+                                Fx.effects(level, SKILL, awakened, "orbitar", caster.position().add(0, 0.05, 0), Vec3.ZERO);
+                            }
+                        }
+                    }
+                    // The wheel: further away or closer while it follows the aim.
+                    if (control.scroll != 0) {
+                        int steps = control.scroll;
+                        control.scroll = 0;
+                        if (phase[0] == Phase.FOLLOW) {
+                            double before = control.reach;
+                            control.reach = Mth.clamp(control.reach + steps * controle.passoScroll(), controle.alcanceMin(), controle.alcanceMax());
+                            if (control.reach != before) {
+                                String momento = steps > 0 ? "afastar" : "aproximar";
+                                SkillSounds.play(level, spec.sons(), momento, 0, 0, where, screen);
+                                Fx.effects(level, SKILL, awakened, momento, orb[0], caster.getLookAngle().scale(steps > 0 ? 1 : -1));
+                            }
+                        }
+                    }
+                    if (phase[0] == Phase.SHOT) {
+                        // Shot: it speeds up towards the aim, turning to chase whoever it was aimed at, and explodes.
+                        if (chased[0] != null && chased[0].isAlive()) {
+                            Vec3 to = Combat.center(chased[0]).subtract(orb[0]);
+                            if (to.lengthSqr() > 1.0E-4) {
+                                shotDir[0] = shotDir[0].lerp(to.normalize(), Mth.clamp(tiro.perseguir(), 0, 1)).normalize();
+                            }
+                        }
+                        shotSpeed[0] = Math.min(tiro.velocidadeMax(), shotSpeed[0] + tiro.aceleracao());
+                        Vec3 next = orb[0].add(shotDir[0].scale(shotSpeed[0]));
+                        var hit = level.clip(new net.minecraft.world.level.ClipContext(orb[0], next, net.minecraft.world.level.ClipContext.Block.COLLIDER,
+                                net.minecraft.world.level.ClipContext.Fluid.NONE, caster));
+                        boolean wall = hit.getType() != net.minecraft.world.phys.HitResult.Type.MISS;
+                        orb[0] = wall ? hit.getLocation() : next;
+                        shotFlown[0] += shotSpeed[0];
+                        velocity[0] = shotDir[0].scale(shotSpeed[0]);
+                        boolean reached = !Combat.inRadius(level, orb[0], radius[0] + 0.8, caster).isEmpty();
+                        pullHeld(level, caster, orb[0], radius[0], baseRadius * scaleMax, c, segurado, age);
+                        steerBlocks(orb[0], radius[0], torn);
+                        if (wall || reached || shotFlown[0] >= tiro.alcance() || age - phaseStart[0] >= Math.max(1, tiro.maxTicks())) {
+                            explode(caster, level, orb[0], radius[0], c, tiro, torn);
+                            send(level, id, IMPLODED, orb[0], radius[0], (float) c, style);
+                            SkillSounds.play(level, spec.sons(), "explodir", 0, 0, where, screen);
+                            Fx.effects(level, SKILL, awakened, "explodir", orb[0], Vec3.ZERO);
+                            PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new ModPayloads.PlaySkillAnimation(caster.getId(), "", false));
+                            return true;
+                        }
+                        break;
+                    }
+                    // Following the aim (or circling him): pulled towards where it should be, keeping part of its speed,
+                    // so it lags a little behind and moves softly. Parked, it stays.
+                    Vec3 goal = null;
+                    double pullK = controle.seguir();
+                    if (phase[0] == Phase.FOLLOW) {
+                        goal = followTarget(caster, control.reach);
+                    } else if (phase[0] == Phase.ORBIT) {
+                        orbitAngle[0] += orbita.velocidade();
+                        goal = caster.position().add(Math.cos(orbitAngle[0]) * orbita.raio(), orbita.altura(), Math.sin(orbitAngle[0]) * orbita.raio());
+                        pullK *= 2;
+                    }
+                    if (goal != null) {
+                        Vec3 v = velocity[0].scale(Mth.clamp(controle.amortecer(), 0, 0.99)).add(goal.subtract(orb[0]).scale(pullK));
+                        double max = controle.velocidadeMax() * (phase[0] == Phase.ORBIT ? 1.6 : 1);
+                        if (v.length() > max) {
+                            v = v.normalize().scale(max);
+                        }
+                        velocity[0] = v;
+                        orb[0] = orb[0].add(v);
+                    } else {
+                        velocity[0] = Vec3.ZERO;
+                    }
+                    if (caster instanceof ServerPlayer player && phase[0] != Phase.SHOT) {
+                        // Keeps the client's wheel on the orb (the hotbar doesn't scroll) while it is under control.
+                        PacketDistributor.sendToPlayer(player, new ModPayloads.AzulControl(true));
+                    }
                     pullHeld(level, caster, orb[0], radius[0], baseRadius * scaleMax, c, segurado, age);
                     tearBlocks(level, orb[0], radius[0], c, segurado, torn, tornCount);
                     int crushed = steerBlocks(orb[0], radius[0], torn);
@@ -197,13 +365,14 @@ public final class Azul {
                         SkillSounds.play(level, spec.sons(), "esmagar", 0, 0, where, screen);
                         Fx.effects(level, SKILL, awakened, "esmagar", orb[0], Vec3.ZERO);
                     }
-                    if (t + 1 >= Math.max(1, segurado.duracaoTicks())) {
+                    if (age - lifeStart[0] + 1 >= Math.max(1, segurado.duracaoTicks())) {
                         // It implodes: everyone in it is hit once more, the blocks still flying fall.
                         float last = (float) (segurado.danoFim() * (0.4 + 0.6 * c));
                         for (LivingEntity hit : Combat.inRadius(level, orb[0], radius[0] * 1.6 + 1, caster)) {
                             Combat.hurtMagic(caster, hit, last);
                         }
                         release(torn);
+                        endControl(caster, control);
                         send(level, id, IMPLODED, orb[0], radius[0], (float) c, style);
                         SkillSounds.play(level, spec.sons(), "fimForte", 0, 0, where, screen);
                         Fx.effects(level, SKILL, awakened, "fimForte", orb[0], Vec3.ZERO);
@@ -215,6 +384,38 @@ public final class Azul {
             return false;
         });
         return true;
+    }
+
+    // The Blue is no longer his to steer: Z and the wheel go back to normal.
+    private static void endControl(LivingEntity caster, Control control) {
+        if (caster instanceof ServerPlayer player) {
+            CONTROLS.remove(player.getUUID(), control);
+            PacketDistributor.sendToPlayer(player, new ModPayloads.AzulControl(false));
+        }
+    }
+
+    // The shot Blue blows up: everyone near is hit and thrown out, blocks break (gamerule), the torn blocks fly out.
+    private static void explode(LivingEntity caster, ServerLevel level, Vec3 at, double r, double c, AzulSpec.Tiro tiro, List<FallingBlockEntity> torn) {
+        double reach = r * Math.max(0.5, tiro.raioExplosao()) + 1;
+        float damage = (float) (tiro.dano() * (0.4 + 0.6 * c));
+        for (LivingEntity hit : Combat.inRadius(level, at, reach, caster)) {
+            Combat.hurtMagic(caster, hit, damage);
+            Combat.pushFrom(hit, at, tiro.empurrao() * (0.5 + 0.5 * c), 0.5);
+        }
+        if (tiro.forcaExplosao() > 0 && BlockRules.canBreak(level)) {
+            level.explode(caster, at.x, at.y, at.z, (float) (tiro.forcaExplosao() * (0.4 + 0.6 * c)), false,
+                    net.minecraft.world.level.Level.ExplosionInteraction.TNT);
+        }
+        for (FallingBlockEntity block : torn) {
+            if (!block.isRemoved()) {
+                Vec3 out = block.position().subtract(at);
+                out = out.lengthSqr() > 1.0E-4 ? out.normalize() : new Vec3(0, 1, 0);
+                block.setNoGravity(false);
+                block.noPhysics = false;
+                block.setDeltaMovement(out.scale(0.9).add(0, 0.4, 0));
+            }
+        }
+        torn.clear();
     }
 
     // Between his hands, in front of the chest: higher and further out the bigger it is (the Visualizer's holdAt).

@@ -187,6 +187,10 @@ public final class ClientHooks {
         com.starkinhon.battlegroundsmod.client.fx.BlackBoxRenderer.box(id, mode, base, size, awakened);
     }
 
+    public static void azulControl(boolean on) {
+        com.starkinhon.battlegroundsmod.client.fx.AzulRenderer.control(on);
+    }
+
     public static void azul(int id, int mode, Vec3 pos, float radius, float charge, int style) {
         com.starkinhon.battlegroundsmod.client.fx.AzulRenderer.orb(id, mode, pos, radius, charge, style);
     }

@@ -74,6 +74,10 @@ public final class PowerLogic {
             // V with his domain open: Gojo closes it.
             return;
         }
+        if (slot == 0 && com.starkinhon.battlegroundsmod.power.powers.gojo.Azul.press(player)) {
+            // Z with his held Blue out: a command to it (park, shoot, circle), not a new Blue.
+            return;
+        }
         if (slot < 0 || slot >= PowerData.SLOT_COUNT || !canCast(player, data, slot)) {
             return;
         }

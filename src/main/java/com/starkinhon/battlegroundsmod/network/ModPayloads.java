@@ -597,7 +597,7 @@ public final class ModPayloads {
     }
 
     // Server -> client: Gojo's Blue (power/powers/gojo/Azul), every tick while it lives. mode 0 alive, 1 imploded (the
-    // held one's end), 2 gone (the tap's end, or cut short). charge 0 to 1 (0 the tap); style: the shader's look (2 realism).
+    // held one's end), 2 gone (the tap's end, or cut short). charge 0 to 1 (0 the tap); style: the shader's look (2 realism, 3 mix).
     public record Azul(int id, int mode, Vec3 pos, float radius, float charge, int style) implements CustomPacketPayload {
         public static final Type<Azul> TYPE = payloadType("azul");
         public static final StreamCodec<ByteBuf, Azul> STREAM_CODEC = StreamCodec.composite(
@@ -611,6 +611,31 @@ public final class ModPayloads {
 
         @Override
         public Type<Azul> type() {
+            return TYPE;
+        }
+    }
+
+    // Server -> client (the owner only), every tick while his held Blue is under his control: the mouse wheel steers it
+    // (and the hotbar doesn't scroll). false when it no longer is.
+    public record AzulControl(boolean on) implements CustomPacketPayload {
+        public static final Type<AzulControl> TYPE = payloadType("azul_control");
+        public static final StreamCodec<ByteBuf, AzulControl> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.BOOL, AzulControl::on, AzulControl::new);
+
+        @Override
+        public Type<AzulControl> type() {
+            return TYPE;
+        }
+    }
+
+    // Client -> server: the mouse wheel turned while the Blue is under control (+ away, - closer).
+    public record AzulScroll(int steps) implements CustomPacketPayload {
+        public static final Type<AzulScroll> TYPE = payloadType("azul_scroll");
+        public static final StreamCodec<ByteBuf, AzulScroll> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, AzulScroll::steps, AzulScroll::new);
+
+        @Override
+        public Type<AzulScroll> type() {
             return TYPE;
         }
     }
@@ -804,6 +829,11 @@ public final class ModPayloads {
                 player.getData(ModAttachments.POWER).attackHeld = payload.down();
             }
         }));
+        registrar.playToServer(AzulScroll.TYPE, AzulScroll.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
+            if (context.player() instanceof ServerPlayer player) {
+                com.starkinhon.battlegroundsmod.power.powers.gojo.Azul.scroll(player, payload.steps());
+            }
+        }));
         registrar.playToServer(AbilityHold.TYPE, AbilityHold.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer player) {
                 player.getData(ModAttachments.POWER).abilityHeld = payload.down();
@@ -867,6 +897,8 @@ public final class ModPayloads {
                 () -> ClientHooks.hakaiShot(payload.start(), payload.velocity(), payload.ticks(), payload.awakened())));
         registrar.playToClient(BlackBox.TYPE, BlackBox.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.blackBox(payload.id(), payload.mode(), payload.base(), payload.size(), payload.awakened())));
+        registrar.playToClient(AzulControl.TYPE, AzulControl.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.azulControl(payload.on())));
         registrar.playToClient(Azul.TYPE, Azul.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.azul(payload.id(), payload.mode(), payload.pos(), payload.radius(), payload.charge(), payload.style())));
         registrar.playToClient(AizenFx.TYPE, AizenFx.STREAM_CODEC, (payload, context) -> context.enqueueWork(

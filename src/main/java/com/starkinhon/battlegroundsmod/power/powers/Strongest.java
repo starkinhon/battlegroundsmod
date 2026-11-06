@@ -1,6 +1,5 @@
 package com.starkinhon.battlegroundsmod.power.powers;
 
-import java.util.Arrays;
 import java.util.List;
 
 import com.starkinhon.battlegroundsmod.power.Ability;
@@ -13,7 +12,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
 
 // O Mais Forte (Gojo). Z is Azul (tap: a small orb that locks where he aims and pulls; held: a big one that follows his
-// aim, pulls hard and tears blocks out; see gojo/Azul; Shift + Z is the same with the glass look). V is the ult, Expansão de Domínio: Vazio Infinito. X (Vermelho)
+// aim, pulls hard and tears blocks out; see gojo/Azul; drawn with the realism look; the mix look is kept in the shader). V is the ult, Expansão de Domínio: Vazio Infinito. X (Vermelho)
 // and C (Roxo) are still to come: for now they only say so and cost nothing.
 public final class Strongest {
     private Strongest() {
@@ -24,9 +23,7 @@ public final class Strongest {
                 new Ability(160, 0, Azul::use),
                 new Ability(0, 0, Strongest::soon),
                 new Ability(0, 0, Strongest::soon),
-                new Ability(900, 0, InfiniteVoid::use)),
-                // Shift + Z: the same Blue with the mix look (glass ball).
-                Arrays.asList(new Ability(160, 0, Azul::useMix), null, null, null));
+                new Ability(900, 0, InfiniteVoid::use)));
     }
 
     private static boolean soon(LivingEntity caster, net.minecraft.server.level.ServerLevel level) {
