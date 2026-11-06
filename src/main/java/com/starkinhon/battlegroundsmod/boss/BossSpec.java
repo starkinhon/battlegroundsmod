@@ -107,7 +107,7 @@ public record BossSpec(String boss, String poder, Integer tier, boolean dropAlma
     // tipo tells the AI what the move is for: alcance (ranged), controle (stun), contra (counter), ult, golpe (heavy hit),
     // barragem (multi-hit), hakai (Bills' V: erases a target low on life, else throws the hakai ball), anti (Bills'
 // hakaizinho: shot at attacks flying at it, or to finish someone low and far), livre (used almost at random whenever it is ready and
-// in range). avisoTicks: the warning before it is used. giroGrausPorTick: how fast it turns to follow the
+// in range), roteiro (only as a step of a combo, never on its own; it skips the range and sight checks). avisoTicks: the warning before it is used. giroGrausPorTick: how fast it turns to follow the
     // target while the move plays (low = easier to dodge).
     // recargaTicks..recargaMaxTicks: the cooldown is a random value in between (no max = always recargaTicks).
     // fala: what the boss says in the chat of whoever the move catches (the neck grab), empty = nothing.
@@ -125,8 +125,19 @@ public record BossSpec(String boss, String poder, Integer tier, boolean dropAlma
         return null;
     }
 
-    // Steps: a skill name from "skills", or soco, investida, esquiva, pulo, aproximar.
-    public record Combo(double peso, List<String> passos) {
+    // Steps: a skill name from "skills", or soco, investida, esquiva, pulo, aproximar (or a step only the boss's tactics
+    // know, see BossTactics.step).
+    // encadeado: its techniques go one right after the other (no intervaloTecnicasTicks between them), and it is only
+    // picked when all of them are off cooldown. ult: a finishing move: once started, nothing the target does (dodges,
+    // counters, escapes) breaks it off.
+    public record Combo(double peso, List<String> passos, Boolean encadeado, Boolean ult) {
+        public boolean chained() {
+            return Boolean.TRUE.equals(encadeado);
+        }
+
+        public boolean finisher() {
+            return Boolean.TRUE.equals(ult);
+        }
     }
 
     // comecaEm: the life fraction where the phase starts (1 = full life). Phases only go forward.

@@ -14,6 +14,7 @@ import com.starkinhon.battlegroundsmod.combat.Fx;
 import com.starkinhon.battlegroundsmod.combat.SkillSounds;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
+import com.starkinhon.battlegroundsmod.power.BossOrder;
 import com.starkinhon.battlegroundsmod.power.PowerData;
 import com.starkinhon.battlegroundsmod.skill.AzulSpec;
 
@@ -137,6 +138,17 @@ public final class Azul {
         return best;
     }
 
+    // owner's Blue parked right now with at least minCharge (not taken by a Red yet), or null. The Gojo boss waits for
+    // it before firing the Red of the Unlimited Purple.
+    public static Live parkedBlue(LivingEntity owner, double minCharge) {
+        for (Live l : LIVE) {
+            if (l.owner == owner && l.level == owner.level() && l.parked && !l.claimed && l.charge >= minCharge && l.alive()) {
+                return l;
+            }
+        }
+        return null;
+    }
+
     private Azul() {
     }
 
@@ -187,8 +199,12 @@ public final class Azul {
         // Bosses don't hold keys: half the time a tap, else a charge of their own length.
         // Bosses (the Gojo boss) use every form: a third of the time a tap, else a charge; see BossPlan for what the
         // charged one does after.
-        boolean bossHolds = RANDOM.nextDouble() < 0.67;
-        int bossCharge = Math.max(4, chargeTicks / 3 + RANDOM.nextInt(Math.max(1, chargeTicks)));
+        // A boss with tactics (the Gojo boss) says how this time: tap or charge, how much, and the plan (BossOrder).
+        BossOrder.Order order = BossOrder.take(caster);
+        boolean bossHolds = order != null ? order.hold() : RANDOM.nextDouble() < 0.67;
+        int bossCharge = order != null ? Math.max(4, (int) Math.round(chargeTicks * Mth.clamp(order.charge(), 0, 1)))
+                : Math.max(4, chargeTicks / 3 + RANDOM.nextInt(Math.max(1, chargeTicks)));
+        BossPlan orderedPlan = order != null ? BossPlan.named(order.plan()) : null;
         List<ServerPlayer> screen = caster instanceof ServerPlayer player ? List.of(player) : List.<ServerPlayer>of();
 
         // What changes from tick to tick.
@@ -312,7 +328,7 @@ public final class Azul {
                         if (caster instanceof ServerPlayer player) {
                             CONTROLS.put(player.getUUID(), control);
                         } else {
-                            bossPlan[0] = BossPlan.pick();
+                            bossPlan[0] = orderedPlan != null ? orderedPlan : BossPlan.pick();
                             bossAt[0] = age + 1 + bossPlan[0].delay();
                         }
                         caster.swing(InteractionHand.MAIN_HAND, true);
@@ -335,7 +351,7 @@ public final class Azul {
                         BossPlan doing = bossPlan[0];
                         bossPlan[0] = doing.next();
                         bossAt[0] = age + (bossPlan[0] != null ? bossPlan[0].delay() : 0);
-                        if (doing == BossPlan.PARK_THEN_UNPARK || doing == BossPlan.PARK_THEN_ORBIT) {
+                        if (doing == BossPlan.PARK_THEN_UNPARK || doing == BossPlan.PARK_THEN_ORBIT || doing == BossPlan.IRRESTRITO) {
                             doing = BossPlan.PARK;
                         }
                         if (doing == BossPlan.SHOOT && phase[0] == Phase.FOLLOW) {
@@ -531,7 +547,22 @@ public final class Azul {
     // eats the ground under them when charged enough), is shot at them, parks there (sometimes chasing again after), or
     // parks and then circles the boss. Each step has its own wait (delay) after the one before; next() is the step after.
     private enum BossPlan {
-        CHASE, SHOOT, PARK, UNPARK, ORBIT, PARK_THEN_UNPARK, PARK_THEN_ORBIT;
+        // IRRESTRITO: chases the target a little, then parks on it and stays there, waiting for the Red (the Unlimited
+        // Purple, ordered by the Gojo boss's tactics).
+        CHASE, SHOOT, PARK, UNPARK, ORBIT, PARK_THEN_UNPARK, PARK_THEN_ORBIT, IRRESTRITO;
+
+        // A plan by name (BossOrder.plan), or null.
+        static BossPlan named(String name) {
+            if (name == null) {
+                return null;
+            }
+            for (BossPlan plan : values()) {
+                if (plan.name().equalsIgnoreCase(name)) {
+                    return plan;
+                }
+            }
+            return null;
+        }
 
         static BossPlan pick() {
             double r = RANDOM.nextDouble();
@@ -546,6 +577,7 @@ public final class Azul {
                 case PARK, PARK_THEN_UNPARK, PARK_THEN_ORBIT -> 15 + RANDOM.nextInt(30);
                 case UNPARK -> 30 + RANDOM.nextInt(40);
                 case ORBIT -> 8 + RANDOM.nextInt(20);
+                case IRRESTRITO -> 16 + RANDOM.nextInt(10);
             };
         }
 

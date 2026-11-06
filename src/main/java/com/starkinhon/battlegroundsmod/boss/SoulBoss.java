@@ -97,6 +97,11 @@ public abstract class SoulBoss extends Monster {
         return stagedTicks > 0 || ultPending;
     }
 
+    // Its own way of reading the fight on top of SoulBossAI (see BossTactics), or null. Asked for only once it fights.
+    public BossTactics tactics() {
+        return null;
+    }
+
     public PowerData powerData() {
         return getData(ModAttachments.POWER);
     }

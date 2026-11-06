@@ -97,6 +97,45 @@
       "avisoCor": "#4fc3ff",
       "avisoSom": "minecraft:block.beacon.activate"
     },
+    "vermelho": {
+      "slot": 1,
+      "tipo": "alcance",
+      "peso": 1.5,
+      "recargaTicks": 200,
+      "recargaMaxTicks": 320,
+      "avisoTicks": 6,
+      "distanciaMin": 0,
+      "distanciaMax": 60,
+      "giroGrausPorTick": 25,
+      "avisoCor": "#ff3b3b",
+      "avisoSom": "minecraft:block.beacon.activate"
+    },
+    "vermelho_atras": {
+      "slot": 9,
+      "tipo": "controle",
+      "peso": 1.1,
+      "recargaTicks": 360,
+      "recargaMaxTicks": 480,
+      "avisoTicks": 3,
+      "distanciaMin": 4,
+      "distanciaMax": 30,
+      "giroGrausPorTick": 40,
+      "avisoCor": "#ff3b3b",
+      "avisoSom": "minecraft:entity.enderman.teleport"
+    },
+    "roxo": {
+      "slot": 2,
+      "tipo": "alcance",
+      "peso": 1.3,
+      "recargaTicks": 520,
+      "recargaMaxTicks": 720,
+      "avisoTicks": 10,
+      "distanciaMin": 6,
+      "distanciaMax": 90,
+      "giroGrausPorTick": 15,
+      "avisoCor": "#b44dff",
+      "avisoSom": "minecraft:block.beacon.power_select"
+    },
     "dominio": {
       "slot": 3,
       "tipo": "ult",
@@ -108,6 +147,32 @@
       "distanciaMax": 30,
       "giroGrausPorTick": 30,
       "avisoCor": "#4fc3ff",
+      "avisoSom": "minecraft:block.beacon.power_select"
+    },
+    "azul_irrestrito": {
+      "slot": 0,
+      "tipo": "roteiro",
+      "peso": 1.0,
+      "recargaTicks": 260,
+      "recargaMaxTicks": 380,
+      "avisoTicks": 10,
+      "distanciaMin": 0,
+      "distanciaMax": 999,
+      "giroGrausPorTick": 30,
+      "avisoCor": "#4fc3ff",
+      "avisoSom": "minecraft:block.beacon.power_select"
+    },
+    "vermelho_irrestrito": {
+      "slot": 1,
+      "tipo": "roteiro",
+      "peso": 1.0,
+      "recargaTicks": 200,
+      "recargaMaxTicks": 320,
+      "avisoTicks": 8,
+      "distanciaMin": 0,
+      "distanciaMax": 999,
+      "giroGrausPorTick": 30,
+      "avisoCor": "#ff3b3b",
       "avisoSom": "minecraft:block.beacon.power_select"
     },
     "forte": {
@@ -178,6 +243,35 @@
         "soco",
         "forte"
       ]
+    },
+    "porrada_e_vermelho": {
+      "peso": 1.0,
+      "encadeado": true,
+      "passos": [
+        "sombra",
+        "soco",
+        "soco",
+        "barragem",
+        "vermelho"
+      ]
+    },
+    "puxa_e_explode": {
+      "peso": 1.0,
+      "encadeado": true,
+      "passos": [
+        "azul",
+        "vermelho"
+      ]
+    },
+    "roxo_irrestrito": {
+      "peso": 1.0,
+      "encadeado": true,
+      "ult": true,
+      "passos": [
+        "azul_irrestrito",
+        "esperar_azul",
+        "vermelho_irrestrito"
+      ]
     }
   },
   "fases": [
@@ -185,6 +279,9 @@
       "comecaEm": 1.0,
       "skills": [
         "azul",
+        "vermelho",
+        "vermelho_atras",
+        "roxo",
         "dominio",
         "forte",
         "barragem"
@@ -192,7 +289,10 @@
       "combos": [
         "infinito",
         "teletransporte",
-        "azul_e_porrada"
+        "azul_e_porrada",
+        "porrada_e_vermelho",
+        "puxa_e_explode",
+        "roxo_irrestrito"
       ],
       "agressividade": 0.8,
       "multRecarga": 1.0,
@@ -212,6 +312,9 @@
       "comecaEm": 0.5,
       "skills": [
         "azul",
+        "vermelho",
+        "vermelho_atras",
+        "roxo",
         "dominio",
         "forte",
         "barragem"
@@ -220,7 +323,10 @@
         "infinito",
         "teletransporte",
         "o_mais_forte",
-        "azul_e_porrada"
+        "azul_e_porrada",
+        "porrada_e_vermelho",
+        "puxa_e_explode",
+        "roxo_irrestrito"
       ],
       "agressividade": 0.85,
       "multRecarga": 1.0,
