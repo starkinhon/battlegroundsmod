@@ -117,7 +117,9 @@ public final class Azul {
         double baseRadius = Math.max(0.05, orbe.raio());
         double scaleMax = Math.max(1, orbe.escalaMax());
         // Bosses don't hold keys: half the time a tap, else a charge of their own length.
-        boolean bossHolds = RANDOM.nextBoolean();
+        // Bosses (the Gojo boss) use every form: a third of the time a tap, else a charge; see BossPlan for what the
+        // charged one does after.
+        boolean bossHolds = RANDOM.nextDouble() < 0.67;
         int bossCharge = Math.max(4, chargeTicks / 3 + RANDOM.nextInt(Math.max(1, chargeTicks)));
         List<ServerPlayer> screen = caster instanceof ServerPlayer player ? List.of(player) : List.<ServerPlayer>of();
 
@@ -146,6 +148,9 @@ public final class Azul {
         int[] tornCount = {0};
         int[] lastCrushFx = {-10};
         int[] lastEatFx = {-10};
+        // A boss's charged Blue: what it does once out (BossPlan) and when.
+        BossPlan[] bossPlan = {null};
+        int[] bossAt = {0};
         int[] eaten = {0};
 
         Function<String, Vec3> where = onde -> "usuario".equals(onde) ? caster.position().add(0, 1, 0) : orb[0];
@@ -228,6 +233,9 @@ public final class Azul {
                         control.reach = segurado.miraMax() != null ? Mth.lerp(charge[0], segurado.mira(), segurado.miraMax()) : segurado.mira();
                         if (caster instanceof ServerPlayer player) {
                             CONTROLS.put(player.getUUID(), control);
+                        } else {
+                            bossPlan[0] = BossPlan.pick();
+                            bossAt[0] = age + 1 + bossPlan[0].delay();
                         }
                         caster.swing(InteractionHand.MAIN_HAND, true);
                         // The push of the hand that sends it out.
@@ -244,6 +252,46 @@ public final class Azul {
                     }
                     // Z again: a tap parks it or sends it back to following; held, it is shot (following) or circles
                     // him (parked), on its own until it ends.
+                    if (bossPlan[0] != null && age >= bossAt[0] && !cut) {
+                        // A boss "presses Z" by itself: the plan picked when it let the Blue go.
+                        BossPlan doing = bossPlan[0];
+                        bossPlan[0] = doing.next();
+                        bossAt[0] = age + (bossPlan[0] != null ? bossPlan[0].delay() : 0);
+                        if (doing == BossPlan.PARK_THEN_UNPARK || doing == BossPlan.PARK_THEN_ORBIT) {
+                            doing = BossPlan.PARK;
+                        }
+                        if (doing == BossPlan.SHOOT && phase[0] == Phase.FOLLOW) {
+                            caster.swing(InteractionHand.MAIN_HAND, true);
+                            PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new ModPayloads.PlaySkillAnimation(caster.getId(), SKILL, awakened));
+                            phase[0] = Phase.SHOT;
+                            phaseStart[0] = age;
+                            chased[0] = caster instanceof Mob mob && mob.getTarget() != null && mob.getTarget().isAlive() ? mob.getTarget() : null;
+                            Vec3 aim = chased[0] != null ? Combat.center(chased[0]) : followTarget(caster, control.reach);
+                            Vec3 to = aim.subtract(orb[0]);
+                            shotDir[0] = to.lengthSqr() > 1.0E-4 ? to.normalize() : caster.getLookAngle();
+                            shotSpeed[0] = tiro.velocidade();
+                            shotFlown[0] = 0;
+                            SkillSounds.play(level, spec.sons(), "atirar", 0, 0, where, screen);
+                            Fx.effects(level, SKILL, awakened, "atirar", orb[0], shotDir[0]);
+                        } else if (doing == BossPlan.PARK && phase[0] == Phase.FOLLOW) {
+                            phase[0] = Phase.PARKED;
+                            velocity[0] = Vec3.ZERO;
+                            SkillSounds.play(level, spec.sons(), "travarControle", 0, 0, where, screen);
+                            Fx.effects(level, SKILL, awakened, "travarControle", orb[0], Vec3.ZERO);
+                        } else if (doing == BossPlan.UNPARK && phase[0] == Phase.PARKED) {
+                            phase[0] = Phase.FOLLOW;
+                            SkillSounds.play(level, spec.sons(), "seguirDeNovo", 0, 0, where, screen);
+                            Fx.effects(level, SKILL, awakened, "seguirDeNovo", orb[0], Vec3.ZERO);
+                        } else if (doing == BossPlan.ORBIT && phase[0] == Phase.PARKED) {
+                            caster.swing(InteractionHand.MAIN_HAND, true);
+                            PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new ModPayloads.PlaySkillAnimation(caster.getId(), SKILL, awakened));
+                            phase[0] = Phase.ORBIT;
+                            Vec3 from = orb[0].subtract(caster.position());
+                            orbitAngle[0] = Math.atan2(from.z, from.x);
+                            SkillSounds.play(level, spec.sons(), "orbitar", 0, 0, where, screen);
+                            Fx.effects(level, SKILL, awakened, "orbitar", caster.position().add(0, 0.05, 0), Vec3.ZERO);
+                        }
+                    }
                     if (control.pressed && phase[0] == Phase.ORBIT) {
                         // Circling, it goes on by itself until it ends: Z does nothing to it any more.
                         control.pressed = false;
@@ -394,6 +442,38 @@ public final class Azul {
             return false;
         });
         return true;
+    }
+
+    // What a boss's charged Blue does once out, like a player pressing Z: keeps chasing the target until it implodes (and
+    // eats the ground under them when charged enough), is shot at them, parks there (sometimes chasing again after), or
+    // parks and then circles the boss. Each step has its own wait (delay) after the one before; next() is the step after.
+    private enum BossPlan {
+        CHASE, SHOOT, PARK, UNPARK, ORBIT, PARK_THEN_UNPARK, PARK_THEN_ORBIT;
+
+        static BossPlan pick() {
+            double r = RANDOM.nextDouble();
+            return r < 0.2 ? CHASE : r < 0.5 ? SHOOT : r < 0.65 ? PARK : r < 0.8 ? PARK_THEN_UNPARK : PARK_THEN_ORBIT;
+        }
+
+        // Ticks to wait before doing this step.
+        int delay() {
+            return switch (this) {
+                case CHASE -> Integer.MAX_VALUE / 2;
+                case SHOOT -> 20 + RANDOM.nextInt(40);
+                case PARK, PARK_THEN_UNPARK, PARK_THEN_ORBIT -> 15 + RANDOM.nextInt(30);
+                case UNPARK -> 30 + RANDOM.nextInt(40);
+                case ORBIT -> 8 + RANDOM.nextInt(20);
+            };
+        }
+
+        // The step itself (the two-step plans start by parking) and the one after it.
+        BossPlan next() {
+            return switch (this) {
+                case PARK_THEN_UNPARK -> UNPARK;
+                case PARK_THEN_ORBIT -> ORBIT;
+                default -> null;
+            };
+        }
     }
 
     // The Blue is no longer his to steer: Z and the wheel go back to normal.

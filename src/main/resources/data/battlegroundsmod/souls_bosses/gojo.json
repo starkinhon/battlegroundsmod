@@ -84,6 +84,19 @@
     "ativa": false
   },
   "skills": {
+    "azul": {
+      "slot": 0,
+      "tipo": "alcance",
+      "peso": 1.6,
+      "recargaTicks": 260,
+      "recargaMaxTicks": 380,
+      "avisoTicks": 6,
+      "distanciaMin": 0,
+      "distanciaMax": 40,
+      "giroGrausPorTick": 25,
+      "avisoCor": "#4fc3ff",
+      "avisoSom": "minecraft:block.beacon.activate"
+    },
     "dominio": {
       "slot": 3,
       "tipo": "ult",
@@ -155,19 +168,31 @@
         "barragem",
         "forte"
       ]
+    },
+    "azul_e_porrada": {
+      "peso": 1.0,
+      "passos": [
+        "azul",
+        "sombra",
+        "soco",
+        "soco",
+        "forte"
+      ]
     }
   },
   "fases": [
     {
       "comecaEm": 1.0,
       "skills": [
+        "azul",
         "dominio",
         "forte",
         "barragem"
       ],
       "combos": [
         "infinito",
-        "teletransporte"
+        "teletransporte",
+        "azul_e_porrada"
       ],
       "agressividade": 0.8,
       "multRecarga": 1.0,
@@ -186,6 +211,7 @@
     {
       "comecaEm": 0.5,
       "skills": [
+        "azul",
         "dominio",
         "forte",
         "barragem"
@@ -193,7 +219,8 @@
       "combos": [
         "infinito",
         "teletransporte",
-        "o_mais_forte"
+        "o_mais_forte",
+        "azul_e_porrada"
       ],
       "agressividade": 0.85,
       "multRecarga": 1.0,
