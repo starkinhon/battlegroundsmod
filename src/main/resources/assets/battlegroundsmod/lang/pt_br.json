@@ -188,7 +188,7 @@
   "ability.battlegroundsmod.strongest.1": "Vermelho",
   "ability.battlegroundsmod.strongest.2": "Roxo",
   "ability.battlegroundsmod.strongest.3": "Expansão de Domínio: Vazio Infinito",
-  "ability.battlegroundsmod.strongest.0.desc": "Clique: um orbe azul voa até onde você mira, trava lá e puxa os inimigos por 6 s. Segure: ele cresce até 5x nas mãos e só sai quando você solta; aí segue a sua mira por 10 s (com um leve atraso), puxando forte e arrancando blocos. Com ele fora, a rodinha do mouse afasta (até 70 blocos) ou aproxima (até 10); Z clicado trava ou solta ele; Z segurado com ele seguindo atira e explode; Z segurado com ele travado faz ele girar em volta de você (30 blocos).",
+  "ability.battlegroundsmod.strongest.0.desc": "Clique: um orbe azul voa até onde você mira, trava lá e puxa os inimigos por 6 s. Segure: ele cresce até 5x nas mãos e só sai quando você solta; aí segue a sua mira por 10 s (com um leve atraso), puxando forte e arrancando blocos. Com ele fora, a rodinha do mouse afasta (até 70 blocos) ou aproxima (até 10); Z clicado trava ou solta ele; Z segurado com ele seguindo atira e explode; Z segurado com ele travado faz ele girar em volta de você (30 blocos). Com 50% de carga ou mais, se ele encostar no chão o centro vira uma singularidade e devora os blocos em volta (até 10 blocos, mais rápido quanto mais perto).",
   "ability.battlegroundsmod.strongest.1.desc": "Em breve.",
   "ability.battlegroundsmod.strongest.2.desc": "Em breve.",
   "ability.battlegroundsmod.strongest.3.desc": "Faz o selo de mão e expande o domínio: uma esfera preta engole tudo em volta. Lá dentro só existe o vazio, e quem foi pego recebe informação infinita, ficando paralisado até o domínio quebrar.",

@@ -16,7 +16,7 @@ import java.util.List;
 // Also "travarControle", "seguirDeNovo", "afastar", "aproximar", "atirar", "explodir", "orbitar" (see Controle).
 // The "tempo" and "animacao" blocks are also read as an AnimationSpec (the aim and push of the hand).
 public record AzulSpec(String skill, String nome, Tempo tempo, Visual visual, Orbe orbe, Clique clique, Segurado segurado, Controle controle,
-        Orbita orbita, Tiro tiro, List<Som> sons) {
+        Orbita orbita, Tiro tiro, Singularidade singularidade, List<Som> sons) {
 
     public record Tempo(int atrasoTicks, int duracaoTicks) {
     }
@@ -63,6 +63,15 @@ public record AzulSpec(String skill, String nome, Tempo tempo, Visual visual, Or
     // dano to everyone within raioExplosao (times the orb's size); forcaExplosao breaks blocks (with the gamerule on).
     public record Tiro(double velocidade, double aceleracao, double velocidadeMax, double perseguir, double alcance, int maxTicks, float dano,
             double raioExplosao, float forcaExplosao, double empurrao) {
+    }
+
+    // The held one touching the ground (following, parked or circling), charged at least cargaMin: its middle is a
+    // singularity that eats the ground away within raio blocks, not all at once: each tick tentativasPorTick random
+    // spots are tried and a block goes with chance (1 - distance/raio)^curva (near the middle almost at once, the edge
+    // slowly), at most maxBlocosPorTick. contato: blocks past its surface that count as touching. Every particulasACada-th
+    // block shows its break. Only with the gamerule soulsBlockDestruction. Timeline: "singularidade" (eating, every few ticks).
+    public record Singularidade(double cargaMin, double raio, int tentativasPorTick, int maxBlocosPorTick, double curva, double contato,
+            int particulasACada) {
     }
 
     public static final String SKILL = "gojo.azul";

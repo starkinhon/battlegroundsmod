@@ -145,6 +145,8 @@ public final class Azul {
         List<FallingBlockEntity> torn = new ArrayList<>();
         int[] tornCount = {0};
         int[] lastCrushFx = {-10};
+        int[] lastEatFx = {-10};
+        int[] eaten = {0};
 
         Function<String, Vec3> where = onde -> "usuario".equals(onde) ? caster.position().add(0, 1, 0) : orb[0];
         PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new ModPayloads.PlaySkillAnimation(caster.getId(), SKILL, awakened));
@@ -362,6 +364,11 @@ public final class Azul {
                     }
                     pullHeld(level, caster, orb[0], radius[0], baseRadius * scaleMax, c, segurado, age);
                     tearBlocks(level, orb[0], radius[0], c, segurado, torn, tornCount);
+                    if (eatGround(level, orb[0], radius[0], c, spec.singularidade(), eaten) && age - lastEatFx[0] >= 4) {
+                        lastEatFx[0] = age;
+                        SkillSounds.play(level, spec.sons(), "singularidade", 0, 0, where, screen);
+                        Fx.effects(level, SKILL, awakened, "singularidade", orb[0], Vec3.ZERO);
+                    }
                     int crushed = steerBlocks(orb[0], radius[0], torn);
                     if (crushed > 0 && age - lastCrushFx[0] >= 3) {
                         lastCrushFx[0] = age;
@@ -554,6 +561,67 @@ public final class Azul {
             torn.add(block);
             count[0]++;
         }
+    }
+
+    // The singularity: touching the ground and charged enough, it eats the blocks around its middle away (destroyed, no
+    // drops), the nearer the faster, so it never sinks in and sits inside the ground. Returns whether it ate any.
+    private static boolean eatGround(ServerLevel level, Vec3 orb, double r, double c, AzulSpec.Singularidade s, int[] eaten) {
+        if (s == null || c + 1.0E-6 < s.cargaMin() || s.raio() <= 0 || !BlockRules.canBreak(level)) {
+            return false;
+        }
+        // Touching: a solid block within its surface plus contato.
+        double touch = r + Math.max(0, s.contato());
+        BlockPos.MutableBlockPos probe = new BlockPos.MutableBlockPos();
+        boolean touching = false;
+        int span = Mth.ceil(touch);
+        for (int dx = -span; dx <= span && !touching; dx++) {
+            for (int dy = -span; dy <= span && !touching; dy++) {
+                for (int dz = -span; dz <= span && !touching; dz++) {
+                    probe.set(Mth.floor(orb.x) + dx, Mth.floor(orb.y) + dy, Mth.floor(orb.z) + dz);
+                    if (Vec3.atCenterOf(probe).distanceToSqr(orb) <= touch * touch && level.isLoaded(probe)
+                            && !level.getBlockState(probe).getCollisionShape(level, probe).isEmpty()) {
+                        touching = true;
+                    }
+                }
+            }
+        }
+        if (!touching) {
+            return false;
+        }
+        double reach = s.raio();
+        // Stronger the more it was charged above cargaMin.
+        double power = 0.6 + 0.4 * Mth.clamp((c - s.cargaMin()) / Math.max(1.0E-3, 1 - s.cargaMin()), 0, 1);
+        int done = 0;
+        for (int i = 0; i < s.tentativasPorTick() && done < s.maxBlocosPorTick(); i++) {
+            // A random spot in the ball, more of them near the middle.
+            double u = RANDOM.nextDouble();
+            double d = reach * u * u;
+            Vec3 dir = new Vec3(RANDOM.nextGaussian(), RANDOM.nextGaussian(), RANDOM.nextGaussian());
+            if (dir.lengthSqr() < 1.0E-6) {
+                continue;
+            }
+            Vec3 at = orb.add(dir.normalize().scale(d));
+            BlockPos pos = BlockPos.containing(at);
+            double dist = Vec3.atCenterOf(pos).distanceTo(orb);
+            if (dist > reach || RANDOM.nextDouble() > power * Math.pow(Math.max(0, 1 - dist / reach), Math.max(0.1, s.curva()))) {
+                continue;
+            }
+            if (!level.isLoaded(pos)) {
+                continue;
+            }
+            BlockState state = level.getBlockState(pos);
+            if (state.isAir() || !state.getFluidState().isEmpty() || state.hasBlockEntity() || state.getDestroySpeed(level, pos) < 0) {
+                continue;
+            }
+            eaten[0]++;
+            if (s.particulasACada() > 0 && eaten[0] % s.particulasACada() == 0) {
+                // The break's crumbs and sound, on some of them only.
+                level.levelEvent(2001, pos, net.minecraft.world.level.block.Block.getId(state));
+            }
+            level.setBlock(pos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+            done++;
+        }
+        return done > 0;
     }
 
     // The torn blocks spiral in and are crushed in the middle. Returns how many were crushed this tick.
