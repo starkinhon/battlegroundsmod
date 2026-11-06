@@ -56,13 +56,23 @@ public final class Azul {
     }
 
     public static boolean use(LivingEntity caster, ServerLevel level) {
+        return use(caster, level, false);
+    }
+
+    // Shift + Z: the very same Blue, drawn with the mix look (the glass ball) instead of the realism one.
+    public static boolean useMix(LivingEntity caster, ServerLevel level) {
+        return use(caster, level, true);
+    }
+
+    private static boolean use(LivingEntity caster, ServerLevel level, boolean shift) {
         PowerData data = caster.getData(ModAttachments.POWER);
         boolean awakened = data.awakened;
         AzulSpec spec = AzulSpec.get(awakened);
         AzulSpec.Orbe orbe = spec.orbe();
         AzulSpec.Clique clique = spec.clique();
         AzulSpec.Segurado segurado = spec.segurado();
-        int style = spec.visual() != null ? spec.visual().estilo() : 2;
+        AzulSpec.Visual visual = spec.visual();
+        int style = visual == null ? (shift ? 3 : 2) : shift ? (visual.estiloShift() != null ? visual.estiloShift() : 3) : visual.estilo();
         int id = nextId++;
         String power = data.power;
         int interrupts = data.interrupts;
@@ -173,7 +183,10 @@ public final class Azul {
                 }
                 case FOLLOW -> {
                     if (following[0]) {
-                        orb[0] = orb[0].lerp(followTarget(caster, segurado.mira()), t < 6 ? 0.3 : Mth.clamp(segurado.seguir(), 0, 1));
+                        // The longer it was held, the further out it goes: segurado.mira at the lightest charge, up to
+                        // segurado.miraMax fully charged.
+                        double reach = segurado.miraMax() != null ? Mth.lerp(charge[0], segurado.mira(), segurado.miraMax()) : segurado.mira();
+                        orb[0] = orb[0].lerp(followTarget(caster, reach), t < 6 ? 0.3 : Mth.clamp(segurado.seguir(), 0, 1));
                     }
                     double c = charge[0];
                     pullHeld(level, caster, orb[0], radius[0], baseRadius * scaleMax, c, segurado, age);
