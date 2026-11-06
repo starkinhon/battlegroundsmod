@@ -22,6 +22,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.item.FallingBlockEntity;
@@ -29,6 +30,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -39,8 +41,8 @@ import net.neoforged.neoforge.network.PacketDistributor;
 // only when the key is let go. Firing, the orb bursts into a wall of repulsion straight where he aims: a cylinder that
 // carves a tunnel through the ground and walls (with the gamerule soulsBlockDestruction; without it, it stops at the
 // first wall) and throws whoever it reaches far away. The charge makes it much longer and wider.
-// Shift + X: the move he used on Toji. He appears behind the target he aims at, floating a little, raises the finger
-// and fires it point blank.
+// Shift + X: the move he used on Toji. He appears behind the target he aims at, floating upside down, raises the
+// finger and fires it point blank.
 // The orb and the blast are drawn on the clients (client/fx/VermelhoRenderer): the orb from what is sent here every
 // tick (the clients put it on his hand themselves), the blast from one message when it fires.
 public final class Vermelho {
@@ -172,12 +174,12 @@ public final class Vermelho {
         SkillSounds.play(level, spec.sons(), "teleporte", 0, 0, where, screen);
         Fx.effects(level, SKILL, awakened, "teleporte", spot.add(0, 1, 0), caster.getLookAngle());
         data.busyTicks = prep + 4;
-        send(level, caster, id, ALIVE, 0);
+        send(level, caster, id, ALIVE, 0, true);
 
         Tasks.add(age -> {
             PowerData now = caster.getData(ModAttachments.POWER);
             if (!caster.isAlive() || caster.isRemoved() || !power.equals(now.power)) {
-                send(level, caster, id, GONE, 0);
+                send(level, caster, id, GONE, 0, true);
                 caster.setNoGravity(gravity);
                 return true;
             }
@@ -186,11 +188,11 @@ public final class Vermelho {
             caster.hurtMarked = true;
             double c = shift.carga() * Math.min(1, (age + 1) / (double) prep);
             if (age + 1 < prep) {
-                send(level, caster, id, ALIVE, (float) c);
+                send(level, caster, id, ALIVE, (float) c, true);
                 return false;
             }
             caster.setNoGravity(gravity);
-            Vec3 dir = target.isAlive() ? Combat.center(target).subtract(caster.getEyePosition()).normalize() : caster.getLookAngle();
+            Vec3 dir = target.isAlive() ? Combat.center(target).subtract(upsideDownTip(caster)).normalize() : caster.getLookAngle();
             fire(level, caster, id, spec, awakened, shift.carga(), dir, shift, screen);
             return true;
         });
@@ -201,8 +203,9 @@ public final class Vermelho {
     private static void fire(ServerLevel level, LivingEntity caster, int id, VermelhoSpec spec, boolean awakened, double c, Vec3 dir,
             VermelhoSpec.Shift shift, List<ServerPlayer> screen) {
         VermelhoSpec.Tiro tiro = spec.tiro();
-        Vec3 tip = fingertip(caster);
-        Vec3 from = caster.getEyePosition().add(dir.scale(0.6)).add(0, -0.2, 0);
+        // Shift: he hangs upside down, so it leaves his finger, low.
+        Vec3 tip = shift != null ? upsideDownTip(caster) : fingertip(caster);
+        Vec3 from = shift != null ? tip : caster.getEyePosition().add(dir.scale(0.6)).add(0, -0.2, 0);
         double range = Mth.lerp(c, tiro.alcance(), tiro.alcanceMax());
         double radius = Mth.lerp(c, tiro.raio(), tiro.raioMax());
         double speed = Math.max(0.5, Mth.lerp(c, tiro.velocidade(), tiro.velocidadeMax()));
@@ -219,7 +222,7 @@ public final class Vermelho {
         double length = range;
         caster.swing(InteractionHand.MAIN_HAND, true);
         PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new ModPayloads.PlaySkillAnimation(caster.getId(), SKILL, awakened));
-        send(level, caster, id, FIRED, (float) c);
+        send(level, caster, id, FIRED, (float) c, shift != null);
         ModPayloads.VermelhoBlast blast = new ModPayloads.VermelhoBlast(from, dir, (float) length, (float) radius, (float) speed, (float) c);
         for (ServerPlayer player : level.players()) {
             if (player.distanceToSqr(from) < VIEW_DISTANCE * VIEW_DISTANCE) {
@@ -255,6 +258,36 @@ public final class Vermelho {
                 e.hurtMarked = true;
                 Fx.effects(level, SKILL, awakened, "acerto", Combat.center(e), dir);
                 SkillSounds.play(level, spec.sons(), "acerto", 0, 0, onde -> Combat.center(e), screen);
+            }
+            // The repulsion throws everything around the path away from it too: whoever is just outside the tunnel is
+            // shoved aside and forward, and loose things (items, debris, arrows) fly off with the front.
+            double band = radius * 2.2;
+            for (Entity e : level.getEntities(caster, new AABB(pa, pb).inflate(band), x -> !(x instanceof Player p && p.isSpectator()))) {
+                if (hitIds.contains(e.getId())) {
+                    continue;
+                }
+                Vec3 rel = e.position().add(0, e.getBbHeight() / 2, 0).subtract(from);
+                double t = rel.dot(dir);
+                if (t < a - radius || t > b + radius) {
+                    continue;
+                }
+                Vec3 off = rel.subtract(dir.scale(t));
+                double d = off.length();
+                if (d > band) {
+                    continue;
+                }
+                hitIds.add(e.getId());
+                double k = 1 - d / band;
+                Vec3 out = d < 1.0E-3 ? Vec3.ZERO : off.scale(1 / d);
+                Vec3 v = out.scale(throwSpeed * (0.35 + 0.5 * k)).add(dir.scale(throwSpeed * 0.6 * k)).add(0, 0.3 + 0.4 * k, 0);
+                if (e instanceof LivingEntity living) {
+                    if (!Combat.isTarget(living, caster)) {
+                        continue;
+                    }
+                    Combat.hurt(caster, living, damage * 0.35f);
+                }
+                e.setDeltaMovement(v);
+                e.hurtMarked = true;
             }
             if (breaks) {
                 carve(level, caster, from, dir, Math.max(1.2, a), b, radius, tiro, debris);
@@ -346,6 +379,15 @@ public final class Vermelho {
         return caster.position().add(forward.scale(0.55 * scale)).add(right.scale(0.36 * scale)).add(0, 1.5 * scale, 0);
     }
 
+    // The fingertip while he hangs upside down (Shift): his body turned about its middle, so the right hand is on the
+    // other side and low (the clients draw it the same way).
+    static Vec3 upsideDownTip(LivingEntity caster) {
+        Vec3 forward = Combat.flatLook(caster);
+        Vec3 right = new Vec3(-forward.z, 0, forward.x);
+        double scale = caster.getBbHeight() / 1.8;
+        return caster.position().add(forward.scale(0.55 * scale)).add(right.scale(-0.36 * scale)).add(0, caster.getBbHeight() - 1.5 * scale, 0);
+    }
+
     private static double hash(int x, int y, int z) {
         int h = x * 374761393 + y * 668265263 + z * 1274126177;
         h = (h ^ (h >>> 13)) * 1103515245;
@@ -354,7 +396,11 @@ public final class Vermelho {
     }
 
     private static void send(ServerLevel level, LivingEntity caster, int id, int mode, float charge) {
-        ModPayloads.Vermelho payload = new ModPayloads.Vermelho(id, caster.getId(), mode, charge);
+        send(level, caster, id, mode, charge, false);
+    }
+
+    private static void send(ServerLevel level, LivingEntity caster, int id, int mode, float charge, boolean flip) {
+        ModPayloads.Vermelho payload = new ModPayloads.Vermelho(id, caster.getId(), mode, charge, flip);
         for (ServerPlayer player : level.players()) {
             if (player.distanceToSqr(caster) < VIEW_DISTANCE * VIEW_DISTANCE) {
                 PacketDistributor.sendToPlayer(player, payload);

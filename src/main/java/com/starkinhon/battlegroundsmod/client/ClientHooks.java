@@ -196,8 +196,8 @@ public final class ClientHooks {
         com.starkinhon.battlegroundsmod.client.fx.AzulRenderer.orb(id, mode, pos, radius, charge, style);
     }
 
-    public static void vermelho(int id, int owner, int mode, float charge) {
-        com.starkinhon.battlegroundsmod.client.fx.VermelhoRenderer.orb(id, owner, mode, charge);
+    public static void vermelho(int id, int owner, int mode, float charge, boolean flip) {
+        com.starkinhon.battlegroundsmod.client.fx.VermelhoRenderer.orb(id, owner, mode, charge, flip);
     }
 
     public static void vermelhoBlast(Vec3 from, Vec3 dir, float range, float radius, float speed, float charge) {
