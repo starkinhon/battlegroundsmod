@@ -16,10 +16,12 @@ import net.minecraft.world.phys.Vec3;
 
 // Gojo's Red (power/powers/gojo/Vermelho), drawn the same way as the Skill Visualizer's drawVermelho (aba
 // "Gojo · Vermelho", the version Stark approved: bright core, radius 0.093). The orb (souls_vfx shape 20) sits at his
-// fingertip; its tails (shape 19, strips with u along them) come out of it in a spiral, pulled back by the spin, and
-// never leave it: the energy runs along them into the middle. They form one by one, thin and faint with a lit tip,
-// until they are done. Around it a red haze and flakes spin along, and the space bends a little on the orb.
-// The server only says it is alive every tick; where it is comes from the owner's hand here, so it never lags.
+// fingertip. From the start white-hot sparks leak out of it in curved dotted threads (the Visualizer's vmSparks); past
+// half charge its tails (shape 19, strips with u along them) form one by one, thin and faint with a lit tip, and spin
+// around it, never leaving it. Around it a red haze and flakes spin along, and the space bends a little on the orb.
+// The server says it is alive every tick (with its charge); where it is comes from the owner's hand here, so it never
+// lags. Fired, the orb bursts into the blast: a wall of repulsion running straight ahead (a ring of force at its front,
+// a red core fading behind it, speed lines) and, only where it was fired, a shockwave with dust thrown aside in a funnel.
 public final class VermelhoRenderer {
     private static final float[] DEEP = FxDraw.rgb(0x52000A);
     private static final float[] RED = FxDraw.rgb(0xFF1020);
@@ -40,15 +42,29 @@ public final class VermelhoRenderer {
     private static final float TAIL_WIDTH = 2.6f;
     private static final float THREAD_WIDTH = 0.8f;
     private static final int FLAKES = 22;
-    // Appearing, and fading at the end (the tails pull in first, then the orb goes out).
+    // Appearing, and fading when cut short (the tails pull in first, then the orb goes out); fired, it is gone in POP.
     private static final float SPAWN = 4;
     private static final float FADE = 24;
+    private static final float POP = 4;
+    // Fully charged it is this many times bigger (gojo.vermelho.json orbe.escalaMax), and its tails form past TAILS_AT.
+    private static final float SCALE_MAX = 1.8f;
+    private static final float TAILS_AT = 0.5f;
+    // The sparks (the Visualizer's VM_FAISCA).
+    private static final int SPARK_THREADS = 20;
+    private static final int SPARK_DOTS = 14;
+    private static final float SPARK_REACH_MIN = 4;
+    private static final float SPARK_REACH_MAX = 11;
+    private static final int SPARK_LOOSE = 40;
+    private static final float[] WHITE = {1, 1, 1};
+    private static final float[] DUST = FxDraw.rgb(0x4A3A36);
 
     private static final class Orb {
         final int owner;
         final long born;
         long updated;
         long endAt = -1;
+        boolean fired;
+        float prevCharge, charge;
         // Worked out in render, used again by the overlay.
         Vector3f at;
         float drawR;
@@ -68,28 +84,52 @@ public final class VermelhoRenderer {
     private VermelhoRenderer() {
     }
 
-    public static void orb(int id, int owner, int mode) {
+    public static void orb(int id, int owner, int mode, float charge) {
         long now = ScreenFx.now();
         Orb o = ORBS.get(id);
         if (o == null) {
             if (mode == 0) {
-                ORBS.put(id, new Orb(owner, now));
+                o = new Orb(owner, now);
+                o.prevCharge = o.charge = charge;
+                ORBS.put(id, o);
             }
             return;
         }
         o.updated = now;
-        if (mode != 0 && o.endAt < 0) {
-            o.endAt = now;
+        if (mode != 0) {
+            if (o.endAt < 0) {
+                o.endAt = now;
+                o.fired = mode == 1;
+            }
+            return;
+        }
+        o.prevCharge = o.charge;
+        o.charge = charge;
+    }
+
+    private record Blast(Vec3 from, Vec3 dir, float range, float radius, float speed, float charge, long born) {
+        float reach() {
+            return range / Math.max(0.5f, speed);
         }
     }
 
+    private static final List<Blast> BLASTS = new ArrayList<>();
+    // After the front reaches the end, the blast's light and dust fade for this long.
+    private static final float BLAST_FADE = 14;
+    private static final float DUST_LIFE = 30;
+
+    public static void blast(Vec3 from, Vec3 dir, float range, float radius, float speed, float charge) {
+        BLASTS.add(new Blast(from, dir.normalize(), range, radius, speed, charge, ScreenFx.now()));
+    }
+
     public static boolean active() {
-        return !ORBS.isEmpty();
+        return !ORBS.isEmpty() || !BLASTS.isEmpty();
     }
 
     public static void clear() {
         ORBS.clear();
         DRAWN.clear();
+        BLASTS.clear();
     }
 
     static void render(Vec3 camera, double now, float partial) {
@@ -105,7 +145,8 @@ public final class VermelhoRenderer {
                 o.endAt = o.updated;
             }
         }
-        ORBS.values().removeIf(o -> o.endAt >= 0 && now - o.endAt > FADE);
+        ORBS.values().removeIf(o -> o.endAt >= 0 && now - o.endAt > (o.fired ? POP : FADE));
+        BLASTS.removeIf(b -> now - b.born() > Math.max(b.reach() + BLAST_FADE, DUST_LIFE));
         Camera view = mc.gameRenderer.getMainCamera();
         Vector3f left = new Vector3f(view.getLeftVector());
         Vector3f up = new Vector3f(view.getUpVector());
@@ -116,24 +157,102 @@ public final class VermelhoRenderer {
                 continue;
             }
             float age = (float) (now - o.born);
+            float charge = o.endAt >= 0 ? o.charge : Mth.lerp(partial, o.prevCharge, o.charge);
             float spawn = smooth(age / SPAWN);
-            float grow = smooth((age - 2) / FORM);
+            float sparks = smooth(age / 8);
+            // The tails only past half charge, forming as it charges on.
+            float grow = smooth((charge - TAILS_AT) / (1 - TAILS_AT));
+            float flash = 0;
             if (o.endAt >= 0) {
                 float e = (float) (now - o.endAt);
-                grow *= 1 - smooth(e / (FADE - 4));
-                spawn *= 1 - smooth((e - 6) / (FADE - 6));
+                if (o.fired) {
+                    // It doesn't fly: it bursts at once into the blast.
+                    flash = 1 - e / POP;
+                    spawn *= 1 - smooth(e / POP);
+                    grow *= 1 - smooth(e / 2);
+                } else {
+                    grow *= 1 - smooth(e / (FADE - 4));
+                    sparks *= 1 - smooth(e / (FADE - 4));
+                    spawn *= 1 - smooth((e - 6) / (FADE - 6));
+                }
             }
             Vec3 world = fingertip(owner, view, camera, partial);
             o.at = world.subtract(camera).toVector3f();
             o.seed = entry.getKey() * 2027 + 4049;
             o.spawn = spawn;
-            o.drawR = RADIUS * spawn;
+            o.drawR = RADIUS * (1 + (SCALE_MAX - 1) * smooth(charge)) * spawn;
+            if (flash > 0) {
+                FxDraw.billboard(o.at, RADIUS * (8 + 30 * (1 - flash)), 0, FxDraw.SOFT, 0.6f, RED, flash, true);
+            }
             if (o.drawR < 0.01f) {
                 continue;
             }
-            draw(o.at, o.drawR, age, o.seed, grow, spawn, left, up);
+            draw(o.at, o.drawR, age, o.seed, grow, sparks, spawn, left, up);
             ScreenFx.holdWarp(world, o.drawR * 2.4f, 0.25f * spawn, 2, new Vec3(0, 1, 0), age / 20);
             DRAWN.add(o);
+        }
+        for (Blast b : BLASTS) {
+            drawBlast(b, camera, (float) (now - b.born()), left, up);
+        }
+    }
+
+    // The fired Red: a wall of repulsion running from b.from along b.dir.
+    private static void drawBlast(Blast b, Vec3 camera, float age, Vector3f left, Vector3f up) {
+        float reach = b.reach();
+        float s = Math.min(b.range(), b.speed() * age);
+        float running = age < reach ? 1 : 1 - smooth((age - reach) / BLAST_FADE);
+        Vector3f dir = b.dir().toVector3f();
+        Vector3f from = b.from().subtract(camera).toVector3f();
+        Vector3f front = new Vector3f(dir).mul(s).add(from);
+        float r = b.radius();
+        int seed = (int) (b.born() * 131 + (long) (b.from().x * 7));
+        // The red core of the force, bright at first, fading behind the front.
+        float core = running * (1 - smooth(age / (reach + BLAST_FADE)) * 0.6f);
+        FxDraw.ribbon(from, front, r * 1.5f, FxDraw.BEAM, 0.25f, DEEP, 0.4f * core, false);
+        FxDraw.ribbon(from, front, r * 1.1f, FxDraw.BEAM, 0.35f, RED, 0.55f * core, true);
+        FxDraw.ribbon(from, front, r * 0.35f, FxDraw.BEAM, 0.8f, HOT, 0.7f * core, true);
+        // The ring of force at the front, and its glow.
+        if (age < reach + 2) {
+            float o = age < reach ? 1 : 1 - (age - reach) / 2;
+            FxDraw.disk(front, dir, r * 2.6f, FxDraw.RING, 0.22f, RED, 0.85f * o, true);
+            FxDraw.disk(front, dir, r * 1.9f, FxDraw.RING, 0.12f, PALE, 0.6f * o, true);
+            FxDraw.billboard(front, r * 3.2f, 0, FxDraw.SOFT, 0.3f, RED, 0.5f * o, true);
+            // Speed lines along the tunnel, just behind the front.
+            Vector3f side = new Vector3f(dir).cross(Math.abs(dir.y) > 0.9f ? new Vector3f(1, 0, 0) : new Vector3f(0, 1, 0)).normalize();
+            Vector3f other = new Vector3f(dir).cross(side).normalize();
+            for (int k = 0; k < 16; k++) {
+                float a = FxWorld.hash(seed, k, 71) * Mth.TWO_PI;
+                float off = r * (0.3f + 0.8f * FxWorld.hash(seed, k, 72));
+                Vector3f base = new Vector3f(side).mul(Mth.cos(a) * off).add(new Vector3f(other).mul(Mth.sin(a) * off));
+                float len = Math.min(s, b.speed() * (2 + 3 * FxWorld.hash(seed, k, 73)));
+                Vector3f head = new Vector3f(dir).mul(s - r * 0.3f).add(from).add(base);
+                Vector3f tail = new Vector3f(dir).mul(-len).add(head);
+                FxDraw.ribbon(tail, head, Math.max(0.03f, r * 0.05f), FxDraw.STREAK, 0.9f, k % 3 == 0 ? WHITE : PALE, 0.7f * o, true);
+            }
+        }
+        // The shockwave where it was fired, and only there: a ring bursting out around the axis and dust thrown aside
+        // in a funnel.
+        float w = smooth(age / 10);
+        if (age < 12) {
+            float o = 1 - age / 12;
+            FxDraw.disk(from, dir, r * (1.5f + 7 * w) * (1 + b.charge()), FxDraw.RING, 0.18f, PALE, 0.8f * o, true);
+            FxDraw.disk(new Vector3f(dir).mul(r * 1.5f * w).add(from), dir, r * (1 + 5 * w) * (1 + b.charge()), FxDraw.RING, 0.3f, RED, 0.6f * o, true);
+            FxDraw.billboard(from, r * (2 + 4 * w), 0, FxDraw.SOFT, 0.5f, RED, 0.7f * o, true);
+        }
+        if (age < DUST_LIFE) {
+            Vector3f side = new Vector3f(dir).cross(Math.abs(dir.y) > 0.9f ? new Vector3f(1, 0, 0) : new Vector3f(0, 1, 0)).normalize();
+            Vector3f other = new Vector3f(dir).cross(side).normalize();
+            float t = age / DUST_LIFE;
+            float o = Mth.sin(Math.min(1, t * 4) * Mth.HALF_PI) * (1 - smooth(t));
+            int puffs = 10 + Math.round(10 * b.charge());
+            for (int k = 0; k < puffs; k++) {
+                float a = FxWorld.hash(seed, k, 81) * Mth.TWO_PI;
+                float along = r * (0.5f + 3 * FxWorld.hash(seed, k, 82));
+                float out = r * (0.8f + (2.5f + 3 * b.charge()) * (1 - (float) Math.exp(-age / 6)) * (0.6f + 0.6f * FxWorld.hash(seed, k, 83)));
+                Vector3f p = new Vector3f(side).mul(Mth.cos(a) * out).add(new Vector3f(other).mul(Mth.sin(a) * out)).add(new Vector3f(dir).mul(along)).add(from);
+                float size = r * (1.2f + 1.4f * FxWorld.hash(seed, k, 84)) * (0.6f + 0.6f * t);
+                FxDraw.billboard(p, size, FxWorld.hash(seed, k, 85) * Mth.TWO_PI, FxDraw.SMOKE, 0.2f + 0.6f * t, DUST, 0.55f * o, false);
+            }
         }
     }
 
@@ -170,15 +289,17 @@ public final class VermelhoRenderer {
     }
 
     // Everything but the orb itself. R = the orb's radius; grow 0 to 1 = the tails forming; spawn 0 to 1.
-    private static void draw(Vector3f at, float R, float age, int seed, float grow, float spawn, Vector3f X, Vector3f Y) {
+    // sparks 0 to 1 = the sparks leaking out (from the start).
+    private static void draw(Vector3f at, float R, float age, int seed, float grow, float sparks, float spawn, Vector3f X, Vector3f Y) {
         Vector3f look = at.lengthSquared() > 1.0E-6f ? new Vector3f(at).normalize() : new Vector3f(0, 0, 1);
         // The red haze around it (goes to the bloom).
-        FxDraw.billboard(at, R * 18 * (0.4f + 0.6f * grow), 0, FxDraw.SOFT, 0, DEEP, 0.3f * spawn, false);
-        FxDraw.billboard(at, R * 10 * (0.4f + 0.6f * grow), 0, FxDraw.SOFT, 0, DEEP, 0.25f * spawn, true);
+        float haze = Math.max(sparks * 0.5f, grow);
+        FxDraw.billboard(at, R * 18 * (0.4f + 0.6f * haze), 0, FxDraw.SOFT, 0, DEEP, 0.3f * spawn, false);
+        FxDraw.billboard(at, R * 10 * (0.4f + 0.6f * haze), 0, FxDraw.SOFT, 0, DEEP, 0.25f * spawn, true);
         FxDraw.billboard(at, R * 6, 0, FxDraw.SOFT, 0.1f, RED, 0.35f * spawn, true);
         // Tails: the body in the alpha layer (strong red, it doesn't blow out white) and a glow copy added on top.
         List<Tail> tails = new ArrayList<>();
-        for (int k = 0; k < TAILS + THREADS; k++) {
+        for (int k = 0; k < (grow > 0.001f ? TAILS + THREADS : 0); k++) {
             float f = smooth(Mth.clamp(grow * 1.7f - 0.7f * FxWorld.hash(seed, k, 7), 0, 1));
             if (f <= 0.01f) {
                 continue;
@@ -204,6 +325,7 @@ public final class VermelhoRenderer {
         for (Tail t : tails) {
             FxDraw.strip(t.pts, scaled(t.ws, 0.8f), t.us, FxDraw.VRABO, 0.75f, t.color(seed), 0.3f * t.o, true);
         }
+        sparks(at, R, age, seed, sparks, spawn, X, Y, look);
         // Red flakes turning along, slowly.
         for (int k = 0; k < FLAKES; k++) {
             float life = 30 + 30 * FxWorld.hash(seed, k, 41);
@@ -211,7 +333,7 @@ public final class VermelhoRenderer {
             int cyc = (int) Math.floor(ph);
             float u = ph - cyc;
             float a = FxWorld.hash(seed + cyc * 5, k, 43) * Mth.TWO_PI + age * SPIN * 0.6f;
-            float rad = R * (2 + 7 * FxWorld.hash(seed + cyc * 5, k, 44)) * (1 - 0.5f * u) * grow;
+            float rad = R * (2 + 7 * FxWorld.hash(seed + cyc * 5, k, 44)) * (1 - 0.5f * u) * haze;
             Vector3f p = new Vector3f(X).mul(Mth.cos(a) * rad).add(new Vector3f(Y).mul(Mth.sin(a) * rad))
                     .add(new Vector3f(look).mul((FxWorld.hash(seed, k, 45) - 0.5f) * R * 2)).add(at);
             float o = Mth.sin(u * Mth.PI) * spawn;
@@ -221,6 +343,63 @@ public final class VermelhoRenderer {
         }
         // The orb's glow under it (the orb is drawn over the glow, in overlay).
         FxDraw.billboard(at, R * 2.6f, 0, FxDraw.SOFT, 0.3f, PALE, 0.45f * spawn, true);
+    }
+
+    // Sparks leaking out of it (Stark's reference): curved dotted threads of white-hot dots turning the same way as the
+    // tails, curling and fading; each dot blinks. And loose specks crackling around it.
+    private static void sparks(Vector3f at, float R, float age, int seed, float grow, float spawn, Vector3f X, Vector3f Y, Vector3f look) {
+        int on = Math.round(SPARK_THREADS * grow);
+        for (int k = 0; k < on; k++) {
+            float life = 16 + 14 * FxWorld.hash(seed, k, 51);
+            float ph = (age + FxWorld.hash(seed, k, 52) * life) / life;
+            int cyc = (int) Math.floor(ph);
+            float u = ph - cyc;
+            int sd = seed + cyc * 11;
+            float a0 = FxWorld.hash(sd, k, 53) * Mth.TWO_PI + age * SPIN * 0.5f;
+            float reach = R * Mth.lerp(FxWorld.hash(sd, k, 54), SPARK_REACH_MIN, SPARK_REACH_MAX);
+            float curl = 0.8f + 1.6f * FxWorld.hash(sd, k, 55);
+            float wig = 0.25f + 0.35f * FxWorld.hash(sd, k, 56);
+            float freq = 7 + 6 * FxWorld.hash(sd, k, 57);
+            float depth = (FxWorld.hash(sd, k, 58) - 0.5f) * R * 4;
+            float head = smooth(u) * 1.15f;
+            float fade = Mth.sin(Math.min(1, u * 1.1f) * Mth.PI) * spawn;
+            Vector3f last = null;
+            for (int j = 0; j < SPARK_DOTS; j++) {
+                float s = head - j * 0.04f;
+                if (s < 0 || s > 1) {
+                    last = null;
+                    continue;
+                }
+                float ang = a0 - curl * s + wig * Mth.sin(s * freq + k);
+                float rad = R * 0.9f + reach * s;
+                Vector3f p = new Vector3f(X).mul(Mth.cos(ang) * rad).add(new Vector3f(Y).mul(Mth.sin(ang) * rad)).add(new Vector3f(look).mul(depth * s)).add(at);
+                float flick = FxWorld.hash(sd + (int) Math.floor(age * 1.5f), k * 40 + j, 59) > 0.3f ? 1 : 0.25f;
+                float tail = 1 - j / (float) SPARK_DOTS;
+                float sz = R * (0.22f + 0.26f * FxWorld.hash(sd, k * 40 + j, 60)) * (0.55f + 0.45f * tail);
+                FxDraw.billboard(p, sz, 0, FxDraw.SOFT, 0.9f, WHITE, fade * flick * tail, true);
+                FxDraw.billboard(p, sz * 3.4f, 0, FxDraw.SOFT, 0.1f, RED, 0.7f * fade * flick * tail, false);
+                FxDraw.billboard(p, sz * 2.2f, 0, FxDraw.SOFT, 0.3f, RED, 0.35f * fade * flick * tail, true);
+                if (last != null) {
+                    FxDraw.ribbon(last, p, R * 0.07f, FxDraw.STREAK, 0.85f, PALE, 0.6f * fade * tail, true);
+                }
+                last = p;
+            }
+        }
+        int loose = Math.round(SPARK_LOOSE * grow);
+        for (int k = 0; k < loose; k++) {
+            float life = 6 + 8 * FxWorld.hash(seed, k, 61);
+            float ph = (age + FxWorld.hash(seed, k, 62) * life) / life;
+            float u = ph - (float) Math.floor(ph);
+            int sd = seed + (int) Math.floor(ph) * 13;
+            float ang = FxWorld.hash(sd, k, 63) * Mth.TWO_PI - u * 0.6f;
+            float rad = R * (1.2f + 4 * FxWorld.hash(sd, k, 64)) * (1 + 0.6f * u);
+            Vector3f p = new Vector3f(X).mul(Mth.cos(ang) * rad).add(new Vector3f(Y).mul(Mth.sin(ang) * rad))
+                    .add(new Vector3f(look).mul((FxWorld.hash(sd, k, 65) - 0.5f) * R * 3)).add(at);
+            float o = Mth.sin(u * Mth.PI) * spawn * (FxWorld.hash(sd + (int) Math.floor(age * 2), k, 66) > 0.4f ? 1 : 0.2f);
+            float sz = R * (0.16f + 0.2f * FxWorld.hash(sd, k, 67));
+            FxDraw.billboard(p, sz, 0, FxDraw.SOFT, 0.9f, WHITE, o, true);
+            FxDraw.billboard(p, sz * 3, 0, FxDraw.SOFT, 0.1f, RED, 0.6f * o, false);
+        }
     }
 
     private static final class Tail {

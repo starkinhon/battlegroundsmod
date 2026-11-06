@@ -615,18 +615,39 @@ public final class ModPayloads {
         }
     }
 
-    // Server -> client: Gojo's Red (power/powers/gojo/Vermelho), every tick while it lives at owner's fingertip.
-    // mode 0 alive, 1 over (it fades). The client places it on the owner's hand itself, so it never lags behind him.
-    public record Vermelho(int id, int owner, int mode) implements CustomPacketPayload {
+    // Server -> client: Gojo's Red (power/powers/gojo/Vermelho), every tick while it sits at owner's fingertip.
+    // mode 0 alive, 1 fired (it bursts into the blast), 2 gone (cut short, it fades). charge 0 to 1. The client places it
+    // on the owner's hand itself, so it never lags behind him.
+    public record Vermelho(int id, int owner, int mode, float charge) implements CustomPacketPayload {
         public static final Type<Vermelho> TYPE = payloadType("vermelho");
         public static final StreamCodec<ByteBuf, Vermelho> STREAM_CODEC = StreamCodec.composite(
                 ByteBufCodecs.VAR_INT, Vermelho::id,
                 ByteBufCodecs.VAR_INT, Vermelho::owner,
                 ByteBufCodecs.VAR_INT, Vermelho::mode,
+                ByteBufCodecs.FLOAT, Vermelho::charge,
                 Vermelho::new);
 
         @Override
         public Type<Vermelho> type() {
+            return TYPE;
+        }
+    }
+
+    // Server -> client: the Red fired, a wall of repulsion from `from` along dir for range blocks, radius wide, its front
+    // moving speed blocks per tick. charge 0 to 1.
+    public record VermelhoBlast(Vec3 from, Vec3 dir, float range, float radius, float speed, float charge) implements CustomPacketPayload {
+        public static final Type<VermelhoBlast> TYPE = payloadType("vermelho_blast");
+        public static final StreamCodec<ByteBuf, VermelhoBlast> STREAM_CODEC = StreamCodec.composite(
+                VEC3, VermelhoBlast::from,
+                VEC3, VermelhoBlast::dir,
+                ByteBufCodecs.FLOAT, VermelhoBlast::range,
+                ByteBufCodecs.FLOAT, VermelhoBlast::radius,
+                ByteBufCodecs.FLOAT, VermelhoBlast::speed,
+                ByteBufCodecs.FLOAT, VermelhoBlast::charge,
+                VermelhoBlast::new);
+
+        @Override
+        public Type<VermelhoBlast> type() {
             return TYPE;
         }
     }
@@ -918,7 +939,9 @@ public final class ModPayloads {
         registrar.playToClient(Azul.TYPE, Azul.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.azul(payload.id(), payload.mode(), payload.pos(), payload.radius(), payload.charge(), payload.style())));
         registrar.playToClient(Vermelho.TYPE, Vermelho.STREAM_CODEC, (payload, context) -> context.enqueueWork(
-                () -> ClientHooks.vermelho(payload.id(), payload.owner(), payload.mode())));
+                () -> ClientHooks.vermelho(payload.id(), payload.owner(), payload.mode(), payload.charge())));
+        registrar.playToClient(VermelhoBlast.TYPE, VermelhoBlast.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.vermelhoBlast(payload.from(), payload.dir(), payload.range(), payload.radius(), payload.speed(), payload.charge())));
         registrar.playToClient(AizenFx.TYPE, AizenFx.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.aizenFx(payload.kind(), payload.entityId(), payload.pos(), payload.dir(), payload.a(), payload.b())));
         registrar.playToClient(EnergyBall.TYPE, EnergyBall.STREAM_CODEC, (payload, context) -> context.enqueueWork(
