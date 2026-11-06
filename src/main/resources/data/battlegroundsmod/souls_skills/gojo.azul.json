@@ -44,7 +44,7 @@
     "seguir": 0.035,
     "amortecer": 0.82,
     "velocidadeMax": 1.6,
-    "alcanceMin": 10,
+    "alcanceMin": 5,
     "alcanceMax": 70,
     "passoScroll": 3
   },
