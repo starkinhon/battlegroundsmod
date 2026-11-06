@@ -1,0 +1,14 @@
+-proc:none
+-Xmaxerrs
+100000
+-d
+/tmp/claude-0/-home-user-battlegroundsmod/bab84fe6-e7bf-5cd9-aa96-075da696dc3c/scratchpad/jc
+-sourcepath
+src/main/java
+src/main/java/com/starkinhon/battlegroundsmod/boss/GojoTactics.java
+src/main/java/com/starkinhon/battlegroundsmod/boss/SoulBossAI.java
+src/main/java/com/starkinhon/battlegroundsmod/boss/BossTactics.java
+src/main/java/com/starkinhon/battlegroundsmod/power/BossOrder.java
+src/main/java/com/starkinhon/battlegroundsmod/power/powers/gojo/Azul.java
+src/main/java/com/starkinhon/battlegroundsmod/power/powers/gojo/Vermelho.java
+src/main/java/com/starkinhon/battlegroundsmod/power/powers/gojo/Roxo.java

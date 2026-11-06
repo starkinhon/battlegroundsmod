@@ -14,6 +14,7 @@ import com.starkinhon.battlegroundsmod.combat.Fx;
 import com.starkinhon.battlegroundsmod.combat.SkillSounds;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
+import com.starkinhon.battlegroundsmod.power.BossOrder;
 import com.starkinhon.battlegroundsmod.power.PowerData;
 import com.starkinhon.battlegroundsmod.skill.AzulSpec;
 import com.starkinhon.battlegroundsmod.skill.RoxoSpec;
@@ -76,7 +77,10 @@ public final class Roxo {
         String power = data.power;
         int interrupts = data.interrupts;
         // Bosses don't hold keys: half the time it leaves as soon as it forms, else it grows for a while first.
-        int bossGrow = RANDOM.nextBoolean() ? 0 : grow / 3 + RANDOM.nextInt(Math.max(1, Math.max(grow, spec.segurado().maxSegurarTicks()) - grow / 3 + 1));
+        // A boss with tactics (the Gojo boss) says how much it grows this time (BossOrder: no hold = leaves as it forms).
+        BossOrder.Order order = BossOrder.take(caster);
+        int bossGrow = order != null ? (order.hold() ? (int) Math.round(grow * Mth.clamp(order.charge(), 0, 1)) : 0)
+                : RANDOM.nextBoolean() ? 0 : grow / 3 + RANDOM.nextInt(Math.max(1, Math.max(grow, spec.segurado().maxSegurarTicks()) - grow / 3 + 1));
         List<ServerPlayer> screen = caster instanceof ServerPlayer player ? List.of(player) : List.<ServerPlayer>of();
         double[] charge = {0};
         boolean[] released = {false};

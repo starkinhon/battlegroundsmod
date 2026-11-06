@@ -15,6 +15,7 @@ import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.combat.Intangible;
 import com.starkinhon.battlegroundsmod.combat.Melee;
 import com.starkinhon.battlegroundsmod.movement.Movement;
+import com.starkinhon.battlegroundsmod.power.BossOrder;
 import com.starkinhon.battlegroundsmod.power.PowerData;
 import com.starkinhon.battlegroundsmod.power.PowerLogic;
 import com.starkinhon.battlegroundsmod.power.powers.bills.Hakaizinho;
@@ -51,6 +52,8 @@ import net.minecraft.world.phys.Vec3;
 // - a god (estilo "deus", Bills) has none of the ninja moves: he walks calmly at the target, never dodges, dashes or
 //   jumps, and now and then blinks behind it; attacks flying at him are shot down with the hakaizinho.
 // Every number comes from the boss file (BossSpec). /soul boss debug shows what it is thinking.
+// A boss may also have its own tactics (BossTactics, the Gojo boss) that reweigh every move for the situation, say how
+// its held techniques are used, and run steps of their own; the getters below are what they read.
 public class SoulBossAI extends Goal {
     // Toggled by /soul boss debug: each boss shows its state and best options on the action bar of players nearby.
     public static boolean debug = false;
@@ -110,6 +113,8 @@ public class SoulBossAI extends Goal {
     private String thinking = "";
     // The attack the hakaizinho is being shot at (the spark follows it until it leaves the finger).
     private Destructible.Attack antiTarget;
+    private BossTactics tactics;
+    private boolean tacticsAsked;
 
     public SoulBossAI(SoulBoss boss) {
         this.boss = boss;
@@ -206,6 +211,13 @@ public class SoulBossAI extends Goal {
             return;
         }
         if (spec.god() && shootDown(spec, fase)) {
+            return;
+        }
+        if (finishing()) {
+            // A finishing move goes on whatever the target does.
+            reaction = null;
+        }
+        if (state != State.TELL && tactics() != null && tactics().act(this)) {
             return;
         }
         if (reaction != null && now >= reactAt) {
@@ -500,6 +512,9 @@ public class SoulBossAI extends Goal {
         List<Option> options = new ArrayList<>();
         for (String name : fase.skills()) {
             double score = score(spec, fase, name, distance);
+            if (score > 0 && tactics() != null) {
+                score = tactics().weigh(this, name, false, score);
+            }
             if (score > 0) {
                 options.add(new Option(name, score, false));
             }
@@ -514,6 +529,12 @@ public class SoulBossAI extends Goal {
                 double score = openerScore(spec, fase, combo.passos().get(0), distance) * combo.peso() * 1.2;
                 if (punishLeft > 0) {
                     score *= spec.reacoes().multPunir();
+                }
+                if (combo.chained() && !allOff(spec, combo)) {
+                    score = 0;
+                }
+                if (score > 0 && tactics() != null) {
+                    score = tactics().weigh(this, name, true, score);
                 }
                 if (score > 0 && !recent.contains(name)) {
                     options.add(new Option(name, score, true));
@@ -530,8 +551,25 @@ public class SoulBossAI extends Goal {
             case "sombra" -> shadowCooldown == 0 && distance >= spec.passoSombra().distanciaMin()
                     && distance <= spec.passoSombra().distanciaMax() ? (fast ? 1.2 : 0.6) : 0.2;
             case "esquiva", "pulo" -> 0.2;
-            default -> spec.skills().containsKey(step) ? score(spec, fase, step, distance) : 0;
+            default -> {
+                BossSpec.Skill skill = spec.skills().get(step);
+                if (skill == null) {
+                    yield 0;
+                }
+                // A scripted step opens its combo whenever it is off cooldown (the tactics decide when it is time).
+                yield "roteiro".equals(skill.tipo()) ? (off(spec, step) ? skill.peso() : 0) : score(spec, fase, step, distance);
+            }
         };
+    }
+
+    // Every technique of the combo off cooldown.
+    private boolean allOff(BossSpec spec, BossSpec.Combo combo) {
+        for (String step : combo.passos()) {
+            if (spec.skills().containsKey(step) && !off(spec, step)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     // How good a move is right now. 0 = can't or shouldn't.
@@ -541,13 +579,18 @@ public class SoulBossAI extends Goal {
             return 0;
         }
         String tipo = skill.tipo();
+        if ("roteiro".equals(tipo)) {
+            // Only as a step of its combo.
+            return 0;
+        }
         boolean melee = "golpe".equals(tipo) || "barragem".equals(tipo);
         if ("hakai".equals(tipo) && erasable()) {
             // Low enough to be erased: nothing is worth more, from as far as the Hakai reaches.
             double reach = HakaiSpec.get(boss.powerData().awakened).alvo().alcance();
             return distance <= reach && boss.hasLineOfSight(target) ? skill.peso() * 10 : 0;
         }
-        if (!"contra".equals(tipo) && (distance < skill.distanciaMin() || distance > skill.distanciaMax() || !boss.hasLineOfSight(target))) {
+        boolean sees = boss.hasLineOfSight(target) || tactics() != null && tactics().throughWalls(this, name);
+        if (!"contra".equals(tipo) && (distance < skill.distanciaMin() || distance > skill.distanciaMax() || !sees)) {
             return 0;
         }
         boolean stunned = targetStunned();
@@ -701,7 +744,13 @@ public class SoulBossAI extends Goal {
     private boolean execute(BossSpec spec) {
         BossSpec.Skill skill = spec.skills().get(move);
         face(aimPoint(skill), 360);
-        if (!PowerLogic.cast(boss, skill.slot())) {
+        if (tactics() != null) {
+            BossOrder.give(boss, tactics().order(this, move));
+        }
+        boolean cast = PowerLogic.cast(boss, skill.slot());
+        // Whatever the move didn't take is dropped, so it can't reach a later one.
+        BossOrder.clear(boss);
+        if (!cast) {
             state = State.IDLE;
             return false;
         }
@@ -744,6 +793,10 @@ public class SoulBossAI extends Goal {
         if (skill != null && "anti".equals(skill.tipo()) && antiTarget != null && !antiTarget.gone()) {
             return antiTarget.pos();
         }
+        Vec3 own = skill != null && move != null && tactics() != null ? tactics().aim(this, move) : null;
+        if (own != null) {
+            return own;
+        }
         return skill != null && "ult".equals(skill.tipo()) ? target.position() : Combat.center(target);
     }
 
@@ -767,7 +820,16 @@ public class SoulBossAI extends Goal {
         if (step == null) {
             return false;
         }
-        if (++stepAge > STEP_TIMEOUT) {
+        ++stepAge;
+        Boolean own = tactics() != null ? tactics().step(this, step, stepAge) : null;
+        if (own != null) {
+            // A step of the tactics: they keep their own time.
+            if (own) {
+                nextStep();
+            }
+            return true;
+        }
+        if (stepAge > STEP_TIMEOUT) {
             dropCombo();
             return false;
         }
@@ -828,12 +890,20 @@ public class SoulBossAI extends Goal {
             }
             default -> {
                 BossSpec.Skill skill = spec.skills().get(step);
-                if (skill == null || !ready(spec, step)) {
+                BossSpec.Combo combo = comboName != null ? spec.combos().get(comboName) : null;
+                boolean chained = combo != null && combo.chained();
+                if (skill == null || !(chained ? off(spec, step) : ready(spec, step))) {
                     // Not available (or locked by a stun): skip the step, keep the combo going.
                     nextStep();
                     return false;
                 }
-                if (distance > skill.distanciaMax() || !boss.hasLineOfSight(target)) {
+                if ("roteiro".equals(skill.tipo())) {
+                    // Scripted: no range or sight to wait for.
+                    nextStep();
+                    begin(spec, step);
+                    return true;
+                }
+                if (distance > skill.distanciaMax() || !boss.hasLineOfSight(target) && !(tactics() != null && tactics().throughWalls(this, step))) {
                     approach(spec, distance, distance > spec.investida().distanciaMin());
                     return true;
                 }
@@ -857,7 +927,7 @@ public class SoulBossAI extends Goal {
         }
     }
 
-    private void dropCombo() {
+    public void dropCombo() {
         plan.clear();
         comboName = null;
         stepAge = 0;
@@ -1062,6 +1132,77 @@ public class SoulBossAI extends Goal {
         return Combat.level(boss);
     }
 
+    // ---------------------------------------------------------------- what the tactics read
+
+    private BossTactics tactics() {
+        if (!tacticsAsked) {
+            tacticsAsked = true;
+            tactics = boss.tactics();
+        }
+        return tactics;
+    }
+
+    // A finishing combo (BossSpec.Combo.ult) is running.
+    private boolean finishing() {
+        BossSpec.Combo combo = comboName != null ? boss.spec().combos().get(comboName) : null;
+        return combo != null && combo.finisher() && !plan.isEmpty();
+    }
+
+    public SoulBoss boss() {
+        return boss;
+    }
+
+    public LivingEntity target() {
+        return target;
+    }
+
+    public long now() {
+        return now;
+    }
+
+    // The combo running now, or null.
+    public String combo() {
+        return plan.isEmpty() ? null : comboName;
+    }
+
+    // Hits and swings it took up close lately.
+    public int pressure() {
+        return pressure.size();
+    }
+
+    // The target just spent their ult: time to make them pay.
+    public boolean punishing() {
+        return punishLeft > 0;
+    }
+
+    public boolean stunned() {
+        return targetStunned();
+    }
+
+    public boolean busyTarget() {
+        return targetBusy();
+    }
+
+    public boolean usingMove() {
+        return state != State.IDLE;
+    }
+
+    public boolean isOff(String name) {
+        return off(boss.spec(), name);
+    }
+
+    public void lookAt(Vec3 point, float maxTurn) {
+        face(point, maxTurn);
+    }
+
+    public boolean stepBehind() {
+        return shadowStep(boss.spec(), boss.distanceTo(target));
+    }
+
+    public void say(String text) {
+        thinking = text;
+    }
+
     // ---------------------------------------------------------------- debug
 
     private static String summary(List<Option> sorted) {
@@ -1081,7 +1222,8 @@ public class SoulBossAI extends Goal {
             default -> comboName != null ? "combo " + comboName + " > " + plan.peekFirst() : mood == Mood.CLOSE ? "perto" : "distancia";
         };
         Component line = Component.literal(String.format("§cFase %d §7| %s §7| §f%s §7| dist %.1f | pressao %d%s §7| %s",
-                boss.phase() + 1, fast ? "§eRAPIDO" : "§acalmo", what, distance, pressure.size(), punishLeft > 0 ? " §6PUNIR" : "", thinking));
+                boss.phase() + 1, fast ? "§eRAPIDO" : "§acalmo", what, distance, pressure.size(), punishLeft > 0 ? " §6PUNIR" : "",
+                tactics() != null ? thinking + " §b" + tactics().mood() : thinking));
         for (ServerPlayer player : level().players()) {
             if (player.distanceTo(boss) <= DEBUG_RANGE) {
                 player.displayClientMessage(line, true);

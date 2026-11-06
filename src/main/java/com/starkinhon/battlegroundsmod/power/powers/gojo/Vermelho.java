@@ -12,6 +12,7 @@ import com.starkinhon.battlegroundsmod.combat.Fx;
 import com.starkinhon.battlegroundsmod.combat.SkillSounds;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
+import com.starkinhon.battlegroundsmod.power.BossOrder;
 import com.starkinhon.battlegroundsmod.power.PowerData;
 import com.starkinhon.battlegroundsmod.skill.RoxoSpec;
 import com.starkinhon.battlegroundsmod.skill.VermelhoSpec;
@@ -73,8 +74,12 @@ public final class Vermelho {
         int decide = Math.max(1, segurado.decidirTicks());
         int chargeTicks = Math.max(1, segurado.carregarTicks());
         // Bosses don't hold keys: half the time a tap, else a charge of their own length.
-        boolean bossHolds = RANDOM.nextBoolean();
-        int bossCharge = Math.min(Math.max(chargeTicks, segurado.maxSegurarTicks()), chargeTicks / 3 + RANDOM.nextInt(chargeTicks + 1));
+        // A boss with tactics (the Gojo boss) says how this time (BossOrder); aimAtBlue = into his own parked Blue.
+        BossOrder.Order order = BossOrder.take(caster);
+        boolean bossHolds = order != null ? order.hold() : RANDOM.nextBoolean();
+        int bossCharge = order != null ? Math.max(1, (int) Math.ceil(chargeTicks * Mth.clamp(order.charge(), 0, 1)) + 1)
+                : Math.min(Math.max(chargeTicks, segurado.maxSegurarTicks()), chargeTicks / 3 + RANDOM.nextInt(chargeTicks + 1));
+        boolean atBlue = order != null && order.aimAtBlue();
         List<ServerPlayer> screen = caster instanceof ServerPlayer player ? List.of(player) : List.<ServerPlayer>of();
         Function<String, Vec3> where = onde -> "usuario".equals(onde) ? caster.position().add(0, 1, 0) : fingertip(caster);
 
@@ -120,7 +125,7 @@ public final class Vermelho {
             }
             // Players let it go only when they let go of X, however long that is; bosses after their charge.
             if (!held) {
-                fire(level, caster, id, spec, awakened, charge[0], aim(caster), null, screen);
+                fire(level, caster, id, spec, awakened, charge[0], atBlue ? aimAtBlue(caster, awakened) : aim(caster), null, screen);
                 return true;
             }
             send(level, caster, id, ALIVE, (float) charge[0]);
@@ -383,6 +388,19 @@ public final class Vermelho {
             return Combat.center(mob.getTarget()).subtract(caster.getEyePosition()).normalize();
         }
         return caster.getLookAngle();
+    }
+
+    // A boss firing the Unlimited Purple: straight at his own Blue parked at full charge (from where fire starts the
+    // tunnel), so the Red runs into it. No such Blue: at the target as usual.
+    private static Vec3 aimAtBlue(LivingEntity caster, boolean awakened) {
+        RoxoSpec roxo = RoxoSpec.get(awakened);
+        double min = roxo.irrestrito() != null ? roxo.irrestrito().cargaMin() : 2;
+        Azul.Live blue = Azul.parkedBlue(caster, min);
+        if (blue == null) {
+            return aim(caster);
+        }
+        Vec3 to = blue.pos().subtract(caster.getEyePosition().add(0, -0.2, 0));
+        return to.lengthSqr() > 1.0E-4 ? to.normalize() : aim(caster);
     }
 
     // His raised fingertip (the clients work out their own, from his hand).
