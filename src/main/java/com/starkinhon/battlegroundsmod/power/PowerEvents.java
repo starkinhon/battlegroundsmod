@@ -201,6 +201,10 @@ public final class PowerEvents {
         if (event.isCanceled()) {
             return;
         }
+        com.starkinhon.battlegroundsmod.power.powers.sub.SubDefense.onIncomingDamage(event);
+        if (event.isCanceled()) {
+            return;
+        }
         Defense.onIncomingDamage(event.getEntity(), event);
         if (event.isCanceled()) {
             return;

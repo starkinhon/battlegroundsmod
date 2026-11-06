@@ -1,0 +1,37 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "sub.defender",
+  "nome": "Defesa com a espada",
+  "tempo": {
+    "atrasoTicks": 3,
+    "duracaoTicks": 24
+  },
+  "animacao": {
+    "transicaoTicks": 3,
+    "preparo": {
+      "cabeca": 0,
+      "tronco": 0,
+      "bracoDir": {
+        "frente": 100,
+        "abrir": 30
+      },
+      "bracoEsq": {
+        "frente": 90,
+        "abrir": -20
+      }
+    },
+    "sopro": {
+      "cabeca": 0,
+      "tronco": 0,
+      "bracoDir": {
+        "frente": 110,
+        "abrir": 40
+      },
+      "bracoEsq": {
+        "frente": 100,
+        "abrir": -25
+      }
+    },
+    "retornoTicks": 8
+  }
+}

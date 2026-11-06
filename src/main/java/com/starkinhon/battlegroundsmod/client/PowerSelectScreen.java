@@ -6,6 +6,8 @@ import com.starkinhon.battlegroundsmod.power.Power;
 import com.starkinhon.battlegroundsmod.power.PowerData;
 import com.starkinhon.battlegroundsmod.power.Powers;
 
+import java.util.List;
+
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -16,23 +18,46 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.network.PacketDistributor;
 
-// Opened by the Book of Souls: one button per soul, hover shows its moves.
+// Opened by the Book of Souls: one button per soul, hover shows its moves. Two tabs on top: the Divine Souls (the
+// bosses' powers) and the SubAlmas (Low Souls). The book opens on the tab of the soul you have.
 public class PowerSelectScreen extends Screen {
     private static final int BUTTON_WIDTH = 220;
     private static final int BUTTON_HEIGHT = 20;
     private static final int SPACING = 24;
+    private static final int TAB_WIDTH = 108;
 
     private int top;
+    private static int tab = -1;
 
     public PowerSelectScreen() {
         super(Component.translatable("screen.battlegroundsmod.select_power"));
     }
 
+    private List<Power> shown() {
+        return tab == 1 ? Powers.sub() : Powers.divine();
+    }
+
     @Override
     protected void init() {
-        top = height / 2 - Powers.all().size() * SPACING / 2;
+        if (tab < 0) {
+            tab = minecraft != null && minecraft.player != null && Powers.isSub(minecraft.player.getData(com.starkinhon.battlegroundsmod.ModAttachments.POWER).power) ? 1 : 0;
+        }
+        top = height / 2 - shown().size() * SPACING / 2 + 8;
+        for (int i = 0; i < 2; i++) {
+            int which = i;
+            Component name = Component.translatable(i == 0 ? "screen.battlegroundsmod.select_power.divine" : "screen.battlegroundsmod.select_power.sub")
+                    .withStyle(i == tab ? ChatFormatting.GOLD : ChatFormatting.GRAY);
+            Button button = Button.builder(name, b -> {
+                        tab = which;
+                        rebuildWidgets();
+                    })
+                    .bounds(width / 2 - TAB_WIDTH - 2 + i * (TAB_WIDTH + 4), top - 52, TAB_WIDTH, 18)
+                    .build();
+            button.active = i != tab;
+            addRenderableWidget(button);
+        }
         int y = top;
-        for (Power power : Powers.all()) {
+        for (Power power : shown()) {
             Component label = power.name().copy().withStyle(s -> s.withColor(power.color()));
             addRenderableWidget(Button.builder(label, button -> {
                         PacketDistributor.sendToServer(new ModPayloads.SelectPower(power.id()));
@@ -64,7 +89,7 @@ public class PowerSelectScreen extends Screen {
         super.render(graphics, mouseX, mouseY, partialTick);
         // Each power's soul crystal next to its button.
         int y = top;
-        for (Power power : Powers.all()) {
+        for (Power power : shown()) {
             ItemStack soul = new ItemStack(ModItems.SOULS.get(power.id()).get());
             graphics.renderItem(soul, width / 2 - BUTTON_WIDTH / 2 - 20, y + 2);
             graphics.renderItem(soul, width / 2 + BUTTON_WIDTH / 2 + 4, y + 2);

@@ -1,0 +1,37 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "sub.maos",
+  "nome": "Maos juntas",
+  "tempo": {
+    "atrasoTicks": 6,
+    "duracaoTicks": 24
+  },
+  "animacao": {
+    "transicaoTicks": 6,
+    "preparo": {
+      "cabeca": 0,
+      "tronco": 0,
+      "bracoDir": {
+        "frente": 60,
+        "abrir": 20
+      },
+      "bracoEsq": {
+        "frente": 60,
+        "abrir": -20
+      }
+    },
+    "sopro": {
+      "cabeca": 0,
+      "tronco": 0,
+      "bracoDir": {
+        "frente": 75,
+        "abrir": 25
+      },
+      "bracoEsq": {
+        "frente": 75,
+        "abrir": -25
+      }
+    },
+    "retornoTicks": 8
+  }
+}

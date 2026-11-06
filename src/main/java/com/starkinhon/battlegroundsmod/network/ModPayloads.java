@@ -600,6 +600,26 @@ public final class ModPayloads {
         }
     }
 
+    // Server -> client: one effect of the SubAlmas (power/powers/sub/SubNet has the kinds; client/fx/SubFx draws them).
+    // id: the caster, the target or a projectile, depending on the kind; a, b, c: the kind's own numbers.
+    public record SubFx(int kind, int id, Vec3 pos, Vec3 dir, float a, float b, float c) implements CustomPacketPayload {
+        public static final Type<SubFx> TYPE = payloadType("sub_fx");
+        public static final StreamCodec<ByteBuf, SubFx> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, SubFx::kind,
+                ByteBufCodecs.VAR_INT, SubFx::id,
+                VEC3, SubFx::pos,
+                VEC3, SubFx::dir,
+                ByteBufCodecs.FLOAT, SubFx::a,
+                ByteBufCodecs.FLOAT, SubFx::b,
+                ByteBufCodecs.FLOAT, SubFx::c,
+                SubFx::new);
+
+        @Override
+        public Type<SubFx> type() {
+            return TYPE;
+        }
+    }
+
     // Server -> client: Aizen's Black Box (power/powers/aizen/BlackBox). mode 0 held (every tick), 1 shut (once), 2 gone.
     // base: the bottom middle of the box; size: x = half its width, y = its height, z = the charge (0 to 1).
     public record BlackBox(int id, int mode, Vec3 base, Vec3 size, boolean awakened) implements CustomPacketPayload {
@@ -1029,6 +1049,8 @@ public final class ModPayloads {
                 () -> ClientHooks.roxoIrrestrito(payload.center(), payload.size(), payload.timing(), payload.blast())));
         registrar.playToClient(VermelhoBlast.TYPE, VermelhoBlast.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.vermelhoBlast(payload.from(), payload.dir(), payload.range(), payload.radius(), payload.speed(), payload.charge())));
+        registrar.playToClient(SubFx.TYPE, SubFx.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.subFx(payload.kind(), payload.id(), payload.pos(), payload.dir(), payload.a(), payload.b(), payload.c())));
         registrar.playToClient(AizenFx.TYPE, AizenFx.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.aizenFx(payload.kind(), payload.entityId(), payload.pos(), payload.dir(), payload.a(), payload.b())));
         registrar.playToClient(EnergyBall.TYPE, EnergyBall.STREAM_CODEC, (payload, context) -> context.enqueueWork(

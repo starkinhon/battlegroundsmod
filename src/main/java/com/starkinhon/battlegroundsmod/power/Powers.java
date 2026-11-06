@@ -1,7 +1,9 @@
 package com.starkinhon.battlegroundsmod.power;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.starkinhon.battlegroundsmod.power.powers.DestructionGod;
@@ -10,10 +12,19 @@ import com.starkinhon.battlegroundsmod.power.powers.OnePunch;
 import com.starkinhon.battlegroundsmod.power.powers.RubberBoy;
 import com.starkinhon.battlegroundsmod.power.powers.Strongest;
 import com.starkinhon.battlegroundsmod.power.powers.UchihaGhost;
+import com.starkinhon.battlegroundsmod.power.powers.sub.Byakuya;
+import com.starkinhon.battlegroundsmod.power.powers.sub.Ichigo;
+import com.starkinhon.battlegroundsmod.power.powers.sub.Orihime;
+import com.starkinhon.battlegroundsmod.power.powers.sub.Rukia;
+import com.starkinhon.battlegroundsmod.power.powers.sub.SukunaCuts;
+import com.starkinhon.battlegroundsmod.power.powers.sub.Urahara;
 
-// Every selectable power, in the order shown in the power book.
+// Every selectable power, in the order shown in the power book. The Divine Souls (the bosses' powers) are on the book's
+// first tab, the SubAlmas (Low Souls: characters from each boss's anime) on the second.
 public final class Powers {
     private static final Map<String, Power> BY_ID = new LinkedHashMap<>();
+    private static final List<Power> DIVINE = new ArrayList<>();
+    private static final List<Power> SUB = new ArrayList<>();
 
     public static final Power UCHIHA_GHOST = register(UchihaGhost.create());
     public static final Power MANIPULATOR = register(Manipulator.create());
@@ -22,11 +33,26 @@ public final class Powers {
     public static final Power ONE_PUNCH = register(OnePunch.create());
     public static final Power STRONGEST = register(Strongest.create());
 
+    // SubAlmas (Bleach, then Sukuna's cuts for now).
+    public static final Power BYAKUYA = registerSub(Byakuya.create());
+    public static final Power ICHIGO = registerSub(Ichigo.create());
+    public static final Power RUKIA = registerSub(Rukia.create());
+    public static final Power ORIHIME = registerSub(Orihime.create());
+    public static final Power URAHARA = registerSub(Urahara.create());
+    public static final Power SUKUNA_CUTS = registerSub(SukunaCuts.create());
+
     private Powers() {
     }
 
     private static Power register(Power power) {
         BY_ID.put(power.id(), power);
+        DIVINE.add(power);
+        return power;
+    }
+
+    private static Power registerSub(Power power) {
+        BY_ID.put(power.id(), power);
+        SUB.add(power);
         return power;
     }
 
@@ -36,5 +62,18 @@ public final class Powers {
 
     public static Collection<Power> all() {
         return BY_ID.values();
+    }
+
+    public static List<Power> divine() {
+        return DIVINE;
+    }
+
+    public static List<Power> sub() {
+        return SUB;
+    }
+
+    public static boolean isSub(String id) {
+        Power power = BY_ID.get(id);
+        return power != null && SUB.contains(power);
     }
 }

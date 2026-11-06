@@ -1,0 +1,37 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "sub.estocada",
+  "nome": "Estocada",
+  "tempo": {
+    "atrasoTicks": 4,
+    "duracaoTicks": 10
+  },
+  "animacao": {
+    "transicaoTicks": 4,
+    "preparo": {
+      "cabeca": 0,
+      "tronco": -6,
+      "bracoDir": {
+        "frente": 60,
+        "abrir": -20
+      },
+      "bracoEsq": {
+        "frente": 0,
+        "abrir": 5
+      }
+    },
+    "sopro": {
+      "cabeca": 0,
+      "tronco": 6,
+      "bracoDir": {
+        "frente": 90,
+        "abrir": -5
+      },
+      "bracoEsq": {
+        "frente": -10,
+        "abrir": 5
+      }
+    },
+    "retornoTicks": 8
+  }
+}

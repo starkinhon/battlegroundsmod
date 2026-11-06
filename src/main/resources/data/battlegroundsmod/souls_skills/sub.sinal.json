@@ -1,0 +1,37 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "sub.sinal",
+  "nome": "Sinal de mao",
+  "tempo": {
+    "atrasoTicks": 6,
+    "duracaoTicks": 30
+  },
+  "animacao": {
+    "transicaoTicks": 6,
+    "preparo": {
+      "cabeca": 0,
+      "tronco": 0,
+      "bracoDir": {
+        "frente": 80,
+        "abrir": 25
+      },
+      "bracoEsq": {
+        "frente": 80,
+        "abrir": -25
+      }
+    },
+    "sopro": {
+      "cabeca": 5,
+      "tronco": 0,
+      "bracoDir": {
+        "frente": 95,
+        "abrir": 30
+      },
+      "bracoEsq": {
+        "frente": 95,
+        "abrir": -30
+      }
+    },
+    "retornoTicks": 8
+  }
+}
