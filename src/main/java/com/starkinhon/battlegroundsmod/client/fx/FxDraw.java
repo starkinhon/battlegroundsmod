@@ -33,6 +33,12 @@ final class FxDraw {
     // Gojo's Red (souls_vfx.fsh shapes 19 and 20): one tail (a strip, u along it) and the orb.
     static final int VRABO = 19;
     static final int VORBE = 20;
+    // Gojo's Purple (souls_vfx.fsh shapes 21 to 24): the two spheres mixing into it (color.g = the mix, color.b >= 0.95 =
+    // no contour), the twisted space round it in flight, the light leaking out of it, one living bolt (a strip).
+    static final int ROXO = 21;
+    static final int ROXO_VORTEX = 22;
+    static final int ROXO_RAYS = 23;
+    static final int ROXO_RAIO = 24;
 
     private static VertexConsumer additive;
     private static VertexConsumer alpha;

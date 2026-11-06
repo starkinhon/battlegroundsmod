@@ -69,6 +69,74 @@ public final class Azul {
 
     private static final Map<UUID, Control> CONTROLS = new HashMap<>();
 
+    // Every held Blue out right now, as the Unlimited Purple (Roxo.irrestrito) sees it: a Red fired at full charge into
+    // his own Blue parked at full charge. Updated by the Blue's task every tick; consumed, the Blue goes out at once.
+    public static final class Live {
+        final LivingEntity owner;
+        final ServerLevel level;
+        Vec3 pos = Vec3.ZERO;
+        double radius;
+        double charge;
+        boolean parked;
+        long seen;
+        boolean claimed;
+        boolean consumed;
+
+        Live(LivingEntity owner, ServerLevel level) {
+            this.owner = owner;
+            this.level = level;
+            this.seen = level.getGameTime();
+        }
+
+        public Vec3 pos() {
+            return pos;
+        }
+
+        public double radius() {
+            return radius;
+        }
+
+        // Still out (its task ran this tick or the one before) and not taken yet.
+        public boolean alive() {
+            return !consumed && level.getGameTime() - seen <= 2;
+        }
+
+        public void consume() {
+            consumed = true;
+        }
+    }
+
+    private static final List<Live> LIVE = new ArrayList<>();
+
+    // owner's parked Blue charged to at least minCharge that the line from `from` along dir (length long, width wide)
+    // runs into: the nearest one, claimed so no other Red takes it too. null if there is none.
+    public static Live claimParked(LivingEntity owner, Vec3 from, Vec3 dir, double length, double width, double minCharge) {
+        LIVE.removeIf(l -> l.consumed || l.level.getGameTime() - l.seen > 40);
+        Live best = null;
+        double bestT = Double.MAX_VALUE;
+        for (Live l : LIVE) {
+            if (l.owner != owner || l.level != owner.level() || l.claimed || !l.parked || l.charge < minCharge || !l.alive()) {
+                continue;
+            }
+            Vec3 rel = l.pos.subtract(from);
+            double t = rel.dot(dir);
+            if (t < -l.radius || t > length + l.radius) {
+                continue;
+            }
+            if (rel.subtract(dir.scale(t)).length() > l.radius + width) {
+                continue;
+            }
+            if (t < bestT) {
+                bestT = t;
+                best = l;
+            }
+        }
+        if (best != null) {
+            best.claimed = true;
+        }
+        return best;
+    }
+
     private Azul() {
     }
 
@@ -141,6 +209,8 @@ public final class Azul {
         double[] shotSpeed = {0};
         double[] shotFlown = {0};
         Control control = new Control();
+        Live live = new Live(caster, level);
+        LIVE.add(live);
         AzulSpec.Controle controle = spec.controle();
         AzulSpec.Orbita orbita = spec.orbita();
         AzulSpec.Tiro tiro = spec.tiro();
@@ -163,6 +233,14 @@ public final class Azul {
             PowerData now = caster.getData(ModAttachments.POWER);
             boolean casterGone = !caster.isAlive() || caster.isRemoved() || !power.equals(now.power);
             boolean cut = now.interrupts != interrupts;
+            if (live.consumed) {
+                // Swallowed by the Unlimited Purple: the Red hit it, both implode (drawn by RoxoRenderer).
+                send(level, id, GONE, orb[0], radius[0], (float) charge[0], style);
+                release(torn);
+                endControl(caster, control);
+                LIVE.remove(live);
+                return true;
+            }
             if (casterGone || cut && (phase[0] == Phase.DECIDE || phase[0] == Phase.CHARGE)) {
                 // Cut short: it fades without imploding.
                 send(level, id, GONE, orb[0], radius[0], (float) charge[0], style);
@@ -438,6 +516,11 @@ public final class Azul {
                     }
                 }
             }
+            live.pos = orb[0];
+            live.radius = radius[0];
+            live.charge = charge[0];
+            live.parked = phase[0] == Phase.PARKED;
+            live.seen = level.getGameTime();
             send(level, id, ALIVE, orb[0], radius[0], (float) charge[0], style);
             return false;
         });

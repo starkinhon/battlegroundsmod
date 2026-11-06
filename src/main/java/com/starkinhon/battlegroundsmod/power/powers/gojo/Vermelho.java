@@ -13,6 +13,7 @@ import com.starkinhon.battlegroundsmod.combat.SkillSounds;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
 import com.starkinhon.battlegroundsmod.power.PowerData;
+import com.starkinhon.battlegroundsmod.skill.RoxoSpec;
 import com.starkinhon.battlegroundsmod.skill.VermelhoSpec;
 
 import net.minecraft.core.BlockPos;
@@ -219,6 +220,14 @@ public final class Vermelho {
                 range = Math.max(2, hit.getLocation().distanceTo(from));
             }
         }
+        // Fired at full charge into his own Blue parked at full charge: the tunnel stops at the Blue and both implode into
+        // the Unlimited Purple (Roxo.irrestrito) when the front gets there.
+        RoxoSpec roxo = RoxoSpec.get(awakened);
+        double irrMin = roxo.irrestrito() != null ? roxo.irrestrito().cargaMin() : 2;
+        Azul.Live azul = shift == null && c >= irrMin ? Azul.claimParked(caster, from, dir, range, radius, irrMin) : null;
+        if (azul != null) {
+            range = Math.max(1, azul.pos().subtract(from).dot(dir) - azul.radius() * 0.5);
+        }
         double length = range;
         caster.swing(InteractionHand.MAIN_HAND, true);
         PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new ModPayloads.PlaySkillAnimation(caster.getId(), SKILL, awakened));
@@ -291,6 +300,11 @@ public final class Vermelho {
             }
             if (breaks) {
                 carve(level, caster, from, dir, Math.max(1.2, a), b, radius, tiro, debris);
+            }
+            if (b >= length && azul != null && azul.alive()) {
+                azul.consume();
+                Roxo.irrestrito(level, caster, azul.pos(), awakened);
+                return true;
             }
             if (b >= length) {
                 SkillSounds.play(level, spec.sons(), "impacto", 0, 0, where, screen);

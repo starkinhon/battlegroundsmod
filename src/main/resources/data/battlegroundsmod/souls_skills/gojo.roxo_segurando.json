@@ -1,0 +1,36 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "gojo.roxo_segurando",
+  "nome": "Roxo (segurando)",
+  "tempo": {
+    "atrasoTicks": 40,
+    "duracaoTicks": 600
+  },
+  "animacao": {
+    "transicaoTicks": 10,
+    "preparo": {
+      "cabeca": 0,
+      "tronco": -2,
+      "bracoDir": {
+        "frente": 25,
+        "abrir": -55
+      },
+      "bracoEsq": {
+        "frente": 25,
+        "abrir": 55
+      }
+    },
+    "sopro": {
+      "cabeca": 4,
+      "tronco": 4,
+      "bracoDir": {
+        "frente": 78,
+        "abrir": -14
+      },
+      "bracoEsq": {
+        "frente": 78,
+        "abrir": 14
+      }
+    }
+  }
+}

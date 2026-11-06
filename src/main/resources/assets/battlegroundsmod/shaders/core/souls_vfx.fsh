@@ -32,6 +32,12 @@
 //             a dark ink edge (alpha layer), < 0.5 the wide smear behind it (alpha layer), else its glow (additive)
 //  20 vermelho orb   Gojo's Red itself, drawn over the glow; param < 0.5 dark core (kept), else the bright core (the one
 //             in the game)
+//  21 roxo    Gojo's Purple: the Red and the Blue pressed together and mixing (alpha layer, drawn over the glow); the quad
+//             runs along the line between them (u: red 0, blue 1), param * 8 = their distance in radii, color.g = the mix,
+//             color.b >= 0.95 = no neon contour (the Unlimited Purple)
+//  22 roxo vortex  grey wavy rings of twisted space round the Purple in flight, param = strength
+//  23 roxo rays    light leaking out of the launched Purple in wide rays (the quad spins in Java)
+//  24 roxo bolt    a living lightning bolt on a strip (u along it), param = the bolt's own seed
 // A very dark color never burns white (dark rims and lines stay dark).
 // Near walls and the ground the effect fades out instead of cutting a hard line (soft particles).
 uniform sampler2D Sampler1;
@@ -308,6 +314,239 @@ vec4 vermelhoOrbe(vec2 p, float param, float seed, float time) {
     return vec4(col, clamp(max(body, halo), 0.0, 1.0));
 }
 
+// ---- shape 21: Gojo's Purple (Roxo). The Red and the Blue pressed together, mixing into purple. ----
+// The quad runs along the line between the two centres (uv.x: red at 0, blue at 1) and is 6 radii tall.
+// param * 8 = distance between the centres, in radii (0 = one sphere). vCol.g = how far the mix went (0..1).
+vec3 roxoRotY(vec3 n, float a) { float c = cos(a); float s = sin(a); return vec3(n.x * c - n.z * s, n.y, n.x * s + n.z * c); }
+
+// Glitter: tiny white points twinkling inside the purple, on two layers turning at different speeds.
+float roxoGlitter(vec2 q, float seed, float time) {
+    float g = 0.0;
+    for (int l = 0; l < 2; l++) {
+        float fl = float(l);
+        float a = time * (0.25 + 0.2 * fl) * (fl > 0.5 ? -1.0 : 1.0);
+        vec2 r = vec2(q.x * cos(a) - q.y * sin(a), q.x * sin(a) + q.y * cos(a)) * (7.0 + 5.0 * fl);
+        vec2 id = floor(r);
+        float h = hash(id + vec2(seed * 3.1 + fl * 17.0, fl * 5.3));
+        vec2 at = vec2(hash(id + 1.7 + fl), hash(id + 9.1 - fl)) - 0.5;
+        float d = length(fract(r) - 0.5 - at * 0.6);
+        float tw = 0.5 + 0.5 * sin(time * (5.0 + 4.0 * h) + h * 40.0);
+        g += smoothstep(0.11, 0.0, d) * step(0.55, h) * tw * tw;
+    }
+    return g;
+}
+
+vec4 roxo(vec2 uv, float param, float seed, float time, float mixK, float noRim) {
+    float k = param * 8.0;
+    float m = clamp(mixK, 0.0, 1.0);
+    vec2 q = vec2((uv.x - 0.5) * (k + 6.0), (uv.y - 0.5) * 6.0);
+    vec2 a = q + vec2(k * 0.5, 0.0);
+    vec2 b = q - vec2(k * 0.5, 0.0);
+    float ra = length(a);
+    float rb = length(b);
+    // One body: two circles joined by a neck that softens as they mix. Formed, it is a single sphere a bit bigger.
+    float kk = 0.25 + 0.6 * m;
+    float hh = clamp(0.5 + 0.5 * (rb - ra) / kk, 0.0, 1.0);
+    float du = mix(rb, ra, hh) - kk * hh * (1.0 - hh) - (1.0 + 0.1 * m);
+    float fw = max(fwidth(du), 1.0e-4);
+    float body = 1.0 - smoothstep(-fw, fw, du);
+    float side = smoothstep(-0.25, 0.25, ra - rb);
+    float touch = smoothstep(2.4, 1.8, k);
+    vec3 nA = vec3(a, sqrt(max(0.0, 1.0 - dot(a, a))));
+    vec3 nB = vec3(b, sqrt(max(0.0, 1.0 - dot(b, b))));
+    vec3 n = normalize(mix(nA, nB, side) + vec3(0.0, 0.0, 0.001));
+
+    // ---- the two spheres: bright marble glass (red turning one way, blue the other), dark veins, glassy light ----
+    vec3 pA = roxoRotY(nA, time * 0.45);
+    vec3 pB = roxoRotY(nB, -time * 0.55);
+    float fA = azFbm3(pA * 2.4 + vec3(seed, 1.3, seed * 0.5));
+    float fB = azFbm3(pB * 2.4 + vec3(4.1, seed, 2.2));
+    float vA = azFbm3(pA * 4.6 + vec3(fA * 2.2) + vec3(seed));
+    float vB = azFbm3(pB * 4.6 + vec3(fB * 2.2) + vec3(7.0));
+    float veinA = 1.0 - smoothstep(0.0, 0.07, abs(vA - 0.5));
+    float veinB = 1.0 - smoothstep(0.0, 0.07, abs(vB - 0.5));
+    vec3 redDeep = vec3(0.22, 0.0, 0.03);
+    vec3 red = vec3(1.0, 0.04, 0.16);
+    vec3 redHot = vec3(1.0, 0.6, 0.72);
+    vec3 bluDeep = vec3(0.0, 0.03, 0.25);
+    vec3 blu = vec3(0.12, 0.38, 1.0);
+    vec3 bluHot = vec3(0.7, 0.88, 1.0);
+    vec3 cr = mix(redDeep, red, smoothstep(0.25, 0.6, fA));
+    cr = mix(cr, redHot, smoothstep(0.62, 0.85, fA) * 0.7);
+    cr *= 1.0 - 0.75 * veinA;
+    vec3 cb = mix(bluDeep, blu, smoothstep(0.25, 0.6, fB));
+    cb = mix(cb, bluHot, smoothstep(0.62, 0.85, fB) * 0.7);
+    cb *= 1.0 - 0.75 * veinB;
+    vec3 L = normalize(vec3(-0.45, 0.55, 0.7));
+    float lit = 0.35 + 0.75 * max(dot(n, L), 0.0);
+    vec3 col = mix(cr, cb, side) * lit;
+    // the halves facing each other glow violet-white, more as they get close (the refs)
+    float faceA = smoothstep(-0.1, 0.9, nA.x);
+    float faceB = smoothstep(-0.1, 0.9, -nB.x);
+    float face = mix(faceA, faceB, side) * (0.35 + 0.65 * smoothstep(3.2, 1.6, k));
+    vec3 inner = mix(vec3(1.0, 0.35, 0.95), vec3(0.75, 0.55, 1.0), side);
+    col = mix(col, inner, face * 0.75);
+    col += vec3(1.0, 0.9, 1.0) * pow(face, 3.0) * 0.4;
+    // glass: sharp highlight and a coloured fresnel rim
+    float spec = pow(max(dot(reflect(-L, n), vec3(0.0, 0.0, 1.0)), 0.0), 40.0);
+    float fres = pow(1.0 - clamp(n.z, 0.0, 1.0), 2.5);
+    col += vec3(1.0) * spec * 0.7 + mix(redHot, bluHot, side) * fres * 0.45;
+
+    // ---- wind / air resistance: bright bands sweeping across the spheres and streaking past them ----
+    float wind = 0.0;
+    for (int i = 0; i < 4; i++) {
+        float fi = float(i);
+        float h1 = hash(vec2(fi * 3.7, seed));
+        float y0 = (h1 - 0.5) * 1.8 + 0.2 * sin(time * 0.6 + fi * 2.0);
+        // over a sphere the band curves round it (a tilted ring); outside it runs straight
+        float onS = mix(n.y - 0.35 * n.z * (h1 - 0.5) * 2.0, q.y, 0.0);
+        float yy = mix(q.y, onS * 1.0, body);
+        float w = 0.06 + 0.12 * hash(vec2(fi, seed + 1.0));
+        float band = exp(-pow((yy - y0) / w, 2.0));
+        float flow = fbm(vec2(q.x * 0.45 + time * (2.2 + fi * 0.7), fi * 9.0 + seed));
+        band *= smoothstep(0.42, 0.72, flow);
+        wind += band;
+    }
+    // soft at every edge of the quad, so a band never ends in a straight cut
+    wind *= (1.0 - m) * (1.0 - smoothstep(k * 0.5 + 1.2, k * 0.5 + 2.8, abs(q.x))) * (1.0 - smoothstep(1.6, 2.7, abs(q.y)));
+    vec3 windCol = mix(vec3(1.0, 0.7, 0.82), vec3(0.72, 0.9, 1.0), smoothstep(-0.6, 0.6, q.x));
+    col = mix(col, windCol, clamp(wind, 0.0, 1.0) * body * 0.85);
+
+    // ---- the Roxo itself (the Stark's ball video): a burst of light streaming out of a white core, purple plumes
+    // racing to the edge, darker mottled purple near the rim, held in by a thick neon ring. Born where they touch. ----
+    float r0 = length(q) / (1.0 + 0.1 * m);
+    float ang = atan(q.y, q.x);
+    vec2 cs = vec2(cos(ang), sin(ang));
+    float flow = time * 1.6;
+    float plume = azFbm3(vec3(cs * 2.3, r0 * 2.6 - flow) + vec3(seed));
+    float plume2 = azFbm3(vec3(cs * 5.0, r0 * 4.0 - flow * 1.4) + vec3(seed * 2.0, 3.0, 1.0));
+    float rays = pow(plume * 0.65 + plume2 * 0.45, 2.2);
+    float mott = azFbm3(vec3(q * 2.2, time * 0.5) + vec3(seed));
+    vec3 violetDeep = vec3(0.24, 0.02, 0.42);
+    vec3 violet = vec3(0.62, 0.16, 0.95);
+    vec3 orchid = vec3(0.92, 0.55, 1.0);
+    vec3 pale = vec3(1.0, 0.9, 1.0);
+    float inR = 1.0 - smoothstep(0.0, 1.0, r0);
+    vec3 pc = mix(violetDeep, violet, smoothstep(0.3, 0.75, mott) * 0.8 + 0.2 * inR);
+    pc = mix(pc, orchid, clamp(rays * (0.6 + 1.6 * inR), 0.0, 1.0));
+    float coreR = mix(0.22, 0.42, m) * (0.9 + 0.1 * sin(time * 7.0));
+    float core = exp(-pow(r0 / coreR, 2.0));
+    pc = mix(pc, pale, smoothstep(0.1, 0.7, core + rays * inR * 0.5));
+    pc = mix(pc, vec3(1.0), smoothstep(0.55, 1.0, core));
+    pc = mix(pc, violetDeep, smoothstep(0.62, 0.92, r0) * 0.45 * (1.0 - rays));
+    float reach = mix(0.25, 1.6, m) * touch;
+    float glow = exp(-pow(r0 / max(reach, 0.05), 2.0) * 1.4) * touch;
+    float cover = clamp(glow * 1.3 + m * m, 0.0, 1.0);
+    col = mix(col, pc, cover);
+    float gl = roxoGlitter(q, seed, time) * clamp(cover * 1.4 - 0.2, 0.0, 1.0);
+    col += mix(vec3(1.0, 0.92, 1.0), vec3(1.0, 0.7, 0.45), step(0.7, hash(floor(q * 9.0)))) * gl * (0.6 + 0.6 * core);
+    // the neon contour: thick hot pink-violet band with a white line in it, shimmering a little
+    // noRim = 1: Roxo Irrestrito, no contour (only the purple with glow)
+    float formed = smoothstep(0.55, 1.0, m) * (1.0 - noRim);
+    float dw = du + 0.012 * (noise(vec2(ang * 4.0 + time * 3.0, seed)) - 0.5);
+    float rimBand = exp(-pow(dw / 0.075, 2.0));
+    float rimLine = exp(-pow(dw / 0.022, 2.0));
+    vec3 neon = vec3(1.0, 0.32, 0.95);
+    col = mix(col, neon, rimBand * formed * body * 0.9);
+    col = mix(col, vec3(1.0, 0.9, 1.0), rimLine * formed * body);
+
+    // ---- around: red and blue smoke beside each sphere; formed, ragged magenta flame-smoke round the ring ----
+    float outside = max(du, 0.0);
+    float hn = fbm(q * 1.3 + vec2(seed * 2.0, time * 0.35));
+    float smoke = pow(max(0.0, 1.0 - outside * 0.8), 2.2) * smoothstep(0.25, 0.75, hn) * (1.0 - m);
+    vec3 sc = mix(red * 0.75, blu * 0.75, side);
+    sc = mix(sc, violet, touch * exp(-pow(length(q) / 0.9, 2.0)));
+    float rag = azFbm3(vec3(cs * 2.0, outside * 3.0 - time * 1.2) + vec3(seed * 3.0));
+    float flame = smoothstep(0.35, 0.6, rag - outside * 0.9) * formed;
+    vec3 fc = mix(vec3(0.5, 0.05, 0.42), vec3(0.85, 0.2, 0.75), smoothstep(0.5, 0.8, rag));
+    float halo = exp(-outside * 2.6) * m;
+    vec3 hc = mix(violet, neon, exp(-outside * 9.0) * (1.0 - noRim));
+    float og = roxoGlitter(q * 1.1, seed + 3.0, time) * exp(-outside * 1.6) * m;
+    float wOut = wind * (1.0 - body) * 0.7;
+    vec3 outCol = mix(sc, hc, clamp(halo / max(halo + smoke, 1.0e-3), 0.0, 1.0));
+    outCol = mix(outCol, fc, flame * 0.85);
+    outCol = mix(outCol, vec3(1.0, 0.85, 1.0), exp(-pow(dw / 0.05, 2.0)) * formed);
+    outCol = mix(outCol, windCol, clamp(wOut, 0.0, 1.0));
+    outCol += vec3(1.0, 0.9, 1.0) * og;
+    float outA = clamp(max(max(smoke * 0.75, halo * 0.75), max(max(wOut, og), max(flame * 0.8, exp(-pow(dw / 0.05, 2.0)) * formed))), 0.0, 1.0);
+    col = mix(outCol, col, body);
+    return vec4(col, clamp(max(body, outA), 0.0, 1.0));
+}
+
+// ---- shape 22: the space twisting round the Roxo (grey wavy rings in a whirl, like the ref). param = strength. ----
+vec4 roxoVortex(vec2 p, float param, float seed, float time) {
+    float r = length(p);
+    float ang = atan(p.y, p.x);
+    float tw = ang + 1.6 / (r + 0.25) - time * 1.2;
+    float n = fbm(vec2(cos(tw), sin(tw)) * 2.0 + vec2(r * 3.0, seed));
+    float rings = sin(r * 30.0 - time * 5.0 + 3.0 * sin(tw * 2.0) + n * 6.0);
+    float crest = smoothstep(0.55, 1.0, rings);
+    float trough = smoothstep(-0.4, -1.0, rings);
+    vec3 col = mix(vec3(0.05, 0.04, 0.08), vec3(0.62, 0.6, 0.7), crest);
+    col = mix(col, vec3(0.35, 0.2, 0.55), 0.25 * (1.0 - crest));
+    float env = smoothstep(0.28, 0.5, r) * (1.0 - smoothstep(0.72, 1.0, r));
+    float a = env * (0.25 + 0.55 * crest + 0.45 * trough) * param;
+    return vec4(col, clamp(a, 0.0, 1.0));
+}
+
+// ---- shape 23: light leaking out of the launched Roxo (wide rays of different widths; the quad spins in Java). ----
+vec4 roxoRays(vec2 p, float param, float seed, float time) {
+    float r = length(p);
+    float ang = atan(p.y, p.x);
+    float sum = 0.0;
+    vec3 col = vec3(0.0);
+    for (int i = 0; i < 11; i++) {
+        float fi = float(i);
+        float a0 = hash(vec2(fi, seed)) * 6.2832;
+        float w = 0.03 + 0.16 * hash(vec2(fi + 4.0, seed));
+        float len = 0.55 + 0.45 * hash(vec2(fi + 9.0, seed));
+        float d = abs(mod(ang - a0 + 3.1416, 6.2832) - 3.1416);
+        float beam = smoothstep(w, w * 0.25, d) * (1.0 - smoothstep(len * 0.6, len, r));
+        beam *= 0.7 + 0.3 * sin(time * 9.0 + fi * 2.3);
+        vec3 c = mix(vec3(0.55, 0.2, 1.0), vec3(0.45, 0.4, 1.0), hash(vec2(fi + 2.0, seed)));
+        c = mix(c, vec3(0.95, 0.75, 1.0), smoothstep(0.35, 0.0, r) * 0.7);
+        col += c * beam;
+        sum += beam;
+    }
+    float a = clamp(sum, 0.0, 1.0) * smoothstep(0.03, 0.12, r);
+    return vec4(col / max(sum, 1.0e-3), a);
+}
+
+// ---- shape 24: a living lightning bolt (the Stark's video): a curvy line that wanders, thick wet blobs on it,
+// a web of thin tendrils, white core with a purple glow, redrawn 15 times a second. Drawn on a strip (uv.x along it).
+// param = this bolt's own seed (0..1).
+vec4 roxoRaio(vec2 uv, float param, float seed, float time) {
+    float s = seed + param * 91.0;
+    float tq = floor(time * 15.0);
+    float u = uv.x;
+    float v = uv.y * 2.0 - 1.0;
+    float ends = smoothstep(0.0, 0.08, u) * smoothstep(1.0, 0.88, u);
+    // main line: big slow bends plus small kinks, all changing every redraw
+    float c0 = (fbm(vec2(u * 2.6, s + tq * 0.37)) - 0.5) * 1.2 + (noise(vec2(u * 7.0, s * 0.7 + tq * 1.1)) - 0.5) * 0.45 + (noise(vec2(u * 19.0, s * 1.3 + tq * 1.7)) - 0.5) * 0.22;
+    float blob = pow(fbm(vec2(u * 7.0, s * 2.1 + tq * 0.9)), 3.0);
+    float th = (0.022 + 0.2 * blob) * ends;
+    float d0 = abs(v - c0);
+    float fw = max(fwidth(v), 1.0e-4);
+    float line = smoothstep(th + fw, max(th - fw, 0.0), d0);
+    // tendrils: thinner lines branching off the main one, showing in pieces
+    float web = 0.0;
+    for (int i = 0; i < 4; i++) {
+        float fi = float(i);
+        float ci = c0 + (fbm(vec2(u * 4.5 + fi * 3.1, s + fi * 7.3 + tq * 0.53)) - 0.5) * 1.5;
+        float piece = smoothstep(0.42, 0.62, noise(vec2(u * 5.0 + fi * 11.0, s + tq * 0.71 + fi)));
+        float ti = (0.007 + 0.01 * hash(vec2(fi, s))) * ends;
+        web = max(web, smoothstep(ti + fw, max(ti - fw, 0.0), abs(v - ci)) * piece * (0.55 + 0.45 * hash(vec2(fi + tq, s))));
+    }
+    // some redraws flicker weak or go out, like the video
+    float fl = hash(vec2(tq, s * 0.7));
+    float on = fl < 0.12 ? 0.0 : fl < 0.3 ? 0.4 : 1.0;
+    float glow = exp(-d0 * 7.0) * 0.45 * ends + exp(-d0 * 22.0) * 0.4 * ends;
+    float core = max(line, web * 0.9);
+    vec3 col = mix(vec3(0.62, 0.22, 1.0), vec3(1.0, 0.94, 1.0), clamp(line * (0.6 + 0.6 * blob * 8.0) + web * 0.5, 0.0, 1.0));
+    float a = clamp(core + glow * (1.0 - core), 0.0, 1.0) * on;
+    return vec4(col, a);
+}
+
 float linearDepth(float d) {
     float z = d * 2.0 - 1.0;
     return 2.0 * DepthRange.x * DepthRange.y / (DepthRange.y + DepthRange.x - z * (DepthRange.y - DepthRange.x));
@@ -576,6 +815,22 @@ void main() {
         vec4 vm = vermelhoOrbe(p, param, seed, time);
         base = vm.rgb;
         alpha = vm.a;
+    } else if (shape == 21) {
+        vec4 rx = roxo(uv, param, seed, time, color.g, step(0.95, color.b));
+        base = rx.rgb;
+        alpha = rx.a;
+    } else if (shape == 22) {
+        vec4 rv = roxoVortex(p, param, seed, time);
+        base = rv.rgb;
+        alpha = rv.a;
+    } else if (shape == 23) {
+        vec4 ry = roxoRays(p, param, seed, time);
+        base = ry.rgb;
+        alpha = ry.a;
+    } else if (shape == 24) {
+        vec4 rr = roxoRaio(uv, param, seed, time);
+        base = rr.rgb;
+        alpha = rr.a;
     } else {
         alpha = 1.0;
     }
@@ -586,7 +841,7 @@ void main() {
     float fade = 1.0;
     // The Black Box's walls and lances stay solid right in front of whoever is inside, and shards, wings and orbs sit
     // right on bodies (no soft fade), and so does the Red's orb at Gojo's fingertip.
-    if (SoftOn > 0.5 && (shape < 12 || shape > 16) && shape != 20) {
+    if (SoftOn > 0.5 && (shape < 12 || shape > 16) && shape != 20 && shape != 21) {
         float scene = linearDepth(texture(Sampler1, gl_FragCoord.xy / Screen).r);
         fade = clamp((scene - viewDist) / 0.6, 0.0, 1.0);
     }

@@ -34,7 +34,7 @@ public final class ScreenFx {
         }
     }
 
-    // Space bending in a sphere: mode 0 ripple, 1 swirl, 2 lens, 3 whole screen.
+    // Space bending in a sphere: mode 0 ripple, 1 swirl, 2 lens, 3 whole screen, 4 whirl around the outside only.
     // follow/seguir keep it on an entity (lifted by up); otherwise it stays at pos.
     public record Warp(Vec3 pos, float radius, float strength, float speed, int mode, Vec3 axis, float[] tint, float tintAmount, long start, int life,
             int follow, String seguir, float up) {

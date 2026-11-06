@@ -149,7 +149,7 @@ public final class AzulRenderer {
 
     // Moving (following, circling, shot): a few thin white lines of wind streaming past it and off its back, longer the
     // faster it goes; each one is redrawn every few ticks somewhere else around it. Kept minimal on purpose.
-    private static void wind(Vector3f at, Vec3 step, float r, float age, int seed) {
+    static void wind(Vector3f at, Vec3 step, float r, float age, int seed) {
         float speed = (float) step.length();
         Vector3f dir = step.normalize().toVector3f();
         Vector3f side = new Vector3f(dir).cross(Math.abs(dir.y) > 0.9f ? new Vector3f(1, 0, 0) : new Vector3f(0, 1, 0)).normalize();
