@@ -44,7 +44,7 @@
     "seguir": 0.035,
     "amortecer": 0.82,
     "velocidadeMax": 1.6,
-    "alcanceMin": 10,
+    "alcanceMin": 5,
     "alcanceMax": 70,
     "passoScroll": 3
   },
@@ -64,6 +64,15 @@
     "raioExplosao": 2.5,
     "forcaExplosao": 3,
     "empurrao": 1.6
+  },
+  "singularidade": {
+    "cargaMin": 0.5,
+    "raio": 10,
+    "tentativasPorTick": 220,
+    "maxBlocosPorTick": 45,
+    "curva": 2.2,
+    "contato": 0.6,
+    "particulasACada": 3
   },
   "animacao": {
     "transicaoTicks": 3,
@@ -332,6 +341,18 @@
       "volume": 2.0,
       "pitch": 0.6,
       "pitchFim": 0.6,
+      "onde": "orbe"
+    },
+    {
+      "nome": "Singularidade",
+      "som": "minecraft:block.sculk.break",
+      "momento": "singularidade",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.0,
+      "pitch": 0.5,
+      "pitchFim": 0.5,
       "onde": "orbe"
     }
   ],
@@ -643,6 +664,22 @@
       "cor": "#9fdcff",
       "vidaTicks": 16,
       "alcance": 96
+    },
+    {
+      "tipo": "tremor",
+      "momento": "singularidade",
+      "forca": 0.18,
+      "vidaTicks": 4,
+      "alcance": 24
+    },
+    {
+      "tipo": "anel",
+      "momento": "singularidade",
+      "raio": 2.4,
+      "tamanho": 0.12,
+      "cor": "#bfeaff",
+      "vidaTicks": 6,
+      "alcance": 64
     }
   ],
   "despertado": {
