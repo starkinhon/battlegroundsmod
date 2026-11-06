@@ -102,7 +102,7 @@ public final class Azul {
             boolean cut = now.interrupts != interrupts;
             if (casterGone || cut && (phase[0] == Phase.DECIDE || phase[0] == Phase.CHARGE)) {
                 // Cut short: it fades without imploding.
-                send(level, id, GONE, orb[0], radius[0], charge[0], style);
+                send(level, id, GONE, orb[0], radius[0], (float) charge[0], style);
                 release(torn);
                 PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new ModPayloads.PlaySkillAnimation(caster.getId(), "", false));
                 return true;
