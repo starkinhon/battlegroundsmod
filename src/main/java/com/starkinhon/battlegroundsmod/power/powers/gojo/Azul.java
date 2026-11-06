@@ -43,7 +43,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 // then implodes. The orb is drawn on the clients (client/fx/AzulRenderer) from what is sent here every tick.
 // While the held one is out, Z again (PowerLogic sends it here, see press): a tap parks it where it is, or sends a parked
 // one back to following; held while it follows, it is shot towards the aim, chases whoever is there and explodes; held
-// while parked, it circles him (orbita) pulling everything until let go. The mouse wheel moves it away or closer
+// while parked, it circles him (orbita) pulling everything, on its own until it ends. The mouse wheel moves it away or closer
 // (scroll, sent by the client while it is told the orb is under control).
 public final class Azul {
     public static final String SKILL = AzulSpec.SKILL;
@@ -243,7 +243,11 @@ public final class Azul {
                         phase[0] = Phase.PARKED;
                     }
                     // Z again: a tap parks it or sends it back to following; held, it is shot (following) or circles
-                    // him (parked) until let go.
+                    // him (parked), on its own until it ends.
+                    if (control.pressed && phase[0] == Phase.ORBIT) {
+                        // Circling, it goes on by itself until it ends: Z does nothing to it any more.
+                        control.pressed = false;
+                    }
                     if (control.pressed) {
                         control.pressed = false;
                         // A press while a hold is already being timed (the key repeating) doesn't restart it.
@@ -254,12 +258,8 @@ public final class Azul {
                     if (control.holdStart >= 0 && phase[0] != Phase.SHOT) {
                         boolean down = now.abilityHeld;
                         if (!down) {
-                            if (phase[0] == Phase.ORBIT) {
-                                phase[0] = Phase.PARKED;
-                                velocity[0] = Vec3.ZERO;
-                                SkillSounds.play(level, spec.sons(), "travarControle", 0, 0, where, screen);
-                                Fx.effects(level, SKILL, awakened, "travarControle", orb[0], Vec3.ZERO);
-                            } else if (age - control.holdStart < decide) {
+                            // Letting go while it circles changes nothing: it keeps circling until it ends.
+                            if (phase[0] != Phase.ORBIT && age - control.holdStart < decide) {
                                 boolean park = phase[0] == Phase.FOLLOW;
                                 phase[0] = park ? Phase.PARKED : Phase.FOLLOW;
                                 velocity[0] = Vec3.ZERO;

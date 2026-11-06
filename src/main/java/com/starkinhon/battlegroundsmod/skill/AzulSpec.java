@@ -47,7 +47,7 @@ public record AzulSpec(String skill, String nome, Tempo tempo, Visual visual, Or
     }
 
     // While the held one is out, Z again: a tap parks it where it is (or sends it back to following the aim); held while it
-    // follows the aim it is shot (tiro); held while parked it circles him (orbita) until let go.
+    // follows the aim it is shot (tiro); held while parked it starts circling him (orbita), on its own until it ends (Z no longer changes it).
     // seguir: how hard it is pulled towards the aim each tick, amortecer: how much of its speed it keeps (the lag and the
     // slowness when following), velocidadeMax: blocks per tick at most. The mouse wheel moves it away or closer by
     // passoScroll blocks, between alcanceMin and alcanceMax (the hotbar doesn't scroll meanwhile).
