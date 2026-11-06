@@ -191,6 +191,20 @@ public final class Roxo {
             if (b >= range) {
                 SkillSounds.play(level, spec.sons(), "sumir", 0, 0, where, screen);
                 Fx.effects(level, SKILL, awakened, "sumir", pb, dir);
+                // Where it ends it blows a crater (Stark: very destructive).
+                double crater = Mth.lerp(c, tiro.raioCratera(), tiro.raioCrateraMax());
+                if (crater > 0) {
+                    for (LivingEntity e : Combat.inRadius(level, pb, crater, caster)) {
+                        if (hitIds.add(e.getId())) {
+                            Combat.hurtMagic(caster, e, damage * 0.6f);
+                        }
+                        Combat.pushFrom(e, pb, 2.5, 0.8);
+                    }
+                    if (breaks) {
+                        int ticks = Math.max(1, tiro.crateraTicks());
+                        Tasks.repeat(ticks, tick -> eraseShell(level, pb, crater * tick / ticks - 1, crater * (tick + 1) / ticks));
+                    }
+                }
                 return true;
             }
             return false;

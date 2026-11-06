@@ -29,7 +29,10 @@
     "danoMax": 70,
     "blocosPorTick": 6000,
     "raioDestruicao": 8,
-    "raioDestruicaoMax": 11
+    "raioDestruicaoMax": 11,
+    "raioCratera": 14,
+    "raioCrateraMax": 22,
+    "crateraTicks": 8
   },
   "irrestrito": {
     "cargaMin": 0.95,
@@ -316,6 +319,18 @@
       "volume": 8.0,
       "pitch": 0.4,
       "pitchFim": 0.4,
+      "onde": "orbe"
+    },
+    {
+      "nome": "Cratera",
+      "som": "minecraft:entity.generic.explode",
+      "momento": "sumir",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 4.0,
+      "pitch": 0.5,
+      "pitchFim": 0.5,
       "onde": "orbe"
     }
   ],
@@ -664,6 +679,32 @@
       "forca": 0.6,
       "vidaTicks": 90,
       "alcance": 200
+    },
+    {
+      "tipo": "tremor",
+      "momento": "sumir",
+      "forca": 1.6,
+      "vidaTicks": 24,
+      "alcance": 96
+    },
+    {
+      "tipo": "anelChao",
+      "momento": "sumir",
+      "raio": 30,
+      "tamanho": 2,
+      "cor": "#a040ff",
+      "vidaTicks": 24,
+      "alcance": 160
+    },
+    {
+      "tipo": "fumaca",
+      "momento": "sumir",
+      "quantidade": 20,
+      "raio": 8,
+      "tamanho": 5,
+      "cor": "#3a2a3a",
+      "vidaTicks": 60,
+      "alcance": 160
     }
   ],
   "despertado": {
