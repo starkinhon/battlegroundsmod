@@ -56,6 +56,13 @@ public final class ScreenFx {
     private static final net.minecraft.resources.ResourceLocation VIGNETTE = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(
             com.starkinhon.battlegroundsmod.BattlegroundsMod.MODID, "textures/fx/vignette.png");
     private static final List<Warp> WARPS = new ArrayList<>();
+    // Bending kept on by a renderer adding it again every frame (the Blue): no envelope and no WARP_SCALE, the same
+    // numbers as the Skill Visualizer. Cleared at the start of each frame.
+    private record Held(Vec3 pos, float radius, float strength, int mode, Vec3 axis, float age) {
+    }
+
+    private static final List<Held> HELD = new ArrayList<>();
+    private static long heldAt = -10;
     // Kept on by someone calling every tick (Gojo's tunnel of speed, the slow zoom of those caught in the void).
     private static float holdBlur;
     private static Vec3 holdBlurPos = Vec3.ZERO;
@@ -106,6 +113,18 @@ public final class ScreenFx {
         WARPS.add(new Warp(pos, radius, strength * WARP_SCALE, speed, mode, axis, rgb(tint), tintAmount, ticks, Math.max(1, life), follow, seguir, up));
     }
 
+    // Bending for this frame only (call it from a renderer every frame). age in seconds (moves the swirl).
+    public static void holdWarp(Vec3 pos, float radius, float strength, int mode, Vec3 axis, float age) {
+        if (HELD.size() < MAX_WARPS && strength > 0.001f) {
+            HELD.add(new Held(pos, radius, strength, mode, axis, age));
+            heldAt = ticks;
+        }
+    }
+
+    private static boolean warping() {
+        return !WARPS.isEmpty() || !HELD.isEmpty();
+    }
+
     // Orange edges of the screen (being burned): comes in fast, holds, fades over the last part.
     public static void vignette(int color, float strength, int life) {
         float a = Mth.clamp(strength, 0, 1);
@@ -143,11 +162,12 @@ public final class ScreenFx {
     }
 
     static boolean needsScene() {
-        return Realismo.active() || impact != null || !WARPS.isEmpty() || radial != null && radial.k(ticks) > 0 || heldBlur() > 0;
+        return Realismo.active() || impact != null || !WARPS.isEmpty() || ticks - heldAt <= 1 || radial != null && radial.k(ticks) > 0 || heldBlur() > 0;
     }
 
     // The level's camera for this frame, so world positions can be found on screen later (also from the GUI).
     static void capture(RenderLevelStageEvent event) {
+        HELD.clear();
         VIEW.set(event.getModelViewMatrix());
         PROJ.set(event.getProjectionMatrix());
         camera = event.getCamera().getPosition();
@@ -160,7 +180,7 @@ public final class ScreenFx {
             return;
         }
         double now = ticks + levelPartial;
-        boolean warp = FxConfig.on(FxConfig.DISTORTION) && !WARPS.isEmpty();
+        boolean warp = FxConfig.on(FxConfig.DISTORTION) && warping();
         float blur = FxConfig.on(FxConfig.RADIAL_BLUR) ? blurAt(now) : 0;
         boolean real = Realismo.active();
         if (!warp && blur <= 0 && !real) {
@@ -187,7 +207,7 @@ public final class ScreenFx {
         if (FxShaders.ready()) {
             int mode = impactMode();
             boolean flat = FxShaders.flat();
-            boolean warp = flat && FxConfig.on(FxConfig.DISTORTION) && !WARPS.isEmpty();
+            boolean warp = flat && FxConfig.on(FxConfig.DISTORTION) && warping();
             float blur = flat && FxConfig.on(FxConfig.RADIAL_BLUR) ? blurAt(now) : 0;
             // (with a shader pack the volumes go over its finished picture, lit by the same sun and sky)
             boolean real = flat && Realismo.active();
@@ -314,6 +334,20 @@ public final class ScreenFx {
                     w.strength() * env, age, w.speed(), w.mode(),
                     axis.x, axis.y, axis.z, 0,
                     w.tint()[0], w.tint()[1], w.tint()[2], w.tintAmount() * env);
+            shader.safeGetUniform("Src" + count).set(m);
+            count++;
+        }
+        for (Held w : HELD) {
+            if (count >= MAX_WARPS) {
+                break;
+            }
+            Vector3f c = VIEW.transformPosition(w.pos().subtract(camera).toVector3f(), new Vector3f());
+            Vector3f axis = VIEW.transformDirection(w.axis().toVector3f(), new Vector3f());
+            Matrix4f m = new Matrix4f(
+                    c.x, c.y, c.z, w.radius(),
+                    w.strength(), w.age(), 6, w.mode(),
+                    axis.x, axis.y, axis.z, 0,
+                    1, 1, 1, 0);
             shader.safeGetUniform("Src" + count).set(m);
             count++;
         }

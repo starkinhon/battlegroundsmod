@@ -28,6 +28,8 @@ final class FxDraw {
     static final int ORB = 16;
     // Aizen's cartoon reiatsu (souls_vfx.fsh shape 17).
     static final int AURA = 17;
+    // Gojo's Blue (souls_vfx.fsh shape 18); param = AzulRenderer.param(style, charge).
+    static final int AZUL = 18;
 
     private static VertexConsumer additive;
     private static VertexConsumer alpha;

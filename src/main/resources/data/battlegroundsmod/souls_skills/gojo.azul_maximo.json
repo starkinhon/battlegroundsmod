@@ -1,0 +1,36 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "gojo.azul_maximo",
+  "nome": "Azul (segurando)",
+  "tempo": {
+    "atrasoTicks": 600,
+    "duracaoTicks": 1
+  },
+  "animacao": {
+    "transicaoTicks": 6,
+    "preparo": {
+      "cabeca": 5,
+      "tronco": 4,
+      "bracoDir": {
+        "frente": 75,
+        "abrir": -22
+      },
+      "bracoEsq": {
+        "frente": 75,
+        "abrir": 22
+      }
+    },
+    "sopro": {
+      "cabeca": 0,
+      "tronco": 10,
+      "bracoDir": {
+        "frente": 100,
+        "abrir": -8
+      },
+      "bracoEsq": {
+        "frente": 100,
+        "abrir": 8
+      }
+    }
+  }
+}

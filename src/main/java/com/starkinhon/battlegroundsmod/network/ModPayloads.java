@@ -596,6 +596,25 @@ public final class ModPayloads {
         }
     }
 
+    // Server -> client: Gojo's Blue (power/powers/gojo/Azul), every tick while it lives. mode 0 alive, 1 imploded (the
+    // held one's end), 2 gone (the tap's end, or cut short). charge 0 to 1 (0 the tap); style: the shader's look (2 realism).
+    public record Azul(int id, int mode, Vec3 pos, float radius, float charge, int style) implements CustomPacketPayload {
+        public static final Type<Azul> TYPE = payloadType("azul");
+        public static final StreamCodec<ByteBuf, Azul> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, Azul::id,
+                ByteBufCodecs.VAR_INT, Azul::mode,
+                VEC3, Azul::pos,
+                ByteBufCodecs.FLOAT, Azul::radius,
+                ByteBufCodecs.FLOAT, Azul::charge,
+                ByteBufCodecs.VAR_INT, Azul::style,
+                Azul::new);
+
+        @Override
+        public Type<Azul> type() {
+            return TYPE;
+        }
+    }
+
     public record EnergyBall(int id, int mode, Vec3 pos, float radius, float grow, boolean small) implements CustomPacketPayload {
         public static final Type<EnergyBall> TYPE = payloadType("energy_ball");
         public static final StreamCodec<ByteBuf, EnergyBall> STREAM_CODEC = StreamCodec.composite(
@@ -848,6 +867,8 @@ public final class ModPayloads {
                 () -> ClientHooks.hakaiShot(payload.start(), payload.velocity(), payload.ticks(), payload.awakened())));
         registrar.playToClient(BlackBox.TYPE, BlackBox.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.blackBox(payload.id(), payload.mode(), payload.base(), payload.size(), payload.awakened())));
+        registrar.playToClient(Azul.TYPE, Azul.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.azul(payload.id(), payload.mode(), payload.pos(), payload.radius(), payload.charge(), payload.style())));
         registrar.playToClient(AizenFx.TYPE, AizenFx.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.aizenFx(payload.kind(), payload.entityId(), payload.pos(), payload.dir(), payload.a(), payload.b())));
         registrar.playToClient(EnergyBall.TYPE, EnergyBall.STREAM_CODEC, (payload, context) -> context.enqueueWork(
