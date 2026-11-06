@@ -119,7 +119,7 @@ public final class Roxo {
                 Fx.effects(level, SKILL, awakened, "formar", heldAt(caster, spec, 0), Combat.flatLook(caster));
             }
             if (released[0]) {
-                launch(level, caster, id, spec, awakened, charge[0], aim(caster), screen);
+                launch(level, caster, id, spec, awakened, charge[0], aim(caster, heldAt(caster, spec, charge[0]), spec.tiro().alcance()), screen);
                 return true;
             }
             if (!growing[0]) {
@@ -143,7 +143,9 @@ public final class Roxo {
         double v0 = Math.max(0.1, tiro.velocidade());
         double accel = Math.max(0, tiro.aceleracao());
         double vMax = Math.max(v0, tiro.velocidadeMax());
-        double erase = radius * Math.max(0.5, tiro.apagar());
+        // The tunnel it erases is much wider than the ball (Stark: about twice the full Red's).
+        double start = radius * Math.max(0.5, tiro.apagar());
+        double erase = Math.max(radius * Math.max(0.5, tiro.apagar()), Mth.lerp(c, tiro.raioDestruicao(), tiro.raioDestruicaoMax()));
         float damage = Mth.lerp((float) c, tiro.dano(), tiro.danoMax());
         boolean breaks = BlockRules.canBreak(level);
         double reach = Math.max(1, tiro.alcance());
@@ -175,7 +177,10 @@ public final class Roxo {
             Vec3 pa = from.add(dir.scale(a));
             Vec3 pb = from.add(dir.scale(b));
             for (LivingEntity e : Combat.alongLine(level, pa, pb, erase, caster)) {
-                if (!hitIds.add(e.getId())) {
+                // The same cone as the tunnel near where it was launched.
+                Vec3 rel = Combat.center(e).subtract(from);
+                double along = Math.max(0, rel.dot(dir));
+                if (rel.subtract(dir.scale(along)).length() > Math.min(erase, start + along * 0.9) + e.getBbWidth() / 2 || !hitIds.add(e.getId())) {
                     continue;
                 }
                 Combat.hurtMagic(caster, e, damage);
@@ -185,7 +190,7 @@ public final class Roxo {
                 SkillSounds.play(level, spec.sons(), "apagarAlvo", 0, 0, onde -> Combat.center(e), screen);
             }
             if (breaks) {
-                eraseSweep(level, pa, pb, erase, Math.max(1, tiro.blocosPorTick()));
+                eraseSweep(level, pa, pb, erase, Math.max(1, tiro.blocosPorTick()), from, dir, start);
             }
             if (b >= range) {
                 SkillSounds.play(level, spec.sons(), "sumir", 0, 0, where, screen);
@@ -299,8 +304,9 @@ public final class Roxo {
         return Math.max(0.05, spec.orbe().raio()) * Math.max(1, spec.orbe().escalaMax());
     }
 
-    // Erases the blocks within radius of the segment a-b (its edge a little ragged), up to budget.
-    private static void eraseSweep(ServerLevel level, Vec3 a, Vec3 b, double radius, int budget) {
+    // Erases the blocks within radius of the segment a-b (its edge a little ragged), up to budget. Near where it was
+    // launched the tunnel opens like a cone from the ball's own size (start), so the ground he stands on stays.
+    private static void eraseSweep(ServerLevel level, Vec3 a, Vec3 b, double radius, int budget, Vec3 origin, Vec3 dir, double start) {
         Vec3 ab = b.subtract(a);
         double len2 = Math.max(1.0E-6, ab.lengthSqr());
         int minX = Mth.floor(Math.min(a.x, b.x) - radius), maxX = Mth.floor(Math.max(a.x, b.x) + radius);
@@ -312,7 +318,8 @@ public final class Roxo {
                 for (int z = minZ; z <= maxZ && budget > 0; z++) {
                     Vec3 mid = new Vec3(x + 0.5, y + 0.5, z + 0.5);
                     double t = Mth.clamp(mid.subtract(a).dot(ab) / len2, 0, 1);
-                    double edge = radius * (0.92 + 0.16 * hash(x, y, z));
+                    double along = Math.max(0, mid.subtract(origin).dot(dir));
+                    double edge = Math.min(radius, start + along * 0.9) * (0.92 + 0.16 * hash(x, y, z));
                     if (mid.distanceToSqr(a.add(ab.scale(t))) > edge * edge) {
                         continue;
                     }
@@ -443,12 +450,24 @@ public final class Roxo {
         return s1;
     }
 
-    // Players aim with their eyes; bosses at their target.
-    private static Vec3 aim(LivingEntity caster) {
+    // From where it is held straight to what is under the crosshair (the first block or body on the line of sight, else
+    // the far end of its range), so it goes exactly where the player aims (Stark: very easy to aim). Bosses: their target.
+    private static Vec3 aim(LivingEntity caster, Vec3 from, double range) {
+        Vec3 point;
         if (caster instanceof Mob mob && mob.getTarget() != null && mob.getTarget().isAlive()) {
-            return Combat.center(mob.getTarget()).subtract(caster.getEyePosition()).normalize();
+            point = Combat.center(mob.getTarget());
+        } else {
+            Vec3 eye = caster.getEyePosition();
+            Vec3 far = eye.add(caster.getLookAngle().scale(range));
+            var hit = caster.level().clip(new ClipContext(eye, far, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, caster));
+            point = hit.getType() != HitResult.Type.MISS ? hit.getLocation() : far;
+            LivingEntity target = Combat.raycastTarget(caster, Math.min(range, point.distanceTo(eye)));
+            if (target != null) {
+                point = Combat.center(target);
+            }
         }
-        return caster.getLookAngle();
+        Vec3 dir = point.subtract(from);
+        return dir.lengthSqr() > 1.0 ? dir.normalize() : caster.getLookAngle();
     }
 
     private static double smooth(double x) {

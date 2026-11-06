@@ -254,13 +254,16 @@ public final class RoxoRenderer {
             float m = smooth((t - S1 - 8) / (MISTURAR - 2));
             Vec3 a = ball(owner, partial, t, -1);
             Vec3 b = ball(owner, partial, t, 1);
-            Vec3 step = a.subtract(ball(owner, partial, Math.max(0, t - 1), -1));
-            drawRoxo(rel(a, camera), rel(b, camera), RAIO, t, seed, m, spawn, step.lengthSqr() > 0.0004 ? step.scale(8) : null, false, false, null);
+            // Each sphere's own way (they come round on opposite sides), so each one's wind streams off its own back.
+            Vec3 stepA = a.subtract(ball(owner, partial, Math.max(0, t - 1), -1));
+            Vec3 stepB = b.subtract(ball(owner, partial, Math.max(0, t - 1), 1));
+            drawRoxo(rel(a, camera), rel(b, camera), RAIO, t, seed, m, spawn, stepA.lengthSqr() > 0.0004 ? stepA.scale(8) : null,
+                    stepB.lengthSqr() > 0.0004 ? stepB.scale(8) : null, false, false, null);
         } else {
             float c = o.endAt >= 0 ? o.charge : Mth.lerp(partial, o.prevCharge, o.charge);
             float r = RAIO * 1.1f * (1 + (ESCALA_MAX - 1) * smooth(c));
             Vector3f at = rel(heldAt(owner, partial, r), camera);
-            drawRoxo(at, at, r, t, seed, 1, spawn, null, false, false, null);
+            drawRoxo(at, at, r, t, seed, 1, spawn, null, null, false, false, null);
         }
     }
 
@@ -324,7 +327,7 @@ public final class RoxoRenderer {
             FxDraw.ribbon(new Vector3f(fwd).mul(-back).add(at), at, R * 1.7f, FxDraw.BEAM, 0.1f, PURPLE, 0.3f * fade, true);
             FxDraw.ribbon(new Vector3f(fwd).mul(-back * 0.6f).add(at), at, R * 0.4f, FxDraw.BEAM, 0.7f, PALE, 0.35f * fade, true);
             Vec3 step = s.dir().scale(age < end ? s.speedAt(age) : 0);
-            drawRoxo(at, at, R, age + S2, seed, 1, fade, step, true, false, atWorld);
+            drawRoxo(at, at, R, age + S2, seed, 1, fade, step, null, true, false, atWorld);
             // Light leaking out of it (Stark's reference): wide rays in its color, spinning fast, two layers turning
             // opposite ways.
             FxDraw.billboard(at, R * 13, age * 0.42f, FxDraw.ROXO_RAYS, 0, PURPLE, 0.85f * fade, true);
@@ -451,7 +454,7 @@ public final class RoxoRenderer {
         float r = i.radiusAt(age);
         float boomAge = age - i.boom();
         if (r > 0 && boomAge < 4) {
-            drawRoxo(a, a, r, age, 3011, 1, 1, null, true, true, i.center());
+            drawRoxo(a, a, r, age, 3011, 1, 1, null, null, true, true, i.center());
             bolts(a, r, age, 3013, 0.9f, 10);
         }
         if (boomAge < 0) {
@@ -471,7 +474,7 @@ public final class RoxoRenderer {
             FxDraw.billboard(new Vector3f(look).mul(0.6f), 4, 0, FxDraw.SOLID, 0, PURPLE, 0.32f * k, false);
             FxDraw.billboard(new Vector3f(look).mul(0.6f), 4, 0, FxDraw.SOLID, 0, LILAC, 0.18f * k, true);
         } else {
-            drawRoxo(a, a, big, age, 3017, 1, fade, null, false, true, i.center());
+            drawRoxo(a, a, big, age, 3017, 1, fade, null, null, false, true, i.center());
         }
         FxDraw.billboard(a, b * 2.6f, 0, FxDraw.SOFT, 0, PURPLE, 0.35f * fade, true);
         float[] wall = FxDraw.mix(DUST, PURPLE, 0.35f);
@@ -525,10 +528,10 @@ public final class RoxoRenderer {
     // ---- the Purple itself (the Visualizer's drawRoxo) ----
 
     // The two spheres (a the Red, b the Blue) and the purple born between them; m 0 to 1 = how far they mixed. With
-    // a = b it is the formed Purple. step: how far it moved this tick, scaled (wind streaming past), or null. voo: in
+    // a = b it is the formed Purple. step: how far it moved this tick, scaled (wind streaming past), or null; stepB the Blue's own (null: the same). voo: in
     // flight (the twisted space round it, only then and faint). noRim: the Unlimited one, no contour. world: its middle
     // in the world (for the warp), needed only in flight.
-    private static void drawRoxo(Vector3f a, Vector3f b, float radius, float age, int seed, float m, float spawn, Vec3 step, boolean voo,
+    private static void drawRoxo(Vector3f a, Vector3f b, float radius, float age, int seed, float m, float spawn, Vec3 step, Vec3 stepB, boolean voo,
             boolean noRim, Vec3 world) {
         float r = radius * spawn;
         if (r < 0.01f) {
@@ -541,9 +544,11 @@ public final class RoxoRenderer {
         Vector3f eye = mid.lengthSquared() > 1.0E-6f ? new Vector3f(mid).normalize() : new Vector3f(look);
         if (step != null) {
             AzulRenderer.wind(a, step, r, age, seed);
-            if (a.distanceSquared(b) > 1.0E-4f) {
-                AzulRenderer.wind(b, step, r, age, seed + 17);
-            }
+        }
+        // The Blue streams off its own way (stepB), or the Red's when they move together.
+        Vec3 windB = stepB != null ? stepB : step;
+        if (windB != null && a.distanceSquared(b) > 1.0E-4f) {
+            AzulRenderer.wind(b, windB, r, age, seed + 17);
         }
         // Each sphere's glow (goes to the bloom), going out as they mix.
         FxDraw.billboard(a, r * 4.5f, 0, FxDraw.SOFT, 0, RED, 0.3f * (1 - m) * spawn, true);

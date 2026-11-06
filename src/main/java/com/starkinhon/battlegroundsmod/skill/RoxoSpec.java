@@ -32,9 +32,11 @@ public record RoxoSpec(String skill, String nome, Orbe orbe, Formar formar, Segu
 
     // velocidade: blocks per tick when launched, growing by aceleracao each tick up to velocidadeMax; alcance: how far it
     // goes; apagar: it erases everything within its radius times this; dano / danoMax: to whoever it erases (base size
-    // to fully grown); blocosPorTick: at most this many blocks erased each tick.
+    // to fully grown); blocosPorTick: at most this many blocks erased each tick. raioDestruicao / raioDestruicaoMax: the
+    // tunnel it erases through the world and the targets it takes, base size to fully grown (Stark: about twice the full
+    // Red's; the ball itself stays the size it looks).
     public record Tiro(double velocidade, double aceleracao, double velocidadeMax, double alcance, double apagar, float dano, float danoMax,
-            int blocosPorTick) {
+            int blocosPorTick, double raioDestruicao, double raioDestruicaoMax) {
     }
 
     // cargaMin: the Red and the parked Blue both need at least this charge. implodirTicks: the two imploding into one;
