@@ -188,6 +188,8 @@
   "ability.battlegroundsmod.strongest.1": "Red",
   "ability.battlegroundsmod.strongest.2": "Purple",
   "ability.battlegroundsmod.strongest.3": "Domain Expansion: Infinite Void",
+  "ability.battlegroundsmod.strongest.5": "Blue (Mix)",
+  "ability.battlegroundsmod.strongest.5.desc": "Shift + Z: the same Blue, drawn as a glass ball with white flames inside.",
   "ability.battlegroundsmod.strongest.0.desc": "Tap: a blue orb flies to where you aim, locks there and pulls enemies in for 6 s. Hold: it grows up to 5x in your hands; let go and it follows your aim for 10 s, pulling far harder and tearing blocks out of the ground.",
   "ability.battlegroundsmod.strongest.1.desc": "Coming soon.",
   "ability.battlegroundsmod.strongest.2.desc": "Coming soon.",

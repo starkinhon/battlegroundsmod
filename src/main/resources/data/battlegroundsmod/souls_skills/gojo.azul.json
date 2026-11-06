@@ -7,7 +7,8 @@
     "duracaoTicks": 10
   },
   "visual": {
-    "estilo": 2
+    "estilo": 2,
+    "estiloShift": 3
   },
   "orbe": {
     "raio": 0.4,

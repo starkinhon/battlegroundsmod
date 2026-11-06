@@ -9,7 +9,7 @@ import java.util.List;
 // pulls much harder, tears blocks out of the ground and crushes them in the middle (only with the gamerule
 // soulsBlockDestruction), bends the space around it, then implodes. Charged less than full, everything is in between.
 // Held longer than segurado.decidirTicks counts as held. visual.estilo: the orb's look in souls_vfx shape 18 (0 mod glow,
-// 1 cartoon, 2 realism, 3 mix/glass).
+// 1 cartoon, 2 realism, 3 mix/glass); Shift + Z is the same Blue with visual.estiloShift.
 // Timeline: "uso" (press), "lancar" (the tap's orb leaves), "travar" (it locks), "fim" (the tap's orb is gone),
 // "carregar" (held), "soltar" (let go), "esmagar" (a block crushed), "fimForte" (the held one implodes).
 // The "tempo" and "animacao" blocks are also read as an AnimationSpec (the aim and push of the hand).
@@ -18,7 +18,8 @@ public record AzulSpec(String skill, String nome, Tempo tempo, Visual visual, Or
     public record Tempo(int atrasoTicks, int duracaoTicks) {
     }
 
-    public record Visual(int estilo) {
+    // estiloShift: the look of Shift + Z (the same skill otherwise).
+    public record Visual(int estilo, Integer estiloShift) {
     }
 
     // raio: the tap's orb (blocks); escalaMax: how many times bigger fully charged.
