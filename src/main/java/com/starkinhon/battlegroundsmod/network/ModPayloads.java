@@ -618,13 +618,15 @@ public final class ModPayloads {
     // Server -> client: Gojo's Red (power/powers/gojo/Vermelho), every tick while it sits at owner's fingertip.
     // mode 0 alive, 1 fired (it bursts into the blast), 2 gone (cut short, it fades). charge 0 to 1. The client places it
     // on the owner's hand itself, so it never lags behind him.
-    public record Vermelho(int id, int owner, int mode, float charge) implements CustomPacketPayload {
+    // flip: he hangs upside down (Shift + X).
+    public record Vermelho(int id, int owner, int mode, float charge, boolean flip) implements CustomPacketPayload {
         public static final Type<Vermelho> TYPE = payloadType("vermelho");
         public static final StreamCodec<ByteBuf, Vermelho> STREAM_CODEC = StreamCodec.composite(
                 ByteBufCodecs.VAR_INT, Vermelho::id,
                 ByteBufCodecs.VAR_INT, Vermelho::owner,
                 ByteBufCodecs.VAR_INT, Vermelho::mode,
                 ByteBufCodecs.FLOAT, Vermelho::charge,
+                ByteBufCodecs.BOOL, Vermelho::flip,
                 Vermelho::new);
 
         @Override
@@ -939,7 +941,7 @@ public final class ModPayloads {
         registrar.playToClient(Azul.TYPE, Azul.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.azul(payload.id(), payload.mode(), payload.pos(), payload.radius(), payload.charge(), payload.style())));
         registrar.playToClient(Vermelho.TYPE, Vermelho.STREAM_CODEC, (payload, context) -> context.enqueueWork(
-                () -> ClientHooks.vermelho(payload.id(), payload.owner(), payload.mode(), payload.charge())));
+                () -> ClientHooks.vermelho(payload.id(), payload.owner(), payload.mode(), payload.charge(), payload.flip())));
         registrar.playToClient(VermelhoBlast.TYPE, VermelhoBlast.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.vermelhoBlast(payload.from(), payload.dir(), payload.range(), payload.radius(), payload.speed(), payload.charge())));
         registrar.playToClient(AizenFx.TYPE, AizenFx.STREAM_CODEC, (payload, context) -> context.enqueueWork(

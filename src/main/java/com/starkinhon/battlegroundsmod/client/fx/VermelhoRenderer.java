@@ -15,13 +15,15 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
 
 // Gojo's Red (power/powers/gojo/Vermelho), drawn the same way as the Skill Visualizer's drawVermelho (aba
-// "Gojo · Vermelho", the version Stark approved: bright core, radius 0.093). The orb (souls_vfx shape 20) sits at his
+// "Gojo · Vermelho", the version Stark approved: bright core; in the game 2x smaller, radius 0.0465). The orb (souls_vfx shape 20) sits at his
 // fingertip. From the start white-hot sparks leak out of it in curved dotted threads (the Visualizer's vmSparks); past
 // half charge its tails (shape 19, strips with u along them) form one by one, thin and faint with a lit tip, and spin
 // around it, never leaving it. Around it a red haze and flakes spin along, and the space bends a little on the orb.
 // The server says it is alive every tick (with its charge); where it is comes from the owner's hand here, so it never
-// lags. Fired, the orb bursts into the blast: a wall of repulsion running straight ahead (a ring of force at its front,
-// a red core fading behind it, speed lines) and, only where it was fired, a shockwave with dust thrown aside in a funnel.
+// lags. Fired, the orb bursts into the blast: a violent shockwave of repulsion running straight ahead (no beam of
+// light: the space bends at its front, thin rings of pressure, speed lines, the dust of the path thrown aside) and,
+// where it was fired, a burst with dust thrown aside in a funnel. Shift + X: he hangs upside down (the Toji scene) while
+// the orb forms and a little after the shot (onRenderPre turns his body).
 public final class VermelhoRenderer {
     private static final float[] DEEP = FxDraw.rgb(0x52000A);
     private static final float[] RED = FxDraw.rgb(0xFF1020);
@@ -29,7 +31,10 @@ public final class VermelhoRenderer {
     private static final float[] PALE = FxDraw.rgb(0xFFD6D8);
 
     // The Visualizer's VERMELHO.
-    private static final float RADIUS = 0.093f;
+    // Half the Visualizer's 0.093 (Stark: the whole Red 2x smaller after testing it).
+    private static final float RADIUS = 0.0465f;
+    // The blast's look against its tunnel's radius (2x smaller too; the tunnel itself keeps its size).
+    private static final float BLAST_LOOK = 0.5f;
     private static final int TAILS = 7;
     private static final int THREADS = 5;
     private static final float SPIN = 0.24f;
@@ -84,8 +89,18 @@ public final class VermelhoRenderer {
     private VermelhoRenderer() {
     }
 
-    public static void orb(int id, int owner, int mode, float charge) {
+    // Upside down (Shift + X): until when, per entity id.
+    private static final Map<Integer, Long> FLIP = new HashMap<>();
+    private static final java.util.Set<Integer> FLIPPED = new java.util.HashSet<>();
+    // How long he stays upside down after the shot, and how long turning back takes.
+    private static final int FLIP_AFTER = 14;
+    private static final float FLIP_BACK = 4;
+
+    public static void orb(int id, int owner, int mode, float charge, boolean flip) {
         long now = ScreenFx.now();
+        if (flip) {
+            FLIP.merge(owner, now + (mode == 1 ? FLIP_AFTER : mode == 0 ? 3 : 0), Long::max);
+        }
         Orb o = ORBS.get(id);
         if (o == null) {
             if (mode == 0) {
@@ -127,6 +142,7 @@ public final class VermelhoRenderer {
     }
 
     public static void clear() {
+        FLIP.clear();
         ORBS.clear();
         DRAWN.clear();
         BLASTS.clear();
@@ -162,6 +178,8 @@ public final class VermelhoRenderer {
             float sparks = smooth(age / 8);
             // The tails only past half charge, forming as it charges on.
             float grow = smooth((charge - TAILS_AT) / (1 - TAILS_AT));
+            // Past half charge the sparks go out: only the tails (Stark).
+            sparks *= 1 - smooth((charge - TAILS_AT) / 0.12f);
             float flash = 0;
             if (o.endAt >= 0) {
                 float e = (float) (now - o.endAt);
@@ -200,26 +218,30 @@ public final class VermelhoRenderer {
     private static void drawBlast(Blast b, Vec3 camera, float age, Vector3f left, Vector3f up) {
         float reach = b.reach();
         float s = Math.min(b.range(), b.speed() * age);
-        float running = age < reach ? 1 : 1 - smooth((age - reach) / BLAST_FADE);
         Vector3f dir = b.dir().toVector3f();
         Vector3f from = b.from().subtract(camera).toVector3f();
         Vector3f front = new Vector3f(dir).mul(s).add(from);
-        float r = b.radius();
+        float r = b.radius() * BLAST_LOOK;
+        float tunnel = b.radius();
         int seed = (int) (b.born() * 131 + (long) (b.from().x * 7));
-        // The red core of the force, bright at first, fading behind the front.
-        float core = running * (1 - smooth(age / (reach + BLAST_FADE)) * 0.6f);
-        FxDraw.ribbon(from, front, r * 1.5f, FxDraw.BEAM, 0.25f, DEEP, 0.4f * core, false);
-        FxDraw.ribbon(from, front, r * 1.1f, FxDraw.BEAM, 0.35f, RED, 0.55f * core, true);
-        FxDraw.ribbon(from, front, r * 0.35f, FxDraw.BEAM, 0.8f, HOT, 0.7f * core, true);
-        // The ring of force at the front, and its glow.
+        Vector3f side = new Vector3f(dir).cross(Math.abs(dir.y) > 0.9f ? new Vector3f(1, 0, 0) : new Vector3f(0, 1, 0)).normalize();
+        Vector3f other = new Vector3f(dir).cross(side).normalize();
+        // No beam of light (Stark): the force itself is a violent shockwave of repulsion running down the path. Its front
+        // bends the space (a ripple and a lens moving with it) and is drawn as a few thin rings of pressure bursting out;
+        // behind it the dust of the path is thrown aside.
         if (age < reach + 2) {
             float o = age < reach ? 1 : 1 - (age - reach) / 2;
-            FxDraw.disk(front, dir, r * 2.6f, FxDraw.RING, 0.22f, RED, 0.85f * o, true);
-            FxDraw.disk(front, dir, r * 1.9f, FxDraw.RING, 0.12f, PALE, 0.6f * o, true);
-            FxDraw.billboard(front, r * 3.2f, 0, FxDraw.SOFT, 0.3f, RED, 0.5f * o, true);
+            Vec3 frontWorld = b.from().add(b.dir().scale(s));
+            ScreenFx.holdWarp(frontWorld, tunnel * 1.3f, 0.7f * o, 0, b.dir(), age / 20);
+            ScreenFx.holdWarp(frontWorld, tunnel * 0.8f, 0.45f * o, 2, b.dir(), age / 20);
+            for (int i = 0; i < 3; i++) {
+                float back = i * r * 0.9f;
+                float k = 1 - i / 3f;
+                Vector3f at = new Vector3f(dir).mul(Math.max(0, s - back)).add(from);
+                FxDraw.disk(at, dir, r * (2.2f + 1.2f * i), FxDraw.RING, 0.08f, PALE, 0.55f * o * k, true);
+                FxDraw.disk(at, dir, r * (2.6f + 1.2f * i), FxDraw.RING, 0.14f, RED, 0.35f * o * k, true);
+            }
             // Speed lines along the tunnel, just behind the front.
-            Vector3f side = new Vector3f(dir).cross(Math.abs(dir.y) > 0.9f ? new Vector3f(1, 0, 0) : new Vector3f(0, 1, 0)).normalize();
-            Vector3f other = new Vector3f(dir).cross(side).normalize();
             for (int k = 0; k < 16; k++) {
                 float a = FxWorld.hash(seed, k, 71) * Mth.TWO_PI;
                 float off = r * (0.3f + 0.8f * FxWorld.hash(seed, k, 72));
@@ -239,9 +261,23 @@ public final class VermelhoRenderer {
             FxDraw.disk(new Vector3f(dir).mul(r * 1.5f * w).add(from), dir, r * (1 + 5 * w) * (1 + b.charge()), FxDraw.RING, 0.3f, RED, 0.6f * o, true);
             FxDraw.billboard(from, r * (2 + 4 * w), 0, FxDraw.SOFT, 0.5f, RED, 0.7f * o, true);
         }
+        // Dust along the whole path, thrown aside as the front passes.
+        int path = Math.min(48, Math.round(b.range() / Math.max(0.5f, tunnel) * 2));
+        for (int k = 0; k < path; k++) {
+            float along = b.range() * FxWorld.hash(seed, k, 91);
+            float t0 = along / Math.max(0.5f, b.speed());
+            float t = (age - t0) / DUST_LIFE;
+            if (t <= 0 || t >= 1) {
+                continue;
+            }
+            float a = FxWorld.hash(seed, k, 92) * Mth.TWO_PI;
+            float out = tunnel * (0.9f + 1.6f * (1 - (float) Math.exp(-(age - t0) / 5)) * (0.6f + 0.6f * FxWorld.hash(seed, k, 93)));
+            Vector3f p = new Vector3f(side).mul(Mth.cos(a) * out).add(new Vector3f(other).mul(Mth.sin(a) * out)).add(new Vector3f(dir).mul(along)).add(from);
+            float o = Mth.sin(Math.min(1, t * 5) * Mth.HALF_PI) * (1 - smooth(t));
+            float size = r * (1.4f + 1.4f * FxWorld.hash(seed, k, 94)) * (0.6f + 0.7f * t);
+            FxDraw.billboard(p, size, FxWorld.hash(seed, k, 95) * Mth.TWO_PI, FxDraw.SMOKE, 0.2f + 0.6f * t, DUST, 0.5f * o, false);
+        }
         if (age < DUST_LIFE) {
-            Vector3f side = new Vector3f(dir).cross(Math.abs(dir.y) > 0.9f ? new Vector3f(1, 0, 0) : new Vector3f(0, 1, 0)).normalize();
-            Vector3f other = new Vector3f(dir).cross(side).normalize();
             float t = age / DUST_LIFE;
             float o = Mth.sin(Math.min(1, t * 4) * Mth.HALF_PI) * (1 - smooth(t));
             int puffs = 10 + Math.round(10 * b.charge());
@@ -254,6 +290,45 @@ public final class VermelhoRenderer {
                 FxDraw.billboard(p, size, FxWorld.hash(seed, k, 85) * Mth.TWO_PI, FxDraw.SMOKE, 0.2f + 0.6f * t, DUST, 0.55f * o, false);
             }
         }
+    }
+
+    // His body upside down, turned around the way he faces, about its middle.
+    public static void onRenderPre(net.neoforged.neoforge.client.event.RenderLivingEvent.Pre<?, ?> event) {
+        if (event.isCanceled() || FLIP.isEmpty()) {
+            return;
+        }
+        LivingEntity entity = event.getEntity();
+        Long until = FLIP.get(entity.getId());
+        if (until == null) {
+            return;
+        }
+        double now = ScreenFx.now() + event.getPartialTick();
+        float k = Mth.clamp((float) ((until + FLIP_BACK - now) / FLIP_BACK), 0, 1);
+        if (k <= 0) {
+            FLIP.remove(entity.getId());
+            return;
+        }
+        float half = entity.getBbHeight() / 2;
+        float yaw = Mth.rotLerp(event.getPartialTick(), entity.yBodyRotO, entity.yBodyRot);
+        com.mojang.blaze3d.vertex.PoseStack pose = event.getPoseStack();
+        pose.pushPose();
+        pose.translate(0, half, 0);
+        pose.mulPose(com.mojang.math.Axis.YP.rotationDegrees(-yaw));
+        pose.mulPose(com.mojang.math.Axis.ZP.rotationDegrees(180 * smooth(k)));
+        pose.mulPose(com.mojang.math.Axis.YP.rotationDegrees(yaw));
+        pose.translate(0, -half, 0);
+        FLIPPED.add(entity.getId());
+    }
+
+    public static void onRenderPost(net.neoforged.neoforge.client.event.RenderLivingEvent.Post<?, ?> event) {
+        if (FLIPPED.remove(event.getEntity().getId())) {
+            event.getPoseStack().popPose();
+        }
+    }
+
+    static boolean flipped(int id) {
+        Long until = FLIP.get(id);
+        return until != null && ScreenFx.now() <= until + 1;
     }
 
     // Drawn after the glow: the orb over the roots of its tails, and the light on top of it.
@@ -285,6 +360,11 @@ public final class VermelhoRenderer {
         // His right, facing forward.
         double rx = -fz, rz = fx;
         double scale = owner.getBbHeight() / 1.8;
+        if (flipped(owner.getId())) {
+            // Upside down, turned about his middle: his right hand is on the other side, low.
+            double half = owner.getBbHeight() / 2;
+            return owner.getPosition(partial).add((fx * 0.55 - rx * 0.36) * scale, 2 * half - 1.5 * scale, (fz * 0.55 - rz * 0.36) * scale);
+        }
         return owner.getPosition(partial).add((fx * 0.55 + rx * 0.36) * scale, 1.5 * scale, (fz * 0.55 + rz * 0.36) * scale);
     }
 
