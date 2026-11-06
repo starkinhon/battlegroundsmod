@@ -183,7 +183,10 @@ public final class Azul {
                 }
                 case FOLLOW -> {
                     if (following[0]) {
-                        orb[0] = orb[0].lerp(followTarget(caster, segurado.mira()), t < 6 ? 0.3 : Mth.clamp(segurado.seguir(), 0, 1));
+                        // The longer it was held, the further out it goes: segurado.mira at the lightest charge, up to
+                        // segurado.miraMax fully charged.
+                        double reach = segurado.miraMax() != null ? Mth.lerp(charge[0], segurado.mira(), segurado.miraMax()) : segurado.mira();
+                        orb[0] = orb[0].lerp(followTarget(caster, reach), t < 6 ? 0.3 : Mth.clamp(segurado.seguir(), 0, 1));
                     }
                     double c = charge[0];
                     pullHeld(level, caster, orb[0], radius[0], baseRadius * scaleMax, c, segurado, age);

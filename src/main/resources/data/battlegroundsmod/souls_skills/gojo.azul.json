@@ -30,6 +30,7 @@
     "maxSegurarTicks": 60,
     "duracaoTicks": 200,
     "mira": 10,
+    "miraMax": 30,
     "seguir": 0.12,
     "raioPuxar": 14,
     "puxar": 0.3,

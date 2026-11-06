@@ -190,7 +190,7 @@
   "ability.battlegroundsmod.strongest.3": "Expansão de Domínio: Vazio Infinito",
   "ability.battlegroundsmod.strongest.5": "Azul (Misto)",
   "ability.battlegroundsmod.strongest.5.desc": "Shift + Z: o mesmo Azul, com o visual de bola de vidro com chamas brancas dentro.",
-  "ability.battlegroundsmod.strongest.0.desc": "Clique: um orbe azul voa até onde você mira, trava lá e puxa os inimigos por 6 s. Segure: ele cresce até 5x nas mãos; solte e ele segue a sua mira por 10 s, puxando muito mais forte e arrancando blocos do chão.",
+  "ability.battlegroundsmod.strongest.0.desc": "Clique: um orbe azul voa até onde você mira, trava lá e puxa os inimigos por 6 s. Segure: ele cresce até 5x nas mãos; solte e ele segue a sua mira por 10 s, mais longe quanto mais você segurou (até 30 blocos), puxando muito mais forte e arrancando blocos do chão.",
   "ability.battlegroundsmod.strongest.1.desc": "Em breve.",
   "ability.battlegroundsmod.strongest.2.desc": "Em breve.",
   "ability.battlegroundsmod.strongest.3.desc": "Faz o selo de mão e expande o domínio: uma esfera preta engole tudo em volta. Lá dentro só existe o vazio, e quem foi pego recebe informação infinita, ficando paralisado até o domínio quebrar.",
