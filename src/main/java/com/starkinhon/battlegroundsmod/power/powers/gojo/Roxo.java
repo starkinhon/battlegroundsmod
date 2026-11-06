@@ -143,7 +143,8 @@ public final class Roxo {
         double v0 = Math.max(0.1, tiro.velocidade());
         double accel = Math.max(0, tiro.aceleracao());
         double vMax = Math.max(v0, tiro.velocidadeMax());
-        double erase = radius * Math.max(0.5, tiro.apagar());
+        // The tunnel it erases is much wider than the ball (Stark: about twice the full Red's).
+        double erase = Math.max(radius * Math.max(0.5, tiro.apagar()), Mth.lerp(c, tiro.raioDestruicao(), tiro.raioDestruicaoMax()));
         float damage = Mth.lerp((float) c, tiro.dano(), tiro.danoMax());
         boolean breaks = BlockRules.canBreak(level);
         double reach = Math.max(1, tiro.alcance());

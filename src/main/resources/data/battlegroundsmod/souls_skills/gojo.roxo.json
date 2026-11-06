@@ -27,7 +27,9 @@
     "apagar": 1.15,
     "dano": 30,
     "danoMax": 70,
-    "blocosPorTick": 3000
+    "blocosPorTick": 6000,
+    "raioDestruicao": 8,
+    "raioDestruicaoMax": 11
   },
   "irrestrito": {
     "cargaMin": 0.95,
