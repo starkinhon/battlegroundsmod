@@ -604,15 +604,17 @@ public final class ModPayloads {
     // id: the caster, the target or a projectile, depending on the kind; a, b, c: the kind's own numbers.
     public record SubFx(int kind, int id, Vec3 pos, Vec3 dir, float a, float b, float c) implements CustomPacketPayload {
         public static final Type<SubFx> TYPE = payloadType("sub_fx");
-        public static final StreamCodec<ByteBuf, SubFx> STREAM_CODEC = StreamCodec.composite(
-                ByteBufCodecs.VAR_INT, SubFx::kind,
-                ByteBufCodecs.VAR_INT, SubFx::id,
-                VEC3, SubFx::pos,
-                VEC3, SubFx::dir,
-                ByteBufCodecs.FLOAT, SubFx::a,
-                ByteBufCodecs.FLOAT, SubFx::b,
-                ByteBufCodecs.FLOAT, SubFx::c,
-                SubFx::new);
+        // Seven fields: one more than StreamCodec.composite takes, so written out by hand.
+        public static final StreamCodec<ByteBuf, SubFx> STREAM_CODEC = StreamCodec.of((buf, p) -> {
+            ByteBufCodecs.VAR_INT.encode(buf, p.kind());
+            ByteBufCodecs.VAR_INT.encode(buf, p.id());
+            VEC3.encode(buf, p.pos());
+            VEC3.encode(buf, p.dir());
+            buf.writeFloat(p.a());
+            buf.writeFloat(p.b());
+            buf.writeFloat(p.c());
+        }, buf -> new SubFx(ByteBufCodecs.VAR_INT.decode(buf), ByteBufCodecs.VAR_INT.decode(buf), VEC3.decode(buf), VEC3.decode(buf),
+                buf.readFloat(), buf.readFloat(), buf.readFloat()));
 
         @Override
         public Type<SubFx> type() {
