@@ -41,6 +41,22 @@ public final class Keybinds {
 
     // Whether the server was last told a skill key is down.
     private static boolean abilityHeld;
+    // Whether each skill key (the 4 slots, then the extra one) was down last tick. Holding a key makes the system repeat
+    // its press (like holding Q drops item after item); only a press of a key that was up counts as a new use, so
+    // holding a key is one use, never many.
+    private static final boolean[] WAS_DOWN = new boolean[5];
+
+    // A real press of the key this tick (not the system repeating it while held). The clicks are always drained.
+    private static boolean pressed(KeyMapping key, int index) {
+        boolean down = key.isDown();
+        boolean wasDown = WAS_DOWN[index];
+        WAS_DOWN[index] = down;
+        boolean clicked = false;
+        while (key.consumeClick()) {
+            clicked = true;
+        }
+        return clicked && !wasDown;
+    }
 
     // The key of a skill slot (a Shift variant uses its normal skill's key).
     public static KeyMapping forSlot(Power power, int slot) {
@@ -64,13 +80,13 @@ public final class Keybinds {
         Power power = ready ? Powers.get(minecraft.player.getData(ModAttachments.POWER).power) : null;
         boolean shift = power != null && !power.shiftSlots().isEmpty() && minecraft.options.keyShift.isDown();
         for (int slot = 0; slot < ABILITIES.size(); slot++) {
-            while (ABILITIES.get(slot).consumeClick()) {
+            if (pressed(ABILITIES.get(slot), slot)) {
                 if (ready) {
                     PacketDistributor.sendToServer(new ModPayloads.UseAbility(power == null ? slot : power.keySlot(slot, shift)));
                 }
             }
         }
-        while (EXTRA_ABILITY.consumeClick()) {
+        if (pressed(EXTRA_ABILITY, 4)) {
             if (ready) {
                 PacketDistributor.sendToServer(new ModPayloads.UseAbility(power == null ? PowerData.SLOT_EXTRA : power.keySlot(4, shift)));
             }

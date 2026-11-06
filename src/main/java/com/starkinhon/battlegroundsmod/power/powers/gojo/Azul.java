@@ -244,7 +244,10 @@ public final class Azul {
                     // him (parked) until let go.
                     if (control.pressed) {
                         control.pressed = false;
-                        control.holdStart = age;
+                        // A press while a hold is already being timed (the key repeating) doesn't restart it.
+                        if (control.holdStart < 0) {
+                            control.holdStart = age;
+                        }
                     }
                     if (control.holdStart >= 0 && phase[0] != Phase.SHOT) {
                         boolean down = now.abilityHeld;
