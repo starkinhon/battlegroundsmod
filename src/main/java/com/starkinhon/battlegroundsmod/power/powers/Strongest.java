@@ -12,7 +12,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
 
 // O Mais Forte (Gojo). Z is Azul (tap: a small orb that locks where he aims and pulls; held: a big one that follows his
-// aim, pulls hard and tears blocks out; see gojo/Azul; drawn with the mix look, the glass ball). V is the ult, Expansão de Domínio: Vazio Infinito. X (Vermelho)
+// aim, pulls hard and tears blocks out; see gojo/Azul; drawn with the realism look; the mix look is kept in the shader). V is the ult, Expansão de Domínio: Vazio Infinito. X (Vermelho)
 // and C (Roxo) are still to come: for now they only say so and cost nothing.
 public final class Strongest {
     private Strongest() {

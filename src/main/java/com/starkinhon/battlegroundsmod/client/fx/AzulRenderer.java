@@ -12,8 +12,8 @@ import net.minecraft.world.phys.Vec3;
 
 // Gojo's Blue (power/powers/gojo/Azul), drawn the same way as the Skill Visualizer's drawAzul (aba "Gojo · Azul"):
 // a deep blue glow behind it, lines of light sucked in spiraling from far away, arcs of wind turning around it (small
-// vortices), the orb itself (souls_vfx shape 18; the look comes from gojo.azul.json: now 3, the mix, a glass ball with
-// white flames inside; 2, the realism volume, is kept for later) and the space bent around it: a lens on the orb and, charged, a swirl around it.
+// vortices), the orb itself (souls_vfx shape 18; the look comes from gojo.azul.json: now 2, the realism volume with lines of
+// light leaking out of its edge; 3, the mix glass ball, is kept for later) and the space bent around it: a lens on the orb and, charged, a swirl around it.
 // The server sends where it is every tick (smoothed with SmoothTrack); everything else is worked out here.
 public final class AzulRenderer {
     private static final float[] DEEP = FxDraw.rgb(0x0A1F9E);

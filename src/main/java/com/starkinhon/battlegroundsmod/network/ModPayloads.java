@@ -597,7 +597,7 @@ public final class ModPayloads {
     }
 
     // Server -> client: Gojo's Blue (power/powers/gojo/Azul), every tick while it lives. mode 0 alive, 1 imploded (the
-    // held one's end), 2 gone (the tap's end, or cut short). charge 0 to 1 (0 the tap); style: the shader's look (3 mix, 2 realism).
+    // held one's end), 2 gone (the tap's end, or cut short). charge 0 to 1 (0 the tap); style: the shader's look (2 realism, 3 mix).
     public record Azul(int id, int mode, Vec3 pos, float radius, float charge, int style) implements CustomPacketPayload {
         public static final Type<Azul> TYPE = payloadType("azul");
         public static final StreamCodec<ByteBuf, Azul> STREAM_CODEC = StreamCodec.composite(

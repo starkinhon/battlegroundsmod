@@ -189,7 +189,11 @@ vec4 azul(vec2 p, float param, float seed, float time) {
             }
         }
         float corona = pow(max(0.0, 1.0 - r), 3.0) * 0.75 + exp(-abs(rr - 1.0) * 9.0) * 0.25;
-        alpha = 1.0 - trans + corona;
+        // Jagged lines of light leaking out of the edge (the same frost as the mix look).
+        float frost = pow(1.0 - abs(fbm(vec2(ang * 7.0 + seed, rr * 5.0 - time * 2.5)) * 2.0 - 1.0), 10.0) * exp(-max(0.0, rr - 1.0) * 5.0) * step(1.0, rr);
+        float leak = frost * (1.0 + 0.6 * ch);
+        acc += mix(cyan, white, frost * 0.6) * leak * 1.4;
+        alpha = 1.0 - trans + corona + leak;
         col = (acc + blue * corona) / max(alpha, 1.0e-3);
     } else {
         // Mix: a glass ball (ref 3): crisp bright rim, jagged white flames inside, frost licking out of the edge.
