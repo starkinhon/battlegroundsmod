@@ -11,6 +11,7 @@ import com.starkinhon.battlegroundsmod.power.Power;
 import com.starkinhon.battlegroundsmod.power.PowerData;
 import com.starkinhon.battlegroundsmod.power.Powers;
 import com.starkinhon.battlegroundsmod.skill.ComboSpec;
+import com.starkinhon.battlegroundsmod.skill.StaminaSpec;
 
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
@@ -128,6 +129,7 @@ public final class Melee {
         data.punchDelay = golpe.windUp() + golpe.recuperacaoTicks();
         data.punchQueued = false;
         CombatMode.enter(attacker);
+        Stamina.gain(attacker, StaminaSpec.get().ganhoGolpePct());
         PacketDistributor.sendToPlayersTrackingEntityAndSelf(attacker, new ModPayloads.ComboAnimation(attacker.getId(), step));
         if (golpe.avanco() > 0) {
             Vec3 look = Combat.flatLook(attacker).scale(golpe.avanco());
@@ -157,6 +159,7 @@ public final class Melee {
             SkillSounds.play(level, spec.sons(), "erro", 0, 0, onde -> Combat.handPos(attacker), List.of());
             return false;
         }
+        Stamina.gain(attacker, StaminaSpec.get().ganhoAcertoPct());
         LivingEntity hit = target;
         // Guarded: the defense already played its effects; no stun, no hitstop.
         if (Defense.blockedThisTick(hit)) {
@@ -267,6 +270,7 @@ public final class Melee {
                 Defense.breakGuard(target, player);
                 if (Combat.hurt(player, target, 10f * mult * power)) {
                     hitFx(player, target, "final");
+                    Stamina.gain(player, StaminaSpec.get().ganhoAcertoPct());
                     shake(target, 0.5f + charge * 0.5f, 8);
                 }
                 Combat.push(target, look, 2.6 * (1 + 0.8 * charge), 0.6 + 0.3 * charge);
@@ -322,6 +326,7 @@ public final class Melee {
                     for (LivingEntity target : Combat.inCone(player, range, 0.55)) {
                         if (Combat.hurt(player, target, hitDamage)) {
                             hitFx(player, target, "golpe");
+                            Stamina.gain(player, StaminaSpec.get().ganhoAcertoBarragemPct());
                             shake(target, 0.15f, 4);
                         }
                         // Keeps the target in front of the player for the whole barrage.
@@ -343,6 +348,7 @@ public final class Melee {
             for (LivingEntity target : Combat.inCone(player, range, 0.55)) {
                 if (Combat.hurt(player, target, finisherDamage)) {
                     hitFx(player, target, "final");
+                    Stamina.gain(player, StaminaSpec.get().ganhoAcertoPct());
                     shake(target, 0.6f, 8);
                 }
                 Combat.push(target, look, 2.2, 0.6);

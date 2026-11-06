@@ -221,5 +221,9 @@
   "ability.battlegroundsmod.manipulator.6.tags": "Beam",
   "message.battlegroundsmod.hogyoku": "Hogyoku Evolution: press V again for the dash of cuts",
   "message.battlegroundsmod.hogyoku_dash_wait": "Dash of cuts in %s s",
-  "entity.battlegroundsmod.aizen_illusion": "Illusion"
+  "entity.battlegroundsmod.aizen_illusion": "Illusion",
+  "effect.battlegroundsmod.exausto": "Exhausted",
+  "message.battlegroundsmod.stamina_out": "Out of stamina! Vulnerable for %s s",
+  "message.battlegroundsmod.stamina_exhausted": "Exhausted: no skills, only punches",
+  "message.battlegroundsmod.stamina_set": "Stamina: %s/%s"
 }

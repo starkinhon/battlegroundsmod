@@ -221,5 +221,9 @@
   "ability.battlegroundsmod.manipulator.6.tags": "Feixe",
   "message.battlegroundsmod.hogyoku": "Evolução do Hōgyoku: aperte V de novo para o dash de cortes",
   "message.battlegroundsmod.hogyoku_dash_wait": "Dash de cortes em %s s",
-  "entity.battlegroundsmod.aizen_illusion": "Ilusão"
+  "entity.battlegroundsmod.aizen_illusion": "Ilusão",
+  "effect.battlegroundsmod.exausto": "Exausto",
+  "message.battlegroundsmod.stamina_out": "Sem estamina! Vulnerável por %s s",
+  "message.battlegroundsmod.stamina_exhausted": "Exausto: sem técnicas, só porrada",
+  "message.battlegroundsmod.stamina_set": "Estamina: %s/%s"
 }

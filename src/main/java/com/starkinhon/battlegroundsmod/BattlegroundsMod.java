@@ -62,6 +62,7 @@ public class BattlegroundsMod {
         FightRod.register();
         SoulCommand.addSubcommand(BossCommand::bossbar);
         SoulCommand.addSubcommand(BossCommand::boss);
+        SoulCommand.addSubcommand(com.starkinhon.battlegroundsmod.command.StaminaCommand::build);
         NeoForge.EVENT_BUS.addListener(SoulCommand::register);
     }
 

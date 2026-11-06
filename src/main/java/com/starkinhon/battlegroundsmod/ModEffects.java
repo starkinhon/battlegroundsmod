@@ -44,6 +44,10 @@ public final class ModEffects {
     // (combat/Stun). Keeps a fight from turning into both sides spamming. Length in padrao.combo.json.
     public static final DeferredHolder<MobEffect, MobEffect> COOLDOWN = MOB_EFFECTS.register("cooldown", () -> new Harmful(0x78AAE6));
 
+    // Exhausted: the attack stamina ran out. No skills (punches still work) and open to the skills that need a
+    // stunned target (combat/Stamina). Only shows it: the timer lives in PowerData.exhaustedUntil, so milk doesn't end it.
+    public static final DeferredHolder<MobEffect, MobEffect> EXAUSTO = MOB_EFFECTS.register("exausto", () -> new Harmful(0xC23B22));
+
     // Brain Damage: caught in Gojo's domain, the infinite information leaves the brain fried. No moving, no jumping,
     // no attacks or skills: through the whole domain and for 10 s after it ends (power/powers/gojo/InfiniteVoid).
     public static final DeferredHolder<MobEffect, MobEffect> BRAIN_DAMAGE = MOB_EFFECTS.register("brain_damage",
