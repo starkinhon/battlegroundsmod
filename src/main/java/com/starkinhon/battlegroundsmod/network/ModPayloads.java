@@ -654,6 +654,62 @@ public final class ModPayloads {
         }
     }
 
+    // Server -> client: Gojo's Purple (power/powers/gojo/Roxo), every tick while it forms and grows in front of owner's
+    // chest. mode 0 alive, 2 gone (cut short, it fades). tick: ticks since he pressed C (the client runs the whole forming
+    // timeline from it, placing the two spheres on his body itself so they never lag); charge 0 to 1: how much it grew
+    // after forming.
+    public record Roxo(int id, int owner, int mode, int tick, float charge) implements CustomPacketPayload {
+        public static final Type<Roxo> TYPE = payloadType("roxo");
+        public static final StreamCodec<ByteBuf, Roxo> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, Roxo::id,
+                ByteBufCodecs.VAR_INT, Roxo::owner,
+                ByteBufCodecs.VAR_INT, Roxo::mode,
+                ByteBufCodecs.VAR_INT, Roxo::tick,
+                ByteBufCodecs.FLOAT, Roxo::charge,
+                Roxo::new);
+
+        @Override
+        public Type<Roxo> type() {
+            return TYPE;
+        }
+    }
+
+    // Server -> client: the Purple launched (it replaces the held one with the same id). It flies from `from` along dir;
+    // motion = (start speed, added each tick, top speed) in blocks per tick; size = (radius, range, charge).
+    public record RoxoShot(int id, int owner, Vec3 from, Vec3 dir, Vec3 motion, Vec3 size) implements CustomPacketPayload {
+        public static final Type<RoxoShot> TYPE = payloadType("roxo_shot");
+        public static final StreamCodec<ByteBuf, RoxoShot> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, RoxoShot::id,
+                ByteBufCodecs.VAR_INT, RoxoShot::owner,
+                VEC3, RoxoShot::from,
+                VEC3, RoxoShot::dir,
+                VEC3, RoxoShot::motion,
+                VEC3, RoxoShot::size,
+                RoxoShot::new);
+
+        @Override
+        public Type<RoxoShot> type() {
+            return TYPE;
+        }
+    }
+
+    // Server -> client: the Unlimited Purple at center (a full Red into a parked full Blue). size = (the Purple's radius,
+    // the blast's radius, the Blue's radius); timing = (implode, grow, wait) ticks; blast = its ticks.
+    public record RoxoIrrestrito(Vec3 center, Vec3 size, Vec3 timing, int blast) implements CustomPacketPayload {
+        public static final Type<RoxoIrrestrito> TYPE = payloadType("roxo_irrestrito");
+        public static final StreamCodec<ByteBuf, RoxoIrrestrito> STREAM_CODEC = StreamCodec.composite(
+                VEC3, RoxoIrrestrito::center,
+                VEC3, RoxoIrrestrito::size,
+                VEC3, RoxoIrrestrito::timing,
+                ByteBufCodecs.VAR_INT, RoxoIrrestrito::blast,
+                RoxoIrrestrito::new);
+
+        @Override
+        public Type<RoxoIrrestrito> type() {
+            return TYPE;
+        }
+    }
+
     // Server -> client (the owner only), every tick while his held Blue is under his control: the mouse wheel steers it
     // (and the hotbar doesn't scroll). false when it no longer is.
     public record AzulControl(boolean on) implements CustomPacketPayload {
@@ -942,6 +998,12 @@ public final class ModPayloads {
                 () -> ClientHooks.azul(payload.id(), payload.mode(), payload.pos(), payload.radius(), payload.charge(), payload.style())));
         registrar.playToClient(Vermelho.TYPE, Vermelho.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.vermelho(payload.id(), payload.owner(), payload.mode(), payload.charge(), payload.flip())));
+        registrar.playToClient(Roxo.TYPE, Roxo.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.roxo(payload.id(), payload.owner(), payload.mode(), payload.tick(), payload.charge())));
+        registrar.playToClient(RoxoShot.TYPE, RoxoShot.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.roxoShot(payload.id(), payload.owner(), payload.from(), payload.dir(), payload.motion(), payload.size())));
+        registrar.playToClient(RoxoIrrestrito.TYPE, RoxoIrrestrito.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.roxoIrrestrito(payload.center(), payload.size(), payload.timing(), payload.blast())));
         registrar.playToClient(VermelhoBlast.TYPE, VermelhoBlast.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.vermelhoBlast(payload.from(), payload.dir(), payload.range(), payload.radius(), payload.speed(), payload.charge())));
         registrar.playToClient(AizenFx.TYPE, AizenFx.STREAM_CODEC, (payload, context) -> context.enqueueWork(

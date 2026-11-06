@@ -7,7 +7,7 @@
 //   2: twist axis in view space (xyz), unused
 //   3: tint (rgb), tint amount
 // Modes: 0 ripple (rings running outwards), 1 swirl around the axis, 2 lens (pulls the middle in, like a black hole),
-// 3 whole screen (the edges of the screen wobble).
+// 3 whole screen (the edges of the screen wobble), 4 whirl only around the sphere (Gojo's Purple in flight).
 uniform sampler2D DiffuseSampler;
 uniform sampler2D DepthSampler;
 uniform mat4 WarpProj;
@@ -64,7 +64,7 @@ void main() {
         float speed = s[1].z;
         float mode = s[1].w;
 
-        if (mode > 2.5) {
+        if (mode > 2.5 && mode < 3.5) {
             // Whole screen: the edges of the screen push outwards in quick waves.
             float r = length(ndc);
             float edge = smoothstep(0.35, 1.15, r);
@@ -116,6 +116,12 @@ void main() {
             vec3 around = normalize(cross(axis, rel) + vec3(0.00001));
             float k = (1.0 - dist) * (1.0 - dist);
             world = around * k * radius * 0.35 * (0.8 + 0.2 * sin(age * 5.0 + dist * 9.0));
+        } else if (mode > 3.5) {
+            // Gojo's Purple in flight: a whirl only around the ball, its middle left untouched.
+            vec3 axis = normalize(s[2].xyz + vec3(0.0, 0.0001, 0.0));
+            vec3 around = normalize(cross(axis, rel) + vec3(0.00001));
+            float k = smoothstep(0.3, 0.5, dist) * (1.0 - dist) * 2.0;
+            world = around * k * radius * 0.3 * (0.8 + 0.2 * sin(age * 5.0 + dist * 9.0));
         } else {
             float k = (1.0 - dist);
             vec3 around = normalize(cross(vec3(0.0, 0.0, 1.0), rel) + vec3(0.00001));
