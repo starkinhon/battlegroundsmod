@@ -1,0 +1,244 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "gojo.azul",
+  "nome": "Azul",
+  "tempo": {
+    "atrasoTicks": 6,
+    "duracaoTicks": 10
+  },
+  "visual": {
+    "estilo": 2
+  },
+  "orbe": {
+    "raio": 0.4,
+    "escalaMax": 5
+  },
+  "clique": {
+    "velocidade": 1.4,
+    "distancia": 9,
+    "duracaoTicks": 120,
+    "raioPuxar": 7,
+    "puxar": 0.06,
+    "maxPuxar": 0.12,
+    "dano": 1,
+    "danoACadaTicks": 20
+  },
+  "segurado": {
+    "decidirTicks": 6,
+    "carregarTicks": 40,
+    "maxSegurarTicks": 60,
+    "duracaoTicks": 200,
+    "mira": 10,
+    "seguir": 0.12,
+    "raioPuxar": 14,
+    "puxar": 0.3,
+    "maxPuxar": 0.75,
+    "raioBlocos": 6.5,
+    "blocosPorTick": 4,
+    "maxBlocos": 110,
+    "dano": 2,
+    "danoACadaTicks": 10,
+    "danoFim": 12
+  },
+  "animacao": {
+    "transicaoTicks": 3,
+    "retornoTicks": 8,
+    "preparo": {
+      "cabeca": 0,
+      "tronco": 0,
+      "bracoDir": {
+        "frente": 90,
+        "abrir": -5
+      },
+      "bracoEsq": {
+        "frente": 0,
+        "abrir": 5
+      }
+    },
+    "sopro": {
+      "cabeca": 0,
+      "tronco": 6,
+      "bracoDir": {
+        "frente": 95,
+        "abrir": 0
+      },
+      "bracoEsq": {
+        "frente": -10,
+        "abrir": 5
+      }
+    }
+  },
+  "sons": [
+    {
+      "nome": "Juntar",
+      "som": "minecraft:block.beacon.power_select",
+      "momento": "uso",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.0,
+      "pitch": 1.6,
+      "pitchFim": 1.6,
+      "onde": "orbe"
+    },
+    {
+      "nome": "Lançar",
+      "som": "minecraft:entity.breeze.shoot",
+      "momento": "lancar",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.4,
+      "pitch": 0.8,
+      "pitchFim": 0.8,
+      "onde": "usuario"
+    },
+    {
+      "nome": "Travar",
+      "som": "minecraft:block.respawn_anchor.set_spawn",
+      "momento": "travar",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.4,
+      "pitch": 1.4,
+      "pitchFim": 1.4,
+      "onde": "orbe"
+    },
+    {
+      "nome": "Zumbido",
+      "som": "minecraft:block.beacon.ambient",
+      "momento": "travar",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 30,
+      "vezes": 0,
+      "volume": 1.6,
+      "pitch": 1.3,
+      "pitchFim": 1.3,
+      "onde": "orbe"
+    },
+    {
+      "nome": "Sumir",
+      "som": "minecraft:block.beacon.deactivate",
+      "momento": "fim",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.4,
+      "pitch": 1.5,
+      "pitchFim": 1.5,
+      "onde": "orbe"
+    },
+    {
+      "nome": "Carregar",
+      "som": "minecraft:block.respawn_anchor.charge",
+      "momento": "carregar",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 10,
+      "vezes": 4,
+      "volume": 1.2,
+      "pitch": 0.8,
+      "pitchFim": 1.6,
+      "onde": "orbe"
+    },
+    {
+      "nome": "Soltar",
+      "som": "minecraft:entity.warden.sonic_charge",
+      "momento": "soltar",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 2.0,
+      "pitch": 1.4,
+      "pitchFim": 1.4,
+      "onde": "orbe"
+    },
+    {
+      "nome": "Vórtice",
+      "som": "minecraft:entity.breeze.wind_burst",
+      "momento": "soltar",
+      "atrasoTicks": 4,
+      "repetirACadaTicks": 20,
+      "vezes": 0,
+      "volume": 2.4,
+      "pitch": 0.5,
+      "pitchFim": 0.7,
+      "onde": "orbe"
+    },
+    {
+      "nome": "Esmagar",
+      "som": "minecraft:block.stone.break",
+      "momento": "esmagar",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.2,
+      "pitch": 0.6,
+      "pitchFim": 0.6,
+      "onde": "orbe"
+    },
+    {
+      "nome": "Implodir",
+      "som": "minecraft:entity.warden.sonic_boom",
+      "momento": "fimForte",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 3.0,
+      "pitch": 1.2,
+      "pitchFim": 1.2,
+      "onde": "orbe"
+    },
+    {
+      "nome": "Estrondo",
+      "som": "minecraft:entity.generic.explode",
+      "momento": "fimForte",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 3.0,
+      "pitch": 0.6,
+      "pitchFim": 0.6,
+      "onde": "orbe"
+    }
+  ],
+  "vfx": [
+    { "tipo": "clarao", "momento": "lancar", "tamanho": 0.9, "quantidade": 6, "cor": "#3fa8ff", "cor2": "#ffffff", "vidaTicks": 8, "alcance": 64 },
+    { "tipo": "anel", "momento": "lancar", "raio": 1.4, "tamanho": 0.15, "cor": "#bfeaff", "vidaTicks": 8, "alcance": 64 },
+    { "tipo": "anel", "momento": "travar", "raio": 2.2, "tamanho": 0.2, "cor": "#9fdcff", "vidaTicks": 10, "alcance": 64 },
+    { "tipo": "tremor", "momento": "travar", "forca": 0.15, "vidaTicks": 4, "alcance": 16 },
+    { "tipo": "clarao", "momento": "fim", "tamanho": 1.6, "quantidade": 8, "cor": "#3fa8ff", "cor2": "#ffffff", "vidaTicks": 10, "alcance": 64 },
+    { "tipo": "anel", "momento": "fim", "raio": 2.4, "tamanho": 0.25, "cor": "#bfeaff", "vidaTicks": 10, "alcance": 64 },
+    { "tipo": "faiscas", "momento": "fim", "quantidade": 24, "velocidade": 0.35, "comprimento": 0.6, "tamanho": 0.9, "cor": "#3fa8ff", "cor2": "#ffffff", "vidaTicks": 12, "alcance": 64 },
+    { "tipo": "clarao", "momento": "soltar", "tamanho": 4, "quantidade": 10, "cor": "#3fa8ff", "cor2": "#ffffff", "vidaTicks": 10, "alcance": 96 },
+    { "tipo": "anel", "momento": "soltar", "raio": 6, "tamanho": 0.5, "cor": "#bfeaff", "vidaTicks": 12, "alcance": 96 },
+    { "tipo": "tremor", "momento": "soltar", "forca": 0.5, "vidaTicks": 10, "alcance": 32 },
+    { "tipo": "blurRadial", "momento": "soltar", "forca": 0.5, "vidaTicks": 8, "alcance": 32 },
+    { "tipo": "clarao", "momento": "esmagar", "tamanho": 0.7, "quantidade": 1, "cor": "#dff6ff", "cor2": "#ffffff", "vidaTicks": 5, "alcance": 64 },
+    { "tipo": "impactFrame", "momento": "fimForte", "sequencia": ["branco", "cor", "invertido", "cor"], "ticksPorQuadro": 1, "cor": "#1e6bff", "alcance": 48 },
+    { "tipo": "flash", "momento": "fimForte", "cor": "#dff6ff", "forca": 0.5, "vidaTicks": 8, "alcance": 48 },
+    { "tipo": "clarao", "momento": "fimForte", "tamanho": 9, "quantidade": 12, "cor": "#3fa8ff", "cor2": "#ffffff", "vidaTicks": 16, "alcance": 128 },
+    { "tipo": "estrela", "momento": "fimForte", "quantidade": 30, "comprimento": 9, "tamanho": 1.2, "cor": "#60daff", "cor2": "#ffffff", "vidaTicks": 14, "alcance": 128 },
+    { "tipo": "anel", "momento": "fimForte", "raio": 10, "tamanho": 0.9, "cor": "#bfeaff", "vidaTicks": 14, "alcance": 128 },
+    { "tipo": "faiscas", "momento": "fimForte", "quantidade": 120, "velocidade": 0.8, "comprimento": 1.2, "tamanho": 1.4, "cor": "#3fa8ff", "cor2": "#ffffff", "vidaTicks": 18, "alcance": 128 },
+    { "tipo": "tremor", "momento": "fimForte", "forca": 1.0, "vidaTicks": 14, "alcance": 48 }
+  ],
+  "despertado": {
+    "nome": "Azul (despertado)",
+    "orbe": {
+      "escalaMax": 6
+    },
+    "clique": {
+      "duracaoTicks": 160,
+      "dano": 2
+    },
+    "segurado": {
+      "duracaoTicks": 260,
+      "raioPuxar": 18,
+      "raioBlocos": 8,
+      "maxBlocos": 160,
+      "dano": 3,
+      "danoFim": 20
+    }
+  }
+}

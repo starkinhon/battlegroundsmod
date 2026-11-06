@@ -25,6 +25,9 @@
 //  17 aura    Aizen's reiatsu, cartoon: a black-violet mass full of stars with a sharp, boiling violet rim and glow
 //             spilling out past it; param < 0.5 the body (alpha layer), else the glow (additive);
 //             fract(param * 2) < 0.5 a flame rising from the bottom of the quad, else a round burst
+//  18 azul    Gojo's Blue: param byte = style * 64 + charge * 63; style 0 mod glow (additive), 1 cartoon (alpha
+//             layer), 2 realism, a glowing volume (additive; the one in the game), 3 mix, a glass ball (alpha layer, kept
+//             for later)
 // A very dark color never burns white (dark rims and lines stay dark).
 // Near walls and the ground the effect fades out instead of cutting a hard line (soft particles).
 uniform sampler2D Sampler1;
@@ -61,6 +64,153 @@ float fbm(vec2 p) {
         a *= 0.5;
     }
     return v;
+}
+
+// ---- shape 18: Gojo's Blue (Azul). The same text runs in souls_vfx.fsh and in the Visualizador. ----
+// param is a byte: style * 64 + charge * 63. Styles: 0 mod glow, 1 cartoon (alpha layer), 2 realism (volume), 3 mix (glass).
+// The orb fills the middle half of the quad; the rest is room for glow, spikes and frost.
+float azHash3(vec3 p) {
+    p = fract(p * 0.3183099 + 0.1);
+    p *= 17.0;
+    return fract(p.x * p.y * p.z * (p.x + p.y + p.z));
+}
+
+float azNoise3(vec3 x) {
+    vec3 i = floor(x);
+    vec3 f = fract(x);
+    f = f * f * (3.0 - 2.0 * f);
+    return mix(mix(mix(azHash3(i), azHash3(i + vec3(1.0, 0.0, 0.0)), f.x),
+                   mix(azHash3(i + vec3(0.0, 1.0, 0.0)), azHash3(i + vec3(1.0, 1.0, 0.0)), f.x), f.y),
+               mix(mix(azHash3(i + vec3(0.0, 0.0, 1.0)), azHash3(i + vec3(1.0, 0.0, 1.0)), f.x),
+                   mix(azHash3(i + vec3(0.0, 1.0, 1.0)), azHash3(i + vec3(1.0, 1.0, 1.0)), f.x), f.y), f.z);
+}
+
+float azFbm3(vec3 x) {
+    return azNoise3(x) * 0.55 + azNoise3(x * 2.1 + vec3(3.1, 7.7, 1.3)) * 0.3 + azNoise3(x * 4.3 + vec3(9.2, 2.4, 5.6)) * 0.15;
+}
+
+vec4 azul(vec2 p, float param, float seed, float time) {
+    float b = floor(param * 255.0 + 0.5);
+    float style = floor(b / 64.0);
+    float ch = mod(b, 64.0) / 63.0;
+    float r = length(p);
+    vec2 q = p * 2.0;
+    float rr = length(q);
+    float ang = atan(q.y, q.x);
+    vec3 deep = vec3(0.03, 0.12, 0.62);
+    vec3 blue = vec3(0.1, 0.42, 1.0);
+    vec3 cyan = vec3(0.38, 0.88, 1.0);
+    vec3 white = vec3(1.0);
+    // Everything flows the same way: it turns around the middle (faster near it) and falls inward.
+    float spin = 1.5 + 3.0 * ch;
+    float fall = 0.6 + 1.4 * ch;
+    vec3 col = blue;
+    float alpha = 0.0;
+
+    if (style < 0.5) {
+        // Mod: additive light, a white core, spiral arms and a soft halo.
+        float fa = ang - time * spin / (0.35 + rr);
+        float lr = log(rr + 0.02) + time * fall;
+        float sp = fbm(vec2(fa * 1.6 + seed, lr * 2.5));
+        float arms = pow(0.5 + 0.5 * sin(fa * 3.0 + lr * 5.0), 4.0 + 4.0 * ch);
+        float disc = 1.0 - smoothstep(0.86, 1.0, rr);
+        float halo = pow(max(0.0, 1.0 - r), 2.6);
+        float rim = exp(-abs(rr - 1.0) * 14.0);
+        float swirl = arms * smoothstep(1.8, 0.6, rr) * smoothstep(0.05, 0.3, rr) * (0.55 + 0.3 * ch);
+        float core = smoothstep(0.6, 0.0, rr);
+        vec3 inner = mix(blue, cyan, clamp(sp * 1.3, 0.0, 1.0));
+        vec3 outer = mix(blue, cyan, clamp(swirl * 1.5 + rim * 0.6, 0.0, 1.0));
+        col = mix(outer, inner, disc);
+        col = mix(col, white, clamp(core * 1.2 + swirl * 0.35, 0.0, 1.0));
+        alpha = halo * 0.6 + disc * (0.35 + 0.5 * sp) + swirl + rim * 0.45 + core;
+    } else if (style < 1.5) {
+        // Cartoon: hard edge, 4 flat bands, a navy outline and brush spikes; drawn on twos (12 fps).
+        float tq = floor(time * 12.0) / 12.0;
+        float fa = ang - tq * spin / (0.35 + rr);
+        float lr = log(rr + 0.02) + tq * fall;
+        float boil = (fbm(vec2(ang * 1.5 + seed, tq * 3.0)) - 0.5) * 0.06;
+        float d = 1.0 + boil - rr;
+        float fw = max(fwidth(d), 1.0e-4);
+        float inside = smoothstep(0.0, 1.5 * fw, d);
+        float z = sqrt(max(0.0, 1.0 - rr * rr));
+        float lit = dot(vec3(q, z), normalize(vec3(-0.45, 0.55, 0.7)));
+        float strokes = fbm(vec2(fa * 2.0 + seed, lr * 3.0));
+        float v = 0.4 * lit + 0.6 * strokes + 0.3 * (1.0 - rr) + 0.1 * ch;
+        float vw = max(fwidth(v), 0.004) * 1.5;
+        vec3 navy = vec3(0.02, 0.05, 0.26);
+        vec3 c = vec3(0.04, 0.2, 0.78);
+        c = mix(c, vec3(0.12, 0.52, 1.0), smoothstep(0.3, 0.3 + vw, v));
+        c = mix(c, vec3(0.48, 0.92, 1.0), smoothstep(0.52, 0.52 + vw, v));
+        c = mix(c, white, smoothstep(0.74, 0.74 + vw, v));
+        c = mix(c, navy, 1.0 - smoothstep(0.06, 0.06 + 1.5 * fw, d));
+        // Spikes: thick at the orb, sharp outward, redrawn 4 times a second.
+        float n = 22.0;
+        float sa = ang / 6.2831853 * n + seed;
+        float k = floor(sa);
+        float h = azHash3(vec3(k, floor(tq * 4.0), seed));
+        float len = 1.08 + h * (0.35 + 0.55 * ch);
+        float across = abs(fract(sa) - 0.5);
+        float t01 = clamp((rr - 1.0) / max(len - 1.0, 0.01), 0.0, 1.0);
+        float sd = 0.32 * (1.0 - t01) - across;
+        float sfw = max(fwidth(sd), 1.0e-4);
+        float spike = smoothstep(0.0, 1.5 * sfw, sd) * step(rr, len) * step(0.4, h) * (1.0 - inside);
+        vec3 sc = mix(vec3(0.48, 0.92, 1.0), white, smoothstep(0.1, 0.2, sd));
+        col = mix(sc, c, inside);
+        alpha = max(inside, spike * 0.95);
+    } else if (style < 2.5) {
+        // Realism: a glowing volume marched front to back, gas turning faster near the middle and falling in.
+        float zMax = sqrt(max(0.0, 1.0 - rr * rr));
+        float trans = 1.0;
+        vec3 acc = vec3(0.0);
+        float dt = 2.0 * zMax / 14.0;
+        float ph = fract(time * 0.25 * (1.0 + ch));
+        float w1 = 1.0 - abs(2.0 * ph - 1.0);
+        float s1 = exp(ph * 0.7);
+        float s2 = exp(fract(ph + 0.5) * 0.7);
+        if (rr < 1.0) {
+            for (int i = 0; i < 14; i++) {
+                float z = zMax * (1.0 - 2.0 * (float(i) + 0.5) / 14.0);
+                vec3 P = vec3(q, z);
+                float pr = length(P);
+                float a = time * spin / (0.4 + pr);
+                float cs = cos(a);
+                float sn = sin(a);
+                vec3 R = vec3(P.x * cs - P.z * sn, P.y * cs + (P.x * sn + P.z * cs) * 0.25, P.x * sn + P.z * cs);
+                vec3 o = vec3(seed, seed * 1.7, 0.0);
+                float g = mix(azFbm3(R * 2.4 * s2 + o), azFbm3(R * 2.4 * s1 + o + 5.0), w1);
+                float dens = smoothstep(0.38, 0.8, g) * (1.0 - smoothstep(0.7, 1.0, pr)) * 2.2 + exp(-pr * pr * 10.0) * 3.0;
+                float temp = clamp(g * 0.9 + exp(-pr * pr * 5.0) * 0.8 - pr * 0.25, 0.0, 1.0);
+                vec3 emit = mix(deep, blue, smoothstep(0.1, 0.4, temp));
+                emit = mix(emit, cyan, smoothstep(0.4, 0.7, temp));
+                emit = mix(emit, white, smoothstep(0.7, 0.95, temp));
+                float aStep = 1.0 - exp(-dens * 2.4 * dt);
+                acc += trans * aStep * emit * (0.6 + 1.2 * temp);
+                trans *= 1.0 - aStep;
+            }
+        }
+        float corona = pow(max(0.0, 1.0 - r), 3.0) * 0.75 + exp(-abs(rr - 1.0) * 9.0) * 0.25;
+        alpha = 1.0 - trans + corona;
+        col = (acc + blue * corona) / max(alpha, 1.0e-3);
+    } else {
+        // Mix: a glass ball (ref 3): crisp bright rim, jagged white flames inside, frost licking out of the edge.
+        float fa = ang - time * spin / (0.35 + rr);
+        float lr = log(rr + 0.02) + time * fall;
+        float fw = max(fwidth(rr), 1.0e-4);
+        float disc = smoothstep(0.0, 1.5 * fw, 1.0 - rr);
+        float fl = fbm(vec2(fa * 2.5 + seed, lr * 2.0));
+        float ridge = 1.0 - abs(2.0 * fl - 1.0);
+        float jag = smoothstep(0.86, 0.9, ridge + (1.0 - rr) * 0.06);
+        vec3 inner = mix(deep, mix(blue, cyan, 0.5), 0.45 + 0.55 * (1.0 - rr));
+        inner = mix(inner, white, max(jag * 0.9, smoothstep(0.35, 0.0, rr) * 0.6));
+        inner = mix(inner, vec3(0.78, 0.96, 1.0), pow(rr, 8.0) * 0.85);
+        float line = 1.0 - smoothstep(0.0, 2.5 * fw, abs(1.0 - rr));
+        float frost = pow(1.0 - abs(fbm(vec2(ang * 7.0 + seed, rr * 5.0 - time * 2.5)) * 2.0 - 1.0), 10.0) * exp(-max(0.0, rr - 1.0) * 5.0) * step(1.0, rr);
+        float halo = pow(max(0.0, 1.0 - r), 2.5) * 0.45;
+        col = mix(mix(blue, cyan, frost), inner, disc);
+        col = mix(col, white, line);
+        alpha = max(disc * 0.8, line) + frost * (0.6 + 0.4 * ch) + halo;
+    }
+    return vec4(col, clamp(alpha, 0.0, 1.0));
 }
 
 float linearDepth(float d) {
@@ -319,6 +469,10 @@ void main() {
             alpha = rim + spill * 0.9 + outside * 0.55 + star * 0.5;
             core = rimHot * 0.7 + spill * 0.3;
         }
+    } else if (shape == 18) {
+        vec4 az = azul(p, param, seed, time);
+        base = az.rgb;
+        alpha = az.a;
     } else {
         alpha = 1.0;
     }
