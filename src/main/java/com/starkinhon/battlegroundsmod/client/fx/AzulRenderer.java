@@ -5,10 +5,14 @@ import java.util.Map;
 
 import org.joml.Vector3f;
 
+import com.starkinhon.battlegroundsmod.network.ModPayloads;
+
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.client.event.InputEvent;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 // Gojo's Blue (power/powers/gojo/Azul), drawn the same way as the Skill Visualizer's drawAzul (aba "Gojo · Azul"):
 // a deep blue glow behind it, lines of light sucked in spiraling from far away, arcs of wind turning around it (small
@@ -74,12 +78,36 @@ public final class AzulRenderer {
         o.style = style;
     }
 
+    // When the server last said our own Blue is under our control (it says so every tick).
+    private static long controlAt = -100;
+
+    public static void control(boolean on) {
+        controlAt = on ? ScreenFx.now() : -100;
+    }
+
+    private static boolean controlling() {
+        return Minecraft.getInstance().player != null && ScreenFx.now() - controlAt <= 5;
+    }
+
+    // While our Blue follows the aim the wheel moves it (up away, down closer) and the hotbar stays put.
+    public static void onScroll(InputEvent.MouseScrollingEvent event) {
+        if (!controlling() || Minecraft.getInstance().screen != null) {
+            return;
+        }
+        event.setCanceled(true);
+        double d = event.getScrollDeltaY();
+        if (d != 0) {
+            PacketDistributor.sendToServer(new ModPayloads.AzulScroll(d > 0 ? 1 : -1));
+        }
+    }
+
     public static boolean active() {
         return !ORBS.isEmpty();
     }
 
     public static void clear() {
         ORBS.clear();
+        controlAt = -100;
     }
 
     // The shader's param byte: style * 64 + charge * 63 (the same as the Visualizer's azParam).
@@ -111,7 +139,37 @@ public final class AzulRenderer {
             Vec3 world = o.track.pos();
             Vector3f at = world.subtract(camera).toVector3f();
             int seed = entry.getKey() * 2027 + 501;
+            Vec3 step = o.endAt < 0 ? o.track.velocity() : Vec3.ZERO;
+            if (step.lengthSqr() > 0.06) {
+                wind(at, step, o.track.radius() * spawn, age, seed);
+            }
             draw(world, at, o.track.radius(), age, seed, o.style, charge, spawn, left, up);
+        }
+    }
+
+    // Moving (following, circling, shot): a few thin white lines of wind streaming past it and off its back, longer the
+    // faster it goes; each one is redrawn every few ticks somewhere else around it. Kept minimal on purpose.
+    private static void wind(Vector3f at, Vec3 step, float r, float age, int seed) {
+        float speed = (float) step.length();
+        Vector3f dir = step.normalize().toVector3f();
+        Vector3f side = new Vector3f(dir).cross(Math.abs(dir.y) > 0.9f ? new Vector3f(1, 0, 0) : new Vector3f(0, 1, 0)).normalize();
+        Vector3f other = new Vector3f(dir).cross(side).normalize();
+        float k = Mth.clamp((speed - 0.25f) / 1.2f, 0, 1);
+        int count = 3 + Math.round(3 * k);
+        for (int i = 0; i < count; i++) {
+            float life = 5 + 3 * FxWorld.hash(seed, i, 61);
+            float ph = (age + FxWorld.hash(seed, i, 62) * life) / life;
+            int cyc = (int) Math.floor(ph);
+            float u = ph - cyc;
+            float a = FxWorld.hash(seed + cyc * 7, i, 63) * Mth.TWO_PI;
+            float off = r * (1.15f + 0.6f * FxWorld.hash(seed + cyc * 7, i, 64));
+            Vector3f base = new Vector3f(side).mul(Mth.cos(a) * off).add(new Vector3f(other).mul(Mth.sin(a) * off)).add(at);
+            float length = Math.min(8, Math.max(1.2f, speed * (3 + 2 * FxWorld.hash(seed, i, 65)))) * (0.4f + 0.6f * k);
+            // Slides back along the orb as it lives, and fades in and out.
+            Vector3f head = new Vector3f(dir).mul(r * (0.8f - 1.6f * u)).add(base);
+            Vector3f tail = new Vector3f(dir).mul(-length).add(head);
+            float o = Mth.sin(u * Mth.PI) * (0.35f + 0.35f * k);
+            FxDraw.ribbon(tail, head, Math.max(0.025f, r * 0.05f), FxDraw.STREAK, 0.9f, WHITE, o, true);
         }
     }
 
