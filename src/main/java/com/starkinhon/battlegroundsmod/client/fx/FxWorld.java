@@ -119,7 +119,7 @@ public final class FxWorld {
         FxPost.newFrame();
         ScreenFx.capture(event);
         boolean world = !PIECES.isEmpty() || MeteorRenderer.hasTrails() || Aura.active() || KatonBallRenderer.active() || AshDeath.hasSparks()
-                || SpaceScene.active() || EsferaRenderer.active() || HakaiRenderer.active() || EnergyRenderer.active() || BlackBoxRenderer.active() || AzulRenderer.active() || AizenFx.active()
+                || SpaceScene.active() || EsferaRenderer.active() || HakaiRenderer.active() || EnergyRenderer.active() || BlackBoxRenderer.active() || AzulRenderer.active() || VermelhoRenderer.active() || AizenFx.active()
                 || SphereRenderer.active() || SusanooArm.active() || DomainScene.active();
         if (!world && !ScreenFx.needsScene()) {
             return;
@@ -187,6 +187,7 @@ public final class FxWorld {
             EnergyRenderer.render(camera, now, partial);
             BlackBoxRenderer.render(camera, now, partial);
             AzulRenderer.render(camera, now, partial);
+            VermelhoRenderer.render(camera, now, partial);
             AizenFx.render(camera, now, partial);
             SphereRenderer.render(camera, now, partial);
             SusanooArm.render(source, flat, camera, now, partial);
@@ -223,6 +224,13 @@ public final class FxWorld {
             // the thin hot lines on top of them.
             FxDraw.begin(source, event.getCamera(), flat);
             BlackBoxRenderer.overlay(camera, now, partial);
+            source.endBatch(flat ? FxRenderTypes.FLAT_ALPHA : FxRenderTypes.VFX_ALPHA);
+            source.endBatch(flat ? FxRenderTypes.FLAT_ADD : FxRenderTypes.VFX_ADD);
+        }
+        if (!space && VermelhoRenderer.active()) {
+            // The Red's orb over the glow (its root covers the tails' roots), and the light on top of it.
+            FxDraw.begin(source, event.getCamera(), flat);
+            VermelhoRenderer.overlay();
             source.endBatch(flat ? FxRenderTypes.FLAT_ALPHA : FxRenderTypes.VFX_ALPHA);
             source.endBatch(flat ? FxRenderTypes.FLAT_ADD : FxRenderTypes.VFX_ADD);
         }

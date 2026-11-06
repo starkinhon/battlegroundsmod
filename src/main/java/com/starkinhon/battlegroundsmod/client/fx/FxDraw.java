@@ -30,6 +30,9 @@ final class FxDraw {
     static final int AURA = 17;
     // Gojo's Blue (souls_vfx.fsh shape 18); param = AzulRenderer.param(style, charge).
     static final int AZUL = 18;
+    // Gojo's Red (souls_vfx.fsh shapes 19 and 20): one tail (a strip, u along it) and the orb.
+    static final int VRABO = 19;
+    static final int VORBE = 20;
 
     private static VertexConsumer additive;
     private static VertexConsumer alpha;
@@ -108,6 +111,31 @@ final class FxDraw {
         side.normalize(width / 2);
         quad(new Vector3f(from).sub(side), new Vector3f(to).sub(side), new Vector3f(to).add(side), new Vector3f(from).add(side),
                 shape, param, rgb, opacity, glow);
+    }
+
+    // One continuous strip through several points, turned to face the camera, with u running along it (us[i] at
+    // pts[i]) and v across (the Visualizer's strip).
+    static void strip(Vector3f[] pts, float[] widths, float[] us, int shape, float param, float[] rgb, float opacity, boolean glow) {
+        if (opacity <= 0.002f || pts.length < 2) {
+            return;
+        }
+        VertexConsumer out = glow ? additive : alpha;
+        int p = Math.round(Math.max(0, Math.min(1, param)) * 255);
+        float o = Math.min(1, opacity);
+        Vector3f[] sides = new Vector3f[pts.length];
+        for (int i = 0; i < pts.length; i++) {
+            Vector3f a = pts[Math.max(0, i - 1)];
+            Vector3f b = pts[Math.min(pts.length - 1, i + 1)];
+            // Positions are relative to the camera, so the point itself is the view direction.
+            Vector3f side = new Vector3f(b).sub(a).cross(pts[i]);
+            sides[i] = side.lengthSquared() < 1.0E-12f ? new Vector3f() : side.normalize(widths[i] / 2);
+        }
+        for (int i = 0; i < pts.length - 1; i++) {
+            vertex(out, new Vector3f(pts[i]).sub(sides[i]), us[i], 0, shape, p, rgb, o);
+            vertex(out, new Vector3f(pts[i + 1]).sub(sides[i + 1]), us[i + 1], 0, shape, p, rgb, o);
+            vertex(out, new Vector3f(pts[i + 1]).add(sides[i + 1]), us[i + 1], 1, shape, p, rgb, o);
+            vertex(out, new Vector3f(pts[i]).add(sides[i]), us[i], 1, shape, p, rgb, o);
+        }
     }
 
     // Square lying across normal (a ring on the ground has normal straight up).
