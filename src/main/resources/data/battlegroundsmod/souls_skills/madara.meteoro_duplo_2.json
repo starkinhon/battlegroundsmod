@@ -230,37 +230,6 @@
       "tamanho": 18.9,
       "cor": "#2c2426",
       "vidaTicks": 80
-    },
-    {
-      "tipo": "realismo",
-      "momento": "impacto",
-      "modo": "explosao",
-      "raio": 42,
-      "forca": 1.3,
-      "altura": 2,
-      "vidaTicks": 150,
-      "alcance": 400
-    },
-    {
-      "tipo": "realismo",
-      "momento": "impacto",
-      "modo": "fumaca",
-      "inicio": 10,
-      "raio": 24,
-      "comprimento": 119,
-      "forca": 1,
-      "cor": "#a09898",
-      "vidaTicks": 500,
-      "alcance": 400
-    },
-    {
-      "tipo": "realismo",
-      "momento": "impacto",
-      "modo": "lava",
-      "raio": 36,
-      "forca": 1.2,
-      "vidaTicks": 500,
-      "alcance": 400
     }
   ],
   "despertado": {}

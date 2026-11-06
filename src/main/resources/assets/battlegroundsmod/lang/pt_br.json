@@ -182,6 +182,8 @@
   "ability.battlegroundsmod.uchiha_ghost.8.tags": "Área",
   "gamerule.soulsBlockDestruction": "Skills do Souls quebram blocos",
   "gamerule.soulsBlockDestruction.description": "Desligado, nenhuma skill ou boss do mod quebra ou altera blocos. Efeitos e dano continuam. mobGriefing desligado também impede.",
+  "gamerule.soulbossfight": "Bossfights do Souls",
+  "gamerule.soulbossfight.description": "Ligado: bosses com títulos de entrada e de fase, barra de boss, fases e ult final. Desligado: viram mobs normais usando todos os golpes desde o início.",
   "power.battlegroundsmod.strongest": "O Mais Forte",
   "power.battlegroundsmod.strongest.desc": "Por toda a terra e céu, só ele é o honrado.",
   "ability.battlegroundsmod.strongest.0": "Azul",
