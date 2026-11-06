@@ -49,7 +49,7 @@
     "passoScroll": 3
   },
   "orbita": {
-    "raio": 30,
+    "raio": 15,
     "velocidade": 0.05,
     "altura": 3
   },
@@ -659,7 +659,7 @@
     {
       "tipo": "anelChao",
       "momento": "orbitar",
-      "raio": 30,
+      "raio": 15,
       "tamanho": 0.4,
       "cor": "#9fdcff",
       "vidaTicks": 16,
