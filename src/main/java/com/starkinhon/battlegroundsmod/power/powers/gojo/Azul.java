@@ -269,7 +269,7 @@ public final class Azul {
                 // Stunned while it is out: it stays where it is.
                 following[0] = false;
             }
-            boolean held = caster instanceof Player ? now.abilityHeld : bossHolds && age < decide + bossCharge;
+            boolean held = caster instanceof Player ? com.starkinhon.battlegroundsmod.combat.Stamina.holding(caster) : bossHolds && age < decide + bossCharge;
             int t = age - phaseStart[0];
             switch (phase[0]) {
                 case DECIDE -> {

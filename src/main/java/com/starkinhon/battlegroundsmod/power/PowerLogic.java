@@ -81,6 +81,12 @@ public final class PowerLogic {
         if (slot < 0 || slot >= PowerData.SLOT_COUNT || !canCast(player, data, slot)) {
             return;
         }
+        boolean skill = !isBaseAttack(slot);
+        if (skill && com.starkinhon.battlegroundsmod.combat.Stamina.exhausted(player)) {
+            // Out of stamina: only the base fighting until it comes back.
+            player.displayClientMessage(Component.translatable("message.battlegroundsmod.stamina_exhausted"), true);
+            return;
+        }
         Ability ability = ability(power, slot);
         boolean ultimate = PowerData.isUlt(slot);
         // Creative mode skips the costs so moves can be recorded freely.
@@ -95,10 +101,21 @@ public final class PowerLogic {
         if (!free && ultimate) {
             data.ult = 0;
         }
+        if (skill) {
+            com.starkinhon.battlegroundsmod.combat.Stamina.spend(player, ultimate);
+        } else {
+            com.starkinhon.battlegroundsmod.combat.Stamina.gain(player,
+                    com.starkinhon.battlegroundsmod.skill.StaminaSpec.get().ganhoAtaqueBasePct());
+        }
         if (!data.noCooldown) {
             data.cooldowns[slot] = ability.cooldown();
         }
         sync(player);
+    }
+
+    // Forte, Barragem and Dash Attack: the base fighting, which gives stamina back instead of spending it.
+    public static boolean isBaseAttack(int slot) {
+        return slot == PowerData.SLOT_STRONG || slot == PowerData.SLOT_BARRAGE || slot == PowerData.SLOT_DASH_ATTACK;
     }
 
     // Being hit (stun, Cooldown effect) blocks every move but a counter.
@@ -251,6 +268,7 @@ public final class PowerLogic {
             data.comboStep = 0;
         }
         CombatMode.tick(player);
+        com.starkinhon.battlegroundsmod.combat.Stamina.tick(player);
         // Bosses get their tier's damage only; their health and armor come from their own file.
         if (player instanceof Player) {
             Tiers.apply(player);
@@ -296,5 +314,6 @@ public final class PowerLogic {
 
     public static void sync(ServerPlayer player) {
         PacketDistributor.sendToPlayer(player, ModPayloads.SyncPower.of(player.getData(ModAttachments.POWER)));
+        com.starkinhon.battlegroundsmod.combat.Stamina.sync(player);
     }
 }

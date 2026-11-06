@@ -106,7 +106,7 @@ public final class Roxo {
             }
             now.busyTicks = Math.max(now.busyTicks, 2);
             // Players: only the key (however long). Bosses: their own growing time.
-            boolean held = caster instanceof Player ? now.abilityHeld : age < s2 + bossGrow;
+            boolean held = caster instanceof Player ? com.starkinhon.battlegroundsmod.combat.Stamina.holding(caster) : age < s2 + bossGrow;
             if (!held) {
                 released[0] = true;
             }

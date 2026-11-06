@@ -188,6 +188,10 @@ public final class Movement {
         }
         spend(player, kind);
         effects(player.serverLevel(), player, kind, velocity(player, kind, Mth.clamp(forward, -1, 1), Mth.clamp(strafe, -1, 1)));
+        if (kind == Kind.DASH || kind == Kind.DESVIO) {
+            com.starkinhon.battlegroundsmod.combat.Stamina.gain(player,
+                    com.starkinhon.battlegroundsmod.skill.StaminaSpec.get().ganhoDashPct());
+        }
     }
 
     // Server: double tap of the sprint key (Ctrl). Appears in front of the target, facing it, and starts combat mode.

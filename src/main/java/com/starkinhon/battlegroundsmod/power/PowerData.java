@@ -72,6 +72,15 @@ public class PowerData {
     public boolean attackHeld = false;
     // Players: a skill key is held down (a charged skill like the giant Katon is thrown when it comes up).
     public boolean abilityHeld = false;
+    // Players: attack stamina (combat/Stamina). -1 = not set yet (starts full). Not saved: a relog starts full.
+    public float stamina = -1;
+    // Players: exhausted (stamina ran out) until this game time: no skills, open to stun-only skills.
+    public long exhaustedUntil = 0;
+    // Players: what a held charged skill may still drain on top of its use cost.
+    public float chargeLeft = 0;
+    // Client: the synced max stamina and exhaustion ticks left, for the bar.
+    public float staminaMax = 100;
+    public int exhaustedTicks = 0;
     // Players: the aura state the watchers were last told (the power while in combat, "" when off; null = never sent).
     public String auraSent = null;
     // Players: the outfit the watchers were last told (the power, "" when off; null = never sent).
@@ -108,5 +117,8 @@ public class PowerData {
         punchDelay = 0;
         punchQueued = false;
         busyTicks = 0;
+        stamina = -1;
+        exhaustedUntil = 0;
+        chargeLeft = 0;
     }
 }

@@ -229,6 +229,28 @@ public final class ModPayloads {
         }
     }
 
+    // Server -> client: the player's attack stamina, its max and the exhaustion ticks left (combat/Stamina).
+    public record SyncStamina(float stamina, float max, int exhaustedTicks) implements CustomPacketPayload {
+        public static final Type<SyncStamina> TYPE = payloadType("sync_stamina");
+        public static final StreamCodec<ByteBuf, SyncStamina> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.FLOAT, SyncStamina::stamina,
+                ByteBufCodecs.FLOAT, SyncStamina::max,
+                ByteBufCodecs.VAR_INT, SyncStamina::exhaustedTicks,
+                SyncStamina::new);
+
+        void applyTo(Player player) {
+            PowerData data = player.getData(ModAttachments.POWER);
+            data.stamina = stamina;
+            data.staminaMax = max;
+            data.exhaustedTicks = exhaustedTicks;
+        }
+
+        @Override
+        public Type<SyncStamina> type() {
+            return TYPE;
+        }
+    }
+
     // Server -> client: a player started a skill with a body animation (timing comes from the skill's spec).
     public record PlaySkillAnimation(int entityId, String skill, boolean awakened) implements CustomPacketPayload {
         public static final Type<PlaySkillAnimation> TYPE = payloadType("play_skill_animation");
@@ -945,6 +967,7 @@ public final class ModPayloads {
             }
         }));
         registrar.playToClient(SyncPower.TYPE, SyncPower.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> payload.applyTo(context.player())));
+        registrar.playToClient(SyncStamina.TYPE, SyncStamina.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> payload.applyTo(context.player())));
         registrar.playToClient(PlaySkillAnimation.TYPE, PlaySkillAnimation.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.playSkillAnimation(payload.entityId(), payload.skill(), payload.awakened())));
         registrar.playToClient(ComboAnimation.TYPE, ComboAnimation.STREAM_CODEC, (payload, context) -> context.enqueueWork(

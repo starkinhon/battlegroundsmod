@@ -101,7 +101,7 @@ public final class Vermelho {
                 PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new ModPayloads.PlaySkillAnimation(caster.getId(), "", false));
                 return true;
             }
-            boolean held = caster instanceof Player ? now.abilityHeld : bossHolds && age < decide + bossCharge;
+            boolean held = caster instanceof Player ? com.starkinhon.battlegroundsmod.combat.Stamina.holding(caster) : bossHolds && age < decide + bossCharge;
             now.busyTicks = Math.max(now.busyTicks, 2);
             if (!charging[0]) {
                 if (age + 1 < decide) {

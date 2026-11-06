@@ -102,7 +102,7 @@ public final class BlackBox {
             scale[0] = 1 + (scaleMax - 1) * smooth(charge);
             send(level, id, HELD, base, halfWidth * scale[0], height * scale[0], (float) charge, awakened);
             now.busyTicks = Math.max(now.busyTicks, 2);
-            boolean letGo = caster instanceof Player ? !now.abilityHeld : age >= bossCharge;
+            boolean letGo = caster instanceof Player ? !com.starkinhon.battlegroundsmod.combat.Stamina.holding(caster) : age >= bossCharge;
             if (age + 1 < full && !(letGo && age + 1 >= Math.max(1, caixa.minTicks()))) {
                 return false;
             }

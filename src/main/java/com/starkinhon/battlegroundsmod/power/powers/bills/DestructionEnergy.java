@@ -96,7 +96,7 @@ public final class DestructionEnergy {
             double k = Math.min(1, (age + 1) / (double) form);
             send(level, id, 0, pos[0], (float) (radius * (0.2 + 0.8 * smooth(k))), (float) k, false);
             now.busyTicks = Math.max(now.busyTicks, 2);
-            boolean letGo = caster instanceof Player ? !now.abilityHeld : age >= bossCharge;
+            boolean letGo = caster instanceof Player ? !com.starkinhon.battlegroundsmod.combat.Stamina.holding(caster) : age >= bossCharge;
             if (age + 1 < full && !(letGo && age + 1 >= Math.max(1, carga.minTicks()))) {
                 return false;
             }

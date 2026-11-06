@@ -98,7 +98,7 @@ public final class KatonGigante {
                 Fx.sound(level, caster.position(), SoundEvents.BLAZE_SHOOT, 1.5f + k, 0.4f + k * 0.4f);
                 Fx.sound(level, caster.position(), SoundEvents.FIRE_AMBIENT, 2f, 0.5f + k * 0.5f);
             }
-            boolean letGo = caster instanceof Player ? !caster.getData(ModAttachments.POWER).abilityHeld : charge >= bossCharge;
+            boolean letGo = caster instanceof Player ? !com.starkinhon.battlegroundsmod.combat.Stamina.holding(caster) : charge >= bossCharge;
             if (charge >= full || letGo && charge >= carga.minTicks()) {
                 caster.setNoGravity(false);
                 caster.addEffect(new MobEffectInstance(MobEffects.SLOW_FALLING, spec.planarTicks(), 0, false, false, false));
