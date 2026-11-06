@@ -39,47 +39,7 @@ public final class MeteorRenderer {
             return;
         }
         MeteoroSpec spec = SkillSpecs.get(skill, MeteoroSpec.class, awakened);
-        Falling falling = new Falling(spec, start, end, end.subtract(start).normalize(), level.getGameTime() + delay, Math.max(1, fallTicks), new AttackClock());
-        FALLING.add(falling);
-        realismo(falling, delay);
-    }
-
-    // Realismo on the way down: real fire wrapped round the back of the rock and a column of smoke trailing up behind it
-    // (bent back along the path it came down). The fire and smoke ride the meteor (held with it by Gojo's shockwave) and stay over the crater
-    // a moment after it lands, fading; the impact's own fireball, smoke and lava are in the skill file (momento impacto).
-    private static void realismo(Falling falling, int delay) {
-        MeteoroSpec.Corpo corpo = falling.spec().meteoro();
-        float r = (float) corpo.raio();
-        int fall = falling.ticks() + Math.max(0, delay);
-        Vec3 back = new Vec3(-falling.dir().x, 0, -falling.dir().z);
-        if (falling.spec().rabeta() == null || !falling.spec().rabeta().ativa()) {
-            return;
-        }
-        // (started already going, so they're whole from the first frame; they fade over the last quarter of their life,
-        // which starts once the meteor is down)
-        int firePre = 12;
-        Realismo.ride(Realismo.FOGO, partial -> riding(falling, partial, 0), back, r * 0.75f, r * 2.2f, 1.4f, 0xFFFFFF,
-                linger(firePre, fall), firePre, falling);
-        float smokeHeight = r * 5.5f;
-        // (a smoke column grows as it is let out, about 2.5 blocks a second: this one is already full grown)
-        int smokePre = Math.round(smokeHeight * 0.34f * 20);
-        Realismo.ride(Realismo.FUMACA, partial -> riding(falling, partial, r * 1.5), back, r * 0.5f, smokeHeight, 1, 0x9A9090,
-                linger(smokePre, fall), smokePre, falling);
-    }
-
-    // Ticks from now for a volume started preTicks ago to be at full strength until fallTicks from now.
-    private static int linger(int preTicks, int fallTicks) {
-        return (int) Math.ceil((preTicks + fallTicks) / 0.75) - preTicks;
-    }
-
-    // The meteor's middle this frame (raised by up), where it lands once it is down.
-    private static Vec3 riding(Falling falling, double partial, double up) {
-        var level = Minecraft.getInstance().level;
-        if (level == null) {
-            return null;
-        }
-        double age = falling.clock().peek(level.getGameTime() - falling.startTick() + partial);
-        return at(falling, Math.max(0, age)).add(0, up, 0);
+        FALLING.add(new Falling(spec, start, end, end.subtract(start).normalize(), level.getGameTime() + delay, Math.max(1, fallTicks), new AttackClock()));
     }
 
     public static void clear() {
@@ -93,13 +53,7 @@ public final class MeteorRenderer {
             return;
         }
         long now = level.getGameTime();
-        FALLING.removeIf(falling -> {
-            boolean gone = at(falling, falling.clock().peek(now - falling.startTick())).distanceTo(pos) < radius + falling.spec().meteoro().raio() + 3;
-            if (gone) {
-                Realismo.remove(falling);
-            }
-            return gone;
-        });
+        FALLING.removeIf(falling -> at(falling, falling.clock().peek(now - falling.startTick())).distanceTo(pos) < radius + falling.spec().meteoro().raio() + 3);
     }
 
     public static void onRenderLevel(RenderLevelStageEvent event) {

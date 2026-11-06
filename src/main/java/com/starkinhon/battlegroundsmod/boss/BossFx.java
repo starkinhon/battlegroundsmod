@@ -108,7 +108,8 @@ final class BossFx {
     }
 
     static void title(ServerLevel level, LivingEntity boss, String title, String subtitle, int color) {
-        if (title == null || title.isEmpty()) {
+        // Titles on screen are part of the boss fight only (/gamerule soulbossfight).
+        if (title == null || title.isEmpty() || !BossRules.bossfight(level)) {
             return;
         }
         Component big = Component.literal(title).withStyle(s -> s.withColor(color).withBold(true));

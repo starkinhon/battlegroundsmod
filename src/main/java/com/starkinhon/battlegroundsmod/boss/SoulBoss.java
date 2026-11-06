@@ -78,12 +78,40 @@ public abstract class SoulBoss extends Monster {
         return BossRules.atributos(level(), spec());
     }
 
+    // Under /gamerule soulbossfight false it fights as a plain mob: one phase with every move of every phase.
     public BossSpec.Fase fase() {
-        return spec().fase(phase);
+        return bossfight() ? spec().fase(phase) : mobFase(spec());
     }
 
     public int phase() {
         return level().isClientSide() ? entityData.get(DATA_PHASE) : phase;
+    }
+
+    // The boss fight (titles, bar, entrance, phases, final ult) is on: /gamerule soulbossfight.
+    public boolean bossfight() {
+        return BossRules.bossfight(level());
+    }
+
+    private static final java.util.Map<BossSpec, BossSpec.Fase> MOB_FASES = new java.util.IdentityHashMap<>();
+
+    // The first phase's pace, with the moves and combos of all phases (so it uses everything from the start).
+    private static BossSpec.Fase mobFase(BossSpec spec) {
+        synchronized (MOB_FASES) {
+            return MOB_FASES.computeIfAbsent(spec, s -> {
+                java.util.LinkedHashSet<String> skills = new java.util.LinkedHashSet<>();
+                java.util.LinkedHashSet<String> combos = new java.util.LinkedHashSet<>();
+                for (BossSpec.Fase f : s.fases()) {
+                    skills.addAll(f.skills());
+                    if (f.combos() != null) {
+                        combos.addAll(f.combos());
+                    }
+                }
+                BossSpec.Fase f = s.fase(0);
+                return new BossSpec.Fase(f.comecaEm(), java.util.List.copyOf(skills), java.util.List.copyOf(combos), f.agressividade(),
+                        f.multRecarga(), f.menosRecargaTicks(), f.multVelocidade(), f.multAviso(), f.reacaoTicks(), f.chanceReacao(),
+                        f.pausaTicks(), f.despertado(), f.corBarra(), 0, null, null);
+            });
+        }
     }
 
     @Override
@@ -161,15 +189,18 @@ public abstract class SoulBoss extends Monster {
         }
         PowerLogic.tick(this);
         Movement.tick(this);
+        boolean bossfight = BossRules.bossfight(level);
+        bossEvent.setVisible(bossfight);
         int want = spec.faseFor(getHealth() / getMaxHealth());
-        if (want > phase && isAlive()) {
+        if (bossfight && want > phase && isAlive()) {
             phase = want;
             startPhase(level, spec.fase(phase));
         }
         data.awakened = fase().despertado();
-        entityData.set(DATA_PHASE, phase);
+        // As a plain mob it has everything from the start, the sharingan's eye trail too (clients read the last phase).
+        entityData.set(DATA_PHASE, bossfight ? phase : spec.fases().size() - 1);
         BossSpec.UltFinal ult = spec.ultFinal();
-        ultPending = ult != null && ult.ativa() && !ultUsed && isAlive() && getHealth() / getMaxHealth() <= ult.vida();
+        ultPending = bossfight && ult != null && ult.ativa() && !ultUsed && isAlive() && getHealth() / getMaxHealth() <= ult.vida();
         // It finishes whatever move it is in first, so nothing else is flying when the meteor comes.
         if (ultPending && stagedTicks == 0 && data.busyTicks <= 0 && !Freeze.isFrozen(this) && !PowerLogic.sealed(this) && Stun.canAttack(this)) {
             ultPending = false;
@@ -203,10 +234,14 @@ public abstract class SoulBoss extends Monster {
         applyStats(level, spec);
         setHealth(getMaxHealth());
         phase = 0;
+        bossEvent.setColor(barColor(spec.fase(0).corBarra()));
+        if (!BossRules.bossfight(level)) {
+            // A plain mob: no entrance.
+            return;
+        }
         BossSpec.Intro intro = spec.intro();
         stage(intro.duracaoTicks(), true);
         BossFx.title(level, this, intro.titulo(), intro.subtitulo(), BossFx.color(intro.cor()));
-        bossEvent.setColor(barColor(fase().corBarra()));
     }
 
     // Attributes and tier, from the file or the allbossestier0 rule. Health keeps its fraction when the max changes.
@@ -257,11 +292,11 @@ public abstract class SoulBoss extends Monster {
     }
 
     // A hit that would kill it before its final ult leaves it at 1 life instead, so the ult always happens
-    // (/kill and the void still work).
+    // (/kill and the void still work). Only in a boss fight (/gamerule soulbossfight).
     @Override
     public void setHealth(float health) {
         BossSpec.UltFinal ult = level().isClientSide ? null : spec().ultFinal();
-        if (health <= 0 && configured && !ultUsed && !lethalBypass && ult != null && ult.ativa()) {
+        if (health <= 0 && configured && !ultUsed && !lethalBypass && ult != null && ult.ativa() && bossfight()) {
             health = 1;
         }
         super.setHealth(health);
@@ -307,9 +342,10 @@ public abstract class SoulBoss extends Monster {
         return false;
     }
 
+    // Gone in peaceful, like any monster.
     @Override
     protected boolean shouldDespawnInPeaceful() {
-        return false;
+        return true;
     }
 
     @Override

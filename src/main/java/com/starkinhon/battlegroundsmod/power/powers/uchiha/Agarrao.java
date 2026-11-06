@@ -158,7 +158,7 @@ public final class Agarrao {
 
     // A boss says its line (souls_bosses: fala) in the chat of the player it grabbed.
     private static void taunt(LivingEntity caster, LivingEntity target) {
-        if (!(caster instanceof SoulBoss boss) || !(target instanceof ServerPlayer player)) {
+        if (!(caster instanceof SoulBoss boss) || !(target instanceof ServerPlayer player) || !boss.bossfight()) {
             return;
         }
         BossSpec.Skill skill = boss.spec().skillForSlot(PowerData.SLOT_EXTRA);

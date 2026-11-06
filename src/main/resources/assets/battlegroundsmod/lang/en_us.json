@@ -182,6 +182,8 @@
   "ability.battlegroundsmod.uchiha_ghost.8.tags": "Area",
   "gamerule.soulsBlockDestruction": "Souls skills break blocks",
   "gamerule.soulsBlockDestruction.description": "When off, no skill or boss from the mod breaks or changes blocks. Effects and damage stay. mobGriefing off also stops it.",
+  "gamerule.soulbossfight": "Souls boss fights",
+  "gamerule.soulbossfight.description": "On: bosses have entrance and phase titles, boss bar, phases and the final ult. Off: they are plain mobs using all their moves from the start.",
   "power.battlegroundsmod.strongest": "The Strongest",
   "power.battlegroundsmod.strongest.desc": "Throughout heaven and earth, he alone is the honored one.",
   "ability.battlegroundsmod.strongest.0": "Blue",
