@@ -2,7 +2,7 @@
   "formato": "souls-skill/1",
   "skill": "padrao.teleporte",
   "nome": "Teleporte até o alvo",
-  "recargaTicks": 60,
+  "recargaTicks": 160,
   "alcance": 150,
   "distanciaFrente": 1.6,
   "toquesJanelaTicks": 7,

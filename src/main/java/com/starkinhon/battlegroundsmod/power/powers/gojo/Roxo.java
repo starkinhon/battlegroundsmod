@@ -132,6 +132,7 @@ public final class Roxo {
                 Fx.effects(level, SKILL, awakened, "carregar", heldAt(caster, spec, 0), Combat.flatLook(caster));
             }
             charge[0] = Math.min(1, (age - s2 + 1) / (double) grow);
+            com.starkinhon.battlegroundsmod.combat.Charge.report(caster, charge[0]);
             send(level, caster, id, ALIVE, age, (float) charge[0]);
             return false;
         });

@@ -35,6 +35,11 @@ public final class KatonBallRenderer {
         BALLS.put(id, new Ball(caster, mode, pos, velocity, radius, maxRadius, Math.max(1, ticks), ScreenFx.now(), new AttackClock()));
     }
 
+    // The caster's move was cut off while the ball was still growing over their head: it goes. One already thrown keeps flying.
+    public static void stopOwner(int caster) {
+        BALLS.values().removeIf(b -> b.mode() == 0 && b.caster() == caster);
+    }
+
     public static boolean active() {
         return !BALLS.isEmpty();
     }

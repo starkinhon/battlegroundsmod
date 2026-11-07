@@ -44,7 +44,8 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 // Shift + X: Izanami. From the moment it is used, everything within raio is recorded for gravacaoTicks (30 s): where
 // every living thing goes, its life, effects, fire and hunger, every block that changes, everything that appears.
-// Nobody dies in that time: whoever would is held as a ghost (hidden, frozen, untouchable). Then the world stops, the
+// Only the caster's side is spared: nobody of theirs dies in that time, whoever would is held as a ghost (hidden,
+// frozen, untouchable), and their life comes back. Enemies are carried back too but keep their wounds, and their deaths stay. Then the world stops, the
 // camera goes to the caster's eyes, and it all plays backwards until it is as it was: damage, moves, deaths, blocks.
 // Skills still going are cut off and their effects wiped. The caster can't use any skill while it records; at the end
 // only the caster's cooldowns are reset, and the Izanami itself is spent until they die or change power.
@@ -135,6 +136,16 @@ public final class Izanami {
         boolean near(Vec3 pos) {
             return pos.distanceToSqr(center) <= spec.raio() * spec.raio();
         }
+
+        // Izanami is the caster's own: it turns back their fate (and their team's and pets'), never their enemies'.
+        // Enemies are carried back along their paths like everything else, but keep the damage they took, their
+        // effects and their fire, and whoever dies in it stays dead.
+        boolean helps(LivingEntity entity) {
+            if (entity == caster || entity.isAlliedTo(caster)) {
+                return true;
+            }
+            return entity instanceof net.minecraft.world.entity.OwnableEntity pet && pet.getOwner() == caster;
+        }
     }
 
     private static final List<Recording> ACTIVE = new ArrayList<>();
@@ -218,7 +229,7 @@ public final class Izanami {
         int last = Math.max(1, r.spec.gravacaoTicks()) - 1;
         for (Track track : r.tracks.values()) {
             LivingEntity entity = track.entity;
-            if (entity.isRemoved()) {
+            if (entity.isRemoved() || !entity.isAlive()) {
                 continue;
             }
             track.healthAtStop = entity.getHealth();
@@ -282,7 +293,7 @@ public final class Izanami {
         int until = (int) Math.round(record * (1 - eased));
         restoreBlocks(r, until);
         for (Track track : r.tracks.values()) {
-            if (!track.entity.isRemoved() && track.entity.isAlive()) {
+            if (!track.entity.isRemoved() && track.entity.isAlive() && r.helps(track.entity)) {
                 track.entity.setHealth(Math.max(1, Mth.lerp((float) eased, track.healthAtStop, track.health)));
             }
         }
@@ -316,19 +327,28 @@ public final class Izanami {
         ACTIVE.remove(r);
         for (Track track : r.tracks.values()) {
             LivingEntity entity = track.entity;
-            if (entity.isRemoved()) {
+            if (entity.isRemoved() || !entity.isAlive()) {
                 continue;
             }
             if (track.first < 0) {
                 track.record(0);
             }
             Vec3 start = track.at(track.first);
+            boolean helped = r.helps(entity);
             if (entity instanceof ServerPlayer player) {
                 player.connection.teleport(start.x, start.y, start.z, track.yaw[track.first], track.pitch[track.first]);
-                player.getFoodData().setFoodLevel(track.food);
-                player.getFoodData().setSaturation(track.saturation);
+                if (helped) {
+                    player.getFoodData().setFoodLevel(track.food);
+                    player.getFoodData().setSaturation(track.saturation);
+                }
             } else {
                 entity.moveTo(start.x, start.y, start.z, track.yaw[track.first], track.pitch[track.first]);
+            }
+            entity.setDeltaMovement(Vec3.ZERO);
+            entity.fallDistance = 0;
+            entity.hurtMarked = true;
+            if (!helped) {
+                continue;
             }
             entity.setHealth(track.health);
             entity.setAbsorptionAmount(track.absorption);
@@ -337,9 +357,6 @@ public final class Izanami {
                 entity.addEffect(new MobEffectInstance(effect));
             }
             entity.setRemainingFireTicks(track.fire);
-            entity.setDeltaMovement(Vec3.ZERO);
-            entity.fallDistance = 0;
-            entity.hurtMarked = true;
         }
         for (LivingEntity ghost : r.ghosts) {
             PacketDistributor.sendToPlayersTrackingEntityAndSelf(ghost, new ModPayloads.HideEntity(ghost.getId(), 0));
@@ -409,7 +426,7 @@ public final class Izanami {
             return null;
         }
         for (Recording r : ACTIVE) {
-            if (r.level == entity.level() && (r.tracks.containsKey(entity) || r.near(entity.position()))) {
+            if (r.level == entity.level() && r.helps(entity) && (r.tracks.containsKey(entity) || r.near(entity.position()))) {
                 return r;
             }
         }

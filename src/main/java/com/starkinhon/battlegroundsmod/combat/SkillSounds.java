@@ -11,6 +11,8 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
 
 // Plays a skill's "sons" list the way the Forja schedules it (soundSchedule there). Volume above 1 is not louder,
@@ -27,6 +29,9 @@ public final class SkillSounds {
         if (sons == null) {
             return;
         }
+        // Whose move this is: if it is cut off before a sound's turn (SkillStop), that sound never plays.
+        Entity owner = Tasks.owner();
+        int epoch = SkillStop.epoch(owner);
         for (Som som : sons) {
             if (som == null || !momento.equals(som.momento())) {
                 continue;
@@ -42,9 +47,16 @@ public final class SkillSounds {
                 float pitch = (float) (som.pitch() + (som.pitchFim() - som.pitch()) * Math.min(1, k));
                 int delay = Math.max(0, at) + Math.max(0, som.atrasoTicks()) + i * every;
                 Runnable sound = () -> {
+                    if (owner != null && SkillStop.epoch(owner) != epoch) {
+                        return;
+                    }
                     if ("tela".equals(som.onde())) {
                         for (ServerPlayer player : screen) {
-                            player.playNotifySound(event, SoundSource.PLAYERS, som.volume(), pitch);
+                            if (owner instanceof LivingEntity) {
+                                SkillStop.screenSound(player, owner, event, som.volume(), pitch);
+                            } else {
+                                player.playNotifySound(event, SoundSource.PLAYERS, som.volume(), pitch);
+                            }
                         }
                         return;
                     }

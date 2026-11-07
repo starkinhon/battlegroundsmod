@@ -7,6 +7,7 @@ import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Fx;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
+import com.starkinhon.battlegroundsmod.combat.Stun;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
 import com.starkinhon.battlegroundsmod.power.PowerData;
@@ -128,6 +129,7 @@ public final class Susanoo {
                 SusanooSpec.Arremesso arremesso = spec.arremesso();
                 Combat.hurt(player, target, arremesso.dano());
                 Combat.push(target, Combat.flatLook(player), arremesso.forca(), arremesso.altura());
+                Stun.apply(target, arremesso.stunTicks());
                 UchihaFx.susanooThrow(level, target, spec);
                 Fx.effects(level, SKILL, awakened(player), "arremesso", Combat.center(target), Combat.flatLook(player));
                 Fx.effects(level, SKILL, awakened(player), "solto", target, 0);

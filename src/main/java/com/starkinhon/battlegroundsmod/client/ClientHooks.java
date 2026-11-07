@@ -65,8 +65,19 @@ public final class ClientHooks {
         MeteorRenderer.start(skill, awakened, start, end, delay, fallTicks);
     }
 
-    public static void playEffects(String skill, boolean awakened, String momento, Vec3 pos, Vec3 dir, int entityId, int ticks) {
-        SkillEffects.play(skill, awakened, momento, pos, dir, entityId, ticks);
+    public static void ownedSound(int owner, net.minecraft.resources.ResourceLocation sound, Vec3 pos, float volume, float pitch, boolean screen,
+            long seed) {
+        com.starkinhon.battlegroundsmod.client.fx.SkillAudio.play(owner, sound, pos, volume, pitch, screen, seed);
+    }
+
+    // owner's move was cut off: its sounds stop and its effects fade out now.
+    public static void stopOwnerFx(int owner) {
+        com.starkinhon.battlegroundsmod.client.fx.SkillAudio.stop(owner);
+        SkillEffects.stopOwner(owner);
+    }
+
+    public static void playEffects(String skill, boolean awakened, String momento, Vec3 pos, Vec3 dir, int entityId, int ticks, int owner) {
+        SkillEffects.play(skill, awakened, momento, pos, dir, entityId, ticks, owner);
         if ("olhos".equals(momento)) {
             Aura.skillUsed(skill, entityId);
         } else if ("olhosLigar".equals(momento) || "olhosDesligar".equals(momento)) {

@@ -6,6 +6,7 @@ import java.util.Map;
 import com.starkinhon.battlegroundsmod.item.AizenSwordItem;
 import com.starkinhon.battlegroundsmod.item.FightRodItem;
 import com.starkinhon.battlegroundsmod.item.PowerBookItem;
+import com.starkinhon.battlegroundsmod.item.SoulInsectItem;
 import com.starkinhon.battlegroundsmod.item.SoulItem;
 import com.starkinhon.battlegroundsmod.power.Power;
 import com.starkinhon.battlegroundsmod.power.Powers;
@@ -28,6 +29,10 @@ public final class ModItems {
     // Aizen's sword: the model from the Armario Souls viewer, as a normal (unbreakable) sword.
     public static final DeferredItem<AizenSwordItem> AIZEN_SWORD = BattlegroundsMod.ITEMS.registerItem("aizen_sword",
             AizenSwordItem::new, new Item.Properties().rarity(Rarity.EPIC).fireResistant().component(DataComponents.UNBREAKABLE, new Unbreakable(true)));
+
+    // In the inventory: never hungry, never healed by food (item/SoulInsectItem).
+    public static final DeferredItem<SoulInsectItem> SOUL_INSECT = BattlegroundsMod.ITEMS.registerItem("soul_insect",
+            SoulInsectItem::new, new Item.Properties().stacksTo(1).rarity(Rarity.RARE));
 
     public static final DeferredItem<DeferredSpawnEggItem> MADARA_SPAWN_EGG = BattlegroundsMod.ITEMS.register("madara_spawn_egg",
             () -> new DeferredSpawnEggItem(ModEntities.MADARA, 0x1A1A1F, 0xD12F2F, new Item.Properties()));

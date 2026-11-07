@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.function.Function;
 
 import com.starkinhon.battlegroundsmod.ModAttachments;
+import com.starkinhon.battlegroundsmod.power.BossOrder;
 import com.starkinhon.battlegroundsmod.ModEffects;
 import com.starkinhon.battlegroundsmod.combat.AshKill;
 import com.starkinhon.battlegroundsmod.combat.BlockRules;
@@ -65,8 +66,11 @@ public final class DestructionSphere {
         DestructionSphereSpec.Bola bola = spec.bola();
         int form = Math.max(1, carga.formarTicks());
         int full = Math.max(form, carga.maxTicks());
-        // Bosses don't hold keys: they let go a little after the ball formed.
-        int bossCharge = form + 10 + RANDOM.nextInt(20);
+        // Bosses don't hold keys: they let go a little after the ball formed, or as their tactics say (BossOrder: 0 = as
+        // soon as it is formed, 1 = a full charge).
+        BossOrder.Order order = BossOrder.take(caster);
+        int bossCharge = order != null && order.hold() ? form + (int) Math.round((full - form) * order.charge())
+                : form + 10 + RANDOM.nextInt(20);
         float small = (float) Math.max(0.05, bola.raio());
         int id = nextId++;
         String power = data.power;
@@ -97,6 +101,7 @@ public final class DestructionSphere {
             send(level, id, 0, pos[0], (float) (small * (0.3 + 0.7 * smooth(k))), false);
             now.busyTicks = Math.max(now.busyTicks, 2);
             boolean letGo = caster instanceof Player ? !com.starkinhon.battlegroundsmod.combat.Stamina.holding(caster) : age >= bossCharge;
+            com.starkinhon.battlegroundsmod.combat.Charge.report(caster, (age + 1) / (double) full);
             if (age + 1 < full && !(letGo && age + 1 >= Math.max(1, carga.minTicks()))) {
                 return false;
             }

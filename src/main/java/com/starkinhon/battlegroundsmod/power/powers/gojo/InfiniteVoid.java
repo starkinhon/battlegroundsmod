@@ -14,6 +14,7 @@ import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Destructible;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.combat.SkillSounds;
+import com.starkinhon.battlegroundsmod.combat.Stamina;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
 import com.starkinhon.battlegroundsmod.power.PowerData;
@@ -21,11 +22,14 @@ import com.starkinhon.battlegroundsmod.power.PowerLogic;
 import com.starkinhon.battlegroundsmod.skill.DominioSpec;
 
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
@@ -61,10 +65,11 @@ public final class InfiniteVoid {
     private static final int PLACE_SYNC_TICKS = 4;
     // Someone below the floor by more than this (lag, a knockback) is put back on it.
     private static final double FLOOR_SLACK = 1.5;
-    // Brain Damage (ModEffects): those caught have it the whole domain and this long after it ends, held still.
-    private static final int BRAIN_DAMAGE_AFTER = 200;
     // Saved on players taken inside, so a server stop never leaves them in the sky (see onLogin).
     private static final String BACK_TAG = "battlegroundsmod_void_back";
+    // How far past the edge (or above or below the inside's floor) Gojo can be before he counts as gone from it.
+    private static final double LEAVE_SLACK = 6;
+    private static final double LEAVE_UP = 48;
 
     // A domain open right now: for the kills inside it and Gojo's Infinity.
     private static final class Active {
@@ -142,12 +147,14 @@ public final class InfiniteVoid {
         boolean[] closing = {false};
         Tasks.add(age -> {
             active.age = age;
-            boolean gone = !caster.isAlive() || caster.isRemoved() || caster.level() != level;
+            // Gojo left his own domain (a teleport, a pearl, a command): it can't stand without him, it shatters.
+            boolean gone = !caster.isAlive() || caster.isRemoved() || caster.level() != level || left(active);
             // The target died (the ink plays first), or everyone caught is dead.
             boolean done = active.killedAt >= 0 && age >= active.killedAt + KILL_CLOSE_DELAY;
             if ((gone || done || active.cancelled) && !closing[0] && age < close) {
-                // It shatters now.
+                // It shatters now: what it still had going (the tunnel's and the void's sounds, its effects) stops with it.
                 closing[0] = true;
+                com.starkinhon.battlegroundsmod.combat.SkillStop.stop(caster);
                 send(level, center, new ModPayloads.GojoDomain(caster.getId(), center, awakened, 1, 0));
                 SkillSounds.play(level, spec.sons(), "quebra", 0, spec.closeTicks(), onde -> center.add(0, 1, 0), screen);
                 // Everyone inside is back in the world when it shatters.
@@ -190,14 +197,20 @@ public final class InfiniteVoid {
                 double reach = radius;
                 DominioSpec.Acerto acerto = spec.acerto();
                 for (LivingEntity victim : Combat.inRadius(level, center, reach, caster)) {
-                    if (!caught.add(victim)) {
+                    if (spared(victim) || !caught.add(victim)) {
                         continue;
                     }
                     if (victim.hasData(ModAttachments.POWER)) {
                         // Swallowed by the white: whatever they were doing is cut off.
                         PowerLogic.interrupt(victim);
                     }
-                    if (acerto.paralisar()) {
+                    if (Stamina.resists(victim)) {
+                        // A player with stamina left holds off the information for a while (drained below).
+                        if (victim instanceof ServerPlayer resisting) {
+                            resisting.displayClientMessage(Component.translatable("message.battlegroundsmod.domain_resist")
+                                    .withStyle(st -> st.withColor(0x8FE6FF)), true);
+                        }
+                    } else if (acerto.paralisar()) {
                         Freeze.hold(victim, Math.min(HOLD_STEP + 1, release - age));
                     }
                     if (active.inside) {
@@ -209,12 +222,26 @@ public final class InfiniteVoid {
                     if (!victim.isAlive() || victim.isRemoved() || victim.level() != level) {
                         continue;
                     }
-                    if (acerto.paralisar() && age % HOLD_STEP == 0) {
-                        // A tick of overlap so they never slip free in between.
-                        Freeze.hold(victim, Math.min(HOLD_STEP + 1, release - age));
+                    // The infinite information drains a caught player's stamina; while some is left they resist: slowed,
+                    // still able to punch (no techniques, see blocks), not paralyzed. At zero they are exhausted and
+                    // paralyzed like everyone without stamina (mobs, bosses, players without a power).
+                    boolean resisting = Stamina.resists(victim);
+                    if (resisting && age < close) {
+                        Stamina.drain(victim, acerto.drain() / 20.0);
+                        resisting = Stamina.resists(victim);
                     }
-                    if (age % HOLD_STEP == 0 && !active.braindamaged) {
-                        brainDamage(victim, HOLD_STEP * 3);
+                    if (resisting) {
+                        if (age % HOLD_STEP == 0) {
+                            victim.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, HOLD_STEP + 1, 2, false, false, false));
+                        }
+                    } else {
+                        if (acerto.paralisar() && (age % HOLD_STEP == 0 || !Freeze.isFrozen(victim))) {
+                            // A tick of overlap so they never slip free in between.
+                            Freeze.hold(victim, Math.min(HOLD_STEP + 1, release - age));
+                        }
+                        if ((age % HOLD_STEP == 0 || !victim.hasEffect(ModEffects.BRAIN_DAMAGE)) && !active.braindamaged) {
+                            brainDamage(victim, HOLD_STEP * 3);
+                        }
                     }
                     if (age >= voidTick && age < close && acerto.dano() > 0 && acerto.aCadaTicks() > 0
                             && (age - voidTick) % acerto.aCadaTicks() == 0) {
@@ -247,6 +274,41 @@ public final class InfiniteVoid {
             }
         }
         return false;
+    }
+
+    // Players in creative are never caught: no freeze, no inside, no Brain Damage, no screen effects (DomainScene
+    // spares them too). They stay normal, watching it from the world, even standing where it opens.
+    private static boolean spared(LivingEntity entity) {
+        return entity instanceof Player player && player.isCreative();
+    }
+
+    // Gojo is no longer in his domain: out of the inside once everyone is up there, or away from where it opened.
+    private static boolean left(Active active) {
+        LivingEntity caster = active.caster;
+        double slack = active.spec.radius() + LEAVE_SLACK;
+        if (active.inside) {
+            Vec3 pos = caster.position();
+            double dx = pos.x - active.center.x;
+            double dz = pos.z - active.center.z;
+            // Jumping or flying up there is fine; the world itself is far below the floor.
+            return dx * dx + dz * dz > slack * slack || pos.y < active.arena.y - LEAVE_SLACK || pos.y > active.arena.y + LEAVE_UP;
+        }
+        return caster.position().distanceToSqr(active.center) > slack * slack;
+    }
+
+    // a and b are not in the same space: one is up inside a domain, the other is not (or in another one). Nobody
+    // teleports into or out of a domain.
+    public static boolean apart(LivingEntity a, LivingEntity b) {
+        return insideOf(a) != insideOf(b);
+    }
+
+    private static Active insideOf(LivingEntity entity) {
+        for (Active active : ACTIVE) {
+            if (active.inside && active.back.containsKey(entity)) {
+                return active;
+            }
+        }
+        return null;
     }
 
     // Infinity: nothing touches Gojo while he makes the sign and the white closes. And nobody but Gojo hurts those caught.
@@ -405,19 +467,40 @@ public final class InfiniteVoid {
         active.granted.clear();
     }
 
-    // The domain is over: everyone it caught keeps Brain Damage for 10 s more, held still where they stand.
+    // The domain is over: everyone it paralyzed keeps Brain Damage a while more (acerto.danoCerebralDepoisTicks), held
+    // still where they stand; whoever was still resisting with stamina walks out free. Gojo's technique burns out.
     private static void brainDamage(Active active) {
         if (active.braindamaged) {
             return;
         }
         active.braindamaged = true;
+        int after = active.spec.acerto().brainDamageAfter();
         for (LivingEntity victim : active.caught) {
             if (victim == active.caster || !victim.isAlive() || victim.isRemoved() || victim.level() != active.level) {
                 continue;
             }
             victim.removeEffect(ModEffects.BRAIN_DAMAGE);
-            brainDamage(victim, BRAIN_DAMAGE_AFTER);
-            Freeze.hold(victim, BRAIN_DAMAGE_AFTER);
+            if (Stamina.resists(victim) || after <= 0) {
+                continue;
+            }
+            brainDamage(victim, after);
+            Freeze.hold(victim, after);
+        }
+        burnout(active);
+    }
+
+    // Like in the anime, after a Domain the caster's technique is burnt out: for acerto.queimarTecnicaTicks no techniques
+    // (all of them sealed, the boss's too), only punches. Missing the Domain is a big risk.
+    private static void burnout(Active active) {
+        LivingEntity caster = active.caster;
+        int ticks = active.spec.acerto().burnout();
+        if (ticks <= 0 || !caster.isAlive() || caster.isRemoved() || !caster.hasData(ModAttachments.POWER)) {
+            return;
+        }
+        PowerLogic.seal(caster, ticks);
+        if (caster instanceof ServerPlayer player) {
+            player.displayClientMessage(Component.translatable("message.battlegroundsmod.technique_burnout", ticks / 20)
+                    .withStyle(st -> st.withColor(0xFF5555)), true);
         }
     }
 

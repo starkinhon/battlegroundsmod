@@ -10,6 +10,7 @@ import com.starkinhon.battlegroundsmod.combat.BlockRules;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Fx;
 import com.starkinhon.battlegroundsmod.combat.SkillSounds;
+import com.starkinhon.battlegroundsmod.combat.Stun;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
 import com.starkinhon.battlegroundsmod.power.BossOrder;
@@ -118,6 +119,9 @@ public final class Vermelho {
                 Fx.effects(level, SKILL, awakened, "carregar", fingertip(caster), caster.getLookAngle());
             }
             charge[0] = Math.min(1, (age + 1 - chargeStart[0]) / (double) chargeTicks);
+            if (held) {
+                com.starkinhon.battlegroundsmod.combat.Charge.report(caster, charge[0]);
+            }
             if (!tails[0] && charge[0] >= segurado.cargaRabos()) {
                 tails[0] = true;
                 SkillSounds.play(level, spec.sons(), "rabos", 0, 0, where, screen);
@@ -267,6 +271,10 @@ public final class Vermelho {
                     continue;
                 }
                 Combat.hurt(caster, e, damage);
+                if (shift != null) {
+                    // The point blank one catches them off guard: stunned while they fly.
+                    Stun.apply(e, shift.stunTicks());
+                }
                 Vec3 v = dir.scale(throwSpeed).add(0, tiro.subir() * throwSpeed * 0.25, 0);
                 e.setDeltaMovement(v);
                 e.hurtMarked = true;

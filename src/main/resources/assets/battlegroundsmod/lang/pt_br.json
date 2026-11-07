@@ -202,6 +202,10 @@
   "ability.battlegroundsmod.strongest.2.tags": "Linha reta,Destruição,Segurar,Combo",
   "ability.battlegroundsmod.strongest.3.desc": "Faz o selo de mão e expande o domínio: uma esfera preta engole tudo em volta. Lá dentro só existe o vazio, e quem foi pego recebe informação infinita, ficando paralisado até o domínio quebrar.",
   "ability.battlegroundsmod.strongest.3.tags": "Domínio,Área,Acerto garantido,Cutscene",
+  "ability.battlegroundsmod.strongest.5": "Azul + Black Flash",
+  "ability.battlegroundsmod.strongest.5.desc": "Um Azul se forma na palma e puxa o alvo na sua mira (até 18 blocos) direto até você, cada vez mais rápido. Soltou antes dele chegar: o soco sai assim que ele chega. Continue segurando: ele flutua na sua frente enquanto o soco carrega, e sai quando você solta. Sempre um Black Flash: o mundo para por um instante, raios pretos e vermelhos explodem do punho e o alvo voa longe, quebrando tudo no caminho.",
+  "ability.battlegroundsmod.strongest.5.tags": "Puxão,Corpo a corpo,Segurar,Destruição",
+  "message.battlegroundsmod.azul_flash_no_target": "Mire em alguém pra puxar com o Azul.",
   "message.battlegroundsmod.vermelho_no_target": "Mire em alguém pra aparecer atrás dele.",
   "ability.battlegroundsmod.strongest.6.tags": "Teleporte,Destruição,Empurrão",
   "ability.battlegroundsmod.strongest.6.desc": "Aparece atrás do alvo na sua mira, flutuando de cabeça pra baixo, ergue o dedo e dispara o Vermelho à queima-roupa.",
@@ -242,6 +246,9 @@
   "entity.battlegroundsmod.aizen_illusion": "Ilusão",
   "effect.battlegroundsmod.exausto": "Exausto",
   "message.battlegroundsmod.stamina_out": "Sem estamina! Vulnerável por %s s",
+  "message.battlegroundsmod.needs_stun": "O alvo precisa estar stunado (acerte um stun ou zere a estamina dele).",
+  "message.battlegroundsmod.domain_resist": "Informação infinita! Sua estamina está segurando o Domínio...",
+  "message.battlegroundsmod.technique_burnout": "Técnica queimada: sem técnicas por %s s",
   "message.battlegroundsmod.stamina_exhausted": "Exausto: sem técnicas, só porrada",
   "message.battlegroundsmod.stamina_set": "Estamina: %s/%s",
   "screen.battlegroundsmod.select_power.divine": "Almas Divinas",
@@ -274,8 +281,8 @@
   "ability.battlegroundsmod.rukia.3": "Bankai: Hakka no Togame",
   "ability.battlegroundsmod.rukia.3.desc": "Você congela por inteiro e vira branca. O zero absoluto se espalha em volta e transforma todo mundo perto em cristal.",
   "ability.battlegroundsmod.rukia.3.tags": "Especial,Área,Congela",
-  "ability.battlegroundsmod.strongest.5": "Azul + Black Flash",
-  "ability.battlegroundsmod.strongest.5.desc": "Um Azul se forma na palma e puxa o alvo na sua mira (até 18 blocos) direto até você, cada vez mais rápido. Soltou antes dele chegar: o soco sai assim que ele chega. Continue segurando: ele flutua na sua frente enquanto o soco carrega, e sai quando você solta. Sempre um Black Flash: o mundo para por um instante, raios pretos e vermelhos explodem do punho e o alvo voa longe, quebrando tudo no caminho.",
-  "ability.battlegroundsmod.strongest.5.tags": "Puxão,Corpo a corpo,Segurar,Destruição",
-  "message.battlegroundsmod.azul_flash_no_target": "Mire em alguém pra puxar com o Azul."
+  "item.battlegroundsmod.soul_insect": "Inseto de Alma",
+  "item.battlegroundsmod.soul_insect.tip1": "No inventário: você nunca passa fome",
+  "item.battlegroundsmod.soul_insect.tip2": "Mas a fome fica abaixo do ponto de regenerar vida",
+  "message.battlegroundsmod.teleport_domain": "Não dá pra teleportar pra dentro ou pra fora da Expansão de Domínio"
 }

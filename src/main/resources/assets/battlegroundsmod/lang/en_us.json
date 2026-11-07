@@ -202,6 +202,10 @@
   "ability.battlegroundsmod.strongest.2.tags": "Straight line,Destruction,Hold,Combo",
   "ability.battlegroundsmod.strongest.3.desc": "Makes the hand sign and expands the domain: a black sphere swallows everything around. Inside there is only the void, and whoever is caught gets infinite information, paralyzed until the domain breaks.",
   "ability.battlegroundsmod.strongest.3.tags": "Domain,Area,Sure hit,Cutscene",
+  "ability.battlegroundsmod.strongest.5": "Blue + Black Flash",
+  "ability.battlegroundsmod.strongest.5.desc": "A Blue forms on your palm and pulls the target you aim at (up to 18 blocks) straight to you, faster and faster. Let go before it arrives: the punch lands as soon as it gets there. Keep holding: it floats in front of you while the punch charges, and goes when you let go. Always a Black Flash: the world stops for an instant, black and red lightning bursts from the fist and the target flies far, breaking everything in its way.",
+  "ability.battlegroundsmod.strongest.5.tags": "Pull,Melee,Hold,Destruction",
+  "message.battlegroundsmod.azul_flash_no_target": "Aim at someone to pull them with the Blue.",
   "message.battlegroundsmod.vermelho_no_target": "Aim at someone to appear behind them.",
   "ability.battlegroundsmod.strongest.6.tags": "Teleport,Destruction,Push",
   "ability.battlegroundsmod.strongest.6.desc": "Appears behind the target you aim at, floating upside down, raises the finger and fires the Red point blank.",
@@ -242,6 +246,9 @@
   "entity.battlegroundsmod.aizen_illusion": "Illusion",
   "effect.battlegroundsmod.exausto": "Exhausted",
   "message.battlegroundsmod.stamina_out": "Out of stamina! Vulnerable for %s s",
+  "message.battlegroundsmod.needs_stun": "The target must be stunned (hit it with a stun or drain its stamina).",
+  "message.battlegroundsmod.domain_resist": "Infinite information! Your stamina is holding off the Domain...",
+  "message.battlegroundsmod.technique_burnout": "Burnt-out technique: no techniques for %s s",
   "message.battlegroundsmod.stamina_exhausted": "Exhausted: no skills, only punches",
   "message.battlegroundsmod.stamina_set": "Stamina: %s/%s",
   "screen.battlegroundsmod.select_power.divine": "Divine Souls",
@@ -266,8 +273,8 @@
   "ability.battlegroundsmod.rukia.1.desc": "A wide white avalanche forward that freezes everything in its way.",
   "ability.battlegroundsmod.rukia.2.desc": "The blade stretches into ice at once and pierces far; the ice spreads from the wound.",
   "ability.battlegroundsmod.rukia.3.desc": "You freeze over and turn white; absolute zero spreads around you and turns everyone close into crystal.",
-  "ability.battlegroundsmod.strongest.5": "Blue + Black Flash",
-  "ability.battlegroundsmod.strongest.5.desc": "A Blue forms on your palm and pulls the target you aim at (up to 18 blocks) straight to you, faster and faster. Let go before it arrives: the punch lands as soon as it gets there. Keep holding: it floats in front of you while the punch charges, and goes when you let go. Always a Black Flash: the world stops for an instant, black and red lightning bursts from the fist and the target flies far, breaking everything in its way.",
-  "ability.battlegroundsmod.strongest.5.tags": "Pull,Melee,Hold,Destruction",
-  "message.battlegroundsmod.azul_flash_no_target": "Aim at someone to pull them with the Blue."
+  "item.battlegroundsmod.soul_insect": "Soul Insect",
+  "item.battlegroundsmod.soul_insect.tip1": "In the inventory: you never go hungry",
+  "item.battlegroundsmod.soul_insect.tip2": "But hunger stays below the point that regenerates health",
+  "message.battlegroundsmod.teleport_domain": "Can't teleport into or out of a Domain Expansion"
 }

@@ -203,6 +203,12 @@ public class BattlegroundsModClient {
     private static void onClientTick(ClientTickEvent.Post event) {
         MovementInput.tickPost();
         Keybinds.tick();
+        // Single player paused (Esc): the server stops, so every effect, cutscene and screen effect stops on the frame it
+        // is, instead of running on alone and being over (and gone) by the time the move resumes. Their clocks
+        // (ScreenFx.now and the like) only move here, and the partial tick stays put while paused, so they hold still.
+        if (net.minecraft.client.Minecraft.getInstance().isPaused()) {
+            return;
+        }
         FaceCutscene.tick();
         BossCutscene.tick();
         ShoulderCutscene.tick();
@@ -222,5 +228,6 @@ public class BattlegroundsModClient {
         com.starkinhon.battlegroundsmod.client.fx.DomainScene.tick();
         BossBars.tick();
         Fear.tick();
+        com.starkinhon.battlegroundsmod.client.fx.SkillAudio.tick();
     }
 }

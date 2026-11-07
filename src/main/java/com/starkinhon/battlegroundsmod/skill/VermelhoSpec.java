@@ -36,8 +36,8 @@ public record VermelhoSpec(String skill, String nome, Orbe orbe, Segurado segura
 
     // alcanceAlvo: how far the target can be; atras: blocks behind it he appears; flutuar: blocks above the ground he
     // floats; preparoTicks: from appearing to firing; carga: the charge the shot has; dano and empurrao override the
-    // charge's ones.
-    public record Shift(double alcanceAlvo, double atras, double flutuar, int preparoTicks, double carga, float dano, double empurrao) {
+    // charge's ones; stunTicks: how long whoever it hits stays stunned.
+    public record Shift(double alcanceAlvo, double atras, double flutuar, int preparoTicks, double carga, float dano, double empurrao, int stunTicks) {
     }
 
     public static final String SKILL = "gojo.vermelho";

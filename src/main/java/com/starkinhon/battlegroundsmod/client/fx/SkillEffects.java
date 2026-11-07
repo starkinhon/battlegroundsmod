@@ -15,15 +15,22 @@ import net.minecraft.world.phys.Vec3;
 // Plays a skill's "vfx" list on this client: the server says which moment happened where, the timing and look
 // come from the skill file. Screen effects get weaker with distance (alcance) and are skipped past it.
 public final class SkillEffects {
-    private record Pending(String skill, Efeito e, Vec3 pos, Vec3 dir, int entity, int ticks, long at) {
+    // owner: whose move it is (-1 unknown), so stopOwner can take its effects away when the move is cut off.
+    private record Pending(String skill, Efeito e, Vec3 pos, Vec3 dir, int entity, int ticks, long at, int owner) {
     }
 
     private static final List<Pending> PENDING = new ArrayList<>();
+    // The owner of the effect being started now (read by FxWorld, Realismo and ScreenFx when they keep it).
+    private static int starting = -1;
 
     private SkillEffects() {
     }
 
     public static void play(String skill, boolean awakened, String momento, Vec3 pos, Vec3 dir, int entity, int ticks) {
+        play(skill, awakened, momento, pos, dir, entity, ticks, -1);
+    }
+
+    public static void play(String skill, boolean awakened, String momento, Vec3 pos, Vec3 dir, int entity, int ticks, int owner) {
         List<Efeito> efeitos;
         try {
             VfxSpec spec = SkillSpecs.get(skill, VfxSpec.class, awakened);
@@ -41,16 +48,34 @@ public final class SkillEffects {
             }
             int delay = Math.max(0, FxWorld.i(e.inicio(), 0));
             if (delay == 0) {
-                start(skill, e, pos, dir, entity, ticks);
+                start(skill, e, pos, dir, entity, ticks, owner);
             } else {
-                PENDING.add(new Pending(skill, e, pos, dir, entity, ticks, ScreenFx.now() + delay));
+                PENDING.add(new Pending(skill, e, pos, dir, entity, ticks, ScreenFx.now() + delay, owner));
             }
         }
+    }
+
+    static int owner() {
+        return starting;
+    }
+
+    // owner's move was cut off (stunned, sealed, died, the Domain shattered): what was still to come never starts and
+    // what is on now fades out quickly. Attacks already in flight are drawn by their own renderers and keep going.
+    public static void stopOwner(int owner) {
+        if (owner < 0) {
+            return;
+        }
+        PENDING.removeIf(p -> p.owner() == owner);
+        FxWorld.stopOwner(owner);
+        Realismo.remove(new Realismo.Owner(owner));
+        ScreenFx.stopOwner(owner);
+        KatonBallRenderer.stopOwner(owner);
     }
 
     public static void clear() {
         PENDING.clear();
         FxWorld.clear();
+        SkillAudio.clear();
         SusanooArm.clear();
         Realismo.clear();
     }
@@ -61,6 +86,7 @@ public final class SkillEffects {
             FxWorld.clear();
             SusanooArm.clear();
             DomainScene.clear();
+            SkillAudio.clear();
             return;
         }
         long now = ScreenFx.now();
@@ -73,11 +99,20 @@ public final class SkillEffects {
             return false;
         });
         for (Pending p : due) {
-            start(p.skill(), p.e(), p.pos(), p.dir(), p.entity(), p.ticks());
+            start(p.skill(), p.e(), p.pos(), p.dir(), p.entity(), p.ticks(), p.owner());
         }
     }
 
-    private static void start(String skill, Efeito e, Vec3 pos, Vec3 dir, int entity, int ticks) {
+    private static void start(String skill, Efeito e, Vec3 pos, Vec3 dir, int entity, int ticks, int owner) {
+        starting = owner;
+        try {
+            begin(skill, e, pos, dir, entity, ticks);
+        } finally {
+            starting = -1;
+        }
+    }
+
+    private static void begin(String skill, Efeito e, Vec3 pos, Vec3 dir, int entity, int ticks) {
         var player = Minecraft.getInstance().player;
         // Effects tied to someone start on them, wherever the server measured.
         Vec3 anchored = FxAnchor.point(entity, e.seguir(), 1);
@@ -130,7 +165,7 @@ public final class SkillEffects {
                 int span = e.vidaTicks() == null && !Boolean.TRUE.equals(e.duraMomento()) && type >= 0 ? Math.round(Realismo.defaults(type)[2] * 20) : life;
                 Realismo.add(type, at, dir, (float) FxWorld.d(e.velocidade(), 0), (float) FxWorld.d(e.raio(), 0),
                         (float) FxWorld.d(e.comprimento(), 0), forca, FxDraw.parse(e.cor(), 0xFFFFFF), span,
-                        e.seguir() == null ? -1 : entity, e.seguir());
+                        e.seguir() == null ? -1 : entity, e.seguir(), starting < 0 ? null : new Realismo.Owner(starting));
             }
             default -> FxWorld.spawn(skill, e, pos, dir, life, entity);
         }

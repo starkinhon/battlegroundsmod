@@ -78,6 +78,20 @@ public final class Stamina {
         return !exhausted(entity);
     }
 
+    // Whether entity holds off the Gojo's Domain: a player with a power and stamina left (not exhausted).
+    public static boolean resists(LivingEntity entity) {
+        return uses(entity) && !exhausted(entity) && get(entity) > 0;
+    }
+
+    // Drains percent of the max no matter the creative or no-cooldown freebies (the Domain's information overload).
+    // Running out exhausts them as usual.
+    public static void drain(LivingEntity entity, double percent) {
+        if (!uses(entity) || percent <= 0) {
+            return;
+        }
+        take(entity, (float) (max(entity) * percent / 100.0));
+    }
+
     // Gives back percent of the max (a punch, a hit, a dash, a base attack). Nothing while exhausted.
     public static void gain(LivingEntity entity, double percent) {
         if (!uses(entity) || exhausted(entity) || percent <= 0) {

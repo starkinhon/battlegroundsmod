@@ -49,8 +49,8 @@ import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 // - the void (only inside, a space of its own above the world): no walls, a still mirror of water for a floor, endless depth: stars and a blue haze on every side, far behind Gojo a
 //   black hole turning in rings of blue light with black ink and sparks pulled into it, white ink drifting by, and
 //   a ring of water under everyone every 2 seconds. From outside, all this time, a smooth black ball;
-// - the end: cracks of light run all over the sphere, then it shatters like glowing glass, black and white shards
-//   flying away, and the world is back.
+// - the end: it breaks like real glass (DomainGlass): cracks of light run out of one point of impact, branching, in
+//   jolts; then it shatters into crooked pieces that come loose in a wave, fly, fall and bounce, and the world is back.
 // Those caught (everyone but Gojo) also get, on their own screen only, the information pouring in (DomainScreen): lines
 // of light and letters rushing into their mind, flashes of nature and senses, a slow zoom on the black hole, a heart
 // slowing down and a high whine; their bodies show grey, light threads and glyphs flying into their heads.
@@ -82,9 +82,6 @@ public final class DomainScene {
     private static final int CRACK_TICKS = 14;
     // "Expansão de Domínio:" shows when Gojo starts the hand sign.
     private static final int CAPTION_TICK = 46;
-    // The shards: the sphere cut on a grid of LAT x LON cells, two triangles each.
-    private static final int LAT = 9;
-    private static final int LON = 18;
 
     enum Stage {
         NONE, WHITE, TUNNEL, VOID
@@ -108,6 +105,8 @@ public final class DomainScene {
         Vec3 forward;
         final Set<String> fired = new HashSet<>();
         double closeStart = -1;
+        // The glass it breaks into (DomainGlass), made when it starts cracking, around where this viewer sees it hit.
+        DomainGlass glass;
         double nextBeat;
         double nextWhine;
         double nextStutter;
@@ -119,6 +118,11 @@ public final class DomainScene {
             this.spec = spec;
             this.start = start;
             this.forward = forward;
+        }
+
+        // The victim's sounds of this domain (SkillAudio), cut off when it cracks.
+        Object soundKey() {
+            return "domain:" + caster;
         }
 
         double radius() {
@@ -142,6 +146,13 @@ public final class DomainScene {
             return fired.add(key);
         }
 
+        // The local player is in creative and it is not their domain: it does nothing to them (the server never
+        // catches them either). No white, tunnel or void, nothing on the screen; they stay in the normal world.
+        boolean spared() {
+            Minecraft minecraft = Minecraft.getInstance();
+            return minecraft.player != null && minecraft.player.isCreative() && minecraft.player.getId() != caster;
+        }
+
         // The domain's middle nearest pos: up inside, or out in the world.
         Vec3 hub(Vec3 pos) {
             return pos.distanceToSqr(inner) < pos.distanceToSqr(center) ? inner : center;
@@ -153,7 +164,7 @@ public final class DomainScene {
 
         // What a camera at pos sees at time t.
         Stage stage(Vec3 pos, double t) {
-            if (t < spec.whiteTick() || t >= shatterAt()) {
+            if (t < spec.whiteTick() || t >= shatterAt() || spared()) {
                 return Stage.NONE;
             }
             double dist = pos.distanceTo(center);
@@ -194,8 +205,6 @@ public final class DomainScene {
     private static final int[] TUNNEL_IMPACT = {3, 4, 3, 4, 3, 4, 3};
     private static final int TUNNEL_FRAMES = IMPACT_TICKS * TUNNEL_IMPACT.length;
     private static float lastPartial;
-    // The shards' corners on a unit sphere, jittered (made once).
-    private static Vector3f[][] grid;
 
     private DomainScene() {
     }
@@ -267,7 +276,7 @@ public final class DomainScene {
         }
         for (Domain d : DOMAINS) {
             double t = time(d, 0);
-            if (t >= d.spec.whiteTick() && t < d.goneAt() && d.contains(minecraft.player.position())) {
+            if (!d.spared() && t >= d.spec.whiteTick() && t < d.goneAt() && d.contains(minecraft.player.position())) {
                 return true;
             }
         }
@@ -277,6 +286,10 @@ public final class DomainScene {
     // The killing blow inside the domain: a white blink, then the frame turns to sumi-e, red and white ink.
     private static void kill(int victimId, Vec3 center) {
         Minecraft minecraft = Minecraft.getInstance();
+        if (!DOMAINS.isEmpty() && DOMAINS.stream().allMatch(Domain::spared)) {
+            // In creative, watching: the ink is only for those inside.
+            return;
+        }
         Entity victim = minecraft.level.getEntity(victimId);
         Vec3 at = victim != null ? victim.position().add(0, victim.getBbHeight() * 0.6, 0) : center.add(0, 1, 0);
         ScreenFx.flash(0xFFFFFF, 0.95f, 3);
@@ -388,6 +401,9 @@ public final class DomainScene {
         }
         Vec3 camera = cameraPos();
         for (Domain d : DOMAINS) {
+            if (d.spared()) {
+                continue;
+            }
             double t = time(d, 0);
             DominioSpec spec = d.spec;
             boolean caster = minecraft.player.getId() == d.caster;
@@ -428,6 +444,10 @@ public final class DomainScene {
             if (victim) {
                 victimSounds(d, t, minecraft);
             }
+            if (t >= d.closeAt() && d.once("hush")) {
+                // It is cracking: the heart and the whine inside stop with it.
+                SkillAudio.stop(d.soundKey());
+            }
             if (t >= d.closeAt() && d.once("crack") && dist < d.radius() + 30) {
                 ScreenFx.impactFrame(new int[] {3}, 2, 0xFFFFFF, d.hub(camera).add(0, 2, 0), 0);
             }
@@ -466,14 +486,14 @@ public final class DomainScene {
     private static void victimSounds(Domain d, double t, Minecraft minecraft) {
         double total = d.spec.closeTick() - d.spec.tunnelTick();
         double u = Mth.clamp((t - d.spec.tunnelTick()) / Math.max(1, total), 0, 1);
-        var sounds = minecraft.getSoundManager();
+        Object key = d.soundKey();
         if (t >= d.nextBeat) {
-            sounds.play(SimpleSoundInstance.forUI(SoundEvents.WARDEN_HEARTBEAT, (float) (1.0 - 0.35 * u), (float) (0.9 - 0.3 * u)));
+            SkillAudio.play(key, SimpleSoundInstance.forUI(SoundEvents.WARDEN_HEARTBEAT, (float) (1.0 - 0.35 * u), (float) (0.9 - 0.3 * u)));
             d.nextBeat = t + 14 + 34 * u;
         }
         if (t >= d.nextWhine && t >= d.spec.voidTick()) {
-            sounds.play(SimpleSoundInstance.forUI(SoundEvents.BEACON_AMBIENT, 2.0f, (float) (0.35 + 0.4 * u)));
-            sounds.play(SimpleSoundInstance.forUI(SoundEvents.AMETHYST_BLOCK_RESONATE, 2.0f, (float) (0.15 + 0.3 * u)));
+            SkillAudio.play(key, SimpleSoundInstance.forUI(SoundEvents.BEACON_AMBIENT, 2.0f, (float) (0.35 + 0.4 * u)));
+            SkillAudio.play(key, SimpleSoundInstance.forUI(SoundEvents.AMETHYST_BLOCK_RESONATE, 2.0f, (float) (0.15 + 0.3 * u)));
             d.nextWhine = t + 50;
         }
         if (t >= d.nextStutter) {
@@ -601,7 +621,7 @@ public final class DomainScene {
         float partial = event.getPartialTick().getGameTimeDeltaPartialTick(false);
         for (Domain d : DOMAINS) {
             double t = time(d, partial);
-            boolean whiteShows = t >= d.spec.whiteTick() && t < d.shatterAt() && (t < d.spec.tunnelTick() + 8 || d.closeAt() < d.spec.tunnelTick());
+            boolean whiteShows = !d.spared() && t >= d.spec.whiteTick() && t < d.shatterAt() && (t < d.spec.tunnelTick() + 8 || d.closeAt() < d.spec.tunnelTick());
             Vec3 camera = event.getCamera().getPosition();
             Stage stage = d.stage(camera, t);
             if (whiteShows && stage != Stage.TUNNEL && stage != Stage.VOID) {
@@ -740,6 +760,10 @@ public final class DomainScene {
             }
             Stage stage = d.stage(camera, t);
             sign(d, camera, t, partial);
+            if (d.spared() && camera.distanceTo(d.center) < d.radius() + 1) {
+                // Standing where it opened, in creative: the world as it is, not the inside of the ball.
+                continue;
+            }
             if (stage == Stage.TUNNEL) {
                 tunnel(d, t, (float) now);
                 people(d, camera, (float) now, partial, 1);
@@ -748,11 +772,8 @@ public final class DomainScene {
             } else {
                 shell(d, camera, t, (float) now);
             }
-            if (t >= d.closeAt() && t < d.shatterAt()) {
-                cracks(d, camera, t);
-            }
-            if (t >= d.shatterAt()) {
-                shards(d, camera, t);
+            if (t >= d.closeAt()) {
+                glass(d, camera, t);
             }
         }
     }
@@ -1228,105 +1249,38 @@ public final class DomainScene {
         }
     }
 
-    // ---- the end: cracks, then glowing glass shards --------------------------------------------------------------------
+    // ---- the end: it breaks like glass (DomainGlass) ------------------------------------------------------------------
 
-    private static Vector3f[][] grid() {
-        if (grid == null) {
-            grid = new Vector3f[LAT + 1][LON];
-            for (int i = 0; i <= LAT; i++) {
-                for (int j = 0; j < LON; j++) {
-                    boolean pole = i == 0 || i == LAT;
-                    float lat = Mth.PI * i / LAT - Mth.HALF_PI + (pole ? 0 : (FxWorld.hash(981, i * 64 + j, 1) - 0.5f) * 0.18f);
-                    float lon = Mth.TWO_PI * j / LON + (pole ? 0 : (FxWorld.hash(981, i * 64 + j, 2) - 0.5f) * 0.22f);
-                    grid[i][j] = new Vector3f(Mth.cos(lat) * Mth.cos(lon), Mth.sin(lat), Mth.cos(lat) * Mth.sin(lon));
-                }
-            }
-        }
-        return grid;
-    }
-
-    // Cracks of light running over the sphere along where it will break: from outside only on the side facing the camera.
-    private static void cracks(Domain d, Vec3 camera, double t) {
-        Vector3f[][] g = grid();
-        float k = (float) Mth.clamp((t - d.closeAt()) / (d.shatterAt() - d.closeAt()), 0, 1);
-        float r = (float) d.radius() * 1.004f;
-        Vector3f c = d.hub(camera).subtract(camera).toVector3f();
+    private static void glass(Domain d, Vec3 camera, double t) {
+        Minecraft minecraft = Minecraft.getInstance();
+        Vec3 hub = d.hub(camera);
         boolean inside = d.contains(camera);
-        int edge = 0;
-        for (int i = 0; i < LAT; i++) {
-            for (int j = 0; j < LON; j++) {
-                Vector3f a = g[i][j];
-                Vector3f[] ends = {g[i][(j + 1) % LON], g[i + 1][j], g[i + 1][(j + 1) % LON]};
-                for (Vector3f b : ends) {
-                    edge++;
-                    float shown = Mth.clamp(k * 1.5f - FxWorld.hash(983, edge, 1) * 0.5f, 0, 1);
-                    if (shown <= 0 || a.distanceSquared(b) < 1.0E-6f) {
-                        continue;
-                    }
-                    Vector3f mid = new Vector3f(a).add(b).normalize();
-                    Vector3f pa = new Vector3f(a).mul(r).add(c);
-                    if (!inside && new Vector3f(pa).negate().dot(mid) < 0) {
-                        continue;
-                    }
-                    Vector3f pb = new Vector3f(a).lerp(b, shown).normalize().mul(r).add(c);
-                    float w = 0.12f + r * 0.004f;
-                    FxDraw.ribbon(pa, pb, w * 4, FxDraw.BEAM, 0.2f, SILVER, 0.35f, true);
-                    FxDraw.ribbon(pa, pb, w, FxDraw.BEAM, 0.9f, WHITE, 1, true);
-                }
+        if (d.glass == null) {
+            // It breaks first where this viewer sees it: in front of them from inside, on the side facing them from
+            // outside (a little up, never under the ground).
+            Vector3f impact;
+            if (inside) {
+                Vector3f look = minecraft.gameRenderer.getMainCamera().getLookVector();
+                impact = new Vector3f(look.x, Math.max(look.y, 0) + 0.35f, look.z);
+            } else {
+                impact = camera.subtract(hub).toVector3f();
+                impact.y = Math.max(impact.y, (float) d.radius() * 0.45f);
             }
-        }
-    }
-
-    // The sphere breaks along the cracks into triangles of glass, black and milky white with glowing edges, that fly out
-    // turning and fade, with white dust thrown out among them.
-    private static void shards(Domain d, Vec3 camera, double t) {
-        Vector3f[][] g = grid();
-        double tau = t - d.shatterAt();
-        float u = (float) Mth.clamp(tau / Math.max(1, d.goneAt() - d.shatterAt()), 0, 1);
-        if (u >= 1) {
-            return;
+            if (impact.lengthSquared() < 1.0E-6f) {
+                impact.set(0, 1, 0);
+            }
+            d.glass = new DomainGlass(d.caster * 31 + 4242, impact);
         }
         float r = (float) d.radius();
-        Vector3f c = d.center.subtract(camera).toVector3f();
-        boolean white = d.closeAt() < d.spec.tunnelTick();
-        float fade = (float) Math.pow(1 - u, 1.5);
-        int n = 0;
-        for (int i = 0; i < LAT; i++) {
-            for (int j = 0; j < LON; j++) {
-                Vector3f a = g[i][j], b = g[i][(j + 1) % LON], cc = g[i + 1][(j + 1) % LON], e = g[i + 1][j];
-                shard(c, r, a, b, cc, n++, (float) tau, u, fade, white);
-                shard(c, r, a, cc, e, n++, (float) tau, u, fade, white);
-            }
-        }
-        for (int k = 0; k < 50; k++) {
-            Vector3f dir = FxWorld.sphere(991, k);
-            Vector3f p = new Vector3f(dir).mul(r + (float) tau * (0.6f + 0.8f * FxWorld.hash(991, k, 1))).add(c);
-            FxDraw.billboard(p, 4 + 8 * FxWorld.hash(991, k, 2) + 6 * u, FxWorld.hash(991, k, 3) * 6, FxDraw.SMOKE, 0.2f + 0.6f * u, MILK, 0.55f * fade,
-                    false);
-        }
-    }
-
-    private static void shard(Vector3f c, float r, Vector3f a, Vector3f b, Vector3f e, int n, float tau, float u, float fade, boolean white) {
-        Vector3f mid = new Vector3f(a).add(b).add(e).div(3);
-        if (mid.lengthSquared() < 1.0E-4f || a.distanceSquared(b) < 1.0E-6f || a.distanceSquared(e) < 1.0E-6f || b.distanceSquared(e) < 1.0E-6f) {
+        Vector3f c = hub.subtract(camera).toVector3f();
+        if (t < d.shatterAt()) {
+            d.glass.cracks(c, r, (float) (t - d.closeAt()), (float) (d.shatterAt() - d.closeAt()), inside);
             return;
         }
-        Vector3f out = new Vector3f(mid).normalize();
-        float speed = 0.35f + 0.7f * FxWorld.hash(993, n, 1);
-        Vector3f axis = FxWorld.sphere(994, n);
-        float spin = tau * (0.04f + 0.1f * FxWorld.hash(993, n, 2));
-        float shrink = 1 - 0.35f * u;
-        Vector3f home = new Vector3f(out).mul(r + speed * tau).add(c).add(0, -0.012f * tau * tau, 0);
-        Vector3f[] corners = new Vector3f[3];
-        Vector3f[] src = {a, b, e};
-        for (int k = 0; k < 3; k++) {
-            corners[k] = new Vector3f(src[k]).mul(r).sub(new Vector3f(mid).mul(r)).rotateAxis(spin, axis.x, axis.y, axis.z).mul(shrink).add(home);
-        }
-        float[] face = white || FxWorld.hash(993, n, 3) < 0.3f ? MILK : BLACK;
-        FxDraw.quad(corners[0], corners[1], corners[2], corners[2], FxDraw.SOLID, 0, face, 0.95f * fade, false);
-        for (int k = 0; k < 3; k++) {
-            FxDraw.ribbon(corners[k], corners[(k + 1) % 3], 0.18f, FxDraw.BEAM, 0.8f, WHITE, 0.9f * fade, true);
-        }
+        boolean up = hub == d.inner && d.inner != d.center;
+        DomainGlass.Ground ground = (x, z) -> up ? (float) d.inner.y
+                : minecraft.level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, Mth.floor(x), Mth.floor(z));
+        d.glass.shards(c, hub, r, (float) (t - d.shatterAt()), (float) (d.goneAt() - d.shatterAt()), inside, d.closeAt() < d.spec.tunnelTick(), ground);
     }
 
     // ------------------------------------------------------------------------------------------------------------------
@@ -1490,6 +1444,9 @@ public final class DomainScene {
         float partial = delta.getGameTimeDeltaPartialTick(false);
         Vec3 camera = cameraPos();
         for (Domain d : DOMAINS) {
+            if (d.spared()) {
+                continue;
+            }
             double t = time(d, partial);
             Stage stage = d.stage(camera, t);
             DominioSpec spec = d.spec;

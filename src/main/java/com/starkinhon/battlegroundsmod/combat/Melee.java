@@ -239,6 +239,9 @@ public final class Melee {
             Vec3 hand = Combat.handPos(player);
             if (charging) {
                 data.busyTicks = 2;
+                if (data.attackHeld) {
+                    Charge.report(player, charge);
+                }
                 player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 3, 2, false, false));
                 // Energy gathering on the fist, more and faster the longer it charges.
                 int bits = 3 + (int) (charge * 5);

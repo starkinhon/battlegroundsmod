@@ -316,6 +316,9 @@ public final class Azul {
                 }
                 case CHARGE -> {
                     charge[0] = Math.min(1, (t + 1) / (double) chargeTicks);
+                    if (held) {
+                        com.starkinhon.battlegroundsmod.combat.Charge.report(caster, charge[0]);
+                    }
                     radius[0] = baseRadius * (1 + (scaleMax - 1) * smooth(charge[0]));
                     orb[0] = holdAt(caster, smooth(charge[0]), radius[0]);
                     now.busyTicks = Math.max(now.busyTicks, 2);

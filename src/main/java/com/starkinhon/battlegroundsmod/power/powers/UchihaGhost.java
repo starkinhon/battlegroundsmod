@@ -29,7 +29,7 @@ public final class UchihaGhost {
                 new Ability(240, 0, Agarrao::use)), List.of(
                 new Ability(1000, 0, KatonGigante::use),
                 new Ability(PowerData.SPENT, 0, Izanami::use),
-                new Ability(2000, 0, SusanooCorte::use),
+                new Ability(1000, 0, SusanooCorte::use),
                 new Ability(3000, 0, Meteoro::useDouble)));
     }
 }

@@ -14,6 +14,7 @@ import com.starkinhon.battlegroundsmod.combat.Destructible;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.combat.Intangible;
 import com.starkinhon.battlegroundsmod.combat.Melee;
+import com.starkinhon.battlegroundsmod.combat.Stamina;
 import com.starkinhon.battlegroundsmod.movement.Movement;
 import com.starkinhon.battlegroundsmod.power.BossOrder;
 import com.starkinhon.battlegroundsmod.power.PowerData;
@@ -590,6 +591,13 @@ public class SoulBossAI extends Goal {
             return distance <= reach && boss.hasLineOfSight(target) ? skill.peso() * 10 : 0;
         }
         boolean sees = boss.hasLineOfSight(target) || tactics() != null && tactics().throughWalls(this, name);
+        if (skill.needsStun()) {
+            // Only on a stunned target, and then nothing is better while the stun lasts.
+            if (!Stamina.stunnable(target) || distance > skill.distanciaMax() || !sees) {
+                return 0;
+            }
+            return skill.peso() * 8;
+        }
         if (!"contra".equals(tipo) && (distance < skill.distanciaMin() || distance > skill.distanciaMax() || !sees)) {
             return 0;
         }
@@ -897,6 +905,23 @@ public class SoulBossAI extends Goal {
                     nextStep();
                     return false;
                 }
+                if (skill.needsStun()) {
+                    // A step that needs a stunned target: used the moment they are open, skipped if they never are.
+                    if (!Stamina.stunnable(target)) {
+                        if (stepAge > 10) {
+                            nextStep();
+                        }
+                        return false;
+                    }
+                    // (No sight needed: right after a slam the target may be down in its hole.)
+                    if (distance > skill.distanciaMax()) {
+                        nextStep();
+                        return false;
+                    }
+                    nextStep();
+                    begin(spec, step);
+                    return true;
+                }
                 if ("roteiro".equals(skill.tipo())) {
                     // Scripted: no range or sight to wait for.
                     nextStep();
@@ -1189,6 +1214,22 @@ public class SoulBossAI extends Goal {
 
     public boolean isOff(String name) {
         return off(boss.spec(), name);
+    }
+
+    // The move is one this phase may use (under /gamerule soulbossfight false: every move of the boss).
+    public boolean has(String name) {
+        return boss.fase().skills().contains(name);
+    }
+
+    // The tactics start a move now, dropping what it was about to do (an answer that can't wait for the next decision:
+    // the Susanoo against an attack flying at it). Only between moves, and only with the move off cooldown.
+    public boolean use(String name) {
+        if (state != State.IDLE || !has(name) || !off(boss.spec(), name)) {
+            return false;
+        }
+        plan.clear();
+        comboName = null;
+        return begin(boss.spec(), name);
     }
 
     public void lookAt(Vec3 point, float maxTurn) {
