@@ -14,8 +14,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 
-// The SubAlmas' defenses, checked on every hit (PowerEvents): Urahara's shield stops what comes through
-// its front, and Ichigo's guard with the Zangetsu takes most of a hit and makes him stronger.
+// The SubAlmas' shields, checked on every hit (PowerEvents): a wall of light stops what comes through its front.
 public final class SubDefense {
     // A wall of light at center facing `facing`: whoever stands behind it (within reach) is covered from the front.
     // onBlock runs on each blocked hit and may take it down.
@@ -98,7 +97,6 @@ public final class SubDefense {
                 return;
             }
         }
-        Ichigo.onIncomingDamage(target, event, attacker);
     }
 
     public static void clear() {
