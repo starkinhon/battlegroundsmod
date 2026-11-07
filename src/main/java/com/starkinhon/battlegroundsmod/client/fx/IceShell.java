@@ -276,10 +276,10 @@ public final class IceShell {
                 Vector3f d = new Vector3f(p[0] - cx, p[1] - cy, p[2] - cz);
                 float sa = Math.signum(d.dot(a)) * THICK;
                 float sb = Math.signum(d.dot(b)) * THICK;
-                float x = p[0] + a.x * sa + b.x * sb + p[5] * THICK;
-                float y = p[1] + a.y * sa + b.y * sb + p[6] * THICK;
-                float z = p[2] + a.z * sa + b.z * sb + p[7] * THICK;
-                out.addVertex(x, y, z, iv[i][0], p[3], p[4], iv[i][1], iv[i][2], p[5], p[6], p[7]);
+                float gx = p[0] + a.x * sa + b.x * sb + p[5] * THICK;
+                float gy = p[1] + a.y * sa + b.y * sb + p[6] * THICK;
+                float gz = p[2] + a.z * sa + b.z * sb + p[7] * THICK;
+                out.addVertex(gx, gy, gz, iv[i][0], p[3], p[4], iv[i][1], iv[i][2], p[5], p[6], p[7]);
             }
         }
 
