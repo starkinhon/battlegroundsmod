@@ -64,6 +64,15 @@ public final class Powers {
     public static final Power SHIKAMARU = registerSub(Shikamaru.create());
     public static final Power INO = registerSub(Ino.create());
 
+    // SubAlmas (Jujutsu), tiers 6 to 8.
+    public static final Power ITADORI = registerSub(com.starkinhon.battlegroundsmod.power.powers.sub.jj.Itadori.create());
+    public static final Power CHOSO = registerSub(com.starkinhon.battlegroundsmod.power.powers.sub.jj.Choso.create());
+    public static final Power NANAMI = registerSub(com.starkinhon.battlegroundsmod.power.powers.sub.jj.Nanami.create());
+    public static final Power NOBARA = registerSub(com.starkinhon.battlegroundsmod.power.powers.sub.jj.Nobara.create());
+    public static final Power TODO = registerSub(com.starkinhon.battlegroundsmod.power.powers.sub.jj.Todo.create());
+    public static final Power INUMAKI = registerSub(com.starkinhon.battlegroundsmod.power.powers.sub.jj.Inumaki.create());
+    public static final Power MIWA = registerSub(com.starkinhon.battlegroundsmod.power.powers.sub.jj.Miwa.create());
+
     // Mob only.
     public static final Power FIGHTER = registerHidden(Fighter.create());
 

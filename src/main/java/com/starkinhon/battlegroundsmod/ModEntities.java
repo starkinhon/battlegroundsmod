@@ -99,6 +99,13 @@ public final class ModEntities {
     public static final Supplier<EntityType<SoulMob>> GAARA = mob("gaara");
     public static final Supplier<EntityType<SoulMob>> SHIKAMARU = mob("shikamaru");
     public static final Supplier<EntityType<SoulMob>> INO = mob("ino");
+    public static final Supplier<EntityType<SoulMob>> ITADORI = mob("itadori");
+    public static final Supplier<EntityType<SoulMob>> CHOSO = mob("choso");
+    public static final Supplier<EntityType<SoulMob>> NANAMI = mob("nanami");
+    public static final Supplier<EntityType<SoulMob>> NOBARA = mob("nobara");
+    public static final Supplier<EntityType<SoulMob>> TODO = mob("todo");
+    public static final Supplier<EntityType<SoulMob>> INUMAKI = mob("inumaki");
+    public static final Supplier<EntityType<SoulMob>> MIWA = mob("miwa");
 
     // Fighters: weak mobs with only the base combat, Tier 10 (human), 9 (street) and 8 (block).
     public static final Supplier<EntityType<SoulMob>> FIGHTER_HUMANO = mob("fighter_humano");
@@ -106,7 +113,7 @@ public final class ModEntities {
     public static final Supplier<EntityType<SoulMob>> FIGHTER_QUARTEIRAO = mob("fighter_quarteirao");
 
     public static final java.util.List<Supplier<EntityType<SoulMob>>> SUB_MOBS = java.util.List.of(BYAKUYA, RUKIA, GOKU, VEGETA, FREEZA, PICCOLO, KAME, KURIRIN,
-            NARUTO, SASUKE, KAKASHI, GAARA, SHIKAMARU, INO);
+            NARUTO, SASUKE, KAKASHI, GAARA, SHIKAMARU, INO, ITADORI, CHOSO, NANAMI, NOBARA, TODO, INUMAKI, MIWA);
     public static final java.util.List<Supplier<EntityType<SoulMob>>> FIGHTERS = java.util.List.of(FIGHTER_HUMANO, FIGHTER_RUA, FIGHTER_QUARTEIRAO);
 
     private static Supplier<EntityType<SoulMob>> mob(String id) {

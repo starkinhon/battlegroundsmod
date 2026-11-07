@@ -103,6 +103,10 @@ public final class SubDefense {
         if (!event.isCanceled()) {
             com.starkinhon.battlegroundsmod.power.powers.sub.nr.NrCommon.onIncomingDamage(event);
         }
+        // Jujutsu: the Manji Kick's guard, Supernova's orbs, the sleeper's critical, the fake clap, Nobara's blood.
+        if (!event.isCanceled()) {
+            com.starkinhon.battlegroundsmod.power.powers.sub.jj.JjCommon.onIncomingDamage(event);
+        }
     }
 
     public static void clear() {

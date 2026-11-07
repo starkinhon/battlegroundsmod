@@ -97,7 +97,8 @@ public final class Combat {
 
     // Every move of the mod hurts through here or hurtMagic, so the attacker's tier scales them all (see Tiers).
     public static boolean hurt(LivingEntity attacker, LivingEntity target, float damage) {
-        damage *= Tiers.damageMultiplier(attacker) * com.starkinhon.battlegroundsmod.power.powers.sub.nr.NrCommon.damageMultiplier(attacker);
+        damage *= Tiers.damageMultiplier(attacker) * com.starkinhon.battlegroundsmod.power.powers.sub.nr.NrCommon.damageMultiplier(attacker)
+                * com.starkinhon.battlegroundsmod.power.powers.sub.jj.JjCommon.damageMultiplier(attacker);
         // Clear hit immunity so fast multi-hit moves land every hit.
         target.invulnerableTime = 0;
         DamageSource source = attacker instanceof Player player

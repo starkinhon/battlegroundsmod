@@ -72,6 +72,20 @@ public final class ModItems {
             () -> new DeferredSpawnEggItem(ModEntities.SHIKAMARU, 0x5F6B3A, 0x2A2620, new Item.Properties()));
     public static final DeferredItem<DeferredSpawnEggItem> INO_SPAWN_EGG = BattlegroundsMod.ITEMS.register("ino_spawn_egg",
             () -> new DeferredSpawnEggItem(ModEntities.INO, 0x7A3AA8, 0xF3DC7A, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> ITADORI_SPAWN_EGG = BattlegroundsMod.ITEMS.register("itadori_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.ITADORI, 0x2A2A3A, 0xE89A8A, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> CHOSO_SPAWN_EGG = BattlegroundsMod.ITEMS.register("choso_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.CHOSO, 0x6B4A3A, 0x2A1A1A, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> NANAMI_SPAWN_EGG = BattlegroundsMod.ITEMS.register("nanami_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.NANAMI, 0xE8D9A8, 0x8A6A3A, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> NOBARA_SPAWN_EGG = BattlegroundsMod.ITEMS.register("nobara_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.NOBARA, 0x2A2A3A, 0xB0582E, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> TODO_SPAWN_EGG = BattlegroundsMod.ITEMS.register("todo_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.TODO, 0x8A8A8A, 0x3A2A1A, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> INUMAKI_SPAWN_EGG = BattlegroundsMod.ITEMS.register("inumaki_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.INUMAKI, 0x2A2A3A, 0xE8E8F0, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> MIWA_SPAWN_EGG = BattlegroundsMod.ITEMS.register("miwa_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.MIWA, 0x2A3A5A, 0x6FB8E8, new Item.Properties()));
     public static final DeferredItem<DeferredSpawnEggItem> FIGHTER_HUMANO_SPAWN_EGG = BattlegroundsMod.ITEMS.register("fighter_humano_spawn_egg",
             () -> new DeferredSpawnEggItem(ModEntities.FIGHTER_HUMANO, 0x8A6A4F, 0x3E6FB0, new Item.Properties()));
     public static final DeferredItem<DeferredSpawnEggItem> FIGHTER_RUA_SPAWN_EGG = BattlegroundsMod.ITEMS.register("fighter_rua_spawn_egg",

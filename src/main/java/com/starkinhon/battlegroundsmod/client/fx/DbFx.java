@@ -29,12 +29,20 @@ public final class DbFx {
     static final int SAW = 30;
     static final int GENKI = 31;
     static final int TONGUE = 32;
+    // Jujutsu: cursed energy as flat flame with a thick ink outline (tongue on a ribbon when param < 0.5, else a blob),
+    // and the Divergent Fist's opaque brush aura.
+    static final int CEINK = 33;
+    static final int BRUSH = 34;
 
     private static final float[][] COLORS = {
             FxDraw.rgb(0x5AB8FF), FxDraw.rgb(0xE8F8FF), FxDraw.rgb(0xFFD84A), FxDraw.rgb(0xFFF6C8), FxDraw.rgb(0xFF3A2A),
             FxDraw.rgb(0xFFD0C8), FxDraw.rgb(0xC050FF), FxDraw.rgb(0xFF60D0), FxDraw.rgb(0xFFE0F6), FxDraw.rgb(0x70FF80),
             {1f, 1f, 1f}, FxDraw.rgb(0xFF8A2A), FxDraw.rgb(0x60B0FF), FxDraw.rgb(0x2F7DFF)};
     private static final float[] WHITE = {1f, 1f, 1f};
+
+    static float[] colorOf(int i) {
+        return COLORS[Math.floorMod(i, COLORS.length)];
+    }
     private static final float[] DIRT = FxDraw.rgb(0x5A4632);
     private static final float[] DUST = FxDraw.rgb(0xCDB88E);
     private static final float[] AIR = FxDraw.rgb(0xE8F4FF);
@@ -90,6 +98,10 @@ public final class DbFx {
     }
 
     static void receive(int kind, int id, Vec3 pos, Vec3 dir, float a, float b, float c) {
+        if (kind >= SubNet.DIV_AURA) {
+            JjFx.receive(kind, id, pos, dir, a, b, c);
+            return;
+        }
         if (kind >= SubNet.RASENGAN) {
             NrFx.receive(kind, id, pos, dir, a, b, c);
             return;
@@ -166,13 +178,14 @@ public final class DbFx {
     }
 
     static boolean active() {
-        return !SHOTS.isEmpty() || !TRACKED.isEmpty() || NrFx.active();
+        return !SHOTS.isEmpty() || !TRACKED.isEmpty() || NrFx.active() || JjFx.active();
     }
 
     static void clear() {
         SHOTS.clear();
         TRACKED.clear();
         NrFx.clear();
+        JjFx.clear();
     }
 
     private static double life(Fx f) {
@@ -288,6 +301,7 @@ public final class DbFx {
             }
         }
         NrFx.draw(now, partial);
+        JjFx.draw(now, partial);
     }
 
     // ---------- drawing in the right pass ----------
@@ -1345,6 +1359,110 @@ public final class DbFx {
             case 23 -> {
                 ScreenFx.vignette(0x101018, 0.55f, 40);
                 ScreenFx.radialBlur(mc.player.getEyePosition().add(mc.player.getLookAngle().scale(3)), 0.7f, 40);
+            }
+            // ----- Jujutsu (impact modes: 0 white, 1 color, 2 inverted, 3 manga, 4 manga on black) -----
+            // Divergent Fist: the first, dry impact.
+            case 24 -> {
+                ScreenFx.flash(0xFFFFFF, 0.35f * near, 3);
+                ScreenShake.start(0.35f * near, 4);
+            }
+            // Divergent Fist: the second impact going through.
+            case 25 -> {
+                ScreenFx.impactFrame(new int[] {4, 1, 3}, 1, 0x2CC8F2, pos, 0);
+                ScreenShake.start(1.6f * near, 20);
+                ScreenFx.radialBlur(pos, 0.9f * near, 10);
+                ScreenFx.fovKick(9 * near, 12);
+            }
+            // Black Flash (Itadori): three of the Black Flash's own frames.
+            case 26 -> {
+                ScreenFx.impactFrame(new int[] {6, 7, 9}, 1, 0xFF0018, pos, 0);
+                ScreenShake.start(1.1f * near, 14);
+            }
+            // Manji Kick.
+            case 27 -> {
+                ScreenFx.impactFrame(new int[] {3, 2}, 1, 0xFFFFFF, pos, 0);
+                ScreenShake.start(0.8f * near, 10);
+            }
+            // Itadori's dash: the knee.
+            case 28 -> {
+                ScreenFx.impactFrame(new int[] {0, 3, 2}, 1, 0x2CC8F2, pos, 0);
+                ScreenShake.start(1.1f * near, 14);
+            }
+            // Piercing Blood.
+            case 29 -> {
+                ScreenFx.impactFrame(new int[] {1, 2}, 1, 0xA0101A, pos, 0);
+                ScreenShake.start(0.6f * near, 8);
+            }
+            // Supernova bursting.
+            case 30 -> {
+                ScreenFx.impactFrame(new int[] {1, 2, 1}, 1, 0xA0101A, pos, 0);
+                ScreenShake.start(0.9f * near, 14);
+            }
+            // Red Scale's hook.
+            case 31 -> {
+                ScreenFx.impactFrame(new int[] {1, 2, 1}, 1, 0xC0101A, pos, 0);
+                ScreenShake.start(1f * near, 12);
+            }
+            // Nanami's critical on the 7:3 point.
+            case 32 -> {
+                ScreenFx.impactFrame(new int[] {0, 3, 2}, 1, 0xFFB43A, pos, 0);
+                ScreenShake.start(1.2f * near, 14);
+            }
+            // Nanami's fist in the ground.
+            case 33 -> {
+                ScreenFx.impactFrame(new int[] {0, 3, 2}, 1, 0xFFB43A, pos, 0);
+                ScreenShake.start(2f * near, 30);
+                ScreenFx.fovKick(9 * near, 14);
+                ScreenFx.radialBlur(pos, 0.9f * near, 12);
+            }
+            // Overtime's first blow.
+            case 34 -> {
+                ScreenFx.impactFrame(new int[] {0, 1, 2, 3}, 1, 0xFFB43A, pos, 0);
+                ScreenShake.start(1.5f * near, 20);
+            }
+            // Nobara's Hairpin.
+            case 35 -> {
+                ScreenFx.impactFrame(new int[] {1, 2, 1}, 1, 0x3A8AFF, pos, 0);
+                ScreenShake.start(1f * near, 14);
+            }
+            // Resonance.
+            case 36 -> {
+                ScreenFx.impactFrame(new int[] {2, 1, 2}, 1, 0x3A8AFF, pos, 0);
+                ScreenShake.start(1f * near, 14);
+            }
+            // The nail hammered in point blank.
+            case 37 -> {
+                ScreenFx.impactFrame(new int[] {3, 1}, 1, 0x3A8AFF, pos, 0);
+                ScreenShake.start(0.8f * near, 10);
+            }
+            // Todo's clap.
+            case 38 -> ScreenFx.impactFrame(new int[] {0}, 1, 0xFFFFFF, pos, 0);
+            // Todo's punch.
+            case 39 -> {
+                ScreenFx.impactFrame(new int[] {3, 2}, 1, 0xFFFFFF, pos, 0);
+                ScreenShake.start(1f * near, 12);
+            }
+            // Todo coming down from the sky.
+            case 40 -> {
+                ScreenFx.impactFrame(new int[] {0, 3, 2}, 1, 0xFFFFFF, pos, 0);
+                ScreenShake.start(1.4f * near, 18);
+            }
+            // Inumaki: "Stop."
+            case 41 -> ScreenFx.impactFrame(new int[] {3}, 2, 0xA070FF, pos, 0);
+            // Inumaki: "Get crushed!"
+            case 42 -> {
+                ScreenFx.impactFrame(new int[] {2, 3}, 1, 0xA070FF, pos, 0);
+                ScreenShake.start(1.3f * near, 16);
+            }
+            // Miwa's draw.
+            case 43 -> {
+                ScreenFx.impactFrame(new int[] {0}, 1, 0x8FD0FF, pos, 0);
+                ScreenShake.start(0.4f * near, 4);
+            }
+            // Miwa's Line Cut and Simple Domain cutting.
+            case 44 -> {
+                ScreenFx.impactFrame(new int[] {0, 2}, 1, 0x8FD0FF, pos, 0);
+                ScreenShake.start(0.6f * near, 8);
             }
             default -> {
             }

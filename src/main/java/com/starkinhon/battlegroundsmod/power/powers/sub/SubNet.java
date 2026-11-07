@@ -224,6 +224,87 @@ public final class SubNet {
     // Dust thrown up from the ground at pos (something slammed into it): a = size.
     public static final int DUST = 99;
 
+    // ---------- Jujutsu (power/powers/sub/jj, client/fx/JjFx) ----------
+    // The Divergent Fist's aura (stream): id = the entity, a = how strong (0..1), b = 0 the right fist, 1 both; it lags
+    // behind the fist in echoes when the fist moves.
+    public static final int DIV_AURA = 100;
+    // The Divergent Fist: id = Itadori, pos = where it landed, dir = the punch; the second impact comes a ticks later.
+    public static final int DIVERGENT = 101;
+    // The Black Flash's ring closing on the fist (stream): id = Itadori, pos = the fist, a = how closed (0..1).
+    public static final int BF_RING = 102;
+    // The Manji Kick's guard (stream): id = Itadori, a = how up (0..1).
+    public static final int GUARD = 103;
+    // A burst of cursed energy (ink tongues opening out) at pos along dir: a = size, b = color (0 cyan, 1 gold).
+    public static final int INK_BURST = 104;
+    // A swing's arc at pos (the middle of it), facing dir: a = radius, b = color (Db.*), c = 1 a vertical swing.
+    public static final int ARC = 105;
+    // Cracks on the ground at pos: a = radius, b = how many, c = 1 with rubble and dust.
+    public static final int CRACKS = 106;
+    // Speed lines behind a dashing entity (stream): id = the entity, a = color (0 cyan, 1 red, 2 air).
+    public static final int DASH_TRAIL = 107;
+    // Choso. The ball of blood between his palms (stream): id = Choso, pos = between the hands, a = radius, b = how
+    // compressed (0..1).
+    public static final int BLOOD_BALL = 110;
+    // The Piercing Blood: the line from pos to pos + dir.
+    public static final int BLOOD_BEAM = 111;
+    // Supernova's orbs (stream): id = Choso, pos = his middle, a = which orbs are up (bits), b = the angle of the first.
+    public static final int SUPERNOVA = 112;
+    // An orb took a hit and burst at pos.
+    public static final int ORB_POP = 113;
+    // The orbs burst into needles: pos = center, a = which orbs (bits), b = the angle of the first.
+    public static final int SUPERNOVA_BURST = 114;
+    // The blood rope (stream): id = its own, pos = the hand, dir = to the end, a = 0 flying, 1 wrapped round the end,
+    // b = the bound one's height.
+    public static final int ROPE = 115;
+    // Red Scale: id = the entity, a = ticks it lasts (0 stops it).
+    public static final int SCALE = 116;
+    // Blood splashing out of pos along dir: a = size.
+    public static final int BLOOD_SPLASH = 117;
+    // Nanami. The 7:3 lines over the target: id = the target, a = ticks (0 takes them off).
+    public static final int RATIO = 120;
+    // The critical hit on the 7:3 point: pos, dir = the blow.
+    public static final int RATIO_CRIT = 121;
+    // The 7:3 point on the ground glowing where the fist will land (stream): id = Nanami, pos = the point, a = how lit.
+    public static final int GROUND_MARK = 122;
+    // The fist in the ground: pos = the point, a = how far the shockwave runs.
+    public static final int SLAM = 123;
+    // Overtime's gold energy: id = the entity, a = ticks (0 stops it).
+    public static final int GOLD_AURA = 124;
+    // Nobara. A nail (stream): id = its own, pos = its tip, dir = where it points, a = 0 flying, 1 stuck.
+    public static final int NAIL = 130;
+    // Resonance's spike of energy at pos along dir: a = size.
+    public static final int RESONANCE = 131;
+    // The straw doll in her left hand (stream): id = Nobara, a = 1 once the nail is hammered in.
+    public static final int DOLL = 132;
+    // The thread of Resonance from pos to pos + dir.
+    public static final int RESO_LINE = 133;
+    // Todo. A clap: id = who claps, pos = the hands, a = 1 a real one (the swap), 0 the fake.
+    public static final int CLAP = 140;
+    // A swap: the flash where someone was (pos = feet).
+    public static final int SWAP = 141;
+    // Inumaki. Rings of voice from pos to pos + dir: a = size, b = 0 violet, 1 lilac.
+    public static final int VOICE = 150;
+    // The seal marks lit on his face: id = Inumaki, a = ticks.
+    public static final int SEAL_MARKS = 151;
+    // Rings round someone stopped by "Stop": id = the target, a = ticks.
+    public static final int HOLD_RINGS = 152;
+    // "Get crushed": the unseen weight coming down on pos: a = radius.
+    public static final int CRUSH = 153;
+    // Coughing blood: id = Inumaki, a = ticks.
+    public static final int COUGH = 154;
+    // Asleep: id = the target, a = ticks (0 wakes).
+    public static final int SLEEP = 155;
+    // Miwa. The light blue line of a cut at pos along dir: a = half length, b = width.
+    public static final int MIWA_LINE = 160;
+    // Simple Domain's circle (stream): id = Miwa, pos = center, a = how open (0..1), b = radius.
+    public static final int SIMPLE_DOMAIN = 161;
+    // The draw's sweep round her: pos = her middle, dir = forward, a = radius.
+    public static final int MIWA_ARC = 162;
+    // The streak of the Line Cut from pos to pos + dir.
+    public static final int DASH_LINE = 163;
+    // Simple Domain undone: specks rising from the circle at pos, a = radius.
+    public static final int DOMAIN_POP = 164;
+
     public static final int STYLE_SUKUNA = 0;
     public static final int STYLE_PINK = 1;
     public static final int STYLE_CRIMSON = 2;

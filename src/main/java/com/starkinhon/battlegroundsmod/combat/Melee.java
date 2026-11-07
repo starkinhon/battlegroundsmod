@@ -46,7 +46,8 @@ public final class Melee {
     static float multiplier(LivingEntity player) {
         Power power = Powers.get(player.getData(ModAttachments.POWER).power);
         float buff = com.starkinhon.battlegroundsmod.power.powers.sub.db.DbCommon.meleeMultiplier(player)
-                * com.starkinhon.battlegroundsmod.power.powers.sub.nr.NrCommon.meleeMultiplier(player);
+                * com.starkinhon.battlegroundsmod.power.powers.sub.nr.NrCommon.meleeMultiplier(player)
+                * com.starkinhon.battlegroundsmod.power.powers.sub.jj.JjCommon.meleeMultiplier(player);
         return power == null ? buff : power.meleeMultiplier() * buff;
     }
 
