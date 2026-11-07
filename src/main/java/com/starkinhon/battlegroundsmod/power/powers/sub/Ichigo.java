@@ -125,7 +125,7 @@ public final class Ichigo {
                     Combat.hurt(caster, t, damage);
                     Combat.push(t, dir[0], 1.2 + charge, 0.35);
                     Stun.apply(t, 10);
-                    SubNet.send(level, SubNet.IMPACT, 0, Combat.center(t), size * 0.6f, kuroi ? SubNet.COLOR_RED : SubNet.COLOR_BLUE);
+                    SubNet.send(level, SubNet.RIP, 0, Combat.center(t), dir[0], size * 0.8f, kuroi ? 1 : 0, 0);
                     SubCommon.sound(level, t.position(), SoundEvents.PLAYER_ATTACK_CRIT, 1.2f, 0.8f);
                 }
             }
@@ -159,7 +159,7 @@ public final class Ichigo {
                 return;
             }
             Vec3 center = SubCommon.ground(level, caster.position().add(dir.scale(1.5)));
-            SubNet.send(level, SubNet.RIFT, 0, center, dir, 6.5f, 8, 0);
+            SubNet.send(level, SubNet.RIFT, 0, center, dir, 6.5f, 8, kuroi ? 1 : 0);
             SubCommon.sound(level, center, SoundEvents.GENERIC_EXPLODE.value(), 1.4f, 0.9f);
             SubCommon.sound(level, center, SoundEvents.WARDEN_SONIC_BOOM, 0.6f, 1.5f);
             BlockState below = level.getBlockState(net.minecraft.core.BlockPos.containing(center.subtract(0, 0.2, 0)));
