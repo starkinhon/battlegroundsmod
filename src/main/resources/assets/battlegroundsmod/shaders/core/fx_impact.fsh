@@ -215,26 +215,53 @@ vec3 bfGrade(vec3 c, float k, float red) {
     vec3 sat = mix(vec3(g), c, 1.0 + 0.8 * k);
     sat = (sat - 0.5) * (1.0 + 0.35 * k) + 0.5;
     vec3 outc = clamp(sat, 0.0, 1.0) * mix(vec3(1.0), Tint, 0.5 * k);
-    // The ink blots around the fist, re-rolled every two ticks.
+    // The ink blots around the fist, re-rolled every two ticks: the Visualizer's splats (a small crooked core, six thin
+    // spikes and droplets), black with a soft red glow around, not big round blobs.
     float aspect = Screen.x / Screen.y;
     vec2 p = (uv - Center) * vec2(aspect, 1.0);
-    float s = floor(Seed / 2.0);
-    float ink = 0.0;
-    float rim = 0.0;
+    float px = 1.0 / Screen.y;
+    float ep = floor(Seed / 2.0);
+    float dmin = 1.0e3;
     for (int i = 0; i < 16; i++) {
         float fi = float(i);
-        if (inkHash(vec2(s + fi, 1.0)) > 0.75) {
+        float s = 400.0 + ep * 53.0 + fi;
+        if (inkHash(vec2(s, 1.0)) > 0.75) {
             continue;
         }
         bool near = i < 10;
-        float a = inkHash(vec2(s + fi, 2.0)) * 6.28318;
-        float dist = near ? 0.05 + 0.3 * inkHash(vec2(s + fi, 3.0)) : 0.2 + 0.5 * inkHash(vec2(s + fi, 3.0));
-        float r = (near ? 0.03 + 0.07 * inkHash(vec2(s + fi, 4.0)) : 0.015 + 0.04 * inkHash(vec2(s + fi, 4.0))) * (0.6 + 0.6 * k);
-        vec2 at = vec2(cos(a), sin(a) * 0.7) * dist;
-        float e = length(p - at) * (0.75 + 0.5 * inkFbm((p - at) * 30.0 + fi));
-        ink = max(ink, 1.0 - smoothstep(r * 0.8, r, e));
-        rim = max(rim, 1.0 - smoothstep(r, r * 1.6, e));
+        float a = inkHash(vec2(s, 2.0)) * 6.28318;
+        float dist = near ? 0.05 + 0.3 * inkHash(vec2(s, 3.0)) : 0.2 + 0.5 * inkHash(vec2(s, 3.0));
+        float r = (near ? 0.03 + 0.07 * inkHash(vec2(s, 4.0)) : 0.015 + 0.04 * inkHash(vec2(s, 4.0))) * (0.6 + 0.6 * k);
+        vec2 q = p - vec2(cos(a), sin(a) * 0.7) * dist;
+        if (dot(q, q) > r * r * 4.0 + 0.003) {
+            continue;
+        }
+        // The core: a crooked round shape, 0.25 to 0.6 of r, squashed a little.
+        vec2 qe = vec2(q.x, q.y / 0.8);
+        float t = (atan(qe.y, qe.x) / 6.28318 + 0.5) * 36.0;
+        float k0 = floor(t);
+        float cr = r * 0.42 * (0.6 + 0.8 * mix(inkHash(vec2(s + mod(k0, 36.0) * 0.37, 5.0)), inkHash(vec2(s + mod(k0 + 1.0, 36.0) * 0.37, 5.0)), t - k0));
+        float d = (length(qe) - cr) * 0.8;
+        // Six thin spikes out of it, tapering to the tip, most with a droplet past the tip.
+        for (int j = 0; j < 6; j++) {
+            float fj = float(j);
+            float sa = inkHash(vec2(s, 10.0 + fj)) * 6.28318;
+            float len = r * (0.5 + 0.9 * pow(inkHash(vec2(s, 20.0 + fj)), 1.5));
+            float w = r * (0.02 + 0.07 * inkHash(vec2(s, 30.0 + fj)));
+            vec2 b = vec2(cos(sa) * r * 0.25, sin(sa) * r * 0.22);
+            vec2 tip = vec2(cos(sa) * len, sin(sa) * len * 0.85);
+            vec2 bt = tip - b;
+            float u = clamp(dot(q - b, bt) / max(dot(bt, bt), 1.0e-8), 0.0, 1.0);
+            d = min(d, length(q - b - bt * u) - w * (1.0 - u));
+            if (inkHash(vec2(s, 40.0 + fj)) < 0.6) {
+                float f = 1.05 + 0.3 * inkHash(vec2(s, 50.0 + fj));
+                d = min(d, length(q - vec2(cos(sa) * len * f, sin(sa) * len * f * 0.85)) - w * (0.6 + inkHash(vec2(s, 60.0 + fj))));
+            }
+        }
+        dmin = min(dmin, d);
     }
+    float ink = 1.0 - smoothstep(-px, px, dmin);
+    float rim = exp(-0.5 * pow(max(dmin, 0.0) / 0.011, 2.0)) * 0.75;
     outc = mix(outc, Tint, rim * (1.0 - ink) * 0.7 * k);
     return mix(outc, vec3(0.0), ink * k);
 }
