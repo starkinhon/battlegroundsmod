@@ -26,6 +26,7 @@ public final class FxShaders {
     static ShaderInstance susanoo;
     static ShaderInstance realismo;
     static ShaderInstance moon;
+    static ShaderInstance flesh;
     static ShaderInstance voidFlash;
 
     private static Boolean irisPresent;
@@ -62,6 +63,7 @@ public final class FxShaders {
         register(event, "souls_susanoo", DefaultVertexFormat.POSITION_COLOR_NORMAL, s -> susanoo = s);
         register(event, "fx_realismo", DefaultVertexFormat.POSITION, s -> realismo = s);
         register(event, "souls_moon", DefaultVertexFormat.PARTICLE, s -> moon = s);
+        register(event, "souls_flesh", DefaultVertexFormat.NEW_ENTITY, s -> flesh = s);
     }
 
     private static void register(RegisterShadersEvent event, String name, VertexFormat format, java.util.function.Consumer<ShaderInstance> sink)

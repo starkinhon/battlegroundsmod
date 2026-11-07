@@ -199,6 +199,26 @@ public final class FxRenderTypes extends RenderType {
                         .createCompositeState(false)));
     }
 
+    // Kokushibo's sword turning into living flesh (client/outfit/FleshSheathe): its own texture through souls_flesh,
+    // lit like an entity. The vertex color and the overlay slot carry the flesh's data (see souls_flesh.vsh).
+    private static final ShaderStateShard FLESH_SHADER = new ShaderStateShard(() -> FxShaders.flesh);
+    private static final java.util.Map<ResourceLocation, RenderType> FLESH = new java.util.HashMap<>();
+
+    // False when the shader is missing or a shader pack is on: then the flesh is only tinted on a vanilla entity type.
+    public static boolean fleshReady() {
+        return FxShaders.flesh != null && !FxShaders.flat();
+    }
+
+    public static RenderType flesh(ResourceLocation texture) {
+        return FLESH.computeIfAbsent(texture, t -> create("battlegroundsmod_flesh_" + t.getNamespace() + "_" + t.getPath().replace('/', '_'),
+                DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 1536, true, false, CompositeState.builder()
+                        .setShaderState(FLESH_SHADER)
+                        .setTextureState(new TextureStateShard(t, false, false))
+                        .setLightmapState(LIGHTMAP)
+                        .setCullState(NO_CULL)
+                        .createCompositeState(true)));
+    }
+
     // The texture a vanilla render type draws with, or null when it has none or can't be read.
     private static final java.util.Map<RenderType, java.util.Optional<ResourceLocation>> TEXTURES = new java.util.HashMap<>();
 

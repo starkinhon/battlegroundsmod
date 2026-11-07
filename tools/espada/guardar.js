@@ -1,7 +1,5 @@
-// Bakes Kokushibo's sheath moves. Putting his sword away (espada.guardar_kokushibo): a flick of the blade (chiburi), the hand brings it
-// across to the sheath on the left hip with the blade pointing back along it, the left hand at the mouth, then the
-// blade slides in and the arms drop. The sword itself is drawn by client/outfit/KokushiboSheathLayer (in the hand at
-// in the hand all the way, the hand bringing it along the sheath); this only moves the body and turns the wrist.
+// Bakes Kokushibo's sheath moves. Putting his sword away (espada.guardar_kokushibo): he stands still holding it out
+// while the sword, living flesh, leaves the hand by itself (client/outfit/FleshSheathe), then the arm drops.
 // The quick draw (espada.sacar_kokushibo), the combo's first click while the sword rests in the sheath: the right hand
 // on the grip at the hip pulls it forward along the sheath, then it comes out cutting across and up to the right (the
 // cut lands on tick 3) and ends where the combo's third cut starts (SwordArts skips to it).
@@ -42,24 +40,20 @@ const inSheath = (out) => {
   const f = FIT[out];
   return { twist: 0, lean: 0, drop: 1.8, arm: { yaw: f[0], pitch: f[1], roll: f[2] }, blade: { yaw: f[3], pitch: f[4], edge: f[5] } };
 };
-const sheathHand = { yaw: -16, pitch: -78 };
+// Putting it away (Stark, 2026-11-07: the sword is living flesh and goes back by itself, client/outfit/FleshSheathe):
+// the body stands still with the arm out holding it until the hand lets go (tick 40, FleshSheathe.LET_GO), then the
+// arm drops. The sword itself is drawn by KokushiboSheathLayer.
 const keys = [
   { t: 0, arm: { yaw: 0, pitch: -72 }, blade: { yaw: 0, pitch: 11 } },
-  // chiburi: the blade flicked out and down to the right
-  { t: 3, twist: 14, lean: 4, arm: { yaw: 50, pitch: -52 }, blade: { yaw: 75, pitch: -42 }, head: { yaw: -8 }, ease: 'snap' },
-  { t: 5, twist: 16, lean: 4, arm: { yaw: 52, pitch: -55 }, blade: { yaw: 78, pitch: -45 }, head: { yaw: -8 }, ease: 'linear' },
-  // across to the left hip: the tip into the sheath's mouth, the left hand holding it
-  { t: 9, ...inSheath(8), larm: sheathHand, head: { yaw: 14, pitch: -12 }, ease: 'inout' },
-  // the slide: the hand pushes the blade home along the sheath
-  { t: 12.5, ...inSheath(4), larm: sheathHand, head: { yaw: 12, pitch: -10 }, ease: 'linear' },
-  { t: 16, ...inSheath(0), larm: sheathHand, head: { yaw: 10, pitch: -10 }, ease: 'linear' },
-  { t: 18, ...inSheath(0), larm: sheathHand, head: { yaw: 8, pitch: -6 }, ease: 'linear' },
-  // hands down
-  { t: 24, arm: { yaw: 0, pitch: -90 }, blade: { yaw: 0, pitch: -60 }, ease: 'inout' },
+  { t: 40, arm: { yaw: 0, pitch: -72 }, blade: { yaw: 0, pitch: 11 }, ease: 'linear' },
+  { t: 46, arm: { yaw: 0, pitch: -90 }, blade: { yaw: 0, pitch: -60 }, ease: 'inout' },
 ];
 const dir = path.join(__dirname, '../../src/main/resources/assets/battlegroundsmod/animations');
 fs.writeFileSync(path.join(dir, 'espada.guardar_kokushibo.json'), JSON.stringify(Rig.bake(keys, 0.5)));
 console.log('espada.guardar_kokushibo');
+
+// The left hand holding the sheath for the quick draw.
+const sheathHand = { yaw: -16, pitch: -78 };
 
 // The combo's third cut starts here (anims.js C.c2end).
 const C2END = { twist: 30, lean: 2, drop: 1.2, arm: { yaw: 55, pitch: 45 }, blade: { yaw: 80, pitch: 62 }, l: { yaw: 25, pitch: -50 },

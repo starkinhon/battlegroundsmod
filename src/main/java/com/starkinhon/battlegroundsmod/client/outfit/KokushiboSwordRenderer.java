@@ -81,6 +81,15 @@ public class KokushiboSwordRenderer extends BlockEntityWithoutLevelRenderer {
         return true;
     }
 
+    // The meshes, once ready() said true (FleshSheathe bends them).
+    static MeshModel katana() {
+        return katana;
+    }
+
+    static MeshModel saya() {
+        return saya;
+    }
+
     static void fail(RuntimeException e) {
         broken = true;
         BattlegroundsMod.LOGGER.error("Drawing Kokushibo's sword failed; it is invisible until the game restarts", e);

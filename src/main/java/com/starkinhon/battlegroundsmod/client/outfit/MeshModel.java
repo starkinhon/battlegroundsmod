@@ -35,6 +35,11 @@ public final class MeshModel {
         }
     }
 
+    // Per vertex x y z u v nx ny nz, three vertices per triangle (FleshSheathe bends it vertex by vertex).
+    float[] data() {
+        return data;
+    }
+
     // Each triangle goes out as a quad with its last corner repeated (entity render types draw quads).
     public void emit(VertexConsumer out, PoseStack.Pose pose, int light, int overlay) {
         float[] d = data;
