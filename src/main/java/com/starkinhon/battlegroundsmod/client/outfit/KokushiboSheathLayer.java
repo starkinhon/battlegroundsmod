@@ -12,6 +12,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import com.starkinhon.battlegroundsmod.ModItems;
 import com.starkinhon.battlegroundsmod.client.SkillAnimations;
+import com.starkinhon.battlegroundsmod.combat.SwordArts;
 import com.starkinhon.battlegroundsmod.item.KokushiboSwordItem;
 
 import net.minecraft.client.Minecraft;
@@ -30,13 +31,15 @@ import net.minecraft.client.renderer.entity.layers.RenderLayer;
 // Kokushibo's sheath on the left hip, samurai style: mouth just in front of the hip, edge up, the scabbard running
 // back and down past the leg. The sword rests inside whenever it isn't drawn: carried in the inventory, and also held
 // out of combat mode (Stark, 2026-11-07: it only comes out to fight; Sheaths, from power/PowerLogic.sheathCode).
-// Drawing it: the combo's first click is the quick draw cut (espada.sacar_kokushibo), whose first frame has the hand
-// holding the sword in the sheath and pulls it out along it; it is just the held item from the start.
+// The hand never lets go of the sword (Stark, 2026-11-07); the right arm can't quite reach the sheath where it hangs,
+// so while the blade goes in or out the sheath leaves the hip to meet it (the left hand holds it there), SHEATH_OUT
+// pixels of blade still out, and goes back after.
+// Drawing it: the combo's first click is the quick draw cut (espada.sacar_kokushibo, tools/espada/guardar.js): the
+// hand on the grip pulls the blade out along the sheath, then cuts. The sword is just the held item.
 // Putting it away: when it stops being drawn while still carried (combat mode ended, or switched to another slot) it
-// plays espada.guardar_kokushibo (tools/espada/guardar.js): a flick of the blade, the hand brings the tip to the
-// sheath's mouth and pushes it home along the sheath. Until HOME the sword is drawn here in the hand (the same
-// transforms as a held item, wrist turn included; the hand never lets go, Stark 2026-11-07), then in the sheath, where
-// the hand left it (the animation is fitted to within about 2 px).
+// plays espada.guardar_kokushibo: a flick of the blade, the hand brings the tip to the sheath's mouth and pushes it
+// home. Until HOME the sword is drawn here in the hand (the same transforms as a held item, wrist turn included), then
+// in the sheath, which takes it back to the hip.
 // Every client sees it on its own, from the held item and the drawn flag the server sends.
 public class KokushiboSheathLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> {
     // Model space (1 = one pixel, +y down, -z the front, +x the player's left), relative to the body's pivot.
@@ -54,10 +57,20 @@ public class KokushiboSheathLayer extends RenderLayer<AbstractClientPlayer, Play
     public static final String PUT_AWAY = "espada.guardar_kokushibo";
     // Ticks into putting it away: in the hand until HOME; the new item stays hidden until DONE.
     private static final float HOME = 16, DONE = 22;
+    // Ticks into the quick draw when the blade has left the sheath, and when the sheath is back on the hip.
+    private static final float DRAWN_OUT = 2, DRAW_BACK = 4;
+    // Pixels of blade out of the sheath over time, {tick, pixels} pairs, as the animations' keys place the hand.
+    private static final float[] QUICK_DRAW_OUT = {0, 0, 1, 4, 2, 8};
+    private static final float[] PUT_OUT = {9, 8, 12.5f, 4, 16, 0};
+    // Putting it away: the sheath leaves the hip between these ticks, and is back at PUT_BACK.
+    private static final float[] PUT_MEET = {7, 9};
+    private static final float PUT_BACK = 19;
 
     private static final class State {
         boolean out;
         float putStart = -1;
+        // The sheath where the blade left it, relative to its place on the hip (the quick draw).
+        Matrix4f leftAt;
         int seen = Integer.MIN_VALUE;
     }
 
@@ -124,13 +137,37 @@ public class KokushiboSheathLayer extends RenderLayer<AbstractClientPlayer, Play
         int overlay = LivingEntityRenderer.getOverlayCoords(player, 0);
         poseStack.pushPose();
         try {
-            Matrix4f sheath = sheathMatrix(poseStack, 0);
-            draw(poseStack, sheath, buffer, light, overlay, false, true);
+            Matrix4f rest = sheathMatrix(poseStack, 0);
+            Matrix4f sheath = rest;
+            Matrix4f hand = null;
             if (out) {
+                String move = SkillAnimations.swordMoveName(player);
+                float t = ageInTicks - SkillAnimations.swordMoveStart(player);
+                if (SwordArts.QUICK_DRAW.equals(move) && t >= 0 && t < DRAW_BACK) {
+                    if (t <= DRAWN_OUT) {
+                        hand = handMatrix(poseStack, player);
+                        sheath = new Matrix4f(hand).translate(0, sheathOut(QUICK_DRAW_OUT, t), 0);
+                        state.leftAt = new Matrix4f(rest).invert().mul(sheath);
+                    } else if (state.leftAt != null) {
+                        sheath = new Matrix4f(rest).mul(blend(new Matrix4f(), state.leftAt, 1 - (t - DRAWN_OUT) / (DRAW_BACK - DRAWN_OUT)));
+                    }
+                } else {
+                    state.leftAt = null;
+                }
+                draw(poseStack, sheath, buffer, light, overlay, false, true);
                 return;
             }
             float t = state.putStart < 0 ? Float.MAX_VALUE : ageInTicks - state.putStart;
-            draw(poseStack, t >= HOME ? sheath : handMatrix(poseStack, player), buffer, light, overlay, true, false);
+            float w = t < PUT_MEET[0] ? 0 : t < PUT_MEET[1] ? (t - PUT_MEET[0]) / (PUT_MEET[1] - PUT_MEET[0])
+                    : t < HOME ? 1 : t < PUT_BACK ? 1 - (t - HOME) / (PUT_BACK - HOME) : 0;
+            if (w > 0 || t < HOME) {
+                hand = handMatrix(poseStack, player);
+            }
+            if (w > 0) {
+                sheath = blend(rest, new Matrix4f(hand).translate(0, sheathOut(PUT_OUT, t), 0), w);
+            }
+            draw(poseStack, sheath, buffer, light, overlay, false, true);
+            draw(poseStack, t >= HOME ? sheath : hand, buffer, light, overlay, true, false);
         } catch (RuntimeException e) {
             KokushiboSwordRenderer.fail(e);
         } finally {
@@ -164,7 +201,7 @@ public class KokushiboSheathLayer extends RenderLayer<AbstractClientPlayer, Play
         poseStack.translate(1 / 16f, 0.125f, -0.625f);
         float[] wrist = SkillAnimations.wrist(player);
         if (wrist != null) {
-            poseStack.mulPose(new Quaternionf().rotationZYX(wrist[2], wrist[1], wrist[0]));
+            KokushiboSwordRenderer.turnWrist(poseStack, wrist, swordStack);
         }
         BakedModel model = Minecraft.getInstance().getItemRenderer().getModel(swordStack, player.level(), player, player.getId());
         model.applyTransform(ItemDisplayContext.THIRD_PERSON_RIGHT_HAND, poseStack, false);
@@ -173,6 +210,27 @@ public class KokushiboSheathLayer extends RenderLayer<AbstractClientPlayer, Play
         Matrix4f m = new Matrix4f(poseStack.last().pose());
         poseStack.popPose();
         return m;
+    }
+
+    private static float sheathOut(float[] keys, float t) {
+        if (t <= keys[0]) {
+            return keys[1];
+        }
+        for (int i = 2; i < keys.length; i += 2) {
+            if (t <= keys[i]) {
+                float u = (t - keys[i - 2]) / (keys[i] - keys[i - 2]);
+                return keys[i - 1] + (keys[i + 1] - keys[i - 1]) * u;
+            }
+        }
+        return keys[keys.length - 1];
+    }
+
+    private static Matrix4f blend(Matrix4f a, Matrix4f b, float u) {
+        u = Math.max(0, Math.min(1, u));
+        Vector3f ta = a.getTranslation(new Vector3f()), tb = b.getTranslation(new Vector3f());
+        Vector3f sa = a.getScale(new Vector3f()), sb = b.getScale(new Vector3f());
+        Quaternionf qa = a.getNormalizedRotation(new Quaternionf()), qb = b.getNormalizedRotation(new Quaternionf());
+        return new Matrix4f().translationRotateScale(ta.lerp(tb, u), qa.slerp(qb, u), sa.lerp(sb, u));
     }
 
     private static void draw(PoseStack poseStack, Matrix4f m, MultiBufferSource buffer, int light, int overlay, boolean sword, boolean sheath) {

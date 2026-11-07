@@ -21,6 +21,22 @@ public class KokushiboSwordRenderer extends BlockEntityWithoutLevelRenderer {
     public static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "textures/models/kokushibo_sword.png");
     // Sword space: 1 = one pixel of the player model, 0 = the guard, +y the tip.
     public static final float GRIP = -3.6f, BLADE_BASE = 1.2f, TIP = 34.4f, BUTT = -10.6f;
+    // Where the fist holds the grip, in the frame ItemInHandLayer draws the held item in (third person display transform
+    // and toSword applied to (0, GRIP, 0); tools/espada/guardar.js uses the same). The sword moves turn the wrist about
+    // it, so the grip stays in the fist (about the item's own pivot it slid out, Stark 2026-11-07).
+    private static final org.joml.Vector3f GRIP_PIVOT = new org.joml.Vector3f(-0.07969f, -0.18522f, 0.05077f);
+
+    // Turns the held item about the wrist by a sword move's wrist angles (SkillAnimations.wrist).
+    public static void turnWrist(PoseStack pose, float[] wrist, ItemStack stack) {
+        org.joml.Quaternionf turn = new org.joml.Quaternionf().rotationZYX(wrist[2], wrist[1], wrist[0]);
+        if (stack.getItem() instanceof com.starkinhon.battlegroundsmod.item.KokushiboSwordItem) {
+            pose.translate(GRIP_PIVOT.x, GRIP_PIVOT.y, GRIP_PIVOT.z);
+            pose.mulPose(turn);
+            pose.translate(-GRIP_PIVOT.x, -GRIP_PIVOT.y, -GRIP_PIVOT.z);
+        } else {
+            pose.mulPose(turn);
+        }
+    }
 
     private static MeshModel katana;
     private static MeshModel saya;

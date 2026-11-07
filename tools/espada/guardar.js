@@ -19,21 +19,28 @@ src = src.slice(0, from) + `mul(new THREE.Matrix4().makeTranslation(1.5 / 16, 3 
     mul(new THREE.Matrix4().makeScale(1.15 / 16, 1.15 / 16, 1.15 / 16));
     mul(new THREE.Matrix4().makeTranslation(0, 3.6, 0));
     ` + src.slice(to);
+// The wrist turns about the grip (Stark, 2026-11-07: about the item's pivot the grip slid out of the fist), as in
+// KokushiboSwordRenderer.GRIP_PIVOT.
+src = src.replace('return handFromArm().multiply(wristMatrix(w || [0, 0, 0])).multiply(swordFromHand());',
+  `const g = new THREE.Vector3(-0.07969, -0.18522, 0.05077);
+    return handFromArm().multiply(new THREE.Matrix4().makeTranslation(g.x, g.y, g.z)).multiply(wristMatrix(w || [0, 0, 0]))
+      .multiply(new THREE.Matrix4().makeTranslation(-g.x, -g.y, -g.z)).multiply(swordFromHand());`);
 const mod = { exports: {} };
 new Function('module', 'require', 'globalThis', src)(mod, require, globalThis);
 const Rig = mod.exports;
 
 // The right hand holding the sword IN the sheath, the guard out pixels from its mouth: fitted so that the sword in the
-// hand lies along the sheath (KokushiboSheathLayer.GUARD_AT / TURN) within about 2 px at out 0. The hand never lets
-// go: the blade goes in and comes out because the hand moves it along the sheath.
+// hand lies along the sheath (KokushiboSheathLayer.GUARD_AT / TURN) as near as the arm reaches (4 to 8 px off); the
+// left hand brings the sheath the rest of the way (KokushiboSheathLayer.SHEATH_OUT). The hand never lets go: the blade
+// goes in and comes out because the hand moves it along the sheath.
 const FIT = {
-  0: [-63.8, -29.4, 108.4, -168.9, -18.2, 254.7],
-  4: [-47.6, -17.8, 108.4, -168.2, -19.1, 248.8],
-  8: [-33.1, -4.1, 108.4, -164.5, -21.4, 248.8],
+  0: [-51.9, -42.2, 151.8, -164.4, -21, 270.7],
+  4: [-32.2, -27.2, 151.8, -163.2, -23.3, 281.2],
+  8: [-19.8, -14.2, 151.8, -157.8, -26.8, 292.6],
 };
 const inSheath = (out) => {
   const f = FIT[out];
-  return { twist: 0, lean: 0, drop: 1, arm: { yaw: f[0], pitch: f[1], roll: f[2] }, blade: { yaw: f[3], pitch: f[4], edge: f[5] } };
+  return { twist: 0, lean: 0, drop: 1.8, arm: { yaw: f[0], pitch: f[1], roll: f[2] }, blade: { yaw: f[3], pitch: f[4], edge: f[5] } };
 };
 const sheathHand = { yaw: -16, pitch: -78 };
 const keys = [

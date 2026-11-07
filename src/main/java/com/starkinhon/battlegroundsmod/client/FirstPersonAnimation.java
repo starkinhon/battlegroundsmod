@@ -4,7 +4,6 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import com.starkinhon.battlegroundsmod.client.fx.SwordFx;
 
-import org.joml.Quaternionf;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.PlayerModel;
@@ -108,7 +107,7 @@ public final class FirstPersonAnimation {
         pose.translate(1 / 16f, 0.125f, -0.625f);
         float[] wrist = SkillAnimations.wrist(player);
         if (wrist != null) {
-            pose.mulPose(new Quaternionf().rotationZYX(wrist[2], wrist[1], wrist[0]));
+            com.starkinhon.battlegroundsmod.client.outfit.KokushiboSwordRenderer.turnWrist(pose, wrist, player.getMainHandItem());
         }
     }
 
