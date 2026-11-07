@@ -636,6 +636,25 @@ public final class ModPayloads {
     // Server -> client: a ball of Bills' Destruction Energy (power/powers/bills/DestructionEnergy), sent every tick it
     // exists. mode 0 = there at pos, 2 = gone. grow: 0 to 1 while it forms (the rings open one after another); small: one
     // of the many balls of the Shift + Z, drawn lighter.
+    // Server -> client: the look of a hand-to-hand move (combat/PunchFx; kinds there, sent as kind | rgb << 4), drawn by
+    // client/fx/PunchFxRenderer. entityId: who it follows (-1: stays at pos).
+    public record PunchFx(int kind, int entityId, Vec3 pos, Vec3 dir, float a, float b) implements CustomPacketPayload {
+        public static final Type<PunchFx> TYPE = payloadType("punch_fx");
+        public static final StreamCodec<ByteBuf, PunchFx> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, PunchFx::kind,
+                ByteBufCodecs.VAR_INT, PunchFx::entityId,
+                VEC3, PunchFx::pos,
+                VEC3, PunchFx::dir,
+                ByteBufCodecs.FLOAT, PunchFx::a,
+                ByteBufCodecs.FLOAT, PunchFx::b,
+                PunchFx::new);
+
+        @Override
+        public Type<PunchFx> type() {
+            return TYPE;
+        }
+    }
+
     // Server -> client: one of the sword moves' effects (client/fx/SwordFx; kinds there, sent as kind | rgb << 4).
     public record SwordFx(int kind, int entityId, Vec3 pos, Vec3 dir, float a, float b) implements CustomPacketPayload {
         public static final Type<SwordFx> TYPE = payloadType("sword_fx");
@@ -1151,6 +1170,8 @@ public final class ModPayloads {
                 () -> ClientHooks.blackFlash(payload.pos(), payload.dir(), payload.charge(), payload.stop())));
         registrar.playToClient(SubFx.TYPE, SubFx.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.subFx(payload.kind(), payload.id(), payload.pos(), payload.dir(), payload.a(), payload.b(), payload.c())));
+        registrar.playToClient(PunchFx.TYPE, PunchFx.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.punchFx(payload.kind(), payload.entityId(), payload.pos(), payload.dir(), payload.a(), payload.b())));
         registrar.playToClient(SwordFx.TYPE, SwordFx.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.swordFx(payload.kind(), payload.entityId(), payload.pos(), payload.dir(), payload.a(), payload.b())));
         registrar.playToClient(AizenFx.TYPE, AizenFx.STREAM_CODEC, (payload, context) -> context.enqueueWork(
