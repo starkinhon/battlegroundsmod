@@ -95,17 +95,14 @@ module.exports = {
       rl: { pitch: 98, out: 2 }, ll: { pitch: -6, out: 1 }, head: { yaw: 0, pitch: 12 }, ease: 'out' },
     { t: 10, ...guard, ease: 'inout' },
   ],
-  // 5 Chute final: winds the other way, then a roundhouse with the right leg, leaning back, arms flung out for
-  // balance (contact at 3), holds the end and comes back.
+  // 5 Soco final: coils the right shoulder back, then a heavy right straight that steps in, feet on the ground
+  // (contact at 3), holds the end and comes back.
   combo5: [
     { t: 0, ...guard },
-    { t: 2, ...guard, twist: -28, lean: 8, drop: 1.6, arm: { yaw: -40, pitch: -50 }, l: { yaw: 30, pitch: -40 }, rl: { pitch: -24, out: 4 }, ease: 'out' },
-    { t: 3, twist: 44, lean: -20, drop: 0.4, arm: { yaw: 70, pitch: -10 }, l: { yaw: 40, pitch: -70 },
-      rl: { pitch: 84, out: 26 }, ll: { pitch: -8, out: 2 }, head: { yaw: 0, pitch: -4 }, ease: 'snap' },
-    { t: 5, twist: 56, lean: -24, drop: 0.4, arm: { yaw: 80, pitch: -6 }, l: { yaw: 44, pitch: -74 },
-      rl: { pitch: 92, out: 30 }, ll: { pitch: -8, out: 2 }, head: { yaw: 0, pitch: -4 }, ease: 'out' },
-    { t: 9, twist: 50, lean: -20, drop: 0.4, arm: { yaw: 76, pitch: -8 }, l: { yaw: 40, pitch: -70 },
-      rl: { pitch: 86, out: 28 }, ll: { pitch: -8, out: 2 }, head: { yaw: 0, pitch: -4 }, ease: 'linear' },
+    { t: 2, ...coil, twist: 46, lean: 4, drop: 1.6, ease: 'out' },
+    { t: 3, ...hit, twist: -46, lean: 26, fwd: 3, arm: { yaw: 44, pitch: 0 }, ease: 'snap' },
+    { t: 5, ...hit, twist: -54, lean: 28, fwd: 3.5, arm: { yaw: 50, pitch: 2 }, ease: 'out' },
+    { t: 9, ...hit, twist: -48, lean: 24, fwd: 3.5, arm: { yaw: 46, pitch: 2 }, ease: 'linear' },
     { t: 17, ...guard, ease: 'inout' },
   ],
   // Barragem: a punch every 2 ticks, right and left, for the longest hold (60 ticks); the server switches to the
