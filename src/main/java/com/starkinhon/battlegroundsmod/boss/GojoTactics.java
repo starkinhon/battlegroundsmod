@@ -171,7 +171,7 @@ final class GojoTactics extends TacticsBase {
         // The Expansão de 0,2 s: a counter. He reads someone near him charging or in the middle of a move and snaps the
         // void open on them (not every time, so it stays a read and not a wall).
         if (ai.now() >= flashReadyAt && !ai.usingMove() && ai.now() % 4 == 0) {
-            for (LivingEntity target : Combat.inRadius(level, Combat.center(boss), VazioRelampago.RADIUS - 1, boss)) {
+            for (LivingEntity target : Combat.inRadius(level, Combat.center(boss), VazioRelampago.radius(boss) - 1, boss)) {
                 if (VazioRelampago.busy(target) && random.nextDouble() < 0.5) {
                     flashReadyAt = ai.now() + 20;
                     if (PowerLogic.cast(boss, PowerData.SLOT_SHIFT_ULT)) {

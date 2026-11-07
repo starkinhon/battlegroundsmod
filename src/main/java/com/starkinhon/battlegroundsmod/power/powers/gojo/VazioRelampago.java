@@ -18,6 +18,7 @@ import com.starkinhon.battlegroundsmod.network.ModPayloads;
 import com.starkinhon.battlegroundsmod.power.PowerData;
 import com.starkinhon.battlegroundsmod.power.PowerLogic;
 import com.starkinhon.battlegroundsmod.power.powers.uchiha.Katon;
+import com.starkinhon.battlegroundsmod.skill.DominioSpec;
 
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -35,14 +36,15 @@ import net.neoforged.neoforge.network.PacketDistributor;
 // and the void snaps open for an instant: a spiky black blot swallows him, the screen goes black, the inside of our own
 // Expansão lights up (the black hole and its rings, ink falling into it, the water floor, those caught in grey), and it
 // closes in an X across the whole screen that thins into two lines (client/fx/VoidFlashScene).
-// What it does is a counter: everyone within RADIUS has whatever skill they had going broken (held, halfway through,
+// What it does is a counter: everyone within the normal Expansão's reach (radius()) has whatever skill they had going broken (held, halfway through,
 // active, their attacks in the air, even a Domain opening). Whoever was charging or using something when he pressed, or
 // when it snapped, is stunned for STUN_CHARGING with no stamina left (fragile). The others only for STUN_OTHERS, so the
 // key is never dead, but the big reward is reading the enemy. With nobody in reach it does not go off (a warning shows).
 public final class VazioRelampago {
     public static final String SKILL = "gojo.dominio_relampago";
     public static final int COOLDOWN = 800;
-    public static final double RADIUS = 15;
+    // The client's guess of the reach (the server reads the Expansão's own radius, 40 by default).
+    public static final double RADIUS = 40;
     // The tick the void snaps open (the hand sign before it), and how long the X takes to close after.
     public static final int SNAP = 7;
     public static final int LENGTH = 50;
@@ -51,7 +53,7 @@ public final class VazioRelampago {
     // Gojo stands for the sign and the snap (his camera stays free).
     private static final int ROOT = 12;
     // Players this close see the void on their screen.
-    private static final double VIEW_DISTANCE = 40;
+    private static final double VIEW_DISTANCE = 64;
 
     private VazioRelampago() {
     }
@@ -100,7 +102,7 @@ public final class VazioRelampago {
         sound(level, caster, SoundEvents.WARDEN_SONIC_BOOM, 2.2f, 1.7f);
         sound(level, caster, SoundEvents.BEACON_DEACTIVATE, 2.0f, 0.6f);
         // Everything in the air inside it is gone (only Gojo's own attacks stay).
-        Destructible.eraseAlong(level, center, center, RADIUS, caster);
+        Destructible.eraseAlong(level, center, center, radius(caster), caster);
         for (LivingEntity target : targets(level, caster)) {
             boolean caught = busy.contains(target) || busy(target);
             breakAll(target);
@@ -148,9 +150,15 @@ public final class VazioRelampago {
                 || data.abilityHeld && data.chargeLeft > 0;
     }
 
+    // Same reach as the normal Expansão (its radius in gojo.dominio, awakened or not).
+    public static double radius(LivingEntity caster) {
+        boolean awakened = caster.hasData(ModAttachments.POWER) && caster.getData(ModAttachments.POWER).awakened;
+        return DominioSpec.get(awakened).radius();
+    }
+
     // Everyone within reach but players in creative (they see it, but take none of it).
     private static List<LivingEntity> targets(ServerLevel level, LivingEntity caster) {
-        return Combat.inRadius(level, caster.position().add(0, 1, 0), RADIUS, caster).stream()
+        return Combat.inRadius(level, caster.position().add(0, 1, 0), radius(caster), caster).stream()
                 .filter(e -> !(e instanceof Player player && (player.isCreative() || player.isSpectator())))
                 .toList();
     }

@@ -44,7 +44,7 @@ public final class VoidFlashScene {
     private static final int X_THIN = 44;
     private static final int END = 49;
     // The people drawn over it: this close to where it opened.
-    private static final double PEOPLE_REACH = 28;
+    private static final double PEOPLE_REACH = 48;
 
     private static int caster = -1;
     private static Vec3 center = Vec3.ZERO;
