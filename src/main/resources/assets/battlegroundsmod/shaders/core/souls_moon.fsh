@@ -186,7 +186,7 @@ void main() {
         }
         fragColor = vec4(col * fade, alpha * fade);
     } else {
-        vec3 light = glow * 0.5 * fade;
+        vec3 light = glow * 0.2 * fade;
         if (max(light.r, max(light.g, light.b)) < 0.002) {
             discard;
         }
