@@ -123,10 +123,13 @@ public final class InfiniteVoid {
         int close = spec.closeTick();
         int release = close + Math.min(spec.closeTicks(), 16);
 
-        // Gojo stands still through the sign, the white and the tunnel; he moves again when the void opens.
+        // Gojo stands still through the sign, the white and the tunnel; he moves again when the void opens. His camera
+        // stays free (like the Katon): he can look around, and it changes nothing, the domain aims by positions. Rooted
+        // too, so the client doesn't even try to walk and get pulled back.
         data.busyTicks = voidTick;
         if (spec.dominio().pararUsuario()) {
-            Freeze.hold(caster, voidTick);
+            Freeze.holdLookFree(caster, voidTick);
+            caster.addEffect(new MobEffectInstance(ModEffects.ENRAIZADO, voidTick, 0, false, false, false));
         }
         Active active = new Active(caster, level, center, spec, awakened);
         ACTIVE.add(active);
@@ -269,6 +272,7 @@ public final class InfiniteVoid {
                 active.cancelled = true;
                 caster.getData(ModAttachments.POWER).busyTicks = 0;
                 Freeze.free(caster);
+                caster.removeEffect(ModEffects.ENRAIZADO);
                 PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new ModPayloads.PlaySkillAnimation(caster.getId(), "", false));
                 return true;
             }
