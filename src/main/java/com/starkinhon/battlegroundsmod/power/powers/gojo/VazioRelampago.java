@@ -12,11 +12,11 @@ import com.starkinhon.battlegroundsmod.combat.Destructible;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.combat.SkillStop;
 import com.starkinhon.battlegroundsmod.combat.Stamina;
-import com.starkinhon.battlegroundsmod.combat.Stun;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
 import com.starkinhon.battlegroundsmod.power.PowerData;
 import com.starkinhon.battlegroundsmod.power.PowerLogic;
+import com.starkinhon.battlegroundsmod.power.Tiers;
 import com.starkinhon.battlegroundsmod.power.powers.uchiha.Katon;
 import com.starkinhon.battlegroundsmod.skill.DominioSpec;
 
@@ -42,8 +42,9 @@ import net.neoforged.neoforge.network.PacketDistributor;
 // closes in an X across the whole screen that thins into two lines (client/fx/VoidFlashScene).
 // What it does is a counter: everyone within the normal Expansão's reach (radius()) has whatever skill they had going broken (held, halfway through,
 // active, their attacks in the air, even a Domain opening). Whoever was charging or using something when he pressed, or
-// when it snapped, is stunned for STUN_CHARGING with no stamina left (fragile). The others only for STUN_OTHERS, so the
-// key is never dead, but the big reward is reading the enemy. With nobody in reach it does not go off (a warning shows).
+// when it snapped, also loses all stamina (fragile), so the big reward is reading the enemy. Everyone caught takes Brain
+// Damage, held completely still (brainTicks): 3 s for bosses and mobs, 5 s for players, plus 1 s for each tier the target
+// is below Gojo (Stark's rule). With nobody in reach it does not go off (a warning shows).
 public final class VazioRelampago {
     public static final String SKILL = "gojo.dominio_relampago";
     public static final int COOLDOWN = 800;
@@ -52,8 +53,10 @@ public final class VazioRelampago {
     // The tick the void snaps open (the hand sign before it), and how long the X takes to close after.
     public static final int SNAP = 7;
     public static final int LENGTH = 50;
-    public static final int STUN_CHARGING = 140;
-    public static final int STUN_OTHERS = 30;
+    // Brain Damage: base for bosses and mobs, base for players, and how much each tier below Gojo adds.
+    public static final int BRAIN_MOBS = 60;
+    public static final int BRAIN_PLAYERS = 100;
+    public static final int BRAIN_PER_TIER = 20;
     // Gojo stands for the sign and the snap (his camera stays free).
     private static final int ROOT = 12;
     // Players this close see the void on their screen.
@@ -110,11 +113,11 @@ public final class VazioRelampago {
         for (LivingEntity target : targets(level, caster)) {
             boolean caught = busy.contains(target) || busy(target);
             breakAll(target);
-            int ticks = caught ? STUN_CHARGING : STUN_OTHERS;
-            // A complete stun, the whole time, on anyone (bosses too, no boss resistance): stopped where they stand, no
-            // walking, jumping, punches, skills or AI. Mobs and bosses are held still with the AI off (Freeze); players
-            // too, but their camera stays free (turning does nothing for them).
-            Stun.apply(target, ticks, true);
+            int ticks = brainTicks(caster, target);
+            // Brain Damage, a complete stun the whole time on anyone (bosses too, no boss resistance): stopped where they
+            // stand, no walking, jumping, punches, skills or AI. Mobs and bosses are held still with the AI off (Freeze);
+            // players too, but their camera stays free (turning does nothing for them).
+            InfiniteVoid.brainDamage(target, ticks);
             if (target instanceof Player) {
                 Freeze.holdLookFree(target, ticks);
             } else {
@@ -167,6 +170,19 @@ public final class VazioRelampago {
                 || target instanceof Creeper creeper && creeper.getSwellDir() > 0
                 || target instanceof SpellcasterIllager illager && illager.isCastingSpell()
                 || target instanceof RangedAttackMob && target instanceof Mob mob && mob.isAggressive();
+    }
+
+    // 3 s for bosses and mobs, 5 s for players, plus 1 s for each tier the target is below the caster (tier 10 is the
+    // weakest, so a higher number is a lower tier). Same tier or above: only the base.
+    public static int brainTicks(LivingEntity caster, LivingEntity target) {
+        int base = target instanceof Player ? BRAIN_PLAYERS : BRAIN_MOBS;
+        int below = Math.max(0, tier(target) - tier(caster));
+        return base + below * BRAIN_PER_TIER;
+    }
+
+    // Without attaching power data to a mob that has none (a plain mob is human, tier 10).
+    private static int tier(LivingEntity entity) {
+        return entity.hasData(ModAttachments.POWER) ? Tiers.of(entity) : Tiers.HUMANO;
     }
 
     // Same reach as the normal Expansão (its radius in gojo.dominio, awakened or not).
