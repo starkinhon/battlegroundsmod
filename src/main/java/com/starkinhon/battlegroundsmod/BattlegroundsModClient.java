@@ -81,6 +81,7 @@ public class BattlegroundsModClient {
         NeoForge.EVENT_BUS.addListener(MeteorRenderer::onRenderLevel);
         NeoForge.EVENT_BUS.addListener(FxWorld::onRenderLevel);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.StaminaBar::onRenderLevel);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.FalaRender::onRenderLevel);
         NeoForge.EVENT_BUS.addListener(AshDeath::onRenderLevel);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.IceShell::onRenderLevel);
         NeoForge.EVENT_BUS.addListener(RenderLivingEvent.Pre.class, AshDeath::onRenderLiving);
@@ -175,6 +176,10 @@ public class BattlegroundsModClient {
         // Inside Aizen's Black Box the dark closes in over the view (below the HUD).
         event.registerBelowAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "black_box"),
                 com.starkinhon.battlegroundsmod.client.fx.BlackBoxRenderer::renderGui);
+        // The bosses' lines: over the world and every effect, under the impact frames and the HUD (registered last of the
+        // "below all" layers, so it is the lowest of them).
+        event.registerBelowAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "boss_falas"),
+                com.starkinhon.battlegroundsmod.client.FalaRender::renderGui);
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "cutscene_bars"), GrabCutscene::renderGui);
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "bop_cutscene"), BopCutscene::renderGui);
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "hakai_cutscene"), HakaiCutscene::renderGui);
