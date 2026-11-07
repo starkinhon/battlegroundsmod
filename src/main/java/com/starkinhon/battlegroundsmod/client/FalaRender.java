@@ -24,7 +24,7 @@ import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 // A boss's line floating over its head (boss/BossFalas sends it). The whole line shows at once (no letter by letter),
 // in the soul's colors like a game logo (Stark's reference): a gradient from the soul's dark shade on the left to its
 // bright shade on the right, a hard dark outline around every letter with a darker shadow under it, and a soft glow of
-// the soul's color outside the outline, on a dark see-through bar so it reads on any sky, no name on top. It stays 5 s, then fades out rising a little.
+// the soul's color outside the outline (no bar behind it), no name on top. It stays 5 s, then fades out rising a little.
 // It is drawn as a screen layer over the world, at the head's spot on screen and sized by the distance like a name
 // tag, so no effect (glow, smoke, distortion, bloom) can ever cover it. A wall between the camera and the head hides it.
 public final class FalaRender {
@@ -33,14 +33,12 @@ public final class FalaRender {
     private static final float FADE = 10;
     // How much it rises while fading, in blocks.
     private static final float RISE = 0.3f;
-    // Over the head (the name tag sits at +0.5).
-    private static final float ABOVE = 0.5f;
+    // Over the head, well clear of it (the name tag sits at +0.5; Stark: 0.5 too close, 1.0 too far, a third of a block higher).
+    private static final float ABOVE = 0.83f;
     // Text height in blocks per font pixel (a name tag is 0.025), and the screen size limits (GUI scale).
     private static final float BLOCKS_PER_PIXEL = 0.03f;
     private static final float MIN_SCALE = 0.7f;
     private static final float MAX_SCALE = 2.5f;
-    // The bar's darkness (0..255): 62%, the same as the Visualizador.
-    private static final int BAR_ALPHA = 158;
     // The glow: copies of the line in the soul's bright color outside the outline, one ring per entry {radius in font
     // pixels, alpha}.
     private static final float[][] GLOW = {{2.0f, 0.30f}, {3.0f, 0.12f}};
@@ -170,8 +168,7 @@ public final class FalaRender {
         // Centered, sitting on the head's spot.
         float x = -width / 2f, y = -font.lineHeight;
         graphics.pose().translate(x, y, 0);
-        // The bar, wide enough for the glow.
-        graphics.fill(-5, -4, width + 4, font.lineHeight + 3, Math.round(BAR_ALPHA * alpha) << 24 | 0x08060C);
+        // No bar behind it (Stark): the outline and the glow make it read on any sky.
         // The glow: the line in the soul's bright color, a few times around the letters, fainter the farther out.
         for (float[] ring : GLOW) {
             int ga = Math.round(ring[1] * alpha * 255);
