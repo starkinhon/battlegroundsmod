@@ -93,8 +93,6 @@ public class PowerData {
     // Players: what the watchers were last told about Kokushibo's sword (PowerLogic.sheathCode: 0 none, 1 carried in the
     // sheath, 3 carried and drawn; -1 = never sent).
     public int sheathSent = -1;
-    // Players: the power the watchers were last told, for their stance (client/StancePoses; "" = none, null = never sent).
-    public String stanceSent = null;
 
     public PowerData() {
     }

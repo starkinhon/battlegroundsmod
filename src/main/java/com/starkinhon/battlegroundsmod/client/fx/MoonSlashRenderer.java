@@ -25,8 +25,8 @@ import net.minecraft.world.phys.Vec3;
 // of him (souls_moon), and this class does what the page's script did every frame: it lays out the chains of moons from
 // the slash's seed (the same random numbers as the page) and works out where each moon, sparkle and the slash's point
 // and tail are at this moment. Those go to the shader in a small float texture (3 rows per slash, see souls_moon.fsh).
-// Two passes: the body (premultiplied see-through color) with the other see-through effects, and the light into the
-// glow layer, which gets the bloom.
+// One pass: premultiplied see-through color, with the light drawn as a halo under the body (no bloom), so it looks the
+// same on a bright sky, at night or in a cave.
 public final class MoonSlashRenderer {
     private static final int NC = 40, NS = 28, MAX = 8, TEX_W = 40, TEX_H = MAX * 3;
     // The page's timeline (seconds).
@@ -243,14 +243,12 @@ public final class MoonSlashRenderer {
             fill(k, SLASHES.get(k), Math.max(0, (now - SLASHES.get(k).born()) / 20.0));
         }
         upload();
-        boolean flat = FxShaders.flat();
+        // One pass only: the light is a see-through halo inside the body (souls_moon.fsh), not bloom, so the color stays
+        // the page's on a bright sky too.
         for (int k = 0; k < SLASHES.size(); k++) {
             Slash s = SLASHES.get(k);
             int ms = (int) Math.min(30000, Math.max(0, (now - s.born()) / 20.0 * 1000));
             quad(source.getBuffer(Types.BODY), s, camera, ms, k, 1);
-            if (!flat) {
-                quad(source.getBuffer(Types.GLOW), s, camera, ms, k, 0);
-            }
         }
     }
 

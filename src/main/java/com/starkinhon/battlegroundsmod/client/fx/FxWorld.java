@@ -144,7 +144,7 @@ public final class FxWorld {
         FxPost.newFrame();
         ScreenFx.capture(event);
         boolean world = !PIECES.isEmpty() || MeteorRenderer.hasTrails() || Aura.active() || KatonBallRenderer.active() || AshDeath.hasSparks()
-                || SpaceScene.active() || EsferaRenderer.active() || HakaiRenderer.active() || EnergyRenderer.active() || BlackBoxRenderer.active() || AzulRenderer.active() || VermelhoRenderer.active() || BlackFlashRenderer.active() || RoxoRenderer.active() || AizenFx.active() || SwordFx.active() || PunchFxRenderer.active() || SubFx.active()
+                || SpaceScene.active() || EsferaRenderer.active() || HakaiRenderer.active() || EnergyRenderer.active() || BlackBoxRenderer.active() || AzulRenderer.active() || VermelhoRenderer.active() || BlackFlashRenderer.active() || RoxoRenderer.active() || AizenFx.active() || SwordFx.active() || MoonSlashRenderer.active() || PunchFxRenderer.active() || SubFx.active()
                 || SphereRenderer.active() || SusanooArm.active() || DomainScene.active() || VoidFlashScene.active();
         if (!world && !ScreenFx.needsScene()) {
             return;

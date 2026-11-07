@@ -7,7 +7,7 @@
 // sent in Sampler0 (a float texture, 3 rows per slash):
 //   row 0, texel i < 40: moon i (x, y, radius, turn)       row 1: (thickness, alpha, dissolve, cut circle size)
 //   row 2, texel i < 28: sparkle i (x, y, size, alpha)    texel 28: (head, tail, slash alpha, glint)
-// Body pass (Color.r 1): premultiplied color. Glow pass (Color.r 0): only the light, added (and bloomed).
+// One pass (Color.r 1): premultiplied color, the light included as a halo under the body.
 uniform sampler2D Sampler0;
 
 in vec2 uv;
@@ -180,16 +180,16 @@ void main() {
     vec2 e = abs(uv * 2.0 - 1.0);
     float edge = 1.0 - smoothstep(0.92, 1.0, max(e.x, e.y));
     float fade = color.a * edge;
-    if (body) {
-        if (alpha * fade < 0.002) {
-            discard;
-        }
-        fragColor = vec4(col * fade, alpha * fade);
-    } else {
-        vec3 light = glow * 0.2 * fade;
-        if (max(light.r, max(light.g, light.b)) < 0.002) {
-            discard;
-        }
-        fragColor = vec4(min(light, vec3(1.0)), 1.0);
+    // The light is laid UNDER the body as a warm see-through halo ("over", not added), so the slash keeps the page's
+    // color and glow whatever is behind it: bright sky, night or a dark cave. Nothing goes to the bloom layer (on a
+    // bright sky the added bloom turned it white and fuzzy).
+    float lum = dot(glow, vec3(0.333));
+    float ha = clamp(lum * 0.55, 0.0, 0.85);
+    vec3 hc = mix(vec3(1.0, 0.66, 0.30), vec3(1.0, 0.93, 0.72), smoothstep(0.15, 0.8, ha));
+    vec3 outCol = col + hc * ha * (1.0 - alpha);
+    float outA = alpha + ha * (1.0 - alpha);
+    if (!body || outA * fade < 0.002) {
+        discard;
     }
+    fragColor = vec4(outCol * fade, outA * fade);
 }
