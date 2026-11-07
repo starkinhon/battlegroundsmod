@@ -309,13 +309,7 @@ public final class PowerLogic {
                 data.outfitSent = outfit;
                 PacketDistributor.sendToPlayersTrackingEntityAndSelf(serverPlayer, new ModPayloads.OutfitState(serverPlayer.getId(), outfit));
             }
-            if (player.tickCount % 10 == 0) {
-                boolean carrying = carriesSheath(serverPlayer);
-                if (data.sheathSent == null || data.sheathSent != carrying) {
-                    data.sheathSent = carrying;
-                    PacketDistributor.sendToPlayersTrackingEntityAndSelf(serverPlayer, new ModPayloads.SheathState(serverPlayer.getId(), carrying));
-                }
-            }
+            syncSheath(serverPlayer);
             String stance = data.hasPower() ? data.power : "";
             if (!stance.equals(data.stanceSent)) {
                 data.stanceSent = stance;
@@ -334,9 +328,37 @@ public final class PowerLogic {
     public static void sendAura(ServerPlayer player, ServerPlayer watcher) {
         PacketDistributor.sendToPlayer(watcher, new ModPayloads.AuraState(player.getId(), auraOf(player)));
         PacketDistributor.sendToPlayer(watcher, new ModPayloads.OutfitState(player.getId(), outfitOf(player)));
-        PacketDistributor.sendToPlayer(watcher, new ModPayloads.SheathState(player.getId(), carriesSheath(player)));
+        PacketDistributor.sendToPlayer(watcher, sheathState(player, sheathCode(player)));
         PowerData data = player.getData(ModAttachments.POWER);
         PacketDistributor.sendToPlayer(watcher, new ModPayloads.StanceState(player.getId(), data.hasPower() ? data.power : ""));
+    }
+
+    // Tells the watchers when Kokushibo's sword goes in or out of the sheath, or the sheath on or off the hip. Every tick,
+    // and right away from the move that draws it (SwordArts), so the draw shows with the move's first frame.
+    public static void syncSheath(ServerPlayer player) {
+        PowerData data = player.getData(ModAttachments.POWER);
+        int code = sheathCode(player);
+        if (code != data.sheathSent) {
+            data.sheathSent = code;
+            PacketDistributor.sendToPlayersTrackingEntityAndSelf(player, sheathState(player, code));
+        }
+    }
+
+    private static ModPayloads.SheathState sheathState(ServerPlayer player, int code) {
+        return new ModPayloads.SheathState(player.getId(), (code & 1) != 0, (code & 2) != 0);
+    }
+
+    // 0: no sheath. 1: the sword rests in the sheath, also while in hand out of combat mode (Stark, 2026-11-07: it only
+    // comes out to fight). 3: drawn, held in combat mode (or by someone without a power, who never enters it), or in the
+    // off hand.
+    public static int sheathCode(ServerPlayer player) {
+        if (!carriesSheath(player)) {
+            return 0;
+        }
+        boolean main = player.getMainHandItem().getItem() instanceof com.starkinhon.battlegroundsmod.item.KokushiboSwordItem;
+        boolean off = player.getOffhandItem().getItem() instanceof com.starkinhon.battlegroundsmod.item.KokushiboSwordItem;
+        boolean fighting = !player.getData(ModAttachments.POWER).hasPower() || com.starkinhon.battlegroundsmod.combat.CombatMode.in(player);
+        return main && fighting || off ? 3 : 1;
     }
 
     // Kokushibo's sheath goes on the hip of whoever has his sword anywhere in the inventory.

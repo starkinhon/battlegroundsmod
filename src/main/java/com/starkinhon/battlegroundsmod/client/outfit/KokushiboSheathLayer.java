@@ -16,6 +16,7 @@ import com.starkinhon.battlegroundsmod.item.KokushiboSwordItem;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 
@@ -27,13 +28,15 @@ import net.minecraft.client.renderer.entity.RenderLayerParent;
 import net.minecraft.client.renderer.entity.layers.RenderLayer;
 
 // Kokushibo's sheath on the left hip, samurai style: mouth just in front of the hip, edge up, the scabbard running
-// back and down past the leg. With the sword in hand the sheath is empty; with it only in the inventory the sword
-// rests inside (the two meshes share one space, so it fits the blade exactly).
-// Putting it away (Stark, 2026-11-07): switching from the sword to anything else while still carrying it plays
-// espada.guardar_kokushibo (tools/espada/guardar.js): a flick of the blade, the hand brings it across to the hip with
-// the blade pointing back along the sheath, then it slides in. Up to HANDOVER the sword is drawn here in the hand
+// back and down past the leg. The sword rests inside whenever it isn't drawn: carried in the inventory, and also held
+// out of combat mode (Stark, 2026-11-07: it only comes out to fight; Sheaths, from power/PowerLogic.sheathCode).
+// Drawing it: when it comes out (the first move in combat mode; the combo's first click is the quick draw cut,
+// espada.sacar_kokushibo) it slides out of the sheath into the hand over DRAW ticks.
+// Putting it away: when it stops being drawn while still carried (combat mode ended, or switched to another slot) it
+// plays espada.guardar_kokushibo (tools/espada/guardar.js): a flick of the blade, the hand brings it across to the hip
+// with the blade pointing back along the sheath, then it slides in. Up to HANDOVER the sword is drawn here in the hand
 // (the same transforms as a held item, wrist turn included), then it blends onto the sheath's axis and slides home.
-// Every client sees it on its own: it only needs the held item, which everyone already knows.
+// Every client sees it on its own, from the held item and the drawn flag the server sends.
 public class KokushiboSheathLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> {
     // Model space (1 = one pixel, +y down, -z the front, +x the player's left), relative to the body's pivot.
     private static final Vector3f GUARD_AT = new Vector3f(4.9f, 10.6f, -3.2f);
@@ -48,13 +51,16 @@ public class KokushiboSheathLayer extends RenderLayer<AbstractClientPlayer, Play
     }
 
     public static final String PUT_AWAY = "espada.guardar_kokushibo";
-    // Ticks into the animation: in the hand until HANDOVER, blended onto the sheath by HANDOVER + BLEND, home at HOME;
+    // Ticks into putting it away: in the hand until HANDOVER, blended onto the sheath by HANDOVER + BLEND, home at HOME;
     // the new item stays hidden until DONE.
     private static final float HANDOVER = 9, BLEND = 1.5f, HOME = 16, DONE = 22;
+    // Ticks to come out of the sheath into the hand, and how far it slides out on the way (the blade's length).
+    private static final float DRAW = 0.6f, DRAW_SLIDE = KokushiboSwordRenderer.TIP - KokushiboSwordRenderer.BLADE_BASE;
 
     private static final class State {
-        boolean held;
-        float start = -1;
+        boolean out;
+        float putStart = -1;
+        float drawStart = -1;
         float slide = -1;
         int seen = Integer.MIN_VALUE;
     }
@@ -62,14 +68,32 @@ public class KokushiboSheathLayer extends RenderLayer<AbstractClientPlayer, Play
     private static final Map<Integer, State> STATES = new HashMap<>();
     private static ItemStack swordStack;
 
-    // True while this entity is putting the sword away: its new main hand item is not drawn yet (ItemInHandLayerMixin).
-    public static boolean puttingAway(net.minecraft.world.entity.LivingEntity entity) {
+    private static boolean holdsMain(LivingEntity entity) {
+        return entity.getMainHandItem().getItem() instanceof KokushiboSwordItem;
+    }
+
+    // True while the right hand's item is not drawn by Minecraft (ItemInHandLayerMixin, FirstPersonAnimation): the sword
+    // is in the sheath though selected, or this layer is moving it between sheath and hand, or it is still being put
+    // away after switching to something else.
+    public static boolean hidesHand(LivingEntity entity) {
+        if (holdsMain(entity) && !Sheaths.drawn(entity.getId())) {
+            return true;
+        }
         State state = STATES.get(entity.getId());
-        if (state == null || state.start < 0) {
+        if (state == null) {
             return false;
         }
-        float t = entity.tickCount - state.start;
-        return t >= -1 && t < DONE;
+        if (state.putStart >= 0) {
+            float t = entity.tickCount - state.putStart;
+            if (t >= -1 && t < DONE) {
+                return true;
+            }
+        }
+        if (state.drawStart >= 0) {
+            float t = entity.tickCount - state.drawStart;
+            return t >= -1 && t < DRAW;
+        }
+        return false;
     }
 
     public KokushiboSheathLayer(RenderLayerParent<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> parent) {
@@ -82,39 +106,51 @@ public class KokushiboSheathLayer extends RenderLayer<AbstractClientPlayer, Play
         if (player.isInvisible() || player.isSpectator() || !getParentModel().body.visible) {
             return;
         }
-        boolean inHand = player.getMainHandItem().getItem() instanceof KokushiboSwordItem
-                || player.getOffhandItem().getItem() instanceof KokushiboSwordItem;
+        boolean holds = holdsMain(player) || player.getOffhandItem().getItem() instanceof KokushiboSwordItem;
+        boolean out = holds && Sheaths.drawn(player.getId());
         boolean carrying = Sheaths.carrying(player.getId());
         State state = STATES.computeIfAbsent(player.getId(), id -> {
             State s = new State();
-            s.held = inHand;
+            s.out = out;
             return s;
         });
-        if (inHand) {
-            state.start = -1;
-        } else if (state.held && carrying && player.tickCount - state.seen <= 2) {
-            // Only a switch seen as it happens: not one made while this body wasn't drawn (first person, out of view).
-            state.start = player.tickCount;
+        // Only a change seen as it happens: not one made while this body wasn't drawn (first person, out of view).
+        boolean watching = player.tickCount - state.seen <= 2;
+        if (out && !state.out) {
+            state.putStart = -1;
+            state.drawStart = watching && holdsMain(player) ? player.tickCount : -1;
+        } else if (!out && state.out) {
+            state.drawStart = -1;
+            state.putStart = watching && carrying ? player.tickCount : -1;
             state.slide = -1;
-            SkillAnimations.play(player.getId(), PUT_AWAY, false);
+            if (state.putStart >= 0) {
+                SkillAnimations.play(player.getId(), PUT_AWAY, false);
+            }
         }
-        state.held = inHand;
+        state.out = out;
         state.seen = player.tickCount;
-        if (!inHand && !carrying) {
+        if (!out && !carrying) {
             return;
         }
         if (!KokushiboSwordRenderer.ready()) {
             return;
         }
-        float t = state.start < 0 ? Float.MAX_VALUE : ageInTicks - state.start;
         int overlay = LivingEntityRenderer.getOverlayCoords(player, 0);
         poseStack.pushPose();
         try {
             Matrix4f sheath = sheathMatrix(poseStack, 0);
             draw(poseStack, sheath, buffer, light, overlay, false, true);
-            if (inHand) {
+            if (out) {
+                float t = state.drawStart < 0 ? Float.MAX_VALUE : ageInTicks - state.drawStart;
+                if (t < DRAW) {
+                    // Sliding out along the sheath while the hand pulls it to where it is held.
+                    float u = Math.max(0, t / DRAW);
+                    Matrix4f slid = sheathMatrix(poseStack, DRAW_SLIDE * u);
+                    draw(poseStack, blend(slid, handMatrix(poseStack, player), u), buffer, light, overlay, true, false);
+                }
                 return;
             }
+            float t = state.putStart < 0 ? Float.MAX_VALUE : ageInTicks - state.putStart;
             if (t >= HOME) {
                 draw(poseStack, sheath, buffer, light, overlay, true, false);
                 return;
@@ -131,8 +167,8 @@ public class KokushiboSheathLayer extends RenderLayer<AbstractClientPlayer, Play
                 state.slide = Math.max(0, Math.min(20, -guard.y));
             }
             float u = Math.min(1, (t - HANDOVER - BLEND) / (HOME - HANDOVER - BLEND));
-            float out = t < HANDOVER + BLEND ? state.slide : state.slide * (1 - u * u * u);
-            Matrix4f slid = sheathMatrix(poseStack, out);
+            float slideOut = t < HANDOVER + BLEND ? state.slide : state.slide * (1 - u * u * u);
+            Matrix4f slid = sheathMatrix(poseStack, slideOut);
             Matrix4f m = t < HANDOVER + BLEND ? blend(hand, slid, (t - HANDOVER) / BLEND) : slid;
             draw(poseStack, m, buffer, light, overlay, true, false);
         } catch (RuntimeException e) {

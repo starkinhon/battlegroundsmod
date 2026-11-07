@@ -22,12 +22,13 @@ import net.minecraft.world.item.ItemStack;
 // arms can't do on their own; and the blade's trail (client/fx/SwordFx) is taken from right here, where it is drawn.
 @Mixin(ItemInHandLayer.class)
 public abstract class ItemInHandLayerMixin {
-    // While Kokushibo sheathes his sword, the right hand is still carrying the blade (drawn by KokushiboSheathLayer),
-    // so whatever was just switched to stays out of it until the sword is home.
+    // Kokushibo's sword in the right hand is drawn by KokushiboSheathLayer while it rests in the sheath (out of combat
+    // mode) or moves between sheath and hand; and whatever was just switched to stays out of the hand until the sword
+    // is home.
     @Inject(method = "renderArmWithItem", at = @At("HEAD"), cancellable = true)
     private void battlegroundsmod$puttingAway(LivingEntity entity, ItemStack stack, ItemDisplayContext context, HumanoidArm arm,
             PoseStack pose, MultiBufferSource buffers, int light, CallbackInfo ci) {
-        if (arm == HumanoidArm.RIGHT && KokushiboSheathLayer.puttingAway(entity)) {
+        if (arm == HumanoidArm.RIGHT && KokushiboSheathLayer.hidesHand(entity)) {
             ci.cancel();
         }
     }

@@ -41,6 +41,9 @@ import net.neoforged.neoforge.network.PacketDistributor;
 // The hitboxes follow the blade: a slice in front, as wide as the swing, not a punch's narrow cone.
 public final class SwordArts {
     public static final String DASH_RUN = "espada.dash";
+    // Kokushibo's quick draw (tools/espada/guardar.js): his sword rests in the sheath out of combat mode, and the first
+    // click of the combo pulls it out cutting.
+    public static final String QUICK_DRAW = "espada.sacar_kokushibo";
     private static final String DASH_CUT = "espada.dash_corte";
     private static final String STRONG_CHARGE = "espada.forte_carga";
     private static final String STRONG_CUT = "espada.forte_corte";
@@ -393,7 +396,13 @@ public final class SwordArts {
 
     static void comboSwing(LivingEntity attacker, int step) {
         color(attacker);
-        anim(attacker, COMBO + (Math.floorMod(step, COMBO_ARC.length) + 1));
+        if (quickDraw(attacker)) {
+            // Out of the sheath and cutting in one move (iaido); it ends up high on the right, where the third cut starts.
+            attacker.getData(ModAttachments.POWER).comboStep = 2;
+            anim(attacker, QUICK_DRAW);
+        } else {
+            anim(attacker, COMBO + (Math.floorMod(step, COMBO_ARC.length) + 1));
+        }
         ServerLevel level = Combat.level(attacker);
         boolean last = step == COMBO_ARC.length - 1;
         Fx.sound(level, attacker.getEyePosition(), SoundEvents.PLAYER_ATTACK_SWEEP, last ? 1.0f : 0.6f,
@@ -532,6 +541,18 @@ public final class SwordArts {
         int color = Melee.lighter(Melee.fistColor(entity));
         send(Combat.level(entity), FX_COLOR, entity, entity.position(), Vec3.ZERO, 0, 0, color);
         return color;
+    }
+
+    // True when this swing takes Kokushibo's sword out of its sheath: the watchers are told right away, before the move's
+    // animation, so the sword leaves the sheath on its first frame.
+    private static boolean quickDraw(LivingEntity attacker) {
+        if (!(attacker instanceof ServerPlayer player)
+                || !(player.getMainHandItem().getItem() instanceof com.starkinhon.battlegroundsmod.item.KokushiboSwordItem)) {
+            return false;
+        }
+        boolean sheathed = player.getData(ModAttachments.POWER).sheathSent == 1;
+        com.starkinhon.battlegroundsmod.power.PowerLogic.syncSheath(player);
+        return sheathed;
     }
 
     private static void anim(LivingEntity entity, String move) {

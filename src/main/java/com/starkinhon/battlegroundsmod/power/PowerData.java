@@ -90,8 +90,9 @@ public class PowerData {
     public String auraSent = null;
     // Players: the outfit the watchers were last told (the power, "" when off; null = never sent).
     public String outfitSent = null;
-    // Players: whether the watchers were told this one carries Kokushibo's sword (sheath on the hip; null = never sent).
-    public Boolean sheathSent = null;
+    // Players: what the watchers were last told about Kokushibo's sword (PowerLogic.sheathCode: 0 none, 1 carried in the
+    // sheath, 3 carried and drawn; -1 = never sent).
+    public int sheathSent = -1;
     // Players: the power the watchers were last told, for their stance (client/StancePoses; "" = none, null = never sent).
     public String stanceSent = null;
 
