@@ -183,6 +183,12 @@ public class BattlegroundsModClient {
         // SubAlma mobs (improvised skins; the girls with slim arms) and the Fighters (three looks per tier).
         event.registerEntityRenderer(ModEntities.BYAKUYA.get(), context -> new SoulBossRenderer<>(context, "byakuya", false));
         event.registerEntityRenderer(ModEntities.RUKIA.get(), context -> new SoulBossRenderer<>(context, "rukia", true));
+        event.registerEntityRenderer(ModEntities.GOKU.get(), context -> new SoulBossRenderer<>(context, "goku", false));
+        event.registerEntityRenderer(ModEntities.VEGETA.get(), context -> new SoulBossRenderer<>(context, "vegeta", false));
+        event.registerEntityRenderer(ModEntities.FREEZA.get(), context -> new SoulBossRenderer<>(context, "freeza", false));
+        event.registerEntityRenderer(ModEntities.PICCOLO.get(), context -> new SoulBossRenderer<>(context, "piccolo", false));
+        event.registerEntityRenderer(ModEntities.KAME.get(), context -> new SoulBossRenderer<>(context, "kame", false));
+        event.registerEntityRenderer(ModEntities.KURIRIN.get(), context -> new SoulBossRenderer<>(context, "kuririn", false));
         event.registerEntityRenderer(ModEntities.FIGHTER_HUMANO.get(),
                 context -> new SoulBossRenderer<>(context, false, "fighter_humano_0", "fighter_humano_1", "fighter_humano_2"));
         event.registerEntityRenderer(ModEntities.FIGHTER_RUA.get(),

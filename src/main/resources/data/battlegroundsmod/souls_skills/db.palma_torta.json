@@ -1,0 +1,37 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "db.palma_torta",
+  "nome": "Palmada torta",
+  "tempo": {
+    "atrasoTicks": 2,
+    "duracaoTicks": 6
+  },
+  "animacao": {
+    "transicaoTicks": 2,
+    "preparo": {
+      "cabeca": 5,
+      "tronco": 10,
+      "bracoDir": {
+        "frente": 60,
+        "abrir": -6
+      },
+      "bracoEsq": {
+        "frente": 30,
+        "abrir": 24
+      }
+    },
+    "sopro": {
+      "cabeca": 8,
+      "tronco": 16,
+      "bracoDir": {
+        "frente": 100,
+        "abrir": -10
+      },
+      "bracoEsq": {
+        "frente": 50,
+        "abrir": 40
+      }
+    },
+    "retornoTicks": 6
+  }
+}

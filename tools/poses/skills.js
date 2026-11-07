@@ -497,5 +497,89 @@ S['sub.varrer'] = { keys: [
   P(21, REST, 'inout'),
 ] };
 
+
+// ===================== SUBALMAS DE DRAGON BALL (Goku, Vegeta, Freeza, Piccolo, Kuririn, Mestre Kame) =====================
+// Held poses stay at their peak for the longest the skill can be held; the server sends the next pose (the push, the
+// throw) when it goes off. Each one follows the character: Goku open and loose, Vegeta stiff and proud, Freeza small and
+// elegant gestures, Piccolo serious and economic, Kuririn quick, Kame a crooked old man.
+// hold(): from rest, a short wind-up, the peak in 1-2 ticks, held to `end`, back to rest in `back`.
+function hold(peak, wind, end, back, pre) {
+  const keys = [P(0, REST)];
+  if (pre) keys.push(P(Math.max(1, wind - 2), pre, 'out'));
+  keys.push(P(wind, peak, pre ? 'snap' : 'out'));
+  keys.push(P(end, peak, 'inout'));
+  keys.push(P(end + back, REST, 'inout'));
+  return { keys };
+}
+// db.concha: W4 E70 back8. Cupped hands at the right hip ("Ka-me-ha-me..."), body turned, knees bent.
+const dbCup = { twist: 34, lean: 4, ...wide, ra: { yaw: 30, pitch: -62 }, la: { yaw: -40, pitch: -60 }, head: { yaw: -20, pitch: 4 } };
+S['db.concha'] = hold(dbCup, 5, 70, 8, { ...dbCup, twist: 18, ra: { yaw: 20, pitch: -40 }, la: { yaw: -20, pitch: -40 } });
+// db.empurra: W2 E70 back10. Both hands thrust forward, palms out ("HA!"), feet set wide.
+const dbPush = { twist: 0, lean: 10, ...wide, ra: { yaw: -6, pitch: 4 }, la: { yaw: -6, pitch: 4 }, head: { yaw: 0, pitch: 0 } };
+S['db.empurra'] = hold(dbPush, 2, 70, 10, { ...dbPush, lean: 14, ra: { yaw: -10, pitch: -10 }, la: { yaw: -10, pitch: -10 } });
+// db.testa: W5 E64 back8. Two fingers on the forehead, eyes closed, the other arm loose.
+const dbBrow = { lean: 2, ...stance, ra: { yaw: -46, pitch: 64 }, la: { yaw: 8, pitch: -86 }, head: { yaw: 0, pitch: 8 } };
+S['db.testa'] = hold(dbBrow, 5, 64, 8);
+// db.grito: W3 E20 back8. Fists clenched down at the sides, chest out, head up: the Kaioken's shout.
+const dbShout = { lean: -8, ...wide, ra: { yaw: 22, pitch: -70 }, la: { yaw: 22, pitch: -70 }, head: { yaw: 0, pitch: -14 } };
+S['db.grito'] = hold(dbShout, 3, 20, 8, { ...dbShout, lean: 8, head: { yaw: 0, pitch: 10 } });
+// db.ceu: W6 E120 back12. Both arms straight up to the sky (the Genki Dama), head back.
+const dbSky = { lean: -6, ...stance, ra: { yaw: 14, pitch: 84 }, la: { yaw: 14, pitch: 84 }, head: { yaw: 0, pitch: -30 } };
+S['db.ceu'] = hold(dbSky, 6, 120, 12);
+// db.palma_dir: W3 E40 back8. The right arm straight out, palm open, the left hand holding the wrist.
+const dbPalm = { twist: 24, lean: 4, ...stance, ra: { yaw: 4, pitch: 2 }, la: { yaw: -30, pitch: -4 }, head: { yaw: 0, pitch: 2 } };
+S['db.palma_dir'] = hold(dbPalm, 3, 40, 8, { ...dbPalm, twist: 34, ra: { yaw: 30, pitch: -30 } });
+// db.bracos_abertos: W6 E84 back10. Arms spread wide to the sides (the Final Flash gathering), chest out.
+const dbOpen = { lean: -4, ...wide, ra: { yaw: 84, pitch: 6 }, la: { yaw: 84, pitch: 6 }, head: { yaw: 0, pitch: -4 } };
+S['db.bracos_abertos'] = hold(dbOpen, 6, 84, 10);
+// db.bracos_abertos_curto: W3 E14 back8. The same, quick: Piccolo closing the Hellzone.
+S['db.bracos_abertos_curto'] = hold({ ...dbOpen, ra: { yaw: 70, pitch: 20 }, la: { yaw: 70, pitch: 20 } }, 3, 14, 8);
+// db.apontar: W3 E40 back8. Freeza's finger pointed at the target, the left hand on the hip.
+const dbPoint = { twist: 28, ...stance, ra: { yaw: 4, pitch: 4 }, la: { yaw: 30, pitch: -110 }, head: { yaw: 0, pitch: 2 } };
+S['db.apontar'] = hold(dbPoint, 3, 40, 8);
+// db.mao_alto: W4 E70 back8. One hand raised open in front, fingers spread (the telekinesis), head tilted.
+const dbLift = { twist: 16, lean: -2, ...stance, ra: { yaw: 6, pitch: 30 }, la: { yaw: 30, pitch: -110 }, head: { yaw: 6, pitch: -4 } };
+S['db.mao_alto'] = hold(dbLift, 4, 70, 8);
+// db.gesto_baixo: W2 E12 back8. The raised hand flicks down: the one held is thrown at the ground.
+S['db.gesto_baixo'] = { keys: [P(0, dbLift), P(2, { ...dbLift, ra: { yaw: 6, pitch: 50 } }, 'out'), P(4, { ...dbLift, lean: 6, ra: { yaw: 4, pitch: -40 } }, 'snap'), P(12, { ...dbLift, ra: { yaw: 4, pitch: -46 } }, 'inout'), P(20, REST, 'inout')] };
+// db.dedo_ceu: W4 E26 back8. One finger up over the head (the Death Saucer grows on it).
+const dbFinger = { lean: -2, ...stance, ra: { yaw: 8, pitch: 88 }, la: { yaw: 30, pitch: -110 }, head: { yaw: 0, pitch: -12 } };
+S['db.dedo_ceu'] = hold(dbFinger, 4, 26, 8);
+// db.dedo_ceu_longo: W6 E112 back10. The same, held for the whole Death Ball.
+S['db.dedo_ceu_longo'] = hold(dbFinger, 6, 112, 10);
+// db.arremesso: W2 E12 back8. The raised hand swings forward and down: something thrown.
+const dbThrowUp = { twist: 20, lean: -4, ...stance, ra: { yaw: 10, pitch: 96 }, la: { yaw: 10, pitch: -86 }, head: { yaw: 0, pitch: -4 } };
+const dbThrow = { twist: -14, lean: 12, ...stance, ra: { yaw: -6, pitch: -10 }, la: { yaw: 14, pitch: -80 }, head: { yaw: 0, pitch: 4 } };
+S['db.arremesso'] = { keys: [P(0, dbThrowUp), P(2, dbThrow, 'snap'), P(4, { ...dbThrow, lean: 14, ra: { yaw: -10, pitch: -24 } }, 'out'), P(12, dbThrow, 'inout'), P(20, REST, 'inout')] };
+// db.gesto: W2 E12 back8. A small flick of two fingers down: the Death Ball let go.
+S['db.gesto'] = { keys: [P(0, dbFinger), P(2, { ...dbFinger, ra: { yaw: 6, pitch: 30 } }, 'snap'), P(12, { ...dbFinger, ra: { yaw: 6, pitch: 20 } }, 'inout'), P(20, REST, 'inout')] };
+// db.joelhada: W2 E10 back8. Piccolo's knee up into the one pulled in, arms back.
+const dbKnee = { lean: -6, rl: { pitch: 80, out: 2 }, ll: { pitch: -6, out: 3 }, ra: { yaw: 20, pitch: -110 }, la: { yaw: 20, pitch: -110 }, head: { yaw: 0, pitch: 10 } };
+S['db.joelhada'] = hold(dbKnee, 2, 10, 8);
+// db.disco_alto: W5 E32 back8. Kuririn's right arm straight up, palm flat to the sky: the Kienzan forms on it.
+const dbDisc = { lean: -2, ...stance, ra: { yaw: 6, pitch: 86 }, la: { yaw: 10, pitch: -86 }, head: { yaw: 0, pitch: -8 } };
+S['db.disco_alto'] = hold(dbDisc, 5, 32, 8);
+// db.rosto: W4 E22 back8. Both hands open beside the face, fingers spread ("Taiyoken!").
+const dbFace = { lean: -4, ...stance, ra: { yaw: -30, pitch: 70 }, la: { yaw: -30, pitch: 70 }, head: { yaw: 0, pitch: -6 } };
+S['db.rosto'] = hold(dbFace, 4, 22, 8);
+// db.lanca_alto: W3 E18 back8. A ki ball thrown straight up, the arm following through, head up.
+const dbToss = { lean: -10, ...stance, ra: { yaw: 4, pitch: 70 }, la: { yaw: 10, pitch: -86 }, head: { yaw: 0, pitch: -26 } };
+S['db.lanca_alto'] = hold(dbToss, 3, 18, 8, { ...dbToss, lean: 4, ra: { yaw: 10, pitch: -40 } });
+// db.bebado: W3 E12 back4. The drunken sway: leaning to one side, arms loose and crooked (sent again every 12 ticks).
+const dbDrunk = { twist: 14, lean: 8, rl: { pitch: -14, out: 6 }, ll: { pitch: 18, out: 2 }, ra: { yaw: 36, pitch: -30 }, la: { yaw: -10, pitch: -50 }, head: { yaw: 16, pitch: 12 } };
+S['db.bebado'] = { keys: [P(0, REST), P(4, dbDrunk, 'inout'), P(10, { ...dbDrunk, twist: -12, ra: { yaw: 10, pitch: -60 }, la: { yaw: 30, pitch: -20 }, head: { yaw: -16, pitch: 14 } }, 'inout'), P(16, REST, 'inout')] };
+// db.palma_torta: W2 E8 back6. A crooked palm from below, body leaning the wrong way.
+const dbSlap = { twist: -20, lean: 16, ...stance, ra: { yaw: -10, pitch: 10 }, la: { yaw: 40, pitch: -40 }, head: { yaw: 12, pitch: 8 } };
+S['db.palma_torta'] = hold(dbSlap, 2, 8, 6, { ...dbSlap, twist: 20, ra: { yaw: 30, pitch: -50 } });
+// db.flex: W4 E40 back10. Max Power: arms up and bent, fists clenched, chest out, knees bent.
+const dbFlex = { lean: -6, ...wide, ra: { yaw: 70, pitch: 50 }, la: { yaw: 70, pitch: 50 }, head: { yaw: 0, pitch: -10 } };
+S['db.flex'] = hold(dbFlex, 4, 40, 10, { ...dbFlex, lean: 10, ra: { yaw: 30, pitch: -70 }, la: { yaw: 30, pitch: -70 } });
+// db.mafuba: W6 E86 back10. Both open hands pushed forward and a bit apart, leaning in against the wind.
+const dbSeal = { lean: 14, ...wide, ra: { yaw: 18, pitch: 0 }, la: { yaw: 18, pitch: 0 }, head: { yaw: 0, pitch: 0 } };
+S['db.mafuba'] = hold(dbSeal, 6, 86, 10);
+// db.ajoelhado: W8 E60 back12. Spent after the Mafuba: down on one knee, head hanging, a hand on the ground.
+const dbKneel = { lean: 30, drop: 7, rl: { pitch: 80, out: 3 }, ll: { pitch: -40, out: 3 }, ra: { yaw: 6, pitch: -60 }, la: { yaw: 10, pitch: -84 }, head: { yaw: 0, pitch: 30 } };
+S['db.ajoelhado'] = hold(dbKneel, 8, 60, 12);
+
 for (const k in S) S[k].keys = S[k].keys.map(fix);
 module.exports = S;

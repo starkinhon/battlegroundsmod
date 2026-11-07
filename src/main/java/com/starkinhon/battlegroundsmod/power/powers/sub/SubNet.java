@@ -71,6 +71,74 @@ public final class SubNet {
     // A Getsuga's hit: a rip along the cut at pos, dir = where it flew, a = how wide, b = 1 Kuroi, c = 1 on the ground.
     public static final int RIP = 29;
 
+    // ---- Dragon Ball (client/fx/DbFx; colors are Db.*). "Stream" = sent every tick, c = 1 on the last message. ----
+    // A ki beam (stream): id = its own, pos = from, dir = to - from, a = width, b = color.
+    public static final int KI_BEAM = 30;
+    // A ki ball (stream): id = its own, pos, a = radius, b = color + 16 * style (0 plain, 1 charging with sparks, 2 with a
+    // trail behind it).
+    public static final int KI_BALL = 31;
+    // A ki blast: pos, dir.x = the ground's height, a = radius, b = color, c = seed.
+    public static final int KI_BOOM = 32;
+    // The ki aura on id (mod style, fire of glow): a = ticks, b = color, c = size, dir.x = strength; a = 0 stops it.
+    public static final int KI_AURA = 33;
+    // The saw disc (stream): id = its own, pos, dir = its normal, a = radius, b = color.
+    public static final int SAW = 34;
+    // The Genki Dama (stream): id = its own, pos, a = radius, b = 1 while the light still gathers, dir = Goku's feet.
+    public static final int GENKI = 35;
+    // Its blast: pos, dir.x = the ground's height, a = size.
+    public static final int GENKI_BOOM = 36;
+    // The Death Ball (stream): id = its own, pos, a = radius.
+    public static final int DEATH_BALL = 37;
+    // Its blast (the Supernova): pos, dir.x = the ground's height, a = size.
+    public static final int SUPERNOVA = 38;
+    // The Big Bang ball made of tongues (stream): id = its own, pos, a = radius, b = how much (0..1).
+    public static final int BIG_BANG = 39;
+    // Its blast of tongues: pos, dir.x = the ground's height, a = radius.
+    public static final int BIG_BANG_BOOM = 40;
+    // A hit flash (the Visualizador's nrHit): pos, a = size, b = color, c = seed.
+    public static final int HIT = 41;
+    // The Death Beam: from pos to pos + dir.
+    public static final int DEATH_BEAM = 42;
+    // The Makankosappo: from pos to pos + dir, a = ticks it stays.
+    public static final int MAKANKO = 43;
+    // Bolts crackling (stream): id = its own, pos, a = how much (0..1), b = color, dir = the feet when they come off the
+    // ground round a body (Final Flash), else zero (round a point, the Makankosappo's fingers).
+    public static final int SPARKS = 44;
+    // Telekinesis (stream): id = the one held, dir = Freeza's hand, a = how much (0..1).
+    public static final int TELEKINESIS = 45;
+    // The Taiyoken's flash from pos (the head) toward dir.
+    public static final int SOLAR = 46;
+    // Dizzy stars round id's head for a ticks; id = the local player also whitens the screen.
+    public static final int DIZZY = 47;
+    // The Mafuba's gale (stream): pos = the hands, dir = where it goes (the target's middle), a = how much.
+    public static final int GALE = 48;
+    // The Mafuba's green spiral round a target (stream): id = its own, pos = center, a = radius, b = how much.
+    public static final int SPIRAL = 49;
+    // The Mafuba's tornado (stream): id = its own, pos = its foot, a = height, b = radius.
+    public static final int TORNADO = 50;
+    // The Mafuba's jar at pos (id = its own): c = 0 open, waiting; c = 1 sealed for a ticks, then it breaks (b = 1) or
+    // stays shut and fades (b = 0).
+    public static final int JAR = 51;
+    // A streak of speed from pos to pos + dir: a = width, b = color, c = ticks.
+    public static final int STREAK = 52;
+    // Piccolo's arm stretched from id's shoulder to pos (stream).
+    public static final int ARM = 53;
+    // The Kakusandan: the ball splits at pos and rains on dir (the middle of the area, on the ground), a = area,
+    // b = ticks the rain spreads over, c = seed (Db.rainSpot / rainTime).
+    public static final int RAIN = 54;
+    // One of Vegeta's ki shots: from pos to pos + dir in a ticks, b = color; it bursts there.
+    public static final int SHOT = 55;
+    // Smoke piling up round id (stream): a = how much.
+    public static final int SMOKE_COVER = 56;
+    // Goku's Instant Transmission: a streak of light and a ripple at pos.
+    public static final int VANISH = 57;
+    // Max Power: the ground cracks and the shirt bursts at pos (the feet).
+    public static final int FLEX = 58;
+    // Screen effects for whoever is close to pos: a = preset (DbFx.screen).
+    public static final int SCREEN = 59;
+    // A scar torn in the ground from pos along dir: a = width, b = ticks it stays.
+    public static final int SCAR = 60;
+
     public static final int STYLE_SUKUNA = 0;
     public static final int STYLE_PINK = 1;
     public static final int STYLE_CRIMSON = 2;

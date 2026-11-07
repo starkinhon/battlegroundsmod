@@ -47,6 +47,13 @@
 //             bottom (v = 1 is the bottom) up to param * 2, else cell by cell up to (param - 0.5) * 2 frozen
 //  29 barrier a shield of light with a honeycomb and a bright rim, tinted by the color; param < 0.5 a triangle (tip at
 //             v = 0), else a hexagon; fract(param * 2) = how hard it ripples (a hit)
+//  30 saw     the Kienzan / Death Saucer (Dragon Ball): a thin flat disc with saw teeth on its rim, grooves and spin
+//             marks, tinted by the color (alpha layer), param = how fast it spins
+//  31 genki   the Genki Dama: the glass of the Blue's style 3 without the flames inside: smooth gradient core, thin bright
+//             rim and frost leaking out of it; the orb fills the middle half of the quad, param = seed
+//  32 tongue  a cartoon tongue of ki (the Zanka no Tachi study): a drop from root (u = 0) to tip (u = 1) with a whip and a
+//             fork, 5 nested bands moved by their own fields, swirl strokes, a hard edge, dying torn from the top, drawn
+//             at 12 frames a second (alpha layer); param byte = life (0..15) * 16 + seed (0..15); the color is its skin
 // A very dark color never burns white (dark rims and lines stay dark).
 // Near walls and the ground the effect fades out instead of cutting a hard line (soft particles).
 uniform sampler2D Sampler1;
@@ -992,6 +999,98 @@ void main() {
         vec4 br = barrier(p, uv, param, time, core);
         base = br.rgb;
         alpha = br.a;
+    } else if (shape == 30) {
+        // Same text as the Visualizador's shape 32 (SAW).
+        float ang = atan(p.y, p.x) + time * (8.0 + param * 40.0);
+        float saw = fract(ang * 28.0 / 6.2831853);
+        float R = 0.84 + 0.13 * saw;
+        float d = R - r;
+        float fw = max(fwidth(d), 1.0e-4);
+        float fill = smoothstep(0.0, 1.2 * fw, d);
+        vec3 lite = mix(color.rgb, vec3(1.0), 0.8);
+        vec3 col = mix(lite, color.rgb, smoothstep(0.25, 0.7, r));
+        float groove = (1.0 - smoothstep(0.0, 0.025 + fw, abs(r - 0.42))) * 0.6 + (1.0 - smoothstep(0.0, 0.02 + fw, abs(r - 0.7))) * 0.5;
+        float marks = smoothstep(0.75, 0.95, noise(vec2(ang * 6.0, floor(r * 14.0)))) * smoothstep(0.2, 0.3, r) * step(r, 0.8);
+        col = mix(col, color.rgb * 0.5, max(groove, marks * 0.5));
+        col = mix(col, vec3(1.0), 1.0 - smoothstep(0.0, 0.05 + fw, d));
+        base = col;
+        alpha = fill * 0.96;
+        core = 0.0;
+    } else if (shape == 31) {
+        // Same text as the Visualizador's shape 33 (GENKI).
+        vec2 q = p * 2.0;
+        float rr = length(q);
+        float ang = atan(q.y, q.x);
+        float sd = param * 31.0;
+        vec3 deep = vec3(0.03, 0.12, 0.5);
+        vec3 blue = vec3(0.1, 0.42, 1.0);
+        vec3 cyan = vec3(0.38, 0.88, 1.0);
+        float fw = max(fwidth(rr), 1.0e-4);
+        float disc = smoothstep(0.0, 1.5 * fw, 1.0 - rr);
+        vec3 inner = mix(deep, mix(blue, cyan, 0.5), 0.45 + 0.55 * (1.0 - rr));
+        inner = mix(inner, vec3(1.0), smoothstep(0.45, 0.0, rr) * 0.6);
+        inner = mix(inner, vec3(0.78, 0.96, 1.0), pow(rr, 8.0) * 0.85);
+        float line = 1.0 - smoothstep(0.0, 2.5 * fw, abs(1.0 - rr));
+        float frost = pow(1.0 - abs(fbm(vec2(ang * 7.0 + sd, rr * 5.0 - time * 2.5)) * 2.0 - 1.0), 10.0) * exp(-max(0.0, rr - 1.0) * 5.0) * step(1.0, rr);
+        float halo = pow(max(0.0, 1.0 - r), 2.5) * 0.45;
+        base = mix(mix(blue, cyan, frost), inner, disc);
+        base = mix(base, vec3(1.0), line);
+        alpha = max(disc * 0.8, line) + frost * 0.9 + halo;
+        core = 0.0;
+    } else if (shape == 32) {
+        // Same text as the Visualizador's shape 34 (TONGUE), but life and seed come from the param byte.
+        float pb = floor(param * 255.0 + 0.5);
+        float vida = floor(pb / 16.0) / 16.0;
+        float sd = mod(pb, 16.0) / 16.0 * 37.0 + 1.0;
+        float tq = floor(time * 12.0) / 12.0;
+        float y = uv.x;
+        float x = uv.y * 2.0 - 1.0;
+        float die = vida * vida;
+        float fy = 0.4 + 0.2 * fract(sd * 0.37);
+        float fk[4];
+        for (int k = 0; k < 4; k++) {
+            float off = k == 0 ? 0.0 : k == 1 ? 1.7 : k == 2 ? 3.9 : 6.3;
+            float tt = tq * (k == 0 ? 1.0 : k == 1 ? 1.0 : k == 2 ? 1.06 : 1.12);
+            float rg = k == 0 ? 1.0 : k == 1 ? 1.1 : k == 2 ? 1.25 : 1.4;
+            float w = 0.92 * pow(sin(clamp(y, 0.0, 1.0) * 3.14159), 0.6) * (1.0 - 0.6 * y) + 0.04 * (1.0 - y);
+            float c = (noise(vec2(y * 2.0 + sd, tt * 2.0)) - 0.5) * 1.5 * y * y + sin(y * 6.0 - tt * 3.0 + sd) * 0.25 * y * y;
+            float s = 0.28 * smoothstep(fy, 1.0, y);
+            float ax = mix(abs(x - c), min(abs(x - c - s), abs(x - c + s * 0.8)), smoothstep(fy, 1.0, y));
+            vec2 wp = vec2(x * 2.0 + off, y * 3.0 - tt * 2.5 + sd);
+            float n = fbm(wp + 0.6 * vec2(fbm(wp + 5.2), fbm(wp + 1.3)));
+            float ridge = 1.0 - abs(2.0 * n - 1.0);
+            float f = w - ax + (n - 0.5) * 0.5 * (0.4 + y) * rg - ridge * 0.14 * y * rg - 0.04;
+            f -= smoothstep(0.85, 1.0, y) * 0.6 + die * 0.55 * (0.3 + y * 1.4);
+            fk[k] = f;
+        }
+        float aa0 = max(fwidth(fk[0]) * 0.9, 1.0e-4);
+        float aa1 = max(fwidth(fk[1]) * 0.9, 1.0e-4);
+        float aa2 = max(fwidth(fk[2]) * 0.9, 1.0e-4);
+        float aa3 = max(fwidth(fk[3]) * 0.9, 1.0e-4);
+        float out0 = smoothstep(-aa0, aa0, fk[0]);
+        float aro = smoothstep(-aa0, aa0, fk[0] - 0.035);
+        float pele = smoothstep(-aa1, aa1, fk[1] - 0.07);
+        float corpo = smoothstep(-aa2, aa2, fk[2] - 0.26);
+        float miolo = smoothstep(-aa3, aa3, fk[3] - 0.5);
+        vec3 cB = color.rgb * 0.15;
+        vec3 cA = color.rgb * 0.55;
+        vec3 cP = color.rgb;
+        vec3 cC = mix(color.rgb, vec3(1.0), 0.45);
+        vec3 cM = mix(color.rgb, vec3(1.0), 0.85);
+        vec3 cT = color.rgb * 0.7;
+        vec3 col = cB;
+        col = mix(col, cA, aro);
+        col = mix(col, cP, pele * aro);
+        col = mix(col, cC, corpo * pele * aro);
+        col = mix(col, cM, miolo * corpo * pele * aro);
+        float sw = fbm(vec2(x * 1.5 + sd, y * 2.0 - tq * 0.8)) * 6.0;
+        float linha = 1.0 - smoothstep(0.0, fwidth(sw) * 1.4, abs(fract(sw) - 0.5) - 0.06);
+        col = mix(col, cT, linha * pele * aro * (1.0 - miolo) * (1.0 - corpo * 0.5) * step(0.15, y) * 0.8);
+        float soot = step(0.93, hash(floor(vec2(x * 9.0, y * 13.0)) + floor(tq * 12.0))) * (1.0 - aro) * out0;
+        col = mix(col, cB * 0.4, soot);
+        base = col;
+        alpha = out0;
+        core = 0.0;
     } else {
         alpha = 1.0;
     }

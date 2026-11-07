@@ -1,0 +1,37 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "db.dedo_ceu",
+  "nome": "Dedo pro céu",
+  "tempo": {
+    "atrasoTicks": 4,
+    "duracaoTicks": 22
+  },
+  "animacao": {
+    "transicaoTicks": 4,
+    "preparo": {
+      "cabeca": -7,
+      "tronco": 0,
+      "bracoDir": {
+        "frente": 105,
+        "abrir": 3
+      },
+      "bracoEsq": {
+        "frente": 0,
+        "abrir": 18
+      }
+    },
+    "sopro": {
+      "cabeca": -12,
+      "tronco": 0,
+      "bracoDir": {
+        "frente": 175,
+        "abrir": 5
+      },
+      "bracoEsq": {
+        "frente": 0,
+        "abrir": 30
+      }
+    },
+    "retornoTicks": 8
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "db.testa",
+  "nome": "Dedos na testa",
+  "tempo": {
+    "atrasoTicks": 5,
+    "duracaoTicks": 59
+  },
+  "animacao": {
+    "transicaoTicks": 4,
+    "preparo": {
+      "cabeca": 6,
+      "tronco": 0,
+      "bracoDir": {
+        "frente": 90,
+        "abrir": -24
+      },
+      "bracoEsq": {
+        "frente": 0,
+        "abrir": 3
+      }
+    },
+    "sopro": {
+      "cabeca": 10,
+      "tronco": 0,
+      "bracoDir": {
+        "frente": 150,
+        "abrir": -40
+      },
+      "bracoEsq": {
+        "frente": 0,
+        "abrir": 5
+      }
+    },
+    "retornoTicks": 8
+  }
+}

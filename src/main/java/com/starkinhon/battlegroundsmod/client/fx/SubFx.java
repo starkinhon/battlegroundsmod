@@ -93,6 +93,10 @@ public final class SubFx {
     }
 
     public static void receive(int kind, int id, Vec3 pos, Vec3 dir, float a, float b, float c) {
+        if (kind >= SubNet.KI_BEAM) {
+            DbFx.receive(kind, id, pos, dir, a, b, c);
+            return;
+        }
         double now = ScreenFx.now();
         switch (kind) {
             case SubNet.PETALS, SubNet.GOKEI, SubNet.GETSUGA, SubNet.CHARGE, SubNet.NET, SubNet.FUGA -> {
@@ -195,13 +199,14 @@ public final class SubFx {
     }
 
     public static boolean active() {
-        return !SHOTS.isEmpty() || !TRACKED.isEmpty() || IceShell.active();
+        return !SHOTS.isEmpty() || !TRACKED.isEmpty() || IceShell.active() || DbFx.active();
     }
 
     public static void clear() {
         SHOTS.clear();
         TRACKED.clear();
         IceShell.clear();
+        DbFx.clear();
     }
 
     // ---------- the two passes ----------
@@ -309,6 +314,7 @@ public final class SubFx {
             }
         }
         IceShell.draw(camera, now, partial, glow);
+        DbFx.draw(camera, now, partial, glow);
     }
 
     // ---------- Byakuya ----------
