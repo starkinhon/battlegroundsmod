@@ -63,6 +63,11 @@ public final class Intangible {
         });
     }
 
+    // Ends every hold on entity right away (the timers left running then find nothing to take off).
+    public static void free(Entity entity) {
+        HELD.remove(entity);
+    }
+
     public static void clear() {
         HELD.clear();
         SHIELD.clear();

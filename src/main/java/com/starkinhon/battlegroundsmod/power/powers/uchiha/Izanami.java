@@ -124,6 +124,9 @@ public final class Izanami {
         final Set<LivingEntity> ghosts = new HashSet<>();
         int tick;
         boolean recording = true;
+        // When the recording stops (gravacaoTicks, or sooner if the caster dies in it: see onDeath).
+        int end;
+        int scene;
 
         Recording(LivingEntity caster, ServerLevel level, IzanamiSpec spec) {
             this.caster = caster;
@@ -171,6 +174,8 @@ public final class Izanami {
         // No skills while it records (and while the world turns back).
         PowerLogic.seal(caster, total);
         Recording r = new Recording(caster, level, spec);
+        r.end = recordTicks;
+        r.scene = scene;
         ACTIVE.add(r);
         snapshot(r);
 
@@ -180,25 +185,27 @@ public final class Izanami {
         Fx.sound(level, caster.position(), SoundEvents.BEACON_POWER_SELECT, 1.5f, 0.6f);
 
         Tasks.addSystem(age -> {
-            if (age < recordTicks) {
+            // r.end can move up while it records (the caster died: 5 s left), so it is read every tick.
+            int end = r.end;
+            if (age < end) {
                 r.tick = age;
                 snapshot(r);
-                if (caster instanceof ServerPlayer player && (recordTicks - age) % 20 == 0) {
-                    player.displayClientMessage(Component.literal("Izanami " + (recordTicks - age) / 20 + "s").withStyle(ChatFormatting.DARK_RED),
+                if (caster instanceof ServerPlayer player && (end - age) % 20 == 0) {
+                    player.displayClientMessage(Component.literal("Izanami " + (end - age) / 20 + "s").withStyle(ChatFormatting.DARK_RED),
                             true);
                 }
                 return false;
             }
-            if (age == recordTicks) {
+            if (age == end) {
                 stop(r, scene, back, awakened);
             }
-            if (age == recordTicks + scene) {
+            if (age == end + scene) {
                 rewindStart(r, back, awakened);
             }
-            if (age >= recordTicks + scene) {
-                rewindStep(r, age - recordTicks - scene, back);
+            if (age >= end + scene) {
+                rewindStep(r, age - end - scene, back);
             }
-            if (age >= total) {
+            if (age >= end + scene + back) {
                 finish(r, awakened);
                 return true;
             }
@@ -226,7 +233,7 @@ public final class Izanami {
         r.recording = false;
         // Only the moves of those caught in it (a player across the map keeps theirs).
         Tasks.cancelSince(r.taskMark, owner -> owner instanceof LivingEntity living && r.tracks.containsKey(living));
-        int last = Math.max(1, r.spec.gravacaoTicks()) - 1;
+        int last = Math.max(0, r.tick);
         for (Track track : r.tracks.values()) {
             LivingEntity entity = track.entity;
             if (entity.isRemoved() || !entity.isAlive()) {
@@ -287,7 +294,7 @@ public final class Izanami {
 
     // Blocks go back newest first, at the pace the bodies go back; life flows back too.
     private static void rewindStep(Recording r, int step, int back) {
-        int record = Math.max(1, r.spec.gravacaoTicks());
+        int record = r.tick + 1;
         double k = Mth.clamp((step + 1) / (double) back, 0, 1);
         double eased = k * k * (3 - 2 * k);
         int until = (int) Math.round(record * (1 - eased));
@@ -443,19 +450,46 @@ public final class Izanami {
             entity.setHealth(1);
             entity.clearFire();
             entity.removeAllEffects();
+            if (entity == r.caster && r.recording && r.end - r.tick > CASTER_DEATH_LEFT) {
+                cutShort(r);
+            }
             if (r.ghosts.add(entity)) {
                 r.tracks.computeIfAbsent(entity, e -> new Track(e, Math.max(1, r.spec.gravacaoTicks())));
-                CutsceneSpec cutscene = r.spec.cutscene();
-                int scene = cutscene != null && cutscene.ativa() ? cutscene.duracaoTicks() : 0;
-                int left = Math.max(1, r.spec.gravacaoTicks() - r.tick) + (r.recording ? scene : 0);
-                PacketDistributor.sendToPlayersTrackingEntityAndSelf(entity, new ModPayloads.HideEntity(entity.getId(), left));
-                Freeze.hold(entity, r.recording ? left - scene : 1);
-                Intangible.hold(entity, left + r.spec.voltarTicks());
+                ghost(r, entity);
                 if (entity.hasData(ModAttachments.POWER)) {
                     PowerLogic.interrupt(entity);
                 }
             }
         }
+    }
+
+    // How long is left on the Izanami once its caster dies in it.
+    private static final int CASTER_DEATH_LEFT = 100;
+
+    // Hidden, frozen and untouchable until time turns back.
+    private static void ghost(Recording r, LivingEntity entity) {
+        int left = Math.max(1, r.end - r.tick) + (r.recording ? r.scene : 0);
+        PacketDistributor.sendToPlayersTrackingEntityAndSelf(entity, new ModPayloads.HideEntity(entity.getId(), left));
+        Freeze.hold(entity, r.recording ? left - r.scene : 1);
+        Intangible.hold(entity, left + r.spec.voltarTicks());
+    }
+
+    // The caster died while it records: the Izanami jumps to its last 5 s, and then everything goes back to the moment
+    // it was used. The ones already held as ghosts get their holds cut to the new end.
+    private static void cutShort(Recording r) {
+        r.end = r.tick + CASTER_DEATH_LEFT;
+        for (LivingEntity ghost : r.ghosts) {
+            if (ghost.isRemoved()) {
+                continue;
+            }
+            Freeze.free(ghost);
+            Intangible.free(ghost);
+            ghost(r, ghost);
+        }
+        if (r.caster instanceof ServerPlayer player) {
+            player.displayClientMessage(Component.literal("Izanami 5s").withStyle(ChatFormatting.DARK_RED), true);
+        }
+        Fx.sound(r.level, r.caster.position(), SoundEvents.ELDER_GUARDIAN_CURSE, 1.5f, 0.4f);
     }
 
     public static void clear() {
