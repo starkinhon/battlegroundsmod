@@ -638,5 +638,11 @@
   "item.battlegroundsmod.nobara_spawn_egg": "Ovo Gerador da Nobara",
   "item.battlegroundsmod.todo_spawn_egg": "Ovo Gerador do Todo",
   "item.battlegroundsmod.inumaki_spawn_egg": "Ovo Gerador do Inumaki",
-  "item.battlegroundsmod.miwa_spawn_egg": "Ovo Gerador da Miwa"
+  "item.battlegroundsmod.miwa_spawn_egg": "Ovo Gerador da Miwa",
+  "message.battlegroundsmod.vazio_relampago_ninguem": "Ninguém perto o bastante pra Expansão de 0,2 s.",
+  "message.battlegroundsmod.vazio_relampago_pego": "Pego carregando! Expansão de 0,2 s: atordoado e sem estamina.",
+  "message.battlegroundsmod.vazio_relampago_atingido": "Expansão de 0,2 s: técnica quebrada.",
+  "ability.battlegroundsmod.strongest.8": "Expansão de 0,2 s",
+  "ability.battlegroundsmod.strongest.8.desc": "Contra-ataque: o selo da Expansão num piscar, o Vazio abre por um instante e fecha num X que corta a tela. Quebra qualquer técnica de quem estiver a até 15 blocos (carregando, no meio ou ativa, ataques no ar e até uma Expansão abrindo). Quem estava carregando ou usando alguma técnica fica atordoado 7 s e sem estamina; o resto só 1,5 s. Sem ninguém perto, não sai.",
+  "ability.battlegroundsmod.strongest.8.tags": "Contra-ataque,Área,Atordoa,Domínio"
 }
