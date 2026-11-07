@@ -110,13 +110,18 @@ public final class VazioRelampago {
         for (LivingEntity target : targets(level, caster)) {
             boolean caught = busy.contains(target) || busy(target);
             breakAll(target);
-            if (caught) {
-                Stun.apply(target, STUN_CHARGING);
-                if (target.hasData(ModAttachments.POWER)) {
-                    Stamina.exhaust(target);
-                }
+            int ticks = caught ? STUN_CHARGING : STUN_OTHERS;
+            // A complete stun, the whole time, on anyone (bosses too, no boss resistance): stopped where they stand, no
+            // walking, jumping, punches, skills or AI. Mobs and bosses are held still with the AI off (Freeze); players
+            // too, but their camera stays free (turning does nothing for them).
+            Stun.apply(target, ticks, true);
+            if (target instanceof Player) {
+                Freeze.holdLookFree(target, ticks);
             } else {
-                Stun.apply(target, STUN_OTHERS);
+                Freeze.hold(target, ticks);
+            }
+            if (caught && target.hasData(ModAttachments.POWER)) {
+                Stamina.exhaust(target);
             }
             if (target instanceof ServerPlayer player) {
                 player.displayClientMessage(Component.translatable(caught ? "message.battlegroundsmod.vazio_relampago_pego" : "message.battlegroundsmod.vazio_relampago_atingido")
