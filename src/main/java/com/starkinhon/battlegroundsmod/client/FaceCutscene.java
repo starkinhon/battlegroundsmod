@@ -39,6 +39,10 @@ public final class FaceCutscene {
         }
     }
 
+    public static boolean hidesHud() {
+        return entityId >= 0 && spec != null && spec.esconderHud();
+    }
+
     public static void tick() {
         if (entityId < 0) {
             return;
