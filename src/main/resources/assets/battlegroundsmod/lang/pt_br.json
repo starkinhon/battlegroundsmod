@@ -273,5 +273,9 @@
   "ability.battlegroundsmod.rukia.2.tags": "Alcance,Congela",
   "ability.battlegroundsmod.rukia.3": "Bankai: Hakka no Togame",
   "ability.battlegroundsmod.rukia.3.desc": "Você congela por inteiro e vira branca. O zero absoluto se espalha em volta e transforma todo mundo perto em cristal.",
-  "ability.battlegroundsmod.rukia.3.tags": "Especial,Área,Congela"
+  "ability.battlegroundsmod.rukia.3.tags": "Especial,Área,Congela",
+  "item.battlegroundsmod.soul_insect": "Inseto de Alma",
+  "item.battlegroundsmod.soul_insect.tip1": "No inventário: você nunca passa fome",
+  "item.battlegroundsmod.soul_insect.tip2": "Mas a fome fica abaixo do ponto de regenerar vida",
+  "message.battlegroundsmod.teleport_domain": "Não dá pra teleportar pra dentro ou pra fora da Expansão de Domínio"
 }

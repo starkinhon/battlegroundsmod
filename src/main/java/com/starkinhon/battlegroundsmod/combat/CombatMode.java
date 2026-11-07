@@ -14,7 +14,8 @@ import net.minecraft.world.item.ItemStack;
 // Hitting, getting hit or using moves keeps it going; after LINGER_TICKS of none of that it ends.
 // Server side; the client reads PowerData.combat, synced with the power.
 public final class CombatMode {
-    public static final int LINGER_TICKS = 200;
+    // 30 s: it used to end after 10 s, too fast in the middle of a fight.
+    public static final int LINGER_TICKS = 600;
 
     private CombatMode() {
     }

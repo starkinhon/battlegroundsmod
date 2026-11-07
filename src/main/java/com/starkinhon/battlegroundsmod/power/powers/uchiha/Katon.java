@@ -15,6 +15,7 @@ import com.starkinhon.battlegroundsmod.combat.SkillSounds;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
 import com.starkinhon.battlegroundsmod.power.PowerData;
+import com.starkinhon.battlegroundsmod.power.PowerLogic;
 import com.starkinhon.battlegroundsmod.skill.SkillSpec;
 import com.starkinhon.battlegroundsmod.skill.SkillSpecs;
 import com.starkinhon.battlegroundsmod.skill.Som;
@@ -43,7 +44,24 @@ public final class Katon {
             Som.of("Fogo crepitando", "minecraft:block.fire.ambient", "fogo", 2, 0.6f, "boca").repeating(8),
             Som.of("Blaze queimando", "minecraft:entity.blaze.burn", "fogo", 1.2f, 0.5f, "meio").repeating(8));
 
+    // Who is breathing fire right now, and the interrupt count it started under (an older count means it was cut off).
+    private static final Map<LivingEntity, Integer> BREATHING = new java.util.WeakHashMap<>();
+
     private Katon() {
+    }
+
+    // Z again while the fire pours out: the caster stops it and can move, dodge and fight back at once (else whoever
+    // teleports next to him beats him up while he stands rooted). Works even while being hit. Returns true when there
+    // was a Katon to stop.
+    public static boolean cancel(LivingEntity player) {
+        Integer started = BREATHING.get(player);
+        if (started == null || started != player.getData(ModAttachments.POWER).interrupts) {
+            return false;
+        }
+        BREATHING.remove(player);
+        PowerLogic.interrupt(player);
+        player.removeEffect(ModEffects.ENRAIZADO);
+        return true;
     }
 
     public static boolean use(LivingEntity player, ServerLevel level) {
@@ -60,6 +78,7 @@ public final class Katon {
         List<Som> sons = spec.sons() != null ? spec.sons() : DEFAULT_SOUNDS;
         long start = level.getGameTime();
         int interrupts = data.interrupts;
+        BREATHING.put(player, interrupts);
         // Once the fire is cut off (grabbed, sealed) its sounds stop too.
         Function<String, Vec3> where = onde -> {
             if (player.getData(ModAttachments.POWER).interrupts != interrupts) {
@@ -84,6 +103,7 @@ public final class Katon {
             if (!player.isAlive() || player.isRemoved() || !power.equals(player.getData(ModAttachments.POWER).power)
                     || player.getData(ModAttachments.POWER).interrupts != interrupts) {
                 player.removeEffect(ModEffects.ENRAIZADO);
+                BREATHING.remove(player, interrupts);
                 return true;
             }
             int age = tick - tempo.atrasoTicks();
@@ -120,7 +140,11 @@ public final class Katon {
             if (Cone.debug && age % 2 == 0) {
                 cone.draw(Fx.dust(0xFFFFFF, 0.6f));
             }
-            return age >= weak + tempo.duracaoTicks() - 1;
+            boolean over = age >= weak + tempo.duracaoTicks() - 1;
+            if (over) {
+                BREATHING.remove(player, interrupts);
+            }
+            return over;
         });
         return true;
     }

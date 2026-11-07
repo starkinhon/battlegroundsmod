@@ -146,6 +146,13 @@ public final class DomainScene {
             return fired.add(key);
         }
 
+        // The local player is in creative and it is not their domain: it does nothing to them (the server never
+        // catches them either). No white, tunnel or void, nothing on the screen; they stay in the normal world.
+        boolean spared() {
+            Minecraft minecraft = Minecraft.getInstance();
+            return minecraft.player != null && minecraft.player.isCreative() && minecraft.player.getId() != caster;
+        }
+
         // The domain's middle nearest pos: up inside, or out in the world.
         Vec3 hub(Vec3 pos) {
             return pos.distanceToSqr(inner) < pos.distanceToSqr(center) ? inner : center;
@@ -157,7 +164,7 @@ public final class DomainScene {
 
         // What a camera at pos sees at time t.
         Stage stage(Vec3 pos, double t) {
-            if (t < spec.whiteTick() || t >= shatterAt()) {
+            if (t < spec.whiteTick() || t >= shatterAt() || spared()) {
                 return Stage.NONE;
             }
             double dist = pos.distanceTo(center);
@@ -269,7 +276,7 @@ public final class DomainScene {
         }
         for (Domain d : DOMAINS) {
             double t = time(d, 0);
-            if (t >= d.spec.whiteTick() && t < d.goneAt() && d.contains(minecraft.player.position())) {
+            if (!d.spared() && t >= d.spec.whiteTick() && t < d.goneAt() && d.contains(minecraft.player.position())) {
                 return true;
             }
         }
@@ -279,6 +286,10 @@ public final class DomainScene {
     // The killing blow inside the domain: a white blink, then the frame turns to sumi-e, red and white ink.
     private static void kill(int victimId, Vec3 center) {
         Minecraft minecraft = Minecraft.getInstance();
+        if (!DOMAINS.isEmpty() && DOMAINS.stream().allMatch(Domain::spared)) {
+            // In creative, watching: the ink is only for those inside.
+            return;
+        }
         Entity victim = minecraft.level.getEntity(victimId);
         Vec3 at = victim != null ? victim.position().add(0, victim.getBbHeight() * 0.6, 0) : center.add(0, 1, 0);
         ScreenFx.flash(0xFFFFFF, 0.95f, 3);
@@ -390,6 +401,9 @@ public final class DomainScene {
         }
         Vec3 camera = cameraPos();
         for (Domain d : DOMAINS) {
+            if (d.spared()) {
+                continue;
+            }
             double t = time(d, 0);
             DominioSpec spec = d.spec;
             boolean caster = minecraft.player.getId() == d.caster;
@@ -607,7 +621,7 @@ public final class DomainScene {
         float partial = event.getPartialTick().getGameTimeDeltaPartialTick(false);
         for (Domain d : DOMAINS) {
             double t = time(d, partial);
-            boolean whiteShows = t >= d.spec.whiteTick() && t < d.shatterAt() && (t < d.spec.tunnelTick() + 8 || d.closeAt() < d.spec.tunnelTick());
+            boolean whiteShows = !d.spared() && t >= d.spec.whiteTick() && t < d.shatterAt() && (t < d.spec.tunnelTick() + 8 || d.closeAt() < d.spec.tunnelTick());
             Vec3 camera = event.getCamera().getPosition();
             Stage stage = d.stage(camera, t);
             if (whiteShows && stage != Stage.TUNNEL && stage != Stage.VOID) {
@@ -746,6 +760,10 @@ public final class DomainScene {
             }
             Stage stage = d.stage(camera, t);
             sign(d, camera, t, partial);
+            if (d.spared() && camera.distanceTo(d.center) < d.radius() + 1) {
+                // Standing where it opened, in creative: the world as it is, not the inside of the ball.
+                continue;
+            }
             if (stage == Stage.TUNNEL) {
                 tunnel(d, t, (float) now);
                 people(d, camera, (float) now, partial, 1);
@@ -1426,6 +1444,9 @@ public final class DomainScene {
         float partial = delta.getGameTimeDeltaPartialTick(false);
         Vec3 camera = cameraPos();
         for (Domain d : DOMAINS) {
+            if (d.spared()) {
+                continue;
+            }
             double t = time(d, partial);
             Stage stage = d.stage(camera, t);
             DominioSpec spec = d.spec;
