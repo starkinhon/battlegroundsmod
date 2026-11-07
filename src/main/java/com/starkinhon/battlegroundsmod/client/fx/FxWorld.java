@@ -145,7 +145,7 @@ public final class FxWorld {
         ScreenFx.capture(event);
         boolean world = !PIECES.isEmpty() || MeteorRenderer.hasTrails() || Aura.active() || KatonBallRenderer.active() || AshDeath.hasSparks()
                 || SpaceScene.active() || EsferaRenderer.active() || HakaiRenderer.active() || EnergyRenderer.active() || BlackBoxRenderer.active() || AzulRenderer.active() || VermelhoRenderer.active() || BlackFlashRenderer.active() || RoxoRenderer.active() || AizenFx.active() || SwordFx.active() || PunchFxRenderer.active() || SubFx.active()
-                || SphereRenderer.active() || SusanooArm.active() || DomainScene.active();
+                || SphereRenderer.active() || SusanooArm.active() || DomainScene.active() || VoidFlashScene.active();
         if (!world && !ScreenFx.needsScene()) {
             return;
         }
@@ -155,6 +155,10 @@ public final class FxWorld {
         } else if (DomainScene.inVoid()) {
             // Inside Gojo's domain the void takes the place of the world.
             DomainScene.backdrop(event);
+        }
+        if (VoidFlashScene.active()) {
+            // Gojo's Expansão de 0,2 s: the void over the world, the people over it.
+            VoidFlashScene.render(event);
         }
         boolean flat = FxShaders.flat();
         if (!flat) {

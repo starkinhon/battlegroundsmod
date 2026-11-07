@@ -1,0 +1,26 @@
+{
+    "vertex": "battlegroundsmod:fx_blit",
+    "fragment": "battlegroundsmod:fx_void_flash",
+    "samplers": [ { "name": "Sampler0" } ],
+    "uniforms": [
+        { "name": "Screen", "type": "float", "count": 2, "values": [ 1.0, 1.0 ] },
+        { "name": "XCenter", "type": "float", "count": 2, "values": [ 0.0, 0.0 ] },
+        { "name": "HoleCenter", "type": "float", "count": 2, "values": [ 0.0, 0.0 ] },
+        { "name": "HoleSize", "type": "float", "count": 1, "values": [ 100.0 ] },
+        { "name": "Horizon", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "Mode", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "BlotSize", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "Fade", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "Grow", "type": "float", "count": 1, "values": [ 1.0 ] },
+        { "name": "ArmWidth", "type": "float", "count": 1, "values": [ 100000.0 ] },
+        { "name": "Angles", "type": "float", "count": 2, "values": [ 0.0, 1.0 ] },
+        { "name": "Now", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "CamFwd", "type": "float", "count": 3, "values": [ 0.0, 0.0, 1.0 ] },
+        { "name": "CamRight", "type": "float", "count": 3, "values": [ 1.0, 0.0, 0.0 ] },
+        { "name": "CamUp", "type": "float", "count": 3, "values": [ 0.0, 1.0, 0.0 ] },
+        { "name": "TanHalf", "type": "float", "count": 2, "values": [ 1.0, 1.0 ] },
+        { "name": "FloorDepth", "type": "float", "count": 1, "values": [ 1.6 ] },
+        { "name": "CasterRel", "type": "float", "count": 2, "values": [ 0.0, 0.0 ] },
+        { "name": "TargetRel", "type": "float", "count": 2, "values": [ 1000.0, 1000.0 ] }
+    ]
+}

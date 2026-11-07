@@ -141,6 +141,8 @@ public final class ClientHooks {
         com.starkinhon.battlegroundsmod.client.fx.AzulRenderer.clear();
         com.starkinhon.battlegroundsmod.client.fx.VermelhoRenderer.clear();
         com.starkinhon.battlegroundsmod.client.fx.BlackFlashRenderer.clear();
+        LimpBody.clear();
+        com.starkinhon.battlegroundsmod.client.fx.VoidFlashScene.clear();
         com.starkinhon.battlegroundsmod.client.fx.RoxoRenderer.clear();
         com.starkinhon.battlegroundsmod.client.fx.AizenFx.clear();
         com.starkinhon.battlegroundsmod.client.fx.SwordFx.clear();
@@ -226,8 +228,16 @@ public final class ClientHooks {
         com.starkinhon.battlegroundsmod.client.fx.VermelhoRenderer.blast(from, dir, range, radius, speed, charge);
     }
 
+    public static void voidFlash(int caster, Vec3 center) {
+        com.starkinhon.battlegroundsmod.client.fx.VoidFlashScene.start(caster, center);
+    }
+
     public static void blackFlash(int kind, int entity, Vec3 pos, Vec3 dir, float charge, int ticks) {
         com.starkinhon.battlegroundsmod.client.fx.BlackFlashRenderer.event(kind, entity, pos, dir, charge, ticks);
+    }
+
+    public static void limp(int entity, int phase, int ticks, float strength) {
+        LimpBody.event(entity, phase, ticks, strength);
     }
 
     public static void roxo(int id, int owner, int mode, int tick, float charge) {

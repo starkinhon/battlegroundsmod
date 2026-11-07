@@ -26,6 +26,7 @@ public final class FxShaders {
     static ShaderInstance susanoo;
     static ShaderInstance realismo;
     static ShaderInstance moon;
+    static ShaderInstance voidFlash;
 
     private static Boolean irisPresent;
 
@@ -37,6 +38,12 @@ public final class FxShaders {
             registerAll(event);
         } catch (IOException e) {
             BattlegroundsMod.LOGGER.error("Could not load the effect shaders; effects fall back to the flat look", e);
+        }
+        // On its own, so a problem here never takes the other effects down (the Gojo's Expansão de 0,2 s just won't show).
+        try {
+            register(event, "fx_void_flash", DefaultVertexFormat.POSITION, s -> voidFlash = s);
+        } catch (Exception e) {
+            BattlegroundsMod.LOGGER.error("Could not load the 0.2-second Domain Expansion shader", e);
         }
     }
 

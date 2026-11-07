@@ -5,11 +5,14 @@ import com.starkinhon.battlegroundsmod.combat.Destructible;
 import com.starkinhon.battlegroundsmod.combat.Fx;
 import com.starkinhon.battlegroundsmod.power.BossOrder;
 import com.starkinhon.battlegroundsmod.power.PowerData;
+import com.starkinhon.battlegroundsmod.power.PowerLogic;
 import com.starkinhon.battlegroundsmod.power.powers.gojo.Azul;
+import com.starkinhon.battlegroundsmod.power.powers.gojo.VazioRelampago;
 import com.starkinhon.battlegroundsmod.skill.RoxoSpec;
 
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
 
 // How the Gojo boss plays. SoulBossAI does the fighting; this reads the situation and tells it what Gojo would do.
@@ -62,6 +65,9 @@ final class GojoTactics extends TacticsBase {
     private long lastUlt = -100_000;
     private long irrestritoAt;
     private int infinityCooldown;
+
+    // When the Expansão de 0,2 s can be read again.
+    private long flashReadyAt;
 
     GojoTactics(GojoEntity boss) {
         super(boss);
@@ -160,6 +166,21 @@ final class GojoTactics extends TacticsBase {
                 }
                 ai.say("Infinito");
                 return true;
+            }
+        }
+        // The Expansão de 0,2 s: a counter. He reads someone near him charging or in the middle of a move and snaps the
+        // void open on them (not every time, so it stays a read and not a wall).
+        if (ai.now() >= flashReadyAt && !ai.usingMove() && ai.now() % 4 == 0) {
+            for (LivingEntity target : Combat.inRadius(level, Combat.center(boss), VazioRelampago.radius(boss) - 1, boss)) {
+                if (VazioRelampago.busy(target) && random.nextDouble() < 0.5) {
+                    flashReadyAt = ai.now() + 20;
+                    if (PowerLogic.cast(boss, PowerData.SLOT_SHIFT_ULT)) {
+                        flashReadyAt = ai.now() + VazioRelampago.COOLDOWN + 100;
+                        ai.say("Expansao de 0,2 s");
+                        return true;
+                    }
+                    break;
+                }
             }
         }
         // Artillery: he doesn't let them stay on him; a blink back to his range.
