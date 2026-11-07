@@ -1,0 +1,33 @@
+{
+  "parent": "minecraft:husbandry/root",
+  "display": {
+    "icon": {
+      "id": "battlegroundsmod:soul_insect"
+    },
+    "title": {
+      "translate": "advancements.battlegroundsmod.soul_insect.title"
+    },
+    "description": {
+      "translate": "advancements.battlegroundsmod.soul_insect.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "ate_soul_insect": {
+      "trigger": "minecraft:consume_item",
+      "conditions": {
+        "item": {
+          "items": "battlegroundsmod:soul_insect"
+        }
+      }
+    }
+  },
+  "requirements": [
+    [
+      "ate_soul_insect"
+    ]
+  ]
+}
