@@ -1,0 +1,37 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "jj.bf_punch",
+  "nome": "Black Flash",
+  "tempo": {
+    "atrasoTicks": 1,
+    "duracaoTicks": 17
+  },
+  "animacao": {
+    "transicaoTicks": 1,
+    "preparo": {
+      "cabeca": 0,
+      "tronco": 4,
+      "bracoDir": {
+        "frente": 18,
+        "abrir": 10
+      },
+      "bracoEsq": {
+        "frente": 18,
+        "abrir": -10
+      }
+    },
+    "sopro": {
+      "cabeca": 0,
+      "tronco": 8,
+      "bracoDir": {
+        "frente": 30,
+        "abrir": 16
+      },
+      "bracoEsq": {
+        "frente": 30,
+        "abrir": -16
+      }
+    },
+    "retornoTicks": 8
+  }
+}
