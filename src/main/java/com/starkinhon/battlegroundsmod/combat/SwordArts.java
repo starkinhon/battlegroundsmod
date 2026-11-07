@@ -91,6 +91,8 @@ public final class SwordArts {
     public static final int FX_GLINT = 3;
     // Kokushibo's 1st Form, Yoru no Miya (client/fx/MoonSlashRenderer): pos = his eyes, dir = his look, a = the moons' seed.
     public static final int FX_MOON = 4;
+    // Yoru no Miya's blow landing on the entity (0.5 s after the cut): impact frame and shake there. pos = its middle.
+    public static final int FX_MOON_HIT = 5;
 
     private SwordArts() {
     }
