@@ -55,22 +55,26 @@ S['gojo.azul_maximo'] = { keys: [
   P(10, { ...azulMax, ra: { yaw: 14, pitch: 6 }, la: { yaw: 14, pitch: 6 } }, 'out'),
 ] };
 
-// gojo.vermelho_segurando: held. Side-on, right hand up by the chest pointing ahead, left hand loose behind.
-const vermHold = { twist: 46, lean: 4, drop: 1.4, ra: { yaw: 18, pitch: -6 }, la: { yaw: 30, pitch: -100 }, rl: { pitch: -16, out: 5 },
-  ll: { pitch: 20, out: 5 }, head: { yaw: 0, pitch: 2 } };
+// gojo.vermelho_segurando: held. Three-quarter stance with the Red's side forward (Stark, 2026-11-07): right shoulder
+// and right foot ahead, the chest on a diagonal, the right arm out in front at shoulder height with the Red on the
+// fingertip; the left side stays back, the left hand loose by the hip. Calm, no step.
+const vermHold = { twist: -38, lean: 3, drop: 1.4, ra: { yaw: 2, pitch: 6 }, la: { yaw: 14, pitch: -98 },
+  rl: { pitch: 14, out: 4 }, ll: { pitch: -16, out: 5 }, head: { yaw: 0, pitch: 2 } };
 S['gojo.vermelho_segurando'] = { keys: [
   P(0, REST),
-  P(2, { twist: 20, drop: 0.6, ra: { yaw: 40, pitch: -40 }, la: { yaw: 10, pitch: -90 }, ...stance }, 'out'),
-  P(6, vermHold, 'inout'),
+  // a small turn the other way first, the hand coming up by the chest
+  P(2, { twist: 8, drop: 0.6, ra: { yaw: -10, pitch: -40 }, la: { yaw: 8, pitch: -92 }, ...stance }, 'out'),
+  P(6, { ...vermHold, twist: -42, ra: { yaw: 2, pitch: 9 } }, 'inout'),
+  P(9, vermHold, 'inout'),
 ] };
-// gojo.vermelho: W1 E11 back8. Fires from the held pose without stepping: the pointing hand kicks up with the recoil
-// and the body rocks back on its heels, then settles.
-const vermKick = { ...vermHold, twist: 40, lean: -8, fwd: -1, ra: { yaw: 16, pitch: 20 }, head: { yaw: 0, pitch: -2 } };
+// gojo.vermelho: W1 E11 back8. Fires from the held pose without stepping: the arm kicks up with the recoil, the right
+// shoulder is pushed back a little and the body rocks onto the back foot, then settles into the diagonal again.
+const vermKick = { ...vermHold, twist: -26, lean: -8, fwd: -1, ra: { yaw: 2, pitch: 30 }, head: { yaw: 0, pitch: -2 } };
 S['gojo.vermelho'] = { keys: [
   P(0, vermHold),
   P(1, vermKick, 'snap'),
-  P(3, { ...vermKick, lean: -10, ra: { yaw: 16, pitch: 26 } }, 'out'),
-  P(7, { ...vermHold, lean: 0, ra: { yaw: 18, pitch: 2 } }, 'inout'),
+  P(3, { ...vermKick, lean: -10, ra: { yaw: 2, pitch: 36 } }, 'out'),
+  P(7, { ...vermHold, lean: 0, ra: { yaw: 2, pitch: 12 } }, 'inout'),
   P(11, vermHold, 'inout'),
   P(19, REST, 'inout'),
 ] };
