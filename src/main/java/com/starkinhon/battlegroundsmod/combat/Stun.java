@@ -25,7 +25,13 @@ public final class Stun {
     }
 
     public static void apply(LivingEntity target, int ticks) {
-        if (target instanceof SoulBoss boss && boss.isBoss()) {
+        apply(target, ticks, false);
+    }
+
+    // full: the whole length on bosses too (no boss resistance), for the stuns meant to land in full (Gojo's Expansão de
+    // 0,2 s).
+    public static void apply(LivingEntity target, int ticks, boolean full) {
+        if (!full && target instanceof SoulBoss boss && boss.isBoss()) {
             ticks = (int) Math.round(ticks * ComboSpec.get().atordoado().multiplicadorBoss());
         }
         boolean wasStunned = is(target);
