@@ -30,46 +30,21 @@ const P = (t, pose, ease, extra) => ({ t, ...pose, ...(extra || {}), ...(ease ? 
 const BACK = { yaw: -12, pitch: -118 };
 const stance = { rl: { pitch: -6, out: 3 }, ll: { pitch: 6, out: 3 } };
 const wide = { rl: { pitch: -4, out: 9 }, ll: { pitch: 4, out: 9 }, drop: 1.6 };
-const lunge = { rl: { pitch: -30, out: 3 }, ll: { pitch: 34, out: 3 }, drop: 2, fwd: 2.5 };
-
-// A one-hand push or throw: from `from` to a straight arm ahead, the chest swinging round and stepping in.
-function thrust(W, E, back, from, opts = {}) {
-  const pitch = opts.pitch != null ? opts.pitch : 4;
-  const la = opts.la || { yaw: 22, pitch: -70 };
-  const hitP = { twist: -30, lean: 16, ...lunge, ra: { yaw: 6, pitch }, la, head: { yaw: 0, pitch: 2 } };
-  return [
-    P(0, from),
-    P(W, hitP, 'snap'),
-    P(W + 2, { ...hitP, twist: -36, lean: 18, fwd: 3, ra: { yaw: 8, pitch: pitch + 2 } }, 'out'),
-    P(Math.max(W + 3, E - 2), { ...hitP, twist: -30, lean: 14 }, 'inout'),
-    P(E + back, REST, 'inout'),
-  ];
-}
-
-// A slash with whatever is in the right hand: high behind the right shoulder, down across to the left hip.
-function slash(W, E, back, opts = {}) {
-  const up = { twist: 34, lean: -6, drop: 0.6, ra: { yaw: 50, pitch: 110 }, la: { yaw: 30, pitch: -40 }, rl: { pitch: -10, out: 3 },
-    ll: { pitch: 14, out: 3 }, head: { yaw: 0, pitch: -4 } };
-  const down = { twist: -40, lean: 22, ...lunge, ra: { yaw: -40, pitch: -44 }, la: { yaw: 36, pitch: -60 }, head: { yaw: 0, pitch: 8 } };
-  return [
-    P(0, REST),
-    P(Math.max(1, W - 3), up, 'out'),
-    P(W - 1, { ...up, twist: 40, ra: { yaw: 56, pitch: 118 } }, 'inout'),
-    P(W, down, 'snap'),
-    P(W + 2, { ...down, twist: -48, lean: 26, ra: { yaw: -50, pitch: -52 } }, 'out'),
-    P(Math.max(W + 3, E - 2), { ...down, twist: -42, lean: 20 }, 'inout'),
-    P(E + back, REST, 'inout'),
-  ];
-}
-
 const S = {};
 
 // ===================== GOJO =====================
-// gojo.azul: W6 E16 back8. The hand that sends the Blue: pulls in to the chest, then a flat push ahead.
+// gojo.azul: W6 E16 back8. Gojo doesn't wind up: the hand comes up to the chest, two fingers out, and flicks ahead.
+// Feet stay put, the body barely turns; the left hand hangs loose.
+const azulFlick = { twist: -6, lean: 3, ...stance, ra: { yaw: 4, pitch: 6 }, la: { yaw: 6, pitch: -96 }, head: { yaw: 0, pitch: 2 } };
 S['gojo.azul'] = { keys: [
   P(0, REST),
-  P(4, { twist: 26, lean: -4, drop: 0.8, ra: { yaw: 20, pitch: -20 }, la: { yaw: 18, pitch: -70 }, ...stance, head: { yaw: 0, pitch: 2 } }, 'out'),
-].concat(thrust(6, 16, 8, REST, { pitch: 6 }).slice(1)) };
+  P(4, { twist: 8, ...stance, ra: { yaw: -24, pitch: -6 }, la: { yaw: 6, pitch: -94 }, head: { yaw: 0, pitch: 4 } }, 'out'),
+  P(5, { twist: 10, ...stance, ra: { yaw: -28, pitch: -2 }, la: { yaw: 6, pitch: -94 }, head: { yaw: 0, pitch: 4 } }, 'inout'),
+  P(6, azulFlick, 'snap'),
+  P(8, { ...azulFlick, ra: { yaw: 6, pitch: 12 } }, 'out'),
+  P(14, azulFlick, 'inout'),
+  P(24, REST, 'inout'),
+] };
 
 // gojo.azul_maximo: held (up to 600). Both hands out, feet wide and low, leaning into it.
 const azulMax = { twist: 4, lean: 12, ...wide, drop: 2.4, ra: { yaw: 12, pitch: 2 }, la: { yaw: 12, pitch: 2 }, head: { yaw: 0, pitch: 4 } };
@@ -88,13 +63,15 @@ S['gojo.vermelho_segurando'] = { keys: [
   P(2, { twist: 20, drop: 0.6, ra: { yaw: 40, pitch: -40 }, la: { yaw: 10, pitch: -90 }, ...stance }, 'out'),
   P(6, vermHold, 'inout'),
 ] };
-// gojo.vermelho: W1 E11 back8. Fires from the held pose: the arm snaps out and kicks up with the recoil.
-const vermShot = { twist: -18, lean: 10, ...lunge, ra: { yaw: 4, pitch: 6 }, la: { yaw: 40, pitch: -110 }, head: { yaw: 0, pitch: 2 } };
+// gojo.vermelho: W1 E11 back8. Fires from the held pose without stepping: the pointing hand kicks up with the recoil
+// and the body rocks back on its heels, then settles.
+const vermKick = { ...vermHold, twist: 40, lean: -8, fwd: -1, ra: { yaw: 16, pitch: 20 }, head: { yaw: 0, pitch: -2 } };
 S['gojo.vermelho'] = { keys: [
   P(0, vermHold),
-  P(1, vermShot, 'snap'),
-  P(3, { ...vermShot, lean: 4, fwd: 1, ra: { yaw: 6, pitch: 14 } }, 'out'),
-  P(9, { ...vermShot, lean: 6, ra: { yaw: 6, pitch: 12 } }, 'inout'),
+  P(1, vermKick, 'snap'),
+  P(3, { ...vermKick, lean: -10, ra: { yaw: 16, pitch: 26 } }, 'out'),
+  P(7, { ...vermHold, lean: 0, ra: { yaw: 18, pitch: 2 } }, 'inout'),
+  P(11, vermHold, 'inout'),
   P(19, REST, 'inout'),
 ] };
 
@@ -110,13 +87,15 @@ S['gojo.roxo_segurando'] = { keys: [
   P(36, { ...roxoJoin, ra: { yaw: 10, pitch: 4 }, la: { yaw: 6, pitch: 4 } }, 'inout'),
   P(40, roxoJoin, 'out'),
 ] };
-// gojo.roxo: W1 E15 back12. Lets it go: the right hand drives through, the left swings back, a big step.
-const roxoShot = { twist: -34, lean: 20, ...lunge, fwd: 3, ra: { yaw: 6, pitch: 2 }, la: { yaw: 50, pitch: -130 }, head: { yaw: 0, pitch: 2 } };
+// gojo.roxo: W1 E15 back12. Lets it go standing tall: the hands part, the right stays pointing ahead, the left drops
+// away; the release pushes the chest back and the chin up, feet planted.
+const roxoGo = { twist: 12, lean: -10, ...wide, drop: 1.2, ra: { yaw: 4, pitch: 6 }, la: { yaw: 40, pitch: -60 }, head: { yaw: 0, pitch: -6 } };
 S['gojo.roxo'] = { keys: [
   P(0, roxoJoin),
-  P(1, roxoShot, 'snap'),
-  P(4, { ...roxoShot, twist: -42, lean: 24 }, 'out'),
-  P(13, { ...roxoShot, twist: -36, lean: 18 }, 'inout'),
+  P(1, roxoGo, 'snap'),
+  P(3, { ...roxoGo, lean: -14, ra: { yaw: 4, pitch: 12 }, la: { yaw: 50, pitch: -66 } }, 'out'),
+  P(9, { ...roxoGo, lean: -6, ra: { yaw: 4, pitch: 4 }, la: { yaw: 30, pitch: -76 } }, 'inout'),
+  P(15, { ...roxoGo, lean: -4, ra: { yaw: 4, pitch: 2 }, la: { yaw: 20, pitch: -84 } }, 'inout'),
   P(27, REST, 'inout'),
 ] };
 
@@ -149,18 +128,19 @@ S['gojo.azul_black_flash'] = { keys: [
 ] };
 
 // ===================== BILLS =====================
-// bills.hakai_bola: W96 E106 back3. The ball forms over the raised hand, then he throws it.
-const bolaUp = { twist: 18, lean: -6, ra: { yaw: 14, pitch: 84 }, la: BACK, ...stance, head: { yaw: 0, pitch: -24 } };
-const bolaThrow = { twist: -26, lean: 18, ...lunge, ra: { yaw: 4, pitch: -6 }, la: BACK, head: { yaw: 0, pitch: 6 } };
+// bills.hakai_bola: W96 E106 back3. A god doesn't throw: the ball forms over the raised hand, then the hand just
+// tips down to point at the target and the ball goes; the left hand never leaves his back.
+const bolaUp = { twist: 10, lean: -4, ra: { yaw: 10, pitch: 80 }, la: BACK, ...stance, head: { yaw: 0, pitch: -22 } };
+const bolaSend = { twist: 8, lean: 2, ra: { yaw: 6, pitch: 10 }, la: BACK, ...stance, head: { yaw: 0, pitch: 4 } };
 S['bills.hakai_bola'] = { keys: [
   P(0, REST),
-  P(10, bolaUp, 'inout'),
-  P(90, { ...bolaUp, head: { yaw: 0, pitch: -20 } }, 'inout'),
-  P(95, { ...bolaUp, twist: 30, lean: -12, ra: { yaw: 24, pitch: 112 }, head: { yaw: 0, pitch: -4 } }, 'out'),
-  P(97, bolaThrow, 'snap'),
-  P(99, { ...bolaThrow, twist: -32, lean: 22, ra: { yaw: 2, pitch: -16 } }, 'out'),
-  P(104, bolaThrow, 'inout'),
-  P(112, REST, 'inout'),
+  P(12, bolaUp, 'inout'),
+  P(90, { ...bolaUp, head: { yaw: 0, pitch: -18 } }, 'inout'),
+  P(95, { ...bolaUp, ra: { yaw: 10, pitch: 86 }, head: { yaw: 0, pitch: -6 } }, 'inout'),
+  P(98, bolaSend, 'out'),
+  P(100, { ...bolaSend, ra: { yaw: 6, pitch: 4 } }, 'out'),
+  P(105, bolaSend, 'inout'),
+  P(114, REST, 'inout'),
 ] };
 
 // bills.hakaizinho: W8 E16 back2. The small one: the hand to the mouth, then a flick ahead.
@@ -284,8 +264,20 @@ S['aizen.um_dedo'] = { keys: [
   P(19, REST, 'inout'),
 ] };
 
-// aizen.um_dedo_corte: W12 E32 back14.
-S['aizen.um_dedo_corte'] = { keys: slash(12, 32, 14) };
+// aizen.um_dedo_corte: W12 E32 back14. One clean cut, no effort: the blade comes up by the right shoulder, then
+// down across in one line with half a step, and stays there a moment before he lowers it.
+const udUp = { twist: 20, lean: -2, ra: { yaw: 34, pitch: 52 }, la: { yaw: 6, pitch: -92 }, ...stance, head: { yaw: 0, pitch: 2 } };
+const udDown = { twist: -18, lean: 8, drop: 1, fwd: 1, ra: { yaw: -34, pitch: -38 }, la: { yaw: 6, pitch: -92 }, rl: { pitch: 12, out: 3 },
+  ll: { pitch: -8, out: 3 }, head: { yaw: 0, pitch: 6 } };
+S['aizen.um_dedo_corte'] = { keys: [
+  P(0, REST),
+  P(9, udUp, 'inout'),
+  P(11, { ...udUp, ra: { yaw: 36, pitch: 56 } }, 'inout'),
+  P(12, udDown, 'snap'),
+  P(14, { ...udDown, ra: { yaw: -40, pitch: -44 } }, 'out'),
+  P(30, udDown, 'inout'),
+  P(46, REST, 'inout'),
+] };
 
 // ===================== MADARA =====================
 // madara.katon_gigante: W8 E88 back6. Hands together at the chest (the seal), then leaning back and blowing up and
@@ -321,8 +313,18 @@ function meteoro(fall, both) {
 S['madara.meteoro'] = { keys: meteoro(70, false) };
 S['madara.meteoro_duplo'] = { keys: meteoro(120, true) };
 
-// madara.susanoo_corte: W9 E19 back5. The Susanoo's blade follows his arm.
-S['madara.susanoo_corte'] = { keys: slash(9, 19, 5) };
+// madara.susanoo_corte: W9 E19 back5. He commands the Susanoo's blade with one wide sweep of the arm, out to the
+// right and across, standing his ground (the Susanoo does the swinging).
+const scOut = { twist: 14, ra: { yaw: 74, pitch: 8 }, la: { yaw: 10, pitch: -90 }, ...stance, head: { yaw: 0, pitch: 2 } };
+const scAcross = { twist: -16, lean: 4, drop: 0.8, ra: { yaw: -46, pitch: -6 }, la: { yaw: 10, pitch: -90 }, ...stance, head: { yaw: 0, pitch: 4 } };
+S['madara.susanoo_corte'] = { keys: [
+  P(0, REST),
+  P(7, scOut, 'inout'),
+  P(9, scAcross, 'snap'),
+  P(11, { ...scAcross, ra: { yaw: -52, pitch: -8 } }, 'out'),
+  P(17, scAcross, 'inout'),
+  P(24, REST, 'inout'),
+] };
 
 // ===================== SUBALMAS (Rukia, Byakuya) =====================
 // sub.apontar: W4 E34 back8. Points the sword (or finger) at the target.
@@ -360,8 +362,19 @@ S['sub.arco'] = { keys: [
   P(30, REST, 'inout'),
 ] };
 
-// sub.corte: W5 E13 back8.
-S['sub.corte'] = { keys: slash(5, 13, 8) };
+// sub.corte: W5 E13 back8. A rising cut: the blade low on the left, then up across to high on the right.
+const ctLow = { twist: -24, lean: 10, drop: 1.6, ra: { yaw: -40, pitch: -58 }, la: { yaw: 20, pitch: -80 }, rl: { pitch: -10, out: 4 },
+  ll: { pitch: 14, out: 4 }, head: { yaw: 0, pitch: 6 } };
+const ctHigh = { twist: 26, lean: -4, drop: 0.6, ra: { yaw: 52, pitch: 44 }, la: { yaw: 30, pitch: -70 }, rl: { pitch: 8, out: 4 },
+  ll: { pitch: -6, out: 4 }, head: { yaw: 0, pitch: -2 } };
+S['sub.corte'] = { keys: [
+  P(0, REST),
+  P(4, ctLow, 'out'),
+  P(5, ctHigh, 'snap'),
+  P(7, { ...ctHigh, twist: 30, ra: { yaw: 58, pitch: 50 } }, 'out'),
+  P(12, ctHigh, 'inout'),
+  P(21, REST, 'inout'),
+] };
 
 // sub.cravar: W6 E16 back8. Both hands up over the head on the hilt, then drives it down into the ground.
 const cravUp = { lean: -10, drop: -0.5, ...stance, ra: { yaw: -6, pitch: 84 }, la: { yaw: -6, pitch: 84 }, head: { yaw: 0, pitch: -14 } };
@@ -397,12 +410,19 @@ S['sub.erguer'] = { keys: [
   P(34, REST, 'inout'),
 ] };
 
-// sub.estocada: W4 E14 back8. Pulls back, then the thrust with a step.
+// sub.estocada: W4 E14 back8. A fencer's thrust: side-on, right foot leading, the left hand up behind for balance.
+const fenGuard = { twist: -50, lean: 2, drop: 1.6, ra: { yaw: 14, pitch: -20 }, la: { yaw: 70, pitch: 10 }, rl: { pitch: 14, out: 3 },
+  ll: { pitch: -16, out: 3 }, head: { yaw: 0, pitch: 4 } };
+const fenLunge = { twist: -64, lean: 10, drop: 3, fwd: 3, ra: { yaw: 2, pitch: 0 }, la: { yaw: 80, pitch: 30 }, rl: { pitch: 40, out: 2 },
+  ll: { pitch: -36, out: 2 }, head: { yaw: 0, pitch: 4 } };
 S['sub.estocada'] = { keys: [
   P(0, REST),
-  P(3, { twist: 40, lean: 4, drop: 1.4, ra: { yaw: 70, pitch: -6 }, la: { yaw: 20, pitch: -70 }, rl: { pitch: -16, out: 4 }, ll: { pitch: 18, out: 4 },
-    head: { yaw: 0, pitch: 4 } }, 'out'),
-].concat(thrust(5, 14, 8, REST, { pitch: 2, la: { yaw: 40, pitch: -110 } }).slice(1)) };
+  P(3, fenGuard, 'out'),
+  P(5, fenLunge, 'snap'),
+  P(7, { ...fenLunge, fwd: 3.6 }, 'out'),
+  P(13, fenLunge, 'inout'),
+  P(22, REST, 'inout'),
+] };
 
 // sub.gesto: W2 E8 back8. A flick of the hand out to the side.
 S['sub.gesto'] = { keys: [
