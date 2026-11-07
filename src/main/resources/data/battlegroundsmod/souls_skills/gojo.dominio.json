@@ -22,7 +22,10 @@
   "acerto": {
     "paralisar": true,
     "dano": 0,
-    "aCadaTicks": 20
+    "aCadaTicks": 20,
+    "drenoEstaminaPorSegundo": 20,
+    "danoCerebralDepoisTicks": 60,
+    "queimarTecnicaTicks": 200
   },
   "visual": {
     "corBuraco": "#8fe6ff",

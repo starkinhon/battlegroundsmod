@@ -36,7 +36,23 @@ public record DominioSpec(String skill, String nome, Tempo tempo, Fases fases, D
 
     // paralisar: everyone inside is held still (Freeze) from the press to the end, also anyone who
     // walks in later. dano: damage every aCadaTicks to each of them during the void (0 = none, Gojo does the beating).
-    public record Acerto(boolean paralisar, double dano, int aCadaTicks) {
+    // drenoEstaminaPorSegundo: the infinite information drains this percent of a caught player's max stamina every
+    // second; while they still have stamina they resist (slowed, punching, no techniques), at zero they are paralyzed.
+    // danoCerebralDepoisTicks: how long the Brain Damage (held still, stunned) lasts after it shatters.
+    // queimarTecnicaTicks: once it shatters Gojo's technique is burnt out that long (no techniques, only punches).
+    public record Acerto(boolean paralisar, double dano, int aCadaTicks, Double drenoEstaminaPorSegundo, Integer danoCerebralDepoisTicks,
+            Integer queimarTecnicaTicks) {
+        public double drain() {
+            return drenoEstaminaPorSegundo != null ? drenoEstaminaPorSegundo : 20;
+        }
+
+        public int brainDamageAfter() {
+            return danoCerebralDepoisTicks != null ? danoCerebralDepoisTicks : 60;
+        }
+
+        public int burnout() {
+            return queimarTecnicaTicks != null ? queimarTecnicaTicks : 200;
+        }
     }
 
     // corBuraco: the black hole's glowing rings. corNevoa: the far haze of the void. estrelas: how many.

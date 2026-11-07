@@ -14,6 +14,7 @@ import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Destructible;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.combat.SkillSounds;
+import com.starkinhon.battlegroundsmod.combat.Stamina;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
 import com.starkinhon.battlegroundsmod.power.PowerData;
@@ -21,10 +22,12 @@ import com.starkinhon.battlegroundsmod.power.PowerLogic;
 import com.starkinhon.battlegroundsmod.skill.DominioSpec;
 
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.phys.Vec3;
@@ -61,8 +64,6 @@ public final class InfiniteVoid {
     private static final int PLACE_SYNC_TICKS = 4;
     // Someone below the floor by more than this (lag, a knockback) is put back on it.
     private static final double FLOOR_SLACK = 1.5;
-    // Brain Damage (ModEffects): those caught have it the whole domain and this long after it ends, held still.
-    private static final int BRAIN_DAMAGE_AFTER = 200;
     // Saved on players taken inside, so a server stop never leaves them in the sky (see onLogin).
     private static final String BACK_TAG = "battlegroundsmod_void_back";
 
@@ -197,7 +198,13 @@ public final class InfiniteVoid {
                         // Swallowed by the white: whatever they were doing is cut off.
                         PowerLogic.interrupt(victim);
                     }
-                    if (acerto.paralisar()) {
+                    if (Stamina.resists(victim)) {
+                        // A player with stamina left holds off the information for a while (drained below).
+                        if (victim instanceof ServerPlayer resisting) {
+                            resisting.displayClientMessage(Component.translatable("message.battlegroundsmod.domain_resist")
+                                    .withStyle(st -> st.withColor(0x8FE6FF)), true);
+                        }
+                    } else if (acerto.paralisar()) {
                         Freeze.hold(victim, Math.min(HOLD_STEP + 1, release - age));
                     }
                     if (active.inside) {
@@ -209,12 +216,26 @@ public final class InfiniteVoid {
                     if (!victim.isAlive() || victim.isRemoved() || victim.level() != level) {
                         continue;
                     }
-                    if (acerto.paralisar() && age % HOLD_STEP == 0) {
-                        // A tick of overlap so they never slip free in between.
-                        Freeze.hold(victim, Math.min(HOLD_STEP + 1, release - age));
+                    // The infinite information drains a caught player's stamina; while some is left they resist: slowed,
+                    // still able to punch (no techniques, see blocks), not paralyzed. At zero they are exhausted and
+                    // paralyzed like everyone without stamina (mobs, bosses, players without a power).
+                    boolean resisting = Stamina.resists(victim);
+                    if (resisting && age < close) {
+                        Stamina.drain(victim, acerto.drain() / 20.0);
+                        resisting = Stamina.resists(victim);
                     }
-                    if (age % HOLD_STEP == 0 && !active.braindamaged) {
-                        brainDamage(victim, HOLD_STEP * 3);
+                    if (resisting) {
+                        if (age % HOLD_STEP == 0) {
+                            victim.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, HOLD_STEP + 1, 2, false, false, false));
+                        }
+                    } else {
+                        if (acerto.paralisar() && (age % HOLD_STEP == 0 || !Freeze.isFrozen(victim))) {
+                            // A tick of overlap so they never slip free in between.
+                            Freeze.hold(victim, Math.min(HOLD_STEP + 1, release - age));
+                        }
+                        if ((age % HOLD_STEP == 0 || !victim.hasEffect(ModEffects.BRAIN_DAMAGE)) && !active.braindamaged) {
+                            brainDamage(victim, HOLD_STEP * 3);
+                        }
                     }
                     if (age >= voidTick && age < close && acerto.dano() > 0 && acerto.aCadaTicks() > 0
                             && (age - voidTick) % acerto.aCadaTicks() == 0) {
@@ -405,19 +426,40 @@ public final class InfiniteVoid {
         active.granted.clear();
     }
 
-    // The domain is over: everyone it caught keeps Brain Damage for 10 s more, held still where they stand.
+    // The domain is over: everyone it paralyzed keeps Brain Damage a while more (acerto.danoCerebralDepoisTicks), held
+    // still where they stand; whoever was still resisting with stamina walks out free. Gojo's technique burns out.
     private static void brainDamage(Active active) {
         if (active.braindamaged) {
             return;
         }
         active.braindamaged = true;
+        int after = active.spec.acerto().brainDamageAfter();
         for (LivingEntity victim : active.caught) {
             if (victim == active.caster || !victim.isAlive() || victim.isRemoved() || victim.level() != active.level) {
                 continue;
             }
             victim.removeEffect(ModEffects.BRAIN_DAMAGE);
-            brainDamage(victim, BRAIN_DAMAGE_AFTER);
-            Freeze.hold(victim, BRAIN_DAMAGE_AFTER);
+            if (Stamina.resists(victim) || after <= 0) {
+                continue;
+            }
+            brainDamage(victim, after);
+            Freeze.hold(victim, after);
+        }
+        burnout(active);
+    }
+
+    // Like in the anime, after a Domain the caster's technique is burnt out: for acerto.queimarTecnicaTicks no techniques
+    // (all of them sealed, the boss's too), only punches. Missing the Domain is a big risk.
+    private static void burnout(Active active) {
+        LivingEntity caster = active.caster;
+        int ticks = active.spec.acerto().burnout();
+        if (ticks <= 0 || !caster.isAlive() || caster.isRemoved() || !caster.hasData(ModAttachments.POWER)) {
+            return;
+        }
+        PowerLogic.seal(caster, ticks);
+        if (caster instanceof ServerPlayer player) {
+            player.displayClientMessage(Component.translatable("message.battlegroundsmod.technique_burnout", ticks / 20)
+                    .withStyle(st -> st.withColor(0xFF5555)), true);
         }
     }
 

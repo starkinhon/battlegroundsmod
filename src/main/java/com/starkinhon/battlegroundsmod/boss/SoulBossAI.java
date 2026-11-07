@@ -14,6 +14,7 @@ import com.starkinhon.battlegroundsmod.combat.Destructible;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.combat.Intangible;
 import com.starkinhon.battlegroundsmod.combat.Melee;
+import com.starkinhon.battlegroundsmod.combat.Stamina;
 import com.starkinhon.battlegroundsmod.movement.Movement;
 import com.starkinhon.battlegroundsmod.power.BossOrder;
 import com.starkinhon.battlegroundsmod.power.PowerData;
@@ -590,6 +591,13 @@ public class SoulBossAI extends Goal {
             return distance <= reach && boss.hasLineOfSight(target) ? skill.peso() * 10 : 0;
         }
         boolean sees = boss.hasLineOfSight(target) || tactics() != null && tactics().throughWalls(this, name);
+        if (skill.needsStun()) {
+            // Only on a stunned target, and then nothing is better while the stun lasts.
+            if (!Stamina.stunnable(target) || distance > skill.distanciaMax() || !sees) {
+                return 0;
+            }
+            return skill.peso() * 8;
+        }
         if (!"contra".equals(tipo) && (distance < skill.distanciaMin() || distance > skill.distanciaMax() || !sees)) {
             return 0;
         }
@@ -896,6 +904,23 @@ public class SoulBossAI extends Goal {
                     // Not available (or locked by a stun): skip the step, keep the combo going.
                     nextStep();
                     return false;
+                }
+                if (skill.needsStun()) {
+                    // A step that needs a stunned target: used the moment they are open, skipped if they never are.
+                    if (!Stamina.stunnable(target)) {
+                        if (stepAge > 10) {
+                            nextStep();
+                        }
+                        return false;
+                    }
+                    // (No sight needed: right after a slam the target may be down in its hole.)
+                    if (distance > skill.distanciaMax()) {
+                        nextStep();
+                        return false;
+                    }
+                    nextStep();
+                    begin(spec, step);
+                    return true;
                 }
                 if ("roteiro".equals(skill.tipo())) {
                     // Scripted: no range or sight to wait for.
