@@ -813,6 +813,25 @@ public final class ModPayloads {
         }
     }
 
+    // Server -> client: a body out of its own control (client/LimpBody), for whoever sees it. phase: 0 pulled, 1 slow
+    // motion, 2 stuck on the fist, 3 thrown (ticks = how long it lies stunned when it lands), 5 let go, 6 a jolt
+    // (strength 0 to 1).
+    public record Limp(int entity, int phase, int ticks, float strength) implements CustomPacketPayload {
+        public static final int PULL = 0, SLOW = 1, FIT = 2, THROW = 3, OFF = 5, JOLT = 6;
+        public static final Type<Limp> TYPE = payloadType("limp");
+        public static final StreamCodec<ByteBuf, Limp> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, Limp::entity,
+                ByteBufCodecs.VAR_INT, Limp::phase,
+                ByteBufCodecs.VAR_INT, Limp::ticks,
+                ByteBufCodecs.FLOAT, Limp::strength,
+                Limp::new);
+
+        @Override
+        public Type<Limp> type() {
+            return TYPE;
+        }
+    }
+
     // Server -> client: Gojo's Expansão de 0,2 s (power/powers/gojo/VazioRelampago) opening at center: the void snaps
     // open on the screen and closes in an X (client/fx/VoidFlashScene).
     public record VoidFlash(int caster, Vec3 center) implements CustomPacketPayload {
@@ -1203,6 +1222,8 @@ public final class ModPayloads {
                 () -> ClientHooks.vermelhoBlast(payload.from(), payload.dir(), payload.range(), payload.radius(), payload.speed(), payload.charge())));
         registrar.playToClient(BlackFlash.TYPE, BlackFlash.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.blackFlash(payload.kind(), payload.entity(), payload.pos(), payload.dir(), payload.charge(), payload.ticks())));
+        registrar.playToClient(Limp.TYPE, Limp.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.limp(payload.entity(), payload.phase(), payload.ticks(), payload.strength())));
         registrar.playToClient(VoidFlash.TYPE, VoidFlash.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.voidFlash(payload.caster(), payload.center())));
         registrar.playToClient(SubFx.TYPE, SubFx.STREAM_CODEC, (payload, context) -> context.enqueueWork(

@@ -6,6 +6,7 @@
   "client": [
     "CameraMixin",
     "ItemInHandLayerMixin",
+    "LivingEntityRendererMixin",
     "PlayerModelMixin"
   ],
   "injectors": {
