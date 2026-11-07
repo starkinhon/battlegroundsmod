@@ -34,7 +34,10 @@ public final class ModItems {
 
     // Kokushibo's sword (Kyokokukamusari): the 3D model Stark sent, with its sheath on the hip.
     public static final DeferredItem<KokushiboSwordItem> KOKUSHIBO_SWORD = BattlegroundsMod.ITEMS.registerItem("kokushibo_sword",
-            KokushiboSwordItem::new, new Item.Properties().rarity(Rarity.EPIC).fireResistant().component(DataComponents.UNBREAKABLE, new Unbreakable(true)));
+            p -> new KokushiboSwordItem(p, false), new Item.Properties().rarity(Rarity.EPIC).fireResistant().component(DataComponents.UNBREAKABLE, new Unbreakable(true)));
+    // The same sword remade blocky (Minecraft style), to compare with the realistic one.
+    public static final DeferredItem<KokushiboSwordItem> KOKUSHIBO_SWORD_BLOCKY = BattlegroundsMod.ITEMS.registerItem("kokushibo_sword_blocky",
+            p -> new KokushiboSwordItem(p, true), new Item.Properties().rarity(Rarity.EPIC).fireResistant().component(DataComponents.UNBREAKABLE, new Unbreakable(true)));
 
     // Eaten once: never hungry again, never healed by it (item/SoulInsectItem).
     public static final DeferredItem<SoulInsectItem> SOUL_INSECT = BattlegroundsMod.ITEMS.registerItem("soul_insect",

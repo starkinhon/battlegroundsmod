@@ -23,7 +23,7 @@ public class KokushiboSheathLayer extends RenderLayer<AbstractClientPlayer, Play
     private static final Quaternionf TURN;
 
     static {
-        Vector3f tip = new Vector3f(0.12f, 0.38f, 0.92f).normalize();
+        Vector3f tip = new Vector3f(0.12f, 0.3f, 0.95f).normalize();
         Vector3f edge = new Vector3f(0, -1, 0);
         edge.sub(new Vector3f(tip).mul(edge.dot(tip))).normalize();
         Vector3f side = new Vector3f(edge).cross(tip);
@@ -40,12 +40,18 @@ public class KokushiboSheathLayer extends RenderLayer<AbstractClientPlayer, Play
         if (player.isInvisible() || player.isSpectator() || !getParentModel().body.visible) {
             return;
         }
-        boolean inHand = player.getMainHandItem().getItem() instanceof KokushiboSwordItem
-                || player.getOffhandItem().getItem() instanceof KokushiboSwordItem;
-        if (!inHand && !Sheaths.carrying(player.getId())) {
-            return;
+        int style = 0;
+        if (player.getMainHandItem().getItem() instanceof KokushiboSwordItem sword) {
+            style = sword.style();
+        } else if (player.getOffhandItem().getItem() instanceof KokushiboSwordItem sword) {
+            style = sword.style();
         }
-        if (!KokushiboSwordRenderer.ready()) {
+        boolean inHand = style > 0;
+        if (!inHand) {
+            style = Sheaths.style(player.getId());
+        }
+        int look = style - 1;
+        if (look < 0 || !KokushiboSwordRenderer.ready(look)) {
             return;
         }
         poseStack.pushPose();
@@ -54,7 +60,7 @@ public class KokushiboSheathLayer extends RenderLayer<AbstractClientPlayer, Play
             poseStack.scale(1 / 16f, 1 / 16f, 1 / 16f);
             poseStack.translate(GUARD_AT.x, GUARD_AT.y, GUARD_AT.z);
             poseStack.mulPose(TURN);
-            KokushiboSwordRenderer.emit(poseStack.last(), buffer, light, LivingEntityRenderer.getOverlayCoords(player, 0), !inHand, true);
+            KokushiboSwordRenderer.emit(look, poseStack.last(), buffer, light, LivingEntityRenderer.getOverlayCoords(player, 0), !inHand, true);
         } catch (RuntimeException e) {
             KokushiboSwordRenderer.fail(e);
         } finally {

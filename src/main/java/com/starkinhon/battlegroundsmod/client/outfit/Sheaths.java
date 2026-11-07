@@ -1,24 +1,26 @@
 package com.starkinhon.battlegroundsmod.client.outfit;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.HashMap;
+import java.util.Map;
 
-// Players the server says carry Kokushibo's sword somewhere in their inventory (their sheath is drawn on the hip).
+// Which Kokushibo sword the server says each player carries in the inventory (1 realistic, 2 blocky), for the
+// sheath on the hip.
 public final class Sheaths {
-    private static final Set<Integer> CARRYING = new HashSet<>();
+    private static final Map<Integer, Integer> CARRYING = new HashMap<>();
 
     private Sheaths() {
     }
 
-    public static void set(int entityId, boolean carrying) {
-        if (carrying) {
-            CARRYING.add(entityId);
+    public static void set(int entityId, int style) {
+        if (style > 0) {
+            CARRYING.put(entityId, style);
         } else {
             CARRYING.remove(entityId);
         }
     }
 
-    static boolean carrying(int entityId) {
-        return CARRYING.contains(entityId);
+    // 0 = none.
+    static int style(int entityId) {
+        return CARRYING.getOrDefault(entityId, 0);
     }
 }

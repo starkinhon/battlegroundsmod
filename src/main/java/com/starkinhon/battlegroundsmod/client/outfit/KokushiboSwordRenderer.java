@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import com.starkinhon.battlegroundsmod.BattlegroundsMod;
+import com.starkinhon.battlegroundsmod.item.KokushiboSwordItem;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
@@ -16,14 +17,19 @@ import net.minecraft.world.item.ItemStack;
 // Draws Kokushibo's sword item with the 3D model Stark sent (KokushiboSword.blend, baked to models/mesh/kokushibo_*.bin
 // with its own texture). Laid out like AizenSwordRenderer: in hand the fist holds the handle just under the guard, tip
 // forward and up in third person; in the inventory, on the ground and in frames it is shrunk to fit, centred. The
-// sheath is baked in the same space, so drawing both with no move puts the blade exactly inside it.
+// sheath is baked in the same space, so drawing both with no move puts the blade exactly inside it. The blocky
+// item uses a voxel remake (half a pixel per block, Minecraft style) baked to the same space.
 public class KokushiboSwordRenderer extends BlockEntityWithoutLevelRenderer {
-    public static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "textures/models/kokushibo_sword.png");
+    // Index 0 = realistic (the .blend as sent), 1 = blocky (voxel remake, Minecraft style).
+    private static final ResourceLocation[] TEXTURE = {
+            ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "textures/models/kokushibo_sword.png"),
+            ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "textures/models/kokushibo_sword_blocky.png")};
+    private static final String[] SUFFIX = {"", "_blocky"};
     // Sword space: 1 = one pixel of the player model, 0 = the guard, +y the tip.
-    public static final float GRIP = -2.4f, BLADE_BASE = 0.8f, TIP = 22.9f, BUTT = -7.1f;
+    public static final float GRIP = -3.6f, BLADE_BASE = 1.2f, TIP = 34.4f, BUTT = -10.6f;
 
-    private static MeshModel katana;
-    private static MeshModel saya;
+    private static final MeshModel[] KATANA = new MeshModel[2];
+    private static final MeshModel[] SAYA = new MeshModel[2];
     private static boolean broken;
 
     public KokushiboSwordRenderer() {
@@ -31,14 +37,14 @@ public class KokushiboSwordRenderer extends BlockEntityWithoutLevelRenderer {
     }
 
     // False once loading or drawing failed: the sword and its sheath stay invisible instead of crashing every frame.
-    static boolean ready() {
+    static boolean ready(int look) {
         if (broken) {
             return false;
         }
-        if (katana == null) {
+        if (KATANA[look] == null) {
             try {
-                katana = MeshModel.load("kokushibo_katana");
-                saya = MeshModel.load("kokushibo_saya");
+                KATANA[look] = MeshModel.load("kokushibo_katana" + SUFFIX[look]);
+                SAYA[look] = MeshModel.load("kokushibo_saya" + SUFFIX[look]);
             } catch (RuntimeException e) {
                 fail(e);
                 return false;
@@ -53,19 +59,20 @@ public class KokushiboSwordRenderer extends BlockEntityWithoutLevelRenderer {
     }
 
     // Blade, guard and handle (and the sheath too when sheathed), in sword space through pose.
-    static void emit(PoseStack.Pose pose, MultiBufferSource buffer, int light, int overlay, boolean sword, boolean sheath) {
-        VertexConsumer out = buffer.getBuffer(RenderType.entityCutoutNoCull(TEXTURE));
+    static void emit(int look, PoseStack.Pose pose, MultiBufferSource buffer, int light, int overlay, boolean sword, boolean sheath) {
+        VertexConsumer out = buffer.getBuffer(RenderType.entityCutoutNoCull(TEXTURE[look]));
         if (sword) {
-            katana.emit(out, pose, light, overlay);
+            KATANA[look].emit(out, pose, light, overlay);
         }
         if (sheath) {
-            saya.emit(out, pose, light, overlay);
+            SAYA[look].emit(out, pose, light, overlay);
         }
     }
 
     @Override
     public void renderByItem(ItemStack stack, ItemDisplayContext context, PoseStack poseStack, MultiBufferSource buffer, int light, int overlay) {
-        if (!ready()) {
+        int look = stack.getItem() instanceof KokushiboSwordItem sword && sword.blocky ? 1 : 0;
+        if (!ready(look)) {
             return;
         }
         poseStack.pushPose();
@@ -76,9 +83,9 @@ public class KokushiboSwordRenderer extends BlockEntityWithoutLevelRenderer {
                 toSword(poseStack, thirdPerson);
             } else {
                 poseStack.translate(0.5f, 0.5f, 0.5f);
-                toSwordSpace(poseStack, 0.68f, (TIP + BUTT) / 2);
+                toSwordSpace(poseStack, 0.45f, (TIP + BUTT) / 2);
             }
-            emit(poseStack.last(), buffer, light, overlay, true, false);
+            emit(look, poseStack.last(), buffer, light, overlay, true, false);
         } catch (RuntimeException e) {
             fail(e);
         } finally {
