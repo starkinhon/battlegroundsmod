@@ -1189,7 +1189,7 @@ public final class ModPayloads {
         registrar.playToClient(AzulControl.TYPE, AzulControl.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.azulControl(payload.on())));
         registrar.playToClient(Azul.TYPE, Azul.STREAM_CODEC, (payload, context) -> context.enqueueWork(
-                () -> ClientHooks.azul(payload.id(), payload.mode(), payload.pos(), payload.radius(), payload.charge(), payload.carrying())));
+                () -> ClientHooks.azul(payload.id(), payload.mode(), payload.pos(), payload.radius(), payload.charge(), payload.style())));
         registrar.playToClient(Vermelho.TYPE, Vermelho.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.vermelho(payload.id(), payload.owner(), payload.mode(), payload.charge(), payload.flip())));
         registrar.playToClient(Roxo.TYPE, Roxo.STREAM_CODEC, (payload, context) -> context.enqueueWork(
