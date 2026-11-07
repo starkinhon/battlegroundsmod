@@ -46,6 +46,7 @@ public final class SubFx {
     private static final float[] DARK = {0.01f, 0.005f, 0.008f};
     private static final float[] SMOKE_GREY = {0.12f, 0.1f, 0.1f};
     private static final float[] MIST = {0.9f, 0.96f, 1f};
+    private static final float[] BYK_BLUE = FxDraw.rgb(0xDFEAFF);
     private static final float[] PALE = {0.84f, 0.95f, 1f};
     private static final float[] SHRINE_DARK = {0.08f, 0.02f, 0.025f};
     private static final float[] SHRINE_BONE = {0.75f, 0.68f, 0.6f};
@@ -247,7 +248,7 @@ public final class SubFx {
                 case SubNet.PETALS, SubNet.GOKEI, SubNet.GETSUGA, SubNet.CHARGE, SubNet.NET, SubNet.FUGA -> true;
                 default -> false;
             };
-            double fadeOut = f.kind == SubNet.GOKEI ? 24 : f.kind == SubNet.BANKAI_BYAKUYA ? 20 : 8;
+            double fadeOut = f.kind == SubNet.GOKEI ? 24 : f.kind == SubNet.BANKAI_BYAKUYA ? 40 : 8;
             if (f.endAt < 0 && streamed && now - f.updated > 4) {
                 f.endAt = f.updated;
             }
@@ -286,7 +287,7 @@ public final class SubFx {
         }
         for (Fx f : TRACKED.values()) {
             float age = (float) (now - f.born) + partial;
-            float out = f.endAt < 0 ? 1 : 1 - smooth((float) (now - f.endAt + partial) / (f.kind == SubNet.GOKEI ? 24 : f.kind == SubNet.BANKAI_BYAKUYA ? 20 : 8));
+            float out = f.endAt < 0 ? 1 : 1 - smooth((float) (now - f.endAt + partial) / (f.kind == SubNet.GOKEI ? 24 : f.kind == SubNet.BANKAI_BYAKUYA ? 40 : 8));
             if (out <= 0) {
                 continue;
             }
@@ -436,18 +437,41 @@ public final class SubFx {
         face = face.lengthSqr() < 1.0E-4 ? new Vec3(0, 0, 1) : face.normalize();
         Vec3 side = face.cross(new Vec3(0, 1, 0)).normalize();
         float t = age;
-        // The blades: 2 rows of 7 along his sides, rising one after another (ticks 6-40), coming apart (40-70).
-        if (age < 74) {
+        // The night falls round him (the Visualizador darkens the sky): a deep blue vignette for whoever is close.
+        if (f.hitAt < -50 && f.endAt < 0) {
+            f.hitAt = 0;
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.player != null && mc.player.position().distanceTo(feet) < 40) {
+                ScreenFx.vignette(0x050A26, 0.6f, (int) Math.max(40, f.b - age));
+            }
+        }
+        // The sword let go point down sinks into the ground like water: rings spreading on the ground.
+        if (age < 44) {
+            Vec3 drop = f.pos.add(face.scale(0.5)).add(side.scale(0.35));
+            Vector3f dp = rel(drop.add(0, 0.03, 0), camera);
+            for (int j = 0; j < 4; j++) {
+                float r = age - 3 - j * 6;
+                if (r > 0 && r < 40) {
+                    FxDraw.disk(dp, new Vector3f(0, 1, 0), 0.6f + r * 0.32f, FxDraw.RING, 0.08f, BYK_BLUE, 0.65f * (1 - r / 40), true);
+                }
+            }
+            if (age > 3 && age < 30) {
+                FxDraw.billboard(new Vector3f(dp).add(0, 0.05f, 0), 1.5f, 0, FxDraw.SOFT, 0.5f, BYK_BLUE, 0.5f * (1 - age / 30), true);
+            }
+        }
+        // The blades: 2 rows of 12 giant blades along his sides out to far away, rising one after another from the
+        // nearest, then coming apart from the bottom up along a glowing pink line.
+        if (age < 92) {
             for (int row = -1; row <= 1; row += 2) {
-                for (int k = 0; k < 7; k++) {
-                    float start = 6 + k * 3.5f;
+                for (int k = 0; k < 12; k++) {
+                    float start = 6 + k * 2.6f;
                     float rise = smooth((age - start) / 10);
                     if (rise <= 0) {
                         continue;
                     }
-                    float undo = Mth.clamp((age - 40 - k * 2) / 18, 0, 1);
-                    float height = 9 + 2 * hash(k, row + 5);
-                    Vec3 base = f.pos.add(face.scale(-3 + k * 3.2)).add(side.scale(row * (5 + k * 0.8)));
+                    float undo = Mth.clamp((age - 44 - k * 2) / 18, 0, 1);
+                    float height = (11 + 2 * hash(k, row + 5)) * (1 + k * 0.05f);
+                    Vec3 base = f.pos.add(face.scale(-3 + k * 4.5)).add(side.scale(row * (5 + k * 0.8)));
                     Vector3f b = rel(base, camera);
                     float shown = height * rise;
                     float cut = height * undo;
@@ -476,6 +500,12 @@ public final class SubFx {
         }
         Vec3 center = feet.add(0, 1.2, 0);
         Vector3f c = rel(center, camera);
+        Vector3f handV = rel(handOf(f.id, partial, center), camera);
+        if (f.endAt >= 0) {
+            float g = 1 - out;
+            FxDraw.billboard(handV, 0.6f + 1.2f * g, 0, FxDraw.SOFT, 0.5f, PINK, 0.8f * (1 - g * 0.5f), true);
+            FxDraw.billboard(handV, 0.9f, t * 0.1f, FxDraw.FLARE, 6 / 32f, WHITE, smooth(g * 2) * (1 - smooth((g - 0.7f) / 0.3f)), true);
+        }
         int count = (int) (420 * form);
         boolean self = FxAnchor.firstPersonSelf(f.id);
         for (int i = 0; i < count; i++) {
@@ -486,8 +516,12 @@ public final class SubFx {
             float ang = h2 * Mth.TWO_PI + t * (0.05f + 0.08f / (0.4f + h1)) * (h3 < 0.15f ? -1 : 1);
             float y = (h3 - 0.35f) * 4.5f + 0.4f * Mth.sin(t * 0.05f + i);
             float gather = f.endAt >= 0 ? 1 - out : 0;
-            r *= 1 - 0.9f * gather;
-            Vector3f p = new Vector3f(c).add(Mth.cos(ang) * r, y * (1 - gather), Mth.sin(ang) * r);
+            Vector3f p = new Vector3f(c).add(Mth.cos(ang) * r, y, Mth.sin(ang) * r);
+            if (gather > 0) {
+                // The end: the petals run to his hand, nearest first, and the sword comes back.
+                float g = smooth(gather * 1.6f - h1 * 0.6f);
+                p.lerp(handV, g).add(0, Mth.sin(g * Mth.PI) * 0.8f, 0);
+            }
             if (self && p.lengthSquared() < 1.5f) {
                 continue;
             }
@@ -510,16 +544,50 @@ public final class SubFx {
         Vector3f b = new Vector3f(center).add(half);
         int style = (int) f.c;
         if (style == SubNet.STYLE_SUKUNA) {
-            float w = f.b * open;
+            // The Visualizador's slash(): opens in 2 ticks, holds, closes; a thin line running past the tips at first,
+            // white flecks along it and red embers jumping off it.
+            float open2 = (1 - (1 - Math.min(1, age / 2)) * (1 - Math.min(1, age / 2))) * (1 - smooth((age - lifeT * 0.4f) / (lifeT * 0.6f)));
+            float w = f.b * open2;
+            int seed = (int) (f.pos.x * 13 + f.pos.z * 7 + f.pos.y * 3);
             if (glow) {
-                FxDraw.ribbon(a, b, Math.max(0.05f, w * 1.6f), SLIT, 0f, WHITE, Math.min(1, open * 1.4f), true);
-                if (age < 3) {
-                    Vector3f a2 = new Vector3f(center).sub(new Vector3f(half).mul(1.7f));
-                    Vector3f b2 = new Vector3f(center).add(new Vector3f(half).mul(1.7f));
-                    FxDraw.ribbon(a2, b2, 0.06f, FxDraw.STREAK, 1f, WHITE, 1 - age / 3, true);
+                if (w > 0.01f) {
+                    FxDraw.ribbon(a, b, w * 2.4f, SLIT, 0.2f, WHITE, 1, true);
+                }
+                if (age < 4) {
+                    float kk = 1 - age / 4;
+                    float ext = f.a * (1 + age * 0.4f);
+                    Vector3f dv = new Vector3f(half).normalize();
+                    FxDraw.ribbon(new Vector3f(center).sub(new Vector3f(dv).mul(ext)), new Vector3f(center).add(new Vector3f(dv).mul(ext)), 0.05f * kk + 0.01f,
+                            FxDraw.STREAK, 0.9f, WHITE, kk, true);
+                }
+                Vector3f dv = new Vector3f(half).normalize();
+                Vector3f side = new Vector3f(dv).cross(new Vector3f(center).negate().normalize());
+                if (side.lengthSquared() > 1.0E-6f) {
+                    side.normalize();
+                    for (int i = 0; i < 5; i++) {
+                        float u = (hash(seed + i, 201) * 2 - 1) * 0.6f;
+                        Vector3f p = new Vector3f(center).add(new Vector3f(dv).mul(u * f.a)).add(new Vector3f(side).mul((hash(seed + i, 202) - 0.5f) * f.b * 3
+                                + age * 0.04f * Math.signum(hash(seed + i, 203) - 0.5f)));
+                        float fl = 0.12f + hash(seed + i, 204) * 0.2f;
+                        FxDraw.ribbon(new Vector3f(p).sub(new Vector3f(dv).mul(fl)), new Vector3f(p).add(new Vector3f(dv).mul(fl)), 0.06f, FxDraw.SOFT, 0.9f, WHITE,
+                                (1 - age / lifeT) * open2, true);
+                    }
+                }
+                if (age < 6 && hash(seed, 209) > 0.5f) {
+                    FxDraw.billboard(new Vector3f(b).lerp(center, 0.15f), 0.9f * (1 - age / 6), 0.785f, FxDraw.FLARE, 4 / 32f, WHITE, 1 - age / 6, true);
+                }
+                // Embers: short red streaks jumping off the cut.
+                if (age < 16) {
+                    for (int i = 0; i < 8; i++) {
+                        Vector3f d2 = new Vector3f(hash(seed + i, 205) - 0.5f, hash(seed + i, 206) - 0.35f, hash(seed + i, 207) - 0.5f).normalize();
+                        float v = 0.1f * (0.4f + hash(seed + i, 208));
+                        Vector3f p = new Vector3f(center).add(new Vector3f(d2).mul(v * age)).add(0, -0.004f * age * age, 0);
+                        Vector3f q = new Vector3f(p).sub(new Vector3f(d2).mul(v * 2.2f));
+                        FxDraw.ribbon(q, p, 0.05f, FxDraw.STREAK, 0.7f, i % 3 != 0 ? RED : WHITE, 1 - age / 16, true);
+                    }
                 }
             } else if (w > 0.01f) {
-                FxDraw.ribbon(a, b, w * 1.6f, SLIT, 1f, WHITE, Math.min(1, open * 1.5f), false);
+                FxDraw.ribbon(a, b, w * 2.4f, SLIT, 0.8f, DARK, 1, false);
             }
             return;
         }
