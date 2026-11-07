@@ -118,6 +118,9 @@ public final class Vermelho {
                 Fx.effects(level, SKILL, awakened, "carregar", fingertip(caster), caster.getLookAngle());
             }
             charge[0] = Math.min(1, (age + 1 - chargeStart[0]) / (double) chargeTicks);
+            if (held) {
+                com.starkinhon.battlegroundsmod.combat.Charge.report(caster, charge[0]);
+            }
             if (!tails[0] && charge[0] >= segurado.cargaRabos()) {
                 tails[0] = true;
                 SkillSounds.play(level, spec.sons(), "rabos", 0, 0, where, screen);

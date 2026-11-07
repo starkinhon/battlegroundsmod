@@ -81,6 +81,11 @@ public class PowerData {
     // Client: the synced max stamina and exhaustion ticks left, for the bar.
     public float staminaMax = 100;
     public int exhaustedTicks = 0;
+    // Players: the held attack's charge (combat/Charge), 0..1, the game time it was last reported and the value the
+    // client was last told (-1 = not charging). On the client, chargeSent is the synced value.
+    public float chargeProgress = 0;
+    public long chargeReportedAt = -10;
+    public float chargeSent = -1;
     // Players: the aura state the watchers were last told (the power while in combat, "" when off; null = never sent).
     public String auraSent = null;
     // Players: the outfit the watchers were last told (the power, "" when off; null = never sent).

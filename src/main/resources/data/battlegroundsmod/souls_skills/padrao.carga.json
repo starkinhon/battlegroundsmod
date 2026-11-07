@@ -1,0 +1,16 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "padrao.carga",
+  "nome": "Barra de carga",
+  "observacoes": "Mostra o quanto o ataque segurado já carregou (Ataque Forte, Katon Gigante, Azul, Vermelho, Roxo, Caixa Preta, Reiatsu, Esferas do Bills...). Fica do lado da barra de estamina. cores: por alma, [escuro, claro]; a barra vai do escuro embaixo até o claro na ponta conforme enche. Alma que não está na lista usa a cor dela do menu U.",
+  "espacoPrimeiraPessoa": 4,
+  "larguraPrimeiraPessoa": 4,
+  "espacoTerceiraPessoa": 0.13,
+  "espessura": 0.05,
+  "cores": {
+    "uchiha_ghost": ["#4a0606", "#ff6a4d"],
+    "manipulator": ["#33124f", "#d4a8f5"],
+    "strongest": ["#08305e", "#8fe3ff"],
+    "destruction_god": ["#3d006b", "#e15cff"]
+  }
+}

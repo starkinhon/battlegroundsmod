@@ -96,6 +96,7 @@ public final class PowerEvents {
                 PowerLogic.tick(player);
                 Movement.tick(player);
                 Defense.tick(player);
+                com.starkinhon.battlegroundsmod.combat.Charge.tick(player);
             });
         }
     }

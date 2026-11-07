@@ -101,6 +101,7 @@ public final class DestructionSphere {
             send(level, id, 0, pos[0], (float) (small * (0.3 + 0.7 * smooth(k))), false);
             now.busyTicks = Math.max(now.busyTicks, 2);
             boolean letGo = caster instanceof Player ? !com.starkinhon.battlegroundsmod.combat.Stamina.holding(caster) : age >= bossCharge;
+            com.starkinhon.battlegroundsmod.combat.Charge.report(caster, (age + 1) / (double) full);
             if (age + 1 < full && !(letGo && age + 1 >= Math.max(1, carga.minTicks()))) {
                 return false;
             }
