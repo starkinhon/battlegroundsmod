@@ -32,7 +32,9 @@ public final class ModCreativeTabs {
             "ichigo_spawn_egg", "soul_ichigo",
             "urahara_spawn_egg", "soul_urahara",
             "sukuna_spawn_egg", "soul_sukuna_cuts",
-            "orihime_spawn_egg", "soul_orihime");
+            "orihime_spawn_egg", "soul_orihime",
+            // Luffy and Saitama: hidden until they are ready.
+            "soul_rubber_boy", "soul_one_punch");
 
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> ESSENTIALS = BattlegroundsMod.CREATIVE_MODE_TABS.register("battlegrounds_tab", () -> CreativeModeTab.builder()
             .title(Component.translatable("itemGroup.battlegroundsmod"))
