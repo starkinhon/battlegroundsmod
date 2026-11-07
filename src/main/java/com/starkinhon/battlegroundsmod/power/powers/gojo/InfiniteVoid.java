@@ -526,7 +526,7 @@ public final class InfiniteVoid {
 
     // Gives Brain Damage for ticks, and tells those who see them, so the letters and numbers rush into their head as long
     // as it lasts (DomainScene.brainGlyphs).
-    private static void brainDamage(LivingEntity victim, int ticks) {
+    public static void brainDamage(LivingEntity victim, int ticks) {
         victim.addEffect(new MobEffectInstance(ModEffects.BRAIN_DAMAGE, ticks, 0, false, false, true));
         PacketDistributor.sendToPlayersTrackingEntityAndSelf(victim, new ModPayloads.GojoDomain(victim.getId(), victim.position(), false, 4, ticks));
     }
