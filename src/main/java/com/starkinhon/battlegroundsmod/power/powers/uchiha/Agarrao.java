@@ -238,8 +238,6 @@ public final class Agarrao {
             double k = (age - held) / (double) Math.max(1, impact - held);
             return base.add(0, height * (1 - k * k), 0);
         });
-        // No control of its body (client/LimpBody): hands on his arm, legs kicking the air, weaker and weaker.
-        ModPayloads.Limp.send(target, ModPayloads.Limp.NECK, held, 0);
         Stun.apply(target, impact + Math.max(0, esmagar.presoTicks()));
         // Whatever the target was charging is cut off, and no skill (not even a counter) until they get out of the hole.
         PowerLogic.seal(target, impact + Math.max(0, esmagar.presoTicks()));
@@ -278,9 +276,6 @@ public final class Agarrao {
             // Pinned at the bottom of the hole while stuck there.
             Vec3 bottom = bottom(level, ground, esmagar.profundidadeCratera() + 2, caster);
             Freeze.hold(target, Math.max(1, esmagar.presoTicks()), age -> bottom);
-            // Slammed onto its back, lying loose in the hole while stuck there.
-            ModPayloads.Limp.send(target, ModPayloads.Limp.LIE, Math.max(1, esmagar.presoTicks()), -1);
-            ModPayloads.Limp.send(target, ModPayloads.Limp.JOLT, 0, 1);
             SkillSounds.play(level, spec.sons(), "esmagar", 0, 0, onde -> "alvo".equals(onde) ? Combat.center(target) : "usuario".equals(onde)
                     ? caster.position() : ground, screens(caster, target));
             Fx.effects(level, SKILL, awakened, "esmagar", ground, forward);

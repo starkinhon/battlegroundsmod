@@ -117,13 +117,6 @@ public final class DestructionBop {
             double k = (age - slap) / (double) Math.max(1, ground - slap);
             return high.lerp(groundAt, k * (0.4 + 0.6 * k));
         });
-        // No control of its body (client/LimpBody): paralyzed with fear, flung up limp, floating loose, slapped face first.
-        ModPayloads.Limp.send(target, ModPayloads.Limp.FROZEN, flick, 0);
-        Tasks.later(top, () -> {
-            if (target.isAlive()) {
-                ModPayloads.Limp.send(target, ModPayloads.Limp.HANG, slap - top, 0);
-            }
-        });
         Stun.apply(target, ground + stuck);
         // Whatever the target was doing is cut off (this also stops its animation, so its own goes after).
         PowerLogic.seal(target, ground + stuck);
@@ -147,7 +140,6 @@ public final class DestructionBop {
                 return;
             }
             Combat.hurt(caster, target, spec.peteleco().dano());
-            ModPayloads.Limp.send(target, ModPayloads.Limp.THROW, 0, 1);
             Vec3 finger = Combat.center(target).subtract(forward.scale(target.getBbWidth() * 0.5));
             Fx.effects(level, SKILL, awakened, "peteleco", finger, new Vec3(0, 1, 0));
             Fx.effects(level, SKILL, awakened, "subir", target, top - flick);
@@ -204,7 +196,6 @@ public final class DestructionBop {
                 return;
             }
             Combat.hurt(caster, target, spec.tapa().dano());
-            ModPayloads.Limp.send(target, ModPayloads.Limp.SLAP, 0, 1);
             Vec3 hand = Combat.center(target).add(0, target.getBbHeight() * 0.5, 0);
             Fx.effects(level, SKILL, awakened, "tapa", hand, groundAt.subtract(high).normalize());
             SkillSounds.play(level, spec.sons(), "tapa", 0, 0, onde -> hand, screens(caster, target));
@@ -223,8 +214,6 @@ public final class DestructionBop {
             Vec3 bottom = floor(level, groundAt.add(0, 0.5, 0), target, chao.profundidadeCratera() + 2);
             target.resetFallDistance();
             Freeze.hold(target, stuck, age -> bottom);
-            ModPayloads.Limp.send(target, ModPayloads.Limp.LIE, stuck, 1);
-            ModPayloads.Limp.send(target, ModPayloads.Limp.JOLT, 0, 1);
             Fx.effects(level, SKILL, awakened, "chao", groundAt, forward);
             SkillSounds.play(level, spec.sons(), "chao", 0, 0, onde -> groundAt, screens(caster, target));
             dust(level, groundAt, spec);

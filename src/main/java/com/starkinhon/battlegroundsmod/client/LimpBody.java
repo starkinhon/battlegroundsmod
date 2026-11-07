@@ -29,17 +29,12 @@ import net.neoforged.neoforge.client.event.RenderLivingEvent;
 // legs, light arms, a head that bobs more) and a loose sway on top, stronger the faster it goes. The server says the
 // phase (ModPayloads.Limp): the pull, slow motion (everything at 0.2x), stuck on the fist (folded around the punch,
 // jolted by each wave), the throw (tumbling loose in the air), lying on its back while stunned, and getting back up.
-// Other contact moves use the same body with reactions of their own (Stark: "not exactly the same animation"):
-// Madara's neck grab = held by the neck (both hands on his arm, legs kicking the air, weaker and weaker), slammed onto
-// its back in the hole; Bills' Destruction Bop = paralyzed with fear (stiff, trembling), flung up limp by the flick,
-// floating loose up there, and the slap on the shoulder sends it face first into the ground.
 // The very same code runs in the Visualizador (forja/gojo-shift-ragdoll/limp.js): same constants, same order.
 // Humanoid models (players, bosses, zombies...) get the limbs; every mob gets the whole-body tilt and tumble.
 public final class LimpBody {
-    // The phases (ModPayloads.Limp). LIE also starts by itself when a thrown body lands.
+    // The phases the server sends (ModPayloads.Limp) plus LIE, which only the client knows (it landed).
     public static final int PULL = ModPayloads.Limp.PULL, SLOW = ModPayloads.Limp.SLOW, FIT = ModPayloads.Limp.FIT, THROW = ModPayloads.Limp.THROW,
-            LIE = ModPayloads.Limp.LIE, OFF = ModPayloads.Limp.OFF, JOLT = ModPayloads.Limp.JOLT, NECK = ModPayloads.Limp.NECK,
-            FROZEN = ModPayloads.Limp.FROZEN, HANG = ModPayloads.Limp.HANG, SLAP = ModPayloads.Limp.SLAP;
+            LIE = 4, OFF = ModPayloads.Limp.OFF, JOLT = ModPayloads.Limp.JOLT;
     private static final float G = 0.08f, KD = 0.9f, KA = 1.6f, SLOW_RATE = 0.2f;
     private static final int SUB = 4;
     // Angles (degrees): head, chest, right arm (forward, out), left arm, right leg, left leg, the whole body (tilt
@@ -51,14 +46,10 @@ public final class LimpBody {
     private static final float[] WOB = {0.9f, 0.35f, 1.0f, 0.7f, 1.0f, 0.7f, 0.55f, 0.3f, 0.55f, 0.3f, 0, 0, 0.8f};
     // Folded around the fist.
     private static final float[] FOLD = {38, 52, 72, 22, 58, 30, 42, 8, 26, 10, 10, 0, 0};
-    // Held by the neck: head back, both hands on the arm holding it (the legs kick on top of this).
-    private static final float[] NECK_POSE = {-32, -8, 150, -28, 146, -24, 12, 8, 6, 8, -4, 0, 0};
-    // Paralyzed: stiff, arms a little open, head a little back.
-    private static final float[] FROZEN_POSE = {-10, -4, 14, 16, 12, 18, 0, 4, 0, 4, 0, 0, 0};
     private static final float DEG = Mth.DEG_TO_RAD;
 
     private static final class State {
-        int phase = OFF, age, seed, air, lie = 24, side;
+        int phase = OFF, age, seed, air, lie = 24;
         float w, prevW, t, pw, prevPw;
         final float[] ang = new float[N], vel = new float[N], prev = new float[N];
         float[] tgt;
@@ -111,31 +102,7 @@ public final class LimpBody {
             s.vel[8] += 14 * k;
             s.lie = ticks > 0 ? ticks : 24;
         }
-        if (phase == SLAP) {
-            // A slap from behind: it goes face first, forward and down, the head whipping.
-            float k = 0.6f + 0.4f * strength;
-            s.vel[10] += 9 * k;
-            s.vel[0] += 26 * k;
-            s.vel[1] += 14 * k;
-            s.vel[2] -= 20 * k;
-            s.vel[4] -= 20 * k;
-            s.vel[6] -= 12 * k;
-            s.vel[8] -= 12 * k;
-        }
         if (phase == LIE) {
-            // The server can say lie down (it hit the bottom of the hole): ticks = for how long, strength = face down (1)
-            // or on its back (-1).
-            if (ticks > 0) {
-                s.lie = ticks;
-            }
-            s.side = strength > 0 ? 1 : strength < 0 ? -1 : 0;
-            if (s.side != 0) {
-                s.vel[0] += 18 * s.side;
-                s.vel[1] += 10;
-                for (int i = 2; i <= 9; i++) {
-                    s.vel[i] += (hash(s.seed, 77, i) - 0.5f) * 30;
-                }
-            }
             // After tumbling in the air: the same angle brought near zero, so it lies down the short way.
             float turns = Math.round(s.ang[10] / 360) * 360f;
             s.ang[10] -= turns;
@@ -209,7 +176,7 @@ public final class LimpBody {
         if (p == OFF && s.w <= 0) {
             return false;
         }
-        float rate = p == SLOW ? SLOW_RATE : p == HANG ? 0.45f : 1;
+        float rate = p == SLOW ? SLOW_RATE : 1;
         s.t += rate;
         s.age++;
         double speed = Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
@@ -229,26 +196,6 @@ public final class LimpBody {
             tgt = s.tgt.clone();
         } else if (p == FIT) {
             tgt = FOLD.clone();
-        } else if (p == NECK) {
-            tgt = NECK_POSE.clone();
-            // Kicking the air, weaker and weaker (no air).
-            float fight = Math.max(0.3f, 1 - s.age / 45f);
-            float kick = 38 * fight * (float) Math.sin(s.t * 0.9);
-            tgt[6] += kick;
-            tgt[8] -= kick;
-            tgt[7] += 6 * fight * (float) Math.sin(s.t * 1.7);
-            tgt[9] += 6 * fight * (float) Math.sin(s.t * 1.3 + 1);
-            // And pulling at his arm, thrashing.
-            tgt[2] += 10 * fight * (float) Math.sin(s.t * 1.1);
-            tgt[4] += 10 * fight * (float) Math.sin(s.t * 1.1 + 2);
-            tgt[1] += 6 * fight * (float) Math.sin(s.t * 0.9 + 1.5);
-            tgt[12] = 14 * fight * (float) Math.sin(s.t * 0.7);
-        } else if (p == FROZEN) {
-            tgt = FROZEN_POSE.clone();
-            // Trembling, unable to move.
-            for (int i = 0; i < 10; i++) {
-                tgt[i] += 2.5f * (float) Math.sin(s.t * 2.6 + i * 1.7);
-            }
         } else {
             tgt = new float[N];
             tgt[0] = Mth.clamp(0.6f * swing, -60, 55);
@@ -266,7 +213,7 @@ public final class LimpBody {
             tgt[11] = Mth.clamp(-30 * (float) dw[0], -25, 25);
             tgt[12] = 0;
             if (p == LIE) {
-                tgt[10] = s.side != 0 ? 90 * s.side : s.ang[10] >= 0 ? 90 : -90;
+                tgt[10] = s.ang[10] >= 0 ? 90 : -90;
                 tgt[11] = 0;
                 // Lying down: the arms open and drop to the ground, the head falls to the side.
                 tgt[3] = 55;
@@ -280,8 +227,7 @@ public final class LimpBody {
             }
         }
         // The loose sway: stronger the faster it goes (in slow motion it floats slowly).
-        float amp = p == FIT || p == NECK ? 5 : p == FROZEN ? 0 : p == LIE ? 1.5f : p == SLOW || p == HANG ? 16
-                : 10 + 30 * Mth.clamp((float) speed / 1.5f, 0, 1);
+        float amp = p == FIT ? 5 : p == LIE ? 1.5f : p == SLOW ? 16 : 10 + 30 * Mth.clamp((float) speed / 1.5f, 0, 1);
         for (int i = 0; i < N; i++) {
             if (WOB[i] == 0) {
                 continue;
@@ -291,7 +237,7 @@ public final class LimpBody {
             tgt[i] += amp * WOB[i] * (0.6f * (float) Math.sin(s.t * w1 + p1) + 0.4f * (float) Math.sin(s.t * w2 + p2));
         }
         // In the air after the throw it tumbles loose; when it hits the ground, it lies down.
-        boolean free = p == THROW || p == SLAP;
+        boolean free = p == THROW;
         if (free) {
             s.air++;
             if (onGround && s.air > 3) {
@@ -301,7 +247,7 @@ public final class LimpBody {
             }
         } else if (p == LIE && s.age > s.lie) {
             event(s, OFF, 0, 0);
-        } else if (p != OFF && p != LIE && s.age > 200) {
+        } else if ((p == PULL || p == SLOW || p == FIT) && s.age > 120) {
             event(s, OFF, 0, 0);
         }
         // Lying on the ground (0 to 1): the body comes down until it touches.
@@ -317,15 +263,6 @@ public final class LimpBody {
                 if (p == LIE && i == 10) {
                     k = 0.3f;
                     c = 0.5f;
-                }
-                // Stiff (paralyzed) or held: firmer springs, except the kicking legs.
-                if ((p == FROZEN || (p == NECK && (i < 6 || i > 9))) && i < 10) {
-                    k *= 3;
-                    c *= 1.6f;
-                }
-                if (p == HANG && i == 10) {
-                    k = 0.03f;
-                    c = 0.1f;
                 }
                 s.vel[i] += (k * (tgt[i] - s.ang[i]) - c * s.vel[i]) * h;
                 s.ang[i] += s.vel[i] * h;
