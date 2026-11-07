@@ -125,6 +125,7 @@ public final class ClientHooks {
         com.starkinhon.battlegroundsmod.client.fx.VermelhoRenderer.clear();
         com.starkinhon.battlegroundsmod.client.fx.RoxoRenderer.clear();
         com.starkinhon.battlegroundsmod.client.fx.AizenFx.clear();
+        com.starkinhon.battlegroundsmod.client.fx.SubFx.clear();
     }
 
     public static void hideEntity(int entityId, int ticks) {
@@ -215,6 +216,10 @@ public final class ClientHooks {
 
     public static void roxoIrrestrito(Vec3 center, Vec3 size, Vec3 timing, int blast) {
         com.starkinhon.battlegroundsmod.client.fx.RoxoRenderer.irrestrito(center, size, timing, blast);
+    }
+
+    public static void subFx(int kind, int id, Vec3 pos, Vec3 dir, float a, float b, float c) {
+        com.starkinhon.battlegroundsmod.client.fx.SubFx.receive(kind, id, pos, dir, a, b, c);
     }
 
     public static void aizenFx(int kind, int entityId, Vec3 pos, Vec3 dir, float a, float b) {

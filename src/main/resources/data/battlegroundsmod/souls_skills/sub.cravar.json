@@ -1,0 +1,37 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "sub.cravar",
+  "nome": "Cravar no chao",
+  "tempo": {
+    "atrasoTicks": 6,
+    "duracaoTicks": 10
+  },
+  "animacao": {
+    "transicaoTicks": 6,
+    "preparo": {
+      "cabeca": -5,
+      "tronco": -6,
+      "bracoDir": {
+        "frente": 170,
+        "abrir": -15
+      },
+      "bracoEsq": {
+        "frente": 170,
+        "abrir": 15
+      }
+    },
+    "sopro": {
+      "cabeca": 20,
+      "tronco": 25,
+      "bracoDir": {
+        "frente": 60,
+        "abrir": -10
+      },
+      "bracoEsq": {
+        "frente": 60,
+        "abrir": 10
+      }
+    },
+    "retornoTicks": 8
+  }
+}

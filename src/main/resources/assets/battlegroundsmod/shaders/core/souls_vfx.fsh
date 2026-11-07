@@ -38,6 +38,15 @@
 //  22 roxo vortex  grey wavy rings of twisted space round the Purple in flight, param = strength
 //  23 roxo rays    light leaking out of the launched Purple in wide rays (the quad spins in Java)
 //  24 roxo bolt    a living lightning bolt on a strip (u along it), param = the bolt's own seed
+//  25 petal   one of Senbonzakura's blade petals (Byakuya): pointed both ends, pink with a light edge and a silver
+//             glint running along it (fract(param) slides the glint)
+//  26 crescent  the Getsuga Tensho (Ichigo): a sickle moon bulging toward +u, thick middle, sharp tips, a ragged edge
+//             with wisps; param < 0.5 the light (additive, white core), else the black body with a red rim (alpha layer)
+//  27 slit    Sukuna's cut: a thin lens along u; param < 0.5 the white glowing rim (additive), else the black inside
+//  28 ice     Rukia's ice shell over a face (Minecraft pixels, cracks, a bright frontier); param < 0.5 it fills from the
+//             bottom (v = 1 is the bottom) up to param * 2, else cell by cell up to (param - 0.5) * 2 frozen
+//  29 barrier a shield of light with a honeycomb and a bright rim, tinted by the color; param < 0.5 a triangle (tip at
+//             v = 0), else a hexagon; fract(param * 2) = how hard it ripples (a hit)
 // A very dark color never burns white (dark rims and lines stay dark).
 // Near walls and the ground the effect fades out instead of cutting a hard line (soft particles).
 uniform sampler2D Sampler1;
@@ -547,6 +556,136 @@ vec4 roxoRaio(vec2 uv, float param, float seed, float time) {
     return vec4(col, a);
 }
 
+// ---- shapes 25-29: the SubAlmas (the same look as the Visualizador's Bleach and Sukuna tabs). ----
+vec4 petal(vec2 p, float param, vec3 tint) {
+    float yy = p.y;
+    float hw = 0.92 * (1.0 - yy * yy) * (1.0 - 0.18 * yy);
+    float d = hw - abs(p.x);
+    float fw = max(fwidth(d), 1.0e-4);
+    float body = smoothstep(0.0, 1.5 * fw, d);
+    float edge = 1.0 - smoothstep(0.0, 0.22, d / max(hw, 0.05));
+    float ridge = 1.0 - smoothstep(0.0, 0.1, abs(p.x));
+    float g = pow(max(0.0, 1.0 - abs(yy - (fract(param) * 3.0 - 1.5)) * 2.2), 3.0);
+    vec3 col = mix(tint, vec3(1.0, 0.94, 0.98), clamp(edge * 0.55 + ridge * 0.3 + g * 0.9, 0.0, 1.0));
+    return vec4(col, body);
+}
+
+vec4 crescent(vec2 p, float param, float seed, float time, out float core) {
+    vec2 q = vec2(p.x, p.y * 1.5);
+    float n = fbm(vec2(q.x * 3.0 - time * 4.0, q.y * 2.5) + seed) - 0.5;
+    float n2 = fbm(vec2(q.x * 7.0 - time * 6.0, q.y * 6.0) + seed * 1.7) - 0.5;
+    float dO = 1.45 - length(q - vec2(-0.5, 0.0)) + n * 0.16;
+    float dI = length(q - vec2(-1.1, 0.0)) - 1.6 + n * 0.22 + n2 * 0.12;
+    float d = min(dO, dI);
+    float body = smoothstep(-0.02, 0.05, d);
+    float halo = exp(-max(0.0, -d) * 9.0) * 0.5;
+    float front = smoothstep(0.22, 0.0, dO) * body;
+    float wisp = pow(max(0.0, n2 + 0.5), 3.0) * smoothstep(-0.3, 0.0, d) * (1.0 - body);
+    float border = smoothstep(1.0, 0.72, max(abs(p.x), abs(p.y)));
+    if (param < 0.5) {
+        core = body * (0.3 + 0.7 * front);
+        return vec4(color.rgb, max(body * (0.6 + 0.4 * front), halo + wisp * 1.4) * border);
+    }
+    core = 0.0;
+    float rim = 1.0 - smoothstep(0.0, 0.08, d);
+    return vec4(mix(vec3(0.015, 0.0, 0.01), vec3(1.0, 0.1, 0.07), rim * body), body * 0.97 * border);
+}
+
+vec4 slit(vec2 p, vec2 uvq, float param, out float core) {
+    float x = uvq.x * 2.0 - 1.0;
+    float hw = 0.3 * pow(max(0.0, 1.0 - x * x), 0.9);
+    float d = hw - abs(p.y);
+    float fw = max(fwidth(d), 1.0e-4);
+    float body = smoothstep(-fw, fw, d);
+    float fade = smoothstep(1.0, 0.8, abs(p.y)) * smoothstep(1.0, 0.9, abs(x));
+    if (param < 0.5) {
+        float rim = exp(-abs(d) * 38.0) * smoothstep(0.0, 0.25, 1.0 - abs(x));
+        float halo = exp(-max(0.0, -d) * 7.0) * 0.4 * (hw / 0.3 + 0.1);
+        float line = exp(-abs(p.y) * 55.0) * 0.7 * (1.0 - body);
+        core = rim;
+        return vec4(color.rgb, max(max(rim, halo), line) * fade);
+    }
+    core = 0.0;
+    float rim = 1.0 - smoothstep(0.0, 0.035, d);
+    return vec4(mix(vec3(0.0), vec3(1.0), rim * 0.85), body * 0.98 * fade);
+}
+
+vec2 voronoi2(vec2 x, float seed) {
+    vec2 i = floor(x);
+    vec2 f = fract(x);
+    float d1 = 8.0;
+    float d2 = 8.0;
+    for (int a = -1; a <= 1; a++) {
+        for (int b = -1; b <= 1; b++) {
+            vec2 g = vec2(float(a), float(b));
+            vec2 o = vec2(hash(i + g + seed), hash(i + g + seed + 11.3));
+            float d = length(g + o - f);
+            if (d < d1) {
+                d2 = d1;
+                d1 = d;
+            } else if (d < d2) {
+                d2 = d;
+            }
+        }
+    }
+    return vec2(d1, d2);
+}
+
+vec4 ice(vec2 uvq, float param, float seed, float time, out float core) {
+    // 8 Minecraft pixels across each quad (Java cuts the shell into quads of half a block).
+    vec2 cell = floor(uvq * 8.0);
+    float n = hash(cell + seed);
+    float d;
+    if (param < 0.5) {
+        float fill = param * 2.0;
+        float fromBottom = 1.0 - (cell.y + 0.5) / 8.0;
+        d = fill * 1.12 - (fromBottom + (n - 0.5) * 0.1 + 0.05);
+    } else {
+        d = (param - 0.5) * 2.0 * 1.1 - n;
+    }
+    core = 0.0;
+    if (d <= 0.0) {
+        return vec4(0.0);
+    }
+    float edge = 1.0 - smoothstep(0.0, 0.07, d);
+    vec2 vo = voronoi2(uvq * 3.0, seed);
+    float crack = 1.0 - smoothstep(0.0, 0.05, vo.y - vo.x);
+    float tw = step(0.95, n) * pow(max(0.0, sin(time * 4.0 + n * 60.0)), 12.0);
+    vec3 deep = vec3(0.28, 0.56, 0.9);
+    vec3 pale = vec3(0.84, 0.95, 1.0);
+    vec3 c = mix(deep, pale, clamp(0.35 + vo.x * 0.4 + (n - 0.5) * 0.15, 0.0, 1.0));
+    c += vec3(0.75, 0.9, 1.0) * crack * 0.35 + tw;
+    core = edge * 0.8 + tw;
+    return vec4(c, clamp(0.5 + crack * 0.25 + edge * 0.5 + tw, 0.0, 1.0));
+}
+
+vec4 barrier(vec2 p, vec2 uvq, float param, float time, out float core) {
+    float d;
+    if (param < 0.5) {
+        // Triangle, tip at the top (v = 0): distance to its three edges.
+        vec2 q = vec2(p.x, -p.y);
+        float e1 = q.y + 0.9;
+        float e2 = 0.866 * (1.0 - q.y) * 0.5 - abs(q.x) * 0.95;
+        d = min(e1 * 0.5, e2);
+    } else {
+        vec2 a = abs(p);
+        d = 0.92 - max(a.x * 0.866 + a.y * 0.5, a.y);
+    }
+    float ripple = fract(param * 2.0);
+    float r = length(p);
+    float wave = ripple * pow(max(0.0, sin(r * 18.0 - time * 14.0)), 3.0) * exp(-r * 1.5);
+    vec2 h = p * 6.0;
+    vec2 hr = vec2(h.x * 1.1547, h.y + h.x * 0.57735);
+    vec2 fc = fract(hr) - 0.5;
+    float hex = smoothstep(0.38, 0.5, max(abs(fc.x), abs(fc.y)));
+    float inside = smoothstep(0.0, 0.02, d);
+    float rim = exp(-abs(d) * 30.0);
+    float sheen = 0.5 + 0.5 * sin(p.x * 3.0 + p.y * 2.0 + time * 1.5);
+    core = rim * 0.8 + wave * 0.6;
+    float a = inside * (0.16 + hex * 0.22 + sheen * 0.08 + wave * 0.5) + rim * 0.95;
+    return vec4(color.rgb, clamp(a, 0.0, 1.0));
+}
+
 float linearDepth(float d) {
     float z = d * 2.0 - 1.0;
     return 2.0 * DepthRange.x * DepthRange.y / (DepthRange.y + DepthRange.x - z * (DepthRange.y - DepthRange.x));
@@ -831,6 +970,26 @@ void main() {
         vec4 rr = roxoRaio(uv, param, seed, time);
         base = rr.rgb;
         alpha = rr.a;
+    } else if (shape == 25) {
+        vec4 pt = petal(p, param, color.rgb);
+        base = pt.rgb;
+        alpha = pt.a;
+    } else if (shape == 26) {
+        vec4 cr = crescent(p, param, seed, time, core);
+        base = cr.rgb;
+        alpha = cr.a;
+    } else if (shape == 27) {
+        vec4 sl = slit(p, uv, param, core);
+        base = sl.rgb;
+        alpha = sl.a;
+    } else if (shape == 28) {
+        vec4 ic = ice(uv, param, seed, time, core);
+        base = ic.rgb;
+        alpha = ic.a;
+    } else if (shape == 29) {
+        vec4 br = barrier(p, uv, param, time, core);
+        base = br.rgb;
+        alpha = br.a;
     } else {
         alpha = 1.0;
     }
@@ -841,7 +1000,7 @@ void main() {
     float fade = 1.0;
     // The Black Box's walls and lances stay solid right in front of whoever is inside, and shards, wings and orbs sit
     // right on bodies (no soft fade), and so does the Red's orb at Gojo's fingertip.
-    if (SoftOn > 0.5 && (shape < 12 || shape > 16) && shape != 20 && shape != 21) {
+    if (SoftOn > 0.5 && (shape < 12 || shape > 16) && shape != 20 && shape != 21 && shape != 28) {
         float scene = linearDepth(texture(Sampler1, gl_FragCoord.xy / Screen).r);
         fade = clamp((scene - viewDist) / 0.6, 0.0, 1.0);
     }
