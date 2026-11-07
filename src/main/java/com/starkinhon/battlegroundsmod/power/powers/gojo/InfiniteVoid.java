@@ -26,6 +26,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
@@ -65,6 +66,9 @@ public final class InfiniteVoid {
     private static final int BRAIN_DAMAGE_AFTER = 200;
     // Saved on players taken inside, so a server stop never leaves them in the sky (see onLogin).
     private static final String BACK_TAG = "battlegroundsmod_void_back";
+    // How far past the edge (or above or below the inside's floor) Gojo can be before he counts as gone from it.
+    private static final double LEAVE_SLACK = 6;
+    private static final double LEAVE_UP = 48;
 
     // A domain open right now: for the kills inside it and Gojo's Infinity.
     private static final class Active {
@@ -142,7 +146,8 @@ public final class InfiniteVoid {
         boolean[] closing = {false};
         Tasks.add(age -> {
             active.age = age;
-            boolean gone = !caster.isAlive() || caster.isRemoved() || caster.level() != level;
+            // Gojo left his own domain (a teleport, a pearl, a command): it can't stand without him, it shatters.
+            boolean gone = !caster.isAlive() || caster.isRemoved() || caster.level() != level || left(active);
             // The target died (the ink plays first), or everyone caught is dead.
             boolean done = active.killedAt >= 0 && age >= active.killedAt + KILL_CLOSE_DELAY;
             if ((gone || done || active.cancelled) && !closing[0] && age < close) {
@@ -190,7 +195,7 @@ public final class InfiniteVoid {
                 double reach = radius;
                 DominioSpec.Acerto acerto = spec.acerto();
                 for (LivingEntity victim : Combat.inRadius(level, center, reach, caster)) {
-                    if (!caught.add(victim)) {
+                    if (spared(victim) || !caught.add(victim)) {
                         continue;
                     }
                     if (victim.hasData(ModAttachments.POWER)) {
@@ -247,6 +252,41 @@ public final class InfiniteVoid {
             }
         }
         return false;
+    }
+
+    // Players in creative are never caught: no freeze, no inside, no Brain Damage, no screen effects (DomainScene
+    // spares them too). They stay normal, watching it from the world, even standing where it opens.
+    private static boolean spared(LivingEntity entity) {
+        return entity instanceof Player player && player.isCreative();
+    }
+
+    // Gojo is no longer in his domain: out of the inside once everyone is up there, or away from where it opened.
+    private static boolean left(Active active) {
+        LivingEntity caster = active.caster;
+        double slack = active.spec.radius() + LEAVE_SLACK;
+        if (active.inside) {
+            Vec3 pos = caster.position();
+            double dx = pos.x - active.center.x;
+            double dz = pos.z - active.center.z;
+            // Jumping or flying up there is fine; the world itself is far below the floor.
+            return dx * dx + dz * dz > slack * slack || pos.y < active.arena.y - LEAVE_SLACK || pos.y > active.arena.y + LEAVE_UP;
+        }
+        return caster.position().distanceToSqr(active.center) > slack * slack;
+    }
+
+    // a and b are not in the same space: one is up inside a domain, the other is not (or in another one). Nobody
+    // teleports into or out of a domain.
+    public static boolean apart(LivingEntity a, LivingEntity b) {
+        return insideOf(a) != insideOf(b);
+    }
+
+    private static Active insideOf(LivingEntity entity) {
+        for (Active active : ACTIVE) {
+            if (active.inside && active.back.containsKey(entity)) {
+                return active;
+            }
+        }
+        return null;
     }
 
     // Infinity: nothing touches Gojo while he makes the sign and the white closes. And nobody but Gojo hurts those caught.

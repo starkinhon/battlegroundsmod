@@ -329,5 +329,9 @@
   "ability.battlegroundsmod.sukuna_cuts.dominio": "Expansão de Domínio: Santuário Malevolente",
   "ability.battlegroundsmod.sukuna_cuts.voto1": "Escala do Dragão...",
   "ability.battlegroundsmod.sukuna_cuts.voto2": "Recuo...",
-  "ability.battlegroundsmod.sukuna_cuts.voto3": "Estrela Gêmea do Cruzamento."
+  "ability.battlegroundsmod.sukuna_cuts.voto3": "Estrela Gêmea do Cruzamento.",
+  "item.battlegroundsmod.soul_insect": "Inseto de Alma",
+  "item.battlegroundsmod.soul_insect.tip1": "No inventário: você nunca passa fome",
+  "item.battlegroundsmod.soul_insect.tip2": "Mas a fome fica abaixo do ponto de regenerar vida",
+  "message.battlegroundsmod.teleport_domain": "Não dá pra teleportar pra dentro ou pra fora da Expansão de Domínio"
 }

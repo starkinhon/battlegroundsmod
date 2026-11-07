@@ -306,5 +306,9 @@
   "ability.battlegroundsmod.sukuna_cuts.dominio": "Domain Expansion: Malevolent Shrine",
   "ability.battlegroundsmod.sukuna_cuts.voto1": "Dragon Scale...",
   "ability.battlegroundsmod.sukuna_cuts.voto2": "Recoil...",
-  "ability.battlegroundsmod.sukuna_cuts.voto3": "Twin Meteors."
+  "ability.battlegroundsmod.sukuna_cuts.voto3": "Twin Meteors.",
+  "item.battlegroundsmod.soul_insect": "Soul Insect",
+  "item.battlegroundsmod.soul_insect.tip1": "In the inventory: you never go hungry",
+  "item.battlegroundsmod.soul_insect.tip2": "But hunger stays below the point that regenerates health",
+  "message.battlegroundsmod.teleport_domain": "Can't teleport into or out of a Domain Expansion"
 }

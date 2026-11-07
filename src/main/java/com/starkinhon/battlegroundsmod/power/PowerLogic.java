@@ -74,6 +74,10 @@ public final class PowerLogic {
             // V with his domain open: Gojo closes it.
             return;
         }
+        if (slot == 0 && com.starkinhon.battlegroundsmod.power.powers.uchiha.Katon.cancel(player)) {
+            // Z while Madara breathes fire: he stops it.
+            return;
+        }
         if (slot == 0 && com.starkinhon.battlegroundsmod.power.powers.gojo.Azul.press(player)) {
             // Z with his held Blue out: a command to it (park, shoot, circle), not a new Blue.
             return;
