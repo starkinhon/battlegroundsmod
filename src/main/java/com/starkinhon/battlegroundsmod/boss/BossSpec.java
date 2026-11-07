@@ -111,8 +111,13 @@ public record BossSpec(String boss, String poder, Integer tier, boolean dropAlma
     // target while the move plays (low = easier to dodge).
     // recargaTicks..recargaMaxTicks: the cooldown is a random value in between (no max = always recargaTicks).
     // fala: what the boss says in the chat of whoever the move catches (the neck grab), empty = nothing.
+    // precisaStun: the technique only lands on a stunned target (Stamina.stunnable). The boss only picks it then, and
+    // then it is worth a lot, from any distance up to distanciaMax.
     public record Skill(int slot, String tipo, double peso, int recargaTicks, int recargaMaxTicks, int avisoTicks, double distanciaMin, double distanciaMax,
-            float giroGrausPorTick, String avisoCor, String avisoSom, String fala) {
+            float giroGrausPorTick, String avisoCor, String avisoSom, String fala, Boolean precisaStun) {
+        public boolean needsStun() {
+            return Boolean.TRUE.equals(precisaStun);
+        }
     }
 
     // The skill entry that uses this slot, or null.

@@ -27,7 +27,7 @@
   },
   "chao": {
     "dano": 14,
-    "presoTicks": 40,
+    "presoTicks": 50,
     "quebrarBlocos": true,
     "raioCratera": 4.5,
     "profundidadeCratera": 2.2,

@@ -12,6 +12,7 @@ import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.combat.Fx;
 import com.starkinhon.battlegroundsmod.combat.Intangible;
 import com.starkinhon.battlegroundsmod.combat.SkillSounds;
+import com.starkinhon.battlegroundsmod.combat.Stamina;
 import com.starkinhon.battlegroundsmod.combat.Stun;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
@@ -36,6 +37,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 // both of them gone (frozen, untouchable and hidden where they stood). Back in the world Bills lands where he was,
 // facing the spot queda.distancia blocks ahead of him, and the target falls from queda.altura blocks up straight down
 // onto it with the sun on top of it: it blows up in flames, opening a crater.
+// It needs a stunned target (Stamina.stunnable: stunned by a hit, or exhausted), e.g. right after the Destruction Bop.
 public final class Esfera {
     public static final String SKILL = EsferaSpec.SKILL;
     private static final double VIEW_DISTANCE = 256;
@@ -59,6 +61,14 @@ public final class Esfera {
         if (target == null) {
             if (caster instanceof ServerPlayer player) {
                 player.displayClientMessage(Component.translatable("message.battlegroundsmod.no_target"), true);
+            }
+            return false;
+        }
+        if (!Stamina.stunnable(target)) {
+            // Only a stunned (or exhausted) target can be taken to space: told on screen, nothing spent.
+            if (caster instanceof ServerPlayer player) {
+                player.displayClientMessage(Component.translatable("message.battlegroundsmod.needs_stun")
+                        .withStyle(s -> s.withColor(0xFF5555)), true);
             }
             return false;
         }

@@ -38,7 +38,8 @@
     "preparoTicks": 12,
     "carga": 0.65,
     "dano": 30,
-    "empurrao": 6.5
+    "empurrao": 6.5,
+    "stunTicks": 40
   },
   "animacao": {
     "transicaoTicks": 2,

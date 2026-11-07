@@ -19,7 +19,8 @@
   "arremesso": {
     "forca": 2,
     "altura": 0.5,
-    "dano": 5
+    "dano": 5,
+    "stunTicks": 30
   },
   "visual": {
     "cor": "#38bdff"

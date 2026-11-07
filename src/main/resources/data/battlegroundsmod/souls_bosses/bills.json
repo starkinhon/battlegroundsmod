@@ -185,11 +185,12 @@
     "esfera": {
       "slot": 10,
       "tipo": "ult",
+      "precisaStun": true,
       "peso": 0.9,
       "recargaTicks": 1200,
       "recargaMaxTicks": 1600,
-      "avisoTicks": 12,
-      "distanciaMin": 12,
+      "avisoTicks": 0,
+      "distanciaMin": 0,
       "distanciaMax": 40,
       "giroGrausPorTick": 30,
       "avisoCor": "#ff9a1f",
@@ -240,6 +241,14 @@
         "soco",
         "barragem",
         "forte"
+      ]
+    },
+    "viagem_espacial": {
+      "peso": 1.2,
+      "encadeado": true,
+      "passos": [
+        "destruction_bop",
+        "esfera"
       ]
     },
     "peteleco_e_hakai": {
@@ -310,7 +319,8 @@
         "julgamento",
         "punho_divino",
         "peteleco_e_hakai",
-        "peteleco_e_planeta"
+        "peteleco_e_planeta",
+        "viagem_espacial"
       ],
       "agressividade": 0.85,
       "multRecarga": 1.0,

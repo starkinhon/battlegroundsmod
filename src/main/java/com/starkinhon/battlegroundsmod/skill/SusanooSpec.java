@@ -16,8 +16,9 @@ public record SusanooSpec(String skill, String nome, Janela janela, Agarrar agar
     public record Esmagar(int duracaoTicks, int golpes, float dano) {
     }
 
-    // Throw along the caster's facing: forca is horizontal speed, altura vertical speed.
-    public record Arremesso(double forca, double altura, float dano) {
+    // Throw along the caster's facing: forca is horizontal speed, altura vertical speed. stunTicks: how long the thrown
+    // attacker stays stunned after it (short, so taking the counter is dangerous: open to stun-only techniques).
+    public record Arremesso(double forca, double altura, float dano, int stunTicks) {
     }
 
     public record Visual(String cor) {
