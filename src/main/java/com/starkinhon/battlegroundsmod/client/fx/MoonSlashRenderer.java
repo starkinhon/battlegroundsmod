@@ -66,7 +66,8 @@ public final class MoonSlashRenderer {
     }
 
     // Impact (Stark: "tá muito seco"): the cut opens with a shake and a short radial blur, for everyone close enough to
-    // see it well. No impact frames, here or on the blow (Stark took them out).
+    // see it well. The impact frame is not here but on the blow (Stark moved it there).
+    private static final int GOLD = 0xFCB040;
     private static final double IMPACT_VIEW = 40;
 
     private static boolean near(Vec3 pos) {
@@ -82,11 +83,13 @@ public final class MoonSlashRenderer {
         com.starkinhon.battlegroundsmod.client.ScreenShake.start(0.7f, 10);
     }
 
-    // The blow landing on someone 0.5 s after the cut (Black Flash style): a light flash and a harder shake.
+    // The blow landing on someone 0.5 s after the cut (Black Flash style): the impact frame in the moon's gold,
+    // a light flash and a harder shake.
     public static void hit(Vec3 pos) {
         if (!near(pos)) {
             return;
         }
+        ScreenFx.impactFrame(new int[] {1, 4, 2}, 1, GOLD, pos, 0);
         ScreenFx.flash(0xFFE2A0, 0.25f, 5);
         com.starkinhon.battlegroundsmod.client.ScreenShake.start(1.0f, 12);
     }
