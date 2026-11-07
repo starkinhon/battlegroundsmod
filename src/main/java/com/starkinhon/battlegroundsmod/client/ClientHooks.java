@@ -226,8 +226,8 @@ public final class ClientHooks {
         com.starkinhon.battlegroundsmod.client.fx.VermelhoRenderer.blast(from, dir, range, radius, speed, charge);
     }
 
-    public static void blackFlash(Vec3 pos, Vec3 dir, float charge, int stop) {
-        com.starkinhon.battlegroundsmod.client.fx.BlackFlashRenderer.flash(pos, dir, charge, stop);
+    public static void blackFlash(int kind, int entity, Vec3 pos, Vec3 dir, float charge, int ticks) {
+        com.starkinhon.battlegroundsmod.client.fx.BlackFlashRenderer.event(kind, entity, pos, dir, charge, ticks);
     }
 
     public static void roxo(int id, int owner, int mode, int tick, float charge) {

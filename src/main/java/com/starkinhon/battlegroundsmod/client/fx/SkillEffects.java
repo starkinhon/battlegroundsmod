@@ -183,7 +183,8 @@ public final class SkillEffects {
         };
     }
 
-    // "branco", "cor", "invertido", "manga", "mangaInvertido"; anything else is a normal frame in between.
+    // "branco", "cor", "invertido", "manga", "mangaInvertido", and the Black Flash's "bfInvertido", "bfManga", "bfVermelho",
+    // "bfVermelhoInvertido"; anything else is a normal frame in between.
     private static int[] modes(List<String> sequencia) {
         if (sequencia == null || sequencia.isEmpty()) {
             return new int[] {0, 2, 1, 3, 4, 0};
@@ -197,6 +198,11 @@ public final class SkillEffects {
                 case "invertido" -> 2;
                 case "manga" -> 3;
                 case "mangaInvertido" -> 4;
+                // the Black Flash's (Gojo): shaking, diffuse
+                case "bfInvertido" -> 6;
+                case "bfManga" -> 7;
+                case "bfVermelho" -> 8;
+                case "bfVermelhoInvertido" -> 9;
                 default -> -1;
             };
         }

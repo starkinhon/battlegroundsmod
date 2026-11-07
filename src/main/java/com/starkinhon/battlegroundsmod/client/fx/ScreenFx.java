@@ -70,6 +70,12 @@ public final class ScreenFx {
     private static long holdBlurAt = -10;
     private static float holdFov;
     private static long holdFovAt = -10;
+    // A color grade over the whole frame (fx_impact modes 10 and 11), kept on by a renderer calling every frame.
+    private static int gradeMode;
+    private static float gradeAmount;
+    private static float[] gradeTint = {1, 0, 0};
+    private static Vec3 gradePos = Vec3.ZERO;
+    private static long gradeAt = -10;
 
     private static final Matrix4f VIEW = new Matrix4f();
     private static final Matrix4f PROJ = new Matrix4f();
@@ -149,6 +155,22 @@ public final class ScreenFx {
         holdBlurAt = ticks;
     }
 
+    // Grade for this frame (call every frame): mode 10 the slow motion's blue, 11 the Black Flash's red with ink blots
+    // around pos; amount 0 to 1.
+    public static void sustainGrade(int mode, float amount, int tint, Vec3 pos) {
+        if (amount > 0.004f) {
+            gradeMode = mode;
+            gradeAmount = Mth.clamp(amount, 0, 1);
+            gradeTint = rgb(tint);
+            gradePos = pos;
+            gradeAt = ticks;
+        }
+    }
+
+    private static boolean grading() {
+        return ticks - gradeAt <= 1 && gradeAmount > 0.004f && FxConfig.on(FxConfig.IMPACT_FRAMES);
+    }
+
     // FOV change (degrees) for as long as this is called every tick.
     public static void sustainFov(float degrees) {
         holdFov = degrees;
@@ -218,7 +240,8 @@ public final class ScreenFx {
             float blur = flat && FxConfig.on(FxConfig.RADIAL_BLUR) ? blurAt(now) : 0;
             // (with a shader pack the volumes go over its finished picture, lit by the same sun and sky)
             boolean real = flat && Realismo.active();
-            if (mode >= 0 || warp || blur > 0 || real) {
+            boolean grade = grading();
+            if (mode >= 0 || warp || blur > 0 || real || grade) {
                 graphics.flush();
                 FxPost.beginPasses();
                 if (real) {
@@ -229,6 +252,9 @@ public final class ScreenFx {
                 }
                 if (blur > 0) {
                     radialPass(blur, blurPos(now));
+                }
+                if (grade) {
+                    gradePass(reduced);
                 }
                 if (mode >= 0) {
                     impactPass(mode, reduced, now);
@@ -298,13 +324,30 @@ public final class ScreenFx {
         shader.safeGetUniform("Center").set(center[0], center[1]);
         shader.safeGetUniform("Tint").set(impact.tint()[0], impact.tint()[1], impact.tint()[2]);
         shader.safeGetUniform("Mode").set((float) mode);
-        shader.safeGetUniform("Seed").set((float) (ticks % 997));
+        // (the Black Flash's frames shake: re-rolled three times a tick)
+        shader.safeGetUniform("Seed").set((float) (mode >= 6 ? Math.floor(now * 3) % 997 : ticks % 997));
         shader.safeGetUniform("DepthOn").set(FxPost.sceneDepth() > 0 ? 1f : 0f);
         shader.safeGetUniform("DepthRange").set(0.05f, Minecraft.getInstance().gameRenderer.getDepthFar());
         shader.safeGetUniform("Reduced").set(reduced ? 1f : 0f);
         // How far through the whole impact (0 to 1): the ink of mode 5 spreads with it.
         double total = (double) impact.modes().length * impact.ticksPerFrame();
         shader.safeGetUniform("Age").set((float) Mth.clamp((now - impact.start()) / total, 0, 1));
+        FxPost.pass(shader);
+    }
+
+    private static void gradePass(boolean reduced) {
+        var shader = FxShaders.impact;
+        var target = Minecraft.getInstance().getMainRenderTarget();
+        float[] center = toScreen(gradePos);
+        shader.safeGetUniform("Screen").set((float) target.width, (float) target.height);
+        shader.safeGetUniform("Center").set(center[0], center[1]);
+        shader.safeGetUniform("Tint").set(gradeTint[0], gradeTint[1], gradeTint[2]);
+        shader.safeGetUniform("Mode").set((float) gradeMode);
+        shader.safeGetUniform("Seed").set((float) (ticks % 997));
+        shader.safeGetUniform("DepthOn").set(0f);
+        shader.safeGetUniform("DepthRange").set(0.05f, Minecraft.getInstance().gameRenderer.getDepthFar());
+        shader.safeGetUniform("Reduced").set(reduced ? 1f : 0f);
+        shader.safeGetUniform("Age").set(gradeAmount);
         FxPost.pass(shader);
     }
 
