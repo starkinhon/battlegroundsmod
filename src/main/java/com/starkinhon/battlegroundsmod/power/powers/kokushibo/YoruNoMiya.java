@@ -31,6 +31,8 @@ public final class YoruNoMiya {
     public static final double TILT = 82;
     // Turn about where he faces (negative: his right side lower), for a bit of a top-down feel.
     public static final double ROLL = -12;
+    // Turn of the arc in its own plane (degrees, positive: from his right toward the front): centres the gap behind him.
+    public static final double SPIN = 25;
     // The cut lands as the point of the slash goes round (the page's head reaches the arc's middle at ~0.2 s).
     private static final int HIT_DELAY = 4;
     private static final float DAMAGE = 14f;
@@ -52,6 +54,12 @@ public final class YoruNoMiya {
         Vec3 right = flat.cross(new Vec3(0, 1, 0)).normalize();
         double tilt = Math.toRadians(TILT);
         Vec3 up = new Vec3(0, Math.cos(tilt), 0).add(flat.scale(Math.sin(tilt)));
+        // Turn the arc in its own plane so its open gap sits right behind him and it wraps him evenly (Stark: it looked
+        // off to one side, its thick end coming at the camera on his right).
+        double spin = Math.toRadians(SPIN);
+        Vec3 r0 = right;
+        right = r0.scale(Math.cos(spin)).add(up.scale(Math.sin(spin)));
+        up = up.scale(Math.cos(spin)).subtract(r0.scale(Math.sin(spin)));
         // (turning about "flat" by a positive angle lifts his right side, hence the minus)
         double roll = -Math.toRadians(ROLL);
         right = turn(right, flat, roll);
