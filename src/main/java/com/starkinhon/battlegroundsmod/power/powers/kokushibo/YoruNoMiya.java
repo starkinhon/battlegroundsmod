@@ -22,14 +22,14 @@ import net.neoforged.neoforge.network.PacketDistributor;
 public final class YoruNoMiya {
     // The page's slash (keep in step with souls_moon.fsh and MoonSlashRenderer).
     public static final double CX = 0.06, CY = -0.04, R = 0.60;
-    public static final double SCALE = 7.0;
-    // Where the plane's centre sits: AHEAD blocks in front of his eyes, RISE above them.
-    public static final double AHEAD = 4.2;
-    public static final double RISE = 0.35;
-    // How far the slash leans back from standing up (degrees): nearly lying, a slash going forward that both he and the
-    // one hit see well.
-    public static final double TILT = 65;
-    // Turned in its own plane so his right side dips (negative), for a bit of a top-down slash feel.
+    // Blocks per page unit: the arc's radius (R) is the reach of his arm plus the Kokushibo blade (~0.6 + 2.7 blocks).
+    public static final double SCALE = 5.5;
+    // Where the arc's centre sits: AHEAD blocks in front of his eyes, RISE above them (negative: at his chest).
+    public static final double AHEAD = 0.6;
+    public static final double RISE = -0.35;
+    // How far the slash leans back from standing up (degrees): nearly flat, a horizontal cut.
+    public static final double TILT = 82;
+    // Turn about where he faces (negative: his right side lower), for a bit of a top-down feel.
     public static final double ROLL = -12;
     // The cut lands as the point of the slash goes round (the page's head reaches the arc's middle at ~0.2 s).
     private static final int HIT_DELAY = 4;
@@ -40,11 +40,11 @@ public final class YoruNoMiya {
     private YoruNoMiya() {
     }
 
-    // The plane's centre and its axes (normal, right, up), the same on both sides. As in Stark's montage: the page's
-    // slash keeps its page shape and lies forward, leaned back TILT degrees from standing, a horizontal cut in front of
-    // him, with its right side dipping ROLL degrees: from his left at about eye height it sweeps round ahead of him
-    // and comes down near the ground in front of him on his right. It follows only his turning, not his pitch, so
-    // looking down never buries it.
+    // The plane's centre and its axes (normal, right, up), the same on both sides. Stark: a horizontal cut forward that
+    // he and the one hit both see well, sized to the sword (the slash comes off its point): the page's arc is centred
+    // on his chest, a little ahead, with its radius the reach of arm plus blade, and lies nearly flat (TILT degrees back
+    // from standing, so the part ahead of him rises a little), then the whole plane turns ROLL degrees about where he
+    // faces so his right side dips, for a bit of a top-down slash. It follows only his turning, not his pitch.
     public static Vec3[] frame(Vec3 eye, Vec3 look) {
         Vec3 l = look.lengthSqr() < 1.0E-6 ? new Vec3(0, 0, 1) : look.normalize();
         Vec3 flat = new Vec3(l.x, 0, l.z);
@@ -52,13 +52,19 @@ public final class YoruNoMiya {
         Vec3 right = flat.cross(new Vec3(0, 1, 0)).normalize();
         double tilt = Math.toRadians(TILT);
         Vec3 up = new Vec3(0, Math.cos(tilt), 0).add(flat.scale(Math.sin(tilt)));
+        // (turning about "flat" by a positive angle lifts his right side, hence the minus)
+        double roll = -Math.toRadians(ROLL);
+        right = turn(right, flat, roll);
+        up = turn(up, flat, roll);
         Vec3 n = right.cross(up).normalize();
-        double roll = Math.toRadians(ROLL);
-        Vec3 r = right.scale(Math.cos(roll)).add(up.scale(Math.sin(roll)));
-        up = up.scale(Math.cos(roll)).subtract(right.scale(Math.sin(roll)));
-        right = r;
         Vec3 centre = eye.add(0, RISE, 0).add(flat.scale(AHEAD));
         return new Vec3[] {centre, n, right, up};
+    }
+
+    // v turned by angle a about the unit axis k (Rodrigues).
+    private static Vec3 turn(Vec3 v, Vec3 k, double a) {
+        double c = Math.cos(a), s = Math.sin(a);
+        return v.scale(c).add(k.cross(v).scale(s)).add(k.scale(k.dot(v) * (1 - c)));
     }
 
     public static boolean use(LivingEntity caster, ServerLevel level) {
