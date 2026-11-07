@@ -205,6 +205,7 @@ public abstract class SoulBoss extends Monster {
         }
         PowerLogic.tick(this);
         Movement.tick(this);
+        BossFalas.tick(this);
         boolean bossfight = bossfight();
         bossEvent.setVisible(bossfight);
         int want = spec.faseFor(getHealth() / getMaxHealth());

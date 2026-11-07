@@ -156,14 +156,14 @@ public final class Agarrao {
         return caster.position();
     }
 
-    // A boss says its line (souls_bosses: fala) in the chat of the player it grabbed.
+    // A boss says its line (souls_bosses: fala) over its head, for everyone near (boss/BossFalas).
     private static void taunt(LivingEntity caster, LivingEntity target) {
-        if (!(caster instanceof SoulBoss boss) || !(target instanceof ServerPlayer player) || !boss.bossfight()) {
+        if (!(caster instanceof SoulBoss boss)) {
             return;
         }
         BossSpec.Skill skill = boss.spec().skillForSlot(PowerData.SLOT_EXTRA);
         if (skill != null && skill.fala() != null && !skill.fala().isEmpty()) {
-            player.sendSystemMessage(Component.literal("<").append(boss.getDisplayName()).append("> " + skill.fala()));
+            com.starkinhon.battlegroundsmod.boss.BossFalas.say(boss, skill.fala(), 200);
         }
     }
 

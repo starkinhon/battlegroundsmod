@@ -1030,6 +1030,22 @@ public final class ModPayloads {
         }
     }
 
+    // Server -> client: a boss says a line over its head (boss/BossFalas). text is a lang key or plain text.
+    public record Fala(int entityId, String text, int color1, int color2) implements CustomPacketPayload {
+        public static final Type<Fala> TYPE = payloadType("fala");
+        public static final StreamCodec<ByteBuf, Fala> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, Fala::entityId,
+                ByteBufCodecs.STRING_UTF8, Fala::text,
+                ByteBufCodecs.INT, Fala::color1,
+                ByteBufCodecs.INT, Fala::color2,
+                Fala::new);
+
+        @Override
+        public Type<Fala> type() {
+            return TYPE;
+        }
+    }
+
     // Server -> client: custom boss bars on or off for this player (/soul bossbar).
     public record BossBarToggle(boolean on) implements CustomPacketPayload {
         public static final Type<BossBarToggle> TYPE = payloadType("boss_bar_toggle");
@@ -1246,6 +1262,8 @@ public final class ModPayloads {
                 () -> ClientHooks.bossBarStyle(payload.barId(), payload.texture(), payload.frames(), payload.width(), payload.height(), payload.glow())));
         registrar.playToClient(BossCutscene.TYPE, BossCutscene.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.bossCutscene(payload.entityId(), payload.zoomTicks(), payload.skyTicks(), payload.backTicks(), payload.lookAt())));
+        registrar.playToClient(Fala.TYPE, Fala.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.fala(payload.entityId(), payload.text(), payload.color1(), payload.color2())));
         registrar.playToClient(BossBarToggle.TYPE, BossBarToggle.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.bossBarToggle(payload.on())));
         registrar.playToClient(KatonBall.TYPE, KatonBall.STREAM_CODEC, (payload, context) -> context.enqueueWork(

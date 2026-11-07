@@ -669,6 +669,7 @@ public final class Azul {
             }
             Vec3 dm = e.getDeltaMovement();
             if (d > r + 0.7) {
+                com.starkinhon.battlegroundsmod.boss.BossFalas.azulPull(caster, e, d);
                 // Pulled straight at it (off the ground too), fast enough that walking away doesn't save you.
                 double speed = Math.min(clique.maxPuxar(), clique.puxar() + (clique.maxPuxar() - clique.puxar()) * (1 - d / reach));
                 Vec3 want = to.normalize().scale(Math.min(speed, d * 0.5));
@@ -706,6 +707,9 @@ public final class Azul {
             Vec3 want;
             double blend;
             if (d > Math.max(r, rMax * 0.5 * c)) {
+                if (e instanceof LivingEntity living) {
+                    com.starkinhon.battlegroundsmod.boss.BossFalas.azulPull(caster, living, d);
+                }
                 double speed = Math.max(s.puxar(), maxSpeed * (0.4 + 0.6 * (1 - d / reach)));
                 want = to.normalize().scale(Math.min(speed, d * 0.6));
                 blend = 0.55;

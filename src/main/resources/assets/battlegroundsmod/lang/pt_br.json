@@ -656,5 +656,20 @@
   "message.battlegroundsmod.vazio_relampago_atingido": "Expansão de 0,2 s: técnica quebrada.",
   "ability.battlegroundsmod.strongest.8": "Expansão de 0,2 s",
   "ability.battlegroundsmod.strongest.8.desc": "Contra-ataque: o selo da Expansão num piscar, o Vazio abre por um instante e fecha num X que corta a tela. Quebra qualquer técnica de quem estiver na área da Expansão (carregando, no meio ou ativa, ataques no ar e até uma Expansão abrindo). Quem estava carregando ou usando alguma técnica fica atordoado 7 s e sem estamina; o resto só 1,5 s. Sem ninguém perto, não sai.",
-  "ability.battlegroundsmod.strongest.8.tags": "Contra-ataque,Área,Atordoa,Domínio"
+  "ability.battlegroundsmod.strongest.8.tags": "Contra-ataque,Área,Atordoa,Domínio",
+  "fala.battlegroundsmod.gojo.menos_um": "Menos um... quem é o segundo?",
+  "fala.battlegroundsmod.gojo.fugindo": "Pra onde você vai?",
+  "fala.battlegroundsmod.madara.agarrao": "Estou decepcionado. Esperava mais.",
+  "fala.battlegroundsmod.madara.inutil": "Inútil.",
+  "fala.battlegroundsmod.madara.matou": "Acorde para a realidade.",
+  "fala.battlegroundsmod.bills.atordoado": "Fique quieto. Isso vai ser rápido.",
+  "fala.battlegroundsmod.bills.fome": "Estou ficando com fome... vamos terminar isso.",
+  "fala.battlegroundsmod.bills.pouca_vida": "Agora você me irritou de verdade...",
+  "fala.battlegroundsmod.bills.matou": "Que tédio.",
+  "fala.battlegroundsmod.aizen.kyoka": "Desde quando você teve a ilusão de que eu estava aí?",
+  "fala.battlegroundsmod.aizen.dedo": "Não use palavras fortes, isso faz você parecer fraco.",
+  "fala.battlegroundsmod.aizen.matou": "Admirável.",
+  "fala.battlegroundsmod.aizen.hogyoku": "Ninguém fica no topo desde o início.",
+  "fala.battlegroundsmod.kokushibo.matou": "Fraco demais...",
+  "fala.battlegroundsmod.kokushibo.respiracao": "Me mostre sua Respiração."
 }

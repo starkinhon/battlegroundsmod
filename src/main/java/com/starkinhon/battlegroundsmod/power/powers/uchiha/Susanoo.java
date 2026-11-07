@@ -83,6 +83,7 @@ public final class Susanoo {
         // The hit lands on the shield in front of him.
         Fx.effects(Combat.level(player), SKILL, awakened(player), "bloqueio",
                 player.position().add(Combat.flatLook(player).scale(3.0)).add(0, 2.1, 0), Combat.flatLook(player));
+        com.starkinhon.battlegroundsmod.boss.BossFalas.say(player, "fala.battlegroundsmod.madara.inutil", 400);
         grab(player, attacker, spec);
     }
 

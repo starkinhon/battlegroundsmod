@@ -284,6 +284,10 @@ public final class ClientHooks {
         BossBars.style(barId, texture, frames, width, height, glow);
     }
 
+    public static void fala(int entityId, String text, int color1, int color2) {
+        FalaRender.add(entityId, text, color1, color2);
+    }
+
     public static void bossBarToggle(boolean on) {
         BossBars.enabled = on;
     }
