@@ -1,29 +1,15 @@
 package com.starkinhon.battlegroundsmod.boss;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
-
-import com.starkinhon.battlegroundsmod.ModAttachments;
-import com.starkinhon.battlegroundsmod.combat.BlockRules;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Destructible;
 import com.starkinhon.battlegroundsmod.combat.Fx;
-import com.starkinhon.battlegroundsmod.combat.Intangible;
 import com.starkinhon.battlegroundsmod.power.BossOrder;
 import com.starkinhon.battlegroundsmod.power.PowerData;
 import com.starkinhon.battlegroundsmod.power.powers.gojo.Azul;
-import com.starkinhon.battlegroundsmod.power.powers.uchiha.Susanoo;
 import com.starkinhon.battlegroundsmod.skill.RoxoSpec;
 
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
-import net.minecraft.util.RandomSource;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.level.ClipContext;
-import net.minecraft.world.phys.AABB;
-import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
 // How the Gojo boss plays. SoulBossAI does the fighting; this reads the situation and tells it what Gojo would do.
@@ -52,7 +38,7 @@ import net.minecraft.world.phys.Vec3;
 // So it doesn't play the same twice: a style he switches every 20 to 40 seconds and at each phase (playing around,
 // serious, hunting, artillery, picked by the situation but never certain), every charge and plan rolled within what
 // the situation allows, a little jitter on every weight, and the AI's own randomness on top.
-final class GojoTactics implements BossTactics {
+final class GojoTactics extends TacticsBase {
     private enum Style {
         BRINCANDO("brincando"), SERIO("serio"), CACADOR("cacador"), ARTILHEIRO("artilheiro");
 
@@ -63,8 +49,6 @@ final class GojoTactics implements BossTactics {
         }
     }
 
-    private enum Kind { MADARA, BILLS, AIZEN, GOJO, LUTADOR, PODER, COMUM }
-
     // Least time between the two ultimates, and the Unlimited Purple's own wait.
     private static final int ULT_GAP = 600;
     private static final int IRRESTRITO_COOLDOWN = 3600;
@@ -72,109 +56,15 @@ final class GojoTactics implements BossTactics {
     private static final int INFINITY_HOLD = 40;
     private static final double INFINITY_RANGE = 4.5;
 
-    private final GojoEntity boss;
-    private final RandomSource random;
-
     private Style style;
     private int styleLeft;
     private int stylePhase = -1;
     private long lastUlt = -100_000;
     private long irrestritoAt;
     private int infinityCooldown;
-    private int blinkCooldown;
-    private final Deque<Double> distances = new ArrayDeque<>();
-
-    // The read of this tick.
-    private long readAt = -1;
-    private double distance;
-    private double myLife;
-    private double theirLife;
-    private int enemies;
-    private int crowd;
-    private boolean air;
-    private boolean fleeing;
-    private boolean guarded;
-    private boolean breaks;
-    private boolean sees;
-    private boolean strongFoe;
-    private Kind kind = Kind.COMUM;
 
     GojoTactics(GojoEntity boss) {
-        this.boss = boss;
-        this.random = boss.getRandom();
-    }
-
-    // ---------------------------------------------------------------- reading the fight
-
-    private void read(SoulBossAI ai) {
-        LivingEntity target = ai.target();
-        if (target == null || readAt == ai.now()) {
-            return;
-        }
-        readAt = ai.now();
-        ServerLevel level = Combat.level(boss);
-        distance = boss.distanceTo(target);
-        myLife = life(boss);
-        theirLife = life(target);
-        sees = boss.hasLineOfSight(target);
-        guarded = Susanoo.isReady(target);
-        breaks = BlockRules.canBreak(level);
-        kind = kindOf(target);
-        strongFoe = target instanceof SoulBoss || kind == Kind.BILLS || kind == Kind.GOJO
-                || target.hasData(ModAttachments.POWER) && target.getData(ModAttachments.POWER).hasPower()
-                        && target.getData(ModAttachments.POWER).tier <= 5;
-        // In the air: nothing under their feet for 2.5 blocks.
-        Vec3 feet = target.position();
-        air = !target.onGround() && level.clip(new ClipContext(feet, feet.add(0, -2.5, 0), ClipContext.Block.COLLIDER,
-                ClipContext.Fluid.ANY, target)).getType() == HitResult.Type.MISS;
-        // Who is fighting him, and who stands next to the target (a line or a ring catches them too).
-        enemies = 0;
-        crowd = 0;
-        for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, boss.getBoundingBox().inflate(24), x -> x != boss && x.isAlive())) {
-            if (!foe(e)) {
-                continue;
-            }
-            enemies++;
-            if (e != target && e.distanceTo(target) <= 5) {
-                crowd++;
-            }
-        }
-        // Running away: farther every half second for a second and a half.
-        if (ai.now() % 10 == 0) {
-            distances.addLast(distance);
-            while (distances.size() > 4) {
-                distances.pollFirst();
-            }
-        }
-        fleeing = distance > 10 && distances.size() == 4 && distances.peekLast() - distances.peekFirst() > 4;
-    }
-
-    private boolean foe(LivingEntity e) {
-        if (e instanceof Player player) {
-            return !player.isSpectator() && !player.isCreative();
-        }
-        if (e instanceof SoulBoss other) {
-            return other.getType() != boss.getType();
-        }
-        return e instanceof Mob mob && mob.getTarget() == boss;
-    }
-
-    private static Kind kindOf(LivingEntity target) {
-        String power = target instanceof SoulBoss other ? other.spec().poder()
-                : target.hasData(ModAttachments.POWER) ? target.getData(ModAttachments.POWER).power : "";
-        return switch (power == null ? "" : power) {
-            case "uchiha_ghost" -> Kind.MADARA;
-            case "destruction_god" -> Kind.BILLS;
-            case "manipulator" -> Kind.AIZEN;
-            case "strongest" -> Kind.GOJO;
-            case "rubber_boy", "one_punch" -> Kind.LUTADOR;
-            case "" -> Kind.COMUM;
-            default -> Kind.PODER;
-        };
-    }
-
-    private static double life(LivingEntity e) {
-        return e.getHealth() / Math.max(1, e.getMaxHealth());
+        super(boss);
     }
 
     // Time to end it: low on life, or half down against a strong foe, a crowd, or someone clearly winning. Against
@@ -248,9 +138,7 @@ final class GojoTactics implements BossTactics {
         if (infinityCooldown > 0) {
             infinityCooldown--;
         }
-        if (blinkCooldown > 0) {
-            blinkCooldown--;
-        }
+        coolDown();
         if (--styleLeft <= 0 || style == null || stylePhase != boss.phase()) {
             stylePhase = boss.phase();
             pickStyle();
@@ -449,12 +337,6 @@ final class GojoTactics implements BossTactics {
         };
     }
 
-    // A random charge between min and max, moved by the style.
-    private double range(double min, double max, double bump) {
-        double c = min + (max - min) * random.nextDouble() + bump;
-        return Math.max(0.05, Math.min(1, c));
-    }
-
     @Override
     public Vec3 aim(SoulBossAI ai, String name) {
         if ("vermelho_irrestrito".equals(name)) {
@@ -511,35 +393,5 @@ final class GojoTactics implements BossTactics {
         RoxoSpec roxo = RoxoSpec.get(data.awakened);
         double min = roxo.irrestrito() != null ? roxo.irrestrito().cargaMin() : 2;
         return Azul.parkedBlue(boss, min);
-    }
-
-    // A blink straight away from the target (or to a side when that is blocked), landing on the ground.
-    private boolean blinkAway(SoulBossAI ai, double far) {
-        LivingEntity target = ai.target();
-        if (target == null) {
-            return false;
-        }
-        Vec3 from = boss.position();
-        Vec3 away = from.subtract(target.position());
-        away = new Vec3(away.x, 0, away.z);
-        away = away.lengthSqr() < 1.0E-4 ? Combat.flatLook(boss).reverse() : away.normalize();
-        for (double turn : new double[] {0, 40, -40, 80, -80}) {
-            Vec3 dir = away.yRot((float) Math.toRadians(turn));
-            for (double up : new double[] {0, 1, -1, 2, -2, 3}) {
-                Vec3 spot = from.add(dir.scale(far)).add(0, up, 0);
-                AABB box = boss.getBoundingBox().move(spot.subtract(from));
-                if (!boss.level().noCollision(boss, box) || boss.level().noCollision(boss, box.move(0, -1.0, 0))) {
-                    continue;
-                }
-                boss.teleportTo(spot.x, spot.y, spot.z);
-                boss.getNavigation().stop();
-                ai.lookAt(Combat.center(target), 360);
-                Intangible.hold(boss, 3);
-                BossFx.shadowStep(Combat.level(boss), from, spot, BossFx.color(boss.spec().intro().cor()));
-                blinkCooldown = 120;
-                return true;
-            }
-        }
-        return false;
     }
 }

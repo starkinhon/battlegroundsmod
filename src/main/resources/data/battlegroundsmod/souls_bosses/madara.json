@@ -220,9 +220,9 @@
     "susanoo_corte": {
       "slot": 10,
       "tipo": "alcance",
-      "peso": 1.4,
-      "recargaTicks": 2000,
-      "recargaMaxTicks": 2000,
+      "peso": 1.8,
+      "recargaTicks": 1000,
+      "recargaMaxTicks": 1000,
       "avisoTicks": 6,
       "distanciaMin": 5,
       "distanciaMax": 60,
@@ -276,6 +276,23 @@
         "barragem",
         "forte"
       ]
+    },
+    "genjutsu_e_meteoro": {
+      "peso": 1.0,
+      "encadeado": true,
+      "passos": [
+        "mangekyo",
+        "meteoro"
+      ]
+    },
+    "agarrao_e_corte": {
+      "peso": 1.0,
+      "encadeado": true,
+      "passos": [
+        "agarrao",
+        "esquiva",
+        "susanoo_corte"
+      ]
     }
   },
   "fases": [
@@ -314,12 +331,16 @@
         "susanoo",
         "forte",
         "barragem",
-        "agarrao"
+        "agarrao",
+        "meteoro",
+        "susanoo_corte"
       ],
       "combos": [
         "fogo_cruzado",
         "passo_sombra",
-        "olhar_do_inferno"
+        "olhar_do_inferno",
+        "genjutsu_e_meteoro",
+        "agarrao_e_corte"
       ],
       "agressividade": 0.85,
       "multRecarga": 1.0,
@@ -347,12 +368,15 @@
         "katon_gigante",
         "izanami",
         "susanoo_corte",
-        "meteoro_duplo"
+        "meteoro_duplo",
+        "meteoro"
       ],
       "combos": [
         "fogo_cruzado",
         "passo_sombra",
-        "olhar_do_inferno"
+        "olhar_do_inferno",
+        "genjutsu_e_meteoro",
+        "agarrao_e_corte"
       ],
       "agressividade": 0.85,
       "multRecarga": 1.0,
@@ -380,12 +404,15 @@
         "katon_gigante",
         "izanami",
         "susanoo_corte",
-        "meteoro_duplo"
+        "meteoro_duplo",
+        "meteoro"
       ],
       "combos": [
         "fogo_cruzado",
         "passo_sombra",
-        "olhar_do_inferno"
+        "olhar_do_inferno",
+        "genjutsu_e_meteoro",
+        "agarrao_e_corte"
       ],
       "agressividade": 0.95,
       "multRecarga": 1.0,
