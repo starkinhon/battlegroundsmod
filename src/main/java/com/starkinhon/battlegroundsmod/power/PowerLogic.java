@@ -310,11 +310,6 @@ public final class PowerLogic {
                 PacketDistributor.sendToPlayersTrackingEntityAndSelf(serverPlayer, new ModPayloads.OutfitState(serverPlayer.getId(), outfit));
             }
             syncSheath(serverPlayer);
-            String stance = data.hasPower() ? data.power : "";
-            if (!stance.equals(data.stanceSent)) {
-                data.stanceSent = stance;
-                PacketDistributor.sendToPlayersTrackingEntityAndSelf(serverPlayer, new ModPayloads.StanceState(serverPlayer.getId(), stance));
-            }
         }
     }
 
@@ -329,8 +324,6 @@ public final class PowerLogic {
         PacketDistributor.sendToPlayer(watcher, new ModPayloads.AuraState(player.getId(), auraOf(player)));
         PacketDistributor.sendToPlayer(watcher, new ModPayloads.OutfitState(player.getId(), outfitOf(player)));
         PacketDistributor.sendToPlayer(watcher, sheathState(player, sheathCode(player)));
-        PowerData data = player.getData(ModAttachments.POWER);
-        PacketDistributor.sendToPlayer(watcher, new ModPayloads.StanceState(player.getId(), data.hasPower() ? data.power : ""));
     }
 
     // Tells the watchers when Kokushibo's sword goes in or out of the sheath, or the sheath on or off the hip. Every tick,
