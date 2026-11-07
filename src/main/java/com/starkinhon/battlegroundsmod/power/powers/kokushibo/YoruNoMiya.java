@@ -15,18 +15,19 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 // Moon Breathing, 1st Form: Yoru no Miya (Dark Moon, Evening Palace). A quick draw (espada.sacar_kokushibo) that opens a
 // giant crescent slash in front of him, pale cream outside and ember inside, with chains of moons popping out along
-// it; everything caught in the arc (a big disc lying in front of him, leaning) is cut.
+// it; everything caught in the arc (a big disc leaning back in front of him) is cut.
 // The look is the Visualizer page Stark approved (forja/kokushibo-formas/yoru-no-miya.html), drawn by
 // client/fx/MoonSlashRenderer with the souls_moon shader. Its shape lives in the page's 2D "p" space, set up on a plane
-// lying in front of him: p = C at the plane's centre, D blocks ahead of his eyes, SCALE blocks per unit.
+// leaning back in front of him: p = C at the plane's centre, D blocks ahead of his eyes, SCALE blocks per unit.
 public final class YoruNoMiya {
     // The page's slash (keep in step with souls_moon.fsh and MoonSlashRenderer).
     public static final double CX = 0.06, CY = -0.04, R = 0.60;
     public static final double SCALE = 7.0;
-    public static final double AHEAD = 2.6;
-    public static final double DROP = 0.4;
-    // How much the lying slash leans (negative: his right side lower).
-    public static final double ROLL = -13;
+    // Where the plane's centre sits: AHEAD blocks in front of his eyes, RISE above them.
+    public static final double AHEAD = 3.6;
+    public static final double RISE = 0.7;
+    // How far the slash leans back from standing up (degrees).
+    public static final double TILT = 55;
     // The cut lands as the point of the slash goes round (the page's head reaches the arc's middle at ~0.2 s).
     private static final int HIT_DELAY = 4;
     private static final float DAMAGE = 14f;
@@ -36,23 +37,20 @@ public final class YoruNoMiya {
     private YoruNoMiya() {
     }
 
-    // The plane's centre and its axes (normal, right, up), the same on both sides. The slash lies down like a horizontal
-    // sweep (Stark: "diagonalmente deitado"), not standing up: the page's "up" runs forward along where he looks (only
-    // half his pitch, so looking down doesn't bury it), its "right" runs to his right, and the plane leans ROLL degrees
-    // so it goes from high on his left to low on his right.
+    // The plane's centre and its axes (normal, right, up), the same on both sides. As in Stark's montage: the page's
+    // slash faces forward (the same shape he sees on the page) but leans back TILT degrees, so it wraps round him: it
+    // rises from beside his left shoulder, passes high above and behind his head and comes down to the ground ahead of
+    // him on his right. It follows only his turning, not his pitch, so looking down never buries it.
     public static Vec3[] frame(Vec3 eye, Vec3 look) {
         Vec3 l = look.lengthSqr() < 1.0E-6 ? new Vec3(0, 0, 1) : look.normalize();
         Vec3 flat = new Vec3(l.x, 0, l.z);
         flat = flat.lengthSqr() < 1.0E-6 ? new Vec3(0, 0, 1) : flat.normalize();
-        double pitch = Math.asin(Math.max(-1, Math.min(1, l.y))) * 0.5;
-        Vec3 fwd = flat.scale(Math.cos(pitch)).add(0, Math.sin(pitch), 0);
-        Vec3 right = fwd.cross(new Vec3(0, 1, 0)).normalize();
-        Vec3 normal = right.cross(fwd).normalize();
-        double roll = Math.toRadians(ROLL);
-        Vec3 r = right.scale(Math.cos(roll)).add(normal.scale(Math.sin(roll)));
-        Vec3 n = normal.scale(Math.cos(roll)).subtract(right.scale(Math.sin(roll)));
-        Vec3 centre = eye.add(0, -DROP, 0).add(flat.scale(AHEAD));
-        return new Vec3[] {centre, n, r, fwd};
+        Vec3 right = flat.cross(new Vec3(0, 1, 0)).normalize();
+        double tilt = Math.toRadians(TILT);
+        Vec3 up = new Vec3(0, Math.cos(tilt), 0).add(flat.scale(Math.sin(tilt)));
+        Vec3 n = right.cross(up).normalize();
+        Vec3 centre = eye.add(0, RISE, 0).add(flat.scale(AHEAD));
+        return new Vec3[] {centre, n, right, up};
     }
 
     public static boolean use(LivingEntity caster, ServerLevel level) {
