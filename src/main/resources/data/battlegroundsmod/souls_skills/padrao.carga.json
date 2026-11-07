@@ -10,7 +10,7 @@
   "cores": {
     "uchiha_ghost": ["#4a0606", "#ff6a4d"],
     "manipulator": ["#33124f", "#d4a8f5"],
-    "strongest": ["#1c0f5c", "#9a86ff"],
+    "strongest": ["#08305e", "#8fe3ff"],
     "destruction_god": ["#3d006b", "#e15cff"]
   }
 }
