@@ -157,6 +157,7 @@ public final class KyokaSuigetsu {
             Fx.effects(level, SKILL, awakened, "quebrar", middle, facing);
             clone.discard();
             ACTIVE.remove(caster);
+            com.starkinhon.battlegroundsmod.boss.BossFalas.say(caster, "fala.battlegroundsmod.aizen.kyoka", 400);
             if (caster.isAlive()) {
                 hide(caster, 0);
                 caster.removeEffect(MobEffects.INVISIBILITY);

@@ -130,6 +130,7 @@ public final class Hogyoku {
         buff(caster, MobEffects.MOVEMENT_SPEED, spec.velocidade(), lasts);
         buff(caster, MobEffects.DAMAGE_RESISTANCE, spec.resistencia(), lasts);
         caster.getData(ModAttachments.POWER).awakened = true;
+        com.starkinhon.battlegroundsmod.boss.BossFalas.say(caster, "fala.battlegroundsmod.aizen.hogyoku", 0);
         if (caster instanceof ServerPlayer player) {
             player.displayClientMessage(Component.translatable("message.battlegroundsmod.hogyoku"), true);
         }

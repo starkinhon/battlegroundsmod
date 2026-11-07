@@ -85,6 +85,7 @@ public final class UmDedo {
         PowerLogic.interrupt(attacker);
         Freeze.hold(attacker, cut + SWEEP);
         Freeze.hold(caster, stop);
+        com.starkinhon.battlegroundsmod.boss.BossFalas.say(caster, "fala.battlegroundsmod.aizen.dedo", 400);
         PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new ModPayloads.Hitstop(caster.getId(), stop));
         PacketDistributor.sendToPlayersTrackingEntityAndSelf(attacker, new ModPayloads.Hitstop(attacker.getId(), stop));
         caster.getData(ModAttachments.POWER).busyTicks = cut + SWEEP + IMPACT_STOP + 4;

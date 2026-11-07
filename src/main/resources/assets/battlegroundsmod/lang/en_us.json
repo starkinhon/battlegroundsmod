@@ -648,5 +648,20 @@
   "message.battlegroundsmod.vazio_relampago_atingido": "0.2-second Domain Expansion: technique broken.",
   "ability.battlegroundsmod.strongest.8": "0.2-Second Domain Expansion",
   "ability.battlegroundsmod.strongest.8.desc": "Counter: the Domain's hand sign in a blink, the Void opens for an instant and closes in an X across the screen. Breaks any technique of everyone in the Domain's reach (charging, halfway or active, attacks in the air, even a Domain opening). Whoever was charging or using a technique is stunned for 7 s with no stamina; the others for 1.5 s. With no one near it does not go off.",
-  "ability.battlegroundsmod.strongest.8.tags": "Counter,Area,Stun,Domain"
+  "ability.battlegroundsmod.strongest.8.tags": "Counter,Area,Stun,Domain",
+  "fala.battlegroundsmod.gojo.menos_um": "One down... who's next?",
+  "fala.battlegroundsmod.gojo.fugindo": "Where do you think you're going?",
+  "fala.battlegroundsmod.madara.agarrao": "I'm disappointed. I expected more.",
+  "fala.battlegroundsmod.madara.inutil": "Useless.",
+  "fala.battlegroundsmod.madara.matou": "Wake up to reality.",
+  "fala.battlegroundsmod.bills.atordoado": "Hold still. This will be quick.",
+  "fala.battlegroundsmod.bills.fome": "I'm getting hungry... let's finish this.",
+  "fala.battlegroundsmod.bills.pouca_vida": "Now you've really made me angry...",
+  "fala.battlegroundsmod.bills.matou": "How boring.",
+  "fala.battlegroundsmod.aizen.kyoka": "Since when were you under the impression I was there?",
+  "fala.battlegroundsmod.aizen.dedo": "Don't use such strong words, it makes you look weak.",
+  "fala.battlegroundsmod.aizen.matou": "Admirable.",
+  "fala.battlegroundsmod.aizen.hogyoku": "No one stands at the top from the start.",
+  "fala.battlegroundsmod.kokushibo.matou": "Too weak...",
+  "fala.battlegroundsmod.kokushibo.respiracao": "Show me your Breathing."
 }

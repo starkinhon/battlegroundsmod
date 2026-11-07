@@ -1,0 +1,199 @@
+package com.starkinhon.battlegroundsmod.boss;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.WeakHashMap;
+
+import com.starkinhon.battlegroundsmod.combat.Combat;
+import com.starkinhon.battlegroundsmod.combat.Stun;
+import com.starkinhon.battlegroundsmod.network.ModPayloads;
+
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
+import net.neoforged.neoforge.network.PacketDistributor;
+
+// The bosses' lines: short phrases from the anime they say in certain moments of the fight, floating over their head
+// (client/FalaRender) for everyone near, instead of the chat. Only real bosses speak (not the player with the soul,
+// not the SubAlma mobs). The text is a lang key (fala.battlegroundsmod.*) or plain text (a souls_bosses "fala").
+// Lines come from the power the boss carries, so a future Aizen or Kokushibo boss speaks with no extra code.
+public final class BossFalas {
+    // Who hears it.
+    private static final double RANGE = 32;
+    // Gap between two lines of the same boss, so it never turns into spam; kills skip it.
+    private static final int GAP = 200;
+    // A target lost for this long ends the fight (the "once per fight" lines can come again).
+    private static final int FIGHT_END = 300;
+    // Bills gets hungry after this long in the same fight.
+    private static final int HUNGRY = 1800;
+
+    private static final Map<LivingEntity, State> STATES = new WeakHashMap<>();
+    // Last distance of each target the Azul pulls (by entity id), to see who is getting away from it.
+    private static final Map<Integer, double[]> AZUL = new HashMap<>();
+
+    private static final class State {
+        long lastSaid = -100000;
+        final Map<String, Long> said = new HashMap<>();
+        long fightStart = -1;
+        long lastTarget = -100000;
+        boolean lowSaid;
+    }
+
+    private BossFalas() {
+    }
+
+    // The boss says this line if it may: true when it did.
+    public static boolean say(LivingEntity speaker, String key, int cooldown) {
+        return say(speaker, key, cooldown, false);
+    }
+
+    private static boolean say(LivingEntity speaker, String key, int cooldown, boolean force) {
+        if (!(speaker instanceof SoulBoss boss) || !boss.isBoss() || !boss.isAlive() || !(boss.level() instanceof ServerLevel level)) {
+            return false;
+        }
+        State state = STATES.computeIfAbsent(boss, b -> new State());
+        long now = level.getGameTime();
+        Long last = state.said.get(key);
+        if (last != null && now - last < cooldown) {
+            return false;
+        }
+        if (!force && now - state.lastSaid < GAP) {
+            return false;
+        }
+        state.lastSaid = now;
+        state.said.put(key, now);
+        int[] colors = colors(boss.powerData().power);
+        ModPayloads.Fala payload = new ModPayloads.Fala(boss.getId(), key, colors[0], colors[1]);
+        for (ServerPlayer player : level.players()) {
+            if (player.distanceToSqr(boss) <= RANGE * RANGE) {
+                PacketDistributor.sendToPlayer(player, payload);
+            }
+        }
+        return true;
+    }
+
+    // Once per fight: true the first time in this fight.
+    private static boolean sayOncePerFight(LivingEntity speaker, String key) {
+        if (!(speaker instanceof SoulBoss boss)) {
+            return false;
+        }
+        State state = STATES.computeIfAbsent(boss, b -> new State());
+        if (state.said.containsKey(key) && state.said.get(key) >= state.fightStart && state.fightStart >= 0) {
+            return false;
+        }
+        return say(speaker, key, 0);
+    }
+
+    // The soul's two colors (the text runs from the first to the second).
+    private static int[] colors(String power) {
+        return switch (power) {
+            case "strongest" -> new int[] {0x3AA8FF, 0xE8F8FF};
+            case "uchiha_ghost" -> new int[] {0xFF4A1A, 0xFFCF6A};
+            case "destruction_god" -> new int[] {0xB45CFF, 0xF3E3FF};
+            case "manipulator" -> new int[] {0x8E44FF, 0xE6D4FF};
+            case "moon_demon" -> new int[] {0xB04AFF, 0xFFD6FF};
+            default -> new int[] {0xFFFFFF, 0xFFFFFF};
+        };
+    }
+
+    // Every server tick of a boss: the fight clock and the lines that come from how the fight is going.
+    public static void tick(SoulBoss boss) {
+        if (!boss.isBoss() || !boss.isAlive() || !(boss.level() instanceof ServerLevel level)) {
+            return;
+        }
+        State state = STATES.computeIfAbsent(boss, b -> new State());
+        long now = level.getGameTime();
+        LivingEntity target = boss.getTarget();
+        if (target != null && target.isAlive()) {
+            if (state.fightStart < 0 || now - state.lastTarget > FIGHT_END) {
+                state.fightStart = now;
+            }
+            state.lastTarget = now;
+        } else if (now - state.lastTarget > FIGHT_END) {
+            state.fightStart = -1;
+        }
+        float life = boss.getHealth() / boss.getMaxHealth();
+        if (life > 0.6f) {
+            state.lowSaid = false;
+        }
+        if (!"destruction_god".equals(boss.powerData().power) || target == null || !target.isAlive()) {
+            return;
+        }
+        // Bills: the target stunned right in front of him.
+        Vec3 to = target.position().subtract(boss.position());
+        if (Stun.is(target) && to.length() < 6 && to.lengthSqr() > 1.0e-4
+                && Combat.flatLook(boss).dot(new Vec3(to.x, 0, to.z).normalize()) > 0.5) {
+            say(boss, "fala.battlegroundsmod.bills.atordoado", 600);
+        }
+        // Bills: the fight dragging on.
+        if (state.fightStart >= 0 && now - state.fightStart >= HUNGRY) {
+            sayOncePerFight(boss, "fala.battlegroundsmod.bills.fome");
+        }
+        // Bills: low on life, once until he heals back up.
+        if (!state.lowSaid && life <= 0.3f && say(boss, "fala.battlegroundsmod.bills.pouca_vida", 0)) {
+            state.lowSaid = true;
+        }
+    }
+
+    // The Azul is pulling this target and it is still getting away (running, dashing): Gojo teases it.
+    public static void azulPull(LivingEntity caster, LivingEntity target, double distance) {
+        if (!(caster instanceof SoulBoss) || !(caster.level() instanceof ServerLevel level)) {
+            return;
+        }
+        long now = level.getGameTime();
+        double[] last = AZUL.put(target.getId(), new double[] {distance, now});
+        if (AZUL.size() > 256) {
+            AZUL.clear();
+        }
+        if (last != null && now - (long) last[1] <= 2 && distance - last[0] > 0.2) {
+            say(caster, "fala.battlegroundsmod.gojo.fugindo", 400);
+        }
+    }
+
+    // Kokushibo: the first Moon form of a fight.
+    public static void firstForm(LivingEntity caster) {
+        sayOncePerFight(caster, "fala.battlegroundsmod.kokushibo.respiracao");
+    }
+
+    // A boss killed someone.
+    public static void onDeath(LivingDeathEvent event) {
+        if (event.isCanceled() || !(event.getSource().getEntity() instanceof SoulBoss boss) || !(boss.level() instanceof ServerLevel level)) {
+            return;
+        }
+        LivingEntity victim = event.getEntity();
+        String key = switch (boss.powerData().power) {
+            // Gojo only says his when someone else is still fighting him.
+            case "strongest" -> othersLeft(level, boss, victim) ? "fala.battlegroundsmod.gojo.menos_um" : null;
+            case "uchiha_ghost" -> "fala.battlegroundsmod.madara.matou";
+            case "destruction_god" -> "fala.battlegroundsmod.bills.matou";
+            case "manipulator" -> "fala.battlegroundsmod.aizen.matou";
+            case "moon_demon" -> "fala.battlegroundsmod.kokushibo.matou";
+            default -> null;
+        };
+        if (key != null) {
+            say(boss, key, 100, true);
+        }
+    }
+
+    // Anyone else near still in the fight: players in survival, or anything that has the boss as its target.
+    private static boolean othersLeft(ServerLevel level, SoulBoss boss, LivingEntity victim) {
+        for (LivingEntity e : Combat.inRadius(level, Combat.center(boss), RANGE, boss)) {
+            if (e == victim || !e.isAlive()) {
+                continue;
+            }
+            if (e instanceof Player player ? !player.isSpectator() && !player.isCreative() : e instanceof Mob mob && mob.getTarget() == boss) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static void clear() {
+        STATES.clear();
+        AZUL.clear();
+    }
+}
