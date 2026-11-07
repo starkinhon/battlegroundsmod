@@ -343,7 +343,7 @@ public final class VermelhoRenderer {
         DRAWN.clear();
     }
 
-    // His raised fingertip: in front of the right side of his chest (the Visualizer's "na ponta do dedo"); in first
+    // His fingertip at the end of the outstretched right arm (the held pose has the Red side forward); in first
     // person, low on the right of the view.
     private static Vec3 fingertip(Entity owner, Camera view, Vec3 camera, float partial) {
         Minecraft mc = Minecraft.getInstance();
@@ -363,9 +363,9 @@ public final class VermelhoRenderer {
         if (flipped(owner.getId())) {
             // Upside down, turned about his middle: his right hand is on the other side, low.
             double half = owner.getBbHeight() / 2;
-            return owner.getPosition(partial).add((fx * 0.55 - rx * 0.36) * scale, 2 * half - 1.5 * scale, (fz * 0.55 - rz * 0.36) * scale);
+            return owner.getPosition(partial).add((fx * 0.93 - rx * 0.27) * scale, 2 * half - 1.37 * scale, (fz * 0.93 - rz * 0.27) * scale);
         }
-        return owner.getPosition(partial).add((fx * 0.55 + rx * 0.36) * scale, 1.5 * scale, (fz * 0.55 + rz * 0.36) * scale);
+        return owner.getPosition(partial).add((fx * 0.93 + rx * 0.27) * scale, 1.37 * scale, (fz * 0.93 + rz * 0.27) * scale);
     }
 
     // Everything but the orb itself. R = the orb's radius; grow 0 to 1 = the tails forming; spawn 0 to 1.

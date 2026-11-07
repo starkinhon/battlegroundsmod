@@ -411,12 +411,13 @@ public final class Vermelho {
         return to.lengthSqr() > 1.0E-4 ? to.normalize() : aim(caster);
     }
 
-    // His raised fingertip (the clients work out their own, from his hand).
+    // His fingertip at the end of the outstretched arm (gojo.vermelho_segurando: Red side forward, body on a diagonal).
+    // The clients work out their own the same way (VermelhoRenderer.fingertip).
     static Vec3 fingertip(LivingEntity caster) {
         Vec3 forward = Combat.flatLook(caster);
         Vec3 right = new Vec3(-forward.z, 0, forward.x);
         double scale = caster.getBbHeight() / 1.8;
-        return caster.position().add(forward.scale(0.55 * scale)).add(right.scale(0.36 * scale)).add(0, 1.5 * scale, 0);
+        return caster.position().add(forward.scale(0.93 * scale)).add(right.scale(0.27 * scale)).add(0, 1.37 * scale, 0);
     }
 
     // The fingertip while he hangs upside down (Shift): his body turned about its middle, so the right hand is on the
@@ -425,7 +426,7 @@ public final class Vermelho {
         Vec3 forward = Combat.flatLook(caster);
         Vec3 right = new Vec3(-forward.z, 0, forward.x);
         double scale = caster.getBbHeight() / 1.8;
-        return caster.position().add(forward.scale(0.55 * scale)).add(right.scale(-0.36 * scale)).add(0, caster.getBbHeight() - 1.5 * scale, 0);
+        return caster.position().add(forward.scale(0.93 * scale)).add(right.scale(-0.27 * scale)).add(0, caster.getBbHeight() - 1.37 * scale, 0);
     }
 
     private static double hash(int x, int y, int z) {
