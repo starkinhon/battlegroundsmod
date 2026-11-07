@@ -832,6 +832,21 @@ public final class ModPayloads {
         }
     }
 
+    // Server -> client: Gojo's Expansão de 0,2 s (power/powers/gojo/VazioRelampago) opening at center: the void snaps
+    // open on the screen and closes in an X (client/fx/VoidFlashScene).
+    public record VoidFlash(int caster, Vec3 center) implements CustomPacketPayload {
+        public static final Type<VoidFlash> TYPE = payloadType("void_flash");
+        public static final StreamCodec<ByteBuf, VoidFlash> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, VoidFlash::caster,
+                VEC3, VoidFlash::center,
+                VoidFlash::new);
+
+        @Override
+        public Type<VoidFlash> type() {
+            return TYPE;
+        }
+    }
+
     // Server -> client: Gojo's Purple (power/powers/gojo/Roxo), every tick while it forms and grows in front of owner's
     // chest. mode 0 alive, 2 gone (cut short, it fades). tick: ticks since he pressed C (the client runs the whole forming
     // timeline from it, placing the two spheres on his body itself so they never lag); charge 0 to 1: how much it grew
@@ -1209,6 +1224,8 @@ public final class ModPayloads {
                 () -> ClientHooks.blackFlash(payload.kind(), payload.entity(), payload.pos(), payload.dir(), payload.charge(), payload.ticks())));
         registrar.playToClient(Limp.TYPE, Limp.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.limp(payload.entity(), payload.phase(), payload.ticks(), payload.strength())));
+        registrar.playToClient(VoidFlash.TYPE, VoidFlash.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.voidFlash(payload.caster(), payload.center())));
         registrar.playToClient(SubFx.TYPE, SubFx.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.subFx(payload.kind(), payload.id(), payload.pos(), payload.dir(), payload.a(), payload.b(), payload.c())));
         registrar.playToClient(PunchFx.TYPE, PunchFx.STREAM_CODEC, (payload, context) -> context.enqueueWork(
