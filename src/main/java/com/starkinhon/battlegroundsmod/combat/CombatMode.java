@@ -33,7 +33,7 @@ public final class CombatMode {
         if (entity.level().isClientSide()) {
             return data.combat;
         }
-        return data.combatUntil > entity.level().getGameTime();
+        return data.combatLocked || data.combatUntil > entity.level().getGameTime();
     }
 
     // Starts combat mode, or keeps it going.
@@ -71,6 +71,27 @@ public final class CombatMode {
     public static void leave(LivingEntity entity) {
         PowerData data = entity.getData(ModAttachments.POWER);
         data.combatUntil = 0;
+        data.combatLocked = false;
         data.combat = false;
+    }
+
+    // The combat mode key (Stark, 2026-11-07): turns it on and keeps it on until pressed again, or turns it off right
+    // away. Skills, base attacks and hits still turn it on by themselves for 30 s after it was turned off.
+    public static void toggle(ServerPlayer player) {
+        PowerData data = player.getData(ModAttachments.POWER);
+        if (!data.hasPower() || player.isSpectator() || !player.isAlive()) {
+            return;
+        }
+        boolean on = !in(player);
+        if (on) {
+            enter(player);
+            data.combatLocked = true;
+        } else {
+            leave(player);
+        }
+        PowerLogic.sync(player);
+        PowerLogic.syncSheath(player);
+        player.displayClientMessage(net.minecraft.network.chat.Component.translatable(
+                on ? "message.battlegroundsmod.combat_on" : "message.battlegroundsmod.combat_off"), true);
     }
 }

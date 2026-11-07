@@ -59,6 +59,8 @@ public class PowerData {
     public long lastCastTime = -1;
     // Combat mode lasts until this game time (see CombatMode). On the client, combat is the synced flag instead.
     public long combatUntil = 0;
+    // Turned on with the combat mode key: combat mode stays on, with no 30 s limit, until the key turns it off.
+    public boolean combatLocked = false;
     // Who this fighter last hit or was hit by, and when (game time): the teleport goes to them.
     public int foughtId = -1;
     public long foughtAt = -1;
@@ -128,5 +130,6 @@ public class PowerData {
         stamina = -1;
         exhaustedUntil = 0;
         chargeLeft = 0;
+        combatLocked = false;
     }
 }
