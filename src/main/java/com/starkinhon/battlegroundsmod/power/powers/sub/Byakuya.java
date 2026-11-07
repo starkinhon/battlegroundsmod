@@ -30,6 +30,8 @@ import net.minecraft.world.phys.Vec3;
 public final class Byakuya {
     public static final String BANKAI = "byakuya_bankai";
     private static final int BANKAI_TICKS = 400;
+    private static final int GOKEI_RANGE = 26;
+    private static final int SENKA_RANGE = 18;
 
     private Byakuya() {
     }
@@ -138,8 +140,9 @@ public final class Byakuya {
     // ---------- X: Gokei ----------
 
     private static boolean gokei(LivingEntity caster, ServerLevel level) {
-        LivingEntity target = SubCommon.aimed(caster, 26);
+        LivingEntity target = SubCommon.aimed(caster, GOKEI_RANGE);
         if (target == null) {
+            SubCommon.warn(caster, "byakuya.gokei_no_target", GOKEI_RANGE);
             return false;
         }
         SubCommon.Guard guard = SubCommon.guard(caster);
@@ -191,8 +194,9 @@ public final class Byakuya {
     // ---------- C: Senka ----------
 
     private static boolean senka(LivingEntity caster, ServerLevel level) {
-        LivingEntity target = SubCommon.aimed(caster, 18);
+        LivingEntity target = SubCommon.aimed(caster, SENKA_RANGE);
         if (target == null) {
+            SubCommon.warn(caster, "byakuya.senka_no_target", SENKA_RANGE);
             return false;
         }
         Vec3 behind = target.position().subtract(SubCommon.flat(target.getLookAngle()).scale(1.3));
@@ -239,6 +243,7 @@ public final class Byakuya {
 
     private static boolean bankai(LivingEntity caster, ServerLevel level) {
         if (inBankai(caster)) {
+            SubCommon.warn(caster, "byakuya.bankai_active", (SubCommon.remaining(caster, BANKAI) + 19) / 20);
             return false;
         }
         SubCommon.Guard guard = SubCommon.guard(caster);

@@ -147,8 +147,9 @@ public final class InfiniteVoid {
             // The target died (the ink plays first), or everyone caught is dead.
             boolean done = active.killedAt >= 0 && age >= active.killedAt + KILL_CLOSE_DELAY;
             if ((gone || done || active.cancelled) && !closing[0] && age < close) {
-                // It shatters now.
+                // It shatters now: what it still had going (the tunnel's and the void's sounds, its effects) stops with it.
                 closing[0] = true;
+                com.starkinhon.battlegroundsmod.combat.SkillStop.stop(caster);
                 send(level, center, new ModPayloads.GojoDomain(caster.getId(), center, awakened, 1, 0));
                 SkillSounds.play(level, spec.sons(), "quebra", 0, spec.closeTicks(), onde -> center.add(0, 1, 0), screen);
                 // Everyone inside is back in the world when it shatters.

@@ -78,6 +78,11 @@ public final class Tasks {
         return nextSeq;
     }
 
+    // Whose code is running now (null: unknown): the owner of the sounds and effects it plays (SkillStop).
+    public static Entity owner() {
+        return current;
+    }
+
     // Runs body with owner as the one every task it starts belongs to.
     public static void as(Entity owner, Runnable body) {
         Entity before = current;

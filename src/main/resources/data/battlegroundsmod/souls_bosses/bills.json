@@ -137,7 +137,7 @@
       "recargaTicks": 500,
       "recargaMaxTicks": 700,
       "avisoTicks": 6,
-      "distanciaMin": 6,
+      "distanciaMin": 0,
       "distanciaMax": 40,
       "giroGrausPorTick": 10,
       "avisoCor": "#9b30ff",
@@ -250,6 +250,22 @@
         "destruction_bop",
         "esfera"
       ]
+    },
+    "peteleco_e_hakai": {
+      "peso": 1.0,
+      "encadeado": true,
+      "passos": [
+        "destruction_bop",
+        "hakai"
+      ]
+    },
+    "peteleco_e_planeta": {
+      "peso": 1.0,
+      "encadeado": true,
+      "passos": [
+        "destruction_bop",
+        "destruction_touch"
+      ]
     }
   },
   "fases": [
@@ -268,7 +284,8 @@
       ],
       "combos": [
         "julgamento",
-        "punho_divino"
+        "punho_divino",
+        "peteleco_e_hakai"
       ],
       "agressividade": 0.8,
       "multRecarga": 1.0,
@@ -301,6 +318,8 @@
       "combos": [
         "julgamento",
         "punho_divino",
+        "peteleco_e_hakai",
+        "peteleco_e_planeta",
         "viagem_espacial"
       ],
       "agressividade": 0.85,

@@ -10,10 +10,12 @@ import com.starkinhon.battlegroundsmod.combat.Stamina;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
 import com.starkinhon.battlegroundsmod.power.PowerData;
 
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -33,6 +35,21 @@ public final class SubCommon {
 
     public static void setState(LivingEntity entity, String name, int ticks) {
         STATES.computeIfAbsent(entity.getUUID(), k -> new HashMap<>()).put(name, entity.level().getGameTime() + ticks);
+    }
+
+    // Ticks left on a timed state (0 when it is off).
+    public static int remaining(LivingEntity entity, String name) {
+        Map<String, Long> map = STATES.get(entity.getUUID());
+        Long end = map == null ? null : map.get(name);
+        return end == null ? 0 : (int) Math.max(0, end - entity.level().getGameTime());
+    }
+
+    // A skill that can't go off right now says why on the action bar, never fails in silence (Stark's rule, 2026-11-07).
+    // Mobs just skip it.
+    public static void warn(LivingEntity caster, String key, Object... args) {
+        if (caster instanceof ServerPlayer player) {
+            player.displayClientMessage(Component.translatable("message.battlegroundsmod." + key, args).withStyle(ChatFormatting.YELLOW), true);
+        }
     }
 
     public static void clearState(LivingEntity entity, String name) {
@@ -76,7 +93,7 @@ public final class SubCommon {
     }
 
     public static void sound(ServerLevel level, Vec3 pos, SoundEvent sound, float volume, float pitch) {
-        level.playSound(null, pos.x, pos.y, pos.z, sound, SoundSource.PLAYERS, volume, pitch);
+        com.starkinhon.battlegroundsmod.combat.Fx.sound(level, pos, sound, volume, pitch);
     }
 
     // The target in the aim, or null.

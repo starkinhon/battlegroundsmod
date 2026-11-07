@@ -36,8 +36,9 @@ public final class ScreenFx {
 
     // Space bending in a sphere: mode 0 ripple, 1 swirl, 2 lens, 3 whole screen, 4 whirl around the outside only.
     // follow/seguir keep it on an entity (lifted by up); otherwise it stays at pos.
+    // owner: whose move it came from (-1 unknown), see stopOwner.
     public record Warp(Vec3 pos, float radius, float strength, float speed, int mode, Vec3 axis, float[] tint, float tintAmount, long start, int life,
-            int follow, String seguir, float up) {
+            int follow, String seguir, float up, int owner) {
         float envelope(double now) {
             double t = (now - start) / life;
             if (t < 0 || t >= 1) {
@@ -110,7 +111,13 @@ public final class ScreenFx {
 
     public static void warp(Vec3 pos, float radius, float strength, float speed, int mode, Vec3 axis, int tint, float tintAmount, int life,
             int follow, String seguir, float up) {
-        WARPS.add(new Warp(pos, radius, strength * WARP_SCALE, speed, mode, axis, rgb(tint), tintAmount, ticks, Math.max(1, life), follow, seguir, up));
+        WARPS.add(new Warp(pos, radius, strength * WARP_SCALE, speed, mode, axis, rgb(tint), tintAmount, ticks, Math.max(1, life), follow, seguir, up,
+                SkillEffects.owner()));
+    }
+
+    // owner's move was cut off: its bending is gone.
+    public static void stopOwner(int owner) {
+        WARPS.removeIf(w -> w.owner() == owner);
     }
 
     // Bending for this frame only (call it from a renderer every frame). age in seconds (moves the swirl).

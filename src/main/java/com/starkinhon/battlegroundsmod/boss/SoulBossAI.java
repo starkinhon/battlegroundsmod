@@ -1216,6 +1216,22 @@ public class SoulBossAI extends Goal {
         return off(boss.spec(), name);
     }
 
+    // The move is one this phase may use (under /gamerule soulbossfight false: every move of the boss).
+    public boolean has(String name) {
+        return boss.fase().skills().contains(name);
+    }
+
+    // The tactics start a move now, dropping what it was about to do (an answer that can't wait for the next decision:
+    // the Susanoo against an attack flying at it). Only between moves, and only with the move off cooldown.
+    public boolean use(String name) {
+        if (state != State.IDLE || !has(name) || !off(boss.spec(), name)) {
+            return false;
+        }
+        plan.clear();
+        comboName = null;
+        return begin(boss.spec(), name);
+    }
+
     public void lookAt(Vec3 point, float maxTurn) {
         face(point, maxTurn);
     }

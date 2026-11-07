@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.starkinhon.battlegroundsmod.ModAttachments;
+import com.starkinhon.battlegroundsmod.power.BossOrder;
 import com.starkinhon.battlegroundsmod.combat.AshKill;
 import com.starkinhon.battlegroundsmod.combat.BlockRules;
 import com.starkinhon.battlegroundsmod.combat.Combat;
@@ -53,8 +54,10 @@ public final class KatonGigante {
         KatonGiganteSpec.Carga carga = spec.carga();
         int rise = Math.max(0, spec.pulo().subirTicks());
         int full = Math.max(1, carga.maxTicks());
-        // Bosses don't hold keys: they let go somewhere between 60% and a full charge.
-        int bossCharge = Math.max(carga.minTicks(), (int) (full * (0.6 + RANDOM.nextDouble() * 0.4)));
+        // Bosses don't hold keys: they let go somewhere between 60% and a full charge, or as their tactics say (BossOrder).
+        BossOrder.Order order = BossOrder.take(caster);
+        double part = order != null && order.hold() ? order.charge() : 0.6 + RANDOM.nextDouble() * 0.4;
+        int bossCharge = Math.max(carga.minTicks(), (int) (full * part));
         int id = nextId++;
         String power = data.power;
         int interrupts = data.interrupts;

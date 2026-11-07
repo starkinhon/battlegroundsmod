@@ -125,6 +125,16 @@ public final class Realismo {
         add(type, pos, dir, speed, radius, height, intensity, tint, lifeTicks, follow, seguir, null, null, 0);
     }
 
+    // Same, belonging to owner (taken away by remove(owner)).
+    public static void add(int type, Vec3 pos, Vec3 dir, float speed, float radius, float height, float intensity, int tint, int lifeTicks,
+            int follow, String seguir, Object owner) {
+        add(type, pos, dir, speed, radius, height, intensity, tint, lifeTicks, follow, seguir, null, owner, 0);
+    }
+
+    // The fighter whose move a volume came from (SkillEffects.stopOwner).
+    public record Owner(int id) {
+    }
+
     // A volume that rides path (see Vol) and belongs to owner. preAgeTicks: it starts as if it had already been going that
     // long (a smoke column already at its full height, no fading in); it still lasts lifeTicks from now.
     public static void ride(int type, DoubleFunction<Vec3> path, Vec3 dir, float radius, float height, float intensity, int tint, int lifeTicks,
@@ -136,7 +146,7 @@ public final class Realismo {
     // Takes away every volume that belongs to owner (the meteor pulverized in the air).
     public static void remove(Object owner) {
         if (owner != null) {
-            VOLS.removeIf(v -> v.owner() == owner);
+            VOLS.removeIf(v -> owner.equals(v.owner()));
         }
     }
 
