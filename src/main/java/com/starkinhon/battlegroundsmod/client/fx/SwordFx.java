@@ -44,6 +44,7 @@ public final class SwordFx {
     public static final int GLINT = SwordArts.FX_GLINT;
     public static final int MOON = SwordArts.FX_MOON;
     public static final int MOON_HIT = SwordArts.FX_MOON_HIT;
+    public static final int MOON_FORM = SwordArts.FX_MOON_FORM;
 
     // How long the trail lasts behind the blade, in ticks.
     private static final float TRAIL_TICKS = 3.2f;
@@ -92,6 +93,7 @@ public final class SwordFx {
             case GLINT -> GLINTS.add(new Glint(entityId, now));
             case MOON -> MoonSlashRenderer.receive(pos, dir, (int) a);
             case MOON_HIT -> MoonSlashRenderer.hit(pos);
+            case MOON_FORM -> MoonFormsRenderer.receive((int) b, pos, dir, (int) a);
             default -> {
             }
         }
@@ -108,6 +110,7 @@ public final class SwordFx {
         GLINTS.clear();
         ORIGINS.clear();
         MoonSlashRenderer.clear();
+        MoonFormsRenderer.clear();
     }
 
     private static Vec3 unit(Vec3 v) {

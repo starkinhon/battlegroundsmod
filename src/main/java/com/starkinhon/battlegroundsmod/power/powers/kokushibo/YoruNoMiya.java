@@ -260,7 +260,7 @@ public final class YoruNoMiya {
     }
 
     // One block out: some fly off as debris, the rest just go.
-    private static void remove(ServerLevel level, BlockPos.MutableBlockPos pos, Vec3 from, Vec3 feet, int[] debris) {
+    static void remove(ServerLevel level, BlockPos.MutableBlockPos pos, Vec3 from, Vec3 feet, int[] debris) {
         double fx = pos.getX() + 0.5 - feet.x, fz = pos.getZ() + 0.5 - feet.z;
         if (fx * fx + fz * fz < 1.6 * 1.6 && pos.getY() < feet.y + 2.2) {
             return;
