@@ -312,7 +312,8 @@ public abstract class SoulBoss extends Monster {
     // (/kill and the void still work). Only in a boss fight (/gamerule soulbossfight).
     @Override
     public void setHealth(float health) {
-        BossSpec.UltFinal ult = level().isClientSide ? null : spec().ultFinal();
+        // Only looked up when it matters: LivingEntity's constructor already calls this.
+        BossSpec.UltFinal ult = health <= 0 && configured && !level().isClientSide ? spec().ultFinal() : null;
         if (health <= 0 && configured && !ultUsed && !lethalBypass && ult != null && ult.ativa() && bossfight()) {
             health = 1;
         }
