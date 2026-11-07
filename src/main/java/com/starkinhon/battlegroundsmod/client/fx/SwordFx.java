@@ -43,6 +43,7 @@ public final class SwordFx {
     public static final int COLOR = SwordArts.FX_COLOR;
     public static final int GLINT = SwordArts.FX_GLINT;
     public static final int MOON = SwordArts.FX_MOON;
+    public static final int MOON_HIT = SwordArts.FX_MOON_HIT;
 
     // How long the trail lasts behind the blade, in ticks.
     private static final float TRAIL_TICKS = 3.2f;
@@ -90,6 +91,7 @@ public final class SwordFx {
             case COLOR -> COLORS.put(entityId, color);
             case GLINT -> GLINTS.add(new Glint(entityId, now));
             case MOON -> MoonSlashRenderer.receive(pos, dir, (int) a);
+            case MOON_HIT -> MoonSlashRenderer.hit(pos);
             default -> {
             }
         }

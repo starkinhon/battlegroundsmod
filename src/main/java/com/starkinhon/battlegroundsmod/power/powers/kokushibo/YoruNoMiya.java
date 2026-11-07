@@ -1,15 +1,23 @@
 package com.starkinhon.battlegroundsmod.power.powers.kokushibo;
 
+import com.starkinhon.battlegroundsmod.combat.BlockRules;
 import com.starkinhon.battlegroundsmod.combat.Combat;
+import com.starkinhon.battlegroundsmod.combat.Freeze;
+import com.starkinhon.battlegroundsmod.combat.Stun;
 import com.starkinhon.battlegroundsmod.combat.SwordArts;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
 import com.starkinhon.battlegroundsmod.power.powers.sub.SubCommon;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.item.FallingBlockEntity;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
 
@@ -36,7 +44,23 @@ public final class YoruNoMiya {
     // The cut lands as the point of the slash goes round (the page's head reaches the arc's middle at ~0.2 s).
     private static final int HIT_DELAY = 4;
     private static final float DAMAGE = 14f;
-    private static final double DEPTH = 3.0;
+    private static final double DEPTH = 2.5;
+    // The sword trails during the move: a deep gold, since the trail is mixed halfway with white (SwordFx.drawTrail), so it
+    // ends up the yellow of the moons.
+    public static final int MOON_GOLD = 0xFFA000;
+    // The hitbox reaches this many times as far as the drawn slash (Stark: 1.5x).
+    private static final double HIT_REACH = 1.5;
+    // Black Flash style: the target stands frozen this long after the cut before the blow lands (0.5 s), then stays
+    // stunned STUN_AFTER more.
+    private static final int IMPACT_DELAY = 10;
+    private static final int STUN_AFTER = 10;
+    // The crescent cut into blocks: out past the arc by CARVE_OUT of its radius at the fattest, CARVE_ABOVE blocks above
+    // the slash's plane and CARVE_BELOW below it.
+    private static final double CARVE_OUT = 0.55;
+    private static final double CARVE_ABOVE = 1.5;
+    private static final double CARVE_BELOW = 3.5;
+    // The arc as on the page (souls_moon.fsh): starts at A0 and turns SPAN.
+    private static final double A0 = Math.toRadians(200), SPAN = Math.toRadians(-265);
     private static final double VIEW_DISTANCE = 128;
 
     private YoruNoMiya() {
@@ -76,6 +100,10 @@ public final class YoruNoMiya {
     }
 
     public static boolean use(LivingEntity caster, ServerLevel level) {
+        // The sword's own trails during the move are the moon's gold, not the white of his basic swings (each basic
+        // swing tells its own color again when it starts, so those stay as they are).
+        ModPayloads.SwordFx gold = new ModPayloads.SwordFx(SwordArts.FX_COLOR | MOON_GOLD << 4, caster.getId(), caster.position(), Vec3.ZERO, 0, 0);
+        PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, gold);
         SubCommon.pose(caster, SwordArts.QUICK_DRAW);
         SubCommon.busy(caster, 8);
         com.starkinhon.battlegroundsmod.boss.BossFalas.firstForm(caster);
@@ -101,17 +129,127 @@ public final class YoruNoMiya {
         Vec3 centre = fr[0];
         SubCommon.sound(level, centre, SoundEvents.TRIDENT_RIPTIDE_3.value(), 1.2f, 1.6f);
         SubCommon.sound(level, centre, SoundEvents.AMETHYST_BLOCK_CHIME, 2.0f, 0.7f);
-        double reach = (R * 1.07 + 0.2) * SCALE;
+        SubCommon.sound(level, centre, SoundEvents.GENERIC_EXPLODE.value(), 1.1f, 1.5f);
+        if (BlockRules.canBreak(level)) {
+            carve(level, fr, caster.position());
+        }
+        // The hitbox fills the whole shape the slash sweeps (inside of the arc included, the open gap behind him left
+        // out) and reaches HIT_REACH times as far as the drawn slash (Stark).
+        double reach = (R * 1.07 + 0.2) * SCALE * HIT_REACH;
         for (LivingEntity target : Combat.inRadius(level, centre, reach + DEPTH, caster)) {
             Vec3 rel = Combat.center(target).subtract(centre);
             double depth = rel.dot(fr[1]);
             double px = rel.dot(fr[2]) / SCALE, py = rel.dot(fr[3]) / SCALE;
-            if (Math.abs(depth) > DEPTH || px * px + py * py > (reach / SCALE) * (reach / SCALE)) {
+            if (Math.abs(depth) > DEPTH + target.getBbHeight() * 0.5 || px * px + py * py > (reach / SCALE) * (reach / SCALE)) {
                 continue;
             }
-            if (Combat.hurt(caster, target, DAMAGE)) {
-                Combat.pushFrom(target, eye, 1.1, 0.25);
+            if (px * px + py * py > 0.04 && sweep(px, py) > 1.08) {
+                continue;
+            }
+            strike(caster, target, level, eye);
+        }
+    }
+
+    // How far round the swing (0 at its start, 1 at its end, past 1 in the gap) the page point (x, y) from the arc's centre is.
+    private static double sweep(double x, double y) {
+        double th = Math.atan2(y, x);
+        double a = (A0 - th) % (2 * Math.PI);
+        if (a < 0) {
+            a += 2 * Math.PI;
+        }
+        return a / Math.abs(SPAN);
+    }
+
+    // Like the Black Flash: the cut lands but the target freezes, stunned, and only takes the blow (damage, knockback and
+    // its impact frame) IMPACT_DELAY ticks later.
+    private static void strike(LivingEntity caster, LivingEntity target, ServerLevel level, Vec3 eye) {
+        Stun.apply(target, IMPACT_DELAY + STUN_AFTER);
+        Freeze.hold(target, IMPACT_DELAY + 1);
+        Tasks.later(IMPACT_DELAY, () -> {
+            Freeze.free(target);
+            if (!target.isAlive()) {
+                return;
+            }
+            Vec3 at = Combat.center(target);
+            Vec3 away = at.subtract(eye);
+            ModPayloads.SwordFx hit = new ModPayloads.SwordFx(SwordArts.FX_MOON_HIT, target.getId(), at, away, 0, 0);
+            for (ServerPlayer player : level.players()) {
+                if (player.distanceToSqr(at) < VIEW_DISTANCE * VIEW_DISTANCE) {
+                    PacketDistributor.sendToPlayer(player, hit);
+                }
+            }
+            SubCommon.sound(level, at, SoundEvents.LIGHTNING_BOLT_IMPACT, 1.0f, 1.6f);
+            SubCommon.sound(level, at, SoundEvents.PLAYER_ATTACK_CRIT, 1.6f, 0.6f);
+            if (caster.isAlive() && Combat.hurt(caster, target, DAMAGE)) {
+                Combat.pushFrom(target, eye, 1.9, 0.45);
+            }
+        });
+    }
+
+    // Blocks: the crescent of the slash cut out of whatever it crosses. A thin moon (pointed at both ends, fattest in the
+    // middle of the swing) from the arc out past it, through the plane and down below it, so on flat ground it digs a
+    // crescent trench under the slash and a wall in its way gets a crescent hole through it. Never what he stands on.
+    private static void carve(ServerLevel level, Vec3[] fr, Vec3 feet) {
+        Vec3 centre = fr[0], n = fr[1], right = fr[2], up = fr[3];
+        double outer = R * 1.07 * (1 + CARVE_OUT) * SCALE;
+        int reach = (int) Math.ceil(outer + CARVE_BELOW);
+        int[] debris = {0};
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+        int cx = Mth.floor(centre.x), cy = Mth.floor(centre.y), cz = Mth.floor(centre.z);
+        for (int x = cx - reach; x <= cx + reach; x++) {
+            for (int y = cy - reach; y <= cy + reach; y++) {
+                for (int z = cz - reach; z <= cz + reach; z++) {
+                    Vec3 rel = new Vec3(x + 0.5, y + 0.5, z + 0.5).subtract(centre);
+                    double depth = rel.dot(n);
+                    if (depth > CARVE_ABOVE || depth < -CARVE_BELOW) {
+                        continue;
+                    }
+                    double px = rel.dot(right) / SCALE, py = rel.dot(up) / SCALE;
+                    double s = sweep(px, py);
+                    if (s > 1.0) {
+                        continue;
+                    }
+                    double ru = R * (1 + 0.07 * s);
+                    double fat = Math.pow(Math.sin(Math.PI * s), 0.6);
+                    double r = Math.sqrt(px * px + py * py);
+                    double jag = 0.06 * (hash(x, y, z) - 0.5);
+                    if (r < ru * (1 - 0.1 * fat) + jag || r > ru * (1 + CARVE_OUT * fat) + jag) {
+                        continue;
+                    }
+                    pos.set(x, y, z);
+                    remove(level, pos, centre, feet, debris);
+                }
             }
         }
+    }
+
+    // One block out: some fly off as debris, the rest just go.
+    private static void remove(ServerLevel level, BlockPos.MutableBlockPos pos, Vec3 from, Vec3 feet, int[] debris) {
+        double fx = pos.getX() + 0.5 - feet.x, fz = pos.getZ() + 0.5 - feet.z;
+        if (fx * fx + fz * fz < 1.6 * 1.6 && pos.getY() < feet.y + 2.2) {
+            return;
+        }
+        BlockState state = level.getBlockState(pos);
+        if (state.isAir() || !state.getFluidState().isEmpty() || state.hasBlockEntity() || state.getDestroySpeed(level, pos) < 0) {
+            return;
+        }
+        if (debris[0] < 40 && SubCommon.RANDOM.nextInt(5) == 0) {
+            debris[0]++;
+            FallingBlockEntity block = FallingBlockEntity.fall(level, pos.immutable(), state);
+            block.dropItem = false;
+            Vec3 out = new Vec3(pos.getX() + 0.5 - from.x, 0, pos.getZ() + 0.5 - from.z);
+            out = out.lengthSqr() < 1.0E-4 ? Vec3.ZERO : out.normalize();
+            block.setDeltaMovement(out.scale(0.3 + 0.4 * SubCommon.RANDOM.nextDouble()).add(0, 0.4 + 0.5 * SubCommon.RANDOM.nextDouble(), 0));
+            block.hurtMarked = true;
+        } else {
+            level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2);
+        }
+    }
+
+    private static double hash(int x, int y, int z) {
+        int h = x * 374761393 + y * 668265263 + z * 1274126177;
+        h = (h ^ (h >>> 13)) * 1103515245;
+        h ^= h >>> 16;
+        return (h & 0xFFFFFF) / (double) 0x1000000;
     }
 }

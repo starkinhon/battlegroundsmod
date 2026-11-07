@@ -59,9 +59,39 @@ public final class MoonSlashRenderer {
         List<Spark> sparks = new ArrayList<>();
         build(seed, moons, sparks);
         SLASHES.add(new Slash(fr[0], fr[2], fr[3], ScreenFx.now(), moons, sparks));
+        opening(fr[0]);
         while (SLASHES.size() > MAX) {
             SLASHES.remove(0);
         }
+    }
+
+    // Impact (Stark: "tá muito seco"): the cut opens with an impact frame in the moon's gold, a shake and a short radial
+    // blur, for everyone close enough to see it well.
+    private static final int GOLD = 0xFCB040;
+    private static final double IMPACT_VIEW = 40;
+
+    private static boolean near(Vec3 pos) {
+        net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+        return mc.player != null && mc.player.position().distanceTo(pos) < IMPACT_VIEW;
+    }
+
+    private static void opening(Vec3 centre) {
+        if (!near(centre)) {
+            return;
+        }
+        ScreenFx.impactFrame(new int[] {1, 4, 2}, 1, GOLD, centre, 3);
+        ScreenFx.radialBlur(centre, 0.35f, 8);
+        com.starkinhon.battlegroundsmod.client.ScreenShake.start(0.7f, 10);
+    }
+
+    // The blow landing on someone 0.5 s after the cut (Black Flash style): a second impact frame there and a harder shake.
+    public static void hit(Vec3 pos) {
+        if (!near(pos)) {
+            return;
+        }
+        ScreenFx.impactFrame(new int[] {2, 4}, 1, GOLD, pos, 0);
+        ScreenFx.flash(0xFFE2A0, 0.25f, 5);
+        com.starkinhon.battlegroundsmod.client.ScreenShake.start(1.0f, 12);
     }
 
     public static boolean active() {
