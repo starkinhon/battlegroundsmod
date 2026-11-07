@@ -121,6 +121,8 @@ public final class Urahara {
         Freeze.hold(t, 40);
         SubCommon.pose(caster, "sub.estocada");
         SubCommon.sound(level, caster.position(), SoundEvents.FLINTANDSTEEL_USE, 1f, 1f);
+        // He pierces the net: fire beads are born on its knots and go off one after another (drawn on the net).
+        SubNet.send(level, SubNet.NET, netId, Combat.center(t), t.position().subtract(caster.position()), 1, 1, 2);
         int beads = 8;
         for (int i = 0; i < beads; i++) {
             int k = i;
@@ -131,7 +133,6 @@ public final class Urahara {
                 float ang = k / (float) beads * Mth.TWO_PI;
                 float r = Math.max(0.8f, t.getBbWidth() * 0.8f);
                 Vec3 at = Combat.center(t).add(Mth.cos(ang) * r, (k % 3 - 1) * t.getBbHeight() * 0.35, Mth.sin(ang) * r);
-                SubNet.send(level, SubNet.EXPLOSION, 0, at, Vec3.ZERO, 1.2f, 0, 0);
                 SubCommon.sound(level, at, SoundEvents.GENERIC_EXPLODE.value(), 0.6f, 1.6f + k * 0.05f);
                 t.invulnerableTime = 0;
                 Combat.hurtMagic(caster, t, 1.8f);

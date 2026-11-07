@@ -106,14 +106,22 @@ public final class SubFx {
                 f.a = a;
                 f.b = b;
                 f.updated = now;
-                f.trail.addLast(pos);
+                if (kind != SubNet.NET || b < 0.5f) {
+                    f.trail.addLast(pos);
+                }
                 while (f.trail.size() > 40) {
                     f.trail.removeFirst();
                 }
                 if (kind == SubNet.GOKEI && c >= 1 && c < 2 && f.crushAt < 0) {
                     f.crushAt = now;
                 }
-                if ((kind == SubNet.GOKEI && c >= 2) || (kind != SubNet.GOKEI && c >= 1)) {
+                if (kind == SubNet.NET && b > 0.5f && f.crushAt < 0) {
+                    f.crushAt = now;
+                }
+                if (kind == SubNet.NET && c >= 2 && f.hitAt < 0) {
+                    f.hitAt = now;
+                }
+                if ((kind == SubNet.GOKEI && c >= 2) || (kind == SubNet.NET && c >= 1 && c < 2) || (kind != SubNet.GOKEI && kind != SubNet.NET && c >= 1)) {
                     f.endAt = now;
                     if (kind == SubNet.GETSUGA) {
                         SHOTS.add(new Fx(SubNet.RIP, 0, pos, dir, a * 0.8f, b, 0, now));
@@ -1287,74 +1295,104 @@ public final class SubFx {
         FxDraw.billboard(c, size * 1.5f, 0, FxDraw.SOFT, 0.05f, col, 0.15f * op + 0.4f * hit, true);
     }
 
-    private static void net(Fx f, Vec3 camera, float age, float partial, float out, boolean glow) {
-        if (!glow) {
+    // Shibari's net, the Visualizador's drawNet: a mesh of diamond threads with gaps, thrown like a fishing net (bowed
+    // back as it flies, opening), then closing round the body from the feet up and squeezing.
+    private static final float[] NET_CORE = FxDraw.rgb(0xFFD0D8);
+    private static final float[] URA_FIRE = FxDraw.rgb(0xFFB030);
+    private static final float[] URA_HOT = FxDraw.rgb(0xFF7A4A);
+
+    private static Vector3f netPoint(float a, float b, Vector3f center, Vector3f f, Vector3f s, float r, Vector3f feet, float k, float squeeze, float t) {
+        float u = (a + b) / 2;
+        float v = (a - b) / 2;
+        Vector3f flat = new Vector3f(center).add(new Vector3f(s).mul(u * r)).add(0, v * r * 0.8f, 0).add(new Vector3f(f).mul(-(1 - u * u) * r * 0.35f));
+        if (k <= 0) {
+            return flat;
+        }
+        float th = u * Mth.PI + Mth.HALF_PI;
+        float rr = Mth.lerp(squeeze, 0.75f, 0.42f) + 0.03f * Mth.sin(t * 0.6f + a * 5);
+        float y = (v + 1) * 1.05f;
+        Vector3f wrap = new Vector3f(feet).add(Mth.cos(th) * rr, y, Mth.sin(th) * rr);
+        return flat.lerp(wrap, smooth(k));
+    }
+
+    private static void drawNet(Vector3f center, Vector3f f, Vector3f s, float r, Vector3f feet, float k, float squeeze, float t, float a) {
+        if (a <= 0) {
             return;
         }
-        Vec3 posW = f.endAt >= 0 ? f.pos : f.prev.lerp(f.pos, Math.min(1, partial));
-        Vector3f c = rel(posW, camera);
-        float r = f.a;
-        boolean wrapped = f.b > 0.5f;
-        float w = 0.07f;
-        if (!wrapped) {
-            // Flat and spinning, opening as it flies.
-            Vec3 d = f.dir.lengthSqr() < 1.0E-6 ? new Vec3(0, 0, 1) : f.dir.normalize();
-            Vec3 u0 = d.cross(new Vec3(0, 1, 0));
-            u0 = u0.lengthSqr() < 1.0E-4 ? new Vec3(1, 0, 0) : u0.normalize();
-            Vec3 v0 = u0.cross(d).normalize();
-            float spin = age * 0.25f;
-            int spokes = 10;
-            for (int i = 0; i < spokes; i++) {
-                float ang = i / (float) spokes * Mth.TWO_PI + spin;
-                Vector3f tip = new Vector3f(c).add(vec(u0.scale(Mth.cos(ang) * r).add(v0.scale(Mth.sin(ang) * r))));
-                FxDraw.ribbon(c, tip, w, FxDraw.BEAM, 0.8f, CRIMSON, out, true);
-            }
-            for (int ring = 1; ring <= 3; ring++) {
-                float rr = r * ring / 3f;
+        for (int sign = -1; sign <= 1; sign += 2) {
+            for (int ia = 0; ia < 13; ia++) {
+                float an = -1.8f + ia * 0.3f;
+                float lim = 2 - Math.abs(an);
+                int n = 12;
                 Vector3f last = null;
-                for (int i = 0; i <= spokes; i++) {
-                    float ang = i / (float) spokes * Mth.TWO_PI + spin;
-                    Vector3f p = new Vector3f(c).add(vec(u0.scale(Mth.cos(ang) * rr).add(v0.scale(Mth.sin(ang) * rr))));
+                for (int i = 0; i <= n; i++) {
+                    float bn = -lim + 2 * lim * i / n;
+                    Vector3f p = sign > 0 ? netPoint(an, bn, center, f, s, r, feet, k, squeeze, t) : netPoint(bn, an, center, f, s, r, feet, k, squeeze, t);
                     if (last != null) {
-                        FxDraw.ribbon(last, p, w, FxDraw.BEAM, 0.8f, CRIMSON, out, true);
-                        FxDraw.billboard(p, 0.22f, 0, FxDraw.SOFT, 0.8f, RED, 0.8f * out, true);
+                        FxDraw.ribbon(last, p, 0.16f, FxDraw.BEAM, 0.4f, RED, 0.75f * a, true);
+                        FxDraw.ribbon(last, p, 0.045f, FxDraw.BEAM, 0.95f, NET_CORE, a, true);
                     }
                     last = p;
                 }
             }
-            FxDraw.billboard(c, r * 2.2f, 0, FxDraw.SOFT, 0.05f, CRIMSON, 0.2f * out, true);
+        }
+    }
+
+    private static void net(Fx f, Vec3 camera, float age, float partial, float out, boolean glow) {
+        if (!glow) {
             return;
         }
-        // Wrapped round the target: a cage of crimson lines.
-        float spin = age * 0.03f;
-        for (int i = 0; i < 6; i++) {
-            float lon = i / 6f * Mth.PI + spin;
-            Vector3f last = null;
-            for (int j = 0; j <= 12; j++) {
-                float lat = j / 12f * Mth.TWO_PI;
-                Vector3f p = new Vector3f(c).add(Mth.cos(lat) * Mth.cos(lon) * r, Mth.sin(lat) * r * 1.2f, Mth.cos(lat) * Mth.sin(lon) * r);
-                if (last != null) {
-                    FxDraw.ribbon(last, p, w, FxDraw.BEAM, 0.8f, CRIMSON, out, true);
-                }
-                last = p;
-            }
+        double now = ScreenFx.now() + partial;
+        Vec3 posW = f.endAt >= 0 ? f.pos : f.prev.lerp(f.pos, Math.min(1, partial));
+        Vec3 d = f.dir.lengthSqr() < 1.0E-6 ? new Vec3(0, 0, 1) : new Vec3(f.dir.x, 0, f.dir.z).normalize();
+        Vector3f fv = new Vector3f((float) d.x, 0, (float) d.z);
+        Vector3f sv = new Vector3f(fv).cross(0, 1, 0).normalize();
+        boolean wrapped = f.crushAt >= 0;
+        if (!wrapped) {
+            float r = Mth.lerp(smooth(Math.min(1, age / 10f)), 0.6f, 1.9f);
+            Vector3f c = rel(posW, camera);
+            drawNet(c, fv, sv, r, c, 0, 0, age, out);
+            return;
         }
-        for (int k = 1; k <= 3; k++) {
-            float lat = (k / 4f - 0.5f) * Mth.PI;
-            Vector3f last = null;
-            for (int j = 0; j <= 16; j++) {
-                float lon = j / 16f * Mth.TWO_PI;
-                Vector3f p = new Vector3f(c).add(Mth.cos(lat) * Mth.cos(lon) * r, Mth.sin(lat) * r * 1.2f, Mth.cos(lat) * Mth.sin(lon) * r);
-                if (last != null) {
-                    FxDraw.ribbon(last, p, w, FxDraw.BEAM, 0.8f, CRIMSON, out, true);
-                    if (j % 2 == 0) {
-                        FxDraw.billboard(p, 0.2f, 0, FxDraw.SOFT, 0.8f, RED, 0.8f * out, true);
+        float since = (float) (now - f.crushAt);
+        float k = smooth((since + 3) / 8);
+        float squeeze = smooth((since - 4) / 14);
+        Vector3f feet = rel(posW.add(0, -1.05, 0), camera);
+        Vector3f flatC = rel(f.trail.isEmpty() ? posW : f.trail.peekLast(), camera);
+        drawNet(flatC, fv, sv, 1.9f, feet, k, squeeze, age, out);
+        // Fire beads born on the knots after Hiasobi pierces the net, going off one after another.
+        if (f.hitAt > 0) {
+            float p = (float) (now - f.hitAt);
+            int i = 0;
+            for (int ia = 0; ia < 13; ia++) {
+                for (int ib = 0; ib < 13; ib++) {
+                    float an = -1.8f + ia * 0.3f;
+                    float bn = -1.8f + ib * 0.3f;
+                    if (Math.abs(an) + Math.abs(bn) > 2 || Math.round((an + bn) / 0.3f) % 2 != 0) {
+                        continue;
+                    }
+                    float dist = (float) Math.hypot(an - 0.9f, bn - 0.9f);
+                    float born = 2 + dist * 3;
+                    float det = 12 + dist * 6 + (i++ % 5) * 0.4f;
+                    if (p < born) {
+                        continue;
+                    }
+                    Vector3f q = netPoint(an, bn, flatC, fv, sv, 1.9f, feet, 1, 1, age);
+                    if (p < det) {
+                        float g = smooth((p - born) / 4);
+                        FxDraw.billboard(q, 0.45f * g, age * 0.2f + i, FxDraw.FIRE, 0.3f, URA_FIRE, 0.9f * g, true);
+                        FxDraw.billboard(q, 0.18f * g, 0, FxDraw.SOFT, 0.9f, WHITE, g, true);
+                    } else if (p < det + 12) {
+                        float a = (p - det) / 12;
+                        FxDraw.billboard(q, 0.6f + a * 1.4f, i, FxDraw.FIRE, 0.25f + a * 0.4f, URA_HOT, 1 - a, true);
+                        FxDraw.billboard(q, 1.0f * (1 - a), 0, FxDraw.FLARE, 6 / 32f, URA_FIRE, 1 - a, true);
                     }
                 }
-                last = p;
+            }
+            if (p < 6) {
+                FxDraw.billboard(netPoint(0.9f, 0.9f, flatC, fv, sv, 1.9f, feet, 1, 1, age), 1.2f, 0, FxDraw.FLARE, 8 / 32f, WHITE, 1 - p / 6, true);
             }
         }
-        FxDraw.billboard(c, r * 2.6f, 0, FxDraw.SOFT, 0.05f, CRIMSON, 0.18f * out, true);
     }
 
     private static void explosion(Fx f, Vec3 camera, float age, boolean glow) {
@@ -1386,6 +1424,16 @@ public final class SubFx {
         FxDraw.disk(new Vector3f(c).add(0, -R * 0.3f, 0), new Vector3f(0, 1, 0), R * (1 + 4 * smooth(k * 2)), FxDraw.RING, 0.08f, hot,
                 0.7f * (1 - smooth(k * 2)), true);
         FxDraw.billboard(c, R * 3, 0, FxDraw.SOFT, 0.1f, hot, 0.35f * (1 - smooth(k)), true);
+        if (R >= 2) {
+            // The big one throws sparks out and up.
+            for (int i = 0; i < 30; i++) {
+                Vector3f d = new Vector3f(hash(i, 116) - 0.5f, Math.abs(hash(i, 117) - 0.3f) + 0.2f, hash(i, 118) - 0.5f).normalize();
+                float sp = 0.25f + 0.35f * hash(i, 119);
+                Vector3f p = new Vector3f(c).add(new Vector3f(d).mul(age * sp * R * 0.4f)).add(0, -0.01f * age * age, 0);
+                Vector3f tail = new Vector3f(p).sub(new Vector3f(d).mul(0.5f));
+                FxDraw.ribbon(tail, p, 0.08f, FxDraw.STREAK, 0.8f, URA_FIRE, 1 - smooth(k * 1.4f), true);
+            }
+        }
     }
 
     private static void seal(Fx f, Vec3 camera, float age, float partial, float out, boolean glow) {
