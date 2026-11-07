@@ -27,6 +27,10 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.monster.Creeper;
+import net.minecraft.world.entity.monster.RangedAttackMob;
+import net.minecraft.world.entity.monster.SpellcasterIllager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -139,15 +143,25 @@ public final class VazioRelampago {
         Defense.stop(target);
     }
 
-    // Charging, holding a key, in the middle of a move, or just cast one.
+    // Charging, holding a key, in the middle of a move, or just cast one. A fighter of the mod reads that from its power
+    // data; any other mob (no power data) counts when it is in the middle of its own attack: swinging, drawing a bow or
+    // crossbow (anything held in use), a creeper swelling, an illager casting, a ranged mob aiming.
     public static boolean busy(LivingEntity target) {
-        if (!target.hasData(ModAttachments.POWER)) {
+        if (target.hasData(ModAttachments.POWER)) {
+            PowerData data = target.getData(ModAttachments.POWER);
+            long now = target.level().getGameTime();
+            if (data.chargeReportedAt >= now - 2 || data.busyTicks > 0 || data.lastCastTime >= now - 10
+                    || data.abilityHeld && data.chargeLeft > 0) {
+                return true;
+            }
+        }
+        if (target instanceof Player) {
             return false;
         }
-        PowerData data = target.getData(ModAttachments.POWER);
-        long now = target.level().getGameTime();
-        return data.chargeReportedAt >= now - 2 || data.busyTicks > 0 || data.lastCastTime >= now - 10
-                || data.abilityHeld && data.chargeLeft > 0;
+        return target.swinging || target.isUsingItem()
+                || target instanceof Creeper creeper && creeper.getSwellDir() > 0
+                || target instanceof SpellcasterIllager illager && illager.isCastingSpell()
+                || target instanceof RangedAttackMob && target instanceof Mob mob && mob.isAggressive();
     }
 
     // Same reach as the normal Expansão (its radius in gojo.dominio, awakened or not).
