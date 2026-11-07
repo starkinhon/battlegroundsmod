@@ -270,6 +270,9 @@ public final class ModPayloads {
     // Server -> client: a player started a skill with a body animation (timing comes from the skill's spec).
     public record PlaySkillAnimation(int entityId, String skill, boolean awakened) implements CustomPacketPayload {
         public static final Type<PlaySkillAnimation> TYPE = payloadType("play_skill_animation");
+        // Sent as the skill when a held skill is let go: an animation waiting at its "soltar" mark plays the rest (the
+        // throw); anything else just stops, like "".
+        public static final String RELEASE = ">";
         public static final StreamCodec<ByteBuf, PlaySkillAnimation> STREAM_CODEC = StreamCodec.composite(
                 ByteBufCodecs.VAR_INT, PlaySkillAnimation::entityId,
                 ByteBufCodecs.STRING_UTF8, PlaySkillAnimation::skill,
