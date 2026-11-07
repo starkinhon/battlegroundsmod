@@ -41,6 +41,8 @@ public final class CutscenePlayer {
     private static int targetId = -1;
     // Only the camera: the skill's own cutscene still runs and draws its bars and lines (the Esfera's trip to space).
     private static boolean cameraOnly;
+    // Whether this cutscene is hiding the HUD right now (see client/CutsceneHud).
+    private static boolean hudHidden;
     private static int age;
     private static Vec3 origin = Vec3.ZERO;
     private static Vec3 forward = new Vec3(0, 0, 1);
@@ -110,6 +112,10 @@ public final class CutscenePlayer {
         return data != null;
     }
 
+    public static boolean hidesHud() {
+        return data != null && hudHidden;
+    }
+
     public static String skill() {
         return skill;
     }
@@ -139,6 +145,7 @@ public final class CutscenePlayer {
     private static void apply(Minecraft minecraft, double t) {
         boolean filming = weight(t) > 0 || weight(t + 1) > 0;
         minecraft.options.setCameraType(filming ? CameraType.THIRD_PERSON_BACK : previousCameraType);
+        hudHidden = !cameraOnly && filming && data.hideHud();
         if (!cameraOnly) {
             minecraft.options.hideGui = filming && data.hideHud() || previousHideGui;
         }
@@ -155,6 +162,7 @@ public final class CutscenePlayer {
         casterId = -1;
         targetId = -1;
         frameWeight = 0;
+        hudHidden = false;
         minecraft.options.setCameraType(previousCameraType);
         if (!cameraOnly) {
             minecraft.options.hideGui = previousHideGui;
