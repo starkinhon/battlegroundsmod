@@ -181,10 +181,7 @@ public class BattlegroundsModClient {
         event.registerEntityRenderer(ModEntities.AIZEN_ILLUSION.get(), AizenIllusionRenderer::new);
         // SubAlma mobs (improvised skins; the girls with slim arms) and the Fighters (three looks per tier).
         event.registerEntityRenderer(ModEntities.BYAKUYA.get(), context -> new SoulBossRenderer<>(context, "byakuya", false));
-        event.registerEntityRenderer(ModEntities.ICHIGO.get(), context -> new SoulBossRenderer<>(context, "ichigo", false));
         event.registerEntityRenderer(ModEntities.RUKIA.get(), context -> new SoulBossRenderer<>(context, "rukia", true));
-        event.registerEntityRenderer(ModEntities.URAHARA.get(), context -> new SoulBossRenderer<>(context, "urahara", false));
-        event.registerEntityRenderer(ModEntities.SUKUNA.get(), context -> new SoulBossRenderer<>(context, "sukuna", false));
         event.registerEntityRenderer(ModEntities.FIGHTER_HUMANO.get(),
                 context -> new SoulBossRenderer<>(context, false, "fighter_humano_0", "fighter_humano_1", "fighter_humano_2"));
         event.registerEntityRenderer(ModEntities.FIGHTER_RUA.get(),

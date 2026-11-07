@@ -14,10 +14,7 @@ import com.starkinhon.battlegroundsmod.power.powers.RubberBoy;
 import com.starkinhon.battlegroundsmod.power.powers.Strongest;
 import com.starkinhon.battlegroundsmod.power.powers.UchihaGhost;
 import com.starkinhon.battlegroundsmod.power.powers.sub.Byakuya;
-import com.starkinhon.battlegroundsmod.power.powers.sub.Ichigo;
 import com.starkinhon.battlegroundsmod.power.powers.sub.Rukia;
-import com.starkinhon.battlegroundsmod.power.powers.sub.SukunaCuts;
-import com.starkinhon.battlegroundsmod.power.powers.sub.Urahara;
 
 // Every selectable power, in the order shown in the power book. The Divine Souls (the bosses' powers) are on the book's
 // first tab, the SubAlmas (Low Souls: characters from each boss's anime) on the second.
@@ -35,12 +32,9 @@ public final class Powers {
     public static final Power ONE_PUNCH = register(OnePunch.create());
     public static final Power STRONGEST = register(Strongest.create());
 
-    // SubAlmas (Bleach, then Sukuna's cuts for now).
+    // SubAlmas (Bleach). The provisional Sukuna, Ichigo and Urahara were taken out for now (2026-11-07).
     public static final Power BYAKUYA = registerSub(Byakuya.create());
-    public static final Power ICHIGO = registerSub(Ichigo.create());
     public static final Power RUKIA = registerSub(Rukia.create());
-    public static final Power URAHARA = registerSub(Urahara.create());
-    public static final Power SUKUNA_CUTS = registerSub(SukunaCuts.create());
 
     // Mob only.
     public static final Power FIGHTER = registerHidden(Fighter.create());

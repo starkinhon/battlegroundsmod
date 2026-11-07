@@ -68,6 +68,8 @@ public final class SubNet {
     public static final int ICE_ARMOR = 27;
     // A crystal of ice standing at pos toward dir: a = height, b = ticks it stays.
     public static final int ICE_SPIKE = 28;
+    // A Getsuga's hit: a rip along the cut at pos, dir = where it flew, a = how wide, b = 1 Kuroi, c = 1 on the ground.
+    public static final int RIP = 29;
 
     public static final int STYLE_SUKUNA = 0;
     public static final int STYLE_PINK = 1;

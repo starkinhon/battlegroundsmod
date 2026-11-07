@@ -46,6 +46,7 @@ public final class SubFx {
     private static final float[] DARK = {0.01f, 0.005f, 0.008f};
     private static final float[] SMOKE_GREY = {0.12f, 0.1f, 0.1f};
     private static final float[] MIST = {0.9f, 0.96f, 1f};
+    private static final float[] BYK_BLUE = FxDraw.rgb(0xDFEAFF);
     private static final float[] PALE = {0.84f, 0.95f, 1f};
     private static final float[] SHRINE_DARK = {0.08f, 0.02f, 0.025f};
     private static final float[] SHRINE_BONE = {0.75f, 0.68f, 0.6f};
@@ -106,18 +107,25 @@ public final class SubFx {
                 f.a = a;
                 f.b = b;
                 f.updated = now;
-                f.trail.addLast(pos);
+                if (kind != SubNet.NET || b < 0.5f) {
+                    f.trail.addLast(pos);
+                }
                 while (f.trail.size() > 40) {
                     f.trail.removeFirst();
                 }
                 if (kind == SubNet.GOKEI && c >= 1 && c < 2 && f.crushAt < 0) {
                     f.crushAt = now;
                 }
-                if ((kind == SubNet.GOKEI && c >= 2) || (kind != SubNet.GOKEI && c >= 1)) {
+                if (kind == SubNet.NET && b > 0.5f && f.crushAt < 0) {
+                    f.crushAt = now;
+                }
+                if (kind == SubNet.NET && c >= 2 && f.hitAt < 0) {
+                    f.hitAt = now;
+                }
+                if ((kind == SubNet.GOKEI && c >= 2) || (kind == SubNet.NET && c >= 1 && c < 2) || (kind != SubNet.GOKEI && kind != SubNet.NET && c >= 1)) {
                     f.endAt = now;
                     if (kind == SubNet.GETSUGA) {
-                        SHOTS.add(new Fx(SubNet.IMPACT, 0, pos, dir, b > 0.5f ? 3.2f : 2.6f,
-                                b > 0.5f ? SubNet.COLOR_RED : SubNet.COLOR_BLUE, 0, now));
+                        SHOTS.add(new Fx(SubNet.RIP, 0, pos, dir, a * 0.8f, b, 0, now));
                     }
                 }
             }
@@ -214,7 +222,8 @@ public final class SubFx {
     private static double life(Fx f) {
         return switch (f.kind) {
             case SubNet.SLASH -> f.c == SubNet.STYLE_SUKUNA ? 16 : 10;
-            case SubNet.RIFT -> 40;
+            case SubNet.RIFT -> 80;
+            case SubNet.RIP -> 30;
             case SubNet.IMPACT -> 14;
             case SubNet.TSUKISHIRO -> f.b + Rukia.TSUKI_HOLD + 44;
             case SubNet.HAKUREN -> 90;
@@ -239,7 +248,7 @@ public final class SubFx {
                 case SubNet.PETALS, SubNet.GOKEI, SubNet.GETSUGA, SubNet.CHARGE, SubNet.NET, SubNet.FUGA -> true;
                 default -> false;
             };
-            double fadeOut = f.kind == SubNet.GOKEI ? 24 : f.kind == SubNet.BANKAI_BYAKUYA ? 20 : 8;
+            double fadeOut = f.kind == SubNet.GOKEI ? 24 : f.kind == SubNet.BANKAI_BYAKUYA ? 40 : 8;
             if (f.endAt < 0 && streamed && now - f.updated > 4) {
                 f.endAt = f.updated;
             }
@@ -261,6 +270,7 @@ public final class SubFx {
             switch (f.kind) {
                 case SubNet.SLASH -> slash(f, camera, age, glow);
                 case SubNet.RIFT -> rift(f, camera, age, glow);
+                case SubNet.RIP -> rip(f, camera, age, glow);
                 case SubNet.IMPACT -> impact(f, camera, age, glow);
                 case SubNet.TSUKISHIRO -> tsukishiro(f, camera, age, glow);
                 case SubNet.HAKUREN -> hakuren(f, camera, age, glow);
@@ -277,7 +287,7 @@ public final class SubFx {
         }
         for (Fx f : TRACKED.values()) {
             float age = (float) (now - f.born) + partial;
-            float out = f.endAt < 0 ? 1 : 1 - smooth((float) (now - f.endAt + partial) / (f.kind == SubNet.GOKEI ? 24 : f.kind == SubNet.BANKAI_BYAKUYA ? 20 : 8));
+            float out = f.endAt < 0 ? 1 : 1 - smooth((float) (now - f.endAt + partial) / (f.kind == SubNet.GOKEI ? 24 : f.kind == SubNet.BANKAI_BYAKUYA ? 40 : 8));
             if (out <= 0) {
                 continue;
             }
@@ -427,18 +437,41 @@ public final class SubFx {
         face = face.lengthSqr() < 1.0E-4 ? new Vec3(0, 0, 1) : face.normalize();
         Vec3 side = face.cross(new Vec3(0, 1, 0)).normalize();
         float t = age;
-        // The blades: 2 rows of 7 along his sides, rising one after another (ticks 6-40), coming apart (40-70).
-        if (age < 74) {
+        // The night falls round him (the Visualizador darkens the sky): a deep blue vignette for whoever is close.
+        if (f.hitAt < -50 && f.endAt < 0) {
+            f.hitAt = 0;
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.player != null && mc.player.position().distanceTo(feet) < 40) {
+                ScreenFx.vignette(0x050A26, 0.6f, (int) Math.max(40, f.b - age));
+            }
+        }
+        // The sword let go point down sinks into the ground like water: rings spreading on the ground.
+        if (age < 44) {
+            Vec3 drop = f.pos.add(face.scale(0.5)).add(side.scale(0.35));
+            Vector3f dp = rel(drop.add(0, 0.03, 0), camera);
+            for (int j = 0; j < 4; j++) {
+                float r = age - 3 - j * 6;
+                if (r > 0 && r < 40) {
+                    FxDraw.disk(dp, new Vector3f(0, 1, 0), 0.6f + r * 0.32f, FxDraw.RING, 0.08f, BYK_BLUE, 0.65f * (1 - r / 40), true);
+                }
+            }
+            if (age > 3 && age < 30) {
+                FxDraw.billboard(new Vector3f(dp).add(0, 0.05f, 0), 1.5f, 0, FxDraw.SOFT, 0.5f, BYK_BLUE, 0.5f * (1 - age / 30), true);
+            }
+        }
+        // The blades: 2 rows of 12 giant blades along his sides out to far away, rising one after another from the
+        // nearest, then coming apart from the bottom up along a glowing pink line.
+        if (age < 92) {
             for (int row = -1; row <= 1; row += 2) {
-                for (int k = 0; k < 7; k++) {
-                    float start = 6 + k * 3.5f;
+                for (int k = 0; k < 12; k++) {
+                    float start = 6 + k * 2.6f;
                     float rise = smooth((age - start) / 10);
                     if (rise <= 0) {
                         continue;
                     }
-                    float undo = Mth.clamp((age - 40 - k * 2) / 18, 0, 1);
-                    float height = 9 + 2 * hash(k, row + 5);
-                    Vec3 base = f.pos.add(face.scale(-3 + k * 3.2)).add(side.scale(row * (5 + k * 0.8)));
+                    float undo = Mth.clamp((age - 44 - k * 2) / 18, 0, 1);
+                    float height = (11 + 2 * hash(k, row + 5)) * (1 + k * 0.05f);
+                    Vec3 base = f.pos.add(face.scale(-3 + k * 4.5)).add(side.scale(row * (5 + k * 0.8)));
                     Vector3f b = rel(base, camera);
                     float shown = height * rise;
                     float cut = height * undo;
@@ -467,6 +500,12 @@ public final class SubFx {
         }
         Vec3 center = feet.add(0, 1.2, 0);
         Vector3f c = rel(center, camera);
+        Vector3f handV = rel(handOf(f.id, partial, center), camera);
+        if (f.endAt >= 0) {
+            float g = 1 - out;
+            FxDraw.billboard(handV, 0.6f + 1.2f * g, 0, FxDraw.SOFT, 0.5f, PINK, 0.8f * (1 - g * 0.5f), true);
+            FxDraw.billboard(handV, 0.9f, t * 0.1f, FxDraw.FLARE, 6 / 32f, WHITE, smooth(g * 2) * (1 - smooth((g - 0.7f) / 0.3f)), true);
+        }
         int count = (int) (420 * form);
         boolean self = FxAnchor.firstPersonSelf(f.id);
         for (int i = 0; i < count; i++) {
@@ -477,8 +516,12 @@ public final class SubFx {
             float ang = h2 * Mth.TWO_PI + t * (0.05f + 0.08f / (0.4f + h1)) * (h3 < 0.15f ? -1 : 1);
             float y = (h3 - 0.35f) * 4.5f + 0.4f * Mth.sin(t * 0.05f + i);
             float gather = f.endAt >= 0 ? 1 - out : 0;
-            r *= 1 - 0.9f * gather;
-            Vector3f p = new Vector3f(c).add(Mth.cos(ang) * r, y * (1 - gather), Mth.sin(ang) * r);
+            Vector3f p = new Vector3f(c).add(Mth.cos(ang) * r, y, Mth.sin(ang) * r);
+            if (gather > 0) {
+                // The end: the petals run to his hand, nearest first, and the sword comes back.
+                float g = smooth(gather * 1.6f - h1 * 0.6f);
+                p.lerp(handV, g).add(0, Mth.sin(g * Mth.PI) * 0.8f, 0);
+            }
             if (self && p.lengthSquared() < 1.5f) {
                 continue;
             }
@@ -501,16 +544,50 @@ public final class SubFx {
         Vector3f b = new Vector3f(center).add(half);
         int style = (int) f.c;
         if (style == SubNet.STYLE_SUKUNA) {
-            float w = f.b * open;
+            // The Visualizador's slash(): opens in 2 ticks, holds, closes; a thin line running past the tips at first,
+            // white flecks along it and red embers jumping off it.
+            float open2 = (1 - (1 - Math.min(1, age / 2)) * (1 - Math.min(1, age / 2))) * (1 - smooth((age - lifeT * 0.4f) / (lifeT * 0.6f)));
+            float w = f.b * open2;
+            int seed = (int) (f.pos.x * 13 + f.pos.z * 7 + f.pos.y * 3);
             if (glow) {
-                FxDraw.ribbon(a, b, Math.max(0.05f, w * 1.6f), SLIT, 0f, WHITE, Math.min(1, open * 1.4f), true);
-                if (age < 3) {
-                    Vector3f a2 = new Vector3f(center).sub(new Vector3f(half).mul(1.7f));
-                    Vector3f b2 = new Vector3f(center).add(new Vector3f(half).mul(1.7f));
-                    FxDraw.ribbon(a2, b2, 0.06f, FxDraw.STREAK, 1f, WHITE, 1 - age / 3, true);
+                if (w > 0.01f) {
+                    FxDraw.ribbon(a, b, w * 2.4f, SLIT, 0.2f, WHITE, 1, true);
+                }
+                if (age < 4) {
+                    float kk = 1 - age / 4;
+                    float ext = f.a * (1 + age * 0.4f);
+                    Vector3f dv = new Vector3f(half).normalize();
+                    FxDraw.ribbon(new Vector3f(center).sub(new Vector3f(dv).mul(ext)), new Vector3f(center).add(new Vector3f(dv).mul(ext)), 0.05f * kk + 0.01f,
+                            FxDraw.STREAK, 0.9f, WHITE, kk, true);
+                }
+                Vector3f dv = new Vector3f(half).normalize();
+                Vector3f side = new Vector3f(dv).cross(new Vector3f(center).negate().normalize());
+                if (side.lengthSquared() > 1.0E-6f) {
+                    side.normalize();
+                    for (int i = 0; i < 5; i++) {
+                        float u = (hash(seed + i, 201) * 2 - 1) * 0.6f;
+                        Vector3f p = new Vector3f(center).add(new Vector3f(dv).mul(u * f.a)).add(new Vector3f(side).mul((hash(seed + i, 202) - 0.5f) * f.b * 3
+                                + age * 0.04f * Math.signum(hash(seed + i, 203) - 0.5f)));
+                        float fl = 0.12f + hash(seed + i, 204) * 0.2f;
+                        FxDraw.ribbon(new Vector3f(p).sub(new Vector3f(dv).mul(fl)), new Vector3f(p).add(new Vector3f(dv).mul(fl)), 0.06f, FxDraw.SOFT, 0.9f, WHITE,
+                                (1 - age / lifeT) * open2, true);
+                    }
+                }
+                if (age < 6 && hash(seed, 209) > 0.5f) {
+                    FxDraw.billboard(new Vector3f(b).lerp(center, 0.15f), 0.9f * (1 - age / 6), 0.785f, FxDraw.FLARE, 4 / 32f, WHITE, 1 - age / 6, true);
+                }
+                // Embers: short red streaks jumping off the cut.
+                if (age < 16) {
+                    for (int i = 0; i < 8; i++) {
+                        Vector3f d2 = new Vector3f(hash(seed + i, 205) - 0.5f, hash(seed + i, 206) - 0.35f, hash(seed + i, 207) - 0.5f).normalize();
+                        float v = 0.1f * (0.4f + hash(seed + i, 208));
+                        Vector3f p = new Vector3f(center).add(new Vector3f(d2).mul(v * age)).add(0, -0.004f * age * age, 0);
+                        Vector3f q = new Vector3f(p).sub(new Vector3f(d2).mul(v * 2.2f));
+                        FxDraw.ribbon(q, p, 0.05f, FxDraw.STREAK, 0.7f, i % 3 != 0 ? RED : WHITE, 1 - age / 16, true);
+                    }
                 }
             } else if (w > 0.01f) {
-                FxDraw.ribbon(a, b, w * 1.6f, SLIT, 1f, WHITE, Math.min(1, open * 1.5f), false);
+                FxDraw.ribbon(a, b, w * 2.4f, SLIT, 0.8f, DARK, 1, false);
             }
             return;
         }
@@ -561,6 +638,12 @@ public final class SubFx {
     }
 
     // ---------- Ichigo ----------
+    // Ported from the Visualizador's Ichigo tab: the crescent with its curtain of light (getsugaBand), the echoes behind,
+    // bits shed from the tips, the rip along the cut on a hit (not a round blast), the aura on the blade and the body.
+
+    private static final float[] DIRT = FxDraw.rgb(0x4A3A2C);
+    private static final float[] DUST = FxDraw.rgb(0x8A8378);
+    private static final float[] GT_DARK = FxDraw.rgb(0x2A0204);
 
     private static void crescentQuad(Vector3f c, Vector3f fwd, Vector3f side, float len, float width, float param, float[] rgb, float op, boolean glow) {
         Vector3f u = new Vector3f(fwd).mul(len * 0.5f);
@@ -569,114 +652,259 @@ public final class SubFx {
                 CRESCENT, param, rgb, op, glow);
     }
 
+    // The side axis of a cut flying along f, rolled like the diagonal swing.
+    private static Vector3f slashSide(Vector3f f, float roll) {
+        Vector3f flat = new Vector3f(f).cross(0, 1, 0);
+        if (flat.lengthSquared() < 1.0E-4f) {
+            flat.set(1, 0, 0);
+        }
+        flat.normalize();
+        Vector3f up = new Vector3f(flat).cross(f).normalize();
+        return flat.mul(Mth.cos(roll)).add(up.mul(Mth.sin(roll))).normalize();
+    }
+
+    // The crescent's curtain: its arc (in the plane of f and s) stretched across the cut, so it has a body seen from any
+    // side; where the curtain turns edge-on to the camera it fades out softly (or the fold shows as a hard line).
+    private static void getsugaBand(Vector3f pos, Vector3f f, Vector3f s, float w, float l, float[] col, float op, boolean glow, float coreP, float hk,
+            float age) {
+        if (op <= 0.002f) {
+            return;
+        }
+        Vector3f n = new Vector3f(f).cross(s).normalize();
+        int segs = 22;
+        float bow = l * 0.9f;
+        Vector3f pc = null;
+        float ph = 0;
+        float pf = 0;
+        for (int i = 0; i <= segs; i++) {
+            float u = i / (float) segs * 2 - 1;
+            float t = 1 - u * u;
+            Vector3f cur = new Vector3f(pos).add(new Vector3f(f).mul(-bow * u * u + l * 0.25f)).add(new Vector3f(s).mul(u * w * 0.5f));
+            float hh = (0.06f + 0.94f * (float) Math.pow(t, 0.8)) * w * hk * (1 + 0.12f * Mth.sin(age * 1.3f + u * 7));
+            Vector3f g0 = new Vector3f(f).mul(-2 * bow * u).add(new Vector3f(s).mul(w * 0.5f)).cross(n);
+            float face = g0.lengthSquared() < 1.0E-8f || cur.lengthSquared() < 1.0E-8f ? 1
+                    : Math.abs(new Vector3f(g0).normalize().dot(new Vector3f(cur).normalize()));
+            float fc = op * (float) Math.pow(smooth((face - 0.04f) / 0.85f), 1.5);
+            if (pc != null) {
+                FxDraw.quadFade(new Vector3f(pc).sub(new Vector3f(n).mul(ph)), new Vector3f(cur).sub(new Vector3f(n).mul(hh)),
+                        new Vector3f(cur).add(new Vector3f(n).mul(hh)), new Vector3f(pc).add(new Vector3f(n).mul(ph)), FxDraw.BEAM, coreP, col, pf, fc, fc,
+                        pf, glow);
+            }
+            pc = cur;
+            ph = hh;
+            pf = fc;
+        }
+    }
+
+    // One Getsuga at pos (axes f, s), age ticks after the cut.
+    private static void drawGetsuga(Vector3f pos, Vector3f f, Vector3f s, float w, float age, boolean kuroi, float fade, boolean glow) {
+        float l = w * 0.62f;
+        float o = fade * smooth(age / 3);
+        if (o <= 0.01f) {
+            return;
+        }
+        float wob = Mth.sin(age * 0.9f) * 0.05f;
+        Vector3f s2 = new Vector3f(s).add(new Vector3f(f).mul(wob)).normalize();
+        if (!kuroi) {
+            if (glow) {
+                for (int e = 1; e <= 3; e++) {
+                    getsugaBand(new Vector3f(pos).sub(new Vector3f(f).mul(e * l * 0.55f)), f, s2, w * (1 - e * 0.07f), l, GT_BLUE, o * 0.28f / e, true, 0,
+                            0.12f, age - e);
+                }
+                getsugaBand(pos, f, s2, w * 1.1f, l, GT_BLUE, 0.45f * o, true, 0.1f, 0.2f, age);
+                getsugaBand(pos, f, s2, w, l, GT_ICE, 0.9f * o, true, 0.75f, 0.09f, age);
+                crescentQuad(pos, f, s2, l * 1.5f, w * 1.25f, 0, GT_BLUE, 0.3f * o, true);
+                crescentQuad(pos, f, s2, l, w, 0, GT_ICE, 0.8f * o, true);
+            }
+        } else if (glow) {
+            for (int e = 1; e <= 3; e++) {
+                getsugaBand(new Vector3f(pos).sub(new Vector3f(f).mul(e * l * 0.55f)), f, s2, w * (1 - e * 0.07f), l, RED, o * 0.35f / e, true, 0, 0.14f,
+                        age - e);
+            }
+            getsugaBand(pos, f, s2, w * 1.12f, l, RED, 0.75f * o, true, 0.2f, 0.3f, age);
+            crescentQuad(pos, f, s2, l * 1.6f, w * 1.3f, 0, RED, 0.45f * o, true);
+        } else {
+            getsugaBand(pos, f, s2, w, l, GT_DARK, 0.95f * o, false, 0, 0.15f, age);
+            crescentQuad(pos, f, s2, l, w, 1, DARK, o, false);
+        }
+        // Bits coming off the tips and left behind.
+        for (int k = 0; k < 26; k++) {
+            int born = (int) Math.floor(age) - (k % 13);
+            float a = age - born;
+            if (born < 0 || a > 13) {
+                continue;
+            }
+            boolean dark = kuroi && k % 3 == 0;
+            if (dark == glow) {
+                continue;
+            }
+            float u = hash(k * 131 + born, 3) * 2 - 1;
+            float side = u * w * 0.5f;
+            float back = -l * 0.2f * (1 - u * u) - a * 0.35f;
+            Vector3f p = new Vector3f(pos).add(new Vector3f(s2).mul(side * (1 + a * 0.02f))).add(new Vector3f(f).mul(back)).add(0, a * 0.03f, 0);
+            float[] col = kuroi ? (dark ? GT_DARK : RED) : (k % 3 != 0 ? GT_ICE : GT_BLUE);
+            FxDraw.billboard(p, (0.18f + hash(k * 131 + born, 4) * 0.2f) * (1 - a / 13), 0, FxDraw.SOFT, 0.7f, col, o * (1 - a / 13), glow);
+        }
+    }
+
     private static void getsuga(Fx f, Vec3 camera, double now, float partial, float out, boolean glow) {
         boolean kuroi = f.b > 0.5f;
         Vec3 d = f.dir.lengthSqr() < 1.0E-6 ? new Vec3(0, 0, 1) : f.dir.normalize();
         Vec3 posW = f.endAt >= 0 ? f.pos : f.prev.lerp(f.pos, Math.min(1, partial));
         Vector3f fwd = new Vector3f((float) d.x, (float) d.y, (float) d.z);
-        Vector3f flatSide = new Vector3f(fwd).cross(0, 1, 0);
-        if (flatSide.lengthSquared() < 1.0E-4f) {
-            flatSide.set(1, 0, 0);
-        }
-        flatSide.normalize();
-        // The cut's slant: rolled round the flight, like the diagonal swing.
-        float roll = -0.45f;
-        Vector3f up = new Vector3f(flatSide).cross(fwd).normalize();
-        Vector3f side = new Vector3f(flatSide).mul(Mth.cos(roll)).add(new Vector3f(up).mul(Mth.sin(roll))).normalize();
-        Vector3f normal = new Vector3f(fwd).cross(side).normalize();
-        float W = f.a;
-        float L = W * 0.55f;
-        Vec3 step = f.pos.subtract(f.prev);
-        float speed = (float) step.length();
-        for (int echo = 0; echo < 4; echo++) {
-            Vector3f c = rel(posW.subtract(d.scale(echo * Math.max(0.6, speed * 0.7))), camera);
-            float op = out * (echo == 0 ? 1 : 0.4f / echo);
-            for (int tilt = -1; tilt <= 1; tilt++) {
-                // Two tilted copies give it body seen from the side.
-                float ang = tilt * 0.45f;
-                Vector3f fw = new Vector3f(fwd).mul(Mth.cos(ang)).add(new Vector3f(normal).mul(Mth.sin(ang)));
-                float o = op * (tilt == 0 ? 1 : 0.45f);
-                if (kuroi) {
-                    if (glow) {
-                        crescentQuad(c, fw, side, L * 1.6f, W * 1.3f, 0, RED, 0.45f * o, true);
-                    } else if (echo == 0) {
-                        crescentQuad(c, fw, side, L, W, 1, DARK, o, false);
-                    }
-                } else if (glow) {
-                    crescentQuad(c, fw, side, L * 1.5f, W * 1.25f, 0, GT_BLUE, 0.3f * o, true);
-                    crescentQuad(c, fw, side, L, W, 0, GT_ICE, 0.8f * o, true);
+        float roll = kuroi ? -0.5f : f.a > 4.5f ? -0.32f : -0.55f;
+        float age = (float) (now - f.born) + partial;
+        drawGetsuga(rel(posW, camera), fwd, slashSide(fwd, roll), f.a, age, kuroi, out, glow);
+        if (!glow && f.a > 4.5f) {
+            // The charged one scrapes the ground: dust rising along its path.
+            int j = 0;
+            for (Vec3 p : f.trail) {
+                if (j++ % 2 == 1) {
+                    continue;
                 }
-            }
-        }
-        if (glow) {
-            Vector3f c = rel(posW, camera);
-            FxDraw.billboard(c, W * 1.2f, 0, FxDraw.SOFT, 0.2f, kuroi ? RED : GT_BLUE, 0.3f * out, true);
-            float t = (float) now + partial;
-            for (int i = 0; i < 2; i++) {
-                float s = i == 0 ? 0.5f : -0.5f;
-                Vector3f tip = new Vector3f(c).add(new Vector3f(side).mul(W * s)).add(new Vector3f(fwd).mul(-L * 0.3f));
-                FxDraw.billboard(tip, 0.4f + 0.2f * Mth.sin(t + i), 0, FxDraw.SOFT, 0.6f, kuroi ? RED : GT_ICE, 0.6f * out, true);
+                float a2 = (f.trail.size() - j) * 1f;
+                if (a2 > 24) {
+                    continue;
+                }
+                FxDraw.billboard(rel(p.add(0, -0.9 + a2 * 0.06, 0), camera), 1.2f + a2 * 0.12f, j, FxDraw.SMOKE, 0.3f, DUST, 0.5f * (1 - a2 / 24) * out,
+                        false);
             }
         }
     }
 
-    private static void charge(Fx f, Vec3 camera, float age, float partial, float out, boolean glow) {
-        if (!glow) {
+    // The rip of a hit: it opens along the line of the cut (s), with dirt and dust flying; c >= 1 = cut on the ground.
+    private static void rip(Fx f, Vec3 camera, float age, boolean glow) {
+        boolean kuroi = f.b > 0.5f;
+        Vec3 d = f.dir.lengthSqr() < 1.0E-6 ? new Vec3(0, 0, 1) : f.dir.normalize();
+        Vector3f fv = new Vector3f((float) d.x, (float) d.y, (float) d.z);
+        Vector3f s = f.c >= 1 ? new Vector3f(0, 1, 0) : slashSide(fv, kuroi ? -0.5f : -0.55f);
+        drawRip(rel(f.pos, camera), fv, s, age, f.a, kuroi, glow);
+    }
+
+    private static void drawRip(Vector3f at, Vector3f f, Vector3f s, float age, float w, boolean kuroi, boolean glow) {
+        if (age < 0 || age > 30) {
             return;
         }
-        float[] col = switch ((int) f.b) {
+        float k = age / 30;
+        float[] c1 = kuroi ? RED : GT_BLUE;
+        float[] c2 = kuroi ? FxDraw.rgb(0xFFD0C8) : WHITE;
+        float spread = w * 0.5f + (1 - (1 - Math.min(1, age / 8)) * (1 - Math.min(1, age / 8))) * w * 0.6f;
+        if (glow) {
+            if (age < 12) {
+                float a = 1 - age / 12;
+                FxDraw.ribbon(new Vector3f(at).sub(new Vector3f(s).mul(spread)), new Vector3f(at).add(new Vector3f(s).mul(spread)), 1.0f * a + 0.2f,
+                        FxDraw.BEAM, 0.3f, c1, 0.7f * a, true);
+                FxDraw.ribbon(new Vector3f(at).sub(new Vector3f(s).mul(spread * 0.8f)), new Vector3f(at).add(new Vector3f(s).mul(spread * 0.8f)),
+                        0.4f * a + 0.1f, FxDraw.BEAM, 0.95f, c2, a, true);
+                FxDraw.billboard(at, w * 0.5f * (0.6f + 0.4f * a), age * 0.2f, FxDraw.FLARE, 4 / 32f, c1, 0.7f * a, true);
+            }
+            return;
+        }
+        for (int i = 0; i < 22; i++) {
+            float u = hash(i, 191) * 2 - 1;
+            Vector3f v = new Vector3f(s).mul(u * 0.6f).add(new Vector3f(f).mul(0.4f + hash(i, 192) * 0.6f)).add(0, 0.2f + hash(i, 193) * 0.5f, 0)
+                    .normalize().mul(0.35f + hash(i, 194) * 0.35f);
+            Vector3f p = new Vector3f(at).add(new Vector3f(s).mul(u * w * 0.4f)).add(new Vector3f(v).mul(age)).add(0, -0.02f * age * age, 0);
+            if (p.y < at.y - 1.1f) {
+                continue;
+            }
+            FxDraw.billboard(p, 0.35f + hash(i, 195) * 0.3f, age * 0.4f + i, SHARD, 0, i % 4 != 0 ? DIRT : DUST, 1 - k, false);
+        }
+        for (int j = 0; j < 6; j++) {
+            FxDraw.billboard(new Vector3f(at).add(new Vector3f(s).mul((j / 5f * 2 - 1) * w * 0.4f)).add(0, -0.6f + k * 1.5f, 0), 2 + k * 3, j,
+                    FxDraw.SMOKE, 0.3f, DUST, 0.5f * (1 - k), false);
+        }
+    }
+
+    // Reiatsu while charging: a glow wrapped round the blade (strongest on the edge) and flames rising off the body.
+    private static void charge(Fx f, Vec3 camera, float age, float partial, float out, boolean glow) {
+        int style = (int) f.b;
+        float[] col = switch (style) {
             case 1 -> RED;
             case 2 -> FIRE;
             case 3 -> ICE_BLUE;
             default -> GT_BLUE;
         };
-        float k = Mth.clamp(f.a, 0, 1);
-        Vec3 hand = handOf(f.id, partial, f.pos);
-        Vector3f h = rel(hand, camera);
-        float t = age;
-        FxDraw.billboard(h, 0.7f + 1.4f * k, t * 0.1f, FxDraw.FLARE, 6 / 32f, col, (0.5f + 0.5f * k) * out, true);
-        FxDraw.billboard(h, 0.4f + 0.5f * k, 0, FxDraw.SOFT, 0.8f, WHITE, 0.7f * out, true);
+        boolean kuroi = style == 1;
+        float a = Math.min(1, 0.3f + 0.7f * Mth.clamp(f.a, 0, 1)) * out;
         Entity e = FxAnchor.entity(f.id);
+        boolean self = FxAnchor.firstPersonSelf(f.id);
+        Vec3 hand = handOf(f.id, partial, f.pos);
+        Vec3 look = e instanceof LivingEntity le ? le.getViewVector(partial) : new Vec3(0, 0, 1);
+        Vec3 tipW = hand.add(0, 1.3, 0).add(look.scale(0.35));
+        Vector3f base = rel(hand.add(0, 0.2, 0), camera);
+        Vector3f tip = rel(tipW, camera);
+        if (glow && !self) {
+            FxDraw.ribbon(base, tip, 0.6f * a, FxDraw.BEAM, 0.25f, col, 0.7f * a, true);
+            FxDraw.ribbon(base, tip, 0.12f * a, FxDraw.BEAM, 0.9f, kuroi ? FxDraw.rgb(0xFFB0A8) : WHITE, 0.8f * a, true);
+            for (int i = 0; i < 10; i++) {
+                float u = fract(age * 0.06f + i / 10f);
+                Vector3f p = new Vector3f(base).lerp(tip, u).add(0, Mth.sin(age * 0.5f + i) * 0.15f, 0);
+                FxDraw.billboard(p, 0.35f * a, age * 0.2f + i, FxDraw.FIRE, 0.5f, col, 0.35f * a, true);
+            }
+        }
+        if (glow) {
+            FxDraw.billboard(rel(hand, camera), 0.4f + 0.6f * a, 0, FxDraw.SOFT, 0.8f, WHITE, 0.4f * a, true);
+        }
         if (e == null) {
             return;
         }
-        Vec3 feet = e.getPosition(partial);
-        int n = (int) (4 + 10 * k);
-        for (int i = 0; i < n; i++) {
-            float h1 = hash(i, 31);
-            float life = 14;
-            float ph = fract((t + h1 * life) / life);
+        Vec3 ctr = e.getPosition(partial).add(0, e.getBbHeight() * 0.55, 0);
+        for (int i = 0; i < 14; i++) {
+            boolean dark = kuroi && i % 2 == 1;
+            if (dark == glow) {
+                continue;
+            }
+            float ph = fract(age * 0.04f + hash(i, 31));
             float ang = hash(i, 32) * Mth.TWO_PI;
-            float r = 0.45f + 0.25f * hash(i, 33);
-            Vec3 base = feet.add(Mth.cos(ang) * r, ph * (1.4f + 1.2f * k), Mth.sin(ang) * r);
-            Vector3f a = rel(base, camera);
-            Vector3f b = new Vector3f(a).add(0, 0.5f + 0.6f * k, 0);
-            FxDraw.ribbon(a, b, 0.12f + 0.1f * k, FxDraw.STREAK, 0.6f, col, 0.6f * out * Mth.sin(ph * Mth.PI), true);
+            Vector3f p = rel(ctr.add(Mth.cos(ang) * 0.45, -0.8 + ph * 2.4, Mth.sin(ang) * 0.45), camera);
+            if (self && p.lengthSquared() < 1.5f) {
+                continue;
+            }
+            FxDraw.billboard(p, 0.3f * a * (1 - ph) + 0.15f, 0, FxDraw.FIRE, 0.6f, dark ? GT_DARK : col, 0.5f * a * (1 - ph), glow);
         }
     }
 
+    // Shift+Z, the Getsuga cut into the ground: rips of energy run out over the ground in many directions, tearing up
+    // the dirt, each one ending in a rip; a flash and a ring where it hit, dust rising.
     private static void rift(Fx f, Vec3 camera, float age, boolean glow) {
-        if (!glow) {
-            return;
-        }
-        int n = Math.max(3, (int) f.b);
-        float grow = smooth(age / 5);
-        float fade = 1 - smooth((age - 8) / 30);
-        Vector3f c = rel(f.pos.add(0, 0.06, 0), camera);
+        int n = Math.max(3, (int) f.b - 1);
+        boolean kuroi = f.c >= 1;
+        float[] col = kuroi ? RED : GT_BLUE;
+        Vector3f at = rel(f.pos.add(0, 0.05, 0), camera);
         for (int i = 0; i < n; i++) {
-            float ang = (i + hash(i, 41) * 0.6f) / n * Mth.TWO_PI;
-            float len = f.a * (0.55f + 0.45f * hash(i, 42)) * grow;
-            Vector3f dir = new Vector3f(Mth.cos(ang), 0, Mth.sin(ang));
-            Vector3f end = new Vector3f(c).add(new Vector3f(dir).mul(len));
-            groundStrip(c, end, 0.55f, FxDraw.BEAM, 0.5f, GT_BLUE, 0.7f * fade);
-            groundStrip(c, end, 0.18f, FxDraw.BEAM, 0.9f, WHITE, 0.9f * fade);
-            if (age < 14) {
-                Vector3f s = new Vector3f(dir).cross(0, 1, 0).normalize();
-                crescentQuad(new Vector3f(end).add(0, 0.9f, 0), new Vector3f(dir), new Vector3f(s).add(0, 0.8f, 0).normalize(), 1.1f, 2.2f, 0, GT_ICE,
-                        0.8f * (1 - age / 14), true);
+            float ang = i / (float) n * Mth.TWO_PI + 0.3f;
+            Vector3f d = new Vector3f(Mth.sin(ang), 0, Mth.cos(ang));
+            float reach = f.a * (0.6f + 0.45f * hash(i, 42));
+            float len = Math.min(reach, age * 0.9f);
+            float a = Math.max(0, 1 - age / 22);
+            Vector3f tip = new Vector3f(at).add(new Vector3f(d).mul(len));
+            if (glow) {
+                groundStrip(at, new Vector3f(tip).add(0, 0.01f, 0), 0.7f * a, FxDraw.BEAM, 0.2f, col, 0.55f * a, true);
+                groundStrip(new Vector3f(at).add(0, 0.02f, 0), new Vector3f(tip).add(0, 0.02f, 0), 0.14f * a, FxDraw.BEAM, 0.9f, WHITE, 0.8f * a, true);
+                if (len < reach) {
+                    for (int k = 0; k < 3; k++) {
+                        FxDraw.billboard(new Vector3f(tip).add(0, 0.5f + k * 0.4f, 0), 1.0f - k * 0.25f, k, FxDraw.FIRE, 0.5f, col, 0.35f * a, true);
+                    }
+                }
+            } else {
+                groundStrip(new Vector3f(at).add(0, -0.02f, 0), new Vector3f(tip).add(0, -0.02f, 0), 0.6f, FxDraw.SOFT, 0, DIRT,
+                        0.7f * Math.min(1, 2 - age / 40), false);
+            }
+            drawRip(new Vector3f(tip).add(0, 0.4f, 0), d, new Vector3f(0, 1, 0), age - reach / 0.9f, 1.6f, kuroi, glow);
+        }
+        if (glow && age < 10) {
+            FxDraw.billboard(new Vector3f(at).add(0, 0.5f, 0), 3.5f * (1 - age / 10) + 0.8f, 0, FxDraw.FLARE, 7 / 32f, kuroi ? RED : GT_ICE,
+                    0.7f * (1 - age / 10), true);
+            FxDraw.disk(at, new Vector3f(0, 1, 0), 2 + age * 1.4f, FxDraw.RING, 0.15f, col, 1 - age / 10, true);
+        }
+        if (!glow) {
+            float k = Mth.clamp(age / 30, 0, 1);
+            for (int j = 0; j < 8; j++) {
+                FxDraw.billboard(new Vector3f(at).add(Mth.cos(j) * (1 + k * 4), 0.5f + k * 1.5f, Mth.sin(j) * (1 + k * 4)), 2 + k * 3, j, FxDraw.SMOKE,
+                        0.3f, DUST, 0.55f * (1 - k), false);
             }
         }
-        FxDraw.billboard(new Vector3f(c).add(0, 0.5f, 0), f.a * 0.8f, 0, FxDraw.FLARE, 10 / 32f, GT_ICE, 0.8f * (1 - smooth(age / 10)), true);
     }
 
     // A strip lying flat on the ground from a to b.
@@ -1135,74 +1363,104 @@ public final class SubFx {
         FxDraw.billboard(c, size * 1.5f, 0, FxDraw.SOFT, 0.05f, col, 0.15f * op + 0.4f * hit, true);
     }
 
-    private static void net(Fx f, Vec3 camera, float age, float partial, float out, boolean glow) {
-        if (!glow) {
+    // Shibari's net, the Visualizador's drawNet: a mesh of diamond threads with gaps, thrown like a fishing net (bowed
+    // back as it flies, opening), then closing round the body from the feet up and squeezing.
+    private static final float[] NET_CORE = FxDraw.rgb(0xFFD0D8);
+    private static final float[] URA_FIRE = FxDraw.rgb(0xFFB030);
+    private static final float[] URA_HOT = FxDraw.rgb(0xFF7A4A);
+
+    private static Vector3f netPoint(float a, float b, Vector3f center, Vector3f f, Vector3f s, float r, Vector3f feet, float k, float squeeze, float t) {
+        float u = (a + b) / 2;
+        float v = (a - b) / 2;
+        Vector3f flat = new Vector3f(center).add(new Vector3f(s).mul(u * r)).add(0, v * r * 0.8f, 0).add(new Vector3f(f).mul(-(1 - u * u) * r * 0.35f));
+        if (k <= 0) {
+            return flat;
+        }
+        float th = u * Mth.PI + Mth.HALF_PI;
+        float rr = Mth.lerp(squeeze, 0.75f, 0.42f) + 0.03f * Mth.sin(t * 0.6f + a * 5);
+        float y = (v + 1) * 1.05f;
+        Vector3f wrap = new Vector3f(feet).add(Mth.cos(th) * rr, y, Mth.sin(th) * rr);
+        return flat.lerp(wrap, smooth(k));
+    }
+
+    private static void drawNet(Vector3f center, Vector3f f, Vector3f s, float r, Vector3f feet, float k, float squeeze, float t, float a) {
+        if (a <= 0) {
             return;
         }
-        Vec3 posW = f.endAt >= 0 ? f.pos : f.prev.lerp(f.pos, Math.min(1, partial));
-        Vector3f c = rel(posW, camera);
-        float r = f.a;
-        boolean wrapped = f.b > 0.5f;
-        float w = 0.07f;
-        if (!wrapped) {
-            // Flat and spinning, opening as it flies.
-            Vec3 d = f.dir.lengthSqr() < 1.0E-6 ? new Vec3(0, 0, 1) : f.dir.normalize();
-            Vec3 u0 = d.cross(new Vec3(0, 1, 0));
-            u0 = u0.lengthSqr() < 1.0E-4 ? new Vec3(1, 0, 0) : u0.normalize();
-            Vec3 v0 = u0.cross(d).normalize();
-            float spin = age * 0.25f;
-            int spokes = 10;
-            for (int i = 0; i < spokes; i++) {
-                float ang = i / (float) spokes * Mth.TWO_PI + spin;
-                Vector3f tip = new Vector3f(c).add(vec(u0.scale(Mth.cos(ang) * r).add(v0.scale(Mth.sin(ang) * r))));
-                FxDraw.ribbon(c, tip, w, FxDraw.BEAM, 0.8f, CRIMSON, out, true);
-            }
-            for (int ring = 1; ring <= 3; ring++) {
-                float rr = r * ring / 3f;
+        for (int sign = -1; sign <= 1; sign += 2) {
+            for (int ia = 0; ia < 13; ia++) {
+                float an = -1.8f + ia * 0.3f;
+                float lim = 2 - Math.abs(an);
+                int n = 12;
                 Vector3f last = null;
-                for (int i = 0; i <= spokes; i++) {
-                    float ang = i / (float) spokes * Mth.TWO_PI + spin;
-                    Vector3f p = new Vector3f(c).add(vec(u0.scale(Mth.cos(ang) * rr).add(v0.scale(Mth.sin(ang) * rr))));
+                for (int i = 0; i <= n; i++) {
+                    float bn = -lim + 2 * lim * i / n;
+                    Vector3f p = sign > 0 ? netPoint(an, bn, center, f, s, r, feet, k, squeeze, t) : netPoint(bn, an, center, f, s, r, feet, k, squeeze, t);
                     if (last != null) {
-                        FxDraw.ribbon(last, p, w, FxDraw.BEAM, 0.8f, CRIMSON, out, true);
-                        FxDraw.billboard(p, 0.22f, 0, FxDraw.SOFT, 0.8f, RED, 0.8f * out, true);
+                        FxDraw.ribbon(last, p, 0.16f, FxDraw.BEAM, 0.4f, RED, 0.75f * a, true);
+                        FxDraw.ribbon(last, p, 0.045f, FxDraw.BEAM, 0.95f, NET_CORE, a, true);
                     }
                     last = p;
                 }
             }
-            FxDraw.billboard(c, r * 2.2f, 0, FxDraw.SOFT, 0.05f, CRIMSON, 0.2f * out, true);
+        }
+    }
+
+    private static void net(Fx f, Vec3 camera, float age, float partial, float out, boolean glow) {
+        if (!glow) {
             return;
         }
-        // Wrapped round the target: a cage of crimson lines.
-        float spin = age * 0.03f;
-        for (int i = 0; i < 6; i++) {
-            float lon = i / 6f * Mth.PI + spin;
-            Vector3f last = null;
-            for (int j = 0; j <= 12; j++) {
-                float lat = j / 12f * Mth.TWO_PI;
-                Vector3f p = new Vector3f(c).add(Mth.cos(lat) * Mth.cos(lon) * r, Mth.sin(lat) * r * 1.2f, Mth.cos(lat) * Mth.sin(lon) * r);
-                if (last != null) {
-                    FxDraw.ribbon(last, p, w, FxDraw.BEAM, 0.8f, CRIMSON, out, true);
-                }
-                last = p;
-            }
+        double now = ScreenFx.now() + partial;
+        Vec3 posW = f.endAt >= 0 ? f.pos : f.prev.lerp(f.pos, Math.min(1, partial));
+        Vec3 d = f.dir.lengthSqr() < 1.0E-6 ? new Vec3(0, 0, 1) : new Vec3(f.dir.x, 0, f.dir.z).normalize();
+        Vector3f fv = new Vector3f((float) d.x, 0, (float) d.z);
+        Vector3f sv = new Vector3f(fv).cross(0, 1, 0).normalize();
+        boolean wrapped = f.crushAt >= 0;
+        if (!wrapped) {
+            float r = Mth.lerp(smooth(Math.min(1, age / 10f)), 0.6f, 1.9f);
+            Vector3f c = rel(posW, camera);
+            drawNet(c, fv, sv, r, c, 0, 0, age, out);
+            return;
         }
-        for (int k = 1; k <= 3; k++) {
-            float lat = (k / 4f - 0.5f) * Mth.PI;
-            Vector3f last = null;
-            for (int j = 0; j <= 16; j++) {
-                float lon = j / 16f * Mth.TWO_PI;
-                Vector3f p = new Vector3f(c).add(Mth.cos(lat) * Mth.cos(lon) * r, Mth.sin(lat) * r * 1.2f, Mth.cos(lat) * Mth.sin(lon) * r);
-                if (last != null) {
-                    FxDraw.ribbon(last, p, w, FxDraw.BEAM, 0.8f, CRIMSON, out, true);
-                    if (j % 2 == 0) {
-                        FxDraw.billboard(p, 0.2f, 0, FxDraw.SOFT, 0.8f, RED, 0.8f * out, true);
+        float since = (float) (now - f.crushAt);
+        float k = smooth((since + 3) / 8);
+        float squeeze = smooth((since - 4) / 14);
+        Vector3f feet = rel(posW.add(0, -1.05, 0), camera);
+        Vector3f flatC = rel(f.trail.isEmpty() ? posW : f.trail.peekLast(), camera);
+        drawNet(flatC, fv, sv, 1.9f, feet, k, squeeze, age, out);
+        // Fire beads born on the knots after Hiasobi pierces the net, going off one after another.
+        if (f.hitAt > 0) {
+            float p = (float) (now - f.hitAt);
+            int i = 0;
+            for (int ia = 0; ia < 13; ia++) {
+                for (int ib = 0; ib < 13; ib++) {
+                    float an = -1.8f + ia * 0.3f;
+                    float bn = -1.8f + ib * 0.3f;
+                    if (Math.abs(an) + Math.abs(bn) > 2 || Math.round((an + bn) / 0.3f) % 2 != 0) {
+                        continue;
+                    }
+                    float dist = (float) Math.hypot(an - 0.9f, bn - 0.9f);
+                    float born = 2 + dist * 3;
+                    float det = 12 + dist * 6 + (i++ % 5) * 0.4f;
+                    if (p < born) {
+                        continue;
+                    }
+                    Vector3f q = netPoint(an, bn, flatC, fv, sv, 1.9f, feet, 1, 1, age);
+                    if (p < det) {
+                        float g = smooth((p - born) / 4);
+                        FxDraw.billboard(q, 0.45f * g, age * 0.2f + i, FxDraw.FIRE, 0.3f, URA_FIRE, 0.9f * g, true);
+                        FxDraw.billboard(q, 0.18f * g, 0, FxDraw.SOFT, 0.9f, WHITE, g, true);
+                    } else if (p < det + 12) {
+                        float a = (p - det) / 12;
+                        FxDraw.billboard(q, 0.6f + a * 1.4f, i, FxDraw.FIRE, 0.25f + a * 0.4f, URA_HOT, 1 - a, true);
+                        FxDraw.billboard(q, 1.0f * (1 - a), 0, FxDraw.FLARE, 6 / 32f, URA_FIRE, 1 - a, true);
                     }
                 }
-                last = p;
+            }
+            if (p < 6) {
+                FxDraw.billboard(netPoint(0.9f, 0.9f, flatC, fv, sv, 1.9f, feet, 1, 1, age), 1.2f, 0, FxDraw.FLARE, 8 / 32f, WHITE, 1 - p / 6, true);
             }
         }
-        FxDraw.billboard(c, r * 2.6f, 0, FxDraw.SOFT, 0.05f, CRIMSON, 0.18f * out, true);
     }
 
     private static void explosion(Fx f, Vec3 camera, float age, boolean glow) {
@@ -1234,6 +1492,16 @@ public final class SubFx {
         FxDraw.disk(new Vector3f(c).add(0, -R * 0.3f, 0), new Vector3f(0, 1, 0), R * (1 + 4 * smooth(k * 2)), FxDraw.RING, 0.08f, hot,
                 0.7f * (1 - smooth(k * 2)), true);
         FxDraw.billboard(c, R * 3, 0, FxDraw.SOFT, 0.1f, hot, 0.35f * (1 - smooth(k)), true);
+        if (R >= 2) {
+            // The big one throws sparks out and up.
+            for (int i = 0; i < 30; i++) {
+                Vector3f d = new Vector3f(hash(i, 116) - 0.5f, Math.abs(hash(i, 117) - 0.3f) + 0.2f, hash(i, 118) - 0.5f).normalize();
+                float sp = 0.25f + 0.35f * hash(i, 119);
+                Vector3f p = new Vector3f(c).add(new Vector3f(d).mul(age * sp * R * 0.4f)).add(0, -0.01f * age * age, 0);
+                Vector3f tail = new Vector3f(p).sub(new Vector3f(d).mul(0.5f));
+                FxDraw.ribbon(tail, p, 0.08f, FxDraw.STREAK, 0.8f, URA_FIRE, 1 - smooth(k * 1.4f), true);
+            }
+        }
     }
 
     private static void seal(Fx f, Vec3 camera, float age, float partial, float out, boolean glow) {
