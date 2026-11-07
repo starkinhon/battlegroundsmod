@@ -80,3 +80,62 @@ module.exports = {
       head: { yaw: 18, pitch: 6 }, ease: 'linear' },
   ],
 };
+
+// ---------- the click combo (padrao.combo.json: 5 hits landing at ticks 1, 2, 2, 2, 3) ----------
+// Each one starts where the one before ends, so the chain flows; the blade crosses in front on the hit tick.
+const C = {
+  // flat cut right to left
+  c1wind: { twist: 34, lean: 6, arm: { yaw: 80, pitch: 2 }, blade: { yaw: 130, pitch: 4 }, l: { yaw: 20, pitch: -50 }, ...stance, head: { yaw: -34 } },
+  c1mid: { twist: 0, lean: 10, arm: { yaw: 5, pitch: 0 }, blade: { yaw: -15, pitch: 0 }, l: { yaw: 30, pitch: -35 }, ...stance, head: { yaw: 0 } },
+  c1end: { twist: -36, lean: 10, arm: { yaw: -70, pitch: -6 }, blade: { yaw: -110, pitch: -8 }, l: { yaw: 45, pitch: -25 }, ...stance, head: { yaw: 36 } },
+  // rising back across, left low to right high
+  c2mid: { twist: 0, lean: 6, arm: { yaw: 5, pitch: 10 }, blade: { yaw: 25, pitch: 40 }, l: { yaw: 30, pitch: -40 }, ...stance, head: { yaw: 0 } },
+  c2end: { twist: 30, lean: 2, arm: { yaw: 55, pitch: 45 }, blade: { yaw: 80, pitch: 62 }, l: { yaw: 25, pitch: -50 }, ...stance, head: { yaw: -30 } },
+  // kesagiri, right high down to left low
+  c3mid: { twist: 0, lean: 12, arm: { yaw: 0, pitch: 12 }, blade: { yaw: 25, pitch: 42 }, l: { yaw: 30, pitch: -40 }, ...stance, head: { yaw: 0 } },
+  c3end: { twist: -28, lean: 16, arm: { yaw: -48, pitch: -40 }, blade: { yaw: -70, pitch: -28 }, l: { yaw: 40, pitch: -20 }, ...stance, head: { yaw: 28 } },
+  // thrust: pulled back by the hip, then straight out with a lunge
+  c4wind: { twist: 30, lean: 0, drop: 1.6, arm: { yaw: 40, pitch: -45 }, blade: { yaw: 0, pitch: 2 }, l: { yaw: 10, pitch: -60 }, rl: { pitch: 10 }, ll: { pitch: -10 }, head: { yaw: -30 } },
+  c4end: { twist: -12, lean: 18, drop: 2.6, fwd: 2.5, arm: { yaw: 0, pitch: 0 }, blade: { yaw: -2, pitch: -2 }, l: { yaw: -30, pitch: 10 }, rl: { pitch: 40 }, ll: { pitch: -32 }, head: { yaw: 12 } },
+  // both hands up over the head (jodan), then straight down the middle
+  c5wind: { twist: 0, lean: -8, drop: 0.5, grip: 1, arm: { yaw: 8, pitch: 80 }, blade: { yaw: 180, pitch: 40 }, rl: { pitch: 10 }, ll: { pitch: -8 }, head: { yaw: 0 } },
+  c5mid: { twist: 0, lean: 10, drop: 1.5, grip: 1, arm: { yaw: 4, pitch: 25 }, blade: { yaw: 0, pitch: 55 }, rl: { pitch: 24 }, ll: { pitch: -18 }, head: { yaw: 0 } },
+  c5end: { twist: 0, lean: 24, drop: 3, fwd: 2, grip: 1, arm: { yaw: 3, pitch: -35 }, blade: { yaw: 0, pitch: -30 }, rl: { pitch: 36 }, ll: { pitch: -28 }, head: { yaw: 0 } },
+};
+const hold = (p, d) => ({ ...p, lean: (p.lean || 0) + d });
+Object.assign(module.exports, {
+  combo1: [
+    { t: 0, ...REST },
+    { t: 0.5, ...C.c1wind, ease: 'out' },
+    { t: 1, ...C.c1mid, ease: 'in' },
+    { t: 2.2, ...C.c1end, ease: 'out' },
+    { t: 7, ...hold(C.c1end, -2), ease: 'inout' },
+  ],
+  combo2: [
+    { t: 0, ...C.c1end },
+    { t: 0.8, ...C.c3end, twist: -30, arm: { yaw: -55, pitch: -45 }, blade: { yaw: -80, pitch: -40 }, ease: 'out' },
+    { t: 2, ...C.c2mid, ease: 'in' },
+    { t: 3.2, ...C.c2end, ease: 'out' },
+    { t: 8, ...hold(C.c2end, -2), ease: 'inout' },
+  ],
+  combo3: [
+    { t: 0, ...C.c2end },
+    { t: 0.9, ...C.c2end, twist: 36, arm: { yaw: 45, pitch: 55 }, blade: { yaw: 130, pitch: 45 }, ease: 'out' },
+    { t: 2, ...C.c3mid, ease: 'in' },
+    { t: 3.2, ...C.c3end, ease: 'out' },
+    { t: 8, ...hold(C.c3end, -2), ease: 'inout' },
+  ],
+  combo4: [
+    { t: 0, ...C.c3end },
+    { t: 1.2, ...C.c4wind, ease: 'out' },
+    { t: 2, ...C.c4end, ease: 'snap' },
+    { t: 8, ...hold(C.c4end, -2), ease: 'inout' },
+  ],
+  combo5: [
+    { t: 0, ...C.c4end },
+    { t: 2, ...C.c5wind, ease: 'out' },
+    { t: 3, ...C.c5mid, ease: 'in' },
+    { t: 4.2, ...C.c5end, ease: 'out' },
+    { t: 14, ...hold(C.c5end, -2), ease: 'inout' },
+  ],
+});

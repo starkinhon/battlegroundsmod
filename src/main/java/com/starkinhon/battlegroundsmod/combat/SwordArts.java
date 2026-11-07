@@ -391,6 +391,79 @@ public final class SwordArts {
                 .normalize();
     }
 
+    // ---------- Combo (left click) ----------
+
+    // The five cuts of the click combo (espada.combo1..5): flat right to left, rising back across, kesagiri, a thrust,
+    // and the two-handed overhead cut that ends it. Same timings and values as the punches (padrao.combo.json); the
+    // blade reaches a bit further and cuts everyone in its arc.
+    private static final String COMBO = "espada.combo";
+    private static final double[][] COMBO_ARC = {{-80, 80}, {-65, 65}, {-60, 60}, {-18, 18}, {-35, 35}};
+    private static final double[] COMBO_EXTRA_REACH = {0.4, 0.4, 0.4, 1.0, 0.6};
+
+    static void comboSwing(LivingEntity attacker, int step) {
+        color(attacker);
+        anim(attacker, COMBO + (Math.floorMod(step, COMBO_ARC.length) + 1));
+        ServerLevel level = Combat.level(attacker);
+        boolean last = step == COMBO_ARC.length - 1;
+        Fx.sound(level, attacker.getEyePosition(), SoundEvents.PLAYER_ATTACK_SWEEP, last ? 1.0f : 0.6f,
+                (last ? 0.85f : 1.25f) + level.random.nextFloat() * 0.25f);
+    }
+
+    // Lands combo cut step. Returns true when it connected with anyone (blocked or not).
+    static boolean comboCut(LivingEntity attacker, LivingEntity target, int step, ComboSpec.Golpe golpe, ComboSpec spec) {
+        if (!attacker.isAlive() || !Stun.canAttack(attacker) || Freeze.isFrozen(attacker)) {
+            return false;
+        }
+        ServerLevel level = Combat.level(attacker);
+        int i = Math.floorMod(step, COMBO_ARC.length);
+        double reach = spec.alcance() + COMBO_EXTRA_REACH[i];
+        List<LivingEntity> hit = slashed(attacker, reach, COMBO_ARC[i][0], COMBO_ARC[i][1]);
+        // The one he chased or clicked on is cut even a bit off the arc.
+        if (target != null && !hit.contains(target) && Combat.isTarget(target, attacker) && attacker.distanceTo(target) <= reach + 1.2) {
+            hit.add(target);
+        }
+        Vec3 eye = attacker.getEyePosition();
+        if (hit.isEmpty()) {
+            Fx.sound(level, eye, SoundEvents.PLAYER_ATTACK_NODAMAGE, 0.5f, 1.3f);
+            return false;
+        }
+        boolean last = "final".equals(golpe.momento());
+        float damage = (float) golpe.dano() * Melee.multiplier(attacker);
+        int color = Melee.lighter(Melee.fistColor(attacker));
+        Vec3 look = attacker.getLookAngle();
+        Vec3 line = comboLine(attacker, i);
+        boolean any = false;
+        for (LivingEntity e : hit) {
+            if (land(attacker, e, damage, golpe.stunTicks(), golpe.hitstopTicks(), golpe.tremor(), look, golpe.empurrao(), golpe.subida(),
+                    golpe.momento())) {
+                any = true;
+                cut(level, e, jitter(level, line), last ? 2.8f : i == 3 ? 1.2f : 2.0f, last ? 1.2f : 0.8f, color);
+            }
+        }
+        if (any) {
+            Fx.sound(level, eye, last ? SoundEvents.PLAYER_ATTACK_STRONG : SoundEvents.PLAYER_ATTACK_SWEEP, last ? 1.3f : 0.9f,
+                    last ? 0.8f : 1.5f + level.random.nextFloat() * 0.3f);
+            Fx.sound(level, eye, SoundEvents.PLAYER_ATTACK_CRIT, 0.6f, 1.5f);
+            if (last) {
+                Fx.sound(level, eye, SoundEvents.TRIDENT_THROW.value(), 1.0f, 0.8f);
+            }
+        }
+        return any;
+    }
+
+    // The line each combo cut leaves on whoever it hits (see tools/espada/anims.js).
+    private static Vec3 comboLine(LivingEntity attacker, int step) {
+        Vec3 flat = Combat.flatLook(attacker);
+        Vec3 side = right(flat);
+        return switch (step) {
+            case 0 -> side.scale(-1).add(0, -0.1, 0).normalize();
+            case 1 -> side.scale(0.9).add(0, 0.8, 0).normalize();
+            case 2 -> side.scale(-0.8).add(0, -1, 0).normalize();
+            case 3 -> flat;
+            default -> new Vec3(0, -1, 0).add(side.scale(0.1)).normalize();
+        };
+    }
+
     // ---------- shared ----------
 
     // Everyone the swing reaches: in front within reach (plus their own width), between the two angles left/right of

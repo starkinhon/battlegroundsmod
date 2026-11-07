@@ -26,7 +26,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 // Hand-to-hand moves every power shares: the punch combo on left click (values in souls_skills/padrao.combo.json),
 // a strong punch that charges while held and a barrage that lasts while held. The Dash Attack is in DashAttack.
-// With a sword in hand the Forte, the Barragem and the Dash Attack are sword moves instead (SwordArts).
+// With a sword in hand the combo, the Forte, the Barragem and the Dash Attack are sword moves instead (SwordArts).
 public final class Melee {
     public static final Ability STRONG = new Ability(60, 0, Melee::strong);
     public static final Ability BARRAGE = new Ability(140, 10, Melee::barrageMove);
@@ -131,7 +131,12 @@ public final class Melee {
         data.punchQueued = false;
         CombatMode.enter(attacker);
         Stamina.gain(attacker, StaminaSpec.get().ganhoGolpePct());
-        PacketDistributor.sendToPlayersTrackingEntityAndSelf(attacker, new ModPayloads.ComboAnimation(attacker.getId(), step));
+        boolean sword = SwordArts.held(attacker);
+        if (sword) {
+            SwordArts.comboSwing(attacker, step);
+        } else {
+            PacketDistributor.sendToPlayersTrackingEntityAndSelf(attacker, new ModPayloads.ComboAnimation(attacker.getId(), step));
+        }
         if (golpe.avanco() > 0) {
             Vec3 look = Combat.flatLook(attacker).scale(golpe.avanco());
             Vec3 now = attacker.getDeltaMovement();
@@ -140,7 +145,13 @@ public final class Melee {
         }
         int interrupts = data.interrupts;
         Tasks.later(golpe.windUp(), () -> {
-            if (data.interrupts == interrupts && land(attacker, target, golpe, spec) && onHit != null) {
+            if (data.interrupts != interrupts) {
+                return;
+            }
+            // Swapped the sword away mid-swing: it lands as the punch.
+            boolean landed = sword && SwordArts.held(attacker) ? SwordArts.comboCut(attacker, target, step, golpe, spec)
+                    : land(attacker, target, golpe, spec);
+            if (landed && onHit != null) {
                 onHit.run();
             }
         });
