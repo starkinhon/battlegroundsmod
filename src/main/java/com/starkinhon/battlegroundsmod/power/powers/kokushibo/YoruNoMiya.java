@@ -30,10 +30,11 @@ import net.neoforged.neoforge.network.PacketDistributor;
 public final class YoruNoMiya {
     // The page's slash (keep in step with souls_moon.fsh and MoonSlashRenderer).
     public static final double CX = 0.06, CY = -0.04, R = 0.60;
-    // Blocks per page unit: the arc's radius (R) is the reach of his arm plus the Kokushibo blade (~0.6 + 2.7 blocks).
-    public static final double SCALE = 5.5;
+    // Blocks per page unit: the arc's radius (R) started as the reach of his arm plus the Kokushibo blade (~0.6 + 2.7
+    // blocks, 5.5); Stark then asked for everything 1.5x bigger (size, reach, destruction): 8.25.
+    public static final double SCALE = 8.25;
     // Where the arc's centre sits: AHEAD blocks in front of his eyes, RISE above them (negative: at his chest).
-    public static final double AHEAD = 0.6;
+    public static final double AHEAD = 0.9;
     public static final double RISE = -0.35;
     // How far the slash leans back from standing up (degrees): nearly flat, a horizontal cut.
     public static final double TILT = 82;
@@ -54,11 +55,17 @@ public final class YoruNoMiya {
     // stunned STUN_AFTER more.
     private static final int IMPACT_DELAY = 10;
     private static final int STUN_AFTER = 10;
+    // The blow's knockback: blocks per tick away from him, and up.
+    private static final double FLING = 2.2;
+    private static final double FLING_UP = 0.55;
     // The crescent cut into blocks: out past the arc by CARVE_OUT of its radius at the fattest, CARVE_ABOVE blocks above
     // the slash's plane and CARVE_BELOW below it.
-    private static final double CARVE_OUT = 0.55;
-    private static final double CARVE_ABOVE = 1.5;
-    private static final double CARVE_BELOW = 3.5;
+    // Stark: destroy EVERYTHING in the slash's shape, so a fat moon: from CARVE_IN of the radius inside the arc to CARVE_OUT
+    // past it at the middle of the swing, and tall (a whole cliff in its way gets the crescent cut through it).
+    private static final double CARVE_IN = 0.45;
+    private static final double CARVE_OUT = 0.6;
+    private static final double CARVE_ABOVE = 6.0;
+    private static final double CARVE_BELOW = 5.0;
     // The arc as on the page (souls_moon.fsh): starts at A0 and turns SPAN.
     private static final double A0 = Math.toRadians(200), SPAN = Math.toRadians(-265);
     private static final double VIEW_DISTANCE = 128;
@@ -163,7 +170,7 @@ public final class YoruNoMiya {
     // Like the Black Flash: the cut lands but the target freezes, stunned, and only takes the blow (damage, knockback and
     // its impact frame) IMPACT_DELAY ticks later.
     private static void strike(LivingEntity caster, LivingEntity target, ServerLevel level, Vec3 eye) {
-        Stun.apply(target, IMPACT_DELAY + STUN_AFTER);
+        Stun.apply(target, IMPACT_DELAY);
         Freeze.hold(target, IMPACT_DELAY + 1);
         Tasks.later(IMPACT_DELAY, () -> {
             Freeze.free(target);
@@ -180,10 +187,30 @@ public final class YoruNoMiya {
             }
             SubCommon.sound(level, at, SoundEvents.LIGHTNING_BOLT_IMPACT, 1.0f, 1.6f);
             SubCommon.sound(level, at, SoundEvents.PLAYER_ATTACK_CRIT, 1.6f, 0.6f);
-            if (caster.isAlive() && Combat.hurt(caster, target, DAMAGE)) {
-                Combat.pushFrom(target, eye, 1.9, 0.45);
+            if (caster.isAlive()) {
+                Combat.hurt(caster, target, DAMAGE);
             }
+            // The knockback whatever the damage did (it used to ride on the hurt landing, and Stark saw none), and once
+            // more the next tick so nothing that ran in between (the hold letting go, the hurt's own knockback) eats it.
+            Vec3 fling = fling(target, eye);
+            target.setDeltaMovement(fling);
+            target.hurtMarked = true;
+            Tasks.later(1, () -> {
+                if (target.isAlive()) {
+                    target.setDeltaMovement(fling);
+                    target.hurtMarked = true;
+                }
+            });
+            Stun.apply(target, STUN_AFTER);
         });
+    }
+
+    // Thrown away from him (flat), and up.
+    private static Vec3 fling(LivingEntity target, Vec3 eye) {
+        Vec3 away = target.position().subtract(eye);
+        away = new Vec3(away.x, 0, away.z);
+        away = away.lengthSqr() < 1.0E-4 ? Vec3.ZERO : away.normalize();
+        return away.scale(FLING).add(0, FLING_UP, 0);
     }
 
     // Blocks: the crescent of the slash cut out of whatever it crosses. A thin moon (pointed at both ends, fattest in the
@@ -213,7 +240,7 @@ public final class YoruNoMiya {
                     double fat = Math.pow(Math.sin(Math.PI * s), 0.6);
                     double r = Math.sqrt(px * px + py * py);
                     double jag = 0.06 * (hash(x, y, z) - 0.5);
-                    if (r < ru * (1 - 0.1 * fat) + jag || r > ru * (1 + CARVE_OUT * fat) + jag) {
+                    if (r < ru * (1 - CARVE_IN * fat) + jag || r > ru * (1 + CARVE_OUT * fat) + jag) {
                         continue;
                     }
                     pos.set(x, y, z);
