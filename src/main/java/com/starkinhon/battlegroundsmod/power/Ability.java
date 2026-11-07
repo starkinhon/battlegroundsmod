@@ -7,14 +7,24 @@ import net.minecraft.world.entity.LivingEntity;
 // One move of a power. Cooldown is in ticks (20 = 1 second).
 // The caster is any living entity, so bosses use the very same moves as players.
 // counter: a move made to get out of a beating, so it still works while stunned or with the Cooldown effect.
-public record Ability(int cooldown, float energyCost, Action action, boolean counter) {
+// beatenCounter: an instant answer to being beaten up (punches, combos: their short hitstun and the Cooldown effect), but not
+// to a real stun from a technique (Stun.real), which still blocks it.
+public record Ability(int cooldown, float energyCost, Action action, boolean counter, boolean beatenCounter) {
 
     public Ability(int cooldown, float energyCost, Action action) {
-        this(cooldown, energyCost, action, false);
+        this(cooldown, energyCost, action, false, false);
+    }
+
+    public Ability(int cooldown, float energyCost, Action action, boolean counter) {
+        this(cooldown, energyCost, action, counter, false);
     }
 
     public Ability asCounter() {
-        return new Ability(cooldown, energyCost, action, true);
+        return new Ability(cooldown, energyCost, action, true, false);
+    }
+
+    public Ability asBeatenCounter() {
+        return new Ability(cooldown, energyCost, action, false, true);
     }
 
     @FunctionalInterface

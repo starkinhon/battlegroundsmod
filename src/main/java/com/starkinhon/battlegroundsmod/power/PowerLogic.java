@@ -130,14 +130,14 @@ public final class PowerLogic {
         return slot == PowerData.SLOT_STRONG || slot == PowerData.SLOT_BARRAGE || slot == PowerData.SLOT_DASH_ATTACK;
     }
 
-    // Being hit (stun, Cooldown effect) blocks every move but a counter.
+    // Being hit (stun, Cooldown effect) blocks every move but a counter (a beaten counter only out of punches, not a real stun).
     private static boolean canCast(LivingEntity caster, PowerData data, int slot) {
         Power power = Powers.get(data.power);
         Ability ability = power == null ? null : ability(power, slot);
         if (ability == null) {
             return false;
         }
-        boolean counter = ability.counter();
+        boolean counter = ability.counter() || ability.beatenCounter() && !Stun.real(caster);
         return !caster.isSpectator() && caster.isAlive() && data.cooldowns[slot] <= 0 && data.busyTicks <= 0 && !Freeze.isFrozen(caster)
                 && (counter || Stun.canAttack(caster)) && !Defense.isGuarding(caster) && !sealed(caster)
                 && !com.starkinhon.battlegroundsmod.power.powers.gojo.InfiniteVoid.blocks(caster);

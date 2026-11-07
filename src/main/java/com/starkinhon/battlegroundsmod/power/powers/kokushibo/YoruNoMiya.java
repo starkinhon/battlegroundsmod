@@ -2,7 +2,6 @@ package com.starkinhon.battlegroundsmod.power.powers.kokushibo;
 
 import com.starkinhon.battlegroundsmod.combat.BlockRules;
 import com.starkinhon.battlegroundsmod.combat.Combat;
-import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.combat.Stun;
 import com.starkinhon.battlegroundsmod.combat.SwordArts;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
@@ -53,10 +52,11 @@ public final class YoruNoMiya {
     public static final int MOON_GOLD = 0xFFA000;
     // The hitbox reaches this many times as far as the drawn slash (Stark: 1.5x).
     private static final double HIT_REACH = 1.5;
-    // Black Flash style: the target stands frozen this long after the cut before the blow lands (0.5 s), then stays
-    // stunned STUN_AFTER more.
-    private static final int IMPACT_DELAY = 10;
-    private static final int STUN_AFTER = 10;
+    // Anyone in front of him this share of the hitbox's reach is hit even if the arc's open gap would miss them.
+    private static final double CLOSE_IN = 0.6;
+    // The blow lands with the cut (Stark took out the old 0.5 s Black Flash wait), then the target stays stunned this long
+    // (the same 1 s in all it was stunned before).
+    private static final int STUN_AFTER = 20;
     // The blow's knockback: blocks per tick away from him, and up.
     private static final double FLING = 2.2;
     private static final double FLING_UP = 0.55;
@@ -154,6 +154,11 @@ public final class YoruNoMiya {
         double reach = (R * 1.07 + 0.2) * SCALE * HIT_REACH;
         for (LivingEntity target : Combat.inRadius(level, centre, reach + DEPTH, caster)) {
             Vec3 rel = Combat.center(target).subtract(centre);
+            // Stark: someone close in, between him and the slash, is hit too (they used to slip through the inside).
+            if (closeIn(target, eye, look, reach)) {
+                strike(caster, target, level, eye);
+                continue;
+            }
             double depth = rel.dot(fr[1]);
             double px = rel.dot(fr[2]) / SCALE, py = rel.dot(fr[3]) / SCALE;
             if (Math.abs(depth) > DEPTH + target.getBbHeight() * 0.5 || px * px + py * py > (reach / SCALE) * (reach / SCALE)) {
@@ -166,6 +171,21 @@ public final class YoruNoMiya {
         }
     }
 
+    // In front of him (up to the arc's reach, a little to the sides) and around the height the slash passes at.
+    private static boolean closeIn(LivingEntity target, Vec3 eye, Vec3 look, double reach) {
+        Vec3 c = Combat.center(target);
+        Vec3 flat = new Vec3(look.x, 0, look.z);
+        flat = flat.lengthSqr() < 1.0E-6 ? new Vec3(0, 0, 1) : flat.normalize();
+        Vec3 rel = c.subtract(eye);
+        double ahead = rel.x * flat.x + rel.z * flat.z;
+        double side = Math.abs(rel.x * flat.z - rel.z * flat.x);
+        // the height his look reaches at that distance (the slash turns with his pitch)
+        double ly = Mth.clamp(look.normalize().y, -0.98, 0.98);
+        double pitchY = ly / Math.sqrt(1 - ly * ly) * Math.max(0, ahead);
+        double dy = Math.abs(rel.y - pitchY) - target.getBbHeight() * 0.5;
+        return ahead > -target.getBbWidth() && ahead < reach * CLOSE_IN && side < Math.max(2.0, ahead + 1.0) && dy < DEPTH;
+    }
+
     // How far round the swing (0 at its start, 1 at its end, past 1 in the gap) the page point (x, y) from the arc's centre is.
     private static double sweep(double x, double y) {
         double th = Math.atan2(y, x);
@@ -176,42 +196,33 @@ public final class YoruNoMiya {
         return a / Math.abs(SPAN);
     }
 
-    // Like the Black Flash: the cut lands but the target freezes, stunned, and only takes the blow (damage, knockback and
-    // its impact frame) IMPACT_DELAY ticks later.
+    // The blow (damage, knockback and its impact frame) lands right with the cut, like a normal hit.
     private static void strike(LivingEntity caster, LivingEntity target, ServerLevel level, Vec3 eye) {
-        Stun.apply(target, IMPACT_DELAY);
-        Freeze.hold(target, IMPACT_DELAY + 1);
-        Tasks.later(IMPACT_DELAY, () -> {
-            Freeze.free(target);
-            if (!target.isAlive()) {
-                return;
+        Vec3 at = Combat.center(target);
+        Vec3 away = at.subtract(eye);
+        ModPayloads.SwordFx hit = new ModPayloads.SwordFx(SwordArts.FX_MOON_HIT, target.getId(), at, away, 0, 0);
+        for (ServerPlayer player : level.players()) {
+            if (player.distanceToSqr(at) < VIEW_DISTANCE * VIEW_DISTANCE) {
+                PacketDistributor.sendToPlayer(player, hit);
             }
-            Vec3 at = Combat.center(target);
-            Vec3 away = at.subtract(eye);
-            ModPayloads.SwordFx hit = new ModPayloads.SwordFx(SwordArts.FX_MOON_HIT, target.getId(), at, away, 0, 0);
-            for (ServerPlayer player : level.players()) {
-                if (player.distanceToSqr(at) < VIEW_DISTANCE * VIEW_DISTANCE) {
-                    PacketDistributor.sendToPlayer(player, hit);
-                }
+        }
+        SubCommon.sound(level, at, SoundEvents.LIGHTNING_BOLT_IMPACT, 1.0f, 1.6f);
+        SubCommon.sound(level, at, SoundEvents.PLAYER_ATTACK_CRIT, 1.6f, 0.6f);
+        if (caster.isAlive()) {
+            Combat.hurt(caster, target, DAMAGE);
+        }
+        // The knockback whatever the damage did (it used to ride on the hurt landing, and Stark saw none), and once
+        // more the next tick so nothing that ran in between (the hold letting go, the hurt's own knockback) eats it.
+        Vec3 fling = fling(target, eye);
+        target.setDeltaMovement(fling);
+        target.hurtMarked = true;
+        Tasks.later(1, () -> {
+            if (target.isAlive()) {
+                target.setDeltaMovement(fling);
+                target.hurtMarked = true;
             }
-            SubCommon.sound(level, at, SoundEvents.LIGHTNING_BOLT_IMPACT, 1.0f, 1.6f);
-            SubCommon.sound(level, at, SoundEvents.PLAYER_ATTACK_CRIT, 1.6f, 0.6f);
-            if (caster.isAlive()) {
-                Combat.hurt(caster, target, DAMAGE);
-            }
-            // The knockback whatever the damage did (it used to ride on the hurt landing, and Stark saw none), and once
-            // more the next tick so nothing that ran in between (the hold letting go, the hurt's own knockback) eats it.
-            Vec3 fling = fling(target, eye);
-            target.setDeltaMovement(fling);
-            target.hurtMarked = true;
-            Tasks.later(1, () -> {
-                if (target.isAlive()) {
-                    target.setDeltaMovement(fling);
-                    target.hurtMarked = true;
-                }
-            });
-            Stun.apply(target, STUN_AFTER);
         });
+        Stun.apply(target, STUN_AFTER);
     }
 
     // Thrown away from him (flat), and up.

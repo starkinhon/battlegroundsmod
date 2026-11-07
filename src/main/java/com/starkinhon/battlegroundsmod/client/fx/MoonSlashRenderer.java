@@ -83,7 +83,7 @@ public final class MoonSlashRenderer {
         com.starkinhon.battlegroundsmod.client.ScreenShake.start(0.7f, 10);
     }
 
-    // The blow landing on someone 0.5 s after the cut (Black Flash style): the impact frame in the moon's gold,
+    // The blow landing on someone with the cut: the impact frame in the moon's gold,
     // a light flash and a harder shake.
     public static void hit(Vec3 pos) {
         if (!near(pos)) {
