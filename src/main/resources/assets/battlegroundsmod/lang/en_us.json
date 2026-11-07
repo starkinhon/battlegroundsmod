@@ -1,5 +1,8 @@
 {
-  "itemGroup.battlegroundsmod": "Battlegrounds",
+  "itemGroup.battlegroundsmod": "Battlegrounds: Essentials",
+  "itemGroup.battlegroundsmod.souls": "Battlegrounds: Souls",
+  "itemGroup.battlegroundsmod.weapons": "Battlegrounds: Weapons",
+  "itemGroup.battlegroundsmod.spawn_eggs": "Battlegrounds: Spawn Eggs",
   "item.battlegroundsmod.power_book": "Book of Souls",
   "item.battlegroundsmod.aizen_sword": "Kyoka Suigetsu (Aizen's Sword)",
   "item.battlegroundsmod.fight_rod": "Fight Rod",
