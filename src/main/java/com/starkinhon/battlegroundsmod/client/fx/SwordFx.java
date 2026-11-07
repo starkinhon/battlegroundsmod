@@ -185,7 +185,8 @@ public final class SwordFx {
         if (last != null && Math.abs(last.time() - t) < 1.0E-4) {
             return;
         }
-        if (last != null && t < last.time()) {
+        // Going back in time, or the blade jumping (he went through someone): start the trail over.
+        if (last != null && (t < last.time() || last.base().distanceToSqr(base) > 4)) {
             trail.samples.clear();
         }
         trail.samples.addLast(new Sample(t, base, tip));
@@ -278,14 +279,13 @@ public final class SwordFx {
                 continue;
             }
             Vector3f b0 = bases.get(i), t0 = tips.get(i), b1 = bases.get(i + 1), t1 = tips.get(i + 1);
-            Vector3f m0 = new Vector3f(b0).lerp(t0, 0.55f), m1 = new Vector3f(b1).lerp(t1, 0.55f);
-            // The wide body of the cut in the power's color, nothing at the hilt, full at the tip...
-            FxDraw.quadFade(b0, b1, t1, t0, FxDraw.SOLID, 0, rgb, 0, 0, 0.5f * vis[i + 1], 0.5f * vis[i], true);
-            // ...brighter toward the tip...
-            FxDraw.quadFade(m0, m1, t1, t0, FxDraw.SOLID, 0, light, 0, 0, 0.55f * vis[i + 1], 0.55f * vis[i], true);
-            // ...and a white-hot edge where the tip went.
-            FxDraw.ribbon(t0, t1, 0.09f + 0.06f * vis[i], FxDraw.BEAM, 0.8f, WHITE, 0.95f * vis[i], true);
-            FxDraw.ribbon(t0, t1, 0.35f, FxDraw.BEAM, 0.1f, rgb, 0.45f * vis[i], true);
+            // Three bands on the swept surface itself (no seams between frames), each fading in toward the tip: the
+            // power's color over the whole blade, a lighter one over the outer half, a white edge where the tip went.
+            FxDraw.quadFade(b0, b1, t1, t0, FxDraw.SOLID, 0, rgb, 0, 0, 0.42f * vis[i + 1], 0.42f * vis[i], true);
+            FxDraw.quadFade(new Vector3f(b0).lerp(t0, 0.5f), new Vector3f(b1).lerp(t1, 0.5f), t1, t0, FxDraw.SOLID, 0, light,
+                    0, 0, 0.5f * vis[i + 1], 0.5f * vis[i], true);
+            FxDraw.quadFade(new Vector3f(b0).lerp(t0, 0.86f), new Vector3f(b1).lerp(t1, 0.86f), t1, t0, FxDraw.SOLID, 0, WHITE,
+                    0, 0, 0.95f * vis[i + 1], 0.95f * vis[i], true);
         }
     }
 
@@ -340,12 +340,12 @@ public final class SwordFx {
         // Overshoot a little past each end, thinner.
         Vector3f a2 = new Vector3f(center).sub(new Vector3f(half).mul(1.25f));
         Vector3f b2 = new Vector3f(center).add(new Vector3f(half).mul(1.25f));
-        FxDraw.ribbon(a2, b2, 0.9f * c.width() * thin, FxDraw.BEAM, 0.05f, rgb, 0.5f * fade, true);
-        FxDraw.ribbon(a, b, 0.32f * c.width() * thin, FxDraw.BEAM, 0.6f, FxDraw.mix(rgb, WHITE, 0.5f), 0.9f * fade, true);
-        FxDraw.ribbon(a, b, 0.1f * c.width() * thin, FxDraw.BEAM, 1, WHITE, fade, true);
+        FxDraw.ribbon(a2, b2, 0.45f * c.width() * thin, FxDraw.BEAM, 0.05f, rgb, 0.6f * fade, true);
+        FxDraw.ribbon(a, b, 0.2f * c.width() * thin, FxDraw.BEAM, 0.6f, FxDraw.mix(rgb, WHITE, 0.5f), 0.9f * fade, true);
+        FxDraw.ribbon(a, b, 0.07f * c.width() * thin, FxDraw.BEAM, 1, WHITE, fade, true);
         if (age < 3) {
             float flash = 1 - age / 3;
-            FxDraw.billboard(center, 2.2f * c.width() * flash + 0.4f, age * 0.3f, FxDraw.FLARE, 6 / 32f, WHITE, 0.9f * flash, true);
+            FxDraw.billboard(center, 0.9f * c.width() * flash + 0.3f, age * 0.3f, FxDraw.FLARE, 6 / 32f, WHITE, 0.75f * flash, true);
         }
     }
 
