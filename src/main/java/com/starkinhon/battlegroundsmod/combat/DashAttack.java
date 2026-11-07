@@ -44,7 +44,12 @@ public final class DashAttack {
         int ticks = Math.max(1, spec.duracaoMaxTicks());
         data.busyTicks = ticks + 1;
         Vec3[] dir = {Combat.flatLook(attacker)};
-        PacketDistributor.sendToPlayersTrackingEntityAndSelf(attacker, new ModPayloads.PlaySkillAnimation(attacker.getId(), SKILL, false));
+        boolean sword = SwordArts.held(attacker);
+        PacketDistributor.sendToPlayersTrackingEntityAndSelf(attacker, new ModPayloads.PlaySkillAnimation(attacker.getId(),
+                sword ? SwordArts.DASH_RUN : SKILL, false));
+        if (sword) {
+            SwordArts.color(attacker);
+        }
         SkillSounds.play(level, spec.sons(), "uso", 0, ticks, onde -> attacker.position(), List.of());
         Fx.effects(level, SKILL, false, "uso", attacker.position().add(0, 1, 0), dir[0]);
         Fx.burst(level, ParticleTypes.GUST_EMITTER_SMALL, attacker.position().add(0, 0.2, 0), 1, 0, 0);
@@ -99,6 +104,10 @@ public final class DashAttack {
 
     // Snaps in front of the target, facing it, and lands the hit.
     private static void stick(LivingEntity attacker, LivingEntity target, DashAtaqueSpec spec) {
+        if (SwordArts.held(attacker)) {
+            SwordArts.dashCut(attacker, target, spec);
+            return;
+        }
         PowerData data = attacker.getData(ModAttachments.POWER);
         data.busyTicks = 0;
         Vec3 away = attacker.position().subtract(target.position());

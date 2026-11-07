@@ -636,6 +636,24 @@ public final class ModPayloads {
     // Server -> client: a ball of Bills' Destruction Energy (power/powers/bills/DestructionEnergy), sent every tick it
     // exists. mode 0 = there at pos, 2 = gone. grow: 0 to 1 while it forms (the rings open one after another); small: one
     // of the many balls of the Shift + Z, drawn lighter.
+    // Server -> client: one of the sword moves' effects (client/fx/SwordFx; kinds there, sent as kind | rgb << 4).
+    public record SwordFx(int kind, int entityId, Vec3 pos, Vec3 dir, float a, float b) implements CustomPacketPayload {
+        public static final Type<SwordFx> TYPE = payloadType("sword_fx");
+        public static final StreamCodec<ByteBuf, SwordFx> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, SwordFx::kind,
+                ByteBufCodecs.VAR_INT, SwordFx::entityId,
+                VEC3, SwordFx::pos,
+                VEC3, SwordFx::dir,
+                ByteBufCodecs.FLOAT, SwordFx::a,
+                ByteBufCodecs.FLOAT, SwordFx::b,
+                SwordFx::new);
+
+        @Override
+        public Type<SwordFx> type() {
+            return TYPE;
+        }
+    }
+
     // Server -> client: one of Aizen's other effects (client/fx/AizenFx; kinds there): the Reiatsu around entityId, the
     // Hogyoku evolution on entityId, a cut in space at pos along dir, or Kyoka Suigetsu's clone cracking and breaking.
     public record AizenFx(int kind, int entityId, Vec3 pos, Vec3 dir, float a, float b) implements CustomPacketPayload {
@@ -1133,6 +1151,8 @@ public final class ModPayloads {
                 () -> ClientHooks.blackFlash(payload.pos(), payload.dir(), payload.charge(), payload.stop())));
         registrar.playToClient(SubFx.TYPE, SubFx.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.subFx(payload.kind(), payload.id(), payload.pos(), payload.dir(), payload.a(), payload.b(), payload.c())));
+        registrar.playToClient(SwordFx.TYPE, SwordFx.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.swordFx(payload.kind(), payload.entityId(), payload.pos(), payload.dir(), payload.a(), payload.b())));
         registrar.playToClient(AizenFx.TYPE, AizenFx.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.aizenFx(payload.kind(), payload.entityId(), payload.pos(), payload.dir(), payload.a(), payload.b())));
         registrar.playToClient(EnergyBall.TYPE, EnergyBall.STREAM_CODEC, (payload, context) -> context.enqueueWork(

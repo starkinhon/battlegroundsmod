@@ -43,29 +43,35 @@ public class AizenSwordRenderer extends BlockEntityWithoutLevelRenderer {
         }
     }
 
-    private static void draw(ItemDisplayContext context, PoseStack poseStack, MultiBufferSource buffer, int light, int overlay) {
-        boolean firstPerson = context.firstPerson();
-        boolean thirdPerson = context == ItemDisplayContext.THIRD_PERSON_RIGHT_HAND || context == ItemDisplayContext.THIRD_PERSON_LEFT_HAND;
-        poseStack.pushPose();
-        float scale, anchor;
-        if (firstPerson || thirdPerson) {
-            // the fist sits where a vanilla sword's handle is
-            poseStack.translate(3 / 16f, 3 / 16f, 0.5f);
-            if (thirdPerson) {
-                poseStack.mulPose(Axis.ZP.rotation(-0.62f));
-            }
-            scale = thirdPerson ? 1.15f : 1.0f;
-            anchor = OutfitDefs.SWORD_GRIP;
-        } else {
-            poseStack.translate(0.5f, 0.5f, 0.5f);
-            scale = 0.74f;
-            anchor = OutfitDefs.SWORD_MIDDLE;
+    // In hand: from the item's 0..1 square (after its display transform) to the sword's own space (+y the tip, 1 = one
+    // pixel of the player model, 0 = the guard). Also where client/fx/SwordFx finds the blade.
+    public static void toSword(PoseStack poseStack, boolean thirdPerson) {
+        // the fist sits where a vanilla sword's handle is
+        poseStack.translate(3 / 16f, 3 / 16f, 0.5f);
+        if (thirdPerson) {
+            poseStack.mulPose(Axis.ZP.rotation(-0.62f));
         }
+        toSwordSpace(poseStack, thirdPerson ? 1.15f : 1.0f, OutfitDefs.SWORD_GRIP);
+    }
+
+    private static void toSwordSpace(PoseStack poseStack, float scale, float anchor) {
         // sword space (+y tip, +x edge, z thickness) to the sprite's diagonal
         poseStack.mulPose(Axis.ZP.rotation((float) -Math.PI / 4));
         poseStack.mulPose(Axis.YP.rotation((float) Math.PI));
         poseStack.scale(scale / 16, scale / 16, scale / 16);
         poseStack.translate(0, -anchor, 0);
+    }
+
+    private static void draw(ItemDisplayContext context, PoseStack poseStack, MultiBufferSource buffer, int light, int overlay) {
+        boolean firstPerson = context.firstPerson();
+        boolean thirdPerson = context == ItemDisplayContext.THIRD_PERSON_RIGHT_HAND || context == ItemDisplayContext.THIRD_PERSON_LEFT_HAND;
+        poseStack.pushPose();
+        if (firstPerson || thirdPerson) {
+            toSword(poseStack, thirdPerson);
+        } else {
+            poseStack.translate(0.5f, 0.5f, 0.5f);
+            toSwordSpace(poseStack, 0.74f, OutfitDefs.SWORD_MIDDLE);
+        }
         PoseStack.Pose pose = poseStack.last();
         // one buffer at a time: asking for another render type closes the one before
         for (OutfitDefs.Piece piece : pieces) {

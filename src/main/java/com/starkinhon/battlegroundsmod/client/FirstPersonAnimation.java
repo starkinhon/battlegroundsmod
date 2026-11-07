@@ -2,6 +2,9 @@ package com.starkinhon.battlegroundsmod.client;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
+import com.starkinhon.battlegroundsmod.client.fx.SwordFx;
+
+import org.joml.Quaternionf;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.PlayerModel;
@@ -14,6 +17,8 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.item.ItemDisplayContext;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.player.PlayerModelPart;
 import net.neoforged.neoforge.client.event.RenderHandEvent;
@@ -73,6 +78,45 @@ public final class FirstPersonAnimation {
             sleeve.visible = true;
             sleeve.render(pose, buffers.getBuffer(RenderType.entityTranslucent(skin)), light, OverlayTexture.NO_OVERLAY);
         }
+        // What the hand holds (the sword moves), the way the third person body holds it, turned about the wrist.
+        ItemStack held = player.getMainHandItem();
+        if (right && event.getHand() == InteractionHand.MAIN_HAND && !held.isEmpty()) {
+            pose.pushPose();
+            arm.translateAndRotate(pose);
+            toHand(pose, player);
+            mc.getEntityRenderDispatcher().getItemInHandRenderer().renderItem(player, held, ItemDisplayContext.THIRD_PERSON_RIGHT_HAND, false,
+                    pose, buffers, light);
+            pose.popPose();
+            if (SkillAnimations.swordMove(player, age)) {
+                trail(player, arm, held, partial, bodyYaw);
+            }
+        }
         pose.popPose();
+    }
+
+    // ItemInHandLayer's steps from the arm to where the item is drawn, plus the sword move's wrist turn.
+    private static void toHand(PoseStack pose, AbstractClientPlayer player) {
+        pose.mulPose(Axis.XP.rotationDegrees(-90));
+        pose.mulPose(Axis.YP.rotationDegrees(180));
+        pose.translate(1 / 16f, 0.125f, -0.625f);
+        float[] wrist = SkillAnimations.wrist(player);
+        if (wrist != null) {
+            pose.mulPose(new Quaternionf().rotationZYX(wrist[2], wrist[1], wrist[0]));
+        }
+    }
+
+    // In first person the body isn't drawn, so the blade's trail is found here: the same steps the body would be drawn
+    // with (LivingEntityRenderer, PlayerRenderer), from the feet.
+    private static void trail(AbstractClientPlayer player, ModelPart arm, ItemStack held, float partial, float bodyYaw) {
+        PoseStack world = new PoseStack();
+        float scale = player.getScale();
+        world.scale(scale, scale, scale);
+        world.mulPose(Axis.YP.rotationDegrees(180 - bodyYaw));
+        world.scale(-1, -1, 1);
+        world.scale(SCALE, SCALE, SCALE);
+        world.translate(0, -1.501f, 0);
+        arm.translateAndRotate(world);
+        toHand(world, player);
+        SwordFx.atWristFirstPerson(player, held, world, player.getPosition(partial));
     }
 }
