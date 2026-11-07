@@ -111,6 +111,7 @@ final class GojoTactics extends TacticsBase {
             case BRINCANDO -> melee ? 1.4 : technique(name) ? 0.6 : 1;
             case SERIO -> name.equals("roxo") ? 1.5 : name.equals("vermelho") ? 1.2 : melee ? 0.8 : 1;
             case CACADOR -> name.equals("azul") ? 1.3 : name.equals("vermelho_atras") || name.equals("azul_e_porrada")
+                    || name.equals("azul_black_flash")
                     || name.equals("puxa_e_explode") ? 1.5 : 1;
             case ARTILHEIRO -> name.equals("vermelho") ? 1.4 : name.equals("roxo") ? 1.3 : name.equals("azul") ? 1.2 : melee ? 0.6 : 1;
         };
@@ -125,7 +126,7 @@ final class GojoTactics extends TacticsBase {
 
     private static boolean technique(String name) {
         return switch (name) {
-            case "azul", "vermelho", "vermelho_atras", "roxo" -> true;
+            case "azul", "vermelho", "vermelho_atras", "azul_black_flash", "roxo" -> true;
             default -> false;
         };
     }
@@ -225,6 +226,15 @@ final class GojoTactics extends TacticsBase {
                 m *= kind == Kind.AIZEN ? 1.3 : 1;
                 m *= crowd >= 2 ? 0.6 : 1;
             }
+            case "azul_black_flash" -> {
+                // Pulls them in for the Black Flash: best on someone running, guarding or worn down, at mid range.
+                m *= distance >= 4 && distance <= 16 ? 1.4 : distance < 3 ? 0.6 : 1;
+                m *= fleeing ? 1.7 : 1;
+                m *= guarded ? 1.5 : 1;
+                m *= theirLife < 0.4 ? 1.4 : 1;
+                m *= !sees ? 0.3 : 1;
+                m *= crowd >= 2 ? 0.7 : 1;
+            }
             case "roxo" -> {
                 // Five seconds to form: only with room, or when they can't get away.
                 m *= distance < 8 && !stunned ? 0.3 : 1;
@@ -322,6 +332,13 @@ final class GojoTactics extends TacticsBase {
                     yield BossOrder.Order.tap();
                 }
                 yield random.nextBoolean() ? BossOrder.Order.tap() : BossOrder.Order.charged(range(0.2, 0.7, bump));
+            }
+            case "azul_black_flash" -> {
+                // Holds it in front of him for a heavier punch when they can't answer.
+                if (stunned || theirLife < 0.35) {
+                    yield BossOrder.Order.charged(range(0.6, 1, bump));
+                }
+                yield random.nextDouble() < 0.4 ? BossOrder.Order.tap() : BossOrder.Order.charged(range(0.2, 0.8, bump));
             }
             case "roxo" -> {
                 if (stunned || crowd >= 2 || strongFoe && random.nextBoolean()) {

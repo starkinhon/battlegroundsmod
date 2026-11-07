@@ -134,6 +134,7 @@ public final class ClientHooks {
         com.starkinhon.battlegroundsmod.client.fx.BlackBoxRenderer.clear();
         com.starkinhon.battlegroundsmod.client.fx.AzulRenderer.clear();
         com.starkinhon.battlegroundsmod.client.fx.VermelhoRenderer.clear();
+        com.starkinhon.battlegroundsmod.client.fx.BlackFlashRenderer.clear();
         com.starkinhon.battlegroundsmod.client.fx.RoxoRenderer.clear();
         com.starkinhon.battlegroundsmod.client.fx.AizenFx.clear();
         com.starkinhon.battlegroundsmod.client.fx.SubFx.clear();
@@ -215,6 +216,10 @@ public final class ClientHooks {
 
     public static void vermelhoBlast(Vec3 from, Vec3 dir, float range, float radius, float speed, float charge) {
         com.starkinhon.battlegroundsmod.client.fx.VermelhoRenderer.blast(from, dir, range, radius, speed, charge);
+    }
+
+    public static void blackFlash(Vec3 pos, Vec3 dir, float charge, int stop) {
+        com.starkinhon.battlegroundsmod.client.fx.BlackFlashRenderer.flash(pos, dir, charge, stop);
     }
 
     public static void roxo(int id, int owner, int mode, int tick, float charge) {
