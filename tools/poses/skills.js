@@ -1,4 +1,5 @@
 // Skill poses (everything not made by Stark in his editor: his are madara.katon and gojo.dominio, never touched here).
+// bills.hakai and bills.destruction_energy keep their Forja poses (Stark liked them as they were, 2026-11-07).
 // Same rig and rules as anims.js (the pose guide from the emote study): wind up the other way, hold the peak a
 // moment, strike in 2-3 ticks, overshoot, settle; the whole body moves and the head keeps on the target.
 // Each entry: { keys, soltar?: ticks } baked to <skill>.json. The time of the skill's spec (souls_skills/<skill>.json,
@@ -148,20 +149,6 @@ S['gojo.azul_black_flash'] = { keys: [
 ] };
 
 // ===================== BILLS =====================
-// bills.hakai: W52 E152 back3. Calm: the left hand goes behind his back, the right palm rises slowly at the target,
-// then a small push as it goes off; holds while the target turns to dust.
-const hakaiAim = { twist: 14, lean: 2, ra: { yaw: 10, pitch: 4 }, la: BACK, ...stance, head: { yaw: 0, pitch: 4 } };
-S['bills.hakai'] = { keys: [
-  P(0, REST),
-  P(10, { ...stance, ra: { yaw: 10, pitch: -70 }, la: BACK, head: { yaw: 0, pitch: 6 } }, 'inout'),
-  P(40, hakaiAim, 'inout'),
-  P(50, { ...hakaiAim, twist: 18, lean: -2, ra: { yaw: 10, pitch: 8 } }, 'inout'),
-  P(52, { ...hakaiAim, twist: 6, lean: 8, fwd: 1, ra: { yaw: 8, pitch: 2 } }, 'snap'),
-  P(56, { ...hakaiAim, twist: 8, lean: 6 }, 'out'),
-  P(146, { ...hakaiAim, twist: 8, lean: 4 }, 'inout'),
-  P(158, REST, 'inout'),
-] };
-
 // bills.hakai_bola: W96 E106 back3. The ball forms over the raised hand, then he throws it.
 const bolaUp = { twist: 18, lean: -6, ra: { yaw: 14, pitch: 84 }, la: BACK, ...stance, head: { yaw: 0, pitch: -24 } };
 const bolaThrow = { twist: -26, lean: 18, ...lunge, ra: { yaw: 4, pitch: -6 }, la: BACK, head: { yaw: 0, pitch: 6 } };
@@ -187,20 +174,6 @@ S['bills.hakaizinho'] = { keys: [
   P(10, { ...zinhoFlick, ra: { yaw: 10, pitch: 14 } }, 'out'),
   P(15, zinhoFlick, 'inout'),
   P(22, REST, 'inout'),
-] };
-
-// bills.destruction_energy: held (up to 100), let go = thrown. The ball over the raised hand, then a full throw.
-const deUp = { twist: 22, lean: -8, drop: 0.6, ra: { yaw: 10, pitch: 88 }, la: BACK, ...stance, head: { yaw: 0, pitch: -22 } };
-const deThrow = { twist: -32, lean: 22, ...lunge, ra: { yaw: 4, pitch: -10 }, la: { yaw: 30, pitch: -70 }, head: { yaw: 0, pitch: 6 } };
-S['bills.destruction_energy'] = { soltar: 10, keys: [
-  P(0, REST),
-  P(3, { drop: 1, ra: { yaw: 20, pitch: -40 }, la: BACK, ...stance }, 'out'),
-  P(10, deUp, 'inout'),
-  P(11, { ...deUp, twist: 32, lean: -14, ra: { yaw: 18, pitch: 120 } }, 'out'),
-  P(13, deThrow, 'snap'),
-  P(15, { ...deThrow, twist: -40, lean: 26, ra: { yaw: 2, pitch: -22 } }, 'out'),
-  P(20, deThrow, 'inout'),
-  P(30, REST, 'inout'),
 ] };
 
 // bills.destruction_energy_chuva: flying, arms spread up while it rains down; let go when the last shot is out.

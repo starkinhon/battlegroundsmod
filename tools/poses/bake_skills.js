@@ -9,8 +9,11 @@ const Rig = require('../espada/rig.js');
 const S = require('./skills.js');
 const out = path.join(__dirname, '../../src/main/resources/assets/battlegroundsmod/animations');
 const STARK = new Set(['madara.katon', 'gojo.dominio']);
+// Kept on their Forja poses, by Stark's choice.
+const KEEP = new Set(['bills.hakai', 'bills.destruction_energy']);
 for (const name of Object.keys(S)) {
   if (STARK.has(name)) throw new Error(name + ' is Stark\'s own animation');
+  if (KEEP.has(name)) throw new Error(name + ' keeps its Forja pose');
   const json = Rig.bake(S[name].keys, 0.5);
   json.segueMira = true;
   if (S[name].soltar != null) json.soltar = +(S[name].soltar / 20).toFixed(4);
