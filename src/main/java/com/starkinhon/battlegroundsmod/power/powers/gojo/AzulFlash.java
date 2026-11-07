@@ -5,6 +5,7 @@ import java.util.function.Function;
 
 import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.combat.BlockRules;
+import com.starkinhon.battlegroundsmod.combat.Charge;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.combat.Fx;
@@ -33,24 +34,24 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 // Shift + Z of Gojo (gojo.azul_black_flash.json, see BlackFlashSpec): the Blue pulls the enemy to him and he meets it
-// with a Black Flash. A small Blue forms on his left palm (the arm held out, the right one cocked back), grabs the target
-// he aims at and drags it in to the front of him, faster and faster. Let go of the key before it arrives and the punch
-// goes as soon as it gets there; still held, the target floats in front of him while the punch charges, and it goes
-// when the key is let go. Always a Black Flash: the world stops for a moment, the black and red lightning bursts out
-// of the fist (client/fx/BlackFlashRenderer) and the target is thrown far, breaking what it flies through (with the
-// gamerule soulsBlockDestruction).
-// The Blue on the palm is the same orb as the Z's (client/fx/AzulRenderer, the realism look), sent from here every tick.
+// with a Black Flash. No orb: he holds his hand out and whoever he aims at (up to 50 blocks) is dragged in, faster and
+// faster. Close to him time slows down (the target comes in slowly, his fist cocks back crackling black lightning),
+// then the punch. The punch "fits": the impact frames, and the target stays stuck on the fist while the black lightning
+// bursts out in waves and the crater opens right there, at the punch point (gamerule soulsBlockDestruction). Only at the
+// end a last burst throws it far. The look is all on the client (client/fx/BlackFlashRenderer, sent as
+// ModPayloads.BlackFlash: 0 slow motion, 1 the punch, 2 the throw) plus the skill file's vfx moments.
 public final class AzulFlash {
     public static final String SKILL = BlackFlashSpec.SKILL;
-    // The pulling pose (the left arm out with the Blue, the right fist cocked back), held until the punch.
+    // The pulling pose (the left arm out, the right fist cocked back), held until the punch.
     public static final String HOLD_ANIMATION = "gojo.azul_black_flash_segurando";
     public static final int COOLDOWN = 260;
+    public static final int SLOW = 0;
+    public static final int PUNCH = 1;
+    public static final int THROW = 2;
     private static final double VIEW_DISTANCE = 160;
     private static final RandomSource RANDOM = RandomSource.create();
-    // The palm Blue's ids, far from the Z's own (Azul counts from 0).
-    private static int nextId = 1 << 24;
 
-    private enum Phase { FORM, PULL, CHARGE, HIT }
+    private enum Phase { PULL, SLOW, FIT, DONE }
 
     private AzulFlash() {
     }
@@ -60,7 +61,7 @@ public final class AzulFlash {
         boolean awakened = data.awakened;
         BlackFlashSpec spec = BlackFlashSpec.get(awakened);
         BlackFlashSpec.Puxar puxar = spec.puxar();
-        BlackFlashSpec.Segurado segurado = spec.segurado();
+        BlackFlashSpec.Golpe golpe = spec.golpe();
         LivingEntity target = caster instanceof Mob mob && mob.getTarget() != null && mob.getTarget().isAlive() ? mob.getTarget()
                 : Combat.raycastTarget(caster, puxar.alcanceAlvo());
         if (target == null || target.distanceTo(caster) > puxar.alcanceAlvo() + 2) {
@@ -69,220 +70,272 @@ public final class AzulFlash {
             }
             return false;
         }
-        int id = nextId++;
         String power = data.power;
         int interrupts = data.interrupts;
-        int form = Math.max(1, puxar.formarTicks());
-        int chargeTicks = Math.max(1, segurado.carregarTicks());
-        int maxHold = Math.max(1, segurado.maxSegurarTicks());
+        int chargeTicks = Math.max(1, spec.segurado().carregarTicks());
+        int slowTicks = Math.max(1, puxar.lentoTicks());
+        int fit = Math.max(1, golpe.encaixeTicks());
         // Bosses don't hold keys: a charge of their own (BossOrder when the tactics chose one).
         BossOrder.Order order = BossOrder.take(caster);
-        int bossCharge = Math.min(maxHold, order != null ? (order.hold() ? (int) Math.ceil(chargeTicks * Mth.clamp(order.charge(), 0, 1)) : 0)
-                : RANDOM.nextInt(3) == 0 ? 0 : chargeTicks / 3 + RANDOM.nextInt(chargeTicks + 1));
+        double bossCharge = order != null ? (order.hold() ? Mth.clamp(order.charge(), 0, 1) : 0) : RANDOM.nextInt(3) == 0 ? 0 : 0.35 + 0.65 * RANDOM.nextDouble();
         List<ServerPlayer> screen = caster instanceof ServerPlayer player ? List.of(player) : List.<ServerPlayer>of();
-        Vec3[] contact = {front(caster, target, puxar)};
+        Vec3 contact = front(caster, target, puxar);
+        Vec3 dir = aim(caster, target);
         Vec3[] stopAt = {null};
         Function<String, Vec3> where = onde -> switch (onde == null ? "" : onde) {
-            case "usuario" -> caster.position().add(0, 1, 0);
             case "alvo" -> Combat.center(target);
-            case "golpe" -> contact[0];
+            case "golpe" -> contact;
             case "impacto" -> stopAt[0] != null ? stopAt[0] : Combat.center(target);
-            default -> palm(caster);
+            default -> caster.position().add(0, 1, 0);
         };
 
         // From now on the target is ours: held still (no walking, turning or skills), carried along the pull.
         Vec3 start = target.position();
+        Vec3 end = contact.subtract(0, target.getBbHeight() / 2, 0);
+        Vec3 line = end.subtract(start);
+        double distance = line.length();
+        // Where the slow motion takes over (or right away, when it is already that close).
+        double slowFrom = Math.min(puxar.lentoDistancia(), distance);
+        Vec3 slowStart = distance < 1.0E-3 ? end : end.subtract(line.scale(slowFrom / distance));
         Vec3[] hold = {start};
         Freeze.hold(target, 20 * 30, age -> hold[0]);
-        double distance = start.distanceTo(contact[0]);
         double speed = Math.max(0.3, puxar.velocidade());
         // Starts slow and ends at velocidade (ease in, t^2): the average is half of it.
-        int pullTicks = Mth.clamp((int) Math.ceil(distance * 2 / speed), Math.max(1, puxar.minTicks()), Math.max(puxar.minTicks(), puxar.maxTicks()));
+        int pullTicks = Mth.clamp((int) Math.ceil((distance - slowFrom) * 2 / speed), Math.max(1, puxar.minTicks()), Math.max(puxar.minTicks(), puxar.maxTicks()));
+        // He stays where he stands from here to the throw (the pull ends in front of him, the punch has to land).
+        Freeze.holdLookFree(caster, pullTicks + slowTicks + fit + 6);
 
         PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new ModPayloads.PlaySkillAnimation(caster.getId(), HOLD_ANIMATION, awakened));
         SkillSounds.play(level, spec.sons(), "uso", 0, 0, where, screen);
-        Fx.effects(level, SKILL, awakened, "uso", palm(caster), caster.getLookAngle());
-        data.busyTicks = form + pullTicks + 4;
-        sendOrb(level, id, 0, palm(caster), puxar.orbeRaio() * 0.4, 0);
+        Fx.effects(level, SKILL, awakened, "uso", caster.position().add(0, 1.3, 0), caster.getLookAngle());
+        SkillSounds.play(level, spec.sons(), "puxar", 0, 0, where, screen);
+        Fx.effects(level, SKILL, awakened, "puxar", Combat.center(target), dir.scale(-1));
+        data.busyTicks = pullTicks + slowTicks + fit + 8;
 
-        Phase[] phase = {Phase.FORM};
+        Phase[] phase = {Phase.PULL};
         int[] phaseStart = {0};
-        // Let go during the pull: the punch goes on arrival, with no charge.
         boolean[] released = {false};
         double[] charge = {0};
         Tasks.add(age -> {
             PowerData now = caster.getData(ModAttachments.POWER);
             boolean gone = !target.isAlive() || target.isRemoved() || target.level() != caster.level();
             if (!caster.isAlive() || caster.isRemoved() || !power.equals(now.power) || now.interrupts != interrupts || gone) {
-                // Cut short: the Blue fades on the palm and the target is let go where it is.
+                // Cut short: everyone is let go where they are.
                 Freeze.free(target);
-                sendOrb(level, id, 2, palm(caster), puxar.orbeRaio(), (float) charge[0]);
+                Freeze.free(caster);
                 PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new ModPayloads.PlaySkillAnimation(caster.getId(), "", false));
                 return true;
             }
             now.busyTicks = Math.max(now.busyTicks, 2);
-            boolean held = caster instanceof ServerPlayer ? Stamina.holding(caster) : age < form + pullTicks + bossCharge;
-            if (!held) {
-                released[0] = true;
+            // The charge: every tick the key is held from the start, until it is let go once.
+            if (!released[0] && phase[0] != Phase.FIT) {
+                boolean held = caster instanceof ServerPlayer ? Stamina.holding(caster) : charge[0] < bossCharge;
+                if (held) {
+                    charge[0] = Math.min(1, charge[0] + 1.0 / chargeTicks);
+                    Charge.report(caster, charge[0]);
+                } else {
+                    released[0] = true;
+                }
             }
             int t = age - phaseStart[0];
-            contact[0] = front(caster, target, puxar);
             switch (phase[0]) {
-                case FORM -> {
-                    double grow = smooth((t + 1) / (double) form);
-                    sendOrb(level, id, 0, palm(caster), puxar.orbeRaio() * (0.4 + 0.6 * grow), 0);
-                    if (t + 1 >= form) {
-                        phase[0] = Phase.PULL;
-                        phaseStart[0] = age + 1;
-                        SkillSounds.play(level, spec.sons(), "puxar", 0, 0, where, screen);
-                        Fx.effects(level, SKILL, awakened, "puxar", Combat.center(target), contact[0].subtract(start).normalize());
-                    }
-                }
                 case PULL -> {
                     double f = (t + 1) / (double) pullTicks;
-                    double k = f * f;
-                    // Toward where in front of him it ends, wherever he is now.
-                    Vec3 to = contact[0].subtract(0, target.getBbHeight() / 2, 0);
-                    hold[0] = start.lerp(to, k);
+                    hold[0] = start.lerp(slowStart, f * f);
                     face(target, caster);
-                    sendOrb(level, id, 0, palm(caster), puxar.orbeRaio(), 0);
                     if (t + 1 >= pullTicks) {
-                        SkillSounds.play(level, spec.sons(), "chegou", 0, 0, where, screen);
-                        Fx.effects(level, SKILL, awakened, "chegou", Combat.center(target), caster.getLookAngle());
+                        phase[0] = Phase.SLOW;
                         phaseStart[0] = age + 1;
-                        if (released[0]) {
-                            phase[0] = Phase.HIT;
-                            hit(level, caster, target, spec, awakened, 0, contact, stopAt, hold, id, where, screen);
-                        } else {
-                            phase[0] = Phase.CHARGE;
-                            SkillSounds.play(level, spec.sons(), "carregar", 0, maxHold, where, screen);
-                            Fx.effects(level, SKILL, awakened, "carregar", caster.position().add(0, 1, 0), caster.getLookAngle());
-                        }
+                        SkillSounds.play(level, spec.sons(), "lento", 0, slowTicks, where, screen);
+                        Fx.effects(level, SKILL, awakened, "lento", contact, dir);
+                        send(level, new ModPayloads.BlackFlash(SLOW, caster.getId(), contact, dir, (float) charge[0], slowTicks));
                     }
                 }
-                case CHARGE -> {
-                    // Floating in front of him, wherever he turns, while the punch charges.
-                    hold[0] = contact[0].subtract(0, target.getBbHeight() / 2, 0);
+                case SLOW -> {
+                    // Coming in slowly, slower and slower, right onto the fist.
+                    double f = (t + 1) / (double) slowTicks;
+                    double k = 1 - (1 - f) * (1 - f);
+                    hold[0] = slowStart.lerp(end, k);
                     face(target, caster);
-                    charge[0] = Math.min(1, (t + 1) / (double) chargeTicks);
-                    sendOrb(level, id, 0, palm(caster), Mth.lerp(charge[0], puxar.orbeRaio(), puxar.orbeRaioMax()), (float) charge[0]);
-                    if (released[0] || t + 1 >= maxHold) {
-                        phase[0] = Phase.HIT;
+                    if (t + 1 >= slowTicks) {
+                        phase[0] = Phase.FIT;
                         phaseStart[0] = age + 1;
-                        hit(level, caster, target, spec, awakened, charge[0], contact, stopAt, hold, id, where, screen);
+                        punch(level, caster, target, spec, awakened, charge[0], contact, dir, end, hold, stopAt, where, screen);
                     }
                 }
-                case HIT -> {
+                case FIT, DONE -> {
                     return true;
                 }
             }
-            return phase[0] == Phase.HIT;
+            return false;
         });
         return true;
     }
 
-    // The Black Flash: the world stops a moment on the contact, then the target flies.
-    private static void hit(ServerLevel level, LivingEntity caster, LivingEntity target, BlackFlashSpec spec, boolean awakened, double c,
-            Vec3[] contact, Vec3[] stopAt, Vec3[] hold, int id, Function<String, Vec3> where, List<ServerPlayer> screen) {
+    // The Black Flash. It fits: the target stays on the fist through the waves of black lightning, the crater opens at
+    // the punch point, and only after encaixeTicks the last burst throws it far.
+    private static void punch(ServerLevel level, LivingEntity caster, LivingEntity target, BlackFlashSpec spec, boolean awakened, double c,
+            Vec3 contact, Vec3 dir, Vec3 end, Vec3[] hold, Vec3[] stopAt, Function<String, Vec3> where, List<ServerPlayer> screen) {
         BlackFlashSpec.Golpe golpe = spec.golpe();
-        Vec3 dir = aim(caster, target);
-        Vec3 point = Combat.center(target).add(dir.scale(-target.getBbWidth() * 0.5));
-        contact[0] = point;
-        int stop = Math.max(1, Math.round(Mth.lerp((float) c, golpe.paradaTicks(), golpe.paradaTicksMax())));
-        float damage = Mth.lerp((float) c, golpe.dano(), golpe.danoMax());
-        double throwSpeed = Mth.lerp(c, golpe.empurrao(), golpe.empurraoMax());
-        sendOrb(level, id, 1, palm(caster), spec.puxar().orbeRaio(), (float) c);
+        int fit = Math.max(1, golpe.encaixeTicks());
         caster.swing(InteractionHand.MAIN_HAND, true);
         PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new ModPayloads.PlaySkillAnimation(caster.getId(), SKILL, awakened));
         SkillSounds.play(level, spec.sons(), "blackFlash", 0, 0, where, screen);
-        Fx.effects(level, SKILL, awakened, "blackFlash", point, dir);
-        ModPayloads.BlackFlash flash = new ModPayloads.BlackFlash(point, dir, (float) c, stop);
-        for (ServerPlayer player : level.players()) {
-            if (player.distanceToSqr(point) < VIEW_DISTANCE * VIEW_DISTANCE) {
-                PacketDistributor.sendToPlayer(player, flash);
-            }
-        }
-        Combat.hurt(caster, target, damage);
-        // The impact frame: both of them stopped in place, the target still held where the fist met it.
-        Freeze.hold(caster, stop);
-        caster.getData(ModAttachments.POWER).busyTicks = Math.max(caster.getData(ModAttachments.POWER).busyTicks, stop + 6);
+        Fx.effects(level, SKILL, awakened, "blackFlash", contact, dir);
+        send(level, new ModPayloads.BlackFlash(PUNCH, caster.getId(), contact, dir, (float) c, fit));
+        Combat.hurt(caster, target, Mth.lerp((float) c, golpe.dano(), golpe.danoMax()));
+        // Both of them feel it: he stays in the punch, the target stuck on the fist.
+        Freeze.hold(target, fit + 2, age -> hold[0]);
+        caster.getData(ModAttachments.POWER).busyTicks = Math.max(caster.getData(ModAttachments.POWER).busyTicks, fit + 8);
         boolean breaks = BlockRules.canBreak(level);
-        Vec3[] last = {null};
+        List<Integer> waves = golpe.ondas() == null ? List.of() : golpe.ondas();
+        double crater = Mth.lerp(c, golpe.crateraRaio(), golpe.crateraRaioMax());
+        Vec3 ground = groundUnder(level, contact).add(new Vec3(dir.x, 0, dir.z).normalize().scale(1.2));
+        Vec3 feet = caster.position();
         int[] debris = {0};
+        Vec3[] last = {null};
         Tasks.add(age -> {
             if (!target.isAlive() || target.isRemoved()) {
                 Freeze.free(target);
+                Freeze.free(caster);
                 return true;
             }
-            if (age < stop) {
+            if (age < fit) {
+                // Shaking on the fist, pushed in a little more with every wave.
+                double jolt = age > 6 ? 0.04 : 0;
+                hold[0] = end.add((RANDOM.nextDouble() - 0.5) * jolt, (RANDOM.nextDouble() - 0.5) * jolt, (RANDOM.nextDouble() - 0.5) * jolt);
                 target.setDeltaMovement(Vec3.ZERO);
+                int wave = waves.indexOf(age);
+                if (wave >= 0) {
+                    SkillSounds.play(level, spec.sons(), "onda", 0, 0, where, screen);
+                    Fx.effects(level, SKILL, awakened, "onda", contact, dir);
+                    if (breaks) {
+                        // The crater grows with each wave, and the punch point itself is blown open.
+                        double grow = (wave + 1) / (double) waves.size();
+                        crater(level, ground, crater * (0.45 + 0.55 * grow), feet, dir, debris);
+                        carve(level, contact, 1.2 + 0.5 * c, feet, dir, debris);
+                    }
+                }
                 return false;
             }
-            if (age == stop) {
+            if (age == fit) {
+                // The last burst: only now it flies.
                 Freeze.free(target);
+                Freeze.free(caster);
+                SkillSounds.play(level, spec.sons(), "arremesso", 0, 0, where, screen);
+                Fx.effects(level, SKILL, awakened, "arremesso", contact, dir);
+                send(level, new ModPayloads.BlackFlash(THROW, caster.getId(), contact, dir, (float) c, 0));
+                if (breaks) {
+                    crater(level, ground, crater, feet, dir, debris);
+                }
+                Combat.hurt(caster, target, Mth.lerp((float) c, golpe.danoFinal(), golpe.danoFinalMax()));
                 Stun.apply(target, golpe.atordoadoTicks());
+                double throwSpeed = Mth.lerp(c, golpe.empurrao(), golpe.empurraoMax());
                 target.setDeltaMovement(dir.scale(throwSpeed).add(0, golpe.subir() * throwSpeed * 0.3 + 0.2, 0));
                 target.hurtMarked = true;
                 last[0] = target.position();
                 return false;
             }
-            int flying = age - stop;
-            Vec3 pos = Combat.center(target);
-            double moved = last[0] == null ? 0 : target.position().distanceTo(last[0]);
+            // Flying: where it stops (a wall, the ground) gets a last blow, without breaking anything there.
+            int flying = age - fit;
+            double moved = target.position().distanceTo(last[0]);
             last[0] = target.position();
-            if (breaks && flying <= golpe.quebraTicks()) {
-                carve(level, pos, golpe.quebraRaio() * (0.7 + 0.3 * c), debris);
-            }
-            // It stopped (a wall, the ground) or flew its time: the last blow lands there.
-            if (flying > 2 && (moved < 0.35 || flying >= golpe.quebraTicks())) {
-                stopAt[0] = pos;
+            if (flying > 2 && (moved < 0.35 || flying >= 30)) {
+                stopAt[0] = Combat.center(target);
                 SkillSounds.play(level, spec.sons(), "impacto", 0, 0, where, screen);
-                Fx.effects(level, SKILL, awakened, "impacto", pos, dir);
-                if (breaks) {
-                    carve(level, pos, golpe.quebraRaio() * 1.5, debris);
-                }
+                Fx.effects(level, SKILL, awakened, "impacto", stopAt[0], dir);
                 return true;
             }
             return false;
         });
     }
 
-    // Breaks the blocks within r of the point (a ragged ball), a few flying off as debris.
-    private static void carve(ServerLevel level, Vec3 at, double r, int[] debris) {
+    private static void send(ServerLevel level, ModPayloads.BlackFlash payload) {
+        for (ServerPlayer player : level.players()) {
+            if (player.distanceToSqr(payload.pos()) < VIEW_DISTANCE * VIEW_DISTANCE) {
+                PacketDistributor.sendToPlayer(player, payload);
+            }
+        }
+    }
+
+    // The top of the ground under the point (up to 6 blocks down), or the point itself in the air.
+    private static Vec3 groundUnder(ServerLevel level, Vec3 at) {
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos(Mth.floor(at.x), Mth.floor(at.y), Mth.floor(at.z));
+        for (int i = 0; i < 6; i++) {
+            if (!level.getBlockState(pos).getCollisionShape(level, pos).isEmpty()) {
+                return new Vec3(at.x, pos.getY() + 1, at.z);
+            }
+            pos.move(0, -1, 0);
+        }
+        return at;
+    }
+
+    // A bowl dug into the ground around 'center' (wide and shallow), never under his own feet.
+    private static void crater(ServerLevel level, Vec3 center, double r, Vec3 feet, Vec3 dir, int[] debris) {
+        double deep = r * 0.55;
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
-        int minX = Mth.floor(at.x - r), maxX = Mth.floor(at.x + r);
-        int minY = Mth.floor(at.y - r), maxY = Mth.floor(at.y + r);
-        int minZ = Mth.floor(at.z - r), maxZ = Mth.floor(at.z + r);
-        for (int x = minX; x <= maxX; x++) {
-            for (int y = minY; y <= maxY; y++) {
-                for (int z = minZ; z <= maxZ; z++) {
-                    Vec3 mid = new Vec3(x + 0.5, y + 0.5, z + 0.5);
-                    double d = mid.distanceTo(at);
-                    if (d > r * (0.85 + 0.3 * hash(x, y, z))) {
+        int top = Mth.floor(center.y) - 1;
+        for (int x = Mth.floor(center.x - r); x <= Mth.floor(center.x + r); x++) {
+            for (int z = Mth.floor(center.z - r); z <= Mth.floor(center.z + r); z++) {
+                double dx = (x + 0.5 - center.x) / r, dz = (z + 0.5 - center.z) / r;
+                for (int y = top + 1; y >= top - Mth.ceil(deep); y--) {
+                    double dy = (top + 0.5 - (y + 0.5)) / Math.max(0.5, deep);
+                    if (y > top) {
+                        // (grass, flowers and the like standing on the ground go too)
+                        dy = 0;
+                    }
+                    if (dx * dx + dz * dz + dy * dy > 0.75 + 0.35 * hash(x, y, z)) {
                         continue;
                     }
                     pos.set(x, y, z);
-                    BlockState state = level.getBlockState(pos);
-                    if (state.isAir() || !state.getFluidState().isEmpty() || state.hasBlockEntity() || state.getDestroySpeed(level, pos) < 0) {
-                        continue;
-                    }
-                    if (debris[0] < 20 && RANDOM.nextInt(10) == 0) {
-                        debris[0]++;
-                        FallingBlockEntity block = FallingBlockEntity.fall(level, pos.immutable(), state);
-                        block.dropItem = false;
-                        Vec3 out = mid.subtract(at);
-                        out = out.lengthSqr() < 1.0E-4 ? new Vec3(0, 1, 0) : out.normalize();
-                        block.setDeltaMovement(out.scale(0.5 + 0.5 * RANDOM.nextDouble()).add(0, 0.35, 0));
-                        block.hurtMarked = true;
-                    } else {
-                        level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2);
-                    }
+                    remove(level, pos, center.add(0, 1, 0), feet, dir, debris);
                 }
             }
         }
     }
 
-    // Where the target ends the pull: its middle, right in front of his chest.
+    // Breaks the blocks within r of the point (a ragged ball): walls hit by the punch.
+    private static void carve(ServerLevel level, Vec3 at, double r, Vec3 feet, Vec3 dir, int[] debris) {
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+        for (int x = Mth.floor(at.x - r); x <= Mth.floor(at.x + r); x++) {
+            for (int y = Mth.floor(at.y - r); y <= Mth.floor(at.y + r); y++) {
+                for (int z = Mth.floor(at.z - r); z <= Mth.floor(at.z + r); z++) {
+                    if (new Vec3(x + 0.5, y + 0.5, z + 0.5).distanceTo(at) > r * (0.85 + 0.3 * hash(x, y, z))) {
+                        continue;
+                    }
+                    pos.set(x, y, z);
+                    remove(level, pos, at, feet, dir, debris);
+                }
+            }
+        }
+    }
+
+    // One block out: some fly off forward and to the sides as debris, the rest just go.
+    private static void remove(ServerLevel level, BlockPos.MutableBlockPos pos, Vec3 from, Vec3 feet, Vec3 dir, int[] debris) {
+        double fx = pos.getX() + 0.5 - feet.x, fz = pos.getZ() + 0.5 - feet.z;
+        // Never the ground he stands on (nor the column over it).
+        if (fx * fx + fz * fz < 1.6 * 1.6 && pos.getY() < feet.y + 2.2) {
+            return;
+        }
+        BlockState state = level.getBlockState(pos);
+        if (state.isAir() || !state.getFluidState().isEmpty() || state.hasBlockEntity() || state.getDestroySpeed(level, pos) < 0) {
+            return;
+        }
+        if (debris[0] < 36 && RANDOM.nextInt(4) == 0) {
+            debris[0]++;
+            FallingBlockEntity block = FallingBlockEntity.fall(level, pos.immutable(), state);
+            block.dropItem = false;
+            Vec3 out = new Vec3(pos.getX() + 0.5 - from.x, 0, pos.getZ() + 0.5 - from.z);
+            out = out.lengthSqr() < 1.0E-4 ? Vec3.ZERO : out.normalize();
+            block.setDeltaMovement(out.scale(0.25 + 0.35 * RANDOM.nextDouble()).add(new Vec3(dir.x, 0, dir.z).normalize().scale(0.2 + 0.2 * RANDOM.nextDouble()))
+                    .add(0, 0.35 + 0.45 * RANDOM.nextDouble(), 0));
+            block.hurtMarked = true;
+        } else {
+            level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2);
+        }
+    }
+
+    // Where the target ends up: its middle, right on his fist in front of his chest.
     private static Vec3 front(LivingEntity caster, LivingEntity target, BlackFlashSpec.Puxar puxar) {
         Vec3 forward = Combat.flatLook(caster);
         double gap = puxar.distanciaFrente() + (caster.getBbWidth() + target.getBbWidth()) * 0.5;
@@ -307,33 +360,10 @@ public final class AzulFlash {
         Freeze.face(target, yaw, pitch);
     }
 
-    // His left palm, the arm held out in front of him (the clients smooth the orb between the ticks).
-    static Vec3 palm(LivingEntity caster) {
-        Vec3 forward = Combat.flatLook(caster);
-        Vec3 right = new Vec3(-forward.z, 0, forward.x);
-        double scale = caster.getBbHeight() / 1.8;
-        return caster.position().add(forward.scale(0.78 * scale)).add(right.scale(-0.34 * scale)).add(0, 1.36 * scale, 0);
-    }
-
-    private static double smooth(double x) {
-        x = Mth.clamp(x, 0, 1);
-        return x * x * (3 - 2 * x);
-    }
-
     private static double hash(int x, int y, int z) {
         int h = x * 374761393 + y * 668265263 + z * 1274126177;
         h = (h ^ (h >>> 13)) * 1103515245;
         h ^= h >>> 16;
         return (h & 0xFFFFFF) / (double) 0x1000000;
-    }
-
-    // The Blue on the palm, drawn by the Z's renderer (mode 0 alive, 1 bursts into the punch, 2 fades); realism look.
-    private static void sendOrb(ServerLevel level, int id, int mode, Vec3 pos, double radius, float charge) {
-        ModPayloads.Azul payload = new ModPayloads.Azul(id, mode, pos, (float) radius, charge, 2);
-        for (ServerPlayer player : level.players()) {
-            if (player.distanceToSqr(pos) < VIEW_DISTANCE * VIEW_DISTANCE) {
-                PacketDistributor.sendToPlayer(player, payload);
-            }
-        }
     }
 }

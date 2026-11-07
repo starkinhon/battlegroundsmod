@@ -203,7 +203,7 @@
   "ability.battlegroundsmod.strongest.3.desc": "Faz o selo de mão e expande o domínio: uma esfera preta engole tudo em volta. Lá dentro só existe o vazio, e quem foi pego recebe informação infinita, ficando paralisado até o domínio quebrar.",
   "ability.battlegroundsmod.strongest.3.tags": "Domínio,Área,Acerto garantido,Cutscene",
   "ability.battlegroundsmod.strongest.5": "Azul + Black Flash",
-  "ability.battlegroundsmod.strongest.5.desc": "Um Azul se forma na palma e puxa o alvo na sua mira (até 18 blocos) direto até você, cada vez mais rápido. Soltou antes dele chegar: o soco sai assim que ele chega. Continue segurando: ele flutua na sua frente enquanto o soco carrega, e sai quando você solta. Sempre um Black Flash: o mundo para por um instante, raios pretos e vermelhos explodem do punho e o alvo voa longe, quebrando tudo no caminho.",
+  "ability.battlegroundsmod.strongest.5.desc": "Estenda a mão: o Azul agarra o alvo na sua mira (até 50 blocos) e puxa ele voando até você. Perto de você o tempo desacelera e o punho arma estalando raio negro. Sempre um Black Flash: o soco encaixa, o alvo fica preso no punho enquanto ondas de raio negro explodem e abrem uma cratera no ponto do soco, e só no fim ele é arremessado longe. Segure a tecla desde o começo pra carregar.",
   "ability.battlegroundsmod.strongest.5.tags": "Puxão,Corpo a corpo,Segurar,Destruição",
   "message.battlegroundsmod.azul_flash_no_target": "Mire em alguém pra puxar com o Azul.",
   "message.battlegroundsmod.vermelho_no_target": "Mire em alguém pra aparecer atrás dele.",
