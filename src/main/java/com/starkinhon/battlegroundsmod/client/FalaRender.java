@@ -1,6 +1,8 @@
 package com.starkinhon.battlegroundsmod.client;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -39,6 +41,8 @@ public final class FalaRender {
     private static final float BLOCKS_PER_PIXEL = 0.03f;
     private static final float MIN_SCALE = 0.7f;
     private static final float MAX_SCALE = 2.5f;
+    // The widest a line gets, as a share of the screen width, before it wraps.
+    private static final float MAX_WIDTH = 0.7f;
     // The glow: copies of the line in the soul's bright color outside the outline, one ring per entry {radius in font
     // pixels, alpha}.
     private static final float[][] GLOW = {{2.0f, 0.30f}, {3.0f, 0.12f}};
@@ -151,12 +155,65 @@ public final class FalaRender {
         float pxPerBlock = PROJ.m11() * h / 2f / depth;
         float scale = Mth.clamp(BLOCKS_PER_PIXEL * pxPerBlock, MIN_SCALE, MAX_SCALE);
 
-        String text = line.text();
+        // A long line wraps (whole words) to fit the screen at this scale, up close too; the gradient runs over the whole
+        // phrase, line after line, and the last line sits on the head's spot.
         Font font = mc.font;
+        String text = line.text();
+        List<String> rows = wrap(font, text, Math.max(80, (int) (w * MAX_WIDTH / scale)));
+        int total = text.length();
+        // Up close (someone standing right in front of the boss) the head's spot is near the top of the screen: the
+        // lines come down as far as needed to stay whole on screen (the outline and glow need a few pixels).
+        float top = sy + (-font.lineHeight - (rows.size() - 1) * (font.lineHeight + 2) - 4) * scale;
+        if (top < 4) {
+            sy += 4 - top;
+        }
+        int index = 0;
+        for (int r = 0; r < rows.size(); r++) {
+            String row = rows.get(r);
+            int start = text.indexOf(row, index);
+            if (start < 0) {
+                start = index;
+            }
+            index = start + row.length();
+            float rowY = -font.lineHeight - (rows.size() - 1 - r) * (font.lineHeight + 2);
+            drawRow(graphics, font, row, start, total, line, alpha, a, sx, sy, scale, rowY);
+        }
+    }
+
+    // Splits text into lines no wider than maxWidth font pixels, breaking only between words (a single word too long
+    // for a line stays whole).
+    private static List<String> wrap(Font font, String text, int maxWidth) {
+        List<String> rows = new ArrayList<>();
+        if (font.width(text) <= maxWidth) {
+            rows.add(text);
+            return rows;
+        }
+        StringBuilder current = new StringBuilder();
+        for (String word : text.split(" ")) {
+            String next = current.length() == 0 ? word : current + " " + word;
+            if (current.length() > 0 && font.width(next) > maxWidth) {
+                rows.add(current.toString());
+                current.setLength(0);
+                current.append(word);
+            } else {
+                current.setLength(0);
+                current.append(next);
+            }
+        }
+        if (current.length() > 0) {
+            rows.add(current.toString());
+        }
+        return rows;
+    }
+
+    // One line of the phrase: glow, shadow, outline and the letters. first: where it starts in the whole phrase (for the
+    // gradient).
+    private static void drawRow(GuiGraphics graphics, Font font, String text, int first, int total, Line line, float alpha, int a, float sx,
+            float sy, float scale, float rowY) {
         MutableComponent colored = Component.empty();
         int len = text.length();
         for (int i = 0; i < len; i++) {
-            float k = len <= 1 ? 0 : (float) i / (len - 1);
+            float k = total <= 1 ? 0 : (float) (first + i) / (total - 1);
             colored.append(Component.literal(String.valueOf(text.charAt(i))).withColor(lerpColor(line.color1(), line.color2(), k)));
         }
         Component plain = Component.literal(text);
@@ -166,7 +223,7 @@ public final class FalaRender {
         graphics.pose().translate(sx, sy, 0);
         graphics.pose().scale(scale, scale, 1);
         // Centered, sitting on the head's spot.
-        float x = -width / 2f, y = -font.lineHeight;
+        float x = -width / 2f, y = rowY;
         graphics.pose().translate(x, y, 0);
         // No bar behind it (Stark): the outline and the glow make it read on any sky.
         // The glow: the line in the soul's bright color, a few times around the letters, fainter the farther out.
