@@ -29,7 +29,7 @@ public class KokushiboSwordRenderer extends BlockEntityWithoutLevelRenderer {
     // Turns the held item about the wrist by a sword move's wrist angles (SkillAnimations.wrist).
     public static void turnWrist(PoseStack pose, float[] wrist, ItemStack stack) {
         org.joml.Quaternionf turn = new org.joml.Quaternionf().rotationZYX(wrist[2], wrist[1], wrist[0]);
-        if (stack.getItem() instanceof com.starkinhon.battlegroundsmod.item.KokushiboSwordItem) {
+        if (isKokushibo(stack)) {
             pose.translate(GRIP_PIVOT.x, GRIP_PIVOT.y, GRIP_PIVOT.z);
             pose.mulPose(turn);
             pose.translate(-GRIP_PIVOT.x, -GRIP_PIVOT.y, -GRIP_PIVOT.z);
@@ -38,12 +38,29 @@ public class KokushiboSwordRenderer extends BlockEntityWithoutLevelRenderer {
         }
     }
 
+    // The awakened sword (KokushiboAwakenedSwordItem): the blade stretched to LONG_TIP, three blades branching off it.
+    public static final float LONG_TIP = 39.4f;
+
     private static MeshModel katana;
+    private static MeshModel katanaLong;
     private static MeshModel saya;
     private static boolean broken;
 
+    private final boolean awakened;
+
     public KokushiboSwordRenderer() {
+        this(false);
+    }
+
+    public KokushiboSwordRenderer(boolean awakened) {
         super(Minecraft.getInstance().getBlockEntityRenderDispatcher(), Minecraft.getInstance().getEntityModels());
+        this.awakened = awakened;
+    }
+
+    // Kokushibo's swords, plain or awakened: the same grip, so they are held and turned the same way.
+    public static boolean isKokushibo(ItemStack stack) {
+        return stack.getItem() instanceof com.starkinhon.battlegroundsmod.item.KokushiboSwordItem
+                || stack.getItem() instanceof com.starkinhon.battlegroundsmod.item.KokushiboAwakenedSwordItem;
     }
 
     // False once loading or drawing failed: the sword and its sheath stay invisible instead of crashing every frame.
@@ -54,6 +71,7 @@ public class KokushiboSwordRenderer extends BlockEntityWithoutLevelRenderer {
         if (katana == null) {
             try {
                 katana = MeshModel.load("kokushibo_katana");
+                katanaLong = MeshModel.load("kokushibo_katana_long");
                 saya = MeshModel.load("kokushibo_saya");
             } catch (RuntimeException e) {
                 fail(e);
@@ -92,9 +110,13 @@ public class KokushiboSwordRenderer extends BlockEntityWithoutLevelRenderer {
                 toSword(poseStack, thirdPerson);
             } else {
                 poseStack.translate(0.5f, 0.5f, 0.5f);
-                toSwordSpace(poseStack, 0.45f, (TIP + BUTT) / 2);
+                toSwordSpace(poseStack, awakened ? 0.39f : 0.45f, ((awakened ? LONG_TIP : TIP) + BUTT) / 2);
             }
-            emit(poseStack.last(), buffer, light, overlay, true, false);
+            if (awakened) {
+                katanaLong.emit(buffer.getBuffer(RenderType.entityCutoutNoCull(TEXTURE)), poseStack.last(), light, overlay);
+            } else {
+                emit(poseStack.last(), buffer, light, overlay, true, false);
+            }
         } catch (RuntimeException e) {
             fail(e);
         } finally {
