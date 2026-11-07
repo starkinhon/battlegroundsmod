@@ -17,7 +17,7 @@ public final class Stun {
     }
 
     public static void apply(LivingEntity target, int ticks) {
-        if (target instanceof SoulBoss) {
+        if (target instanceof SoulBoss boss && boss.isBoss()) {
             ticks = (int) Math.round(ticks * ComboSpec.get().atordoado().multiplicadorBoss());
         }
         if (ticks > 0) {

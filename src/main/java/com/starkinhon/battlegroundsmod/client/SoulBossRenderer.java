@@ -12,16 +12,24 @@ import net.minecraft.resources.ResourceLocation;
 
 // Bosses are drawn with the player model and a skin, so the skill poses (PlayerModelMixin) work on them as well.
 public class SoulBossRenderer<T extends SoulBoss> extends HumanoidMobRenderer<T, PlayerModel<T>> {
-    private final ResourceLocation skin;
+    private final ResourceLocation[] skins;
+
+    // More than one skin: each entity keeps one of them, picked by its UUID (the Fighters' look variants).
+    public SoulBossRenderer(EntityRendererProvider.Context context, boolean slim, String... skins) {
+        super(context, new PlayerModel<>(context.bakeLayer(slim ? ModelLayers.PLAYER_SLIM : ModelLayers.PLAYER), slim), 0.5f);
+        this.skins = new ResourceLocation[skins.length];
+        for (int i = 0; i < skins.length; i++) {
+            this.skins[i] = ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "textures/entity/" + skins[i] + ".png");
+        }
+        addLayer(new AuraEyesLayer<>(this));
+    }
 
     public SoulBossRenderer(EntityRendererProvider.Context context, String skin, boolean slim) {
-        super(context, new PlayerModel<>(context.bakeLayer(slim ? ModelLayers.PLAYER_SLIM : ModelLayers.PLAYER), slim), 0.5f);
-        this.skin = ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "textures/entity/" + skin + ".png");
-        addLayer(new AuraEyesLayer<>(this));
+        this(context, slim, skin);
     }
 
     @Override
     public ResourceLocation getTextureLocation(T entity) {
-        return skin;
+        return skins.length == 1 ? skins[0] : skins[Math.floorMod(entity.getUUID().hashCode(), skins.length)];
     }
 }

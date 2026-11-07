@@ -62,8 +62,17 @@ public abstract class SoulBoss extends Monster {
     protected SoulBoss(EntityType<? extends SoulBoss> type, Level level) {
         super(type, level);
         this.lookControl = new AimLookControl(this);
-        this.xpReward = 200;
-        setPersistenceRequired();
+        this.xpReward = isBoss() ? 200 : 10;
+        if (isBoss()) {
+            setPersistenceRequired();
+        }
+    }
+
+    // A real boss: the bar, entrance, phases and final ult under /gamerule soulbossfight, the allbossestier0 rule, staying
+    // in the world, and fighting bosses of other souls on sight. The SubAlma and Fighter mobs (SoulMob) are not: they
+    // fight with the same AI and skills, but as plain monsters.
+    public boolean isBoss() {
+        return true;
     }
 
     // The file in souls_bosses/ this boss reads.
@@ -75,7 +84,11 @@ public abstract class SoulBoss extends Monster {
 
     // Its attributes from the file, or the shared Tier 0 ones under /gamerule allbossestier0.
     public BossSpec.Atributos atributos() {
-        return BossRules.atributos(level(), spec());
+        return isBoss() ? BossRules.atributos(level(), spec()) : spec().atributos();
+    }
+
+    private boolean allTier0(Level level) {
+        return isBoss() && BossRules.allTier0(level);
     }
 
     // Under /gamerule soulbossfight false it fights as a plain mob: one phase with every move of every phase.
@@ -89,7 +102,7 @@ public abstract class SoulBoss extends Monster {
 
     // The boss fight (titles, bar, entrance, phases, final ult) is on: /gamerule soulbossfight.
     public boolean bossfight() {
-        return BossRules.bossfight(level());
+        return isBoss() && BossRules.bossfight(level());
     }
 
     private static final java.util.Map<BossSpec, BossSpec.Fase> MOB_FASES = new java.util.IdentityHashMap<>();
@@ -156,8 +169,11 @@ public abstract class SoulBoss extends Monster {
         goalSelector.addGoal(8, new RandomLookAroundGoal(this));
         targetSelector.addGoal(1, new HurtByTargetGoal(this));
         // Bosses of different souls fight each other on sight (Bills against the Uchiha Ghost), before players.
-        targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, SoulBoss.class, 10, true, false,
-                other -> other.getType() != getType()));
+        // The mobs leave each other alone (unless one hits the other).
+        if (isBoss()) {
+            targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, SoulBoss.class, 10, true, false,
+                    other -> other.getType() != getType() && other instanceof SoulBoss boss && boss.isBoss()));
+        }
         targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Player.class, true));
     }
 
@@ -184,12 +200,12 @@ public abstract class SoulBoss extends Monster {
         }
         if (!configured) {
             configure(level, spec);
-        } else if (BossRules.allTier0(level) != tier0Applied) {
+        } else if (allTier0(level) != tier0Applied) {
             applyStats(level, spec);
         }
         PowerLogic.tick(this);
         Movement.tick(this);
-        boolean bossfight = BossRules.bossfight(level);
+        boolean bossfight = bossfight();
         bossEvent.setVisible(bossfight);
         int want = spec.faseFor(getHealth() / getMaxHealth());
         if (bossfight && want > phase && isAlive()) {
@@ -235,7 +251,7 @@ public abstract class SoulBoss extends Monster {
         setHealth(getMaxHealth());
         phase = 0;
         bossEvent.setColor(barColor(spec.fase(0).corBarra()));
-        if (!BossRules.bossfight(level)) {
+        if (!bossfight()) {
             // A plain mob: no entrance.
             return;
         }
@@ -246,16 +262,17 @@ public abstract class SoulBoss extends Monster {
 
     // Attributes and tier, from the file or the allbossestier0 rule. Health keeps its fraction when the max changes.
     private void applyStats(ServerLevel level, BossSpec spec) {
-        tier0Applied = BossRules.allTier0(level);
+        tier0Applied = allTier0(level);
         float healthFraction = getHealth() / Math.max(1, getMaxHealth());
-        BossSpec.Atributos atributos = BossRules.atributos(level, spec);
+        BossSpec.Atributos atributos = atributos();
         setBase(Attributes.MAX_HEALTH, atributos.vida());
         setBase(Attributes.ARMOR, atributos.armadura());
         setBase(Attributes.MOVEMENT_SPEED, atributos.velocidade());
         setBase(Attributes.KNOCKBACK_RESISTANCE, atributos.resistenciaEmpurrao());
         setBase(Attributes.FOLLOW_RANGE, atributos.alcanceVisao());
         setHealth(Math.max(1, healthFraction * getMaxHealth()));
-        powerData().tier = BossRules.tier(level, spec);
+        powerData().tier = isBoss() ? BossRules.tier(level, spec)
+                : spec.tier() != null ? com.starkinhon.battlegroundsmod.power.Tiers.clamp(spec.tier()) : com.starkinhon.battlegroundsmod.power.Tiers.HUMANO;
     }
 
     private void setBase(net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> attribute, double value) {
