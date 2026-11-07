@@ -88,14 +88,15 @@ public final class BossFalas {
         return say(speaker, key, 0);
     }
 
-    // The soul's two colors (the text runs from the first to the second).
+    // The soul's dark and bright shades: the text runs from the dark one (left) to the bright one (right), the outline is
+    // the dark one darkened and the glow the bright one (client/FalaRender).
     private static int[] colors(String power) {
         return switch (power) {
-            case "strongest" -> new int[] {0x3AA8FF, 0xE8F8FF};
-            case "uchiha_ghost" -> new int[] {0xFF4A1A, 0xFFCF6A};
-            case "destruction_god" -> new int[] {0xB45CFF, 0xF3E3FF};
-            case "manipulator" -> new int[] {0x8E44FF, 0xE6D4FF};
-            case "moon_demon" -> new int[] {0xB04AFF, 0xFFD6FF};
+            case "strongest" -> new int[] {0x1E5FD0, 0x8FE0FF};
+            case "uchiha_ghost" -> new int[] {0x8A1A14, 0xFF5A3C};
+            case "destruction_god" -> new int[] {0x6A2AC0, 0xE2B4FF};
+            case "manipulator" -> new int[] {0x4C1CA8, 0xC8A2FF};
+            case "moon_demon" -> new int[] {0x7A1A9E, 0xFF9AE8};
             default -> new int[] {0xFFFFFF, 0xFFFFFF};
         };
     }

@@ -5,43 +5,58 @@ import java.util.Iterator;
 import java.util.Map;
 
 import org.joml.Matrix4f;
+import org.joml.Vector4f;
 
-import com.mojang.blaze3d.vertex.PoseStack;
-
+import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.renderer.LightTexture;
-import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.util.Mth;
-import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 
-// A boss's line floating over its head (boss/BossFalas sends it), the style Stark picked in the Visualizador
-// ("Falas na cabeça", style 2): the letters type out one by one in the soul's colors (a gradient from the first color to the
-// second), on a dark see-through bar so it reads on any sky, no name on top. It lasts a moment longer the longer the
-// line is, then fades out rising a little. Held in the world like a name tag, so it gets smaller farther away.
+// A boss's line floating over its head (boss/BossFalas sends it). The whole line shows at once (no letter by letter),
+// in the soul's colors like a game logo (Stark's reference): a gradient from the soul's dark shade on the left to its
+// bright shade on the right, a hard dark outline around every letter with a darker shadow under it, and a soft glow of
+// the soul's color outside the outline, on a dark see-through bar so it reads on any sky, no name on top. It stays 5 s, then fades out rising a little.
+// It is drawn as a screen layer over the world, at the head's spot on screen and sized by the distance like a name
+// tag, so no effect (glow, smoke, distortion, bloom) can ever cover it. A wall between the camera and the head hides it.
 public final class FalaRender {
-    // Ticks per letter while typing.
-    private static final float TICKS_PER_LETTER = 0.6f;
-    // How long it stays after it appears: base + per letter. Then it fades out in FADE ticks.
-    private static final float HOLD = 30;
-    private static final float HOLD_PER_LETTER = 1.2f;
-    private static final float FADE = 8;
+    // How long it stays whole, then how long it takes to fade out (ticks).
+    private static final float HOLD = 100;
+    private static final float FADE = 10;
     // How much it rises while fading, in blocks.
     private static final float RISE = 0.3f;
-    // Over the head (the name tag sits at +0.5); a bit higher when the name tag shows.
+    // Over the head (the name tag sits at +0.5).
     private static final float ABOVE = 0.5f;
-    private static final float ABOVE_NAME = 0.3f;
-    // Text size: 0.03 of a block per font pixel (a name tag is 0.025).
-    private static final float SCALE = 0.03f;
+    // Text height in blocks per font pixel (a name tag is 0.025), and the screen size limits (GUI scale).
+    private static final float BLOCKS_PER_PIXEL = 0.03f;
+    private static final float MIN_SCALE = 0.7f;
+    private static final float MAX_SCALE = 2.5f;
     // The bar's darkness (0..255): 62%, the same as the Visualizador.
     private static final int BAR_ALPHA = 158;
+    // The glow: copies of the line in the soul's bright color outside the outline, one ring per entry {radius in font
+    // pixels, alpha}.
+    private static final float[][] GLOW = {{2.0f, 0.30f}, {3.0f, 0.12f}};
+    // The outline: the soul's dark shade darkened this much (0 black, 1 the dark shade itself).
+    private static final float OUTLINE_SHADE = 0.32f;
+    // Farther than this, it is not drawn (the server only sends it to players within 32 blocks).
+    private static final double MAX_DISTANCE = 48;
+
+    private static final Matrix4f VIEW = new Matrix4f();
+    private static final Matrix4f PROJ = new Matrix4f();
+    private static Vec3 camera = Vec3.ZERO;
+    private static boolean captured;
 
     private record Line(String text, int color1, int color2, long start) {
         float total() {
-            return HOLD + text.length() * HOLD_PER_LETTER + FADE;
+            return HOLD + FADE;
         }
     }
 
@@ -67,22 +82,43 @@ public final class FalaRender {
         LINES.put(entityId, new Line(shown, color1, color2, now));
     }
 
-    // Called by the boss renderer after the body is drawn.
-    public static void render(LivingEntity entity, boolean nameShown, float partialTick, PoseStack poseStack, MultiBufferSource buffer) {
-        Line line = LINES.get(entity.getId());
+    // The camera of the frame, to place the lines on screen.
+    public static void onRenderLevel(RenderLevelStageEvent event) {
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_LEVEL) {
+            return;
+        }
+        VIEW.set(event.getModelViewMatrix());
+        PROJ.set(event.getProjectionMatrix());
+        camera = event.getCamera().getPosition();
+        captured = true;
+    }
+
+    // The screen layer (under the HUD, over the world and every effect).
+    public static void renderGui(GuiGraphics graphics, DeltaTracker deltaTracker) {
         Minecraft mc = Minecraft.getInstance();
-        if (line == null || mc.level == null) {
+        if (LINES.isEmpty() || mc.level == null || mc.player == null || !captured || mc.options.hideGui) {
             return;
         }
-        float age = (mc.level.getGameTime() - line.start()) + partialTick;
-        float total = line.total();
-        if (age < 0 || age > total) {
-            if (age > total) {
-                LINES.remove(entity.getId());
+        float partial = deltaTracker.getGameTimeDeltaPartialTick(false);
+        long now = mc.level.getGameTime();
+        for (Iterator<Map.Entry<Integer, Line>> it = LINES.entrySet().iterator(); it.hasNext(); ) {
+            Map.Entry<Integer, Line> entry = it.next();
+            Line line = entry.getValue();
+            float age = (now - line.start()) + partial;
+            if (age > line.total()) {
+                it.remove();
+                continue;
             }
-            return;
+            Entity entity = mc.level.getEntity(entry.getKey());
+            if (entity == null || age < 0) {
+                continue;
+            }
+            draw(graphics, mc, entity, line, age, partial);
         }
-        float out = age > total - FADE ? (age - (total - FADE)) / FADE : 0;
+    }
+
+    private static void draw(GuiGraphics graphics, Minecraft mc, Entity entity, Line line, float age, float partial) {
+        float out = age > HOLD ? (age - HOLD) / FADE : 0;
         float smoothOut = out * out * (3 - 2 * out);
         float alpha = 1 - smoothOut;
         int a = Math.round(alpha * 255);
@@ -90,30 +126,85 @@ public final class FalaRender {
         if (a < 5) {
             return;
         }
-        String text = line.text();
-        int shown = Math.min(text.length(), (int) Math.floor(age / TICKS_PER_LETTER) + 1);
-        // A small pop when it appears.
-        float pop = 1 + 0.15f * (1 - Mth.clamp(age / 4, 0, 1));
-
-        Font font = mc.font;
-        MutableComponent typed = Component.empty();
-        int len = text.length();
-        for (int i = 0; i < shown; i++) {
-            float k = len <= 1 ? 0 : (float) i / (len - 1);
-            typed.append(Component.literal(String.valueOf(text.charAt(i))).withColor(lerpColor(line.color1(), line.color2(), k)));
+        Vec3 head = entity.getPosition(partial).add(0, entity.getBbHeight() + ABOVE + RISE * smoothOut, 0);
+        if (head.distanceTo(camera) > MAX_DISTANCE) {
+            return;
         }
+        // Behind a wall: hidden, like a name tag.
+        if (mc.level.clip(new ClipContext(camera, head, ClipContext.Block.VISUAL, ClipContext.Fluid.NONE, mc.player)).getType()
+                != HitResult.Type.MISS) {
+            return;
+        }
+        Vector4f view = new Vector4f((float) (head.x - camera.x), (float) (head.y - camera.y), (float) (head.z - camera.z), 1);
+        VIEW.transform(view);
+        float depth = -view.z;
+        if (depth <= 0.1f) {
+            return;
+        }
+        Vector4f clip = new Vector4f(view);
+        PROJ.transform(clip);
+        if (clip.w <= 0.05f) {
+            return;
+        }
+        int w = graphics.guiWidth(), h = graphics.guiHeight();
+        float sx = (clip.x / clip.w * 0.5f + 0.5f) * w;
+        float sy = (1 - (clip.y / clip.w * 0.5f + 0.5f)) * h;
+        // GUI pixels per block at that distance, and the font scale that makes one font pixel BLOCKS_PER_PIXEL tall.
+        float pxPerBlock = PROJ.m11() * h / 2f / depth;
+        float scale = Mth.clamp(BLOCKS_PER_PIXEL * pxPerBlock, MIN_SCALE, MAX_SCALE);
 
-        poseStack.pushPose();
-        poseStack.translate(0, entity.getBbHeight() + ABOVE + (nameShown ? ABOVE_NAME : 0) + RISE * smoothOut, 0);
-        poseStack.mulPose(mc.getEntityRenderDispatcher().cameraOrientation());
-        float s = SCALE * pop;
-        poseStack.scale(s, -s, s);
-        Matrix4f pose = poseStack.last().pose();
-        // Centered on the whole line, so the bar grows to the right as the letters come in.
-        float x = -font.width(text) / 2f;
-        int bar = Math.round(BAR_ALPHA * alpha) << 24;
-        font.drawInBatch(typed, x, 0, (a << 24) | 0xFFFFFF, false, pose, buffer, Font.DisplayMode.NORMAL, bar, LightTexture.FULL_BRIGHT);
-        poseStack.popPose();
+        String text = line.text();
+        Font font = mc.font;
+        MutableComponent colored = Component.empty();
+        int len = text.length();
+        for (int i = 0; i < len; i++) {
+            float k = len <= 1 ? 0 : (float) i / (len - 1);
+            colored.append(Component.literal(String.valueOf(text.charAt(i))).withColor(lerpColor(line.color1(), line.color2(), k)));
+        }
+        Component plain = Component.literal(text);
+        int width = font.width(text);
+
+        graphics.pose().pushPose();
+        graphics.pose().translate(sx, sy, 0);
+        graphics.pose().scale(scale, scale, 1);
+        // Centered, sitting on the head's spot.
+        float x = -width / 2f, y = -font.lineHeight;
+        graphics.pose().translate(x, y, 0);
+        // The bar, wide enough for the glow.
+        graphics.fill(-5, -4, width + 4, font.lineHeight + 3, Math.round(BAR_ALPHA * alpha) << 24 | 0x08060C);
+        // The glow: the line in the soul's bright color, a few times around the letters, fainter the farther out.
+        for (float[] ring : GLOW) {
+            int ga = Math.round(ring[1] * alpha * 255);
+            if (ga < 5) {
+                continue;
+            }
+            for (int d = 0; d < 8; d++) {
+                double ang = d * Math.PI / 4;
+                graphics.pose().pushPose();
+                graphics.pose().translate((float) Math.cos(ang) * ring[0], (float) Math.sin(ang) * ring[0], 0);
+                graphics.drawString(font, plain, 0, 0, ga << 24 | line.color2(), false);
+                graphics.pose().popPose();
+            }
+        }
+        // The shadow (one pixel lower, two thick) and the outline (one pixel all around), in the dark shade.
+        int dark = a << 24 | shade(line.color1(), OUTLINE_SHADE);
+        int shadow = a << 24 | shade(line.color1(), OUTLINE_SHADE * 0.5f);
+        graphics.drawString(font, plain, 0, 2, shadow, false);
+        graphics.drawString(font, plain, 1, 2, shadow, false);
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dy = -1; dy <= 1; dy++) {
+                if (dx != 0 || dy != 0) {
+                    graphics.drawString(font, plain, dx, dy, dark, false);
+                }
+            }
+        }
+        // The letters on top.
+        graphics.drawString(font, colored, 0, 0, a << 24 | 0xFFFFFF, false);
+        graphics.pose().popPose();
+    }
+
+    private static int shade(int c, float k) {
+        return Math.round((c >> 16 & 255) * k) << 16 | Math.round((c >> 8 & 255) * k) << 8 | Math.round((c & 255) * k);
     }
 
     private static int lerpColor(int c1, int c2, float k) {
