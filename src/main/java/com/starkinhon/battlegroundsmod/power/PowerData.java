@@ -78,6 +78,9 @@ public class PowerData {
     public float stamina = -1;
     // Players: exhausted (stamina ran out) until this game time: no skills, open to stun-only skills.
     public long exhaustedUntil = 0;
+    // Anyone: a real stun (Stun.INTERRUPT_TICKS or longer: the Bop, a parry, the Mangekyo...) lasts until this game time.
+    // The short stun every punch leaves doesn't set it, so it doesn't open the stun-only skills (Stamina.stunnable).
+    public long realStunUntil = 0;
     // Players: what a held charged skill may still drain on top of its use cost.
     public float chargeLeft = 0;
     // Client: the synced max stamina and exhaustion ticks left, for the bar.
@@ -129,6 +132,7 @@ public class PowerData {
         busyTicks = 0;
         stamina = -1;
         exhaustedUntil = 0;
+        realStunUntil = 0;
         chargeLeft = 0;
         combatLocked = false;
     }
