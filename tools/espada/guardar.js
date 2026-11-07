@@ -12,7 +12,7 @@ const path = require('path');
 let src = fs.readFileSync(path.join(__dirname, 'rig.js'), 'utf8');
 const from = src.indexOf('mul(new THREE.Matrix4().makeTranslation(3 / 16, 3 / 16, 0.5));');
 const to = src.indexOf('return m;', from);
-src = src.slice(0, from) + `mul(new THREE.Matrix4().makeTranslation(1.5 / 16, 3 / 16, 0.5 + 1.5 / 16));
+src = src.slice(0, from) + `mul(new THREE.Matrix4().makeTranslation(2.825 / 16, 3.084 / 16, 0.5));
     mul(new THREE.Matrix4().makeRotationZ(-0.2));
     mul(new THREE.Matrix4().makeRotationZ(-Math.PI / 4));
     mul(new THREE.Matrix4().makeRotationY(Math.PI));
@@ -22,7 +22,7 @@ src = src.slice(0, from) + `mul(new THREE.Matrix4().makeTranslation(1.5 / 16, 3 
 // The wrist turns about the grip (Stark, 2026-11-07: about the item's pivot the grip slid out of the fist), as in
 // KokushiboSwordRenderer.GRIP_PIVOT.
 src = src.replace('return handFromArm().multiply(wristMatrix(w || [0, 0, 0])).multiply(swordFromHand());',
-  `const g = new THREE.Vector3(-0.07969, -0.18522, 0.05077);
+  `const g = new THREE.Vector3(0, -0.125, 0.0875);
     return handFromArm().multiply(new THREE.Matrix4().makeTranslation(g.x, g.y, g.z)).multiply(wristMatrix(w || [0, 0, 0]))
       .multiply(new THREE.Matrix4().makeTranslation(-g.x, -g.y, -g.z)).multiply(swordFromHand());`);
 const mod = { exports: {} };
