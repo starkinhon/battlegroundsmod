@@ -128,15 +128,23 @@ S['gojo.azul_black_flash_segurando'] = { keys: [
   P(6, bfHold, 'inout'),
   P(9, { ...bfHold, twist: 44, ra: { yaw: 126, pitch: -36 } }, 'inout'),
 ] };
-// gojo.azul_black_flash: W1 E11 back10. The punch: everything swings round into the right fist.
+// gojo.azul_black_flash: W1 E37 back12 (Black Flash v2, PR #158). The punch lands at 1 and stays IN the target for the
+// fit (encaixeTicks 34) while the black lightning goes off, the body leaning into it and grinding; at the end the
+// last burst throws the target far: the fist drives through, then back.
 const bfHit = { twist: -40, lean: 26, drop: 2.4, fwd: 3.5, ra: { yaw: 6, pitch: 2 }, la: { yaw: 10, pitch: -150 }, rl: { pitch: -36, out: 3 },
   ll: { pitch: 40, out: 3 }, head: { yaw: 0, pitch: 4 } };
+const bfGrind = { ...bfHit, twist: -46, lean: 30, drop: 2.8, fwd: 4 };
+const bfThrow = { ...bfHit, twist: -58, lean: 34, drop: 2.6, fwd: 5, ra: { yaw: 2, pitch: 6 }, la: { yaw: 20, pitch: -160 } };
 S['gojo.azul_black_flash'] = { keys: [
   P(0, bfHold),
   P(1, bfHit, 'snap'),
   P(3, { ...bfHit, twist: -50, lean: 30, fwd: 4 }, 'out'),
-  P(10, { ...bfHit, twist: -44, lean: 24 }, 'inout'),
-  P(21, REST, 'inout'),
+  P(12, bfGrind, 'inout'),
+  P(24, { ...bfGrind, twist: -48, lean: 32, drop: 3 }, 'inout'),
+  P(33, { ...bfGrind, twist: -44, lean: 28 }, 'inout'),
+  P(35, bfThrow, 'snap'),
+  P(38, { ...bfThrow, twist: -62, lean: 36 }, 'out'),
+  P(49, REST, 'inout'),
 ] };
 
 // ===================== BILLS =====================
