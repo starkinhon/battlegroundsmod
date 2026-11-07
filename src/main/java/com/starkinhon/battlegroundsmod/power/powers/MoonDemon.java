@@ -18,9 +18,9 @@ public final class MoonDemon {
     public static Power create() {
         return new Power("moon_demon", 0x9B4DCA, 1.1f, List.of(
                 new Ability(80, 0, YoruNoMiya::use),
-                new Ability(120, 0, MoonFormSkill::second),
+                new Ability(120, 0, MoonFormSkill::second).asBeatenCounter(),
                 new Ability(160, 0, MoonFormSkill::third),
                 new Ability(400, 0, MoonFormSkill::sixth),
-                new Ability(240, 0, MoonFormSkill::fifth)));
+                new Ability(240, 0, MoonFormSkill::fifth).asBeatenCounter()));
     }
 }

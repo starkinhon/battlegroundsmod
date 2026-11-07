@@ -572,7 +572,7 @@ public class ConstellationScreen extends Screen {
             tagColors.add(GuiDraw.mix(color, 0xFFFFFF, 0.2f));
         }
         Ability ability = PowerLogic.ability(power, slot);
-        if (ability != null && ability.counter()) {
+        if (ability != null && (ability.counter() || ability.beatenCounter())) {
             tags.add(Component.translatable("screen.battlegroundsmod.skills.tag.counter"));
             tagColors.add(0x6FB8FF);
         }
