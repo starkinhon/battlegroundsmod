@@ -1103,6 +1103,17 @@ public final class ModPayloads {
         }
     }
 
+    // The combat mode key: turns combat mode on (until pressed again) or off.
+    public record ToggleCombat() implements CustomPacketPayload {
+        public static final Type<ToggleCombat> TYPE = payloadType("toggle_combat");
+        public static final StreamCodec<ByteBuf, ToggleCombat> STREAM_CODEC = StreamCodec.unit(new ToggleCombat());
+
+        @Override
+        public Type<ToggleCombat> type() {
+            return TYPE;
+        }
+    }
+
     public record AuraState(int entityId, String power) implements CustomPacketPayload {
         public static final Type<AuraState> TYPE = payloadType("aura_state");
         public static final StreamCodec<ByteBuf, AuraState> STREAM_CODEC = StreamCodec.composite(
@@ -1279,6 +1290,11 @@ public final class ModPayloads {
         registrar.playToServer(ToggleOutfit.TYPE, ToggleOutfit.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer player) {
                 player.getData(ModAttachments.POWER).outfit = payload.on();
+            }
+        }));
+        registrar.playToServer(ToggleCombat.TYPE, ToggleCombat.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
+            if (context.player() instanceof ServerPlayer player) {
+                Tasks.as(player, () -> CombatMode.toggle(player));
             }
         }));
     }
