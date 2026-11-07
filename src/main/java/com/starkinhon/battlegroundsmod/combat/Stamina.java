@@ -22,9 +22,10 @@ public final class Stamina {
     private Stamina() {
     }
 
-    // Whether the stun-only skills can be used on target: stunned by a hit, or exhausted.
+    // Whether the stun-only skills can be used on target: under a real stun (Stun.real, never the punches' short one),
+    // or exhausted.
     public static boolean stunnable(LivingEntity target) {
-        return Stun.is(target) || exhausted(target);
+        return Stun.real(target) || exhausted(target);
     }
 
     public static boolean exhausted(LivingEntity entity) {

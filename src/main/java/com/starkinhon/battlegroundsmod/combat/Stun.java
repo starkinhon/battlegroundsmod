@@ -3,6 +3,7 @@ package com.starkinhon.battlegroundsmod.combat;
 import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.ModEffects;
 import com.starkinhon.battlegroundsmod.boss.SoulBoss;
+import com.starkinhon.battlegroundsmod.power.PowerData;
 import com.starkinhon.battlegroundsmod.power.PowerLogic;
 import com.starkinhon.battlegroundsmod.skill.ComboSpec;
 
@@ -38,6 +39,11 @@ public final class Stun {
         if (ticks > 0) {
             target.addEffect(new MobEffectInstance(ModEffects.ATORDOADO, ticks, 0, false, false, true));
         }
+        // Only a real stun opens the stun-only skills (Stamina.stunnable): the punches' short one is just hitstun.
+        if (ticks >= INTERRUPT_TICKS) {
+            PowerData data = target.getData(ModAttachments.POWER);
+            data.realStunUntil = Math.max(data.realStunUntil, target.level().getGameTime() + ticks);
+        }
         // A real stun (not the short one every punch leaves) knocks them out of the move they are making (busy with it, or
         // holding its key), with its sounds and effects. Counters keep working through the punches' short stuns, and
         // someone already stunned (held in a trap, falling with the Esfera) is not cut off again.
@@ -69,6 +75,15 @@ public final class Stun {
 
     public static boolean canAttack(Entity entity) {
         return !is(entity) && !(entity instanceof LivingEntity living && living.hasEffect(ModEffects.COOLDOWN));
+    }
+
+    // Stunned by a real stun (not the punches' short one), still going.
+    public static boolean real(LivingEntity entity) {
+        if (entity.hasEffect(ModEffects.BRAIN_DAMAGE)) {
+            return true;
+        }
+        return entity.hasEffect(ModEffects.ATORDOADO)
+                && entity.getData(ModAttachments.POWER).realStunUntil > entity.level().getGameTime();
     }
 
     public static boolean is(Entity entity) {
