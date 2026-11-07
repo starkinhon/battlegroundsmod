@@ -52,6 +52,8 @@ public final class YoruNoMiya {
     public static final int MOON_GOLD = 0xFFA000;
     // The hitbox reaches this many times as far as the drawn slash (Stark: 1.5x).
     private static final double HIT_REACH = 1.5;
+    // Anyone in front of him this share of the hitbox's reach is hit even if the arc's open gap would miss them.
+    private static final double CLOSE_IN = 0.6;
     // The blow lands with the cut (Stark took out the old 0.5 s Black Flash wait), then the target stays stunned this long
     // (the same 1 s in all it was stunned before).
     private static final int STUN_AFTER = 20;
@@ -152,6 +154,11 @@ public final class YoruNoMiya {
         double reach = (R * 1.07 + 0.2) * SCALE * HIT_REACH;
         for (LivingEntity target : Combat.inRadius(level, centre, reach + DEPTH, caster)) {
             Vec3 rel = Combat.center(target).subtract(centre);
+            // Stark: someone close in, between him and the slash, is hit too (they used to slip through the inside).
+            if (closeIn(target, eye, look, reach)) {
+                strike(caster, target, level, eye);
+                continue;
+            }
             double depth = rel.dot(fr[1]);
             double px = rel.dot(fr[2]) / SCALE, py = rel.dot(fr[3]) / SCALE;
             if (Math.abs(depth) > DEPTH + target.getBbHeight() * 0.5 || px * px + py * py > (reach / SCALE) * (reach / SCALE)) {
@@ -162,6 +169,21 @@ public final class YoruNoMiya {
             }
             strike(caster, target, level, eye);
         }
+    }
+
+    // In front of him (up to the arc's reach, a little to the sides) and around the height the slash passes at.
+    private static boolean closeIn(LivingEntity target, Vec3 eye, Vec3 look, double reach) {
+        Vec3 c = Combat.center(target);
+        Vec3 flat = new Vec3(look.x, 0, look.z);
+        flat = flat.lengthSqr() < 1.0E-6 ? new Vec3(0, 0, 1) : flat.normalize();
+        Vec3 rel = c.subtract(eye);
+        double ahead = rel.x * flat.x + rel.z * flat.z;
+        double side = Math.abs(rel.x * flat.z - rel.z * flat.x);
+        // the height his look reaches at that distance (the slash turns with his pitch)
+        double ly = Mth.clamp(look.normalize().y, -0.98, 0.98);
+        double pitchY = ly / Math.sqrt(1 - ly * ly) * Math.max(0, ahead);
+        double dy = Math.abs(rel.y - pitchY) - target.getBbHeight() * 0.5;
+        return ahead > -target.getBbWidth() && ahead < reach * CLOSE_IN && side < Math.max(2.0, ahead + 1.0) && dy < DEPTH;
     }
 
     // How far round the swing (0 at its start, 1 at its end, past 1 in the gap) the page point (x, y) from the arc's centre is.

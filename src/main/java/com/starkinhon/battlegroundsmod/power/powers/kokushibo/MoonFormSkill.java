@@ -32,6 +32,8 @@ import net.neoforged.neoforge.network.PacketDistributor;
 public final class MoonFormSkill {
     private static final double VIEW_DISTANCE = 128;
     private static final double HIT_THICK = 1.5;
+    // How far from the line between him and a cut someone can stand and still be hit by it (blocks, past their width).
+    private static final double FAN_REACH = 1.0;
 
     // Per form: damage of a cut and of a moon, knockback out and up, how fat the carving is around a cut (times its half
     // width), how deep it tears the ground under it, the blocks it may take in one tick, and whether one target can be hit
@@ -133,6 +135,9 @@ public final class MoonFormSkill {
             double around = form == 6 ? 30 : form == 3 ? 18 : form == 5 ? 10 : 14;
             List<LivingEntity> near = Combat.inRadius(level, middle, around, caster);
             int[] budget = {tune.budget()};
+            // 3rd (Stark): the cut also lands on anyone between him and it, so someone close in still gets hit
+            boolean fan = form == 3;
+            Vec3 chest = caster.position().add(0, caster.getBbHeight() * 0.55, 0);
             for (int k = 0; k < fr.ribbons().size(); k++) {
                 MoonForms.Ribbon rb = fr.ribbons().get(k);
                 if (rb.shape == 2) {
@@ -153,6 +158,8 @@ public final class MoonFormSkill {
                         double dy = Math.max(0, Math.abs(c.y - p.y) - target.getBbHeight() * 0.5);
                         double dx = c.x - p.x, dz = c.z - p.z;
                         if (dx * dx + dz * dz + dy * dy < reach * reach) {
+                            strike(target, key, tune.cutDamage(), age, p);
+                        } else if (fan && inFan(target, chest, p)) {
                             strike(target, key, tune.cutDamage(), age, p);
                         }
                     }
@@ -179,6 +186,20 @@ public final class MoonFormSkill {
                     }
                 }
             }
+        }
+
+        // Whether the target stands on the line from his chest out to this point of a cut (the area the cut sweeps
+        // through between him and where it is drawn).
+        private static boolean inFan(LivingEntity target, Vec3 from, Vec3 to) {
+            Vec3 c = Combat.center(target);
+            Vec3 seg = to.subtract(from);
+            double len2 = seg.lengthSqr();
+            double k = len2 < 1.0E-6 ? 0 : Mth.clamp(c.subtract(from).dot(seg) / len2, 0, 1);
+            Vec3 q = from.add(seg.scale(k));
+            double reach = target.getBbWidth() * 0.5 + FAN_REACH;
+            double dy = Math.max(0, Math.abs(c.y - q.y) - target.getBbHeight() * 0.5);
+            double dx = c.x - q.x, dz = c.z - q.z;
+            return dx * dx + dz * dz + dy * dy < reach * reach;
         }
 
         // A stable id per cut over the move (the ribbons come back in the same order each frame for a given form while
