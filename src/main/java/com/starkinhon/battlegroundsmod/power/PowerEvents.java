@@ -80,6 +80,8 @@ public final class PowerEvents {
         Tasks.clear();
         Freeze.clear();
         Intangible.clear();
+        com.starkinhon.battlegroundsmod.power.powers.sub.nr.NrCommon.clear();
+        com.starkinhon.battlegroundsmod.power.powers.sub.jj.JjCommon.clear();
         Destructible.clear();
         Defense.clear();
         Susanoo.clear();

@@ -49,6 +49,84 @@
       "weight": 1,
       "minCount": 1,
       "maxCount": 1
+    },
+    {
+      "type": "battlegroundsmod:naruto",
+      "weight": 1,
+      "minCount": 1,
+      "maxCount": 1
+    },
+    {
+      "type": "battlegroundsmod:sasuke",
+      "weight": 1,
+      "minCount": 1,
+      "maxCount": 1
+    },
+    {
+      "type": "battlegroundsmod:kakashi",
+      "weight": 1,
+      "minCount": 1,
+      "maxCount": 1
+    },
+    {
+      "type": "battlegroundsmod:gaara",
+      "weight": 1,
+      "minCount": 1,
+      "maxCount": 1
+    },
+    {
+      "type": "battlegroundsmod:shikamaru",
+      "weight": 1,
+      "minCount": 1,
+      "maxCount": 1
+    },
+    {
+      "type": "battlegroundsmod:ino",
+      "weight": 1,
+      "minCount": 1,
+      "maxCount": 1
+    },
+    {
+      "type": "battlegroundsmod:itadori",
+      "weight": 1,
+      "minCount": 1,
+      "maxCount": 1
+    },
+    {
+      "type": "battlegroundsmod:choso",
+      "weight": 1,
+      "minCount": 1,
+      "maxCount": 1
+    },
+    {
+      "type": "battlegroundsmod:nanami",
+      "weight": 1,
+      "minCount": 1,
+      "maxCount": 1
+    },
+    {
+      "type": "battlegroundsmod:nobara",
+      "weight": 1,
+      "minCount": 1,
+      "maxCount": 1
+    },
+    {
+      "type": "battlegroundsmod:todo",
+      "weight": 1,
+      "minCount": 1,
+      "maxCount": 1
+    },
+    {
+      "type": "battlegroundsmod:inumaki",
+      "weight": 1,
+      "minCount": 1,
+      "maxCount": 1
+    },
+    {
+      "type": "battlegroundsmod:miwa",
+      "weight": 1,
+      "minCount": 1,
+      "maxCount": 1
     }
   ]
 }

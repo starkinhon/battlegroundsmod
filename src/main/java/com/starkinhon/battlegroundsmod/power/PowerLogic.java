@@ -182,6 +182,8 @@ public final class PowerLogic {
         }
         data.lastCastSlot = slot;
         data.lastCastTime = level.getGameTime();
+        // Kakashi's Sharingan remembers what was used near him.
+        com.starkinhon.battlegroundsmod.power.powers.sub.nr.NrCommon.recordCast(caster, power.id(), slot);
         CombatMode.enter(caster);
         if (PowerData.isUlt(slot)) {
             announceUlt(caster, power, slot);

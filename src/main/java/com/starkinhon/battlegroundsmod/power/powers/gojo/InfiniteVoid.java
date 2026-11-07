@@ -290,9 +290,11 @@ public final class InfiniteVoid {
 
     // Players in creative are never caught, but go in with Gojo: they see the sign, the domain opening, the tunnel and
     // the void, and are taken inside like everyone, free like Gojo: no paralysis, no slowness, no stamina drain, no
-    // Brain Damage, no damage, skills still theirs (DomainScene spares their screen too).
+    // Brain Damage, no damage, skills still theirs (DomainScene spares their screen too). Miwa inside her Simple Domain is
+    // spared the same way: the domain's sure hit has no hold on her.
     private static boolean spared(LivingEntity entity) {
-        return entity instanceof Player player && player.isCreative();
+        return (entity instanceof Player player && player.isCreative())
+                || com.starkinhon.battlegroundsmod.power.powers.sub.jj.JjCommon.inSimpleDomain(entity);
     }
 
     // Gojo is no longer in his domain: out of the inside once everyone is up there, or away from where it opened.

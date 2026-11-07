@@ -1,0 +1,37 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "nr.selo_cruz",
+  "nome": "Selo em cruz",
+  "tempo": {
+    "atrasoTicks": 3,
+    "duracaoTicks": 15
+  },
+  "animacao": {
+    "transicaoTicks": 3,
+    "preparo": {
+      "cabeca": 0,
+      "tronco": 4,
+      "bracoDir": {
+        "frente": 18,
+        "abrir": 10
+      },
+      "bracoEsq": {
+        "frente": 18,
+        "abrir": -10
+      }
+    },
+    "sopro": {
+      "cabeca": 0,
+      "tronco": 8,
+      "bracoDir": {
+        "frente": 30,
+        "abrir": 16
+      },
+      "bracoEsq": {
+        "frente": 30,
+        "abrir": -16
+      }
+    },
+    "retornoTicks": 8
+  }
+}

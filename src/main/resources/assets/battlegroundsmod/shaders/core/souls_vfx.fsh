@@ -1091,6 +1091,85 @@ void main() {
         base = col;
         alpha = out0;
         core = 0.0;
+    } else if (shape == 33) {
+        // Same text as the Visualizador's shape 28 (CEINK): cursed energy anime style (Itadori's ref), flat flame with a
+        // thick black ink outline. param < 0.5 a flame tongue on a ribbon (uv.x from base to tip), else a blob round the
+        // fist; fract(param * 2) = seed.
+        float sd = fract(param * 2.0) * 37.0 + 1.0;
+        float tq = floor(time * 12.0) / 12.0;
+        float d;
+        float wref;
+        float lay;
+        if (param < 0.5) {
+            float u = uv.x;
+            float v = uv.y * 2.0 - 1.0;
+            float c = (fbm(vec2(u * 2.4 - tq * 2.4, sd)) - 0.5) * 0.55 * u + sin(u * 6.0 - tq * 8.0 + sd) * 0.12 * u;
+            float w = 0.6 * smoothstep(0.0, 0.2, u) * pow(max(0.0, 1.0 - u), 0.8) * (0.75 + 0.45 * fbm(vec2(u * 4.0 - tq * 3.2, sd * 1.7)));
+            d = w - abs(v - c);
+            wref = 0.42;
+            lay = fbm(vec2(u * 3.0 - tq * 2.0, v * 1.5 + sd));
+        } else {
+            vec2 cs = p / max(r, 1.0e-4);
+            float R = 0.5 + 0.22 * fbm(cs * 1.6 + vec2(sd, tq * 1.4)) + 0.16 * max(0.0, p.y) * fbm(cs * 3.5 + vec2(-sd, tq * 2.6));
+            d = R - r;
+            wref = 0.55;
+            lay = fbm(p * 2.0 + vec2(sd, -tq * 1.5));
+        }
+        float fw = max(fwidth(d), 1.0e-4);
+        float ow = max(0.1 * wref / 0.45, 2.2 * fw);
+        float outer = smoothstep(0.0, 1.5 * fw, d);
+        float fill = smoothstep(ow, ow + 1.5 * fw, d);
+        float t = clamp((d - ow) / (wref * 0.7), 0.0, 1.0);
+        vec3 cdeep = color.rgb * vec3(0.35, 0.62, 0.78);
+        vec3 clite = mix(color.rgb, vec3(1.0), 0.55);
+        vec3 col = mix(cdeep, color.rgb, smoothstep(0.0, 0.25, t));
+        col = mix(col, clite, smoothstep(0.35, 0.75, t));
+        col = mix(col, vec3(1.0), smoothstep(0.75, 0.95, t) * 0.85);
+        // An ink line inside (the flame's layers), in pieces.
+        float ld = abs(d - ow - wref * (0.22 + 0.25 * lay));
+        float inkIn = (1.0 - smoothstep(0.012, 0.012 + 1.5 * fw, ld)) * smoothstep(0.45, 0.6, lay);
+        vec3 ink = vec3(0.01, 0.015, 0.03);
+        base = mix(ink, col, fill * (1.0 - inkIn));
+        alpha = outer;
+        core = 0.0;
+    } else if (shape == 34) {
+        // Same text as the Visualizador's shape 29 (BRUSH): the Divergent Fist's aura (Stark's ref). A flat opaque blot of
+        // color with a black brush outline only in parts of the edge, scratchy ink hairs, one tip of flame on top; the
+        // edge runs up both sides. param = seed. Drawn at 12 frames a second.
+        float sd = param * 53.0 + 1.0;
+        float tq = floor(time * 12.0) / 12.0;
+        vec2 q = p - vec2(0.0, -0.3);
+        float rq = length(q);
+        float ang = atan(q.y, q.x);
+        float v = abs(mod(ang + 1.5707963 + 3.1415926, 6.2831853) - 3.1415926);
+        float side = sign(q.x + 1.0e-4);
+        float flow = v * 2.2 - tq * 5.0;
+        float lump = (fbm(vec2(flow * 0.6 + side * 7.0 + sd, tq * 0.5)) - 0.5) * 0.08;
+        float licks = pow(fbm(vec2(flow * 3.0 + side * 13.0 + sd, 1.3)), 2.0) * 0.1;
+        float lean = 0.12 * sin(tq * 2.3 + sd) + 0.06 * sin(tq * 5.1 + sd * 2.0);
+        float da = ang - 1.5707963 - lean * (0.6 + rq);
+        float tip = 0.5 * pow(max(0.0, 1.0 - abs(da) / 1.5), 2.2);
+        float R = 0.4 * (1.0 + lump) + licks + tip;
+        float d = R - rq;
+        float fw = max(fwidth(d), 1.0e-4);
+        float fill = smoothstep(0.0, 1.2 * fw, d);
+        float th = 0.018 + 0.045 * pow(fbm(vec2(flow * 1.8 + side * 5.0 + sd * 2.3, 7.0)), 1.5);
+        float gap = smoothstep(0.32, 0.46, fbm(vec2(flow * 1.2 + side * 3.0 + sd * 3.1, 3.0)));
+        float off = (fbm(vec2(flow * 5.0 + side * 9.0 + sd, 5.0)) - 0.5) * 0.03;
+        float hair = smoothstep(0.55, 0.8, noise(vec2(flow * 25.0 + sd, rq * 8.0))) * 0.6;
+        float band = 1.0 - smoothstep(th * (1.0 + hair), th * (1.0 + hair) + 1.2 * fw, abs(d + off + th * 0.5));
+        float ink = band * gap;
+        // Half opaque body with glints travelling up through parts of it.
+        float inside = smoothstep(0.0, 0.06, d);
+        float blob = smoothstep(0.6, 0.78, fbm(vec2(q.x * 3.2 + sd, q.y * 2.6 - time * 1.5)));
+        float fio = 1.0 - smoothstep(0.0, 0.035, abs(fbm(vec2(q.x * 2.2 - sd, q.y * 1.4 - time * 1.1)) - 0.5));
+        fio *= smoothstep(0.5, 0.7, noise(vec2(q.x * 1.5 + sd * 0.7, q.y * 2.0 - time * 2.2)));
+        float glow = clamp(blob + fio * 0.9, 0.0, 1.0) * inside;
+        vec3 hot = mix(color.rgb, vec3(0.85, 1.0, 1.0), 0.7);
+        vec3 body = mix(color.rgb, hot, glow);
+        base = mix(body, vec3(0.08, 0.08, 0.09), ink);
+        alpha = max(fill * (0.58 + 0.4 * glow), ink);
+        core = glow * 0.35 * (1.0 - ink);
     } else {
         alpha = 1.0;
     }
@@ -1101,7 +1180,7 @@ void main() {
     float fade = 1.0;
     // The Black Box's walls and lances stay solid right in front of whoever is inside, and shards, wings and orbs sit
     // right on bodies (no soft fade), and so does the Red's orb at Gojo's fingertip.
-    if (SoftOn > 0.5 && (shape < 12 || shape > 16) && shape != 20 && shape != 21 && shape != 28) {
+    if (SoftOn > 0.5 && (shape < 12 || shape > 16) && shape != 20 && shape != 21 && shape != 28 && shape != 33 && shape != 34) {
         float scene = linearDepth(texture(Sampler1, gl_FragCoord.xy / Screen).r);
         fade = clamp((scene - viewDist) / 0.6, 0.0, 1.0);
     }

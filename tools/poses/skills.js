@@ -585,5 +585,194 @@ S['db.mafuba'] = hold(dbSeal, 6, 86, 10);
 const dbKneel = { lean: 30, drop: 7, rl: { pitch: 80, out: 3 }, ll: { pitch: -40, out: 3 }, ra: { yaw: 6, pitch: -60 }, la: { yaw: 10, pitch: -84 }, head: { yaw: 0, pitch: 30 } };
 S['db.ajoelhado'] = hold(dbKneel, 8, 60, 12);
 
+// ===================== SUBALMAS DE NARUTO (Naruto, Sasuke, Kakashi, Gaara, Shikamaru, Ino) =====================
+// Each one follows the character: Naruto loud and wide open, Sasuke cold and economic, Kakashi relaxed until he moves,
+// Gaara still (only the sand moves), Shikamaru lazy and low, Ino light and precise.
+// nr.molda: W4 E44 back8. Naruto's two hands cupped in front of the chest, the Rasengan turning between them.
+const nrCup = { twist: 12, lean: 8, ...wide, ra: { yaw: -12, pitch: -22 }, la: { yaw: -26, pitch: -6 }, head: { yaw: 0, pitch: 12 } };
+S['nr.molda'] = hold(nrCup, 4, 44, 8, { ...nrCup, lean: 2, ra: { yaw: -4, pitch: -50 }, la: { yaw: -10, pitch: -40 } });
+// nr.investida: W2 E20 back8. Dashing in: the right arm driven forward, body low, the left arm thrown back.
+const nrDash = { twist: 22, lean: 24, rl: { pitch: 34, out: 3 }, ll: { pitch: -34, out: 3 }, ra: { yaw: -4, pitch: 2 }, la: { yaw: 20, pitch: -124 }, head: { yaw: 0, pitch: -10 } };
+S['nr.investida'] = hold(nrDash, 2, 20, 8);
+// nr.selo_cruz: W3 E18 back8. The cross seal in front of the chest ("Kage Bunshin no Jutsu!").
+const nrCross = { lean: 4, ...wide, ra: { yaw: -40, pitch: -28 }, la: { yaw: -40, pitch: -22 }, head: { yaw: 0, pitch: 6 } };
+S['nr.selo_cruz'] = hold(nrCross, 3, 18, 8);
+// nr.chute_alto: W2 E10 back8. A clone's kick straight up under the chin, arms flung back.
+const nrUpKick = { lean: -18, rl: { pitch: 112, out: 2 }, ll: { pitch: -8, out: 3 }, ra: { yaw: 30, pitch: -120 }, la: { yaw: 30, pitch: -120 }, head: { yaw: 0, pitch: -16 } };
+S['nr.chute_alto'] = hold(nrUpKick, 2, 10, 8, { ...nrUpKick, lean: 8, rl: { pitch: 30, out: 3 } });
+// nr.salto: W3 E16 back6. In the air over the target: knees tucked, arms up for balance.
+const nrJump = { lean: -6, rl: { pitch: 64, out: 4 }, ll: { pitch: 52, out: 4 }, ra: { yaw: 50, pitch: 30 }, la: { yaw: 50, pitch: 30 }, head: { yaw: 0, pitch: 20 } };
+S['nr.salto'] = hold(nrJump, 3, 16, 6);
+// nr.calcanhar: W2 E10 back10. The heel brought down from over the head ("Uzumaki Naruto Rendan!").
+const nrHeel = { lean: 20, rl: { pitch: 18, out: 2 }, ll: { pitch: -10, out: 3 }, ra: { yaw: 40, pitch: -60 }, la: { yaw: 40, pitch: -60 }, head: { yaw: 0, pitch: 24 } };
+S['nr.calcanhar'] = hold(nrHeel, 2, 10, 10, { ...nrHeel, lean: -10, rl: { pitch: 150, out: 2 }, ra: { yaw: 50, pitch: 20 }, la: { yaw: 50, pitch: 20 } });
+// nr.meditar: W8 E88 back12. Sitting cross-legged gathering nature energy, hands together in the lap, head bowed.
+const nrSit = { lean: 4, drop: 9, rl: { pitch: 84, out: 16 }, ll: { pitch: 84, out: 16 }, ra: { yaw: -30, pitch: -52 }, la: { yaw: -30, pitch: -52 }, head: { yaw: 0, pitch: 12 } };
+S['nr.meditar'] = hold(nrSit, 8, 88, 12);
+// nr.mao_alto: W4 E60 back8. One arm straight up holding the jutsu over the head (the Rasenshuriken, the Kirin's call).
+const nrUp = { lean: -6, ...wide, ra: { yaw: 8, pitch: 88 }, la: { yaw: 24, pitch: -96 }, head: { yaw: 0, pitch: -14 } };
+S['nr.mao_alto'] = hold(nrUp, 4, 60, 8);
+// nr.chidori: W4 E62 back8. Sasuke low, the right hand down and back crackling, the left hand gripping the wrist.
+const nrChidori = { twist: 32, lean: 16, ...wide, ra: { yaw: 18, pitch: -70 }, la: { yaw: -34, pitch: -42 }, head: { yaw: -10, pitch: 6 } };
+S['nr.chidori'] = hold(nrChidori, 4, 62, 8);
+// nr.leitura: W3 E22 back8. A cold guard: one hand loose in front, weight back, the Sharingan reading.
+const nrRead = { twist: 14, lean: -2, ...stance, ra: { yaw: -16, pitch: -36 }, la: { yaw: -6, pitch: -64 }, head: { yaw: 0, pitch: 4 } };
+S['nr.leitura'] = hold(nrRead, 3, 22, 8);
+// nr.chute_giro: W2 E10 back8. Sasuke's spinning kick from behind, arms out.
+const nrSpin = { twist: -60, lean: -12, rl: { pitch: 80, out: 34 }, ll: { pitch: -4, out: 3 }, ra: { yaw: 70, pitch: -20 }, la: { yaw: 70, pitch: -20 }, head: { yaw: 0, pitch: 4 } };
+S['nr.chute_giro'] = hold(nrSpin, 2, 10, 8, { ...nrSpin, twist: 30, rl: { pitch: 20, out: 10 } });
+// nr.senbon: W2 E14 back8. The needles flicked out from across the body in one tight motion.
+const nrNeedle = { twist: -20, lean: 6, ...stance, ra: { yaw: 30, pitch: 2 }, la: { yaw: 10, pitch: -80 }, head: { yaw: 0, pitch: 2 } };
+S['nr.senbon'] = hold(nrNeedle, 2, 14, 8, { ...nrNeedle, twist: 30, ra: { yaw: -50, pitch: -14 } });
+// nr.selo: W3 E110 back8. The tiger seal in front of the chest, still: Sasuke calling the storm, Kakashi reading a move.
+const nrTiger = { lean: 2, ...stance, ra: { yaw: -36, pitch: -34 }, la: { yaw: -36, pitch: -34 }, head: { yaw: 0, pitch: 6 } };
+S['nr.selo'] = hold(nrTiger, 3, 110, 8);
+// nr.mao_aberta: W3 E100 back8. Gaara's arm out, palm open toward the target; the rest of him doesn't move.
+const nrOpen = { twist: 10, ...stance, ra: { yaw: 6, pitch: 4 }, la: { yaw: 6, pitch: -88 }, head: { yaw: 0, pitch: 0 } };
+S['nr.mao_aberta'] = hold(nrOpen, 3, 100, 8);
+// nr.punho: W1 E14 back8. The open hand closes into a fist ("Sabaku Soso").
+const nrFist = { ...nrOpen, lean: 4, ra: { yaw: 4, pitch: 12 } };
+S['nr.punho'] = { keys: [P(0, nrOpen), P(1, { ...nrOpen, ra: { yaw: 8, pitch: 2 } }, 'out'), P(2, nrFist, 'snap'), P(14, nrFist, 'inout'), P(22, REST, 'inout')] };
+// nr.bracos_cruzados: W4 E40 back8. Arms crossed over the chest while the sand gathers under his feet.
+const nrArms = { lean: -2, ...stance, ra: { yaw: -62, pitch: -24 }, la: { yaw: -62, pitch: -30 }, head: { yaw: 0, pitch: 2 } };
+S['nr.bracos_cruzados'] = hold(nrArms, 4, 40, 8);
+// nr.rato: W3 E130 back8. Shikamaru's rat seal, hands low in front, knees bent, head down.
+const nrRat = { lean: 8, ...wide, ra: { yaw: -34, pitch: -52 }, la: { yaw: -34, pitch: -52 }, head: { yaw: 0, pitch: 10 } };
+S['nr.rato'] = hold(nrRat, 3, 130, 8);
+// nr.losango: W4 E40 back8. Ino's diamond of hands aimed straight at the target (Shintenshin).
+const nrDiamond = { ...stance, ra: { yaw: -22, pitch: -2 }, la: { yaw: -22, pitch: -2 }, head: { yaw: 0, pitch: 0 } };
+S['nr.losango'] = hold(nrDiamond, 4, 40, 8);
+// nr.caida: W6 E90 back12. Her body left behind: slumped forward, arms hanging, head down.
+const nrSlump = { lean: 28, drop: 3, rl: { pitch: 14, out: 4 }, ll: { pitch: -6, out: 4 }, ra: { yaw: 6, pitch: -82 }, la: { yaw: 6, pitch: -82 }, head: { yaw: 0, pitch: 40 } };
+S['nr.caida'] = hold(nrSlump, 6, 90, 12);
+// nr.testa_aponta: W3 E20 back8. Two fingers at the temple, then pointed out: the mind wave.
+const nrTemple = { lean: 0, ...stance, ra: { yaw: -46, pitch: 64 }, la: { yaw: 8, pitch: -86 }, head: { yaw: 0, pitch: 4 } };
+const nrPointOut = { twist: 14, lean: 6, ...stance, ra: { yaw: 2, pitch: 4 }, la: { yaw: 8, pitch: -86 }, head: { yaw: 0, pitch: 0 } };
+S['nr.testa_aponta'] = hold(nrPointOut, 3, 20, 8, nrTemple);
+// nr.fios: W3 E14 back8. Arms spread, fingers pulling the chakra threads between her enemies tight.
+const nrThreads = { lean: -2, ...wide, ra: { yaw: 64, pitch: -8 }, la: { yaw: 64, pitch: -8 }, head: { yaw: 0, pitch: -4 } };
+S['nr.fios'] = hold(nrThreads, 3, 14, 8);
+// nr.raikiri: W4 E40 back6. Kakashi crouched, the right hand at chest height, the left holding the forearm.
+const nrRaikiri = { twist: 20, lean: 14, ...wide, ra: { yaw: -4, pitch: -30 }, la: { yaw: -42, pitch: -40 }, head: { yaw: 0, pitch: 8 } };
+S['nr.raikiri'] = hold(nrRaikiri, 4, 40, 6);
+// nr.mao_chao: W2 E14 back8. The lightning hand driven into the ground, body bent over it.
+const nrGround = { twist: 16, lean: 40, drop: 4, rl: { pitch: 50, out: 6 }, ll: { pitch: -20, out: 6 }, ra: { yaw: 0, pitch: -66 }, la: { yaw: 30, pitch: -110 }, head: { yaw: 0, pitch: 10 } };
+S['nr.mao_chao'] = hold(nrGround, 2, 14, 8);
+// nr.bandana: W4 E62 back8. The left hand lifts the headband off the Sharingan eye; the right hangs loose.
+const nrBand = { lean: -2, ...stance, ra: { yaw: 10, pitch: -84 }, la: { yaw: -30, pitch: 76 }, head: { yaw: 0, pitch: -2 } };
+S['nr.bandana'] = hold(nrBand, 4, 62, 8);
+
 for (const k in S) S[k].keys = S[k].keys.map(fix);
+
+// ===================== SUBALMAS DE JUJUTSU (Itadori, Choso, Nanami, Nobara, Todo, Inumaki, Miwa) =====================
+// Each one follows the character: Itadori all body and energy, Choso calm and exact, Nanami formal (no wasted motion),
+// Nobara cocky with the hammer, Todo huge and brash, Inumaki one hand always at the collar, Miwa the iaido stance.
+// jj.div_punch: W5 E12 back8. Itadori's straight right, pulled back first, the whole body behind it.
+const jjPunch = { twist: -26, lean: 14, ...wide, ra: { yaw: -4, pitch: 2 }, la: { yaw: 20, pitch: -70 }, head: { yaw: 0, pitch: 0 } };
+S['jj.div_punch'] = hold(jjPunch, 5, 12, 8, { ...jjPunch, twist: 30, lean: 4, ra: { yaw: 30, pitch: -70 }, la: { yaw: -20, pitch: -30 } });
+// jj.bf_ready: W3 E18 back6. The fist cocked at the hip, knees bent, eyes on the target: waiting for the ring to close.
+const jjCock = { twist: 30, lean: 8, ...wide, ra: { yaw: 34, pitch: -74 }, la: { yaw: -26, pitch: -24 }, head: { yaw: -14, pitch: 4 } };
+S['jj.bf_ready'] = hold(jjCock, 3, 18, 6);
+// jj.bf_punch: W1 E18 back8. The Black Flash: the arm all the way out and held there through the lightning.
+const jjBlack = { twist: -34, lean: 18, ...wide, drop: 2.2, ra: { yaw: -2, pitch: 6 }, la: { yaw: 30, pitch: -64 }, head: { yaw: 6, pitch: -2 } };
+S['jj.bf_punch'] = hold(jjBlack, 1, 18, 8);
+// jj.manji_guard: W2 E20 back6. Forearms crossed high in front of the face, weight on the back foot.
+const jjGuard = { lean: -4, ...stance, ra: { yaw: -46, pitch: 24 }, la: { yaw: -46, pitch: 30 }, head: { yaw: 0, pitch: 8 } };
+S['jj.manji_guard'] = hold(jjGuard, 2, 20, 6);
+// jj.manji_kick: W2 E8 back8. The high kick out of the guard, the leg straight up, arms flung out for balance.
+const jjKick = { twist: -20, lean: -20, rl: { pitch: 120, out: 4 }, ll: { pitch: -6, out: 3 }, ra: { yaw: 50, pitch: -40 }, la: { yaw: 50, pitch: -30 }, head: { yaw: 0, pitch: -6 } };
+S['jj.manji_kick'] = hold(jjKick, 2, 8, 8, { ...jjKick, lean: 0, rl: { pitch: 40, out: 3 } });
+// jj.dash_charge: W3 E14 back4. Down like a sprinter in the blocks, one hand nearly on the ground.
+const jjSet = { twist: 10, lean: 40, drop: 6, rl: { pitch: -40, out: 4 }, ll: { pitch: 50, out: 4 }, ra: { yaw: 10, pitch: -110 }, la: { yaw: 6, pitch: -40 }, head: { yaw: 0, pitch: -30 } };
+S['jj.dash_charge'] = hold(jjSet, 3, 14, 4);
+// jj.dash_run: W1 E14 back4. Running flat out, leaning far forward, the arms pumping.
+const jjRun = { lean: 34, rl: { pitch: 50, out: 3 }, ll: { pitch: -40, out: 3 }, ra: { yaw: 4, pitch: -130 }, la: { yaw: 4, pitch: -30 }, head: { yaw: 0, pitch: -24 } };
+S['jj.dash_run'] = hold(jjRun, 1, 14, 4);
+// jj.dash_knee: W1 E8 back10. The flying knee: the knee driven up into the target, both arms thrown back.
+const jjKnee = { lean: 10, rl: { pitch: 104, out: 2 }, ll: { pitch: -20, out: 3 }, ra: { yaw: 20, pitch: -140 }, la: { yaw: 20, pitch: -140 }, head: { yaw: 0, pitch: 6 } };
+S['jj.dash_knee'] = hold(jjKnee, 1, 8, 10);
+// jj.blood_charge: W4 E62 back8. Choso's palms pressed together in front of the chest, still, the blood compressing.
+const jjPalms = { lean: 2, ...stance, ra: { yaw: -40, pitch: -14 }, la: { yaw: -40, pitch: -14 }, head: { yaw: 0, pitch: 6 } };
+S['jj.blood_charge'] = hold(jjPalms, 4, 62, 8);
+// jj.blood_shoot: W1 E10 back8. The palms open forward, the line already gone.
+const jjShoot = { lean: -4, ...stance, ra: { yaw: -16, pitch: 4 }, la: { yaw: -16, pitch: 2 }, head: { yaw: 0, pitch: 0 } };
+S['jj.blood_shoot'] = hold(jjShoot, 1, 10, 8);
+// jj.supernova: W3 E12 back6. The hands part slowly from the chest and the orbs leave them.
+const jjOrbs = { lean: -2, ...stance, ra: { yaw: 40, pitch: -30 }, la: { yaw: 40, pitch: -30 }, head: { yaw: 0, pitch: 4 } };
+S['jj.supernova'] = hold(jjOrbs, 3, 12, 6, jjPalms);
+// jj.supernova_burst: W1 E8 back8. Both arms flung wide: the orbs burst.
+const jjBurst = { lean: -6, ...wide, ra: { yaw: 80, pitch: -10 }, la: { yaw: 80, pitch: -10 }, head: { yaw: 0, pitch: -6 } };
+S['jj.supernova_burst'] = hold(jjBurst, 1, 8, 8);
+// jj.rope_throw: W2 E10 back8. The right arm whipped forward and across, letting the rope go.
+const jjWhip = { twist: -24, lean: 8, ...stance, ra: { yaw: -30, pitch: -6 }, la: { yaw: 20, pitch: -80 }, head: { yaw: 0, pitch: 0 } };
+S['jj.rope_throw'] = hold(jjWhip, 2, 10, 8, { ...jjWhip, twist: 20, ra: { yaw: 40, pitch: 30 } });
+// jj.rope_pull: W1 E8 back8. The rope yanked back with both hands, leaning away from it.
+const jjYank = { twist: 20, lean: -16, ...wide, ra: { yaw: 10, pitch: -60 }, la: { yaw: -10, pitch: -40 }, head: { yaw: 0, pitch: -4 } };
+S['jj.rope_pull'] = hold(jjYank, 1, 8, 8);
+// jj.scale_on: W3 E8 back6. Fists clenched low, chest out: the blood runs faster.
+const jjScale = { lean: -6, ...wide, ra: { yaw: 24, pitch: -66 }, la: { yaw: 24, pitch: -66 }, head: { yaw: 0, pitch: -10 } };
+S['jj.scale_on'] = hold(jjScale, 3, 8, 6);
+// jj.scale_punch / jj.scale_punch_l: W1 E4 back3. Short, exact punches, right and left.
+const jjJabR = { twist: -18, lean: 10, ...stance, ra: { yaw: -6, pitch: 0 }, la: { yaw: -30, pitch: -40 }, head: { yaw: 0, pitch: 0 } };
+S['jj.scale_punch'] = hold(jjJabR, 1, 4, 3);
+const jjJabL = { twist: 18, lean: 10, ...stance, ra: { yaw: -30, pitch: -40 }, la: { yaw: -6, pitch: 0 }, head: { yaw: 0, pitch: 0 } };
+S['jj.scale_punch_l'] = hold(jjJabL, 1, 4, 3);
+// jj.uppercut: W1 E6 back8. The right fist up past the head, rising onto the toes.
+const jjUpper = { twist: -20, lean: -14, ...stance, ra: { yaw: -10, pitch: 80 }, la: { yaw: 10, pitch: -70 }, head: { yaw: 0, pitch: -20 } };
+S['jj.uppercut'] = hold(jjUpper, 1, 6, 8, { ...jjUpper, lean: 12, drop: 3, ra: { yaw: 20, pitch: -80 } });
+// jj.ratio_cut: W2 E6 back8. Nanami's blade swept across from right to left, nothing more than needed.
+const jjCut = { twist: -30, lean: 8, ...stance, ra: { yaw: -40, pitch: -10 }, la: { yaw: 10, pitch: -80 }, head: { yaw: 0, pitch: 0 } };
+S['jj.ratio_cut'] = hold(jjCut, 2, 6, 8, { ...jjCut, twist: 30, ra: { yaw: 70, pitch: 10 } });
+// jj.ratio_crit: W3 E6 back10. The blade driven straight into the 7:3 point, the arm locked.
+const jjThrust = { twist: -20, lean: 18, ...wide, ra: { yaw: -4, pitch: -2 }, la: { yaw: 16, pitch: -84 }, head: { yaw: 0, pitch: -2 } };
+S['jj.ratio_crit'] = hold(jjThrust, 3, 6, 10);
+// jj.slam_leap: W2 E8 back4. Up in the air, the right fist raised over the head, knees bent.
+const jjLeap = { lean: -4, rl: { pitch: 50, out: 4 }, ll: { pitch: 40, out: 4 }, ra: { yaw: 10, pitch: 120 }, la: { yaw: 30, pitch: -40 }, head: { yaw: 0, pitch: 20 } };
+S['jj.slam_leap'] = hold(jjLeap, 2, 8, 4);
+// jj.slam_fist: W3 E10 back10. The fist driven into the ground, body bent over it, one knee down.
+const jjSlam = { lean: 44, drop: 6, rl: { pitch: -30, out: 4 }, ll: { pitch: 70, out: 4 }, ra: { yaw: 0, pitch: -150 }, la: { yaw: 30, pitch: -60 }, head: { yaw: 0, pitch: -20 } };
+S['jj.slam_fist'] = hold(jjSlam, 3, 10, 10, jjLeap);
+// jj.overtime: W4 E14 back8. The left hand pulls the tie loose, the head tilts: the clock has stopped.
+const jjTie = { lean: -2, ...stance, ra: { yaw: 10, pitch: -84 }, la: { yaw: -30, pitch: 50 }, head: { yaw: 10, pitch: 10 } };
+S['jj.overtime'] = hold(jjTie, 4, 14, 8);
+// jj.nail_throw: W2 E8 back8. Nobara tosses the nails with the left hand and hits them out of the air with the hammer.
+const jjHit = { twist: -26, lean: 10, ...stance, ra: { yaw: -10, pitch: 4 }, la: { yaw: 10, pitch: 10 }, head: { yaw: 0, pitch: 0 } };
+S['jj.nail_throw'] = hold(jjHit, 2, 8, 8, { ...jjHit, twist: 20, ra: { yaw: 20, pitch: 100 }, la: { yaw: -10, pitch: -20 } });
+// jj.hairpin: W1 E8 back8. The hammer raised beside the head, a cocky snap: "Hairpin".
+const jjPin = { lean: -6, ...stance, ra: { yaw: 30, pitch: 60 }, la: { yaw: 14, pitch: -80 }, head: { yaw: -16, pitch: -8 } };
+S['jj.hairpin'] = hold(jjPin, 1, 8, 8);
+// jj.resonance: W4 E20 back8. The doll held out in the left hand, the hammer brought down on the nail in it.
+const jjDoll = { lean: 8, ...stance, ra: { yaw: -26, pitch: -16 }, la: { yaw: -14, pitch: -20 }, head: { yaw: 0, pitch: 16 } };
+S['jj.resonance'] = hold(jjDoll, 4, 20, 8, { ...jjDoll, ra: { yaw: -10, pitch: 80 } });
+// jj.point_blank: W2 E8 back8. The hammer swung straight into the chest of whoever is touching her.
+const jjPoint = { twist: -24, lean: 16, ...wide, ra: { yaw: -10, pitch: -8 }, la: { yaw: -30, pitch: -10 }, head: { yaw: 0, pitch: 0 } };
+S['jj.point_blank'] = hold(jjPoint, 2, 8, 8, { ...jjPoint, twist: 20, ra: { yaw: 20, pitch: 60 } });
+// jj.clap: W2 E6 back6. Todo's clap: the hands come together hard in front of the chest.
+const jjClap = { lean: 4, ...wide, ra: { yaw: -40, pitch: -6 }, la: { yaw: -40, pitch: -6 }, head: { yaw: 0, pitch: 0 } };
+S['jj.clap'] = hold(jjClap, 2, 6, 6, { ...jjClap, ra: { yaw: 60, pitch: -6 }, la: { yaw: 60, pitch: -6 } });
+// jj.block_rip: W3 E8 back2. Bent down, both hands under the block, tearing it out of the ground.
+const jjRip = { lean: 50, drop: 6, ...wide, ra: { yaw: -10, pitch: -140 }, la: { yaw: -10, pitch: -140 }, head: { yaw: 0, pitch: -20 } };
+S['jj.block_rip'] = hold(jjRip, 3, 8, 2);
+// jj.block_throw: W2 E10 back8. The block heaved over the head and thrown forward high.
+const jjHeave = { lean: -10, ...wide, ra: { yaw: -10, pitch: 120 }, la: { yaw: -10, pitch: 120 }, head: { yaw: 0, pitch: -24 } };
+S['jj.block_throw'] = hold(jjHeave, 2, 10, 8, { ...jjHeave, lean: 20, ra: { yaw: -10, pitch: 30 }, la: { yaw: -10, pitch: 30 } });
+// jj.hammer_punch: W2 E8 back8. Both fists brought down together from over the head.
+const jjHammer = { lean: 30, ...wide, ra: { yaw: -24, pitch: -60 }, la: { yaw: -24, pitch: -60 }, head: { yaw: 0, pitch: -24 } };
+S['jj.hammer_punch'] = hold(jjHammer, 2, 8, 8, { ...jjHammer, lean: -10, ra: { yaw: -20, pitch: 150 }, la: { yaw: -20, pitch: 150 } });
+// jj.speak: W2 E10 back8. Inumaki pulls the collar down off his mouth with the left hand, the right hangs loose.
+const jjCollar = { lean: 4, ...stance, ra: { yaw: 10, pitch: -84 }, la: { yaw: -44, pitch: 24 }, head: { yaw: 0, pitch: -2 } };
+S['jj.speak'] = hold(jjCollar, 2, 10, 8);
+// jj.speak_hard: W2 E14 back10. The collar down, leaning into the word, the right arm thrust down and back.
+const jjShout = { lean: 18, ...wide, ra: { yaw: 30, pitch: -120 }, la: { yaw: -44, pitch: 30 }, head: { yaw: 0, pitch: -10 } };
+S['jj.speak_hard'] = hold(jjShout, 2, 14, 10);
+// jj.batto_stance: W3 E60 back6. Miwa's iaido stance: low, the left hand on the scabbard, the right on the grip across.
+const jjBatto = { twist: 24, lean: 12, drop: 4, rl: { pitch: -24, out: 6 }, ll: { pitch: 30, out: 6 }, ra: { yaw: -50, pitch: -60 }, la: { yaw: -20, pitch: -70 }, head: { yaw: -20, pitch: 4 } };
+S['jj.batto_stance'] = hold(jjBatto, 3, 60, 6);
+// jj.batto_draw: W1 E6 back8. Drawn and swept in one tick: the sword arm out to the right, the body turned through.
+const jjDraw = { twist: -40, lean: 10, drop: 3, rl: { pitch: -24, out: 6 }, ll: { pitch: 30, out: 6 }, ra: { yaw: 60, pitch: -6 }, la: { yaw: -10, pitch: -76 }, head: { yaw: 10, pitch: 2 } };
+S['jj.batto_draw'] = hold(jjDraw, 1, 6, 8);
+// jj.line_cut: W1 E10 back8. Past the target in a low lunge, the blade held out behind.
+const jjLine = { twist: -30, lean: 26, drop: 5, rl: { pitch: 50, out: 4 }, ll: { pitch: -40, out: 4 }, ra: { yaw: 50, pitch: -30 }, la: { yaw: 20, pitch: -90 }, head: { yaw: 0, pitch: -6 } };
+S['jj.line_cut'] = hold(jjLine, 1, 10, 8);
+
 module.exports = S;

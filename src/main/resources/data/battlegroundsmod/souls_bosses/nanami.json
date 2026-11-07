@@ -1,0 +1,199 @@
+{
+  "formato": "souls-boss/1",
+  "boss": "nanami",
+  "poder": "nanami",
+  "tier": 7,
+  "dropAlma": false,
+  "atributos": {
+    "vida": 170,
+    "armadura": 6.7,
+    "velocidade": 0.36,
+    "resistenciaEmpurrao": 0.3,
+    "alcanceVisao": 32,
+    "multDano": 1.0
+  },
+  "intro": {
+    "duracaoTicks": 0,
+    "titulo": "",
+    "subtitulo": "",
+    "cor": "#ffffff"
+  },
+  "percepcao": {
+    "intervaloDecisaoTicks": 6,
+    "aleatoriedade": 0.3,
+    "trocarHumorTicks": 60,
+    "intervaloTecnicasTicks": 100
+  },
+  "distancias": {
+    "soco": 3.0,
+    "ideal": 4,
+    "intervaloSocoTicks": 12
+  },
+  "movimento": {
+    "velocidadeAndar": 0.9,
+    "velocidadeCorrer": 1.25,
+    "trocarLadoTicks": 35
+  },
+  "ritmo": {
+    "calmoMinTicks": 60,
+    "calmoMaxTicks": 100,
+    "rapidoMinTicks": 40,
+    "rapidoMaxTicks": 80,
+    "velocidadeCalmo": 0.85,
+    "velocidadeRapido": 1.25,
+    "recargaInvestidaRapido": 35
+  },
+  "investida": {
+    "recargaTicks": 70,
+    "distanciaMin": 6,
+    "forca": 1.5,
+    "altura": 0.2
+  },
+  "passoSombra": {
+    "recargaTicks": 120,
+    "distanciaMin": 3,
+    "distanciaMax": 14,
+    "atras": 2.0,
+    "chance": 0.2,
+    "chanceCalmo": 0.08,
+    "chanceNaEsquiva": 0.3
+  },
+  "puloDuplo": {
+    "alturaMin": 2.5,
+    "distanciaMax": 6
+  },
+  "teleporte": {
+    "ativo": false,
+    "presoTicks": 100,
+    "distancia": 3
+  },
+  "reacoes": {
+    "chanceEsquivarSkill": 0.4,
+    "chanceEsquivarProjetil": 0.4,
+    "chanceContraAtaque": 0.3,
+    "chanceEsquivarUlt": 0.6,
+    "golpesParaContra": 3,
+    "janelaPressaoTicks": 30,
+    "punirTicks": 80,
+    "multPunir": 2,
+    "golpesParaFugir": 3,
+    "chanceFugirAoApanhar": 0.3
+  },
+  "ultFinal": {
+    "ativa": false
+  },
+  "skills": {
+    "forte": {
+      "slot": 4,
+      "tipo": "golpe",
+      "peso": 1.0,
+      "recargaTicks": 260,
+      "recargaMaxTicks": 400,
+      "avisoTicks": 4,
+      "distanciaMin": 0,
+      "distanciaMax": 4,
+      "giroGrausPorTick": 20,
+      "avisoCor": "#ffffff",
+      "avisoSom": "minecraft:entity.player.attack.sweep"
+    },
+    "barragem": {
+      "slot": 5,
+      "tipo": "barragem",
+      "peso": 1.0,
+      "recargaTicks": 300,
+      "recargaMaxTicks": 460,
+      "avisoTicks": 5,
+      "distanciaMin": 0,
+      "distanciaMax": 3.5,
+      "giroGrausPorTick": 10,
+      "avisoCor": "#ffffff",
+      "avisoSom": "minecraft:entity.player.attack.sweep"
+    },
+    "razao": {
+      "slot": 0,
+      "tipo": "golpe",
+      "peso": 1.2,
+      "recargaTicks": 190,
+      "recargaMaxTicks": 275,
+      "avisoTicks": 4,
+      "distanciaMin": 0,
+      "distanciaMax": 3.8,
+      "giroGrausPorTick": 14,
+      "avisoCor": "#f0d080",
+      "avisoSom": "minecraft:entity.player.attack.sweep"
+    },
+    "colapso": {
+      "slot": 1,
+      "tipo": "golpe",
+      "peso": 1.0,
+      "recargaTicks": 320,
+      "recargaMaxTicks": 464,
+      "avisoTicks": 6,
+      "distanciaMin": 2,
+      "distanciaMax": 8,
+      "giroGrausPorTick": 14,
+      "avisoCor": "#f0d080",
+      "avisoSom": "minecraft:block.anvil.land"
+    },
+    "hora_extra": {
+      "slot": 3,
+      "tipo": "livre",
+      "peso": 0.8,
+      "recargaTicks": 1000,
+      "recargaMaxTicks": 1450,
+      "avisoTicks": 6,
+      "distanciaMin": 0,
+      "distanciaMax": 10,
+      "giroGrausPorTick": 14,
+      "avisoCor": "#ffd040",
+      "avisoSom": "minecraft:block.bell.use"
+    }
+  },
+  "combos": {
+    "nanami_1": {
+      "peso": 1.0,
+      "passos": [
+        "razao",
+        "aproximar",
+        "forte"
+      ]
+    },
+    "nanami_2": {
+      "peso": 1.0,
+      "passos": [
+        "colapso",
+        "aproximar",
+        "razao"
+      ]
+    }
+  },
+  "fases": [
+    {
+      "comecaEm": 1.0,
+      "skills": [
+        "forte",
+        "barragem",
+        "razao",
+        "colapso",
+        "hora_extra"
+      ],
+      "combos": [
+        "nanami_1",
+        "nanami_2"
+      ],
+      "agressividade": 0.75,
+      "multRecarga": 1.0,
+      "menosRecargaTicks": 0,
+      "multVelocidade": 1.0,
+      "multAviso": 1.0,
+      "reacaoTicks": 7,
+      "chanceReacao": 0.6,
+      "pausaTicks": 8,
+      "despertado": false,
+      "corBarra": "white",
+      "transicaoTicks": 0,
+      "titulo": "",
+      "subtitulo": ""
+    }
+  ]
+}

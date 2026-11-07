@@ -19,6 +19,12 @@ import com.starkinhon.battlegroundsmod.power.powers.sub.db.Freeza;
 import com.starkinhon.battlegroundsmod.power.powers.sub.db.Goku;
 import com.starkinhon.battlegroundsmod.power.powers.sub.db.Kame;
 import com.starkinhon.battlegroundsmod.power.powers.sub.db.Kuririn;
+import com.starkinhon.battlegroundsmod.power.powers.sub.nr.Gaara;
+import com.starkinhon.battlegroundsmod.power.powers.sub.nr.Ino;
+import com.starkinhon.battlegroundsmod.power.powers.sub.nr.Kakashi;
+import com.starkinhon.battlegroundsmod.power.powers.sub.nr.Naruto;
+import com.starkinhon.battlegroundsmod.power.powers.sub.nr.Sasuke;
+import com.starkinhon.battlegroundsmod.power.powers.sub.nr.Shikamaru;
 import com.starkinhon.battlegroundsmod.power.powers.sub.db.Piccolo;
 import com.starkinhon.battlegroundsmod.power.powers.sub.db.Vegeta;
 
@@ -49,6 +55,23 @@ public final class Powers {
     public static final Power PICCOLO = registerSub(Piccolo.create());
     public static final Power KAME = registerSub(Kame.create());
     public static final Power KURIRIN = registerSub(Kuririn.create());
+
+    // SubAlmas (Naruto), tiers 6 to 8.
+    public static final Power NARUTO = registerSub(Naruto.create());
+    public static final Power SASUKE = registerSub(Sasuke.create());
+    public static final Power KAKASHI = registerSub(Kakashi.create());
+    public static final Power GAARA = registerSub(Gaara.create());
+    public static final Power SHIKAMARU = registerSub(Shikamaru.create());
+    public static final Power INO = registerSub(Ino.create());
+
+    // SubAlmas (Jujutsu), tiers 6 to 8.
+    public static final Power ITADORI = registerSub(com.starkinhon.battlegroundsmod.power.powers.sub.jj.Itadori.create());
+    public static final Power CHOSO = registerSub(com.starkinhon.battlegroundsmod.power.powers.sub.jj.Choso.create());
+    public static final Power NANAMI = registerSub(com.starkinhon.battlegroundsmod.power.powers.sub.jj.Nanami.create());
+    public static final Power NOBARA = registerSub(com.starkinhon.battlegroundsmod.power.powers.sub.jj.Nobara.create());
+    public static final Power TODO = registerSub(com.starkinhon.battlegroundsmod.power.powers.sub.jj.Todo.create());
+    public static final Power INUMAKI = registerSub(com.starkinhon.battlegroundsmod.power.powers.sub.jj.Inumaki.create());
+    public static final Power MIWA = registerSub(com.starkinhon.battlegroundsmod.power.powers.sub.jj.Miwa.create());
 
     // Mob only.
     public static final Power FIGHTER = registerHidden(Fighter.create());

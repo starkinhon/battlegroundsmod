@@ -45,8 +45,15 @@ public final class Melee {
 
     static float multiplier(LivingEntity player) {
         Power power = Powers.get(player.getData(ModAttachments.POWER).power);
-        float buff = com.starkinhon.battlegroundsmod.power.powers.sub.db.DbCommon.meleeMultiplier(player);
+        float buff = com.starkinhon.battlegroundsmod.power.powers.sub.db.DbCommon.meleeMultiplier(player)
+                * com.starkinhon.battlegroundsmod.power.powers.sub.nr.NrCommon.meleeMultiplier(player)
+                * com.starkinhon.battlegroundsmod.power.powers.sub.jj.JjCommon.meleeMultiplier(player);
         return power == null ? buff : power.meleeMultiplier() * buff;
+    }
+
+    // How far a punch reaches: the combo's reach, plus the Sage Mode's 2 blocks (Kawazu Kumite).
+    static double reach(LivingEntity attacker, ComboSpec spec) {
+        return spec.alcance() + com.starkinhon.battlegroundsmod.power.powers.sub.nr.NrCommon.extraReach(attacker);
     }
 
     static int fistColor(LivingEntity player) {
@@ -73,7 +80,7 @@ public final class Melee {
         }
         data.punchQueued = false;
         if (target == null) {
-            target = closestInFront(attacker, spec.alcance(), 0.55);
+            target = closestInFront(attacker, reach(attacker, spec), 0.55);
         }
         ComboSpec.Passo passo = spec.passo();
         if (target == null) {
@@ -82,7 +89,7 @@ public final class Melee {
                 chase(attacker, target, spec);
                 return true;
             }
-        } else if (attacker.distanceTo(target) > spec.alcance() + 0.5) {
+        } else if (attacker.distanceTo(target) > reach(attacker, spec) + 0.5) {
             chase(attacker, target, spec);
             return true;
         }
@@ -103,7 +110,7 @@ public final class Melee {
             }
             Vec3 to = target.position().subtract(attacker.position());
             Vec3 flat = new Vec3(to.x, 0, to.z);
-            if (!target.isAlive() || flat.length() <= spec.alcance() - 0.6 || age >= passo.ticksMax()) {
+            if (!target.isAlive() || flat.length() <= reach(attacker, spec) - 0.6 || age >= passo.ticksMax()) {
                 data.punchDelay = 0;
                 swing(attacker, target.isAlive() ? target : null, spec);
                 return true;
@@ -171,8 +178,8 @@ public final class Melee {
             return false;
         }
         ServerLevel level = Combat.level(attacker);
-        if (target == null || !Combat.isTarget(target, attacker) || attacker.distanceTo(target) > spec.alcance() + 1.2) {
-            target = closestInFront(attacker, spec.alcance(), 0.55);
+        if (target == null || !Combat.isTarget(target, attacker) || attacker.distanceTo(target) > reach(attacker, spec) + 1.2) {
+            target = closestInFront(attacker, reach(attacker, spec), 0.55);
         }
         if (target == null || !Combat.hurt(attacker, target, (float) golpe.dano() * multiplier(attacker))) {
             SkillSounds.play(level, spec.sons(), "erro", 0, 0, onde -> Combat.handPos(attacker), List.of());
@@ -180,6 +187,7 @@ public final class Melee {
         }
         Stamina.gain(attacker, StaminaSpec.get().ganhoAcertoPct());
         LivingEntity hit = target;
+        com.starkinhon.battlegroundsmod.power.powers.sub.nr.NrCommon.onPunchLanded(attacker, hit);
         // Guarded: the defense already played its effects; no stun, no hitstop.
         if (Defense.blockedThisTick(hit)) {
             return true;

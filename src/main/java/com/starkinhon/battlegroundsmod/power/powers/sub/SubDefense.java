@@ -99,6 +99,14 @@ public final class SubDefense {
         }
         // Dragon Ball: the Suiken's dodges and the Taiyoken's stun broken by a hit from the front.
         com.starkinhon.battlegroundsmod.power.powers.sub.db.DbCommon.onIncomingDamage(event);
+        // Naruto: Sasuke's reading, Gaara's sand, the meditation broken, Ino's link.
+        if (!event.isCanceled()) {
+            com.starkinhon.battlegroundsmod.power.powers.sub.nr.NrCommon.onIncomingDamage(event);
+        }
+        // Jujutsu: the Manji Kick's guard, Supernova's orbs, the sleeper's critical, the fake clap, Nobara's blood.
+        if (!event.isCanceled()) {
+            com.starkinhon.battlegroundsmod.power.powers.sub.jj.JjCommon.onIncomingDamage(event);
+        }
     }
 
     public static void clear() {
