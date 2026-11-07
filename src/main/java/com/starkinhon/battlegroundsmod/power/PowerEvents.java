@@ -151,7 +151,7 @@ public final class PowerEvents {
     private static void onDamage(LivingDamageEvent.Post event) {
         if (event.getSource().getEntity() instanceof ServerPlayer player && player != event.getEntity()) {
             // Measured at human strength, so higher tiers don't fill the ult in one combo.
-            PowerLogic.addUltCharge(player, event.getNewDamage() / Tiers.damageMultiplier(player));
+            PowerLogic.addUltCharge(player, event.getEntity(), event.getNewDamage() / Tiers.damageMultiplier(player));
         }
         if (event.getSource().getEntity() instanceof LivingEntity attacker && attacker != event.getEntity()) {
             CombatMode.refresh(attacker);

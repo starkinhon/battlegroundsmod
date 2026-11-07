@@ -161,18 +161,6 @@ public final class UchihaFx {
         Fx.burst(level, ParticleTypes.FLAME, pos, 6, 0.3, 0.03);
     }
 
-    // Placeholder look: a red flash in the eyes, right after the cutscene zooms in.
-    public static void mangekyoEyes(ServerLevel level, LivingEntity caster) {
-        Vec3 eyes = caster.getEyePosition().add(caster.getLookAngle().scale(0.3));
-        Fx.burst(level, Fx.dust(0xD10A0A, 1.2f), eyes, 12, 0.15, 0);
-    }
-
-    public static void mangekyoHit(ServerLevel level, LivingEntity target) {
-        Vec3 head = target.getEyePosition();
-        Fx.ring(level, Fx.dust(0xD10A0A, 1.5f), head.add(0, 0.4, 0), 0.6, 16, 0);
-        Fx.burst(level, Fx.dust(0x1A0000, 2f), head, 20, 0.4, 0);
-    }
-
     // Susanoo counter is ready: a low hum. The arm with its shield is drawn on the clients (client/fx/SusanooArm)
     // for as long as the window stays open.
     public static void susanooReady(ServerLevel level, LivingEntity player, SusanooSpec spec) {
@@ -181,24 +169,21 @@ public final class UchihaFx {
         Fx.sound(level, pos, SoundEvents.WITHER_SHOOT, 0.6f, 0.4f);
     }
 
+    // Grab, crush and throw only play sounds here: the look is the mod's own vfx from madara.susanoo.json
+    // (agarrar, esmagar, arremesso). The Minecraft particles (soul, crit, dust) were taken out (no vanilla particles on hits).
     public static void susanooGrab(ServerLevel level, LivingEntity player, LivingEntity target, SusanooSpec spec) {
         Fx.sound(level, player.position(), SoundEvents.WARDEN_SONIC_CHARGE, 1.5f, 1.4f);
         Fx.sound(level, target.position(), SoundEvents.IRON_GOLEM_ATTACK, 1.5f, 0.5f);
-        Fx.burst(level, ParticleTypes.SOUL, Combat.center(target), 15, 0.5, 0.05);
     }
 
     public static void susanooCrush(ServerLevel level, LivingEntity target, SusanooSpec spec) {
         Vec3 center = Combat.center(target);
-        Fx.sphere(level, Fx.dust(parseColor(spec.visual().cor()), 2.5f), center, 0.5, 30);
-        Fx.burst(level, ParticleTypes.CRIT, center, 25, 0.4, 0.4);
         Fx.sound(level, center, SoundEvents.ANVIL_LAND, 0.8f, 0.6f);
         Fx.sound(level, center, SoundEvents.SKELETON_HURT, 1f, 0.5f);
     }
 
     public static void susanooThrow(ServerLevel level, LivingEntity target, SusanooSpec spec) {
         Vec3 center = Combat.center(target);
-        Fx.burst(level, Fx.dust(parseColor(spec.visual().cor()), 3f), center, 30, 0.8, 0);
-        Fx.burst(level, ParticleTypes.SOUL_FIRE_FLAME, center, 25, 0.6, 0.15);
         Fx.sound(level, center, SoundEvents.PLAYER_ATTACK_KNOCKBACK, 2f, 0.5f);
         Fx.sound(level, center, SoundEvents.WARDEN_ATTACK_IMPACT, 1.5f, 0.7f);
     }
