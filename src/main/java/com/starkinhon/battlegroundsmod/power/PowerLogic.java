@@ -63,6 +63,12 @@ public final class PowerLogic {
             player.displayClientMessage(Component.translatable("message.battlegroundsmod.no_power"), true);
             return;
         }
+        if (slot >= 0 && slot < PowerData.SLOT_COUNT && player.isAlive() && !player.isSpectator()) {
+            // Any skill key puts the fighter in combat mode (and gives it its full 30 s again) right away, before the
+            // move itself: also the second presses below (closing the domain, stopping the Katon, commanding the Blue)
+            // and a press that fails (cooldown, no target), since pressing a skill means fighting (Stark, 2026-11-07).
+            enterCombat(player);
+        }
         if (PowerData.isUlt(slot) && com.starkinhon.battlegroundsmod.power.powers.aizen.Hogyoku.dash(player)) {
             // V while evolved: Aizen's dash of cuts.
             return;
@@ -177,6 +183,9 @@ public final class PowerLogic {
             return false;
         }
         ServerLevel level = Combat.level(caster);
+        // In combat mode before the move runs, so the move starts with everything that comes with it already on (the
+        // aura, Kokushibo's sword out of the sheath on the first frame, the ult bar). Bosses come through here too.
+        enterCombat(caster);
         if (!ability(power, slot).action().use(caster, level)) {
             return false;
         }
@@ -184,11 +193,19 @@ public final class PowerLogic {
         data.lastCastTime = level.getGameTime();
         // Kakashi's Sharingan remembers what was used near him.
         com.starkinhon.battlegroundsmod.power.powers.sub.nr.NrCommon.recordCast(caster, power.id(), slot);
-        CombatMode.enter(caster);
         if (PowerData.isUlt(slot)) {
             announceUlt(caster, power, slot);
         }
         return true;
+    }
+
+    // Starts combat mode (or gives it its full time again) and, for a player, tells everyone at once that the sword left
+    // the sheath, instead of waiting for the next tick.
+    public static void enterCombat(LivingEntity caster) {
+        CombatMode.enter(caster);
+        if (caster instanceof ServerPlayer player) {
+            syncSheath(player);
+        }
     }
 
     // Big title on the screen of everyone nearby. Makes ults read well on video.
