@@ -4,7 +4,6 @@ import java.util.Comparator;
 import java.util.List;
 
 import com.starkinhon.battlegroundsmod.ModAttachments;
-import com.starkinhon.battlegroundsmod.fx.ModParticles;
 import com.starkinhon.battlegroundsmod.movement.Movement;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
 import com.starkinhon.battlegroundsmod.power.Ability;
@@ -12,7 +11,6 @@ import com.starkinhon.battlegroundsmod.power.PowerData;
 import com.starkinhon.battlegroundsmod.skill.ComboSpec;
 import com.starkinhon.battlegroundsmod.skill.DashAtaqueSpec;
 
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
@@ -52,7 +50,6 @@ public final class DashAttack {
         }
         SkillSounds.play(level, spec.sons(), "uso", 0, ticks, onde -> attacker.position(), List.of());
         Fx.effects(level, SKILL, false, "uso", attacker.position().add(0, 1, 0), dir[0]);
-        Fx.burst(level, ParticleTypes.GUST_EMITTER_SMALL, attacker.position().add(0, 0.2, 0), 1, 0, 0);
         Tasks.add(age -> {
             if (!attacker.isAlive() || data.interrupts != interrupts || Freeze.isFrozen(attacker) || !Stun.canAttack(attacker)) {
                 stop(attacker, data, false);
@@ -136,17 +133,12 @@ public final class DashAttack {
         ComboSpec.Golpe base = combo.golpe(step);
         DashAtaqueSpec.Golpe hit = spec.golpe();
         ComboSpec.Golpe golpe = new ComboSpec.Golpe(base.nome(), base.dano() * hit.multiplicadorDano(), hit.empurrao(), hit.subida(), 0,
-                hit.stunTicks(), hit.hitstopTicks(), hit.tremor(), base.recuperacaoTicks(), base.momento(), base.tempo(), base.animacao());
+                hit.stunTicks(), hit.hitstopTicks(), hit.tremor(), base.recuperacaoTicks(), "dash", base.tempo(), base.animacao());
         Melee.strike(attacker, target, step, golpe, () -> {
             ServerLevel level = Combat.level(attacker);
             Vec3 at = Combat.center(target);
             SkillSounds.play(level, spec.sons(), "golpe", 0, 0, onde -> "alvo".equals(onde) ? at : attacker.position(), List.of());
             Fx.effects(level, SKILL, false, "golpe", at, Combat.flatLook(attacker));
-            Fx.burst(level, ParticleTypes.GUST, at, 1, 0, 0);
-            int color = rgb(spec.rastro().cor());
-            for (int i = 0; i < 2; i++) {
-                Fx.burst(level, ModParticles.ring(color, (float) (spec.rastro().tamanhoAnel() * (1.2 + i * 0.6)), 6 + i * 2), at, 1, 0, 0);
-            }
         });
     }
 
@@ -159,37 +151,13 @@ public final class DashAttack {
         }
     }
 
-    // Speed lines streaking back from the body, wind puffs at the feet and a wind ring every few ticks.
+    // The slide's look (combat/PunchFx TRAIL, every tick): a vapor cone tinted with the soul in front of the body, soul
+    // flames behind it and dust at the feet; plus the file's "rastro" vfx every few ticks.
     private static void trail(ServerLevel level, LivingEntity attacker, Vec3 dir, DashAtaqueSpec spec, int age) {
+        PunchFx.follow(level, PunchFx.TRAIL, attacker, dir, Melee.fistColor(attacker), 0);
         DashAtaqueSpec.Rastro rastro = spec.rastro();
-        int color = rgb(rastro.cor());
-        Vec3 center = Combat.center(attacker);
-        Vec3 back = dir.scale(-1);
-        Vec3 side = new Vec3(-dir.z, 0, dir.x);
-        for (int i = 0; i < rastro.linhas(); i++) {
-            Vec3 at = center.add(side.scale((level.random.nextDouble() - 0.5) * 1.4))
-                    .add(0, (level.random.nextDouble() - 0.5) * attacker.getBbHeight(), 0)
-                    .add(back.scale(level.random.nextDouble() * 0.8));
-            Fx.moving(level, ModParticles.streak(color, (float) rastro.comprimentoLinha(), rastro.vidaTicks()), at, back.scale(0.45));
-        }
-        for (int i = 0; i < rastro.puffs(); i++) {
-            Vec3 feet = attacker.position().add(side.scale((level.random.nextDouble() - 0.5) * 0.8)).add(0, 0.1, 0);
-            Fx.moving(level, ModParticles.puff(color, 0.25f + level.random.nextFloat() * 0.2f, 8 + level.random.nextInt(5), 0.85f),
-                    feet, back.scale(0.12).add(0, 0.03, 0));
-        }
-        if (rastro.anelACadaTicks() > 0 && age % rastro.anelACadaTicks() == 0) {
-            Fx.burst(level, ModParticles.ring(color, (float) rastro.tamanhoAnel(), 6), center.add(back.scale(0.6)), 1, 0, 0);
-        }
         if (rastro.rastroACadaTicks() > 0 && age % rastro.rastroACadaTicks() == 0) {
-            Fx.effects(level, SKILL, false, "rastro", center, dir);
-        }
-    }
-
-    private static int rgb(String hex) {
-        try {
-            return Integer.parseInt(hex.replace("#", ""), 16);
-        } catch (RuntimeException e) {
-            return 0xFFFFFF;
+            Fx.effects(level, SKILL, false, "rastro", Combat.center(attacker), dir);
         }
     }
 }

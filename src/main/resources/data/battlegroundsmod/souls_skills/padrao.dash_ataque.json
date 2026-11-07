@@ -98,8 +98,6 @@
   "vfx": [
     {"tipo": "fov", "momento": "uso", "forca": 0.18, "vidaTicks": 12, "alcance": 2},
     {"tipo": "blurRadial", "momento": "uso", "forca": 0.35, "vidaTicks": 8, "alcance": 2},
-    {"tipo": "anel", "momento": "golpe", "raio": 2, "tamanho": 0.45, "cor": "#ffffff", "vidaTicks": 8, "alcance": 40},
-    {"tipo": "clarao", "momento": "golpe", "tamanho": 1.3, "quantidade": 5, "cor": "#ffffff", "cor2": "#eef6ff", "vidaTicks": 6, "alcance": 40},
     {"tipo": "tremor", "momento": "golpe", "forca": 0.3, "vidaTicks": 6, "alcance": 6}
   ]
 }
