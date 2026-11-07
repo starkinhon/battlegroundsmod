@@ -293,6 +293,10 @@ public final class ClientHooks {
         Aura.state(entityId, power);
     }
 
+    public static void stanceState(int entityId, String power) {
+        StancePoses.set(entityId, power);
+    }
+
     public static void outfitState(int entityId, String power) {
         com.starkinhon.battlegroundsmod.client.outfit.Outfits.set(entityId, power);
     }

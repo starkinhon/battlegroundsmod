@@ -248,6 +248,10 @@ public final class SkillAnimations {
                 float weight = (float) (raw <= end ? 1 : 1 - (raw - end) / KEYFRAME_OUT);
                 float seconds = (float) seconds(keyframed, raw);
                 keyframed.animation().apply(model, seconds, weight);
+                // As the move blends out, the character's own stance blends in (not Minecraft's plain standing pose).
+                if (weight < 1 && StancePoses.wants(entity, model, ageInTicks)) {
+                    StancePoses.pose(entity, model, ageInTicks, 1 - weight);
+                }
                 if (keyframed.animation().followLook()) {
                     model.head.xRot += lookX;
                     model.head.yRot += lookY;
@@ -279,6 +283,10 @@ public final class SkillAnimations {
             entity.yBodyRot = entity.yBodyRotO = entity.getYHeadRot();
         }
         if (!animating && !guard && cut == null) {
+            if (StancePoses.wants(entity, model, ageInTicks)) {
+                stance(entity, model, ageInTicks);
+                return;
+            }
             unshift(model);
             return;
         }
@@ -309,6 +317,27 @@ public final class SkillAnimations {
         leg(model.rightLeg, pose.pernaDir(), 1);
         leg(model.leftLeg, pose.pernaEsq(), -1);
         turn((float) pose.pernas() * DEG, model.rightLeg, model.leftLeg);
+        model.hat.copyFrom(model.head);
+        SHIFTED.add(model);
+    }
+
+    // Nothing playing: the character's standing / walking / running pose (StancePoses). The head keeps following the
+    // aim, and an arm holding something keeps Minecraft's way of holding it (only moved with the shoulder).
+    private static void stance(LivingEntity entity, HumanoidModel<?> model, float ageInTicks) {
+        float lookX = model.head.xRot;
+        float lookY = model.head.yRot;
+        float[] right = model.rightArmPose != HumanoidModel.ArmPose.EMPTY ? new float[] {model.rightArm.xRot, model.rightArm.yRot, model.rightArm.zRot} : null;
+        float[] left = model.leftArmPose != HumanoidModel.ArmPose.EMPTY ? new float[] {model.leftArm.xRot, model.leftArm.yRot, model.leftArm.zRot} : null;
+        standStill(model);
+        StancePoses.pose(entity, model, ageInTicks, 1);
+        model.head.xRot += lookX;
+        model.head.yRot += lookY;
+        if (right != null) {
+            model.rightArm.setRotation(right[0], right[1], right[2]);
+        }
+        if (left != null) {
+            model.leftArm.setRotation(left[0], left[1], left[2]);
+        }
         model.hat.copyFrom(model.head);
         SHIFTED.add(model);
     }
@@ -411,6 +440,11 @@ public final class SkillAnimations {
         }
         model.body.z = 0;
         model.head.z = 0;
+        // nor the x of the head, body and legs (a pose that turns the hips moves them)
+        model.head.x = 0;
+        model.body.x = 0;
+        model.rightLeg.x = -1.9f;
+        model.leftLeg.x = 1.9f;
         // (a hand-made animation may have scaled parts; the model is shared by everyone drawn with it)
         for (ModelPart part : new ModelPart[] {model.head, model.body, model.rightArm, model.leftArm, model.rightLeg, model.leftLeg}) {
             part.xScale = part.yScale = part.zScale = 1;

@@ -1050,6 +1050,20 @@ public final class ModPayloads {
         }
     }
 
+    // A player's power, for everyone who sees them (client/StancePoses: each character's way of standing and walking).
+    public record StanceState(int entityId, String power) implements CustomPacketPayload {
+        public static final Type<StanceState> TYPE = payloadType("stance_state");
+        public static final StreamCodec<ByteBuf, StanceState> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, StanceState::entityId,
+                ByteBufCodecs.STRING_UTF8, StanceState::power,
+                StanceState::new);
+
+        @Override
+        public Type<StanceState> type() {
+            return TYPE;
+        }
+    }
+
     public static void register(RegisterPayloadHandlersEvent event) {
         PayloadRegistrar registrar = event.registrar("1");
         registrar.playToServer(UseAbility.TYPE, UseAbility.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
@@ -1202,6 +1216,8 @@ public final class ModPayloads {
                 () -> ClientHooks.auraState(payload.entityId(), payload.power())));
         registrar.playToClient(OutfitState.TYPE, OutfitState.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.outfitState(payload.entityId(), payload.power())));
+        registrar.playToClient(StanceState.TYPE, StanceState.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.stanceState(payload.entityId(), payload.power())));
         registrar.playToServer(ToggleOutfit.TYPE, ToggleOutfit.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer player) {
                 player.getData(ModAttachments.POWER).outfit = payload.on();
