@@ -26,6 +26,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 // Hand-to-hand moves every power shares: the punch combo on left click (values in souls_skills/padrao.combo.json),
 // a strong punch that charges while held and a barrage that lasts while held. The Dash Attack is in DashAttack.
+// With a sword in hand the Forte, the Barragem and the Dash Attack are sword moves instead (SwordArts).
 public final class Melee {
     public static final Ability STRONG = new Ability(60, 0, Melee::strong);
     public static final Ability BARRAGE = new Ability(140, 10, Melee::barrageMove);
@@ -38,12 +39,12 @@ public final class Melee {
     private Melee() {
     }
 
-    private static float multiplier(LivingEntity player) {
+    static float multiplier(LivingEntity player) {
         Power power = Powers.get(player.getData(ModAttachments.POWER).power);
         return power == null ? 1f : power.meleeMultiplier();
     }
 
-    private static int fistColor(LivingEntity player) {
+    static int fistColor(LivingEntity player) {
         Power power = Powers.get(player.getData(ModAttachments.POWER).power);
         return power == null ? 0xFFFFFF : power.color();
     }
@@ -193,14 +194,14 @@ public final class Melee {
 
     // The combo's hit look (padrao.combo.json vfx of that momento, "golpe" or "final", plus a burst in the fist color),
     // shared by every punch: combo, Dash Attack, Forte and Barragem.
-    private static void hitFx(LivingEntity attacker, LivingEntity hit, String momento) {
+    static void hitFx(LivingEntity attacker, LivingEntity hit, String momento) {
         ServerLevel level = Combat.level(attacker);
         Vec3 at = hitPos(attacker, hit);
         Fx.effects(level, ComboSpec.get().skill(), false, momento, at, attacker.getLookAngle());
         Fx.burst(level, Fx.dust(fistColor(attacker), 1.1f), at, 5, 0.15, 0);
     }
 
-    private static void shake(LivingEntity entity, float strength, int ticks) {
+    static void shake(LivingEntity entity, float strength, int ticks) {
         if (strength > 0 && entity instanceof ServerPlayer player) {
             PacketDistributor.sendToPlayer(player, new ModPayloads.ScreenShake(strength, ticks));
         }
@@ -223,6 +224,9 @@ public final class Melee {
     // Short wind-up, then a heavy punch that sends the target flying. Holding the base attack key charges it: up to
     // STRONG_CHARGE_TICKS more, for up to STRONG_CHARGE_BONUS more damage and a harder throw. Bosses never hold it.
     private static boolean strong(LivingEntity player, ServerLevel level) {
+        if (SwordArts.held(player)) {
+            return SwordArts.strong(player, level);
+        }
         PowerData data = player.getData(ModAttachments.POWER);
         float mult = multiplier(player);
         int color = fistColor(player);
@@ -288,6 +292,9 @@ public final class Melee {
     }
 
     private static boolean barrageMove(LivingEntity player, ServerLevel level) {
+        if (SwordArts.held(player)) {
+            return SwordArts.barrage(player, level);
+        }
         barrage(player, 20, BARRAGE_HELD_TICKS, 4.0, 1.5f * multiplier(player), 6f * multiplier(player), fistColor(player));
         return true;
     }
@@ -362,7 +369,7 @@ public final class Melee {
     }
 
     // The fist color pulled towards white, so wind and rings read as light even for dark powers.
-    private static int lighter(int color) {
+    static int lighter(int color) {
         int r = (color >> 16 & 0xFF) + (255 - (color >> 16 & 0xFF)) * 3 / 5;
         int g = (color >> 8 & 0xFF) + (255 - (color >> 8 & 0xFF)) * 3 / 5;
         int b = (color & 0xFF) + (255 - (color & 0xFF)) * 3 / 5;

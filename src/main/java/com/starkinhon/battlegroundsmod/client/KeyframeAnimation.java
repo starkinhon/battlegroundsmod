@@ -26,6 +26,8 @@ import net.minecraft.util.Mth;
 // Rotations are degrees and positions pixels, as the editor shows them (x and y flipped into Minecraft's axes). Before the first keyframe a
 // channel holds its first value, after the last its last, so the final pose stays as long as the skill wants it.
 // Bones: Head, Body, Right Arm, Left Arm, Right Leg, Left Leg (spaces, underscores and case don't matter).
+// One more bone, Item, turns what the right hand holds about the wrist (the sword moves): its rotation is degrees in
+// the hand's own frame, applied Z then Y then X, with nothing flipped (see SkillAnimations.wrist).
 public final class KeyframeAnimation {
     private record Keyframe(float time, float x, float y, float z, boolean smooth) {
     }
@@ -38,9 +40,27 @@ public final class KeyframeAnimation {
     private static final float DEG = (float) (Math.PI / 180);
 
     private final List<Channel> channels;
+    private final Keyframe[] wrist;
+    private final float length;
 
-    private KeyframeAnimation(List<Channel> channels) {
+    private KeyframeAnimation(List<Channel> channels, Keyframe[] wrist, float length) {
         this.channels = channels;
+        this.wrist = wrist;
+        this.length = length;
+    }
+
+    // Seconds, from the file's "length" (or the last keyframe).
+    public float length() {
+        return length;
+    }
+
+    // The hand's turn at this time (radians x, y, z, scaled by weight), or null when the animation doesn't turn it.
+    public float[] wrist(float seconds, float weight) {
+        if (wrist == null) {
+            return null;
+        }
+        float[] v = sample(wrist, seconds);
+        return new float[] {v[0] * DEG * weight, v[1] * DEG * weight, v[2] * DEG * weight};
     }
 
     // The hand-made animation of this skill, if it has one.
@@ -57,6 +77,8 @@ public final class KeyframeAnimation {
         try (Reader reader = resource.get().openAsReader()) {
             JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
             List<Channel> channels = new ArrayList<>();
+            Keyframe[] wrist = null;
+            float end = 0;
             for (JsonElement element : root.getAsJsonArray("animations")) {
                 JsonObject anim = element.getAsJsonObject();
                 String bone = anim.get("bone").getAsString().toLowerCase().replace(" ", "").replace("_", "");
@@ -72,10 +94,16 @@ public final class KeyframeAnimation {
                 }
                 keys.sort((a, b) -> Float.compare(a.time(), b.time()));
                 if (!keys.isEmpty()) {
+                    end = Math.max(end, keys.get(keys.size() - 1).time());
+                }
+                if (!keys.isEmpty() && "item".equals(bone)) {
+                    wrist = keys.toArray(new Keyframe[0]);
+                } else if (!keys.isEmpty()) {
                     channels.add(new Channel(bone, target, keys.toArray(new Keyframe[0])));
                 }
             }
-            return Optional.of(new KeyframeAnimation(channels));
+            float length = root.has("length") ? root.get("length").getAsFloat() : end;
+            return Optional.of(new KeyframeAnimation(channels, wrist, length));
         } catch (Exception e) {
             BattlegroundsMod.LOGGER.error("Bad animation {}", id, e);
             return Optional.empty();

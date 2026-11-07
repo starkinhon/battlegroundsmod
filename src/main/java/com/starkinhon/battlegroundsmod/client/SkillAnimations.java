@@ -48,10 +48,14 @@ public final class SkillAnimations {
     private static final Map<Integer, Playing> PLAYING = new HashMap<>();
     // Skills with a hand-made keyframe animation (KeyframeAnimation) play it instead of the Forja pose: from startTick
     // for endTicks (the last pose held), then blended out over KEYFRAME_OUT ticks.
-    private record Keyframed(KeyframeAnimation animation, int startTick, int endTicks) {
+    private record Keyframed(KeyframeAnimation animation, int startTick, int endTicks, String skill) {
     }
 
     private static final Map<Integer, Keyframed> KEYFRAMED = new HashMap<>();
+    // The sword moves (combat/SwordArts) are the keyframe animations named "espada.<move>".
+    public static final String SWORD_PREFIX = "espada.";
+    // How the right hand is turned about the wrist right now (the sword moves), radians x, y, z: entity id -> angles.
+    private static final Map<Integer, float[]> WRIST = new HashMap<>();
     private static final double KEYFRAME_OUT = 6;
     // Entities whose body is kept square with where they look while their move plays (a teleport that turns them
     // around would otherwise leave the body turned sideways, since vanilla only drags it along once the head is far off).
@@ -68,6 +72,7 @@ public final class SkillAnimations {
     public static void play(int entityId, String skill, boolean awakened) {
         SQUARE.remove(entityId);
         KEYFRAMED.remove(entityId);
+        WRIST.remove(entityId);
         if (skill.isEmpty()) {
             PLAYING.remove(entityId);
             return;
@@ -76,7 +81,12 @@ public final class SkillAnimations {
                 ? java.util.Optional.<KeyframeAnimation>empty() : KeyframeAnimation.of(skill);
         Entity who = entity(entityId);
         if (keyframes.isPresent() && who != null) {
-            KEYFRAMED.put(entityId, new Keyframed(keyframes.get(), who.tickCount, keyframeEnd(skill, awakened)));
+            KEYFRAMED.put(entityId, new Keyframed(keyframes.get(), who.tickCount, keyframeEnd(skill, awakened), skill));
+            if (skill.startsWith(SWORD_PREFIX)) {
+                // The cuts are made facing ahead: the body turns with the aim, or they would go off to the side.
+                SQUARE.add(entityId);
+                return;
+            }
         }
         String[] parts = skill.split("#");
         if (parts.length > 1 && AgarraoSpec.SKILL.equals(parts[0])) {
@@ -124,6 +134,9 @@ public final class SkillAnimations {
 
     // How long a hand-made animation runs, the last pose held to the end. Gojo's domain: until the tunnel is over.
     private static int keyframeEnd(String skill, boolean awakened) {
+        if (skill.startsWith(SWORD_PREFIX)) {
+            return KeyframeAnimation.of(skill).map(a -> (int) Math.ceil(a.length() * 20)).orElse(0);
+        }
         if (com.starkinhon.battlegroundsmod.skill.DominioSpec.SKILL.equals(skill)) {
             return com.starkinhon.battlegroundsmod.skill.DominioSpec.get(awakened).voidTick();
         }
@@ -150,6 +163,32 @@ public final class SkillAnimations {
         return raw >= -1 && raw <= keyframed.endTicks() + KEYFRAME_OUT;
     }
 
+    // True while this entity plays a sword move (its blade leaves a trail, client/fx/BladeTrail).
+    public static boolean swordMove(Entity entity, float ageInTicks) {
+        Keyframed keyframed = KEYFRAMED.get(entity.getId());
+        if (keyframed == null || !keyframed.skill().startsWith(SWORD_PREFIX)) {
+            return false;
+        }
+        double raw = ageInTicks - keyframed.startTick();
+        return raw >= -1 && raw <= keyframed.endTicks() + KEYFRAME_OUT;
+    }
+
+    // The sword move playing (null when none), and how far into it, in ticks.
+    public static String swordMoveName(Entity entity) {
+        Keyframed keyframed = KEYFRAMED.get(entity.getId());
+        return keyframed == null || !keyframed.skill().startsWith(SWORD_PREFIX) ? null : keyframed.skill();
+    }
+
+    public static int swordMoveStart(Entity entity) {
+        Keyframed keyframed = KEYFRAMED.get(entity.getId());
+        return keyframed == null ? 0 : keyframed.startTick();
+    }
+
+    // How the main hand item is turned about the wrist right now (null: as vanilla holds it). Set while the body is posed.
+    public static float[] wrist(Entity entity) {
+        return WRIST.get(entity.getId());
+    }
+
     // Called after the vanilla pose is set up. Angles are added on top, so the head still follows the aim.
     public static void apply(LivingEntity entity, HumanoidModel<?> model, float ageInTicks) {
         Keyframed keyframed = KEYFRAMED.get(entity.getId());
@@ -157,10 +196,21 @@ public final class SkillAnimations {
             double raw = ageInTicks - keyframed.startTick();
             if (raw > keyframed.endTicks() + KEYFRAME_OUT || raw < -1) {
                 KEYFRAMED.remove(entity.getId());
+                WRIST.remove(entity.getId());
+                SQUARE.remove(entity.getId());
             } else {
                 standStill(model);
+                if (SQUARE.contains(entity.getId())) {
+                    entity.yBodyRot = entity.yBodyRotO = entity.getYHeadRot();
+                }
                 float weight = (float) (raw <= keyframed.endTicks() ? 1 : 1 - (raw - keyframed.endTicks()) / KEYFRAME_OUT);
                 keyframed.animation().apply(model, (float) Math.max(0, raw) / 20f, weight);
+                float[] wrist = keyframed.animation().wrist((float) Math.max(0, raw) / 20f, weight);
+                if (wrist == null) {
+                    WRIST.remove(entity.getId());
+                } else {
+                    WRIST.put(entity.getId(), wrist);
+                }
                 model.hat.copyFrom(model.head);
                 SHIFTED.add(model);
                 return;
@@ -176,7 +226,7 @@ public final class SkillAnimations {
         boolean guard = ageInTicks != 0 && GUARDING.contains(entity.getId());
         // The Editor de Cutscenes can pose the body too, on top of the move or in its place.
         CutscenePlayer.PoseOverride cut = ageInTicks != 0 ? CutscenePlayer.pose(entity) : null;
-        if (!animating) {
+        if (!animating && !KEYFRAMED.containsKey(entity.getId())) {
             SQUARE.remove(entity.getId());
         } else if (SQUARE.contains(entity.getId())) {
             entity.yBodyRot = entity.yBodyRotO = entity.getYHeadRot();
