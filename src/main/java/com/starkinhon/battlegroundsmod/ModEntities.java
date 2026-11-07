@@ -10,6 +10,7 @@ import com.starkinhon.battlegroundsmod.boss.SoulMob;
 import com.starkinhon.battlegroundsmod.dummy.AttackerDummy;
 import com.starkinhon.battlegroundsmod.dummy.TrainingDummy;
 import com.starkinhon.battlegroundsmod.power.powers.aizen.AizenIllusion;
+import com.starkinhon.battlegroundsmod.power.powers.sub.nr.NarutoClone;
 
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.EntityType;
@@ -74,6 +75,15 @@ public final class ModEntities {
                     .clientTrackingRange(16)
                     .build("aizen_illusion"));
 
+    // Naruto's shadow clones (power/powers/sub/nr/Naruto).
+    public static final Supplier<EntityType<NarutoClone>> NARUTO_CLONE = ENTITY_TYPES.register("naruto_clone",
+            () -> EntityType.Builder.<NarutoClone>of(NarutoClone::new, MobCategory.MISC)
+                    .sized(0.6f, 1.8f)
+                    .eyeHeight(1.62f)
+                    .noSummon()
+                    .clientTrackingRange(16)
+                    .build("naruto_clone"));
+
     // SubAlma mobs: each fights with its SubAlma's skills (souls_bosses/<id>.json), as a plain monster.
     public static final Supplier<EntityType<SoulMob>> BYAKUYA = mob("byakuya");
     public static final Supplier<EntityType<SoulMob>> RUKIA = mob("rukia");
@@ -83,13 +93,20 @@ public final class ModEntities {
     public static final Supplier<EntityType<SoulMob>> PICCOLO = mob("piccolo");
     public static final Supplier<EntityType<SoulMob>> KAME = mob("kame");
     public static final Supplier<EntityType<SoulMob>> KURIRIN = mob("kuririn");
+    public static final Supplier<EntityType<SoulMob>> NARUTO = mob("naruto");
+    public static final Supplier<EntityType<SoulMob>> SASUKE = mob("sasuke");
+    public static final Supplier<EntityType<SoulMob>> KAKASHI = mob("kakashi");
+    public static final Supplier<EntityType<SoulMob>> GAARA = mob("gaara");
+    public static final Supplier<EntityType<SoulMob>> SHIKAMARU = mob("shikamaru");
+    public static final Supplier<EntityType<SoulMob>> INO = mob("ino");
 
     // Fighters: weak mobs with only the base combat, Tier 10 (human), 9 (street) and 8 (block).
     public static final Supplier<EntityType<SoulMob>> FIGHTER_HUMANO = mob("fighter_humano");
     public static final Supplier<EntityType<SoulMob>> FIGHTER_RUA = mob("fighter_rua");
     public static final Supplier<EntityType<SoulMob>> FIGHTER_QUARTEIRAO = mob("fighter_quarteirao");
 
-    public static final java.util.List<Supplier<EntityType<SoulMob>>> SUB_MOBS = java.util.List.of(BYAKUYA, RUKIA, GOKU, VEGETA, FREEZA, PICCOLO, KAME, KURIRIN);
+    public static final java.util.List<Supplier<EntityType<SoulMob>>> SUB_MOBS = java.util.List.of(BYAKUYA, RUKIA, GOKU, VEGETA, FREEZA, PICCOLO, KAME, KURIRIN,
+            NARUTO, SASUKE, KAKASHI, GAARA, SHIKAMARU, INO);
     public static final java.util.List<Supplier<EntityType<SoulMob>>> FIGHTERS = java.util.List.of(FIGHTER_HUMANO, FIGHTER_RUA, FIGHTER_QUARTEIRAO);
 
     private static Supplier<EntityType<SoulMob>> mob(String id) {
@@ -128,6 +145,7 @@ public final class ModEntities {
         event.put(DUMMY.get(), TrainingDummy.createAttributes().build());
         event.put(DUMMY_ATTACKER.get(), TrainingDummy.createAttributes().build());
         event.put(AIZEN_ILLUSION.get(), AizenIllusion.createAttributes().build());
+        event.put(NARUTO_CLONE.get(), NarutoClone.createAttributes().build());
         for (Supplier<EntityType<SoulMob>> type : SUB_MOBS) {
             event.put(type.get(), SoulBoss.createAttributes().build());
         }

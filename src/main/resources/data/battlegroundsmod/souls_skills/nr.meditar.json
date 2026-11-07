@@ -1,0 +1,37 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "nr.meditar",
+  "nome": "Meditação",
+  "tempo": {
+    "atrasoTicks": 8,
+    "duracaoTicks": 80
+  },
+  "animacao": {
+    "transicaoTicks": 8,
+    "preparo": {
+      "cabeca": 0,
+      "tronco": 4,
+      "bracoDir": {
+        "frente": 18,
+        "abrir": 10
+      },
+      "bracoEsq": {
+        "frente": 18,
+        "abrir": -10
+      }
+    },
+    "sopro": {
+      "cabeca": 0,
+      "tronco": 8,
+      "bracoDir": {
+        "frente": 30,
+        "abrir": 16
+      },
+      "bracoEsq": {
+        "frente": 30,
+        "abrir": -16
+      }
+    },
+    "retornoTicks": 12
+  }
+}

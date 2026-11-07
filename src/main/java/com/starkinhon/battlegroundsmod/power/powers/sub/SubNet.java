@@ -139,6 +139,91 @@ public final class SubNet {
     // A scar torn in the ground from pos along dir: a = width, b = ticks it stays.
     public static final int SCAR = 60;
 
+    // ---- Naruto (client/fx/NrFx). "Stream" = sent every tick, c = 1 on the last message. ----
+    // The Rasengan (stream): id = its own, pos, a = radius, b = how much (0..1); c = 2 while it forms in the palm (the
+    // chakra spiraling in); dir = where it grinds (zero when it doesn't).
+    public static final int RASENGAN = 61;
+    // A shadow clone's puff of white smoke at pos: a = size.
+    public static final int POOF = 62;
+    // The wind drill behind someone launched (stream): id = them, pos = their middle, a = how much.
+    public static final int DRILL = 63;
+    // The Rasenshuriken (stream): id = its own, pos, a = how grown the blades are (0..1), b = their reach.
+    public static final int RASENSHURIKEN = 64;
+    // Its sphere of wind needles at pos: a = radius, b = ticks it lasts, dir.x = the ground's height.
+    public static final int WIND_SPHERE = 65;
+    // Nature energy coming from far into id (stream): a = how much.
+    public static final int SAGE_GATHER = 66;
+    // Sage Mode switching on at pos (the feet): a wave of nature, leaves and dust.
+    public static final int SAGE_BURST = 67;
+    // Glowing eyes on id for a ticks (a = 0 stops them): b = 0 Sage (orange), 1 Sharingan, 2 Ino's purple, 3 Kakashi's
+    // Mangekyo (the left eye only).
+    public static final int EYES = 68;
+    // Kawazu Kumite: the wave of the punch from pos to pos + dir.
+    public static final int KAWAZU = 69;
+    // A ball of lightning in the hand (stream): id = its own, pos, a = radius, b = 0 Chidori, 1 Raikiri (paler, finer);
+    // dir = a point on the ground the bolts scratch (zero = none).
+    public static final int CHIDORI = 70;
+    // The Chidori's trail from pos to pos + dir: bolts along it and a burned line on the ground a blocks under it.
+    public static final int BOLT_TRAIL = 71;
+    // Lightning bursting out of a body hit at pos, going on along dir.
+    public static final int PIERCE = 72;
+    // One Chidori Senbon needle from pos to pos + dir.
+    public static final int SENBON = 73;
+    // Sparks running over id, paralyzed, for a ticks.
+    public static final int PARALYZE = 74;
+    // Storm clouds gathering round pos (high in the sky): a = ticks until the strike, b = radius.
+    public static final int STORM = 75;
+    // The Kirin: a dragon of lightning from pos (the sky) down to pos + dir.
+    public static final int KIRIN = 76;
+    // Sasuke's afterimage: from pos (the feet he left) a red streak to pos + dir, a = his height.
+    public static final int AFTERIMAGE = 77;
+    // Gaara's sand wall rising round pos (his feet) toward dir.
+    public static final int SAND_WALL = 78;
+    // The Sand Hand (stream): id = its own, pos = its foot on the ground, dir = the way it faces, a = how far out of the
+    // ground (0..1), b = how far it tips forward (0..1); c = 2 closed into a fist.
+    public static final int SAND_HAND = 79;
+    // The Sand Coffin's shell (stream): id = its own, pos = the feet of the one inside, a = how grown (0..1), b = how
+    // crushed (0..1), dir.x = how big (their height / 1.8).
+    public static final int SAND_SHELL = 80;
+    // Sand bursting out of pos: a = size.
+    public static final int SAND_BURST = 81;
+    // The sand platform under id (stream): pos = under the feet, a = how formed, b = how melted, dir.x = the ground.
+    public static final int SAND_PLAT = 82;
+    // Sand running along the ground from pos to pos + dir in a ticks (b = 1: gathering in round pos from a dir.length radius).
+    public static final int SAND_FLOW = 83;
+    // A shadow stretched along the ground (stream): id = its own, pos = from, dir = to - from, a = how far (0..1), b = width.
+    public static final int SHADOW = 84;
+    // The shadow standing up round id's body (stream): a = how high (0..1).
+    public static final int BODY_SHADOW = 85;
+    // The shadow hand closing on id's neck (stream): a = ticks since it started closing.
+    public static final int NECK_HAND = 86;
+    // Kage Nui's shadow spikes round pos (stream): id = its own, a = how grown (0..1), b = seed.
+    public static final int SPIKES = 87;
+    // A paper bomb stuck in the ground at pos (stream): id = its own.
+    public static final int TAG = 88;
+    // A kunai thrown from pos to pos + dir in a ticks.
+    public static final int KUNAI = 89;
+    // An explosion of fire in the Katon's style at pos: a = radius, c = seed, dir.x = the ground's height.
+    public static final int FIRE_BOOM = 90;
+    // Ino's spirit form (stream): id = its own, pos = its feet, dir = where it faces, a = how visible.
+    public static final int SPIRIT = 91;
+    // The Shinranshin's purple wave from pos along dir.
+    public static final int MIND_WAVE = 92;
+    // Purple threads spinning over id's head (confused) for a ticks.
+    public static final int CONFUSED = 93;
+    // A purple thread (stream): id = its own, from pos to pos + dir, a = how far it reached (0..1), b = how visible.
+    public static final int THREAD = 94;
+    // A pulse running along a thread from pos to pos + dir.
+    public static final int PULSE = 95;
+    // The lightning hound (stream): id = its own, pos = its head, dir = the way it runs.
+    public static final int RAIJU = 96;
+    // Kamui's spiral (stream): id = its own, pos = center, dir = its axis (toward Kakashi), a = how open (0..1).
+    public static final int KAMUI = 97;
+    // Screen effects for id only (the local player): a = preset (DbFx.screen).
+    public static final int SELF_SCREEN = 98;
+    // Dust thrown up from the ground at pos (something slammed into it): a = size.
+    public static final int DUST = 99;
+
     public static final int STYLE_SUKUNA = 0;
     public static final int STYLE_PINK = 1;
     public static final int STYLE_CRIMSON = 2;

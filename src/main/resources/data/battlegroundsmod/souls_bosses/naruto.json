@@ -1,0 +1,214 @@
+{
+  "formato": "souls-boss/1",
+  "boss": "naruto",
+  "poder": "naruto",
+  "tier": 6,
+  "dropAlma": false,
+  "atributos": {
+    "vida": 230,
+    "armadura": 6.7,
+    "velocidade": 0.36,
+    "resistenciaEmpurrao": 0.3,
+    "alcanceVisao": 32,
+    "multDano": 1.0
+  },
+  "intro": {
+    "duracaoTicks": 0,
+    "titulo": "",
+    "subtitulo": "",
+    "cor": "#ffffff"
+  },
+  "percepcao": {
+    "intervaloDecisaoTicks": 6,
+    "aleatoriedade": 0.3,
+    "trocarHumorTicks": 60,
+    "intervaloTecnicasTicks": 100
+  },
+  "distancias": {
+    "soco": 3.0,
+    "ideal": 9,
+    "intervaloSocoTicks": 12
+  },
+  "movimento": {
+    "velocidadeAndar": 0.9,
+    "velocidadeCorrer": 1.25,
+    "trocarLadoTicks": 35
+  },
+  "ritmo": {
+    "calmoMinTicks": 60,
+    "calmoMaxTicks": 100,
+    "rapidoMinTicks": 40,
+    "rapidoMaxTicks": 80,
+    "velocidadeCalmo": 0.85,
+    "velocidadeRapido": 1.25,
+    "recargaInvestidaRapido": 35
+  },
+  "investida": {
+    "recargaTicks": 70,
+    "distanciaMin": 6,
+    "forca": 1.5,
+    "altura": 0.2
+  },
+  "passoSombra": {
+    "recargaTicks": 120,
+    "distanciaMin": 3,
+    "distanciaMax": 14,
+    "atras": 2.0,
+    "chance": 0.2,
+    "chanceCalmo": 0.08,
+    "chanceNaEsquiva": 0.3
+  },
+  "puloDuplo": {
+    "alturaMin": 2.5,
+    "distanciaMax": 6
+  },
+  "teleporte": {
+    "ativo": false,
+    "presoTicks": 100,
+    "distancia": 3
+  },
+  "reacoes": {
+    "chanceEsquivarSkill": 0.4,
+    "chanceEsquivarProjetil": 0.4,
+    "chanceContraAtaque": 0.3,
+    "chanceEsquivarUlt": 0.6,
+    "golpesParaContra": 3,
+    "janelaPressaoTicks": 30,
+    "punirTicks": 80,
+    "multPunir": 2,
+    "golpesParaFugir": 3,
+    "chanceFugirAoApanhar": 0.3
+  },
+  "ultFinal": {
+    "ativa": false
+  },
+  "skills": {
+    "forte": {
+      "slot": 4,
+      "tipo": "golpe",
+      "peso": 1.0,
+      "recargaTicks": 260,
+      "recargaMaxTicks": 400,
+      "avisoTicks": 4,
+      "distanciaMin": 0,
+      "distanciaMax": 4,
+      "giroGrausPorTick": 20,
+      "avisoCor": "#ffffff",
+      "avisoSom": "minecraft:entity.player.attack.sweep"
+    },
+    "barragem": {
+      "slot": 5,
+      "tipo": "barragem",
+      "peso": 1.0,
+      "recargaTicks": 300,
+      "recargaMaxTicks": 460,
+      "avisoTicks": 5,
+      "distanciaMin": 0,
+      "distanciaMax": 3.5,
+      "giroGrausPorTick": 10,
+      "avisoCor": "#ffffff",
+      "avisoSom": "minecraft:entity.player.attack.sweep"
+    },
+    "rasengan": {
+      "slot": 0,
+      "tipo": "livre",
+      "peso": 1.0,
+      "recargaTicks": 220,
+      "recargaMaxTicks": 320,
+      "avisoTicks": 4,
+      "distanciaMin": 0,
+      "distanciaMax": 14,
+      "giroGrausPorTick": 12,
+      "avisoCor": "#9fd8ff",
+      "avisoSom": "minecraft:entity.breeze.charge"
+    },
+    "kage_bunshin": {
+      "slot": 1,
+      "tipo": "livre",
+      "peso": 0.9,
+      "recargaTicks": 320,
+      "recargaMaxTicks": 440,
+      "avisoTicks": 4,
+      "distanciaMin": 0,
+      "distanciaMax": 16,
+      "giroGrausPorTick": 12,
+      "avisoCor": "#ffb066",
+      "avisoSom": "minecraft:entity.illusioner.cast_spell"
+    },
+    "rendan": {
+      "slot": 2,
+      "tipo": "golpe",
+      "peso": 1.0,
+      "recargaTicks": 260,
+      "recargaMaxTicks": 360,
+      "avisoTicks": 4,
+      "distanciaMin": 0,
+      "distanciaMax": 5,
+      "giroGrausPorTick": 12,
+      "avisoCor": "#ffb066",
+      "avisoSom": "minecraft:entity.player.attack.strong"
+    },
+    "sennin": {
+      "slot": 3,
+      "tipo": "ult",
+      "peso": 0.8,
+      "recargaTicks": 1200,
+      "recargaMaxTicks": 1600,
+      "avisoTicks": 10,
+      "distanciaMin": 4,
+      "distanciaMax": 24,
+      "giroGrausPorTick": 12,
+      "avisoCor": "#ff8a1a",
+      "avisoSom": "minecraft:block.beacon.activate"
+    }
+  },
+  "combos": {
+    "naruto_1": {
+      "peso": 1.0,
+      "passos": [
+        "kage_bunshin",
+        "aproximar",
+        "rasengan"
+      ]
+    },
+    "naruto_2": {
+      "peso": 1.0,
+      "passos": [
+        "aproximar",
+        "rendan",
+        "soco",
+        "forte"
+      ]
+    }
+  },
+  "fases": [
+    {
+      "comecaEm": 1.0,
+      "skills": [
+        "forte",
+        "barragem",
+        "rasengan",
+        "kage_bunshin",
+        "rendan",
+        "sennin"
+      ],
+      "combos": [
+        "naruto_1",
+        "naruto_2"
+      ],
+      "agressividade": 0.75,
+      "multRecarga": 1.0,
+      "menosRecargaTicks": 0,
+      "multVelocidade": 1.0,
+      "multAviso": 1.0,
+      "reacaoTicks": 7,
+      "chanceReacao": 0.6,
+      "pausaTicks": 8,
+      "despertado": false,
+      "corBarra": "white",
+      "transicaoTicks": 0,
+      "titulo": "",
+      "subtitulo": ""
+    }
+  ]
+}

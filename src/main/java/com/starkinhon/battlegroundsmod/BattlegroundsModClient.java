@@ -189,6 +189,13 @@ public class BattlegroundsModClient {
         event.registerEntityRenderer(ModEntities.PICCOLO.get(), context -> new SoulBossRenderer<>(context, "piccolo", false));
         event.registerEntityRenderer(ModEntities.KAME.get(), context -> new SoulBossRenderer<>(context, "kame", false));
         event.registerEntityRenderer(ModEntities.KURIRIN.get(), context -> new SoulBossRenderer<>(context, "kuririn", false));
+        event.registerEntityRenderer(ModEntities.NARUTO.get(), context -> new SoulBossRenderer<>(context, "naruto", false));
+        event.registerEntityRenderer(ModEntities.SASUKE.get(), context -> new SoulBossRenderer<>(context, "sasuke", false));
+        event.registerEntityRenderer(ModEntities.KAKASHI.get(), context -> new SoulBossRenderer<>(context, "kakashi", false));
+        event.registerEntityRenderer(ModEntities.GAARA.get(), context -> new SoulBossRenderer<>(context, "gaara", false));
+        event.registerEntityRenderer(ModEntities.SHIKAMARU.get(), context -> new SoulBossRenderer<>(context, "shikamaru", false));
+        event.registerEntityRenderer(ModEntities.INO.get(), context -> new SoulBossRenderer<>(context, "ino", true));
+        event.registerEntityRenderer(ModEntities.NARUTO_CLONE.get(), com.starkinhon.battlegroundsmod.client.NarutoCloneRenderer::new);
         event.registerEntityRenderer(ModEntities.FIGHTER_HUMANO.get(),
                 context -> new SoulBossRenderer<>(context, false, "fighter_humano_0", "fighter_humano_1", "fighter_humano_2"));
         event.registerEntityRenderer(ModEntities.FIGHTER_RUA.get(),

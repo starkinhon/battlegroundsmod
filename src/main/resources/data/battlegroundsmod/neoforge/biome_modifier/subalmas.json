@@ -49,6 +49,42 @@
       "weight": 1,
       "minCount": 1,
       "maxCount": 1
+    },
+    {
+      "type": "battlegroundsmod:naruto",
+      "weight": 1,
+      "minCount": 1,
+      "maxCount": 1
+    },
+    {
+      "type": "battlegroundsmod:sasuke",
+      "weight": 1,
+      "minCount": 1,
+      "maxCount": 1
+    },
+    {
+      "type": "battlegroundsmod:kakashi",
+      "weight": 1,
+      "minCount": 1,
+      "maxCount": 1
+    },
+    {
+      "type": "battlegroundsmod:gaara",
+      "weight": 1,
+      "minCount": 1,
+      "maxCount": 1
+    },
+    {
+      "type": "battlegroundsmod:shikamaru",
+      "weight": 1,
+      "minCount": 1,
+      "maxCount": 1
+    },
+    {
+      "type": "battlegroundsmod:ino",
+      "weight": 1,
+      "minCount": 1,
+      "maxCount": 1
     }
   ]
 }

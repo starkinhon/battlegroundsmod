@@ -71,8 +71,8 @@ public final class DbFx {
     private static final List<Fx> SHOTS = new ArrayList<>();
     private static final Map<Long, Fx> TRACKED = new HashMap<>();
     // Which pass is drawing: true the glow (additive), false the alpha layer.
-    private static boolean pass;
-    private static Vec3 cam = Vec3.ZERO;
+    static boolean pass;
+    static Vec3 cam = Vec3.ZERO;
 
     private DbFx() {
     }
@@ -90,6 +90,10 @@ public final class DbFx {
     }
 
     static void receive(int kind, int id, Vec3 pos, Vec3 dir, float a, float b, float c) {
+        if (kind >= SubNet.RASENGAN) {
+            NrFx.receive(kind, id, pos, dir, a, b, c);
+            return;
+        }
         double now = ScreenFx.now();
         if (stream(kind)) {
             Fx f = TRACKED.get(key(kind, id));
@@ -162,12 +166,13 @@ public final class DbFx {
     }
 
     static boolean active() {
-        return !SHOTS.isEmpty() || !TRACKED.isEmpty();
+        return !SHOTS.isEmpty() || !TRACKED.isEmpty() || NrFx.active();
     }
 
     static void clear() {
         SHOTS.clear();
         TRACKED.clear();
+        NrFx.clear();
     }
 
     private static double life(Fx f) {
@@ -282,29 +287,30 @@ public final class DbFx {
                 }
             }
         }
+        NrFx.draw(now, partial);
     }
 
     // ---------- drawing in the right pass ----------
 
-    private static void bb(Vector3f c, float size, float spin, int shape, float param, float[] col, float op, boolean glow) {
+    static void bb(Vector3f c, float size, float spin, int shape, float param, float[] col, float op, boolean glow) {
         if (glow == pass && op > 0.002f) {
             FxDraw.billboard(c, size, spin, shape, param, col, op, glow);
         }
     }
 
-    private static void rib(Vector3f a, Vector3f b, float w, int shape, float param, float[] col, float op, boolean glow) {
+    static void rib(Vector3f a, Vector3f b, float w, int shape, float param, float[] col, float op, boolean glow) {
         if (glow == pass && op > 0.002f) {
             FxDraw.ribbon(a, b, w, shape, param, col, op, glow);
         }
     }
 
-    private static void dsk(Vector3f c, Vector3f n, float size, int shape, float param, float[] col, float op, boolean glow) {
+    static void dsk(Vector3f c, Vector3f n, float size, int shape, float param, float[] col, float op, boolean glow) {
         if (glow == pass && op > 0.002f) {
             FxDraw.disk(c, n, size, shape, param, col, op, glow);
         }
     }
 
-    private static void warp(Vector3f at, float radius, float strength, int mode, float age, Vector3f axis) {
+    static void warp(Vector3f at, float radius, float strength, int mode, float age, Vector3f axis) {
         if (pass && strength > 0.001f) {
             Vec3 world = cam.add(at.x, at.y, at.z);
             ScreenFx.holdWarp(world, radius, strength, mode, axis == null ? new Vec3(0, 1, 0) : new Vec3(axis.x, axis.y, axis.z), age / 20);
@@ -1041,7 +1047,7 @@ public final class DbFx {
     }
 
     // A lit cylinder (12 sides) standing on base from y0 to y1, tipped by tilt radians round x.
-    private static void cylinder(Vector3f base, float rTop, float rBottom, float y0, float y1, float tilt, float[] col, float op) {
+    static void cylinder(Vector3f base, float rTop, float rBottom, float y0, float y1, float tilt, float[] col, float op) {
         int n = 12;
         float cos = Mth.cos(tilt);
         float sin = Mth.sin(tilt);
@@ -1091,7 +1097,7 @@ public final class DbFx {
     }
 
     // A lit square bar from a to b, w thick.
-    private static void box(Vector3f a, Vector3f b, float w, float[] col, float op) {
+    static void box(Vector3f a, Vector3f b, float w, float[] col, float op) {
         Vector3f d = new Vector3f(b).sub(a);
         if (d.lengthSquared() < 1.0E-6f) {
             return;
@@ -1324,6 +1330,22 @@ public final class DbFx {
                 ScreenFx.impactFrame(new int[] {0, 3, 2}, 1, 0xFFFFFF, pos, 0);
                 ScreenShake.start(near, 12);
             }
+            // Naruto: Sage Mode switching on.
+            case 21 -> {
+                ScreenFx.flash(0xFFCF80, 0.2f * near, 8);
+                ScreenShake.start(0.4f * near, 10);
+            }
+            // Shikamaru's paper bomb.
+            case 22 -> {
+                ScreenFx.flash(0xFFF0C0, 0.7f * near, 8);
+                ScreenFx.impactFrame(new int[] {0, 3, 1}, 1, 0xFF7A12, pos, 0);
+                ScreenShake.start(1.8f * near, 26);
+            }
+            // Kakashi's sight blurred after the Kamui (sent to him only).
+            case 23 -> {
+                ScreenFx.vignette(0x101018, 0.55f, 40);
+                ScreenFx.radialBlur(mc.player.getEyePosition().add(mc.player.getLookAngle().scale(3)), 0.7f, 40);
+            }
             default -> {
             }
         }
@@ -1340,36 +1362,36 @@ public final class DbFx {
         return (float) (f.dir.x - cam.y);
     }
 
-    private static Vector3f rel(Vec3 world) {
+    static Vector3f rel(Vec3 world) {
         return new Vector3f((float) (world.x - cam.x), (float) (world.y - cam.y), (float) (world.z - cam.z));
     }
 
-    private static Vector3f at(Vector3f p, Vector3f d, float k) {
+    static Vector3f at(Vector3f p, Vector3f d, float k) {
         return new Vector3f(p).add(d.x * k, d.y * k, d.z * k);
     }
 
-    private static Vector3f sphere(int seed, int k) {
+    static Vector3f sphere(int seed, int k) {
         Vec3 d = Db.sphereDir(seed, k);
         return new Vector3f((float) d.x, (float) d.y, (float) d.z);
     }
 
-    private static Vector3f rotY(Vector3f v, float a) {
+    static Vector3f rotY(Vector3f v, float a) {
         // THREE's applyAxisAngle(up, a): x' = x cos + z sin, z' = -x sin + z cos.
         float c = Mth.cos(a);
         float s = Mth.sin(a);
         return new Vector3f(v.x * c + v.z * s, v.y, -v.x * s + v.z * c);
     }
 
-    private static float fract(float x) {
+    static float fract(float x) {
         return x - (float) Math.floor(x);
     }
 
-    private static float smooth(float x) {
+    static float smooth(float x) {
         x = Mth.clamp(x, 0, 1);
         return x * x * (3 - 2 * x);
     }
 
-    private static float easeOut(float t) {
+    static float easeOut(float t) {
         float u = 1 - Mth.clamp(t, 0, 1);
         return 1 - u * u * u;
     }
