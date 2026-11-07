@@ -65,6 +65,8 @@ public final class PowerEvents {
         NeoForge.EVENT_BUS.addListener(Izanami::onEntityJoin);
         NeoForge.EVENT_BUS.addListener(EventPriority.HIGHEST, Izanami::onDeath);
         NeoForge.EVENT_BUS.addListener(EventPriority.LOW, com.starkinhon.battlegroundsmod.power.powers.gojo.InfiniteVoid::onDeath);
+        // Last, so a death the Izanami undoes never stops anything.
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, com.starkinhon.battlegroundsmod.combat.SkillStop::onDeath);
     }
 
     private static void onServerTick(ServerTickEvent.Post event) {

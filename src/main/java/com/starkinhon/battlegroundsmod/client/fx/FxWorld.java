@@ -25,7 +25,8 @@ import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 // the same as one and they never drift between frames.
 public final class FxWorld {
     // follow: the entity it sticks to (-1 for none). life covers the whole show, emission stops at emitFor.
-    private record Piece(String skill, Efeito e, Vec3 pos, Vec3 dir, long start, int life, int emitFor, int seed, int follow) {
+    // owner: whose move it belongs to (-1 unknown), see stopOwner.
+    private record Piece(String skill, Efeito e, Vec3 pos, Vec3 dir, long start, int life, int emitFor, int seed, int follow, int owner) {
     }
 
     private static final List<Piece> PIECES = new ArrayList<>();
@@ -57,15 +58,38 @@ public final class FxWorld {
             total += (int) Math.ceil(d(e.comprimento(), 25) / Math.max(0.1, d(e.velocidade(), 1.4))) + 2;
         }
         PIECES.add(new Piece(skill, e, pos, dir.lengthSqr() < 1.0E-6 ? new Vec3(0, 1, 0) : dir.normalize(), ScreenFx.now(), total, life, seeds++ * 7919,
-                follow));
+                follow, SkillEffects.owner()));
     }
 
     // Fades out every effect of this skill stuck to this entity (a counter window that closed early, say).
     public static void stopFollowing(String skill, int follow) {
         long now = ScreenFx.now();
         PIECES.replaceAll(p -> p.follow() == follow && p.skill().equals(skill) && now - p.start() < p.life() - 10
-                ? new Piece(p.skill(), p.e(), p.pos(), p.dir(), now - p.life() + 10, p.life(), p.emitFor(), p.seed(), p.follow()) : p);
+                ? new Piece(p.skill(), p.e(), p.pos(), p.dir(), now - p.life() + 10, p.life(), p.emitFor(), p.seed(), p.follow(), p.owner()) : p);
     }
+
+    // owner's move was cut off: everything of it still burning goes out over a few ticks (a fire stream stops pouring,
+    // flames already out burn away) instead of playing to its end.
+    public static void stopOwner(int owner) {
+        long now = ScreenFx.now();
+        PIECES.replaceAll(p -> {
+            if (p.owner() != owner) {
+                return p;
+            }
+            int age = (int) (now - p.start());
+            if ("jatoFogo".equals(p.e().tipo())) {
+                // No more flames come out; the ones in the air finish their flight.
+                int emit = Math.max(0, Math.min(p.emitFor(), age));
+                int life = Math.min(p.life(), age + 12);
+                return new Piece(p.skill(), p.e(), p.pos(), p.dir(), p.start(), life, emit, p.seed(), p.follow(), p.owner());
+            }
+            return age < p.life() - STOP_FADE
+                    ? new Piece(p.skill(), p.e(), p.pos(), p.dir(), now - p.life() + STOP_FADE, p.life(), p.emitFor(), p.seed(), p.follow(), p.owner())
+                    : p;
+        });
+    }
+
+    private static final int STOP_FADE = 6;
 
     // Every moving piece of this skill (a slash in flight) is gone at once: the attack was pulverized.
     public static void erase(String skill) {

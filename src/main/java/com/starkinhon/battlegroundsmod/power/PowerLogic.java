@@ -158,6 +158,8 @@ public final class PowerLogic {
         data.punchQueued = false;
         Susanoo.cancel(target);
         PacketDistributor.sendToPlayersTrackingEntityAndSelf(target, new ModPayloads.PlaySkillAnimation(target.getId(), "", false));
+        // Their sounds and effects stop with the move.
+        com.starkinhon.battlegroundsmod.combat.SkillStop.stop(target);
     }
 
     // Runs a move of the caster's power, with no costs and no cooldown set: players go through tryUse, bosses set

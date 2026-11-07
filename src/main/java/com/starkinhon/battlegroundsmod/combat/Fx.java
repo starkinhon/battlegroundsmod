@@ -11,6 +11,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -88,24 +89,24 @@ public final class Fx {
     // Plays the skill file's "vfx" for this moment on every client close enough to see it (screen effects
     // like impact frames and bending, and the shader-drawn world effects).
     public static void effects(ServerLevel level, String skill, boolean awakened, String momento, Vec3 pos, Vec3 dir) {
-        broadcast(level, pos, new ModPayloads.PlayEffects(skill, awakened, momento, pos, dir, -1, 0));
+        broadcast(level, pos, new ModPayloads.PlayEffects(skill, awakened, momento, pos, dir, -1, 0, owner()));
     }
 
     // Same, lasting ticks for the effects that last as long as the moment (duraMomento).
     public static void effects(ServerLevel level, String skill, boolean awakened, String momento, Vec3 pos, Vec3 dir, int ticks) {
-        broadcast(level, pos, new ModPayloads.PlayEffects(skill, awakened, momento, pos, dir, -1, ticks));
+        broadcast(level, pos, new ModPayloads.PlayEffects(skill, awakened, momento, pos, dir, -1, ticks, owner()));
     }
 
     // Same, with effects that can stick to entity (seguir in the file) for ticks (duraMomento).
     public static void effects(ServerLevel level, String skill, boolean awakened, String momento, Entity entity, int ticks) {
         Vec3 pos = entity.position().add(0, entity.getBbHeight() / 2, 0);
-        broadcast(level, pos, new ModPayloads.PlayEffects(skill, awakened, momento, pos, entity.getLookAngle(), entity.getId(), ticks));
+        broadcast(level, pos, new ModPayloads.PlayEffects(skill, awakened, momento, pos, entity.getLookAngle(), entity.getId(), ticks, owner()));
     }
 
     // Only for one player's screen (the one being burned, say).
     public static void effectsTo(ServerPlayer player, String skill, boolean awakened, String momento, int ticks) {
         PacketDistributor.sendToPlayer(player, new ModPayloads.PlayEffects(skill, awakened, momento, player.getEyePosition(), player.getLookAngle(),
-                player.getId(), ticks));
+                player.getId(), ticks, owner()));
     }
 
     private static void broadcast(ServerLevel level, Vec3 pos, ModPayloads.PlayEffects payload) {
@@ -116,7 +117,19 @@ public final class Fx {
         }
     }
 
+    // The id of whoever's move is running now, so its effects go away with it (SkillStop); -1 when unknown.
+    private static int owner() {
+        Entity owner = Tasks.owner();
+        return owner instanceof LivingEntity ? owner.getId() : -1;
+    }
+
+    // A move's sound belongs to its owner: the clients play it themselves so it stops when the move is cut off.
     public static void sound(ServerLevel level, Vec3 pos, SoundEvent sound, float volume, float pitch) {
+        Entity owner = Tasks.owner();
+        if (owner instanceof LivingEntity) {
+            SkillStop.sound(level, owner, pos, sound, volume, pitch);
+            return;
+        }
         level.playSound(null, pos.x, pos.y, pos.z, sound, SoundSource.PLAYERS, volume, pitch);
     }
 
