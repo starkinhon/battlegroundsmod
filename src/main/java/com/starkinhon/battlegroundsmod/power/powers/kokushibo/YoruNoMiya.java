@@ -2,7 +2,6 @@ package com.starkinhon.battlegroundsmod.power.powers.kokushibo;
 
 import com.starkinhon.battlegroundsmod.combat.BlockRules;
 import com.starkinhon.battlegroundsmod.combat.Combat;
-import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.combat.Stun;
 import com.starkinhon.battlegroundsmod.combat.SwordArts;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
@@ -53,10 +52,9 @@ public final class YoruNoMiya {
     public static final int MOON_GOLD = 0xFFA000;
     // The hitbox reaches this many times as far as the drawn slash (Stark: 1.5x).
     private static final double HIT_REACH = 1.5;
-    // Black Flash style: the target stands frozen this long after the cut before the blow lands (0.5 s), then stays
-    // stunned STUN_AFTER more.
-    private static final int IMPACT_DELAY = 10;
-    private static final int STUN_AFTER = 10;
+    // The blow lands with the cut (Stark took out the old 0.5 s Black Flash wait), then the target stays stunned this long
+    // (the same 1 s in all it was stunned before).
+    private static final int STUN_AFTER = 20;
     // The blow's knockback: blocks per tick away from him, and up.
     private static final double FLING = 2.2;
     private static final double FLING_UP = 0.55;
@@ -176,42 +174,33 @@ public final class YoruNoMiya {
         return a / Math.abs(SPAN);
     }
 
-    // Like the Black Flash: the cut lands but the target freezes, stunned, and only takes the blow (damage, knockback and
-    // its impact frame) IMPACT_DELAY ticks later.
+    // The blow (damage, knockback and its impact frame) lands right with the cut, like a normal hit.
     private static void strike(LivingEntity caster, LivingEntity target, ServerLevel level, Vec3 eye) {
-        Stun.apply(target, IMPACT_DELAY);
-        Freeze.hold(target, IMPACT_DELAY + 1);
-        Tasks.later(IMPACT_DELAY, () -> {
-            Freeze.free(target);
-            if (!target.isAlive()) {
-                return;
+        Vec3 at = Combat.center(target);
+        Vec3 away = at.subtract(eye);
+        ModPayloads.SwordFx hit = new ModPayloads.SwordFx(SwordArts.FX_MOON_HIT, target.getId(), at, away, 0, 0);
+        for (ServerPlayer player : level.players()) {
+            if (player.distanceToSqr(at) < VIEW_DISTANCE * VIEW_DISTANCE) {
+                PacketDistributor.sendToPlayer(player, hit);
             }
-            Vec3 at = Combat.center(target);
-            Vec3 away = at.subtract(eye);
-            ModPayloads.SwordFx hit = new ModPayloads.SwordFx(SwordArts.FX_MOON_HIT, target.getId(), at, away, 0, 0);
-            for (ServerPlayer player : level.players()) {
-                if (player.distanceToSqr(at) < VIEW_DISTANCE * VIEW_DISTANCE) {
-                    PacketDistributor.sendToPlayer(player, hit);
-                }
+        }
+        SubCommon.sound(level, at, SoundEvents.LIGHTNING_BOLT_IMPACT, 1.0f, 1.6f);
+        SubCommon.sound(level, at, SoundEvents.PLAYER_ATTACK_CRIT, 1.6f, 0.6f);
+        if (caster.isAlive()) {
+            Combat.hurt(caster, target, DAMAGE);
+        }
+        // The knockback whatever the damage did (it used to ride on the hurt landing, and Stark saw none), and once
+        // more the next tick so nothing that ran in between (the hold letting go, the hurt's own knockback) eats it.
+        Vec3 fling = fling(target, eye);
+        target.setDeltaMovement(fling);
+        target.hurtMarked = true;
+        Tasks.later(1, () -> {
+            if (target.isAlive()) {
+                target.setDeltaMovement(fling);
+                target.hurtMarked = true;
             }
-            SubCommon.sound(level, at, SoundEvents.LIGHTNING_BOLT_IMPACT, 1.0f, 1.6f);
-            SubCommon.sound(level, at, SoundEvents.PLAYER_ATTACK_CRIT, 1.6f, 0.6f);
-            if (caster.isAlive()) {
-                Combat.hurt(caster, target, DAMAGE);
-            }
-            // The knockback whatever the damage did (it used to ride on the hurt landing, and Stark saw none), and once
-            // more the next tick so nothing that ran in between (the hold letting go, the hurt's own knockback) eats it.
-            Vec3 fling = fling(target, eye);
-            target.setDeltaMovement(fling);
-            target.hurtMarked = true;
-            Tasks.later(1, () -> {
-                if (target.isAlive()) {
-                    target.setDeltaMovement(fling);
-                    target.hurtMarked = true;
-                }
-            });
-            Stun.apply(target, STUN_AFTER);
         });
+        Stun.apply(target, STUN_AFTER);
     }
 
     // Thrown away from him (flat), and up.
