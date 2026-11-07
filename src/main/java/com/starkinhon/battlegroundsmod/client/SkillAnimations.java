@@ -47,8 +47,9 @@ public final class SkillAnimations {
 
     private static final Map<Integer, Playing> PLAYING = new HashMap<>();
     // Skills with a hand-made keyframe animation (KeyframeAnimation) play it instead of the Forja pose: from startTick
-    // for endTicks (the last pose held), then blended out over KEYFRAME_OUT ticks.
-    private record Keyframed(KeyframeAnimation animation, int startTick, int endTicks, String skill) {
+    // for endTicks (the last pose held), then blended out over KEYFRAME_OUT ticks. releasedAt: the tick a held skill was
+    // let go (its animation waits at its "soltar" mark until then), -1 before.
+    private record Keyframed(KeyframeAnimation animation, int startTick, int endTicks, String skill, int releasedAt) {
     }
 
     private static final Map<Integer, Keyframed> KEYFRAMED = new HashMap<>();
@@ -73,6 +74,16 @@ public final class SkillAnimations {
     // number after a second # is how long the part runs, when only the server knows (a dash until it reaches someone).
     // An empty skill stops whatever is playing (the move was cut off).
     public static void play(int entityId, String skill, boolean awakened) {
+        if (com.starkinhon.battlegroundsmod.network.ModPayloads.PlaySkillAnimation.RELEASE.equals(skill)) {
+            // Let go: an animation waiting at its "soltar" mark plays the rest; anything else stops.
+            Keyframed held = KEYFRAMED.get(entityId);
+            Entity who = entity(entityId);
+            if (held != null && who != null && held.animation().release() >= 0 && held.releasedAt() < 0) {
+                KEYFRAMED.put(entityId, new Keyframed(held.animation(), held.startTick(), held.endTicks(), held.skill(), who.tickCount));
+                return;
+            }
+            skill = "";
+        }
         SQUARE.remove(entityId);
         KEYFRAMED.remove(entityId);
         WRIST.remove(entityId);
@@ -84,8 +95,8 @@ public final class SkillAnimations {
                 ? java.util.Optional.<KeyframeAnimation>empty() : KeyframeAnimation.of(skill);
         Entity who = entity(entityId);
         if (keyframes.isPresent() && who != null) {
-            KEYFRAMED.put(entityId, new Keyframed(keyframes.get(), who.tickCount, keyframeEnd(skill, awakened), skill));
-            if (skill.startsWith(SWORD_PREFIX) || skill.startsWith(FIST_PREFIX)) {
+            KEYFRAMED.put(entityId, new Keyframed(keyframes.get(), who.tickCount, keyframeEnd(skill, awakened), skill, -1));
+            if (skill.startsWith(SWORD_PREFIX) || skill.startsWith(FIST_PREFIX) || keyframes.get().followLook()) {
                 // The cuts and punches are made facing ahead: the body turns with the aim, or they would go off to the side.
                 SQUARE.add(entityId);
                 return;
@@ -143,7 +154,31 @@ public final class SkillAnimations {
         if (com.starkinhon.battlegroundsmod.skill.DominioSpec.SKILL.equals(skill)) {
             return com.starkinhon.battlegroundsmod.skill.DominioSpec.get(awakened).voidTick();
         }
-        return (int) Math.ceil(SkillSpecs.get(skill, AnimationSpec.class, awakened).animationEnd());
+        int spec = (int) Math.ceil(SkillSpecs.get(skill, AnimationSpec.class, awakened).animationEnd());
+        // The skill poses made with tools/poses run to their own end too (it can go a little past the spec's).
+        return KeyframeAnimation.of(skill).filter(KeyframeAnimation::followLook).map(a -> Math.max(spec, (int) Math.ceil(a.length() * 20)))
+                .orElse(spec);
+    }
+
+    // Seconds into a keyframe animation at raw ticks since it started: it waits at its "soltar" mark until let go.
+    private static double seconds(Keyframed keyframed, double raw) {
+        float release = keyframed.animation().release();
+        if (release < 0) {
+            return Math.max(0, raw) / 20;
+        }
+        if (keyframed.releasedAt() < 0) {
+            return Math.min(Math.max(0, raw) / 20, release);
+        }
+        return release + Math.max(0, raw - (keyframed.releasedAt() - keyframed.startTick())) / 20;
+    }
+
+    // Ticks after the start when a keyframe animation reaches its last pose (blended out after that).
+    private static double end(Keyframed keyframed) {
+        if (keyframed.releasedAt() < 0) {
+            return keyframed.endTicks();
+        }
+        KeyframeAnimation a = keyframed.animation();
+        return keyframed.releasedAt() - keyframed.startTick() + Math.max(0, a.length() - a.release()) * 20;
     }
 
     private static Entity entity(int entityId) {
@@ -163,7 +198,7 @@ public final class SkillAnimations {
             return false;
         }
         double raw = ageInTicks - keyframed.startTick();
-        return raw >= -1 && raw <= keyframed.endTicks() + KEYFRAME_OUT;
+        return raw >= -1 && raw <= end(keyframed) + KEYFRAME_OUT;
     }
 
     // True while this entity plays a sword move (its blade leaves a trail, client/fx/BladeTrail).
@@ -197,18 +232,27 @@ public final class SkillAnimations {
         Keyframed keyframed = KEYFRAMED.get(entity.getId());
         if (keyframed != null && ageInTicks != 0) {
             double raw = ageInTicks - keyframed.startTick();
-            if (raw > keyframed.endTicks() + KEYFRAME_OUT || raw < -1) {
+            double end = end(keyframed);
+            if (raw > end + KEYFRAME_OUT || raw < -1) {
                 KEYFRAMED.remove(entity.getId());
                 WRIST.remove(entity.getId());
                 SQUARE.remove(entity.getId());
             } else {
+                // Where vanilla points the head (the aim), for animations that keep following it.
+                float lookX = model.head.xRot;
+                float lookY = model.head.yRot;
                 standStill(model);
                 if (SQUARE.contains(entity.getId())) {
                     entity.yBodyRot = entity.yBodyRotO = entity.getYHeadRot();
                 }
-                float weight = (float) (raw <= keyframed.endTicks() ? 1 : 1 - (raw - keyframed.endTicks()) / KEYFRAME_OUT);
-                keyframed.animation().apply(model, (float) Math.max(0, raw) / 20f, weight);
-                float[] wrist = keyframed.animation().wrist((float) Math.max(0, raw) / 20f, weight);
+                float weight = (float) (raw <= end ? 1 : 1 - (raw - end) / KEYFRAME_OUT);
+                float seconds = (float) seconds(keyframed, raw);
+                keyframed.animation().apply(model, seconds, weight);
+                if (keyframed.animation().followLook()) {
+                    model.head.xRot += lookX;
+                    model.head.yRot += lookY;
+                }
+                float[] wrist = keyframed.animation().wrist(seconds, weight);
                 if (wrist == null) {
                     WRIST.remove(entity.getId());
                 } else {

@@ -145,7 +145,7 @@ public final class BlackBox {
         }
         Tasks.add(age -> {
             if (age == closeAt + 2 && caster.isAlive()) {
-                PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new ModPayloads.PlaySkillAnimation(caster.getId(), "", false));
+                PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new ModPayloads.PlaySkillAnimation(caster.getId(), ModPayloads.PlaySkillAnimation.RELEASE, false));
             }
             if (stabAt.contains(age)) {
                 for (LivingEntity inside : inside(level, box, caster)) {

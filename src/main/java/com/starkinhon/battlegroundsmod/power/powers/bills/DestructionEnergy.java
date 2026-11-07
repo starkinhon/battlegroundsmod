@@ -107,7 +107,7 @@ public final class DestructionEnergy {
             }
             // Thrown: the hand comes down and the ball goes.
             now.busyTicks = 4;
-            PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new ModPayloads.PlaySkillAnimation(caster.getId(), "", false));
+            PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new ModPayloads.PlaySkillAnimation(caster.getId(), ModPayloads.PlaySkillAnimation.RELEASE, false));
             caster.swing(InteractionHand.MAIN_HAND, true);
             LivingEntity target = lock(caster, spec.alvo().alcance());
             Vec3 aim = target != null ? Combat.center(target) : aimPoint(caster, bola.alcance());
@@ -245,7 +245,7 @@ public final class DestructionEnergy {
                 caster.addEffect(new MobEffectInstance(MobEffects.SLOW_FALLING, Math.max(1, voo.planarTicks()), 0, false, false, false));
                 now.busyTicks = 4;
                 unshield.run();
-                PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new ModPayloads.PlaySkillAnimation(caster.getId(), "", false));
+                PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new ModPayloads.PlaySkillAnimation(caster.getId(), ModPayloads.PlaySkillAnimation.RELEASE, false));
                 return true;
             }
             return false;

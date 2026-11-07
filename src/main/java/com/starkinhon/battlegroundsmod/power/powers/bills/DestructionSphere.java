@@ -107,7 +107,7 @@ public final class DestructionSphere {
             }
             // Let go: the arm comes down and the ball flies up.
             now.busyTicks = 4;
-            PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new ModPayloads.PlaySkillAnimation(caster.getId(), "", false));
+            PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new ModPayloads.PlaySkillAnimation(caster.getId(), ModPayloads.PlaySkillAnimation.RELEASE, false));
             caster.swing(InteractionHand.MAIN_HAND, true);
             LivingEntity target = lock(caster, spec.alvo().alcance());
             SkillSounds.play(level, spec.sons(), "soltar", 0, 0, onde -> pos[0], screen);

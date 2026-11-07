@@ -28,6 +28,9 @@ import net.minecraft.util.Mth;
 // Bones: Head, Body, Right Arm, Left Arm, Right Leg, Left Leg (spaces, underscores and case don't matter).
 // One more bone, Item, turns what the right hand holds about the wrist (the sword moves): its rotation is degrees in
 // the hand's own frame, applied Z then Y then X, with nothing flipped (see SkillAnimations.wrist).
+// Optional, for the skill poses made with tools/poses: "soltar": s, where a held skill waits (the time stops there until
+// the server says the key was let go, then the rest plays: the throw); "segueMira": true, the head keeps following the
+// aim and the body turns with it while the animation plays.
 public final class KeyframeAnimation {
     private record Keyframe(float time, float x, float y, float z, boolean smooth) {
     }
@@ -42,11 +45,25 @@ public final class KeyframeAnimation {
     private final List<Channel> channels;
     private final Keyframe[] wrist;
     private final float length;
+    private final float release;
+    private final boolean followLook;
 
-    private KeyframeAnimation(List<Channel> channels, Keyframe[] wrist, float length) {
+    private KeyframeAnimation(List<Channel> channels, Keyframe[] wrist, float length, float release, boolean followLook) {
         this.channels = channels;
         this.wrist = wrist;
         this.length = length;
+        this.release = release;
+        this.followLook = followLook;
+    }
+
+    // Seconds where the animation waits for the key to be let go, or -1 when it doesn't.
+    public float release() {
+        return release;
+    }
+
+    // True when the head follows the aim on top of the animation (and the body turns with it).
+    public boolean followLook() {
+        return followLook;
     }
 
     // Seconds, from the file's "length" (or the last keyframe).
@@ -103,7 +120,9 @@ public final class KeyframeAnimation {
                 }
             }
             float length = root.has("length") ? root.get("length").getAsFloat() : end;
-            return Optional.of(new KeyframeAnimation(channels, wrist, length));
+            float release = root.has("soltar") ? root.get("soltar").getAsFloat() : -1;
+            boolean followLook = root.has("segueMira") && root.get("segueMira").getAsBoolean();
+            return Optional.of(new KeyframeAnimation(channels, wrist, length, release, followLook));
         } catch (Exception e) {
             BattlegroundsMod.LOGGER.error("Bad animation {}", id, e);
             return Optional.empty();
