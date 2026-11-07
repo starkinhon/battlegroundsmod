@@ -10,6 +10,7 @@ import java.util.Map;
 import org.joml.Vector3f;
 
 import com.starkinhon.battlegroundsmod.client.ScreenShake;
+import com.starkinhon.battlegroundsmod.power.powers.sub.Rukia;
 import com.starkinhon.battlegroundsmod.power.powers.sub.SubNet;
 
 import net.minecraft.client.Minecraft;
@@ -29,7 +30,7 @@ public final class SubFx {
     static final int SLIT = 27;
     static final int ICE = 28;
     static final int BARRIER = 29;
-    private static final int SHARD = 14;
+    static final int SHARD = 14;
 
     private static final float[] PINK = FxDraw.rgb(0xF4A6C6);
     private static final float[] PINK_DEEP = FxDraw.rgb(0xE0679A);
@@ -45,6 +46,7 @@ public final class SubFx {
     private static final float[] DARK = {0.01f, 0.005f, 0.008f};
     private static final float[] SMOKE_GREY = {0.12f, 0.1f, 0.1f};
     private static final float[] MIST = {0.9f, 0.96f, 1f};
+    private static final float[] PALE = {0.84f, 0.95f, 1f};
     private static final float[] SHRINE_DARK = {0.08f, 0.02f, 0.025f};
     private static final float[] SHRINE_BONE = {0.75f, 0.68f, 0.6f};
 
@@ -119,9 +121,23 @@ public final class SubFx {
                     }
                 }
             }
-            case SubNet.BANKAI_BYAKUYA, SubNet.AURA, SubNet.FREEZE, SubNet.SEAL, SubNet.CLEAVE_SCAN, SubNet.SHRINE -> {
+            case SubNet.FREEZE -> {
+                if (c >= 1) {
+                    IceShell.end(id, c >= 1.5f ? IceShell.THAW : IceShell.SHATTER);
+                } else {
+                    IceShell.freeze(id, pos, (int) b, (float) dir.x, (float) dir.y);
+                }
+            }
+            case SubNet.ICE_ARMOR -> {
+                if (c >= 1) {
+                    IceShell.end(id, IceShell.THAW);
+                } else {
+                    IceShell.armor(id);
+                }
+            }
+            case SubNet.BANKAI_BYAKUYA, SubNet.AURA, SubNet.SEAL, SubNet.CLEAVE_SCAN, SubNet.SHRINE -> {
                 Fx f = TRACKED.get(key(kind, id));
-                boolean stop = kind == SubNet.FREEZE ? c >= 1 : kind == SubNet.BANKAI_BYAKUYA || kind == SubNet.AURA ? c >= 1 : a <= 0;
+                boolean stop = kind == SubNet.BANKAI_BYAKUYA || kind == SubNet.AURA ? c >= 1 : a <= 0;
                 if (stop) {
                     if (f != null && f.endAt < 0) {
                         f.endAt = now;
@@ -171,12 +187,13 @@ public final class SubFx {
     }
 
     public static boolean active() {
-        return !SHOTS.isEmpty() || !TRACKED.isEmpty();
+        return !SHOTS.isEmpty() || !TRACKED.isEmpty() || IceShell.active();
     }
 
     public static void clear() {
         SHOTS.clear();
         TRACKED.clear();
+        IceShell.clear();
     }
 
     // ---------- the two passes ----------
@@ -199,9 +216,10 @@ public final class SubFx {
             case SubNet.SLASH -> f.c == SubNet.STYLE_SUKUNA ? 16 : 10;
             case SubNet.RIFT -> 40;
             case SubNet.IMPACT -> 14;
-            case SubNet.TSUKISHIRO -> f.b + 44;
+            case SubNet.TSUKISHIRO -> f.b + Rukia.TSUKI_HOLD + 44;
             case SubNet.HAKUREN -> 90;
-            case SubNet.SHIRAFUNE -> 34;
+            case SubNet.SHIRAFUNE -> 60;
+            case SubNet.ICE_SPIKE -> f.b;
             case SubNet.FROST -> f.b;
             case SubNet.EXPLOSION -> 36;
             case SubNet.WEB -> 50;
@@ -213,6 +231,7 @@ public final class SubFx {
 
     private static void prune(double now) {
         SHOTS.removeIf(f -> now - f.born > life(f));
+        IceShell.prune(now);
         Iterator<Fx> it = TRACKED.values().iterator();
         while (it.hasNext()) {
             Fx f = it.next();
@@ -220,7 +239,7 @@ public final class SubFx {
                 case SubNet.PETALS, SubNet.GOKEI, SubNet.GETSUGA, SubNet.CHARGE, SubNet.NET, SubNet.FUGA -> true;
                 default -> false;
             };
-            double fadeOut = f.kind == SubNet.GOKEI ? 24 : f.kind == SubNet.BANKAI_BYAKUYA ? 20 : f.kind == SubNet.FREEZE ? 12 : 8;
+            double fadeOut = f.kind == SubNet.GOKEI ? 24 : f.kind == SubNet.BANKAI_BYAKUYA ? 20 : 8;
             if (f.endAt < 0 && streamed && now - f.updated > 4) {
                 f.endAt = f.updated;
             }
@@ -247,6 +266,7 @@ public final class SubFx {
                 case SubNet.HAKUREN -> hakuren(f, camera, age, glow);
                 case SubNet.SHIRAFUNE -> shirafune(f, camera, age, glow);
                 case SubNet.FROST -> frost(f, camera, age, glow);
+                case SubNet.ICE_SPIKE -> spike(f, camera, age, glow);
                 case SubNet.EXPLOSION -> explosion(f, camera, age, glow);
                 case SubNet.WEB -> web(f, camera, age, glow);
                 case SubNet.WORLD_CUT -> worldCut(f, camera, age, glow);
@@ -268,7 +288,6 @@ public final class SubFx {
                 case SubNet.GETSUGA -> getsuga(f, camera, now, partial, out, glow);
                 case SubNet.CHARGE -> charge(f, camera, age, partial, out, glow);
                 case SubNet.AURA -> aura(f, camera, age, partial, out, glow);
-                case SubNet.FREEZE -> freeze(f, camera, age, partial, now, glow);
                 case SubNet.SHIELD -> shield(f, camera, age, now, out, glow);
                 case SubNet.NET -> net(f, camera, age, partial, out, glow);
                 case SubNet.SEAL -> seal(f, camera, age, partial, out, glow);
@@ -279,6 +298,7 @@ public final class SubFx {
                 }
             }
         }
+        IceShell.draw(camera, now, partial, glow);
     }
 
     // ---------- Byakuya ----------
@@ -737,16 +757,80 @@ public final class SubFx {
     }
 
     // ---------- Rukia ----------
+    // Ported from the Visualizador's Rukia tab (v26+): 3D crystals of pixel ice (iceSpike), snow, cold mist, and the
+    // ice over bodies in IceShell. Light never cuts off hard: everything fades in and out.
 
-    private static void tsukishiro(Fx f, Vec3 camera, float age, boolean glow) {
-        if (!glow) {
+    // A crystal of ice: a six-sided spike from base toward dir, h tall, r wide at the base, each side lit on its own.
+    static void iceSpike(Vector3f base, Vector3f dir, float h, float r, float spin, float op) {
+        if (h <= 0.01f || op <= 0.002f) {
             return;
         }
+        Vector3f d = new Vector3f(dir).normalize();
+        Vector3f u = new Vector3f(d).cross(Math.abs(d.y) > 0.9f ? new Vector3f(1, 0, 0) : new Vector3f(0, 1, 0)).normalize();
+        Vector3f w = new Vector3f(d).cross(u);
+        Vector3f tip = new Vector3f(base).add(new Vector3f(d).mul(h));
+        Vector3f[] ring = new Vector3f[7];
+        for (int k = 0; k < 7; k++) {
+            float a = spin + k * Mth.TWO_PI / 6;
+            ring[k] = new Vector3f(base).add(new Vector3f(u).mul(Mth.cos(a) * r)).add(new Vector3f(w).mul(Mth.sin(a) * r));
+        }
+        for (int k = 0; k < 6; k++) {
+            Vector3f mid = new Vector3f(ring[k]).add(ring[k + 1]).mul(0.5f).sub(base).normalize();
+            Vector3f n = new Vector3f(mid).mul(h).add(new Vector3f(d).mul(r)).normalize();
+            float lit = 0.55f + 0.45f * Math.max(0, n.dot(0.37f, 0.86f, 0.28f));
+            float[] col = {0.78f, 0.9f * lit, 1f};
+            FxDraw.quad(ring[k], ring[k + 1], tip, tip, ICE, 1, col, 0.85f * op, false);
+        }
+    }
+
+    // Fine snow falling round a spot.
+    private static void snowfall(Vec3 c, float rad, float age, int n, float a, Vec3 camera) {
+        if (a <= 0) {
+            return;
+        }
+        for (int i = 0; i < n; i++) {
+            float y = 7 - fract(age * (0.02f + hash(i, 121) * 0.02f) + hash(i, 122)) * 7;
+            float x = (hash(i, 123) * 2 - 1) * rad + Mth.sin(age * 0.03f + i) * 0.4f;
+            float z = (hash(i, 124) * 2 - 1) * rad;
+            float edge = 1 - smooth((y - 5.5f) / 1.5f);
+            FxDraw.billboard(rel(c.add(x, y, z), camera), 0.07f + hash(i, 125) * 0.06f, 0, FxDraw.SOFT, 0.8f, WHITE, 0.85f * a * edge, true);
+        }
+    }
+
+    private static void tsukishiro(Fx f, Vec3 camera, float age, boolean glow) {
         float rise = f.b;
+        float hold = Rukia.TSUKI_HOLD;
+        float scale = f.a / 2.5f;
         Vector3f c = rel(f.pos.add(0, 0.05, 0), camera);
         float draw = smooth(age / Math.max(1, rise * 0.8f));
         float colAge = age - rise;
-        float fadeCircle = colAge < 0 ? 1 : 1 - smooth(colAge / 30);
+        float ring = 1 - smooth((colAge - hold - 6) / 10);
+        if (!glow) {
+            FxDraw.disk(rel(f.pos.add(0, 0.02, 0), camera), new Vector3f(0, 1, 0), f.a * 2.1f, FxDraw.SOFT, 0.1f, PALE,
+                    0.35f * smooth(colAge / 4) * (1 - smooth((colAge - hold - 10) / 14)), false);
+            if (colAge >= 0 && colAge < hold + 2) {
+                // Crystals shooting up inside the circle while the statue stands.
+                float k = smooth(colAge / 8) * (1 - smooth((colAge - hold) / 2));
+                for (int i = 0; i < 18; i++) {
+                    float a = hash(i, 131) * Mth.TWO_PI;
+                    float r = (0.8f + hash(i, 132) * 1.6f) * scale;
+                    Vector3f p = new Vector3f(c).add(Mth.cos(a) * r, -0.05f, Mth.sin(a) * r);
+                    iceSpike(p, new Vector3f(Mth.cos(a) * 0.3f, 1, Mth.sin(a) * 0.3f), (0.4f + hash(i, 133) * 1.1f) * k * scale, 0.16f * scale, i, 1);
+                }
+            }
+            if (colAge >= hold) {
+                // The statue breaks: crystals flung out, falling.
+                float a = colAge - hold;
+                for (int i = 0; i < 30; i++) {
+                    Vector3f d = new Vector3f(hash(i, 134) - 0.5f, hash(i, 135) * 0.9f, hash(i, 136) - 0.5f).normalize();
+                    Vector3f p = new Vector3f(c).add(0, 1.1f, 0).add(new Vector3f(d).mul(a * (0.12f + hash(i, 137) * 0.1f))).add(0, -0.012f * a * a, 0);
+                    if (p.y > c.y) {
+                        iceSpike(p, d, 0.35f * (1 - a / 40), 0.12f, a * 0.3f + i, 1 - smooth((a - 24) / 16));
+                    }
+                }
+            }
+            return;
+        }
         // The circle drawn round the target, then its glow.
         int seg = 48;
         int shown = (int) (seg * draw);
@@ -755,131 +839,231 @@ public final class SubFx {
             float ang = i / (float) seg * Mth.TWO_PI;
             Vector3f p = new Vector3f(c).add(Mth.cos(ang) * f.a, 0, Mth.sin(ang) * f.a);
             if (last != null) {
-                groundStrip(last, p, 0.28f, FxDraw.BEAM, 0.8f, WHITE, 0.95f * fadeCircle);
+                groundStrip(last, p, 0.22f, FxDraw.BEAM, 0.8f, PALE, 0.95f * ring);
             }
             last = p;
         }
-        FxDraw.disk(c, new Vector3f(0, 1, 0), f.a * 2.2f, FxDraw.SOFT, 0.1f, ICE_BLUE, 0.35f * draw * fadeCircle, true);
+        if (colAge < 0) {
+            FxDraw.disk(c, new Vector3f(0, 1, 0), f.a * 2, FxDraw.SOFT, 0.2f, ICE_BLUE, 0.25f * draw, true);
+        }
+        snowfall(f.pos.add(0, 0, 0), f.a * 2.2f, age, 120, ring, camera);
         if (colAge < 0) {
             return;
         }
-        float up = smooth(colAge / 5);
-        float fade = 1 - smooth((colAge - 10) / 30);
+        float up = 1 - (1 - Math.min(1, colAge / 8)) * (1 - Math.min(1, colAge / 8));
+        float fade = 1 - smooth((colAge - 24) / 30);
         Vector3f top = new Vector3f(c).add(0, 40 * up, 0);
-        FxDraw.ribbon(c, top, f.a * 2.4f, FxDraw.BEAM, 0.2f, ICE_BLUE, 0.6f * fade, true);
-        FxDraw.ribbon(c, top, f.a * 1.1f, FxDraw.BEAM, 0.8f, WHITE, 0.9f * fade, true);
-        FxDraw.billboard(new Vector3f(c).add(0, 1, 0), f.a * 3.5f, 0, FxDraw.FLARE, 12 / 32f, WHITE, 0.9f * (1 - smooth(colAge / 12)), true);
-        for (int i = 0; i < 26; i++) {
-            float ph = Mth.clamp(colAge / 30 + hash(i, 61) * 0.3f, 0, 1);
+        FxDraw.ribbon(c, top, f.a * 2.16f, FxDraw.BEAM, 0.1f, ICE_BLUE, 0.55f * fade, true);
+        FxDraw.ribbon(c, top, f.a * 0.96f, FxDraw.BEAM, 0.8f, WHITE, 0.8f * fade, true);
+        for (int i = 0; i < 70; i++) {
+            float y = (colAge * 0.25f + hash(i, 61) * 40) % 40;
+            if (y > 40 * up) {
+                continue;
+            }
             float ang = hash(i, 62) * Mth.TWO_PI;
-            float r = f.a * Mth.sqrt(hash(i, 63));
-            Vector3f p = new Vector3f(c).add(Mth.cos(ang) * r, ph * 18, Mth.sin(ang) * r);
-            FxDraw.billboard(p, 0.35f, ang + colAge * 0.2f, SHARD, hash(i, 64) * 0.49f, ICE_BLUE, 0.9f * fade, true);
+            float r = hash(i, 63) * f.a * 0.96f;
+            FxDraw.billboard(new Vector3f(c).add(Mth.cos(ang) * r, y, Mth.sin(ang) * r), 0.15f, 0, FxDraw.SOFT, 0.9f, WHITE, 0.9f * fade, true);
         }
-    }
-
-    // Ice crystals standing on the ground (Hakuren's trail, the frozen ground): a few camera-facing shards each.
-    private static void crystal(Vector3f base, float h, float spin, float op) {
-        for (int k = 0; k < 3; k++) {
-            float lean = (k - 1) * 0.35f;
-            Vector3f top = new Vector3f(base).add(Mth.sin(spin + k) * lean, h * (1 - 0.25f * Math.abs(k - 1)), Mth.cos(spin + k) * lean);
-            FxDraw.ribbon(base, top, h * 0.32f, SHARD, 0.6f + 0.1f * k, ICE_BLUE, op, true);
+        if (colAge < 12) {
+            FxDraw.disk(new Vector3f(c).add(0, 0.03f, 0), new Vector3f(0, 1, 0), f.a * 2 + colAge * 0.8f, FxDraw.RING, 0.15f, PALE,
+                    1 - colAge / 12, true);
+        }
+        if (colAge >= hold && colAge < hold + 8) {
+            float a = colAge - hold;
+            FxDraw.billboard(new Vector3f(c).add(0, 1.2f, 0), 3 * (1 - a / 8) + 0.5f, 0, FxDraw.FLARE, 6 / 32f, PALE, 1 - a / 8, true);
         }
     }
 
     private static void hakuren(Fx f, Vec3 camera, float age, boolean glow) {
-        if (!glow) {
-            return;
-        }
         Vec3 d = new Vec3(f.dir.x, 0, f.dir.z);
         d = d.lengthSqr() < 1.0E-6 ? new Vec3(0, 0, 1) : d.normalize();
         Vec3 side = d.cross(new Vec3(0, 1, 0)).normalize();
-        float front = f.a * smooth(age / 14);
-        float stay = 1 - smooth((age - 62) / 20);
-        // Mist rolling forward.
-        for (int i = 0; i < 40; i++) {
+        float len = f.a;
+        float front = len * smooth(age / 14);
+        float fade = 1 - smooth((age - 40) / 40);
+        // The white avalanche: cold mist rolling forward, wider and taller as it goes, with a soft light in it.
+        for (int i = 0; i < 46; i++) {
             float s = hash(i, 71) * front;
-            float frac = s / Math.max(1, f.a);
-            float near = front - s;
-            float vis = smooth(near / 3) * (1 - smooth((age - 16 - frac * 10) / 30));
-            if (vis <= 0) {
+            float frac = s / Math.max(1, len);
+            float hw = f.b * (0.2f + 0.45f * frac);
+            Vec3 p = f.pos.add(d.scale(s)).add(side.scale((hash(i, 72) * 2 - 1) * hw)).add(0, 0.4 + hash(i, 73) * (1 + s * 0.09), 0);
+            float near = smooth((front - s + 1) / 3);
+            if (glow) {
+                if (i % 2 == 0) {
+                    FxDraw.billboard(rel(p, camera), 1.8f + s * 0.08f, i, FxDraw.SOFT, 0.3f, ICE_BLUE, 0.25f * fade * near, true);
+                }
+            } else {
+                FxDraw.billboard(rel(p, camera), 2.2f + s * 0.12f, i + age * 0.01f, FxDraw.SMOKE, 0.2f, MIST, 0.55f * fade * near, false);
+            }
+        }
+        if (glow) {
+            Vec3 head = f.pos.add(d.scale(front)).add(0, 1.4, 0);
+            FxDraw.billboard(rel(head, camera), 4 + front * 0.15f, age * 0.05f, FxDraw.SOFT, 0.6f, WHITE, 0.6f * (1 - smooth((age - 16) / 10)), true);
+            snowfall(f.pos.add(d.scale(len * 0.5)), len * 0.45f, age, 120, fade, camera);
+            return;
+        }
+        // Crystals bursting up from the ground as the front passes, leaning forward.
+        for (int i = 0; i < 70; i++) {
+            float s = 0.3f + hash(i, 74) * (len - 0.3f);
+            if (s > front) {
                 continue;
             }
-            float w = f.b * (0.4f + 0.6f * frac);
-            Vec3 p = f.pos.add(d.scale(s)).add(side.scale((hash(i, 72) - 0.5) * w)).add(0, 0.4 + hash(i, 73) * w * 0.5, 0);
-            FxDraw.billboard(rel(p, camera), 1.8f + w * 0.6f, i, FxDraw.SOFT, 0.15f, MIST, 0.35f * vis, true);
-        }
-        Vec3 head = f.pos.add(d.scale(front));
-        if (age < 18) {
-            FxDraw.billboard(rel(head.add(0, 1, 0), camera), f.b * 2.5f, 0, FxDraw.SOFT, 0.5f, WHITE, 0.6f * (1 - smooth(age / 18)), true);
-        }
-        // Crystals left behind, each appearing when the front passes, all shattering at the end.
-        for (int i = 0; i < 34; i++) {
-            float s = (i + 0.5f) / 34 * f.a;
-            if (s > front) {
-                break;
-            }
-            float w = f.b * (0.3f + 0.7f * s / f.a);
-            Vec3 p = f.pos.add(d.scale(s)).add(side.scale((hash(i, 74) - 0.5) * w)).add(0, -0.1, 0);
-            float grow = smooth((front - s) / 2);
-            float h = (0.8f + 1.6f * hash(i, 75)) * grow;
-            crystal(rel(p, camera), h, hash(i, 76) * 6, 0.85f * stay);
+            float hw = f.b * (0.16f + 0.5f * s / len);
+            Vec3 p = f.pos.add(d.scale(s)).add(side.scale((hash(i, 75) * 2 - 1) * hw)).add(0, -0.05, 0);
+            Vec3 dir = side.scale((hash(i, 76) - 0.5) * 0.9).add(0, 1, 0).add(d.scale(0.35));
+            float grow = smooth((front - s) / 5.5f);
+            iceSpike(rel(p, camera), new Vector3f((float) dir.x, (float) dir.y, (float) dir.z), (0.5f + hash(i, 77) * 1.8f) * grow,
+                    0.2f + hash(i, 78) * 0.15f, i, fade);
         }
     }
 
     private static void shirafune(Fx f, Vec3 camera, float age, boolean glow) {
-        if (!glow) {
-            return;
-        }
         Vec3 d = f.dir.lengthSqr() < 1.0E-6 ? new Vec3(0, 0, 1) : f.dir.normalize();
-        float len = f.a * smooth(age / 3);
-        float fade = 1 - smooth((age - 16) / 14);
+        float hold = 24;
+        float ext = Math.min(1, age / 3) * (1 - smooth((age - hold) / 8));
+        float len = f.a * ext;
         Vector3f a = rel(f.pos, camera);
-        Vector3f b = rel(f.pos.add(d.scale(len)), camera);
-        FxDraw.ribbon(a, b, 0.9f, FxDraw.BEAM, 0.2f, ICE_BLUE, 0.5f * fade, true);
-        FxDraw.ribbon(a, b, 0.3f, SHARD, 0.62f, WHITE, 0.95f * fade, true);
-        for (int i = 0; i < 12; i++) {
-            float s = (i + hash(i, 81)) / 12 * len;
-            Vector3f p = rel(f.pos.add(d.scale(s)), camera);
-            FxDraw.billboard(p, 0.4f + 0.3f * hash(i, 82), i, SHARD, hash(i, 83) * 0.49f, ICE_BLUE, 0.8f * fade, true);
-        }
-        FxDraw.billboard(b, 1.6f, age * 0.2f, FxDraw.FLARE, 8 / 32f, WHITE, 0.8f * fade, true);
-    }
-
-    // The ice shell over a frozen body: it grows from the feet up (or all at once), holds, then shatters into shards.
-    private static void freeze(Fx f, Vec3 camera, float age, float partial, double now, boolean glow) {
-        Entity e = FxAnchor.entity(f.id);
-        if (e == null) {
-            return;
-        }
-        Vec3 p = e.getPosition(partial);
-        AABB box = e.getBoundingBox().move(p.subtract(e.position())).inflate(0.07);
-        float grow = f.b > 0.5f ? smooth(age / 4) : smooth(age / 10);
-        float shatter = f.endAt < 0 ? 0 : Mth.clamp((float) (now - f.endAt + partial) / 10, 0, 1);
-        if (glow) {
-            if (shatter > 0) {
-                Vector3f c = rel(box.getCenter(), camera);
-                for (int i = 0; i < 30; i++) {
-                    Vector3f dir = new Vector3f(hash(i, 91) - 0.5f, hash(i, 92) * 0.8f, hash(i, 93) - 0.5f).normalize();
-                    Vector3f q = new Vector3f(c).add(new Vector3f(dir).mul(0.3f + 2.8f * shatter)).add(0, -2 * shatter * shatter, 0);
-                    FxDraw.billboard(q, 0.25f + 0.25f * hash(i, 94), i + shatter * 6, SHARD, hash(i, 95) * 0.49f, ICE_BLUE, 1 - shatter, true);
+        Vector3f dv = new Vector3f((float) d.x, (float) d.y, (float) d.z);
+        Vec3 hitP = f.pos.add(d.scale(f.a));
+        if (!glow) {
+            if (len > 0.05f) {
+                // The blade grown into one long crystal, little spikes along it.
+                iceSpike(a, dv, len, 0.09f, 0, 1);
+                Vector3f upish = new Vector3f(dv).add(0, 0.6f, 0).normalize();
+                for (int k = 0; k < 7; k++) {
+                    float u = (k + 0.5f) / 7;
+                    if (u * len < 0.3f) {
+                        continue;
+                    }
+                    iceSpike(new Vector3f(a).add(new Vector3f(dv).mul(u * len)), upish, 0.25f * (1 - u * 0.5f), 0.05f, k, 1);
                 }
-                if (shatter < 0.4f) {
-                    FxDraw.billboard(c, 2.5f, 0, FxDraw.FLARE, 10 / 32f, WHITE, 0.8f * (1 - shatter / 0.4f), true);
+            }
+            if (f.c >= 1 && age >= 2) {
+                // From the wound the ice spreads out in spikes.
+                float k = smooth((age - 2) / 30) * (1 - smooth((age - hold - 4) / 20));
+                for (int i = 0; i < 16; i++) {
+                    Vec3 r = new Vec3(hash(i, 84) - 0.5, hash(i, 85) - 0.5, hash(i, 86) - 0.5).normalize();
+                    double along = r.dot(d);
+                    r = r.subtract(d.scale(along)).subtract(d.scale(Math.abs(along) * 0.3)).normalize();
+                    Vec3 base = hitP.add(r.scale(0.3 * k));
+                    iceSpike(rel(base, camera), new Vector3f((float) r.x, (float) r.y, (float) r.z), (0.3f + hash(i, 87) * 0.6f) * k, 0.1f, i, 1);
                 }
             }
             return;
         }
-        if (shatter >= 1) {
-            return;
+        if (age < 3) {
+            // The cold gathering at the tip.
+            for (int k = 0; k < 12; k++) {
+                float ph = 1 - age / 3;
+                FxDraw.billboard(new Vector3f(a).add(Mth.cos(k) * ph, Mth.sin(k * 2) * ph, Mth.sin(k) * ph), 0.1f, 0, FxDraw.SOFT, 0.9f, WHITE,
+                        1 - ph, true);
+            }
         }
-        float fill = grow * (1 - shatter);
-        iceBox(box, camera, shatter > 0 ? -1 : fill, shatter > 0 ? 1 - shatter : 1, f.id);
+        if (len > 0.05f) {
+            Vector3f b = rel(f.pos.add(d.scale(len)), camera);
+            FxDraw.ribbon(a, b, 0.5f, FxDraw.BEAM, 0.4f, ICE_BLUE, 0.35f, true);
+        }
+        if (f.c >= 1 && age >= 2 && age < 8) {
+            FxDraw.billboard(rel(hitP, camera), 1.5f, 0, FxDraw.FLARE, 6 / 32f, PALE, 1 - (age - 2) / 6, true);
+        }
+        snowfall(f.pos.add(d.scale(f.a * 0.5)).add(0, -1.4, 0), f.a * 0.4f, age, 60, 1 - smooth((age - hold) / 20), camera);
     }
 
+    // A crystal of ice standing out of the ground for a while (where she stabs the ground before the Hakuren).
+    private static void spike(Fx f, Vec3 camera, float age, boolean glow) {
+        float k = smooth(age / 4) * (1 - smooth((age - f.b + 6) / 6));
+        if (glow) {
+            FxDraw.disk(rel(f.pos.add(0, 0.03, 0), camera), new Vector3f(0, 1, 0), 1.2f, FxDraw.SOFT, 0.2f, ICE_BLUE, 0.4f * k, true);
+            for (int i = 0; i < 6; i++) {
+                float ph = fract(age * 0.05f + hash(i, 141));
+                FxDraw.billboard(rel(f.pos.add((hash(i, 142) - 0.5) * 0.5, ph * 1.4, (hash(i, 143) - 0.5) * 0.5), camera), 0.12f, 0, FxDraw.SOFT,
+                        0.9f, WHITE, 0.9f * k * (1 - ph * 0.5f), true);
+            }
+            return;
+        }
+        Vec3 dir = f.dir.lengthSqr() < 1.0E-6 ? new Vec3(0, 1, 0) : f.dir.normalize();
+        iceSpike(rel(f.pos, camera), new Vector3f((float) dir.x, (float) dir.y, (float) dir.z), f.a * k, 0.14f, f.id, 1);
+    }
+
+    // The ground freezing round her (the Bankai): cracks running out, the ground turning to ice, crystals coming up,
+    // then the wave of absolute zero (at Rukia.BANKAI_W) and white mist, all of it melting away at the end.
+    private static void frost(Fx f, Vec3 camera, float age, boolean glow) {
+        float wave = Rukia.BANKAI_W - Rukia.BANKAI_X - Rukia.BANKAI_FROST;
+        float spread = smooth(age / 30);
+        float fade = 1 - smooth((age - (f.b - 50)) / 50);
+        float radius = f.a * spread;
+        Vector3f c = rel(f.pos.add(0, 0.04, 0), camera);
+        if (!glow) {
+            // The ground turning to ice, block by block.
+            int n = (int) Math.ceil(radius);
+            Vec3 base = new Vec3(Math.floor(f.pos.x), f.pos.y + 0.03, Math.floor(f.pos.z));
+            for (int ix = -n; ix <= n; ix++) {
+                for (int iz = -n; iz <= n; iz++) {
+                    double dx = ix + 0.5;
+                    double dz = iz + 0.5;
+                    double dist = Math.sqrt(dx * dx + dz * dz);
+                    if (dist > radius) {
+                        continue;
+                    }
+                    float local = (float) Mth.clamp((radius - dist) / 2.5, 0, 1) * fade;
+                    Vector3f q0 = rel(base.add(ix, 0, iz), camera);
+                    Vector3f q1 = rel(base.add(ix + 1, 0, iz), camera);
+                    Vector3f q2 = rel(base.add(ix + 1, 0, iz + 1), camera);
+                    Vector3f q3 = rel(base.add(ix, 0, iz + 1), camera);
+                    FxDraw.quad(q0, q1, q2, q3, ICE, 0.5f + 0.4999f * local, ICE_BLUE, 0.6f, false);
+                }
+            }
+            for (int i = 0; i < 40; i++) {
+                float a = hash(i, 101) * Mth.TWO_PI;
+                float r = 1.5f + hash(i, 102) * (f.a - 2);
+                float k = smooth((age - 5 - r * 2) / 10) * fade;
+                iceSpike(new Vector3f(c).add(Mth.sin(a) * r, -0.05f, Mth.cos(a) * r), new Vector3f(Mth.sin(a) * 0.3f, 1, Mth.cos(a) * 0.3f),
+                        (0.2f + hash(i, 103) * 0.7f) * k, 0.14f, i, 1);
+            }
+            if (age >= wave && age < wave + 50) {
+                float a = age - wave;
+                for (int j = 0; j < 16; j++) {
+                    float ang = j / 16f * Mth.TWO_PI;
+                    float r = f.a * (1 - (1 - Math.min(1, a / 18)) * (1 - Math.min(1, a / 18)));
+                    FxDraw.billboard(new Vector3f(c).add(Mth.sin(ang) * r, 0.6f, Mth.cos(ang) * r), 2.4f, j, FxDraw.SMOKE, 0.2f, MIST,
+                            0.5f * (1 - a / 50), false);
+                }
+            }
+            return;
+        }
+        // Cracks running out from her feet, lying on the ground.
+        for (int i = 0; i < 14; i++) {
+            float a = i / 14f * Mth.TWO_PI + hash(i, 104) * 0.3f;
+            Vector3f last = new Vector3f(c);
+            for (int k = 1; k <= 6; k++) {
+                float r = k * f.a / 6.5f * smooth((age - k * 2) / 14);
+                float ang = a + Mth.sin(k * 3 + i) * 0.25f;
+                Vector3f p = new Vector3f(c).add(Mth.sin(ang) * r, 0, Mth.cos(ang) * r);
+                groundStrip(last, p, 0.12f, FxDraw.BEAM, 0.9f, ICE_BLUE, 0.8f * fade, true);
+                last = p;
+            }
+        }
+        FxDraw.disk(c, new Vector3f(0, 1, 0), radius * 2.1f, FxDraw.SOFT, 0.05f, PALE, 0.3f * fade, true);
+        if (age >= wave && age < wave + 50) {
+            float a = age - wave;
+            float r = f.a * (1 - (1 - Math.min(1, a / 18)) * (1 - Math.min(1, a / 18)));
+            FxDraw.disk(new Vector3f(c).add(0, 0.5f, 0), new Vector3f(0, 1, 0), 2 + r * 2, FxDraw.RING, 0.2f, WHITE, 1 - a / 50, true);
+            if (f.hitAt < -50) {
+                f.hitAt = 0;
+                Minecraft mc = Minecraft.getInstance();
+                if (mc.player != null && mc.player.position().distanceTo(f.pos) < f.a * 2) {
+                    ScreenFx.flash(0xEAF6FF, 0.45f, 10);
+                    ScreenShake.start(0.5f, 16);
+                }
+            }
+        }
+        snowfall(f.pos, f.a * 0.85f, age, 220, smooth(age / 20) * fade, camera);
+    }
+
+    // The flat look of the ice over a body (IceShell, when the shader can't be used).
     // The six faces of a box cut into quads of about half a block, each filled from the bottom up to `fill` (0..1 of
     // the box's height), or, with fill < 0, dissolving cell by cell (`left` of it remaining).
-    private static void iceBox(AABB box, Vec3 camera, float fill, float left, int seed) {
+    static void iceBox(AABB box, Vec3 camera, float fill, float left, int seed) {
         float[] col = {0.75f + 0.02f * (seed % 7), 0.9f, 1f};
         double h = box.getYsize();
         double fillY = box.minY + h * Math.max(0, fill);
@@ -925,44 +1109,6 @@ public final class SubFx {
             Vector3f q2 = rel(new Vec3(box.maxX, box.maxY, box.maxZ), camera);
             Vector3f q3 = rel(new Vec3(box.minX, box.maxY, box.maxZ), camera);
             FxDraw.quad(q0, q1, q2, q3, ICE, fill < 0 ? 0.5f + 0.4999f * left : 0.9999f, col, 0.9f, false);
-        }
-    }
-
-    // The ground freezing around her (the Bankai): a disc of ice spreading, a cold ring, white mist.
-    private static void frost(Fx f, Vec3 camera, float age, boolean glow) {
-        float spread = smooth(age / 16);
-        float fade = 1 - smooth((age - (f.b - 20)) / 20);
-        float radius = f.a * spread;
-        if (!glow) {
-            float cell = 1;
-            int n = (int) Math.ceil(radius / cell);
-            Vec3 base = new Vec3(Math.floor(f.pos.x), f.pos.y + 0.03, Math.floor(f.pos.z));
-            for (int ix = -n; ix <= n; ix++) {
-                for (int iz = -n; iz <= n; iz++) {
-                    double dx = ix + 0.5;
-                    double dz = iz + 0.5;
-                    double dist = Math.sqrt(dx * dx + dz * dz);
-                    if (dist > radius) {
-                        continue;
-                    }
-                    float local = (float) Mth.clamp((radius - dist) / 2.5, 0, 1) * fade;
-                    Vector3f q0 = rel(base.add(ix, 0, iz), camera);
-                    Vector3f q1 = rel(base.add(ix + 1, 0, iz), camera);
-                    Vector3f q2 = rel(base.add(ix + 1, 0, iz + 1), camera);
-                    Vector3f q3 = rel(base.add(ix, 0, iz + 1), camera);
-                    FxDraw.quad(q0, q1, q2, q3, ICE, 0.5f + 0.4999f * local, ICE_BLUE, 0.75f, false);
-                }
-            }
-            return;
-        }
-        Vector3f c = rel(f.pos.add(0, 0.08, 0), camera);
-        FxDraw.disk(c, new Vector3f(0, 1, 0), f.a * 2.4f * Math.min(1, age / 10 + 0.1f), FxDraw.RING, 0.06f, WHITE, 0.8f * (1 - smooth(age / 14)), true);
-        FxDraw.disk(c, new Vector3f(0, 1, 0), radius * 2.1f, FxDraw.SOFT, 0.05f, ICE_BLUE, 0.3f * fade, true);
-        for (int i = 0; i < 18; i++) {
-            float ang = hash(i, 101) * Mth.TWO_PI;
-            float r = radius * Mth.sqrt(hash(i, 102));
-            Vector3f p = new Vector3f(c).add(Mth.cos(ang) * r, 0, Mth.sin(ang) * r);
-            crystal(p, (0.6f + 1.4f * hash(i, 103)) * smooth((radius - r) / 2), ang, 0.8f * fade);
         }
     }
 

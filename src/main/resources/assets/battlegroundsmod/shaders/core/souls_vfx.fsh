@@ -655,6 +655,8 @@ vec4 ice(vec2 uvq, float param, float seed, float time, out float core) {
     vec3 pale = vec3(0.84, 0.95, 1.0);
     vec3 c = mix(deep, pale, clamp(0.35 + vo.x * 0.4 + (n - 0.5) * 0.15, 0.0, 1.0));
     c += vec3(0.75, 0.9, 1.0) * crack * 0.35 + tw;
+    // color.g shades the face (the 3D ice spikes light each side differently; 0.9 = full light).
+    c *= 0.6 + 0.4 * clamp(color.g / 0.9, 0.0, 1.2);
     core = edge * 0.8 + tw;
     return vec4(c, clamp(0.5 + crack * 0.25 + edge * 0.5 + tw, 0.0, 1.0));
 }

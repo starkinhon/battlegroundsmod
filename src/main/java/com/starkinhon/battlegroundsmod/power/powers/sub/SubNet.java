@@ -34,7 +34,9 @@ public final class SubNet {
     public static final int HAKUREN = 10;
     // The ice blade from pos along dir: a = length.
     public static final int SHIRAFUNE = 11;
-    // id = entity frozen for a ticks: b = 0 from the feet up, 1 all at once; c = 1 shatters it now.
+    // id = entity frozen (IceShell): pos = where the ice starts (the feet, or the point it spreads from), dir.x = ticks
+    // to cover the body, dir.y = how far it reaches in blocks for a 1.8-tall body (0 = its height), a = ticks it lasts,
+    // b = 0 from the feet up, 1 out from pos; c = 0 starts it, 1 shatters it now, 2 thaws it now.
     public static final int FREEZE = 12;
     // The ground freezing around pos: a = radius, b = ticks it lasts.
     public static final int FROST = 13;
@@ -62,6 +64,10 @@ public final class SubNet {
     public static final int WORLD_CUT = 25;
     // A beam of light from pos to pos + dir: a = width, b = color (COLOR_*).
     public static final int BEAM = 26;
+    // Rukia's Bankai armor on id (the program over time is Rukia.BANKAI_*); c = 1 stops it early (thaws).
+    public static final int ICE_ARMOR = 27;
+    // A crystal of ice standing at pos toward dir: a = height, b = ticks it stays.
+    public static final int ICE_SPIKE = 28;
 
     public static final int STYLE_SUKUNA = 0;
     public static final int STYLE_PINK = 1;
