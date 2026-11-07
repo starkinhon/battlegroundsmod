@@ -146,8 +146,11 @@ public final class Melee {
         CombatMode.enter(attacker);
         Stamina.gain(attacker, StaminaSpec.get().ganhoGolpePct());
         boolean sword = SwordArts.held(attacker);
+        int windUp = golpe.windUp();
         if (sword) {
-            SwordArts.comboSwing(attacker, step);
+            int extra = SwordArts.comboSwing(attacker, step);
+            windUp += extra;
+            data.punchDelay += extra;
         } else {
             PacketDistributor.sendToPlayersTrackingEntityAndSelf(attacker, new ModPayloads.ComboAnimation(attacker.getId(), step));
         }
@@ -158,7 +161,7 @@ public final class Melee {
             attacker.hurtMarked = true;
         }
         int interrupts = data.interrupts;
-        Tasks.later(golpe.windUp(), () -> {
+        Tasks.later(windUp, () -> {
             if (data.interrupts != interrupts) {
                 return;
             }
