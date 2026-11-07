@@ -62,6 +62,9 @@ public final class Reiatsu {
             }
             boolean held = caster instanceof Player ? com.starkinhon.battlegroundsmod.combat.Stamina.holding(caster) : age < bossHold;
             float charge = Math.min(1, age / (float) grow);
+            if (held) {
+                com.starkinhon.battlegroundsmod.combat.Charge.report(caster, charge);
+            }
             float radius = (float) Mth.lerp(smooth(charge), spec.raioClique(), spec.raioMax());
             float strength = 0.3f + 0.7f * smooth(charge);
             now.busyTicks = Math.max(now.busyTicks, 2);

@@ -75,6 +75,9 @@ public final class Byakuya {
             if (back[0] < 0 && (age >= most || (age >= least && !held))) {
                 back[0] = age;
             }
+            if (back[0] < 0 && held) {
+                com.starkinhon.battlegroundsmod.combat.Charge.report(caster, age / (double) most);
+            }
             Vec3 goal;
             if (back[0] < 0) {
                 goal = Combat.raycastPoint(caster, range);
@@ -160,6 +163,9 @@ public final class Byakuya {
             SubCommon.busy(caster, 2);
             float closed = Math.min(1, age / (float) closeTicks);
             boolean held = SubCommon.held(caster, age, bossHold);
+            if (held) {
+                com.starkinhon.battlegroundsmod.combat.Charge.report(caster, closed);
+            }
             // Caught inside: slowed hard while it closes.
             target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 4, closed > 0.6f ? 5 : 2, false, false));
             if (age % 6 == 0) {

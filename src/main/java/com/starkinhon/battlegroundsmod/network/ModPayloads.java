@@ -251,6 +251,22 @@ public final class ModPayloads {
         }
     }
 
+    // Server -> client: how far the attack the player holds has charged, 0..1, or -1 when nothing charges (combat/Charge).
+    public record SyncCharge(float progress) implements CustomPacketPayload {
+        public static final Type<SyncCharge> TYPE = payloadType("sync_charge");
+        public static final StreamCodec<ByteBuf, SyncCharge> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.FLOAT, SyncCharge::progress, SyncCharge::new);
+
+        void applyTo(Player player) {
+            player.getData(ModAttachments.POWER).chargeSent = progress;
+        }
+
+        @Override
+        public Type<SyncCharge> type() {
+            return TYPE;
+        }
+    }
+
     // Server -> client: a player started a skill with a body animation (timing comes from the skill's spec).
     public record PlaySkillAnimation(int entityId, String skill, boolean awakened) implements CustomPacketPayload {
         public static final Type<PlaySkillAnimation> TYPE = payloadType("play_skill_animation");
@@ -990,6 +1006,7 @@ public final class ModPayloads {
         }));
         registrar.playToClient(SyncPower.TYPE, SyncPower.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> payload.applyTo(context.player())));
         registrar.playToClient(SyncStamina.TYPE, SyncStamina.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> payload.applyTo(context.player())));
+        registrar.playToClient(SyncCharge.TYPE, SyncCharge.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> payload.applyTo(context.player())));
         registrar.playToClient(PlaySkillAnimation.TYPE, PlaySkillAnimation.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.playSkillAnimation(payload.entityId(), payload.skill(), payload.awakened())));
         registrar.playToClient(ComboAnimation.TYPE, ComboAnimation.STREAM_CODEC, (payload, context) -> context.enqueueWork(

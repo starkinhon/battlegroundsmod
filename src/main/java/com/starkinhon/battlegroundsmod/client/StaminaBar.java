@@ -12,6 +12,7 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
@@ -22,13 +23,13 @@ import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 // side of the screen. Gold, red when low, dark red filling back up while exhausted. A white trail shows what was just
 // spent. Full and out of combat it fades out. Values in padrao.estamina.json ("barra").
 public final class StaminaBar {
-    private static final int SEGMENTS = 28;
+    static final int SEGMENTS = 28;
     private static final Matrix4f VIEW = new Matrix4f();
     private static final Matrix4f PROJ = new Matrix4f();
     private static Vec3 camera = Vec3.ZERO;
     private static Vector3f right = new Vector3f(1, 0, 0);
     private static Vector3f up = new Vector3f(0, 1, 0);
-    private static boolean captured;
+    static boolean captured;
 
     // Shown values, eased towards the synced one.
     private static float shown = 1;
@@ -58,8 +59,17 @@ public final class StaminaBar {
         if (player == null || minecraft.options.hideGui || player.isSpectator()) {
             return;
         }
+        // Menus (inventory, chests, the Souls Book...) cover the bars: not drawn over them. The chat keeps them.
+        if (minecraft.screen != null && !(minecraft.screen instanceof ChatScreen)) {
+            return;
+        }
         PowerData data = player.getData(ModAttachments.POWER);
-        if (!data.hasPower() || data.stamina < 0) {
+        if (!data.hasPower()) {
+            return;
+        }
+        // The charge bar stands beside this one, even while this one is faded out.
+        ChargeBar.render(graphics, deltaTracker, player, data);
+        if (data.stamina < 0) {
             return;
         }
         StaminaSpec.Barra spec = StaminaSpec.get().barra();
@@ -177,14 +187,14 @@ public final class StaminaBar {
         }
     }
 
-    private static float[] lerp(float[][] points, float at) {
+    static float[] lerp(float[][] points, float at) {
         int i = Math.min(points.length - 2, (int) Math.floor(at));
         float t = at - i;
         return new float[] {Mth.lerp(t, points[i][0], points[i + 1][0]), Mth.lerp(t, points[i][1], points[i + 1][1])};
     }
 
     // A point of the curve (angle 0 = straight out to the right, up is positive) on the GUI, or null behind the camera.
-    private static float[] project(GuiGraphics graphics, Vec3 center, double angle, double distance) {
+    static float[] project(GuiGraphics graphics, Vec3 center, double angle, double distance) {
         double cos = Math.cos(angle) * distance;
         double sin = Math.sin(angle) * distance;
         Vector3f rel = new Vector3f(
