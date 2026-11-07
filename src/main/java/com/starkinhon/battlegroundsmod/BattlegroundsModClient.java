@@ -92,6 +92,8 @@ public class BattlegroundsModClient {
                 com.starkinhon.battlegroundsmod.client.fx.EsferaRenderer::onRenderPost);
         NeoForge.EVENT_BUS.addListener(EventPriority.LOW, false, RenderLivingEvent.Pre.class,
                 com.starkinhon.battlegroundsmod.client.fx.VermelhoRenderer::onRenderPre);
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOW, false, RenderLivingEvent.Pre.class, com.starkinhon.battlegroundsmod.client.LimpBody::onRenderPre);
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, true, RenderLivingEvent.Post.class, com.starkinhon.battlegroundsmod.client.LimpBody::onRenderPost);
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, true, RenderLivingEvent.Post.class,
                 com.starkinhon.battlegroundsmod.client.fx.VermelhoRenderer::onRenderPost);
         NeoForge.EVENT_BUS.addListener(ScreenFx::onComputeFov);
@@ -230,6 +232,7 @@ public class BattlegroundsModClient {
         if (net.minecraft.client.Minecraft.getInstance().isPaused()) {
             return;
         }
+        com.starkinhon.battlegroundsmod.client.LimpBody.tick();
         FaceCutscene.tick();
         BossCutscene.tick();
         ShoulderCutscene.tick();
