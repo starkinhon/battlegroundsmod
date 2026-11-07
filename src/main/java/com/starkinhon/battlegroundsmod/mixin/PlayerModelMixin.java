@@ -18,6 +18,7 @@ public abstract class PlayerModelMixin {
             float netHeadYaw, float headPitch, CallbackInfo ci) {
         PlayerModel<?> model = (PlayerModel<?>) (Object) this;
         SkillAnimations.apply(entity, model, ageInTicks);
+        com.starkinhon.battlegroundsmod.client.outfit.KokushiboSheathLayer.holdArm(entity, model, ageInTicks);
         model.leftSleeve.copyFrom(model.leftArm);
         model.rightSleeve.copyFrom(model.rightArm);
         model.jacket.copyFrom(model.body);

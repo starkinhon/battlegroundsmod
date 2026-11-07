@@ -6,6 +6,7 @@ import java.util.Random;
 
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
+import org.joml.Vector3d;
 import org.joml.Vector3f;
 
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -15,13 +16,17 @@ import com.starkinhon.battlegroundsmod.client.fx.FxRenderTypes;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.world.phys.Vec3;
 
 // Kokushibo's sword putting itself away (Stark, 2026-11-07: "Só no guardar"): it is living flesh. It wakes up in the
 // hand (veins throb, the gold eyes open), the grip melts out of the palm in strings of slime, it flies by itself along
 // a curve over his left side, writhing and shaking off drops, and slides into the sheath, which swallows it; there it
 // hardens back into a blade. The character stands still; only the sword moves. A port of the approved visualizer page
 // forja/kokushibo-espada/espada-carne-viva.html (v3, scene "Guardar na bainha"): same path, timings and shapes.
-// Every space here is the player model's (the pose KokushiboSheathLayer gets: 1 = one block, +y down, -z the front).
+// The sword, its path and the slime from the palm are in the player model's space (the pose KokushiboSheathLayer
+// gets: 1 = one block, +y down, -z the front), so they go along when he walks, runs or flies. The drops and the
+// strings trailing behind the blade are let go into the world: they fall and hang where they were left (Stark,
+// 2026-11-07: in the player's space they followed him around, floating in the air).
 // The page works in its own world (the player at the origin facing +z, +y up, 0.9375 blocks per unit): its numbers
 // come through visualPoint / visualDir.
 final class FleshSheathe {
@@ -47,7 +52,7 @@ final class FleshSheathe {
         private Path path;
         private float lastTick;
         private final boolean[] dropped = new boolean[GRIP_Y.length];
-        private final List<List<float[]>> strings = new ArrayList<>();
+        private final List<List<double[]>> strings = new ArrayList<>();
         private final List<Drop> drops = new ArrayList<>();
 
         Run() {
@@ -57,13 +62,14 @@ final class FleshSheathe {
         }
     }
 
+    // In the world: p a position, v blocks per second.
     private static final class Drop {
-        final Vector3f p;
+        final Vector3d p;
         final Vector3f v;
         final float size;
         float life;
 
-        Drop(Vector3f p, Vector3f v, float size) {
+        Drop(Vector3d p, Vector3f v, float size) {
             this.p = p;
             this.v = v;
             this.size = size;
@@ -168,7 +174,7 @@ final class FleshSheathe {
     // held: the sword's space as held in the right hand; sheath: the sheath's space on the hip; palm: the middle of
     // the right palm. All relative to pose (the player model's space). t: ticks since it started putting it away.
     static void render(Run run, PoseStack.Pose pose, Matrix4f held, Matrix4f sheath, Vector3f palm, float t, float ageInTicks,
-            MultiBufferSource buffer, int light) {
+            MultiBufferSource buffer, int light, Vec3 camera) {
         if (run.path == null) {
             run.path = new Path(held, sheath);
         }
@@ -182,6 +188,10 @@ final class FleshSheathe {
         boolean shader = FxRenderTypes.fleshReady();
         RenderType type = shader ? FxRenderTypes.flesh(KokushiboSwordRenderer.TEXTURE) : RenderType.entityCutoutNoCull(KokushiboSwordRenderer.TEXTURE);
         Out out = new Out(buffer.getBuffer(type), pose, light, shader);
+        // The player model's space <-> the world (the pose is relative to the camera's position).
+        Matrix4f toCamera = pose.pose();
+        Matrix4f fromCamera = new Matrix4f(toCamera).invert();
+        World world = new World(toCamera, fromCamera, camera);
         float k = path.k;
 
         // how alive it is
@@ -249,7 +259,7 @@ final class FleshSheathe {
                 float snapAt = 23 + i * 1.6f, snap = clamp01((tick - snapAt) / 3.5f);
                 if (snap > 0 && snap < 0.15f && !run.dropped[i]) {
                     run.dropped[i] = true;
-                    run.drops.add(new Drop(new Vector3f(a).lerp(b, 0.5f), visualDir(0, -0.2f, 0), 0.016f));
+                    run.drops.add(world.drop(new Vector3f(a).lerp(b, 0.5f), visualDir(0, -0.2f, 0), 0.016f));
                 }
                 if (tick < snapAt) {
                     run.dropped[i] = false;
@@ -273,7 +283,7 @@ final class FleshSheathe {
         // ago, thins as it stretches, snaps into drops and grows again
         boolean flying = tick >= 23 && tick < 49;
         for (int i = 0; i < STRING_Y.length; i++) {
-            List<float[]> hist = run.strings.get(i);
+            List<double[]> hist = run.strings.get(i);
             float dist = dTip - (TIP - STRING_Y[i]) * k;
             if (!flying || dist > path.dMouth) {
                 hist.clear();
@@ -281,19 +291,21 @@ final class FleshSheathe {
             }
             path.frame(dist, f);
             Vector3f a = new Vector3f(f.p);
-            hist.add(new float[] { tick, a.x, a.y, a.z });
+            Vector3d aw = world.point(a);
+            hist.add(new double[] { tick, aw.x, aw.y, aw.z });
             while (hist.size() > 2 && hist.get(1)[0] < tick - 3.5f) {
                 hist.remove(0);
             }
-            float[] first = hist.get(0);
-            Vector3f b = new Vector3f(first[1], first[2], first[3]);
+            // where the point was a moment ago stays put in the world
+            double[] first = hist.get(0);
+            Vector3f b = fromCamera.transformPosition(new Vector3f((float) (first[1] - camera.x), (float) (first[2] - camera.y), (float) (first[3] - camera.z)));
             float len = a.distance(b) / U;
             float max = 0.28f + 0.12f * ((i * 7) % 3);
             if (len > max) {
-                run.drops.add(new Drop(b, visualDir(0, -0.1f, 0), 0.014f + RANDOM.nextFloat() * 0.01f));
-                run.drops.add(new Drop(new Vector3f(b).lerp(a, 0.4f), new Vector3f(), 0.01f));
+                run.drops.add(world.drop(b, visualDir(0, -0.1f, 0), 0.014f + RANDOM.nextFloat() * 0.01f));
+                run.drops.add(world.drop(new Vector3f(b).lerp(a, 0.4f), new Vector3f(), 0.01f));
                 hist.clear();
-                hist.add(new float[] { tick, a.x, a.y, a.z });
+                hist.add(new double[] { tick, aw.x, aw.y, aw.z });
                 continue;
             }
             if (len < 0.02f) {
@@ -306,32 +318,46 @@ final class FleshSheathe {
         // drops shaken off in flight
         if (tick >= 24 && tick < 46 && Math.floor(tick * 3) != Math.floor(run.lastTick * 3)) {
             path.frame(dTip - (TIP - 8 - RANDOM.nextFloat() * 22) * k, f);
-            run.drops.add(new Drop(new Vector3f(f.p), visualDir((RANDOM.nextFloat() - 0.5f) * 0.3f, 0.05f, (RANDOM.nextFloat() - 0.5f) * 0.3f),
+            run.drops.add(world.drop(new Vector3f(f.p), visualDir((RANDOM.nextFloat() - 0.5f) * 0.3f, 0.05f, (RANDOM.nextFloat() - 0.5f) * 0.3f),
                     0.014f + RANDOM.nextFloat() * 0.01f));
         }
         // squeezed out round the mouth as it slides in
         if (tick >= 46 && tick < 53 && Math.floor(tick * 2) != Math.floor(run.lastTick * 2)) {
             Vector3f side = new Vector3f(RANDOM.nextFloat() - 0.5f, RANDOM.nextFloat() * 0.5f, RANDOM.nextFloat() - 0.5f).normalize();
-            run.drops.add(new Drop(new Vector3f(path.mouth).add(visualDir(side.x * 0.04f, side.y * 0.04f, side.z * 0.04f)),
+            run.drops.add(world.drop(new Vector3f(path.mouth).add(visualDir(side.x * 0.04f, side.y * 0.04f, side.z * 0.04f)),
                     visualDir(side.x * 0.25f, side.y * 0.25f + 0.1f, side.z * 0.25f), 0.012f));
         }
         float dt = Math.max(0, Math.min(0.1f, (tick - run.lastTick) / 20));
         for (int i = run.drops.size() - 1; i >= 0; i--) {
             Drop drop = run.drops.get(i);
             drop.life += dt;
-            // the page's gravity, -9.8 * 0.45 up its y: down here is +y
-            drop.v.y += 9.8f * dt * 0.45f * U;
-            drop.p.fma(dt, drop.v);
+            // the page's gravity, 9.8 * 0.45 down
+            drop.v.y -= 9.8f * dt * 0.45f;
+            drop.p.add(drop.v.x * dt, drop.v.y * dt, drop.v.z * dt);
             if (drop.life > 0.75f) {
                 run.drops.remove(i);
                 continue;
             }
             // a drop stretches along its fall, like slime
-            float speed = drop.v.length() / U;
+            float speed = drop.v.length();
             float r = drop.size * Math.max(0.05f, 1 - drop.life * 1.3f) * U;
-            out.drop(drop.p, drop.v, r, r * (1 + speed * 2.2f));
+            Vector3f at = fromCamera.transformPosition(new Vector3f((float) (drop.p.x - camera.x), (float) (drop.p.y - camera.y), (float) (drop.p.z - camera.z)));
+            Vector3f along = fromCamera.transformDirection(new Vector3f(drop.v));
+            out.drop(at, along, r, r * (1 + speed * 2.2f));
         }
         run.lastTick = tick;
+    }
+
+    // From the player model's space to the world: points, and the page's velocities (visualDir) as blocks per second.
+    private record World(Matrix4f toCamera, Matrix4f fromCamera, Vec3 camera) {
+        Vector3d point(Vector3f model) {
+            Vector3f c = toCamera.transformPosition(new Vector3f(model));
+            return new Vector3d(c.x + camera.x, c.y + camera.y, c.z + camera.z);
+        }
+
+        Drop drop(Vector3f model, Vector3f modelVelocity, float size) {
+            return new Drop(point(model), toCamera.transformDirection(new Vector3f(modelVelocity)), size);
+        }
     }
 
     // Writes the vertices: through souls_flesh (flesh and wet in the color, the unbent height for the veins in the
