@@ -138,6 +138,7 @@ public final class ClientHooks {
         com.starkinhon.battlegroundsmod.client.fx.RoxoRenderer.clear();
         com.starkinhon.battlegroundsmod.client.fx.AizenFx.clear();
         com.starkinhon.battlegroundsmod.client.fx.SwordFx.clear();
+        com.starkinhon.battlegroundsmod.client.fx.PunchFxRenderer.clear();
         com.starkinhon.battlegroundsmod.client.fx.SubFx.clear();
     }
 
@@ -237,6 +238,10 @@ public final class ClientHooks {
 
     public static void subFx(int kind, int id, Vec3 pos, Vec3 dir, float a, float b, float c) {
         com.starkinhon.battlegroundsmod.client.fx.SubFx.receive(kind, id, pos, dir, a, b, c);
+    }
+
+    public static void punchFx(int kind, int entityId, Vec3 pos, Vec3 dir, float a, float b) {
+        com.starkinhon.battlegroundsmod.client.fx.PunchFxRenderer.receive(kind, entityId, pos, dir, a, b);
     }
 
     public static void swordFx(int kind, int entityId, Vec3 pos, Vec3 dir, float a, float b) {

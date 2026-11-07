@@ -4,7 +4,6 @@ import java.util.Comparator;
 import java.util.List;
 
 import com.starkinhon.battlegroundsmod.ModAttachments;
-import com.starkinhon.battlegroundsmod.fx.ModParticles;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
 import com.starkinhon.battlegroundsmod.power.Ability;
 import com.starkinhon.battlegroundsmod.power.Power;
@@ -13,7 +12,6 @@ import com.starkinhon.battlegroundsmod.power.Powers;
 import com.starkinhon.battlegroundsmod.skill.ComboSpec;
 import com.starkinhon.battlegroundsmod.skill.StaminaSpec;
 
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -203,13 +201,22 @@ public final class Melee {
         return Combat.center(hit).add(toAttacker.lengthSqr() < 1.0E-4 ? Vec3.ZERO : toAttacker.normalize().scale(hit.getBbWidth() * 0.5));
     }
 
-    // The combo's hit look (padrao.combo.json vfx of that momento, "golpe" or "final", plus a burst in the fist color),
-    // shared by every punch: combo, Dash Attack, Forte and Barragem.
+    // The combo's hit look, shared by every punch: the air shock tinted with the soul (combat/PunchFx) for the momento
+    // ("golpe" a jab, "final" the last hit, "dash" the Dash Attack), plus padrao.combo.json's vfx of that momento if any.
     static void hitFx(LivingEntity attacker, LivingEntity hit, String momento) {
+        int kind = momento == null ? PunchFx.JAB : switch (momento) {
+            case "final" -> PunchFx.FINAL;
+            case "dash" -> PunchFx.DASH;
+            default -> PunchFx.JAB;
+        };
+        hitFx(attacker, hit, momento, kind, 0);
+    }
+
+    static void hitFx(LivingEntity attacker, LivingEntity hit, String momento, int kind, float charge) {
         ServerLevel level = Combat.level(attacker);
         Vec3 at = hitPos(attacker, hit);
         Fx.effects(level, ComboSpec.get().skill(), false, momento, at, attacker.getLookAngle());
-        Fx.burst(level, Fx.dust(fistColor(attacker), 1.1f), at, 5, 0.15, 0);
+        PunchFx.hit(level, kind, at, attacker.getLookAngle(), fistColor(attacker), charge, hit.getY());
     }
 
     static void shake(LivingEntity entity, float strength, int ticks) {
@@ -258,20 +265,13 @@ public final class Melee {
                     Charge.report(player, charge);
                 }
                 player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 3, 2, false, false));
-                // Energy gathering on the fist, more and faster the longer it charges.
-                int bits = 3 + (int) (charge * 5);
-                for (int i = 0; i < bits; i++) {
-                    Vec3 from = hand.add((level.random.nextDouble() - 0.5) * 2, (level.random.nextDouble() - 0.5) * 2, (level.random.nextDouble() - 0.5) * 2);
-                    Fx.moving(level, Fx.dust(color, 1f + charge), from, hand.subtract(from).scale(0.25 + charge * 0.15));
-                }
-                Fx.burst(level, ParticleTypes.CRIT, hand, 2, 0.1, 0.05);
+                // Vapor rings tinted with the soul closing on the fist, stronger the longer it charges.
+                PunchFx.follow(level, PunchFx.CHARGE, player, player.getLookAngle(), color, charge);
                 if (age > windup && (age - windup) % 6 == 0) {
-                    Fx.burst(level, ModParticles.ring(lighter(color), 0.6f + charge, 5), hand, 1, 0, 0);
                     Fx.sound(level, hand, SoundEvents.BREEZE_CHARGE, 0.5f, 0.8f + charge * 0.8f);
                 }
                 if (age == windup + STRONG_CHARGE_TICKS - 1) {
                     Fx.sound(level, hand, SoundEvents.AMETHYST_BLOCK_CHIME, 1.2f, 1.6f);
-                    Fx.burst(level, ModParticles.ring(0xFFFFFF, 1.8f, 7), hand, 1, 0, 0);
                 }
                 return false;
             }
@@ -279,22 +279,19 @@ public final class Melee {
             Vec3 look = player.getLookAngle();
             Vec3 front = player.getEyePosition().add(look.scale(2.5));
             LivingEntity target = Combat.raycastTarget(player, 4.5);
-            Fx.burst(level, ParticleTypes.SWEEP_ATTACK, front, 1, 0, 0);
-            Fx.line(level, ModParticles.puff(0xEEEEEE, 0.25f, 10, 0.9f), hand, front.add(look.scale(2)), 0.4);
-            Fx.burst(level, ModParticles.ring(0xFFFFFF, 1.2f + charge, 6), front, 1, 0, 0);
+            if (target == null) {
+                PunchFx.swing(level, front, look, color, 1 + 0.5f * charge);
+            }
             Fx.sound(level, front, SoundEvents.PLAYER_ATTACK_STRONG, 1.5f, 0.6f - charge * 0.15f);
             if (target != null) {
                 Vec3 hitPos = Combat.center(target);
                 Defense.breakGuard(target, player);
                 if (Combat.hurt(player, target, 10f * mult * power)) {
-                    hitFx(player, target, "final");
+                    hitFx(player, target, "final", PunchFx.FORTE, charge);
                     Stamina.gain(player, StaminaSpec.get().ganhoAcertoPct());
                     shake(target, 0.5f + charge * 0.5f, 8);
                 }
                 Combat.push(target, look, 2.6 * (1 + 0.8 * charge), 0.6 + 0.3 * charge);
-                Fx.burst(level, ParticleTypes.EXPLOSION, hitPos, 2 + (int) (charge * 3), 0.3, 0);
-                Fx.burst(level, Fx.dust(color, 2f), hitPos, 25, 0.5, 0);
-                Fx.burst(level, ModParticles.ring(0xFFFFFF, 1.5f + charge * 2, 8), hitPos, 1, 0, 0);
                 Fx.sound(level, hitPos, SoundEvents.GENERIC_EXPLODE.value(), 0.6f + charge * 0.6f, 1.6f - charge * 0.6f);
             }
             return true;
@@ -321,7 +318,6 @@ public final class Melee {
         ServerLevel level = Combat.level(player);
         PowerData data = player.getData(ModAttachments.POWER);
         int interrupts = data.interrupts;
-        int wind = lighter(fistColor);
         data.busyTicks = ticks + 4;
         Tasks.add(age -> {
             if (!player.isAlive() || data.interrupts != interrupts || !Stun.canAttack(player)) {
@@ -332,21 +328,13 @@ public final class Melee {
             if (age < ticks || data.attackHeld && age < maxTicks) {
                 data.busyTicks = 3;
                 player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 3, 1, false, false));
-                for (int i = 0; i < 2; i++) {
-                    Vec3 offset = new Vec3(level.random.nextDouble() - 0.5, level.random.nextDouble() - 0.5, level.random.nextDouble() - 0.5).scale(1.3);
-                    Vec3 at = eye.add(look.scale(range * 0.35 + level.random.nextDouble() * range * 0.4)).add(offset);
-                    Fx.moving(level, ModParticles.streak(0xFFFFFF, 1.1f, 5), at, look.scale(0.9));
-                    if (level.random.nextInt(3) == 0) {
-                        Fx.moving(level, ModParticles.puff(wind, 0.2f + level.random.nextFloat() * 0.15f, 6, 0.85f), at, look.scale(0.15));
-                    }
-                }
                 if (age % 2 == 0) {
-                    if (age % 4 == 0) {
-                        Fx.burst(level, ModParticles.ring(0xFFFFFF, 0.9f, 5), eye.add(look.scale(range * 0.6)), 1, 0, 0);
-                    }
+                    // Each punch pushes a small tinted vapor ring into the air in front.
+                    Vec3 offset = new Vec3(level.random.nextDouble() - 0.5, level.random.nextDouble() - 0.5, level.random.nextDouble() - 0.5).scale(0.9);
+                    PunchFx.swing(level, eye.add(look.scale(range * 0.4)).add(offset), look, fistColor, 0.4f);
                     for (LivingEntity target : Combat.inCone(player, range, 0.55)) {
                         if (Combat.hurt(player, target, hitDamage)) {
-                            hitFx(player, target, "golpe");
+                            hitFx(player, target, "golpe", PunchFx.BARRAGEM, 0);
                             Stamina.gain(player, StaminaSpec.get().ganhoAcertoBarragemPct());
                             shake(target, 0.15f, 4);
                         }
@@ -358,13 +346,7 @@ public final class Melee {
                 return false;
             }
             Vec3 front = eye.add(look.scale(2));
-            Fx.burst(level, ParticleTypes.EXPLOSION, front, 1, 0, 0);
-            Fx.burst(level, ParticleTypes.GUST, front, 1, 0, 0);
-            Fx.burst(level, ModParticles.ring(0xFFFFFF, 2.2f, 8), front, 1, 0, 0);
-            for (int i = 0; i < 8; i++) {
-                Vec3 offset = new Vec3(level.random.nextDouble() - 0.5, level.random.nextDouble() - 0.5, level.random.nextDouble() - 0.5).scale(1.6);
-                Fx.moving(level, ModParticles.streak(0xFFFFFF, 1.8f, 7), front.add(offset), look.scale(1.1));
-            }
+            PunchFx.swing(level, front, look, fistColor, 1.1f);
             Fx.sound(level, front, SoundEvents.PLAYER_ATTACK_KNOCKBACK, 1.5f, 0.6f);
             for (LivingEntity target : Combat.inCone(player, range, 0.55)) {
                 if (Combat.hurt(player, target, finisherDamage)) {
