@@ -4,6 +4,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import com.starkinhon.battlegroundsmod.item.AizenSwordItem;
+import com.starkinhon.battlegroundsmod.item.KokushiboSwordItem;
 import com.starkinhon.battlegroundsmod.item.FightRodItem;
 import com.starkinhon.battlegroundsmod.item.PowerBookItem;
 import com.starkinhon.battlegroundsmod.item.SoulInsectItem;
@@ -30,6 +31,10 @@ public final class ModItems {
     // Aizen's sword: the model from the Armario Souls viewer, as a normal (unbreakable) sword.
     public static final DeferredItem<AizenSwordItem> AIZEN_SWORD = BattlegroundsMod.ITEMS.registerItem("aizen_sword",
             AizenSwordItem::new, new Item.Properties().rarity(Rarity.EPIC).fireResistant().component(DataComponents.UNBREAKABLE, new Unbreakable(true)));
+
+    // Kokushibo's sword (Kyokokukamusari): the 3D model Stark sent, with its sheath on the hip.
+    public static final DeferredItem<KokushiboSwordItem> KOKUSHIBO_SWORD = BattlegroundsMod.ITEMS.registerItem("kokushibo_sword",
+            KokushiboSwordItem::new, new Item.Properties().rarity(Rarity.EPIC).fireResistant().component(DataComponents.UNBREAKABLE, new Unbreakable(true)));
 
     // Eaten once: never hungry again, never healed by it (item/SoulInsectItem).
     public static final DeferredItem<SoulInsectItem> SOUL_INSECT = BattlegroundsMod.ITEMS.registerItem("soul_insect",

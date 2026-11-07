@@ -1,0 +1,49 @@
+package com.starkinhon.battlegroundsmod.client.outfit;
+
+import java.io.DataInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.starkinhon.battlegroundsmod.BattlegroundsMod;
+
+import net.minecraft.client.Minecraft;
+import net.minecraft.resources.ResourceLocation;
+
+// A triangle mesh baked from a Blender file (assets/battlegroundsmod/models/mesh/*.bin): a big-endian int with the
+// vertex count, then per vertex x y z u v nx ny nz as floats, three vertices per triangle. Positions are already in
+// the model's own space (for the swords: 1 = one pixel of the player model, +y the tip, +x the edge, 0 = the guard).
+public final class MeshModel {
+    private final float[] data;
+
+    private MeshModel(float[] data) {
+        this.data = data;
+    }
+
+    public static MeshModel load(String name) {
+        ResourceLocation id = ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "models/mesh/" + name + ".bin");
+        try (InputStream raw = Minecraft.getInstance().getResourceManager().open(id); DataInputStream in = new DataInputStream(raw)) {
+            int count = in.readInt();
+            float[] data = new float[count * 8];
+            for (int i = 0; i < data.length; i++) {
+                data[i] = in.readFloat();
+            }
+            return new MeshModel(data);
+        } catch (IOException e) {
+            throw new IllegalStateException("Missing mesh " + id, e);
+        }
+    }
+
+    // Each triangle goes out as a quad with its last corner repeated (entity render types draw quads).
+    public void emit(VertexConsumer out, PoseStack.Pose pose, int light, int overlay) {
+        float[] d = data;
+        for (int i = 0; i < d.length; i += 24) {
+            for (int v = 0; v < 4; v++) {
+                int o = i + Math.min(v, 2) * 8;
+                out.addVertex(pose, d[o], d[o + 1], d[o + 2]).setColor(1f, 1f, 1f, 1f).setUv(d[o + 3], d[o + 4])
+                        .setOverlay(overlay).setLight(light).setNormal(pose, d[o + 5], d[o + 6], d[o + 7]);
+            }
+        }
+    }
+}

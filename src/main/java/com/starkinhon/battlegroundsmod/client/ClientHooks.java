@@ -301,6 +301,10 @@ public final class ClientHooks {
         com.starkinhon.battlegroundsmod.client.outfit.Outfits.set(entityId, power);
     }
 
+    public static void sheathState(int entityId, boolean carrying) {
+        com.starkinhon.battlegroundsmod.client.outfit.Sheaths.set(entityId, carrying);
+    }
+
     public static void openPowerSelect() {
         Minecraft.getInstance().setScreen(new PowerSelectScreen());
     }

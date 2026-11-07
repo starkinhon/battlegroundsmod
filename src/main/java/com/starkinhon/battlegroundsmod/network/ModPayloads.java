@@ -1024,6 +1024,20 @@ public final class ModPayloads {
         }
     }
 
+    // Server -> client: whether this player carries Kokushibo's sword in the inventory (sheath on the hip).
+    public record SheathState(int entityId, boolean carrying) implements CustomPacketPayload {
+        public static final Type<SheathState> TYPE = payloadType("sheath_state");
+        public static final StreamCodec<ByteBuf, SheathState> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, SheathState::entityId,
+                ByteBufCodecs.BOOL, SheathState::carrying,
+                SheathState::new);
+
+        @Override
+        public Type<SheathState> type() {
+            return TYPE;
+        }
+    }
+
     // Client -> server: put the power's outfit on or take it off (abilities menu).
     public record ToggleOutfit(boolean on) implements CustomPacketPayload {
         public static final Type<ToggleOutfit> TYPE = payloadType("toggle_outfit");
@@ -1216,6 +1230,8 @@ public final class ModPayloads {
                 () -> ClientHooks.auraState(payload.entityId(), payload.power())));
         registrar.playToClient(OutfitState.TYPE, OutfitState.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.outfitState(payload.entityId(), payload.power())));
+        registrar.playToClient(SheathState.TYPE, SheathState.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.sheathState(payload.entityId(), payload.carrying())));
         registrar.playToClient(StanceState.TYPE, StanceState.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.stanceState(payload.entityId(), payload.power())));
         registrar.playToServer(ToggleOutfit.TYPE, ToggleOutfit.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {

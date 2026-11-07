@@ -162,6 +162,10 @@ public final class SwordFx {
                 AizenSwordRenderer.toSword(pose, true);
                 base = new Vector3f(0, 1.2f, 0);
                 tip = new Vector3f(0, 21, 0);
+            } else if (stack.getItem() instanceof com.starkinhon.battlegroundsmod.item.KokushiboSwordItem) {
+                com.starkinhon.battlegroundsmod.client.outfit.KokushiboSwordRenderer.toSword(pose, true);
+                base = new Vector3f(0, com.starkinhon.battlegroundsmod.client.outfit.KokushiboSwordRenderer.BLADE_BASE, 0);
+                tip = new Vector3f(0, com.starkinhon.battlegroundsmod.client.outfit.KokushiboSwordRenderer.TIP, 0);
             } else {
                 // A sword sprite: the blade on the diagonal, from past the guard to the tip.
                 base = new Vector3f(0.42f, 0.42f, 0.5f);

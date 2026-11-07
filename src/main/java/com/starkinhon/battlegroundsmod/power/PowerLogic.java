@@ -309,6 +309,13 @@ public final class PowerLogic {
                 data.outfitSent = outfit;
                 PacketDistributor.sendToPlayersTrackingEntityAndSelf(serverPlayer, new ModPayloads.OutfitState(serverPlayer.getId(), outfit));
             }
+            if (player.tickCount % 10 == 0) {
+                boolean carrying = carriesSheath(serverPlayer);
+                if (data.sheathSent == null || data.sheathSent != carrying) {
+                    data.sheathSent = carrying;
+                    PacketDistributor.sendToPlayersTrackingEntityAndSelf(serverPlayer, new ModPayloads.SheathState(serverPlayer.getId(), carrying));
+                }
+            }
             String stance = data.hasPower() ? data.power : "";
             if (!stance.equals(data.stanceSent)) {
                 data.stanceSent = stance;
@@ -327,8 +334,19 @@ public final class PowerLogic {
     public static void sendAura(ServerPlayer player, ServerPlayer watcher) {
         PacketDistributor.sendToPlayer(watcher, new ModPayloads.AuraState(player.getId(), auraOf(player)));
         PacketDistributor.sendToPlayer(watcher, new ModPayloads.OutfitState(player.getId(), outfitOf(player)));
+        PacketDistributor.sendToPlayer(watcher, new ModPayloads.SheathState(player.getId(), carriesSheath(player)));
         PowerData data = player.getData(ModAttachments.POWER);
         PacketDistributor.sendToPlayer(watcher, new ModPayloads.StanceState(player.getId(), data.hasPower() ? data.power : ""));
+    }
+
+    // Kokushibo's sheath goes on the hip of whoever has his sword anywhere in the inventory.
+    public static boolean carriesSheath(ServerPlayer player) {
+        for (net.minecraft.world.item.ItemStack stack : player.getInventory().items) {
+            if (stack.getItem() instanceof com.starkinhon.battlegroundsmod.item.KokushiboSwordItem) {
+                return true;
+            }
+        }
+        return player.getOffhandItem().getItem() instanceof com.starkinhon.battlegroundsmod.item.KokushiboSwordItem;
     }
 
     // The 3D outfit others should draw on this player: the power's, unless they took it off. Powers without an
