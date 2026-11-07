@@ -30,9 +30,6 @@ public final class FirstPersonAnimation {
     // eyes at 1.62.
     private static final float SCALE = 0.9375f;
     private static final float NECK_BELOW_EYES = 1.62f - 1.501f * SCALE;
-    // How far the sword arm is moved in first person (camera space: right, down).
-    private static final float SWORD_ASIDE_X = 0.28f;
-    private static final float SWORD_ASIDE_Y = -0.06f;
 
     private FirstPersonAnimation() {
     }
@@ -70,11 +67,6 @@ public final class FirstPersonAnimation {
 
         PoseStack pose = event.getPoseStack();
         pose.pushPose();
-        // A sword in the right hand is pulled off to the side of the view, so the blade and its guard don't sit on the
-        // crosshair (Stark, 2026-11-07: Kokushibo's sword covered the middle of the screen during the barrage).
-        if (right && player.getMainHandItem().getItem() instanceof net.minecraft.world.item.SwordItem) {
-            pose.translate(SWORD_ASIDE_X, SWORD_ASIDE_Y, 0);
-        }
         // From the camera to the body: the body does not pitch with the view, and may be turned from where the head looks.
         pose.mulPose(Axis.XP.rotationDegrees(player.getViewXRot(partial)));
         float headYaw = Mth.rotLerp(partial, player.yHeadRotO, player.yHeadRot);
@@ -131,12 +123,6 @@ public final class FirstPersonAnimation {
         world.translate(0, -1.501f, 0);
         arm.translateAndRotate(world);
         toHand(world, player);
-        // The same shift aside as the drawn sword, so the trail stays on the blade.
-        net.minecraft.client.Camera camera = Minecraft.getInstance().gameRenderer.getMainCamera();
-        org.joml.Vector3f left = camera.getLeftVector(), up = camera.getUpVector();
-        net.minecraft.world.phys.Vec3 at = player.getPosition(partial)
-                .add(-left.x() * SWORD_ASIDE_X + up.x() * SWORD_ASIDE_Y, -left.y() * SWORD_ASIDE_X + up.y() * SWORD_ASIDE_Y,
-                        -left.z() * SWORD_ASIDE_X + up.z() * SWORD_ASIDE_Y);
-        SwordFx.atWristFirstPerson(player, held, world, at);
+        SwordFx.atWristFirstPerson(player, held, world, player.getPosition(partial));
     }
 }
