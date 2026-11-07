@@ -51,6 +51,11 @@ public final class BossFalas {
         return say(speaker, key, cooldown, false);
     }
 
+    // Says it now, over the gap between lines (a scripted moment, like the Bills boss's Inevitável).
+    public static boolean sayNow(LivingEntity speaker, String key) {
+        return say(speaker, key, 0, true);
+    }
+
     private static boolean say(LivingEntity speaker, String key, int cooldown, boolean force) {
         if (!(speaker instanceof SoulBoss boss) || !boss.isBoss() || !boss.isAlive() || !(boss.level() instanceof ServerLevel level)) {
             return false;
@@ -121,7 +126,7 @@ public final class BossFalas {
         if (life > 0.6f) {
             state.lowSaid = false;
         }
-        if (!"destruction_god".equals(boss.powerData().power) || target == null || !target.isAlive()) {
+        if (!"destruction_god".equals(boss.powerData().power) || target == null || !target.isAlive() || BillsInevitavel.running(boss)) {
             return;
         }
         // Bills: the target stunned right in front of him.
@@ -166,6 +171,10 @@ public final class BossFalas {
             return;
         }
         LivingEntity victim = event.getEntity();
+        // The Inevitável ends with its own line.
+        if (BillsInevitavel.victim(victim)) {
+            return;
+        }
         String key = switch (boss.powerData().power) {
             // Gojo only says his when someone else is still fighting him.
             case "strongest" -> othersLeft(level, boss, victim) ? "fala.battlegroundsmod.gojo.menos_um" : null;
@@ -196,5 +205,6 @@ public final class BossFalas {
     public static void clear() {
         STATES.clear();
         AZUL.clear();
+        BillsInevitavel.clear();
     }
 }

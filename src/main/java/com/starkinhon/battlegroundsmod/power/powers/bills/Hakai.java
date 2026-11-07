@@ -67,11 +67,22 @@ public final class Hakai {
             // Still too much life to erase: the hakai ball instead.
             return HakaiBola.use(caster, level, target);
         }
+        strike(caster, level, target, spec.alvo().aparecer(), true);
+        return true;
+    }
+
+    // The Hakai itself on a target, whatever its life (the cutscene, the open hand and the erasing). appear: he steps in
+    // front of them first. pose: he plays the Hakai's own body pose (off when another move already has his arm up, like
+    // the Bills boss's Inevitável). Returns the tick the kill lands, counted from now.
+    public static int strike(LivingEntity caster, ServerLevel level, LivingEntity target, boolean appear, boolean pose) {
+        PowerData data = caster.getData(ModAttachments.POWER);
+        boolean awakened = data.awakened;
+        HakaiSpec spec = HakaiSpec.get(awakened);
         int touch = Math.max(1, spec.tempo().atrasoTicks());
         int dissolve = spec.dissolveTick();
         int kill = spec.killTick();
         int end = spec.cutsceneEnd();
-        if (spec.alvo().aparecer()) {
+        if (appear) {
             appear(level, caster, target, spec.alvo().distancia());
         }
         face(caster, target);
@@ -93,7 +104,9 @@ public final class Hakai {
                 PacketDistributor.sendToPlayer(player, new ModPayloads.HakaiCutscene(caster.getId(), target.getId(), awakened));
             }
         }
-        PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new ModPayloads.PlaySkillAnimation(caster.getId(), SKILL, awakened));
+        if (pose) {
+            PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new ModPayloads.PlaySkillAnimation(caster.getId(), SKILL, awakened));
+        }
 
         Function<String, Vec3> where = onde -> switch (onde == null ? "" : onde) {
             case "alvo" -> Combat.center(target);
@@ -135,7 +148,7 @@ public final class Hakai {
             Fx.effects(level, SKILL, awakened, "fim", Combat.center(target), Vec3.ZERO);
             erase(caster, target);
         });
-        return true;
+        return kill;
     }
 
     // Erases target without the cutscene (the hakaizinho finishing someone low on life): it stops where it is, lights up
@@ -206,7 +219,7 @@ public final class Hakai {
     }
 
     // Turns one to look the other in the eyes (Freeze keeps the turn).
-    private static void face(LivingEntity who, LivingEntity at) {
+    public static void face(LivingEntity who, LivingEntity at) {
         Vec3 look = at.getEyePosition().subtract(who.getEyePosition());
         float yaw = (float) (Mth.atan2(-look.x, look.z) * Mth.RAD_TO_DEG);
         float pitch = (float) (-Mth.atan2(look.y, Math.max(0.1, look.horizontalDistance())) * Mth.RAD_TO_DEG);
@@ -215,7 +228,7 @@ public final class Hakai {
         who.setYBodyRot(yaw);
     }
 
-    private static void move(LivingEntity who, Vec3 at, float yaw, float pitch) {
+    public static void move(LivingEntity who, Vec3 at, float yaw, float pitch) {
         who.setDeltaMovement(Vec3.ZERO);
         if (who instanceof ServerPlayer player) {
             player.connection.teleport(at.x, at.y, at.z, yaw, pitch);

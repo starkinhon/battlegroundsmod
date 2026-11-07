@@ -22,6 +22,9 @@ import com.starkinhon.battlegroundsmod.power.BossOrder;
 // - Against the Gojo boss's Infinity (it holds thrown attacks) he uses what it can't stop: the Bop, the Hakai, the space
 //   trip, the Planetary Destruction. Against a Madara he punches only while that Madara's counter is recharging.
 //
+// - Inevitável: whoever is tier 4 or weaker gets no fight at all (BillsInevitavel): he appears in front of them, they
+//   freeze, he talks down to them raising his arm slowly, and the Hakai erases them whatever their life.
+//
 // Styles he switches every 20 to 40 seconds and at each phase, picked by the situation but never certain: bored
 // (punches, the Bop, the energy, barely trying), judge (the Hakai and what leads to it), destroyer (the big area
 // moves) and annoyed (when he is hurt or the foe is strong: everything, faster).
@@ -106,6 +109,11 @@ final class BillsTactics extends TacticsBase {
     @Override
     public boolean act(SoulBossAI ai) {
         read(ai);
+        // Someone beneath a god (tier 4 or weaker): no fight, the Inevitável.
+        if (!ai.usingMove() && ai.combo() == null && BillsInevitavel.tryStart(boss, ai.target())) {
+            ai.say("inevitavel");
+            return true;
+        }
         coolDown();
         if (snipeCooldown > 0) {
             snipeCooldown--;
