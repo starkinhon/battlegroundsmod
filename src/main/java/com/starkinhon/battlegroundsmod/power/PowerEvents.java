@@ -158,6 +158,7 @@ public final class PowerEvents {
             PowerLogic.addUltCharge(player, event.getEntity(), event.getNewDamage() / Tiers.damageMultiplier(player));
         }
         if (event.getSource().getEntity() instanceof LivingEntity attacker && attacker != event.getEntity()) {
+            com.starkinhon.battlegroundsmod.power.powers.kokushibo.OniBody.onHurt(event.getEntity(), attacker);
             CombatMode.refresh(attacker);
             CombatMode.refresh(event.getEntity());
             long now = attacker.level().getGameTime();
