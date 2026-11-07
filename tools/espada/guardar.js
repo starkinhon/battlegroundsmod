@@ -1,5 +1,5 @@
-// Bakes Kokushibo's sheath moves. Putting his sword away (espada.guardar_kokushibo): he stands still holding it out
-// while the sword, living flesh, leaves the hand by itself (client/outfit/FleshSheathe), then the arm drops.
+// Bakes Kokushibo's sheath moves. (Putting it away needs no move: the sword, living flesh, goes back by itself while
+// only the right arm is held out, client/outfit/FleshSheathe and KokushiboSheathLayer.holdArm.)
 // The quick draw (espada.sacar_kokushibo), the combo's first click while the sword rests in the sheath: the right hand
 // on the grip at the hip pulls it forward along the sheath, then it comes out cutting across and up to the right (the
 // cut lands on tick 3) and ends where the combo's third cut starts (SwordArts skips to it).
@@ -40,17 +40,7 @@ const inSheath = (out) => {
   const f = FIT[out];
   return { twist: 0, lean: 0, drop: 1.8, arm: { yaw: f[0], pitch: f[1], roll: f[2] }, blade: { yaw: f[3], pitch: f[4], edge: f[5] } };
 };
-// Putting it away (Stark, 2026-11-07: the sword is living flesh and goes back by itself, client/outfit/FleshSheathe):
-// the body stands still with the arm out holding it until the hand lets go (tick 40, FleshSheathe.LET_GO), then the
-// arm drops. The sword itself is drawn by KokushiboSheathLayer.
-const keys = [
-  { t: 0, arm: { yaw: 0, pitch: -72 }, blade: { yaw: 0, pitch: 11 } },
-  { t: 40, arm: { yaw: 0, pitch: -72 }, blade: { yaw: 0, pitch: 11 }, ease: 'linear' },
-  { t: 46, arm: { yaw: 0, pitch: -90 }, blade: { yaw: 0, pitch: -60 }, ease: 'inout' },
-];
 const dir = path.join(__dirname, '../../src/main/resources/assets/battlegroundsmod/animations');
-fs.writeFileSync(path.join(dir, 'espada.guardar_kokushibo.json'), JSON.stringify(Rig.bake(keys, 0.5)));
-console.log('espada.guardar_kokushibo');
 
 // The left hand holding the sheath for the quick draw.
 const sheathHand = { yaw: -16, pitch: -78 };

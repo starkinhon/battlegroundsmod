@@ -38,8 +38,8 @@ import net.minecraft.client.renderer.entity.layers.RenderLayer;
 // hand on the grip pulls the blade out along the sheath, then cuts. The sword is just the held item.
 // Putting it away: when it stops being drawn while still carried (combat mode ended, or switched to another slot) the
 // sword goes back by itself, as living flesh (FleshSheathe, Stark 2026-11-07): it melts out of the hand, flies over
-// his left side and the sheath swallows it. espada.guardar_kokushibo only holds the body still with the arm out until
-// the hand lets go.
+// his left side and the sheath swallows it. Only the right arm is held out (holdArm) until the hand lets go: walking,
+// running and flying go on as normal (Stark, 2026-11-07: the whole body froze while walking).
 // Every client sees it on its own, from the held item and the drawn flag the server sends.
 public class KokushiboSheathLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> {
     // Model space (1 = one pixel, +y down, -z the front, +x the player's left), relative to the body's pivot.
@@ -54,7 +54,6 @@ public class KokushiboSheathLayer extends RenderLayer<AbstractClientPlayer, Play
         TURN = new Matrix3f(edge, tip, side).getNormalizedRotation(new Quaternionf());
     }
 
-    public static final String PUT_AWAY = "espada.guardar_kokushibo";
     // Ticks into putting it away until the new item may show: when the hand has let go of the flesh.
     private static final float DONE = FleshSheathe.LET_GO;
     // Ticks into the quick draw when the blade has left the sheath, and when the sheath is back on the hip.
@@ -96,6 +95,25 @@ public class KokushiboSheathLayer extends RenderLayer<AbstractClientPlayer, Play
         return false;
     }
 
+    // The right arm held out with the sword while it comes alive, on top of whatever the body is doing (walking,
+    // flying), until the hand lets go; then it blends back. From PlayerModelMixin, after the vanilla pose.
+    private static final float HOLD_X = (float) Math.toRadians(-18), LET_GO_BLEND = 6;
+
+    public static void holdArm(LivingEntity entity, net.minecraft.client.model.HumanoidModel<?> model, float ageInTicks) {
+        State state = STATES.get(entity.getId());
+        if (state == null || state.putStart < 0 || ageInTicks == 0) {
+            return;
+        }
+        float t = ageInTicks - state.putStart;
+        if (t < 0 || t > DONE + LET_GO_BLEND) {
+            return;
+        }
+        float w = t < DONE ? Math.min(1, t / 3) : 1 - (t - DONE) / LET_GO_BLEND;
+        model.rightArm.xRot += (HOLD_X - model.rightArm.xRot) * w;
+        model.rightArm.yRot += (0 - model.rightArm.yRot) * w;
+        model.rightArm.zRot += (0 - model.rightArm.zRot) * w;
+    }
+
     public KokushiboSheathLayer(RenderLayerParent<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> parent) {
         super(parent);
     }
@@ -122,7 +140,6 @@ public class KokushiboSheathLayer extends RenderLayer<AbstractClientPlayer, Play
             state.putStart = watching && carrying ? player.tickCount : -1;
             if (state.putStart >= 0) {
                 state.flesh = new FleshSheathe.Run();
-                SkillAnimations.play(player.getId(), PUT_AWAY, false);
             }
         }
         state.out = out;
@@ -163,7 +180,7 @@ public class KokushiboSheathLayer extends RenderLayer<AbstractClientPlayer, Play
                 Vector3f palm = local.last().pose().transformPosition(new Vector3f(-1 / 16f, 9.5f / 16, 0));
                 try {
                     FleshSheathe.render(state.flesh, poseStack.last(), handMatrix(new PoseStack(), player), sheathMatrix(new PoseStack(), 0), palm, t,
-                            ageInTicks, buffer, light);
+                            ageInTicks, buffer, light, Minecraft.getInstance().gameRenderer.getMainCamera().getPosition());
                     return;
                 } catch (RuntimeException e) {
                     // Only the flesh goes: the sword just rests in the sheath from then on.
