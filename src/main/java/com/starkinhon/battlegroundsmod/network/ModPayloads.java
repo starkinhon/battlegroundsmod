@@ -1024,13 +1024,12 @@ public final class ModPayloads {
         }
     }
 
-    // Server -> client: which Kokushibo sword this player carries in the inventory, for the sheath on the hip
-    // (0 none, 1 realistic, 2 blocky).
-    public record SheathState(int entityId, int style) implements CustomPacketPayload {
+    // Server -> client: whether this player carries Kokushibo's sword in the inventory (sheath on the hip).
+    public record SheathState(int entityId, boolean carrying) implements CustomPacketPayload {
         public static final Type<SheathState> TYPE = payloadType("sheath_state");
         public static final StreamCodec<ByteBuf, SheathState> STREAM_CODEC = StreamCodec.composite(
                 ByteBufCodecs.VAR_INT, SheathState::entityId,
-                ByteBufCodecs.VAR_INT, SheathState::style,
+                ByteBufCodecs.BOOL, SheathState::carrying,
                 SheathState::new);
 
         @Override
@@ -1190,7 +1189,7 @@ public final class ModPayloads {
         registrar.playToClient(AzulControl.TYPE, AzulControl.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.azulControl(payload.on())));
         registrar.playToClient(Azul.TYPE, Azul.STREAM_CODEC, (payload, context) -> context.enqueueWork(
-                () -> ClientHooks.azul(payload.id(), payload.mode(), payload.pos(), payload.radius(), payload.charge(), payload.style())));
+                () -> ClientHooks.azul(payload.id(), payload.mode(), payload.pos(), payload.radius(), payload.charge(), payload.carrying())));
         registrar.playToClient(Vermelho.TYPE, Vermelho.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.vermelho(payload.id(), payload.owner(), payload.mode(), payload.charge(), payload.flip())));
         registrar.playToClient(Roxo.TYPE, Roxo.STREAM_CODEC, (payload, context) -> context.enqueueWork(
@@ -1232,7 +1231,7 @@ public final class ModPayloads {
         registrar.playToClient(OutfitState.TYPE, OutfitState.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.outfitState(payload.entityId(), payload.power())));
         registrar.playToClient(SheathState.TYPE, SheathState.STREAM_CODEC, (payload, context) -> context.enqueueWork(
-                () -> ClientHooks.sheathState(payload.entityId(), payload.style())));
+                () -> ClientHooks.sheathState(payload.entityId(), payload.carrying())));
         registrar.playToClient(StanceState.TYPE, StanceState.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.stanceState(payload.entityId(), payload.power())));
         registrar.playToServer(ToggleOutfit.TYPE, ToggleOutfit.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {

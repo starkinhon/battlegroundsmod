@@ -138,7 +138,7 @@ public class BattlegroundsModClient {
                 }
                 return kokushibo[0];
             }
-        }, ModItems.KOKUSHIBO_SWORD.get(), ModItems.KOKUSHIBO_SWORD_BLOCKY.get());
+        }, ModItems.KOKUSHIBO_SWORD.get());
     }
 
     private static void onClientSetup(FMLClientSetupEvent event) {

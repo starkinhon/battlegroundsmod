@@ -310,8 +310,8 @@ public final class PowerLogic {
                 PacketDistributor.sendToPlayersTrackingEntityAndSelf(serverPlayer, new ModPayloads.OutfitState(serverPlayer.getId(), outfit));
             }
             if (player.tickCount % 10 == 0) {
-                int carrying = carriesSheath(serverPlayer);
-                if (data.sheathSent != carrying) {
+                boolean carrying = carriesSheath(serverPlayer);
+                if (data.sheathSent == null || data.sheathSent != carrying) {
                     data.sheathSent = carrying;
                     PacketDistributor.sendToPlayersTrackingEntityAndSelf(serverPlayer, new ModPayloads.SheathState(serverPlayer.getId(), carrying));
                 }
@@ -339,18 +339,14 @@ public final class PowerLogic {
         PacketDistributor.sendToPlayer(watcher, new ModPayloads.StanceState(player.getId(), data.hasPower() ? data.power : ""));
     }
 
-    // Kokushibo's sheath goes on the hip of whoever has his sword anywhere in the inventory: the style of the first
-    // one found (0 none, 1 realistic, 2 blocky).
-    public static int carriesSheath(ServerPlayer player) {
-        if (player.getOffhandItem().getItem() instanceof com.starkinhon.battlegroundsmod.item.KokushiboSwordItem sword) {
-            return sword.style();
-        }
+    // Kokushibo's sheath goes on the hip of whoever has his sword anywhere in the inventory.
+    public static boolean carriesSheath(ServerPlayer player) {
         for (net.minecraft.world.item.ItemStack stack : player.getInventory().items) {
-            if (stack.getItem() instanceof com.starkinhon.battlegroundsmod.item.KokushiboSwordItem sword) {
-                return sword.style();
+            if (stack.getItem() instanceof com.starkinhon.battlegroundsmod.item.KokushiboSwordItem) {
+                return true;
             }
         }
-        return 0;
+        return player.getOffhandItem().getItem() instanceof com.starkinhon.battlegroundsmod.item.KokushiboSwordItem;
     }
 
     // The 3D outfit others should draw on this player: the power's, unless they took it off. Powers without an
