@@ -15,7 +15,6 @@ import com.starkinhon.battlegroundsmod.power.powers.Strongest;
 import com.starkinhon.battlegroundsmod.power.powers.UchihaGhost;
 import com.starkinhon.battlegroundsmod.power.powers.sub.Byakuya;
 import com.starkinhon.battlegroundsmod.power.powers.sub.Ichigo;
-import com.starkinhon.battlegroundsmod.power.powers.sub.Orihime;
 import com.starkinhon.battlegroundsmod.power.powers.sub.Rukia;
 import com.starkinhon.battlegroundsmod.power.powers.sub.SukunaCuts;
 import com.starkinhon.battlegroundsmod.power.powers.sub.Urahara;
@@ -40,7 +39,6 @@ public final class Powers {
     public static final Power BYAKUYA = registerSub(Byakuya.create());
     public static final Power ICHIGO = registerSub(Ichigo.create());
     public static final Power RUKIA = registerSub(Rukia.create());
-    public static final Power ORIHIME = registerSub(Orihime.create());
     public static final Power URAHARA = registerSub(Urahara.create());
     public static final Power SUKUNA_CUTS = registerSub(SukunaCuts.create());
 

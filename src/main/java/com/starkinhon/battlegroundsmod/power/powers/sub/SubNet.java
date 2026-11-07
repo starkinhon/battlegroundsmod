@@ -38,15 +38,12 @@ public final class SubNet {
     public static final int FREEZE = 12;
     // The ground freezing around pos: a = radius, b = ticks it lasts.
     public static final int FROST = 13;
-    // Orihime / Urahara. id = owner, pos = center, dir = facing, a = ticks, b = style (0 Santen, 1 Shiten, 2 Urahara),
+    // Urahara's shield. id = owner, pos = center, dir = facing, a = ticks, b = style (2, the only one left),
     // c = size. Sent once (and again with a = 0 to take it down).
     public static final int SHIELD = 14;
     // Something hit a shield at pos.
     public static final int SHIELD_HIT = 15;
-    // id = entity under a dome for a ticks (b = radius).
-    public static final int DOME = 16;
-    // id = its own, pos, dir; c = 1 on its last message. Every tick.
-    public static final int KOTEN = 17;
+    // 16 and 17 were Orihime's (removed from the game); left unused.
     // Urahara's net. id = its own, pos = center, dir = travel, a = radius, b = 0 flying, 1 wrapped; c = 1 gone. Every tick.
     public static final int NET = 18;
     // A blast at pos: a = radius, b = 0 crimson (Urahara), 1 orange (Fuga).

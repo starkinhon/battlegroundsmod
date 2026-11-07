@@ -182,7 +182,6 @@ public class BattlegroundsModClient {
         event.registerEntityRenderer(ModEntities.BYAKUYA.get(), context -> new SoulBossRenderer<>(context, "byakuya", false));
         event.registerEntityRenderer(ModEntities.ICHIGO.get(), context -> new SoulBossRenderer<>(context, "ichigo", false));
         event.registerEntityRenderer(ModEntities.RUKIA.get(), context -> new SoulBossRenderer<>(context, "rukia", true));
-        event.registerEntityRenderer(ModEntities.ORIHIME.get(), context -> new SoulBossRenderer<>(context, "orihime", true));
         event.registerEntityRenderer(ModEntities.URAHARA.get(), context -> new SoulBossRenderer<>(context, "urahara", false));
         event.registerEntityRenderer(ModEntities.SUKUNA.get(), context -> new SoulBossRenderer<>(context, "sukuna", false));
         event.registerEntityRenderer(ModEntities.FIGHTER_HUMANO.get(),
