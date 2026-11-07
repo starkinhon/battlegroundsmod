@@ -36,6 +36,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 
@@ -146,8 +147,9 @@ public final class DomainScene {
             return fired.add(key);
         }
 
-        // The local player is in creative and it is not their domain: it does nothing to them (the server never
-        // catches them either). No white, tunnel or void, nothing on the screen; they stay in the normal world.
+        // The local player is in creative and it is not their domain: they go through all of it like Gojo does (the
+        // sign, the white, the tunnel, the void, taken inside with him) but free: none of the infinite information on
+        // their screen, no sinking view, no grey (the server never catches them either).
         boolean spared() {
             Minecraft minecraft = Minecraft.getInstance();
             return minecraft.player != null && minecraft.player.isCreative() && minecraft.player.getId() != caster;
@@ -164,7 +166,7 @@ public final class DomainScene {
 
         // What a camera at pos sees at time t.
         Stage stage(Vec3 pos, double t) {
-            if (t < spec.whiteTick() || t >= shatterAt() || spared()) {
+            if (t < spec.whiteTick() || t >= shatterAt()) {
                 return Stage.NONE;
             }
             double dist = pos.distanceTo(center);
@@ -276,7 +278,7 @@ public final class DomainScene {
         }
         for (Domain d : DOMAINS) {
             double t = time(d, 0);
-            if (!d.spared() && t >= d.spec.whiteTick() && t < d.goneAt() && d.contains(minecraft.player.position())) {
+            if (t >= d.spec.whiteTick() && t < d.goneAt() && d.contains(minecraft.player.position())) {
                 return true;
             }
         }
@@ -286,10 +288,6 @@ public final class DomainScene {
     // The killing blow inside the domain: a white blink, then the frame turns to sumi-e, red and white ink.
     private static void kill(int victimId, Vec3 center) {
         Minecraft minecraft = Minecraft.getInstance();
-        if (!DOMAINS.isEmpty() && DOMAINS.stream().allMatch(Domain::spared)) {
-            // In creative, watching: the ink is only for those inside.
-            return;
-        }
         Entity victim = minecraft.level.getEntity(victimId);
         Vec3 at = victim != null ? victim.position().add(0, victim.getBbHeight() * 0.6, 0) : center.add(0, 1, 0);
         ScreenFx.flash(0xFFFFFF, 0.95f, 3);
@@ -401,15 +399,12 @@ public final class DomainScene {
         }
         Vec3 camera = cameraPos();
         for (Domain d : DOMAINS) {
-            if (d.spared()) {
-                continue;
-            }
             double t = time(d, 0);
             DominioSpec spec = d.spec;
             boolean caster = minecraft.player.getId() == d.caster;
             double dist = camera.distanceTo(d.hub(camera));
             Stage stage = d.stage(camera, t);
-            boolean victim = !caster && d.contains(minecraft.player.getEyePosition()) && t >= spec.tunnelTick() && t < d.shatterAt();
+            boolean victim = !caster && !d.spared() && d.contains(minecraft.player.getEyePosition()) && t >= spec.tunnelTick() && t < d.shatterAt();
 
             if (t >= spec.ondaTick() && d.once("onda") && dist < 110) {
                 ScreenFx.warp(d.center.add(0, 1.2, 0), (float) spec.dominio().raioChoque(), 0.55f, 26, 0, new Vec3(0, 1, 0), 0xCFF4FF, 0.08f, 20, -1,
@@ -576,7 +571,8 @@ public final class DomainScene {
                             || !d.contains(entity.getPosition(partial).add(0, entity.getBbHeight() / 2, 0))) {
                         continue;
                     }
-                    boolean isVictim = entity.getId() != d.caster;
+                    // Players in creative are inside free, in their own colors like Gojo.
+                    boolean isVictim = entity.getId() != d.caster && !(entity instanceof Player p && p.isCreative());
                     if (isVictim != (pass == 1)) {
                         continue;
                     }
@@ -621,7 +617,7 @@ public final class DomainScene {
         float partial = event.getPartialTick().getGameTimeDeltaPartialTick(false);
         for (Domain d : DOMAINS) {
             double t = time(d, partial);
-            boolean whiteShows = !d.spared() && t >= d.spec.whiteTick() && t < d.shatterAt() && (t < d.spec.tunnelTick() + 8 || d.closeAt() < d.spec.tunnelTick());
+            boolean whiteShows = t >= d.spec.whiteTick() && t < d.shatterAt() && (t < d.spec.tunnelTick() + 8 || d.closeAt() < d.spec.tunnelTick());
             Vec3 camera = event.getCamera().getPosition();
             Stage stage = d.stage(camera, t);
             if (whiteShows && stage != Stage.TUNNEL && stage != Stage.VOID) {
@@ -760,10 +756,6 @@ public final class DomainScene {
             }
             Stage stage = d.stage(camera, t);
             sign(d, camera, t, partial);
-            if (d.spared() && camera.distanceTo(d.center) < d.radius() + 1) {
-                // Standing where it opened, in creative: the world as it is, not the inside of the ball.
-                continue;
-            }
             if (stage == Stage.TUNNEL) {
                 tunnel(d, t, (float) now);
                 people(d, camera, (float) now, partial, 1);
@@ -1444,9 +1436,6 @@ public final class DomainScene {
         float partial = delta.getGameTimeDeltaPartialTick(false);
         Vec3 camera = cameraPos();
         for (Domain d : DOMAINS) {
-            if (d.spared()) {
-                continue;
-            }
             double t = time(d, partial);
             Stage stage = d.stage(camera, t);
             DominioSpec spec = d.spec;
@@ -1459,7 +1448,7 @@ public final class DomainScene {
             if (t < spec.tunnelTick() && t < d.closeAt() && camera.distanceTo(d.center) < d.radius() + 40) {
                 caption(graphics, minecraft, d, t);
             }
-            boolean victim = !gojo && d.contains(minecraft.player.getEyePosition(partial))
+            boolean victim = !gojo && !d.spared() && d.contains(minecraft.player.getEyePosition(partial))
                     && (stage == Stage.TUNNEL || stage == Stage.VOID);
             if (victim) {
                 float strength = (float) Mth.clamp(spec.visual().telaVitima(), 0, 2) * (FxConfig.on(FxConfig.REDUCED_FLASH) ? 0.4f : 1);

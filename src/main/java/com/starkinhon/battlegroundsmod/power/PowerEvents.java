@@ -97,6 +97,7 @@ public final class PowerEvents {
                 Movement.tick(player);
                 Defense.tick(player);
                 com.starkinhon.battlegroundsmod.combat.Charge.tick(player);
+                com.starkinhon.battlegroundsmod.item.SoulInsectItem.tick(player);
             });
         }
     }

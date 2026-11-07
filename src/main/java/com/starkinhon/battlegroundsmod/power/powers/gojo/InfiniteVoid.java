@@ -79,6 +79,8 @@ public final class InfiniteVoid {
         final DominioSpec spec;
         final boolean awakened;
         final Set<LivingEntity> caught = new HashSet<>();
+        // Players in creative inside it: taken in with Gojo, but free (see spared).
+        final Set<LivingEntity> free = new HashSet<>();
         // The floor of the inside, straight above center.
         final Vec3 arena;
         // Everyone taken inside, and where each was in the world.
@@ -200,7 +202,13 @@ public final class InfiniteVoid {
                 double reach = radius;
                 DominioSpec.Acerto acerto = spec.acerto();
                 for (LivingEntity victim : Combat.inRadius(level, center, reach, caster)) {
-                    if (spared(victim) || !caught.add(victim)) {
+                    if (spared(victim)) {
+                        if (active.free.add(victim) && active.inside) {
+                            takeInside(active, victim);
+                        }
+                        continue;
+                    }
+                    if (!caught.add(victim)) {
                         continue;
                     }
                     if (victim.hasData(ModAttachments.POWER)) {
@@ -280,8 +288,9 @@ public final class InfiniteVoid {
         return false;
     }
 
-    // Players in creative are never caught: no freeze, no inside, no Brain Damage, no screen effects (DomainScene
-    // spares them too). They stay normal, watching it from the world, even standing where it opens.
+    // Players in creative are never caught, but go in with Gojo: they see the sign, the domain opening, the tunnel and
+    // the void, and are taken inside like everyone, free like Gojo: no paralysis, no slowness, no stamina drain, no
+    // Brain Damage, no damage, skills still theirs (DomainScene spares their screen too).
     private static boolean spared(LivingEntity entity) {
         return entity instanceof Player player && player.isCreative();
     }
@@ -357,6 +366,11 @@ public final class InfiniteVoid {
         for (LivingEntity victim : active.caught) {
             if (victim.isAlive() && !victim.isRemoved() && victim.level() == active.level) {
                 takeInside(active, victim);
+            }
+        }
+        for (LivingEntity watcher : active.free) {
+            if (watcher.isAlive() && !watcher.isRemoved() && watcher.level() == active.level) {
+                takeInside(active, watcher);
             }
         }
         LivingEntity target = null;
