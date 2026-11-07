@@ -51,7 +51,7 @@ public final class DestructionEnergy {
     public static final String SKILL = DestructionEnergySpec.SKILL;
     public static final String RAIN = DestructionRainSpec.SKILL;
     private static final double VIEW_DISTANCE = 160;
-    private static final RandomSource RANDOM = RandomSource.create();
+    private static final RandomSource RANDOM = RandomSource.createThreadSafe();
     private static int nextId;
 
     private DestructionEnergy() {

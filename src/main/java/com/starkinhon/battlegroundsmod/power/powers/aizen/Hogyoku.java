@@ -42,7 +42,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 public final class Hogyoku {
     public static final String SKILL = AizenSpecs.HOGYOKU;
     public static final String DASH = AizenSpecs.DASH;
-    private static final RandomSource RANDOM = RandomSource.create();
+    private static final RandomSource RANDOM = RandomSource.createThreadSafe();
 
     private static final class State {
         final boolean wasAwakened;

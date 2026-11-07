@@ -28,7 +28,7 @@ import net.minecraft.world.phys.Vec3;
 // so moving to Photon means replacing a method body with a call to the matching Photon effect.
 // The particle layers follow the Forja de Skills page, which simulates the same emitters.
 public final class UchihaFx {
-    private static final RandomSource RANDOM = RandomSource.create();
+    private static final RandomSource RANDOM = RandomSource.createThreadSafe();
 
     private UchihaFx() {
     }

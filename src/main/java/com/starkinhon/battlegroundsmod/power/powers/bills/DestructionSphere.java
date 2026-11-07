@@ -52,7 +52,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 public final class DestructionSphere {
     public static final String SKILL = DestructionSphereSpec.SKILL;
     private static final double VIEW_DISTANCE = 256;
-    private static final RandomSource RANDOM = RandomSource.create();
+    private static final RandomSource RANDOM = RandomSource.createThreadSafe();
     private static int nextId;
 
     private DestructionSphere() {

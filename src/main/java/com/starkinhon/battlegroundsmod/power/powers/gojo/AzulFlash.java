@@ -51,7 +51,7 @@ public final class AzulFlash {
     public static final int PUNCH = 1;
     public static final int THROW = 2;
     private static final double VIEW_DISTANCE = 160;
-    private static final RandomSource RANDOM = RandomSource.create();
+    private static final RandomSource RANDOM = RandomSource.createThreadSafe();
 
     private enum Phase { PULL, SLOW, FIT, DONE }
 

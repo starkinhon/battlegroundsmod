@@ -57,7 +57,7 @@ public final class Roxo {
     public static final int GONE = 2;
     private static final double VIEW_DISTANCE = 192;
     private static final double IRR_VIEW_DISTANCE = 448;
-    private static final RandomSource RANDOM = RandomSource.create();
+    private static final RandomSource RANDOM = RandomSource.createThreadSafe();
     private static int nextId;
 
     private Roxo() {

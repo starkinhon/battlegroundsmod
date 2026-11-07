@@ -39,7 +39,9 @@ public final class ModParticles {
     // A circle outline that grows from nothing to its size while it lives: wind rings and impact waves.
     public static final Supplier<ParticleType<SoulParticleOptions>> RING = PARTICLE_TYPES.register("ring", ModParticles::type);
 
-    private static final RandomSource RANDOM = RandomSource.create();
+    // Thread safe: these helpers run on the server thread (bosses, skills) and on the client thread (effects) at the
+    // same time in single player. A plain RandomSource.create() crashes with "Accessing LegacyRandomSource from multiple threads".
+    private static final RandomSource RANDOM = RandomSource.createThreadSafe();
 
     private ModParticles() {
     }

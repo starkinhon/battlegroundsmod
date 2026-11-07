@@ -51,7 +51,7 @@ public final class Azul {
     // The held one's body animation (both hands on the orb while it charges).
     public static final String HOLD_ANIMATION = "gojo.azul_maximo";
     private static final double VIEW_DISTANCE = 160;
-    private static final RandomSource RANDOM = RandomSource.create();
+    private static final RandomSource RANDOM = RandomSource.createThreadSafe();
     private static int nextId;
 
     public static final int ALIVE = 0;
