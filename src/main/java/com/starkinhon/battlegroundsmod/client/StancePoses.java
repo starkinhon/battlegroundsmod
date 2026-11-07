@@ -5,25 +5,23 @@ import java.util.Map;
 
 import com.starkinhon.battlegroundsmod.boss.BossSpec;
 import com.starkinhon.battlegroundsmod.boss.SoulBoss;
-import com.starkinhon.battlegroundsmod.power.powers.aizen.AizenIllusion;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Pose;
-import net.minecraft.world.entity.player.Player;
 
-// Each character's own way of standing, walking and running (Stark, 2026-11-07): Bills floats with his hands behind
-// his back and glides instead of walking, Madara keeps his arms crossed and runs like a ninja, Aizen rests his left
-// hand on his sword. Made in tools/poses/locomocao.js and baked to animations/pose.<character>.<state>.json.
-// Players get it from their power (the server says which, StanceState), bosses and Aizen's illusions from their kind.
-// Powers without an entry (Gojo) keep Minecraft's walk. Skills, guard and cutscenes always win over this.
+// The bosses' own way of standing, walking and running (Stark, 2026-11-07): Bills floats with his hands behind his
+// back and glides instead of walking, Madara keeps his arms crossed and runs like a ninja. Made in
+// tools/poses/locomocao.js and baked to animations/pose.<character>.<state>.json.
+// Only on the bosses: on players it looked out of place (Stark, 2026-11-07), so players, Aizen's illusions and bosses
+// without an entry (Gojo) keep Minecraft's walk. The player version is kept on the branch archive/poses-padrao.
+// Skills, guard and cutscenes always win over this.
 public final class StancePoses {
     // power id -> the character whose poses it uses
     private static final Map<String, String> CHARACTER = Map.of(
             "destruction_god", "bills",
-            "uchiha_ghost", "madara",
-            "manipulator", "aizen");
+            "uchiha_ghost", "madara");
     private static final String[] STATES = {"parado", "andar", "correr"};
     // How far Minecraft's walk counter (limbSwing) runs per tick at walking and at sprinting speed, so one loop of
     // andar / correr is one stride on the ground at that speed.
@@ -34,7 +32,6 @@ public final class StancePoses {
     // Ticks to blend between standing, walking and running.
     private static final float BLEND_TICKS = 4;
 
-    private static final Map<Integer, String> PLAYERS = new HashMap<>();
     // Per entity: last ageInTicks seen, how much it is moving (0-1), how much of that is running (0-1).
     private static final Map<Integer, float[]> STATE = new HashMap<>();
     private static Object lastLevel;
@@ -42,42 +39,21 @@ public final class StancePoses {
     private StancePoses() {
     }
 
-    // The server tells us a player's power ("" = none).
-    public static void set(int entityId, String power) {
-        if (power.isEmpty()) {
-            PLAYERS.remove(entityId);
-        } else {
-            PLAYERS.put(entityId, power);
-        }
-    }
-
     private static String character(LivingEntity entity) {
         var level = Minecraft.getInstance().level;
         if (level != lastLevel) {
             STATE.clear();
-            if (level == null) {
-                PLAYERS.clear();
-            }
             lastLevel = level;
         }
-        if (entity instanceof AizenIllusion) {
-            return "aizen";
-        }
-        if (entity instanceof SoulBoss boss) {
-            return CHARACTER.get(BossSpec.get(boss.bossId()).poder());
-        }
-        return entity instanceof Player ? CHARACTER.get(PLAYERS.getOrDefault(entity.getId(), "")) : null;
+        return entity instanceof SoulBoss boss ? CHARACTER.get(BossSpec.get(boss.bossId()).poder()) : null;
     }
 
     // Does this entity stand in its character's pose right now? Not while crouching, swimming, flying, sleeping,
     // riding, using an item or swinging an arm (those keep Minecraft's pose).
     public static boolean wants(LivingEntity entity, HumanoidModel<?> model, float ageInTicks) {
-        if (ageInTicks == 0 || character(entity) == null || !entity.isAlive() || entity.isPassenger() || entity.isUsingItem()
+        return !(ageInTicks == 0 || character(entity) == null || !entity.isAlive() || entity.isPassenger() || entity.isUsingItem()
                 || entity.isFallFlying() || entity.isVisuallySwimming() || entity.isAutoSpinAttack() || entity.getPose() != Pose.STANDING
-                || model.crouching || model.attackTime > 0) {
-            return false;
-        }
-        return !(entity instanceof Player player && player.getAbilities().flying);
+                || model.crouching || model.attackTime > 0);
     }
 
     // Adds the pose on top of a model already reset to Minecraft's standing pose (SkillAnimations.standStill),
