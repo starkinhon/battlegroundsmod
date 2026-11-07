@@ -1,0 +1,241 @@
+{
+  "formato": "souls-boss/1",
+  "boss": "sukuna",
+  "poder": "sukuna_cuts",
+  "tier": 6,
+  "dropAlma": false,
+  "atributos": {
+    "vida": 220,
+    "armadura": 8.9,
+    "velocidade": 0.37,
+    "resistenciaEmpurrao": 0.5,
+    "alcanceVisao": 32,
+    "multDano": 1.0
+  },
+  "intro": {
+    "duracaoTicks": 0,
+    "titulo": "",
+    "subtitulo": "",
+    "cor": "#ffffff"
+  },
+  "percepcao": {
+    "intervaloDecisaoTicks": 6,
+    "aleatoriedade": 0.3,
+    "trocarHumorTicks": 60,
+    "intervaloTecnicasTicks": 100
+  },
+  "distancias": {
+    "soco": 3.0,
+    "ideal": 7,
+    "intervaloSocoTicks": 12
+  },
+  "movimento": {
+    "velocidadeAndar": 0.9,
+    "velocidadeCorrer": 1.25,
+    "trocarLadoTicks": 35
+  },
+  "ritmo": {
+    "calmoMinTicks": 60,
+    "calmoMaxTicks": 100,
+    "rapidoMinTicks": 40,
+    "rapidoMaxTicks": 80,
+    "velocidadeCalmo": 0.85,
+    "velocidadeRapido": 1.25,
+    "recargaInvestidaRapido": 35
+  },
+  "investida": {
+    "recargaTicks": 70,
+    "distanciaMin": 6,
+    "forca": 1.5,
+    "altura": 0.2
+  },
+  "passoSombra": {
+    "recargaTicks": 120,
+    "distanciaMin": 3,
+    "distanciaMax": 14,
+    "atras": 2.0,
+    "chance": 0.2,
+    "chanceCalmo": 0.08,
+    "chanceNaEsquiva": 0.3
+  },
+  "puloDuplo": {
+    "alturaMin": 2.5,
+    "distanciaMax": 6
+  },
+  "teleporte": {
+    "ativo": false,
+    "presoTicks": 100,
+    "distancia": 3
+  },
+  "reacoes": {
+    "chanceEsquivarSkill": 0.45,
+    "chanceEsquivarProjetil": 0.45,
+    "chanceContraAtaque": 0.4,
+    "chanceEsquivarUlt": 0.7,
+    "golpesParaContra": 3,
+    "janelaPressaoTicks": 30,
+    "punirTicks": 80,
+    "multPunir": 2,
+    "golpesParaFugir": 3,
+    "chanceFugirAoApanhar": 0.3
+  },
+  "ultFinal": {
+    "ativa": false
+  },
+  "skills": {
+    "forte": {
+      "slot": 4,
+      "tipo": "golpe",
+      "peso": 1.0,
+      "recargaTicks": 260,
+      "recargaMaxTicks": 400,
+      "avisoTicks": 4,
+      "distanciaMin": 0,
+      "distanciaMax": 4,
+      "giroGrausPorTick": 20,
+      "avisoCor": "#ffffff",
+      "avisoSom": "minecraft:entity.player.attack.sweep"
+    },
+    "barragem": {
+      "slot": 5,
+      "tipo": "barragem",
+      "peso": 1.0,
+      "recargaTicks": 300,
+      "recargaMaxTicks": 460,
+      "avisoTicks": 5,
+      "distanciaMin": 0,
+      "distanciaMax": 3.5,
+      "giroGrausPorTick": 10,
+      "avisoCor": "#ffffff",
+      "avisoSom": "minecraft:entity.player.attack.sweep"
+    },
+    "desmantelar": {
+      "slot": 0,
+      "tipo": "alcance",
+      "peso": 1.5,
+      "recargaTicks": 70,
+      "recargaMaxTicks": 120,
+      "avisoTicks": 3,
+      "distanciaMin": 3,
+      "distanciaMax": 24,
+      "giroGrausPorTick": 15,
+      "avisoCor": "#ffffff",
+      "avisoSom": "minecraft:entity.player.attack.sweep"
+    },
+    "clivar": {
+      "slot": 1,
+      "tipo": "golpe",
+      "peso": 1.2,
+      "recargaTicks": 160,
+      "recargaMaxTicks": 220,
+      "avisoTicks": 4,
+      "distanciaMin": 2,
+      "distanciaMax": 12,
+      "giroGrausPorTick": 30,
+      "avisoCor": "#ff3030",
+      "avisoSom": "minecraft:entity.player.attack.sweep"
+    },
+    "fuga": {
+      "slot": 2,
+      "tipo": "alcance",
+      "peso": 1.0,
+      "recargaTicks": 500,
+      "recargaMaxTicks": 700,
+      "avisoTicks": 10,
+      "distanciaMin": 8,
+      "distanciaMax": 56,
+      "giroGrausPorTick": 6,
+      "avisoCor": "#ff7a10",
+      "avisoSom": "minecraft:item.firecharge.use"
+    },
+    "santuario": {
+      "slot": 3,
+      "tipo": "ult",
+      "peso": 0.8,
+      "recargaTicks": 1800,
+      "recargaMaxTicks": 2200,
+      "avisoTicks": 14,
+      "distanciaMin": 0,
+      "distanciaMax": 20,
+      "giroGrausPorTick": 30,
+      "avisoCor": "#8a0010",
+      "avisoSom": "minecraft:entity.wither.ambient"
+    },
+    "corte_do_mundo": {
+      "slot": 7,
+      "tipo": "ult",
+      "peso": 0.6,
+      "recargaTicks": 2400,
+      "recargaMaxTicks": 3000,
+      "avisoTicks": 16,
+      "distanciaMin": 4,
+      "distanciaMax": 40,
+      "giroGrausPorTick": 6,
+      "avisoCor": "#ffffff",
+      "avisoSom": "minecraft:entity.wither.ambient"
+    },
+    "teia": {
+      "slot": 9,
+      "tipo": "controle",
+      "peso": 1.0,
+      "recargaTicks": 240,
+      "recargaMaxTicks": 300,
+      "avisoTicks": 6,
+      "distanciaMin": 0,
+      "distanciaMax": 10,
+      "giroGrausPorTick": 30,
+      "avisoCor": "#ffffff",
+      "avisoSom": "minecraft:entity.player.attack.sweep"
+    }
+  },
+  "combos": {
+    "cortes": {
+      "peso": 1.2,
+      "passos": [
+        "soco",
+        "soco",
+        "clivar",
+        "desmantelar"
+      ]
+    },
+    "teia_e_fuga": {
+      "peso": 0.8,
+      "passos": [
+        "teia",
+        "fuga"
+      ]
+    }
+  },
+  "fases": [
+    {
+      "comecaEm": 1.0,
+      "skills": [
+        "forte",
+        "barragem",
+        "desmantelar",
+        "clivar",
+        "fuga",
+        "santuario",
+        "corte_do_mundo",
+        "teia"
+      ],
+      "combos": [
+        "cortes",
+        "teia_e_fuga"
+      ],
+      "agressividade": 0.85,
+      "multRecarga": 1.0,
+      "menosRecargaTicks": 0,
+      "multVelocidade": 1.0,
+      "multAviso": 1.0,
+      "reacaoTicks": 7,
+      "chanceReacao": 0.6,
+      "pausaTicks": 8,
+      "despertado": false,
+      "corBarra": "white",
+      "transicaoTicks": 0,
+      "titulo": "",
+      "subtitulo": ""
+    }
+  ]
+}

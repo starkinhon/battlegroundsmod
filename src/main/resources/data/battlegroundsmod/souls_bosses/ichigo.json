@@ -1,0 +1,230 @@
+{
+  "formato": "souls-boss/1",
+  "boss": "ichigo",
+  "poder": "ichigo",
+  "tier": 7,
+  "dropAlma": false,
+  "atributos": {
+    "vida": 170,
+    "armadura": 6.7,
+    "velocidade": 0.38,
+    "resistenciaEmpurrao": 0.5,
+    "alcanceVisao": 32,
+    "multDano": 1.0
+  },
+  "intro": {
+    "duracaoTicks": 0,
+    "titulo": "",
+    "subtitulo": "",
+    "cor": "#ffffff"
+  },
+  "percepcao": {
+    "intervaloDecisaoTicks": 6,
+    "aleatoriedade": 0.3,
+    "trocarHumorTicks": 60,
+    "intervaloTecnicasTicks": 100
+  },
+  "distancias": {
+    "soco": 3.0,
+    "ideal": 4,
+    "intervaloSocoTicks": 12
+  },
+  "movimento": {
+    "velocidadeAndar": 0.9,
+    "velocidadeCorrer": 1.25,
+    "trocarLadoTicks": 35
+  },
+  "ritmo": {
+    "calmoMinTicks": 60,
+    "calmoMaxTicks": 100,
+    "rapidoMinTicks": 40,
+    "rapidoMaxTicks": 80,
+    "velocidadeCalmo": 0.85,
+    "velocidadeRapido": 1.25,
+    "recargaInvestidaRapido": 35
+  },
+  "investida": {
+    "recargaTicks": 70,
+    "distanciaMin": 6,
+    "forca": 1.5,
+    "altura": 0.2
+  },
+  "passoSombra": {
+    "recargaTicks": 120,
+    "distanciaMin": 3,
+    "distanciaMax": 14,
+    "atras": 2.0,
+    "chance": 0.2,
+    "chanceCalmo": 0.08,
+    "chanceNaEsquiva": 0.3
+  },
+  "puloDuplo": {
+    "alturaMin": 2.5,
+    "distanciaMax": 6
+  },
+  "teleporte": {
+    "ativo": false,
+    "presoTicks": 100,
+    "distancia": 3
+  },
+  "reacoes": {
+    "chanceEsquivarSkill": 0.3,
+    "chanceEsquivarProjetil": 0.3,
+    "chanceContraAtaque": 0.6,
+    "chanceEsquivarUlt": 0.5,
+    "golpesParaContra": 3,
+    "janelaPressaoTicks": 30,
+    "punirTicks": 80,
+    "multPunir": 2,
+    "golpesParaFugir": 3,
+    "chanceFugirAoApanhar": 0.3
+  },
+  "ultFinal": {
+    "ativa": false
+  },
+  "skills": {
+    "forte": {
+      "slot": 4,
+      "tipo": "golpe",
+      "peso": 1.0,
+      "recargaTicks": 208,
+      "recargaMaxTicks": 320,
+      "avisoTicks": 4,
+      "distanciaMin": 0,
+      "distanciaMax": 4,
+      "giroGrausPorTick": 20,
+      "avisoCor": "#ffffff",
+      "avisoSom": "minecraft:entity.player.attack.sweep"
+    },
+    "barragem": {
+      "slot": 5,
+      "tipo": "barragem",
+      "peso": 1.0,
+      "recargaTicks": 240,
+      "recargaMaxTicks": 368,
+      "avisoTicks": 5,
+      "distanciaMin": 0,
+      "distanciaMax": 3.5,
+      "giroGrausPorTick": 10,
+      "avisoCor": "#ffffff",
+      "avisoSom": "minecraft:entity.player.attack.sweep"
+    },
+    "getsuga": {
+      "slot": 0,
+      "tipo": "alcance",
+      "peso": 1.5,
+      "recargaTicks": 100,
+      "recargaMaxTicks": 160,
+      "avisoTicks": 5,
+      "distanciaMin": 4,
+      "distanciaMax": 30,
+      "giroGrausPorTick": 10,
+      "avisoCor": "#9fd8ff",
+      "avisoSom": "minecraft:entity.player.attack.sweep"
+    },
+    "guarda": {
+      "slot": 1,
+      "tipo": "contra",
+      "peso": 1.0,
+      "recargaTicks": 160,
+      "recargaMaxTicks": 220,
+      "avisoTicks": 0,
+      "distanciaMin": 0,
+      "distanciaMax": 4,
+      "giroGrausPorTick": 30,
+      "avisoCor": "#9fd8ff",
+      "avisoSom": ""
+    },
+    "mascara": {
+      "slot": 2,
+      "tipo": "livre",
+      "peso": 0.5,
+      "recargaTicks": 700,
+      "recargaMaxTicks": 900,
+      "avisoTicks": 6,
+      "distanciaMin": 0,
+      "distanciaMax": 20,
+      "giroGrausPorTick": 30,
+      "avisoCor": "#ffffff",
+      "avisoSom": "minecraft:entity.wither.ambient"
+    },
+    "bankai": {
+      "slot": 3,
+      "tipo": "livre",
+      "peso": 0.6,
+      "recargaTicks": 1200,
+      "recargaMaxTicks": 1400,
+      "avisoTicks": 10,
+      "distanciaMin": 0,
+      "distanciaMax": 20,
+      "giroGrausPorTick": 30,
+      "avisoCor": "#222222",
+      "avisoSom": "minecraft:entity.wither.ambient"
+    },
+    "getsuga_chao": {
+      "slot": 8,
+      "tipo": "golpe",
+      "peso": 1.0,
+      "recargaTicks": 160,
+      "recargaMaxTicks": 220,
+      "avisoTicks": 5,
+      "distanciaMin": 0,
+      "distanciaMax": 5,
+      "giroGrausPorTick": 20,
+      "avisoCor": "#9fd8ff",
+      "avisoSom": "minecraft:entity.player.attack.sweep"
+    }
+  },
+  "combos": {
+    "porrada_getsuga": {
+      "peso": 1.2,
+      "passos": [
+        "soco",
+        "soco",
+        "soco",
+        "forte",
+        "getsuga"
+      ]
+    },
+    "chao": {
+      "peso": 0.8,
+      "passos": [
+        "aproximar",
+        "soco",
+        "soco",
+        "getsuga_chao"
+      ]
+    }
+  },
+  "fases": [
+    {
+      "comecaEm": 1.0,
+      "skills": [
+        "forte",
+        "barragem",
+        "getsuga",
+        "guarda",
+        "mascara",
+        "bankai",
+        "getsuga_chao"
+      ],
+      "combos": [
+        "porrada_getsuga",
+        "chao"
+      ],
+      "agressividade": 0.9,
+      "multRecarga": 1.0,
+      "menosRecargaTicks": 0,
+      "multVelocidade": 1.0,
+      "multAviso": 1.0,
+      "reacaoTicks": 7,
+      "chanceReacao": 0.6,
+      "pausaTicks": 8,
+      "despertado": false,
+      "corBarra": "white",
+      "transicaoTicks": 0,
+      "titulo": "",
+      "subtitulo": ""
+    }
+  ]
+}

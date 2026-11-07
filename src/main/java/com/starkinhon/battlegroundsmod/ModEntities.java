@@ -6,6 +6,7 @@ import com.starkinhon.battlegroundsmod.boss.BillsEntity;
 import com.starkinhon.battlegroundsmod.boss.GojoEntity;
 import com.starkinhon.battlegroundsmod.boss.MadaraEntity;
 import com.starkinhon.battlegroundsmod.boss.SoulBoss;
+import com.starkinhon.battlegroundsmod.boss.SoulMob;
 import com.starkinhon.battlegroundsmod.dummy.AttackerDummy;
 import com.starkinhon.battlegroundsmod.dummy.TrainingDummy;
 import com.starkinhon.battlegroundsmod.power.powers.aizen.AizenIllusion;
@@ -73,7 +74,49 @@ public final class ModEntities {
                     .clientTrackingRange(16)
                     .build("aizen_illusion"));
 
+    // SubAlma mobs: each fights with its SubAlma's skills (souls_bosses/<id>.json), as a plain monster.
+    public static final Supplier<EntityType<SoulMob>> BYAKUYA = mob("byakuya");
+    public static final Supplier<EntityType<SoulMob>> ICHIGO = mob("ichigo");
+    public static final Supplier<EntityType<SoulMob>> RUKIA = mob("rukia");
+    public static final Supplier<EntityType<SoulMob>> ORIHIME = mob("orihime");
+    public static final Supplier<EntityType<SoulMob>> URAHARA = mob("urahara");
+    public static final Supplier<EntityType<SoulMob>> SUKUNA = mob("sukuna");
+
+    // Fighters: weak mobs with only the base combat, Tier 10 (human), 9 (street) and 8 (block).
+    public static final Supplier<EntityType<SoulMob>> FIGHTER_HUMANO = mob("fighter_humano");
+    public static final Supplier<EntityType<SoulMob>> FIGHTER_RUA = mob("fighter_rua");
+    public static final Supplier<EntityType<SoulMob>> FIGHTER_QUARTEIRAO = mob("fighter_quarteirao");
+
+    public static final java.util.List<Supplier<EntityType<SoulMob>>> SUB_MOBS = java.util.List.of(BYAKUYA, ICHIGO, RUKIA, ORIHIME, URAHARA, SUKUNA);
+    public static final java.util.List<Supplier<EntityType<SoulMob>>> FIGHTERS = java.util.List.of(FIGHTER_HUMANO, FIGHTER_RUA, FIGHTER_QUARTEIRAO);
+
+    private static Supplier<EntityType<SoulMob>> mob(String id) {
+        return ENTITY_TYPES.register(id, () -> EntityType.Builder.<SoulMob>of((type, level) -> new SoulMob(type, level, id), MobCategory.MONSTER)
+                .sized(0.6f, 1.8f)
+                .eyeHeight(1.62f)
+                .clientTrackingRange(10)
+                .build(id));
+    }
+
     private ModEntities() {
+    }
+
+    // Natural spawns (the biome modifiers in data/battlegroundsmod/neoforge/biome_modifier add them to the overworld):
+    // on the ground, by day or night, never in peaceful.
+    public static void onSpawnPlacements(net.neoforged.neoforge.event.entity.RegisterSpawnPlacementsEvent event) {
+        for (Supplier<EntityType<SoulMob>> type : SUB_MOBS) {
+            placement(event, type.get());
+        }
+        for (Supplier<EntityType<SoulMob>> type : FIGHTERS) {
+            placement(event, type.get());
+        }
+    }
+
+    private static void placement(net.neoforged.neoforge.event.entity.RegisterSpawnPlacementsEvent event, EntityType<SoulMob> type) {
+        event.register(type, net.minecraft.world.entity.SpawnPlacementTypes.ON_GROUND,
+                net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+                net.minecraft.world.entity.monster.Monster::checkAnyLightMonsterSpawnRules,
+                net.neoforged.neoforge.event.entity.RegisterSpawnPlacementsEvent.Operation.REPLACE);
     }
 
     public static void onAttributes(EntityAttributeCreationEvent event) {
@@ -83,5 +126,11 @@ public final class ModEntities {
         event.put(DUMMY.get(), TrainingDummy.createAttributes().build());
         event.put(DUMMY_ATTACKER.get(), TrainingDummy.createAttributes().build());
         event.put(AIZEN_ILLUSION.get(), AizenIllusion.createAttributes().build());
+        for (Supplier<EntityType<SoulMob>> type : SUB_MOBS) {
+            event.put(type.get(), SoulBoss.createAttributes().build());
+        }
+        for (Supplier<EntityType<SoulMob>> type : FIGHTERS) {
+            event.put(type.get(), SoulBoss.createAttributes().build());
+        }
     }
 }

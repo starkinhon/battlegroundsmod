@@ -178,6 +178,19 @@ public class BattlegroundsModClient {
         event.registerEntityRenderer(ModEntities.DUMMY.get(), context -> new DummyRenderer<>(context, "steve"));
         event.registerEntityRenderer(ModEntities.DUMMY_ATTACKER.get(), context -> new DummyRenderer<>(context, "kai"));
         event.registerEntityRenderer(ModEntities.AIZEN_ILLUSION.get(), AizenIllusionRenderer::new);
+        // SubAlma mobs (improvised skins; the girls with slim arms) and the Fighters (three looks per tier).
+        event.registerEntityRenderer(ModEntities.BYAKUYA.get(), context -> new SoulBossRenderer<>(context, "byakuya", false));
+        event.registerEntityRenderer(ModEntities.ICHIGO.get(), context -> new SoulBossRenderer<>(context, "ichigo", false));
+        event.registerEntityRenderer(ModEntities.RUKIA.get(), context -> new SoulBossRenderer<>(context, "rukia", true));
+        event.registerEntityRenderer(ModEntities.ORIHIME.get(), context -> new SoulBossRenderer<>(context, "orihime", true));
+        event.registerEntityRenderer(ModEntities.URAHARA.get(), context -> new SoulBossRenderer<>(context, "urahara", false));
+        event.registerEntityRenderer(ModEntities.SUKUNA.get(), context -> new SoulBossRenderer<>(context, "sukuna", false));
+        event.registerEntityRenderer(ModEntities.FIGHTER_HUMANO.get(),
+                context -> new SoulBossRenderer<>(context, false, "fighter_humano_0", "fighter_humano_1", "fighter_humano_2"));
+        event.registerEntityRenderer(ModEntities.FIGHTER_RUA.get(),
+                context -> new SoulBossRenderer<>(context, false, "fighter_rua_0", "fighter_rua_1", "fighter_rua_2"));
+        event.registerEntityRenderer(ModEntities.FIGHTER_QUARTEIRAO.get(),
+                context -> new SoulBossRenderer<>(context, false, "fighter_quarteirao_0", "fighter_quarteirao_1", "fighter_quarteirao_2"));
     }
 
     // Players' eyes can trail light too (Mangekyo, see Aura), so their renderers learn where the eyes are.

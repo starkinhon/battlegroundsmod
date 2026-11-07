@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.starkinhon.battlegroundsmod.power.powers.DestructionGod;
+import com.starkinhon.battlegroundsmod.power.powers.Fighter;
 import com.starkinhon.battlegroundsmod.power.powers.Manipulator;
 import com.starkinhon.battlegroundsmod.power.powers.OnePunch;
 import com.starkinhon.battlegroundsmod.power.powers.RubberBoy;
@@ -25,6 +26,8 @@ public final class Powers {
     private static final Map<String, Power> BY_ID = new LinkedHashMap<>();
     private static final List<Power> DIVINE = new ArrayList<>();
     private static final List<Power> SUB = new ArrayList<>();
+    // Powers only mobs use (the Fighters' base combat): found by get, but not selectable and without a soul crystal.
+    private static final Map<String, Power> HIDDEN = new LinkedHashMap<>();
 
     public static final Power UCHIHA_GHOST = register(UchihaGhost.create());
     public static final Power MANIPULATOR = register(Manipulator.create());
@@ -41,6 +44,9 @@ public final class Powers {
     public static final Power URAHARA = registerSub(Urahara.create());
     public static final Power SUKUNA_CUTS = registerSub(SukunaCuts.create());
 
+    // Mob only.
+    public static final Power FIGHTER = registerHidden(Fighter.create());
+
     private Powers() {
     }
 
@@ -56,8 +62,14 @@ public final class Powers {
         return power;
     }
 
+    private static Power registerHidden(Power power) {
+        HIDDEN.put(power.id(), power);
+        return power;
+    }
+
     public static Power get(String id) {
-        return BY_ID.get(id);
+        Power power = BY_ID.get(id);
+        return power != null || id == null ? power : HIDDEN.get(id);
     }
 
     public static Collection<Power> all() {
