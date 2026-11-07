@@ -88,13 +88,12 @@ public class KokushiboSwordRenderer extends BlockEntityWithoutLevelRenderer {
 
     // In hand: from the item's 0..1 square (after its display transform) to sword space. Also where
     // client/fx/SwordFx finds the blade.
-    // Third person (Stark, 2026-11-07): a bit lower, turned in toward the body and laid flatter (about 11 degrees up
-    // instead of the Aizen sword's 36).
+    // Third person (Stark, 2026-11-07): a bit lower, a bit closer to the body, pointing straight ahead and laid
+    // flatter (about 11 degrees up instead of the Aizen sword's 36).
     public static void toSword(PoseStack poseStack, boolean thirdPerson) {
         if (thirdPerson) {
-            poseStack.translate(1.5f / 16, 3 / 16f, 0.5f);
+            poseStack.translate(1.5f / 16, 3 / 16f, 0.5f + 1.5f / 16);
             poseStack.mulPose(Axis.ZP.rotation(-0.2f));
-            poseStack.mulPose(Axis.XP.rotation(0.35f));
         } else {
             poseStack.translate(3 / 16f, 3 / 16f, 0.5f);
         }
