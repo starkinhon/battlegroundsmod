@@ -26,6 +26,7 @@ public final class FxShaders {
     static ShaderInstance susanoo;
     static ShaderInstance realismo;
     static ShaderInstance moon;
+    static ShaderInstance moon3d;
     static ShaderInstance flesh;
     static ShaderInstance voidFlash;
 
@@ -63,6 +64,7 @@ public final class FxShaders {
         register(event, "souls_susanoo", DefaultVertexFormat.POSITION_COLOR_NORMAL, s -> susanoo = s);
         register(event, "fx_realismo", DefaultVertexFormat.POSITION, s -> realismo = s);
         register(event, "souls_moon", DefaultVertexFormat.PARTICLE, s -> moon = s);
+        register(event, "souls_moon3d", DefaultVertexFormat.PARTICLE, s -> moon3d = s);
         register(event, "souls_flesh", DefaultVertexFormat.NEW_ENTITY, s -> flesh = s);
     }
 
