@@ -640,5 +640,15 @@
   "item.battlegroundsmod.nobara_spawn_egg": "Ovo Gerador da Nobara",
   "item.battlegroundsmod.todo_spawn_egg": "Ovo Gerador do Todo",
   "item.battlegroundsmod.inumaki_spawn_egg": "Ovo Gerador do Inumaki",
-  "item.battlegroundsmod.miwa_spawn_egg": "Ovo Gerador da Miwa"
+  "item.battlegroundsmod.miwa_spawn_egg": "Ovo Gerador da Miwa",
+  "power.battlegroundsmod.moon_demon": "Demônio da Lua",
+  "power.battlegroundsmod.moon_demon.desc": "A Lua Superior Um. Cada corte da Respiração da Lua enche o ar de luas.",
+  "ability.battlegroundsmod.moon_demon.0": "1ª Forma: Yoru no Miya",
+  "ability.battlegroundsmod.moon_demon.0.desc": "Saque rápido da Respiração da Lua: um corte em lua gigante se abre na sua frente, creme por fora e brasa por dentro, soltando correntes de luas crescentes que brilham e se desfazem em lascas de luz. Corta tudo dentro do arco.",
+  "ability.battlegroundsmod.moon_demon.0.tags": "Espada,Área,Saque rápido",
+  "ability.battlegroundsmod.moon_demon.1": "2ª Forma (em breve)",
+  "ability.battlegroundsmod.moon_demon.2": "3ª Forma (em breve)",
+  "ability.battlegroundsmod.moon_demon.3": "Alongar a Espada (em breve)",
+  "message.battlegroundsmod.moon_demon.soon": "Essa forma do Kokushibo ainda está sendo feita",
+  "item.battlegroundsmod.soul_moon_demon": "Alma: Demônio da Lua"
 }

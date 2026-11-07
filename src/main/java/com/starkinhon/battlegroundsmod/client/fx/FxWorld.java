@@ -42,7 +42,8 @@ public final class FxWorld {
     static MultiBufferSource.BufferSource buffers() {
         if (buffers == null) {
             for (RenderType type : List.of(FxRenderTypes.VFX_ALPHA, FxRenderTypes.VFX_ADD, FxRenderTypes.FLAT_ALPHA, FxRenderTypes.FLAT_ADD,
-                    FxRenderTypes.SUS_DEPTH, FxRenderTypes.SUS_COLOR, FxRenderTypes.SUS_GLOW, FxRenderTypes.SUS_FLAT)) {
+                    FxRenderTypes.SUS_DEPTH, FxRenderTypes.SUS_COLOR, FxRenderTypes.SUS_GLOW, FxRenderTypes.SUS_FLAT,
+                    MoonSlashRenderer.Types.BODY, MoonSlashRenderer.Types.GLOW)) {
                 FIXED.put(type, new ByteBufferBuilder(type.bufferSize()));
             }
             buffers = MultiBufferSource.immediateWithBuffers(FIXED, new ByteBufferBuilder(16384));
@@ -216,6 +217,7 @@ public final class FxWorld {
             RoxoRenderer.render(camera, now, partial);
             AizenFx.render(camera, now, partial);
             SwordFx.render(camera, now, partial);
+            MoonSlashRenderer.render(source, camera, now, partial);
             PunchFxRenderer.render(camera, now, partial);
             SubFx.render(camera, now, partial);
             SphereRenderer.render(camera, now, partial);
@@ -224,6 +226,7 @@ public final class FxWorld {
         }
         if (flat) {
             source.endBatch(FxRenderTypes.SUS_FLAT);
+            source.endBatch(MoonSlashRenderer.Types.BODY);
             source.endBatch(FxRenderTypes.FLAT_ALPHA);
             source.endBatch(FxRenderTypes.FLAT_ADD);
             endDecals(source);
@@ -232,6 +235,7 @@ public final class FxWorld {
             source.endBatch(FxRenderTypes.SUS_DEPTH);
             source.endBatch(FxRenderTypes.SUS_COLOR);
             source.endBatch(FxRenderTypes.VFX_ALPHA);
+            source.endBatch(MoonSlashRenderer.Types.BODY);
             endDecals(source);
             boolean outline = !space && Aura.drawMask(event, camera, partial);
             FxPost.beginGlow();
@@ -240,6 +244,7 @@ public final class FxWorld {
             }
             source.endBatch(FxRenderTypes.SUS_GLOW);
             source.endBatch(FxRenderTypes.VFX_ADD);
+            source.endBatch(MoonSlashRenderer.Types.GLOW);
             FxPost.endGlow(FxConfig.on(FxConfig.BLOOM));
         }
         if (!space && HakaiRenderer.active()) {

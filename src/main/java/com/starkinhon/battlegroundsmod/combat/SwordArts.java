@@ -89,6 +89,8 @@ public final class SwordArts {
     public static final int FX_COLOR = 2;
     // A glint runs along the entity's blade (the Forte is fully charged).
     public static final int FX_GLINT = 3;
+    // Kokushibo's 1st Form, Yoru no Miya (client/fx/MoonSlashRenderer): pos = his eyes, dir = his look, a = the moons' seed.
+    public static final int FX_MOON = 4;
 
     private SwordArts() {
     }

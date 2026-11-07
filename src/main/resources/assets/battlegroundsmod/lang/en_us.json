@@ -632,5 +632,15 @@
   "item.battlegroundsmod.nobara_spawn_egg": "Nobara Spawn Egg",
   "item.battlegroundsmod.todo_spawn_egg": "Todo Spawn Egg",
   "item.battlegroundsmod.inumaki_spawn_egg": "Inumaki Spawn Egg",
-  "item.battlegroundsmod.miwa_spawn_egg": "Miwa Spawn Egg"
+  "item.battlegroundsmod.miwa_spawn_egg": "Miwa Spawn Egg",
+  "power.battlegroundsmod.moon_demon": "Moon Demon",
+  "power.battlegroundsmod.moon_demon.desc": "Upper Moon One. Every cut of Moon Breathing fills the air with moons.",
+  "ability.battlegroundsmod.moon_demon.0": "1st Form: Yoru no Miya",
+  "ability.battlegroundsmod.moon_demon.0.desc": "A Moon Breathing quick draw: a giant crescent slash opens in front of you, cream outside and ember inside, throwing out chains of crescent moons that glow and break into flakes of light. Cuts everything inside the arc.",
+  "ability.battlegroundsmod.moon_demon.0.tags": "Sword,Area,Quick draw",
+  "ability.battlegroundsmod.moon_demon.1": "2nd Form (soon)",
+  "ability.battlegroundsmod.moon_demon.2": "3rd Form (soon)",
+  "ability.battlegroundsmod.moon_demon.3": "Extend the Sword (soon)",
+  "message.battlegroundsmod.moon_demon.soon": "This form of Kokushibo is still being made",
+  "item.battlegroundsmod.soul_moon_demon": "Soul: Moon Demon"
 }
