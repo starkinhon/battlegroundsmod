@@ -1,5 +1,7 @@
 package com.starkinhon.battlegroundsmod.boss;
 
+import java.util.List;
+
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Destructible;
 import com.starkinhon.battlegroundsmod.combat.Fx;
@@ -13,6 +15,7 @@ import com.starkinhon.battlegroundsmod.skill.RoxoSpec;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.phys.Vec3;
 
 // How the Gojo boss plays. SoulBossAI does the fighting; this reads the situation and tells it what Gojo would do.
@@ -171,8 +174,13 @@ final class GojoTactics extends TacticsBase {
         // The Expansão de 0,2 s: a counter. He reads someone near him charging or in the middle of a move and snaps the
         // void open on them (not every time, so it stays a read and not a wall).
         if (ai.now() >= flashReadyAt && !ai.usingMove() && ai.now() % 4 == 0) {
-            for (LivingEntity target : Combat.inRadius(level, Combat.center(boss), VazioRelampago.radius(boss) - 1, boss)) {
-                if (VazioRelampago.busy(target) && random.nextDouble() < 0.5) {
+            List<LivingEntity> around = Combat.inRadius(level, Combat.center(boss), VazioRelampago.radius(boss) - 1, boss);
+            // Surrounded (3+ coming at him, players or any mob): the snap stuns the whole crowd at once.
+            long hunters = around.stream().filter(e -> e instanceof Mob mob && mob.getTarget() == boss
+                    || e == ai.target()).count();
+            boolean crowd = hunters >= 3 && random.nextDouble() < 0.15;
+            for (LivingEntity target : around) {
+                if (crowd || VazioRelampago.busy(target) && random.nextDouble() < 0.5) {
                     flashReadyAt = ai.now() + 20;
                     if (PowerLogic.cast(boss, PowerData.SLOT_SHIFT_ULT)) {
                         flashReadyAt = ai.now() + VazioRelampago.COOLDOWN + 100;

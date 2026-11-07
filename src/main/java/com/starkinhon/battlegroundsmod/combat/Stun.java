@@ -9,6 +9,8 @@ import com.starkinhon.battlegroundsmod.skill.ComboSpec;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.monster.Creeper;
 
 // The stun a hit leaves: the ATORDOADO effect. While it lasts the fighter is slow and can't punch, use skills or dodge
 // (checked in Melee, PowerLogic, Movement and PowerEvents). A longer stun replaces a shorter one, never the other way.
@@ -36,6 +38,20 @@ public final class Stun {
         if (ticks >= INTERRUPT_TICKS && !wasStunned && target.hasData(ModAttachments.POWER)
                 && (target.getData(ModAttachments.POWER).busyTicks > 0 || Stamina.holding(target))) {
             PowerLogic.interrupt(target);
+        }
+        // Any other mob (not a fighter of the mod): a real stun also stops its own attack, not only its swing (that is
+        // blocked in PowerEvents). While stunned a skeleton lets go of the bow, a creeper stops swelling.
+        if (ticks >= INTERRUPT_TICKS && !wasStunned && target instanceof Mob mob && !(target instanceof SoulBoss)) {
+            Tasks.addSystem(age -> {
+                if (!mob.isAlive() || mob.isRemoved() || !is(mob)) {
+                    return true;
+                }
+                mob.stopUsingItem();
+                if (mob instanceof Creeper creeper) {
+                    creeper.setSwellDir(-1);
+                }
+                return false;
+            });
         }
     }
 
