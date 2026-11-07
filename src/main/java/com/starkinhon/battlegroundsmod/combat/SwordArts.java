@@ -13,7 +13,6 @@ import com.starkinhon.battlegroundsmod.skill.ComboSpec;
 import com.starkinhon.battlegroundsmod.skill.DashAtaqueSpec;
 import com.starkinhon.battlegroundsmod.skill.StaminaSpec;
 
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -172,13 +171,9 @@ public final class SwordArts {
         }
         attacker.setDeltaMovement(flat.scale(0.15));
         attacker.hurtMarked = true;
-        // A streak of light and wind where he went through.
+        // A streak of light where he went through. No sprite puffs or rings: the blade's own light does the rest.
         int light = Melee.lighter(color);
-        Vec3 mid = from.add(0, 1, 0);
-        Vec3 end = spot.add(0, 1, 0);
-        Fx.line(level, ModParticles.streak(light, 1.6f, 6), mid, end, 0.5);
-        Fx.line(level, ModParticles.puff(light, 0.3f, 8, 0.85f), from.add(0, 0.2, 0), spot.add(0, 0.2, 0), 0.6);
-        Fx.burst(level, ModParticles.ring(0xFFFFFF, 1.4f, 6), end, 1, 0, 0);
+        Fx.line(level, ModParticles.streak(light, 1.6f, 6), from.add(0, 1, 0), spot.add(0, 1, 0), 0.5);
     }
 
     // ---------- Ataque Forte ----------
@@ -241,14 +236,11 @@ public final class SwordArts {
             Vec3 line = side.scale(-0.75).add(0, -1, 0).normalize();
             Fx.sound(level, player.getEyePosition(), SoundEvents.PLAYER_ATTACK_STRONG, 1.4f, 0.65f - charge * 0.15f);
             Fx.sound(level, player.getEyePosition(), SoundEvents.TRIDENT_THROW.value(), 1.2f, 0.75f);
-            Fx.burst(level, ParticleTypes.SWEEP_ATTACK, player.getEyePosition().add(flat.scale(2)), 1, 0, 0);
             for (LivingEntity target : slashed(player, STRONG_REACH + 0.8 * charge, -80, 80)) {
                 Defense.breakGuard(target, player);
                 if (land(player, target, 10f * mult * power, 16, 4 + Math.round(3 * charge), 0.5f + charge * 0.5f, look,
                         2.4 * (1 + 0.8 * charge), 0.55 + 0.3 * charge, "final")) {
                     cut(level, target, line, 2.4f + 1.2f * charge, 1.1f + 0.8f * charge, color);
-                    Fx.burst(level, Fx.dust(color, 2f), Combat.center(target), 18, 0.5, 0);
-                    Fx.burst(level, ModParticles.ring(0xFFFFFF, 1.5f + charge * 2, 8), Combat.center(target), 1, 0, 0);
                 }
             }
             if (charge >= 0.999f) {
@@ -290,7 +282,7 @@ public final class SwordArts {
             }
             if (age >= ticks) {
                 if (range < WAVE_RANGE) {
-                    Fx.burst(level, ParticleTypes.EXPLOSION, b, 1, 0, 0);
+                    PunchFx.hit(level, PunchFx.FINAL, b, dir, color, 1, b.y - 1);
                     Fx.sound(level, b, SoundEvents.PLAYER_ATTACK_SWEEP, 1.2f, 0.5f);
                 }
                 return true;
@@ -359,7 +351,6 @@ public final class SwordArts {
             if (since == FINISH_CUT_AT) {
                 Fx.sound(level, eye, SoundEvents.PLAYER_ATTACK_STRONG, 1.4f, 0.8f);
                 Fx.sound(level, eye, SoundEvents.TRIDENT_THROW.value(), 1.1f, 0.9f);
-                Fx.burst(level, ParticleTypes.GUST, eye.add(Combat.flatLook(player).scale(2)), 1, 0, 0);
                 for (LivingEntity target : slashed(player, BARRAGE_REACH + 0.4, -70, 70)) {
                     if (land(player, target, finisherDamage, 14, 4, 0.6f, look, 1.2, 1.15, "final")) {
                         cut(level, target, new Vec3(0, 1, 0), 3.2f, 1.4f, color);

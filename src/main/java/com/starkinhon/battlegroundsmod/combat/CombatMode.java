@@ -1,13 +1,13 @@
 package com.starkinhon.battlegroundsmod.combat;
 
 import com.starkinhon.battlegroundsmod.ModAttachments;
-import com.starkinhon.battlegroundsmod.item.AizenSwordItem;
 import com.starkinhon.battlegroundsmod.power.PowerData;
 import com.starkinhon.battlegroundsmod.power.PowerLogic;
 
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.SwordItem;
 
 // Combat mode: out of it a player is plain Minecraft (mines, punches like vanilla). Using a base attack or a skill
 // starts it; from then on left click is the punch combo, the dodges and the defense work, and the XP bar shows the ult.
@@ -20,10 +20,12 @@ public final class CombatMode {
     private CombatMode() {
     }
 
-    // The punch combo runs with an empty main hand, or holding Aizen's sword.
+    // The punch combo runs with an empty main hand; with any sword in hand it's the sword combo (SwordArts). Anything
+    // else in hand is the vanilla hit. Without this a plain sword's left click fell to the vanilla attack, with its
+    // sweep, crit and damage indicator particles.
     public static boolean freeHand(LivingEntity entity) {
         ItemStack held = entity.getMainHandItem();
-        return held.isEmpty() || held.getItem() instanceof AizenSwordItem;
+        return held.isEmpty() || held.getItem() instanceof SwordItem;
     }
 
     public static boolean in(LivingEntity entity) {
