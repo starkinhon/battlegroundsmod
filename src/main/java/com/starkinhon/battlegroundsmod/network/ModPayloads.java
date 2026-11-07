@@ -698,6 +698,23 @@ public final class ModPayloads {
         }
     }
 
+    // Server -> client: a Black Flash landing (power/powers/gojo/AzulFlash) at pos, the fist going along dir. charge 0 to
+    // 1 (how much the punch was charged); stop: ticks the world stays stopped on the hit.
+    public record BlackFlash(Vec3 pos, Vec3 dir, float charge, int stop) implements CustomPacketPayload {
+        public static final Type<BlackFlash> TYPE = payloadType("black_flash");
+        public static final StreamCodec<ByteBuf, BlackFlash> STREAM_CODEC = StreamCodec.composite(
+                VEC3, BlackFlash::pos,
+                VEC3, BlackFlash::dir,
+                ByteBufCodecs.FLOAT, BlackFlash::charge,
+                ByteBufCodecs.VAR_INT, BlackFlash::stop,
+                BlackFlash::new);
+
+        @Override
+        public Type<BlackFlash> type() {
+            return TYPE;
+        }
+    }
+
     // Server -> client: Gojo's Purple (power/powers/gojo/Roxo), every tick while it forms and grows in front of owner's
     // chest. mode 0 alive, 2 gone (cut short, it fades). tick: ticks since he pressed C (the client runs the whole forming
     // timeline from it, placing the two spheres on his body itself so they never lag); charge 0 to 1: how much it grew
@@ -1051,6 +1068,8 @@ public final class ModPayloads {
                 () -> ClientHooks.roxoIrrestrito(payload.center(), payload.size(), payload.timing(), payload.blast())));
         registrar.playToClient(VermelhoBlast.TYPE, VermelhoBlast.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.vermelhoBlast(payload.from(), payload.dir(), payload.range(), payload.radius(), payload.speed(), payload.charge())));
+        registrar.playToClient(BlackFlash.TYPE, BlackFlash.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.blackFlash(payload.pos(), payload.dir(), payload.charge(), payload.stop())));
         registrar.playToClient(SubFx.TYPE, SubFx.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.subFx(payload.kind(), payload.id(), payload.pos(), payload.dir(), payload.a(), payload.b(), payload.c())));
         registrar.playToClient(AizenFx.TYPE, AizenFx.STREAM_CODEC, (payload, context) -> context.enqueueWork(

@@ -6,6 +6,7 @@ import java.util.List;
 import com.starkinhon.battlegroundsmod.power.Ability;
 import com.starkinhon.battlegroundsmod.power.Power;
 import com.starkinhon.battlegroundsmod.power.powers.gojo.Azul;
+import com.starkinhon.battlegroundsmod.power.powers.gojo.AzulFlash;
 import com.starkinhon.battlegroundsmod.power.powers.gojo.InfiniteVoid;
 import com.starkinhon.battlegroundsmod.power.powers.gojo.Roxo;
 import com.starkinhon.battlegroundsmod.power.powers.gojo.Vermelho;
@@ -16,6 +17,7 @@ import com.starkinhon.battlegroundsmod.power.powers.gojo.Vermelho;
 // behind the target, point blank; see gojo/Vermelho). C is Roxo (held: the Red and the Blue come round to the front and
 // mix into the Purple, held on it grows, let go it is launched and erases everything in its path; a full Red fired into
 // a parked full Blue makes the Unlimited Purple; see gojo/Roxo). Shift + C is still to be rethought.
+// Shift + Z: the Blue on his palm pulls the target to him and he meets it with a Black Flash (see gojo/AzulFlash).
 public final class Strongest {
     private Strongest() {
     }
@@ -26,7 +28,7 @@ public final class Strongest {
                 new Ability(Vermelho.COOLDOWN, 0, Vermelho::use),
                 new Ability(Roxo.COOLDOWN, 0, Roxo::use),
                 new Ability(900, 0, InfiniteVoid::use)),
-                // Shift: only X has a variant (the Red point blank, behind the target).
-                Arrays.asList(null, new Ability(Vermelho.SHIFT_COOLDOWN, 0, Vermelho::useShift), null, null));
+                // Shift: Z (the Blue pulls them in for a Black Flash) and X (the Red point blank, behind the target).
+                Arrays.asList(new Ability(AzulFlash.COOLDOWN, 0, AzulFlash::use), new Ability(Vermelho.SHIFT_COOLDOWN, 0, Vermelho::useShift), null, null));
     }
 }

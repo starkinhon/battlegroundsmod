@@ -119,7 +119,7 @@ public final class FxWorld {
         FxPost.newFrame();
         ScreenFx.capture(event);
         boolean world = !PIECES.isEmpty() || MeteorRenderer.hasTrails() || Aura.active() || KatonBallRenderer.active() || AshDeath.hasSparks()
-                || SpaceScene.active() || EsferaRenderer.active() || HakaiRenderer.active() || EnergyRenderer.active() || BlackBoxRenderer.active() || AzulRenderer.active() || VermelhoRenderer.active() || RoxoRenderer.active() || AizenFx.active() || SubFx.active()
+                || SpaceScene.active() || EsferaRenderer.active() || HakaiRenderer.active() || EnergyRenderer.active() || BlackBoxRenderer.active() || AzulRenderer.active() || VermelhoRenderer.active() || BlackFlashRenderer.active() || RoxoRenderer.active() || AizenFx.active() || SubFx.active()
                 || SphereRenderer.active() || SusanooArm.active() || DomainScene.active();
         if (!world && !ScreenFx.needsScene()) {
             return;
@@ -188,6 +188,7 @@ public final class FxWorld {
             BlackBoxRenderer.render(camera, now, partial);
             AzulRenderer.render(camera, now, partial);
             VermelhoRenderer.render(camera, now, partial);
+            BlackFlashRenderer.render(camera, now, partial);
             RoxoRenderer.render(camera, now, partial);
             AizenFx.render(camera, now, partial);
             SubFx.render(camera, now, partial);
@@ -235,6 +236,12 @@ public final class FxWorld {
             VermelhoRenderer.overlay();
             source.endBatch(flat ? FxRenderTypes.FLAT_ALPHA : FxRenderTypes.VFX_ALPHA);
             source.endBatch(flat ? FxRenderTypes.FLAT_ADD : FxRenderTypes.VFX_ADD);
+        }
+        if (!space && BlackFlashRenderer.active()) {
+            // The Black Flash's black lightning over its own red glow.
+            FxDraw.begin(source, event.getCamera(), flat);
+            BlackFlashRenderer.overlay(camera, now, partial);
+            source.endBatch(flat ? FxRenderTypes.FLAT_ALPHA : FxRenderTypes.VFX_ALPHA);
         }
         if (!space && RoxoRenderer.active()) {
             // The Purple's body over the glow (its light already went to the bloom under it).

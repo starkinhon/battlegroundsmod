@@ -329,5 +329,9 @@
   "ability.battlegroundsmod.sukuna_cuts.dominio": "Expansão de Domínio: Santuário Malevolente",
   "ability.battlegroundsmod.sukuna_cuts.voto1": "Escala do Dragão...",
   "ability.battlegroundsmod.sukuna_cuts.voto2": "Recuo...",
-  "ability.battlegroundsmod.sukuna_cuts.voto3": "Estrela Gêmea do Cruzamento."
+  "ability.battlegroundsmod.sukuna_cuts.voto3": "Estrela Gêmea do Cruzamento.",
+  "ability.battlegroundsmod.strongest.5": "Azul + Black Flash",
+  "ability.battlegroundsmod.strongest.5.desc": "Um Azul se forma na palma e puxa o alvo na sua mira (até 18 blocos) direto até você, cada vez mais rápido. Soltou antes dele chegar: o soco sai assim que ele chega. Continue segurando: ele flutua na sua frente enquanto o soco carrega, e sai quando você solta. Sempre um Black Flash: o mundo para por um instante, raios pretos e vermelhos explodem do punho e o alvo voa longe, quebrando tudo no caminho.",
+  "ability.battlegroundsmod.strongest.5.tags": "Puxão,Corpo a corpo,Segurar,Destruição",
+  "message.battlegroundsmod.azul_flash_no_target": "Mire em alguém pra puxar com o Azul."
 }
