@@ -34,6 +34,8 @@ public final class MoonFormSkill {
     private static final double HIT_THICK = 1.5;
     // How far from the line between him and a cut someone can stand and still be hit by it (blocks, past their width).
     private static final double FAN_REACH = 1.0;
+    // Each moon left hanging in the air after a form cuts whoever touches it for this much.
+    private static final float HANGING_DAMAGE = 3f;
 
     // Per form: damage of a cut and of a moon, knockback out and up, how fat the carving is around a cut (times its half
     // width), how deep it tears the ground under it, the blocks it may take in one tick, and whether one target can be hit
@@ -78,7 +80,9 @@ public final class MoonFormSkill {
         Vec3 feet = caster.position();
         Vec3 look = caster.getLookAngle();
         int seed = 1 + SubCommon.RANDOM.nextInt(999_999);
-        ModPayloads.SwordFx payload = new ModPayloads.SwordFx(SwordArts.FX_MOON_FORM, caster.getId(), feet, look, seed, form);
+        // at the full moon more moons stay hanging after the form, bigger and for longer (told to the clients as form + 10)
+        boolean full = OniBody.is(caster) && OniBody.phase(caster) == OniBody.FULL_MOON;
+        ModPayloads.SwordFx payload = new ModPayloads.SwordFx(SwordArts.FX_MOON_FORM, caster.getId(), feet, look, seed, form + (full ? 10 : 0));
         for (ServerPlayer player : level.players()) {
             if (player.distanceToSqr(feet) < VIEW_DISTANCE * VIEW_DISTANCE) {
                 PacketDistributor.sendToPlayer(player, payload);
@@ -92,7 +96,7 @@ public final class MoonFormSkill {
             caster.setDeltaMovement(caster.getDeltaMovement().x, 0.62, caster.getDeltaMovement().z);
             caster.hurtMarked = true;
         }
-        MoonForms.Form shape = MoonForms.create(form, seed);
+        MoonForms.Linger shape = MoonForms.create(form, seed, full);
         MoonForms.Basis basis = MoonForms.basis(form, feet, look);
         Tune tune = tune(form);
         Run run = new Run(caster, level, form, shape, basis, tune);
@@ -105,7 +109,7 @@ public final class MoonFormSkill {
         final LivingEntity caster;
         final ServerLevel level;
         final int form;
-        final MoonForms.Form shape;
+        final MoonForms.Linger shape;
         final MoonForms.Basis basis;
         final Tune tune;
         final Set<Long> hit = new HashSet<>();
@@ -114,7 +118,7 @@ public final class MoonFormSkill {
         final int[] debris = {0};
         final boolean carve;
 
-        Run(LivingEntity caster, ServerLevel level, int form, MoonForms.Form shape, MoonForms.Basis basis, Tune tune) {
+        Run(LivingEntity caster, ServerLevel level, int form, MoonForms.Linger shape, MoonForms.Basis basis, Tune tune) {
             this.caster = caster;
             this.level = level;
             this.form = form;
@@ -169,9 +173,12 @@ public final class MoonFormSkill {
                     }
                 }
             }
-            if (tune.moonDamage() > 0) {
+            {
                 for (MoonForms.Moon m : fr.moons()) {
-                    if (m.diss() > 0.5) {
+                    // the moons left hanging in the air cut whoever touches them, once each (any form, the 5th too)
+                    boolean hanging = shape.hanging(m.idx(), t);
+                    float damage = hanging ? HANGING_DAMAGE : tune.moonDamage();
+                    if (m.diss() > 0.5 || damage <= 0) {
                         continue;
                     }
                     Vec3 p = basis.world(m.p());
@@ -181,7 +188,7 @@ public final class MoonFormSkill {
                         double dy = Math.max(0, Math.abs(c.y - p.y) - target.getBbHeight() * 0.5);
                         double dx = c.x - p.x, dz = c.z - p.z;
                         if (dx * dx + dz * dz + dy * dy < reach * reach) {
-                            strike(target, 100000 + m.idx(), tune.moonDamage(), age, p);
+                            strike(target, (hanging ? 200000 : 100000) + m.idx(), damage, age, p);
                         }
                     }
                 }

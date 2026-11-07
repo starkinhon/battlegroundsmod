@@ -36,9 +36,12 @@ public final class MoonFormsRenderer {
     private MoonFormsRenderer() {
     }
 
-    public static void receive(int form, Vec3 feet, Vec3 look, int seed) {
+    // form: + 10 at the full moon (more moons left hanging, bigger and for longer).
+    public static void receive(int code, Vec3 feet, Vec3 look, int seed) {
+        boolean full = code >= 10;
+        int form = code % 10;
         MoonForms.Basis basis = MoonForms.basis(form, feet, look);
-        CASTS.add(new Cast(MoonForms.create(form, seed), basis, ScreenFx.now()));
+        CASTS.add(new Cast(MoonForms.create(form, seed, full), basis, ScreenFx.now()));
         while (CASTS.size() > MAX) {
             CASTS.remove(0);
         }
