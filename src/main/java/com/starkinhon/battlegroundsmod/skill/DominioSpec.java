@@ -19,7 +19,8 @@ import net.minecraft.world.phys.Vec3;
 //   for a floor, endless depth, a black hole turning far away, white ink drifting
 //   by, a ring of water under everyone every 2 s. Those caught are paralyzed and get infinite information on their screen
 //   (only them, never Gojo); only Gojo can hurt them. If his target dies, it shatters right away.
-// - quebra (fases.quebra): it cracks everywhere and shatters like glowing glass, black and white, until nothing is left.
+// - quebra (fases.quebra): it cracks out of one point of impact and shatters like real glass, the pieces falling and
+//   bouncing until nothing is left (DomainGlass).
 public record DominioSpec(String skill, String nome, Tempo tempo, Fases fases, Dominio dominio, Acerto acerto, Visual visual, List<Som> sons) {
 
     public record Tempo(int atrasoTicks, int duracaoTicks) {
