@@ -307,6 +307,11 @@ public final class PowerLogic {
                 data.outfitSent = outfit;
                 PacketDistributor.sendToPlayersTrackingEntityAndSelf(serverPlayer, new ModPayloads.OutfitState(serverPlayer.getId(), outfit));
             }
+            String stance = data.hasPower() ? data.power : "";
+            if (!stance.equals(data.stanceSent)) {
+                data.stanceSent = stance;
+                PacketDistributor.sendToPlayersTrackingEntityAndSelf(serverPlayer, new ModPayloads.StanceState(serverPlayer.getId(), stance));
+            }
         }
     }
 
@@ -320,6 +325,8 @@ public final class PowerLogic {
     public static void sendAura(ServerPlayer player, ServerPlayer watcher) {
         PacketDistributor.sendToPlayer(watcher, new ModPayloads.AuraState(player.getId(), auraOf(player)));
         PacketDistributor.sendToPlayer(watcher, new ModPayloads.OutfitState(player.getId(), outfitOf(player)));
+        PowerData data = player.getData(ModAttachments.POWER);
+        PacketDistributor.sendToPlayer(watcher, new ModPayloads.StanceState(player.getId(), data.hasPower() ? data.power : ""));
     }
 
     // The 3D outfit others should draw on this player: the power's, unless they took it off. Powers without an

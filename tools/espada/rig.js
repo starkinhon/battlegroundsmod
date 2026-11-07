@@ -44,7 +44,7 @@
   }
 
   const ZERO = { lean: 0, twist: 0, drop: 0, fwd: 0, side: 0, head: { yaw: 0, pitch: 0 },
-    r: { yaw: 0, pitch: 0, roll: 0, tilt: 0 }, l: { yaw: 0, pitch: 0, roll: 0, tilt: 0 }, arm: null, blade: null, grip: 0,
+    r: { yaw: 0, pitch: 0, roll: 0, tilt: 0 }, l: { yaw: 0, pitch: 0, roll: 0, tilt: 0 }, arm: null, larm: null, blade: null, grip: 0,
     rl: { pitch: 0, out: 0 }, ll: { pitch: 0, out: 0 } };
 
   function fill(p) {
@@ -137,7 +137,11 @@
       : q(p.r.yaw, p.r.pitch, p.r.roll, p.r.tilt));
     parts.item = { wrist: p.blade ? wrist(qr, dir(p.blade.yaw, p.blade.pitch).applyQuaternion(rb), p.blade.edge || 0) : [0, 0, 0] };
     put('rightArm', rs, qr);
-    let ql = rb.clone().multiply(q(-p.l.yaw, p.l.pitch, -p.l.roll, -p.l.tilt));
+    // larm: like arm, for the left arm, mirrored (yaw + = out to his left, pitch + = up, roll mirrored too)
+    let ql = rb.clone().multiply(p.larm
+      ? new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir(-p.larm.yaw, p.larm.pitch).normalize())
+        .multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(0, -(p.larm.roll || 0) * D, 0)))
+      : q(-p.l.yaw, p.l.pitch, -p.l.roll, -p.l.tilt));
     if (p.grip > 0) {
       // two hands: the left arm reaches for the right fist (just under the right hand on the grip)
       const fist = new THREE.Vector3(0, 9.5, 0).applyQuaternion(qr).add(rs);

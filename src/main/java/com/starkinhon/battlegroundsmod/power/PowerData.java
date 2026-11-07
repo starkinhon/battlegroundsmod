@@ -90,6 +90,8 @@ public class PowerData {
     public String auraSent = null;
     // Players: the outfit the watchers were last told (the power, "" when off; null = never sent).
     public String outfitSent = null;
+    // Players: the power the watchers were last told, for their stance (client/StancePoses; "" = none, null = never sent).
+    public String stanceSent = null;
 
     public PowerData() {
     }
