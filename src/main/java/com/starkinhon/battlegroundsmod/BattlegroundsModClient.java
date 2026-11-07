@@ -129,6 +129,26 @@ public class BattlegroundsModClient {
                 return renderer[0];
             }
         }, ModItems.AIZEN_SWORD.get());
+        com.starkinhon.battlegroundsmod.client.outfit.KokushiboSwordRenderer[] kokushibo = new com.starkinhon.battlegroundsmod.client.outfit.KokushiboSwordRenderer[1];
+        event.registerItem(new IClientItemExtensions() {
+            @Override
+            public BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                if (kokushibo[0] == null) {
+                    kokushibo[0] = new com.starkinhon.battlegroundsmod.client.outfit.KokushiboSwordRenderer();
+                }
+                return kokushibo[0];
+            }
+        }, ModItems.KOKUSHIBO_SWORD.get());
+        com.starkinhon.battlegroundsmod.client.outfit.KokushiboSwordRenderer[] awakened = new com.starkinhon.battlegroundsmod.client.outfit.KokushiboSwordRenderer[1];
+        event.registerItem(new IClientItemExtensions() {
+            @Override
+            public BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                if (awakened[0] == null) {
+                    awakened[0] = new com.starkinhon.battlegroundsmod.client.outfit.KokushiboSwordRenderer(true);
+                }
+                return awakened[0];
+            }
+        }, ModItems.KOKUSHIBO_SWORD_AWAKENED.get());
     }
 
     private static void onClientSetup(FMLClientSetupEvent event) {
@@ -217,6 +237,7 @@ public class BattlegroundsModClient {
             if (event.getSkin(model) instanceof PlayerRenderer renderer) {
                 renderer.addLayer(new AuraEyesLayer<>(renderer));
                 renderer.addLayer(new com.starkinhon.battlegroundsmod.client.outfit.OutfitLayer(renderer));
+                renderer.addLayer(new com.starkinhon.battlegroundsmod.client.outfit.KokushiboSheathLayer(renderer));
             }
         }
     }

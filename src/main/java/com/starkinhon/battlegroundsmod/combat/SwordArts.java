@@ -41,6 +41,11 @@ import net.neoforged.neoforge.network.PacketDistributor;
 // The hitboxes follow the blade: a slice in front, as wide as the swing, not a punch's narrow cone.
 public final class SwordArts {
     public static final String DASH_RUN = "espada.dash";
+    // Kokushibo's quick draw (tools/espada/guardar.js): his sword rests in the sheath out of combat mode, and the first
+    // click of the combo pulls it out cutting.
+    public static final String QUICK_DRAW = "espada.sacar_kokushibo";
+    // Its cut lands this much later than the combo's first: the hand first pulls the blade out along the sheath.
+    static final int QUICK_DRAW_DELAY = 2;
     private static final String DASH_CUT = "espada.dash_corte";
     private static final String STRONG_CHARGE = "espada.forte_carga";
     private static final String STRONG_CUT = "espada.forte_corte";
@@ -391,13 +396,23 @@ public final class SwordArts {
     private static final double[][] COMBO_ARC = {{-80, 80}, {-65, 65}, {-60, 60}, {-18, 18}, {-35, 35}};
     private static final double[] COMBO_EXTRA_REACH = {0.4, 0.4, 0.4, 1.0, 0.6};
 
-    static void comboSwing(LivingEntity attacker, int step) {
+    // Returns the extra ticks before its cut lands (the quick draw's).
+    static int comboSwing(LivingEntity attacker, int step) {
         color(attacker);
-        anim(attacker, COMBO + (Math.floorMod(step, COMBO_ARC.length) + 1));
+        int delay = 0;
+        if (quickDraw(attacker)) {
+            // Out of the sheath and cutting in one move (iaido); it ends up high on the right, where the third cut starts.
+            attacker.getData(ModAttachments.POWER).comboStep = 2;
+            anim(attacker, QUICK_DRAW);
+            delay = QUICK_DRAW_DELAY;
+        } else {
+            anim(attacker, COMBO + (Math.floorMod(step, COMBO_ARC.length) + 1));
+        }
         ServerLevel level = Combat.level(attacker);
         boolean last = step == COMBO_ARC.length - 1;
         Fx.sound(level, attacker.getEyePosition(), SoundEvents.PLAYER_ATTACK_SWEEP, last ? 1.0f : 0.6f,
                 (last ? 0.85f : 1.25f) + level.random.nextFloat() * 0.25f);
+        return delay;
     }
 
     // Lands combo cut step. Returns true when it connected with anyone (blocked or not).
@@ -532,6 +547,18 @@ public final class SwordArts {
         int color = Melee.lighter(Melee.fistColor(entity));
         send(Combat.level(entity), FX_COLOR, entity, entity.position(), Vec3.ZERO, 0, 0, color);
         return color;
+    }
+
+    // True when this swing takes Kokushibo's sword out of its sheath: the watchers are told right away, before the move's
+    // animation, so the sword leaves the sheath on its first frame.
+    private static boolean quickDraw(LivingEntity attacker) {
+        if (!(attacker instanceof ServerPlayer player)
+                || !(player.getMainHandItem().getItem() instanceof com.starkinhon.battlegroundsmod.item.KokushiboSwordItem)) {
+            return false;
+        }
+        boolean sheathed = player.getData(ModAttachments.POWER).sheathSent == 1;
+        com.starkinhon.battlegroundsmod.power.PowerLogic.syncSheath(player);
+        return sheathed;
     }
 
     private static void anim(LivingEntity entity, String move) {

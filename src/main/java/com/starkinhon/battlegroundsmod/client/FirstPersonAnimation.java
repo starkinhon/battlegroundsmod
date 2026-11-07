@@ -4,7 +4,6 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import com.starkinhon.battlegroundsmod.client.fx.SwordFx;
 
-import org.joml.Quaternionf;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.PlayerModel;
@@ -42,6 +41,13 @@ public final class FirstPersonAnimation {
         }
         float partial = event.getPartialTick();
         float age = player.tickCount + partial;
+        // Kokushibo's sword resting in its sheath though selected (out of combat mode): nothing in the hand.
+        boolean hidden = event.getHand() == InteractionHand.MAIN_HAND
+                && com.starkinhon.battlegroundsmod.client.outfit.KokushiboSheathLayer.hidesHand(player);
+        if (hidden && !SkillAnimations.keyframed(player, age)) {
+            event.setCanceled(true);
+            return;
+        }
         if (!SkillAnimations.keyframed(player, age)
                 || !(mc.getEntityRenderDispatcher().getRenderer(player) instanceof PlayerRenderer renderer)) {
             return;
@@ -80,7 +86,7 @@ public final class FirstPersonAnimation {
         }
         // What the hand holds (the sword moves), the way the third person body holds it, turned about the wrist.
         ItemStack held = player.getMainHandItem();
-        if (right && event.getHand() == InteractionHand.MAIN_HAND && !held.isEmpty()) {
+        if (right && event.getHand() == InteractionHand.MAIN_HAND && !held.isEmpty() && !hidden) {
             pose.pushPose();
             arm.translateAndRotate(pose);
             toHand(pose, player);
@@ -101,7 +107,7 @@ public final class FirstPersonAnimation {
         pose.translate(1 / 16f, 0.125f, -0.625f);
         float[] wrist = SkillAnimations.wrist(player);
         if (wrist != null) {
-            pose.mulPose(new Quaternionf().rotationZYX(wrist[2], wrist[1], wrist[0]));
+            com.starkinhon.battlegroundsmod.client.outfit.KokushiboSwordRenderer.turnWrist(pose, wrist, player.getMainHandItem());
         }
     }
 
