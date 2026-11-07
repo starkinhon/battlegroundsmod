@@ -117,7 +117,8 @@ public final class DestructionBop {
             double k = (age - slap) / (double) Math.max(1, ground - slap);
             return high.lerp(groundAt, k * (0.4 + 0.6 * k));
         });
-        Stun.apply(target, ground + stuck);
+        // Full length on a boss too (Stark): everyone stays stunned the whole presoTicks (2.5 s) after hitting the ground.
+        Stun.apply(target, ground + stuck, true);
         // Whatever the target was doing is cut off (this also stops its animation, so its own goes after).
         PowerLogic.seal(target, ground + stuck);
         if (spec.cutscene().intangivel()) {
