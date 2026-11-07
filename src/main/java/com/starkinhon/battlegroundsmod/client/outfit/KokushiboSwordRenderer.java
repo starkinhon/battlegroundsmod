@@ -24,7 +24,7 @@ public class KokushiboSwordRenderer extends BlockEntityWithoutLevelRenderer {
     // Where the fist holds the grip, in the frame ItemInHandLayer draws the held item in (third person display transform
     // and toSword applied to (0, GRIP, 0); tools/espada/guardar.js uses the same). The sword moves turn the wrist about
     // it, so the grip stays in the fist (about the item's own pivot it slid out, Stark 2026-11-07).
-    private static final org.joml.Vector3f GRIP_PIVOT = new org.joml.Vector3f(-0.07969f, -0.18522f, 0.05077f);
+    private static final org.joml.Vector3f GRIP_PIVOT = new org.joml.Vector3f(0f, -0.125f, 0.0875f);
 
     // Turns the held item about the wrist by a sword move's wrist angles (SkillAnimations.wrist).
     public static void turnWrist(PoseStack pose, float[] wrist, ItemStack stack) {
@@ -81,6 +81,15 @@ public class KokushiboSwordRenderer extends BlockEntityWithoutLevelRenderer {
         return true;
     }
 
+    // The meshes, once ready() said true (FleshSheathe bends them).
+    static MeshModel katana() {
+        return katana;
+    }
+
+    static MeshModel saya() {
+        return saya;
+    }
+
     static void fail(RuntimeException e) {
         broken = true;
         BattlegroundsMod.LOGGER.error("Drawing Kokushibo's sword failed; it is invisible until the game restarts", e);
@@ -130,7 +139,8 @@ public class KokushiboSwordRenderer extends BlockEntityWithoutLevelRenderer {
     // flatter (about 11 degrees up instead of the Aizen sword's 36).
     public static void toSword(PoseStack poseStack, boolean thirdPerson) {
         if (thirdPerson) {
-            poseStack.translate(1.5f / 16, 3 / 16f, 0.5f + 1.5f / 16);
+            // The grip in the middle of the fist (Stark, 2026-11-07: it sat off to the side of the hand).
+            poseStack.translate(2.825f / 16, 3.084f / 16, 0.5f);
             poseStack.mulPose(Axis.ZP.rotation(-0.2f));
         } else {
             poseStack.translate(3 / 16f, 3 / 16f, 0.5f);

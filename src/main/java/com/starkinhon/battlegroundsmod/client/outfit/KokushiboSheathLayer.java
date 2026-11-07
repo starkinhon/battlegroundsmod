@@ -31,15 +31,15 @@ import net.minecraft.client.renderer.entity.layers.RenderLayer;
 // Kokushibo's sheath on the left hip, samurai style: mouth just in front of the hip, edge up, the scabbard running
 // back and down past the leg. The sword rests inside whenever it isn't drawn: carried in the inventory, and also held
 // out of combat mode (Stark, 2026-11-07: it only comes out to fight; Sheaths, from power/PowerLogic.sheathCode).
-// The hand never lets go of the sword (Stark, 2026-11-07); the right arm can't quite reach the sheath where it hangs,
-// so while the blade goes in or out the sheath leaves the hip to meet it (the left hand holds it there), SHEATH_OUT
+// Drawing it, the hand never lets go of the sword (Stark, 2026-11-07); the right arm can't quite reach the sheath where it hangs,
+// so while the blade comes out the sheath leaves the hip to meet it (the left hand holds it there), SHEATH_OUT
 // pixels of blade still out, and goes back after.
 // Drawing it: the combo's first click is the quick draw cut (espada.sacar_kokushibo, tools/espada/guardar.js): the
 // hand on the grip pulls the blade out along the sheath, then cuts. The sword is just the held item.
-// Putting it away: when it stops being drawn while still carried (combat mode ended, or switched to another slot) it
-// plays espada.guardar_kokushibo: a flick of the blade, the hand brings the tip to the sheath's mouth and pushes it
-// home. Until HOME the sword is drawn here in the hand (the same transforms as a held item, wrist turn included), then
-// in the sheath, which takes it back to the hip.
+// Putting it away: when it stops being drawn while still carried (combat mode ended, or switched to another slot) the
+// sword goes back by itself, as living flesh (FleshSheathe, Stark 2026-11-07): it melts out of the hand, flies over
+// his left side and the sheath swallows it. espada.guardar_kokushibo only holds the body still with the arm out until
+// the hand lets go.
 // Every client sees it on its own, from the held item and the drawn flag the server sends.
 public class KokushiboSheathLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> {
     // Model space (1 = one pixel, +y down, -z the front, +x the player's left), relative to the body's pivot.
@@ -55,27 +55,25 @@ public class KokushiboSheathLayer extends RenderLayer<AbstractClientPlayer, Play
     }
 
     public static final String PUT_AWAY = "espada.guardar_kokushibo";
-    // Ticks into putting it away: in the hand until HOME; the new item stays hidden until DONE.
-    private static final float HOME = 16, DONE = 22;
+    // Ticks into putting it away until the new item may show: when the hand has let go of the flesh.
+    private static final float DONE = FleshSheathe.LET_GO;
     // Ticks into the quick draw when the blade has left the sheath, and when the sheath is back on the hip.
     private static final float DRAWN_OUT = 2, DRAW_BACK = 4;
     // Pixels of blade out of the sheath over time, {tick, pixels} pairs, as the animations' keys place the hand.
     private static final float[] QUICK_DRAW_OUT = {0, 0, 1, 4, 2, 8};
-    private static final float[] PUT_OUT = {9, 8, 12.5f, 4, 16, 0};
-    // Putting it away: the sheath leaves the hip between these ticks, and is back at PUT_BACK.
-    private static final float[] PUT_MEET = {7, 9};
-    private static final float PUT_BACK = 19;
 
     private static final class State {
         boolean out;
         float putStart = -1;
         // The sheath where the blade left it, relative to its place on the hip (the quick draw).
         Matrix4f leftAt;
+        FleshSheathe.Run flesh;
         int seen = Integer.MIN_VALUE;
     }
 
     private static final Map<Integer, State> STATES = new HashMap<>();
     private static ItemStack swordStack;
+    private static boolean fleshBroken;
 
     private static boolean holdsMain(LivingEntity entity) {
         return entity.getMainHandItem().getItem() instanceof KokushiboSwordItem;
@@ -123,6 +121,7 @@ public class KokushiboSheathLayer extends RenderLayer<AbstractClientPlayer, Play
         } else if (state.out) {
             state.putStart = watching && carrying ? player.tickCount : -1;
             if (state.putStart >= 0) {
+                state.flesh = new FleshSheathe.Run();
                 SkillAnimations.play(player.getId(), PUT_AWAY, false);
             }
         }
@@ -158,16 +157,22 @@ public class KokushiboSheathLayer extends RenderLayer<AbstractClientPlayer, Play
                 return;
             }
             float t = state.putStart < 0 ? Float.MAX_VALUE : ageInTicks - state.putStart;
-            float w = t < PUT_MEET[0] ? 0 : t < PUT_MEET[1] ? (t - PUT_MEET[0]) / (PUT_MEET[1] - PUT_MEET[0])
-                    : t < HOME ? 1 : t < PUT_BACK ? 1 - (t - HOME) / (PUT_BACK - HOME) : 0;
-            if (w > 0 || t < HOME) {
-                hand = handMatrix(poseStack, player);
+            if (t >= 0 && t < FleshSheathe.END && state.flesh != null && !fleshBroken) {
+                PoseStack local = new PoseStack();
+                getParentModel().rightArm.translateAndRotate(local);
+                Vector3f palm = local.last().pose().transformPosition(new Vector3f(-1 / 16f, 9.5f / 16, 0));
+                try {
+                    FleshSheathe.render(state.flesh, poseStack.last(), handMatrix(new PoseStack(), player), sheathMatrix(new PoseStack(), 0), palm, t,
+                            ageInTicks, buffer, light);
+                    return;
+                } catch (RuntimeException e) {
+                    // Only the flesh goes: the sword just rests in the sheath from then on.
+                    fleshBroken = true;
+                    com.starkinhon.battlegroundsmod.BattlegroundsMod.LOGGER.error("Kokushibo's flesh sword failed; it is put away plainly until the game restarts", e);
+                }
             }
-            if (w > 0) {
-                sheath = blend(rest, new Matrix4f(hand).translate(0, sheathOut(PUT_OUT, t), 0), w);
-            }
-            draw(poseStack, sheath, buffer, light, overlay, false, true);
-            draw(poseStack, t >= HOME ? sheath : hand, buffer, light, overlay, true, false);
+            state.flesh = null;
+            draw(poseStack, sheath, buffer, light, overlay, true, true);
         } catch (RuntimeException e) {
             KokushiboSwordRenderer.fail(e);
         } finally {
