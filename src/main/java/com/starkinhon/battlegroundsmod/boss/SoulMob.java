@@ -8,7 +8,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
 
 // A plain monster that fights with the boss AI (SoulBossAI) and a soul's skills: the SubAlma mobs (Byakuya, Ichigo,
-// Rukia, Urahara, Sukuna) with their SubAlma's skills, and the weak Fighters (Tier 10, 9 and 8) that only use
+// Rukia, Urahara) with their SubAlma's skills, and the weak Fighters (Tier 10, 9 and 8) that only use
 // the base combat (punches, strong, barrage, dashes). Tuning in souls_bosses/<id>.json, like the bosses.
 // Unlike a boss: no bar, entrance, phases or final ult (even under /gamerule soulbossfight), no allbossestier0, they
 // despawn like any monster (unless spawned from an egg or named), and they don't hunt other souls on sight.
