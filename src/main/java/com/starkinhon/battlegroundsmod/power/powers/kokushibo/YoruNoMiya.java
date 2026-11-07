@@ -42,6 +42,8 @@ public final class YoruNoMiya {
     public static final double ROLL = -12;
     // Turn of the arc in its own plane (degrees, positive: from his right toward the front): centres the gap behind him.
     public static final double SPIN = 25;
+    // How far up or down the slash follows his look (degrees).
+    public static final double MAX_PITCH = 80;
     // The cut lands as the point of the slash goes round (the page's head reaches the arc's middle at ~0.2 s).
     private static final int HIT_DELAY = 4;
     private static final float DAMAGE = 14f;
@@ -77,7 +79,7 @@ public final class YoruNoMiya {
     // he and the one hit both see well, sized to the sword (the slash comes off its point): the page's arc is centred
     // on his chest, a little ahead, with its radius the reach of arm plus blade, and lies nearly flat (TILT degrees back
     // from standing, so the part ahead of him rises a little), then the whole plane turns ROLL degrees about where he
-    // faces so his right side dips, for a bit of a top-down slash. It follows only his turning, not his pitch.
+    // faces so his right side dips, for a bit of a top-down slash. It follows his turning and, up to MAX_PITCH, his pitch.
     public static Vec3[] frame(Vec3 eye, Vec3 look) {
         Vec3 l = look.lengthSqr() < 1.0E-6 ? new Vec3(0, 0, 1) : look.normalize();
         Vec3 flat = new Vec3(l.x, 0, l.z);
@@ -95,8 +97,15 @@ public final class YoruNoMiya {
         double roll = -Math.toRadians(ROLL);
         right = turn(right, flat, roll);
         up = turn(up, flat, roll);
+        // Aimed up and down with his look (Stark: otherwise no one above or below him can be hit): the whole slash,
+        // hitbox and carving included, turns about his right-hand side by his pitch, round his eyes.
+        Vec3 side = flat.cross(new Vec3(0, 1, 0)).normalize();
+        double pitch = Math.asin(Mth.clamp(l.y, -1, 1));
+        pitch = Mth.clamp(pitch, -Math.toRadians(MAX_PITCH), Math.toRadians(MAX_PITCH));
+        right = turn(right, side, pitch);
+        up = turn(up, side, pitch);
         Vec3 n = right.cross(up).normalize();
-        Vec3 centre = eye.add(0, RISE, 0).add(flat.scale(AHEAD));
+        Vec3 centre = eye.add(turn(new Vec3(0, RISE, 0).add(flat.scale(AHEAD)), side, pitch));
         return new Vec3[] {centre, n, right, up};
     }
 
