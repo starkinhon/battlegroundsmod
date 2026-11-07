@@ -83,7 +83,7 @@ public final class Freeze {
                 // Only the position is put back; the rotation is sent as relative zero so the camera is never yanked.
                 if (entity.position().distanceToSqr(pos) > 1.0E-4) {
                     if (entity instanceof ServerPlayer player) {
-                        player.connection.teleport(pos.x, pos.y, pos.z, 0, 0, EnumSet.of(RelativeMovement.Y_ROT, RelativeMovement.X_ROT));
+                        lookFreeTeleport(player, pos);
                     } else {
                         entity.moveTo(pos.x, pos.y, pos.z, entity.getYRot(), entity.getXRot());
                     }
@@ -105,6 +105,14 @@ public final class Freeze {
             entity.hurtMarked = true;
             return false;
         });
+    }
+
+    // Moves a player without touching the camera. Vanilla's relative teleport sends (yaw - current yaw) and also sets the
+    // server rotation to the yaw given, so passing 0, 0 snapped the view (and the body others see) to yaw 0 / pitch 0.
+    // Passing the current rotation makes the sent turn exactly zero and keeps the server rotation as it is.
+    private static void lookFreeTeleport(ServerPlayer player, Vec3 pos) {
+        player.connection.teleport(pos.x, pos.y, pos.z, player.getYRot(), player.getXRot(),
+                EnumSet.of(RelativeMovement.Y_ROT, RelativeMovement.X_ROT));
     }
 
     // Turns someone held still to look this way, and keeps them so while the hold lasts.
@@ -131,7 +139,7 @@ public final class Freeze {
         }
         if (hold != null && hold.lookFree && entity instanceof ServerPlayer player) {
             // Free look: move them, but leave the camera where they are pointing it.
-            player.connection.teleport(pos.x, pos.y, pos.z, 0, 0, EnumSet.of(RelativeMovement.Y_ROT, RelativeMovement.X_ROT));
+            lookFreeTeleport(player, pos);
             return;
         }
         if (entity instanceof ServerPlayer player) {
