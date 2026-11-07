@@ -121,6 +121,11 @@ public final class DomainScene {
             this.forward = forward;
         }
 
+        // The victim's sounds of this domain (SkillAudio), cut off when it cracks.
+        Object soundKey() {
+            return "domain:" + caster;
+        }
+
         double radius() {
             return spec.radius();
         }
@@ -428,6 +433,10 @@ public final class DomainScene {
             if (victim) {
                 victimSounds(d, t, minecraft);
             }
+            if (t >= d.closeAt() && d.once("hush")) {
+                // It is cracking: the heart and the whine inside stop with it.
+                SkillAudio.stop(d.soundKey());
+            }
             if (t >= d.closeAt() && d.once("crack") && dist < d.radius() + 30) {
                 ScreenFx.impactFrame(new int[] {3}, 2, 0xFFFFFF, d.hub(camera).add(0, 2, 0), 0);
             }
@@ -466,14 +475,14 @@ public final class DomainScene {
     private static void victimSounds(Domain d, double t, Minecraft minecraft) {
         double total = d.spec.closeTick() - d.spec.tunnelTick();
         double u = Mth.clamp((t - d.spec.tunnelTick()) / Math.max(1, total), 0, 1);
-        var sounds = minecraft.getSoundManager();
+        Object key = d.soundKey();
         if (t >= d.nextBeat) {
-            sounds.play(SimpleSoundInstance.forUI(SoundEvents.WARDEN_HEARTBEAT, (float) (1.0 - 0.35 * u), (float) (0.9 - 0.3 * u)));
+            SkillAudio.play(key, SimpleSoundInstance.forUI(SoundEvents.WARDEN_HEARTBEAT, (float) (1.0 - 0.35 * u), (float) (0.9 - 0.3 * u)));
             d.nextBeat = t + 14 + 34 * u;
         }
         if (t >= d.nextWhine && t >= d.spec.voidTick()) {
-            sounds.play(SimpleSoundInstance.forUI(SoundEvents.BEACON_AMBIENT, 2.0f, (float) (0.35 + 0.4 * u)));
-            sounds.play(SimpleSoundInstance.forUI(SoundEvents.AMETHYST_BLOCK_RESONATE, 2.0f, (float) (0.15 + 0.3 * u)));
+            SkillAudio.play(key, SimpleSoundInstance.forUI(SoundEvents.BEACON_AMBIENT, 2.0f, (float) (0.35 + 0.4 * u)));
+            SkillAudio.play(key, SimpleSoundInstance.forUI(SoundEvents.AMETHYST_BLOCK_RESONATE, 2.0f, (float) (0.15 + 0.3 * u)));
             d.nextWhine = t + 50;
         }
         if (t >= d.nextStutter) {

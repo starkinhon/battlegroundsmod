@@ -13,7 +13,6 @@ import com.starkinhon.battlegroundsmod.power.PowerData;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -76,7 +75,7 @@ public final class SubCommon {
     }
 
     public static void sound(ServerLevel level, Vec3 pos, SoundEvent sound, float volume, float pitch) {
-        level.playSound(null, pos.x, pos.y, pos.z, sound, SoundSource.PLAYERS, volume, pitch);
+        com.starkinhon.battlegroundsmod.combat.Fx.sound(level, pos, sound, volume, pitch);
     }
 
     // The target in the aim, or null.

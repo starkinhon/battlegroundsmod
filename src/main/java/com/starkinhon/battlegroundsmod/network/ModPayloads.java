@@ -352,7 +352,8 @@ public final class ModPayloads {
     // Server -> client: moment momento of a skill happened at pos facing dir; the client plays the matching entries
     // of the skill's "vfx" list (client/fx/SkillEffects). entityId (-1 for none) is who the effects can follow, and
     // ticks how long this moment lasts (0 when it has no length).
-    public record PlayEffects(String skill, boolean awakened, String momento, Vec3 pos, Vec3 dir, int entityId, int ticks)
+    // owner (-1 for none) is whose move it belongs to: when that move is cut off (SkillStop) the client takes its effects away.
+    public record PlayEffects(String skill, boolean awakened, String momento, Vec3 pos, Vec3 dir, int entityId, int ticks, int owner)
             implements CustomPacketPayload {
         public static final Type<PlayEffects> TYPE = payloadType("play_effects");
         public static final StreamCodec<ByteBuf, PlayEffects> STREAM_CODEC = StreamCodec.of((buf, p) -> {
@@ -363,11 +364,49 @@ public final class ModPayloads {
             VEC3.encode(buf, p.dir());
             ByteBufCodecs.VAR_INT.encode(buf, p.entityId());
             ByteBufCodecs.VAR_INT.encode(buf, p.ticks());
+            ByteBufCodecs.VAR_INT.encode(buf, p.owner());
         }, buf -> new PlayEffects(ByteBufCodecs.STRING_UTF8.decode(buf), ByteBufCodecs.BOOL.decode(buf), ByteBufCodecs.STRING_UTF8.decode(buf),
-                VEC3.decode(buf), VEC3.decode(buf), ByteBufCodecs.VAR_INT.decode(buf), ByteBufCodecs.VAR_INT.decode(buf)));
+                VEC3.decode(buf), VEC3.decode(buf), ByteBufCodecs.VAR_INT.decode(buf), ByteBufCodecs.VAR_INT.decode(buf),
+                ByteBufCodecs.VAR_INT.decode(buf)));
 
         @Override
         public Type<PlayEffects> type() {
+            return TYPE;
+        }
+    }
+
+    // Server -> client: a sound of owner's move (combat/SkillStop). Played by the client itself so it can be cut off the
+    // moment the move is (StopOwnerFx). screen: only for this player's ears, at their own position (no distance).
+    public record OwnedSound(int owner, ResourceLocation sound, Vec3 pos, float volume, float pitch, boolean screen, long seed)
+            implements CustomPacketPayload {
+        public static final Type<OwnedSound> TYPE = payloadType("owned_sound");
+        public static final StreamCodec<ByteBuf, OwnedSound> STREAM_CODEC = StreamCodec.of((buf, p) -> {
+            ByteBufCodecs.VAR_INT.encode(buf, p.owner());
+            ResourceLocation.STREAM_CODEC.encode(buf, p.sound());
+            VEC3.encode(buf, p.pos());
+            ByteBufCodecs.FLOAT.encode(buf, p.volume());
+            ByteBufCodecs.FLOAT.encode(buf, p.pitch());
+            ByteBufCodecs.BOOL.encode(buf, p.screen());
+            ByteBufCodecs.VAR_LONG.encode(buf, p.seed());
+        }, buf -> new OwnedSound(ByteBufCodecs.VAR_INT.decode(buf), ResourceLocation.STREAM_CODEC.decode(buf), VEC3.decode(buf),
+                ByteBufCodecs.FLOAT.decode(buf), ByteBufCodecs.FLOAT.decode(buf), ByteBufCodecs.BOOL.decode(buf), ByteBufCodecs.VAR_LONG.decode(buf)));
+
+        @Override
+        public Type<OwnedSound> type() {
+            return TYPE;
+        }
+    }
+
+    // Server -> client: owner's move was cut off (stunned, sealed, died, the Domain shattered): its sounds stop now and its
+    // effects (the skill file's vfx, held orbs) fade out at once.
+    public record StopOwnerFx(int owner) implements CustomPacketPayload {
+        public static final Type<StopOwnerFx> TYPE = payloadType("stop_owner_fx");
+        public static final StreamCodec<ByteBuf, StopOwnerFx> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, StopOwnerFx::owner,
+                StopOwnerFx::new);
+
+        @Override
+        public Type<StopOwnerFx> type() {
             return TYPE;
         }
     }
@@ -1006,7 +1045,12 @@ public final class ModPayloads {
                 () -> ClientHooks.meteorFall(payload.skill(), payload.awakened(), payload.start(), payload.end(), payload.delay(), payload.fallTicks())));
         registrar.playToClient(PlayEffects.TYPE, PlayEffects.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.playEffects(payload.skill(), payload.awakened(), payload.momento(), payload.pos(), payload.dir(),
-                        payload.entityId(), payload.ticks())));
+                        payload.entityId(), payload.ticks(), payload.owner())));
+        registrar.playToClient(OwnedSound.TYPE, OwnedSound.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.ownedSound(payload.owner(), payload.sound(), payload.pos(), payload.volume(), payload.pitch(), payload.screen(),
+                        payload.seed())));
+        registrar.playToClient(StopOwnerFx.TYPE, StopOwnerFx.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.stopOwnerFx(payload.owner())));
         registrar.playToClient(SusanooArm.TYPE, SusanooArm.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.susanooArm(payload.casterId(), payload.targetId(), payload.phase(), payload.a(), payload.b())));
         registrar.playToClient(ShoulderCutscene.TYPE, ShoulderCutscene.STREAM_CODEC, (payload, context) -> context.enqueueWork(
