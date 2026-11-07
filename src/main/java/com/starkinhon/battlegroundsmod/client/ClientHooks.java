@@ -27,7 +27,13 @@ public final class ClientHooks {
 
     // The local player also swings the hand seen in first person (the body pose only shows from outside).
     public static void comboAnimation(int entityId, int step) {
-        SkillAnimations.play(entityId, ComboSpec.get().golpe(step).animation());
+        // The punches have their own keyframe animations (soco.combo1..5); the Forja pose is the fallback.
+        String keyframes = SkillAnimations.FIST_PREFIX + "combo" + (Math.floorMod(step, ComboSpec.get().golpes().size()) + 1);
+        if (KeyframeAnimation.of(keyframes).isPresent()) {
+            SkillAnimations.play(entityId, keyframes, false);
+        } else {
+            SkillAnimations.play(entityId, ComboSpec.get().golpe(step).animation());
+        }
         var player = Minecraft.getInstance().player;
         if (player != null && player.getId() == entityId && Minecraft.getInstance().options.getCameraType().isFirstPerson()) {
             player.swing(InteractionHand.MAIN_HAND, false);

@@ -31,6 +31,12 @@ public final class Melee {
     // Holding the base attack key: the Forte charges this much longer at most, for up to this much more damage...
     private static final int STRONG_CHARGE_TICKS = 30;
     private static final float STRONG_CHARGE_BONUS = 1.5f;
+    // The bare-fist poses of the Forte and the Barragem (tools/poses, client/SkillAnimations FIST_PREFIX).
+    private static final String STRONG_CHARGE = "soco.forte_carga";
+    private static final String STRONG_PUNCH = "soco.forte_golpe";
+    private static final int STRONG_HIT_DELAY = 3;
+    private static final String BARRAGE_POSE = "soco.barragem";
+    private static final String BARRAGE_END_POSE = "soco.barragem_final";
     // ...and the Barragem goes on for up to this long.
     private static final int BARRAGE_HELD_TICKS = 60;
 
@@ -251,13 +257,19 @@ public final class Melee {
         int interrupts = data.interrupts;
         int windup = 8;
         data.busyTicks = windup + 2;
+        anim(player, STRONG_CHARGE);
         Fx.sound(level, player.position(), SoundEvents.PLAYER_ATTACK_SWEEP, 1f, 0.5f);
+        float[] released = {-1};
+        int[] releasedAt = {-1};
         Tasks.add(age -> {
             if (!player.isAlive() || data.interrupts != interrupts || !Stun.canAttack(player)) {
+                if (released[0] < 0) {
+                    anim(player, "");
+                }
                 return true;
             }
-            boolean charging = age < windup || data.attackHeld && age < windup + STRONG_CHARGE_TICKS;
-            float charge = Mth.clamp((age - windup) / (float) STRONG_CHARGE_TICKS, 0, 1);
+            boolean charging = released[0] < 0 && (age < windup || data.attackHeld && age < windup + STRONG_CHARGE_TICKS);
+            float charge = released[0] >= 0 ? released[0] : Mth.clamp((age - windup) / (float) STRONG_CHARGE_TICKS, 0, 1);
             Vec3 hand = Combat.handPos(player);
             if (charging) {
                 data.busyTicks = 2;
@@ -273,6 +285,18 @@ public final class Melee {
                 if (age == windup + STRONG_CHARGE_TICKS - 1) {
                     Fx.sound(level, hand, SoundEvents.AMETHYST_BLOCK_CHIME, 1.2f, 1.6f);
                 }
+                return false;
+            }
+            if (released[0] < 0) {
+                // Let go (or fully charged): the punch swings and lands STRONG_HIT_DELAY ticks later, when the fist
+                // reaches the front in soco.forte_golpe.
+                released[0] = charge;
+                releasedAt[0] = age;
+                data.busyTicks = STRONG_HIT_DELAY + 4;
+                anim(player, STRONG_PUNCH);
+                return false;
+            }
+            if (age - releasedAt[0] < STRONG_HIT_DELAY) {
                 return false;
             }
             float power = 1 + STRONG_CHARGE_BONUS * charge;
@@ -303,7 +327,7 @@ public final class Melee {
         if (SwordArts.held(player)) {
             return SwordArts.barrage(player, level);
         }
-        barrage(player, 20, BARRAGE_HELD_TICKS, 4.0, 1.5f * multiplier(player), 6f * multiplier(player), fistColor(player));
+        barrage(player, 20, BARRAGE_HELD_TICKS, 4.0, 1.5f * multiplier(player), 6f * multiplier(player), fistColor(player), true);
         return true;
     }
 
@@ -315,12 +339,24 @@ public final class Melee {
     // Lasts ticks, or up to maxTicks while the base attack key is held. Also used by powers whose own moves are bigger
     // barrages. Drawn as wind and speed lines along the punches.
     public static void barrage(LivingEntity player, int ticks, int maxTicks, double range, float hitDamage, float finisherDamage, int fistColor) {
+        barrage(player, ticks, maxTicks, range, hitDamage, finisherDamage, fistColor, false);
+    }
+
+    // poses: plays the base move's own punches (soco.barragem, then soco.barragem_final); the powers' barrages keep
+    // their own poses.
+    private static void barrage(LivingEntity player, int ticks, int maxTicks, double range, float hitDamage, float finisherDamage, int fistColor, boolean poses) {
         ServerLevel level = Combat.level(player);
         PowerData data = player.getData(ModAttachments.POWER);
         int interrupts = data.interrupts;
         data.busyTicks = ticks + 4;
+        if (poses) {
+            anim(player, BARRAGE_POSE);
+        }
         Tasks.add(age -> {
             if (!player.isAlive() || data.interrupts != interrupts || !Stun.canAttack(player)) {
+                if (poses) {
+                    anim(player, "");
+                }
                 return true;
             }
             Vec3 eye = player.getEyePosition();
@@ -345,6 +381,9 @@ public final class Melee {
                 }
                 return false;
             }
+            if (poses) {
+                anim(player, BARRAGE_END_POSE);
+            }
             Vec3 front = eye.add(look.scale(2));
             PunchFx.swing(level, front, look, fistColor, 1.1f);
             Fx.sound(level, front, SoundEvents.PLAYER_ATTACK_KNOCKBACK, 1.5f, 0.6f);
@@ -367,5 +406,9 @@ public final class Melee {
         int g = (color >> 8 & 0xFF) + (255 - (color >> 8 & 0xFF)) * 3 / 5;
         int b = (color & 0xFF) + (255 - (color & 0xFF)) * 3 / 5;
         return r << 16 | g << 8 | b;
+    }
+
+    private static void anim(LivingEntity entity, String move) {
+        PacketDistributor.sendToPlayersTrackingEntityAndSelf(entity, new ModPayloads.PlaySkillAnimation(entity.getId(), move, false));
     }
 }
