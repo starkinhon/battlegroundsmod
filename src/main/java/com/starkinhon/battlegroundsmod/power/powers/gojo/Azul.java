@@ -654,7 +654,7 @@ public final class Azul {
         return caster.getEyePosition().add(caster.getLookAngle().scale(reach));
     }
 
-    // The tap: whoever is near is pulled slowly along the ground until stuck to it.
+    // The tap: whoever is near is pulled hard into it and stuck there.
     private static void pullTap(ServerLevel level, LivingEntity caster, Vec3 orb, double r, AzulSpec.Clique clique, int age) {
         double reach = Math.max(1, clique.raioPuxar());
         int every = Math.max(1, clique.danoACadaTicks());
@@ -669,12 +669,15 @@ public final class Azul {
             }
             Vec3 dm = e.getDeltaMovement();
             if (d > r + 0.7) {
+                // Pulled straight at it (off the ground too), fast enough that walking away doesn't save you.
                 double speed = Math.min(clique.maxPuxar(), clique.puxar() + (clique.maxPuxar() - clique.puxar()) * (1 - d / reach));
-                Vec3 flat = new Vec3(to.x, 0, to.z);
-                Vec3 want = flat.lengthSqr() > 1.0E-4 ? flat.normalize().scale(speed) : Vec3.ZERO;
-                e.setDeltaMovement(dm.x + (want.x - dm.x) * 0.5, dm.y, dm.z + (want.z - dm.z) * 0.5);
+                Vec3 want = to.normalize().scale(Math.min(speed, d * 0.5));
+                e.setDeltaMovement(dm.lerp(want, 0.6));
+                e.fallDistance = 0;
             } else {
-                e.setDeltaMovement(dm.x * 0.5, dm.y, dm.z * 0.5);
+                // Stuck to it: held in place at the orb.
+                e.setDeltaMovement(to.scale(0.4));
+                e.fallDistance = 0;
                 if (age % every == 0 && clique.dano() > 0) {
                     Combat.hurtMagic(caster, e, clique.dano());
                 }
@@ -685,8 +688,8 @@ public final class Azul {
 
     // The held one: pulled hard from far away (dropped items too), and held spinning inside it once there.
     private static void pullHeld(ServerLevel level, LivingEntity caster, Vec3 orb, double r, double rMax, double c, AzulSpec.Segurado s, int age) {
-        double reach = Math.max(1, Mth.lerp(c, s.raioPuxar() * 0.5, s.raioPuxar()));
-        double maxSpeed = Mth.lerp(c, s.maxPuxar() * 0.4, s.maxPuxar());
+        double reach = Math.max(1, Mth.lerp(c, s.raioPuxar() * 0.6, s.raioPuxar()));
+        double maxSpeed = Mth.lerp(c, s.maxPuxar() * 0.5, s.maxPuxar());
         int every = Math.max(1, s.danoACadaTicks());
         float damage = (float) (s.dano() * (0.4 + 0.6 * c));
         AABB box = new AABB(orb, orb).inflate(reach);
@@ -705,7 +708,7 @@ public final class Azul {
             if (d > Math.max(r, rMax * 0.5 * c)) {
                 double speed = Math.max(s.puxar(), maxSpeed * (0.4 + 0.6 * (1 - d / reach)));
                 want = to.normalize().scale(Math.min(speed, d * 0.6));
-                blend = 0.35;
+                blend = 0.55;
             } else {
                 // Inside: held in the middle, turning around it.
                 Vec3 around = new Vec3(-to.z, 0, to.x).normalize().scale(0.15 * r);
