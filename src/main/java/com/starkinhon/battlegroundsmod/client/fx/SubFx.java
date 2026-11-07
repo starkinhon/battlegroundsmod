@@ -21,7 +21,7 @@ import net.minecraft.world.phys.Vec3;
 
 // The SubAlmas' effects (power/powers/sub), drawn with shader shapes only, as in the Visualizador's Bleach and Sukuna
 // tabs: Senbonzakura's petals (shape 25), the Getsuga's crescent (26), Sukuna's slits (27), Rukia's ice shell (28) and
-// Orihime's / Urahara's shields (29), plus the shared glow, fire and smoke shapes.
+// Urahara's shield (29), plus the shared glow, fire and smoke shapes.
 // Glow goes in render (into the bloom); the dark parts (slits, the Kuroi Getsuga, the shrine) in overlay, after the glow.
 public final class SubFx {
     static final int PETAL = 25;
@@ -92,7 +92,7 @@ public final class SubFx {
     public static void receive(int kind, int id, Vec3 pos, Vec3 dir, float a, float b, float c) {
         double now = ScreenFx.now();
         switch (kind) {
-            case SubNet.PETALS, SubNet.GOKEI, SubNet.GETSUGA, SubNet.CHARGE, SubNet.KOTEN, SubNet.NET, SubNet.FUGA -> {
+            case SubNet.PETALS, SubNet.GOKEI, SubNet.GETSUGA, SubNet.CHARGE, SubNet.NET, SubNet.FUGA -> {
                 Fx f = TRACKED.get(key(kind, id));
                 if (f == null || f.endAt >= 0) {
                     f = new Fx(kind, id, pos, dir, a, b, c, now);
@@ -113,13 +113,13 @@ public final class SubFx {
                 }
                 if ((kind == SubNet.GOKEI && c >= 2) || (kind != SubNet.GOKEI && c >= 1)) {
                     f.endAt = now;
-                    if (kind == SubNet.GETSUGA || kind == SubNet.KOTEN) {
+                    if (kind == SubNet.GETSUGA) {
                         SHOTS.add(new Fx(SubNet.IMPACT, 0, pos, dir, b > 0.5f ? 3.2f : 2.6f,
-                                kind == SubNet.KOTEN ? SubNet.COLOR_GOLD : b > 0.5f ? SubNet.COLOR_RED : SubNet.COLOR_BLUE, 0, now));
+                                b > 0.5f ? SubNet.COLOR_RED : SubNet.COLOR_BLUE, 0, now));
                     }
                 }
             }
-            case SubNet.BANKAI_BYAKUYA, SubNet.AURA, SubNet.FREEZE, SubNet.DOME, SubNet.SEAL, SubNet.CLEAVE_SCAN, SubNet.SHRINE -> {
+            case SubNet.BANKAI_BYAKUYA, SubNet.AURA, SubNet.FREEZE, SubNet.SEAL, SubNet.CLEAVE_SCAN, SubNet.SHRINE -> {
                 Fx f = TRACKED.get(key(kind, id));
                 boolean stop = kind == SubNet.FREEZE ? c >= 1 : kind == SubNet.BANKAI_BYAKUYA || kind == SubNet.AURA ? c >= 1 : a <= 0;
                 if (stop) {
@@ -158,7 +158,7 @@ public final class SubFx {
                         f.hitAt = now;
                     }
                 }
-                SHOTS.add(new Fx(SubNet.IMPACT, 0, pos, dir, 1.6f, SubNet.COLOR_GOLD, 0, now));
+                SHOTS.add(new Fx(SubNet.IMPACT, 0, pos, dir, 1.6f, SubNet.COLOR_RED, 0, now));
             }
             default -> {
                 SHOTS.add(new Fx(kind, id, pos, dir, a, b, c, now));
@@ -217,7 +217,7 @@ public final class SubFx {
         while (it.hasNext()) {
             Fx f = it.next();
             boolean streamed = switch (f.kind) {
-                case SubNet.PETALS, SubNet.GOKEI, SubNet.GETSUGA, SubNet.CHARGE, SubNet.KOTEN, SubNet.NET, SubNet.FUGA -> true;
+                case SubNet.PETALS, SubNet.GOKEI, SubNet.GETSUGA, SubNet.CHARGE, SubNet.NET, SubNet.FUGA -> true;
                 default -> false;
             };
             double fadeOut = f.kind == SubNet.GOKEI ? 24 : f.kind == SubNet.BANKAI_BYAKUYA ? 20 : f.kind == SubNet.FREEZE ? 12 : 8;
@@ -270,8 +270,6 @@ public final class SubFx {
                 case SubNet.AURA -> aura(f, camera, age, partial, out, glow);
                 case SubNet.FREEZE -> freeze(f, camera, age, partial, now, glow);
                 case SubNet.SHIELD -> shield(f, camera, age, now, out, glow);
-                case SubNet.DOME -> dome(f, camera, age, partial, out, glow);
-                case SubNet.KOTEN -> koten(f, camera, partial, out, glow);
                 case SubNet.NET -> net(f, camera, age, partial, out, glow);
                 case SubNet.SEAL -> seal(f, camera, age, partial, out, glow);
                 case SubNet.CLEAVE_SCAN -> cleaveScan(f, camera, age, partial, out, glow);
@@ -968,93 +966,27 @@ public final class SubFx {
         }
     }
 
-    // ---------- Orihime / Urahara ----------
+    // ---------- Urahara ----------
 
     private static void shield(Fx f, Vec3 camera, float age, double now, float out, boolean glow) {
         if (!glow) {
             return;
         }
-        int style = (int) f.b;
         float pop = smooth(age / 4);
         float size = Math.max(1, f.c) * (0.7f + 0.3f * pop);
         float hit = (float) Mth.clamp(1 - (now - f.hitAt) / 14, 0, 1);
-        float[] col = style == 2 ? CRIMSON : GOLD;
+        float[] col = CRIMSON;
         Vec3 d = new Vec3(f.dir.x, 0, f.dir.z);
         d = d.lengthSqr() < 1.0E-6 ? new Vec3(0, 0, 1) : d.normalize();
         Vec3 sideW = d.cross(new Vec3(0, 1, 0)).normalize();
         Vector3f c = rel(f.pos, camera);
         Vector3f s = new Vector3f((float) sideW.x, 0, (float) sideW.z).mul(size * 0.5f);
         Vector3f up = new Vector3f(0, size * 0.5f, 0);
-        float param = (style == 2 ? 0.5f : 0) + 0.49f * hit;
+        float param = 0.5f + 0.49f * hit;
         float op = out * pop * (0.85f + 0.15f * hit);
         FxDraw.quad(new Vector3f(c).sub(s).add(up), new Vector3f(c).add(s).add(up), new Vector3f(c).add(s).sub(up), new Vector3f(c).sub(s).sub(up),
                 BARRIER, param, col, op, true);
-        if (style != 2) {
-            // The Shun Shun Rikka at the corners (and Tsubaki in the middle of the Shiten).
-            Vector3f[] corners = {new Vector3f(c).add(0, size * 0.45f, 0), new Vector3f(c).add(new Vector3f(s).mul(0.9f)).sub(new Vector3f(up).mul(0.8f)),
-                new Vector3f(c).sub(new Vector3f(s).mul(0.9f)).sub(new Vector3f(up).mul(0.8f))};
-            for (Vector3f corner : corners) {
-                FxDraw.billboard(corner, 0.5f, 0, FxDraw.SOFT, 0.8f, AMBER, op, true);
-            }
-            if (style == 1) {
-                FxDraw.billboard(c, 0.7f + 0.3f * hit, age * 0.1f, FxDraw.FLARE, 6 / 32f, RED, op, true);
-            }
-        }
         FxDraw.billboard(c, size * 1.5f, 0, FxDraw.SOFT, 0.05f, col, 0.15f * op + 0.4f * hit, true);
-    }
-
-    private static void dome(Fx f, Vec3 camera, float age, float partial, float out, boolean glow) {
-        if (!glow) {
-            return;
-        }
-        Entity e = FxAnchor.entity(f.id);
-        Vec3 feet = e != null ? e.getPosition(partial) : f.pos;
-        float r = Math.max(1, f.b) * smooth(age / 8);
-        Vector3f c = rel(feet, camera);
-        int lon = 10;
-        int lat = 4;
-        for (int i = 0; i < lon; i++) {
-            float a0 = i / (float) lon * Mth.TWO_PI;
-            float a1 = (i + 1) / (float) lon * Mth.TWO_PI;
-            for (int j = 0; j < lat; j++) {
-                float b0 = j / (float) lat * Mth.HALF_PI;
-                float b1 = (j + 1) / (float) lat * Mth.HALF_PI;
-                Vector3f p0 = sph(c, r, a0, b1);
-                Vector3f p1 = sph(c, r, a1, b1);
-                Vector3f p2 = sph(c, r, a1, b0);
-                Vector3f p3 = sph(c, r, a0, b0);
-                FxDraw.quad(p0, p1, p2, p3, BARRIER, 0.5f + 0.25f * (0.5f + 0.5f * Mth.sin(age * 0.2f + i + j)) * 0.4f, GOLD, 0.5f * out, true);
-            }
-        }
-        for (int k = 0; k < 2; k++) {
-            float ang = age * 0.08f + k * Mth.PI;
-            FxDraw.billboard(new Vector3f(c).add(Mth.cos(ang) * r, r * 0.9f, Mth.sin(ang) * r), 0.6f, 0, FxDraw.SOFT, 0.8f, AMBER, out, true);
-        }
-        FxDraw.billboard(new Vector3f(c).add(0, r * 0.5f, 0), r * 2.5f, 0, FxDraw.SOFT, 0.05f, GOLD, 0.15f * out, true);
-    }
-
-    private static Vector3f sph(Vector3f c, float r, float lon, float lat) {
-        return new Vector3f(c).add(Mth.cos(lat) * Mth.cos(lon) * r, Mth.sin(lat) * r, Mth.cos(lat) * Mth.sin(lon) * r);
-    }
-
-    private static void koten(Fx f, Vec3 camera, float partial, float out, boolean glow) {
-        if (!glow) {
-            return;
-        }
-        Vec3 d = f.dir.lengthSqr() < 1.0E-6 ? new Vec3(0, 0, 1) : f.dir.normalize();
-        Vec3 posW = f.endAt >= 0 ? f.pos : f.prev.lerp(f.pos, Math.min(1, partial));
-        Vector3f c = rel(posW, camera);
-        Vector3f fwd = new Vector3f((float) d.x, (float) d.y, (float) d.z);
-        Vector3f side = new Vector3f(fwd).cross(0, 1, 0);
-        if (side.lengthSquared() < 1.0E-4f) {
-            side.set(1, 0, 0);
-        }
-        side.normalize();
-        crescentQuad(c, fwd, side, 0.9f, 1.9f, 0, AMBER, 0.6f * out, true);
-        crescentQuad(c, fwd, side, 0.6f, 1.5f, 0, GOLD, 0.95f * out, true);
-        Vector3f tail = new Vector3f(c).sub(new Vector3f(fwd).mul(3));
-        FxDraw.ribbon(tail, c, 0.5f, FxDraw.STREAK, 0.8f, GOLD, 0.6f * out, true);
-        FxDraw.billboard(c, 0.9f, 0, FxDraw.SOFT, 0.7f, WHITE, 0.5f * out, true);
     }
 
     private static void net(Fx f, Vec3 camera, float age, float partial, float out, boolean glow) {

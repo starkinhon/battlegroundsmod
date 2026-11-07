@@ -78,7 +78,6 @@ public final class ModEntities {
     public static final Supplier<EntityType<SoulMob>> BYAKUYA = mob("byakuya");
     public static final Supplier<EntityType<SoulMob>> ICHIGO = mob("ichigo");
     public static final Supplier<EntityType<SoulMob>> RUKIA = mob("rukia");
-    public static final Supplier<EntityType<SoulMob>> ORIHIME = mob("orihime");
     public static final Supplier<EntityType<SoulMob>> URAHARA = mob("urahara");
     public static final Supplier<EntityType<SoulMob>> SUKUNA = mob("sukuna");
 
@@ -87,7 +86,7 @@ public final class ModEntities {
     public static final Supplier<EntityType<SoulMob>> FIGHTER_RUA = mob("fighter_rua");
     public static final Supplier<EntityType<SoulMob>> FIGHTER_QUARTEIRAO = mob("fighter_quarteirao");
 
-    public static final java.util.List<Supplier<EntityType<SoulMob>>> SUB_MOBS = java.util.List.of(BYAKUYA, ICHIGO, RUKIA, ORIHIME, URAHARA, SUKUNA);
+    public static final java.util.List<Supplier<EntityType<SoulMob>>> SUB_MOBS = java.util.List.of(BYAKUYA, ICHIGO, RUKIA, URAHARA, SUKUNA);
     public static final java.util.List<Supplier<EntityType<SoulMob>>> FIGHTERS = java.util.List.of(FIGHTER_HUMANO, FIGHTER_RUA, FIGHTER_QUARTEIRAO);
 
     private static Supplier<EntityType<SoulMob>> mob(String id) {
