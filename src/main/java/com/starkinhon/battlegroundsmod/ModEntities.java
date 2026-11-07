@@ -76,16 +76,14 @@ public final class ModEntities {
 
     // SubAlma mobs: each fights with its SubAlma's skills (souls_bosses/<id>.json), as a plain monster.
     public static final Supplier<EntityType<SoulMob>> BYAKUYA = mob("byakuya");
-    public static final Supplier<EntityType<SoulMob>> ICHIGO = mob("ichigo");
     public static final Supplier<EntityType<SoulMob>> RUKIA = mob("rukia");
-    public static final Supplier<EntityType<SoulMob>> URAHARA = mob("urahara");
 
     // Fighters: weak mobs with only the base combat, Tier 10 (human), 9 (street) and 8 (block).
     public static final Supplier<EntityType<SoulMob>> FIGHTER_HUMANO = mob("fighter_humano");
     public static final Supplier<EntityType<SoulMob>> FIGHTER_RUA = mob("fighter_rua");
     public static final Supplier<EntityType<SoulMob>> FIGHTER_QUARTEIRAO = mob("fighter_quarteirao");
 
-    public static final java.util.List<Supplier<EntityType<SoulMob>>> SUB_MOBS = java.util.List.of(BYAKUYA, ICHIGO, RUKIA, URAHARA);
+    public static final java.util.List<Supplier<EntityType<SoulMob>>> SUB_MOBS = java.util.List.of(BYAKUYA, RUKIA);
     public static final java.util.List<Supplier<EntityType<SoulMob>>> FIGHTERS = java.util.List.of(FIGHTER_HUMANO, FIGHTER_RUA, FIGHTER_QUARTEIRAO);
 
     private static Supplier<EntityType<SoulMob>> mob(String id) {

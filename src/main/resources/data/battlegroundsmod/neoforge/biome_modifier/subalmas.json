@@ -9,19 +9,7 @@
       "maxCount": 1
     },
     {
-      "type": "battlegroundsmod:ichigo",
-      "weight": 1,
-      "minCount": 1,
-      "maxCount": 1
-    },
-    {
       "type": "battlegroundsmod:rukia",
-      "weight": 1,
-      "minCount": 1,
-      "maxCount": 1
-    },
-    {
-      "type": "battlegroundsmod:urahara",
       "weight": 1,
       "minCount": 1,
       "maxCount": 1
