@@ -33,8 +33,8 @@ public final class FalaRender {
     private static final float FADE = 10;
     // How much it rises while fading, in blocks.
     private static final float RISE = 0.3f;
-    // Over the head (the name tag sits at +0.5).
-    private static final float ABOVE = 0.5f;
+    // Over the head, well clear of it (the name tag sits at +0.5; Stark found 0.5 too close).
+    private static final float ABOVE = 1.0f;
     // Text height in blocks per font pixel (a name tag is 0.025), and the screen size limits (GUI scale).
     private static final float BLOCKS_PER_PIXEL = 0.03f;
     private static final float MIN_SCALE = 0.7f;
