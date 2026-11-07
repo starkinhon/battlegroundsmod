@@ -87,7 +87,6 @@ public final class Mangekyo {
         sounds(level, player, spec, targets);
         Tasks.later(cutscene.particlesTick(), () -> {
             if (player.isAlive()) {
-                UchihaFx.mangekyoEyes(level, player);
                 Fx.effects(level, SKILL, data.awakened, "particulas", player.getEyePosition(), player.getLookAngle());
             }
         });
@@ -100,7 +99,6 @@ public final class Mangekyo {
             for (LivingEntity target : targets) {
                 if (target.isAlive() && !target.isRemoved()) {
                     stun(target, spec.efeitos());
-                    UchihaFx.mangekyoHit(level, target);
                     // Ring over the head and the eye under the feet stay for as long as the stun does.
                     Fx.effects(level, SKILL, data.awakened, "stun", target, spec.efeitos().duracaoTicks());
                 }

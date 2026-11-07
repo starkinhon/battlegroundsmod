@@ -32,6 +32,8 @@ import net.neoforged.neoforge.network.PacketDistributor;
 public final class PowerLogic {
     private static final float ULT_PASSIVE_PER_TICK = 0.03f;
     private static final float ULT_PER_DAMAGE = 2.0f;
+    // Most of the ult one hit can give: a big skill no longer refills it in one go (Destruction Touch gave the whole bar).
+    private static final float ULT_MAX_PER_HIT = 15f;
     private static final int SYNC_INTERVAL = 4;
     private static final double ULT_TITLE_RANGE = 48;
     // Powers whose ult draws its own title, so the vanilla one is not sent.
@@ -244,11 +246,20 @@ public final class PowerLogic {
         sync(player);
     }
 
-    public static void addUltCharge(ServerPlayer player, float damageDealt) {
+    // Only a real fight charges the ult: players, monsters (bosses and soul mobs too) and the training dummies.
+    // Hitting cows or villagers no longer fills it.
+    public static void addUltCharge(ServerPlayer player, LivingEntity target, float damageDealt) {
         PowerData data = player.getData(ModAttachments.POWER);
-        if (data.hasPower()) {
-            data.ult = Math.min(PowerData.MAX_ULT, data.ult + damageDealt * ULT_PER_DAMAGE);
+        if (!data.hasPower() || !chargesUlt(target)) {
+            return;
         }
+        float gain = Math.min(ULT_MAX_PER_HIT, damageDealt * ULT_PER_DAMAGE);
+        data.ult = Math.min(PowerData.MAX_ULT, data.ult + gain);
+    }
+
+    private static boolean chargesUlt(LivingEntity target) {
+        return target instanceof Player || target instanceof net.minecraft.world.entity.monster.Enemy
+                || target instanceof com.starkinhon.battlegroundsmod.dummy.TrainingDummy;
     }
 
     public static void tick(LivingEntity player) {
