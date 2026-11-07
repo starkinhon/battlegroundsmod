@@ -90,7 +90,7 @@ public final class ModEntities {
     public static final java.util.List<Supplier<EntityType<SoulMob>>> FIGHTERS = java.util.List.of(FIGHTER_HUMANO, FIGHTER_RUA, FIGHTER_QUARTEIRAO);
 
     private static Supplier<EntityType<SoulMob>> mob(String id) {
-        return ENTITY_TYPES.register(id, () -> EntityType.Builder.<SoulMob>of((type, level) -> new SoulMob(type, level, id), MobCategory.MONSTER)
+        return ENTITY_TYPES.register(id, () -> EntityType.Builder.<SoulMob>of(SoulMob::new, MobCategory.MONSTER)
                 .sized(0.6f, 1.8f)
                 .eyeHeight(1.62f)
                 .clientTrackingRange(10)

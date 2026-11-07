@@ -13,11 +13,8 @@ import net.minecraft.world.level.ServerLevelAccessor;
 // Unlike a boss: no bar, entrance, phases or final ult (even under /gamerule soulbossfight), no allbossestier0, they
 // despawn like any monster (unless spawned from an egg or named), and they don't hunt other souls on sight.
 public class SoulMob extends SoulBoss {
-    private final String id;
-
-    public SoulMob(EntityType<? extends SoulMob> type, Level level, String id) {
+    public SoulMob(EntityType<? extends SoulMob> type, Level level) {
         super(type, level);
-        this.id = id;
     }
 
     @Override
@@ -27,7 +24,9 @@ public class SoulMob extends SoulBoss {
 
     @Override
     public String bossId() {
-        return id;
+        // Its entity id (battlegroundsmod:byakuya -> byakuya). Read from the type, not a field: the constructors of
+        // Mob and LivingEntity already ask for it (setHealth), before a field of this class would be set.
+        return net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(getType()).getPath();
     }
 
     @Override
