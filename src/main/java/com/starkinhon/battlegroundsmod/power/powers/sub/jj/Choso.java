@@ -132,14 +132,14 @@ public final class Choso {
             long[] o = ORBS.get(caster.getUUID());
             boolean mine = o != null && o[1] == start;
             if (guard.broken() || !mine || o[0] == 0) {
-                SubNet.send(level, SubNet.SUPERNOVA, caster.getId(), Combat.center(caster), Vec3.ZERO, 0, 0, 1);
+                SubNet.send(level, SubNet.BLOOD_ORBS, caster.getId(), Combat.center(caster), Vec3.ZERO, 0, 0, 1);
                 if (mine && o[0] == 0) {
                     ORBS.remove(caster.getUUID());
                     DbCommon.cooldown(caster, 1, 300);
                 }
                 return true;
             }
-            SubNet.send(level, SubNet.SUPERNOVA, caster.getId(), Combat.center(caster), Vec3.ZERO, o[0], angle(age), 0);
+            SubNet.send(level, SubNet.BLOOD_ORBS, caster.getId(), Combat.center(caster), Vec3.ZERO, o[0], angle(age), 0);
             boolean near = !(caster instanceof Player) && age > 30 && !Combat.inRadius(level, Combat.center(caster), 3.5, caster).isEmpty();
             if (age >= ORB_TICKS || near) {
                 burst(caster, level);
@@ -168,7 +168,7 @@ public final class Choso {
         int mask = (int) o[0];
         int count = Integer.bitCount(mask);
         Vec3 c = Combat.center(caster);
-        SubNet.send(level, SubNet.SUPERNOVA, caster.getId(), c, Vec3.ZERO, 0, 0, 1);
+        SubNet.send(level, SubNet.BLOOD_ORBS, caster.getId(), c, Vec3.ZERO, 0, 0, 1);
         SubNet.send(level, SubNet.SUPERNOVA_BURST, 0, c, Vec3.ZERO, mask, angle(age), 0);
         DbCommon.screen(level, c, 30);
         SubCommon.pose(caster, "jj.supernova_burst");

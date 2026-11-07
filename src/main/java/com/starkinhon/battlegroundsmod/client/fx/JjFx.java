@@ -115,7 +115,7 @@ final class JjFx {
 
     private static boolean stream(int kind) {
         return switch (kind) {
-            case SubNet.DIV_AURA, SubNet.BF_RING, SubNet.GUARD, SubNet.DASH_TRAIL, SubNet.BLOOD_BALL, SubNet.SUPERNOVA, SubNet.ROPE,
+            case SubNet.DIV_AURA, SubNet.BF_RING, SubNet.GUARD, SubNet.DASH_TRAIL, SubNet.BLOOD_BALL, SubNet.BLOOD_ORBS, SubNet.ROPE,
                     SubNet.GROUND_MARK, SubNet.NAIL, SubNet.DOLL, SubNet.SIMPLE_DOMAIN -> true;
             default -> false;
         };
@@ -309,7 +309,7 @@ final class JjFx {
                 case SubNet.GUARD -> guard(f, partial, out);
                 case SubNet.DASH_TRAIL -> dashTrail(f, partial, out);
                 case SubNet.BLOOD_BALL -> bloodBallFx(f, age, out);
-                case SubNet.SUPERNOVA -> supernova(f, age, out);
+                case SubNet.BLOOD_ORBS -> supernova(f, age, out);
                 case SubNet.ROPE -> rope(f, now, age, out);
                 case SubNet.SCALE -> scale(f, age, partial, out);
                 case SubNet.RATIO -> ratio(f, age, partial, out);

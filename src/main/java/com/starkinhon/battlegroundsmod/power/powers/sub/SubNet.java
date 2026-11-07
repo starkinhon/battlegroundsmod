@@ -248,7 +248,7 @@ public final class SubNet {
     // The Piercing Blood: the line from pos to pos + dir.
     public static final int BLOOD_BEAM = 111;
     // Supernova's orbs (stream): id = Choso, pos = his middle, a = which orbs are up (bits), b = the angle of the first.
-    public static final int SUPERNOVA = 112;
+    public static final int BLOOD_ORBS = 112;
     // An orb took a hit and burst at pos.
     public static final int ORB_POP = 113;
     // The orbs burst into needles: pos = center, a = which orbs (bits), b = the angle of the first.
