@@ -1,0 +1,37 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "db.ajoelhado",
+  "nome": "De joelhos",
+  "tempo": {
+    "atrasoTicks": 8,
+    "duracaoTicks": 52
+  },
+  "animacao": {
+    "transicaoTicks": 4,
+    "preparo": {
+      "cabeca": 18,
+      "tronco": 18,
+      "bracoDir": {
+        "frente": 18,
+        "abrir": 6
+      },
+      "bracoEsq": {
+        "frente": 6,
+        "abrir": -6
+      }
+    },
+    "sopro": {
+      "cabeca": 30,
+      "tronco": 30,
+      "bracoDir": {
+        "frente": 30,
+        "abrir": 10
+      },
+      "bracoEsq": {
+        "frente": 10,
+        "abrir": -10
+      }
+    },
+    "retornoTicks": 12
+  }
+}

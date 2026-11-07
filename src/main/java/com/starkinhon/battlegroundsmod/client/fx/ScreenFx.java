@@ -139,6 +139,10 @@ public final class ScreenFx {
     }
 
     // Orange edges of the screen (being burned): comes in fast, holds, fades over the last part.
+    public static void clearVignette() {
+        vignette = null;
+    }
+
     public static void vignette(int color, float strength, int life) {
         float a = Mth.clamp(strength, 0, 1);
         if (vignette == null || vignette.k(ticks) < a * 0.8f) {

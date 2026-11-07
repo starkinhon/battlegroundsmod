@@ -1,0 +1,37 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "db.mafuba",
+  "nome": "Mafūba",
+  "tempo": {
+    "atrasoTicks": 6,
+    "duracaoTicks": 80
+  },
+  "animacao": {
+    "transicaoTicks": 4,
+    "preparo": {
+      "cabeca": 0,
+      "tronco": 8,
+      "bracoDir": {
+        "frente": 54,
+        "abrir": 9
+      },
+      "bracoEsq": {
+        "frente": 54,
+        "abrir": -9
+      }
+    },
+    "sopro": {
+      "cabeca": 0,
+      "tronco": 14,
+      "bracoDir": {
+        "frente": 90,
+        "abrir": 15
+      },
+      "bracoEsq": {
+        "frente": 90,
+        "abrir": -15
+      }
+    },
+    "retornoTicks": 10
+  }
+}

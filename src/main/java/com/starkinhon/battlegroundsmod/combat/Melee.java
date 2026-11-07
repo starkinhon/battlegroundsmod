@@ -45,7 +45,8 @@ public final class Melee {
 
     static float multiplier(LivingEntity player) {
         Power power = Powers.get(player.getData(ModAttachments.POWER).power);
-        return power == null ? 1f : power.meleeMultiplier();
+        float buff = com.starkinhon.battlegroundsmod.power.powers.sub.db.DbCommon.meleeMultiplier(player);
+        return power == null ? buff : power.meleeMultiplier() * buff;
     }
 
     static int fistColor(LivingEntity player) {
@@ -131,7 +132,9 @@ public final class Melee {
         PowerData data = attacker.getData(ModAttachments.POWER);
         data.comboStep = step + 1 >= spec.golpes().size() ? 0 : step + 1;
         data.comboResetTicks = spec.resetTicks();
-        data.punchDelay = golpe.windUp() + golpe.recuperacaoTicks();
+        // Under the Kaioken the punches come faster.
+        data.punchDelay = Math.max(1, Math.round((golpe.windUp() + golpe.recuperacaoTicks())
+                / com.starkinhon.battlegroundsmod.power.powers.sub.db.DbCommon.punchSpeed(attacker)));
         data.punchQueued = false;
         CombatMode.enter(attacker);
         Stamina.gain(attacker, StaminaSpec.get().ganhoGolpePct());

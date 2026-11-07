@@ -1,0 +1,37 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "db.disco_alto",
+  "nome": "Mão pro alto",
+  "tempo": {
+    "atrasoTicks": 5,
+    "duracaoTicks": 27
+  },
+  "animacao": {
+    "transicaoTicks": 4,
+    "preparo": {
+      "cabeca": -5,
+      "tronco": 0,
+      "bracoDir": {
+        "frente": 105,
+        "abrir": 3
+      },
+      "bracoEsq": {
+        "frente": 0,
+        "abrir": 3
+      }
+    },
+    "sopro": {
+      "cabeca": -8,
+      "tronco": 0,
+      "bracoDir": {
+        "frente": 175,
+        "abrir": 5
+      },
+      "bracoEsq": {
+        "frente": 0,
+        "abrir": 5
+      }
+    },
+    "retornoTicks": 8
+  }
+}

@@ -15,6 +15,12 @@ import com.starkinhon.battlegroundsmod.power.powers.Strongest;
 import com.starkinhon.battlegroundsmod.power.powers.UchihaGhost;
 import com.starkinhon.battlegroundsmod.power.powers.sub.Byakuya;
 import com.starkinhon.battlegroundsmod.power.powers.sub.Rukia;
+import com.starkinhon.battlegroundsmod.power.powers.sub.db.Freeza;
+import com.starkinhon.battlegroundsmod.power.powers.sub.db.Goku;
+import com.starkinhon.battlegroundsmod.power.powers.sub.db.Kame;
+import com.starkinhon.battlegroundsmod.power.powers.sub.db.Kuririn;
+import com.starkinhon.battlegroundsmod.power.powers.sub.db.Piccolo;
+import com.starkinhon.battlegroundsmod.power.powers.sub.db.Vegeta;
 
 // Every selectable power, in the order shown in the power book. The Divine Souls (the bosses' powers) are on the book's
 // first tab, the SubAlmas (Low Souls: characters from each boss's anime) on the second.
@@ -35,6 +41,14 @@ public final class Powers {
     // SubAlmas (Bleach). The provisional Sukuna, Ichigo and Urahara were taken out for now (2026-11-07).
     public static final Power BYAKUYA = registerSub(Byakuya.create());
     public static final Power RUKIA = registerSub(Rukia.create());
+
+    // SubAlmas (Dragon Ball), tiers 6 to 8: nobody above the bosses.
+    public static final Power GOKU = registerSub(Goku.create());
+    public static final Power VEGETA = registerSub(Vegeta.create());
+    public static final Power FREEZA = registerSub(Freeza.create());
+    public static final Power PICCOLO = registerSub(Piccolo.create());
+    public static final Power KAME = registerSub(Kame.create());
+    public static final Power KURIRIN = registerSub(Kuririn.create());
 
     // Mob only.
     public static final Power FIGHTER = registerHidden(Fighter.create());

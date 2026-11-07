@@ -97,6 +97,8 @@ public final class SubDefense {
                 return;
             }
         }
+        // Dragon Ball: the Suiken's dodges and the Taiyoken's stun broken by a hit from the front.
+        com.starkinhon.battlegroundsmod.power.powers.sub.db.DbCommon.onIncomingDamage(event);
     }
 
     public static void clear() {

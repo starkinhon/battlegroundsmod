@@ -13,6 +13,42 @@
       "weight": 1,
       "minCount": 1,
       "maxCount": 1
+    },
+    {
+      "type": "battlegroundsmod:goku",
+      "weight": 1,
+      "minCount": 1,
+      "maxCount": 1
+    },
+    {
+      "type": "battlegroundsmod:vegeta",
+      "weight": 1,
+      "minCount": 1,
+      "maxCount": 1
+    },
+    {
+      "type": "battlegroundsmod:freeza",
+      "weight": 1,
+      "minCount": 1,
+      "maxCount": 1
+    },
+    {
+      "type": "battlegroundsmod:piccolo",
+      "weight": 1,
+      "minCount": 1,
+      "maxCount": 1
+    },
+    {
+      "type": "battlegroundsmod:kame",
+      "weight": 1,
+      "minCount": 1,
+      "maxCount": 1
+    },
+    {
+      "type": "battlegroundsmod:kuririn",
+      "weight": 1,
+      "minCount": 1,
+      "maxCount": 1
     }
   ]
 }

@@ -1,0 +1,37 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "db.lanca_alto",
+  "nome": "Lança pro alto",
+  "tempo": {
+    "atrasoTicks": 3,
+    "duracaoTicks": 15
+  },
+  "animacao": {
+    "transicaoTicks": 3,
+    "preparo": {
+      "cabeca": -16,
+      "tronco": -6,
+      "bracoDir": {
+        "frente": 96,
+        "abrir": 3
+      },
+      "bracoEsq": {
+        "frente": 0,
+        "abrir": 3
+      }
+    },
+    "sopro": {
+      "cabeca": -26,
+      "tronco": -10,
+      "bracoDir": {
+        "frente": 160,
+        "abrir": 5
+      },
+      "bracoEsq": {
+        "frente": 0,
+        "abrir": 5
+      }
+    },
+    "retornoTicks": 8
+  }
+}

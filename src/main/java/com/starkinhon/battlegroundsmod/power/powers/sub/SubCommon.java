@@ -132,4 +132,10 @@ public final class SubCommon {
         x = Math.max(0, Math.min(1, x));
         return x * x * (3 - 2 * x);
     }
+
+    public static float easeOutCubic(float x) {
+        x = Math.max(0, Math.min(1, x));
+        float u = 1 - x;
+        return 1 - u * u * u;
+    }
 }
