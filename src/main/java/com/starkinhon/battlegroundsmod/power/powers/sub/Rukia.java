@@ -27,6 +27,18 @@ import net.minecraft.world.phys.Vec3;
 // V Bankai, Hakka no Togame: she freezes over and turns white; absolute zero spreads round her and turns everyone close
 //   into crystal.
 public final class Rukia {
+    // Tsukishiro: ticks the ice statue stands before it breaks.
+    public static final int TSUKI_HOLD = 60;
+    // Bankai timeline (ticks from the cast; the client draws the same, see client/fx/IceShell): the ice covers her
+    // until X, then she is white and the ice thaws down to the neck (BANKAI_ARMOR of her height stays as armor); the
+    // ground starts cracking at X + FROST; the wave of absolute zero goes out at W; at M she freezes whole again, and
+    // after that thaws slowly.
+    public static final int BANKAI_X = 40;
+    public static final int BANKAI_FROST = 20;
+    public static final int BANKAI_W = 80;
+    public static final int BANKAI_M = 190;
+    public static final float BANKAI_ARMOR = 0.76f;
+
     private Rukia() {
     }
 
@@ -38,22 +50,36 @@ public final class Rukia {
                 new Ability(100, 0, Rukia::bankai)));
     }
 
-    // Frozen for ticks: held still, the shell on it, then it shatters with a little more damage.
-    static void freeze(LivingEntity caster, ServerLevel level, LivingEntity target, int ticks, boolean fromFeet, float shatterDamage) {
+    // Frozen for ticks: held still with the ice over the body (spreading from the feet up, or out from `from`, over
+    // `grow` ticks, reaching `reach` blocks), then it shatters with a little more damage, or (shatterDamage < 0) thaws.
+    static void freeze(LivingEntity caster, ServerLevel level, LivingEntity target, int ticks, Vec3 from, boolean fromFeet, int grow,
+            float reach, float shatterDamage) {
         Freeze.hold(target, ticks);
         target.setTicksFrozen(Math.max(target.getTicksFrozen(), 160));
-        SubNet.send(level, SubNet.FREEZE, target.getId(), target.position(), Vec3.ZERO, ticks, fromFeet ? 0 : 1, 0);
+        SubNet.send(level, SubNet.FREEZE, target.getId(), fromFeet ? target.position() : from, new Vec3(grow, reach, 0), ticks,
+                fromFeet ? 0 : 1, 0);
         SubCommon.sound(level, target.position(), SoundEvents.PLAYER_HURT_FREEZE, 1f, 0.8f);
+        boolean shatter = shatterDamage >= 0;
         Tasks.later(ticks, () -> {
-            SubNet.send(level, SubNet.FREEZE, target.getId(), target.position(), Vec3.ZERO, 0, 0, 1);
+            SubNet.send(level, SubNet.FREEZE, target.getId(), target.position(), Vec3.ZERO, 0, 0, shatter ? 1 : 2);
             if (target.isAlive()) {
-                SubCommon.sound(level, target.position(), SoundEvents.GLASS_BREAK, 1.2f, 0.9f);
+                if (shatter) {
+                    SubCommon.sound(level, target.position(), SoundEvents.GLASS_BREAK, 1.2f, 0.9f);
+                } else {
+                    SubCommon.sound(level, target.position(), SoundEvents.POWDER_SNOW_BREAK, 1f, 1.2f);
+                }
                 if (shatterDamage > 0 && caster.isAlive()) {
                     target.invulnerableTime = 0;
                     Combat.hurtMagic(caster, target, shatterDamage);
                 }
             }
         });
+    }
+
+    // The point of target's body facing the caster, at chest height (where the ice starts spreading from).
+    static Vec3 facing(LivingEntity caster, LivingEntity target) {
+        Vec3 to = SubCommon.flat(caster.position().subtract(target.position()));
+        return target.position().add(0, target.getBbHeight() * 0.5, 0).add(to.scale(target.getBbWidth() * 0.6));
     }
 
     // ---------- Z: Tsukishiro ----------
@@ -84,7 +110,7 @@ public final class Rukia {
                     continue;
                 }
                 Combat.hurtMagic(caster, t, 7);
-                freeze(caster, level, t, 60, true, 5);
+                freeze(caster, level, t, TSUKI_HOLD, null, true, 7, 1.9f, 5);
             }
         });
         return true;
@@ -104,6 +130,8 @@ public final class Rukia {
                 SubCommon.sound(level, p, SoundEvents.POWDER_SNOW_BREAK, 1f, 0.8f + k * 0.15f);
                 level.sendParticles(ParticleTypes.SNOWFLAKE, p.x, p.y + 0.1, p.z, 10, 0.2, 0.1, 0.2, 0.05);
                 SubNet.send(level, SubNet.IMPACT, 0, p.add(0, 0.1, 0), 0.8f, SubNet.COLOR_ICE);
+                Vec3 lean = dir.cross(new Vec3(0, 1, 0)).scale((k - 1.5) * 0.15).add(0, 1, 0).add(dir.scale(0.2));
+                SubNet.send(level, SubNet.ICE_SPIKE, k, p, lean, 0.6f, 13 - k * 3 + 16, 0);
             });
         }
         Tasks.later(13, () -> {
@@ -124,8 +152,8 @@ public final class Rukia {
                 double w = width * (0.4 + 0.6 * front / length) * 0.5 + 0.6;
                 for (LivingEntity t : Combat.alongLine(level, a.add(0, 1, 0), b.add(0, 1, 0), w, caster)) {
                     if (hit.add(t.getId())) {
-                        Combat.hurtMagic(caster, t, 8);
-                        freeze(caster, level, t, 45, false, 3);
+                        Combat.hurtMagic(caster, t, 11);
+                        freeze(caster, level, t, 60, facing(caster, t), false, 9, 1.6f, -1);
                     }
                 }
                 return age >= 14;
@@ -156,12 +184,12 @@ public final class Rukia {
         if (first != null) {
             length = Math.min(length, best + 0.5);
         }
-        SubNet.send(level, SubNet.SHIRAFUNE, 0, start, dir, (float) length, 0, 0);
+        SubNet.send(level, SubNet.SHIRAFUNE, 0, start, dir, (float) length, 0, first != null ? 1 : 0);
         SubCommon.sound(level, start, SoundEvents.GLASS_BREAK, 1f, 1.8f);
         SubCommon.sound(level, start, SoundEvents.TRIDENT_THROW.value(), 1.2f, 1.4f);
         if (first != null) {
-            Combat.hurtMagic(caster, first, 9);
-            freeze(caster, level, first, 35, false, 3);
+            Combat.hurtMagic(caster, first, 12);
+            freeze(caster, level, first, 40, start.add(dir.scale(length)), false, 26, 1.25f, -1);
             SubNet.send(level, SubNet.IMPACT, 0, Combat.center(first), 1.6f, SubNet.COLOR_ICE);
         }
         return true;
@@ -172,37 +200,62 @@ public final class Rukia {
     private static boolean bankai(LivingEntity caster, ServerLevel level) {
         SubCommon.Guard guard = SubCommon.guard(caster);
         Vec3 feet = caster.position();
-        int freezeSelf = 26;
         float radius = 11;
+        int armorEnd = BANKAI_M + 16;
+        boolean[] cancelled = {false};
         SubCommon.pose(caster, "sub.erguer");
-        SubCommon.busy(caster, freezeSelf + 6);
-        // She freezes over herself first (the Bankai's body at -18 degrees), untouched while it lasts.
-        Freeze.hold(caster, freezeSelf);
-        caster.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, freezeSelf + 10, 4, false, false));
-        SubNet.send(level, SubNet.FREEZE, caster.getId(), feet, Vec3.ZERO, freezeSelf, 0, 0);
+        SubCommon.busy(caster, BANKAI_X + 6);
+        // The white mist rises and the ice climbs over her whole body (the Bankai's body at -18 degrees); she stands
+        // still and is hard to hurt while it does.
+        Freeze.hold(caster, BANKAI_X);
+        caster.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, BANKAI_X + 10, 4, false, false));
+        SubNet.send(level, SubNet.ICE_ARMOR, caster.getId(), feet, Vec3.ZERO, armorEnd, 0, 0);
         SubCommon.sound(level, feet, SoundEvents.BEACON_ACTIVATE, 1.5f, 1.6f);
         SubCommon.sound(level, feet, SoundEvents.PLAYER_HURT_FREEZE, 1.5f, 0.6f);
-        Tasks.later(freezeSelf, () -> {
-            SubNet.send(level, SubNet.FREEZE, caster.getId(), feet, Vec3.ZERO, 0, 0, 1);
+        Tasks.later(BANKAI_X, () -> {
             if (guard.broken()) {
+                cancelled[0] = true;
+                SubNet.send(level, SubNet.ICE_ARMOR, caster.getId(), feet, Vec3.ZERO, 0, 0, 1);
                 return;
             }
+            // White under the ice, which thaws down to the neck and stays on her as armor.
             SubCommon.sound(level, feet, SoundEvents.GLASS_BREAK, 1.6f, 0.5f);
             SubCommon.sound(level, feet, SoundEvents.ELDER_GUARDIAN_CURSE, 1f, 1.5f);
-            SubNet.send(level, SubNet.AURA, caster.getId(), feet, Vec3.ZERO, 200, 2, 0);
-            SubNet.send(level, SubNet.FROST, 0, feet, Vec3.ZERO, radius, 140, 0);
-            caster.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 200, 1, false, false));
+            SubNet.send(level, SubNet.AURA, caster.getId(), feet, Vec3.ZERO, armorEnd - BANKAI_X, 2, 0);
+            caster.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, armorEnd - BANKAI_X, 1, false, false));
+        });
+        Tasks.later(BANKAI_X + BANKAI_FROST, () -> {
+            if (cancelled[0] || !caster.isAlive()) {
+                return;
+            }
+            // The ground cracks and freezes out from her.
+            SubNet.send(level, SubNet.FROST, 0, feet, Vec3.ZERO, radius, BANKAI_M - BANKAI_X - BANKAI_FROST + 50, 0);
+            SubCommon.sound(level, feet, SoundEvents.GLASS_BREAK, 1.4f, 0.4f);
+        });
+        Tasks.later(BANKAI_W, () -> {
+            if (cancelled[0] || !caster.isAlive()) {
+                return;
+            }
+            // Absolute zero: everyone close turns into crystal.
+            SubCommon.sound(level, feet, SoundEvents.WARDEN_SONIC_BOOM, 0.8f, 1.7f);
+            SubCommon.sound(level, feet, SoundEvents.AMETHYST_BLOCK_RESONATE, 1.5f, 0.6f);
             Set<Integer> hit = new HashSet<>();
             Tasks.add(age -> {
                 double r = radius * SubCommon.smooth(age / 16f);
                 for (LivingEntity t : Combat.inRadius(level, feet, r, caster)) {
                     if (hit.add(t.getId())) {
-                        Combat.hurtMagic(caster, t, 10);
-                        freeze(caster, level, t, 80, false, 7);
+                        Combat.hurtMagic(caster, t, 17);
+                        freeze(caster, level, t, 100, facing(caster, t), false, 10, 2.2f, -1);
                     }
                 }
                 return age >= 16;
             });
+        });
+        Tasks.later(BANKAI_M, () -> {
+            if (!cancelled[0] && caster.isAlive()) {
+                // Only a few seconds at absolute zero: she freezes whole again and goes back to normal, thawing.
+                SubCommon.sound(level, caster.position(), SoundEvents.PLAYER_HURT_FREEZE, 1.2f, 0.7f);
+            }
         });
         return true;
     }

@@ -170,6 +170,20 @@ public final class FxRenderTypes extends RenderType {
                         .createCompositeState(false)));
     }
 
+    // Rukia's ice shell over a body (IceShell): see-through, only its outer faces, tested against the body's depth.
+    private static final ShaderStateShard ICE_SHADER = new ShaderStateShard(() -> FxShaders.ice);
+    private static final java.util.Map<ResourceLocation, RenderType> ICE = new java.util.HashMap<>();
+
+    public static RenderType iceShell(ResourceLocation texture) {
+        return ICE.computeIfAbsent(texture, t -> create("battlegroundsmod_ice_" + t.getNamespace() + "_" + t.getPath().replace('/', '_'),
+                DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 1536, false, true, CompositeState.builder()
+                        .setShaderState(ICE_SHADER)
+                        .setTextureState(new TextureStateShard(t, false, false))
+                        .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                        .setWriteMaskState(COLOR_WRITE)
+                        .createCompositeState(false)));
+    }
+
     // A body with an aura, drawn flat into the aura mask (see Aura): its own texture only to skip see-through pixels.
     // Pulled a hair toward the camera so it isn't hidden by the same body already in the depth it tests against.
     private static final ShaderStateShard AURA_SHADER = new ShaderStateShard(() -> FxShaders.aura);

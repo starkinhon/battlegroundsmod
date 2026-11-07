@@ -20,6 +20,7 @@ public final class FxShaders {
     static ShaderInstance bloomComp;
     static ShaderInstance vfx;
     static ShaderInstance ash;
+    static ShaderInstance ice;
     static ShaderInstance aura;
     static ShaderInstance auraOutline;
     static ShaderInstance susanoo;
@@ -47,6 +48,7 @@ public final class FxShaders {
         register(event, "fx_bloom_comp", DefaultVertexFormat.POSITION, s -> bloomComp = s);
         register(event, "souls_vfx", DefaultVertexFormat.PARTICLE, s -> vfx = s);
         register(event, "souls_ash", DefaultVertexFormat.NEW_ENTITY, s -> ash = s);
+        register(event, "souls_ice", DefaultVertexFormat.NEW_ENTITY, s -> ice = s);
         register(event, "souls_aura", DefaultVertexFormat.NEW_ENTITY, s -> aura = s);
         register(event, "fx_aura_outline", DefaultVertexFormat.POSITION, s -> auraOutline = s);
         register(event, "souls_susanoo", DefaultVertexFormat.POSITION_COLOR_NORMAL, s -> susanoo = s);
