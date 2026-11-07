@@ -23,6 +23,8 @@ import net.neoforged.neoforge.network.PacketDistributor;
 // Values in souls_skills/padrao.dash_ataque.json (DashAtaqueSpec).
 public final class DashAttack {
     public static final String SKILL = "padrao.dash_ataque";
+    // The bare-fist slide pose (tools/poses); on contact the combo's Direto plays.
+    private static final String FIST_RUN = "soco.dash";
 
     private DashAttack() {
     }
@@ -44,7 +46,7 @@ public final class DashAttack {
         Vec3[] dir = {Combat.flatLook(attacker)};
         boolean sword = SwordArts.held(attacker);
         PacketDistributor.sendToPlayersTrackingEntityAndSelf(attacker, new ModPayloads.PlaySkillAnimation(attacker.getId(),
-                sword ? SwordArts.DASH_RUN : SKILL, false));
+                sword ? SwordArts.DASH_RUN : FIST_RUN, false));
         if (sword) {
             SwordArts.color(attacker);
         }
