@@ -3,37 +3,37 @@ package com.starkinhon.battlegroundsmod.skill;
 import java.util.List;
 
 // Shift + Z of Gojo (gojo.azul_black_flash.json): the Blue pulls the enemy to him and he meets it with a Black Flash.
-// A small Blue forms on his left palm (formarTicks) and grabs the target he aims at (up to alcanceAlvo blocks). The
-// target is dragged in a straight line, faster and faster, to distanciaFrente blocks in front of him (puxar), unable to
-// move or use skills. Let go of the key before it arrives and the punch goes at the lightest charge as soon as it gets
-// there; still held, the target floats in front of him while the punch charges (segurado), and it goes when the key is
-// let go (or at segurado.maxSegurarTicks). The punch is always a Black Flash: the world stops for golpe.parada ticks
-// (the impact frame), the black and red lightning bursts out of the fist and the target is thrown far, breaking the
-// blocks it flies through (only with the gamerule soulsBlockDestruction). Everything in golpe goes from x (no charge)
-// to xMax (full charge).
-// Timeline: "uso" (pressed, the Blue forms on the palm), "puxar" (the pull starts, on the target), "chegou" (it reached
-// him), "carregar" (the charge starts), "blackFlash" (the hit, at the contact point), "impacto" (where the thrown target
-// stops). The "tempo" and "animacao" blocks are also read as an AnimationSpec (the punch).
+// No orb: he holds his hand out and the Blue (only implied, a light bending on the target) grabs whoever he aims at, up
+// to alcanceAlvo blocks away, and drags it in a straight line, faster and faster (puxar). lentoDistancia blocks before
+// it arrives time slows down: for lentoTicks it comes in slowly while his fist cocks back crackling black lightning.
+// Then the punch, always a Black Flash: the impact frames, and the punch "fits" (encaixe): the target stays stuck on
+// the fist for golpe.encaixeTicks while the black lightning bursts out in waves (golpe.ondas, ticks after the punch)
+// and the crater opens at the punch point (only with the gamerule soulsBlockDestruction). Only then a last burst
+// throws it far. Holding the key from the start charges it (segurado.carregarTicks to full): everything in golpe goes
+// from x (no charge) to xMax (full charge).
+// Timeline: "uso" (pressed), "puxar" (the pull starts, on the target), "lento" (slow motion, at the fist), "blackFlash"
+// (the punch, at the contact point), "onda" (each wave), "arremesso" (the throw), "impacto" (where the thrown target
+// stops). The "tempo" and "animacao" blocks are also read as an AnimationSpec (the punch, held through the encaixe).
 public record BlackFlashSpec(String skill, String nome, Puxar puxar, Segurado segurado, Golpe golpe, List<Som> sons) {
 
-    // alcanceAlvo: how far the target can be; formarTicks: the Blue forming before it pulls; velocidade: blocks per tick
-    // at the end of the pull (it starts slow and speeds up); minTicks/maxTicks: the pull never takes less or more than
-    // this; distanciaFrente: blocks between the two of them when it ends (plus their widths); orbeRaio/orbeRaioMax: the
-    // Blue on the palm, from formed to fully charged.
-    public record Puxar(double alcanceAlvo, int formarTicks, double velocidade, int minTicks, int maxTicks, double distanciaFrente,
-            double orbeRaio, double orbeRaioMax) {
+    // alcanceAlvo: how far the target can be; velocidade: blocks per tick at the end of the pull (it starts slow and
+    // speeds up); minTicks/maxTicks: the pull never takes less or more than this; distanciaFrente: blocks between the two
+    // of them at the punch (plus their widths); lentoDistancia: how far from the punch the slow motion starts;
+    // lentoTicks: how long the slow motion lasts.
+    public record Puxar(double alcanceAlvo, double velocidade, int minTicks, int maxTicks, double distanciaFrente,
+            double lentoDistancia, int lentoTicks) {
     }
 
-    // carregarTicks: from arriving to full charge; maxSegurarTicks: held longer than this it goes anyway (bosses: their
-    // own charge, never more than this).
-    public record Segurado(int carregarTicks, int maxSegurarTicks) {
+    // carregarTicks: holding the key this long from the start gives the full charge (bosses: their own charge).
+    public record Segurado(int carregarTicks) {
     }
 
-    // dano, empurrao (blocks per tick the target is thrown), subir (how much of the throw goes up), paradaTicks (the
-    // world stopped on the hit), each from no charge to full (xMax); atordoadoTicks: stun left on the target;
-    // quebraRaio: blocks broken around the target while it flies; quebraTicks: for how long.
-    public record Golpe(float dano, float danoMax, double empurrao, double empurraoMax, double subir, int paradaTicks, int paradaTicksMax,
-            int atordoadoTicks, double quebraRaio, int quebraTicks) {
+    // dano at the punch and danoFinal at the throw; empurrao (blocks per tick the target is thrown) and subir (how much of
+    // the throw goes up); encaixeTicks: the target stuck on the fist; ondas: the ticks after the punch when a wave of
+    // black lightning bursts; atordoadoTicks: stun left on the target after the throw; crateraRaio: the crater at the
+    // punch point (it grows with each wave up to this).
+    public record Golpe(float dano, float danoMax, float danoFinal, float danoFinalMax, double empurrao, double empurraoMax, double subir,
+            int encaixeTicks, List<Integer> ondas, int atordoadoTicks, double crateraRaio, double crateraRaioMax) {
     }
 
     public static final String SKILL = "gojo.azul_black_flash";
