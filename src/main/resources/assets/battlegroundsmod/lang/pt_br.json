@@ -1,5 +1,8 @@
 {
-  "itemGroup.battlegroundsmod": "Battlegrounds",
+  "itemGroup.battlegroundsmod": "Battlegrounds: Essenciais",
+  "itemGroup.battlegroundsmod.souls": "Battlegrounds: Almas",
+  "itemGroup.battlegroundsmod.weapons": "Battlegrounds: Armas",
+  "itemGroup.battlegroundsmod.spawn_eggs": "Battlegrounds: Ovos Geradores",
   "item.battlegroundsmod.power_book": "Livro das Almas",
   "item.battlegroundsmod.aizen_sword": "Kyōka Suigetsu (Espada do Aizen)",
   "item.battlegroundsmod.fight_rod": "Vara da Luta",
