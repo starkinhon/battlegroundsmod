@@ -26,15 +26,40 @@ public class PowerSelectScreen extends Screen {
     private static final int SPACING = 24;
     private static final int TAB_WIDTH = 108;
 
+    // Fixed header (tabs, title, hint) and footer (page arrows); the souls in between are paged so the tabs never
+    // scroll off screen, however many souls a tab has.
+    private static final int HEADER = 64;
+    private static final int FOOTER = 34;
+
     private int top;
+    private int perPage;
     private static int tab = -1;
+    private static int page = 0;
 
     public PowerSelectScreen() {
         super(Component.translatable("screen.battlegroundsmod.select_power"));
     }
 
-    private List<Power> shown() {
+    private List<Power> all() {
         return tab == 1 ? Powers.sub() : Powers.divine();
+    }
+
+    private int pages() {
+        return Math.max(1, (all().size() + perPage - 1) / perPage);
+    }
+
+    private List<Power> shown() {
+        List<Power> list = all();
+        int from = Math.min(page * perPage, list.size());
+        return list.subList(from, Math.min(from + perPage, list.size()));
+    }
+
+    private void turn(int delta) {
+        int next = Math.max(0, Math.min(pages() - 1, page + delta));
+        if (next != page) {
+            page = next;
+            rebuildWidgets();
+        }
     }
 
     @Override
@@ -42,16 +67,21 @@ public class PowerSelectScreen extends Screen {
         if (tab < 0) {
             tab = minecraft != null && minecraft.player != null && Powers.isSub(minecraft.player.getData(com.starkinhon.battlegroundsmod.ModAttachments.POWER).power) ? 1 : 0;
         }
-        top = height / 2 - shown().size() * SPACING / 2 + 8;
+        perPage = Math.max(1, (height - HEADER - FOOTER + SPACING - BUTTON_HEIGHT) / SPACING);
+        page = Math.max(0, Math.min(page, pages() - 1));
+        // Centered like before when the tab fits on one page, but never above the header.
+        int tabsY = Math.max(8, height / 2 - shown().size() * SPACING / 2 - 44);
+        top = tabsY + 52;
         for (int i = 0; i < 2; i++) {
             int which = i;
             Component name = Component.translatable(i == 0 ? "screen.battlegroundsmod.select_power.divine" : "screen.battlegroundsmod.select_power.sub")
                     .withStyle(i == tab ? ChatFormatting.GOLD : ChatFormatting.GRAY);
             Button button = Button.builder(name, b -> {
                         tab = which;
+                        page = 0;
                         rebuildWidgets();
                     })
-                    .bounds(width / 2 - TAB_WIDTH - 2 + i * (TAB_WIDTH + 4), top - 52, TAB_WIDTH, 18)
+                    .bounds(width / 2 - TAB_WIDTH - 2 + i * (TAB_WIDTH + 4), tabsY, TAB_WIDTH, 18)
                     .build();
             button.active = i != tab;
             addRenderableWidget(button);
@@ -68,6 +98,40 @@ public class PowerSelectScreen extends Screen {
                     .build());
             y += SPACING;
         }
+        if (pages() > 1) {
+            int arrowsY = top + perPage * SPACING + 4;
+            Button prev = Button.builder(Component.literal("<"), b -> turn(-1))
+                    .bounds(width / 2 - BUTTON_WIDTH / 2, arrowsY, 40, BUTTON_HEIGHT).build();
+            prev.active = page > 0;
+            addRenderableWidget(prev);
+            Button next = Button.builder(Component.literal(">"), b -> turn(1))
+                    .bounds(width / 2 + BUTTON_WIDTH / 2 - 40, arrowsY, 40, BUTTON_HEIGHT).build();
+            next.active = page < pages() - 1;
+            addRenderableWidget(next);
+        }
+    }
+
+    // Mouse wheel and the arrow keys also turn the page.
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        if (pages() > 1 && scrollY != 0) {
+            turn(scrollY < 0 ? 1 : -1);
+            return true;
+        }
+        return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
+    }
+
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (keyCode == org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT || keyCode == org.lwjgl.glfw.GLFW.GLFW_KEY_PAGE_UP) {
+            turn(-1);
+            return true;
+        }
+        if (keyCode == org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT || keyCode == org.lwjgl.glfw.GLFW.GLFW_KEY_PAGE_DOWN) {
+            turn(1);
+            return true;
+        }
+        return super.keyPressed(keyCode, scanCode, modifiers);
     }
 
     private static Component describe(Power power) {
@@ -97,6 +161,9 @@ public class PowerSelectScreen extends Screen {
         }
         graphics.drawCenteredString(font, title, width / 2, top - 24, 0xFFFFFFFF);
         graphics.drawCenteredString(font, Component.translatable("screen.battlegroundsmod.select_power.hint"), width / 2, top - 12, 0xFFAAAAAA);
+        if (pages() > 1) {
+            graphics.drawCenteredString(font, (page + 1) + " / " + pages(), width / 2, top + perPage * SPACING + 10, 0xFFFFFFFF);
+        }
     }
 
     @Override
