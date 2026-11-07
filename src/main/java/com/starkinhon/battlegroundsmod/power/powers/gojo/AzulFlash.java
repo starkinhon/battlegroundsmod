@@ -101,7 +101,7 @@ public final class AzulFlash {
         Vec3 slowStart = distance < 1.0E-3 ? end : end.subtract(line.scale(slowFrom / distance));
         Vec3[] hold = {start};
         Freeze.hold(target, 20 * 30, age -> hold[0]);
-        limp(target, ModPayloads.Limp.PULL, 0, 0);
+        ModPayloads.Limp.send(target, ModPayloads.Limp.PULL, 0, 0);
         double speed = Math.max(0.3, puxar.velocidade());
         // Starts slow and ends at velocidade (ease in, t^2): the average is half of it.
         int pullTicks = Mth.clamp((int) Math.ceil((distance - slowFrom) * 2 / speed), Math.max(1, puxar.minTicks()), Math.max(puxar.minTicks(), puxar.maxTicks()));
@@ -124,7 +124,7 @@ public final class AzulFlash {
             boolean gone = !target.isAlive() || target.isRemoved() || target.level() != caster.level();
             if (!caster.isAlive() || caster.isRemoved() || !power.equals(now.power) || now.interrupts != interrupts || gone) {
                 // Cut short: everyone is let go where they are.
-                limp(target, ModPayloads.Limp.OFF, 0, 0);
+                ModPayloads.Limp.send(target, ModPayloads.Limp.OFF, 0, 0);
                 Freeze.free(target);
                 Freeze.free(caster);
                 PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new ModPayloads.PlaySkillAnimation(caster.getId(), "", false));
@@ -150,7 +150,7 @@ public final class AzulFlash {
                     if (t + 1 >= pullTicks) {
                         phase[0] = Phase.SLOW;
                         phaseStart[0] = age + 1;
-                        limp(target, ModPayloads.Limp.SLOW, slowTicks, 0);
+                        ModPayloads.Limp.send(target, ModPayloads.Limp.SLOW, slowTicks, 0);
                         SkillSounds.play(level, spec.sons(), "lento", 0, slowTicks, where, screen);
                         Fx.effects(level, SKILL, awakened, "lento", contact, dir);
                         send(level, new ModPayloads.BlackFlash(SLOW, caster.getId(), contact, dir, (float) charge[0], slowTicks));
@@ -189,7 +189,7 @@ public final class AzulFlash {
         Fx.effects(level, SKILL, awakened, "blackFlash", contact, dir);
         send(level, new ModPayloads.BlackFlash(PUNCH, caster.getId(), contact, dir, (float) c, fit));
         Combat.hurt(caster, target, Mth.lerp((float) c, golpe.dano(), golpe.danoMax()));
-        limp(target, ModPayloads.Limp.FIT, fit, 0);
+        ModPayloads.Limp.send(target, ModPayloads.Limp.FIT, fit, 0);
         // Both of them feel it: he stays in the punch, the target stuck on the fist.
         Freeze.hold(target, fit + 2, age -> hold[0]);
         caster.getData(ModAttachments.POWER).busyTicks = Math.max(caster.getData(ModAttachments.POWER).busyTicks, fit + 8);
@@ -202,7 +202,7 @@ public final class AzulFlash {
         Vec3[] last = {null};
         Tasks.add(age -> {
             if (!target.isAlive() || target.isRemoved()) {
-                limp(target, ModPayloads.Limp.OFF, 0, 0);
+                ModPayloads.Limp.send(target, ModPayloads.Limp.OFF, 0, 0);
                 Freeze.free(target);
                 Freeze.free(caster);
                 return true;
@@ -214,7 +214,7 @@ public final class AzulFlash {
                 target.setDeltaMovement(Vec3.ZERO);
                 int wave = waves.indexOf(age);
                 if (wave >= 0) {
-                    limp(target, ModPayloads.Limp.JOLT, 0, (float) (0.6 + 0.4 * (wave + 1) / waves.size()));
+                    ModPayloads.Limp.send(target, ModPayloads.Limp.JOLT, 0, (float) (0.6 + 0.4 * (wave + 1) / waves.size()));
                     SkillSounds.play(level, spec.sons(), "onda", 0, 0, where, screen);
                     Fx.effects(level, SKILL, awakened, "onda", contact, dir);
                     if (breaks) {
@@ -238,7 +238,7 @@ public final class AzulFlash {
                 }
                 Combat.hurt(caster, target, Mth.lerp((float) c, golpe.danoFinal(), golpe.danoFinalMax()));
                 Stun.apply(target, golpe.atordoadoTicks());
-                limp(target, ModPayloads.Limp.THROW, golpe.atordoadoTicks(), (float) c);
+                ModPayloads.Limp.send(target, ModPayloads.Limp.THROW, golpe.atordoadoTicks(), (float) c);
                 double throwSpeed = Mth.lerp(c, golpe.empurrao(), golpe.empurraoMax());
                 target.setDeltaMovement(dir.scale(throwSpeed).add(0, golpe.subir() * throwSpeed * 0.3 + 0.2, 0));
                 target.hurtMarked = true;
@@ -257,11 +257,6 @@ public final class AzulFlash {
             }
             return false;
         });
-    }
-
-    // The target's body, for whoever sees it (and the target itself, in third person).
-    private static void limp(LivingEntity target, int phase, int ticks, float strength) {
-        PacketDistributor.sendToPlayersTrackingEntityAndSelf(target, new ModPayloads.Limp(target.getId(), phase, ticks, strength));
     }
 
     private static void send(ServerLevel level, ModPayloads.BlackFlash payload) {

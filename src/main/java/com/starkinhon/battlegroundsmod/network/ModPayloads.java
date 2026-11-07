@@ -814,10 +814,11 @@ public final class ModPayloads {
     }
 
     // Server -> client: a body out of its own control (client/LimpBody), for whoever sees it. phase: 0 pulled, 1 slow
-    // motion, 2 stuck on the fist, 3 thrown (ticks = how long it lies stunned when it lands), 5 let go, 6 a jolt
-    // (strength 0 to 1).
+    // motion, 2 stuck on the fist, 3 thrown backwards (ticks = how long it lies stunned when it lands), 4 lying down now
+    // (ticks = how long; strength 1 face down, -1 on its back, 0 whichever is nearer), 5 let go, 6 a jolt (strength 0
+    // to 1), 7 held by the neck, 8 paralyzed (stiff, trembling), 9 floating limp up in the air, 10 slapped forward.
     public record Limp(int entity, int phase, int ticks, float strength) implements CustomPacketPayload {
-        public static final int PULL = 0, SLOW = 1, FIT = 2, THROW = 3, OFF = 5, JOLT = 6;
+        public static final int PULL = 0, SLOW = 1, FIT = 2, THROW = 3, LIE = 4, OFF = 5, JOLT = 6, NECK = 7, FROZEN = 8, HANG = 9, SLAP = 10;
         public static final Type<Limp> TYPE = payloadType("limp");
         public static final StreamCodec<ByteBuf, Limp> STREAM_CODEC = StreamCodec.composite(
                 ByteBufCodecs.VAR_INT, Limp::entity,
@@ -825,6 +826,11 @@ public final class ModPayloads {
                 ByteBufCodecs.VAR_INT, Limp::ticks,
                 ByteBufCodecs.FLOAT, Limp::strength,
                 Limp::new);
+
+        // To whoever sees the target, and the target itself (it sees its body in third person).
+        public static void send(net.minecraft.world.entity.LivingEntity target, int phase, int ticks, float strength) {
+            net.neoforged.neoforge.network.PacketDistributor.sendToPlayersTrackingEntityAndSelf(target, new Limp(target.getId(), phase, ticks, strength));
+        }
 
         @Override
         public Type<Limp> type() {
