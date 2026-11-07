@@ -45,8 +45,9 @@ public final class YoruNoMiya {
     private static final int HIT_DELAY = 4;
     private static final float DAMAGE = 14f;
     private static final double DEPTH = 2.5;
-    // The gold of the moons (souls_moon.fsh's cGold), for the sword's trails during the move.
-    public static final int MOON_GOLD = 0xFCD15C;
+    // The sword trails during the move: a deep gold, since the trail is mixed halfway with white (SwordFx.drawTrail), so it
+    // ends up the yellow of the moons.
+    public static final int MOON_GOLD = 0xFFA000;
     // The hitbox reaches this many times as far as the drawn slash (Stark: 1.5x).
     private static final double HIT_REACH = 1.5;
     // Black Flash style: the target stands frozen this long after the cut before the blow lands (0.5 s), then stays
