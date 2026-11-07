@@ -22,8 +22,9 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 
 // A boss's line floating over its head (boss/BossFalas sends it). The whole line shows at once (no letter by letter),
-// in the soul's colors (a gradient from the first color to the second) with a glow of the soul's color around the
-// letters, on a dark see-through bar so it reads on any sky, no name on top. It stays 5 s, then fades out rising a little.
+// in the soul's colors like a game logo (Stark's reference): a gradient from the soul's dark shade on the left to its
+// bright shade on the right, a hard dark outline around every letter with a darker shadow under it, and a soft glow of
+// the soul's color outside the outline, on a dark see-through bar so it reads on any sky, no name on top. It stays 5 s, then fades out rising a little.
 // It is drawn as a screen layer over the world, at the head's spot on screen and sized by the distance like a name
 // tag, so no effect (glow, smoke, distortion, bloom) can ever cover it. A wall between the camera and the head hides it.
 public final class FalaRender {
@@ -40,8 +41,11 @@ public final class FalaRender {
     private static final float MAX_SCALE = 2.5f;
     // The bar's darkness (0..255): 62%, the same as the Visualizador.
     private static final int BAR_ALPHA = 158;
-    // The glow: copies of the line in the soul's color around the letters, one ring per entry {radius in font pixels, alpha}.
-    private static final float[][] GLOW = {{1.0f, 0.38f}, {2.0f, 0.16f}};
+    // The glow: copies of the line in the soul's bright color outside the outline, one ring per entry {radius in font
+    // pixels, alpha}.
+    private static final float[][] GLOW = {{2.0f, 0.30f}, {3.0f, 0.12f}};
+    // The outline: the soul's dark shade darkened this much (0 black, 1 the dark shade itself).
+    private static final float OUTLINE_SHADE = 0.32f;
     // Farther than this, it is not drawn (the server only sends it to players within 32 blocks).
     private static final double MAX_DISTANCE = 48;
 
@@ -166,9 +170,9 @@ public final class FalaRender {
         // Centered, sitting on the head's spot.
         float x = -width / 2f, y = -font.lineHeight;
         graphics.pose().translate(x, y, 0);
-        // The bar.
-        graphics.fill(-3, -2, width + 2, font.lineHeight + 1, Math.round(BAR_ALPHA * alpha) << 24 | 0x08060C);
-        // The glow: the line in the soul's color, a few times around the letters, fainter the farther out.
+        // The bar, wide enough for the glow.
+        graphics.fill(-5, -4, width + 4, font.lineHeight + 3, Math.round(BAR_ALPHA * alpha) << 24 | 0x08060C);
+        // The glow: the line in the soul's bright color, a few times around the letters, fainter the farther out.
         for (float[] ring : GLOW) {
             int ga = Math.round(ring[1] * alpha * 255);
             if (ga < 5) {
@@ -178,13 +182,29 @@ public final class FalaRender {
                 double ang = d * Math.PI / 4;
                 graphics.pose().pushPose();
                 graphics.pose().translate((float) Math.cos(ang) * ring[0], (float) Math.sin(ang) * ring[0], 0);
-                graphics.drawString(font, plain, 0, 0, ga << 24 | line.color1(), false);
+                graphics.drawString(font, plain, 0, 0, ga << 24 | line.color2(), false);
                 graphics.pose().popPose();
+            }
+        }
+        // The shadow (one pixel lower, two thick) and the outline (one pixel all around), in the dark shade.
+        int dark = a << 24 | shade(line.color1(), OUTLINE_SHADE);
+        int shadow = a << 24 | shade(line.color1(), OUTLINE_SHADE * 0.5f);
+        graphics.drawString(font, plain, 0, 2, shadow, false);
+        graphics.drawString(font, plain, 1, 2, shadow, false);
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dy = -1; dy <= 1; dy++) {
+                if (dx != 0 || dy != 0) {
+                    graphics.drawString(font, plain, dx, dy, dark, false);
+                }
             }
         }
         // The letters on top.
         graphics.drawString(font, colored, 0, 0, a << 24 | 0xFFFFFF, false);
         graphics.pose().popPose();
+    }
+
+    private static int shade(int c, float k) {
+        return Math.round((c >> 16 & 255) * k) << 16 | Math.round((c >> 8 & 255) * k) << 8 | Math.round((c & 255) * k);
     }
 
     private static int lerpColor(int c1, int c2, float k) {
