@@ -55,7 +55,7 @@ public final class Vermelho {
     public static final int COOLDOWN = 140;
     public static final int SHIFT_COOLDOWN = 300;
     private static final double VIEW_DISTANCE = 160;
-    private static final RandomSource RANDOM = RandomSource.create();
+    private static final RandomSource RANDOM = RandomSource.createThreadSafe();
     public static final int ALIVE = 0;
     public static final int FIRED = 1;
     public static final int GONE = 2;

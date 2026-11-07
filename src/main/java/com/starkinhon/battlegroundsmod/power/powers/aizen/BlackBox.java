@@ -36,7 +36,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 public final class BlackBox {
     public static final String SKILL = BlackBoxSpec.SKILL;
     private static final double VIEW_DISTANCE = 160;
-    private static final RandomSource RANDOM = RandomSource.create();
+    private static final RandomSource RANDOM = RandomSource.createThreadSafe();
     private static int nextId;
 
     // Sent to the clients: 0 = held (value = charge 0..1), 1 = shut (value = final charge), 2 = gone.

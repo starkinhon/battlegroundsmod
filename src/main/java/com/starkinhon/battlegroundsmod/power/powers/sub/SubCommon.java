@@ -26,7 +26,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 // Shared bits of the SubAlmas' skills: timed states (a Bankai, a mask), holding a key, poses, the ground under a point.
 public final class SubCommon {
-    public static final RandomSource RANDOM = RandomSource.create();
+    public static final RandomSource RANDOM = RandomSource.createThreadSafe();
     // Timed states by entity: name -> the game tick it ends.
     private static final Map<UUID, Map<String, Long>> STATES = new HashMap<>();
 

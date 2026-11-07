@@ -13,7 +13,7 @@ import net.minecraft.world.phys.Vec3;
 // Look of the Meteoro, a copy of the Forja's emit() with the mod's own particles (fx/ModParticles). The ball and the
 // warning circle on the ground are drawn on the client by client/fx/MeteorRenderer; everything around them is here.
 final class MeteoroFx {
-    private static final RandomSource RANDOM = RandomSource.create();
+    private static final RandomSource RANDOM = RandomSource.createThreadSafe();
 
     private MeteoroFx() {
     }

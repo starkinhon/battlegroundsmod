@@ -31,7 +31,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 // Timeline: "carregar" while held (tremor "tremer", then "tremerForte" past half charge), "soltar" on the burst.
 public final class Reiatsu {
     public static final String SKILL = AizenSpecs.REIATSU;
-    private static final RandomSource RANDOM = RandomSource.create();
+    private static final RandomSource RANDOM = RandomSource.createThreadSafe();
     private static final int SHAKE_EVERY = 4;
 
     private Reiatsu() {

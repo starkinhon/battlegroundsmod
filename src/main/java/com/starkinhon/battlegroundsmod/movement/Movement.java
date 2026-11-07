@@ -45,7 +45,7 @@ public final class Movement {
     private static final int SAFE_FALL_MAX_TICKS = 200;
     // A move's take-off tick still reads as "on the ground", so landing only counts after this.
     private static final int LANDING_DELAY = 3;
-    private static final RandomSource RANDOM = RandomSource.create();
+    private static final RandomSource RANDOM = RandomSource.createThreadSafe();
 
     public enum Kind {
         ESQUIVA("padrao.esquiva"),

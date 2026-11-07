@@ -21,7 +21,7 @@ import net.minecraft.world.phys.Vec3;
 
 // Looks and sounds of the boss itself (warnings, entrance, phase changes, dashes). The skills bring their own.
 final class BossFx {
-    private static final RandomSource RANDOM = RandomSource.create();
+    private static final RandomSource RANDOM = RandomSource.createThreadSafe();
     private static final double TITLE_RANGE = 48;
 
     private BossFx() {

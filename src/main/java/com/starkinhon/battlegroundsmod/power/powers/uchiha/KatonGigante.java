@@ -41,7 +41,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 // drawn on the clients (client/fx/KatonBallRenderer); values come from souls_skills/madara.katon_gigante.json.
 public final class KatonGigante {
     public static final String SKILL = "madara.katon_gigante";
-    private static final RandomSource RANDOM = RandomSource.create();
+    private static final RandomSource RANDOM = RandomSource.createThreadSafe();
     private static int nextId;
 
     private KatonGigante() {
