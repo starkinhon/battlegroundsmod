@@ -74,6 +74,20 @@ final class FxDraw {
         vertex(out, d, 0, 1, shape, p, rgb, o);
     }
 
+    // Same, with its own opacity at each corner (a curtain that fades where it turns edge-on to the camera).
+    static void quadFade(Vector3f a, Vector3f b, Vector3f c, Vector3f d, int shape, float param, float[] rgb, float oa, float ob, float oc,
+            float od, boolean glow) {
+        if (Math.max(Math.max(oa, ob), Math.max(oc, od)) <= 0.002f) {
+            return;
+        }
+        VertexConsumer out = glow ? additive : alpha;
+        int p = Math.round(Math.max(0, Math.min(1, param)) * 255);
+        vertex(out, a, 0, 0, shape, p, rgb, Math.min(1, oa));
+        vertex(out, b, 1, 0, shape, p, rgb, Math.min(1, ob));
+        vertex(out, c, 1, 1, shape, p, rgb, Math.min(1, oc));
+        vertex(out, d, 0, 1, shape, p, rgb, Math.min(1, od));
+    }
+
     // Same, with its own color at each corner (smooth shading across a mesh).
     static void quad(Vector3f a, Vector3f b, Vector3f c, Vector3f d, int shape, float param, float[] ca, float[] cb, float[] cc, float[] cd,
             float opacity, boolean glow) {
