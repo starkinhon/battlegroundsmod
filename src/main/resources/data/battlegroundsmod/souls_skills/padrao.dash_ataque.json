@@ -6,7 +6,7 @@
   "duracaoMaxTicks": 14,
   "velocidade": 1.15,
   "curva": 0.35,
-  "raioGrudar": 2.2,
+  "raioGrudar": 3.4,
   "raioGrudarAlvo": 4.0,
   "distanciaGrudar": 0.9,
   "golpeDoCombo": 1,

@@ -201,7 +201,8 @@ public final class SwordArts {
         float[] released = {-1};
         int[] cutAt = {-1};
         Tasks.add(age -> {
-            if (!player.isAlive() || data.interrupts != interrupts || !Stun.canAttack(player)) {
+            // Super armor: only a real stun (Stun.INTERRUPT_TICKS+) cuts it off, plain punches don't.
+            if (!player.isAlive() || data.interrupts != interrupts || Stun.real(player)) {
                 if (released[0] < 0) {
                     anim(player, "");
                 }
@@ -315,7 +316,8 @@ public final class SwordArts {
         data.busyTicks = ROUND * BARRAGE_MIN_ROUNDS + 4;
         int[] finishAt = {-1};
         Tasks.add(age -> {
-            if (!player.isAlive() || data.interrupts != interrupts || !Stun.canAttack(player)) {
+            // Super armor: only a real stun (Stun.INTERRUPT_TICKS+) cuts it off, plain punches don't.
+            if (!player.isAlive() || data.interrupts != interrupts || Stun.real(player)) {
                 anim(player, "");
                 return true;
             }
@@ -424,7 +426,7 @@ public final class SwordArts {
 
     // Lands combo cut step. Returns true when it connected with anyone (blocked or not).
     static boolean comboCut(LivingEntity attacker, LivingEntity target, int step, ComboSpec.Golpe golpe, ComboSpec spec) {
-        if (!attacker.isAlive() || !Stun.canAttack(attacker) || Freeze.isFrozen(attacker)) {
+        if (!attacker.isAlive() || (!Stun.canAttack(attacker) || Freeze.isFrozen(attacker)) && !Melee.struckFirst(attacker)) {
             return false;
         }
         ServerLevel level = Combat.level(attacker);
@@ -450,6 +452,7 @@ public final class SwordArts {
             if (land(attacker, e, damage, golpe.stunTicks(), golpe.hitstopTicks(), golpe.tremor(), look, golpe.empurrao(), golpe.subida(),
                     golpe.momento())) {
                 any = true;
+                Melee.markHit(attacker, e);
                 cut(level, e, jitter(level, line), last ? 2.8f : i == 3 ? 1.2f : 2.0f, last ? 1.2f : 0.8f, color);
             }
         }

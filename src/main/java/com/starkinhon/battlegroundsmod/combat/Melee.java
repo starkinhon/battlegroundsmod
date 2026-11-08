@@ -39,6 +39,8 @@ public final class Melee {
     private static final String BARRAGE_END_POSE = "soco.barragem_final";
     // ...and the Barragem goes on for up to this long.
     private static final int BARRAGE_HELD_TICKS = 60;
+    // How long after taking a later-thrown punch an earlier one still comes out (covers that punch's hitstop).
+    private static final int PRIORITY_WINDOW_TICKS = 5;
 
     private Melee() {
     }
@@ -161,6 +163,7 @@ public final class Melee {
             attacker.hurtMarked = true;
         }
         int interrupts = data.interrupts;
+        data.swingStart = attacker.level().getGameTime();
         Tasks.later(windUp, () -> {
             if (data.interrupts != interrupts) {
                 return;
@@ -176,8 +179,8 @@ public final class Melee {
 
     // Returns true when the hit connected (blocked or not).
     private static boolean land(LivingEntity attacker, LivingEntity target, ComboSpec.Golpe golpe, ComboSpec spec) {
-        // Hit out of the wind-up: the punch never comes out.
-        if (!attacker.isAlive() || !Stun.canAttack(attacker) || Freeze.isFrozen(attacker)) {
+        // Hit out of the wind-up: the punch never comes out (unless it started first, see struckFirst).
+        if (!attacker.isAlive() || (!Stun.canAttack(attacker) || Freeze.isFrozen(attacker)) && !struckFirst(attacker)) {
             return false;
         }
         ServerLevel level = Combat.level(attacker);
@@ -190,6 +193,7 @@ public final class Melee {
         }
         Stamina.gain(attacker, StaminaSpec.get().ganhoAcertoPct());
         LivingEntity hit = target;
+        markHit(attacker, hit);
         com.starkinhon.battlegroundsmod.power.powers.sub.nr.NrCommon.onPunchLanded(attacker, hit);
         // Guarded: the defense already played its effects; no stun, no hitstop.
         if (Defense.blockedThisTick(hit)) {
@@ -213,6 +217,21 @@ public final class Melee {
             }
         });
         return true;
+    }
+
+    // Punch priority: two punches thrown at each other, the one that started first wins. A punch already winding up is
+    // not cut off by a punch that was thrown after it (that one still lands: they trade). A real stun still cuts it.
+    static boolean struckFirst(LivingEntity attacker) {
+        PowerData data = attacker.getData(ModAttachments.POWER);
+        long now = attacker.level().getGameTime();
+        return data.hitBySwing > data.swingStart && now - data.hitAt <= PRIORITY_WINDOW_TICKS && !Stun.real(attacker);
+    }
+
+    // Remembers on whoever a combo hit landed on when that swing had started (for struckFirst).
+    static void markHit(LivingEntity attacker, LivingEntity hit) {
+        PowerData data = hit.getData(ModAttachments.POWER);
+        data.hitBySwing = attacker.getData(ModAttachments.POWER).swingStart;
+        data.hitAt = hit.level().getGameTime();
     }
 
     // On the side of the body facing the puncher.
@@ -276,7 +295,8 @@ public final class Melee {
         float[] released = {-1};
         int[] releasedAt = {-1};
         Tasks.add(age -> {
-            if (!player.isAlive() || data.interrupts != interrupts || !Stun.canAttack(player)) {
+            // Super armor: plain punches hurt but don't cut the Forte off; only a real stun (Stun.INTERRUPT_TICKS+) does.
+            if (!player.isAlive() || data.interrupts != interrupts || Stun.real(player)) {
                 if (released[0] < 0) {
                     anim(player, "");
                 }
@@ -367,7 +387,8 @@ public final class Melee {
             anim(player, BARRAGE_POSE);
         }
         Tasks.add(age -> {
-            if (!player.isAlive() || data.interrupts != interrupts || !Stun.canAttack(player)) {
+            // Super armor, like the Forte: only a real stun cuts the Barragem off.
+            if (!player.isAlive() || data.interrupts != interrupts || Stun.real(player)) {
                 if (poses) {
                     anim(player, "");
                 }

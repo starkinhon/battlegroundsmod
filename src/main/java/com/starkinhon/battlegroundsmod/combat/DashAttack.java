@@ -8,6 +8,7 @@ import com.starkinhon.battlegroundsmod.movement.Movement;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
 import com.starkinhon.battlegroundsmod.power.Ability;
 import com.starkinhon.battlegroundsmod.power.PowerData;
+import com.starkinhon.battlegroundsmod.skill.AnimationSpec;
 import com.starkinhon.battlegroundsmod.skill.ComboSpec;
 import com.starkinhon.battlegroundsmod.skill.DashAtaqueSpec;
 
@@ -135,13 +136,18 @@ public final class DashAttack {
         ComboSpec.Golpe base = combo.golpe(step);
         DashAtaqueSpec.Golpe hit = spec.golpe();
         ComboSpec.Golpe golpe = new ComboSpec.Golpe(base.nome(), base.dano() * hit.multiplicadorDano(), hit.empurrao(), hit.subida(), 0,
-                hit.stunTicks(), hit.hitstopTicks(), hit.tremor(), base.recuperacaoTicks(), "dash", base.tempo(), base.animacao());
+                hit.stunTicks(), hit.hitstopTicks(), hit.tremor(), base.recuperacaoTicks(), "dash", onContact(base.tempo()), base.animacao());
         Melee.strike(attacker, target, step, golpe, () -> {
             ServerLevel level = Combat.level(attacker);
             Vec3 at = Combat.center(target);
             SkillSounds.play(level, spec.sons(), "golpe", 0, 0, onde -> "alvo".equals(onde) ? at : attacker.position(), List.of());
             Fx.effects(level, SKILL, false, "golpe", at, Combat.flatLook(attacker));
         });
+    }
+
+    // The slide itself was the wind-up: the hit lands the moment it reaches them, before they can swing back.
+    private static AnimationSpec.Tempo onContact(AnimationSpec.Tempo tempo) {
+        return new AnimationSpec.Tempo(0, tempo.duracaoTicks(), tempo.preparoTicks(), tempo.quedaTicks(), tempo.fracoTicks());
     }
 
     private static void stop(LivingEntity attacker, PowerData data, boolean slowDown) {

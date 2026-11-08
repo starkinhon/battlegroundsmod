@@ -64,6 +64,13 @@ public class SoulBossAI extends Goal {
     private static final int REACTION_EXPIRY = 10;
     private static final int REPATH_TICKS = 8;
     private static final int SHADOW_CHECK_TICKS = 10;
+    // A target moving more than this in one tick teleported: the boss has to notice it again.
+    private static final double TELEPORT_JUMP = 2.5;
+    // Extra ticks to notice someone who got into reach behind it.
+    private static final int BEHIND_EXTRA_TICKS = 4;
+    // Degrees per tick it turns to punch, and how squarely it must face them (cosine) to throw it.
+    private static final float PUNCH_TURN = 40;
+    private static final double PUNCH_FACING = 0.5;
     private static final ResourceLocation FAST = ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "boss_fast");
 
     private enum State { IDLE, TELL, ACTION }
@@ -99,6 +106,11 @@ public class SoulBossAI extends Goal {
     private boolean fast;
     private int paceLeft;
     private int punchCooldown;
+    // Human reaction on the punch: when the target walks, dashes or teleports into reach, the boss only punches from
+    // this game tick on (fase.reacaoTicks, more from behind). -1 while the target is out of reach.
+    private long punchReadyAt = -1;
+    private Vec3 lastTargetPos;
+    private Vec3 lastBossPos;
     // Ticks until it may use another special technique (see Percepcao.intervaloTecnicasTicks).
     private int techniqueGap;
     private int stuck;
@@ -161,6 +173,9 @@ public class SoulBossAI extends Goal {
         reaction = null;
         pressure.clear();
         decisionWait = 0;
+        punchReadyAt = -1;
+        lastTargetPos = null;
+        lastBossPos = null;
     }
 
     // ---------------------------------------------------------------- the loop
@@ -182,6 +197,7 @@ public class SoulBossAI extends Goal {
         PowerData data = boss.powerData();
         double distance = boss.distanceTo(target);
         countDown();
+        trackReach(spec, fase, distance);
         perceive(spec, fase, distance);
         if (debug && now % 5 == 0) {
             showDebug(fase, distance);
@@ -290,6 +306,38 @@ public class SoulBossAI extends Goal {
     }
 
     // ---------------------------------------------------------------- reading the target
+
+    // When the target gets into punching reach by its own move (walking in, a Dash Attack, a teleport behind it), the
+    // boss needs a human moment to notice before its first punch, and longer when it shows up behind it. Getting there
+    // by its own move (walking up, its dash, its shadow step) it knows, so it punches almost at once.
+    private void trackReach(BossSpec spec, BossSpec.Fase fase, double distance) {
+        Vec3 targetPos = target.position();
+        Vec3 bossPos = boss.position();
+        double targetMoved = lastTargetPos == null ? 0 : targetPos.distanceTo(lastTargetPos);
+        double bossMoved = lastBossPos == null ? 0 : bossPos.distanceTo(lastBossPos);
+        lastTargetPos = targetPos;
+        lastBossPos = bossPos;
+        if (distance > spec.distancias().soco() + 0.5) {
+            punchReadyAt = -1;
+            return;
+        }
+        boolean blinked = targetMoved > TELEPORT_JUMP;
+        if (punchReadyAt >= 0 && !blinked) {
+            return;
+        }
+        int delay = targetMoved >= bossMoved ? Math.max(2, fase.reacaoTicks()) : 2;
+        if (!inFront(target)) {
+            delay += BEHIND_EXTRA_TICKS;
+        }
+        punchReadyAt = now + delay;
+    }
+
+    // The target is within 90 degrees of where the boss looks.
+    private boolean inFront(LivingEntity entity) {
+        Vec3 to = entity.position().subtract(boss.position());
+        Vec3 flat = new Vec3(to.x, 0, to.z);
+        return flat.lengthSqr() < 1.0E-4 || flat.normalize().dot(Combat.flatLook(boss)) > 0;
+    }
 
     private void perceive(BossSpec spec, BossSpec.Fase fase, double distance) {
         BossSpec.Reacoes reacoes = spec.reacoes();
@@ -1054,10 +1102,16 @@ public class SoulBossAI extends Goal {
     }
 
     private boolean punch() {
-        if (punchCooldown > 0 || boss.powerData().punchDelay > 0) {
+        if (punchCooldown > 0 || boss.powerData().punchDelay > 0 || punchReadyAt < 0 || now < punchReadyAt) {
             return false;
         }
-        face(Combat.center(target), 360);
+        // Turns towards them like a fighter would, not in one tick; punches once roughly facing them.
+        face(Combat.center(target), PUNCH_TURN);
+        Vec3 to = Combat.center(target).subtract(boss.getEyePosition());
+        Vec3 flat = new Vec3(to.x, 0, to.z);
+        if (flat.lengthSqr() > 1.0E-4 && flat.normalize().dot(Combat.flatLook(boss)) < PUNCH_FACING) {
+            return false;
+        }
         if (!Melee.normalHit(boss, target)) {
             return false;
         }
@@ -1105,6 +1159,8 @@ public class SoulBossAI extends Goal {
             BossFx.shadowStep(level(), from, spot, BossFx.color(spec.intro().cor()));
             shadowCooldown = sombra.recargaTicks();
             punchCooldown = 0;
+            lastBossPos = boss.position();
+            punchReadyAt = now + 2;
             mood = Mood.CLOSE;
             thinking = "passo sombra";
             return true;
