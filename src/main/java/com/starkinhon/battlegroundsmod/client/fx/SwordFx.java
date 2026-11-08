@@ -174,11 +174,12 @@ public final class SwordFx {
                 AizenSwordRenderer.toSword(pose, true);
                 base = new Vector3f(0, 1.2f, 0);
                 tip = new Vector3f(0, 21, 0);
-            } else if (stack.getItem() instanceof com.starkinhon.battlegroundsmod.item.KokushiboSwordItem
-                    || stack.getItem() instanceof com.starkinhon.battlegroundsmod.item.KokushiboAwakenedSwordItem) {
+            } else if (stack.getItem() instanceof com.starkinhon.battlegroundsmod.item.KokushiboSwordItem) {
                 com.starkinhon.battlegroundsmod.client.outfit.KokushiboSwordRenderer.toSword(pose, true);
                 base = new Vector3f(0, com.starkinhon.battlegroundsmod.client.outfit.KokushiboSwordRenderer.BLADE_BASE, 0);
-                tip = new Vector3f(0, stack.getItem() instanceof com.starkinhon.battlegroundsmod.item.KokushiboAwakenedSwordItem
+                // the stretched sword's longer blade (H)
+                float stretch = com.starkinhon.battlegroundsmod.client.outfit.SwordStretch.tick(entity, 0);
+                tip = new Vector3f(0, stretch >= com.starkinhon.battlegroundsmod.client.outfit.SwordStretch.LENGTH * 0.4f
                         ? com.starkinhon.battlegroundsmod.client.outfit.KokushiboSwordRenderer.LONG_TIP
                         : com.starkinhon.battlegroundsmod.client.outfit.KokushiboSwordRenderer.TIP, 0);
             } else {

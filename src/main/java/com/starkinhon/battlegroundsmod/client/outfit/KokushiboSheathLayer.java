@@ -134,6 +134,32 @@ public class KokushiboSheathLayer extends RenderLayer<AbstractClientPlayer, Play
         });
         // Only a change seen as it happens: not one made while this body wasn't drawn (first person, out of view).
         boolean watching = player.tickCount - state.seen <= 2;
+        // The sword stretched (H): the sheath is eaten into the blade, and grows back when it shrinks (Stark, 2026-11-08).
+        float left = SwordStretch.sheathLeft(SwordStretch.tick(player, partialTick));
+        if (left < 1) {
+            // nothing to put away into while the sheath is gone or going
+            state.putStart = -1;
+            state.flesh = null;
+            state.leftAt = null;
+            state.out = out;
+            state.seen = player.tickCount;
+            if ((out || carrying) && left > 0 && KokushiboSwordRenderer.ready()) {
+                poseStack.pushPose();
+                try {
+                    Matrix4f rest = sheathMatrix(poseStack, 0);
+                    poseStack.last().pose().set(rest);
+                    poseStack.last().normal().set(new Matrix3f(rest).normal());
+                    if (!SwordStretch.renderSheath(left, ageInTicks / 20f, poseStack.last(), buffer, light)) {
+                        KokushiboSwordRenderer.emit(poseStack.last(), buffer, light, LivingEntityRenderer.getOverlayCoords(player, 0), false, true);
+                    }
+                } catch (RuntimeException e) {
+                    KokushiboSwordRenderer.fail(e);
+                } finally {
+                    poseStack.popPose();
+                }
+            }
+            return;
+        }
         if (out) {
             state.putStart = -1;
         } else if (state.out) {

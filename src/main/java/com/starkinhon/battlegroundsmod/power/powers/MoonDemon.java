@@ -35,12 +35,16 @@ public final class MoonDemon {
     // Between two stretches of the sword, so the key can't be spammed.
     private static final int STRETCH_COOLDOWN = 20;
 
-    private static final Ability SEVENTH = new Ability(160, 0, MoonFormSkill::seventh);
-    private static final Ability EIGHTH = new Ability(220, 0, MoonFormSkill::eighth);
-    private static final Ability NINTH = new Ability(200, 0, MoonFormSkill::ninth);
-    private static final Ability FOURTEENTH = new Ability(400, 0, MoonFormSkill::fourteenth);
+    // The awakened kit is the strong side, so it waits long (Stark, 2026-11-08): 7th 15 s, 8th 10 s, 9th 15 s, 10th as it
+    // was, 14th 30 s, 16th 40 s; and any of them locks all the others for AWAKENED_LOCK, so they can't be chained.
+    // The 14th (plain V) also gets him out of a beating, a big defence as much as an attack, as the 2nd and 5th do.
+    public static final int AWAKENED_LOCK = 30;
+    private static final Ability SEVENTH = new Ability(300, 0, MoonFormSkill::seventh);
+    private static final Ability EIGHTH = new Ability(200, 0, MoonFormSkill::eighth);
+    private static final Ability NINTH = new Ability(300, 0, MoonFormSkill::ninth);
+    private static final Ability FOURTEENTH = new Ability(600, 0, MoonFormSkill::fourteenth).asBeatenCounter();
     private static final Ability TENTH = new Ability(300, 0, MoonFormSkill::tenth);
-    private static final Ability SIXTEENTH = new Ability(400, 0, MoonFormSkill::sixteenth);
+    private static final Ability SIXTEENTH = new Ability(800, 0, MoonFormSkill::sixteenth);
 
     private MoonDemon() {
     }
@@ -78,6 +82,19 @@ public final class MoonDemon {
             case PowerData.SLOT_SHIFT_ULT -> SIXTEENTH;
             default -> normal;
         };
+    }
+
+    // After a move of his: with the sword stretched, every other skill key waits AWAKENED_LOCK (the base fighting doesn't).
+    public static void lockOthers(LivingEntity caster, Power power, int used) {
+        if (power == null || !ID.equals(power.id()) || !stretched(caster)) {
+            return;
+        }
+        PowerData data = caster.getData(ModAttachments.POWER);
+        for (int i = 0; i < data.cooldowns.length; i++) {
+            if (i != used && !PowerLogic.isBaseAttack(i)) {
+                data.cooldowns[i] = Math.max(data.cooldowns[i], AWAKENED_LOCK);
+            }
+        }
     }
 
     // The name a slot shows (the awakened form's with the sword stretched).

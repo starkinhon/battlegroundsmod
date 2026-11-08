@@ -78,12 +78,13 @@ public final class SwordStretch {
         Change change = CHANGES.get(entity.getId());
         Minecraft mc = Minecraft.getInstance();
         boolean self = entity == mc.player;
+        boolean stretched = self ? entity.getData(ModAttachments.POWER).moonSword : Sheaths.stretched(entity.getId());
         if (change == null) {
-            // his own sword: the synced state (rejoining with it stretched, say)
-            return self && entity.getData(ModAttachments.POWER).moonSword ? LENGTH : -1;
+            // the synced state (rejoining with it stretched, or someone who came into view with it stretched)
+            return stretched ? LENGTH : -1;
         }
         float t = scene(change, entity.tickCount + partial);
-        if (t < 0 || self && change.on && t >= LENGTH && !entity.getData(ModAttachments.POWER).moonSword) {
+        if (t < 0 || change.on && t >= LENGTH && !stretched) {
             CHANGES.remove(entity.getId());
             return -1;
         }
@@ -96,6 +97,67 @@ public final class SwordStretch {
             return Math.min(LENGTH, elapsed);
         }
         return elapsed >= LENGTH ? -1 : LENGTH - elapsed;
+    }
+
+    // How much of the sheath is left at that tick of the scene (Stark, 2026-11-08: one sword; stretching it, the sheath's
+    // flesh goes into the blade, so the sheath is eaten away while the blade grows, and grows back as it shrinks).
+    public static float sheathLeft(float tick) {
+        if (tick < 0) {
+            return 1;
+        }
+        return 1 - easeInOut(clamp01((tick - SHEATH_FROM) / SHEATH_TICKS));
+    }
+
+    private static final float SHEATH_FROM = 4, SHEATH_TICKS = 38;
+    private static float[] sheathPos, sheathNor;
+    private static float sheathMinY, sheathMaxY;
+
+    // The sheath being eaten: from its far end to the mouth it melts into living flesh, the part still there swells and
+    // boils at the melting edge, and what is gone is pulled into that edge. In sheath (sword) space through pose. False
+    // when it can't (then the caller draws it plain or not at all).
+    static boolean renderSheath(float left, float clock, PoseStack.Pose pose, MultiBufferSource buffer, int light) {
+        if (left <= 0.001f) {
+            return true;
+        }
+        float[] d = KokushiboSwordRenderer.saya().data();
+        int vertices = d.length / 8;
+        if (sheathPos == null) {
+            sheathPos = new float[vertices * 3];
+            sheathNor = new float[vertices * 3];
+            sheathMinY = Float.MAX_VALUE;
+            sheathMaxY = -Float.MAX_VALUE;
+            for (int v = 0; v < vertices; v++) {
+                sheathNor[v * 3] = d[v * 8 + 5];
+                sheathNor[v * 3 + 1] = d[v * 8 + 6];
+                sheathNor[v * 3 + 2] = d[v * 8 + 7];
+                sheathMinY = Math.min(sheathMinY, d[v * 8 + 1]);
+                sheathMaxY = Math.max(sheathMaxY, d[v * 8 + 1]);
+            }
+        }
+        float span = sheathMaxY - sheathMinY;
+        float front = sheathMinY + span * left;
+        // alive at once, and stays alive until it is gone
+        float flesh = clamp01((1 - left) * 5);
+        float[] p = sheathPos;
+        for (int v = 0; v < vertices; v++) {
+            float x = d[v * 8], y = d[v * 8 + 1], z = d[v * 8 + 2];
+            float near = clamp01(1 - (front - y) / 7);
+            float b = boil(y, clock);
+            float swell = 1 + flesh * near * (0.35f + 0.9f * b);
+            if (y > front) {
+                // the eaten part, gathered in a blob at the edge
+                float pinch = clamp01(1 - (y - front) / (span * 0.25f + 1));
+                y = front;
+                swell *= 0.4f + 0.6f * pinch;
+            }
+            p[v * 3] = x * swell;
+            p[v * 3 + 1] = y;
+            p[v * 3 + 2] = z * swell;
+        }
+        boolean shader = FxRenderTypes.fleshReady();
+        RenderType type = shader ? FxRenderTypes.flesh(KokushiboSwordRenderer.TEXTURE) : RenderType.entityCutoutNoCull(KokushiboSwordRenderer.TEXTURE);
+        new FleshSheathe.Out(buffer.getBuffer(type), pose, light, shader).bent(d, p, sheathNor, flesh, flesh);
+        return true;
     }
 
     public static void clear() {

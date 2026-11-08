@@ -8,11 +8,18 @@ import java.util.Set;
 public final class Sheaths {
     private static final Set<Integer> CARRYING = new HashSet<>();
     private static final Set<Integer> DRAWN = new HashSet<>();
+    // Kokushibo's who have the sword stretched (H): no sheath on the hip, the long sword in hand.
+    private static final Set<Integer> STRETCHED = new HashSet<>();
 
     private Sheaths() {
     }
 
-    public static void set(int entityId, boolean carrying, boolean drawn) {
+    public static void set(int entityId, boolean carrying, boolean drawn, boolean stretched) {
+        if (stretched) {
+            STRETCHED.add(entityId);
+        } else {
+            STRETCHED.remove(entityId);
+        }
         if (carrying) {
             CARRYING.add(entityId);
         } else {
@@ -27,6 +34,10 @@ public final class Sheaths {
 
     static boolean carrying(int entityId) {
         return CARRYING.contains(entityId);
+    }
+
+    static boolean stretched(int entityId) {
+        return STRETCHED.contains(entityId);
     }
 
     static boolean drawn(int entityId) {

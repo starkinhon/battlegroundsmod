@@ -1078,12 +1078,13 @@ public final class ModPayloads {
 
     // Server -> client: whether this player carries Kokushibo's sword in the inventory (sheath on the hip), and whether
     // it is drawn (held in combat mode) or resting in the sheath (power/PowerLogic.sheathCode).
-    public record SheathState(int entityId, boolean carrying, boolean drawn) implements CustomPacketPayload {
+    public record SheathState(int entityId, boolean carrying, boolean drawn, boolean stretched) implements CustomPacketPayload {
         public static final Type<SheathState> TYPE = payloadType("sheath_state");
         public static final StreamCodec<ByteBuf, SheathState> STREAM_CODEC = StreamCodec.composite(
                 ByteBufCodecs.VAR_INT, SheathState::entityId,
                 ByteBufCodecs.BOOL, SheathState::carrying,
                 ByteBufCodecs.BOOL, SheathState::drawn,
+                ByteBufCodecs.BOOL, SheathState::stretched,
                 SheathState::new);
 
         @Override
@@ -1299,7 +1300,7 @@ public final class ModPayloads {
         registrar.playToClient(OutfitState.TYPE, OutfitState.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.outfitState(payload.entityId(), payload.power())));
         registrar.playToClient(SheathState.TYPE, SheathState.STREAM_CODEC, (payload, context) -> context.enqueueWork(
-                () -> ClientHooks.sheathState(payload.entityId(), payload.carrying(), payload.drawn())));
+                () -> ClientHooks.sheathState(payload.entityId(), payload.carrying(), payload.drawn(), payload.stretched())));
         registrar.playToServer(ToggleOutfit.TYPE, ToggleOutfit.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer player) {
                 player.getData(ModAttachments.POWER).outfit = payload.on();
