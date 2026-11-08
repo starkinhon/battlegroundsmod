@@ -10,6 +10,7 @@ import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 
@@ -86,6 +87,10 @@ public class KokushiboSwordRenderer extends BlockEntityWithoutLevelRenderer {
         return katana;
     }
 
+    static MeshModel katanaLong() {
+        return katanaLong;
+    }
+
     static MeshModel saya() {
         return saya;
     }
@@ -121,7 +126,18 @@ public class KokushiboSwordRenderer extends BlockEntityWithoutLevelRenderer {
                 poseStack.translate(0.5f, 0.5f, 0.5f);
                 toSwordSpace(poseStack, awakened ? 0.39f : 0.45f, ((awakened ? LONG_TIP : TIP) + BUTT) / 2);
             }
-            if (awakened) {
+            // Kokushibo's own sword in his hand while H has it stretched (SwordStretch): changing, or long at rest.
+            LivingEntity holder = SwordStretch.holder();
+            float stretch = !awakened && holder != null && (firstPerson || thirdPerson)
+                    ? SwordStretch.tick(holder, Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false)) : -1;
+            if (stretch >= SwordStretch.LENGTH) {
+                katanaLong.emit(buffer.getBuffer(RenderType.entityCutoutNoCull(TEXTURE)), poseStack.last(), light, overlay);
+            } else if (stretch >= 0) {
+                float clock = (holder.tickCount + Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false)) / 20f;
+                if (!SwordStretch.render(stretch, clock, poseStack.last(), buffer, light)) {
+                    katanaLong.emit(buffer.getBuffer(RenderType.entityCutoutNoCull(TEXTURE)), poseStack.last(), light, overlay);
+                }
+            } else if (awakened) {
                 katanaLong.emit(buffer.getBuffer(RenderType.entityCutoutNoCull(TEXTURE)), poseStack.last(), light, overlay);
             } else {
                 emit(poseStack.last(), buffer, light, overlay, true, false);

@@ -13,11 +13,16 @@ import com.starkinhon.battlegroundsmod.power.powers.kokushibo.MoonFormSkill;
 import com.starkinhon.battlegroundsmod.power.powers.kokushibo.YoruNoMiya;
 import com.starkinhon.battlegroundsmod.power.powers.sub.SubCommon;
 
+import com.starkinhon.battlegroundsmod.combat.SwordArts;
+import com.starkinhon.battlegroundsmod.network.ModPayloads;
+
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 // O Demonio da Lua (Kokushibo), Moon Breathing. Kit (Stark, 2026-11-07): Z, X, C and B the 1st, 2nd, 3rd and 5th Forms,
 // V the 6th (the last form of the standard kit, the biggest and most destructive). All five look exactly as the pages Stark
@@ -118,5 +123,9 @@ public final class MoonDemon {
         player.displayClientMessage(Component.translatable("message.battlegroundsmod.moon_sword." + (data.moonSword ? "on" : "off"))
                 .withStyle(s -> s.withColor(data.moonSword ? 0xC9A2FF : 0xE8C26A)), true);
         PowerLogic.sync(player);
+        // the sword out of the sheath, so everyone sees it stretch (or shrink back) in his hand
+        PowerLogic.enterCombat(player);
+        PacketDistributor.sendToPlayersTrackingEntityAndSelf(player, new ModPayloads.SwordFx(SwordArts.FX_MOON_STRETCH, player.getId(),
+                player.position(), Vec3.ZERO, data.moonSword ? 1 : 0, 0));
     }
 }

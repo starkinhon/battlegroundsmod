@@ -213,8 +213,10 @@ public final class MoonFormSkill {
             if (form == 16) {
                 craters(t, budget);
             }
-            // 3rd (Stark): the cut also lands on anyone between him and it, so someone close in still gets hit
-            boolean fan = form == 3;
+            // Every form but the 6th and the 16th (Stark, 2026-11-07/08): a cut also lands on anyone between him and it,
+            // so someone close in still gets hit. The 6th stays as it was (Stark: it is fine as it is); the 16th's cuts
+            // fall from the sky on the targets it homes on, they are not swung out from him.
+            boolean fan = form != 6 && form != 16;
             Vec3 chest = caster.position().add(0, caster.getBbHeight() * 0.55, 0);
             for (int k = 0; k < fr.ribbons().size(); k++) {
                 MoonForms.Ribbon rb = fr.ribbons().get(k);
@@ -288,6 +290,10 @@ public final class MoonFormSkill {
             }
             if (!any) {
                 return List.of();
+            }
+            if (form != 16) {
+                // the area between him and the cuts is hit too (see tick), so whoever stands next to him counts
+                grow(lo, hi, caster.position().add(0, caster.getBbHeight() * 0.55, 0), 3);
             }
             net.minecraft.world.phys.AABB box = new net.minecraft.world.phys.AABB(lo[0] - 2, lo[1] - 2, lo[2] - 2, hi[0] + 2, hi[1] + 2, hi[2] + 2);
             return level.getEntitiesOfClass(LivingEntity.class, box, e -> Combat.isTarget(e, caster));
