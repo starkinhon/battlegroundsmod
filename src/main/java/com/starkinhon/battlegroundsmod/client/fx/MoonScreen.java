@@ -226,17 +226,11 @@ public final class MoonScreen {
                 shock(s, .45, 1.1, .6, 0, 0, 24);
             }
             case 8 -> {
-                // letterbox, slow motion, the screen itself cut in two along the huge cut, then the slam
+                // letterbox, slow motion, then the slam (no screen cut in two: Stark, 2026-11-08)
                 win(s, LETTER, 0, 1.7, 1, .12, .45);
                 win(s, GRADE, 0, 1.9, .45, .08, .7);
                 win(s, VIG, 0, 1.9, .5, .08, .7);
                 imp(s, .10, "PP", 1.5, 2.8, 16);
-                at(s, K.SPLIT, .30, e -> {
-                    e.life = .7;
-                    e.ang = -.12;
-                    e.off = .03;
-                    e.at = new double[] {1.5, 2.8, 16};
-                });
                 slam(s, .60, 1.1, "INIL", new double[] {1.5, 2.8, 16});
                 flash(s, .60, LILAC, .45, .3);
                 lines(s, .58, 1.0, .8, 1.5, 2.8, 16);

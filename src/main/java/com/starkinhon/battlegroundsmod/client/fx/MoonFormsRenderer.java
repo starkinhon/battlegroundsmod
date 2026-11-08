@@ -54,7 +54,8 @@ public final class MoonFormsRenderer {
     }
 
     // form: + 100 at the full moon (more moons left hanging, bigger and for longer).
-    public static void receive(int code, Vec3 feet, Vec3 look, int seed, int casterId) {
+    // impact: the Awakened Moon's screen script and slow motion (off: as before them, MoonImpactRule).
+    public static void receive(int code, Vec3 feet, Vec3 look, int seed, int casterId, boolean impact) {
         boolean full = code >= 100;
         int form = code % 100;
         MoonForms.Basis basis = MoonForms.basis(form, feet, look);
@@ -77,8 +78,8 @@ public final class MoonFormsRenderer {
         Minecraft mc = Minecraft.getInstance();
         boolean awakened = MoonForms.awakened(form);
         double born = ScreenFx.now();
-        MoonTime clock = awakened ? MoonTime.of(form, shape) : MoonTime.plain(shape.end);
-        MoonScreen.Show screen = awakened
+        MoonTime clock = awakened && impact ? MoonTime.of(form, shape) : MoonTime.plain(shape.end);
+        MoonScreen.Show screen = awakened && impact
                 ? MoonScreen.start(form, shape, basis, clock, born, feet, mc.player != null && mc.player.getId() == casterId)
                 : null;
         CASTS.add(new Cast(shape, basis, born, clock, screen));
@@ -87,9 +88,10 @@ public final class MoonFormsRenderer {
         }
         // The pages open with a flash and a shake (stronger for the bigger forms); the awakened ones have their own
         // screen script (MoonScreen).
-        if (!awakened && mc.player != null && mc.player.position().distanceTo(feet) < IMPACT_VIEW) {
-            float shake = form == 6 ? 1.0f : form == 3 ? 0.9f : 0.7f;
-            ScreenFx.flash(0xFFE2A0, 0.18f, 5);
+        // (with the new impact off, the awakened ones open as they did before it)
+        if (screen == null && mc.player != null && mc.player.position().distanceTo(feet) < IMPACT_VIEW * (awakened ? 2 : 1)) {
+            float shake = awakened ? 1.1f : form == 6 ? 1.0f : form == 3 ? 0.9f : 0.7f;
+            ScreenFx.flash(awakened ? 0xD8C0FF : 0xFFE2A0, 0.18f, 5);
             ScreenFx.radialBlur(feet.add(0, 1.5, 0), 0.3f, 8);
             com.starkinhon.battlegroundsmod.client.ScreenShake.start(shake, 12);
         }

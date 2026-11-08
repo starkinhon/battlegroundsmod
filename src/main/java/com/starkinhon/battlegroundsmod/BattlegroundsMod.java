@@ -51,11 +51,13 @@ public class BattlegroundsMod {
 
         BossRules.init();
         BlockRules.init();
+        com.starkinhon.battlegroundsmod.power.powers.kokushibo.MoonImpactRule.init();
         PowerEvents.register();
         FightRod.register();
         SoulCommand.addSubcommand(BossCommand::bossbar);
         SoulCommand.addSubcommand(BossCommand::boss);
         SoulCommand.addSubcommand(com.starkinhon.battlegroundsmod.command.StaminaCommand::build);
+        SoulCommand.addSubcommand(com.starkinhon.battlegroundsmod.power.powers.kokushibo.MoonImpactRule::command);
         NeoForge.EVENT_BUS.addListener(SoulCommand::register);
     }
 
