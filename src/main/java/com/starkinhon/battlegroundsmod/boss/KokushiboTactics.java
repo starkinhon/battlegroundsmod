@@ -198,6 +198,16 @@ final class KokushiboTactics extends TacticsBase {
         if (enemies >= 2) {
             BossFalas.say(boss, "fala.battlegroundsmod.kokushibo.dois", 2400);
         }
+        // Stark's (2026-11-08): the night falls on the fight; they keep landing hits on him; they are holding their own.
+        if (night) {
+            BossFalas.say(boss, "fala.battlegroundsmod.kokushibo.amanhecer", 6000);
+        }
+        if (ai.pressure() >= 3) {
+            BossFalas.say(boss, "fala.battlegroundsmod.kokushibo.dificil", 1800);
+        }
+        if (myLife <= 0.85 && theirLife >= 0.7) {
+            BossFalas.say(boss, "fala.battlegroundsmod.kokushibo.trezentos", 6000);
+        }
     }
 
     @Override
