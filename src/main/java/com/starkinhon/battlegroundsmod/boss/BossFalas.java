@@ -117,6 +117,10 @@ public final class BossFalas {
         if (target != null && target.isAlive()) {
             if (state.fightStart < 0 || now - state.lastTarget > FIGHT_END) {
                 state.fightStart = now;
+                // Kokushibo opens every fight with a line (Stark).
+                if ("moon_demon".equals(boss.powerData().power)) {
+                    sayNow(boss, "fala.battlegroundsmod.kokushibo.inicio");
+                }
             }
             state.lastTarget = now;
         } else if (now - state.lastTarget > FIGHT_END) {
