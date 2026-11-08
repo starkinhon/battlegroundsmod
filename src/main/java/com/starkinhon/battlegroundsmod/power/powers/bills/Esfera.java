@@ -81,10 +81,10 @@ public final class Esfera {
         LivingEntity victim = target;
         // Out of the hakai ball (or any trap) first: one grab at a time (it blows up on them before the trip).
         com.starkinhon.battlegroundsmod.combat.Capture.take(victim);
-        com.starkinhon.battlegroundsmod.combat.Capture.grabbed(victim, caster, end);
         int tp = spec.tpTick();
         int blast = spec.blastTick();
         int end = spec.endTick();
+        com.starkinhon.battlegroundsmod.combat.Capture.grabbed(victim, caster, end);
         // Laid out from where he stands and faces now, the same way on the clients.
         Vec3 forward = Vec3.directionFromRotation(0, caster.getYRot());
         Vec3 home = caster.position();

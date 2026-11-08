@@ -65,13 +65,11 @@ public final class AzulFlash {
         BlackFlashSpec spec = BlackFlashSpec.get(awakened);
         BlackFlashSpec.Puxar puxar = spec.puxar();
         BlackFlashSpec.Golpe golpe = spec.golpe();
-        LivingEntity target = caster instanceof Mob mob && mob.getTarget() != null && mob.getTarget().isAlive() ? mob.getTarget()
+        LivingEntity aimed = caster instanceof Mob mob && mob.getTarget() != null && mob.getTarget().isAlive() ? mob.getTarget()
                 : Combat.raycastTarget(caster, puxar.alcanceAlvo());
         // Not someone in another's cutscene (untouchable) or kept by another's domain: the Kokushibo boss went limp and
         // fell through his own awakening scene, pulled by a Gojo (Stark, 2026-11-08).
-        if (target != null && (!Combat.isTarget(target, caster) || !Capture.canGrab(caster, target))) {
-            target = null;
-        }
+        LivingEntity target = aimed != null && Combat.isTarget(aimed, caster) && Capture.canGrab(caster, aimed) ? aimed : null;
         if (target == null || target.distanceTo(caster) > puxar.alcanceAlvo() + 2) {
             if (caster instanceof ServerPlayer player) {
                 player.displayClientMessage(Component.translatable("message.battlegroundsmod.azul_flash_no_target"), true);
