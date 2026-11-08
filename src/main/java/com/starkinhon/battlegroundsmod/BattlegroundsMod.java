@@ -59,6 +59,7 @@ public class BattlegroundsMod {
         SoulCommand.addSubcommand(BossCommand::boss);
         SoulCommand.addSubcommand(com.starkinhon.battlegroundsmod.command.StaminaCommand::build);
         SoulCommand.addSubcommand(com.starkinhon.battlegroundsmod.power.powers.kokushibo.MoonImpactRule::command);
+        SoulCommand.addSubcommand(com.starkinhon.battlegroundsmod.domain.MalevolentShrine::command);
         NeoForge.EVENT_BUS.addListener(SoulCommand::register);
     }
 
