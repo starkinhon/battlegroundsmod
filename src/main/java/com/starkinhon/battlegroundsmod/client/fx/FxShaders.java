@@ -30,6 +30,8 @@ public final class FxShaders {
     static ShaderInstance moon3d;
     static ShaderInstance flesh;
     static ShaderInstance voidFlash;
+    // The procedural smoke particles (SmokeParticle); without it they just don't draw.
+    static ShaderInstance smoke;
 
     private static Boolean irisPresent;
 
@@ -47,6 +49,12 @@ public final class FxShaders {
             register(event, "fx_moonscreen", DefaultVertexFormat.POSITION, s -> moonScreen = s);
         } catch (Exception e) {
             BattlegroundsMod.LOGGER.error("Could not load the Awakened Moon screen shader", e);
+        }
+        // On its own: a problem here only hides the smoke, never the other effects.
+        try {
+            register(event, "souls_smoke", DefaultVertexFormat.NEW_ENTITY, s -> smoke = s);
+        } catch (Exception e) {
+            BattlegroundsMod.LOGGER.error("Could not load the smoke shader", e);
         }
         // On its own, so a problem here never takes the other effects down (the Gojo's Expansão de 0,2 s just won't show).
         try {

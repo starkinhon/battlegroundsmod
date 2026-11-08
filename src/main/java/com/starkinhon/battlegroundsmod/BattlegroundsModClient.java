@@ -19,6 +19,7 @@ import com.starkinhon.battlegroundsmod.client.fx.FxWorld;
 import com.starkinhon.battlegroundsmod.client.fx.MeteorRenderer;
 import com.starkinhon.battlegroundsmod.client.fx.ScreenFx;
 import com.starkinhon.battlegroundsmod.client.fx.SkillEffects;
+import com.starkinhon.battlegroundsmod.client.fx.SmokeParticle;
 import com.starkinhon.battlegroundsmod.client.fx.SoulParticle;
 import com.starkinhon.battlegroundsmod.fx.ModParticles;
 import com.starkinhon.battlegroundsmod.client.Keybinds;
@@ -188,6 +189,7 @@ public class BattlegroundsModClient {
                 ModParticles.PUFF, ModParticles.STREAK, ModParticles.FIST, ModParticles.RING)) {
             event.registerSpriteSet(type.get(), SoulParticle.Provider::new);
         }
+        event.registerSpecial(ModParticles.SMOKE_FX.get(), new SmokeParticle.Provider());
     }
 
     private static void onClientTickPre(ClientTickEvent.Pre event) {

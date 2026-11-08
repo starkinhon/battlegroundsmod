@@ -10,4 +10,6 @@ public class MovementData {
     public long lastMoveAt = Long.MIN_VALUE / 2;
     // When the teleport to the target (double tap of the sprint key) is ready again.
     public long teleportReadyAt = 0;
+    // Flat direction of the last dash on the ground while its dust trail runs (server), else null.
+    public net.minecraft.world.phys.Vec3 trailDir;
 }

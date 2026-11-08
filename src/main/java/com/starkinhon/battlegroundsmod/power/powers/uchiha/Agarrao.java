@@ -16,6 +16,7 @@ import com.starkinhon.battlegroundsmod.combat.SkillSounds;
 import com.starkinhon.battlegroundsmod.combat.Stun;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
 import com.starkinhon.battlegroundsmod.fx.ModParticles;
+import com.starkinhon.battlegroundsmod.fx.Smoke;
 import com.starkinhon.battlegroundsmod.fx.SoulParticleOptions;
 import com.starkinhon.battlegroundsmod.movement.Movement;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
@@ -344,12 +345,9 @@ public final class Agarrao {
         if (!rastro.ativa()) {
             return;
         }
-        int color = rgb(rastro.corFumaca(), 0x2A2633);
-        RandomSource random = level.getRandom();
-        for (int i = 0; i < rastro.fumacaSumir(); i++) {
-            Vec3 at = caster.position().add(random.nextGaussian() * 0.3, 0.2 + random.nextDouble() * caster.getBbHeight(), random.nextGaussian() * 0.3);
-            Vec3 velocity = new Vec3(random.nextGaussian() * 0.05, 0.02, random.nextGaussian() * 0.05);
-            Fx.moving(level, ModParticles.puff(color, 0.25f + random.nextFloat() * 0.3f, 8 + random.nextInt(8), 0.9f), at, velocity);
+        if (rastro.fumacaSumir() > 0) {
+            // Procedural shadow smoke: the body is drawn dark and the rim takes Madara's red.
+            Smoke.puff(level, caster.position(), 0xD12F2F, caster.getBbHeight(), false);
         }
     }
 
@@ -367,10 +365,9 @@ public final class Agarrao {
             Vec3 at = from.add(dir.scale(step * i / count)).add(random.nextGaussian() * 0.12, (random.nextDouble() - 0.5) * 0.9, random.nextGaussian() * 0.12);
             Fx.moving(level, ModParticles.streak(color, 1.1f, 6 + random.nextInt(3)), at, back.scale(0.15));
         }
-        Vec3 feet = caster.position().add(0, 0.1, 0);
+        Vec3 feet = caster.position();
         for (int i = 0; i < 2; i++) {
-            Fx.moving(level, ModParticles.puff(0xD8D2C4, 0.3f + random.nextFloat() * 0.2f, 8, 0.85f), feet,
-                    back.scale(0.1).add(random.nextGaussian() * 0.05, 0.03, random.nextGaussian() * 0.05));
+            Smoke.feetDust(level, feet, back.scale(0.1).add(random.nextGaussian() * 0.05, 0.03, random.nextGaussian() * 0.05));
         }
     }
 
@@ -381,15 +378,7 @@ public final class Agarrao {
         AgarraoSpec.Onda onda = impacto.onda();
         if (onda != null && onda.ativa()) {
             int color = rgb(onda.cor(), 0xB8A58A);
-            int points = 48;
-            for (double y : new double[] {0.15, 0.6}) {
-                for (int i = 0; i < points; i++) {
-                    double angle = i * Math.PI * 2 / points;
-                    Vec3 out = new Vec3(Math.cos(angle), 0, Math.sin(angle));
-                    Fx.moving(level, ModParticles.puff(color, 0.35f + random.nextFloat() * 0.2f, 10 + random.nextInt(6), 0.93f),
-                            pos.add(out.scale(0.6)).add(0, y, 0), out.scale(onda.velocidade()));
-                }
-            }
+            Smoke.groundWave(level, pos, color, onda.velocidade());
         }
         double radius = spec.esmagar().raioCratera();
         for (int i = 0; i < impacto.poeira(); i++) {

@@ -38,6 +38,9 @@ public final class ModParticles {
     public static final Supplier<ParticleType<SoulParticleOptions>> FIST = PARTICLE_TYPES.register("fist", ModParticles::type);
     // A circle outline that grows from nothing to its size while it lives: wind rings and impact waves.
     public static final Supplier<ParticleType<SoulParticleOptions>> RING = PARTICLE_TYPES.register("ring", ModParticles::type);
+    // Procedural smoke drawn by a shader (client/fx/SmokeParticle): billows, ground dust, wind lines, shadow smoke,
+    // sparks and marks on the ground. The generic smoke and puffs below are drawn with it.
+    public static final Supplier<ParticleType<SmokeOptions>> SMOKE_FX = PARTICLE_TYPES.register("smoke_fx", ModParticles::smokeType);
 
     // Thread safe: these helpers run on the server thread (bosses, skills) and on the client thread (effects) at the
     // same time in single player. A plain RandomSource.create() crashes with "Accessing LegacyRandomSource from multiple threads".
@@ -61,6 +64,29 @@ public final class ModParticles {
                 return streamCodec;
             }
         };
+    }
+
+    private static ParticleType<SmokeOptions> smokeType() {
+        return new ParticleType<>(true) {
+            private final MapCodec<SmokeOptions> codec = SmokeOptions.codec(this);
+            private final StreamCodec<RegistryFriendlyByteBuf, SmokeOptions> streamCodec = SmokeOptions.streamCodec(this);
+
+            @Override
+            public MapCodec<SmokeOptions> codec() {
+                return codec;
+            }
+
+            @Override
+            public StreamCodec<? super RegistryFriendlyByteBuf, SmokeOptions> streamCodec() {
+                return streamCodec;
+            }
+        };
+    }
+
+    // One procedural smoke particle (see SmokeOptions for what each number does).
+    public static SmokeOptions fx(int style, int color, float alpha, float size, float grow, int lifetime, float friction, float gravity,
+            float flat, float stretch) {
+        return new SmokeOptions(SMOKE_FX.get(), style, color, alpha, size, grow, lifetime, friction, gravity, flat, stretch);
     }
 
     // Vanilla particle lifetime and size, as the Forja draws them.
@@ -91,22 +117,25 @@ public final class ModParticles {
         return new SoulParticleOptions(DUST.get(), shade(color), baseQuad() * 0.75f * scale, lifetime, friction, 0);
     }
 
-    public static SoulParticleOptions smoke() {
-        int gray = (int) (RANDOM.nextFloat() * 0.3f * 255);
-        return new SoulParticleOptions(SMOKE.get(), gray << 16 | gray << 8 | gray, baseQuad() * 0.75f * 2.5f, (int) (vanillaLife() * 2.5f), 0.96f, -0.1f);
+    // Dark smoke that rises: thick procedural billow, lit from above.
+    public static SmokeOptions smoke() {
+        int gray = (int) ((0.12f + RANDOM.nextFloat() * 0.22f) * 255);
+        return fx(SmokeOptions.BILLOW, gray << 16 | gray << 8 | gray, 0.85f, baseQuad() * 0.75f * 2.5f * 1.25f, 0.6f, (int) (vanillaLife() * 2.5f),
+                0.96f, -0.1f, 1, 0);
     }
 
     // Smoke of a chosen color and size (half the width in blocks) that drifts up slowly: fire smoke, vanishing.
-    public static SoulParticleOptions smoke(int color, float size, int lifetime) {
-        return new SoulParticleOptions(SMOKE.get(), color, size, lifetime, 0.94f, -0.02f);
+    public static SmokeOptions smoke(int color, float size, int lifetime) {
+        return fx(SmokeOptions.BILLOW, color, 0.85f, size * 1.25f, 0.6f, lifetime, 0.94f, -0.02f, 1, 0);
     }
 
     public static SoulParticleOptions lava() {
         return new SoulParticleOptions(LAVA.get(), 0xFFFFFF, baseQuad() * (RANDOM.nextFloat() * 2 + 0.2f), (int) (16 / (RANDOM.nextFloat() * 0.8f + 0.2f)), 0.999f, 0.75f);
     }
 
-    public static SoulParticleOptions puff(int color, float size, int lifetime, float friction) {
-        return new SoulParticleOptions(PUFF.get(), color, size, lifetime, friction, 0);
+    // Soft cloud puff (dust, wind, smoke) tinted by the color: billows out and tears apart as it fades.
+    public static SmokeOptions puff(int color, float size, int lifetime, float friction) {
+        return fx(SmokeOptions.BILLOW, color, 0.85f, size * 1.25f, 0.6f, lifetime, friction, 0, 1, 0);
     }
 
     public static SoulParticleOptions streak(int color, float halfLength, int lifetime) {
