@@ -95,6 +95,31 @@ public final class FalaRender {
         captured = true;
     }
 
+    // A world point on the GUI screen of the last frame: {x, y, GUI pixels per block there}, or null when it is behind the
+    // camera or the frame isn't known yet (FormKanji uses it too).
+    static float[] toScreen(GuiGraphics graphics, Vec3 at) {
+        if (!captured) {
+            return null;
+        }
+        Vector4f view = new Vector4f((float) (at.x - camera.x), (float) (at.y - camera.y), (float) (at.z - camera.z), 1);
+        VIEW.transform(view);
+        float depth = -view.z;
+        if (depth <= 0.1f) {
+            return null;
+        }
+        Vector4f clip = new Vector4f(view);
+        PROJ.transform(clip);
+        if (clip.w <= 0.05f) {
+            return null;
+        }
+        int w = graphics.guiWidth(), h = graphics.guiHeight();
+        return new float[] {(clip.x / clip.w * 0.5f + 0.5f) * w, (1 - (clip.y / clip.w * 0.5f + 0.5f)) * h, PROJ.m11() * h / 2f / depth};
+    }
+
+    static Vec3 camera() {
+        return camera;
+    }
+
     // The screen layer (under the HUD, over the world and every effect).
     public static void renderGui(GuiGraphics graphics, DeltaTracker deltaTracker) {
         Minecraft mc = Minecraft.getInstance();

@@ -118,6 +118,7 @@ public final class MoonFormSkill {
         PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, gold);
         SubCommon.pose(caster, SwordArts.QUICK_DRAW);
         SubCommon.busy(caster, form == 5 ? 14 : 10);
+        com.starkinhon.battlegroundsmod.boss.BossFalas.formName(caster, form);
         Vec3 feet = caster.position();
         Vec3 look = caster.getLookAngle();
         int seed = 1 + SubCommon.RANDOM.nextInt(999_999);

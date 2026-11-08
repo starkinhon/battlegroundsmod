@@ -1,0 +1,5 @@
+Shippori Mincho ExtraBold (subset with only the glyphs of Kokushibo's form names)
+Copyright 2020 The Shippori Mincho Project Authors (https://github.com/fontdasu/ShipporiMincho)
+
+This Font Software is licensed under the SIL Open Font License, Version 1.1.
+The full license text is available at https://openfontlicense.org

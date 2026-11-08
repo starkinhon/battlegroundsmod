@@ -93,9 +93,15 @@ public final class SwordFx {
             case WAVE -> WAVES.add(new Wave(pos, unit(dir), a, b, color, now));
             case COLOR -> COLORS.put(entityId, color);
             case GLINT -> GLINTS.add(new Glint(entityId, now));
-            case MOON -> MoonSlashRenderer.receive(pos, dir, (int) a);
+            case MOON -> {
+                MoonSlashRenderer.receive(pos, dir, (int) a);
+                com.starkinhon.battlegroundsmod.client.FormKanji.cast(entityId, 1);
+            }
             case MOON_HIT -> MoonSlashRenderer.hit(pos);
-            case MOON_FORM -> MoonFormsRenderer.receive((int) b, pos, dir, (int) a);
+            case MOON_FORM -> {
+                MoonFormsRenderer.receive((int) b, pos, dir, (int) a);
+                com.starkinhon.battlegroundsmod.client.FormKanji.cast(entityId, (int) b % 100);
+            }
             case MOON_TARGET -> MoonFormsRenderer.target((int) a, (int) b, entityId);
             case MOON_STRETCH -> com.starkinhon.battlegroundsmod.client.outfit.SwordStretch.set(entityId, a > 0.5f);
             default -> {
