@@ -29,10 +29,7 @@ public final class OniBody {
     // playable), regeneration (share of max health per second).
     private static final double[] STATS = {1.0, 1.5, 1.75, 0.85};
     private static final double[] SPEED = {1.0, 1.15, 1.25, 0.9};
-    // (Stark, 2026-11-08: the night healing was too fast, cut in half; the day's stays.)
-    private static final double[] REGEN = {0.015, 0.015, 0.02, 0.005};
-    // Night vision at night (Stark, 2026-11-08), kept topped up while it lasts.
-    private static final int NIGHT_VISION = 300;
+    private static final double[] REGEN = {0.015, 0.03, 0.04, 0.005};
     // How long a sword or a destruction hit stops him healing (ticks).
     private static final int REGEN_CUT = 100;
 
@@ -76,7 +73,8 @@ public final class OniBody {
         int phase = oni ? phase(entity) : NORMAL;
         float fraction = entity.getHealth() / Math.max(1, entity.getMaxHealth());
         // The boss keeps the life of his file (Stark: 1000) at night too; the rest of the night's strength he gets.
-        boolean healthChanged = set(entity, Attributes.MAX_HEALTH, HEALTH, entity instanceof net.minecraft.world.entity.player.Player ? STATS[phase] - 1 : 0);
+        boolean healthChanged = set(entity, Attributes.MAX_HEALTH, HEALTH,
+                entity instanceof net.minecraft.world.entity.player.Player ? STATS[phase] - 1 : 0);
         set(entity, Attributes.ARMOR, ARMOR, STATS[phase] - 1);
         set(entity, Attributes.ATTACK_DAMAGE, STRENGTH, STATS[phase] - 1);
         set(entity, Attributes.MOVEMENT_SPEED, SPEED_ID, SPEED[phase] - 1);
@@ -85,13 +83,6 @@ public final class OniBody {
         }
         if (!oni) {
             return;
-        }
-        if (entity instanceof ServerPlayer && (phase == NIGHT || phase == FULL_MOON)) {
-            net.minecraft.world.effect.MobEffectInstance vision = entity.getEffect(net.minecraft.world.effect.MobEffects.NIGHT_VISION);
-            if (vision == null || vision.getDuration() < NIGHT_VISION - 100) {
-                entity.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.NIGHT_VISION, NIGHT_VISION, 0,
-                        true, false, false));
-            }
         }
         PowerData data = entity.getData(ModAttachments.POWER);
         long now = entity.level().getGameTime();
