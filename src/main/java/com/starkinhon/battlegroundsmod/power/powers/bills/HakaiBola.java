@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.function.Function;
 
 import com.starkinhon.battlegroundsmod.ModAttachments;
+import com.starkinhon.battlegroundsmod.combat.Capture;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Destructible;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
@@ -69,6 +70,10 @@ public final class HakaiBola {
         int interrupts = data.interrupts;
         int[] caught = {-1};
         Destructible.Attack[] attack = {null};
+        boolean[] over = {false};
+        Runnable[] release = {() -> {
+        }};
+        Runnable[] breaker = {null};
         Tasks.add(age -> {
             if (age < raise) {
                 // The sphere grows over his raised hand; taken out before it is done, it fades.
@@ -87,6 +92,12 @@ public final class HakaiBola {
                 Fx.effects(level, SKILL, awakened, "lancar", pos[0], Combat.center(target).subtract(pos[0]).normalize());
             }
             if (attack[0].gone()) {
+                // Erased (a hakaizinho): whoever was inside is let go.
+                if (caught[0] >= 0 && !over[0]) {
+                    over[0] = true;
+                    Capture.untrap(target, breaker[0]);
+                    release[0].run();
+                }
                 return true;
             }
             int t = age - raise;
@@ -108,40 +119,75 @@ public final class HakaiBola {
                 pos[0] = pos[0].add(velocity[0]);
                 attack[0].move(pos[0]);
                 send(level, id, 0, pos[0], -1, (float) radius, awakened);
-                if (Combat.center(target).distanceTo(pos[0]) <= radius * bola.pegar()) {
+                // Someone in another's cutscene (untouchable) or kept by another's domain is not caught: it goes on after them.
+                if (Combat.center(target).distanceTo(pos[0]) <= radius * bola.pegar() && Combat.isTarget(target, caster)
+                        && Capture.canGrab(caster, target)) {
                     caught[0] = t;
-                    trap(caster, target, pos[0], trapTicks);
+                    // The ball is a trap, not a grab: one held by another grab (Agarrão, Bop) is taken from it.
+                    Capture.take(target);
+                    release[0] = trap(caster, target, pos[0], trapTicks);
+                    Capture.trap(target, breaker[0]);
+                    Capture.grabbed(target, caster, trapTicks);
                     SkillSounds.play(level, spec.sons(), "prender", 0, trapTicks, where, screen);
                     Fx.effects(level, SKILL, awakened, "prender", target, trapTicks);
                 }
                 return false;
             }
+            if (over[0]) {
+                // Already ended by a grab that took the target (Capture.take).
+                return true;
+            }
             // Trapped: the ball stays put with them inside, hit after hit, until it blows up.
             int k = t - caught[0];
-            send(level, id, 1, pos[0], target.getId(), (float) radius, awakened);
-            if (k > 0 && k % every == 0 && k < trapTicks && target.isAlive()) {
-                Combat.hurt(caster, target, prisao.dano());
-                Fx.effects(level, SKILL, awakened, "dano", Combat.center(target), Vec3.ZERO);
-            }
-            if (k >= trapTicks || !target.isAlive()) {
-                explode(caster, level, spec, pos[0]);
-                SkillSounds.play(level, spec.sons(), "explosao", 0, 0, onde -> pos[0], screen);
-                Fx.effects(level, SKILL, awakened, "explosao", pos[0], Vec3.ZERO);
+            if (!caster.isAlive()) {
+                // Bills is gone: his ball fades with him and lets them go.
+                Capture.untrap(target, breaker[0]);
+                over[0] = true;
+                release[0].run();
+                Fx.effects(level, SKILL, awakened, "sumir", pos[0], Vec3.ZERO);
                 send(level, id, 2, pos[0], -1, 0, awakened);
                 attack[0].end();
                 return true;
             }
+            boolean inside = target.isAlive() && Combat.center(target).distanceTo(pos[0]) <= radius * 1.2;
+            if (k >= trapTicks || !inside) {
+                // Its time is up, they died, or something took them out of it: it blows up now, where it is.
+                Capture.untrap(target, breaker[0]);
+                breaker[0].run();
+                return true;
+            }
+            send(level, id, 1, pos[0], target.getId(), (float) radius, awakened);
+            if (k > 0 && k % every == 0) {
+                Combat.hurt(caster, target, prisao.dano());
+                Fx.effects(level, SKILL, awakened, "dano", Combat.center(target), Vec3.ZERO);
+            }
             return false;
         });
+        // Ends the trap at once: the blast where the ball is, and the target let go (by its own end or a grab taking them).
+        breaker[0] = () -> {
+            if (over[0]) {
+                return;
+            }
+            over[0] = true;
+            release[0].run();
+            explode(caster, level, spec, pos[0]);
+            SkillSounds.play(level, spec.sons(), "explosao", 0, 0, onde -> pos[0], screen);
+            Fx.effects(level, SKILL, awakened, "explosao", pos[0], Vec3.ZERO);
+            send(level, id, 2, pos[0], -1, 0, awakened);
+            if (attack[0] != null) {
+                attack[0].end();
+            }
+        };
         return true;
     }
 
-    // Held in the middle of the sphere, no moves, for the whole trap.
-    private static void trap(LivingEntity caster, LivingEntity target, Vec3 center, int ticks) {
+    // Held in the middle of the sphere, no moves, for the whole trap. Returns what lets them go.
+    private static Runnable trap(LivingEntity caster, LivingEntity target, Vec3 center, int ticks) {
         Vec3 feet = center.subtract(0, target.getBbHeight() / 2, 0);
-        Freeze.hold(target, ticks, age -> feet);
+        Runnable release = Freeze.hold(target, ticks, age -> feet);
         Stun.apply(target, ticks);
         PowerLogic.seal(target, ticks);
+        return release;
     }
 
     private static void explode(LivingEntity caster, ServerLevel level, HakaiBolaSpec spec, Vec3 at) {

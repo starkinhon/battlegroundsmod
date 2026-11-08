@@ -50,8 +50,6 @@ public final class CutscenePlayer {
     private static Vec3 targetStart;
     private static Vec3 casterLast = Vec3.ZERO;
     private static Vec3 targetLast;
-    private static CameraType previousCameraType = CameraType.FIRST_PERSON;
-    private static boolean previousHideGui;
     // Worked out with the camera each frame, for the roll and zoom events that come after it.
     private static double frameWeight;
     private static double frameRoll;
@@ -84,8 +82,7 @@ public final class CutscenePlayer {
         }
         Entity targetEntity = target >= 0 && target != caster ? minecraft.level.getEntity(target) : null;
         if (data == null) {
-            previousCameraType = minecraft.options.getCameraType();
-            previousHideGui = minecraft.options.hideGui;
+            com.starkinhon.battlegroundsmod.client.CutsceneCamera.begin("player");
         }
         data = next;
         skill = skillId;
@@ -101,11 +98,6 @@ public final class CutscenePlayer {
         PUSHED.clear();
         apply(minecraft, 0);
         return true;
-    }
-
-    // The camera to go back to at the end, when another cutscene already changed it before this one started.
-    public static void restoreTo(CameraType cameraType) {
-        previousCameraType = cameraType;
     }
 
     public static boolean active() {
@@ -144,10 +136,10 @@ public final class CutscenePlayer {
     // Third person (so the player's own body is drawn) and no HUD while the camera is the cutscene's.
     private static void apply(Minecraft minecraft, double t) {
         boolean filming = weight(t) > 0 || weight(t + 1) > 0;
-        minecraft.options.setCameraType(filming ? CameraType.THIRD_PERSON_BACK : previousCameraType);
+        minecraft.options.setCameraType(filming ? CameraType.THIRD_PERSON_BACK : com.starkinhon.battlegroundsmod.client.CutsceneCamera.savedType());
         hudHidden = !cameraOnly && filming && data.hideHud();
         if (!cameraOnly) {
-            minecraft.options.hideGui = filming && data.hideHud() || previousHideGui;
+            minecraft.options.hideGui = filming && data.hideHud() || com.starkinhon.battlegroundsmod.client.CutsceneCamera.savedHideGui();
         }
     }
 
@@ -163,10 +155,7 @@ public final class CutscenePlayer {
         targetId = -1;
         frameWeight = 0;
         hudHidden = false;
-        minecraft.options.setCameraType(previousCameraType);
-        if (!cameraOnly) {
-            minecraft.options.hideGui = previousHideGui;
-        }
+        com.starkinhon.battlegroundsmod.client.CutsceneCamera.end("player");
     }
 
     public static void onMovementInput(MovementInputUpdateEvent event) {

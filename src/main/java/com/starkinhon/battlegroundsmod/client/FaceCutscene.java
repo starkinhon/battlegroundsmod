@@ -18,8 +18,6 @@ public final class FaceCutscene {
     private static int entityId = -1;
     private static CutsceneSpec spec;
     private static int age;
-    private static CameraType previousCameraType = CameraType.FIRST_PERSON;
-    private static boolean previousHideGui;
 
     private FaceCutscene() {
     }
@@ -27,8 +25,7 @@ public final class FaceCutscene {
     public static void start(int id, CutsceneSpec cutscene) {
         Minecraft minecraft = Minecraft.getInstance();
         if (entityId < 0) {
-            previousCameraType = minecraft.options.getCameraType();
-            previousHideGui = minecraft.options.hideGui;
+            CutsceneCamera.begin("face");
         }
         entityId = id;
         spec = cutscene;
@@ -58,8 +55,7 @@ public final class FaceCutscene {
 
     private static void stop(Minecraft minecraft) {
         entityId = -1;
-        minecraft.options.setCameraType(previousCameraType);
-        minecraft.options.hideGui = previousHideGui;
+        CutsceneCamera.end("face");
     }
 
     public static void onMovementInput(MovementInputUpdateEvent event) {

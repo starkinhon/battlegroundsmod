@@ -64,6 +64,12 @@ public final class Esfera {
             }
             return false;
         }
+        if (!com.starkinhon.battlegroundsmod.combat.Capture.canGrab(caster, target)) {
+            if (caster instanceof ServerPlayer player) {
+                player.displayClientMessage(Component.translatable("message.battlegroundsmod.no_target"), true);
+            }
+            return false;
+        }
         if (!Stamina.stunnable(target)) {
             // Only a stunned (or exhausted) target can be taken to space: told on screen, nothing spent.
             if (caster instanceof ServerPlayer player) {
@@ -73,9 +79,12 @@ public final class Esfera {
             return false;
         }
         LivingEntity victim = target;
+        // Out of the hakai ball (or any trap) first: one grab at a time (it blows up on them before the trip).
+        com.starkinhon.battlegroundsmod.combat.Capture.take(victim);
         int tp = spec.tpTick();
         int blast = spec.blastTick();
         int end = spec.endTick();
+        com.starkinhon.battlegroundsmod.combat.Capture.grabbed(victim, caster, end);
         // Laid out from where he stands and faces now, the same way on the clients.
         Vec3 forward = Vec3.directionFromRotation(0, caster.getYRot());
         Vec3 home = caster.position();
@@ -97,7 +106,7 @@ public final class Esfera {
         Freeze.hold(victim, end - 1, age -> age < moveUp ? stood : top);
         if (spec.cutscene().intangivel()) {
             Intangible.hold(caster, end);
-            Intangible.hold(victim, end);
+            Intangible.holdExcept(victim, end, caster);
         }
         List<ServerPlayer> screen = new ArrayList<>();
         if (caster instanceof ServerPlayer player) {

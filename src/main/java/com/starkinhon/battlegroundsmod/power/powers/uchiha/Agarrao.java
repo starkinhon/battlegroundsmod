@@ -8,6 +8,7 @@ import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.boss.BossSpec;
 import com.starkinhon.battlegroundsmod.boss.SoulBoss;
 import com.starkinhon.battlegroundsmod.combat.BlockRules;
+import com.starkinhon.battlegroundsmod.combat.Capture;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.combat.Fx;
@@ -127,7 +128,8 @@ public final class Agarrao {
 
     // The first one along this stretch of the dash, the locked target first.
     private static LivingEntity caught(ServerLevel level, LivingEntity caster, Vec3 from, Vec3 to, double radius, LivingEntity locked) {
-        List<LivingEntity> hits = Combat.alongLine(level, from, to, radius, caster);
+        List<LivingEntity> hits = new java.util.ArrayList<>(Combat.alongLine(level, from, to, radius, caster));
+        hits.removeIf(e -> !Capture.canGrab(caster, e));
         if (locked != null && hits.contains(locked)) {
             return locked;
         }
@@ -188,6 +190,8 @@ public final class Agarrao {
     private static void grab(LivingEntity caster, LivingEntity target, ServerLevel level, AgarraoSpec spec, boolean awakened, PowerData data) {
         reappear(caster, level, spec);
         Fx.effects(level, SKILL, awakened, "olhosDesligar", caster, 0);
+        // Out of the hakai ball (or any trap) first: one grab at a time.
+        Capture.take(target);
         AgarraoSpec.Agarrar agarrar = spec.agarrar();
         AgarraoSpec.Esmagar esmagar = spec.esmagar();
         int lift = Math.max(0, agarrar.levantarTicks());
@@ -241,10 +245,12 @@ public final class Agarrao {
         Stun.apply(target, impact + Math.max(0, esmagar.presoTicks()));
         // Whatever the target was charging is cut off, and no skill (not even a counter) until they get out of the hole.
         PowerLogic.seal(target, impact + Math.max(0, esmagar.presoTicks()));
+        Capture.grabbed(target, caster, impact + Math.max(0, esmagar.presoTicks()));
         if (spec.cutscene().intangivel()) {
             int ticks = impact + Math.max(0, spec.cutscene().depoisTicks());
             Intangible.hold(caster, ticks);
-            Intangible.hold(target, ticks);
+            // Untouchable to everyone but Madara: his own grip and slam still hurt.
+            Intangible.holdExcept(target, ticks, caster);
         }
         if (spec.cutscene().ativa()) {
             for (ServerPlayer player : screens(caster, target)) {

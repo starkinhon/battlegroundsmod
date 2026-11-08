@@ -24,8 +24,6 @@ public final class HakaiCutscene {
     private static int targetId = -1;
     private static HakaiSpec spec;
     private static int age;
-    private static CameraType previousCameraType = CameraType.FIRST_PERSON;
-    private static boolean previousHideGui;
     // Where the target last was: the shot on it stays put after its body is gone.
     private static Vec3 lastTarget = Vec3.ZERO;
 
@@ -40,8 +38,7 @@ public final class HakaiCutscene {
             return;
         }
         if (casterId < 0) {
-            previousCameraType = minecraft.options.getCameraType();
-            previousHideGui = minecraft.options.hideGui;
+            CutsceneCamera.begin("hakai");
         }
         casterId = caster;
         targetId = target;
@@ -76,8 +73,7 @@ public final class HakaiCutscene {
     private static void stop(Minecraft minecraft) {
         casterId = -1;
         targetId = -1;
-        minecraft.options.setCameraType(previousCameraType);
-        minecraft.options.hideGui = previousHideGui;
+        CutsceneCamera.end("hakai");
     }
 
     public static void onMovementInput(MovementInputUpdateEvent event) {

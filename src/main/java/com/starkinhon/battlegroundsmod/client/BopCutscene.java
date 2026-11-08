@@ -29,8 +29,6 @@ public final class BopCutscene {
     private static Vec3 forward = new Vec3(0, 0, 1);
     private static double top;
     private static Vec3 landed;
-    private static CameraType previousCameraType = CameraType.FIRST_PERSON;
-    private static boolean previousHideGui;
 
     private BopCutscene() {
     }
@@ -44,8 +42,7 @@ public final class BopCutscene {
             return;
         }
         if (casterId < 0) {
-            previousCameraType = minecraft.options.getCameraType();
-            previousHideGui = minecraft.options.hideGui;
+            CutsceneCamera.begin("bop");
         }
         casterId = caster;
         targetId = target;
@@ -87,8 +84,7 @@ public final class BopCutscene {
     private static void stop(Minecraft minecraft) {
         casterId = -1;
         targetId = -1;
-        minecraft.options.setCameraType(previousCameraType);
-        minecraft.options.hideGui = previousHideGui;
+        CutsceneCamera.end("bop");
     }
 
     public static void onMovementInput(MovementInputUpdateEvent event) {

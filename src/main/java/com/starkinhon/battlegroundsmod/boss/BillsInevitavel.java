@@ -64,7 +64,8 @@ public final class BillsInevitavel {
         if (target instanceof Player player && (player.isCreative() || player.isSpectator())) {
             return false;
         }
-        return target.isAlive() && !target.isRemoved() && !Intangible.untouchable(target);
+        return target.isAlive() && !target.isRemoved() && !Intangible.untouchable(target)
+                && com.starkinhon.battlegroundsmod.combat.Capture.canGrab(bills, target);
     }
 
     // Starts the scene on Bills' target if it is beneath him: true when it started.
@@ -100,6 +101,8 @@ public final class BillsInevitavel {
         Hakai.face(target, bills);
         Fx.sound(level, spot, SoundEvents.ENDERMAN_TELEPORT, 0.8f, 0.5f);
 
+        // Out of the hakai ball (or any trap) first: one grab at a time.
+        com.starkinhon.battlegroundsmod.combat.Capture.take(target);
         // Both stand still for the whole thing; they can't do anything, not even a counter, and nothing touches either.
         data.busyTicks = total;
         Freeze.hold(bills, total);

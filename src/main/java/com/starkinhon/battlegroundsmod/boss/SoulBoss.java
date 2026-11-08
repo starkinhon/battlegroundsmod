@@ -209,7 +209,10 @@ public abstract class SoulBoss extends Monster {
         boolean bossfight = bossfight();
         bossEvent.setVisible(bossfight);
         int want = spec.faseFor(getHealth() / getMaxHealth());
-        if (bossfight && want > phase && isAlive()) {
+        // A new phase (and its scene) waits until nobody's move has the boss (held, in a cutscene, in a trap): the Kokushibo
+        // used to awaken while a Gojo pulled him, and his scene broke (Stark, 2026-11-08). Its life stops at the phase's
+        // line meanwhile (phaseFloor).
+        if (bossfight && want > phase && isAlive() && sceneFree()) {
             phase = want;
             startPhase(level, spec.fase(phase));
         }
@@ -284,8 +287,10 @@ public abstract class SoulBoss extends Monster {
     }
 
     private void startPhase(ServerLevel level, BossSpec.Fase fase) {
-        // A new phase shakes off slows and stuns.
+        // A new phase shakes off slows and stuns, and any hold or seal left on it.
         removeAllEffects();
+        Freeze.freeAll(this);
+        powerData().sealedUntil = 0;
         // A boss with a scene of its own for this phase (Kokushibo stretching his sword) plays it and shows the title itself.
         int scene = phaseScene(level, phase);
         stage(scene > 0 ? scene : fase.transicaoTicks(), true);
@@ -331,9 +336,32 @@ public abstract class SoulBoss extends Monster {
         super.setHealth(health);
     }
 
+    // Free for its phase scene: no move of anyone's holds it (Freeze), keeps it in a cutscene (Intangible) or a trap.
+    protected boolean sceneFree() {
+        return !Freeze.isFrozen(this) && !com.starkinhon.battlegroundsmod.combat.Intangible.is(this)
+                && !com.starkinhon.battlegroundsmod.combat.Capture.trapped(this);
+    }
+
+    // The life (as a fraction) it can't drop under right now, -1 for none: the next phase's line, while that phase has to
+    // wait for the boss to be free (sceneFree). Damage that bypasses everything (the Hakai) still goes through.
+    protected float phaseFloor() {
+        if (!bossfight() || sceneFree()) {
+            return -1;
+        }
+        BossSpec spec = spec();
+        if (phase + 1 >= spec.fases().size()) {
+            return -1;
+        }
+        return (float) spec.fase(phase + 1).comecaEm();
+    }
+
     @Override
     public boolean hurt(DamageSource source, float amount) {
         lethalBypass = source.is(DamageTypeTags.BYPASSES_INVULNERABILITY);
+        float floor = lethalBypass || level().isClientSide() ? -1 : phaseFloor();
+        if (floor > 0) {
+            amount = Math.max(0, Math.min(amount, getHealth() - floor * getMaxHealth()));
+        }
         boolean hurt = super.hurt(source, amount);
         lethalBypass = false;
         if (hurt && ai != null && source.getEntity() instanceof LivingEntity attacker) {

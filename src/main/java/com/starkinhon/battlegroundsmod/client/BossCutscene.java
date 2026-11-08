@@ -20,8 +20,6 @@ public final class BossCutscene {
     private static int backTicks;
     private static Vec3 lookAt = Vec3.ZERO;
     private static int age;
-    private static CameraType previousCameraType = CameraType.FIRST_PERSON;
-    private static boolean previousHideGui;
 
     private BossCutscene() {
     }
@@ -29,8 +27,7 @@ public final class BossCutscene {
     public static void start(int id, int zoom, int sky, int back, Vec3 skyPoint) {
         Minecraft minecraft = Minecraft.getInstance();
         if (entityId < 0) {
-            previousCameraType = minecraft.options.getCameraType();
-            previousHideGui = minecraft.options.hideGui;
+            CutsceneCamera.begin("boss");
         }
         entityId = id;
         zoomTicks = Math.max(1, zoom);
@@ -53,8 +50,7 @@ public final class BossCutscene {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level == null || ++age >= zoomTicks + skyTicks + backTicks || minecraft.level.getEntity(entityId) == null) {
             entityId = -1;
-            minecraft.options.setCameraType(previousCameraType);
-            minecraft.options.hideGui = previousHideGui;
+            CutsceneCamera.end("boss");
             return;
         }
         minecraft.options.setCameraType(CameraType.THIRD_PERSON_BACK);

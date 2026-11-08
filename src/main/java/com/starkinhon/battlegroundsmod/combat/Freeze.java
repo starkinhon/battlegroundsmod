@@ -1,7 +1,9 @@
 package com.starkinhon.battlegroundsmod.combat;
 
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.IntFunction;
 
@@ -16,16 +18,49 @@ import net.minecraft.world.phys.Vec3;
 // Mobs get their AI switched off; players are put back in place every tick. Attacks and item use are blocked in
 // PowerEvents, skills in PowerLogic.
 public final class Freeze {
+    // One hold on an entity: whose move made it (Tasks.owner()), where it keeps them, and how long it has run.
+    private static final class Grip {
+        final Entity owner;
+        final IntFunction<Vec3> anchor;
+        final boolean lookFree;
+        final float startYaw;
+        final float startPitch;
+        // Set by place: where this hold keeps them, over its own anchor.
+        Vec3 at;
+        int age;
+        boolean done;
+
+        Grip(Entity owner, IntFunction<Vec3> anchor, boolean lookFree, float startYaw, float startPitch) {
+            this.owner = owner;
+            this.anchor = anchor;
+            this.lookFree = lookFree;
+            this.startYaw = startYaw;
+            this.startPitch = startPitch;
+        }
+    }
+
+    // Every hold an entity is under. Only the newest one moves them (two moves holding the same target used to pull it
+    // to two places every tick: it shook between them, and the longer one pulled it back at the end, Stark 2026-11-08).
     private static final class Hold {
-        int count;
+        final List<Grip> grips = new ArrayList<>();
         boolean hadNoAi;
         // Set by face: the way they are kept looking, over the one each hold started with.
         float faceYaw = Float.NaN;
         float facePitch;
-        // Set by place: where they are kept, over the anchor each hold started with.
-        Vec3 at;
-        // Kept in place but free to look around (holdLookFree). Any plain hold on top locks the look again.
-        boolean lookFree = true;
+
+        Grip top() {
+            return grips.isEmpty() ? null : grips.get(grips.size() - 1);
+        }
+
+        // Kept in place but free to look around (holdLookFree) only while every hold on them is that kind.
+        boolean lookFree() {
+            for (Grip grip : grips) {
+                if (!grip.lookFree) {
+                    return false;
+                }
+            }
+            return true;
+        }
     }
 
     private static final Map<Entity, Hold> HELD = new HashMap<>();
@@ -37,49 +72,53 @@ public final class Freeze {
         return HELD.containsKey(entity);
     }
 
-    public static void hold(LivingEntity entity, int ticks) {
+    // Each hold returns the action that ends it (only it: the entity's other holds go on).
+    public static Runnable hold(LivingEntity entity, int ticks) {
         Vec3 pos = entity.position();
-        hold(entity, ticks, age -> pos);
+        return hold(entity, ticks, age -> pos);
     }
 
     // Same, but the entity is kept at anchor(age) each tick instead of where it stood (used to carry someone around).
-    public static void hold(LivingEntity entity, int ticks, IntFunction<Vec3> anchor) {
-        hold(entity, ticks, anchor, false);
+    public static Runnable hold(LivingEntity entity, int ticks, IntFunction<Vec3> anchor) {
+        return hold(entity, ticks, anchor, false);
     }
 
     // Same as hold, but the camera stays free: they can't walk, jump, attack or use skills, yet can turn and look around
     // (like Madara's Katon). Turning changes nothing for the move, which aims by positions, not by where they look.
-    public static void holdLookFree(LivingEntity entity, int ticks) {
+    public static Runnable holdLookFree(LivingEntity entity, int ticks) {
         Vec3 pos = entity.position();
-        hold(entity, ticks, age -> pos, true);
+        return hold(entity, ticks, age -> pos, true);
     }
 
-    private static void hold(LivingEntity entity, int ticks, IntFunction<Vec3> anchor, boolean lookFree) {
+    private static Runnable hold(LivingEntity entity, int ticks, IntFunction<Vec3> anchor, boolean lookFree) {
         if (ticks <= 0) {
-            return;
+            return () -> {
+            };
         }
         Hold hold = HELD.computeIfAbsent(entity, e -> new Hold());
-        if (!lookFree) {
-            hold.lookFree = false;
-        }
-        if (hold.count++ == 0 && entity instanceof Mob mob) {
+        if (hold.grips.isEmpty() && entity instanceof Mob mob) {
             hold.hadNoAi = mob.isNoAi();
             mob.setNoAi(true);
         }
-        float startYaw = entity.getYRot();
-        float startPitch = entity.getXRot();
+        Grip grip = new Grip(Tasks.owner(), anchor, lookFree, entity.getYRot(), entity.getXRot());
+        hold.grips.add(grip);
         Tasks.addSystem(age -> {
-            if (HELD.get(entity) != hold) {
-                // Let go early (free).
+            if (grip.done) {
+                // Let go early (free, or its own release).
                 return true;
             }
+            grip.age = age;
             if (age >= ticks || !entity.isAlive() || entity.isRemoved()) {
-                release(entity);
+                release(entity, grip);
                 return true;
+            }
+            if (HELD.get(entity) != hold || hold.top() != grip) {
+                // A newer hold has them: it is the one that moves them.
+                return false;
             }
             entity.setDeltaMovement(Vec3.ZERO);
-            Vec3 pos = hold.at != null ? hold.at : anchor.apply(age);
-            if (hold.lookFree) {
+            Vec3 pos = grip.at != null ? grip.at : anchor.apply(age);
+            if (hold.lookFree()) {
                 // Only the position is put back; the rotation is sent as relative zero so the camera is never yanked.
                 if (entity.position().distanceToSqr(pos) > 1.0E-4) {
                     if (entity instanceof ServerPlayer player) {
@@ -92,8 +131,8 @@ public final class Freeze {
                 return false;
             }
             boolean faced = !Float.isNaN(hold.faceYaw);
-            float yRot = faced ? hold.faceYaw : startYaw;
-            float xRot = faced ? hold.facePitch : startPitch;
+            float yRot = faced ? hold.faceYaw : grip.startYaw;
+            float xRot = faced ? hold.facePitch : grip.startPitch;
             boolean moved = entity.position().distanceToSqr(pos) > 1.0E-4 || entity.getYRot() != yRot || entity.getXRot() != xRot;
             if (moved) {
                 if (entity instanceof ServerPlayer player) {
@@ -105,6 +144,7 @@ public final class Freeze {
             entity.hurtMarked = true;
             return false;
         });
+        return () -> release(entity, grip);
     }
 
     // Moves a player without touching the camera. Vanilla's relative teleport sends (yaw - current yaw) and also sets the
@@ -131,13 +171,24 @@ public final class Freeze {
         }
     }
 
-    // Puts someone held still at pos looking this way, and keeps them there while the hold lasts.
+    // Puts someone held still at pos looking this way, and keeps them there while the hold lasts: the holds of whoever is
+    // moving them (Tasks.owner()), or the newest one if none is theirs.
     public static void place(LivingEntity entity, Vec3 pos, float yaw, float pitch) {
         Hold hold = HELD.get(entity);
         if (hold != null) {
-            hold.at = pos;
+            Entity owner = Tasks.owner();
+            boolean mine = false;
+            for (Grip grip : hold.grips) {
+                if (owner != null && grip.owner == owner) {
+                    grip.at = pos;
+                    mine = true;
+                }
+            }
+            if (!mine && hold.top() != null) {
+                hold.top().at = pos;
+            }
         }
-        if (hold != null && hold.lookFree && entity instanceof ServerPlayer player) {
+        if (hold != null && hold.lookFree() && entity instanceof ServerPlayer player) {
             // Free look: move them, but leave the camera where they are pointing it.
             lookFreeTeleport(player, pos);
             return;
@@ -150,17 +201,37 @@ public final class Freeze {
         face(entity, yaw, pitch);
     }
 
-    // Lets someone go right away, whatever holds they still have.
+    // Lets go of the holds the move running now made on entity (Tasks.owner(); holds of no known owner go too), right
+    // away. Holds someone else's move has on them go on: a skill ending used to drop the target out of another one's
+    // grab in mid-air (Stark 2026-11-08). With no known owner running, every hold goes.
     public static void free(Entity entity) {
-        Hold hold = HELD.remove(entity);
-        if (hold != null && entity instanceof Mob mob) {
-            mob.setNoAi(hold.hadNoAi);
+        Hold hold = HELD.get(entity);
+        if (hold == null) {
+            return;
+        }
+        Entity owner = Tasks.owner();
+        for (Grip grip : new ArrayList<>(hold.grips)) {
+            if (owner == null || grip.owner == null || grip.owner == owner) {
+                release(entity, grip);
+            }
         }
     }
 
-    private static void release(Entity entity) {
+    // Lets go of every hold on entity, whoever made it (a boss's new phase, a cutscene that takes over).
+    public static void freeAll(Entity entity) {
         Hold hold = HELD.get(entity);
-        if (hold == null || --hold.count > 0) {
+        if (hold == null) {
+            return;
+        }
+        for (Grip grip : new ArrayList<>(hold.grips)) {
+            release(entity, grip);
+        }
+    }
+
+    private static void release(Entity entity, Grip grip) {
+        grip.done = true;
+        Hold hold = HELD.get(entity);
+        if (hold == null || !hold.grips.remove(grip) || !hold.grips.isEmpty()) {
             return;
         }
         HELD.remove(entity);
