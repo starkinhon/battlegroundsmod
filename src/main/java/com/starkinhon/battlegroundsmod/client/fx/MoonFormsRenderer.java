@@ -23,7 +23,8 @@ import net.minecraft.world.phys.Vec3;
 // (forja/kokushibo-formas/moon3d.html): every frame the pages' script (power/powers/kokushibo/MoonForms, the same on the
 // server, so the hits and the carving match what is seen) says where each cut, moon and sparkle is, and this lays them
 // out in the world, the cuts as strips and the moons and sparkles as billboards, through the pages' own shader
-// (souls_moon3d). Back to front, see-through, no bloom: the same on a bright sky, at night or in a cave.
+// (souls_moon3d). Back to front, see-through, no bloom: the same on a bright sky, at night or in a cave. The awakened
+// forms (7th, 8th, 9th, 10th, 14th, 16th: the stretched sword) are drawn the same way in their own colours.
 public final class MoonFormsRenderer {
     private static final int MAX = 6;
     private static final double IMPACT_VIEW = 48;
@@ -32,24 +33,55 @@ public final class MoonFormsRenderer {
     }
 
     private static final List<Cast> CASTS = new ArrayList<>();
+    // The 16th Form's targets, told just before the form itself: seed -> entity ids, in order.
+    private static final java.util.Map<Integer, List<Integer>> TARGETS = new java.util.HashMap<>();
 
     private MoonFormsRenderer() {
     }
 
-    // form: + 10 at the full moon (more moons left hanging, bigger and for longer).
+    // One of the 16th Form's targets (index: its place in the order the server picked them).
+    public static void target(int seed, int index, int entityId) {
+        List<Integer> ids = TARGETS.computeIfAbsent(seed, k -> new ArrayList<>());
+        while (ids.size() <= index) {
+            ids.add(-1);
+        }
+        ids.set(index, entityId);
+        while (TARGETS.size() > 8) {
+            TARGETS.remove(TARGETS.keySet().iterator().next());
+        }
+    }
+
+    // form: + 100 at the full moon (more moons left hanging, bigger and for longer).
     public static void receive(int code, Vec3 feet, Vec3 look, int seed) {
-        boolean full = code >= 10;
-        int form = code % 10;
+        boolean full = code >= 100;
+        int form = code % 100;
         MoonForms.Basis basis = MoonForms.basis(form, feet, look);
-        CASTS.add(new Cast(MoonForms.create(form, seed, full), basis, ScreenFx.now()));
+        MoonForms.Form shape;
+        if (form == 16) {
+            // homing: the cuts follow the very entities the server is cutting
+            List<Integer> ids = TARGETS.remove(seed);
+            List<Integer> list = ids == null ? List.of() : ids;
+            net.minecraft.client.multiplayer.ClientLevel level = Minecraft.getInstance().level;
+            double[][] start = new double[list.size()][];
+            net.minecraft.world.entity.Entity[] ents = new net.minecraft.world.entity.Entity[list.size()];
+            for (int i = 0; i < list.size(); i++) {
+                ents[i] = level == null ? null : level.getEntity(list.get(i));
+                start[i] = ents[i] != null ? basis.local(ents[i].position()) : new double[] {0, 0, 20};
+            }
+            shape = MoonForms.create16(seed, full, start, i -> ents[i] != null && ents[i].isAlive() ? basis.local(ents[i].position()) : null);
+        } else {
+            shape = MoonForms.create(form, seed, full);
+        }
+        CASTS.add(new Cast(shape, basis, ScreenFx.now()));
         while (CASTS.size() > MAX) {
             CASTS.remove(0);
         }
         // The pages open with a flash and a shake (stronger for the bigger forms).
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player != null && mc.player.position().distanceTo(feet) < IMPACT_VIEW) {
-            float shake = form == 6 ? 1.0f : form == 3 ? 0.9f : 0.7f;
-            ScreenFx.flash(0xFFE2A0, 0.18f, 5);
+        boolean awakened = MoonForms.awakened(form);
+        if (mc.player != null && mc.player.position().distanceTo(feet) < IMPACT_VIEW * (awakened ? 2 : 1)) {
+            float shake = awakened ? 1.1f : form == 6 ? 1.0f : form == 3 ? 0.9f : 0.7f;
+            ScreenFx.flash(awakened ? 0xD8C0FF : 0xFFE2A0, 0.18f, 5);
             ScreenFx.radialBlur(feet.add(0, 1.5, 0), 0.3f, 8);
             com.starkinhon.battlegroundsmod.client.ScreenShake.start(shake, 12);
         }
@@ -76,8 +108,10 @@ public final class MoonFormsRenderer {
             double t = Math.max(0, (now - c.born()) / 20.0);
             MoonForms.Frame fr = c.form().frame(t);
             MoonForms.Basis b = c.basis();
+            // the awakened colours are the same kinds of piece, three further up (see souls_moon3d)
+            int pal = c.form().pal ? 3 * 4096 : 0;
             for (MoonForms.Ribbon rb : fr.ribbons()) {
-                ribbon(out, b, rb, camera);
+                ribbon(out, b, rb, camera, pal);
             }
             for (MoonForms.Moon m : fr.moons()) {
                 Vec3 p = b.world(m.p()).subtract(camera);
@@ -86,21 +120,21 @@ public final class MoonFormsRenderer {
                 if (rot < 0) {
                     rot += Math.PI * 2;
                 }
-                int d = 4096 + (m.idx() & 4095), e = (int) Math.round(rot * 1000);
+                int d = pal + 4096 + (m.idx() & 4095), e = (int) Math.round(rot * 1000);
                 float cr = (float) m.thin(), cg = (float) m.a(), cb = (float) m.diss(), ca = (float) ((m.cut() - 0.9) / 0.2);
                 billboard(out, p, right, upv, h, 1.3f, cr, cg, cb, ca, d, e);
             }
             for (MoonForms.Spark s : fr.sparks()) {
                 Vec3 p = b.world(s.p()).subtract(camera);
-                billboard(out, p, right, upv, s.z() * 4, 4f, (float) (s.a() / 1.5), 0, 0, 0, 8192, 0);
+                billboard(out, p, right, upv, s.z() * 4, 4f, (float) (s.a() / 1.5), 0, 0, 0, pal + 8192, 0);
             }
         }
     }
 
-    private static void ribbon(VertexConsumer out, MoonForms.Basis b, MoonForms.Ribbon rb, Vec3 camera) {
+    private static void ribbon(VertexConsumer out, MoonForms.Basis b, MoonForms.Ribbon rb, Vec3 camera, int pal) {
         int n = rb.p.length - 1;
         double w = rb.hw * 2.2;
-        int d = (int) Math.round(rb.seed * 100) & 4095, e = (int) Math.min(32000, Math.round(rb.len * 100));
+        int d = pal + ((int) Math.round(rb.seed * 100) & 4095), e = (int) Math.min(32000, Math.round(rb.len * 100));
         float cr = (float) (rb.head / 1.2), cg = (float) rb.tail, cb = (float) rb.bandA, ca = rb.shape / 3f;
         Vec3 prevP = b.world(rb.p[0]).subtract(camera), prevA = b.dir(rb.a[0]).scale(w);
         for (int i = 0; i < n; i++) {

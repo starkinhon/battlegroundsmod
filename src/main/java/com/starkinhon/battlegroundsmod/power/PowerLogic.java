@@ -56,6 +56,11 @@ public final class PowerLogic {
         };
     }
 
+    // The move a fighter's key runs right now: as above, but Kokushibo's keys change with his sword stretched (MoonDemon).
+    public static Ability ability(LivingEntity caster, Power power, int slot) {
+        return com.starkinhon.battlegroundsmod.power.powers.MoonDemon.swap(caster, power, slot, ability(power, slot));
+    }
+
     public static void tryUse(ServerPlayer player, int slot) {
         PowerData data = player.getData(ModAttachments.POWER);
         Power power = Powers.get(data.power);
@@ -99,7 +104,7 @@ public final class PowerLogic {
             player.displayClientMessage(Component.translatable("message.battlegroundsmod.stamina_exhausted"), true);
             return;
         }
-        Ability ability = ability(power, slot);
+        Ability ability = ability(player, power, slot);
         boolean ultimate = PowerData.isUlt(slot);
         // Creative mode skips the costs so moves can be recorded freely.
         boolean free = player.isCreative() || data.noCooldown;
@@ -133,7 +138,7 @@ public final class PowerLogic {
     // Being hit (stun, Cooldown effect) blocks every move but a counter (a beaten counter only out of punches, not a real stun).
     private static boolean canCast(LivingEntity caster, PowerData data, int slot) {
         Power power = Powers.get(data.power);
-        Ability ability = power == null ? null : ability(power, slot);
+        Ability ability = power == null ? null : ability(caster, power, slot);
         if (ability == null) {
             return false;
         }
@@ -186,7 +191,7 @@ public final class PowerLogic {
         // In combat mode before the move runs, so the move starts with everything that comes with it already on (the
         // aura, Kokushibo's sword out of the sheath on the first frame, the ult bar). Bosses come through here too.
         enterCombat(caster);
-        if (!ability(power, slot).action().use(caster, level)) {
+        if (!ability(caster, power, slot).action().use(caster, level)) {
             return false;
         }
         data.lastCastSlot = slot;

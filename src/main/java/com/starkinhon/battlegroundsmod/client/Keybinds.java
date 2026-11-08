@@ -34,9 +34,12 @@ public final class Keybinds {
     public static final KeyMapping SKILLS_MENU = key("skills_menu", GLFW.GLFW_KEY_U);
     // Turns combat mode on (it stays on until pressed again) or off. K is free in vanilla and in the mod.
     public static final KeyMapping TOGGLE_COMBAT = key("toggle_combat", GLFW.GLFW_KEY_K);
+    // Kokushibo: stretches his sword (the awakened forms on Z, X, C, B and V, the 16th on Shift + V) or brings it back.
+    // H is free in vanilla and in the mod.
+    public static final KeyMapping STRETCH_SWORD = key("stretch_sword", GLFW.GLFW_KEY_H);
 
     public static final List<KeyMapping> ALL = List.of(ABILITIES.get(0), ABILITIES.get(1), ABILITIES.get(2), ABILITIES.get(3),
-            EXTRA_ABILITY, CYCLE_ATTACK, USE_ATTACK, GUARD, DASH, SKILLS_MENU, TOGGLE_COMBAT);
+            EXTRA_ABILITY, CYCLE_ATTACK, USE_ATTACK, GUARD, DASH, SKILLS_MENU, TOGGLE_COMBAT, STRETCH_SWORD);
 
     private Keybinds() {
     }
@@ -102,6 +105,11 @@ public final class Keybinds {
         while (TOGGLE_COMBAT.consumeClick()) {
             if (hasPower) {
                 PacketDistributor.sendToServer(new ModPayloads.ToggleCombat());
+            }
+        }
+        while (STRETCH_SWORD.consumeClick()) {
+            if (hasPower) {
+                PacketDistributor.sendToServer(new ModPayloads.StretchSword());
             }
         }
         while (CYCLE_ATTACK.consumeClick()) {

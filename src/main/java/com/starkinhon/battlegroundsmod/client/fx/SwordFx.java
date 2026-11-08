@@ -45,6 +45,7 @@ public final class SwordFx {
     public static final int MOON = SwordArts.FX_MOON;
     public static final int MOON_HIT = SwordArts.FX_MOON_HIT;
     public static final int MOON_FORM = SwordArts.FX_MOON_FORM;
+    public static final int MOON_TARGET = SwordArts.FX_MOON_TARGET;
 
     // How long the trail lasts behind the blade, in ticks.
     private static final float TRAIL_TICKS = 3.2f;
@@ -94,6 +95,7 @@ public final class SwordFx {
             case MOON -> MoonSlashRenderer.receive(pos, dir, (int) a);
             case MOON_HIT -> MoonSlashRenderer.hit(pos);
             case MOON_FORM -> MoonFormsRenderer.receive((int) b, pos, dir, (int) a);
+            case MOON_TARGET -> MoonFormsRenderer.target((int) a, (int) b, entityId);
             default -> {
             }
         }

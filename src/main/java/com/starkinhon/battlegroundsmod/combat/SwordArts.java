@@ -93,9 +93,11 @@ public final class SwordArts {
     public static final int FX_MOON = 4;
     // Yoru no Miya's blow landing on the entity (with the cut): impact frame and shake there. pos = its middle.
     public static final int FX_MOON_HIT = 5;
-    // Kokushibo's 2nd, 3rd, 5th or 6th Form (client/fx/MoonFormsRenderer): pos = his feet, dir = his look, a = the seed,
-    // b = the form.
+    // Kokushibo's 2nd, 3rd, 5th or 6th Form, or an awakened one (client/fx/MoonFormsRenderer): pos = his feet, dir = his
+    // look, a = the seed, b = the form (+ 100 at the full moon).
     public static final int FX_MOON_FORM = 6;
+    // One target of the 16th Form (sent just before it): entityId = the target, a = the form's seed, b = its index.
+    public static final int FX_MOON_TARGET = 7;
 
     private SwordArts() {
     }
