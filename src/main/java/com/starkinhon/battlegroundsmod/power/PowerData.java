@@ -81,6 +81,11 @@ public class PowerData {
     // Anyone: a real stun (Stun.INTERRUPT_TICKS or longer: the Bop, a parry, the Mangekyo...) lasts until this game time.
     // The short stun every punch leaves doesn't set it, so it doesn't open the stun-only skills (Stamina.stunnable).
     public long realStunUntil = 0;
+    // Punch priority (Melee.struckFirst): when the current combo swing started, and when the last punch that hit them
+    // landed and when that punch had started. Not saved.
+    public long swingStart = 0;
+    public long hitBySwing = -1;
+    public long hitAt = -1;
     // Players: what a held charged skill may still drain on top of its use cost.
     public float chargeLeft = 0;
     // Client: the synced max stamina and exhaustion ticks left, for the bar.
