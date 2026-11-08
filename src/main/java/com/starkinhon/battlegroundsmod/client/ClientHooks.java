@@ -180,12 +180,11 @@ public final class ClientHooks {
         if (com.starkinhon.battlegroundsmod.client.fx.DomainScene.blocksCutscenes()) {
             return;
         }
-        // The trip to space keeps running (it draws the space, its bars and its line); only the camera is the editor's.
-        var before = Minecraft.getInstance().options.getCameraType();
+        // The trip to space keeps running (it draws the space, its bars and its line); only the camera is the editor's
+        // (CutsceneCamera gives back the view the player had before the first of them).
         EsferaCutscene.start(casterId, targetId, awakened);
-        if (EsferaCutscene.active() && CutscenePlayer.start("bills.esfera", casterId, targetId, true)) {
-            // The trip already switched to third person: give back the view the player had before it.
-            CutscenePlayer.restoreTo(before);
+        if (EsferaCutscene.active()) {
+            CutscenePlayer.start("bills.esfera", casterId, targetId, true);
         }
     }
 

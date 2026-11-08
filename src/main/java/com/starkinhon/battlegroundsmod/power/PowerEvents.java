@@ -82,6 +82,7 @@ public final class PowerEvents {
         com.starkinhon.battlegroundsmod.boss.BossFalas.clear();
         Freeze.clear();
         Intangible.clear();
+        com.starkinhon.battlegroundsmod.combat.Capture.clear();
         com.starkinhon.battlegroundsmod.power.powers.sub.nr.NrCommon.clear();
         com.starkinhon.battlegroundsmod.power.powers.sub.jj.JjCommon.clear();
         Destructible.clear();
@@ -191,9 +192,11 @@ public final class PowerEvents {
         }
     }
 
-    // Intangible or shielded entities take no damage, knockback or projectile hits (arrows fly through them).
+    // Intangible or shielded entities take no damage, knockback or projectile hits (arrows fly through them). Only the
+    // one whose cutscene holds them (Intangible.holdExcept) still lands its own blows.
     private static void onIncomingDamage(LivingIncomingDamageEvent event) {
-        if (Intangible.untouchable(event.getEntity()) && !event.getSource().is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
+        if (Intangible.untouchableBy(event.getEntity(), event.getSource().getEntity())
+                && !event.getSource().is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
             event.setCanceled(true);
             return;
         }

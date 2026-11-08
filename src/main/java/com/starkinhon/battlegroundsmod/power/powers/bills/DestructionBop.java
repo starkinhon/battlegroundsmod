@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.starkinhon.battlegroundsmod.ModAttachments;
+import com.starkinhon.battlegroundsmod.combat.Capture;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.combat.Fx;
@@ -58,6 +59,8 @@ public final class DestructionBop {
             return false;
         }
 
+        // Out of the hakai ball (or any trap) first: one grab at a time (it blows up on them now).
+        Capture.take(target);
         int flick = spec.flickTick();
         int top = spec.topTick();
         int vanish = spec.vanishTick();
@@ -121,9 +124,11 @@ public final class DestructionBop {
         Stun.apply(target, ground + stuck, true);
         // Whatever the target was doing is cut off (this also stops its animation, so its own goes after).
         PowerLogic.seal(target, ground + stuck);
+        Capture.grabbed(target, caster, ground + stuck);
         if (spec.cutscene().intangivel()) {
             Intangible.hold(caster, land + 2);
-            Intangible.hold(target, ground + 2);
+            // Untouchable to everyone but Bills: his own flick, slap and ground still hurt.
+            Intangible.holdExcept(target, ground + 2, caster);
         }
         if (spec.cutscene().ativa()) {
             for (ServerPlayer player : screens(caster, target)) {
@@ -249,10 +254,11 @@ public final class DestructionBop {
         PowerData data = caster.getData(ModAttachments.POWER);
         if (data.foughtId >= 0 && caster.level().getEntity(data.foughtId) instanceof LivingEntity fought && Combat.isTarget(fought, caster)
                 && fought.distanceTo(caster) <= range && caster.hasLineOfSight(fought)
-                && flatTo(caster, fought).dot(Combat.flatLook(caster)) > 0.5) {
+                && flatTo(caster, fought).dot(Combat.flatLook(caster)) > 0.5 && Capture.canGrab(caster, fought)) {
             return fought;
         }
-        return Combat.raycastTarget(caster, range);
+        LivingEntity aimed = Combat.raycastTarget(caster, range);
+        return Capture.canGrab(caster, aimed) ? aimed : null;
     }
 
     // Moves him there facing that way, players through their connection so their own screen follows.

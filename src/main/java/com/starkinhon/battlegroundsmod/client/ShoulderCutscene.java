@@ -23,7 +23,6 @@ public final class ShoulderCutscene {
     private static int targetId = -1;
     private static int duration;
     private static int age;
-    private static CameraType previousCameraType = CameraType.FIRST_PERSON;
 
     private ShoulderCutscene() {
     }
@@ -31,7 +30,7 @@ public final class ShoulderCutscene {
     public static void start(int caster, int target, int ticks) {
         Minecraft minecraft = Minecraft.getInstance();
         if (casterId < 0) {
-            previousCameraType = minecraft.options.getCameraType();
+            CutsceneCamera.begin("shoulder");
         }
         casterId = caster;
         targetId = target;
@@ -72,7 +71,7 @@ public final class ShoulderCutscene {
     private static void stop(Minecraft minecraft) {
         casterId = -1;
         targetId = -1;
-        minecraft.options.setCameraType(previousCameraType);
+        CutsceneCamera.end("shoulder");
     }
 
     // Behind and to the right of the caster, on the line from the caster to the target. Null when not playing.

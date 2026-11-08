@@ -34,8 +34,6 @@ public final class EsferaCutscene {
     private static Vec3 origin = Vec3.ZERO;
     private static Vec3 forward = new Vec3(0, 0, 1);
     private static float yaw;
-    private static CameraType previousCameraType = CameraType.FIRST_PERSON;
-    private static boolean previousHideGui;
 
     private EsferaCutscene() {
     }
@@ -48,8 +46,7 @@ public final class EsferaCutscene {
             return;
         }
         if (casterId < 0) {
-            previousCameraType = minecraft.options.getCameraType();
-            previousHideGui = minecraft.options.hideGui;
+            CutsceneCamera.begin("esfera");
         }
         casterId = caster;
         targetId = target;
@@ -146,8 +143,7 @@ public final class EsferaCutscene {
     private static void stop(Minecraft minecraft) {
         casterId = -1;
         targetId = -1;
-        minecraft.options.setCameraType(previousCameraType);
-        minecraft.options.hideGui = previousHideGui;
+        CutsceneCamera.end("esfera");
     }
 
     public static void onMovementInput(MovementInputUpdateEvent event) {

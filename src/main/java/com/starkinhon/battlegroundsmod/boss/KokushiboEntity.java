@@ -78,6 +78,11 @@ public class KokushiboEntity extends SoulBoss {
         if (bossfight()) {
             return phase() >= 1;
         }
+        if (awakened()) {
+            // Once awakened he stays so: healing back over the line used to put the old sword back, and the next hit
+            // played the whole scene again (Stark, 2026-11-08).
+            return true;
+        }
         BossSpec.Fase second = spec().fase(1);
         return getHealth() / getMaxHealth() <= second.comecaEm();
     }
@@ -93,7 +98,7 @@ public class KokushiboEntity extends SoulBoss {
         }
         if (!inScene) {
             boolean want = wantsAwakened();
-            if (want && !awakened() && !bossfight() && isAlive()) {
+            if (want && !awakened() && !bossfight() && isAlive() && sceneFree()) {
                 // as a plain mob too he awakens with his scene (Stark: "cadê a cutscene"); a boss fight plays it with
                 // its phase (phaseScene)
                 startScene(level);
@@ -154,6 +159,15 @@ public class KokushiboEntity extends SoulBoss {
     @Override
     public boolean staged() {
         return super.staged() || (drawAt >= 0 && !awakened());
+    }
+
+    // As a plain mob too his life waits at the line while something holds him, so the scene plays once he is free.
+    @Override
+    protected float phaseFloor() {
+        if (!bossfight() && !awakened() && !inScene && level() instanceof ServerLevel && !sceneFree()) {
+            return (float) spec().fase(1).comecaEm();
+        }
+        return super.phaseFloor();
     }
 
     @Override

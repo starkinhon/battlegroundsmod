@@ -6,6 +6,7 @@ import java.util.function.Function;
 import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.combat.BlockRules;
 import com.starkinhon.battlegroundsmod.combat.Charge;
+import com.starkinhon.battlegroundsmod.combat.Capture;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.combat.Fx;
@@ -66,6 +67,11 @@ public final class AzulFlash {
         BlackFlashSpec.Golpe golpe = spec.golpe();
         LivingEntity target = caster instanceof Mob mob && mob.getTarget() != null && mob.getTarget().isAlive() ? mob.getTarget()
                 : Combat.raycastTarget(caster, puxar.alcanceAlvo());
+        // Not someone in another's cutscene (untouchable) or kept by another's domain: the Kokushibo boss went limp and
+        // fell through his own awakening scene, pulled by a Gojo (Stark, 2026-11-08).
+        if (target != null && (!Combat.isTarget(target, caster) || !Capture.canGrab(caster, target))) {
+            target = null;
+        }
         if (target == null || target.distanceTo(caster) > puxar.alcanceAlvo() + 2) {
             if (caster instanceof ServerPlayer player) {
                 player.displayClientMessage(Component.translatable("message.battlegroundsmod.azul_flash_no_target"), true);
@@ -100,12 +106,15 @@ public final class AzulFlash {
         double slowFrom = Math.min(puxar.lentoDistancia(), distance);
         Vec3 slowStart = distance < 1.0E-3 ? end : end.subtract(line.scale(slowFrom / distance));
         Vec3[] hold = {start};
+        // Out of the hakai ball (or any trap) first: one grab at a time.
+        Capture.take(target);
         Freeze.hold(target, 20 * 30, age -> hold[0]);
         limp(target, ModPayloads.Limp.PULL, 0, 0);
         double speed = Math.max(0.3, puxar.velocidade());
         // Starts slow and ends at velocidade (ease in, t^2): the average is half of it.
         int pullTicks = Mth.clamp((int) Math.ceil((distance - slowFrom) * 2 / speed), Math.max(1, puxar.minTicks()), Math.max(puxar.minTicks(), puxar.maxTicks()));
         // He stays where he stands from here to the throw (the pull ends in front of him, the punch has to land).
+        Capture.grabbed(target, caster, pullTicks + slowTicks + fit);
         Freeze.holdLookFree(caster, pullTicks + slowTicks + fit + 6);
 
         PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new ModPayloads.PlaySkillAnimation(caster.getId(), HOLD_ANIMATION, awakened));

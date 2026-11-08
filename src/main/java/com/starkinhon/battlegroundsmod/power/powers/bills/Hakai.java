@@ -82,6 +82,8 @@ public final class Hakai {
         int dissolve = spec.dissolveTick();
         int kill = spec.killTick();
         int end = spec.cutsceneEnd();
+        // Out of the hakai ball (or any trap) first: one grab at a time.
+        com.starkinhon.battlegroundsmod.combat.Capture.take(target);
         if (appear) {
             appear(level, caster, target, spec.alvo().distancia());
         }
@@ -197,10 +199,12 @@ public final class Hakai {
         PowerData data = caster.getData(ModAttachments.POWER);
         if (data.foughtId >= 0 && caster.level().getEntity(data.foughtId) instanceof LivingEntity fought && Combat.isTarget(fought, caster)
                 && fought.distanceTo(caster) <= range && caster.hasLineOfSight(fought)
-                && flatTo(caster, fought).dot(Combat.flatLook(caster)) > 0.5) {
+                && flatTo(caster, fought).dot(Combat.flatLook(caster)) > 0.5
+                && com.starkinhon.battlegroundsmod.combat.Capture.canGrab(caster, fought)) {
             return fought;
         }
-        return Combat.raycastTarget(caster, range);
+        LivingEntity aimed = Combat.raycastTarget(caster, range);
+        return com.starkinhon.battlegroundsmod.combat.Capture.canGrab(caster, aimed) ? aimed : null;
     }
 
     // Steps in front of the target, distance blocks away on the side he came from, if there is room (same height or a

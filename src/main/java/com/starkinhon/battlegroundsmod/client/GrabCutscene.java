@@ -27,8 +27,6 @@ public final class GrabCutscene {
     private static int age;
     private static Vec3 origin = Vec3.ZERO;
     private static Vec3 forward = new Vec3(0, 0, 1);
-    private static CameraType previousCameraType = CameraType.FIRST_PERSON;
-    private static boolean previousHideGui;
 
     private GrabCutscene() {
     }
@@ -42,8 +40,7 @@ public final class GrabCutscene {
             return;
         }
         if (casterId < 0) {
-            previousCameraType = minecraft.options.getCameraType();
-            previousHideGui = minecraft.options.hideGui;
+            CutsceneCamera.begin("grab");
         }
         casterId = caster;
         targetId = target;
@@ -82,8 +79,7 @@ public final class GrabCutscene {
     private static void stop(Minecraft minecraft) {
         casterId = -1;
         targetId = -1;
-        minecraft.options.setCameraType(previousCameraType);
-        minecraft.options.hideGui = previousHideGui;
+        CutsceneCamera.end("grab");
     }
 
     public static void onMovementInput(MovementInputUpdateEvent event) {

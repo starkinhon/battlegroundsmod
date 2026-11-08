@@ -342,6 +342,17 @@ public final class InfiniteVoid {
         }
     }
 
+    // Caught in a domain someone other than by opened, still going (held in place by it): no grab of by's takes them
+    // (combat/Capture.canGrab).
+    public static boolean heldByOther(LivingEntity entity, LivingEntity by) {
+        for (Active active : ACTIVE) {
+            if (active.caster != by && active.caster != entity && active.caught.contains(entity) && !active.free.contains(entity)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     // Caught in someone else's domain: no skills, no boss moves, nothing of their own until it shatters.
     public static boolean blocks(LivingEntity entity) {
         if (ACTIVE.isEmpty()) {
