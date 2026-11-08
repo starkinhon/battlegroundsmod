@@ -75,6 +75,123 @@ public final class MoonForms {
         };
     }
 
+    // The form with its moons left hanging in the air after it (luas-no-ar.html, Stark 2026-11-07); full: the full moon's.
+    public static Linger create(int form, int seed, boolean full) {
+        return new Linger(create(form, seed), full);
+    }
+
+    // ---------------- moons that stay in the air (Stark 2026-11-07, luas-no-ar.html) ----------------
+    // After the form, part of its moons stop where the attack left them (slowing down from the speed they had), hang there
+    // bobbing and slowly turning, and cut whoever touches them; then they break into light like any moon. So the area they
+    // hold is the very shape the attack drew. At the full moon more of them stay, bigger and for longer.
+    public static final class Linger extends Form {
+        private static final double STEP = 1 / 20.0;
+
+        private static final class Held {
+            int idx;
+            double[] p, prev, v;
+            double r, rot, thin, cut, at, spin, bob, gone;
+        }
+
+        private final Form base;
+        private final List<Held> held = new ArrayList<>();
+        private final java.util.Set<Integer> ids = new java.util.HashSet<>();
+
+        Linger(Form base, boolean full) {
+            super(base.end + (full ? 5.5 : 4.0));
+            this.base = base;
+            double share = full ? .6 : .4, grow = full ? 1.35 : 1;
+            int max = full ? 64 : 40;
+            this.grow = grow;
+            java.util.LinkedHashMap<Integer, Held> seen = new java.util.LinkedHashMap<>();
+            for (int i = 0; i * STEP <= base.end; i++) {
+                double tt = i * STEP;
+                for (Moon m : base.frame(tt).moons()) {
+                    if (m.diss() > 0) {
+                        continue;
+                    }
+                    Held was = seen.get(m.idx());
+                    Held h = new Held();
+                    h.idx = m.idx();
+                    h.p = m.p().clone();
+                    h.prev = was != null ? was.p : m.p().clone();
+                    h.r = m.r();
+                    h.rot = m.rot();
+                    h.thin = m.thin();
+                    h.cut = m.cut();
+                    h.at = tt;
+                    seen.put(m.idx(), h);
+                }
+            }
+            for (Held h : seen.values()) {
+                if (held.size() >= max) {
+                    break;
+                }
+                if (hash01(h.idx * 7 + 3) < share) {
+                    held.add(h);
+                }
+            }
+            for (Held h : held) {
+                h.v = mul(sub(h.p, h.prev), 1 / STEP);
+                double sp = Math.hypot(Math.hypot(h.v[0], h.v[1]), h.v[2]);
+                if (sp > 12) {
+                    h.v = mul(h.v, 12 / sp);
+                }
+                h.spin = (hash01(h.idx) - .5) * 1.2;
+                h.bob = hash01(h.idx + 11) * 6.28;
+                h.gone = end - .7 - hash01(h.idx + 5) * 1.2;
+                ids.add(h.idx);
+            }
+        }
+
+        private final double grow;
+
+        // Whether this moon is one left hanging, and already hanging by t (no longer part of the attack itself).
+        public boolean hanging(int idx, double t) {
+            if (!ids.contains(idx)) {
+                return false;
+            }
+            for (Held h : held) {
+                if (h.idx == idx) {
+                    return t > h.at;
+                }
+            }
+            return false;
+        }
+
+        @Override
+        public Frame frame(double t) {
+            Frame fr = t <= base.end ? base.frame(t) : new Frame(new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), 0, 0);
+            List<Moon> ms = new ArrayList<>();
+            for (Moon m : fr.moons()) {
+                if (!ids.contains(m.idx()) || m.diss() <= 0) {
+                    ms.add(m);
+                }
+            }
+            for (Held h : held) {
+                if (!(t > h.at && t < h.gone + .45)) {
+                    continue;
+                }
+                double k = t - h.at, tau = .22;
+                double[] drift = mul(h.v, tau * (1 - Math.exp(-k / tau)));
+                double[] p = add(add(h.p, drift), v(0, Math.sin(k * 1.6 + h.bob) * .12 + .06 * k, 0));
+                double diss = Math.max(0, Math.min(1, (t - h.gone) / .45));
+                double g = 1 + (grow - 1) * Math.min(1, k / .35);
+                ms.add(new Moon(p, h.r * g * (1 + diss * .12), h.rot + h.spin * k, h.thin, 1, diss, h.cut, h.idx));
+            }
+            return new Frame(fr.ribbons(), ms, fr.sparks(), fr.flash(), fr.shake());
+        }
+
+        // The page's hash01 (Math.imul and >>> as ints).
+        static double hash01(int n) {
+            int x = (n ^ 0x9e3779b9) * 0x85ebca6b;
+            x ^= x >>> 13;
+            x *= 0xc2b2ae35;
+            x ^= x >>> 16;
+            return (x & 0xFFFFFFFFL) / 4294967296.0;
+        }
+    }
+
     // Local (the pages' space) to world: feet at origin, facing fwd, left and up.
     public record Basis(Vec3 origin, Vec3 left, Vec3 up, Vec3 fwd) {
         public Vec3 world(double[] p) {

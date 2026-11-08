@@ -309,6 +309,9 @@ public final class PowerLogic {
         if (player instanceof Player) {
             Tiers.apply(player);
         }
+        if (!player.level().isClientSide()) {
+            com.starkinhon.battlegroundsmod.power.powers.kokushibo.OniBody.tick(player);
+        }
         if (data.hasPower()) {
             data.ult = Math.min(PowerData.MAX_ULT, data.ult + ULT_PASSIVE_PER_TICK);
         }

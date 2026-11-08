@@ -98,6 +98,10 @@ public class PowerData {
     // Players: what the watchers were last told about Kokushibo's sword (PowerLogic.sheathCode: 0 none, 1 carried in the
     // sheath, 3 carried and drawn; -1 = never sent).
     public int sheathSent = -1;
+    // Kokushibo (OniBody): his regeneration is cut until this game time (a sword or Bills' destruction hit him), and the
+    // phase (night, full moon, day, normal) he was last told about.
+    public long oniRegenCutUntil = 0;
+    public int oniPhaseSent = -1;
 
     public PowerData() {
     }
