@@ -192,6 +192,8 @@
   "ability.battlegroundsmod.uchiha_ghost.7.tags": "Slash,Destruction",
   "ability.battlegroundsmod.uchiha_ghost.8.desc": "Two meteors fall one after the other on the target.",
   "ability.battlegroundsmod.uchiha_ghost.8.tags": "Area",
+  "gamerule.passivakokushibo": "Kokushibo's passive (day and night)",
+  "gamerule.passivakokushibo.description": "Off, Kokushibo (player and boss) gets no day/night buffs or debuffs and no Night Vision: weak regeneration and normal strength all the time.",
   "gamerule.soulsBlockDestruction": "Souls skills break blocks",
   "gamerule.soulsBlockDestruction.description": "When off, no skill or boss from the mod breaks or changes blocks. Effects and damage stay. mobGriefing off also stops it.",
   "gamerule.soulsKokushiboImpact": "Awakened Moon new impact",
