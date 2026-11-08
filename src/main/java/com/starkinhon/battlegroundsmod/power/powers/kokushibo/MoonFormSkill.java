@@ -159,8 +159,10 @@ public final class MoonFormSkill {
             shape = MoonForms.create(form, seed, full);
         }
         Tune tune = tune(form);
-        Run run = new Run(caster, level, form, shape, basis, tune);
-        int ticks = (int) Math.ceil(shape.end * 20);
+        // the awakened forms' freezes and slow motion (the clients play the same clock, so hits stay on the cuts)
+        MoonTime clock = MoonForms.awakened(form) ? MoonTime.of(form, shape) : MoonTime.plain(shape.end);
+        Run run = new Run(caster, level, form, shape, basis, tune, clock);
+        int ticks = (int) Math.ceil(clock.realEnd * 20);
         Tasks.repeat(ticks, run::tick);
         return true;
     }
@@ -184,8 +186,10 @@ public final class MoonFormSkill {
         final Set<Integer> struck = new HashSet<>();
         final int[] debris = {0};
         final boolean carve;
+        final MoonTime clock;
 
-        Run(LivingEntity caster, ServerLevel level, int form, MoonForms.Linger shape, MoonForms.Basis basis, Tune tune) {
+        Run(LivingEntity caster, ServerLevel level, int form, MoonForms.Linger shape, MoonForms.Basis basis, Tune tune, MoonTime clock) {
+            this.clock = clock;
             this.caster = caster;
             this.level = level;
             this.form = form;
@@ -199,7 +203,7 @@ public final class MoonFormSkill {
             if (!caster.isAlive()) {
                 return;
             }
-            double t = age / 20.0;
+            double t = clock.form(age / 20.0);
             MoonForms.Frame fr = shape.frame(t);
             // who could be touched: everyone around where the form plays out
             List<LivingEntity> near;

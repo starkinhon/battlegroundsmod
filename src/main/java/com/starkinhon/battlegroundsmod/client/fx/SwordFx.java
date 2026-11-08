@@ -99,7 +99,7 @@ public final class SwordFx {
             }
             case MOON_HIT -> MoonSlashRenderer.hit(pos);
             case MOON_FORM -> {
-                MoonFormsRenderer.receive((int) b, pos, dir, (int) a);
+                MoonFormsRenderer.receive((int) b, pos, dir, (int) a, entityId);
                 com.starkinhon.battlegroundsmod.client.FormKanji.cast(entityId, (int) b % 100);
             }
             case MOON_TARGET -> MoonFormsRenderer.target((int) a, (int) b, entityId);
