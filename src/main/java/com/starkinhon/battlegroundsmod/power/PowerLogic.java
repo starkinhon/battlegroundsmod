@@ -126,6 +126,9 @@ public final class PowerLogic {
         }
         if (!data.noCooldown) {
             data.cooldowns[slot] = ability.cooldown();
+            if (skill) {
+                com.starkinhon.battlegroundsmod.power.powers.MoonDemon.lockOthers(player, power, slot);
+            }
         }
         sync(player);
     }
@@ -363,20 +366,22 @@ public final class PowerLogic {
     }
 
     private static ModPayloads.SheathState sheathState(ServerPlayer player, int code) {
-        return new ModPayloads.SheathState(player.getId(), (code & 1) != 0, (code & 2) != 0);
+        return new ModPayloads.SheathState(player.getId(), (code & 1) != 0, (code & 2) != 0, (code & 4) != 0);
     }
 
     // 0: no sheath. 1: the sword rests in the sheath, also while in hand out of combat mode (Stark, 2026-11-07: it only
     // comes out to fight). 3: drawn, held in combat mode (or by someone without a power, who never enters it), or in the
-    // off hand.
+    // off hand. +4: Kokushibo has the sword stretched (H): the sheath's flesh went into the blade, so there is no sheath on
+    // the hip and the long sword stays in his hand even out of combat mode (Stark, 2026-11-08).
     public static int sheathCode(ServerPlayer player) {
         if (!carriesSheath(player)) {
             return 0;
         }
         boolean main = player.getMainHandItem().getItem() instanceof com.starkinhon.battlegroundsmod.item.KokushiboSwordItem;
         boolean off = player.getOffhandItem().getItem() instanceof com.starkinhon.battlegroundsmod.item.KokushiboSwordItem;
-        boolean fighting = !player.getData(ModAttachments.POWER).hasPower() || com.starkinhon.battlegroundsmod.combat.CombatMode.in(player);
-        return main && fighting || off ? 3 : 1;
+        boolean stretched = com.starkinhon.battlegroundsmod.power.powers.MoonDemon.stretched(player);
+        boolean fighting = stretched || !player.getData(ModAttachments.POWER).hasPower() || com.starkinhon.battlegroundsmod.combat.CombatMode.in(player);
+        return (main && fighting || off ? 3 : 1) | (stretched ? 4 : 0);
     }
 
     // Kokushibo's sheath goes on the hip of whoever has his sword anywhere in the inventory.

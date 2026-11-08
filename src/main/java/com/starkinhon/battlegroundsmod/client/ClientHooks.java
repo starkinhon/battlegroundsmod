@@ -311,8 +311,8 @@ public final class ClientHooks {
         com.starkinhon.battlegroundsmod.client.outfit.Outfits.set(entityId, power);
     }
 
-    public static void sheathState(int entityId, boolean carrying, boolean drawn) {
-        com.starkinhon.battlegroundsmod.client.outfit.Sheaths.set(entityId, carrying, drawn);
+    public static void sheathState(int entityId, boolean carrying, boolean drawn, boolean stretched) {
+        com.starkinhon.battlegroundsmod.client.outfit.Sheaths.set(entityId, carrying, drawn, stretched);
     }
 
     public static void openPowerSelect() {

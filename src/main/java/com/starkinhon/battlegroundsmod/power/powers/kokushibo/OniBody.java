@@ -9,6 +9,8 @@ import net.minecraft.core.Holder;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
@@ -29,7 +31,11 @@ public final class OniBody {
     // playable), regeneration (share of max health per second).
     private static final double[] STATS = {1.0, 1.5, 1.75, 0.85};
     private static final double[] SPEED = {1.0, 1.15, 1.25, 0.9};
-    private static final double[] REGEN = {0.015, 0.03, 0.04, 0.005};
+    // Night and the full moon healed too fast (Stark, 2026-11-08): half of what they were (0.03 and 0.04).
+    private static final double[] REGEN = {0.015, 0.015, 0.02, 0.005};
+    // At night he sees in the dark (Stark, 2026-11-08): Night Vision kept topped up while it lasts, taken off at dawn.
+    // Over 10 s so the vanilla flicker of a running-out Night Vision never shows.
+    private static final int NIGHT_VISION = 300, NIGHT_VISION_REFRESH = 220;
     // How long a sword or a destruction hit stops him healing (ticks).
     private static final int REGEN_CUT = 100;
 
@@ -84,6 +90,7 @@ public final class OniBody {
         if (!oni) {
             return;
         }
+        nightVision(entity, phase == NIGHT || phase == FULL_MOON);
         PowerData data = entity.getData(ModAttachments.POWER);
         long now = entity.level().getGameTime();
         if (entity.isAlive() && now >= data.oniRegenCutUntil && entity.getHealth() < entity.getMaxHealth() && entity.tickCount % 10 == 0) {
@@ -95,6 +102,19 @@ public final class OniBody {
             if (!first && entity instanceof ServerPlayer player) {
                 player.displayClientMessage(Component.translatable("message." + BattlegroundsMod.MODID + ".oni.phase." + phase), true);
             }
+        }
+    }
+
+    // Ours is the ambient, particle-free one no longer than NIGHT_VISION: a potion's own Night Vision is left alone.
+    private static void nightVision(LivingEntity entity, boolean night) {
+        MobEffectInstance current = entity.getEffect(MobEffects.NIGHT_VISION);
+        boolean ours = current != null && current.isAmbient() && !current.isVisible() && current.getDuration() <= NIGHT_VISION;
+        if (night) {
+            if (current == null || ours && current.getDuration() < NIGHT_VISION_REFRESH) {
+                entity.addEffect(new MobEffectInstance(MobEffects.NIGHT_VISION, NIGHT_VISION, 0, true, false, false));
+            }
+        } else if (ours) {
+            entity.removeEffect(MobEffects.NIGHT_VISION);
         }
     }
 

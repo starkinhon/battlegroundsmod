@@ -8,11 +8,18 @@ import java.util.Set;
 public final class Sheaths {
     private static final Set<Integer> CARRYING = new HashSet<>();
     private static final Set<Integer> DRAWN = new HashSet<>();
+    // Kokushibo's who have the sword stretched (H): no sheath on the hip, the long sword in hand.
+    private static final Set<Integer> STRETCHED = new HashSet<>();
 
     private Sheaths() {
     }
 
-    public static void set(int entityId, boolean carrying, boolean drawn) {
+    public static void set(int entityId, boolean carrying, boolean drawn, boolean stretched) {
+        if (stretched) {
+            STRETCHED.add(entityId);
+        } else {
+            STRETCHED.remove(entityId);
+        }
         if (carrying) {
             CARRYING.add(entityId);
         } else {
@@ -29,14 +36,19 @@ public final class Sheaths {
         return CARRYING.contains(entityId);
     }
 
+    static boolean stretched(int entityId) {
+        return STRETCHED.contains(entityId);
+    }
+
     static boolean drawn(int entityId) {
         return DRAWN.contains(entityId);
     }
 
-    // The Kokushibo boss carries it until the awakening eats the sheath, and draws it when his fight starts.
+    // The Kokushibo boss always carries it (the awakening's stretch eats the sheath, SwordStretch.sheathLeft), and draws it
+    // when his fight starts.
     static boolean carrying(net.minecraft.world.entity.LivingEntity entity) {
-        if (entity instanceof com.starkinhon.battlegroundsmod.boss.KokushiboEntity boss) {
-            return boss.look() == com.starkinhon.battlegroundsmod.boss.KokushiboEntity.LOOK_NORMAL;
+        if (entity instanceof com.starkinhon.battlegroundsmod.boss.KokushiboEntity) {
+            return true;
         }
         return carrying(entity.getId());
     }
