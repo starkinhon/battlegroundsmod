@@ -641,7 +641,7 @@
   "item.battlegroundsmod.inumaki_spawn_egg": "Inumaki Spawn Egg",
   "item.battlegroundsmod.miwa_spawn_egg": "Miwa Spawn Egg",
   "power.battlegroundsmod.moon_demon": "Moon Demon",
-  "power.battlegroundsmod.moon_demon.desc": "Upper Moon One. Every cut of Moon Breathing fills the air with moons. Oni: strong regeneration (swords and destruction stop it for 5 s), 1.5x stronger at night, more at the full moon, weaker and slower to heal under the sun.",
+  "power.battlegroundsmod.moon_demon.desc": "Upper Moon One. Every cut of Moon Breathing fills the air with moons. Oni: strong regeneration (swords and destruction stop it for 5 s), 1.5x stronger at night, more at the full moon, weaker and slower to heal under the sun. The H key stretches the sword: Z, X, C, B and V become the 7th, 8th, 9th, 10th and 14th Forms, and Shift+V the 16th. Every cut and every moon lands as a blow of its own.",
   "ability.battlegroundsmod.moon_demon.0": "1st Form: Yoru no Miya",
   "ability.battlegroundsmod.moon_demon.0.desc": "A Moon Breathing quick draw: a giant crescent slash opens in front of you, cream outside and ember inside, throwing out chains of crescent moons that glow and break into flakes of light. Cuts everything inside the arc.",
   "ability.battlegroundsmod.moon_demon.0.tags": "Sword,Area,Quick draw",
@@ -680,5 +680,17 @@
   "fala.battlegroundsmod.aizen.matou": "Admirable.",
   "fala.battlegroundsmod.aizen.hogyoku": "No one stands at the top from the start.",
   "fala.battlegroundsmod.kokushibo.matou": "Too weak...",
-  "fala.battlegroundsmod.kokushibo.respiracao": "Show me your Breathing."
+  "fala.battlegroundsmod.kokushibo.respiracao": "Show me your Breathing.",
+  "key.battlegroundsmod.stretch_sword": "Kokushibo: Stretch the Sword",
+  "message.battlegroundsmod.moon_sword.on": "Sword stretched: Awakened Moon Breathing",
+  "message.battlegroundsmod.moon_sword.off": "The sword is back to normal",
+  "ability.battlegroundsmod.moon_demon.8": "16th Form: Gekko Katawarezuki",
+  "ability.battlegroundsmod.moon_demon.8.desc": "Only with the sword stretched (H). Six giant crescent cuts fall from the sky, homing on anyone within 50 blocks, no aiming: one per enemy, and a lone enemy takes all six on the head, one every 0.5 s. Each one leaves a crater. With the normal sword, Shift+V uses the 6th.",
+  "ability.battlegroundsmod.moon_demon.8.tags": "Sword,Awakened,Homing,Destruction",
+  "ability.battlegroundsmod.moon_demon.awakened.0": "7th Form: Yakkyo Zukibae",
+  "ability.battlegroundsmod.moon_demon.awakened.1": "8th Form: Getsuryu Rinbi",
+  "ability.battlegroundsmod.moon_demon.awakened.2": "9th Form: Kudaritsuki Renmen",
+  "ability.battlegroundsmod.moon_demon.awakened.3": "14th Form: Kyohen Tenman Sengetsu",
+  "ability.battlegroundsmod.moon_demon.awakened.4": "10th Form: Senmenzan Ragetsu",
+  "ability.battlegroundsmod.moon_demon.awakened.8": "16th Form: Gekko Katawarezuki"
 }

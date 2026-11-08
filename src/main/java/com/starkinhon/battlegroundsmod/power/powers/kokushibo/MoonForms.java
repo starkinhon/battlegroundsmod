@@ -57,7 +57,17 @@ public final class MoonForms {
     }
 
     public abstract static class Form {
-        public final double end;
+        public double end;
+        // Drawn in the awakened colours (lilac cuts with a black edge, blue moons): the forms of the stretched sword.
+        public boolean pal;
+        // Its shape depends on the world as it plays (the 16th follows its targets): it can only be asked for its frames
+        // in order, as time goes on, never ahead.
+        boolean live;
+        // The moons it leaves hanging after it: none (it leaves its own), how far they spread out from him (14th: 2x the
+        // area, Stark) and how many at most (-1: the usual).
+        boolean noLinger;
+        double lingerSpread = 1;
+        int lingerMax = -1;
 
         Form(double end) {
             this.end = end;
@@ -66,11 +76,22 @@ public final class MoonForms {
         public abstract Frame frame(double t);
     }
 
+    // The awakened forms of the stretched sword (MoonFormsAwakened).
+    public static boolean awakened(int form) {
+        return form >= 7;
+    }
+
     public static Form create(int form, int seed) {
         return switch (form) {
             case 2 -> new Form2(seed);
             case 3 -> new Form3(seed);
             case 5 -> new Form5(seed);
+            case 7 -> new MoonFormsAwakened.Form7(seed);
+            case 8 -> new MoonFormsAwakened.Form8(seed);
+            case 9 -> new MoonFormsAwakened.Form9(seed);
+            case 10 -> new MoonFormsAwakened.Form10(seed);
+            case 14 -> new MoonFormsAwakened.Form14(seed);
+            case 16 -> new MoonFormsAwakened.Form16(seed, new double[0][], i -> null);
             default -> new Form6(seed);
         };
     }
@@ -78,6 +99,12 @@ public final class MoonForms {
     // The form with its moons left hanging in the air after it (luas-no-ar.html, Stark 2026-11-07); full: the full moon's.
     public static Linger create(int form, int seed, boolean full) {
         return new Linger(create(form, seed), full);
+    }
+
+    // The 16th Form, homing on its targets (their feet in local space when it starts, and where each one is now: null
+    // once it is gone). No targets: the cuts fall in front of him.
+    public static Linger create16(int seed, boolean full, double[][] targets, java.util.function.IntFunction<double[]> targetAt) {
+        return new Linger(new MoonFormsAwakened.Form16(seed, targets, targetAt), full);
     }
 
     // ---------------- moons that stay in the air (Stark 2026-11-07, luas-no-ar.html) ----------------
@@ -90,19 +117,34 @@ public final class MoonForms {
         private static final class Held {
             int idx;
             double[] p, prev, v;
-            double r, rot, thin, cut, at, spin, bob, gone;
+            double r, rot, thin, cut, at, prevAt, spin, bob, gone;
         }
 
         private final Form base;
+
+        // The form under its hanging moons.
+        public Form base() {
+            return base;
+        }
         private final List<Held> held = new ArrayList<>();
         private final java.util.Set<Integer> ids = new java.util.HashSet<>();
 
         Linger(Form base, boolean full) {
-            super(base.end + (full ? 5.5 : 4.0));
+            // the awakened forms' moons stay longer (Stark: 6.5 s on their pages); some forms leave none of these
+            super(base.end + (base.noLinger ? 0 : base.pal ? (full ? 8.0 : 6.5) : full ? 5.5 : 4.0));
             this.base = base;
+            this.pal = base.pal;
+            this.live = base.live;
+            this.spread = base.lingerSpread;
             double share = full ? .6 : .4, grow = full ? 1.35 : 1;
-            int max = full ? 64 : 40;
+            int max = base.noLinger ? 0 : base.lingerMax > 0 ? (full ? base.lingerMax * 5 / 4 : base.lingerMax) : full ? 64 : 40;
             this.grow = grow;
+            this.share = share;
+            this.max = max;
+            if (base.live) {
+                // its moons are only known as it plays: they are picked as they show up (stream below)
+                return;
+            }
             java.util.LinkedHashMap<Integer, Held> seen = new java.util.LinkedHashMap<>();
             for (int i = 0; i * STEP <= base.end; i++) {
                 double tt = i * STEP;
@@ -144,24 +186,74 @@ public final class MoonForms {
             }
         }
 
-        private final double grow;
+        private final double grow, share, spread;
+        private final int max;
+        private final java.util.Map<Integer, Held> byIdx = new java.util.HashMap<>();
 
         // Whether this moon is one left hanging, and already hanging by t (no longer part of the attack itself).
         public boolean hanging(int idx, double t) {
             if (!ids.contains(idx)) {
                 return false;
             }
-            for (Held h : held) {
-                if (h.idx == idx) {
-                    return t > h.at;
+            Held h = byIdx.get(idx);
+            if (h != null) {
+                return t > h.at;
+            }
+            for (Held x : held) {
+                if (x.idx == idx) {
+                    return t > x.at;
                 }
             }
             return false;
         }
 
+        // A live form: each moon that would be left hanging is followed while the attack still holds it (its last place,
+        // the one before and when), and hangs from where it was last seen once the attack lets go of it.
+        private void stream(Frame fr, double t) {
+            for (Moon m : fr.moons()) {
+                if (m.diss() > 0) {
+                    continue;
+                }
+                Held h = byIdx.get(m.idx());
+                if (h == null) {
+                    if (held.size() >= max || hash01(m.idx() * 7 + 3) >= share) {
+                        continue;
+                    }
+                    h = new Held();
+                    h.idx = m.idx();
+                    h.prev = m.p().clone();
+                    h.prevAt = t;
+                    h.spin = (hash01(h.idx) - .5) * 1.2;
+                    h.bob = hash01(h.idx + 11) * 6.28;
+                    h.gone = end - .7 - hash01(h.idx + 5) * 1.2;
+                    held.add(h);
+                    ids.add(h.idx);
+                    byIdx.put(h.idx, h);
+                } else if (t > h.at) {
+                    h.prev = h.p;
+                    h.prevAt = h.at;
+                }
+                h.p = m.p().clone();
+                h.at = t;
+                h.r = m.r();
+                h.rot = m.rot();
+                h.thin = m.thin();
+                h.cut = m.cut();
+                double dt = h.at - h.prevAt;
+                h.v = dt > 1.0E-4 ? mul(sub(h.p, h.prev), 1 / dt) : v(0, 0, 0);
+                double sp = Math.hypot(Math.hypot(h.v[0], h.v[1]), h.v[2]);
+                if (sp > 12) {
+                    h.v = mul(h.v, 12 / sp);
+                }
+            }
+        }
+
         @Override
         public Frame frame(double t) {
             Frame fr = t <= base.end ? base.frame(t) : new Frame(new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), 0, 0);
+            if (live) {
+                stream(fr, t);
+            }
             List<Moon> ms = new ArrayList<>();
             for (Moon m : fr.moons()) {
                 if (!ids.contains(m.idx()) || m.diss() <= 0) {
@@ -174,7 +266,9 @@ public final class MoonForms {
                 }
                 double k = t - h.at, tau = .22;
                 double[] drift = mul(h.v, tau * (1 - Math.exp(-k / tau)));
-                double[] p = add(add(h.p, drift), v(0, Math.sin(k * 1.6 + h.bob) * .12 + .06 * k, 0));
+                // spread out from him (the 14th: over 2x the area, Stark)
+                double sp = (spread - 1) * outCubic(Math.min(1, k / 1.6));
+                double[] p = add(add(add(h.p, v(h.p[0] * sp, 0, h.p[2] * sp)), drift), v(0, Math.sin(k * 1.6 + h.bob) * .12 + .06 * k, 0));
                 double diss = Math.max(0, Math.min(1, (t - h.gone) / .45));
                 double g = 1 + (grow - 1) * Math.min(1, k / .35);
                 ms.add(new Moon(p, h.r * g * (1 + diss * .12), h.rot + h.spin * k, h.thin, 1, diss, h.cut, h.idx));
@@ -197,6 +291,12 @@ public final class MoonForms {
         public Vec3 world(double[] p) {
             return new Vec3(origin.x + left.x * p[0] + up.x * p[1] + fwd.x * p[2], origin.y + left.y * p[0] + up.y * p[1] + fwd.y * p[2],
                     origin.z + left.z * p[0] + up.z * p[1] + fwd.z * p[2]);
+        }
+
+        // World to local (the axes are at right angles and of length 1).
+        public double[] local(Vec3 w) {
+            Vec3 d = w.subtract(origin);
+            return new double[] {d.dot(left), d.dot(up), d.dot(fwd)};
         }
 
         public Vec3 dir(double[] p) {

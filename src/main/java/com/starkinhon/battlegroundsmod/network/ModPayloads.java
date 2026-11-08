@@ -194,7 +194,7 @@ public final class ModPayloads {
     }
 
     // Server -> client: power state for the HUD.
-    public record SyncPower(String power, float ult, List<Integer> cooldowns, boolean combat, int tier) implements CustomPacketPayload {
+    public record SyncPower(String power, float ult, List<Integer> cooldowns, boolean combat, int tier, boolean moonSword) implements CustomPacketPayload {
         public static final Type<SyncPower> TYPE = payloadType("sync_power");
         public static final StreamCodec<ByteBuf, SyncPower> STREAM_CODEC = StreamCodec.composite(
                 ByteBufCodecs.STRING_UTF8, SyncPower::power,
@@ -202,6 +202,7 @@ public final class ModPayloads {
                 ByteBufCodecs.VAR_INT.apply(ByteBufCodecs.list()), SyncPower::cooldowns,
                 ByteBufCodecs.BOOL, SyncPower::combat,
                 ByteBufCodecs.VAR_INT, SyncPower::tier,
+                ByteBufCodecs.BOOL, SyncPower::moonSword,
                 SyncPower::new);
 
         public static SyncPower of(PowerData data) {
@@ -209,7 +210,7 @@ public final class ModPayloads {
             for (int cooldown : data.cooldowns) {
                 cooldowns.add(cooldown);
             }
-            return new SyncPower(data.power, data.ult, cooldowns, data.combat, data.tier);
+            return new SyncPower(data.power, data.ult, cooldowns, data.combat, data.tier, data.moonSword);
         }
 
         void applyTo(Player player) {
@@ -218,6 +219,7 @@ public final class ModPayloads {
             data.ult = ult;
             data.combat = combat;
             data.tier = tier;
+            data.moonSword = moonSword;
             for (int i = 0; i < data.cooldowns.length && i < cooldowns.size(); i++) {
                 data.cooldowns[i] = cooldowns.get(i);
             }
@@ -1103,6 +1105,17 @@ public final class ModPayloads {
         }
     }
 
+    // Kokushibo's key: stretches the sword (the awakened forms) or brings it back.
+    public record StretchSword() implements CustomPacketPayload {
+        public static final Type<StretchSword> TYPE = payloadType("stretch_sword");
+        public static final StreamCodec<ByteBuf, StretchSword> STREAM_CODEC = StreamCodec.unit(new StretchSword());
+
+        @Override
+        public Type<StretchSword> type() {
+            return TYPE;
+        }
+    }
+
     // The combat mode key: turns combat mode on (until pressed again) or off.
     public record ToggleCombat() implements CustomPacketPayload {
         public static final Type<ToggleCombat> TYPE = payloadType("toggle_combat");
@@ -1290,6 +1303,11 @@ public final class ModPayloads {
         registrar.playToServer(ToggleOutfit.TYPE, ToggleOutfit.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer player) {
                 player.getData(ModAttachments.POWER).outfit = payload.on();
+            }
+        }));
+        registrar.playToServer(StretchSword.TYPE, StretchSword.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
+            if (context.player() instanceof ServerPlayer player) {
+                Tasks.as(player, () -> com.starkinhon.battlegroundsmod.power.powers.MoonDemon.stretch(player));
             }
         }));
         registrar.playToServer(ToggleCombat.TYPE, ToggleCombat.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {

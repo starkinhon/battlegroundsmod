@@ -219,7 +219,7 @@ public final class PowerHud {
     }
 
     private static void name(GuiGraphics graphics, Font font, Power power, int slot, int right, int y, boolean ult, float alpha) {
-        Component name = power.abilityName(slot);
+        Component name = com.starkinhon.battlegroundsmod.power.powers.MoonDemon.abilityName(power, net.minecraft.client.Minecraft.getInstance().player, slot);
         int width = font.width(name);
         int a = Math.round(alpha * 255);
         graphics.fillGradient(right - width - 8, y - 2, right + 2, y + 10, GuiDraw.argb(Math.round(alpha * 150), 0x050308),

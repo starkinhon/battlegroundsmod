@@ -649,7 +649,7 @@
   "item.battlegroundsmod.inumaki_spawn_egg": "Ovo Gerador do Inumaki",
   "item.battlegroundsmod.miwa_spawn_egg": "Ovo Gerador da Miwa",
   "power.battlegroundsmod.moon_demon": "Demônio da Lua",
-  "power.battlegroundsmod.moon_demon.desc": "A Lua Superior Um. Cada corte da Respiração da Lua enche o ar de luas. Oni: regenera forte (espada e destruição cortam a regeneração por 5 s), de noite fica 1,5x mais forte, na lua cheia mais ainda, e debaixo do sol enfraquece e regenera devagar.",
+  "power.battlegroundsmod.moon_demon.desc": "A Lua Superior Um. Cada corte da Respiração da Lua enche o ar de luas. Oni: regenera forte (espada e destruição cortam a regeneração por 5 s), de noite fica 1,5x mais forte, na lua cheia mais ainda, e debaixo do sol enfraquece e regenera devagar. Tecla H alonga a espada: Z, X, C, B e V viram a 7ª, 8ª, 9ª, 10ª e 14ª Formas, e Shift+V a 16ª. Cada corte e cada lua acerta como um golpe próprio.",
   "ability.battlegroundsmod.moon_demon.0": "1ª Forma: Yoru no Miya",
   "ability.battlegroundsmod.moon_demon.0.desc": "Saque rápido da Respiração da Lua: um corte em lua gigante se abre na sua frente, creme por fora e brasa por dentro, soltando correntes de luas crescentes que brilham e se desfazem em lascas de luz. Corta tudo dentro do arco.",
   "ability.battlegroundsmod.moon_demon.0.tags": "Espada,Área,Saque rápido",
@@ -688,5 +688,17 @@
   "fala.battlegroundsmod.aizen.matou": "Admirável.",
   "fala.battlegroundsmod.aizen.hogyoku": "Ninguém fica no topo desde o início.",
   "fala.battlegroundsmod.kokushibo.matou": "Fraco demais...",
-  "fala.battlegroundsmod.kokushibo.respiracao": "Me mostre sua Respiração."
+  "fala.battlegroundsmod.kokushibo.respiracao": "Me mostre sua Respiração.",
+  "key.battlegroundsmod.stretch_sword": "Kokushibo: Alongar a Espada",
+  "message.battlegroundsmod.moon_sword.on": "Espada alongada: Respiração da Lua Desperta",
+  "message.battlegroundsmod.moon_sword.off": "A espada volta ao normal",
+  "ability.battlegroundsmod.moon_demon.8": "16ª Forma: Gekko Katawarezuki",
+  "ability.battlegroundsmod.moon_demon.8.desc": "Só com a espada alongada (H). Seis cortes crescentes gigantes caem do céu, teleguiados em quem estiver a até 50 blocos, sem precisar mirar: um por inimigo, e um só leva os seis na cabeça, um a cada 0,5 s. Cada um abre uma cratera. Com a espada normal, Shift+V usa a 6ª.",
+  "ability.battlegroundsmod.moon_demon.8.tags": "Espada,Desperta,Teleguiado,Destruição",
+  "ability.battlegroundsmod.moon_demon.awakened.0": "7ª Forma: Yakkyo Zukibae",
+  "ability.battlegroundsmod.moon_demon.awakened.1": "8ª Forma: Getsuryu Rinbi",
+  "ability.battlegroundsmod.moon_demon.awakened.2": "9ª Forma: Kudaritsuki Renmen",
+  "ability.battlegroundsmod.moon_demon.awakened.3": "14ª Forma: Kyohen Tenman Sengetsu",
+  "ability.battlegroundsmod.moon_demon.awakened.4": "10ª Forma: Senmenzan Ragetsu",
+  "ability.battlegroundsmod.moon_demon.awakened.8": "16ª Forma: Gekko Katawarezuki"
 }
