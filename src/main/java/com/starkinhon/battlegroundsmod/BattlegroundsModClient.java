@@ -247,7 +247,7 @@ public class BattlegroundsModClient {
             if (event.getSkin(model) instanceof PlayerRenderer renderer) {
                 renderer.addLayer(new AuraEyesLayer<>(renderer));
                 renderer.addLayer(new com.starkinhon.battlegroundsmod.client.outfit.OutfitLayer(renderer));
-                renderer.addLayer(new com.starkinhon.battlegroundsmod.client.outfit.KokushiboSheathLayer(renderer));
+                renderer.addLayer(new com.starkinhon.battlegroundsmod.client.outfit.KokushiboSheathLayer<>(renderer));
             }
         }
     }

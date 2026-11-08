@@ -32,4 +32,19 @@ public final class Sheaths {
     static boolean drawn(int entityId) {
         return DRAWN.contains(entityId);
     }
+
+    // The Kokushibo boss carries it until the awakening eats the sheath, and draws it when his fight starts.
+    static boolean carrying(net.minecraft.world.entity.LivingEntity entity) {
+        if (entity instanceof com.starkinhon.battlegroundsmod.boss.KokushiboEntity boss) {
+            return boss.look() == com.starkinhon.battlegroundsmod.boss.KokushiboEntity.LOOK_NORMAL;
+        }
+        return carrying(entity.getId());
+    }
+
+    static boolean drawn(net.minecraft.world.entity.LivingEntity entity) {
+        if (entity instanceof com.starkinhon.battlegroundsmod.boss.KokushiboEntity boss) {
+            return boss.drawn() || boss.look() != com.starkinhon.battlegroundsmod.boss.KokushiboEntity.LOOK_NORMAL;
+        }
+        return drawn(entity.getId());
+    }
 }

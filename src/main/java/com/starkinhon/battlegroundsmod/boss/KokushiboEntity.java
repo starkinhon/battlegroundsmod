@@ -26,6 +26,13 @@ public class KokushiboEntity extends SoulBoss {
     // How he looks, mirrored to clients: 0 his kimono and normal sword, 1 the kimono torn, 2 torn and the sword stretched.
     public static final int LOOK_NORMAL = 0, LOOK_TORN = 1, LOOK_AWAKENED = 2;
     private static final EntityDataAccessor<Integer> DATA_LOOK = SynchedEntityData.defineId(KokushiboEntity.class, EntityDataSerializers.INT);
+    // The sword out of its sheath, mirrored to clients (client/outfit/KokushiboSheathLayer). Stark, 2026-11-08: every fight
+    // starts with it sheathed; he says "I'll draw my sword, or it would be rude of me" (BossFalas) and only then draws.
+    private static final EntityDataAccessor<Boolean> DATA_DRAWN = SynchedEntityData.defineId(KokushiboEntity.class, EntityDataSerializers.BOOLEAN);
+    // Ticks from the line to the draw, and how long he stays still after it (the quick draw pose).
+    private static final int DRAW_AFTER_LINE = 50, DRAW_HOLD = 6;
+    // A target lost for this long ends the fight: the sword goes back to the sheath (as BossFalas's fight clock).
+    private static final int SHEATHE_AFTER = 300;
 
     private KokushiboTactics tactics;
     // Set while the awakening scene runs, so the look follows the scene and not the life.
@@ -41,6 +48,7 @@ public class KokushiboEntity extends SoulBoss {
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
         super.defineSynchedData(builder);
         builder.define(DATA_LOOK, LOOK_NORMAL);
+        builder.define(DATA_DRAWN, false);
     }
 
     @Override
@@ -92,6 +100,56 @@ public class KokushiboEntity extends SoulBoss {
         }
         // The keys of his soul follow the sword, as the player's do with H (MoonDemon.swap).
         powerData().moonSword = awakened();
+        tickSheath(level);
+    }
+
+    // Sheathed out of a fight; a fight starts with the line (BossFalas.tick), he waits still and draws.
+    private long drawAt = -1;
+    private long lastTarget = -100000;
+
+    private void tickSheath(ServerLevel level) {
+        long now = level.getGameTime();
+        if (awakened() || inScene) {
+            drawAt = -1;
+            entityData.set(DATA_DRAWN, true);
+            return;
+        }
+        net.minecraft.world.entity.LivingEntity target = getTarget();
+        boolean fighting = target != null && target.isAlive();
+        if (fighting) {
+            lastTarget = now;
+            if (!drawn() && drawAt < 0) {
+                drawAt = now + DRAW_AFTER_LINE;
+            }
+        } else if (drawn() && now - lastTarget > SHEATHE_AFTER) {
+            entityData.set(DATA_DRAWN, false);
+        }
+        if (drawAt >= 0 && now >= drawAt && !drawn()) {
+            draw(level);
+        }
+        if (drawAt >= 0 && now >= drawAt + DRAW_HOLD) {
+            drawAt = -1;
+        }
+    }
+
+    private void draw(ServerLevel level) {
+        if (drawAt < 0) {
+            drawAt = level.getGameTime();
+        }
+        entityData.set(DATA_DRAWN, true);
+        com.starkinhon.battlegroundsmod.power.powers.sub.SubCommon.pose(this, SwordArts.QUICK_DRAW);
+        com.starkinhon.battlegroundsmod.combat.Fx.sound(level, position(), net.minecraft.sounds.SoundEvents.ARMOR_EQUIP_IRON.value(), 1.4f, 0.6f);
+        com.starkinhon.battlegroundsmod.combat.Fx.sound(level, position(), net.minecraft.sounds.SoundEvents.PLAYER_ATTACK_SWEEP, 1.2f, 0.7f);
+    }
+
+    public boolean drawn() {
+        return entityData.get(DATA_DRAWN);
+    }
+
+    // Waiting with the sword sheathed for the draw: he holds still, as in his entrance.
+    @Override
+    public boolean staged() {
+        return super.staged() || (drawAt >= 0 && !awakened());
     }
 
     @Override
@@ -115,8 +173,12 @@ public class KokushiboEntity extends SoulBoss {
     public boolean hurt(net.minecraft.world.damagesource.DamageSource source, float amount) {
         float before = getHealth();
         boolean hurt = super.hurt(source, amount);
-        if (hurt && isAlive() && !level().isClientSide()) {
-            long now = level().getGameTime();
+        if (hurt && isAlive() && level() instanceof ServerLevel level) {
+            // Hit before drawing: he draws right away.
+            if (!drawn()) {
+                draw(level);
+            }
+            long now = level.getGameTime();
             if (now - bigHitAt > 40) {
                 bigHit = 0;
                 bigHitAt = now;

@@ -14,6 +14,7 @@ public class KokushiboRenderer extends SoulBossRenderer<KokushiboEntity> {
 
     public KokushiboRenderer(EntityRendererProvider.Context context) {
         super(context, "kokushibo", false);
+        addLayer(new com.starkinhon.battlegroundsmod.client.outfit.KokushiboSheathLayer<>(this));
     }
 
     @Override
