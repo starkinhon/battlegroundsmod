@@ -47,6 +47,8 @@ import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 public final class Aura {
     private static final double RANGE = 96;
     private static final int MAX_EYE_SAMPLES = 96;
+    // Farthest the eyes can move between two frames and still be one trail (blocks).
+    private static final float MAX_EYE_STEP = 3f;
 
     private static final class State {
         String power;
@@ -320,7 +322,7 @@ public final class Aura {
     }
 
     // Called while a body is drawn (AuraEyesLayer), with the pose of its model: where its eyes are right now.
-    public static void recordEyes(LivingEntity entity, PoseStack pose, ModelPart head) {
+    public static void recordEyes(LivingEntity entity, PoseStack pose, ModelPart head, float partial) {
         if (drawing || !entity.isAlive() || FxAnchor.firstPersonSelf(entity.getId())) {
             return;
         }
@@ -338,7 +340,18 @@ public final class Aura {
         pose.popPose();
         Minecraft minecraft = Minecraft.getInstance();
         Vec3 camera = minecraft.gameRenderer.getMainCamera().getPosition();
-        addEyeSample(entity.getId(), eyes, camera.add(left.x, left.y, left.z), camera.add(right.x, right.y, right.z));
+        Vec3 leftAt = camera.add(left.x, left.y, left.z);
+        Vec3 rightAt = camera.add(right.x, right.y, right.z);
+        // The same body is also drawn outside the world pass: the player in the inventory, minimap radar icons
+        // (Xaero's), the shader shadow pass (Iris), other mods' previews. There the pose is not "world minus camera",
+        // and that point, joined to the real ones, made the trail a huge laser in one direction. Only a point that
+        // is really at the head counts.
+        Vec3 head0 = entity.getEyePosition(partial);
+        double reach = Math.max(1.0, entity.getBbHeight() * 0.6);
+        if (leftAt.distanceToSqr(head0) > reach * reach || rightAt.distanceToSqr(head0) > reach * reach) {
+            return;
+        }
+        addEyeSample(entity.getId(), eyes, leftAt, rightAt);
     }
 
     // A body that is not drawn (the invisible dash) has no model to read the eyes from: they are put where its head
@@ -500,6 +513,11 @@ public final class Aura {
                     break;
                 }
                 Vector3f point = (side == 0 ? s.left() : s.right()).subtract(camera).toVector3f();
+                // A jump between two frames (teleport, position snap from the server) is not a movement: the trail
+                // stops there instead of drawing a long beam across.
+                if (prev != null && prev.distanceSquared(point) > MAX_EYE_STEP * MAX_EYE_STEP) {
+                    break;
+                }
                 if (prev != null && prev.distanceSquared(point) > 1.0E-6f) {
                     float fade = (1 - t) * (1 - t) * alive;
                     float width = (float) eyes.largura() * (1 - 0.7f * t);
