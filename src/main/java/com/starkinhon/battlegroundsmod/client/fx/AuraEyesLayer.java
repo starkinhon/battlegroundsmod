@@ -17,6 +17,6 @@ public class AuraEyesLayer<T extends LivingEntity, M extends HumanoidModel<T>> e
     @Override
     public void render(PoseStack poseStack, MultiBufferSource buffer, int packedLight, T entity, float limbSwing, float limbSwingAmount,
             float partialTick, float ageInTicks, float netHeadYaw, float headPitch) {
-        Aura.recordEyes(entity, poseStack, getParentModel().head);
+        Aura.recordEyes(entity, poseStack, getParentModel().head, partialTick);
     }
 }
