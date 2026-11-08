@@ -12,7 +12,7 @@
     "raio": 0.7
   },
   "destruir": {
-    "dano": 20,
+    "dano": 48,
     "raioBlocos": 1.3,
     "raioAtaques": 1.5
   },

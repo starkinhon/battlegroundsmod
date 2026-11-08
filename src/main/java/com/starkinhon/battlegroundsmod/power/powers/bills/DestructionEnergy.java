@@ -10,6 +10,7 @@ import com.starkinhon.battlegroundsmod.power.BossOrder;
 import com.starkinhon.battlegroundsmod.ModEffects;
 import com.starkinhon.battlegroundsmod.combat.BlockRules;
 import com.starkinhon.battlegroundsmod.combat.Combat;
+import com.starkinhon.battlegroundsmod.combat.RepeatHits;
 import com.starkinhon.battlegroundsmod.combat.Destructible;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.combat.Fx;
@@ -349,7 +350,9 @@ public final class DestructionEnergy {
         double radius = Math.max(1, explosao.raio());
         for (LivingEntity hit : Combat.inRadius(level, at, radius, caster)) {
             double k = Math.min(1, Combat.center(hit).distanceTo(at) / radius);
-            Combat.hurt(caster, hit, (float) (explosao.dano() * (1 - k * 0.5)));
+            // the Rain's 40 balls share their damage (RepeatHits): a target caught by all of them takes about 3.3 balls
+            float share = f.skill().equals(RAIN) ? RepeatHits.share(caster, hit, f.skill()) : 1f;
+            Combat.hurt(caster, hit, (float) (explosao.dano() * (1 - k * 0.5)) * share);
             Combat.pushFrom(hit, at, explosao.empurrao() * (1 - k * 0.5), explosao.altura());
         }
         Fx.effects(level, f.skill(), f.awakened(), "explosao", at, new Vec3(0, 1, 0));

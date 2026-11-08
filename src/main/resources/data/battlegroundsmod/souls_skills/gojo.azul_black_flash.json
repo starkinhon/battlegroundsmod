@@ -19,10 +19,10 @@
     "carregarTicks": 30
   },
   "golpe": {
-    "dano": 18,
-    "danoMax": 34,
-    "danoFinal": 8,
-    "danoFinalMax": 16,
+    "dano": 56,
+    "danoMax": 100,
+    "danoFinal": 24,
+    "danoFinalMax": 48,
     "empurrao": 3.4,
     "empurraoMax": 6.4,
     "subir": 0.3,

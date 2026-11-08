@@ -289,7 +289,7 @@ public final class SwordArts {
             for (LivingEntity target : Combat.alongLine(level, a, b, 1.6, player)) {
                 if (done.add(target.getId())) {
                     Defense.breakGuard(target, player);
-                    if (Combat.hurt(player, target, 9f * mult)) {
+                    if (Combat.hurtBase(player, target, 22.5f * mult)) {
                         Stun.apply(target, 14);
                         Melee.shake(target, 0.6f, 8);
                         cut(level, target, line, 3f, 1.6f, color);
@@ -315,8 +315,8 @@ public final class SwordArts {
         float mult = Melee.multiplier(player);
         int color = color(player);
         int interrupts = data.interrupts;
-        float hitDamage = 1.5f * mult;
-        float finisherDamage = 6f * mult;
+        float hitDamage = 3.75f * mult;
+        float finisherDamage = 15f * mult;
         data.busyTicks = ROUND * BARRAGE_MIN_ROUNDS + 4;
         int[] finishAt = {-1};
         Tasks.add(age -> {
@@ -352,7 +352,7 @@ public final class SwordArts {
                     int which = inRound / cutLen;
                     Vec3 line = barrageLine(Combat.flatLook(player), which);
                     for (LivingEntity target : slashed(player, BARRAGE_REACH, -80, 80)) {
-                        if (Combat.hurt(player, target, hitDamage)) {
+                        if (Combat.hurtBase(player, target, hitDamage)) {
                             Melee.hitFx(player, target, "golpe");
                             Stamina.gain(player, StaminaSpec.get().ganhoAcertoBarragemPct());
                             Melee.shake(target, 0.15f, 4);
@@ -528,7 +528,7 @@ public final class SwordArts {
     // A sword hit: damage, then (unless guarded) stun, hitstop, shake and the push after the hitstop.
     private static boolean land(LivingEntity attacker, LivingEntity hit, float damage, int stun, int stop, float tremor, Vec3 pushDir,
             double push, double up, String momento) {
-        if (!Combat.hurt(attacker, hit, damage)) {
+        if (!Combat.hurtBase(attacker, hit, damage)) {
             return false;
         }
         Stamina.gain(attacker, StaminaSpec.get().ganhoAcertoPct());

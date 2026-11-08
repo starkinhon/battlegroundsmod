@@ -30,7 +30,8 @@ public final class OniBody {
     public static final int NORMAL = 0, NIGHT = 1, FULL_MOON = 2, DAY = 3;
     // Per phase (NORMAL, NIGHT, FULL_MOON, DAY): general stats (health, damage, armor), walking speed (kept lower so he stays
     // playable), regeneration (share of max health per second).
-    private static final double[] STATS = {1.0, 1.5, 1.75, 0.85};
+    // Rebalance of 2026-11-08 (he was too strong): night 1.25 and full moon 1.4 (were 1.5 and 1.75).
+    private static final double[] STATS = {1.0, 1.25, 1.4, 0.85};
     private static final double[] SPEED = {1.0, 1.15, 1.25, 0.9};
     // Night and the full moon healed too fast (Stark, 2026-11-08): half of what they were (0.03 and 0.04).
     private static final double[] REGEN = {0.015, 0.015, 0.02, 0.005};
@@ -91,7 +92,7 @@ public final class OniBody {
         boolean oni = is(entity);
         int phase = oni ? phase(entity) : NORMAL;
         float fraction = entity.getHealth() / Math.max(1, entity.getMaxHealth());
-        // The boss keeps the life of his file (Stark: 1000) at night too; the rest of the night's strength he gets.
+        // The boss keeps the life of his file (225 since the 2026-11-08 rebalance) at night too; the rest of the night's strength he gets.
         boolean healthChanged = set(entity, Attributes.MAX_HEALTH, HEALTH,
                 entity instanceof net.minecraft.world.entity.player.Player ? STATS[phase] - 1 : 0);
         set(entity, Attributes.ARMOR, ARMOR, STATS[phase] - 1);

@@ -97,6 +97,11 @@ public final class Combat {
 
     // Every move of the mod hurts through here or hurtMagic, so the attacker's tier scales them all (see Tiers).
     public static boolean hurt(LivingEntity attacker, LivingEntity target, float damage) {
+        return hurtBase(attacker, target, damage * subScale(attacker));
+    }
+
+    // The base attacks (combo, Forte, Barragem, sword arts): already on the new scale for everyone, SubAlmas too.
+    public static boolean hurtBase(LivingEntity attacker, LivingEntity target, float damage) {
         damage *= Tiers.damageMultiplier(attacker) * com.starkinhon.battlegroundsmod.power.powers.sub.nr.NrCommon.damageMultiplier(attacker)
                 * com.starkinhon.battlegroundsmod.power.powers.sub.jj.JjCommon.damageMultiplier(attacker)
                 * com.starkinhon.battlegroundsmod.power.powers.kokushibo.OniBody.damageMultiplier(attacker);
@@ -108,10 +113,18 @@ public final class Combat {
         return target.hurt(source, damage);
     }
 
+    // The SubAlmas' damages are written in their code at the old scale (before the 2026-11-08 rebalance made every
+    // value a Tier 0 maximum): this brings them to the new one.
+    public static float subScale(LivingEntity attacker) {
+        String power = attacker.getData(com.starkinhon.battlegroundsmod.ModAttachments.POWER).power;
+        return power != null && com.starkinhon.battlegroundsmod.power.Powers.isSub(power)
+                ? (float) com.starkinhon.battlegroundsmod.skill.TierSpec.get().multSubAlmas() : 1f;
+    }
+
     // Magic damage ignores armor.
     public static boolean hurtMagic(LivingEntity player, LivingEntity target, float damage) {
         damage *= Tiers.damageMultiplier(player) * com.starkinhon.battlegroundsmod.power.powers.sub.nr.NrCommon.damageMultiplier(player)
-                * com.starkinhon.battlegroundsmod.power.powers.kokushibo.OniBody.damageMultiplier(player);
+                * com.starkinhon.battlegroundsmod.power.powers.kokushibo.OniBody.damageMultiplier(player) * subScale(player);
         target.invulnerableTime = 0;
         return target.hurt(player.damageSources().indirectMagic(player, player), damage);
     }

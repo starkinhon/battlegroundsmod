@@ -25,8 +25,8 @@
     "velocidadeMax": 2.6,
     "alcance": 90,
     "apagar": 1.15,
-    "dano": 30,
-    "danoMax": 70,
+    "dano": 72,
+    "danoMax": 140,
     "blocosPorTick": 12000,
     "raioDestruicao": 16,
     "raioDestruicaoMax": 22
@@ -39,9 +39,9 @@
     "raio": 13,
     "explosaoTicks": 34,
     "raioExplosao": 100,
-    "danoRoxo": 120,
-    "danoCentro": 90,
-    "danoBorda": 25,
+    "danoRoxo": 200,
+    "danoCentro": 160,
+    "danoBorda": 48,
     "empurrao": 4.5,
     "puxar": 0.7,
     "raioPuxar": 16,
@@ -669,10 +669,10 @@
   "despertado": {
     "nome": "Roxo (despertado)",
     "tiro": {
-      "danoMax": 90
+      "danoMax": 170
     },
     "irrestrito": {
-      "danoCentro": 120
+      "danoCentro": 200
     }
   }
 }

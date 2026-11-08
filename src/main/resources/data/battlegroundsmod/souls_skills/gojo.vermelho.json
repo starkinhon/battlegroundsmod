@@ -23,8 +23,8 @@
     "raioMax": 5.5,
     "velocidade": 5,
     "velocidadeMax": 9,
-    "dano": 12,
-    "danoMax": 36,
+    "dano": 32,
+    "danoMax": 88,
     "empurrao": 2.6,
     "empurraoMax": 5.5,
     "subir": 0.35,
@@ -37,7 +37,7 @@
     "flutuar": 1.0,
     "preparoTicks": 12,
     "carga": 0.65,
-    "dano": 30,
+    "dano": 80,
     "empurrao": 6.5,
     "stunTicks": 40
   },
@@ -474,11 +474,11 @@
     "tiro": {
       "alcanceMax": 110,
       "raioMax": 7,
-      "danoMax": 46,
+      "danoMax": 105,
       "empurraoMax": 7
     },
     "shift": {
-      "dano": 40
+      "dano": 100
     }
   }
 }

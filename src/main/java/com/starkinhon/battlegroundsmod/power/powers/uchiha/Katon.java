@@ -36,7 +36,7 @@ public final class Katon {
     public static final String SKILL = "madara.katon";
     // Each target is burned at most once per interval, so the damage does not depend on the tick rate.
     private static final int HIT_INTERVAL = 5;
-    private static final float DAMAGE = 1.5f;
+    private static final float DAMAGE = 5.5f;
     private static final int SLOW_TICKS = 30;
     // Used when the file has no "sons" list: the Forja's starting sounds.
     private static final List<Som> DEFAULT_SOUNDS = List.of(

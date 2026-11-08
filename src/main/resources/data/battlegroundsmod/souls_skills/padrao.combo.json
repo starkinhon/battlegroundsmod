@@ -20,7 +20,7 @@
   "golpes": [
     {
       "nome": "Jab",
-      "dano": 3.5,
+      "dano": 8,
       "empurrao": 0.25,
       "subida": 0.05,
       "avanco": 0.12,
@@ -66,7 +66,7 @@
     },
     {
       "nome": "Direto",
-      "dano": 3.5,
+      "dano": 8,
       "empurrao": 0.3,
       "subida": 0.05,
       "avanco": 0.15,
@@ -112,7 +112,7 @@
     },
     {
       "nome": "Gancho",
-      "dano": 4,
+      "dano": 10,
       "empurrao": 0.2,
       "subida": 0.38,
       "avanco": 0.15,
@@ -158,7 +158,7 @@
     },
     {
       "nome": "Joelhada",
-      "dano": 4.5,
+      "dano": 12,
       "empurrao": 0.35,
       "subida": 0.3,
       "avanco": 0.1,
@@ -208,7 +208,7 @@
     },
     {
       "nome": "Soco final",
-      "dano": 7,
+      "dano": 18,
       "empurrao": 1.9,
       "subida": 0.5,
       "avanco": 0.25,

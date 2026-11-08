@@ -29,9 +29,13 @@ import net.neoforged.neoforge.network.PacketDistributor;
 // the effect itself, 1.5x as thick, as the 1st form), and the cuts carve the blocks they pass through and tear the ground
 // under them, so the destruction always follows the direction of the cuts (Stark).
 // Stark's order of destruction: 6th > 5th > 3rd and 2nd > 1st.
-// Every cut and every moon is a blow of its own (Stark, 2026-11-08): each one that touches a target does its damage and its
-// impact, thrown away from where that cut came, so a form of a hundred cuts lands a hundred blows from every side and the
-// 8th (one huge cut) lands one huge blow. The awakened forms (7th, 8th, 9th, 10th, 14th, 16th) go through here too.
+// Every cut is a blow of its own (Stark, 2026-11-08), but a form has a TOTAL damage per target that its cuts share (the
+// rebalance of the same day): the first cut on someone takes 30% of it and every next cut on the same one 30% less than
+// the one before, so all of them together never pass the total; a form of a hundred cuts deals what one of five does,
+// spread out, and the 8th (one huge cut) deals it all at once. The cuts in the middle only hold (stun); the target is
+// thrown away from the last cut that hit it once no cut has touched it for FLING_AFTER ticks (or the form ends), so
+// nobody bounces like a pinball between the cuts. The moons cut without throwing or stunning. The awakened forms (7th,
+// 8th, 9th, 10th, 14th, 16th) go through here too.
 public final class MoonFormSkill {
     private static final double VIEW_DISTANCE = 128;
     // The awakened forms reach much further (the 10th drills ~180 blocks).
@@ -41,10 +45,15 @@ public final class MoonFormSkill {
     private static final double HIT_THICK = 1.5;
     // How far from the line between him and a cut someone can stand and still be hit by it (blocks, past their width).
     private static final double FAN_REACH = 1.0;
-    // Each moon left hanging in the air after a form cuts whoever touches it for this much.
-    private static final float HANGING_DAMAGE = 3f;
+    // Each moon left hanging in the air after a form cuts whoever touches it for this much (Tier 0 maximum, like every
+    // damage of the mod): no throw and no stun (Stark, 2026-11-08), so whoever runs or flies at him only gets scratched.
+    private static final float HANGING_DAMAGE = 2f;
+    // Share of a form's total the first cut on a target takes, and what each next cut keeps of the one before.
+    private static final float FIRST_CUT = 0.3f, NEXT_CUT = 0.7f;
+    // Ticks with no cut on a target before it is thrown away from the last one.
+    private static final int FLING_AFTER = 6;
 
-    // Per form: damage of a cut and of a moon, knockback out and up, how fat the carving is around a cut (times its half
+    // Per form: the total damage of its cuts on one target (Tier 0 maximum), damage of a moon, knockback out and up, how fat the carving is around a cut (times its half
     // width), how deep it tears the ground under it, the blocks it may take in one tick, and whether one target can be hit
     // again by the same cut (the 5th form's vortex keeps cutting whoever stays in it).
     private record Tune(float cutDamage, float moonDamage, double fling, double flingUp, double fat, int groove, int budget, int rehit) {
@@ -52,17 +61,17 @@ public final class MoonFormSkill {
 
     private static Tune tune(int form) {
         return switch (form) {
-            case 2 -> new Tune(9f, 3f, 1.6, 0.6, 1.2, 1, 350, 0);
-            case 3 -> new Tune(16f, 3f, 2.0, 0.7, 1.4, 2, 650, 0);
-            case 5 -> new Tune(7f, 0f, 1.8, 0.7, 1.25, 2, 750, 10);
+            case 2 -> new Tune(64f, 4f, 1.6, 0.6, 1.2, 1, 350, 0);
+            case 3 -> new Tune(72f, 4f, 2.0, 0.7, 1.4, 2, 650, 0);
+            case 5 -> new Tune(72f, 0f, 1.8, 0.7, 1.25, 2, 750, 10);
             // the awakened forms: 2x the scale, stronger blows, deeper marks
-            case 7 -> new Tune(14f, 3f, 2.4, 0.8, 1.3, 2, 1500, 0);
-            case 8 -> new Tune(22f, 3f, 3.0, 0.9, 1.4, 3, 1800, 0);
-            case 9 -> new Tune(9f, 3f, 2.0, 0.6, 1.3, 2, 1500, 0);
-            case 10 -> new Tune(6f, 3f, 1.6, 0.5, 1.3, 3, 1800, 6);
-            case 14 -> new Tune(10f, 3f, 2.4, 0.8, 1.3, 2, 1800, 0);
-            case 16 -> new Tune(22f, 3f, 1.0, 1.2, 1.4, 3, 2000, 0);
-            default -> new Tune(5f, 2f, 2.4, 0.5, 1.5, 2, 1100, 0);
+            case 7 -> new Tune(80f, 4f, 2.4, 0.8, 1.3, 2, 1500, 0);
+            case 8 -> new Tune(100f, 4f, 3.0, 0.9, 1.4, 3, 1800, 0);
+            case 9 -> new Tune(72f, 4f, 2.0, 0.6, 1.3, 2, 1500, 0);
+            case 10 -> new Tune(88f, 4f, 1.6, 0.5, 1.3, 3, 1800, 6);
+            case 14 -> new Tune(120f, 4f, 2.4, 0.8, 1.3, 2, 1800, 0);
+            case 16 -> new Tune(160f, 4f, 1.0, 1.2, 1.4, 3, 2000, 0);
+            default -> new Tune(88f, 4f, 2.4, 0.5, 1.5, 2, 1100, 0);
         };
     }
 
@@ -164,8 +173,8 @@ public final class MoonFormSkill {
         Tune tune = tune(form);
         // the awakened forms' freezes and slow motion (the clients play the same clock, so hits stay on the cuts)
         MoonTime clock = MoonForms.awakened(form) && MoonImpactRule.on(level) ? MoonTime.of(form, shape) : MoonTime.plain(shape.end);
-        Run run = new Run(caster, level, form, shape, basis, tune, clock);
         int ticks = (int) Math.ceil(clock.realEnd * 20);
+        Run run = new Run(caster, level, form, shape, basis, tune, clock, ticks);
         Tasks.repeat(ticks, run::tick);
         return true;
     }
@@ -187,11 +196,19 @@ public final class MoonFormSkill {
         final Set<Long> hit = new HashSet<>();
         final Map<Long, Long> lastHit = new HashMap<>();
         final Set<Integer> struck = new HashSet<>();
+        // per target: cuts landed in this form, and the tick and point of its last cut (for the throw after it)
+        final Map<Integer, Integer> cuts = new HashMap<>();
+        final Map<Integer, Integer> lastCutAt = new HashMap<>();
+        final Map<Integer, Vec3> lastCutFrom = new HashMap<>();
+        final Map<Integer, LivingEntity> held = new HashMap<>();
+        final int ticks;
+        int now;
         final int[] debris = {0};
         final boolean carve;
         final MoonTime clock;
 
-        Run(LivingEntity caster, ServerLevel level, int form, MoonForms.Linger shape, MoonForms.Basis basis, Tune tune, MoonTime clock) {
+        Run(LivingEntity caster, ServerLevel level, int form, MoonForms.Linger shape, MoonForms.Basis basis, Tune tune, MoonTime clock, int ticks) {
+            this.ticks = ticks;
             this.clock = clock;
             this.caster = caster;
             this.level = level;
@@ -203,6 +220,8 @@ public final class MoonFormSkill {
         }
 
         void tick(int age) {
+            now = age;
+            flings(age >= ticks - 1);
             if (!caster.isAlive()) {
                 return;
             }
@@ -246,9 +265,9 @@ public final class MoonFormSkill {
                         double dy = Math.max(0, Math.abs(c.y - p.y) - target.getBbHeight() * 0.5);
                         double dx = c.x - p.x, dz = c.z - p.z;
                         if (dx * dx + dz * dz + dy * dy < reach * reach) {
-                            strike(target, key, tune.cutDamage(), age, p);
+                            strike(target, key, age, p);
                         } else if (fan && inFan(target, chest, p)) {
-                            strike(target, key, tune.cutDamage(), age, p);
+                            strike(target, key, age, p);
                         }
                     }
                     if (carve && budget[0] > 0) {
@@ -272,7 +291,7 @@ public final class MoonFormSkill {
                         double dy = Math.max(0, Math.abs(c.y - p.y) - target.getBbHeight() * 0.5);
                         double dx = c.x - p.x, dz = c.z - p.z;
                         if (dx * dx + dz * dz + dy * dy < reach * reach) {
-                            strike(target, (hanging ? 200000 : 100000) + m.idx(), damage, age, p);
+                            moon(target, (hanging ? 200000 : 100000) + m.idx(), damage, p);
                         }
                     }
                 }
@@ -332,7 +351,7 @@ public final class MoonFormSkill {
                 SubCommon.sound(level, at, SoundEvents.GENERIC_EXPLODE.value(), 2.2f, 0.7f);
                 SubCommon.sound(level, at, SoundEvents.TRIDENT_THUNDER.value(), 1.6f, 1.4f);
                 for (LivingEntity target : Combat.inRadius(level, at.add(0, 1, 0), CRATER_RADIUS, caster)) {
-                    strike(target, 300000 + i, tune.cutDamage(), (int) Math.round(t * 20), at);
+                    strike(target, 300000 + i, (int) Math.round(t * 20), at);
                 }
                 if (carve) {
                     // the bowl: everything within the radius below the landing point, a little above it too
@@ -376,16 +395,8 @@ public final class MoonFormSkill {
             return (int) Math.round(rb.seed * 1000);
         }
 
-        private void strike(LivingEntity target, int piece, float damage, int age, Vec3 from) {
-            long id = (long) target.getId() << 32 | (piece & 0xFFFFFFFFL);
-            if (tune.rehit() > 0) {
-                // a cut that keeps grinding (the 5th's vortex, the 10th's saws) hits again, each cut on its own
-                Long last = lastHit.get(id);
-                if (last != null && age - last < tune.rehit()) {
-                    return;
-                }
-                lastHit.put(id, (long) age);
-            } else if (!hit.add(id)) {
+        private void strike(LivingEntity target, int piece, int age, Vec3 from) {
+            if (!firstTouch(target, piece, age)) {
                 return;
             }
             Vec3 at = Combat.center(target);
@@ -400,25 +411,79 @@ public final class MoonFormSkill {
                 SubCommon.sound(level, at, SoundEvents.LIGHTNING_BOLT_IMPACT, 0.9f, 1.6f);
             }
             SubCommon.sound(level, at, SoundEvents.PLAYER_ATTACK_CRIT, 1.2f, 0.7f + SubCommon.RANDOM.nextFloat() * 0.3f);
-            Combat.hurt(caster, target, damage);
+            // this cut's share of the form's total: the 8th is one cut and deals it all
+            int n = cuts.merge(target.getId(), 1, Integer::sum);
+            float share = form == 8 ? 1f : FIRST_CUT * (float) Math.pow(NEXT_CUT, n - 1);
+            Combat.hurt(caster, target, tune.cutDamage() * share);
             Stun.apply(target, 12);
-            // thrown away from the cut that hit (the 6th along its barrage), and up, so blows from every side shake him
-            // every way; set again next tick so nothing in between eats it
-            Vec3 away = form == 6 ? basis.fwd() : target.position().subtract(from);
-            if (new Vec3(away.x, 0, away.z).lengthSqr() < 1.0E-3) {
-                away = target.position().subtract(basis.origin());
-            }
-            away = new Vec3(away.x, 0, away.z);
-            away = away.lengthSqr() < 1.0E-4 ? basis.fwd() : away.normalize();
-            Vec3 fling = away.scale(tune.fling()).add(0, tune.flingUp(), 0);
-            target.setDeltaMovement(fling);
+            // held where it is until the cuts stop; thrown away from the last one after (flings)
+            target.setDeltaMovement(Vec3.ZERO);
             target.hurtMarked = true;
-            Tasks.later(1, () -> {
-                if (target.isAlive()) {
-                    target.setDeltaMovement(fling);
-                    target.hurtMarked = true;
+            lastCutAt.put(target.getId(), now);
+            lastCutFrom.put(target.getId(), from);
+            held.put(target.getId(), target);
+        }
+
+        // A moon that touches someone: its damage only, no throw and no stun (Stark, 2026-11-08).
+        private void moon(LivingEntity target, int piece, float damage, Vec3 at) {
+            if (!hit.add((long) target.getId() << 32 | (piece & 0xFFFFFFFFL))) {
+                return;
+            }
+            SubCommon.sound(level, at, SoundEvents.PLAYER_ATTACK_SWEEP, 0.6f, 1.6f + SubCommon.RANDOM.nextFloat() * 0.3f);
+            Vec3 motion = target.getDeltaMovement();
+            Combat.hurt(caster, target, damage);
+            // the hurt's own vanilla knockback taken back
+            target.setDeltaMovement(motion);
+            target.hurtMarked = true;
+        }
+
+        // Whether this cut may land on this target now (once per cut, or again after rehit ticks for a grinding cut).
+        private boolean firstTouch(LivingEntity target, int piece, int age) {
+            long id = (long) target.getId() << 32 | (piece & 0xFFFFFFFFL);
+            if (tune.rehit() > 0) {
+                // a cut that keeps grinding (the 5th's vortex, the 10th's saws) hits again, each cut on its own
+                Long last = lastHit.get(id);
+                if (last != null && age - last < tune.rehit()) {
+                    return false;
                 }
-            });
+                lastHit.put(id, (long) age);
+                return true;
+            }
+            return hit.add(id);
+        }
+
+        // Throws everyone no cut has touched for FLING_AFTER ticks (everyone left, when the form ends) away from the
+        // last cut that hit them (the 6th along its barrage), and up; set again next tick so nothing in between eats it.
+        private void flings(boolean end) {
+            var it = held.entrySet().iterator();
+            while (it.hasNext()) {
+                var e = it.next();
+                int id = e.getKey();
+                if (!end && now - lastCutAt.get(id) < FLING_AFTER) {
+                    continue;
+                }
+                it.remove();
+                LivingEntity target = e.getValue();
+                if (!target.isAlive()) {
+                    continue;
+                }
+                Vec3 from = lastCutFrom.get(id);
+                Vec3 away = form == 6 ? basis.fwd() : target.position().subtract(from);
+                if (new Vec3(away.x, 0, away.z).lengthSqr() < 1.0E-3) {
+                    away = target.position().subtract(basis.origin());
+                }
+                away = new Vec3(away.x, 0, away.z);
+                away = away.lengthSqr() < 1.0E-4 ? basis.fwd() : away.normalize();
+                Vec3 fling = away.scale(tune.fling()).add(0, tune.flingUp(), 0);
+                target.setDeltaMovement(fling);
+                target.hurtMarked = true;
+                Tasks.later(1, () -> {
+                    if (target.isAlive()) {
+                        target.setDeltaMovement(fling);
+                        target.hurtMarked = true;
+                    }
+                });
+            }
         }
 
         // The blocks a cut passes through (a flat slab along it, as wide as the band and a little thick), and the ground

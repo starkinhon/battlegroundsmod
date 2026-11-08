@@ -50,7 +50,7 @@ public final class Manipulator {
         Fx.burst(level, ParticleTypes.FLASH, end, 1, 0, 0);
         Fx.sound(level, start, SoundEvents.LIGHTNING_BOLT_IMPACT, 1.5f, 1.5f);
         for (LivingEntity target : Combat.alongLine(level, start, end, 0.6, player)) {
-            Combat.hurt(player, target, 9f);
+            Combat.hurt(player, target, 22f);
             Fx.burst(level, ParticleTypes.ELECTRIC_SPARK, Combat.center(target), 20, 0.4, 0.3);
         }
         return true;

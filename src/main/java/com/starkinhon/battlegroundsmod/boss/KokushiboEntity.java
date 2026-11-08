@@ -16,9 +16,9 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
 
-// Kokushibo, the Upper Moon One boss (Stark, 2026-11-08): the fourth boss, tier 4, 1000 life, a demon with the same body as
+// Kokushibo, the Upper Moon One boss (Stark, 2026-11-08): the fourth boss, tier 5, 225 life (rebalance of 2026-11-08; was tier 4, 1000), a demon with the same body as
 // the player with the soul (OniBody: stronger at night, regenerates, a sword cuts the regeneration). He fights with his own
-// sword in hand and the normal Moon Breathing (1st, 2nd, 3rd, 5th and 6th Forms) until he is down to 600; then the fight
+// sword in hand and the normal Moon Breathing (1st, 2nd, 3rd, 5th and 6th Forms) until he is down to 60%; then the fight
 // stops for his scene (KokushiboDespertar): the kimono tears, the sword stretches into the awakened one and from then on he
 // only uses the Awakened Moon (7th, 8th, 9th, 10th, 14th and the homing 16th). How he picks them is KokushiboTactics;
 // tuning in souls_bosses/kokushibo.json.

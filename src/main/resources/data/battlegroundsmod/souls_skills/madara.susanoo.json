@@ -14,12 +14,12 @@
   "esmagar": {
     "duracaoTicks": 60,
     "golpes": 5,
-    "dano": 3
+    "dano": 12
   },
   "arremesso": {
     "forca": 2,
     "altura": 0.5,
-    "dano": 5,
+    "dano": 20,
     "stunTicks": 30
   },
   "visual": {

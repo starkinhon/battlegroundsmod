@@ -6,7 +6,7 @@
   "dropAlma": false,
   "atributos": {
     "vida": 20,
-    "armadura": 0.0,
+    "armadura": 0,
     "velocidade": 0.3,
     "resistenciaEmpurrao": 0.0,
     "alcanceVisao": 24,

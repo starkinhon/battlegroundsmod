@@ -11,7 +11,7 @@
     "alcance": 200,
     "velocidade": 5,
     "espessura": 3,
-    "dano": 30,
+    "dano": 88,
     "empurrao": 2.2,
     "altura": 0.5,
     "quebrarBlocos": true,

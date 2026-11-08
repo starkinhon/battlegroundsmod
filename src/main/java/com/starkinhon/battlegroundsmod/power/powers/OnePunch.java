@@ -50,7 +50,7 @@ public final class OnePunch {
         Fx.sound(level, front, SoundEvents.PLAYER_ATTACK_STRONG, 1.5f, 0.5f);
         if (target != null) {
             Vec3 hit = Combat.center(target);
-            Combat.hurt(player, target, 12f);
+            Combat.hurt(player, target, 30f);
             Combat.push(target, look, 3.5, 0.7);
             Fx.burst(level, ParticleTypes.EXPLOSION, hit, 2, 0.2, 0);
             Fx.burst(level, Fx.dust(GLOVE, 2f), hit, 20, 0.4, 0);
@@ -61,7 +61,7 @@ public final class OnePunch {
 
     // X: consecutive normal punches.
     private static boolean consecutivePunches(ServerPlayer player, ServerLevel level) {
-        Melee.barrage(player, 34, 4.5, 3f, 10f, GLOVE);
+        Melee.barrage(player, 34, 4.5, 7.5f, 25f, GLOVE);
         return true;
     }
 
@@ -97,7 +97,7 @@ public final class OnePunch {
         Combat.explode(player, pos.add(0, -0.5, 0), 2.5f);
         Fx.sound(level, pos, SoundEvents.GENERIC_EXPLODE.value(), 2f, 0.7f);
         for (LivingEntity target : Combat.inRadius(level, pos, 8, player)) {
-            Combat.hurt(player, target, 10f);
+            Combat.hurt(player, target, 25f);
             Combat.pushFrom(target, pos, 1.5, 1.1);
         }
     }
@@ -138,7 +138,7 @@ public final class OnePunch {
             Fx.burst(level, ParticleTypes.EXPLOSION, to, 3, radius, 0);
             for (LivingEntity target : Combat.alongLine(level, from, to, radius, player)) {
                 if (hit.add(target)) {
-                    Combat.hurt(player, target, 50f);
+                    Combat.hurt(player, target, 125f);
                     Combat.push(target, dir, 5.0, 1.5);
                 }
             }
