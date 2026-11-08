@@ -223,6 +223,11 @@ public final class PowerLogic {
         if (OWN_ULT_TITLE.contains(power.id())) {
             return;
         }
+        // Kokushibo's 6th Form (V with the normal sword) goes without the big title (Stark, 2026-11-08).
+        if (com.starkinhon.battlegroundsmod.power.powers.MoonDemon.ID.equals(power.id())
+                && !com.starkinhon.battlegroundsmod.power.powers.MoonDemon.stretched(player)) {
+            return;
+        }
         Component title = power.abilityName(slot).copy().withStyle(s -> s.withColor(power.color()).withBold(true));
         Component subtitle = player.getDisplayName().copy().withStyle(ChatFormatting.GRAY);
         for (ServerPlayer other : Combat.level(player).players()) {
