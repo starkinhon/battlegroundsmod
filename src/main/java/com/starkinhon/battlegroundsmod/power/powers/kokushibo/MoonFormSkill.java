@@ -213,10 +213,10 @@ public final class MoonFormSkill {
             if (form == 16) {
                 craters(t, budget);
             }
-            // Every form (Stark, 2026-11-08; first the 3rd): a cut also lands on anyone between him and it, so someone
-            // close in still gets hit. Not the 16th: its cuts fall from the sky on the targets it homes on, they are
-            // not swung out from him.
-            boolean fan = form != 16;
+            // The 3rd and the awakened forms (Stark, 2026-11-07/08): a cut also lands on anyone between him and it, so
+            // someone close in still gets hit. Not the 2nd, 5th and 6th (Stark: they are fine as they are), nor the
+            // 16th (its cuts fall from the sky on the targets it homes on, they are not swung out from him).
+            boolean fan = form == 3 || MoonForms.awakened(form) && form != 16;
             Vec3 chest = caster.position().add(0, caster.getBbHeight() * 0.55, 0);
             for (int k = 0; k < fr.ribbons().size(); k++) {
                 MoonForms.Ribbon rb = fr.ribbons().get(k);
