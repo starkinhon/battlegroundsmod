@@ -55,9 +55,23 @@
     return o;
   }
 
+  // sc: per-part scale for smear / squash frames ({rightArm: [x, y, z], ...}, in the part's own axes: y = along an arm
+  // or leg); a part left out is 1, 1, 1.
+  function lerpScale(a, b, u) {
+    if (!a && !b) return undefined;
+    const out = {};
+    for (const n of new Set([...Object.keys(a || {}), ...Object.keys(b || {})])) {
+      const x = (a && a[n]) || [1, 1, 1], y = (b && b[n]) || [1, 1, 1];
+      out[n] = x.map((v, i) => v + (y[i] - v) * u);
+    }
+    return out;
+  }
+
   function lerpPose(a, b, u) {
     const out = {};
+    if (a.sc || b.sc) out.sc = lerpScale(a.sc, b.sc, u);
     for (const k in a) {
+      if (k === 'sc') continue;
       if (a[k] === null || b[k] === null) { out[k] = u < 0.5 ? a[k] : b[k]; }
       else if (typeof a[k] === 'object') { out[k] = {}; for (const j in a[k]) out[k][j] = a[k][j] + (b[k][j] - a[k][j]) * u; }
       else out[k] = a[k] + (b[k] - a[k]) * u;
@@ -168,8 +182,15 @@
     const end = keys[keys.length - 1].t;
     const chans = {};
     const last = {};
+    const scaled = new Set();
+    for (const k of keys) for (const n in (k.sc || {})) scaled.add(n);
     for (let t = 0; t <= end + 1e-6; t += step) {
-      const parts = solve(poseAt(keys, t));
+      const pose = poseAt(keys, t);
+      const parts = solve(pose);
+      for (const n of scaled) {
+        const v = (pose.sc && pose.sc[n]) || [1, 1, 1];
+        (chans[n + ':scale'] = chans[n + ':scale'] || []).push({ timestamp: +(t / 20).toFixed(4), target: v.map((x) => +x.toFixed(3)), interpolation: 'linear' });
+      }
       {
         let r = parts.item.wrist.slice();
         if (last.item) r = r.map((v, i) => { let x = v; while (x - last.item[i] > 180) x -= 360; while (x - last.item[i] < -180) x += 360; return x; });
@@ -195,7 +216,7 @@
   // Reads a baked JSON back like KeyframeAnimation.apply after standStill: parts with pos (px) and ZYX euler.
   function sampleJson(json, seconds) {
     const parts = {};
-    for (const n in DEFAULT_POS) parts[n] = { pos: new THREE.Vector3(...DEFAULT_POS[n]), rot: [0, 0, 0] };
+    for (const n in DEFAULT_POS) parts[n] = { pos: new THREE.Vector3(...DEFAULT_POS[n]), rot: [0, 0, 0], scale: [1, 1, 1] };
     parts.item = { wrist: [0, 0, 0] };
     const inv = {}; for (const k in BONE) inv[BONE[k]] = k;
     for (const a of json.animations) {
@@ -205,6 +226,7 @@
       else { let i = 0; while (i < ks.length - 2 && ks[i + 1].timestamp <= seconds) i++; const u = (seconds - ks[i].timestamp) / (ks[i + 1].timestamp - ks[i].timestamp); v = ks[i].target.map((x, j) => x + (ks[i + 1].target[j] - x) * u); }
       if (a.bone === 'Item') { parts.item.wrist = v.slice(); continue; }
       const P = parts[inv[a.bone]];
+      if (a.target === 'scale') { P.scale = v.slice(); continue; }
       if (a.target === 'position') { P.pos.x -= v[0]; P.pos.y -= v[1]; P.pos.z += v[2]; }
       else { P.rot[0] -= v[0] * D; P.rot[1] -= v[1] * D; P.rot[2] += v[2] * D; }
     }
@@ -221,7 +243,8 @@
 
   function partMatrix(P) {
     return new THREE.Matrix4().makeTranslation(P.pos.x / 16, P.pos.y / 16, P.pos.z / 16)
-      .multiply(new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(P.rot[0], P.rot[1], P.rot[2], 'ZYX')));
+      .multiply(new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(P.rot[0], P.rot[1], P.rot[2], 'ZYX')))
+      .multiply(new THREE.Matrix4().makeScale(...(P.scale || [1, 1, 1])));
   }
 
   // Blade base and tip in world space for a sampled pose.
