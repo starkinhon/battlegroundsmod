@@ -1,8 +1,0 @@
--d
-/tmp/claude-0/jc
--sourcepath
-.
-com/starkinhon/battlegroundsmod/boss/KokushiboEntity.java
-com/starkinhon/battlegroundsmod/boss/KokushiboTactics.java
-com/starkinhon/battlegroundsmod/boss/KokushiboDespertar.java
-com/starkinhon/battlegroundsmod/client/KokushiboRenderer.java
