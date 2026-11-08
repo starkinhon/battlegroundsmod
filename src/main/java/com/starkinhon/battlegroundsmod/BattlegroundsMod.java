@@ -50,6 +50,7 @@ public class BattlegroundsMod {
         ModEffects.MOB_EFFECTS.register(modEventBus);
 
         BossRules.init();
+        com.starkinhon.battlegroundsmod.power.powers.kokushibo.OniBody.init();
         BlockRules.init();
         com.starkinhon.battlegroundsmod.power.powers.kokushibo.MoonImpactRule.init();
         PowerEvents.register();

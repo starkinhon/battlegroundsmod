@@ -17,6 +17,7 @@ import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.SwordItem;
+import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.Level;
 
 // Kokushibo is an oni (Stark, 2026-11-07): a strong regeneration, cut for a while by a sword or Bills' destruction; stronger
@@ -44,7 +45,16 @@ public final class OniBody {
     private static final ResourceLocation STRENGTH = id("oni_strength");
     private static final ResourceLocation SPEED_ID = id("oni_speed");
 
+    // /gamerule passivakokushibo false (Stark, 2026-11-08): no day and night for the oni, player or boss: no buffs or
+    // debuffs, no Night Vision, the normal (weak) regeneration and normal strength all the time. A sword still cuts it.
+    public static final GameRules.Key<GameRules.BooleanValue> PASSIVE =
+            GameRules.register("passivakokushibo", GameRules.Category.PLAYER, GameRules.BooleanValue.create(true));
+
     private OniBody() {
+    }
+
+    // Loads the class so the rule is registered at startup.
+    public static void init() {
     }
 
     private static ResourceLocation id(String path) {
@@ -58,6 +68,9 @@ public final class OniBody {
     // Night and the full moon only where there is a sky and a moon (the overworld); the sun only weakens him out under it.
     public static int phase(LivingEntity entity) {
         Level level = entity.level();
+        if (!level.getGameRules().getBoolean(PASSIVE)) {
+            return NORMAL;
+        }
         if (!level.dimensionType().hasSkyLight() || level.dimensionType().hasCeiling() || level.dimensionType().hasFixedTime()) {
             return NORMAL;
         }
