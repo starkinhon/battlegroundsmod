@@ -78,7 +78,9 @@ public final class OniBody {
         boolean oni = is(entity);
         int phase = oni ? phase(entity) : NORMAL;
         float fraction = entity.getHealth() / Math.max(1, entity.getMaxHealth());
-        boolean healthChanged = set(entity, Attributes.MAX_HEALTH, HEALTH, STATS[phase] - 1);
+        // The boss keeps the life of his file (Stark: 1000) at night too; the rest of the night's strength he gets.
+        boolean healthChanged = set(entity, Attributes.MAX_HEALTH, HEALTH,
+                entity instanceof net.minecraft.world.entity.player.Player ? STATS[phase] - 1 : 0);
         set(entity, Attributes.ARMOR, ARMOR, STATS[phase] - 1);
         set(entity, Attributes.ATTACK_DAMAGE, STRENGTH, STATS[phase] - 1);
         set(entity, Attributes.MOVEMENT_SPEED, SPEED_ID, SPEED[phase] - 1);

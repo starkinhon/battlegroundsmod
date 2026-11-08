@@ -79,6 +79,10 @@ public final class SwordStretch {
         Minecraft mc = Minecraft.getInstance();
         boolean self = entity == mc.player;
         boolean stretched = self ? entity.getData(ModAttachments.POWER).moonSword : Sheaths.stretched(entity.getId());
+        // the Kokushibo boss: his look (also for whoever starts watching after he awakened)
+        if (entity instanceof com.starkinhon.battlegroundsmod.boss.KokushiboEntity boss) {
+            stretched = boss.awakened();
+        }
         if (change == null) {
             // the synced state (rejoining with it stretched, or someone who came into view with it stretched)
             return stretched ? LENGTH : -1;

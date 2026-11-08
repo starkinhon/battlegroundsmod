@@ -1,0 +1,157 @@
+{
+  "formato": "souls-cutscene/1",
+  "skill": "kokushibo.despertar",
+  "ativa": true,
+  "duracaoTicks": 172,
+  "origem": "usuario",
+  "travarMovimento": true,
+  "esconderHud": true,
+  "barrasPretas": true,
+  "trechos": [
+    {
+      "nome": "Lua Despertada",
+      "inicio": 0,
+      "fim": 160,
+      "entradaTicks": 0,
+      "saidaTicks": 12
+    }
+  ],
+  "camera": [
+    {
+      "t": 0,
+      "pos": [
+        0.15,
+        1.62,
+        2.4
+      ],
+      "rot": [
+        0,
+        0,
+        0
+      ],
+      "fov": 50,
+      "mirar": "usuario",
+      "mirarAltura": 1.62,
+      "suave": "suave"
+    },
+    {
+      "t": 26,
+      "pos": [
+        0.05,
+        1.64,
+        1.05
+      ],
+      "rot": [
+        0,
+        0,
+        0
+      ],
+      "fov": 40,
+      "mirar": "usuario",
+      "mirarAltura": 1.62,
+      "suave": "corte"
+    },
+    {
+      "t": 27,
+      "pos": [
+        -2.4,
+        0.55,
+        1.4
+      ],
+      "rot": [
+        0,
+        0,
+        0
+      ],
+      "fov": 62,
+      "mirar": "usuario",
+      "mirarAltura": 1.05,
+      "suave": "suave"
+    },
+    {
+      "t": 70,
+      "pos": [
+        -2.8,
+        0.9,
+        -0.4
+      ],
+      "rot": [
+        0,
+        0,
+        0
+      ],
+      "fov": 60,
+      "mirar": "usuario",
+      "mirarAltura": 1.15,
+      "suave": "suave"
+    },
+    {
+      "t": 116,
+      "pos": [
+        -1.6,
+        1.5,
+        -2.4
+      ],
+      "rot": [
+        0,
+        0,
+        0
+      ],
+      "fov": 58,
+      "mirar": "usuario",
+      "mirarAltura": 1.3,
+      "suave": "corte"
+    },
+    {
+      "t": 117,
+      "pos": [
+        0.4,
+        0.25,
+        4.0
+      ],
+      "rot": [
+        0,
+        0,
+        0
+      ],
+      "fov": 72,
+      "mirar": "usuario",
+      "mirarAltura": 1.5,
+      "suave": "saida"
+    },
+    {
+      "t": 142,
+      "pos": [
+        0.6,
+        0.5,
+        6.5
+      ],
+      "rot": [
+        0,
+        0,
+        0
+      ],
+      "fov": 80,
+      "mirar": "usuario",
+      "mirarAltura": 1.4,
+      "suave": "suave"
+    },
+    {
+      "t": 160,
+      "pos": [
+        0.6,
+        0.7,
+        7.5
+      ],
+      "rot": [
+        0,
+        0,
+        0
+      ],
+      "fov": 74,
+      "mirar": "usuario",
+      "mirarAltura": 1.4,
+      "suave": "suave"
+    }
+  ]
+}

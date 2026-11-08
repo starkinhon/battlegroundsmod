@@ -41,6 +41,7 @@ public final class BossFalas {
         long fightStart = -1;
         long lastTarget = -100000;
         boolean lowSaid;
+        long formName = -100000;
     }
 
     private BossFalas() {
@@ -117,6 +118,10 @@ public final class BossFalas {
         if (target != null && target.isAlive()) {
             if (state.fightStart < 0 || now - state.lastTarget > FIGHT_END) {
                 state.fightStart = now;
+                // Kokushibo opens every fight with a line (Stark).
+                if ("moon_demon".equals(boss.powerData().power)) {
+                    sayNow(boss, "fala.battlegroundsmod.kokushibo.inicio");
+                }
             }
             state.lastTarget = now;
         } else if (now - state.lastTarget > FIGHT_END) {
@@ -163,6 +168,22 @@ public final class BossFalas {
     // Kokushibo: the first Moon form of a fight.
     public static void firstForm(LivingEntity caster) {
         sayOncePerFight(caster, "fala.battlegroundsmod.kokushibo.respiracao");
+    }
+
+    // Kokushibo says the name of the form he is using now and then (Stark, 2026-11-08: every 2 minutes; the 16th always).
+    private static final int FORM_NAME_GAP = 2400;
+
+    public static void formName(LivingEntity caster, int form) {
+        if (!(caster instanceof KokushiboEntity boss) || !(boss.level() instanceof ServerLevel level)) {
+            return;
+        }
+        State state = STATES.computeIfAbsent(boss, b -> new State());
+        long now = level.getGameTime();
+        String key = "fala.battlegroundsmod.kokushibo.forma." + form;
+        boolean said = form == 16 ? sayNow(boss, key) : now - state.formName >= FORM_NAME_GAP && say(boss, key, 0);
+        if (said) {
+            state.formName = now;
+        }
     }
 
     // A boss killed someone.

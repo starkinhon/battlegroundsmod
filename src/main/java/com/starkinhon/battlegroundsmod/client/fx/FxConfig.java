@@ -32,6 +32,10 @@ public final class FxConfig {
             .comment("How much the camera shakes (0 turns it off).")
             .defineInRange("shake", 1.0, 0.0, 2.0);
 
+    public static final ModConfigSpec.BooleanValue FORM_KANJI = BUILDER
+            .comment("Kokushibo's form names in kanji beside him when he uses a Moon Breathing form (/souls kanji desativar).")
+            .define("formKanji", true);
+
     public static final ModConfigSpec SPEC = BUILDER.build();
 
     private FxConfig() {
@@ -43,6 +47,20 @@ public final class FxConfig {
             return value.get();
         } catch (IllegalStateException e) {
             return value.getDefault();
+        }
+    }
+
+    public static boolean formKanji() {
+        return on(FORM_KANJI);
+    }
+
+    // Turns the form kanji on or off and saves it in the client config file.
+    public static void setFormKanji(boolean value) {
+        try {
+            FORM_KANJI.set(value);
+            SPEC.save();
+        } catch (IllegalStateException e) {
+            // the file isn't loaded yet: it stays for this session only
         }
     }
 

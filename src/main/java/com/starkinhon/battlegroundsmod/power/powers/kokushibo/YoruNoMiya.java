@@ -123,6 +123,7 @@ public final class YoruNoMiya {
         SubCommon.pose(caster, SwordArts.QUICK_DRAW);
         SubCommon.busy(caster, 8);
         com.starkinhon.battlegroundsmod.boss.BossFalas.firstForm(caster);
+        com.starkinhon.battlegroundsmod.boss.BossFalas.formName(caster, 1);
         Vec3 eye = caster.getEyePosition();
         Vec3 look = caster.getLookAngle();
         int seed = 1 + SubCommon.RANDOM.nextInt(999_999);

@@ -286,12 +286,22 @@ public abstract class SoulBoss extends Monster {
     private void startPhase(ServerLevel level, BossSpec.Fase fase) {
         // A new phase shakes off slows and stuns.
         removeAllEffects();
-        stage(fase.transicaoTicks(), true);
-        BossFx.title(level, this, fase.titulo(), fase.subtitulo(), BossFx.color(spec().intro().cor()));
+        // A boss with a scene of its own for this phase (Kokushibo stretching his sword) plays it and shows the title itself.
+        int scene = phaseScene(level, phase);
+        stage(scene > 0 ? scene : fase.transicaoTicks(), true);
+        if (scene <= 0) {
+            BossFx.title(level, this, fase.titulo(), fase.subtitulo(), BossFx.color(spec().intro().cor()));
+        }
         bossEvent.setColor(barColor(fase.corBarra()));
         if (ai != null) {
             ai.reset();
         }
+    }
+
+    // The scene a boss plays when this phase starts, instead of the plain still moment with a title: how long it holds the
+    // boss (0 = none, the file's transicaoTicks and title).
+    protected int phaseScene(ServerLevel level, int phase) {
+        return 0;
     }
 
     private void stage(int ticks, boolean untouchable) {

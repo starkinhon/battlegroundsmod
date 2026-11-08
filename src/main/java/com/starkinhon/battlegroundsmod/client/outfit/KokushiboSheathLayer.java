@@ -22,7 +22,6 @@ import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 
 import net.minecraft.client.model.PlayerModel;
-import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import net.minecraft.client.renderer.entity.RenderLayerParent;
@@ -41,7 +40,9 @@ import net.minecraft.client.renderer.entity.layers.RenderLayer;
 // his left side and the sheath swallows it. Only the right arm is held out (holdArm) until the hand lets go: walking,
 // running and flying go on as normal (Stark, 2026-11-07: the whole body froze while walking).
 // Every client sees it on its own, from the held item and the drawn flag the server sends.
-public class KokushiboSheathLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> {
+// The Kokushibo boss wears it too (Stark, 2026-11-08): sheathed until he says his opening line and draws, and gone with
+// the awakening (the sheath turns to flesh, as the player's H).
+public class KokushiboSheathLayer<T extends LivingEntity> extends RenderLayer<T, PlayerModel<T>> {
     // Model space (1 = one pixel, +y down, -z the front, +x the player's left), relative to the body's pivot.
     private static final Vector3f GUARD_AT = new Vector3f(4.9f, 10.6f, -3.2f);
     private static final Quaternionf TURN;
@@ -81,7 +82,7 @@ public class KokushiboSheathLayer extends RenderLayer<AbstractClientPlayer, Play
     // True while the right hand's item is not drawn by Minecraft (ItemInHandLayerMixin, FirstPersonAnimation): the sword
     // is in the sheath though selected, or it is being put away (drawn here, also after switching to something else).
     public static boolean hidesHand(LivingEntity entity) {
-        if (holdsMain(entity) && !Sheaths.drawn(entity.getId())) {
+        if (holdsMain(entity) && !Sheaths.drawn(entity)) {
             return true;
         }
         State state = STATES.get(entity.getId());
@@ -114,19 +115,19 @@ public class KokushiboSheathLayer extends RenderLayer<AbstractClientPlayer, Play
         model.rightArm.zRot += (0 - model.rightArm.zRot) * w;
     }
 
-    public KokushiboSheathLayer(RenderLayerParent<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> parent) {
+    public KokushiboSheathLayer(RenderLayerParent<T, PlayerModel<T>> parent) {
         super(parent);
     }
 
     @Override
-    public void render(PoseStack poseStack, MultiBufferSource buffer, int light, AbstractClientPlayer player, float limbSwing,
+    public void render(PoseStack poseStack, MultiBufferSource buffer, int light, T player, float limbSwing,
             float limbSwingAmount, float partialTick, float ageInTicks, float netHeadYaw, float headPitch) {
         if (player.isInvisible() || player.isSpectator() || !getParentModel().body.visible) {
             return;
         }
         boolean holds = holdsMain(player) || player.getOffhandItem().getItem() instanceof KokushiboSwordItem;
-        boolean out = holds && Sheaths.drawn(player.getId());
-        boolean carrying = Sheaths.carrying(player.getId());
+        boolean out = holds && Sheaths.drawn(player);
+        boolean carrying = Sheaths.carrying(player);
         State state = STATES.computeIfAbsent(player.getId(), id -> {
             State s = new State();
             s.out = out;
@@ -238,7 +239,7 @@ public class KokushiboSheathLayer extends RenderLayer<AbstractClientPlayer, Play
 
     // The sword's space as if held in the right hand: ItemInHandLayer's transforms, the wrist turn of the animation,
     // the item's third person display transform and KokushiboSwordRenderer.toSword.
-    private Matrix4f handMatrix(PoseStack poseStack, AbstractClientPlayer player) {
+    private Matrix4f handMatrix(PoseStack poseStack, T player) {
         if (swordStack == null) {
             swordStack = new ItemStack(ModItems.KOKUSHIBO_SWORD.get());
         }

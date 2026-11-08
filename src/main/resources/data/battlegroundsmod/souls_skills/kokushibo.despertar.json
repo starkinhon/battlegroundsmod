@@ -1,0 +1,187 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "kokushibo.despertar",
+  "vfx": [
+    {
+      "tipo": "vinheta",
+      "momento": "inicio",
+      "cor": "#2a0a36",
+      "forca": 0.7,
+      "vidaTicks": 150
+    },
+    {
+      "tipo": "flash",
+      "momento": "inicio",
+      "cor": "#000000",
+      "forca": 0.5,
+      "vidaTicks": 8
+    },
+    {
+      "tipo": "tremor",
+      "momento": "inicio",
+      "forca": 0.25,
+      "vidaTicks": 10
+    },
+    {
+      "tipo": "flash",
+      "momento": "rasgo",
+      "cor": "#ffffff",
+      "forca": 0.3,
+      "vidaTicks": 4
+    },
+    {
+      "tipo": "faiscas",
+      "momento": "rasgo",
+      "quantidade": 40,
+      "velocidade": 0.4,
+      "comprimento": 0.6,
+      "tamanho": 0.8,
+      "cor": "#6b3a72",
+      "cor2": "#c9a2ff",
+      "vidaTicks": 14
+    },
+    {
+      "tipo": "tremor",
+      "momento": "rasgo",
+      "forca": 0.35,
+      "vidaTicks": 8
+    },
+    {
+      "tipo": "distorcao",
+      "momento": "carne",
+      "modo": "onda",
+      "raio": 4,
+      "forca": 0.4,
+      "velocidade": 6,
+      "cor": "#7a1a9e",
+      "vidaTicks": 20
+    },
+    {
+      "tipo": "distorcao",
+      "momento": "carne",
+      "modo": "onda",
+      "raio": 5,
+      "forca": 0.4,
+      "velocidade": 6,
+      "cor": "#7a1a9e",
+      "vidaTicks": 20,
+      "inicio": 30
+    },
+    {
+      "tipo": "distorcao",
+      "momento": "carne",
+      "modo": "onda",
+      "raio": 6,
+      "forca": 0.5,
+      "velocidade": 7,
+      "cor": "#7a1a9e",
+      "vidaTicks": 20,
+      "inicio": 60
+    },
+    {
+      "tipo": "distorcao",
+      "momento": "carne",
+      "modo": "onda",
+      "raio": 7,
+      "forca": 0.6,
+      "velocidade": 8,
+      "cor": "#7a1a9e",
+      "vidaTicks": 20,
+      "inicio": 90
+    },
+    {
+      "tipo": "tremor",
+      "momento": "carne",
+      "forca": 0.15,
+      "vidaTicks": 100
+    },
+    {
+      "tipo": "blurRadial",
+      "momento": "carga",
+      "forca": 0.4,
+      "vidaTicks": 10
+    },
+    {
+      "tipo": "fov",
+      "momento": "carga",
+      "forca": -8,
+      "vidaTicks": 10
+    },
+    {
+      "tipo": "impactFrame",
+      "momento": "impacto",
+      "sequencia": [
+        "branco",
+        "manga",
+        "mangaInvertido",
+        "cor",
+        "manga"
+      ],
+      "ticksPorQuadro": 2,
+      "cor": "#c9a2ff"
+    },
+    {
+      "tipo": "flash",
+      "momento": "impacto",
+      "cor": "#e9d6ff",
+      "forca": 0.5,
+      "vidaTicks": 8
+    },
+    {
+      "tipo": "tremor",
+      "momento": "impacto",
+      "forca": 1.0,
+      "vidaTicks": 24,
+      "alcance": 64
+    },
+    {
+      "tipo": "blurRadial",
+      "momento": "impacto",
+      "forca": 0.7,
+      "vidaTicks": 10
+    },
+    {
+      "tipo": "fov",
+      "momento": "impacto",
+      "forca": 12,
+      "vidaTicks": 12
+    },
+    {
+      "tipo": "distorcao",
+      "momento": "impacto",
+      "modo": "onda",
+      "raio": 16,
+      "forca": 0.8,
+      "velocidade": 18,
+      "cor": "#9b4dca",
+      "vidaTicks": 16
+    },
+    {
+      "tipo": "anel",
+      "momento": "impacto",
+      "raio": 12,
+      "tamanho": 0.35,
+      "cor": "#c9a2ff",
+      "vidaTicks": 14
+    },
+    {
+      "tipo": "estrela",
+      "momento": "impacto",
+      "quantidade": 30,
+      "comprimento": 8,
+      "tamanho": 0.9,
+      "cor": "#9b4dca",
+      "cor2": "#bfe6ff",
+      "vidaTicks": 14
+    },
+    {
+      "tipo": "clarao",
+      "momento": "impacto",
+      "tamanho": 3,
+      "quantidade": 10,
+      "cor": "#9b4dca",
+      "cor2": "#ffffff",
+      "vidaTicks": 12
+    }
+  ]
+}
