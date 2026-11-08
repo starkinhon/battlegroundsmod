@@ -14,6 +14,7 @@ import net.neoforged.neoforge.client.event.RegisterShadersEvent;
 public final class FxShaders {
     static ShaderInstance radial;
     static ShaderInstance impact;
+    static ShaderInstance moonScreen;
     static ShaderInstance warp;
     static ShaderInstance bloomDown;
     static ShaderInstance bloomUp;
@@ -40,6 +41,12 @@ public final class FxShaders {
             registerAll(event);
         } catch (IOException e) {
             BattlegroundsMod.LOGGER.error("Could not load the effect shaders; effects fall back to the flat look", e);
+        }
+        // On its own too: without it the Awakened Moon just plays without its screen effects.
+        try {
+            register(event, "fx_moonscreen", DefaultVertexFormat.POSITION, s -> moonScreen = s);
+        } catch (Exception e) {
+            BattlegroundsMod.LOGGER.error("Could not load the Awakened Moon screen shader", e);
         }
         // On its own, so a problem here never takes the other effects down (the Gojo's Expansão de 0,2 s just won't show).
         try {

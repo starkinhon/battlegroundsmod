@@ -266,6 +266,13 @@ public final class ScreenFx {
                 FxPost.endPasses();
             }
         }
+        // the Awakened Moon's screen (Kokushibo): its own pass, after the others
+        if (FxShaders.ready() && MoonScreen.active(now)) {
+            graphics.flush();
+            FxPost.beginPasses();
+            MoonScreen.pass(now, reduced);
+            FxPost.endPasses();
+        }
         float[] edge = Aura.screenEdge(delta.getGameTimeDeltaPartialTick(false));
         if (edge != null) {
             com.mojang.blaze3d.systems.RenderSystem.enableBlend();
@@ -299,6 +306,12 @@ public final class ScreenFx {
     public static void onComputeFov(ViewportEvent.ComputeFov event) {
         if (ticks - holdFovAt <= 1 && event.usedConfiguredFov()) {
             event.setFOV(Mth.clamp(event.getFOV() + holdFov, 10, 150));
+        }
+        if (event.usedConfiguredFov()) {
+            float moon = MoonScreen.fov(ticks + event.getPartialTick());
+            if (moon != 0) {
+                event.setFOV(Mth.clamp(event.getFOV() + moon, 10, 150));
+            }
         }
         if (fov != null && event.usedConfiguredFov()) {
             float k = fov.k(ticks + event.getPartialTick());
@@ -413,6 +426,10 @@ public final class ScreenFx {
         shader.safeGetUniform("InverseProj").set(new Matrix4f(PROJ).invert());
         shader.safeGetUniform("DepthOn").set(FxPost.sceneDepth() > 0 ? 1f : 0f);
         FxPost.pass(shader);
+    }
+
+    static float[] screen(Vec3 pos) {
+        return toScreen(pos);
     }
 
     // Where a world point is on screen (0..1, y up); the middle of the screen if it is behind the camera.
