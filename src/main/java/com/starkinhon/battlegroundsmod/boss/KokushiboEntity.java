@@ -93,7 +93,11 @@ public class KokushiboEntity extends SoulBoss {
         }
         if (!inScene) {
             boolean want = wantsAwakened();
-            if (want != awakened()) {
+            if (want && !awakened() && !bossfight() && isAlive()) {
+                // as a plain mob too he awakens with his scene (Stark: "cadê a cutscene"); a boss fight plays it with
+                // its phase (phaseScene)
+                startScene(level);
+            } else if (want != awakened()) {
                 setLook(want ? LOOK_AWAKENED : LOOK_NORMAL);
                 stretch(level, want);
             }
@@ -157,6 +161,10 @@ public class KokushiboEntity extends SoulBoss {
         if (phase != 1 || awakened()) {
             return 0;
         }
+        return startScene(level);
+    }
+
+    private int startScene(ServerLevel level) {
         inScene = true;
         // A new sword, a new kit: what the normal forms left recharging doesn't hold the awakened ones back (but the 16th
         // still waits a while).

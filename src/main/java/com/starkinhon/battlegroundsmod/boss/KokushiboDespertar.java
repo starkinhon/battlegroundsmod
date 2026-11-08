@@ -48,6 +48,8 @@ final class KokushiboDespertar {
         boss.setXRot(0);
         boss.getNavigation().stop();
         Freeze.hold(boss, IMPACT);
+        // untouchable through it (a boss fight's phase does this too; as a plain mob nothing else does)
+        Intangible.hold(boss, LENGTH);
         // The players near watch it: still and untouchable until the blow, each with the camera framed towards them.
         for (ServerPlayer player : level.players()) {
             if (!player.isSpectator() && player.distanceTo(boss) <= RANGE) {
