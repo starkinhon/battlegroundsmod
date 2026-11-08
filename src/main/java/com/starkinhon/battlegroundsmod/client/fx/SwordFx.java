@@ -46,6 +46,7 @@ public final class SwordFx {
     public static final int MOON_HIT = SwordArts.FX_MOON_HIT;
     public static final int MOON_FORM = SwordArts.FX_MOON_FORM;
     public static final int MOON_TARGET = SwordArts.FX_MOON_TARGET;
+    public static final int MOON_STRETCH = SwordArts.FX_MOON_STRETCH;
 
     // How long the trail lasts behind the blade, in ticks.
     private static final float TRAIL_TICKS = 3.2f;
@@ -96,6 +97,7 @@ public final class SwordFx {
             case MOON_HIT -> MoonSlashRenderer.hit(pos);
             case MOON_FORM -> MoonFormsRenderer.receive((int) b, pos, dir, (int) a);
             case MOON_TARGET -> MoonFormsRenderer.target((int) a, (int) b, entityId);
+            case MOON_STRETCH -> com.starkinhon.battlegroundsmod.client.outfit.SwordStretch.set(entityId, a > 0.5f);
             default -> {
             }
         }

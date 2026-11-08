@@ -98,6 +98,8 @@ public final class SwordArts {
     public static final int FX_MOON_FORM = 6;
     // One target of the 16th Form (sent just before it): entityId = the target, a = the form's seed, b = its index.
     public static final int FX_MOON_TARGET = 7;
+    // Kokushibo's sword stretching (a = 1) or going back (a = 0) on the H key (client/outfit/SwordStretch).
+    public static final int FX_MOON_STRETCH = 8;
 
     private SwordArts() {
     }

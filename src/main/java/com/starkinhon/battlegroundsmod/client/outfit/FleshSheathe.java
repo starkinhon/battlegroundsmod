@@ -362,7 +362,8 @@ final class FleshSheathe {
 
     // Writes the vertices: through souls_flesh (flesh and wet in the color, the unbent height for the veins in the
     // overlay slot), or tinted on a vanilla entity type when that shader can't run.
-    private static final class Out {
+    // Also SwordStretch draws through it.
+    static final class Out {
         final VertexConsumer out;
         final PoseStack.Pose pose;
         final int light;
