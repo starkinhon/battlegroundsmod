@@ -20,10 +20,10 @@
   "prisao": {
     "duracaoTicks": 140,
     "intervaloTicks": 5,
-    "dano": 3
+    "dano": 2
   },
   "explosao": {
-    "dano": 25,
+    "dano": 80,
     "raio": 7,
     "empurrao": 2.4,
     "altura": 0.7

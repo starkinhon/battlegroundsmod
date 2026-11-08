@@ -20,7 +20,7 @@
     "raioPuxar": 16,
     "puxar": 0.5,
     "maxPuxar": 1.1,
-    "dano": 1,
+    "dano": 2,
     "danoACadaTicks": 20
   },
   "segurado": {
@@ -36,9 +36,9 @@
     "raioBlocos": 6.5,
     "blocosPorTick": 4,
     "maxBlocos": 110,
-    "dano": 2,
+    "dano": 4,
     "danoACadaTicks": 10,
-    "danoFim": 12
+    "danoFim": 40
   },
   "controle": {
     "seguir": 0.035,
@@ -60,7 +60,7 @@
     "perseguir": 0.25,
     "alcance": 90,
     "maxTicks": 60,
-    "dano": 18,
+    "dano": 48,
     "raioExplosao": 2.5,
     "forcaExplosao": 3,
     "empurrao": 1.6
@@ -689,15 +689,15 @@
     },
     "clique": {
       "duracaoTicks": 160,
-      "dano": 2
+      "dano": 3
     },
     "segurado": {
       "duracaoTicks": 260,
       "raioPuxar": 40,
       "raioBlocos": 8,
       "maxBlocos": 160,
-      "dano": 3,
-      "danoFim": 20
+      "dano": 5,
+      "danoFim": 55
     }
   }
 }

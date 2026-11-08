@@ -60,7 +60,7 @@ public final class RubberBoy {
                 Fx.burst(level, ModParticles.puff(0xEEEEEE, 0.3f, 12, 0.85f), reach, 10, 0.3, 0.1);
                 Fx.burst(level, ParticleTypes.CRIT, reach, 10, 0.3, 0.3);
                 if (target != null && target.isAlive()) {
-                    Combat.hurt(player, target, 8f);
+                    Combat.hurt(player, target, 20f);
                     Combat.push(target, look, 1.6, 0.4);
                     Fx.sound(level, reach, SoundEvents.PLAYER_ATTACK_KNOCKBACK, 1.5f, 0.7f);
                 }
@@ -71,7 +71,7 @@ public final class RubberBoy {
 
     // X: rubber gatling, a long barrage of stretching punches.
     private static boolean gatling(ServerPlayer player, ServerLevel level) {
-        Melee.barrage(player, 30, 6.0, 2.5f, 7f, SKIN);
+        Melee.barrage(player, 30, 6.0, 6f, 17.5f, SKIN);
         return true;
     }
 
@@ -92,7 +92,7 @@ public final class RubberBoy {
             }
             for (LivingEntity target : Combat.inRadius(level, pos, 1.8, player)) {
                 if (hit.add(target)) {
-                    Combat.hurt(player, target, 7f);
+                    Combat.hurt(player, target, 17.5f);
                     Combat.push(target, look, 1.5, 0.6);
                     Fx.burst(level, ParticleTypes.EXPLOSION, Combat.center(target), 1, 0, 0);
                 }
@@ -137,7 +137,7 @@ public final class RubberBoy {
             arm(level, start, to, 3f);
             for (LivingEntity target : Combat.alongLine(level, from, to, radius, player)) {
                 if (hit.add(target)) {
-                    Combat.hurt(player, target, 28f);
+                    Combat.hurt(player, target, 70f);
                     Combat.push(target, dir, 3.0, 1.0);
                 }
             }

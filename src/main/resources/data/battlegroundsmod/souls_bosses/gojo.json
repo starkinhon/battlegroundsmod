@@ -6,8 +6,8 @@
   "estilo": "deus",
   "dropAlma": true,
   "atributos": {
-    "vida": 600,
-    "armadura": 14,
+    "vida": 300,
+    "armadura": 0,
     "velocidade": 0.32,
     "resistenciaEmpurrao": 0.8,
     "alcanceVisao": 64,

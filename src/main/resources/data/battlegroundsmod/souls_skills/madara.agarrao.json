@@ -26,11 +26,11 @@
     "altura": 0.45,
     "distancia": 0.65,
     "lado": -0.05,
-    "dano": 5
+    "dano": 16
   },
   "esmagar": {
     "descidaTicks": 3,
-    "dano": 20,
+    "dano": 64,
     "presoTicks": 50,
     "quebrarBlocos": true,
     "raioCratera": 5,

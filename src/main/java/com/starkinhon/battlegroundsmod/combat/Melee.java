@@ -187,7 +187,7 @@ public final class Melee {
         if (target == null || !Combat.isTarget(target, attacker) || attacker.distanceTo(target) > reach(attacker, spec) + 1.2) {
             target = closestInFront(attacker, reach(attacker, spec), 0.55);
         }
-        if (target == null || !Combat.hurt(attacker, target, (float) golpe.dano() * multiplier(attacker))) {
+        if (target == null || !Combat.hurtBase(attacker, target, (float) golpe.dano() * multiplier(attacker))) {
             SkillSounds.play(level, spec.sons(), "erro", 0, 0, onde -> Combat.handPos(attacker), List.of());
             return false;
         }
@@ -344,7 +344,7 @@ public final class Melee {
             if (target != null) {
                 Vec3 hitPos = Combat.center(target);
                 Defense.breakGuard(target, player);
-                if (Combat.hurt(player, target, 10f * mult * power)) {
+                if (Combat.hurtBase(player, target, 25f * mult * power)) {
                     hitFx(player, target, "final", PunchFx.FORTE, charge);
                     Stamina.gain(player, StaminaSpec.get().ganhoAcertoPct());
                     shake(target, 0.5f + charge * 0.5f, 8);
@@ -361,7 +361,7 @@ public final class Melee {
         if (SwordArts.held(player)) {
             return SwordArts.barrage(player, level);
         }
-        barrage(player, 20, BARRAGE_HELD_TICKS, 4.0, 1.5f * multiplier(player), 6f * multiplier(player), fistColor(player), true);
+        barrage(player, 20, BARRAGE_HELD_TICKS, 4.0, 3.75f * multiplier(player), 15f * multiplier(player), fistColor(player), true);
         return true;
     }
 
@@ -404,7 +404,7 @@ public final class Melee {
                     Vec3 offset = new Vec3(level.random.nextDouble() - 0.5, level.random.nextDouble() - 0.5, level.random.nextDouble() - 0.5).scale(0.9);
                     PunchFx.swing(level, eye.add(look.scale(range * 0.4)).add(offset), look, fistColor, 0.4f);
                     for (LivingEntity target : Combat.inCone(player, range, 0.55)) {
-                        if (Combat.hurt(player, target, hitDamage)) {
+                        if (Combat.hurtBase(player, target, hitDamage)) {
                             hitFx(player, target, "golpe", PunchFx.BARRAGEM, 0);
                             Stamina.gain(player, StaminaSpec.get().ganhoAcertoBarragemPct());
                             shake(target, 0.15f, 4);
@@ -423,7 +423,7 @@ public final class Melee {
             PunchFx.swing(level, front, look, fistColor, 1.1f);
             Fx.sound(level, front, SoundEvents.PLAYER_ATTACK_KNOCKBACK, 1.5f, 0.6f);
             for (LivingEntity target : Combat.inCone(player, range, 0.55)) {
-                if (Combat.hurt(player, target, finisherDamage)) {
+                if (Combat.hurtBase(player, target, finisherDamage)) {
                     hitFx(player, target, "final");
                     Stamina.gain(player, StaminaSpec.get().ganhoAcertoPct());
                     shake(target, 0.6f, 8);

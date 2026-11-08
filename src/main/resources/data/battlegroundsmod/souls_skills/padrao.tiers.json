@@ -2,18 +2,17 @@
   "formato": "souls-skill/1",
   "skill": "padrao.tiers",
   "nome": "Tiers de poder",
-  "vidaPorTier": 50,
-  "forcaPorTier": 5,
-  "multiplicadorPorForca": 0.1,
-  "armaduraMax": 20,
-  "tierArmaduraCheia": 1,
+  "vida": [400, 300, 220, 165, 120, 90, 66, 49, 36, 27, 20],
+  "escudoCorte": 0.4,
+  "resistenciaEscudo": 0.005,
+  "multSubAlmas": 5.5,
   "velocidadeAndarPorTier": 0.02,
   "speedCorrendoPorTier": 1,
   "tierVelocidadeMax": 5,
   "nomes": ["Deus", "Multiversal", "Universal", "Galáctico", "Estelar", "Planetário", "Continental", "Cidade", "Quarteirão", "Rua", "Humano"],
   "bossTier0": {
     "vida": 1000,
-    "armadura": 20,
+    "armadura": 0,
     "resistenciaEmpurrao": 0.9,
     "multDano": 1.0
   }

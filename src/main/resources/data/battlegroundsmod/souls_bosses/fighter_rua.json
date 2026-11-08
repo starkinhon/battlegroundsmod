@@ -5,8 +5,8 @@
   "tier": 9,
   "dropAlma": false,
   "atributos": {
-    "vida": 70,
-    "armadura": 2.2,
+    "vida": 27,
+    "armadura": 0,
     "velocidade": 0.32,
     "resistenciaEmpurrao": 0.1,
     "alcanceVisao": 24,

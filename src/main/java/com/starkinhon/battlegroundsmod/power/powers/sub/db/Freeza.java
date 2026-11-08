@@ -309,7 +309,7 @@ public final class Freeza {
                 Vec3 c = Combat.center(e);
                 if (self) {
                     e.invulnerableTime = 0;
-                    e.hurt(level.damageSources().magic(), 14 * com.starkinhon.battlegroundsmod.power.Tiers.damageMultiplier(caster));
+                    e.hurt(level.damageSources().magic(), 14 * com.starkinhon.battlegroundsmod.power.Tiers.damageMultiplier(caster) * com.starkinhon.battlegroundsmod.combat.Combat.subScale(caster));
                     Stun.apply(e, 26);
                     DbCommon.screen(level, c, 13);
                 } else {

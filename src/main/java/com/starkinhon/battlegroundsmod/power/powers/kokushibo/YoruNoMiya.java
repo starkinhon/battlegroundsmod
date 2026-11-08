@@ -45,7 +45,7 @@ public final class YoruNoMiya {
     public static final double MAX_PITCH = 80;
     // The cut lands as the point of the slash goes round (the page's head reaches the arc's middle at ~0.2 s).
     private static final int HIT_DELAY = 4;
-    private static final float DAMAGE = 14f;
+    private static final float DAMAGE = 48f;
     private static final double DEPTH = 2.5;
     // The sword trails during the move: a deep gold, since the trail is mixed halfway with white (SwordFx.drawTrail), so it
     // ends up the yellow of the moons.

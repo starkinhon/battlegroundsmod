@@ -16,17 +16,17 @@
     "depoisTapaTicks": 14
   },
   "peteleco": {
-    "dano": 4,
+    "dano": 8,
     "altura": 12
   },
   "tapa": {
-    "dano": 6,
+    "dano": 12,
     "atras": 0.8,
     "acima": 0.3,
     "frente": 9
   },
   "chao": {
-    "dano": 14,
+    "dano": 32,
     "presoTicks": 50,
     "quebrarBlocos": true,
     "raioCratera": 4.5,

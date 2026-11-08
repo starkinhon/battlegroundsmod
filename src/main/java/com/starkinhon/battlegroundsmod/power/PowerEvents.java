@@ -152,10 +152,13 @@ public final class PowerEvents {
 
     // Dealing damage charges the ultimate, fighting keeps combat mode going for both sides, and whoever took the hit
     // gets the Cooldown effect (unless they blocked it).
+    private static final float ULT_SCALE = 0.4f;
+
     private static void onDamage(LivingDamageEvent.Post event) {
         if (event.getSource().getEntity() instanceof ServerPlayer player && player != event.getEntity()) {
-            // Measured at human strength, so higher tiers don't fill the ult in one combo.
-            PowerLogic.addUltCharge(player, event.getEntity(), event.getNewDamage() / Tiers.damageMultiplier(player));
+            // Measured on the move's maximum, so higher tiers don't fill the ult in one combo; the maximums are about 2.5x
+            // the old base damages (rebalance of 2026-11-08), hence ULT_SCALE.
+            PowerLogic.addUltCharge(player, event.getEntity(), event.getNewDamage() / Tiers.damageMultiplier(player) * ULT_SCALE);
         }
         if (event.getSource().getEntity() instanceof LivingEntity attacker && attacker != event.getEntity()) {
             com.starkinhon.battlegroundsmod.power.powers.kokushibo.OniBody.onHurt(event.getEntity(), attacker);
@@ -222,6 +225,11 @@ public final class PowerEvents {
         // Bosses hit as hard as their file says.
         if (!event.isCanceled() && event.getSource().getEntity() instanceof SoulBoss boss) {
             event.setAmount(event.getAmount() * boss.atributos().multDano());
+        }
+        // The target's Escudo against a lower tier (Stark, 2026-11-08): a god takes nothing from a human. Every blow
+        // with an attacker goes through here, the mod's moves, vanilla hits and mobs alike (a plain mob is a human).
+        if (!event.isCanceled() && event.getSource().getEntity() instanceof LivingEntity attacker && attacker != event.getEntity()) {
+            event.setAmount(Tiers.shield(attacker, event.getEntity(), event.getAmount()));
         }
     }
 

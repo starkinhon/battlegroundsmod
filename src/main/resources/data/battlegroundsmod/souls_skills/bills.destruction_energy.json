@@ -23,7 +23,7 @@
     "alcance": 140
   },
   "explosao": {
-    "dano": 14,
+    "dano": 40,
     "raio": 5,
     "empurrao": 1.4,
     "altura": 0.5,

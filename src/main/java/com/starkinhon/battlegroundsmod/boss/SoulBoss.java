@@ -267,7 +267,11 @@ public abstract class SoulBoss extends Monster {
         float healthFraction = getHealth() / Math.max(1, getMaxHealth());
         BossSpec.Atributos atributos = atributos();
         setBase(Attributes.MAX_HEALTH, atributos.vida());
-        setBase(Attributes.ARMOR, atributos.armadura());
+        // Armor 0 counts too (the Escudo replaced the bosses' armor on 2026-11-08), so an old save loses its 20.
+        AttributeInstance armor = getAttribute(Attributes.ARMOR);
+        if (armor != null) {
+            armor.setBaseValue(Math.max(0, atributos.armadura()));
+        }
         setBase(Attributes.MOVEMENT_SPEED, atributos.velocidade());
         setBase(Attributes.KNOCKBACK_RESISTANCE, atributos.resistenciaEmpurrao());
         setBase(Attributes.FOLLOW_RANGE, atributos.alcanceVisao());

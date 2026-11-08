@@ -7,7 +7,7 @@
   "dropAlma": true,
   "atributos": {
     "vida": 1000,
-    "armadura": 20,
+    "armadura": 0,
     "velocidade": 0.3,
     "resistenciaEmpurrao": 0.9,
     "alcanceVisao": 64,

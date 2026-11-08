@@ -23,8 +23,8 @@
   },
   "explosao": {
     "raioMult": 2.4,
-    "danoMin": 12,
-    "danoMax": 55,
+    "danoMin": 32,
+    "danoMax": 120,
     "empurrao": 2.6,
     "quebrarBlocos": true,
     "crateraMult": 1.2,
