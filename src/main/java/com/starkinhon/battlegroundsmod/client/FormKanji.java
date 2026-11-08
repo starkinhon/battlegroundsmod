@@ -210,13 +210,14 @@ public final class FormKanji {
         if (a < 5) {
             return;
         }
-        Component line = Component.literal(text).withStyle(Style.EMPTY.withFont(FONT));
-        float scale = size * em / EM;
+        // Minecraft's own font: Shippori Mincho has no macrons (ō, ū).
+        Component line = Component.literal(text);
+        float scale = size * em / font.lineHeight;
         graphics.pose().pushPose();
         graphics.pose().translate(cx * em, top * em, 0);
         graphics.pose().mulPose(com.mojang.math.Axis.ZP.rotationDegrees(90));
         graphics.pose().scale(scale, scale, 1);
-        graphics.pose().translate(0, -EM / 2f, 0);
+        graphics.pose().translate(0, -font.lineHeight / 2f, 0);
         float outline = Math.max(0.5f, 0.9f / scale);
         for (int d = 0; d < 8; d++) {
             double ang = d * Math.PI / 4;
