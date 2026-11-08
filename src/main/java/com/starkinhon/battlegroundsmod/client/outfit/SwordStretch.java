@@ -80,7 +80,9 @@ public final class SwordStretch {
         boolean self = entity == mc.player;
         if (change == null) {
             // his own sword: the synced state (rejoining with it stretched, say)
-            return self && entity.getData(ModAttachments.POWER).moonSword ? LENGTH : -1;
+            // (the Kokushibo boss: his look, for whoever starts watching after he awakened)
+            return self && entity.getData(ModAttachments.POWER).moonSword
+                    || entity instanceof com.starkinhon.battlegroundsmod.boss.KokushiboEntity boss && boss.awakened() ? LENGTH : -1;
         }
         float t = scene(change, entity.tickCount + partial);
         if (t < 0 || self && change.on && t >= LENGTH && !entity.getData(ModAttachments.POWER).moonSword) {

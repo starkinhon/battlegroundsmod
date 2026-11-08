@@ -700,5 +700,11 @@
   "ability.battlegroundsmod.moon_demon.awakened.2": "9ª Forma: Kudaritsuki Renmen",
   "ability.battlegroundsmod.moon_demon.awakened.3": "14ª Forma: Kyohen Tenman Sengetsu",
   "ability.battlegroundsmod.moon_demon.awakened.4": "10ª Forma: Senmenzan Ragetsu",
-  "ability.battlegroundsmod.moon_demon.awakened.8": "16ª Forma: Gekko Katawarezuki"
+  "ability.battlegroundsmod.moon_demon.awakened.8": "16ª Forma: Gekko Katawarezuki",
+  "entity.battlegroundsmod.kokushibo": "Lua Superior Um",
+  "item.battlegroundsmod.kokushibo_spawn_egg": "Ovo Gerador da Lua Superior Um",
+  "fala.battlegroundsmod.kokushibo.despertar": "Tudo o que você fez... foi rasgar meu kimono.",
+  "fala.battlegroundsmod.kokushibo.pouca_vida": "Que aparência horrenda... é essa?",
+  "fala.battlegroundsmod.kokushibo.bebe": "Nem um bebê morreria disso...",
+  "fala.battlegroundsmod.kokushibo.dois": "Se eu matar vocês dois... todos os outros cairão facilmente."
 }

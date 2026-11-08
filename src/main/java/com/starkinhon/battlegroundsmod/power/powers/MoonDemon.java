@@ -38,7 +38,8 @@ public final class MoonDemon {
     private static final Ability SEVENTH = new Ability(160, 0, MoonFormSkill::seventh);
     private static final Ability EIGHTH = new Ability(220, 0, MoonFormSkill::eighth);
     private static final Ability NINTH = new Ability(200, 0, MoonFormSkill::ninth);
-    private static final Ability FOURTEENTH = new Ability(400, 0, MoonFormSkill::fourteenth);
+    // The 14th also goes off mid combo, a defense and attack in one (Stark, 2026-11-08).
+    private static final Ability FOURTEENTH = new Ability(400, 0, MoonFormSkill::fourteenth).asBeatenCounter();
     private static final Ability TENTH = new Ability(300, 0, MoonFormSkill::tenth);
     private static final Ability SIXTEENTH = new Ability(400, 0, MoonFormSkill::sixteenth);
 

@@ -692,5 +692,11 @@
   "ability.battlegroundsmod.moon_demon.awakened.2": "9th Form: Kudaritsuki Renmen",
   "ability.battlegroundsmod.moon_demon.awakened.3": "14th Form: Kyohen Tenman Sengetsu",
   "ability.battlegroundsmod.moon_demon.awakened.4": "10th Form: Senmenzan Ragetsu",
-  "ability.battlegroundsmod.moon_demon.awakened.8": "16th Form: Gekko Katawarezuki"
+  "ability.battlegroundsmod.moon_demon.awakened.8": "16th Form: Gekko Katawarezuki",
+  "entity.battlegroundsmod.kokushibo": "Upper Moon One",
+  "item.battlegroundsmod.kokushibo_spawn_egg": "Upper Moon One Spawn Egg",
+  "fala.battlegroundsmod.kokushibo.despertar": "All you did... was tear my kimono off.",
+  "fala.battlegroundsmod.kokushibo.pouca_vida": "What a hideous form... is this?",
+  "fala.battlegroundsmod.kokushibo.bebe": "Not even an infant would die from that...",
+  "fala.battlegroundsmod.kokushibo.dois": "If I kill the two of you... everyone else will be defeated easily."
 }
