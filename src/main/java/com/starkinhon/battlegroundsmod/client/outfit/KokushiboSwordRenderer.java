@@ -39,7 +39,8 @@ public class KokushiboSwordRenderer extends BlockEntityWithoutLevelRenderer {
         }
     }
 
-    // The awakened sword (KokushiboAwakenedSwordItem): the blade stretched to LONG_TIP, three blades branching off it.
+    // The stretched sword (H, SwordStretch): the blade stretched to LONG_TIP, three blades branching off it. The same item
+    // (Stark, 2026-11-08: one sword, not two).
     public static final float LONG_TIP = 39.4f;
 
     private static MeshModel katana;
@@ -47,21 +48,13 @@ public class KokushiboSwordRenderer extends BlockEntityWithoutLevelRenderer {
     private static MeshModel saya;
     private static boolean broken;
 
-    private final boolean awakened;
-
     public KokushiboSwordRenderer() {
-        this(false);
-    }
-
-    public KokushiboSwordRenderer(boolean awakened) {
         super(Minecraft.getInstance().getBlockEntityRenderDispatcher(), Minecraft.getInstance().getEntityModels());
-        this.awakened = awakened;
     }
 
-    // Kokushibo's swords, plain or awakened: the same grip, so they are held and turned the same way.
+    // Kokushibo's sword, plain or stretched: its own grip, so it is held and turned its own way.
     public static boolean isKokushibo(ItemStack stack) {
-        return stack.getItem() instanceof com.starkinhon.battlegroundsmod.item.KokushiboSwordItem
-                || stack.getItem() instanceof com.starkinhon.battlegroundsmod.item.KokushiboAwakenedSwordItem;
+        return stack.getItem() instanceof com.starkinhon.battlegroundsmod.item.KokushiboSwordItem;
     }
 
     // False once loading or drawing failed: the sword and its sheath stay invisible instead of crashing every frame.
@@ -124,11 +117,11 @@ public class KokushiboSwordRenderer extends BlockEntityWithoutLevelRenderer {
                 toSword(poseStack, thirdPerson);
             } else {
                 poseStack.translate(0.5f, 0.5f, 0.5f);
-                toSwordSpace(poseStack, awakened ? 0.39f : 0.45f, ((awakened ? LONG_TIP : TIP) + BUTT) / 2);
+                toSwordSpace(poseStack, 0.45f, (TIP + BUTT) / 2);
             }
             // Kokushibo's own sword in his hand while H has it stretched (SwordStretch): changing, or long at rest.
             LivingEntity holder = SwordStretch.holder();
-            float stretch = !awakened && holder != null && (firstPerson || thirdPerson)
+            float stretch = holder != null && (firstPerson || thirdPerson)
                     ? SwordStretch.tick(holder, Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false)) : -1;
             if (stretch >= SwordStretch.LENGTH) {
                 katanaLong.emit(buffer.getBuffer(RenderType.entityCutoutNoCull(TEXTURE)), poseStack.last(), light, overlay);
@@ -137,8 +130,6 @@ public class KokushiboSwordRenderer extends BlockEntityWithoutLevelRenderer {
                 if (!SwordStretch.render(stretch, clock, poseStack.last(), buffer, light)) {
                     katanaLong.emit(buffer.getBuffer(RenderType.entityCutoutNoCull(TEXTURE)), poseStack.last(), light, overlay);
                 }
-            } else if (awakened) {
-                katanaLong.emit(buffer.getBuffer(RenderType.entityCutoutNoCull(TEXTURE)), poseStack.last(), light, overlay);
             } else {
                 emit(poseStack.last(), buffer, light, overlay, true, false);
             }
