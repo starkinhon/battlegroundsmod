@@ -11,7 +11,7 @@ import com.starkinhon.battlegroundsmod.combat.Fx;
 import com.starkinhon.battlegroundsmod.combat.Intangible;
 import com.starkinhon.battlegroundsmod.combat.SkillSounds;
 import com.starkinhon.battlegroundsmod.combat.Stun;
-import com.starkinhon.battlegroundsmod.fx.ModParticles;
+import com.starkinhon.battlegroundsmod.fx.Smoke;
 import com.starkinhon.battlegroundsmod.power.PowerData;
 import com.starkinhon.battlegroundsmod.skill.MovementSpec;
 import com.starkinhon.battlegroundsmod.skill.SkillSpecs;
@@ -22,7 +22,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
-import net.minecraft.util.RandomSource;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
@@ -45,7 +44,6 @@ public final class Movement {
     private static final int SAFE_FALL_MAX_TICKS = 200;
     // A move's take-off tick still reads as "on the ground", so landing only counts after this.
     private static final int LANDING_DELAY = 3;
-    private static final RandomSource RANDOM = RandomSource.createThreadSafe();
 
     public enum Kind {
         ESQUIVA("padrao.esquiva"),
@@ -282,28 +280,28 @@ public final class Movement {
             entity.removeEffect(kind.effect());
             entity.addEffect(new MobEffectInstance(kind.effect(), SAFE_FALL_MAX_TICKS, 0, false, false, true));
         }
-        puffs(level, entity, spec.poeira(), velocity);
+        puffs(level, entity, kind, spec.poeira(), velocity);
         Vec3 feet = entity.position();
         SkillSounds.play(level, spec.sons(), "uso", 0, 0, where -> "pes".equals(where) ? feet : entity.position(), List.of());
     }
 
-    // A ring of puffs at the feet, thrown against the push so they look kicked off the ground.
-    private static void puffs(ServerLevel level, LivingEntity entity, MovementSpec.Poeira poeira, Vec3 velocity) {
+    // Dust kicked off the ground against the push (procedural smoke, in the color of the block underneath), or a
+    // ring of wind under the feet for a jump in the air.
+    private static void puffs(ServerLevel level, LivingEntity entity, Kind kind, MovementSpec.Poeira poeira, Vec3 velocity) {
         if (poeira == null || !poeira.ativa() || poeira.quantidade() <= 0) {
             return;
         }
-        Vec3 feet = entity.position().add(0, 0.1, 0);
+        Vec3 feet = entity.position();
         Vec3 push = new Vec3(velocity.x, 0, velocity.z);
-        Vec3 kick = push.lengthSqr() > 1.0E-4 ? push.normalize().scale(-poeira.velocidade() * 0.6) : Vec3.ZERO;
-        int color = poeira.rgb();
-        for (int i = 0; i < poeira.quantidade(); i++) {
-            double angle = i * Math.PI * 2 / poeira.quantidade() + RANDOM.nextDouble() * 0.4;
-            double speed = poeira.velocidade() * (0.6 + RANDOM.nextDouble() * 0.4);
-            Vec3 out = new Vec3(Math.cos(angle) * speed, 0.01 + RANDOM.nextDouble() * 0.03, Math.sin(angle) * speed).add(kick);
-            float size = poeira.tamanho() * (0.7f + RANDOM.nextFloat() * 0.6f);
-            int life = Math.max(1, (int) (poeira.vidaTicks() * (0.7 + RANDOM.nextDouble() * 0.6)));
-            Fx.moving(level, ModParticles.puff(color, size, life, 0.9f), feet, out);
+        double sizeScale = poeira.tamanho() / 0.7;
+        if (kind == Kind.PULO_DUPLO || push.lengthSqr() < 1.0E-4) {
+            Smoke.airJump(level, feet.add(0, 0.05, 0), poeira.rgb(), poeira.tamanho() / 0.8);
+            return;
         }
+        Smoke.kick(level, feet, push.normalize(), Smoke.groundColor(level, feet), sizeScale, poeira.vidaTicks() / 14.0, poeira.velocidade() / 0.22,
+                poeira.quantidade());
+        MovementData data = data(entity);
+        data.trailDir = push.normalize();
     }
 
     // Every tick, both sides: landing gives the air jump back. On the server it also ends the no-fall effect once
@@ -313,6 +311,14 @@ public final class Movement {
         long sinceMove = entity.level().getGameTime() - data.lastMoveAt;
         if (data.airJumpUsed && (entity.onGround() && sinceMove >= LANDING_DELAY || entity.isInWater() || entity.onClimbable())) {
             data.airJumpUsed = false;
+        }
+        // The first ticks of a dash on the ground: dust trail at the feet and wind along the body.
+        if (data.trailDir != null && entity.level() instanceof ServerLevel level) {
+            if (sinceMove >= 1 && sinceMove <= 6) {
+                Smoke.dashTrail(level, entity.position(), data.trailDir, Smoke.groundColor(level, entity.position()), entity.onGround() ? (int) sinceMove : 99);
+            } else if (sinceMove > 6) {
+                data.trailDir = null;
+            }
         }
         if (!entity.level().isClientSide() && sinceMove >= SAFE_FALL_MIN_TICKS && entity.onGround() && entity.fallDistance == 0) {
             for (Kind kind : Kind.values()) {

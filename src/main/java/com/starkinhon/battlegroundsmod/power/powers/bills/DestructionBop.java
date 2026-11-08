@@ -13,6 +13,7 @@ import com.starkinhon.battlegroundsmod.combat.SkillSounds;
 import com.starkinhon.battlegroundsmod.combat.Stun;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
 import com.starkinhon.battlegroundsmod.fx.ModParticles;
+import com.starkinhon.battlegroundsmod.fx.Smoke;
 import com.starkinhon.battlegroundsmod.fx.SoulParticleOptions;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
 import com.starkinhon.battlegroundsmod.power.PowerData;
@@ -338,12 +339,7 @@ public final class DestructionBop {
 
     // A quick dark-purple puff where he vanishes or comes back.
     private static void smoke(ServerLevel level, Vec3 at, double height) {
-        RandomSource random = level.getRandom();
-        for (int i = 0; i < 10; i++) {
-            Vec3 pos = at.add(random.nextGaussian() * 0.3, 0.2 + random.nextDouble() * height, random.nextGaussian() * 0.3);
-            Vec3 velocity = new Vec3(random.nextGaussian() * 0.04, 0.02, random.nextGaussian() * 0.04);
-            Fx.moving(level, ModParticles.puff(0x3A2A4F, 0.25f + random.nextFloat() * 0.3f, 8 + random.nextInt(6), 0.9f), pos, velocity);
-        }
+        Smoke.puff(level, at, 0x9B30FF, height, false);
     }
 
     // The dust wave rolling out along the ground and specks of dirt flying out of the hole.
@@ -351,15 +347,7 @@ public final class DestructionBop {
         DestructionBopSpec.Chao chao = spec.chao();
         RandomSource random = level.getRandom();
         int color = rgb(chao.corOnda(), 0xB8A58A);
-        int points = 48;
-        for (double y : new double[] {0.15, 0.6}) {
-            for (int i = 0; i < points; i++) {
-                double angle = i * Math.PI * 2 / points;
-                Vec3 out = new Vec3(Math.cos(angle), 0, Math.sin(angle));
-                Fx.moving(level, ModParticles.puff(color, 0.35f + random.nextFloat() * 0.2f, 10 + random.nextInt(6), 0.93f),
-                        pos.add(out.scale(0.6)).add(0, y, 0), out.scale(chao.velocidadeOnda()));
-            }
-        }
+        Smoke.groundWave(level, pos, color, chao.velocidadeOnda());
         double radius = chao.raioCratera();
         for (int i = 0; i < chao.poeira(); i++) {
             double angle = random.nextDouble() * Math.PI * 2;

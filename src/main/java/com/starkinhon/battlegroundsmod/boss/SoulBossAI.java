@@ -1197,7 +1197,7 @@ public class SoulBossAI extends Goal {
                 boss.teleportTo(spot.x, spot.y, spot.z);
                 boss.getNavigation().stop();
                 face(Combat.center(target), 360);
-                BossFx.teleport(level(), from, spot);
+                BossFx.teleport(level(), from, spot, BossFx.color(boss.spec().intro().cor()));
                 thinking = "teleporte";
                 return true;
             }
