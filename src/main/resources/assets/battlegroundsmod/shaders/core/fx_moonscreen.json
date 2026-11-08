@@ -1,0 +1,26 @@
+{
+    "vertex": "battlegroundsmod:fx_blit",
+    "fragment": "battlegroundsmod:fx_moonscreen",
+    "samplers": [ { "name": "DiffuseSampler" }, { "name": "DepthSampler" } ],
+    "uniforms": [
+        { "name": "Screen", "type": "float", "count": 2, "values": [ 1.0, 1.0 ] },
+        { "name": "Imp", "type": "float", "count": 1, "values": [ -1.0 ] },
+        { "name": "Seed", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "Blur", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "CA", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "Vig", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "Grade", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "Letter", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "Lines", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "Roll", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "Zoom", "type": "float", "count": 1, "values": [ 1.0 ] },
+        { "name": "Night", "type": "float", "count": 1, "values": [ 1.0 ] },
+        { "name": "BlurCenter", "type": "float", "count": 2, "values": [ 0.5, 0.5 ] },
+        { "name": "LinesCenter", "type": "float", "count": 2, "values": [ 0.5, 0.5 ] },
+        { "name": "Offset", "type": "float", "count": 2, "values": [ 0.0, 0.0 ] },
+        { "name": "SplitCenter", "type": "float", "count": 2, "values": [ 0.5, 0.5 ] },
+        { "name": "Split", "type": "float", "count": 4, "values": [ 0.0, 0.0, 0.0, 0.0 ] },
+        { "name": "Shock", "type": "float", "count": 4, "values": [ 0.0, 0.0, 0.0, 0.0 ] },
+        { "name": "Flash", "type": "float", "count": 4, "values": [ 1.0, 1.0, 1.0, 0.0 ] }
+    ]
+}

@@ -11,6 +11,7 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.starkinhon.battlegroundsmod.power.powers.kokushibo.MoonForms;
+import com.starkinhon.battlegroundsmod.power.powers.kokushibo.MoonTime;
 
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
@@ -29,7 +30,8 @@ public final class MoonFormsRenderer {
     private static final int MAX = 6;
     private static final double IMPACT_VIEW = 48;
 
-    private record Cast(MoonForms.Form form, MoonForms.Basis basis, double born) {
+    // clock: the awakened forms' freezes and slow motion (the server plays the same); screen: their screen effects
+    private record Cast(MoonForms.Form form, MoonForms.Basis basis, double born, MoonTime clock, MoonScreen.Show screen) {
     }
 
     private static final List<Cast> CASTS = new ArrayList<>();
@@ -52,7 +54,7 @@ public final class MoonFormsRenderer {
     }
 
     // form: + 100 at the full moon (more moons left hanging, bigger and for longer).
-    public static void receive(int code, Vec3 feet, Vec3 look, int seed) {
+    public static void receive(int code, Vec3 feet, Vec3 look, int seed, int casterId) {
         boolean full = code >= 100;
         int form = code % 100;
         MoonForms.Basis basis = MoonForms.basis(form, feet, look);
@@ -72,16 +74,22 @@ public final class MoonFormsRenderer {
         } else {
             shape = MoonForms.create(form, seed, full);
         }
-        CASTS.add(new Cast(shape, basis, ScreenFx.now()));
+        Minecraft mc = Minecraft.getInstance();
+        boolean awakened = MoonForms.awakened(form);
+        double born = ScreenFx.now();
+        MoonTime clock = awakened ? MoonTime.of(form, shape) : MoonTime.plain(shape.end);
+        MoonScreen.Show screen = awakened
+                ? MoonScreen.start(form, shape, basis, clock, born, feet, mc.player != null && mc.player.getId() == casterId)
+                : null;
+        CASTS.add(new Cast(shape, basis, born, clock, screen));
         while (CASTS.size() > MAX) {
             CASTS.remove(0);
         }
-        // The pages open with a flash and a shake (stronger for the bigger forms).
-        Minecraft mc = Minecraft.getInstance();
-        boolean awakened = MoonForms.awakened(form);
-        if (mc.player != null && mc.player.position().distanceTo(feet) < IMPACT_VIEW * (awakened ? 2 : 1)) {
-            float shake = awakened ? 1.1f : form == 6 ? 1.0f : form == 3 ? 0.9f : 0.7f;
-            ScreenFx.flash(awakened ? 0xD8C0FF : 0xFFE2A0, 0.18f, 5);
+        // The pages open with a flash and a shake (stronger for the bigger forms); the awakened ones have their own
+        // screen script (MoonScreen).
+        if (!awakened && mc.player != null && mc.player.position().distanceTo(feet) < IMPACT_VIEW) {
+            float shake = form == 6 ? 1.0f : form == 3 ? 0.9f : 0.7f;
+            ScreenFx.flash(0xFFE2A0, 0.18f, 5);
             ScreenFx.radialBlur(feet.add(0, 1.5, 0), 0.3f, 8);
             com.starkinhon.battlegroundsmod.client.ScreenShake.start(shake, 12);
         }
@@ -93,10 +101,11 @@ public final class MoonFormsRenderer {
 
     public static void clear() {
         CASTS.clear();
+        MoonScreen.clear();
     }
 
     public static void render(MultiBufferSource source, Vec3 camera, double now, float partial) {
-        CASTS.removeIf(c -> (now - c.born()) / 20.0 > c.form().end);
+        CASTS.removeIf(c -> (now - c.born()) / 20.0 > c.clock().realEnd);
         if (CASTS.isEmpty() || FxShaders.moon3d == null) {
             return;
         }
@@ -105,9 +114,12 @@ public final class MoonFormsRenderer {
         Vec3 right = new Vec3(-left.x(), -left.y(), -left.z()), upv = new Vec3(up.x(), up.y(), up.z());
         VertexConsumer out = source.getBuffer(Types.BODY);
         for (Cast c : CASTS) {
-            double t = Math.max(0, (now - c.born()) / 20.0);
+            double t = c.clock().form(Math.max(0, (now - c.born()) / 20.0));
             MoonForms.Frame fr = c.form().frame(t);
             MoonForms.Basis b = c.basis();
+            if (c.screen() != null) {
+                c.screen().near(nearest(fr, b, camera), now);
+            }
             // the awakened colours are the same kinds of piece, three further up (see souls_moon3d)
             int pal = c.form().pal ? 3 * 4096 : 0;
             for (MoonForms.Ribbon rb : fr.ribbons()) {
@@ -129,6 +141,20 @@ public final class MoonFormsRenderer {
                 billboard(out, p, right, upv, s.z() * 4, 4f, (float) (s.a() / 1.5), 0, 0, 0, pal + 8192, 0);
             }
         }
+    }
+
+    // How close the nearest cut or moon of this frame is to the camera (blocks).
+    private static double nearest(MoonForms.Frame fr, MoonForms.Basis b, Vec3 camera) {
+        double near = 1e9;
+        for (MoonForms.Ribbon rb : fr.ribbons()) {
+            for (int i = 0; i < rb.p.length; i += 3) {
+                near = Math.min(near, b.world(rb.p[i]).distanceTo(camera) - rb.hw);
+            }
+        }
+        for (MoonForms.Moon m : fr.moons()) {
+            near = Math.min(near, b.world(m.p()).distanceTo(camera) - m.r());
+        }
+        return near;
     }
 
     private static void ribbon(VertexConsumer out, MoonForms.Basis b, MoonForms.Ribbon rb, Vec3 camera, int pal) {

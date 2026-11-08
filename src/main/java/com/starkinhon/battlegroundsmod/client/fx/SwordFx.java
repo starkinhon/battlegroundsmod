@@ -95,7 +95,7 @@ public final class SwordFx {
             case GLINT -> GLINTS.add(new Glint(entityId, now));
             case MOON -> MoonSlashRenderer.receive(pos, dir, (int) a);
             case MOON_HIT -> MoonSlashRenderer.hit(pos);
-            case MOON_FORM -> MoonFormsRenderer.receive((int) b, pos, dir, (int) a);
+            case MOON_FORM -> MoonFormsRenderer.receive((int) b, pos, dir, (int) a, entityId);
             case MOON_TARGET -> MoonFormsRenderer.target((int) a, (int) b, entityId);
             case MOON_STRETCH -> com.starkinhon.battlegroundsmod.client.outfit.SwordStretch.set(entityId, a > 0.5f);
             default -> {
