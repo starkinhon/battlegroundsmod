@@ -194,6 +194,8 @@
   "ability.battlegroundsmod.uchiha_ghost.8.tags": "Area",
   "gamerule.soulsBlockDestruction": "Souls skills break blocks",
   "gamerule.soulsBlockDestruction.description": "When off, no skill or boss from the mod breaks or changes blocks. Effects and damage stay. mobGriefing off also stops it.",
+  "gamerule.soulsKokushiboImpact": "Awakened Moon new impact",
+  "gamerule.soulsKokushiboImpact.description": "Kokushibo's awakened forms: impact frames, screen effects and slow motion. Off: as they were before (/soul effectsimpactkokushibo).",
   "gamerule.soulbossfight": "Souls boss fights",
   "gamerule.soulbossfight.description": "On: bosses have entrance and phase titles, boss bar, phases and the final ult. Off: they are plain mobs using all their moves from the start.",
   "power.battlegroundsmod.strongest": "The Strongest",
