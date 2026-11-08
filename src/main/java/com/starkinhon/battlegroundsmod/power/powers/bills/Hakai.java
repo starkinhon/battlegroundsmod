@@ -139,6 +139,7 @@ public final class Hakai {
             if (cut[0] || !target.isAlive()) {
                 return;
             }
+            com.starkinhon.battlegroundsmod.combat.CustomDeath.mark(target);
             PacketDistributor.sendToPlayersTrackingEntityAndSelf(target, new ModPayloads.HakaiDeath(target.getId(), awakened));
             Fx.effects(level, SKILL, awakened, "hakai", target, kill - dissolve);
         });
@@ -165,6 +166,7 @@ public final class Hakai {
         Stun.apply(target, ticks + 1);
         PowerLogic.seal(target, ticks + 1);
         Intangible.hold(target, ticks + 1);
+        com.starkinhon.battlegroundsmod.combat.CustomDeath.mark(target);
         PacketDistributor.sendToPlayersTrackingEntityAndSelf(target, new ModPayloads.HakaiDeath(target.getId(), awakened));
         Fx.effects((ServerLevel) target.level(), SKILL, awakened, "hakai", target, ticks);
         Tasks.later(ticks, () -> {

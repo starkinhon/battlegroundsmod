@@ -523,6 +523,40 @@ public final class ModPayloads {
         }
     }
 
+    // Server -> client: a boss killed by a player gives up its soul (boss/SoulCeremony): it leaves the body slowly, takes
+    // the shape of the soul item's icon and falls to the ground as the item. full: the whole ceremony (first time this
+    // killer steals that soul) or the short one. killerId: whose HUD hides while it plays.
+    public record SoulCeremony(int entityId, int killerId, String power, int color, boolean full) implements CustomPacketPayload {
+        public static final Type<SoulCeremony> TYPE = payloadType("soul_ceremony");
+        public static final StreamCodec<ByteBuf, SoulCeremony> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, SoulCeremony::entityId,
+                ByteBufCodecs.VAR_INT, SoulCeremony::killerId,
+                ByteBufCodecs.STRING_UTF8, SoulCeremony::power,
+                ByteBufCodecs.INT, SoulCeremony::color,
+                ByteBufCodecs.BOOL, SoulCeremony::full,
+                SoulCeremony::new);
+
+        @Override
+        public Type<SoulCeremony> type() {
+            return TYPE;
+        }
+    }
+
+    // Server -> client: the soul of that ceremony became this item on the ground: it keeps a glow and a beam of light
+    // until someone picks it up.
+    public record SoulCeremonyDrop(int entityId, int itemId) implements CustomPacketPayload {
+        public static final Type<SoulCeremonyDrop> TYPE = payloadType("soul_ceremony_drop");
+        public static final StreamCodec<ByteBuf, SoulCeremonyDrop> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, SoulCeremonyDrop::entityId,
+                ByteBufCodecs.VAR_INT, SoulCeremonyDrop::itemId,
+                SoulCeremonyDrop::new);
+
+        @Override
+        public Type<SoulCeremonyDrop> type() {
+            return TYPE;
+        }
+    }
+
     // Server -> client: Bills' Hakai cutscene for him and his target (the shots and timing come from bills.hakai.json).
     public record HakaiCutscene(int casterId, int targetId, boolean awakened) implements CustomPacketPayload {
         public static final Type<HakaiCutscene> TYPE = payloadType("hakai_cutscene");
@@ -1231,6 +1265,10 @@ public final class ModPayloads {
                 () -> ClientHooks.hideEntity(payload.entityId(), payload.ticks())));
         registrar.playToClient(AshDeath.TYPE, AshDeath.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.ashDeath(payload.entityId())));
+        registrar.playToClient(SoulCeremony.TYPE, SoulCeremony.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.soulCeremony(payload.entityId(), payload.killerId(), payload.power(), payload.color(), payload.full())));
+        registrar.playToClient(SoulCeremonyDrop.TYPE, SoulCeremonyDrop.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.soulCeremonyDrop(payload.entityId(), payload.itemId())));
         registrar.playToClient(HakaiCutscene.TYPE, HakaiCutscene.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.hakaiCutscene(payload.casterId(), payload.targetId(), payload.awakened())));
         registrar.playToClient(HakaiDeath.TYPE, HakaiDeath.STREAM_CODEC, (payload, context) -> context.enqueueWork(

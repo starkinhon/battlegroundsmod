@@ -60,6 +60,7 @@ public class BattlegroundsMod {
         SoulCommand.addSubcommand(com.starkinhon.battlegroundsmod.command.StaminaCommand::build);
         SoulCommand.addSubcommand(com.starkinhon.battlegroundsmod.power.powers.kokushibo.MoonImpactRule::command);
         NeoForge.EVENT_BUS.addListener(SoulCommand::register);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.boss.SoulCeremony::onPickup);
     }
 
     private void commonSetup(FMLCommonSetupEvent event) {

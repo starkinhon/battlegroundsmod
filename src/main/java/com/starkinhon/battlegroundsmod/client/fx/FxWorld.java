@@ -143,7 +143,7 @@ public final class FxWorld {
         }
         FxPost.newFrame();
         ScreenFx.capture(event);
-        boolean world = !PIECES.isEmpty() || MeteorRenderer.hasTrails() || Aura.active() || KatonBallRenderer.active() || AshDeath.hasSparks()
+        boolean world = !PIECES.isEmpty() || MeteorRenderer.hasTrails() || Aura.active() || KatonBallRenderer.active() || AshDeath.hasSparks() || SoulCeremonyFx.active()
                 || SpaceScene.active() || EsferaRenderer.active() || HakaiRenderer.active() || EnergyRenderer.active() || BlackBoxRenderer.active() || AzulRenderer.active() || VermelhoRenderer.active() || BlackFlashRenderer.active() || RoxoRenderer.active() || AizenFx.active() || SwordFx.active() || MoonSlashRenderer.active() || MoonFormsRenderer.active() || PunchFxRenderer.active() || SubFx.active()
                 || SphereRenderer.active() || SusanooArm.active() || DomainScene.active() || VoidFlashScene.active();
         if (!world && !ScreenFx.needsScene()) {
@@ -211,6 +211,7 @@ public final class FxWorld {
             KatonBallRenderer.render(camera, now, partial);
             Aura.render(event.getCamera(), now, partial);
             AshDeath.sparks(camera, now, partial);
+            SoulCeremonyFx.render(camera, now, partial);
             EsferaRenderer.render(camera, now, partial);
             HakaiRenderer.render(camera, now, partial);
             EnergyRenderer.render(camera, now, partial);

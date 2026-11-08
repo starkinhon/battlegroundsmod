@@ -172,6 +172,14 @@ public final class ClientHooks {
         com.starkinhon.battlegroundsmod.client.fx.DomainScene.event(casterId, center, awakened, mode, other);
     }
 
+    public static void soulCeremony(int entityId, int killerId, String power, int color, boolean full) {
+        com.starkinhon.battlegroundsmod.client.fx.SoulCeremonyFx.start(entityId, killerId, power, color, full);
+    }
+
+    public static void soulCeremonyDrop(int entityId, int itemId) {
+        com.starkinhon.battlegroundsmod.client.fx.SoulCeremonyFx.drop(entityId, itemId);
+    }
+
     public static void hakaiDeath(int entityId, boolean awakened) {
         AshDeath.startHakai(entityId, awakened);
     }
