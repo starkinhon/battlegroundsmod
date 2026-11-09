@@ -61,6 +61,8 @@ public final class Clivar {
     private static final float DAMAGE = 30, MAX_HEALTH_SHARE = 0.25f, GRAB_DAMAGE = 4;
     private static final int COOLDOWN = 260, MISS_COOLDOWN = 50, BROKEN_COOLDOWN = 80;
     private static final float MODEL_WEIGHT = 1.5f;
+    // How fast he can turn with the target in his hand, degrees a tick.
+    private static final double TURN = 24;
 
     private static final Map<LivingEntity, Boolean> BUSY = new WeakHashMap<>();
 
@@ -182,11 +184,12 @@ public final class Clivar {
         }
         caster.hurtMarked = true;
         data.busyTicks = Math.max(data.busyTicks, thr + 6);
-        Runnable freeCaster = Freeze.hold(caster, thr + 4, age -> age < pin ? stand.lerp(pinStand, smooth((age + 1) / (double) pin)) : pinStand);
+        // Stark 2026-11-09: the camera stays free. In the open he turns with it and the body hanging from his hand goes
+        // round with him; the throw goes where he faces. Pinned to a wall nothing turns.
+        Runnable freeCaster = Freeze.holdLookFree(caster, thr + 4, age -> age < pin ? stand.lerp(pinStand, smooth((age + 1) / (double) pin)) : pinStand);
+        double[] facing = {yRot};
         // held by the neck: lifted over 3 ticks; against a wall carried to it and pressed there
-        Vec3 right = new Vec3(-fwd.z, 0, fwd.x);
         double neck = 1.5 * target.getBbHeight() / 1.8;
-        Vec3 held = stand.add(fwd.scale(HAND_FWD * body)).add(right.scale(HAND_SIDE * body)).add(0, Math.max(0.1, HAND_UP * body - neck), 0);
         Vec3 pressed = pinFeet.add(0, LIFT * 0.6 * body, 0);
         float targetYaw = yRot + 180;
         target.setYRot(targetYaw);
@@ -196,7 +199,7 @@ public final class Clivar {
             if (wall) {
                 return age < pin ? startFeet.lerp(pressed, smooth((age + 1) / (double) pin)) : pressed;
             }
-            return startFeet.lerp(held, smooth((age + 1) / 3.0));
+            return startFeet.lerp(heldAt(stand, facing[0], body, neck), smooth((age + 1) / 3.0));
         });
         Stun.apply(target, thr + 12);
         PowerLogic.seal(target, thr + 2);
@@ -220,6 +223,15 @@ public final class Clivar {
                 cooldown(caster, BROKEN_COOLDOWN);
                 return true;
             }
+            if (!wall && age < wind) {
+                // he turns with his camera (at most TURN degrees a tick, so the body swings round instead of jumping)
+                float want = caster instanceof ServerPlayer ? caster.getYRot() : caster.getYHeadRot();
+                double step = Mth.clamp(Mth.wrapDegrees(want - facing[0]), -TURN, TURN);
+                if (Math.abs(step) > 0.5) {
+                    facing[0] += step;
+                    Freeze.face(target, (float) facing[0] + 180, 0);
+                }
+            }
             if (wall && age == pin) {
                 anim(caster, "sukuna.clivar_prensa");
                 send(caster, target, SukunaClivar.PIN, 0, pressed.add(0, target.getBbHeight() * 0.7, 0).subtract(normal.scale(half)), normal, seed);
@@ -238,7 +250,7 @@ public final class Clivar {
                 float damage = DAMAGE + MAX_HEALTH_SHARE * target.getMaxHealth();
                 Combat.hurt(caster, target, damage);
                 lethal[0] = !target.isAlive() || target.getHealth() <= 0;
-                send(caster, target, lethal[0] ? SukunaClivar.SNAP_LETHAL : SukunaClivar.SNAP, 0, Vec3.ZERO, fwd, seed);
+                send(caster, target, lethal[0] ? SukunaClivar.SNAP_LETHAL : SukunaClivar.SNAP, 0, Vec3.ZERO, facingDir(facing[0]), seed);
                 Vec3 c = Combat.center(target);
                 Fx.sound(level, c, SoundEvents.PLAYER_ATTACK_CRIT, 1.6f, 0.5f);
                 Fx.sound(level, c, SoundEvents.PLAYER_ATTACK_SWEEP, 1.4f, 0.4f);
@@ -261,7 +273,7 @@ public final class Clivar {
             }
             if (age == thr + 2) {
                 freeTarget.run();
-                Combat.push(target, fwd, 1.5, 0.45);
+                Combat.push(target, wall ? fwd : facingDir(facing[0]), 1.5, 0.45);
                 Stun.apply(target, 22);
                 Fx.sound(level, Combat.center(target), SoundEvents.PLAYER_ATTACK_KNOCKBACK, 1.3f, 0.5f);
             }
@@ -273,6 +285,18 @@ public final class Clivar {
             }
             return false;
         });
+    }
+
+    // Where the held body's feet hang: under his gripping hand, for him standing at stand and facing yaw.
+    private static Vec3 heldAt(Vec3 stand, double yaw, double body, double neck) {
+        Vec3 fwd = facingDir(yaw);
+        Vec3 right = new Vec3(-fwd.z, 0, fwd.x);
+        return stand.add(fwd.scale(HAND_FWD * body)).add(right.scale(HAND_SIDE * body)).add(0, Math.max(0.1, HAND_UP * body - neck), 0);
+    }
+
+    private static Vec3 facingDir(double yaw) {
+        double r = yaw * Mth.DEG_TO_RAD;
+        return new Vec3(-Math.sin(r), 0, Math.cos(r));
     }
 
     // The centre of the wall's face (its middle 3x3 from the target's feet up), in front of the block hit.

@@ -1,16 +1,253 @@
 {
     "vertex": "battlegroundsmod:souls_clivar",
     "fragment": "battlegroundsmod:souls_clivar",
-    "samplers": [ { "name": "Sampler0" } ],
+    "samplers": [
+        {
+            "name": "Sampler0"
+        }
+    ],
     "uniforms": [
-        { "name": "ModelViewMat", "type": "matrix4x4", "count": 16, "values": [ 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 ] },
-        { "name": "ProjMat", "type": "matrix4x4", "count": 16, "values": [ 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 ] },
-        { "name": "Origin", "type": "float", "count": 3, "values": [ 0.0, 0.0, 0.0 ] },
-        { "name": "Yaw", "type": "float", "count": 1, "values": [ 0.0 ] },
-        { "name": "Measure", "type": "float", "count": 1, "values": [ 0.0 ] },
-        { "name": "Sil", "type": "float", "count": 1, "values": [ 0.0 ] },
-        { "name": "Fade", "type": "float", "count": 1, "values": [ 1.0 ] },
-        { "name": "N", "type": "float", "count": 1, "values": [ 9.0 ] },
-        { "name": "Seed", "type": "float", "count": 1, "values": [ 0.0 ] }
+        {
+            "name": "ModelViewMat",
+            "type": "matrix4x4",
+            "count": 16,
+            "values": [
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1
+            ]
+        },
+        {
+            "name": "ProjMat",
+            "type": "matrix4x4",
+            "count": 16,
+            "values": [
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1
+            ]
+        },
+        {
+            "name": "Origin",
+            "type": "float",
+            "count": 3,
+            "values": [
+                0.0,
+                0.0,
+                0.0
+            ]
+        },
+        {
+            "name": "Yaw",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0.0
+            ]
+        },
+        {
+            "name": "Measure",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0.0
+            ]
+        },
+        {
+            "name": "Sil",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0.0
+            ]
+        },
+        {
+            "name": "Fade",
+            "type": "float",
+            "count": 1,
+            "values": [
+                1.0
+            ]
+        },
+        {
+            "name": "Center",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0.9
+            ]
+        },
+        {
+            "name": "Radius",
+            "type": "float",
+            "count": 1,
+            "values": [
+                1.0
+            ]
+        },
+        {
+            "name": "P0",
+            "type": "matrix4x4",
+            "count": 16,
+            "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+            ]
+        },
+        {
+            "name": "P1",
+            "type": "matrix4x4",
+            "count": 16,
+            "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+            ]
+        },
+        {
+            "name": "P2",
+            "type": "matrix4x4",
+            "count": 16,
+            "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+            ]
+        },
+        {
+            "name": "Q0",
+            "type": "matrix4x4",
+            "count": 16,
+            "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+            ]
+        },
+        {
+            "name": "Q1",
+            "type": "matrix4x4",
+            "count": 16,
+            "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+            ]
+        },
+        {
+            "name": "Q2",
+            "type": "matrix4x4",
+            "count": 16,
+            "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+            ]
+        }
     ]
 }

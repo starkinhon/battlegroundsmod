@@ -8,6 +8,7 @@
 // and twist in radians); in the files x and y are flipped into the mod's axes, as KeyframeAnimation reads them.
 const fs = require('fs');
 const path = require('path');
+const { channels } = require('./rig');
 const dir = path.join(__dirname, '../../src/main/resources/assets/battlegroundsmod/animations');
 const ease = { out: u => 1 - Math.pow(1 - u, 3), snap: u => 1 - Math.pow(1 - u, 5), io: u => u < .5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2 };
 const cl = (x, a, b) => Math.max(a, Math.min(b, x));
@@ -46,23 +47,9 @@ function poseAt(keys, t) {
 // legs: false leaves them to Minecraft (the crouch); hold: seconds the last pose stays (the key is still held).
 function bake(name, keys, { legs = true, hold = 0 } = {}) {
   const last = keys[keys.length - 1].t;
-  const chans = {};
-  const bones = Object.keys(BONES).filter(b => legs || (b !== 'rl' && b !== 'll'));
-  for (const b of bones) chans[b] = [];
-  chans.body = [];
-  for (let k = 0; k <= last * 2; k++) {
-    const tt = k / 2;
-    const p = poseAt(keys, tt);
-    const ts = +(tt / 20).toFixed(4);
-    for (const b of bones) {
-      const r = p[b] || [0, 0, 0];
-      chans[b].push({ timestamp: ts, target: [-r[0], -r[1], r[2]].map(x => +x.toFixed(3)), interpolation: 'linear' });
-    }
-    chans.body.push({ timestamp: ts, target: [-(p.g.lean || 0) * D, -(p.g.twist || 0) * D, 0].map(x => +x.toFixed(3)), interpolation: 'linear' });
-  }
-  const animations = bones.map(b => ({ bone: BONES[b], target: 'rotation', keyframes: chans[b] }));
-  animations.push({ bone: 'Body', target: 'rotation', keyframes: chans.body });
-  const out = { length: +((last / 20) + hold).toFixed(4), animations };
+  const poses = [];
+  for (let k = 0; k <= last * 2; k++) poses.push({ ts: +((k / 2) / 20).toFixed(4), p: poseAt(keys, k / 2) });
+  const out = { length: +((last / 20) + hold).toFixed(4), animations: channels(poses, { legs }) };
   fs.writeFileSync(path.join(dir, name + '.json'), JSON.stringify(out));
   console.log(`${name}: ${out.length} s`);
 }
