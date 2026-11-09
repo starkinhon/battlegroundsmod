@@ -106,7 +106,10 @@ public final class Cravada {
                 launch(caster, caught, level, data, seed);
                 return true;
             }
-            if (step <= 0.05 || t > DASH + 2 || t > 1 && caster.horizontalCollision) {
+            // a step, a slab or a block up in the way: he hops it on the run (a scripted run, 2026-11-09, missed on every
+            // one); only a wall two high stops him
+            boolean hop = t > 1 && caster.horizontalCollision && canHop(level, caster, dir[0]);
+            if (step <= 0.05 || t > DASH + 2 || t > 1 && caster.horizontalCollision && !hop) {
                 BUSY.remove(caster);
                 data.busyTicks = 0;
                 Vec3 v = caster.getDeltaMovement();
@@ -118,12 +121,17 @@ public final class Cravada {
                 cooldown(caster, MISS_COOLDOWN);
                 return true;
             }
-            caster.setDeltaMovement(dir[0].x * step, Math.min(caster.getDeltaMovement().y, 0.1), dir[0].z * step);
+            caster.setDeltaMovement(dir[0].x * step, hop ? 0.5 : Math.min(caster.getDeltaMovement().y, 0.1), dir[0].z * step);
             caster.hurtMarked = true;
             caster.resetFallDistance();
             return false;
         });
         return true;
+    }
+
+    // Room for him a block up and a little ahead.
+    private static boolean canHop(ServerLevel level, LivingEntity caster, Vec3 dir) {
+        return level.noCollision(caster, caster.getBoundingBox().move(dir.x * 0.6, 1.05, dir.z * 0.6));
     }
 
     private static LivingEntity lock(LivingEntity caster) {
@@ -147,6 +155,11 @@ public final class Cravada {
     // The uppercut landed: from here the two of them fly on BTrack, in his frame at this moment.
     private static void launch(LivingEntity caster, LivingEntity target, ServerLevel level, PowerData data, int seed) {
         Capture.take(target);
+        // Whatever the target was doing ends here (Stark 2026-11-09: caught in the middle of Madara's attack, the attack
+        // kept moving and holding him, so the two of them ended up apart while the animation played on): its moves are
+        // cut off and the holds they put on it let go, so the only thing moving it is this.
+        PowerLogic.interrupt(target);
+        Freeze.freeOwn(target);
         Vec3 fwd = flatTo(caster, target);
         Vec3 left = new Vec3(fwd.z, 0, -fwd.x);
         float yRot = (float) (Mth.atan2(-fwd.x, fwd.z) * Mth.RAD_TO_DEG);
@@ -170,6 +183,11 @@ public final class Cravada {
             Vec3 at = origin.add(frame(left, fwd, p[0], p[1], p[2]));
             return age >= BTrack.LAND - 2 ? onGround(level, at, groundS, caster) : at;
         }, SLACK);
+        // from this tick: his client is on the track already, before the hold's first tick turns it on (a scripted run
+        // on steps had him "moved wrongly" and snapped back once at the start of the flight)
+        if (caster instanceof ServerPlayer) {
+            caster.noPhysics = true;
+        }
         Runnable freeTarget = Freeze.holdLookFree(target, BTrack.BURST, age -> {
             double[] p = BTrack.TARGET[Math.min(age, length)];
             Vec3 c = origin.add(frame(left, fwd, p[0], p[1], p[2]));
@@ -179,6 +197,9 @@ public final class Cravada {
             }
             return age >= BTrack.IMPACT - 1 ? onGround(level, feet, groundT, target) : feet;
         });
+        // the holds are this move's: if another one takes either of them (a counter, a cutscene, a grab), it stops
+        // instead of playing on with the two of them somewhere else
+        net.minecraft.world.entity.Entity holdsCaster = Freeze.holder(caster), holdsTarget = Freeze.holder(target);
         int total = BTrack.BURST + 12;
         data.busyTicks = Math.max(data.busyTicks, total);
         Stun.apply(target, BTrack.BURST + 10);
@@ -189,7 +210,9 @@ public final class Cravada {
         int interrupts = data.interrupts;
         Tasks.add(age -> {
             boolean alive = target.isAlive() && !target.isRemoved();
-            if (!caster.isAlive() || data.interrupts != interrupts) {
+            boolean taken = age > 0 && age < total && (Freeze.holder(caster) != holdsCaster
+                    || alive && age < BTrack.BURST && Freeze.holder(target) != holdsTarget);
+            if (!caster.isAlive() || data.interrupts != interrupts || taken) {
                 freeCaster.run();
                 freeTarget.run();
                 BUSY.remove(caster);

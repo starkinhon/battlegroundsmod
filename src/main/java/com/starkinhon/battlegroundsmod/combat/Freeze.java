@@ -141,6 +141,11 @@ public final class Freeze {
                 if (entity.position().distanceToSqr(pos) > grip.slack * grip.slack && entity instanceof ServerPlayer player) {
                     lookFreeTeleport(player, pos);
                 }
+                // The path goes through whatever stands in it (it was planned on flat ground): without this the server
+                // checked each step his client sent against the blocks, found him "moved wrongly" and threw him back,
+                // so he teleported about (Stark 2026-11-09, the B in a real fight). Player.tick sets it back to
+                // isSpectator() at the start of every tick; the client's steps arrive between ticks, after this.
+                entity.noPhysics = true;
                 entity.resetFallDistance();
                 return false;
             }
@@ -244,6 +249,27 @@ public final class Freeze {
         }
     }
 
+    // Whose move holds entity now (the newest hold, the one that moves them), or null when no hold has them.
+    public static Entity holder(Entity entity) {
+        Hold hold = HELD.get(entity);
+        Grip top = hold == null ? null : hold.top();
+        return top == null ? null : top.owner;
+    }
+
+    // Lets go of the holds entity's own moves put on it (a cast that kept them still), when someone else's grab takes
+    // them: those would otherwise outlast or overtake the grab.
+    public static void freeOwn(Entity entity) {
+        Hold hold = HELD.get(entity);
+        if (hold == null) {
+            return;
+        }
+        for (Grip grip : new ArrayList<>(hold.grips)) {
+            if (grip.owner == entity) {
+                release(entity, grip);
+            }
+        }
+    }
+
     // Lets go of every hold on entity, whoever made it (a boss's new phase, a cutscene that takes over).
     public static void freeAll(Entity entity) {
         Hold hold = HELD.get(entity);
@@ -257,6 +283,9 @@ public final class Freeze {
 
     private static void release(Entity entity, Grip grip) {
         grip.done = true;
+        if (grip.slack > 0 && entity instanceof net.minecraft.world.entity.player.Player player) {
+            player.noPhysics = player.isSpectator();
+        }
         Hold hold = HELD.get(entity);
         if (hold == null || !hold.grips.remove(grip) || !hold.grips.isEmpty()) {
             return;
