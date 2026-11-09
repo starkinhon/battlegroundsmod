@@ -184,6 +184,21 @@ public final class FxRenderTypes extends RenderType {
                         .createCompositeState(false)));
     }
 
+    // The Clivar's grid over a body (ClivarRenderer): see-through, the outer faces of the grown model, tested against the
+    // body's depth.
+    private static final ShaderStateShard CLIVAR_SHADER = new ShaderStateShard(() -> FxShaders.clivar);
+    private static final java.util.Map<ResourceLocation, RenderType> CLIVAR = new java.util.HashMap<>();
+
+    public static RenderType clivarGrid(ResourceLocation texture) {
+        return CLIVAR.computeIfAbsent(texture, t -> create("battlegroundsmod_clivar_" + t.getNamespace() + "_" + t.getPath().replace('/', '_'),
+                DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 1536, false, true, CompositeState.builder()
+                        .setShaderState(CLIVAR_SHADER)
+                        .setTextureState(new TextureStateShard(t, false, false))
+                        .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                        .setWriteMaskState(COLOR_WRITE)
+                        .createCompositeState(false)));
+    }
+
     // A body with an aura, drawn flat into the aura mask (see Aura): its own texture only to skip see-through pixels.
     // Pulled a hair toward the camera so it isn't hidden by the same body already in the depth it tests against.
     private static final ShaderStateShard AURA_SHADER = new ShaderStateShard(() -> FxShaders.aura);
