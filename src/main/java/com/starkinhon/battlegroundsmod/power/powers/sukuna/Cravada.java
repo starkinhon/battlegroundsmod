@@ -30,7 +30,6 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -41,12 +40,17 @@ import net.neoforged.neoforge.network.PacketDistributor;
 // target's arc and catches it by the neck on the way down; he pulls it over his head and slams it into the ground (it
 // bounces and slides onto its back); the throw kicks him up and he comes down standing on it. The stomp spreads a web of
 // cuts over the ground around the body in three stages, ~0.7 s apart, each wider; then the whole web cuts the ground
-// (four huge straight cuts across it) and the ground inside it blows up (gamerule soulsBlockDestruction), throwing
-// everyone in it. The flight is the preview's own ballistics, replayed from BTrack (tools/sukuna/bake_b.js).
+// (four huge straight cuts across it) and the ground blows up along it: the web's own shape is cut out of the world's
+// blocks (CravadaWeb.cuts; gamerule soulsBlockDestruction; Stark 2026-11-09: no blocks thrown around), throwing everyone
+// on it. The flight is the preview's own ballistics, replayed from BTrack (tools/sukuna/bake_b.js). Stark 2026-11-09:
+// twice the sprint's reach, and the camera stays free: the caster's own client flies him along the same track
+// (CravadaRenderer.onPlayerTick) so it glides, and the server only puts him back when he drifts (Freeze.holdDriven).
 public final class Cravada {
     // Ticks: the crouch before the sprint, the sprint's longest.
-    private static final int PREP = 3, DASH = 11;
-    private static final double SPEED = 1.2, DISTANCE = 12, GRAB_REACH = 1.2, GRAB_RADIUS = 0.8, LOCK_RANGE = 14;
+    private static final int PREP = 3, DASH = 20;
+    private static final double SPEED = 1.3, DISTANCE = 24, GRAB_REACH = 1.2, GRAB_RADIUS = 0.8, LOCK_RANGE = 28;
+    // How far the caster's client may drift from the track before the server puts him back (blocks).
+    private static final double SLACK = 3.5;
     // The webs' reach (blocks, the preview's S_WEB), and the ground that blows up.
     private static final double[] WEB_R = {5.0, 8.6, 13.2};
     private static final double BURST_R = 13.4;
@@ -160,12 +164,13 @@ public final class Cravada {
         target.setYHeadRot(targetYaw);
         target.setYBodyRot(targetYaw);
         double[] groundS = {Double.NaN}, groundT = {Double.NaN};
-        Runnable freeCaster = Freeze.hold(caster, BTrack.BURST + 12, age -> {
+        send(caster, SukunaCravada.TRACK, target.getId(), origin, fwd, seed);
+        Runnable freeCaster = Freeze.holdDriven(caster, BTrack.BURST + 12, age -> {
             double[] p = BTrack.SUKUNA[Math.min(age, length)];
             Vec3 at = origin.add(frame(left, fwd, p[0], p[1], p[2]));
             return age >= BTrack.LAND - 2 ? onGround(level, at, groundS, caster) : at;
-        });
-        Runnable freeTarget = Freeze.hold(target, BTrack.BURST, age -> {
+        }, SLACK);
+        Runnable freeTarget = Freeze.holdLookFree(target, BTrack.BURST, age -> {
             double[] p = BTrack.TARGET[Math.min(age, length)];
             Vec3 c = origin.add(frame(left, fwd, p[0], p[1], p[2]));
             Vec3 feet = new Vec3(c.x, c.y - 0.75 * tScale, c.z);
@@ -256,7 +261,7 @@ public final class Cravada {
                 Vec3 chest = target.position();
                 freeTarget.run();
                 send(caster, SukunaCravada.BURST, BlockRules.canBreak(level) ? 1 : 0, chest, fwd, seed);
-                burst(level, chest, caster);
+                burst(level, chest, fwd);
                 if (alive) {
                     Combat.hurt(caster, target, BURST);
                     target.setDeltaMovement(fwd.x * 0.2, 0.9, fwd.z * 0.2);
@@ -294,51 +299,14 @@ public final class Cravada {
         }
     }
 
-    // The ground inside the web blows up: the top of every column (two deep near the middle), as
-    // client/fx/CravadaRenderer.burstBlocks finds them.
-    private static void burst(ServerLevel level, Vec3 at, LivingEntity caster) {
+    // The ground blows up along the web: its shape cut out of the world's blocks (CravadaWeb.cuts), nothing thrown.
+    private static void burst(ServerLevel level, Vec3 at, Vec3 fwd) {
         if (!BlockRules.canBreak(level)) {
             return;
         }
-        for (BlockPos pos : burstBlocks(level, at)) {
+        for (BlockPos pos : CravadaWeb.cuts(level, at, fwd)) {
             level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
         }
-    }
-
-    // The blocks the burst takes, centre at (the ground under the body): within BURST_R, the first solid block from 3
-    // over to 3 under, and the one under it within 5 blocks of the middle. Shared with the client (same rules, same order).
-    public static List<BlockPos> burstBlocks(net.minecraft.world.level.Level level, Vec3 at) {
-        List<BlockPos> out = new ArrayList<>();
-        int r = (int) Math.ceil(BURST_R);
-        int cx = Mth.floor(at.x), cy = Mth.floor(at.y), cz = Mth.floor(at.z);
-        for (int dx = -r; dx <= r; dx++) {
-            for (int dz = -r; dz <= r; dz++) {
-                double d2 = dx * dx + dz * dz;
-                if (d2 > BURST_R * BURST_R) {
-                    continue;
-                }
-                for (int y = cy + 2; y >= cy - 4; y--) {
-                    BlockPos pos = new BlockPos(cx + dx, y, cz + dz);
-                    BlockState state = level.getBlockState(pos);
-                    if (state.isAir() || !state.getFluidState().isEmpty()) {
-                        continue;
-                    }
-                    if (breakable(level, pos, state)) {
-                        out.add(pos);
-                        BlockPos below = pos.below();
-                        if (d2 < 25 && breakable(level, below, level.getBlockState(below))) {
-                            out.add(below);
-                        }
-                    }
-                    break;
-                }
-            }
-        }
-        return out;
-    }
-
-    private static boolean breakable(net.minecraft.world.level.Level level, BlockPos pos, BlockState state) {
-        return !state.isAir() && state.getFluidState().isEmpty() && !state.hasBlockEntity() && state.getDestroySpeed(level, pos) >= 0;
     }
 
     // Kept on the ground from here on: the track's height, or the floor under it if that is higher (or a little lower:

@@ -2,12 +2,13 @@
 //   cd tools/sukuna && node bake_clivar.js
 // The preview's hand-keyed poses (SK for Sukuna, TK for the target; degrees in the preview's rig, body lean and twist in
 // radians) baked tick by tick (every half tick) into KeyframeAnimation files; x and y are flipped into the mod's axes.
-// Sukuna: sukuna.clivar_corre (the crouch, the sprint with legs and the free arm pumping, the gripping arm shooting out,
-// then holding up by the neck while the lines measure: the head turns a little), sukuna.clivar_prensa (against a wall:
+// Sukuna: sukuna.clivar_corre (the crouch, then the sprint cycle for as long as it runs), sukuna.clivar_pega (caught: the
+// arm shoots out from mid-stride, lifts the target by the neck and holds it up while the lines measure: the head turns a
+// little, the arm gives to the kicks), sukuna.clivar_prensa (against a wall:
 // the arm pushes the target into it), sukuna.clivar_joga(_parede) (keeps holding, winds the arm back, throws, follows
 // through and stands), sukuna.clivar_solta(_parede) (lethal: holds, then lowers the empty hand). Target (players):
-// sukuna.clivar_preso (hands at the neck, held), sukuna.clivar_mole (limp after the snap), sukuna.clivar_voa (flailing
-// in the air). Timings match power/powers/sukuna/Clivar (RUN0, GRAB, MEASURE, HOLD, WIND).
+// sukuna.clivar_preso (hanging by the neck, kicking and clawing at his arm), sukuna.clivar_mole (limp after the snap), sukuna.clivar_voa (flailing
+// in the air). Timings match power/powers/sukuna/Clivar (RUN0, PIN, MEASURE, HOLD, WIND; HAND_* for where his hand is).
 const fs = require('fs');
 const path = require('path');
 const dir = path.join(__dirname, '../../src/main/resources/assets/battlegroundsmod/animations');
@@ -16,7 +17,9 @@ const cl = (x, a, b) => Math.max(a, Math.min(b, x));
 const SK = {
   stand: { h: [0, 0, 0], ra: [0, 0, 4], la: [0, 0, -4], g: {} },
   crouch: { h: [-12, 0, 0], ra: [40, 0, 14], la: [35, 0, -14], rl: [-38, 0, 0], ll: [28, 0, 0], g: { lean: 0.38, twist: 0.08 } },
-  grabF: { h: [-12, 6, 0], ra: [-112, 0, -4], la: [14, 0, -12], rl: [-14, 0, 0], ll: [22, 0, 0], g: { lean: -0.16, twist: 0.12 } },
+  // Stark 2026-11-09: the old hold (arm at -112, body leaning back, the target floating over his head with its hands up)
+  // looked bad. Now the arm goes up high and forward (-132) and the target hangs from the hand by the neck (Clivar.HAND_*).
+  grabF: { h: [-22, 4, 0], ra: [-132, 0, -6], la: [16, 0, -16], rl: [-12, 0, 0], ll: [16, 0, 0], g: {} },
   grabW: { h: [-12, 0, 0], ra: [-100, 0, -6], la: [18, 0, -14], rl: [-26, 0, 0], ll: [32, 0, 0], g: { lean: 0.12, twist: 0.25 } },
   wind: { h: [-14, 34, 0], ra: [24, 0, 96], la: [-62, 0, -26], rl: [34, 0, 0], ll: [-38, 0, 0], g: { lean: -0.16, twist: -0.85 } },
   throw: { h: [2, -12, 0], ra: [-140, 0, 20], la: [42, 0, -22], rl: [42, 0, 0], ll: [-36, 0, 0], g: { lean: 0.36, twist: 0.75 } },
@@ -25,7 +28,8 @@ const SK = {
 };
 const TK = {
   stand: { ra: [0, 0, 4], la: [0, 0, -4], g: {} },
-  held: { h: [-26, 0, 0], ra: [-150, 0, -16], la: [-150, 0, 16], rl: [12, 0, 0], ll: [-8, 0, 0], g: {} },
+  // hanging by the neck from his hand: head thrown back, both hands clawing at his forearm in front of it, legs dangling
+  held: { h: [-30, 0, 0], ra: [-92, 0, -24], la: [-86, 0, 24], rl: [10, 0, 0], ll: [6, 0, 0], g: { lean: -0.06 } },
   limp: { h: [38, 0, 0], ra: [8, 0, 9], la: [8, 0, -9], rl: [8, 0, 0], ll: [-4, 0, 0], g: {} },
   flail: { h: [18, 0, 0], ra: [-130, 0, 30], la: [-95, 0, -35], rl: [-30, 0, 0], ll: [25, 0, 0], g: {} },
 };
@@ -79,21 +83,26 @@ function bake(name, fn, last, hold = 0) {
   fs.writeFileSync(path.join(dir, name + '.json'), JSON.stringify(out));
   console.log(`${name}: ${out.length} s`);
 }
-const RUN0 = 3, GRAB = 9, PIN = 3, MEASURE = 48, HOLD = 12, WIND = 9, SIL = 5;
-// the measuring: the head turns 10 degrees as the lines run over the body
-const measured = (G, t0) => t => headTurn(G, 10 * ease.io(cl((t - t0) / MEASURE, 0, 1)));
+const RUN0 = 3, PIN = 3, MEASURE = 48, HOLD = 12, WIND = 9, SIL = 5;
+// the sprint (Stark: 3x the reach, up to ~30 blocks): crouch, then the run cycle for as long as it lasts
+const runPose = ph => { const s = Math.sin(ph); return { h: [-8, 0, 0], rl: [-58 * s, 0, 0], ll: [58 * s, 0, 0], la: [48 * s, 0, -10], ra: [-48 * s, 0, 10], g: { lean: 0.5, twist: 0.12 * s } }; };
 bake('sukuna.clivar_corre', t => {
   if (t < RUN0) return keys([{ t: 0, p: SK.stand }, { t: RUN0, p: SK.crouch, e: 'out' }])(t);
-  if (t < GRAB) {
-    const ph = t - RUN0, s = Math.sin(ph), reach = ease.io(cl((t - (GRAB - 2.2)) / 2.2, 0, 1));
-    const run = { h: [-8, 0, 0], rl: [-58 * s, 0, 0], ll: [58 * s, 0, 0], la: [48 * s, 0, -10], ra: [-48 * s, 0, 10], g: { lean: 0.5, twist: 0.12 * s } };
-    let p = lerp(run, SK.grabF, reach);
-    if (t < RUN0 + 1.5) p = lerp(SK.crouch, p, ease.out((t - RUN0) / 1.5));
-    return p;
-  }
-  return measured(SK.grabF, GRAB + 2)(t);
-}, GRAB + 2 + MEASURE, 3);
-bake('sukuna.clivar_prensa', t => t < PIN ? lerp(SK.grabF, SK.grabW, ease.out(t / PIN)) : measured(SK.grabW, PIN + 2)(t), PIN + 2 + MEASURE, 3);
+  const p = runPose(t - RUN0);
+  return t < RUN0 + 1.5 ? lerp(SK.crouch, p, ease.out((t - RUN0) / 1.5)) : p;
+}, RUN0 + 22, 1);
+// caught: from mid-stride the arm shoots out to the neck (2 ticks) and lifts, the body straightens; then the hold, with
+// the arm giving a little to the target's kicks while the lines measure
+const struggle = (G, t0) => t => {
+  const o = headTurn(G, 10 * ease.io(cl((t - t0) / MEASURE, 0, 1)));
+  o.ra[0] += 3 * Math.sin(t * 0.55);
+  return o;
+};
+bake('sukuna.clivar_pega', t => {
+  if (t < 2) return lerp(runPose(1.2), SK.grabF, ease.snap(t / 2));
+  return struggle(SK.grabF, 2)(t);
+}, 2 + MEASURE + 2, 3);
+bake('sukuna.clivar_prensa', t => t < PIN ? lerp(SK.grabF, SK.grabW, ease.out(t / PIN)) : struggle(SK.grabW, PIN + 2)(t), PIN + 2 + MEASURE, 3);
 for (const [suffix, G] of [['', SK.grabF], ['_parede', SK.grabW]]) {
   const g = headTurn(G, 10);
   bake('sukuna.clivar_joga' + suffix, keys([{ t: 0, p: g }, { t: HOLD, p: g }, { t: HOLD + 6, p: SK.wind, e: 'io' }, { t: HOLD + WIND, p: SK.wind },
@@ -102,7 +111,17 @@ for (const [suffix, G] of [['', SK.grabF], ['_parede', SK.grabW]]) {
   bake('sukuna.clivar_solta' + suffix, keys([{ t: 0, p: g }, { t: SIL + 18, p: g }, { t: SIL + 44, p: SK.lower }, { t: SIL + 60, p: SK.stand, e: 'io' }]),
     SIL + 60);
 }
-bake('sukuna.clivar_preso', keys([{ t: 0, p: TK.stand }, { t: 3, p: TK.held, e: 'out' }]), 3, 6);
+// held: lifted into the hang over 3 ticks, then kicking and clawing at his arm (slowing as the grid closes)
+bake('sukuna.clivar_preso', t => {
+  const p = lerp(TK.stand, TK.held, ease.out(cl(t / 3, 0, 1)));
+  const k = cl(t / 3, 0, 1) * (1 - 0.5 * cl((t - 3) / (MEASURE + 3), 0, 1));
+  p.rl[0] += 22 * Math.sin(t * 0.6) * k;
+  p.ll[0] -= 22 * Math.sin(t * 0.6 + 0.9) * k;
+  p.ra[0] += 9 * Math.sin(t * 0.45) * k;
+  p.la[0] -= 9 * Math.sin(t * 0.45 + 1.3) * k;
+  p.h[1] += 8 * Math.sin(t * 0.3) * k;
+  return p;
+}, 3 + PIN + 2 + MEASURE + 2, 2);
 bake('sukuna.clivar_mole', keys([{ t: 0, p: TK.held }, { t: 4, p: TK.limp, e: 'out' }]), 4, 4);
 bake('sukuna.clivar_voa', t => {
   const p = lerp(TK.limp, TK.flail, ease.out(cl(t / 3, 0, 1)));
