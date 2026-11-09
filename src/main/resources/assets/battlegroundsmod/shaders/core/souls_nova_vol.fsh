@@ -31,7 +31,6 @@ float gn(vec3 p) {
 }
 const mat3 ROT = mat3(0.00, 0.80, 0.60, -0.80, 0.36, -0.48, -0.60, -0.48, 0.64);
 float fbm3(vec3 p) { float s = 0.0, w = 0.5; for (int o = 0; o < 3; o++) { s += w * gn(p); p = ROT * p * 2.03; w *= 0.5; } return s; }
-float fbm4(vec3 p) { float s = 0.0, w = 0.5; for (int o = 0; o < 4; o++) { s += w * gn(p); p = ROT * p * 2.03; w *= 0.5; } return s; }
 
 float field(vec3 p, out float temp) {
     vec3 q = p - E;
@@ -44,7 +43,7 @@ float field(vec3 p, out float temp) {
     np -= vec3(dir.x, 0.0, dir.y) * Phase * 0.55;        // fire running outward
     np.y -= Phase * 0.4;                                 // and up
     float w = fbm3(np * 0.7 + Seed);
-    float n = fbm4(np + vec3(w * 1.4, -w, w * 0.9) + Seed * 1.7);
+    float n = fbm3(np + vec3(w * 1.4, -w, w * 0.9) + Seed * 1.7);
     // the skirt along the ground, past the dome's rim (the low tongues of the reference)
     float skirt = exp(-pow(yy / (H * 0.17), 2.0)) * (1.0 - smoothstep(0.92, 1.2 + n * 0.18, r / R));
     float body = 1.0 - d + n * 0.5;
@@ -68,12 +67,18 @@ float depthOf(vec3 rel) { vec4 c = ProjMat * ModelViewMat * vec4(rel, 1.0); retu
 
 void main() {
     vec3 rd = normalize(vW);
-    vec3 t0s = Bmin / rd, t1s = Bmax / rd;
-    vec3 tmn = min(t0s, t1s), tmx = max(t0s, t1s);
-    float t0 = max(max(max(tmn.x, tmn.y), tmn.z), 0.0), t1 = min(min(tmx.x, tmx.y), tmx.z);
+    // Only march inside the ellipsoid that holds the fire (not the whole box): most of the box's pixels are empty
+    // and were costing a full march each (the lag Stark saw, 2026-11-09; the rule from #236).
+    vec3 rad = vec3((Bmax.x - Bmin.x) * 0.5, Bmax.y - E.y, (Bmax.z - Bmin.z) * 0.5);
+    vec3 oc = -E / rad, dr = rd / rad;
+    float qa = dot(dr, dr), qb = dot(oc, dr), qc = dot(oc, oc) - 1.0;
+    float disc = qb * qb - qa * qc;
+    if (disc <= 0.0) discard;
+    float sq = sqrt(disc);
+    float t0 = max((-qb - sq) / qa, 0.0), t1 = (-qb + sq) / qa;
     if (rd.y < 0.0) t1 = min(t1, (E.y - 0.3) / rd.y);     // stops at the ground
     if (t1 <= t0) discard;
-    const int STEPS = 64;
+    const int STEPS = 44;
     float dt = (t1 - t0) / float(STEPS);
     float t = t0 + dt * fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453);
     vec3 acc = vec3(0.0);
