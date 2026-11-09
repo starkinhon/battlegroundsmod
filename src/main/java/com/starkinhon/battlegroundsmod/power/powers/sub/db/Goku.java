@@ -22,19 +22,22 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.phys.Vec3;
 
 // Goku (SubAlma of Dragon Ball, tier 6), the Visualizador's Goku tab.
 // Z Kamehameha: held, the blue ball grows between the cupped hands; let go, the beam comes out, and held again it
 //   grows thicker (0.6 to 1.8), pushes the target and blows up at the end. With the Kaioken on it comes out red and 2x.
-// X Instant Transmission: fingers on the forehead for a moment, he vanishes and appears behind the aimed target, punching.
+// X Instant Transmission: instant, he vanishes and appears behind the aimed target with a heavy punch that stuns.
 // C Kaioken: a buff (faster, harder punches, the life drains); C again: a red blur of four hits and a kick that launches.
 // V Genki Dama: hands to the sky, the light of everything gathers in a glass ball over him (held up to 60 s; full = it
-//   can kill in one hit); thrown, it falls slowly and blows up into a crater.
+//   can kill in one hit); thrown, it is guided onto the target (or the crosshair) and blows up into a crater from about
+//   7 blocks wide (2 s) to 52 (the full minute), the damage growing with it.
 public final class Goku {
     private static final int TELE_RANGE = 30;
     private static final int KAIOKEN_TICKS = 200;
     private static final int GENKI_FULL = 1200;
+    private static final int GENKI_RANGE = 80;
 
     private Goku() {
     }
@@ -115,13 +118,15 @@ public final class Goku {
                 SubCommon.sound(level, to, SoundEvents.FIREWORK_ROCKET_BLAST, 1.2f, 0.6f);
             }
             if (end) {
-                DbCommon.boom(level, to, 2.8f * (kaioken ? 1.4f : 1), color, 4);
+                // The blast at the end (Stark, 2026-11-09: a bit bigger), growing with how thick the beam got.
+                float blast = (3.6f + 0.9f * thick) * (kaioken ? 1.4f : 1);
+                DbCommon.boom(level, to, blast, color, 4);
                 // The ground under the end is torn up: a bowl of blocks, some thrown out.
                 double ground = DbCommon.groundY(level, to);
-                if (to.y - ground < 3) {
-                    JjCommon.crater(level, new Vec3(to.x, ground, to.z), (2 + thick) * (kaioken ? 1.3 : 1), 1 + thick * 0.5, 12);
+                if (to.y - ground < 4) {
+                    JjCommon.crater(level, new Vec3(to.x, ground, to.z), (3.2 + 1.4 * thick) * (kaioken ? 1.3 : 1), 1.5 + thick * 0.7, 18);
                 }
-                DbCommon.hurtRadius(caster, level, to, 2.8, (6 + 8 * charge[0]) * (kaioken ? 1.5f : 1), 1.2, 0.4);
+                DbCommon.hurtRadius(caster, level, to, blast, (6 + 8 * charge[0]) * (kaioken ? 1.5f : 1), 1.3, 0.45);
                 return true;
             }
             return false;
@@ -137,54 +142,44 @@ public final class Goku {
             SubCommon.warn(caster, "goku.tele_no_target", TELE_RANGE);
             return false;
         }
+        // Instant (Stark, 2026-11-09): no wait with the fingers on the forehead. A flick of the fingers, he is gone the
+        // same tick and appears behind the target, and the punch lands two ticks later: heavy, a real stun.
         SubCommon.Guard guard = SubCommon.guard(caster);
-        int focus = 16;
         SubCommon.pose(caster, "db.testa");
-        SubCommon.busy(caster, focus + 12);
-        Freeze.holdLookFree(caster, focus);
-        int glow = SubNet.newId();
-        Tasks.add(age -> {
-            boolean done = age >= focus || guard.broken();
-            // The fingers light up while he concentrates.
-            SubNet.send(level, SubNet.SPARKS, glow, DbCommon.forehead(caster), Vec3.ZERO, 0.25f, Db.GOLD_W, done ? 1 : 0);
-            return done;
-        });
-        SubCommon.sound(level, caster.position(), SoundEvents.AMETHYST_BLOCK_RESONATE, 1f, 1.8f);
-        Tasks.later(focus, () -> {
-            if (guard.broken() || !target.isAlive()) {
+        SubCommon.busy(caster, 10);
+        SubNet.send(level, SubNet.SPARKS, SubNet.newId(), DbCommon.forehead(caster), Vec3.ZERO, 0.25f, Db.GOLD_W, 1);
+        Vec3 from = caster.position();
+        Vec3 behind = target.position().subtract(SubCommon.flat(target.getLookAngle()).scale(1.2));
+        if (SubCommon.solid(level, behind.add(0, 0.5, 0)) || SubCommon.solid(level, behind.add(0, 1.5, 0))) {
+            behind = target.position().add(SubCommon.flat(target.position().subtract(from)).scale(1.2));
+        }
+        SubNet.send(level, SubNet.VANISH, 0, from.add(0, 1, 0), Vec3.ZERO, 0, 0, 0);
+        SubCommon.sound(level, from, SoundEvents.ILLUSIONER_MIRROR_MOVE, 1f, 1.8f);
+        Vec3 face = target.position().subtract(behind);
+        float yaw = (float) (Mth.atan2(-face.x, face.z) * Mth.RAD_TO_DEG);
+        if (caster instanceof ServerPlayer player) {
+            player.teleportTo(level, behind.x, behind.y, behind.z, yaw, player.getXRot());
+        } else {
+            caster.teleportTo(behind.x, behind.y, behind.z);
+            caster.setYRot(yaw);
+        }
+        SubNet.send(level, SubNet.VANISH, 0, behind.add(0, 1, 0), Vec3.ZERO, 0, 0, 0);
+        SubCommon.pose(caster, "soco.forte_golpe");
+        Tasks.later(2, () -> {
+            if (guard.broken() || !target.isAlive() || !caster.isAlive()) {
                 return;
             }
-            Vec3 from = caster.position();
-            Vec3 behind = target.position().subtract(SubCommon.flat(target.getLookAngle()).scale(1.2));
-            if (SubCommon.solid(level, behind.add(0, 0.5, 0)) || SubCommon.solid(level, behind.add(0, 1.5, 0))) {
-                behind = target.position().add(SubCommon.flat(target.position().subtract(from)).scale(1.2));
-            }
-            SubNet.send(level, SubNet.VANISH, 0, from.add(0, 1, 0), Vec3.ZERO, 0, 0, 0);
-            SubCommon.sound(level, from, SoundEvents.ILLUSIONER_MIRROR_MOVE, 1f, 1.6f);
-            Vec3 face = target.position().subtract(behind);
-            float yaw = (float) (Mth.atan2(-face.x, face.z) * Mth.RAD_TO_DEG);
-            if (caster instanceof ServerPlayer player) {
-                player.teleportTo(level, behind.x, behind.y, behind.z, yaw, player.getXRot());
-            } else {
-                caster.teleportTo(behind.x, behind.y, behind.z);
-                caster.setYRot(yaw);
-            }
-            Vec3 at = behind;
-            Tasks.later(2, () -> {
-                SubNet.send(level, SubNet.VANISH, 0, at.add(0, 1, 0), Vec3.ZERO, 0, 0, 0);
-                SubCommon.pose(caster, "soco.forte_golpe");
-            });
-            Tasks.later(8, () -> {
-                if (!target.isAlive() || !caster.isAlive()) {
-                    return;
-                }
-                Combat.hurt(caster, target, 9);
-                Stun.apply(target, 16);
-                Combat.push(target, target.position().subtract(caster.position()), 1.2, 0.35);
-                DbCommon.hit(level, Combat.center(target), 0.8f, Db.KAME_W);
-                DbCommon.screen(level, Combat.center(target), 1);
-                SubCommon.sound(level, target.position(), SoundEvents.PLAYER_ATTACK_KNOCKBACK, 1.4f, 0.8f);
-            });
+            Combat.hurt(caster, target, 14);
+            // A real stun (over Stun.INTERRUPT_TICKS): it cuts off whatever the target was doing. Only this one, no hold
+            // on top (one prison at a time).
+            Stun.apply(target, 40);
+            Combat.push(target, target.position().subtract(caster.position()), 1.5, 0.3);
+            Vec3 c = Combat.center(target);
+            DbCommon.hit(level, c, 1.6f, Db.KAME_W);
+            DbCommon.boom(level, c, 1.6f, Db.KAME_W, 4);
+            DbCommon.screen(level, c, 56);
+            SubCommon.sound(level, target.position(), SoundEvents.PLAYER_ATTACK_KNOCKBACK, 1.8f, 0.6f);
+            SubCommon.sound(level, target.position(), SoundEvents.PLAYER_ATTACK_CRIT, 1.4f, 0.7f);
         });
         return true;
     }
@@ -318,8 +313,9 @@ public final class Goku {
         SubCommon.pose(caster, "db.ceu");
         SubCommon.sound(level, feet, SoundEvents.BEACON_ACTIVATE, 2f, 0.7f);
         int[] thrown = {-1};
-        Vec3[] from = {null};
-        Vec3[] goal = {null};
+        Vec3[] at = {null};
+        Vec3[] vel = {Vec3.ZERO};
+        LivingEntity[] locked = {null};
         float[] size = {0};
         Tasks.add(age -> {
             if (thrown[0] < 0) {
@@ -336,9 +332,11 @@ public final class Goku {
                     SubCommon.pose(caster, "db.ceu");
                 }
                 float grow = SubCommon.smooth((age - 10) / 130f);
-                float r = 0.2f + 3.8f * grow;
+                // After the first seconds it keeps swelling slowly the whole minute (the blast grows far more).
+                float more = (float) Math.pow(Math.min(1, age / (float) GENKI_FULL), 0.8);
+                float r = 0.2f + 3.8f * grow + 3f * more;
                 size[0] = r;
-                Vec3 top = caster.position().add(0, 3.2 + 4 * grow, 0);
+                Vec3 top = caster.position().add(0, 3.2 + 4 * grow + 3 * more, 0);
                 boolean held = SubCommon.held(caster, age, bossHold);
                 if (held) {
                     Charge.report(caster, age / (double) GENKI_FULL);
@@ -354,47 +352,98 @@ public final class Goku {
                     return false;
                 }
                 thrown[0] = age;
-                from[0] = top;
-                goal[0] = SubCommon.aimPoint(caster, 60);
+                at[0] = top;
+                // Locked on whoever is aimed at (or the nearest one in front; a boss takes its own target). Nobody: it
+                // follows the crosshair the whole way.
+                LivingEntity target = SubCommon.aimed(caster, GENKI_RANGE);
+                if (target == null) {
+                    double best = Double.MAX_VALUE;
+                    for (LivingEntity e : Combat.inCone(caster, GENKI_RANGE, 0.93)) {
+                        double d = e.distanceToSqr(caster);
+                        if (d < best) {
+                            best = d;
+                            target = e;
+                        }
+                    }
+                }
+                if (target == null && caster instanceof Mob mob && mob.getTarget() != null && mob.getTarget().isAlive()) {
+                    target = mob.getTarget();
+                }
+                locked[0] = target;
+                vel[0] = genkiGoal(caster, locked[0]).subtract(top).normalize().scale(0.3);
                 SubCommon.pose(caster, "db.empurra");
                 SubCommon.sound(level, top, SoundEvents.WARDEN_SONIC_CHARGE, 2f, 0.8f);
             }
             int t = age - thrown[0];
-            float k = Math.min(1, t / 46f);
-            Vec3 at = from[0].lerp(goal[0], k * k * 0.4 + k * 0.6).add(0, Math.sin(k * Math.PI) * 1.5, 0);
-            // Close to someone on the way: it lands there.
-            boolean touch = false;
-            for (LivingEntity e : Combat.inRadius(level, at, size[0] * 0.8, caster)) {
-                touch = e != null;
-                break;
+            // Guided (Stark, 2026-11-09): it turns towards the target every tick, starting slow and speeding up.
+            if (locked[0] != null && !locked[0].isAlive()) {
+                locked[0] = null;
             }
-            if (k < 1 && !touch) {
-                SubNet.send(level, SubNet.GENKI, id, at, caster.position(), size[0], 0, 0);
+            Vec3 goal = genkiGoal(caster, locked[0]);
+            double speed = 0.3 + 1.0 * SubCommon.smooth(t / 30f);
+            Vec3 want = goal.subtract(at[0]);
+            if (want.lengthSqr() > 1.0E-4) {
+                vel[0] = vel[0].lerp(want.normalize().scale(speed), 0.22);
+            }
+            Vec3 next = at[0].add(vel[0]);
+            float r = size[0];
+            // It lands on whoever it touches, on the ground or a wall in its way, or after 12 s in the air.
+            boolean touch = !Combat.inRadius(level, next, r * 0.8 + 0.6, caster).isEmpty();
+            Vec3 ahead = next.add(vel[0].lengthSqr() > 1.0E-4 ? vel[0].normalize().scale(r * 0.7) : Vec3.ZERO);
+            boolean wall = SubCommon.solid(level, next) || SubCommon.solid(level, ahead);
+            boolean arrived = locked[0] == null && caster instanceof Mob && next.distanceTo(goal) < r * 0.6 + 0.5;
+            at[0] = next;
+            if (!touch && !wall && !arrived && t < 240) {
+                SubNet.send(level, SubNet.GENKI, id, next, caster.position(), r, 0, 0);
+                if (t % 10 == 0) {
+                    SubCommon.sound(level, next, SoundEvents.BEACON_AMBIENT, 2f, 0.5f);
+                }
                 return false;
             }
-            SubNet.send(level, SubNet.GENKI, id, at, caster.position(), size[0], 0, 1);
-            float s = Math.max(0.35f, size[0] / 4);
-            boolean full = thrown[0] >= GENKI_FULL;
-            double ground = DbCommon.groundY(level, at);
-            Vec3 c = new Vec3(at.x, Math.min(at.y, ground + 1.5), at.z);
-            SubNet.send(level, SubNet.GENKI_BOOM, 0, c, new Vec3(ground, 0, 0), s, 0, 0);
-            DbCommon.screen(level, c, 47);
-            SubCommon.sound(level, c, SoundEvents.GENERIC_EXPLODE.value(), 4f, 0.5f);
-            SubCommon.sound(level, c, SoundEvents.WARDEN_SONIC_BOOM, 3f, 0.6f);
-            float charge = Math.min(1, thrown[0] / (float) GENKI_FULL);
-            for (LivingEntity e : Combat.inRadius(level, c, 7 * s, caster)) {
-                double kk = 1 - 0.4 * Math.min(1, Combat.center(e).distanceTo(c) / (7 * s));
-                float dmg = (float) ((14 + 22 * s + 30 * charge) * kk);
-                if (full) {
-                    // Full: one hit can kill, even someone stronger.
-                    dmg = Math.max(dmg, e.getMaxHealth() * 4);
-                }
-                Combat.hurtMagic(caster, e, dmg);
-                Combat.pushFrom(e, c, 1.4, 0.6);
-            }
-            JjCommon.crater(level, new Vec3(c.x, ground, c.z), 5.5 * s, 3 * s, 28);
+            SubNet.send(level, SubNet.GENKI, id, next, caster.position(), r, 0, 1);
+            genkiBlast(caster, level, next, Math.min(1, thrown[0] / (float) GENKI_FULL), thrown[0] >= GENKI_FULL);
             return true;
         });
         return true;
+    }
+
+    // Where the guided ball heads: the locked target's body, or (nobody locked) the caster's crosshair.
+    private static Vec3 genkiGoal(LivingEntity caster, LivingEntity target) {
+        if (target != null) {
+            return Combat.center(target);
+        }
+        return Combat.raycastPoint(caster, GENKI_RANGE);
+    }
+
+    // The landing (Stark, 2026-11-09: "the more it charges, the more blocks, the more damage"): the blast radius goes from
+    // about 7 blocks (2 s) to 52 (the full minute), the damage with it, and the full one can kill in one hit. The dome
+    // of the approved explosion is sized to the real radius, so what is seen is what is hit and destroyed.
+    private static void genkiBlast(LivingEntity caster, ServerLevel level, Vec3 at, float charge, boolean full) {
+        double radius = 3 + 49 * Math.pow(charge, 0.7);
+        double ground = DbCommon.groundY(level, at);
+        boolean low = at.y - ground < 6;
+        Vec3 c = low ? new Vec3(at.x, Math.min(at.y, ground + 1.5), at.z) : at;
+        SubNet.send(level, SubNet.GENKI_BOOM, 0, c, new Vec3(low ? ground : c.y - 1, 0, 0), (float) (radius / 7), 0, 0);
+        DbCommon.screen(level, c, charge >= 0.25f ? 57 : 47);
+        SubCommon.sound(level, c, SoundEvents.GENERIC_EXPLODE.value(), 4f + (float) radius * 0.1f, 0.5f);
+        SubCommon.sound(level, c, SoundEvents.WARDEN_SONIC_BOOM, 3f + (float) radius * 0.08f, 0.6f);
+        if (charge >= 0.25f) {
+            SubCommon.sound(level, c, SoundEvents.LIGHTNING_BOLT_THUNDER, 4f + (float) radius * 0.1f, 0.6f);
+        }
+        float dmg0 = (float) (15 + 85 * Math.pow(charge, 0.8));
+        for (LivingEntity e : Combat.inRadius(level, c, radius, caster)) {
+            double kk = 1 - 0.6 * Math.min(1, Combat.center(e).distanceTo(c) / radius);
+            float dmg = (float) (dmg0 * kk);
+            if (full) {
+                // Full: one hit can kill, even someone stronger.
+                dmg = Math.max(dmg, e.getMaxHealth() * 4);
+            }
+            Combat.hurtMagic(caster, e, dmg);
+            Combat.pushFrom(e, c, (1.0 + 1.6 * charge) * kk, 0.6);
+        }
+        // The crater only when it lands on (or near) the ground; blown up high in the air it leaves the ground alone.
+        if (low || at.y - ground < radius * 0.5) {
+            DbCommon.bigCrater(level, new Vec3(c.x, ground, c.z), radius * 0.85, Math.max(2, radius * 0.35), (int) Math.max(4, radius / 2));
+        }
     }
 }

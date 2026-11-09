@@ -5,6 +5,7 @@ import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.skill.TierSpec;
 
 import net.minecraft.core.Holder;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
@@ -53,10 +54,13 @@ public final class Tiers {
         return HUMANO - clamp(tier);
     }
 
-    public static String name(int tier) {
+    // The tier's name in the game's language (tier.battlegroundsmod.<n> in the lang files); the name in
+    // padrao.tiers.json is only the fallback, so the HUD never shows Portuguese with the game in English.
+    public static Component name(int tier) {
         var names = TierSpec.get().nomes();
         tier = clamp(tier);
-        return names != null && tier < names.size() ? names.get(tier) : "Tier " + tier;
+        String fallback = names != null && tier < names.size() ? names.get(tier) : "Tier " + tier;
+        return Component.translatableWithFallback("tier.battlegroundsmod." + tier, fallback);
     }
 
     private static final double[] DEFAULT_HEALTH = {400, 300, 220, 165, 120, 90, 66, 49, 36, 27, 20};

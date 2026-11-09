@@ -2245,7 +2245,8 @@ public final class DbFx {
             return;
         }
         double dist = mc.player.position().distanceTo(pos);
-        float near = (float) Mth.clamp(1 - (dist - 20) / 40, 0, 1);
+        // The charged Genki Dama (57) blows up tens of blocks wide: it is felt from much farther off.
+        float near = preset == 57 ? (float) Mth.clamp(1 - (dist - 70) / 90, 0, 1) : (float) Mth.clamp(1 - (dist - 20) / 40, 0, 1);
         if (near <= 0) {
             return;
         }
@@ -2495,6 +2496,21 @@ public final class DbFx {
                 ScreenFx.flash(0xFFF4C8, near, 18);
                 ScreenFx.impactFrame(new int[] {4, 3, 4, 3, 4, 3}, 1, 0xFFFFFF, pos, 0);
                 ScreenShake.start(3f * near, 70);
+            }
+            // Goku's X: the punch out of the Instant Transmission, heavy: four manga frames, radial blur and a FOV kick.
+            case 56 -> {
+                ScreenFx.flash(0xFFFFFF, 0.3f * near, 3);
+                ScreenFx.impactFrame(new int[] {4, 3, 4, 3}, 1, 0xFFFFFF, pos, 0);
+                ScreenShake.start(1.5f * near, 16);
+                ScreenFx.radialBlur(pos, 0.9f * near, 10);
+                ScreenFx.fovKick(8 * near, 12);
+            }
+            // The charged Genki Dama landing: a long white-blue flash, six manga frames and a long quake.
+            case 57 -> {
+                ScreenFx.flash(0xE8F6FF, near, 22);
+                ScreenFx.impactFrame(new int[] {4, 3, 4, 3, 4, 3}, 1, 0xFFFFFF, pos, 0);
+                ScreenShake.start(3.2f * near, 90);
+                ScreenFx.radialBlur(pos, near, 18);
             }
             // Realista+Anime: the Genki Dama landing, three manga frames (negative, positive, negative).
             case 47 -> {
