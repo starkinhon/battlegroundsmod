@@ -194,7 +194,11 @@ public final class ShrineDomain {
             com.starkinhon.battlegroundsmod.power.powers.gojo.InfiniteVoid.Handover from) {
         // The cutscene from the black aura and the six eyes on (Stark, 2026-11-09 18:15: "com o céu vermelho e o Santuário
         // sendo revelado, pra ficar mais épico"): everyone held, Sukuna untouchable, until the camera is back on him.
-        Active active = new Active(caster, level, center);
+        // Its space is laid out around Sukuna (the cutscene's shots are framed on him standing at its origin): opened
+        // around where he stood in the world, not around Gojo's center, or the close on his face looked at the empty
+        // floor with him somewhere behind the Santuário (Stark, 2026-11-09).
+        Vec3 at = from.back().getOrDefault(caster, center);
+        Active active = new Active(caster, level, at);
         active.skip = WAVE + QUICK_FROM;
         active.origin = from.back();
         active.inherited.addAll(from.granted());
@@ -697,6 +701,34 @@ public final class ShrineDomain {
     // a and b are not in the same space (one inside a Santuário, the other out in the world or in another one).
     public static boolean apart(LivingEntity a, LivingEntity b) {
         return insideOf(a) != insideOf(b);
+    }
+
+    // Up in the space of a Santuário (his own or someone else's).
+    public static boolean insideAny(LivingEntity entity) {
+        return insideOf(entity) != null;
+    }
+
+    // His Santuário is open (not closing yet).
+    public static boolean open(LivingEntity caster) {
+        for (Active active : ACTIVE) {
+            if (active.caster == caster && !active.closing && !active.yielded) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Broken from outside (Gojo's Expansão de 0,2 s on Sukuna while his opens): it closes like his own V closes it, on
+    // the next tick of its task (holds let go, everyone back in the world). True when there was one.
+    public static boolean cancel(LivingEntity caster) {
+        boolean any = false;
+        for (Active active : ACTIVE) {
+            if (active.caster == caster && !active.closing && !active.yielded && !active.cancelled) {
+                active.cancelled = true;
+                any = true;
+            }
+        }
+        return any;
     }
 
     private static Active insideOf(LivingEntity entity) {

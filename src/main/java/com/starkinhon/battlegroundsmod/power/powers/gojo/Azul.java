@@ -112,6 +112,17 @@ public final class Azul {
 
     private static final List<Live> LIVE = new ArrayList<>();
 
+    // Every Blue of owner's still out, and any other within radius of center, fades now without imploding (its task
+    // sees it on its next tick, lets go of what it tore up and frees the Z). The Duelo de Expansões starting: nothing
+    // keeps pulling through its scenes (Stark, 2026-11-09: a Blue kept pulling him while the duel opened).
+    public static void dispel(LivingEntity owner, Vec3 center, double radius) {
+        for (Live live : LIVE) {
+            if (live.owner == owner || live.level == owner.level() && live.pos.distanceTo(center) <= radius + live.radius) {
+                live.consumed = true;
+            }
+        }
+    }
+
     // owner's parked Blue charged to at least minCharge that the line from `from` along dir (length long, width wide)
     // runs into: the nearest one, claimed so no other Red takes it too. null if there is none.
     public static Live claimParked(LivingEntity owner, Vec3 from, Vec3 dir, double length, double width, double minCharge) {
