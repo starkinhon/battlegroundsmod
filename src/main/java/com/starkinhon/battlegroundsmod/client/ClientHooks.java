@@ -95,6 +95,10 @@ public final class ClientHooks {
         com.starkinhon.battlegroundsmod.client.fx.SusanooArm.update(casterId, targetId, phase, a, b);
     }
 
+    public static void fuga(int casterId, int phase, net.minecraft.world.phys.Vec3 pos, net.minecraft.world.phys.Vec3 dir) {
+        com.starkinhon.battlegroundsmod.client.fx.FugaRenderer.receive(casterId, phase, pos, dir);
+    }
+
     public static void shoulderCutscene(int casterId, int targetId, int ticks) {
         if (com.starkinhon.battlegroundsmod.client.fx.DomainScene.blocksCutscenes()) {
             return;
@@ -134,6 +138,7 @@ public final class ClientHooks {
         SkillEffects.clear();
         MeteorRenderer.clear();
         com.starkinhon.battlegroundsmod.client.fx.KatonBallRenderer.clear();
+        com.starkinhon.battlegroundsmod.client.fx.FugaRenderer.clear();
         com.starkinhon.battlegroundsmod.client.fx.HakaiRenderer.clear();
         com.starkinhon.battlegroundsmod.client.fx.EnergyRenderer.clear();
         com.starkinhon.battlegroundsmod.client.fx.SphereRenderer.clear();
@@ -170,6 +175,14 @@ public final class ClientHooks {
 
     public static void gojoDomain(int casterId, net.minecraft.world.phys.Vec3 center, boolean awakened, int mode, int other) {
         com.starkinhon.battlegroundsmod.client.fx.DomainScene.event(casterId, center, awakened, mode, other);
+    }
+
+    public static void soulCeremony(int entityId, int killerId, String power, int color, boolean full) {
+        com.starkinhon.battlegroundsmod.client.fx.SoulCeremonyFx.start(entityId, killerId, power, color, full);
+    }
+
+    public static void soulCeremonyDrop(int entityId, int itemId) {
+        com.starkinhon.battlegroundsmod.client.fx.SoulCeremonyFx.drop(entityId, itemId);
     }
 
     public static void hakaiDeath(int entityId, boolean awakened) {

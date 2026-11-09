@@ -85,7 +85,11 @@ public class BattlegroundsModClient {
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.FalaRender::onRenderLevel);
         NeoForge.EVENT_BUS.addListener(AshDeath::onRenderLevel);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.IceShell::onRenderLevel);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.FugaRenderer::onRenderLevel);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.FugaRenderer::onFog);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.FugaRenderer::onFogColor);
         NeoForge.EVENT_BUS.addListener(RenderLivingEvent.Pre.class, AshDeath::onRenderLiving);
+        NeoForge.EVENT_BUS.addListener(RenderLivingEvent.Pre.class, com.starkinhon.battlegroundsmod.client.fx.SoulCeremonyFx::onRenderLiving);
         NeoForge.EVENT_BUS.addListener(RenderLivingEvent.Pre.class, Vanish::onRenderLiving);
         NeoForge.EVENT_BUS.addListener(RenderLivingEvent.Pre.class, com.starkinhon.battlegroundsmod.client.fx.SwordFx::onRenderLivingPre);
         NeoForge.EVENT_BUS.addListener(EventPriority.LOW, false, RenderLivingEvent.Pre.class,
@@ -206,6 +210,7 @@ public class BattlegroundsModClient {
         event.registerEntityRenderer(ModEntities.DUMMY.get(), context -> new DummyRenderer<>(context, "steve"));
         event.registerEntityRenderer(ModEntities.DUMMY_ATTACKER.get(), context -> new DummyRenderer<>(context, "kai"));
         event.registerEntityRenderer(ModEntities.AIZEN_ILLUSION.get(), AizenIllusionRenderer::new);
+        event.registerEntityRenderer(ModEntities.MALEVOLENT_SHRINE.get(), com.starkinhon.battlegroundsmod.client.fx.MalevolentShrineRenderer::new);
         // SubAlma mobs (improvised skins; the girls with slim arms) and the Fighters (three looks per tier).
         event.registerEntityRenderer(ModEntities.BYAKUYA.get(), context -> new SoulBossRenderer<>(context, "byakuya", false));
         event.registerEntityRenderer(ModEntities.RUKIA.get(), context -> new SoulBossRenderer<>(context, "rukia", true));
@@ -271,6 +276,7 @@ public class BattlegroundsModClient {
         ScreenFx.tick();
         FxWorld.tick();
         AshDeath.tick();
+        com.starkinhon.battlegroundsmod.client.fx.SoulCeremonyFx.tick();
         Aura.tick();
         SkillEffects.tick();
         com.starkinhon.battlegroundsmod.client.fx.Realismo.tick();

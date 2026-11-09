@@ -716,5 +716,20 @@
   "fala.battlegroundsmod.kokushibo.forma.9": "Ninth Form... Kudaritsuki Renmen.",
   "fala.battlegroundsmod.kokushibo.forma.10": "Tenth Form... Senmenzan Ragetsu.",
   "fala.battlegroundsmod.kokushibo.forma.14": "Fourteenth Form... Kyōhen Tenman Sengetsu.",
-  "fala.battlegroundsmod.kokushibo.forma.16": "Sixteenth Form... Gekkō Katawarezuki."
+  "fala.battlegroundsmod.kokushibo.forma.16": "Sixteenth Form... Gekkō Katawarezuki.",
+  "power.battlegroundsmod.sukuna": "King of Curses",
+  "power.battlegroundsmod.sukuna.desc": "Ryomen Sukuna, the King of Curses. His techniques arrive one by one: for now only Fuga on C.",
+  "item.battlegroundsmod.soul_sukuna": "Soul: King of Curses",
+  "ability.battlegroundsmod.sukuna.0": "Coming soon",
+  "ability.battlegroundsmod.sukuna.0.desc": "Technique not ported yet.",
+  "ability.battlegroundsmod.sukuna.0.tags": "Soon",
+  "ability.battlegroundsmod.sukuna.1": "Coming soon",
+  "ability.battlegroundsmod.sukuna.1.desc": "Technique not ported yet.",
+  "ability.battlegroundsmod.sukuna.1.tags": "Soon",
+  "ability.battlegroundsmod.sukuna.2": "■開 Fuga",
+  "ability.battlegroundsmod.sukuna.2.desc": "\"Open.\" Everything within 70 blocks goes dark. Ribbons of fire whip out of his hands and circle him, are sucked one by one into the fireball between his palms, which stretches into the arrow. He draws it like a bow, holds and looses: the arrow flies straight at the aim, faster and faster, and bursts into a dome of fire that climbs into a column, burning and throwing everyone around. Rooted while it forms (he can still aim).",
+  "ability.battlegroundsmod.sukuna.2.tags": "Fire,Projectile,Explosion,Destruction",
+  "ability.battlegroundsmod.sukuna.3": "Coming soon",
+  "ability.battlegroundsmod.sukuna.3.desc": "Technique not ported yet.",
+  "ability.battlegroundsmod.sukuna.3.tags": "Soon"
 }

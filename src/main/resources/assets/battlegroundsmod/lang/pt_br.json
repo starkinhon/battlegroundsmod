@@ -724,5 +724,20 @@
   "fala.battlegroundsmod.kokushibo.forma.9": "Nona Forma... Kudaritsuki Renmen.",
   "fala.battlegroundsmod.kokushibo.forma.10": "Décima Forma... Senmenzan Ragetsu.",
   "fala.battlegroundsmod.kokushibo.forma.14": "Décima Quarta Forma... Kyōhen Tenman Sengetsu.",
-  "fala.battlegroundsmod.kokushibo.forma.16": "Décima Sexta Forma... Gekkō Katawarezuki."
+  "fala.battlegroundsmod.kokushibo.forma.16": "Décima Sexta Forma... Gekkō Katawarezuki.",
+  "power.battlegroundsmod.sukuna": "Rei das Maldições",
+  "power.battlegroundsmod.sukuna.desc": "Ryomen Sukuna, o Rei das Maldições. As técnicas chegam uma a uma: por enquanto, só o Fuga no C.",
+  "item.battlegroundsmod.soul_sukuna": "Alma: Rei das Maldições",
+  "ability.battlegroundsmod.sukuna.0": "Em breve",
+  "ability.battlegroundsmod.sukuna.0.desc": "Técnica ainda não portada.",
+  "ability.battlegroundsmod.sukuna.0.tags": "Em breve",
+  "ability.battlegroundsmod.sukuna.1": "Em breve",
+  "ability.battlegroundsmod.sukuna.1.desc": "Técnica ainda não portada.",
+  "ability.battlegroundsmod.sukuna.1.tags": "Em breve",
+  "ability.battlegroundsmod.sukuna.2": "■開 Fuga",
+  "ability.battlegroundsmod.sukuna.2.desc": "\"Abrir.\" Tudo num raio de 70 blocos escurece. Fitas de fogo nascem das mãos e giram em volta dele, são sugadas uma a uma pra bola de fogo entre as palmas, que se estica na flecha. Ele puxa como um arco, segura e solta: a flecha voa reta pra mira, cada vez mais rápida, e explode numa cúpula de fogo que sobe em coluna, queima e arremessa todo mundo em volta. Fica parado enquanto forma (dá pra mirar).",
+  "ability.battlegroundsmod.sukuna.2.tags": "Fogo,Projétil,Explosão,Destruição",
+  "ability.battlegroundsmod.sukuna.3": "Em breve",
+  "ability.battlegroundsmod.sukuna.3.desc": "Técnica ainda não portada.",
+  "ability.battlegroundsmod.sukuna.3.tags": "Em breve"
 }

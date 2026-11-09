@@ -15,6 +15,7 @@ public final class AshKill {
         boolean wasAlive = target.isAlive() && !target.isDeadOrDying();
         boolean hit = Combat.hurt(attacker, target, damage);
         if (wasAlive && target.isDeadOrDying()) {
+            CustomDeath.mark(target);
             PacketDistributor.sendToPlayersTrackingEntityAndSelf(target, new ModPayloads.AshDeath(target.getId()));
         }
         return hit;

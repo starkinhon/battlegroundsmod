@@ -24,7 +24,8 @@ public final class CutsceneHud {
 
     public static boolean hidden() {
         return GrabCutscene.active() || BopCutscene.active() || HakaiCutscene.active() || EsferaCutscene.active()
-                || BossCutscene.active() || FaceCutscene.hidesHud() || CutscenePlayer.hidesHud();
+                || BossCutscene.active() || FaceCutscene.hidesHud() || CutscenePlayer.hidesHud()
+                || com.starkinhon.battlegroundsmod.client.fx.SoulCeremonyFx.hidesHud();
     }
 
     public static void onRenderLayer(RenderGuiLayerEvent.Pre event) {

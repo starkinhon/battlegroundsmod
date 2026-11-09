@@ -465,6 +465,24 @@ public final class ModPayloads {
         }
     }
 
+    // Server -> client: Sukuna's Fuga (power/powers/sukuna/Fuga, drawn by client/fx/FugaRenderer). phase START: it begins
+    // forming on casterId now; SHOT: the arrow leaves from pos along dir; HIT: it burst at pos (dir: the way it flew);
+    // STOP: cut off before the shot.
+    public record FugaFx(int casterId, int phase, Vec3 pos, Vec3 dir) implements CustomPacketPayload {
+        public static final Type<FugaFx> TYPE = payloadType("fuga_fx");
+        public static final StreamCodec<ByteBuf, FugaFx> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, FugaFx::casterId,
+                ByteBufCodecs.VAR_INT, FugaFx::phase,
+                VEC3, FugaFx::pos,
+                VEC3, FugaFx::dir,
+                FugaFx::new);
+
+        @Override
+        public Type<FugaFx> type() {
+            return TYPE;
+        }
+    }
+
     // Server -> client: the neck grab's cutscene for the two fighters. The camera cuts in now; the slam lands at impactTick.
     public record GrabCutscene(int casterId, int targetId, boolean awakened, int impactTick) implements CustomPacketPayload {
         public static final Type<GrabCutscene> TYPE = payloadType("grab_cutscene");
@@ -519,6 +537,40 @@ public final class ModPayloads {
 
         @Override
         public Type<AshDeath> type() {
+            return TYPE;
+        }
+    }
+
+    // Server -> client: a boss killed by a player gives up its soul (boss/SoulCeremony): it leaves the body slowly, takes
+    // the shape of the soul item's icon and falls to the ground as the item. full: the whole ceremony (first time this
+    // killer steals that soul) or the short one. killerId: whose HUD hides while it plays.
+    public record SoulCeremony(int entityId, int killerId, String power, int color, boolean full) implements CustomPacketPayload {
+        public static final Type<SoulCeremony> TYPE = payloadType("soul_ceremony");
+        public static final StreamCodec<ByteBuf, SoulCeremony> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, SoulCeremony::entityId,
+                ByteBufCodecs.VAR_INT, SoulCeremony::killerId,
+                ByteBufCodecs.STRING_UTF8, SoulCeremony::power,
+                ByteBufCodecs.INT, SoulCeremony::color,
+                ByteBufCodecs.BOOL, SoulCeremony::full,
+                SoulCeremony::new);
+
+        @Override
+        public Type<SoulCeremony> type() {
+            return TYPE;
+        }
+    }
+
+    // Server -> client: the soul of that ceremony became this item on the ground: it keeps a glow and a beam of light
+    // until someone picks it up.
+    public record SoulCeremonyDrop(int entityId, int itemId) implements CustomPacketPayload {
+        public static final Type<SoulCeremonyDrop> TYPE = payloadType("soul_ceremony_drop");
+        public static final StreamCodec<ByteBuf, SoulCeremonyDrop> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, SoulCeremonyDrop::entityId,
+                ByteBufCodecs.VAR_INT, SoulCeremonyDrop::itemId,
+                SoulCeremonyDrop::new);
+
+        @Override
+        public Type<SoulCeremonyDrop> type() {
             return TYPE;
         }
     }
@@ -1221,6 +1273,8 @@ public final class ModPayloads {
                 () -> ClientHooks.stopOwnerFx(payload.owner())));
         registrar.playToClient(SusanooArm.TYPE, SusanooArm.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.susanooArm(payload.casterId(), payload.targetId(), payload.phase(), payload.a(), payload.b())));
+        registrar.playToClient(FugaFx.TYPE, FugaFx.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.fuga(payload.casterId(), payload.phase(), payload.pos(), payload.dir())));
         registrar.playToClient(ShoulderCutscene.TYPE, ShoulderCutscene.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.shoulderCutscene(payload.casterId(), payload.targetId(), payload.ticks())));
         registrar.playToClient(GrabCutscene.TYPE, GrabCutscene.STREAM_CODEC, (payload, context) -> context.enqueueWork(
@@ -1231,6 +1285,10 @@ public final class ModPayloads {
                 () -> ClientHooks.hideEntity(payload.entityId(), payload.ticks())));
         registrar.playToClient(AshDeath.TYPE, AshDeath.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.ashDeath(payload.entityId())));
+        registrar.playToClient(SoulCeremony.TYPE, SoulCeremony.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.soulCeremony(payload.entityId(), payload.killerId(), payload.power(), payload.color(), payload.full())));
+        registrar.playToClient(SoulCeremonyDrop.TYPE, SoulCeremonyDrop.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.soulCeremonyDrop(payload.entityId(), payload.itemId())));
         registrar.playToClient(HakaiCutscene.TYPE, HakaiCutscene.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.hakaiCutscene(payload.casterId(), payload.targetId(), payload.awakened())));
         registrar.playToClient(HakaiDeath.TYPE, HakaiDeath.STREAM_CODEC, (payload, context) -> context.enqueueWork(
