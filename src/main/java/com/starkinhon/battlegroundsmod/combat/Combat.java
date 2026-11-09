@@ -113,6 +113,23 @@ public final class Combat {
         return target.hurt(source, damage);
     }
 
+    // A blow that ignores every defense (Sukuna's World Cutting Slash): no guard, parry, Escudo, intangibility or other
+    // shield of the mod stops or lessens it (PowerEvents.onIncomingDamage lets it through untouched).
+    private static boolean piercing;
+
+    public static boolean piercing() {
+        return piercing;
+    }
+
+    public static boolean hurtPiercing(LivingEntity attacker, LivingEntity target, float damage) {
+        piercing = true;
+        try {
+            return hurt(attacker, target, damage);
+        } finally {
+            piercing = false;
+        }
+    }
+
     // The SubAlmas' damages are written in their code at the old scale (before the 2026-11-08 rebalance made every
     // value a Tier 0 maximum): this brings them to the new one.
     public static float subScale(LivingEntity attacker) {

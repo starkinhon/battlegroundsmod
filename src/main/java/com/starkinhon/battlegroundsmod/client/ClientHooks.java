@@ -99,6 +99,29 @@ public final class ClientHooks {
         com.starkinhon.battlegroundsmod.client.fx.DismantleRenderer.add(origin, velocity, span, reach, seed);
     }
 
+    public static void sukunaSlash(com.starkinhon.battlegroundsmod.network.ModPayloads.SukunaSlash p) {
+        com.starkinhon.battlegroundsmod.client.fx.SukunaCutsRenderer.slash(p.origin(), p.dir(), p.across(), p.unit(), p.speed(), p.reach(), p.seed(),
+                p.flags(), p.ground());
+    }
+
+    public static void sukunaBar(com.starkinhon.battlegroundsmod.network.ModPayloads.SukunaBar p) {
+        com.starkinhon.battlegroundsmod.client.fx.SukunaCutsRenderer.bar(p.center(), p.dir(), p.len(), p.thick(), p.shift(), p.skew(), p.rough(),
+                p.s0(), p.s1(), p.seed(), p.star());
+    }
+
+    public static void sukunaWaffle(com.starkinhon.battlegroundsmod.network.ModPayloads.SukunaWaffle p) {
+        com.starkinhon.battlegroundsmod.client.fx.SukunaCutsRenderer.waffle(p.origin(), p.dir(), p.up(), p.size(), p.above(), p.speed(), p.reach(),
+                p.seed());
+    }
+
+    public static void sukunaStar(com.starkinhon.battlegroundsmod.network.ModPayloads.SukunaStar p) {
+        com.starkinhon.battlegroundsmod.client.fx.SukunaCutsRenderer.star(p.pos(), p.size(), p.seed());
+    }
+
+    public static void sukunaModel(float value) {
+        com.starkinhon.battlegroundsmod.client.ModelBarHud.set(value);
+    }
+
     public static void fuga(int casterId, int phase, net.minecraft.world.phys.Vec3 pos, net.minecraft.world.phys.Vec3 dir) {
         com.starkinhon.battlegroundsmod.client.fx.FugaRenderer.receive(casterId, phase, pos, dir);
     }
@@ -144,6 +167,8 @@ public final class ClientHooks {
         com.starkinhon.battlegroundsmod.client.fx.KatonBallRenderer.clear();
         com.starkinhon.battlegroundsmod.client.fx.FugaRenderer.clear();
         com.starkinhon.battlegroundsmod.client.fx.DismantleRenderer.clear();
+        com.starkinhon.battlegroundsmod.client.fx.SukunaCutsRenderer.clear();
+        com.starkinhon.battlegroundsmod.client.ModelBarHud.set(0);
         com.starkinhon.battlegroundsmod.client.fx.HakaiRenderer.clear();
         com.starkinhon.battlegroundsmod.client.fx.EnergyRenderer.clear();
         com.starkinhon.battlegroundsmod.client.fx.SphereRenderer.clear();

@@ -198,6 +198,10 @@ public final class PowerEvents {
     // Intangible or shielded entities take no damage, knockback or projectile hits (arrows fly through them). Only the
     // one whose cutscene holds them (Intangible.holdExcept) still lands its own blows.
     private static void onIncomingDamage(LivingIncomingDamageEvent event) {
+        if (com.starkinhon.battlegroundsmod.combat.Combat.piercing()) {
+            // Sukuna's World Cutting Slash: it ignores every defense.
+            return;
+        }
         if (Intangible.untouchableBy(event.getEntity(), event.getSource().getEntity())
                 && !event.getSource().is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
             event.setCanceled(true);

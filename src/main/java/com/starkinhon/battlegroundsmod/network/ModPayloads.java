@@ -502,6 +502,111 @@ public final class ModPayloads {
         }
     }
 
+    // Server -> client: one of Sukuna's technique crescents (power/powers/sukuna/SukunaCuts, drawn by
+    // client/fx/SukunaCutsRenderer): the Z, the chant's, the World Cutting Slash. It leaves origin flying along dir, its span
+    // along across, unit blocks per crescent unit, speed blocks a tick, its front going reach blocks before it breaks.
+    // flags: SukunaCutsRenderer.GROOVE (a groove on the ground at height ground), WORLD (the World Cutting Slash's look).
+    public record SukunaSlash(Vec3 origin, Vec3 dir, Vec3 across, float unit, float speed, float reach, int seed, int flags, float ground)
+            implements CustomPacketPayload {
+        public static final Type<SukunaSlash> TYPE = payloadType("sukuna_slash");
+        public static final StreamCodec<ByteBuf, SukunaSlash> STREAM_CODEC = StreamCodec.of((buf, p) -> {
+            VEC3.encode(buf, p.origin());
+            VEC3.encode(buf, p.dir());
+            VEC3.encode(buf, p.across());
+            ByteBufCodecs.FLOAT.encode(buf, p.unit());
+            ByteBufCodecs.FLOAT.encode(buf, p.speed());
+            ByteBufCodecs.FLOAT.encode(buf, p.reach());
+            ByteBufCodecs.VAR_INT.encode(buf, p.seed());
+            ByteBufCodecs.VAR_INT.encode(buf, p.flags());
+            ByteBufCodecs.FLOAT.encode(buf, p.ground());
+        }, buf -> new SukunaSlash(VEC3.decode(buf), VEC3.decode(buf), VEC3.decode(buf), ByteBufCodecs.FLOAT.decode(buf), ByteBufCodecs.FLOAT.decode(buf),
+                ByteBufCodecs.FLOAT.decode(buf), ByteBufCodecs.VAR_INT.decode(buf), ByteBufCodecs.VAR_INT.decode(buf), ByteBufCodecs.FLOAT.decode(buf)));
+
+        @Override
+        public Type<SukunaSlash> type() {
+            return TYPE;
+        }
+    }
+
+    // Server -> client: one line of Sukuna's Shift+Z, born on the opponent (center, along dir, len long, thick wide; shift:
+    // how far its center was moved along it from where it struck; skew, rough: its shape; s0..s1: the part of a bent
+    // stroke it is; star: a star where it finishes drawing).
+    public record SukunaBar(Vec3 center, Vec3 dir, float len, float thick, float shift, float skew, float rough, float s0, float s1, int seed,
+            boolean star) implements CustomPacketPayload {
+        public static final Type<SukunaBar> TYPE = payloadType("sukuna_bar");
+        public static final StreamCodec<ByteBuf, SukunaBar> STREAM_CODEC = StreamCodec.of((buf, p) -> {
+            VEC3.encode(buf, p.center());
+            VEC3.encode(buf, p.dir());
+            ByteBufCodecs.FLOAT.encode(buf, p.len());
+            ByteBufCodecs.FLOAT.encode(buf, p.thick());
+            ByteBufCodecs.FLOAT.encode(buf, p.shift());
+            ByteBufCodecs.FLOAT.encode(buf, p.skew());
+            ByteBufCodecs.FLOAT.encode(buf, p.rough());
+            ByteBufCodecs.FLOAT.encode(buf, p.s0());
+            ByteBufCodecs.FLOAT.encode(buf, p.s1());
+            ByteBufCodecs.VAR_INT.encode(buf, p.seed());
+            ByteBufCodecs.BOOL.encode(buf, p.star());
+        }, buf -> new SukunaBar(VEC3.decode(buf), VEC3.decode(buf), ByteBufCodecs.FLOAT.decode(buf), ByteBufCodecs.FLOAT.decode(buf),
+                ByteBufCodecs.FLOAT.decode(buf), ByteBufCodecs.FLOAT.decode(buf), ByteBufCodecs.FLOAT.decode(buf), ByteBufCodecs.FLOAT.decode(buf),
+                ByteBufCodecs.FLOAT.decode(buf), ByteBufCodecs.VAR_INT.decode(buf), ByteBufCodecs.BOOL.decode(buf)));
+
+        @Override
+        public Type<SukunaBar> type() {
+            return TYPE;
+        }
+    }
+
+    // Server -> client: the crouched World Cutting Slash, a grid of lines size blocks a side flying from origin (above
+    // blocks over the ground) along dir, its up along up, speed blocks a tick, reach blocks.
+    public record SukunaWaffle(Vec3 origin, Vec3 dir, Vec3 up, float size, float above, float speed, float reach, int seed)
+            implements CustomPacketPayload {
+        public static final Type<SukunaWaffle> TYPE = payloadType("sukuna_waffle");
+        public static final StreamCodec<ByteBuf, SukunaWaffle> STREAM_CODEC = StreamCodec.of((buf, p) -> {
+            VEC3.encode(buf, p.origin());
+            VEC3.encode(buf, p.dir());
+            VEC3.encode(buf, p.up());
+            ByteBufCodecs.FLOAT.encode(buf, p.size());
+            ByteBufCodecs.FLOAT.encode(buf, p.above());
+            ByteBufCodecs.FLOAT.encode(buf, p.speed());
+            ByteBufCodecs.FLOAT.encode(buf, p.reach());
+            ByteBufCodecs.VAR_INT.encode(buf, p.seed());
+        }, buf -> new SukunaWaffle(VEC3.decode(buf), VEC3.decode(buf), VEC3.decode(buf), ByteBufCodecs.FLOAT.decode(buf), ByteBufCodecs.FLOAT.decode(buf),
+                ByteBufCodecs.FLOAT.decode(buf), ByteBufCodecs.FLOAT.decode(buf), ByteBufCodecs.VAR_INT.decode(buf)));
+
+        @Override
+        public Type<SukunaWaffle> type() {
+            return TYPE;
+        }
+    }
+
+    // Server -> client: a four-point star of Sukuna's cuts at pos, size blocks wide.
+    public record SukunaStar(Vec3 pos, float size, int seed) implements CustomPacketPayload {
+        public static final Type<SukunaStar> TYPE = payloadType("sukuna_star");
+        public static final StreamCodec<ByteBuf, SukunaStar> STREAM_CODEC = StreamCodec.composite(
+                VEC3, SukunaStar::pos,
+                ByteBufCodecs.FLOAT, SukunaStar::size,
+                ByteBufCodecs.VAR_INT, SukunaStar::seed,
+                SukunaStar::new);
+
+        @Override
+        public Type<SukunaStar> type() {
+            return TYPE;
+        }
+    }
+
+    // Server -> client: Sukuna's Modelo bar (power/powers/sukuna/ModelBar, drawn by client/ModelBarHud), 0..1.
+    public record SukunaModel(float value) implements CustomPacketPayload {
+        public static final Type<SukunaModel> TYPE = payloadType("sukuna_model");
+        public static final StreamCodec<ByteBuf, SukunaModel> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.FLOAT, SukunaModel::value,
+                SukunaModel::new);
+
+        @Override
+        public Type<SukunaModel> type() {
+            return TYPE;
+        }
+    }
+
     // Server -> client: the neck grab's cutscene for the two fighters. The camera cuts in now; the slam lands at impactTick.
     public record GrabCutscene(int casterId, int targetId, boolean awakened, int impactTick) implements CustomPacketPayload {
         public static final Type<GrabCutscene> TYPE = payloadType("grab_cutscene");
@@ -1294,6 +1399,16 @@ public final class ModPayloads {
                 () -> ClientHooks.susanooArm(payload.casterId(), payload.targetId(), payload.phase(), payload.a(), payload.b())));
         registrar.playToClient(SukunaCut.TYPE, SukunaCut.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.sukunaCut(payload.origin(), payload.velocity(), payload.span(), payload.reach(), payload.seed())));
+        registrar.playToClient(SukunaSlash.TYPE, SukunaSlash.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.sukunaSlash(payload)));
+        registrar.playToClient(SukunaBar.TYPE, SukunaBar.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.sukunaBar(payload)));
+        registrar.playToClient(SukunaWaffle.TYPE, SukunaWaffle.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.sukunaWaffle(payload)));
+        registrar.playToClient(SukunaStar.TYPE, SukunaStar.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.sukunaStar(payload)));
+        registrar.playToClient(SukunaModel.TYPE, SukunaModel.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.sukunaModel(payload.value())));
         registrar.playToClient(FugaFx.TYPE, FugaFx.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.fuga(payload.casterId(), payload.phase(), payload.pos(), payload.dir())));
         registrar.playToClient(ShoulderCutscene.TYPE, ShoulderCutscene.STREAM_CODEC, (payload, context) -> context.enqueueWork(
