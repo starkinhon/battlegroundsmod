@@ -763,6 +763,8 @@ public final class ClivarRenderer {
         Vec3 at = mid.add(n.scale((q.h() - 0.5) * 0.12 * grow));
         SukunaCutsRenderer.U u = SukunaCutsRenderer.U.of(5);
         u.seed = (float) (i * 2.7 + c.seed % 53);
+        u.s0 = 0;
+        u.s1 = 1;
         u.skew = (float) (0.75 + 0.5 * hash(i * 5.1 + c.seed));
         u.rough = (float) (0.3 + 0.6 * hash(i * 7.9 + c.seed));
         u.grow = 1;
@@ -803,6 +805,8 @@ public final class ClivarRenderer {
             Vec3 perp = m.cross(dir).normalize();
             SukunaCutsRenderer.U u = SukunaCutsRenderer.U.of(5);
             u.seed = (float) (i * 4.1 + 17 + c.seed % 41);
+            u.s0 = 0;
+            u.s1 = 1;
             u.skew = (float) (0.8 + 0.4 * q.h());
             u.rough = (float) (0.4 + 0.5 * q.h());
             u.grow = (float) prog;
@@ -835,7 +839,7 @@ public final class ClivarRenderer {
         return RANDOM.nextGaussian();
     }
 
-    // The snap, out of the body: white sparks thrown along every slit, dark smoke bursting from the cuts, a fine red mist.
+    // The snap, out of the body: white sparks thrown along every slit, a fine red mist, a few small dark puffs.
     private static void snapBurst(Cut c) {
         Vec3 feet = new Vec3(c.center.x, c.feet, c.center.z);
         double sc = c.scale, R = 0.55 * c.height;
@@ -858,10 +862,11 @@ public final class ClivarRenderer {
                         0.025, 1, 0, at, n.scale((rr() < 0.5 ? -1 : 1) * (0.05 + 0.06 * rr())));
             }
         }
-        for (int k = 0; k < 7; k++) {
-            Vec3 at = c.center.add(gg() * 0.18 * sc, gg() * 0.35 * sc, gg() * 0.18 * sc);
-            Vec3 v = at.subtract(c.center).normalize().scale(0.08 + 0.08 * rr()).add(0, 0.02, 0);
-            fx(com.starkinhon.battlegroundsmod.fx.SmokeOptions.INK, 0xF2F2F2, 0.75, (0.3 + 0.25 * rr()) * sc, 1.5, 16 + RANDOM.nextInt(10), 0.88, -0.008,
+        // a few small dark puffs out of the middle, thin and quick (big pale ink blobs read as paper in the game)
+        for (int k = 0; k < 4; k++) {
+            Vec3 at = c.center.add(gg() * 0.15 * sc, gg() * 0.3 * sc, gg() * 0.15 * sc);
+            Vec3 v = at.subtract(c.center).normalize().scale(0.05 + 0.05 * rr()).add(0, 0.015, 0);
+            fx(com.starkinhon.battlegroundsmod.fx.SmokeOptions.BILLOW, 0x1A1418, 0.5, (0.18 + 0.1 * rr()) * sc, 1.2, 12 + RANDOM.nextInt(8), 0.86, -0.006,
                     1, 0, at, v);
         }
     }
