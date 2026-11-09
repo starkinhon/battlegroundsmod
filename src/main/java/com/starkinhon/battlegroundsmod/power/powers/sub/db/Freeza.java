@@ -15,10 +15,16 @@ import com.starkinhon.battlegroundsmod.power.powers.sub.SubCommon;
 import com.starkinhon.battlegroundsmod.power.powers.sub.SubNet;
 import com.starkinhon.battlegroundsmod.power.powers.sub.jj.JjCommon;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.Mth;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.item.FallingBlockEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec3;
 
 // Freeza (SubAlma of Dragon Ball, tier 6), the Visualizador's Freeza tab.
@@ -27,8 +33,8 @@ import net.minecraft.world.phys.Vec3;
 // X Telekinesis: the hand comes up and the target rises, stuck in the air; X again, a gesture slams it into the ground.
 // C Death Saucer: a pink saw disc cuts the target and goes on, turns and comes back... and stops for no one: it cuts
 //   Freeza too. C again blows it up before it comes back.
-// V Death Ball: a little red ball on the raised finger grows into a red sun the size of a house; a flick and it comes
-//   down slowly on the target: three blasts in a chain and a crater.
+// V Supernova: a little red ball on the raised finger grows into a red sun the size of a house; a flick and it homes in
+//   on the target: a dome of fire of radius 36, a crater, lava cracks and tremors.
 public final class Freeza {
     public static final String TELE = "db_freeza_tele";
     public static final String SAUCER = "db_freeza_saucer";
@@ -355,17 +361,26 @@ public final class Freeza {
         return false;
     }
 
-    // ---------- V: Death Ball ----------
+    // ---------- V: Supernova ----------
+    // Stark, 2026-11-09: "comparado ao tamanho da bola, a explosão tá ridícula": now it homes in on the target and lands
+    // as the approved preview (forja/freeza-supernova): a dome of fire of radius 36, a crater, lava cracks running out
+    // to ~40 blocks and three tremors popping the ground's blocks up. The hitbox is the dome itself (an ellipsoid R x R/2
+    // growing with the fire): its front hits once with knockback, then whoever stays inside only burns, no knockback.
+    public static final double NOVA_R = 36;
+    private static final int NOVA_TICKS = 180;
 
     private static boolean deathBall(LivingEntity caster, ServerLevel level) {
         SubCommon.Guard guard = SubCommon.guard(caster);
         int id = SubNet.newId();
         int grow = 110;
-        int fall = 56;
+        float R = 3.48f;
         SubCommon.pose(caster, "db.dedo_ceu_longo");
         SubCommon.sound(level, caster.position(), SoundEvents.BEACON_ACTIVATE, 2f, 0.5f);
-        Vec3[] base = {null};
+        Vec3[] pos = {null};
+        Vec3[] vel = {null};
         Vec3[] goal = {null};
+        LivingEntity[] target = {null};
+        double[] speed = {0.25};
         Tasks.add(age -> {
             if (age < grow) {
                 if (guard.broken()) {
@@ -384,33 +399,196 @@ public final class Freeza {
                 return false;
             }
             if (age == grow) {
-                base[0] = DbCommon.raised(caster).add(0, 3.55, 0);
-                goal[0] = SubCommon.aimPoint(caster, 50).add(0, 1.5, 0);
+                pos[0] = DbCommon.raised(caster).add(0, 3.55, 0);
+                target[0] = SubCommon.aimed(caster, 70);
+                goal[0] = SubCommon.aimPoint(caster, 50).add(0, R - 0.4, 0);
+                Vec3 to = (target[0] != null ? target[0].position() : goal[0]).subtract(pos[0]);
+                vel[0] = SubCommon.flat(to).scale(0.25).add(0, 0.125, 0);
                 SubCommon.pose(caster, "db.gesto");
-                SubCommon.sound(level, base[0], SoundEvents.WARDEN_SONIC_CHARGE, 2f, 0.5f);
+                SubCommon.sound(level, pos[0], SoundEvents.WARDEN_SONIC_CHARGE, 2f, 0.5f);
             }
-            float k = Math.min(1, (age - grow) / (float) fall);
-            Vec3 at = base[0].lerp(goal[0], SubCommon.smooth(k));
-            boolean touch = k > 0.3f && !Combat.inRadius(level, at, 2.8, caster).isEmpty();
-            if (k < 1 && !touch) {
-                SubNet.send(level, SubNet.DEATH_BALL, id, at, Vec3.ZERO, 3.48f, 0, 0);
-                if ((age - grow) % 10 == 0) {
+            int t = age - grow;
+            // Homing: it turns at most 1.5 rad/s toward the target and speeds up to 24 blocks/s, so it visibly curves but
+            // walking sideways doesn't shake it off. It aims a ball's radius above the feet (aiming at the chest, a ball
+            // this big hits the ground 17 blocks short).
+            LivingEntity tg = target[0];
+            Vec3 aim = tg != null && tg.isAlive() ? tg.position().add(0, Math.max(1, R - 0.4), 0) : goal[0];
+            speed[0] = Math.min(1.2, speed[0] + 0.0275);
+            Vec3 cur = vel[0].normalize(), want = aim.subtract(pos[0]);
+            want = want.lengthSqr() < 1.0E-6 ? cur : want.normalize();
+            double ang = Math.acos(Math.max(-1, Math.min(1, cur.dot(want))));
+            double turn = ang > 1.0E-4 ? Math.min(1, 0.075 / ang) : 1;
+            Vec3 dir = cur.lerp(want, turn);
+            dir = dir.lengthSqr() < 1.0E-6 ? want : dir.normalize();
+            vel[0] = dir.scale(speed[0]);
+            pos[0] = pos[0].add(vel[0]);
+            Vec3 at = pos[0];
+            boolean touch = !Combat.inRadius(level, at, R + 0.3, caster).isEmpty();
+            boolean ground = at.y - R < DbCommon.groundY(level, at) - 0.4 || SubCommon.solid(level, at.add(dir.scale(R * 0.8)));
+            if (!touch && !ground && t < 180) {
+                SubNet.send(level, SubNet.DEATH_BALL, id, at, Vec3.ZERO, R, 0, 0);
+                if (t % 10 == 0) {
                     SubCommon.sound(level, at, SoundEvents.FIRE_AMBIENT, 2.5f, 0.4f);
                 }
                 return false;
             }
-            SubNet.send(level, SubNet.DEATH_BALL, id, at, Vec3.ZERO, 3.48f, 0, 1);
-            double ground = DbCommon.groundY(level, at);
-            Vec3 c = new Vec3(at.x, Math.min(at.y, ground + 1.5), at.z);
-            SubNet.send(level, SubNet.SUPERNOVA, 0, c, new Vec3(ground, 0, 0), 1, 0, 0);
-            DbCommon.screen(level, c, 11);
-            SubCommon.sound(level, c, SoundEvents.GENERIC_EXPLODE.value(), 4f, 0.4f);
-            Tasks.later(5, () -> SubCommon.sound(level, c, SoundEvents.GENERIC_EXPLODE.value(), 3f, 0.6f));
-            Tasks.later(9, () -> SubCommon.sound(level, c, SoundEvents.GENERIC_EXPLODE.value(), 3f, 0.5f));
-            DbCommon.hurtRadius(caster, level, c, 9, 38, 1.8, 0.7);
-            JjCommon.crater(level, new Vec3(c.x, ground, c.z), 6.5, 3.2, 60);
+            SubNet.send(level, SubNet.DEATH_BALL, id, at, Vec3.ZERO, R, 0, 1);
+            nova(caster, level, at);
             return true;
         });
         return true;
+    }
+
+    private static double easeOut4(double x) {
+        double u = 1 - Math.max(0, Math.min(1, x));
+        return 1 - u * u * u * u;
+    }
+
+    // The dome's radius at a tick of the landing (same curve as the client's NovaRenderer.radius).
+    private static double novaRadius(int t) {
+        double s = t / 20.0;
+        return 1 + (NOVA_R - 2.5) * easeOut4(s / 1.5) + 1.5 * Math.max(0, Math.min(1, (s - 1.5) / 6));
+    }
+
+    private static void nova(LivingEntity caster, ServerLevel level, Vec3 at) {
+        double ground = DbCommon.groundY(level, at);
+        Vec3 c = new Vec3(at.x, ground, at.z);
+        SubNet.send(level, SubNet.SUPERNOVA, 0, c, new Vec3(ground, 0, 0), 1, 0, 0);
+        DbCommon.screen(level, c, 11);
+        SubCommon.sound(level, c, SoundEvents.GENERIC_EXPLODE.value(), 6f, 0.4f);
+        SubCommon.sound(level, c, SoundEvents.WARDEN_SONIC_BOOM, 4f, 0.5f);
+        Tasks.later(5, () -> SubCommon.sound(level, c, SoundEvents.GENERIC_EXPLODE.value(), 5f, 0.6f));
+        Tasks.later(9, () -> SubCommon.sound(level, c, SoundEvents.GENERIC_EXPLODE.value(), 5f, 0.5f));
+        boolean breaks = com.starkinhon.battlegroundsmod.combat.BlockRules.canBreak(level);
+        if (breaks) {
+            JjCommon.crater(level, c, 10.5, 7, 70);
+        }
+        List<List<double[]>> cracks = breaks ? cracks() : List.of();
+        int[] carved = new int[cracks.size()];
+        Set<Integer> hit = DbCommon.once();
+        Tasks.add(t -> {
+            double R = novaRadius(t), H = R * 0.5, life = t / (double) NOVA_TICKS;
+            // The hitbox: the dome's own shape. The fire's front hits once (knockback falling off with distance), then
+            // inside it only burns (the hurt's knockback taken back, like the domain's cuts and Kokushibo's moons).
+            if (life < 0.85) {
+                for (LivingEntity e : Combat.inRadius(level, c.add(0, H * 0.5, 0), R + 2, caster)) {
+                    Vec3 ec = Combat.center(e);
+                    double dh = Math.hypot(ec.x - c.x, ec.z - c.z), yy = Math.max(0, ec.y - ground);
+                    if ((dh / R) * (dh / R) + (yy / H) * (yy / H) >= 1) {
+                        continue;
+                    }
+                    if (hit.add(e.getId())) {
+                        double k = 1 - 0.55 * Math.min(1, dh / (NOVA_R + 4));
+                        Combat.hurtMagic(caster, e, (float) (40 * k));
+                        Combat.pushFrom(e, c, 0.8 + 1.6 * k, 0.45 + 0.6 * k);
+                        Stun.apply(e, 20);
+                        DbCommon.hit(level, ec, 1.2f, Db.ORANGE);
+                    } else if (t % 10 == 0) {
+                        Vec3 motion = e.getDeltaMovement();
+                        Combat.hurtMagic(caster, e, 2.5f);
+                        e.setDeltaMovement(motion);
+                        e.hurtMarked = true;
+                    }
+                }
+            }
+            if (breaks) {
+                // The cracks open behind the front (41 blocks in 2.6 s), lava (magma) at the bottom.
+                double front = 41 * (1 - Math.pow(1 - Math.min(1, t / 52.0), 3));
+                for (int i = 0; i < cracks.size(); i++) {
+                    List<double[]> path = cracks.get(i);
+                    while (carved[i] < path.size() && path.get(carved[i])[2] < front) {
+                        double[] q = path.get(carved[i]++);
+                        crack(level, c, (int) Math.floor(q[0]), (int) Math.floor(q[1]), (int) q[3]);
+                    }
+                }
+                // The three tremors: each wave's front pops the ground's blocks up (each its own force) and they fall back.
+                for (int w = 0; w < 3; w++) {
+                    int tw = t - 2 - w * 16;
+                    double pr = tw * (27 - w * 5) / 20.0;
+                    if (tw < 0 || pr < 10 || pr > 40) {
+                        continue;
+                    }
+                    for (int n = 0; n < 7 - w * 2; n++) {
+                        double a = SubCommon.RANDOM.nextDouble() * Math.PI * 2, rr = pr + (SubCommon.RANDOM.nextDouble() - 0.5) * 3;
+                        pop(level, c, Mth.floor(c.x + Math.cos(a) * rr), Mth.floor(c.z + Math.sin(a) * rr), (0.28 + 0.32 * SubCommon.RANDOM.nextDouble()) * (1 - w * 0.25));
+                    }
+                }
+            }
+            if (t == 2 || t == 18 || t == 34) {
+                SubCommon.sound(level, c, SoundEvents.GENERIC_EXPLODE.value(), 3f, 0.35f);
+            }
+            if (t % 20 == 0 && t < 160) {
+                SubCommon.sound(level, c, SoundEvents.FIRE_AMBIENT, 4f, 0.5f);
+            }
+            return t >= NOVA_TICKS;
+        });
+    }
+
+    // The cracks: 10-13 crooked lines from the crater's rim out to 36-41 blocks, each point {x, z, distance, depth}
+    // relative to the impact (wider near the middle).
+    private static List<List<double[]>> cracks() {
+        List<List<double[]>> out = new ArrayList<>();
+        int n = 10 + SubCommon.RANDOM.nextInt(4);
+        for (int i = 0; i < n; i++) {
+            List<double[]> path = new ArrayList<>();
+            double a = Math.PI * 2 * i / n + (SubCommon.RANDOM.nextDouble() - 0.5) * 0.4, bend = 0;
+            double end = 36 + SubCommon.RANDOM.nextDouble() * 5;
+            for (double r = 9; r < end; r += 0.6) {
+                bend += (SubCommon.RANDOM.nextDouble() - 0.5) * 0.05;
+                bend *= 0.96;
+                a += bend;
+                double x = Math.cos(a) * r, z = Math.sin(a) * r;
+                int depth = 2 + SubCommon.RANDOM.nextInt(r < 20 ? 4 : 2);
+                path.add(new double[] {x, z, r, depth});
+                if (r < 22) {
+                    // wider near the middle: the block beside it too
+                    path.add(new double[] {x - Math.sin(a), z + Math.cos(a), r, Math.max(1, depth - 1)});
+                }
+            }
+            out.add(path);
+        }
+        return out;
+    }
+
+    // The top block column at (x, z) near the impact's ground, or null.
+    private static BlockPos top(ServerLevel level, Vec3 c, int x, int z) {
+        int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z) - 1;
+        return Math.abs(y - c.y) > 6 ? null : new BlockPos(x, y, z);
+    }
+
+    private static boolean breakable(ServerLevel level, BlockPos p, BlockState st) {
+        return !st.isAir() && st.getFluidState().isEmpty() && !st.hasBlockEntity() && st.getDestroySpeed(level, p) >= 0;
+    }
+
+    private static void crack(ServerLevel level, Vec3 c, int dx, int dz, int depth) {
+        BlockPos top = top(level, c, Mth.floor(c.x) + dx, Mth.floor(c.z) + dz);
+        if (top == null) {
+            return;
+        }
+        for (int d = 0; d < depth; d++) {
+            BlockPos p = top.below(d);
+            if (breakable(level, p, level.getBlockState(p))) {
+                level.setBlock(p, Blocks.AIR.defaultBlockState(), 3);
+            }
+        }
+        BlockPos bottom = top.below(depth);
+        if (breakable(level, bottom, level.getBlockState(bottom))) {
+            level.setBlock(bottom, Blocks.MAGMA_BLOCK.defaultBlockState(), 3);
+        }
+    }
+
+    private static void pop(ServerLevel level, Vec3 c, int x, int z, double up) {
+        BlockPos p = top(level, c, x, z);
+        if (p == null) {
+            return;
+        }
+        BlockState st = level.getBlockState(p);
+        if (!breakable(level, p, st)) {
+            return;
+        }
+        FallingBlockEntity block = FallingBlockEntity.fall(level, p, st);
+        block.dropItem = false;
+        block.setDeltaMovement((SubCommon.RANDOM.nextDouble() - 0.5) * 0.08, up, (SubCommon.RANDOM.nextDouble() - 0.5) * 0.08);
+        block.hurtMarked = true;
     }
 }

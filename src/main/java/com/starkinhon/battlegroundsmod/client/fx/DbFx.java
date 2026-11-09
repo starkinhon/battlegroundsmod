@@ -82,6 +82,8 @@ public final class DbFx {
         final ArrayDeque<Vec3> trail = new ArrayDeque<>();
         // Where a thrown ball left the hand (the Big Bang's comet tail starts there).
         Vec3 origin;
+        // The Supernova's tremor waves already felt (each one shakes the screen once).
+        int waves;
 
         Fx(int kind, int id, Vec3 pos, Vec3 dir, float a, float b, float c, double now) {
             this.kind = kind;
@@ -302,7 +304,7 @@ public final class DbFx {
         return switch (f.kind) {
             case SubNet.KI_BOOM -> f.c >= 3000 ? 170 : f.c >= 2000 ? FINAL_LIFE : 110;
             case SubNet.GENKI_BOOM -> 130;
-            case SubNet.SUPERNOVA -> 150;
+            case SubNet.SUPERNOVA -> 200;
             case SubNet.BIG_BANG_BOOM -> 110;
             case SubNet.HIT -> 13;
             case SubNet.DEATH_BEAM -> 11;
@@ -1339,35 +1341,57 @@ public final class DbFx {
         }
     }
 
+    private static final float[] NOVA_SKY_RING = FxDraw.rgb(0xFFB27A);
+    private static final float[] NOVA_SKY_DUST = FxDraw.rgb(0xFFF1E0);
+    private static final float[] NOVA_SCORCH = FxDraw.rgb(0x130E0B);
+
     private static void supernova(Fx f, float a) {
         float s = f.a;
         Vector3f c = rel(f.pos);
         float ground = groundY(f);
         if (KiMesh.ready()) {
-            // The approved landing: a fire dome of radius 9 tearing into tongues, the white burst, a huge dust ring,
-            // then the smoke rising on top.
-            float rb = 9 * s;
-            float tb = a - 2;
-            Vector3f mid = new Vector3f(c.x, ground + 0.4f, c.z);
-            if (tb > 0) {
-                blast(mid, rb * easeOut(tb / 26), Mth.clamp(tb / 64, 0, 1), NOVA_DOME, a, 3.3f, 1, false, 14);
-                dustRing(new Vector3f(c.x, ground, c.z), rb * 2.3f * easeOut(tb / 36), rb * 2.6f, Mth.clamp(tb / 60, 0, 1), NOVA_DOME, 8.2f);
+            // The approved Supernova v2 (forja/freeza-supernova, Stark 2026-11-09: "PERFEITO", Realista): one dome of fire
+            // of radius 36 raymarched (NovaRenderer), a dust ring running over the ground, a shock ring hanging in the
+            // air over the dome, the ground scorched where the fire went, and three tremors shaking the screen.
+            Vector3f e = new Vector3f(c.x, ground, c.z);
+            float R = NovaRenderer.radius(a), H = R * 0.5f;
+            if (!pass) {
+                NovaRenderer.want(e, a, 3.3f + (f.id & 7) * 1.7f);
             }
-            if (a >= 40) {
-                float late = (a - 40) / 20;
-                blast(new Vector3f(c.x, ground + 0.3f + late * 0.6f, c.z), rb * (1 + late * 0.08f), 0.35f + 0.65f * Mth.clamp((a - 40) / 100, 0, 1), SMOKE_3D,
-                        a, 7.7f, 1, true, 6);
+            dustRing(e, NovaRenderer.RMAX * 1.7f * easeOut4(a / 44), NovaRenderer.RMAX * 2.1f, Mth.clamp(a / 64, 0, 1), NOVA_DOME, 8.2f);
+            if (a > 5 && pass) {
+                KiMesh.P p = KiMesh.p(KiMesh.RING);
+                p.ringR = R * (0.55f + 0.4f * easeOut4(a / 50));
+                p.ringMax = NovaRenderer.RMAX * 1.4f;
+                p.life = Mth.clamp((a - 5) / 90, 0, 1);
+                p.color = NOVA_SKY_RING;
+                p.dust = NOVA_SKY_DUST;
+                p.seed = 5.3f;
+                if (p.life < 1) {
+                    KiMesh.queue(KiMesh.Mesh.QUAD, KiMesh.flat(new Vector3f(e).add(0, H * 1.25f + a * 0.075f, 0), p.ringMax), p, KiMesh.BOTH, 31);
+                }
             }
-            if (a < 8) {
-                float k = a / 8;
-                flashBall(mid, rb * (0.3f + 0.7f * Mth.sqrt(k)), 1 - k, NOVA_FLASH, 4.4f);
+            if (a < 9) {
+                float k = a / 9;
+                flashBall(new Vector3f(e).add(0, 1, 0), 4 + 24 * Mth.sqrt(k), 1 - k, NOVA_FLASH, 4.4f);
             }
-            if (a < 34) {
-                warp(mid, rb * 2, 1.2f * (1 - a / 34), 0, a, null);
+            if (a < 30) {
+                warp(new Vector3f(e).add(0, 3, 0), NovaRenderer.RMAX * 1.5f, 1.6f * (1 - a / 30), 0, a, null);
             }
-            if (a < 120) {
-                dsk(new Vector3f(c.x, ground + 0.03f, c.z), new Vector3f(0, 1, 0), rb * 1.5f, FxDraw.SOFT, 0.15f, DIRT, 0.85f * smooth(a / 4) * (1 - smooth((a - 80) / 40)),
-                        false);
+            if (a < 200) {
+                float scorch = smooth(a / 24) * (1 - smooth((a - 160) / 40));
+                dsk(new Vector3f(e).add(0, 0.04f, 0), new Vector3f(0, 1, 0), Math.min(R, NovaRenderer.RMAX) * 1.02f, FxDraw.SOFT, 0.12f, NOVA_SCORCH, 0.9f * scorch, false);
+            }
+            // The tremors (the server pops the blocks of each wave's front up when blocks may break).
+            for (int w = f.waves; w < 3 && a >= 2 + w * 16; w = ++f.waves) {
+                Minecraft mc = Minecraft.getInstance();
+                if (mc.player != null) {
+                    double dist = mc.player.position().distanceTo(f.pos);
+                    float near = (float) Mth.clamp(1 - (dist - 30) / 60, 0, 1);
+                    if (near > 0) {
+                        ScreenShake.start((1.6f - w * 0.35f) * near, 18);
+                    }
+                }
             }
             return;
         }
@@ -2710,6 +2734,11 @@ public final class DbFx {
     static float smooth(float x) {
         x = Mth.clamp(x, 0, 1);
         return x * x * (3 - 2 * x);
+    }
+
+    static float easeOut4(float t) {
+        float u = 1 - Mth.clamp(t, 0, 1);
+        return 1 - u * u * u * u;
     }
 
     static float easeOut(float t) {
