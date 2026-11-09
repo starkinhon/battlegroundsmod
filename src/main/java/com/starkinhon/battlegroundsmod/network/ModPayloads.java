@@ -621,9 +621,10 @@ public final class ModPayloads {
     // chest at the uppercut (ticks = the target's entity id: the speed lines follow it; the timings are BTrack's);
     // RELEASE = the chest when he throws it down (ticks = the fall); IMPACT = where the body hits the ground; LAND = the
     // body under his feet (the web grows from here); BURST = the ground that blows up (ticks = 1 when the blocks really
-    // break, gamerule soulsBlockDestruction); CANCEL ends it.
+    // break, gamerule soulsBlockDestruction); TRACK = where BTrack's frame sits (the flight starts; ticks = the target's
+    // entity id); CANCEL ends it.
     public record SukunaCravada(int entity, int kind, int ticks, Vec3 a, Vec3 b, int seed) implements CustomPacketPayload {
-        public static final int RUN = 0, HIT = 1, RELEASE = 2, IMPACT = 3, LAND = 4, BURST = 5, CANCEL = 6;
+        public static final int RUN = 0, HIT = 1, RELEASE = 2, IMPACT = 3, LAND = 4, BURST = 5, CANCEL = 6, TRACK = 7;
         public static final Type<SukunaCravada> TYPE = payloadType("sukuna_cravada");
         public static final StreamCodec<ByteBuf, SukunaCravada> STREAM_CODEC = StreamCodec.composite(
                 ByteBufCodecs.VAR_INT, SukunaCravada::entity,

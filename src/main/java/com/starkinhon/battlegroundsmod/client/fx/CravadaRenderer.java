@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 import com.mojang.blaze3d.platform.GlStateManager;
@@ -13,28 +14,26 @@ import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.BufferUploader;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.MeshData;
-import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
-import com.mojang.math.Axis;
 import com.starkinhon.battlegroundsmod.network.ModPayloads.SukunaCravada;
 import com.starkinhon.battlegroundsmod.power.powers.sukuna.BTrack;
-import com.starkinhon.battlegroundsmod.power.powers.sukuna.Cravada;
+import com.starkinhon.battlegroundsmod.power.powers.sukuna.CravadaWeb;
 
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.renderer.LevelRenderer;
-import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.ShaderInstance;
-import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.ClipContext;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.client.event.MovementInputUpdateEvent;
+import net.neoforged.neoforge.client.event.RenderLivingEvent;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
 // Sukuna's B, the cravada (the old Shift+X), as in the 3D preview Stark approved (forja/sukuna-desmantelar, "Shift+X";
 // server side in power/powers/sukuna/Cravada). Everything is the preview's, laid out in his frame at the moment of the
@@ -42,24 +41,20 @@ import net.minecraft.world.phys.Vec3;
 //   - the sprint: wind needles born at his back that stretch backwards, curved wind off a shoulder or a foot, a flat
 //     stroke and chips kicked back at each footfall, and the launch burst (strokes, a star, dashes flung off);
 //   - vertical speed lines around the target on its way up and on its way down; stars at the uppercut, the throw, the
-//     impact and the stomp; chips off the uppercut and out of the ground; rubble blocks (the ground's own) thrown out;
+//     impact and the stomp; chips off the uppercut and out of the ground;
 //   - rings of Shift+Z strokes running out over the ground at the impact and at the landing;
 //   - the stomp's web: Shift+Z strokes laid flat on the ground (each on the ground under it), in three stages ~0.7 s
 //     apart, each a wider layer around the last, with stars at the first spokes' tips; then it flashes, four huge straight
-//     cuts cross it all and the strokes burn away; then the ground inside it blows up: the blocks the server breaks
-//     (Cravada.burstBlocks, read before they go) tumble up and out like the preview's slabs, and clods of the ground fly.
+//     cuts cross it all and the strokes burn away; the server then cuts the web's shape out of the ground (CravadaWeb.cuts;
+//     Stark 2026-11-09: no blocks thrown around, the world's own blocks cut in the web's shape).
+//   - the flight, smooth and with the camera free (Stark 2026-11-09): the one who casts it is moved along BTrack here, on
+//     his own client, every tick (the server only puts him back when far off), so his view glides instead of jumping 20
+//     times a second; both bodies stay turned the way the move goes whatever their cameras do, and the target's whole
+//     body tumbles, hangs, is thrown head first and lies on its back as in the preview (bones alone can't lay it down).
 public final class CravadaRenderer {
     // The preview's timings (ticks): the web's stages, the flash (SX_BOOM), the cut before the burst (SX_CUT).
     private static final double SX_BOOM = BTrack.BOOM - BTrack.LAND, SX_CUT = BTrack.BURST - BTrack.BOOM, FORM = 1.0;
-    private static final double[][] S_WEB = {{14, 17, 5.0, 8.6, 6.0, 7.4, 8.4, 1.15}, {28, 25, 8.6, 13.2, 9.8, 11.4, 12.8, 1.3}};
     private static final double GLOW = 2;
-
-    // One stroke of the web, in his frame around the body: a spoke (angle a, middle at r) or a ring piece (middle mx, mz).
-    private record Stroke(boolean spoke, double a, double r, double mx, double mz, double dx, double dz, double len, double thick, double t0,
-            float skew, float rough, float seed) {
-    }
-
-    private static final List<Stroke> WEB = web();
 
     private static final class Run {
         final int id, seed;
@@ -69,11 +64,11 @@ public final class CravadaRenderer {
         Vec3 start = Vec3.ZERO, hit = Vec3.ZERO, rel = Vec3.ZERO, impact = Vec3.ZERO, chest = Vec3.ZERO;
         double impactGround, hitGround;
         final Vec3[] windAt = new Vec3[16], curveAt = new Vec3[6], stepAt = new Vec3[3];
-        BlockState ground = Blocks.DIRT.defaultBlockState();
         double[] webY;
-        boolean broken;
-        List<Piece> pieces;
-        List<Clod> clods;
+        // The flight (TRACK): where BTrack's frame sits, when it started (now() and ticks of this client).
+        Vec3 origin;
+        double trackAt = -1;
+        int trackTick = -1;
 
         Run(int id, int seed, Vec3 fwd) {
             this.id = id;
@@ -104,84 +99,9 @@ public final class CravadaRenderer {
         }
     }
 
-    // A block the burst takes, at rest where it was until its turn comes; and a clod of the ground thrown up.
-    private record Piece(BlockState state, Vec3 at, double r, double ux, double uz, double h0, double h1, double h2, double h3) {
-    }
-
-    private record Clod(BlockState state, Vec3 c, double R, double an, double h0, double h2, double h3, double h4) {
-    }
-
     private static final Map<Integer, Run> RUNS = new HashMap<>();
 
     private CravadaRenderer() {
-    }
-
-    // ---------- the web, as the preview builds it ----------
-
-    private static List<Stroke> web() {
-        List<Stroke> out = new ArrayList<>();
-        int n = 11;
-        double[] spokeA = new double[n];
-        for (int k = 0; k < n; k++) {
-            double h = hash(k * 3.3 + 1), a = (k + (hash(k * 1.9) - 0.5) * 0.5) / n * 6.2832, L = 2.6 + 2.8 * h;
-            spokeA[k] = a;
-            out.add(new Stroke(true, a, 0.3 + L / 2, 0, 0, 0, 0, L, 0.45 + 0.35 * hash(k * 5.1), 0.4 * hash(k * 7.7),
-                    (float) (0.55 + 0.5 * hash(k * 8.3)), (float) (0.5 + 0.5 * hash(k * 9.9)), (float) (k * 2.7)));
-        }
-        double[] rings = {1.3, 2.3, 3.4};
-        for (int j = 0; j < 3; j++) {
-            double rj = rings[j];
-            for (int k = 0; k < n; k++) {
-                if (hash(k * 4.1 + j * 7.3) < 0.25) {
-                    continue;
-                }
-                double a0 = spokeA[k], a1 = k + 1 < n ? spokeA[k + 1] : spokeA[0] + 6.2832;
-                double r0 = rj * (1 + (hash(k + j * 3.1) - 0.5) * 0.12), r1 = rj * (1 + (hash(k + 1 + j * 3.1) - 0.5) * 0.12);
-                out.add(piece(a0, a1, r0, r1, 0.94, 1.12, 0.22 + 0.14 * hash(k * 2.2 + j), 1 + rj * 0.5 + 0.4 * hash(k * 6.6 + j),
-                        0.8 + 0.5 * hash(k * 3.9 + j), 0.6 + 0.4 * hash(k * 1.7 + j), 50 + k * 1.3 + j * 7.1));
-            }
-        }
-        for (int si = 0; si < S_WEB.length; si++) {
-            double[] st = S_WEB[si];
-            int m = (int) st[1];
-            double t = st[0], sr0 = st[2], sr1 = st[3], th = st[7];
-            double[] ang = new double[m];
-            for (int k = 0; k < m; k++) {
-                ang[k] = (k + (hash(k * 2.3 + si * 11) - 0.5) * 0.5) / m * 6.2832 + si * 0.13;
-            }
-            for (int k = 0; k < m; k++) {
-                if (hash(k * 5.7 + si * 3.3) < 0.15) {
-                    continue;
-                }
-                double L = (sr1 - sr0) * (0.75 + 0.45 * hash(k * 1.3 + si * 7));
-                out.add(new Stroke(true, ang[k], sr0 - 0.4 + L / 2, 0, 0, 0, 0, L, (0.5 + 0.35 * hash(k * 8.1 + si)) * th,
-                        t + 0.4 * hash(k * 7.1 + si), (float) (0.55 + 0.5 * hash(k * 2.9 + si)), (float) (0.5 + 0.5 * hash(k * 6.3 + si)),
-                        (float) (300 + si * 100 + k * 1.7)));
-            }
-            for (int j = 0; j < 3; j++) {
-                double rj = st[4 + j];
-                for (int k = 0; k < m; k++) {
-                    if (hash(k * 4.7 + j * 9.1 + si * 13) < 0.2) {
-                        continue;
-                    }
-                    double a0 = ang[k], a1 = k + 1 < m ? ang[k + 1] : ang[0] + 6.2832;
-                    double r0 = rj * (1 + (hash(k + j * 3.7 + si) - 0.5) * 0.1), r1 = rj * (1 + (hash(k + 1 + j * 3.7 + si) - 0.5) * 0.1);
-                    out.add(piece(a0, a1, r0, r1, 0.95, 1.1, (0.24 + 0.14 * hash(k * 2.6 + j + si)) * th,
-                            t + 1 + (rj - sr0) * 0.35 + 0.4 * hash(k * 6.1 + j + si), 0.8 + 0.5 * hash(k * 3.3 + j + si),
-                            0.6 + 0.4 * hash(k * 1.9 + j + si), 500 + si * 100 + k * 1.1 + j * 5.3));
-                }
-            }
-        }
-        return out;
-    }
-
-    // A ring piece between two spokes: from (a0, r0) to (a1, r1), its middle pulled in a little.
-    private static Stroke piece(double a0, double a1, double r0, double r1, double in, double longer, double thick, double t0, double skew,
-            double rough, double seed) {
-        double ax = Math.cos(a0) * r0, az = Math.sin(a0) * r0, bx = Math.cos(a1) * r1, bz = Math.sin(a1) * r1;
-        double dx = bx - ax, dz = bz - az, len = Math.sqrt(dx * dx + dz * dz);
-        return new Stroke(false, 0, 0, (ax + bx) * 0.5 * in, (az + bz) * 0.5 * in, dx / len, dz / len, len * longer, thick, t0, (float) skew,
-                (float) rough, (float) seed);
     }
 
     // ---------- from the server ----------
@@ -220,7 +140,6 @@ public final class CravadaRenderer {
                 r.impactAt = now;
                 r.impact = a;
                 r.impactGround = groundUnder(a, 3);
-                r.ground = groundState(a);
                 SukunaCutsRenderer.star(a.add(0, 0.5, 0), 3.2f, seed + 2);
             }
             case SukunaCravada.LAND -> {
@@ -229,15 +148,18 @@ public final class CravadaRenderer {
                 r.webY = null;
                 SukunaCutsRenderer.star(a.add(0, 0.3, 0), 2.8f, seed + 3);
             }
+            case SukunaCravada.TRACK -> {
+                r.origin = a;
+                r.trackAt = now;
+                r.targetId = ticks;
+                Minecraft minecraft = Minecraft.getInstance();
+                r.trackTick = minecraft.player != null ? minecraft.player.tickCount : 0;
+            }
             case SukunaCravada.BURST -> {
                 r.burstAt = now;
-                r.broken = ticks == 1;
                 if (r.landAt < 0) {
                     r.landAt = now - SX_BOOM - SX_CUT;
                     r.chest = a;
-                }
-                if (r.pieces == null) {
-                    readGround(r);
                 }
             }
             default -> {
@@ -290,47 +212,6 @@ public final class CravadaRenderer {
         return hit.getType() == HitResult.Type.MISS ? at.y : hit.getLocation().y;
     }
 
-    private static BlockState groundState(Vec3 at) {
-        ClientLevel level = Minecraft.getInstance().level;
-        if (level != null) {
-            for (int dy = 0; dy <= 3; dy++) {
-                BlockState s = level.getBlockState(BlockPos.containing(at.x, at.y - 0.2 - dy, at.z));
-                if (!s.isAir() && s.getFluidState().isEmpty()) {
-                    return s;
-                }
-            }
-        }
-        return Blocks.DIRT.defaultBlockState();
-    }
-
-    // The ground inside the web, read just before it blows: the blocks the server will break (same rules, same list) and
-    // the clods thrown up off its top.
-    private static void readGround(Run r) {
-        ClientLevel level = Minecraft.getInstance().level;
-        r.pieces = new ArrayList<>();
-        r.clods = new ArrayList<>();
-        if (level == null) {
-            return;
-        }
-        Vec3 c = r.chest;
-        for (BlockPos pos : Cravada.burstBlocks(level, c)) {
-            BlockState state = level.getBlockState(pos);
-            Vec3 mid = Vec3.atCenterOf(pos);
-            double dx = mid.x - c.x, dz = mid.z - c.z, d = Math.sqrt(dx * dx + dz * dz);
-            double ux = d < 1.0E-3 ? 1 : dx / d, uz = d < 1.0E-3 ? 0 : dz / d;
-            double k = pos.getX() * 1.7 + pos.getZ() * 3.1 + pos.getY() * 0.7;
-            r.pieces.add(new Piece(state, mid, d, ux, uz, hash(k + 1.3), hash(k * 2.9 + 5.1), hash(k * 4.3 + 2.2), hash(k * 6.1 + 7.7)));
-        }
-        for (int k = 0; k < 90; k++) {
-            double h0 = hash(k * 1.3 + 7), h1 = hash(k * 2.9 + 1), h2 = hash(k * 4.1 + 3), h3 = hash(k * 5.3 + 5), h4 = hash(k * 6.7 + 2);
-            double R = 13 * Math.sqrt(h0), an = h1 * 6.2832;
-            Vec3 at = new Vec3(c.x + Math.cos(an) * R, c.y, c.z + Math.sin(an) * R);
-            double y = groundUnder(at, 3);
-            BlockState state = groundState(new Vec3(at.x, y, at.z));
-            r.clods.add(new Clod(state, new Vec3(c.x, y, c.z), R, an, h0, h2, h3, h4));
-        }
-    }
-
     // ---------- drawing (FxWorld, end of the level) ----------
 
     private static ShaderInstance shader;
@@ -349,13 +230,6 @@ public final class CravadaRenderer {
         Vector3f left = c.getLeftVector(), up = c.getUpVector();
         camRight = new Vec3(-left.x(), -left.y(), -left.z());
         camUp = new Vec3(up.x(), up.y(), up.z());
-        for (Run r : RUNS.values()) {
-            // the ground is read the beat the web cuts it, before the server takes it
-            if (r.landAt >= 0 && r.pieces == null && now - r.landAt >= SX_BOOM) {
-                readGround(r);
-            }
-        }
-        drawBlocks(now);
         RenderSystem.enableDepthTest();
         RenderSystem.disableCull();
         RenderSystem.enableBlend();
@@ -649,22 +523,22 @@ public final class CravadaRenderer {
         Vec3 c = r.chest;
         if (r.webY == null) {
             // each stroke lies on the ground under its middle
-            r.webY = new double[WEB.size()];
-            for (int i = 0; i < WEB.size(); i++) {
-                Vec3 m = middle(r, WEB.get(i));
+            r.webY = new double[CravadaWeb.WEB.size()];
+            for (int i = 0; i < CravadaWeb.WEB.size(); i++) {
+                Vec3 m = middle(r, CravadaWeb.WEB.get(i));
                 r.webY[i] = groundUnder(new Vec3(m.x, c.y, m.z), 2.5);
             }
         }
         if (s < SX_BOOM + SX_CUT + 2) {
-            for (int i = 0; i < WEB.size(); i++) {
-                Stroke w = WEB.get(i);
+            for (int i = 0; i < CravadaWeb.WEB.size(); i++) {
+                CravadaWeb.Stroke w = CravadaWeb.WEB.get(i);
                 double lt = s - w.t0();
                 if (lt < 0) {
                     continue;
                 }
                 Vec3 m = middle(r, w);
                 Vec3 p = new Vec3(m.x, r.webY[i] + (w.spoke() ? 0.04 : 0.035), m.z);
-                Vec3 d = w.spoke() ? r.dir(Math.cos(w.a()), 0, Math.sin(w.a())) : r.dir(w.dx(), 0, w.dz());
+                Vec3 d = r.dir(w.dirX(), 0, w.dirZ());
                 double flash = bs >= 0 ? bs < 1.5 ? 1.6 : Math.exp(-(bs - 1.5) / 2) : Math.exp(-lt / 1.5);
                 double tear = bs > 2 ? cl((bs - 2) / (SX_CUT - 1), 0, 1) * 1.05 : 0;
                 flat(stroke(w.seed(), w.skew(), w.rough(), snap(cl(lt / FORM, 0, 1)), flash, tear), p, d, w.len(),
@@ -673,7 +547,7 @@ public final class CravadaRenderer {
         }
         // stars where the first spokes finish drawing
         for (int i = 0; i < 6; i++) {
-            Stroke w = WEB.get(i * 2);
+            CravadaWeb.Stroke w = CravadaWeb.WEB.get(i * 2);
             double st = s - w.t0() - FORM + 0.05;
             if (st < 0 || st >= 5) {
                 continue;
@@ -691,114 +565,145 @@ public final class CravadaRenderer {
             if (lt < 0 || lt >= SX_CUT + 6) {
                 continue;
             }
-            double a = i * 0.81 + 0.35 + hash(i * 5.5) * 0.3, off = (hash(i * 7.1) - 0.5) * 3;
+            double a = CravadaWeb.cutAngle(i), off = CravadaWeb.cutOffset(i);
             Vec3 d = r.dir(Math.cos(a), 0, Math.sin(a));
             Vec3 n = new Vec3(-d.z, 0, d.x);
             Vec3 p = c.add(0, 0.3, 0).add(n.scale(off));
             flat(stroke((float) (900 + i * 3.3), (float) (0.7 + 0.4 * hash(i * 2.1)), (float) (0.6 + 0.3 * hash(i * 3.7)), snap(cl(lt, 0, 1)),
-                    lt < 1.5 ? 1.8 : Math.exp(-(lt - 1.5) / 2), lt > SX_CUT - 1 ? cl((lt - SX_CUT + 1) / 6, 0, 1) * 1.05 : 0), p, d, 28, 1.15 * GLOW);
+                    lt < 1.5 ? 1.8 : Math.exp(-(lt - 1.5) / 2), lt > SX_CUT - 1 ? cl((lt - SX_CUT + 1) / 6, 0, 1) * 1.05 : 0), p, d, CravadaWeb.CUT_LEN, CravadaWeb.CUT_THICK * GLOW);
         }
     }
 
-    private static Vec3 middle(Run r, Stroke w) {
-        return w.spoke() ? r.at(r.chest, Math.cos(w.a()) * w.r(), 0, Math.sin(w.a()) * w.r()) : r.at(r.chest, w.mx(), 0, w.mz());
+    private static Vec3 middle(Run r, CravadaWeb.Stroke w) {
+        return r.at(r.chest, w.midX(), 0, w.midZ());
     }
 
-    // ---------- real blocks: rubble at the impact, the burst ----------
+    // ---------- the flight: his own client moves him (smooth), both bodies keep their facing, the target tumbles ----------
 
-    private static void drawBlocks(double now) {
-        Minecraft minecraft = Minecraft.getInstance();
-        ClientLevel level = minecraft.level;
-        if (level == null) {
+    // The run this client's player is flying in, if any.
+    private static Run driving() {
+        LocalPlayer player = Minecraft.getInstance().player;
+        if (player == null) {
+            return null;
+        }
+        Run r = RUNS.get(player.getId());
+        return r != null && r.origin != null && r.trackTick >= 0 && player.tickCount - r.trackTick <= BTrack.BURST + 12 ? r : null;
+    }
+
+    private static Vec3 track(Run r, double[][] path, double age) {
+        int i = Mth.clamp((int) Math.floor(age), 0, BTrack.LENGTH), j = Math.min(i + 1, BTrack.LENGTH);
+        double u = Mth.clamp(age - Math.floor(age), 0, 1);
+        double[] a = path[i], b = path[j];
+        return r.at(r.origin, a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u, a[2] + (b[2] - a[2]) * u);
+    }
+
+    // Before the player moves this tick: his motion is set to land exactly on the track (as the server's Cravada.launch
+    // anchors him), on the floor from just before the landing.
+    public static void onPlayerTick(PlayerTickEvent.Pre event) {
+        if (!(event.getEntity() instanceof LocalPlayer player)) {
             return;
         }
-        MultiBufferSource.BufferSource source = minecraft.renderBuffers().bufferSource();
-        boolean any = false;
-        for (Run r : RUNS.values()) {
-            // rubble blocks thrown out of the ground at the impact
-            if (r.impactAt >= 0) {
-                for (int k = 0; k < 18; k++) {
-                    double h0 = hash(k * 1.7), h1 = hash(k * 3.9), h2 = hash(k * 6.1), h3 = hash(k * 8.3);
-                    double s = now - r.impactAt - h3 * 1.2;
-                    if (s < 0 || s >= 32) {
-                        continue;
-                    }
-                    double an = h0 * 6.28, sp = 0.12 + 0.14 * h1, vy = 0.22 + 0.2 * h2, ys = vy * s - 0.02 * s * s;
-                    double sc = (0.22 + 0.3 * h2) * (1 - cl((s - 24) / 8, 0, 1));
-                    double tl = vy / 0.01, ds = ys <= 0 && s > 2 ? tl : s;
-                    double rad = 0.5 + sp * Math.min(ds, tl);
-                    double y = ys <= 0 && s > 2 ? sc / 2 : Math.max(sc / 2, ys + 0.1);
-                    Vec3 p = new Vec3(r.impact.x + Math.cos(an) * rad, r.impactGround + y, r.impact.z + Math.sin(an) * rad);
-                    double rr = Math.min(s, tl) * 0.25 * (h1 - 0.5) * 2;
-                    block(minecraft, level, source, r.ground, p, sc, rr, rr * 0.7, rr * 0.4);
-                    any = true;
-                }
-            }
-            if (r.burstAt < 0 || r.pieces == null) {
-                continue;
-            }
-            double bs = now - r.burstAt;
-            if (bs >= 46) {
-                continue;
-            }
-            // the blocks the burst took: in place until their turn, then up and out, tumbling, shrinking away
-            if (r.broken) {
-                for (Piece q : r.pieces) {
-                    double st = bs - q.r() * 0.07;
-                    double x = q.at().x, y = q.at().y, z = q.at().z, rx = 0, ry = 0, rz = 0, sc = 1;
-                    if (st > 0) {
-                        double vy = (0.95 - 0.04 * q.r()) * (0.6 + 0.6 * q.h3()), vo = 0.05 + 0.1 * q.h1();
-                        double tt = Math.min(st, 2 * vy / 0.08 + 2);
-                        x += q.ux() * vo * tt;
-                        z += q.uz() * vo * tt;
-                        y += Math.max(0, vy * tt - 0.04 * tt * tt);
-                        double spin = tt * 0.2;
-                        rx = spin * (q.h2() - 0.5) * 2;
-                        rz = spin * (q.h0() - 0.5) * 2;
-                        ry = spin * (q.h3() - 0.5);
-                        sc = 1 - cl((st - 26) / 10, 0, 1);
-                    }
-                    if (sc <= 0.01) {
-                        continue;
-                    }
-                    block(minecraft, level, source, q.state(), new Vec3(x, y, z), sc, rx, ry, rz);
-                    any = true;
-                }
-            }
-            // clods of the ground thrown up all over the web
-            for (Clod q : r.clods) {
-                double st = bs - q.R() * 0.12;
-                if (st < 0 || st >= 40) {
-                    continue;
-                }
-                double vy = (0.75 - 0.035 * q.R()) * (0.6 + 0.6 * q.h2()), vo = 0.04 + 0.08 * q.h3();
-                double tt = Math.min(st, 2 * vy / 0.08);
-                double rr = q.R() + vo * tt, y = Math.max(0, vy * tt - 0.04 * tt * tt);
-                double sc = (0.45 + 0.6 * q.h4()) * 0.6 * (1 - cl((st - 28) / 10, 0, 1));
-                if (sc <= 0.01) {
-                    continue;
-                }
-                Vec3 p = r.at(q.c(), Math.cos(q.an()) * rr, y + sc / 2, Math.sin(q.an()) * rr);
-                double rot = tt * 0.22 * (q.h2() - 0.5) * 2;
-                block(minecraft, level, source, q.state(), p, sc, rot, rot * 0.6 + q.h0() * 3, rot * 0.3);
-                any = true;
-            }
+        Run r = driving();
+        if (r == null) {
+            return;
         }
-        if (any) {
-            source.endBatch();
+        int age = Math.max(0, player.tickCount - r.trackTick);
+        Vec3 at = track(r, BTrack.SUKUNA, age);
+        if (age >= BTrack.LAND - 2) {
+            at = new Vec3(at.x, Math.max(at.y, groundUnder(at, 3)), at.z);
+        }
+        player.setDeltaMovement(at.subtract(player.position()));
+        player.fallDistance = 0;
+    }
+
+    // No walking, jumping or sneaking of his own while he flies.
+    public static void onMovementInput(MovementInputUpdateEvent event) {
+        if (driving() == null) {
+            return;
+        }
+        var input = event.getInput();
+        input.leftImpulse = 0;
+        input.forwardImpulse = 0;
+        input.up = input.down = input.left = input.right = false;
+        input.jumping = false;
+        input.shiftKeyDown = false;
+    }
+
+    // The target's whole-body turn about its middle (radians, about its own side: negative tips its head back toward
+    // where he faces), at this age of the flight: the preview's tilt (thrown up tumbling, hanging from his hand, swung over
+    // his head, thrown head first, bounced over onto its back).
+    private static double tilt(double a) {
+        double launch = BTrack.LAUNCH, meet = BTrack.CATCH, wind = BTrack.WIND, rel = BTrack.RELEASE, imp = BTrack.IMPACT;
+        if (a < launch) {
+            return -0.25 * out(cl((a - BTrack.HIT) / 1.5, 0, 1));
+        }
+        if (a < meet) {
+            return -0.25 - 1.3 * cl((a - launch) / (meet - launch), 0, 1.2);
+        }
+        double caught = -0.25 - 1.3 * cl((meet - launch) / (meet - launch), 0, 1.2);
+        if (a < wind) {
+            return Mth.lerp(out(cl((a - meet) / 2, 0, 1)), caught, -0.3);
+        }
+        if (a < rel) {
+            return Mth.lerp(cl((a - wind) / (rel - wind), 0, 1), -0.3, -Math.PI * 0.95);
+        }
+        if (a < imp) {
+            return -Math.PI * (0.95 + 0.55 * cl((a - rel) / (imp - rel), 0, 1));
+        }
+        // the bounce rolls it the rest of the way over onto its back (-1.5 pi to -2.5 pi: head away from him, face up)
+        return -Math.PI * (1.5 + out(cl((a - imp) / 5, 0, 1)));
+    }
+
+    private static final java.util.Set<Integer> TURNED = new java.util.HashSet<>();
+
+    public static void onRenderPre(RenderLivingEvent.Pre<?, ?> event) {
+        if (RUNS.isEmpty() || event.isCanceled()) {
+            return;
+        }
+        LivingEntity e = event.getEntity();
+        float partial = event.getPartialTick();
+        for (Run r : RUNS.values()) {
+            if (r.origin == null || r.trackAt < 0) {
+                continue;
+            }
+            double age = now() - r.trackAt;
+            if (age < 0 || age > BTrack.BURST + 14) {
+                continue;
+            }
+            float yaw = (float) (Mth.atan2(-r.fwd.x, r.fwd.z) * Mth.RAD_TO_DEG);
+            if (e.getId() == r.id) {
+                // he faces the way he flies, whatever his camera does
+                e.yBodyRot = e.yBodyRotO = yaw;
+                return;
+            }
+            if (e.getId() != r.targetId) {
+                continue;
+            }
+            e.yBodyRot = e.yBodyRotO = yaw + 180;
+            double t = tilt(Math.min(age, BTrack.BURST));
+            // after the burst throws it, it rights itself in the air
+            if (age > BTrack.BURST) {
+                t *= 1 - out(cl((age - BTrack.BURST) / 8, 0, 1));
+            }
+            double h = e.getBbHeight() / 2;
+            double feet = Mth.lerp(partial, e.yo, e.getY());
+            // the body's middle where the track has it (lying, it is lower than standing feet allow), never in the floor
+            double centre = track(r, BTrack.TARGET, Math.min(age, BTrack.BURST)).y;
+            double want = Math.max(centre, feet + 0.15);
+            double dy = age < BTrack.IMPACT - 1 || age > BTrack.BURST ? 0 : Math.min(0, want - (feet + h));
+            var pose = event.getPoseStack();
+            pose.pushPose();
+            pose.translate(0, h + dy, 0);
+            pose.mulPose(new Quaternionf().rotateAxis((float) -t, (float) r.left.x, 0, (float) r.left.z));
+            pose.translate(0, -h, 0);
+            TURNED.add(e.getId());
+            return;
         }
     }
 
-    private static void block(Minecraft minecraft, ClientLevel level, MultiBufferSource source, BlockState state, Vec3 p, double sc, double rx,
-            double ry, double rz) {
-        PoseStack pose = new PoseStack();
-        pose.translate(p.x - cam.x, p.y - cam.y, p.z - cam.z);
-        pose.mulPose(Axis.YP.rotation((float) ry));
-        pose.mulPose(Axis.XP.rotation((float) rx));
-        pose.mulPose(Axis.ZP.rotation((float) rz));
-        pose.scale((float) sc, (float) sc, (float) sc);
-        pose.translate(-0.5, -0.5, -0.5);
-        int light = LevelRenderer.getLightColor(level, BlockPos.containing(p.x, p.y + 0.5, p.z));
-        minecraft.getBlockRenderer().renderSingleBlock(state, pose, source, light, OverlayTexture.NO_OVERLAY);
+    public static void onRenderPost(RenderLivingEvent.Post<?, ?> event) {
+        if (TURNED.remove(event.getEntity().getId())) {
+            event.getPoseStack().popPose();
+        }
     }
 }

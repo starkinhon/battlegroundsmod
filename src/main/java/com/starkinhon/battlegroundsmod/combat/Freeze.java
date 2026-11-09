@@ -23,6 +23,8 @@ public final class Freeze {
         final Entity owner;
         final IntFunction<Vec3> anchor;
         final boolean lookFree;
+        // A player moved by their own client along the same path (holdDriven): only put back when this far off.
+        final double slack;
         final float startYaw;
         final float startPitch;
         // Set by place: where this hold keeps them, over its own anchor.
@@ -30,10 +32,11 @@ public final class Freeze {
         int age;
         boolean done;
 
-        Grip(Entity owner, IntFunction<Vec3> anchor, boolean lookFree, float startYaw, float startPitch) {
+        Grip(Entity owner, IntFunction<Vec3> anchor, boolean lookFree, double slack, float startYaw, float startPitch) {
             this.owner = owner;
             this.anchor = anchor;
             this.lookFree = lookFree;
+            this.slack = slack;
             this.startYaw = startYaw;
             this.startPitch = startPitch;
         }
@@ -87,10 +90,26 @@ public final class Freeze {
     // (like Madara's Katon). Turning changes nothing for the move, which aims by positions, not by where they look.
     public static Runnable holdLookFree(LivingEntity entity, int ticks) {
         Vec3 pos = entity.position();
-        return hold(entity, ticks, age -> pos, true);
+        return hold(entity, ticks, age -> pos, true, 0);
+    }
+
+    // Carried along anchor(age) with the camera free.
+    public static Runnable holdLookFree(LivingEntity entity, int ticks, IntFunction<Vec3> anchor) {
+        return hold(entity, ticks, anchor, true, 0);
+    }
+
+    // Same, for a move whose path the player's own client also follows tick by tick (so their view glides instead of
+    // jumping with every teleport, Sukuna's B): a player is only put back when more than slack blocks off the anchor
+    // (lag puts the two a tick or so apart). Others are carried exactly.
+    public static Runnable holdDriven(LivingEntity entity, int ticks, IntFunction<Vec3> anchor, double slack) {
+        return hold(entity, ticks, anchor, true, entity instanceof ServerPlayer ? slack : 0);
     }
 
     private static Runnable hold(LivingEntity entity, int ticks, IntFunction<Vec3> anchor, boolean lookFree) {
+        return hold(entity, ticks, anchor, lookFree, 0);
+    }
+
+    private static Runnable hold(LivingEntity entity, int ticks, IntFunction<Vec3> anchor, boolean lookFree, double slack) {
         if (ticks <= 0) {
             return () -> {
             };
@@ -100,7 +119,7 @@ public final class Freeze {
             hold.hadNoAi = mob.isNoAi();
             mob.setNoAi(true);
         }
-        Grip grip = new Grip(Tasks.owner(), anchor, lookFree, entity.getYRot(), entity.getXRot());
+        Grip grip = new Grip(Tasks.owner(), anchor, lookFree, slack, entity.getYRot(), entity.getXRot());
         hold.grips.add(grip);
         Tasks.addSystem(age -> {
             if (grip.done) {
@@ -116,8 +135,16 @@ public final class Freeze {
                 // A newer hold has them: it is the one that moves them.
                 return false;
             }
-            entity.setDeltaMovement(Vec3.ZERO);
             Vec3 pos = grip.at != null ? grip.at : anchor.apply(age);
+            if (grip.slack > 0) {
+                // their client flies them; the server only steps in when they drift too far
+                if (entity.position().distanceToSqr(pos) > grip.slack * grip.slack && entity instanceof ServerPlayer player) {
+                    lookFreeTeleport(player, pos);
+                }
+                entity.resetFallDistance();
+                return false;
+            }
+            entity.setDeltaMovement(Vec3.ZERO);
             if (hold.lookFree()) {
                 // Only the position is put back; the rotation is sent as relative zero so the camera is never yanked.
                 if (entity.position().distanceToSqr(pos) > 1.0E-4) {

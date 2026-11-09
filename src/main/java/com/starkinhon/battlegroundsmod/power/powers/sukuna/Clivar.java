@@ -38,7 +38,7 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 // X: Clivar (捌), as in the 3D preview Stark approved (forja/sukuna-desmantelar, "X: Clivar"; drawn by
-// client/fx/ClivarRenderer). He sprints (~10 blocks). If he reaches the target he grabs it by the neck with one hand and
+// client/fx/ClivarRenderer). He sprints (~30 blocks: Stark 2026-11-09, 3x the preview's). If he reaches the target he grabs it by the neck with one hand and
 // lifts it; fine white lines start measuring the body until the grid closes (slowly and smoothly, 2.4 s), then it
 // snaps: the body turns into a black silhouette under the white grid for a moment and hundreds of white zigzag bits burst
 // off it. The target takes the hit (scaled by its max health); he keeps holding, winds the arm back and throws it far.
@@ -50,10 +50,13 @@ import net.neoforged.neoforge.network.PacketDistributor;
 public final class Clivar {
     // Ticks (the preview's CL_T): the crouch before the sprint, the sprint's longest, carrying to the wall, the measuring,
     // the silhouette, holding after the snap, winding the arm back.
-    public static final int PREP = 3, DASH = 6, PIN = 3, MEASURE = 48, SIL = 5, HOLD = 12, WIND = 9;
-    private static final double SPEED = 1.7, DISTANCE = 10, GRAB_REACH = 1.2, GRAB_RADIUS = 0.8, LOCK_RANGE = 14;
-    // How far ahead of him the held body is, how high it is lifted, how far a wall may be past it to pin it there.
-    private static final double REACH = 0.95, LIFT = 0.45, WALL_REACH = 4.2;
+    public static final int PREP = 3, DASH = 16, PIN = 3, MEASURE = 48, SIL = 5, HOLD = 12, WIND = 9;
+    private static final double SPEED = 1.9, DISTANCE = 30, GRAB_REACH = 1.2, GRAB_RADIUS = 0.8, LOCK_RANGE = 34;
+    // Where his gripping hand is in the hold (sukuna.clivar_pega: right arm up at 132 degrees, tools/sukuna/bake_clivar.js),
+    // blocks on a 1.8-block body: ahead, up from his feet, to his right. The target hangs from it by the neck.
+    private static final double HAND_FWD = 0.557, HAND_UP = 1.877, HAND_SIDE = 0.234;
+    // How far ahead of him the held body is, how high a body pinned to a wall is lifted, how far a wall may be past it.
+    private static final double REACH = HAND_FWD, LIFT = 0.45, WALL_REACH = 4.2;
     // The hit: a flat part plus a share of the target's max health.
     private static final float DAMAGE = 30, MAX_HEALTH_SHARE = 0.25f, GRAB_DAMAGE = 4;
     private static final int COOLDOWN = 260, MISS_COOLDOWN = 50, BROKEN_COOLDOWN = 80;
@@ -181,7 +184,9 @@ public final class Clivar {
         data.busyTicks = Math.max(data.busyTicks, thr + 6);
         Runnable freeCaster = Freeze.hold(caster, thr + 4, age -> age < pin ? stand.lerp(pinStand, smooth((age + 1) / (double) pin)) : pinStand);
         // held by the neck: lifted over 3 ticks; against a wall carried to it and pressed there
-        Vec3 held = stand.add(fwd.scale(REACH * body)).add(0, LIFT * body, 0);
+        Vec3 right = new Vec3(-fwd.z, 0, fwd.x);
+        double neck = 1.5 * target.getBbHeight() / 1.8;
+        Vec3 held = stand.add(fwd.scale(HAND_FWD * body)).add(right.scale(HAND_SIDE * body)).add(0, Math.max(0.1, HAND_UP * body - neck), 0);
         Vec3 pressed = pinFeet.add(0, LIFT * 0.6 * body, 0);
         float targetYaw = yRot + 180;
         target.setYRot(targetYaw);
@@ -196,7 +201,7 @@ public final class Clivar {
         Stun.apply(target, thr + 12);
         PowerLogic.seal(target, thr + 2);
         Capture.grabbed(target, caster, thr + 2);
-        anim(caster, "sukuna.clivar_corre");
+        anim(caster, "sukuna.clivar_pega");
         anim(target, "sukuna.clivar_preso");
         Combat.hurt(caster, target, GRAB_DAMAGE);
         Fx.sound(level, chest, SoundEvents.PLAYER_ATTACK_KNOCKBACK, 1.1f, 0.6f);
