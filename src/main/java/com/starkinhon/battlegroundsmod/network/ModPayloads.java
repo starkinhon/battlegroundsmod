@@ -616,6 +616,30 @@ public final class ModPayloads {
         }
     }
 
+    // Server -> client: Sukuna's B, the cravada (power/powers/sukuna/Cravada, drawn by client/fx/CravadaRenderer). entity:
+    // the caster. b = his forward (flat). a by kind: RUN = where the sprint starts (ticks = its length); HIT = the target's
+    // chest at the uppercut (ticks = the target's entity id: the speed lines follow it; the timings are BTrack's);
+    // RELEASE = the chest when he throws it down (ticks = the fall); IMPACT = where the body hits the ground; LAND = the
+    // body under his feet (the web grows from here); BURST = the ground that blows up (ticks = 1 when the blocks really
+    // break, gamerule soulsBlockDestruction); CANCEL ends it.
+    public record SukunaCravada(int entity, int kind, int ticks, Vec3 a, Vec3 b, int seed) implements CustomPacketPayload {
+        public static final int RUN = 0, HIT = 1, RELEASE = 2, IMPACT = 3, LAND = 4, BURST = 5, CANCEL = 6;
+        public static final Type<SukunaCravada> TYPE = payloadType("sukuna_cravada");
+        public static final StreamCodec<ByteBuf, SukunaCravada> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, SukunaCravada::entity,
+                ByteBufCodecs.VAR_INT, SukunaCravada::kind,
+                ByteBufCodecs.VAR_INT, SukunaCravada::ticks,
+                VEC3, SukunaCravada::a,
+                VEC3, SukunaCravada::b,
+                ByteBufCodecs.VAR_INT, SukunaCravada::seed,
+                SukunaCravada::new);
+
+        @Override
+        public Type<SukunaCravada> type() {
+            return TYPE;
+        }
+    }
+
     // Server -> client: Sukuna's Modelo bar (power/powers/sukuna/ModelBar, drawn by client/ModelBarHud), 0..1.
     public record SukunaModel(float value) implements CustomPacketPayload {
         public static final Type<SukunaModel> TYPE = payloadType("sukuna_model");
@@ -1431,6 +1455,8 @@ public final class ModPayloads {
                 () -> ClientHooks.sukunaStar(payload)));
         registrar.playToClient(SukunaClivar.TYPE, SukunaClivar.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.sukunaClivar(payload)));
+        registrar.playToClient(SukunaCravada.TYPE, SukunaCravada.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.sukunaCravada(payload)));
         registrar.playToClient(SukunaModel.TYPE, SukunaModel.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.sukunaModel(payload.value())));
         registrar.playToClient(FugaFx.TYPE, FugaFx.STREAM_CODEC, (payload, context) -> context.enqueueWork(

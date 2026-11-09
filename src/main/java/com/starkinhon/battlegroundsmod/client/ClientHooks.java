@@ -118,6 +118,10 @@ public final class ClientHooks {
         com.starkinhon.battlegroundsmod.client.fx.SukunaCutsRenderer.star(p.pos(), p.size(), p.seed());
     }
 
+    public static void sukunaCravada(com.starkinhon.battlegroundsmod.network.ModPayloads.SukunaCravada p) {
+        com.starkinhon.battlegroundsmod.client.fx.CravadaRenderer.event(p.entity(), p.kind(), p.ticks(), p.a(), p.b(), p.seed());
+    }
+
     public static void sukunaClivar(com.starkinhon.battlegroundsmod.network.ModPayloads.SukunaClivar p) {
         com.starkinhon.battlegroundsmod.client.fx.ClivarRenderer.event(p.entity(), p.kind(), p.ticks(), p.a(), p.b(), p.seed());
     }
@@ -173,6 +177,7 @@ public final class ClientHooks {
         com.starkinhon.battlegroundsmod.client.fx.DismantleRenderer.clear();
         com.starkinhon.battlegroundsmod.client.fx.SukunaCutsRenderer.clear();
         com.starkinhon.battlegroundsmod.client.fx.ClivarRenderer.clear();
+        com.starkinhon.battlegroundsmod.client.fx.CravadaRenderer.clear();
         com.starkinhon.battlegroundsmod.client.ModelBarHud.set(0);
         com.starkinhon.battlegroundsmod.client.fx.HakaiRenderer.clear();
         com.starkinhon.battlegroundsmod.client.fx.EnergyRenderer.clear();
