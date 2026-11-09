@@ -192,7 +192,8 @@ final class GojoTactics extends TacticsBase {
             }
         }
         // Artillery: he doesn't let them stay on him; a blink back to his range.
-        if (style == Style.ARTILHEIRO && !ai.usingMove() && ai.combo() == null && distance < 4 && blinkCooldown == 0
+        // (Not in chaos, gamerule soulbotscaoticos: no keeping distance.)
+        if (style == Style.ARTILHEIRO && !ai.chaos() && !ai.usingMove() && ai.combo() == null && distance < 4 && blinkCooldown == 0
                 && random.nextDouble() < 0.08 && blinkAway(ai, 9 + random.nextInt(5))) {
             ai.say("distancia");
             return true;

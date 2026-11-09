@@ -148,7 +148,8 @@ final class MadaraTactics extends TacticsBase {
             }
         }
         // Katon style: he doesn't let them stay on him, a jump back to his range.
-        if (style == Style.KATON && ai.combo() == null && distance < 4 && random.nextDouble() < 0.06
+        // (Not in chaos, gamerule soulbotscaoticos: no keeping distance.)
+        if (style == Style.KATON && !ai.chaos() && ai.combo() == null && distance < 4 && random.nextDouble() < 0.06
                 && Movement.tryPerform(boss, Movement.Kind.ESQUIVA, -1, 0)) {
             ai.say("distancia");
             return true;

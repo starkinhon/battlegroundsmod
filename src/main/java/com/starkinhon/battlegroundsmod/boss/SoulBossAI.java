@@ -55,6 +55,8 @@ import net.minecraft.world.phys.Vec3;
 // Every number comes from the boss file (BossSpec). /soul boss debug shows what it is thinking.
 // A boss may also have its own tactics (BossTactics, the Gojo boss) that reweigh every move for the situation, say how
 // its held techniques are used, and run steps of their own; the getters below are what they read.
+// Under /gamerule soulbotscaoticos (BossRules.chaos) the strategy is switched off and it fights like a lunatic: see
+// "chaos" below. The locks stay the same (cooldowns, stuns, busy, the human reaction before a punch): wilder, not unfair.
 public class SoulBossAI extends Goal {
     // Toggled by /soul boss debug: each boss shows its state and best options on the action bar of players nearby.
     public static boolean debug = false;
@@ -71,6 +73,18 @@ public class SoulBossAI extends Goal {
     // Degrees per tick it turns to punch, and how squarely it must face them (cosine) to throw it.
     private static final float PUNCH_TURN = 40;
     private static final double PUNCH_FACING = 0.5;
+    // Chaos (gamerule soulbotscaoticos): decisions and pauses this many times shorter, warnings and the gap between
+    // techniques shortened, calm stretches almost gone, reactions more likely, and a random burst of movement (dodge,
+    // air jump, dash, blink) checked every CHAOS_BURST_TICKS with CHAOS_BURST_CHANCE.
+    private static final int CHAOS_DECISION_DIV = 3;
+    private static final int CHAOS_PAUSE_DIV = 4;
+    private static final double CHAOS_TELL = 0.6;
+    private static final int CHAOS_GAP_DIV = 3;
+    private static final int CHAOS_CALM_DIV = 4;
+    private static final double CHAOS_REACTION = 1.4;
+    private static final double CHAOS_CLOSE = 0.8;
+    private static final int CHAOS_BURST_TICKS = 6;
+    private static final double CHAOS_BURST_CHANCE = 0.3;
     private static final ResourceLocation FAST = ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "boss_fast");
 
     private enum State { IDLE, TELL, ACTION }
@@ -128,6 +142,8 @@ public class SoulBossAI extends Goal {
     private Destructible.Attack antiTarget;
     private BossTactics tactics;
     private boolean tacticsAsked;
+    // /gamerule soulbotscaoticos, read every tick.
+    private boolean chaos;
 
     public SoulBossAI(SoulBoss boss) {
         this.boss = boss;
@@ -192,6 +208,7 @@ public class SoulBossAI extends Goal {
             seenCast = t.hasData(ModAttachments.POWER) ? t.getData(ModAttachments.POWER).lastCastTime : -1;
         }
         now = boss.level().getGameTime();
+        chaos = BossRules.chaos(boss.level());
         BossSpec spec = boss.spec();
         BossSpec.Fase fase = boss.fase();
         PowerData data = boss.powerData();
@@ -221,7 +238,7 @@ public class SoulBossAI extends Goal {
                 return;
             }
             state = State.IDLE;
-            decisionWait = Math.max(decisionWait, fase.pausaTicks());
+            decisionWait = Math.max(decisionWait, chaos ? fase.pausaTicks() / CHAOS_PAUSE_DIV : fase.pausaTicks());
         }
         if (busy) {
             keepAiming(null);
@@ -252,7 +269,8 @@ public class SoulBossAI extends Goal {
             return;
         }
         if (--decisionWait <= 0) {
-            decisionWait = Math.max(1, spec.percepcao().intervaloDecisaoTicks());
+            int interval = spec.percepcao().intervaloDecisaoTicks();
+            decisionWait = Math.max(1, chaos ? interval / CHAOS_DECISION_DIV : interval);
             decide(spec, fase, distance);
             if (state != State.IDLE || !plan.isEmpty()) {
                 return;
@@ -279,6 +297,11 @@ public class SoulBossAI extends Goal {
             boolean nowFast = !fast;
             int min = nowFast ? ritmo.rapidoMinTicks() : ritmo.calmoMinTicks();
             int max = nowFast ? ritmo.rapidoMaxTicks() : ritmo.calmoMaxTicks();
+            if (chaos && !nowFast) {
+                // Chaos: barely a breath of calm before running again.
+                min /= CHAOS_CALM_DIV;
+                max /= CHAOS_CALM_DIV;
+            }
             setPace(nowFast, min + random.nextInt(Math.max(1, max - min + 1)));
         }
         if (punishLeft > 0) {
@@ -392,7 +415,7 @@ public class SoulBossAI extends Goal {
 
     // Reactions wait reacaoTicks like a human would, and only some happen (chance x the phase's chanceReacao).
     private void schedule(Reaction r, double chance, BossSpec.Fase fase) {
-        if (random.nextDouble() >= chance * fase.chanceReacao()) {
+        if (random.nextDouble() >= chance * fase.chanceReacao() * (chaos ? CHAOS_REACTION : 1)) {
             return;
         }
         if (reaction == null || r == Reaction.COUNTER) {
@@ -537,11 +560,14 @@ public class SoulBossAI extends Goal {
 
     private void decide(BossSpec spec, BossSpec.Fase fase, double distance) {
         List<Option> options = options(spec, fase, distance);
-        // Waiting is an option too: less aggressive phases breathe more between moves.
-        options.add(new Option("esperar", (1 - fase.agressividade()) * 0.6, false));
+        if (!chaos) {
+            // Waiting is an option too: less aggressive phases breathe more between moves. (Chaos never waits.)
+            options.add(new Option("esperar", (1 - fase.agressividade()) * 0.6, false));
+        }
         options.sort(Comparator.comparingDouble(Option::score).reversed());
         thinking = summary(options);
-        Option pick = pick(options, spec.percepcao().aleatoriedade());
+        // Chaos: always a roll, never "the best one".
+        Option pick = pick(options, chaos ? 1 : spec.percepcao().aleatoriedade());
         if (pick == null || pick.name().equals("esperar")) {
             return;
         }
@@ -564,6 +590,7 @@ public class SoulBossAI extends Goal {
             if (score > 0 && tactics() != null) {
                 score = tactics().weigh(this, name, false, score);
             }
+            score = crazy(score);
             if (score > 0) {
                 options.add(new Option(name, score, false));
             }
@@ -585,12 +612,23 @@ public class SoulBossAI extends Goal {
                 if (score > 0 && tactics() != null) {
                     score = tactics().weigh(this, name, true, score);
                 }
+                score = crazy(score);
                 if (score > 0 && !recent.contains(name)) {
                     options.add(new Option(name, score, true));
                 }
             }
         }
         return options;
+    }
+
+    // Chaos: what the reading of the fight said only decides whether a move is ALLOWED (0 stays 0: out of range, on
+    // cooldown, an ult outside its moment, the other sword's forms). How much it is wanted is mostly luck, flattened so
+    // a weak option is still picked often.
+    private double crazy(double score) {
+        if (!chaos || score <= 0) {
+            return score;
+        }
+        return Math.pow(score, 0.25) * (0.3 + 1.4 * random.nextDouble());
     }
 
     private double openerScore(BossSpec spec, BossSpec.Fase fase, String step, double distance) {
@@ -776,7 +814,7 @@ public class SoulBossAI extends Goal {
             return false;
         }
         move = name;
-        tellTotal = Math.max(0, (int) Math.round(skill.avisoTicks() * boss.fase().multAviso()));
+        tellTotal = Math.max(0, (int) Math.round(skill.avisoTicks() * boss.fase().multAviso() * (chaos ? CHAOS_TELL : 1)));
         tellLeft = tellTotal;
         boss.getNavigation().stop();
         boss.getMoveControl().strafe(0, 0);
@@ -800,7 +838,8 @@ public class SoulBossAI extends Goal {
     private boolean execute(BossSpec spec) {
         BossSpec.Skill skill = spec.skills().get(move);
         face(aimPoint(skill), 360);
-        if (tactics() != null) {
+        if (tactics() != null && !chaos) {
+            // (Chaos: no plan for the charge, each technique uses its own random.)
             BossOrder.give(boss, tactics().order(this, move));
         }
         boolean cast = PowerLogic.cast(boss, skill.slot());
@@ -820,7 +859,7 @@ public class SoulBossAI extends Goal {
             boss.swing(InteractionHand.MAIN_HAND);
         }
         if (!basic(skill) && !(tactics() != null && tactics().basic(move))) {
-            techniqueGap = spec.percepcao().techniqueGap();
+            techniqueGap = chaos ? spec.percepcao().techniqueGap() / CHAOS_GAP_DIV : spec.percepcao().techniqueGap();
         }
         remember(move);
         state = State.ACTION;
@@ -1014,11 +1053,13 @@ public class SoulBossAI extends Goal {
             return;
         }
         if (--moodAge <= 0) {
-            moodAge = Math.max(20, spec.percepcao().trocarHumorTicks());
-            mood = random.nextDouble() < fase.agressividade() ? Mood.CLOSE : Mood.RANGE;
+            moodAge = chaos ? Math.max(8, spec.percepcao().trocarHumorTicks() / CHAOS_DECISION_DIV)
+                    : Math.max(20, spec.percepcao().trocarHumorTicks());
+            double aggression = chaos ? Math.max(CHAOS_CLOSE, fase.agressividade()) : fase.agressividade();
+            mood = random.nextDouble() < aggression ? Mood.CLOSE : Mood.RANGE;
         }
         boolean close = mood == Mood.CLOSE || punishLeft > 0 || targetStunned();
-        if (Susanoo.isReady(target)) {
+        if (Susanoo.isReady(target) && !chaos) {
             // Their counter is up: back off and wait it out.
             close = false;
         }
@@ -1030,9 +1071,14 @@ public class SoulBossAI extends Goal {
         if (heightGap >= spec.puloDuplo().alturaMin() && horizontal(distance) <= spec.puloDuplo().distanciaMax() && jump()) {
             return;
         }
+        if (chaos && sees && boss.tickCount % CHAOS_BURST_TICKS == 0 && random.nextDouble() < CHAOS_BURST_CHANCE
+                && burst(spec, distance)) {
+            return;
+        }
         if (close && sees && boss.tickCount % SHADOW_CHECK_TICKS == 0) {
             BossSpec.PassoSombra sombra = spec.passoSombra();
-            if (random.nextDouble() < (fast ? sombra.chance() : sombra.chanceCalmo()) && shadowStep(spec, distance)) {
+            double chance = fast ? sombra.chance() : sombra.chanceCalmo();
+            if (random.nextDouble() < (chaos ? chance * 2 : chance) && shadowStep(spec, distance)) {
                 return;
             }
         }
@@ -1091,6 +1137,48 @@ public class SoulBossAI extends Goal {
         punch();
     }
 
+    // Chaos: a move out of nowhere between attacks, so the next second can't be read. Each one has its own cooldown
+    // (Movement, dash, shadow step), so a burst that isn't ready simply doesn't happen.
+    private boolean burst(BossSpec spec, double distance) {
+        switch (random.nextInt(5)) {
+            case 0 -> {
+                face(Combat.center(target), 360);
+                if (Movement.tryPerform(boss, Movement.Kind.DESVIO, 0, random.nextBoolean() ? 1 : -1)) {
+                    thinking = "caos: esquiva do lado";
+                    return true;
+                }
+            }
+            case 1 -> {
+                face(Combat.center(target), 360);
+                if (Movement.tryPerform(boss, Movement.Kind.ESQUIVA, -1, 0)) {
+                    jumpPending = true;
+                    jumpBack = random.nextBoolean();
+                    thinking = "caos: pra tras e pro alto";
+                    return true;
+                }
+            }
+            case 2 -> {
+                if (jump()) {
+                    thinking = "caos: pulo duplo";
+                    return true;
+                }
+            }
+            case 3 -> {
+                if (distance > spec.distancias().soco() + 1 && dash(spec)) {
+                    thinking = "caos: investida";
+                    return true;
+                }
+            }
+            default -> {
+                if (shadowStep(spec, Math.max(distance, spec.passoSombra().distanciaMin()))) {
+                    thinking = "caos: passo sombra";
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     private void approach(BossSpec spec, double distance, boolean run) {
         run &= !spec.god();
         boss.getLookControl().setLookAt(target, 30, 30);
@@ -1132,6 +1220,9 @@ public class SoulBossAI extends Goal {
         boss.hasImpulse = true;
         boss.hurtMarked = true;
         dashCooldown = fast ? spec.ritmo().recargaInvestidaRapido() : investida.recargaTicks();
+        if (chaos) {
+            dashCooldown /= 2;
+        }
         BossFx.dash(level(), boss, BossFx.color(boss.spec().intro().cor()));
         thinking = "investida";
         return true;
@@ -1157,7 +1248,7 @@ public class SoulBossAI extends Goal {
             face(Combat.center(target), 360);
             Intangible.hold(boss, 3);
             BossFx.shadowStep(level(), from, spot, BossFx.color(spec.intro().cor()));
-            shadowCooldown = sombra.recargaTicks();
+            shadowCooldown = chaos ? sombra.recargaTicks() / 2 : sombra.recargaTicks();
             punchCooldown = 0;
             lastBossPos = boss.position();
             punchReadyAt = now + 2;
@@ -1266,6 +1357,11 @@ public class SoulBossAI extends Goal {
 
     public boolean usingMove() {
         return state != State.IDLE;
+    }
+
+    // /gamerule soulbotscaoticos: no strategy, pure chaos. Tactics skip their waiting and keeping distance under it.
+    public boolean chaos() {
+        return chaos;
     }
 
     public boolean isOff(String name) {

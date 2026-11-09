@@ -14,11 +14,18 @@ import net.minecraft.world.level.Level;
 // over time, the final ult before dying, the grab line in the chat, the Roxo Irrestrito title). false (default, while
 // there are no boss fights yet): bosses are plain mobs that use every move they have from the start, with no titles,
 // bar, entrance, phase changes or final ult.
+// /gamerule soulbotscaoticos true: every bot and boss forgets its strategy and fights like a lunatic (SoulBossAI.chaos):
+// decisions several times faster, no waiting between moves, the move picked almost at random among everything it may
+// use (the tactics only still say what is FORBIDDEN, like an ult outside its moment), short warnings, always running,
+// random dodges, air jumps, dashes and blinks in between. Every cooldown, stun, busy lock and reaction delay stays the
+// same, so it is wilder, not unfair. false (default): the strategy as it was.
 public final class BossRules {
     public static final GameRules.Key<GameRules.BooleanValue> ALL_BOSSES_TIER0 =
             GameRules.register("allbossestier0", GameRules.Category.MOBS, GameRules.BooleanValue.create(false));
     public static final GameRules.Key<GameRules.BooleanValue> BOSSFIGHT =
             GameRules.register("soulbossfight", GameRules.Category.MOBS, GameRules.BooleanValue.create(false));
+    public static final GameRules.Key<GameRules.BooleanValue> CHAOS =
+            GameRules.register("soulbotscaoticos", GameRules.Category.MOBS, GameRules.BooleanValue.create(false));
 
     private BossRules() {
     }
@@ -33,6 +40,10 @@ public final class BossRules {
 
     public static boolean bossfight(Level level) {
         return level.getGameRules().getBoolean(BOSSFIGHT);
+    }
+
+    public static boolean chaos(Level level) {
+        return level.getGameRules().getBoolean(CHAOS);
     }
 
     public static int tier(Level level, BossSpec spec) {

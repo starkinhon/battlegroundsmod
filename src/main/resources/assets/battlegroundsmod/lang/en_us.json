@@ -203,6 +203,8 @@
   "gamerule.soulsKokushiboImpact.description": "Kokushibo's awakened forms: impact frames, screen effects and slow motion. Off: as they were before (/soul effectsimpactkokushibo).",
   "gamerule.soulbossfight": "Souls boss fights",
   "gamerule.soulbossfight.description": "On: bosses have entrance and phase titles, boss bar, phases and the final ult. Off: they are plain mobs using all their moves from the start.",
+  "gamerule.soulbotscaoticos": "Souls chaotic bots",
+  "gamerule.soulbotscaoticos.description": "On: bots and bosses drop their strategy and fight in chaos: much faster decisions, no waiting, almost random moves, short warnings, always running, random dodges, jumps, dashes and blinks. Cooldowns, stuns and human reaction stay the same.",
   "power.battlegroundsmod.strongest": "The Strongest",
   "power.battlegroundsmod.strongest.desc": "Throughout heaven and earth, he alone is the honored one.",
   "ability.battlegroundsmod.strongest.0": "Blue",

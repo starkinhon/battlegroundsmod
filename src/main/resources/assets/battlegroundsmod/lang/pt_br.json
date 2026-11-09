@@ -203,6 +203,8 @@
   "gamerule.soulsKokushiboImpact.description": "Formas despertas do Kokushibo: impact frames, efeitos de tela e câmera lenta. Desligado: como eram antes (/soul effectsimpactkokushibo).",
   "gamerule.soulbossfight": "Bossfights do Souls",
   "gamerule.soulbossfight.description": "Ligado: bosses com títulos de entrada e de fase, barra de boss, fases e ult final. Desligado: viram mobs normais usando todos os golpes desde o início.",
+  "gamerule.soulbotscaoticos": "Bots caóticos do Souls",
+  "gamerule.soulbotscaoticos.description": "Ligado: bots e bosses esquecem a estratégia e lutam no caos: decidem muito mais rápido, não esperam, escolhem golpes quase ao acaso, avisos curtos, correm sempre e soltam esquivas, pulos, investidas e teleportes do nada. Recargas, stun e reação humana continuam iguais.",
   "power.battlegroundsmod.strongest": "O Mais Forte",
   "power.battlegroundsmod.strongest.desc": "Por toda a terra e céu, só ele é o honrado.",
   "ability.battlegroundsmod.strongest.0": "Azul",
