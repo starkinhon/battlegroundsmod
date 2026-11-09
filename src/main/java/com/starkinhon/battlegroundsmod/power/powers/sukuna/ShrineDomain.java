@@ -216,12 +216,13 @@ public final class ShrineDomain {
         run(active, level);
     }
 
-    // The Sukuna whose Santuário opened at most window ticks ago with other inside its raio (a Gojo who can still
-    // answer with his own), or null.
+    // The Sukuna whose Santuário opened at most window ticks ago with other inside its raio, or already taken up into
+    // its space (a Gojo who can still answer with his own), or null.
     public static LivingEntity openedNear(LivingEntity other, int window) {
         for (Active active : ACTIVE) {
             if (active.caster != other && !active.closing && !active.cancelled && !active.yielded && active.caster.isAlive()
-                    && active.age <= window && active.level == other.level() && other.position().distanceTo(active.center) <= RADIUS) {
+                    && active.age <= window && active.level == other.level()
+                    && (other.position().distanceTo(active.center) <= RADIUS || active.back.containsKey(other))) {
                 return active.caster;
             }
         }

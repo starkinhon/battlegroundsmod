@@ -120,6 +120,9 @@ public final class InfiniteVoid {
     }
 
     public static boolean use(LivingEntity caster, ServerLevel level) {
+        // Answering a Santuário that just opened (the Duelo de Expansões): it gives way first, so everyone is back in the
+        // world before the domain reads where it opens.
+        LivingEntity answered = com.starkinhon.battlegroundsmod.power.powers.duel.DomainDuel.answering(caster);
         PowerData data = caster.getData(ModAttachments.POWER);
         boolean awakened = data.awakened;
         DominioSpec spec = DominioSpec.get(awakened);
@@ -296,7 +299,7 @@ public final class InfiniteVoid {
             return false;
         });
         // A Sukuna whose Santuário opened just before (or who answers within the window) fights Gojo for the domain.
-        com.starkinhon.battlegroundsmod.power.powers.duel.DomainDuel.gojoOpened(caster, level);
+        com.starkinhon.battlegroundsmod.power.powers.duel.DomainDuel.gojoOpened(caster, level, answered);
         return true;
     }
 
