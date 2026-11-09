@@ -9,6 +9,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 // Sukuna's thrown cuts (the Z and its chant, the Dismantles of his base moves) cut the world they fly through as well
@@ -52,7 +53,7 @@ public final class SukunaCarve {
                     if (caster.getBoundingBox().inflate(0.3).contains(q)) {
                         continue;
                     }
-                    if (carve(level, q, done)) {
+                    if (carve(level, caster, q, done)) {
                         budget--;
                     }
                 }
@@ -71,14 +72,29 @@ public final class SukunaCarve {
             if (caster.getBoundingBox().inflate(0.3).contains(p)) {
                 continue;
             }
-            if (carve(level, p, done)) {
+            if (carve(level, caster, p, done)) {
                 budget--;
             }
         }
     }
 
-    private static boolean carve(ServerLevel level, Vec3 p, LongOpenHashSet done) {
+    // The ground he stands on: blocks under his feet (any depth), up to FLOOR blocks around him, are never cut, so his own
+    // Desmantelares don't take the floor from under him (Stark, 2026-11-09). Read where he is when the cut gets there.
+    public static final double FLOOR = 1.5;
+
+    public static boolean underFeet(LivingEntity caster, BlockPos pos) {
+        if (caster == null || pos.getY() + 1 > caster.getY() + 0.01) {
+            return false;
+        }
+        AABB box = caster.getBoundingBox().inflate(FLOOR, 0, FLOOR);
+        return pos.getX() + 1 > box.minX && pos.getX() < box.maxX && pos.getZ() + 1 > box.minZ && pos.getZ() < box.maxZ;
+    }
+
+    private static boolean carve(ServerLevel level, LivingEntity caster, Vec3 p, LongOpenHashSet done) {
         BlockPos pos = BlockPos.containing(p);
+        if (underFeet(caster, pos)) {
+            return false;
+        }
         if (!done.add(pos.asLong()) || !level.isLoaded(pos) || level.isOutsideBuildHeight(pos)) {
             return false;
         }
