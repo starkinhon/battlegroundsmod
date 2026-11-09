@@ -30,6 +30,8 @@ jobs:
           ./gradlew dependencies --configuration runtimeClasspath > deps.txt
           ! grep -n 'FAILED' deps.txt
           grep -n 'freecam' deps.txt
+          grep -n 'maven.modrinth:neat' deps.txt
+          grep -n 'maven.modrinth:shoulder-surfing-reloaded' deps.txt
 
       # The mod jar, downloadable from the run page (Actions tab > run > Artifacts).
       - name: Upload mod jar

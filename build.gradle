@@ -33,6 +33,11 @@ repositories {
         url = "https://cursemaven.com"
         content { includeGroup "curse.maven" }
     }
+    // Modrinth files as Maven dependencies, also only for dev-only tools below.
+    maven {
+        url = "https://api.modrinth.com/maven"
+        content { includeGroup "maven.modrinth" }
+    }
 }
 
 base {
@@ -126,6 +131,10 @@ dependencies {
     // It is client-only, so the dedicated server smoke test in CI passes -PnoDevMods to leave it out.
     if (!project.hasProperty('noDevMods')) {
         localRuntime "curse.maven:freecam-by-zergatul-618947:5591136"
+        // Neat by Vazkii (health bars over mobs), version 1.21.1-47-neoforge (Modrinth id kALoScYM).
+        localRuntime "maven.modrinth:neat:kALoScYM"
+        // Shoulder Surfing Reloaded (over-the-shoulder camera), version 1.21.1-5.2.0+neoforge (Modrinth id woekHsje).
+        localRuntime "maven.modrinth:shoulder-surfing-reloaded:woekHsje"
     }
 
     // Example optional mod dependency with JEI
