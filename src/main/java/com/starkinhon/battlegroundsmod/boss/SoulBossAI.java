@@ -743,7 +743,7 @@ public class SoulBossAI extends Goal {
     // Off cooldown and, for a special technique, past the gap since the last one.
     private boolean ready(BossSpec spec, String name) {
         BossSpec.Skill skill = spec.skills().get(name);
-        return off(spec, name) && (techniqueGap <= 0 || basic(skill));
+        return off(spec, name) && (techniqueGap <= 0 || basic(skill) || tactics() != null && tactics().basic(name));
     }
 
     // Only the skill's own cooldown: the defenses (counter, hakaizinho on an attack) don't wait for the gap.
@@ -819,7 +819,7 @@ public class SoulBossAI extends Goal {
         if ("golpe".equals(skill.tipo()) || "barragem".equals(skill.tipo())) {
             boss.swing(InteractionHand.MAIN_HAND);
         }
-        if (!basic(skill)) {
+        if (!basic(skill) && !(tactics() != null && tactics().basic(move))) {
             techniqueGap = spec.percepcao().techniqueGap();
         }
         remember(move);

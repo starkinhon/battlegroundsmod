@@ -87,10 +87,10 @@
     "desmantelar": {
       "slot": 0,
       "tipo": "alcance",
-      "peso": 1.6,
-      "recargaTicks": 60,
-      "recargaMaxTicks": 110,
-      "avisoTicks": 3,
+      "peso": 2.4,
+      "recargaTicks": 25,
+      "recargaMaxTicks": 45,
+      "avisoTicks": 2,
       "distanciaMin": 0,
       "distanciaMax": 34,
       "giroGrausPorTick": 30,
@@ -223,6 +223,7 @@
         "cortes",
         "aproximar",
         "soco",
+        "desmantelar",
         "soco",
         "barragem"
       ]
@@ -231,6 +232,7 @@
       "peso": 1.0,
       "passos": [
         "soco",
+        "desmantelar",
         "soco",
         "soco",
         "forte"
@@ -277,6 +279,15 @@
       "passos": [
         "corte_mundial"
       ]
+    },
+    "recua_e_corta": {
+      "peso": 1.3,
+      "passos": [
+        "soco",
+        "soco",
+        "recuar",
+        "desmantelar"
+      ]
     }
   },
   "fases": [
@@ -292,7 +303,8 @@
       "combos": [
         "corte_e_porrada",
         "porrada",
-        "desmonte"
+        "desmonte",
+        "recua_e_corta"
       ],
       "agressividade": 0.6,
       "multRecarga": 1.0,
@@ -328,7 +340,8 @@
         "porrada_e_fuga",
         "clivar_e_fuga",
         "cravada_e_fuga",
-        "mundo"
+        "mundo",
+        "recua_e_corta"
       ],
       "agressividade": 0.85,
       "multRecarga": 1.0,
