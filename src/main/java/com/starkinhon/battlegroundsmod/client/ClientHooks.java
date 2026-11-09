@@ -95,6 +95,10 @@ public final class ClientHooks {
         com.starkinhon.battlegroundsmod.client.fx.SusanooArm.update(casterId, targetId, phase, a, b);
     }
 
+    public static void sukunaCut(net.minecraft.world.phys.Vec3 origin, net.minecraft.world.phys.Vec3 velocity, net.minecraft.world.phys.Vec3 span, float reach, int seed) {
+        com.starkinhon.battlegroundsmod.client.fx.DismantleRenderer.add(origin, velocity, span, reach, seed);
+    }
+
     public static void fuga(int casterId, int phase, net.minecraft.world.phys.Vec3 pos, net.minecraft.world.phys.Vec3 dir) {
         com.starkinhon.battlegroundsmod.client.fx.FugaRenderer.receive(casterId, phase, pos, dir);
     }
@@ -139,6 +143,7 @@ public final class ClientHooks {
         MeteorRenderer.clear();
         com.starkinhon.battlegroundsmod.client.fx.KatonBallRenderer.clear();
         com.starkinhon.battlegroundsmod.client.fx.FugaRenderer.clear();
+        com.starkinhon.battlegroundsmod.client.fx.DismantleRenderer.clear();
         com.starkinhon.battlegroundsmod.client.fx.HakaiRenderer.clear();
         com.starkinhon.battlegroundsmod.client.fx.EnergyRenderer.clear();
         com.starkinhon.battlegroundsmod.client.fx.SphereRenderer.clear();
