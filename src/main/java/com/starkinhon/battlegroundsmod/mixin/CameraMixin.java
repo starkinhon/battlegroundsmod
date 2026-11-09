@@ -36,7 +36,9 @@ public abstract class CameraMixin {
             float partialTick, CallbackInfo ci) {
         // A cutscene from the Editor de Cutscenes has the camera to itself (null between its stretches: the player's view).
         // Sukuna's Expansão de Domínio holds the camera of everyone caught in it while its cutscene plays.
-        FaceCutscene.Shot shot = com.starkinhon.battlegroundsmod.client.fx.SukunaDomainScene.cutscene() ? com.starkinhon.battlegroundsmod.client.fx.SukunaDomainScene.shot(partialTick)
+        // The Duelo de Expansões holds the camera of the two (and of those watching inside) on their faces.
+        FaceCutscene.Shot shot = com.starkinhon.battlegroundsmod.client.fx.DuelScene.cutscene() ? com.starkinhon.battlegroundsmod.client.fx.DuelScene.shot(partialTick)
+                : com.starkinhon.battlegroundsmod.client.fx.SukunaDomainScene.cutscene() ? com.starkinhon.battlegroundsmod.client.fx.SukunaDomainScene.shot(partialTick)
                 : CutscenePlayer.active() ? CutscenePlayer.shot(partialTick)
                 : BossCutscene.active() ? BossCutscene.shot(partialTick)
                 : HakaiCutscene.active() ? HakaiCutscene.shot(partialTick)

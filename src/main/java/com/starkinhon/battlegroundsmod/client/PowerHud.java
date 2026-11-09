@@ -52,7 +52,7 @@ public final class PowerHud {
 
     public static void render(GuiGraphics graphics, DeltaTracker deltaTracker) {
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.options.hideGui || minecraft.player == null || cutscene()) {
+        if (minecraft.options.hideGui || minecraft.player == null || cutscene() || com.starkinhon.battlegroundsmod.client.fx.DuelScene.cutscene()) {
             return;
         }
         PowerData data = minecraft.player.getData(ModAttachments.POWER);

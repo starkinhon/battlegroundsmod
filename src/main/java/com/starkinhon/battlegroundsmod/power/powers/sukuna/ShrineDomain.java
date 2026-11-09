@@ -105,6 +105,10 @@ public final class ShrineDomain {
         boolean inside;
         boolean cancelled;
         boolean closing;
+        // Gave way to a Duelo de Expansões (duel/DomainDuel): gone without a trace, the duel goes on from here.
+        boolean yielded;
+        // Ticks already gone by when it started (the domain the duel's winner gets starts after the wave).
+        int skip;
         int age;
         int closeAt = -1;
         int deadAt = -1;
@@ -158,6 +162,10 @@ public final class ShrineDomain {
                 return false;
             }
         }
+        if (com.starkinhon.battlegroundsmod.power.powers.duel.DomainDuel.sukunaOpened(caster, level)) {
+            // Gojo's domain opened just before, with Sukuna inside its reach: the two fight for it (duel/DomainDuel).
+            return true;
+        }
         PowerData data = caster.getData(ModAttachments.POWER);
         Active active = new Active(caster, level, caster.position());
         ACTIVE.add(active);
@@ -167,8 +175,64 @@ public final class ShrineDomain {
         send(active, M_WAVE, Math.round(caster.getYRot() * 10), -1);
         PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new ModPayloads.PlaySkillAnimation(caster.getId(), SKILL, false));
         level.playSound(null, caster.getX(), caster.getY(), caster.getZ(), SoundEvents.WARDEN_SONIC_CHARGE, SoundSource.PLAYERS, 1.4f, 0.6f);
+        run(active, level);
+        return true;
+    }
 
-        Tasks.add(age -> {
+    // Sukuna won the Duelo de Expansões: his Santuário takes over right away, the fast version (no wave, no cutscene:
+    // the black aura and the six eyes, then the cutting), with Gojo and everyone who was in Gojo's domain caught in it.
+    public static void startWon(LivingEntity caster, ServerLevel level, java.util.Collection<LivingEntity> victims) {
+        Active active = new Active(caster, level, caster.position());
+        active.quick = true;
+        active.skip = WAVE;
+        ACTIVE.add(active);
+        for (LivingEntity v : victims) {
+            if (v != caster && v.isAlive() && !v.isRemoved() && v.level() == level) {
+                catchOne(active, v, false);
+            }
+        }
+        PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new ModPayloads.PlaySkillAnimation(caster.getId(), SKILL, false));
+        level.playSound(null, caster.getX(), caster.getY(), caster.getZ(), SoundEvents.WARDEN_SONIC_BOOM, SoundSource.PLAYERS, 1.6f, 0.5f);
+        run(active, level);
+    }
+
+    // The Sukuna whose Santuário opened at most window ticks ago with other inside its raio (a Gojo who can still
+    // answer with his own), or null.
+    public static LivingEntity openedNear(LivingEntity other, int window) {
+        for (Active active : ACTIVE) {
+            if (active.caster != other && !active.closing && !active.cancelled && !active.yielded && active.caster.isAlive()
+                    && active.age <= window && active.level == other.level() && other.position().distanceTo(active.center) <= RADIUS) {
+                return active.caster;
+            }
+        }
+        return null;
+    }
+
+    // Gives way to the duel: everything it started stops (its holds, the clients' scene) and it is gone, no burnout.
+    public static void yieldTo(LivingEntity caster) {
+        for (Active active : List.copyOf(ACTIVE)) {
+            if (active.caster != caster || active.closing || active.yielded) {
+                continue;
+            }
+            active.yielded = true;
+            release(active);
+            // Sukuna himself, held in his sign by it: let go of (the duel holds him its own way).
+            Freeze.freeAll(caster);
+            caster.removeEffect(ModEffects.ENRAIZADO);
+            caster.getData(ModAttachments.POWER).busyTicks = 0;
+            comeBack(active);
+            send(active, M_GONE, 0, -1);
+            ACTIVE.remove(active);
+        }
+    }
+
+    private static void run(Active active, ServerLevel level) {
+        LivingEntity caster = active.caster;
+        Tasks.add(raw -> {
+            if (active.yielded) {
+                return true;
+            }
+            int age = raw + active.skip;
             active.age = age;
             boolean gone = !caster.isAlive() || caster.isRemoved() || caster.level() != level;
             int end = WAVE + (active.quick ? (CUT_RED - QUICK_FROM) : CUT_PLAY) + FREE_TICKS;
@@ -199,7 +263,6 @@ public final class ShrineDomain {
             }
             return false;
         });
-        return true;
     }
 
     private static void holdCaster(Active active, int ticks) {
