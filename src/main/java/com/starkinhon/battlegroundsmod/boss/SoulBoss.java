@@ -205,6 +205,8 @@ public abstract class SoulBoss extends Monster {
         } else if (allTier0(level) != tier0Applied) {
             applyStats(level, spec);
         }
+        // The tier's Armadura, like the players' (their own file's armor stays under it).
+        com.starkinhon.battlegroundsmod.power.Tiers.applyDefense(this);
         PowerLogic.tick(this);
         Movement.tick(this);
         BossFalas.tick(this);

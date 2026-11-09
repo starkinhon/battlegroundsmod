@@ -17,7 +17,11 @@ import net.minecraft.world.entity.player.Player;
 // Power tiers (fandom power scale): 0 Deus ... 10 Humano. Each tier sets health and speed, kept as saved attribute
 // modifiers on the fighter (so health survives a relog) and refreshed by apply (players every tick; bosses take their
 // health from their file). The moves' damage scales with the attacker's tier (damageMultiplier) and the target's Escudo
-// shrinks blows from lower tiers (shield, in PowerEvents.onIncomingDamage). Values in souls_skills/padrao.tiers.json.
+// shrinks blows from lower tiers (shield, in PowerEvents.onIncomingDamage). Against the same tier the Escudo does nothing,
+// so every fighter also gets its tier's Armadura (the real armor attribute, the bar over the hotbar: stops physical
+// blows like punches, less so the heavy ones) and Resistencia (a share of every blow, techniques too), like the
+// Jujutsu Craft's armor and Resistance (Stark, 2026-11-09: a Tier 0 died to a Tier 0's punches in 10 s). Players and
+// bosses alike (defense). Values in souls_skills/padrao.tiers.json.
 public final class Tiers {
     public static final int DEUS = 0;
     public static final int HUMANO = 10;
@@ -25,6 +29,7 @@ public final class Tiers {
     private static final ResourceLocation HEALTH = id("tier_health");
     private static final ResourceLocation STRENGTH = id("tier_strength");
     private static final ResourceLocation ARMOR = id("tier_armor");
+    private static final ResourceLocation DEFENSE_ARMOR = id("tier_defense_armor");
     private static final ResourceLocation WALK = id("tier_walk");
     private static final ResourceLocation SPRINT = id("tier_sprint");
 
@@ -87,6 +92,30 @@ public final class Tiers {
         return (float) Math.max(0, kept);
     }
 
+    // Armadura points of this tier: armaduraPorTier per tier above human (Tier 0 = 20, a full bar).
+    public static double armor(int tier) {
+        return Math.max(0, TierSpec.get().armaduraPorTier() * steps(tier));
+    }
+
+    // Share of every blow this tier's Resistencia takes off: resistenciaPorTier per tier above human, at most 90%.
+    public static double resistance(int tier) {
+        return Mth.clamp(TierSpec.get().resistenciaPorTier() * steps(tier), 0, 0.9);
+    }
+
+    // What is left of a blow after the target's Resistencia. Void, /kill and the like go through.
+    public static float resist(LivingEntity target, net.minecraft.world.damagesource.DamageSource source, float amount) {
+        // A plain mob has no tier (and gets no attachment made here): a human.
+        if (amount <= 0 || !target.hasData(ModAttachments.POWER) || source.is(net.minecraft.tags.DamageTypeTags.BYPASSES_RESISTANCE)) {
+            return amount;
+        }
+        return (float) (amount * (1 - resistance(of(target))));
+    }
+
+    // The tier's Armadura on the armor attribute (on top of worn armor and a boss file's own). Cheap when unchanged.
+    public static void applyDefense(LivingEntity entity) {
+        set(entity, Attributes.ARMOR, DEFENSE_ARMOR, armor(of(entity)), AttributeModifier.Operation.ADD_VALUE);
+    }
+
     // Puts this fighter's tier bonuses on its attributes. Cheap when nothing changed. Health keeps its fraction when
     // the max changes, so a new tier doesn't leave the player at 20 of 400.
     public static void apply(LivingEntity entity) {
@@ -97,6 +126,7 @@ public final class Tiers {
         // The old strength and armor bonuses: the tier's damage and the Escudo do that now (taken off old saves).
         set(entity, Attributes.ATTACK_DAMAGE, STRENGTH, 0, AttributeModifier.Operation.ADD_VALUE);
         set(entity, Attributes.ARMOR, ARMOR, 0, AttributeModifier.Operation.ADD_VALUE);
+        applyDefense(entity);
         int speedSteps = Math.min(steps, HUMANO - spec.tierVelocidadeMax());
         set(entity, Attributes.MOVEMENT_SPEED, WALK, spec.velocidadeAndarPorTier() * speedSteps, AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
         // Speed potion levels are +20% each, on the base speed like the potion.
