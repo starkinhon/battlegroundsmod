@@ -1319,8 +1319,8 @@ public final class SukunaDomainScene {
             m.safeGetUniform("Red").set((float) (red * NEVOA));
             // while playing the air has to stay clear enough to fight in (test 2026-11-09: floor and sky read as one red)
             double play = sm(T_PLAY, T_PLAY + 20, s);
-            m.safeGetUniform("Low").set((float) (low * (1 - 0.5 * play)));
-            m.safeGetUniform("Wind").set((float) (wind * (1 - 0.6 * play)));
+            m.safeGetUniform("Low").set((float) (low * (1 - 0.7 * play)));
+            m.safeGetUniform("Wind").set((float) (wind * (1 - 0.75 * play)));
             m.safeGetUniform("R").set((float) MIST_R);
             m.safeGetUniform("CamL").set((float) camL.x, (float) camL.y, (float) camL.z);
             RenderSystem.depthMask(false);
@@ -1914,12 +1914,12 @@ public final class SukunaDomainScene {
             String top = "Expansão de Domínio";
             String bottom = "Santuário Malevolente";
             pose.pushPose();
-            pose.translate(graphics.guiWidth() / 2f, graphics.guiHeight() * 0.83f - 18, 0);
+            pose.translate(graphics.guiWidth() / 2f, graphics.guiHeight() - 46, 0);
             pose.scale(1.4f, 1.4f, 1);
             graphics.drawString(font, top, -font.width(top) / 2, 0, (alpha << 24) | 0xFFD9DE, true);
             pose.popPose();
             pose.pushPose();
-            pose.translate(graphics.guiWidth() / 2f, graphics.guiHeight() * 0.83f - 18 + 16, 0);
+            pose.translate(graphics.guiWidth() / 2f, graphics.guiHeight() - 46 + 16, 0);
             pose.scale(2.0f, 2.0f, 1);
             graphics.drawString(font, bottom, -font.width(bottom) / 2, 0, (alpha << 24) | 0xFF3048, true);
             pose.popPose();

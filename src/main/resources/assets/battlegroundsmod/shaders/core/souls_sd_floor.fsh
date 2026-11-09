@@ -37,7 +37,7 @@ void main() {
             sh = (smoothstep(0.62, 0.8, q1) * 0.6 + smoothstep(0.7, 0.9, q2) * 0.4) * Quake;
         }
         float a = clamp(fres * 0.95 - sh * 0.12, 0.0, 1.0);
-        vec3 deep = vec3(0.004, 0.006, 0.01);
+        vec3 deep = vec3(0.012, 0.003, 0.003); // warm: a blue-black read as a grey sea at the first red frame (test 2026-11-09)
         fragColor = vec4(deep * (1.0 - a) + vec3(0.5, 0.08, 0.1) * sh * 0.04, 1.0 - a);
         return;
     }
