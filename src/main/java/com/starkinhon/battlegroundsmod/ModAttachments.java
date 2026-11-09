@@ -25,7 +25,7 @@ public final class ModAttachments {
     public static final Supplier<AttachmentType<Boolean>> BOSS_BAR_OFF = ATTACHMENT_TYPES.register("boss_bar_off",
             () -> AttachmentType.builder(() -> false).serialize(Codec.BOOL).copyOnDeath().build());
 
-    // Ate an Inseto de Alma: never hungry again, never healed by it (item/SoulInsectItem). Saved and kept on death.
+    // Ate an Inseto de Alma: hunger bar always full (item/SoulInsectItem). Saved and kept on death.
     public static final Supplier<AttachmentType<Boolean>> SOUL_FED = ATTACHMENT_TYPES.register("soul_fed",
             () -> AttachmentType.builder(() -> false).serialize(Codec.BOOL).copyOnDeath().build());
 

@@ -36,7 +36,7 @@ public final class ModItems {
     public static final DeferredItem<KokushiboSwordItem> KOKUSHIBO_SWORD = BattlegroundsMod.ITEMS.registerItem("kokushibo_sword",
             KokushiboSwordItem::new, new Item.Properties().rarity(Rarity.EPIC).fireResistant().component(DataComponents.UNBREAKABLE, new Unbreakable(true)));
 
-    // Eaten once: never hungry again, never healed by it (item/SoulInsectItem).
+    // Eaten once: hunger bar always full from then on (item/SoulInsectItem).
     public static final DeferredItem<SoulInsectItem> SOUL_INSECT = BattlegroundsMod.ITEMS.registerItem("soul_insect",
             SoulInsectItem::new, new Item.Properties().stacksTo(16).rarity(Rarity.RARE)
                     .food(new FoodProperties.Builder().nutrition(0).saturationModifier(0).alwaysEdible().build()));
