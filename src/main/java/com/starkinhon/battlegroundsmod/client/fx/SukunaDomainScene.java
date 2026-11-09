@@ -282,6 +282,48 @@ public final class SukunaDomainScene {
                 mc.options.setCameraType(CameraType.THIRD_PERSON_BACK);
             }
             sounds(d, c, mc);
+            if (c >= ShrineDomain.CUT_INSIDE - 2 && d.goneAt < 0 && mc.player != null) {
+                floor(d, mc.player);
+            }
+        }
+    }
+
+    // The arena has no blocks: its floor holds the local player up here too (as Gojo's, DomainScene.floor), standing on
+    // it, so they walk and jump like on the ground, and the barrier stops them softly. Without it the player kept falling
+    // and the server kept pulling them back up (ShrineDomain.floor): the stutter that made walking impossible.
+    private static void floor(Dom d, LocalPlayer player) {
+        Vec3 pos = player.position();
+        if (!nearArena(d, pos)) {
+            return;
+        }
+        if (pos.y > d.arena.y + 0.001) {
+            clampRadius(d, player);
+            return;
+        }
+        if (player.getAbilities().flying) {
+            player.getAbilities().flying = false;
+        }
+        player.setPos(pos.x, d.arena.y, pos.z);
+        Vec3 v = player.getDeltaMovement();
+        player.setDeltaMovement(v.x, Math.max(0, v.y), v.z);
+        player.setOnGround(true);
+        player.resetFallDistance();
+        clampRadius(d, player);
+    }
+
+    private static void clampRadius(Dom d, LocalPlayer player) {
+        Vec3 pos = player.position();
+        if (!nearArena(d, pos)) {
+            return;
+        }
+        double dx = pos.x - d.arena.x, dz = pos.z - d.arena.z, r = Math.sqrt(dx * dx + dz * dz), max = ShrineDomain.RADIUS - 1.5;
+        if (r > max) {
+            player.setPos(d.arena.x + dx / r * max, pos.y, d.arena.z + dz / r * max);
+            Vec3 v = player.getDeltaMovement();
+            double out = (v.x * dx + v.z * dz) / r;
+            if (out > 0) {
+                player.setDeltaMovement(v.x - dx / r * out, v.y, v.z - dz / r * out);
+            }
         }
     }
 
@@ -441,6 +483,20 @@ public final class SukunaDomainScene {
             l = l.add(q[3], q[4], 0);
         }
         Vec3 wp = toWorld(d, c, p), wl = toWorld(d, c, l);
+        if (c < ShrineDomain.CUT_INSIDE && mc.level != null) {
+            // out in the world the ground is not the preview's flat grid: walls and hills must not swallow the camera
+            // (Stark 07:02, "os blocos atrapalham"), so it stops in front of the first block between Sukuna and it
+            Vec3 from = toWorld(d, c, v(0, 1.5, 0));
+            net.minecraft.world.phys.BlockHitResult hit = mc.level.clip(new net.minecraft.world.level.ClipContext(from, wp,
+                    net.minecraft.world.level.ClipContext.Block.VISUAL, net.minecraft.world.level.ClipContext.Fluid.NONE, viewer));
+            if (hit.getType() == net.minecraft.world.phys.HitResult.Type.BLOCK) {
+                Vec3 back = wp.subtract(from);
+                double len = back.length();
+                if (len > 1e-3) {
+                    wp = hit.getLocation().subtract(back.scale(0.25 / len));
+                }
+            }
+        }
         Vec3 dir = wl.subtract(wp);
         float yaw = (float) (Mth.atan2(dir.z, dir.x) * Mth.RAD_TO_DEG) - 90;
         float pitch = (float) (-Mth.atan2(dir.y, dir.horizontalDistance()) * Mth.RAD_TO_DEG);
@@ -1388,6 +1444,10 @@ public final class SukunaDomainScene {
         for (int k = Math.max(0, kl - LPOOL + 1); k <= kl; k++) {
             double age = s - (LCUT0 + k * LCUT_DT);
             if (age < 0) {
+                continue;
+            }
+            if (hk(k, 333) < 0.5) {
+                // half the preview's count: its camera stood far, in the game they cross right in front of you
                 continue;
             }
             Vec3 anchor = d.lineAt.computeIfAbsent(k, kk -> anchorNow);
