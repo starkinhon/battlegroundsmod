@@ -221,6 +221,7 @@ public class BattlegroundsModClient {
     private static void onClientTickPre(ClientTickEvent.Pre event) {
         MovementInput.tickPre();
         CombatInput.tickPre();
+        com.starkinhon.battlegroundsmod.client.fx.DuelScene.drainKeys();
     }
 
     // The Madara skin uses slim (3 pixel) arms.
