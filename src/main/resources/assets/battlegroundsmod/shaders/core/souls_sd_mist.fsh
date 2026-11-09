@@ -41,7 +41,7 @@ void main() {
         if (Red > 0.0) {
             float f = fb3(q * 0.075 + vec3(0.0, T * 0.012, 0.0));
             float f2 = fb3(q * 0.22 + vec3(f * 2.0, -T * 0.02, 0.0));
-            float dR = smoothstep(0.42, 0.78, f * 0.8 + f2 * 0.35) * Red * 0.45 * smoothstep(1.5, 6.0, length(p - vec3(0.0, 1.2, 0.0)));
+            float dR = smoothstep(0.42, 0.78, f * 0.8 + f2 * 0.35) * Red * 0.45 * smoothstep(1.5, 6.0, length(p - vec3(0.0, 1.2, 0.0))) * (0.15 + 0.85 * smoothstep(4.0, 16.0, length(p - ro)));
             vec3 cr = mix(vec3(0.09, 0.0, 0.005), vec3(0.85, 0.05, 0.08), smoothstep(0.55, 0.82, f2 + f * 0.3));
             float a = 1.0 - exp(-dR * dt);
             col += (1.0 - A) * a * cr;
