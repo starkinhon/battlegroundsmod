@@ -128,7 +128,7 @@ public final class PowerHud {
         Component name = power.name();
         Component second = shift
                 ? Component.literal("Shift")
-                : Component.literal(Tiers.name(data.tier));
+                : Tiers.name(data.tier);
         int width = Math.max(font.width(name), font.width(second)) + 10;
         int x1 = Math.min(left, right - width);
         int y1 = top - 25;

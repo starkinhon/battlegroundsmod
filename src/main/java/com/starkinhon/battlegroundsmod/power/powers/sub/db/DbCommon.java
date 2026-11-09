@@ -7,19 +7,25 @@ import java.util.Set;
 
 import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.ModEffects;
+import com.starkinhon.battlegroundsmod.combat.BlockRules;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
 import com.starkinhon.battlegroundsmod.power.PowerData;
 import com.starkinhon.battlegroundsmod.power.powers.sub.SubCommon;
 import com.starkinhon.battlegroundsmod.power.powers.sub.SubNet;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.item.FallingBlockEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 
@@ -121,6 +127,59 @@ public final class DbCommon {
     public static void boom(ServerLevel level, Vec3 at, float radius, int color, int seed) {
         SubNet.send(level, SubNet.KI_BOOM, 0, at, new Vec3(groundY(level, at), 0, 0), radius, color, seed);
         SubCommon.sound(level, at, SoundEvents.GENERIC_EXPLODE.value(), 1f + radius * 0.2f, 1.2f - Math.min(0.5f, radius * 0.08f));
+    }
+
+    // A big crater (the charged Genki Dama, tens of blocks wide): a ring a tick from the middle out so the server never
+    // breaks it all at once (like Bills' Destruction Touch), deep in the middle and shallow at the rim, with what stands
+    // over it (trees, houses) gone too. No drops, no neighbor updates; some blocks on the way are thrown out instead,
+    // the ones nearer the middle higher. Only with soulsBlockDestruction (and mobGriefing).
+    public static void bigCrater(ServerLevel level, Vec3 center, double radius, double depth, int ticks) {
+        if (radius <= 0 || !BlockRules.canBreak(level)) {
+            return;
+        }
+        int r = (int) Math.ceil(radius);
+        int up = (int) Math.ceil(Math.min(radius * 0.5, 24));
+        BlockPos mid = BlockPos.containing(center);
+        int[] flown = {0};
+        int flyMax = (int) Math.min(60, 8 + radius);
+        Tasks.repeat(Math.max(1, ticks), tick -> {
+            double from = radius * tick / ticks;
+            double to = radius * (tick + 1) / ticks;
+            for (int dx = -r; dx <= r; dx++) {
+                for (int dz = -r; dz <= r; dz++) {
+                    double flat = Math.sqrt(dx * dx + dz * dz);
+                    if (flat < from || flat >= to && tick < ticks - 1 || flat > radius) {
+                        continue;
+                    }
+                    double k = flat / radius;
+                    // A ragged rim: each column a little deeper or shallower than its neighbors.
+                    double rough = 0.85 + 0.3 * SubCommon.RANDOM.nextDouble();
+                    int bottom = -(int) Math.round(depth * Math.sqrt(Math.max(0, 1 - k * k)) * rough);
+                    int top = (int) Math.round(up * (1 - k * 0.5));
+                    for (int dy = top; dy >= bottom; dy--) {
+                        BlockPos block = mid.offset(dx, dy, dz);
+                        if (!level.isLoaded(block)) {
+                            continue;
+                        }
+                        BlockState state = level.getBlockState(block);
+                        if (state.isAir() || !state.getFluidState().isEmpty() || state.hasBlockEntity() || state.getDestroySpeed(level, block) < 0) {
+                            continue;
+                        }
+                        if (dy <= 1 && dy >= bottom - 1 && flown[0] < flyMax && SubCommon.RANDOM.nextInt(40) == 0) {
+                            flown[0]++;
+                            FallingBlockEntity thrown = FallingBlockEntity.fall(level, block, state);
+                            thrown.dropItem = false;
+                            Vec3 out = new Vec3(dx, 0, dz);
+                            out = out.lengthSqr() < 1.0E-4 ? Vec3.ZERO : out.normalize();
+                            thrown.setDeltaMovement(out.scale(0.5 + 0.8 * SubCommon.RANDOM.nextDouble()).add(0, 0.6 + 1.0 * (1 - k) * SubCommon.RANDOM.nextDouble(), 0));
+                            thrown.hurtMarked = true;
+                        } else {
+                            level.setBlock(block, Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS);
+                        }
+                    }
+                }
+            }
+        });
     }
 
     public static void screen(ServerLevel level, Vec3 at, int preset) {
