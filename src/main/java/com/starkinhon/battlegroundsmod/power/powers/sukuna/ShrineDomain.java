@@ -88,6 +88,8 @@ public final class ShrineDomain {
     private static final String BACK_TAG = "battlegroundsmod_shrine_back";
     // Payload modes.
     public static final int M_WAVE = 0, M_CUTSCENE = 1, M_QUICK = 2, M_CLOSE = 3, M_GONE = 4;
+    // The cutscene from the six eyes on (QUICK_FROM): the Santuário that took Gojo's tunnel over in the duel.
+    public static final int M_TAKEOVER = 5;
 
     private static final class Active {
         final LivingEntity caster;
@@ -190,15 +192,19 @@ public final class ShrineDomain {
     // ever touching the ground (Stark, 2026-11-09: the shatter and the trip back to the world in between looked off).
     public static void startWon(LivingEntity caster, ServerLevel level, Vec3 center, java.util.Collection<LivingEntity> victims,
             com.starkinhon.battlegroundsmod.power.powers.gojo.InfiniteVoid.Handover from) {
+        // The cutscene from the black aura and the six eyes on (Stark, 2026-11-09 18:15: "com o céu vermelho e o Santuário
+        // sendo revelado, pra ficar mais épico"): everyone held, Sukuna untouchable, until the camera is back on him.
         Active active = new Active(caster, level, center);
-        active.quick = true;
-        active.skip = WAVE;
+        active.skip = WAVE + QUICK_FROM;
         active.origin = from.back();
         active.inherited.addAll(from.granted());
         ACTIVE.add(active);
+        int still = CUT_PLAY - QUICK_FROM;
+        caster.getData(ModAttachments.POWER).busyTicks = still;
+        holdCaster(active, still);
         for (LivingEntity v : victims) {
             if (v != caster && v.isAlive() && !v.isRemoved() && v.level() == level) {
-                catchOne(active, v, false);
+                catchOne(active, v, true);
             }
         }
         PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new ModPayloads.PlaySkillAnimation(caster.getId(), SKILL, false));
@@ -360,7 +366,7 @@ public final class ShrineDomain {
             Freeze.face(active.caster, active.forward, 0);
         }
         int yaw10 = Math.round(active.forward * 10);
-        send(active, active.quick ? M_QUICK : M_CUTSCENE, yaw10, target != null ? target.getId() : -1);
+        send(active, active.quick ? M_QUICK : active.skip > WAVE ? M_TAKEOVER : M_CUTSCENE, yaw10, target != null ? target.getId() : -1);
         // Everyone goes into the domain's own space right now, before the opening scenes (Stark 07:27): the ground turning
         // to water, the drop and the drowning play on its clean flat stage, so no block of the world gets in the way.
         goInside(active);

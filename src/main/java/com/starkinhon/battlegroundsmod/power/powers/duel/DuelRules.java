@@ -25,6 +25,11 @@ public final class DuelRules {
     public static final int K0 = 62;
     // From the game's end: the result on screen this long before the winner's domain takes over.
     public static final int RESULT = 24;
+    // Sukuna won: after the result, the red takes the tunnel over (client/fx/DomainScene.redden) this long before the
+    // Santuário's six eyes.
+    public static final int TAKEOVER = 30;
+    // When the red starts running down the tunnel, after the result.
+    public static final int TAKEOVER_FROM = 12;
 
     public static final int[] WIN = {16, 15, 14, 13, 12, 12, 11, 10, 10, 9};
     public static final int GAP = 4;
@@ -83,6 +88,11 @@ public final class DuelRules {
 
     public static int resultEnd(int game) {
         return gameEnd(game) + RESULT;
+    }
+
+    // When the winner's domain takes over: Sukuna's after the red has taken the tunnel.
+    public static int settleAt(int game, int result, int sukuna) {
+        return resultEnd(game) + (result == sukuna ? TAKEOVER : 0);
     }
 
     // The preview's generator (a Lehmer stream), so a seed gives the same keys and rounds everywhere.

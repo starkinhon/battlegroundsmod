@@ -156,10 +156,15 @@ public final class SukunaDomainScene {
                     DomainPanorama.request();
                 }
             }
-            case ShrineDomain.M_CUTSCENE, ShrineDomain.M_QUICK -> {
+            case ShrineDomain.M_CUTSCENE, ShrineDomain.M_QUICK, ShrineDomain.M_TAKEOVER -> {
+                // The takeover (the duel's winner, out of Gojo's tunnel) comes in at the six eyes.
+                double skip = mode == ShrineDomain.M_TAKEOVER ? ShrineDomain.WAVE + ShrineDomain.QUICK_FROM : ShrineDomain.WAVE;
                 if (d == null) {
-                    d = new Dom(casterId, center, now - ShrineDomain.WAVE, a / 10f);
+                    d = new Dom(casterId, center, now - skip, a / 10f);
                     DOMS.add(d);
+                    if (mode == ShrineDomain.M_TAKEOVER && shrineReady()) {
+                        shrineUpload();
+                    }
                 }
                 d.decided = true;
                 d.quick = mode == ShrineDomain.M_QUICK;

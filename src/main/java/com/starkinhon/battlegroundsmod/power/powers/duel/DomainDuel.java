@@ -349,7 +349,7 @@ public final class DomainDuel {
             d.result = d.score[GOJO] > d.score[SUKUNA] ? GOJO : d.score[SUKUNA] > d.score[GOJO] ? SUKUNA : TIE;
             send(d, M_RESULT, d.result, d.score[GOJO], d.score[SUKUNA]);
         }
-        if (t >= DuelRules.resultEnd(d.game)) {
+        if (d.result >= 0 && t >= DuelRules.settleAt(d.game, d.result, SUKUNA)) {
             settle(d);
         }
     }

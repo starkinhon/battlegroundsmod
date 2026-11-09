@@ -65,6 +65,13 @@ public final class DomainScene {
     private static final float[] PURPLE = FxDraw.rgb(0xA040FF);
     private static final float[] MAGENTA = FxDraw.rgb(0xFF3CDC);
     private static final float[] RED = FxDraw.rgb(0xFF2058);
+    // The Santuário's reds, taking the tunnel over when Sukuna wins the Duelo de Expansões (each streak keeps its own).
+    private static final float[][] TAKEN = {FxDraw.rgb(0xFF1A2A), FxDraw.rgb(0xB0081A), FxDraw.rgb(0xFF5A3C), FxDraw.rgb(0xE0203F),
+            FxDraw.rgb(0x6A0010)};
+    private static final float[] TAKEN_GLOW = FxDraw.rgb(0xFF2030);
+    private static final float[] TAKEN_DEEP = FxDraw.rgb(0x7A0010);
+    // How long the red takes to run down the tunnel, from the black hole to past the camera.
+    public static final int TAKEOVER_RUN = 26;
     private static final float[] BLUE = FxDraw.rgb(0x4C5CFF);
     private static final float[] PINK = FxDraw.rgb(0xFFD6FF);
     private static final float[] SILVER = FxDraw.rgb(0xCFE8FF);
@@ -109,6 +116,8 @@ public final class DomainScene {
         double held;
         // Where Gojo faced when he started: the black hole is far behind him, the tunnel runs towards it.
         Vec3 forward;
+        // Sukuna won the duel: when the red starts running down the tunnel from its far end (-1: never).
+        double redAt = -1;
         final Set<String> fired = new HashSet<>();
         double closeStart = -1;
         // The glass it breaks into (DomainGlass), made when it starts cracking, around where this viewer sees it hit.
@@ -286,6 +295,17 @@ public final class DomainScene {
         d.nextWhine = d.spec.voidTick() + 20;
         d.nextStutter = d.spec.tunnelTick() + 50;
         DOMAINS.add(d);
+    }
+
+    // Sukuna won the Duelo de Expansões (DuelScene): at the client time at, the red runs down Gojo's tunnel from its far end
+    // and every streak, cloud and fleck it passes turns to the Santuário's reds (Stark, 2026-11-09: "um destaque pro túnel
+    // vermelho"), before the six eyes.
+    public static void redden(int casterId, double at) {
+        for (Domain d : DOMAINS) {
+            if (d.caster == casterId) {
+                d.redAt = at;
+            }
+        }
     }
 
     // The tunnel starts: Gojo and his target stand face to face, 20 blocks apart (the server put them there), and the
@@ -964,9 +984,20 @@ public final class DomainScene {
         Vector3f x = new Vector3f(a).cross(new Vector3f(0, 1, 0)).normalize();
         Vector3f y = new Vector3f(x).cross(a).normalize();
 
+        // The red taking it over: its front runs from the far end (z 400) to behind the camera (z -200); what it has passed
+        // is red. red is how far it has gone (0..1).
+        double clock = ScreenFx.now() + lastPartial;
+        float red = d.redAt < 0 ? 0 : (float) Mth.clamp((clock - d.redAt) / TAKEOVER_RUN, 0, 1);
+        double front = d.redAt < 0 || clock < d.redAt ? 1.0E9 : 400 - 600 * red * red;
+
         Vector3f far = new Vector3f(a).mul(390);
-        FxDraw.billboard(far, 420, 0, FxDraw.SOFT, 0.0f, PURPLE, 0.3f * in, true);
-        FxDraw.billboard(far, 180, now * 0.01f, FxDraw.SOFT, 0.2f, MAGENTA, 0.25f * in, true);
+        FxDraw.billboard(far, 420, 0, FxDraw.SOFT, 0.0f, front < 390 ? TAKEN_DEEP : PURPLE, 0.3f * in * (1 + red), true);
+        FxDraw.billboard(far, 180, now * 0.01f, FxDraw.SOFT, 0.2f, front < 390 ? TAKEN_GLOW : MAGENTA, 0.25f * in * (1 + red), true);
+        if (front < 400 && front > -60) {
+            // The front itself: a red glow on the tunnel's line, growing as it comes at the camera.
+            float near = (float) Mth.clamp((400 - front) / 400, 0, 1);
+            FxDraw.billboard(new Vector3f(a).mul((float) front), 40 + 120 * near, now * 0.02f, FxDraw.SOFT, 0.0f, TAKEN_GLOW, 0.55f + 0.35f * near, true);
+        }
 
         double range = 600;
         for (int k = 0; k < 540; k++) {
@@ -980,8 +1011,10 @@ public final class DomainScene {
             float fade = in * smooth(400, 230, (float) z) * smooth(-200, -40, (float) z);
             float width = (0.05f + 0.2f * FxWorld.hash(931, k, 6)) * (0.6f + rr / 30f);
             float pick = FxWorld.hash(931, k, 7);
-            float[] col = pick < 0.3f ? RED : pick < 0.5f ? PURPLE : pick < 0.66f ? BLUE : pick < 0.86f ? PINK : MAGENTA;
-            FxDraw.ribbon(from, to, width, FxDraw.STREAK, 0.7f, col, fade * 0.9f, true);
+            boolean taken = z > front;
+            float[] col = taken ? TAKEN[(int) (pick * TAKEN.length) % TAKEN.length]
+                    : pick < 0.3f ? RED : pick < 0.5f ? PURPLE : pick < 0.66f ? BLUE : pick < 0.86f ? PINK : MAGENTA;
+            FxDraw.ribbon(from, to, taken ? width * 1.35f : width, FxDraw.STREAK, 0.7f, col, fade * (taken ? 1f : 0.9f), true);
         }
         // Clouds of dark violet giving it volume, and white flecks, all streaming the same way, slower.
         for (int k = 0; k < 60; k++) {
@@ -990,7 +1023,9 @@ public final class DomainScene {
             double z = 400 - ((run * 0.5 + FxWorld.hash(932, k, 4) * range) % range);
             Vector3f p = new Vector3f(a).mul((float) z).add(new Vector3f(x).mul(Mth.cos(ang) * rr)).add(new Vector3f(y).mul(Mth.sin(ang) * rr));
             float s = 18 + 26 * FxWorld.hash(932, k, 3);
-            FxDraw.billboard(p, s, FxWorld.hash(932, k, 5) * 6, FxDraw.SMOKE, 0.3f, k % 3 == 0 ? FxDraw.rgb(0x1A0630) : FxDraw.rgb(0x3A0F5A),
+            boolean taken = z > front;
+            FxDraw.billboard(p, s, FxWorld.hash(932, k, 5) * 6, FxDraw.SMOKE, 0.3f,
+                    taken ? (k % 3 == 0 ? FxDraw.rgb(0x1A0204) : FxDraw.rgb(0x4A0610)) : k % 3 == 0 ? FxDraw.rgb(0x1A0630) : FxDraw.rgb(0x3A0F5A),
                     0.4f * in * smooth(400, 260, (float) z), false);
         }
         // The torn white still flying past in puffs, for the first second or two.
@@ -1007,7 +1042,7 @@ public final class DomainScene {
             float rr = 5 + 25 * FxWorld.hash(933, k, 2);
             double z = 400 - ((run * 0.8 + FxWorld.hash(933, k, 4) * range) % range);
             Vector3f p = new Vector3f(a).mul((float) z).add(new Vector3f(x).mul(Mth.cos(ang) * rr)).add(new Vector3f(y).mul(Mth.sin(ang) * rr));
-            ink(p, 1.5f + 4 * FxWorld.hash(933, k, 3), FxWorld.hash(933, k, 5) * 6, FxWorld.hash(933, k, 6), WHITE,
+            ink(p, 1.5f + 4 * FxWorld.hash(933, k, 3), FxWorld.hash(933, k, 5) * 6, FxWorld.hash(933, k, 6), z > front ? TAKEN[0] : WHITE,
                     0.85f * in * smooth(400, 230, (float) z));
         }
     }
