@@ -50,6 +50,8 @@ public final class FxShaders {
     static ShaderInstance clivar;
     // Sukuna's Expansão de Domínio (SukunaDomainScene); without them the domain still works, just without its look.
     static ShaderInstance sdSky;
+    // The two skies of the Duelo de Expansões, cyan and red, and the Santuário's cracks in the void (DuelScene).
+    static ShaderInstance duelSky;
     static ShaderInstance sdFloor;
     static ShaderInstance sdShrine;
     static ShaderInstance sdCol;
@@ -156,6 +158,12 @@ public final class FxShaders {
             register(event, "souls_sd_pano", DefaultVertexFormat.POSITION, s -> sdPano = s);
         } catch (Exception e) {
             BattlegroundsMod.LOGGER.error("Could not load the Sukuna Domain Expansion shaders", e);
+        }
+        // On its own: without it the duel still plays, just without its sky.
+        try {
+            register(event, "souls_duel_sky", DefaultVertexFormat.POSITION, s -> duelSky = s);
+        } catch (Exception e) {
+            BattlegroundsMod.LOGGER.error("Could not load the Domain Duel sky shader", e);
         }
     }
 

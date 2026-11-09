@@ -127,6 +127,8 @@ public class BattlegroundsModClient {
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.SoulsCommand::register);
         NeoForge.EVENT_BUS.addListener(InputEvent.InteractionKeyMappingTriggered.class, PunchInput::onInteraction);
         NeoForge.EVENT_BUS.addListener(InputEvent.MouseScrollingEvent.class, com.starkinhon.battlegroundsmod.client.fx.AzulRenderer::onScroll);
+        // The Duelo de Expansões minigame's keys.
+        NeoForge.EVENT_BUS.addListener(InputEvent.Key.class, com.starkinhon.battlegroundsmod.client.fx.DuelScene::onKey);
         // Before StatusBars: a cancelled layer skips the listeners after it, so its custom bars stay hidden too.
         NeoForge.EVENT_BUS.addListener(RenderGuiLayerEvent.Pre.class, com.starkinhon.battlegroundsmod.client.CutsceneHud::onRenderLayer);
         NeoForge.EVENT_BUS.addListener(RenderGuiLayerEvent.Pre.class, StatusBars::onRenderLayer);
@@ -199,6 +201,9 @@ public class BattlegroundsModClient {
         event.registerBelowAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "form_kanji"),
                 com.starkinhon.battlegroundsmod.client.FormKanji::renderGui);
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "cutscene_bars"), GrabCutscene::renderGui);
+        // The Duelo de Expansões: its title, the minigame and the result (over the HUD, which the duel hides).
+        event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "expansion_duel"),
+                com.starkinhon.battlegroundsmod.client.fx.DuelScene::renderGui);
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "bop_cutscene"), BopCutscene::renderGui);
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "hakai_cutscene"), HakaiCutscene::renderGui);
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "esfera_cutscene"), EsferaCutscene::renderGui);
@@ -300,6 +305,7 @@ public class BattlegroundsModClient {
         com.starkinhon.battlegroundsmod.client.fx.Realismo.tick();
         com.starkinhon.battlegroundsmod.client.fx.DomainScene.tick();
         com.starkinhon.battlegroundsmod.client.fx.SukunaDomainScene.tick();
+        com.starkinhon.battlegroundsmod.client.fx.DuelScene.tick();
         BossBars.tick();
         Fear.tick();
         com.starkinhon.battlegroundsmod.client.fx.SkillAudio.tick();

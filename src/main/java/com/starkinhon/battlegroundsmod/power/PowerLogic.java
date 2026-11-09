@@ -83,6 +83,10 @@ public final class PowerLogic {
             // X with the illusion up: it breaks and he shows up.
             return;
         }
+        if (PowerData.isUlt(slot) && com.starkinhon.battlegroundsmod.power.powers.duel.DomainDuel.press(player)) {
+            // V in a Duelo de Expansões: Gojo reopening the void in the tie (any other press is swallowed).
+            return;
+        }
         if (PowerData.isUlt(slot) && com.starkinhon.battlegroundsmod.power.powers.gojo.InfiniteVoid.cancel(player)) {
             // V with his domain open: Gojo closes it.
             return;
@@ -148,6 +152,11 @@ public final class PowerLogic {
         Ability ability = power == null ? null : ability(caster, power, slot);
         if (ability == null) {
             return false;
+        }
+        if (slot == PowerData.SLOT_ULT && com.starkinhon.battlegroundsmod.power.powers.duel.DomainDuel.canClash(caster)) {
+            // Answering the other one's domain with their own (the Duelo de Expansões): allowed though that domain has
+            // them caught and held.
+            return !caster.isSpectator() && caster.isAlive() && data.cooldowns[slot] <= 0 && !sealed(caster);
         }
         boolean counter = ability.counter() || ability.beatenCounter() && !Stun.real(caster);
         return !caster.isSpectator() && caster.isAlive() && data.cooldowns[slot] <= 0 && data.busyTicks <= 0 && !Freeze.isFrozen(caster)

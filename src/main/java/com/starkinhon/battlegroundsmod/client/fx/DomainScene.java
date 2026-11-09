@@ -101,7 +101,12 @@ public final class DomainScene {
         // shatter everyone in the domain is up there.
         final Vec3 inner;
         final DominioSpec spec;
-        final double start;
+        // Not final: the Duelo de Expansões holds the clock still (pausedAt, mode 5) and moves it (mode 6).
+        double start;
+        // When the clock was held still (-1: running), and how long it has been held in all: the tunnel keeps streaming
+        // past while the two fight for the domain (tunnel's flow).
+        double pausedAt = -1;
+        double held;
         // Where Gojo faced when he started: the black hole is far behind him, the tunnel runs towards it.
         Vec3 forward;
         final Set<String> fired = new HashSet<>();
@@ -152,7 +157,8 @@ public final class DomainScene {
         // their screen, no sinking view, no grey (the server never catches them either).
         boolean spared() {
             Minecraft minecraft = Minecraft.getInstance();
-            return minecraft.player != null && minecraft.player.isCreative() && minecraft.player.getId() != caster;
+            return minecraft.player != null && minecraft.player.getId() != caster
+                    && (minecraft.player.isCreative() || DuelScene.spares(caster, minecraft.player.getId()));
         }
 
         // The domain's middle nearest pos: up inside, or out in the world.
@@ -240,6 +246,25 @@ public final class DomainScene {
             tunnel(casterId, other);
             return;
         }
+        if (mode == 5 || mode == 6) {
+            // The Duelo de Expansões: 5 holds the clock still (other 1) or lets it run (other 0); 6 moves it back by other
+            // ticks (ahead when negative).
+            for (Domain d : DOMAINS) {
+                if (d.caster != casterId) {
+                    continue;
+                }
+                if (mode == 6) {
+                    d.start += other;
+                } else if (other == 1 && d.pausedAt < 0) {
+                    d.pausedAt = now;
+                } else if (other == 0 && d.pausedAt >= 0) {
+                    d.start += now - d.pausedAt;
+                    d.held += now - d.pausedAt;
+                    d.pausedAt = -1;
+                }
+            }
+            return;
+        }
         if (mode == 2) {
             kill(other, center);
             return;
@@ -309,7 +334,15 @@ public final class DomainScene {
     }
 
     private static double time(Domain d, float partial) {
+        if (d.pausedAt >= 0) {
+            return d.pausedAt - d.start;
+        }
         return ScreenFx.now() + partial - d.start;
+    }
+
+    // How long the tunnel has been held still (while the duel plays it keeps streaming at the speed it had).
+    private static double flow(Domain d, float now) {
+        return d.held + (d.pausedAt >= 0 ? Math.max(0, now - d.pausedAt) : 0);
     }
 
     private static Vec3 cameraPos() {
@@ -572,7 +605,8 @@ public final class DomainScene {
                         continue;
                     }
                     // Players in creative are inside free, in their own colors like Gojo.
-                    boolean isVictim = entity.getId() != d.caster && !(entity instanceof Player p && p.isCreative());
+                    boolean isVictim = entity.getId() != d.caster && !(entity instanceof Player p && p.isCreative())
+                            && !DuelScene.spares(d.caster, entity.getId());
                     if (isVictim != (pass == 1)) {
                         continue;
                     }
@@ -914,8 +948,8 @@ public final class DomainScene {
         double tau = t - d.spec.tunnelTick();
         double total = Math.max(1, d.spec.fases().tunel());
         float u = (float) Mth.clamp(tau / total, 0, 1);
-        double run = 3 * tau + 26 * tau * tau * tau / (3 * total * total);
         float speed = 3 + 26 * u * u;
+        double run = 3 * tau + 26 * tau * tau * tau / (3 * total * total) + speed * flow(d, now);
         float in = (float) Mth.clamp(tau / 6, 0, 1);
         Vector3f a = d.tunnelAxis();
         Vector3f x = new Vector3f(a).cross(new Vector3f(0, 1, 0)).normalize();
@@ -1223,6 +1257,10 @@ public final class DomainScene {
                     FxDraw.billboard(e, 0.34f, now * 0.02f, FxDraw.FLARE, 6 / 32f, glow, 0.9f * life, true);
                     FxDraw.billboard(e, 0.1f, 0, FxDraw.SOFT, 0.9f, WHITE, life, true);
                 }
+                continue;
+            }
+            if (DuelScene.spares(d.caster, entity.getId())) {
+                // Sukuna fighting Gojo for the domain: none of the information on him.
                 continue;
             }
             Vector3f head = pos.add(0, entity.getEyeHeight(), 0).subtract(camera).toVector3f();

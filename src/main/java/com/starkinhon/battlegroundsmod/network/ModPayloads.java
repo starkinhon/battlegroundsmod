@@ -846,6 +846,40 @@ public final class ModPayloads {
         }
     }
 
+    // Server -> client: the Duelo de Expansões between a Gojo and a Sukuna (power/powers/duel/DomainDuel, modes M_*; a, b
+    // and c depend on the mode). See client/fx/DuelScene.
+    public record ExpansionDuel(int gojoId, int sukunaId, int mode, int a, int b, int c) implements CustomPacketPayload {
+        public static final Type<ExpansionDuel> TYPE = payloadType("expansion_duel");
+        public static final StreamCodec<ByteBuf, ExpansionDuel> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, ExpansionDuel::gojoId,
+                ByteBufCodecs.VAR_INT, ExpansionDuel::sukunaId,
+                ByteBufCodecs.VAR_INT, ExpansionDuel::mode,
+                ByteBufCodecs.VAR_INT, ExpansionDuel::a,
+                ByteBufCodecs.VAR_INT, ExpansionDuel::b,
+                ByteBufCodecs.VAR_INT, ExpansionDuel::c,
+                ExpansionDuel::new);
+
+        @Override
+        public Type<ExpansionDuel> type() {
+            return TYPE;
+        }
+    }
+
+    // Client -> server: one move of the player's in the Duelo de Expansões minigame, measured on their client: index (the
+    // key, beat or round) and value (its points).
+    public record ExpansionDuelInput(int index, int value) implements CustomPacketPayload {
+        public static final Type<ExpansionDuelInput> TYPE = payloadType("expansion_duel_input");
+        public static final StreamCodec<ByteBuf, ExpansionDuelInput> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, ExpansionDuelInput::index,
+                ByteBufCodecs.VAR_INT, ExpansionDuelInput::value,
+                ExpansionDuelInput::new);
+
+        @Override
+        public Type<ExpansionDuelInput> type() {
+            return TYPE;
+        }
+    }
+
     // Server -> client: an attack in flight was erased (Bills' hakaizinho): stop drawing what skill had around pos.
     public record EraseAttack(String skill, Vec3 pos, float radius) implements CustomPacketPayload {
         public static final Type<EraseAttack> TYPE = payloadType("erase_attack");
@@ -1406,6 +1440,11 @@ public final class ModPayloads {
                 Tasks.as(player, () -> Melee.punch(player, null));
             }
         }));
+        registrar.playToServer(ExpansionDuelInput.TYPE, ExpansionDuelInput.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
+            if (context.player() instanceof ServerPlayer player) {
+                com.starkinhon.battlegroundsmod.power.powers.duel.DomainDuel.input(player, payload.index(), payload.value());
+            }
+        }));
         registrar.playToServer(Guard.TYPE, Guard.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer player) {
                 Tasks.as(player, () -> Defense.setGuard(player, payload.down()));
@@ -1507,6 +1546,8 @@ public final class ModPayloads {
                 () -> ClientHooks.gojoDomain(payload.casterId(), payload.center(), payload.awakened(), payload.mode(), payload.other())));
         registrar.playToClient(SukunaDomain.TYPE, SukunaDomain.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.sukunaDomain(payload.casterId(), payload.center(), payload.mode(), payload.a(), payload.b(), payload.part())));
+        registrar.playToClient(ExpansionDuel.TYPE, ExpansionDuel.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.expansionDuel(payload.gojoId(), payload.sukunaId(), payload.mode(), payload.a(), payload.b(), payload.c())));
         registrar.playToClient(EraseAttack.TYPE, EraseAttack.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.eraseAttack(payload.skill(), payload.pos(), payload.radius())));
         registrar.playToClient(HakaiBall.TYPE, HakaiBall.STREAM_CODEC, (payload, context) -> context.enqueueWork(
