@@ -29,6 +29,11 @@ public final class ModAttachments {
     public static final Supplier<AttachmentType<Boolean>> SOUL_FED = ATTACHMENT_TYPES.register("soul_fed",
             () -> AttachmentType.builder(() -> false).serialize(Codec.BOOL).copyOnDeath().build());
 
+    // The souls this player already stole from a boss (power ids): the first time plays the whole soul ceremony, later
+    // ones the short version (boss/SoulCeremony). Saved and kept on death.
+    public static final Supplier<AttachmentType<java.util.List<String>>> STOLEN_SOULS = ATTACHMENT_TYPES.register("stolen_souls",
+            () -> AttachmentType.<java.util.List<String>>builder(() -> java.util.List.of()).serialize(Codec.STRING.listOf()).copyOnDeath().build());
+
     private ModAttachments() {
     }
 }

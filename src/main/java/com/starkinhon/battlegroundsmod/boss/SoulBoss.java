@@ -58,6 +58,8 @@ public abstract class SoulBoss extends Monster {
     private boolean ultPending;
     private boolean lethalBypass;
     private SoulBossAI ai;
+    // Its soul being stolen by the player who killed it (only after death).
+    private SoulCeremony ceremony;
 
     protected SoulBoss(EntityType<? extends SoulBoss> type, Level level) {
         super(type, level);
@@ -414,7 +416,26 @@ public abstract class SoulBoss extends Monster {
         super.dropCustomDeathLoot(level, source, recentlyHit);
         var soul = ModItems.SOULS.get(spec().poder());
         if (spec().dropAlma() && soul != null) {
-            spawnAtLocation(new ItemStack(soul.get()));
+            ServerPlayer killer = SoulCeremony.killer(source);
+            if (killer != null) {
+                // Killed by a player: the soul leaves the body and becomes the item (SoulCeremony), dropped there.
+                ceremony = new SoulCeremony(killer, source, new ItemStack(soul.get()), spec().poder(), spec().tier());
+            } else {
+                spawnAtLocation(new ItemStack(soul.get()));
+            }
+        }
+    }
+
+    // While its soul ceremony plays the body stays lying where it fell (vanilla would take it away after 20 ticks).
+    @Override
+    protected void tickDeath() {
+        if (ceremony == null || level().isClientSide()) {
+            super.tickDeath();
+            return;
+        }
+        deathTime = Math.min(deathTime + 1, 20);
+        if (!ceremony.tick((ServerLevel) level(), this)) {
+            ceremony = null;
         }
     }
 

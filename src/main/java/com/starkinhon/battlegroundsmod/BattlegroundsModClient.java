@@ -86,6 +86,7 @@ public class BattlegroundsModClient {
         NeoForge.EVENT_BUS.addListener(AshDeath::onRenderLevel);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.IceShell::onRenderLevel);
         NeoForge.EVENT_BUS.addListener(RenderLivingEvent.Pre.class, AshDeath::onRenderLiving);
+        NeoForge.EVENT_BUS.addListener(RenderLivingEvent.Pre.class, com.starkinhon.battlegroundsmod.client.fx.SoulCeremonyFx::onRenderLiving);
         NeoForge.EVENT_BUS.addListener(RenderLivingEvent.Pre.class, Vanish::onRenderLiving);
         NeoForge.EVENT_BUS.addListener(RenderLivingEvent.Pre.class, com.starkinhon.battlegroundsmod.client.fx.SwordFx::onRenderLivingPre);
         NeoForge.EVENT_BUS.addListener(EventPriority.LOW, false, RenderLivingEvent.Pre.class,
@@ -271,6 +272,7 @@ public class BattlegroundsModClient {
         ScreenFx.tick();
         FxWorld.tick();
         AshDeath.tick();
+        com.starkinhon.battlegroundsmod.client.fx.SoulCeremonyFx.tick();
         Aura.tick();
         SkillEffects.tick();
         com.starkinhon.battlegroundsmod.client.fx.Realismo.tick();
