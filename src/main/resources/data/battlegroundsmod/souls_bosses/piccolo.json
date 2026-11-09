@@ -130,7 +130,7 @@
       "recargaMaxTicks": 240,
       "avisoTicks": 4,
       "distanciaMin": 3,
-      "distanciaMax": 8,
+      "distanciaMax": 16,
       "giroGrausPorTick": 12,
       "avisoCor": "#62b04a",
       "avisoSom": "minecraft:entity.slime.squish"
@@ -138,6 +138,7 @@
     "hellzone": {
       "slot": 2,
       "tipo": "alcance",
+      "precisaStun": true,
       "peso": 1.0,
       "recargaTicks": 260,
       "recargaMaxTicks": 340,
@@ -158,6 +159,13 @@
         "soco",
         "forte"
       ]
+    },
+    "braco_hellzone": {
+      "peso": 1.4,
+      "passos": [
+        "braco",
+        "hellzone"
+      ]
     }
   },
   "fases": [
@@ -171,7 +179,8 @@
         "hellzone"
       ],
       "combos": [
-        "puxa_e_bate"
+        "puxa_e_bate",
+        "braco_hellzone"
       ],
       "agressividade": 0.75,
       "multRecarga": 1.0,

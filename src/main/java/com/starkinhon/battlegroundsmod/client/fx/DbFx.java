@@ -16,10 +16,18 @@ import com.starkinhon.battlegroundsmod.power.powers.sub.SubNet;
 import com.starkinhon.battlegroundsmod.power.powers.sub.db.Db;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import com.starkinhon.battlegroundsmod.BattlegroundsMod;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.AbstractClientPlayer;
+import net.minecraft.client.renderer.LevelRenderer;
+import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.client.resources.PlayerSkin;
+import net.minecraft.core.BlockPos;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.network.chat.Component;
@@ -261,6 +269,22 @@ public final class DbFx {
                     }
                 }
             }
+            case SubNet.SHOT -> {
+                if (c >= 1) {
+                    // The server says the ball hit something on the way: it bursts there, now.
+                    for (Fx s : SHOTS) {
+                        if (s.kind == SubNet.SHOT && s.id == id) {
+                            float age = (float) (now - s.born);
+                            if (age < s.a) {
+                                s.dir = pos.subtract(s.pos);
+                                s.a = Math.max(1, age);
+                            }
+                        }
+                    }
+                    return;
+                }
+                SHOTS.add(new Fx(kind, id, pos, dir, a, b, c, now));
+            }
             default -> SHOTS.add(new Fx(kind, id, pos, dir, a, b, c, now));
         }
     }
@@ -278,7 +302,7 @@ public final class DbFx {
 
     private static double life(Fx f) {
         return switch (f.kind) {
-            case SubNet.KI_BOOM -> f.c >= 2000 ? 170 : 110;
+            case SubNet.KI_BOOM -> f.c >= 3000 ? 170 : f.c >= 2000 ? FINAL_LIFE : 110;
             case SubNet.GENKI_BOOM -> 130;
             case SubNet.SUPERNOVA -> 200;
             case SubNet.BIG_BANG_BOOM -> 110;
@@ -634,7 +658,7 @@ public final class DbFx {
 
     static void kiBoom(Vector3f p, float age, float r, float[] col, int seed, float ground) {
         if (KiMesh.ready()) {
-            if (age < 0 || age > (seed >= 2000 ? 170 : 110)) {
+            if (age < 0 || age > (seed >= 3000 ? 170 : seed >= 2000 ? FINAL_LIFE : 110)) {
                 return;
             }
             if (seed >= 3000) {
@@ -757,27 +781,35 @@ public final class DbFx {
     private static final float[] FINAL_FLASH = FxDraw.rgb(0xFFF4C8);
 
     // Vegeta's Explosao Final: two domes (golden tearing, white inside) of radius R, the biggest ring and smoke.
+    // The Explosao Final lasts (the anime's dome stays up, burning): it grows, holds whole for about 2 s while the
+    // server burns whoever is inside, then tears open and the smoke takes its place.
+    static final int FINAL_LIFE = 260;
+
     static void final3d(Vector3f c, float age, float R, float[] col, int seed, float ground) {
-        if (age > 170) {
+        if (age > FINAL_LIFE) {
             return;
         }
-        blast(c, R * easeOut(age / 18), Mth.clamp(age / 56, 0, 1), col, age, seed * 0.013f, 1, false, 14);
-        blast(c, R * 0.72f * easeOut(age / 12), Mth.clamp(age / 32, 0, 1), FINAL_WHITE, age, seed * 0.029f, 1, false, 15);
-        if (age >= 32) {
-            float late = (age - 32) / 20;
-            blast(new Vector3f(c.x, ground + 0.5f + late * 0.6f, c.z), R * (1.02f + late * 0.08f), 0.35f + 0.65f * Mth.clamp((age - 32) / 100, 0, 1), SMOKE_3D, age,
-                    seed * 0.017f, 1, true, 6);
+        // A slow heave while it holds, so the held dome is never a still picture.
+        float heave = 1 + 0.03f * Mth.sin(age * 0.35f) * (1 - smooth((age - 70) / 30));
+        blast(c, R * easeOut(age / 22) * heave, Mth.clamp((age - 40) / 90, 0, 1) * 0.92f + 0.08f * Mth.clamp(age / 40, 0, 1), col, age,
+                seed * 0.013f, 1, false, 14);
+        blast(c, R * 0.72f * easeOut(age / 14) * heave, Mth.clamp((age - 24) / 60, 0, 1) * 0.9f + 0.1f * Mth.clamp(age / 24, 0, 1), FINAL_WHITE, age,
+                seed * 0.029f, 1, false, 15);
+        if (age >= 80) {
+            float late = (age - 80) / 20;
+            blast(new Vector3f(c.x, ground + 0.5f + Math.min(late, 4) * 0.6f, c.z), R * (1.02f + Math.min(late, 4) * 0.06f),
+                    0.35f + 0.65f * Mth.clamp((age - 80) / 170, 0, 1), SMOKE_3D, age, seed * 0.017f, 1, true, 6);
         }
-        dustRing(new Vector3f(c.x, ground, c.z), R * 2.17f * easeOut(age / 40), R * 2.33f, Mth.clamp(age / 64, 0, 1), col, 9.9f);
-        if (age < 10) {
-            float k = age / 10;
+        dustRing(new Vector3f(c.x, ground, c.z), R * 2.17f * easeOut(age / 50), R * 2.33f, Mth.clamp(age / 110, 0, 1), col, 9.9f);
+        if (age < 12) {
+            float k = age / 12;
             flashBall(c, 2 + R * 0.6f * Mth.sqrt(k), 1 - k, FINAL_FLASH, 3.7f);
         }
-        if (age < 40) {
-            warp(c, R * 2, 1.5f * (1 - age / 40), 0, age, null);
+        if (age < 70) {
+            warp(c, R * 2, 1.5f * (1 - age / 70), 0, age, null);
         }
-        if (age < 150) {
-            dsk(new Vector3f(c.x, ground + 0.03f, c.z), new Vector3f(0, 1, 0), R * 1.4f, FxDraw.SOFT, 0.15f, DIRT, 0.85f * smooth(age / 4) * (1 - smooth((age - 110) / 40)),
+        if (age < 240) {
+            dsk(new Vector3f(c.x, ground + 0.03f, c.z), new Vector3f(0, 1, 0), R * 1.4f, FxDraw.SOFT, 0.15f, DIRT, 0.85f * smooth(age / 4) * (1 - smooth((age - 190) / 50)),
                     false);
         }
     }
@@ -2073,7 +2105,15 @@ public final class DbFx {
     private static final float[] PICCOLO_SKIN = FxDraw.rgb(0x62B04A);
     private static final float[] PICCOLO_CUFF = FxDraw.rgb(0xA0402A);
 
-    // Piccolo's arm stretched out to pos: a long green arm (lit box) with the red cuff at the shoulder.
+    // A stretched arm waiting to be drawn with its owner's skin, after the effects (drawArms).
+    private record SkinArm(Vector3f a, Vector3f b, Vector3f right, Vec3 mid, ResourceLocation skin, boolean slim) {
+    }
+
+    private static final List<SkinArm> ARMS = new ArrayList<>();
+
+    // Piccolo's arm stretched out to pos. A player's arm is their own (Stark, 2026-11-09: "a green arm on my skin is
+    // strange"): the skin's right arm and sleeve, shoulder and hand at the ends and the forearm repeated along the
+    // stretch (drawArms). Anyone else (the Piccolo boss): a long green arm (lit box) with the red cuff at the shoulder.
     private static void arm(Fx f, float partial, float out) {
         if (pass) {
             return;
@@ -2088,8 +2128,117 @@ public final class DbFx {
         Vec3 shoulder = e.getPosition(partial).add(0, e.getBbHeight() * 0.75, 0).add(right.scale(0.33));
         Vector3f a = rel(shoulder);
         Vector3f b = rel(f.pos);
+        if (e instanceof AbstractClientPlayer player && out > 0.5f) {
+            PlayerSkin skin = player.getSkin();
+            if (ARMS.size() > 16) {
+                ARMS.clear();
+            }
+            ARMS.add(new SkinArm(a, b, new Vector3f((float) right.x, (float) right.y, (float) right.z), shoulder.lerp(f.pos, 0.5), skin.texture(),
+                    skin.model() == PlayerSkin.Model.SLIM));
+            return;
+        }
         box(a, at(a, new Vector3f(b).sub(a).normalize(), 0.25f), 0.27f, PICCOLO_CUFF, out);
         box(at(a, new Vector3f(b).sub(a).normalize(), 0.25f), b, 0.24f, PICCOLO_SKIN, out);
+    }
+
+    // Draws the stretched arms queued this frame with their owners' skins (entity cutout, lit by the world where they
+    // are), after the effects like the Mafuba seals.
+    static void drawArms() {
+        if (ARMS.isEmpty()) {
+            return;
+        }
+        Minecraft mc = Minecraft.getInstance();
+        MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
+        PoseStack.Pose pose = new PoseStack().last();
+        for (SkinArm arm : ARMS) {
+            int light = mc.level == null ? LightTexture.FULL_BRIGHT : LevelRenderer.getLightColor(mc.level, BlockPos.containing(arm.mid()));
+            VertexConsumer out = buffers.getBuffer(RenderType.entityCutoutNoCull(arm.skin()));
+            skinArm(out, pose, arm, light, 0, 0);
+            // The sleeve layer, a hair bigger.
+            skinArm(out, pose, arm, light, 16, 0.03f);
+        }
+        buffers.endBatch();
+        ARMS.clear();
+    }
+
+    // One layer of the skin's right arm (64x64 layout; the sleeve is 16 pixels lower) stretched from a to b: the
+    // shoulder's 4 pixels at the start, the hand's 4 at the end, the 4 of the forearm in between, one copy every quarter
+    // block.
+    private static void skinArm(VertexConsumer out, PoseStack.Pose pose, SkinArm arm, int light, int vOff, float grow) {
+        Vector3f d = new Vector3f(arm.b()).sub(arm.a());
+        float len = d.length();
+        if (len < 1.0E-3f) {
+            return;
+        }
+        d.div(len);
+        Vector3f r = new Vector3f(arm.right()).sub(new Vector3f(d).mul(arm.right().dot(d)));
+        if (r.lengthSquared() < 1.0E-4f) {
+            r = new Vector3f(d).cross(0, 1, 0);
+            if (r.lengthSquared() < 1.0E-4f) {
+                r.set(1, 0, 0);
+            }
+        }
+        r.normalize();
+        // The arm's front (its palm side when it hangs) faces up when it points forward.
+        Vector3f fr = new Vector3f(r).cross(d).normalize();
+        int aw = arm.slim() ? 3 : 4;
+        float hr = aw / 32f + grow;
+        float hf = 4 / 32f + grow;
+        float cap = Math.min(0.25f, len / 3);
+        // Shoulder end (top) and hand end (bottom) caps.
+        Vector3f a0 = new Vector3f(arm.a()).sub(new Vector3f(d).mul(grow));
+        Vector3f b0 = new Vector3f(arm.b()).add(new Vector3f(d).mul(grow));
+        skinCap(out, pose, a0, r, fr, hr, hf, 44, 16 + vOff, aw, new Vector3f(d).negate(), light);
+        skinCap(out, pose, b0, r, fr, hr, hf, 44 + aw, 16 + vOff, aw, d, light);
+        skinSides(out, pose, a0, d, 0, cap, r, fr, hr, hf, aw, 20 + vOff, 24 + vOff, light);
+        float mid = len - cap;
+        for (float s = cap; s < mid - 1.0E-3f; s += 0.25f) {
+            float e = Math.min(mid, s + 0.25f);
+            skinSides(out, pose, a0, d, s, e, r, fr, hr, hf, aw, 24 + vOff, 24 + vOff + 4 * (e - s) / 0.25f, light);
+        }
+        skinSides(out, pose, a0, d, mid, len + 2 * grow, r, fr, hr, hf, aw, 28 + vOff, 32 + vOff, light);
+    }
+
+    // The four sides of the arm from s to e along it, with the skin rows v0 to v1: outer, front, inner, back in turn.
+    private static void skinSides(VertexConsumer out, PoseStack.Pose pose, Vector3f a, Vector3f d, float s, float e, Vector3f r, Vector3f fr,
+            float hr, float hf, int aw, float v0, float v1, int light) {
+        Vector3f p0 = new Vector3f(a).add(new Vector3f(d).mul(s));
+        Vector3f p1 = new Vector3f(a).add(new Vector3f(d).mul(e));
+        Vector3f rr = new Vector3f(r).mul(hr);
+        Vector3f ff = new Vector3f(fr).mul(hf);
+        // Corners round the arm: outer-back, outer-front, inner-front, inner-back.
+        Vector3f[] c = {new Vector3f(rr).sub(ff), new Vector3f(rr).add(ff), new Vector3f(rr).negate().add(ff), new Vector3f(rr).negate().sub(ff)};
+        float[] u = {40, 44, 44 + aw, 48 + aw, 48 + 2 * aw};
+        Vector3f[] n = {r, fr, new Vector3f(r).negate(), new Vector3f(fr).negate()};
+        for (int i = 0; i < 4; i++) {
+            Vector3f c0 = c[i];
+            Vector3f c1 = c[(i + 1) % 4];
+            skinQuad(out, pose, new Vector3f(p0).add(c0), new Vector3f(p0).add(c1), new Vector3f(p1).add(c1), new Vector3f(p1).add(c0),
+                    u[i], u[i + 1], v0, v1, n[i], light);
+        }
+    }
+
+    private static void skinCap(VertexConsumer out, PoseStack.Pose pose, Vector3f at, Vector3f r, Vector3f fr, float hr, float hf, float u0, float v0,
+            int aw, Vector3f n, int light) {
+        Vector3f rr = new Vector3f(r).mul(hr);
+        Vector3f ff = new Vector3f(fr).mul(hf);
+        skinQuad(out, pose, new Vector3f(at).add(rr).sub(ff), new Vector3f(at).sub(rr).sub(ff), new Vector3f(at).sub(rr).add(ff), new Vector3f(at).add(rr).add(ff),
+                u0, u0 + aw, v0, v0 + 4, n, light);
+    }
+
+    // A quad with the skin's pixels u0..u1 across (a to b) and v0..v1 down (a to d).
+    private static void skinQuad(VertexConsumer out, PoseStack.Pose pose, Vector3f a, Vector3f b, Vector3f c, Vector3f d, float u0, float u1, float v0,
+            float v1, Vector3f n, int light) {
+        float k = 1 / 64f;
+        skinVertex(out, pose, a, u0 * k, v0 * k, n, light);
+        skinVertex(out, pose, b, u1 * k, v0 * k, n, light);
+        skinVertex(out, pose, c, u1 * k, v1 * k, n, light);
+        skinVertex(out, pose, d, u0 * k, v1 * k, n, light);
+    }
+
+    private static void skinVertex(VertexConsumer out, PoseStack.Pose pose, Vector3f p, float u, float v, Vector3f n, int light) {
+        out.addVertex(pose, p.x, p.y, p.z).setColor(1f, 1f, 1f, 1f).setUv(u, v).setOverlay(OverlayTexture.NO_OVERLAY).setLight(light)
+                .setNormal(pose, n.x, n.y, n.z);
     }
 
     // A lit square bar from a to b, w thick.
@@ -2269,7 +2418,8 @@ public final class DbFx {
             return;
         }
         double dist = mc.player.position().distanceTo(pos);
-        float near = (float) Mth.clamp(1 - (dist - 20) / 40, 0, 1);
+        // The charged Genki Dama (57) blows up tens of blocks wide: it is felt from much farther off.
+        float near = preset == 57 ? (float) Mth.clamp(1 - (dist - 70) / 90, 0, 1) : (float) Mth.clamp(1 - (dist - 20) / 40, 0, 1);
         if (near <= 0) {
             return;
         }
@@ -2519,6 +2669,21 @@ public final class DbFx {
                 ScreenFx.flash(0xFFF4C8, near, 18);
                 ScreenFx.impactFrame(new int[] {4, 3, 4, 3, 4, 3}, 1, 0xFFFFFF, pos, 0);
                 ScreenShake.start(3f * near, 70);
+            }
+            // Goku's X: the punch out of the Instant Transmission, heavy: four manga frames, radial blur and a FOV kick.
+            case 56 -> {
+                ScreenFx.flash(0xFFFFFF, 0.3f * near, 3);
+                ScreenFx.impactFrame(new int[] {4, 3, 4, 3}, 1, 0xFFFFFF, pos, 0);
+                ScreenShake.start(1.5f * near, 16);
+                ScreenFx.radialBlur(pos, 0.9f * near, 10);
+                ScreenFx.fovKick(8 * near, 12);
+            }
+            // The charged Genki Dama landing: a long white-blue flash, six manga frames and a long quake.
+            case 57 -> {
+                ScreenFx.flash(0xE8F6FF, near, 22);
+                ScreenFx.impactFrame(new int[] {4, 3, 4, 3, 4, 3}, 1, 0xFFFFFF, pos, 0);
+                ScreenShake.start(3.2f * near, 90);
+                ScreenFx.radialBlur(pos, near, 18);
             }
             // Realista+Anime: the Genki Dama landing, three manga frames (negative, positive, negative).
             case 47 -> {

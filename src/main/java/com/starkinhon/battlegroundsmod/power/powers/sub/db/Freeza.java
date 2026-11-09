@@ -97,6 +97,7 @@ public final class Freeza {
                     (SubCommon.RANDOM.nextDouble() - 0.5) * spread).normalize();
         }
         Vec3 end = DbCommon.beamEnd(caster, level, tip, dir, 40, 0.4, true);
+        DbScar.along(caster, level, tip, end, 0.4);
         SubNet.send(level, SubNet.DEATH_BEAM, 0, tip, end.subtract(tip), 0, 0, 0);
         SubCommon.sound(level, tip, SoundEvents.TRIDENT_THROW.value(), 1.2f, 2f);
         SubCommon.sound(level, tip, SoundEvents.ILLUSIONER_CAST_SPELL, 0.8f, 2f);

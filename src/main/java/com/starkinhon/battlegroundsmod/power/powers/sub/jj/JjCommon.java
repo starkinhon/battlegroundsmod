@@ -190,6 +190,14 @@ public final class JjCommon {
         }
     }
 
+    // Breaks the one block at pos (a small ki shot chipping the ground): it flies off now and then, or just goes.
+    public static void breakAt(ServerLevel level, BlockPos pos, Vec3 from, boolean canFly) {
+        if (!BlockRules.canBreak(level)) {
+            return;
+        }
+        breakOne(level, pos.mutable(), from, new int[] {0}, canFly ? 1 : 0, 0.35);
+    }
+
     private static void breakOne(ServerLevel level, BlockPos.MutableBlockPos pos, Vec3 from, int[] flown, int flyMax, double up) {
         BlockState state = level.getBlockState(pos);
         if (state.isAir() || !state.getFluidState().isEmpty() || state.hasBlockEntity() || state.getDestroySpeed(level, pos) < 0) {

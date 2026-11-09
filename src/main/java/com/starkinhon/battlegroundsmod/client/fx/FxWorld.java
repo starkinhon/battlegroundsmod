@@ -264,6 +264,8 @@ public final class FxWorld {
             KiMesh.flush(true);
             FxPost.endGlow(FxConfig.on(FxConfig.BLOOM));
         }
+        // Piccolo's stretched arm with its owner's skin.
+        DbFx.drawArms();
         if (!space) {
             // The Mafuba jar's 魔封波 seal, written in the kanji font after the effects.
             DbFx.drawTags();
