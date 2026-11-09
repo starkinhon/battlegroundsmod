@@ -88,10 +88,13 @@ public final class AshDeath {
     public static void startStone(int entityId, int ticks) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level == null || FxShaders.ash == null || FxShaders.flat() || !(minecraft.level.getEntity(entityId) instanceof LivingEntity living)) {
+            com.starkinhon.battlegroundsmod.BattlegroundsMod.LOGGER.warn("Stone body skipped for entity {}: level {}, ash shader {}, flat {}, entity {}", entityId,
+                    minecraft.level != null, FxShaders.ash != null, FxShaders.flat(), minecraft.level == null ? null : minecraft.level.getEntity(entityId));
             return;
         }
         int end = Math.max(30, ticks);
         ASHES.put(entityId, new Ash(living, ScreenFx.now(), 0, 24, end - 20, end, end, null, true));
+        com.starkinhon.battlegroundsmod.BattlegroundsMod.LOGGER.info("Stone body for {} ({} ticks)", living, end);
     }
 
     static boolean hasSparks() {
@@ -370,6 +373,7 @@ public final class AshDeath {
                     0xF000F0);
         } catch (RuntimeException e) {
             // A renderer that can't be drawn this way: let vanilla draw it from now on.
+            com.starkinhon.battlegroundsmod.BattlegroundsMod.LOGGER.warn("Ash/stone body of {} can't be drawn; vanilla draws it", entity, e);
             BROKEN.add(entity.getId());
         } finally {
             entity.deathTime = deathTime;

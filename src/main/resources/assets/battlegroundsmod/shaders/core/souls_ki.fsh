@@ -38,6 +38,7 @@ in float vH;
 in vec2 vUv;
 in vec2 vDir;
 in vec3 vNv;
+in vec4 vC;
 
 out vec4 fragColor;
 
@@ -72,6 +73,18 @@ void emit(vec3 premul, float a) {
     }
 }
 
+// How much a ball faces the camera: 0 on its outline, 1 in the middle of the disc it makes on the screen. On the pages
+// the camera is always far, so dot(N, V) does that; here the ball can hang right over a third-person camera, and then
+// every point seen is at a grazing angle (dot(N, V) near 0 all over), so the whole ball took the outline's dark color.
+// Measured instead from where the pixel sits in the ball's disc on the screen, the ball looks like the page's ball at
+// any distance, only bigger.
+float facing() {
+    float d = length(vC.xyz), s = clamp(vC.w / max(d, 1e-4), 0., 0.999);
+    float c = clamp(dot(normalize(-vV), vC.xyz / max(d, 1e-4)), 1e-3, 1.);
+    float rho = (sqrt(1. - c * c) / c) / (s / sqrt(1. - s * s));
+    return sqrt(clamp(1. - rho * rho, 0., 1.));
+}
+
 float spiralBand(float s, float w, out float core) {
     float d = abs(fract(s) - 0.5); float aa = clamp(fwidth(s), 1e-3, 0.05);
     core = 1. - smoothstep(0., w * 0.32, d); return 1. - smoothstep(w * 0.5 - aa, w * 0.5 + aa, d);
@@ -103,7 +116,7 @@ void main() {
             emit(col * a * (0.8 + 1.1 * heat), a * 0.6);
         }
     } else if (kind == 1) {                                            // Genki core: light ball, white middle, no dark outline
-        float fz = clamp(dot(N, V), 0., 1.);
+        float fz = facing();
         float a = Time * 0.35; vec3 o = vO; o.xz = mat2(cos(a), -sin(a), sin(a), cos(a)) * o.xz;
         vec3 q = o * 2.6 + vec3(0., -Time * 0.25, 0.);
         float w = fbm3(q * 0.9 + 4.); float pl = fbm4(q + vec3(w, -w, w) * 1.2) * 0.5 + 0.5;
@@ -170,7 +183,7 @@ void main() {
         if (a < 0.003) discard;
         emit(c * a * 1.6, a * 0.2);
     } else if (kind == 7) {                                            // the Supernova's red sun
-        float fz = clamp(dot(N, V), 0., 1.);
+        float fz = facing();
         float a = Time * 0.3; vec3 o = vO; o.xz = mat2(cos(a), -sin(a), sin(a), cos(a)) * o.xz;
         vec3 q = o * 2.4 + vec3(0., -Time * 0.35, 0.);
         float w = fbm3(q * 0.9 + 2.); float pl = fbm4(q + vec3(w, -w, w) * 1.4) * 0.5 + 0.5;
