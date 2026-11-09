@@ -537,6 +537,33 @@ public final class InfiniteVoid {
         return insideOf(entity) != null;
     }
 
+    // The height of the floor when entity is up in the space of a domain of Gojo's, NaN otherwise. There are no blocks
+    // up there, so the bosses can't find a path on it: they walk it straight (SoulBossAI.approach) and anywhere at
+    // this height counts as ground for their blinks.
+    public static double floorY(LivingEntity entity) {
+        Active active = insideOf(entity);
+        return active != null ? active.arena.y : Double.NaN;
+    }
+
+    // spot is on the floor of the domain entity is up in (a blink lands there as on the ground).
+    public static boolean onFloor(LivingEntity entity, Vec3 spot) {
+        double y = floorY(entity);
+        return !Double.isNaN(y) && Math.abs(spot.y - y) < 0.6;
+    }
+
+    // A blink of entity's to spot stays in the domain it is up in (always true outside one). Gojo going past the edge
+    // would shatter his own domain (see left), so his blinks never land out there.
+    public static boolean keepsInside(LivingEntity entity, Vec3 spot) {
+        Active active = insideOf(entity);
+        if (active == null) {
+            return true;
+        }
+        double dx = spot.x - active.center.x;
+        double dz = spot.z - active.center.z;
+        double r = active.spec.radius();
+        return dx * dx + dz * dz <= r * r;
+    }
+
     private static Active insideOf(LivingEntity entity) {
         for (Active active : ACTIVE) {
             if (active.inside && active.back.containsKey(entity)) {

@@ -8,6 +8,7 @@ import com.starkinhon.battlegroundsmod.combat.BlockRules;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Intangible;
 import com.starkinhon.battlegroundsmod.power.PowerData;
+import com.starkinhon.battlegroundsmod.power.powers.gojo.InfiniteVoid;
 import com.starkinhon.battlegroundsmod.power.powers.uchiha.Susanoo;
 
 import net.minecraft.server.level.ServerLevel;
@@ -74,10 +75,14 @@ abstract class TacticsBase implements BossTactics {
         strongFoe = target instanceof SoulBoss || kind == Kind.BILLS || kind == Kind.GOJO
                 || target.hasData(ModAttachments.POWER) && target.getData(ModAttachments.POWER).hasPower()
                         && target.getData(ModAttachments.POWER).tier <= 5;
-        // In the air: nothing under their feet for 2.5 blocks.
+        // In the air: nothing under their feet for 2.5 blocks. Up in Gojo's domain there are no blocks at all, only its
+        // floor: there it is 2.5 blocks above the floor (before, everyone in there read as in the air and the Gojo boss
+        // kept throwing the Blue to bring them down).
         Vec3 feet = target.position();
-        air = !target.onGround() && level.clip(new ClipContext(feet, feet.add(0, -2.5, 0), ClipContext.Block.COLLIDER,
-                ClipContext.Fluid.ANY, target)).getType() == HitResult.Type.MISS;
+        double floor = InfiniteVoid.floorY(target);
+        air = !Double.isNaN(floor) ? feet.y - floor > 2.5
+                : !target.onGround() && level.clip(new ClipContext(feet, feet.add(0, -2.5, 0), ClipContext.Block.COLLIDER,
+                        ClipContext.Fluid.ANY, target)).getType() == HitResult.Type.MISS;
         // Who is fighting him, and who stands next to the target (a line or a ring catches them too).
         enemies = 0;
         crowd = 0;
@@ -190,7 +195,8 @@ abstract class TacticsBase implements BossTactics {
             for (double up : new double[] {0, 1, -1, 2, -2, 3}) {
                 Vec3 spot = from.add(dir.scale(far)).add(0, up, 0);
                 AABB box = boss.getBoundingBox().move(spot.subtract(from));
-                if (!boss.level().noCollision(boss, box) || boss.level().noCollision(boss, box.move(0, -1.0, 0))) {
+                if (!boss.level().noCollision(boss, box) || boss.level().noCollision(boss, box.move(0, -1.0, 0))
+                        && !InfiniteVoid.onFloor(boss, spot) || !InfiniteVoid.keepsInside(boss, spot)) {
                     continue;
                 }
                 boss.teleportTo(spot.x, spot.y, spot.z);

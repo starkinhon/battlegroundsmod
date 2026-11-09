@@ -9,6 +9,7 @@ import com.starkinhon.battlegroundsmod.power.BossOrder;
 import com.starkinhon.battlegroundsmod.power.PowerData;
 import com.starkinhon.battlegroundsmod.power.PowerLogic;
 import com.starkinhon.battlegroundsmod.power.powers.gojo.Azul;
+import com.starkinhon.battlegroundsmod.power.powers.gojo.InfiniteVoid;
 import com.starkinhon.battlegroundsmod.power.powers.gojo.VazioRelampago;
 import com.starkinhon.battlegroundsmod.skill.RoxoSpec;
 
@@ -209,6 +210,12 @@ final class GojoTactics extends TacticsBase {
         }
         double m = 1;
         boolean stunned = ai.stunned();
+        // Up in his own domain: everyone caught stands paralyzed on the floor and he walks it freely, so he goes to them
+        // and hits; a Blue to pull them in is pointless there (Stark, 2026-11-09: "sempre jogar esse azul aleatório").
+        boolean inVoid = InfiniteVoid.insideAny(boss);
+        // Past this the Blue's tap would lock in the empty air between them.
+        double tapReach = Azul.tapReach(boss.powerData().awakened);
+        boolean blueOut = Azul.out(boss);
         switch (name) {
             case "dominio" -> {
                 if (!finalMoment(ai)) {
@@ -231,6 +238,10 @@ final class GojoTactics extends TacticsBase {
                 return score * m;
             }
             case "azul" -> {
+                if (blueOut) {
+                    // One of his is still out: never a second one on top of it.
+                    return 0;
+                }
                 m *= air ? 1.8 : 1;
                 m *= fleeing || distance > 14 ? 1.6 : 1;
                 m *= crowd >= 1 ? 1.5 : 1;
@@ -238,6 +249,13 @@ final class GojoTactics extends TacticsBase {
                 m *= guarded ? 1.3 : 1;
                 m *= kind == Kind.AIZEN ? 1.3 : 1;
                 m *= kind == Kind.LUTADOR && distance < 6 ? 0.7 : 1;
+                // Behind a wall it only reaches the wall.
+                m *= !sees ? 0.4 : 1;
+                // Paralyzed on the ground and next to him: a punch, not a Blue.
+                m *= stunned && !air && distance < 6 ? 0.3 : 1;
+                if (inVoid && !air) {
+                    m *= crowd >= 1 ? 0.5 : stunned ? 0.05 : 0.3;
+                }
             }
             case "vermelho" -> {
                 m *= crowd >= 1 ? 1.8 : 1;
@@ -264,6 +282,8 @@ final class GojoTactics extends TacticsBase {
                 m *= theirLife < 0.4 ? 1.4 : 1;
                 m *= !sees ? 0.3 : 1;
                 m *= crowd >= 2 ? 0.7 : 1;
+                // In his domain he can just walk up to them.
+                m *= inVoid && !air ? 0.5 : 1;
             }
             case "roxo" -> {
                 // Five seconds to form: only with room, or when they can't get away.
@@ -278,13 +298,23 @@ final class GojoTactics extends TacticsBase {
                 m *= theirLife < 0.15 && !strongFoe ? 0.5 : 1;
             }
             case "azul_e_porrada" -> {
+                if (blueOut) {
+                    return 0;
+                }
                 m *= fleeing || distance > 10 ? 1.5 : 1;
                 m *= guarded ? 0.2 : 1;
+                m *= distance > tapReach ? 0.15 : 1;
+                m *= inVoid && !air ? 0.15 : 1;
             }
             case "puxa_e_explode" -> {
+                if (blueOut) {
+                    return 0;
+                }
                 m *= crowd >= 1 ? 1.6 : 1;
                 m *= air ? 1.4 : 1;
                 m *= distance >= 6 && distance <= 20 ? 1.3 : 1;
+                m *= distance > tapReach ? 0.2 : 1;
+                m *= inVoid && !air && crowd == 0 ? 0.2 : 1;
             }
             case "porrada_e_vermelho", "infinito", "teletransporte", "o_mais_forte" -> {
                 m *= guarded ? 0.2 : 1;
@@ -294,6 +324,10 @@ final class GojoTactics extends TacticsBase {
             }
         }
         m *= styleWeight(name);
+        if (inVoid && melee(name)) {
+            // His domain is where he finishes it with his own hands.
+            m *= 1.5;
+        }
         // A little noise, so even the same situation doesn't always end the same way.
         m *= 0.85 + 0.3 * random.nextDouble();
         return score * m;
@@ -320,9 +354,12 @@ final class GojoTactics extends TacticsBase {
                 yield new BossOrder.Order(true, 1, null, true);
             }
             case "azul" -> {
+                // A tap only where it reaches them; farther it would lock in the empty air between them.
+                double tapReach = Azul.tapReach(boss.powerData().awakened);
+                boolean tapReaches = distance <= tapReach;
                 if ("puxa_e_explode".equals(combo) || "azul_e_porrada".equals(combo)) {
                     // Pulls them in for what comes next.
-                    yield BossOrder.Order.tap();
+                    yield tapReaches ? BossOrder.Order.tap() : BossOrder.Order.charged(range(0.3, 0.6, bump), "CHASE");
                 }
                 if (air) {
                     yield BossOrder.Order.charged(range(0.6, 1, bump), "CHASE");
@@ -334,12 +371,13 @@ final class GojoTactics extends TacticsBase {
                     yield BossOrder.Order.charged(range(0.5, 1, bump), "SHOOT");
                 }
                 if (fleeing || distance > 14) {
-                    yield random.nextDouble() < 0.45 ? BossOrder.Order.tap() : BossOrder.Order.charged(range(0.4, 0.9, bump), "SHOOT");
+                    yield tapReaches && random.nextDouble() < 0.45 ? BossOrder.Order.tap()
+                            : BossOrder.Order.charged(range(0.4, 0.9, bump), "SHOOT");
                 }
                 if (distance < 5) {
                     yield random.nextDouble() < 0.6 ? BossOrder.Order.tap() : BossOrder.Order.charged(range(0.3, 0.7, bump), "PARK_THEN_ORBIT");
                 }
-                yield random.nextDouble() < (style == Style.BRINCANDO ? 0.5 : 0.3) ? BossOrder.Order.tap()
+                yield tapReaches && random.nextDouble() < (style == Style.BRINCANDO ? 0.5 : 0.3) ? BossOrder.Order.tap()
                         : BossOrder.Order.charged(range(0.3, 1, bump));
             }
             case "vermelho" -> {
@@ -415,8 +453,7 @@ final class GojoTactics extends TacticsBase {
             ai.dropCombo();
             return false;
         }
-        boss.getNavigation().stop();
-        boss.getMoveControl().strafe(0, 0);
+        ai.halt();
         ai.lookAt(Combat.center(ai.target()), 20);
         if (distance < 6 && blinkCooldown == 0) {
             blinkAway(ai, 10);
