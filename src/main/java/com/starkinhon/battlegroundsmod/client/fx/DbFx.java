@@ -259,6 +259,22 @@ public final class DbFx {
                     }
                 }
             }
+            case SubNet.SHOT -> {
+                if (c >= 1) {
+                    // The server says the ball hit something on the way: it bursts there, now.
+                    for (Fx s : SHOTS) {
+                        if (s.kind == SubNet.SHOT && s.id == id) {
+                            float age = (float) (now - s.born);
+                            if (age < s.a) {
+                                s.dir = pos.subtract(s.pos);
+                                s.a = Math.max(1, age);
+                            }
+                        }
+                    }
+                    return;
+                }
+                SHOTS.add(new Fx(kind, id, pos, dir, a, b, c, now));
+            }
             default -> SHOTS.add(new Fx(kind, id, pos, dir, a, b, c, now));
         }
     }
@@ -276,7 +292,7 @@ public final class DbFx {
 
     private static double life(Fx f) {
         return switch (f.kind) {
-            case SubNet.KI_BOOM -> f.c >= 2000 ? 170 : 110;
+            case SubNet.KI_BOOM -> f.c >= 3000 ? 170 : f.c >= 2000 ? FINAL_LIFE : 110;
             case SubNet.GENKI_BOOM -> 130;
             case SubNet.SUPERNOVA -> 150;
             case SubNet.BIG_BANG_BOOM -> 110;
@@ -632,7 +648,7 @@ public final class DbFx {
 
     static void kiBoom(Vector3f p, float age, float r, float[] col, int seed, float ground) {
         if (KiMesh.ready()) {
-            if (age < 0 || age > (seed >= 2000 ? 170 : 110)) {
+            if (age < 0 || age > (seed >= 3000 ? 170 : seed >= 2000 ? FINAL_LIFE : 110)) {
                 return;
             }
             if (seed >= 3000) {
@@ -755,27 +771,35 @@ public final class DbFx {
     private static final float[] FINAL_FLASH = FxDraw.rgb(0xFFF4C8);
 
     // Vegeta's Explosao Final: two domes (golden tearing, white inside) of radius R, the biggest ring and smoke.
+    // The Explosao Final lasts (the anime's dome stays up, burning): it grows, holds whole for about 2 s while the
+    // server burns whoever is inside, then tears open and the smoke takes its place.
+    static final int FINAL_LIFE = 260;
+
     static void final3d(Vector3f c, float age, float R, float[] col, int seed, float ground) {
-        if (age > 170) {
+        if (age > FINAL_LIFE) {
             return;
         }
-        blast(c, R * easeOut(age / 18), Mth.clamp(age / 56, 0, 1), col, age, seed * 0.013f, 1, false, 14);
-        blast(c, R * 0.72f * easeOut(age / 12), Mth.clamp(age / 32, 0, 1), FINAL_WHITE, age, seed * 0.029f, 1, false, 15);
-        if (age >= 32) {
-            float late = (age - 32) / 20;
-            blast(new Vector3f(c.x, ground + 0.5f + late * 0.6f, c.z), R * (1.02f + late * 0.08f), 0.35f + 0.65f * Mth.clamp((age - 32) / 100, 0, 1), SMOKE_3D, age,
-                    seed * 0.017f, 1, true, 6);
+        // A slow heave while it holds, so the held dome is never a still picture.
+        float heave = 1 + 0.03f * Mth.sin(age * 0.35f) * (1 - smooth((age - 70) / 30));
+        blast(c, R * easeOut(age / 22) * heave, Mth.clamp((age - 40) / 90, 0, 1) * 0.92f + 0.08f * Mth.clamp(age / 40, 0, 1), col, age,
+                seed * 0.013f, 1, false, 14);
+        blast(c, R * 0.72f * easeOut(age / 14) * heave, Mth.clamp((age - 24) / 60, 0, 1) * 0.9f + 0.1f * Mth.clamp(age / 24, 0, 1), FINAL_WHITE, age,
+                seed * 0.029f, 1, false, 15);
+        if (age >= 80) {
+            float late = (age - 80) / 20;
+            blast(new Vector3f(c.x, ground + 0.5f + Math.min(late, 4) * 0.6f, c.z), R * (1.02f + Math.min(late, 4) * 0.06f),
+                    0.35f + 0.65f * Mth.clamp((age - 80) / 170, 0, 1), SMOKE_3D, age, seed * 0.017f, 1, true, 6);
         }
-        dustRing(new Vector3f(c.x, ground, c.z), R * 2.17f * easeOut(age / 40), R * 2.33f, Mth.clamp(age / 64, 0, 1), col, 9.9f);
-        if (age < 10) {
-            float k = age / 10;
+        dustRing(new Vector3f(c.x, ground, c.z), R * 2.17f * easeOut(age / 50), R * 2.33f, Mth.clamp(age / 110, 0, 1), col, 9.9f);
+        if (age < 12) {
+            float k = age / 12;
             flashBall(c, 2 + R * 0.6f * Mth.sqrt(k), 1 - k, FINAL_FLASH, 3.7f);
         }
-        if (age < 40) {
-            warp(c, R * 2, 1.5f * (1 - age / 40), 0, age, null);
+        if (age < 70) {
+            warp(c, R * 2, 1.5f * (1 - age / 70), 0, age, null);
         }
-        if (age < 150) {
-            dsk(new Vector3f(c.x, ground + 0.03f, c.z), new Vector3f(0, 1, 0), R * 1.4f, FxDraw.SOFT, 0.15f, DIRT, 0.85f * smooth(age / 4) * (1 - smooth((age - 110) / 40)),
+        if (age < 240) {
+            dsk(new Vector3f(c.x, ground + 0.03f, c.z), new Vector3f(0, 1, 0), R * 1.4f, FxDraw.SOFT, 0.15f, DIRT, 0.85f * smooth(age / 4) * (1 - smooth((age - 190) / 50)),
                     false);
         }
     }
