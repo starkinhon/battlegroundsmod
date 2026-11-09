@@ -20,7 +20,9 @@ import net.neoforged.neoforge.network.PacketDistributor;
 // new body (death) starts empty. Shown by client/ModelBarHud.
 public final class ModelBar {
     // How much a landed cut gives (times its weight: a Shift+Z line is a quarter of a Z), clean and against a defense.
-    public static final float HIT = 0.012f, DEFENDED = 0.06f;
+    // Stark 2026-11-09: 0.012/0.06 (about 80 clean Z hits) never filled in a real fight, not even the boss's. Now about
+    // 20 clean Z hits (5 full combos), 7 into a guard.
+    public static final float HIT = 0.05f, DEFENDED = 0.15f;
     private static final Map<LivingEntity, Float> VALUES = new WeakHashMap<>();
     private static final Map<LivingEntity, Float> SENT = new WeakHashMap<>();
 
