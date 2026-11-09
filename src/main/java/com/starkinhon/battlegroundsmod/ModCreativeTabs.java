@@ -31,7 +31,7 @@ public final class ModCreativeTabs {
     private static final Set<String> REMOVED = Set.of(
             "ichigo_spawn_egg", "soul_ichigo",
             "urahara_spawn_egg", "soul_urahara",
-            "sukuna_spawn_egg", "soul_sukuna_cuts",
+            "soul_sukuna_cuts",
             "orihime_spawn_egg", "soul_orihime",
             // Luffy and Saitama: hidden until they are ready.
             "soul_rubber_boy", "soul_one_punch");
