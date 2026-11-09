@@ -8,6 +8,7 @@ import java.util.Map;
 import com.starkinhon.battlegroundsmod.combat.Charge;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
+import com.starkinhon.battlegroundsmod.combat.Stamina;
 import com.starkinhon.battlegroundsmod.combat.Stun;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
@@ -30,14 +31,17 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 // Piccolo (SubAlma of Dragon Ball, tier 7), the approved forja/piccolo-kit page in the Realista+Anime style.
 // Z Masenko: both hands over the head, a yellow ball crackling between them; the arms come down and a short, thick
-//   beam pushes the target and blows up on it (dome, crater, dust ring, manga impact frame).
-// X Stretched Arm: the arm stretches 8 blocks, grabs the target and pulls it straight into a knee (hitstop, manga frame).
-// C Hellzone Grenade: Piccolo vanishes and shows up at three spots round the target, throwing balls that seem to miss;
+//   beam pushes the target and blows up on it (dome, crater, dust ring, manga impact frame). The blast is twice the
+//   first port's (Stark, 2026-11-09), and the beam tears the ground it runs over (DbScar).
+// X Stretched Arm: the arm (drawn with the user's own skin) stretches 17 blocks, grabs the target (stun) and pulls it
+//   straight into a knee (hitstop, manga frame) that stuns again, long enough for the Hellzone (the X then C combo).
+// C Hellzone Grenade: only on a stunned target (Stamina.stunnable), kept stunned while the balls are thrown. Piccolo
+//   vanishes and shows up at three spots round the target, throwing balls that seem to miss;
 //   they stop in the air (20 of them, each with its own size and sway) and hurt whoever touches them. C again (or by
 //   itself after 4 s) all of them dive into the target and blow up together in one big golden dome.
 // V Makankosappo: first he throws off the heavy cape, turban and pads (they crack the ground), then two fingers on the
 //   forehead while yellow and pink sparks spiral in; let go, a thin ray with two tight spirals pierces everyone in line
-//   (hitstop on each hole) and blows up where it hits the ground far away.
+//   (hitstop on each hole), 68 blocks out (twice the first port), and blows up where it hits the ground far away.
 public final class Piccolo {
     public static final String HELLZONE = "db_piccolo_hellzone";
 
@@ -121,12 +125,14 @@ public final class Piccolo {
                 SubCommon.sound(level, to, SoundEvents.FIREWORK_ROCKET_BLAST, 1f, 0.8f);
             }
             if (end) {
-                DbCommon.boom(level, to, 2.7f, Db.GOLD, 5);
+                // Twice the first port's blast (Stark, 2026-11-09): dome, crater and reach.
+                DbCommon.boom(level, to, 5.4f, Db.GOLD, 5);
+                DbCommon.screen(level, to, 46);
                 double ground = DbCommon.groundY(level, to);
-                if (to.y - ground < 3) {
-                    JjCommon.crater(level, new Vec3(to.x, ground, to.z), 2.7, 1.3, 16);
+                if (to.y - ground < 5) {
+                    JjCommon.crater(level, new Vec3(to.x, ground, to.z), 5.4, 2.6, 32);
                 }
-                DbCommon.hurtRadius(caster, level, to, 2.7, 10, 1.4, 0.8);
+                DbCommon.hurtRadius(caster, level, to, 5.4, 10, 1.6, 0.8);
                 return true;
             }
             return false;
@@ -138,10 +144,12 @@ public final class Piccolo {
 
     private static boolean arm(LivingEntity caster, ServerLevel level) {
         SubCommon.Guard guard = SubCommon.guard(caster);
-        int stretch = 8;
-        double reach = 8.5;
+        // Twice the first port's reach (Stark, 2026-11-09: "too hard to land"), a little faster and a little fatter.
+        int stretch = 11;
+        double reach = 17;
+        int pull = 10;
         SubCommon.pose(caster, "db.palma_dir");
-        SubCommon.busy(caster, 30);
+        SubCommon.busy(caster, 36);
         SubCommon.sound(level, caster.position(), SoundEvents.SLIME_SQUISH, 1.2f, 0.6f);
         LivingEntity[] caught = {null};
         int[] grabAt = {-1};
@@ -160,7 +168,7 @@ public final class Piccolo {
                 double len = reach * Math.min(1, SubCommon.easeOutCubic(age / (float) stretch));
                 Vec3 tip = shoulder.add(dir.scale(Math.max(0.6, len)));
                 SubNet.send(level, SubNet.ARM, caster.getId(), tip, Vec3.ZERO, 0, 0, 0);
-                for (LivingEntity t : Combat.alongLine(level, shoulder, tip, 0.7, caster)) {
+                for (LivingEntity t : Combat.alongLine(level, shoulder, tip, 0.9, caster)) {
                     caught[0] = t;
                     break;
                 }
@@ -172,8 +180,8 @@ public final class Piccolo {
                     LivingEntity t = caught[0];
                     Vec3 start = from[0];
                     // Pulled straight back in front of Piccolo.
-                    Freeze.hold(t, 10, a -> start.lerp(caster.position().add(SubCommon.flat(caster.getLookAngle()).scale(1.3)), SubCommon.smooth(a / 8f))
-                            .add(0, a < 8 ? 0.3 : 0, 0));
+                    Freeze.hold(t, pull + 2, a -> start.lerp(caster.position().add(SubCommon.flat(caster.getLookAngle()).scale(1.3)),
+                            SubCommon.smooth(a / (float) pull)).add(0, a < pull ? 0.3 : 0, 0));
                     return false;
                 }
                 if (age >= stretch + 2) {
@@ -193,18 +201,19 @@ public final class Piccolo {
                 return done;
             }
             LivingEntity target = caught[0];
-            if (t <= 8) {
-                SubNet.send(level, SubNet.ARM, caster.getId(), Combat.center(target), Vec3.ZERO, 0, 0, t == 8 ? 1 : 0);
+            if (t <= pull) {
+                SubNet.send(level, SubNet.ARM, caster.getId(), Combat.center(target), Vec3.ZERO, 0, 0, t == pull ? 1 : 0);
                 return false;
             }
-            if (t == 10) {
+            if (t == pull + 2) {
                 SubCommon.pose(caster, "db.joelhada");
             }
-            if (t == 12) {
+            if (t == pull + 4) {
                 // The knee in the stomach: hitstop, the manga frame, the shock and it flies up spinning.
                 if (target.isAlive()) {
                     Combat.hurt(caster, target, 9);
-                    Stun.apply(target, 18);
+                    // A real stun (Stark, 2026-11-09): the knee opens the Hellzone, which only lands on a stunned target.
+                    Stun.apply(target, 45);
                     Combat.push(target, target.position().subtract(caster.position()), 0.6, 1.0);
                     Vec3 c = Combat.center(target);
                     DbCommon.hit(level, c, 0.8f, Db.WHITE);
@@ -246,11 +255,18 @@ public final class Piccolo {
             SubCommon.warn(caster, "piccolo.hellzone_no_target", 24);
             return false;
         }
+        // Only on a stunned target (Stark, 2026-11-09: it never landed on someone moving and hitting back): the X's knee
+        // opens it, and the target stays stunned while the balls are thrown round it.
+        if (!Stamina.stunnable(target)) {
+            SubCommon.warn(caster, "piccolo.hellzone_needs_stun");
+            return false;
+        }
         SubCommon.Guard guard = SubCommon.guard(caster);
         int throwEnd = 3 * HZ_SPOT + 5 * 2 + 4;
         int auto = throwEnd + 80;
         int bossClose = throwEnd + 30 + SubCommon.RANDOM.nextInt(30);
         SubCommon.setState(caster, HELLZONE, auto + 10);
+        Stun.apply(target, throwEnd + 10);
         Vec3 home = caster.position();
         // The three spots round the target (left, far left, far right), seen from where Piccolo stands.
         Vec3 toMe = SubCommon.flat(home.subtract(target.position()));
@@ -417,6 +433,8 @@ public final class Piccolo {
 
     // ---------- V: Makankosappo ----------
 
+    private static final double SAPPO_SPEED = 4;
+
     private static boolean makanko(LivingEntity caster, ServerLevel level) {
         SubCommon.Guard guard = SubCommon.guard(caster);
         int gear = 28;
@@ -477,10 +495,11 @@ public final class Piccolo {
             SubCommon.pose(caster, "db.apontar");
             Vec3 tip = DbCommon.hand(caster).add(caster.getLookAngle().scale(0.1));
             Vec3 dir = caster.getLookAngle();
-            Vec3 end = DbCommon.beamEnd(caster, level, tip, dir, 34, 0.5, true);
+            // Twice the first port's reach (Stark, 2026-11-09).
+            Vec3 end = DbCommon.beamEnd(caster, level, tip, dir, 68, 0.5, true);
             double dist = tip.distanceTo(end);
-            // Far too fast: 2.75 blocks a tick, then it blows up where it stops.
-            int reach = Math.max(1, (int) Math.ceil(dist / 2.75));
+            // Far too fast: 4 blocks a tick, then it blows up where it stops.
+            int reach = Math.max(1, (int) Math.ceil(dist / SAPPO_SPEED));
             double ground = DbCommon.groundY(level, end);
             SubNet.send(level, SubNet.MAKANKO, 0, tip, end.subtract(tip), reach, (float) ground, 0);
             DbCommon.screen(level, tip, 45);
@@ -489,7 +508,7 @@ public final class Piccolo {
             float damage = 8 + 16 * k;
             // Pierces everyone on the line, each one when the ray gets there, with a hitstop on each hole.
             for (LivingEntity t : Combat.alongLine(level, tip, end, 0.6, caster)) {
-                int when = (int) (Combat.center(t).distanceTo(tip) / 2.75);
+                int when = (int) (Combat.center(t).distanceTo(tip) / SAPPO_SPEED);
                 Tasks.later(Math.max(0, when), () -> {
                     if (!t.isAlive()) {
                         return;
@@ -504,6 +523,13 @@ public final class Piccolo {
                     hitstop(caster, 2);
                     SubCommon.sound(level, hole, SoundEvents.TRIDENT_HIT, 1.4f, 0.8f);
                 });
+            }
+            // The thin ray tears a narrow furrow where it runs low, as it gets there.
+            for (int i = 0; i < reach; i++) {
+                Vec3 a = tip.add(dir.scale(i * SAPPO_SPEED));
+                Vec3 b = tip.add(dir.scale(Math.min(dist, (i + 1) * SAPPO_SPEED + 1.2)));
+                double skip = i == 0 ? 1.2 : 0;
+                Tasks.later(i, () -> DbScar.along(caster, level, a, b, 0.5, skip));
             }
             Tasks.later(reach, () -> {
                 SubCommon.sound(level, end, SoundEvents.GENERIC_EXPLODE.value(), 1.8f, 1.1f);
