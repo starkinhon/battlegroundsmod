@@ -244,6 +244,10 @@ public final class PowerEvents {
         if (!event.isCanceled() && event.getSource().getEntity() instanceof LivingEntity attacker && attacker != event.getEntity()) {
             event.setAmount(Tiers.shield(attacker, event.getEntity(), event.getAmount()));
         }
+        // The target's Resistencia (2026-11-09): every blow, the same tier's too; the Armadura comes after this, in vanilla.
+        if (!event.isCanceled()) {
+            event.setAmount(Tiers.resist(event.getEntity(), event.getSource(), event.getAmount()));
+        }
     }
 
     private static void onKnockBack(LivingKnockBackEvent event) {
