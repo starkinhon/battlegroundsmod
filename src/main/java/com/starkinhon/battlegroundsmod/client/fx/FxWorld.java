@@ -145,7 +145,7 @@ public final class FxWorld {
         ScreenFx.capture(event);
         boolean world = !PIECES.isEmpty() || MeteorRenderer.hasTrails() || Aura.active() || KatonBallRenderer.active() || AshDeath.hasSparks()
                 || SpaceScene.active() || EsferaRenderer.active() || HakaiRenderer.active() || EnergyRenderer.active() || BlackBoxRenderer.active() || AzulRenderer.active() || VermelhoRenderer.active() || BlackFlashRenderer.active() || RoxoRenderer.active() || AizenFx.active() || SwordFx.active() || MoonSlashRenderer.active() || MoonFormsRenderer.active() || PunchFxRenderer.active() || SubFx.active()
-                || SphereRenderer.active() || SusanooArm.active() || DomainScene.active() || VoidFlashScene.active();
+                || SphereRenderer.active() || SusanooArm.active() || DomainScene.active() || VoidFlashScene.active() || FugaRenderer.active();
         if (!world && !ScreenFx.needsScene()) {
             return;
         }
@@ -160,6 +160,8 @@ public final class FxWorld {
             // Gojo's Expansão de 0,2 s: the void over the world, the people over it.
             VoidFlashScene.render(event);
         }
+        // Sukuna's Fuga: the world goes dark before the effects are drawn on it.
+        FugaRenderer.darken();
         boolean flat = FxShaders.flat();
         if (!flat) {
             FxPost.captureScene();
@@ -316,6 +318,10 @@ public final class FxWorld {
         if (!space) {
             // Letters and numbers rushing into the heads of those with Brain Damage.
             DomainScene.brainGlyphs(event);
+        }
+        if (!space) {
+            // Sukuna's Fuga, over everything else: its fire is its own light in the dark.
+            FugaRenderer.render(camera, partial);
         }
 
         RenderSystem.restoreProjectionMatrix();

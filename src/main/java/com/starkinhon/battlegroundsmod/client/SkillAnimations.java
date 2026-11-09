@@ -58,6 +58,9 @@ public final class SkillAnimations {
     // The bare-fist base moves (combo, Forte, Barragem, Dash Attack) are the keyframe animations named "soco.<move>"
     // (made with tools/poses).
     public static final String FIST_PREFIX = "soco.";
+    // Sukuna's techniques, baked frame by frame from their 3D previews (forja/sukuna-*): they run to their own end and
+    // keep the body square with the aim (the arrow of the Fuga flies where he looks).
+    public static final String SUKUNA_PREFIX = "sukuna.";
     // How the right hand is turned about the wrist right now (the sword moves), radians x, y, z: entity id -> angles.
     private static final Map<Integer, float[]> WRIST = new HashMap<>();
     private static final double KEYFRAME_OUT = 6;
@@ -96,7 +99,7 @@ public final class SkillAnimations {
         Entity who = entity(entityId);
         if (keyframes.isPresent() && who != null) {
             KEYFRAMED.put(entityId, new Keyframed(keyframes.get(), who.tickCount, keyframeEnd(skill, awakened), skill, -1));
-            if (skill.startsWith(SWORD_PREFIX) || skill.startsWith(FIST_PREFIX) || keyframes.get().followLook()) {
+            if (skill.startsWith(SWORD_PREFIX) || skill.startsWith(FIST_PREFIX) || skill.startsWith(SUKUNA_PREFIX) || keyframes.get().followLook()) {
                 // The cuts and punches are made facing ahead: the body turns with the aim, or they would go off to the side.
                 SQUARE.add(entityId);
                 return;
@@ -148,7 +151,7 @@ public final class SkillAnimations {
 
     // How long a hand-made animation runs, the last pose held to the end. Gojo's domain: until the tunnel is over.
     private static int keyframeEnd(String skill, boolean awakened) {
-        if (skill.startsWith(SWORD_PREFIX) || skill.startsWith(FIST_PREFIX)) {
+        if (skill.startsWith(SWORD_PREFIX) || skill.startsWith(FIST_PREFIX) || skill.startsWith(SUKUNA_PREFIX)) {
             return KeyframeAnimation.of(skill).map(a -> (int) Math.ceil(a.length() * 20)).orElse(0);
         }
         if (com.starkinhon.battlegroundsmod.skill.DominioSpec.SKILL.equals(skill)) {
