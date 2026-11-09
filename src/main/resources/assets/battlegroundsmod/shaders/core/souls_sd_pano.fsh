@@ -60,7 +60,7 @@ void main() {
     vec3 col = pano(w);
     // the domain stains what it mirrors: darker, pulled toward its red, deeper away from the horizon
     float lum = dot(col, vec3(0.3, 0.55, 0.15));
-    col = mix(col, vec3(lum) * vec3(1.0, 0.42, 0.4), 0.45) * 0.62;
+    col = mix(col, vec3(lum) * vec3(1.0, 0.3, 0.3), 0.6) * 0.4;
     col *= mix(1.0, 0.55, smoothstep(0.0, 0.6, -v.y));
     fragColor = vec4(col * A, 1.0);
 }

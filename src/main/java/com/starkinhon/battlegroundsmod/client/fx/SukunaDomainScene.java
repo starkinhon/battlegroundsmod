@@ -423,7 +423,8 @@ public final class SukunaDomainScene {
         double s = src(c);
         Vec3 eye = viewer.getEyePosition(partial);
         Vec3 look = Vec3.directionFromRotation(viewer.getViewXRot(partial), viewer.getViewYRot(partial));
-        Vec3 ownP = toLocal(d, c, eye);
+        // where the camera lands: the third person spot behind the head (4 blocks back, like vanilla), never in the eyes
+        Vec3 ownP = toLocal(d, c, eye.subtract(look.scale(4)));
         Vec3 ownL = toLocal(d, c, eye.add(look.scale(8)));
         Vec3[] cam = cutCam(d, c, ownP, ownL);
         Vec3 p = cam[0], l = cam[1];
@@ -801,7 +802,7 @@ public final class SukunaDomainScene {
             pano.safeGetUniform("T").set(t);
             pano.safeGetUniform("Yaw").set(d.yaw * Mth.DEG_TO_RAD);
             pano.safeGetUniform("A").set((float) sm(T_RED, T_RED + 10, s));
-            pano.safeGetUniform("Quake").set((float) quake(s));
+            pano.safeGetUniform("Quake").set(0f);
             pano.safeGetUniform("Texel").set(DomainPanorama.texel());
             pano.safeGetUniform("CamL").set((float) camL.x, (float) camL.y, (float) camL.z);
             RenderSystem.setShaderTexture(0, DomainPanorama.texture());
@@ -822,7 +823,7 @@ public final class SukunaDomainScene {
         ShaderInstance fl = FxShaders.sdFloor;
         fl.safeGetUniform("T").set(t);
         fl.safeGetUniform("Arena").set(1f);
-        fl.safeGetUniform("Quake").set((float) quake(s));
+        fl.safeGetUniform("Quake").set(0f);
         fl.safeGetUniform("Light").set(1f);
         fl.safeGetUniform("CamL").set((float) camL.x, (float) camL.y, (float) camL.z);
         BufferBuilder b = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION);
@@ -1252,7 +1253,8 @@ public final class SukunaDomainScene {
         if (!shrineReady()) {
             return;
         }
-        double Q = quake(s);
+        // The shrine stands still: the tremor is only a screen effect (Stark 06:38).
+        double Q = 0;
         double t = s;
         Matrix4f model = new Matrix4f();
         if (mirror) {
@@ -1381,7 +1383,7 @@ public final class SukunaDomainScene {
         double a = d.yaw * Mth.DEG_TO_RAD, cs = Math.cos(a), sn = Math.sin(a);
         Vec3 fl = new Vec3(fw.x * cs + fw.z * sn, 0, -fw.x * sn + fw.z * cs);
         fl = fl.lengthSqr() < 1e-4 ? v(0, 0, 1) : fl.normalize();
-        Vec3 anchorNow = new Vec3(camL.x + fl.x * 7, 0, camL.z + fl.z * 7);
+        Vec3 anchorNow = new Vec3(camL.x + fl.x * 11, 0, camL.z + fl.z * 11);
         d.lineAt.keySet().removeIf(k -> k < kl - 140);
         for (int k = Math.max(0, kl - LPOOL + 1); k <= kl; k++) {
             double age = s - (LCUT0 + k * LCUT_DT);
@@ -1425,13 +1427,21 @@ public final class SukunaDomainScene {
             return;
         }
         side = side.normalize();
+        // a cut passing right by the camera fills the screen with white: those fade out (only seen at a distance)
+        Vec3 rel = camL.subtract(C);
+        double along = cl(rel.dot(L.ax()), -L.len() * 0.5, L.len() * 0.5);
+        double near = C.add(L.ax().scale(along)).distanceTo(camL);
+        double vis = sm(2.5, 6.0, near);
+        if (vis <= 0.001) {
+            return;
+        }
         ShaderInstance sh = FxShaders.sdLine;
         sh.safeGetUniform("Kind").set((float) L.kind());
         sh.safeGetUniform("Tap").set((float) L.tap());
         sh.safeGetUniform("Seed").set((float) L.seed());
         sh.safeGetUniform("Grow").set((float) ease("out", cl(age / L.grow(), 0, 1)));
         sh.safeGetUniform("Life").set((float) sm(L.grow() * 0.6, L.life(), age));
-        sh.safeGetUniform("A").set((float) (1 - sm(L.life() * 0.75, L.life(), age)));
+        sh.safeGetUniform("A").set((float) ((1 - sm(L.life() * 0.75, L.life(), age)) * vis));
         BufferBuilder b = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
         int n = 24;
         for (int i = 0; i < n; i++) {
