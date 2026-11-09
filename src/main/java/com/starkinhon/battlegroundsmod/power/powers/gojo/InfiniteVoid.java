@@ -248,7 +248,7 @@ public final class InfiniteVoid {
                                     .withStyle(st -> st.withColor(0x8FE6FF)), true);
                         }
                     } else if (acerto.paralisar()) {
-                        Freeze.hold(victim, Math.min(HOLD_STEP + 1, release - age));
+                        Freeze.holdLoose(victim, Math.min(HOLD_STEP + 1, release - age), spot -> within(active, spot));
                     }
                     if (active.inside) {
                         // Walked into the black ball later: taken inside too.
@@ -274,7 +274,7 @@ public final class InfiniteVoid {
                     } else {
                         if (acerto.paralisar() && (age % HOLD_STEP == 0 || !Freeze.isFrozen(victim))) {
                             // A tick of overlap so they never slip free in between.
-                            Freeze.hold(victim, Math.min(HOLD_STEP + 1, release - age));
+                            Freeze.holdLoose(victim, Math.min(HOLD_STEP + 1, release - age), spot -> within(active, spot));
                         }
                         if ((age % HOLD_STEP == 0 || !victim.hasEffect(ModEffects.BRAIN_DAMAGE)) && !active.braindamaged) {
                             brainDamage(victim, HOLD_STEP * 3);
@@ -498,7 +498,7 @@ public final class InfiniteVoid {
                 PowerLogic.interrupt(victim);
             }
             if (!Stamina.resists(victim) && active.spec.acerto().paralisar()) {
-                Freeze.hold(victim, HOLD_STEP + 1);
+                Freeze.holdLoose(victim, HOLD_STEP + 1, spot -> within(active, spot));
             }
         }
     }
@@ -543,12 +543,6 @@ public final class InfiniteVoid {
     public static double floorY(LivingEntity entity) {
         Active active = insideOf(entity);
         return active != null ? active.arena.y : Double.NaN;
-    }
-
-    // spot is on the floor of the domain entity is up in (a blink lands there as on the ground).
-    public static boolean onFloor(LivingEntity entity, Vec3 spot) {
-        double y = floorY(entity);
-        return !Double.isNaN(y) && Math.abs(spot.y - y) < 0.6;
     }
 
     // A blink of entity's to spot stays in the domain it is up in (always true outside one). Gojo going past the edge
@@ -692,6 +686,18 @@ public final class InfiniteVoid {
         put(entity, new Vec3(from.x, active.arena.y, from.z));
     }
 
+    // spot, put back within the barrier when past it (where a hit can throw someone paralyzed, Freeze.holdLoose).
+    private static Vec3 within(Active active, Vec3 spot) {
+        double dx = spot.x - active.center.x;
+        double dz = spot.z - active.center.z;
+        double r = Math.sqrt(dx * dx + dz * dz);
+        double max = active.spec.radius() - 1.5;
+        if (r <= max) {
+            return spot;
+        }
+        return new Vec3(active.center.x + dx * max / r, spot.y, active.center.z + dz * max / r);
+    }
+
     // The floor of the inside holds up everyone in it (no blocks there). Players move themselves (their client keeps
     // them on it, DomainScene.floor); here they never take fall damage and never fly, and fall back up if they sink.
     private static void floor(Active active) {
@@ -701,6 +707,17 @@ public final class InfiniteVoid {
                 continue;
             }
             entity.resetFallDistance();
+            if (entity != active.caster) {
+                // Nobody but Gojo leaves through the barrier (he can: his domain shatters without him).
+                Vec3 inside = within(active, entity.position());
+                if (inside.distanceToSqr(entity.position()) > 0.25) {
+                    if (entity instanceof ServerPlayer player) {
+                        put(player, inside);
+                    } else {
+                        entity.setPos(inside.x, entity.getY(), inside.z);
+                    }
+                }
+            }
             if (entity instanceof ServerPlayer player) {
                 if (player.getAbilities().flying && active.granted.contains(player)) {
                     player.getAbilities().flying = false;
@@ -714,6 +731,8 @@ public final class InfiniteVoid {
             if (Freeze.isFrozen(entity)) {
                 continue;
             }
+            // No blocks up here, so no paths: mobs walk straight at whoever they hunt (DomainSpace.steer).
+            com.starkinhon.battlegroundsmod.power.powers.DomainSpace.steer(entity, y);
             if (entity.getY() < y) {
                 entity.setPos(entity.getX(), y, entity.getZ());
             }

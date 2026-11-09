@@ -20,7 +20,7 @@ import com.starkinhon.battlegroundsmod.power.BossOrder;
 import com.starkinhon.battlegroundsmod.power.PowerData;
 import com.starkinhon.battlegroundsmod.power.PowerLogic;
 import com.starkinhon.battlegroundsmod.power.powers.bills.Hakaizinho;
-import com.starkinhon.battlegroundsmod.power.powers.gojo.InfiniteVoid;
+import com.starkinhon.battlegroundsmod.power.powers.DomainSpace;
 import com.starkinhon.battlegroundsmod.power.powers.uchiha.Susanoo;
 import com.starkinhon.battlegroundsmod.skill.HakaiSpec;
 
@@ -1105,15 +1105,15 @@ public class SoulBossAI extends Goal {
         float forward = distance < ideal - 2 ? -0.6f : distance > ideal + 2 ? 0.4f : 0;
         double floor = voidFloor();
         if (!Double.isNaN(floor)) {
-            // On the domain's floor a strafe would read the air under it as a cliff and only walk forward: it steps to
+            // On an expansion's floor a strafe would read the air under it as a cliff and only walk forward: it steps to
             // a point beside it instead.
             Vec3 to = target.position().subtract(boss.position());
             Vec3 ahead = new Vec3(to.x, 0, to.z);
             ahead = ahead.lengthSqr() > 1.0E-4 ? ahead.normalize() : Combat.flatLook(boss);
             Vec3 side = new Vec3(-ahead.z, 0, ahead.x).scale(strafeSide * 0.6 * 2);
             Vec3 spot = boss.position().add(ahead.scale(forward * 2)).add(side);
-            if (!InfiniteVoid.keepsInside(boss, spot)) {
-                // At the edge of his domain (past it, it shatters): the other way round.
+            if (!DomainSpace.keepsInside(boss, spot)) {
+                // At the edge of the expansion (past it Gojo's shatters, Sukuna's barrier throws him back): the other way round.
                 strafeSide = -strafeSide;
                 spot = boss.position().add(ahead.scale(forward * 2)).subtract(side);
             }
@@ -1196,7 +1196,7 @@ public class SoulBossAI extends Goal {
         boss.getLookControl().setLookAt(target, 30, 30);
         double floor = voidFloor();
         if (!Double.isNaN(floor)) {
-            // Up in Gojo's domain there are no blocks, so no path: it walks straight at them over the floor.
+            // Up in an expansion (Gojo's or Sukuna's) there are no blocks, so no path: it walks straight at them over the floor.
             BossSpec.Movimento movimento = spec.movimento();
             boss.getNavigation().stop();
             boss.getMoveControl().setWantedPosition(target.getX(), floor, target.getZ(),
@@ -1261,9 +1261,9 @@ public class SoulBossAI extends Goal {
             Vec3 spot = target.position().add(back.yRot((float) Math.toRadians(turn)).scale(sombra.atras()));
             if (!boss.level().noCollision(boss, boss.getBoundingBox().move(spot.subtract(from)))
                     || boss.level().noCollision(boss, boss.getBoundingBox().move(spot.subtract(from)).move(0, -1.5, 0))
-                            && !InfiniteVoid.onFloor(boss, spot)
-                    || !InfiniteVoid.keepsInside(boss, spot)) {
-                // Blocked, nothing to stand on (the floor of Gojo's domain counts), or out of his domain.
+                            && !DomainSpace.onFloor(boss, spot)
+                    || !DomainSpace.keepsInside(boss, spot)) {
+                // Blocked, nothing to stand on (an expansion's floor counts), or past its barrier.
                 continue;
             }
             boss.teleportTo(spot.x, spot.y, spot.z);
@@ -1297,7 +1297,7 @@ public class SoulBossAI extends Goal {
     // Can't see or reach the target for a while: reappear behind them.
     private boolean unreachable(BossSpec spec, boolean sees, double distance) {
         BossSpec.Teleporte teleporte = spec.teleporte();
-        // (In Gojo's domain it walks without a path, so a finished path means nothing there.)
+        // (In an expansion it walks without a path, so a finished path means nothing there.)
         boolean stalled = !sees || (distance > spec.distancias().ideal() + 4 && boss.getNavigation().isDone()
                 && Double.isNaN(voidFloor()));
         stuck = stalled ? stuck + 1 : 0;
@@ -1309,7 +1309,7 @@ public class SoulBossAI extends Goal {
         Vec3 from = boss.position();
         Vec3 front = target.position().add(Combat.flatLook(target).scale(teleporte.distancia()));
         for (Vec3 spot : new Vec3[] {behind, front}) {
-            if (boss.level().noCollision(boss, boss.getBoundingBox().move(spot.subtract(from))) && InfiniteVoid.keepsInside(boss, spot)) {
+            if (boss.level().noCollision(boss, boss.getBoundingBox().move(spot.subtract(from))) && DomainSpace.keepsInside(boss, spot)) {
                 boss.teleportTo(spot.x, spot.y, spot.z);
                 boss.getNavigation().stop();
                 face(Combat.center(target), 360);
@@ -1321,12 +1321,12 @@ public class SoulBossAI extends Goal {
         return false;
     }
 
-    // The height of the floor while it is up in the space of Gojo's domain, NaN anywhere else (InfiniteVoid.floorY).
+    // The height of the floor while it is up in the space of an expansion, NaN anywhere else (DomainSpace.floorY).
     private double voidFloor() {
-        return InfiniteVoid.floorY(boss);
+        return DomainSpace.floorY(boss);
     }
 
-    // Stands where it is. On the floor of Gojo's domain a strafe of nothing reads the air under it as a cliff and walks
+    // Stands where it is. On an expansion's floor a strafe of nothing reads the air under it as a cliff and walks
     // forward, so it is told to stay at its own spot there.
     public void halt() {
         boss.getNavigation().stop();
