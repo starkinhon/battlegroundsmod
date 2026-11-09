@@ -106,7 +106,7 @@ public final class WorldSlash {
                 for (double s = Math.max(0.6, from); s < upTo && budget[0] > 0; s += STEP) {
                     Vec3 p = origin.add(way.scale(s));
                     for (double hh = -below; hh <= top && budget[0] > 0; hh += STEP) {
-                        carve(level, p.add(up.scale(hh)), done, budget);
+                        carve(level, p.add(up.scale(hh)), done, budget, caster);
                     }
                 }
             }
@@ -178,10 +178,10 @@ public final class WorldSlash {
                     for (int k = 0; k < 9 && budget[0] > 0; k++) {
                         // an upright line: its plane from the ground up; a lying one: across the whole width
                         for (double y = -2; y <= height && budget[0] > 0; y += STEP) {
-                            carve(level, p.add(right.scale(vx[k] + va[k] * (y - 56 * sc))).add(0, y, 0), done, budget);
+                            carve(level, p.add(right.scale(vx[k] + va[k] * (y - 56 * sc))).add(0, y, 0), done, budget, caster);
                         }
                         for (double x = -half; x <= half && budget[0] > 0; x += STEP) {
-                            carve(level, p.add(right.scale(x)).add(0, hy[k] + ha[k] * x, 0), done, budget);
+                            carve(level, p.add(right.scale(x)).add(0, hy[k] + ha[k] * x, 0), done, budget, caster);
                         }
                     }
                 }
@@ -202,8 +202,11 @@ public final class WorldSlash {
     }
 
     // One block of the slit, if it is there to cut: not air, fluid, a block entity or unbreakable; loaded.
-    private static void carve(ServerLevel level, Vec3 p, LongOpenHashSet done, int[] budget) {
+    private static void carve(ServerLevel level, Vec3 p, LongOpenHashSet done, int[] budget, LivingEntity caster) {
         BlockPos pos = BlockPos.containing(p);
+        if (SukunaCarve.underFeet(caster, pos)) {
+            return;
+        }
         if (!done.add(pos.asLong()) || !level.isLoaded(pos) || level.isOutsideBuildHeight(pos)) {
             return;
         }
