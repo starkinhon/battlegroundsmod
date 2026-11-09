@@ -212,9 +212,12 @@ public final class Piccolo {
                 // The knee in the stomach: hitstop, the manga frame, the shock and it flies up spinning.
                 if (target.isAlive()) {
                     Combat.hurt(caster, target, 9);
-                    // A real stun (Stark, 2026-11-09): the knee opens the Hellzone, which only lands on a stunned target.
-                    Stun.apply(target, 45);
-                    Combat.push(target, target.position().subtract(caster.position()), 0.6, 1.0);
+                    // A real stun (Stark, 2026-11-09): the knee opens the Hellzone, which only lands on a stunned target. 3 s
+                    // and full on bosses too: halved (45 -> 22 ticks) it fell under Stun.INTERRUPT_TICKS, so it never
+                    // counted as a stun and the C refused ("the X's stun is tiny").
+                    Stun.apply(target, 60, true);
+                    // Up, but not out of sight: the C has to find it (it flew 1.0 up and was hard to aim at).
+                    Combat.push(target, target.position().subtract(caster.position()), 0.6, 0.6);
                     Vec3 c = Combat.center(target);
                     DbCommon.hit(level, c, 0.8f, Db.WHITE);
                     SubNet.send(level, SubNet.KI_BOOM, 0, c, new Vec3(DbCommon.groundY(level, c), 0, 0), 0.5f, Db.WHITE, 1000 + SubCommon.RANDOM.nextInt(100));
@@ -245,12 +248,35 @@ public final class Piccolo {
         return c.add(Math.cos(a) * r * big, Math.max(-0.75, y * big * 0.8), Math.sin(a) * r * big);
     }
 
+    private static LivingEntity stunnedInFront(LivingEntity caster, ServerLevel level, double range) {
+        Vec3 eye = caster.getEyePosition();
+        Vec3 look = caster.getLookAngle();
+        LivingEntity best = null;
+        double bestDot = 0.6;
+        for (LivingEntity e : Combat.inRadius(level, eye, range, caster)) {
+            Vec3 to = Combat.center(e).subtract(eye);
+            if (to.lengthSqr() < 1.0E-4 || !Stamina.stunnable(e)) {
+                continue;
+            }
+            double dot = to.normalize().dot(look);
+            if (dot > bestDot) {
+                bestDot = dot;
+                best = e;
+            }
+        }
+        return best;
+    }
+
     private static boolean hellzone(LivingEntity caster, ServerLevel level) {
         if (SubCommon.hasState(caster, HELLZONE)) {
             SubCommon.clearState(caster, HELLZONE);
             return true;
         }
-        LivingEntity target = SubCommon.aimed(caster, 24);
+        LivingEntity aimed = SubCommon.aimed(caster, 24);
+        // Right after the X's knee the target is up in the air and hard to aim at: the stunned one nearest the aim (in
+        // front, within 24 blocks) is taken instead.
+        LivingEntity open = aimed == null || !Stamina.stunnable(aimed) ? stunnedInFront(caster, level, 24) : null;
+        LivingEntity target = open != null ? open : aimed;
         if (target == null) {
             SubCommon.warn(caster, "piccolo.hellzone_no_target", 24);
             return false;
@@ -266,7 +292,7 @@ public final class Piccolo {
         int auto = throwEnd + 80;
         int bossClose = throwEnd + 30 + SubCommon.RANDOM.nextInt(30);
         SubCommon.setState(caster, HELLZONE, auto + 10);
-        Stun.apply(target, throwEnd + 10);
+        Stun.apply(target, throwEnd + 10, true);
         Vec3 home = caster.position();
         // The three spots round the target (left, far left, far right), seen from where Piccolo stands.
         Vec3 toMe = SubCommon.flat(home.subtract(target.position()));
