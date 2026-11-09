@@ -295,12 +295,19 @@ public final class Desmantelar {
             Vec3 dir = aim(caster);
             if (crouched) {
                 WorldSlash.waffle(caster, hand(caster, -0.3, 1.0, 0.8), dir);
-            } else {
-                // standing: level, a little up or down with the aim (never into the ground under him)
+            } else if (onTarget(caster)) {
+                // standing, straight at whom he fights (Stark 2026-11-09): level, a little up or down with the aim
+                // (never into the ground under him)
                 double pitch = Math.max(-0.26, Math.min(0.5, Math.asin(Math.max(-1, Math.min(1, dir.y)))));
                 Vec3 flat = Combat.flatLook(caster);
                 Vec3 way = flat.scale(Math.cos(pitch)).add(0, Math.sin(pitch), 0);
                 WorldSlash.standing(caster, hand(caster, -0.3, 1.4, 1.2), way);
+            } else {
+                // aimed away from anyone he fights: lying, a hair up from level (the preview's 2.5 degrees), the way
+                // he looks, across everything at his height
+                double pitch = Math.toRadians(2.5);
+                Vec3 flat = Combat.flatLook(caster);
+                WorldSlash.lying(caster, hand(caster, -0.3, 1.4, 1.2), flat.scale(Math.cos(pitch)).add(0, Math.sin(pitch), 0));
             }
             ModelBar.set(caster, 0);
             cooldown(caster, WORLD_COOLDOWN);
@@ -375,6 +382,15 @@ public final class Desmantelar {
         }
         Vec3 to = Combat.center(other).subtract(caster.getEyePosition()).normalize();
         return to.dot(caster.getLookAngle()) > 0.75 ? other : null;
+    }
+
+    // The aim right on someone he fights: the crosshair on them, or within ~15 degrees of the one he is fighting.
+    private static boolean onTarget(LivingEntity caster) {
+        if (Combat.raycastTarget(caster, RANGE) != null) {
+            return true;
+        }
+        LivingEntity target = target(caster);
+        return target != null && Combat.center(target).subtract(caster.getEyePosition()).normalize().dot(caster.getLookAngle()) > 0.966;
     }
 
     private static Vec3 aim(LivingEntity caster) {

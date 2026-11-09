@@ -47,15 +47,27 @@ public final class WorldSlash {
 
     // origin: the hand when it leaves; dir: the way it flies.
     public static void standing(LivingEntity caster, Vec3 origin, Vec3 dir) {
+        normal(caster, origin, dir, false);
+    }
+
+    // Lying (Stark 2026-11-09: standing when he aims right at whom he fights, lying when he doesn't): the same crescent
+    // turned flat, its span across to his sides, cutting everything at its height (the preview's three mountains).
+    public static void lying(LivingEntity caster, Vec3 origin, Vec3 dir) {
+        normal(caster, origin, dir, true);
+    }
+
+    // "up" is the crescent's span (the way its tips point): upright, or flat across for the lying one.
+    private static void normal(LivingEntity caster, Vec3 origin, Vec3 dir, boolean flat) {
         ServerLevel level = Combat.level(caster);
         Vec3 way = dir.normalize();
-        Vec3 up = new Vec3(0, 1, 0).subtract(way.scale(way.y)).normalize();
+        Vec3 upright = new Vec3(0, 1, 0).subtract(way.scale(way.y)).normalize();
+        Vec3 up = flat ? upright.cross(way).normalize() : upright;
         Vec3 face = up.cross(way).normalize();
         double unit = SPAN / 2 / SukunaCuts.TIP;
         int seed = caster.getRandom().nextInt(0xFFFF);
         double feet = caster.getY();
         PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new ModPayloads.SukunaSlash(origin, way, up, (float) unit, (float) SPEED,
-                (float) REACH, seed, SukunaCuts.WORLD | SukunaCuts.GROOVE, (float) feet));
+                (float) REACH, seed, SukunaCuts.WORLD | (flat ? 0 : SukunaCuts.GROOVE), (float) feet));
         sounds(level, origin);
         boolean cut = BlockRules.canBreak(level);
         Set<Integer> hit = new HashSet<>();
@@ -69,10 +81,12 @@ public final class WorldSlash {
             // how tall it is out there (it grows out of the hand over its first blocks)
             double g = Math.min(1, Math.pow(Math.max(upTo, 0.05) / grow, 0.75));
             double top = SukunaCuts.TIP * unit * g;
-            double below = Math.min(top, (origin.y - feet) + DEPTH);
+            // standing it goes a few blocks into the ground under him; flat it spans the same both ways
+            double below = flat ? top : Math.min(top, (origin.y - feet) + DEPTH);
             // whoever is in its plane
             Vec3 a = origin.add(way.scale(from)), b = origin.add(way.scale(upTo));
-            AABB box = new AABB(a, b).inflate(2, 0, 2).expandTowards(0, top, 0).expandTowards(0, -below, 0);
+            AABB box = flat ? new AABB(a, b).inflate(top + 2, 2, top + 2)
+                    : new AABB(a, b).inflate(2, 0, 2).expandTowards(0, top, 0).expandTowards(0, -below, 0);
             for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, box, e -> e != caster && e.isAlive() && !e.isSpectator())) {
                 if (hit.contains(e.getId()) || e instanceof net.minecraft.world.entity.decoration.ArmorStand) {
                     continue;
@@ -88,7 +102,7 @@ public final class WorldSlash {
             }
             // the slit through the blocks, in its plane
             if (cut) {
-                int[] budget = {BUDGET};
+                int[] budget = {flat ? BUDGET * 3 / 2 : BUDGET};
                 for (double s = Math.max(0.6, from); s < upTo && budget[0] > 0; s += STEP) {
                     Vec3 p = origin.add(way.scale(s));
                     for (double hh = -below; hh <= top && budget[0] > 0; hh += STEP) {
