@@ -42,6 +42,8 @@ public final class FxShaders {
     static ShaderInstance fugaRing;
     static ShaderInstance fugaGlow;
     static ShaderInstance fugaOrb;
+    // Freeza's Supernova fire dome (NovaRenderer); without it the landing keeps its rings, flash and shake.
+    static ShaderInstance novaVol;
     // Sukuna's thrown Dismantle (DismantleRenderer); without it the cuts still hit, they just don't show.
     static ShaderInstance dismantle;
     // Sukuna's technique cuts (SukunaCutsRenderer: the Z, the chant, the World Cutting Slash, the Shift+Z lines).
@@ -110,6 +112,12 @@ public final class FxShaders {
             register(event, "souls_fuga_orb", DefaultVertexFormat.POSITION, s -> fugaOrb = s);
         } catch (Exception e) {
             BattlegroundsMod.LOGGER.error("Could not load the Fuga shaders", e);
+        }
+        // On its own: a problem here only hides the Supernova's fire dome.
+        try {
+            register(event, "souls_nova_vol", DefaultVertexFormat.POSITION, s -> novaVol = s);
+        } catch (Exception e) {
+            BattlegroundsMod.LOGGER.error("Could not load the Supernova shader", e);
         }
         // On its own: a problem here only hides Sukuna's thrown Dismantle.
         try {
