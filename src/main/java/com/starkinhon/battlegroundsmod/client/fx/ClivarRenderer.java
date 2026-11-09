@@ -7,8 +7,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.joml.Matrix4f;
 import org.joml.Matrix4fStack;
 import org.joml.Vector3f;
+import org.joml.Vector4f;
 
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -22,38 +24,42 @@ import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexSorting;
-import com.mojang.math.Axis;
 import com.starkinhon.battlegroundsmod.network.ModPayloads.SukunaClivar;
 
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
-import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.ClipContext;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import net.neoforged.neoforge.client.event.RenderLivingEvent;
 
-// Sukuna's X, Clivar (捌), as in the 3D preview Stark approved (forja/sukuna-desmantelar, "X: Clivar"; server side in
-// power/powers/sukuna/Clivar). Ref: the Mimiko scene: fine white lines "measure" the held body until the grid closes
-// (the body's own model drawn again through souls_clivar, each box grown a hair), then the grid snaps: for a moment the
-// body is a black silhouette under the white grid and hundreds of white zigzag bits burst off it; then the cut marks
-// fade. Against a wall the grid runs over the wall too and its middle 3x3 breaks into quarter blocks that fly through.
-// Lethal: no throw: after the silhouette the body comes apart into the grid's own cells (black with white edges), which
-// part, crumble to the ground and vanish over a pool of blood. The sprint leaves white and black dashes behind.
+// Sukuna's X, Clivar (捌) (server side in power/powers/sukuna/Clivar). Ref: the Mimiko scene: the held body is measured
+// by cuts, then it snaps. Stark 2026-11-09 found the first port ugly ("é tudo PNG repetido": a lattice of lines every 1/9
+// block lit all over at once, 140 copies of one zigzag sprite, chips and dashes), so every piece is its own shape now:
+//   - The measure: twelve planes through the body (planes(): slices across at different heights and tilts, a few
+//     lengthwise, a few diagonal), each traced on the model by souls_clivar as a line running across from one side with
+//     a white-hot head, leaving a thin black slit rimmed in white, one after another.
+//   - The snap: the body is a black silhouette under the cuts; each plane's cut shoots out of the body on both sides as a
+//     long Shift+Z stroke along that plane (its own length, taper and tearing), white sparks fly along the slits, dark
+//     smoke and a fine red mist burst out (Fumaça Nova, SmokeParticle); then the cuts fade.
+//   - Against a wall, every plane cuts the wall where it meets it (a stroke on the wall's face, drawn with the body's
+//     line), the slam throws dust and grit off it, and its middle 3x3 opens (the real blocks, nothing
+//     spawned to look like them) with the wall's dust bursting through.
+//   - Lethal: no throw: after the silhouette the body comes apart into cells cut from its own model, which part, crumble
+//     to the ground and vanish over a pool of blood.
+//   - The sprint kicks dust off the ground under his feet and leaves wind lines along his body.
 public final class ClivarRenderer {
-    private static final int SIL = 5, FADE = 30, BITS = 140, CHIPS = 14, TRAIL = 8;
+    private static final int SIL = 5, FADE = 30, PLANES = 12, RIBBON = 24;
     private static final double THICK = 0.012;
 
     private static final class Cut {
@@ -68,7 +74,12 @@ public final class ClivarRenderer {
         Vec3 fwd = new Vec3(0, 0, 1), center = Vec3.ZERO, pin;
         double feet, ground, scale = 1;
         List<Cell> cells;
-        List<Piece> pieces = new ArrayList<>();
+        int wallColor = -1;
+        // the cuts, in the body's frame (x its left, y up, z ahead, from its feet), and what they were in the world at
+        // the snap (for the strokes that shoot out)
+        List<Plane> planes;
+        double height = 1.8, yaw;
+        boolean burst, pinDust;
 
         Cut(int id, double born, int measure, Vec3 wall, Vec3 wallNormal, int seed) {
             this.id = id;
@@ -83,7 +94,7 @@ public final class ClivarRenderer {
             if (snapAt < 0) {
                 return born + measure + 60;
             }
-            return snapAt + (lethal ? SIL + 64 : SIL + FADE + 2) + (breakAt >= 0 ? 26 : 0);
+            return snapAt + (lethal ? SIL + 64 : SIL + FADE + 2) + (breakAt >= 0 ? 2 : 0);
         }
     }
 
@@ -91,11 +102,32 @@ public final class ClivarRenderer {
     private record Cell(Vec3 c, Vec3 x, Vec3 y, Vec3 z, double h0, double h1, double h2, double h3) {
     }
 
-    // A quarter of a wall block flying through.
-    private record Piece(BlockState state, Vec3 at, Vec3 v, double h0, double h1, double h2, double floor) {
+    // One cut through the body: normal and offset from the body's middle (body frame), when it runs (start and length in
+    // Measure), its width in blocks, which way it runs across (angle in the plane) and its own noise.
+    private record Plane(Vec3 n, double d, double t0, double dur, double w, double ang, double h) {
+        Vec3 along() {
+            Vec3 ax = Math.abs(n.y) < 0.9 ? new Vec3(0, 1, 0) : new Vec3(1, 0, 0);
+            Vec3 u1 = n.cross(ax).normalize();
+            Vec3 u2 = n.cross(u1);
+            return u1.scale(Math.cos(ang)).add(u2.scale(Math.sin(ang)));
+        }
+
+        double progress(double measure) {
+            return cl((measure - t0) / dur, 0, 1);
+        }
     }
 
-    private record Trail(int id, double born, int ticks, int seed, Vec3[] spots) {
+    private static final class Trail {
+        final int id, ticks, seed;
+        final double born;
+        int spawned;
+
+        Trail(int id, double born, int ticks, int seed) {
+            this.id = id;
+            this.born = born;
+            this.ticks = ticks;
+            this.seed = seed;
+        }
     }
 
     private static final Map<Integer, Cut> CUTS = new HashMap<>();
@@ -116,6 +148,8 @@ public final class ClivarRenderer {
                 Cut c = new Cut(id, now, Math.max(1, ticks), wall ? a : null, wall ? b.normalize() : null, seed);
                 if (FxAnchor.entity(id) instanceof LivingEntity e) {
                     c.entity = e;
+                    c.height = e.getBbHeight();
+                    c.planes = planes(seed, e.getBbWidth(), e.getBbHeight());
                 }
                 CUTS.put(id, c);
             }
@@ -135,6 +169,11 @@ public final class ClivarRenderer {
                 }
                 if (c.entity != null) {
                     LivingEntity e = c.entity;
+                    if (c.planes == null) {
+                        c.height = e.getBbHeight();
+                        c.planes = planes(seed, e.getBbWidth(), e.getBbHeight());
+                    }
+                    c.yaw = e.yBodyRot;
                     c.scale = e.getBbHeight() / 1.8;
                     c.feet = e.getY();
                     c.center = e.position().add(0, e.getBbHeight() * 0.6, 0);
@@ -147,16 +186,23 @@ public final class ClivarRenderer {
                 if (c != null) {
                     c.pinAt = now;
                     c.pin = a;
+                    c.wallColor = wallColor(a, b.normalize());
+                    wallDust(a, b.normalize(), c.wallColor);
                 }
             }
             case SukunaClivar.WALL_BREAK -> {
                 Cut c = CUTS.get(id);
                 if (c != null) {
                     c.breakAt = now;
-                    c.pieces = pieces(a, b.normalize());
+                    // no flying block copies (Stark: destruction cuts the real blocks, nothing spawned to look like
+                    // them): the hole just opens, and the wall's dust bursts out through it, away from Sukuna
+                    Vec3 n = b.normalize();
+                    int color = c.wallColor >= 0 ? c.wallColor : wallColor(a, n);
+                    wallDust(a.subtract(n.scale(0.5)), n.scale(-1), color);
+                    wallDust(a, n, color);
                 }
             }
-            case SukunaClivar.TRAIL -> TRAILS.add(new Trail(id, now, Math.max(1, ticks), seed, new Vec3[TRAIL]));
+            case SukunaClivar.TRAIL -> TRAILS.add(new Trail(id, now, Math.max(1, ticks), seed));
             case SukunaClivar.CANCEL -> CUTS.remove(id);
             default -> {
             }
@@ -193,38 +239,6 @@ public final class ClivarRenderer {
         Vec3 from = at.add(0, 0.2, 0);
         var hit = e.level().clip(new ClipContext(from, from.add(0, -6, 0), ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, e));
         return hit.getType() == HitResult.Type.MISS ? at.y : hit.getLocation().y;
-    }
-
-    // The wall's middle 3x3, as the server breaks it (Clivar.wallBlocks): four quarters per block still there.
-    private static List<Piece> pieces(Vec3 center, Vec3 normal) {
-        List<Piece> out = new ArrayList<>();
-        ClientLevel level = Minecraft.getInstance().level;
-        if (level == null) {
-            return out;
-        }
-        Vec3 up = new Vec3(0, 1, 0);
-        Vec3 right = up.cross(normal);
-        right = right.lengthSqr() < 1.0E-4 ? new Vec3(1, 0, 0) : right.normalize();
-        double floor = center.y - 1.5;
-        for (int i = -1; i <= 1; i++) {
-            for (int j = -1; j <= 1; j++) {
-                BlockPos pos = BlockPos.containing(center.subtract(normal.scale(0.5)).add(right.scale(i)).add(up.scale(j)));
-                BlockState state = level.getBlockState(pos);
-                if (state.isAir() || !state.getFluidState().isEmpty()) {
-                    continue;
-                }
-                Vec3 mid = Vec3.atCenterOf(pos);
-                for (int q = 0; q < 4; q++) {
-                    double ox = q % 2 == 1 ? 0.25 : -0.25, oy = q < 2 ? 0.25 : -0.25;
-                    double h0 = hash(i * 3 + j * 5 + q * 1.3), h1 = hash(i * 9 + j + q * 2.7), h2 = hash(i + j * 11 + q * 3.1);
-                    Vec3 at = mid.add(right.scale(ox)).add(0, oy, 0).add(normal.scale((hash(i * 7 + j * 3 + q) - 0.5) * 0.4));
-                    // through the wall, away from Sukuna (the normal points back at him)
-                    Vec3 v = right.scale((ox + (h0 - 0.5) * 0.4) * 0.25).add(0, 0.05 + 0.08 * h1, 0).add(normal.scale(-(0.12 + 0.15 * h2)));
-                    out.add(new Piece(state, at, v, h0, h1, h2, floor));
-                }
-            }
-        }
-        return out;
     }
 
     // ---------- the grid over the body (after the entities) ----------
@@ -287,8 +301,9 @@ public final class ClivarRenderer {
                 shader.safeGetUniform("Measure").set(measure);
                 shader.safeGetUniform("Sil").set(st >= 0 && st < SIL ? 1f : 0f);
                 shader.safeGetUniform("Fade").set(st < SIL ? 1f : (float) (1 - cl((st - SIL) / FADE, 0, 1)));
-                shader.safeGetUniform("N").set((float) (9 / Math.max(0.3, c.scale)));
-                shader.safeGetUniform("Seed").set((c.seed % 97) * 0.13f);
+                shader.safeGetUniform("Center").set((float) (0.52 * c.height));
+                shader.safeGetUniform("Radius").set((float) (0.55 * c.height));
+                planeUniforms(shader, c.planes);
                 draw(dispatcher, e, o, partial);
                 buffers.endBatch();
             }
@@ -524,7 +539,7 @@ public final class ClivarRenderer {
     static void render(Vec3 camera) {
         double now = now();
         CUTS.values().removeIf(c -> now > c.end() || now < c.born - 40);
-        TRAILS.removeIf(t -> now - t.born() > t.ticks() + 6 || now < t.born() - 40);
+        TRAILS.removeIf(t -> now - t.born > t.ticks + 6 || now < t.born - 40);
         shader = FxShaders.sukunaFx;
         if (!active() || shader == null) {
             return;
@@ -534,8 +549,6 @@ public final class ClivarRenderer {
         Vector3f left = c.getLeftVector(), up = c.getUpVector();
         camRight = new Vec3(-left.x(), -left.y(), -left.z());
         camUp = new Vec3(up.x(), up.y(), up.z());
-        // the wall's quarter blocks first, as real blocks (their own render types and blending)
-        drawPieces(now);
         RenderSystem.enableDepthTest();
         RenderSystem.disableCull();
         RenderSystem.enableBlend();
@@ -551,7 +564,7 @@ public final class ClivarRenderer {
             drawCut(cut, now);
         }
         for (Trail t : TRAILS) {
-            drawTrail(t, now);
+            trailTick(t, now);
         }
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableBlend();
@@ -582,68 +595,26 @@ public final class ClivarRenderer {
         }
     }
 
-    private static void billboard(SukunaCutsRenderer.U u, Vec3 c, double sx, double sy, double spin) {
-        double cs = Math.cos(spin), sn = Math.sin(spin);
-        Vec3 r = camRight.scale(cs).add(camUp.scale(sn)).scale(sx);
-        Vec3 f = camUp.scale(cs).subtract(camRight.scale(sn)).scale(sy);
-        quad(u, c, r, f);
-    }
-
     private static void drawCut(Cut c, double now) {
-        // the wall's grid, measuring with the body's, until the middle breaks
-        if (c.wall != null && c.breakAt < 0) {
-            Vec3 up = new Vec3(0, 1, 0);
-            Vec3 right = up.cross(c.wallNormal);
-            right = right.lengthSqr() < 1.0E-4 ? new Vec3(1, 0, 0) : right.normalize();
-            SukunaCutsRenderer.U u = SukunaCutsRenderer.U.of(8);
-            u.grow = (float) (c.snapAt >= 0 ? 1 : cl((now - c.born) / c.measure, 0, 1));
-            u.n = 12;
-            u.seed = (c.seed % 31) * 0.7f;
-            quad(u, c.wall.add(c.wallNormal.scale(0.015)), right.scale(1.5), up.scale(1.5));
+        double measure = c.snapAt >= 0 ? 1 : cl((now - c.born) / c.measure, 0, 1);
+        // against a wall: each cut goes on into the wall's face, drawn with the body's line, until the middle breaks
+        if (c.wall != null && c.breakAt < 0 && c.planes != null && c.entity != null) {
+            wallCuts(c, measure, c.snapAt >= 0 ? now - c.snapAt : -1);
         }
-        // chips: on the slam against the wall, or off the body on the snap in the open
-        double ct = c.wall != null ? (c.pinAt >= 0 ? now - c.pinAt : -1) : c.snapAt >= 0 ? now - c.snapAt : -1;
-        if (ct >= 0) {
-            Vec3 cp = c.wall != null && c.pin != null ? c.pin : c.center;
-            Vec3 back = c.wallNormal != null ? c.wallNormal : c.fwd.scale(-1);
-            Vec3 side = new Vec3(0, 1, 0).cross(back);
-            side = side.lengthSqr() < 1.0E-4 ? new Vec3(1, 0, 0) : side.normalize();
-            for (int k = 0; k < CHIPS; k++) {
-                double s = ct - (k % 4) * 0.25;
-                if (s < 0 || s >= 9) {
-                    continue;
-                }
-                double h1 = hash(k * 3.1 + 2), h2 = hash(k * 1.3 + 7), h3 = hash(k * 8.9);
-                Vec3 v = side.scale((h1 - 0.5) * 0.35).add(0, 0.08 + 0.12 * h2, 0).add(back.scale(0.1 + 0.15 * h3));
-                Vec3 p = cp.add(v.scale(s)).subtract(0, 0.012 * s * s, 0);
-                double sz = (0.12 + 0.16 * h2) * (1 - Math.pow(s / 9, 2));
-                SukunaCutsRenderer.U u = SukunaCutsRenderer.U.of(2);
-                u.n = 3 + (float) Math.floor(hash(k * 2.2) * 4);
-                u.asp = 0.6f + (float) hash(k * 6.1) * 1.4f;
-                u.rot = (float) (h1 * 6.28 + s * (h3 - 0.5));
-                billboard(u, p, sz / 2, sz / 2, 0);
-            }
-        }
-        if (c.snapAt < 0) {
+        if (c.snapAt < 0 || c.planes == null) {
             return;
         }
         double st = now - c.snapAt;
-        // the white zigzag bits bursting off the body
-        double w = c.entity != null ? c.entity.getBbWidth() : 0.6, h = c.entity != null ? c.entity.getBbHeight() : 1.8;
-        for (int k = 0; k < BITS; k++) {
-            double h0 = hash(k * 6.1), h1 = hash(k * 7.7), h2 = hash(k * 8.3), h3 = hash(k * 9.9);
-            double s = (st - h3 * (c.lethal ? 14 : 2)) * 0.7;
-            if (s < 0 || s >= 11) {
-                continue;
+        if (!c.burst) {
+            c.burst = true;
+            snapBurst(c);
+        }
+        // each cut shoots out of the body along its own plane, both ways: a long stroke that flashes, thins and tears
+        if (!c.lethal || st < SIL + 4) {
+            Vec3 feet = new Vec3(c.center.x, c.feet, c.center.z);
+            for (int i = 0; i < c.planes.size(); i++) {
+                ribbon(c, c.planes.get(i), i, feet, st);
             }
-            Vec3 p0 = c.center.add((hash(k * 2.1) - 0.5) * w * 1.2, (hash(k * 4.3) - 0.5) * h * 0.75, (hash(k * 5.9) - 0.5) * w * 1.2);
-            Vec3 dir = p0.subtract(c.center).add(0, 0.15, 0);
-            dir = dir.lengthSqr() < 1.0E-6 ? new Vec3(0, 1, 0) : dir.normalize();
-            double sp = (0.08 + 0.18 * h0) * (1 - Math.exp(-s / 2)) * 6 * c.scale;
-            double sc = (0.12 + 0.14 * h2) * (1 - Math.pow(s / 11, 2)) * c.scale;
-            SukunaCutsRenderer.U u = SukunaCutsRenderer.U.of(9);
-            u.seed = (float) hash(k * 3.3);
-            billboard(u, p0.add(dir.scale(sp)), sc / 2, sc / 4, h1 * 6.28 + s * (h2 - 0.5));
         }
         // lethal: the pool of blood
         double ks = st - SIL;
@@ -655,6 +626,262 @@ public final class ClivarRenderer {
             Vec3 at = new Vec3(c.center.x, c.ground + 0.012, c.center.z).add(c.fwd.scale(-0.15 * c.scale));
             double r = 1.3 * c.scale;
             quad(u, at, new Vec3(r, 0, 0), new Vec3(0, 0, r));
+        }
+    }
+
+    // ---------- the cuts' planes ----------
+
+    // Twelve cuts through a body w wide and h tall, as a measure is taken: five slices across from the shins to the head,
+    // each tilted its own way; four lengthwise, each turned and set off the middle its own way; three diagonals. Each
+    // runs in at its own moment (one after another in a shuffled order) from its own side, at its own width.
+    private static List<Plane> planes(int seed, double w, double h) {
+        List<Plane> out = new ArrayList<>();
+        double sc = h / 1.8;
+        double s = seed * 0.0137;
+        int[] order = new int[PLANES];
+        for (int i = 0; i < PLANES; i++) {
+            order[i] = i;
+        }
+        for (int i = PLANES - 1; i > 0; i--) {
+            int j = (int) Math.floor(hash(s + i * 7.31) * (i + 1));
+            int t = order[i];
+            order[i] = order[j];
+            order[j] = t;
+        }
+        double cy = 0.52 * h;
+        for (int i = 0; i < PLANES; i++) {
+            double h1 = hash(s + i * 1.91), h2 = hash(s + i * 3.73), h3 = hash(s + i * 5.17), h4 = hash(s + i * 8.29);
+            Vec3 n;
+            double d;
+            if (i < 5) {
+                double tilt = (6 + 22 * h1) * Mth.DEG_TO_RAD, around = h2 * Math.PI * 2;
+                n = new Vec3(Math.sin(tilt) * Math.cos(around), Math.cos(tilt), Math.sin(tilt) * Math.sin(around));
+                d = (0.13 + i * 0.185 + (h3 - 0.5) * 0.09) * h - cy;
+            } else if (i < 9) {
+                double yaw = (i - 5) * Math.PI / 4 + (h1 - 0.5) * 0.5, tilt = (h2 - 0.5) * 0.35;
+                n = new Vec3(Math.cos(yaw) * Math.cos(tilt), Math.sin(tilt), Math.sin(yaw) * Math.cos(tilt));
+                d = (i % 2 == 0 ? 1 : -1) * (0.12 + 0.3 * h3) * w;
+            } else {
+                double tilt = (38 + 20 * h1) * Mth.DEG_TO_RAD, around = h2 * Math.PI * 2;
+                n = new Vec3(Math.sin(tilt) * Math.cos(around), Math.cos(tilt), Math.sin(tilt) * Math.sin(around));
+                d = (h3 - 0.5) * 0.45 * h;
+            }
+            int rank = 0;
+            for (int k = 0; k < PLANES; k++) {
+                if (order[k] == i) {
+                    rank = k;
+                }
+            }
+            double t0 = 0.04 + 0.64 * rank / (PLANES - 1.0) + (h4 - 0.5) * 0.05;
+            double dur = 0.15 + 0.13 * hash(s + i * 9.71);
+            double width = (0.005 + 0.005 * hash(s + i * 4.43)) * sc;
+            out.add(new Plane(n.normalize(), d, Math.max(0, t0), dur, width, hash(s + i * 6.67) * Math.PI * 2, hash(s + i * 2.39)));
+        }
+        return out;
+    }
+
+    private static void planeUniforms(ShaderInstance shader, List<Plane> planes) {
+        for (int k = 0; k < 3; k++) {
+            Matrix4f pm = new Matrix4f().zero(), qm = new Matrix4f().zero();
+            for (int j = 0; j < 4; j++) {
+                int i = k * 4 + j;
+                if (planes == null || i >= planes.size()) {
+                    continue;
+                }
+                Plane q = planes.get(i);
+                pm.setColumn(j, new Vector4f((float) q.n().x, (float) q.n().y, (float) q.n().z, (float) q.d()));
+                qm.setColumn(j, new Vector4f((float) q.t0(), (float) q.dur(), (float) q.w(), (float) q.ang()));
+            }
+            shader.safeGetUniform("P" + k).set(pm);
+            shader.safeGetUniform("Q" + k).set(qm);
+        }
+    }
+
+    // The body's frame to the world (souls_clivar.vsh turns the other way): x is the body's left, z ahead.
+    private static Vec3 toWorld(Vec3 v, double yawDeg) {
+        double r = yawDeg * Mth.DEG_TO_RAD, c = Math.cos(r), s = Math.sin(r);
+        return new Vec3(c * v.x - s * v.z, v.y, s * v.x + c * v.z);
+    }
+
+    // One cut leaving the body: from the slit's middle out both ways along its plane, 1.6 to 3.4 blocks each side,
+    // shooting out in 3 ticks, flashing white, then thinning and tearing apart (Shift+Z's stroke, mode 5).
+    private static void ribbon(Cut c, Plane q, int i, Vec3 feet, double st) {
+        double life = 20 + 8 * q.h();
+        double s = st - q.h() * 1.5;
+        if (s < 0 || s >= life) {
+            return;
+        }
+        Vec3 n = toWorld(q.n(), c.yaw);
+        Vec3 dir = toWorld(q.along(), c.yaw);
+        Vec3 mid = feet.add(toWorld(new Vec3(0, 0.52 * c.height, 0).add(q.n().scale(q.d())), c.yaw));
+        Vec3 view = cam.subtract(mid);
+        Vec3 perp = dir.cross(view);
+        if (perp.lengthSqr() < 1.0E-6) {
+            return;
+        }
+        perp = perp.normalize();
+        double reach = (1.2 + 1.3 * hash(i * 3.3 + c.seed)) * c.scale;
+        double grow = out(cl(s / 3, 0, 1));
+        double half = 0.55 * c.scale + reach * grow;
+        double thick = (0.09 + 0.07 * q.h()) * c.scale;
+        // the two halves part a little along the plane's normal, as if the cut had gone through the air too
+        Vec3 at = mid.add(n.scale((q.h() - 0.5) * 0.12 * grow));
+        SukunaCutsRenderer.U u = SukunaCutsRenderer.U.of(5);
+        u.seed = (float) (i * 2.7 + c.seed % 53);
+        u.s0 = 0;
+        u.s1 = 1;
+        u.skew = (float) (0.75 + 0.5 * hash(i * 5.1 + c.seed));
+        u.rough = (float) (0.3 + 0.6 * hash(i * 7.9 + c.seed));
+        u.grow = 1;
+        u.flash = (float) (1 - cl(s / 4, 0, 1));
+        u.close = (float) (cl((s - 5) / (life - 5), 0, 1) * 0.85);
+        u.tear = (float) (cl((s - life * 0.45) / (life * 0.55), 0, 1) * 1.05);
+        u.px = 1;
+        quad(u, at, dir.scale(half), perp.scale(thick));
+    }
+
+    // The cuts on the wall: where each plane meets the wall's face, a stroke across the 3x3 drawn in as the plane's line
+    // runs over the body; on the snap they flash, then they stay until the wall breaks (or fade with the body's).
+    private static void wallCuts(Cut c, double measure, double st) {
+        Vec3 m = c.wallNormal;
+        Vec3 feet = c.entity.position();
+        double yaw = c.entity.yBodyRot;
+        double db = m.dot(c.wall);
+        for (int i = 0; i < c.planes.size(); i++) {
+            Plane q = c.planes.get(i);
+            double prog = q.progress(measure);
+            if (prog <= 0) {
+                continue;
+            }
+            Vec3 n = toWorld(q.n(), yaw);
+            Vec3 dir = n.cross(m);
+            double len = dir.length();
+            if (len < 0.2) {
+                continue;
+            }
+            dir = dir.scale(1 / len);
+            double da = n.dot(feet.add(toWorld(new Vec3(0, 0.52 * c.height, 0).add(q.n().scale(q.d())), yaw)));
+            double k = n.dot(m);
+            Vec3 p0 = n.scale(da - db * k).add(m.scale(db - da * k)).scale(1 / (1 - k * k));
+            Vec3 p = p0.add(dir.scale(c.wall.subtract(p0).dot(dir)));
+            if (p.distanceTo(c.wall) > 1.3) {
+                continue;
+            }
+            Vec3 perp = m.cross(dir).normalize();
+            SukunaCutsRenderer.U u = SukunaCutsRenderer.U.of(5);
+            u.seed = (float) (i * 4.1 + 17 + c.seed % 41);
+            u.s0 = 0;
+            u.s1 = 1;
+            u.skew = (float) (0.8 + 0.4 * q.h());
+            u.rough = (float) (0.4 + 0.5 * q.h());
+            u.grow = (float) prog;
+            u.flash = (float) (st >= 0 ? 1 - cl(st / 4, 0, 1) : 1 - prog);
+            u.close = (float) (st >= 0 ? cl((st - SIL) / FADE, 0, 1) * 0.8 : 0.35);
+            u.px = 1;
+            quad(u, p.add(m.scale(0.016)), dir.scale(1.6), perp.scale(0.09 * c.scale));
+        }
+    }
+
+    // ---------- the procedural smoke (Fumaça Nova, SmokeParticle), spawned here on the client ----------
+
+    private static final net.minecraft.util.RandomSource RANDOM = net.minecraft.util.RandomSource.createThreadSafe();
+
+    private static void fx(int style, int color, double alpha, double size, double grow, int life, double friction, double gravity, double flat,
+            double stretch, Vec3 at, Vec3 v) {
+        ClientLevel level = Minecraft.getInstance().level;
+        if (level == null) {
+            return;
+        }
+        level.addAlwaysVisibleParticle(com.starkinhon.battlegroundsmod.fx.ModParticles.fx(style, color, (float) alpha, (float) size, (float) grow, life,
+                (float) friction, (float) gravity, (float) flat, (float) stretch), true, at.x, at.y, at.z, v.x, v.y, v.z);
+    }
+
+    private static double rr() {
+        return RANDOM.nextDouble();
+    }
+
+    private static double gg() {
+        return RANDOM.nextGaussian();
+    }
+
+    // The snap, out of the body: white sparks thrown along every slit, a fine red mist, a few small dark puffs.
+    private static void snapBurst(Cut c) {
+        Vec3 feet = new Vec3(c.center.x, c.feet, c.center.z);
+        double sc = c.scale, R = 0.55 * c.height;
+        for (int i = 0; i < c.planes.size(); i++) {
+            Plane q = c.planes.get(i);
+            Vec3 n = toWorld(q.n(), c.yaw);
+            Vec3 dir = toWorld(q.along(), c.yaw);
+            Vec3 mid = feet.add(toWorld(new Vec3(0, 0.52 * c.height, 0).add(q.n().scale(q.d())), c.yaw));
+            int sparks = 3 + RANDOM.nextInt(3);
+            for (int k = 0; k < sparks; k++) {
+                double side = rr() < 0.5 ? -1 : 1;
+                Vec3 at = mid.add(dir.scale(side * R * (0.3 + 0.6 * rr())));
+                Vec3 v = dir.scale(side * (0.3 + 0.5 * rr()) * sc).add(n.scale(gg() * 0.06)).add(0, 0.03 + rr() * 0.05, 0);
+                fx(com.starkinhon.battlegroundsmod.fx.SmokeOptions.WISP, 0xFFFFFF, 0.9, (0.025 + 0.02 * rr()) * sc, 0, 5 + RANDOM.nextInt(5), 0.82, 0.02,
+                        1, 6 + rr() * 6, at, v);
+            }
+            if (!c.lethal || rr() < 0.5) {
+                Vec3 at = mid.add(dir.scale(gg() * R * 0.3));
+                fx(com.starkinhon.battlegroundsmod.fx.SmokeOptions.BILLOW, 0x6E0A12, 0.55, (0.12 + 0.08 * rr()) * sc, 1.2, 12 + RANDOM.nextInt(8), 0.88,
+                        0.025, 1, 0, at, n.scale((rr() < 0.5 ? -1 : 1) * (0.05 + 0.06 * rr())));
+            }
+        }
+        // a few small dark puffs out of the middle, thin and quick (big pale ink blobs read as paper in the game)
+        for (int k = 0; k < 4; k++) {
+            Vec3 at = c.center.add(gg() * 0.15 * sc, gg() * 0.3 * sc, gg() * 0.15 * sc);
+            Vec3 v = at.subtract(c.center).normalize().scale(0.05 + 0.05 * rr()).add(0, 0.015, 0);
+            fx(com.starkinhon.battlegroundsmod.fx.SmokeOptions.BILLOW, 0x1A1418, 0.5, (0.18 + 0.1 * rr()) * sc, 1.2, 12 + RANDOM.nextInt(8), 0.86, -0.006,
+                    1, 0, at, v);
+        }
+    }
+
+    // Slammed into the wall: dust of the wall's own colour bursting off it, grit thrown back, a darker puff in the middle.
+    private static int wallColor(Vec3 at, Vec3 normal) {
+        ClientLevel level = Minecraft.getInstance().level;
+        return level == null ? 0xB9AA90 : com.starkinhon.battlegroundsmod.fx.Smoke.groundColor(level, at.subtract(normal.scale(0.6)).add(0, 0.6, 0));
+    }
+
+    private static void wallDust(Vec3 at, Vec3 normal, int color) {
+        Vec3 side = new Vec3(0, 1, 0).cross(normal);
+        side = side.lengthSqr() < 1.0E-4 ? new Vec3(1, 0, 0) : side.normalize();
+        for (int k = 0; k < 22; k++) {
+            double a = rr() * Math.PI * 2;
+            Vec3 spread = side.scale(Math.cos(a)).add(0, Math.sin(a), 0);
+            fx(com.starkinhon.battlegroundsmod.fx.SmokeOptions.BILLOW, color, 0.8, 0.25 + 0.25 * rr(), 1.3, 16 + RANDOM.nextInt(10), 0.85, -0.005, 1, 0,
+                    at.add(spread.scale(0.3)), spread.scale(0.12 + 0.12 * rr()).add(normal.scale(0.05 + 0.08 * rr())));
+        }
+        for (int k = 0; k < 12; k++) {
+            Vec3 v = normal.scale(0.18 + 0.2 * rr()).add(side.scale(gg() * 0.15)).add(0, 0.08 + rr() * 0.15, 0);
+            fx(com.starkinhon.battlegroundsmod.fx.SmokeOptions.SPECK, com.starkinhon.battlegroundsmod.fx.Smoke.mix(color, 0x1A1714, 0.4), 1,
+                    0.035 + 0.03 * rr(), 0, 14 + RANDOM.nextInt(8), 0.94, 0.06, 1, 0, at, v);
+        }
+    }
+
+    // The sprint, a tick at a time: dust kicked off the ground under his feet and wind lines streaming back along him.
+    private static void trailTick(Trail t, double now) {
+        int due = (int) Math.min(t.ticks, Math.floor(now - t.born) + 1);
+        Entity e = FxAnchor.entity(t.id);
+        while (t.spawned < due) {
+            t.spawned++;
+            if (e == null) {
+                continue;
+            }
+            Vec3 d = Vec3.directionFromRotation(0, e.getYRot());
+            Vec3 side = new Vec3(-d.z, 0, d.x);
+            Vec3 feet = e.position();
+            ClientLevel level = Minecraft.getInstance().level;
+            int color = level == null ? 0xB9AA90 : com.starkinhon.battlegroundsmod.fx.Smoke.groundColor(level, feet.add(0, 0.25, 0));
+            if (e.onGround()) {
+                for (int k = 0; k < 2; k++) {
+                    fx(com.starkinhon.battlegroundsmod.fx.SmokeOptions.DUST, color, 0.75, 0.22 + 0.16 * rr(), 1.2, 10 + RANDOM.nextInt(6), 0.85, 0, 0.5, 0,
+                            feet.add(side.scale(gg() * 0.2)).add(0, 0.1, 0), d.scale(-0.08 - 0.06 * rr()).add(side.scale(gg() * 0.05)).add(0, 0.02, 0));
+                }
+            }
+            for (int k = 0; k < 2; k++) {
+                fx(com.starkinhon.battlegroundsmod.fx.SmokeOptions.WISP, 0xFFFFFF, 0.55, 0.06 + 0.04 * rr(), 0, 5 + RANDOM.nextInt(3), 0.8, 0, 1,
+                        7 + rr() * 6, feet.add(0, 0.3 + rr() * 1.4, 0).add(side.scale(gg() * 0.35)), d.scale(-0.3));
+            }
         }
     }
 
@@ -717,75 +944,5 @@ public final class ClivarRenderer {
         put(b, c.add(r).subtract(f), 1, 0);
         put(b, c.add(r).add(f), 1, 1);
         put(b, c.subtract(r).add(f), 0, 1);
-    }
-
-    private static void drawPieces(double now) {
-        Minecraft minecraft = Minecraft.getInstance();
-        ClientLevel level = minecraft.level;
-        if (level == null) {
-            return;
-        }
-        MultiBufferSource.BufferSource source = minecraft.renderBuffers().bufferSource();
-        boolean any = false;
-        for (Cut c : CUTS.values()) {
-            if (c.breakAt < 0) {
-                continue;
-            }
-            double s = now - c.breakAt;
-            if (s >= 24) {
-                continue;
-            }
-            for (Piece q : c.pieces) {
-                Vec3 p = q.at().add(q.v().scale(s));
-                p = new Vec3(p.x, Math.max(q.floor() + 0.25, p.y - 0.02 * s * s), p.z);
-                double sc = 0.5 * (1 - cl((s - 14) / 10, 0, 1));
-                if (sc <= 0.01) {
-                    continue;
-                }
-                PoseStack pose = new PoseStack();
-                pose.translate(p.x - cam.x, p.y - cam.y, p.z - cam.z);
-                pose.mulPose(Axis.XP.rotation((float) (q.h0() * s * 0.2)));
-                pose.mulPose(Axis.YP.rotation((float) (q.h1() * s * 0.25)));
-                pose.scale((float) sc, (float) sc, (float) sc);
-                pose.translate(-0.5, -0.5, -0.5);
-                int light = LevelRenderer.getLightColor(level, BlockPos.containing(p));
-                minecraft.getBlockRenderer().renderSingleBlock(q.state(), pose, source, light, OverlayTexture.NO_OVERLAY);
-                any = true;
-            }
-        }
-        if (any) {
-            source.endBatch();
-        }
-    }
-
-    // The sprint: white and black dashes left behind, each where he was when it was born.
-    private static void drawTrail(Trail t, double now) {
-        Entity e = FxAnchor.entity(t.id());
-        for (int k = 0; k < TRAIL; k++) {
-            double born = t.born() + k * (t.ticks() / (double) TRAIL), s = now - born;
-            if (s < 0 || s >= 5) {
-                continue;
-            }
-            double h1 = hash(k * 3.1 + t.seed()), h2 = hash(k * 5.3 + t.seed());
-            if (t.spots()[k] == null) {
-                if (e == null) {
-                    continue;
-                }
-                Vec3 d = Vec3.directionFromRotation(0, e.getYRot());
-                Vec3 side = new Vec3(-d.z, 0, d.x);
-                t.spots()[k] = e.position().add(side.scale((h1 - 0.5) * 1.0)).add(0, 0.3 + h2 * 1.5, 0).subtract(d.scale(0.4));
-            }
-            Vec3 p = t.spots()[k];
-            Vec3 d = e != null ? Vec3.directionFromRotation(0, e.getYRot()) : new Vec3(0, 0, 1);
-            Vec3 view = cam.subtract(p).normalize();
-            Vec3 wv = d.cross(view);
-            wv = wv.lengthSqr() < 1.0E-6 ? new Vec3(0, 1, 0) : wv.normalize();
-            double L = (0.8 + 0.6 * h2) * (1 - Math.pow(s / 5, 2)), W = 0.08 + 0.05 * h1;
-            SukunaCutsRenderer.U u = SukunaCutsRenderer.U.of(3);
-            u.kind = k % 3 == 0 ? 1 : 0;
-            u.seed = (float) h1;
-            u.a = (float) (1 - s / 5);
-            quad(u, p.subtract(d.scale(s * 0.05)), d.scale(L / 2), wv.scale(W / 2));
-        }
     }
 }

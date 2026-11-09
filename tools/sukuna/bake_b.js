@@ -11,6 +11,7 @@
 // he lets go, is set here from the slam pose (arm hanging forward from a body leaning 47 degrees).
 const fs = require('fs');
 const path = require('path');
+const { channels } = require('./rig');
 const anims = path.join(__dirname, '../../src/main/resources/assets/battlegroundsmod/animations');
 const javaOut = path.join(__dirname, '../../src/main/java/com/starkinhon/battlegroundsmod/power/powers/sukuna/BTrack.java');
 class V {
@@ -104,7 +105,7 @@ const D = 180 / Math.PI;
 function lerp(a, b, u) {
   const o = { g: {} };
   for (const k of Object.keys(BONES)) { const x = a[k] || [0, 0, 0], y = b[k] || [0, 0, 0]; o[k] = [0, 1, 2].map(i => x[i] + (y[i] - x[i]) * u); }
-  for (const k of ['lean', 'twist']) o.g[k] = ((a.g || {})[k] || 0) + (((b.g || {})[k] || 0) - ((a.g || {})[k] || 0)) * u;
+  for (const k of ['lean', 'twist', 'y']) o.g[k] = ((a.g || {})[k] || 0) + (((b.g || {})[k] || 0) - ((a.g || {})[k] || 0)) * u;
   return o;
 }
 function keys(list) {
@@ -115,19 +116,24 @@ function keys(list) {
   };
 }
 function bake(name, fn, t0, t1, hold = 0) {
-  const chans = {}; for (const b of Object.keys(BONES)) chans[b] = []; chans.body = [];
-  for (let k = 0; k <= (t1 - t0) * 2; k++) {
-    const tt = t0 + k / 2, p = fn(tt), ts = +((k / 2) / 20).toFixed(4);
-    for (const b of Object.keys(BONES)) { const r = p[b] || [0, 0, 0]; chans[b].push({ timestamp: ts, target: [-r[0], -r[1], r[2]].map(x => +x.toFixed(3)), interpolation: 'linear' }); }
-    chans.body.push({ timestamp: ts, target: [-((p.g || {}).lean || 0) * D, -((p.g || {}).twist || 0) * D, 0].map(x => +x.toFixed(3)), interpolation: 'linear' });
-  }
-  const animations = Object.keys(BONES).map(b => ({ bone: BONES[b], target: 'rotation', keyframes: chans[b] }));
-  animations.push({ bone: 'Body', target: 'rotation', keyframes: chans.body });
-  const out = { length: +(((t1 - t0) / 20) + hold).toFixed(4), animations };
+  const poses = [];
+  for (let k = 0; k <= (t1 - t0) * 2; k++) poses.push({ ts: +((k / 2) / 20).toFixed(4), p: fn(t0 + k / 2) });
+  const out = { length: +(((t1 - t0) / 20) + hold).toFixed(4), animations: channels(poses) };
   fs.writeFileSync(path.join(anims, name + '.json'), JSON.stringify(out));
   console.log(`${name}: ${out.length} s`);
 }
-const runPose = t => { const ph = t - S.RUN0, s = Math.sin(ph); return { h: [-8, 0, 0], rl: [-58 * s, 0, 0], ll: [58 * s, 0, 0], la: [48 * s, 0, -10], ra: [-48 * s, 0, 10], g: { lean: 0.5, twist: 0.12 * s } }; };
+// Anime sprint (Stark 2026-11-09: the old one was "uma bosta"): 7 ticks a stride pair, the whole body leaning in from the
+// feet (rig.js), the knee driven high forward and the back leg kicking out less, arms pumping against the legs, shoulders
+// counter-turning, the body rising in the flight phase, the head held up and square so he looks ahead.
+const runPhase = ph => {
+  const w = 2 * Math.PI * ph / 7, s = Math.sin(w), c = Math.cos(w);
+  const leg = v => v > 0 ? -74 * v : -46 * v;
+  const tw = -0.16 * s;
+  return { h: [-24 - 3 * Math.abs(c), -tw * 180 / Math.PI * 0.85, 0], rl: [leg(s), 0, 2], ll: [leg(-s), 0, -2],
+    ra: [52 * s - 6, 0, 10 + 4 * Math.abs(s)], la: [-52 * s - 6, 0, -10 - 4 * Math.abs(s)],
+    g: { lean: 0.44 + 0.05 * Math.abs(c), twist: tw, y: 0.05 * Math.abs(s) - 0.05 } };
+};
+const runPose = t => runPhase(t - S.RUN0);
 // the sprint runs until he reaches the target (the server decides): the cycle baked long, the punch is its own file
 bake('sukuna.b_corre', t => t < S.RUN0 ? keys([{ t: 0, p: SK.stand }, { t: S.RUN0, p: SK.crouch, e: 'out' }])(t)
   : t < S.RUN0 + 1.5 ? lerp(SK.crouch, runPose(t), ease.out((t - S.RUN0) / 1.5)) : runPose(t), 0, 40);

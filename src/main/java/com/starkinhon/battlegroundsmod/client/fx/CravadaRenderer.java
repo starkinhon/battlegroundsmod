@@ -65,6 +65,8 @@ public final class CravadaRenderer {
         double impactGround, hitGround;
         final Vec3[] windAt = new Vec3[16], curveAt = new Vec3[6], stepAt = new Vec3[3];
         double[] webY;
+        // Which web strokes already kicked their dust up as they drew.
+        boolean[] kicked;
         // The flight (TRACK): where BTrack's frame sits, when it started (now() and ticks of this client).
         Vec3 origin;
         double trackAt = -1;
@@ -141,12 +143,15 @@ public final class CravadaRenderer {
                 r.impact = a;
                 r.impactGround = groundUnder(a, 3);
                 SukunaCutsRenderer.star(a.add(0, 0.5, 0), 3.2f, seed + 2);
+                slamDust(new Vec3(a.x, r.impactGround, a.z), 1.0);
             }
             case SukunaCravada.LAND -> {
                 r.landAt = now;
                 r.chest = a;
                 r.webY = null;
+                r.kicked = null;
                 SukunaCutsRenderer.star(a.add(0, 0.3, 0), 2.8f, seed + 3);
+                slamDust(new Vec3(a.x, groundUnder(a, 2), a.z), 0.8);
             }
             case SukunaCravada.TRACK -> {
                 r.origin = a;
@@ -161,6 +166,8 @@ public final class CravadaRenderer {
                     r.landAt = now - SX_BOOM - SX_CUT;
                     r.chest = a;
                 }
+                SukunaCutsRenderer.star(a.add(0, 0.6, 0), 6f, seed + 4);
+                burstSmoke(r);
             }
             default -> {
             }
@@ -529,6 +536,9 @@ public final class CravadaRenderer {
                 r.webY[i] = groundUnder(new Vec3(m.x, c.y, m.z), 2.5);
             }
         }
+        if (r.kicked == null) {
+            r.kicked = new boolean[CravadaWeb.WEB.size()];
+        }
         if (s < SX_BOOM + SX_CUT + 2) {
             for (int i = 0; i < CravadaWeb.WEB.size(); i++) {
                 CravadaWeb.Stroke w = CravadaWeb.WEB.get(i);
@@ -537,6 +547,11 @@ public final class CravadaRenderer {
                     continue;
                 }
                 Vec3 m = middle(r, w);
+                if (!r.kicked[i]) {
+                    // the cut bites into the ground as it draws: dust and grit kicked up along it
+                    r.kicked[i] = true;
+                    strokeDust(r, w, new Vec3(m.x, r.webY[i], m.z));
+                }
                 Vec3 p = new Vec3(m.x, r.webY[i] + (w.spoke() ? 0.04 : 0.035), m.z);
                 Vec3 d = r.dir(w.dirX(), 0, w.dirZ());
                 double flash = bs >= 0 ? bs < 1.5 ? 1.6 : Math.exp(-(bs - 1.5) / 2) : Math.exp(-lt / 1.5);
@@ -681,10 +696,13 @@ public final class CravadaRenderer {
             }
             e.yBodyRot = e.yBodyRotO = yaw + 180;
             double t = tilt(Math.min(age, BTrack.BURST));
-            // after the burst throws it, it rights itself in the air
+            // after the burst throws it, it tumbles over once and a half in the air and comes out upright (-2.5 pi to -4 pi)
             if (age > BTrack.BURST) {
-                t *= 1 - out(cl((age - BTrack.BURST) / 8, 0, 1));
+                t = -Math.PI * (2.5 + 1.5 * out(cl((age - BTrack.BURST) / 16, 0, 1)));
             }
+            // the blows land in the body: flattened for a moment at the slam, the stomp and each web that cuts under it
+            double squash = Math.max(Math.max(hitPulse(age - BTrack.IMPACT, 5) * 0.35, hitPulse(age - BTrack.LAND, 6) * 0.3),
+                    Math.max(Math.max(hitPulse(age - BTrack.WEB2, 4), hitPulse(age - BTrack.WEB3, 4)) * 0.12, hitPulse(age - BTrack.BOOM, 4) * 0.18));
             double h = e.getBbHeight() / 2;
             double feet = Mth.lerp(partial, e.yo, e.getY());
             // the body's middle where the track has it (lying, it is lower than standing feet allow), never in the floor
@@ -693,7 +711,10 @@ public final class CravadaRenderer {
             double dy = age < BTrack.IMPACT - 1 || age > BTrack.BURST ? 0 : Math.min(0, want - (feet + h));
             var pose = event.getPoseStack();
             pose.pushPose();
-            pose.translate(0, h + dy, 0);
+            pose.translate(0, h + dy - squash * 0.25, 0);
+            if (squash > 0) {
+                pose.scale((float) (1 + squash * 0.35), (float) (1 - squash), (float) (1 + squash * 0.35));
+            }
             pose.mulPose(new Quaternionf().rotateAxis((float) -t, (float) r.left.x, 0, (float) r.left.z));
             pose.translate(0, -h, 0);
             TURNED.add(e.getId());
@@ -705,5 +726,123 @@ public final class CravadaRenderer {
         if (TURNED.remove(event.getEntity().getId())) {
             event.getPoseStack().popPose();
         }
+    }
+
+    // A hit's pulse: up at once, back down over len ticks (0 outside).
+    private static double hitPulse(double since, double len) {
+        double u = since / len;
+        return since < 0 || u >= 1 ? 0 : (1 - u) * (1 - u);
+    }
+
+    // ---------- the procedural smoke (Fumaça Nova, SmokeParticle), spawned here on the client: dust, grit, columns ----------
+
+    private static final net.minecraft.util.RandomSource RANDOM = net.minecraft.util.RandomSource.createThreadSafe();
+
+    private static void smoke(int style, int color, double alpha, double size, double grow, int life, double friction, double gravity, double flat,
+            Vec3 at, Vec3 v) {
+        var level = Minecraft.getInstance().level;
+        if (level == null) {
+            return;
+        }
+        level.addAlwaysVisibleParticle(com.starkinhon.battlegroundsmod.fx.ModParticles.fx(style, color, (float) alpha, (float) size, (float) grow, life,
+                (float) friction, (float) gravity, (float) flat, 0), true, at.x, at.y, at.z, v.x, v.y, v.z);
+    }
+
+    private static double rr() {
+        return RANDOM.nextDouble();
+    }
+
+    private static double gg() {
+        return RANDOM.nextGaussian();
+    }
+
+    private static int ground(Vec3 at) {
+        var level = Minecraft.getInstance().level;
+        return level == null ? 0xB9AA90 : com.starkinhon.battlegroundsmod.fx.Smoke.groundColor(level, at.add(0, 0.25, 0));
+    }
+
+    // A body slammed into the ground (scale 1: the cravada): a wave of dust rolling out low, a lighter layer over it,
+    // a column thrown up, grit flying and a shadow on the ground.
+    private static void slamDust(Vec3 at, double scale) {
+        int color = ground(at), dark = com.starkinhon.battlegroundsmod.fx.Smoke.mix(color, 0x2A2622, 0.35);
+        double TAU = Math.PI * 2;
+        for (int i = 0; i < 46; i++) {
+            double a = i / 46.0 * TAU + rr() * 0.12, sp = 0.42 * scale * (0.8 + rr() * 0.4);
+            Vec3 o = new Vec3(Math.cos(a), 0, Math.sin(a));
+            smoke(1, color, 0.95, (0.7 + rr() * 0.4) * scale, 1.6, 22 + RANDOM.nextInt(10), 0.89, 0, 0.5, at.add(o.scale(0.7)).add(0, 0.25, 0),
+                    o.scale(sp).add(0, 0.015, 0));
+        }
+        for (int i = 0; i < 20; i++) {
+            double a = rr() * TAU, sp = 0.22 * scale * (0.6 + rr() * 0.5);
+            Vec3 o = new Vec3(Math.cos(a), 0, Math.sin(a));
+            smoke(1, com.starkinhon.battlegroundsmod.fx.Smoke.mix(color, 0xFFFFFF, 0.15), 0.65, (0.6 + rr() * 0.4) * scale, 1.4, 18 + RANDOM.nextInt(8),
+                    0.9, 0, 1, at.add(o.scale(0.5)).add(0, 0.7, 0), o.scale(sp).add(0, 0.06, 0));
+        }
+        for (int i = 0; i < 14; i++) {
+            smoke(0, dark, 0.85, (0.55 + rr() * 0.35) * scale, 1.8, 30 + RANDOM.nextInt(12), 0.92, 0, 1, at.add(gg() * 0.4, 0.3 + rr() * 0.4, gg() * 0.4),
+                    new Vec3(gg() * 0.04, (0.14 + rr() * 0.12) * scale, gg() * 0.04));
+        }
+        for (int i = 0; i < 30; i++) {
+            Vec3 v = new Vec3(gg(), 1.4 + rr(), gg()).normalize();
+            smoke(5, dark, 1, 0.07 + rr() * 0.08, 0, 18 + RANDOM.nextInt(10), 0.97, 1, 1, at.add(0, 0.25, 0), v.scale((0.3 + rr() * 0.25) * scale));
+        }
+        smoke(6, 0xFFFFFF, 1.1, 0.6, 9 * scale, 12, 1, 0, 1, at.add(0, 0.05, 0), Vec3.ZERO);
+        smoke(7, 0, 0.55, 2.2 * scale, 1.2, 60, 1, 0, 1, at.add(0, 0.03, 0), Vec3.ZERO);
+    }
+
+    // One web stroke biting into the ground as it draws: a little dust thrown sideways off it and grit popping up.
+    private static void strokeDust(Run r, CravadaWeb.Stroke w, Vec3 mid) {
+        Vec3 d = r.dir(w.dirX(), 0, w.dirZ()), n = new Vec3(-d.z, 0, d.x);
+        int color = ground(mid);
+        int pts = Math.max(1, (int) (w.len() / 2.2));
+        for (int i = 0; i < pts; i++) {
+            Vec3 p = mid.add(d.scale(((i + 0.5) / pts - 0.5) * w.len() * 0.8)).add(0, 0.15, 0);
+            int side = RANDOM.nextBoolean() ? 1 : -1;
+            smoke(1, color, 0.8, 0.35 + rr() * 0.2, 1.5, 14 + RANDOM.nextInt(6), 0.88, 0, 0.6, p, n.scale(side * (0.06 + rr() * 0.05)).add(0, 0.02, 0));
+            smoke(5, com.starkinhon.battlegroundsmod.fx.Smoke.mix(color, 0, 0.35), 1, 0.06 + rr() * 0.04, 0, 12 + RANDOM.nextInt(6), 0.97, 1, 1, p,
+                    new Vec3(gg() * 0.06, 0.2 + rr() * 0.15, gg() * 0.06));
+        }
+    }
+
+    // The ground blowing up along the whole web and the four cuts: thick dust columns out of every line, a dark cloud
+    // rolling up from the middle, grit and clods (the procedural specks, no block copies) thrown high, a ring of air.
+    private static void burstSmoke(Run r) {
+        Vec3 c = r.chest;
+        Vec3 base = new Vec3(c.x, groundUnder(c, 2), c.z);
+        int color = ground(base), dark = com.starkinhon.battlegroundsmod.fx.Smoke.mix(color, 0x1E1A16, 0.4);
+        int budget = 900;
+        java.util.List<Vec3[]> lines = new java.util.ArrayList<>();
+        for (CravadaWeb.Stroke w : CravadaWeb.WEB) {
+            Vec3 m = middle(r, w);
+            lines.add(new Vec3[] {m, r.dir(w.dirX(), 0, w.dirZ()), new Vec3(w.len(), w.spoke() ? 1 : 0.6, 0)});
+        }
+        for (int i = 0; i < 4; i++) {
+            double a = CravadaWeb.cutAngle(i), off = CravadaWeb.cutOffset(i);
+            Vec3 d = r.dir(Math.cos(a), 0, Math.sin(a));
+            lines.add(new Vec3[] {c.add(new Vec3(-d.z, 0, d.x).scale(off)), d, new Vec3(CravadaWeb.CUT_LEN * 0.8, 1.6, 0)});
+        }
+        for (Vec3[] line : lines) {
+            double len = line[2].x, k = line[2].y;
+            int pts = Math.max(1, (int) (len / 2.4));
+            for (int i = 0; i < pts && budget > 0; i++, budget -= 3) {
+                Vec3 p = line[0].add(line[1].scale(((i + 0.5) / pts - 0.5) * len));
+                double y = groundUnder(new Vec3(p.x, base.y, p.z), 2.5);
+                p = new Vec3(p.x, y + 0.2, p.z);
+                double dist = Math.sqrt(p.distanceToSqr(base.x, p.y, base.z));
+                int delay = (int) (dist * 0.1);
+                smoke(0, rr() < 0.5 ? color : dark, 0.9, (0.6 + rr() * 0.5) * k, 1.9, 34 + RANDOM.nextInt(16) + delay, 0.93, 0, 1, p.add(0, rr() * 0.4, 0),
+                        new Vec3(gg() * 0.03, (0.16 + rr() * 0.16) * k, gg() * 0.03));
+                smoke(1, color, 0.9, (0.5 + rr() * 0.3) * k, 1.6, 24 + RANDOM.nextInt(10), 0.9, 0, 0.55, p,
+                        new Vec3(gg() * 0.08, 0.02, gg() * 0.08));
+                Vec3 v = new Vec3(gg() * 0.4, 1.2 + rr(), gg() * 0.4).normalize();
+                smoke(5, dark, 1, (0.09 + rr() * 0.12) * Math.min(1.3, k), 0, 26 + RANDOM.nextInt(14), 0.98, 1, 1, p, v.scale(0.45 + rr() * 0.4));
+            }
+        }
+        for (int i = 0; i < 24; i++) {
+            smoke(0, dark, 0.95, 1.2 + rr() * 0.8, 2.2, 50 + RANDOM.nextInt(20), 0.94, 0, 1, base.add(gg() * 1.2, 0.5 + rr() * 1.5, gg() * 1.2),
+                    new Vec3(gg() * 0.05, 0.22 + rr() * 0.18, gg() * 0.05));
+        }
+        smoke(6, 0xFFFFFF, 1.3, 0.8, 17, 16, 1, 0, 1, base.add(0, 0.06, 0), Vec3.ZERO);
+        smoke(7, 0, 0.6, 9, 1.3, 90, 1, 0, 1, base.add(0, 0.03, 0), Vec3.ZERO);
     }
 }

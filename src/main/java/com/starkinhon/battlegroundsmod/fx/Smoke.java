@@ -63,7 +63,7 @@ public final class Smoke {
     }
 
     // Dust in the color of the ground under the feet (grass kicks up dirt), a little washed out.
-    public static int groundColor(ServerLevel level, Vec3 feet) {
+    public static int groundColor(net.minecraft.world.level.Level level, Vec3 feet) {
         BlockPos pos = BlockPos.containing(feet.x, feet.y - 0.2, feet.z);
         for (int i = 0; i < 3; i++, pos = pos.below()) {
             BlockState state = level.getBlockState(pos);

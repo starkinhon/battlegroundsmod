@@ -11,6 +11,7 @@
 // in the air). Timings match power/powers/sukuna/Clivar (RUN0, PIN, MEASURE, HOLD, WIND; HAND_* for where his hand is).
 const fs = require('fs');
 const path = require('path');
+const { channels } = require('./rig');
 const dir = path.join(__dirname, '../../src/main/resources/assets/battlegroundsmod/animations');
 const ease = { out: u => 1 - Math.pow(1 - u, 3), snap: u => 1 - Math.pow(1 - u, 5), io: u => u < .5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2 };
 const cl = (x, a, b) => Math.max(a, Math.min(b, x));
@@ -20,6 +21,7 @@ const SK = {
   // Stark 2026-11-09: the old hold (arm at -112, body leaning back, the target floating over his head with its hands up)
   // looked bad. Now the arm goes up high and forward (-132) and the target hangs from the hand by the neck (Clivar.HAND_*).
   grabF: { h: [-22, 4, 0], ra: [-132, 0, -6], la: [16, 0, -16], rl: [-12, 0, 0], ll: [16, 0, 0], g: {} },
+  lunge: { h: [-26, 0, 0], ra: [-96, 0, -4], la: [30, 0, -18], rl: [-40, 0, 0], ll: [30, 0, 0], g: { lean: 0.3, twist: 0.2, y: -0.08 } },
   grabW: { h: [-12, 0, 0], ra: [-100, 0, -6], la: [18, 0, -14], rl: [-26, 0, 0], ll: [32, 0, 0], g: { lean: 0.12, twist: 0.25 } },
   wind: { h: [-14, 34, 0], ra: [24, 0, 96], la: [-62, 0, -26], rl: [34, 0, 0], ll: [-38, 0, 0], g: { lean: -0.16, twist: -0.85 } },
   throw: { h: [2, -12, 0], ra: [-140, 0, 20], la: [42, 0, -22], rl: [42, 0, 0], ll: [-36, 0, 0], g: { lean: 0.36, twist: 0.75 } },
@@ -41,7 +43,7 @@ function lerp(a, b, u) {
     const x = a[k] || [0, 0, 0], y = b[k] || [0, 0, 0];
     o[k] = [0, 1, 2].map(i => x[i] + (y[i] - x[i]) * u);
   }
-  for (const k of ['lean', 'twist']) o.g[k] = ((a.g || {})[k] || 0) + (((b.g || {})[k] || 0) - ((a.g || {})[k] || 0)) * u;
+  for (const k of ['lean', 'twist', 'y']) o.g[k] = ((a.g || {})[k] || 0) + (((b.g || {})[k] || 0) - ((a.g || {})[k] || 0)) * u;
   return o;
 }
 function keys(list) {
@@ -64,28 +66,25 @@ function headTurn(p, deg) {
 }
 // fn: tick -> pose; last: ticks baked; hold: seconds the last pose stays.
 function bake(name, fn, last, hold = 0) {
-  const chans = {};
-  for (const b of Object.keys(BONES)) chans[b] = [];
-  chans.body = [];
-  for (let k = 0; k <= last * 2; k++) {
-    const tt = k / 2;
-    const p = fn(tt);
-    const ts = +(tt / 20).toFixed(4);
-    for (const b of Object.keys(BONES)) {
-      const r = p[b] || [0, 0, 0];
-      chans[b].push({ timestamp: ts, target: [-r[0], -r[1], r[2]].map(x => +x.toFixed(3)), interpolation: 'linear' });
-    }
-    chans.body.push({ timestamp: ts, target: [-((p.g || {}).lean || 0) * D, -((p.g || {}).twist || 0) * D, 0].map(x => +x.toFixed(3)), interpolation: 'linear' });
-  }
-  const animations = Object.keys(BONES).map(b => ({ bone: BONES[b], target: 'rotation', keyframes: chans[b] }));
-  animations.push({ bone: 'Body', target: 'rotation', keyframes: chans.body });
-  const out = { length: +((last / 20) + hold).toFixed(4), animations };
+  const poses = [];
+  for (let k = 0; k <= last * 2; k++) poses.push({ ts: +((k / 2) / 20).toFixed(4), p: fn(k / 2) });
+  const out = { length: +((last / 20) + hold).toFixed(4), animations: channels(poses) };
   fs.writeFileSync(path.join(dir, name + '.json'), JSON.stringify(out));
   console.log(`${name}: ${out.length} s`);
 }
 const RUN0 = 3, PIN = 3, MEASURE = 48, HOLD = 12, WIND = 9, SIL = 5;
 // the sprint (Stark: 3x the reach, up to ~30 blocks): crouch, then the run cycle for as long as it lasts
-const runPose = ph => { const s = Math.sin(ph); return { h: [-8, 0, 0], rl: [-58 * s, 0, 0], ll: [58 * s, 0, 0], la: [48 * s, 0, -10], ra: [-48 * s, 0, 10], g: { lean: 0.5, twist: 0.12 * s } }; };
+// Anime sprint (Stark 2026-11-09: the old one was "uma bosta"): 7 ticks a stride pair, the whole body leaning in from the
+// feet (rig.js), the knee driven high forward and the back leg kicking out less, arms pumping against the legs, shoulders
+// counter-turning, the body rising in the flight phase, the head held up and square so he looks ahead.
+const runPose = ph => {
+  const w = 2 * Math.PI * ph / 7, s = Math.sin(w), c = Math.cos(w);
+  const leg = v => v > 0 ? -74 * v : -46 * v;
+  const tw = -0.16 * s;
+  return { h: [-24 - 3 * Math.abs(c), -tw * 180 / Math.PI * 0.85, 0], rl: [leg(s), 0, 2], ll: [leg(-s), 0, -2],
+    ra: [52 * s - 6, 0, 10 + 4 * Math.abs(s)], la: [-52 * s - 6, 0, -10 - 4 * Math.abs(s)],
+    g: { lean: 0.44 + 0.05 * Math.abs(c), twist: tw, y: 0.05 * Math.abs(s) - 0.05 } };
+};
 bake('sukuna.clivar_corre', t => {
   if (t < RUN0) return keys([{ t: 0, p: SK.stand }, { t: RUN0, p: SK.crouch, e: 'out' }])(t);
   const p = runPose(t - RUN0);
@@ -99,8 +98,10 @@ const struggle = (G, t0) => t => {
   return o;
 };
 bake('sukuna.clivar_pega', t => {
-  if (t < 2) return lerp(runPose(1.2), SK.grabF, ease.snap(t / 2));
-  return struggle(SK.grabF, 2)(t);
+  // the stride carries into a lunge (arm out at the neck), then he straightens and lifts, leaning back a hair with the weight
+  if (t < 2) return lerp(runPose(1.2), SK.lunge, ease.snap(t / 2));
+  if (t < 6) return lerp(SK.lunge, SK.grabF, ease.out((t - 2) / 4));
+  return struggle(SK.grabF, 6)(t);
 }, 2 + MEASURE + 2, 3);
 bake('sukuna.clivar_prensa', t => t < PIN ? lerp(SK.grabF, SK.grabW, ease.out(t / PIN)) : struggle(SK.grabW, PIN + 2)(t), PIN + 2 + MEASURE, 3);
 for (const [suffix, G] of [['', SK.grabF], ['_parede', SK.grabW]]) {
