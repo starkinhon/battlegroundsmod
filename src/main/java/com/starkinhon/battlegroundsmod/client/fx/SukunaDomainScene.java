@@ -1184,10 +1184,10 @@ public final class SukunaDomainScene {
             m.safeGetUniform("CamL").set((float) camL.x, (float) camL.y, (float) camL.z);
             RenderSystem.depthMask(false);
             RenderSystem.enableCull();
-            RenderSystem.cullFace(GlStateManager.CullFace.FRONT);
+            GL11.glCullFace(GL11.GL_FRONT);
             premult();
             sphere(m, Vec3.ZERO, (float) MIST_R, 24, 48);
-            RenderSystem.cullFace(GlStateManager.CullFace.BACK);
+            GL11.glCullFace(GL11.GL_BACK);
             RenderSystem.disableCull();
         }
         if (s >= T_LIT) {
