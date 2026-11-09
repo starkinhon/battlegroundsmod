@@ -27,9 +27,10 @@ void main() {
     if (h < 0.0) discard;
     h = sqrt(h);
     float t0 = max(0.0, -b - h), t1 = -b + h;
-    const int N = 26;
+    // No per-pixel jitter: in the game it stays on the screen while the world moves, a grain that shimmers (Stark 06:38).
+    const int N = 40;
     float dt = (t1 - t0) / float(N);
-    float t = t0 + dt * (0.35 + 0.3 * h21(gl_FragCoord.xy));
+    float t = t0 + dt * 0.5;
     vec3 col = vec3(0.0);
     float A = 0.0;
     for (int i = 0; i < N; i++) {
@@ -48,7 +49,7 @@ void main() {
         }
         if (Low > 0.0) {
             float f = fb3(vec3(p.x * 0.12 + T * 0.004, p.y * 0.5, p.z * 0.12));
-            float dL = Low * 0.18 * smoothstep(2.4, 0.0, p.y) * smoothstep(0.35, 0.7, f);
+            float dL = Low * 0.06 * smoothstep(1.6, 0.0, p.y) * smoothstep(0.35, 0.7, f);
             float a = 1.0 - exp(-dL * dt);
             col += (1.0 - A) * a * vec3(0.2, 0.27, 0.3) * (0.6 + 0.6 * f);
             A += (1.0 - A) * a;
