@@ -138,7 +138,7 @@ public final class FxWorld {
 
     // End of the level: world effects, then the screen bending and blur on top of them.
     public static void onRenderLevel(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_LEVEL) {
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_LEVEL || DomainPanorama.capturing()) {
             return;
         }
         FxPost.newFrame();

@@ -146,6 +146,10 @@ public final class SukunaDomainScene {
                     endCamera(d);
                 }
                 DOMS.add(new Dom(casterId, center, now, a / 10f));
+                // The floor inside mirrors this place: take it all round now, while the wave is on screen.
+                if (mc.player != null && mc.player.position().distanceTo(center) <= ShrineDomain.RADIUS + 16) {
+                    DomainPanorama.request();
+                }
             }
             case ShrineDomain.M_CUTSCENE, ShrineDomain.M_QUICK -> {
                 if (d == null) {
@@ -201,6 +205,7 @@ public final class SukunaDomainScene {
             endCamera(d);
         }
         DOMS.clear();
+        DomainPanorama.clear();
     }
 
     public static boolean active() {
@@ -790,6 +795,18 @@ public final class SukunaDomainScene {
         sky.safeGetUniform("Red").set(s >= T_RED ? 1f : 0f);
         sky.safeGetUniform("CamL").set((float) camL.x, (float) camL.y, (float) camL.z);
         sphere(sky, camL, 50, 24, 48);
+        if (s >= T_RED && DomainPanorama.ready() && FxShaders.sdPano != null) {
+            // the outside, upside down in the water (where the domain opened, taken when it started)
+            ShaderInstance pano = FxShaders.sdPano;
+            pano.safeGetUniform("T").set(t);
+            pano.safeGetUniform("Yaw").set(d.yaw * Mth.DEG_TO_RAD);
+            pano.safeGetUniform("A").set((float) sm(T_RED, T_RED + 10, s));
+            pano.safeGetUniform("Quake").set((float) quake(s));
+            pano.safeGetUniform("Texel").set(DomainPanorama.texel());
+            pano.safeGetUniform("CamL").set((float) camL.x, (float) camL.y, (float) camL.z);
+            RenderSystem.setShaderTexture(0, DomainPanorama.texture());
+            sphere(pano, camL, 50, 24, 48);
+        }
         // the mirror: what stands on the water, upside down under it
         RenderSystem.enableDepthTest();
         RenderSystem.depthMask(true);

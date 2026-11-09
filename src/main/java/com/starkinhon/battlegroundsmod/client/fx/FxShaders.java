@@ -59,6 +59,7 @@ public final class FxShaders {
     static ShaderInstance sdBubble;
     static ShaderInstance sdDrop;
     static ShaderInstance sdWave;
+    static ShaderInstance sdPano;
 
     private static Boolean irisPresent;
 
@@ -121,6 +122,7 @@ public final class FxShaders {
             register(event, "souls_sd_bubble", DefaultVertexFormat.POSITION_TEX_COLOR, s -> sdBubble = s);
             register(event, "souls_sd_drop", DefaultVertexFormat.POSITION_TEX, s -> sdDrop = s);
             register(event, "souls_sd_wave", DefaultVertexFormat.POSITION_TEX, s -> sdWave = s);
+            register(event, "souls_sd_pano", DefaultVertexFormat.POSITION, s -> sdPano = s);
         } catch (Exception e) {
             BattlegroundsMod.LOGGER.error("Could not load the Sukuna Domain Expansion shaders", e);
         }
