@@ -34,6 +34,9 @@ public final class BaseAttacks {
     private static int selected = 0;
     private static int switchedAt = -100;
     private static boolean heldSent = false;
+    // The top of the selector's backing, the highest thing of the bottom stack, from the last frame (MIN_VALUE when it
+    // was not drawn). StatusBars lifts vanilla's action bar message above it.
+    static int stackTop = Integer.MIN_VALUE;
 
     private BaseAttacks() {
     }
@@ -57,6 +60,7 @@ public final class BaseAttacks {
     }
 
     public static void render(GuiGraphics graphics, DeltaTracker deltaTracker) {
+        stackTop = Integer.MIN_VALUE;
         Minecraft minecraft = Minecraft.getInstance();
         var player = minecraft.player;
         if (minecraft.options.hideGui || player == null || player.isSpectator()) {
@@ -85,6 +89,7 @@ public final class BaseAttacks {
         float flash = Mth.clamp(1 - (player.tickCount - switchedAt) / (float) SWITCH_FLASH_TICKS, 0, 1);
         int color = cooldown > 0 ? 0xFF8A8A8A : lerp(0xFFFFFFFF, 0xFFFFD84A, flash);
         int textY = top - font.lineHeight;
+        stackTop = textY - 2;
         graphics.fill(center - width / 2 - 4, textY - 2, center + width / 2 + 4, textY + font.lineHeight + 4, 0x66000000);
         graphics.drawString(font, name, center - width / 2, textY, color, true);
         // One dot per attack, the picked one lit.
