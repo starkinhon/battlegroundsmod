@@ -13,7 +13,7 @@ import com.starkinhon.battlegroundsmod.power.Ability;
 import com.starkinhon.battlegroundsmod.power.Power;
 import com.starkinhon.battlegroundsmod.power.powers.sub.SubCommon;
 import com.starkinhon.battlegroundsmod.power.powers.sub.SubNet;
-import com.starkinhon.battlegroundsmod.power.powers.uchiha.Agarrao;
+import com.starkinhon.battlegroundsmod.power.powers.sub.jj.JjCommon;
 
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -94,7 +94,7 @@ public final class Goku {
                 SubNet.send(level, SubNet.KI_BALL, ball, hm, Vec3.ZERO, 0, color, 1);
                 SubNet.send(level, SubNet.KI_AURA, caster.getId(), caster.position(), Vec3.ZERO, 0, color, 1);
                 SubCommon.pose(caster, "db.empurra");
-                DbCommon.screen(level, hm, 0);
+                DbCommon.screen(level, hm, 45);
                 SubCommon.sound(level, hm, SoundEvents.WARDEN_SONIC_BOOM, 1.4f, 1.3f);
                 SubCommon.sound(level, hm, SoundEvents.BEACON_POWER_SELECT, 1.5f, 0.7f);
             }
@@ -116,6 +116,11 @@ public final class Goku {
             }
             if (end) {
                 DbCommon.boom(level, to, 2.8f * (kaioken ? 1.4f : 1), color, 4);
+                // The ground under the end is torn up: a bowl of blocks, some thrown out.
+                double ground = DbCommon.groundY(level, to);
+                if (to.y - ground < 3) {
+                    JjCommon.crater(level, new Vec3(to.x, ground, to.z), (2 + thick) * (kaioken ? 1.3 : 1), 1 + thick * 0.5, 12);
+                }
                 DbCommon.hurtRadius(caster, level, to, 2.8, (6 + 8 * charge[0]) * (kaioken ? 1.5f : 1), 1.2, 0.4);
                 return true;
             }
@@ -373,7 +378,7 @@ public final class Goku {
             double ground = DbCommon.groundY(level, at);
             Vec3 c = new Vec3(at.x, Math.min(at.y, ground + 1.5), at.z);
             SubNet.send(level, SubNet.GENKI_BOOM, 0, c, new Vec3(ground, 0, 0), s, 0, 0);
-            DbCommon.screen(level, c, 5);
+            DbCommon.screen(level, c, 47);
             SubCommon.sound(level, c, SoundEvents.GENERIC_EXPLODE.value(), 4f, 0.5f);
             SubCommon.sound(level, c, SoundEvents.WARDEN_SONIC_BOOM, 3f, 0.6f);
             float charge = Math.min(1, thrown[0] / (float) GENKI_FULL);
@@ -387,7 +392,7 @@ public final class Goku {
                 Combat.hurtMagic(caster, e, dmg);
                 Combat.pushFrom(e, c, 1.4, 0.6);
             }
-            Agarrao.crater(level, new Vec3(c.x, ground, c.z), 5.5 * s, 3 * s);
+            JjCommon.crater(level, new Vec3(c.x, ground, c.z), 5.5 * s, 3 * s, 28);
             return true;
         });
         return true;

@@ -2,6 +2,7 @@
 
 // Burn: 0 = the normal skin, 1 = charred black with glowing cracks.
 // Progress: 0 = whole body, 1 = all crumbled away, top first, along a ragged glowing edge.
+// Style 2: stone, see main.
 // Style 1 (the Hakai): instead of charring, the body lights up white with purple veins, and the edge breaks into
 // pixel-sized bits (1/16 of a block, like the skins) burning white in the middle and purple outside.
 uniform sampler2D Sampler0;
@@ -34,10 +35,58 @@ float noise(vec3 x) {
                mix(mix(hash(i + vec3(0, 0, 1)), hash(i + vec3(1, 0, 1)), f.x), mix(hash(i + vec3(0, 1, 1)), hash(i + vec3(1, 1, 1)), f.x), f.y), f.z);
 }
 
+vec3 hash3(vec3 p) {
+    p = vec3(dot(p, vec3(127.1, 311.7, 74.7)), dot(p, vec3(269.5, 183.3, 246.1)), dot(p, vec3(113.5, 271.9, 124.6)));
+    return fract(sin(p) * 43758.5453);
+}
+
+// Distances to the nearest and second nearest cell point (stones and the cracks between them).
+vec2 voronoi(vec3 p) {
+    vec3 i = floor(p);
+    vec3 f = fract(p);
+    float d1 = 9.0;
+    float d2 = 9.0;
+    for (int z = -1; z <= 1; z++) {
+        for (int y = -1; y <= 1; y++) {
+            for (int x = -1; x <= 1; x++) {
+                vec3 g = vec3(float(x), float(y), float(z));
+                float d = length(g + hash3(i + g) - f);
+                if (d < d1) {
+                    d2 = d1;
+                    d1 = d;
+                } else if (d < d2) {
+                    d2 = d;
+                }
+            }
+        }
+    }
+    return vec2(d1, d2);
+}
+
 void main() {
     vec4 tex = texture(Sampler0, texCoord);
     if (tex.a < 0.1) {
         discard;
+    }
+    if (Style > 1.5) {
+        // Style 2, stone (Vegeta's Explosao Final): grey rock rising from the feet (Burn) with dark cracks between
+        // stones; Progress lights the cracks up before it bursts.
+        vec3 skin = tex.rgb * vertexColor.rgb;
+        float lit = 0.55 + 0.45 * max(dot(normalize(normal), normalize(vec3(0.4, 0.8, 0.3))), 0.0);
+        float frontS = Burn * (AshHeight + 0.15) + (noise(local * 3.0) - 0.5) * 0.12;
+        if (local.y > frontS) {
+            fragColor = vec4(skin * lit, 1.0);
+            return;
+        }
+        vec2 v = voronoi(local * 4.5);
+        float crack = 1.0 - smoothstep(0.02, 0.07, v.y - v.x);
+        float grain = noise(local * 18.0);
+        vec3 st = vec3(0.47, 0.45, 0.42) * (0.75 + 0.35 * grain) * lit;
+        st = mix(st, vec3(0.08, 0.07, 0.07), crack * (0.55 + 0.45 * Progress));
+        st += vec3(1.0, 0.8, 0.35) * crack * Progress * 1.4;
+        float rim = 1.0 - smoothstep(0.0, 0.06, frontS - local.y);
+        fragColor = vec4(mix(st, vec3(0.8, 0.78, 0.72) * lit, rim * 0.6), 1.0);
+        return;
     }
     float h = clamp(local.y / max(AshHeight, 0.1), 0.0, 1.0);
     float n = noise(local * 7.0) * 0.6 + noise(local * 19.0) * 0.4;
