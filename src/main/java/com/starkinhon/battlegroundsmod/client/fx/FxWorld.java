@@ -145,7 +145,7 @@ public final class FxWorld {
         ScreenFx.capture(event);
         boolean world = !PIECES.isEmpty() || MeteorRenderer.hasTrails() || Aura.active() || KatonBallRenderer.active() || AshDeath.hasSparks() || SoulCeremonyFx.active()
                 || SpaceScene.active() || EsferaRenderer.active() || HakaiRenderer.active() || EnergyRenderer.active() || BlackBoxRenderer.active() || AzulRenderer.active() || VermelhoRenderer.active() || BlackFlashRenderer.active() || RoxoRenderer.active() || AizenFx.active() || SwordFx.active() || MoonSlashRenderer.active() || MoonFormsRenderer.active() || PunchFxRenderer.active() || SubFx.active()
-                || SphereRenderer.active() || SusanooArm.active() || DomainScene.active() || VoidFlashScene.active() || FugaRenderer.active() || DismantleRenderer.active();
+                || SphereRenderer.active() || SusanooArm.active() || DomainScene.active() || VoidFlashScene.active() || FugaRenderer.active() || DismantleRenderer.active() || SukunaCutsRenderer.active();
         if (!world && !ScreenFx.needsScene()) {
             return;
         }
@@ -330,6 +330,8 @@ public final class FxWorld {
         if (!space) {
             // Sukuna's thrown Dismantle (the combo's cuts).
             DismantleRenderer.render(camera);
+            // Sukuna's technique cuts (the Z, the chant, the World Cutting Slash, the Shift+Z lines).
+            SukunaCutsRenderer.render(camera);
         }
         if (!space) {
             // Sukuna's Fuga, over everything else: its fire is its own light in the dark.
