@@ -35,6 +35,10 @@ public final class NrCommon {
     public static final String MEDITATE = "nr_meditate";
     public static final String MEDITATE_BROKEN = "nr_meditate_broken";
     public static final String READ = "nr_sharingan_read";
+    // Read by Sasuke's Sharingan: his Chidori goes straight at them (critical), one Senbon needle paralyzes.
+    public static final String MARKED = "nr_sharingan_marked";
+    // Nothing touches them (Sasuke dashing with the Chidori, sliding out of a blow read by the Sharingan).
+    public static final String UNTOUCHABLE = "nr_untouchable";
     public static final String PARALYZED = "nr_paralyzed";
     public static final String COPY = "nr_copy";
     // Gaara's sand guards again 6 s after it blocked.
@@ -135,7 +139,9 @@ public final class NrCommon {
         SubCommon.setState(t, PARALYZED, ticks);
         Freeze.hold(t, ticks);
         PowerLogic.seal(t, ticks);
-        Stun.apply(t, Math.min(ticks, 20));
+        // A real stun the whole length, boss or not (Stark, 2026-11-09: the Senbon has to stun a lot): it opens the
+        // stun-only moves.
+        Stun.apply(t, ticks, true);
         SubNet.send(level, SubNet.PARALYZE, t.getId(), t.position(), Vec3.ZERO, ticks, 0, 0);
         SubCommon.sound(level, t.position(), SoundEvents.BEEHIVE_WORK, 1f, 2f);
     }
@@ -204,15 +210,16 @@ public final class NrCommon {
             return;
         }
         PowerData data = target.getData(ModAttachments.POWER);
-        // Sasuke reading with the Sharingan: the hit (punch or shot) is read and answered from behind.
-        if (attacker instanceof LivingEntity enemy && SubCommon.hasState(target, READ)) {
-            boolean melee = attacker == direct && attacker.distanceTo(target) < 6;
-            if (melee || direct instanceof Projectile) {
-                event.setCanceled(true);
-                SubCommon.clearState(target, READ);
-                Sasuke.counter(target, level, enemy);
-                return;
-            }
+        // Sasuke going through a blow (the Chidori's dash, the slide out of a blow he read).
+        if (attacker != null && SubCommon.hasState(target, UNTOUCHABLE)) {
+            event.setCanceled(true);
+            return;
+        }
+        // Sasuke reading with the Sharingan: any blow from someone (punch, shot or skill) is read and dodged.
+        if (attacker instanceof LivingEntity enemy && SubCommon.hasState(target, READ)
+                && Sasuke.dodge(target, level, enemy, event.getAmount())) {
+            event.setCanceled(true);
+            return;
         }
         // Naruto meditating: any hit breaks it.
         if (SubCommon.hasState(target, MEDITATE) && event.getAmount() > 0) {

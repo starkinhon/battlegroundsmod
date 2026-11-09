@@ -24,7 +24,7 @@ import net.minecraft.world.entity.Mob;
 import net.minecraft.world.phys.Vec3;
 
 // Shikamaru (SubAlma of Naruto, tier 8), the Visualizador's Shikamaru tab. The shadows are flat and opaque, no glow.
-// Z Kagemane: his shadow stretches along the ground to the target (up to 12 blocks) and catches it: the target copies
+// Z Kagemane: his shadow stretches along the ground to the target (up to 18 blocks) and catches it: the target copies
 //   every step he takes (walk back and it walks back). Z again: Kage Kubishibari, the shadow climbs the body into a hand
 //   on the neck: damage while the key is held, and it costs stamina.
 // X Kage Nui: the shadow splits toward up to 3 enemies and rises in sharp threads that pierce and pin them 1.5 s.
@@ -72,7 +72,7 @@ public final class Shikamaru {
             }
             return false;
         }
-        LivingEntity target = NrCommon.target(caster, 12);
+        LivingEntity target = NrCommon.target(caster, 18);
         if (target == null) {
             SubCommon.warn(caster, "shikamaru.no_target");
             return false;
@@ -172,7 +172,7 @@ public final class Shikamaru {
     // ---------- X: Kage Nui ----------
 
     private static boolean kageNui(LivingEntity caster, ServerLevel level) {
-        List<LivingEntity> targets = new ArrayList<>(Combat.inCone(caster, 12, 0.3));
+        List<LivingEntity> targets = new ArrayList<>(Combat.inCone(caster, 18, 0.3));
         targets.sort((a, b) -> Double.compare(a.distanceTo(caster), b.distanceTo(caster)));
         if (targets.isEmpty()) {
             SubCommon.warn(caster, "shikamaru.no_target");

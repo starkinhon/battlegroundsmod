@@ -14,7 +14,7 @@ import com.starkinhon.battlegroundsmod.power.powers.sub.SubCommon;
 import com.starkinhon.battlegroundsmod.power.powers.sub.SubNet;
 import com.starkinhon.battlegroundsmod.power.powers.sub.db.Db;
 import com.starkinhon.battlegroundsmod.power.powers.sub.db.DbCommon;
-import com.starkinhon.battlegroundsmod.power.powers.uchiha.Agarrao;
+import com.starkinhon.battlegroundsmod.power.powers.sub.jj.JjCommon;
 
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
@@ -24,7 +24,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 // Naruto (SubAlma of Naruto, tier 6), the Visualizador's Naruto tab.
-// Z Rasengan: the chakra sphere (the Azul's glass, style 4) forms in the palm, he runs 7 blocks and drives it into the
+// Z Rasengan: the chakra sphere (the Azul's glass, style 4) forms in the palm, he runs 14 blocks and drives it into the
 //   target: it grinds for half a second and launches them ~16 blocks spinning like a drill. With clones alive it is the
 //   Oodama Rasengan (twice as big, pushes harder).
 // X Kage Bunshin: cross seal, three clones of 1 life appear in smoke and fight on their own. X again: he swaps places with
@@ -90,7 +90,8 @@ public final class Naruto {
         boolean big = !clones(caster, level).isEmpty();
         float r = big ? 0.42f : 0.21f;
         int form = 40;
-        int dashEnd = 50;
+        // Twice the first port's run (Stark, 2026-11-09: the same reach pass as Dragon Ball).
+        int dashEnd = 54;
         SubCommon.pose(caster, "nr.molda");
         SubCommon.busy(caster, form + 4);
         if (big) {
@@ -125,8 +126,8 @@ public final class Naruto {
                 }
                 Vec3 ball = hand.add(look.scale(0.18)).add(0, 0.05, 0);
                 SubNet.send(level, SubNet.RASENGAN, id, ball, Vec3.ZERO, r, 1, 0);
-                // Runs 7 blocks with the sphere in front.
-                Vec3 run = SubCommon.flat(look).scale(0.7);
+                // Runs 14 blocks with the sphere in front.
+                Vec3 run = SubCommon.flat(look).scale(1.0);
                 caster.setDeltaMovement(run.x, Math.min(caster.getDeltaMovement().y, 0.05), run.z);
                 caster.hurtMarked = true;
                 caster.fallDistance = 0;
@@ -480,8 +481,8 @@ public final class Naruto {
 
     private static boolean rasenshuriken(LivingEntity caster, ServerLevel level) {
         SubCommon.Guard guard = SubCommon.guard(caster);
-        LivingEntity target = NrCommon.target(caster, 32);
-        Vec3 aim = target != null ? Combat.center(target) : SubCommon.aimPoint(caster, 32).add(0, 1, 0);
+        LivingEntity target = NrCommon.target(caster, 48);
+        Vec3 aim = target != null ? Combat.center(target) : SubCommon.aimPoint(caster, 48).add(0, 1, 0);
         int id = SubNet.newId();
         int throwAt = 60;
         int fly = 18;
@@ -528,20 +529,23 @@ public final class Naruto {
         return true;
     }
 
-    // The sphere of wind needles: it grows to 6.5 blocks, hurts everyone inside every few ticks and holds them spinning in
-    // it, and tears up the ground (a crater of ~4.5 blocks, if the gamerule allows).
+    // The sphere of wind needles: it grows to 9 blocks (it was 6.5; Stark, 2026-11-09, bigger reach and destruction), hurts
+    // everyone inside every few ticks and holds them spinning in it, and tears up the ground (a crater of ~7 blocks with
+    // clods flying, if the gamerule allows).
+    private static final double SPHERE_R = 9;
+
     private static void explode(LivingEntity caster, ServerLevel level, Vec3 c) {
         int lasts = 58;
         Vec3 ground = SubCommon.ground(level, c);
-        SubNet.send(level, SubNet.WIND_SPHERE, 0, c, new Vec3(ground.y, 0, 0), 6.5f, lasts, 0);
+        SubNet.send(level, SubNet.WIND_SPHERE, 0, c, new Vec3(ground.y, 0, 0), (float) SPHERE_R, lasts, 0);
         DbCommon.screen(level, c, 5);
         SubCommon.sound(level, c, SoundEvents.GENERIC_EXPLODE.value(), 2.5f, 0.6f);
         SubCommon.sound(level, c, SoundEvents.BREEZE_CHARGE, 2f, 0.5f);
         SubCommon.sound(level, c, SoundEvents.WARDEN_SONIC_BOOM, 1.2f, 1.6f);
-        Tasks.later(4, () -> Agarrao.crater(level, ground, 4.5, 2.6));
+        Tasks.later(4, () -> JjCommon.crater(level, ground, 7, 3.4, 40));
         Tasks.add(age -> {
             float grow = SubCommon.easeOutCubic(age / 9f);
-            double r = 6.5 * grow;
+            double r = SPHERE_R * grow;
             if (age % 3 == 0) {
                 for (LivingEntity t : Combat.inRadius(level, c, r, caster)) {
                     Combat.hurtMagic(caster, t, 1.7f);
@@ -555,8 +559,8 @@ public final class Naruto {
                 SubCommon.sound(level, c, SoundEvents.ELYTRA_FLYING, 1.5f, 1.8f);
             }
             if (age >= lasts) {
-                for (LivingEntity t : Combat.inRadius(level, c, 7, caster)) {
-                    Combat.hurtMagic(caster, t, 6);
+                for (LivingEntity t : Combat.inRadius(level, c, SPHERE_R + 1.5, caster)) {
+                    Combat.hurtMagic(caster, t, 8);
                     Combat.pushFrom(t, c, 1.2, 0.5);
                 }
                 DbCommon.screen(level, c, 18);

@@ -30,7 +30,7 @@ import net.minecraft.world.phys.Vec3;
 // Z Shintenshin: diamond seal aimed at the target; her purple spirit form flies slowly and straight (it can be dodged).
 //   If it gets in, her body drops and she controls the enemy 4 s: it goes and hits its own allies. Missed: the spirit comes
 //   back and she is dizzy 1 s. Z again (inside): Exit, she makes the enemy hurt itself before going back.
-// X Shinranshin: a purple wave from her forehead (8 blocks, a cone): whoever is caught has their head scrambled and
+// X Shinranshin: a purple wave from her forehead (12 blocks, a cone): whoever is caught has their head scrambled and
 //   attacks whoever is closest to them for 4 s (1 s on a boss).
 // C Mind Link: purple threads tie the minds of up to 3 enemies: for 6 s half the damage one takes runs along the thread
 //   to the others. A thread snaps past 12 blocks.
@@ -99,7 +99,7 @@ public final class Ino {
         SubCommon.Guard guard = SubCommon.guard(caster);
         int leave = 28;
         double speed = 0.25;
-        double range = 14;
+        double range = 20;
         int id = SubNet.newId();
         Vec3 dir = SubCommon.flat(caster.getLookAngle());
         SubCommon.pose(caster, "nr.losango");
@@ -231,7 +231,7 @@ public final class Ino {
             }
             SubNet.send(level, SubNet.MIND_WAVE, 0, forehead(caster), caster.getLookAngle(), 0, 0, 0);
             SubCommon.sound(level, caster.position(), SoundEvents.ILLUSIONER_CAST_SPELL, 1.2f, 1.6f);
-            List<LivingEntity> caught = Combat.inCone(caster, 8, 0.8);
+            List<LivingEntity> caught = Combat.inCone(caster, 12, 0.8);
             if (caught.isEmpty()) {
                 SubCommon.warn(caster, "ino.wave_miss");
                 return true;
