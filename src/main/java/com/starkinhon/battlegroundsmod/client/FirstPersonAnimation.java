@@ -39,6 +39,11 @@ public final class FirstPersonAnimation {
         if (!(mc.player instanceof AbstractClientPlayer player)) {
             return;
         }
+        // Sukuna's domain: no arm over the black, the eyes and the pink of the fast version (test 2026-11-09).
+        if (com.starkinhon.battlegroundsmod.client.fx.SukunaDomainScene.hidesHud()) {
+            event.setCanceled(true);
+            return;
+        }
         float partial = event.getPartialTick();
         float age = player.tickCount + partial;
         // Kokushibo's sword resting in its sheath though selected (out of combat mode): nothing in the hand.

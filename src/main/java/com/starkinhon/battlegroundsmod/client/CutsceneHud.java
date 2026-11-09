@@ -23,9 +23,9 @@ public final class CutsceneHud {
     }
 
     public static boolean hidden() {
-        return com.starkinhon.battlegroundsmod.client.fx.SukunaDomainScene.cutscene() || GrabCutscene.active() || BopCutscene.active() || HakaiCutscene.active() || EsferaCutscene.active()
+        return com.starkinhon.battlegroundsmod.client.fx.SukunaDomainScene.hidesHud() || GrabCutscene.active() || BopCutscene.active() || HakaiCutscene.active() || EsferaCutscene.active()
                 || BossCutscene.active() || FaceCutscene.hidesHud() || CutscenePlayer.hidesHud()
-                || com.starkinhon.battlegroundsmod.client.fx.SoulCeremonyFx.hidesHud();
+                || com.starkinhon.battlegroundsmod.client.fx.SoulCeremonyFx.hidesHud() || com.starkinhon.battlegroundsmod.client.fx.DuelScene.cutscene();
     }
 
     public static void onRenderLayer(RenderGuiLayerEvent.Pre event) {

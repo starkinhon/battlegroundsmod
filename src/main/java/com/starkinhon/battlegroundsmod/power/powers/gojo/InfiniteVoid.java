@@ -94,6 +94,11 @@ public final class InfiniteVoid {
         boolean braindamaged;
         LivingEntity target;
         int age;
+        // The Duelo de Expansões (duel/DomainDuel) holds the domain's clock still while the two fight for it in the
+        // tunnel (paused), and moves it (offset: ticks taken off the task's own age; the tie jumps to the void, Gojo
+        // reopening it winds it back).
+        boolean paused;
+        int offset;
         // When the target (or the last one caught) died, -1 while they live.
         int killedAt = -1;
 
@@ -150,7 +155,23 @@ public final class InfiniteVoid {
 
         Set<LivingEntity> caught = active.caught;
         boolean[] closing = {false};
-        Tasks.add(age -> {
+        Tasks.add(raw -> {
+            if (active.paused) {
+                // The duel has the clock: everyone stays up on the floor, and those caught stay caught.
+                active.offset++;
+                if (active.inside) {
+                    floor(active);
+                }
+                if (raw % HOLD_STEP == 0) {
+                    for (LivingEntity victim : caught) {
+                        if (victim.isAlive() && !victim.isRemoved() && !Stamina.resists(victim) && spec.acerto().paralisar()) {
+                            Freeze.hold(victim, HOLD_STEP + 1);
+                        }
+                    }
+                }
+                return false;
+            }
+            int age = raw - active.offset;
             active.age = age;
             // Gojo left his own domain (a teleport, a pearl, a command): it can't stand without him, it shatters.
             boolean gone = !caster.isAlive() || caster.isRemoved() || caster.level() != level || left(active);
@@ -202,7 +223,7 @@ public final class InfiniteVoid {
                 double reach = radius;
                 DominioSpec.Acerto acerto = spec.acerto();
                 for (LivingEntity victim : Combat.inRadius(level, center, reach, caster)) {
-                    if (spared(victim)) {
+                    if (spared(victim) || com.starkinhon.battlegroundsmod.power.powers.duel.DomainDuel.exempt(caster, victim)) {
                         if (active.free.add(victim) && active.inside) {
                             takeInside(active, victim);
                         }
@@ -269,6 +290,8 @@ public final class InfiniteVoid {
             }
             return false;
         });
+        // A Sukuna whose Santuário opened just before (or who answers within the window) fights Gojo for the domain.
+        com.starkinhon.battlegroundsmod.power.powers.duel.DomainDuel.gojoOpened(caster, level);
         return true;
     }
 
@@ -278,6 +301,11 @@ public final class InfiniteVoid {
         for (Active active : ACTIVE) {
             if (active.caster == caster && !active.cancelled && active.age < active.spec.closeTick()) {
                 active.cancelled = true;
+                if (active.paused) {
+                    // Held still by a Duelo de Expansões: it runs again, to shatter.
+                    active.paused = false;
+                    send(active.level, active.center, new ModPayloads.GojoDomain(caster.getId(), active.center, active.awakened, 5, 0));
+                }
                 caster.getData(ModAttachments.POWER).busyTicks = 0;
                 Freeze.free(caster);
                 caster.removeEffect(ModEffects.ENRAIZADO);
@@ -286,6 +314,139 @@ public final class InfiniteVoid {
             }
         }
         return false;
+    }
+
+    // ---- the Duelo de Expansões (duel/DomainDuel) ----
+
+    private static Active of(LivingEntity caster) {
+        for (Active active : ACTIVE) {
+            if (active.caster == caster && !active.cancelled) {
+                return active;
+            }
+        }
+        return null;
+    }
+
+    // The Gojo whose domain opened at most window ticks ago with other inside its reach (a Sukuna who can still answer
+    // with his own), or null.
+    public static LivingEntity openedNear(LivingEntity other, int window) {
+        for (Active active : ACTIVE) {
+            if (active.caster != other && !active.cancelled && active.caster.isAlive() && active.age <= window
+                    && active.level == other.level() && other.position().distanceTo(active.center) <= active.spec.radius()) {
+                return active.caster;
+            }
+        }
+        return null;
+    }
+
+    public static boolean open(LivingEntity caster) {
+        Active active = of(caster);
+        return active != null && active.age < active.spec.closeTick();
+    }
+
+    public static int age(LivingEntity caster) {
+        Active active = of(caster);
+        return active == null ? -1 : active.age;
+    }
+
+    public static int tunnelTick(LivingEntity caster) {
+        Active active = of(caster);
+        return active == null ? -1 : active.spec.tunnelTick();
+    }
+
+    // Holds the domain's clock still (on) or lets it run again (off), here and on the clients (mode 5). Gojo is held
+    // still again through what is left of the tunnel when it runs again.
+    public static void pause(LivingEntity caster, boolean on) {
+        Active active = of(caster);
+        if (active == null || active.paused == on) {
+            return;
+        }
+        active.paused = on;
+        send(active.level, active.center, new ModPayloads.GojoDomain(caster.getId(), active.center, active.awakened, 5, on ? 1 : 0));
+        int voidTick = active.spec.voidTick();
+        if (!on && caster.isAlive() && active.age < voidTick && active.spec.dominio().pararUsuario()) {
+            int left = voidTick - active.age;
+            caster.getData(ModAttachments.POWER).busyTicks = left;
+            Freeze.holdLookFree(caster, left);
+            caster.addEffect(new MobEffectInstance(ModEffects.ENRAIZADO, left, 0, false, false, false));
+        }
+    }
+
+    // Moves the domain's clock by ticks (positive: back, negative: ahead), here and on the clients (mode 6).
+    private static void shift(Active active, int ticks) {
+        if (ticks == 0) {
+            return;
+        }
+        active.offset += ticks;
+        active.age -= ticks;
+        send(active.level, active.center, new ModPayloads.GojoDomain(active.caster.getId(), active.center, active.awakened, 6, ticks));
+    }
+
+    // The tie: straight to the void (the tick before it opens, so it opens as always).
+    public static void toVoid(LivingEntity caster) {
+        Active active = of(caster);
+        if (active != null && active.age < active.spec.voidTick() - 1) {
+            shift(active, active.age - (active.spec.voidTick() - 1));
+        }
+    }
+
+    // Gojo reopens the void in the tie: its clock goes back to after ticks into the void, so it lasts again.
+    public static void rewindVoid(LivingEntity caster, int after) {
+        Active active = of(caster);
+        if (active != null && active.age > active.spec.voidTick() + after) {
+            shift(active, active.age - (active.spec.voidTick() + after));
+        }
+    }
+
+    // Sukuna answered with his own domain: no longer caught (he fights Gojo for it), taken inside free like a player in
+    // creative until the duel is decided.
+    public static void spare(LivingEntity caster, LivingEntity victim) {
+        Active active = of(caster);
+        if (active == null) {
+            return;
+        }
+        if (active.caught.remove(victim)) {
+            Freeze.freeAll(victim);
+            victim.removeEffect(ModEffects.BRAIN_DAMAGE);
+            victim.removeEffect(MobEffects.MOVEMENT_SLOWDOWN);
+        }
+        active.free.add(victim);
+        if (active.inside) {
+            takeInside(active, victim);
+        }
+    }
+
+    // Everyone in the domain but Gojo (caught or free), for whoever takes it over.
+    public static List<LivingEntity> everyone(LivingEntity caster) {
+        Active active = of(caster);
+        List<LivingEntity> out = new ArrayList<>();
+        if (active != null) {
+            out.addAll(active.caught);
+            out.addAll(active.free);
+        }
+        return out;
+    }
+
+    public static int shatterDelay(LivingEntity caster) {
+        Active active = of(caster);
+        return active == null ? 0 : active.spec.shatterDelay();
+    }
+
+    // Gojo won the duel: the one who fought him is caught like everyone (paralyzed, the information, the sure hit).
+    public static void seize(LivingEntity caster, LivingEntity victim) {
+        Active active = of(caster);
+        if (active == null || !victim.isAlive()) {
+            return;
+        }
+        active.free.remove(victim);
+        if (active.caught.add(victim)) {
+            if (victim.hasData(ModAttachments.POWER)) {
+                PowerLogic.interrupt(victim);
+            }
+            if (!Stamina.resists(victim) && active.spec.acerto().paralisar()) {
+                Freeze.hold(victim, HOLD_STEP + 1);
+            }
+        }
     }
 
     // Players in creative are never caught, but go in with Gojo: they see the sign, the domain opening, the tunnel and
@@ -387,7 +548,12 @@ public final class InfiniteVoid {
             }
         }
         LivingEntity target = null;
-        if (caster instanceof Mob mob && mob.getTarget() != null && active.caught.contains(mob.getTarget()) && mob.getTarget().isAlive()) {
+        // In a Duelo de Expansões the target is always Sukuna (taken inside free, see DomainDuel.exempt).
+        LivingEntity foe = com.starkinhon.battlegroundsmod.power.powers.duel.DomainDuel.foe(caster);
+        if (foe != null && foe.isAlive() && active.back.containsKey(foe)) {
+            target = foe;
+        }
+        if (target == null && caster instanceof Mob mob && mob.getTarget() != null && active.caught.contains(mob.getTarget()) && mob.getTarget().isAlive()) {
             target = mob.getTarget();
         }
         if (target == null) {

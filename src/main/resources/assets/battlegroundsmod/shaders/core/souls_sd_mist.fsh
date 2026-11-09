@@ -27,12 +27,16 @@ void main() {
     if (h < 0.0) discard;
     h = sqrt(h);
     float t0 = max(0.0, -b - h), t1 = -b + h;
+    // The mist stands on the water: a ray looking down stops at the surface. Without this the volume under the floor
+    // painted the water the same red as the sky and hid the shrine's reflection (test 2026-11-09).
+    if (rd.y < 0.0) t1 = min(t1, max(0.0, -ro.y / rd.y));
+    if (t1 <= t0) discard;
     // No per-pixel jitter: in the game it stays on the screen while the world moves, a grain that shimmers (Stark 06:38).
     const int N = 40;
     float dt = (t1 - t0) / float(N);
     float t = t0 + dt * 0.5;
     vec3 col = vec3(0.0);
-    float A = 0.0;
+    float A = 0.0, S = 0.0;
     for (int i = 0; i < N; i++) {
         vec3 p = ro + rd * t;
         float r = length(p.xz);
@@ -51,7 +55,7 @@ void main() {
             float f = fb3(vec3(p.x * 0.12 + T * 0.004, p.y * 0.5, p.z * 0.12));
             float dL = Low * 0.06 * smoothstep(1.6, 0.0, p.y) * smoothstep(0.35, 0.7, f);
             float a = 1.0 - exp(-dL * dt);
-            col += (1.0 - A) * a * vec3(0.2, 0.27, 0.3) * (0.6 + 0.6 * f);
+            col += (1.0 - A) * a * vec3(0.15, 0.07, 0.08) * (0.6 + 0.6 * f); // red-dark, not grey (test 2026-11-09)
             A += (1.0 - A) * a;
         }
         if (Wind > 0.0) {
@@ -66,8 +70,11 @@ void main() {
             vec2 tq = vec2(atan(w.z, w.x) * r * 0.5, r);
             float st = fb3(vec3(tq.x * 0.06, tq.y * 1.9 + g * 3.0, p.y * 1.3 + T * 0.03));
             float streak = smoothstep(0.69, 0.8, st) * smoothstep(5.5, 0.6, p.y) * smoothstep(0.45, 0.7, g) * Wind;
-            float a2 = 1.0 - exp(-streak * 3.0 * dt);
-            col += (1.0 - A) * a2 * vec3(1.0, 0.72, 0.72);
+            // the streaks a grazing ray gathers are capped: crossing a gust along the floor they added up into a pale pink
+            // wash over the horizon and the water for a few seconds (test 2026-11-09)
+            float a2 = min(1.0 - exp(-streak * 3.0 * dt), max(0.0, 0.18 - S));
+            S += a2;
+            col += (1.0 - A) * a2 * vec3(0.95, 0.55, 0.55);
             A += (1.0 - A) * a2 * 0.6;
         }
         if (A > 0.97) break;

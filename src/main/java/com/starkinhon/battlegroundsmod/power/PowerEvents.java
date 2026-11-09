@@ -91,6 +91,7 @@ public final class PowerEvents {
         Izanami.clear();
         com.starkinhon.battlegroundsmod.power.powers.gojo.InfiniteVoid.clear();
         com.starkinhon.battlegroundsmod.power.powers.sukuna.ShrineDomain.clear();
+        com.starkinhon.battlegroundsmod.power.powers.duel.DomainDuel.clear();
         com.starkinhon.battlegroundsmod.power.powers.aizen.KyokaSuigetsu.clear();
         com.starkinhon.battlegroundsmod.power.powers.aizen.UmDedo.clear();
         com.starkinhon.battlegroundsmod.power.powers.aizen.Hogyoku.clear();
@@ -219,6 +220,7 @@ public final class PowerEvents {
             return;
         }
         com.starkinhon.battlegroundsmod.power.powers.sukuna.ShrineDomain.onIncomingDamage(event);
+        com.starkinhon.battlegroundsmod.power.powers.duel.DomainDuel.onIncomingDamage(event);
         if (event.isCanceled()) {
             return;
         }

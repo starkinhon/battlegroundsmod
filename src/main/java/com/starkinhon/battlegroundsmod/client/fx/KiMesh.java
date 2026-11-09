@@ -96,12 +96,16 @@ public final class KiMesh {
         float dist = c.length();
         P q = p.copy();
         float reach = reach(mesh, model);
-        if (reach > 0 && dist < reach * 1.25f) {
+        if (reach > 0 && dist < reach * (mesh == Mesh.BALL && sides == FRONT ? 1 : 1.25f)) {
             // The camera inside a ball, a halo, a flash, an aura or a dome: on the pages the camera never goes in, but
             // here a fingertip flash or the Genki's halo can wrap it, and the inside then paints the whole screen (the
             // pink screen of the Makankosappo shot). Small pieces fade out as the camera gets in; a big blast dome only
             // thins out (being inside your own Explosao Final still shows it, and you can still see yourself turn to stone).
-            float k = Math.max(0, Math.min(1, (dist / reach - 0.85f) / 0.4f));
+            // A ball drawn from the outside only (the Genki Dama, the Supernova's sun) shows nothing from inside anyway, so
+            // it stays whole and solid right up to its surface (a Supernova held over a third-person camera used to go
+            // see-through and dark long before the camera got to it).
+            boolean shell = mesh == Mesh.BALL && sides == FRONT;
+            float k = shell ? Math.max(0, Math.min(1, (dist / reach - 0.92f) / 0.08f)) : Math.max(0, Math.min(1, (dist / reach - 0.85f) / 0.4f));
             k = k * k * (3 - 2 * k);
             boolean big = mesh == Mesh.BLAST && reach > 3.25f;
             q.alpha *= big ? 0.3f + 0.7f * k : k;

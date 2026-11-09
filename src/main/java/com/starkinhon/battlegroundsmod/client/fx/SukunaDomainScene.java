@@ -146,6 +146,9 @@ public final class SukunaDomainScene {
                     endCamera(d);
                 }
                 DOMS.add(new Dom(casterId, center, now, a / 10f));
+                // load the shrine's meshes now, while the wave plays: loading them when it first shows froze the game
+                // for 1.5 s on the first domain of the session (test 2026-11-09)
+                shrineReady();
                 // The floor inside mirrors this place: take it all round now, while the wave is on screen.
                 if (mc.player != null && mc.player.position().distanceTo(center) <= ShrineDomain.RADIUS + 16) {
                     DomainPanorama.request();
@@ -206,6 +209,7 @@ public final class SukunaDomainScene {
         }
         DOMS.clear();
         DomainPanorama.clear();
+        restoreHeld();
     }
 
     public static boolean active() {
@@ -257,9 +261,26 @@ public final class SukunaDomainScene {
         return sceneDom(now()) != null;
     }
 
+    // The HUD goes away in the cutscene and in the fast version's dive into the dark too (it stayed over the eyes).
+    public static boolean hidesHud() {
+        if (cutscene()) {
+            return true;
+        }
+        double now = now();
+        for (Dom d : DOMS) {
+            double c = cut(d, now);
+            if (d.quick && d.part && d.closeAt < 0 && c >= ShrineDomain.QUICK_FROM && c < ShrineDomain.CUT_PLAY) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     // ---------- every tick ----------
 
     public static void tick() {
+        // anything still emptied (a draw that never finished: another mod cancelled it) gets its items back
+        restoreHeld();
         if (DOMS.isEmpty()) {
             return;
         }
@@ -366,7 +387,9 @@ public final class SukunaDomainScene {
     // ---------- the frame ----------
 
     private static Vec3 origin(Dom d, double c) {
-        return c >= ShrineDomain.CUT_INSIDE ? d.arena : d.center;
+        // From the moment it is decided everyone is in the domain's own space (Stark 07:27: no more blocks in the way),
+        // the opening scenes included; only the wave happens where it opened.
+        return c >= ShrineDomain.CUT_INSIDE || d.decided ? d.arena : d.center;
     }
 
     private static Matrix4f localToRel(Dom d, double c, Vec3 camera) {
@@ -524,7 +547,7 @@ public final class SukunaDomainScene {
         Dom in = insideNow(now);
         if (in != null) {
             double s = src(cut(in, now));
-            event.setFOV(event.getFOV() + quake(s) * 1.75);
+            event.setFOV(event.getFOV() + quake(s) * 1.75 * PLAY_SHAKE);
         }
     }
 
@@ -563,10 +586,13 @@ public final class SukunaDomainScene {
         }
         double[] q = quakeOffsets(s);
         // the preview's offsets (blocks, the camera ~3 blocks from what it looks at) as angles
-        float yaw = (float) Math.toDegrees(q[0] / 3.0 + q[3] / 8.0);
-        float pitch = (float) Math.toDegrees(q[1] / 3.0 + q[4] / 8.0);
+        // while playing it is only a faint tremor (Stark 07:30: the strong one makes the fight unplayable)
+        float yaw = (float) Math.toDegrees(q[0] / 3.0 + q[3] / 8.0) * PLAY_SHAKE;
+        float pitch = (float) Math.toDegrees(q[1] / 3.0 + q[4] / 8.0) * PLAY_SHAKE;
         return new float[] {yaw, pitch};
     }
+
+    private static final float PLAY_SHAKE = 0.2f;
 
     // The preview's shake (05:34 Stark: half of the first version): camera xyz and look xy.
     private static double[] quakeOffsets(double t) {
@@ -857,7 +883,7 @@ public final class SukunaDomainScene {
             ShaderInstance pano = FxShaders.sdPano;
             pano.safeGetUniform("T").set(t);
             pano.safeGetUniform("Yaw").set(d.yaw * Mth.DEG_TO_RAD);
-            pano.safeGetUniform("A").set((float) sm(T_RED, T_RED + 10, s));
+            pano.safeGetUniform("A").set((float) (sm(T_RED + 4, T_RED + 16, s) * (1 - 0.5 * sm(T_PLAY, T_PLAY + 20, s))));
             pano.safeGetUniform("Quake").set(0f);
             pano.safeGetUniform("Texel").set(DomainPanorama.texel());
             pano.safeGetUniform("CamL").set((float) camL.x, (float) camL.y, (float) camL.z);
@@ -1060,6 +1086,7 @@ public final class SukunaDomainScene {
         double qU = (s - T_HIT) / 16;
         double ring = s < T_HIT || qU >= 1 ? -9 : 1.8 * (1 - (1 - qU) * (1 - qU));
         double ringA = s < T_HIT || qU >= 1 ? 0 : 0.35 * (1 - sm(0.3, 1, qU));
+        ground(d, c, camera, d.part ? light : 1);
         if (water > 0) {
             floorCells(d, c, s, camera, water, ring, ringA, d.part ? light : 1);
         }
@@ -1095,7 +1122,7 @@ public final class SukunaDomainScene {
         int bx = Mth.floor(w.x), bz = Mth.floor(w.z);
         for (int i = 0; i < cells.length; i += 3) {
             if (cells[i] == bx && cells[i + 2] == bz) {
-                return cells[i + 1] - d.center.y;
+                return cells[i + 1] - d.arena.y;
             }
         }
         return 0;
@@ -1106,26 +1133,17 @@ public final class SukunaDomainScene {
         if (d.cells != null) {
             return d.cells;
         }
-        Level level = Minecraft.getInstance().level;
+        // The opening plays on the domain's own flat stage (no real blocks up there): one cell per block within the raio,
+        // all at the stage's height, so nothing of the world can poke through, hide the camera or tear the water.
         List<int[]> out = new ArrayList<>();
-        int cx = Mth.floor(d.center.x), cz = Mth.floor(d.center.z), cy = Mth.floor(d.center.y + 0.01);
+        Vec3 st = d.arena;
+        int cx = Mth.floor(st.x), cz = Mth.floor(st.z), cy = Mth.floor(st.y + 0.01);
         int R = (int) ShrineDomain.RADIUS + 3;
-        BlockPos.MutableBlockPos p = new BlockPos.MutableBlockPos();
         for (int x = cx - R; x <= cx + R; x++) {
             for (int z = cz - R; z <= cz + R; z++) {
-                double dx = x + 0.5 - d.center.x, dz = z + 0.5 - d.center.z;
-                if (dx * dx + dz * dz > R * R) {
-                    continue;
-                }
-                for (int y = cy + 3; y >= cy - 5; y--) {
-                    p.set(x, y - 1, z);
-                    boolean ground = !level.getBlockState(p).getCollisionShape(level, p).isEmpty() || !level.getFluidState(p).isEmpty();
-                    p.set(x, y, z);
-                    boolean open = level.getBlockState(p).getCollisionShape(level, p).isEmpty() && level.getFluidState(p).isEmpty();
-                    if (ground && open) {
-                        out.add(new int[] {x, y, z});
-                        break;
-                    }
+                double dx = x + 0.5 - st.x, dz = z + 0.5 - st.z;
+                if (dx * dx + dz * dz <= R * R) {
+                    out.add(new int[] {x, cy, z});
                 }
             }
         }
@@ -1139,6 +1157,53 @@ public final class SukunaDomainScene {
         return flat;
     }
 
+    // The stage's ground for the opening: plain grass blocks (the preview's field), as far as the eye needs, dimming with
+    // the light. Only their tops: it is flat.
+    private static final int GROUND_R = 96;
+
+    private static void ground(Dom d, double c, Vec3 camera, double light) {
+        Minecraft mc = Minecraft.getInstance();
+        net.minecraft.client.renderer.texture.TextureAtlasSprite top = mc.getModelManager()
+                .getAtlas(net.minecraft.client.renderer.texture.TextureAtlas.LOCATION_BLOCKS)
+                .getSprite(ResourceLocation.withDefaultNamespace("block/grass_block_top"));
+        Matrix4fStack modelView = RenderSystem.getModelViewStack();
+        modelView.pushMatrix();
+        modelView.mul(new Matrix4f(localToRel(d, c, camera)).invert());
+        int ox = Mth.floor(d.arena.x), oz = Mth.floor(d.arena.z);
+        double gy = Mth.floor(d.arena.y + 0.01);
+        Vec3 o = new Vec3(ox, gy, oz).subtract(camera);
+        modelView.translate((float) o.x, (float) o.y, (float) o.z);
+        RenderSystem.applyModelViewMatrix();
+        float u0 = top.getU0(), u1 = top.getU1(), v0 = top.getV0(), v1 = top.getV1();
+        float k = (float) light;
+        BufferBuilder b = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
+        for (int x = -GROUND_R; x <= GROUND_R; x++) {
+            for (int z = -GROUND_R; z <= GROUND_R; z++) {
+                int r2 = x * x + z * z;
+                if (r2 > GROUND_R * GROUND_R) {
+                    continue;
+                }
+                // the plains' grass tint, a touch of per-block variation like the vanilla noise, darker far away
+                float var = (float) (0.94 + 0.08 * hash(x * 13.7 + z * 71.3));
+                float far = (float) (1 - 0.25 * Math.sqrt(r2) / GROUND_R);
+                float cr = 0.49f * var * far * k, cg = 0.74f * var * far * k, cb = 0.35f * var * far * k;
+                b.addVertex(x, 0, z).setUv(u0, v0).setColor(cr, cg, cb, 1f);
+                b.addVertex(x, 0, z + 1).setUv(u0, v1).setColor(cr, cg, cb, 1f);
+                b.addVertex(x + 1, 0, z + 1).setUv(u1, v1).setColor(cr, cg, cb, 1f);
+                b.addVertex(x + 1, 0, z).setUv(u1, v0).setColor(cr, cg, cb, 1f);
+            }
+        }
+        RenderSystem.enableDepthTest();
+        RenderSystem.depthMask(true);
+        RenderSystem.enableCull();
+        RenderSystem.disableBlend();
+        RenderSystem.setShaderTexture(0, net.minecraft.client.renderer.texture.TextureAtlas.LOCATION_BLOCKS);
+        RenderSystem.setShader(GameRenderer::getPositionTexColorShader);
+        BufferUploader.drawWithShader(b.buildOrThrow());
+        modelView.popMatrix();
+        RenderSystem.applyModelViewMatrix();
+    }
+
     private static void floorCells(Dom d, double c, double s, Vec3 camera, double water, double ring, double ringA, double light) {
         int[] cells = cells(d);
         if (cells.length == 0) {
@@ -1149,7 +1214,7 @@ public final class SukunaDomainScene {
         modelView.pushMatrix();
         Matrix4f back = new Matrix4f(localToRel(d, c, camera)).invert();
         modelView.mul(back);
-        int ox = Mth.floor(d.center.x), oz = Mth.floor(d.center.z);
+        int ox = Mth.floor(d.arena.x), oz = Mth.floor(d.arena.z);
         Vec3 o = new Vec3(ox, 0, oz).subtract(camera);
         modelView.translate((float) o.x, (float) o.y, (float) o.z);
         RenderSystem.applyModelViewMatrix();
@@ -1164,7 +1229,7 @@ public final class SukunaDomainScene {
         sh.safeGetUniform("Light").set((float) light);
         sh.safeGetUniform("Quake").set(0f);
         sh.safeGetUniform("Hit").set((float) (hitW.x - ox), (float) (hitW.z - oz));
-        sh.safeGetUniform("Mid").set((float) (d.center.x - ox), (float) (d.center.z - oz));
+        sh.safeGetUniform("Mid").set((float) (d.arena.x - ox), (float) (d.arena.z - oz));
         sh.safeGetUniform("CamL").set((float) camF.x, (float) camF.y, (float) camF.z);
         BufferBuilder b = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION);
         for (int i = 0; i < cells.length; i += 3) {
@@ -1252,8 +1317,10 @@ public final class SukunaDomainScene {
             ShaderInstance m = FxShaders.sdMist;
             m.safeGetUniform("T").set((float) (s / 20));
             m.safeGetUniform("Red").set((float) (red * NEVOA));
-            m.safeGetUniform("Low").set((float) low);
-            m.safeGetUniform("Wind").set((float) wind);
+            // while playing the air has to stay clear enough to fight in (test 2026-11-09: floor and sky read as one red)
+            double play = sm(T_PLAY, T_PLAY + 20, s);
+            m.safeGetUniform("Low").set((float) (low * (1 - 0.7 * play)));
+            m.safeGetUniform("Wind").set((float) (wind * (1 - 0.75 * play)));
             m.safeGetUniform("R").set((float) MIST_R);
             m.safeGetUniform("CamL").set((float) camL.x, (float) camL.y, (float) camL.z);
             RenderSystem.depthMask(false);
@@ -1446,7 +1513,7 @@ public final class SukunaDomainScene {
             if (age < 0) {
                 continue;
             }
-            if (hk(k, 333) < 0.5) {
+            if (hk(k, 333) < (s >= T_PLAY ? 0.7 : 0.5)) {
                 // half the preview's count: its camera stood far, in the game they cross right in front of you
                 continue;
             }
@@ -1716,7 +1783,9 @@ public final class SukunaDomainScene {
             if (c >= 0 && d.closeAt < 0 && in) {
                 double s = src(c);
                 boolean sceneHere = scene(d, c);
-                if (sceneHere && s < T_BLACK) {
+                boolean under = s >= T_DARK && s < T_RED && toLocal(d, c, mc.gameRenderer.getMainCamera().getPosition()).y < -0.02;
+                if (sceneHere && s < T_BLACK && !under) {
+                    // the light dying is the world's; under the water the sea has its own (it went near black, test 07:4x)
                     double light = s < T_HIT ? 1 : 1 - 0.55 * sm(T_HIT, 170, s);
                     if (s >= T_DARK) {
                         light *= (1 - 0.6 * sm(T_DARK, T_BLACK - 10, s)) * (1 - sm(T_BLACK - 10, T_BLACK - 2, s));
@@ -1845,15 +1914,55 @@ public final class SukunaDomainScene {
             String top = "Expansão de Domínio";
             String bottom = "Santuário Malevolente";
             pose.pushPose();
-            pose.translate(graphics.guiWidth() / 2f, graphics.guiHeight() * 0.72f, 0);
+            pose.translate(graphics.guiWidth() / 2f, graphics.guiHeight() - 46, 0);
             pose.scale(1.4f, 1.4f, 1);
             graphics.drawString(font, top, -font.width(top) / 2, 0, (alpha << 24) | 0xFFD9DE, true);
             pose.popPose();
             pose.pushPose();
-            pose.translate(graphics.guiWidth() / 2f, graphics.guiHeight() * 0.72f + 16, 0);
+            pose.translate(graphics.guiWidth() / 2f, graphics.guiHeight() - 46 + 16, 0);
             pose.scale(2.0f, 2.0f, 1);
             graphics.drawString(font, bottom, -font.width(bottom) / 2, 0, (alpha << 24) | 0xFF3048, true);
             pose.popPose();
+        }
+    }
+
+    // ---------- what the people hold ----------
+
+    // In the cutscene nobody holds anything: an item in hand was drawn over his face in the hand sign close-up (test
+    // 2026-11-09). Emptied only for the draw, on this client, and put back right after.
+    private static final Map<LivingEntity, net.minecraft.world.item.ItemStack[]> HELD = new HashMap<>();
+
+    public static void onRenderLivingPre(net.neoforged.neoforge.client.event.RenderLivingEvent.Pre<?, ?> event) {
+        if (DOMS.isEmpty() || !cutscene()) {
+            return;
+        }
+        LivingEntity e = event.getEntity();
+        net.minecraft.world.item.ItemStack main = e.getMainHandItem(), off = e.getOffhandItem();
+        if (main.isEmpty() && off.isEmpty() || HELD.containsKey(e)) {
+            return;
+        }
+        HELD.put(e, new net.minecraft.world.item.ItemStack[] {main, off});
+        e.setItemSlot(net.minecraft.world.entity.EquipmentSlot.MAINHAND, net.minecraft.world.item.ItemStack.EMPTY);
+        e.setItemSlot(net.minecraft.world.entity.EquipmentSlot.OFFHAND, net.minecraft.world.item.ItemStack.EMPTY);
+    }
+
+    private static void restoreHeld() {
+        for (Map.Entry<LivingEntity, net.minecraft.world.item.ItemStack[]> en : HELD.entrySet()) {
+            en.getKey().setItemSlot(net.minecraft.world.entity.EquipmentSlot.MAINHAND, en.getValue()[0]);
+            en.getKey().setItemSlot(net.minecraft.world.entity.EquipmentSlot.OFFHAND, en.getValue()[1]);
+        }
+        HELD.clear();
+    }
+
+    public static void onRenderLivingPost(net.neoforged.neoforge.client.event.RenderLivingEvent.Post<?, ?> event) {
+        if (HELD.isEmpty()) {
+            return;
+        }
+        LivingEntity e = event.getEntity();
+        net.minecraft.world.item.ItemStack[] items = HELD.remove(e);
+        if (items != null) {
+            e.setItemSlot(net.minecraft.world.entity.EquipmentSlot.MAINHAND, items[0]);
+            e.setItemSlot(net.minecraft.world.entity.EquipmentSlot.OFFHAND, items[1]);
         }
     }
 

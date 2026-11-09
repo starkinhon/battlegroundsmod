@@ -46,13 +46,13 @@ public final class PowerHud {
     }
 
     private static boolean cutscene() {
-        return com.starkinhon.battlegroundsmod.client.fx.SukunaDomainScene.cutscene() || GrabCutscene.active() || BopCutscene.active() || HakaiCutscene.active() || EsferaCutscene.active()
+        return com.starkinhon.battlegroundsmod.client.fx.SukunaDomainScene.hidesHud() || GrabCutscene.active() || BopCutscene.active() || HakaiCutscene.active() || EsferaCutscene.active()
                 || BossCutscene.active() || ShoulderCutscene.active();
     }
 
     public static void render(GuiGraphics graphics, DeltaTracker deltaTracker) {
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.options.hideGui || minecraft.player == null || cutscene()) {
+        if (minecraft.options.hideGui || minecraft.player == null || cutscene() || com.starkinhon.battlegroundsmod.client.fx.DuelScene.cutscene()) {
             return;
         }
         PowerData data = minecraft.player.getData(ModAttachments.POWER);

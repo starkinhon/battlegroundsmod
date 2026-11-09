@@ -345,6 +345,8 @@ public final class FxWorld {
             // Sukuna's Expansão de Domínio: the shrine, its cuts and its light, then what it does to the screen.
             SukunaDomainScene.render(camera, partial);
             SukunaDomainScene.screen();
+            // The Duelo de Expansões: the split sky (or the tie's cracks) and the Santuário rising in Gojo's tunnel.
+            DuelScene.render(camera, partial);
         }
 
         KiMesh.endFrame();

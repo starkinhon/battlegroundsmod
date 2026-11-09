@@ -83,6 +83,10 @@ public final class PowerLogic {
             // X with the illusion up: it breaks and he shows up.
             return;
         }
+        if (PowerData.isUlt(slot) && com.starkinhon.battlegroundsmod.power.powers.duel.DomainDuel.press(player)) {
+            // V in a Duelo de Expansões: Gojo reopening the void in the tie (any other press is swallowed).
+            return;
+        }
         if (PowerData.isUlt(slot) && com.starkinhon.battlegroundsmod.power.powers.gojo.InfiniteVoid.cancel(player)) {
             // V with his domain open: Gojo closes it.
             return;
@@ -148,6 +152,11 @@ public final class PowerLogic {
         Ability ability = power == null ? null : ability(caster, power, slot);
         if (ability == null) {
             return false;
+        }
+        if (slot == PowerData.SLOT_ULT && com.starkinhon.battlegroundsmod.power.powers.duel.DomainDuel.canClash(caster)) {
+            // Answering the other one's domain with their own (the Duelo de Expansões): allowed though that domain has
+            // them caught and held.
+            return !caster.isSpectator() && caster.isAlive() && data.cooldowns[slot] <= 0 && !sealed(caster);
         }
         boolean counter = ability.counter() || ability.beatenCounter() && !Stun.real(caster);
         return !caster.isSpectator() && caster.isAlive() && data.cooldowns[slot] <= 0 && data.busyTicks <= 0 && !Freeze.isFrozen(caster)
@@ -226,6 +235,10 @@ public final class PowerLogic {
         // Gojo's Domain Expansion writes its own words on the screen ("Expansão de Domínio:" then "Vazio Infinito."),
         // and its long name in the big vanilla title runs off the screen.
         if (OWN_ULT_TITLE.contains(power.id())) {
+            return;
+        }
+        // Sukuna's Expansão writes its own words too, and its long name ran off both edges (test 2026-11-09).
+        if (com.starkinhon.battlegroundsmod.power.powers.Sukuna.ID.equals(power.id()) && slot == 3) {
             return;
         }
         // Kokushibo's 6th Form (V with the normal sword) goes without the big title (Stark, 2026-11-08).

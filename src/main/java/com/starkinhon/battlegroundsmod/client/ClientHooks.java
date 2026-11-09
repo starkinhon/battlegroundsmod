@@ -217,6 +217,10 @@ public final class ClientHooks {
         com.starkinhon.battlegroundsmod.client.fx.SukunaDomainScene.event(casterId, center, mode, a, b, part);
     }
 
+    public static void expansionDuel(int gojoId, int sukunaId, int mode, int a, int b, int c) {
+        com.starkinhon.battlegroundsmod.client.fx.DuelScene.event(gojoId, sukunaId, mode, a, b, c);
+    }
+
     public static void gojoDomain(int casterId, net.minecraft.world.phys.Vec3 center, boolean awakened, int mode, int other) {
         com.starkinhon.battlegroundsmod.client.fx.DomainScene.event(casterId, center, awakened, mode, other);
     }
