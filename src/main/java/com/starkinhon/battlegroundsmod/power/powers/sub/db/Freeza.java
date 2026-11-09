@@ -32,7 +32,9 @@ import net.minecraft.world.phys.Vec3;
 public final class Freeza {
     public static final String TELE = "db_freeza_tele";
     public static final String SAUCER = "db_freeza_saucer";
-    private static final int TELE_RANGE = 15;
+    // 1.5x of the first port (15 and 30 blocks).
+    private static final double TELE_RANGE = 22.5;
+    private static final double SAUCER_RANGE = 45;
 
     private Freeza() {
     }
@@ -207,7 +209,7 @@ public final class Freeza {
         SubCommon.Guard guard = SubCommon.guard(caster);
         int form = 24;
         int id = SubNet.newId();
-        LivingEntity target = SubCommon.aimed(caster, 30);
+        LivingEntity target = SubCommon.aimed(caster, SAUCER_RANGE);
         SubCommon.setState(caster, SAUCER, 200);
         SubCommon.pose(caster, "db.dedo_ceu");
         SubCommon.busy(caster, form);
@@ -240,7 +242,7 @@ public final class Freeza {
             if (age == form) {
                 SubCommon.pose(caster, "db.arremesso");
                 p[0] = DbCommon.raised(caster).add(0, 0.45, 0);
-                goal[0] = target != null ? Combat.center(target) : SubCommon.aimPoint(caster, 30).add(0, 1, 0);
+                goal[0] = target != null ? Combat.center(target) : SubCommon.aimPoint(caster, SAUCER_RANGE).add(0, 1, 0);
                 SubCommon.sound(level, p[0], SoundEvents.TRIDENT_THROW.value(), 1.2f, 1.2f);
             }
             if (popped) {
@@ -338,7 +340,7 @@ public final class Freeza {
                 DbCommon.hit(level, c, 0.8f, Db.PINK);
                 SubCommon.sound(level, c, SoundEvents.PLAYER_ATTACK_SWEEP, 1.4f, 1.2f);
             }
-            boolean gone = t > 160 || (phase[0] == 2 && cutBack.contains(caster.getId()) && next.distanceTo(Combat.center(caster)) > 6)
+            boolean gone = t > 240 || (phase[0] == 2 && cutBack.contains(caster.getId()) && next.distanceTo(Combat.center(caster)) > 6)
                     || SubCommon.solid(level, next);
             if (gone) {
                 SubNet.send(level, SubNet.SAW, id, next, new Vec3(0, 1, 0), 0.6f, Db.PINK, 1);
