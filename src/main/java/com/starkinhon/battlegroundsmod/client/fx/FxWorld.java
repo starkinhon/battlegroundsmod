@@ -260,6 +260,10 @@ public final class FxWorld {
             KiMesh.flush(true);
             FxPost.endGlow(FxConfig.on(FxConfig.BLOOM));
         }
+        if (!space) {
+            // The Mafuba jar's 魔封波 seal, written in the kanji font after the effects.
+            DbFx.drawTags();
+        }
         if (!space && HakaiRenderer.active()) {
             // Dark lines on top of the glow, so the light doesn't wash them out.
             FxDraw.begin(source, event.getCamera(), flat);

@@ -15,7 +15,15 @@ import com.starkinhon.battlegroundsmod.client.ScreenShake;
 import com.starkinhon.battlegroundsmod.power.powers.sub.SubNet;
 import com.starkinhon.battlegroundsmod.power.powers.sub.db.Db;
 
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.math.Axis;
+import com.starkinhon.battlegroundsmod.BattlegroundsMod;
+
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
@@ -82,6 +90,23 @@ public final class DbFx {
 
     // Piccolo's heavy gear thrown off before the Makankosappo (sent as screen preset 52; drawn here, not a SubNet kind).
     private static final int GEAR = -52;
+    // Mestre Kame's Bankoku Bikkuri Sho: bolts from id's hands to the entity b (screen preset 54).
+    private static final int SHOCK = -54;
+    private static final float[] MAF = FxDraw.rgb(0x3DFF74);
+    private static final float[] MAF_FLASH = FxDraw.rgb(0xD8FFE0);
+    private static final float[] BOLT_BLUE = FxDraw.rgb(0x59C8FF);
+    private static final float[] JAR_CREAM = FxDraw.rgb(0xECE4D2);
+    private static final float[] JAR_BAND = FxDraw.rgb(0x2F6F62);
+    private static final float[] TAG_PAPER = FxDraw.rgb(0xF3EAD2);
+    private static final float[] TAG_RED = FxDraw.rgb(0xB3261E);
+    private static final float[] MAX_AURA = FxDraw.rgb(0x7CC8FF);
+    private static final ResourceLocation KANJI = ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "kanji");
+
+    // The 魔封波 seals to write this frame (text can't go through the effect buffers): where, facing, size, opacity.
+    private record Tag(Vector3f at, float yaw, float size, float alpha) {
+    }
+
+    private static final List<Tag> TAGS = new ArrayList<>();
     private static final float[] MK_CORE = FxDraw.rgb(0xFFF3A6);
     private static final float[] MK_GOLD = FxDraw.rgb(0xFFE23A);
     private static final float[] MK_PINK = FxDraw.rgb(0xFF5FAE);
@@ -199,6 +224,12 @@ public final class DbFx {
                 if ((int) a == 48) {
                     // Turned to stone (id = who, b = ticks).
                     AshDeath.startStone(id, (int) b);
+                } else if ((int) a == 54) {
+                    // Bankoku Bikkuri Sho (id = Kame, b = target, dir.x = ticks; 0 = stop now).
+                    SHOTS.removeIf(s -> s.kind == SHOCK && s.id == id);
+                    if (dir.x > 0) {
+                        SHOTS.add(new Fx(SHOCK, id, pos, dir, a, b, c, now));
+                    }
                 } else if ((int) a == 52) {
                     // Piccolo throws off the cape, turban and pads (pos = feet, dir = ground Y and yaw).
                     SHOTS.add(new Fx(GEAR, id, pos, dir, a, b, c, now));
@@ -253,6 +284,7 @@ public final class DbFx {
             case SubNet.DEATH_BEAM -> 11;
             case SubNet.MAKANKO -> f.a + 95;
             case GEAR -> 120;
+            case SHOCK -> f.dir.x + 2;
             case SubNet.SOLAR -> 31;
             case SubNet.STREAK -> Math.max(1, f.c);
             case SubNet.RAIN -> 14 + f.b + 22;
@@ -277,7 +309,7 @@ public final class DbFx {
             }
             if (f.kind == SubNet.JAR) {
                 // Open and waiting for 10 s at most; sealed: its time, then breaking or fading.
-                if ((f.sealAt < 0 && now - f.updated > 200) || (f.sealAt >= 0 && now - f.sealAt > f.a + 40)) {
+                if ((f.sealAt < 0 && now - f.updated > 200) || (f.sealAt >= 0 && now - f.sealAt > f.a + 90)) {
                     it.remove();
                 }
                 continue;
@@ -328,6 +360,7 @@ public final class DbFx {
                 case SubNet.FLEX -> flex(f, age);
                 case SubNet.SCAR -> scar(f, age);
                 case GEAR -> gear(f, age);
+                case SHOCK -> shockBolts(f, age, partial);
                 default -> {
                 }
             }
@@ -507,6 +540,15 @@ public final class DbFx {
                 p.spikeFreq = sup ? 7.5f : 4.5f;
                 p.spikeSharp = sup ? 2.6f : 2.2f;
                 p.crown = sup ? 0.85f : 0.55f;
+                if (col == COLORS[Db.KAME_W] && s > 1.2f) {
+                    // Mestre Kame's Max Power: the blue shell, wide and spiky round the swollen body.
+                    p.color = MAX_AURA;
+                    p.tongue = 0.45f;
+                    p.spike = 0.35f;
+                    p.spikeFreq = 6;
+                    p.spikeSharp = 2.4f;
+                    p.crown = 0.9f;
+                }
                 if (sup && s > 1.2f) {
                     // Gathering everything (Final Flash, and more for the Explosao Final): taller, spikier, with a crown.
                     boolean peak = s > 1.35f;
@@ -1639,9 +1681,34 @@ public final class DbFx {
         }
     }
 
+    // b 0: the gust from the hands (a cone); b 1 to 2: the river of wind running into the jar (narrowing as b goes to 2).
     private static void gale(Fx f, float age, float out) {
         Vector3f hm = rel(f.pos);
         Vector3f to = rel(f.dir);
+        if (KiMesh.ready()) {
+            float aw = Mth.clamp(f.a, 0, 1) * out;
+            Vector3f d = new Vector3f(to).sub(hm);
+            float len = d.length();
+            if (pass && aw > 0.002f && len > 0.1f) {
+                // Realista+Anime (the approved Mafuba): one shell of wind streaked with speed lines, never repeated ribbons.
+                boolean stream = f.b >= 1;
+                float k = Mth.clamp(f.b - 1, 0, 1);
+                KiMesh.P w = KiMesh.p(KiMesh.WIND);
+                w.len = len;
+                w.r0 = stream ? 0.16f : 0.25f;
+                w.r1 = stream ? 0.8f + 1.4f * (1 - k) : 2.2f;
+                w.flare = stream ? 1.4f : 0.8f;
+                w.twist = stream ? 14 : 1.5f;
+                w.flow = (stream ? -3 : 2.4f) * age / 20f * 4;
+                w.time = age / 20f;
+                w.alpha = aw;
+                w.color = MAF;
+                KiMesh.queue(KiMesh.Mesh.WIND, KiMesh.along(hm, d.div(len)), w, KiMesh.BOTH, 13);
+            }
+            if (f.b >= 1) {
+                return;
+            }
+        }
         float aw = smooth(age / 8) * Mth.clamp(f.a, 0, 1) * out;
         float[] green = COLORS[Db.GREEN];
         bb(hm, 0.9f, 0, FxDraw.SOFT, 0.5f, green, 0.7f * aw, true);
@@ -1658,7 +1725,7 @@ public final class DbFx {
         }
         u.normalize();
         Vector3f v = new Vector3f(u).cross(d);
-        for (int i = 0; i < 46; i++) {
+        for (int i = 0; i < (KiMesh.ready() ? 0 : 46); i++) {
             float ph = fract(age * (0.07f + 0.05f * Db.hash(i, 1, 3)) + Db.hash(i, 2, 3));
             float ang = Db.hash(i, 3, 3) * Mth.TWO_PI;
             float spread = (0.15f + 1.3f * ph) * (0.5f + 0.7f * Db.hash(i, 4, 3));
@@ -1693,6 +1760,11 @@ public final class DbFx {
         u.normalize();
         Vector3f v = new Vector3f(u).cross(n);
         warp(c, rr * 1.6f, 1.1f * a, 1, age * 0.1f * 20, n);
+        if (KiMesh.ready()) {
+            // The image twisting round the target (the swirl) and its white middle.
+            flashBall(c, rr * 0.3f, 0.6f * Math.min(1, a), MAF_FLASH, 6.6f);
+            return;
+        }
         bb(c, rr * 0.9f, 0, FxDraw.SOFT, 0.9f, WHITE, 0.7f * a, true);
         bb(c, rr * 2.4f, 0, FxDraw.SOFT, 0.15f, COLORS[Db.GREEN], 0.35f * a, true);
         for (int arm = 0; arm < 4; arm++) {
@@ -1710,11 +1782,28 @@ public final class DbFx {
         }
     }
 
+    // a: the funnel's height; b: how strong it is (0 to 1).
     private static void tornado(Fx f, float age, float out) {
         Vector3f center = rel(f.pos);
         float hgt = f.a;
-        float rad = f.b;
+        float rad = 1.5f * Mth.clamp(f.b, 0, 1) + 0.2f;
         float a = smooth(age / 10) * out;
+        if (KiMesh.ready()) {
+            if (pass && hgt > 0.05f && f.b * out > 0.002f) {
+                KiMesh.P w = KiMesh.p(KiMesh.WIND);
+                w.len = hgt;
+                w.r0 = 0.55f;
+                w.r1 = 2.4f;
+                w.flare = 1.6f;
+                w.twist = 9;
+                w.flow = age / 20f * 4 * 1.5f;
+                w.time = age / 20f;
+                w.alpha = Mth.clamp(f.b, 0, 1) * out;
+                w.color = MAF;
+                KiMesh.queue(KiMesh.Mesh.WIND, KiMesh.along(center, new Vector3f(0, 1, 0)), w, KiMesh.BOTH, 13);
+            }
+            return;
+        }
         for (int i = 0; i < 56; i++) {
             float u = i / 56f;
             float ang = age * 0.45f + u * 22;
@@ -1727,82 +1816,204 @@ public final class DbFx {
 
     // The Mafuba's jar: white body with a red tag; the lid closes, it shakes harder and harder and cracks, then breaks
     // (b = 1) or stays shut and fades (b = 0, the target died sealed).
-    private static final float[] JAR_WHITE = FxDraw.rgb(0xE8E2D0);
-    private static final float[] JAR_RED = FxDraw.rgb(0xC02020);
 
+    private static final float JAR_S = 0.75f;
+    private static final float[][] JAR_PROFILE = {{0.42f, 0}, {0.55f, 0.06f}, {0.6f, 0.3f}, {0.6f, 0.62f}, {0.54f, 0.8f}, {0.4f, 0.9f}, {0.36f, 0.98f}, {0.39f, 1.02f}};
+    private static final float[][] LID_PROFILE = {{0.43f, -0.03f}, {0.43f, 0}, {0.38f, 0.04f}, {0.18f, 0.12f}, {0.02f, 0.14f}};
+
+    // Realista+Anime (the approved Mafuba): a turned cream jar with a green band; the lid falls and the 魔封波 seal sticks;
+    // it hops and shakes with the target trying to get out (harder and harder if it will break, dying down if not), then
+    // breaks (b = 1) or stays shut and fades (b = 0, the target died sealed).
     private static void jar(Fx f, double now) {
         float sinceSeal = f.sealAt < 0 ? -1 : (float) (now - f.sealAt);
         float sealTicks = f.a;
         boolean breaks = f.b > 0.5f;
         float t = (float) (now - f.born);
+        Vector3f base0 = rel(f.pos);
         if (sinceSeal >= 0 && breaks && sinceSeal >= sealTicks) {
-            jarBreak(rel(f.pos), sinceSeal - sealTicks);
+            jarBreak(base0, sinceSeal - sealTicks);
             return;
         }
-        float fade = sinceSeal >= 0 && !breaks ? 1 - smooth((sinceSeal - sealTicks) / 30) : 1;
+        float fade = sinceSeal >= 0 && !breaks ? 1 - smooth((sinceSeal - sealTicks - 10) / 30) : 1;
         if (fade <= 0) {
             return;
         }
+        float S = JAR_S;
         boolean sealed = sinceSeal >= 0;
-        float shake = sealed ? 0.02f + 0.06f * smooth((sinceSeal - 60) / Math.max(1, sealTicks - 60)) : 0;
-        Vector3f base = rel(f.pos).add(sealed ? Mth.sin(t * 1.6f) * shake : 0, 0, 0);
-        float tilt = sealed ? Mth.sin(t * 1.3f) * shake * 2.5f : 0;
+        // The lid falls from high up (gravity) and lands on the mouth.
+        float ls = sinceSeal / 20f;
+        float lidY = sealed ? Math.max(1.02f, 2.6f - 15 * ls * ls) : -1;
+        float landAt = Mth.sqrt((2.6f - 1.02f) / 15) * 20;
+        boolean landed = sealed && sinceSeal >= landAt;
+        float s = Math.max(0, sinceSeal - landAt) / 20f;
+        float sealS = sealTicks / 20f;
+        float fight = !landed ? 0 : breaks ? 0.4f + 0.6f * Math.min(1, s / sealS) : Math.max(0, 1 - s / (sealS * 0.8f));
+        float ts = t / 20f;
+        float bump = Math.max(0, Mth.sin(ts * 7.3f) * Mth.sin(ts * 3.1f + 1)) * fight;
+        int tk = (int) Math.floor(t);
+        Vector3f base = new Vector3f(base0).add((Db.hash(tk, 1, 41) - 0.5f) * 0.06f * fight * S, bump * 0.18f * S, (Db.hash(tk, 2, 41) - 0.5f) * 0.06f * fight * S);
+        float tilt = (Db.hash(tk, 3, 41) - 0.5f) * 0.12f * fight;
+        Vector3f toCam = new Vector3f(base).negate();
+        toCam.y = 0;
+        if (toCam.lengthSquared() < 1.0E-4f) {
+            toCam.set(0, 0, 1);
+        }
+        toCam.normalize();
+        Vector3f mouth = new Vector3f(base).add(0, 1.05f * S, 0);
         if (!pass) {
-            cylinder(base, 0.22f, 0.26f, 0, 0.42f, tilt, JAR_WHITE, fade);
-            float lidY = sinceSeal < 0 ? 0.62f : Mth.lerp(smooth(sinceSeal / 4), 0.62f, 0.46f);
-            cylinder(new Vector3f(base).add(0, lidY - 0.035f, 0), 0.24f, 0.24f, 0, 0.07f, tilt + (sinceSeal < 0 ? 0.5f : 0.5f * (1 - smooth(sinceSeal / 4))),
-                    JAR_WHITE, fade);
-            Vector3f tag = new Vector3f(base).add(0, 0.3f, 0);
-            Vector3f toCam = new Vector3f(tag).negate();
-            toCam.y = 0;
-            if (toCam.lengthSquared() > 1.0E-4f) {
-                toCam.normalize();
-                Vector3f side = new Vector3f(toCam).cross(0, 1, 0).normalize(0.05f);
-                Vector3f face = at(tag, toCam, 0.265f);
-                FxDraw.quad(new Vector3f(face).sub(side).add(0, -0.15f, 0), new Vector3f(face).add(side).add(0, -0.15f, 0),
-                        new Vector3f(face).add(side).add(0, 0.15f, 0), new Vector3f(face).sub(side).add(0, 0.15f, 0), FxDraw.SOLID, 0, JAR_RED, fade, false);
+            for (int i = 0; i + 1 < JAR_PROFILE.length; i++) {
+                float[] a = JAR_PROFILE[i];
+                float[] b = JAR_PROFILE[i + 1];
+                lathe(base, b[0] * S, a[0] * S, a[1] * S, b[1] * S, tilt, JAR_CREAM, fade);
             }
+            lathe(base, 0.64f * S, 0.64f * S, 0.43f * S, 0.47f * S, tilt, JAR_BAND, fade);
             if (sealed) {
-                // Cracks running over it, more and more.
-                float cr = smooth((sinceSeal - 100) / Math.max(1, sealTicks - 100));
-                for (int i = 0; i < 4; i++) {
-                    if (cr * 4 < i) {
-                        break;
-                    }
-                    float a0 = Db.hash(i, 1, 21) * Mth.TWO_PI;
-                    float y0 = 0.08f + 0.3f * Db.hash(i, 2, 21);
-                    Vector3f p = new Vector3f(base).add(Mth.cos(a0) * 0.27f, y0, Mth.sin(a0) * 0.27f);
-                    for (int j = 0; j < 3; j++) {
-                        Vector3f q = new Vector3f(p).add((Db.hash(i, j, 22) - 0.5f) * 0.12f, 0.06f + 0.04f * Db.hash(i, j, 23), (Db.hash(i, j, 24) - 0.5f) * 0.05f);
-                        FxDraw.ribbon(p, q, 0.012f, FxDraw.SOLID, 0, new float[] {0.1f, 0.08f, 0.08f}, fade, false);
-                        p = q;
-                    }
+                Vector3f lb = new Vector3f(base).add(0, (lidY - 1.02f + bump * 0.06f) * S, 0);
+                float lt = tilt + 0.5f * Math.max(0, 1 - sinceSeal / landAt);
+                for (int i = 0; i + 1 < LID_PROFILE.length; i++) {
+                    float[] a = LID_PROFILE[i];
+                    float[] b = LID_PROFILE[i + 1];
+                    lathe(new Vector3f(lb).add(0, 1.02f * S, 0), b[0] * S, a[0] * S, a[1] * S, b[1] * S, lt, JAR_CREAM, fade);
                 }
+                cylinder(new Vector3f(lb).add(0, 1.15f * S, 0), 0.06f * S, 0.08f * S, 0, 0.08f * S, lt, JAR_BAND, fade);
             }
-        } else if (sealed) {
-            Vector3f seal = new Vector3f(base).add(0, 0.3f, 0);
-            Vector3f toCam = new Vector3f(seal).negate().normalize(0.28f);
-            bb(seal.add(toCam), 0.4f, 0, FxDraw.SOFT, 0.5f, COLORS[Db.RED], (0.5f + 0.3f * Mth.sin(t * 0.3f)) * fade, true);
+            if (landed) {
+                // The seal: paper with a red frame on the jar's face, popping on (1.6x) as the lid lands.
+                float pop = Math.max(1, 1.6f - (sinceSeal - landAt) / 20f * 5);
+                Vector3f side = new Vector3f(toCam).cross(0, 1, 0).normalize();
+                Vector3f c = at(new Vector3f(base).add(0, 0.55f * S, 0), toCam, 0.61f * S);
+                float hw = 0.1f * S * pop;
+                float hh = 0.3f * S * pop;
+                FxDraw.quad(at(at(c, side, -hw - 0.012f), new Vector3f(0, 1, 0), -hh - 0.012f), at(at(c, side, hw + 0.012f), new Vector3f(0, 1, 0), -hh - 0.012f),
+                        at(at(c, side, hw + 0.012f), new Vector3f(0, 1, 0), hh + 0.012f), at(at(c, side, -hw - 0.012f), new Vector3f(0, 1, 0), hh + 0.012f), FxDraw.SOLID, 0,
+                        TAG_RED, fade, false);
+                Vector3f c2 = at(c, toCam, 0.004f);
+                FxDraw.quad(at(at(c2, side, -hw), new Vector3f(0, 1, 0), -hh), at(at(c2, side, hw), new Vector3f(0, 1, 0), -hh), at(at(c2, side, hw), new Vector3f(0, 1, 0), hh),
+                        at(at(c2, side, -hw), new Vector3f(0, 1, 0), hh), FxDraw.SOLID, 0, TAG_PAPER, fade, false);
+                TAGS.add(new Tag(at(c2, toCam, 0.004f), (float) Math.atan2(toCam.x, toCam.z), hh * 2, fade));
+            }
+        } else if (landed) {
+            // The green glow at the mouth, beating with each hop.
+            flashBall(mouth, 0.5f * S * (0.5f + 0.2f * bump), (0.15f + 0.4f * bump) * fade, MAF, 3.3f);
+            if (sinceSeal - landAt < 6) {
+                float k = (sinceSeal - landAt) / 6;
+                flashBall(mouth, 0.3f + 0.7f * Mth.sqrt(k), 1 - k, MAF_FLASH, 1.1f);
+            }
         }
     }
 
+    // A ring of the jar's turned body (20 sides, no caps) from radius rBottom at y0 to rTop at y1.
+    private static void lathe(Vector3f base, float rTop, float rBottom, float y0, float y1, float tilt, float[] col, float op) {
+        int n = 20;
+        float cos = Mth.cos(tilt);
+        float sin = Mth.sin(tilt);
+        for (int i = 0; i < n; i++) {
+            float a0 = i / (float) n * Mth.TWO_PI;
+            float a1 = (i + 1) / (float) n * Mth.TWO_PI;
+            float slope = rBottom - rTop;
+            float light = 0.6f + 0.3f * Math.max(0, Mth.cos((a0 + a1) / 2 - 0.8f)) + 0.1f * Mth.clamp(-slope * 4, -1, 1);
+            float[] c = {col[0] * light, col[1] * light, col[2] * light};
+            FxDraw.quad(tilted(base, Mth.cos(a0) * rBottom, y0, Mth.sin(a0) * rBottom, cos, sin), tilted(base, Mth.cos(a1) * rBottom, y0, Mth.sin(a1) * rBottom, cos, sin),
+                    tilted(base, Mth.cos(a1) * rTop, y1, Mth.sin(a1) * rTop, cos, sin), tilted(base, Mth.cos(a0) * rTop, y1, Mth.sin(a0) * rTop, cos, sin),
+                    FxDraw.SOLID, 0, c, op, false);
+        }
+    }
+
+    // The jar bursting: shards flying out (each with its own size, speed and spin), the lid popping up, the green flash.
     private static void jarBreak(Vector3f base, float a) {
-        for (int i = 0; i < 16; i++) {
-            Vector3f d = sphere(33, i);
-            d.y = Math.abs(d.y) + 0.3f;
-            d.normalize();
-            Vector3f p = at(new Vector3f(base).add(0, 0.25f, 0), d, 0.2f + a * 0.12f);
-            p.y -= a * a * 0.004f;
-            if (p.y > base.y + 0.03f) {
-                bb(p, 0.1f + 0.06f * Db.hash(i, 3, 33), a * 0.2f + i, FxDraw.SOLID, 0, i == 3 ? new float[] {0.75f, 0.12f, 0.12f} : new float[] {0.91f, 0.89f, 0.82f},
-                        1, false);
+        float S = JAR_S;
+        float ts = a / 20f;
+        if (!pass) {
+            for (int i = 0; i < 40; i++) {
+                float ang = Db.hash(i, 1, 43) * Mth.TWO_PI;
+                float y0 = Db.hash(i, 2, 43) * S;
+                float v = (2 + Db.hash(i, 3, 43) * 4) * S;
+                float vy = (2 + Db.hash(i, 4, 43) * 4) * S;
+                float y = y0 + vy * ts - 0.5f * 20 * S * ts * ts;
+                if (y < 0.02f) {
+                    y = 0.02f;
+                }
+                float tt = y <= 0.02f ? (vy + Mth.sqrt(vy * vy + 2 * 20 * S * y0)) / (20 * S) : ts;
+                Vector3f p = new Vector3f(base).add(Mth.cos(ang) * (0.55f * S + v * tt), y, Mth.sin(ang) * (0.55f * S + v * tt));
+                float fadeS = 1 - smooth((a - 60) / 20);
+                bb(p, (0.05f + 0.12f * Db.hash(i, 5, 43)) * S, a * 0.2f * (Db.hash(i, 6, 43) - 0.5f) + i, FxDraw.SOLID, 0,
+                        pale(JAR_CREAM, -0.2f + 0.25f * Db.hash(i, 7, 43)), fadeS, false);
+            }
+            float ly = Math.max(0.05f, 1.02f + 9 * ts - 10 * ts * ts);
+            float fadeL = 1 - smooth((a - 60) / 20);
+            if (fadeL > 0) {
+                for (int i = 0; i + 1 < LID_PROFILE.length; i++) {
+                    float[] p = LID_PROFILE[i];
+                    float[] q = LID_PROFILE[i + 1];
+                    lathe(new Vector3f(base).add(0.3f * ts, ly * S, 0), q[0] * S, p[0] * S, p[1] * S, q[1] * S, ts * 8, JAR_CREAM, fadeL);
+                }
             }
         }
         if (a < 10) {
-            bb(new Vector3f(base).add(0, 0.4f, 0), 2.5f * (1 - a / 10), 0, FxDraw.SOFT, 0.6f, COLORS[Db.GREEN], 1 - a / 10, true);
-            dsk(new Vector3f(base).add(0, 0.05f, 0), new Vector3f(0, 1, 0), 0.4f + a * 0.3f, FxDraw.RING, 0.08f, COLORS[Db.GREEN], 1 - a / 10, true);
+            float k = a / 10;
+            flashBall(new Vector3f(base).add(0, 0.8f * S, 0), 0.4f + 1.4f * Mth.sqrt(k), 1 - k, MAF_FLASH, 2.2f);
+        }
+        if (KiMesh.ready()) {
+            dustRing(base, 2.6f * easeOut(a / 22), 3, Mth.clamp(a / 40, 0, 1), MAF, 1.7f);
         }
         nrDust(base, a, 61, 10, 0.8f, new float[] {0.6f, 0.55f, 0.5f}, 30);
+    }
+
+    // Writes the 魔封波 seals queued this frame, after the effects (FxWorld), in the kanji font.
+    static void drawTags() {
+        if (TAGS.isEmpty()) {
+            return;
+        }
+        Minecraft mc = Minecraft.getInstance();
+        Font font = mc.font;
+        MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
+        String seal = "魔封波";
+        for (Tag tag : TAGS) {
+            int alpha = (int) (Mth.clamp(tag.alpha(), 0, 1) * 255);
+            if (alpha < 8) {
+                continue;
+            }
+            float glyph = tag.size() / 3.4f;
+            for (int i = 0; i < 3; i++) {
+                PoseStack pose = new PoseStack();
+                pose.translate(tag.at().x, tag.at().y + tag.size() * (0.31f - i * 0.31f), tag.at().z);
+                pose.mulPose(Axis.YP.rotation(tag.yaw()));
+                float k = glyph / 11f;
+                pose.scale(k, -k, k);
+                Component c = Component.literal(String.valueOf(seal.charAt(i))).withStyle(st -> st.withFont(KANJI));
+                font.drawInBatch(c, -font.width(c) / 2f, -4.5f, alpha << 24 | 0x1A1210, false, pose.last().pose(), buffers, Font.DisplayMode.POLYGON_OFFSET, 0, 0xF000F0);
+            }
+        }
+        buffers.endBatch();
+        TAGS.clear();
+    }
+
+    // Bankoku Bikkuri Sho: two blue bolts with white cores from Kame's hands to the target's body, a new path about every
+    // tick, with branches breaking off; the body flickering blue.
+    private static void shockBolts(Fx f, float age, float partial) {
+        Entity kame = FxAnchor.entity(f.id);
+        Entity foe = FxAnchor.entity((int) f.b);
+        if (kame == null || foe == null) {
+            return;
+        }
+        Vec3 look = kame.getViewVector(partial);
+        Vec3 right = look.cross(new Vec3(0, 1, 0));
+        right = right.lengthSqr() < 1.0E-4 ? new Vec3(1, 0, 0) : right.normalize();
+        Vec3 chest = kame.getPosition(partial).add(0, kame.getBbHeight() * 0.72, 0).add(look.scale(0.55));
+        Vector3f hr = rel(chest.add(right.scale(0.22)));
+        Vector3f hl = rel(chest.add(right.scale(-0.22)));
+        Vector3f body = rel(foe.getPosition(partial).add(0, foe.getBbHeight() * 0.55, 0));
+        float fade = 1 - smooth((age - (float) f.dir.x) / 2);
+        int tk = (int) Math.floor(age * 1.1f);
+        Vector3f br = new Vector3f(body).add(0.15f, 0.2f, 0);
+        Vector3f bl = new Vector3f(body).add(-0.15f, -0.1f, 0);
+        nrBolt(hr, br, tk * 13 + 1, 0.06f, BOLT_BLUE, fade, 0.7f, 13, 2);
+        nrBolt(hr, br, tk * 13 + 1, 0.018f, WHITE, fade, 0.7f, 13, 0);
+        nrBolt(hl, bl, tk * 13 + 7, 0.06f, BOLT_BLUE, fade, 0.7f, 13, 1);
+        nrBolt(hl, bl, tk * 13 + 7, 0.018f, WHITE, fade, 0.7f, 13, 0);
+        if (KiMesh.ready()) {
+            flashBall(body, 0.55f + 0.15f * Db.hash(tk, 4, 51), (0.15f + 0.35f * Db.hash(tk, 5, 51)) * fade, BOLT_BLUE, tk * 0.37f);
+        }
     }
 
     // A lit cylinder (12 sides) standing on base from y0 to y1, tipped by tilt radians round x.
@@ -2265,6 +2476,8 @@ public final class DbFx {
                 ScreenFx.impactFrame(new int[] {4, 3, 4, 3}, 1, 0xFFFFFF, pos, 0);
                 ScreenShake.start(2f * near, 46);
             }
+            // The Mafuba's white flash between the cuts.
+            case 55 -> ScreenFx.flash(0xFFFDF2, near, 8);
             // The Makankosappo piercing someone: one negative frame.
             case 53 -> {
                 ScreenFx.impactFrame(new int[] {4}, 1, 0xFFFFFF, pos, 0);
