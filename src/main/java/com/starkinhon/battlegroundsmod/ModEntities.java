@@ -94,6 +94,15 @@ public final class ModEntities {
                     .clientTrackingRange(16)
                     .build("naruto_clone"));
 
+    // Sukuna's Malevolent Shrine: static blocky model (domain/MalevolentShrine, /soul santuario).
+    public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.domain.MalevolentShrine>> MALEVOLENT_SHRINE = ENTITY_TYPES.register("malevolent_shrine",
+            () -> EntityType.Builder.<com.starkinhon.battlegroundsmod.domain.MalevolentShrine>of(com.starkinhon.battlegroundsmod.domain.MalevolentShrine::new, MobCategory.MISC)
+                    .sized(1f, 1f)
+                    .noSummon()
+                    .fireImmune()
+                    .clientTrackingRange(16)
+                    .build("malevolent_shrine"));
+
     // SubAlma mobs: each fights with its SubAlma's skills (souls_bosses/<id>.json), as a plain monster.
     public static final Supplier<EntityType<SoulMob>> BYAKUYA = mob("byakuya");
     public static final Supplier<EntityType<SoulMob>> RUKIA = mob("rukia");

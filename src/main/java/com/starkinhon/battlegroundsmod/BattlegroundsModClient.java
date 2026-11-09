@@ -207,6 +207,7 @@ public class BattlegroundsModClient {
         event.registerEntityRenderer(ModEntities.DUMMY.get(), context -> new DummyRenderer<>(context, "steve"));
         event.registerEntityRenderer(ModEntities.DUMMY_ATTACKER.get(), context -> new DummyRenderer<>(context, "kai"));
         event.registerEntityRenderer(ModEntities.AIZEN_ILLUSION.get(), AizenIllusionRenderer::new);
+        event.registerEntityRenderer(ModEntities.MALEVOLENT_SHRINE.get(), com.starkinhon.battlegroundsmod.client.fx.MalevolentShrineRenderer::new);
         // SubAlma mobs (improvised skins; the girls with slim arms) and the Fighters (three looks per tier).
         event.registerEntityRenderer(ModEntities.BYAKUYA.get(), context -> new SoulBossRenderer<>(context, "byakuya", false));
         event.registerEntityRenderer(ModEntities.RUKIA.get(), context -> new SoulBossRenderer<>(context, "rukia", true));
