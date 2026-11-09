@@ -120,6 +120,7 @@ public class BattlegroundsModClient {
         // Before StatusBars: a cancelled layer skips the listeners after it, so its custom bars stay hidden too.
         NeoForge.EVENT_BUS.addListener(RenderGuiLayerEvent.Pre.class, com.starkinhon.battlegroundsmod.client.CutsceneHud::onRenderLayer);
         NeoForge.EVENT_BUS.addListener(RenderGuiLayerEvent.Pre.class, StatusBars::onRenderLayer);
+        NeoForge.EVENT_BUS.addListener(RenderGuiLayerEvent.Post.class, StatusBars::onRenderLayerPost);
         NeoForge.EVENT_BUS.addListener(MovementInputUpdateEvent.class, FaceCutscene::onMovementInput);
         NeoForge.EVENT_BUS.addListener(MovementInputUpdateEvent.class, BossCutscene::onMovementInput);
         NeoForge.EVENT_BUS.addListener(MovementInputUpdateEvent.class, GrabCutscene::onMovementInput);

@@ -15,6 +15,8 @@ import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 
 // Vanilla status bars changed by the mod:
 // - In combat mode the XP bar becomes the ult bar: the same bar tinted red (its title is drawn by BaseAttacks).
+// - Vanilla's action bar message ("Combat mode on!", warnings) is lifted above the base attack selector, so it never
+//   lands on the ult title or the selector.
 // - Above Tier 10 health goes past 20, so the hearts row stays one row of 10 hearts, each one a tenth of the max,
 //   with the real numbers next to it (vanilla would stack dozens of rows).
 public final class StatusBars {
@@ -24,6 +26,9 @@ public final class StatusBars {
     private static final ResourceLocation HEART_FULL = ResourceLocation.withDefaultNamespace("hud/heart/full");
     private static final ResourceLocation HEART_HALF = ResourceLocation.withDefaultNamespace("hud/heart/half");
     private static final int BAR_WIDTH = 182;
+    // Vanilla draws the action bar message's text from guiHeight - 72 down 9 pixels.
+    private static final int OVERLAY_MESSAGE_TOP = 72;
+    private static boolean overlayLifted;
 
     private StatusBars() {
     }
@@ -37,6 +42,17 @@ public final class StatusBars {
         PowerData data = player.getData(ModAttachments.POWER);
         boolean combat = data.hasPower() && data.combat;
         ResourceLocation name = event.getName();
+        if (name.equals(VanillaGuiLayers.OVERLAY_MESSAGE) && BaseAttacks.stackTop != Integer.MIN_VALUE) {
+            GuiGraphics graphics = event.getGuiGraphics();
+            int textTop = graphics.guiHeight() - OVERLAY_MESSAGE_TOP;
+            int lift = textTop + minecraft.font.lineHeight + 3 - BaseAttacks.stackTop;
+            if (lift > 0) {
+                graphics.pose().pushPose();
+                graphics.pose().translate(0, -lift, 0);
+                overlayLifted = true;
+            }
+            return;
+        }
         if (combat && name.equals(VanillaGuiLayers.EXPERIENCE_BAR)) {
             event.setCanceled(true);
             ultBar(event.getGuiGraphics(), data);
@@ -47,6 +63,13 @@ public final class StatusBars {
                 && minecraft.gameMode.canHurtPlayer()) {
             event.setCanceled(true);
             hearts(event.getGuiGraphics(), minecraft, player);
+        }
+    }
+
+    public static void onRenderLayerPost(RenderGuiLayerEvent.Post event) {
+        if (overlayLifted && event.getName().equals(VanillaGuiLayers.OVERLAY_MESSAGE)) {
+            overlayLifted = false;
+            event.getGuiGraphics().pose().popPose();
         }
     }
 
