@@ -49,6 +49,11 @@ public final class SkillSpecs {
         }
     }
 
+    // Whether the skill has a spec file (some poses are only keyframe animations, like gojo.dominio_relampago).
+    public static boolean exists(String id) {
+        return SkillSpecs.class.getResource("/data/" + BattlegroundsMod.MODID + "/souls_skills/" + id + ".json") != null;
+    }
+
     private static JsonObject read(String id) {
         String path = "/data/" + BattlegroundsMod.MODID + "/souls_skills/" + id + ".json";
         try (InputStream in = SkillSpecs.class.getResourceAsStream(path)) {

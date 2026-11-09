@@ -138,9 +138,6 @@ public final class VazioRelampago {
     // and the Susanoo are put out, the guard drops, and their sounds and effects stop.
     public static void breakAll(LivingEntity target) {
         boolean domain = InfiniteVoid.cancel(target);
-        if (!domain) {
-            Tasks.cancelSince(0, owner -> owner == target);
-        }
         if (target.hasData(ModAttachments.POWER)) {
             Katon.cancel(target);
             PowerLogic.interrupt(target);
@@ -149,6 +146,19 @@ public final class VazioRelampago {
             SkillStop.stop(target);
         }
         Defense.stop(target);
+        if (!domain) {
+            // The interrupt first, and the target's own tasks dropped only a couple of ticks later: a move that reads the
+            // interrupt closes itself on its next tick (frees its key, its flags), and only what is still running after
+            // that is cut. Dropping them right away left keys dead for good (Sukuna's Z and B after the boss's Shift+V,
+            // Stark 2026-11-09), and the old cancelSince(0, ...) also dropped every task with no owner in the world.
+            Tasks.addSystem(age -> {
+                if (age < 2) {
+                    return false;
+                }
+                Tasks.cancelOwned(target);
+                return true;
+            });
+        }
     }
 
     // Charging, holding a key, in the middle of a move, or just cast one. A fighter of the mod reads that from its power

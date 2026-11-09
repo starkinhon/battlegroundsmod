@@ -104,6 +104,10 @@ public final class SkillAnimations {
                 SQUARE.add(entityId);
                 return;
             }
+            if (!SkillSpecs.exists(skill)) {
+                // Only the keyframes (gojo.dominio_relampago): nothing more to read.
+                return;
+            }
         }
         String[] parts = skill.split("#");
         if (parts.length > 1 && AgarraoSpec.SKILL.equals(parts[0])) {
@@ -156,6 +160,10 @@ public final class SkillAnimations {
         }
         if (com.starkinhon.battlegroundsmod.skill.DominioSpec.SKILL.equals(skill)) {
             return com.starkinhon.battlegroundsmod.skill.DominioSpec.get(awakened).voidTick();
+        }
+        if (!SkillSpecs.exists(skill)) {
+            // Only a keyframe animation (no spec file): it runs to its own end.
+            return KeyframeAnimation.of(skill).map(a -> (int) Math.ceil(a.length() * 20)).orElse(0);
         }
         int spec = (int) Math.ceil(SkillSpecs.get(skill, AnimationSpec.class, awakened).animationEnd());
         // The skill poses made with tools/poses run to their own end too (it can go a little past the spec's).

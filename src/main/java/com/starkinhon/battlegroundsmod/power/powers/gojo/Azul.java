@@ -66,6 +66,9 @@ public final class Azul {
         int holdStart = -1;
         double reach;
         int scroll;
+        // The game time the Blue's task last ran: a control its task no longer runs (the task dropped from outside)
+        // must not keep swallowing Z for good.
+        long seen;
     }
 
     private static final Map<UUID, Control> CONTROLS = new HashMap<>();
@@ -162,6 +165,12 @@ public final class Azul {
         if (control == null) {
             return false;
         }
+        if (player.level().getGameTime() - control.seen > 40) {
+            // Its task has not run for 2 s (a hold in the air is shorter): the Blue is gone without ending the control,
+            // and Z would stay swallowed for good, whatever power he has now (Stark 2026-11-09).
+            CONTROLS.remove(player.getUUID(), control);
+            return false;
+        }
         control.pressed = true;
         return true;
     }
@@ -246,6 +255,7 @@ public final class Azul {
         data.busyTicks = decide + 2;
 
         Tasks.add(age -> {
+            control.seen = level.getGameTime();
             PowerData now = caster.getData(ModAttachments.POWER);
             boolean casterGone = !caster.isAlive() || caster.isRemoved() || !power.equals(now.power);
             boolean cut = now.interrupts != interrupts;

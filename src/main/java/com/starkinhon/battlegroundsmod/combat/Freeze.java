@@ -135,7 +135,15 @@ public final class Freeze {
                 // A newer hold has them: it is the one that moves them.
                 return false;
             }
-            Vec3 pos = grip.at != null ? grip.at : anchor.apply(age);
+            Vec3 pos;
+            try {
+                pos = grip.at != null ? grip.at : anchor.apply(age);
+            } catch (RuntimeException e) {
+                // a move's anchor that fails must not keep them held for good (every skill is blocked while held)
+                com.starkinhon.battlegroundsmod.BattlegroundsMod.LOGGER.error("Freeze anchor failed", e);
+                release(entity, grip);
+                return true;
+            }
             if (grip.slack > 0) {
                 // their client flies them; the server only steps in when they drift too far
                 if (entity.position().distanceToSqr(pos) > grip.slack * grip.slack && entity instanceof ServerPlayer player) {

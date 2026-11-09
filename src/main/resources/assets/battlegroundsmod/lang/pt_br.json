@@ -49,6 +49,7 @@
   "message.battlegroundsmod.no_target": "Nenhum alvo na mira.",
   "message.battlegroundsmod.sukuna.clivar_miss": "O Clivar não alcançou ninguém.",
   "message.battlegroundsmod.sukuna.b_miss": "A Cravada não alcançou ninguém.",
+  "message.battlegroundsmod.sukuna.b_cant": "A Cravada precisa de você livre e no chão (sem voar, nadar ou estar atordoado).",
   "message.battlegroundsmod.blocked": "Caminho bloqueado.",
   "message.battlegroundsmod.unknown_power": "Alma desconhecida.",
   "message.battlegroundsmod.soul_help": "Comandos do Souls:",

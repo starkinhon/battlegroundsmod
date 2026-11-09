@@ -49,6 +49,7 @@
   "message.battlegroundsmod.no_target": "No target in sight.",
   "message.battlegroundsmod.sukuna.clivar_miss": "The Cleave reached no one.",
   "message.battlegroundsmod.sukuna.b_miss": "The Slam reached no one.",
+  "message.battlegroundsmod.sukuna.b_cant": "The Cravada needs you free and on the ground (not flying, swimming or stunned).",
   "message.battlegroundsmod.blocked": "Path blocked.",
   "message.battlegroundsmod.unknown_power": "Unknown soul.",
   "message.battlegroundsmod.soul_help": "Souls commands:",
