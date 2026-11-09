@@ -670,7 +670,7 @@
   "ability.battlegroundsmod.moon_demon.4.tags": "Sword,Defense,Area,Destruction",
   "item.battlegroundsmod.soul_moon_demon": "Soul: Moon Demon",
   "message.battlegroundsmod.vazio_relampago_ninguem": "No one close enough for the 0.2-second Domain Expansion.",
-  "message.battlegroundsmod.vazio_relampago_dominio": "No 0.2-second Domain Expansion inside a Domain or a Domain clash.",
+  "message.battlegroundsmod.vazio_relampago_dominio": "The 0.2-second Domain Expansion does nothing inside or against a Domain: only your real Expansion (V) holds off the Shrine.",
   "message.battlegroundsmod.vazio_relampago_pego": "Caught charging! 0.2-second Domain Expansion: brain damage and out of stamina.",
   "message.battlegroundsmod.vazio_relampago_atingido": "0.2-second Domain Expansion: technique broken, brain damage.",
   "ability.battlegroundsmod.strongest.8": "0.2-Second Domain Expansion",

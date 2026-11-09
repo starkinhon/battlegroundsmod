@@ -718,6 +718,17 @@ public final class ShrineDomain {
         return false;
     }
 
+    // A Santuário still open (not closing) with entity within its raio, out in the world: whoever it is coming for.
+    public static boolean around(LivingEntity entity) {
+        for (Active active : ACTIVE) {
+            if (active.caster != entity && !active.closing && !active.yielded && active.level == entity.level()
+                    && entity.position().distanceTo(active.center) <= RADIUS) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     // Broken from outside (Gojo's Expansão de 0,2 s on Sukuna while his opens): it closes like his own V closes it, on
     // the next tick of its task (holds let go, everyone back in the world). True when there was one.
     public static boolean cancel(LivingEntity caster) {

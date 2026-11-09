@@ -217,6 +217,9 @@ public final class VazioRelampago {
         return com.starkinhon.battlegroundsmod.power.powers.duel.DomainDuel.fighting(entity)
                 || InfiniteVoid.open(entity) || InfiniteVoid.blocks(entity) || InfiniteVoid.insideAny(entity)
                 || com.starkinhon.battlegroundsmod.power.powers.sukuna.ShrineDomain.open(entity)
+                // A Santuário opening around him: the 0,2 s is a faster, weaker Expansão, it can't stop a whole one; only
+                // his real Expansão (V, the Duelo de Expansões) keeps him from being swallowed (Stark, 2026-11-09).
+                || com.starkinhon.battlegroundsmod.power.powers.sukuna.ShrineDomain.around(entity)
                 || com.starkinhon.battlegroundsmod.power.powers.sukuna.ShrineDomain.blocks(entity)
                 || com.starkinhon.battlegroundsmod.power.powers.sukuna.ShrineDomain.insideAny(entity);
     }
@@ -227,6 +230,7 @@ public final class VazioRelampago {
         return Combat.inRadius(level, caster.position().add(0, 1, 0), radius(caster), caster).stream()
                 .filter(e -> !(e instanceof Player player && (player.isCreative() || player.isSpectator())))
                 .filter(e -> !com.starkinhon.battlegroundsmod.power.powers.duel.DomainDuel.fighting(e)
+                        && !com.starkinhon.battlegroundsmod.power.powers.sukuna.ShrineDomain.open(e)
                         && !InfiniteVoid.insideAny(e)
                         && !com.starkinhon.battlegroundsmod.power.powers.sukuna.ShrineDomain.insideAny(e))
                 .toList();
