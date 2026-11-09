@@ -153,6 +153,13 @@ public final class Melee {
             int extra = SwordArts.comboSwing(attacker, step);
             windUp += extra;
             data.punchDelay += extra;
+        } else if (onHit == null && com.starkinhon.battlegroundsmod.power.powers.sukuna.SukunaMelee.active(attacker)) {
+            // Sukuna: an open hand slashes the air and throws a Dismantle first, then the punch (not on the Dash
+            // Attack's hit, which has its own cut at the start of the dash).
+            int extra = com.starkinhon.battlegroundsmod.power.powers.sukuna.SukunaMelee.comboSwing(attacker, target, step,
+                    (float) golpe.dano() * multiplier(attacker));
+            windUp += extra;
+            data.punchDelay += extra;
         } else {
             PacketDistributor.sendToPlayersTrackingEntityAndSelf(attacker, new ModPayloads.ComboAnimation(attacker.getId(), step));
         }
@@ -327,7 +334,14 @@ public final class Melee {
                 released[0] = charge;
                 releasedAt[0] = age;
                 data.busyTicks = STRONG_HIT_DELAY + 4;
-                anim(player, STRONG_PUNCH);
+                if (com.starkinhon.battlegroundsmod.power.powers.sukuna.SukunaMelee.active(player)) {
+                    // Sukuna: the fist stays cocked while the left hand throws a big Dismantle, then the fist lands.
+                    anim(player, com.starkinhon.battlegroundsmod.power.powers.sukuna.SukunaMelee.FORTE_POSE);
+                    com.starkinhon.battlegroundsmod.power.powers.sukuna.SukunaMelee.forteCut(player, Combat.raycastTarget(player, 6),
+                            25f * mult * (1 + STRONG_CHARGE_BONUS * charge));
+                } else {
+                    anim(player, STRONG_PUNCH);
+                }
                 return false;
             }
             if (age - releasedAt[0] < STRONG_HIT_DELAY) {
@@ -416,13 +430,20 @@ public final class Melee {
                 }
                 return false;
             }
+            boolean sukuna = poses && com.starkinhon.battlegroundsmod.power.powers.sukuna.SukunaMelee.active(player);
             if (poses) {
-                anim(player, BARRAGE_END_POSE);
+                anim(player, sukuna ? com.starkinhon.battlegroundsmod.power.powers.sukuna.SukunaMelee.BARRAGE_END_POSE : BARRAGE_END_POSE);
             }
             Vec3 front = eye.add(look.scale(2));
             PunchFx.swing(level, front, look, fistColor, 1.1f);
             Fx.sound(level, front, SoundEvents.PLAYER_ATTACK_KNOCKBACK, 1.5f, 0.6f);
-            for (LivingEntity target : Combat.inCone(player, range, 0.55)) {
+            List<LivingEntity> finished = Combat.inCone(player, range, 0.55);
+            if (sukuna) {
+                // Sukuna: with the right fist still out, the left hand throws one more Dismantle at whoever flies away.
+                com.starkinhon.battlegroundsmod.power.powers.sukuna.SukunaMelee.barrageCut(player,
+                        finished.stream().min(Comparator.comparingDouble(e -> e.distanceTo(player))).orElse(null), finisherDamage);
+            }
+            for (LivingEntity target : finished) {
                 if (Combat.hurtBase(player, target, finisherDamage)) {
                     hitFx(player, target, "final");
                     Stamina.gain(player, StaminaSpec.get().ganhoAcertoPct());

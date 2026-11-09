@@ -40,6 +40,8 @@ public final class FxShaders {
     static ShaderInstance fugaRing;
     static ShaderInstance fugaGlow;
     static ShaderInstance fugaOrb;
+    // Sukuna's thrown Dismantle (DismantleRenderer); without it the cuts still hit, they just don't show.
+    static ShaderInstance dismantle;
 
     private static Boolean irisPresent;
 
@@ -75,6 +77,12 @@ public final class FxShaders {
             register(event, "souls_fuga_orb", DefaultVertexFormat.POSITION, s -> fugaOrb = s);
         } catch (Exception e) {
             BattlegroundsMod.LOGGER.error("Could not load the Fuga shaders", e);
+        }
+        // On its own: a problem here only hides Sukuna's thrown Dismantle.
+        try {
+            register(event, "souls_dismantle", DefaultVertexFormat.POSITION_TEX, s -> dismantle = s);
+        } catch (Exception e) {
+            BattlegroundsMod.LOGGER.error("Could not load the Dismantle shader", e);
         }
         // On its own, so a problem here never takes the other effects down (the Gojo's Expansão de 0,2 s just won't show).
         try {
