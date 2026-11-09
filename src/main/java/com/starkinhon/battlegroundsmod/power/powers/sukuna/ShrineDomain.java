@@ -339,7 +339,7 @@ public final class ShrineDomain {
     }
 
     private static void hold(Active active, LivingEntity victim) {
-        Runnable old = active.holds.put(victim, Freeze.hold(victim, HOLD_STEP + 1));
+        Runnable old = active.holds.put(victim, Freeze.holdLoose(victim, HOLD_STEP + 1, spot -> within(active, spot)));
         if (old != null) {
             old.run();
         }
@@ -542,6 +542,18 @@ public final class ShrineDomain {
         put(entity, new Vec3(active.center.x + rel.x, active.arena.y, active.center.z + rel.z));
     }
 
+    // spot, put back within the barrier when past it (where a hit can throw someone paralyzed, Freeze.holdLoose).
+    private static Vec3 within(Active active, Vec3 spot) {
+        double dx = spot.x - active.center.x;
+        double dz = spot.z - active.center.z;
+        double r = Math.sqrt(dx * dx + dz * dz);
+        double max = RADIUS - 1.5;
+        if (r <= max) {
+            return spot;
+        }
+        return new Vec3(active.center.x + dx * max / r, spot.y, active.center.z + dz * max / r);
+    }
+
     // The floor holds everyone up, and the barrier keeps everyone within its raio.
     private static void floor(Active active) {
         double y = active.arena.y;
@@ -572,6 +584,8 @@ public final class ShrineDomain {
                 double k = (RADIUS - 1.5) / r;
                 entity.setPos(active.center.x + dx * k, entity.getY(), active.center.z + dz * k);
             }
+            // No blocks up here, so no paths: mobs walk straight at whoever they hunt (DomainSpace.steer).
+            com.starkinhon.battlegroundsmod.power.powers.DomainSpace.steer(entity, y);
             if (entity.getY() < y) {
                 entity.setPos(entity.getX(), y, entity.getZ());
             }
@@ -741,6 +755,24 @@ public final class ShrineDomain {
             }
         }
         return any;
+    }
+
+    // The height of the floor when entity is up in the Santuário's space, NaN otherwise (see DomainSpace).
+    public static double floorY(LivingEntity entity) {
+        Active active = insideOf(entity);
+        return active != null ? active.arena.y : Double.NaN;
+    }
+
+    // A move of entity's to spot stays within the barrier it is up in (always true outside one).
+    public static boolean keepsInside(LivingEntity entity, Vec3 spot) {
+        Active active = insideOf(entity);
+        if (active == null) {
+            return true;
+        }
+        double dx = spot.x - active.center.x;
+        double dz = spot.z - active.center.z;
+        double r = RADIUS - 1.5;
+        return dx * dx + dz * dz <= r * r;
     }
 
     private static Active insideOf(LivingEntity entity) {

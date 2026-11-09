@@ -6,11 +6,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.IntFunction;
+import java.util.function.UnaryOperator;
 
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.RelativeMovement;
 import net.minecraft.world.phys.Vec3;
 
@@ -27,6 +29,11 @@ public final class Freeze {
         final double slack;
         final float startYaw;
         final float startPitch;
+        // holdLoose: paralyzed, not nailed. Hits still throw them, but only within this (the expansion's barrier); null
+        // for every other hold.
+        UnaryOperator<Vec3> bound;
+        // The throw of the last hit, carried out a tick at a time and dying off (mobs; players' own clients fly them).
+        Vec3 push;
         // Set by place: where this hold keeps them, over its own anchor.
         Vec3 at;
         int age;
@@ -84,6 +91,24 @@ public final class Freeze {
     // Same, but the entity is kept at anchor(age) each tick instead of where it stood (used to carry someone around).
     public static Runnable hold(LivingEntity entity, int ticks, IntFunction<Vec3> anchor) {
         return hold(entity, ticks, anchor, false);
+    }
+
+    // Paralyzed inside an expansion (Gojo's Vazio Infinito, Sukuna's Santuário): they can't walk, attack or use skills,
+    // but a hit still throws them like anyone, never past the barrier (bound puts a spot back inside it). Stark,
+    // 2026-11-09: "o mob pode ser movido por hits e dano, pra n ficar totalmente paralisado no msm lugar, só que sem
+    // conseguir sair da barreira da expansão".
+    public static Runnable holdLoose(LivingEntity entity, int ticks, UnaryOperator<Vec3> bound) {
+        Vec3 pos = entity.position();
+        Hold before = HELD.get(entity);
+        // The expansions renew their hold every few ticks: a throw still going on carries over to the new one.
+        Vec3 push = before != null && before.top() != null ? before.top().push : null;
+        Runnable release = hold(entity, ticks, age -> pos, false, 0);
+        Hold hold = HELD.get(entity);
+        if (hold != null && hold.top() != null) {
+            hold.top().bound = bound;
+            hold.top().push = push;
+        }
+        return release;
     }
 
     // Same as hold, but the camera stays free: they can't walk, jump, attack or use skills, yet can turn and look around
@@ -157,6 +182,14 @@ public final class Freeze {
                 entity.resetFallDistance();
                 return false;
             }
+            if (grip.bound != null) {
+                Vec3 thrown = loose(entity, grip, pos);
+                if (thrown == null) {
+                    // A player just hit: their own client flies them (the knockback it was sent); kept inside only.
+                    return false;
+                }
+                pos = thrown;
+            }
             entity.setDeltaMovement(Vec3.ZERO);
             if (hold.lookFree()) {
                 // Only the position is put back; the rotation is sent as relative zero so the camera is never yanked.
@@ -185,6 +218,42 @@ public final class Freeze {
             return false;
         });
         return () -> release(entity, grip);
+    }
+
+    // A loose hold's tick: where they are kept now that a hit may have thrown them. null for a player in the middle of a
+    // hit (their client moves them; the server only keeps them inside the barrier).
+    private static Vec3 loose(LivingEntity entity, Grip grip, Vec3 pos) {
+        if (entity instanceof ServerPlayer player) {
+            Vec3 here = player.position();
+            if (player.hurtTime <= 0) {
+                return pos;
+            }
+            Vec3 inside = grip.bound.apply(here);
+            if (inside.distanceToSqr(here) > 1.0E-4) {
+                lookFreeTeleport(player, new Vec3(inside.x, here.y, inside.z));
+            }
+            grip.at = new Vec3(inside.x, pos.y, inside.z);
+            return null;
+        }
+        Vec3 v = entity.getDeltaMovement();
+        if (v.horizontalDistanceSqr() > 0.0025 && (grip.push == null || v.horizontalDistanceSqr() > grip.push.horizontalDistanceSqr())) {
+            // A hit's knockback: thrown from where they are kept.
+            grip.push = new Vec3(v.x, 0, v.z);
+        }
+        if (grip.push == null) {
+            return pos;
+        }
+        entity.setDeltaMovement(Vec3.ZERO);
+        entity.setPos(pos.x, pos.y, pos.z);
+        entity.move(MoverType.SELF, grip.push);
+        Vec3 inside = grip.bound.apply(entity.position());
+        Vec3 next = new Vec3(inside.x, pos.y, inside.z);
+        grip.at = next;
+        grip.push = grip.push.scale(0.7);
+        if (grip.push.horizontalDistanceSqr() < 0.0025) {
+            grip.push = null;
+        }
+        return next;
     }
 
     // Moves a player without touching the camera. Vanilla's relative teleport sends (yaw - current yaw) and also sets the

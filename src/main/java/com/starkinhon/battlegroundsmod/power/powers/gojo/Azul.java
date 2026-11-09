@@ -163,6 +163,23 @@ public final class Azul {
         return null;
     }
 
+    // One of owner's Blues is still out (flying, parked, following, circling or shot). The Gojo boss doesn't throw a
+    // second one on top of it.
+    public static boolean out(LivingEntity owner) {
+        for (Live l : LIVE) {
+            if (l.owner == owner && l.level == owner.level() && l.alive()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // How far a boss's tap reaches: past this the orb would lock in the empty air between him and the target
+    // (tapTarget stops it at clique.distancia), so a boss throws a charged one instead.
+    public static double tapReach(boolean awakened) {
+        return AzulSpec.get(awakened).clique().distancia() * 2;
+    }
+
     private Azul() {
     }
 
@@ -221,7 +238,11 @@ public final class Azul {
         // charged one does after.
         // A boss with tactics (the Gojo boss) says how this time: tap or charge, how much, and the plan (BossOrder).
         BossOrder.Order order = BossOrder.take(caster);
-        boolean bossHolds = order != null ? order.hold() : RANDOM.nextDouble() < 0.67;
+        // Without an order (chaos, gamerule soulbotscaoticos) a target out of the tap's reach still gets a charged one:
+        // a tap would only lock halfway, in the empty air (Stark, 2026-11-09: "o Azul aleatório").
+        boolean farTarget = caster instanceof Mob far && far.getTarget() != null
+                && far.getTarget().distanceTo(caster) > clique.distancia() * 2;
+        boolean bossHolds = order != null ? order.hold() : farTarget || RANDOM.nextDouble() < 0.67;
         int bossCharge = order != null ? Math.max(4, (int) Math.round(chargeTicks * Mth.clamp(order.charge(), 0, 1)))
                 : Math.max(4, chargeTicks / 3 + RANDOM.nextInt(Math.max(1, chargeTicks)));
         BossPlan orderedPlan = order != null ? BossPlan.named(order.plan()) : null;
@@ -370,7 +391,8 @@ public final class Azul {
                     }
                     // Z again: a tap parks it or sends it back to following; held, it is shot (following) or circles
                     // him (parked), on its own until it ends.
-                    if (bossPlan[0] != null && age >= bossAt[0] && !cut) {
+                    if (bossPlan[0] != null && age >= bossAt[0] && !cut
+                            && !parkTooSoon(caster, bossPlan[0], phase[0], orb[0], radius[0], age - lifeStart[0])) {
                         // A boss "presses Z" by itself: the plan picked when it let the Blue go.
                         BossPlan doing = bossPlan[0];
                         bossPlan[0] = doing.next();
@@ -570,6 +592,21 @@ public final class Azul {
     // What a boss's charged Blue does once out, like a player pressing Z: keeps chasing the target until it implodes (and
     // eats the ground under them when charged enough), is shot at them, parks there (sometimes chasing again after), or
     // parks and then circles the boss. Each step has its own wait (delay) after the one before; next() is the step after.
+    // A boss parks its Blue on the target, not in the empty air on the way there (Stark, 2026-11-09: the Gojo boss left
+    // it parked halfway, "o Azul aleatório"): while it follows it keeps going until it reaches them, for at most
+    // PARK_WAIT ticks (a target it can't reach still gets it parked).
+    private static final int PARK_WAIT = 70;
+
+    private static boolean parkTooSoon(LivingEntity caster, BossPlan plan, Phase phase, Vec3 orb, double radius, int following) {
+        boolean parks = plan == BossPlan.PARK || plan == BossPlan.PARK_THEN_UNPARK || plan == BossPlan.PARK_THEN_ORBIT
+                || plan == BossPlan.IRRESTRITO;
+        if (!parks || phase != Phase.FOLLOW || following >= PARK_WAIT || !(caster instanceof Mob mob)
+                || mob.getTarget() == null || !mob.getTarget().isAlive()) {
+            return false;
+        }
+        return orb.distanceTo(Combat.center(mob.getTarget())) > Math.max(3, radius * 1.5);
+    }
+
     private enum BossPlan {
         // IRRESTRITO: chases the target a little, then parks on it and stays there, waiting for the Red (the Unlimited
         // Purple, ordered by the Gojo boss's tactics).
