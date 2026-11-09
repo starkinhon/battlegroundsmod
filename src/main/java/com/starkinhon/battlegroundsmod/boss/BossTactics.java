@@ -40,6 +40,12 @@ public interface BossTactics {
         return null;
     }
 
+    // A technique this boss uses as freely as its punches: no gap after other techniques, and it opens none
+    // (Sukuna's Desmantelar taps).
+    default boolean basic(String name) {
+        return false;
+    }
+
     // What it is thinking, for /soul boss debug.
     default String mood() {
         return "";

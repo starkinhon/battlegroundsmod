@@ -1,6 +1,7 @@
 package com.starkinhon.battlegroundsmod.boss;
 
 import com.starkinhon.battlegroundsmod.combat.Combat;
+import com.starkinhon.battlegroundsmod.movement.Movement;
 import com.starkinhon.battlegroundsmod.power.BossOrder;
 import com.starkinhon.battlegroundsmod.power.powers.sukuna.ModelBar;
 
@@ -120,7 +121,8 @@ final class SukunaTactics extends TacticsBase {
                 m *= strongFoe ? 1.2 : 1;
             }
             case "desmantelar" -> {
-                m *= distance >= 6 ? 1.3 : 1;
+                // Up close too: the cut leaves the hand right in their face (Stark).
+                m *= distance <= 4 ? 1.8 : distance >= 6 ? 1.4 : 1.2;
                 m *= fleeing ? 1.5 : 1;
                 m *= crowd >= 1 ? 1.3 : 1;
             }
@@ -152,7 +154,9 @@ final class SukunaTactics extends TacticsBase {
             }
         }
         // Playing: punches and quick cuts; serious: the techniques.
-        if (!serious) {
+        if ("desmantelar".equals(name)) {
+            // His main technique: as often playing as serious.
+        } else if (!serious) {
             m *= combo || "forte".equals(name) || "barragem".equals(name) ? 1.3 : 0.8;
         } else {
             m *= "forte".equals(name) || "barragem".equals(name) ? 0.8 : 1.1;
@@ -180,7 +184,7 @@ final class SukunaTactics extends TacticsBase {
                 yield BossOrder.Order.charged(c);
             }
             case "desmantelar" -> {
-                if ("desmonte".equals(combo)) {
+                if ("desmonte".equals(combo) || "recua_e_corta".equals(combo)) {
                     yield new BossOrder.Order(false, 0, "COMBO3", false);
                 }
                 // The tap combo (2 or 3), more often serious; a single tap to catch someone running.
@@ -194,6 +198,37 @@ final class SukunaTactics extends TacticsBase {
             }
             default -> null;
         };
+    }
+
+    // "recuar": opens a little room before the Desmantelar (Stark, 2026-11-09): a hop back, a dash back or to a side,
+    // whichever is ready; nothing ready = he cuts point blank anyway.
+    @Override
+    public Boolean step(SoulBossAI ai, String step, int stepAge) {
+        if (!"recuar".equals(step)) {
+            return null;
+        }
+        LivingEntity target = ai.target();
+        if (target == null) {
+            return true;
+        }
+        ai.lookAt(Combat.center(target), 360);
+        float side = random.nextBoolean() ? 1 : -1;
+        double roll = random.nextDouble();
+        boolean moved = roll < 0.35 ? Movement.backstep(boss)
+                : roll < 0.65 ? Movement.tryPerform(boss, Movement.Kind.DASH, -1, 0)
+                        : Movement.tryPerform(boss, Movement.Kind.DASH, 0, side);
+        if (!moved) {
+            moved = Movement.backstep(boss) || Movement.tryPerform(boss, Movement.Kind.DASH, 0, side);
+        }
+        ai.say(moved ? "abrindo distancia pro Desmantelar" : "queima-roupa");
+        return true;
+    }
+
+    // The Desmantelar taps are his main technique (Stark, 2026-11-09: "quase tanto quanto ataca com golpes normais"):
+    // they go between punches with no wait for the other techniques.
+    @Override
+    public boolean basic(String name) {
+        return "desmantelar".equals(name);
     }
 
     @Override
