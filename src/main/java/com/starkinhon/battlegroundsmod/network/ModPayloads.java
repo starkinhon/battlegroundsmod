@@ -465,6 +465,24 @@ public final class ModPayloads {
         }
     }
 
+    // Server -> client: Sukuna's Fuga (power/powers/sukuna/Fuga, drawn by client/fx/FugaRenderer). phase START: it begins
+    // forming on casterId now; SHOT: the arrow leaves from pos along dir; HIT: it burst at pos (dir: the way it flew);
+    // STOP: cut off before the shot.
+    public record FugaFx(int casterId, int phase, Vec3 pos, Vec3 dir) implements CustomPacketPayload {
+        public static final Type<FugaFx> TYPE = payloadType("fuga_fx");
+        public static final StreamCodec<ByteBuf, FugaFx> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, FugaFx::casterId,
+                ByteBufCodecs.VAR_INT, FugaFx::phase,
+                VEC3, FugaFx::pos,
+                VEC3, FugaFx::dir,
+                FugaFx::new);
+
+        @Override
+        public Type<FugaFx> type() {
+            return TYPE;
+        }
+    }
+
     // Server -> client: the neck grab's cutscene for the two fighters. The camera cuts in now; the slam lands at impactTick.
     public record GrabCutscene(int casterId, int targetId, boolean awakened, int impactTick) implements CustomPacketPayload {
         public static final Type<GrabCutscene> TYPE = payloadType("grab_cutscene");
@@ -1255,6 +1273,8 @@ public final class ModPayloads {
                 () -> ClientHooks.stopOwnerFx(payload.owner())));
         registrar.playToClient(SusanooArm.TYPE, SusanooArm.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.susanooArm(payload.casterId(), payload.targetId(), payload.phase(), payload.a(), payload.b())));
+        registrar.playToClient(FugaFx.TYPE, FugaFx.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.fuga(payload.casterId(), payload.phase(), payload.pos(), payload.dir())));
         registrar.playToClient(ShoulderCutscene.TYPE, ShoulderCutscene.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.shoulderCutscene(payload.casterId(), payload.targetId(), payload.ticks())));
         registrar.playToClient(GrabCutscene.TYPE, GrabCutscene.STREAM_CODEC, (payload, context) -> context.enqueueWork(

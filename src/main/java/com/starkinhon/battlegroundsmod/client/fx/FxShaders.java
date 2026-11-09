@@ -32,6 +32,14 @@ public final class FxShaders {
     static ShaderInstance voidFlash;
     // The procedural smoke particles (SmokeParticle); without it they just don't draw.
     static ShaderInstance smoke;
+    // Sukuna's Fuga (FugaRenderer); without them the Fuga only darkens the world.
+    static ShaderInstance fugaFlame;
+    static ShaderInstance fugaArrow;
+    static ShaderInstance fugaVol;
+    static ShaderInstance fugaExp;
+    static ShaderInstance fugaRing;
+    static ShaderInstance fugaGlow;
+    static ShaderInstance fugaOrb;
 
     private static Boolean irisPresent;
 
@@ -55,6 +63,18 @@ public final class FxShaders {
             register(event, "souls_smoke", DefaultVertexFormat.NEW_ENTITY, s -> smoke = s);
         } catch (Exception e) {
             BattlegroundsMod.LOGGER.error("Could not load the smoke shader", e);
+        }
+        // On their own: a problem here only hides the Fuga's fire.
+        try {
+            register(event, "souls_fuga_flame", DefaultVertexFormat.POSITION_TEX, s -> fugaFlame = s);
+            register(event, "souls_fuga_arrow", DefaultVertexFormat.POSITION_TEX, s -> fugaArrow = s);
+            register(event, "souls_fuga_vol", DefaultVertexFormat.POSITION, s -> fugaVol = s);
+            register(event, "souls_fuga_exp", DefaultVertexFormat.POSITION, s -> fugaExp = s);
+            register(event, "souls_fuga_ring", DefaultVertexFormat.POSITION_TEX, s -> fugaRing = s);
+            register(event, "souls_fuga_glow", DefaultVertexFormat.POSITION_TEX_COLOR, s -> fugaGlow = s);
+            register(event, "souls_fuga_orb", DefaultVertexFormat.POSITION, s -> fugaOrb = s);
+        } catch (Exception e) {
+            BattlegroundsMod.LOGGER.error("Could not load the Fuga shaders", e);
         }
         // On its own, so a problem here never takes the other effects down (the Gojo's Expansão de 0,2 s just won't show).
         try {
