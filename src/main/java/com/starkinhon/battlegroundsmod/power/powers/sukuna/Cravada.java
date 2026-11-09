@@ -147,6 +147,11 @@ public final class Cravada {
     // The uppercut landed: from here the two of them fly on BTrack, in his frame at this moment.
     private static void launch(LivingEntity caster, LivingEntity target, ServerLevel level, PowerData data, int seed) {
         Capture.take(target);
+        // Whatever the target was doing ends here (Stark 2026-11-09: caught in the middle of Madara's attack, the attack
+        // kept moving and holding him, so the two of them ended up apart while the animation played on): its moves are
+        // cut off and the holds they put on it let go, so the only thing moving it is this.
+        PowerLogic.interrupt(target);
+        Freeze.freeOwn(target);
         Vec3 fwd = flatTo(caster, target);
         Vec3 left = new Vec3(fwd.z, 0, -fwd.x);
         float yRot = (float) (Mth.atan2(-fwd.x, fwd.z) * Mth.RAD_TO_DEG);
@@ -179,6 +184,9 @@ public final class Cravada {
             }
             return age >= BTrack.IMPACT - 1 ? onGround(level, feet, groundT, target) : feet;
         });
+        // the holds are this move's: if another one takes either of them (a counter, a cutscene, a grab), it stops
+        // instead of playing on with the two of them somewhere else
+        net.minecraft.world.entity.Entity holdsCaster = Freeze.holder(caster), holdsTarget = Freeze.holder(target);
         int total = BTrack.BURST + 12;
         data.busyTicks = Math.max(data.busyTicks, total);
         Stun.apply(target, BTrack.BURST + 10);
@@ -189,7 +197,9 @@ public final class Cravada {
         int interrupts = data.interrupts;
         Tasks.add(age -> {
             boolean alive = target.isAlive() && !target.isRemoved();
-            if (!caster.isAlive() || data.interrupts != interrupts) {
+            boolean taken = age > 0 && age < total && (Freeze.holder(caster) != holdsCaster
+                    || alive && age < BTrack.BURST && Freeze.holder(target) != holdsTarget);
+            if (!caster.isAlive() || data.interrupts != interrupts || taken) {
                 freeCaster.run();
                 freeTarget.run();
                 BUSY.remove(caster);

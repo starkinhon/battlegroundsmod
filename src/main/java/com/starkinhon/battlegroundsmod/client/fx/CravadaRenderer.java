@@ -627,7 +627,11 @@ public final class CravadaRenderer {
         if (age >= BTrack.LAND - 2) {
             at = new Vec3(at.x, Math.max(at.y, groundUnder(at, 3)), at.z);
         }
-        player.setDeltaMovement(at.subtract(player.position()));
+        // put on the track, not pushed toward it: a push collides with whatever stands in the way (a step, a tree, the
+        // target's own ground a block higher) and left him behind until the server threw him back, in jumps (Stark
+        // 2026-11-09). The tick still starts from where he was, so the view glides between the two.
+        player.setPos(at.x, at.y, at.z);
+        player.setDeltaMovement(Vec3.ZERO);
         player.fallDistance = 0;
     }
 
