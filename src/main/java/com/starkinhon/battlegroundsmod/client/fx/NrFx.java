@@ -864,17 +864,36 @@ final class NrFx {
             nrBolt(sky, tgt, tk * 3 + 1, 0.12f, BOLT_HOT, fd, 0.14f, 16, 3);
             bb(add(tgt, 0, 1, 0), 8 * fd, 0, FxDraw.SOFT, 0.3f, BOLT, 0.5f * fd, true);
         }
-        nrHit(tgt, h, BOLT, 2.2f, 7, 16);
+        // The blast's reach comes in f.a (8 blocks since Stark asked for a bigger, electric blast; 3.4 before).
+        float R = f.a > 0 ? f.a : 3.4f;
+        float big = R / 3.4f;
+        nrHit(tgt, h, BOLT, 2.2f * Math.min(2, big), 7, 16);
         if (h < 30) {
-            dsk(add(floor, 0, 0.04f, 0), UP, 2 + h * 0.5f, FxDraw.RING, 0.1f, BOLT, 1 - h / 30, true);
+            dsk(add(floor, 0, 0.04f, 0), UP, 2 + h * 0.5f * big, FxDraw.RING, 0.1f, BOLT, 1 - h / 30, true);
         }
-        dsk(add(floor, 0, 0.03f, 0), UP, 3.4f, FxDraw.SOFT, 0.1f, new float[] {0.04f, 0.04f, 0.06f}, 0.85f * smooth(h / 4) * (1 - smooth((h - 30) / 14)), false);
+        dsk(add(floor, 0, 0.03f, 0), UP, R, FxDraw.SOFT, 0.1f, new float[] {0.04f, 0.04f, 0.06f}, 0.85f * smooth(h / 4) * (1 - smooth((h - 30) / 14)), false);
         if (h < 40) {
-            for (int j = 0; j < 6; j++) {
-                nrBolt(add(floor, 0, 0.05f, 0), add(floor, Mth.cos(j + tk) * 3, 0.05f, Mth.sin(j + tk) * 3), tk * 11 + j, 0.04f, BOLT, 1 - h / 40, 0.3f, 6, 1);
+            int n = 6 + (int) (4 * big);
+            for (int j = 0; j < n; j++) {
+                float ang = j * 6.2832f / n + hash(j, tk, 5) * 0.6f;
+                float len = R * (0.6f + 0.5f * hash(j, tk, 6));
+                nrBolt(add(floor, 0, 0.05f, 0), add(floor, Mth.cos(ang) * len, 0.05f, Mth.sin(ang) * len), tk * 11 + j, 0.04f, BOLT, 1 - h / 40, 0.3f, 6, 1);
             }
         }
-        nrDust(floor, h - 2, 15, 16, 1.6f, new float[] {0.4f, 0.4f, 0.45f}, 34);
+        // The smoke is lit from inside: short bolts jumping up through it while it rises.
+        if (h > 2 && h < 34) {
+            for (int j = 0; j < 4; j++) {
+                if (hash(j, tk, 7) < 0.45f) {
+                    continue;
+                }
+                float ang = hash(j, tk, 8) * 6.2832f;
+                float rr = R * 0.7f * hash(j, tk, 9);
+                Vector3f lo = add(floor, Mth.cos(ang) * rr, 0.5f + hash(j, tk, 10) * 1.5f, Mth.sin(ang) * rr);
+                nrBolt(lo, add(lo, (hash(j, tk, 11) - 0.5f) * 2, 1.5f + hash(j, tk, 12) * 2.5f * big, (hash(j, tk, 13) - 0.5f) * 2), tk * 13 + j, 0.04f, BOLT_HOT,
+                        1 - h / 34, 0.3f, 7, 1);
+            }
+        }
+        nrDust(floor, h - 2, 15, 16, 1.6f * big, new float[] {0.4f, 0.4f, 0.45f}, 34);
     }
 
     // Sasuke's afterimage: a red streak to where he went and a fading dark copy where he stood.

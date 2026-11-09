@@ -68,8 +68,8 @@ public final class Gaara {
 
     private static boolean sandHand(LivingEntity caster, ServerLevel level) {
         SubCommon.Guard guard = SubCommon.guard(caster);
-        LivingEntity target = NrCommon.target(caster, 24);
-        Vec3 goal = target != null ? target.position() : SubCommon.ground(level, SubCommon.aimPoint(caster, 24));
+        LivingEntity target = NrCommon.target(caster, 34);
+        Vec3 goal = target != null ? target.position() : SubCommon.ground(level, SubCommon.aimPoint(caster, 34));
         Vec3 dir = SubCommon.flat(goal.subtract(caster.position()));
         Vec3 flatMe = new Vec3(caster.getX(), goal.y, caster.getZ());
         Vec3 base0 = goal.subtract(dir.scale(4.6));

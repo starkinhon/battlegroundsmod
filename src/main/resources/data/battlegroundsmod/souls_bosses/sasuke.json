@@ -117,7 +117,7 @@
       "recargaMaxTicks": 340,
       "avisoTicks": 4,
       "distanciaMin": 3,
-      "distanciaMax": 10,
+      "distanciaMax": 20,
       "giroGrausPorTick": 12,
       "avisoCor": "#bfe4ff",
       "avisoSom": "minecraft:entity.bee.loop_aggressive"
@@ -156,7 +156,7 @@
       "recargaMaxTicks": 1700,
       "avisoTicks": 14,
       "distanciaMin": 4,
-      "distanciaMax": 24,
+      "distanciaMax": 40,
       "giroGrausPorTick": 12,
       "avisoCor": "#bfe4ff",
       "avisoSom": "minecraft:entity.lightning_bolt.thunder"

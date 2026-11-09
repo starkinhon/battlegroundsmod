@@ -28,7 +28,7 @@ import net.minecraft.world.phys.Vec3;
 
 // Kakashi (SubAlma of Naruto, tier 7), the Visualizador's Kakashi tab.
 // Z Raiton: Raiju Tsuiga: the Raikiri in his hand becomes a hound of lightning when he drives the hand into the ground. It
-//   runs along the ground and follows the target even if it dodges (3 s or 14 blocks), and bites: damage and 1 s paralysis.
+//   runs along the ground and follows the target even if it dodges (3 s or 24 blocks), and bites: damage and 2 s paralysis.
 // X Kamui: the Mangekyo turns and the space round the target twists into a spiral: it is pulled into another dimension and
 //   is out of the fight for 4 s (can't hit, can't be hit), then spat back out, hurt. His sight blurs for 2 s after.
 // C Sharingan Copy: the last skill ANYONE used near him in the last 10 s (a Soul, a SubAlma or a boss, any move of the mod)
@@ -49,13 +49,13 @@ public final class Kakashi {
 
     private static boolean raiju(LivingEntity caster, ServerLevel level) {
         SubCommon.Guard guard = SubCommon.guard(caster);
-        LivingEntity target = NrCommon.target(caster, 22);
+        LivingEntity target = NrCommon.target(caster, 32);
         int ball = SubNet.newId();
         int dog = SubNet.newId();
         int ground = 40;
         int run = 52;
         double speed = 0.45;
-        double maxRun = 14;
+        double maxRun = 24;
         SubCommon.pose(caster, "nr.raikiri");
         SubCommon.busy(caster, run + 4);
         Vec3[] head = {null};
@@ -106,7 +106,7 @@ public final class Kakashi {
             }
             if (bitten != null) {
                 Combat.hurtMagic(caster, bitten, 11);
-                NrCommon.paralyze(level, bitten, 20);
+                NrCommon.paralyze(level, bitten, 40);
                 DbCommon.hit(level, Combat.center(bitten), 1, Db.BLUE);
                 DbCommon.screen(level, Combat.center(bitten), 0);
                 SubCommon.sound(level, bitten.position(), SoundEvents.WOLF_GROWL, 1.2f, 1.2f);
@@ -125,7 +125,7 @@ public final class Kakashi {
     // ---------- X: Kamui ----------
 
     private static boolean kamui(LivingEntity caster, ServerLevel level) {
-        LivingEntity target = NrCommon.target(caster, 24);
+        LivingEntity target = NrCommon.target(caster, 34);
         if (target == null) {
             SubCommon.warn(caster, "kakashi.no_target");
             return false;
