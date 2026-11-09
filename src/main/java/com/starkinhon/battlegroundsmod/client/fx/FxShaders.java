@@ -46,6 +46,8 @@ public final class FxShaders {
     static ShaderInstance dismantle;
     // Sukuna's technique cuts (SukunaCutsRenderer: the Z, the chant, the World Cutting Slash, the Shift+Z lines).
     static ShaderInstance sukunaFx;
+    // The Clivar's grid over a body (ClivarRenderer).
+    static ShaderInstance clivar;
     // Sukuna's Expansão de Domínio (SukunaDomainScene); without them the domain still works, just without its look.
     static ShaderInstance sdSky;
     static ShaderInstance sdFloor;
@@ -118,6 +120,12 @@ public final class FxShaders {
             register(event, "souls_sukuna_fx", DefaultVertexFormat.POSITION_TEX, s -> sukunaFx = s);
         } catch (Exception e) {
             BattlegroundsMod.LOGGER.error("Could not load the Sukuna cuts shader", e);
+        }
+        // On its own: a problem here only hides the grid over the Clivar's target (the hit still lands).
+        try {
+            register(event, "souls_clivar", DefaultVertexFormat.NEW_ENTITY, s -> clivar = s);
+        } catch (Exception e) {
+            BattlegroundsMod.LOGGER.error("Could not load the Clivar grid shader", e);
         }
         // On its own, so a problem here never takes the other effects down (the Gojo's Expansão de 0,2 s just won't show).
         try {

@@ -151,7 +151,7 @@ public final class SukunaCutsRenderer {
     // ---------- drawing ----------
 
     // The uniforms of one quad: everything is set for every quad, so nothing leaks from the one before.
-    private static final class U {
+    static final class U {
         float mode, a = 1, heat, tear, t, seed, s0 = -9, s1 = 9, tearSeed, len = 1, n = 3, asp = 1, rot, kind, grow = 1, close, flash, skew = 1,
                 rough = 0.5f, o = 1, w = 0.5f, blood, thin = 1, px, fine, halo = 0.5f;
 

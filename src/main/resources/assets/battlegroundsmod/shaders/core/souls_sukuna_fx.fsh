@@ -14,6 +14,12 @@
 //     (Close), breaking and burning (Tear); S0..S1 is the part of the whole stroke this quad holds. The quad is twice as
 //     tall as the line so the glow has room.
 //   6 slit: the groove left on the ground, black with a white rim (Blood: a hint of red).
+//   7 strip: the waffle's streaks.
+//   8 grid: the Clivar's grid on a flat face (the wall): N lines across each way, each drawn in at its own moment as
+//     Grow goes 0 -> 1, fading in along its length (the preview's gridMat).
+//   9 zig: a white zigzag bit from the grid breaking up (Seed picks how many teeth).
+//   10 cell: one face of a cell the body comes apart into (lethal Clivar): black with a white edge, opaque.
+//   11 blood: the pool under a body cut apart, growing to Grow (0..1 of the quad), ragged edge.
 uniform float Mode;
 uniform float A;
 uniform float Heat;
@@ -233,6 +239,46 @@ vec4 strip() {
     return vec4(c, on * ends * 0.7);
 }
 
+vec4 grid() {
+    vec2 q = vUv * N + 0.5;
+    vec2 f = abs(fract(q) - 0.5);
+    vec2 id = floor(q);
+    float line = 0.0;
+    for (int i = 0; i < 2; i++) {
+        float fi = i == 0 ? f.x : f.y;
+        float ii = i == 0 ? id.x : id.y;
+        float along = i == 0 ? vUv.y : vUv.x;
+        float h = h21(vec2(ii * 1.7 + float(i) * 31.0, 7.0 + Seed));
+        float pr = clamp((Grow * 1.45 - h) / 0.45, 0.0, 1.0);
+        float r = vn(vec2(along * N * 2.2 + ii * 0.37, float(i) * 5.0 + ii));
+        float show = smoothstep(r - 0.12, r + 0.12, pr * 1.24 - 0.12) * smoothstep(0.0, 0.35, pr);
+        float wd = mix(0.02, 0.06, smoothstep(0.0, 1.0, pr));
+        line = max(line, (1.0 - smoothstep(wd, wd + 0.05, fi)) * show);
+    }
+    return vec4(vec3(1.0), line);
+}
+
+vec4 zig() {
+    vec2 p = vUv * 2.0 - 1.0;
+    float k = 2.0 + floor(Seed * 3.0);
+    float tri = abs(fract(p.x * k * 0.5 + 0.25) - 0.5) * 2.0 - 0.5;
+    float d = abs(p.y - tri * 0.7) - 0.13;
+    return vec4(vec3(1.0), (1.0 - smoothstep(0.0, 0.08, d)) * step(abs(p.x), 0.95));
+}
+
+vec4 cell() {
+    float e = min(min(vUv.x, 1.0 - vUv.x), min(vUv.y, 1.0 - vUv.y));
+    return vec4(e < 0.13 ? vec3(1.0) : vec3(0.02, 0.01, 0.02), 1.0);
+}
+
+vec4 blood() {
+    vec2 p = vUv * 2.0 - 1.0;
+    float r = length(p);
+    float edge = Grow * (0.75 + 0.35 * vn(vec2(atan(p.y, p.x) * 2.0 + Seed, 1.0)) + 0.15 * vn(p * 6.0 + Seed));
+    vec3 col = mix(vec3(0.32, 0.0, 0.02), vec3(0.55, 0.02, 0.04), vn(p * 4.0 + Seed));
+    return vec4(col, 1.0 - smoothstep(edge - 0.03, edge, r));
+}
+
 void main() {
     vec4 c;
     if (Mode < 0.5) {
@@ -255,8 +301,16 @@ void main() {
         c = bar();
     } else if (Mode < 6.5) {
         c = slit();
-    } else {
+    } else if (Mode < 7.5) {
         c = strip();
+    } else if (Mode < 8.5) {
+        c = grid();
+    } else if (Mode < 9.5) {
+        c = zig();
+    } else if (Mode < 10.5) {
+        c = cell();
+    } else {
+        c = blood();
     }
     float a = c.a * A;
     if (a < 0.004) {
