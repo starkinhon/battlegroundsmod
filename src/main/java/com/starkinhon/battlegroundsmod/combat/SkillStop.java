@@ -48,6 +48,7 @@ public final class SkillStop {
     // A dead fighter's moves are over: their sounds and effects too.
     public static void onDeath(LivingDeathEvent event) {
         if (!event.isCanceled() && !event.getEntity().level().isClientSide()) {
+            com.starkinhon.battlegroundsmod.power.powers.sukuna.Fuga.onDeath(event.getEntity(), event.getSource());
             stop(event.getEntity());
         }
     }

@@ -82,6 +82,19 @@ public final class BossFalas {
         return true;
     }
 
+    // Anyone (players too) says a scripted line in a move, over their head (client/FalaRender), with these shades.
+    public static void line(LivingEntity speaker, String key, int[] colors) {
+        if (!(speaker.level() instanceof ServerLevel level)) {
+            return;
+        }
+        ModPayloads.Fala payload = new ModPayloads.Fala(speaker.getId(), key, colors[0], colors[1]);
+        for (ServerPlayer player : level.players()) {
+            if (player.distanceToSqr(speaker) <= RANGE * RANGE) {
+                PacketDistributor.sendToPlayer(player, payload);
+            }
+        }
+    }
+
     // Once per fight: true the first time in this fight.
     private static boolean sayOncePerFight(LivingEntity speaker, String key) {
         if (!(speaker instanceof SoulBoss boss)) {
@@ -96,8 +109,9 @@ public final class BossFalas {
 
     // The soul's dark and bright shades: the text runs from the dark one (left) to the bright one (right), the outline is
     // the dark one darkened and the glow the bright one (client/FalaRender).
-    private static int[] colors(String power) {
-        return switch (power) {
+    public static int[] colors(String power) {
+        return switch (power == null ? "" : power) {
+            case "sukuna" -> new int[] {0x7A0E14, 0xFF6A50};
             case "strongest" -> new int[] {0x1E5FD0, 0x8FE0FF};
             case "uchiha_ghost" -> new int[] {0x8A1A14, 0xFF5A3C};
             case "destruction_god" -> new int[] {0x6A2AC0, 0xE2B4FF};
