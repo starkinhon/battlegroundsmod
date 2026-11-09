@@ -91,6 +91,9 @@ public final class DuelScene {
         double push;
         double pushTarget;
         double hitAt = -1;
+        // Sukuna won: when the red starts down the tunnel (-1: not), and whether its front reached the camera yet.
+        double redAt = -1;
+        boolean redHit;
         int hitSide;
         // The local fighter's own presses.
         final boolean[] sent = new boolean[10];
@@ -185,6 +188,11 @@ public final class DuelScene {
                 }
             }
             case DomainDuel.M_RESULT -> {
+                if (a == DomainDuel.SUKUNA && d.result != DomainDuel.SUKUNA) {
+                    // The red runs down Gojo's tunnel (DomainScene.redden), from right after the title.
+                    d.redAt = now + DuelRules.TAKEOVER_FROM;
+                    DomainScene.redden(d.gojo, d.redAt);
+                }
                 d.result = a;
                 d.score[0] = b;
                 d.score[1] = c;
@@ -257,7 +265,7 @@ public final class DuelScene {
 
     // The minigame is on: from the duel's start to the end of the result.
     private static boolean playing(Duel d, double t) {
-        return d.begin >= 0 && t >= 0 && t < DuelRules.resultEnd(d.game) && d.tieAt < 0 && (d.endAt < 0 || d.result >= 0);
+        return d.begin >= 0 && t >= 0 && t < DuelRules.settleAt(d.game, d.result, DomainDuel.SUKUNA) && d.tieAt < 0 && (d.endAt < 0 || d.result >= 0);
     }
 
     // The camera is the duel's: for the two, and for anyone watching from inside the tunnel.
@@ -293,6 +301,13 @@ public final class DuelScene {
             return;
         }
         d.push += (d.pushTarget - d.push) * 0.18;
+        if (d.redAt >= 0 && !d.redHit && ScreenFx.now() >= d.redAt + DomainScene.TAKEOVER_RUN * 0.8) {
+            // The red's front runs past the camera: the screen floods red, the whole tunnel is his.
+            d.redHit = true;
+            ScreenFx.flash(0xFF1A2A, 0.75f, 12);
+            com.starkinhon.battlegroundsmod.client.ScreenShake.start(5f, 20);
+            ui(SoundEvents.WARDEN_SONIC_BOOM, 0.8f, 0.55f);
+        }
         boolean cam = cutscene();
         if (cam && !d.camera) {
             d.camera = true;
@@ -465,6 +480,17 @@ public final class DuelScene {
             Vec3 lean = d.result == DomainDuel.GOJO ? w.f().scale(-3) : d.result == DomainDuel.SUKUNA ? w.f().scale(5) : Vec3.ZERO;
             p = w.mid().add(w.r().scale(17 + 3 * u)).add(up.scale(5 + 2 * u)).add(lean);
             l = w.mid().add(w.f().scale(3)).add(up.scale(4)).add(lean);
+            if (d.result == DomainDuel.SUKUNA) {
+                // The red taking the tunnel over: over Sukuna's shoulder, down the tunnel past Gojo to its far end, where
+                // the red comes from (the tunnel runs away behind Gojo, DomainScene.tunnelAxis).
+                int re = DuelRules.resultEnd(d.game);
+                double k = sm(re - 8, re + 2, t);
+                double push = 0.6 * sm(re, DuelRules.settleAt(d.game, d.result, DomainDuel.SUKUNA), t);
+                Vec3 p2 = w.eyeS().add(w.f().scale(3.2 - push)).add(w.r().scale(1.1)).add(up.scale(0.55));
+                Vec3 l2 = w.eyeG().subtract(w.f().scale(12)).add(up.scale(0.3));
+                p = p.lerp(p2, k);
+                l = l.lerp(l2, k);
+            }
         }
         Vec3 dir = l.subtract(p);
         float yaw = (float) (Mth.atan2(dir.z, dir.x) * Mth.RAD_TO_DEG) - 90;
@@ -514,6 +540,10 @@ public final class DuelScene {
         if (d == null || d.begin < 0) {
             return;
         }
+        if (d.result == DomainDuel.SUKUNA && d.endAt >= 0) {
+            // The Santuário took the tunnel over: its own cutscene (SukunaDomainScene) has the screen from the six eyes.
+            return;
+        }
         Frame w = frame(d, partial);
         if (w == null || camera.distanceTo(w.mid()) > 90) {
             return;
@@ -551,7 +581,7 @@ public final class DuelScene {
         } else {
             mode = 0;
             alpha = (float) sm(4, 22, t);
-            int resultEnd = DuelRules.resultEnd(d.game);
+            int resultEnd = DuelRules.resultEnd(d.game) + (d.result == DomainDuel.SUKUNA ? DuelRules.TAKEOVER : 0);
             if (d.result == DomainDuel.GOJO) {
                 alpha *= (float) (1 - sm(resultEnd, resultEnd + 26, t));
             } else if (d.result == DomainDuel.SUKUNA) {
