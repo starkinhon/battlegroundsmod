@@ -166,12 +166,26 @@ public final class DomainDuel {
         return false;
     }
 
-    // Gojo's domain just opened: a duel if a Santuário opened just before with him in its raio; else the Sukuna mobs
-    // around may answer.
-    public static void gojoOpened(LivingEntity gojo, ServerLevel level) {
+    // The Sukuna whose Santuário Gojo's V is answering right now (it opened at most WINDOW ticks ago with him in it,
+    // out in the world or already up in its space), or null. InfiniteVoid.use asks this before anything else: the
+    // Santuário gives way first (everyone back in the world), so Gojo's domain opens down where they fight and not up in
+    // the Santuário's space (Stark, 2026-11-09: Gojo never got a duel when Sukuna opened first; 16 ticks after the press
+    // everyone was already up there, too far from where it opened to count).
+    public static LivingEntity answering(LivingEntity gojo) {
+        if (of(gojo) != null) {
+            return null;
+        }
         LivingEntity sukuna = ShrineDomain.openedNear(gojo, WINDOW);
-        if (sukuna != null && of(sukuna) == null && of(gojo) == null) {
-            ShrineDomain.yieldTo(sukuna);
+        if (sukuna == null || of(sukuna) != null) {
+            return null;
+        }
+        ShrineDomain.yieldTo(sukuna);
+        return sukuna;
+    }
+
+    // Gojo's domain just opened: a duel with the Sukuna it answered (answering), else the Sukuna mobs around may answer.
+    public static void gojoOpened(LivingEntity gojo, ServerLevel level, LivingEntity sukuna) {
+        if (sukuna != null && sukuna.isAlive() && !sukuna.isRemoved() && of(sukuna) == null && of(gojo) == null) {
             start(gojo, sukuna, level);
             return;
         }
