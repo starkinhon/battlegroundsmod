@@ -883,7 +883,7 @@ public final class SukunaDomainScene {
             ShaderInstance pano = FxShaders.sdPano;
             pano.safeGetUniform("T").set(t);
             pano.safeGetUniform("Yaw").set(d.yaw * Mth.DEG_TO_RAD);
-            pano.safeGetUniform("A").set((float) (sm(T_RED, T_RED + 10, s) * (1 - 0.5 * sm(T_PLAY, T_PLAY + 20, s))));
+            pano.safeGetUniform("A").set((float) (sm(T_RED + 4, T_RED + 16, s) * (1 - 0.5 * sm(T_PLAY, T_PLAY + 20, s))));
             pano.safeGetUniform("Quake").set(0f);
             pano.safeGetUniform("Texel").set(DomainPanorama.texel());
             pano.safeGetUniform("CamL").set((float) camL.x, (float) camL.y, (float) camL.z);
@@ -1914,12 +1914,12 @@ public final class SukunaDomainScene {
             String top = "Expansão de Domínio";
             String bottom = "Santuário Malevolente";
             pose.pushPose();
-            pose.translate(graphics.guiWidth() / 2f, graphics.guiHeight() * 0.72f, 0);
+            pose.translate(graphics.guiWidth() / 2f, graphics.guiHeight() * 0.83f - 18, 0);
             pose.scale(1.4f, 1.4f, 1);
             graphics.drawString(font, top, -font.width(top) / 2, 0, (alpha << 24) | 0xFFD9DE, true);
             pose.popPose();
             pose.pushPose();
-            pose.translate(graphics.guiWidth() / 2f, graphics.guiHeight() * 0.72f + 16, 0);
+            pose.translate(graphics.guiWidth() / 2f, graphics.guiHeight() * 0.83f - 18 + 16, 0);
             pose.scale(2.0f, 2.0f, 1);
             graphics.drawString(font, bottom, -font.width(bottom) / 2, 0, (alpha << 24) | 0xFF3048, true);
             pose.popPose();

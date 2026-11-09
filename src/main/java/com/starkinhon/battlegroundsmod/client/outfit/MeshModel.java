@@ -1,8 +1,9 @@
 package com.starkinhon.battlegroundsmod.client.outfit;
 
-import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -23,12 +24,12 @@ public final class MeshModel {
 
     public static MeshModel load(String name) {
         ResourceLocation id = ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "models/mesh/" + name + ".bin");
-        try (InputStream raw = Minecraft.getInstance().getResourceManager().open(id); DataInputStream in = new DataInputStream(raw)) {
-            int count = in.readInt();
+        // Read in one go: float by float on the raw resource stream took ~2 s for the Santuário's 3.5 MB (test 2026-11-09).
+        try (InputStream raw = Minecraft.getInstance().getResourceManager().open(id)) {
+            ByteBuffer buf = ByteBuffer.wrap(raw.readAllBytes()).order(ByteOrder.BIG_ENDIAN);
+            int count = buf.getInt();
             float[] data = new float[count * 8];
-            for (int i = 0; i < data.length; i++) {
-                data[i] = in.readFloat();
-            }
+            buf.asFloatBuffer().get(data);
             return new MeshModel(data);
         } catch (IOException e) {
             throw new IllegalStateException("Missing mesh " + id, e);
