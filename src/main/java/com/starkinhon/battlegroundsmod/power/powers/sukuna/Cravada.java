@@ -183,6 +183,11 @@ public final class Cravada {
             Vec3 at = origin.add(frame(left, fwd, p[0], p[1], p[2]));
             return age >= BTrack.LAND - 2 ? onGround(level, at, groundS, caster) : at;
         }, SLACK);
+        // from this tick: his client is on the track already, before the hold's first tick turns it on (a scripted run
+        // on steps had him "moved wrongly" and snapped back once at the start of the flight)
+        if (caster instanceof ServerPlayer) {
+            caster.noPhysics = true;
+        }
         Runnable freeTarget = Freeze.holdLookFree(target, BTrack.BURST, age -> {
             double[] p = BTrack.TARGET[Math.min(age, length)];
             Vec3 c = origin.add(frame(left, fwd, p[0], p[1], p[2]));
