@@ -363,6 +363,11 @@ public final class ShrineDomain {
                 Combat.hurt(caster, v, CUT_DAMAGE);
                 if (!resisting) {
                     Stun.apply(v, CUT_STUN);
+                    // Techniques still work inside, but a charged one gets cut off by each cut that lands (Stark,
+                    // 2026-11-09): quick moves come out, holding one is a gamble unless you resist with stamina.
+                    if (com.starkinhon.battlegroundsmod.combat.Charge.charging(v)) {
+                        com.starkinhon.battlegroundsmod.power.PowerLogic.interrupt(v);
+                    }
                 }
             }
             if (clivar) {

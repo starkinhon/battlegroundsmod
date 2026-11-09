@@ -26,6 +26,14 @@ public final class Charge {
         data.chargeReportedAt = entity.level().getGameTime();
     }
 
+    // Whether the player is holding a charged attack right now (it reported this tick or the last one).
+    public static boolean charging(LivingEntity entity) {
+        if (!(entity instanceof ServerPlayer)) {
+            return false;
+        }
+        return entity.getData(ModAttachments.POWER).chargeReportedAt >= entity.level().getGameTime() - 1;
+    }
+
     // Every tick on the server, after the moves ran.
     public static void tick(ServerPlayer player) {
         PowerData data = player.getData(ModAttachments.POWER);
