@@ -52,6 +52,9 @@ public final class KiMesh {
         public float r0 = 0.3f, r1 = 1, flare = 1, bend;
         // false: never drawn into the glow layer (smoke, dust)
         public boolean glow = true;
+        // true: an opaque ball (the Genki Dama's core, the Supernova's sun), drawn first and writing depth like the
+        // pages' plain ShaderMaterial, so the halo and the corona behind it stay hidden instead of washing over its face
+        public boolean solid;
 
         P copy() {
             P p = new P();
@@ -59,7 +62,7 @@ public final class KiMesh {
             p.pulse = pulse; p.smoke = smoke; p.skirt = skirt; p.color = color.clone(); p.color2 = color2.clone(); p.dust = dust.clone();
             p.phase = phase; p.growth = growth; p.flashAmt = flashAmt; p.tongue = tongue; p.spike = spike; p.spikeFreq = spikeFreq; p.spikeSharp = spikeSharp;
             p.crown = crown; p.up = up; p.thresh = thresh; p.size = size.clone(); p.ringR = ringR; p.ringMax = ringMax; p.rot = rot; p.teeth = teeth;
-            p.pitch = pitch; p.twist = twist; p.r0 = r0; p.r1 = r1; p.flare = flare; p.bend = bend; p.glow = glow;
+            p.pitch = pitch; p.twist = twist; p.r0 = r0; p.r1 = r1; p.flare = flare; p.bend = bend; p.glow = glow; p.solid = solid;
             return p;
         }
     }
@@ -93,15 +96,21 @@ public final class KiMesh {
         float dist = c.length();
         P q = p.copy();
         float reach = reach(mesh, model);
-        if (reach > 0) {
-            // The camera inside a ball, dome or aura: on the pages the camera never goes in, but here a fingertip flash,
-            // a Genki halo or a dome round the target can wrap it, and the inside then paints the whole screen (the
-            // pink screen of the Makankosappo, the red one of the Supernova). It fades out as the camera gets in.
+        if (reach > 0 && dist < reach * 1.25f) {
+            // The camera inside a ball, a halo, a flash, an aura or a dome: on the pages the camera never goes in, but
+            // here a fingertip flash or the Genki's halo can wrap it, and the inside then paints the whole screen (the
+            // pink screen of the Makankosappo shot). Small pieces fade out as the camera gets in; a big blast dome only
+            // thins out (being inside your own Explosao Final still shows it, and you can still see yourself turn to stone).
             float k = Math.max(0, Math.min(1, (dist / reach - 0.85f) / 0.4f));
-            q.alpha *= k * k * (3 - 2 * k);
+            k = k * k * (3 - 2 * k);
+            boolean big = mesh == Mesh.BLAST && reach > 3.25f;
+            q.alpha *= big ? 0.3f + 0.7f * k : k;
             if (q.alpha <= 0.002f) {
                 return;
             }
+        }
+        if (q.alpha < 0.999f) {
+            q.solid = false;
         }
         QUEUE.add(new Cmd(mesh, new Matrix4f(model), q, sides, dist, order));
     }
@@ -171,22 +180,23 @@ public final class KiMesh {
             RenderSystem.depthMask(false);
             RenderSystem.enableCull();
             Matrix4f view = RenderSystem.getModelViewMatrix(), proj = RenderSystem.getProjectionMatrix();
+            // The opaque balls first, writing depth (into the frame only; the glow layer copies that depth).
+            if (!glow) {
+                RenderSystem.disableBlend();
+                RenderSystem.depthMask(true);
+                for (Cmd c : QUEUE) {
+                    if (c.p().solid) {
+                        draw(shader, c, false, view, proj);
+                    }
+                }
+                RenderSystem.depthMask(false);
+                RenderSystem.enableBlend();
+            }
             for (Cmd c : QUEUE) {
-                if (glow && !c.p().glow) {
+                if (glow && !c.p().glow || !glow && c.p().solid) {
                     continue;
                 }
-                set(shader, c, glow);
-                VertexBuffer vbo = c.mesh().vbo;
-                vbo.bind();
-                if ((c.sides() & BACK) != 0) {
-                    GL11.glCullFace(GL11.GL_FRONT);
-                    vbo.drawWithShader(view, proj, shader);
-                }
-                if ((c.sides() & FRONT) != 0) {
-                    GL11.glCullFace(GL11.GL_BACK);
-                    vbo.drawWithShader(view, proj, shader);
-                }
-                VertexBuffer.unbind();
+                draw(shader, c, glow, view, proj);
             }
         } catch (RuntimeException e) {
             broken = true;
@@ -197,6 +207,22 @@ public final class KiMesh {
             RenderSystem.defaultBlendFunc();
             RenderSystem.disableBlend();
         }
+    }
+
+    // One piece: back faces first, then front faces.
+    private static void draw(ShaderInstance shader, Cmd c, boolean glow, Matrix4f view, Matrix4f proj) {
+        set(shader, c, glow);
+        VertexBuffer vbo = c.mesh().vbo;
+        vbo.bind();
+        if ((c.sides() & BACK) != 0) {
+            GL11.glCullFace(GL11.GL_FRONT);
+            vbo.drawWithShader(view, proj, shader);
+        }
+        if ((c.sides() & FRONT) != 0) {
+            GL11.glCullFace(GL11.GL_BACK);
+            vbo.drawWithShader(view, proj, shader);
+        }
+        VertexBuffer.unbind();
     }
 
     // End of the frame: the next one queues again.
@@ -246,6 +272,8 @@ public final class KiMesh {
         s.safeGetUniform("Flare").set(p.flare);
         s.safeGetUniform("Bend").set(p.bend);
         s.safeGetUniform("GlowPass").set(glow ? 1f : 0f);
+        boolean highPass = p.kind == BLAST || p.kind == GENKI || p.kind == HALO || p.kind == SUN || p.kind == SUN_HALO;
+        s.safeGetUniform("HighPass").set(highPass ? 1f : 0f);
     }
 
     // ---------- the unit meshes, built once ----------
