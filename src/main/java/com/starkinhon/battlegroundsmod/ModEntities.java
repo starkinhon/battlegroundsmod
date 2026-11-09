@@ -8,6 +8,7 @@ import com.starkinhon.battlegroundsmod.boss.KokushiboEntity;
 import com.starkinhon.battlegroundsmod.boss.MadaraEntity;
 import com.starkinhon.battlegroundsmod.boss.SoulBoss;
 import com.starkinhon.battlegroundsmod.boss.SoulMob;
+import com.starkinhon.battlegroundsmod.boss.SukunaEntity;
 import com.starkinhon.battlegroundsmod.dummy.AttackerDummy;
 import com.starkinhon.battlegroundsmod.dummy.TrainingDummy;
 import com.starkinhon.battlegroundsmod.power.powers.aizen.AizenIllusion;
@@ -57,6 +58,15 @@ public final class ModEntities {
                     .fireImmune()
                     .clientTrackingRange(16)
                     .build("kokushibo"));
+
+    // King of Curses (Sukuna): player sized.
+    public static final Supplier<EntityType<SukunaEntity>> SUKUNA = ENTITY_TYPES.register("sukuna",
+            () -> EntityType.Builder.of(SukunaEntity::new, MobCategory.MONSTER)
+                    .sized(0.6f, 1.8f)
+                    .eyeHeight(1.62f)
+                    .fireImmune()
+                    .clientTrackingRange(16)
+                    .build("sukuna"));
 
     // Test dummies: one only takes hits, the other also punches back on a steady rhythm.
     public static final Supplier<EntityType<TrainingDummy>> DUMMY = ENTITY_TYPES.register("dummy",
@@ -169,6 +179,7 @@ public final class ModEntities {
         event.put(BILLS.get(), SoulBoss.createAttributes().build());
         event.put(GOJO.get(), SoulBoss.createAttributes().build());
         event.put(KOKUSHIBO.get(), SoulBoss.createAttributes().build());
+        event.put(SUKUNA.get(), SoulBoss.createAttributes().build());
         event.put(DUMMY.get(), TrainingDummy.createAttributes().build());
         event.put(DUMMY_ATTACKER.get(), TrainingDummy.createAttributes().build());
         event.put(AIZEN_ILLUSION.get(), AizenIllusion.createAttributes().build());

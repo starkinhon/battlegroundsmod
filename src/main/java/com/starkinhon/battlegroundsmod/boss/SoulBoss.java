@@ -210,6 +210,13 @@ public abstract class SoulBoss extends Monster {
         PowerLogic.tick(this);
         Movement.tick(this);
         BossFalas.tick(this);
+        if ("itadori".equals(bossId())) {
+            // Low on life, the Itadori may give the body to Sukuna (and is gone).
+            SukunaEntity.takeOver(this, level);
+            if (isRemoved()) {
+                return;
+            }
+        }
         boolean bossfight = bossfight();
         bossEvent.setVisible(bossfight);
         int want = spec.faseFor(getHealth() / getMaxHealth());

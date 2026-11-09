@@ -758,5 +758,12 @@
   "fala.battlegroundsmod.sukuna.canto1": "龍鱗 Escamas de Dragão",
   "fala.battlegroundsmod.sukuna.canto2": "反発 Repulsão",
   "fala.battlegroundsmod.sukuna.canto3": "番いの流星 Estrelas Cadentes em Par",
-  "hud.battlegroundsmod.sukuna.model_full": "MODELO COMPLETO"
+  "hud.battlegroundsmod.sukuna.model_full": "MODELO COMPLETO",
+  "entity.battlegroundsmod.sukuna": "Rei das Maldições",
+  "item.battlegroundsmod.sukuna_spawn_egg": "Ovo Gerador do Rei das Maldições",
+  "fala.battlegroundsmod.sukuna.inicio": "Saiba o seu lugar, seu tolo.",
+  "fala.battlegroundsmod.sukuna.inicio_gojo": "Você é só um peixe na tábua que eu vou cortar...",
+  "fala.battlegroundsmod.sukuna.pouca_vida": "Que interessante... me divirta mais.",
+  "fala.battlegroundsmod.sukuna.matou_forte": "Fique de pé com orgulho. Você é forte.",
+  "fala.battlegroundsmod.sukuna.matou_gojo": "Você foi magnífico. Não vou esquecer você enquanto eu viver."
 }

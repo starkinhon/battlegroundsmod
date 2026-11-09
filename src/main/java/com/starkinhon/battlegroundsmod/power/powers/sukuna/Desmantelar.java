@@ -12,6 +12,7 @@ import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.combat.Fx;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
+import com.starkinhon.battlegroundsmod.power.BossOrder;
 import com.starkinhon.battlegroundsmod.power.PowerData;
 import com.starkinhon.battlegroundsmod.power.PowerLogic;
 import com.starkinhon.battlegroundsmod.power.powers.Sukuna;
@@ -42,6 +43,8 @@ public final class Desmantelar {
     // Ticks: the cut leaves the hand; holding this long means the chant; between combo taps; a word; the gesture; the
     // world cut leaves the hand after the release; the longest a stage is held before it goes by itself.
     private static final int SPAWN = 3, DECIDE = 5, WINDOW = 20, WORD = 10, GESTURE = 20, WORLD_RELEASE = 6, MAX_HOLD = 240;
+    // A boss's gap between its combo taps.
+    private static final int AUTO_GAP = 9;
     private static final double SPEED = 3, RANGE = 36;
     private static final float DAMAGE = 30;
     private static final double[] SCALE = {1, 1.75, 2.5, 3.5}, THROW = {1, 1, 1.6, 2.2};
@@ -61,6 +64,10 @@ public final class Desmantelar {
         long windowUntil = -1;
         boolean busy;
         int token;
+        // A boss can't hold the key: how many chant ticks it holds this time (-1 = a tap), and how many more combo taps it
+        // throws on its own after this one (its BossOrder: hold = chant, plan COMBO2/COMBO3 = the taps, MUNDO = the gesture).
+        int bossHold = -1;
+        int autoTaps;
     }
 
     private static final Map<LivingEntity, State> STATES = new WeakHashMap<>();
@@ -76,6 +83,9 @@ public final class Desmantelar {
         PowerData data = caster.getData(ModAttachments.POWER);
         long now = level.getGameTime();
         int step = now <= st.windowUntil ? st.step : 0;
+        if (!(caster instanceof ServerPlayer)) {
+            bossOrder(caster, st, step);
+        }
         st.busy = true;
         int token = ++st.token;
         int interrupts = data.interrupts;
@@ -89,7 +99,7 @@ public final class Desmantelar {
                 broken(caster, st, chant[0] >= 0);
                 return true;
             }
-            boolean held = holding(caster);
+            boolean held = holding(caster, st, chant[0] < 0 ? -1 : age - chant[0]);
             if (chant[0] < 0) {
                 if (step < 2 && held && age >= DECIDE) {
                     chant[0] = age;
@@ -105,6 +115,16 @@ public final class Desmantelar {
                         st.step = step + 1;
                         st.windowUntil = level.getGameTime() + WINDOW;
                         int mine = token;
+                        if (st.autoTaps > 0 && !(caster instanceof ServerPlayer)) {
+                            // The boss's next tap of the combo, at a human rhythm inside the window.
+                            st.autoTaps--;
+                            data.busyTicks = Math.max(data.busyTicks, AUTO_GAP + 2);
+                            Tasks.later(AUTO_GAP, () -> {
+                                if (st.token == mine && caster.isAlive() && data.interrupts == interrupts) {
+                                    use(caster, level);
+                                }
+                            });
+                        }
                         Tasks.later(WINDOW + 1, () -> {
                             if (st.token == mine && level.getGameTime() > st.windowUntil) {
                                 cooldown(caster, COMBO_COOLDOWN);
@@ -160,9 +180,32 @@ public final class Desmantelar {
         return true;
     }
 
-    // Holding the skill key (players only: a bot taps).
-    private static boolean holding(LivingEntity caster) {
-        return caster instanceof ServerPlayer && caster.getData(ModAttachments.POWER).abilityHeld;
+    // Holding the skill key: a player's key; a boss holds the chant for as long as its order said (ct: ticks into the
+    // chant, -1 before it starts).
+    private static boolean holding(LivingEntity caster, State st, int ct) {
+        if (caster instanceof ServerPlayer) {
+            return caster.getData(ModAttachments.POWER).abilityHeld;
+        }
+        return st.bossHold > 0 && (ct < 0 || ct < st.bossHold);
+    }
+
+    // How a boss (boss/SukunaTactics) uses the Z this time: the chant up to a stage (charge 1/3, 2/3, 1 = stages 1, 2,
+    // 3), the World Cutting Slash with the bar full (plan MUNDO), or a combo of 2 or 3 taps (plan COMBO2, COMBO3).
+    private static void bossOrder(LivingEntity caster, State st, int step) {
+        BossOrder.Order order = BossOrder.take(caster);
+        st.bossHold = -1;
+        if (step == 0) {
+            st.autoTaps = 0;
+        }
+        if (order == null) {
+            return;
+        }
+        if (order.hold() && step < 2) {
+            int stage = Math.max(1, Math.min(3, (int) Math.ceil(order.charge() * 3 - 1.0E-6)));
+            st.bossHold = "MUNDO".equals(order.plan()) && ModelBar.full(caster) ? 3 * WORD + GESTURE + 1 : stage * WORD + 1;
+        } else if (step == 0 && order.plan() != null && order.plan().startsWith("COMBO")) {
+            st.autoTaps = "COMBO3".equals(order.plan()) ? 2 : 1;
+        }
     }
 
     private static void word(LivingEntity caster, int k) {
@@ -267,6 +310,7 @@ public final class Desmantelar {
     // Cut off (hit, stunned, frozen): no cut; with the bar full and the chant going, the bar drops to half.
     private static void broken(LivingEntity caster, State st, boolean chanting) {
         st.busy = false;
+        st.autoTaps = 0;
         st.windowUntil = -1;
         caster.removeEffect(ModEffects.ENRAIZADO);
         if (chanting) {
