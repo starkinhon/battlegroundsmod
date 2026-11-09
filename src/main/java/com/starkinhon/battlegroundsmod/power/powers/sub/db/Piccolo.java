@@ -212,8 +212,10 @@ public final class Piccolo {
                 // The knee in the stomach: hitstop, the manga frame, the shock and it flies up spinning.
                 if (target.isAlive()) {
                     Combat.hurt(caster, target, 9);
-                    // A real stun (Stark, 2026-11-09): the knee opens the Hellzone, which only lands on a stunned target.
-                    Stun.apply(target, 45);
+                    // A real stun (Stark, 2026-11-09): the knee opens the Hellzone, which only lands on a stunned target. 3 s
+                    // and full on bosses too: halved (45 -> 22 ticks) it fell under Stun.INTERRUPT_TICKS, so it never
+                    // counted as a stun and the C refused ("the X's stun is tiny").
+                    Stun.apply(target, 60, true);
                     Combat.push(target, target.position().subtract(caster.position()), 0.6, 1.0);
                     Vec3 c = Combat.center(target);
                     DbCommon.hit(level, c, 0.8f, Db.WHITE);
@@ -266,7 +268,7 @@ public final class Piccolo {
         int auto = throwEnd + 80;
         int bossClose = throwEnd + 30 + SubCommon.RANDOM.nextInt(30);
         SubCommon.setState(caster, HELLZONE, auto + 10);
-        Stun.apply(target, throwEnd + 10);
+        Stun.apply(target, throwEnd + 10, true);
         Vec3 home = caster.position();
         // The three spots round the target (left, far left, far right), seen from where Piccolo stands.
         Vec3 toMe = SubCommon.flat(home.subtract(target.position()));
