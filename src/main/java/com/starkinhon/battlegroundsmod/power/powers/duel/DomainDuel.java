@@ -52,7 +52,9 @@ import net.neoforged.neoforge.network.PacketDistributor;
 public final class DomainDuel {
     public static final int WINDOW = 40;
     // How far into the tunnel the duel starts (the tunnel open and the two face to face, as in the preview).
-    private static final int PAUSE_AFTER = 20;
+    // The tunnel takes ~30 ticks to tear open: stopping earlier froze the white over the whole duel (in-game test
+    // 2026-11-09).
+    private static final int PAUSE_AFTER = 34;
     private static final int HOLD_STEP = 10;
     private static final double VIEW_DISTANCE = 192;
     // The tie: ticks until the Santuário breaks the barrier, each reopening this much shorter, never below REOPEN_MIN.
@@ -64,7 +66,7 @@ public final class DomainDuel {
     private static final int REOPEN_REWIND = 20;
     private static final int BURNOUT_TICKS = 200;
     // Payload modes (client/fx/DuelScene).
-    public static final int M_FIGHTERS = 0, M_BEGIN = 1, M_POINT = 2, M_RESULT = 3, M_TIE = 4, M_END = 5;
+    public static final int M_FIGHTERS = 0, M_BEGIN = 1, M_POINT = 2, M_RESULT = 3, M_TIE = 4, M_END = 5, M_SYNC = 6;
     public static final int GOJO = 0, SUKUNA = 1, TIE = 2;
     private static final RandomSource RANDOM = RandomSource.createThreadSafe();
 
@@ -194,7 +196,9 @@ public final class DomainDuel {
                 continue;
             }
             boolean boss = e instanceof com.starkinhon.battlegroundsmod.boss.SoulBoss b && b.isBoss();
-            if (RANDOM.nextDouble() > (boss ? 0.85 : 0.6)) {
+            // A boss always answers (bosses use everything they have; in the in-game test the boss Gojo let a Santuário
+            // through); a mob only sometimes.
+            if (!boss && RANDOM.nextDouble() > 0.6) {
                 continue;
             }
             int delay = 10 + RANDOM.nextInt(18);
@@ -330,6 +334,9 @@ public final class DomainDuel {
             hold(d, SUKUNA, false);
         }
         d.beatsThisTick[0] = d.beatsThisTick[1] = 0;
+        if (t % 10 == 0) {
+            send(d, M_SYNC, t, 0, 0);
+        }
         int end = DuelRules.gameEnd(d.game);
         for (int side = 0; side < 2; side++) {
             List<DuelRules.Move> moves = d.bot[side];

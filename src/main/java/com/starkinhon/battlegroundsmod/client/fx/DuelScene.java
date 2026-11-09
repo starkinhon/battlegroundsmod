@@ -137,6 +137,10 @@ public final class DuelScene {
         }
         Duel d = duel;
         switch (mode) {
+            case DomainDuel.M_FIGHTERS -> {
+                // Load the Santuário's model now, in the white, not on the first frame of the duel.
+                shrineReady();
+            }
             case DomainDuel.M_BEGIN -> {
                 d.begin = now;
                 d.seed = a;
@@ -147,6 +151,14 @@ public final class DuelScene {
                 }
                 com.starkinhon.battlegroundsmod.client.ScreenShake.start(2.5f, 34);
                 ui(SoundEvents.WARDEN_SONIC_BOOM, 0.5f, 0.6f);
+            }
+            case DomainDuel.M_SYNC -> {
+                // The server's duel clock: a client that fell behind (a hitch, the first duel of the session) catches
+                // up, or its presses arrive after the server's window and don't count (in-game test 2026-11-09: 8 x 0
+                // with every key right, the client 22 ticks behind).
+                if (d.begin >= 0 && Math.abs((now - d.begin) - a) > 1) {
+                    d.begin = now - a;
+                }
             }
             case DomainDuel.M_POINT -> {
                 int side = Mth.clamp(a, 0, 1);
@@ -291,16 +303,24 @@ public final class DuelScene {
         } else if (d.camera) {
             endCamera();
         }
-        // The fighter's keys are the minigame's: no inventory, no dropping, no swapping hands while it plays.
-        if (side(d) >= 0 && playing(d, dt(d, 0))) {
-            while (mc.options.keyInventory.consumeClick()) {
-            }
-            while (mc.options.keyDrop.consumeClick()) {
-            }
-            while (mc.options.keySwapOffhand.consumeClick()) {
-            }
-            while (mc.options.keyJump.consumeClick()) {
-            }
+    }
+
+    // The fighter's keys are the minigame's: no inventory, no dropping, no swapping hands while it plays. Called at the
+    // START of the client tick (ClientTickEvent.Pre): Minecraft reads the clicks in its own tick (handleKeybinds), so
+    // draining them after it (Post) was too late and E still opened the inventory (in-game test 2026-11-09).
+    public static void drainKeys() {
+        Duel d = duel;
+        Minecraft mc = Minecraft.getInstance();
+        if (d == null || mc.level == null || side(d) < 0 || !playing(d, dt(d, 0))) {
+            return;
+        }
+        while (mc.options.keyInventory.consumeClick()) {
+        }
+        while (mc.options.keyDrop.consumeClick()) {
+        }
+        while (mc.options.keySwapOffhand.consumeClick()) {
+        }
+        while (mc.options.keyJump.consumeClick()) {
         }
     }
 
@@ -717,7 +737,8 @@ public final class DuelScene {
             }
         }
         int end = DuelRules.gameEnd(d.game);
-        if (t >= DuelRules.MG && t < end + 2) {
+        // The game's HUD gives way to the result (they would sit on top of each other on a small screen).
+        if (t >= DuelRules.MG && t < end + 2 && d.result < 0) {
             minigame(g, font, d, t, cx, g.guiHeight() - 92);
         }
         if (d.result >= 0 && d.resultAt >= 0) {
@@ -838,7 +859,10 @@ public final class DuelScene {
             String how = d.game == DuelRules.SEQ ? "aperte a tecla que aparecer: W A S D Q E" : d.game == DuelRules.CABO ? "A e D alternando, o mais rápido que der" : "aperte Espaço com o ponteiro na zona";
             hint = (you >= 0 ? how : "assistindo") + "   ·   " + count;
         }
-        g.drawString(font, DuelRules.NAMES[d.game].toUpperCase(), cx - font.width(DuelRules.NAMES[d.game].toUpperCase()) / 2, y - 36, 0xCCFFFFFF, true);
+        // The game's name over the score, once the title (which already says it, in the middle) is gone.
+        if (t >= DuelRules.K0 + 4) {
+            g.drawString(font, DuelRules.NAMES[d.game].toUpperCase(), cx - font.width(DuelRules.NAMES[d.game].toUpperCase()) / 2, y - 36, 0xCCFFFFFF, true);
+        }
         if (!hint.isEmpty()) {
             g.drawString(font, hint, cx - font.width(hint) / 2, y + 52, 0xFFFFFFFF, true);
         }
