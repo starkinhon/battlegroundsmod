@@ -42,7 +42,7 @@ public final class AshDeath {
 
     // Timing in ticks from start: the body lights up (burn), falls apart from crumbleStart to crumbleEnd, and is kept
     // hidden until end. hakai: null for fire; else the Hakai's look.
-    private record Ash(LivingEntity entity, long start, float windYaw, int burn, int crumbleStart, int crumbleEnd, int end, Hakai hakai) {
+    private record Ash(LivingEntity entity, long start, float windYaw, int burn, int crumbleStart, int crumbleEnd, int end, Hakai hakai, boolean stone) {
     }
 
     private record Hakai(int sparks, float rise, float wind, float[] color, float[] white) {
@@ -63,7 +63,7 @@ public final class AshDeath {
         }
         if (minecraft.level.getEntity(entityId) instanceof LivingEntity living) {
             ASHES.put(entityId, new Ash(living, ScreenFx.now(), (float) (FxWorld.hash(entityId, 1, 3) * Math.PI * 2), BURN_TICKS, CRUMBLE_START,
-                    CRUMBLE_END, END, null));
+                    CRUMBLE_END, END, null, false));
         }
     }
 
@@ -80,7 +80,18 @@ public final class AshDeath {
         Hakai look = new Hakai(Math.max(0, d.faiscas()), (float) d.subida(), (float) d.vento(), FxDraw.rgb(FxDraw.parse(d.cor(), 0x9B30FF)),
                 FxDraw.rgb(FxDraw.parse(d.cor2(), 0xFFFFFF)));
         ASHES.put(entityId, new Ash(living, ScreenFx.now(), (float) (FxWorld.hash(entityId, 1, 3) * Math.PI * 2), burn, burn, crumbleEnd,
-                crumbleEnd + 40, look));
+                crumbleEnd + 40, look, false));
+    }
+
+    // Turned to stone for `ticks` (Vegeta's Explosao Final, alive): the rock climbs from the feet in 1.2 s, the cracks
+    // light up in the last second and the stone bursts into pieces. Needs the body shader; without it nothing shows.
+    public static void startStone(int entityId, int ticks) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level == null || FxShaders.ash == null || FxShaders.flat() || !(minecraft.level.getEntity(entityId) instanceof LivingEntity living)) {
+            return;
+        }
+        int end = Math.max(30, ticks);
+        ASHES.put(entityId, new Ash(living, ScreenFx.now(), 0, 24, end - 20, end, end, null, true));
     }
 
     static boolean hasSparks() {
@@ -102,11 +113,34 @@ public final class AshDeath {
             return;
         }
         long now = ScreenFx.now();
-        ASHES.values().removeIf(a -> now - a.start() > a.end() || a.entity().level() != level);
+        ASHES.values().removeIf(a -> {
+            boolean gone = now - a.start() > a.end() || a.entity().level() != level;
+            if (gone && a.stone() && a.entity().level() == level) {
+                burst(level, a.entity());
+            }
+            return gone;
+        });
         for (Ash ash : ASHES.values()) {
-            if (ash.hakai() == null) {
+            if (ash.hakai() == null && !ash.stone()) {
                 emit(level, ash, (int) (now - ash.start()));
             }
+        }
+    }
+
+    // The stone bursting: grey pieces thrown out from the whole body, each its own size and speed.
+    private static void burst(ClientLevel level, LivingEntity entity) {
+        var random = level.getRandom();
+        Vec3 feet = entity.position();
+        float height = entity.getBbHeight();
+        for (int i = 0; i < 70; i++) {
+            double a = random.nextDouble() * Math.PI * 2;
+            double r = 0.15 + random.nextDouble() * 0.15;
+            double speed = 0.05 + random.nextDouble() * 0.15;
+            int gray = 0x60 + random.nextInt(0x40);
+            int color = gray << 16 | (int) (gray * 0.96) << 8 | (int) (gray * 0.9);
+            level.addParticle(ModParticles.dust(color, 0.6f + random.nextFloat() * 1.4f, 20 + random.nextInt(25), 0.92f), feet.x + Math.cos(a) * r,
+                    feet.y + 0.1 + random.nextDouble() * height, feet.z + Math.sin(a) * r, Math.cos(a) * speed, 0.05 + random.nextDouble() * 0.15,
+                    Math.sin(a) * speed);
         }
     }
 
@@ -277,12 +311,15 @@ public final class AshDeath {
                 }
                 float burn = (float) Mth.clamp(age / ash.burn(), 0, 1);
                 float progress = (float) Mth.clamp((age - ash.crumbleStart()) / (ash.crumbleEnd() - ash.crumbleStart()), 0, 1);
+                if (ash.stone()) {
+                    burn = burn * burn * (3 - 2 * burn);
+                }
                 Vec3 rel = at.subtract(camera);
                 shader.safeGetUniform("AshOrigin").set((float) rel.x, (float) rel.y, (float) rel.z);
                 shader.safeGetUniform("AshHeight").set(entity.getBbHeight());
                 shader.safeGetUniform("Burn").set(burn);
                 shader.safeGetUniform("Progress").set(progress);
-                shader.safeGetUniform("Style").set(ash.hakai() != null ? 1f : 0f);
+                shader.safeGetUniform("Style").set(ash.stone() ? 2f : ash.hakai() != null ? 1f : 0f);
                 if (ash.hakai() != null) {
                     float[] c = ash.hakai().color();
                     float[] w = ash.hakai().white();

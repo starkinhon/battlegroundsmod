@@ -64,6 +64,8 @@ public final class DbFx {
         double endAt = -1;
         double sealAt = -1;
         final ArrayDeque<Vec3> trail = new ArrayDeque<>();
+        // Where a thrown ball left the hand (the Big Bang's comet tail starts there).
+        Vec3 origin;
 
         Fx(int kind, int id, Vec3 pos, Vec3 dir, float a, float b, float c, double now) {
             this.kind = kind;
@@ -121,6 +123,9 @@ public final class DbFx {
             f.b = b;
             f.updated = now;
             f.trail.addLast(pos);
+            if (kind == SubNet.BIG_BANG && a >= 0.69f && f.origin == null) {
+                f.origin = pos;
+            }
             while (f.trail.size() > 12) {
                 f.trail.removeFirst();
             }
@@ -174,10 +179,17 @@ public final class DbFx {
                 }
                 f.updated = now;
             }
-            case SubNet.SCREEN -> screen((int) a, pos);
+            case SubNet.SCREEN -> {
+                if ((int) a == 48) {
+                    // Turned to stone (id = who, b = ticks).
+                    AshDeath.startStone(id, (int) b);
+                } else {
+                    screen((int) a, pos);
+                }
+            }
             case SubNet.KI_BOOM -> {
                 SHOTS.add(new Fx(kind, id, pos, dir, a, b, c, now));
-                if (a >= 2.5f && KiMesh.ready()) {
+                if (a >= 2.5f && c < 1000 && KiMesh.ready()) {
                     // A big ki blast landing: the manga impact frame (negative and positive) on the hit, never on the throw.
                     screen(46, pos);
                 }
@@ -199,17 +211,17 @@ public final class DbFx {
 
     private static double life(Fx f) {
         return switch (f.kind) {
-            case SubNet.KI_BOOM -> 110;
+            case SubNet.KI_BOOM -> f.c >= 2000 ? 170 : 110;
             case SubNet.GENKI_BOOM -> 130;
             case SubNet.SUPERNOVA -> 150;
-            case SubNet.BIG_BANG_BOOM -> 72;
+            case SubNet.BIG_BANG_BOOM -> 110;
             case SubNet.HIT -> 13;
             case SubNet.DEATH_BEAM -> 11;
             case SubNet.MAKANKO -> f.a + 11;
             case SubNet.SOLAR -> 31;
             case SubNet.STREAK -> Math.max(1, f.c);
             case SubNet.RAIN -> 14 + f.b + 22;
-            case SubNet.SHOT -> f.a * 2.2 + 1;
+            case SubNet.SHOT -> Math.max(f.a * 2.2 + 1, f.a + 13);
             case SubNet.VANISH -> 9;
             case SubNet.FLEX -> 42;
             case SubNet.SCAR -> f.b;
@@ -248,6 +260,8 @@ public final class DbFx {
             case SubNet.KI_BEAM -> KiMesh.ready() ? (float) Math.max(12, f.dir.length() / 1.3 + 3) : 12;
             case SubNet.SMOKE_COVER -> 40;
             case SubNet.SAW -> 6;
+            // The Big Bang's comet tail runs on to the ball after it lands.
+            case SubNet.BIG_BANG -> KiMesh.ready() && f.origin != null ? (float) Math.max(8, f.origin.distanceTo(f.pos) / 2 + 2) : 8;
             default -> 8;
         };
     }
@@ -296,7 +310,7 @@ public final class DbFx {
                 case SubNet.SAW -> saw(f, age, out);
                 case SubNet.GENKI -> genki(f, age, out);
                 case SubNet.DEATH_BALL -> deathBall(f, age, out);
-                case SubNet.BIG_BANG -> bigBangBall(rel(f.pos), f.a, age, f.b * out);
+                case SubNet.BIG_BANG -> bigBang(f, age, out, now);
                 case SubNet.SPARKS -> sparks(f, age, out);
                 case SubNet.TELEKINESIS -> telekinesis(f, age, partial, out);
                 case SubNet.DIZZY -> dizzy(f, age, partial, out);
@@ -452,6 +466,13 @@ public final class DbFx {
                 p.spikeFreq = sup ? 7.5f : 4.5f;
                 p.spikeSharp = sup ? 2.6f : 2.2f;
                 p.crown = sup ? 0.85f : 0.55f;
+                if (sup && s > 1.2f) {
+                    // Gathering everything (Final Flash, and more for the Explosao Final): taller, spikier, with a crown.
+                    boolean peak = s > 1.35f;
+                    p.tongue = peak ? 0.55f : 0.5f;
+                    p.spike = peak ? 0.45f : 0.42f;
+                    p.crown = peak ? 1.1f : 1f;
+                }
                 p.size = new float[] {0.62f, 1.12f, 0.5f};
                 Matrix4f m = new Matrix4f().translation(feet.x, feet.y + 1.0f * s, feet.z).scale(s);
                 KiMesh.queue(KiMesh.Mesh.AURA, m, p, KiMesh.BOTH, 10);
@@ -528,7 +549,11 @@ public final class DbFx {
 
     static void kiBoom(Vector3f p, float age, float r, float[] col, int seed, float ground) {
         if (KiMesh.ready()) {
-            if (age < 0 || age > 110) {
+            if (age < 0 || age > (seed >= 2000 ? 170 : 110)) {
+                return;
+            }
+            if (seed >= 2000) {
+                final3d(p, age, r * 1.4f, col, seed, ground);
                 return;
             }
             if (seed >= 1000) {
@@ -636,6 +661,35 @@ public final class DbFx {
         }
         if (age < 24) {
             warp(c, R * 2, 0.8f * (1 - age / 24), 0, age, null);
+        }
+    }
+
+    private static final float[] FINAL_WHITE = FxDraw.rgb(0xFFF1B8);
+    private static final float[] FINAL_FLASH = FxDraw.rgb(0xFFF4C8);
+
+    // Vegeta's Explosao Final: two domes (golden tearing, white inside) of radius R, the biggest ring and smoke.
+    static void final3d(Vector3f c, float age, float R, float[] col, int seed, float ground) {
+        if (age > 170) {
+            return;
+        }
+        blast(c, R * easeOut(age / 18), Mth.clamp(age / 56, 0, 1), col, age, seed * 0.013f, 1, false, 14);
+        blast(c, R * 0.72f * easeOut(age / 12), Mth.clamp(age / 32, 0, 1), FINAL_WHITE, age, seed * 0.029f, 1, false, 15);
+        if (age >= 32) {
+            float late = (age - 32) / 20;
+            blast(new Vector3f(c.x, ground + 0.5f + late * 0.6f, c.z), R * (1.02f + late * 0.08f), 0.35f + 0.65f * Mth.clamp((age - 32) / 100, 0, 1), SMOKE_3D, age,
+                    seed * 0.017f, 1, true, 6);
+        }
+        dustRing(new Vector3f(c.x, ground, c.z), R * 2.17f * easeOut(age / 40), R * 2.33f, Mth.clamp(age / 64, 0, 1), col, 9.9f);
+        if (age < 10) {
+            float k = age / 10;
+            flashBall(c, 2 + R * 0.6f * Mth.sqrt(k), 1 - k, FINAL_FLASH, 3.7f);
+        }
+        if (age < 40) {
+            warp(c, R * 2, 1.5f * (1 - age / 40), 0, age, null);
+        }
+        if (age < 150) {
+            dsk(new Vector3f(c.x, ground + 0.03f, c.z), new Vector3f(0, 1, 0), R * 1.4f, FxDraw.SOFT, 0.15f, DIRT, 0.85f * smooth(age / 4) * (1 - smooth((age - 110) / 40)),
+                    false);
         }
     }
 
@@ -774,6 +828,41 @@ public final class DbFx {
         }
     }
 
+    private static final float[] BB_3D = FxDraw.rgb(0x7FD4FF);
+
+    // Realista+Anime (the approved Big Bang): the ball at the palm, then a comet: the ball in front and the twisted beam
+    // leaving the hand behind it and running after it.
+    private static void bigBang(Fx f, float age, float out, double now) {
+        if (!KiMesh.ready()) {
+            bigBangBall(rel(f.pos), f.a, age, f.b * out);
+            return;
+        }
+        if (!pass) {
+            return;
+        }
+        Vector3f p = rel(f.pos);
+        if (f.endAt < 0) {
+            blast(p, f.a + 0.03f * Mth.sin(age * 1.5f), f.origin == null ? 0.1f : 0.12f, BB_3D, age, 7.3f, Math.min(1, f.b + 0.2f), false, 16);
+        }
+        if (f.origin != null) {
+            Vector3f o = rel(f.origin);
+            Vector3f d = new Vector3f(p).sub(o);
+            float len = d.length();
+            float flown = len;
+            float tail = Math.max(-1, flown - 3.5f) + (f.endAt < 0 ? 0 : (float) (now - f.endAt) * 2);
+            if (len > 0.1f && tail < len) {
+                KiMesh.P b = KiMesh.p(KiMesh.BEAM);
+                b.len = len;
+                b.w = 0.38f;
+                b.flow = age * 0.45f;
+                b.time = age / 20f;
+                b.tail = tail;
+                b.color = BB_3D;
+                KiMesh.queue(KiMesh.Mesh.TUBE, KiMesh.along(o, d), b, KiMesh.BOTH, 14);
+            }
+        }
+    }
+
     static void bigBangBall(Vector3f p, float r, float t, float a) {
         if (a <= 0) {
             return;
@@ -795,6 +884,16 @@ public final class DbFx {
     }
 
     static void bbBoom(Vector3f p, float age, float r, float ground) {
+        if (KiMesh.ready()) {
+            if (age < 0 || age > 110) {
+                return;
+            }
+            boom3d(p, age, 4.6f * r / 3.2f, BB_3D, 31, ground);
+            if (age < 60) {
+                dsk(new Vector3f(p.x, ground + 0.03f, p.z), new Vector3f(0, 1, 0), r * 2.2f, FxDraw.SOFT, 0.15f, DIRT, 0.8f * smooth(age / 4) * (1 - smooth((age - 40) / 20)), false);
+            }
+            return;
+        }
         if (age < 0 || age > 70) {
             return;
         }
@@ -1498,6 +1597,22 @@ public final class DbFx {
         Entity e = FxAnchor.entity(f.id);
         Vector3f tgt = e != null ? rel(e.getPosition(partial).add(0, 1.1, 0)) : rel(f.pos);
         float cover = Mth.clamp(f.a, 0, 1) * out;
+        if (KiMesh.ready()) {
+            // One cel-shaded smoke cloud swallowing the target, growing as the blasts pile up, opening slowly.
+            if (pass && cover > 0.002f) {
+                KiMesh.P sm = KiMesh.p(KiMesh.BLAST);
+                sm.smoke = 1;
+                sm.skirt = 0;
+                sm.glow = false;
+                sm.life = 0.04f + 0.96f * (1 - cover);
+                sm.time = age / 20f;
+                sm.seed = 3.3f + f.id % 7;
+                sm.flat = 0.3f;
+                sm.color = RENZOKU_SMOKE;
+                KiMesh.queue(KiMesh.Mesh.BLAST, KiMesh.sphere(new Vector3f(tgt).add(0, -0.2f, 0), 0.9f + 1.3f * smooth(age / 30)), sm, KiMesh.BOTH, 6);
+            }
+            return;
+        }
         for (int i = 0; i < 16; i++) {
             float a = Db.hash(i, 8, 1) * Mth.TWO_PI;
             float rr = 0.4f + Db.hash(i, 8, 2) * 1.6f;
@@ -1538,11 +1653,29 @@ public final class DbFx {
     }
 
     // One of Vegeta's ki shots, with its little burst where it lands.
+    private static final float[] RENZOKU_BALL = FxDraw.rgb(0xFFD23F);
+    private static final float[] RENZOKU_BOOM = FxDraw.rgb(0xFFB52E);
+    private static final float[] RENZOKU_SMOKE = FxDraw.rgb(0x7A7468);
+
     private static void shot(Fx f, float age) {
         Vector3f from = rel(f.pos);
         Vector3f to = rel(f.pos.add(f.dir));
         float[] col = color(f.b);
         float k = age / Math.max(1, f.a);
+        if (KiMesh.ready()) {
+            // Realista+Anime (the approved Renzoku): each ball a small blast of its own size, and its own blast where
+            // it lands.
+            float h = Db.hash(f.id, 6, 4);
+            boolean gold = f.b == Db.GOLD;
+            if (k < 1) {
+                float size = (0.18f + Db.hash(f.id, 7, 4) * 0.08f) * (1 + 0.15f * Mth.sin(age * 2 + h * 10));
+                blast(new Vector3f(from).lerp(to, k), size, 0.15f, gold ? RENZOKU_BALL : col, age, h * 10, 1, false, 14);
+            } else {
+                float bt = age - f.a;
+                blast(to, (0.7f + 0.5f * h) * easeOut(bt / 3.6f), Mth.clamp(bt / 11, 0, 1), gold ? RENZOKU_BOOM : col, age, h * 10, 1, false, 14);
+            }
+            return;
+        }
         if (k < 1) {
             Vector3f p = new Vector3f(from).lerp(to, k);
             kiBall(p, 0.12f, col, 1, age);
@@ -1642,14 +1775,16 @@ public final class DbFx {
                 ScreenFx.impactFrame(new int[] {0, 0, 2, 1, 0}, 2, 0x3A8AFF, pos, 0);
                 ScreenShake.start(2.2f * near, 50);
             }
+            // Vegeta's Big Bang landing: three manga frames.
             case 6 -> {
-                ScreenFx.flash(0xE0F0FF, 0.8f * near, 10);
-                ScreenFx.impactFrame(new int[] {2, 3, 1}, 1, 0x60B0FF, pos, 0);
+                ScreenFx.flash(0xE0F0FF, 0.5f * near, 10);
+                ScreenFx.impactFrame(new int[] {4, 3, 4}, 1, 0xFFFFFF, pos, 0);
                 ScreenShake.start(1.6f * near, 32);
             }
+            // Final Flash fired: one manga frame (as in the approved preview).
             case 7 -> {
-                ScreenFx.flash(0xFFF6C8, 0.8f * near, 12);
-                ScreenFx.impactFrame(new int[] {0, 1, 2, 1, 0}, 2, 0xFFD84A, pos, 0);
+                ScreenFx.flash(0xFFF6C8, 0.6f * near, 12);
+                ScreenFx.impactFrame(new int[] {4}, 1, 0xFFFFFF, pos, 0);
                 ScreenShake.start(1.8f * near, 60);
             }
             case 8 -> {
@@ -1836,6 +1971,12 @@ public final class DbFx {
             case 46 -> {
                 ScreenFx.impactFrame(new int[] {4, 3}, 1, 0xFFFFFF, pos, 0);
                 ScreenShake.start(0.9f * near, 14);
+            }
+            // Vegeta's Explosao Final: six manga frames, the biggest flash and shake of the mod.
+            case 49 -> {
+                ScreenFx.flash(0xFFF4C8, near, 18);
+                ScreenFx.impactFrame(new int[] {4, 3, 4, 3, 4, 3}, 1, 0xFFFFFF, pos, 0);
+                ScreenShake.start(3f * near, 70);
             }
             // Realista+Anime: the Genki Dama landing, three manga frames (negative, positive, negative).
             case 47 -> {
