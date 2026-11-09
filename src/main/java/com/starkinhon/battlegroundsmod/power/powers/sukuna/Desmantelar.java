@@ -47,9 +47,10 @@ public final class Desmantelar {
     private static final int AUTO_GAP = 9;
     // Stark 2026-11-09: three times the reach it had (36), he looked "low scale" next to Gojo.
     private static final double SPEED = 3, RANGE = 108;
-    private static final float DAMAGE = 30;
+    private static final float DAMAGE = 30, BURST_TOTAL = 1.3f;
     private static final double[] SCALE = {1, 1.75, 2.5, 3.5}, THROW = {1, 1, 1.6, 2.2};
-    private static final int COMBO_COOLDOWN = 50, WORLD_COOLDOWN = 400, BROKEN_COOLDOWN = 30;
+    // COMBO_COOLDOWN 50 -> 90 (Stark 2026-11-09): the combo alone out-damaged Gojo's whole kit in a 1v1.
+    private static final int COMBO_COOLDOWN = 90, WORLD_COOLDOWN = 400, BROKEN_COOLDOWN = 30;
     private static final int[] CHANT_COOLDOWN = {40, 60, 80, 100};
     // The preview's two kinds: unit (blocks per crescent unit) and the height of its middle, for a 1.8-block-tall body.
     private static final double PE_UNIT = 2.6, PE_Y = 1.55, DE_UNIT = 3.0, DE_Y = 1.0;
@@ -230,7 +231,8 @@ public final class Desmantelar {
         } else {
             PowerData data = caster.getData(ModAttachments.POWER);
             int interrupts = data.interrupts;
-            float each = DAMAGE * 1.8f / BURST.length;
+            // the burst's total, 1.8x -> 1.3x a cut (Stark 2026-11-09, balance against Gojo)
+            float each = DAMAGE * BURST_TOTAL / BURST.length;
             for (double[] b : BURST) {
                 Runnable go = () -> {
                     if (caster.isAlive() && data.interrupts == interrupts) {
