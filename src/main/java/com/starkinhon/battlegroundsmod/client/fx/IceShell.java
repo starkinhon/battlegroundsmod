@@ -218,13 +218,13 @@ public final class IceShell {
         MultiBufferSource ice = type -> {
             ResourceLocation texture = FxRenderTypes.textureOf(type);
             if (texture == null) {
-                return NOTHING;
+                return new Nothing();
             }
             String path = texture.getPath();
             // Only the body and what it wears: no shadow, fire, enchant glint, held items or name tag.
             if (!(path.startsWith("textures/") || path.startsWith("skins/")) || path.contains("shadow") || path.contains("glint")
                     || path.contains("atlas")) {
-                return NOTHING;
+                return new Nothing();
             }
             return new Grow(buffers.getBuffer(FxRenderTypes.iceShell(texture)));
         };
@@ -315,7 +315,9 @@ public final class IceShell {
         }
     }
 
-    private static final VertexConsumer NOTHING = new VertexConsumer() {
+    // A new one each time it is asked for: an enchanted item in the hand joins its glint buffer with its own, and the
+    // game refuses joining one buffer to itself ("Duplicate delegates").
+    private static final class Nothing implements VertexConsumer {
         @Override
         public VertexConsumer addVertex(float x, float y, float z) {
             return this;
@@ -345,7 +347,7 @@ public final class IceShell {
         public VertexConsumer setNormal(float x, float y, float z) {
             return this;
         }
-    };
+    }
 
     // ---------- what goes with it (drawn with the other effects, from SubFx) ----------
 

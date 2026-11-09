@@ -45,6 +45,7 @@ out float vH;
 out vec2 vUv;
 out vec2 vDir;
 out vec3 vNv;
+out vec4 vC;
 
 vec3 h33(vec3 p) { p = fract(p * vec3(.1031, .1030, .0973)); p += dot(p, p.yxz + 33.33); return fract((p.xxy + p.yxx) * p.zyx) * 2. - 1.; }
 float gn(vec3 p) {
@@ -129,5 +130,6 @@ void main() {
     vN = mat3(Model) * n;
     vNv = mat3(ModelViewMat) * vN;                                     // the normal as the camera sees it (halo rays)
     vV = -w.xyz;
+    vC = vec4((Model * vec4(0., 0., 0., 1.)).xyz, length(Model[0].xyz));   // the piece's center (camera-relative) and size
     gl_Position = ProjMat * ModelViewMat * w;
 }

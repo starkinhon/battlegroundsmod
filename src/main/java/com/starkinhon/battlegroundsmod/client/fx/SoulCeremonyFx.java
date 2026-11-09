@@ -197,7 +197,7 @@ public final class SoulCeremonyFx {
                     return new Tint(source.getBuffer(type), dim, dim, dim, 1, true);
                 }
                 ResourceLocation texture = texture(type, skin);
-                return texture == null ? NOTHING : new Tint(source.getBuffer(RenderType.entityTranslucent(texture)), dim, dim, dim, 1 - fade, true);
+                return texture == null ? new Nothing() : new Tint(source.getBuffer(RenderType.entityTranslucent(texture)), dim, dim, dim, 1 - fade, true);
             };
             if (fade < 1) {
                 renderer.render(entity, entity.getYRot(), partial, pose, body, event.getPackedLight());
@@ -210,7 +210,7 @@ public final class SoulCeremonyFx {
                 float[] rgb = c.rgb;
                 MultiBufferSource glow = type -> {
                     ResourceLocation texture = texture(type, skin);
-                    return texture == null ? NOTHING : new Tint(source.getBuffer(RenderType.eyes(texture)), rgb[0] * ghost, rgb[1] * ghost, rgb[2] * ghost, 1, false);
+                    return texture == null ? new Nothing() : new Tint(source.getBuffer(RenderType.eyes(texture)), rgb[0] * ghost, rgb[1] * ghost, rgb[2] * ghost, 1, false);
                 };
                 int deathTime = entity.deathTime;
                 int hurtTime = entity.hurtTime;
@@ -493,7 +493,9 @@ public final class SoulCeremonyFx {
         }
     }
 
-    private static final VertexConsumer NOTHING = new VertexConsumer() {
+    // A new one each time it is asked for: an enchanted item in the hand joins its glint buffer with its own, and the
+    // game refuses joining one buffer to itself ("Duplicate delegates").
+    private static final class Nothing implements VertexConsumer {
         @Override
         public VertexConsumer addVertex(float x, float y, float z) {
             return this;
@@ -523,5 +525,5 @@ public final class SoulCeremonyFx {
         public VertexConsumer setNormal(float x, float y, float z) {
             return this;
         }
-    };
+    }
 }

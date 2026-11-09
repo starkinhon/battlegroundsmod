@@ -327,7 +327,7 @@ public final class ClivarRenderer {
     private static void draw(EntityRenderDispatcher dispatcher, LivingEntity entity, Vec3 rel, float partial) {
         MultiBufferSource grid = type -> {
             ResourceLocation texture = FxRenderTypes.textureOf(type);
-            return bodyTexture(texture) ? new Grow(buffers.getBuffer(FxRenderTypes.clivarGrid(texture))) : NOTHING;
+            return bodyTexture(texture) ? new Grow(buffers.getBuffer(FxRenderTypes.clivarGrid(texture))) : new Nothing();
         };
         render(dispatcher, entity, rel, partial, grid);
     }
@@ -420,7 +420,7 @@ public final class ClivarRenderer {
                 return this;
             }
         };
-        render(dispatcher, entity, feet.subtract(camera), partial, type -> bodyTexture(FxRenderTypes.textureOf(type)) ? capture : NOTHING);
+        render(dispatcher, entity, feet.subtract(camera), partial, type -> bodyTexture(FxRenderTypes.textureOf(type)) ? capture : new Nothing());
         cut.center = feet.add(0, entity.getBbHeight() * 0.55, 0);
         cut.feet = feet.y;
         return cells;
@@ -498,7 +498,9 @@ public final class ClivarRenderer {
         }
     }
 
-    private static final VertexConsumer NOTHING = new VertexConsumer() {
+    // A new one each time it is asked for: an enchanted item in the hand joins its glint buffer with its own, and the
+    // game refuses joining one buffer to itself ("Duplicate delegates").
+    private static final class Nothing implements VertexConsumer {
         @Override
         public VertexConsumer addVertex(float x, float y, float z) {
             return this;
@@ -528,7 +530,7 @@ public final class ClivarRenderer {
         public VertexConsumer setNormal(float x, float y, float z) {
             return this;
         }
-    };
+    }
 
     // ---------- bits, cells, blood, the wall, the trail (FxWorld, end of the level) ----------
 
