@@ -213,6 +213,21 @@ public final class DbFx {
                     screen(46, pos);
                 }
             }
+            case SubNet.SOLAR -> {
+                SHOTS.add(new Fx(kind, id, pos, dir, a, b, c, now));
+                Minecraft mc = Minecraft.getInstance();
+                if (mc.player != null) {
+                    // Whoever looks at the flash gets the screen burned white (the blinded ones also keep the vignette).
+                    Vec3 eye = mc.player.getEyePosition();
+                    double dist = eye.distanceTo(pos);
+                    Vec3 toFlash = pos.subtract(eye).normalize();
+                    double facing = mc.player.getLookAngle().dot(toFlash);
+                    if (dist > 1 && dist < 24 && facing > 0.2) {
+                        float near = (float) (1 - dist / 24);
+                        ScreenFx.flash(0xFFFDF4, Math.min(1, (0.4f + 0.6f * (float) facing) * (0.4f + near)), 22);
+                    }
+                }
+            }
             default -> SHOTS.add(new Fx(kind, id, pos, dir, a, b, c, now));
         }
     }
@@ -1065,6 +1080,21 @@ public final class DbFx {
         if (KiMesh.ready()) {
             // Realista+Anime (the approved Disco da Morte): a real saw with 18 slanted teeth, spinning, tilted a little
             // into its flight.
+            int ci = (int) f.b;
+            if ((ci == Db.GOLD || ci == Db.GOLD_W) && pass && out > 0.002f && f.a > 0.02f) {
+                // Realista+Anime (the approved Kienzan): a thin blade with small slanted saw teeth (26; the guided one
+                // 34) and rings of ki running inside, spinning fast.
+                boolean big = ci == Db.GOLD_W;
+                KiMesh.P d = KiMesh.p(KiMesh.KIEN);
+                d.rot = age * (big ? 1.7f : 1.5f);
+                d.time = age / 20f;
+                d.alpha = out;
+                d.teeth = big ? 34 : 26;
+                d.color = KIEN_YELLOW;
+                Quaternionf q = new Quaternionf().rotationTo(new Vector3f(0, 1, 0), up).rotateX(0.04f);
+                KiMesh.queue(KiMesh.Mesh.QUAD, KiMesh.disc(p, f.a * 1.3f, q), d, KiMesh.BOTH, 15);
+                return;
+            }
             if (pass && out > 0.002f && f.a > 0.02f) {
                 KiMesh.P d = KiMesh.p(KiMesh.SAW);
                 d.rot = age * 1.1f;
@@ -1093,6 +1123,8 @@ public final class DbFx {
         }
     }
 
+    private static final float[] KIEN_YELLOW = FxDraw.rgb(0xFFE066);
+    private static final float[] SOLAR_WHITE = FxDraw.rgb(0xFFFBE6);
     private static final float[] GENKI_BLUE = FxDraw.rgb(0x4FB4FF);
     private static final float[] GENKI_FLASH = FxDraw.rgb(0xBFE6FF);
 
@@ -1562,6 +1594,21 @@ public final class DbFx {
 
     private static void solar(Fx f, float a) {
         Vector3f head = rel(f.pos);
+        if (KiMesh.ready()) {
+            // Realista+Anime: the white burst from the head (a fresnel shell racing out) and a softer, wider one after it.
+            if (a < 10) {
+                float k = a / 10;
+                flashBall(head, 0.4f + 2.2f * Mth.sqrt(k), 1 - k, SOLAR_WHITE, 1.9f);
+            }
+            if (a < 24) {
+                float k = a / 24;
+                flashBall(head, 1 + 5f * easeOut(k), 0.55f * (1 - k), pale(SOLAR_WHITE, 0.5f), 4.3f);
+            }
+            if (a < 16) {
+                warp(head, 4, 0.5f * (1 - a / 16), 0, a, null);
+            }
+            return;
+        }
         float fd = 1 - a / 30;
         Vector3f fwd = new Vector3f((float) f.dir.x, (float) f.dir.y, (float) f.dir.z).normalize();
         Vector3f right = new Vector3f(fwd).cross(0, 1, 0);
