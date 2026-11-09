@@ -99,6 +99,8 @@ public final class InfiniteVoid {
         // reopening it winds it back).
         boolean paused;
         int offset;
+        // Sukuna won the duel: the domain is his now (handOver), gone without shattering.
+        boolean handed;
         // When the target (or the last one caught) died, -1 while they live.
         int killedAt = -1;
 
@@ -156,6 +158,9 @@ public final class InfiniteVoid {
         Set<LivingEntity> caught = active.caught;
         boolean[] closing = {false};
         Tasks.add(raw -> {
+            if (active.handed) {
+                return true;
+            }
             if (active.paused) {
                 // The duel has the clock: everyone stays up on the floor, and those caught stay caught.
                 active.offset++;
@@ -424,6 +429,55 @@ public final class InfiniteVoid {
             out.addAll(active.caught);
             out.addAll(active.free);
         }
+        return out;
+    }
+
+    // Who was taken up into the domain and where each one was in the world, and the players allowed to fly for it: handed
+    // over to the Santuário that takes the domain over (ShrineDomain.startWon), so nobody comes down in between.
+    public record Handover(Map<LivingEntity, Vec3> back, Set<ServerPlayer> granted) {
+    }
+
+    // How long the clients keep drawing the tunnel after it is taken over: until the Santuário's dark covers the screen.
+    private static final int HANDOVER_DROP = 8;
+
+    // Sukuna won the Duelo de Expansões (Stark, 2026-11-09): the tunnel is taken over by the red, it never shatters and
+    // nobody goes back to the world in between. Gojo's domain is gone right here (no sounds, no holds, no Brain Damage
+    // after it), his technique burns out, and everyone stays up where they are for the Santuário to take; the clients drop
+    // the tunnel once the Santuário's dark is over the screen (mode 7). Returns who was inside and where they came from.
+    public static Handover handOver(LivingEntity caster) {
+        Active active = of(caster);
+        if (active == null) {
+            return new Handover(Map.of(), Set.of());
+        }
+        active.cancelled = true;
+        active.handed = true;
+        active.paused = false;
+        active.braindamaged = true;
+        Handover out = new Handover(new LinkedHashMap<>(active.back), new HashSet<>(active.granted));
+        for (LivingEntity entity : active.back.keySet()) {
+            if (entity instanceof ServerPlayer player) {
+                player.getPersistentData().remove(BACK_TAG);
+            }
+        }
+        active.back.clear();
+        active.granted.clear();
+        active.inside = false;
+        for (LivingEntity victim : active.caught) {
+            victim.removeEffect(ModEffects.BRAIN_DAMAGE);
+            victim.removeEffect(MobEffects.MOVEMENT_SLOWDOWN);
+        }
+        caster.getData(ModAttachments.POWER).busyTicks = 0;
+        Freeze.free(caster);
+        caster.removeEffect(ModEffects.ENRAIZADO);
+        com.starkinhon.battlegroundsmod.combat.SkillStop.stop(caster);
+        PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new ModPayloads.PlaySkillAnimation(caster.getId(), "", false));
+        burnout(active);
+        ACTIVE.remove(active);
+        ServerLevel level = active.level;
+        Vec3 center = active.center;
+        boolean awakened = active.awakened;
+        int id = caster.getId();
+        Tasks.later(HANDOVER_DROP, () -> send(level, center, new ModPayloads.GojoDomain(id, center, awakened, 7, 0)));
         return out;
     }
 

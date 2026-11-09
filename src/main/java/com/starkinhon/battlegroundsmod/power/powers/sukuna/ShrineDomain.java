@@ -109,6 +109,10 @@ public final class ShrineDomain {
         boolean yielded;
         // Ticks already gone by when it started (the domain the duel's winner gets starts after the wave).
         int skip;
+        // Taken over from Gojo's domain (the duel): where each one was in the world before his tunnel took them up, and
+        // the players his domain already let fly (they stay so, no fall in between).
+        Map<LivingEntity, Vec3> origin = Map.of();
+        Set<ServerPlayer> inherited = new HashSet<>();
         int age;
         int closeAt = -1;
         int deadAt = -1;
@@ -181,10 +185,16 @@ public final class ShrineDomain {
 
     // Sukuna won the Duelo de Expansões: his Santuário takes over right away, the fast version (no wave, no cutscene:
     // the black aura and the six eyes, then the cutting), with Gojo and everyone who was in Gojo's domain caught in it.
-    public static void startWon(LivingEntity caster, ServerLevel level, java.util.Collection<LivingEntity> victims) {
-        Active active = new Active(caster, level, caster.position());
+    // It opens where Gojo's did (center, out in the world), but everyone is already up in the space above it from his
+    // tunnel (from: who and where they came from): the red takes the tunnel over and they are inside the Santuário without
+    // ever touching the ground (Stark, 2026-11-09: the shatter and the trip back to the world in between looked off).
+    public static void startWon(LivingEntity caster, ServerLevel level, Vec3 center, java.util.Collection<LivingEntity> victims,
+            com.starkinhon.battlegroundsmod.power.powers.gojo.InfiniteVoid.Handover from) {
+        Active active = new Active(caster, level, center);
         active.quick = true;
         active.skip = WAVE;
+        active.origin = from.back();
+        active.inherited.addAll(from.granted());
         ACTIVE.add(active);
         for (LivingEntity v : victims) {
             if (v != caster && v.isAlive() && !v.isRemoved() && v.level() == level) {
@@ -496,7 +506,7 @@ public final class ShrineDomain {
         if (active.back.containsKey(entity)) {
             return;
         }
-        Vec3 from = entity.position();
+        Vec3 from = active.origin.getOrDefault(entity, entity.position());
         active.back.put(entity, from);
         if (entity instanceof ServerPlayer player) {
             CompoundTag tag = new CompoundTag();
@@ -504,7 +514,10 @@ public final class ShrineDomain {
             tag.putDouble("y", from.y);
             tag.putDouble("z", from.z);
             player.getPersistentData().put(BACK_TAG, tag);
-            if (!player.getAbilities().mayfly) {
+            if (active.inherited.remove(player)) {
+                // Gojo's domain let them fly for its inside: this one takes that over (and takes it back at the end).
+                active.granted.add(player);
+            } else if (!player.getAbilities().mayfly) {
                 player.getAbilities().mayfly = true;
                 player.onUpdateAbilities();
                 active.granted.add(player);

@@ -246,6 +246,15 @@ public final class DomainScene {
             tunnel(casterId, other);
             return;
         }
+        if (mode == 7) {
+            // Sukuna won the Duelo de Expansões: the Santuário took the tunnel over (its dark already covers the screen),
+            // so the domain is just gone, without the cracks and the shatter.
+            DOMAINS.removeIf(d -> d.caster == casterId);
+            if (CutscenePlayer.active() && DominioSpec.SKILL.equals(CutscenePlayer.skill())) {
+                CutscenePlayer.stop();
+            }
+            return;
+        }
         if (mode == 5 || mode == 6) {
             // The Duelo de Expansões: 5 holds the clock still (other 1) or lets it run (other 0); 6 moves it back by other
             // ticks (ahead when negative).

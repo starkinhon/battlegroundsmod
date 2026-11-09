@@ -403,19 +403,19 @@ public final class DomainDuel {
                 finish(d);
             }
             case SUKUNA -> {
-                // The tunnel shatters (Gojo's technique burns out with it, InfiniteVoid.brainDamage) and the Santuário
-                // takes over once everyone is back in the world, with everyone who was in Gojo's domain caught in it.
+                // The red takes the tunnel over (Stark, 2026-11-09): no shatter, no trip back to the world. Gojo's domain is
+                // handed over right here (his technique burns out) and the Santuário opens from the black aura and the six
+                // eyes (its fast version), with everyone who was in Gojo's domain caught in it, straight into its space.
                 List<LivingEntity> victims = InfiniteVoid.everyone(gojo);
                 victims.remove(sukuna);
                 victims.add(gojo);
-                int delay = InfiniteVoid.shatterDelay(gojo) + 6;
-                InfiniteVoid.cancel(gojo);
-                ServerLevel level = d.level;
-                Tasks.later(delay, () -> {
-                    if (sukuna.isAlive() && !sukuna.isRemoved() && sukuna.level() == level) {
-                        ShrineDomain.startWon(sukuna, level, victims);
-                    }
-                });
+                if (sukuna.isAlive() && !sukuna.isRemoved() && sukuna.level() == d.level) {
+                    InfiniteVoid.Handover from = InfiniteVoid.handOver(gojo);
+                    ShrineDomain.startWon(sukuna, d.level, d.center, victims, from);
+                } else {
+                    // Nobody to take it over: it shatters as usual, everyone back in the world.
+                    InfiniteVoid.cancel(gojo);
+                }
                 finish(d);
             }
             default -> {
