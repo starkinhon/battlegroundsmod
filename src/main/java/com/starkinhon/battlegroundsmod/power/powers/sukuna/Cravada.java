@@ -57,19 +57,27 @@ public final class Cravada {
     private static final float UPPERCUT = 12, SLAM = 25, STOMP = 15, WEB = 8, BOOM = 20, BURST = 10;
     private static final int COOLDOWN = 500, MISS_COOLDOWN = 50, BROKEN_COOLDOWN = 100;
 
-    private static final Map<LivingEntity, Boolean> BUSY = new WeakHashMap<>();
+    // Who is in the middle of one, and until when at the latest (game time): a B that never got to its end (its task
+    // dropped, an error) used to leave him marked busy for good, and the key did nothing from then on (Stark
+    // 2026-11-09: "aperto e não acontece nada").
+    private static final Map<LivingEntity, Long> BUSY = new WeakHashMap<>();
 
     private Cravada() {
     }
 
     public static boolean use(LivingEntity caster, ServerLevel level) {
-        if (!Movement.free(caster) || BUSY.containsKey(caster)) {
+        if (!Movement.free(caster)) {
+            SubCommon.warn(caster, "sukuna.b_cant");
+            return false;
+        }
+        Long until = BUSY.get(caster);
+        if (until != null && level.getGameTime() < until) {
             return false;
         }
         PowerData data = caster.getData(ModAttachments.POWER);
         int interrupts = data.interrupts;
         data.busyTicks = Math.max(data.busyTicks, PREP + DASH + 3);
-        BUSY.put(caster, true);
+        BUSY.put(caster, level.getGameTime() + PREP + DASH + 3 + BTrack.BURST + 16);
         LivingEntity locked = lock(caster);
         anim(caster, "sukuna.b_corre");
         Vec3[] dir = {locked != null ? flatTo(caster, locked) : Combat.flatLook(caster)};

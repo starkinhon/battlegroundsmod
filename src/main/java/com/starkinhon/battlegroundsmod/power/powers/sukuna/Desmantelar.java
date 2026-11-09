@@ -64,6 +64,8 @@ public final class Desmantelar {
         int step;
         long windowUntil = -1;
         boolean busy;
+        // when busy was set (game time): a press that never got to its end can't keep the key dead for good
+        long busySince;
         int token;
         // A boss can't hold the key: how many chant ticks it holds this time (-1 = a tap), and how many more combo taps it
         // throws on its own after this one (its BossOrder: hold = chant, plan COMBO2/COMBO3 = the taps, MUNDO = the gesture).
@@ -78,7 +80,7 @@ public final class Desmantelar {
 
     public static boolean use(LivingEntity caster, ServerLevel level) {
         State st = STATES.computeIfAbsent(caster, k -> new State());
-        if (st.busy) {
+        if (st.busy && level.getGameTime() - st.busySince < MAX_HOLD + 60) {
             return false;
         }
         PowerData data = caster.getData(ModAttachments.POWER);
@@ -88,6 +90,7 @@ public final class Desmantelar {
             bossOrder(caster, st, step);
         }
         st.busy = true;
+        st.busySince = level.getGameTime();
         int token = ++st.token;
         int interrupts = data.interrupts;
         data.busyTicks = Math.max(data.busyTicks, DECIDE + 1);

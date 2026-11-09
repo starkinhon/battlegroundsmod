@@ -107,6 +107,18 @@ public final class Tasks {
         }
     }
 
+    // Drops only the (non system) tasks that belong to owner, from any time. Unlike cancelSince(0, ...), the tasks with
+    // no known owner (other fighters' timers, the world's) are left alone.
+    public static void cancelOwned(Entity owner) {
+        for (List<Entry> list : List.of(ACTIVE, PENDING)) {
+            for (Entry entry : list) {
+                if (!entry.system && entry.owner == owner) {
+                    entry.cancelled = true;
+                }
+            }
+        }
+    }
+
     // Runs body every tick for the given number of ticks.
     public static void repeat(int ticks, IntConsumer body) {
         add(age -> {
