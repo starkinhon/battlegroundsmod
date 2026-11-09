@@ -146,6 +146,9 @@ public final class SukunaDomainScene {
                     endCamera(d);
                 }
                 DOMS.add(new Dom(casterId, center, now, a / 10f));
+                // load the shrine's meshes now, while the wave plays: loading them when it first shows froze the game
+                // for 1.5 s on the first domain of the session (test 2026-11-09)
+                shrineReady();
                 // The floor inside mirrors this place: take it all round now, while the wave is on screen.
                 if (mc.player != null && mc.player.position().distanceTo(center) <= ShrineDomain.RADIUS + 16) {
                     DomainPanorama.request();
@@ -206,6 +209,7 @@ public final class SukunaDomainScene {
         }
         DOMS.clear();
         DomainPanorama.clear();
+        restoreHeld();
     }
 
     public static boolean active() {
@@ -257,9 +261,26 @@ public final class SukunaDomainScene {
         return sceneDom(now()) != null;
     }
 
+    // The HUD goes away in the cutscene and in the fast version's dive into the dark too (it stayed over the eyes).
+    public static boolean hidesHud() {
+        if (cutscene()) {
+            return true;
+        }
+        double now = now();
+        for (Dom d : DOMS) {
+            double c = cut(d, now);
+            if (d.quick && d.part && d.closeAt < 0 && c >= ShrineDomain.QUICK_FROM && c < ShrineDomain.CUT_PLAY) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     // ---------- every tick ----------
 
     public static void tick() {
+        // anything still emptied (a draw that never finished: another mod cancelled it) gets its items back
+        restoreHeld();
         if (DOMS.isEmpty()) {
             return;
         }
@@ -862,7 +883,7 @@ public final class SukunaDomainScene {
             ShaderInstance pano = FxShaders.sdPano;
             pano.safeGetUniform("T").set(t);
             pano.safeGetUniform("Yaw").set(d.yaw * Mth.DEG_TO_RAD);
-            pano.safeGetUniform("A").set((float) sm(T_RED, T_RED + 10, s));
+            pano.safeGetUniform("A").set((float) (sm(T_RED, T_RED + 10, s) * (1 - 0.5 * sm(T_PLAY, T_PLAY + 20, s))));
             pano.safeGetUniform("Quake").set(0f);
             pano.safeGetUniform("Texel").set(DomainPanorama.texel());
             pano.safeGetUniform("CamL").set((float) camL.x, (float) camL.y, (float) camL.z);
@@ -1296,8 +1317,10 @@ public final class SukunaDomainScene {
             ShaderInstance m = FxShaders.sdMist;
             m.safeGetUniform("T").set((float) (s / 20));
             m.safeGetUniform("Red").set((float) (red * NEVOA));
-            m.safeGetUniform("Low").set((float) low);
-            m.safeGetUniform("Wind").set((float) wind);
+            // while playing the air has to stay clear enough to fight in (test 2026-11-09: floor and sky read as one red)
+            double play = sm(T_PLAY, T_PLAY + 20, s);
+            m.safeGetUniform("Low").set((float) (low * (1 - 0.5 * play)));
+            m.safeGetUniform("Wind").set((float) (wind * (1 - 0.6 * play)));
             m.safeGetUniform("R").set((float) MIST_R);
             m.safeGetUniform("CamL").set((float) camL.x, (float) camL.y, (float) camL.z);
             RenderSystem.depthMask(false);
@@ -1490,7 +1513,7 @@ public final class SukunaDomainScene {
             if (age < 0) {
                 continue;
             }
-            if (hk(k, 333) < 0.5) {
+            if (hk(k, 333) < (s >= T_PLAY ? 0.7 : 0.5)) {
                 // half the preview's count: its camera stood far, in the game they cross right in front of you
                 continue;
             }
@@ -1760,7 +1783,9 @@ public final class SukunaDomainScene {
             if (c >= 0 && d.closeAt < 0 && in) {
                 double s = src(c);
                 boolean sceneHere = scene(d, c);
-                if (sceneHere && s < T_BLACK) {
+                boolean under = s >= T_DARK && s < T_RED && toLocal(d, c, mc.gameRenderer.getMainCamera().getPosition()).y < -0.02;
+                if (sceneHere && s < T_BLACK && !under) {
+                    // the light dying is the world's; under the water the sea has its own (it went near black, test 07:4x)
                     double light = s < T_HIT ? 1 : 1 - 0.55 * sm(T_HIT, 170, s);
                     if (s >= T_DARK) {
                         light *= (1 - 0.6 * sm(T_DARK, T_BLACK - 10, s)) * (1 - sm(T_BLACK - 10, T_BLACK - 2, s));
@@ -1898,6 +1923,46 @@ public final class SukunaDomainScene {
             pose.scale(2.0f, 2.0f, 1);
             graphics.drawString(font, bottom, -font.width(bottom) / 2, 0, (alpha << 24) | 0xFF3048, true);
             pose.popPose();
+        }
+    }
+
+    // ---------- what the people hold ----------
+
+    // In the cutscene nobody holds anything: an item in hand was drawn over his face in the hand sign close-up (test
+    // 2026-11-09). Emptied only for the draw, on this client, and put back right after.
+    private static final Map<LivingEntity, net.minecraft.world.item.ItemStack[]> HELD = new HashMap<>();
+
+    public static void onRenderLivingPre(net.neoforged.neoforge.client.event.RenderLivingEvent.Pre<?, ?> event) {
+        if (DOMS.isEmpty() || !cutscene()) {
+            return;
+        }
+        LivingEntity e = event.getEntity();
+        net.minecraft.world.item.ItemStack main = e.getMainHandItem(), off = e.getOffhandItem();
+        if (main.isEmpty() && off.isEmpty() || HELD.containsKey(e)) {
+            return;
+        }
+        HELD.put(e, new net.minecraft.world.item.ItemStack[] {main, off});
+        e.setItemSlot(net.minecraft.world.entity.EquipmentSlot.MAINHAND, net.minecraft.world.item.ItemStack.EMPTY);
+        e.setItemSlot(net.minecraft.world.entity.EquipmentSlot.OFFHAND, net.minecraft.world.item.ItemStack.EMPTY);
+    }
+
+    private static void restoreHeld() {
+        for (Map.Entry<LivingEntity, net.minecraft.world.item.ItemStack[]> en : HELD.entrySet()) {
+            en.getKey().setItemSlot(net.minecraft.world.entity.EquipmentSlot.MAINHAND, en.getValue()[0]);
+            en.getKey().setItemSlot(net.minecraft.world.entity.EquipmentSlot.OFFHAND, en.getValue()[1]);
+        }
+        HELD.clear();
+    }
+
+    public static void onRenderLivingPost(net.neoforged.neoforge.client.event.RenderLivingEvent.Post<?, ?> event) {
+        if (HELD.isEmpty()) {
+            return;
+        }
+        LivingEntity e = event.getEntity();
+        net.minecraft.world.item.ItemStack[] items = HELD.remove(e);
+        if (items != null) {
+            e.setItemSlot(net.minecraft.world.entity.EquipmentSlot.MAINHAND, items[0]);
+            e.setItemSlot(net.minecraft.world.entity.EquipmentSlot.OFFHAND, items[1]);
         }
     }
 

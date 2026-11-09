@@ -27,6 +27,10 @@ void main() {
     if (h < 0.0) discard;
     h = sqrt(h);
     float t0 = max(0.0, -b - h), t1 = -b + h;
+    // The mist stands on the water: a ray looking down stops at the surface. Without this the volume under the floor
+    // painted the water the same red as the sky and hid the shrine's reflection (test 2026-11-09).
+    if (rd.y < 0.0) t1 = min(t1, max(0.0, -ro.y / rd.y));
+    if (t1 <= t0) discard;
     // No per-pixel jitter: in the game it stays on the screen while the world moves, a grain that shimmers (Stark 06:38).
     const int N = 40;
     float dt = (t1 - t0) / float(N);
