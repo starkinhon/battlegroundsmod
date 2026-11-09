@@ -39,6 +39,7 @@ public final class FxShaders {
     static ShaderInstance fugaExp;
     static ShaderInstance fugaRing;
     static ShaderInstance fugaGlow;
+    static ShaderInstance fugaOrb;
 
     private static Boolean irisPresent;
 
@@ -71,6 +72,7 @@ public final class FxShaders {
             register(event, "souls_fuga_exp", DefaultVertexFormat.POSITION, s -> fugaExp = s);
             register(event, "souls_fuga_ring", DefaultVertexFormat.POSITION_TEX, s -> fugaRing = s);
             register(event, "souls_fuga_glow", DefaultVertexFormat.POSITION_TEX_COLOR, s -> fugaGlow = s);
+            register(event, "souls_fuga_orb", DefaultVertexFormat.POSITION, s -> fugaOrb = s);
         } catch (Exception e) {
             BattlegroundsMod.LOGGER.error("Could not load the Fuga shaders", e);
         }

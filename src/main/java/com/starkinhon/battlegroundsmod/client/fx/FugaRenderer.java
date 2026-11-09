@@ -609,7 +609,7 @@ public final class FugaRenderer {
 
     static void render(Vec3 camera, float partial) {
         if (CASTS.isEmpty() || !loadTrack() || track.length == 0 || FxShaders.fugaFlame == null || FxShaders.fugaVol == null
-                || FxShaders.fugaArrow == null || FxShaders.fugaExp == null || FxShaders.fugaRing == null || FxShaders.fugaGlow == null) {
+                || FxShaders.fugaArrow == null || FxShaders.fugaExp == null || FxShaders.fugaRing == null || FxShaders.fugaGlow == null || FxShaders.fugaOrb == null) {
             return;
         }
         double now = now();
@@ -862,8 +862,18 @@ public final class FugaRenderer {
         draw(sh, b);
     }
 
-    // Soft glows: facing the camera (the fist), or lying on the ground (under him).
+    // Soft glows: a ball of light in the world (the fist), or lying on the ground (under him).
     private static void sprites(Frame f, Matrix4f toRel, Vec3 camera, boolean ground) {
+        if (!ground) {
+            // the fist's glow: a ball of light in the world (each one its own draw, not a quad in the shared buffer)
+            for (Sprite s : f.sprites) {
+                if (!s.ground()) {
+                    orb(toRel.transformPosition(new org.joml.Vector3f((float) s.at().x, (float) s.at().y, (float) s.at().z)), (float) s.size() / 2,
+                            s.r(), s.g(), s.b());
+                }
+            }
+            return;
+        }
         BufferBuilder b = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
         int count = 0;
         for (Sprite s : f.sprites) {
@@ -871,15 +881,8 @@ public final class FugaRenderer {
                 continue;
             }
             org.joml.Vector3f c = toRel.transformPosition(new org.joml.Vector3f((float) s.at().x, (float) s.at().y, (float) s.at().z));
-            org.joml.Vector3f r, u;
-            if (ground) {
-                r = new org.joml.Vector3f((float) s.size() / 2, 0, 0);
-                u = new org.joml.Vector3f(0, 0, (float) s.size() / 2);
-            } else {
-                org.joml.Vector3f[] ax = billboard(c);
-                r = ax[0].mul((float) s.size() / 2);
-                u = ax[1].mul((float) s.size() / 2);
-            }
+            org.joml.Vector3f r = new org.joml.Vector3f((float) s.size() / 2, 0, 0);
+            org.joml.Vector3f u = new org.joml.Vector3f(0, 0, (float) s.size() / 2);
             quad(b, c, r, u, s.r(), s.g(), s.b(), s.a());
             count++;
         }
@@ -888,6 +891,39 @@ public final class FugaRenderer {
             return;
         }
         draw(FxShaders.fugaGlow, b);
+    }
+
+    // A glow fixed in the world (the fist's): a ball of light around c (camera-relative), drawn on a box around it; the
+    // shader finds the light along each view ray and writes its depth, so whatever stands in front of it hides it.
+    private static void orb(org.joml.Vector3f c, float radius, float r, float g, float b) {
+        if (radius < 1.0E-3f) {
+            return;
+        }
+        ShaderInstance sh = FxShaders.fugaOrb;
+        sh.safeGetUniform("Center").set(c.x, c.y, c.z);
+        sh.safeGetUniform("Radius").set(radius);
+        sh.safeGetUniform("Tint").set(r, g, b);
+        BufferBuilder buf = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION);
+        float h = radius * 1.01f;
+        // each face: the axis it faces along, then two in-plane axes ordered so the corners wind counter-clockwise seen
+        // from outside (the shader keeps only the far, back-facing side)
+        int[][] faces = {{0, 1, 2}, {1, 2, 0}, {2, 0, 1}};
+        for (int[] f : faces) {
+            for (int sign = -1; sign <= 1; sign += 2) {
+                float[][] q = {{-1, -1}, {1, -1}, {1, 1}, {-1, 1}};
+                for (int k = 0; k < 4; k++) {
+                    int qi = sign > 0 ? k : 3 - k;
+                    float[] p = new float[3];
+                    p[f[0]] = sign * h;
+                    p[f[1]] = q[qi][0] * h;
+                    p[f[2]] = q[qi][1] * h;
+                    buf.addVertex(c.x + p[0], c.y + p[1], c.z + p[2]);
+                }
+            }
+        }
+        RenderSystem.disableCull();
+        draw(sh, buf);
+        RenderSystem.enableCull();
     }
 
     private static void embers(Frame f, Matrix4f toRel, Vec3 camera) {
