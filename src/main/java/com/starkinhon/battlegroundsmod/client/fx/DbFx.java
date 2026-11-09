@@ -80,6 +80,22 @@ public final class DbFx {
         }
     }
 
+    // Piccolo's heavy gear thrown off before the Makankosappo (sent as screen preset 52; drawn here, not a SubNet kind).
+    private static final int GEAR = -52;
+    private static final float[] MK_CORE = FxDraw.rgb(0xFFF3A6);
+    private static final float[] MK_GOLD = FxDraw.rgb(0xFFE23A);
+    private static final float[] MK_PINK = FxDraw.rgb(0xFF5FAE);
+    private static final float[] MK_DOME = FxDraw.rgb(0xFF7CC0);
+    private static final float[] MK_FLASH = FxDraw.rgb(0xFFF1C8);
+    private static final float[] MK_TIP = FxDraw.rgb(0xFFE85A);
+    private static final float[] MK_SPARK_PINK = {1f, 0.37f, 0.68f};
+    private static final float[] MK_SPARK_GOLD = {1f, 0.89f, 0.23f};
+    private static final float[][] HZ_ORBS = {FxDraw.rgb(0xFF9A1A), FxDraw.rgb(0xFFB22A), FxDraw.rgb(0xFFC23A)};
+    private static final float[] HZ_DOME = FxDraw.rgb(0xFFA828);
+    private static final float[] HZ_INNER = FxDraw.rgb(0xFFD36A);
+    private static final float[] HZ_FLASH = FxDraw.rgb(0xFFF3C0);
+    private static final float[][] GEAR_COLORS = {FxDraw.rgb(0xEDE8D6), FxDraw.rgb(0xF4F1E6), FxDraw.rgb(0xE2DCC8)};
+
     private static final List<Fx> SHOTS = new ArrayList<>();
     private static final Map<Long, Fx> TRACKED = new HashMap<>();
     // Which pass is drawing: true the glow (additive), false the alpha layer.
@@ -183,6 +199,9 @@ public final class DbFx {
                 if ((int) a == 48) {
                     // Turned to stone (id = who, b = ticks).
                     AshDeath.startStone(id, (int) b);
+                } else if ((int) a == 52) {
+                    // Piccolo throws off the cape, turban and pads (pos = feet, dir = ground Y and yaw).
+                    SHOTS.add(new Fx(GEAR, id, pos, dir, a, b, c, now));
                 } else {
                     screen((int) a, pos);
                 }
@@ -217,7 +236,8 @@ public final class DbFx {
             case SubNet.BIG_BANG_BOOM -> 110;
             case SubNet.HIT -> 13;
             case SubNet.DEATH_BEAM -> 11;
-            case SubNet.MAKANKO -> f.a + 11;
+            case SubNet.MAKANKO -> f.a + 95;
+            case GEAR -> 120;
             case SubNet.SOLAR -> 31;
             case SubNet.STREAK -> Math.max(1, f.c);
             case SubNet.RAIN -> 14 + f.b + 22;
@@ -292,6 +312,7 @@ public final class DbFx {
                 case SubNet.VANISH -> vanish(f, age);
                 case SubNet.FLEX -> flex(f, age);
                 case SubNet.SCAR -> scar(f, age);
+                case GEAR -> gear(f, age);
                 default -> {
                 }
             }
@@ -418,13 +439,18 @@ public final class DbFx {
     }
 
     static void kiBall(Vector3f p, float r, float[] col, float a, float t) {
+        kiBall(p, r, col, a, t, 0.3f, 3.1f);
+    }
+
+    // life: how torn the dome is (colored balls want about 0.4, lower burns out white); seed: its own noise.
+    static void kiBall(Vector3f p, float r, float[] col, float a, float t, float life, float seed) {
         if (a <= 0) {
             return;
         }
         if (KiMesh.ready()) {
-            // A small blast dome, held at life 0.3 so it keeps its color (lower life burns out white).
+            // A small blast dome, held at a life that keeps its color.
             if (pass) {
-                blast(p, r, 0.3f, col, t, 3.1f, Math.min(1, a), false, 14);
+                blast(p, r, life, col, t, seed, Math.min(1, a), false, 14);
             }
             return;
         }
@@ -550,6 +576,10 @@ public final class DbFx {
     static void kiBoom(Vector3f p, float age, float r, float[] col, int seed, float ground) {
         if (KiMesh.ready()) {
             if (age < 0 || age > (seed >= 2000 ? 170 : 110)) {
+                return;
+            }
+            if (seed >= 3000) {
+                hellzone3d(p, age, r, seed, ground);
                 return;
             }
             if (seed >= 2000) {
@@ -689,6 +719,37 @@ public final class DbFx {
         }
         if (age < 150) {
             dsk(new Vector3f(c.x, ground + 0.03f, c.z), new Vector3f(0, 1, 0), R * 1.4f, FxDraw.SOFT, 0.15f, DIRT, 0.85f * smooth(age / 4) * (1 - smooth((age - 110) / 40)),
+                    false);
+        }
+    }
+
+    // Piccolo's Hellzone Grenade closing (radius R, 6.5 at full): the orange dome, a golden one inside it growing faster,
+    // the smoke staying on top and the widest dust ring.
+    static void hellzone3d(Vector3f p, float age, float R, int seed, float ground) {
+        if (age > 170) {
+            return;
+        }
+        boolean low = p.y - ground < R * 0.7f;
+        Vector3f c = low ? new Vector3f(p.x, ground + 0.6f, p.z) : new Vector3f(p);
+        blast(c, R * easeOut(age / 14), Mth.clamp(age / 48, 0, 1), HZ_DOME, age, seed * 0.011f, 1, false, 14);
+        blast(new Vector3f(c).add(0, 0.2f, 0), R * 0.68f * easeOut(age / 9), Mth.clamp(age / 26, 0, 1), HZ_INNER, age, seed * 0.023f, 1, false, 15);
+        if (age >= 26) {
+            float late = (age - 26) / 20;
+            blast(new Vector3f(c.x, c.y - 0.3f + late * 0.5f, c.z), R * 1.02f + late * 0.4f, 0.35f + 0.65f * Mth.clamp((age - 26) / 90, 0, 1), SMOKE_3D, age,
+                    seed * 0.031f, 1, true, 6);
+        }
+        if (p.y - ground < R * 1.5f) {
+            dustRing(new Vector3f(p.x, ground, p.z), R * 2.3f * easeOut(age / 32), R * 2.6f, Mth.clamp(age / 56, 0, 1), HZ_DOME, seed * 0.07f);
+        }
+        if (age < 8) {
+            float k = age / 8;
+            flashBall(c, R * (0.15f + 0.6f * Mth.sqrt(k)), 1 - k, HZ_FLASH, seed * 0.05f);
+        }
+        if (age < 30) {
+            warp(c, R * 2, 1.2f * (1 - age / 30), 0, age, null);
+        }
+        if (age < 140) {
+            dsk(new Vector3f(p.x, ground + 0.03f, p.z), new Vector3f(0, 1, 0), R * 1.3f, FxDraw.SOFT, 0.15f, DIRT, 0.85f * smooth(age / 4) * (1 - smooth((age - 100) / 40)),
                     false);
         }
     }
@@ -948,6 +1009,16 @@ public final class DbFx {
         float[] col = color(f.b % 16);
         Vector3f p = rel(f.pos);
         float r = f.a;
+        if (style == 3) {
+            // A ball being charged in the hands (Masenko), crackling at life 0.36 with its own noise.
+            kiBall(p, r, col, out, age, 0.36f, 1.3f + (f.id % 97) * 0.61f);
+            return;
+        }
+        if (style == 4) {
+            // Hellzone Grenade: each of the 20 balls in its own orange, with its own noise, at life 0.44.
+            kiBall(p, r, HZ_ORBS[Math.floorMod(f.id, 3)], out, age, 0.44f, 0.7f + (f.id % 89) * 0.37f);
+            return;
+        }
         kiBall(p, r, col, out, age);
         if (style == 1 && !KiMesh.ready()) {
             // Charging (Kamehameha): sparks crackling out of it.
@@ -1247,11 +1318,20 @@ public final class DbFx {
         bb(end, 0.2f, 0, FxDraw.SOFT, 0.9f, COLORS[Db.PINK_W], fd, true);
     }
 
+    // a: the ticks the ray takes to reach its end; b: the ground's world Y under the end.
     private static void makanko(Fx f, float age) {
-        float fd = 1 - smooth((age - f.a) / 10);
         Vector3f tip = rel(f.pos);
         Vector3f to = rel(f.pos.add(f.dir));
-        Vector3f end = new Vector3f(tip).lerp(to, Math.min(1, age / 4));
+        float reach = Math.max(1, f.a);
+        if (KiMesh.ready()) {
+            makanko3d(f, age, tip, to, reach);
+            return;
+        }
+        if (age > reach + 11) {
+            return;
+        }
+        float fd = 1 - smooth((age - reach) / 10);
+        Vector3f end = new Vector3f(tip).lerp(to, Math.min(1, age / reach));
         Vector3f d = new Vector3f(to).sub(tip).normalize();
         Vector3f u = new Vector3f(d).cross(Math.abs(d.y) > 0.9f ? new Vector3f(1, 0, 0) : new Vector3f(0, 1, 0)).normalize();
         Vector3f v = new Vector3f(d).cross(u).normalize();
@@ -1277,7 +1357,76 @@ public final class DbFx {
         }
     }
 
+    // Realista+Anime (the approved Makankosappo): a thin white-yellow core and two tight spirals stuck to it (yellow and
+    // pink, each with its own living thickness), running out far too fast; where it stops, a pink dome tears open and
+    // the smoke stays, and only then does the ray's end leave the hand and run out to the tip.
+    private static void makanko3d(Fx f, float age, Vector3f tip, Vector3f to, float reach) {
+        if (!pass) {
+            return;
+        }
+        Vector3f d = new Vector3f(to).sub(tip);
+        float full = d.length();
+        if (full < 0.05f) {
+            return;
+        }
+        d.div(full);
+        float len = Math.max(0.05f, full * Math.min(1, age / reach));
+        float endT = age - reach;
+        float tail = endT > 18 ? (endT - 18) * 2.5f : -1;
+        if (tail < len) {
+            KiMesh.P core = KiMesh.p(KiMesh.BEAM);
+            core.len = len;
+            core.w = 0.12f;
+            core.flow = age * 0.7f;
+            core.time = age / 20f;
+            core.tail = tail;
+            core.alpha = 1;
+            core.color = MK_CORE;
+            KiMesh.queue(KiMesh.Mesh.TUBE, KiMesh.along(tip, d), core, KiMesh.BOTH, 14);
+            KiMesh.P sp = KiMesh.p(KiMesh.SPIRAL);
+            sp.len = len;
+            sp.w = 0.29f;
+            sp.pitch = 1.05f;
+            sp.time = age / 20f;
+            sp.tail = tail;
+            sp.alpha = 1;
+            sp.color = MK_GOLD;
+            sp.color2 = MK_PINK;
+            KiMesh.queue(KiMesh.Mesh.SPIRAL, KiMesh.along(tip, d), sp, KiMesh.BOTH, 16);
+        }
+        if (age < 6) {
+            // The shock at the fingertips as it is let go.
+            float k = age / 6;
+            flashBall(tip, 0.3f + 1.0f * Mth.sqrt(k), 1 - k, MK_FLASH, 2.3f);
+        }
+        if (endT < 0) {
+            return;
+        }
+        float ground = (float) (f.b - cam.y);
+        boolean low = to.y - ground < 2.5f;
+        Vector3f c = low ? new Vector3f(to.x, ground + 0.4f, to.z) : new Vector3f(to);
+        blast(c, 3.2f * easeOut(endT / 10), Mth.clamp(endT / 36, 0, 1), MK_DOME, endT, 4.7f + f.id * 0.13f, 1, false, 14);
+        if (endT >= 20) {
+            float late = (endT - 20) / 20;
+            blast(new Vector3f(c.x, c.y - 0.1f + late * 0.4f, c.z), 3.4f + late * 0.3f, 0.35f + 0.65f * Mth.clamp((endT - 20) / 80, 0, 1), SMOKE_3D, endT, 6.1f, 1, true, 6);
+        }
+        if (low) {
+            dustRing(new Vector3f(to.x, ground, to.z), 5.6f * easeOut(endT / 22), 6.4f, Mth.clamp(endT / 40, 0, 1), MK_GOLD, 3.3f);
+        }
+        if (endT < 6) {
+            float k = endT / 6;
+            flashBall(c, 0.4f + 2f * Mth.sqrt(k), 1 - k, pale(MK_DOME, 0.6f), 5.1f);
+        }
+        if (endT < 20) {
+            warp(c, 5, 0.8f * (1 - endT / 20), 0, endT, null);
+        }
+    }
+
     private static void sparks(Fx f, float age, float out) {
+        if ((int) f.b / 16 == 1 && f.dir.lengthSqr() < 1.0E-6) {
+            makankoCharge(f, age, out);
+            return;
+        }
         float k = Mth.clamp(f.a, 0, 1) * out;
         float[] col = color(f.b);
         float[] hot = pale(col, 0.75f);
@@ -1300,6 +1449,97 @@ public final class DbFx {
             float ph = fract(age * 0.03f + Db.hash(i, 6, 1));
             bb(new Vector3f(feet).add((Db.hash(i, 6, 2) - 0.5f) * 6, ph * 1.4f, (Db.hash(i, 6, 3) - 0.5f) * 6), 0.2f, i, FxDraw.SOLID, 0,
                     new float[] {0.4f, 0.36f, 0.32f}, k * (1 - ph), false);
+        }
+    }
+
+    // The Makankosappo charge: the yellow orb at the fingertips (Realista+Anime dome) and 90 sparks spiralling into it,
+    // yellow and pink, each with its own radius, turn and speed.
+    private static void makankoCharge(Fx f, float age, float out) {
+        float k = Mth.clamp(f.a, 0, 1) * out;
+        Vector3f tip = rel(f.pos);
+        float r = 0.06f + 0.16f * smooth(k) + 0.03f * Mth.sin(age * 2.65f) + 0.02f * Mth.sin(age * 4.55f);
+        if (KiMesh.ready()) {
+            blast(tip, r, 0.28f, MK_TIP, age, 2.9f, out, false, 14);
+        } else {
+            bb(tip, r * 4, 0, FxDraw.SOFT, 0.8f, MK_TIP, 0.9f * out, true);
+        }
+        float t = age / 20f;
+        for (int i = 0; i < 90; i++) {
+            float spd = 0.9f + Db.hash(i, 1, 31) * 1.4f;
+            float raw = t * spd + Db.hash(i, 2, 31);
+            float life = fract(raw);
+            int cyc = (int) Math.floor(raw);
+            float a0 = Db.hash(i, cyc, 32) * Mth.TWO_PI;
+            float rad = (0.3f + Db.hash(i, cyc, 33) * 0.7f) * (1 - life);
+            float turn = 6 + Db.hash(i, 3, 31) * 9;
+            float a = a0 + life * turn;
+            float y = (Db.hash(i, 4, 31) - 0.5f) * 0.5f * (1 - life);
+            Vector3f q = new Vector3f(tip).add(Mth.cos(a) * rad, y + Mth.sin(a) * rad * 0.6f, Mth.sin(a) * rad * 0.8f);
+            float b = 0.4f + 0.6f * life;
+            bb(q, 0.07f, 0, FxDraw.SOFT, 0.9f, i % 2 == 1 ? MK_SPARK_PINK : MK_SPARK_GOLD, b * out * (0.3f + 0.7f * k), true);
+        }
+    }
+
+    // Piccolo's heavy gear (cape, turban, pads) falling off him: each piece a solid slab with its own throw and spin,
+    // landing flat on the ground; they stay a few seconds and fade.
+    private static void gear(Fx f, float age) {
+        if (pass) {
+            return;
+        }
+        float fade = 1 - smooth((age - 90) / 30);
+        if (fade <= 0) {
+            return;
+        }
+        float s = 0.78f;
+        float yaw = (float) f.dir.y;
+        float ground = groundY(f);
+        Vector3f feet = rel(f.pos);
+        // Facing (Minecraft yaw): forward = (-sin, 0, cos); the gear is thrown back and out to the sides.
+        Vector3f back = new Vector3f(Mth.sin(yaw), 0, -Mth.cos(yaw));
+        Vector3f side = new Vector3f(Mth.cos(yaw), 0, Mth.sin(yaw));
+        float[][] half = {{0.31f, 0.65f, 0.025f}, {0.28f, 0.15f, 0.28f}, {0.46f, 0.07f, 0.17f}};
+        float[][] start = {{0, 0.95f, 0.17f}, {0, 2.1f, 0}, {0, 1.56f, 0}};
+        float g = 28 * s;
+        float t = age / 20f;
+        for (int i = 0; i < 3; i++) {
+            float vx = (i - 1) * 0.6f * s;
+            float vy = (1.2f + i * 0.3f) * s;
+            float vz = (i == 0 ? 1.4f : 0.3f) * s;
+            float y0 = start[i][1] * s;
+            float rest = i == 0 ? 0.03f : half[i][1] * s;
+            float land = (vy + Mth.sqrt(vy * vy + 2 * g * Math.max(0, y0 - rest))) / g;
+            float tt = Math.min(t, land);
+            float lx = start[i][0] * s + vx * tt;
+            float lz = start[i][2] * s + vz * tt;
+            float ly = t >= land ? rest : y0 + vy * tt - 0.5f * g * tt * tt;
+            Vector3f c = new Vector3f(feet).add(side.x * lx + back.x * lz, 0, side.z * lx + back.z * lz);
+            c.y = t >= land ? ground + rest : feet.y + ly;
+            Quaternionf q = new Quaternionf().rotateY(Mth.PI - yaw);
+            if (t >= land) {
+                q.rotateY(Db.hash(i, 5, f.id) * 0.8f - 0.4f);
+                if (i == 0) {
+                    q.rotateX(-Mth.HALF_PI);
+                }
+            } else {
+                q.rotateX((Db.hash(i, 6, f.id) * 2 - 1) * tt * 3).rotateZ((Db.hash(i, 7, f.id) * 2 - 1) * tt * 3);
+            }
+            slab(c, q, half[i][0] * s, half[i][1] * s, half[i][2] * s, GEAR_COLORS[i], fade);
+        }
+    }
+
+    // A solid box (half sizes hx, hy, hz) turned by q, each face shaded by where it looks.
+    private static void slab(Vector3f c, Quaternionf q, float hx, float hy, float hz, float[] col, float op) {
+        Vector3f[] p = new Vector3f[8];
+        for (int i = 0; i < 8; i++) {
+            Vector3f v = new Vector3f((i & 1) == 0 ? -hx : hx, (i & 2) == 0 ? -hy : hy, (i & 4) == 0 ? -hz : hz);
+            p[i] = q.transform(v).add(c);
+        }
+        int[][] faces = {{0, 1, 3, 2}, {4, 6, 7, 5}, {0, 4, 5, 1}, {2, 3, 7, 6}, {0, 2, 6, 4}, {1, 5, 7, 3}};
+        for (int[] fc : faces) {
+            Vector3f n = new Vector3f(p[fc[1]]).sub(p[fc[0]]).cross(new Vector3f(p[fc[3]]).sub(p[fc[0]]));
+            float lit = n.lengthSquared() < 1.0E-9f ? 0.7f : 0.62f + 0.38f * Math.max(0, n.normalize().y) + 0.08f * n.x;
+            float[] shaded = {col[0] * lit, col[1] * lit, col[2] * lit};
+            FxDraw.quad(p[fc[0]], p[fc[1]], p[fc[2]], p[fc[3]], FxDraw.SOLID, 0, shaded, op, false);
         }
     }
 
@@ -1966,6 +2206,22 @@ public final class DbFx {
             case 45 -> {
                 ScreenFx.flash(0xD8F0FF, 0.35f * near, 6);
                 ScreenShake.start(0.7f * near, 30);
+            }
+            // Piccolo's knee (Stretched Arm): three manga frames.
+            case 50 -> {
+                ScreenFx.impactFrame(new int[] {4, 3, 4}, 1, 0xFFFFFF, pos, 0);
+                ScreenShake.start(0.9f * near, 10);
+            }
+            // The Hellzone Grenade closing: four manga frames.
+            case 51 -> {
+                ScreenFx.flash(0xFFF3C0, 0.7f * near, 14);
+                ScreenFx.impactFrame(new int[] {4, 3, 4, 3}, 1, 0xFFFFFF, pos, 0);
+                ScreenShake.start(2f * near, 46);
+            }
+            // The Makankosappo piercing someone: one negative frame.
+            case 53 -> {
+                ScreenFx.impactFrame(new int[] {4}, 1, 0xFFFFFF, pos, 0);
+                ScreenShake.start(0.6f * near, 6);
             }
             // Realista+Anime: a ki blast landing, the manga impact frame in black and white, negative then positive.
             case 46 -> {
