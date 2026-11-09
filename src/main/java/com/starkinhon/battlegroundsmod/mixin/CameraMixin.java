@@ -35,7 +35,9 @@ public abstract class CameraMixin {
     private void battlegroundsmod$cutscene(BlockGetter level, Entity entity, boolean detached, boolean thirdPersonReverse,
             float partialTick, CallbackInfo ci) {
         // A cutscene from the Editor de Cutscenes has the camera to itself (null between its stretches: the player's view).
-        FaceCutscene.Shot shot = CutscenePlayer.active() ? CutscenePlayer.shot(partialTick)
+        // Sukuna's Expansão de Domínio holds the camera of everyone caught in it while its cutscene plays.
+        FaceCutscene.Shot shot = com.starkinhon.battlegroundsmod.client.fx.SukunaDomainScene.cutscene() ? com.starkinhon.battlegroundsmod.client.fx.SukunaDomainScene.shot(partialTick)
+                : CutscenePlayer.active() ? CutscenePlayer.shot(partialTick)
                 : BossCutscene.active() ? BossCutscene.shot(partialTick)
                 : HakaiCutscene.active() ? HakaiCutscene.shot(partialTick)
                 : EsferaCutscene.active() ? EsferaCutscene.shot(partialTick)
@@ -50,6 +52,11 @@ public abstract class CameraMixin {
         if (shake != null) {
             Camera camera = (Camera) (Object) this;
             setRotation(camera.getYRot() + shake[0], camera.getXRot() + shake[1]);
+        }
+        float[] domainShake = com.starkinhon.battlegroundsmod.client.fx.SukunaDomainScene.shake();
+        if (domainShake != null) {
+            Camera camera = (Camera) (Object) this;
+            setRotation(camera.getYRot() + domainShake[0], camera.getXRot() + domainShake[1]);
         }
     }
 }

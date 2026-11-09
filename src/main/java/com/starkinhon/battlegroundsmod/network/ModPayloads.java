@@ -826,6 +826,25 @@ public final class ModPayloads {
         }
     }
 
+    // Server -> client: Sukuna's Santuário Malevolente (power/powers/sukuna/ShrineDomain, modes M_*). a: where he faces x10
+    // (or 0), b: the target's id (or -1), part: this player is in it (sees the cutscene). See client/fx/SukunaDomainScene.
+    public record SukunaDomain(int casterId, Vec3 center, int mode, int a, int b, boolean part) implements CustomPacketPayload {
+        public static final Type<SukunaDomain> TYPE = payloadType("sukuna_domain");
+        public static final StreamCodec<ByteBuf, SukunaDomain> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, SukunaDomain::casterId,
+                VEC3, SukunaDomain::center,
+                ByteBufCodecs.VAR_INT, SukunaDomain::mode,
+                ByteBufCodecs.VAR_INT, SukunaDomain::a,
+                ByteBufCodecs.VAR_INT, SukunaDomain::b,
+                ByteBufCodecs.BOOL, SukunaDomain::part,
+                SukunaDomain::new);
+
+        @Override
+        public Type<SukunaDomain> type() {
+            return TYPE;
+        }
+    }
+
     // Server -> client: an attack in flight was erased (Bills' hakaizinho): stop drawing what skill had around pos.
     public record EraseAttack(String skill, Vec3 pos, float radius) implements CustomPacketPayload {
         public static final Type<EraseAttack> TYPE = payloadType("erase_attack");
@@ -1485,6 +1504,8 @@ public final class ModPayloads {
                 () -> ClientHooks.esferaFall(payload.targetId(), payload.start(), payload.lastHead(), payload.awakened())));
         registrar.playToClient(GojoDomain.TYPE, GojoDomain.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.gojoDomain(payload.casterId(), payload.center(), payload.awakened(), payload.mode(), payload.other())));
+        registrar.playToClient(SukunaDomain.TYPE, SukunaDomain.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.sukunaDomain(payload.casterId(), payload.center(), payload.mode(), payload.a(), payload.b(), payload.part())));
         registrar.playToClient(EraseAttack.TYPE, EraseAttack.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.eraseAttack(payload.skill(), payload.pos(), payload.radius())));
         registrar.playToClient(HakaiBall.TYPE, HakaiBall.STREAM_CODEC, (payload, context) -> context.enqueueWork(

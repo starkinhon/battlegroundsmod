@@ -48,6 +48,26 @@ public final class FxShaders {
     static ShaderInstance sukunaFx;
     // The Clivar's grid over a body (ClivarRenderer).
     static ShaderInstance clivar;
+    // Sukuna's Expansão de Domínio (SukunaDomainScene); without them the domain still works, just without its look.
+    static ShaderInstance sdSky;
+    static ShaderInstance sdFloor;
+    static ShaderInstance sdShrine;
+    static ShaderInstance sdCol;
+    static ShaderInstance sdMist;
+    static ShaderInstance sdEmber;
+    static ShaderInstance sdLine;
+    static ShaderInstance sdScar;
+    static ShaderInstance sdGrid;
+    static ShaderInstance sdZig;
+    static ShaderInstance sdBlood;
+    static ShaderInstance sdAbyss;
+    static ShaderInstance sdOv;
+    static ShaderInstance sdUwBack;
+    static ShaderInstance sdUwSurf;
+    static ShaderInstance sdBubble;
+    static ShaderInstance sdDrop;
+    static ShaderInstance sdWave;
+    static ShaderInstance sdPano;
 
     private static Boolean irisPresent;
 
@@ -112,6 +132,30 @@ public final class FxShaders {
             register(event, "fx_void_flash", DefaultVertexFormat.POSITION, s -> voidFlash = s);
         } catch (Exception e) {
             BattlegroundsMod.LOGGER.error("Could not load the 0.2-second Domain Expansion shader", e);
+        }
+        // On its own too: a problem in the Sukuna's domain shaders never takes the rest down.
+        try {
+            register(event, "souls_sd_sky", DefaultVertexFormat.POSITION, s -> sdSky = s);
+            register(event, "souls_sd_floor", DefaultVertexFormat.POSITION, s -> sdFloor = s);
+            register(event, "souls_sd_shrine", DefaultVertexFormat.NEW_ENTITY, s -> sdShrine = s);
+            register(event, "souls_sd_col", DefaultVertexFormat.POSITION_TEX, s -> sdCol = s);
+            register(event, "souls_sd_mist", DefaultVertexFormat.POSITION, s -> sdMist = s);
+            register(event, "souls_sd_ember", DefaultVertexFormat.POSITION_TEX_COLOR, s -> sdEmber = s);
+            register(event, "souls_sd_line", DefaultVertexFormat.POSITION_TEX, s -> sdLine = s);
+            register(event, "souls_sd_scar", DefaultVertexFormat.POSITION_TEX, s -> sdScar = s);
+            register(event, "souls_sd_grid", DefaultVertexFormat.POSITION_COLOR_NORMAL, s -> sdGrid = s);
+            register(event, "souls_sd_zig", DefaultVertexFormat.POSITION_TEX, s -> sdZig = s);
+            register(event, "souls_sd_blood", DefaultVertexFormat.POSITION_TEX, s -> sdBlood = s);
+            register(event, "souls_sd_abyss", DefaultVertexFormat.POSITION, s -> sdAbyss = s);
+            register(event, "souls_sd_ov", DefaultVertexFormat.POSITION, s -> sdOv = s);
+            register(event, "souls_sd_uwback", DefaultVertexFormat.POSITION, s -> sdUwBack = s);
+            register(event, "souls_sd_uwsurf", DefaultVertexFormat.POSITION, s -> sdUwSurf = s);
+            register(event, "souls_sd_bubble", DefaultVertexFormat.POSITION_TEX_COLOR, s -> sdBubble = s);
+            register(event, "souls_sd_drop", DefaultVertexFormat.POSITION_TEX, s -> sdDrop = s);
+            register(event, "souls_sd_wave", DefaultVertexFormat.POSITION_TEX, s -> sdWave = s);
+            register(event, "souls_sd_pano", DefaultVertexFormat.POSITION, s -> sdPano = s);
+        } catch (Exception e) {
+            BattlegroundsMod.LOGGER.error("Could not load the Sukuna Domain Expansion shaders", e);
         }
     }
 
