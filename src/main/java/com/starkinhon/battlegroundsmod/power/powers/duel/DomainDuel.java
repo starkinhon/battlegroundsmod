@@ -137,6 +137,11 @@ public final class DomainDuel {
         return null;
     }
 
+    // One of the two of a Duelo de Expansões still going (the tie too).
+    public static boolean fighting(LivingEntity entity) {
+        return !DUELS.isEmpty() && of(entity) != null;
+    }
+
     private static boolean isGojo(LivingEntity e) {
         return e.hasData(ModAttachments.POWER) && "strongest".equals(e.getData(ModAttachments.POWER).power);
     }
@@ -216,6 +221,15 @@ public final class DomainDuel {
         Vec3 center = gojo.position();
         Duel d = new Duel(gojo, sukuna, level, center);
         DUELS.add(d);
+        // Everything of before stops as the duel opens (Stark, 2026-11-09: Gojo's Blue kept pulling him through it):
+        // every attack in the air around, the Blues out, and whatever Sukuna had going (his tasks read the interrupt and
+        // close themselves). Gojo's own domain is the duel's, so he is not interrupted.
+        com.starkinhon.battlegroundsmod.combat.Destructible.eraseAlong(level, center, center, ShrineDomain.RADIUS, null);
+        com.starkinhon.battlegroundsmod.power.powers.gojo.Azul.dispel(gojo, center, ShrineDomain.RADIUS);
+        com.starkinhon.battlegroundsmod.power.powers.gojo.Azul.dispel(sukuna, center, ShrineDomain.RADIUS);
+        if (sukuna.hasData(ModAttachments.POWER)) {
+            PowerLogic.interrupt(sukuna);
+        }
         // Sukuna is no longer caught: he answers. Held in his sign, his camera free, until the tunnel.
         InfiniteVoid.spare(gojo, sukuna);
         if (sukuna.hasData(ModAttachments.POWER)) {

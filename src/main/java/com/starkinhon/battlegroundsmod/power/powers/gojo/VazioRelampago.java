@@ -66,6 +66,15 @@ public final class VazioRelampago {
     }
 
     public static boolean use(LivingEntity caster, ServerLevel level) {
+        if (inDomain(caster)) {
+            // Inside a Domain (his own open, someone else's, the space of one) or in a Duelo de Expansões: it does not go off
+            // (Stark, 2026-11-09: the boss Gojo snapped it in the tie and inside his own Expansão, and breaking a
+            // Santuário mid-way left everyone stuck in it).
+            if (caster instanceof ServerPlayer player) {
+                player.displayClientMessage(Component.translatable("message.battlegroundsmod.vazio_relampago_dominio"), true);
+            }
+            return false;
+        }
         List<LivingEntity> near = targets(level, caster);
         if (near.isEmpty()) {
             if (caster instanceof ServerPlayer player) {
@@ -94,7 +103,7 @@ public final class VazioRelampago {
         }
         sound(level, caster, SoundEvents.BEACON_ACTIVATE, 1.4f, 1.9f);
         Tasks.later(SNAP, () -> {
-            if (!caster.isAlive() || caster.level() != level) {
+            if (!caster.isAlive() || caster.level() != level || inDomain(caster)) {
                 return;
             }
             snap(level, caster, busy);
@@ -137,7 +146,9 @@ public final class VazioRelampago {
     // move of theirs still running is dropped (like the Izanami does: their tasks, not the bookkeeping ones), the Katon
     // and the Susanoo are put out, the guard drops, and their sounds and effects stop.
     public static void breakAll(LivingEntity target) {
-        boolean domain = InfiniteVoid.cancel(target);
+        // A Santuário opening closes the way Sukuna's own V closes it (everyone back in the world): dropping its task
+        // left the arena, the holds and the clients' scene stuck for good.
+        boolean domain = InfiniteVoid.cancel(target) | com.starkinhon.battlegroundsmod.power.powers.sukuna.ShrineDomain.cancel(target);
         if (target.hasData(ModAttachments.POWER)) {
             Katon.cancel(target);
             PowerLogic.interrupt(target);
@@ -201,10 +212,27 @@ public final class VazioRelampago {
         return DominioSpec.get(awakened).radius();
     }
 
-    // Everyone within reach but players in creative (they see it, but take none of it).
+    // In a Duelo de Expansões, with a Domain of his own open, caught in someone else's or up in the space of one.
+    public static boolean inDomain(LivingEntity entity) {
+        return com.starkinhon.battlegroundsmod.power.powers.duel.DomainDuel.fighting(entity)
+                || InfiniteVoid.open(entity) || InfiniteVoid.blocks(entity) || InfiniteVoid.insideAny(entity)
+                || com.starkinhon.battlegroundsmod.power.powers.sukuna.ShrineDomain.open(entity)
+                // A Santuário opening around him: the 0,2 s is a faster, weaker Expansão, it can't stop a whole one; only
+                // his real Expansão (V, the Duelo de Expansões) keeps him from being swallowed (Stark, 2026-11-09).
+                || com.starkinhon.battlegroundsmod.power.powers.sukuna.ShrineDomain.around(entity)
+                || com.starkinhon.battlegroundsmod.power.powers.sukuna.ShrineDomain.blocks(entity)
+                || com.starkinhon.battlegroundsmod.power.powers.sukuna.ShrineDomain.insideAny(entity);
+    }
+
+    // Everyone within reach but players in creative (they see it, but take none of it), the two of a Duelo de Expansões
+    // and anyone up in the space of a Domain (not in the same world as him).
     private static List<LivingEntity> targets(ServerLevel level, LivingEntity caster) {
         return Combat.inRadius(level, caster.position().add(0, 1, 0), radius(caster), caster).stream()
                 .filter(e -> !(e instanceof Player player && (player.isCreative() || player.isSpectator())))
+                .filter(e -> !com.starkinhon.battlegroundsmod.power.powers.duel.DomainDuel.fighting(e)
+                        && !com.starkinhon.battlegroundsmod.power.powers.sukuna.ShrineDomain.open(e)
+                        && !InfiniteVoid.insideAny(e)
+                        && !com.starkinhon.battlegroundsmod.power.powers.sukuna.ShrineDomain.insideAny(e))
                 .toList();
     }
 

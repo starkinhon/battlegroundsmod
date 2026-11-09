@@ -678,6 +678,7 @@
   "ability.battlegroundsmod.moon_demon.4.tags": "Espada,Defesa,Área,Destruição",
   "item.battlegroundsmod.soul_moon_demon": "Alma: Demônio da Lua",
   "message.battlegroundsmod.vazio_relampago_ninguem": "Ninguém perto o bastante pra Expansão de 0,2 s.",
+  "message.battlegroundsmod.vazio_relampago_dominio": "A Expansão de 0,2 s não funciona dentro nem contra uma Expansão: só a sua Expansão de verdade (V) segura o Santuário.",
   "message.battlegroundsmod.vazio_relampago_pego": "Pego carregando! Expansão de 0,2 s: dano cerebral e sem estamina.",
   "message.battlegroundsmod.vazio_relampago_atingido": "Expansão de 0,2 s: técnica quebrada, dano cerebral.",
   "ability.battlegroundsmod.strongest.8": "Expansão de 0,2 s",

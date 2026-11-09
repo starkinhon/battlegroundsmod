@@ -532,6 +532,11 @@ public final class InfiniteVoid {
         return insideOf(a) != insideOf(b);
     }
 
+    // Up in the space of a domain of Gojo's (his own or someone else's).
+    public static boolean insideAny(LivingEntity entity) {
+        return insideOf(entity) != null;
+    }
+
     private static Active insideOf(LivingEntity entity) {
         for (Active active : ACTIVE) {
             if (active.inside && active.back.containsKey(entity)) {
