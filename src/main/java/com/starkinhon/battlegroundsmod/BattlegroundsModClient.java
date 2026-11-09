@@ -208,7 +208,6 @@ public class BattlegroundsModClient {
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "hakai_cutscene"), HakaiCutscene::renderGui);
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "esfera_cutscene"), EsferaCutscene::renderGui);
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "editor_cutscene"), CutscenePlayer::renderGui);
-        event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "sukuna_domain"), com.starkinhon.battlegroundsmod.client.fx.SukunaDomainScene::renderGui);
     }
 
     private static void onRegisterParticles(RegisterParticleProvidersEvent event) {

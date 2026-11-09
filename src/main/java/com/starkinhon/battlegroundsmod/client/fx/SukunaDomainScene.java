@@ -30,10 +30,7 @@ import com.starkinhon.battlegroundsmod.power.powers.sukuna.ShrineDomain;
 import com.starkinhon.battlegroundsmod.skill.DominioSpec;
 
 import net.minecraft.client.CameraType;
-import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.Input;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.GameRenderer;
@@ -1884,46 +1881,6 @@ public final class SukunaDomainScene {
         RenderSystem.restoreProjectionMatrix();
         modelView.popMatrix();
         RenderSystem.applyModelViewMatrix();
-    }
-
-    // ---------- the words ----------
-
-    // "Expansão de Domínio" / "Santuário Malevolente" during the hand sign (the preview's line, ticks 3-103).
-    public static void renderGui(GuiGraphics graphics, DeltaTracker delta) {
-        if (DOMS.isEmpty()) {
-            return;
-        }
-        Minecraft mc = Minecraft.getInstance();
-        double now = now();
-        for (Dom d : DOMS) {
-            double c = cut(d, now);
-            if (!scene(d, c)) {
-                continue;
-            }
-            double s = src(c);
-            if (s < 3 || s >= 103) {
-                continue;
-            }
-            float a = (float) (sm(3, 7, s) * (1 - sm(96, 103, s)));
-            int alpha = (int) (a * 255);
-            if (alpha < 8) {
-                continue;
-            }
-            Font font = mc.font;
-            var pose = graphics.pose();
-            String top = "Expansão de Domínio";
-            String bottom = "Santuário Malevolente";
-            pose.pushPose();
-            pose.translate(graphics.guiWidth() / 2f, graphics.guiHeight() - 46, 0);
-            pose.scale(1.4f, 1.4f, 1);
-            graphics.drawString(font, top, -font.width(top) / 2, 0, (alpha << 24) | 0xFFD9DE, true);
-            pose.popPose();
-            pose.pushPose();
-            pose.translate(graphics.guiWidth() / 2f, graphics.guiHeight() - 46 + 16, 0);
-            pose.scale(2.0f, 2.0f, 1);
-            graphics.drawString(font, bottom, -font.width(bottom) / 2, 0, (alpha << 24) | 0xFF3048, true);
-            pose.popPose();
-        }
     }
 
     // ---------- what the people hold ----------
