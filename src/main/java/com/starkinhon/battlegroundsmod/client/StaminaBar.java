@@ -69,6 +69,8 @@ public final class StaminaBar {
         }
         // The charge bar stands beside this one, even while this one is faded out.
         ChargeBar.render(graphics, deltaTracker, player, data);
+        // Sukuna's Modelo bar, above the hotbar.
+        ModelBarHud.render(graphics, deltaTracker, player, data);
         if (data.stamina < 0) {
             return;
         }

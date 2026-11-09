@@ -145,7 +145,7 @@ public final class FxWorld {
         ScreenFx.capture(event);
         boolean world = !PIECES.isEmpty() || MeteorRenderer.hasTrails() || Aura.active() || KatonBallRenderer.active() || AshDeath.hasSparks() || SoulCeremonyFx.active()
                 || SpaceScene.active() || EsferaRenderer.active() || HakaiRenderer.active() || EnergyRenderer.active() || BlackBoxRenderer.active() || AzulRenderer.active() || VermelhoRenderer.active() || BlackFlashRenderer.active() || RoxoRenderer.active() || AizenFx.active() || SwordFx.active() || MoonSlashRenderer.active() || MoonFormsRenderer.active() || PunchFxRenderer.active() || SubFx.active()
-                || SphereRenderer.active() || SusanooArm.active() || DomainScene.active() || VoidFlashScene.active() || FugaRenderer.active() || SukunaDomainScene.active();
+                || SphereRenderer.active() || SusanooArm.active() || DomainScene.active() || VoidFlashScene.active() || FugaRenderer.active() || DismantleRenderer.active() || SukunaCutsRenderer.active() || SukunaDomainScene.active();
         if (!world && !ScreenFx.needsScene()) {
             return;
         }
@@ -242,6 +242,7 @@ public final class FxWorld {
             source.endBatch(FxRenderTypes.FLAT_ALPHA);
             source.endBatch(FxRenderTypes.FLAT_ADD);
             endDecals(source);
+            KiMesh.flush(false);
         } else {
             // The Susanoo arm's depth goes in first, so its color only lands on the front surface.
             source.endBatch(FxRenderTypes.SUS_DEPTH);
@@ -250,6 +251,7 @@ public final class FxWorld {
             source.endBatch(MoonSlashRenderer.Types.BODY);
             source.endBatch(MoonFormsRenderer.Types.BODY);
             endDecals(source);
+            KiMesh.flush(false);
             boolean outline = !space && Aura.drawMask(event, camera, partial);
             FxPost.beginGlow();
             if (outline) {
@@ -258,7 +260,12 @@ public final class FxWorld {
             source.endBatch(FxRenderTypes.SUS_GLOW);
             source.endBatch(FxRenderTypes.VFX_ADD);
             source.endBatch(MoonSlashRenderer.Types.GLOW);
+            KiMesh.flush(true);
             FxPost.endGlow(FxConfig.on(FxConfig.BLOOM));
+        }
+        if (!space) {
+            // The Mafuba jar's 魔封波 seal, written in the kanji font after the effects.
+            DbFx.drawTags();
         }
         if (!space && HakaiRenderer.active()) {
             // Dark lines on top of the glow, so the light doesn't wash them out.
@@ -324,6 +331,12 @@ public final class FxWorld {
             DomainScene.brainGlyphs(event);
         }
         if (!space) {
+            // Sukuna's thrown Dismantle (the combo's cuts).
+            DismantleRenderer.render(camera);
+            // Sukuna's technique cuts (the Z, the chant, the World Cutting Slash, the Shift+Z lines).
+            SukunaCutsRenderer.render(camera);
+        }
+        if (!space) {
             // Sukuna's Fuga, over everything else: its fire is its own light in the dark.
             FugaRenderer.render(camera, partial);
             // Sukuna's Expansão de Domínio: the shrine, its cuts and its light, then what it does to the screen.
@@ -331,6 +344,7 @@ public final class FxWorld {
             SukunaDomainScene.screen();
         }
 
+        KiMesh.endFrame();
         RenderSystem.restoreProjectionMatrix();
         modelView.popMatrix();
         RenderSystem.applyModelViewMatrix();

@@ -46,8 +46,15 @@ public final class DashAttack {
         data.busyTicks = ticks + 1;
         Vec3[] dir = {Combat.flatLook(attacker)};
         boolean sword = SwordArts.held(attacker);
+        boolean sukuna = com.starkinhon.battlegroundsmod.power.powers.sukuna.SukunaMelee.active(attacker);
         PacketDistributor.sendToPlayersTrackingEntityAndSelf(attacker, new ModPayloads.PlaySkillAnimation(attacker.getId(),
-                sword ? SwordArts.DASH_RUN : FIST_RUN, false));
+                sword ? SwordArts.DASH_RUN : sukuna ? com.starkinhon.battlegroundsmod.power.powers.sukuna.SukunaMelee.DASH_POSE : FIST_RUN, false));
+        if (sukuna) {
+            // Sukuna: the left hand slashes flat on the way out; the Dismantle gets there before he does.
+            ComboSpec combo = ComboSpec.get();
+            com.starkinhon.battlegroundsmod.power.powers.sukuna.SukunaMelee.dashCut(attacker, latchTarget(attacker, data, spec),
+                    (float) (combo.golpe(spec.golpeDoCombo()).dano() * spec.golpe().multiplicadorDano()) * Melee.multiplier(attacker));
+        }
         if (sword) {
             SwordArts.color(attacker);
         }

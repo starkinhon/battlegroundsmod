@@ -32,6 +32,8 @@ public final class FxShaders {
     static ShaderInstance voidFlash;
     // The procedural smoke particles (SmokeParticle); without it they just don't draw.
     static ShaderInstance smoke;
+    // The Dragon Ball kits' 3D effects (KiMesh); on its own, so a problem here only hides them.
+    static ShaderInstance ki;
     // Sukuna's Fuga (FugaRenderer); without them the Fuga only darkens the world.
     static ShaderInstance fugaFlame;
     static ShaderInstance fugaArrow;
@@ -40,6 +42,10 @@ public final class FxShaders {
     static ShaderInstance fugaRing;
     static ShaderInstance fugaGlow;
     static ShaderInstance fugaOrb;
+    // Sukuna's thrown Dismantle (DismantleRenderer); without it the cuts still hit, they just don't show.
+    static ShaderInstance dismantle;
+    // Sukuna's technique cuts (SukunaCutsRenderer: the Z, the chant, the World Cutting Slash, the Shift+Z lines).
+    static ShaderInstance sukunaFx;
     // Sukuna's Expansão de Domínio (SukunaDomainScene); without them the domain still works, just without its look.
     static ShaderInstance sdSky;
     static ShaderInstance sdFloor;
@@ -78,6 +84,11 @@ public final class FxShaders {
         } catch (Exception e) {
             BattlegroundsMod.LOGGER.error("Could not load the Awakened Moon screen shader", e);
         }
+        try {
+            register(event, "souls_ki", DefaultVertexFormat.POSITION, s -> ki = s);
+        } catch (Exception e) {
+            BattlegroundsMod.LOGGER.error("Could not load the Dragon Ball 3D effect shader", e);
+        }
         // On its own: a problem here only hides the smoke, never the other effects.
         try {
             register(event, "souls_smoke", DefaultVertexFormat.NEW_ENTITY, s -> smoke = s);
@@ -95,6 +106,18 @@ public final class FxShaders {
             register(event, "souls_fuga_orb", DefaultVertexFormat.POSITION, s -> fugaOrb = s);
         } catch (Exception e) {
             BattlegroundsMod.LOGGER.error("Could not load the Fuga shaders", e);
+        }
+        // On its own: a problem here only hides Sukuna's thrown Dismantle.
+        try {
+            register(event, "souls_dismantle", DefaultVertexFormat.POSITION_TEX, s -> dismantle = s);
+        } catch (Exception e) {
+            BattlegroundsMod.LOGGER.error("Could not load the Dismantle shader", e);
+        }
+        // On its own: a problem here only hides Sukuna's technique cuts (they still hit).
+        try {
+            register(event, "souls_sukuna_fx", DefaultVertexFormat.POSITION_TEX, s -> sukunaFx = s);
+        } catch (Exception e) {
+            BattlegroundsMod.LOGGER.error("Could not load the Sukuna cuts shader", e);
         }
         // On its own, so a problem here never takes the other effects down (the Gojo's Expansão de 0,2 s just won't show).
         try {

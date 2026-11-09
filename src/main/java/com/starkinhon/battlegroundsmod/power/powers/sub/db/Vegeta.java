@@ -7,11 +7,14 @@ import java.util.Map;
 import com.starkinhon.battlegroundsmod.combat.Charge;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
+import com.starkinhon.battlegroundsmod.combat.Intangible;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
 import com.starkinhon.battlegroundsmod.power.Ability;
 import com.starkinhon.battlegroundsmod.power.Power;
+import com.starkinhon.battlegroundsmod.power.PowerLogic;
 import com.starkinhon.battlegroundsmod.power.powers.sub.SubCommon;
 import com.starkinhon.battlegroundsmod.power.powers.sub.SubNet;
+import com.starkinhon.battlegroundsmod.power.powers.sub.jj.JjCommon;
 
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
@@ -25,8 +28,11 @@ import net.minecraft.world.phys.Vec3;
 //   disappears into a cloud of blasts and smoke (it can't see).
 // X Big Bang Attack: arm out, open palm: a big blue ball made of Zanka tongues of ki, with waves running over it; it
 //   flies heavy and bursts into tongues that open and die torn.
-// V Final Flash: arms open, the yellow ki gathers in both palms with bolts round the body; hands together, a huge yellow
-//   beam goes through everything and tears the ground.
+// C Explosao Final (the strongest attack of the mod): he rises with the golden aura at its peak and blows up: a golden
+//   dome of radius 12 with a white one inside, a deep crater, everyone round thrown. The price: 1 heart left and turned
+//   to stone for 20 s (still, no skills, nothing gets through the stone); then the stone bursts.
+// V Final Flash: arms open, the yellow ki gathers in both palms with the golden aura rising; hands together, a huge
+//   yellow beam goes through everything and tears the ground up under it.
 public final class Vegeta {
     private Vegeta() {
     }
@@ -35,7 +41,7 @@ public final class Vegeta {
         return new Power("vegeta", 0xFFD84A, 1.1f, List.of(
                 new Ability(140, 0, Vegeta::rajada),
                 new Ability(200, 0, Vegeta::bigBang),
-                new Ability(220, 0, Vegeta::galickGunMissing),
+                new Ability(1600, 0, Vegeta::explosaoFinal),
                 new Ability(1000, 0, Vegeta::finalFlash)));
     }
 
@@ -68,21 +74,36 @@ public final class Vegeta {
                     caster.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 4, 2, false, false));
                     LivingEntity target = SubCommon.aimed(caster, 32);
                     Vec3 aim = target != null ? Combat.center(target) : Combat.raycastPoint(caster, 32);
-                    for (int j = 0; j < 2; j++) {
-                        Vec3 from = (age + j) % 2 == 0 ? DbCommon.hand(caster) : DbCommon.handLeft(caster);
-                        Vec3 to = aim.add((SubCommon.RANDOM.nextDouble() - 0.5) * 1.6, (SubCommon.RANDOM.nextDouble() - 0.5) * 1.4,
-                                (SubCommon.RANDOM.nextDouble() - 0.5) * 1.6);
-                        int flight = Math.max(2, (int) Math.round(from.distanceTo(to) / 1.8));
+                    if (age % 2 == 0) {
+                        // One ball every 2 ticks, the hands taking turns, each with its own aim and speed; some miss and
+                        // hole the ground round the target.
+                        Vec3 from = (age / 2) % 2 == 0 ? DbCommon.hand(caster) : DbCommon.handLeft(caster);
+                        boolean miss = SubCommon.RANDOM.nextFloat() < 0.22f;
+                        Vec3 to;
+                        if (miss) {
+                            Vec3 near = aim.add((SubCommon.RANDOM.nextDouble() - 0.5) * 3, 0, (SubCommon.RANDOM.nextDouble() - 0.5) * 2);
+                            to = new Vec3(near.x, DbCommon.groundY(level, near.add(0, 2, 0)), near.z);
+                        } else {
+                            to = aim.add((SubCommon.RANDOM.nextDouble() - 0.5) * 0.9, (SubCommon.RANDOM.nextDouble() - 0.5) * 1.3,
+                                    (SubCommon.RANDOM.nextDouble() - 0.5) * 0.9);
+                        }
+                        double speed = 1.1 + SubCommon.RANDOM.nextDouble() * 0.5;
+                        int flight = Math.max(2, (int) Math.round(from.distanceTo(to) / speed));
                         SubNet.send(level, SubNet.SHOT, SubCommon.RANDOM.nextInt(100), from, to.subtract(from), flight, Db.GOLD, 0);
                         Tasks.later(flight, () -> {
+                            boolean any = false;
                             for (LivingEntity t : Combat.inRadius(level, to, 1.3, caster)) {
+                                any = true;
                                 Integer last = hitAt.get(t.getId());
                                 if (last == null || age - last >= 2) {
                                     hitAt.put(t.getId(), age);
-                                    Combat.hurtMagic(caster, t, 0.45f);
-                                    cover.merge(t.getId(), 0.04f, Float::sum);
+                                    Combat.hurtMagic(caster, t, 0.9f);
+                                    cover.merge(t.getId(), 0.08f, Float::sum);
                                     covered.put(t.getId(), t);
                                 }
+                            }
+                            if (miss && !any) {
+                                JjCommon.crater(level, to, 0.7, 0.5, 2);
                             }
                         });
                     }
@@ -159,9 +180,8 @@ public final class Vegeta {
             Vec3 p = from[0].add(dir[0].scale(Math.min(1, k)));
             boolean touch = !Combat.inRadius(level, p, 1.1, caster).isEmpty() || SubCommon.solid(level, p);
             if (k < 1 && !touch) {
+                // The comet's tail (the twisted beam leaving the hand behind it) is drawn by the client.
                 SubNet.send(level, SubNet.BIG_BANG, id, p, Vec3.ZERO, 0.7f, 1, 0);
-                Vec3 back = from[0].add(dir[0].scale(Math.max(0, k - 0.3)));
-                SubNet.send(level, SubNet.STREAK, 0, back, p.subtract(back), 1.1f, Db.BLUE, 3);
                 return false;
             }
             SubNet.send(level, SubNet.BIG_BANG, id, p, Vec3.ZERO, 0.7f, 1, 1);
@@ -171,16 +191,76 @@ public final class Vegeta {
             SubCommon.sound(level, p, SoundEvents.GENERIC_EXPLODE.value(), 3f, 0.7f);
             SubCommon.sound(level, p, SoundEvents.BLAZE_SHOOT, 2f, 0.5f);
             DbCommon.hurtRadius(caster, level, p, 4.2, 22, 1.4, 0.5);
+            if (p.y - ground < 3) {
+                JjCommon.crater(level, new Vec3(p.x, ground, p.z), 3.2, 1.6, 20);
+            }
             return true;
         });
         return true;
     }
 
-    // ---------- C: not made yet in the Visualizador ----------
+    // ---------- C: Explosao Final ----------
 
-    private static boolean galickGunMissing(LivingEntity caster, ServerLevel level) {
-        SubCommon.warn(caster, "db.skill_coming");
-        return false;
+    private static final int FINAL_CHARGE = 52;
+    private static final int STONE_TICKS = 400;
+    private static final double FINAL_RADIUS = 12;
+
+    private static boolean explosaoFinal(LivingEntity caster, ServerLevel level) {
+        SubCommon.Guard guard = SubCommon.guard(caster);
+        Vec3 start = caster.position();
+        SubCommon.pose(caster, "db.bracos_abertos");
+        // The aura at its peak (strength 1: it bursts when lit), bigger than ever.
+        SubNet.send(level, SubNet.KI_AURA, caster.getId(), start, new Vec3(1, 0, 0), FINAL_CHARGE + 6, Db.GOLD, 1.42f);
+        SubCommon.sound(level, start, SoundEvents.BEACON_ACTIVATE, 2.5f, 0.6f);
+        Runnable[] lift = {Freeze.hold(caster, FINAL_CHARGE + 2, a -> start.add(0, 0.9 * SubCommon.smooth(a / 48f), 0))};
+        Tasks.add(age -> {
+            if (age < FINAL_CHARGE) {
+                if (guard.broken()) {
+                    lift[0].run();
+                    SubNet.send(level, SubNet.KI_AURA, caster.getId(), caster.position(), Vec3.ZERO, 0, Db.GOLD, 1);
+                    return true;
+                }
+                SubCommon.busy(caster, 3);
+                if (age % 10 == 0) {
+                    SubCommon.sound(level, caster.position(), SoundEvents.BEACON_AMBIENT, 2.5f, 0.5f + age / 60f);
+                    DbCommon.screen(level, caster.position(), 4);
+                }
+                return false;
+            }
+            lift[0].run();
+            Vec3 c = Combat.center(caster);
+            double ground = DbCommon.groundY(level, start.add(0, 1, 0));
+            SubNet.send(level, SubNet.KI_AURA, caster.getId(), caster.position(), Vec3.ZERO, 0, Db.GOLD, 1);
+            // The biggest blast of the mod (style 2000 in the client: golden dome with a white one inside).
+            SubNet.send(level, SubNet.KI_BOOM, 0, c, new Vec3(ground, 0, 0), (float) (FINAL_RADIUS / 1.4), Db.GOLD, 2000);
+            DbCommon.screen(level, c, 49);
+            SubCommon.sound(level, c, SoundEvents.GENERIC_EXPLODE.value(), 5f, 0.4f);
+            SubCommon.sound(level, c, SoundEvents.WARDEN_SONIC_BOOM, 4f, 0.5f);
+            Tasks.later(6, () -> SubCommon.sound(level, c, SoundEvents.GENERIC_EXPLODE.value(), 4f, 0.5f));
+            for (LivingEntity e : Combat.inRadius(level, c, FINAL_RADIUS, caster)) {
+                double k = 1 - 0.5 * Math.min(1, Combat.center(e).distanceTo(c) / FINAL_RADIUS);
+                Combat.hurtMagic(caster, e, (float) (95 * k));
+                Combat.pushFrom(e, c, 3.2 * k, 1.1);
+            }
+            JjCommon.crater(level, new Vec3(start.x, ground, start.z), 8.5, 4.2, 80);
+            // The price: 1 heart and stone for 20 s. Nothing gets through the stone, and he can't move or use anything.
+            caster.setHealth(Math.min(caster.getHealth(), 1));
+            // He comes down into the bottom of his own crater and stays there.
+            Vec3 top = caster.position();
+            Vec3 rest = new Vec3(start.x, DbCommon.groundY(level, start.add(0, 1, 0)), start.z);
+            Freeze.hold(caster, STONE_TICKS, a -> top.lerp(rest, SubCommon.smooth(a / 12f)));
+            Intangible.hold(caster, STONE_TICKS);
+            PowerLogic.seal(caster, STONE_TICKS);
+            SubNet.send(level, SubNet.SCREEN, caster.getId(), caster.position(), Vec3.ZERO, 48, STONE_TICKS, 0);
+            Tasks.later(STONE_TICKS, () -> {
+                if (caster.isAlive()) {
+                    SubCommon.sound(level, caster.position(), SoundEvents.STONE_BREAK, 1.6f, 0.7f);
+                    SubCommon.sound(level, caster.position(), SoundEvents.DEEPSLATE_BREAK, 1.6f, 0.8f);
+                }
+            });
+            return true;
+        });
+        return true;
     }
 
     // ---------- V: Final Flash ----------
@@ -192,11 +272,9 @@ public final class Vegeta {
         int end = 150;
         int right = SubNet.newId();
         int left = SubNet.newId();
-        int bolts = SubNet.newId();
         int beam = SubNet.newId();
         SubCommon.pose(caster, "db.bracos_abertos");
-        DbCommon.screen(level, Combat.center(caster), 8);
-        SubNet.send(level, SubNet.KI_AURA, caster.getId(), caster.position(), new Vec3(0.45, 0, 0), fire, Db.GOLD, 1.1f);
+        SubNet.send(level, SubNet.KI_AURA, caster.getId(), caster.position(), new Vec3(0.45, 0, 0), fire, Db.GOLD, 1.3f);
         SubCommon.sound(level, caster.position(), SoundEvents.BEACON_ACTIVATE, 2f, 0.9f);
         Map<Integer, Integer> hitAt = new HashMap<>();
         Vec3[] start = {null};
@@ -204,7 +282,6 @@ public final class Vegeta {
             if (guard.broken()) {
                 SubNet.send(level, SubNet.KI_BALL, right, caster.position(), Vec3.ZERO, 0, Db.GOLD, 1);
                 SubNet.send(level, SubNet.KI_BALL, left, caster.position(), Vec3.ZERO, 0, Db.GOLD, 1);
-                SubNet.send(level, SubNet.SPARKS, bolts, caster.position(), caster.position(), 0, Db.GOLD, 1);
                 SubNet.send(level, SubNet.KI_BEAM, beam, caster.position(), Vec3.ZERO, 0, Db.GOLD, 1);
                 SubNet.send(level, SubNet.KI_AURA, caster.getId(), caster.position(), Vec3.ZERO, 0, Db.GOLD, 1);
                 return true;
@@ -224,7 +301,6 @@ public final class Vegeta {
                     SubNet.send(level, SubNet.KI_BALL, left, chest, Vec3.ZERO, 0, Db.GOLD, 1);
                     SubNet.send(level, SubNet.KI_BALL, right, DbCommon.hands(caster).add(look.scale(0.3)), Vec3.ZERO, 0.6f, Db.GOLD, 0);
                 }
-                SubNet.send(level, SubNet.SPARKS, bolts, caster.position(), caster.position(), k, Db.GOLD, 0);
                 if (age == join) {
                     SubCommon.pose(caster, "db.empurra");
                 }
@@ -238,7 +314,6 @@ public final class Vegeta {
             }
             if (age == fire) {
                 SubNet.send(level, SubNet.KI_BALL, right, caster.position(), Vec3.ZERO, 0, Db.GOLD, 1);
-                SubNet.send(level, SubNet.SPARKS, bolts, caster.position(), caster.position(), 0, Db.GOLD, 1);
                 DbCommon.screen(level, Combat.center(caster), 7);
                 SubCommon.sound(level, caster.position(), SoundEvents.WARDEN_SONIC_BOOM, 3f, 0.6f);
                 SubCommon.sound(level, caster.position(), SoundEvents.GENERIC_EXPLODE.value(), 2f, 0.6f);
@@ -261,8 +336,20 @@ public final class Vegeta {
             if (t % 6 == 0) {
                 SubCommon.sound(level, to, SoundEvents.FIREWORK_ROCKET_BLAST, 1.5f, 0.5f);
             }
+            if (t % 2 == 0 && t > 2) {
+                // It tears the ground up under it as it passes.
+                Vec3 q = from.add(to.subtract(from).scale(0.3 + 0.7 * SubCommon.RANDOM.nextDouble()));
+                double g = DbCommon.groundY(level, q);
+                if (q.y - g < 3.5) {
+                    JjCommon.crater(level, new Vec3(q.x, g, q.z), 1.4, 0.8, 2);
+                }
+            }
             if (done) {
-                DbCommon.boom(level, to, 3, Db.GOLD, 8);
+                DbCommon.boom(level, to, 4.3f, Db.GOLD, 8);
+                double g = DbCommon.groundY(level, to);
+                if (to.y - g < 4) {
+                    JjCommon.crater(level, new Vec3(to.x, g, to.z), 4.2, 2.2, 30);
+                }
             }
             return done;
         });
