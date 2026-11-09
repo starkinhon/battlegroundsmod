@@ -60,7 +60,7 @@ public final class Capture {
     // where the domain keeps them in place and nothing from outside reaches them, and not just let go by someone
     // else's grab (REGRAB_TICKS).
     public static boolean canGrab(LivingEntity caster, LivingEntity target) {
-        if (target == null || InfiniteVoid.apart(caster, target) || InfiniteVoid.heldByOther(target, caster)) {
+        if (target == null || InfiniteVoid.apart(caster, target) || com.starkinhon.battlegroundsmod.power.powers.sukuna.ShrineDomain.apart(caster, target) || InfiniteVoid.heldByOther(target, caster)) {
             return false;
         }
         Long until = SAFE_UNTIL.get(target);

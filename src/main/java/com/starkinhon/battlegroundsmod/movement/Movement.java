@@ -210,7 +210,7 @@ public final class Movement {
             player.displayClientMessage(Component.translatable("message.battlegroundsmod.teleport_no_target", (int) spec.alcance()), true);
             return;
         }
-        if (com.starkinhon.battlegroundsmod.power.powers.gojo.InfiniteVoid.apart(player, target)) {
+        if (com.starkinhon.battlegroundsmod.power.powers.gojo.InfiniteVoid.apart(player, target) || com.starkinhon.battlegroundsmod.power.powers.sukuna.ShrineDomain.apart(player, target)) {
             // A Domain Expansion is a space of its own: no way in or out by teleport.
             player.displayClientMessage(Component.translatable("message.battlegroundsmod.teleport_domain"), true);
             return;

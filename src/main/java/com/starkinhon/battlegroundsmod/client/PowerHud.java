@@ -46,7 +46,7 @@ public final class PowerHud {
     }
 
     private static boolean cutscene() {
-        return GrabCutscene.active() || BopCutscene.active() || HakaiCutscene.active() || EsferaCutscene.active()
+        return com.starkinhon.battlegroundsmod.client.fx.SukunaDomainScene.cutscene() || GrabCutscene.active() || BopCutscene.active() || HakaiCutscene.active() || EsferaCutscene.active()
                 || BossCutscene.active() || ShoulderCutscene.active();
     }
 

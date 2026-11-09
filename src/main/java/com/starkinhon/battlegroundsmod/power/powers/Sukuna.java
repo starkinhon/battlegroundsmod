@@ -6,12 +6,14 @@ import com.starkinhon.battlegroundsmod.power.Ability;
 import com.starkinhon.battlegroundsmod.power.Power;
 import com.starkinhon.battlegroundsmod.power.powers.sub.SubCommon;
 import com.starkinhon.battlegroundsmod.power.powers.sukuna.Fuga;
+import com.starkinhon.battlegroundsmod.power.powers.sukuna.ShrineDomain;
 
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.LivingEntity;
 
 // Ryomen Sukuna, the King of Curses (Divine Soul). Ported technique by technique from the 3D previews Stark approves:
-// for now only C, the Fuga (■開). Z, X and V say "soon" until their turn comes.
+// C, the Fuga (■開), and V, the Expansão de Domínio: Santuário Malevolente (ShrineDomain). Z and X say "soon" until
+// their turn comes.
 public final class Sukuna {
     public static final String ID = "sukuna";
 
@@ -23,7 +25,7 @@ public final class Sukuna {
                 new Ability(20, 0, Sukuna::soon),
                 new Ability(20, 0, Sukuna::soon),
                 new Ability(900, 0, Fuga::use),
-                new Ability(20, 0, Sukuna::soon)), List.of());
+                new Ability(900, 0, ShrineDomain::use)), List.of());
     }
 
     private static boolean soon(LivingEntity caster, ServerLevel level) {

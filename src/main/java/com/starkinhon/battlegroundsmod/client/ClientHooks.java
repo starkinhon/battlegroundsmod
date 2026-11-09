@@ -173,6 +173,10 @@ public final class ClientHooks {
         HakaiCutscene.start(casterId, targetId, awakened);
     }
 
+    public static void sukunaDomain(int casterId, net.minecraft.world.phys.Vec3 center, int mode, int a, int b, boolean part) {
+        com.starkinhon.battlegroundsmod.client.fx.SukunaDomainScene.event(casterId, center, mode, a, b, part);
+    }
+
     public static void gojoDomain(int casterId, net.minecraft.world.phys.Vec3 center, boolean awakened, int mode, int other) {
         com.starkinhon.battlegroundsmod.client.fx.DomainScene.event(casterId, center, awakened, mode, other);
     }

@@ -258,6 +258,7 @@
   "message.battlegroundsmod.stamina_out": "Sem estamina! Vulnerável por %s s",
   "message.battlegroundsmod.needs_stun": "O alvo precisa estar stunado (acerte um stun ou zere a estamina dele).",
   "message.battlegroundsmod.domain_resist": "Informação infinita! Sua estamina está segurando o Domínio...",
+  "message.battlegroundsmod.shrine_resist": "O Santuário te pegou! Sua estamina está resistindo aos cortes...",
   "message.battlegroundsmod.technique_burnout": "Técnica queimada: sem técnicas por %s s",
   "message.battlegroundsmod.stamina_exhausted": "Exausto: sem técnicas, só porrada",
   "message.battlegroundsmod.combat_on": "Modo de Ataque: ligado",
@@ -737,7 +738,7 @@
   "ability.battlegroundsmod.sukuna.2": "■開 Fuga",
   "ability.battlegroundsmod.sukuna.2.desc": "\"Abrir.\" Tudo num raio de 70 blocos escurece. Fitas de fogo nascem das mãos e giram em volta dele, são sugadas uma a uma pra bola de fogo entre as palmas, que se estica na flecha. Ele puxa como um arco, segura e solta: a flecha voa reta pra mira, cada vez mais rápida, e explode numa cúpula de fogo que sobe em coluna, queima e arremessa todo mundo em volta. Fica parado enquanto forma (dá pra mirar).",
   "ability.battlegroundsmod.sukuna.2.tags": "Fogo,Projétil,Explosão,Destruição",
-  "ability.battlegroundsmod.sukuna.3": "Em breve",
-  "ability.battlegroundsmod.sukuna.3.desc": "Técnica ainda não portada.",
-  "ability.battlegroundsmod.sukuna.3.tags": "Em breve"
+  "ability.battlegroundsmod.sukuna.3": "領域展開 Santuário Malevolente",
+  "ability.battlegroundsmod.sukuna.3.desc": "\"Expansão de Domínio: Santuário Malevolente.\" Uma onda sai dele e para todo ataque no ar até 40 blocos; quem ela pega fica paralisado (com estamina, você resiste). Se pegar alguém, toca a cutscene: o chão vira água, uma gota cai, todos se afogam no mar vermelho, a aura preta e os seis olhos, e o Santuário acende atrás dele. Depois, todos andam livres por 30 s: os Desmantelar cortando por todo lado dão um stun pequeno em cada um, e o Clivar acerta todo mundo menos ele até acabar. V de novo fecha. V duas vezes: abre rápido, sem cutscene.",
+  "ability.battlegroundsmod.sukuna.3.tags": "Domínio,Acerto garantido,Cutscene"
 }

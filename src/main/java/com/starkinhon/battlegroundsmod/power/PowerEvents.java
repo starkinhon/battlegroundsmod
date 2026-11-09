@@ -90,6 +90,7 @@ public final class PowerEvents {
         Susanoo.clear();
         Izanami.clear();
         com.starkinhon.battlegroundsmod.power.powers.gojo.InfiniteVoid.clear();
+        com.starkinhon.battlegroundsmod.power.powers.sukuna.ShrineDomain.clear();
         com.starkinhon.battlegroundsmod.power.powers.aizen.KyokaSuigetsu.clear();
         com.starkinhon.battlegroundsmod.power.powers.aizen.UmDedo.clear();
         com.starkinhon.battlegroundsmod.power.powers.aizen.Hogyoku.clear();
@@ -117,6 +118,7 @@ public final class PowerEvents {
                 player.displayClientMessage(Component.translatable("message.battlegroundsmod.welcome"), false);
             }
             com.starkinhon.battlegroundsmod.power.powers.gojo.InfiniteVoid.onLogin(player);
+            com.starkinhon.battlegroundsmod.power.powers.sukuna.ShrineDomain.onLogin(player);
             PowerLogic.sync(player);
             BossCommand.syncBossBar(player);
         }
@@ -209,6 +211,10 @@ public final class PowerEvents {
             return;
         }
         com.starkinhon.battlegroundsmod.power.powers.gojo.InfiniteVoid.onIncomingDamage(event);
+        if (event.isCanceled()) {
+            return;
+        }
+        com.starkinhon.battlegroundsmod.power.powers.sukuna.ShrineDomain.onIncomingDamage(event);
         if (event.isCanceled()) {
             return;
         }

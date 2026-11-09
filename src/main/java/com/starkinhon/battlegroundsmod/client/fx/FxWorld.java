@@ -145,7 +145,7 @@ public final class FxWorld {
         ScreenFx.capture(event);
         boolean world = !PIECES.isEmpty() || MeteorRenderer.hasTrails() || Aura.active() || KatonBallRenderer.active() || AshDeath.hasSparks() || SoulCeremonyFx.active()
                 || SpaceScene.active() || EsferaRenderer.active() || HakaiRenderer.active() || EnergyRenderer.active() || BlackBoxRenderer.active() || AzulRenderer.active() || VermelhoRenderer.active() || BlackFlashRenderer.active() || RoxoRenderer.active() || AizenFx.active() || SwordFx.active() || MoonSlashRenderer.active() || MoonFormsRenderer.active() || PunchFxRenderer.active() || SubFx.active()
-                || SphereRenderer.active() || SusanooArm.active() || DomainScene.active() || VoidFlashScene.active() || FugaRenderer.active();
+                || SphereRenderer.active() || SusanooArm.active() || DomainScene.active() || VoidFlashScene.active() || FugaRenderer.active() || SukunaDomainScene.active();
         if (!world && !ScreenFx.needsScene()) {
             return;
         }
@@ -155,6 +155,9 @@ public final class FxWorld {
         } else if (DomainScene.inVoid()) {
             // Inside Gojo's domain the void takes the place of the world.
             DomainScene.backdrop(event);
+        } else if (SukunaDomainScene.active()) {
+            // Sukuna's domain: the world drowning in the black water, then the shrine's arena in its place.
+            SukunaDomainScene.backdrop(event);
         }
         if (VoidFlashScene.active()) {
             // Gojo's Expansão de 0,2 s: the void over the world, the people over it.
@@ -323,6 +326,9 @@ public final class FxWorld {
         if (!space) {
             // Sukuna's Fuga, over everything else: its fire is its own light in the dark.
             FugaRenderer.render(camera, partial);
+            // Sukuna's Expansão de Domínio: the shrine, its cuts and its light, then what it does to the screen.
+            SukunaDomainScene.render(camera, partial);
+            SukunaDomainScene.screen();
         }
 
         RenderSystem.restoreProjectionMatrix();

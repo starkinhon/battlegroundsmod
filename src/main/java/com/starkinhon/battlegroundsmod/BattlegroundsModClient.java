@@ -103,6 +103,9 @@ public class BattlegroundsModClient {
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, true, RenderLivingEvent.Post.class,
                 com.starkinhon.battlegroundsmod.client.fx.VermelhoRenderer::onRenderPost);
         NeoForge.EVENT_BUS.addListener(ScreenFx::onComputeFov);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.SukunaDomainScene::onComputeFov);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.SukunaDomainScene::onCameraAngles);
+        NeoForge.EVENT_BUS.addListener(MovementInputUpdateEvent.class, com.starkinhon.battlegroundsmod.client.fx.SukunaDomainScene::onMovementInput);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.FirstPersonAnimation::onRenderHand);
         NeoForge.EVENT_BUS.addListener(BattlegroundsModClient::onClientTickPre);
         NeoForge.EVENT_BUS.addListener(BattlegroundsModClient::onClientTick);
@@ -186,6 +189,7 @@ public class BattlegroundsModClient {
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "hakai_cutscene"), HakaiCutscene::renderGui);
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "esfera_cutscene"), EsferaCutscene::renderGui);
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "editor_cutscene"), CutscenePlayer::renderGui);
+        event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "sukuna_domain"), com.starkinhon.battlegroundsmod.client.fx.SukunaDomainScene::renderGui);
     }
 
     private static void onRegisterParticles(RegisterParticleProvidersEvent event) {
@@ -281,6 +285,7 @@ public class BattlegroundsModClient {
         SkillEffects.tick();
         com.starkinhon.battlegroundsmod.client.fx.Realismo.tick();
         com.starkinhon.battlegroundsmod.client.fx.DomainScene.tick();
+        com.starkinhon.battlegroundsmod.client.fx.SukunaDomainScene.tick();
         BossBars.tick();
         Fear.tick();
         com.starkinhon.battlegroundsmod.client.fx.SkillAudio.tick();

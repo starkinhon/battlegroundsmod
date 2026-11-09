@@ -87,6 +87,10 @@ public final class PowerLogic {
             // V with his domain open: Gojo closes it.
             return;
         }
+        if (PowerData.isUlt(slot) && com.starkinhon.battlegroundsmod.power.powers.sukuna.ShrineDomain.press(player)) {
+            // V with his Santuário open: Sukuna closes it (the second press right after the first: the fast version).
+            return;
+        }
         if (slot == 0 && com.starkinhon.battlegroundsmod.power.powers.uchiha.Katon.cancel(player)) {
             // Z while Madara breathes fire: he stops it.
             return;
@@ -148,7 +152,8 @@ public final class PowerLogic {
         boolean counter = ability.counter() || ability.beatenCounter() && !Stun.real(caster);
         return !caster.isSpectator() && caster.isAlive() && data.cooldowns[slot] <= 0 && data.busyTicks <= 0 && !Freeze.isFrozen(caster)
                 && (counter || Stun.canAttack(caster)) && !Defense.isGuarding(caster) && !sealed(caster)
-                && !com.starkinhon.battlegroundsmod.power.powers.gojo.InfiniteVoid.blocks(caster);
+                && !com.starkinhon.battlegroundsmod.power.powers.gojo.InfiniteVoid.blocks(caster)
+                && !com.starkinhon.battlegroundsmod.power.powers.sukuna.ShrineDomain.blocks(caster);
     }
 
     public static boolean sealed(LivingEntity caster) {
