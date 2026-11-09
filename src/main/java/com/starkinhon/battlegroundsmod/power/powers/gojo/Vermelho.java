@@ -52,7 +52,9 @@ public final class Vermelho {
     public static final String SKILL = VermelhoSpec.SKILL;
     // The finger raised for as long as it is held (a pose with a very long wind-up, stopped when it fires).
     public static final String HOLD_ANIMATION = "gojo.vermelho_segurando";
-    public static final int COOLDOWN = 140;
+    // The Ability's cooldown is the tap's (Stark 2026-11-09, balance against Sukuna: 7 s -> 5 s, so Gojo has an answer at
+    // range); the held one keeps its 7 s, counted from the press as before (HELD_COOLDOWN, raised when it fires).
+    public static final int COOLDOWN = 100, HELD_COOLDOWN = 140;
     public static final int SHIFT_COOLDOWN = 300;
     private static final double VIEW_DISTANCE = 160;
     private static final RandomSource RANDOM = RandomSource.createThreadSafe();
@@ -129,6 +131,12 @@ public final class Vermelho {
             }
             // Players let it go only when they let go of X, however long that is; bosses after their charge.
             if (!held) {
+                if (!now.noCooldown) {
+                    now.cooldowns[1] = Math.max(now.cooldowns[1], HELD_COOLDOWN - age);
+                    if (caster instanceof net.minecraft.server.level.ServerPlayer player) {
+                        com.starkinhon.battlegroundsmod.power.PowerLogic.sync(player);
+                    }
+                }
                 fire(level, caster, id, spec, awakened, charge[0], atBlue ? aimAtBlue(caster, awakened) : aim(caster), null, screen);
                 return true;
             }
