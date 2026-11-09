@@ -86,6 +86,7 @@ public final class SkillEffects {
             FxWorld.clear();
             SusanooArm.clear();
             DomainScene.clear();
+            SukunaDomainScene.clear();
             SkillAudio.clear();
             return;
         }

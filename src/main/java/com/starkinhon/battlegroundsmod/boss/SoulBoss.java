@@ -190,7 +190,7 @@ public abstract class SoulBoss extends Monster {
         if (!(level() instanceof ServerLevel level)) {
             return;
         }
-        if (com.starkinhon.battlegroundsmod.power.powers.gojo.InfiniteVoid.blocks(this)) {
+        if (com.starkinhon.battlegroundsmod.power.powers.gojo.InfiniteVoid.blocks(this) || com.starkinhon.battlegroundsmod.power.powers.sukuna.ShrineDomain.blocks(this)) {
             // Caught in Gojo's domain: no phases, no ult, no moves, nothing until it shatters (only the bar keeps up).
             bossEvent.setProgress(getHealth() / getMaxHealth());
             return;
