@@ -1181,6 +1181,7 @@ public final class DbFx {
                 KiMesh.P core = KiMesh.p(KiMesh.GENKI);
                 core.time = age / 20f;
                 core.alpha = a;
+                core.solid = true;
                 KiMesh.queue(KiMesh.Mesh.BALL, KiMesh.sphere(p, r), core, KiMesh.FRONT, 12);
                 KiMesh.P halo = KiMesh.p(KiMesh.HALO);
                 halo.time = age / 20f;
@@ -1284,6 +1285,7 @@ public final class DbFx {
                 KiMesh.P sun = KiMesh.p(KiMesh.SUN);
                 sun.time = age / 20f;
                 sun.alpha = out;
+                sun.solid = true;
                 sun.pulse = grow >= 0.99f ? 0.5f + 0.5f * Mth.sin(age * 0.25f) : 0;
                 KiMesh.queue(KiMesh.Mesh.BALL, KiMesh.sphere(p, r), sun, KiMesh.FRONT, 12);
                 KiMesh.P halo = KiMesh.p(KiMesh.SUN_HALO);

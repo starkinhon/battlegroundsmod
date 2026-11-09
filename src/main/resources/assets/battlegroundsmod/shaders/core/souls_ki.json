@@ -337,6 +337,12 @@
             ]
         },
         {
+            "name": "HighPass",
+            "type": "float",
+            "count": 1,
+            "values": [0.0]
+        },
+        {
             "name": "GlowPass",
             "type": "float",
             "count": 1,

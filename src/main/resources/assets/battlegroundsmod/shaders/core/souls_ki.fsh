@@ -53,14 +53,20 @@ float fbm3(vec3 p) { float s = 0., w = 0.5; for (int o = 0; o < 3; o++) { s += w
 float fbm4(vec3 p) { float s = 0., w = 0.5; for (int o = 0; o < 4; o++) { s += w * gn(p); p = ROT * p * 2.03; w *= 0.5; } return s; }
 vec3 bright(vec3 c) { return c / max(max(c.r, max(c.g, c.b)), 1e-4); }
 
-// The glow layer works like the pages' bloom (threshold 0.6): only light that is already bright spills over. Sending
-// everything there doubled every ball and dome and blurred them into a white fog over the day sky.
+// Balls, halos and blast domes glow like the pages' bloom (threshold 0.6): only their white-hot parts spill light, so the
+// colored body keeps its color (all of it in the glow layer washed the Genki Dama and the Supernova out). The rest (aura,
+// beams, discs, wind) keeps the full glow.
+uniform float HighPass;
+
 void emit(vec3 premul, float a) {
     if (GlowPass > 0.5) {
-        float l = dot(premul, vec3(0.299, 0.587, 0.114));
-        float k = smoothstep(0.55, 0.85, l);
-        if (k < 0.003) discard;
-        fragColor = vec4(premul * k * 0.35, 0.);
+        if (HighPass > 0.5) {
+            float k = smoothstep(0.55, 0.7, dot(premul, vec3(0.299, 0.587, 0.114)));
+            if (k < 0.003) discard;
+            fragColor = vec4(premul * k * 0.5, 0.);
+            return;
+        }
+        fragColor = vec4(premul * 0.45, 0.);
     } else {
         fragColor = vec4(premul, a);
     }
@@ -94,10 +100,7 @@ void main() {
             vec3 b = bright(Color);
             vec3 col = mix(Color * 0.5, Color, smoothstep(0.05, 0.4, heat)); col = mix(col, mix(b, vec3(1.), 0.55), smoothstep(0.45, 0.95, heat));
             float a = m * mix(0.3, 1., pow(rim, 1.1)) * Alpha;
-            vec3 lit = col * a * (0.8 + 1.1 * heat);
-            // The pages are drawn on a dark sky; covering the background as much as the dome shines keeps the same
-            // colors over Minecraft's bright day sky instead of a white blob.
-            emit(lit, min(0.92, max(a * 0.6, max(lit.r, max(lit.g, lit.b)))));
+            emit(col * a * (0.8 + 1.1 * heat), a * 0.6);
         }
     } else if (kind == 1) {                                            // Genki core: light ball, white middle, no dark outline
         float fz = clamp(dot(N, V), 0., 1.);
