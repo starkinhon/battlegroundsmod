@@ -53,11 +53,16 @@ public final class SukunaCuts {
         Set<Integer> hit = new HashSet<>();
         double span = TIP * t.unit() * 1.05;
         Vec3 way = dir, side = across, face = normal;
+        // the crescent's own width cut out of the world as it flies (SukunaCarve)
+        it.unimi.dsi.fastutil.longs.LongOpenHashSet carved = new it.unimi.dsi.fastutil.longs.LongOpenHashSet();
+        double blade = TIP * t.unit(), bow = 0.35 * t.unit();
         Tasks.add(age -> {
             if (!caster.isAlive()) {
                 return true;
             }
             double from = age == 0 ? -1.5 : t.speed() * age - 0.6 * t.unit(), upTo = Math.min(t.reach(), t.speed() * (age + 1)) + 0.3 * t.unit();
+            SukunaCarve.sweep(level, caster, t.origin(), way, side, blade, bow, age == 0 ? 0 : t.speed() * age, Math.min(t.reach(), t.speed() * (age + 1)),
+                    carved);
             Vec3 a = t.origin().add(way.scale(from)), b = t.origin().add(way.scale(upTo));
             AABB around = new AABB(a, b).inflate(span + 1.5);
             for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, around, e -> Combat.isTarget(e, caster))) {

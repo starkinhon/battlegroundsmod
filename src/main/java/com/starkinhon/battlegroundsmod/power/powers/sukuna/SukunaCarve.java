@@ -1,0 +1,64 @@
+package com.starkinhon.battlegroundsmod.power.powers.sukuna;
+
+import com.starkinhon.battlegroundsmod.combat.BlockRules;
+
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
+
+// Sukuna's thrown cuts (the Z and its chant, the Dismantles of his base moves) cut the world they fly through as well
+// (Stark 2026-11-09: "destruírem como cortes mesmo... um estrago equivalente ao tamanho deles"): the blade's own plane, as
+// wide as the blade and a block thin, is taken out of the blocks between where its front was and where it is now. A
+// standing cut low enough leaves a groove in the ground; a lying one, a slit across whatever wall it meets. Nothing is
+// thrown about: the blocks in the cut just go (gamerule soulsBlockDestruction, BlockRules).
+public final class SukunaCarve {
+    // Sampling step along and across the blade (blocks), and the most blocks one cut takes out in one tick.
+    private static final double STEP = 0.45;
+    private static final int PER_TICK = 72;
+
+    private SukunaCarve() {
+    }
+
+    // One blade's sweep this tick. origin: where it left the hand; way: its flight (unit); side: across its span (unit);
+    // span: half its width; bow: how far its tips trail behind its middle (the crescent); from/upTo: its front's travel
+    // along way this tick. done: the blocks this cut already took (one set per cut).
+    public static void sweep(ServerLevel level, LivingEntity caster, Vec3 origin, Vec3 way, Vec3 side, double span, double bow, double from,
+            double upTo, LongOpenHashSet done) {
+        if (!BlockRules.canBreak(level) || upTo <= from) {
+            return;
+        }
+        int budget = PER_TICK;
+        // not under his own feet, nor in front of his face: the cut leaves the hand
+        double start = Math.max(from, 0.6);
+        for (double s = start; s <= upTo && budget > 0; s += STEP) {
+            for (double c = -span; c <= span && budget > 0; c += STEP) {
+                double u = c / Math.max(span, 1.0E-3);
+                Vec3 p = origin.add(way.scale(s - bow * u * u)).add(side.scale(c));
+                if (caster.getBoundingBox().inflate(0.3).contains(p)) {
+                    continue;
+                }
+                if (carve(level, p, done)) {
+                    budget--;
+                }
+            }
+        }
+    }
+
+    private static boolean carve(ServerLevel level, Vec3 p, LongOpenHashSet done) {
+        BlockPos pos = BlockPos.containing(p);
+        if (!done.add(pos.asLong()) || !level.isLoaded(pos) || level.isOutsideBuildHeight(pos)) {
+            return false;
+        }
+        BlockState state = level.getBlockState(pos);
+        if (state.isAir() || !state.getFluidState().isEmpty() || state.hasBlockEntity() || state.getDestroySpeed(level, pos) < 0) {
+            return false;
+        }
+        level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
+        return true;
+    }
+}

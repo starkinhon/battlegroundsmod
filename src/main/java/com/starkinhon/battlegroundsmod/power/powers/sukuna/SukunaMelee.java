@@ -151,11 +151,19 @@ public final class SukunaMelee {
         double radius = 0.8 * 0.8 * flight.size();
         Set<Integer> hit = new HashSet<>();
         Vec3 way = dir;
+        // the blade cuts the world it flies through, its own width (SukunaCarve): across it is the slash's line
+        Vec3 slashLine = slash.slash(yaw);
+        Vec3 side = slashLine.subtract(way.scale(slashLine.dot(way)));
+        side = side.lengthSqr() < 1.0E-4 ? new Vec3(-way.z, 0, way.x).normalize() : side.normalize();
+        Vec3 bladeSide = side;
+        double blade = 0.75 * flight.size(), bow = 0.3 * flight.size();
+        it.unimi.dsi.fastutil.longs.LongOpenHashSet carved = new it.unimi.dsi.fastutil.longs.LongOpenHashSet();
         Tasks.add(age -> {
             double from = flight.speed() * age, upTo = Math.min(reach, flight.speed() * (age + 1));
             if (!attacker.isAlive() || from >= reach) {
                 return true;
             }
+            SukunaCarve.sweep(level, attacker, origin, way, bladeSide, blade, bow, from, upTo, carved);
             Vec3 a = origin.add(way.scale(from)), b = origin.add(way.scale(upTo));
             AABB around = new AABB(a, b).inflate(radius + 1);
             for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, around, e -> Combat.isTarget(e, attacker))) {
