@@ -31,8 +31,21 @@ void main() {
     // painted the water the same red as the sky and hid the shrine's reflection (test 2026-11-09).
     if (rd.y < 0.0) t1 = min(t1, max(0.0, -ro.y / rd.y));
     if (t1 <= t0) discard;
+    // Without the red, the low fog and the wind live under y 5.5 (both are zero above it): march only that slab, and
+    // with steps of about a block, so a short ray takes few steps. Same look, a fraction of the cost (Stark 2026-11-09:
+    // FPS dropping inside the domain).
+    if (Red <= 0.0) {
+        const float TOP = 5.5;
+        if (ro.y > TOP) {
+            if (rd.y >= 0.0) discard;
+            t0 = max(t0, (ro.y - TOP) / -rd.y);
+        } else if (rd.y > 0.0) {
+            t1 = min(t1, (TOP - ro.y) / rd.y);
+        }
+        if (t1 <= t0) discard;
+    }
     // No per-pixel jitter: in the game it stays on the screen while the world moves, a grain that shimmers (Stark 06:38).
-    const int N = 40;
+    int N = int(clamp(ceil((t1 - t0) / 1.2), 12.0, 40.0));
     float dt = (t1 - t0) / float(N);
     float t = t0 + dt * 0.5;
     vec3 col = vec3(0.0);

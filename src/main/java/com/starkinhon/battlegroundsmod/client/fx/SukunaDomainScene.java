@@ -91,6 +91,9 @@ public final class SukunaDomainScene {
     private static final String[] MATERIALS = {"tile", "black", "dark", "wood", "gold", "post", "red", "void", "gum", "tooth",
             "bone", "horn", "hornB", "bark", "heap", "lamp"};
     private static final Map<String, MeshModel> SHRINE = new LinkedHashMap<>();
+    // The shrine's meshes on the GPU, uploaded once: re-sending its ~150k vertices twice a frame (it and its mirror)
+    // was most of the domain's cost on the processor (Stark 2026-11-09, FPS dropping inside).
+    private static final Map<String, com.mojang.blaze3d.vertex.VertexBuffer> SHRINE_GPU = new LinkedHashMap<>();
     private static boolean shrineBroken;
 
     private static final class Dom {
@@ -145,7 +148,9 @@ public final class SukunaDomainScene {
                 DOMS.add(new Dom(casterId, center, now, a / 10f));
                 // load the shrine's meshes now, while the wave plays: loading them when it first shows froze the game
                 // for 1.5 s on the first domain of the session (test 2026-11-09)
-                shrineReady();
+                if (shrineReady()) {
+                    shrineUpload();
+                }
                 // The floor inside mirrors this place: take it all round now, while the wave is on screen.
                 if (mc.player != null && mc.player.position().distanceTo(center) <= ShrineDomain.RADIUS + 16) {
                     DomainPanorama.request();
@@ -1400,16 +1405,42 @@ public final class SukunaDomainScene {
         RenderSystem.depthMask(true);
         RenderSystem.disableCull();
         RenderSystem.disableBlend();
-        PoseStack.Pose identity = new PoseStack().last();
-        for (Map.Entry<String, MeshModel> e : SHRINE.entrySet()) {
+        shrineUpload();
+        Matrix4f view = RenderSystem.getModelViewMatrix(), proj = RenderSystem.getProjectionMatrix();
+        for (Map.Entry<String, com.mojang.blaze3d.vertex.VertexBuffer> e : SHRINE_GPU.entrySet()) {
             String m = e.getKey();
             float glow = m.equals("void") ? -1 : (m.equals("red") || m.equals("post") || m.equals("lamp")) ? 1 : (m.equals("tile") || m.equals("gold")) ? 0.4f : 0.15f;
             sh.safeGetUniform("Glow").set(glow);
             RenderSystem.setShaderTexture(0, ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "textures/models/malevolent_shrine/" + m.toLowerCase() + ".png"));
+            com.mojang.blaze3d.vertex.VertexBuffer vb = e.getValue();
+            vb.bind();
+            vb.drawWithShader(view, proj, sh);
+        }
+        com.mojang.blaze3d.vertex.VertexBuffer.unbind();
+    }
+
+    // Each material's mesh into its own static GPU buffer, once (render thread only).
+    private static void shrineUpload() {
+        if (SHRINE_GPU.size() == SHRINE.size() || !RenderSystem.isOnRenderThread()) {
+            return;
+        }
+        PoseStack.Pose identity = new PoseStack().last();
+        for (Map.Entry<String, MeshModel> e : SHRINE.entrySet()) {
+            if (SHRINE_GPU.containsKey(e.getKey())) {
+                continue;
+            }
             BufferBuilder b = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.NEW_ENTITY);
             e.getValue().emit(b, identity, 0xF000F0, OverlayTexture.NO_OVERLAY);
-            draw(sh, b);
+            MeshData mesh = b.build();
+            if (mesh == null) {
+                continue;
+            }
+            com.mojang.blaze3d.vertex.VertexBuffer vb = new com.mojang.blaze3d.vertex.VertexBuffer(com.mojang.blaze3d.vertex.VertexBuffer.Usage.STATIC);
+            vb.bind();
+            vb.upload(mesh);
+            SHRINE_GPU.put(e.getKey(), vb);
         }
+        com.mojang.blaze3d.vertex.VertexBuffer.unbind();
     }
 
     // The cyan light that lives only in the water (05:03 Stark: the two side lights out).
