@@ -426,7 +426,7 @@ public final class ShrineDomain {
                 Stamina.drain(v, RESIST_DRAIN / 20.0);
             }
             if (Math.floorMod(p + cutPhase(v.getId()), CUT_EVERY) == 0) {
-                Combat.hurt(caster, v, CUT_DAMAGE);
+                domainCut(caster, v, CUT_DAMAGE);
                 if (!resisting) {
                     Stun.apply(v, CUT_STUN);
                     // Techniques still work inside, but a charged one gets cut off by each cut that lands (Stark,
@@ -437,13 +437,23 @@ public final class ShrineDomain {
                 }
             }
             if (clivar) {
-                Combat.hurt(caster, v, CLIVAR_DAMAGE);
+                domainCut(caster, v, CLIVAR_DAMAGE);
                 active.level.playSound(null, v.getX(), v.getY() + 1, v.getZ(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 0.7f, 0.6f + 0.3f * (p % 3));
             }
         }
         if (active.deadAt < 0 && !active.caught.isEmpty() && active.caught.stream().noneMatch(LivingEntity::isAlive)) {
             active.deadAt = age;
         }
+    }
+
+    // A cut of the domain: its damage only, the hurt's own knockback taken back, like Kokushibo's moons (Stark,
+    // 2026-11-09: Madara kept flying across the domain from the cuts). Only the domain's cuts: every other blow inside
+    // still throws as usual.
+    private static void domainCut(LivingEntity caster, LivingEntity v, float damage) {
+        Vec3 motion = v.getDeltaMovement();
+        Combat.hurt(caster, v, damage);
+        v.setDeltaMovement(motion);
+        v.hurtMarked = true;
     }
 
     // When each one's little cut lands, spread so they don't all land on the same tick (the client draws it the same).
