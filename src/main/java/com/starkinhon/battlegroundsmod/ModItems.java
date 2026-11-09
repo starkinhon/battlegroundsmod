@@ -47,6 +47,8 @@ public final class ModItems {
             () -> new DeferredSpawnEggItem(ModEntities.BILLS, 0x9B30FF, 0xF2C94C, new Item.Properties()));
     public static final DeferredItem<DeferredSpawnEggItem> GOJO_SPAWN_EGG = BattlegroundsMod.ITEMS.register("gojo_spawn_egg",
             () -> new DeferredSpawnEggItem(ModEntities.GOJO, 0x14161C, 0x4FC3FF, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> SUKUNA_SPAWN_EGG = BattlegroundsMod.ITEMS.register("sukuna_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.SUKUNA, 0x16090B, 0xC8321E, new Item.Properties()));
     public static final DeferredItem<DeferredSpawnEggItem> KOKUSHIBO_SPAWN_EGG = BattlegroundsMod.ITEMS.register("kokushibo_spawn_egg",
             () -> new DeferredSpawnEggItem(ModEntities.KOKUSHIBO, 0x2D1531, 0xC9A2FF, new Item.Properties()));
 

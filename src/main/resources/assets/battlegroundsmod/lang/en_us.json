@@ -750,5 +750,12 @@
   "fala.battlegroundsmod.sukuna.canto1": "龍鱗 Dragon Scales",
   "fala.battlegroundsmod.sukuna.canto2": "反発 Recoil",
   "fala.battlegroundsmod.sukuna.canto3": "番いの流星 Paired Falling Stars",
-  "hud.battlegroundsmod.sukuna.model_full": "MODEL COMPLETE"
+  "hud.battlegroundsmod.sukuna.model_full": "MODEL COMPLETE",
+  "entity.battlegroundsmod.sukuna": "King of Curses",
+  "item.battlegroundsmod.sukuna_spawn_egg": "King of Curses Spawn Egg",
+  "fala.battlegroundsmod.sukuna.inicio": "Know your place, fool.",
+  "fala.battlegroundsmod.sukuna.inicio_gojo": "You're just a fish on my cutting board...",
+  "fala.battlegroundsmod.sukuna.pouca_vida": "Interesting... entertain me some more.",
+  "fala.battlegroundsmod.sukuna.matou_forte": "Stand proud. You are strong.",
+  "fala.battlegroundsmod.sukuna.matou_gojo": "You were magnificent. I will never forget you as long as I live."
 }

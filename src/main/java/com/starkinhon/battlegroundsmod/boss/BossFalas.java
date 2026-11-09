@@ -136,6 +136,11 @@ public final class BossFalas {
                 if ("moon_demon".equals(boss.powerData().power)) {
                     sayNow(boss, "fala.battlegroundsmod.kokushibo.inicio");
                 }
+                // Sukuna too: against a Gojo the line from the start of their fight, against anyone else "know your place".
+                if ("sukuna".equals(boss.powerData().power)) {
+                    sayNow(boss, "strongest".equals(powerOf(target)) ? "fala.battlegroundsmod.sukuna.inicio_gojo"
+                            : "fala.battlegroundsmod.sukuna.inicio");
+                }
             }
             state.lastTarget = now;
         } else if (now - state.lastTarget > FIGHT_END) {
@@ -144,6 +149,11 @@ public final class BossFalas {
         float life = boss.getHealth() / boss.getMaxHealth();
         if (life > 0.6f) {
             state.lowSaid = false;
+        }
+        // Sukuna: low on life, once until he heals back up.
+        if ("sukuna".equals(boss.powerData().power) && !state.lowSaid && life <= 0.3f
+                && say(boss, "fala.battlegroundsmod.sukuna.pouca_vida", 0)) {
+            state.lowSaid = true;
         }
         if (!"destruction_god".equals(boss.powerData().power) || target == null || !target.isAlive() || BillsInevitavel.running(boss)) {
             return;
@@ -217,11 +227,40 @@ public final class BossFalas {
             case "destruction_god" -> "fala.battlegroundsmod.bills.matou";
             case "manipulator" -> "fala.battlegroundsmod.aizen.matou";
             case "moon_demon" -> "fala.battlegroundsmod.kokushibo.matou";
+            // Sukuna: to Gojo his farewell; to anyone of his tier or above, "stand proud"; the weak get nothing.
+            case "sukuna" -> "strongest".equals(powerOf(victim)) ? "fala.battlegroundsmod.sukuna.matou_gojo"
+                    : tierOf(victim) <= boss.powerData().tier ? "fala.battlegroundsmod.sukuna.matou_forte" : null;
             default -> null;
         };
         if (key != null) {
             say(boss, key, 100, true);
         }
+    }
+
+    // The power someone fights with (a boss's soul, or a player's or mob's power), "" for none.
+    private static String powerOf(LivingEntity e) {
+        if (e instanceof SoulBoss other) {
+            return other.spec().poder();
+        }
+        if (e.hasData(com.starkinhon.battlegroundsmod.ModAttachments.POWER)) {
+            com.starkinhon.battlegroundsmod.power.PowerData data = e.getData(com.starkinhon.battlegroundsmod.ModAttachments.POWER);
+            return data.hasPower() ? data.power : "";
+        }
+        return "";
+    }
+
+    // Someone's tier (lower is stronger); a plain mob or a player without a soul counts as human.
+    private static int tierOf(LivingEntity e) {
+        if (e instanceof SoulBoss other) {
+            return other.powerData().tier;
+        }
+        if (e.hasData(com.starkinhon.battlegroundsmod.ModAttachments.POWER)) {
+            com.starkinhon.battlegroundsmod.power.PowerData data = e.getData(com.starkinhon.battlegroundsmod.ModAttachments.POWER);
+            if (data.hasPower()) {
+                return data.tier;
+            }
+        }
+        return com.starkinhon.battlegroundsmod.power.Tiers.HUMANO;
     }
 
     // Anyone else near still in the fight: players in survival, or anything that has the boss as its target.
