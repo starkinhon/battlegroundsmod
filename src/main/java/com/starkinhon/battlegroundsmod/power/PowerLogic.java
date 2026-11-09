@@ -228,6 +228,10 @@ public final class PowerLogic {
         if (OWN_ULT_TITLE.contains(power.id())) {
             return;
         }
+        // Sukuna's Expansão writes its own words too, and its long name ran off both edges (test 2026-11-09).
+        if (com.starkinhon.battlegroundsmod.power.powers.Sukuna.ID.equals(power.id()) && slot == 3) {
+            return;
+        }
         // Kokushibo's 6th Form (V with the normal sword) goes without the big title (Stark, 2026-11-08).
         if (com.starkinhon.battlegroundsmod.power.powers.MoonDemon.ID.equals(power.id())
                 && !com.starkinhon.battlegroundsmod.power.powers.MoonDemon.stretched(player)) {

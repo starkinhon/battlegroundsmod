@@ -288,6 +288,9 @@ public final class ShrineDomain {
         }
         int yaw10 = Math.round(active.forward * 10);
         send(active, active.quick ? M_QUICK : M_CUTSCENE, yaw10, target != null ? target.getId() : -1);
+        // Everyone goes into the domain's own space right now, before the opening scenes (Stark 07:27): the ground turning
+        // to water, the drop and the drowning play on its clean flat stage, so no block of the world gets in the way.
+        goInside(active);
         if (active.quick) {
             freeCaster(active);
             release(active);
