@@ -24,24 +24,20 @@ import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexSorting;
-import com.mojang.math.Axis;
 import com.starkinhon.battlegroundsmod.network.ModPayloads.SukunaClivar;
 
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
-import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.ClipContext;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
@@ -57,7 +53,8 @@ import net.neoforged.neoforge.client.event.RenderLivingEvent;
 //     long Shift+Z stroke along that plane (its own length, taper and tearing), white sparks fly along the slits, dark
 //     smoke and a fine red mist burst out (Fumaça Nova, SmokeParticle); then the cuts fade.
 //   - Against a wall, every plane cuts the wall where it meets it (a stroke on the wall's face, drawn with the body's
-//     line), the slam throws dust and grit off it, and its middle 3x3 breaks into quarter blocks that fly through.
+//     line), the slam throws dust and grit off it, and its middle 3x3 opens (the real blocks, nothing
+//     spawned to look like them) with the wall's dust bursting through.
 //   - Lethal: no throw: after the silhouette the body comes apart into cells cut from its own model, which part, crumble
 //     to the ground and vanish over a pool of blood.
 //   - The sprint kicks dust off the ground under his feet and leaves wind lines along his body.
@@ -77,7 +74,7 @@ public final class ClivarRenderer {
         Vec3 fwd = new Vec3(0, 0, 1), center = Vec3.ZERO, pin;
         double feet, ground, scale = 1;
         List<Cell> cells;
-        List<Piece> pieces = new ArrayList<>();
+        int wallColor = -1;
         // the cuts, in the body's frame (x its left, y up, z ahead, from its feet), and what they were in the world at
         // the snap (for the strokes that shoot out)
         List<Plane> planes;
@@ -97,16 +94,12 @@ public final class ClivarRenderer {
             if (snapAt < 0) {
                 return born + measure + 60;
             }
-            return snapAt + (lethal ? SIL + 64 : SIL + FADE + 2) + (breakAt >= 0 ? 26 : 0);
+            return snapAt + (lethal ? SIL + 64 : SIL + FADE + 2) + (breakAt >= 0 ? 2 : 0);
         }
     }
 
     // One cell of a lethal Clivar: a box on the body's surface, its centre and half extents along its own axes.
     private record Cell(Vec3 c, Vec3 x, Vec3 y, Vec3 z, double h0, double h1, double h2, double h3) {
-    }
-
-    // A quarter of a wall block flying through.
-    private record Piece(BlockState state, Vec3 at, Vec3 v, double h0, double h1, double h2, double floor) {
     }
 
     // One cut through the body: normal and offset from the body's middle (body frame), when it runs (start and length in
@@ -193,14 +186,20 @@ public final class ClivarRenderer {
                 if (c != null) {
                     c.pinAt = now;
                     c.pin = a;
-                    wallDust(a, b.normalize());
+                    c.wallColor = wallColor(a, b.normalize());
+                    wallDust(a, b.normalize(), c.wallColor);
                 }
             }
             case SukunaClivar.WALL_BREAK -> {
                 Cut c = CUTS.get(id);
                 if (c != null) {
                     c.breakAt = now;
-                    c.pieces = pieces(a, b.normalize());
+                    // no flying block copies (Stark: destruction cuts the real blocks, nothing spawned to look like
+                    // them): the hole just opens, and the wall's dust bursts out through it, away from Sukuna
+                    Vec3 n = b.normalize();
+                    int color = c.wallColor >= 0 ? c.wallColor : wallColor(a, n);
+                    wallDust(a.subtract(n.scale(0.5)), n.scale(-1), color);
+                    wallDust(a, n, color);
                 }
             }
             case SukunaClivar.TRAIL -> TRAILS.add(new Trail(id, now, Math.max(1, ticks), seed));
@@ -240,38 +239,6 @@ public final class ClivarRenderer {
         Vec3 from = at.add(0, 0.2, 0);
         var hit = e.level().clip(new ClipContext(from, from.add(0, -6, 0), ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, e));
         return hit.getType() == HitResult.Type.MISS ? at.y : hit.getLocation().y;
-    }
-
-    // The wall's middle 3x3, as the server breaks it (Clivar.wallBlocks): four quarters per block still there.
-    private static List<Piece> pieces(Vec3 center, Vec3 normal) {
-        List<Piece> out = new ArrayList<>();
-        ClientLevel level = Minecraft.getInstance().level;
-        if (level == null) {
-            return out;
-        }
-        Vec3 up = new Vec3(0, 1, 0);
-        Vec3 right = up.cross(normal);
-        right = right.lengthSqr() < 1.0E-4 ? new Vec3(1, 0, 0) : right.normalize();
-        double floor = center.y - 1.5;
-        for (int i = -1; i <= 1; i++) {
-            for (int j = -1; j <= 1; j++) {
-                BlockPos pos = BlockPos.containing(center.subtract(normal.scale(0.5)).add(right.scale(i)).add(up.scale(j)));
-                BlockState state = level.getBlockState(pos);
-                if (state.isAir() || !state.getFluidState().isEmpty()) {
-                    continue;
-                }
-                Vec3 mid = Vec3.atCenterOf(pos);
-                for (int q = 0; q < 4; q++) {
-                    double ox = q % 2 == 1 ? 0.25 : -0.25, oy = q < 2 ? 0.25 : -0.25;
-                    double h0 = hash(i * 3 + j * 5 + q * 1.3), h1 = hash(i * 9 + j + q * 2.7), h2 = hash(i + j * 11 + q * 3.1);
-                    Vec3 at = mid.add(right.scale(ox)).add(0, oy, 0).add(normal.scale((hash(i * 7 + j * 3 + q) - 0.5) * 0.4));
-                    // through the wall, away from Sukuna (the normal points back at him)
-                    Vec3 v = right.scale((ox + (h0 - 0.5) * 0.4) * 0.25).add(0, 0.05 + 0.08 * h1, 0).add(normal.scale(-(0.12 + 0.15 * h2)));
-                    out.add(new Piece(state, at, v, h0, h1, h2, floor));
-                }
-            }
-        }
-        return out;
     }
 
     // ---------- the grid over the body (after the entities) ----------
@@ -582,8 +549,6 @@ public final class ClivarRenderer {
         Vector3f left = c.getLeftVector(), up = c.getUpVector();
         camRight = new Vec3(-left.x(), -left.y(), -left.z());
         camUp = new Vec3(up.x(), up.y(), up.z());
-        // the wall's quarter blocks first, as real blocks (their own render types and blending)
-        drawPieces(now);
         RenderSystem.enableDepthTest();
         RenderSystem.disableCull();
         RenderSystem.enableBlend();
@@ -755,7 +720,7 @@ public final class ClivarRenderer {
             return;
         }
         perp = perp.normalize();
-        double reach = (1.6 + 1.8 * hash(i * 3.3 + c.seed)) * c.scale;
+        double reach = (1.2 + 1.3 * hash(i * 3.3 + c.seed)) * c.scale;
         double grow = out(cl(s / 3, 0, 1));
         double half = 0.55 * c.scale + reach * grow;
         double thick = (0.09 + 0.07 * q.h()) * c.scale;
@@ -872,12 +837,12 @@ public final class ClivarRenderer {
     }
 
     // Slammed into the wall: dust of the wall's own colour bursting off it, grit thrown back, a darker puff in the middle.
-    private static void wallDust(Vec3 at, Vec3 normal) {
+    private static int wallColor(Vec3 at, Vec3 normal) {
         ClientLevel level = Minecraft.getInstance().level;
-        if (level == null) {
-            return;
-        }
-        int color = com.starkinhon.battlegroundsmod.fx.Smoke.groundColor(level, at.subtract(normal.scale(0.6)).add(0, 0.6, 0));
+        return level == null ? 0xB9AA90 : com.starkinhon.battlegroundsmod.fx.Smoke.groundColor(level, at.subtract(normal.scale(0.6)).add(0, 0.6, 0));
+    }
+
+    private static void wallDust(Vec3 at, Vec3 normal, int color) {
         Vec3 side = new Vec3(0, 1, 0).cross(normal);
         side = side.lengthSqr() < 1.0E-4 ? new Vec3(1, 0, 0) : side.normalize();
         for (int k = 0; k < 22; k++) {
@@ -979,44 +944,5 @@ public final class ClivarRenderer {
         put(b, c.add(r).subtract(f), 1, 0);
         put(b, c.add(r).add(f), 1, 1);
         put(b, c.subtract(r).add(f), 0, 1);
-    }
-
-    private static void drawPieces(double now) {
-        Minecraft minecraft = Minecraft.getInstance();
-        ClientLevel level = minecraft.level;
-        if (level == null) {
-            return;
-        }
-        MultiBufferSource.BufferSource source = minecraft.renderBuffers().bufferSource();
-        boolean any = false;
-        for (Cut c : CUTS.values()) {
-            if (c.breakAt < 0) {
-                continue;
-            }
-            double s = now - c.breakAt;
-            if (s >= 24) {
-                continue;
-            }
-            for (Piece q : c.pieces) {
-                Vec3 p = q.at().add(q.v().scale(s));
-                p = new Vec3(p.x, Math.max(q.floor() + 0.25, p.y - 0.02 * s * s), p.z);
-                double sc = 0.5 * (1 - cl((s - 14) / 10, 0, 1));
-                if (sc <= 0.01) {
-                    continue;
-                }
-                PoseStack pose = new PoseStack();
-                pose.translate(p.x - cam.x, p.y - cam.y, p.z - cam.z);
-                pose.mulPose(Axis.XP.rotation((float) (q.h0() * s * 0.2)));
-                pose.mulPose(Axis.YP.rotation((float) (q.h1() * s * 0.25)));
-                pose.scale((float) sc, (float) sc, (float) sc);
-                pose.translate(-0.5, -0.5, -0.5);
-                int light = LevelRenderer.getLightColor(level, BlockPos.containing(p));
-                minecraft.getBlockRenderer().renderSingleBlock(q.state(), pose, source, light, OverlayTexture.NO_OVERLAY);
-                any = true;
-            }
-        }
-        if (any) {
-            source.endBatch();
-        }
     }
 }
