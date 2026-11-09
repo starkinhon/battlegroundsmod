@@ -39,14 +39,22 @@ public final class Fuga {
     public static final int LENGTH = 372;
     // The flight: the preview covers 12 blocks in 8 ticks along u^1.6; the same curve keeps going up to RANGE.
     private static final double FLY_BLOCKS = 12, FLY_TICKS = 8, FLY_POW = 1.6;
-    private static final double RANGE = 64;
+    private static final double RANGE = 96;
+    // Stark (2026-11-09): it takes long to form, so it needs a stunned target (Stamina.stunnable), found from far away:
+    // held in place for the whole charge (it can turn the camera, not walk). Sukuna tells it to arm itself, it answers
+    // with a shocked "!?", and then the fire starts.
+    private static final double TARGET_RANGE = 64;
+    private static final int ANSWER_TICK = 26;
     // Where the arrow's tip sits at the release, in the caster's own frame (facing +z, feet at 0): the right fist from the
     // baked pose, plus the preview's offsets along the aim (0.08 out of the fist, the arrow 1.35 past it).
     private static final Vec3 TIP_LOCAL = new Vec3(-0.071, 1.093, 0.763 + 0.08 + 1.35);
-    // The burst: full damage at the middle, EDGE at RADIUS.
-    private static final double RADIUS = 7;
+    // The burst: full damage at the middle, EDGE at RADIUS (Stark: bigger, 7 -> 12); everyone within FIRE_RADIUS catches
+    // fire, and whoever dies burning from it is charred like the Katon's (AshKill / onDeath).
+    private static final double RADIUS = 12, FIRE_RADIUS = 18;
     private static final float DAMAGE_CENTER = 150, DAMAGE_EDGE = 45;
     private static final int BURN_SECONDS = 8;
+    // Who is burning from a Fuga, until when (game time): a death by fire then turns them to ash.
+    private static final java.util.Map<LivingEntity, Long> BURNING = new java.util.WeakHashMap<>();
     public static final double DARK_RADIUS = 70;
 
     // Phases sent to the clients (ModPayloads.FugaFx).
@@ -57,6 +65,34 @@ public final class Fuga {
 
     public static boolean use(LivingEntity caster, ServerLevel level) {
         PowerData data = caster.getData(ModAttachments.POWER);
+        LivingEntity target = Combat.raycastTarget(caster, TARGET_RANGE);
+        if (target == null && data.foughtId >= 0 && level.getEntity(data.foughtId) instanceof LivingEntity fought && Combat.isTarget(fought, caster)
+                && fought.distanceTo(caster) <= TARGET_RANGE) {
+            target = fought;
+        }
+        if (target == null && caster instanceof net.minecraft.world.entity.Mob mob && mob.getTarget() != null
+                && Combat.isTarget(mob.getTarget(), caster) && mob.getTarget().distanceTo(caster) <= TARGET_RANGE) {
+            target = mob.getTarget();
+        }
+        if (target == null || !com.starkinhon.battlegroundsmod.combat.Capture.canGrab(caster, target)) {
+            if (caster instanceof net.minecraft.server.level.ServerPlayer player) {
+                player.displayClientMessage(net.minecraft.network.chat.Component.translatable("message.battlegroundsmod.no_target"), true);
+            }
+            return false;
+        }
+        if (!com.starkinhon.battlegroundsmod.combat.Stamina.stunnable(target)) {
+            if (caster instanceof net.minecraft.server.level.ServerPlayer player) {
+                player.displayClientMessage(net.minecraft.network.chat.Component.translatable("message.battlegroundsmod.needs_stun")
+                        .withStyle(st -> st.withColor(0xFF5555)), true);
+            }
+            return false;
+        }
+        LivingEntity victim = target;
+        // One hold at a time: whatever had it lets go, and it stands still (turning, not walking) until the release.
+        com.starkinhon.battlegroundsmod.combat.Capture.take(victim);
+        com.starkinhon.battlegroundsmod.combat.Capture.grabbed(victim, caster, FIRE_TICK + 4);
+        victim.addEffect(new MobEffectInstance(ModEffects.ENRAIZADO, FIRE_TICK + 4, 0, false, false, false));
+        com.starkinhon.battlegroundsmod.boss.BossFalas.line(caster, "fala.battlegroundsmod.sukuna.fuga", com.starkinhon.battlegroundsmod.boss.BossFalas.colors(com.starkinhon.battlegroundsmod.power.powers.Sukuna.ID));
         String power = data.power;
         int interrupts = data.interrupts;
         data.busyTicks = FIRE_TICK + 6;
@@ -69,14 +105,19 @@ public final class Fuga {
             if (!caster.isAlive() || caster.isRemoved() || !power.equals(caster.getData(ModAttachments.POWER).power)
                     || caster.getData(ModAttachments.POWER).interrupts != interrupts) {
                 caster.removeEffect(ModEffects.ENRAIZADO);
+                victim.removeEffect(ModEffects.ENRAIZADO);
                 send(caster, STOP, caster.position(), Vec3.ZERO);
                 return true;
+            }
+            if (tick == ANSWER_TICK && victim.isAlive()) {
+                com.starkinhon.battlegroundsmod.boss.BossFalas.line(victim, "fala.battlegroundsmod.sukuna.fuga_resposta",
+                        com.starkinhon.battlegroundsmod.boss.BossFalas.colors(victim.getData(ModAttachments.POWER).power));
             }
             sounds(level, caster, tick);
             if (tick < FIRE_TICK) {
                 return false;
             }
-            shoot(caster, level);
+            shoot(caster, level, victim.isAlive() && !victim.isRemoved() ? victim : null);
             return true;
         });
         return true;
@@ -103,14 +144,15 @@ public final class Fuga {
         }
     }
 
-    // The release: the arrow flies at the crosshair, stopped by the first body or block on its way.
-    private static void shoot(LivingEntity caster, ServerLevel level) {
+    // The release: the arrow flies at the held target (or the crosshair if it is gone), stopped by the first body or
+    // block on its way.
+    private static void shoot(LivingEntity caster, ServerLevel level, LivingEntity victim) {
         float yaw = caster.getYHeadRot();
         Vec3 tip = caster.position().add(TIP_LOCAL.yRot(-yaw * Mth.DEG_TO_RAD));
         Vec3 eye = caster.getEyePosition();
         Vec3 aimEnd = eye.add(caster.getLookAngle().scale(RANGE));
         var sight = level.clip(new ClipContext(eye, aimEnd, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, caster));
-        Vec3 aim = sight.getType() == HitResult.Type.MISS ? aimEnd : sight.getLocation();
+        Vec3 aim = victim != null ? Combat.center(victim) : sight.getType() == HitResult.Type.MISS ? aimEnd : sight.getLocation();
         Vec3 dir = aim.subtract(tip);
         dir = dir.lengthSqr() < 1.0E-4 ? caster.getLookAngle() : dir.normalize();
         Vec3 way = dir;
@@ -151,6 +193,12 @@ public final class Fuga {
         Fx.sound(level, center, SoundEvents.GENERIC_EXPLODE.value(), 4f, 0.55f);
         Fx.sound(level, center, SoundEvents.BLAZE_SHOOT, 3f, 0.3f);
         Set<LivingEntity> hit = new HashSet<>(Combat.inRadius(level, center, RADIUS, caster));
+        // Everyone near enough catches fire, inside the blast or not.
+        long burnUntil = level.getGameTime() + BURN_SECONDS * 20L + 40;
+        for (LivingEntity near : Combat.inRadius(level, center, FIRE_RADIUS, caster)) {
+            near.igniteForSeconds(BURN_SECONDS);
+            BURNING.put(near, burnUntil);
+        }
         for (LivingEntity target : hit) {
             double d = Math.min(1, Combat.center(target).distanceTo(center) / RADIUS);
             float damage = (float) Mth.lerp(d, DAMAGE_CENTER, DAMAGE_EDGE);
@@ -162,8 +210,8 @@ public final class Fuga {
             Combat.push(target, out, 2.2 * (1 - 0.5 * d), 0.9 * (1 - 0.4 * d));
         }
         // The ground breaks into a bowl and catches fire around it (gamerule soulsBlockDestruction).
-        JjCommon.crater(level, center, 4.5, 2.5, 24);
-        Tasks.later(2, () -> scorch(level, center, RADIUS + 2));
+        JjCommon.crater(level, center, 7, 3.5, 40);
+        Tasks.later(2, () -> scorch(level, center, FIRE_RADIUS));
     }
 
     private static void scorch(ServerLevel level, Vec3 center, double r) {
@@ -172,7 +220,7 @@ public final class Fuga {
         }
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
         var random = level.getRandom();
-        for (int i = 0; i < 70; i++) {
+        for (int i = 0; i < 160; i++) {
             double a = random.nextDouble() * Mth.TWO_PI, d = Math.sqrt(random.nextDouble()) * r;
             int x = Mth.floor(center.x + Math.cos(a) * d), z = Mth.floor(center.z + Math.sin(a) * d);
             for (int y = Mth.floor(center.y) + 3; y >= Mth.floor(center.y) - 5; y--) {
@@ -185,6 +233,16 @@ public final class Fuga {
                 }
             }
         }
+    }
+
+    // A death while burning from a Fuga (LivingDeathEvent, combat/SkillStop): charred like the Katon's, not the normal death.
+    public static void onDeath(LivingEntity dead, net.minecraft.world.damagesource.DamageSource source) {
+        Long until = BURNING.remove(dead);
+        if (until == null || dead.level().getGameTime() > until || !source.is(net.minecraft.tags.DamageTypeTags.IS_FIRE)) {
+            return;
+        }
+        com.starkinhon.battlegroundsmod.combat.CustomDeath.mark(dead);
+        PacketDistributor.sendToPlayersTrackingEntityAndSelf(dead, new ModPayloads.AshDeath(dead.getId()));
     }
 
     private static void send(LivingEntity caster, int phase, Vec3 pos, Vec3 dir) {
