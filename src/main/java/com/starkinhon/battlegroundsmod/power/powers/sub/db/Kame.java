@@ -40,8 +40,8 @@ import net.neoforged.neoforge.network.PacketDistributor;
 // X Max Power: he swells (1.4x bigger), the shirt bursts, the blue aura rises: punches +40%. X again (or by itself after
 //   3 s): the Kamehameha Max from the hip, and he is skinny again.
 // C Bankoku Bikkuri Sho: two blue lightning bolts with white cores (and branches) from the hands hold the target shaking
-//   for 2.5 s, then a burst knocks it down.
-// V Mafuba: a gale of green speed lines and a green tornado lift the target spinning (the screen twists round it,
+//   for 2.5 s, then a burst knocks it down, stunned long enough to start the Mafuba.
+// V Mafuba (only on a stunned target, e.g. right after the C): a gale of green speed lines and a green tornado lift the target spinning (the screen twists round it,
 //   flashing white between the cuts), the wind runs into the jar with the target shrinking inside, the lid falls and the
 //   魔封波 seal sticks. Sealed 6 s: with 20% of life or less it dies sealed; with more it breaks the jar and comes out
 //   with 15% less life. Kame is left on his knees with no stamina.
@@ -273,12 +273,13 @@ public final class Kame {
                 SubCommon.sound(level, to, SoundEvents.FIREWORK_ROCKET_BLAST, 1.4f, 0.5f);
             }
             if (end) {
-                DbCommon.boom(level, to, 3.3f, Db.KAME, 5);
+                // Breaks more than the first port (Stark, 2026-11-09), like the other beams: a bigger blast and crater.
+                DbCommon.boom(level, to, 4.6f, Db.KAME, 5);
                 double ground = DbCommon.groundY(level, to);
-                if (to.y - ground < 3) {
-                    JjCommon.crater(level, new Vec3(to.x, ground, to.z), 3.2, 1.6, 24);
+                if (to.y - ground < 4) {
+                    JjCommon.crater(level, new Vec3(to.x, ground, to.z), 4.6, 2.4, 36);
                 }
-                DbCommon.hurtRadius(caster, level, to, 3.3, 14, 1.6, 0.7);
+                DbCommon.hurtRadius(caster, level, to, 4.2, 14, 1.6, 0.7);
                 // Spent: skinny again.
                 SubCommon.clearState(caster, DbCommon.MAX_POWER);
                 return true;
@@ -332,7 +333,8 @@ public final class Kame {
             // The burst that knocks it down.
             Freeze.free(target);
             Combat.hurtMagic(caster, target, 8);
-            Stun.apply(target, 20);
+            // A real stun, a little longer (Stark, 2026-11-09): time to start the Mafuba, which needs a stunned target.
+            Stun.apply(target, 50);
             Combat.push(target, target.position().subtract(caster.position()), 1.1, 0.45);
             SubNet.send(level, SubNet.KI_BOOM, 0, body, new Vec3(DbCommon.groundY(level, body), 0, 0), 0.6f, Db.KAME_W, 1000 + SubCommon.RANDOM.nextInt(100));
             DbCommon.hit(level, body, 0.9f, Db.KAME_W);
@@ -366,6 +368,11 @@ public final class Kame {
         LivingEntity target = SubCommon.aimed(caster, 14);
         if (target == null) {
             SubCommon.warn(caster, "kame.mafuba_no_target", 14);
+            return false;
+        }
+        // Only on a stunned target (Stark, 2026-11-09): the Bankoku Bikkuri Sho (C) opens it.
+        if (!Stamina.stunnable(target)) {
+            SubCommon.warn(caster, "kame.mafuba_needs_stun");
             return false;
         }
         SubCommon.Guard guard = SubCommon.guard(caster);

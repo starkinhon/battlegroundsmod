@@ -135,9 +135,23 @@
       "avisoCor": "#e8f8ff",
       "avisoSom": "minecraft:entity.ravager.roar"
     },
+    "bikkuri": {
+      "slot": 2,
+      "tipo": "controle",
+      "peso": 1.0,
+      "recargaTicks": 240,
+      "recargaMaxTicks": 340,
+      "avisoTicks": 6,
+      "distanciaMin": 2,
+      "distanciaMax": 12,
+      "giroGrausPorTick": 12,
+      "avisoCor": "#9cd8ff",
+      "avisoSom": "minecraft:entity.lightning_bolt.impact"
+    },
     "mafuba": {
       "slot": 3,
       "tipo": "ult",
+      "precisaStun": true,
       "peso": 0.8,
       "recargaTicks": 1400,
       "recargaMaxTicks": 1800,
@@ -159,6 +173,13 @@
         "soco",
         "forte"
       ]
+    },
+    "choque_e_sela": {
+      "peso": 1.2,
+      "passos": [
+        "bikkuri",
+        "mafuba"
+      ]
     }
   },
   "fases": [
@@ -169,10 +190,12 @@
         "barragem",
         "suiken",
         "max_power",
+        "bikkuri",
         "mafuba"
       ],
       "combos": [
-        "bebado"
+        "bebado",
+        "choque_e_sela"
       ],
       "agressividade": 0.75,
       "multRecarga": 1.0,

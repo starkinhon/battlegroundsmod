@@ -91,9 +91,12 @@ public final class DbCommon {
         return end;
     }
 
-    // Everyone along a line from `from` to `to`, hurt by damage each, once per `every` ticks (hitAt keeps track).
+    // Everyone along a line from `from` to `to`, hurt by damage each, once per `every` ticks (hitAt keeps track). Every
+    // beam that hurts this way also scars the ground under it.
     public static void hurtAlong(LivingEntity caster, ServerLevel level, Vec3 from, Vec3 to, double radius, float damage, int age, int every,
             Map<Integer, Integer> hitAt, Vec3 push) {
+        // The beam's body tears the ground it runs over, not only its blast (DbScar).
+        DbScar.along(caster, level, from, to, radius);
         for (LivingEntity t : Combat.alongLine(level, from, to, radius, caster)) {
             Integer last = hitAt.get(t.getId());
             if (last != null && age - last < every) {
