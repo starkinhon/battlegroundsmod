@@ -58,7 +58,9 @@ public final class CravadaRenderer {
 
     private static final class Run {
         final int id, seed;
-        final Vec3 fwd, left;
+        // The way he runs (RUN), then the way the flight goes (TRACK: the server's, toward where the target was when the
+        // uppercut landed, which is not the run's when the target moved round him during the sprint).
+        Vec3 fwd, left;
         double runAt = -1, hitAt = -1, relAt = -1, impactAt = -1, landAt = -1, burstAt = -1;
         int targetId = -1;
         Vec3 start = Vec3.ZERO, hit = Vec3.ZERO, rel = Vec3.ZERO, impact = Vec3.ZERO, chest = Vec3.ZERO;
@@ -155,6 +157,13 @@ public final class CravadaRenderer {
             }
             case SukunaCravada.TRACK -> {
                 r.origin = a;
+                Vec3 flat = new Vec3(b.x, 0, b.z);
+                if (flat.lengthSqr() > 1.0E-4) {
+                    // fly the way the server flies him (Stark 2026-11-09: Madara stepped round behind him during the
+                    // sprint, the server flew one way and this client the other, 50 blocks apart, teleported back and forth)
+                    r.fwd = flat.normalize();
+                    r.left = new Vec3(r.fwd.z, 0, -r.fwd.x);
+                }
                 r.trackAt = now;
                 r.targetId = ticks;
                 Minecraft minecraft = Minecraft.getInstance();

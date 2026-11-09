@@ -106,7 +106,10 @@ public final class Cravada {
                 launch(caster, caught, level, data, seed);
                 return true;
             }
-            if (step <= 0.05 || t > DASH + 2 || t > 1 && caster.horizontalCollision) {
+            // a step, a slab or a block up in the way: he hops it on the run (a scripted run, 2026-11-09, missed on every
+            // one); only a wall two high stops him
+            boolean hop = t > 1 && caster.horizontalCollision && canHop(level, caster, dir[0]);
+            if (step <= 0.05 || t > DASH + 2 || t > 1 && caster.horizontalCollision && !hop) {
                 BUSY.remove(caster);
                 data.busyTicks = 0;
                 Vec3 v = caster.getDeltaMovement();
@@ -118,12 +121,17 @@ public final class Cravada {
                 cooldown(caster, MISS_COOLDOWN);
                 return true;
             }
-            caster.setDeltaMovement(dir[0].x * step, Math.min(caster.getDeltaMovement().y, 0.1), dir[0].z * step);
+            caster.setDeltaMovement(dir[0].x * step, hop ? 0.5 : Math.min(caster.getDeltaMovement().y, 0.1), dir[0].z * step);
             caster.hurtMarked = true;
             caster.resetFallDistance();
             return false;
         });
         return true;
+    }
+
+    // Room for him a block up and a little ahead.
+    private static boolean canHop(ServerLevel level, LivingEntity caster, Vec3 dir) {
+        return level.noCollision(caster, caster.getBoundingBox().move(dir.x * 0.6, 1.05, dir.z * 0.6));
     }
 
     private static LivingEntity lock(LivingEntity caster) {
