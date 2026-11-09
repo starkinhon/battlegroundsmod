@@ -52,7 +52,7 @@ public final class Desmantelar {
     private static final int COMBO_COOLDOWN = 50, WORLD_COOLDOWN = 400, BROKEN_COOLDOWN = 30;
     private static final int[] CHANT_COOLDOWN = {40, 60, 80, 100};
     // The preview's two kinds: unit (blocks per crescent unit) and the height of its middle, for a 1.8-block-tall body.
-    private static final double PE_UNIT = 1.75, PE_Y = 1.55, DE_UNIT = 2.0, DE_Y = 1.0;
+    private static final double PE_UNIT = 2.6, PE_Y = 1.55, DE_UNIT = 3.0, DE_Y = 1.0;
     // The 3rd tap's burst (the preview's CB_CUTS): lying?, offset to his left, roll about the flight, size, height offset,
     // ticks after the first.
     private static final double[][] BURST = {
@@ -354,7 +354,7 @@ public final class Desmantelar {
         }
         int flags = !lying && roll == 0 && caster.onGround() && Math.abs(dir.y) < 0.35 ? SukunaCuts.GROOVE : 0;
         SukunaCuts.fire(caster, new SukunaCuts.Throw(origin, dir, across, (lying ? DE_UNIT : PE_UNIT) * sc * body, SPEED, reach, damage, knock, knockUp,
-                stun, flags, weight, 2.2 * sc));
+                stun, flags, weight, 2.2 * sc, sc >= 3 ? 3 : sc >= 2.2 ? 2 : 1));
     }
 
     // Whoever the cut goes for: in the crosshair, else the one he is fighting if in front of him.

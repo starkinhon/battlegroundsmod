@@ -35,7 +35,7 @@ public final class SukunaCuts {
     // hard it throws whoever it cuts (blocks a tick, horizontal and up); stun: ticks of stun on a hit; flags: the
     // renderer's (GROOVE for a standing cut on the ground).
     public record Throw(Vec3 origin, Vec3 dir, Vec3 across, double unit, double speed, double reach, float damage, double knock, double knockUp,
-            int stun, int flags, float modelWeight, double starSize) {
+            int stun, int flags, float modelWeight, double starSize, int carve) {
     }
 
     public static void fire(LivingEntity caster, Throw t) {
@@ -62,7 +62,7 @@ public final class SukunaCuts {
             }
             double from = age == 0 ? -1.5 : t.speed() * age - 0.6 * t.unit(), upTo = Math.min(t.reach(), t.speed() * (age + 1)) + 0.3 * t.unit();
             SukunaCarve.sweep(level, caster, t.origin(), way, side, blade, bow, age == 0 ? 0 : t.speed() * age, Math.min(t.reach(), t.speed() * (age + 1)),
-                    carved);
+                    t.carve(), carved);
             Vec3 a = t.origin().add(way.scale(from)), b = t.origin().add(way.scale(upTo));
             AABB around = new AABB(a, b).inflate(span + 1.5);
             for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, around, e -> Combat.isTarget(e, caster))) {
