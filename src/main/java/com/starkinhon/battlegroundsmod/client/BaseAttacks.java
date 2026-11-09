@@ -74,6 +74,10 @@ public final class BaseAttacks {
         if (data.combat) {
             top = ultTitle(graphics, font, data, player.tickCount, center, top);
         }
+        // Sukuna's Modelo bar gets its own row between the ult title and the selector, so nothing hides behind it.
+        if (ModelBarHud.showing(data)) {
+            top = ModelBarHud.placeAbove(top);
+        }
         int slot = SLOTS[selected];
         int cooldown = data.cooldowns[slot];
         Component name = Component.translatable(NAMES[selected]);
