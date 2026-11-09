@@ -32,6 +32,8 @@ public final class FxShaders {
     static ShaderInstance voidFlash;
     // The procedural smoke particles (SmokeParticle); without it they just don't draw.
     static ShaderInstance smoke;
+    // The Dragon Ball kits' 3D effects (KiMesh); on its own, so a problem here only hides them.
+    static ShaderInstance ki;
 
     private static Boolean irisPresent;
 
@@ -49,6 +51,11 @@ public final class FxShaders {
             register(event, "fx_moonscreen", DefaultVertexFormat.POSITION, s -> moonScreen = s);
         } catch (Exception e) {
             BattlegroundsMod.LOGGER.error("Could not load the Awakened Moon screen shader", e);
+        }
+        try {
+            register(event, "souls_ki", DefaultVertexFormat.POSITION, s -> ki = s);
+        } catch (Exception e) {
+            BattlegroundsMod.LOGGER.error("Could not load the Dragon Ball 3D effect shader", e);
         }
         // On its own: a problem here only hides the smoke, never the other effects.
         try {

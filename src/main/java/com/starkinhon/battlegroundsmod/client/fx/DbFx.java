@@ -7,6 +7,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
 import com.starkinhon.battlegroundsmod.client.ScreenShake;
@@ -173,6 +174,13 @@ public final class DbFx {
                 f.updated = now;
             }
             case SubNet.SCREEN -> screen((int) a, pos);
+            case SubNet.KI_BOOM -> {
+                SHOTS.add(new Fx(kind, id, pos, dir, a, b, c, now));
+                if (a >= 2.5f && KiMesh.ready()) {
+                    // A big ki blast landing: the manga impact frame (negative and positive) on the hit, never on the throw.
+                    screen(46, pos);
+                }
+            }
             default -> SHOTS.add(new Fx(kind, id, pos, dir, a, b, c, now));
         }
     }
@@ -190,8 +198,8 @@ public final class DbFx {
 
     private static double life(Fx f) {
         return switch (f.kind) {
-            case SubNet.KI_BOOM -> 60;
-            case SubNet.GENKI_BOOM -> 80;
+            case SubNet.KI_BOOM -> 110;
+            case SubNet.GENKI_BOOM -> 130;
             case SubNet.SUPERNOVA -> 90;
             case SubNet.BIG_BANG_BOOM -> 72;
             case SubNet.HIT -> 13;
@@ -235,7 +243,8 @@ public final class DbFx {
     private static float fadeOut(Fx f) {
         return switch (f.kind) {
             case SubNet.KI_AURA -> 14;
-            case SubNet.KI_BEAM -> 12;
+            // The 3D beam's end leaves the hand and runs to the tip (1.3 blocks a tick) before it is gone.
+            case SubNet.KI_BEAM -> KiMesh.ready() ? (float) Math.max(12, f.dir.length() / 1.3 + 3) : 12;
             case SubNet.SMOKE_COVER -> 40;
             case SubNet.SAW -> 6;
             default -> 8;
@@ -280,7 +289,7 @@ public final class DbFx {
             }
             switch (f.kind) {
                 case SubNet.KI_BEAM -> kiBeam(rel(f.pos), rel(f.pos.add(f.dir)), f.a + (f.b == Db.KAME ? 0.08f * Mth.sin(age * 1.3f) : 0),
-                        color(f.b), age, out, f.id % 7 + 1);
+                        color(f.b), age, out, f.id % 7 + 1, f.endAt < 0 ? -1 : (float) (now - f.endAt) * 1.3f);
                 case SubNet.KI_BALL -> ball(f, age, out);
                 case SubNet.KI_AURA -> aura(f, age, partial, out);
                 case SubNet.SAW -> saw(f, age, out);
@@ -334,6 +343,11 @@ public final class DbFx {
     // ---------- the Visualizador's shared ki effects ----------
 
     static void kiBeam(Vector3f from, Vector3f to, float w, float[] col, float t, float a, int seed) {
+        kiBeam(from, to, w, col, t, a, seed, -1);
+    }
+
+    // tail: how far (blocks) the beam's end has left the hand once it was let go, -1 while it is still fired.
+    static void kiBeam(Vector3f from, Vector3f to, float w, float[] col, float t, float a, int seed, float tail) {
         if (a <= 0) {
             return;
         }
@@ -343,6 +357,30 @@ public final class DbFx {
             return;
         }
         Vector3f dn = new Vector3f(d).div(len);
+        if (KiMesh.ready()) {
+            // Realista+Anime (the approved Kamehameha): one tube, twisted and swollen in the shader, tongues running
+            // from the hand to the tip, white middle going to the color at the edge, and a head of energy at the tip.
+            if (pass) {
+                float fade = tail < 0 ? 1 : 1 - smooth((tail - len + 1) / 2);
+                if (fade <= 0) {
+                    return;
+                }
+                float radius = w * 0.55f;
+                KiMesh.P p = KiMesh.p(KiMesh.BEAM);
+                p.len = Math.max(0.1f, len);
+                p.w = radius;
+                p.flow = t * 0.35f;
+                p.time = t / 20f;
+                p.alpha = fade * (tail < 0 ? Math.min(1, a * 1.5f) : 1);
+                p.tail = tail;
+                p.color = col;
+                KiMesh.queue(KiMesh.Mesh.TUBE, KiMesh.along(from, dn), p, KiMesh.BOTH, 14);
+                if (tail < len - 0.3f) {
+                    blast(to, radius * (1.55f + 0.12f * Mth.sin(t)), 0.14f, col, t, seed * 1.7f, p.alpha, false, 16);
+                }
+            }
+            return;
+        }
         rib(from, to, w * 2.6f, FxDraw.BEAM, 0.05f, col, 0.3f * a, true);
         rib(from, to, w, FxDraw.BEAM, 0.6f, col, 0.95f * a, true);
         rib(from, to, w * 0.45f, FxDraw.BEAM, 0.9f, WHITE, a, true);
@@ -368,6 +406,13 @@ public final class DbFx {
         if (a <= 0) {
             return;
         }
+        if (KiMesh.ready()) {
+            // A small blast dome, held at life 0.3 so it keeps its color (lower life burns out white).
+            if (pass) {
+                blast(p, r, 0.3f, col, t, 3.1f, Math.min(1, a), false, 14);
+            }
+            return;
+        }
         bb(p, r * 5, 0, FxDraw.SOFT, 0.15f, col, 0.4f * a, true);
         bb(p, r * 2.2f, t * 0.05f, FxDraw.FLARE, 6 / 32f, col, 0.8f * a, true);
         bb(p, r * 2, 0, FxDraw.SOFT, 0.85f, WHITE, a, true);
@@ -379,7 +424,38 @@ public final class DbFx {
 
     // The ki aura in the mod's style (v58): fire of glow rising round the body, white jets, wind on the ground, pebbles.
     static void kiAura(Vector3f feet, float t, float[] col, float a, float s, int seed, boolean self) {
+        kiAura(feet, t, col, a, s, seed, self, a, 0);
+    }
+
+    // growth: how far the 3D shell has grown (0 to 1, it rises from the feet); flash: the burst when it is lit (1 to 0).
+    static void kiAura(Vector3f feet, float t, float[] col, float a, float s, int seed, boolean self, float growth, float flash) {
         if (a <= 0) {
+            return;
+        }
+        if (KiMesh.ready()) {
+            // Realista+Anime: the approved "Aura de Ki em Casca", one shell round the body bent by 3D noise into
+            // tongues of fire and cut by a threshold. Golden ki (Super Saiyajin) gets the spiky, taller form. In first
+            // person the shell would wrap the camera, so only the pebbles show.
+            if (pass && !self && growth > 0.001f) {
+                boolean sup = col == COLORS[Db.GOLD] || col == COLORS[Db.GOLD_W];
+                KiMesh.P p = KiMesh.p(KiMesh.SHELL);
+                p.phase = t / 20f * 0.9f;
+                p.time = t / 20f;
+                p.growth = growth;
+                p.flashAmt = flash;
+                p.alpha = Mth.clamp(0.45f + 0.55f * a, 0, 1);
+                p.color = col;
+                p.seed = 0.37f * seed;
+                p.tongue = sup ? 0.4f : 0.36f;
+                p.spike = sup ? 0.34f : 0.1f;
+                p.spikeFreq = sup ? 7.5f : 4.5f;
+                p.spikeSharp = sup ? 2.6f : 2.2f;
+                p.crown = sup ? 0.85f : 0.55f;
+                p.size = new float[] {0.62f, 1.12f, 0.5f};
+                Matrix4f m = new Matrix4f().translation(feet.x, feet.y + 1.0f * s, feet.z).scale(s);
+                KiMesh.queue(KiMesh.Mesh.AURA, m, p, KiMesh.BOTH, 10);
+            }
+            pebbles(feet, t, a, s, seed);
             return;
         }
         Vector3f left = FxDraw.left();
@@ -435,6 +511,11 @@ public final class DbFx {
             rib(at(feet, d, r0).add(0, 0.06f, 0), at(feet, d, r0 + 0.6f * s).add(0, 0.06f, 0), 0.05f * s, FxDraw.STREAK, 0.9f, pl, a * 0.5f * (1 - ph), true);
         }
         dsk(new Vector3f(feet).add(0, 0.04f, 0), up, 2.6f * s, FxDraw.SOFT, 0.2f, col, 0.3f * a, true);
+        pebbles(feet, t, a, s, seed);
+    }
+
+    // Small stones floating up round someone charging, each at its own pace.
+    static void pebbles(Vector3f feet, float t, float a, float s, int seed) {
         for (int i = 0; i < 12; i++) {
             float ph = fract(t * 0.025f + Db.hash(i, 8, seed));
             float ang = Db.hash(i, 9, seed) * Mth.TWO_PI;
@@ -445,6 +526,16 @@ public final class DbFx {
     }
 
     static void kiBoom(Vector3f p, float age, float r, float[] col, int seed, float ground) {
+        if (KiMesh.ready()) {
+            if (age < 0 || age > 110) {
+                return;
+            }
+            boom3d(p, age, r * 1.4f, col, seed, ground);
+            if (age < 60) {
+                dsk(new Vector3f(p.x, ground + 0.03f, p.z), new Vector3f(0, 1, 0), r * 2.4f, FxDraw.SOFT, 0.15f, DIRT, 0.8f * smooth(age / 4) * (1 - smooth((age - 40) / 20)), false);
+            }
+            return;
+        }
         if (age < 0 || age > 60) {
             return;
         }
@@ -463,6 +554,80 @@ public final class DbFx {
         }
         nrDust(floor, age - 4, seed, 16, r * 0.9f, DUST, 56);
         dsk(new Vector3f(floor).add(0, 0.03f, 0), new Vector3f(0, 1, 0), r * 2.4f, FxDraw.SOFT, 0.15f, DIRT, 0.8f * smooth(age / 4), false);
+    }
+
+    // ---------- Realista+Anime pieces (KiMesh), queued in the glow call only ----------
+
+    private static final float[] SMOKE_3D = FxDraw.rgb(0x6B6F78);
+    private static final float[] RING_DUST = FxDraw.rgb(0x8A8D94);
+
+    // The blast dome (smoke: the cel-shaded smoke in 3 bands). life 0 solid, tearing into tongues until 1 (gone).
+    static void blast(Vector3f c, float r, float life, float[] col, float t, float seed, float alpha, boolean smoke, int order) {
+        if (!pass || life >= 1 || r <= 0.02f || alpha <= 0.002f) {
+            return;
+        }
+        KiMesh.P p = KiMesh.p(KiMesh.BLAST);
+        p.life = Math.max(0, life);
+        p.seed = seed;
+        p.time = t / 20f;
+        p.flat = 0.3f;
+        p.color = col;
+        p.alpha = Math.min(1, alpha);
+        p.smoke = smoke ? 1 : 0;
+        p.glow = !smoke;
+        KiMesh.queue(KiMesh.Mesh.BLAST, KiMesh.sphere(c, r), p, KiMesh.BOTH, smoke ? 6 : order);
+    }
+
+    // The dust ring running over the ground (ringR its front, max the square it is drawn on).
+    static void dustRing(Vector3f floor, float ringR, float max, float life, float[] tint, float seed) {
+        if (!pass || life >= 1 || max <= 0.05f) {
+            return;
+        }
+        KiMesh.P p = KiMesh.p(KiMesh.RING);
+        p.ringR = ringR;
+        p.ringMax = max;
+        p.life = Math.max(0, life);
+        p.color = tint;
+        p.dust = RING_DUST;
+        p.seed = seed;
+        p.glow = false;
+        KiMesh.queue(KiMesh.Mesh.QUAD, KiMesh.flat(new Vector3f(floor).add(0, 0.06f, 0), max), p, KiMesh.BOTH, 7);
+    }
+
+    // The white burst of a hit: a fresnel shell.
+    static void flashBall(Vector3f c, float r, float alpha, float[] col, float seed) {
+        if (!pass || alpha <= 0.002f || r <= 0.02f) {
+            return;
+        }
+        KiMesh.P p = KiMesh.p(KiMesh.FLASH);
+        p.alpha = alpha;
+        p.color = col;
+        p.seed = seed;
+        KiMesh.queue(KiMesh.Mesh.FLASH, KiMesh.sphere(c, r), p, KiMesh.FRONT, 20);
+    }
+
+    // A ki blast of radius R landing (the approved Kamehameha end and Explosao de ki): the dome tearing into tongues,
+    // the white burst, the dust ring over the ground, the shock wave bending the screen, then the smoke staying on top.
+    static void boom3d(Vector3f p, float age, float R, float[] col, int seed, float ground) {
+        boolean low = p.y - ground < R * 0.6f;
+        Vector3f c = low ? new Vector3f(p.x, ground + 0.4f, p.z) : new Vector3f(p);
+        blast(c, R * easeOut(age / 12), Mth.clamp(age / 40, 0, 1), col, age, seed * 1.37f, 1, false, 14);
+        float late = Math.max(0, age - 20) / 20;
+        if (age >= 20) {
+            blast(new Vector3f(c).add(0, 0.2f + late * 0.45f, 0), R * 0.98f + late * 0.4f, 0.35f + 0.65f * Mth.clamp((age - 20) / 80, 0, 1), SMOKE_3D, age,
+                    seed * 2.11f, 1, true, 6);
+        }
+        if (p.y - ground < R * 1.5f) {
+            float max = R * 2.3f;
+            dustRing(new Vector3f(p.x, ground, p.z), max * 0.86f * easeOut(age / 26), max, Mth.clamp(age / 44, 0, 1), col, seed * 0.7f);
+        }
+        if (age < 6) {
+            float k = age / 6;
+            flashBall(c, R * (0.12f + 0.7f * Mth.sqrt(k)), 1 - k, pale(col, 0.6f), seed);
+        }
+        if (age < 24) {
+            warp(c, R * 2, 0.8f * (1 - age / 24), 0, age, null);
+        }
     }
 
     static void nrHit(Vector3f p, float age, float[] col, float s, int seed, float life) {
@@ -657,7 +822,7 @@ public final class DbFx {
         Vector3f p = rel(f.pos);
         float r = f.a;
         kiBall(p, r, col, out, age);
-        if (style == 1) {
+        if (style == 1 && !KiMesh.ready()) {
             // Charging (Kamehameha): sparks crackling out of it.
             float k = Mth.clamp((r - 0.06f) / 0.16f, 0, 1);
             for (int i = 0; i < 6; i++) {
@@ -684,7 +849,11 @@ public final class DbFx {
             return;
         }
         float in = smooth(age / 4) * out;
-        kiAura(rel(e.getPosition(partial)), age, color(f.b), (float) f.dir.x * in, Math.max(0.3f, f.c), f.id % 7 + 1, FxAnchor.firstPersonSelf(f.id));
+        float strength = (float) f.dir.x;
+        // The shell grows up from the feet in 0.7 s and bursts when a strong aura is lit (Kaioken, Super Saiyajin).
+        float growth = Math.min(smooth(age / 14), out);
+        float flash = strength >= 0.6f && age < 6 ? 1 - age / 6 : 0;
+        kiAura(rel(e.getPosition(partial)), age, color(f.b), strength * in, Math.max(0.3f, f.c), f.id % 7 + 1, FxAnchor.firstPersonSelf(f.id), growth, flash);
     }
 
     private static void saw(Fx f, float age, float out) {
@@ -712,10 +881,42 @@ public final class DbFx {
         }
     }
 
+    private static final float[] GENKI_BLUE = FxDraw.rgb(0x4FB4FF);
+    private static final float[] GENKI_FLASH = FxDraw.rgb(0xBFE6FF);
+
     private static void genki(Fx f, float age, float out) {
         Vector3f p = rel(f.pos);
         float r = f.a;
         float a = smooth(age / 10) * out;
+        if (KiMesh.ready()) {
+            // Realista+Anime (the approved Genki Dama): a ball of light (white middle, light cyan body, sky-blue edge,
+            // plasma turning inside in veins) with a halo of rays round it 1.6 times its size.
+            if (pass && a > 0.002f) {
+                KiMesh.P core = KiMesh.p(KiMesh.GENKI);
+                core.time = age / 20f;
+                core.alpha = a;
+                KiMesh.queue(KiMesh.Mesh.BALL, KiMesh.sphere(p, r), core, KiMesh.FRONT, 12);
+                KiMesh.P halo = KiMesh.p(KiMesh.HALO);
+                halo.time = age / 20f;
+                halo.alpha = a;
+                KiMesh.queue(KiMesh.Mesh.HALO, KiMesh.sphere(p, r * 1.6f), halo, KiMesh.BACK, 13);
+            }
+            if (f.b > 0.5f) {
+                // Points of light from the whole sky and the ground, each on its own curve, speeding up into the ball.
+                Vector3f feet = rel(f.dir);
+                for (int i = 0; i < 140; i++) {
+                    float ph = fract(age * (0.006f + Db.hash(i, 5, 1) * 0.008f) + Db.hash(i, 5, 2));
+                    float e = (float) Math.pow(ph, 1.7);
+                    Vector3f start = new Vector3f(feet).add((Db.hash(i, 5, 3) - 0.5f) * 50, Db.hash(i, 5, 4) > 0.5f ? 0.2f : 8 + Db.hash(i, 5, 5) * 14,
+                            (Db.hash(i, 5, 6) - 0.5f) * 50);
+                    Vector3f ctrl = new Vector3f(start).lerp(p, 0.5f).add((Db.hash(i, 5, 7) - 0.5f) * 14, 3 + Db.hash(i, 5, 8) * 8, (Db.hash(i, 5, 9) - 0.5f) * 14);
+                    Vector3f q = new Vector3f(start).lerp(ctrl, e).lerp(new Vector3f(ctrl).lerp(p, e), e);
+                    float vis = smooth(ph / 0.12f) * (1 - smooth((ph - 0.88f) / 0.12f));
+                    bb(q, (0.1f + 0.08f * Db.hash(i, 5, 10)) * (0.6f + 0.9f * e), 0, FxDraw.SOFT, 0.9f, i % 3 != 0 ? COLORS[Db.KAME_W] : WHITE, 0.9f * vis * out, true);
+                }
+            }
+            return;
+        }
         bb(p, r * 4.4f, 0, FxDraw.SOFT, 0.15f, COLORS[Db.BLUE], 0.3f * a, true);
         bb(p, r * 4.2f, 0, GENKI, 0.3f, WHITE, a, false);
         if (f.b > 0.5f) {
@@ -735,6 +936,33 @@ public final class DbFx {
         float s = f.a;
         Vector3f c = rel(f.pos);
         float ground = groundY(f);
+        if (KiMesh.ready()) {
+            // The approved landing: the blue dome tearing into tongues, the white burst, the dust ring, then the smoke.
+            float rb = 7 * s;
+            float tb = a - 2.4f;
+            Vector3f mid = new Vector3f(c.x, ground + 0.3f, c.z);
+            if (tb > 0) {
+                blast(mid, rb * easeOut(tb / 20), Mth.clamp(tb / 56, 0, 1), GENKI_BLUE, a, 9.3f, 1, false, 14);
+                dustRing(new Vector3f(c.x, ground, c.z), rb * 2.3f * easeOut(tb / 32), rb * 2.6f, Mth.clamp(tb / 52, 0, 1), GENKI_BLUE, 4.1f);
+            }
+            if (a >= 32) {
+                float late = (a - 32) / 20;
+                blast(new Vector3f(c.x, ground + 0.2f + late * 0.5f, c.z), rb * (1 + late * 0.1f), 0.35f + 0.65f * Mth.clamp((a - 32) / 90, 0, 1), SMOKE_3D, a,
+                        5.7f, 1, true, 6);
+            }
+            if (a < 7) {
+                float k = a / 7;
+                flashBall(mid, rb * (0.3f + 0.7f * Mth.sqrt(k)), 1 - k, GENKI_FLASH, 2.9f);
+            }
+            if (a < 30) {
+                warp(mid, rb * 2, 1 - a / 30, 0, a, null);
+            }
+            if (a < 90) {
+                dsk(new Vector3f(c.x, ground + 0.03f, c.z), new Vector3f(0, 1, 0), rb * 1.6f, FxDraw.SOFT, 0.15f, DIRT, 0.8f * smooth(a / 4) * (1 - smooth((a - 60) / 30)),
+                        false);
+            }
+            return;
+        }
         kiBoom(c, a, 7 * s, COLORS[Db.KAME], 9, ground);
         kiBoom(new Vector3f(c).add(0, s, 0), a - 6, 5 * s, COLORS[Db.BLUE], 19, ground);
         if (a < 70) {
@@ -1263,14 +1491,15 @@ public final class DbFx {
                 ScreenFx.impactFrame(new int[] {0, 1, 2}, 1, 0x3A8AFF, pos, 0);
                 ScreenShake.start(0.9f * near, 44);
             }
+            // Goku's punch behind the target: the manga frame, negative then positive.
             case 1 -> {
-                ScreenFx.impactFrame(new int[] {0, 3}, 1, 0xFFFFFF, pos, 0);
+                ScreenFx.impactFrame(new int[] {4, 3}, 1, 0xFFFFFF, pos, 0);
                 ScreenShake.start(0.7f * near, 10);
             }
+            // Kaioken lit: a red burst and the shake (no impact frame on an invocation).
             case 2 -> {
-                ScreenFx.flash(0xFF4030, 0.3f * near, 8);
-                ScreenFx.impactFrame(new int[] {3, 0}, 1, 0xFFFFFF, pos, 0);
-                ScreenShake.start(0.4f * near, 6);
+                ScreenFx.flash(0xFF4030, 0.45f * near, 10);
+                ScreenShake.start(0.5f * near, 8);
             }
             case 3 -> {
                 ScreenFx.impactFrame(new int[] {1, 2, 1}, 1, 0xFF2A1A, pos, 0);
@@ -1463,6 +1692,22 @@ public final class DbFx {
             case 44 -> {
                 ScreenFx.impactFrame(new int[] {0, 2}, 1, 0x8FD0FF, pos, 0);
                 ScreenShake.start(0.6f * near, 8);
+            }
+            // Realista+Anime: a ki beam let go (no impact frame on the throw, only light and the shake).
+            case 45 -> {
+                ScreenFx.flash(0xD8F0FF, 0.35f * near, 6);
+                ScreenShake.start(0.7f * near, 30);
+            }
+            // Realista+Anime: a ki blast landing, the manga impact frame in black and white, negative then positive.
+            case 46 -> {
+                ScreenFx.impactFrame(new int[] {4, 3}, 1, 0xFFFFFF, pos, 0);
+                ScreenShake.start(0.9f * near, 14);
+            }
+            // Realista+Anime: the Genki Dama landing, three manga frames (negative, positive, negative).
+            case 47 -> {
+                ScreenFx.flash(0xE8F6FF, 0.6f * near, 12);
+                ScreenFx.impactFrame(new int[] {4, 3, 4}, 1, 0xFFFFFF, pos, 0);
+                ScreenShake.start(2.2f * near, 50);
             }
             default -> {
             }
