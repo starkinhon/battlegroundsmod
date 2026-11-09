@@ -73,7 +73,7 @@ public final class ShrineDomain {
     // The sure hits (Tier 0 values, the attacker's tier scales them like every move, Combat.hurt).
     public static final int CUT_EVERY = 16;
     public static final int CUT_STUN = 8;
-    private static final float CUT_DAMAGE = 3;
+    private static final float CUT_DAMAGE = 5;
     // Clivar snaps CLIVAR_FIRST ticks after the play starts (the grid measures the body first), then every CLIVAR_EVERY.
     public static final int CLIVAR_FIRST = 1;
     public static final int CLIVAR_EVERY = 7;
