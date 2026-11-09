@@ -94,7 +94,6 @@ public final class AshDeath {
         }
         int end = Math.max(30, ticks);
         ASHES.put(entityId, new Ash(living, ScreenFx.now(), 0, 24, end - 20, end, end, null, true));
-        com.starkinhon.battlegroundsmod.BattlegroundsMod.LOGGER.info("Stone body for {} ({} ticks)", living, end);
     }
 
     static boolean hasSparks() {
@@ -360,7 +359,10 @@ public final class AshDeath {
             // Only the body and what it wears: no shadow, fire overlay, enchant glint or name tag.
             if (!(path.startsWith("textures/") || path.startsWith("skins/")) || path.contains("shadow") || path.contains("glint")
                     || path.contains("atlas")) {
-                return NOTHING;
+                // A new one each time: an enchanted item in the hand (the Livro das Almas) asks for its glint and its
+                // own buffer and joins the two, and the game refuses joining one buffer to itself ("Duplicate
+                // delegates"), which threw the whole stone body away.
+                return new Nothing();
             }
             return buffers.getBuffer(FxRenderTypes.ash(texture));
         };
@@ -381,7 +383,7 @@ public final class AshDeath {
         }
     }
 
-    private static final VertexConsumer NOTHING = new VertexConsumer() {
+    private static final class Nothing implements VertexConsumer {
         @Override
         public VertexConsumer addVertex(float x, float y, float z) {
             return this;
@@ -411,5 +413,5 @@ public final class AshDeath {
         public VertexConsumer setNormal(float x, float y, float z) {
             return this;
         }
-    };
+    }
 }
