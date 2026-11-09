@@ -27,11 +27,12 @@ import net.neoforged.neoforge.network.PacketDistributor;
 // hairlines, medium, short and fat), some bending into a second stroke. Each one is a blow that jolts the target; the
 // last throws it far. Drawn by client/fx/SukunaCutsRenderer (the bars); the layout is the preview's, stroke for stroke.
 public final class DesmantelarShift {
-    private static final double RANGE = 24;
+    // Stark 2026-11-09 (Sukuna "low scale" next to Gojo): twice the reach (24) and more per cut (3.2).
+    private static final double RANGE = 48;
     // Ticks: the first cut; the spread of the others; strokes; how long he holds the hand out.
     private static final int START = 5, COUNT = 20, BUSY = 34;
     private static final double SPAN = 14 * 1.8;
-    private static final float DAMAGE = 3.2f, LAST_DAMAGE = 14;
+    private static final float DAMAGE = 5f, LAST_DAMAGE = 14;
     private static final int HITSTUN = 8, LAST_STUN = 20;
     private static final float WEIGHT = 0.25f;
 
@@ -86,12 +87,16 @@ public final class DesmantelarShift {
         double len = s.len() * Math.max(1, body * 0.8);
         Vec3 c = target.position().add(side.scale(s.ox() * wide)).add(0, s.oy() * body, 0).add(away.scale(s.oz() * wide)).add(dir.scale(s.shift()));
         send(caster, c, dir, len, s.thick(), s.shift(), s.skew(), s.rough(), 0, 1, seed + s.k(), s.k());
+        // each stroke cuts the world it runs through too (SukunaCarve), a block thin
+        it.unimi.dsi.fastutil.longs.LongOpenHashSet carved = new it.unimi.dsi.fastutil.longs.LongOpenHashSet();
+        SukunaCarve.line(level, caster, c, dir, len, carved);
         if (s.bend() != null) {
             Stroke b = s.bend();
             Vec3 bd = frame(b.wdir(), side, away);
             double bl = b.len() * Math.max(1, body * 0.8);
             Vec3 bc = c.add(dir.scale(len * (b.oz() - 0.5))).add(bd.scale(bl * 0.5));
             send(caster, bc, bd, bl, b.thick(), 0, 1, s.rough(), 0.5f, 1, seed + b.k(), b.k());
+            SukunaCarve.line(level, caster, bc, bd, bl, carved);
         }
         Fx.sound(level, c, SoundEvents.PLAYER_ATTACK_SWEEP, 0.7f, 1.3f + caster.getRandom().nextFloat() * 0.4f);
         if (!Combat.isTarget(target, caster)) {

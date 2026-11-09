@@ -29,22 +29,50 @@ public final class SukunaCarve {
     // along way this tick. done: the blocks this cut already took (one set per cut).
     public static void sweep(ServerLevel level, LivingEntity caster, Vec3 origin, Vec3 way, Vec3 side, double span, double bow, double from,
             double upTo, LongOpenHashSet done) {
+        sweep(level, caster, origin, way, side, span, bow, from, upTo, 1, done);
+    }
+
+    // Same, the cut layers blocks thick across its face (the chant's stages cut deeper: 1, 2, 3).
+    public static void sweep(ServerLevel level, LivingEntity caster, Vec3 origin, Vec3 way, Vec3 side, double span, double bow, double from,
+            double upTo, int layers, LongOpenHashSet done) {
         if (!BlockRules.canBreak(level) || upTo <= from) {
             return;
         }
-        int budget = PER_TICK;
+        int budget = PER_TICK * Math.max(1, layers);
+        Vec3 face = side.cross(way);
+        face = face.lengthSqr() < 1.0E-6 ? new Vec3(0, 1, 0) : face.normalize();
         // not under his own feet, nor in front of his face: the cut leaves the hand
         double start = Math.max(from, 0.6);
         for (double s = start; s <= upTo && budget > 0; s += STEP) {
             for (double c = -span; c <= span && budget > 0; c += STEP) {
                 double u = c / Math.max(span, 1.0E-3);
                 Vec3 p = origin.add(way.scale(s - bow * u * u)).add(side.scale(c));
-                if (caster.getBoundingBox().inflate(0.3).contains(p)) {
-                    continue;
+                for (int k = 0; k < Math.max(1, layers) && budget > 0; k++) {
+                    Vec3 q = p.add(face.scale((k - (layers - 1) / 2.0) * 0.9));
+                    if (caster.getBoundingBox().inflate(0.3).contains(q)) {
+                        continue;
+                    }
+                    if (carve(level, q, done)) {
+                        budget--;
+                    }
                 }
-                if (carve(level, p, done)) {
-                    budget--;
-                }
+            }
+        }
+    }
+
+    // A straight stroke (Shift+Z's cuts born on the body): a block-thin line of this length through its middle.
+    public static void line(ServerLevel level, LivingEntity caster, Vec3 center, Vec3 dir, double length, LongOpenHashSet done) {
+        if (!BlockRules.canBreak(level)) {
+            return;
+        }
+        int budget = PER_TICK;
+        for (double s = -length / 2; s <= length / 2 && budget > 0; s += STEP) {
+            Vec3 p = center.add(dir.scale(s));
+            if (caster.getBoundingBox().inflate(0.3).contains(p)) {
+                continue;
+            }
+            if (carve(level, p, done)) {
+                budget--;
             }
         }
     }
