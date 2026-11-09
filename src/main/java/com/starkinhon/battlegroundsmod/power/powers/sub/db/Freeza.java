@@ -13,7 +13,7 @@ import com.starkinhon.battlegroundsmod.power.Power;
 import com.starkinhon.battlegroundsmod.power.PowerLogic;
 import com.starkinhon.battlegroundsmod.power.powers.sub.SubCommon;
 import com.starkinhon.battlegroundsmod.power.powers.sub.SubNet;
-import com.starkinhon.battlegroundsmod.power.powers.uchiha.Agarrao;
+import com.starkinhon.battlegroundsmod.power.powers.sub.jj.JjCommon;
 
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
@@ -22,7 +22,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 
 // Freeza (SubAlma of Dragon Ball, tier 6), the Visualizador's Freeza tab.
-// Z Death Beam: a thin pink-violet ray, instant, that pierces the target; held, several in a row, each at a new spot.
+// Z Death Beam: a thin pink ray, instant, that pierces the target; held, a burst of 8 (some miss and hole the ground),
+//   the last one pushes.
 // X Telekinesis: the hand comes up and the target rises, stuck in the air; X again, a gesture slams it into the ground.
 // C Death Saucer: a pink saw disc cuts the target and goes on, turns and comes back... and stops for no one: it cuts
 //   Freeza too. C again blows it up before it comes back.
@@ -48,7 +49,7 @@ public final class Freeza {
 
     private static boolean deathBeam(LivingEntity caster, ServerLevel level) {
         SubCommon.Guard guard = SubCommon.guard(caster);
-        int bossShots = 1 + SubCommon.RANDOM.nextInt(5);
+        int bossShots = 1 + SubCommon.RANDOM.nextInt(8);
         SubCommon.pose(caster, "db.apontar");
         Tasks.add(age -> {
             if (guard.broken()) {
@@ -58,17 +59,16 @@ public final class Freeza {
             if (age < 2) {
                 return false;
             }
-            int shot = (age - 2) / 6;
+            // Held: a burst of 8, one every 3 ticks; the last one pushes.
+            int shot = (age - 2) / 3;
             boolean held = caster instanceof Player ? SubCommon.held(caster, age, 0) : shot < bossShots;
-            if ((age - 2) % 6 == 0) {
+            if ((age - 2) % 3 == 0) {
                 if (shot > 0 && !held) {
                     return true;
                 }
-                fire(caster, level, shot);
-                if (shot == 0) {
-                    DbCommon.screen(level, Combat.center(caster), 9);
-                }
-                if (shot >= 5) {
+                boolean last = shot >= 7 || (shot > 0 && !(caster instanceof Player) && shot + 1 >= bossShots);
+                fire(caster, level, shot, last);
+                if (last) {
                     return true;
                 }
             }
@@ -77,21 +77,36 @@ public final class Freeza {
         return true;
     }
 
-    private static void fire(LivingEntity caster, ServerLevel level, int shot) {
+    private static void fire(LivingEntity caster, ServerLevel level, int shot, boolean last) {
         Vec3 tip = DbCommon.hand(caster).add(caster.getLookAngle().scale(0.2));
         Vec3 dir = caster.getLookAngle();
+        // In the burst some miss: they go low and punch a hole in the ground behind.
+        boolean miss = shot > 0 && !last && SubCommon.RANDOM.nextFloat() < 0.3f;
         if (shot > 0) {
             // Each one at a slightly new spot.
-            dir = dir.add((SubCommon.RANDOM.nextDouble() - 0.5) * 0.06, (SubCommon.RANDOM.nextDouble() - 0.5) * 0.06, (SubCommon.RANDOM.nextDouble() - 0.5) * 0.06)
-                    .normalize();
+            double spread = miss ? 0.2 : 0.06;
+            dir = dir.add((SubCommon.RANDOM.nextDouble() - 0.5) * spread, (SubCommon.RANDOM.nextDouble() - 0.5) * spread - (miss ? 0.15 : 0),
+                    (SubCommon.RANDOM.nextDouble() - 0.5) * spread).normalize();
         }
         Vec3 end = DbCommon.beamEnd(caster, level, tip, dir, 40, 0.4, true);
         SubNet.send(level, SubNet.DEATH_BEAM, 0, tip, end.subtract(tip), 0, 0, 0);
         SubCommon.sound(level, tip, SoundEvents.TRIDENT_THROW.value(), 1.2f, 2f);
         SubCommon.sound(level, tip, SoundEvents.ILLUSIONER_CAST_SPELL, 0.8f, 2f);
+        boolean hitSomeone = false;
         for (LivingEntity t : Combat.alongLine(level, tip, end, 0.45, caster)) {
-            Combat.hurtMagic(caster, t, 7);
+            hitSomeone = true;
+            Combat.hurtMagic(caster, t, 5.5f);
             DbCommon.hit(level, Combat.center(t), 0.5f, Db.PINK);
+            if (last) {
+                t.setDeltaMovement(t.getDeltaMovement().add(dir.x * 1.1, 0.35, dir.z * 1.1));
+                t.hurtMarked = true;
+            }
+        }
+        if (last && hitSomeone) {
+            DbCommon.screen(level, end, 12);
+        }
+        if (!hitSomeone && end.distanceTo(tip) < 39.5 && SubCommon.solid(level, end.add(dir.scale(0.3)))) {
+            JjCommon.crater(level, end, 0.6, 1.5, 3);
         }
     }
 
@@ -169,9 +184,11 @@ public final class Freeza {
             }
             DbCommon.hit(level, goal[0].add(0, 0.5, 0), 1.2f, Db.WHITE);
             DbCommon.screen(level, goal[0], 10);
+            // The slam (style 1000+ in the client: the burst and the dust ring, no dome).
+            SubNet.send(level, SubNet.KI_BOOM, 0, goal[0].add(0, 0.5, 0), new Vec3(goal[0].y, 0, 0), 1.4f, Db.PURPLE, 1000);
             SubCommon.sound(level, goal[0], SoundEvents.ANVIL_LAND, 1.4f, 0.5f);
             SubCommon.sound(level, goal[0], SoundEvents.GENERIC_EXPLODE.value(), 1f, 1.2f);
-            Agarrao.crater(level, goal[0], 1.8, 1.1);
+            JjCommon.crater(level, goal[0], 2, 1.4, 14);
             DbCommon.cooldown(caster, 1, 220);
             return true;
         });
@@ -388,7 +405,7 @@ public final class Freeza {
             Tasks.later(5, () -> SubCommon.sound(level, c, SoundEvents.GENERIC_EXPLODE.value(), 3f, 0.6f));
             Tasks.later(9, () -> SubCommon.sound(level, c, SoundEvents.GENERIC_EXPLODE.value(), 3f, 0.5f));
             DbCommon.hurtRadius(caster, level, c, 9, 38, 1.8, 0.7);
-            Agarrao.crater(level, new Vec3(c.x, ground, c.z), 6, 3.5);
+            JjCommon.crater(level, new Vec3(c.x, ground, c.z), 6.5, 3.2, 60);
             return true;
         });
         return true;

@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.joml.Matrix4f;
+import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 import com.starkinhon.battlegroundsmod.client.ScreenShake;
@@ -200,7 +201,7 @@ public final class DbFx {
         return switch (f.kind) {
             case SubNet.KI_BOOM -> 110;
             case SubNet.GENKI_BOOM -> 130;
-            case SubNet.SUPERNOVA -> 90;
+            case SubNet.SUPERNOVA -> 150;
             case SubNet.BIG_BANG_BOOM -> 72;
             case SubNet.HIT -> 13;
             case SubNet.DEATH_BEAM -> 11;
@@ -530,6 +531,10 @@ public final class DbFx {
             if (age < 0 || age > 110) {
                 return;
             }
+            if (seed >= 1000) {
+                slam3d(p, age, r, col, seed, ground);
+                return;
+            }
             boom3d(p, age, r * 1.4f, col, seed, ground);
             if (age < 60) {
                 dsk(new Vector3f(p.x, ground + 0.03f, p.z), new Vector3f(0, 1, 0), r * 2.4f, FxDraw.SOFT, 0.15f, DIRT, 0.8f * smooth(age / 4) * (1 - smooth((age - 40) / 20)), false);
@@ -563,6 +568,10 @@ public final class DbFx {
 
     // The blast dome (smoke: the cel-shaded smoke in 3 bands). life 0 solid, tearing into tongues until 1 (gone).
     static void blast(Vector3f c, float r, float life, float[] col, float t, float seed, float alpha, boolean smoke, int order) {
+        blast(c, r, life, col, t, seed, alpha, smoke, order, 0.3f);
+    }
+
+    static void blast(Vector3f c, float r, float life, float[] col, float t, float seed, float alpha, boolean smoke, int order, float flat) {
         if (!pass || life >= 1 || r <= 0.02f || alpha <= 0.002f) {
             return;
         }
@@ -570,7 +579,7 @@ public final class DbFx {
         p.life = Math.max(0, life);
         p.seed = seed;
         p.time = t / 20f;
-        p.flat = 0.3f;
+        p.flat = flat;
         p.color = col;
         p.alpha = Math.min(1, alpha);
         p.smoke = smoke ? 1 : 0;
@@ -627,6 +636,25 @@ public final class DbFx {
         }
         if (age < 24) {
             warp(c, R * 2, 0.8f * (1 - age / 24), 0, age, null);
+        }
+    }
+
+    // Something slammed into the ground (no dome): the white burst, the dust ring and the shock wave.
+    static void slam3d(Vector3f p, float age, float r, float[] col, int seed, float ground) {
+        if (age > 50) {
+            return;
+        }
+        Vector3f floor = new Vector3f(p.x, ground, p.z);
+        dustRing(floor, r * 5 * easeOut(age / 22), r * 5.7f, Mth.clamp(age / 40, 0, 1), col, seed * 0.3f);
+        if (age < 6) {
+            float k = age / 6;
+            flashBall(new Vector3f(p.x, ground + 0.6f, p.z), r * (0.3f + 1.4f * Mth.sqrt(k)), 1 - k, pale(col, 0.7f), seed);
+        }
+        if (age < 20) {
+            warp(new Vector3f(p.x, ground + 0.8f, p.z), r * 2.5f, 0.7f * (1 - age / 20), 0, age, null);
+        }
+        if (age < 40) {
+            dsk(new Vector3f(p.x, ground + 0.03f, p.z), new Vector3f(0, 1, 0), r * 2, FxDraw.SOFT, 0.15f, DIRT, 0.8f * smooth(age / 3) * (1 - smooth((age - 25) / 15)), false);
         }
     }
 
@@ -864,6 +892,20 @@ public final class DbFx {
             up.set(0, 1, 0);
         }
         up.normalize();
+        if (KiMesh.ready()) {
+            // Realista+Anime (the approved Disco da Morte): a real saw with 18 slanted teeth, spinning, tilted a little
+            // into its flight.
+            if (pass && out > 0.002f && f.a > 0.02f) {
+                KiMesh.P d = KiMesh.p(KiMesh.SAW);
+                d.rot = age * 1.1f;
+                d.time = age / 20f;
+                d.alpha = out;
+                d.color = PINK_3D;
+                Quaternionf q = new Quaternionf().rotationTo(new Vector3f(0, 1, 0), up).rotateZ(0.12f * Mth.sin(age * 0.15f));
+                KiMesh.queue(KiMesh.Mesh.QUAD, KiMesh.disc(p, f.a * 1.6f, q), d, KiMesh.BOTH, 15);
+            }
+            return;
+        }
         sawDisc(p, f.a, age, out, col, up);
         if (f.trail.size() > 3) {
             Vec3 q = null;
@@ -979,10 +1021,38 @@ public final class DbFx {
         }
     }
 
+    private static final float[] PINK_3D = FxDraw.rgb(0xFF4FD8);
+    private static final float[] PINK_TIP = FxDraw.rgb(0xFF7AE6);
+    private static final float[] PINK_FLASH = FxDraw.rgb(0xFFC6F3);
+    private static final float[] TELE_FIELD = FxDraw.rgb(0x9B3DFF);
+    private static final float[] CORONA = FxDraw.rgb(0xFF3A10);
+    private static final float[] NOVA_DOME = FxDraw.rgb(0xFF6A2A);
+    private static final float[] NOVA_FLASH = FxDraw.rgb(0xFFD2A0);
+
     private static void deathBall(Fx f, float age, float out) {
         Vector3f p = rel(f.pos);
         float r = f.a;
         float grow = (r - 0.08f) / 3.4f;
+        if (KiMesh.ready()) {
+            // Realista+Anime (the approved Supernova): a red sun (granulation, dark outline) with an orange halo of
+            // rays 1.7 times its size and a crown of fire tearing round it; full size, it pulses.
+            if (pass && out > 0.002f && r > 0.02f) {
+                KiMesh.P sun = KiMesh.p(KiMesh.SUN);
+                sun.time = age / 20f;
+                sun.alpha = out;
+                sun.pulse = grow >= 0.99f ? 0.5f + 0.5f * Mth.sin(age * 0.25f) : 0;
+                KiMesh.queue(KiMesh.Mesh.BALL, KiMesh.sphere(p, r), sun, KiMesh.FRONT, 12);
+                KiMesh.P halo = KiMesh.p(KiMesh.SUN_HALO);
+                halo.time = age / 20f;
+                halo.alpha = out;
+                KiMesh.queue(KiMesh.Mesh.HALO, KiMesh.sphere(p, r * 1.7f), halo, KiMesh.BACK, 13);
+                blast(p, r * 1.25f, 0.64f + 0.04f * Mth.sin(age * 0.15f), CORONA, age, 6.1f, out, false, 14);
+            }
+            if (grow > 0.2f) {
+                warp(p, r * 2, 0.4f * out, 0, age, null);
+            }
+            return;
+        }
         bb(p, r * 4.5f, 0, FxDraw.SOFT, 0, COLORS[Db.RED], 0.35f * out, true);
         bb(p, r * 2.8f, 0, FxDraw.SOFT, 0.1f, COLORS[Db.ORANGE], 0.45f * out, true);
         bb(p, r * 2.2f, age * 0.002f, FxDraw.SUN, 0.1f, new float[] {1, 0.62f, 0.5f}, out, false);
@@ -995,6 +1065,34 @@ public final class DbFx {
         float s = f.a;
         Vector3f c = rel(f.pos);
         float ground = groundY(f);
+        if (KiMesh.ready()) {
+            // The approved landing: a fire dome of radius 9 tearing into tongues, the white burst, a huge dust ring,
+            // then the smoke rising on top.
+            float rb = 9 * s;
+            float tb = a - 2;
+            Vector3f mid = new Vector3f(c.x, ground + 0.4f, c.z);
+            if (tb > 0) {
+                blast(mid, rb * easeOut(tb / 26), Mth.clamp(tb / 64, 0, 1), NOVA_DOME, a, 3.3f, 1, false, 14);
+                dustRing(new Vector3f(c.x, ground, c.z), rb * 2.3f * easeOut(tb / 36), rb * 2.6f, Mth.clamp(tb / 60, 0, 1), NOVA_DOME, 8.2f);
+            }
+            if (a >= 40) {
+                float late = (a - 40) / 20;
+                blast(new Vector3f(c.x, ground + 0.3f + late * 0.6f, c.z), rb * (1 + late * 0.08f), 0.35f + 0.65f * Mth.clamp((a - 40) / 100, 0, 1), SMOKE_3D,
+                        a, 7.7f, 1, true, 6);
+            }
+            if (a < 8) {
+                float k = a / 8;
+                flashBall(mid, rb * (0.3f + 0.7f * Mth.sqrt(k)), 1 - k, NOVA_FLASH, 4.4f);
+            }
+            if (a < 34) {
+                warp(mid, rb * 2, 1.2f * (1 - a / 34), 0, a, null);
+            }
+            if (a < 120) {
+                dsk(new Vector3f(c.x, ground + 0.03f, c.z), new Vector3f(0, 1, 0), rb * 1.5f, FxDraw.SOFT, 0.15f, DIRT, 0.85f * smooth(a / 4) * (1 - smooth((a - 80) / 40)),
+                        false);
+            }
+            return;
+        }
         kiBoom(c, a, 7 * s, COLORS[Db.RED], 11, ground);
         kiBoom(new Vector3f(c).add(1.5f * s, 0.5f * s, 0), a - 5, 5 * s, COLORS[Db.ORANGE], 12, ground);
         kiBoom(new Vector3f(c).add(-1.5f * s, s, 0), a - 9, 5 * s, COLORS[Db.RED], 13, ground);
@@ -1015,6 +1113,34 @@ public final class DbFx {
     private static void deathBeam(Fx f, float a) {
         Vector3f tip = rel(f.pos);
         Vector3f end = rel(f.pos.add(f.dir));
+        if (KiMesh.ready()) {
+            // Realista+Anime (the approved Death Beam): the Kamehameha's twisted tube, very thin and fast, white
+            // middle and pink edge, a spark on the finger and a burst where it lands.
+            if (!pass) {
+                return;
+            }
+            float k = a / 6;
+            Vector3f d = new Vector3f(end).sub(tip);
+            float len = d.length();
+            if (k < 1 && len > 0.05f) {
+                KiMesh.P b = KiMesh.p(KiMesh.BEAM);
+                b.len = len;
+                b.w = 0.07f * (1 - smooth((k - 0.5f) / 0.5f)) + 0.01f;
+                b.flow = a * 0.7f;
+                b.time = a / 20f;
+                b.alpha = 1 - smooth((k - 0.6f) / 0.4f);
+                b.color = PINK_3D;
+                KiMesh.queue(KiMesh.Mesh.TUBE, KiMesh.along(tip, d), b, KiMesh.BOTH, 14);
+            }
+            if (a < 3) {
+                blast(tip, 0.07f + 0.03f * Mth.sin(a * 2), 0.2f, PINK_TIP, a, 2.3f, 1, false, 16);
+            }
+            if (a < 4) {
+                float h = a / 4;
+                flashBall(end, 0.1f + 0.5f * Mth.sqrt(h), 1 - h, PINK_FLASH, 1.9f);
+            }
+            return;
+        }
         float fd = 1 - a / 10;
         rib(tip, end, 0.08f * fd + 0.02f, FxDraw.BEAM, 0.9f, COLORS[Db.PINK], fd, true);
         rib(tip, end, 0.4f * fd, FxDraw.BEAM, 0.05f, COLORS[Db.PURPLE], 0.4f * fd, true);
@@ -1082,6 +1208,11 @@ public final class DbFx {
         Entity e = FxAnchor.entity(f.id);
         Vector3f c = e != null ? rel(e.getPosition(partial).add(0, e.getBbHeight() * 0.5, 0)) : rel(f.pos);
         float a = smooth(age / 8) * Mth.clamp(f.a, 0, 1) * out;
+        if (KiMesh.ready()) {
+            // Realista+Anime (the approved Telecinese): the target held in a purple field that tears into tongues.
+            blast(c, 1.3f + 0.05f * Mth.sin(age * 0.25f), 0.68f + 0.32f * (1 - a), TELE_FIELD, age, 5.5f, 1, false, 14, 0);
+            return;
+        }
         bb(c, 3, 0, FxDraw.SOFT, 0.15f, COLORS[Db.PURPLE], 0.45f * a, true);
         for (int i = 0; i < 8; i++) {
             dsk(new Vector3f(c).add(0, (i - 4) * 0.2f, 0), new Vector3f(0, 1, 0), 1.3f + 0.1f * Mth.sin(age * 0.2f + i), FxDraw.RING, 0.05f,
@@ -1529,22 +1660,25 @@ public final class DbFx {
                 ScreenFx.impactFrame(new int[] {2, 1}, 1, 0xC050FF, pos, 0);
                 ScreenShake.start(0.25f * near, 4);
             }
+            // Freeza's Telekinesis slam: the manga frame, negative then positive.
             case 10 -> {
-                ScreenFx.impactFrame(new int[] {3, 2}, 1, 0xFFFFFF, pos, 0);
+                ScreenFx.impactFrame(new int[] {4, 3}, 1, 0xFFFFFF, pos, 0);
                 ScreenShake.start(1.1f * near, 16);
             }
+            // The Supernova landing: five manga frames.
             case 11 -> {
                 ScreenFx.flash(0xFFB080, near, 16);
                 ScreenFx.flash(0xFF6A3A, 0.8f * near, 26);
-                ScreenFx.impactFrame(new int[] {0, 1, 2, 1}, 2, 0xFF4A1A, pos, 0);
+                ScreenFx.impactFrame(new int[] {4, 3, 4, 3, 4}, 1, 0xFFFFFF, pos, 0);
                 ScreenShake.start(2.4f * near, 50);
             }
+            // The Death Saucer cutting someone (12) and cutting Freeza himself (13).
             case 12 -> {
-                ScreenFx.impactFrame(new int[] {2, 1}, 1, 0xFF60D0, pos, 0);
+                ScreenFx.impactFrame(new int[] {4, 3}, 1, 0xFFFFFF, pos, 0);
                 ScreenShake.start(0.7f * near, 8);
             }
             case 13 -> {
-                ScreenFx.impactFrame(new int[] {2, 1, 3}, 1, 0xFF60D0, pos, 0);
+                ScreenFx.impactFrame(new int[] {4, 3, 4}, 1, 0xFFFFFF, pos, 0);
                 ScreenShake.start(0.9f * near, 12);
             }
             case 14 -> {
