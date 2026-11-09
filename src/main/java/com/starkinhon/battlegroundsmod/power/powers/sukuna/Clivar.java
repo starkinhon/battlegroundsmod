@@ -202,7 +202,6 @@ public final class Clivar {
         PowerLogic.seal(target, thr + 2);
         Capture.grabbed(target, caster, thr + 2);
         anim(caster, "sukuna.clivar_pega");
-        anim(target, "sukuna.clivar_preso");
         Combat.hurt(caster, target, GRAB_DAMAGE);
         Fx.sound(level, chest, SoundEvents.PLAYER_ATTACK_KNOCKBACK, 1.1f, 0.6f);
         int interrupts = data.interrupts;
@@ -245,7 +244,6 @@ public final class Clivar {
                 Fx.sound(level, c, SoundEvents.PLAYER_ATTACK_SWEEP, 1.4f, 0.4f);
                 Fx.sound(level, c, SoundEvents.AMETHYST_CLUSTER_BREAK, 1.2f, 0.7f);
                 String suffix = wall ? "_parede" : "";
-                anim(target, "sukuna.clivar_mole");
                 if (lethal[0]) {
                     anim(caster, "sukuna.clivar_solta" + suffix);
                     freeTarget.run();
@@ -265,7 +263,6 @@ public final class Clivar {
                 freeTarget.run();
                 Combat.push(target, fwd, 1.5, 0.45);
                 Stun.apply(target, 22);
-                anim(target, "sukuna.clivar_voa");
                 Fx.sound(level, Combat.center(target), SoundEvents.PLAYER_ATTACK_KNOCKBACK, 1.3f, 0.5f);
             }
             if (age >= thr + 4) {
