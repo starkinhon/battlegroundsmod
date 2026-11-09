@@ -90,7 +90,35 @@ public final class KiMesh {
             return;
         }
         Vector3f c = model.getTranslation(new Vector3f());
-        QUEUE.add(new Cmd(mesh, new Matrix4f(model), p.copy(), sides, c.length(), order));
+        float dist = c.length();
+        P q = p.copy();
+        float reach = reach(mesh, model);
+        if (reach > 0) {
+            // The camera inside a ball, dome or aura: on the pages the camera never goes in, but here a fingertip flash,
+            // a Genki halo or a dome round the target can wrap it, and the inside then paints the whole screen (the
+            // pink screen of the Makankosappo, the red one of the Supernova). It fades out as the camera gets in.
+            float k = Math.max(0, Math.min(1, (dist / reach - 0.85f) / 0.4f));
+            q.alpha *= k * k * (3 - 2 * k);
+            if (q.alpha <= 0.002f) {
+                return;
+            }
+        }
+        QUEUE.add(new Cmd(mesh, new Matrix4f(model), q, sides, dist, order));
+    }
+
+    // How far a round piece reaches from its center (0: not round; tubes and squares are left alone).
+    private static float reach(Mesh mesh, Matrix4f model) {
+        float bound = switch (mesh) {
+            case BLAST -> 1.3f;
+            case AURA -> 1.75f;
+            case BALL, HALO, FLASH -> 1.06f;
+            default -> 0;
+        };
+        if (bound == 0) {
+            return 0;
+        }
+        Vector3f s = model.getScale(new Vector3f());
+        return Math.max(s.x, Math.max(s.y, s.z)) * bound;
     }
 
     // ---------- where things go (camera-relative) ----------
@@ -133,8 +161,8 @@ public final class KiMesh {
         ShaderInstance shader = FxShaders.ki;
         try {
             build();
-            QUEUE.sort((x, y) -> x.dist() != y.dist() && Math.abs(x.dist() - y.dist()) > 0.01f ? Float.compare(y.dist(), x.dist())
-                    : Integer.compare(x.order(), y.order()));
+            // Like three.js on the pages: renderOrder first (smoke under the dome, halo over the ball), then far before near.
+            QUEUE.sort((x, y) -> x.order() != y.order() ? Integer.compare(x.order(), y.order()) : Float.compare(y.dist(), x.dist()));
             RenderSystem.enableBlend();
             RenderSystem.blendFuncSeparate(GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE,
                     GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);

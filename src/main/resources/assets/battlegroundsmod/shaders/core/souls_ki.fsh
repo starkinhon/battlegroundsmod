@@ -37,6 +37,7 @@ in vec2 vQ;
 in float vH;
 in vec2 vUv;
 in vec2 vDir;
+in vec3 vNv;
 
 out vec4 fragColor;
 
@@ -52,9 +53,14 @@ float fbm3(vec3 p) { float s = 0., w = 0.5; for (int o = 0; o < 3; o++) { s += w
 float fbm4(vec3 p) { float s = 0., w = 0.5; for (int o = 0; o < 4; o++) { s += w * gn(p); p = ROT * p * 2.03; w *= 0.5; } return s; }
 vec3 bright(vec3 c) { return c / max(max(c.r, max(c.g, c.b)), 1e-4); }
 
+// The glow layer works like the pages' bloom (threshold 0.6): only light that is already bright spills over. Sending
+// everything there doubled every ball and dome and blurred them into a white fog over the day sky.
 void emit(vec3 premul, float a) {
     if (GlowPass > 0.5) {
-        fragColor = vec4(premul * 0.45, 0.);
+        float l = dot(premul, vec3(0.299, 0.587, 0.114));
+        float k = smoothstep(0.55, 0.85, l);
+        if (k < 0.003) discard;
+        fragColor = vec4(premul * k * 0.35, 0.);
     } else {
         fragColor = vec4(premul, a);
     }
@@ -88,7 +94,10 @@ void main() {
             vec3 b = bright(Color);
             vec3 col = mix(Color * 0.5, Color, smoothstep(0.05, 0.4, heat)); col = mix(col, mix(b, vec3(1.), 0.55), smoothstep(0.45, 0.95, heat));
             float a = m * mix(0.3, 1., pow(rim, 1.1)) * Alpha;
-            emit(col * a * (0.8 + 1.1 * heat), a * 0.6);
+            vec3 lit = col * a * (0.8 + 1.1 * heat);
+            // The pages are drawn on a dark sky; covering the background as much as the dome shines keeps the same
+            // colors over Minecraft's bright day sky instead of a white blob.
+            emit(lit, min(0.92, max(a * 0.6, max(lit.r, max(lit.g, lit.b)))));
         }
     } else if (kind == 1) {                                            // Genki core: light ball, white middle, no dark outline
         float fz = clamp(dot(N, V), 0., 1.);
@@ -102,7 +111,7 @@ void main() {
         col = mix(col, wht, veins * 0.35 * (1. - fz));
         emit(col * (1. + 0.25 * Pulse) * Alpha, Alpha);
     } else if (kind == 2 || kind == 8) {                               // halo with rays (Genki blue, sun orange)
-        float ang = atan(N.y, N.x);
+        vec3 Nv = normalize(vNv); float ang = atan(Nv.y, Nv.x);         // rays round the screen, as on the pages (view space)
         float rays, g; vec3 col; float al;
         if (kind == 2) {
             rays = pow(gn(vec3(cos(ang) * 9., sin(ang) * 9., Time * 0.6)) * 0.5 + 0.5, 2.5) + 0.5 * pow(gn(vec3(cos(ang) * 23., sin(ang) * 23., Time * 0.9 + 3.)) * 0.5 + 0.5, 3.);
