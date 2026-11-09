@@ -460,11 +460,10 @@ public final class Freeza {
         Tasks.later(5, () -> SubCommon.sound(level, c, SoundEvents.GENERIC_EXPLODE.value(), 5f, 0.6f));
         Tasks.later(9, () -> SubCommon.sound(level, c, SoundEvents.GENERIC_EXPLODE.value(), 5f, 0.5f));
         boolean breaks = com.starkinhon.battlegroundsmod.combat.BlockRules.canBreak(level);
-        if (breaks) {
-            JjCommon.crater(level, c, 10.5, 7, 70);
-        }
         List<List<double[]>> cracks = breaks ? cracks() : List.of();
         int[] carved = new int[cracks.size()];
+        double[] burnt = {11};
+        Set<Long> done = new java.util.HashSet<>();
         Set<Integer> hit = DbCommon.once();
         Tasks.add(t -> {
             double R = novaRadius(t), H = R * 0.5, life = t / (double) NOVA_TICKS;
@@ -492,26 +491,26 @@ public final class Freeza {
                 }
             }
             if (breaks) {
-                // The cracks open behind the front (41 blocks in 2.6 s), lava (magma) at the bottom.
+                // Every block change here skips the neighbour updates (flag 2): thousands of them in a few ticks were the
+                // lag Stark saw (2026-11-09), together with dozens of falling blocks at once.
+                if (t < 6) {
+                    // The crater, dug in 6 slices (a deep bowl with its rim raised, like the preview).
+                    crater(level, c, t, done);
+                }
+                // The cracks open behind the front (41 blocks in 2.6 s), magma at the bottom, their lips pushed up.
                 double front = 41 * (1 - Math.pow(1 - Math.min(1, t / 52.0), 3));
                 for (int i = 0; i < cracks.size(); i++) {
                     List<double[]> path = cracks.get(i);
                     while (carved[i] < path.size() && path.get(carved[i])[2] < front) {
                         double[] q = path.get(carved[i]++);
-                        crack(level, c, (int) Math.floor(q[0]), (int) Math.floor(q[1]), (int) q[3]);
+                        crack(level, c, q, done);
                     }
                 }
-                // The three tremors: each wave's front pops the ground's blocks up (each its own force) and they fall back.
-                for (int w = 0; w < 3; w++) {
-                    int tw = t - 2 - w * 16;
-                    double pr = tw * (27 - w * 5) / 20.0;
-                    if (tw < 0 || pr < 10 || pr > 40) {
-                        continue;
-                    }
-                    for (int n = 0; n < 7 - w * 2; n++) {
-                        double a = SubCommon.RANDOM.nextDouble() * Math.PI * 2, rr = pr + (SubCommon.RANDOM.nextDouble() - 0.5) * 3;
-                        pop(level, c, Mth.floor(c.x + Math.cos(a) * rr), Mth.floor(c.z + Math.sin(a) * rr), (0.28 + 0.32 * SubCommon.RANDOM.nextDouble()) * (1 - w * 0.25));
-                    }
+                // The ground scorched where the fire went, ring by ring as the dome grows.
+                double reach = Math.min(R, NOVA_R) * 0.97;
+                if (reach > burnt[0] + 0.5) {
+                    scorch(level, c, burnt[0], reach, done);
+                    burnt[0] = reach;
                 }
             }
             if (t == 2 || t == 18 || t == 34) {
@@ -524,8 +523,75 @@ public final class Freeza {
         });
     }
 
-    // The cracks: 10-13 crooked lines from the crater's rim out to 36-41 blocks, each point {x, z, distance, depth}
-    // relative to the impact (wider near the middle).
+    private static final int QUIET = 2 | 16;
+
+    private static long key(int x, int z) {
+        return ((long) x << 32) ^ (z & 0xFFFFFFFFL);
+    }
+
+    private static double hash(int x, int z, int k) {
+        long h = x * 374761393L + z * 668265263L + k * 1442695041L;
+        h = (h ^ (h >>> 13)) * 1274126177L;
+        return ((h ^ (h >>> 16)) & 0xFFFF) / 65535.0;
+    }
+
+    // One slice (of 6) of the crater: a bowl 7 deep at the middle and 10.5 wide, its rim raised 1-2 blocks; a few of
+    // its blocks fly out (each its own push), the rest just go.
+    private static void crater(ServerLevel level, Vec3 c, int slice, Set<Long> done) {
+        int cx = Mth.floor(c.x), cz = Mth.floor(c.z);
+        double rc = 10.5;
+        for (int dx = -14; dx <= 14; dx++) {
+            for (int dz = -14; dz <= 14; dz++) {
+                if (Math.floorMod(dx * 7 + dz * 13, 6) != slice) {
+                    continue;
+                }
+                int x = cx + dx, z = cz + dz;
+                double r = Math.hypot(dx + 0.5 - (c.x - cx), dz + 0.5 - (c.z - cz));
+                BlockPos top = top(level, c, x, z);
+                if (top == null) {
+                    continue;
+                }
+                if (r < rc) {
+                    done.add(key(x, z));
+                    int depth = (int) Math.round(7 * (1 - r * r / (rc * rc)) * (0.8 + 0.4 * hash(x, z, 1))) + 1;
+                    for (int d = 0; d < depth; d++) {
+                        BlockPos p = top.below(d);
+                        BlockState st = level.getBlockState(p);
+                        if (!breakable(level, p, st)) {
+                            break;
+                        }
+                        if (d == 0 && hash(x, z, 2) < 0.06) {
+                            fly(level, p, st, c);
+                        } else {
+                            level.setBlock(p, Blocks.AIR.defaultBlockState(), QUIET);
+                        }
+                    }
+                } else if (r < rc + 3.2) {
+                    // the rim: the dug ground piled up round the hole
+                    double k = 1 - Math.abs(r - (rc + 1.3)) / 1.9;
+                    int h = (int) Math.round(Math.max(0, k) * (0.6 + 1.6 * hash(x, z, 3)));
+                    BlockState pile = hash(x, z, 4) < 0.5 ? Blocks.COARSE_DIRT.defaultBlockState() : Blocks.DIRT.defaultBlockState();
+                    for (int d = 1; d <= h; d++) {
+                        if (level.getBlockState(top.above(d)).canBeReplaced()) {
+                            level.setBlock(top.above(d), pile, QUIET);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private static void fly(ServerLevel level, BlockPos p, BlockState st, Vec3 c) {
+        FallingBlockEntity block = FallingBlockEntity.fall(level, p, st);
+        block.dropItem = false;
+        Vec3 out = SubCommon.flat(new Vec3(p.getX() + 0.5 - c.x, 0, p.getZ() + 0.5 - c.z));
+        double k = 0.4 + SubCommon.RANDOM.nextDouble() * 1.1;
+        block.setDeltaMovement(out.scale(0.5 * k).add(0, 0.6 + 0.6 * SubCommon.RANDOM.nextDouble(), 0));
+        block.hurtMarked = true;
+    }
+
+    // The cracks: 10-13 crooked lines from the crater's rim out to 36-41 blocks, each point {x, z, distance, depth,
+    // width, angle} relative to the impact: 3 wide near the crater, 2 by the middle, 1 at the ends.
     private static List<List<double[]>> cracks() {
         List<List<double[]>> out = new ArrayList<>();
         int n = 10 + SubCommon.RANDOM.nextInt(4);
@@ -533,17 +599,13 @@ public final class Freeza {
             List<double[]> path = new ArrayList<>();
             double a = Math.PI * 2 * i / n + (SubCommon.RANDOM.nextDouble() - 0.5) * 0.4, bend = 0;
             double end = 36 + SubCommon.RANDOM.nextDouble() * 5;
-            for (double r = 9; r < end; r += 0.6) {
-                bend += (SubCommon.RANDOM.nextDouble() - 0.5) * 0.05;
-                bend *= 0.96;
+            for (double r = 9.5; r < end; r += 0.35) {
+                bend += (SubCommon.RANDOM.nextDouble() - 0.5) * 0.03;
+                bend *= 0.97;
                 a += bend;
-                double x = Math.cos(a) * r, z = Math.sin(a) * r;
                 int depth = 2 + SubCommon.RANDOM.nextInt(r < 20 ? 4 : 2);
-                path.add(new double[] {x, z, r, depth});
-                if (r < 22) {
-                    // wider near the middle: the block beside it too
-                    path.add(new double[] {x - Math.sin(a), z + Math.cos(a), r, Math.max(1, depth - 1)});
-                }
+                int width = r < 20 ? 3 : r < 30 ? 2 : 1;
+                path.add(new double[] {Math.cos(a) * r, Math.sin(a) * r, r, depth, width, a});
             }
             out.add(path);
         }
@@ -560,35 +622,90 @@ public final class Freeza {
         return !st.isAir() && st.getFluidState().isEmpty() && !st.hasBlockEntity() && st.getDestroySpeed(level, p) >= 0;
     }
 
-    private static void crack(ServerLevel level, Vec3 c, int dx, int dz, int depth) {
-        BlockPos top = top(level, c, Mth.floor(c.x) + dx, Mth.floor(c.z) + dz);
-        if (top == null) {
-            return;
-        }
-        for (int d = 0; d < depth; d++) {
-            BlockPos p = top.below(d);
-            if (breakable(level, p, level.getBlockState(p))) {
-                level.setBlock(p, Blocks.AIR.defaultBlockState(), 3);
+    // One point of a crack: the columns across it dug down (magma at the bottom, or in the last dug block when the one
+    // under it can't break), and the lips on both sides pushed up a block here and there.
+    private static void crack(ServerLevel level, Vec3 c, double[] q, Set<Long> done) {
+        double a = q[5];
+        double sx = -Math.sin(a), sz = Math.cos(a);
+        int width = (int) q[4];
+        for (int w = 0; w < width; w++) {
+            double off = w - (width - 1) / 2.0;
+            int x = Mth.floor(c.x + q[0] + sx * off), z = Mth.floor(c.z + q[1] + sz * off);
+            if (!done.add(key(x, z))) {
+                continue;
+            }
+            BlockPos top = top(level, c, x, z);
+            if (top == null) {
+                continue;
+            }
+            int depth = (int) q[3];
+            BlockPos last = null;
+            int d = 0;
+            for (; d < depth; d++) {
+                BlockPos p = top.below(d);
+                if (!breakable(level, p, level.getBlockState(p))) {
+                    break;
+                }
+                level.setBlock(p, Blocks.AIR.defaultBlockState(), QUIET);
+                last = p;
+            }
+            BlockPos bottom = top.below(d);
+            if (breakable(level, bottom, level.getBlockState(bottom))) {
+                level.setBlock(bottom, Blocks.MAGMA_BLOCK.defaultBlockState(), QUIET);
+            } else if (last != null) {
+                level.setBlock(last, Blocks.MAGMA_BLOCK.defaultBlockState(), QUIET);
             }
         }
-        BlockPos bottom = top.below(depth);
-        if (breakable(level, bottom, level.getBlockState(bottom))) {
-            level.setBlock(bottom, Blocks.MAGMA_BLOCK.defaultBlockState(), 3);
+        for (int side = -1; side <= 1; side += 2) {
+            double off = side * ((width + 1) / 2.0);
+            int x = Mth.floor(c.x + q[0] + sx * off), z = Mth.floor(c.z + q[1] + sz * off);
+            if (done.contains(key(x, z)) || hash(x, z, 5) > 0.4) {
+                continue;
+            }
+            done.add(key(x, z));
+            BlockPos top = top(level, c, x, z);
+            if (top != null && level.getBlockState(top.above()).canBeReplaced()) {
+                BlockState st = level.getBlockState(top);
+                if (breakable(level, top, st)) {
+                    level.setBlock(top.above(), st, QUIET);
+                }
+            }
         }
     }
 
-    private static void pop(ServerLevel level, Vec3 c, int x, int z, double up) {
-        BlockPos p = top(level, c, x, z);
-        if (p == null) {
-            return;
+    // The scorched ring between r0 and r1: the top blocks turned to coarse dirt, blackstone, basalt, a reddish bit of
+    // netherrack and a few embers of magma (fewer toward the edge), the grass and flowers on top burnt away.
+    private static void scorch(ServerLevel level, Vec3 c, double r0, double r1, Set<Long> done) {
+        int cx = Mth.floor(c.x), cz = Mth.floor(c.z), m = (int) Math.ceil(r1) + 1;
+        for (int dx = -m; dx <= m; dx++) {
+            for (int dz = -m; dz <= m; dz++) {
+                double r = Math.hypot(dx, dz);
+                if (r < r0 || r >= r1) {
+                    continue;
+                }
+                int x = cx + dx, z = cz + dz;
+                if (done.contains(key(x, z)) || hash(x, z, 6) > 1 - Math.max(0, (r - 28) / 9)) {
+                    continue;
+                }
+                BlockPos top = top(level, c, x, z);
+                if (top == null) {
+                    continue;
+                }
+                BlockState st = level.getBlockState(top);
+                if (!(st.is(net.minecraft.tags.BlockTags.DIRT) || st.is(net.minecraft.tags.BlockTags.SAND) || st.is(net.minecraft.tags.BlockTags.BASE_STONE_OVERWORLD)
+                        || st.is(Blocks.GRAVEL))) {
+                    continue;
+                }
+                double h = hash(x, z, 7);
+                BlockState burnt = h < 0.3 ? Blocks.COARSE_DIRT.defaultBlockState() : h < 0.6 ? Blocks.BLACKSTONE.defaultBlockState()
+                        : h < 0.75 ? Blocks.BASALT.defaultBlockState() : h < 0.87 ? Blocks.SMOOTH_BASALT.defaultBlockState()
+                        : h < 0.95 ? Blocks.NETHERRACK.defaultBlockState() : Blocks.MAGMA_BLOCK.defaultBlockState();
+                level.setBlock(top, burnt, QUIET);
+                BlockState over = level.getBlockState(top.above());
+                if (!over.isAir() && over.canBeReplaced()) {
+                    level.setBlock(top.above(), Blocks.AIR.defaultBlockState(), QUIET);
+                }
+            }
         }
-        BlockState st = level.getBlockState(p);
-        if (!breakable(level, p, st)) {
-            return;
-        }
-        FallingBlockEntity block = FallingBlockEntity.fall(level, p, st);
-        block.dropItem = false;
-        block.setDeltaMovement((SubCommon.RANDOM.nextDouble() - 0.5) * 0.08, up, (SubCommon.RANDOM.nextDouble() - 0.5) * 0.08);
-        block.hurtMarked = true;
     }
 }

@@ -345,7 +345,7 @@ public final class FxWorld {
             // Sukuna's Fuga, over everything else: its fire is its own light in the dark.
             FugaRenderer.render(camera, partial);
             // Freeza's Supernova: the fire dome (DbFx said where this frame).
-            NovaRenderer.render();
+            NovaRenderer.render(camera);
             // Sukuna's Expansão de Domínio: the shrine, its cuts and its light, then what it does to the screen.
             SukunaDomainScene.render(camera, partial);
             SukunaDomainScene.screen();

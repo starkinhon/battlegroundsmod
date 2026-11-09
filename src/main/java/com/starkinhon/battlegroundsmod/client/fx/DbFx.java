@@ -1356,7 +1356,7 @@ public final class DbFx {
             Vector3f e = new Vector3f(c.x, ground, c.z);
             float R = NovaRenderer.radius(a), H = R * 0.5f;
             if (!pass) {
-                NovaRenderer.want(e, a, 3.3f + (f.id & 7) * 1.7f);
+                NovaRenderer.want(e, new Vec3(f.pos.x, f.dir.x, f.pos.z), a, 3.3f + (f.id & 7) * 1.7f);
             }
             dustRing(e, NovaRenderer.RMAX * 1.7f * easeOut4(a / 44), NovaRenderer.RMAX * 2.1f, Mth.clamp(a / 64, 0, 1), NOVA_DOME, 8.2f);
             if (a > 5 && pass) {
