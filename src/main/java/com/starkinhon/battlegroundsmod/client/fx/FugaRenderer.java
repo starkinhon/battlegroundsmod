@@ -59,8 +59,8 @@ public final class FugaRenderer {
     // Darkness: what the picture is multiplied by at full strength (the preview's night: hemisphere 0.28 of day, floor
     // 0x2a1512 against 0x6f7f60), and the sky / fog color before that, so after it the sky is the preview's 0x140605.
     private static final float[] MULT = {0.34f, 0.2f, 0.19f};
-    // The burst's size against the preview's (Fuga.RADIUS 12 against the preview's 7).
-    private static final double EXP_SCALE = 12.0 / 7.0;
+    // The burst's size against the preview's (Fuga.RADIUS 20 against the preview's 7).
+    private static final double EXP_SCALE = 20.0 / 7.0;
     private static final float[] SKY = {0x14 / 255f / 0.34f, 0x06 / 255f / 0.2f, 0x05 / 255f / 0.19f};
     private static final double DARK_FADE = 10;
 
@@ -570,7 +570,7 @@ public final class FugaRenderer {
         if (c.hitAt >= 0) {
             double eh = (now() - c.hitAt) / SLOW;
             f.exp = eh < T_LEN - T_HIT;
-            // Stark (2026-11-09): a bigger burst, in step with Fuga.RADIUS (7 -> 12), so everything here is EXP_SCALE times the preview's.
+            // Stark (2026-11-09): a bigger burst, in step with Fuga.RADIUS (7 -> 20), so everything here is EXP_SCALE times the preview's.
             f.expR = EXP_SCALE * (4.2 * easeOut(cl(eh / 6, 0, 1)) + 0.6 * smooth(6, 40, eh));
             f.expRise = EXP_SCALE * 5.5 * smooth(1, 34, eh) * easeOut(cl(eh / 30, 0, 1));
             f.expBurn = smooth(12, 48, eh);

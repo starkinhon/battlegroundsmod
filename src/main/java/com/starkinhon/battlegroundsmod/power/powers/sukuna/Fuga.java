@@ -13,7 +13,6 @@ import com.starkinhon.battlegroundsmod.network.ModPayloads;
 import com.starkinhon.battlegroundsmod.power.PowerData;
 import com.starkinhon.battlegroundsmod.power.powers.sub.jj.JjCommon;
 
-import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
@@ -21,7 +20,6 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.ClipContext;
-import net.minecraft.world.level.block.BaseFireBlock;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -48,9 +46,9 @@ public final class Fuga {
     // Where the arrow's tip sits at the release, in the caster's own frame (facing +z, feet at 0): the right fist from the
     // baked pose, plus the preview's offsets along the aim (0.08 out of the fist, the arrow 1.35 past it).
     private static final Vec3 TIP_LOCAL = new Vec3(-0.071, 1.093, 0.763 + 0.08 + 1.35);
-    // The burst: full damage at the middle, EDGE at RADIUS (Stark: bigger, 7 -> 12); everyone within FIRE_RADIUS catches
+    // The burst: full damage at the middle, EDGE at RADIUS (Stark: bigger, 7 -> 20); everyone within FIRE_RADIUS catches
     // fire, and whoever dies burning from it is charred like the Katon's (AshKill / onDeath).
-    private static final double RADIUS = 12, FIRE_RADIUS = 18;
+    private static final double RADIUS = 20, FIRE_RADIUS = 28;
     private static final float DAMAGE_CENTER = 150, DAMAGE_EDGE = 45;
     private static final int BURN_SECONDS = 8;
     // Who is burning from a Fuga, until when (game time): a death by fire then turns them to ash.
@@ -209,30 +207,8 @@ public final class Fuga {
             out = new Vec3(out.x, 0, out.z).lengthSqr() < 0.01 ? way : out;
             Combat.push(target, out, 2.2 * (1 - 0.5 * d), 0.9 * (1 - 0.4 * d));
         }
-        // The ground breaks into a bowl and catches fire around it (gamerule soulsBlockDestruction).
-        JjCommon.crater(level, center, 7, 3.5, 40);
-        Tasks.later(2, () -> scorch(level, center, FIRE_RADIUS));
-    }
-
-    private static void scorch(ServerLevel level, Vec3 center, double r) {
-        if (!com.starkinhon.battlegroundsmod.combat.BlockRules.canBreak(level)) {
-            return;
-        }
-        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
-        var random = level.getRandom();
-        for (int i = 0; i < 160; i++) {
-            double a = random.nextDouble() * Mth.TWO_PI, d = Math.sqrt(random.nextDouble()) * r;
-            int x = Mth.floor(center.x + Math.cos(a) * d), z = Mth.floor(center.z + Math.sin(a) * d);
-            for (int y = Mth.floor(center.y) + 3; y >= Mth.floor(center.y) - 5; y--) {
-                pos.set(x, y, z);
-                if (level.getBlockState(pos).isAir() && !level.getBlockState(pos.below()).isAir()) {
-                    if (BaseFireBlock.canBePlacedAt(level, pos, net.minecraft.core.Direction.UP)) {
-                        level.setBlock(pos, BaseFireBlock.getState(level, pos), 11);
-                    }
-                    break;
-                }
-            }
-        }
+        // The ground breaks into a bowl (gamerule soulsBlockDestruction); no flames left on the ground (Stark 2026-11-09).
+        JjCommon.crater(level, center, 9, 4.5, 50);
     }
 
     // A death while burning from a Fuga (LivingDeathEvent, combat/SkillStop): charred like the Katon's, not the normal death.
