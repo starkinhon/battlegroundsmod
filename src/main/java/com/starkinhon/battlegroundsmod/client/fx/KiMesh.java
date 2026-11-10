@@ -38,7 +38,7 @@ public final class KiMesh {
     }
 
     public static final int BLAST = 0, GENKI = 1, HALO = 2, BEAM = 3, RING = 4, SHELL = 5, FLASH = 6, SUN = 7, SUN_HALO = 8, SAW = 9, KIEN = 10,
-            SPIRAL = 11, WIND = 12;
+            SPIRAL = 11, WIND = 12, KATON = 13, KATON_RING = 14;
     public static final int FRONT = 1, BACK = 2, BOTH = 3;
 
     // Everything souls_ki reads; queue() keeps a copy, so one P can be reused for the next piece.
@@ -276,7 +276,8 @@ public final class KiMesh {
         s.safeGetUniform("Flare").set(p.flare);
         s.safeGetUniform("Bend").set(p.bend);
         s.safeGetUniform("GlowPass").set(glow ? 1f : 0f);
-        boolean highPass = p.kind == BLAST || p.kind == GENKI || p.kind == HALO || p.kind == SUN || p.kind == SUN_HALO;
+        boolean highPass = p.kind == BLAST || p.kind == GENKI || p.kind == HALO || p.kind == SUN || p.kind == SUN_HALO
+                || p.kind == KATON || p.kind == KATON_RING;
         s.safeGetUniform("HighPass").set(highPass ? 1f : 0f);
     }
 

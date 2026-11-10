@@ -4,7 +4,8 @@
 // vegeta-kit, piccolo-kit, kuririn-kit, kame-kit) carried over line by line. The mesh comes in as a unit shape (sphere,
 // open tube with y from 0 to 1, or a flat square in x/z) and is bent here exactly as on the pages; Model places it
 // (relative to the camera). Kind says which effect: 0 blast/smoke, 1 Genki core, 2 halo (Genki), 3 beam, 4 dust ring,
-// 5 aura shell, 6 hit flash, 7 sun core, 8 sun halo, 9 saw disc, 10 Kienzan disc, 11 Makankosappo spirals, 12 wind.
+// 5 aura shell, 6 hit flash, 7 sun core, 8 sun halo, 9 saw disc, 10 Kienzan disc, 11 Makankosappo spirals, 12 wind,
+// 13 Sasuke's Katon shell (forja/sasuke-chidori/katon.js), 14 its wall of fire on the ground.
 in vec3 Position;
 
 uniform mat4 ModelViewMat;
@@ -125,6 +126,26 @@ void main() {
         float h = Position.y; vec2 d = normalize(Position.xz + 1e-5);
         float r = mix(R0, R1, pow(h, Flare)) * (1. + 0.1 * sin(h * 11. - Time * 8. + d.x * 3.));
         P = vec3(d.x * r + Bend * h * h, h * Len, d.y * r); n = vec3(d.x, 0., d.y); vDir = d; vH = h;
+    } else if (kind == 13) {                                           // Katon: ONE fire shell (the ball with its tail, the blast dome turning to smoke)
+        vec3 nr = normalize(Position), ax = normalize(vec3(0.25, 1., 0.15));
+        float ca = cos(-Phase), sa = sin(-Phase);                       // Phase = how far the drawing has turned (with the ball)
+        vec3 q = nr * ca + cross(ax, nr) * sa + ax * dot(ax, nr) * (1. - ca);
+        float nn = fbm3(q * 2.1 + vec3(0., -Time * 0.55, 0.) + Seed);
+        float sp = pow(clamp(gn(q * 4.7 + Seed * 2. + vec3(0., -Time * 0.8, 0.)) * 0.5 + 0.5, 0., 1.), 3.);   // tongues of the shell itself
+        vec3 td = normalize(Size + vec3(1e-5));                         // Size = where the tail runs, Len = how long
+        float tl = Len * pow(max(0., dot(nr, td)), 2.6);
+        P = nr * (1. + Spike * (nn * 0.55 + sp * 1.4)) + td * tl * (0.85 + 0.35 * nn);
+        P.y += Up * smoothstep(-0.1, 0.5, nr.y) * (0.7 + 0.6 * nn);    // the dome rising as smoke
+        P.xz *= 1. + Growth * (0.6 + 0.5 * nn);
+        n = normalize(nr + vec3(0., 0.4 * Up, 0.)); vO = q; vD = Len > 0. ? tl / Len : 0.;
+    } else if (kind == 14) {                                           // Katon: the wall of fire running round on the ground (tube, y 0..1)
+        vec2 d = normalize(Position.xz + 1e-5); float ang = atan(d.y, d.x), h = Position.y;
+        vec3 c = vec3(cos(ang) * 2.6, sin(ang) * 2.6, Time * 0.7 + Seed);
+        float nn = fbm3(c) * 0.5 + 0.5, n2 = gn(c * 2.3 + 4.) * 0.5 + 0.5;
+        float top = 0.35 + 1.25 * nn * nn + 0.5 * n2;                   // each flame its own height
+        float rr = 1. + 0.05 * (nn - 0.5) - 0.08 * h;
+        P = vec3(d.x * rr, h * top, d.y * rr); n = normalize(vec3(d.x, 0.3, d.y));
+        vH = h; vO = vec3(cos(ang) * 4., P.y * 2.2 - Time * 2.2, sin(ang) * 4.) + Seed;
     }
     vec4 w = Model * vec4(P, 1.0);
     vN = mat3(Model) * n;

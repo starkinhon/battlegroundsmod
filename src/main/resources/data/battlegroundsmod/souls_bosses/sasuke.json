@@ -109,8 +109,21 @@
       "avisoCor": "#ffffff",
       "avisoSom": "minecraft:entity.player.attack.sweep"
     },
-    "chidori": {
+    "katon": {
       "slot": 0,
+      "tipo": "alcance",
+      "peso": 1.0,
+      "recargaTicks": 160,
+      "recargaMaxTicks": 260,
+      "avisoTicks": 4,
+      "distanciaMin": 4,
+      "distanciaMax": 30,
+      "giroGrausPorTick": 14,
+      "avisoCor": "#ff8a30",
+      "avisoSom": "minecraft:entity.blaze.shoot"
+    },
+    "chidori": {
+      "slot": 1,
       "tipo": "livre",
       "peso": 1.0,
       "recargaTicks": 240,
@@ -123,7 +136,7 @@
       "avisoSom": "minecraft:entity.bee.loop_aggressive"
     },
     "leitura": {
-      "slot": 1,
+      "slot": 7,
       "tipo": "controle",
       "peso": 0.7,
       "recargaTicks": 240,
@@ -178,6 +191,13 @@
         "soco",
         "forte"
       ]
+    },
+    "sasuke_3": {
+      "peso": 1.0,
+      "passos": [
+        "senbon",
+        "katon"
+      ]
     }
   },
   "fases": [
@@ -186,6 +206,7 @@
       "skills": [
         "forte",
         "barragem",
+        "katon",
         "chidori",
         "leitura",
         "senbon",
@@ -193,7 +214,8 @@
       ],
       "combos": [
         "sasuke_1",
-        "sasuke_2"
+        "sasuke_2",
+        "sasuke_3"
       ],
       "agressividade": 0.75,
       "multRecarga": 1.0,

@@ -304,6 +304,11 @@ public final class SubNet {
     public static final int DASH_LINE = 163;
     // Simple Domain undone: specks rising from the circle at pos, a = radius.
     public static final int DOMAIN_POP = 164;
+    // Sasuke's Katon ball (stream): id = its own, pos = its center, dir = where its tail runs (unit), a = radius,
+    // b = the tail's length (in radii), c = 1 ends it. Drawn by NrFx with the Naruto effects.
+    public static final int KATON = 165;
+    // The Katon's blast at pos (on the ground): a = radius, dir.x = the ground's height, c = seed.
+    public static final int KATON_BOOM = 166;
 
     public static final int STYLE_SUKUNA = 0;
     public static final int STYLE_PINK = 1;

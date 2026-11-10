@@ -1,0 +1,37 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "nr.katon",
+  "nome": "Katon: Grande Bola de Fogo",
+  "tempo": {
+    "atrasoTicks": 12,
+    "duracaoTicks": 22
+  },
+  "animacao": {
+    "transicaoTicks": 3,
+    "preparo": {
+      "cabeca": -6,
+      "tronco": -4,
+      "bracoDir": {
+        "frente": 72,
+        "abrir": -26
+      },
+      "bracoEsq": {
+        "frente": 72,
+        "abrir": 26
+      }
+    },
+    "sopro": {
+      "cabeca": 10,
+      "tronco": 14,
+      "bracoDir": {
+        "frente": 38,
+        "abrir": -14
+      },
+      "bracoEsq": {
+        "frente": 38,
+        "abrir": 14
+      }
+    },
+    "retornoTicks": 6
+  }
+}
