@@ -975,8 +975,18 @@ def time_chamber():
             v.set(x, 5, z1, 'purple_stained_glass')
             if x0 + 4 <= x <= x1 - 4:
                 v.set(x, 6, z1, 'purple_stained_glass')
-        ox = x1 if sx > 0 else x0                                                 # open outer end (dark doorway)
-        v.box(ox, 3, z0 + 2, ox, 7, z1 - 2, 'air')
+        ox = x1 if sx > 0 else x0                                                 # arched doorway at the outer end
+        v.box(ox, 3, -6, ox, 5, -4, 'air'); v.set(ox, 6, -5, 'air')
+        for z, y in ((-7, 3), (-7, 4), (-7, 5), (-6, 6), (-5, 7), (-4, 6), (-3, 3), (-3, 4), (-3, 5)):
+            v.set(ox, y, z, 'smooth_quartz')                                      # white trim round the arch
+        for z in range(z0 - 1, z1 + 2):                                           # the pink roof curls over the end
+            t = (z - (z0 + z1) / 2) / ((z1 - z0) / 2 + 1.5)
+            h = 8 + round(3.2 * math.sqrt(max(0, 1 - t * t)))
+            v.set(ox + sx, h, z, 'pink_concrete')
+            v.set(ox, h, z, 'pink_concrete')
+        for z in (z0 - 1, z1 + 1):
+            for x in range(x0, x1 + 1):
+                v.set(x, 8, z, 'pink_concrete')                                   # eaves along both sides
         v.box(x0 + 1, 2, z0 + 1, x1 - 1, 2, z1 - 1, 'smooth_quartz')
         v.set(sx * 9, 3, hz, 'air')
         v.box(sx * 8, 3, -6, sx * 8, 5, -4, 'air')                               # opens into the house drum side
