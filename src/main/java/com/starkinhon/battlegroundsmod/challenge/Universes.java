@@ -11,7 +11,10 @@ import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.ModItems;
 import com.starkinhon.battlegroundsmod.combat.Fx;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
+import com.starkinhon.battlegroundsmod.power.PowerData;
+import com.starkinhon.battlegroundsmod.power.PowerLogic;
 import com.starkinhon.battlegroundsmod.power.Progression;
+import com.starkinhon.battlegroundsmod.power.Tiers;
 import com.starkinhon.battlegroundsmod.skill.ChallengeSpec;
 
 import net.minecraft.commands.CommandSourceStack;
@@ -167,6 +170,9 @@ public final class Universes {
         BlockPos pos = saved != null ? saved : arrival;
         player.setData(ModAttachments.UNIVERSE_POS, Map.copyOf(positions));
         player.setData(ModAttachments.UNIVERSE, universe);
+        if (born) {
+            bornHuman(player);
+        }
         player.teleportTo(level, pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5, player.getYRot(), 0);
         player.setRespawnPosition(level.dimension(), arrival, 0, true, false);
         giveBook(player, universe);
@@ -180,6 +186,24 @@ public final class Universes {
         Fx.burst(level, ParticleTypes.REVERSE_PORTAL, at, 120, 0.8, 0.4);
         Fx.sound(level, at, SoundEvents.END_PORTAL_SPAWN, 0.5f, 1.6f);
         return true;
+    }
+
+    // Being born: human, Tier 10, empty bar, no soul and no Livro das Almas, only the basic attacks (Stark 2026-11-10).
+    private static void bornHuman(ServerPlayer player) {
+        PowerData data = player.getData(ModAttachments.POWER);
+        if (!data.power.isEmpty()) {
+            PowerLogic.clear(player);
+        }
+        data.tier = Tiers.HUMANO;
+        data.poder = 0;
+        Tiers.apply(player);
+        Item book = ModItems.POWER_BOOK.get();
+        for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+            if (player.getInventory().getItem(i).is(book)) {
+                player.getInventory().setItem(i, ItemStack.EMPTY);
+            }
+        }
+        PowerLogic.sync(player);
     }
 
     private static void giveBook(ServerPlayer player, String universe) {

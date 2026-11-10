@@ -111,11 +111,12 @@ public final class PowerEvents {
         }
     }
 
-    // First time a player joins, they get the power book.
+    // First time a player joins, they get the power book. Not in a world with universes and progression (Stark
+    // 2026-11-10): there everyone is born with only the basic attacks and gets souls from the characters they beat.
     private static void onLogin(PlayerEvent.PlayerLoggedInEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
             PowerData data = player.getData(ModAttachments.POWER);
-            if (!data.receivedBook) {
+            if (!data.receivedBook && !com.starkinhon.battlegroundsmod.power.Progression.on(player)) {
                 data.receivedBook = true;
                 player.getInventory().add(new ItemStack(ModItems.POWER_BOOK.get()));
                 player.displayClientMessage(Component.translatable("message.battlegroundsmod.welcome"), false);

@@ -842,5 +842,6 @@
   "message.battlegroundsmod.universe_is": "Your universe: %s",
   "message.battlegroundsmod.universe_forgot": "%s will choose a universe again.",
   "item.battlegroundsmod.cristal_multiversal": "Multiversal Crystal",
-  "item.battlegroundsmod.cristal_multiversal.desc": "Takes you to another universe. Spent on the trip."
+  "item.battlegroundsmod.cristal_multiversal.desc": "Takes you to another universe. Spent on the trip.",
+  "message.battlegroundsmod.book_locked": "In this world souls come from the characters you beat."
 }
