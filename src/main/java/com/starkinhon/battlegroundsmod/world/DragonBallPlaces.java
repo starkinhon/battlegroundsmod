@@ -174,7 +174,7 @@ public final class DragonBallPlaces {
         b.ball(0, 1, 0, 2.6, s(Blocks.WHITE_CONCRETE), s(Blocks.LIGHT_GRAY_CONCRETE), s(Blocks.RED_STAINED_GLASS));
         b.set(0, 1, 0, Blocks.AIR).set(0, 2, 0, Blocks.AIR);
         b.set(2, 1, 0, Blocks.AIR).set(2, 2, 0, Blocks.AIR);
-        b.set(3, 1, 0, Blocks.LIGHT_GRAY_CONCRETE_POWDER.defaultBlockState());
+        b.set(3, 1, 0, Blocks.LIGHT_GRAY_CONCRETE.defaultBlockState());
         b.set(0, -1, 0, Blocks.SMOOTH_STONE);
         // Smoke still rising.
         b.set(-2, 0, 2, Blocks.CAMPFIRE).set(1, 0, -3, Blocks.CAMPFIRE);
@@ -202,7 +202,7 @@ public final class DragonBallPlaces {
                 b.set(i, g - depth, k, Math.abs(w) == width ? Blocks.SANDSTONE
                         : b.random.nextInt(3) == 0 ? Blocks.COARSE_DIRT : Blocks.RED_SAND);
                 if (Math.abs(w) == width && depth > 0) {
-                    b.set(i, g + 1, k, Blocks.SAND);
+                    b.set(i, g + 1, k, Blocks.SMOOTH_SANDSTONE);
                 }
             }
         }
