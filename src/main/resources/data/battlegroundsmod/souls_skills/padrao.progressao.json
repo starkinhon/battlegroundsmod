@@ -1,0 +1,37 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "padrao.progressao",
+  "nome": "Progressão de tier",
+  "custo": [0, 64000, 32000, 16000, 8000, 4000, 2000, 1000, 500, 250, 100],
+  "valor": [5120, 2560, 1280, 640, 320, 160, 80, 40, 20, 10, 5],
+  "abaixoZera": 3,
+  "multSubAlma": 5,
+  "perdaMorte": 0.1,
+  "tetoSemAlma": 8,
+  "tetos": {
+    "kuririn": 8, "shikamaru": 8, "ino": 8, "nobara": 8, "miwa": 8,
+    "piccolo": 7, "kame": 7, "kakashi": 7, "gaara": 7, "nanami": 7, "inumaki": 7, "rukia": 7, "byakuya": 7,
+    "goku": 6, "vegeta": 6, "freeza": 6, "naruto": 6, "sasuke": 6, "itadori": 6, "choso": 6, "todo": 6,
+    "rubber_boy": 6, "one_punch": 6,
+    "moon_demon": 5, "uchiha_ghost": 5,
+    "strongest": 4, "sukuna": 4,
+    "manipulator": 3,
+    "destruction_god": 0
+  },
+  "universos": {
+    "kuririn": "dragonball", "piccolo": "dragonball", "kame": "dragonball", "goku": "dragonball", "vegeta": "dragonball",
+    "freeza": "dragonball", "destruction_god": "dragonball",
+    "shikamaru": "naruto", "ino": "naruto", "kakashi": "naruto", "gaara": "naruto", "naruto": "naruto", "sasuke": "naruto",
+    "uchiha_ghost": "naruto",
+    "nobara": "jujutsu", "miwa": "jujutsu", "nanami": "jujutsu", "inumaki": "jujutsu", "itadori": "jujutsu",
+    "choso": "jujutsu", "todo": "jujutsu", "strongest": "jujutsu", "sukuna": "jujutsu",
+    "rukia": "bleach", "byakuya": "bleach", "manipulator": "bleach",
+    "moon_demon": "demonslayer"
+  },
+  "mobsVanilla": [
+    {"vidaMax": 40, "tier": 10},
+    {"vidaMax": 100, "tier": 9},
+    {"vidaMax": 250, "tier": 8},
+    {"vidaMax": 100000, "tier": 7}
+  ]
+}

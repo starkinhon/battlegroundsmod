@@ -1,0 +1,70 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "padrao.desafios",
+  "nome": "Livros dos Desafios",
+  "raio": 26,
+  "altura": 22,
+  "universos": [
+    {
+      "id": "dragonball", "nome": "Dragon Ball", "cor": "#FF9A2E",
+      "piso": ["minecraft:red_sand", "minecraft:orange_terracotta", "minecraft:smooth_red_sandstone", "minecraft:red_sand"],
+      "pilar": "minecraft:terracotta",
+      "desafios": [
+        {"id": "kuririn", "foco": "Truques. O Kienzan corta qualquer coisa e o Taiyoken cega. Fraco de perto, perigoso de longe."},
+        {"id": "piccolo", "foco": "Controle. O Makankosappo perfura, o braço esticado puxa e o Hellzone cerca você."},
+        {"id": "kame", "foco": "Selamento. O Mafuba prende o alvo no pote e o Punho Bêbado esquiva de tudo."},
+        {"id": "goku", "foco": "Equilíbrio. Kamehameha, teleporte nas suas costas, Kaioken e a Genki Dama."},
+        {"id": "vegeta", "foco": "Explosão. Rajadas que cobrem o alvo de fumaça, Big Bang e Final Flash."},
+        {"id": "freeza", "foco": "Precisão. Death Beam rápido, telecinese, Disco da Morte e Supernova."},
+        {"id": "bills", "foco": "Destruição. O Hakai apaga quem estiver fraco. O deus deste universo."}
+      ]
+    },
+    {
+      "id": "naruto", "nome": "Naruto", "cor": "#F28C28",
+      "piso": ["minecraft:grass_block", "minecraft:moss_block", "minecraft:grass_block", "minecraft:coarse_dirt"],
+      "pilar": "minecraft:oak_log",
+      "desafios": [
+        {"id": "shikamaru", "foco": "Prender. A sombra dele segura você no lugar."},
+        {"id": "ino", "foco": "Mente. Entra na sua cabeça e troca de corpo."},
+        {"id": "kakashi", "foco": "Técnica. Raikiri e jutsus copiados com o Sharingan."},
+        {"id": "gaara", "foco": "Defesa. A areia bloqueia tudo e esmaga quem chega perto."},
+        {"id": "naruto", "foco": "Pressão. Clones por todo lado e Rasengan."},
+        {"id": "sasuke", "foco": "Velocidade. Chidori, e o Sharingan esquiva dos seus golpes."},
+        {"id": "madara", "foco": "Guerra. Katon, Susanoo e o Meteoro. O deus deste universo."}
+      ]
+    },
+    {
+      "id": "jujutsu", "nome": "Jujutsu Kaisen", "cor": "#7A5CFF",
+      "piso": ["minecraft:stone_bricks", "minecraft:cracked_stone_bricks", "minecraft:polished_andesite", "minecraft:gravel"],
+      "pilar": "minecraft:cracked_stone_bricks",
+      "desafios": [
+        {"id": "nobara", "foco": "Ressonância. Pregos e martelo que machucam à distância."},
+        {"id": "miwa", "foco": "Contra-ataque. O Batto corta quem entra no Domínio Simples dela."},
+        {"id": "nanami", "foco": "Proporção 7:3. Cada corte procura o seu ponto fraco."},
+        {"id": "inumaki", "foco": "Fala Amaldiçoada. Uma palavra e você para."},
+        {"id": "itadori", "foco": "Corpo a corpo. Punho Divergente e Black Flash."},
+        {"id": "choso", "foco": "Sangue. Perfura de longe e prende você."},
+        {"id": "todo", "foco": "Troca de lugar. Uma palma e você não sabe mais onde está."},
+        {"id": "gojo", "foco": "Infinito. Azul, Vermelho, Roxo e a Expansão. O mais forte."},
+        {"id": "sukuna", "foco": "Cortes. Desmantelar, Clivar e o Santuário. O Rei das Maldições."}
+      ]
+    },
+    {
+      "id": "bleach", "nome": "Bleach", "cor": "#E8E8F0",
+      "piso": ["minecraft:white_concrete_powder", "minecraft:sand", "minecraft:white_concrete_powder", "minecraft:smooth_quartz"],
+      "pilar": "minecraft:quartz_pillar",
+      "desafios": [
+        {"id": "rukia", "foco": "Gelo. Congela você e o chão em volta."},
+        {"id": "byakuya", "foco": "Pétalas. Mil lâminas da Senbonzakura."}
+      ]
+    },
+    {
+      "id": "demonslayer", "nome": "Demon Slayer", "cor": "#C7A2FF",
+      "piso": ["minecraft:podzol", "minecraft:coarse_dirt", "minecraft:podzol", "minecraft:moss_block"],
+      "pilar": "minecraft:spruce_log",
+      "desafios": [
+        {"id": "kokushibo", "foco": "Luas. A Respiração da Lua corta em leque. A Lua Superior Um."}
+      ]
+    }
+  ]
+}

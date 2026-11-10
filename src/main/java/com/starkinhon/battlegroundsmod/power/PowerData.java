@@ -30,7 +30,8 @@ public class PowerData {
             Codec.FLOAT.optionalFieldOf("ult", 0f).forGetter(d -> d.ult),
             Codec.BOOL.optionalFieldOf("received_book", false).forGetter(d -> d.receivedBook),
             Codec.INT.optionalFieldOf("tier", Tiers.HUMANO).forGetter(d -> d.tier),
-            Codec.BOOL.optionalFieldOf("outfit", true).forGetter(d -> d.outfit)
+            Codec.BOOL.optionalFieldOf("outfit", true).forGetter(d -> d.outfit),
+            Codec.FLOAT.optionalFieldOf("poder", 0f).forGetter(d -> d.poder)
     ).apply(instance, PowerData::new));
 
     public String power = "";
@@ -40,6 +41,8 @@ public class PowerData {
     public int tier = Tiers.HUMANO;
     // The power's 3D outfit is on (put on when a power is picked, taken off in the abilities menu).
     public boolean outfit = true;
+    // Poder in the current tier's bar (see Progression): full bar = one tier up.
+    public float poder = 0f;
 
     // Not saved: these only matter while the player is online.
     public int[] cooldowns = new int[SLOT_COUNT];
@@ -115,7 +118,8 @@ public class PowerData {
     public PowerData() {
     }
 
-    private PowerData(String power, float ult, boolean receivedBook, int tier, boolean outfit) {
+    private PowerData(String power, float ult, boolean receivedBook, int tier, boolean outfit, float poder) {
+        this.poder = poder;
         this.outfit = outfit;
         this.power = power;
         this.ult = ult;
