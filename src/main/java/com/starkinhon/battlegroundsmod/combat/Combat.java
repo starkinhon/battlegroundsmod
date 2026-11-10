@@ -107,6 +107,20 @@ public final class Combat {
         return effect == null ? 1f : 1f + 0.3f * (effect.getAmplifier() + 1);
     }
 
+    // The fists (combo punches, Dash Attack, Forte, Barragem): at least 1 damage a hit for a human (Stark 2026-11-10: a
+    // Tier 10's punches did 0.3-0.4), the floor growing 0.25 a tier until the tier's own scale passes it (around Tier 4),
+    // so it keeps rising like before and the higher tiers stay as they were.
+    public static boolean hurtBasic(LivingEntity attacker, LivingEntity target, float damage) {
+        float mult = Tiers.damageMultiplier(attacker) * com.starkinhon.battlegroundsmod.power.powers.sub.nr.NrCommon.damageMultiplier(attacker)
+                * com.starkinhon.battlegroundsmod.power.powers.sub.jj.JjCommon.damageMultiplier(attacker)
+                * com.starkinhon.battlegroundsmod.power.powers.kokushibo.OniBody.damageMultiplier(attacker);
+        float floor = 1f + 0.25f * (Tiers.HUMANO - Tiers.of(attacker));
+        if (mult > 0 && damage > 0 && damage * mult < floor) {
+            damage = floor / mult;
+        }
+        return hurtBase(attacker, target, damage);
+    }
+
     // The base attacks (combo, Forte, Barragem, sword arts): already on the new scale for everyone, SubAlmas too.
     public static boolean hurtBase(LivingEntity attacker, LivingEntity target, float damage) {
         damage *= Tiers.damageMultiplier(attacker) * com.starkinhon.battlegroundsmod.power.powers.sub.nr.NrCommon.damageMultiplier(attacker)

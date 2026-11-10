@@ -99,6 +99,16 @@ public final class ModItems {
             () -> new DeferredSpawnEggItem(ModEntities.SOLDADO_RED_RIBBON, 0x6B6B3A, 0xC8102E, new Item.Properties()));
     public static final DeferredItem<DeferredSpawnEggItem> SAIBAMAN_SPAWN_EGG = BattlegroundsMod.ITEMS.register("saibaman_spawn_egg",
             () -> new DeferredSpawnEggItem(ModEntities.SAIBAMAN, 0x3E8E2E, 0xA8D86A, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> BANDIDO_DESERTO_SPAWN_EGG = BattlegroundsMod.ITEMS.register("bandido_deserto_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.BANDIDO_DESERTO, 0xC9A46A, 0x7A3E1C, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> PIRATA_SPAWN_EGG = BattlegroundsMod.ITEMS.register("pirata_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.PIRATA, 0x2F3E8C, 0xD23A2A, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> YETI_SPAWN_EGG = BattlegroundsMod.ITEMS.register("yeti_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.YETI, 0xEDEFF2, 0x7FA6C2, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> TIRANOSSAURO_SPAWN_EGG = BattlegroundsMod.ITEMS.register("tiranossauro_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.TIRANOSSAURO, 0x5E7A3A, 0xD8C79A, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> RAPTOR_SPAWN_EGG = BattlegroundsMod.ITEMS.register("raptor_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.RAPTOR, 0x8C6A3E, 0x3C2C1C, new Item.Properties()));
     public static final DeferredItem<DeferredSpawnEggItem> SOLDADO_FREEZA_SPAWN_EGG = BattlegroundsMod.ITEMS.register("soldado_freeza_spawn_egg",
             () -> new DeferredSpawnEggItem(ModEntities.SOLDADO_FREEZA, 0xE8E8E0, 0x6A3C8E, new Item.Properties()));
     public static final DeferredItem<DeferredSpawnEggItem> NPC_GOHAN_SPAWN_EGG = BattlegroundsMod.ITEMS.register("npc_gohan_spawn_egg",

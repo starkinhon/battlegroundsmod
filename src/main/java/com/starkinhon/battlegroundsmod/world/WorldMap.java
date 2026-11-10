@@ -104,6 +104,60 @@ public final class WorldMap {
         return k == DEEP || k == SHALLOW || k == NSEA;
     }
 
+    // How many columns the piece of land under (x, z) has (0 on water): small ones are the islands (the spawns tell
+    // them from the continent). Counted once, the first time it is asked.
+    private int[] landSize;
+
+    public int landSize(int x, int z) {
+        int i = index(x, z);
+        if (i < 0 || water(x, z)) {
+            return 0;
+        }
+        if (landSize == null) {
+            landSize = countLand();
+        }
+        return landSize[i];
+    }
+
+    private int[] countLand() {
+        int n = width * depth;
+        int[] size = new int[n];
+        int[] queue = new int[n];
+        int[] comp = new int[n];
+        java.util.Arrays.fill(comp, -1);
+        for (int start = 0; start < n; start++) {
+            if (comp[start] >= 0 || isWater(kind[start])) {
+                continue;
+            }
+            int head = 0, tail = 0;
+            queue[tail++] = start;
+            comp[start] = start;
+            while (head < tail) {
+                int c = queue[head++];
+                int cx = c % width, cz = c / width;
+                for (int k = 0; k < 4; k++) {
+                    int nx = cx + (k == 0 ? 1 : k == 1 ? -1 : 0), nz = cz + (k == 2 ? 1 : k == 3 ? -1 : 0);
+                    if (nx < 0 || nz < 0 || nx >= width || nz >= depth) {
+                        continue;
+                    }
+                    int ni = nz * width + nx;
+                    if (comp[ni] < 0 && !isWater(kind[ni])) {
+                        comp[ni] = start;
+                        queue[tail++] = ni;
+                    }
+                }
+            }
+            for (int q = 0; q < tail; q++) {
+                size[queue[q]] = tail;
+            }
+        }
+        return size;
+    }
+
+    private static boolean isWater(int k) {
+        return k == DEEP || k == SHALLOW || k == NSEA;
+    }
+
     public int centerX() {
         return originX + width / 2;
     }

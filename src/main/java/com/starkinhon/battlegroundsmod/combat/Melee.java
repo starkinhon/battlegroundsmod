@@ -194,7 +194,7 @@ public final class Melee {
         if (target == null || !Combat.isTarget(target, attacker) || attacker.distanceTo(target) > reach(attacker, spec) + 1.2) {
             target = closestInFront(attacker, reach(attacker, spec), 0.55);
         }
-        if (target == null || !Combat.hurtBase(attacker, target, (float) golpe.dano() * multiplier(attacker))) {
+        if (target == null || !Combat.hurtBasic(attacker, target, (float) golpe.dano() * multiplier(attacker))) {
             SkillSounds.play(level, spec.sons(), "erro", 0, 0, onde -> Combat.handPos(attacker), List.of());
             return false;
         }
@@ -358,7 +358,7 @@ public final class Melee {
             if (target != null) {
                 Vec3 hitPos = Combat.center(target);
                 Defense.breakGuard(target, player);
-                if (Combat.hurtBase(player, target, 25f * mult * power)) {
+                if (Combat.hurtBasic(player, target, 25f * mult * power)) {
                     hitFx(player, target, "final", PunchFx.FORTE, charge);
                     Stamina.gain(player, StaminaSpec.get().ganhoAcertoPct());
                     shake(target, 0.5f + charge * 0.5f, 8);
@@ -418,7 +418,7 @@ public final class Melee {
                     Vec3 offset = new Vec3(level.random.nextDouble() - 0.5, level.random.nextDouble() - 0.5, level.random.nextDouble() - 0.5).scale(0.9);
                     PunchFx.swing(level, eye.add(look.scale(range * 0.4)).add(offset), look, fistColor, 0.4f);
                     for (LivingEntity target : Combat.inCone(player, range, 0.55)) {
-                        if (Combat.hurtBase(player, target, hitDamage)) {
+                        if (Combat.hurtBasic(player, target, hitDamage)) {
                             hitFx(player, target, "golpe", PunchFx.BARRAGEM, 0);
                             Stamina.gain(player, StaminaSpec.get().ganhoAcertoBarragemPct());
                             shake(target, 0.15f, 4);
@@ -444,7 +444,7 @@ public final class Melee {
                         finished.stream().min(Comparator.comparingDouble(e -> e.distanceTo(player))).orElse(null), finisherDamage);
             }
             for (LivingEntity target : finished) {
-                if (Combat.hurtBase(player, target, finisherDamage)) {
+                if (Combat.hurtBasic(player, target, finisherDamage)) {
                     hitFx(player, target, "final");
                     Stamina.gain(player, StaminaSpec.get().ganhoAcertoPct());
                     shake(target, 0.6f, 8);

@@ -147,6 +147,18 @@ public final class ModEntities {
     public static final Supplier<EntityType<SoulMob>> SOLDADO_RED_RIBBON = mob("soldado_red_ribbon");
     public static final Supplier<EntityType<SoulMob>> SAIBAMAN = mob("saibaman");
     public static final Supplier<EntityType<SoulMob>> SOLDADO_FREEZA = mob("soldado_freeza");
+    // The Earth's regions (Stark 2026-11-10): desert bandits, pirates on the islands, the yeti in the snow.
+    public static final Supplier<EntityType<SoulMob>> BANDIDO_DESERTO = mob("bandido_deserto");
+    public static final Supplier<EntityType<SoulMob>> PIRATA = mob("pirata");
+    public static final Supplier<EntityType<SoulMob>> YETI = ENTITY_TYPES.register("yeti", () -> EntityType.Builder.<SoulMob>of(SoulMob::new, MobCategory.MONSTER)
+            .sized(0.85f, 2.45f).eyeHeight(2.2f).clientTrackingRange(10).build("yeti"));
+    // The dinosaurs of the Dragon World: the big tyrannosaur alone, the raptors in packs (animal/Dinosaur).
+    public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.animal.Dinosaur>> TIRANOSSAURO = ENTITY_TYPES.register("tiranossauro",
+            () -> EntityType.Builder.<com.starkinhon.battlegroundsmod.animal.Dinosaur>of(com.starkinhon.battlegroundsmod.animal.Dinosaur::new, MobCategory.MONSTER)
+                    .sized(2.2f, 3.6f).eyeHeight(3.2f).clientTrackingRange(12).build("tiranossauro"));
+    public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.animal.Dinosaur>> RAPTOR = ENTITY_TYPES.register("raptor",
+            () -> EntityType.Builder.<com.starkinhon.battlegroundsmod.animal.Dinosaur>of(com.starkinhon.battlegroundsmod.animal.Dinosaur::new, MobCategory.MONSTER)
+                    .sized(0.9f, 1.3f).eyeHeight(1.15f).clientTrackingRange(10).build("raptor"));
 
     // Common enemies of Naruto.
     public static final Supplier<EntityType<SoulMob>> NINJA_RENEGADO = mob("ninja_renegado");
@@ -167,7 +179,7 @@ public final class ModEntities {
     public static final Supplier<EntityType<SoulMob>> ONI_ESPADACHIM = mob("oni_espadachim");
 
     public static final java.util.List<Supplier<EntityType<SoulMob>>> FIGHTERS = java.util.List.of(FIGHTER_HUMANO, FIGHTER_RUA, FIGHTER_QUARTEIRAO,
-            SOLDADO_RED_RIBBON, SAIBAMAN, SOLDADO_FREEZA, NINJA_RENEGADO, NINJA_SOM, ANBU_RAIZ,
+            SOLDADO_RED_RIBBON, SAIBAMAN, SOLDADO_FREEZA, BANDIDO_DESERTO, PIRATA, YETI, NINJA_RENEGADO, NINJA_SOM, ANBU_RAIZ,
             MALDICAO_MENOR, MALDICAO_GRAU2, FEITICEIRO_RENEGADO, HOLLOW, ARRANCAR, MENOS_GRANDE,
             ONI_COMUM, ONI_LUA_INFERIOR, ONI_ESPADACHIM);
 
@@ -237,6 +249,8 @@ public final class ModEntities {
         for (Supplier<EntityType<SoulMob>> type : FIGHTERS) {
             event.put(type.get(), SoulBoss.createAttributes().build());
         }
+        event.put(TIRANOSSAURO.get(), com.starkinhon.battlegroundsmod.animal.Dinosaur.attributes(true).build());
+        event.put(RAPTOR.get(), com.starkinhon.battlegroundsmod.animal.Dinosaur.attributes(false).build());
         event.put(NPC_GOHAN.get(), com.starkinhon.battlegroundsmod.npc.UniverseNpc.createAttributes().build());
         event.put(NPC_KORIN.get(), com.starkinhon.battlegroundsmod.npc.UniverseNpc.createAttributes().build());
         event.put(NPC_JIRAIYA.get(), com.starkinhon.battlegroundsmod.npc.UniverseNpc.createAttributes().build());
