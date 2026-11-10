@@ -850,5 +850,6 @@
   "message.battlegroundsmod.universe_is": "Seu universo: %s",
   "message.battlegroundsmod.universe_forgot": "%s vai escolher o universo de novo.",
   "item.battlegroundsmod.cristal_multiversal": "Cristal Multiversal",
-  "item.battlegroundsmod.cristal_multiversal.desc": "Leva você a outro universo. Gasta-se na viagem."
+  "item.battlegroundsmod.cristal_multiversal.desc": "Leva você a outro universo. Gasta-se na viagem.",
+  "message.battlegroundsmod.book_locked": "Neste mundo as almas vêm dos personagens que você vence."
 }

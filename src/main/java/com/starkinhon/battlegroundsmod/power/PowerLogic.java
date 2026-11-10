@@ -266,6 +266,11 @@ public final class PowerLogic {
             player.displayClientMessage(Component.translatable("message.battlegroundsmod.need_book"), true);
             return;
         }
+        // With universes and progression souls come only from beating their characters (creative still picks freely).
+        if (Progression.on(player) && !player.isCreative()) {
+            player.displayClientMessage(Component.translatable("message.battlegroundsmod.book_locked"), true);
+            return;
+        }
         Power power = Powers.get(id);
         if (power != null) {
             select(player, power);

@@ -3,6 +3,7 @@ package com.starkinhon.battlegroundsmod.challenge;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.mojang.datafixers.util.Pair;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.starkinhon.battlegroundsmod.BattlegroundsMod;
@@ -10,13 +11,17 @@ import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.ModItems;
 import com.starkinhon.battlegroundsmod.combat.Fx;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
+import com.starkinhon.battlegroundsmod.power.PowerData;
+import com.starkinhon.battlegroundsmod.power.PowerLogic;
 import com.starkinhon.battlegroundsmod.power.Progression;
+import com.starkinhon.battlegroundsmod.power.Tiers;
 import com.starkinhon.battlegroundsmod.skill.ChallengeSpec;
 
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -32,6 +37,9 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.tags.BiomeTags;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.NeoForge;
@@ -55,6 +63,8 @@ public final class Universes {
     public static void register() {
         NeoForge.EVENT_BUS.addListener(Universes::onServerTick);
         NeoForge.EVENT_BUS.addListener(Universes::onLogin);
+        NeoForge.EVENT_BUS.addListener(Universes::onRespawn);
+        NeoForge.EVENT_BUS.addListener(Universes::onStopped);
     }
 
     public static ResourceKey<Level> key(String universe) {
@@ -160,6 +170,9 @@ public final class Universes {
         BlockPos pos = saved != null ? saved : arrival;
         player.setData(ModAttachments.UNIVERSE_POS, Map.copyOf(positions));
         player.setData(ModAttachments.UNIVERSE, universe);
+        if (born) {
+            bornHuman(player);
+        }
         player.teleportTo(level, pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5, player.getYRot(), 0);
         player.setRespawnPosition(level.dimension(), arrival, 0, true, false);
         giveBook(player, universe);
@@ -175,6 +188,24 @@ public final class Universes {
         return true;
     }
 
+    // Being born: human, Tier 10, empty bar, no soul and no Livro das Almas, only the basic attacks (Stark 2026-11-10).
+    private static void bornHuman(ServerPlayer player) {
+        PowerData data = player.getData(ModAttachments.POWER);
+        if (!data.power.isEmpty()) {
+            PowerLogic.clear(player);
+        }
+        data.tier = Tiers.HUMANO;
+        data.poder = 0;
+        Tiers.apply(player);
+        Item book = ModItems.POWER_BOOK.get();
+        for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+            if (player.getInventory().getItem(i).is(book)) {
+                player.getInventory().setItem(i, ItemStack.EMPTY);
+            }
+        }
+        PowerLogic.sync(player);
+    }
+
     private static void giveBook(ServerPlayer player, String universe) {
         var book = ModItems.CHALLENGE_BOOKS.get(universe);
         if (book == null || player.getInventory().contains(new ItemStack(book.get()))) {
@@ -186,24 +217,67 @@ public final class Universes {
         }
     }
 
+    // Arrival point of each universe, found once per server run (the search loads chunks).
+    private static final Map<ResourceKey<Level>, BlockPos> ARRIVALS = new HashMap<>();
+
     // The universe's arrival point: dry ground near its center (the same for every player, so friends land together).
+    // The biome noise finds the nearest land without generating anything; only that chunk is then loaded for real,
+    // so its heightmap is the true ground (an unloaded chunk reads as the bottom of the world: the void, PR #269).
     public static BlockPos arrival(ServerLevel level) {
-        BlockPos fallback = null;
-        for (int ring = 0; ring <= 12; ring++) {
-            for (int i = 0; i < Math.max(1, ring * 8); i++) {
-                double angle = ring == 0 ? 0 : i * Math.PI * 2 / (ring * 8);
-                int x = (int) Math.round(Math.cos(angle) * ring * 24);
-                int z = (int) Math.round(Math.sin(angle) * ring * 24);
-                BlockPos top = level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, new BlockPos(x, 0, z));
-                if (fallback == null) {
-                    fallback = top;
-                }
-                if (level.getFluidState(top.below()).isEmpty() && level.getFluidState(top).isEmpty() && top.getY() > level.getMinBuildHeight() + 1) {
-                    return top;
-                }
+        BlockPos cached = ARRIVALS.get(level.dimension());
+        if (cached != null) {
+            return cached;
+        }
+        BlockPos center = new BlockPos(0, 64, 0);
+        Pair<BlockPos, Holder<Biome>> land = level.findClosestBiome3d(biome -> !biome.is(BiomeTags.IS_OCEAN)
+                && !biome.is(BiomeTags.IS_DEEP_OCEAN) && !biome.is(BiomeTags.IS_RIVER) && !biome.is(BiomeTags.IS_BEACH),
+                center, 2048, 32, 64);
+        BlockPos start = land != null ? land.getFirst() : center;
+        BlockPos found = null;
+        // A few tries around it, in case that exact column is a lake.
+        for (int i = 0; i < 9 && found == null; i++) {
+            int x = start.getX() + (i % 3 - 1) * 16 * (i == 0 ? 0 : 1);
+            int z = start.getZ() + (i / 3 - 1) * 16 * (i == 0 ? 0 : 1);
+            BlockPos top = ground(level, x, z);
+            if (level.getFluidState(top).isEmpty() && level.getFluidState(top.below()).isEmpty()) {
+                found = top;
             }
         }
-        return fallback;
+        if (found == null) {
+            found = ground(level, start.getX(), start.getZ());
+        }
+        ARRIVALS.put(level.dimension(), found);
+        return found;
+    }
+
+    private static BlockPos ground(ServerLevel level, int x, int z) {
+        LevelChunk chunk = level.getChunk(x >> 4, z >> 4);
+        int y = chunk.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x & 15, z & 15) + 1;
+        if (y <= level.getMinBuildHeight() + 1) {
+            // No ground at all in this column: a safe platform instead of the void.
+            y = 80;
+            level.setBlockAndUpdate(new BlockPos(x, y - 1, z), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState());
+        }
+        return new BlockPos(x, y, z);
+    }
+
+    private static void onStopped(net.neoforged.neoforge.event.server.ServerStoppedEvent event) {
+        ARRIVALS.clear();
+    }
+
+    // Safety net: a player with a universe who respawns in the overworld (bed broken, respawn point lost) goes home.
+    private static void onRespawn(PlayerEvent.PlayerRespawnEvent event) {
+        if (event.isEndConquered() || !(event.getEntity() instanceof ServerPlayer player) || home(player).isEmpty()
+                || !Progression.on(player) || !player.level().dimension().equals(Level.OVERWORLD)) {
+            return;
+        }
+        ServerLevel level = homeLevel(player);
+        if (level == player.server.overworld()) {
+            return;
+        }
+        BlockPos pos = arrival(level);
+        player.teleportTo(level, pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5, player.getYRot(), 0);
+        player.setRespawnPosition(level.dimension(), pos, 0, true, false);
     }
 
     // /soul universo: where you live. /soul universo <id> [jogador] (ops): go there without a crystal.
