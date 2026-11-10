@@ -27,6 +27,7 @@ uniform float Teeth;
 uniform float Pitch;
 uniform float Twist;
 uniform float GlowPass;
+uniform float W;
 
 in vec3 vN;
 in vec3 vV;
@@ -101,6 +102,39 @@ void main() {
     vec3 N = normalize(vN), V = normalize(vV);
     float f = abs(dot(N, V)), rim = 1. - f;
     int kind = int(Kind + 0.5);
+    if (kind == 15 || kind == 16) {                                    // Shikamaru's shadow: ONE flat shape on the ground (an SDF), opaque, no glow
+        if (GlowPass > 0.5) discard;
+        vec2 q = vQ; float d;
+        if (kind == 15) {
+            // Len = the whole way to the target, Growth = how far it ran (0..1), Thresh = the blot that catches it, W = width,
+            // Twist 1 = his own shadow stretched by the flare (no fingers, thinning out), Pulse = his own round shadow.
+            q.y += Len * 0.5;                                          // from his feet (the square sits on the middle of the way)
+            float L = max(Len, 0.01), tip = L * Growth;
+            float h = clamp(q.y / max(tip, 1e-3), 0., 1.);
+            float wob = gn(vec3(h * L * 0.35, Seed, Time * 0.25)) * 0.18;   // the way snakes a little
+            float s = abs(q.x - wob * (1. - h) * h * 4.);
+            float w = W * (1.05 - 0.45 * sin(3.1416 * h));             // thinner in the middle, like ink running
+            if (Twist > 0.5) w = W * (1. - 0.35 * h) - gn(vec3(h * tip * 0.5, 9., Time * 0.3)) * 0.06;
+            if (q.y > tip) { s = length(q - vec2(0., tip)); w = W * 0.9; }
+            if (q.y < 0.) s = length(q);
+            vec2 t = q - vec2(0., tip); float ang = atan(t.y, t.x);
+            float fing = Twist > 0.5 ? 0. : smoothstep(0.8, 0., length(t)) * (gn(vec3(ang * 2.2, Seed + 3., Time * 1.6)) * 0.5 + 0.5) * 0.45 * (1. - Thresh);
+            d = length(q) - 0.62 * Pulse;
+            if (Growth > 0.) d = min(d, s - w - fing);                // the fingers at the tip feel ahead as it runs
+            d = min(d, length(q - vec2(0., L)) - 0.75 * Thresh);
+        } else {
+            // RingR = the flood's radius: its edge licks forward in tongues of its own.
+            float ang = atan(q.y, q.x);
+            float lick = (gn(vec3(cos(ang) * 3.2, sin(ang) * 3.2, Time * 0.5)) * 0.5 + 0.5) * 1.6 + fbm3(vec3(q * 0.35, Time * 0.2)) * 0.8;
+            d = min(length(q) - 0.62, length(q) - RingR - lick * min(1., RingR / 4.));
+        }
+        d += fbm3(vec3(q * 2.4, Time * 0.35)) * 0.07;                  // a living edge
+        float aa = max(fwidth(d), 0.01), a = smoothstep(aa, -aa, d) * Alpha * 0.93;
+        if (a < 0.003) discard;
+        float edge = smoothstep(-0.09, -0.02, d);                      // a lighter thread on the edge, to read the shape
+        fragColor = vec4(mix(vec3(0.018, 0.015, 0.024), vec3(0.09, 0.08, 0.11), edge * 0.6) * a, a);
+        return;
+    }
     if (kind == 13 || kind == 14) {                                    // Sasuke's Katon (RingR = the ground's height, camera-relative)
         if (-vV.y < RingR) discard;
         float fz = kind == 13 ? facing() : f, edge = 1. - fz;

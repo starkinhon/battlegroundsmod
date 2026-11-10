@@ -93,6 +93,12 @@ public final class Stamina {
         take(entity, (float) (max(entity) * percent / 100.0));
     }
 
+    // Whether a skill that runs on stamina while it lasts (Shikamaru's shadows) really drains entity: a player with a
+    // power, outside the creative and no-cooldown freebies. The others run on a fixed budget instead.
+    public static boolean drains(LivingEntity entity) {
+        return uses(entity) && !free(entity);
+    }
+
     // Gives back percent of the max (a punch, a hit, a dash, a base attack). Nothing while exhausted.
     public static void gain(LivingEntity entity, double percent) {
         if (!uses(entity) || exhausted(entity) || percent <= 0) {

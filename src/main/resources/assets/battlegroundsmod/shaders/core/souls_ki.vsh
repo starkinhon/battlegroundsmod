@@ -5,7 +5,8 @@
 // open tube with y from 0 to 1, or a flat square in x/z) and is bent here exactly as on the pages; Model places it
 // (relative to the camera). Kind says which effect: 0 blast/smoke, 1 Genki core, 2 halo (Genki), 3 beam, 4 dust ring,
 // 5 aura shell, 6 hit flash, 7 sun core, 8 sun halo, 9 saw disc, 10 Kienzan disc, 11 Makankosappo spirals, 12 wind,
-// 13 Sasuke's Katon shell (forja/sasuke-chidori/katon.js), 14 its wall of fire on the ground.
+// 13 Sasuke's Katon shell (forja/sasuke-chidori/katon.js), 14 its wall of fire on the ground, 15 Shikamaru's shadow running
+// on the ground, 16 his Xeque-mate's flood of shadow (forja/shikamaru/shika.js; both flat squares).
 in vec3 Position;
 
 uniform mat4 ModelViewMat;
@@ -109,8 +110,9 @@ void main() {
         float r = W * prof * (1. + 0.4 * tg);
         P = vec3(d.x * r, along, d.y * r); n = vec3(d.x, 0., d.y);
         vU = along; vD = tg; vQ = vec2(tw, along);
-    } else if (kind == 4 || kind == 9 || kind == 10) {                 // flat square: dust ring, saw and Kienzan discs
+    } else if (kind == 4 || kind == 9 || kind == 10 || kind == 15 || kind == 16) {   // flat square: dust ring, saw and Kienzan discs, shadows
         P = Position; n = vec3(0., 1., 0.); vUv = Position.xz * 0.5 + 0.5;
+        vQ = Position.xz * vec2(length(Model[0].xyz), length(Model[2].xyz));   // in blocks, across and along the square
     } else if (kind == 5) {                                            // aura shell
         vec3 p = normalize(Position); float d0, d1, d2; P = shape(p, d0);
         vec3 t1 = normalize(cross(p, abs(p.y) > 0.99 ? vec3(1, 0, 0) : vec3(0, 1, 0))), t2 = cross(p, t1);
