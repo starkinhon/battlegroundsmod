@@ -930,6 +930,12 @@ def goku_house():
         return 'white_concrete' if y > 0 else 'white_terracotta'
     solid(v, lambda X, Y, Z: dome(X, Y, Z) & (Y >= 0), (-12, 12, 0, 9, -10, 10), dcol, air_inside=True)
     v.box(-10, -1, -8, 10, -1, 8, 'birch_planks')                    # light plank floor (interior refs)
+    # the shell's bottom face closed the room at y 0, so everything inside stood half sunk in it (Stark's test
+    # 2026-11-10): open it wherever the room is open above, so the plank floor is the real floor
+    for x in range(-12, 13):
+        for z in range(-10, 11):
+            if v.get(x, 1, z) == 'minecraft:air' and v.get(x, 0, z) == 'minecraft:white_terracotta':
+                v.set(x, 0, z, 'air')
     # arched door frame + door + orange diamond sign
     for y in range(0, 5):
         for x in range(-2, 3):

@@ -113,8 +113,8 @@ public final class UniverseSpawns {
         EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.get(ResourceLocation.fromNamespaceAndPath(
                 com.starkinhon.battlegroundsmod.BattlegroundsMod.MODID, "soldado_freeza"));
         AABB around = player.getBoundingBox().inflate(NEARBY_RADIUS);
-        if (type == EntityType.PIG || level.getEntitiesOfClass(SoulBoss.class, around,
-                mob -> "soldado_freeza".equals(mob.bossId())).size() >= NEARBY_CAP) {
+        int nearby = level.getEntitiesOfClass(SoulBoss.class, around, mob -> "soldado_freeza".equals(mob.bossId())).size();
+        if (type == EntityType.PIG || nearby >= NEARBY_CAP) {
             return;
         }
         RandomSource random = level.getRandom();
@@ -122,13 +122,29 @@ public final class UniverseSpawns {
         int dist = MIN_DIST + random.nextInt(MAX_DIST - MIN_DIST + 1);
         int x = player.getBlockX() + (int) Math.round(Math.cos(angle) * dist);
         int z = player.getBlockZ() + (int) Math.round(Math.sin(angle) * dist);
-        int count = 1 + random.nextInt(3);
+        // never past the cap (Stark's test 2026-11-10: a group of 3 on top of 5 made 8), and away from Namek's green
+        // sea, where they ended up swimming
+        int count = Math.min(1 + random.nextInt(3), NEARBY_CAP - nearby);
         for (int i = 0; i < count; i++) {
             BlockPos pos = ground(level, x + random.nextInt(5) - 2, z + random.nextInt(5) - 2);
-            if (pos != null) {
+            if (pos != null && !nearWater(level, pos)) {
                 type.spawn(level, pos, MobSpawnType.EVENT);
             }
         }
+    }
+
+    private static boolean nearWater(ServerLevel level, BlockPos pos) {
+        BlockPos.MutableBlockPos p = new BlockPos.MutableBlockPos();
+        for (int dx = -4; dx <= 4; dx += 2) {
+            for (int dz = -4; dz <= 4; dz += 2) {
+                for (int dy = -2; dy <= 0; dy++) {
+                    if (!level.getFluidState(p.set(pos.getX() + dx, pos.getY() + dy, pos.getZ() + dz)).isEmpty()) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     // A dry spot on top of solid ground in a loaded chunk, or null.
