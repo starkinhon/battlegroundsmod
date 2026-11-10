@@ -111,7 +111,7 @@ final class NrFx {
         return switch (kind) {
             case SubNet.RASENGAN, SubNet.DRILL, SubNet.RASENSHURIKEN, SubNet.SAGE_GATHER, SubNet.CHIDORI, SubNet.SAND_HAND, SubNet.SAND_SHELL,
                     SubNet.SAND_PLAT, SubNet.SHADOW, SubNet.BODY_SHADOW, SubNet.NECK_HAND, SubNet.SPIKES, SubNet.TAG, SubNet.SPIRIT, SubNet.THREAD,
-                    SubNet.RAIJU, SubNet.KAMUI, SubNet.KATON -> true;
+                    SubNet.RAIJU, SubNet.KAMUI, SubNet.KATON, SubNet.SHADOW_SEA, SubNet.FLARE -> true;
             default -> false;
         };
     }
@@ -125,6 +125,13 @@ final class NrFx {
         double now = ScreenFx.now();
         if (stream(kind)) {
             Fx f = TRACKED.get(key(kind, id));
+            if (kind == SubNet.SHADOW && c == 1 && dir.lengthSqr() < 1.0E-6) {
+                // Ended with no way given: it fades where it was.
+                if (f != null && f.endAt < 0) {
+                    f.endAt = now;
+                }
+                return;
+            }
             if (f == null || f.endAt >= 0) {
                 f = new Fx(kind, id, pos, dir, a, b, c, now);
                 TRACKED.put(key(kind, id), f);
@@ -201,7 +208,8 @@ final class NrFx {
 
     private static float fadeOut(Fx f) {
         return switch (f.kind) {
-            case SubNet.SHADOW, SubNet.SPIKES -> 6;
+            case SubNet.SHADOW, SubNet.SPIKES, SubNet.SHADOW_SEA -> 6;
+            case SubNet.FLARE -> 12;
             case SubNet.SAND_SHELL -> 2;
             case SubNet.SAND_PLAT -> 4;
             case SubNet.SAND_HAND -> 10;
@@ -279,7 +287,9 @@ final class NrFx {
                 case SubNet.SAND_HAND -> sandHand(f, age, out);
                 case SubNet.SAND_SHELL -> sandShell(f, age, out);
                 case SubNet.SAND_PLAT -> sandPlat(f, age, partial, out);
-                case SubNet.SHADOW -> shadowPath(rel(f.pos), rel(f.pos.add(f.dir)), f.a * (f.endAt < 0 ? 1 : out), f.b, age, f.id % 9, 0.94f);
+                case SubNet.SHADOW -> shadowGround(f, age, out);
+                case SubNet.SHADOW_SEA -> shadowSea(f, age, out);
+                case SubNet.FLARE -> flare(f, age, out);
                 case SubNet.BODY_SHADOW -> bodyShadow(f, age, partial, out);
                 case SubNet.NECK_HAND -> neckHand(f, partial, out);
                 case SubNet.SPIKES -> spikes(f, out);
@@ -1322,6 +1332,8 @@ final class NrFx {
 
     // ---------- Shikamaru: shadows ----------
 
+    // The shadow arm climbing the body in a spiral to the neck (one curve, thick at the ground, its own turns), with the
+    // blot on the ground it rose from.
     private static void bodyShadow(Fx f, float t, float partial, float out) {
         Entity e = FxAnchor.entity(f.id);
         if (e == null) {
@@ -1329,12 +1341,28 @@ final class NrFx {
         }
         Vector3f feet = rel(e.getPosition(partial));
         float k = f.a;
-        float h = e.getBbHeight() * 0.8f * k;
-        dsk(add(feet, 0, 0.026f, 0), UP, 0.9f, FxDraw.DISC, 0.2f, SHADOW, 0.95f * out, false);
-        for (int i = 0; i < 6; i++) {
-            float ang = i / 6f * Mth.TWO_PI + e.getYRot() * Mth.DEG_TO_RAD;
-            Vector3f b = add(feet, Mth.cos(ang) * 0.2f, 0.02f, Mth.sin(ang) * 0.2f);
-            rib(b, add(b, Mth.sin(i * 3 + t * 0.1f) * 0.03f, h * (0.7f + 0.3f * hash(i, 17, 1)), 0), 0.18f, FxDraw.BEAM, 0.9f, SHADOW, 0.9f * out, false);
+        float s = e.getBbHeight() / 1.8f;
+        float r0 = Math.max(0.3f, e.getBbWidth() * 0.62f);
+        dsk(add(feet, 0, 0.026f, 0), UP, r0 * 1.9f, FxDraw.DISC, 0.2f, SHADOW, 0.95f * out, false);
+        if (k <= 0.13f) {
+            return;
+        }
+        int seed = Math.floorMod(f.id, 61);
+        float turns = 1.15f + 0.2f * hash(seed, 1, 1), a0 = hash(seed, 1, 2) * Mth.TWO_PI, top = (1.48f - 0.25f) * s;
+        int n = 40;
+        Vector3f last = null;
+        for (int i = 0; i <= n; i++) {
+            float u = i / (float) n;
+            if (u > k) {
+                break;
+            }
+            float ang = a0 + u * turns * Mth.TWO_PI, rr = r0 + 0.05f * Mth.sin(u * 9 + seed) + (1 - u) * 0.12f;
+            Vector3f p = add(feet, Mth.cos(ang) * rr, 0.02f + u * top, Mth.sin(ang) * rr);
+            if (last != null) {
+                float w = (0.17f + 0.1f * (1 - u) + 0.03f * Mth.sin(u * 23 + seed)) * s;
+                rib(last, p, w, FxDraw.SOLID, 0, SHADOW, 0.95f * out, false);
+            }
+            last = p;
         }
     }
 
@@ -1368,37 +1396,145 @@ final class NrFx {
         }
     }
 
-    // Kage Nui: thin sharp threads rising from the shadow round the target.
+    // A Kage Nui needle (forja/shikamaru buildNeedle): it runs low out of his shadow to the target, rises crooked
+    // through them and comes out sharp above. One curve per target, each with its own swing, lean and height.
     private static void spikes(Fx f, float out) {
-        Vector3f g = rel(f.pos);
-        int gi = (int) f.b;
         float k0 = f.a * out;
         if (k0 <= 0) {
             return;
         }
-        for (int i = 0; i < 7; i++) {
-            Vector3f base = add(g, (hash(gi, i, 1) - 0.5f) * 1.6f, 0.03f, (hash(gi, i, 2) - 0.5f) * 1.6f);
-            Vector3f tip = add(g, (hash(gi, i, 3) - 0.5f) * 0.4f, 0.4f + hash(gi, i, 4) * 1.1f, (hash(gi, i, 5) - 0.5f) * 0.3f);
-            float k = clamp(k0 * 1.2f - i * 0.03f, 0, 1);
-            if (k <= 0) {
-                continue;
+        Vector3f at = rel(f.pos);
+        Vector3f back = vec(f.dir);
+        back.y = 0;
+        float L = back.length();
+        if (L < 1.0E-3f) {
+            back.set(0, 0, 1);
+            L = 1;
+        }
+        back.div(L);
+        Vector3f side = v(-back.z, 0, back.x);
+        int seed = (int) f.b * 31 + Math.floorMod(f.id, 17);
+        float swing = (hash(seed, 2, 1) - 0.5f) * 1.6f, lean = (hash(seed, 3, 3) - 0.5f) * 0.9f, up = 3.2f + 1.2f * hash(seed, 3, 4);
+        float run = Math.min(2.6f, L);
+        float w = 0.12f + 0.05f * hash(seed, 4, 5);
+        int n = 34;
+        Vector3f last = null;
+        for (int i = 0; i <= n; i++) {
+            float u = i / (float) n;
+            if (u > k0 * 1.02f) {
+                break;
             }
-            Vector3f end = lerp(base, tip, 1.25f * k);
-            rib(base, end, 0.09f, FxDraw.STREAK, 0, SHADOW, 1, false);
-            dsk(base, UP, 0.25f, FxDraw.DISC, 0.3f, SHADOW, 0.9f, false);
+            Vector3f p;
+            if (u < 0.3f) {
+                float g = u / 0.3f;                                    // low along the ground, swinging aside
+                p = at(at(at, back, run * (1 - g)), side, Mth.sin(g * Mth.PI) * swing * 0.5f);
+                p.y += 0.05f + 0.3f * g * g;
+            } else {
+                float g = (u - 0.3f) / 0.7f;                           // up through the body, crooked
+                p = at(at(at, side, lean * g * g), back, -0.35f * g * g);
+                p.y += 0.35f + (up - 0.35f) * g;
+            }
+            if (last != null) {
+                float ww = u < 0.72f ? w * (0.75f + 0.25f * Mth.sin(u * 13 + seed)) : w * (float) Math.pow(Math.max(0, 1 - (u - 0.72f) / 0.28f), 1.3) + 0.004f;
+                rib(last, p, ww * 2, FxDraw.SOLID, 0, SHADOW, out, false);
+            }
+            last = p;
         }
     }
 
-    // The paper bomb stuck in the ground, its seal blinking red.
+    // The paper bomb: a kunai stuck in the ground with the paper hanging from it, the seal burning from the bottom up
+    // (b) before it goes off. a = size (the Xeque-mate's rise bigger).
     private static void tag(Fx f, float t, float out) {
         Vector3f p = rel(f.pos);
-        obox(add(p, 0, 0.02f, 0), v(0.11f, 0, 0), v(0, 0.006f, 0), v(0, 0, 0.21f), PAPER, out);
-        obox(add(p, 0, 0.03f, 0), v(0.03f, 0, 0), v(0, 0.006f, 0), v(0, 0, 0.15f), PAPER_RED, out);
+        float s = f.a > 0 ? f.a : 1;
+        float burn = clamp(f.b, 0, 1);
         if (!DbFx.pass && out > 0) {
-            DbFx.box(add(p, 0, 0.03f, 0.15f), add(p, 0, 0.42f, -0.05f), 0.05f, KUNAI, out);
+            DbFx.box(add(p, 0, 0.02f * s, 0), add(p, 0.05f * s, 0.62f * s, 0.04f * s), 0.035f * s, KUNAI, out);
         }
-        if (((int) Math.floor(t / 10)) % 2 != 0) {
-            bb(add(p, 0, 0.08f, 0), 0.3f, 0, FxDraw.SOFT, 0.6f, RED, 0.35f * out, true);
+        Vector3f pc = add(p, 0.09f * s, 0.42f * s, 0.03f);
+        float left = 1 - burn;
+        obox(add(pc, 0, -0.21f * s * burn, 0), v(0.1f * s, 0, 0.012f * s), v(0, 0.21f * s * left + 0.004f, 0), v(0, 0, 0.004f), PAPER, out);
+        obox(add(pc, 0, 0.02f * s - 0.21f * s * burn, 0.006f), v(0.022f * s, 0, 0), v(0, 0.16f * s * left + 0.004f, 0), v(0, 0, 0.003f), PAPER_RED, out);
+        if (burn > 0) {
+            Vector3f edge = add(pc, 0, -0.21f * s + 0.42f * s * burn, 0.01f);
+            bb(edge, (0.18f + 0.2f * burn) * s, t * 0.3f, FxDraw.SOFT, 0.6f, KATON_STAR2, 0.9f * out, true);
+            bb(edge, 0.08f * s, 0, FxDraw.SOFT, 0.6f, KATON_STAR, out, true);
+        } else if (((int) Math.floor(t / 10)) % 2 != 0) {
+            bb(add(pc, 0, 0, 0.02f), 0.22f * s, 0, FxDraw.SOFT, 0.6f, RED, 0.3f * out, true);
+        }
+    }
+
+    // ---------- Shikamaru: the shadow on the ground, the flood, the flare (forja/shikamaru, souls_ki kinds 15 and 16) ----------
+
+    private static final float[] FLARE_COL = FxDraw.rgb(0xFFF1D6);
+    private static final float[] FLARE_HOT = FxDraw.rgb(0xFFB070);
+
+    // The way the shadow runs: ONE shape drawn by the shader (snaking, thinner in the middle, fingers feeling ahead at
+    // the tip, the blot that catches), from his own round shadow.
+    private static void shadowGround(Fx f, float age, float out) {
+        float prog = Math.min(1, Math.max(0, f.a));
+        float grab = clamp(f.a - 1, 0, 1);
+        boolean stretch = f.b < 0;
+        float w = Math.abs(f.b);
+        Vector3f from = rel(f.pos);
+        if (!KiMesh.ready()) {
+            shadowPath(from, rel(f.pos.add(f.dir)), prog * out, w, age, f.id % 9, 0.94f);
+            return;
+        }
+        if (!DbFx.pass) {
+            return;
+        }
+        Vector3f d = vec(f.dir);
+        d.y = 0;
+        float L = d.length();
+        Vector3f u = L < 1.0E-3f ? v(0, 0, 1) : new Vector3f(d).div(L);
+        float halfL = L * 0.5f + 1.4f, halfW = w * 1.6f + 1.1f;
+        Vector3f c = at(from, u, L * 0.5f);
+        c.y += 0.03f;
+        org.joml.Matrix4f model = new org.joml.Matrix4f().translation(c).rotateY((float) Math.atan2(u.x, u.z)).scale(halfW, 1, halfL);
+        KiMesh.P p = KiMesh.p(KiMesh.SHADOW_PATH);
+        p.len = L;
+        p.growth = prog;
+        p.thresh = grab;
+        p.w = w;
+        p.twist = stretch ? 1 : 0;
+        p.pulse = 1;
+        p.seed = Math.floorMod(f.id, 9) * 7.3f + 1;
+        p.time = age / 20f;
+        p.alpha = out;
+        p.glow = false;
+        KiMesh.queue(KiMesh.Mesh.QUAD, model, p, KiMesh.FRONT, 3);
+    }
+
+    // The Xeque-mate's flood: a disc of shadow whose edge licks forward in tongues.
+    private static void shadowSea(Fx f, float age, float out) {
+        if (!DbFx.pass || !KiMesh.ready() || f.a <= 0.01f) {
+            return;
+        }
+        Vector3f c = add(rel(f.pos), 0, 0.03f, 0);
+        KiMesh.P p = KiMesh.p(KiMesh.SHADOW_SEA);
+        p.ringR = f.a;
+        p.seed = Math.floorMod(f.id, 13) * 3.1f;
+        p.time = age / 20f;
+        p.alpha = out;
+        p.glow = false;
+        KiMesh.queue(KiMesh.Mesh.QUAD, KiMesh.flat(c, f.a + 2.4f), p, KiMesh.FRONT, 3);
+    }
+
+    // The signal flare: a white-hot point with a warm glow round it, hanging in the sky.
+    private static void flare(Fx f, float age, float out) {
+        Vector3f c = rel(f.pos);
+        float k = f.a * out;
+        if (k <= 0.01f) {
+            return;
+        }
+        float flick = 0.9f + 0.1f * Mth.sin(age * 1.7f) * Mth.sin(age * 0.63f + 1);
+        DbFx.flashBall(c, 0.35f + 0.1f * flick, k, FLARE_COL, 1.3f);
+        DbFx.flashBall(c, 2.2f * flick, 0.35f * k, FLARE_HOT, 4.1f);
+        bb(c, 6.5f * flick, age * 0.02f, FxDraw.SOFT, 0.5f, FLARE_COL, 0.35f * k, true);
+        if (f.b > 0.5f) {
+            Vector3f tail = add(c, 0, -1.6f, 0);
+            rib(tail, c, 0.12f, FxDraw.STREAK, 0.9f, FLARE_HOT, 0.8f * k, true);
         }
     }
 

@@ -117,7 +117,7 @@
       "recargaMaxTicks": 420,
       "avisoTicks": 4,
       "distanciaMin": 2,
-      "distanciaMax": 14,
+      "distanciaMax": 20,
       "giroGrausPorTick": 12,
       "avisoCor": "#2a2a36",
       "avisoSom": "minecraft:entity.illusioner.cast_spell"
@@ -130,7 +130,7 @@
       "recargaMaxTicks": 320,
       "avisoTicks": 4,
       "distanciaMin": 2,
-      "distanciaMax": 12,
+      "distanciaMax": 16,
       "giroGrausPorTick": 12,
       "avisoCor": "#2a2a36",
       "avisoSom": "minecraft:entity.phantom.bite"
@@ -143,10 +143,36 @@
       "recargaMaxTicks": 240,
       "avisoTicks": 3,
       "distanciaMin": 3,
-      "distanciaMax": 14,
+      "distanciaMax": 18,
       "giroGrausPorTick": 12,
       "avisoCor": "#ff9a3a",
       "avisoSom": "minecraft:entity.tnt.primed"
+    },
+    "xeque_mate": {
+      "slot": 3,
+      "tipo": "ult",
+      "peso": 1.0,
+      "recargaTicks": 1100,
+      "recargaMaxTicks": 1500,
+      "avisoTicks": 8,
+      "distanciaMin": 0,
+      "distanciaMax": 12,
+      "giroGrausPorTick": 8,
+      "avisoCor": "#2a2a36",
+      "avisoSom": "minecraft:entity.illusioner.prepare_blindness"
+    },
+    "sinalizador": {
+      "slot": 7,
+      "tipo": "livre",
+      "peso": 0.6,
+      "recargaTicks": 800,
+      "recargaMaxTicks": 1100,
+      "avisoTicks": 3,
+      "distanciaMin": 8,
+      "distanciaMax": 30,
+      "giroGrausPorTick": 12,
+      "avisoCor": "#fff1d6",
+      "avisoSom": "minecraft:entity.firework_rocket.launch"
     }
   },
   "combos": {
@@ -161,7 +187,14 @@
       "peso": 1.0,
       "passos": [
         "papel_bomba",
-        "papel_bomba"
+        "kagemane"
+      ]
+    },
+    "shikamaru_3": {
+      "peso": 0.7,
+      "passos": [
+        "sinalizador",
+        "kagemane"
       ]
     }
   },
@@ -173,11 +206,14 @@
         "barragem",
         "kagemane",
         "kage_nui",
-        "papel_bomba"
+        "papel_bomba",
+        "xeque_mate",
+        "sinalizador"
       ],
       "combos": [
         "shikamaru_1",
-        "shikamaru_2"
+        "shikamaru_2",
+        "shikamaru_3"
       ],
       "agressividade": 0.75,
       "multRecarga": 1.0,

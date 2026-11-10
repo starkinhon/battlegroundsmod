@@ -191,15 +191,17 @@ public final class SubNet {
     public static final int SAND_PLAT = 82;
     // Sand running along the ground from pos to pos + dir in a ticks (b = 1: gathering in round pos from a dir.length radius).
     public static final int SAND_FLOW = 83;
-    // A shadow stretched along the ground (stream): id = its own, pos = from, dir = to - from, a = how far (0..1), b = width.
+    // A shadow stretched along the ground (stream): id = its own, pos = from, dir = to - from, a = how far it ran (0..1), then
+    // 1..2 = the blot that catches at the end growing; b = width (negative: his own shadow stretched by the flare). c = 1
+    // with dir zero ends it where it was.
     public static final int SHADOW = 84;
-    // The shadow standing up round id's body (stream): a = how high (0..1).
+    // The shadow arm climbing round id's body in a spiral (stream): a = how high (0..1).
     public static final int BODY_SHADOW = 85;
     // The shadow hand closing on id's neck (stream): a = ticks since it started closing.
     public static final int NECK_HAND = 86;
-    // Kage Nui's shadow spikes round pos (stream): id = its own, a = how grown (0..1), b = seed.
+    // A Kage Nui needle (stream): id = its own, pos = the target's feet, dir = toward his shadow, a = how grown (0..1), b = seed.
     public static final int SPIKES = 87;
-    // A paper bomb stuck in the ground at pos (stream): id = its own.
+    // A paper bomb at pos (stream): id = its own, a = size (1 normal), b = how far the seal has burnt (0..1).
     public static final int TAG = 88;
     // A kunai thrown from pos to pos + dir in a ticks.
     public static final int KUNAI = 89;
@@ -309,6 +311,10 @@ public final class SubNet {
     public static final int KATON = 165;
     // The Katon's blast at pos (on the ground): a = radius, dir.x = the ground's height, c = seed.
     public static final int KATON_BOOM = 166;
+    // Shikamaru's Xeque-mate: the shadow flooding round pos (stream): id = its own, a = radius, c = 1 ends it.
+    public static final int SHADOW_SEA = 167;
+    // Shikamaru's signal flare (stream): pos = the light, a = how bright, b = 1 while it still climbs, c = 1 ends it.
+    public static final int FLARE = 168;
 
     public static final int STYLE_SUKUNA = 0;
     public static final int STYLE_PINK = 1;
