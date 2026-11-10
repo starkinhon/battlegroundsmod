@@ -32,7 +32,7 @@ vox.COLORS.update({
     'magma_block': (140, 60, 20), 'end_rod': (240, 240, 230), 'chain': (60, 65, 80), 'glowstone': (250, 210, 120),
     'smooth_red_sandstone': (181, 98, 31), 'cut_sandstone': (217, 206, 159), 'chiseled_sandstone': (216, 203, 155), 'white_glazed_terracotta': (188, 212, 202),
     'tinted_glass': (44, 38, 46), 'dark_oak_planks': (66, 43, 20), 'stripped_spruce_log': (115, 89, 52),
-    'spruce_stairs': (114, 84, 48), 'light_blue_terracotta': (113, 108, 137), 'light_blue_wool': (58, 175, 217), 'chiseled_quartz_block': (231, 226, 218), 'yellow_carpet': (248, 197, 39), 'azalea_leaves': (90, 114, 44), 'flowering_azalea_leaves': (100, 112, 60), 'light_blue_carpet': (58, 175, 217), 'purple_bed': (121, 42, 172), 'dark_oak_fence': (66, 43, 20), 'dark_oak_pressure_plate': (66, 43, 20), 'dark_oak_stairs': (66, 43, 20), 'bookshelf': (117, 94, 59), 'purple_stained_glass': (127, 63, 178), 'smoker': (90, 90, 90), 'barrel': (140, 105, 60), 'crafting_table': (130, 100, 60), 'lime_concrete': (94, 168, 24), 'lime_stained_glass': (127, 204, 25), 'glass': (200, 230, 235), 'glass_pane': (200, 230, 235), 'yellow_concrete': (240, 175, 21), 'deepslate_tiles': (54, 54, 55), 'mud_bricks': (137, 103, 79),
+    'spruce_stairs': (114, 84, 48), 'light_blue_terracotta': (113, 108, 137), 'quartz_bricks': (234, 229, 221), 'cocoa': (150, 90, 40), 'light_blue_wool': (58, 175, 217), 'chiseled_quartz_block': (231, 226, 218), 'yellow_carpet': (248, 197, 39), 'azalea_leaves': (90, 114, 44), 'flowering_azalea_leaves': (100, 112, 60), 'light_blue_carpet': (58, 175, 217), 'purple_bed': (121, 42, 172), 'dark_oak_fence': (66, 43, 20), 'dark_oak_pressure_plate': (66, 43, 20), 'dark_oak_stairs': (66, 43, 20), 'bookshelf': (117, 94, 59), 'purple_stained_glass': (127, 63, 178), 'smoker': (90, 90, 90), 'barrel': (140, 105, 60), 'crafting_table': (130, 100, 60), 'lime_concrete': (94, 168, 24), 'lime_stained_glass': (127, 204, 25), 'glass': (200, 230, 235), 'glass_pane': (200, 230, 235), 'yellow_concrete': (240, 175, 21), 'deepslate_tiles': (54, 54, 55), 'mud_bricks': (137, 103, 79),
     'oak_slab': (162, 130, 78), 'spruce_slab': (114, 84, 48), 'smooth_quartz_slab': (235, 229, 222), 'lantern': (200, 150, 60),
     'cyan_stained_glass_pane': (76, 127, 153), 'light_blue_stained_glass': (100, 160, 220), 'campfire': (230, 140, 40),
     'flower_pot': (120, 68, 53), 'potted_bamboo': (90, 140, 40), 'bamboo': (90, 140, 40), 'brewing_stand': (120, 100, 80),
@@ -103,12 +103,37 @@ def cypress(v, x, y, z, h, rnd):
     v.set(x, y, z, 'spruce_log[axis=y]')
     for j in range(1, h + 1):
         v.set(x, y + j, z, 'spruce_log[axis=y]' if j < h - 1 else leaves('spruce_leaves'))
-        r = 1.45 * math.sin(math.pi * min(1.0, (j + 0.5) / (h + 1.2))) ** 0.8
+        r = (1.45 + 0.08 * max(0, h - 7)) * math.sin(math.pi * min(1.0, (j + 0.5) / (h + 1.2))) ** 0.8
         for a in range(-2, 3):
             for b in range(-2, 3):
                 if (a or b) and a * a + b * b <= r * r + 0.15:
                     v.set(x + a, y + j, z + b, leaves('spruce_leaves'))
     v.set(x, y + h + 1, z, leaves('spruce_leaves'))
+
+
+def big_palm(v, x, z, y, h, lean, rnd):
+    """A tall palm (refs: the big trees of the Lookout): curved trunk, thick at the base, long drooping fronds."""
+    log = 'jungle_log[axis=y]'
+    v.set(x, y, z, 'jungle_wood[axis=y]')
+    bx = 0.0
+    px = x
+    for j in range(h):
+        bx = lean * 2.2 * (j / h) ** 2
+        cx = x + round(bx)
+        if cx != px:
+            v.set(cx, y + j - 1, z, log)
+        v.set(cx, y + j, z, log); px = cx
+    tx, ty = px, y + h
+    leaf = leaves()
+    v.set(tx, ty, tz := z, leaf)
+    for k in range(10):
+        a = k * math.pi / 5 + rnd.random() * 0.3
+        L = 6 + rnd.randint(0, 1)
+        for s_ in range(1, L + 1):
+            droop = -round(0.05 * s_ * s_ * 1.4) + (1 if s_ < 2 else 0)
+            v.set(tx + round(math.cos(a) * s_), ty + droop, tz + round(math.sin(a) * s_), leaf)
+    for c in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+        v.set(tx + c[0], ty - 1, tz + c[1], 'cocoa[age=2,facing=%s]' % {(1, 0): 'west', (-1, 0): 'east', (0, 1): 'north', (0, -1): 'south'}[c]) if rnd.random() < 0.5 else None
 
 
 # ---------------------------------------------------------------------------------------------------------------
@@ -127,7 +152,9 @@ def kami_lookout():
             if d <= R + 0.3:
                 edge = d > R - 1.5
                 joint = (x % 7 == 0 or z % 7 == 0)
-                v.set(x, -1, z, 'smooth_quartz' if edge else 'calcite' if joint else 'white_concrete')
+                tile_rnd = random.Random(x // 7 * 1000 + z // 7).random()                 # each 7x7 tile its own shade
+                body = 'white_concrete' if tile_rnd < 0.55 else 'smooth_quartz' if tile_rnd < 0.85 else 'quartz_bricks'
+                v.set(x, -1, z, 'smooth_quartz' if edge else 'calcite' if joint else body)
 
     # rim and bowl as one solid of revolution: radius by height
     def prof(y):
@@ -215,12 +242,29 @@ def kami_lookout():
             rib = (a * ribs / (2 * math.pi)) % 1 < 0.22
             return 'gold_block' if rib or y == cy else 'yellow_concrete'
         solid(v, lambda X, Y, Z: ins(X, Y, Z) & (Y >= cy), (cx - r - 1, cx + r + 1, cy, cy + hgt + 1, cz - r - 1, cz + r + 1), col)
-    dome(0, 15, pz, 9, 9)
-    v.cylinder(0, 24, pz, 2.6, 26, 'quartz_block', hollow=False)
-    v.box(-1, 25, pz - 3, 1, 25, pz + 3, 'light_blue_stained_glass'); v.box(-3, 25, pz - 1, 3, 25, pz + 1, 'light_blue_stained_glass')
-    v.cylinder(0, 25, pz, 1.2, 25, 'glowstone', hollow=False)
-    dome(0, 27, pz, 3, 3, ribs=8)
+    dome(0, 15, pz, 9, 7)
+    # on top a white rotunda ringed with columns (refs: the tall layered silhouette), then the gold cap and spike
+    v.disc(0, 21, pz, 5.6, 'smooth_quartz')
+    v.cylinder(0, 22, pz, 3.6, 25, 'quartz_block', hollow=True)
+    for k in range(12):
+        a = k * math.pi / 6
+        x, z = round(3.6 * math.cos(a)), pz + round(3.6 * math.sin(a))
+        if k % 2:
+            v.box(x, 23, z, x, 24, z, 'light_blue_stained_glass')
+        x, z = round(5.0 * math.cos(a)), pz + round(5.0 * math.sin(a))
+        v.box(x, 22, z, x, 25, z, 'quartz_pillar[axis=y]')
+    v.disc(0, 26, pz, 5.6, 'smooth_quartz'); v.disc(0, 26, pz, 2.5, 'glowstone')
+    dome(0, 27, pz, 4, 3, ribs=8)
     v.set(0, 31, pz, 'gold_block'); v.set(0, 32, pz, 'lightning_rod[facing=up,powered=false,waterlogged=false]')
+    # porch at the door: a gold barrel-vault canopy on white columns (refs)
+    for z in range(pz + 8, pz + 14):
+        for x in range(-4, 5):
+            h = 6 + round(1.6 * math.sqrt(max(0, 1 - (x / 4.5) ** 2)))
+            v.set(x, h, z, 'yellow_concrete' if z % 2 else 'gold_block')
+        for x in (-4, 4):
+            if z in (pz + 9, pz + 13):
+                v.box(x, 1, z, x, 5, z, 'quartz_pillar[axis=y]')
+    v.box(-4, 6, pz + 13, 4, 6, pz + 13, 'smooth_quartz')
     # two side pavilions with smaller domes
     for sx in (-17, 17):
         v.cylinder(sx, 0, pz + 2, 5, 8, 'quartz_block', hollow=True)
@@ -232,7 +276,11 @@ def kami_lookout():
         v.box(sx, 1, pz + 7, sx, 2, pz + 7, 'air')
         v.disc(sx, 9, pz + 2, 5.5, 'smooth_quartz')
         dome(sx, 10, pz + 2, 5, 5, ribs=10)
-        v.set(sx, 16, pz + 2, 'gold_block'); v.set(sx, 17, pz + 2, 'lightning_rod[facing=up,powered=false,waterlogged=false]')
+        v.cylinder(sx, 9, pz + 2, 5.6, 9, 'gold_block', hollow=True)                   # gold band under the dome
+        v.cylinder(sx, 15, pz + 2, 1.6, 16, 'quartz_block', hollow=False)            # little white lantern on top
+        v.set(sx, 16, pz + 2, 'glowstone')
+        v.disc(sx, 17, pz + 2, 2.2, 'smooth_quartz'); v.set(sx, 18, pz + 2, 'gold_block')
+        v.set(sx, 19, pz + 2, 'lightning_rod[facing=up,powered=false,waterlogged=false]')
     # ---- inside the palace (Stark 2026-11-10, interiors one at a time: the way to the Room of Spirit and Time) ----
     v.box(-10, 0, pz - 6, 10, 0, pz + 6, 'smooth_quartz')
     for x in range(-10, 11):                                                      # gold inlay border and squares
@@ -307,7 +355,7 @@ def kami_lookout():
         v.box(sx - 2, 0, -18, sx + 2, 0, 22, 'green_concrete')
         v.box(sx - 1, 0, -17, sx + 1, 0, 21, 'grass_block')
         for i, z in enumerate(range(-14, 22, 6)):
-            palm(v, sx, z, y=1, height=8 + (i % 3), lean=(1 if sx > 0 else -1, 0), rnd=rnd)
+            big_palm(v, sx, z, 1, 11 + (i % 3) * 2, 1 if sx > 0 else -1, rnd)
     # cypress planters along the edge (front and sides) and beside the palace
     groups = []
     for a0 in (-2.75, -2.25, -1.75, -1.3, -0.4, 0.05, 0.5, 0.95, 1.4, 1.85, 2.35, 2.8):
@@ -323,12 +371,12 @@ def kami_lookout():
                 v.set(x, 0, z, 'green_concrete' if abs(t) == 6 or w != 0 else 'grass_block')
         for t in range(-4, 5, 2):
             x, z = round(cx + tx * t), round(cz + tz * t)
-            cypress(v, x, 1, z, rnd.randint(6, 8), rnd)
+            cypress(v, x, 1, z, rnd.randint(9, 12), rnd)
     for sx in (-26, 26):                                                          # beside the palace front
         v.box(sx - 4, 0, pz + 12, sx + 4, 0, pz + 14, 'green_concrete')
         v.box(sx - 3, 0, pz + 13, sx + 3, 0, pz + 13, 'grass_block')
         for x in range(sx - 3, sx + 4, 2):
-            cypress(v, x, 1, pz + 13, rnd.randint(5, 7), rnd)
+            cypress(v, x, 1, pz + 13, rnd.randint(8, 10), rnd)
     # saucer lamp posts
     for lx, lz, h in ((-20, -44, 22), (20, -44, 22), (-30, -36, 18), (30, -36, 18), (-40, -14, 16), (40, -14, 16),
                       (-15, 10, 14), (15, 10, 14)):
@@ -340,6 +388,14 @@ def kami_lookout():
             a = k * math.pi / 6
             v.set(lx + round(2.6 * math.cos(a)), h + 3, lz + round(2.6 * math.sin(a)), 'light_blue_stained_glass')
         v.disc(lx, h + 4, lz, 2.4, 'white_concrete'); v.set(lx, h + 5, lz, 'white_concrete')
+        if h >= 18:                                                                # the tall ones: a second saucer below
+            m = h - 6
+            v.disc(lx, m, lz, 1.4, 'white_concrete'); v.disc(lx, m + 1, lz, 2.8, 'white_concrete')
+            v.disc(lx, m + 1, lz, 1.0, 'sea_lantern'); v.disc(lx, m + 2, lz, 2.0, 'white_concrete')
+    # a low white border all round the edge (refs)
+    for k in range(int(2 * math.pi * (R - 0.6))):
+        a = k / (R - 0.6)
+        v.set(round((R - 0.6) * math.cos(a)), 0, round((R - 0.6) * math.sin(a)), 'smooth_quartz_slab[type=bottom,waterlogged=false]')
     # the ladder down the rim at the front (Goku came up from Korin's tower)
     for y in range(-15, 0):
         v.set(0, y, R + 1, 'ladder[facing=south,waterlogged=false]')
