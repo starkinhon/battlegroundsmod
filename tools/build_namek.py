@@ -81,7 +81,7 @@ while pillars < 10 and tries < 400:
 
 # building sites: flat grass discs
 for name, (sx, sz) in sites.items():
-    r = {'freeza': 34, 'capsula': 16, 'vila': 30, 'guru': 18, 'arrival': 10}[name]
+    r = {'freeza': 34, 'capsula': 16, 'vila': 30, 'guru': 18, 'arrival': 16}[name]
     d = np.hypot(xx - sx, yy - sz)
     m = d <= r
     lvl = SEA + 3
@@ -92,6 +92,10 @@ for name, (sx, sz) in sites.items():
     h[m] = lvl; kind[m] = N['ngrass']
     ring = (d > r) & (d <= r + 8) & (h < lvl)
     h[ring] = np.maximum(h[ring], lvl - ((d[ring] - r) // 2.5).astype(int)); kind[ring & (h >= SEA)] = N['ngrass']
+    # higher ground around is cut down in a gentle slope, so a site is a clearing, never the bottom of a well
+    # (Stark's test 2026-11-10: the arrival pad sat in a deep round pit)
+    up = (d > r) & (d <= r + 40) & (h > lvl)
+    h[up] = np.minimum(h[up], lvl + ((d[up] - r) // 3).astype(int))
 h = np.clip(h, 30, 250).astype(int)
 kind[(h < SEA) & (kind != N['nsea'])] = N['nsea']
 ax, az = sites['arrival']

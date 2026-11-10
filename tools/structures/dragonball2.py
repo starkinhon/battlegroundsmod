@@ -1041,8 +1041,15 @@ def goku_interior(v, dome):
     for lx in (-3, 3):
         top = max(y for y in range(0, 10) if v.get(lx, y, 0) == 'minecraft:cherry_planks' or y == 0)
         v.set(lx, top, 0, 'pearlescent_froglight[axis=y]'); v.set(lx, top, -1, 'pearlescent_froglight[axis=y]')
-    # round table (2x2) and four slatted chairs
-    v.box(0, 0, 1, 1, 0, 2, 'oak_slab[type=top,waterlogged=false]')
+    # round rug, then the table (2x2: fence legs under oak pressure plates, so it stands above the chairs) and four
+    # slatted chairs (Stark's test 2026-11-10: the slab table looked sunk into the floor)
+    for x in range(-3, 5):
+        for z in range(-2, 6):
+            if (x - 0.5) ** 2 + (z - 1.5) ** 2 <= 3.6 ** 2 and v.get(x, 0, z) in (None, 'minecraft:air'):
+                v.set(x, 0, z, 'orange_carpet' if (x - 0.5) ** 2 + (z - 1.5) ** 2 > 2.6 ** 2 else 'yellow_carpet')
+    v.box(0, 0, 1, 1, 0, 2, 'oak_fence[east=false,north=false,south=false,waterlogged=false,west=false]')
+    v.box(0, 1, 1, 1, 1, 2, 'oak_pressure_plate[powered=false]')
+    v.set(1, 2, 1, 'potted_red_tulip')
     chairs = ((0, 0, 'north'), (1, 3, 'south'), (-1, 2, 'west'), (2, 1, 'east'))
     for x, z, f in chairs:
         v.set(x, 0, z, f'oak_stairs[facing={f},half=bottom,shape=straight,waterlogged=false]')
@@ -1069,6 +1076,14 @@ def goku_interior(v, dome):
     # dark cabinet with two vases on the right wall
     v.box(7, 0, -3, 7, 0, -2, 'dark_oak_planks')
     v.set(7, 1, -3, 'potted_dandelion'); v.set(7, 1, -2, 'potted_fern')
+    # the left side: a low bookshelf, a chest and a potted bamboo by the annex opening, a lantern on the shelf
+    v.box(-7, 0, 2, -7, 1, 3, 'bookshelf')
+    v.set(-7, 2, 2, 'lantern[hanging=false,waterlogged=false]')
+    v.set(-6, 0, 4, 'chest[facing=east,type=single,waterlogged=false]')
+    v.set(-7, 0, -3, 'potted_bamboo')
+    # a wall clock and a small framed shelf over the dark cabinet
+    v.set(7, 2, -2, 'spruce_trapdoor[facing=west,half=top,open=false,powered=false,waterlogged=false]')
+    v.set(7, 3, -2, 'potted_oxeye_daisy')
     # purple curtains each side of the right window
     for z in (-2, 2):
         for x in range(10, 0, -1):
