@@ -712,7 +712,7 @@ public final class SukunaDomainScene {
     private static void withLocal(RenderLevelStageEvent event, Dom d, double c, Vec3 camera, Runnable draw) {
         Matrix4fStack modelView = com.starkinhon.soulsjjk.compat.Matrix4fStack.modelView();
         modelView.pushMatrix();
-        modelView.set(event.getPoseStack().last().pose());
+        modelView.set(com.starkinhon.soulsjjk.compat.LevelView.of(event));
         modelView.mul(localToRel(d, c, camera));
         RenderSystem.applyModelViewMatrix();
         RenderSystem.backupProjectionMatrix();
@@ -943,7 +943,7 @@ public final class SukunaDomainScene {
         Minecraft mc = Minecraft.getInstance();
         Matrix4fStack modelView = com.starkinhon.soulsjjk.compat.Matrix4fStack.modelView();
         modelView.pushMatrix();
-        modelView.set(event.getPoseStack().last().pose());
+        modelView.set(com.starkinhon.soulsjjk.compat.LevelView.of(event));
         RenderSystem.applyModelViewMatrix();
         RenderSystem.backupProjectionMatrix();
         RenderSystem.setProjectionMatrix(event.getProjectionMatrix(), VertexSorting.DISTANCE_TO_ORIGIN);

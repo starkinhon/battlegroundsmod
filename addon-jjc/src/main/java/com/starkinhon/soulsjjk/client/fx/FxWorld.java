@@ -177,7 +177,7 @@ public final class FxWorld {
     private static void draw(RenderLevelStageEvent event, boolean flat) {
         Matrix4fStack modelView = com.starkinhon.soulsjjk.compat.Matrix4fStack.modelView();
         modelView.pushMatrix();
-        modelView.set(event.getPoseStack().last().pose());
+        modelView.set(com.starkinhon.soulsjjk.compat.LevelView.of(event));
         RenderSystem.applyModelViewMatrix();
         RenderSystem.backupProjectionMatrix();
         RenderSystem.setProjectionMatrix(event.getProjectionMatrix(), VertexSorting.DISTANCE_TO_ORIGIN);

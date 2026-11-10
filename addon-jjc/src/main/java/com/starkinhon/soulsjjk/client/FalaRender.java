@@ -89,7 +89,7 @@ public final class FalaRender {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_LEVEL) {
             return;
         }
-        VIEW.set(event.getPoseStack().last().pose());
+        VIEW.set(com.starkinhon.soulsjjk.compat.LevelView.of(event));
         PROJ.set(event.getProjectionMatrix());
         camera = event.getCamera().getPosition();
         captured = true;

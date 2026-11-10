@@ -47,7 +47,7 @@ public final class StaminaBar {
             return;
         }
         Camera cam = event.getCamera();
-        VIEW.set(event.getPoseStack().last().pose());
+        VIEW.set(com.starkinhon.soulsjjk.compat.LevelView.of(event));
         PROJ.set(event.getProjectionMatrix());
         camera = cam.getPosition();
         right = new Vector3f(cam.getLeftVector()).negate();

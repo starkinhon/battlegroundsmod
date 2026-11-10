@@ -22,7 +22,7 @@ public final class VX {
     }
 
     private static final ThreadLocal<W> POOL = ThreadLocal.withInitial(W::new);
-    private static Field formatField;
+    private static final java.util.Map<Class<?>, java.util.Optional<Field>> FORMAT_FIELDS = new java.util.concurrent.ConcurrentHashMap<>();
 
     public static VertexConsumer v(VertexConsumer target, float x, float y, float z) {
         return POOL.get().start(target, x, y, z);
@@ -73,24 +73,37 @@ public final class VX {
         return pose.normal().transform(new Vector3f(x, y, z)).normalize();
     }
 
+    // The format the target is being filled in: vanilla's BufferBuilder, or a mod's own buffer (ImmediatelyFast,
+    // Embeddium) that keeps it in a field of its own. Looked up once per class.
     static VertexFormat formatOf(VertexConsumer target) {
-        if (!(target instanceof BufferBuilder builder)) {
+        if (target == null) {
+            return null;
+        }
+        Field f = FORMAT_FIELDS.computeIfAbsent(target.getClass(), VX::findFormatField).orElse(null);
+        if (f == null) {
             return null;
         }
         try {
-            if (formatField == null) {
-                for (Field f : BufferBuilder.class.getDeclaredFields()) {
-                    if (f.getType() == VertexFormat.class) {
+            return (VertexFormat) f.get(target);
+        } catch (ReflectiveOperationException | RuntimeException e) {
+            return null;
+        }
+    }
+
+    private static java.util.Optional<Field> findFormatField(Class<?> type) {
+        for (Class<?> c = type; c != null && c != Object.class; c = c.getSuperclass()) {
+            for (Field f : c.getDeclaredFields()) {
+                if (f.getType() == VertexFormat.class && !java.lang.reflect.Modifier.isStatic(f.getModifiers())) {
+                    try {
                         f.setAccessible(true);
-                        formatField = f;
-                        break;
+                        return java.util.Optional.of(f);
+                    } catch (RuntimeException e) {
+                        return java.util.Optional.empty();
                     }
                 }
             }
-            return formatField == null ? null : (VertexFormat) formatField.get(builder);
-        } catch (ReflectiveOperationException e) {
-            return null;
         }
+        return java.util.Optional.empty();
     }
 
     static final class W implements VertexConsumer {

@@ -86,7 +86,7 @@ public final class VoidFlashScene {
         Camera cam = event.getCamera();
         Vec3 camera = cam.getPosition();
         Matrix4f proj = new Matrix4f(event.getProjectionMatrix());
-        Matrix4f view = new Matrix4f(event.getPoseStack().last().pose());
+        Matrix4f view = new Matrix4f(com.starkinhon.soulsjjk.compat.LevelView.of(event));
         var target = minecraft.getMainRenderTarget();
         float w = target.width;
         float h = target.height;
@@ -176,7 +176,7 @@ public final class VoidFlashScene {
         Vec3 camera = event.getCamera().getPosition();
         Matrix4fStack modelView = com.starkinhon.soulsjjk.compat.Matrix4fStack.modelView();
         modelView.pushMatrix();
-        modelView.set(event.getPoseStack().last().pose());
+        modelView.set(com.starkinhon.soulsjjk.compat.LevelView.of(event));
         RenderSystem.applyModelViewMatrix();
         RenderSystem.backupProjectionMatrix();
         RenderSystem.setProjectionMatrix(event.getProjectionMatrix(), VertexSorting.DISTANCE_TO_ORIGIN);

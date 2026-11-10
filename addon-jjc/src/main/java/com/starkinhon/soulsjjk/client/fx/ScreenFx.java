@@ -201,7 +201,7 @@ public final class ScreenFx {
     // The level's camera for this frame, so world positions can be found on screen later (also from the GUI).
     static void capture(RenderLevelStageEvent event) {
         HELD.clear();
-        VIEW.set(event.getPoseStack().last().pose());
+        VIEW.set(com.starkinhon.soulsjjk.compat.LevelView.of(event));
         PROJ.set(event.getProjectionMatrix());
         camera = event.getCamera().getPosition();
         levelPartial = event.getPartialTick();
