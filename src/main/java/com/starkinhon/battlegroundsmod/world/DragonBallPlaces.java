@@ -262,7 +262,7 @@ public final class DragonBallPlaces {
     }
 
     private static void karinDone(ServerLevel level, Build b) {
-        BlockPos top = new BlockPos(b.x - 3, b.y + KORIN_FLOOR + 1, b.z - 2);
+        BlockPos top = new BlockPos(b.x - 8, b.y + KORIN_FLOOR + 1, b.z);
         if (!level.getEntities(ModEntities.NPC_KORIN.get(), new AABB(top).inflate(48, 64, 48), e -> e.isAlive()).isEmpty()) {
             return;
         }

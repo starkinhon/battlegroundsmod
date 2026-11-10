@@ -17,6 +17,7 @@ from dragonball import stairs, leaves, palm, OUT
 PREV = sys.argv[1] if len(sys.argv) > 1 else os.path.join(OUT, '..', '..', '..', '..', '..', '..', 'build', 'previews')
 
 vox.COLORS.update({
+    'cut_red_sandstone': (186, 99, 29), 'chiseled_red_sandstone': (183, 96, 27), 'red_sandstone_stairs': (186, 99, 29), 'pearlescent_froglight': (245, 232, 228), 'azalea': (101, 124, 47), 'flowering_azalea': (150, 120, 160), 'gray_stained_glass': (76, 76, 76), 'light_gray_stained_glass': (153, 153, 153), 'white_stained_glass': (240, 240, 240), 'prismarine': (99, 156, 151), 'prismarine_bricks': (99, 171, 158), 'dark_prismarine': (51, 91, 75), 'stripped_dark_oak_log': (96, 76, 49), 'rooted_dirt': (144, 103, 76), 'tuff': (108, 109, 102),
     'calcite': (223, 224, 220), 'orange_concrete': (224, 97, 0), 'gold_block': (246, 208, 61), 'yellow_terracotta': (186, 133, 35),
     'light_blue_concrete': (36, 137, 199), 'cyan_concrete': (21, 119, 136), 'green_concrete': (73, 91, 36),
     'lime_concrete': (94, 168, 24), 'green_terracotta': (76, 83, 42), 'spruce_leaves': (40, 80, 40), 'spruce_log': (58, 37, 16),
@@ -547,84 +548,187 @@ def korin_tower():
     for y in range(T - 3, T + 2):
         v.cylinder(0, y, 0, 4.6 if y > T - 3 else 4.0, y, 'smooth_sandstone', hollow=True)
     b0 = T                                                       # bottom of the bowl
-    FL = b0 + 12                                                 # balcony floor
-    # lower bowl
+    FL = b0 + 12                                                 # balcony / hall floor
+    LF = b0 + 3                                                  # floor of the senzu room inside the bowl
+    def bowl_r(Y):
+        return 5 + 13 * np.sqrt(np.clip(1 - ((FL - Y) / 12.0) ** 2, 0, 1))
+    # lower bowl (refs: white with long black oval windows, an orange stripe, gold/tan underside running into the pillar)
     def bowl(X, Y, Z):
-        t = (Y - FL) / 12.0
-        r = 17 * np.sqrt(np.clip(1 - t * t, 0, 1))
-        return (np.hypot(X, Z) <= r) & (Y <= FL) & (Y >= b0)
+        return (np.hypot(X, Z) <= bowl_r(Y)) & (Y <= FL) & (Y >= b0)
     def bowl_col(x, y, z, s):
-        a = math.atan2(z, x); arc = (a % (2 * math.pi)) * 16
+        if not s:
+            return 'smooth_sandstone'                                # inside: the senzu room's pale stone walls
+        a = math.atan2(z, x)
+        if y <= b0 + 1:
+            return 'chiseled_sandstone'
         if y == FL - 1:
+            return 'light_gray_concrete'
+        if y == FL - 7:
+            return 'orange_terracotta'
+        if y == FL - 8:
             return 'gold_block'
-        if y in (FL - 5, FL - 4) and (arc % 14) < 6:
-            return 'black_concrete'
-        if y < b0 + 4 and (arc % 9) < 1.2 and np.hypot(x, z) > 4:
-            return 'tinted_glass'
-        return 'smooth_sandstone' if y > b0 + 2 else 'cut_sandstone'
-    solid(v, bowl, (-18, 18, b0, FL, -18, 18), bowl_col, air_inside=True)
+        if y > FL - 7:
+            return 'white_concrete'
+        return 'yellow_terracotta' if ((a % (2 * math.pi)) * 12) % 5 < 1 else 'smooth_sandstone'
+    solid(v, bowl, (-18, 18, b0, FL, -18, 18), bowl_col, fill=True)
+    carve(v, lambda X, Y, Z: (np.hypot(X, Z) <= bowl_r(Y) - 2) & (Y > LF) & (Y < FL), (-17, 17, LF + 1, FL - 1, -17, 17))
+    v.disc(0, LF, 0, float(bowl_r(LF)) - 1.6, 'tuff')                 # gravel-grey floor of the senzu room
+    # four long oval windows through the wall (glass is dark from outside, the sky shows through from inside)
+    for y in range(FL - 6, FL - 1):
+        R = float(bowl_r(y)); half = {FL - 6: 0.22, FL - 5: 0.3, FL - 4: 0.32, FL - 3: 0.3, FL - 2: 0.2}[y]
+        for x in range(-19, 20):
+            for z in range(-19, 20):
+                rr = math.hypot(x, z)
+                if not (R - 2.6 < rr <= R + 0.6):
+                    continue
+                a = math.atan2(z, x)
+                for k in range(4):
+                    c = math.pi / 4 + k * math.pi / 2
+                    d = abs((a - c + math.pi) % (2 * math.pi) - math.pi)
+                    if d < half:
+                        v.set(x, y, z, 'gray_stained_glass')
+                    elif d < half + 0.07 and rr > R - 1:
+                        v.set(x, y, z, 'black_concrete')
     carve(v, lambda X, Y, Z: (np.hypot(X, Z) <= 4.4) & (Y <= b0 + 1), (-5, 5, b0 - 1, b0 + 1, -5, 5))
-    # balcony floor + railing + support posts
-    v.disc(0, FL, 0, 17.2, 'stripped_spruce_log[axis=y]')
-    v.disc(0, FL, 0, 12, 'spruce_planks')
-    for k in range(int(2 * math.pi * 16.6)):
-        a = k / 16.6
-        x, z = round(16.6 * math.cos(a)), round(16.6 * math.sin(a))
-        v.set(x, FL + 1, z, 'iron_bars')
-    for k in range(10):
-        a = k * math.pi / 5
-        v.box(round(15.5 * math.cos(a)), FL + 1, round(15.5 * math.sin(a)), round(15.5 * math.cos(a)), FL + 5,
-              round(15.5 * math.sin(a)), 'smooth_sandstone')
-    # Korin's room: round wall r 11 with windows and a door to the balcony
-    for y in range(FL + 1, FL + 6):
-        v.cylinder(0, y, 0, 11, y, 'smooth_sandstone' if y not in (FL + 3,) else 'cut_sandstone', hollow=True)
-    for k in range(8):
-        a = k * math.pi / 4 + 0.39
-        x, z = round(11 * math.cos(a)), round(11 * math.sin(a))
-        v.box(x, FL + 2, z, x, FL + 3, z, 'light_blue_stained_glass')
-    v.box(10, FL + 1, -1, 11, FL + 3, 1, 'air')
-    # dome
-    DB = FL + 6
-    def dome(X, Y, Z):
-        t = (Y - DB) / 17.0
-        r = 18.2 * np.sqrt(np.clip(1 - t * t, 0, 1))
-        return (np.hypot(X, Z) <= r) & (Y >= DB) & (Y <= DB + 17)
-    def dome_col(x, y, z, s):
-        a = math.atan2(z, x); arc = (a % (2 * math.pi)) * 17
-        if y == DB:
-            return 'brown_concrete'
-        if DB + 2 <= y <= DB + 6:                                   # zigzag band
-            tri = abs((arc / 5.0) % 2 - 1); lvl = (y - DB - 2) / 4.0
-            return 'white_terracotta' if abs(lvl - tri) < 0.2 else 'brown_terracotta'
-        if y in (DB + 1, DB + 7):
-            return 'light_gray_terracotta'
-        if (y - DB) % 3 == 0 and (arc % 7) < 1:
-            return 'gold_block'                                      # the little dots
-        return 'terracotta'
-    solid(v, dome, (-19, 19, DB, DB + 18, -19, 19), dome_col, air_inside=True)
-    v.disc(0, DB, 0, 10.5, 'air')                                     # room open into the dome
-    # finial
-    for y, r in ((DB + 17, 2.2), (DB + 18, 1.6), (DB + 19, 2.0), (DB + 20, 1.4), (DB + 21, 0.6)):
-        v.disc(0, y, 0, r, 'gold_block')
-    v.set(0, DB + 22, 0, 'lightning_rod[facing=up,powered=false,waterlogged=false]')
-    # inside: Ultra Holy Water on a pedestal, senzu pots, lanterns
-    v.set(0, FL + 1, 0, 'chiseled_stone_bricks'); v.set(0, FL + 2, 0, 'water_cauldron[level=3]')
-    for x, z in ((-6, 4), (-7, 2), (-6, -4), (-3, -7)):
-        v.set(x, FL + 1, z, 'potted_bamboo')
-    v.set(5, FL + 1, -6, 'brewing_stand[has_bottle_0=false,has_bottle_1=false,has_bottle_2=false]')
+    # --- the senzu room: a small terracotta temple in the middle and four senzu planters that glow
+    for y, r, blk in ((LF + 1, 2, 'cut_red_sandstone'), (LF + 2, 2, 'smooth_red_sandstone'), (LF + 3, 1, 'cut_red_sandstone'),
+                      (LF + 4, 1, 'smooth_red_sandstone')):
+        v.box(-r, y, -r, r, y, r, blk)
+    v.set(0, LF + 5, 0, 'chiseled_red_sandstone')
+    for i in range(-2, 3):
+        for (x, z, f) in ((i, -3, 'south'), (i, 3, 'north'), (-3, i, 'east'), (3, i, 'west')):
+            if x == 3 and abs(z) <= 1:
+                continue                                              # the pillar ladder comes up here
+            v.set(x, LF + 1, z, f'red_sandstone_stairs[facing={f},half=bottom,shape=straight,waterlogged=false]')
+    for cx, cz in ((-6, -6), (6, -6), (-6, 6), (6, 6)):
+        v.box(cx - 2, LF + 1, cz - 2, cx + 2, LF + 1, cz + 2, 'smooth_red_sandstone')
+        v.walls(cx - 2, LF + 2, cz - 2, cx + 2, LF + 2, cz + 2, 'cut_red_sandstone')
+        for ex, ez in ((-2, -2), (2, -2), (-2, 2), (2, 2)):
+            v.set(cx + ex, LF + 2, cz + ez, 'shroomlight')
+        v.box(cx - 1, LF + 2, cz - 1, cx + 1, LF + 2, cz + 1, 'rooted_dirt')
+        for ex in (-1, 0, 1):
+            for ez in (-1, 0, 1):
+                v.set(cx + ex, LF + 3, cz + ez, 'flowering_azalea' if (ex + ez) % 2 == 0 else 'azalea')
     for k in range(6):
-        a = k * math.pi / 3
-        v.set(round(9 * math.cos(a)), DB + 3, round(9 * math.sin(a)), 'lantern[hanging=true,waterlogged=false]')
-        v.set(round(6 * math.cos(a + 0.5)), FL, round(6 * math.sin(a + 0.5)), 'sea_lantern')   # light in the floor too
-        v.set(round(9 * math.cos(a)), DB + 4, round(9 * math.sin(a)), 'chain[axis=y]')
-    # the pad to Kami's Lookout, on the balcony right outside the door (DragonBallPlaces links it)
+        a = k * math.pi / 3 + 0.5
+        v.set(round(9.5 * math.cos(a)), FL - 1, round(9.5 * math.sin(a)), 'lantern[hanging=true,waterlogged=false]')
+    # door on the west side of the bowl, opening onto the landing of the outside stair
+    v.box(-17, LF + 1, -1, -11, LF + 3, 1, 'air'); v.set(-17, LF + 4, 0, 'air'); v.set(-16, LF + 4, 0, 'air')
+    v.box(-21, LF, -2, -14, LF, 2, 'smooth_quartz')
+    # --- the open hall: dark wood floor, a pale stone ring, the balcony railing with glowing posts
+    v.disc(0, FL, 0, 18.3, 'smooth_quartz')
+    v.disc(0, FL, 0, 13.4, 'stripped_dark_oak_log[axis=y]')
+    v.disc(0, FL, 0, 12.4, 'dark_oak_planks')
+    seen = set()
+    for k in range(int(2 * math.pi * 17.4) * 2):
+        a = k / (17.4 * 2)
+        x, z = round(17.4 * math.cos(a)), round(17.4 * math.sin(a))
+        if (x, z) in seen or (x <= -15 and -3 <= z <= 11):
+            continue                                                  # gap where the stair leaves the balcony
+        seen.add((x, z))
+        v.set(x, FL + 1, z, 'birch_fence[east=false,north=false,south=false,west=false,waterlogged=false]')
+        if len(seen) % 4 == 0:
+            v.set(x, FL + 2, z, 'end_rod[facing=up]')
+    # twelve dark-green carved columns holding the roof
+    for k in range(12):
+        a = k * math.pi / 6 + math.pi / 12
+        x, z = round(15.6 * math.cos(a)), round(15.6 * math.sin(a))
+        for y in range(FL + 1, FL + 7):
+            v.set(x, y, z, 'dark_prismarine' if y in (FL + 1, FL + 3, FL + 6) else 'prismarine_bricks')
+        ix, iz = round(14.6 * math.cos(a)), round(14.6 * math.sin(a))
+        v.set(ix, FL + 6, iz, 'lantern[hanging=true,waterlogged=false]')
+    # --- the roof: a tall round dome with the relief rings of the refs and a wide eave past the balcony
+    DB = FL + 7
+    H = 13
+    def dome_r(Y):
+        return 20 * np.sqrt(np.clip(1 - ((Y - DB) / float(H)) ** 2, 0, 1))
+    def dome(X, Y, Z):
+        return (np.hypot(X, Z) <= dome_r(Y)) & (Y >= DB) & (Y <= DB + H)
+    def dome_col(x, y, z, s):
+        h = y - DB; a = math.atan2(z, x) % (2 * math.pi); R = max(float(dome_r(y)), 1.0); arc = a * R
+        if h == 0:                                                    # flat ceiling ring over the columns, light band
+            rr = math.hypot(x, z)
+            return 'pearlescent_froglight[axis=y]' if 16.4 < rr < 17.6 else 'dark_oak_planks' if rr < 19 else 'light_gray_concrete'
+        if not s:                                                     # inside: dark wood in segments with ribs
+            return 'stripped_dark_oak_log[axis=y]' if (a * 12 / (2 * math.pi)) % 1 < 0.1 else 'dark_oak_planks'
+        if h == 0:
+            return 'light_gray_concrete'
+        if 1 <= h <= 3:                                               # big gold triangles over the columns
+            d = abs((arc / 3.5) % 2 - 1)
+            return 'gold_block' if d < 1 - (h - 0.5) / 3.2 else 'white_concrete'
+        if h in (4, 9):
+            return 'gray_concrete'                                    # the two dark grooves
+        if h == 6:
+            return 'gold_block' if arc % 5 < 1.3 else 'white_concrete'      # the round gems
+        if h == 7:
+            return 'light_gray_concrete' if arc % 4 < 1.2 else 'white_concrete'   # small inverted triangles
+        if h == 11:
+            return 'gold_block' if arc % 3 < 1 else 'white_concrete'        # the ring of little circles
+        return 'white_concrete'
+    solid(v, dome, (-21, 21, DB, DB + H, -21, 21), dome_col, fill=True)
+    carve(v, lambda X, Y, Z: (np.hypot(X, Z) <= 20 * np.sqrt(np.clip(1 - ((Y - DB) / (H - 2.0)) ** 2, 0, 1)) - 2) & (Y >= DB)
+                          & ((Y > DB) | (np.hypot(X, Z) <= 12)),
+          (-20, 20, DB, DB + H, -20, 20))
+    # stepped spire
+    for y, r, blk in ((DB + H, 3.4, 'smooth_quartz'), (DB + H + 1, 2.6, 'gold_block'), (DB + H + 2, 1.9, 'gold_block'),
+                      (DB + H + 3, 1.5, 'smooth_quartz'), (DB + H + 4, 1.0, 'gold_block'), (DB + H + 5, 0.4, 'gold_block'),
+                      (DB + H + 6, 0.4, 'gold_block')):
+        v.disc(0, y, 0, r, blk)
+    v.set(0, DB + H + 7, 0, 'lightning_rod[facing=up,powered=false,waterlogged=false]')
+    # the cloudy glass ball hanging under the dome
+    top_in = DB + H - 3
+    for y in range(DB + 5, DB + 11):
+        for x in range(-4, 5):
+            for z in range(-4, 5):
+                d = math.sqrt(x * x + (y - DB - 8) ** 2 + z * z)
+                if 1.6 < d <= 2.7:
+                    v.set(x, y, z, 'light_gray_stained_glass' if (x * 7 + y * 3 + z * 5) % 4 == 0 else 'white_stained_glass')
+    v.set(0, DB + 8, 0, 'sea_lantern')
+    for y in range(DB + 11, top_in + 1):
+        v.set(0, y, 0, 'chain[axis=y]')
+    # --- the Ultra Divine Water: green carved pedestal, two big blue hands holding the gold-and-teal jar
+    v.disc(0, FL + 1, 0, 4.2, 'dark_prismarine')
+    v.disc(0, FL + 2, 0, 3.2, 'prismarine_bricks')
+    for y in range(FL + 3, FL + 7):
+        v.disc(0, y, 0, 1.5, 'prismarine_bricks')
+        for cx, cz in ((-2, 0), (2, 0), (0, -2), (0, 2)):
+            v.set(cx, y, cz, 'prismarine')
+    v.disc(0, FL + 7, 0, 2.3, 'dark_prismarine')
+    for sx in (-1, 1):                                                # the hands: palms on the jar's sides, fingers over
+        v.box(2 * sx, FL + 8, -1, 2 * sx, FL + 10, 1, 'light_blue_concrete')
+        v.set(3 * sx, FL + 8, 0, 'light_blue_concrete')
+        v.set(2 * sx, FL + 11, 0, 'light_blue_concrete')
+        v.set(2 * sx, FL + 9, 0, 'blue_concrete')                     # the dark nail/cuff line of the ref
+    v.disc(0, FL + 8, 0, 1.5, 'cyan_terracotta')
+    for y in (FL + 9, FL + 10):
+        v.disc(0, y, 0, 1.5, 'yellow_concrete')
+        v.set(0, y, -1, 'light_blue_concrete'); v.set(0, y, 1, 'light_blue_concrete')
+    v.disc(0, FL + 11, 0, 1.2, 'cyan_terracotta')
+    v.set(0, FL + 12, 0, 'cyan_concrete')
+    # floor lights round the hall
+    for k in range(6):
+        a = k * math.pi / 3 + 0.5
+        v.set(round(8 * math.cos(a)), FL, round(8 * math.sin(a)), 'sea_lantern')
+    # the pad to Kami's Lookout, on the balcony (DragonBallPlaces links it)
     v.disc(14, FL, 0, 1.6, 'light_blue_concrete'); v.set(14, FL, 0, 'sea_lantern')
     for c in ((15, 1), (15, -1), (13, 1), (13, -1)):
         v.set(c[0], FL + 1, c[1], 'end_rod[facing=up]')
-    # the ladder all the way up the pillar, through the bowl, to a trapdoor in the room floor
-    ladder(v, 3, 0, 0, FL - 1, facing='east', support='cut_sandstone')
-    trapdoor(v, 3, FL, 0, facing='west')
-    v.set(2, FL, 0, 'spruce_planks')
+    # outside stair: from the balcony's west edge down along the bowl to the senzu-room door
+    v.box(-20, FL, 8, -17, FL, 11, 'smooth_quartz')
+    for i in range(8):
+        z, y = 7 - i, FL - 1 - i
+        v.box(-20, y, z, -18, y, z, 'quartz_stairs[facing=south,half=bottom,shape=straight,waterlogged=false]')
+        v.box(-20, y - 1, z, -18, y - 1, z, 'smooth_quartz_slab[type=top,waterlogged=false]')
+        v.set(-21, y + 1, z, 'birch_fence[east=false,north=false,south=false,west=false,waterlogged=false]')
+    for z in range(-2, 3):
+        v.set(-22, LF + 1, z, 'birch_fence[east=false,north=false,south=false,west=false,waterlogged=false]')
+    v.set(-22, LF + 2, -2, 'lantern[hanging=false,waterlogged=false]'); v.set(-22, LF + 2, 2, 'lantern[hanging=false,waterlogged=false]')
+    # ladders: up the pillar into the senzu room, then from the senzu room up through a trapdoor into the hall
+    ladder(v, 3, 0, 0, LF, facing='east', support='cut_sandstone')
+    v.set(3, LF, 0, 'air')
+    ladder(v, 3, 0, 0, LF, facing='east', support='cut_sandstone')
+    ladder(v, 0, 9, LF + 1, FL - 1, facing='north', support='smooth_sandstone')
+    trapdoor(v, 0, FL, 9, facing='south')
     return v
 
 
