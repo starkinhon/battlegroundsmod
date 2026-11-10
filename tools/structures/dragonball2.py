@@ -792,21 +792,44 @@ def babidi_ship():
     plain = lambda c: (lambda x, z, d: c)
     ringed = lambda c, c2: (lambda x, z, d: c2 if abs(d - 5) < 0.6 else c)
     room(-8, 8, 6, plain('light_blue_concrete'))                                         # entrance hall / flight deck
-    stages = [(-16, 'orange_terracotta', 'yellow_terracotta'), (-24, 'magenta_concrete', 'purple_concrete'),
-              (-32, 'orange_concrete', 'yellow_concrete'), (-40, 'lime_concrete', 'green_concrete')]
-    for cy, c1, c2 in stages:                                                            # Stages 1-4
-        room(cy, 9, 6, ringed(c1, c2))
+    def speck(x, z):
+        return (x * 73856093 ^ z * 19349663) % 11 == 0                  # the black pebbles on every floor
+    def stage_floor(c):
+        def f(x, z, d):
+            a = math.atan2(z, x)
+            if d <= 1.2:
+                return 'black_concrete'                                  # the hatch to the next stage
+            if d <= 2.3:
+                return 'gold_block'
+            if d <= 3.6:
+                return 'gold_block' if (a * 16 / math.pi) % 2 < 1 else 'yellow_terracotta'   # the sun rays
+            return 'black_concrete' if speck(x, z) else c
+        return f
+    stages = [(-16, 'blue_concrete'), (-24, 'red_concrete'), (-32, 'orange_concrete'), (-40, 'lime_concrete')]
+    for cy, c1 in stages:                                                                # Stages 1-4 (ref colors)
+        room(cy, 9, 6, stage_floor(c1), wall='gold_block', ceil='yellow_terracotta', windows='black_concrete')
+        # the white egg door of the stage
+        solid(v, lambda X, Y, Z, cy=cy: ((X + 5) / 1.9) ** 2 + ((Y - cy - 2) / 2.7) ** 2 + ((Z + 5) / 1.9) ** 2 <= 1,
+              (-8, -2, cy - 1, cy + 5, -8, -2), lambda x, y, z, s: 'white_concrete', fill=True)
+        v.box(-4, cy, -4, -4, cy + 2, -4, 'black_concrete')                # its dark doorway, facing the arena
     def cc_floor(x, z, d):
-        if d <= 2.2:
-            return 'blue_concrete'
-        if d <= 4.2:
-            return 'gold_block' if d > 3.2 else 'yellow_concrete'
-        a = math.atan2(z, x)
-        return 'light_blue_concrete' if (a * 12 / math.pi) % 2 < 0.25 else 'blue_concrete'
-    room(-53, 17, 8, cc_floor, ceil='brown_terracotta', windows='black_concrete')       # Command Center
-    room(-66, 6, 6, plain('packed_mud'), ceil='light_gray_concrete')                    # Buu's shell room
+        if d <= 1.4:
+            return 'black_concrete'
+        if d <= 3.2:
+            return 'light_blue_concrete' if d > 2.3 else 'blue_concrete'
+        return 'black_concrete' if speck(x, z) else 'blue_concrete'
+    room(-53, 17, 8, cc_floor, wall='blue_terracotta', ceil='blue_terracotta', windows='black_concrete')   # Command Center
+    # Babidi's console at the side of the Command Center
+    v.set(-9, -53, 0, 'blue_concrete'); v.set(-9, -52, 0, 'light_blue_concrete'); v.set(-10, -53, 0, 'blue_concrete')
+    v.set(-10, -52, 0, 'blue_concrete'); v.set(-10, -51, 0, 'blue_concrete'); v.set(-9, -51, 0, 'sea_lantern')
+    room(-66, 6, 6, cc_floor, wall='blue_terracotta', ceil='blue_terracotta', windows='black_concrete')    # Buu's shell room
     solid(v, lambda X, Y, Z: X ** 2 + (Y + 63) ** 2 + Z ** 2 <= 3.3 ** 2, (-4, 4, -67, -59, -4, 4),
-          lambda x, y, z, s: 'pink_concrete' if y in (-63,) else 'white_concrete', fill=True)
+          lambda x, y, z, s: 'magenta_concrete' if (x * 3 + y * 5 + z * 7) % 6 == 0 else 'pink_concrete', fill=True)
+    # the tube from the Command Center down to Buu's room
+    for y in range(-60, -53):
+        for dx, dz in ((1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (1, -1)):
+            if v.get(4 + dx, y, dz) in (None, 'minecraft:air'):
+                v.set(4 + dx, y, dz, 'blue_stained_glass')
     # two white capsule pods with the M at the sides of the Command Center (ref)
     for sz in (-1, 1):
         solid(v, lambda X, Y, Z, sz=sz: ((X) / 2.6) ** 2 + ((Y + 50) / 4.0) ** 2 + ((Z - sz * 13) / 2.6) ** 2 <= 1,
