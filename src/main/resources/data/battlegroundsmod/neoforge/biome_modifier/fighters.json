@@ -73,6 +73,42 @@
       "weight": 5,
       "minCount": 1,
       "maxCount": 2
+    },
+    {
+      "type": "battlegroundsmod:hollow",
+      "weight": 14,
+      "minCount": 1,
+      "maxCount": 3
+    },
+    {
+      "type": "battlegroundsmod:arrancar",
+      "weight": 8,
+      "minCount": 1,
+      "maxCount": 2
+    },
+    {
+      "type": "battlegroundsmod:menos_grande",
+      "weight": 4,
+      "minCount": 1,
+      "maxCount": 1
+    },
+    {
+      "type": "battlegroundsmod:oni_comum",
+      "weight": 14,
+      "minCount": 1,
+      "maxCount": 3
+    },
+    {
+      "type": "battlegroundsmod:oni_lua_inferior",
+      "weight": 8,
+      "minCount": 1,
+      "maxCount": 2
+    },
+    {
+      "type": "battlegroundsmod:oni_espadachim",
+      "weight": 5,
+      "minCount": 1,
+      "maxCount": 2
     }
   ]
 }

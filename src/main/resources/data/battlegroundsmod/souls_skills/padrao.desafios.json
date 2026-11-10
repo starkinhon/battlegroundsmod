@@ -60,20 +60,22 @@
     {
       "id": "bleach", "nome": "Bleach", "cor": "#E8E8F0",
       "descricao": "Hueco Mundo: um deserto sem fim numa noite eterna.",
+      "mobs": ["hollow", "arrancar", "menos_grande"],
       "piso": ["minecraft:white_concrete_powder", "minecraft:sand", "minecraft:white_concrete_powder", "minecraft:smooth_quartz"],
       "pilar": "minecraft:quartz_pillar",
       "desafios": [
-        {"id": "rukia", "foco": "Gelo. Congela você e o chão em volta."},
-        {"id": "byakuya", "foco": "Pétalas. Mil lâminas da Senbonzakura.", "itens": ["battlegroundsmod:cristal_multiversal"]}
+        {"id": "rukia", "foco": "Gelo. Congela você e o chão em volta.", "itens": ["battlegroundsmod:pilula_alma 3"]},
+        {"id": "byakuya", "foco": "Pétalas. Mil lâminas da Senbonzakura.", "itens": ["battlegroundsmod:cristal_multiversal", "battlegroundsmod:zanpakuto"]}
       ]
     },
     {
       "id": "demonslayer", "nome": "Demon Slayer", "cor": "#C7A2FF",
       "descricao": "Montanhas, florestas de pinheiro, cerejeiras e neve.",
+      "mobs": ["oni_comum", "oni_lua_inferior", "oni_espadachim"],
       "piso": ["minecraft:podzol", "minecraft:coarse_dirt", "minecraft:podzol", "minecraft:moss_block"],
       "pilar": "minecraft:spruce_log",
       "desafios": [
-        {"id": "kokushibo", "foco": "Luas. A Respiração da Lua corta em leque. A Lua Superior Um.", "itens": ["battlegroundsmod:cristal_multiversal"]}
+        {"id": "kokushibo", "foco": "Luas. A Respiração da Lua corta em leque. A Lua Superior Um.", "itens": ["battlegroundsmod:cristal_multiversal", "battlegroundsmod:espada_nichirin"]}
       ]
     }
   ]

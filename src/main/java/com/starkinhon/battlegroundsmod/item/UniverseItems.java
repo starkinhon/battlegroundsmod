@@ -36,8 +36,12 @@ public final class UniverseItems {
             Map.entry("nobara", "jujutsu"), Map.entry("todo", "jujutsu"), Map.entry("inumaki", "jujutsu"),
             Map.entry("miwa", "jujutsu"), Map.entry("maldicao_menor", "jujutsu"), Map.entry("maldicao_grau2", "jujutsu"),
             Map.entry("feiticeiro_renegado", "jujutsu"), Map.entry("npc_shoko", "jujutsu"), Map.entry("npc_yaga", "jujutsu"),
-            Map.entry("byakuya", "bleach"), Map.entry("rukia", "bleach"),
-            Map.entry("moon_demon", "demonslayer"), Map.entry("kokushibo", "demonslayer"));
+            Map.entry("byakuya", "bleach"), Map.entry("rukia", "bleach"), Map.entry("hollow", "bleach"),
+            Map.entry("arrancar", "bleach"), Map.entry("menos_grande", "bleach"), Map.entry("npc_yoruichi", "bleach"),
+            Map.entry("npc_urahara", "bleach"),
+            Map.entry("moon_demon", "demonslayer"), Map.entry("kokushibo", "demonslayer"), Map.entry("oni_comum", "demonslayer"),
+            Map.entry("oni_lua_inferior", "demonslayer"), Map.entry("oni_espadachim", "demonslayer"),
+            Map.entry("npc_urokodaki", "demonslayer"), Map.entry("npc_tamayo", "demonslayer"));
 
     // Items, by item id.
     private static final Map<String, String> ITEMS = Map.ofEntries(
@@ -48,8 +52,10 @@ public final class UniverseItems {
             Map.entry("samehada", "naruto"), Map.entry("kusanagi", "naruto"),
             Map.entry("dedo_sukuna", "jujutsu"), Map.entry("venda_gojo", "jujutsu"), Map.entry("boneco_palha", "jujutsu"),
             Map.entry("boneco_amaldicoado", "jujutsu"), Map.entry("nuvem_brincalhona", "jujutsu"), Map.entry("lanca_invertida", "jujutsu"),
-            Map.entry("aizen_sword", "bleach"),
-            Map.entry("kokushibo_sword", "demonslayer"));
+            Map.entry("aizen_sword", "bleach"), Map.entry("pilula_alma", "bleach"), Map.entry("mascara_hollow", "bleach"),
+            Map.entry("zanpakuto", "bleach"),
+            Map.entry("kokushibo_sword", "demonslayer"), Map.entry("espada_nichirin", "demonslayer"),
+            Map.entry("flor_glicinia", "demonslayer"), Map.entry("remedio_tamayo", "demonslayer"));
 
     // Weapons that are not TieredItem (thrown or special).
     private static final Set<String> WEAPONS = Set.of("bastao_magico", "kunai_hiraishin", "samehada", "kusanagi", "espada_z");
