@@ -7,11 +7,13 @@ import java.util.Map;
 import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.combat.Charge;
 import com.starkinhon.battlegroundsmod.combat.Combat;
+import com.starkinhon.battlegroundsmod.combat.Destructible;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.combat.Stun;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
 import com.starkinhon.battlegroundsmod.power.Ability;
 import com.starkinhon.battlegroundsmod.power.Power;
+import com.starkinhon.battlegroundsmod.power.PowerData;
 import com.starkinhon.battlegroundsmod.power.powers.sub.SubCommon;
 import com.starkinhon.battlegroundsmod.power.powers.sub.SubNet;
 import com.starkinhon.battlegroundsmod.power.powers.sub.db.Db;
@@ -28,12 +30,17 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
 // Sasuke (SubAlma of Naruto, tier 6), the Visualizador's Sasuke tab.
-// Z Chidori: held, the hand becomes a bundle of chirping lightning scratching the ground; the longer, the farther he goes
+// Z Katon: Goukakyuu no Jutsu, a smaller Great Fireball than Madara's (Stark, 2026-11-10, approved preview v9 in
+//   forja/sasuke-chidori/katon.js). Tiger seal, a breath in, and he blows: the ball swells at his mouth (radius 1.3) and
+//   flies 22 blocks/s up to 44 blocks, straight at whoever is in the aim. It blows up 4 blocks round: fire that stuns
+//   (whole on a boss), sets on fire, throws back and digs a small crater. Short wind-up (under 1 s) that only a real
+//   stun cuts; Bills' hakaizinho can erase the ball in flight.
+// X Chidori: held, the hand becomes a bundle of chirping lightning scratching the ground; the longer, the farther he goes
 //   (8 to 22 blocks: Stark, 2026-11-09, "he has to run to the enemy"). Let go: a dash that goes through the target, turning
 //   onto whoever is in front within that reach, and the hand rips a furrow in the ground behind him. A target paralyzed by
 //   the Senbon can't dodge it: it is a critical hit.
-// X Sharingan: a reading stance of 1 s. Hit in that window (punch or shot), he reads it: no damage, an afterimage stays
-//   and he appears behind the attacker with a spinning kick. Nobody attacked: "nothing to read" and a short cooldown.
+// B Sharingan: 6 s of reading. The first 2 blows that would hit (punch, shot or skill) miss: he slides to the free side
+//   through an afterimage; on the 2nd he appears behind the attacker with a spinning kick. Whoever he read is marked.
 // C Chidori Senbon: a fan of 9 lightning needles (60°, 14 blocks); who takes 2 or more is paralyzed 3.5 s with sparks on
 //   the body, the whole of it on a boss too (a real stun: it opens the stun combos); one needle still stuns 1.5 s.
 // V Kirin, one of the strongest moves of Naruto: storm clouds gather over the target (64 blocks); he raises his hand and a
@@ -45,10 +52,11 @@ public final class Sasuke {
 
     public static Power create() {
         return new Power("sasuke", 0x5A3A8A, 1.05f, List.of(
+                new Ability(KATON_COOLDOWN, 0, Sasuke::katon),
                 new Ability(150, 0, Sasuke::chidori),
-                new Ability(240, 0, Sasuke::read),
                 new Ability(200, 0, Sasuke::senbon),
-                new Ability(1100, 0, Sasuke::kirin)));
+                new Ability(1100, 0, Sasuke::kirin),
+                new Ability(240, 0, Sasuke::read)));
     }
 
     static Vec3 lowHand(LivingEntity caster) {
@@ -57,7 +65,132 @@ public final class Sasuke {
         return caster.position().add(0, caster.getBbHeight() * 0.4, 0).add(right.scale(0.45)).add(look.scale(0.1));
     }
 
-    // ---------- Z: Chidori ----------
+    // ---------- Z: Katon ----------
+
+    private static final int KATON_COOLDOWN = 140;
+    private static final double KATON_BALL = 1.3;
+    private static final double KATON_R = 4;
+    private static final double KATON_SPEED = 1.1;
+    private static final double KATON_RANGE = 44;
+
+    private static boolean katon(LivingEntity caster, ServerLevel level) {
+        SubCommon.Guard guard = SubCommon.guard(caster);
+        int id = SubNet.newId();
+        // Seal (6), breath in (6), blow: the ball swells at the mouth (6). Under 1 s, and only a real stun cuts it
+        // (Stark, 2026-11-09: the bosses beat him up while he uses a skill).
+        int seal = 6;
+        int blow = 12;
+        int out = 18;
+        SubCommon.pose(caster, "nr.katon");
+        SubCommon.busy(caster, out + 3);
+        Freeze.holdLookFree(caster, out);
+        Tasks.add(age -> {
+            if (guard.broken() || !caster.isAlive()) {
+                Freeze.free(caster);
+                SubNet.send(level, SubNet.KATON, id, caster.getEyePosition(), Vec3.ZERO, 0, 0, 1);
+                return true;
+            }
+            Vec3 look = caster.getLookAngle();
+            Vec3 mouth = caster.getEyePosition().add(look.scale(0.3)).add(0, -0.15, 0);
+            if (age == seal) {
+                SubCommon.sound(level, mouth, SoundEvents.BLAZE_AMBIENT, 0.8f, 1.6f);
+            }
+            if (age < blow) {
+                return false;
+            }
+            double k = SubCommon.easeOutCubic(Math.min(1f, (age - blow + 1) / (float) (out - blow)));
+            double r = 0.25 + (KATON_BALL - 0.25) * k;
+            Vec3 ball = mouth.add(look.scale(0.4 + r * 1.05));
+            if (age == blow) {
+                SubCommon.sound(level, mouth, SoundEvents.BLAZE_SHOOT, 1.2f, 0.7f);
+                SubCommon.sound(level, mouth, SoundEvents.FIRECHARGE_USE, 1f, 0.6f);
+            }
+            if (age < out) {
+                // The tail joins the ball to his mouth while he blows.
+                Vec3 toMouth = mouth.subtract(ball);
+                SubNet.send(level, SubNet.KATON, id, ball, toMouth.normalize(), (float) r, (float) Math.max(0, toMouth.length() / r - 0.8), 0);
+                return false;
+            }
+            katonFly(caster, level, id, ball, katonAim(caster, ball, look));
+            return true;
+        });
+        return true;
+    }
+
+    // Straight at whoever is in the aim (a mob: at its target), else along the look.
+    private static Vec3 katonAim(LivingEntity caster, Vec3 from, Vec3 look) {
+        LivingEntity goal = NrCommon.target(caster, KATON_RANGE);
+        if (goal != null) {
+            Vec3 to = Combat.center(goal).subtract(from);
+            if (to.lengthSqr() > 1 && (!(caster instanceof net.minecraft.world.entity.player.Player) || to.normalize().dot(look) > 0.9)) {
+                return to.normalize();
+            }
+        }
+        return look.normalize();
+    }
+
+    private static void katonFly(LivingEntity caster, ServerLevel level, int id, Vec3 start, Vec3 dir) {
+        int ticks = (int) Math.ceil(KATON_RANGE / KATON_SPEED);
+        Vec3 velocity = dir.scale(KATON_SPEED);
+        Vec3 tail = dir.scale(-1);
+        SubCommon.sound(level, start, SoundEvents.GHAST_SHOOT, 1.4f, 0.8f);
+        boolean[] done = {false};
+        // Erased in flight (the hakaizinho): the ball is gone with no explosion.
+        Destructible.Attack attack = Destructible.track(level, caster, start, KATON_BALL,
+                () -> SubNet.send(level, SubNet.KATON, id, start, Vec3.ZERO, 0, 0, 1));
+        Tasks.repeat(ticks + 1, age -> {
+            if (done[0] || attack.gone()) {
+                return;
+            }
+            Vec3 from = start.add(velocity.scale(age));
+            Vec3 to = start.add(velocity.scale(age + 1));
+            attack.move(from);
+            SubNet.send(level, SubNet.KATON, id, from, tail, (float) KATON_BALL, 2.6f, 0);
+            boolean hit = age == ticks;
+            Vec3 at = to;
+            double touch = KATON_BALL * 0.6;
+            var clip = level.clip(new ClipContext(from, to.add(dir.scale(touch)), ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, caster));
+            if (clip.getType() != HitResult.Type.MISS) {
+                hit = true;
+                at = clip.getLocation().subtract(dir.scale(touch * 0.5));
+            } else if (!Combat.alongLine(level, from, to, KATON_BALL, caster).isEmpty()) {
+                hit = true;
+            }
+            if (age % 5 == 0) {
+                SubCommon.sound(level, to, SoundEvents.FIRE_AMBIENT, 1.5f, 0.7f);
+            }
+            if (hit) {
+                done[0] = true;
+                attack.end();
+                SubNet.send(level, SubNet.KATON, id, at, tail, (float) KATON_BALL, 2.6f, 1);
+                katonBlast(caster, level, at);
+            }
+        });
+    }
+
+    // 4 blocks of fire: hurt by distance, stunned (whole on a boss in the core), set on fire, thrown back; a small crater.
+    private static void katonBlast(LivingEntity caster, ServerLevel level, Vec3 at) {
+        double ground = DbCommon.groundY(level, at);
+        boolean low = at.y - ground < KATON_R;
+        Vec3 floor = new Vec3(at.x, low ? ground : at.y - 1, at.z);
+        for (LivingEntity t : Combat.inRadius(level, at, KATON_R, caster)) {
+            double edge = Math.min(1, Combat.center(t).distanceTo(at) / KATON_R);
+            Combat.hurtMagic(caster, t, (float) (26 * (1 - 0.5 * edge)));
+            Stun.apply(t, edge < 0.6 ? 30 : 25, edge < 0.6);
+            Combat.pushFrom(t, at, 1.1 * (1 - 0.5 * edge), 0.55);
+            t.igniteForSeconds(4);
+        }
+        if (low) {
+            JjCommon.crater(level, floor, 2.6, 1.3, 14);
+        }
+        SubNet.send(level, SubNet.KATON_BOOM, 0, floor, new Vec3(floor.y, 0, 0), (float) KATON_R, 0, SubCommon.RANDOM.nextInt(40));
+        DbCommon.screen(level, at, 58);
+        SubCommon.sound(level, at, SoundEvents.GENERIC_EXPLODE.value(), 2f, 0.9f);
+        SubCommon.sound(level, at, SoundEvents.BLAZE_SHOOT, 1.6f, 0.5f);
+        SubCommon.sound(level, at, SoundEvents.FIRECHARGE_USE, 1.6f, 0.5f);
+    }
+
+    // ---------- X: Chidori ----------
 
     private static boolean chidori(LivingEntity caster, ServerLevel level) {
         SubCommon.Guard guard = SubCommon.guard(caster);
@@ -172,8 +305,8 @@ public final class Sasuke {
     // A blow this strong (a Divine Soul's ult) is too much to read: it lands.
     private static final float READ_MAX = 45;
     private static final Map<Integer, Integer> dodges = new HashMap<>();
-    // The Sharingan's key slot (its cooldown).
-    private static final int READ_SLOT = 1;
+    // The Sharingan's key slot (its cooldown): B.
+    private static final int READ_SLOT = PowerData.SLOT_EXTRA;
     private static final int READ_COOLDOWN = 240;
 
     private static boolean read(LivingEntity caster, ServerLevel level) {

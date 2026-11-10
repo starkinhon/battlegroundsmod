@@ -78,6 +78,13 @@ void emit(vec3 premul, float a) {
 // every point seen is at a grazing angle (dot(N, V) near 0 all over), so the whole ball took the outline's dark color.
 // Measured instead from where the pixel sits in the ball's disc on the screen, the ball looks like the page's ball at
 // any distance, only bigger.
+// Sasuke's Katon: the Supernova's fire ramp (approved) cut in flat anime bands.
+vec3 katonRamp(float t) {
+    float x = clamp(t, 0., 1.) * 4.; float fl = floor(x); x = fl + smoothstep(0.3, 0.7, fract(x));
+    vec3 c0 = vec3(0.09, 0.03, 0.02), c1 = vec3(0.62, 0.06, 0.01), c2 = vec3(1., 0.24, 0.02), c3 = vec3(1., 0.58, 0.08), c4 = vec3(1., 0.95, 0.72);
+    return x < 1. ? mix(c0, c1, x) : x < 2. ? mix(c1, c2, x - 1.) : x < 3. ? mix(c2, c3, x - 2.) : mix(c3, c4, clamp(x - 3., 0., 1.));
+}
+
 float facing() {
     float d = length(vC.xyz), s = clamp(vC.w / max(d, 1e-4), 0., 0.999);
     float c = clamp(dot(normalize(-vV), vC.xyz / max(d, 1e-4)), 1e-3, 1.);
@@ -94,6 +101,32 @@ void main() {
     vec3 N = normalize(vN), V = normalize(vV);
     float f = abs(dot(N, V)), rim = 1. - f;
     int kind = int(Kind + 0.5);
+    if (kind == 13 || kind == 14) {                                    // Sasuke's Katon (RingR = the ground's height, camera-relative)
+        if (-vV.y < RingR) discard;
+        float fz = kind == 13 ? facing() : f, edge = 1. - fz;
+        float n = fbm3(vO * (kind == 13 ? 3.2 : 1.) + vec3(0., -Time * (Smoke > 0.5 ? 0.25 : 1.3), 0.) + Seed * 1.7);
+        float dens, heat;
+        if (kind == 13) {
+            dens = 0.62 + n * 0.9 - smoothstep(0.35, 1., edge) * 0.55 - vD * 0.55 - Thresh;   // the outline and the tail tear into tongues
+            heat = Life * (0.55 + n * 0.55 + fz * fz * 0.5 - vD * 0.75);                       // seen face on: the white core
+        } else {
+            dens = 0.72 + n * 0.7 - smoothstep(0.45, 1., vH) * 0.9 - Thresh;
+            heat = Life * (0.95 - vH * 0.7 + n * 0.4);
+        }
+        float aa = max(fwidth(dens), 1e-3), m = smoothstep(-aa, aa, dens);
+        if (m < 0.003) discard;
+        vec3 col = katonRamp(heat);
+        if (Smoke > 0.5) {
+            float lit = 0.5 + N.y * 0.4 + n * 0.5, b = lit > 0.62 ? 1. : lit > 0.4 ? 0.72 : 0.5;   // smoke lit in 3 bands
+            col = mix(col * 0.95, vec3(0.21, 0.18, 0.18) * b * 1.2, smoothstep(0., 0.3, 1. - heat * 2.2));
+            float a = m * Alpha * mix(1., 0.62, smoothstep(0.3, 0., heat));
+            emit(col * a, a);
+        } else {
+            float a = m * Alpha * mix(0.75, 1., edge);
+            emit(col * (0.85 + 0.35 * smoothstep(0.75, 1., heat)) * a, a * 0.85);
+        }
+        return;
+    }
     if (kind == 0) {                                                   // blast / smoke
         vec3 q = vO * 3. + vec3(0., -Time * (Smoke > 0.5 ? 0.22 : 1.1), 0.) + Seed;
         float w = fbm3(q * 0.8 + 7.) * 0.8; float fire = fbm4(q + vec3(w, 0., -w)) * 0.5 + 0.5;

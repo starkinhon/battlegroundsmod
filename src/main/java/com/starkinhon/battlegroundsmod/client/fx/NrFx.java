@@ -111,7 +111,7 @@ final class NrFx {
         return switch (kind) {
             case SubNet.RASENGAN, SubNet.DRILL, SubNet.RASENSHURIKEN, SubNet.SAGE_GATHER, SubNet.CHIDORI, SubNet.SAND_HAND, SubNet.SAND_SHELL,
                     SubNet.SAND_PLAT, SubNet.SHADOW, SubNet.BODY_SHADOW, SubNet.NECK_HAND, SubNet.SPIKES, SubNet.TAG, SubNet.SPIRIT, SubNet.THREAD,
-                    SubNet.RAIJU, SubNet.KAMUI -> true;
+                    SubNet.RAIJU, SubNet.KAMUI, SubNet.KATON -> true;
             default -> false;
         };
     }
@@ -194,6 +194,7 @@ final class NrFx {
             case SubNet.MIND_WAVE -> 17;
             case SubNet.PULSE -> 9;
             case SubNet.DUST -> 52;
+            case SubNet.KATON_BOOM -> 60;
             default -> 40;
         };
     }
@@ -205,6 +206,7 @@ final class NrFx {
             case SubNet.SAND_PLAT -> 4;
             case SubNet.SAND_HAND -> 10;
             case SubNet.EYES -> 6;
+            case SubNet.KATON -> 2;
             default -> 8;
         };
     }
@@ -255,6 +257,7 @@ final class NrFx {
                 case SubNet.MIND_WAVE -> mindWave(f, age);
                 case SubNet.PULSE -> pulse(f, age);
                 case SubNet.DUST -> dust(f, age);
+                case SubNet.KATON_BOOM -> katonBoom(f, age);
                 default -> {
                 }
             }
@@ -286,8 +289,133 @@ final class NrFx {
                 case SubNet.THREAD -> thread(rel(f.pos), rel(f.pos.add(f.dir)), f.a, f.b * out, age);
                 case SubNet.RAIJU -> raiju(f, age, out);
                 case SubNet.KAMUI -> kamui(f, age, out);
+                case SubNet.KATON -> katonBall(f, age, now, out);
                 default -> {
                 }
+            }
+        }
+    }
+
+    // ---------- Sasuke's Katon (the approved preview v9, forja/sasuke-chidori/katon.js) ----------
+    // Nothing repeated: the ball is ONE fire shell turning on a tilted axis with its tongues and its tail coming out of
+    // the shell itself; the blast is ONE dome that bursts, burns inside, rises, tears and becomes its own smoke, and ONE
+    // wall of fire runs round over the ground. Only the stars and the sparks are streaks, each its own way, length,
+    // width and life. All of it is souls_ki (KiMesh kinds KATON and KATON_RING), queued once a frame.
+
+    private static final float[] KATON_FLASH = FxDraw.rgb(0xFFE0B0);
+    private static final float[] KATON_STAR = FxDraw.rgb(0xFFF0C0);
+    private static final float[] KATON_STAR2 = FxDraw.rgb(0xFF8A40);
+    private static final float[] KATON_SPARK2 = FxDraw.rgb(0xFF4010);
+
+    private static void katonBall(Fx f, float age, double now, float out) {
+        if (!DbFx.pass || !KiMesh.ready()) {
+            return;
+        }
+        // Moved by the server once a tick: carried on along its last step so it flies smooth.
+        Vec3 p = f.pos;
+        if (f.endAt < 0 && f.trail.size() >= 2) {
+            Iterator<Vec3> it = f.trail.descendingIterator();
+            Vec3 last = it.next(), prev = it.next();
+            if (last.distanceToSqr(prev) < 9) {
+                p = last.add(last.subtract(prev).scale(Math.min(1.5, Math.max(0, now - f.updated))));
+            }
+        }
+        Vector3f c = rel(p);
+        KiMesh.P k = KiMesh.p(KiMesh.KATON);
+        k.time = age / 20f;
+        k.seed = (Math.floorMod(f.id, 97)) * 0.37f;
+        k.phase = age * 0.09f;
+        k.len = f.b;
+        k.size = new float[] {(float) f.dir.x, (float) f.dir.y, (float) f.dir.z};
+        k.spike = 0.3f;
+        k.life = 1;
+        k.thresh = 0;
+        k.smoke = 0;
+        k.up = 0;
+        k.growth = 0;
+        k.ringR = -1.0E4f;
+        k.alpha = out;
+        KiMesh.queue(KiMesh.Mesh.BALL, KiMesh.sphere(c, f.a), k, KiMesh.BOTH, 18);
+        // Its glow: the orange halo (the Supernova sun's).
+        KiMesh.P h = KiMesh.p(KiMesh.SUN_HALO);
+        h.time = age / 20f;
+        h.alpha = 0.35f * out;
+        KiMesh.queue(KiMesh.Mesh.HALO, KiMesh.sphere(c, f.a * 2f), h, KiMesh.BACK, 17);
+    }
+
+    private static void katonBoom(Fx f, float age) {
+        float x = age / 20f, tk = age, xr = f.a, sc = xr / 4;
+        Vector3f c = rel(f.pos);
+        float ground = (float) (f.dir.x - DbFx.cam.y);
+        int seed = (int) f.c;
+        if (DbFx.pass && KiMesh.ready()) {
+            if (x < 2.8f) {
+                float r = xr * (0.3f + 0.7f * easeOut(Math.min(1, x / 0.3f))) * (1 + 0.12f * x);
+                KiMesh.P k = KiMesh.p(KiMesh.KATON);
+                k.time = x;
+                k.seed = seed * 0.29f;
+                k.phase = x * 0.4f;
+                k.len = 0;
+                k.size = new float[] {0, 1, 0};
+                k.spike = 0.32f + 0.15f * x;
+                k.life = 0.92f - 0.92f * smooth((x - 0.15f) / 1.25f);
+                k.smoke = 1;
+                k.thresh = 1.1f * smooth((x - 0.45f) / 1.9f);
+                k.up = 0.5f * x * x;
+                k.growth = 0.12f * x;
+                k.alpha = 1 - smooth((x - 2.2f) / 0.6f);
+                k.ringR = ground + 0.03f;
+                k.glow = k.life > 0.3f;
+                KiMesh.queue(KiMesh.Mesh.BLAST, KiMesh.sphere(new Vector3f(c.x, ground, c.z), r), k, KiMesh.BOTH, 17);
+            }
+            if (x < 1.4f) {
+                float rr = (0.6f + 6.4f * easeOut(Math.min(1, x / 0.7f))) * sc, hh = 1.7f * sc * (1 - smooth((x - 0.35f) / 1.0f));
+                if (hh > 0.02f) {
+                    KiMesh.P k = KiMesh.p(KiMesh.KATON_RING);
+                    k.time = x;
+                    k.seed = seed * 0.41f + 3;
+                    k.life = 1 - 0.45f * smooth(x / 1.2f);
+                    k.thresh = 0.75f * smooth((x - 0.45f) / 0.9f);
+                    k.ringR = -1.0E4f;
+                    k.alpha = 1;
+                    KiMesh.queue(KiMesh.Mesh.TUBE, new org.joml.Matrix4f().translation(c.x, ground, c.z).scale(rr, hh, rr), k, KiMesh.BOTH, 16);
+                }
+            }
+        }
+        if (tk < 4) {
+            float q = tk / 4;
+            DbFx.flashBall(new Vector3f(c.x, ground + 1, c.z), xr * (0.4f + 1.6f * Mth.sqrt(q)) * 0.6f, 0.6f * (1 - q), KATON_FLASH, 2.7f);
+        }
+        // The stars: rays out of the burst, each its own way, length and width.
+        if (tk < 12) {
+            float k = 1 - tk / 12;
+            for (int i = 0; i < 16; i++) {
+                Vector3f d = sphere(811 + seed, i);
+                d.y = Math.abs(d.y) * 0.8f + 0.1f;
+                d.normalize();
+                float len = xr * 2.6f * (0.35f + 0.65f * hash(i, 811, 2)) * easeOut(tk / 6), w = 0.08f + 0.16f * hash(i, 811, 4);
+                Vector3f a = at(c, d, xr * 0.35f);
+                rib(a, at(a, d, len), w * k, FxDraw.STREAK, 0.9f, mix(KATON_STAR, KATON_STAR2, hash(i, 811, 5)), 0.8f * k, true);
+            }
+        }
+        // The sparks: thrown out and falling, each its own speed, length and life.
+        if (tk < 26) {
+            for (int i = 0; i < 28; i++) {
+                float life = 14 + 12 * hash(i, 831, 4), u = tk / life;
+                if (u >= 1) {
+                    continue;
+                }
+                Vector3f d = sphere(831 + seed, i);
+                d.y = Math.abs(d.y) + 0.15f;
+                d.normalize();
+                float v = (8 + 14 * hash(i, 831, 2)) * sc;
+                Vector3f p = at(c, d, v * x * 0.45f);
+                p.y -= 4 * x * x;
+                if (p.y < ground + 0.05f) {
+                    continue;
+                }
+                rib(p, at(p, d, -(0.5f + 1.6f * hash(i, 831, 3)) * (1 - u) * sc), 0.03f + 0.05f * hash(i, 831, 6), FxDraw.STREAK, 0.9f,
+                        mix(KATON_STAR, KATON_SPARK2, Math.min(1, u + 0.3f * hash(i, 831, 7))), 1 - u, true);
             }
         }
     }

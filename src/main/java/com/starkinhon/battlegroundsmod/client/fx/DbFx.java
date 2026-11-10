@@ -153,6 +153,10 @@ public final class DbFx {
     }
 
     static void receive(int kind, int id, Vec3 pos, Vec3 dir, float a, float b, float c) {
+        if (kind == SubNet.KATON || kind == SubNet.KATON_BOOM) {
+            NrFx.receive(kind, id, pos, dir, a, b, c);
+            return;
+        }
         if (kind >= SubNet.DIV_AURA) {
             JjFx.receive(kind, id, pos, dir, a, b, c);
             return;
@@ -2679,6 +2683,12 @@ public final class DbFx {
                 ScreenFx.fovKick(8 * near, 12);
             }
             // The charged Genki Dama landing: a long white-blue flash, six manga frames and a long quake.
+            // Sasuke's Katon blowing up: orange manga frames and a short shake.
+            case 58 -> {
+                ScreenFx.flash(0xFFB070, 0.3f * near, 8);
+                ScreenFx.impactFrame(new int[] {1, 2, 1, 2}, 1, 0xFF5A10, pos, 0);
+                ScreenShake.start(0.9f * near, 16);
+            }
             case 57 -> {
                 ScreenFx.flash(0xE8F6FF, near, 22);
                 ScreenFx.impactFrame(new int[] {4, 3, 4, 3, 4, 3}, 1, 0xFFFFFF, pos, 0);
