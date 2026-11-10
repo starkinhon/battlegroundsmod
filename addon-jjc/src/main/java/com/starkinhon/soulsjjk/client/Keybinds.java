@@ -1,0 +1,130 @@
+package com.starkinhon.soulsjjk.client;
+
+import com.starkinhon.soulsjjk.compat.Att;
+
+import java.util.List;
+
+import org.lwjgl.glfw.GLFW;
+
+import com.mojang.blaze3d.platform.InputConstants;
+import com.starkinhon.soulsjjk.ModAttachments;
+import com.starkinhon.soulsjjk.network.ModPayloads;
+import com.starkinhon.soulsjjk.power.Power;
+import com.starkinhon.soulsjjk.power.PowerData;
+import com.starkinhon.soulsjjk.power.Powers;
+
+import net.minecraft.client.KeyMapping;
+import net.minecraft.client.Minecraft;
+import com.starkinhon.soulsjjk.compat.PacketDistributor;
+
+// The power's skills (Z, X, C, V: index in ABILITIES = ability slot, with Shift held the Shift variant; B for a fifth skill) and the base fighting keys: R cycles the base
+// attack selector (Shift + R goes back), G uses the selected base attack, F holds the guard, Left Alt dashes U opens the skill constellation and K turns combat mode on or off. All can be changed in Controls.
+public final class Keybinds {
+    private static final String CATEGORY = "key.categories.soulsjjk";
+
+    public static final List<KeyMapping> ABILITIES = List.of(
+            key("ability_1", GLFW.GLFW_KEY_Z),
+            key("ability_2", GLFW.GLFW_KEY_X),
+            key("ability_3", GLFW.GLFW_KEY_C),
+            key("ultimate", GLFW.GLFW_KEY_V));
+    public static final KeyMapping EXTRA_ABILITY = key("ability_4", GLFW.GLFW_KEY_B);
+    public static final KeyMapping CYCLE_ATTACK = key("cycle_attack", GLFW.GLFW_KEY_R);
+    public static final KeyMapping USE_ATTACK = key("use_attack", GLFW.GLFW_KEY_G);
+    public static final KeyMapping GUARD = key("guard", GLFW.GLFW_KEY_F);
+    public static final KeyMapping DASH = key("dash", GLFW.GLFW_KEY_LEFT_ALT);
+    // Opens the power's constellation (its skills with names and descriptions).
+    public static final KeyMapping SKILLS_MENU = key("skills_menu", GLFW.GLFW_KEY_U);
+    // Turns combat mode on (it stays on until pressed again) or off. K is free in vanilla and in the mod.
+    public static final KeyMapping TOGGLE_COMBAT = key("toggle_combat", GLFW.GLFW_KEY_K);
+    // Kokushibo: stretches his sword (the awakened forms on Z, X, C, B and V, the 16th on Shift + V) or brings it back.
+    // H is free in vanilla and in the mod.
+    public static final KeyMapping STRETCH_SWORD = key("stretch_sword", GLFW.GLFW_KEY_H);
+
+    public static final List<KeyMapping> ALL = List.of(ABILITIES.get(0), ABILITIES.get(1), ABILITIES.get(2), ABILITIES.get(3),
+            EXTRA_ABILITY, CYCLE_ATTACK, USE_ATTACK, GUARD, DASH, SKILLS_MENU, TOGGLE_COMBAT, STRETCH_SWORD);
+
+    private Keybinds() {
+    }
+
+    // Whether the server was last told a skill key is down.
+    private static boolean abilityHeld;
+    // Whether each skill key (the 4 slots, then the extra one) was down last tick. Holding a key makes the system repeat
+    // its press (like holding Q drops item after item); only a press of a key that was up counts as a new use, so
+    // holding a key is one use, never many.
+    private static final boolean[] WAS_DOWN = new boolean[5];
+
+    // A real press of the key this tick (not the system repeating it while held). The clicks are always drained.
+    private static boolean pressed(KeyMapping key, int index) {
+        boolean down = key.isDown();
+        boolean wasDown = WAS_DOWN[index];
+        WAS_DOWN[index] = down;
+        boolean clicked = false;
+        while (key.consumeClick()) {
+            clicked = true;
+        }
+        return clicked && !wasDown;
+    }
+
+    // The key of a skill slot (a Shift variant uses its normal skill's key).
+    public static KeyMapping forSlot(Power power, int slot) {
+        int key = power.slotKey(slot);
+        return key == 4 ? EXTRA_ABILITY : ABILITIES.get(key);
+    }
+
+    private static KeyMapping key(String name, int defaultKey) {
+        return new KeyMapping("key.soulsjjk." + name, InputConstants.Type.KEYSYM, defaultKey, CATEGORY);
+    }
+
+    public static void tick() {
+        Minecraft minecraft = Minecraft.getInstance();
+        boolean ready = minecraft.player != null && minecraft.screen == null;
+        // Down before the use, so a charged skill knows the key is held from its first tick.
+        boolean held = ready && (EXTRA_ABILITY.isDown() || ABILITIES.stream().anyMatch(KeyMapping::isDown));
+        if (held != abilityHeld) {
+            abilityHeld = held;
+            PacketDistributor.sendToServer(new ModPayloads.AbilityHold(held));
+        }
+        Power power = ready ? Powers.get(Att.get(minecraft.player, ModAttachments.POWER).power) : null;
+        boolean shift = power != null && !power.shiftSlots().isEmpty() && minecraft.options.keyShift.isDown();
+        for (int slot = 0; slot < ABILITIES.size(); slot++) {
+            if (pressed(ABILITIES.get(slot), slot)) {
+                if (ready) {
+                    PacketDistributor.sendToServer(new ModPayloads.UseAbility(power == null ? slot : power.keySlot(slot, shift)));
+                }
+            }
+        }
+        if (pressed(EXTRA_ABILITY, 4)) {
+            if (ready) {
+                PacketDistributor.sendToServer(new ModPayloads.UseAbility(power == null ? PowerData.SLOT_EXTRA : power.keySlot(4, shift)));
+            }
+        }
+        boolean hasPower = ready && com.starkinhon.soulsjjk.combat.CombatMode.fighter(minecraft.player);
+        while (SKILLS_MENU.consumeClick()) {
+            if (ready) {
+                ConstellationScreen.open();
+            }
+        }
+        while (TOGGLE_COMBAT.consumeClick()) {
+            if (hasPower) {
+                PacketDistributor.sendToServer(new ModPayloads.ToggleCombat());
+            }
+        }
+        while (STRETCH_SWORD.consumeClick()) {
+            if (hasPower) {
+                PacketDistributor.sendToServer(new ModPayloads.StretchSword());
+            }
+        }
+        while (CYCLE_ATTACK.consumeClick()) {
+            if (hasPower) {
+                BaseAttacks.cycle(minecraft.options.keyShift.isDown());
+            }
+        }
+        // Down before the use, so the server already knows the key is held when the attack starts.
+        BaseAttacks.holdKey(hasPower && USE_ATTACK.isDown());
+        while (USE_ATTACK.consumeClick()) {
+            if (hasPower) {
+                BaseAttacks.use();
+            }
+        }
+    }
+}

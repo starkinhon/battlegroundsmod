@@ -1,0 +1,37 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "db.flex",
+  "nome": "Max Power",
+  "tempo": {
+    "atrasoTicks": 4,
+    "duracaoTicks": 36
+  },
+  "animacao": {
+    "transicaoTicks": 4,
+    "preparo": {
+      "cabeca": -6,
+      "tronco": -4,
+      "bracoDir": {
+        "frente": 84,
+        "abrir": 42
+      },
+      "bracoEsq": {
+        "frente": 84,
+        "abrir": -42
+      }
+    },
+    "sopro": {
+      "cabeca": -10,
+      "tronco": -6,
+      "bracoDir": {
+        "frente": 140,
+        "abrir": 70
+      },
+      "bracoEsq": {
+        "frente": 140,
+        "abrir": -70
+      }
+    },
+    "retornoTicks": 10
+  }
+}

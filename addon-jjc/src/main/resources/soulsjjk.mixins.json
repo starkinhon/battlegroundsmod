@@ -1,0 +1,19 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.starkinhon.soulsjjk.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "refmap": "soulsjjk.refmap.json",
+  "mixins": [
+    "jjc.KeyChangeTechniqueMixin",
+    "jjc.StartCursedTechniqueMixin"
+  ],
+  "client": [
+    "CameraMixin",
+    "LivingEntityRendererMixin",
+    "PlayerModelMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

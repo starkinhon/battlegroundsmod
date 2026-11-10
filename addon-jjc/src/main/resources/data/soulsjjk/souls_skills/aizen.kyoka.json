@@ -1,0 +1,160 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "aizen.kyoka",
+  "nome": "Kyōka Suigetsu",
+  "usarTicks": 0,
+  "limiteTicks": 140,
+  "quebrarTicks": 4,
+  "recargaTicks": 160,
+  "custoAtivar": 15,
+  "custoPorSegundo": 3,
+  "tempo": {
+    "atrasoTicks": 12,
+    "duracaoTicks": 6
+  },
+  "animacao": {
+    "transicaoTicks": 4,
+    "preparo": {
+      "cabeca": -5,
+      "tronco": 0,
+      "bracoDir": {
+        "frente": 100,
+        "abrir": -25
+      },
+      "bracoEsq": {
+        "frente": 0,
+        "abrir": 5
+      }
+    },
+    "sopro": {
+      "cabeca": 0,
+      "tronco": 0,
+      "bracoDir": {
+        "frente": 25,
+        "abrir": -10
+      },
+      "bracoEsq": {
+        "frente": 0,
+        "abrir": 5
+      }
+    },
+    "retornoTicks": 6
+  },
+  "sons": [
+    {
+      "nome": "Racha",
+      "som": "minecraft:block.glass.hit",
+      "momento": "rachar",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.4,
+      "pitch": 0.6,
+      "pitchFim": 0.6,
+      "onde": "alvo"
+    },
+    {
+      "nome": "Espelho quebra",
+      "som": "minecraft:block.glass.break",
+      "momento": "quebrar",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 2.0,
+      "pitch": 0.7,
+      "pitchFim": 0.7,
+      "onde": "alvo"
+    },
+    {
+      "nome": "Espelho quebra 2",
+      "som": "minecraft:entity.illusioner.cast_spell",
+      "momento": "quebrar",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.2,
+      "pitch": 0.6,
+      "pitchFim": 0.6,
+      "onde": "alvo"
+    },
+    {
+      "nome": "Aparece",
+      "som": "minecraft:entity.enderman.teleport",
+      "momento": "aparecer",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.0,
+      "pitch": 0.6,
+      "pitchFim": 0.6,
+      "onde": "usuario"
+    }
+  ],
+  "vfx": [
+    {
+      "tipo": "impactFrame",
+      "momento": "quebrar",
+      "sequencia": [
+        "branco",
+        "mangaInvertido",
+        "cor"
+      ],
+      "ticksPorQuadro": 1,
+      "cor": "#7a2cff"
+    },
+    {
+      "tipo": "estrela",
+      "momento": "quebrar",
+      "quantidade": 18,
+      "comprimento": 3,
+      "tamanho": 0.4,
+      "cor": "#c79bff",
+      "cor2": "#ffffff",
+      "vidaTicks": 10
+    },
+    {
+      "tipo": "distorcao",
+      "momento": "quebrar",
+      "modo": "onda",
+      "raio": 4,
+      "forca": 0.4,
+      "velocidade": 10,
+      "cor": "#7a2cff",
+      "vidaTicks": 12
+    },
+    {
+      "tipo": "tremor",
+      "momento": "quebrar",
+      "forca": 0.3,
+      "vidaTicks": 6
+    },
+    {
+      "tipo": "clarao",
+      "momento": "aparecer",
+      "tamanho": 2,
+      "quantidade": 8,
+      "cor": "#7a2cff",
+      "cor2": "#f1e6ff",
+      "vidaTicks": 12
+    },
+    {
+      "tipo": "anelChao",
+      "momento": "aparecer",
+      "raio": 3,
+      "tamanho": 0.4,
+      "cor": "#9a4dff",
+      "vidaTicks": 14
+    },
+    {
+      "tipo": "faiscas",
+      "momento": "aparecer",
+      "quantidade": 30,
+      "velocidade": 0.35,
+      "comprimento": 0.6,
+      "tamanho": 1,
+      "cor": "#7a2cff",
+      "cor2": "#e6d4ff",
+      "vidaTicks": 14
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+    "vertex": "soulsjjk:fx_blit",
+    "fragment": "soulsjjk:fx_bloom_comp",
+    "samplers": [
+        {
+            "name": "DiffuseSampler"
+        },
+        {
+            "name": "BloomSampler"
+        }
+    ],
+    "uniforms": [
+        {
+            "name": "Intensity",
+            "type": "float",
+            "count": 1,
+            "values": [
+                1.0
+            ]
+        }
+    ]
+}

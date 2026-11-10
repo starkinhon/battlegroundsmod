@@ -1,0 +1,235 @@
+{
+  "formato": "souls-boss/1",
+  "boss": "sasuke",
+  "poder": "sasuke",
+  "tier": 6,
+  "dropAlma": false,
+  "atributos": {
+    "vida": 66,
+    "armadura": 0,
+    "velocidade": 0.36,
+    "resistenciaEmpurrao": 0.3,
+    "alcanceVisao": 32,
+    "multDano": 1.0
+  },
+  "intro": {
+    "duracaoTicks": 0,
+    "titulo": "",
+    "subtitulo": "",
+    "cor": "#ffffff"
+  },
+  "percepcao": {
+    "intervaloDecisaoTicks": 6,
+    "aleatoriedade": 0.3,
+    "trocarHumorTicks": 60,
+    "intervaloTecnicasTicks": 100
+  },
+  "distancias": {
+    "soco": 3.0,
+    "ideal": 9,
+    "intervaloSocoTicks": 12
+  },
+  "movimento": {
+    "velocidadeAndar": 0.9,
+    "velocidadeCorrer": 1.25,
+    "trocarLadoTicks": 35
+  },
+  "ritmo": {
+    "calmoMinTicks": 60,
+    "calmoMaxTicks": 100,
+    "rapidoMinTicks": 40,
+    "rapidoMaxTicks": 80,
+    "velocidadeCalmo": 0.85,
+    "velocidadeRapido": 1.25,
+    "recargaInvestidaRapido": 35
+  },
+  "investida": {
+    "recargaTicks": 70,
+    "distanciaMin": 6,
+    "forca": 1.5,
+    "altura": 0.2
+  },
+  "passoSombra": {
+    "recargaTicks": 120,
+    "distanciaMin": 3,
+    "distanciaMax": 14,
+    "atras": 2.0,
+    "chance": 0.2,
+    "chanceCalmo": 0.08,
+    "chanceNaEsquiva": 0.3
+  },
+  "puloDuplo": {
+    "alturaMin": 2.5,
+    "distanciaMax": 6
+  },
+  "teleporte": {
+    "ativo": false,
+    "presoTicks": 100,
+    "distancia": 3
+  },
+  "reacoes": {
+    "chanceEsquivarSkill": 0.4,
+    "chanceEsquivarProjetil": 0.4,
+    "chanceContraAtaque": 0.3,
+    "chanceEsquivarUlt": 0.6,
+    "golpesParaContra": 3,
+    "janelaPressaoTicks": 30,
+    "punirTicks": 80,
+    "multPunir": 2,
+    "golpesParaFugir": 3,
+    "chanceFugirAoApanhar": 0.3
+  },
+  "ultFinal": {
+    "ativa": false
+  },
+  "skills": {
+    "forte": {
+      "slot": 4,
+      "tipo": "golpe",
+      "peso": 1.0,
+      "recargaTicks": 260,
+      "recargaMaxTicks": 400,
+      "avisoTicks": 4,
+      "distanciaMin": 0,
+      "distanciaMax": 4,
+      "giroGrausPorTick": 20,
+      "avisoCor": "#ffffff",
+      "avisoSom": "minecraft:entity.player.attack.sweep"
+    },
+    "barragem": {
+      "slot": 5,
+      "tipo": "barragem",
+      "peso": 1.0,
+      "recargaTicks": 300,
+      "recargaMaxTicks": 460,
+      "avisoTicks": 5,
+      "distanciaMin": 0,
+      "distanciaMax": 3.5,
+      "giroGrausPorTick": 10,
+      "avisoCor": "#ffffff",
+      "avisoSom": "minecraft:entity.player.attack.sweep"
+    },
+    "katon": {
+      "slot": 0,
+      "tipo": "alcance",
+      "peso": 1.0,
+      "recargaTicks": 160,
+      "recargaMaxTicks": 260,
+      "avisoTicks": 4,
+      "distanciaMin": 4,
+      "distanciaMax": 30,
+      "giroGrausPorTick": 14,
+      "avisoCor": "#ff8a30",
+      "avisoSom": "minecraft:entity.blaze.shoot"
+    },
+    "chidori": {
+      "slot": 1,
+      "tipo": "livre",
+      "peso": 1.0,
+      "recargaTicks": 240,
+      "recargaMaxTicks": 340,
+      "avisoTicks": 4,
+      "distanciaMin": 3,
+      "distanciaMax": 20,
+      "giroGrausPorTick": 12,
+      "avisoCor": "#bfe4ff",
+      "avisoSom": "minecraft:entity.bee.loop_aggressive"
+    },
+    "leitura": {
+      "slot": 7,
+      "tipo": "controle",
+      "peso": 0.7,
+      "recargaTicks": 240,
+      "recargaMaxTicks": 340,
+      "avisoTicks": 2,
+      "distanciaMin": 0,
+      "distanciaMax": 4,
+      "giroGrausPorTick": 12,
+      "avisoCor": "#ff2a2a",
+      "avisoSom": "minecraft:entity.illusioner.prepare_mirror"
+    },
+    "senbon": {
+      "slot": 2,
+      "tipo": "alcance",
+      "peso": 1.0,
+      "recargaTicks": 200,
+      "recargaMaxTicks": 300,
+      "avisoTicks": 3,
+      "distanciaMin": 3,
+      "distanciaMax": 16,
+      "giroGrausPorTick": 12,
+      "avisoCor": "#cfe8ff",
+      "avisoSom": "minecraft:entity.arrow.shoot"
+    },
+    "kirin": {
+      "slot": 3,
+      "tipo": "ult",
+      "peso": 0.8,
+      "recargaTicks": 1300,
+      "recargaMaxTicks": 1700,
+      "avisoTicks": 14,
+      "distanciaMin": 4,
+      "distanciaMax": 40,
+      "giroGrausPorTick": 12,
+      "avisoCor": "#bfe4ff",
+      "avisoSom": "minecraft:entity.lightning_bolt.thunder"
+    }
+  },
+  "combos": {
+    "sasuke_1": {
+      "peso": 1.0,
+      "passos": [
+        "senbon",
+        "chidori"
+      ]
+    },
+    "sasuke_2": {
+      "peso": 1.0,
+      "passos": [
+        "aproximar",
+        "leitura",
+        "soco",
+        "forte"
+      ]
+    },
+    "sasuke_3": {
+      "peso": 1.0,
+      "passos": [
+        "senbon",
+        "katon"
+      ]
+    }
+  },
+  "fases": [
+    {
+      "comecaEm": 1.0,
+      "skills": [
+        "forte",
+        "barragem",
+        "katon",
+        "chidori",
+        "leitura",
+        "senbon",
+        "kirin"
+      ],
+      "combos": [
+        "sasuke_1",
+        "sasuke_2",
+        "sasuke_3"
+      ],
+      "agressividade": 0.75,
+      "multRecarga": 1.0,
+      "menosRecargaTicks": 0,
+      "multVelocidade": 1.0,
+      "multAviso": 1.0,
+      "reacaoTicks": 7,
+      "chanceReacao": 0.6,
+      "pausaTicks": 8,
+      "despertado": false,
+      "corBarra": "white",
+      "transicaoTicks": 0,
+      "titulo": "",
+      "subtitulo": ""
+    }
+  ]
+}

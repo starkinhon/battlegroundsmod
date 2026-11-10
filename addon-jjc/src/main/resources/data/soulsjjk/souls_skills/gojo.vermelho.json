@@ -1,0 +1,484 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "gojo.vermelho",
+  "nome": "Vermelho",
+  "tempo": {
+    "atrasoTicks": 1,
+    "duracaoTicks": 10
+  },
+  "orbe": {
+    "raio": 0.093,
+    "escalaMax": 1.8
+  },
+  "segurado": {
+    "decidirTicks": 6,
+    "carregarTicks": 50,
+    "maxSegurarTicks": 60,
+    "cargaRabos": 0.5
+  },
+  "tiro": {
+    "alcance": 22,
+    "alcanceMax": 80,
+    "raio": 1.6,
+    "raioMax": 5.5,
+    "velocidade": 5,
+    "velocidadeMax": 9,
+    "dano": 32,
+    "danoMax": 88,
+    "empurrao": 2.6,
+    "empurraoMax": 5.5,
+    "subir": 0.35,
+    "blocosPorTick": 1400,
+    "pedacos": 28
+  },
+  "shift": {
+    "alcanceAlvo": 32,
+    "atras": 1.6,
+    "flutuar": 1.0,
+    "preparoTicks": 12,
+    "carga": 0.65,
+    "dano": 80,
+    "empurrao": 6.5,
+    "stunTicks": 40
+  },
+  "animacao": {
+    "transicaoTicks": 2,
+    "retornoTicks": 8,
+    "preparo": {
+      "cabeca": 0,
+      "tronco": 2,
+      "bracoDir": {
+        "frente": 62,
+        "abrir": -18
+      },
+      "bracoEsq": {
+        "frente": 0,
+        "abrir": 4
+      }
+    },
+    "sopro": {
+      "cabeca": 0,
+      "tronco": 5,
+      "bracoDir": {
+        "frente": 92,
+        "abrir": -4
+      },
+      "bracoEsq": {
+        "frente": -8,
+        "abrir": 5
+      }
+    }
+  },
+  "sons": [
+    {
+      "nome": "Acender",
+      "som": "minecraft:block.beacon.power_select",
+      "momento": "uso",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 0.9,
+      "pitch": 0.7,
+      "pitchFim": 0.7,
+      "onde": "orbe"
+    },
+    {
+      "nome": "Zumbido",
+      "som": "minecraft:block.beacon.ambient",
+      "momento": "carregar",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 30,
+      "vezes": 0,
+      "volume": 1.4,
+      "pitch": 0.6,
+      "pitchFim": 0.6,
+      "onde": "orbe"
+    },
+    {
+      "nome": "Rabos",
+      "som": "minecraft:block.respawn_anchor.charge",
+      "momento": "rabos",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.0,
+      "pitch": 1.3,
+      "pitchFim": 1.3,
+      "onde": "orbe"
+    },
+    {
+      "nome": "Estouro",
+      "som": "minecraft:entity.warden.sonic_boom",
+      "momento": "disparo",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 2.0,
+      "pitch": 1.25,
+      "pitchFim": 1.25,
+      "onde": "orbe"
+    },
+    {
+      "nome": "Estrondo",
+      "som": "minecraft:entity.generic.explode",
+      "momento": "disparo",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.6,
+      "pitch": 0.9,
+      "pitchFim": 0.9,
+      "onde": "orbe"
+    },
+    {
+      "nome": "Estrondo forte",
+      "som": "minecraft:entity.lightning_bolt.thunder",
+      "momento": "disparoForte",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 2.4,
+      "pitch": 1.5,
+      "pitchFim": 1.5,
+      "onde": "orbe"
+    },
+    {
+      "nome": "Acerto",
+      "som": "minecraft:entity.generic.explode",
+      "momento": "acerto",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.6,
+      "pitch": 1.3,
+      "pitchFim": 1.3,
+      "onde": "orbe"
+    },
+    {
+      "nome": "Fim do túnel",
+      "som": "minecraft:entity.generic.explode",
+      "momento": "impacto",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 2.2,
+      "pitch": 0.7,
+      "pitchFim": 0.7,
+      "onde": "impacto"
+    }
+  ],
+  "vfx": [
+    {
+      "tipo": "clarao",
+      "momento": "uso",
+      "tamanho": 0.25,
+      "quantidade": 4,
+      "cor": "#ff1020",
+      "cor2": "#ffffff",
+      "vidaTicks": 6,
+      "alcance": 48
+    },
+    {
+      "tipo": "distorcao",
+      "momento": "uso",
+      "modo": "lente",
+      "raio": 0.4,
+      "forca": 0.25,
+      "velocidade": 6,
+      "cor": "#ff1020",
+      "tinta": 0.03,
+      "vidaTicks": 6,
+      "alcance": 32
+    },
+    {
+      "tipo": "anel",
+      "momento": "rabos",
+      "raio": 0.45,
+      "tamanho": 0.05,
+      "cor": "#ff9aa0",
+      "vidaTicks": 8,
+      "alcance": 48
+    },
+    {
+      "tipo": "vinheta",
+      "momento": "rabos",
+      "cor": "#4a0006",
+      "forca": 0.35,
+      "vidaTicks": 30
+    },
+    {
+      "tipo": "flash",
+      "momento": "disparo",
+      "cor": "#ff1e30",
+      "forca": 0.6,
+      "vidaTicks": 7,
+      "alcance": 64
+    },
+    {
+      "tipo": "impactFrame",
+      "momento": "disparo",
+      "sequencia": [
+        "branco",
+        "cor",
+        "invertido",
+        "cor"
+      ],
+      "ticksPorQuadro": 1,
+      "cor": "#ff1020",
+      "alcance": 64
+    },
+    {
+      "tipo": "clarao",
+      "momento": "disparo",
+      "tamanho": 1.2,
+      "quantidade": 8,
+      "cor": "#ff1020",
+      "cor2": "#ffffff",
+      "vidaTicks": 8,
+      "alcance": 96
+    },
+    {
+      "tipo": "estrela",
+      "momento": "disparo",
+      "quantidade": 26,
+      "comprimento": 2.5,
+      "tamanho": 0.45,
+      "cor": "#ff4050",
+      "cor2": "#ffffff",
+      "vidaTicks": 10,
+      "alcance": 96
+    },
+    {
+      "tipo": "faiscas",
+      "momento": "disparo",
+      "quantidade": 60,
+      "velocidade": 0.45,
+      "comprimento": 0.7,
+      "tamanho": 0.45,
+      "cor": "#ff1020",
+      "cor2": "#ffffff",
+      "vidaTicks": 14,
+      "alcance": 96
+    },
+    {
+      "tipo": "distorcao",
+      "momento": "disparo",
+      "modo": "onda",
+      "raio": 3.0,
+      "forca": 0.55,
+      "velocidade": 16,
+      "cor": "#ff2030",
+      "tinta": 0.06,
+      "vidaTicks": 12,
+      "alcance": 64
+    },
+    {
+      "tipo": "tremor",
+      "momento": "disparo",
+      "forca": 1.0,
+      "vidaTicks": 12,
+      "alcance": 40
+    },
+    {
+      "tipo": "fov",
+      "momento": "disparo",
+      "forca": 5,
+      "vidaTicks": 10,
+      "alcance": 32
+    },
+    {
+      "tipo": "blurRadial",
+      "momento": "disparo",
+      "forca": 0.7,
+      "vidaTicks": 10,
+      "alcance": 32
+    },
+    {
+      "tipo": "impactFrame",
+      "momento": "disparoForte",
+      "sequencia": [
+        "branco",
+        "branco",
+        "cor",
+        "invertido",
+        "mangaInvertido",
+        "cor",
+        "invertido",
+        "branco"
+      ],
+      "ticksPorQuadro": 1,
+      "cor": "#ff1020",
+      "alcance": 128
+    },
+    {
+      "tipo": "flash",
+      "momento": "disparoForte",
+      "cor": "#ff2a3a",
+      "forca": 0.9,
+      "vidaTicks": 10,
+      "alcance": 160
+    },
+    {
+      "tipo": "clarao",
+      "momento": "disparoForte",
+      "tamanho": 2.5,
+      "quantidade": 12,
+      "cor": "#ff1020",
+      "cor2": "#ffffff",
+      "vidaTicks": 12,
+      "alcance": 160
+    },
+    {
+      "tipo": "distorcao",
+      "momento": "disparoForte",
+      "modo": "onda",
+      "raio": 7.0,
+      "forca": 0.75,
+      "velocidade": 20,
+      "cor": "#ff2030",
+      "tinta": 0.08,
+      "vidaTicks": 18,
+      "alcance": 128
+    },
+    {
+      "tipo": "anelChao",
+      "momento": "disparoForte",
+      "raio": 5.0,
+      "tamanho": 0.6,
+      "cor": "#ff3040",
+      "vidaTicks": 16,
+      "velocidade": 1.2,
+      "alcance": 96
+    },
+    {
+      "tipo": "tremor",
+      "momento": "disparoForte",
+      "forca": 2.4,
+      "vidaTicks": 22,
+      "alcance": 80
+    },
+    {
+      "tipo": "fov",
+      "momento": "disparoForte",
+      "forca": 8,
+      "vidaTicks": 14,
+      "alcance": 64
+    },
+    {
+      "tipo": "blurRadial",
+      "momento": "disparoForte",
+      "forca": 1.0,
+      "vidaTicks": 14,
+      "alcance": 64
+    },
+    {
+      "tipo": "impactFrame",
+      "momento": "acerto",
+      "sequencia": [
+        "cor",
+        "invertido",
+        "cor"
+      ],
+      "ticksPorQuadro": 1,
+      "cor": "#ff1020",
+      "alcance": 48
+    },
+    {
+      "tipo": "clarao",
+      "momento": "acerto",
+      "tamanho": 1.0,
+      "quantidade": 6,
+      "cor": "#ff1020",
+      "cor2": "#ffffff",
+      "vidaTicks": 8,
+      "alcance": 96
+    },
+    {
+      "tipo": "faiscas",
+      "momento": "acerto",
+      "quantidade": 40,
+      "velocidade": 0.4,
+      "comprimento": 0.6,
+      "tamanho": 0.45,
+      "cor": "#ff1020",
+      "cor2": "#ffffff",
+      "vidaTicks": 12,
+      "alcance": 96
+    },
+    {
+      "tipo": "distorcao",
+      "momento": "acerto",
+      "modo": "onda",
+      "raio": 2.0,
+      "forca": 0.5,
+      "velocidade": 14,
+      "cor": "#ff2030",
+      "tinta": 0.05,
+      "vidaTicks": 10,
+      "alcance": 64
+    },
+    {
+      "tipo": "clarao",
+      "momento": "impacto",
+      "tamanho": 1.75,
+      "quantidade": 8,
+      "cor": "#ff1020",
+      "cor2": "#ffffff",
+      "vidaTicks": 10,
+      "alcance": 160
+    },
+    {
+      "tipo": "fumaca",
+      "momento": "impacto",
+      "quantidade": 16,
+      "raio": 2.0,
+      "tamanho": 1.75,
+      "cor": "#3a2a28",
+      "vidaTicks": 50,
+      "alcance": 160
+    },
+    {
+      "tipo": "distorcao",
+      "momento": "impacto",
+      "modo": "onda",
+      "raio": 3.5,
+      "forca": 0.5,
+      "velocidade": 14,
+      "cor": "#ff2030",
+      "tinta": 0.05,
+      "vidaTicks": 14,
+      "alcance": 128
+    },
+    {
+      "tipo": "tremor",
+      "momento": "impacto",
+      "forca": 0.8,
+      "vidaTicks": 12,
+      "alcance": 40
+    },
+    {
+      "tipo": "distorcao",
+      "momento": "teleporte",
+      "modo": "lente",
+      "raio": 0.8,
+      "forca": 0.3,
+      "velocidade": 6,
+      "cor": "#ff1020",
+      "tinta": 0.02,
+      "vidaTicks": 6,
+      "alcance": 32
+    }
+  ],
+  "despertado": {
+    "nome": "Vermelho (despertado)",
+    "tiro": {
+      "alcanceMax": 110,
+      "raioMax": 7,
+      "danoMax": 105,
+      "empurraoMax": 7
+    },
+    "shift": {
+      "dano": 100
+    }
+  }
+}

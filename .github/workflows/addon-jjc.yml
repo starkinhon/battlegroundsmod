@@ -1,0 +1,55 @@
+name: Addon JujutsuCraft
+
+# The Souls x JujutsuCraft addon (addon-jjc/, Forge 1.20.1): built on its own, apart from the main mod.
+on:
+  push:
+    paths:
+      - 'addon-jjc/**'
+      - '.github/workflows/addon-jjc.yml'
+  pull_request:
+    paths:
+      - 'addon-jjc/**'
+      - '.github/workflows/addon-jjc.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    defaults:
+      run:
+        working-directory: addon-jjc
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build with Gradle
+        run: chmod +x gradlew && ./gradlew build --stacktrace
+
+      - name: Upload addon jar
+        uses: actions/upload-artifact@v4
+        with:
+          name: souls-jjc-addon-jar
+          path: addon-jjc/build/libs/*.jar
+
+      # Every push refreshes the "jjc-addon" test release with the new jar (direct download, no login).
+      - name: Publish test release
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release delete jjc-addon --cleanup-tag -y || true
+          gh release create jjc-addon build/libs/*.jar \
+            --target "$GITHUB_SHA" \
+            --prerelease \
+            --title "Souls x JujutsuCraft - addon de teste" \
+            --notes "Addon gerado do commit $GITHUB_SHA (branch ${GITHUB_REF_NAME}). Minecraft 1.20.1 + Forge 47 + JujutsuCraft ver51: coloque o jar na pasta mods junto com o JujutsuCraft."

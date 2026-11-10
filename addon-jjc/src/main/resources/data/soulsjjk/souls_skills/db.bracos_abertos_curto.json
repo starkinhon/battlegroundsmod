@@ -1,0 +1,37 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "db.bracos_abertos_curto",
+  "nome": "Braços abertos",
+  "tempo": {
+    "atrasoTicks": 3,
+    "duracaoTicks": 11
+  },
+  "animacao": {
+    "transicaoTicks": 3,
+    "preparo": {
+      "cabeca": 0,
+      "tronco": 0,
+      "bracoDir": {
+        "frente": 66,
+        "abrir": 42
+      },
+      "bracoEsq": {
+        "frente": 66,
+        "abrir": -42
+      }
+    },
+    "sopro": {
+      "cabeca": 0,
+      "tronco": 0,
+      "bracoDir": {
+        "frente": 110,
+        "abrir": 70
+      },
+      "bracoEsq": {
+        "frente": 110,
+        "abrir": -70
+      }
+    },
+    "retornoTicks": 8
+  }
+}

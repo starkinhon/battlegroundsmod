@@ -1,0 +1,69 @@
+package com.starkinhon.soulsjjk.skill;
+
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.starkinhon.soulsjjk.SoulsJjk;
+
+// Loads skill specs bundled in the mod jar. Both sides read the same file, so the client knows the animation timing.
+// A skill can have a "despertado" block with only the values that change in awakened mode; it is laid over the rest.
+public final class SkillSpecs {
+    private static final Gson GSON = new Gson();
+    private static final Map<String, Object> CACHE = new HashMap<>();
+
+    private SkillSpecs() {
+    }
+
+    // The key includes the type: in singleplayer the server and the client share this cache and read
+    // the same file as different records (e.g. MangekyoSpec on the server, CutsceneSpec.Holder on the client).
+    public static synchronized <T> T get(String id, Class<T> type, boolean awakened) {
+        String key = type.getName() + ":" + id + (awakened ? "#despertado" : "");
+        return type.cast(CACHE.computeIfAbsent(key, k -> GSON.fromJson(json(id, awakened), type)));
+    }
+
+    private static JsonObject json(String id, boolean awakened) {
+        JsonObject json = read(id);
+        JsonElement awakenedBlock = json.remove("despertado");
+        if (awakened && awakenedBlock instanceof JsonObject overrides) {
+            merge(json, overrides);
+        }
+        return json;
+    }
+
+    // Objects merge key by key; anything else (numbers, lists, text) replaces the base value.
+    private static void merge(JsonObject base, JsonObject overrides) {
+        for (Map.Entry<String, JsonElement> entry : overrides.entrySet()) {
+            JsonElement current = base.get(entry.getKey());
+            if (current instanceof JsonObject currentObject && entry.getValue() instanceof JsonObject overrideObject) {
+                merge(currentObject, overrideObject);
+            } else {
+                base.add(entry.getKey(), entry.getValue().deepCopy());
+            }
+        }
+    }
+
+    // Whether the skill has a spec file (some poses are only keyframe animations, like gojo.dominio_relampago).
+    public static boolean exists(String id) {
+        return SkillSpecs.class.getResource("/data/" + SoulsJjk.MODID + "/souls_skills/" + id + ".json") != null;
+    }
+
+    private static JsonObject read(String id) {
+        String path = "/data/" + SoulsJjk.MODID + "/souls_skills/" + id + ".json";
+        try (InputStream in = SkillSpecs.class.getResourceAsStream(path)) {
+            if (in == null) {
+                throw new IllegalStateException("Missing skill file " + path);
+            }
+            return JsonParser.parseReader(new InputStreamReader(in, StandardCharsets.UTF_8)).getAsJsonObject();
+        } catch (Exception e) {
+            SoulsJjk.LOGGER.error("Could not load skill {}", id, e);
+            throw new IllegalStateException("Could not load skill " + id, e);
+        }
+    }
+}

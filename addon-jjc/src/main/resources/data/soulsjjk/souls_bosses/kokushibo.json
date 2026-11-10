@@ -1,0 +1,373 @@
+{
+  "formato": "souls-boss/1",
+  "boss": "kokushibo",
+  "poder": "moon_demon",
+  "tier": 5,
+  "dropAlma": true,
+  "atributos": {
+    "vida": 225,
+    "armadura": 0,
+    "velocidade": 0.36,
+    "resistenciaEmpurrao": 0.75,
+    "alcanceVisao": 72,
+    "multDano": 1.0
+  },
+  "intro": {
+    "duracaoTicks": 60,
+    "titulo": "Lua Superior Um",
+    "subtitulo": "Kokushibo",
+    "cor": "#9b4dca"
+  },
+  "percepcao": {
+    "intervaloDecisaoTicks": 6,
+    "aleatoriedade": 0.25,
+    "trocarHumorTicks": 60,
+    "intervaloTecnicasTicks": 60
+  },
+  "distancias": {
+    "soco": 3.2,
+    "ideal": 7,
+    "intervaloSocoTicks": 10
+  },
+  "movimento": {
+    "velocidadeAndar": 0.9,
+    "velocidadeCorrer": 1.3,
+    "trocarLadoTicks": 35
+  },
+  "ritmo": {
+    "calmoMinTicks": 60,
+    "calmoMaxTicks": 110,
+    "rapidoMinTicks": 60,
+    "rapidoMaxTicks": 100,
+    "velocidadeCalmo": 0.85,
+    "velocidadeRapido": 1.4,
+    "recargaInvestidaRapido": 35
+  },
+  "investida": {
+    "recargaTicks": 60,
+    "distanciaMin": 7,
+    "forca": 1.7,
+    "altura": 0.25
+  },
+  "passoSombra": {
+    "recargaTicks": 90,
+    "distanciaMin": 3,
+    "distanciaMax": 18,
+    "atras": 2.0,
+    "chance": 0.25,
+    "chanceCalmo": 0.1,
+    "chanceNaEsquiva": 0.35
+  },
+  "puloDuplo": {
+    "alturaMin": 2.5,
+    "distanciaMax": 6
+  },
+  "teleporte": {
+    "ativo": true,
+    "presoTicks": 60,
+    "distancia": 3
+  },
+  "reacoes": {
+    "chanceEsquivarSkill": 0.4,
+    "chanceEsquivarProjetil": 0.4,
+    "chanceContraAtaque": 0.6,
+    "chanceEsquivarUlt": 0.85,
+    "golpesParaContra": 3,
+    "janelaPressaoTicks": 30,
+    "punirTicks": 100,
+    "multPunir": 2.5,
+    "golpesParaFugir": 3,
+    "chanceFugirAoApanhar": 0.4
+  },
+  "ultFinal": {
+    "ativa": false
+  },
+  "skills": {
+    "yoru": {
+      "slot": 0,
+      "tipo": "controle",
+      "peso": 1.5,
+      "recargaTicks": 120,
+      "recargaMaxTicks": 180,
+      "avisoTicks": 4,
+      "distanciaMin": 0,
+      "distanciaMax": 8,
+      "giroGrausPorTick": 30,
+      "avisoCor": "#e8c26a",
+      "avisoSom": "minecraft:entity.player.attack.sweep"
+    },
+    "segunda": {
+      "slot": 1,
+      "tipo": "contra",
+      "peso": 1.0,
+      "recargaTicks": 160,
+      "recargaMaxTicks": 220,
+      "avisoTicks": 0,
+      "distanciaMin": 0,
+      "distanciaMax": 6,
+      "giroGrausPorTick": 30,
+      "avisoCor": "#e8c26a",
+      "avisoSom": ""
+    },
+    "terceira": {
+      "slot": 2,
+      "tipo": "alcance",
+      "peso": 1.4,
+      "recargaTicks": 200,
+      "recargaMaxTicks": 260,
+      "avisoTicks": 6,
+      "distanciaMin": 2,
+      "distanciaMax": 14,
+      "giroGrausPorTick": 20,
+      "avisoCor": "#e8c26a",
+      "avisoSom": "minecraft:block.amethyst_block.chime"
+    },
+    "sexta": {
+      "slot": 3,
+      "tipo": "alcance",
+      "peso": 1.3,
+      "recargaTicks": 420,
+      "recargaMaxTicks": 520,
+      "avisoTicks": 10,
+      "distanciaMin": 8,
+      "distanciaMax": 24,
+      "giroGrausPorTick": 15,
+      "avisoCor": "#e8c26a",
+      "avisoSom": "minecraft:block.amethyst_block.chime"
+    },
+    "quinta": {
+      "slot": 7,
+      "tipo": "contra",
+      "peso": 1.0,
+      "recargaTicks": 260,
+      "recargaMaxTicks": 320,
+      "avisoTicks": 0,
+      "distanciaMin": 0,
+      "distanciaMax": 7,
+      "giroGrausPorTick": 30,
+      "avisoCor": "#e8c26a",
+      "avisoSom": ""
+    },
+    "setima": {
+      "slot": 0,
+      "tipo": "alcance",
+      "peso": 1.5,
+      "recargaTicks": 300,
+      "recargaMaxTicks": 340,
+      "avisoTicks": 8,
+      "distanciaMin": 0,
+      "distanciaMax": 60,
+      "giroGrausPorTick": 20,
+      "avisoCor": "#c9a2ff",
+      "avisoSom": "minecraft:entity.warden.sonic_charge"
+    },
+    "oitava": {
+      "slot": 1,
+      "tipo": "alcance",
+      "peso": 1.4,
+      "recargaTicks": 200,
+      "recargaMaxTicks": 240,
+      "avisoTicks": 8,
+      "distanciaMin": 3,
+      "distanciaMax": 20,
+      "giroGrausPorTick": 20,
+      "avisoCor": "#c9a2ff",
+      "avisoSom": "minecraft:entity.warden.sonic_charge"
+    },
+    "nona": {
+      "slot": 2,
+      "tipo": "alcance",
+      "peso": 1.4,
+      "recargaTicks": 300,
+      "recargaMaxTicks": 340,
+      "avisoTicks": 8,
+      "distanciaMin": 6,
+      "distanciaMax": 50,
+      "giroGrausPorTick": 15,
+      "avisoCor": "#c9a2ff",
+      "avisoSom": "minecraft:entity.warden.sonic_charge"
+    },
+    "decima": {
+      "slot": 7,
+      "tipo": "alcance",
+      "peso": 1.3,
+      "recargaTicks": 300,
+      "recargaMaxTicks": 340,
+      "avisoTicks": 10,
+      "distanciaMin": 10,
+      "distanciaMax": 150,
+      "giroGrausPorTick": 12,
+      "avisoCor": "#c9a2ff",
+      "avisoSom": "minecraft:entity.warden.sonic_charge"
+    },
+    "decima_quarta": {
+      "slot": 3,
+      "tipo": "contra",
+      "peso": 1.2,
+      "recargaTicks": 600,
+      "recargaMaxTicks": 640,
+      "avisoTicks": 0,
+      "distanciaMin": 0,
+      "distanciaMax": 40,
+      "giroGrausPorTick": 30,
+      "avisoCor": "#c9a2ff",
+      "avisoSom": ""
+    },
+    "decima_sexta": {
+      "slot": 11,
+      "tipo": "ult",
+      "peso": 1.5,
+      "recargaTicks": 800,
+      "recargaMaxTicks": 860,
+      "avisoTicks": 16,
+      "distanciaMin": 0,
+      "distanciaMax": 50,
+      "giroGrausPorTick": 20,
+      "avisoCor": "#c9a2ff",
+      "avisoSom": "minecraft:block.beacon.power_select"
+    },
+    "forte": {
+      "slot": 4,
+      "tipo": "golpe",
+      "peso": 1.0,
+      "recargaTicks": 300,
+      "recargaMaxTicks": 400,
+      "avisoTicks": 4,
+      "distanciaMin": 0,
+      "distanciaMax": 4,
+      "giroGrausPorTick": 20,
+      "avisoCor": "#ffffff",
+      "avisoSom": "minecraft:entity.player.attack.sweep"
+    },
+    "barragem": {
+      "slot": 5,
+      "tipo": "barragem",
+      "peso": 1.0,
+      "recargaTicks": 300,
+      "recargaMaxTicks": 400,
+      "avisoTicks": 5,
+      "distanciaMin": 0,
+      "distanciaMax": 3.5,
+      "giroGrausPorTick": 10,
+      "avisoCor": "#ffffff",
+      "avisoSom": "minecraft:entity.player.attack.sweep"
+    }
+  },
+  "combos": {
+    "noite_sem_lua": {
+      "peso": 1.1,
+      "passos": [
+        "yoru",
+        "soco",
+        "soco",
+        "forte"
+      ]
+    },
+    "corte_e_porrada": {
+      "peso": 0.9,
+      "passos": [
+        "sombra",
+        "soco",
+        "soco",
+        "barragem",
+        "yoru"
+      ]
+    },
+    "lua_crescente": {
+      "peso": 1.0,
+      "encadeado": true,
+      "passos": [
+        "yoru",
+        "terceira"
+      ]
+    },
+    "lua_despedacada": {
+      "peso": 1.0,
+      "encadeado": true,
+      "passos": [
+        "oitava",
+        "nona"
+      ]
+    },
+    "caca_lunar": {
+      "peso": 1.0,
+      "encadeado": true,
+      "passos": [
+        "nona",
+        "decima"
+      ]
+    },
+    "porrada_desperta": {
+      "peso": 0.9,
+      "passos": [
+        "sombra",
+        "soco",
+        "soco",
+        "forte"
+      ]
+    }
+  },
+  "fases": [
+    {
+      "comecaEm": 1.0,
+      "skills": [
+        "yoru",
+        "segunda",
+        "terceira",
+        "sexta",
+        "quinta",
+        "forte",
+        "barragem"
+      ],
+      "combos": [
+        "noite_sem_lua",
+        "corte_e_porrada",
+        "lua_crescente"
+      ],
+      "agressividade": 0.8,
+      "multRecarga": 1.0,
+      "menosRecargaTicks": 0,
+      "multVelocidade": 1.0,
+      "multAviso": 1.0,
+      "reacaoTicks": 6,
+      "chanceReacao": 0.8,
+      "pausaTicks": 10,
+      "despertado": false,
+      "corBarra": "purple",
+      "transicaoTicks": 0,
+      "titulo": "",
+      "subtitulo": ""
+    },
+    {
+      "comecaEm": 0.6,
+      "skills": [
+        "setima",
+        "oitava",
+        "nona",
+        "decima",
+        "decima_quarta",
+        "decima_sexta",
+        "forte",
+        "barragem"
+      ],
+      "combos": [
+        "lua_despedacada",
+        "caca_lunar",
+        "porrada_desperta"
+      ],
+      "agressividade": 0.85,
+      "multRecarga": 1.0,
+      "menosRecargaTicks": 0,
+      "multVelocidade": 1.1,
+      "multAviso": 0.9,
+      "reacaoTicks": 5,
+      "chanceReacao": 1.0,
+      "pausaTicks": 10,
+      "despertado": false,
+      "corBarra": "pink",
+      "transicaoTicks": 0,
+      "titulo": "Lua Despertada",
+      "subtitulo": "Respiração da Lua, a espada alongada"
+    }
+  ]
+}

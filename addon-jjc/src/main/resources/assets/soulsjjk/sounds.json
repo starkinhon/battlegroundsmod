@@ -1,0 +1,44 @@
+{
+  "katon": {
+    "subtitle": "subtitles.soulsjjk.katon",
+    "sounds": [
+      "soulsjjk:katon"
+    ]
+  },
+  "sharingan": {
+    "subtitle": "subtitles.soulsjjk.sharingan",
+    "sounds": [
+      "soulsjjk:sharingan"
+    ]
+  },
+  "hakai_voz": {
+    "subtitle": "subtitles.soulsjjk.hakai_voz",
+    "sounds": [
+      "soulsjjk:hakai_voz"
+    ]
+  },
+  "hakai_pulverizar": {
+    "subtitle": "subtitles.soulsjjk.hakai_pulverizar",
+    "sounds": [
+      "soulsjjk:hakai_pulverizar"
+    ]
+  },
+  "hakai_bola": {
+    "subtitle": "subtitles.soulsjjk.hakai_bola",
+    "sounds": [
+      "soulsjjk:hakai_bola"
+    ]
+  },
+  "hakaizinho": {
+    "subtitle": "subtitles.soulsjjk.hakaizinho",
+    "sounds": [
+      "soulsjjk:hakaizinho"
+    ]
+  },
+  "hakaizinho_pulverizar": {
+    "subtitle": "subtitles.soulsjjk.hakaizinho_pulverizar",
+    "sounds": [
+      "soulsjjk:hakaizinho_pulverizar"
+    ]
+  }
+}

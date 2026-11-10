@@ -1,0 +1,11 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "padrao.medo",
+  "nome": "Medo",
+  "lentidao": 0.3,
+  "pulo": 0.12,
+  "tremor": 0.22,
+  "batimentoTicks": 12,
+  "volumeBatimento": 1.0,
+  "pitchBatimento": 1.35
+}

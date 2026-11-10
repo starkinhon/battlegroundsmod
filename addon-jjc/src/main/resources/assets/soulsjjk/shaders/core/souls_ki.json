@@ -1,0 +1,404 @@
+{
+    "vertex": "soulsjjk:souls_ki",
+    "fragment": "soulsjjk:souls_ki",
+    "samplers": [],
+    "uniforms": [
+        {
+            "name": "ModelViewMat",
+            "type": "matrix4x4",
+            "count": 16,
+            "values": [
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1
+            ]
+        },
+        {
+            "name": "ProjMat",
+            "type": "matrix4x4",
+            "count": 16,
+            "values": [
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1
+            ]
+        },
+        {
+            "name": "Model",
+            "type": "matrix4x4",
+            "count": 16,
+            "values": [
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1
+            ]
+        },
+        {
+            "name": "Kind",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0
+            ]
+        },
+        {
+            "name": "Life",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0
+            ]
+        },
+        {
+            "name": "Seed",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0
+            ]
+        },
+        {
+            "name": "Time",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0
+            ]
+        },
+        {
+            "name": "Flat",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0
+            ]
+        },
+        {
+            "name": "Len",
+            "type": "float",
+            "count": 1,
+            "values": [
+                1
+            ]
+        },
+        {
+            "name": "W",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0.5
+            ]
+        },
+        {
+            "name": "Flow",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0
+            ]
+        },
+        {
+            "name": "Phase",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0
+            ]
+        },
+        {
+            "name": "Growth",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0
+            ]
+        },
+        {
+            "name": "FlashAmt",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0
+            ]
+        },
+        {
+            "name": "Tongue",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0.36
+            ]
+        },
+        {
+            "name": "Spike",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0.1
+            ]
+        },
+        {
+            "name": "SpikeFreq",
+            "type": "float",
+            "count": 1,
+            "values": [
+                4.5
+            ]
+        },
+        {
+            "name": "SpikeSharp",
+            "type": "float",
+            "count": 1,
+            "values": [
+                2.2
+            ]
+        },
+        {
+            "name": "Crown",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0.55
+            ]
+        },
+        {
+            "name": "Up",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0.5
+            ]
+        },
+        {
+            "name": "R0",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0.3
+            ]
+        },
+        {
+            "name": "R1",
+            "type": "float",
+            "count": 1,
+            "values": [
+                1
+            ]
+        },
+        {
+            "name": "Flare",
+            "type": "float",
+            "count": 1,
+            "values": [
+                1
+            ]
+        },
+        {
+            "name": "Bend",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0
+            ]
+        },
+        {
+            "name": "Smoke",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0
+            ]
+        },
+        {
+            "name": "Skirt",
+            "type": "float",
+            "count": 1,
+            "values": [
+                1
+            ]
+        },
+        {
+            "name": "Alpha",
+            "type": "float",
+            "count": 1,
+            "values": [
+                1
+            ]
+        },
+        {
+            "name": "Tail",
+            "type": "float",
+            "count": 1,
+            "values": [
+                -1
+            ]
+        },
+        {
+            "name": "Pulse",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0
+            ]
+        },
+        {
+            "name": "Thresh",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0.62
+            ]
+        },
+        {
+            "name": "RingR",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0
+            ]
+        },
+        {
+            "name": "RingMax",
+            "type": "float",
+            "count": 1,
+            "values": [
+                1
+            ]
+        },
+        {
+            "name": "Rot",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0
+            ]
+        },
+        {
+            "name": "Teeth",
+            "type": "float",
+            "count": 1,
+            "values": [
+                26
+            ]
+        },
+        {
+            "name": "Pitch",
+            "type": "float",
+            "count": 1,
+            "values": [
+                1.05
+            ]
+        },
+        {
+            "name": "Twist",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0
+            ]
+        },
+        {
+            "name": "HighPass",
+            "type": "float",
+            "count": 1,
+            "values": [0.0]
+        },
+        {
+            "name": "GlowPass",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0
+            ]
+        },
+        {
+            "name": "Size",
+            "type": "float",
+            "count": 3,
+            "values": [
+                0.62,
+                1.12,
+                0.5
+            ]
+        },
+        {
+            "name": "Color",
+            "type": "float",
+            "count": 3,
+            "values": [
+                0.55,
+                0.83,
+                1
+            ]
+        },
+        {
+            "name": "Color2",
+            "type": "float",
+            "count": 3,
+            "values": [
+                1,
+                0.37,
+                0.68
+            ]
+        },
+        {
+            "name": "LightDir",
+            "type": "float",
+            "count": 3,
+            "values": [
+                -0.4,
+                0.8,
+                0.45
+            ]
+        },
+        {
+            "name": "Dust",
+            "type": "float",
+            "count": 3,
+            "values": [
+                0.8,
+                0.74,
+                0.62
+            ]
+        }
+    ]
+}

@@ -1,0 +1,442 @@
+package com.starkinhon.soulsjjk.client.fx;
+
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+
+import org.joml.Matrix4f;
+import org.joml.Vector3f;
+import org.joml.Vector4f;
+
+import com.starkinhon.soulsjjk.compat.DeltaTracker;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.util.Mth;
+import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.client.event.RenderLevelStageEvent;
+import net.minecraftforge.client.event.ViewportEvent;
+
+// What the screen is doing right now: impact frames, flashes, radial blur, space bending and the FOV punch.
+// Started by SkillEffects; the passes themselves run in FxPost. The bending and blur run at the end of the level
+// (so the hand and HUD stay sharp); impact frames and flashes run under the HUD, over the hand.
+public final class ScreenFx {
+    public static final int MAX_WARPS = 8;
+    // Every bending is scaled by this: the files were tuned too strong.
+    private static final float WARP_SCALE = 0.5f;
+
+    private record Impact(int[] modes, int ticksPerFrame, float[] tint, Vec3 pos, long start) {
+    }
+
+    private record Timed(float amount, float[] color, Vec3 pos, long start, int life) {
+        float k(double now) {
+            double t = (now - start) / life;
+            return t < 0 || t >= 1 ? 0 : (float) (amount * (1 - t) * (1 - t));
+        }
+    }
+
+    // Space bending in a sphere: mode 0 ripple, 1 swirl, 2 lens, 3 whole screen, 4 whirl around the outside only.
+    // follow/seguir keep it on an entity (lifted by up); otherwise it stays at pos.
+    // owner: whose move it came from (-1 unknown), see stopOwner.
+    public record Warp(Vec3 pos, float radius, float strength, float speed, int mode, Vec3 axis, float[] tint, float tintAmount, long start, int life,
+            int follow, String seguir, float up, int owner) {
+        float envelope(double now) {
+            double t = (now - start) / life;
+            if (t < 0 || t >= 1) {
+                return 0;
+            }
+            return (float) (smooth(0, 0.08, t) * (1 - smooth(0.55, 1, t)));
+        }
+    }
+
+    private static long ticks;
+    private static Impact impact;
+    private static Timed flash;
+    private static Timed radial;
+    private static Timed fov;
+    private static Timed vignette;
+    private static final net.minecraft.resources.ResourceLocation VIGNETTE = new net.minecraft.resources.ResourceLocation(
+            com.starkinhon.soulsjjk.SoulsJjk.MODID, "textures/fx/vignette.png");
+    private static final List<Warp> WARPS = new ArrayList<>();
+    // Bending kept on by a renderer adding it again every frame (the Blue): no envelope and no WARP_SCALE, the same
+    // numbers as the Skill Visualizer. Cleared at the start of each frame.
+    private record Held(Vec3 pos, float radius, float strength, int mode, Vec3 axis, float age) {
+    }
+
+    private static final List<Held> HELD = new ArrayList<>();
+    private static long heldAt = -10;
+    // Kept on by someone calling every tick (Gojo's tunnel of speed, the slow zoom of those caught in the void).
+    private static float holdBlur;
+    private static Vec3 holdBlurPos = Vec3.ZERO;
+    private static long holdBlurAt = -10;
+    private static float holdFov;
+    private static long holdFovAt = -10;
+    // A color grade over the whole frame (fx_impact modes 10 and 11), kept on by a renderer calling every frame.
+    private static int gradeMode;
+    private static float gradeAmount;
+    private static float[] gradeTint = {1, 0, 0};
+    private static Vec3 gradePos = Vec3.ZERO;
+    private static long gradeAt = -10;
+
+    private static final Matrix4f VIEW = new Matrix4f();
+    private static final Matrix4f PROJ = new Matrix4f();
+    private static Vec3 camera = Vec3.ZERO;
+    private static float levelPartial;
+
+    private ScreenFx() {
+    }
+
+    public static long now() {
+        return ticks;
+    }
+
+    public static void tick() {
+        ticks++;
+        WARPS.removeIf(w -> ticks - w.start() > w.life());
+        if (impact != null && ticks - impact.start() >= (long) impact.modes().length * impact.ticksPerFrame()) {
+            impact = null;
+        }
+    }
+
+    public static void impactFrame(int[] modes, int ticksPerFrame, int tint, Vec3 pos, int delay) {
+        if (modes.length > 0) {
+            impact = new Impact(modes, Math.max(1, ticksPerFrame), rgb(tint), pos, ticks + delay);
+        }
+    }
+
+    public static void flash(int color, float alpha, int life) {
+        flash = new Timed(Mth.clamp(alpha, 0, 1), rgb(color), Vec3.ZERO, ticks, Math.max(1, life));
+    }
+
+    public static void radialBlur(Vec3 pos, float strength, int life) {
+        radial = new Timed(strength, null, pos, ticks, Math.max(1, life));
+    }
+
+    public static void fovKick(float degrees, int life) {
+        fov = new Timed(degrees, null, Vec3.ZERO, ticks, Math.max(1, life));
+    }
+
+    public static void warp(Vec3 pos, float radius, float strength, float speed, int mode, Vec3 axis, int tint, float tintAmount, int life,
+            int follow, String seguir, float up) {
+        WARPS.add(new Warp(pos, radius, strength * WARP_SCALE, speed, mode, axis, rgb(tint), tintAmount, ticks, Math.max(1, life), follow, seguir, up,
+                SkillEffects.owner()));
+    }
+
+    // owner's move was cut off: its bending is gone.
+    public static void stopOwner(int owner) {
+        WARPS.removeIf(w -> w.owner() == owner);
+    }
+
+    // Bending for this frame only (call it from a renderer every frame). age in seconds (moves the swirl).
+    public static void holdWarp(Vec3 pos, float radius, float strength, int mode, Vec3 axis, float age) {
+        if (HELD.size() < MAX_WARPS && strength > 0.001f) {
+            HELD.add(new Held(pos, radius, strength, mode, axis, age));
+            heldAt = ticks;
+        }
+    }
+
+    private static boolean warping() {
+        return !WARPS.isEmpty() || !HELD.isEmpty();
+    }
+
+    // Orange edges of the screen (being burned): comes in fast, holds, fades over the last part.
+    public static void clearVignette() {
+        vignette = null;
+    }
+
+    public static void vignette(int color, float strength, int life) {
+        float a = Mth.clamp(strength, 0, 1);
+        if (vignette == null || vignette.k(ticks) < a * 0.8f) {
+            vignette = new Timed(a, rgb(color), Vec3.ZERO, ticks, Math.max(1, life));
+        } else {
+            vignette = new Timed(vignette.amount(), vignette.color(), Vec3.ZERO, ticks - Math.max(1, life) / 8, Math.max(1, life));
+        }
+    }
+
+    // Radial blur towards pos for as long as this is called every tick.
+    public static void sustainBlur(Vec3 pos, float strength) {
+        holdBlur = strength;
+        holdBlurPos = pos;
+        holdBlurAt = ticks;
+    }
+
+    // Grade for this frame (call every frame): mode 10 the slow motion's blue, 11 the Black Flash's red with ink blots
+    // around pos; amount 0 to 1.
+    public static void sustainGrade(int mode, float amount, int tint, Vec3 pos) {
+        if (amount > 0.004f) {
+            gradeMode = mode;
+            gradeAmount = Mth.clamp(amount, 0, 1);
+            gradeTint = rgb(tint);
+            gradePos = pos;
+            gradeAt = ticks;
+        }
+    }
+
+    private static boolean grading() {
+        return ticks - gradeAt <= 1 && gradeAmount > 0.004f && FxConfig.on(FxConfig.IMPACT_FRAMES);
+    }
+
+    // FOV change (degrees) for as long as this is called every tick.
+    public static void sustainFov(float degrees) {
+        holdFov = degrees;
+        holdFovAt = ticks;
+    }
+
+    private static float heldBlur() {
+        return ticks - holdBlurAt <= 1 ? holdBlur : 0;
+    }
+
+    // The blur this frame and where it points.
+    private static float blurAt(double now) {
+        return Math.max(radial != null ? radial.k(now) : 0, heldBlur());
+    }
+
+    private static Vec3 blurPos(double now) {
+        return heldBlur() > (radial != null ? radial.k(now) : 0) ? holdBlurPos : radial.pos();
+    }
+
+    static boolean needsScene() {
+        return Realismo.active() || impact != null || !WARPS.isEmpty() || ticks - heldAt <= 1 || radial != null && radial.k(ticks) > 0 || heldBlur() > 0;
+    }
+
+    // The level's camera for this frame, so world positions can be found on screen later (also from the GUI).
+    static void capture(RenderLevelStageEvent event) {
+        HELD.clear();
+        VIEW.set(event.getPoseStack().last().pose());
+        PROJ.set(event.getProjectionMatrix());
+        camera = event.getCamera().getPosition();
+        levelPartial = event.getPartialTick();
+    }
+
+    // Bending and blur, at the end of the level. With a shader pack these move to the GUI, without depth.
+    static void levelPasses() {
+        if (!FxShaders.ready()) {
+            return;
+        }
+        double now = ticks + levelPartial;
+        boolean warp = FxConfig.on(FxConfig.DISTORTION) && warping();
+        float blur = FxConfig.on(FxConfig.RADIAL_BLUR) ? blurAt(now) : 0;
+        boolean real = Realismo.active();
+        if (!warp && blur <= 0 && !real) {
+            return;
+        }
+        FxPost.beginPasses();
+        // (the volumes first, so the bending and the blur carry them too)
+        if (real) {
+            Realismo.pass(VIEW, PROJ, camera, levelPartial);
+        }
+        if (warp) {
+            warpPass(now);
+        }
+        if (blur > 0) {
+            radialPass(blur, blurPos(now));
+        }
+        FxPost.endPasses();
+    }
+
+    // Layer under the HUD.
+    public static void renderGui(GuiGraphics graphics, DeltaTracker delta) {
+        double now = ticks + delta.getGameTimeDeltaPartialTick(false);
+        boolean reduced = FxConfig.on(FxConfig.REDUCED_FLASH);
+        if (FxShaders.ready()) {
+            int mode = impactMode();
+            boolean flat = FxShaders.flat();
+            boolean warp = flat && FxConfig.on(FxConfig.DISTORTION) && warping();
+            float blur = flat && FxConfig.on(FxConfig.RADIAL_BLUR) ? blurAt(now) : 0;
+            // (with a shader pack the volumes go over its finished picture, lit by the same sun and sky)
+            boolean real = flat && Realismo.active();
+            boolean grade = grading();
+            if (mode >= 0 || warp || blur > 0 || real || grade) {
+                graphics.flush();
+                FxPost.beginPasses();
+                if (real) {
+                    Realismo.pass(VIEW, PROJ, camera, delta.getGameTimeDeltaPartialTick(false));
+                }
+                if (warp) {
+                    warpPass(now);
+                }
+                if (blur > 0) {
+                    radialPass(blur, blurPos(now));
+                }
+                if (grade) {
+                    gradePass(reduced);
+                }
+                if (mode >= 0) {
+                    impactPass(mode, reduced, now);
+                }
+                FxPost.endPasses();
+            }
+        }
+        float[] edge = Aura.screenEdge(delta.getGameTimeDeltaPartialTick(false));
+        if (edge != null) {
+            com.mojang.blaze3d.systems.RenderSystem.enableBlend();
+            graphics.setColor(edge[0], edge[1], edge[2], edge[3]);
+            graphics.blit(VIGNETTE, 0, 0, 0, 0, graphics.guiWidth(), graphics.guiHeight(), graphics.guiWidth(), graphics.guiHeight());
+            graphics.setColor(1, 1, 1, 1);
+            com.mojang.blaze3d.systems.RenderSystem.disableBlend();
+        }
+        if (vignette != null) {
+            double t = (now - vignette.start()) / vignette.life();
+            float a = t < 0 || t >= 1 ? 0 : (float) (vignette.amount() * Math.min(1, t * 8) * (t < 0.6 ? 1 : 1 - (t - 0.6) / 0.4));
+            if (a > 0.004f) {
+                float[] c = vignette.color();
+                com.mojang.blaze3d.systems.RenderSystem.enableBlend();
+                graphics.setColor(c[0], c[1], c[2], a);
+                graphics.blit(VIGNETTE, 0, 0, 0, 0, graphics.guiWidth(), graphics.guiHeight(), graphics.guiWidth(), graphics.guiHeight());
+                graphics.setColor(1, 1, 1, 1);
+                com.mojang.blaze3d.systems.RenderSystem.disableBlend();
+            }
+        }
+        if (flash != null) {
+            float a = flash.k(now) * (reduced ? 0.35f : 1);
+            if (a > 0.004f) {
+                float[] c = flash.color();
+                int argb = (int) (a * 255) << 24 | (int) (c[0] * 255) << 16 | (int) (c[1] * 255) << 8 | (int) (c[2] * 255);
+                graphics.fill(0, 0, graphics.guiWidth(), graphics.guiHeight(), argb);
+            }
+        }
+    }
+
+    public static void onComputeFov(ViewportEvent.ComputeFov event) {
+        if (ticks - holdFovAt <= 1 && event.usedConfiguredFov()) {
+            event.setFOV(Mth.clamp(event.getFOV() + holdFov, 10, 150));
+        }
+        if (fov != null && event.usedConfiguredFov()) {
+            float k = fov.k(ticks + event.getPartialTick());
+            if (k != 0) {
+                event.setFOV(event.getFOV() + k);
+            }
+        }
+    }
+
+    private static int impactMode() {
+        if (impact == null || !FxConfig.on(FxConfig.IMPACT_FRAMES)) {
+            return -1;
+        }
+        long age = ticks - impact.start();
+        if (age < 0) {
+            return -1;
+        }
+        int frame = (int) (age / impact.ticksPerFrame());
+        return frame < impact.modes().length ? impact.modes()[frame] : -1;
+    }
+
+    private static void impactPass(int mode, boolean reduced, double now) {
+        var shader = FxShaders.impact;
+        var target = Minecraft.getInstance().getMainRenderTarget();
+        float[] center = toScreen(impact.pos());
+        shader.safeGetUniform("Screen").set((float) target.width, (float) target.height);
+        shader.safeGetUniform("Center").set(center[0], center[1]);
+        shader.safeGetUniform("Tint").set(impact.tint()[0], impact.tint()[1], impact.tint()[2]);
+        shader.safeGetUniform("Mode").set((float) mode);
+        // (the Black Flash's frames shake: re-rolled three times a tick)
+        shader.safeGetUniform("Seed").set((float) (mode >= 6 ? Math.floor(now * 3) % 997 : ticks % 997));
+        shader.safeGetUniform("DepthOn").set(FxPost.sceneDepth() > 0 ? 1f : 0f);
+        shader.safeGetUniform("DepthRange").set(0.05f, Minecraft.getInstance().gameRenderer.getDepthFar());
+        shader.safeGetUniform("Reduced").set(reduced ? 1f : 0f);
+        // How far through the whole impact (0 to 1): the ink of mode 5 spreads with it.
+        double total = (double) impact.modes().length * impact.ticksPerFrame();
+        shader.safeGetUniform("Age").set((float) Mth.clamp((now - impact.start()) / total, 0, 1));
+        FxPost.pass(shader);
+    }
+
+    private static void gradePass(boolean reduced) {
+        var shader = FxShaders.impact;
+        var target = Minecraft.getInstance().getMainRenderTarget();
+        float[] center = toScreen(gradePos);
+        shader.safeGetUniform("Screen").set((float) target.width, (float) target.height);
+        shader.safeGetUniform("Center").set(center[0], center[1]);
+        shader.safeGetUniform("Tint").set(gradeTint[0], gradeTint[1], gradeTint[2]);
+        shader.safeGetUniform("Mode").set((float) gradeMode);
+        shader.safeGetUniform("Seed").set((float) (ticks % 997));
+        shader.safeGetUniform("DepthOn").set(0f);
+        shader.safeGetUniform("DepthRange").set(0.05f, Minecraft.getInstance().gameRenderer.getDepthFar());
+        shader.safeGetUniform("Reduced").set(reduced ? 1f : 0f);
+        shader.safeGetUniform("Age").set(gradeAmount);
+        FxPost.pass(shader);
+    }
+
+    private static void radialPass(float strength, Vec3 pos) {
+        var shader = FxShaders.radial;
+        var target = Minecraft.getInstance().getMainRenderTarget();
+        float[] center = toScreen(pos);
+        shader.safeGetUniform("Screen").set((float) target.width, (float) target.height);
+        shader.safeGetUniform("Center").set(center[0], center[1]);
+        shader.safeGetUniform("Strength").set(strength);
+        FxPost.pass(shader);
+    }
+
+    private static void warpPass(double now) {
+        var shader = FxShaders.warp;
+        List<Warp> live = new ArrayList<>(WARPS);
+        live.sort(Comparator.comparingDouble(w -> -w.strength() * w.envelope(now)));
+        int count = 0;
+        for (Warp w : live) {
+            if (count >= MAX_WARPS) {
+                break;
+            }
+            float env = w.envelope(now);
+            if (env <= 0) {
+                continue;
+            }
+            Vec3 at = FxAnchor.point(w.follow(), w.seguir(), levelPartial);
+            at = at == null ? w.pos() : at.add(0, w.up(), 0);
+            Vector3f c = VIEW.transformPosition(at.subtract(camera).toVector3f(), new Vector3f());
+            Vector3f axis = VIEW.transformDirection(w.axis().toVector3f(), new Vector3f());
+            float age = (float) ((now - w.start()) / 20.0);
+            Matrix4f m = new Matrix4f(
+                    c.x, c.y, c.z, w.radius(),
+                    w.strength() * env, age, w.speed(), w.mode(),
+                    axis.x, axis.y, axis.z, 0,
+                    w.tint()[0], w.tint()[1], w.tint()[2], w.tintAmount() * env);
+            shader.safeGetUniform("Src" + count).set(m);
+            count++;
+        }
+        for (Held w : HELD) {
+            if (count >= MAX_WARPS) {
+                break;
+            }
+            Vector3f c = VIEW.transformPosition(w.pos().subtract(camera).toVector3f(), new Vector3f());
+            Vector3f axis = VIEW.transformDirection(w.axis().toVector3f(), new Vector3f());
+            Matrix4f m = new Matrix4f(
+                    c.x, c.y, c.z, w.radius(),
+                    w.strength(), w.age(), 6, w.mode(),
+                    axis.x, axis.y, axis.z, 0,
+                    1, 1, 1, 0);
+            shader.safeGetUniform("Src" + count).set(m);
+            count++;
+        }
+        if (count == 0) {
+            return;
+        }
+        shader.safeGetUniform("Count").set((float) count);
+        shader.safeGetUniform("WarpProj").set(new Matrix4f(PROJ));
+        shader.safeGetUniform("InverseProj").set(new Matrix4f(PROJ).invert());
+        shader.safeGetUniform("DepthOn").set(FxPost.sceneDepth() > 0 ? 1f : 0f);
+        FxPost.pass(shader);
+    }
+
+    static float[] screen(Vec3 pos) {
+        return toScreen(pos);
+    }
+
+    // Where a world point is on screen (0..1, y up); the middle of the screen if it is behind the camera.
+    private static float[] toScreen(Vec3 pos) {
+        Vector3f rel = pos.subtract(camera).toVector3f();
+        Vector4f clip = new Vector4f(rel, 1);
+        VIEW.transform(clip);
+        PROJ.transform(clip);
+        if (clip.w <= 0.01f) {
+            return new float[] {0.5f, 0.5f};
+        }
+        return new float[] {Mth.clamp(clip.x / clip.w * 0.5f + 0.5f, -0.5f, 1.5f), Mth.clamp(clip.y / clip.w * 0.5f + 0.5f, -0.5f, 1.5f)};
+    }
+
+    private static float[] rgb(int color) {
+        return new float[] {((color >> 16) & 0xFF) / 255f, ((color >> 8) & 0xFF) / 255f, (color & 0xFF) / 255f};
+    }
+
+    private static double smooth(double a, double b, double x) {
+        double t = Mth.clamp((x - a) / (b - a), 0, 1);
+        return t * t * (3 - 2 * t);
+    }
+}

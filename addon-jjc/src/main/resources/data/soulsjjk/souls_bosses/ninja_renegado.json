@@ -1,0 +1,173 @@
+{
+  "formato": "souls-boss/1",
+  "boss": "ninja_renegado",
+  "poder": "fighter",
+  "tier": 10,
+  "dropAlma": false,
+  "atributos": {
+    "vida": 22,
+    "armadura": 0,
+    "velocidade": 0.32,
+    "resistenciaEmpurrao": 0.0,
+    "alcanceVisao": 24,
+    "multDano": 1.0
+  },
+  "intro": {
+    "duracaoTicks": 0,
+    "titulo": "",
+    "subtitulo": "",
+    "cor": "#ffffff"
+  },
+  "percepcao": {
+    "intervaloDecisaoTicks": 10,
+    "aleatoriedade": 0.55,
+    "trocarHumorTicks": 60,
+    "intervaloTecnicasTicks": 60
+  },
+  "distancias": {
+    "soco": 3.0,
+    "ideal": 3,
+    "intervaloSocoTicks": 15
+  },
+  "movimento": {
+    "velocidadeAndar": 0.9,
+    "velocidadeCorrer": 1.25,
+    "trocarLadoTicks": 35
+  },
+  "ritmo": {
+    "calmoMinTicks": 60,
+    "calmoMaxTicks": 100,
+    "rapidoMinTicks": 40,
+    "rapidoMaxTicks": 80,
+    "velocidadeCalmo": 0.85,
+    "velocidadeRapido": 1.25,
+    "recargaInvestidaRapido": 72
+  },
+  "investida": {
+    "recargaTicks": 144,
+    "distanciaMin": 6,
+    "forca": 1.3,
+    "altura": 0.2
+  },
+  "passoSombra": {
+    "recargaTicks": 1000,
+    "distanciaMin": 999,
+    "distanciaMax": 0,
+    "atras": 2.0,
+    "chance": 0,
+    "chanceCalmo": 0,
+    "chanceNaEsquiva": 0
+  },
+  "puloDuplo": {
+    "alturaMin": 999,
+    "distanciaMax": 0
+  },
+  "teleporte": {
+    "ativo": false,
+    "presoTicks": 100,
+    "distancia": 3
+  },
+  "reacoes": {
+    "chanceEsquivarSkill": 0.08,
+    "chanceEsquivarProjetil": 0.08,
+    "chanceContraAtaque": 0.1,
+    "chanceEsquivarUlt": 0.1,
+    "golpesParaContra": 3,
+    "janelaPressaoTicks": 30,
+    "punirTicks": 80,
+    "multPunir": 2,
+    "golpesParaFugir": 3,
+    "chanceFugirAoApanhar": 0.3
+  },
+  "ultFinal": {
+    "ativa": false
+  },
+  "skills": {
+    "forte": {
+      "slot": 4,
+      "tipo": "golpe",
+      "peso": 1.0,
+      "recargaTicks": 416,
+      "recargaMaxTicks": 640,
+      "avisoTicks": 4,
+      "distanciaMin": 0,
+      "distanciaMax": 4,
+      "giroGrausPorTick": 20,
+      "avisoCor": "#ffffff",
+      "avisoSom": "minecraft:entity.player.attack.sweep"
+    },
+    "barragem": {
+      "slot": 5,
+      "tipo": "barragem",
+      "peso": 1.0,
+      "recargaTicks": 480,
+      "recargaMaxTicks": 736,
+      "avisoTicks": 5,
+      "distanciaMin": 0,
+      "distanciaMax": 3.5,
+      "giroGrausPorTick": 10,
+      "avisoCor": "#ffffff",
+      "avisoSom": "minecraft:entity.player.attack.sweep"
+    },
+    "dash_attack": {
+      "slot": 6,
+      "tipo": "golpe",
+      "peso": 0.8,
+      "recargaTicks": 320,
+      "recargaMaxTicks": 480,
+      "avisoTicks": 3,
+      "distanciaMin": 4,
+      "distanciaMax": 9,
+      "giroGrausPorTick": 10,
+      "avisoCor": "#ffffff",
+      "avisoSom": "minecraft:entity.player.attack.sweep"
+    }
+  },
+  "combos": {
+    "tres_e_forte": {
+      "peso": 1.0,
+      "passos": [
+        "soco",
+        "soco",
+        "soco",
+        "forte"
+      ]
+    },
+    "investida_barragem": {
+      "peso": 0.8,
+      "passos": [
+        "investida",
+        "soco",
+        "soco",
+        "barragem"
+      ]
+    }
+  },
+  "fases": [
+    {
+      "comecaEm": 1.0,
+      "skills": [
+        "forte",
+        "barragem",
+        "dash_attack"
+      ],
+      "combos": [
+        "tres_e_forte",
+        "investida_barragem"
+      ],
+      "agressividade": 0.65,
+      "multRecarga": 1.0,
+      "menosRecargaTicks": 0,
+      "multVelocidade": 1.0,
+      "multAviso": 1.0,
+      "reacaoTicks": 12,
+      "chanceReacao": 0.3,
+      "pausaTicks": 10,
+      "despertado": false,
+      "corBarra": "white",
+      "transicaoTicks": 0,
+      "titulo": "",
+      "subtitulo": ""
+    }
+  ]
+}

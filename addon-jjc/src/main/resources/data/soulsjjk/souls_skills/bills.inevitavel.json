@@ -1,0 +1,44 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "bills.inevitavel",
+  "nome": "Inevitável",
+  "tierMinimo": 4,
+  "alcance": 48,
+  "distancia": 2.6,
+  "recargaTicks": 100,
+  "falaTick": 10,
+  "hakaiTick": 124,
+  "fimAntesTicks": 14,
+  "tempo": {
+    "atrasoTicks": 124,
+    "duracaoTicks": 170
+  },
+  "animacao": {
+    "transicaoTicks": 116,
+    "retornoTicks": 16,
+    "preparo": {
+      "cabeca": -4,
+      "tronco": 0,
+      "bracoDir": {
+        "frente": 90,
+        "abrir": 0
+      },
+      "bracoEsq": {
+        "frente": 0,
+        "abrir": 3
+      }
+    },
+    "sopro": {
+      "cabeca": -4,
+      "tronco": 0,
+      "bracoDir": {
+        "frente": 90,
+        "abrir": 0
+      },
+      "bracoEsq": {
+        "frente": 0,
+        "abrir": 3
+      }
+    }
+  }
+}

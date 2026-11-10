@@ -1,0 +1,37 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "sub.mascara",
+  "nome": "Mascara",
+  "tempo": {
+    "atrasoTicks": 4,
+    "duracaoTicks": 14
+  },
+  "animacao": {
+    "transicaoTicks": 4,
+    "preparo": {
+      "cabeca": 10,
+      "tronco": 0,
+      "bracoDir": {
+        "frente": 140,
+        "abrir": 20
+      },
+      "bracoEsq": {
+        "frente": 0,
+        "abrir": 5
+      }
+    },
+    "sopro": {
+      "cabeca": 0,
+      "tronco": 0,
+      "bracoDir": {
+        "frente": 150,
+        "abrir": 30
+      },
+      "bracoEsq": {
+        "frente": 0,
+        "abrir": 5
+      }
+    },
+    "retornoTicks": 8
+  }
+}

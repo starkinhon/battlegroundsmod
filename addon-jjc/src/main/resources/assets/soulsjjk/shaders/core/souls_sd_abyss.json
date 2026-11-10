@@ -1,0 +1,38 @@
+{
+    "vertex": "soulsjjk:souls_sd_abyss",
+    "fragment": "soulsjjk:souls_sd_abyss",
+    "uniforms": [
+        {
+            "name": "K",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0.0
+            ]
+        },
+        {
+            "name": "Asp",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0.0
+            ]
+        },
+        {
+            "name": "Six",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0.0
+            ]
+        },
+        {
+            "name": "Red",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0.0
+            ]
+        }
+    ]
+}

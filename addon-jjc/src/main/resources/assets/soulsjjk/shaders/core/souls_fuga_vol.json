@@ -1,0 +1,199 @@
+{
+    "vertex": "soulsjjk:souls_fuga_vol",
+    "fragment": "soulsjjk:souls_fuga_vol",
+    "uniforms": [
+        {
+            "name": "ModelViewMat",
+            "type": "matrix4x4",
+            "count": 16,
+            "values": [
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1
+            ]
+        },
+        {
+            "name": "ProjMat",
+            "type": "matrix4x4",
+            "count": 16,
+            "values": [
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1
+            ]
+        },
+        {
+            "name": "ToFrame",
+            "type": "matrix4x4",
+            "count": 16,
+            "values": [
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1
+            ]
+        },
+        {
+            "name": "FromFrame",
+            "type": "matrix4x4",
+            "count": 16,
+            "values": [
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1
+            ]
+        },
+        {
+            "name": "ToNoise",
+            "type": "matrix4x4",
+            "count": 16,
+            "values": [
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1
+            ]
+        },
+        {
+            "name": "Ball",
+            "type": "float",
+            "count": 3,
+            "values": [
+                0.0,
+                0.0,
+                0.0
+            ]
+        },
+        {
+            "name": "BR",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0.0
+            ]
+        },
+        {
+            "name": "M",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0.0
+            ]
+        },
+        {
+            "name": "Fx",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0.0
+            ]
+        },
+        {
+            "name": "Fy",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0.0
+            ]
+        },
+        {
+            "name": "L",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0.0
+            ]
+        },
+        {
+            "name": "FTime",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0.0
+            ]
+        },
+        {
+            "name": "Bmin",
+            "type": "float",
+            "count": 3,
+            "values": [
+                0.0,
+                0.0,
+                0.0
+            ]
+        },
+        {
+            "name": "Bmax",
+            "type": "float",
+            "count": 3,
+            "values": [
+                0.0,
+                0.0,
+                0.0
+            ]
+        }
+    ]
+}

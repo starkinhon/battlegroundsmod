@@ -1,0 +1,16 @@
+{
+    "vertex": "soulsjjk:souls_ice",
+    "fragment": "soulsjjk:souls_ice",
+    "samplers": [ { "name": "Sampler0" } ],
+    "uniforms": [
+        { "name": "ModelViewMat", "type": "matrix4x4", "count": 16, "values": [ 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 ] },
+        { "name": "ProjMat", "type": "matrix4x4", "count": 16, "values": [ 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 ] },
+        { "name": "GameTime", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "IceOrigin", "type": "float", "count": 3, "values": [ 0.0, 0.0, 0.0 ] },
+        { "name": "IceMode", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "IceHeight", "type": "float", "count": 1, "values": [ 1.8 ] },
+        { "name": "Progress", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "Shatter", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "Seed", "type": "float", "count": 1, "values": [ 0.0 ] }
+    ]
+}

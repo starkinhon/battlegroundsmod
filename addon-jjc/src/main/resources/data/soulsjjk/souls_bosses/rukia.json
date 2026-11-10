@@ -1,0 +1,215 @@
+{
+  "formato": "souls-boss/1",
+  "boss": "rukia",
+  "poder": "rukia",
+  "tier": 7,
+  "dropAlma": false,
+  "atributos": {
+    "vida": 49,
+    "armadura": 0,
+    "velocidade": 0.36,
+    "resistenciaEmpurrao": 0.3,
+    "alcanceVisao": 32,
+    "multDano": 1.0
+  },
+  "intro": {
+    "duracaoTicks": 0,
+    "titulo": "",
+    "subtitulo": "",
+    "cor": "#ffffff"
+  },
+  "percepcao": {
+    "intervaloDecisaoTicks": 6,
+    "aleatoriedade": 0.3,
+    "trocarHumorTicks": 60,
+    "intervaloTecnicasTicks": 100
+  },
+  "distancias": {
+    "soco": 3.0,
+    "ideal": 9,
+    "intervaloSocoTicks": 12
+  },
+  "movimento": {
+    "velocidadeAndar": 0.9,
+    "velocidadeCorrer": 1.25,
+    "trocarLadoTicks": 35
+  },
+  "ritmo": {
+    "calmoMinTicks": 60,
+    "calmoMaxTicks": 100,
+    "rapidoMinTicks": 40,
+    "rapidoMaxTicks": 80,
+    "velocidadeCalmo": 0.85,
+    "velocidadeRapido": 1.25,
+    "recargaInvestidaRapido": 35
+  },
+  "investida": {
+    "recargaTicks": 70,
+    "distanciaMin": 6,
+    "forca": 1.5,
+    "altura": 0.2
+  },
+  "passoSombra": {
+    "recargaTicks": 120,
+    "distanciaMin": 3,
+    "distanciaMax": 14,
+    "atras": 2.0,
+    "chance": 0.2,
+    "chanceCalmo": 0.08,
+    "chanceNaEsquiva": 0.3
+  },
+  "puloDuplo": {
+    "alturaMin": 2.5,
+    "distanciaMax": 6
+  },
+  "teleporte": {
+    "ativo": false,
+    "presoTicks": 100,
+    "distancia": 3
+  },
+  "reacoes": {
+    "chanceEsquivarSkill": 0.4,
+    "chanceEsquivarProjetil": 0.4,
+    "chanceContraAtaque": 0.3,
+    "chanceEsquivarUlt": 0.6,
+    "golpesParaContra": 3,
+    "janelaPressaoTicks": 30,
+    "punirTicks": 80,
+    "multPunir": 2,
+    "golpesParaFugir": 3,
+    "chanceFugirAoApanhar": 0.3
+  },
+  "ultFinal": {
+    "ativa": false
+  },
+  "skills": {
+    "forte": {
+      "slot": 4,
+      "tipo": "golpe",
+      "peso": 1.0,
+      "recargaTicks": 260,
+      "recargaMaxTicks": 400,
+      "avisoTicks": 4,
+      "distanciaMin": 0,
+      "distanciaMax": 4,
+      "giroGrausPorTick": 20,
+      "avisoCor": "#ffffff",
+      "avisoSom": "minecraft:entity.player.attack.sweep"
+    },
+    "barragem": {
+      "slot": 5,
+      "tipo": "barragem",
+      "peso": 1.0,
+      "recargaTicks": 300,
+      "recargaMaxTicks": 460,
+      "avisoTicks": 5,
+      "distanciaMin": 0,
+      "distanciaMax": 3.5,
+      "giroGrausPorTick": 10,
+      "avisoCor": "#ffffff",
+      "avisoSom": "minecraft:entity.player.attack.sweep"
+    },
+    "tsukishiro": {
+      "slot": 0,
+      "tipo": "controle",
+      "peso": 1.3,
+      "recargaTicks": 200,
+      "recargaMaxTicks": 260,
+      "avisoTicks": 8,
+      "distanciaMin": 4,
+      "distanciaMax": 22,
+      "giroGrausPorTick": 12,
+      "avisoCor": "#cfefff",
+      "avisoSom": "minecraft:block.beacon.activate"
+    },
+    "hakuren": {
+      "slot": 1,
+      "tipo": "alcance",
+      "peso": 1.3,
+      "recargaTicks": 200,
+      "recargaMaxTicks": 260,
+      "avisoTicks": 6,
+      "distanciaMin": 3,
+      "distanciaMax": 16,
+      "giroGrausPorTick": 10,
+      "avisoCor": "#cfefff",
+      "avisoSom": "minecraft:entity.player.attack.sweep"
+    },
+    "shirafune": {
+      "slot": 2,
+      "tipo": "alcance",
+      "peso": 1.1,
+      "recargaTicks": 140,
+      "recargaMaxTicks": 200,
+      "avisoTicks": 4,
+      "distanciaMin": 3,
+      "distanciaMax": 16,
+      "giroGrausPorTick": 15,
+      "avisoCor": "#cfefff",
+      "avisoSom": "minecraft:entity.player.attack.sweep"
+    },
+    "bankai": {
+      "slot": 3,
+      "tipo": "ult",
+      "peso": 0.9,
+      "recargaTicks": 1000,
+      "recargaMaxTicks": 1200,
+      "avisoTicks": 12,
+      "distanciaMin": 0,
+      "distanciaMax": 6,
+      "giroGrausPorTick": 30,
+      "avisoCor": "#ffffff",
+      "avisoSom": "minecraft:block.glass.break"
+    }
+  },
+  "combos": {
+    "congela_e_bate": {
+      "peso": 1.2,
+      "passos": [
+        "tsukishiro",
+        "aproximar",
+        "soco",
+        "soco",
+        "forte"
+      ]
+    },
+    "lamina": {
+      "peso": 0.8,
+      "passos": [
+        "soco",
+        "soco",
+        "shirafune"
+      ]
+    }
+  },
+  "fases": [
+    {
+      "comecaEm": 1.0,
+      "skills": [
+        "forte",
+        "barragem",
+        "tsukishiro",
+        "hakuren",
+        "shirafune",
+        "bankai"
+      ],
+      "combos": [
+        "congela_e_bate",
+        "lamina"
+      ],
+      "agressividade": 0.75,
+      "multRecarga": 1.0,
+      "menosRecargaTicks": 0,
+      "multVelocidade": 1.0,
+      "multAviso": 1.0,
+      "reacaoTicks": 7,
+      "chanceReacao": 0.6,
+      "pausaTicks": 8,
+      "despertado": false,
+      "corBarra": "white",
+      "transicaoTicks": 0,
+      "titulo": "",
+      "subtitulo": ""
+    }
+  ]
+}

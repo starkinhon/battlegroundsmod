@@ -1,0 +1,148 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "madara.mangekyo",
+  "nome": "Mangekyo",
+  "tempo": {
+    "atrasoTicks": 40
+  },
+  "forma": {
+    "tipo": "linha",
+    "comprimento": 40,
+    "largura": 3
+  },
+  "efeitos": {
+    "duracaoTicks": 100,
+    "fadiga": 5,
+    "cegueira": 3,
+    "lentidao": 5,
+    "travarSkills": true,
+    "atordoarTicks": 100
+  },
+  "cutscene": {
+    "ativa": true,
+    "duracaoTicks": 50,
+    "aproximarTicks": 19,
+    "voltarTicks": 15,
+    "particulasTicks": 20,
+    "distanciaInicio": 3,
+    "distanciaFim": 0.6,
+    "altura": 0.05,
+    "esconderHud": true,
+    "intangivel": true
+  },
+  "sons": [
+    {
+      "nome": "Sharingan",
+      "som": "soulsjjk:sharingan",
+      "momento": "uso",
+      "atrasoTicks": 10,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 0.7,
+      "pitch": 1,
+      "pitchFim": 1,
+      "onde": "tela"
+    },
+    {
+      "nome": "Maldição",
+      "som": "minecraft:entity.elder_guardian.curse",
+      "momento": "particulas",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.2,
+      "pitch": 0.6,
+      "pitchFim": 0.6,
+      "onde": "olhos"
+    },
+    {
+      "nome": "Brilho",
+      "som": "minecraft:block.beacon.power_select",
+      "momento": "particulas",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1,
+      "pitch": 0.5,
+      "pitchFim": 0.5,
+      "onde": "olhos"
+    }
+  ],
+  "vfx": [
+    {
+      "tipo": "impactFrame",
+      "momento": "particulas",
+      "sequencia": [
+        "mangaInvertido",
+        "nada",
+        "mangaInvertido",
+        "cor",
+        "mangaInvertido",
+        "nada"
+      ],
+      "ticksPorQuadro": 1,
+      "cor": "#d10a0a",
+      "alcance": 30
+    },
+    {
+      "tipo": "clarao",
+      "momento": "particulas",
+      "tamanho": 0.8,
+      "quantidade": 3,
+      "cor": "#d10a0a",
+      "cor2": "#ffd0d0",
+      "deslocamento": 0.3,
+      "vidaTicks": 14
+    },
+    {
+      "tipo": "olho",
+      "momento": "cutscene",
+      "seguir": "cabeca",
+      "duraMomento": true,
+      "deslocamento": -0.6,
+      "altura": 0.05,
+      "tamanho": 1.7,
+      "girar": 0.06,
+      "primeiraPessoa": 0
+    },
+    {
+      "tipo": "distorcao",
+      "momento": "stun",
+      "seguir": "cabeca",
+      "modo": "redemoinho",
+      "raio": 2.5,
+      "forca": 0.8,
+      "cor": "#d10a0a",
+      "tinta": 0.3,
+      "vidaTicks": 40
+    },
+    {
+      "tipo": "anelCabeca",
+      "momento": "stun",
+      "seguir": "cabeca",
+      "duraMomento": true,
+      "raio": 0.75,
+      "altura": 0.45,
+      "tamanho": 0.09,
+      "girar": 0.07,
+      "cor": "#ff3030",
+      "cor2": "#ffd0d0",
+      "primeiraPessoa": 0.3
+    },
+    {
+      "tipo": "olhoChao",
+      "momento": "stun",
+      "seguir": "pes",
+      "duraMomento": true,
+      "tamanho": 2.6,
+      "girar": 0.05,
+      "primeiraPessoa": 0.6
+    }
+  ],
+  "despertado": {
+    "efeitos": {
+      "duracaoTicks": 100,
+      "atordoarTicks": 40
+    }
+  }
+}

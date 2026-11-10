@@ -1,0 +1,37 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "db.grito",
+  "nome": "Grito",
+  "tempo": {
+    "atrasoTicks": 3,
+    "duracaoTicks": 17
+  },
+  "animacao": {
+    "transicaoTicks": 3,
+    "preparo": {
+      "cabeca": -9,
+      "tronco": -5,
+      "bracoDir": {
+        "frente": 6,
+        "abrir": 12
+      },
+      "bracoEsq": {
+        "frente": 6,
+        "abrir": -12
+      }
+    },
+    "sopro": {
+      "cabeca": -15,
+      "tronco": -8,
+      "bracoDir": {
+        "frente": 10,
+        "abrir": 20
+      },
+      "bracoEsq": {
+        "frente": 10,
+        "abrir": -20
+      }
+    },
+    "retornoTicks": 8
+  }
+}

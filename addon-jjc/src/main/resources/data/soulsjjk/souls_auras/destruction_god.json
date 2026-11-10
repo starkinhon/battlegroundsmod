@@ -1,0 +1,58 @@
+{
+  "formato": "souls-aura/1",
+  "poder": "destruction_god",
+  "cor": "#9b30ff",
+  "cor2": "#f0dcff",
+  "corEscura": "#1a0630",
+  "fadeEntrarTicks": 45,
+  "fadeSairTicks": 20,
+  "contorno": {
+    "ativo": false,
+    "espessura": 0.16,
+    "chamas": 0.55,
+    "brilho": 1.35,
+    "velocidade": 1.0,
+    "borda": 0.5
+  },
+  "fios": {
+    "quantidade": 0,
+    "raio": 0.8,
+    "altura": 2.9,
+    "largura": 0.08,
+    "ondulacao": 0.22,
+    "velocidade": 0.035,
+    "opacidade": 0.85
+  },
+  "chao": {
+    "raio": 1.5,
+    "opacidade": 0,
+    "anel": 0
+  },
+  "particulas": [],
+  "entrada": {
+    "raioAnel": 0,
+    "vidaTicks": 22,
+    "particulas": 0
+  },
+  "primeiraPessoa": {
+    "particulas": 0,
+    "bordaTela": 0
+  },
+  "olhos": {
+    "aPartirDaFase": 99,
+    "ativarSkill": "",
+    "jogadorTicks": 0,
+    "duranteSkills": [
+      "bills.hakai"
+    ],
+    "sumirTicks": 10,
+    "cor": "#ffc81a",
+    "cor2": "#fff4c2",
+    "rastroTicks": 4,
+    "largura": 0.06,
+    "brilho": 0.6,
+    "x": 1.5,
+    "y": -2.0,
+    "z": -4.3
+  }
+}

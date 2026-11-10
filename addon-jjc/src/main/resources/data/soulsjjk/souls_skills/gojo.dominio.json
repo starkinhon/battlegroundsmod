@@ -1,0 +1,291 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "gojo.dominio",
+  "nome": "Expansão de Domínio: Vazio Infinito",
+  "tempo": {
+    "atrasoTicks": 10,
+    "duracaoTicks": 190
+  },
+  "fases": {
+    "choque": 80,
+    "branco": 120,
+    "tunel": 170,
+    "vazio": 600,
+    "quebra": 60
+  },
+  "dominio": {
+    "raio": 40,
+    "raioChoque": 30,
+    "ondaTick": 0,
+    "pararUsuario": true
+  },
+  "acerto": {
+    "paralisar": true,
+    "dano": 0,
+    "aCadaTicks": 20,
+    "drenoEstaminaPorSegundo": 20,
+    "danoCerebralDepoisTicks": 60,
+    "queimarTecnicaTicks": 200
+  },
+  "visual": {
+    "corBuraco": "#8fe6ff",
+    "corNevoa": "#2f5cff",
+    "estrelas": 1400,
+    "buracoTamanho": 70,
+    "buracoAltura": 8,
+    "telaVitima": 1.0
+  },
+  "animacao": {
+    "transicaoTicks": 5,
+    "preparo": {
+      "corpo": 0,
+      "cabeca": 0,
+      "tronco": 0,
+      "giro": 0,
+      "bracoDir": {
+        "frente": -4,
+        "abrir": 8
+      },
+      "bracoEsq": {
+        "frente": 15,
+        "abrir": 70
+      },
+      "pernaDir": {
+        "frente": 0,
+        "abrir": 4
+      },
+      "pernaEsq": {
+        "frente": 0,
+        "abrir": 4
+      }
+    },
+    "sopro": {
+      "corpo": 0,
+      "cabeca": -4,
+      "tronco": 0,
+      "giro": 0,
+      "bracoDir": {
+        "frente": -6,
+        "abrir": 4
+      },
+      "bracoEsq": {
+        "frente": -30,
+        "abrir": 155
+      },
+      "pernaDir": {
+        "frente": 0,
+        "abrir": 5
+      },
+      "pernaEsq": {
+        "frente": 0,
+        "abrir": 5
+      }
+    }
+  },
+  "sons": [
+    {
+      "nome": "Selo",
+      "som": "minecraft:block.beacon.activate",
+      "momento": "uso",
+      "atrasoTicks": 10,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.4,
+      "pitch": 1.5,
+      "pitchFim": 1.5,
+      "onde": "usuario"
+    },
+    {
+      "nome": "Brilho na mão",
+      "som": "minecraft:block.amethyst_block.resonate",
+      "momento": "uso",
+      "atrasoTicks": 38,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 2.0,
+      "pitch": 1.6,
+      "pitchFim": 1.6,
+      "onde": "usuario"
+    },
+    {
+      "nome": "Brilho na mão 2",
+      "som": "minecraft:block.amethyst_cluster.break",
+      "momento": "uso",
+      "atrasoTicks": 50,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.6,
+      "pitch": 0.6,
+      "pitchFim": 0.6,
+      "onde": "usuario"
+    },
+    {
+      "nome": "Onda de choque",
+      "som": "minecraft:entity.warden.sonic_boom",
+      "momento": "onda",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 2.5,
+      "pitch": 1.4,
+      "pitchFim": 1.4,
+      "onde": "usuario"
+    },
+    {
+      "nome": "Tempo parado",
+      "som": "minecraft:block.beacon.deactivate",
+      "momento": "onda",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 2.5,
+      "pitch": 0.6,
+      "pitchFim": 0.6,
+      "onde": "usuario"
+    },
+    {
+      "nome": "Luz branca",
+      "som": "minecraft:block.end_portal.spawn",
+      "momento": "branco",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 3.0,
+      "pitch": 1.2,
+      "pitchFim": 1.2,
+      "onde": "usuario"
+    },
+    {
+      "nome": "Luz branca 2",
+      "som": "minecraft:block.beacon.activate",
+      "momento": "branco",
+      "atrasoTicks": 2,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 3.0,
+      "pitch": 0.5,
+      "pitchFim": 0.5,
+      "onde": "usuario"
+    },
+    {
+      "nome": "Túnel",
+      "som": "minecraft:item.elytra.flying",
+      "momento": "tunel",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.6,
+      "pitch": 1.5,
+      "pitchFim": 1.5,
+      "onde": "usuario"
+    },
+    {
+      "nome": "Túnel zumbido",
+      "som": "minecraft:block.portal.trigger",
+      "momento": "tunel",
+      "atrasoTicks": 10,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.2,
+      "pitch": 1.6,
+      "pitchFim": 1.6,
+      "onde": "usuario"
+    },
+    {
+      "nome": "Túnel pulso",
+      "som": "minecraft:block.respawn_anchor.charge",
+      "momento": "tunel",
+      "atrasoTicks": 20,
+      "repetirACadaTicks": 32,
+      "vezes": 5,
+      "volume": 1.5,
+      "pitch": 0.6,
+      "pitchFim": 1.8,
+      "onde": "usuario"
+    },
+    {
+      "nome": "Ápice",
+      "som": "minecraft:entity.warden.sonic_boom",
+      "momento": "vazio",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 3.0,
+      "pitch": 0.5,
+      "pitchFim": 0.5,
+      "onde": "usuario"
+    },
+    {
+      "nome": "Ápice 2",
+      "som": "minecraft:entity.generic.explode",
+      "momento": "vazio",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 2.0,
+      "pitch": 0.5,
+      "pitchFim": 0.5,
+      "onde": "usuario"
+    },
+    {
+      "nome": "Vazio",
+      "som": "minecraft:block.beacon.ambient",
+      "momento": "vazio",
+      "atrasoTicks": 10,
+      "repetirACadaTicks": 40,
+      "vezes": 0,
+      "volume": 2.0,
+      "pitch": 0.5,
+      "pitchFim": 0.5,
+      "onde": "usuario"
+    },
+    {
+      "nome": "Rachar",
+      "som": "minecraft:block.glass.break",
+      "momento": "quebra",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 3,
+      "vezes": 5,
+      "volume": 2.5,
+      "pitch": 0.5,
+      "pitchFim": 0.9,
+      "onde": "usuario"
+    },
+    {
+      "nome": "Rachar 2",
+      "som": "minecraft:block.amethyst_block.break",
+      "momento": "quebra",
+      "atrasoTicks": 4,
+      "repetirACadaTicks": 4,
+      "vezes": 3,
+      "volume": 2.5,
+      "pitch": 0.5,
+      "pitchFim": 0.8,
+      "onde": "usuario"
+    },
+    {
+      "nome": "Quebrar",
+      "som": "minecraft:block.respawn_anchor.deplete",
+      "momento": "quebra",
+      "atrasoTicks": 14,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 3.0,
+      "pitch": 0.6,
+      "pitchFim": 0.6,
+      "onde": "usuario"
+    },
+    {
+      "nome": "Quebrar vidro",
+      "som": "minecraft:block.glass.break",
+      "momento": "quebra",
+      "atrasoTicks": 14,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 3.0,
+      "pitch": 0.4,
+      "pitchFim": 0.4,
+      "onde": "usuario"
+    }
+  ]
+}

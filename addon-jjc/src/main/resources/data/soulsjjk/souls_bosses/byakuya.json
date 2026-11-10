@@ -1,0 +1,216 @@
+{
+  "formato": "souls-boss/1",
+  "boss": "byakuya",
+  "poder": "byakuya",
+  "tier": 7,
+  "dropAlma": false,
+  "atributos": {
+    "vida": 49,
+    "armadura": 0,
+    "velocidade": 0.36,
+    "resistenciaEmpurrao": 0.3,
+    "alcanceVisao": 32,
+    "multDano": 1.0
+  },
+  "intro": {
+    "duracaoTicks": 0,
+    "titulo": "",
+    "subtitulo": "",
+    "cor": "#ffffff"
+  },
+  "percepcao": {
+    "intervaloDecisaoTicks": 6,
+    "aleatoriedade": 0.3,
+    "trocarHumorTicks": 60,
+    "intervaloTecnicasTicks": 100
+  },
+  "distancias": {
+    "soco": 3.0,
+    "ideal": 8,
+    "intervaloSocoTicks": 12
+  },
+  "movimento": {
+    "velocidadeAndar": 0.9,
+    "velocidadeCorrer": 1.25,
+    "trocarLadoTicks": 35
+  },
+  "ritmo": {
+    "calmoMinTicks": 60,
+    "calmoMaxTicks": 100,
+    "rapidoMinTicks": 40,
+    "rapidoMaxTicks": 80,
+    "velocidadeCalmo": 0.85,
+    "velocidadeRapido": 1.25,
+    "recargaInvestidaRapido": 35
+  },
+  "investida": {
+    "recargaTicks": 70,
+    "distanciaMin": 6,
+    "forca": 1.5,
+    "altura": 0.2
+  },
+  "passoSombra": {
+    "recargaTicks": 120,
+    "distanciaMin": 3,
+    "distanciaMax": 14,
+    "atras": 2.0,
+    "chance": 0.2,
+    "chanceCalmo": 0.08,
+    "chanceNaEsquiva": 0.3
+  },
+  "puloDuplo": {
+    "alturaMin": 2.5,
+    "distanciaMax": 6
+  },
+  "teleporte": {
+    "ativo": false,
+    "presoTicks": 100,
+    "distancia": 3
+  },
+  "reacoes": {
+    "chanceEsquivarSkill": 0.4,
+    "chanceEsquivarProjetil": 0.4,
+    "chanceContraAtaque": 0.4,
+    "chanceEsquivarUlt": 0.6,
+    "golpesParaContra": 3,
+    "janelaPressaoTicks": 30,
+    "punirTicks": 80,
+    "multPunir": 2,
+    "golpesParaFugir": 3,
+    "chanceFugirAoApanhar": 0.3
+  },
+  "ultFinal": {
+    "ativa": false
+  },
+  "skills": {
+    "forte": {
+      "slot": 4,
+      "tipo": "golpe",
+      "peso": 1.0,
+      "recargaTicks": 260,
+      "recargaMaxTicks": 400,
+      "avisoTicks": 4,
+      "distanciaMin": 0,
+      "distanciaMax": 4,
+      "giroGrausPorTick": 20,
+      "avisoCor": "#ffffff",
+      "avisoSom": "minecraft:entity.player.attack.sweep"
+    },
+    "barragem": {
+      "slot": 5,
+      "tipo": "barragem",
+      "peso": 1.0,
+      "recargaTicks": 300,
+      "recargaMaxTicks": 460,
+      "avisoTicks": 5,
+      "distanciaMin": 0,
+      "distanciaMax": 3.5,
+      "giroGrausPorTick": 10,
+      "avisoCor": "#ffffff",
+      "avisoSom": "minecraft:entity.player.attack.sweep"
+    },
+    "senbonzakura": {
+      "slot": 0,
+      "tipo": "alcance",
+      "peso": 1.4,
+      "recargaTicks": 140,
+      "recargaMaxTicks": 200,
+      "avisoTicks": 6,
+      "distanciaMin": 4,
+      "distanciaMax": 18,
+      "giroGrausPorTick": 8,
+      "avisoCor": "#f2b6c8",
+      "avisoSom": "minecraft:entity.player.attack.sweep"
+    },
+    "gokei": {
+      "slot": 1,
+      "tipo": "controle",
+      "peso": 1.2,
+      "recargaTicks": 260,
+      "recargaMaxTicks": 340,
+      "avisoTicks": 8,
+      "distanciaMin": 4,
+      "distanciaMax": 24,
+      "giroGrausPorTick": 12,
+      "avisoCor": "#f2b6c8",
+      "avisoSom": "minecraft:block.beacon.activate"
+    },
+    "senka": {
+      "slot": 2,
+      "tipo": "controle",
+      "peso": 1.1,
+      "recargaTicks": 200,
+      "recargaMaxTicks": 260,
+      "avisoTicks": 4,
+      "distanciaMin": 3,
+      "distanciaMax": 18,
+      "giroGrausPorTick": 30,
+      "avisoCor": "#f2b6c8",
+      "avisoSom": ""
+    },
+    "bankai": {
+      "slot": 3,
+      "tipo": "ult",
+      "peso": 0.9,
+      "recargaTicks": 900,
+      "recargaMaxTicks": 1100,
+      "avisoTicks": 12,
+      "distanciaMin": 0,
+      "distanciaMax": 20,
+      "giroGrausPorTick": 30,
+      "avisoCor": "#f2b6c8",
+      "avisoSom": "minecraft:entity.wither.ambient"
+    }
+  },
+  "combos": {
+    "senka_e_porrada": {
+      "peso": 1.2,
+      "passos": [
+        "senka",
+        "soco",
+        "soco",
+        "soco",
+        "forte"
+      ]
+    },
+    "petalas": {
+      "peso": 0.8,
+      "passos": [
+        "soco",
+        "soco",
+        "forte",
+        "senbonzakura"
+      ]
+    }
+  },
+  "fases": [
+    {
+      "comecaEm": 1.0,
+      "skills": [
+        "forte",
+        "barragem",
+        "senbonzakura",
+        "gokei",
+        "senka",
+        "bankai"
+      ],
+      "combos": [
+        "senka_e_porrada",
+        "petalas"
+      ],
+      "agressividade": 0.75,
+      "multRecarga": 1.0,
+      "menosRecargaTicks": 0,
+      "multVelocidade": 1.0,
+      "multAviso": 1.0,
+      "reacaoTicks": 7,
+      "chanceReacao": 0.6,
+      "pausaTicks": 8,
+      "despertado": false,
+      "corBarra": "white",
+      "transicaoTicks": 0,
+      "titulo": "",
+      "subtitulo": ""
+    }
+  ]
+}

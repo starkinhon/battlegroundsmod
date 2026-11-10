@@ -1,0 +1,36 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "gojo.vermelho_segurando",
+  "nome": "Vermelho (segurando)",
+  "tempo": {
+    "atrasoTicks": 600,
+    "duracaoTicks": 1
+  },
+  "animacao": {
+    "transicaoTicks": 5,
+    "preparo": {
+      "cabeca": 0,
+      "tronco": 2,
+      "bracoDir": {
+        "frente": 62,
+        "abrir": -18
+      },
+      "bracoEsq": {
+        "frente": 0,
+        "abrir": 4
+      }
+    },
+    "sopro": {
+      "cabeca": 0,
+      "tronco": 2,
+      "bracoDir": {
+        "frente": 62,
+        "abrir": -18
+      },
+      "bracoEsq": {
+        "frente": 0,
+        "abrir": 4
+      }
+    }
+  }
+}

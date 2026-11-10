@@ -1,0 +1,167 @@
+package com.starkinhon.soulsjjk.combat;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import com.starkinhon.soulsjjk.network.ModPayloads;
+
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.phys.Vec3;
+import com.starkinhon.soulsjjk.compat.PacketDistributor;
+
+// Attacks in flight that something can destroy (Bills' hakaizinho erases them): each move tracks where its body is and
+// how big it is, checks gone() every tick to stop itself, and calls end() when it is over on its own. onErase cleans up
+// what the clients draw (the meteor, the fireball).
+public final class Destructible {
+    // A forgotten entry (a task cancelled by the Izanami never calls end) is dropped after this long.
+    private static final int MAX_AGE = 20 * 120;
+
+    public static final class Attack {
+        private final ServerLevel level;
+        private final Entity owner;
+        private final long born;
+        private final Runnable onErase;
+        private Vec3 pos;
+        private double radius;
+        private boolean gone;
+        private boolean ended;
+        // Stopped in the air (Gojo's shockwave) until this game time: the task moving it does not run meanwhile.
+        private long holdUntil;
+
+        private Attack(ServerLevel level, Entity owner, Vec3 pos, double radius, Runnable onErase) {
+            this.level = level;
+            this.owner = owner;
+            this.pos = pos;
+            this.radius = radius;
+            this.onErase = onErase;
+            this.born = level.getGameTime();
+        }
+
+        public void move(Vec3 pos) {
+            this.pos = pos;
+        }
+
+        public void resize(double radius) {
+            this.radius = radius;
+        }
+
+        public Vec3 pos() {
+            return pos;
+        }
+
+        public double radius() {
+            return radius;
+        }
+
+        public Entity owner() {
+            return owner;
+        }
+
+        // Erased: the move must stop now, without its impact.
+        public boolean gone() {
+            return gone;
+        }
+
+        public void end() {
+            ended = true;
+        }
+
+        // Stopped in the air right now: Tasks skips the moves linked to it, so it neither moves nor ages.
+        public boolean held() {
+            return !gone && !ended && level.getGameTime() < holdUntil;
+        }
+
+        public void hold(int ticks) {
+            holdUntil = Math.max(holdUntil, level.getGameTime() + ticks);
+        }
+    }
+
+    private static final List<Attack> LIVE = new ArrayList<>();
+
+    private Destructible() {
+    }
+
+    public static Attack track(ServerLevel level, Entity owner, Vec3 pos, double radius, Runnable onErase) {
+        prune();
+        Attack attack = new Attack(level, owner, pos, radius, onErase);
+        LIVE.add(attack);
+        // The task that moves it is started right after this (or is the one running now): Tasks ties it to the attack.
+        Tasks.link(attack);
+        return attack;
+    }
+
+    // Erases every attack whose body touches the segment from a to b widened by radius, except the ones of spare (null
+    // for none). Returns them, so the caller can show where each one was pulverized.
+    public static List<Attack> eraseAlong(ServerLevel level, Vec3 a, Vec3 b, double radius, Entity spare) {
+        prune();
+        List<Attack> erased = new ArrayList<>();
+        for (Attack attack : List.copyOf(LIVE)) {
+            if (attack.level != level || attack.gone || attack.ended || attack.owner == spare && spare != null) {
+                continue;
+            }
+            if (distanceToSegment(attack.pos, a, b) <= attack.radius + radius) {
+                attack.gone = true;
+                erased.add(attack);
+                attack.onErase.run();
+            }
+        }
+        LIVE.removeAll(erased);
+        return erased;
+    }
+
+    // Stops in the air, for ticks more, every attack whose body is within radius of center (Gojo's shockwave), except
+    // the ones of spare. Their moves resume where they were when the hold runs out, unless they are erased first.
+    public static void holdAround(ServerLevel level, Vec3 center, double radius, int ticks, Entity spare) {
+        prune();
+        for (Attack attack : LIVE) {
+            if (attack.level == level && !attack.gone && !attack.ended && (spare == null || attack.owner != spare)
+                    && attack.pos.distanceTo(center) <= attack.radius + radius) {
+                attack.hold(ticks);
+            }
+        }
+    }
+
+    // The closest attack in flight that is not me's own and whose body comes within range of me, or null.
+    public static Attack nearestThreat(ServerLevel level, Entity me, double range) {
+        prune();
+        Attack best = null;
+        double bestGap = range;
+        for (Attack attack : LIVE) {
+            if (attack.level != level || attack.gone || attack.ended || attack.owner == me) {
+                continue;
+            }
+            double gap = attack.pos.distanceTo(me.position()) - attack.radius;
+            if (gap <= bestGap) {
+                bestGap = gap;
+                best = attack;
+            }
+        }
+        return best;
+    }
+
+    // Tells the clients near pos to stop drawing what skill had there (a meteor, a slash, a falling sphere).
+    public static void sendErase(ServerLevel level, String skill, Vec3 pos, double radius) {
+        for (ServerPlayer player : level.players()) {
+            if (player.distanceToSqr(pos) < 256 * 256) {
+                PacketDistributor.sendToPlayer(player, new ModPayloads.EraseAttack(skill, pos, (float) radius));
+            }
+        }
+    }
+
+    public static void clear() {
+        LIVE.clear();
+    }
+
+    private static void prune() {
+        LIVE.removeIf(attack -> attack.gone || attack.ended || attack.level.getGameTime() - attack.born > MAX_AGE);
+    }
+
+    private static double distanceToSegment(Vec3 p, Vec3 a, Vec3 b) {
+        Vec3 ab = b.subtract(a);
+        double length = ab.lengthSqr();
+        double t = length < 1.0E-8 ? 0 : Math.max(0, Math.min(1, p.subtract(a).dot(ab) / length));
+        return p.distanceTo(a.add(ab.scale(t)));
+    }
+}

@@ -1,0 +1,183 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "madara.susanoo_corte",
+  "nome": "Susanoo: Corte",
+  "tempo": {
+    "atrasoTicks": 9,
+    "duracaoTicks": 10
+  },
+  "corte": {
+    "largura": 40,
+    "alcance": 200,
+    "velocidade": 5,
+    "espessura": 3,
+    "dano": 88,
+    "empurrao": 2.2,
+    "altura": 0.5,
+    "quebrarBlocos": true,
+    "frente": 2.5,
+    "subir": 2.4
+  },
+  "animacao": {
+    "transicaoTicks": 5,
+    "preparo": {
+      "cabeca": -5,
+      "tronco": -12,
+      "bracoDir": {
+        "frente": 160,
+        "abrir": -35
+      },
+      "bracoEsq": {
+        "frente": 0,
+        "abrir": 0
+      }
+    },
+    "sopro": {
+      "cabeca": 5,
+      "tronco": 16,
+      "bracoDir": {
+        "frente": 75,
+        "abrir": 45
+      },
+      "bracoEsq": {
+        "frente": 0,
+        "abrir": 0
+      }
+    }
+  },
+  "vfx": [
+    {
+      "tipo": "bracoEspada",
+      "momento": "uso",
+      "seguir": "pes",
+      "vidaTicks": 24,
+      "golpeTicks": 9,
+      "tamanho": 1,
+      "comprimento": 11,
+      "cor": "#2f8fff",
+      "cor2": "#dff4ff",
+      "primeiraPessoa": 0.35
+    },
+    {
+      "tipo": "clarao",
+      "momento": "uso",
+      "tamanho": 2.5,
+      "quantidade": 6,
+      "cor": "#38bdff",
+      "cor2": "#e8f8ff",
+      "altura": 1.1,
+      "vidaTicks": 10,
+      "primeiraPessoa": 0.2
+    },
+    {
+      "tipo": "distorcao",
+      "momento": "uso",
+      "modo": "onda",
+      "raio": 4,
+      "forca": 0.4,
+      "velocidade": 5,
+      "altura": 1.2,
+      "cor": "#38bdff",
+      "tinta": 0.15,
+      "vidaTicks": 20
+    },
+    {
+      "tipo": "corte",
+      "momento": "corte",
+      "vidaTicks": 48,
+      "tamanho": 40,
+      "comprimento": 200,
+      "velocidade": 5,
+      "cor": "#2f8fff",
+      "cor2": "#e8f8ff"
+    },
+    {
+      "tipo": "impactFrame",
+      "momento": "corte",
+      "sequencia": [
+        "branco",
+        "branco",
+        "mangaInvertido",
+        "cor",
+        "invertido",
+        "manga",
+        "mangaInvertido",
+        "cor",
+        "branco"
+      ],
+      "ticksPorQuadro": 1,
+      "cor": "#2f8fff",
+      "alcance": 40
+    },
+    {
+      "tipo": "blurRadial",
+      "momento": "corte",
+      "forca": 1.0,
+      "vidaTicks": 12,
+      "alcance": 48
+    },
+    {
+      "tipo": "flash",
+      "momento": "corte",
+      "cor": "#dff4ff",
+      "forca": 0.4,
+      "vidaTicks": 6,
+      "alcance": 48
+    },
+    {
+      "tipo": "anel",
+      "momento": "corte",
+      "raio": 22,
+      "tamanho": 2,
+      "cor": "#9fdcff",
+      "deslocamento": 6,
+      "vidaTicks": 14
+    },
+    {
+      "tipo": "distorcao",
+      "momento": "corte",
+      "modo": "onda",
+      "raio": 30,
+      "forca": 0.9,
+      "velocidade": 20,
+      "cor": "#38bdff",
+      "tinta": 0.12,
+      "vidaTicks": 24
+    },
+    {
+      "tipo": "tremor",
+      "momento": "corte",
+      "forca": 1.2,
+      "vidaTicks": 18,
+      "alcance": 40
+    },
+    {
+      "tipo": "fov",
+      "momento": "corte",
+      "forca": 6,
+      "vidaTicks": 10,
+      "alcance": 20
+    },
+    {
+      "tipo": "faiscas",
+      "momento": "acerto",
+      "quantidade": 18,
+      "velocidade": 0.6,
+      "comprimento": 1,
+      "tamanho": 1.6,
+      "cor": "#38bdff",
+      "cor2": "#ffffff",
+      "vidaTicks": 14
+    },
+    {
+      "tipo": "clarao",
+      "momento": "acerto",
+      "tamanho": 3,
+      "quantidade": 4,
+      "cor": "#38bdff",
+      "cor2": "#ffffff",
+      "vidaTicks": 8
+    }
+  ],
+  "despertado": {}
+}

@@ -1,0 +1,38 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "gojo.azul_black_flash_segurando",
+  "nome": "Azul + Black Flash (puxando)",
+  "tempo": {
+    "atrasoTicks": 600,
+    "duracaoTicks": 1
+  },
+  "animacao": {
+    "transicaoTicks": 4,
+    "preparo": {
+      "cabeca": 0,
+      "tronco": 4,
+      "giro": -28,
+      "bracoDir": {
+        "frente": -30,
+        "abrir": -14
+      },
+      "bracoEsq": {
+        "frente": 82,
+        "abrir": 10
+      }
+    },
+    "sopro": {
+      "cabeca": 0,
+      "tronco": 4,
+      "giro": -28,
+      "bracoDir": {
+        "frente": -30,
+        "abrir": -14
+      },
+      "bracoEsq": {
+        "frente": 82,
+        "abrir": 10
+      }
+    }
+  }
+}

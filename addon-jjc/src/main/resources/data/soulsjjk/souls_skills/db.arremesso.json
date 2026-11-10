@@ -1,0 +1,37 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "db.arremesso",
+  "nome": "Arremesso",
+  "tempo": {
+    "atrasoTicks": 2,
+    "duracaoTicks": 10
+  },
+  "animacao": {
+    "transicaoTicks": 2,
+    "preparo": {
+      "cabeca": 3,
+      "tronco": 7,
+      "bracoDir": {
+        "frente": 48,
+        "abrir": -3
+      },
+      "bracoEsq": {
+        "frente": 0,
+        "abrir": 3
+      }
+    },
+    "sopro": {
+      "cabeca": 5,
+      "tronco": 12,
+      "bracoDir": {
+        "frente": 80,
+        "abrir": -5
+      },
+      "bracoEsq": {
+        "frente": 0,
+        "abrir": 5
+      }
+    },
+    "retornoTicks": 8
+  }
+}

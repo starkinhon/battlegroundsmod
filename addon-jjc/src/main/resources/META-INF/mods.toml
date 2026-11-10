@@ -1,0 +1,34 @@
+modLoader="javafml"
+loaderVersion="[47,)"
+license="All rights reserved"
+
+[[mods]]
+modId="soulsjjk"
+version="${file.jarVersion}"
+displayName="Souls x JujutsuCraft"
+authors="Stark e Claude"
+description='''
+O Gojo e o Sukuna do mod Souls como duas técnicas novas do JujutsuCraft: "Gojo Souls" e "Sukuna Souls" no livro de técnicas.
+Os kits inteiros, as Expansões (Vazio Infinito, Expansão de 0,2 s, Santuário Malevolente) e o Duelo de Expansões, no seletor de técnicas do JujutsuCraft, gastando energia amaldiçoada.
+'''
+
+[[dependencies.soulsjjk]]
+    modId="forge"
+    mandatory=true
+    versionRange="[47,)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.soulsjjk]]
+    modId="minecraft"
+    mandatory=true
+    versionRange="[1.20.1,1.21)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.soulsjjk]]
+    modId="jujutsucraft"
+    mandatory=true
+    versionRange="[0,)"
+    ordering="AFTER"
+    side="BOTH"

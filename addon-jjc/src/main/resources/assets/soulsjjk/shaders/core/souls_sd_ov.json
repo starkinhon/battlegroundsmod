@@ -1,0 +1,30 @@
+{
+    "vertex": "soulsjjk:souls_sd_ov",
+    "fragment": "soulsjjk:souls_sd_ov",
+    "uniforms": [
+        {
+            "name": "Black",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0.0
+            ]
+        },
+        {
+            "name": "Rise",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0.0
+            ]
+        },
+        {
+            "name": "T",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0.0
+            ]
+        }
+    ]
+}

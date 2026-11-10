@@ -1,0 +1,210 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "madara.susanoo",
+  "nome": "Susanoo: Contra-ataque",
+  "janela": {
+    "duracaoTicks": 40,
+    "alcanceMax": 4
+  },
+  "agarrar": {
+    "alcancarTicks": 4,
+    "frente": 3.4,
+    "altura": 3.6
+  },
+  "esmagar": {
+    "duracaoTicks": 60,
+    "golpes": 5,
+    "dano": 12
+  },
+  "arremesso": {
+    "forca": 2,
+    "altura": 0.5,
+    "dano": 20,
+    "stunTicks": 30
+  },
+  "visual": {
+    "cor": "#38bdff"
+  },
+  "vfx": [
+    {
+      "tipo": "clarao",
+      "momento": "bloqueio",
+      "tamanho": 4,
+      "quantidade": 8,
+      "cor": "#38bdff",
+      "cor2": "#ffffff",
+      "vidaTicks": 10
+    },
+    {
+      "tipo": "faiscas",
+      "momento": "bloqueio",
+      "quantidade": 40,
+      "velocidade": 0.7,
+      "comprimento": 1.2,
+      "tamanho": 1.6,
+      "cor": "#38bdff",
+      "cor2": "#ffffff",
+      "vidaTicks": 14
+    },
+    {
+      "tipo": "anel",
+      "momento": "bloqueio",
+      "raio": 3.5,
+      "tamanho": 0.5,
+      "cor": "#bfeaff",
+      "vidaTicks": 10
+    },
+    {
+      "tipo": "flash",
+      "momento": "bloqueio",
+      "cor": "#dff4ff",
+      "forca": 0.35,
+      "vidaTicks": 5,
+      "alcance": 24
+    },
+    {
+      "tipo": "tremor",
+      "momento": "bloqueio",
+      "forca": 0.5,
+      "vidaTicks": 8,
+      "alcance": 24
+    },
+    {
+      "tipo": "distorcao",
+      "momento": "pronto",
+      "modo": "onda",
+      "raio": 4,
+      "forca": 0.4,
+      "velocidade": 5,
+      "altura": 1.2,
+      "cor": "#38bdff",
+      "tinta": 0.15,
+      "vidaTicks": 24
+    },
+    {
+      "tipo": "clarao",
+      "momento": "pronto",
+      "tamanho": 2.5,
+      "quantidade": 6,
+      "cor": "#38bdff",
+      "cor2": "#e8f8ff",
+      "altura": 1.1,
+      "vidaTicks": 10,
+      "primeiraPessoa": 0.2
+    },
+    {
+      "tipo": "parar",
+      "momento": "fimJanela"
+    },
+    {
+      "tipo": "impactFrame",
+      "momento": "agarrar",
+      "sequencia": [
+        "cor",
+        "manga",
+        "invertido",
+        "manga"
+      ],
+      "ticksPorQuadro": 1,
+      "cor": "#38bdff",
+      "alcance": 40
+    },
+    {
+      "tipo": "blurRadial",
+      "momento": "agarrar",
+      "forca": 0.6,
+      "vidaTicks": 10,
+      "alcance": 40
+    },
+    {
+      "tipo": "raios",
+      "momento": "agarrar",
+      "quantidade": 5,
+      "comprimento": 3,
+      "tamanho": 1,
+      "cor": "#38bdff",
+      "cor2": "#e8f8ff",
+      "vidaTicks": 12
+    },
+    {
+      "tipo": "clarao",
+      "momento": "esmagar",
+      "tamanho": 2.5,
+      "quantidade": 4,
+      "cor": "#38bdff",
+      "cor2": "#ffffff",
+      "vidaTicks": 8
+    },
+    {
+      "tipo": "faiscas",
+      "momento": "esmagar",
+      "quantidade": 18,
+      "velocidade": 0.5,
+      "comprimento": 0.8,
+      "tamanho": 1.5,
+      "cor": "#38bdff",
+      "cor2": "#ffffff",
+      "vidaTicks": 14
+    },
+    {
+      "tipo": "tremor",
+      "momento": "esmagar",
+      "forca": 0.25,
+      "vidaTicks": 6,
+      "alcance": 24
+    },
+    {
+      "tipo": "parar",
+      "momento": "solto"
+    },
+    {
+      "tipo": "impactFrame",
+      "momento": "arremesso",
+      "sequencia": [
+        "branco",
+        "invertido",
+        "manga",
+        "branco"
+      ],
+      "ticksPorQuadro": 1,
+      "cor": "#38bdff",
+      "alcance": 40
+    },
+    {
+      "tipo": "anel",
+      "momento": "arremesso",
+      "raio": 5,
+      "tamanho": 0.8,
+      "cor": "#9fdcff",
+      "vidaTicks": 12
+    },
+    {
+      "tipo": "estrela",
+      "momento": "arremesso",
+      "quantidade": 18,
+      "comprimento": 6,
+      "tamanho": 2,
+      "cor": "#38bdff",
+      "vidaTicks": 10
+    },
+    {
+      "tipo": "distorcao",
+      "momento": "arremesso",
+      "modo": "onda",
+      "raio": 8,
+      "forca": 0.7,
+      "velocidade": 14,
+      "cor": "#38bdff",
+      "tinta": 0.12,
+      "vidaTicks": 24
+    },
+    {
+      "tipo": "tremor",
+      "momento": "arremesso",
+      "forca": 0.6,
+      "vidaTicks": 12,
+      "alcance": 30
+    }
+  ],
+  "despertado": {}
+}

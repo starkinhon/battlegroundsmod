@@ -1,0 +1,260 @@
+{
+    "vertex": "soulsjjk:souls_sukuna_fx",
+    "fragment": "soulsjjk:souls_sukuna_fx",
+    "uniforms": [
+        {
+            "name": "ModelViewMat",
+            "type": "matrix4x4",
+            "count": 16,
+            "values": [
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1
+            ]
+        },
+        {
+            "name": "ProjMat",
+            "type": "matrix4x4",
+            "count": 16,
+            "values": [
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1
+            ]
+        },
+        {
+            "name": "Mode",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0
+            ]
+        },
+        {
+            "name": "A",
+            "type": "float",
+            "count": 1,
+            "values": [
+                1
+            ]
+        },
+        {
+            "name": "Heat",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0
+            ]
+        },
+        {
+            "name": "Tear",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0
+            ]
+        },
+        {
+            "name": "T",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0
+            ]
+        },
+        {
+            "name": "Seed",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0
+            ]
+        },
+        {
+            "name": "S0",
+            "type": "float",
+            "count": 1,
+            "values": [
+                -9
+            ]
+        },
+        {
+            "name": "S1",
+            "type": "float",
+            "count": 1,
+            "values": [
+                9
+            ]
+        },
+        {
+            "name": "TearSeed",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0
+            ]
+        },
+        {
+            "name": "Len",
+            "type": "float",
+            "count": 1,
+            "values": [
+                1
+            ]
+        },
+        {
+            "name": "N",
+            "type": "float",
+            "count": 1,
+            "values": [
+                3
+            ]
+        },
+        {
+            "name": "Asp",
+            "type": "float",
+            "count": 1,
+            "values": [
+                1
+            ]
+        },
+        {
+            "name": "Rot",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0
+            ]
+        },
+        {
+            "name": "Kind",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0
+            ]
+        },
+        {
+            "name": "Grow",
+            "type": "float",
+            "count": 1,
+            "values": [
+                1
+            ]
+        },
+        {
+            "name": "Close",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0
+            ]
+        },
+        {
+            "name": "Flash",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0
+            ]
+        },
+        {
+            "name": "Skew",
+            "type": "float",
+            "count": 1,
+            "values": [
+                1
+            ]
+        },
+        {
+            "name": "Rough",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0.5
+            ]
+        },
+        {
+            "name": "O",
+            "type": "float",
+            "count": 1,
+            "values": [
+                1
+            ]
+        },
+        {
+            "name": "W",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0.5
+            ]
+        },
+        {
+            "name": "Blood",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0
+            ]
+        },
+        {
+            "name": "Thin",
+            "type": "float",
+            "count": 1,
+            "values": [
+                1
+            ]
+        },
+        {
+            "name": "Px",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0
+            ]
+        },
+        {
+            "name": "Fine",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0
+            ]
+        },
+        {
+            "name": "Halo",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0.5
+            ]
+        }
+    ]
+}

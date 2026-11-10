@@ -1,0 +1,20 @@
+{
+    "vertex": "soulsjjk:fx_blit",
+    "fragment": "soulsjjk:fx_bloom_up",
+    "samplers": [
+        {
+            "name": "DiffuseSampler"
+        }
+    ],
+    "uniforms": [
+        {
+            "name": "Texel",
+            "type": "float",
+            "count": 2,
+            "values": [
+                0.001,
+                0.001
+            ]
+        }
+    ]
+}

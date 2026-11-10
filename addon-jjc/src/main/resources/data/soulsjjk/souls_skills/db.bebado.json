@@ -1,0 +1,37 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "db.bebado",
+  "nome": "Cambaleio bêbado",
+  "tempo": {
+    "atrasoTicks": 3,
+    "duracaoTicks": 9
+  },
+  "animacao": {
+    "transicaoTicks": 3,
+    "preparo": {
+      "cabeca": 7,
+      "tronco": 5,
+      "bracoDir": {
+        "frente": 36,
+        "abrir": 18
+      },
+      "bracoEsq": {
+        "frente": 24,
+        "abrir": -6
+      }
+    },
+    "sopro": {
+      "cabeca": 12,
+      "tronco": 8,
+      "bracoDir": {
+        "frente": 60,
+        "abrir": 30
+      },
+      "bracoEsq": {
+        "frente": 40,
+        "abrir": -10
+      }
+    },
+    "retornoTicks": 4
+  }
+}

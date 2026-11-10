@@ -1,0 +1,286 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "aizen.um_dedo",
+  "nome": "Um Dedo",
+  "janelaTicks": 10,
+  "alcance": 4.5,
+  "hitstopTicks": 6,
+  "corteTicks": 18,
+  "dano": 12,
+  "empurrao": 2.6,
+  "subida": 0.6,
+  "atordoarTicks": 30,
+  "tempo": {
+    "atrasoTicks": 3,
+    "duracaoTicks": 10
+  },
+  "animacao": {
+    "transicaoTicks": 3,
+    "preparo": {
+      "cabeca": 0,
+      "tronco": 0,
+      "bracoDir": {
+        "frente": 78,
+        "abrir": -12
+      },
+      "bracoEsq": {
+        "frente": 0,
+        "abrir": 0
+      }
+    },
+    "sopro": {
+      "cabeca": 0,
+      "tronco": 0,
+      "bracoDir": {
+        "frente": 78,
+        "abrir": -12
+      },
+      "bracoEsq": {
+        "frente": 0,
+        "abrir": 0
+      }
+    },
+    "retornoTicks": 6
+  },
+  "sons": [
+    {
+      "nome": "Dedo",
+      "som": "minecraft:block.amethyst_block.chime",
+      "momento": "pronto",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.2,
+      "pitch": 1.6,
+      "pitchFim": 1.6,
+      "onde": "usuario"
+    },
+    {
+      "nome": "Bloqueio",
+      "som": "minecraft:block.anvil.land",
+      "momento": "bloqueio",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.0,
+      "pitch": 1.8,
+      "pitchFim": 1.8,
+      "onde": "alvo"
+    },
+    {
+      "nome": "Bloqueio eco",
+      "som": "minecraft:block.bell.use",
+      "momento": "bloqueio",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.4,
+      "pitch": 0.7,
+      "pitchFim": 0.7,
+      "onde": "alvo"
+    },
+    {
+      "nome": "Espada",
+      "som": "minecraft:item.trident.return",
+      "momento": "corte",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.2,
+      "pitch": 1.2,
+      "pitchFim": 1.2,
+      "onde": "usuario"
+    },
+    {
+      "nome": "Corte",
+      "som": "minecraft:entity.player.attack.sweep",
+      "momento": "acerto",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.6,
+      "pitch": 0.6,
+      "pitchFim": 0.6,
+      "onde": "alvo"
+    },
+    {
+      "nome": "Corte 2",
+      "som": "minecraft:item.trident.hit",
+      "momento": "acerto",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.4,
+      "pitch": 0.8,
+      "pitchFim": 0.8,
+      "onde": "alvo"
+    },
+    {
+      "nome": "Impacto",
+      "som": "minecraft:entity.warden.sonic_boom",
+      "momento": "acerto",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.2,
+      "pitch": 1.4,
+      "pitchFim": 1.4,
+      "onde": "alvo"
+    }
+  ],
+  "vfx": [
+    {
+      "tipo": "clarao",
+      "momento": "pronto",
+      "tamanho": 0.5,
+      "quantidade": 4,
+      "cor": "#c79bff",
+      "cor2": "#ffffff",
+      "vidaTicks": 8
+    },
+    {
+      "tipo": "flash",
+      "momento": "bloqueio",
+      "cor": "#ffffff",
+      "forca": 0.35,
+      "vidaTicks": 5
+    },
+    {
+      "tipo": "impactFrame",
+      "momento": "bloqueio",
+      "sequencia": [
+        "branco",
+        "manga",
+        "mangaInvertido",
+        "cor"
+      ],
+      "ticksPorQuadro": 1,
+      "cor": "#7a2cff"
+    },
+    {
+      "tipo": "clarao",
+      "momento": "bloqueio",
+      "tamanho": 2.4,
+      "quantidade": 10,
+      "cor": "#9a4dff",
+      "cor2": "#ffffff",
+      "vidaTicks": 12
+    },
+    {
+      "tipo": "anel",
+      "momento": "bloqueio",
+      "raio": 2.2,
+      "tamanho": 0.2,
+      "cor": "#e6d4ff",
+      "vidaTicks": 10
+    },
+    {
+      "tipo": "estrela",
+      "momento": "bloqueio",
+      "quantidade": 24,
+      "comprimento": 4,
+      "tamanho": 0.5,
+      "cor": "#c79bff",
+      "cor2": "#ffffff",
+      "vidaTicks": 10
+    },
+    {
+      "tipo": "distorcao",
+      "momento": "bloqueio",
+      "modo": "onda",
+      "raio": 6,
+      "forca": 0.6,
+      "velocidade": 14,
+      "cor": "#7a2cff",
+      "vidaTicks": 12
+    },
+    {
+      "tipo": "tremor",
+      "momento": "bloqueio",
+      "forca": 0.7,
+      "vidaTicks": 10
+    },
+    {
+      "tipo": "blurRadial",
+      "momento": "bloqueio",
+      "forca": 0.5,
+      "vidaTicks": 8
+    },
+    {
+      "tipo": "tremor",
+      "momento": "corte",
+      "forca": 0.5,
+      "vidaTicks": 8
+    },
+    {
+      "tipo": "clarao",
+      "momento": "acerto",
+      "tamanho": 2,
+      "quantidade": 6,
+      "cor": "#7a2cff",
+      "cor2": "#f1e6ff",
+      "vidaTicks": 10
+    },
+    {
+      "tipo": "faiscas",
+      "momento": "acerto",
+      "quantidade": 80,
+      "velocidade": 0.6,
+      "comprimento": 0.9,
+      "tamanho": 1.2,
+      "cor": "#7a2cff",
+      "cor2": "#f1e6ff",
+      "vidaTicks": 14
+    },
+    {
+      "tipo": "impactFrame",
+      "momento": "acerto",
+      "sequencia": [
+        "cor",
+        "invertido"
+      ],
+      "ticksPorQuadro": 1,
+      "cor": "#7a2cff"
+    },
+    {
+      "tipo": "tremor",
+      "momento": "acerto",
+      "forca": 0.9,
+      "vidaTicks": 12,
+      "alcance": 32
+    },
+    {
+      "tipo": "flash",
+      "momento": "acerto",
+      "cor": "#c79bff",
+      "forca": 0.3,
+      "vidaTicks": 5
+    },
+    {
+      "tipo": "blurRadial",
+      "momento": "acerto",
+      "forca": 0.6,
+      "vidaTicks": 8
+    },
+    {
+      "tipo": "distorcao",
+      "momento": "acerto",
+      "modo": "onda",
+      "raio": 7,
+      "forca": 0.6,
+      "velocidade": 14,
+      "cor": "#7a2cff",
+      "vidaTicks": 12
+    },
+    {
+      "tipo": "estrela",
+      "momento": "acerto",
+      "quantidade": 26,
+      "comprimento": 6,
+      "tamanho": 0.8,
+      "cor": "#9a4dff",
+      "cor2": "#f1e6ff",
+      "vidaTicks": 12
+    }
+  ]
+}
