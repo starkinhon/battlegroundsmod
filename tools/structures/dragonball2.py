@@ -931,18 +931,20 @@ def time_chamber():
           lambda x, y, z, s: 'gold_block' if (math.atan2(z - hz, x) * 12 / math.pi) % 2 < 0.35 else 'yellow_concrete')
     v.disc(0, 16, hz, 1.5, 'gold_block'); v.set(0, 17, hz, 'gold_block'); v.set(0, 18, hz, 'gold_block')
     v.set(0, 19, hz, 'lightning_rod[facing=up,powered=false,waterlogged=false]')
-    # clock: a white gable over the door with the round face and the hands
-    for x in range(-3, 4):
-        for y in range(9, 15):
-            if (x / 3.4) ** 2 + ((y - 11.5) / 3.4) ** 2 <= 1:
+    # clock: a white gable over the door with a big round face, black rim and hands (at a quarter past twelve)
+    for x in range(-4, 5):
+        for y in range(9, 18):
+            if (x / 4.3) ** 2 + ((y - 13) / 4.3) ** 2 <= 1:
                 for z in (hz + R, hz + R + 1):
                     v.set(x, y, z, 'white_concrete')
-    face = {(0, 13): 'black_concrete', (0, 12): 'black_concrete', (1, 12): 'black_concrete', (0, 11.0): 'smooth_quartz'}
-    for x in range(-2, 3):
-        for y in range(10, 14):
-            if (x / 2.3) ** 2 + ((y - 11.5) / 2.3) ** 2 <= 1:
-                v.set(x, y, hz + R + 2, face.get((x, y), 'smooth_quartz'))
-    v.set(0, 11, hz + R + 2, 'black_concrete'); v.set(0, 12, hz + R + 2, 'black_concrete'); v.set(1, 11, hz + R + 2, 'black_concrete')
+    for x in range(-4, 5):
+        for y in range(9, 18):
+            d = math.hypot(x, y - 13)
+            if d <= 3.4:
+                v.set(x, y, hz + R + 2, 'black_concrete' if d > 2.6 else 'smooth_quartz')
+    for y in (13, 14, 15):
+        v.set(0, y, hz + R + 2, 'black_concrete')                                  # minute hand up
+    v.set(1, 13, hz + R + 2, 'black_concrete')                                     # hour hand right
     v.set(0, 9, hz + R + 2, 'gold_block')
     # inside: purple bed, round table and two chairs, rug, lamp
     v.disc(0, 3, hz, 3.0, 'light_blue_carpet')
@@ -1003,9 +1005,11 @@ def time_chamber():
                 v.disc(cx, y, cz, max(0.6, r - 1.1), 'lime_concrete' if y > 6 else 'green_concrete')
         for y in range(9, 12):
             v.set(cx, y, cz, 'lime_stained_glass')                               # the thin stream of sand
-        v.disc(cx, 20, cz, 4.2, 'gold_block'); v.disc(cx, 21, cz, 3.4, 'gold_block')
-        v.disc(cx, 22, cz, 2.4, 'gold_block'); v.disc(cx, 23, cz, 1.2, 'gold_block')
-        v.set(cx, 24, cz, 'lightning_rod[facing=up,powered=false,waterlogged=false]')
+        v.disc(cx, 20, cz, 4.4, 'gold_block')                                       # rim, then a round gold dome
+        solid(v, lambda X, Y, Z, cx=cx, cz=cz: ((X - cx) ** 2 + (Z - cz) ** 2) / 3.8 ** 2 + ((Y - 21) / 3.2) ** 2 <= 1,
+              (cx - 5, cx + 5, 21, 25, cz - 5, cz + 5), lambda x, y, z, s: 'gold_block', fill=True)
+        v.set(cx, 25, cz, 'gold_block')
+        v.set(cx, 26, cz, 'lightning_rod[facing=up,powered=false,waterlogged=false]')
         # lamp post beyond the hourglass
         lx = sx * 34
         v.box(lx, 3, -6, lx, 9, -6, 'gold_block')

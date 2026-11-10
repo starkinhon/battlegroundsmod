@@ -58,7 +58,7 @@ public final class TimeChamber {
     private static final double[] GRAVITY = {1.0, 2.0, 3.0};
     private static final double[] SPEED = {-0.15, -0.3, -0.45};
     private static final double[] JUMP = {-0.1, -0.2, -0.3};
-    private static final double[] RATE = {0.5, 1.0, 1.6};
+    private static final double[] RATE = {0.8, 1.6, 2.5};
     private static final ResourceLocation GRAVITY_ID = id("sala_gravidade");
     private static final ResourceLocation SPEED_ID = id("sala_velocidade");
     private static final ResourceLocation JUMP_ID = id("sala_pulo");
@@ -228,7 +228,7 @@ public final class TimeChamber {
         PowerData data = player.getData(ModAttachments.POWER);
         var tag = player.getPersistentData();
         float ki = tag.getFloat(KI) + (float) (Progression.value(data.tier) * enemies);
-        if (ki >= Math.max(0.01, Progression.value(data.tier) * 0.05)) {
+        if (ki >= Math.max(0.01, Progression.value(data.tier) * 0.02)) {
             data.poder += ki;
             ki = 0;
             Progression.climb(player);
@@ -296,7 +296,7 @@ public final class TimeChamber {
         Component line = zone < 0
                 ? Component.translatable("message.battlegroundsmod.sala_hud_casa", day(player), YEAR)
                 : Component.translatable("message.battlegroundsmod.sala_hud", day(player), YEAR, ZONE_NAME[zone], bar,
-                        Math.round(data.poder), Math.round(Progression.cost(data.tier)));
+                        String.format("%.1f", data.poder), Math.round(Progression.cost(data.tier)));
         player.displayClientMessage(line, true);
         if (zone >= 0 && trained && player.getRandom().nextInt(3) == 0) {
             Fx.burst(player.serverLevel(), ParticleTypes.CLOUD, now, 3 + zone * 2, 0.3, 0.02);
