@@ -55,6 +55,24 @@
       "weight": 5,
       "minCount": 1,
       "maxCount": 2
+    },
+    {
+      "type": "battlegroundsmod:maldicao_menor",
+      "weight": 14,
+      "minCount": 1,
+      "maxCount": 3
+    },
+    {
+      "type": "battlegroundsmod:maldicao_grau2",
+      "weight": 9,
+      "minCount": 1,
+      "maxCount": 2
+    },
+    {
+      "type": "battlegroundsmod:feiticeiro_renegado",
+      "weight": 5,
+      "minCount": 1,
+      "maxCount": 2
     }
   ]
 }

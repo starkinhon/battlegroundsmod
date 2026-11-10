@@ -42,18 +42,19 @@
     {
       "id": "jujutsu", "nome": "Jujutsu Kaisen", "cor": "#7A5CFF",
       "descricao": "Cidades e vilas, a floresta amaldiçoada e pântanos.",
+      "mobs": ["maldicao_menor", "maldicao_grau2", "feiticeiro_renegado"],
       "piso": ["minecraft:stone_bricks", "minecraft:cracked_stone_bricks", "minecraft:polished_andesite", "minecraft:gravel"],
       "pilar": "minecraft:cracked_stone_bricks",
       "desafios": [
-        {"id": "nobara", "foco": "Ressonância. Pregos e martelo que machucam à distância."},
-        {"id": "miwa", "foco": "Contra-ataque. O Batto corta quem entra no Domínio Simples dela."},
+        {"id": "nobara", "foco": "Ressonância. Pregos e martelo que machucam à distância.", "itens": ["battlegroundsmod:boneco_palha 8"]},
+        {"id": "miwa", "foco": "Contra-ataque. O Batto corta quem entra no Domínio Simples dela.", "itens": ["battlegroundsmod:boneco_amaldicoado 2"]},
         {"id": "nanami", "foco": "Proporção 7:3. Cada corte procura o seu ponto fraco.", "itens": ["battlegroundsmod:cristal_multiversal"]},
         {"id": "inumaki", "foco": "Fala Amaldiçoada. Uma palavra e você para."},
-        {"id": "itadori", "foco": "Corpo a corpo. Punho Divergente e Black Flash."},
+        {"id": "itadori", "foco": "Corpo a corpo. Punho Divergente e Black Flash.", "itens": ["battlegroundsmod:dedo_sukuna 2"]},
         {"id": "choso", "foco": "Sangue. Perfura de longe e prende você."},
-        {"id": "todo", "foco": "Troca de lugar. Uma palma e você não sabe mais onde está."},
-        {"id": "gojo", "foco": "Infinito. Azul, Vermelho, Roxo e a Expansão. O mais forte."},
-        {"id": "sukuna", "foco": "Cortes. Desmantelar, Clivar e o Santuário. O Rei das Maldições."}
+        {"id": "todo", "foco": "Troca de lugar. Uma palma e você não sabe mais onde está.", "itens": ["battlegroundsmod:nuvem_brincalhona"]},
+        {"id": "gojo", "foco": "Infinito. Azul, Vermelho, Roxo e a Expansão. O mais forte.", "itens": ["battlegroundsmod:venda_gojo"]},
+        {"id": "sukuna", "foco": "Cortes. Desmantelar, Clivar e o Santuário. O Rei das Maldições.", "itens": ["battlegroundsmod:lanca_invertida"]}
       ]
     },
     {

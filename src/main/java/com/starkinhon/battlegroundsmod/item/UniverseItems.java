@@ -34,7 +34,8 @@ public final class UniverseItems {
             Map.entry("strongest", "jujutsu"), Map.entry("gojo", "jujutsu"), Map.entry("sukuna", "jujutsu"),
             Map.entry("itadori", "jujutsu"), Map.entry("choso", "jujutsu"), Map.entry("nanami", "jujutsu"),
             Map.entry("nobara", "jujutsu"), Map.entry("todo", "jujutsu"), Map.entry("inumaki", "jujutsu"),
-            Map.entry("miwa", "jujutsu"),
+            Map.entry("miwa", "jujutsu"), Map.entry("maldicao_menor", "jujutsu"), Map.entry("maldicao_grau2", "jujutsu"),
+            Map.entry("feiticeiro_renegado", "jujutsu"), Map.entry("npc_shoko", "jujutsu"), Map.entry("npc_yaga", "jujutsu"),
             Map.entry("byakuya", "bleach"), Map.entry("rukia", "bleach"),
             Map.entry("moon_demon", "demonslayer"), Map.entry("kokushibo", "demonslayer"));
 
@@ -45,6 +46,8 @@ public final class UniverseItems {
             Map.entry("kunai_hiraishin", "naruto"), Map.entry("pilula_soldado", "naruto"), Map.entry("ramen", "naruto"),
             Map.entry("pergaminho_ninken", "naruto"), Map.entry("papel_bomba", "naruto"), Map.entry("bandana_ninja", "naruto"),
             Map.entry("samehada", "naruto"), Map.entry("kusanagi", "naruto"),
+            Map.entry("dedo_sukuna", "jujutsu"), Map.entry("venda_gojo", "jujutsu"), Map.entry("boneco_palha", "jujutsu"),
+            Map.entry("boneco_amaldicoado", "jujutsu"), Map.entry("nuvem_brincalhona", "jujutsu"), Map.entry("lanca_invertida", "jujutsu"),
             Map.entry("aizen_sword", "bleach"),
             Map.entry("kokushibo_sword", "demonslayer"));
 

@@ -100,11 +100,19 @@ public final class Combat {
         return hurtBase(attacker, target, damage * subScale(attacker));
     }
 
+    // The Strength effect counts for the mod's moves too (Stark, 2026-11-10: Strength 255 and the punches did nothing):
+    // +30% per level, like vanilla's +3 on a 10 damage hit.
+    public static float strength(LivingEntity attacker) {
+        var effect = attacker.getEffect(net.minecraft.world.effect.MobEffects.DAMAGE_BOOST);
+        return effect == null ? 1f : 1f + 0.3f * (effect.getAmplifier() + 1);
+    }
+
     // The base attacks (combo, Forte, Barragem, sword arts): already on the new scale for everyone, SubAlmas too.
     public static boolean hurtBase(LivingEntity attacker, LivingEntity target, float damage) {
         damage *= Tiers.damageMultiplier(attacker) * com.starkinhon.battlegroundsmod.power.powers.sub.nr.NrCommon.damageMultiplier(attacker)
                 * com.starkinhon.battlegroundsmod.power.powers.sub.jj.JjCommon.damageMultiplier(attacker)
-                * com.starkinhon.battlegroundsmod.power.powers.kokushibo.OniBody.damageMultiplier(attacker);
+                * com.starkinhon.battlegroundsmod.power.powers.kokushibo.OniBody.damageMultiplier(attacker)
+                * strength(attacker);
         // Clear hit immunity so fast multi-hit moves land every hit.
         target.invulnerableTime = 0;
         DamageSource source = attacker instanceof Player player

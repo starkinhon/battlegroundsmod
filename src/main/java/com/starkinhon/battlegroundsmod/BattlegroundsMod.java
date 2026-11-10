@@ -62,6 +62,8 @@ public class BattlegroundsMod {
         com.starkinhon.battlegroundsmod.universe.NarutoWorld.register();
         com.starkinhon.battlegroundsmod.universe.SageMode.register();
         com.starkinhon.battlegroundsmod.universe.UniverseSpawns.register();
+        com.starkinhon.battlegroundsmod.universe.JujutsuWorld.register();
+        com.starkinhon.battlegroundsmod.universe.ReverseCurse.register();
         FightRod.register();
         SoulCommand.addSubcommand(BossCommand::bossbar);
         SoulCommand.addSubcommand(com.starkinhon.battlegroundsmod.combat.DamageDebug::command);
