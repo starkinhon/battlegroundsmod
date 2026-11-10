@@ -335,6 +335,7 @@ def capsule_corp():
         r = 15
         v.set(int(round(math.cos(math.radians(a)) * r)), 0, int(round(math.sin(math.radians(a)) * r)), 'sea_lantern')
     v.set(0, 0, 0, 'sea_lantern')
+    capsule_interior(v, RX, RY, ez, rnd)
     # path, gate and palms
     for z in range(ez + 7, 34):
         for x in range(-2, 3):
@@ -346,6 +347,179 @@ def capsule_corp():
             continue
         palm(v, x, z, height=rnd.randint(7, 10), lean=rnd.choice([(1, 0), (-1, 0), (0, 1), (0, -1)]), rnd=rnd)
     return v
+
+def capsule_interior(v, RX, RY, ez, rnd):
+    """Inside Capsule Corp (Stark's refs, 2026-11-10: the manga cutaway, Bulma's lab, the lab with the time machine, the
+    purple hall). Ground floor: the purple-tiled hall at the front, two labs behind it through orange arched doors:
+    Bulma's lab (blue tiles, purple walls, Goku's round capsule ship on its legs with a scaffold, consoles, desk, shelf,
+    red bench, the Capsule logo on the floor) and the general lab (yellow tiles, teal walls, Trunks' time machine,
+    computer desk, server cabinet, shelf). Second floor: the indoor garden with grass, palms and a pond, and Bulma's pink
+    room. Third floor: the family lounge under the dome. Ladders inside the two towers link the floors."""
+    F2, F3 = 8, 14
+    def inner_r(y):
+        return RX * math.sqrt(max(0.0, 1 - (y / RY) ** 2)) - 1.8
+    def area(y, r=None):
+        rr = inner_r(y) if r is None else r
+        R = int(rr) + 1
+        for x in range(-R, R + 1):
+            for z in range(-R, R + 1):
+                if x * x + z * z <= rr * rr:
+                    yield x, z
+    towers = ((-11, -3), (11, -3))
+    def in_tower(x, z, pad=0.0):
+        return any(math.hypot(x - tx, z - tz) <= 5 + pad for tx, tz in towers)
+    # ---------------- ground floor ----------------
+    for x, z in area(1):
+        if in_tower(x, z) or v.get(x, 0, z) == 'minecraft:sea_lantern':
+            continue
+        if z > 8:
+            c = 'purple_terracotta' if (x % 4 == 0 or z % 4 == 0) else 'purple_concrete'
+        elif x < 0:
+            c = 'light_blue_concrete' if (x % 3 == 0 or z % 3 == 0) else 'blue_concrete'
+        else:
+            c = 'yellow_terracotta' if (x % 3 == 0 or z % 3 == 0) else 'yellow_concrete'
+        v.set(x, 0, z, c)
+    # partitions: hall | labs (z = 8), Bulma's lab | general lab (x = 0)
+    for x, z in area(1):
+        if in_tower(x, z):
+            continue
+        for y in range(1, F2):
+            if z == 8 and abs(x) > 1:
+                v.set(x, y, z, 'light_gray_concrete')
+            elif z < 8 and x == -1:
+                v.set(x, y, z, 'purple_concrete')
+            elif z < 8 and x == 0:
+                v.set(x, y, z, 'cyan_terracotta')
+    v.box(-1, 1, 8, 1, 3, 8, 'light_gray_concrete')
+    for dx in (-9, 8):                                                    # the two orange arched doors
+        v.box(dx - 1, 1, 8, dx + 2, 5, 8, 'orange_terracotta')
+        v.set(dx - 1, 5, 8, 'light_gray_concrete'); v.set(dx + 2, 5, 8, 'light_gray_concrete')
+        v.set(dx, 1, 8, 'acacia_door[facing=south,half=lower,hinge=left,open=false,powered=false]')
+        v.set(dx, 2, 8, 'acacia_door[facing=south,half=upper,hinge=left,open=false,powered=false]')
+        v.set(dx + 1, 1, 8, 'acacia_door[facing=south,half=lower,hinge=right,open=false,powered=false]')
+        v.set(dx + 1, 2, 8, 'acacia_door[facing=south,half=upper,hinge=right,open=false,powered=false]')
+        v.set(dx, 3, 8, 'white_concrete'); v.set(dx + 1, 3, 8, 'white_concrete')
+    # the Capsule logo on the floor of Bulma's lab
+    lx, lz = -13, -15
+    for x in range(-3, 4):
+        for z in range(-3, 4):
+            d = math.hypot(x, z)
+            if d <= 3.2:
+                c = 'light_gray_concrete'
+                if 1.2 < d <= 2.2 and not (x > 0 and abs(z) <= 1):
+                    c = 'blue_concrete'
+                v.set(lx + x, 0, lz + z, c)
+    # Goku's round capsule ship on its legs, a scaffold beside it
+    sx, sz, sy = -7, -11, 4
+    for x in range(-3, 4):
+        for y in range(-3, 4):
+            for z in range(-3, 4):
+                d = math.sqrt(x * x + y * y + z * z)
+                if d <= 2.8:
+                    a = math.atan2(z, x)
+                    c = 'white_concrete'
+                    if y == 0:
+                        c = 'light_blue_stained_glass' if (a * 4 / math.pi) % 2 < 0.6 and d > 2.2 else 'black_concrete'
+                    elif y == -1:
+                        c = 'black_concrete'
+                    elif y >= 2:
+                        c = 'black_concrete'
+                    v.set(sx + x, sy + y, sz + z, c)
+    for ex, ez2 in ((2, 2), (-2, 2), (2, -2), (-2, -2)):
+        v.set(sx + ex, 1, sz + ez2, 'iron_block'); v.set(sx + ex, 2, sz + ez2, 'light_gray_concrete')
+    v.set(sx, 1, sz + 3, 'smooth_quartz_slab[type=bottom,waterlogged=false]'); v.set(sx, 1, sz + 4, 'smooth_quartz_slab[type=bottom,waterlogged=false]')
+    for y in range(1, 5):
+        v.set(sx + 4, y, sz, 'scaffolding[bottom=false,distance=0,waterlogged=false]')
+    # Bulma's lab: console, desk with computer and stool, shelf, red bench
+    v.box(-6, 1, -2, -3, 1, -2, 'cyan_concrete'); v.box(-6, 2, -2, -3, 2, -2, 'lime_stained_glass')
+    v.box(-20, 1, -9, -18, 1, -9, 'smooth_stone_slab[type=top,waterlogged=false]')
+    v.set(-19, 2, -9, 'lime_stained_glass'); v.set(-19, 1, -8, 'red_concrete')
+    v.box(-17, 1, -16, -15, 3, -16, 'bookshelf')
+    v.box(-6, 1, -19, -4, 1, -19, 'red_concrete'); v.set(-5, 2, -19, 'smithing_table'); v.set(-5, 1, -18, 'red_concrete')
+    v.set(-4, 2, -19, 'lantern[hanging=false,waterlogged=false]')
+    v.set(-20, 1, 2, 'cauldron'); v.set(-19, 1, 4, 'red_concrete')
+    # the general lab: Trunks' time machine
+    tx, tz = 8, -14
+    v.disc(tx, 1, tz, 1.3, 'light_blue_concrete')
+    for y in (2, 3, 4):
+        v.disc(tx, y, tz, 2.0, 'yellow_concrete')
+        v.set(tx - 2, y, tz, 'black_concrete'); v.set(tx + 2, y, tz, 'black_concrete')
+    v.set(tx, 3, tz + 2, 'black_concrete'); v.set(tx, 4, tz + 2, 'black_concrete')         # the "1" on the front
+    v.disc(tx, 5, tz, 2.6, 'gold_block')
+    v.disc(tx, 6, tz, 2.0, 'glass'); v.disc(tx, 6, tz, 1.0, 'air'); v.set(tx, 6, tz, 'red_wool')
+    v.disc(tx, 7, tz, 1.3, 'glass')
+    for ex, ez2 in ((3, 0), (-3, 0), (0, 3), (0, -3)):                                  # the four thruster pods
+        v.set(tx + ex, 1, tz + ez2, 'light_blue_concrete')
+        v.set(tx + ex, 2, tz + ez2, 'yellow_concrete'); v.set(tx + ex, 3, tz + ez2, 'yellow_concrete')
+        v.set(tx + ex, 4, tz + ez2, 'gold_block')
+    for y in range(1, 5):
+        v.set(tx - 4, y, tz + 2, 'scaffolding[bottom=false,distance=0,waterlogged=false]')
+    # general lab: computer desk + stool, server cabinet, shelf, bucket
+    v.box(15, 1, 5, 17, 1, 5, 'smooth_stone_slab[type=top,waterlogged=false]'); v.set(16, 2, 5, 'lime_stained_glass')
+    v.set(16, 1, 6, 'red_concrete')
+    v.set(4, 1, -19, 'cyan_terracotta'); v.set(4, 2, -19, 'lime_stained_glass'); v.set(5, 1, -19, 'cyan_terracotta')
+    v.box(17, 1, -12, 17, 3, -10, 'bookshelf')
+    v.set(14, 1, -16, 'decorated_pot[cracked=false,facing=north,waterlogged=false]')
+    v.box(2, 1, -6, 5, 1, -6, 'cyan_concrete'); v.box(2, 2, -6, 5, 2, -6, 'lime_stained_glass')
+    # the hall: benches, low tables, plants
+    for x in (-12, 12):
+        v.box(x - 2, 1, 14, x + 2, 1, 14, 'dark_oak_slab[type=bottom,waterlogged=false]')
+        v.box(x - 1, 1, 12, x + 1, 1, 12, 'lime_terracotta')
+    for x, z in ((-5, 11), (5, 11), (-16, 10), (16, 10)):
+        v.set(x, 1, z, 'potted_fern')
+    # ---------------- second floor: the garden and Bulma's room ----------------
+    for x, z in area(F2):
+        if v.get(x, F2, z) in (None, 'minecraft:air'):
+            v.set(x, F2, z, 'grass_block[snowy=false]' if math.hypot(x, z) < 13 else 'smooth_quartz')
+            if (x % 6 == 0 and z % 6 == 0) and math.hypot(x, z) >= 13:
+                v.set(x, F2, z, 'sea_lantern')
+    for x, z in area(F2 + 1, 3):
+        v.set(x + 4, F2, z + 3, 'water')
+    for (px, pz, h) in ((-6, -5, 4), (7, -6, 4), (-3, 7, 3)):
+        palm(v, px, pz, y=F2 + 1, height=h, lean=(1, 0), rnd=rnd)
+    for k in range(40):
+        x, z = rnd.randint(-11, 11), rnd.randint(-11, 11)
+        if math.hypot(x, z) < 11 and v.get(x, F2 + 1, z) in (None, 'minecraft:air') and v.get(x, F2, z) == 'minecraft:grass_block[snowy=false]':
+            v.set(x, F2 + 1, z, rnd.choice(['poppy', 'dandelion', 'azalea', 'short_grass', 'short_grass', 'flowering_azalea']))
+    # Bulma's room (front left)
+    for x, z in area(F2 + 1):
+        if x < -4 and z > 6:
+            for y in range(F2 + 1, F3):
+                if x == -5 or z == 7:
+                    v.set(x, y, z, 'pink_concrete')
+            v.set(x, F2, z, 'pink_wool')
+    v.set(-5, F2 + 1, 12, 'birch_door[facing=east,half=lower,hinge=left,open=false,powered=false]')
+    v.set(-5, F2 + 2, 12, 'birch_door[facing=east,half=upper,hinge=left,open=false,powered=false]')
+    v.set(-12, F2 + 1, 9, 'pink_bed[facing=south,occupied=false,part=head]'); v.set(-12, F2 + 1, 10, 'pink_bed[facing=south,occupied=false,part=foot]')
+    v.box(-15, F2 + 1, 14, -13, F2 + 1, 14, 'white_concrete'); v.set(-14, F2 + 2, 14, 'lime_stained_glass')
+    v.box(-9, F2 + 1, 15, -8, F2 + 2, 15, 'quartz_block')
+    v.set(-9, F2 + 4, 11, 'lantern[hanging=true,waterlogged=false]')
+    # ---------------- third floor: the lounge under the dome ----------------
+    for x, z in area(F3):
+        v.set(x, F3, z, 'white_concrete' if (x + z) % 2 else 'smooth_quartz')
+    for x, z in ((0, 0), (6, 0), (-6, 0), (0, 6), (0, -6)):
+        v.set(x, F3, z, 'sea_lantern')
+    for z in (-2, -1, 0, 1, 2):
+        v.set(-4, F3 + 1, z, 'red_wool')
+    v.set(-3, F3 + 1, -2, 'red_wool'); v.set(-3, F3 + 1, 2, 'red_wool')
+    v.box(-1, F3 + 1, -1, 0, F3 + 1, 1, 'dark_oak_slab[type=bottom,waterlogged=false]')
+    v.set(4, F3 + 1, -8, 'brewing_stand[has_bottle_0=false,has_bottle_1=false,has_bottle_2=false]')
+    # ---------------- the towers: openings on every floor and a ladder up ----------------
+    for tx, tz in towers:
+        sx2 = 1 if tx < 0 else -1
+        lxx = tx - 3 * sx2                                           # ladder on the outer side of the tower
+        for y in (F2, F3):
+            v.disc(tx, y, tz, 3.8, 'smooth_stone')
+        for y in range(1, int(RY) + 1):
+            v.set(lxx, y, tz, f'ladder[facing={"east" if sx2 > 0 else "west"},waterlogged=false]')
+            if v.get(lxx - sx2, y, tz) in (None, 'minecraft:air'):
+                v.set(lxx - sx2, y, tz, 'smooth_sandstone')
+        for base in (1, F2 + 1, F3 + 1):
+            for d in (4, 5):
+                for dz in (-1, 0, 1):
+                    for y in range(base, base + 3):
+                        v.set(tx + sx2 * d, y, tz + dz, 'air')
+        v.set(tx, 1, tz, 'chest[facing=north,type=single,waterlogged=false]')
 
 # ---------------------------------------------------------------------------------------------------------------
 def capsule_ship_wreck():
@@ -380,7 +554,26 @@ def capsule_ship_wreck():
         for z in range(-7, 8):
             if x * x + z * z < 46:
                 v.set(x, 0, z, 'smooth_stone')
-    v.set(0, 1, 0, 'polished_andesite'); v.set(0, 2, 0, 'sea_lantern')
+    # inside Goku's ship (refs): the gravity machine in the middle (white column, the dial panel, the glass ring that
+    # glows), the round floor with a blue ring, two bunks, lockers, a console with screens; crash debris and sparks
+    for x in range(-7, 8):
+        for z in range(-7, 8):
+            d = math.hypot(x, z)
+            if d * d < 46:
+                v.set(x, 0, z, 'blue_concrete' if 3.6 < d < 4.6 else 'light_gray_concrete' if d > 2 else 'smooth_stone')
+    for y in range(1, 11):
+        if v.get(0, y, 0) not in (None, 'minecraft:air'):
+            break
+        v.disc(0, y, 0, 1.2, 'light_blue_stained_glass' if y == 4 else 'white_concrete')
+        if y == 4:
+            v.set(0, y, 0, 'sea_lantern')
+    v.set(0, 2, 2, 'red_concrete'); v.set(0, 3, 2, 'light_gray_concrete'); v.set(0, 2, 3, 'stone_button[face=floor,facing=south,powered=false]')
+    v.set(-1, 3, 2, 'lime_stained_glass')
+    v.set(-5, 1, 2, 'white_bed[facing=south,occupied=false,part=head]'); v.set(-5, 1, 3, 'white_bed[facing=south,occupied=false,part=foot]')
+    v.set(5, 1, -2, 'white_bed[facing=north,occupied=false,part=head]'); v.set(5, 1, -3, 'white_bed[facing=north,occupied=false,part=foot]')
+    v.box(-5, 1, -4, -5, 2, -3, 'iron_block')
+    v.box(4, 1, 3, 5, 1, 3, 'cyan_concrete'); v.box(4, 2, 3, 5, 2, 3, 'lime_stained_glass')
+    v.set(3, 1, 5, 'gray_concrete'); v.set(2, 1, 5, 'cobweb'); v.set(-3, 1, -5, 'gray_concrete'); v.set(-2, 1, 5, 'light_gray_concrete')
     # door with ramp on -z side
     for y in range(1, 5):
         for x in range(-1, 2):
