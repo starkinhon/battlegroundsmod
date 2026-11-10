@@ -785,5 +785,15 @@
   "fala.battlegroundsmod.sukuna.inicio_gojo": "Você é só um peixe na tábua que eu vou cortar...",
   "fala.battlegroundsmod.sukuna.pouca_vida": "Que interessante... me divirta mais.",
   "fala.battlegroundsmod.sukuna.matou_forte": "Fique de pé com orgulho. Você é forte.",
-  "fala.battlegroundsmod.sukuna.matou_gojo": "Você foi magnífico. Não vou esquecer você enquanto eu viver."
+  "fala.battlegroundsmod.sukuna.matou_gojo": "Você foi magnífico. Não vou esquecer você enquanto eu viver.",
+  "progression.battlegroundsmod.bar.poder": "Poder",
+  "progression.battlegroundsmod.bar.dragonball": "Ki",
+  "progression.battlegroundsmod.bar.naruto": "Chakra",
+  "progression.battlegroundsmod.bar.jujutsu": "Energia Amaldiçoada",
+  "progression.battlegroundsmod.bar.bleach": "Reiatsu",
+  "progression.battlegroundsmod.bar.demonslayer": "Respiração",
+  "message.battlegroundsmod.poder_gain": "+%s %s (%s / %s)",
+  "message.battlegroundsmod.poder_capped": "%s cheio: equipe uma alma mais forte pra subir de tier",
+  "message.battlegroundsmod.poder_is": "%s: %s / %s (Tier %s, teto da alma: Tier %s)",
+  "message.battlegroundsmod.tier_up": "TIER %s"
 }

@@ -777,5 +777,15 @@
   "fala.battlegroundsmod.sukuna.inicio_gojo": "You're just a fish on my cutting board...",
   "fala.battlegroundsmod.sukuna.pouca_vida": "Interesting... entertain me some more.",
   "fala.battlegroundsmod.sukuna.matou_forte": "Stand proud. You are strong.",
-  "fala.battlegroundsmod.sukuna.matou_gojo": "You were magnificent. I will never forget you as long as I live."
+  "fala.battlegroundsmod.sukuna.matou_gojo": "You were magnificent. I will never forget you as long as I live.",
+  "progression.battlegroundsmod.bar.poder": "Power",
+  "progression.battlegroundsmod.bar.dragonball": "Ki",
+  "progression.battlegroundsmod.bar.naruto": "Chakra",
+  "progression.battlegroundsmod.bar.jujutsu": "Cursed Energy",
+  "progression.battlegroundsmod.bar.bleach": "Reiatsu",
+  "progression.battlegroundsmod.bar.demonslayer": "Breathing",
+  "message.battlegroundsmod.poder_gain": "+%s %s (%s / %s)",
+  "message.battlegroundsmod.poder_capped": "%s full: equip a stronger soul to rise a tier",
+  "message.battlegroundsmod.poder_is": "%s: %s / %s (Tier %s, soul ceiling: Tier %s)",
+  "message.battlegroundsmod.tier_up": "TIER %s"
 }

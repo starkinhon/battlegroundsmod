@@ -54,10 +54,12 @@ public class BattlegroundsMod {
         BlockRules.init();
         com.starkinhon.battlegroundsmod.power.powers.kokushibo.MoonImpactRule.init();
         PowerEvents.register();
+        com.starkinhon.battlegroundsmod.power.Progression.register();
         FightRod.register();
         SoulCommand.addSubcommand(BossCommand::bossbar);
         SoulCommand.addSubcommand(com.starkinhon.battlegroundsmod.combat.DamageDebug::command);
         SoulCommand.addSubcommand(BossCommand::boss);
+        SoulCommand.addSubcommand(com.starkinhon.battlegroundsmod.power.Progression::command);
         SoulCommand.addSubcommand(com.starkinhon.battlegroundsmod.command.StaminaCommand::build);
         SoulCommand.addSubcommand(com.starkinhon.battlegroundsmod.power.powers.kokushibo.MoonImpactRule::command);
         SoulCommand.addSubcommand(com.starkinhon.battlegroundsmod.domain.MalevolentShrine::command);

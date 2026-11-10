@@ -138,6 +138,15 @@ public final class PowerHud {
         graphics.fill(right - 1, y1 + 2, right, top - 3, GuiDraw.argb(200, color));
         graphics.drawString(font, name, right - 4 - font.width(name), y1 + 3, 0xFF000000 | GuiDraw.mix(color, 0xFFFFFF, 0.2f), true);
         graphics.drawString(font, second, right - 4 - font.width(second), y1 + 12, shift ? 0xFF000000 | color : 0xFF9A93A6, true);
+        // The tier's Poder bar (power/Progression) on the header's bottom line: full = next tier.
+        double need = com.starkinhon.battlegroundsmod.power.Progression.cost(data.tier);
+        float fraction = need <= 0 ? 1 : Mth.clamp((float) (data.poder / need), 0, 1);
+        int barLeft = x1 + 4;
+        int filled = barLeft + Math.round((right - barLeft) * fraction);
+        graphics.fill(barLeft, top - 6, right, top - 4, 0x90000000);
+        if (filled > barLeft) {
+            graphics.fill(barLeft, top - 6, filled, top - 4, GuiDraw.argb(235, GuiDraw.mix(color, 0xFFFFFF, 0.45f)));
+        }
     }
 
     private static void divider(GuiGraphics graphics, int left, int right, int y) {

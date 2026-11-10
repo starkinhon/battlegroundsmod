@@ -231,6 +231,23 @@ public final class ModPayloads {
         }
     }
 
+    // Server -> client: the Poder in the player's tier bar (power/Progression).
+    public record SyncProgress(float poder) implements CustomPacketPayload {
+        public static final Type<SyncProgress> TYPE = payloadType("sync_progress");
+        public static final StreamCodec<ByteBuf, SyncProgress> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.FLOAT, SyncProgress::poder,
+                SyncProgress::new);
+
+        void applyTo(Player player) {
+            player.getData(ModAttachments.POWER).poder = poder;
+        }
+
+        @Override
+        public Type<SyncProgress> type() {
+            return TYPE;
+        }
+    }
+
     // Server -> client: the player's attack stamina, its max and the exhaustion ticks left (combat/Stamina).
     public record SyncStamina(float stamina, float max, int exhaustedTicks) implements CustomPacketPayload {
         public static final Type<SyncStamina> TYPE = payloadType("sync_stamina");
@@ -1476,6 +1493,7 @@ public final class ModPayloads {
             }
         }));
         registrar.playToClient(SyncPower.TYPE, SyncPower.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> payload.applyTo(context.player())));
+        registrar.playToClient(SyncProgress.TYPE, SyncProgress.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> payload.applyTo(context.player())));
         registrar.playToClient(SyncStamina.TYPE, SyncStamina.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> payload.applyTo(context.player())));
         registrar.playToClient(SyncCharge.TYPE, SyncCharge.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> payload.applyTo(context.player())));
         registrar.playToClient(PlaySkillAnimation.TYPE, PlaySkillAnimation.STREAM_CODEC, (payload, context) -> context.enqueueWork(
