@@ -379,6 +379,19 @@ public final class ClientHooks {
         Minecraft.getInstance().setScreen(new ChallengeScreen(universe));
     }
 
+    // The universe screen; the first one (choosing where to live) isn't reopened over itself.
+    public static void openUniverses(boolean first) {
+        Minecraft mc = Minecraft.getInstance();
+        if (first && (mc.screen instanceof UniverseScreen || mc.player == null)) {
+            return;
+        }
+        if (first && mc.screen != null && !(mc.screen instanceof net.minecraft.client.gui.screens.ChatScreen)) {
+            // Wait for the loading screen or a menu to close; the server asks again in a few seconds.
+            return;
+        }
+        mc.setScreen(new UniverseScreen(first));
+    }
+
     public static void openPowerSelect() {
         Minecraft.getInstance().setScreen(new PowerSelectScreen());
     }

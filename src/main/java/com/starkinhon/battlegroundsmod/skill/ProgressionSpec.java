@@ -11,13 +11,12 @@ import java.util.Map;
 // multSubAlma: a SubAlma character (the soul mobs) is worth this many normal enemies of its tier. A Divine Soul boss
 // gives the whole tier at once.
 // perdaMorte: share of the Poder in the current bar lost on death (never a tier).
-// tetoSemAlma: the strongest tier a player reaches with no soul. tetos: the strongest tier each soul (power id) carries;
-// a power not listed falls back to tetoSemAlma. Once at the ceiling the bar fills but the tier waits for a stronger soul.
+// No tier ceiling (Stark 2026-11-10): every soul climbs to Tier 0.
 // universos: each power's universe; nomesBarra: what the Poder bar is called in each universe (Ki, Chakra...),
 // translation keys under progression.battlegroundsmod.bar.<universe>.
 // mobsVanilla: tier of an ordinary hostile mob by its max health (first entry whose vidaMax holds it).
 public record ProgressionSpec(List<Double> custo, List<Double> valor, int abaixoZera, double multSubAlma, double perdaMorte,
-        int tetoSemAlma, Map<String, Integer> tetos, Map<String, String> universos, List<MobTier> mobsVanilla) {
+        Map<String, String> universos, List<MobTier> mobsVanilla) {
 
     public record MobTier(double vidaMax, int tier) {
     }

@@ -10,9 +10,14 @@ import java.util.List;
 // itens (optional, per challenge): items given the first time the character is beaten, "namespace:item" or
 // "namespace:item 3" for a stack (Stark 2026-11-10: some challenges give items).
 // piso: the universe's floor blocks (mixed at random), pilar: the block of the broken pillars around the arena.
-public record ChallengeSpec(int raio, int altura, List<Universe> universos) {
+// descricao: the universe's line on the screen where the player picks where to live (challenge/Universes).
+// subAlmasParaChefes: SubAlmas of a universe the player must beat before its bosses' arenas open (Stark 2026-11-10;
+// a universe with fewer SubAlmas than that asks for all of them).
+// chanceRara: chance that a challenge character not yet beaten still spawns in its universe's world, so the world
+// never feels empty (Stark 2026-11-10). Once beaten it spawns normally.
+public record ChallengeSpec(int raio, int altura, int subAlmasParaChefes, double chanceRara, List<Universe> universos) {
 
-    public record Universe(String id, String nome, String cor, List<String> piso, String pilar, List<Challenge> desafios) {
+    public record Universe(String id, String nome, String cor, String descricao, List<String> piso, String pilar, List<Challenge> desafios) {
         public int color() {
             try {
                 return Integer.parseInt(cor.replace("#", ""), 16);

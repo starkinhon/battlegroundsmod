@@ -36,7 +36,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 public final class SoulCeremony {
     // Persistent-data key on the item born from the ceremony: the power id, read on pickup.
     public static final String ITEM_TAG = "souls_cerimonia";
-    // And the tier ceiling of that soul (the boss's tier), shown on pickup.
+    // And the tier of the boss that soul came from, shown on pickup.
     private static final String TIER_TAG = "souls_cerimonia_tier";
     // Where above the feet the soul takes the crystal's shape and the item is born.
     public static final double FORM_HEIGHT = 1.7;
@@ -153,7 +153,7 @@ public final class SoulCeremony {
             player.setData(ModAttachments.STOLEN_SOULS, List.copyOf(stolen));
         }
         Component big = Component.literal("Alma de ").append(name.copy()).withStyle(s -> s.withColor(color).withBold(true));
-        Component small = Component.literal(tier != null ? "Teto de tier " + tier : "").withStyle(s -> s.withColor(0xCCCCCC));
+        Component small = Component.literal(tier != null ? "Tier " + tier : "").withStyle(s -> s.withColor(0xCCCCCC));
         player.connection.send(new ClientboundSetTitlesAnimationPacket(4, 50, 16));
         player.connection.send(new ClientboundSetTitleTextPacket(big));
         player.connection.send(new ClientboundSetSubtitleTextPacket(small));
