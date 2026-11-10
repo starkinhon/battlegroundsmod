@@ -39,6 +39,13 @@ public final class ModAttachments {
     public static final Supplier<AttachmentType<java.util.List<String>>> ARENA_WINS = ATTACHMENT_TYPES.register("arena_wins",
             () -> AttachmentType.<java.util.List<String>>builder(() -> java.util.List.of()).serialize(Codec.STRING.listOf()).copyOnDeath().build());
 
+    // The universe the player lives in (challenge/Universes), "" before choosing one, and where they last stood in each.
+    public static final Supplier<AttachmentType<String>> UNIVERSE = ATTACHMENT_TYPES.register("universe",
+            () -> AttachmentType.builder(() -> "").serialize(Codec.STRING).copyOnDeath().build());
+    public static final Supplier<AttachmentType<java.util.Map<String, net.minecraft.core.BlockPos>>> UNIVERSE_POS = ATTACHMENT_TYPES.register("universe_pos",
+            () -> AttachmentType.<java.util.Map<String, net.minecraft.core.BlockPos>>builder(() -> java.util.Map.of())
+                    .serialize(Codec.unboundedMap(Codec.STRING, net.minecraft.core.BlockPos.CODEC)).copyOnDeath().build());
+
     private ModAttachments() {
     }
 }

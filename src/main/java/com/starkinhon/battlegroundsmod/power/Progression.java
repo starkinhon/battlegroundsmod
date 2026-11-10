@@ -18,6 +18,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket;
 import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
 import net.minecraft.network.protocol.game.ClientboundSetTitlesAnimationPacket;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.Entity;
@@ -25,6 +26,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.GameRules;
+import net.minecraft.world.level.levelgen.FlatLevelSource;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.neoforge.common.NeoForge;
@@ -36,12 +38,17 @@ import net.neoforged.neoforge.network.PacketDistributor;
 // player one tier up and starts empty again. Values in souls_skills/padrao.progressao.json (ProgressionSpec):
 // - an enemy is worth its own tier's value, so someone stronger pays more; 3+ tiers weaker pays nothing;
 // - a SubAlma character pays multSubAlma times its tier; a Divine Soul boss pays the player's whole tier at once;
-// - each soul has a tier ceiling: there the bar stays full until the player equips a stronger soul (then it climbs);
+// - no tier ceiling (Stark 2026-11-10): every soul climbs to Tier 0. A SubAlma and a Divine Soul differ in scale and in
+//   the quality of their skills, so a player who fights well with a weak soul is rewarded for it;
 // - dying takes perdaMorte of the bar, never a tier.
 // /gamerule soulsProgressao false (arena mode) turns all of it off: tiers only change by /soul tier, like before.
+// A flat world is the fight/test mode (Stark 2026-11-10): no universes and no progression there either, all free.
 public final class Progression {
     public static final GameRules.Key<GameRules.BooleanValue> RULE =
             GameRules.register("soulsProgressao", GameRules.Category.PLAYER, GameRules.BooleanValue.create(true));
+
+    // Client side: whether this world runs progression (last SyncProgress). Hides the bar and frees the books when not.
+    public static boolean clientOn = true;
 
     private Progression() {
     }
@@ -51,7 +58,16 @@ public final class Progression {
     }
 
     public static boolean on(ServerPlayer player) {
-        return player.serverLevel().getGameRules().getBoolean(RULE);
+        return on(player.server);
+    }
+
+    public static boolean on(MinecraftServer server) {
+        return server.getGameRules().getBoolean(RULE) && !flatWorld(server);
+    }
+
+    // A superflat world (the overworld's generator): the fight/test mode, with everything free like before.
+    public static boolean flatWorld(MinecraftServer server) {
+        return server.overworld().getChunkSource().getGenerator() instanceof FlatLevelSource;
     }
 
     // Poder needed to leave this tier (0 at Tier 0: nowhere left to go).
@@ -68,17 +84,18 @@ public final class Progression {
         return tier < value.size() ? value.get(tier) : 0;
     }
 
-    // The strongest tier this power carries (no power: tetoSemAlma).
-    public static int ceiling(String power) {
-        ProgressionSpec spec = ProgressionSpec.get();
-        Integer ceiling = power == null || power.isEmpty() || spec.tetos() == null ? null : spec.tetos().get(power);
-        return Tiers.clamp(ceiling != null ? ceiling : spec.tetoSemAlma());
-    }
-
     // The bar's name for this power's universe (Ki in Dragon Ball, Chakra in Naruto...), "Poder" otherwise.
     public static Component barName(String power) {
+        return barName(power, null);
+    }
+
+    // Same, falling back to the universe the player lives in when the soul has none.
+    public static Component barName(String power, String home) {
         ProgressionSpec spec = ProgressionSpec.get();
         String universe = power == null || spec.universos() == null ? null : spec.universos().get(power);
+        if (universe == null && home != null && !home.isEmpty()) {
+            universe = home;
+        }
         return Component.translatable("progression.battlegroundsmod.bar." + (universe != null ? universe : "poder"));
     }
 
@@ -143,30 +160,27 @@ public final class Progression {
         return Tiers.HUMANO;
     }
 
-    // Gives Poder and climbs as many tiers as it pays for, up to the soul's ceiling.
+    // Gives Poder and climbs as many tiers as it pays for.
     public static void add(ServerPlayer player, double amount) {
         if (amount <= 0) {
             return;
         }
         PowerData data = player.getData(ModAttachments.POWER);
         data.poder += (float) amount;
-        boolean capped = climb(player);
-        Component bar = barName(data.power);
+        climb(player);
+        Component bar = barName(data.power, player.getData(ModAttachments.UNIVERSE));
         double need = cost(data.tier);
-        Component line = capped
-                ? Component.translatable("message.battlegroundsmod.poder_capped", bar)
-                : Component.translatable("message.battlegroundsmod.poder_gain", Math.round(amount), bar,
-                        Math.round(data.poder), Math.round(need));
+        Component line = Component.translatable("message.battlegroundsmod.poder_gain", Math.round(amount), bar,
+                Math.round(data.poder), Math.round(need));
         player.displayClientMessage(line, true);
         sync(player);
     }
 
-    // Climbs every tier the bar pays for. Returns true when the soul's ceiling stops it with a full bar.
-    public static boolean climb(ServerPlayer player) {
+    // Climbs every tier the bar pays for, all the way to Tier 0.
+    public static void climb(ServerPlayer player) {
         PowerData data = player.getData(ModAttachments.POWER);
-        int ceiling = ceiling(data.power);
         boolean rose = false;
-        while (data.tier > Tiers.DEUS && data.tier > ceiling && data.poder >= cost(data.tier)) {
+        while (data.tier > Tiers.DEUS && data.poder >= cost(data.tier)) {
             data.poder -= (float) cost(data.tier);
             data.tier--;
             rose = true;
@@ -176,13 +190,10 @@ public final class Progression {
             player.setHealth(player.getMaxHealth());
             announce(player, data.tier);
         }
-        double need = cost(data.tier);
-        boolean capped = need > 0 && data.tier <= ceiling && data.poder >= need;
-        if (capped || data.tier <= Tiers.DEUS) {
-            // The bar stays full at the ceiling instead of hoarding Poder for many tiers at once.
-            data.poder = (float) Math.min(data.poder, need);
+        if (data.tier <= Tiers.DEUS) {
+            // Nowhere left to climb: the bar stays empty.
+            data.poder = 0;
         }
-        return capped;
     }
 
     // The new tier on screen. A first version: the full tier-up scene (aura, cutscene) comes later.
@@ -199,7 +210,8 @@ public final class Progression {
     }
 
     public static void sync(ServerPlayer player) {
-        PacketDistributor.sendToPlayer(player, new ModPayloads.SyncProgress(player.getData(ModAttachments.POWER).poder));
+        PacketDistributor.sendToPlayer(player, new ModPayloads.SyncProgress(player.getData(ModAttachments.POWER).poder, on(player),
+                player.getData(ModAttachments.UNIVERSE)));
     }
 
     // /soul poder: shows the bar. /soul poder <quantidade> [jogador]: gives Poder (ops), for testing.
@@ -209,7 +221,7 @@ public final class Progression {
                     ServerPlayer player = context.getSource().getPlayerOrException();
                     PowerData data = player.getData(ModAttachments.POWER);
                     context.getSource().sendSuccess(() -> Component.translatable("message.battlegroundsmod.poder_is",
-                            barName(data.power), Math.round(data.poder), Math.round(cost(data.tier)), data.tier, ceiling(data.power)), false);
+                            barName(data.power, player.getData(ModAttachments.UNIVERSE)), Math.round(data.poder), Math.round(cost(data.tier)), data.tier), false);
                     return 1;
                 })
                 .then(Commands.argument("quantidade", IntegerArgumentType.integer(1))

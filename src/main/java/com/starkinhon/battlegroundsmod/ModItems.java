@@ -121,6 +121,12 @@ public final class ModItems {
         }
     }
 
+    // Cristal Multiversal: takes the player to another universe (challenge/Universes). Simple for now; the Fenda with
+    // its tunnel comes later (Stark 2026-11-10).
+    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.MultiversalCrystalItem> MULTIVERSAL_CRYSTAL = BattlegroundsMod.ITEMS.registerItem(
+            "cristal_multiversal", com.starkinhon.battlegroundsmod.item.MultiversalCrystalItem::new,
+            new Item.Properties().stacksTo(16).rarity(Rarity.RARE));
+
     static {
         for (Power power : Powers.all()) {
             SOULS.put(power.id(), BattlegroundsMod.ITEMS.registerItem("soul_" + power.id(),

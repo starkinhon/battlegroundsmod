@@ -9,6 +9,7 @@ import com.starkinhon.battlegroundsmod.challenge.ChallengeArenas;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
 import com.starkinhon.battlegroundsmod.power.Power;
 import com.starkinhon.battlegroundsmod.power.Powers;
+import com.starkinhon.battlegroundsmod.power.Progression;
 import com.starkinhon.battlegroundsmod.power.Tiers;
 import com.starkinhon.battlegroundsmod.skill.ChallengeSpec;
 
@@ -22,7 +23,8 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 // A universe's Livro dos Desafios: one card per character of that universe (its SubAlmas and its bosses) with its name,
 // tier and what its power is about. Clicking a card goes to that character's arena (challenge/ChallengeArenas); a beaten
-// character's card is stamped DERROTADO. Inside the arenas the book also offers the way back.
+// character's card is stamped DERROTADO. A boss's card stays locked until some of the universe's SubAlmas are beaten
+// (ChallengeArenas.locked; free in arena mode and flat worlds). Inside the arenas the book also offers the way back.
 public class ChallengeScreen extends Screen {
     private static final int TEXT = 0xFFE6E0EE;
     private static final int MUTED = 0xFF9A93A6;
@@ -123,8 +125,10 @@ public class ChallengeScreen extends Screen {
         GuiDraw.centeredText(graphics, font, sub, width / 2f, 32, 1f, TEXT, true);
 
         int my = mouseY + scroll;
+        int needed = ChallengeArenas.subsNeeded(universe);
         for (Card card : cards) {
-            drawCard(graphics, card, wins.contains(card.id()), card.hit(mouseX, my));
+            boolean locked = ChallengeArenas.locked(wins, card.id(), !Progression.clientOn);
+            drawCard(graphics, card, wins.contains(card.id()), locked, needed, !locked && card.hit(mouseX, my));
         }
         GuiDraw.centeredText(graphics, font, Component.translatable("screen.battlegroundsmod.challenges.hint"), width / 2f,
                 contentHeight - 22, 0.9f, MUTED, false);
@@ -145,9 +149,9 @@ public class ChallengeScreen extends Screen {
         }
     }
 
-    private void drawCard(GuiGraphics graphics, Card card, boolean won, boolean hover) {
+    private void drawCard(GuiGraphics graphics, Card card, boolean won, boolean locked, int needed, boolean hover) {
         int x1 = card.x(), y1 = card.y(), x2 = card.x() + card.w(), y2 = card.y() + card.h();
-        int color = card.color();
+        int color = locked ? GuiDraw.mix(card.color(), 0x403A48, 0.75f) : card.color();
         graphics.fillGradient(x1, y1, x2, y2, hover ? 0xF0221830 : 0xE0140E1C, 0xF0080510);
         GuiDraw.ornateFrame(graphics, x1, y1, x2, y2, GuiDraw.argb(hover ? 230 : 150, GuiDraw.mix(color, 0x000000, 0.2f)),
                 GuiDraw.argb(255, GuiDraw.mix(color, 0xFFFFFF, 0.35f)));
@@ -166,8 +170,9 @@ public class ChallengeScreen extends Screen {
             graphics.drawString(font, line, x1 + 6, y, TEXT, false);
             y += 9;
         }
-        Component action = Component.translatable(won ? "screen.battlegroundsmod.challenges.again" : "screen.battlegroundsmod.challenges.go");
-        GuiDraw.text(graphics, font, action, x1 + 6, y2 - 11, 0.75f, hover ? 0xFF000000 | color : MUTED, false);
+        Component action = locked ? Component.translatable("screen.battlegroundsmod.challenges.locked", needed)
+                : Component.translatable(won ? "screen.battlegroundsmod.challenges.again" : "screen.battlegroundsmod.challenges.go");
+        GuiDraw.text(graphics, font, action, x1 + 6, y2 - 11, 0.75f, locked ? 0xFFB0505A : hover ? 0xFF000000 | color : MUTED, false);
         if (won) {
             // The stamp, tilted across the card.
             Component stamp = Component.translatable("screen.battlegroundsmod.challenges.won");
@@ -192,8 +197,9 @@ public class ChallengeScreen extends Screen {
                 return true;
             }
             double my = mouseY + scroll;
+            List<String> wins = minecraft != null && minecraft.player != null ? minecraft.player.getData(ModAttachments.ARENA_WINS) : List.of();
             for (Card card : cards) {
-                if (card.hit(mouseX, my)) {
+                if (card.hit(mouseX, my) && !ChallengeArenas.locked(wins, card.id(), !Progression.clientOn)) {
                     PacketDistributor.sendToServer(new ModPayloads.ChallengeStart(card.id()));
                     onClose();
                     return true;

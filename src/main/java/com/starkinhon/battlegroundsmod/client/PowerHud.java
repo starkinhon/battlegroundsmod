@@ -139,6 +139,9 @@ public final class PowerHud {
         graphics.drawString(font, name, right - 4 - font.width(name), y1 + 3, 0xFF000000 | GuiDraw.mix(color, 0xFFFFFF, 0.2f), true);
         graphics.drawString(font, second, right - 4 - font.width(second), y1 + 12, shift ? 0xFF000000 | color : 0xFF9A93A6, true);
         // The tier's Poder bar (power/Progression) on the header's bottom line: full = next tier.
+        if (!com.starkinhon.battlegroundsmod.power.Progression.clientOn) {
+            return;
+        }
         double need = com.starkinhon.battlegroundsmod.power.Progression.cost(data.tier);
         float fraction = need <= 0 ? 1 : Mth.clamp((float) (data.poder / need), 0, 1);
         int barLeft = x1 + 4;

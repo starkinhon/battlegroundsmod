@@ -270,15 +270,45 @@ public final class ModPayloads {
         }
     }
 
-    // Server -> client: the Poder in the player's tier bar (power/Progression).
-    public record SyncProgress(float poder) implements CustomPacketPayload {
+    // Server -> client: open the universe screen. first = the player has none yet (can't be closed); otherwise a
+    // Cristal Multiversal was used.
+    public record OpenUniverses(boolean first) implements CustomPacketPayload {
+        public static final Type<OpenUniverses> TYPE = payloadType("open_universes");
+        public static final StreamCodec<ByteBuf, OpenUniverses> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.BOOL, OpenUniverses::first, OpenUniverses::new);
+
+        @Override
+        public Type<OpenUniverses> type() {
+            return TYPE;
+        }
+    }
+
+    // Client -> server: the universe chosen on that screen (challenge/Universes.pick).
+    public record PickUniverse(String id) implements CustomPacketPayload {
+        public static final Type<PickUniverse> TYPE = payloadType("pick_universe");
+        public static final StreamCodec<ByteBuf, PickUniverse> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.STRING_UTF8, PickUniverse::id, PickUniverse::new);
+
+        @Override
+        public Type<PickUniverse> type() {
+            return TYPE;
+        }
+    }
+
+    // Server -> client: the Poder in the player's tier bar (power/Progression), whether progression runs in this world
+    // (off in arena mode and flat worlds: no bar, everything free) and the universe the player lives in.
+    public record SyncProgress(float poder, boolean on, String universe) implements CustomPacketPayload {
         public static final Type<SyncProgress> TYPE = payloadType("sync_progress");
         public static final StreamCodec<ByteBuf, SyncProgress> STREAM_CODEC = StreamCodec.composite(
                 ByteBufCodecs.FLOAT, SyncProgress::poder,
+                ByteBufCodecs.BOOL, SyncProgress::on,
+                ByteBufCodecs.STRING_UTF8, SyncProgress::universe,
                 SyncProgress::new);
 
         void applyTo(Player player) {
             player.getData(ModAttachments.POWER).poder = poder;
+            player.setData(ModAttachments.UNIVERSE, universe);
+            com.starkinhon.battlegroundsmod.power.Progression.clientOn = on;
         }
 
         @Override
@@ -1541,6 +1571,13 @@ public final class ModPayloads {
         registrar.playToServer(ChallengeLeave.TYPE, ChallengeLeave.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer player) {
                 com.starkinhon.battlegroundsmod.challenge.ChallengeArenas.leave(player);
+            }
+        }));
+        registrar.playToClient(OpenUniverses.TYPE, OpenUniverses.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.openUniverses(payload.first())));
+        registrar.playToServer(PickUniverse.TYPE, PickUniverse.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
+            if (context.player() instanceof ServerPlayer player) {
+                com.starkinhon.battlegroundsmod.challenge.Universes.pick(player, payload.id());
             }
         }));
         registrar.playToClient(SyncProgress.TYPE, SyncProgress.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> payload.applyTo(context.player())));

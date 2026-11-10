@@ -284,10 +284,6 @@ public final class PowerLogic {
         Fx.sound(player.serverLevel(), pos, SoundEvents.PLAYER_LEVELUP, 1f, 0.8f);
         player.displayClientMessage(Component.translatable("message.battlegroundsmod.power_selected",
                 power.name().copy().withStyle(s -> s.withColor(power.color()))), false);
-        // A stronger soul lets a full bar held back by the old soul's ceiling climb now.
-        if (Progression.on(player)) {
-            Progression.climb(player);
-        }
         sync(player);
     }
 

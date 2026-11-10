@@ -61,12 +61,12 @@ import net.neoforged.neoforge.network.PacketDistributor;
 // Livro dos Desafios has its own arena. The player goes to any of them whenever they want (from the book), a 3-2-1
 // countdown brings the character in, invisible walls keep both inside, and beating it:
 // - stamps the card DERROTADO in the book;
-// - lets that character spawn in the normal world (before that, the natural spawns of challenge characters are
-//   blocked near the player);
+// - lets that character spawn in its universe's world (before that, only rarely: chanceRara);
 // - brings the player back home after a few seconds (time to pick up the soul).
 // All arenas live in one void dimension (battlegroundsmod:arenas), one slot each, built from code in the universe's
 // blocks (padrao.desafios.json) and rebuilt clean before every fight. Dying or leaving ends the fight.
-// With /gamerule soulsProgressao false (arena mode) the world spawns stay free.
+// A universe's bosses open once the player beats some of its SubAlmas (subAlmasParaChefes).
+// With /gamerule soulsProgressao false (arena mode) or in a flat world everything stays free, spawns included.
 public final class ChallengeArenas {
     public static final ResourceKey<Level> ARENAS = ResourceKey.create(Registries.DIMENSION,
             ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "arenas"));
@@ -121,6 +121,42 @@ public final class ChallengeArenas {
         return Component.literal(id);
     }
 
+    // A boss of the book (not a SubAlma): its arena opens after some of the universe's SubAlmas are beaten.
+    public static boolean isBoss(String id) {
+        try {
+            return !Powers.isSub(BossSpec.get(id).poder());
+        } catch (RuntimeException e) {
+            return false;
+        }
+    }
+
+    // How many SubAlmas of this universe open its bosses.
+    public static int subsNeeded(ChallengeSpec.Universe universe) {
+        int subs = 0;
+        for (ChallengeSpec.Challenge challenge : universe.desafios()) {
+            if (!isBoss(challenge.id())) {
+                subs++;
+            }
+        }
+        return Math.min(ChallengeSpec.get().subAlmasParaChefes(), subs);
+    }
+
+    public static int subsBeaten(List<String> wins, ChallengeSpec.Universe universe) {
+        int beaten = 0;
+        for (ChallengeSpec.Challenge challenge : universe.desafios()) {
+            if (!isBoss(challenge.id()) && wins.contains(challenge.id())) {
+                beaten++;
+            }
+        }
+        return beaten;
+    }
+
+    // Whether this character's arena is still closed for this player (free = progression off or a flat world).
+    public static boolean locked(List<String> wins, String id, boolean free) {
+        ChallengeSpec.Universe universe = ChallengeSpec.get().universeOf(id);
+        return !free && universe != null && isBoss(id) && subsBeaten(wins, universe) < subsNeeded(universe);
+    }
+
     // From the book: go to that character's arena.
     public static void start(ServerPlayer player, String id) {
         ChallengeSpec spec = ChallengeSpec.get();
@@ -138,6 +174,10 @@ public final class ChallengeArenas {
             player.displayClientMessage(Component.translatable("message.battlegroundsmod.arena_busy"), true);
             return;
         }
+        if (locked(wins(player), id, !Progression.on(player))) {
+            player.displayClientMessage(Component.translatable("message.battlegroundsmod.arena_locked", subsNeeded(universe), universe.nome()), true);
+            return;
+        }
         if (entityType(id) == null) {
             player.displayClientMessage(Component.translatable("message.battlegroundsmod.arena_no_entity", id), false);
             return;
@@ -152,8 +192,8 @@ public final class ChallengeArenas {
         session.id = id;
         session.center = new BlockPos(slot * SPACING, FLOOR_Y, 0);
         boolean fromArena = player.level().dimension().equals(ARENAS);
-        session.backLevel = fromArena ? Level.OVERWORLD : player.level().dimension();
-        session.backPos = fromArena ? Vec3.atBottomCenterOf(player.server.overworld().getSharedSpawnPos()) : player.position();
+        session.backLevel = fromArena ? Universes.homeLevel(player).dimension() : player.level().dimension();
+        session.backPos = fromArena ? Universes.homePos(player) : player.position();
         session.backYaw = player.getYRot();
         build(arena, session.center, spec, universe);
         session.fightAt = arena.getGameTime() + COUNTDOWN;
@@ -169,9 +209,8 @@ public final class ChallengeArenas {
         Session session = SESSIONS.remove(player.getUUID());
         if (session == null) {
             if (player.level().dimension().equals(ARENAS)) {
-                ServerLevel overworld = player.server.overworld();
-                Vec3 spawn = Vec3.atBottomCenterOf(overworld.getSharedSpawnPos());
-                player.teleportTo(overworld, spawn.x, spawn.y, spawn.z, player.getYRot(), 0);
+                Vec3 home = Universes.homePos(player);
+                player.teleportTo(Universes.homeLevel(player), home.x, home.y, home.z, player.getYRot(), 0);
             }
             return;
         }
@@ -326,7 +365,7 @@ public final class ChallengeArenas {
         }
     }
 
-    // A player who logs in inside the arenas without a fight (the server stopped mid-fight) goes back to the world spawn.
+    // A player who logs in inside the arenas without a fight (the server stopped mid-fight) goes back home.
     private static void onLogin(PlayerEvent.PlayerLoggedInEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
             syncWins(player);
@@ -345,7 +384,8 @@ public final class ChallengeArenas {
         }
     }
 
-    // Challenge characters only spawn naturally near a player who already beat them in their arena.
+    // Challenge characters only spawn in their own universe's world: rarely (chanceRara) until the nearest player has
+    // beaten them in their arena, normally after. Outside the universes (the overworld) they don't spawn at all.
     private static void onFinalizeSpawn(FinalizeSpawnEvent event) {
         MobSpawnType type = event.getSpawnType();
         if (type != MobSpawnType.NATURAL && type != MobSpawnType.CHUNK_GENERATION) {
@@ -355,11 +395,18 @@ public final class ChallengeArenas {
             return;
         }
         ServerLevel level = event.getLevel().getLevel();
-        if (!level.getGameRules().getBoolean(Progression.RULE) || ChallengeSpec.get().slot(boss.bossId()) < 0) {
+        ChallengeSpec spec = ChallengeSpec.get();
+        ChallengeSpec.Universe universe = spec.universeOf(boss.bossId());
+        if (universe == null || !Progression.on(level.getServer())) {
+            return;
+        }
+        if (!universe.id().equals(Universes.universeOf(level.dimension()))) {
+            event.setSpawnCancelled(true);
             return;
         }
         Player nearest = level.getNearestPlayer(event.getX(), event.getY(), event.getZ(), 128, false);
-        if (nearest == null || !wins(nearest).contains(boss.bossId())) {
+        boolean beaten = nearest != null && wins(nearest).contains(boss.bossId());
+        if (!beaten && level.getRandom().nextDouble() >= spec.chanceRara()) {
             event.setSpawnCancelled(true);
         }
     }
