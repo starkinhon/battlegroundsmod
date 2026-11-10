@@ -72,6 +72,7 @@ public final class PowerEvents {
 
     private static void onServerTick(ServerTickEvent.Post event) {
         Tasks.tick();
+        com.starkinhon.battlegroundsmod.combat.BlockBreakFx.flush();
         if (event.getServer().getTickCount() % 200 == 0) {
             Defense.prune();
         }
@@ -79,6 +80,7 @@ public final class PowerEvents {
 
     private static void onServerStopped(ServerStoppedEvent event) {
         Tasks.clear();
+        com.starkinhon.battlegroundsmod.combat.BlockBreakFx.clear();
         com.starkinhon.battlegroundsmod.boss.BossFalas.clear();
         Freeze.clear();
         Intangible.clear();

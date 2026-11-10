@@ -335,7 +335,7 @@ public final class Clivar {
             if (state.isAir() || !state.getFluidState().isEmpty() || state.hasBlockEntity() || state.getDestroySpeed(level, pos) < 0) {
                 continue;
             }
-            level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
+            com.starkinhon.battlegroundsmod.combat.BlockBreakFx.erase(level, pos, state, Block.UPDATE_ALL);
         }
         Fx.sound(level, face, SoundEvents.STONE_BREAK, 1.6f, 0.6f);
         Fx.sound(level, face, SoundEvents.GENERIC_EXPLODE.value(), 0.6f, 1.4f);

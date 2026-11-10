@@ -290,7 +290,7 @@ public final class YoruNoMiya {
             block.setDeltaMovement(out.scale(0.3 + 0.4 * SubCommon.RANDOM.nextDouble()).add(0, 0.4 + 0.5 * SubCommon.RANDOM.nextDouble(), 0));
             block.hurtMarked = true;
         } else {
-            level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2);
+            com.starkinhon.battlegroundsmod.combat.BlockBreakFx.erase(level, pos, state, 2);
         }
     }
 

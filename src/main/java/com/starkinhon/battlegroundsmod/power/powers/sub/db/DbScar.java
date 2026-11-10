@@ -81,7 +81,7 @@ public final class DbScar {
                     pos.set(x, top + 1, z);
                     BlockState over = level.getBlockState(pos);
                     if (!over.isAir() && over.canBeReplaced() && over.getFluidState().isEmpty()) {
-                        level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS);
+                        com.starkinhon.battlegroundsmod.combat.BlockBreakFx.erase(level, pos, Block.UPDATE_CLIENTS);
                     }
                     pos.set(x, top, z);
                     if (!level.isLoaded(pos) || pos.getY() > p.y) {
@@ -103,7 +103,7 @@ public final class DbScar {
                                 .add(0, 0.35 + 0.35 * close * SubCommon.RANDOM.nextDouble(), 0));
                         clod.hurtMarked = true;
                     } else {
-                        level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS);
+                        com.starkinhon.battlegroundsmod.combat.BlockBreakFx.erase(level, pos, Block.UPDATE_CLIENTS);
                     }
                 }
             }

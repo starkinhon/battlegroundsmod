@@ -385,7 +385,7 @@ public final class DestructionSphere {
                         if (state.isAir() || state.getDestroySpeed(level, block) < 0) {
                             continue;
                         }
-                        level.setBlock(block, Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS);
+                        com.starkinhon.battlegroundsmod.combat.BlockBreakFx.erase(level, block, state, Block.UPDATE_CLIENTS);
                     }
                 }
             }

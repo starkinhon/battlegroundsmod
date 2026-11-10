@@ -417,7 +417,7 @@ public final class Roxo {
         if (state.isAir() || !state.getFluidState().isEmpty() || state.hasBlockEntity() || state.getDestroySpeed(level, pos) < 0) {
             return false;
         }
-        level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS);
+        com.starkinhon.battlegroundsmod.combat.BlockBreakFx.erase(level, pos, state, Block.UPDATE_CLIENTS);
         return true;
     }
 

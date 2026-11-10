@@ -379,7 +379,7 @@ public final class Vermelho {
                         block.setDeltaMovement(side.scale(0.6 + 0.6 * RANDOM.nextDouble()).add(dir.scale(0.5)).add(0, 0.3, 0));
                         block.hurtMarked = true;
                     } else {
-                        level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2);
+                        com.starkinhon.battlegroundsmod.combat.BlockBreakFx.erase(level, pos, state, 2);
                     }
                 }
             }

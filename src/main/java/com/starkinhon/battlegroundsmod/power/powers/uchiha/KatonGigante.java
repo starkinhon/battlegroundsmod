@@ -225,7 +225,7 @@ public final class KatonGigante {
                 for (BlockPos block : wave) {
                     BlockState state = level.getBlockState(block);
                     if (!state.isAir() && state.getDestroySpeed(level, block) >= 0) {
-                        level.setBlock(block, Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS);
+                        com.starkinhon.battlegroundsmod.combat.BlockBreakFx.erase(level, block, state, Block.UPDATE_CLIENTS);
                     }
                 }
             });
