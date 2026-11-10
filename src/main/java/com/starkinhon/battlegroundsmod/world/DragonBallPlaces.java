@@ -4,7 +4,6 @@ import com.starkinhon.battlegroundsmod.ModEntities;
 import com.starkinhon.battlegroundsmod.npc.UniverseNpc;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.level.block.Block;
@@ -63,14 +62,27 @@ public final class DragonBallPlaces {
     static void register() {
         arrivalPad(WorldMap.get(MAP));
         place("kame", 412, 88, DragonBallPlaces::kame);
-        place("capsula", -151, -146, DragonBallPlaces::capsule);
+        place("capsula", -149, -152, DragonBallPlaces::capsule);
         MapPlaces.keepClear(MAP, 412, 88, 17);
-        MapPlaces.keepClear(MAP, -151, -146, 38);
+        MapPlaces.keepClear(MAP, -149, -152, 38);
         place("raditz", 250, -195, DragonBallPlaces::raditz);
-        place("babidi", -322, 54, DragonBallPlaces::wreck);
-        // Only the buildings that look like the anime stay (Stark, 2026-11-10); the other spots keep their flat ground
-        // until they are redone: Goku, Red Ribbon, Pilaf, Satan, North/South City, Buu, Yajirobe.
-        MapPlaces.add(MAP, new MapPlaces.Place("karin", KARIN_X, KARIN_Z, map -> karin(map), DragonBallPlaces::karinDone));
+        place("babidi", -319, 57, DragonBallPlaces::wreck);
+        // The six places Stark marked on the 2D map (2026-11-10), drawn after his references by
+        // tools/structures/dragonball2.py. The spots are the ones tools/build_worldmap.py flattened.
+        place("goku", 323, -29, (map, x, z) -> structure(map, x, z, "goku", 24, 24, "dragonball/goku_house"));
+        place("buu", -268, -430, (map, x, z) -> structure(map, x, z, "buu", 16, 18, "dragonball/buu_house"));
+        place("cell", -54, -289, (map, x, z) -> structure(map, x, z, "cell", 34, 48, "dragonball/cell_arena"));
+        place("babidi_nave", -239, 95, (map, x, z) -> structure(map, x, z, "babidi_nave", 18, 14, "dragonball/babidi_ship"));
+        MapPlaces.add(MAP, new MapPlaces.Place("karin", KARIN_X, KARIN_Z,
+                map -> structure(map, KARIN_X, KARIN_Z, "karin", 10, 12, "dragonball/korin_tower"), DragonBallPlaces::karinDone));
+        MapPlaces.add(MAP, new MapPlaces.Place("lookout", LOOKOUT_X, LOOKOUT_Z,
+                map -> new Build(LOOKOUT_X, LOOKOUT_Y, LOOKOUT_Z, 280).template("dragonball/kami_lookout", 0, 0, 0), null));
+        MapPlaces.keepClear(MAP, 323, -29, 24);
+        MapPlaces.keepClear(MAP, -268, -430, 16);
+        MapPlaces.keepClear(MAP, -54, -289, 34);
+        MapPlaces.keepClear(MAP, -239, 95, 20);
+        MapPlaces.keepClear(MAP, KARIN_X, KARIN_Z, 20);
+        lookoutPads(WorldMap.get(MAP));
         MapPlaces.add(MAP, new MapPlaces.Place("namek", NAMEK_X, NAMEK_Z, map -> namek(), null));
     }
 
@@ -222,50 +234,35 @@ public final class DragonBallPlaces {
         return b;
     }
 
-    // Karin's tower on top of the Montanha da Karin: a white column with a ladder, and the platform where Korin lives.
-    private static final int KARIN_HEIGHT = 40;
-    private static final int KARIN_X = -394, KARIN_Z = -225;
+    // Korin's tower (Stark, 2026-11-10): the carved pillar from the forest up into the sky with the ladder, and the round
+    // house on top (KORIN_TOP blocks up, balcony floor KORIN_FLOOR) where Korin lives; a pad there goes up to Kami.
+    private static final int KARIN_X = -407, KARIN_Z = -87;
+    private static final int KORIN_FLOOR = 162;
+    // Kami's Lookout floats high over the north-west sea (the drawn disc, Stark's mark 1); its tiles are at y 280.
+    private static final int LOOKOUT_X = -400, LOOKOUT_Y = 281, LOOKOUT_Z = -408;
 
-    private static Build karin(WorldMap map) {
-        int bx = KARIN_X;
-        int bz = KARIN_Z;
-        // The highest point near the drawn spot.
-        int best = map.ground(bx, bz);
-        int px = bx;
-        int pz = bz;
-        for (int i = -10; i <= 10; i++) {
-            for (int k = -10; k <= 10; k++) {
-                int g = map.ground(bx + i, bz + k);
-                if (g > best && !map.water(bx + i, bz + k)) {
-                    best = g;
-                    px = bx + i;
-                    pz = bz + k;
-                }
-            }
-        }
-        Build b = new Build(px, best + 1, pz, 77);
-        b.clear(6, 0, KARIN_HEIGHT + 6);
-        for (int j = -2; j < KARIN_HEIGHT; j++) {
-            b.disc(0, j, 0, 2.2, s(j % 9 == 0 ? Blocks.RED_TERRACOTTA : Blocks.SMOOTH_QUARTZ));
-        }
-        b.ladder(3, 0, 0, KARIN_HEIGHT - 1, Direction.EAST);
-        b.disc(0, KARIN_HEIGHT, 0, 5.5, s(Blocks.SMOOTH_QUARTZ));
-        // The ladder ends under a closed trapdoor flush with the floor: Korin walks over it (and never falls 40
-        // blocks), players open it from below.
-        b.set(3, KARIN_HEIGHT, 0, Blocks.OAK_TRAPDOOR.defaultBlockState()
-                .setValue(net.minecraft.world.level.block.TrapDoorBlock.FACING, Direction.WEST)
-                .setValue(net.minecraft.world.level.block.TrapDoorBlock.HALF, net.minecraft.world.level.block.state.properties.Half.TOP));
-        b.ring(0, KARIN_HEIGHT + 1, 0, 5.5, KARIN_HEIGHT + 1, s(Blocks.OAK_FENCE));
-        for (int[] c : new int[][] {{3, 3}, {-3, 3}, {3, -3}, {-3, -3}}) {
-            b.box(c[0], KARIN_HEIGHT + 1, c[1], c[0], KARIN_HEIGHT + 3, c[1], s(Blocks.RED_TERRACOTTA));
-        }
-        b.disc(0, KARIN_HEIGHT + 4, 0, 4.5, s(Blocks.ORANGE_TERRACOTTA));
-        b.cone(0, KARIN_HEIGHT + 5, 0, 3.5, 3, s(Blocks.ORANGE_TERRACOTTA));
-        return b;
+    // A building from a structure file on its flattened spot: clears a cylinder (trees, grass) and draws it.
+    private static Build structure(WorldMap map, int x, int z, String id, double clear, int height, String file) {
+        Build b = at(map, x, z, id);
+        b.clear(clear, 0, height);
+        return b.template(file, 0, 0, 0);
+    }
+
+    // The pads between Korin's balcony and Kami's Lookout (in the anime Goku flies up; here the pad takes you).
+    private static void lookoutPads(WorldMap map) {
+        int ky = Math.max(map.ground(KARIN_X, KARIN_Z), WorldMap.SEA - 1) + 1 + KORIN_FLOOR;
+        BlockPos korinPad = new BlockPos(KARIN_X + 14, ky, KARIN_Z);
+        BlockPos besideKorin = new BlockPos(KARIN_X + 14, ky, KARIN_Z + 3);
+        BlockPos lookoutPad = new BlockPos(LOOKOUT_X, LOOKOUT_Y - 1, LOOKOUT_Z + 40);
+        BlockPos besideLookout = new BlockPos(LOOKOUT_X, LOOKOUT_Y - 1, LOOKOUT_Z + 36);
+        MapPlaces.add(MAP, new MapPlaces.Pad("ir_kami", "karin", korinPad, "lookout", besideLookout,
+                "message.battlegroundsmod.pad_kami"));
+        MapPlaces.add(MAP, new MapPlaces.Pad("voltar_karin", "lookout", lookoutPad, "karin", besideKorin,
+                "message.battlegroundsmod.pad_karin"));
     }
 
     private static void karinDone(ServerLevel level, Build b) {
-        BlockPos top = new BlockPos(b.x - 2, b.y + KARIN_HEIGHT + 1, b.z - 1);
+        BlockPos top = new BlockPos(b.x - 3, b.y + KORIN_FLOOR + 1, b.z - 2);
         if (!level.getEntities(ModEntities.NPC_KORIN.get(), new AABB(top).inflate(48, 64, 48), e -> e.isAlive()).isEmpty()) {
             return;
         }

@@ -1057,5 +1057,7 @@
   "npc.battlegroundsmod.tamayo.hint.3": "Kokushibo is an Upper Moon. Don't go to him unready.",
   "message.battlegroundsmod.map_edge": "§bEnd of this universe. To go to another one, use a Multiversal Crystal.",
   "message.battlegroundsmod.pad_namek": "§aGoing to Namek, Freeza's planet... %s",
-  "message.battlegroundsmod.pad_terra": "§bGoing back to Earth... %s"
+  "message.battlegroundsmod.pad_terra": "§bGoing back to Earth... %s",
+  "message.battlegroundsmod.pad_kami": "§aGoing up to Kami's Lookout... %s",
+  "message.battlegroundsmod.pad_karin": "§bGoing down to Korin's tower... %s"
 }

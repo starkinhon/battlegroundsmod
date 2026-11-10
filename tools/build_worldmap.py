@@ -89,14 +89,43 @@ h=np.full((H,W),62.0)
 h+=np.clip((dist-1.5)*0.28,0,None).clip(0,5)+np.clip(dist-20,0,40)*0.05
 h+=blur(cls==N['grass'],3)*1.5+blur(cls==N['forest'],3)*3
 h+=blur(cls==N['rock'],6)**1.2*32+blur(cls==N['canyon'],5)**1.2*28
-h+=blur(cls==N['snow'],8)**1.1*45
+snowm=blur(cls==N['snow'],8)
+h+=snowm**1.1*45
+# Stark 2026-11-10: the snowy mountains of the north-east bigger: tall ridged peaks inside the snow
+# the area Stark circled in blue on the 2D map (world x,z), soft edges
+from PIL import ImageDraw
+NE=[(10,-295),(-5,-350),(0,-400),(15,-460),(25,-480),(100,-478),(160,-470),(250,-490),(380,-490),(390,-460),(440,-440),
+    (460,-380),(475,-300),(470,-245),(430,-250),(420,-200),(425,-182),(390,-185),(320,-220),(260,-250),(235,-275),
+    (230,-305),(210,-330),(180,-340),(150,-350),(140,-365),(105,-375),(85,-400),(80,-350),(75,-310),(45,-300)]
+zimg=Image.new('L',(W,H),0); ImageDraw.Draw(zimg).polygon([(x+500,z+500) for x,z in NE],fill=255)
+zone=nd.gaussian_filter((np.array(zimg)>0).astype(float),9)
+# separate peaks (not one dome): cones of different sizes scattered inside the zone, ridged detail on top
+prng=np.random.default_rng(23)
+mtn=np.zeros((H,W))
+zy,zx=np.nonzero(zone>0.5)
+for _ in range(70):
+    i=prng.integers(len(zx)); cx,cy=zx[i],zy[i]
+    rad=prng.uniform(18,48); top=prng.uniform(45,135)
+    y0,y1=max(0,int(cy-rad*1.6)),min(H,int(cy+rad*1.6)); x0,x1=max(0,int(cx-rad*1.6)),min(W,int(cx+rad*1.6))
+    d=np.hypot(gx[y0:y1,x0:x1]-cx,gy[y0:y1,x0:x1]-cy)/rad
+    cone=top*np.clip(1-d,0,1)**1.35
+    mtn[y0:y1,x0:x1]=np.maximum(mtn[y0:y1,x0:x1],cone)
+ridge=1-np.abs(noise(16,1.0)); ridge2=1-np.abs(noise(7,1.0))
+mtn*=0.82+0.18*ridge
+mtn+=(ridge**3*10+ridge2**3*4)*np.clip(mtn/30,0,1)
+coast=nd.distance_transform_edt(~((cls==N['deep'])|(cls==N['shallow'])))
+coast=np.clip((coast-4)/40,0,1); coast=coast*coast*(3-2*coast)
+h+=zone*coast*(14+mtn)
+cls[(zone*coast*mtn>35)&land&np.isin(cls,[N['grass'],N['forest'],N['rock']])]=N['snow']   # high slopes covered in snow
 mesa=blur(cls==N['redrock'],3)>0.45
 h+=blur(mesa,1.5)*16
 h+=(noise(36,4)+noise(14,1.5))*np.clip(dist/8,0,1)
 h=np.where(land,nd.gaussian_filter(h,2.0),0)
 fl=np.where(cls==N['shallow'],61.6-np.minimum(wdist,10)*0.45,0)+np.where(cls==N['deep'],54-np.minimum(wdist,30)*0.4,0)
 fl+=noise(24,2)*np.clip((wdist-3)/6,0,1)
-h=np.minimum(h,62+np.clip(dist-1.5,0,None)*0.7)
+# the shore cap keeps beaches low; inside the snowy mountains (away from the coast) it is lifted so the peaks stay tall
+keep=zone*coast
+h=np.minimum(h,62+np.clip(dist-1.5,0,None)*0.7)*(1-keep)+h*keep
 h=np.where(land,np.maximum(h,62),np.minimum(fl,61))
 h=np.round(h).astype(int)
 Hf=h;Cf=cls.copy()
@@ -107,16 +136,17 @@ wd=nd.distance_transform_edt(landF)
 Cf[(Cf==N['sand'])&(wd>10)]=N['desert']
 # building sites (world x, z, radius, ground kind): spots read off the real Dragon Ball map, moved to the flattest
 # dry ground nearby, then flattened so the buildings stand right (Stark 2026-11-10: no terrain where buildings go)
-SITES=[('kame',412,88,15,'grass'),('goku',300,-25,11,'grass'),('capsula',-175,-170,36,'grass'),('redribbon',-415,-65,15,'forest'),
- ('pilaf',75,-193,14,'desert'),('satan',318,-142,12,'grass'),('cidade_norte',103,-402,19,'snow'),('cidade_sul',-44,250,22,'grass'),
-('buu',-313,-284,10,'grass'),('yajirobe',-447,-229,8,'grass'),('karin',-397,-234,7,'grass'),
- ('babidi',-319,57,18,'desert')]
+SITES=[('kame',412,88,15,'grass'),('capsula',-175,-170,36,'grass'),('babidi',-319,57,18,'desert'),
+ # Stark's marks on the 2D map (2026-11-10 19:07): exact spots, only a small search around them
+ ('goku',323,-29,22,'grass',10),('buu',-268,-430,15,'grass',10),('cell',-64,-297,34,'grass',10),('karin',-407,-87,8,'forest',10),
+ ('babidi_nave',-245,105,20,'desert',10)]
 yy2,xx2=np.mgrid[0:H,0:W]
 sites={}
-for nm,wx,wz,rad,kind in SITES:
+for site in SITES:
+    nm,wx,wz,rad,kind=site[:5]; reach=site[5] if len(site)>5 else 30
     cx,cz=wx+500,wz+500; best=None
-    for ox in range(-30,31,3):
-        for oz in range(-30,31,3):
+    for ox in range(-reach,reach+1,2):
+        for oz in range(-reach,reach+1,2):
             x,z=cx+ox,cz+oz
             disc=(xx2[z-rad-3:z+rad+4,x-rad-3:x+rad+4]-x)**2+(yy2[z-rad-3:z+rad+4,x-rad-3:x+rad+4]-z)**2<=(rad+3)**2
             hs=Hf[z-rad-3:z+rad+4,x-rad-3:x+rad+4][disc]; cs=Cf[z-rad-3:z+rad+4,x-rad-3:x+rad+4][disc]
