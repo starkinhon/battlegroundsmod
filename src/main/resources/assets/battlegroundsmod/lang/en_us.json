@@ -1055,5 +1055,7 @@
   "npc.battlegroundsmod.tamayo.hint.1": "Wisteria keeps demons away. Throw the petals when they surround you.",
   "npc.battlegroundsmod.tamayo.hint.2": "The Lower Moons sometimes carry my medicine. They stole it from me.",
   "npc.battlegroundsmod.tamayo.hint.3": "Kokushibo is an Upper Moon. Don't go to him unready.",
-  "message.battlegroundsmod.map_edge": "§bEnd of this universe. To go to another one, use a Multiversal Crystal."
+  "message.battlegroundsmod.map_edge": "§bEnd of this universe. To go to another one, use a Multiversal Crystal.",
+  "message.battlegroundsmod.pad_namek": "§aGoing to Namek, Freeza's planet... %s",
+  "message.battlegroundsmod.pad_terra": "§bGoing back to Earth... %s"
 }

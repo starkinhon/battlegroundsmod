@@ -137,7 +137,7 @@ def nearest(x,y,ok):
 # inland sand = desert (cacti, dead bushes); sand by the sea = beach
 wd=nd.distance_transform_edt(landF)
 Cf[(Cf==N['sand'])&(wd>7)]=10
-names.append('desert')
+names.append('desert'); N['desert']=10
 ok=((Cf==N['grass']))&(nd.uniform_filter((Cf==N['grass']).astype(float),7)>0.8)
 ac,ar=nearest(560,560,ok)
 print('arrival world',ac-300,Hf[ar,ac]+1,ar-300,'class',names[Cf[ar,ac]])
@@ -148,3 +148,37 @@ with gzip.open('dragonball.bin','wb') as f:
     f.write(Hf.astype('>i2').tobytes()); f.write(Cf.astype(np.uint8).tobytes())
 np.save('C.npy',Cf)
 print(names)
+# --- building sites: the picture draws houses/castles as blobs; flatten a plateau so the mod builds them there
+SITES={ # name: (orig x, orig y, radius in blocks, keep kind or None)
+ 'capsula':(110,140,24,'grass'),'kame':(295,125,9,'sand'),'pilaf':(240,255,11,'grass'),'satan':(110,345,11,'grass'),
+ 'redribbon':(1065,110,13,'snow'),'cidade_norte':(1145,320,20,'grass'),'piccolo':(700,250,11,'dark'),
+ 'palacio':(650,410,15,'desert'),'saiyajin':(1010,440,13,'grass'),'goku':(1220,560,9,'grass'),'arco':(1105,665,10,'grass'),
+ 'cidade_sul':(160,790,24,'grass'),'yajirobe':(530,720,9,'grass'),'buu':(1140,1020,11,'grass'),
+}
+import json
+out={}
+yy,xx=np.mgrid[0:600,0:600]
+for k,(x,y,R,kind) in SITES.items():
+    c,r=orig2map(x,y)
+    dd=np.hypot(xx-c,yy-r)
+    landS=~((Cf==N['deep'])|(Cf==N['shallow']))
+    ring=(dd>=R)&(dd<R+8)&landS
+    target=int(np.clip(np.percentile(Hf[ring],30) if ring.any() else 65,64,90))
+    if k in ('capsula','kame','goku','arco','buu','satan','pilaf','yajirobe','cidade_sul','cidade_norte'): target=min(target,67)
+    inner=(dd<R)
+    Hf[inner]=target
+    Cf[inner]=N[kind]
+    edge=(dd>=R)&(dd<R+6)&landS
+    t=((dd-R)/6)[edge]
+    Hf[edge]=np.round(target*(1-t)+Hf[edge]*t).astype(int)
+    out[k]=[int(c-300),int(target+1),int(r-300),R]
+json.dump(out,open('sites.json','w'))
+print(out)
+with gzip.open('dragonball.bin','wb') as f:
+    f.write(b'SMAP');f.write(struct.pack('>iiiii',1,600,600,-300,-300))
+    f.write(struct.pack('>ii',ac-300,ar-300))
+    f.write(Hf.astype('>i2').tobytes()); f.write(Cf.astype(np.uint8).tobytes())
+np.save('H.npy',Hf);np.save('C.npy',Cf)
+show=np.array([(20,60,160),(60,160,230),(235,205,110),(100,180,50),(30,100,30),(240,245,250),(140,95,55),(190,90,90),(255,90,0),(70,70,70),(225,190,95)],float)
+base=show[Cf]; gy,gx=np.gradient(Hf.astype(float)); shade=np.clip(1+(-gx-gy)*0.08,0.5,1.4)[...,None]
+Image.fromarray(np.clip(base*shade,0,255).astype(np.uint8)).resize((1200,1200),Image.NEAREST).save('relief.png')

@@ -52,6 +52,10 @@ public class MapChunkGenerator extends ChunkGenerator {
         this.mapName = mapName;
     }
 
+    public String mapName() {
+        return mapName;
+    }
+
     public WorldMap map() {
         return WorldMap.get(mapName);
     }

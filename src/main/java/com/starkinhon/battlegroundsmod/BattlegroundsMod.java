@@ -64,6 +64,7 @@ public class BattlegroundsMod {
         com.starkinhon.battlegroundsmod.universe.SageMode.register();
         com.starkinhon.battlegroundsmod.universe.UniverseSpawns.register();
         com.starkinhon.battlegroundsmod.world.MapBorder.register();
+        com.starkinhon.battlegroundsmod.world.MapPlaces.register();
         com.starkinhon.battlegroundsmod.universe.JujutsuWorld.register();
         com.starkinhon.battlegroundsmod.universe.ReverseCurse.register();
         com.starkinhon.battlegroundsmod.universe.BleachWorld.register();
