@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "GI ",
+    "IR "
+  ],
+  "key": {
+    "G": {
+      "item": "minecraft:lime_stained_glass_pane"
+    },
+    "I": {
+      "item": "minecraft:iron_ingot"
+    },
+    "R": {
+      "item": "minecraft:redstone"
+    }
+  },
+  "result": {
+    "id": "battlegroundsmod:scouter",
+    "count": 1
+  }
+}

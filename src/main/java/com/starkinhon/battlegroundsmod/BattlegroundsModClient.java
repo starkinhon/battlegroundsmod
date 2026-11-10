@@ -181,6 +181,8 @@ public class BattlegroundsModClient {
 
     private static void onRegisterGuiLayers(RegisterGuiLayersEvent event) {
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "power_hud"), PowerHud::render);
+        event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "scouter"),
+                com.starkinhon.battlegroundsmod.client.ScouterHud::render);
         // After every vanilla bar, so it knows how tall the hearts, armor and food stand.
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "base_attacks"), BaseAttacks::render);
         // The attack stamina: beside the player in third person, on the left of the screen in first person.
@@ -258,6 +260,13 @@ public class BattlegroundsModClient {
         event.registerEntityRenderer(ModEntities.INUMAKI.get(), context -> new SoulBossRenderer<>(context, "inumaki", false));
         event.registerEntityRenderer(ModEntities.MIWA.get(), context -> new SoulBossRenderer<>(context, "miwa", true));
         event.registerEntityRenderer(ModEntities.NARUTO_CLONE.get(), com.starkinhon.battlegroundsmod.client.NarutoCloneRenderer::new);
+        event.registerEntityRenderer(ModEntities.SOLDADO_RED_RIBBON.get(),
+                context -> new SoulBossRenderer<>(context, false, "soldado_red_ribbon_0", "soldado_red_ribbon_1"));
+        event.registerEntityRenderer(ModEntities.SAIBAMAN.get(), context -> new SoulBossRenderer<>(context, "saibaman", false));
+        event.registerEntityRenderer(ModEntities.SOLDADO_FREEZA.get(),
+                context -> new SoulBossRenderer<>(context, false, "soldado_freeza_0", "soldado_freeza_1"));
+        event.registerEntityRenderer(ModEntities.NPC_GOHAN.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_gohan"));
+        event.registerEntityRenderer(ModEntities.NPC_KORIN.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_korin"));
         event.registerEntityRenderer(ModEntities.FIGHTER_HUMANO.get(),
                 context -> new SoulBossRenderer<>(context, false, "fighter_humano_0", "fighter_humano_1", "fighter_humano_2"));
         event.registerEntityRenderer(ModEntities.FIGHTER_RUA.get(),

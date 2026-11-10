@@ -10,6 +10,7 @@ import java.util.List;
 // itens (optional, per challenge): items given the first time the character is beaten, "namespace:item" or
 // "namespace:item 3" for a stack (Stark 2026-11-10: some challenges give items).
 // piso: the universe's floor blocks (mixed at random), pilar: the block of the broken pillars around the arena.
+// mobs: entity ids of the universe's common enemies; they only spawn in its world (with progression on).
 // descricao: the universe's line on the screen where the player picks where to live (challenge/Universes).
 // subAlmasParaChefes: SubAlmas of a universe the player must beat before its bosses' arenas open (Stark 2026-11-10;
 // a universe with fewer SubAlmas than that asks for all of them).
@@ -17,7 +18,7 @@ import java.util.List;
 // never feels empty (Stark 2026-11-10). Once beaten it spawns normally.
 public record ChallengeSpec(int raio, int altura, int subAlmasParaChefes, double chanceRara, List<Universe> universos) {
 
-    public record Universe(String id, String nome, String cor, String descricao, List<String> piso, String pilar, List<Challenge> desafios) {
+    public record Universe(String id, String nome, String cor, String descricao, List<String> mobs, List<String> piso, String pilar, List<Challenge> desafios) {
         public int color() {
             try {
                 return Integer.parseInt(cor.replace("#", ""), 16);
@@ -48,6 +49,16 @@ public record ChallengeSpec(int raio, int altura, int subAlmasParaChefes, double
     public Universe universe(String id) {
         for (Universe universe : universos) {
             if (universe.id().equals(id)) {
+                return universe;
+            }
+        }
+        return null;
+    }
+
+    // The universe whose common enemy this entity id is, or null.
+    public Universe universeOfMob(String id) {
+        for (Universe universe : universos) {
+            if (universe.mobs() != null && universe.mobs().contains(id)) {
                 return universe;
             }
         }

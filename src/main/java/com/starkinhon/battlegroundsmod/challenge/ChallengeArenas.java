@@ -396,6 +396,14 @@ public final class ChallengeArenas {
         }
         ServerLevel level = event.getLevel().getLevel();
         ChallengeSpec spec = ChallengeSpec.get();
+        // A universe's common enemies (Saibaman...) only in that universe.
+        ChallengeSpec.Universe mobUniverse = spec.universeOfMob(boss.bossId());
+        if (mobUniverse != null) {
+            if (Progression.on(level.getServer()) && !mobUniverse.id().equals(Universes.universeOf(level.dimension()))) {
+                event.setSpawnCancelled(true);
+            }
+            return;
+        }
         ChallengeSpec.Universe universe = spec.universeOf(boss.bossId());
         if (universe == null || !Progression.on(level.getServer())) {
             return;

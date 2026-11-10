@@ -95,6 +95,16 @@ public final class ModItems {
             () -> new DeferredSpawnEggItem(ModEntities.INUMAKI, 0x2A2A3A, 0xE8E8F0, new Item.Properties()));
     public static final DeferredItem<DeferredSpawnEggItem> MIWA_SPAWN_EGG = BattlegroundsMod.ITEMS.register("miwa_spawn_egg",
             () -> new DeferredSpawnEggItem(ModEntities.MIWA, 0x2A3A5A, 0x6FB8E8, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> SOLDADO_RED_RIBBON_SPAWN_EGG = BattlegroundsMod.ITEMS.register("soldado_red_ribbon_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.SOLDADO_RED_RIBBON, 0x6B6B3A, 0xC8102E, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> SAIBAMAN_SPAWN_EGG = BattlegroundsMod.ITEMS.register("saibaman_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.SAIBAMAN, 0x3E8E2E, 0xA8D86A, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> SOLDADO_FREEZA_SPAWN_EGG = BattlegroundsMod.ITEMS.register("soldado_freeza_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.SOLDADO_FREEZA, 0xE8E8E0, 0x6A3C8E, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> NPC_GOHAN_SPAWN_EGG = BattlegroundsMod.ITEMS.register("npc_gohan_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.NPC_GOHAN, 0x5A2D82, 0xE8C27A, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> NPC_KORIN_SPAWN_EGG = BattlegroundsMod.ITEMS.register("npc_korin_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.NPC_KORIN, 0xF2F2EE, 0x8A6A4F, new Item.Properties()));
     public static final DeferredItem<DeferredSpawnEggItem> FIGHTER_HUMANO_SPAWN_EGG = BattlegroundsMod.ITEMS.register("fighter_humano_spawn_egg",
             () -> new DeferredSpawnEggItem(ModEntities.FIGHTER_HUMANO, 0x8A6A4F, 0x3E6FB0, new Item.Properties()));
     public static final DeferredItem<DeferredSpawnEggItem> FIGHTER_RUA_SPAWN_EGG = BattlegroundsMod.ITEMS.register("fighter_rua_spawn_egg",
@@ -126,6 +136,29 @@ public final class ModItems {
     public static final DeferredItem<com.starkinhon.battlegroundsmod.item.MultiversalCrystalItem> MULTIVERSAL_CRYSTAL = BattlegroundsMod.ITEMS.registerItem(
             "cristal_multiversal", com.starkinhon.battlegroundsmod.item.MultiversalCrystalItem::new,
             new Item.Properties().stacksTo(16).rarity(Rarity.RARE));
+
+    // Dragon Ball items and weapons (universe/DragonBallWorld). Placeholder looks; what they do is what matters for now.
+    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.SenzuItem> SENZU = BattlegroundsMod.ITEMS.registerItem("senzu",
+            com.starkinhon.battlegroundsmod.item.SenzuItem::new, new Item.Properties().rarity(Rarity.UNCOMMON));
+    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.ScouterItem> SCOUTER = BattlegroundsMod.ITEMS.registerItem("scouter",
+            com.starkinhon.battlegroundsmod.item.ScouterItem::new, new Item.Properties().rarity(Rarity.UNCOMMON));
+    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.CapsuleItem> CAPSULE = BattlegroundsMod.ITEMS.registerItem("capsula_hoipoi",
+            com.starkinhon.battlegroundsmod.item.CapsuleItem::new, new Item.Properties().rarity(Rarity.UNCOMMON));
+    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.DragonRadarItem> DRAGON_RADAR = BattlegroundsMod.ITEMS.registerItem("radar_dragao",
+            com.starkinhon.battlegroundsmod.item.DragonRadarItem::new, new Item.Properties().rarity(Rarity.RARE));
+    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.PowerPoleItem> POWER_POLE = BattlegroundsMod.ITEMS.registerItem("bastao_magico",
+            com.starkinhon.battlegroundsmod.item.PowerPoleItem::new, new Item.Properties().rarity(Rarity.RARE));
+    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.ZSwordItem> Z_SWORD = BattlegroundsMod.ITEMS.registerItem("espada_z",
+            com.starkinhon.battlegroundsmod.item.ZSwordItem::new, new Item.Properties().rarity(Rarity.EPIC).fireResistant());
+    public static final java.util.List<DeferredItem<com.starkinhon.battlegroundsmod.item.DragonBallItem>> DRAGON_BALLS = new java.util.ArrayList<>();
+
+    static {
+        for (int stars = 1; stars <= 7; stars++) {
+            int n = stars;
+            DRAGON_BALLS.add(BattlegroundsMod.ITEMS.registerItem("esfera_dragao_" + n,
+                    properties -> new com.starkinhon.battlegroundsmod.item.DragonBallItem(n, properties), new Item.Properties().rarity(Rarity.EPIC)));
+        }
+    }
 
     static {
         for (Power power : Powers.all()) {
