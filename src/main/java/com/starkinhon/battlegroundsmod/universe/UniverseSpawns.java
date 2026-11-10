@@ -62,6 +62,10 @@ public final class UniverseSpawns {
             if (universe == null || universe.mobs() == null || universe.mobs().isEmpty()) {
                 continue;
             }
+            if (DemonSlayerWorld.UNIVERSE.equals(id) && level.isDay()) {
+                // The demons hide from the sun.
+                continue;
+            }
             List<String> mobs = universe.mobs();
             AABB around = player.getBoundingBox().inflate(NEARBY_RADIUS);
             int nearby = level.getEntitiesOfClass(SoulBoss.class, around, mob -> mobs.contains(mob.bossId())).size();

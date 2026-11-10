@@ -158,9 +158,18 @@ public final class ModEntities {
     public static final Supplier<EntityType<SoulMob>> MALDICAO_GRAU2 = mob("maldicao_grau2");
     public static final Supplier<EntityType<SoulMob>> FEITICEIRO_RENEGADO = mob("feiticeiro_renegado");
 
+    // Common enemies of Bleach (Hueco Mundo) and Demon Slayer.
+    public static final Supplier<EntityType<SoulMob>> HOLLOW = mob("hollow");
+    public static final Supplier<EntityType<SoulMob>> ARRANCAR = mob("arrancar");
+    public static final Supplier<EntityType<SoulMob>> MENOS_GRANDE = mob("menos_grande");
+    public static final Supplier<EntityType<SoulMob>> ONI_COMUM = mob("oni_comum");
+    public static final Supplier<EntityType<SoulMob>> ONI_LUA_INFERIOR = mob("oni_lua_inferior");
+    public static final Supplier<EntityType<SoulMob>> ONI_ESPADACHIM = mob("oni_espadachim");
+
     public static final java.util.List<Supplier<EntityType<SoulMob>>> FIGHTERS = java.util.List.of(FIGHTER_HUMANO, FIGHTER_RUA, FIGHTER_QUARTEIRAO,
             SOLDADO_RED_RIBBON, SAIBAMAN, SOLDADO_FREEZA, NINJA_RENEGADO, NINJA_SOM, ANBU_RAIZ,
-            MALDICAO_MENOR, MALDICAO_GRAU2, FEITICEIRO_RENEGADO);
+            MALDICAO_MENOR, MALDICAO_GRAU2, FEITICEIRO_RENEGADO, HOLLOW, ARRANCAR, MENOS_GRANDE,
+            ONI_COMUM, ONI_LUA_INFERIOR, ONI_ESPADACHIM);
 
     // Friendly NPCs of the universes (npc/UniverseNpc): they teach, give and talk, never fight.
     public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.npc.UniverseNpc>> NPC_GOHAN = npc("npc_gohan");
@@ -169,6 +178,10 @@ public final class ModEntities {
     public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.npc.UniverseNpc>> NPC_TEUCHI = npc("npc_teuchi");
     public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.npc.UniverseNpc>> NPC_SHOKO = npc("npc_shoko");
     public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.npc.UniverseNpc>> NPC_YAGA = npc("npc_yaga");
+    public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.npc.UniverseNpc>> NPC_YORUICHI = npc("npc_yoruichi");
+    public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.npc.UniverseNpc>> NPC_URAHARA = npc("npc_urahara");
+    public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.npc.UniverseNpc>> NPC_UROKODAKI = npc("npc_urokodaki");
+    public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.npc.UniverseNpc>> NPC_TAMAYO = npc("npc_tamayo");
 
     private static Supplier<EntityType<com.starkinhon.battlegroundsmod.npc.UniverseNpc>> npc(String id) {
         return ENTITY_TYPES.register(id, () -> EntityType.Builder.<com.starkinhon.battlegroundsmod.npc.UniverseNpc>of(
@@ -230,5 +243,9 @@ public final class ModEntities {
         event.put(NPC_TEUCHI.get(), com.starkinhon.battlegroundsmod.npc.UniverseNpc.createAttributes().build());
         event.put(NPC_SHOKO.get(), com.starkinhon.battlegroundsmod.npc.UniverseNpc.createAttributes().build());
         event.put(NPC_YAGA.get(), com.starkinhon.battlegroundsmod.npc.UniverseNpc.createAttributes().build());
+        event.put(NPC_YORUICHI.get(), com.starkinhon.battlegroundsmod.npc.UniverseNpc.createAttributes().build());
+        event.put(NPC_URAHARA.get(), com.starkinhon.battlegroundsmod.npc.UniverseNpc.createAttributes().build());
+        event.put(NPC_UROKODAKI.get(), com.starkinhon.battlegroundsmod.npc.UniverseNpc.createAttributes().build());
+        event.put(NPC_TAMAYO.get(), com.starkinhon.battlegroundsmod.npc.UniverseNpc.createAttributes().build());
     }
 }

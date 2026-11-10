@@ -125,6 +125,26 @@ public final class ModItems {
             () -> new DeferredSpawnEggItem(ModEntities.NPC_SHOKO, 0x2A2A2A, 0x6A4A3A, new Item.Properties()));
     public static final DeferredItem<DeferredSpawnEggItem> NPC_YAGA_SPAWN_EGG = BattlegroundsMod.ITEMS.register("npc_yaga_spawn_egg",
             () -> new DeferredSpawnEggItem(ModEntities.NPC_YAGA, 0x1A1A1A, 0xC8A070, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> HOLLOW_SPAWN_EGG = BattlegroundsMod.ITEMS.register("hollow_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.HOLLOW, 0xF0F0F0, 0x1A1A1A, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> ARRANCAR_SPAWN_EGG = BattlegroundsMod.ITEMS.register("arrancar_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.ARRANCAR, 0xE8E8E0, 0x3A3A4A, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> MENOS_GRANDE_SPAWN_EGG = BattlegroundsMod.ITEMS.register("menos_grande_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.MENOS_GRANDE, 0x111111, 0xF0F0F0, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> ONI_COMUM_SPAWN_EGG = BattlegroundsMod.ITEMS.register("oni_comum_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.ONI_COMUM, 0x6A2A2A, 0xD8C8B0, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> ONI_LUA_INFERIOR_SPAWN_EGG = BattlegroundsMod.ITEMS.register("oni_lua_inferior_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.ONI_LUA_INFERIOR, 0x3A1A3A, 0xC8202A, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> ONI_ESPADACHIM_SPAWN_EGG = BattlegroundsMod.ITEMS.register("oni_espadachim_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.ONI_ESPADACHIM, 0x2A1A2A, 0x8A6ACA, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> NPC_YORUICHI_SPAWN_EGG = BattlegroundsMod.ITEMS.register("npc_yoruichi_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.NPC_YORUICHI, 0x6A3A8A, 0xE8B040, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> NPC_URAHARA_SPAWN_EGG = BattlegroundsMod.ITEMS.register("npc_urahara_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.NPC_URAHARA, 0x3A6A3A, 0xF0F0E0, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> NPC_UROKODAKI_SPAWN_EGG = BattlegroundsMod.ITEMS.register("npc_urokodaki_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.NPC_UROKODAKI, 0x3A5AA8, 0xC83A3A, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> NPC_TAMAYO_SPAWN_EGG = BattlegroundsMod.ITEMS.register("npc_tamayo_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.NPC_TAMAYO, 0x8A3A6A, 0xF0D8E0, new Item.Properties()));
     public static final DeferredItem<DeferredSpawnEggItem> FIGHTER_HUMANO_SPAWN_EGG = BattlegroundsMod.ITEMS.register("fighter_humano_spawn_egg",
             () -> new DeferredSpawnEggItem(ModEntities.FIGHTER_HUMANO, 0x8A6A4F, 0x3E6FB0, new Item.Properties()));
     public static final DeferredItem<DeferredSpawnEggItem> FIGHTER_RUA_SPAWN_EGG = BattlegroundsMod.ITEMS.register("fighter_rua_spawn_egg",
@@ -200,6 +220,19 @@ public final class ModItems {
             com.starkinhon.battlegroundsmod.item.PlayfulCloudItem::new, new Item.Properties().rarity(Rarity.EPIC));
     public static final DeferredItem<com.starkinhon.battlegroundsmod.item.InvertedSpearItem> INVERTED_SPEAR = BattlegroundsMod.ITEMS.registerItem("lanca_invertida",
             com.starkinhon.battlegroundsmod.item.InvertedSpearItem::new, new Item.Properties().rarity(Rarity.EPIC));
+    // Bleach and Demon Slayer items and weapons (universe/BleachWorld, universe/DemonSlayerWorld).
+    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.SoulCandyItem> SOUL_CANDY = BattlegroundsMod.ITEMS.registerItem("pilula_alma",
+            com.starkinhon.battlegroundsmod.item.SoulCandyItem::new, new Item.Properties().rarity(Rarity.UNCOMMON));
+    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.HollowMaskItem> HOLLOW_MASK = BattlegroundsMod.ITEMS.registerItem("mascara_hollow",
+            com.starkinhon.battlegroundsmod.item.HollowMaskItem::new, new Item.Properties().rarity(Rarity.RARE));
+    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.ZanpakutoItem> ZANPAKUTO = BattlegroundsMod.ITEMS.registerItem("zanpakuto",
+            com.starkinhon.battlegroundsmod.item.ZanpakutoItem::new, new Item.Properties().rarity(Rarity.EPIC));
+    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.NichirinSwordItem> NICHIRIN_SWORD = BattlegroundsMod.ITEMS.registerItem("espada_nichirin",
+            com.starkinhon.battlegroundsmod.item.NichirinSwordItem::new, new Item.Properties().rarity(Rarity.EPIC));
+    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.WisteriaItem> WISTERIA = BattlegroundsMod.ITEMS.registerItem("flor_glicinia",
+            com.starkinhon.battlegroundsmod.item.WisteriaItem::new, new Item.Properties().rarity(Rarity.UNCOMMON));
+    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.TamayoMedicineItem> TAMAYO_MEDICINE = BattlegroundsMod.ITEMS.registerItem("remedio_tamayo",
+            com.starkinhon.battlegroundsmod.item.TamayoMedicineItem::new, new Item.Properties().rarity(Rarity.RARE));
     public static final java.util.List<DeferredItem<com.starkinhon.battlegroundsmod.item.DragonBallItem>> DRAGON_BALLS = new java.util.ArrayList<>();
 
     static {

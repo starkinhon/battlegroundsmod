@@ -280,6 +280,16 @@ public class BattlegroundsModClient {
         event.registerEntityRenderer(ModEntities.FEITICEIRO_RENEGADO.get(), context -> new SoulBossRenderer<>(context, "feiticeiro_renegado", false));
         event.registerEntityRenderer(ModEntities.NPC_SHOKO.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_shoko"));
         event.registerEntityRenderer(ModEntities.NPC_YAGA.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_yaga"));
+        event.registerEntityRenderer(ModEntities.HOLLOW.get(), context -> new SoulBossRenderer<>(context, "hollow", false));
+        event.registerEntityRenderer(ModEntities.ARRANCAR.get(), context -> new SoulBossRenderer<>(context, "arrancar", false));
+        event.registerEntityRenderer(ModEntities.MENOS_GRANDE.get(), context -> new SoulBossRenderer<>(context, "menos_grande", false));
+        event.registerEntityRenderer(ModEntities.ONI_COMUM.get(), context -> new SoulBossRenderer<>(context, "oni_comum", false));
+        event.registerEntityRenderer(ModEntities.ONI_LUA_INFERIOR.get(), context -> new SoulBossRenderer<>(context, "oni_lua_inferior", false));
+        event.registerEntityRenderer(ModEntities.ONI_ESPADACHIM.get(), context -> new SoulBossRenderer<>(context, "oni_espadachim", false));
+        event.registerEntityRenderer(ModEntities.NPC_YORUICHI.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_yoruichi"));
+        event.registerEntityRenderer(ModEntities.NPC_URAHARA.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_urahara"));
+        event.registerEntityRenderer(ModEntities.NPC_UROKODAKI.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_urokodaki"));
+        event.registerEntityRenderer(ModEntities.NPC_TAMAYO.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_tamayo"));
         event.registerEntityRenderer(ModEntities.NPC_GOHAN.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_gohan"));
         event.registerEntityRenderer(ModEntities.NPC_KORIN.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_korin"));
         event.registerEntityRenderer(ModEntities.FIGHTER_HUMANO.get(),

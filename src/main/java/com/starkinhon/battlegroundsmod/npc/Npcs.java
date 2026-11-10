@@ -46,7 +46,11 @@ public final class Npcs {
             new Home("naruto", ModEntities.NPC_JIRAIYA, 6, 3),
             new Home("naruto", ModEntities.NPC_TEUCHI, -5, 4),
             new Home("jujutsu", ModEntities.NPC_SHOKO, 6, 3),
-            new Home("jujutsu", ModEntities.NPC_YAGA, -5, 4));
+            new Home("jujutsu", ModEntities.NPC_YAGA, -5, 4),
+            new Home("bleach", ModEntities.NPC_YORUICHI, 6, 3),
+            new Home("bleach", ModEntities.NPC_URAHARA, -5, 4),
+            new Home("demonslayer", ModEntities.NPC_UROKODAKI, 6, 3),
+            new Home("demonslayer", ModEntities.NPC_TAMAYO, -5, 4));
 
     // Makes sure this universe's NPCs stand around its arrival point.
     public static void ensure(ServerLevel level, String universe, BlockPos arrival) {
@@ -78,6 +82,10 @@ public final class Npcs {
             case "korin" -> korin(player, npc);
             case "jiraiya" -> jiraiya(player, npc);
             case "shoko" -> shoko(player, npc);
+            case "yoruichi" -> teach(player, npc, "yoruichi", com.starkinhon.battlegroundsmod.universe.BleachWorld.SHUNPO);
+            case "urahara" -> daily(player, npc, "souls_urahara_dia", new ItemStack(ModItems.SOUL_CANDY.get()), "urahara", 4);
+            case "urokodaki" -> teach(player, npc, "urokodaki", com.starkinhon.battlegroundsmod.universe.DemonSlayerWorld.MARK);
+            case "tamayo" -> daily(player, npc, "souls_tamayo_dia", new ItemStack(ModItems.TAMAYO_MEDICINE.get()), "tamayo", 4);
             case "yaga" -> daily(player, npc, "souls_yaga_dia", new ItemStack(ModItems.CURSED_DOLL.get()), "yaga", 4);
             case "teuchi" -> daily(player, npc, "souls_teuchi_dia", new ItemStack(ModItems.RAMEN.get()), "teuchi", 4);
             default -> say(player, npc, Component.literal("..."));
@@ -147,6 +155,25 @@ public final class Npcs {
         player.connection.send(new ClientboundSetTitleTextPacket(Component.translatable("message.battlegroundsmod.technique_learned")
                 .withStyle(s -> s.withColor(0xF2C94C).withBold(true))));
         player.connection.send(new ClientboundSetSubtitleTextPacket(Component.translatable("technique.battlegroundsmod.reversao")));
+        Fx.sound(player.serverLevel(), player.position(), SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, 1f, 1.2f);
+    }
+
+    // A teacher NPC: the technique at Tier 8, its lines before (weak), on teaching (teach) and after (after.0-2).
+    private static void teach(ServerPlayer player, UniverseNpc npc, String who, String technique) {
+        if (player.getData(ModAttachments.TECHNIQUES).contains(technique)) {
+            say(player, npc, pick(player, "npc.battlegroundsmod." + who + ".after", 3));
+            return;
+        }
+        if (Tiers.of(player) > Tiers.HUMANO - 2) {
+            say(player, npc, Component.translatable("npc.battlegroundsmod." + who + ".weak"));
+            return;
+        }
+        learn(player, technique);
+        say(player, npc, Component.translatable("npc.battlegroundsmod." + who + ".teach"));
+        player.connection.send(new ClientboundSetTitlesAnimationPacket(8, 60, 20));
+        player.connection.send(new ClientboundSetTitleTextPacket(Component.translatable("message.battlegroundsmod.technique_learned")
+                .withStyle(s -> s.withColor(0xF2C94C).withBold(true))));
+        player.connection.send(new ClientboundSetSubtitleTextPacket(Component.translatable("technique.battlegroundsmod." + technique)));
         Fx.sound(player.serverLevel(), player.position(), SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, 1f, 1.2f);
     }
 
