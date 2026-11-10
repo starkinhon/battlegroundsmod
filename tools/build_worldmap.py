@@ -107,7 +107,7 @@ wd=nd.distance_transform_edt(landF)
 Cf[(Cf==N['sand'])&(wd>10)]=N['desert']
 # building sites (world x, z, radius, ground kind): spots read off the real Dragon Ball map, moved to the flattest
 # dry ground nearby, then flattened so the buildings stand right (Stark 2026-11-10: no terrain where buildings go)
-SITES=[('kame',412,88,11,'grass'),('goku',300,-25,11,'grass'),('capsula',-175,-170,24,'grass'),('redribbon',-415,-65,15,'forest'),
+SITES=[('kame',412,88,15,'grass'),('goku',300,-25,11,'grass'),('capsula',-175,-170,36,'grass'),('redribbon',-415,-65,15,'forest'),
  ('pilaf',75,-193,14,'desert'),('satan',318,-142,12,'grass'),('cidade_norte',103,-402,19,'snow'),('cidade_sul',-44,250,22,'grass'),
 ('buu',-313,-284,10,'grass'),('yajirobe',-447,-229,8,'grass'),('karin',-397,-234,7,'grass'),
  ('babidi',-319,57,18,'desert')]
