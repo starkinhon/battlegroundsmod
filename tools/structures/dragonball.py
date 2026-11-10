@@ -159,7 +159,104 @@ def kame_house():
     palm(v, -9, 9, height=8, lean=(-1, 1), rnd=rnd)
     palm(v, 8, -9, height=10, lean=(0, -1), rnd=rnd)
     v.set(-2, 10, 0, 'lantern[hanging=false,waterlogged=false]')
+    kame_interior(v, X, Z)
     return v
+
+
+def kame_interior(v, X, Z):
+    """Inside Kame House (Stark's cutaway ref, 2026-11-10). Ground floor: living room with the sofa, the TV, the VCR and
+    the old man's tapes; kitchen with counter, stove, sink and fridge on the back wall; bathroom with the tub and toilet
+    behind its own door. Upper floor: Lunch's room (pink bed, the wardrobe where she hides her guns) and Kame's room (bed,
+    magazines, TV). Outside: the blue and white beach umbrella with the little table and the deck chair, the mailbox.
+    Under the house, through a trapdoor in the hall: the secret basement."""
+    lam = 'lantern[hanging=true,waterlogged=false]'
+    # --- ladder between the floors (through the stair hole on the left)
+    for y in range(1, 5):
+        v.set(-5, y, -2, 'ladder[facing=east,waterlogged=false]')
+    v.set(-5, 4, -1, 'air')
+    # --- bathroom (back right): partition, door, sunken tub, toilet, sink
+    v.box(1, 1, -6, 1, 3, -2, 'cherry_planks'); v.box(1, 1, -2, 5, 3, -2, 'cherry_planks')
+    v.set(3, 1, -2, 'birch_door[facing=north,half=lower,hinge=left,open=false,powered=false]')
+    v.set(3, 2, -2, 'birch_door[facing=north,half=upper,hinge=left,open=false,powered=false]')
+    v.box(2, 0, -6, 5, 0, -3, 'smooth_quartz')
+    v.box(3, 0, -6, 5, 0, -5, 'water')
+    v.box(3, 1, -4, 5, 1, -4, 'smooth_quartz_slab[type=bottom,waterlogged=false]')
+    v.set(2, 1, -3, 'smooth_quartz_stairs[facing=east,half=bottom,shape=straight,waterlogged=false]')   # toilet
+    v.set(2, 1, -6, 'cauldron')                                                                         # sink
+    v.set(3, 3, -4, lam)
+    # --- kitchen (back left): counter, stove, sink, the fridge
+    for x in range(-4, 0):
+        v.set(x, 1, -6, 'stripped_birch_wood[axis=y]')
+    v.set(-3, 1, -6, 'smoker[facing=south,lit=false]')
+    v.set(-1, 1, -6, 'water_cauldron[level=3]')
+    v.box(0, 1, -6, 0, 3, -6, 'quartz_block'); v.set(0, 2, -5, 'lever[face=wall,facing=south,powered=false]')
+    v.box(-4, 3, -6, -2, 3, -6, 'smooth_quartz_slab[type=top,waterlogged=false]')
+    v.set(-2, 1, -3, 'oak_slab[type=top,waterlogged=false]'); v.set(-2, 1, -4, 'oak_stairs[facing=south,half=bottom,shape=straight,waterlogged=false]')
+    v.set(-3, 3, -3, lam)
+    # --- living room (front left): TV + VCR + tapes on the left wall, sofa facing it, coffee table, rug
+    v.box(-5, 1, 4, -5, 1, 6, 'dark_oak_slab[type=top,waterlogged=false]')
+    v.set(-5, 1, 5, 'dropper[facing=east,triggered=false]')                                             # the VCR
+    v.set(-5, 1, 6, 'chiseled_bookshelf[facing=east,slot_0_occupied=true,slot_1_occupied=true,slot_2_occupied=true,slot_3_occupied=true,slot_4_occupied=false,slot_5_occupied=true]')
+    v.box(-5, 2, 4, -5, 2, 6, 'black_concrete'); v.set(-5, 2, 5, 'tinted_glass')
+    for z in (4, 5, 6):
+        v.set(-1, 1, z, 'red_wool')
+        v.set(0, 1, z, 'red_wool')
+    v.set(-1, 1, 3, 'red_wool'); v.set(-1, 1, 6, 'red_wool')
+    v.set(-1, 1, 4, 'red_carpet'); v.set(-1, 1, 5, 'red_carpet')
+    v.set(-3, 1, 5, 'oak_slab[type=bottom,waterlogged=false]')
+    v.set(-4, 0, 4, 'yellow_wool'); v.set(-3, 0, 4, 'yellow_wool'); v.set(-4, 0, 5, 'yellow_wool'); v.set(-2, 0, 6, 'yellow_wool')
+    v.set(-3, 3, 5, lam)
+    # --- entrance hall (front right): plant, coat stand, the trapdoor to the secret basement
+    v.set(5, 1, 6, 'potted_cactus'); v.set(1, 1, 6, 'potted_bamboo')
+    v.set(5, 0, 4, 'spruce_trapdoor[facing=west,half=top,open=false,powered=false,waterlogged=false]')
+    v.set(3, 3, 3, lam)
+    # --- upper floor: partition between Lunch's room (left) and Kame's room (right)
+    v.box(0, 5, -6, 0, 7, 6, 'cherry_planks')
+    v.set(0, 5, 2, 'birch_door[facing=east,half=lower,hinge=left,open=false,powered=false]')
+    v.set(0, 6, 2, 'birch_door[facing=east,half=upper,hinge=left,open=false,powered=false]')
+    # Lunch: pink bed, wardrobe with the hidden guns, a mirror, rug
+    v.set(-3, 5, -6, 'pink_bed[facing=north,occupied=false,part=head]'); v.set(-3, 5, -5, 'pink_bed[facing=north,occupied=false,part=foot]')
+    v.box(-5, 5, 4, -5, 6, 6, 'spruce_planks'); v.set(-4, 5, 5, 'barrel[facing=west,open=false]')
+    v.set(-4, 6, 4, 'dispenser[facing=east,triggered=false]')
+    v.box(-4, 4, 0, -2, 4, 2, 'pink_wool')
+    v.set(-1, 5, -6, 'spruce_slab[type=top,waterlogged=false]'); v.set(-1, 6, -6, 'potted_pink_tulip')
+    v.set(-3, 7, 0, lam)
+    # Kame: red bed, magazines, TV, rug
+    v.set(3, 5, -6, 'red_bed[facing=north,occupied=false,part=head]'); v.set(3, 5, -5, 'red_bed[facing=north,occupied=false,part=foot]')
+    v.box(5, 5, -1, 5, 6, 1, 'bookshelf')
+    v.set(1, 5, 6, 'dark_oak_slab[type=top,waterlogged=false]'); v.set(1, 6, 6, 'black_concrete')
+    v.box(2, 4, 1, 4, 4, 3, 'orange_wool')
+    v.set(5, 5, 6, 'chest[facing=north,type=single,waterlogged=false]')
+    v.set(3, 7, 0, lam)
+    # --- the secret basement under the house: Kame's hidden collection
+    v.box(-6, -7, -7, 6, -1, 7, 'stone_bricks')
+    v.box(-5, -6, -6, 5, -2, 6, 'air')
+    v.box(-5, -7, -6, 5, -7, 6, 'polished_andesite')
+    for y in range(-6, 0):
+        v.set(5, y, 4, 'ladder[facing=west,waterlogged=false]')
+    v.box(-5, -6, -6, -5, -3, 6, 'bookshelf')                                  # the magazine collection
+    v.box(-4, -6, -6, 4, -5, -6, 'chiseled_bookshelf[facing=south,slot_0_occupied=true,slot_1_occupied=true,slot_2_occupied=false,slot_3_occupied=true,slot_4_occupied=true,slot_5_occupied=true]')
+    for x in (-2, 0, 2):
+        v.set(x, -6, 5, 'chest[facing=north,type=single,waterlogged=false]')
+    v.set(3, -6, -2, 'anvil[facing=north]'); v.set(3, -6, -3, 'anvil[facing=north]')        # training weights
+    v.box(0, -6, -1, 1, -6, 0, 'green_terracotta'); v.set(0, -5, -1, 'green_carpet')       # spare turtle shell
+    v.set(-3, -6, 1, 'red_wool'); v.set(-3, -6, 2, 'red_wool')
+    for x, z in ((-2, -3), (2, 2), (-2, 3)):
+        v.set(x, -2, z, lam)
+    # --- outside: beach umbrella, table, deck chair, mailbox
+    ux, uz = -11, -2
+    v.box(ux, 0, uz, ux, 2, uz, 'birch_fence[east=false,north=false,south=false,west=false,waterlogged=false]')
+    for dx in range(-2, 3):
+        for dz in range(-2, 3):
+            if dx * dx + dz * dz <= 5:
+                a = math.atan2(dz, dx)
+                v.set(ux + dx, 3, uz + dz, 'blue_wool' if int((a + math.pi) / (math.pi / 4)) % 2 else 'white_wool')
+    v.set(ux, 4, uz, 'white_wool')
+    v.set(ux + 1, 0, uz - 1, 'birch_fence[east=false,north=false,south=false,west=false,waterlogged=false]')
+    v.set(ux + 1, 1, uz - 1, 'white_carpet')
+    v.set(ux - 1, 0, uz + 2, 'yellow_bed[facing=south,occupied=false,part=head]'); v.set(ux - 1, 0, uz + 1, 'yellow_bed[facing=south,occupied=false,part=foot]')
+    v.set(1, 0, Z + 6, 'birch_fence[east=false,north=false,south=false,west=false,waterlogged=false]')
+    v.set(1, 1, Z + 6, 'red_terracotta')
 
 # ---------------------------------------------------------------------------------------------------------------
 def capsule_corp():
