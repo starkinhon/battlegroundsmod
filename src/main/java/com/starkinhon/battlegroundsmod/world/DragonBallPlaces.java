@@ -68,11 +68,11 @@ public final class DragonBallPlaces {
         place("redribbon", RED_RIBBON_X, RED_RIBBON_Z, DragonBallPlaces::redRibbon);
         place("pilaf", 93, -196, DragonBallPlaces::pilaf);
         place("satan", 315, -169, DragonBallPlaces::satan);
-        place("cidade_norte", 94, -396, (map, x, z) -> city(map, x, z, "cidade_norte", 18));
+        place("cidade_norte", 133, -378, (map, x, z) -> city(map, x, z, "cidade_norte", 18));
         place("cidade_sul", -23, 253, (map, x, z) -> city(map, x, z, "cidade_sul", 22));
         place("raditz", 250, -195, DragonBallPlaces::raditz);
         place("babidi", -322, 54, DragonBallPlaces::wreck);
-        place("buu", -283, -284, DragonBallPlaces::buu);
+        place("buu", -286, -284, DragonBallPlaces::buu);
         place("yajirobe", -432, -211, DragonBallPlaces::yajirobe);
         MapPlaces.add(MAP, new MapPlaces.Place("karin", KARIN_X, KARIN_Z, map -> karin(map), DragonBallPlaces::karinDone));
         MapPlaces.add(MAP, new MapPlaces.Place("namek", NAMEK_X, NAMEK_Z, map -> namek(), null));
@@ -338,20 +338,28 @@ public final class DragonBallPlaces {
         // Buried half: packed sand under the floor so there is no hollow under the ship.
         b.box(-9, -7, -9, 9, -3, 9, s(Blocks.SAND));
         b.box(-8, -2, -8, 8, -2, 8, s(Blocks.SMOOTH_SANDSTONE));
-        // Torn open: holes in the hull on the side that hit the ground, burnt plates around them.
-        for (int i = -9; i <= 9; i++) {
-            for (int j = 0; j <= 11; j++) {
-                for (int k = -9; k <= 9; k++) {
-                    double d = Math.sqrt(i * i + (j - 2) * (j - 2) + k * k);
-                    if (d > 8.5 || d < 7.2) {
-                        continue;
-                    }
-                    boolean front = i * dirX + k * dirZ > 2;
-                    int roll = b.random.nextInt(100);
-                    if (front && roll < 35) {
-                        b.set(i, j, k, Blocks.AIR);
-                    } else if (front && roll < 55 || roll < 6) {
-                        b.set(i, j, k, b.random.nextBoolean() ? Blocks.GRAY_CONCRETE : Blocks.BLACK_CONCRETE);
+        // Torn open: a few big tears on the side that hit the ground (jagged edges), scorched plates around each one.
+        double base = Math.atan2(dirZ, dirX);
+        double[][] tears = {{-0.6, 3, 3.4}, {0.05, 6, 2.8}, {0.7, 2, 2.4}};
+        for (double[] t : tears) {
+            double a = base + t[0];
+            double tx = Math.cos(a) * 8;
+            double ty = t[1];
+            double tz = Math.sin(a) * 8;
+            for (int i = -9; i <= 9; i++) {
+                for (int j = 0; j <= 11; j++) {
+                    for (int k = -9; k <= 9; k++) {
+                        double d = Math.sqrt(i * i + (j - 2) * (j - 2) + k * k);
+                        if (d > 8.5 || d < 7.0) {
+                            continue;
+                        }
+                        double e = Math.sqrt((i - tx) * (i - tx) + (j - ty) * (j - ty) + (k - tz) * (k - tz));
+                        double edge = t[2] + b.random.nextDouble() * 1.2;
+                        if (e < edge) {
+                            b.set(i, j, k, Blocks.AIR);
+                        } else if (e < edge + 1.8 && b.random.nextInt(4) > 0) {
+                            b.set(i, j, k, e < edge + 0.9 ? Blocks.BLACK_CONCRETE : Blocks.GRAY_CONCRETE);
+                        }
                     }
                 }
             }

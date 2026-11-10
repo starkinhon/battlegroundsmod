@@ -60,6 +60,9 @@ for cname,minsize in (('dark',150),('rock',80),('canyon',80),('snow',80),('redro
         votes=np.stack([nd.uniform_filter((other==i).astype(float),13) for i in range(len(names))])
         cls[sm]=votes.argmax(0)[sm]
 cls[cls==N['dark']]=N['rock']
+# white surf drawn along the shores was read as snow: only the big snowy mountains are snow, the rest is beach
+snowy=nd.uniform_filter((cls==N['snow']).astype(float),41)
+cls[(cls==N['snow'])&(snowy<0.45)]=N['sand']
 gy,gx=np.mgrid[0:H,0:W]
 # south-west continent (Babidi's ship, Baba's palace): all desert (Stark 2026-11-10)
 edge=500+nd.gaussian_filter(np.random.default_rng(5).random((H,W)),12)*0+28*np.sin(gx/23.0)*np.cos(gx/57.0)
