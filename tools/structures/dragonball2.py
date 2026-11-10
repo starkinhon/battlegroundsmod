@@ -30,7 +30,7 @@ vox.COLORS.update({
     'bricks': (150, 97, 83), 'warped_door': (43, 120, 110), 'blue_terracotta': (74, 60, 91), 'oak_log': (109, 85, 50),
     'spruce_door': (100, 75, 45), 'shroomlight': (240, 146, 70), 'red_carpet': (160, 39, 34), 'packed_mud': (142, 106, 79),
     'magma_block': (140, 60, 20), 'end_rod': (240, 240, 230), 'chain': (60, 65, 80), 'glowstone': (250, 210, 120),
-    'smooth_red_sandstone': (181, 98, 31), 'cut_sandstone': (217, 206, 159), 'white_glazed_terracotta': (188, 212, 202),
+    'smooth_red_sandstone': (181, 98, 31), 'cut_sandstone': (217, 206, 159), 'chiseled_sandstone': (216, 203, 155), 'white_glazed_terracotta': (188, 212, 202),
     'tinted_glass': (44, 38, 46), 'dark_oak_planks': (66, 43, 20), 'stripped_spruce_log': (115, 89, 52),
     'spruce_stairs': (114, 84, 48), 'yellow_concrete': (240, 175, 21), 'deepslate_tiles': (54, 54, 55), 'mud_bricks': (137, 103, 79),
     'oak_slab': (162, 130, 78), 'spruce_slab': (114, 84, 48), 'smooth_quartz_slab': (235, 229, 222), 'lantern': (200, 150, 60),
@@ -421,12 +421,12 @@ def korin_tower():
     T = KORIN_TOP
     # base: carved flared pedestal
     for y, r in ((-2, 5.2), (-1, 5.0), (0, 4.6), (1, 4.0), (2, 3.6), (3, 3.2), (4, 3.6), (5, 3.0), (6, 2.7)):
-        v.disc(0, y, 0, r, 'chiseled_stone_bricks' if y in (1, 4) else 'smooth_stone' if y < 0 else 'stone_bricks')
+        v.disc(0, y, 0, r, 'chiseled_sandstone' if y in (1, 4) else 'smooth_sandstone' if y < 0 else 'cut_sandstone')
     # the pillar: radius 2, a carved ring every 9 blocks, darker joints
     for y in range(7, T + 1):
         k = y % 9
         r = 2.8 if k == 0 else 2.45 if k in (1, 8) else 2.2
-        blk = 'chiseled_stone_bricks' if k == 0 else 'polished_andesite' if k in (1, 8) else 'smooth_stone' if (y // 9) % 2 else 'stone_bricks'
+        blk = 'chiseled_sandstone' if k == 0 else 'smooth_sandstone' if k in (1, 8) else 'cut_sandstone' if (y // 9) % 2 else 'sandstone'
         v.disc(0, y, 0, r, blk)
     # neck under the bowl (hollow, the ladder goes up through it)
     for y in range(T - 3, T + 2):
@@ -500,13 +500,14 @@ def korin_tower():
     for k in range(6):
         a = k * math.pi / 3
         v.set(round(9 * math.cos(a)), DB + 3, round(9 * math.sin(a)), 'lantern[hanging=true,waterlogged=false]')
+        v.set(round(6 * math.cos(a + 0.5)), FL, round(6 * math.sin(a + 0.5)), 'sea_lantern')   # light in the floor too
         v.set(round(9 * math.cos(a)), DB + 4, round(9 * math.sin(a)), 'chain[axis=y]')
     # the pad to Kami's Lookout, on the balcony right outside the door (DragonBallPlaces links it)
     v.disc(14, FL, 0, 1.6, 'light_blue_concrete'); v.set(14, FL, 0, 'sea_lantern')
     for c in ((15, 1), (15, -1), (13, 1), (13, -1)):
         v.set(c[0], FL + 1, c[1], 'end_rod[facing=up]')
     # the ladder all the way up the pillar, through the bowl, to a trapdoor in the room floor
-    ladder(v, 3, 0, 0, FL - 1, facing='east', support='stone_bricks')
+    ladder(v, 3, 0, 0, FL - 1, facing='east', support='cut_sandstone')
     trapdoor(v, 3, FL, 0, facing='west')
     v.set(2, FL, 0, 'spruce_planks')
     return v
