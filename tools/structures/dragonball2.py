@@ -18,6 +18,8 @@ PREV = sys.argv[1] if len(sys.argv) > 1 else os.path.join(OUT, '..', '..', '..',
 
 vox.COLORS.update({
     'cut_red_sandstone': (186, 99, 29), 'chiseled_red_sandstone': (183, 96, 27), 'red_sandstone_stairs': (186, 99, 29), 'pearlescent_froglight': (245, 232, 228), 'azalea': (101, 124, 47), 'flowering_azalea': (150, 120, 160), 'gray_stained_glass': (76, 76, 76), 'light_gray_stained_glass': (153, 153, 153), 'white_stained_glass': (240, 240, 240), 'prismarine': (99, 156, 151), 'prismarine_bricks': (99, 171, 158), 'dark_prismarine': (51, 91, 75), 'stripped_dark_oak_log': (96, 76, 49), 'rooted_dirt': (144, 103, 76), 'tuff': (108, 109, 102),
+    'cherry_planks': (226, 178, 172), 'stripped_spruce_wood': (115, 89, 52), 'bamboo_block': (127, 143, 55), 'smoker': (90, 86, 82), 'stripped_oak_wood': (177, 144, 86), 'purple_wall_banner': (122, 42, 173), 'quartz_block': (236, 230, 223),
+    'oak_stairs': (162, 130, 78), 'oak_slab': (162, 130, 78), 'decorated_pot': (150, 85, 60), 'potted_dandelion': (230, 210, 40), 'potted_fern': (60, 130, 40), 'flower_pot': (120, 64, 46), 'cauldron': (60, 60, 60), 'water_cauldron': (60, 90, 200), 'lever': (100, 100, 100), 'birch_planks': (196, 179, 123),
     'calcite': (223, 224, 220), 'orange_concrete': (224, 97, 0), 'gold_block': (246, 208, 61), 'yellow_terracotta': (186, 133, 35),
     'light_blue_concrete': (36, 137, 199), 'cyan_concrete': (21, 119, 136), 'green_concrete': (73, 91, 36),
     'lime_concrete': (94, 168, 24), 'green_terracotta': (76, 83, 42), 'spruce_leaves': (40, 80, 40), 'spruce_log': (58, 37, 16),
@@ -899,13 +901,11 @@ def goku_house():
         a = math.atan2(z, x)
         if y == 3 and z > 5 and 3 <= abs(x) <= 7:
             return 'light_blue_stained_glass'                         # long front windows
-        if y == 3 and z < -5 and abs(x) <= 4:
-            return 'light_blue_stained_glass'
         if y == 4 and abs(z) <= 1 and abs(x) > 7:
             return 'light_blue_stained_glass'
         return 'white_concrete' if y > 0 else 'white_terracotta'
     solid(v, lambda X, Y, Z: dome(X, Y, Z) & (Y >= 0), (-12, 12, 0, 9, -10, 10), dcol, air_inside=True)
-    v.box(-10, -1, -8, 10, -1, 8, 'oak_planks')
+    v.box(-10, -1, -8, 10, -1, 8, 'birch_planks')                    # light plank floor (interior refs)
     # arched door frame + door + orange diamond sign
     for y in range(0, 5):
         for x in range(-2, 3):
@@ -940,11 +940,8 @@ def goku_house():
     v.box(-14, 2, 5, -12, 3, 5, 'blue_stained_glass')
     v.box(-18, 2, -2, -18, 3, 1, 'blue_stained_glass')
     v.box(-11, 0, -2, -9, 2, 2, 'air')                                                   # opening into the dome
-    # inside: table, beds, kitchen fire, lantern
-    v.set(2, 0, -2, 'oak_fence'); v.set(2, 1, -2, 'oak_pressure_plate') if False else None
     v.set(-14, 0, -3, 'red_wool'); v.set(-14, 0, -2, 'red_wool'); v.set(-16, 0, -3, 'blue_wool'); v.set(-16, 0, -2, 'blue_wool')
-    v.set(0, 7, 0, 'lantern[hanging=true,waterlogged=false]')
-    v.set(5, 0, -3, 'campfire[facing=north,lit=false,signal_fire=false,waterlogged=false]')
+    goku_interior(v, dome)
     # Grandpa Gohan's house, behind on the right
     gx, gz = 18, -15
     v.box(gx - 4, -1, gz - 4, gx + 4, -1, gz + 4, 'smooth_stone')
@@ -988,6 +985,71 @@ def goku_house():
                 if (x * x + z * z) / 16.0 + ((y - 8) / 3.0) ** 2 <= 1 + rnd.random() * 0.15:
                     v.set(tx + x, y, tz + z, leaves('oak_leaves'))
     return v
+
+
+def goku_interior(v, dome):
+    """Inside the dome (Stark's refs, 2026-11-10): cream curved walls over a dark baseboard, the rosy ceiling with two round
+    lamps, light plank floor, the round table with four chairs, the kitchen on the back wall (counter, stove, sink, hood,
+    pots on a shelf, white cabinet) and the big white fridge, the bamboo pole floor to ceiling, the dark cabinet with the
+    yellow and green vases, and the side window with purple curtains."""
+    WALL = ('white_concrete', 'white_terracotta')
+    lining = []
+    for x in range(-11, 12):
+        for y in range(0, 9):
+            for z in range(-10, 11):
+                if v.get(x, y, z) not in (None, 'minecraft:air') or not dome(x, y, z):
+                    continue
+                if any(v.get(x + dx, y + dy, z + dz) in ['minecraft:' + w for w in WALL]
+                       for dx, dy, dz in ((1, 0, 0), (-1, 0, 0), (0, 1, 0), (0, 0, 1), (0, 0, -1))):
+                    lining.append((x, y, z))
+    for x, y, z in lining:
+        if x < -8 and abs(z) <= 2 and y <= 2:
+            continue                                                  # the opening into the wooden annex
+        if z > 5 and abs(x) <= 1 and y <= 3:
+            continue                                                  # the front door
+        v.set(x, y, z, 'stripped_spruce_wood[axis=y]' if y == 0 else 'smooth_sandstone' if y <= 4 else 'cherry_planks')
+    v.box(-1, 0, 5, 1, 2, 7, 'air'); v.box(-9, 0, -2, -8, 2, 2, 'air')
+    for x, y, z in lining:                                            # keep the windows clear from inside
+        for dx, dz in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            if v.get(x + dx, y, z + dz) == 'minecraft:light_blue_stained_glass':
+                v.set(x, y, z, 'air')
+    # two round ceiling lamps
+    for lx in (-3, 3):
+        top = max(y for y in range(0, 10) if v.get(lx, y, 0) == 'minecraft:cherry_planks' or y == 0)
+        v.set(lx, top, 0, 'pearlescent_froglight[axis=y]'); v.set(lx, top, -1, 'pearlescent_froglight[axis=y]')
+    # round table (2x2) and four slatted chairs
+    v.box(0, 0, 1, 1, 0, 2, 'oak_slab[type=top,waterlogged=false]')
+    chairs = ((0, 0, 'north'), (1, 3, 'south'), (-1, 2, 'west'), (2, 1, 'east'))
+    for x, z, f in chairs:
+        v.set(x, 0, z, f'oak_stairs[facing={f},half=bottom,shape=straight,waterlogged=false]')
+    # kitchen on the back wall
+    kz = -6
+    for x in range(-5, 3):
+        v.set(x, 0, kz, 'stripped_oak_wood[axis=y]')
+    v.set(-3, 0, kz, 'smoker[facing=south,lit=false]')                     # stove + oven
+    v.set(0, 0, kz, 'water_cauldron[level=3]')                             # sink
+    v.set(1, 1, kz, 'decorated_pot[cracked=false,facing=south,waterlogged=false]')
+    v.box(-4, 3, kz, -2, 3, kz, 'smooth_quartz_slab[type=top,waterlogged=false]')    # hood over the stove
+    v.box(-1, 2, kz - 1, 1, 2, kz - 1, 'spruce_planks')                    # pot shelf
+    v.set(-1, 3, kz - 1, 'cauldron'); v.set(1, 3, kz - 1, 'flower_pot')
+    v.box(0, 3, kz, 2, 3, kz, 'quartz_block')                              # white wall cabinet
+    # big white fridge
+    v.box(4, 0, kz, 5, 2, kz, 'quartz_block')
+    v.set(4, 1, kz + 1, 'lever[face=wall,facing=south,powered=false]')
+    # the bamboo pole
+    for y in range(0, 9):
+        if v.get(-6, y, -4) in (None, 'minecraft:air'):
+            v.set(-6, y, -4, 'bamboo_block[axis=y]')
+        else:
+            break
+    # dark cabinet with two vases on the right wall
+    v.box(7, 0, -3, 7, 0, -2, 'dark_oak_planks')
+    v.set(7, 1, -3, 'potted_dandelion'); v.set(7, 1, -2, 'potted_fern')
+    # purple curtains each side of the right window
+    for z in (-2, 2):
+        for x in range(10, 0, -1):
+            if v.get(x, 4, z) in (None, 'minecraft:air') and v.get(x + 1, 4, z) not in (None, 'minecraft:air'):
+                v.set(x, 4, z, 'purple_wall_banner[facing=west]'); break
 
 
 # ---------------------------------------------------------------------------------------------------------------
