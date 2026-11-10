@@ -10,7 +10,7 @@
     {
       "id": "dragonball", "nome": "Dragon Ball", "cor": "#FF9A2E",
       "descricao": "Planícies, savanas, desertos laranja e cânions. Começa perto de uma cidadezinha.",
-      "mobs": ["soldado_red_ribbon", "saibaman", "soldado_freeza"],
+      "mobs": ["soldado_red_ribbon", "saibaman", "soldado_freeza", "bandido_deserto", "pirata", "yeti", "raptor", "tiranossauro"],
       "piso": ["minecraft:red_sand", "minecraft:orange_terracotta", "minecraft:smooth_red_sandstone", "minecraft:red_sand"],
       "pilar": "minecraft:terracotta",
       "desafios": [

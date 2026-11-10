@@ -68,16 +68,12 @@ public final class UniverseSpawns {
             }
             List<String> mobs = universe.mobs();
             if (DragonBallWorld.UNIVERSE.equals(id)) {
-                // Each region of the drawn map has its own enemies: Freeza's soldiers only on Namekusei, the Red
-                // Ribbon around its tower, Saibamen everywhere else on Earth.
                 if (com.starkinhon.battlegroundsmod.world.DragonBallPlaces.onNamek(player)) {
                     spawnNamek(level, player);
-                    continue;
+                } else {
+                    spawnEarth(level, player);
                 }
-                double rx = player.getX() - com.starkinhon.battlegroundsmod.world.DragonBallPlaces.RED_RIBBON_X;
-                double rz = player.getZ() - com.starkinhon.battlegroundsmod.world.DragonBallPlaces.RED_RIBBON_Z;
-                mobs = rx * rx + rz * rz < 90 * 90 ? List.of("soldado_red_ribbon", "soldado_red_ribbon", "saibaman")
-                        : List.of("saibaman", "saibaman", "soldado_red_ribbon");
+                continue;
             }
             AABB around = player.getBoundingBox().inflate(NEARBY_RADIUS);
             List<String> pool = mobs;
@@ -103,6 +99,68 @@ public final class UniverseSpawns {
         for (int i = 0; i < count; i++) {
             BlockPos pos = ground(level, x + random.nextInt(5) - 2, z + random.nextInt(5) - 2);
             if (pos != null) {
+                type.spawn(level, pos, MobSpawnType.EVENT);
+            }
+        }
+    }
+
+    // The Earth's enemies by region (Stark 2026-11-10): each kind of ground of the drawn map has its own. The plains and
+    // forests have the Saibamen and the dinosaurs (the Dragon World is full of them), the deserts the desert bandits
+    // and raptors, the snow the Red Ribbon (its Muscle Tower stood in the snow) and the yeti, the islands and beaches
+    // the pirates; around the Red Ribbon base its soldiers. A group is picked for the spot it lands on.
+    static final List<String> EARTH_MOBS = List.of("saibaman", "soldado_red_ribbon", "bandido_deserto", "pirata", "yeti",
+            "raptor", "tiranossauro");
+
+    static List<String> earthMobs(int x, int z) {
+        double rx = x - com.starkinhon.battlegroundsmod.world.DragonBallPlaces.RED_RIBBON_X;
+        double rz = z - com.starkinhon.battlegroundsmod.world.DragonBallPlaces.RED_RIBBON_Z;
+        if (rx * rx + rz * rz < 90 * 90) {
+            return List.of("soldado_red_ribbon", "soldado_red_ribbon", "saibaman");
+        }
+        com.starkinhon.battlegroundsmod.world.WorldMap map = com.starkinhon.battlegroundsmod.world.WorldMap.get(
+                com.starkinhon.battlegroundsmod.world.DragonBallPlaces.MAP);
+        int kind = map.kind(x, z);
+        if (kind == com.starkinhon.battlegroundsmod.world.WorldMap.SAND || map.landSize(x, z) < ISLAND) {
+            return List.of("pirata", "pirata", "pirata", "saibaman", "raptor");
+        }
+        return switch (kind) {
+            case com.starkinhon.battlegroundsmod.world.WorldMap.SNOW -> List.of("soldado_red_ribbon", "soldado_red_ribbon", "yeti");
+            case com.starkinhon.battlegroundsmod.world.WorldMap.DESERT, com.starkinhon.battlegroundsmod.world.WorldMap.CANYON,
+                    com.starkinhon.battlegroundsmod.world.WorldMap.REDROCK, com.starkinhon.battlegroundsmod.world.WorldMap.CRATER,
+                    com.starkinhon.battlegroundsmod.world.WorldMap.LAVA -> List.of("bandido_deserto", "bandido_deserto", "raptor");
+            default -> List.of("saibaman", "saibaman", "saibaman", "raptor", "raptor", "tiranossauro");
+        };
+    }
+
+    // Land smaller than this (in columns) is an island: everything but the big continent.
+    private static final int ISLAND = 100_000;
+
+    private static void spawnEarth(ServerLevel level, ServerPlayer player) {
+        RandomSource random = level.getRandom();
+        AABB around = player.getBoundingBox().inflate(NEARBY_RADIUS);
+        int nearby = level.getEntitiesOfClass(net.minecraft.world.entity.Mob.class, around, mob -> EARTH_MOBS.contains(
+                BuiltInRegistries.ENTITY_TYPE.getKey(mob.getType()).getPath())).size();
+        if (nearby >= NEARBY_CAP) {
+            return;
+        }
+        double angle = random.nextDouble() * Math.PI * 2;
+        int dist = MIN_DIST + random.nextInt(MAX_DIST - MIN_DIST + 1);
+        int x = player.getBlockX() + (int) Math.round(Math.cos(angle) * dist);
+        int z = player.getBlockZ() + (int) Math.round(Math.sin(angle) * dist);
+        List<String> mobs = earthMobs(x, z);
+        String id = mobs.get(random.nextInt(mobs.size()));
+        EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.get(ResourceLocation.fromNamespaceAndPath(
+                com.starkinhon.battlegroundsmod.BattlegroundsMod.MODID, id));
+        if (type == EntityType.PIG) {
+            return;
+        }
+        // the big ones alone, the raptors in packs
+        int count = "tiranossauro".equals(id) || "yeti".equals(id) ? 1 : "raptor".equals(id) ? 2 + random.nextInt(2)
+                : 1 + random.nextInt(3);
+        count = Math.min(count, NEARBY_CAP - nearby);
+        for (int i = 0; i < count; i++) {
+            BlockPos pos = ground(level, x + random.nextInt(5) - 2, z + random.nextInt(5) - 2);
+            if (pos != null && !nearWater(level, pos)) {
                 type.spawn(level, pos, MobSpawnType.EVENT);
             }
         }

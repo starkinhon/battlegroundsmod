@@ -1070,5 +1070,15 @@
   "message.battlegroundsmod.sala_hud": "§fDay %s of %s §7| §cGravity %s §7| §e%s %s / %s",
   "block.battlegroundsmod.namek_rock": "Namek Rock",
   "block.battlegroundsmod.namek_rock_layer": "Banded Namek Rock",
-  "block.battlegroundsmod.namek_sand": "Namek Sand"
+  "block.battlegroundsmod.namek_sand": "Namek Sand",
+  "entity.battlegroundsmod.bandido_deserto": "Desert Bandit",
+  "item.battlegroundsmod.bandido_deserto_spawn_egg": "Desert Bandit Spawn Egg",
+  "entity.battlegroundsmod.pirata": "Pirate",
+  "item.battlegroundsmod.pirata_spawn_egg": "Pirate Spawn Egg",
+  "entity.battlegroundsmod.yeti": "Yeti",
+  "item.battlegroundsmod.yeti_spawn_egg": "Yeti Spawn Egg",
+  "entity.battlegroundsmod.tiranossauro": "Tyrannosaurus",
+  "item.battlegroundsmod.tiranossauro_spawn_egg": "Tyrannosaurus Spawn Egg",
+  "entity.battlegroundsmod.raptor": "Raptor",
+  "item.battlegroundsmod.raptor_spawn_egg": "Raptor Spawn Egg"
 }

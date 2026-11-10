@@ -75,6 +75,7 @@ public class BattlegroundsModClient {
         modEventBus.addListener(BattlegroundsModClient::onRegisterParticles);
         modEventBus.addListener(BattlegroundsModClient::onRegisterRenderers);
         modEventBus.addListener(BattlegroundsModClient::onAddLayers);
+        modEventBus.addListener(BattlegroundsModClient::onRegisterLayerDefinitions);
         modEventBus.addListener(FxShaders::onRegisterShaders);
         modEventBus.addListener(BattlegroundsModClient::onRegisterClientExtensions);
         modContainer.registerConfig(ModConfig.Type.CLIENT, FxConfig.SPEC);
@@ -268,6 +269,20 @@ public class BattlegroundsModClient {
         event.registerEntityRenderer(ModEntities.SOLDADO_RED_RIBBON.get(),
                 context -> new SoulBossRenderer<>(context, false, "soldado_red_ribbon_0", "soldado_red_ribbon_1"));
         event.registerEntityRenderer(ModEntities.SAIBAMAN.get(), context -> new SoulBossRenderer<>(context, "saibaman", false));
+        event.registerEntityRenderer(ModEntities.BANDIDO_DESERTO.get(),
+                context -> new SoulBossRenderer<>(context, false, "bandido_deserto_0", "bandido_deserto_1"));
+        event.registerEntityRenderer(ModEntities.PIRATA.get(), context -> new SoulBossRenderer<>(context, false, "pirata_0", "pirata_1"));
+        // the yeti: a head and a half taller than a man
+        event.registerEntityRenderer(ModEntities.YETI.get(), context -> new SoulBossRenderer<>(context, "yeti", false) {
+            @Override
+            protected void scale(com.starkinhon.battlegroundsmod.boss.SoulMob entity, com.mojang.blaze3d.vertex.PoseStack pose, float partialTick) {
+                pose.scale(1.35f, 1.35f, 1.35f);
+            }
+        });
+        event.registerEntityRenderer(ModEntities.TIRANOSSAURO.get(),
+                context -> new com.starkinhon.battlegroundsmod.client.animal.DinoRenderer(context, "tiranossauro", 2.6f));
+        event.registerEntityRenderer(ModEntities.RAPTOR.get(),
+                context -> new com.starkinhon.battlegroundsmod.client.animal.DinoRenderer(context, "raptor", 1.0f));
         event.registerEntityRenderer(ModEntities.SOLDADO_FREEZA.get(),
                 context -> new SoulBossRenderer<>(context, false, "soldado_freeza_0", "soldado_freeza_1"));
         event.registerEntityRenderer(ModEntities.NINJA_RENEGADO.get(),
@@ -300,6 +315,11 @@ public class BattlegroundsModClient {
                 context -> new SoulBossRenderer<>(context, false, "fighter_rua_0", "fighter_rua_1", "fighter_rua_2"));
         event.registerEntityRenderer(ModEntities.FIGHTER_QUARTEIRAO.get(),
                 context -> new SoulBossRenderer<>(context, false, "fighter_quarteirao_0", "fighter_quarteirao_1", "fighter_quarteirao_2"));
+    }
+
+    private static void onRegisterLayerDefinitions(EntityRenderersEvent.RegisterLayerDefinitions event) {
+        event.registerLayerDefinition(com.starkinhon.battlegroundsmod.client.animal.DinoModel.LAYER,
+                com.starkinhon.battlegroundsmod.client.animal.DinoModel::create);
     }
 
     // Players' eyes can trail light too (Mangekyo, see Aura), so their renderers learn where the eyes are.

@@ -1078,5 +1078,15 @@
   "message.battlegroundsmod.sala_hud": "§fDia %s de %s §7| §cGravidade %s §7| §e%s %s / %s",
   "block.battlegroundsmod.namek_rock": "Rocha de Namekusei",
   "block.battlegroundsmod.namek_rock_layer": "Rocha Listrada de Namekusei",
-  "block.battlegroundsmod.namek_sand": "Areia de Namekusei"
+  "block.battlegroundsmod.namek_sand": "Areia de Namekusei",
+  "entity.battlegroundsmod.bandido_deserto": "Bandido do Deserto",
+  "item.battlegroundsmod.bandido_deserto_spawn_egg": "Ovo de Bandido do Deserto",
+  "entity.battlegroundsmod.pirata": "Pirata",
+  "item.battlegroundsmod.pirata_spawn_egg": "Ovo de Pirata",
+  "entity.battlegroundsmod.yeti": "Yeti",
+  "item.battlegroundsmod.yeti_spawn_egg": "Ovo de Yeti",
+  "entity.battlegroundsmod.tiranossauro": "Tiranossauro",
+  "item.battlegroundsmod.tiranossauro_spawn_egg": "Ovo de Tiranossauro",
+  "entity.battlegroundsmod.raptor": "Raptor",
+  "item.battlegroundsmod.raptor_spawn_egg": "Ovo de Raptor"
 }
