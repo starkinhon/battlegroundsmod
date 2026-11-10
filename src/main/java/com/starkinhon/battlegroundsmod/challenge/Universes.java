@@ -77,6 +77,9 @@ public final class Universes {
             return null;
         }
         String path = dimension.location().getPath();
+        if ("namek".equals(path)) {
+            return "dragonball";                     // Namek is a planet of the Dragon Ball universe (Stark, 2026-11-10)
+        }
         return ChallengeSpec.get().universe(path) != null ? path : null;
     }
 

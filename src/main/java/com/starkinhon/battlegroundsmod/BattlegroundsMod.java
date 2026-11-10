@@ -39,6 +39,7 @@ public class BattlegroundsMod {
         modEventBus.addListener(ModEntities::onAttributes);
         modEventBus.addListener(ModEntities::onSpawnPlacements);
 
+        ModBlocks.register(modEventBus);
         ModEntities.ENTITY_TYPES.register(modEventBus);
         ModItems.init();
         ModCreativeTabs.init();

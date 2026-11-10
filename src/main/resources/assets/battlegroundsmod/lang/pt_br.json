@@ -1075,5 +1075,8 @@
   "message.battlegroundsmod.sala_sub": "Dia %s de %s",
   "message.battlegroundsmod.sala_ano": "Um ano se passou",
   "message.battlegroundsmod.sala_hud_casa": "§fDia %s de %s §7| §fSaia da plataforma para treinar",
-  "message.battlegroundsmod.sala_hud": "§fDia %s de %s §7| §cGravidade %s §7| §e%s %s / %s"
+  "message.battlegroundsmod.sala_hud": "§fDia %s de %s §7| §cGravidade %s §7| §e%s %s / %s",
+  "block.battlegroundsmod.namek_rock": "Rocha de Namekusei",
+  "block.battlegroundsmod.namek_rock_layer": "Rocha Listrada de Namekusei",
+  "block.battlegroundsmod.namek_sand": "Areia de Namekusei"
 }

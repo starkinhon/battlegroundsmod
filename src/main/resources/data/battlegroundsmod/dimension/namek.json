@@ -1,0 +1,18 @@
+{
+  "type": "battlegroundsmod:namek",
+  "generator": {
+    "type": "battlegroundsmod:map",
+    "map": "namek",
+    "biome_source": {
+      "type": "battlegroundsmod:map",
+      "map": "namek",
+      "biomes": {
+        "deep": "battlegroundsmod:namek",
+        "nsea": "battlegroundsmod:namek",
+        "ngrass": "battlegroundsmod:namek",
+        "nmesa": "battlegroundsmod:namek",
+        "nsand": "battlegroundsmod:namek"
+      }
+    }
+  }
+}

@@ -108,22 +108,25 @@ public final class UniverseSpawns {
         }
     }
 
-    // Freeza's soldiers on Namekusei: on the planet's surface, away from the player, never off the edge.
+    // Freeza's soldiers on Namek (its own dimension now): in groups on dry ground around the player, never too many.
     private static void spawnNamek(ServerLevel level, ServerPlayer player) {
         EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.get(ResourceLocation.fromNamespaceAndPath(
                 com.starkinhon.battlegroundsmod.BattlegroundsMod.MODID, "soldado_freeza"));
-        AABB planet = player.getBoundingBox().inflate(48);
-        if (type == EntityType.PIG || level.getEntitiesOfClass(SoulBoss.class, planet,
-                mob -> "soldado_freeza".equals(mob.bossId())).size() >= 4) {
+        AABB around = player.getBoundingBox().inflate(NEARBY_RADIUS);
+        if (type == EntityType.PIG || level.getEntitiesOfClass(SoulBoss.class, around,
+                mob -> "soldado_freeza".equals(mob.bossId())).size() >= NEARBY_CAP) {
             return;
         }
         RandomSource random = level.getRandom();
-        for (int tries = 0; tries < 8; tries++) {
-            BlockPos pos = com.starkinhon.battlegroundsmod.world.DragonBallPlaces.namekSpot(random);
-            if (pos.distSqr(player.blockPosition()) > 10 * 10 && level.getBlockState(pos).isAir()
-                    && level.getBlockState(pos.above()).isAir() && !level.getBlockState(pos.below()).isAir()) {
+        double angle = random.nextDouble() * Math.PI * 2;
+        int dist = MIN_DIST + random.nextInt(MAX_DIST - MIN_DIST + 1);
+        int x = player.getBlockX() + (int) Math.round(Math.cos(angle) * dist);
+        int z = player.getBlockZ() + (int) Math.round(Math.sin(angle) * dist);
+        int count = 1 + random.nextInt(3);
+        for (int i = 0; i < count; i++) {
+            BlockPos pos = ground(level, x + random.nextInt(5) - 2, z + random.nextInt(5) - 2);
+            if (pos != null) {
                 type.spawn(level, pos, MobSpawnType.EVENT);
-                return;
             }
         }
     }

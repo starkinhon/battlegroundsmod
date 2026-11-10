@@ -42,7 +42,12 @@ public final class MapPlaces {
     }
 
     // Stand on (x, y, z) (the block under the feet) to go to "to".
-    public record Pad(String id, String place, BlockPos at, String toPlace, BlockPos to, String message) {
+    // With toMap, the other end is in another drawn world (the Earth to Namek, Stark 2026-11-10: Namek is a planet of
+    // its own, a sub-dimension of the Dragon Ball universe); the dimension is named like its map.
+    public record Pad(String id, String place, BlockPos at, String toPlace, BlockPos to, String message, String toMap) {
+        public Pad(String id, String place, BlockPos at, String toPlace, BlockPos to, String message) {
+            this(id, place, at, toPlace, to, message, null);
+        }
     }
 
     private static final double TRIGGER = 150;
@@ -71,6 +76,7 @@ public final class MapPlaces {
             ON_PAD.clear();
         });
         DragonBallPlaces.register();
+        NamekWorld.register();
     }
 
     public static void add(String map, Place place) {
@@ -133,9 +139,6 @@ public final class MapPlaces {
                 }
             }
             pads(player, level, map);
-            if (DragonBallPlaces.MAP.equals(map)) {
-                DragonBallPlaces.catchFalls(player);
-            }
         }
     }
 
@@ -251,16 +254,25 @@ public final class MapPlaces {
             return;
         }
         ON_PAD.remove(player.getUUID());
-        Place target = place(map, on.toPlace());
+        ServerLevel dest = level;
+        String destMap = map;
+        if (on.toMap() != null) {
+            dest = level.getServer().getLevel(com.starkinhon.battlegroundsmod.challenge.Universes.key(on.toMap()));
+            destMap = on.toMap();
+            if (dest == null) {
+                return;
+            }
+        }
+        Place target = place(destMap, on.toPlace());
         if (target != null) {
-            start(level, target, true);
+            start(dest, target, true);
         }
         BlockPos to = on.to();
         Fx.burst(level, ParticleTypes.REVERSE_PORTAL, player.position().add(0, 1, 0), 60, 0.6, 0.6);
-        player.teleportTo(level, to.getX() + 0.5, to.getY() + 1, to.getZ() + 0.5, player.getYRot(), player.getXRot());
+        player.teleportTo(dest, to.getX() + 0.5, to.getY() + 1, to.getZ() + 0.5, player.getYRot(), player.getXRot());
         player.fallDistance = 0;
-        Fx.burst(level, ParticleTypes.REVERSE_PORTAL, player.position().add(0, 1, 0), 60, 0.6, 0.6);
-        Fx.sound(level, player.position(), SoundEvents.BEACON_ACTIVATE, 0.8f, 1.4f);
+        Fx.burst(dest, ParticleTypes.REVERSE_PORTAL, player.position().add(0, 1, 0), 60, 0.6, 0.6);
+        Fx.sound(dest, player.position(), SoundEvents.BEACON_ACTIVATE, 0.8f, 1.4f);
         // Standing on the pad at the other end does not send them straight back.
         ON_PAD.put(player.getUUID(), -60);
     }

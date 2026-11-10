@@ -17,37 +17,15 @@ import net.minecraft.world.phys.AABB;
 // floating disc island and the purple island) are sea on purpose.
 public final class DragonBallPlaces {
     public static final String MAP = "dragonball";
-    // Namekusei (Freeza's planet) floats in the sky over the sea, south-west, where the drawing has it.
-    public static final int NAMEK_X = -398, NAMEK_Y = 165, NAMEK_Z = 388, NAMEK_R = 22;
     // The Red Ribbon headquarters, in the dense forest north of the desert (its soldiers spawn around it).
     public static final int RED_RIBBON_X = -415, RED_RIBBON_Z = -65;
-    public static final int NAMEK_TOP = NAMEK_Y + 7;
 
     private DragonBallPlaces() {
     }
 
+    // Namek is its own planet now (Stark, 2026-11-10): a sub-dimension of the Dragon Ball universe (NamekWorld).
     public static boolean onNamek(net.minecraft.world.entity.player.Player player) {
-        double dx = player.getX() - NAMEK_X;
-        double dz = player.getZ() - NAMEK_Z;
-        return dx * dx + dz * dz < (NAMEK_R + 6) * (NAMEK_R + 6) && player.getY() > NAMEK_Y - NAMEK_R;
-    }
-
-    // A random spot on Namekusei's surface (feet position).
-    public static BlockPos namekSpot(net.minecraft.util.RandomSource random) {
-        double a = random.nextDouble() * Math.PI * 2;
-        double d = random.nextDouble() * (NAMEK_R - 4);
-        return new BlockPos(NAMEK_X + (int) Math.round(Math.cos(a) * d), NAMEK_TOP + 1, NAMEK_Z + (int) Math.round(Math.sin(a) * d));
-    }
-
-    // Falling off Namekusei is not death: the fall slows down (the sea and islands are far below).
-    static void catchFalls(net.minecraft.server.level.ServerPlayer player) {
-        double dx = player.getX() - NAMEK_X;
-        double dz = player.getZ() - NAMEK_Z;
-        if (player.fallDistance > 8 && player.getY() < NAMEK_Y && player.getY() > WorldMap.SEA
-                && dx * dx + dz * dz < 60 * 60) {
-            player.addEffect(new net.minecraft.world.effect.MobEffectInstance(
-                    net.minecraft.world.effect.MobEffects.SLOW_FALLING, 100, 0, false, false));
-        }
+        return player.level().dimension() == NamekWorld.LEVEL;
     }
 
     private static BlockState s(Block block) {
@@ -83,7 +61,6 @@ public final class DragonBallPlaces {
         MapPlaces.keepClear(MAP, -239, 95, 20);
         MapPlaces.keepClear(MAP, KARIN_X, KARIN_Z, 20);
         lookoutPads(WorldMap.get(MAP));
-        MapPlaces.add(MAP, new MapPlaces.Place("namek", NAMEK_X, NAMEK_Z, map -> namek(), null));
     }
 
     private interface Builder {
@@ -111,15 +88,12 @@ public final class DragonBallPlaces {
             return b;
         }, null));
         BlockPos pad = new BlockPos(px, py, pz);
-        BlockPos namek = new BlockPos(NAMEK_X, NAMEK_TOP, NAMEK_Z + 8);
         // Each pad lands the player beside the other one, never on it (Stark's test, 2026-11-10: landing on the pad
-        // sent them straight back, back and forth forever).
+        // sent them straight back, back and forth forever). The other end is on Namek, a dimension of its own.
         BlockPos besidePad = new BlockPos(px, map.ground(px, pz + 3), pz + 3);
-        BlockPos besideNamek = new BlockPos(NAMEK_X, NAMEK_TOP, NAMEK_Z + 11);
-        MapPlaces.add(MAP, new MapPlaces.Pad("ir_namek", "chegada", pad, "namek", besideNamek,
-                "message.battlegroundsmod.pad_namek"));
-        MapPlaces.add(MAP, new MapPlaces.Pad("voltar_terra", "namek", namek, "chegada", besidePad,
-                "message.battlegroundsmod.pad_terra"));
+        MapPlaces.add(MAP, new MapPlaces.Pad("ir_namek", "chegada", pad, NamekWorld.PAD_PLACE, NamekWorld.besidePad(),
+                "message.battlegroundsmod.pad_namek", NamekWorld.MAP));
+        NamekWorld.linkBack(besidePad);
     }
 
     // Kame House (Stark's references, 2026-11-10): pink wooden house, steep red gable roof with a dormer, porch with its
@@ -274,77 +248,4 @@ public final class DragonBallPlaces {
         }
     }
 
-    // Namekusei, Freeza's planet (Stark, 2026-11-10): a small round planet floating in the sky, green grass and blue-green
-    // water, the round Namekian trees and houses, and Freeza's ship landed on it.
-    private static Build namek() {
-        Build b = new Build(NAMEK_X, NAMEK_Y, NAMEK_Z, 99);
-        int r = NAMEK_R;
-        int top = NAMEK_TOP - NAMEK_Y;
-        for (int i = -r; i <= r; i++) {
-            for (int k = -r; k <= r; k++) {
-                for (int j = -r; j <= top; j++) {
-                    double d = Math.sqrt(i * i + j * j + k * k);
-                    if (d > r) {
-                        continue;
-                    }
-                    BlockState state;
-                    if (j == top) {
-                        state = s(Blocks.GRASS_BLOCK);
-                    } else if (d > r - 1.5) {
-                        state = s(b.random.nextInt(5) == 0 ? Blocks.MOSS_BLOCK : Blocks.GREEN_TERRACOTTA);
-                    } else if (j > top - 4) {
-                        state = s(Blocks.DIRT);
-                    } else {
-                        state = s(b.random.nextInt(6) == 0 ? Blocks.TUFF : Blocks.STONE);
-                    }
-                    b.set(i, j, k, state);
-                }
-            }
-        }
-        // Ponds.
-        for (int[] p : new int[][] {{-9, -6}, {8, -10}, {-4, 12}}) {
-            b.disc(p[0], top, p[1], 2.8, s(Blocks.WATER));
-            b.disc(p[0], top - 1, p[1], 2.8, s(Blocks.WATER));
-            b.disc(p[0], top - 2, p[1], 2.8, s(Blocks.CLAY));
-        }
-        b.clear(r, top + 1, top + 16);
-        // Namekian trees: thin pale stalk, round blue-green crown.
-        for (int[] t : new int[][] {{-14, 2}, {12, 6}, {-6, -14}, {4, 15}, {15, -6}, {-15, -8}, {-2, -4}}) {
-            int h = 6 + b.random.nextInt(4);
-            for (int j = 1; j <= h; j++) {
-                b.set(t[0], top + j, t[1], Blocks.STRIPPED_BIRCH_LOG);
-            }
-            for (int i = -2; i <= 2; i++) {
-                for (int j = -2; j <= 2; j++) {
-                    for (int k = -2; k <= 2; k++) {
-                        if (i * i + j * j + k * k <= 5) {
-                            b.set(t[0] + i, top + h + 2 + j, t[1] + k, Blocks.WARPED_WART_BLOCK);
-                        }
-                    }
-                }
-            }
-        }
-        // Namekian houses: white domes with round windows.
-        for (int[] h : new int[][] {{-12, 10}, {10, 12}}) {
-            b.dome(h[0], top + 1, h[1], 3.5, s(Blocks.WHITE_TERRACOTTA), null, s(Blocks.LIGHT_BLUE_STAINED_GLASS));
-            b.set(h[0] + 3, top + 1, h[1], Blocks.AIR).set(h[0] + 3, top + 2, h[1], Blocks.AIR);
-        }
-        // Freeza's ship: a white ball with a purple ring of windows, on short legs.
-        int sx = 4;
-        int sz = -4;
-        b.ball(sx, top + 8, sz, 6.5, s(Blocks.WHITE_CONCRETE), s(Blocks.LIGHT_GRAY_CONCRETE), s(Blocks.PURPLE_STAINED_GLASS));
-        for (int[] l : new int[][] {{4, 4}, {-4, 4}, {4, -4}, {-4, -4}}) {
-            b.box(sx + l[0], top + 1, sz + l[1], sx + l[0], top + 3, sz + l[1], s(Blocks.LIGHT_GRAY_CONCRETE));
-        }
-        b.box(sx - 1, top + 2, sz + 6, sx + 1, top + 4, sz + 6, s(Blocks.AIR));
-        b.box(sx - 1, top + 1, sz + 7, sx + 1, top + 1, sz + 8, s(Blocks.SMOOTH_QUARTZ_STAIRS));
-        b.disc(sx, top + 3, sz, 4.5, s(Blocks.SMOOTH_STONE));
-        // The pad back to Earth.
-        b.disc(0, top, 8, 1.6, s(Blocks.LIGHT_BLUE_CONCRETE));
-        b.set(0, top, 8, Blocks.SEA_LANTERN);
-        for (int[] c : new int[][] {{2, 10}, {-2, 10}, {2, 6}, {-2, 6}}) {
-            b.set(c[0], top + 1, c[1], Blocks.END_ROD);
-        }
-        return b;
-    }
 }

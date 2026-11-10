@@ -1067,5 +1067,8 @@
   "message.battlegroundsmod.sala_sub": "Day %s of %s",
   "message.battlegroundsmod.sala_ano": "A year has passed",
   "message.battlegroundsmod.sala_hud_casa": "§fDay %s of %s §7| §fStep off the platform to train",
-  "message.battlegroundsmod.sala_hud": "§fDay %s of %s §7| §cGravity %s §7| §e%s %s / %s"
+  "message.battlegroundsmod.sala_hud": "§fDay %s of %s §7| §cGravity %s §7| §e%s %s / %s",
+  "block.battlegroundsmod.namek_rock": "Namek Rock",
+  "block.battlegroundsmod.namek_rock_layer": "Banded Namek Rock",
+  "block.battlegroundsmod.namek_sand": "Namek Sand"
 }
