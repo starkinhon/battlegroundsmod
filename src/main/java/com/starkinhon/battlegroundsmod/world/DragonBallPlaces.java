@@ -101,9 +101,13 @@ public final class DragonBallPlaces {
         }, null));
         BlockPos pad = new BlockPos(px, py, pz);
         BlockPos namek = new BlockPos(NAMEK_X, NAMEK_TOP, NAMEK_Z + 8);
-        MapPlaces.add(MAP, new MapPlaces.Pad("ir_namek", "chegada", pad, "namek", namek,
+        // Each pad lands the player beside the other one, never on it (Stark's test, 2026-11-10: landing on the pad
+        // sent them straight back, back and forth forever).
+        BlockPos besidePad = new BlockPos(px, map.ground(px, pz + 3), pz + 3);
+        BlockPos besideNamek = new BlockPos(NAMEK_X, NAMEK_TOP, NAMEK_Z + 11);
+        MapPlaces.add(MAP, new MapPlaces.Pad("ir_namek", "chegada", pad, "namek", besideNamek,
                 "message.battlegroundsmod.pad_namek"));
-        MapPlaces.add(MAP, new MapPlaces.Pad("voltar_terra", "namek", namek, "chegada", pad,
+        MapPlaces.add(MAP, new MapPlaces.Pad("voltar_terra", "namek", namek, "chegada", besidePad,
                 "message.battlegroundsmod.pad_terra"));
     }
 
@@ -341,12 +345,14 @@ public final class DragonBallPlaces {
         for (int j = -2; j < KARIN_HEIGHT; j++) {
             b.disc(0, j, 0, 2.2, s(j % 9 == 0 ? Blocks.RED_TERRACOTTA : Blocks.SMOOTH_QUARTZ));
         }
-        b.ladder(3, 0, 0, KARIN_HEIGHT, Direction.EAST);
+        b.ladder(3, 0, 0, KARIN_HEIGHT - 1, Direction.EAST);
         b.disc(0, KARIN_HEIGHT, 0, 5.5, s(Blocks.SMOOTH_QUARTZ));
-        b.set(3, KARIN_HEIGHT, 0, Blocks.AIR);
-        b.ladder(3, KARIN_HEIGHT, 0, KARIN_HEIGHT, Direction.EAST);
+        // The ladder ends under a closed trapdoor flush with the floor: Korin walks over it (and never falls 40
+        // blocks), players open it from below.
+        b.set(3, KARIN_HEIGHT, 0, Blocks.OAK_TRAPDOOR.defaultBlockState()
+                .setValue(net.minecraft.world.level.block.TrapDoorBlock.FACING, Direction.WEST)
+                .setValue(net.minecraft.world.level.block.TrapDoorBlock.HALF, net.minecraft.world.level.block.state.properties.Half.TOP));
         b.ring(0, KARIN_HEIGHT + 1, 0, 5.5, KARIN_HEIGHT + 1, s(Blocks.OAK_FENCE));
-        b.set(4, KARIN_HEIGHT + 1, 0, Blocks.AIR).set(4, KARIN_HEIGHT + 1, 1, Blocks.AIR);
         for (int[] c : new int[][] {{3, 3}, {-3, 3}, {3, -3}, {-3, -3}}) {
             b.box(c[0], KARIN_HEIGHT + 1, c[1], c[0], KARIN_HEIGHT + 3, c[1], s(Blocks.RED_TERRACOTTA));
         }

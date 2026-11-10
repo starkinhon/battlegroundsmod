@@ -79,6 +79,18 @@ for i,s_ in enumerate(szw):
 cls[water&(cls!=N['deep'])&(cls!=N['shallow'])]=N['shallow']
 cls[~water&((cls==N['deep'])|(cls==N['shallow']))]=N['grass']
 land=~water
+# drawing icons (houses, trees, rocks) leave small specks of dark/rock/snow: fold small blobs into their surroundings
+for cname,minsize in (('dark',60),('rock',30),('snow',30),('redrock',20),('lava',6),('forest',8),('grass',8)):
+    labc,nc=nd.label(cls==N[cname])
+    if nc==0: continue
+    sz=nd.sum(np.ones_like(labc),labc,range(1,nc+1))
+    small=np.isin(labc,np.nonzero(sz<minsize)[0]+1)
+    if small.any():
+        other=np.where(small|water,-1,cls)
+        votes=np.stack([nd.uniform_filter((other==i).astype(float),9) for i in range(len(names))])
+        cls[small]=votes.argmax(0)[small]
+cls=np.where(water,cls,mode(np.where(water,N['grass'],cls),5))
+cls[water&(cls!=N['deep'])&(cls!=N['shallow'])]=N['shallow']
 # heights
 rng=np.random.default_rng(7)
 def noise(scale,amp):
@@ -98,7 +110,7 @@ h+=blur(mesa,1)*14
 volc=blur((cls==N['lava'])|(cls==N['dark']),6)
 h+=np.clip(volc-0.15,0,None)*45
 h+=(noise(24,4)+noise(9,1.5))*np.clip(dist/6,0,1)
-h=np.where(land,h,0)
+h=np.where(land,nd.gaussian_filter(h,1.4),0)
 fl=np.where(cls==N['shallow'],60-np.minimum(wdist,6)*0.6,0)+np.where(cls==N['deep'],54-np.minimum(wdist,20)*0.5,0)
 fl+=noise(16,2)
 h=np.where(land,np.maximum(h,63),np.minimum(fl,61))
@@ -150,7 +162,7 @@ np.save('C.npy',Cf)
 print(names)
 # --- building sites: the picture draws houses/castles as blobs; flatten a plateau so the mod builds them there
 SITES={ # name: (orig x, orig y, radius in blocks, keep kind or None)
- 'capsula':(110,140,24,'grass'),'kame':(295,125,9,'sand'),'pilaf':(240,255,11,'grass'),'satan':(110,345,11,'grass'),
+ 'capsula':(110,140,30,'grass'),'kame':(295,125,9,'sand'),'pilaf':(240,255,11,'grass'),'satan':(110,345,11,'grass'),
  'redribbon':(1065,110,13,'snow'),'cidade_norte':(1145,320,20,'grass'),'piccolo':(700,250,11,'dark'),
  'palacio':(650,410,15,'desert'),'saiyajin':(1010,440,13,'grass'),'goku':(1220,560,9,'grass'),'arco':(1105,665,10,'grass'),
  'cidade_sul':(160,790,24,'grass'),'yajirobe':(530,720,9,'grass'),'buu':(1140,1020,11,'grass'),
