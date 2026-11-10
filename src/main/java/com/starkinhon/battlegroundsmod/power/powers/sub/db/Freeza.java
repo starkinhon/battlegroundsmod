@@ -563,7 +563,7 @@ public final class Freeza {
                         if (d == 0 && hash(x, z, 2) < 0.06) {
                             fly(level, p, st, c);
                         } else {
-                            level.setBlock(p, Blocks.AIR.defaultBlockState(), QUIET);
+                            com.starkinhon.battlegroundsmod.combat.BlockBreakFx.erase(level, p, QUIET);
                         }
                     }
                 } else if (r < rc + 3.2) {
@@ -646,7 +646,7 @@ public final class Freeza {
                 if (!breakable(level, p, level.getBlockState(p))) {
                     break;
                 }
-                level.setBlock(p, Blocks.AIR.defaultBlockState(), QUIET);
+                com.starkinhon.battlegroundsmod.combat.BlockBreakFx.erase(level, p, QUIET);
                 last = p;
             }
             BlockPos bottom = top.below(d);

@@ -177,7 +177,7 @@ public final class DbCommon {
                             thrown.setDeltaMovement(out.scale(0.5 + 0.8 * SubCommon.RANDOM.nextDouble()).add(0, 0.6 + 1.0 * (1 - k) * SubCommon.RANDOM.nextDouble(), 0));
                             thrown.hurtMarked = true;
                         } else {
-                            level.setBlock(block, Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS);
+                            com.starkinhon.battlegroundsmod.combat.BlockBreakFx.erase(level, block, state, Block.UPDATE_CLIENTS);
                         }
                     }
                 }

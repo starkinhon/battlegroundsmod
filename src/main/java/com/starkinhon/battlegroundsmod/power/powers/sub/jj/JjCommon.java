@@ -212,7 +212,7 @@ public final class JjCommon {
             block.setDeltaMovement(out.scale(0.2 + 0.35 * SubCommon.RANDOM.nextDouble()).add(0, up + 0.45 * SubCommon.RANDOM.nextDouble(), 0));
             block.hurtMarked = true;
         } else {
-            level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
+            com.starkinhon.battlegroundsmod.combat.BlockBreakFx.erase(level, pos, state, 3);
         }
     }
 

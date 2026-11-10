@@ -215,7 +215,7 @@ public final class WorldSlash {
             return;
         }
         budget[0]--;
-        level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
+        com.starkinhon.battlegroundsmod.combat.BlockBreakFx.erase(level, pos, state, Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
     }
 
     private static void sounds(ServerLevel level, Vec3 at) {

@@ -336,7 +336,7 @@ public final class Cravada {
             return;
         }
         for (BlockPos pos : CravadaWeb.cuts(level, at, fwd)) {
-            level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
+            com.starkinhon.battlegroundsmod.combat.BlockBreakFx.erase(level, pos, Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
         }
     }
 

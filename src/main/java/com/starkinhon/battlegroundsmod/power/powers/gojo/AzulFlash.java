@@ -352,7 +352,7 @@ public final class AzulFlash {
                     .add(0, 0.35 + 0.45 * RANDOM.nextDouble(), 0));
             block.hurtMarked = true;
         } else {
-            level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2);
+            com.starkinhon.battlegroundsmod.combat.BlockBreakFx.erase(level, pos, state, 2);
         }
     }
 
