@@ -56,6 +56,7 @@ public class BattlegroundsMod {
         PowerEvents.register();
         FightRod.register();
         SoulCommand.addSubcommand(BossCommand::bossbar);
+        SoulCommand.addSubcommand(com.starkinhon.battlegroundsmod.combat.DamageDebug::command);
         SoulCommand.addSubcommand(BossCommand::boss);
         SoulCommand.addSubcommand(com.starkinhon.battlegroundsmod.command.StaminaCommand::build);
         SoulCommand.addSubcommand(com.starkinhon.battlegroundsmod.power.powers.kokushibo.MoonImpactRule::command);

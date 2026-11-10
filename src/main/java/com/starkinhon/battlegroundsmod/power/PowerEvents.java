@@ -203,6 +203,7 @@ public final class PowerEvents {
     // Intangible or shielded entities take no damage, knockback or projectile hits (arrows fly through them). Only the
     // one whose cutscene holds them (Intangible.holdExcept) still lands its own blows.
     private static void onIncomingDamage(LivingIncomingDamageEvent event) {
+        com.starkinhon.battlegroundsmod.combat.DamageDebug.incoming(event.getAmount());
         if (com.starkinhon.battlegroundsmod.combat.Combat.piercing()) {
             // Sukuna's World Cutting Slash: it ignores every defense.
             return;
@@ -210,32 +211,39 @@ public final class PowerEvents {
         if (Intangible.untouchableBy(event.getEntity(), event.getSource().getEntity())
                 && !event.getSource().is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
             event.setCanceled(true);
+            com.starkinhon.battlegroundsmod.combat.DamageDebug.blocked("Intangible (cutscene/escudo de skill)");
             return;
         }
         // A stunned mob's swing (or one with the Cooldown) does nothing (players are stopped in onAttack, bosses in Melee).
         if (event.getSource().is(DamageTypes.MOB_ATTACK) && !Stun.canAttack(event.getSource().getDirectEntity())) {
             event.setCanceled(true);
+            com.starkinhon.battlegroundsmod.combat.DamageDebug.blocked("atacante atordoado/Cooldown");
             return;
         }
         com.starkinhon.battlegroundsmod.power.powers.gojo.InfiniteVoid.onIncomingDamage(event);
         if (event.isCanceled()) {
+            com.starkinhon.battlegroundsmod.combat.DamageDebug.blocked("Expansao do Gojo (InfiniteVoid)");
             return;
         }
         com.starkinhon.battlegroundsmod.power.powers.sukuna.ShrineDomain.onIncomingDamage(event);
         com.starkinhon.battlegroundsmod.power.powers.duel.DomainDuel.onIncomingDamage(event);
         if (event.isCanceled()) {
+            com.starkinhon.battlegroundsmod.combat.DamageDebug.blocked("Santuario do Sukuna ou Duelo de Expansoes");
             return;
         }
         com.starkinhon.battlegroundsmod.power.powers.aizen.UmDedo.onIncomingDamage(event.getEntity(), event);
         if (event.isCanceled()) {
+            com.starkinhon.battlegroundsmod.combat.DamageDebug.blocked("Um Dedo do Aizen");
             return;
         }
         com.starkinhon.battlegroundsmod.power.powers.sub.SubDefense.onIncomingDamage(event);
         if (event.isCanceled()) {
+            com.starkinhon.battlegroundsmod.combat.DamageDebug.blocked("defesa de SubAlma (SubDefense)");
             return;
         }
         Defense.onIncomingDamage(event.getEntity(), event);
         if (event.isCanceled()) {
+            com.starkinhon.battlegroundsmod.combat.DamageDebug.blocked("defesa/parry (Defense)");
             return;
         }
         Susanoo.onIncomingDamage(event.getEntity(), event);
@@ -247,10 +255,14 @@ public final class PowerEvents {
         // with an attacker goes through here, the mod's moves, vanilla hits and mobs alike (a plain mob is a human).
         if (!event.isCanceled() && event.getSource().getEntity() instanceof LivingEntity attacker && attacker != event.getEntity()) {
             event.setAmount(Tiers.shield(attacker, event.getEntity(), event.getAmount()));
+            com.starkinhon.battlegroundsmod.combat.DamageDebug.shielded(event.getAmount());
         }
         // The target's Resistencia (2026-11-09): every blow, the same tier's too; the Armadura comes after this, in vanilla.
         if (!event.isCanceled()) {
             event.setAmount(Tiers.resist(event.getEntity(), event.getSource(), event.getAmount()));
+            com.starkinhon.battlegroundsmod.combat.DamageDebug.finished(event.getAmount());
+        } else {
+            com.starkinhon.battlegroundsmod.combat.DamageDebug.blocked("Susanoo");
         }
     }
 

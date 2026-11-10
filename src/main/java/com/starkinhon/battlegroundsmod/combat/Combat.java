@@ -110,7 +110,7 @@ public final class Combat {
         DamageSource source = attacker instanceof Player player
                 ? attacker.damageSources().playerAttack(player)
                 : attacker.damageSources().mobAttack(attacker);
-        return target.hurt(source, damage);
+        return DamageDebug.hurt(attacker, target, source, damage);
     }
 
     // A blow that ignores every defense (Sukuna's World Cutting Slash): no guard, parry, Escudo, intangibility or other
@@ -143,7 +143,7 @@ public final class Combat {
         damage *= Tiers.damageMultiplier(player) * com.starkinhon.battlegroundsmod.power.powers.sub.nr.NrCommon.damageMultiplier(player)
                 * com.starkinhon.battlegroundsmod.power.powers.kokushibo.OniBody.damageMultiplier(player) * subScale(player);
         target.invulnerableTime = 0;
-        return target.hurt(player.damageSources().indirectMagic(player, player), damage);
+        return DamageDebug.hurt(player, target, player.damageSources().indirectMagic(player, player), damage);
     }
 
     public static void push(Entity target, Vec3 direction, double strength, double up) {
