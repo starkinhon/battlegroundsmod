@@ -30,7 +30,9 @@ import net.minecraft.world.phys.AABB;
 // that attack, and the bosses"). The bad ones are the common enemies (ModEntities, Saibaman...). The good ones live
 // near each universe's arrival point and come back if they go missing:
 // - Gohan (Dragon Ball) teaches Voo once the player reaches Tier 9;
-// - Korin (Dragon Ball) gives one Senzu per day and hints about the universe.
+// - Korin (Dragon Ball) gives one Senzu per day and hints about the universe;
+// - Jiraiya (Naruto) teaches Modo Sábio once the player reaches Tier 8;
+// - Teuchi (Naruto, Ichiraku) gives one Ramen per day and hints.
 public final class Npcs {
     private Npcs() {
     }
@@ -40,7 +42,9 @@ public final class Npcs {
 
     private static final List<Home> HOMES = List.of(
             new Home("dragonball", ModEntities.NPC_GOHAN, 6, 3),
-            new Home("dragonball", ModEntities.NPC_KORIN, -5, 4));
+            new Home("dragonball", ModEntities.NPC_KORIN, -5, 4),
+            new Home("naruto", ModEntities.NPC_JIRAIYA, 6, 3),
+            new Home("naruto", ModEntities.NPC_TEUCHI, -5, 4));
 
     // Makes sure this universe's NPCs stand around its arrival point.
     public static void ensure(ServerLevel level, String universe, BlockPos arrival) {
@@ -70,6 +74,8 @@ public final class Npcs {
         switch (npc.npcId()) {
             case "gohan" -> gohan(player, npc);
             case "korin" -> korin(player, npc);
+            case "jiraiya" -> jiraiya(player, npc);
+            case "teuchi" -> daily(player, npc, "souls_teuchi_dia", new ItemStack(ModItems.RAMEN.get()), "teuchi", 4);
             default -> say(player, npc, Component.literal("..."));
         }
     }
@@ -102,6 +108,47 @@ public final class Npcs {
         player.connection.send(new ClientboundSetSubtitleTextPacket(Component.translatable("technique.battlegroundsmod.voo")));
         Fx.burst(player.serverLevel(), ParticleTypes.CLOUD, player.position(), 60, 0.8, 0.1);
         Fx.sound(player.serverLevel(), player.position(), SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, 1f, 1.2f);
+    }
+
+    private static void jiraiya(ServerPlayer player, UniverseNpc npc) {
+        if (com.starkinhon.battlegroundsmod.universe.SageMode.knows(player)) {
+            say(player, npc, pick(player, "npc.battlegroundsmod.jiraiya.after", 3));
+            return;
+        }
+        if (Tiers.of(player) > Tiers.HUMANO - 2) {
+            say(player, npc, Component.translatable("npc.battlegroundsmod.jiraiya.weak"));
+            return;
+        }
+        learn(player, com.starkinhon.battlegroundsmod.universe.SageMode.TECHNIQUE);
+        say(player, npc, Component.translatable("npc.battlegroundsmod.jiraiya.teach"));
+        player.connection.send(new ClientboundSetTitlesAnimationPacket(8, 60, 20));
+        player.connection.send(new ClientboundSetTitleTextPacket(Component.translatable("message.battlegroundsmod.technique_learned")
+                .withStyle(s -> s.withColor(0xF2C94C).withBold(true))));
+        player.connection.send(new ClientboundSetSubtitleTextPacket(Component.translatable("technique.battlegroundsmod.modo_sabio")));
+        Fx.sound(player.serverLevel(), player.position(), SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, 1f, 1.2f);
+    }
+
+    private static void learn(ServerPlayer player, String technique) {
+        List<String> techniques = new ArrayList<>(player.getData(ModAttachments.TECHNIQUES));
+        if (!techniques.contains(technique)) {
+            techniques.add(technique);
+        }
+        player.setData(ModAttachments.TECHNIQUES, List.copyOf(techniques));
+    }
+
+    // One gift per in-game day (by the world's clock), hints the rest of the day.
+    private static void daily(ServerPlayer player, UniverseNpc npc, String tag, ItemStack gift, String who, int hints) {
+        long day = player.serverLevel().getGameTime() / 24000L;
+        if (!player.getPersistentData().contains(tag) || player.getPersistentData().getLong(tag) < day) {
+            player.getPersistentData().putLong(tag, day);
+            if (!player.getInventory().add(gift)) {
+                player.drop(gift, false);
+            }
+            say(player, npc, Component.translatable("npc.battlegroundsmod." + who + ".gift"));
+            Fx.sound(player.serverLevel(), player.position(), SoundEvents.ITEM_PICKUP, 0.8f, 1.2f);
+            return;
+        }
+        say(player, npc, pick(player, "npc.battlegroundsmod." + who + ".hint", hints));
     }
 
     private static final String SENZU_DAY = "souls_korin_dia";

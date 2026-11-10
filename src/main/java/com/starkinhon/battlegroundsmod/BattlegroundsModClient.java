@@ -265,6 +265,12 @@ public class BattlegroundsModClient {
         event.registerEntityRenderer(ModEntities.SAIBAMAN.get(), context -> new SoulBossRenderer<>(context, "saibaman", false));
         event.registerEntityRenderer(ModEntities.SOLDADO_FREEZA.get(),
                 context -> new SoulBossRenderer<>(context, false, "soldado_freeza_0", "soldado_freeza_1"));
+        event.registerEntityRenderer(ModEntities.NINJA_RENEGADO.get(),
+                context -> new SoulBossRenderer<>(context, false, "ninja_renegado_0", "ninja_renegado_1"));
+        event.registerEntityRenderer(ModEntities.NINJA_SOM.get(), context -> new SoulBossRenderer<>(context, "ninja_som", false));
+        event.registerEntityRenderer(ModEntities.ANBU_RAIZ.get(), context -> new SoulBossRenderer<>(context, "anbu_raiz", false));
+        event.registerEntityRenderer(ModEntities.NPC_JIRAIYA.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_jiraiya"));
+        event.registerEntityRenderer(ModEntities.NPC_TEUCHI.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_teuchi"));
         event.registerEntityRenderer(ModEntities.NPC_GOHAN.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_gohan"));
         event.registerEntityRenderer(ModEntities.NPC_KORIN.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_korin"));
         event.registerEntityRenderer(ModEntities.FIGHTER_HUMANO.get(),
