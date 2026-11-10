@@ -298,7 +298,7 @@ def buu_house():
     capsule 'head' lying on top of it, its open round mouth facing front. Portholes along the sides, little feet in
     front, a round door on the bulb. Inside: a table with cakes (Buu loves sweets) and a ladder up into the capsule."""
     v = Vox(); rnd = random.Random(5)
-    white = lambda x, y, z, s: 'white_concrete_powder' if rnd.random() < 0.12 else 'white_concrete'
+    white = lambda x, y, z, s: 'calcite' if rnd.random() < 0.12 else 'white_concrete'
     # body: bulb + 4 shrinking segments trailing to +x
     parts = [(1, 5.8, 7.2), (9, 5.2, 5.4), (14, 4.5, 4.7), (18.4, 3.6, 3.8), (21.8, 2.7, 2.8)]
     def body(X, Y, Z):
@@ -657,7 +657,7 @@ def babidi_ship():
         x, z = round(d * math.cos(a)), round(d * math.sin(a))
         if v.get(x, 0, z):
             continue
-        blk = rnd.choice(['coarse_dirt', 'red_sand', 'terracotta', 'granite', 'packed_mud', 'red_sand'])
+        blk = rnd.choice(['coarse_dirt', 'smooth_red_sandstone', 'terracotta', 'granite', 'packed_mud', 'red_terracotta'])
         v.set(x, -1, z, blk)
         if rnd.random() < 0.5 and 10 < d < 16:
             v.set(x, 0, z, rnd.choice(['granite', 'terracotta', 'coarse_dirt', 'packed_mud']))
