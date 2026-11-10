@@ -34,6 +34,11 @@ public final class ModAttachments {
     public static final Supplier<AttachmentType<java.util.List<String>>> STOLEN_SOULS = ATTACHMENT_TYPES.register("stolen_souls",
             () -> AttachmentType.<java.util.List<String>>builder(() -> java.util.List.of()).serialize(Codec.STRING.listOf()).copyOnDeath().build());
 
+    // The characters this player beat in their challenge arenas (challenge/ChallengeArenas): their cards are stamped and
+    // they spawn in the world. Saved and kept on death.
+    public static final Supplier<AttachmentType<java.util.List<String>>> ARENA_WINS = ATTACHMENT_TYPES.register("arena_wins",
+            () -> AttachmentType.<java.util.List<String>>builder(() -> java.util.List.of()).serialize(Codec.STRING.listOf()).copyOnDeath().build());
+
     private ModAttachments() {
     }
 }

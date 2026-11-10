@@ -231,6 +231,45 @@ public final class ModPayloads {
         }
     }
 
+    // Client -> server: go to this character's challenge arena (Livro dos Desafios).
+    public record ChallengeStart(String id) implements CustomPacketPayload {
+        public static final Type<ChallengeStart> TYPE = payloadType("challenge_start");
+        public static final StreamCodec<ByteBuf, ChallengeStart> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.STRING_UTF8, ChallengeStart::id, ChallengeStart::new);
+
+        @Override
+        public Type<ChallengeStart> type() {
+            return TYPE;
+        }
+    }
+
+    // Client -> server: leave the challenge arena (the book's back button).
+    public record ChallengeLeave() implements CustomPacketPayload {
+        public static final Type<ChallengeLeave> TYPE = payloadType("challenge_leave");
+        public static final StreamCodec<ByteBuf, ChallengeLeave> STREAM_CODEC = StreamCodec.unit(new ChallengeLeave());
+
+        @Override
+        public Type<ChallengeLeave> type() {
+            return TYPE;
+        }
+    }
+
+    // Server -> client: the characters this player beat in their arenas (stamps in the Livros dos Desafios).
+    public record SyncArenaWins(List<String> wins) implements CustomPacketPayload {
+        public static final Type<SyncArenaWins> TYPE = payloadType("sync_arena_wins");
+        public static final StreamCodec<ByteBuf, SyncArenaWins> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.STRING_UTF8.apply(ByteBufCodecs.list()), SyncArenaWins::wins, SyncArenaWins::new);
+
+        void applyTo(Player player) {
+            player.setData(ModAttachments.ARENA_WINS, List.copyOf(wins));
+        }
+
+        @Override
+        public Type<SyncArenaWins> type() {
+            return TYPE;
+        }
+    }
+
     // Server -> client: the Poder in the player's tier bar (power/Progression).
     public record SyncProgress(float poder) implements CustomPacketPayload {
         public static final Type<SyncProgress> TYPE = payloadType("sync_progress");
@@ -1493,6 +1532,17 @@ public final class ModPayloads {
             }
         }));
         registrar.playToClient(SyncPower.TYPE, SyncPower.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> payload.applyTo(context.player())));
+        registrar.playToClient(SyncArenaWins.TYPE, SyncArenaWins.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> payload.applyTo(context.player())));
+        registrar.playToServer(ChallengeStart.TYPE, ChallengeStart.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
+            if (context.player() instanceof ServerPlayer player) {
+                com.starkinhon.battlegroundsmod.challenge.ChallengeArenas.start(player, payload.id());
+            }
+        }));
+        registrar.playToServer(ChallengeLeave.TYPE, ChallengeLeave.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
+            if (context.player() instanceof ServerPlayer player) {
+                com.starkinhon.battlegroundsmod.challenge.ChallengeArenas.leave(player);
+            }
+        }));
         registrar.playToClient(SyncProgress.TYPE, SyncProgress.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> payload.applyTo(context.player())));
         registrar.playToClient(SyncStamina.TYPE, SyncStamina.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> payload.applyTo(context.player())));
         registrar.playToClient(SyncCharge.TYPE, SyncCharge.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> payload.applyTo(context.player())));

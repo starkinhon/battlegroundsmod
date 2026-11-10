@@ -375,6 +375,10 @@ public final class ClientHooks {
         com.starkinhon.battlegroundsmod.client.outfit.Sheaths.set(entityId, carrying, drawn, stretched);
     }
 
+    public static void openChallenges(String universe) {
+        Minecraft.getInstance().setScreen(new ChallengeScreen(universe));
+    }
+
     public static void openPowerSelect() {
         Minecraft.getInstance().setScreen(new PowerSelectScreen());
     }

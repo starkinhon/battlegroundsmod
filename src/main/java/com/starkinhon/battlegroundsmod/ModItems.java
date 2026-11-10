@@ -110,6 +110,17 @@ public final class ModItems {
     // One soul crystal per power, registered as soul_<power id>.
     public static final Map<String, DeferredItem<SoulItem>> SOULS = new LinkedHashMap<>();
 
+    // One Livro dos Desafios per universe (challenge/ChallengeArenas, souls_skills/padrao.desafios.json).
+    public static final Map<String, DeferredItem<com.starkinhon.battlegroundsmod.item.ChallengeBookItem>> CHALLENGE_BOOKS = new LinkedHashMap<>();
+
+    static {
+        for (String universe : java.util.List.of("dragonball", "naruto", "jujutsu", "bleach", "demonslayer")) {
+            CHALLENGE_BOOKS.put(universe, BattlegroundsMod.ITEMS.registerItem("livro_desafios_" + universe,
+                    properties -> new com.starkinhon.battlegroundsmod.item.ChallengeBookItem(universe, properties),
+                    new Item.Properties().stacksTo(1).rarity(Rarity.EPIC)));
+        }
+    }
+
     static {
         for (Power power : Powers.all()) {
             SOULS.put(power.id(), BattlegroundsMod.ITEMS.registerItem("soul_" + power.id(),
