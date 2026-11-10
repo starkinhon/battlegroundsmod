@@ -67,7 +67,7 @@ public final class BaseAttacks {
             return;
         }
         PowerData data = player.getData(ModAttachments.POWER);
-        if (!data.hasPower()) {
+        if (!com.starkinhon.battlegroundsmod.combat.CombatMode.fighter(player)) {
             return;
         }
         Font font = minecraft.font;
@@ -75,7 +75,7 @@ public final class BaseAttacks {
         // Above whichever side of the status bars stands taller (hearts and armor on the left, food and air on the right),
         // leaving a line free for the held item's name that vanilla shows there.
         int top = graphics.guiHeight() - Math.max(minecraft.gui.leftHeight, minecraft.gui.rightHeight) - 2 - ITEM_NAME_SPACE;
-        if (data.combat) {
+        if (data.combat && data.hasPower()) {
             top = ultTitle(graphics, font, data, player.tickCount, center, top);
         }
         // Sukuna's Modelo bar gets its own row between the ult title and the selector, so nothing hides behind it.

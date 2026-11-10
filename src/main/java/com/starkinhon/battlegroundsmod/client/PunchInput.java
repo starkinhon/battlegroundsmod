@@ -26,7 +26,7 @@ public final class PunchInput {
         Minecraft minecraft = Minecraft.getInstance();
         LocalPlayer player = minecraft.player;
         if (!event.isAttack() || event.getHand() != InteractionHand.MAIN_HAND || player == null || player.isSpectator()
-                || !CombatMode.freeHand(player) || !player.getData(ModAttachments.POWER).hasPower()
+                || !CombatMode.freeHand(player) || !com.starkinhon.battlegroundsmod.combat.CombatMode.fighter(player)
                 || !player.getData(ModAttachments.POWER).combat) {
             return;
         }

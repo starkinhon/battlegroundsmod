@@ -36,10 +36,26 @@ public final class CombatMode {
         return data.combatLocked || data.combatUntil > entity.level().getGameTime();
     }
 
+    // Who fights with the base moves (combat mode, punches, Forte, Barragem, Dash Attack, guard, stamina): anyone with a
+    // soul, and in a world with universes also the soulless human every player starts as (Stark, 2026-11-10: "vou nascer
+    // com esses ataques básicos só").
+    public static boolean fighter(LivingEntity entity) {
+        if (entity.getData(ModAttachments.POWER).hasPower()) {
+            return true;
+        }
+        if (!(entity instanceof net.minecraft.world.entity.player.Player)) {
+            return false;
+        }
+        if (entity.level().isClientSide()) {
+            return com.starkinhon.battlegroundsmod.power.Progression.clientOn;
+        }
+        return entity instanceof ServerPlayer player && com.starkinhon.battlegroundsmod.power.Progression.on(player);
+    }
+
     // Starts combat mode, or keeps it going.
     public static void enter(LivingEntity entity) {
         PowerData data = entity.getData(ModAttachments.POWER);
-        if (!data.hasPower()) {
+        if (!fighter(entity)) {
             return;
         }
         boolean was = in(entity);
@@ -79,7 +95,7 @@ public final class CombatMode {
     // away. Skills, base attacks and hits still turn it on by themselves for 30 s after it was turned off.
     public static void toggle(ServerPlayer player) {
         PowerData data = player.getData(ModAttachments.POWER);
-        if (!data.hasPower() || player.isSpectator() || !player.isAlive()) {
+        if (!fighter(player) || player.isSpectator() || !player.isAlive()) {
             return;
         }
         boolean on = !in(player);

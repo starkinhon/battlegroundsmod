@@ -64,7 +64,7 @@ public final class StaminaBar {
             return;
         }
         PowerData data = player.getData(ModAttachments.POWER);
-        if (!data.hasPower()) {
+        if (!com.starkinhon.battlegroundsmod.combat.CombatMode.fighter(player)) {
             return;
         }
         // The charge bar stands beside this one, even while this one is faded out.

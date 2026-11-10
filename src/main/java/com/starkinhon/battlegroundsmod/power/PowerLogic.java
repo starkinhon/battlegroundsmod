@@ -47,6 +47,15 @@ public final class PowerLogic {
             int index = slot - PowerData.SLOT_SHIFT;
             return index < power.shiftAbilities().size() ? power.shiftAbilities().get(index) : null;
         }
+        if (power == null) {
+            // The soulless human (CombatMode.fighter): only the base fighting.
+            return switch (slot) {
+                case PowerData.SLOT_STRONG -> Melee.STRONG;
+                case PowerData.SLOT_BARRAGE -> Melee.BARRAGE;
+                case PowerData.SLOT_DASH_ATTACK -> DashAttack.ability();
+                default -> null;
+            };
+        }
         return switch (slot) {
             case PowerData.SLOT_STRONG -> Melee.STRONG;
             case PowerData.SLOT_BARRAGE -> Melee.BARRAGE;
@@ -64,7 +73,7 @@ public final class PowerLogic {
     public static void tryUse(ServerPlayer player, int slot) {
         PowerData data = player.getData(ModAttachments.POWER);
         Power power = Powers.get(data.power);
-        if (power == null) {
+        if (power == null && !(isBaseAttack(slot) && CombatMode.fighter(player))) {
             player.displayClientMessage(Component.translatable("message.battlegroundsmod.no_power"), true);
             return;
         }
@@ -134,7 +143,7 @@ public final class PowerLogic {
         }
         if (!data.noCooldown) {
             data.cooldowns[slot] = ability.cooldown();
-            if (skill) {
+            if (skill && power != null) {
                 com.starkinhon.battlegroundsmod.power.powers.MoonDemon.lockOthers(player, power, slot);
             }
         }
@@ -149,7 +158,8 @@ public final class PowerLogic {
     // Being hit (stun, Cooldown effect) blocks every move but a counter (a beaten counter only out of punches, not a real stun).
     private static boolean canCast(LivingEntity caster, PowerData data, int slot) {
         Power power = Powers.get(data.power);
-        Ability ability = power == null ? null : ability(caster, power, slot);
+        Ability ability = power == null ? (caster instanceof Player && CombatMode.fighter(caster) ? ability(null, slot) : null)
+                : ability(caster, power, slot);
         if (ability == null) {
             return false;
         }
@@ -201,7 +211,7 @@ public final class PowerLogic {
     public static boolean cast(LivingEntity caster, int slot) {
         PowerData data = caster.getData(ModAttachments.POWER);
         Power power = Powers.get(data.power);
-        if (power == null || slot < 0 || slot >= PowerData.SLOT_COUNT || !canCast(caster, data, slot)) {
+        if (slot < 0 || slot >= PowerData.SLOT_COUNT || !canCast(caster, data, slot)) {
             return false;
         }
         ServerLevel level = Combat.level(caster);
@@ -214,8 +224,10 @@ public final class PowerLogic {
         data.lastCastSlot = slot;
         data.lastCastTime = level.getGameTime();
         // Kakashi's Sharingan remembers what was used near him.
-        com.starkinhon.battlegroundsmod.power.powers.sub.nr.NrCommon.recordCast(caster, power.id(), slot);
-        if (PowerData.isUlt(slot)) {
+        if (power != null) {
+            com.starkinhon.battlegroundsmod.power.powers.sub.nr.NrCommon.recordCast(caster, power.id(), slot);
+        }
+        if (power != null && PowerData.isUlt(slot)) {
             announceUlt(caster, power, slot);
         }
         return true;
