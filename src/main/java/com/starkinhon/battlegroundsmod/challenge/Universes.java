@@ -232,6 +232,13 @@ public final class Universes {
         if (cached != null) {
             return cached;
         }
+        if (level.getChunkSource().getGenerator() instanceof com.starkinhon.battlegroundsmod.world.MapChunkGenerator drawn) {
+            // A drawn universe: its map says where to land.
+            com.starkinhon.battlegroundsmod.world.WorldMap map = drawn.map();
+            BlockPos at = ground(level, map.arrivalX, map.arrivalZ);
+            ARRIVALS.put(level.dimension(), at);
+            return at;
+        }
         BlockPos center = new BlockPos(0, 64, 0);
         Pair<BlockPos, Holder<Biome>> land = level.findClosestBiome3d(biome -> !biome.is(BiomeTags.IS_OCEAN)
                 && !biome.is(BiomeTags.IS_DEEP_OCEAN) && !biome.is(BiomeTags.IS_RIVER) && !biome.is(BiomeTags.IS_BEACH),

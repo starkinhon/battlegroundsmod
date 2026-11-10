@@ -1054,5 +1054,6 @@
   "npc.battlegroundsmod.tamayo.hint.0": "One medicine a day. I need time to prepare another.",
   "npc.battlegroundsmod.tamayo.hint.1": "Wisteria keeps demons away. Throw the petals when they surround you.",
   "npc.battlegroundsmod.tamayo.hint.2": "The Lower Moons sometimes carry my medicine. They stole it from me.",
-  "npc.battlegroundsmod.tamayo.hint.3": "Kokushibo is an Upper Moon. Don't go to him unready."
+  "npc.battlegroundsmod.tamayo.hint.3": "Kokushibo is an Upper Moon. Don't go to him unready.",
+  "message.battlegroundsmod.map_edge": "§bEnd of this universe. To go to another one, use a Multiversal Crystal."
 }

@@ -48,6 +48,7 @@ public class BattlegroundsMod {
         ModParticles.PARTICLE_TYPES.register(modEventBus);
         ModSounds.SOUND_EVENTS.register(modEventBus);
         ModEffects.MOB_EFFECTS.register(modEventBus);
+        com.starkinhon.battlegroundsmod.world.ModWorldgen.register(modEventBus);
 
         BossRules.init();
         com.starkinhon.battlegroundsmod.power.powers.kokushibo.OniBody.init();
@@ -62,6 +63,7 @@ public class BattlegroundsMod {
         com.starkinhon.battlegroundsmod.universe.NarutoWorld.register();
         com.starkinhon.battlegroundsmod.universe.SageMode.register();
         com.starkinhon.battlegroundsmod.universe.UniverseSpawns.register();
+        com.starkinhon.battlegroundsmod.world.MapBorder.register();
         com.starkinhon.battlegroundsmod.universe.JujutsuWorld.register();
         com.starkinhon.battlegroundsmod.universe.ReverseCurse.register();
         com.starkinhon.battlegroundsmod.universe.BleachWorld.register();
