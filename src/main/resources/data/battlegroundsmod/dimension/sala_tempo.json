@@ -1,0 +1,16 @@
+{
+  "type": "battlegroundsmod:sala_tempo",
+  "generator": {
+    "type": "minecraft:flat",
+    "settings": {
+      "biome": "battlegroundsmod:sala_tempo",
+      "layers": [
+        {"block": "minecraft:barrier", "height": 1},
+        {"block": "minecraft:white_concrete", "height": 1}
+      ],
+      "lakes": false,
+      "features": false,
+      "structure_overrides": []
+    }
+  }
+}

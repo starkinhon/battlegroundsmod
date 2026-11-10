@@ -15,9 +15,11 @@ import com.starkinhon.battlegroundsmod.BattlegroundsMod;
 public final class WorldMap {
     // What each column is, in the order the tool writes them.
     public static final int DEEP = 0, SHALLOW = 1, SAND = 2, GRASS = 3, FOREST = 4, SNOW = 5, ROCK = 6, REDROCK = 7,
-            LAVA = 8, DARK = 9, DESERT = 10;
+            LAVA = 8, DARK = 9, DESERT = 10, CANYON = 11, CRATER = 12,
+            // Namek (Stark, 2026-11-10): blue grass plains, the flat-topped pink-beige mesas, tan bare ground, green sea.
+            NGRASS = 13, NMESA = 14, NSAND = 15, NSEA = 16;
     public static final String[] NAMES = {"deep", "shallow", "sand", "grass", "forest", "snow", "rock", "redrock", "lava",
-            "dark", "desert"};
+            "dark", "desert", "canyon", "crater", "ngrass", "nmesa", "nsand", "nsea"};
     public static final int SEA = 63;
     private static final int OUTSIDE_FLOOR = 40;
 
@@ -99,7 +101,7 @@ public final class WorldMap {
 
     public boolean water(int x, int z) {
         int k = kind(x, z);
-        return k == DEEP || k == SHALLOW;
+        return k == DEEP || k == SHALLOW || k == NSEA;
     }
 
     public int centerX() {

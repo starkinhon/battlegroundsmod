@@ -94,7 +94,69 @@ public class MapChunkGenerator extends ChunkGenerator {
                 }
             }
         }
+        if ("namek".equals(mapName)) {
+            namekPlants(chunk, map, surface);
+        }
         return CompletableFuture.completedFuture(chunk);
+    }
+
+    // Namek's plants (Stark's refs, 2026-11-10): the Namekian trees, a long thin trunk with a round ball of leaves on
+    // top (the biome colors the leaves blue), tall ones and short ones, and tufts of blue grass. Every tree fits inside
+    // its own chunk, so they can be grown while the chunk is made.
+    private static void namekPlants(ChunkAccess chunk, WorldMap map, Heightmap surface) {
+        ChunkPos cp = chunk.getPos();
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+        BlockState log = Blocks.STRIPPED_SPRUCE_LOG.defaultBlockState();
+        BlockState leaves = Blocks.OAK_LEAVES.defaultBlockState().setValue(net.minecraft.world.level.block.LeavesBlock.PERSISTENT, true);
+        int roll = hash(cp.x, 77, cp.z) % 100;
+        int trees = roll < 30 ? 0 : roll < 70 ? 1 : roll < 90 ? 2 : 3;
+        for (int t = 0; t < trees; t++) {
+            int lx = 3 + hash(cp.x, t * 7 + 1, cp.z) % 10;
+            int lz = 3 + hash(cp.x, t * 7 + 2, cp.z) % 10;
+            int x = cp.getMinBlockX() + lx, z = cp.getMinBlockZ() + lz;
+            int kind = map.kind(x, z);
+            int top = map.ground(x, z);
+            if ((kind != WorldMap.NGRASS && kind != WorldMap.NMESA) || top < WorldMap.SEA || slope(map, x, z, top) >= 2) {
+                continue;
+            }
+            boolean tall = hash(x, 5, z) % 3 == 0;
+            int h = tall ? 14 + hash(x, 6, z) % 9 : 6 + hash(x, 6, z) % 6;
+            double r = tall ? 2.9 : 1.9;
+            for (int y = top + 1; y <= top + h; y++) {
+                chunk.setBlockState(pos.set(x, y, z), log, false);
+                surface.update(lx, y, lz, log);
+            }
+            int cy = top + h + (int) Math.round(r * 0.6);
+            int R = (int) Math.ceil(r);
+            for (int dx = -R; dx <= R; dx++) {
+                for (int dy = -R; dy <= R; dy++) {
+                    for (int dz = -R; dz <= R; dz++) {
+                        double d = Math.sqrt(dx * dx + dy * dy * 1.3 + dz * dz);
+                        if (d > r + (hash(x + dx, cy + dy, z + dz) % 100) / 400.0) {
+                            continue;
+                        }
+                        pos.set(x + dx, cy + dy, z + dz);
+                        if (chunk.getBlockState(pos).isAir()) {
+                            chunk.setBlockState(pos, leaves, false);
+                            surface.update(lx + dx, cy + dy, lz + dz, leaves);
+                        }
+                    }
+                }
+            }
+        }
+        BlockState tuft = Blocks.SHORT_GRASS.defaultBlockState();
+        for (int lx = 0; lx < 16; lx++) {
+            for (int lz = 0; lz < 16; lz++) {
+                int x = cp.getMinBlockX() + lx, z = cp.getMinBlockZ() + lz;
+                int top = map.ground(x, z);
+                if (top < WorldMap.SEA || hash(x, top, z) % 100 >= 10
+                        || !chunk.getBlockState(pos.set(x, top, z)).is(Blocks.GRASS_BLOCK)
+                        || !chunk.getBlockState(pos.set(x, top + 1, z)).isAir()) {
+                    continue;
+                }
+                chunk.setBlockState(pos.set(x, top + 1, z), tuft, false);
+            }
+        }
     }
 
     // How steep the ground is around this column (the biggest step to a neighbor).
@@ -107,11 +169,34 @@ public class MapChunkGenerator extends ChunkGenerator {
         return s;
     }
 
+    private static BlockState NAMEK_ROCK() {
+        return com.starkinhon.battlegroundsmod.ModBlocks.NAMEK_ROCK.get().defaultBlockState();
+    }
+
+    private static BlockState NAMEK_LAYER() {
+        return com.starkinhon.battlegroundsmod.ModBlocks.NAMEK_ROCK_LAYER.get().defaultBlockState();
+    }
+
+    private static BlockState NAMEK_SAND() {
+        return com.starkinhon.battlegroundsmod.ModBlocks.NAMEK_SAND.get().defaultBlockState();
+    }
+
     private static int hash(int x, int y, int z) {
         int h = x * 73856093 ^ y * 19349663 ^ z * 83492791;
         h ^= h >>> 13;
         h *= 0x5bd1e995;
         return (h ^ h >>> 15) & 0x7fffffff;
+    }
+
+    // Smooth noise from 0 to 1 that changes over about "cell" blocks (patches of red sand, wavy layers).
+    private static double smooth(int x, int z, int cell) {
+        int gx = Math.floorDiv(x, cell), gz = Math.floorDiv(z, cell);
+        double fx = (double) Math.floorMod(x, cell) / cell, fz = (double) Math.floorMod(z, cell) / cell;
+        fx = fx * fx * (3 - 2 * fx);
+        fz = fz * fz * (3 - 2 * fz);
+        double a = hash(gx, cell, gz) % 1000 / 1000.0, b = hash(gx + 1, cell, gz) % 1000 / 1000.0;
+        double c = hash(gx, cell, gz + 1) % 1000 / 1000.0, e = hash(gx + 1, cell, gz + 1) % 1000 / 1000.0;
+        return (a + (b - a) * fx) + ((c + (e - c) * fx) - (a + (b - a) * fx)) * fz;
     }
 
     // The block at height y of a column of that kind whose top is "top".
@@ -133,9 +218,38 @@ public class MapChunkGenerator extends ChunkGenerator {
                 return d < 4 ? Blocks.SAND.defaultBlockState() : d < 6 ? Blocks.SANDSTONE.defaultBlockState()
                         : Blocks.STONE.defaultBlockState();
             case WorldMap.SAND:
-            case WorldMap.DESERT:
                 return d < 4 ? Blocks.SAND.defaultBlockState() : d < 8 ? Blocks.SANDSTONE.defaultBlockState()
                         : Blocks.STONE.defaultBlockState();
+            case WorldMap.DESERT: {
+                // Yellow sand with patches of red sand, terracotta under it (Stark, 2026-11-10).
+                boolean red = smooth(x, z, 20) > 0.62;
+                if (d < 3) {
+                    return (red ? Blocks.RED_SAND : Blocks.SAND).defaultBlockState();
+                }
+                if (d < 8) {
+                    return (red ? Blocks.ORANGE_TERRACOTTA : r < 60 ? Blocks.SANDSTONE : Blocks.YELLOW_TERRACOTTA).defaultBlockState();
+                }
+                return Blocks.STONE.defaultBlockState();
+            }
+            case WorldMap.CANYON: {
+                // The yellow mountains of the desert: layers of yellow terracotta, wavy, sand on the flat tops.
+                if (d == 0 && !steep) {
+                    return (smooth(x, z, 9) > 0.6 ? Blocks.YELLOW_TERRACOTTA : Blocks.SAND).defaultBlockState();
+                }
+                if (y < 58) {
+                    return Blocks.STONE.defaultBlockState();
+                }
+                int band = Math.floorMod(y + (int) (smooth(x, z, 28) * 5), 9);
+                return switch (band) {
+                    case 0, 1, 2 -> Blocks.YELLOW_TERRACOTTA.defaultBlockState();
+                    case 3 -> Blocks.SMOOTH_SANDSTONE.defaultBlockState();
+                    case 4 -> Blocks.ORANGE_TERRACOTTA.defaultBlockState();
+                    case 5 -> Blocks.YELLOW_TERRACOTTA.defaultBlockState();
+                    case 6 -> Blocks.WHITE_TERRACOTTA.defaultBlockState();
+                    case 7 -> Blocks.TERRACOTTA.defaultBlockState();
+                    default -> Blocks.SANDSTONE.defaultBlockState();
+                };
+            }
             case WorldMap.GRASS:
             case WorldMap.FOREST:
                 if (d == 0) {
@@ -166,13 +280,44 @@ public class MapChunkGenerator extends ChunkGenerator {
                 if (y < 60) {
                     return Blocks.STONE.defaultBlockState();
                 }
-                return switch (Math.floorMod(y, 6)) {
+                return switch (Math.floorMod(y + (int) (smooth(x, z, 24) * 4), 8)) {
                     case 0, 1 -> Blocks.RED_TERRACOTTA.defaultBlockState();
                     case 2 -> Blocks.ORANGE_TERRACOTTA.defaultBlockState();
                     case 3 -> Blocks.TERRACOTTA.defaultBlockState();
-                    case 4 -> Blocks.WHITE_TERRACOTTA.defaultBlockState();
-                    default -> Blocks.RED_TERRACOTTA.defaultBlockState();
+                    case 4 -> Blocks.YELLOW_TERRACOTTA.defaultBlockState();
+                    case 5 -> Blocks.RED_TERRACOTTA.defaultBlockState();
+                    case 6 -> Blocks.BROWN_TERRACOTTA.defaultBlockState();
+                    default -> Blocks.ORANGE_TERRACOTTA.defaultBlockState();
                 };
+            case WorldMap.CRATER:
+                // Ground blasted by a falling pod: scorched dirt, gravel, a few cooled stones.
+                if (d == 0) {
+                    return (r < 40 ? Blocks.COARSE_DIRT : r < 60 ? Blocks.PACKED_MUD : r < 75 ? Blocks.GRAVEL
+                            : r < 90 ? Blocks.ROOTED_DIRT : Blocks.TUFF).defaultBlockState();
+                }
+                return d < 4 ? (r < 60 ? Blocks.DIRT : Blocks.COARSE_DIRT).defaultBlockState() : Blocks.STONE.defaultBlockState();
+            case WorldMap.NSEA:
+                return d < 3 ? (r < 70 ? NAMEK_SAND() : NAMEK_ROCK()) : Blocks.STONE.defaultBlockState();
+            case WorldMap.NSAND:
+                if (d == 0 && !steep) {
+                    return NAMEK_SAND();
+                }
+                return y < 40 ? Blocks.STONE.defaultBlockState() : NAMEK_ROCK();
+            case WorldMap.NGRASS:
+            case WorldMap.NMESA: {
+                // Blue grass on top (the biome tints it), the cliffs of pale pink-beige rock in layers under it.
+                if (d == 0 && !(steep && slope >= 3)) {
+                    return Blocks.GRASS_BLOCK.defaultBlockState();
+                }
+                if (kind == WorldMap.NGRASS && d < 3 && !steep) {
+                    return Blocks.DIRT.defaultBlockState();
+                }
+                if (y < 40) {
+                    return Blocks.STONE.defaultBlockState();
+                }
+                int band = Math.floorMod(y + (int) (smooth(x, z, 22) * 4), kind == WorldMap.NMESA ? 7 : 5);
+                return band == 0 || (kind == WorldMap.NMESA && band == 4 && r < 60) ? NAMEK_LAYER() : NAMEK_ROCK();
+            }
             case WorldMap.LAVA:
                 if (d == 0) {
                     return Blocks.LAVA.defaultBlockState();
@@ -217,6 +362,17 @@ public class MapChunkGenerator extends ChunkGenerator {
             }
         }
         return new NoiseColumn(level.getMinBuildHeight(), states);
+    }
+
+    // No trees or grass where a building goes (Stark's test, 2026-11-10: oaks grew into the Capsule Corp dome, because
+    // the chunks around are decorated after the building is put there).
+    @Override
+    public void applyBiomeDecoration(net.minecraft.world.level.WorldGenLevel level, ChunkAccess chunk, StructureManager structures) {
+        net.minecraft.world.level.ChunkPos pos = chunk.getPos();
+        if (MapPlaces.keptClear(mapName(), pos.getMiddleBlockX(), pos.getMiddleBlockZ())) {
+            return;
+        }
+        super.applyBiomeDecoration(level, chunk, structures);
     }
 
     @Override

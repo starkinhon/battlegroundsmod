@@ -39,6 +39,7 @@ public class BattlegroundsMod {
         modEventBus.addListener(ModEntities::onAttributes);
         modEventBus.addListener(ModEntities::onSpawnPlacements);
 
+        ModBlocks.register(modEventBus);
         ModEntities.ENTITY_TYPES.register(modEventBus);
         ModItems.init();
         ModCreativeTabs.init();
@@ -65,6 +66,7 @@ public class BattlegroundsMod {
         com.starkinhon.battlegroundsmod.universe.UniverseSpawns.register();
         com.starkinhon.battlegroundsmod.world.MapBorder.register();
         com.starkinhon.battlegroundsmod.world.MapPlaces.register();
+        com.starkinhon.battlegroundsmod.world.TimeChamber.register();
         com.starkinhon.battlegroundsmod.universe.JujutsuWorld.register();
         com.starkinhon.battlegroundsmod.universe.ReverseCurse.register();
         com.starkinhon.battlegroundsmod.universe.BleachWorld.register();

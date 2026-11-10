@@ -1,7 +1,19 @@
 package com.starkinhon.battlegroundsmod.world;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+
+import net.minecraft.core.HolderGetter;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtAccounter;
+import net.minecraft.nbt.NbtIo;
+import net.minecraft.nbt.NbtUtils;
+import net.minecraft.nbt.Tag;
+import net.minecraft.world.level.block.Block;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -206,6 +218,38 @@ public final class Build {
         BlockState ladder = Blocks.LADDER.defaultBlockState().setValue(LadderBlock.FACING, facing);
         for (int j = y0; j <= y1; j++) {
             set(lx, j, lz, ladder);
+        }
+        return this;
+    }
+
+    // A building drawn in a structure file (data/battlegroundsmod/structure/<path>.nbt, written by
+    // tools/structures/*.py and editable in game with a structure block), its origin (0,0,0) put at (dx, dy, dz).
+    // The file's "battlegroundsmod.origin" says where that origin is inside it (else its corner is the origin).
+    public Build template(String path, int dx, int dy, int dz) {
+        String file = "/data/battlegroundsmod/structure/" + path + ".nbt";
+        try (InputStream in = Build.class.getResourceAsStream(file)) {
+            if (in == null) {
+                throw new IllegalStateException("Construção não encontrada: " + file);
+            }
+            CompoundTag tag = NbtIo.readCompressed(in, NbtAccounter.unlimitedHeap());
+            HolderGetter<Block> blocks = BuiltInRegistries.BLOCK.asLookup();
+            ListTag palette = tag.getList("palette", Tag.TAG_COMPOUND);
+            BlockState[] states = new BlockState[palette.size()];
+            for (int i = 0; i < states.length; i++) {
+                states[i] = NbtUtils.readBlockState(blocks, palette.getCompound(i));
+            }
+            ListTag origin = tag.getCompound("battlegroundsmod").getList("origin", Tag.TAG_INT);
+            int ox = origin.size() == 3 ? origin.getInt(0) : 0;
+            int oy = origin.size() == 3 ? origin.getInt(1) : 0;
+            int oz = origin.size() == 3 ? origin.getInt(2) : 0;
+            ListTag list = tag.getList("blocks", Tag.TAG_COMPOUND);
+            for (int i = 0; i < list.size(); i++) {
+                CompoundTag block = list.getCompound(i);
+                ListTag pos = block.getList("pos", Tag.TAG_INT);
+                set(dx + pos.getInt(0) - ox, dy + pos.getInt(1) - oy, dz + pos.getInt(2) - oz, states[block.getInt("state")]);
+            }
+        } catch (IOException e) {
+            throw new IllegalStateException("Construção ilegível: " + file, e);
         }
         return this;
     }
