@@ -15,9 +15,9 @@ import com.starkinhon.battlegroundsmod.BattlegroundsMod;
 public final class WorldMap {
     // What each column is, in the order the tool writes them.
     public static final int DEEP = 0, SHALLOW = 1, SAND = 2, GRASS = 3, FOREST = 4, SNOW = 5, ROCK = 6, REDROCK = 7,
-            LAVA = 8, DARK = 9, DESERT = 10;
+            LAVA = 8, DARK = 9, DESERT = 10, CANYON = 11, CRATER = 12;
     public static final String[] NAMES = {"deep", "shallow", "sand", "grass", "forest", "snow", "rock", "redrock", "lava",
-            "dark", "desert"};
+            "dark", "desert", "canyon", "crater"};
     public static final int SEA = 63;
     private static final int OUTSIDE_FLOOR = 40;
 

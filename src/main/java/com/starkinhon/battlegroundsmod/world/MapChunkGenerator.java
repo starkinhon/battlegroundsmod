@@ -114,6 +114,17 @@ public class MapChunkGenerator extends ChunkGenerator {
         return (h ^ h >>> 15) & 0x7fffffff;
     }
 
+    // Smooth noise from 0 to 1 that changes over about "cell" blocks (patches of red sand, wavy layers).
+    private static double smooth(int x, int z, int cell) {
+        int gx = Math.floorDiv(x, cell), gz = Math.floorDiv(z, cell);
+        double fx = (double) Math.floorMod(x, cell) / cell, fz = (double) Math.floorMod(z, cell) / cell;
+        fx = fx * fx * (3 - 2 * fx);
+        fz = fz * fz * (3 - 2 * fz);
+        double a = hash(gx, cell, gz) % 1000 / 1000.0, b = hash(gx + 1, cell, gz) % 1000 / 1000.0;
+        double c = hash(gx, cell, gz + 1) % 1000 / 1000.0, e = hash(gx + 1, cell, gz + 1) % 1000 / 1000.0;
+        return (a + (b - a) * fx) + ((c + (e - c) * fx) - (a + (b - a) * fx)) * fz;
+    }
+
     // The block at height y of a column of that kind whose top is "top".
     private static BlockState block(int kind, int x, int y, int z, int top, int slope, int minY) {
         if (y == minY) {
@@ -133,9 +144,38 @@ public class MapChunkGenerator extends ChunkGenerator {
                 return d < 4 ? Blocks.SAND.defaultBlockState() : d < 6 ? Blocks.SANDSTONE.defaultBlockState()
                         : Blocks.STONE.defaultBlockState();
             case WorldMap.SAND:
-            case WorldMap.DESERT:
                 return d < 4 ? Blocks.SAND.defaultBlockState() : d < 8 ? Blocks.SANDSTONE.defaultBlockState()
                         : Blocks.STONE.defaultBlockState();
+            case WorldMap.DESERT: {
+                // Yellow sand with patches of red sand, terracotta under it (Stark, 2026-11-10).
+                boolean red = smooth(x, z, 20) > 0.62;
+                if (d < 3) {
+                    return (red ? Blocks.RED_SAND : Blocks.SAND).defaultBlockState();
+                }
+                if (d < 8) {
+                    return (red ? Blocks.ORANGE_TERRACOTTA : r < 60 ? Blocks.SANDSTONE : Blocks.YELLOW_TERRACOTTA).defaultBlockState();
+                }
+                return Blocks.STONE.defaultBlockState();
+            }
+            case WorldMap.CANYON: {
+                // The yellow mountains of the desert: layers of yellow terracotta, wavy, sand on the flat tops.
+                if (d == 0 && !steep) {
+                    return (smooth(x, z, 9) > 0.6 ? Blocks.YELLOW_TERRACOTTA : Blocks.SAND).defaultBlockState();
+                }
+                if (y < 58) {
+                    return Blocks.STONE.defaultBlockState();
+                }
+                int band = Math.floorMod(y + (int) (smooth(x, z, 28) * 5), 9);
+                return switch (band) {
+                    case 0, 1, 2 -> Blocks.YELLOW_TERRACOTTA.defaultBlockState();
+                    case 3 -> Blocks.SMOOTH_SANDSTONE.defaultBlockState();
+                    case 4 -> Blocks.ORANGE_TERRACOTTA.defaultBlockState();
+                    case 5 -> Blocks.YELLOW_TERRACOTTA.defaultBlockState();
+                    case 6 -> Blocks.WHITE_TERRACOTTA.defaultBlockState();
+                    case 7 -> Blocks.TERRACOTTA.defaultBlockState();
+                    default -> Blocks.SANDSTONE.defaultBlockState();
+                };
+            }
             case WorldMap.GRASS:
             case WorldMap.FOREST:
                 if (d == 0) {
@@ -166,13 +206,22 @@ public class MapChunkGenerator extends ChunkGenerator {
                 if (y < 60) {
                     return Blocks.STONE.defaultBlockState();
                 }
-                return switch (Math.floorMod(y, 6)) {
+                return switch (Math.floorMod(y + (int) (smooth(x, z, 24) * 4), 8)) {
                     case 0, 1 -> Blocks.RED_TERRACOTTA.defaultBlockState();
                     case 2 -> Blocks.ORANGE_TERRACOTTA.defaultBlockState();
                     case 3 -> Blocks.TERRACOTTA.defaultBlockState();
-                    case 4 -> Blocks.WHITE_TERRACOTTA.defaultBlockState();
-                    default -> Blocks.RED_TERRACOTTA.defaultBlockState();
+                    case 4 -> Blocks.YELLOW_TERRACOTTA.defaultBlockState();
+                    case 5 -> Blocks.RED_TERRACOTTA.defaultBlockState();
+                    case 6 -> Blocks.BROWN_TERRACOTTA.defaultBlockState();
+                    default -> Blocks.ORANGE_TERRACOTTA.defaultBlockState();
                 };
+            case WorldMap.CRATER:
+                // Ground blasted by a falling pod: scorched dirt, gravel, a few cooled stones.
+                if (d == 0) {
+                    return (r < 40 ? Blocks.COARSE_DIRT : r < 60 ? Blocks.PACKED_MUD : r < 75 ? Blocks.GRAVEL
+                            : r < 90 ? Blocks.ROOTED_DIRT : Blocks.TUFF).defaultBlockState();
+                }
+                return d < 4 ? (r < 60 ? Blocks.DIRT : Blocks.COARSE_DIRT).defaultBlockState() : Blocks.STONE.defaultBlockState();
             case WorldMap.LAVA:
                 if (d == 0) {
                     return Blocks.LAVA.defaultBlockState();

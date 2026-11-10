@@ -12,13 +12,16 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 
-// The places of the Dragon Ball map (Stark's drawing, 2026-11-10). Coordinates are the drawing's spots in blocks
-// (tools/build_worldmap.py prints them; the ground there was flattened for the building). The odd spots of the
-// drawing (Palácio, Ilha do Destrutor, Ilha do Arco...) stay empty on purpose: they become arenas later.
+// The places of the Dragon Ball map (Stark's second drawing, 1000x1000, 2026-11-10). Each spot was read off the real
+// Dragon Ball world map (referencias/mapa-dragonball-real.png) and tools/build_worldmap.py moved it to the flattest dry
+// ground nearby and flattened it for the building (it prints the spots). The two places Stark circled in red (the
+// floating disc island and the purple island) are sea on purpose.
 public final class DragonBallPlaces {
     public static final String MAP = "dragonball";
     // Namekusei (Freeza's planet) floats in the sky over the sea, south-west, where the drawing has it.
-    public static final int NAMEK_X = -247, NAMEK_Y = 165, NAMEK_Z = 221, NAMEK_R = 22;
+    public static final int NAMEK_X = -398, NAMEK_Y = 165, NAMEK_Z = 388, NAMEK_R = 22;
+    // The Red Ribbon headquarters, in the dense forest north of the desert (its soldiers spawn around it).
+    public static final int RED_RIBBON_X = -415, RED_RIBBON_Z = -65;
     public static final int NAMEK_TOP = NAMEK_Y + 7;
 
     private DragonBallPlaces() {
@@ -59,19 +62,19 @@ public final class DragonBallPlaces {
 
     static void register() {
         arrivalPad(WorldMap.get(MAP));
-        place("kame", -166, -197, DragonBallPlaces::kame);
-        place("goku", 270, 9, DragonBallPlaces::goku);
-        place("capsula", -254, -190, DragonBallPlaces::capsule);
-        place("redribbon", 197, -204, DragonBallPlaces::redRibbon);
-        place("piccolo", 25, -138, DragonBallPlaces::piccolo);
-        place("pilaf", -192, -135, DragonBallPlaces::pilaf);
-        place("satan", -254, -93, DragonBallPlaces::satan);
-        place("cidade_norte", 235, -104, (map, x, z) -> city(map, x, z, "cidade_norte", 18));
-        place("cidade_sul", -230, 118, (map, x, z) -> city(map, x, z, "cidade_sul", 22));
-        place("saiyajin", 171, -48, DragonBallPlaces::saiyans);
-        place("buu", 232, 226, DragonBallPlaces::buu);
-        place("yajirobe", -55, 85, DragonBallPlaces::yajirobe);
-        MapPlaces.add(MAP, new MapPlaces.Place("karin", 109, -114, map -> karin(map), DragonBallPlaces::karinDone));
+        place("kame", 412, 88, DragonBallPlaces::kame);
+        place("goku", 300, -25, DragonBallPlaces::goku);
+        place("capsula", -166, -149, DragonBallPlaces::capsule);
+        place("redribbon", RED_RIBBON_X, RED_RIBBON_Z, DragonBallPlaces::redRibbon);
+        place("pilaf", 93, -196, DragonBallPlaces::pilaf);
+        place("satan", 315, -169, DragonBallPlaces::satan);
+        place("cidade_norte", 94, -396, (map, x, z) -> city(map, x, z, "cidade_norte", 18));
+        place("cidade_sul", -23, 253, (map, x, z) -> city(map, x, z, "cidade_sul", 22));
+        place("raditz", 250, -195, DragonBallPlaces::raditz);
+        place("babidi", -322, 54, DragonBallPlaces::wreck);
+        place("buu", -283, -284, DragonBallPlaces::buu);
+        place("yajirobe", -432, -211, DragonBallPlaces::yajirobe);
+        MapPlaces.add(MAP, new MapPlaces.Place("karin", KARIN_X, KARIN_Z, map -> karin(map), DragonBallPlaces::karinDone));
         MapPlaces.add(MAP, new MapPlaces.Place("namek", NAMEK_X, NAMEK_Z, map -> namek(), null));
     }
 
@@ -172,7 +175,7 @@ public final class DragonBallPlaces {
         return b;
     }
 
-    // The Red Ribbon headquarters: a tall red tower with white bands in the snow, fenced.
+    // The Red Ribbon headquarters: a tall red tower with white bands in the dense forest, fenced.
     private static Build redRibbon(WorldMap map, int x, int z) {
         Build b = at(map, x, z, "redribbon");
         b.clear(13, 0, 40);
@@ -195,25 +198,6 @@ public final class DragonBallPlaces {
         b.set(5, 0, 0, Blocks.AIR).set(5, 1, 0, Blocks.AIR).set(4, 0, 0, Blocks.AIR).set(4, 1, 0, Blocks.AIR);
         b.ring(0, 0, 0, 12, 1, s(Blocks.IRON_BARS));
         b.box(11, 0, -1, 12, 1, 1, s(Blocks.AIR));
-        return b;
-    }
-
-    // Piccolo Daimaoh's castle: black keep with four towers.
-    private static Build piccolo(WorldMap map, int x, int z) {
-        Build b = at(map, x, z, "piccolo");
-        b.clear(11, 0, 22);
-        b.box(-6, -1, -6, 6, -1, 6, s(Blocks.POLISHED_BLACKSTONE));
-        b.walls(-5, 0, -5, 5, 10, 5, s(Blocks.POLISHED_BLACKSTONE_BRICKS));
-        b.box(-5, 11, -5, 5, 11, 5, s(Blocks.BLACKSTONE));
-        for (int[] c : new int[][] {{5, 5}, {-5, 5}, {5, -5}, {-5, -5}}) {
-            b.box(c[0] - 1, 0, c[1] - 1, c[0] + 1, 15, c[1] + 1, s(Blocks.POLISHED_BLACKSTONE_BRICKS));
-            b.pyramid(c[0], 16, c[1], 2, s(Blocks.DEEPSLATE_TILES));
-        }
-        b.box(-1, 0, 5, 1, 3, 5, s(Blocks.AIR));
-        for (int i = -4; i <= 4; i += 2) {
-            b.set(i, 12, -5, Blocks.BLACKSTONE_WALL).set(i, 12, 5, Blocks.BLACKSTONE_WALL);
-        }
-        b.set(0, 7, 5, Blocks.RED_STAINED_GLASS).set(0, 8, 5, Blocks.RED_STAINED_GLASS);
         return b;
     }
 
@@ -280,21 +264,133 @@ public final class DragonBallPlaces {
         return b;
     }
 
-    // The Saiyans' village: round huts around a fire.
-    private static Build saiyans(WorldMap map, int x, int z) {
-        Build b = at(map, x, z, "saiyajin");
-        b.clear(13, 0, 12);
-        b.set(0, -1, 0, Blocks.STONE).set(0, 0, 0, Blocks.CAMPFIRE);
-        for (int i = 0; i < 5; i++) {
-            double a = i * Math.PI * 2 / 5;
-            int hx = (int) Math.round(Math.cos(a) * 8);
-            int hz = (int) Math.round(Math.sin(a) * 8);
-            b.ring(hx, 0, hz, 2.6, 2, s(Blocks.PACKED_MUD));
-            b.cone(hx, 3, hz, 3.4, 3, s(Blocks.SPRUCE_PLANKS));
-            int dx = (int) Math.signum(-hx);
-            int dz = (int) Math.signum(-hz);
-            b.set(hx + dx * 2, 0, hz + dz * 2, Blocks.AIR).set(hx + dx * 2, 1, hz + dz * 2, Blocks.AIR);
+    // Height (relative to the build's floor) of the top block of the ground at an offset from the center.
+    private static int ground(WorldMap map, Build b, int i, int k) {
+        return Math.max(map.ground(b.x + i, b.z + k), WorldMap.SEA - 1) - b.y;
+    }
+
+    // Raditz's landing (Stark, 2026-11-10): the crater the terrain already has, and in its middle the round Saiyan pod,
+    // half buried, hatch open, with scorched cracks running out from it.
+    private static Build raditz(WorldMap map, int x, int z) {
+        Build b = at(map, x, z, "raditz");
+        b.clear(6, 0, 8);
+        // Cracks: crooked lines of blackstone with a little magma still glowing near the pod.
+        for (int ray = 0; ray < 11; ray++) {
+            double a = ray * Math.PI * 2 / 11 + b.random.nextDouble() * 0.4;
+            int length = 10 + b.random.nextInt(16);
+            double bend = (b.random.nextDouble() - 0.5) * 0.05;
+            for (int step = 3; step < length; step++) {
+                a += bend;
+                int i = (int) Math.round(Math.cos(a) * step);
+                int k = (int) Math.round(Math.sin(a) * step);
+                Block crack = step < 7 && b.random.nextInt(3) == 0 ? Blocks.MAGMA_BLOCK
+                        : b.random.nextInt(4) == 0 ? Blocks.BASALT : Blocks.BLACKSTONE;
+                b.set(i, ground(map, b, i, k), k, crack);
+            }
         }
+        // Scorched ring around the pod.
+        for (int i = -5; i <= 5; i++) {
+            for (int k = -5; k <= 5; k++) {
+                if (i * i + k * k <= 25 && b.random.nextInt(3) > 0) {
+                    b.set(i, ground(map, b, i, k), k, b.random.nextBoolean() ? Blocks.BLACKSTONE : Blocks.COARSE_DIRT);
+                }
+            }
+        }
+        // The pod: white ball, red window band, sunk a block in the ground, the hatch facing up the slope.
+        b.ball(0, 1, 0, 2.6, s(Blocks.WHITE_CONCRETE), s(Blocks.LIGHT_GRAY_CONCRETE), s(Blocks.RED_STAINED_GLASS));
+        b.set(0, 1, 0, Blocks.AIR).set(0, 2, 0, Blocks.AIR);
+        b.set(2, 1, 0, Blocks.AIR).set(2, 2, 0, Blocks.AIR);
+        b.set(3, 1, 0, Blocks.LIGHT_GRAY_CONCRETE_POWDER.defaultBlockState());
+        b.set(0, -1, 0, Blocks.SMOOTH_STONE);
+        // Smoke still rising.
+        b.set(-2, 0, 2, Blocks.CAMPFIRE).set(1, 0, -3, Blocks.CAMPFIRE);
+        return b;
+    }
+
+    // The ship that fell in the middle of the desert (Stark, 2026-11-10): a big white round hull, cracked open and half
+    // buried at the end of the furrow it dug, wreckage and smoke all along it.
+    private static Build wreck(WorldMap map, int x, int z) {
+        Build b = at(map, x, z, "babidi");
+        b.clear(16, 0, 14);
+        // The furrow: a trench coming from the north-east that gets deeper toward the ship.
+        double dirX = 0.75;
+        double dirZ = -0.66;
+        for (int step = 6; step <= 40; step++) {
+            int depth = Math.max(0, 3 - (step - 6) / 9);
+            int width = step < 20 ? 3 : 2;
+            for (int w = -width; w <= width; w++) {
+                int i = (int) Math.round(dirX * step - dirZ * w);
+                int k = (int) Math.round(dirZ * step + dirX * w);
+                int g = ground(map, b, i, k);
+                for (int j = g - depth + 1; j <= g + 2; j++) {
+                    b.set(i, j, k, Blocks.AIR);
+                }
+                b.set(i, g - depth, k, Math.abs(w) == width ? Blocks.SANDSTONE
+                        : b.random.nextInt(3) == 0 ? Blocks.COARSE_DIRT : Blocks.RED_SAND);
+                if (Math.abs(w) == width && depth > 0) {
+                    b.set(i, g + 1, k, Blocks.SAND);
+                }
+            }
+        }
+        // The hull: a white ball with a grey band and dark windows, sunk four blocks, a smaller dome on its back.
+        b.ball(0, 2, 0, 8.5, s(Blocks.WHITE_CONCRETE), s(Blocks.LIGHT_GRAY_CONCRETE), s(Blocks.GRAY_STAINED_GLASS));
+        b.ball(-4, 8, 3, 4.2, s(Blocks.WHITE_CONCRETE), null, s(Blocks.GRAY_STAINED_GLASS));
+        // Buried half: packed sand under the floor so there is no hollow under the ship.
+        b.box(-9, -7, -9, 9, -3, 9, s(Blocks.SAND));
+        b.box(-8, -2, -8, 8, -2, 8, s(Blocks.SMOOTH_SANDSTONE));
+        // Torn open: holes in the hull on the side that hit the ground, burnt plates around them.
+        for (int i = -9; i <= 9; i++) {
+            for (int j = 0; j <= 11; j++) {
+                for (int k = -9; k <= 9; k++) {
+                    double d = Math.sqrt(i * i + (j - 2) * (j - 2) + k * k);
+                    if (d > 8.5 || d < 7.2) {
+                        continue;
+                    }
+                    boolean front = i * dirX + k * dirZ > 2;
+                    int roll = b.random.nextInt(100);
+                    if (front && roll < 35) {
+                        b.set(i, j, k, Blocks.AIR);
+                    } else if (front && roll < 55 || roll < 6) {
+                        b.set(i, j, k, b.random.nextBoolean() ? Blocks.GRAY_CONCRETE : Blocks.BLACK_CONCRETE);
+                    }
+                }
+            }
+        }
+        // Sand blown up against the hull.
+        for (int i = -10; i <= 10; i++) {
+            for (int k = -10; k <= 10; k++) {
+                double d = Math.sqrt(i * i + k * k);
+                if (d > 7.5 && d < 10.5 && b.random.nextInt(3) > 0) {
+                    b.set(i, ground(map, b, i, k) + 1, k, Blocks.SAND);
+                }
+            }
+        }
+        // Wreckage along the furrow and around the hull, and smoke.
+        for (int n = 0; n < 26; n++) {
+            int step = 4 + b.random.nextInt(34);
+            int side = b.random.nextInt(11) - 5;
+            int i = (int) Math.round(dirX * step - dirZ * side);
+            int k = (int) Math.round(dirZ * step + dirX * side);
+            int g = ground(map, b, i, k) + 1;
+            Block piece = switch (b.random.nextInt(6)) {
+                case 0 -> Blocks.IRON_BLOCK;
+                case 1 -> Blocks.WHITE_CONCRETE;
+                case 2 -> Blocks.LIGHT_GRAY_CONCRETE;
+                case 3 -> Blocks.CHAIN;
+                case 4 -> Blocks.IRON_BARS;
+                default -> Blocks.ANVIL;
+            };
+            b.set(i, g, k, piece);
+            if (b.random.nextInt(3) == 0) {
+                b.set(i, g + 1, k, Blocks.WHITE_CONCRETE);
+            }
+        }
+        for (int[] c : new int[][] {{9, -6}, {-6, 9}, {14, -11}, {3, 10}}) {
+            b.set(c[0], ground(map, b, c[0], c[1]) + 1, c[1], Blocks.CAMPFIRE);
+        }
+        // A broken antenna sticking up.
+        b.box(-4, 12, 3, -4, 15, 3, s(Blocks.IRON_BARS));
+        b.set(-4, 16, 3, Blocks.LIGHTNING_ROD);
         return b;
     }
 
@@ -322,10 +418,11 @@ public final class DragonBallPlaces {
 
     // Karin's tower on top of the Montanha da Karin: a white column with a ladder, and the platform where Korin lives.
     private static final int KARIN_HEIGHT = 40;
+    private static final int KARIN_X = -394, KARIN_Z = -225;
 
     private static Build karin(WorldMap map) {
-        int bx = 109;
-        int bz = -114;
+        int bx = KARIN_X;
+        int bz = KARIN_Z;
         // The highest point near the drawn spot.
         int best = map.ground(bx, bz);
         int px = bx;

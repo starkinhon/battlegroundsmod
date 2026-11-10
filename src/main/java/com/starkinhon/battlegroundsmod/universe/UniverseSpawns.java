@@ -74,8 +74,8 @@ public final class UniverseSpawns {
                     spawnNamek(level, player);
                     continue;
                 }
-                double rx = player.getX() - 197;
-                double rz = player.getZ() + 204;
+                double rx = player.getX() - com.starkinhon.battlegroundsmod.world.DragonBallPlaces.RED_RIBBON_X;
+                double rz = player.getZ() - com.starkinhon.battlegroundsmod.world.DragonBallPlaces.RED_RIBBON_Z;
                 mobs = rx * rx + rz * rz < 90 * 90 ? List.of("soldado_red_ribbon", "soldado_red_ribbon", "saibaman")
                         : List.of("saibaman", "saibaman", "soldado_red_ribbon");
             }

@@ -17,7 +17,9 @@
         "rock": "minecraft:savanna",
         "redrock": "minecraft:badlands",
         "lava": "minecraft:badlands",
-        "dark": "minecraft:savanna"
+        "dark": "minecraft:savanna",
+        "canyon": "minecraft:eroded_badlands",
+        "crater": "minecraft:badlands"
       }
     }
   }
