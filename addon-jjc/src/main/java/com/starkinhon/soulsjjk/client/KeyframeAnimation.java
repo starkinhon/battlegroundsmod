@@ -20,7 +20,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 
 // A body animation made by hand in an animation editor, keyframe by keyframe, for a skill:
-// assets/soulsjjk/animations/<skill>.json, in the same shape as Minecraft's own animations:
+// assets/soulsjjk/souls_poses/ (not animations/: GeckoLib reads every file there as its own and crashed the game)<skill>.json, in the same shape as Minecraft's own animations:
 // {"length": s, "animations": [{"bone": "Right Arm", "target": "rotation" | "position" | "scale",
 //   "keyframes": [{"timestamp": s, "target": [x, y, z], "interpolation": "linear" | "catmullrom"}]}]}
 // Rotations are degrees and positions pixels, as the editor shows them (x and y flipped into Minecraft's axes). Before the first keyframe a
@@ -86,7 +86,7 @@ public final class KeyframeAnimation {
     }
 
     private static Optional<KeyframeAnimation> load(String skill) {
-        ResourceLocation id = new ResourceLocation(SoulsJjk.MODID, "animations/" + skill + ".json");
+        ResourceLocation id = new ResourceLocation(SoulsJjk.MODID, "souls_poses/" + skill + ".json");
         var resource = Minecraft.getInstance().getResourceManager().getResource(id);
         if (resource.isEmpty()) {
             return Optional.empty();
