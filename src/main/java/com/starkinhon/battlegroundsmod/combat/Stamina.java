@@ -45,7 +45,7 @@ public final class Stamina {
     }
 
     private static boolean uses(LivingEntity entity) {
-        return entity instanceof ServerPlayer player && player.getData(ModAttachments.POWER).hasPower();
+        return entity instanceof ServerPlayer player && CombatMode.fighter(player);
     }
 
     private static boolean free(LivingEntity entity) {

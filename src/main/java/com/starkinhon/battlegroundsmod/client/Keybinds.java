@@ -96,7 +96,7 @@ public final class Keybinds {
                 PacketDistributor.sendToServer(new ModPayloads.UseAbility(power == null ? PowerData.SLOT_EXTRA : power.keySlot(4, shift)));
             }
         }
-        boolean hasPower = ready && minecraft.player.getData(ModAttachments.POWER).hasPower();
+        boolean hasPower = ready && com.starkinhon.battlegroundsmod.combat.CombatMode.fighter(minecraft.player);
         while (SKILLS_MENU.consumeClick()) {
             if (ready) {
                 ConstellationScreen.open();

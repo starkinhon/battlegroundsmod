@@ -1516,7 +1516,7 @@ public final class ModPayloads {
             }
         }));
         registrar.playToServer(Punch.TYPE, Punch.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
-            if (!(context.player() instanceof ServerPlayer player) || !player.getData(ModAttachments.POWER).hasPower() || player.isSpectator()) {
+            if (!(context.player() instanceof ServerPlayer player) || !CombatMode.fighter(player) || player.isSpectator()) {
                 return;
             }
             if (payload.key()) {

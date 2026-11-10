@@ -25,7 +25,7 @@ public final class CombatInput {
             return;
         }
         PowerData data = player.getData(ModAttachments.POWER);
-        boolean combat = data.hasPower() && data.combat;
+        boolean combat = com.starkinhon.battlegroundsmod.combat.CombatMode.fighter(player) && data.combat;
         if (combat && Keybinds.GUARD.same(minecraft.options.keySwapOffhand)) {
             while (minecraft.options.keySwapOffhand.consumeClick()) {
                 // Eaten: the key is the guard here.
