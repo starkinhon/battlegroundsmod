@@ -46,6 +46,10 @@ public final class ModAttachments {
             () -> AttachmentType.<java.util.Map<String, net.minecraft.core.BlockPos>>builder(() -> java.util.Map.of())
                     .serialize(Codec.unboundedMap(Codec.STRING, net.minecraft.core.BlockPos.CODEC)).copyOnDeath().build());
 
+    // Universe techniques the player learned (universe/Flight "voo"...). They are the player's, so they work everywhere.
+    public static final Supplier<AttachmentType<java.util.List<String>>> TECHNIQUES = ATTACHMENT_TYPES.register("techniques",
+            () -> AttachmentType.<java.util.List<String>>builder(() -> java.util.List.of()).serialize(Codec.STRING.listOf()).copyOnDeath().build());
+
     private ModAttachments() {
     }
 }

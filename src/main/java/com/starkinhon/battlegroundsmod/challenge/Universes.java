@@ -176,6 +176,10 @@ public final class Universes {
         player.teleportTo(level, pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5, player.getYRot(), 0);
         player.setRespawnPosition(level.dimension(), arrival, 0, true, false);
         giveBook(player, universe);
+        if (saved == null) {
+            // Only when landing at the arrival point: elsewhere its chunks may be unloaded and the NPCs not found.
+            com.starkinhon.battlegroundsmod.npc.Npcs.ensure(level, universe, arrival);
+        }
         Progression.sync(player);
         player.connection.send(new ClientboundSetTitlesAnimationPacket(10, 60, 20));
         player.connection.send(new ClientboundSetTitleTextPacket(Component.literal(spec.nome())

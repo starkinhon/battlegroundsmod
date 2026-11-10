@@ -143,7 +143,26 @@ public final class ModEntities {
 
     public static final java.util.List<Supplier<EntityType<SoulMob>>> SUB_MOBS = java.util.List.of(BYAKUYA, RUKIA, GOKU, VEGETA, FREEZA, PICCOLO, KAME, KURIRIN,
             NARUTO, SASUKE, KAKASHI, GAARA, SHIKAMARU, INO, ITADORI, CHOSO, NANAMI, NOBARA, TODO, INUMAKI, MIWA);
-    public static final java.util.List<Supplier<EntityType<SoulMob>>> FIGHTERS = java.util.List.of(FIGHTER_HUMANO, FIGHTER_RUA, FIGHTER_QUARTEIRAO);
+    // Common enemies of Dragon Ball (only spawn in its universe: padrao.desafios.json "mobs"), base combat only for now.
+    public static final Supplier<EntityType<SoulMob>> SOLDADO_RED_RIBBON = mob("soldado_red_ribbon");
+    public static final Supplier<EntityType<SoulMob>> SAIBAMAN = mob("saibaman");
+    public static final Supplier<EntityType<SoulMob>> SOLDADO_FREEZA = mob("soldado_freeza");
+
+    public static final java.util.List<Supplier<EntityType<SoulMob>>> FIGHTERS = java.util.List.of(FIGHTER_HUMANO, FIGHTER_RUA, FIGHTER_QUARTEIRAO,
+            SOLDADO_RED_RIBBON, SAIBAMAN, SOLDADO_FREEZA);
+
+    // Friendly NPCs of the universes (npc/UniverseNpc): they teach, give and talk, never fight.
+    public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.npc.UniverseNpc>> NPC_GOHAN = npc("npc_gohan");
+    public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.npc.UniverseNpc>> NPC_KORIN = npc("npc_korin");
+
+    private static Supplier<EntityType<com.starkinhon.battlegroundsmod.npc.UniverseNpc>> npc(String id) {
+        return ENTITY_TYPES.register(id, () -> EntityType.Builder.<com.starkinhon.battlegroundsmod.npc.UniverseNpc>of(
+                        com.starkinhon.battlegroundsmod.npc.UniverseNpc::new, MobCategory.CREATURE)
+                .sized(0.6f, 1.8f)
+                .eyeHeight(1.62f)
+                .clientTrackingRange(10)
+                .build(id));
+    }
 
     private static Supplier<EntityType<SoulMob>> mob(String id) {
         return ENTITY_TYPES.register(id, () -> EntityType.Builder.<SoulMob>of(SoulMob::new, MobCategory.MONSTER)
@@ -190,5 +209,7 @@ public final class ModEntities {
         for (Supplier<EntityType<SoulMob>> type : FIGHTERS) {
             event.put(type.get(), SoulBoss.createAttributes().build());
         }
+        event.put(NPC_GOHAN.get(), com.starkinhon.battlegroundsmod.npc.UniverseNpc.createAttributes().build());
+        event.put(NPC_KORIN.get(), com.starkinhon.battlegroundsmod.npc.UniverseNpc.createAttributes().build());
     }
 }

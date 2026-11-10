@@ -10,16 +10,17 @@
     {
       "id": "dragonball", "nome": "Dragon Ball", "cor": "#FF9A2E",
       "descricao": "Planícies, savanas, desertos laranja e cânions. Começa perto de uma cidadezinha.",
+      "mobs": ["soldado_red_ribbon", "saibaman", "soldado_freeza"],
       "piso": ["minecraft:red_sand", "minecraft:orange_terracotta", "minecraft:smooth_red_sandstone", "minecraft:red_sand"],
       "pilar": "minecraft:terracotta",
       "desafios": [
-        {"id": "kuririn", "foco": "Truques. O Kienzan corta qualquer coisa e o Taiyoken cega. Fraco de perto, perigoso de longe."},
+        {"id": "kuririn", "foco": "Truques. O Kienzan corta qualquer coisa e o Taiyoken cega. Fraco de perto, perigoso de longe.", "itens": ["battlegroundsmod:senzu 3"]},
         {"id": "piccolo", "foco": "Controle. O Makankosappo perfura, o braço esticado puxa e o Hellzone cerca você.", "itens": ["battlegroundsmod:cristal_multiversal"]},
-        {"id": "kame", "foco": "Selamento. O Mafuba prende o alvo no pote e o Punho Bêbado esquiva de tudo."},
-        {"id": "goku", "foco": "Equilíbrio. Kamehameha, teleporte nas suas costas, Kaioken e a Genki Dama."},
-        {"id": "vegeta", "foco": "Explosão. Rajadas que cobrem o alvo de fumaça, Big Bang e Final Flash."},
-        {"id": "freeza", "foco": "Precisão. Death Beam rápido, telecinese, Disco da Morte e Supernova."},
-        {"id": "bills", "foco": "Destruição. O Hakai apaga quem estiver fraco. O deus deste universo."}
+        {"id": "kame", "foco": "Selamento. O Mafuba prende o alvo no pote e o Punho Bêbado esquiva de tudo.", "itens": ["battlegroundsmod:radar_dragao"]},
+        {"id": "goku", "foco": "Equilíbrio. Kamehameha, teleporte nas suas costas, Kaioken e a Genki Dama.", "itens": ["battlegroundsmod:bastao_magico"]},
+        {"id": "vegeta", "foco": "Explosão. Rajadas que cobrem o alvo de fumaça, Big Bang e Final Flash.", "itens": ["battlegroundsmod:scouter"]},
+        {"id": "freeza", "foco": "Precisão. Death Beam rápido, telecinese, Disco da Morte e Supernova.", "itens": ["battlegroundsmod:capsula_hoipoi 2"]},
+        {"id": "bills", "foco": "Destruição. O Hakai apaga quem estiver fraco. O deus deste universo.", "itens": ["battlegroundsmod:espada_z"]}
       ]
     },
     {
