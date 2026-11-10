@@ -5,6 +5,8 @@
   "compatibilityLevel": "JAVA_21",
   "client": [
     "CameraMixin",
+    "CreativeScreenAccessor",
+    "CreativeScreenMixin",
     "ItemInHandLayerMixin",
     "ItemInHandRendererMixin",
     "LivingEntityRendererMixin",

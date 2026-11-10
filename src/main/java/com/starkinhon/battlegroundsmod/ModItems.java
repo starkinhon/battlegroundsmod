@@ -115,6 +115,16 @@ public final class ModItems {
             () -> new DeferredSpawnEggItem(ModEntities.NPC_JIRAIYA, 0xB03030, 0xEDEDED, new Item.Properties()));
     public static final DeferredItem<DeferredSpawnEggItem> NPC_TEUCHI_SPAWN_EGG = BattlegroundsMod.ITEMS.register("npc_teuchi_spawn_egg",
             () -> new DeferredSpawnEggItem(ModEntities.NPC_TEUCHI, 0xF2F2EE, 0x3E6FB0, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> MALDICAO_MENOR_SPAWN_EGG = BattlegroundsMod.ITEMS.register("maldicao_menor_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.MALDICAO_MENOR, 0x3A2A4A, 0x8AE05A, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> MALDICAO_GRAU2_SPAWN_EGG = BattlegroundsMod.ITEMS.register("maldicao_grau2_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.MALDICAO_GRAU2, 0x4A1A2A, 0xD8D0C0, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> FEITICEIRO_RENEGADO_SPAWN_EGG = BattlegroundsMod.ITEMS.register("feiticeiro_renegado_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.FEITICEIRO_RENEGADO, 0x1A1A22, 0x8A2AA8, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> NPC_SHOKO_SPAWN_EGG = BattlegroundsMod.ITEMS.register("npc_shoko_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.NPC_SHOKO, 0x2A2A2A, 0x6A4A3A, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> NPC_YAGA_SPAWN_EGG = BattlegroundsMod.ITEMS.register("npc_yaga_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.NPC_YAGA, 0x1A1A1A, 0xC8A070, new Item.Properties()));
     public static final DeferredItem<DeferredSpawnEggItem> FIGHTER_HUMANO_SPAWN_EGG = BattlegroundsMod.ITEMS.register("fighter_humano_spawn_egg",
             () -> new DeferredSpawnEggItem(ModEntities.FIGHTER_HUMANO, 0x8A6A4F, 0x3E6FB0, new Item.Properties()));
     public static final DeferredItem<DeferredSpawnEggItem> FIGHTER_RUA_SPAWN_EGG = BattlegroundsMod.ITEMS.register("fighter_rua_spawn_egg",
@@ -177,6 +187,19 @@ public final class ModItems {
             com.starkinhon.battlegroundsmod.item.SamehadaItem::new, new Item.Properties().rarity(Rarity.EPIC));
     public static final DeferredItem<com.starkinhon.battlegroundsmod.item.KusanagiItem> KUSANAGI = BattlegroundsMod.ITEMS.registerItem("kusanagi",
             com.starkinhon.battlegroundsmod.item.KusanagiItem::new, new Item.Properties().rarity(Rarity.EPIC));
+    // Jujutsu items and weapons (universe/JujutsuWorld, universe/ReverseCurse).
+    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.SukunaFingerItem> SUKUNA_FINGER = BattlegroundsMod.ITEMS.registerItem("dedo_sukuna",
+            com.starkinhon.battlegroundsmod.item.SukunaFingerItem::new, new Item.Properties().rarity(Rarity.EPIC));
+    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.GojoBlindfoldItem> GOJO_BLINDFOLD = BattlegroundsMod.ITEMS.registerItem("venda_gojo",
+            com.starkinhon.battlegroundsmod.item.GojoBlindfoldItem::new, new Item.Properties().rarity(Rarity.EPIC));
+    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.StrawDollItem> STRAW_DOLL = BattlegroundsMod.ITEMS.registerItem("boneco_palha",
+            com.starkinhon.battlegroundsmod.item.StrawDollItem::new, new Item.Properties().rarity(Rarity.UNCOMMON));
+    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.CursedDollItem> CURSED_DOLL = BattlegroundsMod.ITEMS.registerItem("boneco_amaldicoado",
+            com.starkinhon.battlegroundsmod.item.CursedDollItem::new, new Item.Properties().rarity(Rarity.RARE));
+    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.PlayfulCloudItem> PLAYFUL_CLOUD = BattlegroundsMod.ITEMS.registerItem("nuvem_brincalhona",
+            com.starkinhon.battlegroundsmod.item.PlayfulCloudItem::new, new Item.Properties().rarity(Rarity.EPIC));
+    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.InvertedSpearItem> INVERTED_SPEAR = BattlegroundsMod.ITEMS.registerItem("lanca_invertida",
+            com.starkinhon.battlegroundsmod.item.InvertedSpearItem::new, new Item.Properties().rarity(Rarity.EPIC));
     public static final java.util.List<DeferredItem<com.starkinhon.battlegroundsmod.item.DragonBallItem>> DRAGON_BALLS = new java.util.ArrayList<>();
 
     static {

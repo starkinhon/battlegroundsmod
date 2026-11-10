@@ -80,6 +80,9 @@ public class BattlegroundsModClient {
         modContainer.registerConfig(ModConfig.Type.CLIENT, FxConfig.SPEC);
         modContainer.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
         NeoForge.EVENT_BUS.addListener(MeteorRenderer::onRenderLevel);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.CreativeSubTabs::onInit);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.CreativeSubTabs::onRenderPre);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.CreativeSubTabs::onRenderPost);
         NeoForge.EVENT_BUS.addListener(FxWorld::onRenderLevel);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.DomainPanorama::onRenderFrame);
         NeoForge.EVENT_BUS.addListener(EventPriority.HIGHEST, false, RenderLivingEvent.Pre.class, com.starkinhon.battlegroundsmod.client.fx.SukunaDomainScene::onRenderLivingPre);
@@ -271,6 +274,12 @@ public class BattlegroundsModClient {
         event.registerEntityRenderer(ModEntities.ANBU_RAIZ.get(), context -> new SoulBossRenderer<>(context, "anbu_raiz", false));
         event.registerEntityRenderer(ModEntities.NPC_JIRAIYA.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_jiraiya"));
         event.registerEntityRenderer(ModEntities.NPC_TEUCHI.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_teuchi"));
+        event.registerEntityRenderer(ModEntities.MALDICAO_MENOR.get(),
+                context -> new SoulBossRenderer<>(context, false, "maldicao_menor_0", "maldicao_menor_1"));
+        event.registerEntityRenderer(ModEntities.MALDICAO_GRAU2.get(), context -> new SoulBossRenderer<>(context, "maldicao_grau2", false));
+        event.registerEntityRenderer(ModEntities.FEITICEIRO_RENEGADO.get(), context -> new SoulBossRenderer<>(context, "feiticeiro_renegado", false));
+        event.registerEntityRenderer(ModEntities.NPC_SHOKO.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_shoko"));
+        event.registerEntityRenderer(ModEntities.NPC_YAGA.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_yaga"));
         event.registerEntityRenderer(ModEntities.NPC_GOHAN.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_gohan"));
         event.registerEntityRenderer(ModEntities.NPC_KORIN.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_korin"));
         event.registerEntityRenderer(ModEntities.FIGHTER_HUMANO.get(),

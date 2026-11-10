@@ -1,10 +1,13 @@
 package com.starkinhon.battlegroundsmod;
 
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
 
 import com.starkinhon.battlegroundsmod.item.SoulItem;
+import com.starkinhon.battlegroundsmod.item.UniverseItems;
 import com.starkinhon.battlegroundsmod.power.Power;
 import com.starkinhon.battlegroundsmod.power.Powers;
 
@@ -15,14 +18,11 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.SpawnEggItem;
-import net.minecraft.world.item.TieredItem;
 import net.neoforged.neoforge.registries.DeferredHolder;
 
 /**
- * The mod's creative tabs, one per group so the items are easy to find:
- * Essentials (Souls Book, Fight Rod), Souls, Weapons and Spawn Eggs.
- * Items are sorted by type, so new ones land in the right tab on their own.
+ * The mod's creative tabs: Essentials (Souls Book, Fight Rod and everything of no universe), then one per universe
+ * (UniverseItems says where each item goes).
  * Anything that fits no group goes to Essentials, so nothing ever disappears.
  */
 public final class ModCreativeTabs {
@@ -44,62 +44,68 @@ public final class ModCreativeTabs {
                 output.accept(ModItems.POWER_BOOK.get());
                 output.accept(ModItems.FIGHT_ROD.get());
                 for (Item item : modItems()) {
-                    if (item != ModItems.POWER_BOOK.get() && item != ModItems.FIGHT_ROD.get() && group(item) == null) {
+                    if (item != ModItems.POWER_BOOK.get() && item != ModItems.FIGHT_ROD.get() && UniverseItems.universe(item) == null) {
                         output.accept(item);
                     }
                 }
             })
             .build());
 
-    public static final DeferredHolder<CreativeModeTab, CreativeModeTab> SOULS = BattlegroundsMod.CREATIVE_MODE_TABS.register("souls_tab", () -> CreativeModeTab.builder()
-            .title(Component.translatable("itemGroup.battlegroundsmod.souls"))
-            .withTabsBefore(key("battlegrounds_tab"))
-            .icon(() -> ModItems.SOULS.get("uchiha_ghost").get().getDefaultInstance())
-            .displayItems((parameters, output) -> {
-                // Divine Souls first, then the SubAlmas.
-                for (Power power : Powers.divine()) {
-                    acceptSoul(output, power);
-                }
-                for (Power power : Powers.sub()) {
-                    acceptSoul(output, power);
-                }
-            })
-            .build());
+    // One tab per universe (Stark, 2026-11-10: "usa isso pra separar universo por universo"): its souls first (Divine,
+    // then SubAlmas), then everything else of it. The arrows above the items (client/CreativeSubTabs) flip between
+    // Tudo, Almas, Armas, Itens and Ovos inside the tab.
+    public static final Map<String, DeferredHolder<CreativeModeTab, CreativeModeTab>> UNIVERSES = new LinkedHashMap<>();
 
-    public static final DeferredHolder<CreativeModeTab, CreativeModeTab> WEAPONS = BattlegroundsMod.CREATIVE_MODE_TABS.register("weapons_tab", () -> CreativeModeTab.builder()
-            .title(Component.translatable("itemGroup.battlegroundsmod.weapons"))
-            .withTabsBefore(key("souls_tab"))
-            .icon(() -> ModItems.AIZEN_SWORD.get().getDefaultInstance())
-            .displayItems((parameters, output) -> acceptAll(output, item -> group(item) == Group.WEAPON))
-            .build());
+    static {
+        String before = "battlegrounds_tab";
+        for (String universe : UniverseItems.UNIVERSES) {
+            String name = universe + "_tab";
+            String after = before;
+            UNIVERSES.put(universe, BattlegroundsMod.CREATIVE_MODE_TABS.register(name, () -> CreativeModeTab.builder()
+                    .title(Component.translatable("itemGroup.battlegroundsmod." + universe))
+                    .withTabsBefore(key(after))
+                    .icon(() -> icon(universe))
+                    .displayItems((parameters, output) -> {
+                        for (Power power : Powers.divine()) {
+                            if (universe.equals(universeOf(power))) {
+                                acceptSoul(output, power);
+                            }
+                        }
+                        for (Power power : Powers.sub()) {
+                            if (universe.equals(universeOf(power))) {
+                                acceptSoul(output, power);
+                            }
+                        }
+                        acceptAll(output, item -> !(item instanceof SoulItem) && universe.equals(UniverseItems.universe(item)));
+                    })
+                    .build()));
+            before = name;
+        }
+    }
 
-    public static final DeferredHolder<CreativeModeTab, CreativeModeTab> SPAWN_EGGS = BattlegroundsMod.CREATIVE_MODE_TABS.register("spawn_eggs_tab", () -> CreativeModeTab.builder()
-            .title(Component.translatable("itemGroup.battlegroundsmod.spawn_eggs"))
-            .withTabsBefore(key("weapons_tab"))
-            .icon(() -> ModItems.GOJO_SPAWN_EGG.get().getDefaultInstance())
-            .displayItems((parameters, output) -> acceptAll(output, item -> group(item) == Group.SPAWN_EGG))
-            .build());
+    private static String universeOf(Power power) {
+        var soul = ModItems.SOULS.get(power.id());
+        return soul == null ? null : UniverseItems.universe(soul.get());
+    }
 
-    private enum Group { SOUL, WEAPON, SPAWN_EGG }
+    // The tab's icon: its Divine Soul's crystal (Bleach has none yet: Byakuya's).
+    private static net.minecraft.world.item.ItemStack icon(String universe) {
+        String power = switch (universe) {
+            case "dragonball" -> "destruction_god";
+            case "naruto" -> "uchiha_ghost";
+            case "jujutsu" -> "strongest";
+            case "bleach" -> "byakuya";
+            default -> "moon_demon";
+        };
+        var soul = ModItems.SOULS.get(power);
+        return soul != null ? soul.get().getDefaultInstance() : ModItems.POWER_BOOK.get().getDefaultInstance();
+    }
 
     private ModCreativeTabs() {
     }
 
     // Forces the class to load so the tabs above are added to the register before it fires.
     static void init() {
-    }
-
-    private static Group group(Item item) {
-        if (item instanceof SoulItem) {
-            return Group.SOUL;
-        }
-        if (item instanceof SpawnEggItem) {
-            return Group.SPAWN_EGG;
-        }
-        if (item instanceof TieredItem) {
-            return Group.WEAPON;
-        }
-        return null;
     }
 
     private static void acceptSoul(CreativeModeTab.Output output, Power power) {

@@ -44,7 +44,9 @@ public final class Npcs {
             new Home("dragonball", ModEntities.NPC_GOHAN, 6, 3),
             new Home("dragonball", ModEntities.NPC_KORIN, -5, 4),
             new Home("naruto", ModEntities.NPC_JIRAIYA, 6, 3),
-            new Home("naruto", ModEntities.NPC_TEUCHI, -5, 4));
+            new Home("naruto", ModEntities.NPC_TEUCHI, -5, 4),
+            new Home("jujutsu", ModEntities.NPC_SHOKO, 6, 3),
+            new Home("jujutsu", ModEntities.NPC_YAGA, -5, 4));
 
     // Makes sure this universe's NPCs stand around its arrival point.
     public static void ensure(ServerLevel level, String universe, BlockPos arrival) {
@@ -75,6 +77,8 @@ public final class Npcs {
             case "gohan" -> gohan(player, npc);
             case "korin" -> korin(player, npc);
             case "jiraiya" -> jiraiya(player, npc);
+            case "shoko" -> shoko(player, npc);
+            case "yaga" -> daily(player, npc, "souls_yaga_dia", new ItemStack(ModItems.CURSED_DOLL.get()), "yaga", 4);
             case "teuchi" -> daily(player, npc, "souls_teuchi_dia", new ItemStack(ModItems.RAMEN.get()), "teuchi", 4);
             default -> say(player, npc, Component.literal("..."));
         }
@@ -125,6 +129,24 @@ public final class Npcs {
         player.connection.send(new ClientboundSetTitleTextPacket(Component.translatable("message.battlegroundsmod.technique_learned")
                 .withStyle(s -> s.withColor(0xF2C94C).withBold(true))));
         player.connection.send(new ClientboundSetSubtitleTextPacket(Component.translatable("technique.battlegroundsmod.modo_sabio")));
+        Fx.sound(player.serverLevel(), player.position(), SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, 1f, 1.2f);
+    }
+
+    private static void shoko(ServerPlayer player, UniverseNpc npc) {
+        if (com.starkinhon.battlegroundsmod.universe.ReverseCurse.knows(player)) {
+            say(player, npc, pick(player, "npc.battlegroundsmod.shoko.after", 3));
+            return;
+        }
+        if (Tiers.of(player) > Tiers.HUMANO - 2) {
+            say(player, npc, Component.translatable("npc.battlegroundsmod.shoko.weak"));
+            return;
+        }
+        learn(player, com.starkinhon.battlegroundsmod.universe.ReverseCurse.TECHNIQUE);
+        say(player, npc, Component.translatable("npc.battlegroundsmod.shoko.teach"));
+        player.connection.send(new ClientboundSetTitlesAnimationPacket(8, 60, 20));
+        player.connection.send(new ClientboundSetTitleTextPacket(Component.translatable("message.battlegroundsmod.technique_learned")
+                .withStyle(s -> s.withColor(0xF2C94C).withBold(true))));
+        player.connection.send(new ClientboundSetSubtitleTextPacket(Component.translatable("technique.battlegroundsmod.reversao")));
         Fx.sound(player.serverLevel(), player.position(), SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, 1f, 1.2f);
     }
 

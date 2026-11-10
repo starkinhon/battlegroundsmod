@@ -161,6 +161,8 @@ public final class PowerEvents {
     // gets the Cooldown effect (unless they blocked it).
     private static final float ULT_SCALE = 0.4f;
 
+    private static final float COMMON_MULT = 4f;
+
     private static void onDamage(LivingDamageEvent.Post event) {
         if (event.getSource().getEntity() instanceof ServerPlayer player && player != event.getEntity()) {
             // Measured on the move's maximum, so higher tiers don't fill the ult in one combo; the maximums are about 2.5x
@@ -254,7 +256,15 @@ public final class PowerEvents {
         }
         // The target's Escudo against a lower tier (Stark, 2026-11-08): a god takes nothing from a human. Every blow
         // with an attacker goes through here, the mod's moves, vanilla hits and mobs alike (a plain mob is a human).
-        if (!event.isCanceled() && event.getSource().getEntity() instanceof LivingEntity attacker && attacker != event.getEntity()) {
+        if (!event.isCanceled() && event.getSource().getEntity() instanceof LivingEntity attacker && attacker != event.getEntity()
+                && event.getEntity() instanceof SoulBoss common && common.common()) {
+            // Common enemies (Saibaman, ninjas, curses): no Escudo, and a player hits them COMMON_MULT times harder
+            // (Stark, 2026-11-10: a human could not kill a Saibaman in 5 minutes of punches). A human's punch (0,4)
+            // becomes 1,6: about 18 punches for a Tier 9 Saibaman.
+            if (attacker instanceof net.minecraft.world.entity.player.Player) {
+                event.setAmount(event.getAmount() * COMMON_MULT);
+            }
+        } else if (!event.isCanceled() && event.getSource().getEntity() instanceof LivingEntity attacker && attacker != event.getEntity()) {
             event.setAmount(Tiers.shield(attacker, event.getEntity(), event.getAmount()));
             com.starkinhon.battlegroundsmod.combat.DamageDebug.shielded(event.getAmount());
         }
