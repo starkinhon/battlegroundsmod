@@ -239,7 +239,7 @@ public final class DragonBallPlaces {
     private static final int KARIN_X = -407, KARIN_Z = -87;
     private static final int KORIN_FLOOR = 162;
     // Kami's Lookout floats high over the north-west sea (the drawn disc, Stark's mark 1); its tiles are at y 280.
-    private static final int LOOKOUT_X = -400, LOOKOUT_Y = 281, LOOKOUT_Z = -408;
+    static final int LOOKOUT_X = -400, LOOKOUT_Y = 281, LOOKOUT_Z = -408;
 
     // A building from a structure file on its flattened spot: clears a cylinder (trees, grass) and draws it.
     private static Build structure(WorldMap map, int x, int z, String id, double clear, int height, String file) {

@@ -1059,5 +1059,13 @@
   "message.battlegroundsmod.pad_namek": "§aGoing to Namek, Freeza's planet... %s",
   "message.battlegroundsmod.pad_terra": "§bGoing back to Earth... %s",
   "message.battlegroundsmod.pad_kami": "§aGoing up to Kami's Lookout... %s",
-  "message.battlegroundsmod.pad_karin": "§bGoing down to Korin's tower... %s"
+  "message.battlegroundsmod.pad_karin": "§bGoing down to Korin's tower... %s",
+  "message.battlegroundsmod.sala_entrando": "§fOpening the door of the Room of Spirit and Time... %s",
+  "message.battlegroundsmod.sala_saindo": "§bGoing back to Kami's Lookout... %s",
+  "message.battlegroundsmod.sala_fechada": "§cYou already spent your year in the Room of Spirit and Time. The door won't open again.",
+  "message.battlegroundsmod.sala_titulo": "Room of Spirit and Time",
+  "message.battlegroundsmod.sala_sub": "Day %s of %s",
+  "message.battlegroundsmod.sala_ano": "A year has passed",
+  "message.battlegroundsmod.sala_hud_casa": "§fDay %s of %s §7| §fStep off the platform to train",
+  "message.battlegroundsmod.sala_hud": "§fDay %s of %s §7| §cGravity %s §7| §e%s %s / %s"
 }

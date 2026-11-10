@@ -32,7 +32,7 @@ vox.COLORS.update({
     'magma_block': (140, 60, 20), 'end_rod': (240, 240, 230), 'chain': (60, 65, 80), 'glowstone': (250, 210, 120),
     'smooth_red_sandstone': (181, 98, 31), 'cut_sandstone': (217, 206, 159), 'chiseled_sandstone': (216, 203, 155), 'white_glazed_terracotta': (188, 212, 202),
     'tinted_glass': (44, 38, 46), 'dark_oak_planks': (66, 43, 20), 'stripped_spruce_log': (115, 89, 52),
-    'spruce_stairs': (114, 84, 48), 'yellow_concrete': (240, 175, 21), 'deepslate_tiles': (54, 54, 55), 'mud_bricks': (137, 103, 79),
+    'spruce_stairs': (114, 84, 48), 'light_blue_terracotta': (113, 108, 137), 'light_blue_wool': (58, 175, 217), 'chiseled_quartz_block': (231, 226, 218), 'yellow_carpet': (248, 197, 39), 'azalea_leaves': (90, 114, 44), 'flowering_azalea_leaves': (100, 112, 60), 'light_blue_carpet': (58, 175, 217), 'purple_bed': (121, 42, 172), 'dark_oak_fence': (66, 43, 20), 'dark_oak_pressure_plate': (66, 43, 20), 'dark_oak_stairs': (66, 43, 20), 'bookshelf': (117, 94, 59), 'purple_stained_glass': (127, 63, 178), 'smoker': (90, 90, 90), 'barrel': (140, 105, 60), 'crafting_table': (130, 100, 60), 'lime_concrete': (94, 168, 24), 'lime_stained_glass': (127, 204, 25), 'glass': (200, 230, 235), 'glass_pane': (200, 230, 235), 'yellow_concrete': (240, 175, 21), 'deepslate_tiles': (54, 54, 55), 'mud_bricks': (137, 103, 79),
     'oak_slab': (162, 130, 78), 'spruce_slab': (114, 84, 48), 'smooth_quartz_slab': (235, 229, 222), 'lantern': (200, 150, 60),
     'cyan_stained_glass_pane': (76, 127, 153), 'light_blue_stained_glass': (100, 160, 220), 'campfire': (230, 140, 40),
     'flower_pot': (120, 68, 53), 'potted_bamboo': (90, 140, 40), 'bamboo': (90, 140, 40), 'brewing_stand': (120, 100, 80),
@@ -233,6 +233,65 @@ def kami_lookout():
         v.disc(sx, 9, pz + 2, 5.5, 'smooth_quartz')
         dome(sx, 10, pz + 2, 5, 5, ribs=10)
         v.set(sx, 16, pz + 2, 'gold_block'); v.set(sx, 17, pz + 2, 'lightning_rod[facing=up,powered=false,waterlogged=false]')
+    # ---- inside the palace (Stark 2026-11-10, interiors one at a time: the way to the Room of Spirit and Time) ----
+    v.box(-10, 0, pz - 6, 10, 0, pz + 6, 'smooth_quartz')
+    for x in range(-10, 11):                                                      # gold inlay border and squares
+        for z in range(pz - 6, pz + 7):
+            if abs(x) == 9 or z in (pz - 5, pz + 5):
+                v.set(x, 0, z, 'gold_block' if (x + z) % 2 == 0 else 'smooth_quartz')
+    for z in range(pz - 4, pz + 7):                                               # red carpet from the door to the back
+        for x in (-1, 0, 1):
+            v.set(x, 1, z, 'red_carpet')
+        v.set(-2, 1, z, 'yellow_carpet'); v.set(2, 1, z, 'yellow_carpet')
+    for sx in (-6, 6):                                                            # two rows of columns
+        for z in (pz - 3, pz + 1, pz + 5):
+            v.box(sx, 1, z, sx, 8, z, 'quartz_pillar[axis=y]')
+            v.set(sx, 1, z, 'chiseled_quartz_block'); v.set(sx, 8, z, 'chiseled_quartz_block')
+    carve(v, lambda X, Y, Z: (X ** 2 + (Z - pz) ** 2 <= 6.5 ** 2) & (Y >= 9) & (Y <= 10), (-7, 7, 9, 10, pz - 7, pz + 7))
+    for y in range(12, 23):                                                       # chandelier hanging from the dome
+        v.set(0, y, pz, 'chain[axis=y]')
+    for k in range(8):
+        a = k * math.pi / 4
+        v.set(round(2 * math.cos(a)), 11, pz + round(2 * math.sin(a)), 'lantern[hanging=true,waterlogged=false]')
+        v.set(round(2 * math.cos(a)), 12, pz + round(2 * math.sin(a)), 'chain[axis=y]')
+    v.disc(0, 12, pz, 2.2, 'gold_block'); v.set(0, 11, pz, 'glowstone')
+    for x in (-9, 9):                                                             # big plants in gold pots
+        for z in (pz - 4, pz + 4):
+            v.set(x, 1, z, 'gold_block'); v.set(x, 2, z, leaves('azalea_leaves'))
+            v.set(x, 3, z, leaves('flowering_azalea_leaves'))
+    for x in (-8, 8):
+        v.set(x, 6, pz - 6, 'lantern[hanging=false,waterlogged=false]')
+    # the back wall: through a corridor, the plain wooden door of the Room of Spirit and Time (ref)
+    v.box(-2, 1, pz - 7, 2, 5, pz - 7, 'air')
+    for x in (-3, 3):
+        v.box(x, 1, pz - 7, x, 6, pz - 7, 'gold_block')
+    v.box(-3, 6, pz - 7, 3, 6, pz - 7, 'gold_block')
+    cz0, cz1 = pz - 18, pz - 8                                                    # the corridor behind the palace
+    v.box(-4, 0, cz0 - 1, 4, 7, cz1, 'quartz_block')
+    v.box(-3, 1, cz0, 3, 6, cz1, 'air')
+    v.box(-3, 0, cz0, 3, 0, cz1, 'smooth_quartz')
+    for z in range(cz0, cz1 + 1):
+        v.set(0, 1, z, 'blue_carpet')
+        if (z - cz0) % 4 == 1:
+            for x in (-3, 3):
+                v.set(x, 4, z, 'lantern[hanging=false,waterlogged=false]') if False else None
+            v.set(0, 6, z, 'lantern[hanging=true,waterlogged=false]')
+    v.box(-4, 7, cz0 - 1, 4, 7, cz1, 'smooth_quartz')
+    for z in range(cz0 + 1, cz1, 3):
+        v.set(-4, 3, z, 'light_blue_stained_glass'); v.set(4, 3, z, 'light_blue_stained_glass')
+        v.set(-4, 4, z, 'light_blue_stained_glass'); v.set(4, 4, z, 'light_blue_stained_glass')
+    # the door at the end: wooden, in a white frame with a gold arch, the round light over it
+    v.box(-2, 1, cz0 - 1, 2, 5, cz0 - 1, 'smooth_quartz')
+    door(v, 0, 1, cz0 - 1, 'south', block='spruce_door', hinge='left')
+    v.set(-1, 1, cz0 - 1, 'quartz_pillar[axis=y]'); v.set(1, 1, cz0 - 1, 'quartz_pillar[axis=y]')
+    v.box(-1, 3, cz0 - 1, 1, 3, cz0 - 1, 'gold_block'); v.set(0, 4, cz0 - 1, 'gold_block')
+    v.set(0, 5, cz0 - 1, 'sea_lantern')
+    # the pad in front of the door (TimeChamber takes whoever stands on it for two seconds)
+    v.set(0, 0, cz0 + 1, 'sea_lantern')
+    for x in (-1, 1):
+        v.set(x, 0, cz0 + 1, 'light_blue_concrete'); v.set(x, 0, cz0 + 2, 'light_blue_concrete')
+    v.set(0, 0, cz0 + 2, 'light_blue_concrete')
+    v.set(0, 1, cz0 + 1, 'air'); v.set(0, 1, cz0 + 2, 'blue_carpet')
     # pink-roofed colonnades from the pavilions outwards and toward the front
     def colonnade(x0, x1, z):
         for x in range(min(x0, x1), max(x0, x1) + 1):
@@ -771,8 +830,138 @@ def goku_house():
     return v
 
 
+# ---------------------------------------------------------------------------------------------------------------
+def time_chamber():
+    """The Room of Spirit and Time (Stark's refs, 2026-11-10): in its own all-white dimension, the T-shaped platform of
+    light-blue tiles with three rounded steps at the front; the round house in the middle (white walls with columns and
+    glass, the gold dome with its spike and the clock over the door; bed, table and chairs inside), a white wing with a
+    rounded pink roof and purple windows on each side, the two giant hourglasses of green sand with gold caps and bases at
+    the ends, and the gold lamp posts with their pale globes. Origin = first air above the white floor."""
+    v = Vox(); rnd = random.Random(365)
+    tile = lambda x, z: 'light_blue_wool' if x % 4 == 0 or z % 4 == 0 else 'light_blue_concrete'
+    def rrect(x, z, x0, x1, z0, z1, r):
+        cx = min(max(x, x0 + r), x1 - r); cz = min(max(z, z0 + r), z1 - r)
+        return (x - cx) ** 2 + (z - cz) ** 2 <= r * r + 0.3
+    # the back bar (wings + hourglasses) and the front stem with its steps
+    for x in range(-36, 37):
+        for z in range(-14, 26):
+            bar = rrect(x, z, -36, 36, -14, 3, 5)
+            top = rrect(x, z, -16, 16, -14, 12, 6) or bar
+            s1 = rrect(x, z, -18, 18, -14, 16, 7)
+            s2 = rrect(x, z, -20, 20, -14, 20, 8)
+            h = 2 if top else 1 if s1 else 0 if s2 else None
+            if h is None:
+                continue
+            for y in range(0, h + 1):
+                v.set(x, y, z, tile(x, z) if y == h else 'light_blue_concrete')
+    # the round house: drum of columns and glass, white wall at the back, gold dome, spike, the clock over the door
+    hz = -5; R = 7
+    v.disc(0, 2, hz, R + 0.5, 'smooth_quartz')
+    for k in range(int(2 * math.pi * R)):
+        a = k / R; x, z = round(R * math.cos(a)), hz + round(R * math.sin(a))
+        back = z < hz - 2
+        for y in range(3, 9):
+            v.set(x, y, z, 'white_concrete' if back or y in (3, 8) else 'glass_pane[east=true,north=true,south=true,west=true,waterlogged=false]')
+    for k in range(10):                                                            # columns all round the front
+        a = math.pi * (0.05 + 0.9 * k / 9)
+        x, z = round(R * math.cos(a)), hz + round(R * math.sin(a))
+        v.box(x, 3, z, x, 8, z, 'quartz_pillar[axis=y]')
+    v.box(-1, 3, hz + R, 1, 6, hz + R, 'air')                                       # the door opening
+    v.box(-1, 3, hz + R - 1, 1, 6, hz + R - 1, 'air')
+    v.disc(0, 9, hz, R + 1.2, 'smooth_quartz')                                      # cornice
+    def dome(X, Y, Z):
+        return (X ** 2 + (Z - hz) ** 2) / (R + 0.6) ** 2 + ((Y - 9) / 6.5) ** 2 <= 1
+    solid(v, lambda X, Y, Z: dome(X, Y, Z) & (Y >= 10), (-9, 9, 10, 17, hz - 9, hz + 9),
+          lambda x, y, z, s: 'gold_block' if (math.atan2(z - hz, x) * 12 / math.pi) % 2 < 0.35 else 'yellow_concrete')
+    v.disc(0, 16, hz, 1.5, 'gold_block'); v.set(0, 17, hz, 'gold_block'); v.set(0, 18, hz, 'gold_block')
+    v.set(0, 19, hz, 'lightning_rod[facing=up,powered=false,waterlogged=false]')
+    # clock: a white gable over the door with the round face and the hands
+    for x in range(-3, 4):
+        for y in range(9, 15):
+            if (x / 3.4) ** 2 + ((y - 11.5) / 3.4) ** 2 <= 1:
+                for z in (hz + R, hz + R + 1):
+                    v.set(x, y, z, 'white_concrete')
+    face = {(0, 13): 'black_concrete', (0, 12): 'black_concrete', (1, 12): 'black_concrete', (0, 11.0): 'smooth_quartz'}
+    for x in range(-2, 3):
+        for y in range(10, 14):
+            if (x / 2.3) ** 2 + ((y - 11.5) / 2.3) ** 2 <= 1:
+                v.set(x, y, hz + R + 2, face.get((x, y), 'smooth_quartz'))
+    v.set(0, 11, hz + R + 2, 'black_concrete'); v.set(0, 12, hz + R + 2, 'black_concrete'); v.set(1, 11, hz + R + 2, 'black_concrete')
+    v.set(0, 9, hz + R + 2, 'gold_block')
+    # inside: purple bed, round table and two chairs, rug, lamp
+    v.disc(0, 3, hz, 3.0, 'light_blue_carpet')
+    v.set(-4, 3, hz - 3, 'purple_bed[facing=north,part=head,occupied=false]'); v.set(-4, 3, hz - 2, 'purple_bed[facing=north,part=foot,occupied=false]')
+    v.set(-3, 3, hz - 3, 'purple_bed[facing=north,part=head,occupied=false]'); v.set(-3, 3, hz - 2, 'purple_bed[facing=north,part=foot,occupied=false]')
+    v.set(3, 3, hz - 1, 'dark_oak_fence'); v.set(3, 4, hz - 1, 'dark_oak_pressure_plate[powered=false]')
+    v.set(4, 3, hz - 1, stairs('dark_oak_stairs', 'east')); v.set(2, 3, hz - 1, stairs('dark_oak_stairs', 'west'))
+    v.set(0, 8, hz, 'lantern[hanging=true,waterlogged=false]')
+    v.set(5, 3, hz - 4, 'bookshelf'); v.set(5, 4, hz - 4, 'bookshelf')
+    # the pad home (TimeChamber links it): by the back wall
+    v.set(0, 2, hz - 4, 'sea_lantern')
+    for c in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+        v.set(c[0], 2, hz - 4 + c[1], 'light_blue_concrete')
+    # the wings: white rooms with a rounded pink roof (vault along x), purple oval windows, open at the outer end
+    for sx in (-1, 1):
+        x0, x1 = sorted((sx * 8, sx * 22))
+        z0, z1 = -11, 0
+        v.box(x0, 3, z0, x1, 7, z1, 'white_concrete')
+        v.box(x0 + 1, 3, z0 + 1, x1 - 1, 7, z1 - 1, 'air')
+        for x in range(x0, x1 + 1):
+            for z in range(z0, z1 + 1):
+                t = (z - (z0 + z1) / 2) / ((z1 - z0) / 2 + 0.5)
+                h = 8 + round(3.2 * math.sqrt(max(0, 1 - t * t)))
+                v.set(x, h, z, 'pink_concrete')
+                for y in range(8, h):
+                    v.set(x, y, z, 'white_concrete' if x in (x0, x1) else 'air')
+        for x in range(x0 + 3, x1 - 2):                                         # long purple window on the front
+            v.set(x, 5, z1, 'purple_stained_glass')
+            if x0 + 4 <= x <= x1 - 4:
+                v.set(x, 6, z1, 'purple_stained_glass')
+        ox = x1 if sx > 0 else x0                                                 # open outer end (dark doorway)
+        v.box(ox, 3, z0 + 2, ox, 7, z1 - 2, 'air')
+        v.box(x0 + 1, 2, z0 + 1, x1 - 1, 2, z1 - 1, 'smooth_quartz')
+        v.set(sx * 9, 3, hz, 'air')
+        v.box(sx * 8, 3, -6, sx * 8, 5, -4, 'air')                               # opens into the house drum side
+    # left wing: kitchen and food; right wing: bath
+    for x, b in ((-12, 'smoker[facing=south,lit=false]'), (-13, 'barrel[facing=up,open=false]'), (-14, 'barrel[facing=up,open=false]'),
+                 (-15, 'crafting_table'), (-16, 'cauldron'), (-17, 'barrel[facing=up,open=false]')):
+        v.set(x, 3, -10, b)
+    v.set(-14, 4, -10, 'cake[bites=0]')
+    for x in range(13, 19):
+        v.set(x, 3, -10, 'water_cauldron[level=3]' if x in (14, 17) else 'smooth_quartz')
+    v.set(16, 7, -5, 'lantern[hanging=true,waterlogged=false]'); v.set(-16, 7, -5, 'lantern[hanging=true,waterlogged=false]')
+    # giant hourglasses at the ends: gold base, glass bulbs, green sand, gold cap with a spike
+    for sx in (-1, 1):
+        cx, cz = sx * 29, -6
+        v.disc(cx, 3, cz, 4.4, 'gold_block'); v.disc(cx, 4, cz, 3.8, 'gold_block')
+        def bulbs(X, Y, Z, cx=cx, cz=cz):
+            r = np.where(Y < 12, 3.6 * np.sqrt(np.clip(1 - ((Y - 8.5) / 4.2) ** 2, 0, 1)),
+                         3.6 * np.sqrt(np.clip(1 - ((Y - 15.5) / 4.2) ** 2, 0, 1)))
+            r = np.maximum(r, 0.9)
+            return (np.hypot(X - cx, Z - cz) <= r) & (Y >= 5) & (Y <= 19)
+        solid(v, bulbs, (cx - 5, cx + 5, 5, 19, cz - 5, cz + 5), lambda x, y, z, s: 'glass', air_inside=True)
+        for y in range(5, 20):                                                   # the green sand: most of it fallen
+            r = (3.6 * math.sqrt(max(0, 1 - ((y - 8.5) / 4.2) ** 2))) if y < 12 else 3.6 * math.sqrt(max(0, 1 - ((y - 15.5) / 4.2) ** 2))
+            fill = y <= 8 or (12 <= y <= 13)
+            if fill:
+                v.disc(cx, y, cz, max(0.6, r - 1.1), 'lime_concrete' if y > 6 else 'green_concrete')
+        for y in range(9, 12):
+            v.set(cx, y, cz, 'lime_stained_glass')                               # the thin stream of sand
+        v.disc(cx, 20, cz, 4.2, 'gold_block'); v.disc(cx, 21, cz, 3.4, 'gold_block')
+        v.disc(cx, 22, cz, 2.4, 'gold_block'); v.disc(cx, 23, cz, 1.2, 'gold_block')
+        v.set(cx, 24, cz, 'lightning_rod[facing=up,powered=false,waterlogged=false]')
+        # lamp post beyond the hourglass
+        lx = sx * 34
+        v.box(lx, 3, -6, lx, 9, -6, 'gold_block')
+        v.set(lx, 10, -6, 'sea_lantern')
+        for c in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            v.set(lx + c[0], 10, -6 + c[1], 'light_blue_stained_glass')
+        v.set(lx, 11, -6, 'gold_block')
+    return v
+
 BUILDINGS = {'kami_lookout': kami_lookout, 'buu_house': buu_house, 'cell_arena': cell_arena,
-             'korin_tower': korin_tower, 'babidi_ship': babidi_ship, 'goku_house': goku_house}
+             'korin_tower': korin_tower, 'babidi_ship': babidi_ship, 'goku_house': goku_house,
+             'time_chamber': time_chamber}
 
 if __name__ == '__main__':
     os.makedirs(OUT, exist_ok=True); os.makedirs(PREV, exist_ok=True)
