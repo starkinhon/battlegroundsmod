@@ -67,8 +67,21 @@ public final class UniverseSpawns {
                 continue;
             }
             List<String> mobs = universe.mobs();
+            if (DragonBallWorld.UNIVERSE.equals(id)) {
+                // Each region of the drawn map has its own enemies: Freeza's soldiers only on Namekusei, the Red
+                // Ribbon around its tower, Saibamen everywhere else on Earth.
+                if (com.starkinhon.battlegroundsmod.world.DragonBallPlaces.onNamek(player)) {
+                    spawnNamek(level, player);
+                    continue;
+                }
+                double rx = player.getX() - 197;
+                double rz = player.getZ() + 204;
+                mobs = rx * rx + rz * rz < 90 * 90 ? List.of("soldado_red_ribbon", "soldado_red_ribbon", "saibaman")
+                        : List.of("saibaman", "saibaman", "soldado_red_ribbon");
+            }
             AABB around = player.getBoundingBox().inflate(NEARBY_RADIUS);
-            int nearby = level.getEntitiesOfClass(SoulBoss.class, around, mob -> mobs.contains(mob.bossId())).size();
+            List<String> pool = mobs;
+            int nearby = level.getEntitiesOfClass(SoulBoss.class, around, mob -> pool.contains(mob.bossId())).size();
             if (nearby < NEARBY_CAP) {
                 spawnGroup(level, player, mobs);
             }
@@ -91,6 +104,26 @@ public final class UniverseSpawns {
             BlockPos pos = ground(level, x + random.nextInt(5) - 2, z + random.nextInt(5) - 2);
             if (pos != null) {
                 type.spawn(level, pos, MobSpawnType.EVENT);
+            }
+        }
+    }
+
+    // Freeza's soldiers on Namekusei: on the planet's surface, away from the player, never off the edge.
+    private static void spawnNamek(ServerLevel level, ServerPlayer player) {
+        EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.get(ResourceLocation.fromNamespaceAndPath(
+                com.starkinhon.battlegroundsmod.BattlegroundsMod.MODID, "soldado_freeza"));
+        AABB planet = player.getBoundingBox().inflate(48);
+        if (type == EntityType.PIG || level.getEntitiesOfClass(SoulBoss.class, planet,
+                mob -> "soldado_freeza".equals(mob.bossId())).size() >= 4) {
+            return;
+        }
+        RandomSource random = level.getRandom();
+        for (int tries = 0; tries < 8; tries++) {
+            BlockPos pos = com.starkinhon.battlegroundsmod.world.DragonBallPlaces.namekSpot(random);
+            if (pos.distSqr(player.blockPosition()) > 10 * 10 && level.getBlockState(pos).isAir()
+                    && level.getBlockState(pos.above()).isAir() && !level.getBlockState(pos.below()).isAir()) {
+                type.spawn(level, pos, MobSpawnType.EVENT);
+                return;
             }
         }
     }

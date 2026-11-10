@@ -1062,5 +1062,8 @@
   "npc.battlegroundsmod.tamayo.hint.0": "Um remédio por dia. Preciso de tempo pra preparar outro.",
   "npc.battlegroundsmod.tamayo.hint.1": "A glicínia afasta os demônios. Jogue as pétalas quando cercarem você.",
   "npc.battlegroundsmod.tamayo.hint.2": "As Luas Inferiores às vezes carregam meus remédios. Roubaram de mim.",
-  "npc.battlegroundsmod.tamayo.hint.3": "O Kokushibo é uma Lua Superior. Não vá até ele sem estar pronto."
+  "npc.battlegroundsmod.tamayo.hint.3": "O Kokushibo é uma Lua Superior. Não vá até ele sem estar pronto.",
+  "message.battlegroundsmod.map_edge": "§bFim deste universo. Para ir a outro, use um Cristal Multiversal.",
+  "message.battlegroundsmod.pad_namek": "§aIndo para Namekusei, o planeta do Freeza... %s",
+  "message.battlegroundsmod.pad_terra": "§bVoltando para a Terra... %s"
 }
