@@ -65,6 +65,9 @@ public final class TimeChamber {
 
     private static final Map<UUID, Integer> ON_PAD = new HashMap<>();
     private static final Map<UUID, Vec3> LAST = new HashMap<>();
+    private static final Map<UUID, Long> LAST_HIT = new HashMap<>();
+    // Training dummies (Stark 2026-11-10): three in each gravity zone, on a light-blue ring, facing the house.
+    private static final int[][] DUMMIES = {{-6, 38}, {0, 42}, {6, 38}, {-10, 95}, {0, 100}, {10, 95}, {-12, 165}, {0, 170}, {12, 165}};
 
     private TimeChamber() {
     }
@@ -75,6 +78,7 @@ public final class TimeChamber {
 
     public static void register() {
         NeoForge.EVENT_BUS.addListener(TimeChamber::onServerTick);
+        NeoForge.EVENT_BUS.addListener(TimeChamber::onHurt);
     }
 
     public static boolean in(ServerPlayer player) {
@@ -183,10 +187,71 @@ public final class TimeChamber {
         for (Build.Put put : b.puts) {
             room.setBlock(put.pos(), put.state(), Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
         }
+        for (int[] d : DUMMIES) {
+            for (int i = -3; i <= 3; i++) {
+                for (int k = -3; k <= 3; k++) {
+                    double r = Math.hypot(i, k);
+                    if (r <= 3.2 && r > 2.2) {
+                        room.setBlock(new BlockPos(d[0] + i, FLOOR_Y - 1, d[1] + k), net.minecraft.world.level.block.Blocks.LIGHT_BLUE_CONCRETE
+                                .defaultBlockState(), Block.UPDATE_CLIENTS);
+                    }
+                }
+            }
+            var dummy = com.starkinhon.battlegroundsmod.ModEntities.DUMMY.get().create(room);
+            if (dummy != null) {
+                dummy.moveTo(d[0] + 0.5, FLOOR_Y, d[1] + 0.5, 180f, 0f);
+                dummy.setYHeadRot(180f);
+                dummy.setYBodyRot(180f);
+                room.addFreshEntity(dummy);
+            }
+        }
     }
 
     private static int day(ServerPlayer player) {
         return player.getPersistentData().getInt(DAYS) / DAY_TICKS + 1;
+    }
+
+    // The gravity zone the player is in (0 = 10x, 1 = 50x, 2 = 100x), -1 on the platform.
+    private static int zone(ServerPlayer player) {
+        if (onPlatform(player)) {
+            return -1;
+        }
+        double d = Math.hypot(player.getX(), player.getZ() + 1);
+        return d < 60 ? 0 : d < 140 ? 1 : 2;
+    }
+
+    // Poder from training, in fractions of an enemy of the player's own tier; kept small until it adds up.
+    private static void train(ServerPlayer player, double enemies) {
+        if (!Progression.on(player)) {
+            return;
+        }
+        PowerData data = player.getData(ModAttachments.POWER);
+        var tag = player.getPersistentData();
+        float ki = tag.getFloat(KI) + (float) (Progression.value(data.tier) * enemies);
+        if (ki >= Math.max(0.01, Progression.value(data.tier) * 0.05)) {
+            data.poder += ki;
+            ki = 0;
+            Progression.climb(player);
+            Progression.sync(player);
+        }
+        tag.putFloat(KI, ki);
+    }
+
+    // Hitting a training dummy out in the gravity trains three times faster than walking (at most two hits a second).
+    private static void onHurt(net.neoforged.neoforge.event.entity.living.LivingDamageEvent.Post event) {
+        if (!(event.getSource().getEntity() instanceof ServerPlayer player) || !in(player)
+                || !(event.getEntity() instanceof com.starkinhon.battlegroundsmod.dummy.TrainingDummy)) {
+            return;
+        }
+        int zone = zone(player);
+        long now = player.serverLevel().getGameTime();
+        Long last = LAST_HIT.get(player.getUUID());
+        if (zone < 0 || (last != null && now - last < 10)) {
+            return;
+        }
+        LAST_HIT.put(player.getUUID(), now);
+        train(player, RATE[zone] / 60.0 * 1.5);
+        Fx.burst(player.serverLevel(), ParticleTypes.CRIT, event.getEntity().position().add(0, 1, 0), 4 + zone * 3, 0.3, 0.2);
     }
 
     private static boolean onPlatform(ServerPlayer player) {
@@ -210,11 +275,7 @@ public final class TimeChamber {
             leave(player);
             return;
         }
-        int zone = -1;
-        if (!onPlatform(player)) {
-            double d = Math.hypot(player.getX(), player.getZ() + 1);
-            zone = d < 60 ? 0 : d < 140 ? 1 : 2;
-        }
+        int zone = zone(player);
         if (zone < 0) {
             clearGravity(player);
         } else {
@@ -229,17 +290,8 @@ public final class TimeChamber {
         boolean trained = zone >= 0 && last != null && Math.hypot(now.x - last.x, now.z - last.z) > 0.8;
         PowerData data = player.getData(ModAttachments.POWER);
         Component bar = Progression.barName(data.power, player.getData(ModAttachments.UNIVERSE));
-        if (trained && Progression.on(player)) {
-            double gain = Progression.value(data.tier) * RATE[zone] / 60.0;
-            float ki = tag.getFloat(KI) + (float) gain;
-            double step = Math.max(0.01, Progression.value(data.tier) * 0.05);
-            if (ki >= step) {
-                data.poder += ki;
-                ki = 0;
-                Progression.climb(player);
-                Progression.sync(player);
-            }
-            tag.putFloat(KI, ki);
+        if (trained) {
+            train(player, RATE[zone] / 60.0);
         }
         Component line = zone < 0
                 ? Component.translatable("message.battlegroundsmod.sala_hud_casa", day(player), YEAR)
