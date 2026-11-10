@@ -1,8 +1,5 @@
 {
-  "itemGroup.battlegroundsmod": "Battlegrounds: Essentials",
-  "itemGroup.battlegroundsmod.souls": "Battlegrounds: Souls",
-  "itemGroup.battlegroundsmod.weapons": "Battlegrounds: Weapons",
-  "itemGroup.battlegroundsmod.spawn_eggs": "Battlegrounds: Spawn Eggs",
+  "itemGroup.battlegroundsmod": "Souls: Essentials",
   "item.battlegroundsmod.power_book": "Book of Souls",
   "item.battlegroundsmod.aizen_sword": "Kyoka Suigetsu (Aizen's Sword)",
   "item.battlegroundsmod.kokushibo_sword": "Kyokokukamusari (Kokushibo's Sword)",
@@ -955,5 +952,15 @@
   "npc.battlegroundsmod.teuchi.hint.0": "You already had today's! More tomorrow.",
   "npc.battlegroundsmod.teuchi.hint.1": "Rogue ninjas always carry paper bombs.",
   "npc.battlegroundsmod.teuchi.hint.2": "Jiraiya wanders around here looking for... inspiration for his books.",
-  "npc.battlegroundsmod.teuchi.hint.3": "Sound ninjas carry soldier pills. Beware the hunger after."
+  "npc.battlegroundsmod.teuchi.hint.3": "Sound ninjas carry soldier pills. Beware the hunger after.",
+  "itemGroup.battlegroundsmod.dragonball": "Souls: Dragon Ball",
+  "itemGroup.battlegroundsmod.naruto": "Souls: Naruto",
+  "itemGroup.battlegroundsmod.jujutsu": "Souls: Jujutsu Kaisen",
+  "itemGroup.battlegroundsmod.bleach": "Souls: Bleach",
+  "itemGroup.battlegroundsmod.demonslayer": "Souls: Demon Slayer",
+  "creative.battlegroundsmod.page.all": "All",
+  "creative.battlegroundsmod.page.soul": "Souls",
+  "creative.battlegroundsmod.page.weapon": "Weapons",
+  "creative.battlegroundsmod.page.item": "Items",
+  "creative.battlegroundsmod.page.spawn_egg": "Eggs"
 }
