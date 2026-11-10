@@ -156,7 +156,7 @@ COLORS = {
     'chain': (60, 65, 80), 'anvil': (70, 70, 70), 'campfire': (230, 140, 40), 'oak_trapdoor': (140, 110, 60),
     'birch_trapdoor': (220, 210, 170), 'white_stained_glass_pane': (240, 240, 240), 'moss_block': (89, 109, 45),
     'oak_leaves': (60, 130, 40), 'cherry_planks': (226, 178, 172), 'blue_terracotta': (74, 60, 91),
-    'birch_log': (216, 215, 210), 'jungle_wood': (85, 67, 25), 'red_stained_glass': (170, 50, 50), 'yellow_terracotta': (186, 133, 35),
+    'birch_log': (216, 215, 210), 'lantern': (200, 150, 60), 'jungle_wood': (85, 67, 25), 'red_stained_glass': (170, 50, 50), 'yellow_terracotta': (186, 133, 35),
 }
 
 def color(state):

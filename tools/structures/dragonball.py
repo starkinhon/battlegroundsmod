@@ -41,6 +41,8 @@ def palm(v, x, z, y=0, height=None, lean=(1, 0), rnd=random):
     bx = bz = 0
     for j in range(h):
         if j in (h // 3, (2 * h) // 3):
+            # the bend: the log under the new column too, so the trunk stays joined (not loose steps)
+            v.set(x + bx + lean[0], y + j - 1, z + bz + lean[1], log)
             bx += lean[0]; bz += lean[1]
         v.set(x + bx, y + j, z + bz, log)
     tx, ty, tz = x + bx, y + h, z + bz
@@ -156,8 +158,7 @@ def kame_house():
     palm(v, 10, 4, height=9, lean=(1, 0), rnd=rnd)
     palm(v, -9, 9, height=8, lean=(-1, 1), rnd=rnd)
     palm(v, 8, -9, height=10, lean=(0, -1), rnd=rnd)
-    for x, z in ((-10, -6), (11, 10), (-4, 12)):
-        v.set(x, 0, z, 'cobblestone'); v.set(x + 1, 0, z, 'stone'); v.set(x, 1, z, 'stone')
+    v.set(-2, 10, 0, 'lantern[hanging=false,waterlogged=false]')
     return v
 
 # ---------------------------------------------------------------------------------------------------------------
@@ -165,14 +166,11 @@ def capsule_corp():
     """The big cream dome, flattened, with long blue window bands following the curve, white cap, two round towers with
     white domes, CAPSULE in blue letters on the front, the round entrance with a red door, palms; round courtyard."""
     v = Vox(); rnd = random.Random(3)
-    RX, RY = 24.0, 15.0
+    RX, RY = 24.0, 18.0
     cream = 'smooth_sandstone'; cap = 'white_concrete'; glass = 'blue_stained_glass'; line = 'blue_terracotta'
     R = int(RX) + 1
     v.disc(0, -1, 0, 34, 'smooth_stone'); v.disc(0, -1, 0, 27, 'white_concrete')
-    letters = {}
-    lp = text_pixels('CAPSULE')
-    for (c, r) in lp:
-        letters[(c, 11 - r)] = True       # rows y=7..11
+    letters = {(c, 12 - r) for (c, r) in text_pixels('CAPSULE')}     # rows y=8..12, above the entrance
     for x in range(-R, R + 1):
         for z in range(-R, R + 1):
             for y in range(0, int(RY) + 1):
@@ -187,15 +185,18 @@ def capsule_corp():
                     block = cap
                 ang = math.atan2(z, x)
                 seg = (ang / (2 * math.pi) * 18) % 1.0
-                if y in (3, 4, 8, 9) and seg < 0.78:
+                if y in (3, 4, 14, 15) and seg < 0.78:
                     block = glass
-                elif y in (2, 5, 7, 10) and seg < 0.82:
-                    block = line if y in (2, 7) else cream
-                if z > 0 and (x, y) in letters and z > RX * 0.55:
-                    block = 'blue_concrete'
-                elif z > RX * 0.55 and abs(x) < 15 and 7 <= y <= 11:
-                    block = cream
+                elif y in (2, 13) and seg < 0.82:
+                    block = line
+                if z > RX * 0.4 and abs(x) < 16 and 6 <= y <= 13:
+                    block = cream                          # plain wall behind the letters
                 v.set(x, y, z, block)
+    # CAPSULE on the outermost block of each column of the front, so the letters stay whole on the curve
+    for (c, y) in letters:
+        for z in range(R, 0, -1):
+            if v.get(c, y, z) not in (None, 'minecraft:air'):
+                v.set(c, y, z, 'blue_concrete'); break
     v.box(-R, 0, -R, R, 0, R, 'air'); v.disc(0, 0, 0, RX - 1, 'smooth_stone')
     for x in range(-R, R + 1):
         for z in range(-R, R + 1):
@@ -203,19 +204,22 @@ def capsule_corp():
                 v.set(x, 0, z, cream)
     # two towers on the upper left and right, a little behind the front
     for tx, tz in ((-11, -3), (11, -3)):
-        top = int(RY) + 7
-        v.cylinder(tx, 1, tz, 4.5, top, cream)
+        top = int(RY) + 2
+        v.cylinder(tx, 1, tz, 5, top, cream)
         for y in range(1, top + 1):
             for dx in range(-5, 6):
                 for dz in range(-5, 6):
                     dd = math.hypot(dx, dz)
-                    if dd <= 3.4:
+                    if dd <= 3.8:
                         v.set(tx + dx, y, tz + dz, 'air')
-                    elif dd <= 4.5 and y in (top - 5, top - 4, top - 1) and (math.atan2(dz, dx) * 8 / math.pi) % 1 < 0.7:
+                    elif dd <= 5 and y in (top - 5, top - 4, top - 1) and (math.atan2(dz, dx) * 8 / math.pi) % 1 < 0.7:
                         v.set(tx + dx, y, tz + dz, glass if y != top - 1 else line)
-        v.disc(tx, top + 1, tz, 4.8, line)
-        for y in range(0, 4):
-            v.disc(tx, top + 2 + y, tz, math.sqrt(max(0, 4.6 ** 2 - (y * 1.5) ** 2)), cap)
+        v.disc(tx, top + 1, tz, 5.4, line)
+        for dx in range(-6, 7):                                   # round white dome on top
+            for dz in range(-6, 7):
+                for dy in range(0, 6):
+                    if math.sqrt(dx * dx + dz * dz + (dy * 1.1) ** 2) <= 5.6:
+                        v.set(tx + dx, top + 2 + dy, tz + dz, cap)
     # entrance: little dome in front with a round red door
     ez = int(RX) - 1
     for x in range(-6, 7):
@@ -229,8 +233,11 @@ def capsule_corp():
             d = math.hypot(x, y - 2.5)
             if d <= 3.2:
                 v.set(x, y, ez + 6, 'red_concrete' if d > 1.8 else 'gray_concrete')
-    v.box(0, 1, ez + 6, 0, 2, ez + 6, 'air'); v.box(0, 1, ez + 4, 0, 2, ez + 5, 'air')
-    v.box(-1, 1, ez - 2, 1, 3, ez + 4, 'air')
+    v.box(-1, 1, ez - 3, 1, 3, ez + 6, 'air')                   # a proper 3 wide hall through the entrance
+    for a in range(0, 360, 30):                                   # lights in the floor of the big hall
+        r = 15
+        v.set(int(round(math.cos(math.radians(a)) * r)), 0, int(round(math.sin(math.radians(a)) * r)), 'sea_lantern')
+    v.set(0, 0, 0, 'sea_lantern')
     # path, gate and palms
     for z in range(ez + 7, 34):
         for x in range(-2, 3):
@@ -268,8 +275,6 @@ def capsule_ship_wreck():
                     if -2 <= yy <= 0 and 0.35 < seg < 0.65:
                         block = 'light_blue_stained_glass' if yy == -1 and 0.42 < seg < 0.58 else 'light_gray_concrete'
                 elif yy in (2, -4):
-                    block = 'light_gray_concrete'
-                if y > cy + 5 and rnd.random() < 0.08:
                     block = 'light_gray_concrete'
                 v.set(x, y, z, block)
     # floor inside

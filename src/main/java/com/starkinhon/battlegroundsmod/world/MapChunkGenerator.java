@@ -268,6 +268,17 @@ public class MapChunkGenerator extends ChunkGenerator {
         return new NoiseColumn(level.getMinBuildHeight(), states);
     }
 
+    // No trees or grass where a building goes (Stark's test, 2026-11-10: oaks grew into the Capsule Corp dome, because
+    // the chunks around are decorated after the building is put there).
+    @Override
+    public void applyBiomeDecoration(net.minecraft.world.level.WorldGenLevel level, ChunkAccess chunk, StructureManager structures) {
+        net.minecraft.world.level.ChunkPos pos = chunk.getPos();
+        if (MapPlaces.keptClear(mapName(), pos.getMiddleBlockX(), pos.getMiddleBlockZ())) {
+            return;
+        }
+        super.applyBiomeDecoration(level, chunk, structures);
+    }
+
     @Override
     public void applyCarvers(WorldGenRegion level, long seed, RandomState random, BiomeManager biomeManager,
             StructureManager structures, ChunkAccess chunk, GenerationStep.Carving step) {

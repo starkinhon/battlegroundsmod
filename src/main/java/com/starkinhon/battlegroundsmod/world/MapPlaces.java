@@ -81,6 +81,27 @@ public final class MapPlaces {
         PADS.computeIfAbsent(map, k -> new ArrayList<>()).add(pad);
     }
 
+    // Ground kept free of trees and plants (MapChunkGenerator skips decorating chunks there): a circle per building.
+    private static final Map<String, List<int[]>> CLEAR = new HashMap<>();
+
+    public static void keepClear(String map, int x, int z, int radius) {
+        CLEAR.computeIfAbsent(map, k -> new ArrayList<>()).add(new int[] {x, z, radius});
+    }
+
+    // Whether the chunk whose middle is (x, z) touches a kept-clear circle (16 blocks of margin: a tree from a chunk
+    // next to it reaches in).
+    public static boolean keptClear(String map, int x, int z) {
+        for (int[] c : CLEAR.getOrDefault(map, List.of())) {
+            double dx = x - c[0];
+            double dz = z - c[1];
+            double r = c[2] + 16;
+            if (dx * dx + dz * dz < r * r) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private static String mapOf(ServerLevel level) {
         return level.getChunkSource().getGenerator() instanceof MapChunkGenerator drawn ? drawn.mapName() : null;
     }

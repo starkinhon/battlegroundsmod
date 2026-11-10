@@ -64,6 +64,8 @@ public final class DragonBallPlaces {
         arrivalPad(WorldMap.get(MAP));
         place("kame", 412, 88, DragonBallPlaces::kame);
         place("capsula", -151, -146, DragonBallPlaces::capsule);
+        MapPlaces.keepClear(MAP, 412, 88, 17);
+        MapPlaces.keepClear(MAP, -151, -146, 38);
         place("raditz", 250, -195, DragonBallPlaces::raditz);
         place("babidi", -322, 54, DragonBallPlaces::wreck);
         // Only the buildings that look like the anime stay (Stark, 2026-11-10); the other spots keep their flat ground
@@ -217,7 +219,6 @@ public final class DragonBallPlaces {
         }
         // The ship itself (Capsule Corp's round ship, Stark's reference): sunk and leaning, a leg broken, torn on top.
         b.template("dragonball/capsule_ship_wreck", 0, 0, 0);
-        b.set(3, 1, 2, Blocks.CAMPFIRE);
         return b;
     }
 
