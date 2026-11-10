@@ -26,16 +26,17 @@
     {
       "id": "naruto", "nome": "Naruto", "cor": "#F28C28",
       "descricao": "Florestas fechadas, planícies com vilas e taigas no frio.",
+      "mobs": ["ninja_renegado", "ninja_som", "anbu_raiz"],
       "piso": ["minecraft:grass_block", "minecraft:moss_block", "minecraft:grass_block", "minecraft:coarse_dirt"],
       "pilar": "minecraft:oak_log",
       "desafios": [
-        {"id": "shikamaru", "foco": "Prender. A sombra dele segura você no lugar."},
-        {"id": "ino", "foco": "Mente. Entra na sua cabeça e troca de corpo."},
+        {"id": "shikamaru", "foco": "Prender. A sombra dele segura você no lugar.", "itens": ["battlegroundsmod:papel_bomba 6"]},
+        {"id": "ino", "foco": "Mente. Entra na sua cabeça e troca de corpo.", "itens": ["battlegroundsmod:pergaminho_ninken"]},
         {"id": "kakashi", "foco": "Técnica. Raikiri e jutsus copiados com o Sharingan.", "itens": ["battlegroundsmod:cristal_multiversal"]},
-        {"id": "gaara", "foco": "Defesa. A areia bloqueia tudo e esmaga quem chega perto."},
-        {"id": "naruto", "foco": "Pressão. Clones por todo lado e Rasengan."},
-        {"id": "sasuke", "foco": "Velocidade. Chidori, e o Sharingan esquiva dos seus golpes."},
-        {"id": "madara", "foco": "Guerra. Katon, Susanoo e o Meteoro. O deus deste universo."}
+        {"id": "gaara", "foco": "Defesa. A areia bloqueia tudo e esmaga quem chega perto.", "itens": ["battlegroundsmod:bandana_ninja"]},
+        {"id": "naruto", "foco": "Pressão. Clones por todo lado e Rasengan.", "itens": ["battlegroundsmod:kunai_hiraishin"]},
+        {"id": "sasuke", "foco": "Velocidade. Chidori, e o Sharingan esquiva dos seus golpes.", "itens": ["battlegroundsmod:kusanagi"]},
+        {"id": "madara", "foco": "Guerra. Katon, Susanoo e o Meteoro. O deus deste universo.", "itens": ["battlegroundsmod:samehada"]}
       ]
     },
     {

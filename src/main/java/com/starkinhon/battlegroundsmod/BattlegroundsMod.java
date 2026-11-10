@@ -59,6 +59,8 @@ public class BattlegroundsMod {
         com.starkinhon.battlegroundsmod.challenge.Universes.register();
         com.starkinhon.battlegroundsmod.universe.DragonBallWorld.register();
         com.starkinhon.battlegroundsmod.universe.Flight.register();
+        com.starkinhon.battlegroundsmod.universe.NarutoWorld.register();
+        com.starkinhon.battlegroundsmod.universe.SageMode.register();
         FightRod.register();
         SoulCommand.addSubcommand(BossCommand::bossbar);
         SoulCommand.addSubcommand(com.starkinhon.battlegroundsmod.combat.DamageDebug::command);
