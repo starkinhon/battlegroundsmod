@@ -23,13 +23,13 @@ def features(surface, vegetal, extra_ores=()):
             ["minecraft:spring_water", "minecraft:spring_lava"], ["minecraft:glow_lichen"] + vegetal,
             ["minecraft:freeze_top_layer"]]
 
-def biome(name, temp, sky, fog, water, water_fog, grass, foliage, feats, music=None, water_life=None):
+def biome(name, temp, sky, fog, water, water_fog, grass, foliage, feats, music=None, water_life=None, snow=False):
     effects = {"sky_color": sky, "fog_color": fog, "water_color": water, "water_fog_color": water_fog,
                "grass_color": grass, "foliage_color": foliage,
                "mood_sound": {"block_search_extent": 8, "offset": 2.0, "sound": "minecraft:ambient.cave", "tick_delay": 6000}}
     if music:
         effects["music"] = {"max_delay": 24000, "min_delay": 12000, "replace_current_music": False, "sound": music}
-    data = {"has_precipitation": False, "temperature": temp, "downfall": 0.0, "effects": effects,
+    data = {"has_precipitation": snow, "temperature": temp, "downfall": 0.5 if snow else 0.0, "effects": effects,
             "spawners": {"ambient": [], "axolotls": [], "creature": [], "misc": [], "monster": [],
                          "underground_water_creature": [{"type": "minecraft:glow_squid", "maxCount": 6, "minCount": 4, "weight": 10}],
                          "water_ambient": (water_life or {}).get("ambient", []),
@@ -83,6 +83,14 @@ biome("mar_do_sul", 0.95, 0x6FC6FF, 0xFFF0BC, 0x2EE0D2, 0x14A4B4, 0x6FE04A, 0x4F
                               {"type": "minecraft:pufferfish", "maxCount": 3, "minCount": 1, "weight": 15}],
                   "creature": [{"type": "minecraft:dolphin", "maxCount": 2, "minCount": 1, "weight": 2},
                                {"type": "minecraft:squid", "maxCount": 4, "minCount": 1, "weight": 1}]})
+
+# Norte Gelado (Stark 2026-11-11: "pode usar a criatividade, pode meter bala"): the frozen north, where the Red Ribbon's
+# Muscle Tower stood. Deep snow with glazed ice ponds, huge ice crystal clusters (world/IceCrystalFeature) and tall pines
+# loaded with snow (world/SnowPineFeature); a pale cold sky, and (client/fx/DragonWind) blizzards that come and go, a cold
+# grade with frost at the screen's edges and the aurora over it all at night. It snows when it rains.
+biome("norte_gelado", -0.6, 0x9CC6EE, 0xDCEAF6, 0x3D57D6, 0x050533, 0x80B497, 0x60A17C,
+      features(["battlegroundsmod:ice_crystal"], ["battlegroundsmod:snow_pine"]),
+      music="minecraft:music.overworld.frozen_peaks", snow=True)
 
 # The pillars: one feature, three placements (how often per biome).
 os.makedirs(f"{R}/worldgen/configured_feature", exist_ok=True)
@@ -154,10 +162,33 @@ with open(f"{R}/worldgen/placed_feature/palm_tree_beach.json", "w") as f:
         {"type": "minecraft:biome"}]}, f, indent=2)
     f.write("\n")
 
+# The Norte Gelado's features: an ice crystal cluster every few chunks, pine woods here and there.
+for name in ("ice_crystal", "snow_pine"):
+    with open(f"{R}/worldgen/configured_feature/{name}.json", "w") as f:
+        json.dump({"type": f"battlegroundsmod:{name}", "config": {}}, f, indent=2)
+        f.write("\n")
+with open(f"{R}/worldgen/placed_feature/ice_crystal.json", "w") as f:
+    json.dump({"feature": "battlegroundsmod:ice_crystal", "placement": [
+        {"type": "minecraft:rarity_filter", "chance": 3},
+        {"type": "minecraft:in_square"},
+        {"type": "minecraft:heightmap", "heightmap": "OCEAN_FLOOR_WG"},
+        {"type": "minecraft:biome"}]}, f, indent=2)
+    f.write("\n")
+with open(f"{R}/worldgen/placed_feature/snow_pine.json", "w") as f:
+    json.dump({"feature": "battlegroundsmod:snow_pine", "placement": [
+        {"type": "minecraft:count", "count": {"type": "minecraft:weighted_list", "distribution": [
+            {"weight": 3, "data": 0}, {"weight": 2, "data": 1}, {"weight": 2, "data": 3}, {"weight": 1, "data": 6}]}},
+        {"type": "minecraft:in_square"},
+        {"type": "minecraft:surface_water_depth_filter", "max_water_depth": 0},
+        {"type": "minecraft:heightmap", "heightmap": "OCEAN_FLOOR"},
+        {"type": "minecraft:biome"}]}, f, indent=2)
+    f.write("\n")
+
 # Which biomes are the Dragon Ball universe's (universe/UniverseBiomes).
 os.makedirs(f"{R}/tags/worldgen/biome", exist_ok=True)
 with open(f"{R}/tags/worldgen/biome/universe_dragonball.json", "w") as f:
     json.dump({"values": ["battlegroundsmod:terras_do_dragao", "battlegroundsmod:picos_do_dragao",
-                          "battlegroundsmod:deserto_vermelho", "battlegroundsmod:terra_sagrada_de_karin", "battlegroundsmod:mar_do_sul"]}, f, indent=2)
+                          "battlegroundsmod:deserto_vermelho", "battlegroundsmod:terra_sagrada_de_karin", "battlegroundsmod:mar_do_sul",
+                          "battlegroundsmod:norte_gelado"]}, f, indent=2)
     f.write("\n")
 print("ok")

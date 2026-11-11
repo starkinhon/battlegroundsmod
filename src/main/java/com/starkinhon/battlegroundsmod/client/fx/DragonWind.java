@@ -28,7 +28,10 @@ import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 //   (a soft yellow-green one in the Terra Sagrada de Karin, Stark: "amarelo é do deserto");
 // - in the Mar do Sul (Stark: "uma vibe bem ensolarada, um sol forte"): a sea breeze, fewer and whiter gusts, a light
 //   golden grade, and the strong tropical sun: a wide warm halo around it in the sky (behind the land, drawn right after
-//   the sky) and a glare over the screen when the player looks toward it.
+//   the sky) and a glare over the screen when the player looks toward it;
+// - in the Norte Gelado (Stark: "pode meter bala"): blizzards that build up and die down on their own, the wind turning
+//   to driven snow and the white closing in, a cold blue grade with frost at the screen's edges, and at night the aurora:
+//   curtains of green light with violet tops waving slowly across the sky, rays running along them.
 public final class DragonWind {
     private static final int MAX_GUSTS = 46;
     private static final int SAMPLES = 22;
@@ -52,6 +55,9 @@ public final class DragonWind {
     // 1 in the Mar do Sul.
     private static float sea;
     private static float lastSea;
+    // 1 in the Norte Gelado.
+    private static float cold;
+    private static float lastCold;
 
     private DragonWind() {
     }
@@ -61,6 +67,7 @@ public final class DragonWind {
         lastStrength = strength;
         lastDesert = desert;
         lastSea = sea;
+        lastCold = cold;
         if (mc.level == null || mc.player == null) {
             GUSTS.clear();
             strength = 0;
@@ -76,6 +83,7 @@ public final class DragonWind {
         }
         desert = Mth.clamp(desert + (inside && biome.is(ModWorldgen.DESERTO_VERMELHO) ? 0.01f : -0.015f), 0, 1);
         sea = Mth.clamp(sea + (inside && biome.is(ModWorldgen.MAR_DO_SUL) ? 0.012f : -0.015f), 0, 1);
+        cold = Mth.clamp(cold + (inside && biome.is(ModWorldgen.NORTE_GELADO) ? 0.01f : -0.015f), 0, 1);
         strength = Mth.clamp(strength + (inside ? 0.012f : -0.02f), 0, 1);
         long now = mc.level.getGameTime();
         GUSTS.removeIf(g -> now - g.born() > g.life());
@@ -84,14 +92,21 @@ public final class DragonWind {
         }
         // A gust or so every few ticks, more when the breeze picks up (a slow swell of its own).
         double swell = 0.65 + 0.35 * Math.sin(now / 173.0) * Math.sin(now / 61.0 + 1.3);
-        int max = MAX_GUSTS + (int) (60 * desert);
-        float rate = 0.55f * strength * (float) swell * (1 + 2.2f * desert) * (1 - 0.45f * sea);
+        float blizzard = cold * storm(now);
+        int max = MAX_GUSTS + (int) (60 * desert) + (int) (110 * blizzard);
+        float rate = 0.55f * strength * (float) swell * (1 + 2.2f * desert) * (1 - 0.45f * sea) * (1 + 4.5f * blizzard);
         while (rate > 0 && GUSTS.size() < max) {
             if (RANDOM.nextFloat() < Math.min(1, rate)) {
                 GUSTS.add(newGust(mc, now));
             }
             rate -= 1;
         }
+    }
+
+    // The Norte Gelado's blizzard: 0 calm, 1 a whiteout; it builds up and dies down over a few minutes, now and then.
+    private static float storm(double now) {
+        double wave = Math.sin(now / 1900.0) * 0.6 + Math.sin(now / 710.0 + 0.8) * 0.4;
+        return (float) Mth.clamp((wave - 0.05) / 0.6, 0, 1);
     }
 
     // The breeze turns slowly over the day.
@@ -103,7 +118,7 @@ public final class DragonWind {
         double angle = windAngle(now) + (RANDOM.nextDouble() - 0.5) * 0.5;
         Vec3 dir = new Vec3(Math.cos(angle), (RANDOM.nextDouble() - 0.5) * 0.06, Math.sin(angle)).normalize();
         Vec3 side = new Vec3(-dir.z, 0, dir.x).normalize();
-        double speed = (0.45 + RANDOM.nextDouble() * 0.55) * (1 + 0.7 * desert);
+        double speed = (0.45 + RANDOM.nextDouble() * 0.55) * (1 + 0.7 * desert + 1.1 * cold * storm(now));
         double length = 4 + RANDOM.nextDouble() * 9;
         int life = 40 + RANDOM.nextInt(50);
         // Start upwind of the player so the gust crosses the view; mostly low over the ground, some higher up.
@@ -151,6 +166,7 @@ public final class DragonWind {
     public static void onRenderLevel(RenderLevelStageEvent event) {
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_SKY) {
             renderSunHalo(event);
+            renderAurora(event);
             return;
         }
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS || GUSTS.isEmpty()) {
@@ -186,6 +202,11 @@ public final class DragonWind {
             }
             // pale warm white, a few a little more golden
             float r = 1f, gg = 0.95f - 0.12f * g.warm(), b = 0.84f - 0.3f * g.warm();
+            // the blizzard's: white with a cold blue
+            float frost = cold;
+            r = Mth.lerp(frost, r, 0.9f);
+            gg = Mth.lerp(frost, gg, 0.95f);
+            b = Mth.lerp(frost, b, 1f);
             float sand = desert;
             gg = Mth.lerp(sand, gg, 0.74f - 0.1f * g.warm());
             b = Mth.lerp(sand, b, 0.46f - 0.12f * g.warm());
@@ -254,6 +275,85 @@ public final class DragonWind {
         buffers.endBatch(FxRenderTypes.AREA);
     }
 
+    // The aurora of the Norte Gelado: three to five curtains, each a long wavy band across a part of the sky, bright green
+    // at its foot fading to violet and nothing at the top, rays running along it, all slowly folding and drifting. Each
+    // night's curtains come from that night's number, so they change every night; only by night, not in a storm.
+    private static void renderAurora(RenderLevelStageEvent event) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null) {
+            return;
+        }
+        float partial = event.getPartialTick().getGameTimeDeltaPartialTick(false);
+        double now = mc.level.getGameTime() + partial;
+        float c = Mth.lerp(partial, lastCold, cold) * Mth.lerp(partial, lastStrength, strength);
+        Vec3 sun = sunDir(mc, partial);
+        float night = Mth.clamp((float) -sun.y * 3.5f - 0.1f, 0, 1);
+        float power = c * night * (1 - storm(now)) * (1 - mc.level.getRainLevel(partial));
+        if (power <= 0.001f) {
+            return;
+        }
+        long nightId = Math.floorDiv(mc.level.getDayTime() + 6000, 24000);
+        RandomSource seed = new net.minecraft.world.level.levelgen.SingleThreadedRandomSource(nightId * 7919L + 17);
+        PoseStack.Pose last = event.getPoseStack().last();
+        MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
+        VertexConsumer out = buffers.getBuffer(FxRenderTypes.AREA);
+        int curtains = 3 + seed.nextInt(3);
+        int segments = 90;
+        for (int n = 0; n < curtains; n++) {
+            double az0 = seed.nextDouble() * Mth.TWO_PI;
+            double span = 0.9 + seed.nextDouble() * 1.4;
+            double el0 = Math.toRadians(22 + seed.nextDouble() * 30);
+            double tall = Math.toRadians(14 + seed.nextDouble() * 18);
+            double foldF = 4 + seed.nextDouble() * 6, foldP = seed.nextDouble() * 6.3;
+            double rayF = 18 + seed.nextDouble() * 24, rayP = seed.nextDouble() * 6.3;
+            double drift = (seed.nextDouble() - 0.5) * 0.0006;
+            float bright = 0.5f + seed.nextFloat() * 0.5f;
+            double prevAz = 0, prevEl = 0, prevTop = 0;
+            float prevA = 0;
+            for (int i = 0; i <= segments; i++) {
+                double k = (double) i / segments;
+                double az = az0 + span * (k - 0.5) + drift * now
+                        + 0.07 * Math.sin(k * foldF * Mth.TWO_PI + foldP + now * 0.004)
+                        + 0.03 * Math.sin(k * foldF * 2.7 * Mth.TWO_PI + now * 0.009);
+                double el = el0 + 0.06 * Math.sin(k * 3.1 + now * 0.002 + foldP);
+                double top = el + tall * (0.75 + 0.25 * Math.sin(k * 5.3 + now * 0.003 + rayP));
+                // faint at both ends, rays of light running along it
+                float ends = (float) Math.sin(Math.PI * k);
+                float rays = (float) (0.55 + 0.3 * Math.sin(k * rayF + now * 0.03 + rayP) + 0.15 * Math.sin(k * rayF * 2.3 - now * 0.05));
+                float a = power * bright * ends * ends * rays;
+                if (i > 0) {
+                    curtain(out, last, prevAz, prevEl, prevTop, prevA, az, el, top, a);
+                }
+                prevAz = az;
+                prevEl = el;
+                prevTop = top;
+                prevA = a;
+            }
+        }
+        buffers.endBatch(FxRenderTypes.AREA);
+    }
+
+    // One slice of a curtain, in two parts: the bright green foot (fading in from below) and the long fade to violet.
+    private static void curtain(VertexConsumer out, PoseStack.Pose last, double az0, double el0, double top0, float a0,
+            double az1, double el1, double top1, float a1) {
+        double mid0 = el0 + (top0 - el0) * 0.25, mid1 = el1 + (top1 - el1) * 0.25;
+        double low0 = el0 - 0.03, low1 = el1 - 0.03;
+        sky(out, last, az0, low0, 0.3f, 1f, 0.6f, 0);
+        sky(out, last, az1, low1, 0.3f, 1f, 0.6f, 0);
+        sky(out, last, az1, mid1, 0.35f, 1f, 0.65f, a1 * 0.55f);
+        sky(out, last, az0, mid0, 0.35f, 1f, 0.65f, a0 * 0.55f);
+        sky(out, last, az0, mid0, 0.35f, 1f, 0.65f, a0 * 0.55f);
+        sky(out, last, az1, mid1, 0.35f, 1f, 0.65f, a1 * 0.55f);
+        sky(out, last, az1, top1, 0.62f, 0.32f, 1f, 0);
+        sky(out, last, az0, top0, 0.62f, 0.32f, 1f, 0);
+    }
+
+    private static void sky(VertexConsumer out, PoseStack.Pose last, double az, double el, float r, float g, float b, float a) {
+        double d = 100;
+        out.addVertex(last, (float) (Math.cos(el) * Math.cos(az) * d), (float) (Math.sin(el) * d),
+                (float) (Math.cos(el) * Math.sin(az) * d)).setColor(r, g, b, a);
+    }
+
     // The halo's brightness from its middle (0) to its rim (1).
     private static float glow(float k) {
         return 0.55f * (float) Math.pow(1 - k, 2.4) + 0.25f * (float) Math.exp(-k * k * 60);
@@ -300,9 +400,10 @@ public final class DragonWind {
         float partial = delta.getGameTimeDeltaPartialTick(false);
         float dry = Mth.lerp(partial, lastDesert, desert);
         float sunny = Mth.lerp(partial, lastSea, sea);
-        int wash = mix(mix(mix(0xFF9A30, 0xC8EC6A, green), 0xFF5E1A, dry), 0xFFE07A, sunny);
-        int edge = mix(mix(mix(0xB0480E, 0x4E8A20, green), 0x7A2006, dry), 0xC88A30, sunny);
-        graphics.fill(0, 0, w, h, argb((0.07f - 0.015f * green + 0.035f * dry - 0.025f * sunny) * fade, wash));
+        float chill = Mth.lerp(partial, lastCold, cold);
+        int wash = mix(mix(mix(mix(0xFF9A30, 0xC8EC6A, green), 0xFF5E1A, dry), 0xFFE07A, sunny), 0x8CC4FF, chill);
+        int edge = mix(mix(mix(mix(0xB0480E, 0x4E8A20, green), 0x7A2006, dry), 0xC88A30, sunny), 0xEAF6FF, chill);
+        graphics.fill(0, 0, w, h, argb((0.07f - 0.015f * green + 0.035f * dry - 0.025f * sunny - 0.01f * chill) * fade, wash));
         // The glare of the tropical sun when the player looks toward it.
         Minecraft mc = Minecraft.getInstance();
         if (sunny > 0.001f && mc.level != null && mc.player != null && !mc.level.isRaining()) {
@@ -318,7 +419,9 @@ public final class DragonWind {
         int depthX = Math.max(1, w / 5), depthY = Math.max(1, h / 4);
         for (int i = 0; i < bands; i++) {
             float k = 1 - (float) i / bands;
-            int color = argb((0.022f - 0.006f * green + 0.014f * dry - 0.01f * sunny) * k * k * fade, edge);
+            // the frost of the Norte Gelado creeps in from the edges, more in a blizzard
+            float frost = chill * (0.02f + 0.03f * storm(Minecraft.getInstance().level == null ? 0 : Minecraft.getInstance().level.getGameTime()));
+            int color = argb((0.022f - 0.006f * green + 0.014f * dry - 0.01f * sunny + frost) * k * k * fade, edge);
             int x = depthX * i / bands, y = depthY * i / bands;
             int x2 = depthX * (i + 1) / bands, y2 = depthY * (i + 1) / bands;
             graphics.fill(x, 0, x2, h, color);
@@ -332,16 +435,37 @@ public final class DragonWind {
     // darker at night with the sky.
     public static void onFog(net.neoforged.neoforge.client.event.ViewportEvent.RenderFog event) {
         float d = (float) Mth.lerp(event.getPartialTick(), lastDesert, desert) * strength;
-        if (d <= 0.001f || event.getMode() != net.minecraft.client.renderer.FogRenderer.FogMode.FOG_TERRAIN) {
+        float white = whiteout((float) event.getPartialTick());
+        if ((d <= 0.001f && white <= 0.001f) || event.getMode() != net.minecraft.client.renderer.FogRenderer.FogMode.FOG_TERRAIN) {
             return;
         }
         float far = event.getFarPlaneDistance();
-        event.setNearPlaneDistance(Mth.lerp(d, event.getNearPlaneDistance(), 0));
-        event.setFarPlaneDistance(Mth.lerp(d, far, Math.max(56, far * 0.42f)));
+        float near = event.getNearPlaneDistance();
+        float sandFar = Mth.lerp(d, far, Math.max(56, far * 0.42f));
+        // the blizzard closes in much more than the sand haze
+        event.setNearPlaneDistance(Mth.lerp(Math.max(d, white), near, 0));
+        event.setFarPlaneDistance(Math.min(sandFar, Mth.lerp(white, far, Math.max(26, far * 0.22f))));
         event.setCanceled(true);
     }
 
+    // How far the Norte Gelado's blizzard has closed in (0 to 1).
+    private static float whiteout(float partial) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null) {
+            return 0;
+        }
+        return Mth.lerp(partial, lastCold, cold) * strength * storm(mc.level.getGameTime() + partial);
+    }
+
     public static void onFogColor(net.neoforged.neoforge.client.event.ViewportEvent.ComputeFogColor event) {
+        float white = whiteout((float) event.getPartialTick());
+        if (white > 0.001f) {
+            float lum = Mth.clamp((event.getRed() + event.getGreen() + event.getBlue()) / 3f / 0.7f, 0.08f, 1.2f);
+            float k = 0.75f * white;
+            event.setRed(Mth.lerp(k, event.getRed(), 0.84f * lum));
+            event.setGreen(Mth.lerp(k, event.getGreen(), 0.9f * lum));
+            event.setBlue(Mth.lerp(k, event.getBlue(), 0.97f * lum));
+        }
         float d = (float) Mth.lerp(event.getPartialTick(), lastDesert, desert) * strength;
         if (d <= 0.001f) {
             return;

@@ -42,6 +42,11 @@ public final class ModWorldgen {
             () -> new TropicalIslandFeature(NoneFeatureConfiguration.CODEC));
     public static final Supplier<PirateShipFeature> PIRATE_SHIP = FEATURES.register("pirate_ship",
             () -> new PirateShipFeature(NoneFeatureConfiguration.CODEC));
+    // The Norte Gelado: ice crystal clusters and snow-laden pines (worldgen/placed_feature/ice_crystal, snow_pine).
+    public static final Supplier<IceCrystalFeature> ICE_CRYSTAL = FEATURES.register("ice_crystal",
+            () -> new IceCrystalFeature(NoneFeatureConfiguration.CODEC));
+    public static final Supplier<SnowPineFeature> SNOW_PINE = FEATURES.register("snow_pine",
+            () -> new SnowPineFeature(NoneFeatureConfiguration.CODEC));
 
     // The Dragon Ball biomes of the normal overworld (tools/biomes/dragonball_biomes.py, put there by DragonRegion).
     public static final ResourceKey<Biome> TERRAS_DO_DRAGAO = biome("terras_do_dragao");
@@ -49,6 +54,7 @@ public final class ModWorldgen {
     public static final ResourceKey<Biome> DESERTO_VERMELHO = biome("deserto_vermelho");
     public static final ResourceKey<Biome> TERRA_SAGRADA = biome("terra_sagrada_de_karin");
     public static final ResourceKey<Biome> MAR_DO_SUL = biome("mar_do_sul");
+    public static final ResourceKey<Biome> NORTE_GELADO = biome("norte_gelado");
     public static final TagKey<Biome> DRAGONBALL_BIOMES = TagKey.create(Registries.BIOME,
             ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "universe_dragonball"));
 

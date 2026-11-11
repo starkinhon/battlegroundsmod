@@ -40,8 +40,7 @@ public final class DragonRegion extends Region {
     @Override
     public void addBiomes(Registry<Biome> registry, Consumer<Pair<Climate.ParameterPoint, ResourceKey<Biome>>> mapper) {
         this.addModifiedVanillaOverworldBiomes(mapper, builder -> {
-            for (ResourceKey<Biome> peak : java.util.List.of(Biomes.JAGGED_PEAKS, Biomes.FROZEN_PEAKS, Biomes.STONY_PEAKS,
-                    Biomes.SNOWY_SLOPES, Biomes.GROVE, Biomes.WINDSWEPT_HILLS, Biomes.WINDSWEPT_GRAVELLY_HILLS,
+            for (ResourceKey<Biome> peak : java.util.List.of(Biomes.JAGGED_PEAKS, Biomes.STONY_PEAKS, Biomes.WINDSWEPT_HILLS, Biomes.WINDSWEPT_GRAVELLY_HILLS,
                     Biomes.WINDSWEPT_FOREST, Biomes.WINDSWEPT_SAVANNA, Biomes.SAVANNA_PLATEAU, Biomes.WOODED_BADLANDS)) {
                 builder.replaceBiome(peak, ModWorldgen.PICOS_DO_DRAGAO);
             }
@@ -54,7 +53,7 @@ public final class DragonRegion extends Region {
             // se ele fosse minúsculo").
             for (ResourceKey<Biome> woods : java.util.List.of(Biomes.FOREST, Biomes.FLOWER_FOREST, Biomes.DARK_FOREST,
                     Biomes.BIRCH_FOREST, Biomes.OLD_GROWTH_BIRCH_FOREST, Biomes.TAIGA, Biomes.OLD_GROWTH_PINE_TAIGA,
-                    Biomes.OLD_GROWTH_SPRUCE_TAIGA, Biomes.SNOWY_TAIGA, Biomes.JUNGLE, Biomes.SPARSE_JUNGLE,
+                    Biomes.OLD_GROWTH_SPRUCE_TAIGA, Biomes.JUNGLE, Biomes.SPARSE_JUNGLE,
                     Biomes.BAMBOO_JUNGLE, Biomes.MANGROVE_SWAMP)) {
                 builder.replaceBiome(woods, ModWorldgen.TERRA_SAGRADA);
             }
@@ -65,8 +64,14 @@ public final class DragonRegion extends Region {
                 builder.replaceBiome(sea, ModWorldgen.MAR_DO_SUL);
             }
             for (ResourceKey<Biome> green : java.util.List.of(Biomes.PLAINS, Biomes.SUNFLOWER_PLAINS,
-                    Biomes.MEADOW, Biomes.CHERRY_GROVE, Biomes.SNOWY_PLAINS, Biomes.ICE_SPIKES, Biomes.SWAMP)) {
+                    Biomes.MEADOW, Biomes.CHERRY_GROVE, Biomes.SWAMP)) {
                 builder.replaceBiome(green, ModWorldgen.TERRAS_DO_DRAGAO);
+            }
+            // The cold climates, flat or mountain, become the Norte Gelado (Stark 2026-11-11: "pode meter bala"): snow,
+            // ice crystals, snowed pines, blizzards and the aurora at night.
+            for (ResourceKey<Biome> cold : java.util.List.of(Biomes.SNOWY_PLAINS, Biomes.ICE_SPIKES, Biomes.SNOWY_TAIGA,
+                    Biomes.FROZEN_PEAKS, Biomes.SNOWY_SLOPES, Biomes.GROVE, Biomes.SNOWY_BEACH, Biomes.FROZEN_RIVER)) {
+                builder.replaceBiome(cold, ModWorldgen.NORTE_GELADO);
             }
         });
     }
@@ -115,6 +120,20 @@ public final class DragonRegion extends Region {
                 SurfaceRules.ifTrue(SurfaceRules.UNDER_FLOOR, white),
                 SurfaceRules.ifTrue(SurfaceRules.stoneDepthCheck(0, true, 6, net.minecraft.world.level.levelgen.placement.CaveSurface.FLOOR),
                         SurfaceRules.state(Blocks.SANDSTONE.defaultBlockState()))));
-        return SurfaceRules.ifTrue(SurfaceRules.abovePreliminarySurface(), SurfaceRules.sequence(peaks, desert, lands, sea));
+        // The Norte Gelado: deep snow, glazed patches of packed ice and blue ice like frozen ponds, the steep faces
+        // ice-plated stone.
+        SurfaceRules.RuleSource snow = SurfaceRules.state(Blocks.SNOW_BLOCK.defaultBlockState());
+        SurfaceRules.RuleSource packed = SurfaceRules.state(Blocks.PACKED_ICE.defaultBlockState());
+        SurfaceRules.RuleSource blue = SurfaceRules.state(Blocks.BLUE_ICE.defaultBlockState());
+        SurfaceRules.RuleSource stone = SurfaceRules.state(Blocks.STONE.defaultBlockState());
+        SurfaceRules.RuleSource north = SurfaceRules.ifTrue(SurfaceRules.isBiome(ModWorldgen.NORTE_GELADO), SurfaceRules.sequence(
+                SurfaceRules.ifTrue(SurfaceRules.ON_FLOOR, SurfaceRules.ifTrue(water, SurfaceRules.sequence(
+                        SurfaceRules.ifTrue(SurfaceRules.steep(), SurfaceRules.sequence(
+                                SurfaceRules.ifTrue(SurfaceRules.noiseCondition(Noises.ICE, -0.2, 0.3), packed), stone)),
+                        SurfaceRules.ifTrue(SurfaceRules.noiseCondition(Noises.SURFACE, 0.46, Double.MAX_VALUE), blue),
+                        SurfaceRules.ifTrue(SurfaceRules.noiseCondition(Noises.SURFACE, 0.36, 0.46), packed),
+                        snow))),
+                SurfaceRules.ifTrue(SurfaceRules.UNDER_FLOOR, SurfaceRules.ifTrue(SurfaceRules.not(SurfaceRules.steep()), snow))));
+        return SurfaceRules.ifTrue(SurfaceRules.abovePreliminarySurface(), SurfaceRules.sequence(peaks, desert, lands, sea, north));
     }
 }

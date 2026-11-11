@@ -134,6 +134,10 @@ public final class UniverseSpawns {
         if (biome.is(com.starkinhon.battlegroundsmod.world.ModWorldgen.DESERTO_VERMELHO)) {
             return List.of("saibaman", "saibaman", "bandido_deserto", "raptor");
         }
+        if (biome.is(com.starkinhon.battlegroundsmod.world.ModWorldgen.NORTE_GELADO)) {
+            // the frozen north: the yeti and the Red Ribbon (its Muscle Tower stood in the snow)
+            return List.of("yeti", "yeti", "soldado_red_ribbon", "soldado_red_ribbon");
+        }
         if (biome.is(com.starkinhon.battlegroundsmod.world.ModWorldgen.MAR_DO_SUL)) {
             // the islands and the ships' decks: the pirates' sea
             return List.of("pirata");
