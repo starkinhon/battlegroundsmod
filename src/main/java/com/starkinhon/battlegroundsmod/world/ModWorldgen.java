@@ -28,6 +28,9 @@ public final class ModWorldgen {
     // The rock pillars and mesas of the Dragon World (worldgen/placed_feature/dragon_pillar_*).
     public static final Supplier<DragonPillarFeature> DRAGON_PILLAR = FEATURES.register("dragon_pillar",
             () -> new DragonPillarFeature(NoneFeatureConfiguration.CODEC));
+    // The round puffy trees of the Terra Sagrada de Karin (worldgen/placed_feature/puffy_tree_karin).
+    public static final Supplier<PuffyTreeFeature> PUFFY_TREE = FEATURES.register("puffy_tree",
+            () -> new PuffyTreeFeature(NoneFeatureConfiguration.CODEC));
 
     // The Dragon Ball biomes of the normal overworld (tools/biomes/dragonball_biomes.py, put there by DragonRegion).
     public static final ResourceKey<Biome> TERRAS_DO_DRAGAO = biome("terras_do_dragao");

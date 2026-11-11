@@ -24,7 +24,8 @@ import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 // - gusts: thin streaks of wind running across the land with the breeze, each its own curve (length, speed, waves of
 //   two sine curves with random phases, sometimes a curl), bright at the head and thinning to nothing at the tail; no
 //   texture or particle, every point comes from the gust's own numbers, so no two are alike;
-// - the warm grade over the screen: a light orange wash and a burnt-orange vignette at the edges, over the HUD too.
+// - the warm grade over the screen: a light orange wash and a burnt-orange vignette at the edges, over the HUD too
+//   (a soft yellow-green one in the Terra Sagrada de Karin, Stark: "amarelo é do deserto").
 public final class DragonWind {
     private static final int MAX_GUSTS = 46;
     private static final int SAMPLES = 22;
@@ -39,6 +40,8 @@ public final class DragonWind {
     // 0 outside, 1 inside a Dragon Ball biome; eases in and out over a few seconds.
     private static float strength;
     private static float lastStrength;
+    // 0 in the yellow lands, 1 in the Terra Sagrada de Karin, whose grade is a soft yellow-green instead of orange.
+    private static float green;
 
     private DragonWind() {
     }
@@ -54,7 +57,11 @@ public final class DragonWind {
         if (mc.isPaused()) {
             return;
         }
-        boolean inside = mc.level.getBiome(mc.player.blockPosition()).is(ModWorldgen.DRAGONBALL_BIOMES);
+        var biome = mc.level.getBiome(mc.player.blockPosition());
+        boolean inside = biome.is(ModWorldgen.DRAGONBALL_BIOMES);
+        if (inside) {
+            green = Mth.clamp(green + (biome.is(ModWorldgen.TERRA_SAGRADA) ? 0.015f : -0.015f), 0, 1);
+        }
         strength = Mth.clamp(strength + (inside ? 0.012f : -0.02f), 0, 1);
         long now = mc.level.getGameTime();
         GUSTS.removeIf(g -> now - g.born() > g.life());
@@ -198,13 +205,15 @@ public final class DragonWind {
             return;
         }
         int w = graphics.guiWidth(), h = graphics.guiHeight();
-        graphics.fill(0, 0, w, h, argb(0.07f * fade, 0xFF9A30));
+        int wash = mix(0xFF9A30, 0xC8EC6A, green);
+        int edge = mix(0xB0480E, 0x4E8A20, green);
+        graphics.fill(0, 0, w, h, argb((0.07f - 0.015f * green) * fade, wash));
         // Vignette: burnt orange getting stronger toward the edges, in thin bands.
         int bands = 18;
         int depthX = Math.max(1, w / 5), depthY = Math.max(1, h / 4);
         for (int i = 0; i < bands; i++) {
             float k = 1 - (float) i / bands;
-            int color = argb(0.022f * k * k * fade, 0xB0480E);
+            int color = argb((0.022f - 0.006f * green) * k * k * fade, edge);
             int x = depthX * i / bands, y = depthY * i / bands;
             int x2 = depthX * (i + 1) / bands, y2 = depthY * (i + 1) / bands;
             graphics.fill(x, 0, x2, h, color);
@@ -212,6 +221,13 @@ public final class DragonWind {
             graphics.fill(0, y, w, y2, color);
             graphics.fill(0, h - y2, w, h - y, color);
         }
+    }
+
+    private static int mix(int a, int b, float t) {
+        int r = (int) Mth.lerp(t, (a >> 16) & 255, (b >> 16) & 255);
+        int g = (int) Mth.lerp(t, (a >> 8) & 255, (b >> 8) & 255);
+        int bl = (int) Mth.lerp(t, a & 255, b & 255);
+        return (r << 16) | (g << 8) | bl;
     }
 
     private static int argb(float alpha, int rgb) {

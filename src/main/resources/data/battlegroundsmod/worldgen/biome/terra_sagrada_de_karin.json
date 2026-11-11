@@ -1,14 +1,14 @@
 {
   "has_precipitation": false,
-  "temperature": 0.95,
+  "temperature": 0.8,
   "downfall": 0.0,
   "effects": {
-    "sky_color": 15320430,
-    "fog_color": 16047526,
-    "water_color": 3126998,
+    "sky_color": 7128300,
+    "fog_color": 14873818,
+    "water_color": 4176088,
     "water_fog_color": 1071210,
-    "grass_color": 5227066,
-    "foliage_color": 4173358,
+    "grass_color": 10277450,
+    "foliage_color": 9095996,
     "mood_sound": {
       "block_search_extent": 8,
       "offset": 2.0,
@@ -96,11 +96,9 @@
     ],
     [
       "minecraft:glow_lichen",
-      "minecraft:trees_jungle",
-      "minecraft:flower_warm",
-      "minecraft:patch_grass_jungle",
-      "minecraft:patch_sugar_cane",
-      "minecraft:vines"
+      "battlegroundsmod:puffy_tree_karin",
+      "minecraft:flower_default",
+      "minecraft:patch_grass_forest"
     ],
     [
       "minecraft:freeze_top_layer"

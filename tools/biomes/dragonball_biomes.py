@@ -54,11 +54,12 @@ biome("picos_do_dragao", 1.0, 0xE3B65E, 0xF0D29A, 0x2FB6D6, 0x10586A, 0x8FBF4E, 
                ["minecraft:patch_grass_badlands", "minecraft:trees_savanna", "minecraft:patch_dead_bush_badlands"]),
       music="minecraft:music.overworld.badlands")
 # Terra Sagrada de Karin: the dense forest where Korin's tower stands (Stark 2026-11-11: "aquela floresta densa, que é
-# onde fica a Torre do Karin"). Jungle trees and vines; a pillar now and then breaking out of the canopy.
-biome("terra_sagrada_de_karin", 0.95, SKY, FOG, 0x2FB6D6, 0x10586A, 0x4FC23A, 0x3FAE2E,
+# onde fica a Torre do Karin"; his frames of the anime: a turquoise sky going pale mint at the horizon over a sea of round
+# puffy crowns in light yellow-green). A temperate forest, not a jungle: the puffy trees (world/PuffyTreeFeature), close
+# together, flowers and grass under them, a pillar now and then breaking out of the canopy.
+biome("terra_sagrada_de_karin", 0.8, 0x6CC4EC, 0xE2F4DA, 0x3FB8D8, 0x10586A, 0x9CD24A, 0x8ACB3C,
       features(["battlegroundsmod:dragon_pillar_forest"],
-               ["minecraft:trees_jungle", "minecraft:flower_warm", "minecraft:patch_grass_jungle",
-                "minecraft:patch_sugar_cane", "minecraft:vines"]))
+               ["battlegroundsmod:puffy_tree_karin", "minecraft:flower_default", "minecraft:patch_grass_forest"]))
 biome("deserto_vermelho", 2.0, 0xEDB95C, 0xF6D79A, 0x3FA9C9, 0x10586A, 0x9E9E4E, 0x9E8E3E,
       features(["battlegroundsmod:dragon_pillar_desert"],
                ["minecraft:patch_dead_bush_badlands", "minecraft:patch_cactus_decorated"], ["minecraft:ore_gold_extra"]),
@@ -78,6 +79,19 @@ for name, chance in (("plains", 3), ("peaks", 2), ("desert", 4), ("forest", 7)):
             {"type": "minecraft:heightmap", "heightmap": "WORLD_SURFACE_WG"},
             {"type": "minecraft:biome"}]}, f, indent=2)
         f.write("\n")
+
+# The puffy trees: close together, on dry ground only.
+with open(f"{R}/worldgen/configured_feature/puffy_tree.json", "w") as f:
+    json.dump({"type": "battlegroundsmod:puffy_tree", "config": {}}, f, indent=2)
+    f.write("\n")
+with open(f"{R}/worldgen/placed_feature/puffy_tree_karin.json", "w") as f:
+    json.dump({"feature": "battlegroundsmod:puffy_tree", "placement": [
+        {"type": "minecraft:count", "count": {"type": "minecraft:uniform", "min_inclusive": 7, "max_inclusive": 11}},
+        {"type": "minecraft:in_square"},
+        {"type": "minecraft:surface_water_depth_filter", "max_water_depth": 0},
+        {"type": "minecraft:heightmap", "heightmap": "OCEAN_FLOOR"},
+        {"type": "minecraft:biome"}]}, f, indent=2)
+    f.write("\n")
 
 # Which biomes are the Dragon Ball universe's (universe/UniverseBiomes).
 os.makedirs(f"{R}/tags/worldgen/biome", exist_ok=True)
