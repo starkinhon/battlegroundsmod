@@ -89,6 +89,9 @@ public class BattlegroundsModClient {
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.LeafForestFx::onRenderLevel);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.LeafForestFx::onClientTick);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.LeafForestFx::onFog);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.DeathForestFx::onRenderLevel);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.DeathForestFx::onClientTick);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.DeathForestFx::onFog);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.CreativeSubTabs::onInit);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.CreativeSubTabs::onRenderPre);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.CreativeSubTabs::onRenderPost);
@@ -251,6 +254,8 @@ public class BattlegroundsModClient {
                 com.starkinhon.battlegroundsmod.client.fx.DragonWind::renderGrade);
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "leaf_forest_grade"),
                 com.starkinhon.battlegroundsmod.client.fx.LeafForestFx::renderGrade);
+        event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "death_forest_grade"),
+                com.starkinhon.battlegroundsmod.client.fx.DeathForestFx::renderGrade);
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "cutscene_bars"), GrabCutscene::renderGui);
         // The Duelo de Expansões: its title, the minigame and the result (over the HUD, which the duel hides).
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "expansion_duel"),

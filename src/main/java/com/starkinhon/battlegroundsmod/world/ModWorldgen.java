@@ -60,9 +60,13 @@ public final class ModWorldgen {
     // (worldgen/placed_feature/leaf_forest; LeafTreeGen).
     public static final Supplier<LeafForestFeature> LEAF_FOREST = FEATURES.register("leaf_forest",
             () -> new LeafForestFeature(NoneFeatureConfiguration.CODEC));
+    // The Floresta da Morte's woods, mushrooms, flowers, pools and ground (DeathForestFeature).
+    public static final Supplier<DeathForestFeature> DEATH_FOREST = FEATURES.register("death_forest",
+            () -> new DeathForestFeature(NoneFeatureConfiguration.CODEC));
 
     // The Naruto biomes of the normal overworld (put there by NarutoRegion).
     public static final ResourceKey<Biome> FLORESTA_DA_FOLHA = biome("floresta_da_folha");
+    public static final ResourceKey<Biome> FLORESTA_DA_MORTE = biome("floresta_da_morte");
     public static final TagKey<Biome> NARUTO_BIOMES = TagKey.create(Registries.BIOME,
             ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "universe_naruto"));
 

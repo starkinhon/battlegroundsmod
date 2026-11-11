@@ -3,6 +3,9 @@
   "values": [
     "battlegroundsmod:folhas_da_folha",
     "battlegroundsmod:folhas_da_folha_clara",
-    "battlegroundsmod:folhas_da_folha_escura"
+    "battlegroundsmod:folhas_da_folha_escura",
+    "battlegroundsmod:folhas_da_morte",
+    "battlegroundsmod:folhas_da_morte_clara",
+    "battlegroundsmod:folhas_da_morte_escura"
   ]
 }

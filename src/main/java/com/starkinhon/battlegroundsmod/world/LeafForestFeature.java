@@ -117,7 +117,7 @@ public final class LeafForestFeature extends Feature<NoneFeatureConfiguration> {
 
     // The ground's first air block at a column, as the terrain is shaped before anything is built on it.
     // Keyed by the world's seed too: another world opened in the same game has other heights.
-    private static int height(ChunkGenerator generator, WorldGenLevel level, RandomState random, int seed, int x, int z) {
+    static int height(ChunkGenerator generator, WorldGenLevel level, RandomState random, int seed, int x, int z) {
         long key = (((long) x << 32) | (z & 0xFFFFFFFFL)) ^ ((long) seed * 0x9E3779B97F4A7C15L);
         try {
             return HEIGHTS.get(key, () -> generator.getBaseHeight(x, z, Heightmap.Types.OCEAN_FLOOR_WG, level, random));
