@@ -287,6 +287,44 @@ public final class ModPayloads {
         }
     }
 
+    // Server -> client: a Shenlong cutscene (universe/shenlong/ShenlongServer): who called him, where (the scene's
+    // origin and the way he faced), the game time it started, the wish once picked ("" before) and the game time it
+    // was picked (0 before). Sent at the start and again when the wish is picked; summoner -1 ends it.
+    public record ShenlongState(int summoner, double x, double y, double z, float yaw, long start, String wish, long picked)
+            implements CustomPacketPayload {
+        public static final Type<ShenlongState> TYPE = payloadType("shenlong_state");
+        public static final StreamCodec<io.netty.buffer.ByteBuf, ShenlongState> STREAM_CODEC = StreamCodec.of(
+                (buf, p) -> {
+                    buf.writeInt(p.summoner);
+                    buf.writeDouble(p.x);
+                    buf.writeDouble(p.y);
+                    buf.writeDouble(p.z);
+                    buf.writeFloat(p.yaw);
+                    buf.writeLong(p.start);
+                    ByteBufCodecs.STRING_UTF8.encode(buf, p.wish);
+                    buf.writeLong(p.picked);
+                },
+                buf -> new ShenlongState(buf.readInt(), buf.readDouble(), buf.readDouble(), buf.readDouble(), buf.readFloat(), buf.readLong(),
+                        ByteBufCodecs.STRING_UTF8.decode(buf), buf.readLong()));
+
+        @Override
+        public Type<ShenlongState> type() {
+            return TYPE;
+        }
+    }
+
+    // Client -> server: the wish picked on Shenlong's menu.
+    public record ShenlongWish(String wish) implements CustomPacketPayload {
+        public static final Type<ShenlongWish> TYPE = payloadType("shenlong_wish");
+        public static final StreamCodec<ByteBuf, ShenlongWish> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.STRING_UTF8, ShenlongWish::wish, ShenlongWish::new);
+
+        @Override
+        public Type<ShenlongWish> type() {
+            return TYPE;
+        }
+    }
+
     // Client -> server: the universe chosen on that screen (challenge/Universes.pick).
     public record PickUniverse(String id) implements CustomPacketPayload {
         public static final Type<PickUniverse> TYPE = payloadType("pick_universe");
@@ -1626,6 +1664,13 @@ public final class ModPayloads {
         registrar.playToServer(PickUniverse.TYPE, PickUniverse.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer player) {
                 com.starkinhon.battlegroundsmod.challenge.Universes.pick(player, payload.id());
+            }
+        }));
+        registrar.playToClient(ShenlongState.TYPE, ShenlongState.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> com.starkinhon.battlegroundsmod.client.fx.ShenlongScene.state(payload)));
+        registrar.playToServer(ShenlongWish.TYPE, ShenlongWish.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
+            if (context.player() instanceof ServerPlayer player) {
+                com.starkinhon.battlegroundsmod.universe.shenlong.ShenlongServer.pick(player, payload.wish());
             }
         }));
         registrar.playToClient(SyncProgress.TYPE, SyncProgress.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> payload.applyTo(context.player())));

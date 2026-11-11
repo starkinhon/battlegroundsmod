@@ -106,7 +106,10 @@ public final class Progression {
         }
         if (victim instanceof ServerPlayer dead && on(dead) && !com.starkinhon.battlegroundsmod.universe.DragonBallWorld.immortal(dead)) {
             PowerData data = dead.getData(ModAttachments.POWER);
+            float before = data.poder;
             data.poder = (float) Math.max(0, data.poder * (1 - ProgressionSpec.get().perdaMorte()));
+            // what "Reviver" (Shenlong's wish) gives back
+            com.starkinhon.battlegroundsmod.universe.shenlong.ShenlongServer.lostPoder(dead, before - data.poder);
         }
         ServerPlayer killer = killer(event);
         // In the challenge arenas the win pays (ChallengeArenas.arenaPoder), not the kill.

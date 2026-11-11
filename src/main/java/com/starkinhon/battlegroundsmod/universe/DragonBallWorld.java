@@ -5,34 +5,24 @@ import java.util.List;
 
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
-import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.ModItems;
 import com.starkinhon.battlegroundsmod.boss.SoulBoss;
 import com.starkinhon.battlegroundsmod.challenge.Universes;
 import com.starkinhon.battlegroundsmod.combat.Fx;
-import com.starkinhon.battlegroundsmod.power.PowerData;
 import com.starkinhon.battlegroundsmod.power.Powers;
 import com.starkinhon.battlegroundsmod.power.Progression;
 
-import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.HoverEvent;
-import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket;
-import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
-import net.minecraft.network.protocol.game.ClientboundSetTitlesAnimationPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.LightningBolt;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.monster.Enemy;
@@ -48,11 +38,9 @@ import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 //   Ribbon -> Cápsula Hoi-Poi;
 // - any enemy beaten there may drop an Esfera do Dragão the player is still missing (SubAlmas much more often, three
 //   times as often with the Radar in the inventory);
-// - with the seven, Shenlong grants one wish (clickable in the chat): a free trip (Cristais Multiversais), Senzus, or
-//   the rest of the current tier's bar at once.
+// - with the seven, Shenlong comes and grants one wish (universe/shenlong/ShenlongServer).
 public final class DragonBallWorld {
     public static final String UNIVERSE = "dragonball";
-    private static final String WISH_TAG = "souls_desejo_ate";
     private static final double BALL_CHANCE = 0.03;
     private static final double BALL_CHANCE_SUB = 0.3;
 
@@ -138,6 +126,13 @@ public final class DragonBallWorld {
             }
         }
         player.displayClientMessage(Component.translatable("message.battlegroundsmod.radar_missing", stars.toString()), false);
+        // the balls Shenlong scattered over the world: the nearest one's way and distance
+        int[] ball = com.starkinhon.battlegroundsmod.universe.shenlong.ShenlongServer.nearestScattered(player);
+        if (ball != null) {
+            Vec3 to = new Vec3(ball[0] + 0.5 - player.getX(), 0, ball[1] + 0.5 - player.getZ());
+            player.displayClientMessage(Component.translatable("message.battlegroundsmod.radar_esfera", ball[2], Math.round(to.horizontalDistance()),
+                    direction(to)), false);
+        }
         LivingEntity nearest = null;
         for (LivingEntity entity : player.serverLevel().getEntitiesOfClass(LivingEntity.class, player.getBoundingBox().inflate(96),
                 e -> e instanceof SoulBoss && e.isAlive())) {
@@ -170,90 +165,21 @@ public final class DragonBallWorld {
         return false;
     }
 
-    // With all seven: they fly off and Shenlong appears for one wish (60 s to choose, in the chat).
+    // With all seven: Shenlong comes (universe/shenlong/ShenlongServer, the cutscene and the wishes).
     public static void summon(ServerPlayer player) {
-        List<Item> missing = missing(player);
-        if (!missing.isEmpty()) {
-            player.displayClientMessage(Component.translatable("message.battlegroundsmod.esferas_faltam", 7 - missing.size()), true);
-            return;
-        }
-        for (var ball : ModItems.DRAGON_BALLS) {
-            int slot = player.getInventory().findSlotMatchingItem(new ItemStack(ball.get()));
-            if (slot >= 0) {
-                player.getInventory().removeItem(slot, 1);
-            }
-        }
-        ServerLevel level = player.serverLevel();
-        for (int i = 0; i < 3; i++) {
-            LightningBolt bolt = EntityType.LIGHTNING_BOLT.create(level);
-            if (bolt != null) {
-                bolt.moveTo(player.getX() + (i - 1) * 4, player.getY(), player.getZ() + 4);
-                bolt.setVisualOnly(true);
-                level.addFreshEntity(bolt);
-            }
-        }
-        player.addEffect(new MobEffectInstance(MobEffects.DARKNESS, 120, 0, false, false));
-        Fx.burst(level, ParticleTypes.HAPPY_VILLAGER, player.position().add(0, 6, 0), 200, 3, 0.2);
-        Fx.sound(level, player.position(), SoundEvents.ENDER_DRAGON_GROWL, 1f, 0.7f);
-        player.connection.send(new ClientboundSetTitlesAnimationPacket(10, 70, 20));
-        player.connection.send(new ClientboundSetTitleTextPacket(Component.literal("SHENLONG").withStyle(s -> s.withColor(0x3FD46A).withBold(true))));
-        player.connection.send(new ClientboundSetSubtitleTextPacket(Component.translatable("message.battlegroundsmod.shenlong_sub")));
-        com.starkinhon.battlegroundsmod.power.Achievements.grant(player, "shenlong");
-        player.getPersistentData().putLong(WISH_TAG, level.getGameTime() + 1200);
-        player.sendSystemMessage(Component.translatable("message.battlegroundsmod.shenlong_ask").withStyle(s -> s.withColor(0x3FD46A)));
-        for (String wish : new String[] {"poder", "alma", "rival", "imortal", "senzu", "viagem"}) {
-            Component line = Component.literal("  » ").append(Component.translatable("message.battlegroundsmod.wish." + wish))
-                    .withStyle(s -> s.withColor(ChatFormatting.YELLOW).withUnderlined(true)
-                            .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/soul desejo " + wish))
-                            .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
-                                    Component.translatable("message.battlegroundsmod.wish." + wish + ".desc"))));
-            player.sendSystemMessage(line);
-        }
-    }
-
-    private static int wish(ServerPlayer player, String wish) {
-        long until = player.getPersistentData().getLong(WISH_TAG);
-        if (until < player.serverLevel().getGameTime()) {
-            player.displayClientMessage(Component.translatable("message.battlegroundsmod.wish_none"), true);
-            return 0;
-        }
-        switch (wish) {
-            case "viagem" -> give(player, new ItemStack(ModItems.MULTIVERSAL_CRYSTAL.get(), 2));
-            case "senzu" -> give(player, new ItemStack(ModItems.SENZU.get(), 5));
-            case "poder" -> {
-                PowerData data = player.getData(ModAttachments.POWER);
-                double rest = Progression.cost(data.tier) - data.poder;
-                if (rest <= 0 || !Progression.on(player)) {
-                    give(player, new ItemStack(ModItems.SENZU.get(), 5));
-                } else {
-                    Progression.add(player, rest);
-                }
-            }
-            case "alma" -> give(player, wishedSoul(player));
-            case "rival" -> {
-                if (!rival(player)) {
-                    give(player, new ItemStack(ModItems.SENZU.get(), 5));
-                }
-            }
-            case "imortal" -> {
-                player.getPersistentData().putLong(IMMORTAL_TAG, player.serverLevel().getGameTime() + IMMORTAL_TICKS);
-                player.addEffect(new MobEffectInstance(MobEffects.REGENERATION, IMMORTAL_TICKS, 1, false, true));
-                player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, IMMORTAL_TICKS, 0, false, true));
-            }
-            default -> {
-                return 0;
-            }
-        }
-        player.getPersistentData().remove(WISH_TAG);
-        player.sendSystemMessage(Component.translatable("message.battlegroundsmod.shenlong_done").withStyle(s -> s.withColor(0x3FD46A)));
-        Fx.sound(player.serverLevel(), player.position(), SoundEvents.ENDER_DRAGON_FLAP, 1f, 0.6f);
-        Fx.burst(player.serverLevel(), ParticleTypes.END_ROD, player.position().add(0, 2, 0), 70, 1.5, 0.3);
-        return 1;
+        com.starkinhon.battlegroundsmod.universe.shenlong.ShenlongServer.summon(player);
     }
 
     // The more wishes (Stark 2026-11-10: "mais pedido pro Shenlong"): a soul, a rival, eternal life for a while.
     public static final String IMMORTAL_TAG = "souls_imortal_ate";
     private static final int IMMORTAL_TICKS = 20 * 60 * 10;
+
+    // "Vida eterna": 10 minutes of regeneration and resistance, and dying takes no Poder.
+    public static void eternalLife(ServerPlayer player) {
+        player.getPersistentData().putLong(IMMORTAL_TAG, player.serverLevel().getGameTime() + IMMORTAL_TICKS);
+        player.addEffect(new MobEffectInstance(MobEffects.REGENERATION, IMMORTAL_TICKS, 1, false, true));
+        player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, IMMORTAL_TICKS, 0, false, true));
+    }
 
     // Whether the "imortal" wish still holds: dying then loses no Poder (Progression).
     public static boolean immortal(ServerPlayer player) {
@@ -261,7 +187,7 @@ public final class DragonBallWorld {
     }
 
     // "Alma": the soul of a Dragon Ball character the player already beat in its arena (Kuririn's if none yet).
-    private static ItemStack wishedSoul(ServerPlayer player) {
+    public static ItemStack wishedSoul(ServerPlayer player) {
         var spec = com.starkinhon.battlegroundsmod.skill.ChallengeSpec.get();
         var universe = spec.universe("dragonball");
         List<String> beaten = new java.util.ArrayList<>();
@@ -285,7 +211,7 @@ public final class DragonBallWorld {
 
     // "Rival": a Dragon Ball character comes down to fight, out in the world (the next one the player has not beaten
     // in the book, else any of them).
-    private static boolean rival(ServerPlayer player) {
+    public static boolean rival(ServerPlayer player) {
         var spec = com.starkinhon.battlegroundsmod.skill.ChallengeSpec.get();
         var universe = spec.universe("dragonball");
         if (universe == null || universe.desafios().isEmpty()) {
@@ -316,16 +242,14 @@ public final class DragonBallWorld {
         return entity != null;
     }
 
-    private static void give(ServerPlayer player, ItemStack stack) {
-        if (!player.getInventory().add(stack)) {
-            player.drop(stack, false);
-        }
-    }
-
-    // /soul desejo <poder|alma|rival|imortal|senzu|viagem>: the wish, clicked in the chat after calling Shenlong.
+    // /soul desejo <id>: the wish without the menu, only while Shenlong's menu is up.
     public static LiteralArgumentBuilder<CommandSourceStack> command() {
         return Commands.literal("desejo")
                 .then(Commands.argument("desejo", StringArgumentType.word())
-                        .executes(context -> wish(context.getSource().getPlayerOrException(), StringArgumentType.getString(context, "desejo"))));
+                        .executes(context -> {
+                            com.starkinhon.battlegroundsmod.universe.shenlong.ShenlongServer.pick(context.getSource().getPlayerOrException(),
+                                    StringArgumentType.getString(context, "desejo"));
+                            return 1;
+                        }));
     }
 }

@@ -74,6 +74,12 @@ public final class FxShaders {
     static ShaderInstance sdPano;
     // The Esferas do Dragão (DragonBallRenderer), the ball of the Shenlong cutscene.
     static ShaderInstance dball;
+    // The Shenlong cutscene (ShenlongScene): the preview's shaders (forja/shenlong/glsl.js).
+    static ShaderInstance shenBody;
+    static ShaderInstance shenGlow;
+    static ShaderInstance shenSky;
+    static ShaderInstance shenGround;
+    static ShaderInstance shenBolt;
 
     private static Boolean irisPresent;
 
@@ -174,6 +180,16 @@ public final class FxShaders {
             register(event, "souls_dball", DefaultVertexFormat.NEW_ENTITY, s -> dball = s);
         } catch (Exception e) {
             BattlegroundsMod.LOGGER.error("Could not load the Dragon Ball shader", e);
+        }
+        // On their own: without them Shenlong's cutscene doesn't draw (the wish still happens, by the menu).
+        try {
+            register(event, "souls_shen_body", DefaultVertexFormat.NEW_ENTITY, s -> shenBody = s);
+            register(event, "souls_shen_glow", DefaultVertexFormat.NEW_ENTITY, s -> shenGlow = s);
+            register(event, "souls_shen_sky", DefaultVertexFormat.POSITION, s -> shenSky = s);
+            register(event, "souls_shen_ground", DefaultVertexFormat.POSITION, s -> shenGround = s);
+            register(event, "souls_shen_bolt", DefaultVertexFormat.POSITION_TEX, s -> shenBolt = s);
+        } catch (Exception e) {
+            BattlegroundsMod.LOGGER.error("Could not load the Shenlong shaders", e);
         }
         // On its own: without it the duel still plays, just without its sky.
         try {
