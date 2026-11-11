@@ -98,10 +98,8 @@ public final class LuffyMoves {
 
     static void launch(ServerLevel level, LivingEntity caster, LivingEntity target, Vec3 velocity) {
         boolean boss = target instanceof SoulBoss b && b.isBoss();
-        Vec3 v = boss ? velocity.multiply(0.35, 0.5, 0.35) : velocity;
-        if (k(caster) > 1.5) {
-            v = v.scale(2);
-        }
+        Vec3 base = boss ? velocity.multiply(0.35, 0.5, 0.35) : velocity;
+        Vec3 v = k(caster) > 1.5 ? base.scale(2) : base;
         target.setDeltaMovement(v);
         target.hurtMarked = true;
         Tasks.later(1, () -> {
