@@ -282,6 +282,18 @@ public final class SubNet {
     public static final int SLAM = 123;
     // Overtime's gold energy: id = the entity, a = ticks (0 stops it).
     public static final int GOLD_AURA = 124;
+    // Choso (kit of 2026-11-11). A pool of his blood on the ground (timed): id = the pool, pos = on the ground, a = ticks,
+    // b = radius.
+    public static final int BLOOD_POOL = 125;
+    // A sustained Piercing Blood that sweeps (stream): id = the beam, pos = between his palms, dir = to its end, a = width.
+    public static final int BLOOD_SWEEP = 126;
+    // The Perfurante Maximo's charge (stream): id = Choso, a = how far (0..1): his blood leaves the body in drops that
+    // spiral into the ball between his palms.
+    public static final int MAX_CHARGE = 127;
+    // Blood spikes bursting out of the ground at pos: a = radius, b = how many, c = how tall.
+    public static final int GROUND_SPIKES = 128;
+    // The Blood Meteorite in flight (stream): id = the meteorite, pos = where it is, a = radius.
+    public static final int METEOR = 129;
     // Nobara. A nail (stream): id = its own, pos = its tip, dir = where it points, a = 0 flying, 1 stuck.
     public static final int NAIL = 130;
     // Resonance's spike of energy at pos along dir: a = size.

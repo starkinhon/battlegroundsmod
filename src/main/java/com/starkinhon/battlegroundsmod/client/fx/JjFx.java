@@ -115,7 +115,7 @@ final class JjFx {
 
     private static boolean stream(int kind) {
         return switch (kind) {
-            case SubNet.DIV_AURA, SubNet.DIV_MARK, SubNet.CUT_LOOP, SubNet.BF_RING, SubNet.GUARD, SubNet.DASH_TRAIL, SubNet.BLOOD_BALL, SubNet.BLOOD_ORBS, SubNet.ROPE,
+            case SubNet.DIV_AURA, SubNet.DIV_MARK, SubNet.CUT_LOOP, SubNet.BLOOD_SWEEP, SubNet.MAX_CHARGE, SubNet.METEOR, SubNet.BF_RING, SubNet.GUARD, SubNet.DASH_TRAIL, SubNet.BLOOD_BALL, SubNet.BLOOD_ORBS, SubNet.ROPE,
                     SubNet.GROUND_MARK, SubNet.NAIL, SubNet.DOLL, SubNet.SIMPLE_DOMAIN -> true;
             default -> false;
         };
@@ -124,7 +124,7 @@ final class JjFx {
     // Kinds that last a while on one message, following an entity (a = ticks, 0 stops).
     private static boolean timed(int kind) {
         return switch (kind) {
-            case SubNet.SOUL, SubNet.SCALE, SubNet.RATIO, SubNet.GOLD_AURA, SubNet.SEAL_MARKS, SubNet.HOLD_RINGS, SubNet.COUGH, SubNet.SLEEP -> true;
+            case SubNet.SOUL, SubNet.BLOOD_POOL, SubNet.SCALE, SubNet.RATIO, SubNet.GOLD_AURA, SubNet.SEAL_MARKS, SubNet.HOLD_RINGS, SubNet.COUGH, SubNet.SLEEP -> true;
             default -> false;
         };
     }
@@ -183,6 +183,7 @@ final class JjFx {
             case SubNet.DIVERGENT -> f.a + 42;
             case SubNet.INK_BURST -> 20;
             case SubNet.CUT_SNAP -> 21;
+            case SubNet.GROUND_SPIKES -> 41;
             case SubNet.ARC -> 8;
             case SubNet.CRACKS -> 70;
             case SubNet.BLOOD_BEAM -> 30;
@@ -209,6 +210,9 @@ final class JjFx {
         return switch (f.kind) {
             case SubNet.DIV_AURA, SubNet.DIV_MARK, SubNet.GUARD -> 5;
             case SubNet.CUT_LOOP -> 3;
+            case SubNet.BLOOD_SWEEP -> 6;
+            case SubNet.MAX_CHARGE, SubNet.METEOR -> 3;
+            case SubNet.BLOOD_POOL -> 12;
             case SubNet.BF_RING -> 2;
             case SubNet.ROPE -> 6;
             case SubNet.SIMPLE_DOMAIN -> 10;
@@ -252,6 +256,7 @@ final class JjFx {
                 }
                 case SubNet.ARC -> arc(f, age);
                 case SubNet.CUT_SNAP -> cutSnap(f, age);
+                case SubNet.GROUND_SPIKES -> groundSpikes(f, age);
                 case SubNet.CRACKS -> {
                     Vector3f c = rel(f.pos);
                     crackRing(c, age, f.a, 5 + (int) f.b, Math.max(5, (int) f.b), 0.9f * (1 - smooth((age - 46) / 22)));
@@ -309,6 +314,10 @@ final class JjFx {
                 case SubNet.DIV_MARK -> divMark(f, age, partial, out);
                 case SubNet.CUT_LOOP -> cutLoop(f, age, partial, out);
                 case SubNet.SOUL -> soul(f, age, partial, out);
+                case SubNet.BLOOD_POOL -> bloodPool(f, age, out);
+                case SubNet.BLOOD_SWEEP -> bloodSweep(f, age, out);
+                case SubNet.MAX_CHARGE -> maxCharge(f, age, partial, out);
+                case SubNet.METEOR -> meteor(f, age, out);
                 case SubNet.BF_RING -> bfRing(f, age, out);
                 case SubNet.GUARD -> guard(f, partial, out);
                 case SubNet.DASH_TRAIL -> dashTrail(f, partial, out);
@@ -1064,6 +1073,156 @@ final class JjFx {
                 }
                 prev = p;
             }
+        }
+    }
+
+    // ---------- Choso (kit of 2026-11-11) ----------
+
+    // A pool of his blood: an irregular puddle (a few overlapping blobs, each its own size and offset), dark edge,
+    // red body, a thin gloss; it spreads in fast and shrinks as it dries.
+    private static void bloodPool(Fx f, float age, float out) {
+        Vector3f c = add(rel(f.pos), 0, 0.03f, 0);
+        float life = Math.max(1, f.a);
+        float grow = easeOut(Math.min(1, age / 7));
+        float dry = 1 - smooth((age - (life - 30)) / 30);
+        float r = f.b * grow * (0.65f + 0.35f * dry);
+        if (r <= 0.02f) {
+            return;
+        }
+        for (int i = 0; i < 4; i++) {
+            float ang = hash(f.id, i, 1) * Mth.TWO_PI;
+            float d = i == 0 ? 0 : r * (0.35f + 0.3f * hash(f.id, i, 2));
+            float s = r * (i == 0 ? 1 : 0.45f + 0.35f * hash(f.id, i, 3));
+            Vector3f p = add(c, Mth.cos(ang) * d, 0.001f * i, Mth.sin(ang) * d);
+            dsk(p, UP, s * 2.15f, FxDraw.SOFT, 0.95f, BLOOD_D, out, false);
+            dsk(add(p, 0, 0.004f, 0), UP, s * 1.8f, FxDraw.SOFT, 0.95f, BLOOD, out, false);
+        }
+        dsk(add(c, r * 0.2f, 0.01f, -r * 0.15f), UP, r * 0.5f, FxDraw.SOFT, 0.5f, GLOSS, 0.35f * out * dry, false);
+    }
+
+    // A Piercing Blood that pours for a while and sweeps: one wavy line of liquid blood, thin at the palms, droplets falling
+    // off it and a spray where it ends. Thick (a > 0.5) is the Perfurante Maximo.
+    private static void bloodSweep(Fx f, float age, float out) {
+        Vector3f from = rel(f.pos);
+        Vector3f d = vec(f.dir);
+        float len = d.length();
+        if (len < 0.1f) {
+            return;
+        }
+        Vector3f dir = new Vector3f(d).div(len);
+        Vector3f[] bs = basis(dir);
+        float w = f.a * (0.85f + 0.15f * Mth.sin(age * 2.1f));
+        boolean big = f.a > 0.5f;
+        int n = big ? 28 : 16;
+        Vector3f last = new Vector3f(from);
+        for (int i = 1; i <= n; i++) {
+            float u = i / (float) n;
+            float s = u * len;
+            float wob = (big ? 0.12f : 0.03f) * Mth.sin(s * 0.9f - age * 1.7f) + (big ? 0.06f : 0.015f) * Mth.sin(s * 2.3f + age * 2.6f + 1);
+            Vector3f p = at(at(at(from, dir, s), bs[0], wob), bs[1], wob * 0.6f);
+            float wi = w * Math.min(1, u * (big ? 10 : 6) + 0.25f);
+            bloodLine(last, p, wi, out, big ? 0.12f : 0.1f);
+            last = p;
+        }
+        int drops = big ? 26 : 10;
+        for (int i = 0; i < drops; i++) {
+            float ph = DbFx.fract(age * (0.05f + 0.04f * hash(f.id, i, 2)) + hash(f.id, i, 3));
+            Vector3f p = add(at(from, dir, len * hash(f.id, i, 1)), 0, -ph * ph * 2.2f, 0);
+            bb(p, (0.05f + 0.06f * hash(f.id, i, 4)) * (big ? 2 : 1), 0, FxDraw.SOFT, 0.95f, BLOOD, out * (1 - ph * 0.6f), false);
+        }
+        Vector3f end = at(from, dir, len);
+        for (int i = 0; i < (big ? 12 : 6); i++) {
+            float ph = DbFx.fract(age * 0.09f + hash(f.id + 7, i, 1));
+            Vector3f sd = sphere(f.id + (int) Math.floor(age * 0.09f + hash(f.id + 7, i, 1)) * 13, i).add(new Vector3f(dir).mul(-0.6f)).normalize();
+            Vector3f p = add(at(end, sd, ph * (big ? 2.4f : 1.2f)), 0, -ph * ph * 0.8f, 0);
+            bb(p, (big ? 0.18f : 0.08f) * (1 - ph * 0.5f), 0, FxDraw.SOFT, 0.95f, BLOOD, out * (1 - ph), false);
+        }
+        if (big && DbFx.pass) {
+            warp(at(from, dir, 1.2f), 1.4f, 0.4f * out, 0, age, null);
+        }
+    }
+
+    // The Perfurante Maximo's charge: drops of his blood leave the body, each with its own path, size and pace, and
+    // spiral into the ball between his palms (no aura: Stark, 2026-11-11).
+    private static void maxCharge(Fx f, float age, float partial, float out) {
+        LivingEntity e = living(f.id);
+        if (e == null) {
+            return;
+        }
+        Body b = body(e, partial);
+        Vector3f c = rel(f.pos);
+        Vector3f base = rel(b.feet);
+        float k = smooth(f.a * 3) * out;
+        for (int i = 0; i < 26; i++) {
+            float sp = 0.035f + 0.04f * hash(f.id, i, 1);
+            float s0 = DbFx.fract(age * sp + hash(f.id, i, 2));
+            if (hash(f.id, i, 9) * 0.6f > f.a + 0.2f) {
+                continue;
+            }
+            float a0 = hash(f.id, i, 3) * Mth.TWO_PI;
+            float y0 = (0.5f + 1.3f * hash(f.id, i, 4)) * (float) b.s();
+            float r0 = (0.35f + 0.4f * hash(f.id, i, 5)) * (float) b.s();
+            float turn = (hash(f.id, i, 6) < 0.5f ? -1 : 1) * (1.2f + 1.6f * hash(f.id, i, 7));
+            Vector3f p0 = dropAt(base, c, a0, y0, r0, turn, s0);
+            Vector3f p1 = dropAt(base, c, a0, y0, r0, turn, Math.max(0, s0 - 0.05f));
+            float wd = (0.03f + 0.03f * hash(f.id, i, 8)) * (1 - 0.5f * s0 * s0);
+            bloodLine(p1, p0, wd, k, 0);
+        }
+    }
+
+    private static Vector3f dropAt(Vector3f base, Vector3f c, float a0, float y0, float r0, float turn, float s) {
+        float e = s * s;
+        float ang = a0 + turn * s * 3.2f;
+        float rr = r0 * (1 - e);
+        return add(base, Mth.cos(ang) * rr, y0, Mth.sin(ang) * rr).lerp(c, e);
+    }
+
+    // Blood spikes out of the ground: each one its own height, width, lean and moment; they hold and then sink back.
+    private static void groundSpikes(Fx f, float age) {
+        if (DbFx.pass || age > 40) {
+            return;
+        }
+        Vector3f base = rel(f.pos);
+        int n = Math.max(1, (int) f.b);
+        for (int i = 0; i < n; i++) {
+            float delay = hash(f.id, i, 1) * 4;
+            float g = easeOut(clamp((age - delay) / 3, 0, 1)) * (1 - smooth((age - 26) / 12));
+            if (g <= 0.01f) {
+                continue;
+            }
+            float ang = hash(f.id, i, 2) * Mth.TWO_PI;
+            float d = f.a * (float) Math.sqrt(hash(f.id, i, 3));
+            Vector3f p = add(base, Mth.cos(ang) * d, -0.2f, Mth.sin(ang) * d);
+            float h = f.c * (0.45f + 0.75f * hash(f.id, i, 4)) * g;
+            float w = 0.1f + 0.14f * hash(f.id, i, 5);
+            Vector3f ax = v(Mth.cos(ang) * 0.5f * hash(f.id, i, 6), 1, Mth.sin(ang) * 0.5f * hash(f.id, i, 6)).normalize();
+            Vector3f mid = at(p, ax, h * 0.5f);
+            Vector3f tip = at(p, ax, h);
+            FxDraw.strip(new Vector3f[] {p, mid, tip}, new float[] {w * 1.25f, w * 0.7f, 0}, new float[] {0, 0.5f, 1}, FxDraw.SOLID, 0, BLOOD_D, 1, false);
+            FxDraw.strip(new Vector3f[] {p, mid, tip}, new float[] {w, w * 0.55f, 0}, new float[] {0, 0.5f, 1}, FxDraw.SOLID, 0, BLOOD_R, 1, false);
+            FxDraw.strip(new Vector3f[] {at(p, FxDraw.left(), w * 0.2f), at(mid, FxDraw.left(), w * 0.12f), tip}, new float[] {w * 0.2f, w * 0.1f, 0},
+                    new float[] {0, 0.5f, 1}, FxDraw.SOLID, 0, GLOSS, 0.8f, false);
+        }
+        if (age < 10) {
+            bloodSplash(add(base, 0, 0.2f, 0), age, f.id, 10, f.a / 1.4f, UP);
+        }
+    }
+
+    // The Blood Meteorite: a ball of hardened blood (dark, dull, a few cracks of red) with a short dark trail.
+    private static void meteor(Fx f, float age, float out) {
+        Vector3f p = rel(f.pos);
+        float r = f.a;
+        bb(p, r * 2.3f, age * 0.03f, FxDraw.SOFT, 0.97f, BLOOD_D, out, false);
+        bb(p, r * 1.7f, -age * 0.02f, FxDraw.SOFT, 0.95f, new float[] {0.3f, 0.02f, 0.04f}, out, false);
+        for (int i = 0; i < 4; i++) {
+            Vector3f a = at(p, sphere(f.id, i), r * 0.55f);
+            Vector3f b = at(p, sphere(f.id + 5, i), r * 0.6f);
+            rib(a, b, 0.03f, FxDraw.BEAM, 0.9f, BLOOD_R, 0.7f * out, false);
+        }
+        Vec3[] tr = f.trail.toArray(new Vec3[0]);
+        for (int i = 1; i < tr.length; i++) {
+            float u = i / (float) tr.length;
+            bloodLine(rel(tr[i - 1]), rel(tr[i]), r * 0.5f * u, out * u, 0);
         }
     }
 
