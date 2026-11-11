@@ -291,13 +291,12 @@ public final class DragonWind {
         Vec3 sun = sunDir(mc, partial);
         float three = Mth.lerp(partial, lastNamek, namek);
         if (three > 0.001f) {
-            // Namek's three suns: the sky's own one with a halo, and two more of ours, each a white-hot disc in a
+            // Namek's suns (Stark: the Mine's own sun is Earth's, an intruder there; LevelRendererMixin hides it): two of ours, each a white-hot disc in a
             // golden glow, at their fixed places in the sky (it's always day there).
             PoseStack.Pose pose = skyPose;
             MultiBufferSource.BufferSource buf = mc.renderBuffers().bufferSource();
             VertexConsumer o = buf.getBuffer(FxRenderTypes.AREA);
             // small soft glows (Stark: the big ones came out as a huge banded blot in the corner of the screen)
-            halo(o, pose, sun, 0.4f * three, 15, 1f, 0.98f, 0.86f, false);
             halo(o, pose, dir(40, 34), 0.75f * three, 13, 1f, 0.97f, 0.84f, true);
             halo(o, pose, dir(205, 22), 0.65f * three, 11, 1f, 0.96f, 0.82f, true);
             buf.endBatch(FxRenderTypes.AREA);
