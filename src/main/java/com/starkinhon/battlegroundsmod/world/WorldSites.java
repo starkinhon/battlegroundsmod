@@ -143,6 +143,10 @@ public final class WorldSites {
         if (biome.is(ModWorldgen.PICOS_DO_DRAGAO)) {
             return BUU;
         }
+        if (biome.is(ModWorldgen.MONTANHAS_PAOZU)) {
+            // Goku's house (and grandpa Gohan's) in the mountains where he grew up.
+            return roll % 2 == 0 ? GOKU : null;
+        }
         if (biome.is(ModWorldgen.MAR_DO_SUL)) {
             // The Kame House on its own palm island, in about a third of the Mar do Sul's cells.
             return roll % 3 == 0 ? KAME : null;

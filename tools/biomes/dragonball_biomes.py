@@ -92,6 +92,15 @@ biome("norte_gelado", -0.6, 0x9CC6EE, 0xDCEAF6, 0x3D57D6, 0x050533, 0x80B497, 0x
       features(["battlegroundsmod:ice_crystal"], ["battlegroundsmod:snow_pine"]),
       music="minecraft:music.overworld.frozen_peaks", snow=True)
 
+# Montanhas Paozu (Stark 2026-11-11: "você tem que fazer um diferencial foda, seja o ambiente, seja a geração de
+# terreno... pra não ser parecido com uma planície do Mine"): Goku's childhood mountains, the green hills with a forest of
+# steep karst spires rising out of them like Guilin's (world/KarstSpireFeature: rock columns, moss, vines, a tree on the
+# crown, waterfalls), puffy trees between them, lush grass; clear blue sky and (client/fx/DragonWind) mist lying in the
+# valleys between the spires, thicker in the morning and at night.
+biome("montanhas_paozu", 0.7, 0x86CDF2, 0xE4F2E2, 0x3FC4E0, 0x0F5A6E, 0x6CC64A, 0x4DB43A,
+      features(["battlegroundsmod:karst_spire"],
+               ["battlegroundsmod:puffy_tree_paozu", "minecraft:flower_default", "minecraft:patch_grass_forest"]))
+
 # The pillars: one feature, three placements (how often per biome).
 os.makedirs(f"{R}/worldgen/configured_feature", exist_ok=True)
 os.makedirs(f"{R}/worldgen/placed_feature", exist_ok=True)
@@ -184,11 +193,33 @@ with open(f"{R}/worldgen/placed_feature/snow_pine.json", "w") as f:
         {"type": "minecraft:biome"}]}, f, indent=2)
     f.write("\n")
 
+# The Paozu spires, close together (a forest of stone towers), and a few puffy trees between them.
+with open(f"{R}/worldgen/configured_feature/karst_spire.json", "w") as f:
+    json.dump({"type": "battlegroundsmod:karst_spire", "config": {}}, f, indent=2)
+    f.write("\n")
+with open(f"{R}/worldgen/placed_feature/karst_spire.json", "w") as f:
+    json.dump({"feature": "battlegroundsmod:karst_spire", "placement": [
+        {"type": "minecraft:count", "count": {"type": "minecraft:weighted_list", "distribution": [
+            {"weight": 3, "data": 0}, {"weight": 4, "data": 1}, {"weight": 1, "data": 2}]}},
+        {"type": "minecraft:in_square"},
+        {"type": "minecraft:heightmap", "heightmap": "OCEAN_FLOOR_WG"},
+        {"type": "minecraft:biome"}]}, f, indent=2)
+    f.write("\n")
+with open(f"{R}/worldgen/placed_feature/puffy_tree_paozu.json", "w") as f:
+    json.dump({"feature": "battlegroundsmod:puffy_tree", "placement": [
+        {"type": "minecraft:count", "count": {"type": "minecraft:uniform", "min_inclusive": 0, "max_inclusive": 3}},
+        {"type": "minecraft:in_square"},
+        {"type": "minecraft:surface_water_depth_filter", "max_water_depth": 0},
+        {"type": "minecraft:heightmap", "heightmap": "OCEAN_FLOOR"},
+        {"type": "minecraft:biome"}]}, f, indent=2)
+    f.write("\n")
+
 # Which biomes are the Dragon Ball universe's (universe/UniverseBiomes).
 os.makedirs(f"{R}/tags/worldgen/biome", exist_ok=True)
 with open(f"{R}/tags/worldgen/biome/universe_dragonball.json", "w") as f:
     json.dump({"values": ["battlegroundsmod:terras_do_dragao", "battlegroundsmod:picos_do_dragao",
                           "battlegroundsmod:deserto_vermelho", "battlegroundsmod:terra_sagrada_de_karin", "battlegroundsmod:mar_do_sul",
-                          "battlegroundsmod:norte_gelado"]}, f, indent=2)
+                          "battlegroundsmod:norte_gelado",
+                          "battlegroundsmod:montanhas_paozu"]}, f, indent=2)
     f.write("\n")
 print("ok")

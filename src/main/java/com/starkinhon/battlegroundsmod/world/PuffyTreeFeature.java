@@ -29,9 +29,11 @@ public final class PuffyTreeFeature extends Feature<NoneFeatureConfiguration> {
 
     @Override
     public boolean place(FeaturePlaceContext<NoneFeatureConfiguration> context) {
-        WorldGenLevel level = context.level();
-        RandomSource random = context.random();
-        BlockPos foot = context.origin();
+        return grow(context.level(), context.origin(), context.random());
+    }
+
+    // A puffy tree at a foot, if the ground there is dirt (also used on top of the Paozu spires).
+    public static boolean grow(WorldGenLevel level, BlockPos foot, RandomSource random) {
         BlockState ground = level.getBlockState(foot.below());
         if (!ground.is(BlockTags.DIRT) || !level.getBlockState(foot).canBeReplaced() || !level.getFluidState(foot).isEmpty()) {
             return false;

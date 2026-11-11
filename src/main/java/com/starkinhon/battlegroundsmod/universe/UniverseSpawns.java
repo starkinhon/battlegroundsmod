@@ -134,6 +134,10 @@ public final class UniverseSpawns {
         if (biome.is(com.starkinhon.battlegroundsmod.world.ModWorldgen.DESERTO_VERMELHO)) {
             return List.of("saibaman", "saibaman", "bandido_deserto", "raptor");
         }
+        if (biome.is(com.starkinhon.battlegroundsmod.world.ModWorldgen.MONTANHAS_PAOZU)) {
+            // Goku's mountains: the dinosaurs he grew up hunting
+            return List.of("raptor", "raptor", "tiranossauro", "tiranossauro");
+        }
         if (biome.is(com.starkinhon.battlegroundsmod.world.ModWorldgen.NORTE_GELADO)) {
             // the frozen north: the yeti and the Red Ribbon (its Muscle Tower stood in the snow)
             return List.of("yeti", "yeti", "soldado_red_ribbon", "soldado_red_ribbon");

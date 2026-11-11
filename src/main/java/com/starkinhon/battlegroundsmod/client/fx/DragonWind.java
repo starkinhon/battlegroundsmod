@@ -31,7 +31,9 @@ import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 //   the sky) and a glare over the screen when the player looks toward it;
 // - in the Norte Gelado (Stark: "pode meter bala"): blizzards that build up and die down on their own, the wind turning
 //   to driven snow and the white closing in, a cold blue grade with frost at the screen's edges, and at night the aurora:
-//   curtains of green light with violet tops waving slowly across the sky, rays running along them.
+//   curtains of green light with violet tops waving slowly across the sky, rays running along them;
+// - in the Montanhas Paozu: mist lying in the valleys between the stone spires, sheets of it at a few heights drifting
+//   slowly, thick and thin by a moving pattern of its own, thicker at dawn and at night; the spires rise through it.
 public final class DragonWind {
     private static final int MAX_GUSTS = 46;
     private static final int SAMPLES = 22;
@@ -58,6 +60,9 @@ public final class DragonWind {
     // 1 in the Norte Gelado.
     private static float cold;
     private static float lastCold;
+    // 1 in the Montanhas Paozu.
+    private static float hills;
+    private static float lastHills;
 
     private DragonWind() {
     }
@@ -68,6 +73,7 @@ public final class DragonWind {
         lastDesert = desert;
         lastSea = sea;
         lastCold = cold;
+        lastHills = hills;
         if (mc.level == null || mc.player == null) {
             GUSTS.clear();
             strength = 0;
@@ -84,6 +90,7 @@ public final class DragonWind {
         desert = Mth.clamp(desert + (inside && biome.is(ModWorldgen.DESERTO_VERMELHO) ? 0.01f : -0.015f), 0, 1);
         sea = Mth.clamp(sea + (inside && biome.is(ModWorldgen.MAR_DO_SUL) ? 0.012f : -0.015f), 0, 1);
         cold = Mth.clamp(cold + (inside && biome.is(ModWorldgen.NORTE_GELADO) ? 0.01f : -0.015f), 0, 1);
+        hills = Mth.clamp(hills + (inside && biome.is(ModWorldgen.MONTANHAS_PAOZU) ? 0.01f : -0.015f), 0, 1);
         strength = Mth.clamp(strength + (inside ? 0.012f : -0.02f), 0, 1);
         long now = mc.level.getGameTime();
         GUSTS.removeIf(g -> now - g.born() > g.life());
@@ -168,6 +175,9 @@ public final class DragonWind {
             renderSunHalo(event);
             renderAurora(event);
             return;
+        }
+        if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS) {
+            renderMist(event);
         }
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS || GUSTS.isEmpty()) {
             return;
@@ -333,6 +343,72 @@ public final class DragonWind {
         buffers.endBatch(FxRenderTypes.AREA);
     }
 
+    // The Paozu's valley mist: three sheets a few blocks apart over the valley floor (the sea level up), each a grid around
+    // the player whose every corner takes its thickness from a few slow drifting waves, fading out near the eye (no wall
+    // of white in the face) and far away; whiter by day, blue-grey at night, thickest at dawn and in the dark.
+    private static void renderMist(RenderLevelStageEvent event) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null) {
+            return;
+        }
+        float partial = event.getPartialTick().getGameTimeDeltaPartialTick(false);
+        float power = Mth.lerp(partial, lastHills, hills) * Mth.lerp(partial, lastStrength, strength);
+        if (power <= 0.001f) {
+            return;
+        }
+        double now = mc.level.getGameTime() + partial;
+        Vec3 sun = sunDir(mc, partial);
+        // thick at dawn (sun low in the east) and at night, thinner at noon
+        float day = Mth.clamp((float) sun.y * 2.5f, 0, 1);
+        float dawn = (float) Math.max(0, 1 - Math.abs(sun.y) * 4) * (sun.x > 0 ? 1 : 0.4f);
+        float thick = power * (0.55f + 0.45f * (1 - day) + 0.5f * dawn);
+        float light = 0.35f + 0.65f * Mth.clamp((float) sun.y * 4 + 0.4f, 0, 1);
+        float r = 0.93f * light, g = 0.97f * light, b = 1f * light;
+        Vec3 camera = event.getCamera().getPosition();
+        PoseStack.Pose last = event.getPoseStack().last();
+        MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
+        VertexConsumer out = buffers.getBuffer(FxRenderTypes.AREA);
+        int cells = 36;
+        double size = 5;
+        double half = cells * size / 2;
+        double baseX = Math.floor(camera.x / size) * size - half, baseZ = Math.floor(camera.z / size) * size - half;
+        int sea = mc.level.getSeaLevel();
+        float[][] alpha = new float[cells + 1][cells + 1];
+        for (int layer = 0; layer < 3; layer++) {
+            double y = sea + 5 + layer * 5 + 1.5 * Math.sin(now / 900.0 + layer);
+            double drift = now * (0.012 + layer * 0.004);
+            for (int i = 0; i <= cells; i++) {
+                for (int j = 0; j <= cells; j++) {
+                    double x = baseX + i * size, z = baseZ + j * size;
+                    double n = Math.sin(x * 0.045 + drift + layer) * Math.sin(z * 0.038 - drift * 0.7 + layer * 2)
+                            + 0.5 * Math.sin((x + z) * 0.09 + drift * 1.3 + layer * 3)
+                            + 0.3 * Math.sin(x * 0.17 - z * 0.13 - drift * 2);
+                    float a = (float) Mth.clamp(n * 0.45 + 0.35, 0, 1);
+                    double dx = x - camera.x, dy = y - camera.y, dz = z - camera.z;
+                    double d = Math.sqrt(dx * dx + dy * dy + dz * dz);
+                    float nearFade = (float) Mth.clamp((d - 4) / 14, 0, 1);
+                    float farFade = (float) Mth.clamp((half - Math.sqrt(dx * dx + dz * dz)) / (half * 0.35), 0, 1);
+                    alpha[i][j] = a * a * nearFade * farFade * thick * (0.32f - layer * 0.07f);
+                }
+            }
+            for (int i = 0; i < cells; i++) {
+                for (int j = 0; j < cells; j++) {
+                    if (alpha[i][j] + alpha[i + 1][j] + alpha[i + 1][j + 1] + alpha[i][j + 1] < 0.004f) {
+                        continue;
+                    }
+                    float x0 = (float) (baseX + i * size - camera.x), x1 = (float) (x0 + size);
+                    float z0 = (float) (baseZ + j * size - camera.z), z1 = (float) (z0 + size);
+                    float yy = (float) (y - camera.y);
+                    out.addVertex(last, x0, yy, z0).setColor(r, g, b, alpha[i][j]);
+                    out.addVertex(last, x1, yy, z0).setColor(r, g, b, alpha[i + 1][j]);
+                    out.addVertex(last, x1, yy, z1).setColor(r, g, b, alpha[i + 1][j + 1]);
+                    out.addVertex(last, x0, yy, z1).setColor(r, g, b, alpha[i][j + 1]);
+                }
+            }
+        }
+        buffers.endBatch(FxRenderTypes.AREA);
+    }
+
     // One slice of a curtain, in two parts: the bright green foot (fading in from below) and the long fade to violet.
     private static void curtain(VertexConsumer out, PoseStack.Pose last, double az0, double el0, double top0, float a0,
             double az1, double el1, double top1, float a1) {
@@ -401,8 +477,9 @@ public final class DragonWind {
         float dry = Mth.lerp(partial, lastDesert, desert);
         float sunny = Mth.lerp(partial, lastSea, sea);
         float chill = Mth.lerp(partial, lastCold, cold);
-        int wash = mix(mix(mix(mix(0xFF9A30, 0xC8EC6A, green), 0xFF5E1A, dry), 0xFFE07A, sunny), 0x8CC4FF, chill);
-        int edge = mix(mix(mix(mix(0xB0480E, 0x4E8A20, green), 0x7A2006, dry), 0xC88A30, sunny), 0xEAF6FF, chill);
+        float lush = Mth.lerp(partial, lastHills, hills);
+        int wash = mix(mix(mix(mix(mix(0xFF9A30, 0xC8EC6A, green), 0xFF5E1A, dry), 0xFFE07A, sunny), 0x8CC4FF, chill), 0xB8F0C8, lush);
+        int edge = mix(mix(mix(mix(mix(0xB0480E, 0x4E8A20, green), 0x7A2006, dry), 0xC88A30, sunny), 0xEAF6FF, chill), 0x2E7050, lush);
         graphics.fill(0, 0, w, h, argb((0.07f - 0.015f * green + 0.035f * dry - 0.025f * sunny - 0.01f * chill) * fade, wash));
         // The glare of the tropical sun when the player looks toward it.
         Minecraft mc = Minecraft.getInstance();
