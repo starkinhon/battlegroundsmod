@@ -138,10 +138,10 @@ public final class MakimaFx {
                 if (a <= 0) {
                     EYES.remove(id);
                 } else {
+                    // {lit since, lit until, 0 hers / 1 obeying}: still lit, they stay lit from when they lit.
                     double[] e = EYES.get(id);
-                    double until = now + a;
-                    EYES.put(id, new double[] {e != null && e[0] > now ? e[1] : now, Math.max(until, e != null && e[1] == b ? 0 : 0), b});
-                    EYES.get(id)[1] = until;
+                    double since = e != null && e[1] > now ? e[0] : now;
+                    EYES.put(id, new double[] {since, Math.max(now + a, e != null && e[1] > now ? e[1] : 0), b});
                 }
             }
             case MkNet.X_CHAIN -> {
@@ -228,6 +228,15 @@ public final class MakimaFx {
             case MkNet.VOICE -> {
                 SHOTS.add(new Fx(kind, id, pos, dir, a, b, c, now));
                 ScreenFx.warp(pos.add(dir.scale(0.5)), (float) Math.max(2, dir.length() * 0.6), 0.35f, 1.4f, 0, dir.normalize(), 0, 0, 10, id, null, 0);
+            }
+            case MkNet.STORE -> {
+                SHOTS.add(new Fx(kind, id, pos, dir, a, b, c, now));
+                // The pool opens under her as the body is dragged in (scheduled here: render must not add to SHOTS while
+                // it walks the list).
+                Entity owner = entity((int) a);
+                if (owner != null) {
+                    SHOTS.add(new Fx(MkNet.POOL, id, owner.position(), Vec3.ZERO, 1.6f, 30, 0, now + 18));
+                }
             }
             default -> SHOTS.add(new Fx(kind, id, pos, dir, a, b, c, now));
         }
@@ -1206,9 +1215,6 @@ public final class MakimaFx {
         MkChain.Light l = new MkChain.Light(0.6f, -1, (float) Math.exp(-Math.pow((age - 6) / 1.5, 2)) * 0.9f, age);
         MkChain.draw(solid, arr, vis, 0, 5000 + f.id, l);
         MkChain.halo(arr, vis, l, 0.7f);
-        if (age > 6 && age < 7.5f) {
-            SHOTS.add(new Fx(MkNet.POOL, f.id, drop.add(0, 0, 0), Vec3.ZERO, 1.6f, 30, 0, ScreenFx.now() + 12));
-        }
     }
 
     // Her own blood dripping from the hand that signed the Ritual.
