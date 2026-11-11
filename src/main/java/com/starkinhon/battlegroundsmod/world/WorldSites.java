@@ -218,14 +218,14 @@ public final class WorldSites {
         BlockState grass = s(Blocks.GRASS_BLOCK), dirt = s(Blocks.DIRT);
         BlockState sand = s(Blocks.RED_SAND), sandstone = s(Blocks.RED_SANDSTONE);
         return switch (site.kind()) {
-            case CAPSULE -> b.clear(38, 0, 32).foundation(37, 10, grass, dirt).template("dragonball/capsule_corp", 0, 0, 0);
-            case GOKU -> b.clear(24, 0, 24).foundation(23, 10, grass, dirt).template("dragonball/goku_house", 0, 0, 0);
-            case KARIN -> b.clear(20, 0, 14).foundation(19, 8, grass, dirt).template("dragonball/korin_tower", 0, 0, 0);
-            case CELL_RING -> b.clear(34, 0, 48).foundation(33, 10, s(Blocks.STONE), s(Blocks.STONE))
+            case CAPSULE -> b.clearUp(38, 0, 32).foundation(37, 10, grass, dirt).template("dragonball/capsule_corp", 0, 0, 0);
+            case GOKU -> b.clearUp(24, 0, 24).foundation(23, 10, grass, dirt).template("dragonball/goku_house", 0, 0, 0);
+            case KARIN -> b.clearUp(20, 0, 14).foundation(19, 8, grass, dirt).template("dragonball/korin_tower", 0, 0, 0);
+            case CELL_RING -> b.clearUp(34, 0, 48).foundation(33, 10, s(Blocks.STONE), s(Blocks.STONE))
                     .template("dragonball/cell_arena", 0, 0, 0);
-            case BABIDI -> b.clear(20, 0, 12).template("dragonball/babidi_ship", 0, 0, 0);
-            case BUU -> b.clear(17, 0, 18).foundation(16, 10, grass, dirt).template("dragonball/buu_house", 0, 0, 0);
-            case KAME -> b.clear(17, 0, 24).foundation(16, 6, s(Blocks.SAND), s(Blocks.SANDSTONE))
+            case BABIDI -> b.clearUp(20, 0, 12).template("dragonball/babidi_ship", 0, 0, 0);
+            case BUU -> b.clearUp(17, 0, 18).foundation(16, 10, grass, dirt).template("dragonball/buu_house", 0, 0, 0);
+            case KAME -> b.clearUp(17, 0, 24).foundation(16, 6, s(Blocks.SAND), s(Blocks.SANDSTONE))
                     .template("dragonball/kame_house", 0, 0, 0);
             case WRECK -> wreck(b, sand, sandstone);
             case RADITZ -> raditz(b);
@@ -235,7 +235,7 @@ public final class WorldSites {
 
     // The crashed Capsule Corp ship, sunk in a scorched patch with wreckage and smoke around it.
     private static Build wreck(Build b, BlockState sand, BlockState sandstone) {
-        b.clear(14, 0, 16).foundation(13, 6, sand, sandstone);
+        b.clearUp(14, 0, 16).foundation(13, 6, sand, sandstone);
         for (int n = 0; n < 30; n++) {
             double a = b.random.nextDouble() * Math.PI * 2;
             int r = 9 + b.random.nextInt(9);
@@ -258,7 +258,7 @@ public final class WorldSites {
 
     // Raditz's landing: a scorched crater with cracks running out, the round Saiyan pod in the middle, hatch open.
     private static Build raditz(Build b) {
-        b.clear(12, 0, 8);
+        b.clearUp(12, 0, 8);
         for (int i = -11; i <= 11; i++) {
             for (int k = -11; k <= 11; k++) {
                 double d = Math.sqrt(i * i + k * k);

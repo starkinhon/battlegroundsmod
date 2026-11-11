@@ -86,11 +86,25 @@ public final class Build {
         for (int i = -r; i <= r; i++) {
             for (int k = -r; k <= r; k++) {
                 if (i * i + k * k <= radius * radius) {
+                    for (int j = y0; j <= y1; j++) {
+                        set(i, j, k, Blocks.AIR.defaultBlockState());
+                    }
+                }
+            }
+        }
+        return this;
+    }
+
+    // Like clear, but the top of the cylinder takes the rest of the column with it, up to the sky: on the normal
+    // world's hills a clear up to y1 only left the ground above it hanging in the air (Stark 2026-11-11, WorldSites).
+    public Build clearUp(double radius, int y0, int y1) {
+        int r = (int) Math.ceil(radius);
+        for (int i = -r; i <= r; i++) {
+            for (int k = -r; k <= r; k++) {
+                if (i * i + k * k <= radius * radius) {
                     for (int j = y0; j < y1; j++) {
                         set(i, j, k, Blocks.AIR.defaultBlockState());
                     }
-                    // The top of the cylinder takes the rest of the column with it: on the normal world's hills a
-                    // clear up to y1 only left the ground above it hanging in the air (Stark 2026-11-11).
                     puts.add(new Put(new BlockPos(x + i, y + y1, z + k), Blocks.AIR.defaultBlockState(), true));
                 }
             }
