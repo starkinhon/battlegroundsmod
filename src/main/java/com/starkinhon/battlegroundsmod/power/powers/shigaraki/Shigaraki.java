@@ -30,7 +30,7 @@ public final class Shigaraki {
 
     // ---- what the skills tell the clients (power/powers/sub/SubNet's channel; client/fx/shig/ShigFx draws them) ----
     // A seed of Decadência in the blocks (Decay.seed): id = the caster (his ground is safe), pos = the seed, dir = (speed,
-    // reach, the ground's height), a = Decay.GROUND or STRUCTURE, b = the safe radius.
+    // reach, the ground's height), a = Decay.GROUND or STRUCTURE, b = the safe radius, c = 1 when blocks really go (the gamerules).
     public static final int SEED = 200;
     // The Decadência on a body (Decay.body): id = the body, pos = the touch, dir = (speed, ticks it takes, ticks so far),
     // a = 0 starts, 1 it died of it (crumbles), 2 over (lived).
@@ -52,7 +52,8 @@ public final class Shigaraki {
     public static final int REGEN = 207;
     // V: id = caster, pos = his feet, dir = his facing (flat), a = 0 starts, 1 cut short.
     public static final int TENTACLES = 208;
-    // Shift+V: id = caster, pos = his feet, dir = facing; a = 0 kneels, 1 the touch (pos = the hand, b = speed, c = reach).
+    // Shift+V: id = caster, pos = his feet, dir = facing; a = 0 kneels, 1 the touch (pos = the hand, dir.y = 1 when blocks
+    // really go, b = speed, c = reach), 2 cut short before the touch.
     public static final int END = 209;
 
     // The three powers B tells apart (when the victim has no soul of the mod, by what it is).

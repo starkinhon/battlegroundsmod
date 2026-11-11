@@ -14,6 +14,7 @@ import com.starkinhon.battlegroundsmod.power.powers.OnePunch;
 import com.starkinhon.battlegroundsmod.power.powers.RubberBoy;
 import com.starkinhon.battlegroundsmod.power.powers.Strongest;
 import com.starkinhon.battlegroundsmod.power.powers.Sukuna;
+import com.starkinhon.battlegroundsmod.power.powers.shigaraki.Shigaraki;
 import com.starkinhon.battlegroundsmod.power.powers.UchihaGhost;
 import com.starkinhon.battlegroundsmod.power.powers.sub.Byakuya;
 import com.starkinhon.battlegroundsmod.power.powers.sub.Rukia;
@@ -47,6 +48,7 @@ public final class Powers {
     public static final Power STRONGEST = register(Strongest.create());
     public static final Power MOON_DEMON = register(MoonDemon.create());
     public static final Power SUKUNA = register(Sukuna.create());
+    public static final Power SHIGARAKI = register(Shigaraki.create());
 
     // SubAlmas (Bleach). The provisional Sukuna, Ichigo and Urahara were taken out for now (2026-11-07).
     public static final Power BYAKUYA = registerSub(Byakuya.create());

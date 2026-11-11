@@ -75,7 +75,7 @@ public final class FimDoMundo {
             }
             if (age == TOUCH) {
                 touchTick[0] = level.getGameTime();
-                SubNet.send(level, Shigaraki.END, caster.getId(), hand, face, 1, SPEED, REACH);
+                SubNet.send(level, Shigaraki.END, caster.getId(), hand, new Vec3(face.x, breaks ? 1 : 0, face.z), 1, SPEED, REACH);
                 SubCommon.sound(level, hand, SoundEvents.GENERIC_EXPLODE.value(), 2.5f, 0.4f);
                 SubCommon.sound(level, hand, SoundEvents.WARDEN_SONIC_BOOM, 2f, 0.5f);
                 // the star of cracks under the hand

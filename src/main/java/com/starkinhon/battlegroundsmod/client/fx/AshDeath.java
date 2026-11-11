@@ -42,7 +42,13 @@ public final class AshDeath {
 
     // Timing in ticks from start: the body lights up (burn), falls apart from crumbleStart to crumbleEnd, and is kept
     // hidden until end. hakai: null for fire; else the Hakai's look.
-    private record Ash(LivingEntity entity, long start, float windYaw, int burn, int crumbleStart, int crumbleEnd, int end, Hakai hakai, boolean stone) {
+    private record Ash(LivingEntity entity, long start, float windYaw, int burn, int crumbleStart, int crumbleEnd, int end, Hakai hakai, boolean stone,
+            Decay decay) {
+    }
+
+    // Shigaraki's Decadência (client/fx/shig): dries grey and cracks from the touch (local to the feet) at speed blocks a
+    // second for ticks; if it dies of it, it crumbles to dust from the touch out (crumbleStart..crumbleEnd).
+    private record Decay(float tx, float ty, float tz, float speed, int ticks) {
     }
 
     private record Hakai(int sparks, float rise, float wind, float[] color, float[] white) {
@@ -63,7 +69,7 @@ public final class AshDeath {
         }
         if (minecraft.level.getEntity(entityId) instanceof LivingEntity living) {
             ASHES.put(entityId, new Ash(living, ScreenFx.now(), (float) (FxWorld.hash(entityId, 1, 3) * Math.PI * 2), BURN_TICKS, CRUMBLE_START,
-                    CRUMBLE_END, END, null, false));
+                    CRUMBLE_END, END, null, false, null));
         }
     }
 
@@ -80,7 +86,7 @@ public final class AshDeath {
         Hakai look = new Hakai(Math.max(0, d.faiscas()), (float) d.subida(), (float) d.vento(), FxDraw.rgb(FxDraw.parse(d.cor(), 0x9B30FF)),
                 FxDraw.rgb(FxDraw.parse(d.cor2(), 0xFFFFFF)));
         ASHES.put(entityId, new Ash(living, ScreenFx.now(), (float) (FxWorld.hash(entityId, 1, 3) * Math.PI * 2), burn, burn, crumbleEnd,
-                crumbleEnd + 40, look, false));
+                crumbleEnd + 40, look, false, null));
     }
 
     // Turned to stone for `ticks` (Vegeta's Explosao Final, alive): the rock climbs from the feet in 1.2 s, the cracks
@@ -93,7 +99,39 @@ public final class AshDeath {
             return;
         }
         int end = Math.max(30, ticks);
-        ASHES.put(entityId, new Ash(living, ScreenFx.now(), 0, 24, end - 20, end, end, null, true));
+        ASHES.put(entityId, new Ash(living, ScreenFx.now(), 0, 24, end - 20, end, end, null, true, null));
+    }
+
+    // Shigaraki's Decadência on a living body: grey and cracked from the touch, spreading over ticks; it gets its colour
+    // back after (decayOver) unless it dies of it (decayDied: it crumbles to dust from the touch out).
+    public static void startDecay(int entityId, Vec3 touch, float speed, int ticks) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level == null || FxShaders.ash == null || FxShaders.flat() || !(minecraft.level.getEntity(entityId) instanceof LivingEntity living)) {
+            return;
+        }
+        Vec3 l = touch.subtract(living.position());
+        int far = 1 << 20;
+        ASHES.put(entityId, new Ash(living, ScreenFx.now(), 0, ticks, far, far + 1, ticks + 400, null, false,
+                new Decay((float) l.x, (float) l.y, (float) l.z, speed, ticks)));
+    }
+
+    public static void decayDied(int entityId) {
+        Ash a = ASHES.get(entityId);
+        if (a == null || a.decay() == null) {
+            return;
+        }
+        int age = (int) (ScreenFx.now() - a.start());
+        ASHES.put(entityId, new Ash(a.entity(), a.start(), a.windYaw(), a.burn(), age, age + 30, age + 36, null, false, a.decay()));
+    }
+
+    // Lived through it: the grey fades back over a second.
+    public static void decayOver(int entityId) {
+        Ash a = ASHES.get(entityId);
+        if (a == null || a.decay() == null || a.crumbleStart() < (1 << 20)) {
+            return;
+        }
+        int age = (int) (ScreenFx.now() - a.start());
+        ASHES.put(entityId, new Ash(a.entity(), a.start(), a.windYaw(), a.burn(), a.crumbleStart(), a.crumbleEnd(), age + 20, null, false, a.decay()));
     }
 
     static boolean hasSparks() {
@@ -123,7 +161,9 @@ public final class AshDeath {
             return gone;
         });
         for (Ash ash : ASHES.values()) {
-            if (ash.hakai() == null && !ash.stone()) {
+            if (ash.decay() != null) {
+                decayDust(level, ash, (int) (now - ash.start()));
+            } else if (ash.hakai() == null && !ash.stone()) {
                 emit(level, ash, (int) (now - ash.start()));
             }
         }
@@ -143,6 +183,31 @@ public final class AshDeath {
             level.addParticle(ModParticles.dust(color, 0.6f + random.nextFloat() * 1.4f, 20 + random.nextInt(25), 0.92f), feet.x + Math.cos(a) * r,
                     feet.y + 0.1 + random.nextDouble() * height, feet.z + Math.sin(a) * r, Math.cos(a) * speed, 0.05 + random.nextDouble() * 0.15,
                     Math.sin(a) * speed);
+        }
+    }
+
+    // The Decadência's dust: grey puffs off the edge that crumbles from the touch out.
+    private static void decayDust(ClientLevel level, Ash ash, int age) {
+        if (age < ash.crumbleStart() || age > ash.crumbleEnd()) {
+            return;
+        }
+        LivingEntity entity = ash.entity();
+        var random = level.getRandom();
+        Decay d = ash.decay();
+        float progress = (age - ash.crumbleStart()) / (float) (ash.crumbleEnd() - ash.crumbleStart());
+        float front = progress * (entity.getBbHeight() + 1.2f) * 1.25f;
+        Vec3 touch = entity.position().add(d.tx(), d.ty(), d.tz());
+        for (int i = 0; i < 9; i++) {
+            Vec3 dir = new Vec3(random.nextGaussian(), random.nextGaussian(), random.nextGaussian()).normalize();
+            Vec3 at = touch.add(dir.scale(front * (0.7 + random.nextDouble() * 0.3)));
+            if (at.y < entity.getY() || at.y > entity.getY() + entity.getBbHeight() || Math.abs(at.x - entity.getX()) > entity.getBbWidth()
+                    || Math.abs(at.z - entity.getZ()) > entity.getBbWidth()) {
+                continue;
+            }
+            int g = 0x80 + random.nextInt(0x30);
+            int color = g << 16 | (int) (g * 0.94f) << 8 | (int) (g * 0.86f);
+            level.addParticle(ModParticles.dust(color, 0.9f + random.nextFloat() * 1.3f, 26 + random.nextInt(30), 0.94f), at.x, at.y, at.z,
+                    0.03 + (random.nextDouble() - 0.5) * 0.04, 0.02 + random.nextDouble() * 0.05, (random.nextDouble() - 0.5) * 0.04);
         }
     }
 
@@ -321,7 +386,15 @@ public final class AshDeath {
                 shader.safeGetUniform("AshHeight").set(entity.getBbHeight());
                 shader.safeGetUniform("Burn").set(burn);
                 shader.safeGetUniform("Progress").set(progress);
-                shader.safeGetUniform("Style").set(ash.stone() ? 2f : ash.hakai() != null ? 1f : 0f);
+                shader.safeGetUniform("Style").set(ash.decay() != null ? 3f : ash.stone() ? 2f : ash.hakai() != null ? 1f : 0f);
+                if (ash.decay() != null) {
+                    Decay d = ash.decay();
+                    float front = (float) (age / 20.0 * d.speed());
+                    float back = (float) Mth.clamp((age - (ash.end() - 20)) / 20.0, 0, 1);
+                    shader.safeGetUniform("Touch").set(d.tx(), d.ty(), d.tz());
+                    shader.safeGetUniform("Front").set(front);
+                    shader.safeGetUniform("Recover").set(ash.crumbleStart() < (1 << 20) ? 0f : back);
+                }
                 if (ash.hakai() != null) {
                     float[] c = ash.hakai().color();
                     float[] w = ash.hakai().white();

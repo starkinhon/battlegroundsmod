@@ -93,6 +93,10 @@ public final class SubFx {
     }
 
     public static void receive(int kind, int id, Vec3 pos, Vec3 dir, float a, float b, float c) {
+        if (com.starkinhon.battlegroundsmod.client.fx.shig.ShigFx.handles(kind)) {
+            com.starkinhon.battlegroundsmod.client.fx.shig.ShigFx.receive(kind, id, pos, dir, a, b, c);
+            return;
+        }
         if (kind >= SubNet.KI_BEAM) {
             DbFx.receive(kind, id, pos, dir, a, b, c);
             return;

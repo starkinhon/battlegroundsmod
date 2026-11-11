@@ -3,6 +3,9 @@
 // Burn: 0 = the normal skin, 1 = charred black with glowing cracks.
 // Progress: 0 = whole body, 1 = all crumbled away, top first, along a ragged glowing edge.
 // Style 2: stone, see main.
+// Style 3: Shigaraki's Decadência (client/fx/shig), the preview's look on the voxels: from Touch the body dries to a
+// pale grey and cracks (Front = how far it has got, in blocks); Recover brings the colour back; Progress crumbles it to
+// dust from the touch out, bit by bit.
 // Style 1 (the Hakai): instead of charring, the body lights up white with purple veins, and the edge breaks into
 // pixel-sized bits (1/16 of a block, like the skins) burning white in the middle and purple outside.
 uniform sampler2D Sampler0;
@@ -13,6 +16,9 @@ uniform float Progress;
 uniform float Style;
 uniform vec3 GlowColor;
 uniform vec3 EdgeColor;
+uniform vec3 Touch;
+uniform float Front;
+uniform float Recover;
 
 in vec2 texCoord;
 in vec4 vertexColor;
@@ -67,6 +73,34 @@ void main() {
     vec4 tex = texture(Sampler0, texCoord);
     if (tex.a < 0.1) {
         discard;
+    }
+    if (Style > 2.5) {
+        vec3 skin = tex.rgb * vertexColor.rgb;
+        float lit = 0.62 + 0.38 * max(dot(normalize(normal), normalize(vec3(0.35, 0.85, -0.3))), 0.0);
+        float d = distance(local, Touch);
+        float n1 = noise(local * 3.3), n2 = noise(local * 9.0);
+        float dd = d * (0.8 + 0.45 * n2) + (n1 - 0.5) * 0.35 - Front;
+        if (Progress > 0.001) {
+            float cf = Progress * (AshHeight + 1.2) * 1.25;
+            float e = d + (n1 - 0.5) * 0.3 - cf;
+            vec3 cell = floor(local * 16.0 + 0.001);
+            float bit = hash(cell + vec3(5.3, 1.7, 9.1));
+            if (e < 0.0 || bit < smoothstep(0.25, 0.0, e) * 0.9) {
+                discard;
+            }
+        }
+        float k = smoothstep(0.0, 0.3, -dd) * (1.0 - Recover);
+        float lum = dot(skin, vec3(0.3, 0.55, 0.15));
+        vec3 dry = vec3(0.70, 0.66, 0.60) * (lum * 1.3 + 0.25) * (0.9 + 0.2 * noise(local * 6.2));
+        vec2 v = voronoi(local * 5.0);
+        float crack = 1.0 - smoothstep(0.02, 0.06 + 0.04 * k, v.y - v.x);
+        vec3 c = mix(skin, dry, k * 0.9);
+        c = mix(c, vec3(0.07, 0.05, 0.04), crack * k);
+        // the dark seam right at the front, where it is drying now
+        float seam = (1.0 - smoothstep(0.0, 0.07, abs(dd))) * step(0.001, Front) * (1.0 - Recover);
+        c = mix(c, vec3(0.09, 0.06, 0.05), seam * 0.8);
+        fragColor = vec4(c * lit, 1.0);
+        return;
     }
     if (Style > 1.5) {
         // Style 2, stone (Vegeta's Explosao Final): grey rock rising from the feet (Burn) with dark cracks between

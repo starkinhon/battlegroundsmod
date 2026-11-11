@@ -121,9 +121,10 @@ public final class Decay {
     // A seed of Decadência in the blocks at p (see walk). caster: whose ground is safe (null: none).
     public static void seed(ServerLevel level, LivingEntity caster, Vec3 p, float speed, float maxR, int mode, double groundY, double safeR) {
         double sx = caster == null ? 0 : caster.getX(), sz = caster == null ? 0 : caster.getZ();
+        boolean breaks = BlockRules.canBreak(level);
         SubNet.send(level, Shigaraki.SEED, caster == null ? -1 : caster.getId(), p, new Vec3(speed, maxR, groundY), mode,
-                (float) (caster == null ? 0 : safeR), 0);
-        if (!BlockRules.canBreak(level)) {
+                (float) (caster == null ? 0 : safeR), breaks ? 1 : 0);
+        if (!breaks) {
             return;
         }
         long now = level.getGameTime();
