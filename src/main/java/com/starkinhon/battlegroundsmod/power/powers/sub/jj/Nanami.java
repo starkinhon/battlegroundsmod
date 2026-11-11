@@ -12,27 +12,42 @@ import com.starkinhon.battlegroundsmod.combat.Stun;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
 import com.starkinhon.battlegroundsmod.power.Ability;
 import com.starkinhon.battlegroundsmod.power.Power;
+import com.starkinhon.battlegroundsmod.power.PowerData;
+import com.starkinhon.battlegroundsmod.power.Tiers;
 import com.starkinhon.battlegroundsmod.power.powers.sub.SubCommon;
 import com.starkinhon.battlegroundsmod.power.powers.sub.SubNet;
 import com.starkinhon.battlegroundsmod.power.powers.sub.db.Db;
 import com.starkinhon.battlegroundsmod.power.powers.sub.db.DbCommon;
 
+import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
-// Nanami (SubAlma of Jujutsu, tier 7), the Visualizador's Nanami tab: the Ratio Technique.
-// Z 7:3: a cut with the wrapped blade marks the target with the lines of the 7:3 point (6 s). Press again: he steps in
-//   and strikes the point: a critical, 3x the damage, and a second of stun.
-// X Collapse: he jumps and drives his fist into the 7:3 point of the ground: a crater with flying blocks and a shockwave
-//   that throws everyone round him.
-// V Overtime: only after a minute of fighting ("still on the clock" before that). He takes the tie off: 12 s of double
-//   strength on the punches, every hit heavier, the critical counts anywhere, and the first hit cracks the ground.
+// Nanami (SubAlma of Jujutsu, tier 7), kit remade with Stark (2026-11-11, preview forja/nanami-kit v4): the Ratio Technique.
+// Passive Expediente: after a minute of fighting his blows weigh more (+20%).
+// Z 7:3: he measures the target: a ruler of 10 marks over their body, the 7:3 point lit in gold with "7:3" written over
+//   it (3 s). The blow of his that lands on the point is a critical (2x) and 2 s of stun. Press again: he steps in and
+//   strikes the point himself.
+// X Collapse: he finds the 7:3 point of a wall or of the ground and strikes it: cracks run from the point and it all
+//   comes down in blocks; everyone near is hit and thrown.
+// C Wrapped Blade: 3 fast critical cuts with the blunt cleaver wrapped in cloth, all on the 7:3 point; the last throws.
+// V Overtime: he loosens the tie and wraps it round his fist (12 s of double damage), jumps and strikes the 7:3 point of
+//   the ground: the whole area round him sinks and takes the enemies down with it.
+// B Counter of the Office: a 1 s stance with the cleaver; a blow on him in that time is stopped on the cloth and he
+//   answers on the 7:3 point.
+// The 2 s stun of a 7:3 hit is full on bosses of his tier or weaker, shorter on stronger ones (Stark, 2026-11-11).
 public final class Nanami {
-    private static final int MARK = 120;
+    private static final int MARK = 60;
     public static final String OVERTIME_FIRST = "jj_overtime_first";
+    public static final String COUNTER = "jj_nanami_counter";
     // Who each Nanami marked with 7:3.
     private static final Map<UUID, LivingEntity> MARKED = new HashMap<>();
 
@@ -41,10 +56,31 @@ public final class Nanami {
 
     public static Power create() {
         return new Power("nanami", 0xD9B86A, 1.05f, List.of(
-                new Ability(180, 0, Nanami::ratio),
+                new Ability(160, 0, Nanami::ratio),
                 new Ability(300, 0, Nanami::collapse),
-                new Ability(200, 0, Nanami::ultMissing),
-                new Ability(900, 0, Nanami::overtime)));
+                new Ability(200, 0, Nanami::blade),
+                new Ability(900, 0, Nanami::overtime),
+                new Ability(240, 0, Nanami::counterStance)));
+    }
+
+    // The stun of a blow on the 7:3 point: 2 s, full on bosses of his tier or weaker, less the stronger they are.
+    static void ratioStun(LivingEntity caster, LivingEntity t) {
+        int ticks = 40;
+        if (JjCommon.isBoss(t)) {
+            int gap = Tiers.of(caster) - Tiers.of(t);
+            if (gap > 0) {
+                ticks = Math.max(16, 40 - 8 * gap);
+            }
+        }
+        Stun.apply(t, ticks, true);
+    }
+
+    private static void critFx(ServerLevel level, LivingEntity t, Vec3 dir) {
+        Vec3 c = Combat.center(t);
+        SubNet.send(level, SubNet.RATIO_CRIT, 0, c, dir, 0, 0, 0);
+        DbCommon.screen(level, c, 32);
+        SubCommon.sound(level, c, SoundEvents.PLAYER_ATTACK_CRIT, 1.6f, 0.6f);
+        SubCommon.sound(level, c, SoundEvents.ANVIL_LAND, 0.6f, 1.6f);
     }
 
     // ---------- Z: 7:3 ----------
@@ -55,33 +91,20 @@ public final class Nanami {
             crit(caster, level, marked);
             return false;
         }
-        SubCommon.Guard guard = SubCommon.guard(caster);
+        LivingEntity t = JjCommon.target(caster, 14);
+        if (t == null) {
+            SubCommon.warn(caster, "nanami.no_target");
+            return false;
+        }
         SubCommon.pose(caster, "jj.ratio_cut");
-        SubCommon.busy(caster, 8);
+        SubCommon.busy(caster, 6);
         DbCommon.cooldown(caster, 0, 10);
-        SubCommon.sound(level, caster.position(), SoundEvents.PLAYER_ATTACK_SWEEP, 1f, 0.8f);
-        Tasks.later(4, () -> {
-            if (guard.broken()) {
-                return;
-            }
-            Vec3 fwd = SubCommon.flat(caster.getLookAngle());
-            SubNet.send(level, SubNet.ARC, 0, caster.position().add(fwd.scale(1.3)).add(0, 1.2, 0), fwd, 1.8f, Db.GOLD, 0);
-            LivingEntity t = JjCommon.target(caster, 4);
-            if (t == null || t.distanceTo(caster) > 4.2) {
-                SubCommon.warn(caster, "nanami.miss");
-                DbCommon.cooldown(caster, 0, 40);
-                return;
-            }
-            Combat.hurt(caster, t, 6);
-            Stun.apply(t, 8);
-            DbCommon.hit(level, JjCommon.contact(caster, t), 0.7f, Db.GOLD);
-            SubCommon.setState(t, JjCommon.RATIO, MARK);
-            MARKED.put(caster.getUUID(), t);
-            SubNet.send(level, SubNet.RATIO, t.getId(), t.position(), Vec3.ZERO, MARK, 0, 0);
-            SubCommon.sound(level, t.position(), SoundEvents.PLAYER_ATTACK_STRONG, 1f, 1.1f);
-            SubCommon.sound(level, t.position(), SoundEvents.AMETHYST_BLOCK_CHIME, 1.4f, 0.7f);
-            watch(caster, level, t);
-        });
+        SubCommon.setState(t, JjCommon.RATIO, MARK);
+        MARKED.put(caster.getUUID(), t);
+        SubNet.send(level, SubNet.RATIO, t.getId(), t.position(), Vec3.ZERO, MARK, 0, 0);
+        SubCommon.sound(level, t.position(), SoundEvents.AMETHYST_BLOCK_CHIME, 1.4f, 0.7f);
+        SubCommon.sound(level, caster.position(), SoundEvents.BOOK_PAGE_TURN, 1f, 1.2f);
+        watch(caster, level, t);
         return false;
     }
 
@@ -105,11 +128,21 @@ public final class Nanami {
         });
     }
 
-    private static void crit(LivingEntity caster, ServerLevel level, LivingEntity t) {
+    // A blow of his that lands on someone he measured: the point. Called from the damage hook; true if it was.
+    static boolean onPoint(LivingEntity caster, ServerLevel level, LivingEntity t) {
+        if (MARKED.get(caster.getUUID()) != t || !SubCommon.hasState(t, JjCommon.RATIO)) {
+            return false;
+        }
         MARKED.remove(caster.getUUID());
         SubCommon.clearState(t, JjCommon.RATIO);
         SubNet.send(level, SubNet.RATIO, t.getId(), t.position(), Vec3.ZERO, 0, 0, 0);
-        DbCommon.cooldown(caster, 0, 180);
+        DbCommon.cooldown(caster, 0, 160);
+        ratioStun(caster, t);
+        critFx(level, t, SubCommon.flat(t.position().subtract(caster.position())));
+        return true;
+    }
+
+    private static void crit(LivingEntity caster, ServerLevel level, LivingEntity t) {
         SubCommon.Guard guard = SubCommon.guard(caster);
         boolean overtime = SubCommon.hasState(caster, JjCommon.OVERTIME);
         Vec3 from = caster.position();
@@ -132,16 +165,12 @@ public final class Nanami {
                 return false;
             }
             Freeze.free(caster);
-            Vec3 c = Combat.center(t);
             Vec3 dir = SubCommon.flat(t.position().subtract(caster.position()));
+            SubNet.send(level, SubNet.ARC, 0, caster.position().add(dir.scale(1.2)).add(0, 1.2, 0), dir, 1.8f, Db.GOLD, 0);
             Defense.breakGuard(t, caster);
-            Combat.hurt(caster, t, overtime ? 21 : 18);
-            Stun.apply(t, JjCommon.control(caster, t, 20));
+            // The hook doubles it and stuns: it is on the point.
+            Combat.hurt(caster, t, overtime ? 10 : 9);
             Combat.push(t, dir, 0.9, 0.3);
-            SubNet.send(level, SubNet.RATIO_CRIT, 0, c, dir, 0, 0, 0);
-            DbCommon.screen(level, c, 32);
-            SubCommon.sound(level, c, SoundEvents.PLAYER_ATTACK_CRIT, 1.6f, 0.6f);
-            SubCommon.sound(level, c, SoundEvents.ANVIL_LAND, 0.6f, 1.6f);
             return true;
         });
     }
@@ -150,77 +179,217 @@ public final class Nanami {
 
     private static boolean collapse(LivingEntity caster, ServerLevel level) {
         SubCommon.Guard guard = SubCommon.guard(caster);
-        int id = SubNet.newId();
-        Vec3 fwd = SubCommon.flat(caster.getLookAngle());
-        LivingEntity t = JjCommon.target(caster, 9);
-        double reach = t != null ? Math.min(7, caster.distanceTo(t)) : 3.5;
-        Vec3 land = SubCommon.ground(level, caster.position().add(fwd.scale(reach)));
-        SubCommon.pose(caster, "jj.slam_leap");
-        SubCommon.busy(caster, 30);
-        Vec3 start = caster.position();
-        Vec3[] at = {start};
-        int air = 12;
-        JjCommon.carry(caster, air, at);
-        SubCommon.sound(level, start, SoundEvents.PLAYER_ATTACK_SWEEP, 1f, 0.6f);
+        Vec3 eye = caster.getEyePosition();
+        Vec3 far = eye.add(caster.getLookAngle().scale(6));
+        BlockHitResult hit = level.clip(new ClipContext(eye, far, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, caster));
+        boolean found = hit.getType() == HitResult.Type.BLOCK;
+        Direction face = found ? hit.getDirection() : Direction.UP;
+        boolean ground = face == Direction.UP;
+        Vec3 point = found ? hit.getLocation() : SubCommon.ground(level, caster.position().add(SubCommon.flat(caster.getLookAngle()).scale(2.5)));
+        Vec3 from = caster.position();
+        Vec3 dir = SubCommon.flat(point.subtract(from)).normalize();
+        int strike = 5;
+        int fall = 14;
+        SubCommon.pose(caster, ground ? "jj.slam_fist" : "jj.div_punch");
+        SubCommon.busy(caster, fall + 6);
+        Freeze.holdLookFree(caster, strike + 2);
+        SubNet.send(level, SubNet.GROUND_MARK, caster.getId(), point, Vec3.ZERO, 1, 0, 0);
         Tasks.add(age -> {
             if (guard.broken()) {
                 Freeze.free(caster);
-                SubNet.send(level, SubNet.GROUND_MARK, caster.getId(), land, Vec3.ZERO, 0, 0, 1);
+                SubNet.send(level, SubNet.GROUND_MARK, caster.getId(), point, Vec3.ZERO, 0, 0, 1);
                 return true;
             }
-            if (age < air) {
-                float k = (age + 1) / (float) air;
-                at[0] = start.lerp(land, k).add(0, Math.sin(k * Math.PI) * 3.2, 0);
-                SubNet.send(level, SubNet.GROUND_MARK, caster.getId(), land, Vec3.ZERO, SubCommon.smooth(age / 6f), 0, 0);
-                if (age == air - 4) {
-                    SubCommon.pose(caster, "jj.slam_fist");
-                }
+            if (age < strike) {
+                SubNet.send(level, SubNet.GROUND_MARK, caster.getId(), point, Vec3.ZERO, 1, 0, 0);
                 return false;
             }
-            Freeze.free(caster);
-            SubNet.send(level, SubNet.GROUND_MARK, caster.getId(), land, Vec3.ZERO, 0, 0, 1);
-            float wave = 7;
-            SubNet.send(level, SubNet.SLAM, id, land, Vec3.ZERO, wave, 0, 0);
-            DbCommon.screen(level, land.add(0, 1, 0), 33);
-            JjCommon.crater(level, land, 3.3, 1.8, 24);
-            for (LivingEntity e : Combat.inRadius(level, land.add(0, 0.8, 0), wave, caster)) {
-                double d = e.position().distanceTo(land);
-                float k = (float) (1 - 0.55 * Math.min(1, d / wave));
-                Combat.hurtMagic(caster, e, 14 * k);
-                Stun.apply(e, (int) (12 + 10 * k));
-                Combat.pushFrom(e, land, 1.1 * k, 0.6 * k + 0.2);
+            if (age == strike) {
+                SubNet.send(level, SubNet.RATIO_CRIT, 0, point, dir, 0, 0, 0);
+                if (ground) {
+                    SubNet.send(level, SubNet.CRACKS, 0, point, Vec3.ZERO, 3.4f, 11, 1);
+                }
+                SubCommon.sound(level, point, SoundEvents.ANVIL_LAND, 0.9f, 0.6f);
+                SubCommon.sound(level, point, SoundEvents.STONE_BREAK, 1.6f, 0.6f);
+                return false;
             }
-            SubCommon.sound(level, land, SoundEvents.GENERIC_EXPLODE.value(), 1.6f, 0.7f);
-            SubCommon.sound(level, land, SoundEvents.ANVIL_LAND, 1f, 0.5f);
+            if (age < fall) {
+                return false;
+            }
+            // It all comes down.
+            SubNet.send(level, SubNet.GROUND_MARK, caster.getId(), point, Vec3.ZERO, 0, 0, 1);
+            if (ground) {
+                SubNet.send(level, SubNet.SLAM, SubNet.newId(), point, Vec3.ZERO, 6, 0, 0);
+                JjCommon.crater(level, point, 3.6, 2.0, 40);
+            } else {
+                JjCommon.carve(level, point.subtract(Vec3.atLowerCornerOf(face.getNormal()).scale(1.2)), 3.2, from);
+                SubNet.send(level, SubNet.CRACKS, 0, SubCommon.ground(level, point), Vec3.ZERO, 3f, 9, 1);
+            }
+            DbCommon.screen(level, point, 33);
+            for (LivingEntity e : Combat.inRadius(level, point, 5.5, caster)) {
+                double d = e.position().distanceTo(point);
+                float k = (float) (1 - 0.5 * Math.min(1, d / 5.5));
+                Combat.hurtMagic(caster, e, 15 * k);
+                Stun.apply(e, (int) (12 + 10 * k));
+                Combat.pushFrom(e, point.subtract(dir), 1.1 * k, 0.5 * k + 0.2);
+            }
+            SubCommon.sound(level, point, SoundEvents.GENERIC_EXPLODE.value(), 1.6f, 0.7f);
             return true;
         });
         return true;
     }
 
-    // ---------- V: Overtime ----------
+    // ---------- C: Wrapped Blade ----------
 
-    private static boolean overtime(LivingEntity caster, ServerLevel level) {
-        long fought = JjCommon.fighting(caster);
-        if (fought < 1200) {
-            SubCommon.warn(caster, "nanami.not_yet", (int) Math.ceil((1200 - fought) / 20.0));
+    private static boolean blade(LivingEntity caster, ServerLevel level) {
+        LivingEntity t = JjCommon.target(caster, 4.5);
+        if (t == null || t.distanceTo(caster) > 4.8) {
+            SubCommon.warn(caster, "nanami.miss");
+            JjCommon.shorten(caster, 2, 30);
             return false;
         }
         SubCommon.Guard guard = SubCommon.guard(caster);
-        int ticks = 240;
-        SubCommon.setState(caster, JjCommon.OVERTIME, ticks);
-        SubCommon.setState(caster, OVERTIME_FIRST, ticks);
-        SubNet.send(level, SubNet.GOLD_AURA, caster.getId(), caster.position(), Vec3.ZERO, ticks, 0, 0);
-        SubNet.send(level, SubNet.INK_BURST, SubNet.newId(), Combat.center(caster), new Vec3(0, 1, 0), 1.4f, 1, 0);
-        DbCommon.screen(level, Combat.center(caster), 34);
-        SubCommon.pose(caster, "jj.overtime");
-        SubCommon.busy(caster, 14);
-        SubCommon.sound(level, caster.position(), SoundEvents.BELL_BLOCK, 1.4f, 0.6f);
+        int gap = 3;
+        SubCommon.busy(caster, gap * 3 + 4);
+        Freeze.holdLookFree(caster, gap * 3 + 2);
+        SubNet.send(level, SubNet.RATIO, t.getId(), t.position(), Vec3.ZERO, gap * 3 + 4, 0, 0);
         Tasks.add(age -> {
-            if (guard.broken() || !SubCommon.hasState(caster, JjCommon.OVERTIME)) {
-                SubCommon.clearState(caster, JjCommon.OVERTIME);
-                SubCommon.clearState(caster, OVERTIME_FIRST);
-                SubNet.send(level, SubNet.GOLD_AURA, caster.getId(), caster.position(), Vec3.ZERO, 0, 0, 0);
+            if (guard.broken() || !t.isAlive()) {
+                Freeze.free(caster);
+                SubNet.send(level, SubNet.RATIO, t.getId(), t.position(), Vec3.ZERO, 0, 0, 0);
                 return true;
+            }
+            if (age == 0 || age % gap != 0) {
+                return false;
+            }
+            int n = age / gap;
+            Vec3 dir = SubCommon.flat(t.position().subtract(caster.position()));
+            SubCommon.pose(caster, n == 3 ? "jj.ratio_crit" : "jj.ratio_cut");
+            SubNet.send(level, SubNet.ARC, 0, caster.position().add(dir.scale(1.2)).add(0, n == 3 ? 1.0 : 1.3, 0), dir, 1.6f + 0.2f * n, Db.GOLD, n == 1 ? 1 : 0);
+            if (n == 1) {
+                Defense.breakGuard(t, caster);
+            }
+            // Every cut lands on the point: a critical each.
+            Combat.hurt(caster, t, 5 * 2);
+            critFx(level, t, dir);
+            SubCommon.sound(level, t.position(), SoundEvents.PLAYER_ATTACK_SWEEP, 1f, 0.8f + 0.15f * n);
+            if (n < 3) {
+                Stun.apply(t, 8);
+                return false;
+            }
+            ratioStun(caster, t);
+            Combat.push(t, dir, 1.2, 0.35);
+            Freeze.free(caster);
+            SubNet.send(level, SubNet.RATIO, t.getId(), t.position(), Vec3.ZERO, 0, 0, 0);
+            return true;
+        });
+        return true;
+    }
+
+    // ---------- B: Counter of the Office ----------
+
+    private static boolean counterStance(LivingEntity caster, ServerLevel level) {
+        SubCommon.pose(caster, "jj.manji_guard");
+        SubCommon.busy(caster, 20);
+        SubCommon.setState(caster, COUNTER, 20);
+        SubNet.send(level, SubNet.GUARD, caster.getId(), caster.position(), Vec3.ZERO, 1, 0, 0);
+        SubCommon.sound(level, caster.position(), SoundEvents.ARMOR_EQUIP_IRON.value(), 1f, 0.8f);
+        SubCommon.Guard guard = SubCommon.guard(caster);
+        Tasks.add(age -> {
+            boolean on = SubCommon.hasState(caster, COUNTER) && !guard.broken();
+            SubNet.send(level, SubNet.GUARD, caster.getId(), caster.position(), Vec3.ZERO, on ? 1 : 0, 0, on ? 0 : 1);
+            if (!on) {
+                if (age >= 19) {
+                    JjCommon.shorten(caster, PowerData.SLOT_EXTRA, 100);
+                }
+                return true;
+            }
+            return false;
+        });
+        return true;
+    }
+
+    // A blow caught on the cloth: he answers on the 7:3 point. Called from the damage hook.
+    static void counter(LivingEntity nanami, ServerLevel level, LivingEntity enemy) {
+        SubCommon.clearState(nanami, COUNTER);
+        Vec3 c = Combat.center(nanami).add(SubCommon.flat(enemy.position().subtract(nanami.position())).normalize().scale(0.6));
+        DbCommon.hit(level, c, 0.9f, Db.WHITE);
+        SubCommon.sound(level, c, SoundEvents.ANVIL_PLACE, 0.6f, 1.8f);
+        SubCommon.pose(nanami, "jj.ratio_crit");
+        Tasks.later(3, () -> {
+            if (!enemy.isAlive() || enemy.distanceTo(nanami) > 7) {
+                return;
+            }
+            Vec3 dir = SubCommon.flat(enemy.position().subtract(nanami.position()));
+            SubNet.send(level, SubNet.ARC, 0, nanami.position().add(dir.scale(1.2)).add(0, 1.2, 0), dir, 1.8f, Db.GOLD, 0);
+            Defense.breakGuard(enemy, nanami);
+            Combat.hurt(nanami, enemy, 14);
+            ratioStun(nanami, enemy);
+            critFx(level, enemy, dir);
+            Combat.push(enemy, dir, 1.3, 0.4);
+        });
+    }
+
+    // ---------- V: Overtime ----------
+
+    private static boolean overtime(LivingEntity caster, ServerLevel level) {
+        SubCommon.Guard guard = SubCommon.guard(caster);
+        int ticks = 240;
+        int tie = 16;
+        int air = 10;
+        int land = tie + air;
+        SubCommon.setState(caster, JjCommon.OVERTIME, ticks);
+        SubNet.send(level, SubNet.GOLD_AURA, caster.getId(), caster.position(), Vec3.ZERO, ticks, 0, 0);
+        SubCommon.pose(caster, "jj.overtime");
+        SubCommon.busy(caster, land + 6);
+        Freeze.holdLookFree(caster, tie);
+        caster.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, land, 3, false, false));
+        SubCommon.sound(level, caster.position(), SoundEvents.BELL_BLOCK, 1.4f, 0.6f);
+        Vec3 start = caster.position();
+        Vec3 fwd = SubCommon.flat(caster.getLookAngle()).normalize();
+        Vec3 spot = SubCommon.ground(level, start.add(fwd.scale(2.5)));
+        Vec3[] at = {start};
+        Tasks.add(age -> {
+            boolean on = SubCommon.hasState(caster, JjCommon.OVERTIME);
+            if (guard.broken() || !on) {
+                Freeze.free(caster);
+                SubCommon.clearState(caster, JjCommon.OVERTIME);
+                SubNet.send(level, SubNet.GOLD_AURA, caster.getId(), caster.position(), Vec3.ZERO, 0, 0, 0);
+                SubNet.send(level, SubNet.GROUND_MARK, caster.getId(), spot, Vec3.ZERO, 0, 0, 1);
+                return true;
+            }
+            if (age == tie) {
+                SubNet.send(level, SubNet.INK_BURST, SubNet.newId(), Combat.center(caster), new Vec3(0, 1, 0), 1.4f, 1, 0);
+                SubCommon.pose(caster, "jj.slam_leap");
+                JjCommon.carry(caster, air, at);
+            }
+            if (age >= tie && age < land) {
+                float k = (age - tie + 1) / (float) air;
+                at[0] = start.lerp(spot, k).add(0, Math.sin(k * Math.PI) * 3.4, 0);
+                SubNet.send(level, SubNet.GROUND_MARK, caster.getId(), spot, Vec3.ZERO, SubCommon.smooth(k * 2), 0, 0);
+                if (age == land - 4) {
+                    SubCommon.pose(caster, "jj.slam_fist");
+                }
+            }
+            if (age == land) {
+                Freeze.free(caster);
+                SubNet.send(level, SubNet.GROUND_MARK, caster.getId(), spot, Vec3.ZERO, 0, 0, 1);
+                SubNet.send(level, SubNet.RATIO_CRIT, 0, spot.add(0, 0.4, 0), fwd, 0, 0, 0);
+                SubNet.send(level, SubNet.SLAM, SubNet.newId(), spot, Vec3.ZERO, 10, 0, 0);
+                SubNet.send(level, SubNet.CRACKS, 0, spot, Vec3.ZERO, 6f, 14, 1);
+                DbCommon.screen(level, spot.add(0, 1, 0), 33);
+                // The whole area round him sinks.
+                JjCommon.crater(level, spot, 6, 2.6, 70);
+                for (LivingEntity e : Combat.inRadius(level, spot.add(0, 0.8, 0), 8, caster)) {
+                    double d = e.position().distanceTo(spot);
+                    float k = (float) (1 - 0.45 * Math.min(1, d / 8));
+                    Combat.hurtMagic(caster, e, 20 * k);
+                    Stun.apply(e, (int) (20 + 14 * k));
+                    e.setDeltaMovement(e.getDeltaMovement().add(0, -0.8, 0));
+                    e.hurtMarked = true;
+                }
+                SubCommon.sound(level, spot, SoundEvents.GENERIC_EXPLODE.value(), 1.8f, 0.55f);
+                SubCommon.sound(level, spot, SoundEvents.ANVIL_LAND, 1f, 0.5f);
             }
             return false;
         });
@@ -234,11 +403,6 @@ public final class Nanami {
         SubNet.send(level, SubNet.CRACKS, 0, g, Vec3.ZERO, 2.4f, 8, 1);
         JjCommon.crater(level, g, 1.6, 0.8, 8);
         SubCommon.sound(level, g, SoundEvents.STONE_BREAK, 1.6f, 0.5f);
-    }
-
-    private static boolean ultMissing(LivingEntity caster, ServerLevel level) {
-        SubCommon.warn(caster, "db.skill_coming");
-        return false;
     }
 
     static void clear() {

@@ -1334,28 +1334,90 @@ final class JjFx {
 
     // ---------- Nanami ----------
 
-    // The 7:3 lines over the target: the body cut in ten by gold lines, the 3/10 line wider, its point glowing.
+    // The 7:3 ruler over the target (same as the preview): a white ruler across the chest on a dark backing, ten
+    // marks (the 0, 5 and 10 taller), drawn out from the left; then the gold ring, cross and dot at 70% and "7:3"
+    // above it in the Minecraft font (5x7 pixels, shadow one pixel down-right, the 3 in gold).
+    private static final String[][] GLYPH = {
+            {"#####", "....#", "...#.", "..#..", "..#..", "..#..", "..#.."},
+            {".", "#", ".", ".", ".", "#", "."},
+            {".###.", "#...#", "....#", "..##.", "....#", "#...#", ".###."}};
+    private static final int[] GLYPH_X = {1, 7, 9};
+    private static final float[] INK = FxDraw.rgb(0x14141A);
+    private static final float[] SHADOW = FxDraw.rgb(0x3F3F3F);
+    private static final float[] SHADOW_3 = FxDraw.rgb(0x3F3315);
+    private static final float[] LABEL_3 = FxDraw.rgb(0xFFCF4A);
+
     private static void ratio(Fx f, float age, float partial, float out) {
         LivingEntity e = living(f.id);
         if (e == null) {
             return;
         }
-        float a = smooth(age / 4) * out;
+        float a = smooth(age / 3) * out;
+        float s = clamp(e.getBbHeight() / 1.8f, 1, 2.5f);
         Vector3f feet = rel(e.getPosition(partial));
         Vector3f toCam = safe(v(-feet.x, 0, -feet.z));
-        Vector3f side = safe(new Vector3f(toCam).cross(UP));
-        float h = e.getBbHeight();
-        Vector3f c = at(feet, toCam, e.getBbWidth() * 0.5f + 0.05f);
-        rib(add(c, 0, 0.05f, 0), add(c, 0, h, 0), 0.025f, FxDraw.BEAM, 0.9f, GOLD_W, 0.8f * a, true);
-        for (int i = 0; i <= 10; i++) {
-            float y = Mth.lerp(i / 10f, 0.05f, h);
-            float w = i == 3 ? 0.55f : 0.14f;
-            rib(at(add(c, 0, y, 0), side, -w), at(add(c, 0, y, 0), side, w), i == 3 ? 0.04f : 0.018f, FxDraw.BEAM, 0.9f, i == 3 ? GOLD : GOLD_W,
-                    (i == 3 ? 1 : 0.6f) * a, true);
+        Vector3f right = safe(new Vector3f(UP).cross(toCam));
+        Vector3f c = add(at(feet, toCam, e.getBbWidth() * 0.5f + 0.15f), 0, e.getBbHeight() * 0.66f, 0);
+        float k = age / 12;
+        float len = Math.min(1, k * 1.6f);
+        float w = 1.15f * s;
+        Vector3f left = at(c, right, -w / 2);
+        if (!DbFx.pass) {
+            panel(left, right, toCam, 0, -0.05f * s, (w + 0.05f * s) * len, 0.1f * s, 0, INK, 0.85f * a);
+            panel(left, right, toCam, 0, -0.025f * s, w * len, 0.05f * s, 0.01f, WHITE, a);
+            for (int i = 0; i <= 10; i++) {
+                float g = clamp((len - i / 10f) * 8, 0, 1);
+                if (g <= 0) {
+                    continue;
+                }
+                float h = (i % 5 == 0 ? 0.24f : 0.12f) * (0.85f + 0.3f * hash(i, f.id, 2)) * 1.3f * s * g;
+                float y = (hash(i, f.id, 5) - 0.5f) * 0.02f * s;
+                panel(left, right, toCam, w * i / 10 - 0.015f * s, y - h / 2, 0.03f * s, h, 0.012f, WHITE, a);
+            }
         }
-        Vector3f p = add(at(c, toCam, 0.02f), 0, Mth.lerp(0.3f, 0.05f, h), 0);
-        bb(p, 0.5f + 0.1f * Mth.sin(age * 0.4f), 0, FxDraw.SOFT, 0.7f, GOLD, a, true);
-        bb(p, 0.9f, age * 0.05f, FxDraw.FLARE, 4 / 32f, GOLD_W, 0.7f * a, true);
+        float pk = clamp((k - 0.55f) * 3, 0, 1);
+        if (pk <= 0) {
+            return;
+        }
+        Vector3f pt = at(at(c, right, w * 0.2f), toCam, 0.02f);
+        float ps = pk * (1 + 0.12f * Mth.sin(age * 0.9f)) * s;
+        dsk(pt, toCam, 0.2f * ps, FxDraw.RING, 0.3f, GOLD, a, false);
+        dsk(pt, toCam, 0.09f * ps, FxDraw.DISC, 0.9f, WHITE, a, false);
+        bb(pt, 0.45f * ps, 0, FxDraw.SOFT, 0.6f, GOLD, 0.6f * a, true);
+        if (!DbFx.pass) {
+            panel(pt, right, toCam, -0.21f * ps, -0.006f * ps, 0.42f * ps, 0.012f * ps, 0.004f, GOLD, a);
+            panel(pt, right, toCam, -0.006f * ps, -0.21f * ps, 0.012f * ps, 0.42f * ps, 0.004f, GOLD, a);
+            // the label: 16x9 pixels over 0.4x0.225, centred 0.3 above the point
+            float u = 0.025f * s * pk * (1 + 0.15f * Math.max(0, 1 - pk * 1.5f));
+            Vector3f lc = add(pt, 0, (0.3f + 0.03f * Mth.sin(age * 0.15f)) * s, 0);
+            for (int pass = 0; pass < 2; pass++) {
+                for (int gi = 0; gi < 3; gi++) {
+                    float[] col = pass == 0 ? (gi == 2 ? SHADOW_3 : SHADOW) : (gi == 2 ? LABEL_3 : WHITE);
+                    String[] rows = GLYPH[gi];
+                    for (int j = 0; j < rows.length; j++) {
+                        for (int i = 0; i < rows[j].length(); i++) {
+                            if (rows[j].charAt(i) != '#') {
+                                continue;
+                            }
+                            float cx = GLYPH_X[gi] + i + (pass == 0 ? 1 : 0);
+                            float cy = j + (pass == 0 ? 2 : 1);
+                            panel(lc, right, toCam, (cx - 8) * u, (4.5f - cy - 1) * u, u, u, 0.03f + pass * 0.006f, col, a);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // A flat rectangle facing the camera: x along right, y up, from (x, y) with size (w, h), pushed toward the camera.
+    private static void panel(Vector3f o, Vector3f right, Vector3f toCam, float x, float y, float w, float h, float lift, float[] col, float op) {
+        if (op <= 0.002f || w <= 0 || h <= 0) {
+            return;
+        }
+        Vector3f b = at(at(o, right, x), toCam, lift).add(0, y, 0);
+        Vector3f r = new Vector3f(right).mul(w);
+        Vector3f p1 = new Vector3f(b).add(r);
+        FxDraw.quad(b, p1, add(p1, 0, h, 0), add(b, 0, h, 0), FxDraw.SOLID, 0, col, op, false);
     }
 
     private static void ratioCrit(Fx f, float a) {

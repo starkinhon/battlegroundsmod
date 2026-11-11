@@ -117,7 +117,7 @@
       "recargaMaxTicks": 275,
       "avisoTicks": 4,
       "distanciaMin": 0,
-      "distanciaMax": 3.8,
+      "distanciaMax": 10,
       "giroGrausPorTick": 14,
       "avisoCor": "#f0d080",
       "avisoSom": "minecraft:entity.player.attack.sweep"
@@ -137,16 +137,42 @@
     },
     "hora_extra": {
       "slot": 3,
-      "tipo": "livre",
+      "tipo": "ult",
       "peso": 0.8,
       "recargaTicks": 1000,
       "recargaMaxTicks": 1450,
       "avisoTicks": 6,
       "distanciaMin": 0,
-      "distanciaMax": 10,
+      "distanciaMax": 6,
       "giroGrausPorTick": 14,
       "avisoCor": "#ffd040",
       "avisoSom": "minecraft:block.bell.use"
+    },
+    "lamina": {
+      "slot": 2,
+      "tipo": "golpe",
+      "peso": 1.1,
+      "recargaTicks": 230,
+      "recargaMaxTicks": 333,
+      "avisoTicks": 3,
+      "distanciaMin": 0,
+      "distanciaMax": 4,
+      "giroGrausPorTick": 14,
+      "avisoCor": "#f0d080",
+      "avisoSom": "minecraft:entity.player.attack.sweep"
+    },
+    "contra": {
+      "slot": 7,
+      "tipo": "contra",
+      "peso": 0.7,
+      "recargaTicks": 280,
+      "recargaMaxTicks": 406,
+      "avisoTicks": 0,
+      "distanciaMin": 0,
+      "distanciaMax": 4,
+      "giroGrausPorTick": 14,
+      "avisoCor": "#ffffff",
+      "avisoSom": ""
     }
   },
   "combos": {
@@ -165,6 +191,22 @@
         "aproximar",
         "razao"
       ]
+    },
+    "nanami_3": {
+      "peso": 1.0,
+      "passos": [
+        "razao",
+        "aproximar",
+        "lamina"
+      ]
+    },
+    "nanami_4": {
+      "peso": 0.8,
+      "passos": [
+        "colapso",
+        "aproximar",
+        "hora_extra"
+      ]
     }
   },
   "fases": [
@@ -175,11 +217,15 @@
         "barragem",
         "razao",
         "colapso",
-        "hora_extra"
+        "lamina",
+        "hora_extra",
+        "contra"
       ],
       "combos": [
         "nanami_1",
-        "nanami_2"
+        "nanami_2",
+        "nanami_3",
+        "nanami_4"
       ],
       "agressividade": 0.75,
       "multRecarga": 1.0,

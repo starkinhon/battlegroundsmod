@@ -120,7 +120,12 @@ public final class JjCommon {
 
     // Every physical hit (not magic): Overtime makes them all heavier.
     public static float damageMultiplier(LivingEntity attacker) {
-        return SubCommon.hasState(attacker, OVERTIME) ? 1.4f : 1;
+        float k = SubCommon.hasState(attacker, OVERTIME) ? 1.4f : 1;
+        // Nanami's Expediente: after a minute of fighting every blow weighs more.
+        if ("nanami".equals(power(attacker)) && fighting(attacker) >= 1200) {
+            k *= 1.2f;
+        }
+        return k;
     }
 
     // ---------- the fight clock (Overtime) ----------
@@ -240,6 +245,16 @@ public final class JjCommon {
                 Itadori.counter(target, level, enemy);
                 return;
             }
+        }
+        // Nanami's Counter of the Office: a blow on him is stopped on the cloth and answered on the 7:3 point.
+        if (attacker instanceof LivingEntity enemy && SubCommon.hasState(target, Nanami.COUNTER) && enemy.distanceTo(target) < 7) {
+            event.setCanceled(true);
+            Nanami.counter(target, level, enemy);
+            return;
+        }
+        // Nanami's 7:3: his blow on the point of someone he measured is a critical with 2 s of stun.
+        if (attacker instanceof LivingEntity enemy && "nanami".equals(power(enemy)) && SubCommon.hasState(target, RATIO) && Nanami.onPoint(enemy, level, target)) {
+            event.setAmount(event.getAmount() * 2);
         }
         // Choso's Supernova: an orb takes the hit (a punch or a shot) and bursts.
         if (Choso.orbTakes(target, level, direct != null ? direct : attacker)) {
