@@ -153,6 +153,10 @@ public final class DbFx {
     }
 
     static void receive(int kind, int id, Vec3 pos, Vec3 dir, float a, float b, float c) {
+        if (InoFx.handles(kind)) {
+            InoFx.receive(kind, id, pos, dir, a, b, c);
+            return;
+        }
         if (kind == SubNet.KATON || kind == SubNet.KATON_BOOM || kind == SubNet.SHADOW_SEA || kind == SubNet.FLARE) {
             NrFx.receive(kind, id, pos, dir, a, b, c);
             return;
@@ -294,7 +298,7 @@ public final class DbFx {
     }
 
     static boolean active() {
-        return !SHOTS.isEmpty() || !TRACKED.isEmpty() || NrFx.active() || JjFx.active();
+        return !SHOTS.isEmpty() || !TRACKED.isEmpty() || NrFx.active() || JjFx.active() || InoFx.active();
     }
 
     static void clear() {
@@ -302,6 +306,7 @@ public final class DbFx {
         TRACKED.clear();
         NrFx.clear();
         JjFx.clear();
+        InoFx.clear();
     }
 
     private static double life(Fx f) {
@@ -425,6 +430,7 @@ public final class DbFx {
         }
         NrFx.draw(now, partial);
         JjFx.draw(now, partial);
+        InoFx.draw(now, partial);
     }
 
     // ---------- drawing in the right pass ----------

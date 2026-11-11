@@ -316,6 +316,48 @@ public final class SubNet {
     // Shikamaru's signal flare (stream): pos = the light, a = how bright, b = 1 while it still climbs, c = 1 ends it.
     public static final int FLARE = 168;
 
+    // Ino (drawn by InoFx). Streams are sent every tick and c = 1 ends them.
+    // The spirit flying (stream): id = its own, pos = its feet, dir = its heading (unit), a = how far it rose (0..1),
+    // b = the dissolve (0 whole .. 1 gone).
+    public static final int INO_SPIRIT = 170;
+    // Elo Mental thread (stream): id = a pair's own, pos = one end, dir = the other end (absolute), a = growth (0..1),
+    // c = width (1 ends it).
+    public static final int INO_THREAD = 171;
+    // A pulse running along an Elo thread from pos to dir (absolute), a = damage share (size).
+    public static final int INO_PULSE = 172;
+    // An Elo thread snapping between pos and dir (absolute).
+    public static final int INO_SNAP = 173;
+    // Hand seal / mind seal glowing at pos: id = the entity it rides, a = half size, b = style (0 hands, 1 head).
+    public static final int INO_SEAL = 174;
+    // Dizzy spiral over the head of entity id for a ticks.
+    public static final int INO_SPIRAL = 175;
+    // Shinranshin cone wave from pos along dir (unit): a = length, b = half angle (radians).
+    public static final int INO_WAVE = 176;
+    // Flower field (stream): id = its own, pos = its center (ground), a = radius, b = wilt (0..1), c = 1 ends it.
+    public static final int INO_FIELD = 177;
+    // Pollen burst at pos (a trap went off): a = radius.
+    public static final int INO_POLLEN = 178;
+    // Pollen mark on entity id (stream): c = 1 ends it.
+    public static final int INO_MARK = 179;
+    // Mind Theater (stream): id = its own, pos = Ino, dir.x = dome alpha, dir.y = Ino's aura, a = radius, b = sky,
+    // c = 1 ends it.
+    public static final int INO_THEATER = 180;
+    // Puppet strings (stream): id = the target, pos = Ino's hand, dir = the target (absolute), a = grow, b = snap,
+    // c = 1 ends it.
+    public static final int INO_STRINGS = 181;
+    // The mind explosion at pos: a = radius.
+    public static final int INO_MIND_BOOM = 182;
+    // A mind hit at pos: b = which (0 spirit enters, 1 control, 2 exit, 3 theater opens, 4 theater boom).
+    public static final int INO_HIT = 183;
+    // Leitura Mental (sent only to the Ino): id = the enemy about to cast, pos = its head.
+    public static final int INO_READ = 184;
+    // Piloting (sent only to the Ino): id = the body she drives, a = 1 starts, c = 1 ends.
+    public static final int INO_PILOT = 185;
+    // Inverted controls (sent only to the victim): a = ticks.
+    public static final int INO_INVERT = 186;
+    // Flower seeds thrown from pos to dir (absolute), a = ticks in flight.
+    public static final int INO_SEEDS = 187;
+
     public static final int STYLE_SUKUNA = 0;
     public static final int STYLE_PINK = 1;
     public static final int STYLE_CRIMSON = 2;
@@ -347,6 +389,10 @@ public final class SubNet {
                 PacketDistributor.sendToPlayer(player, payload);
             }
         }
+    }
+
+    public static void sendTo(ServerPlayer player, int kind, int id, Vec3 pos, Vec3 dir, float a, float b, float c) {
+        PacketDistributor.sendToPlayer(player, new ModPayloads.SubFx(kind, id, pos, dir, a, b, c));
     }
 
     public static void send(ServerLevel level, int kind, int id, Vec3 pos, float a, float b) {

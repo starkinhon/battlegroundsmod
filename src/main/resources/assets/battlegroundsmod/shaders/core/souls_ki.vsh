@@ -6,7 +6,9 @@
 // (relative to the camera). Kind says which effect: 0 blast/smoke, 1 Genki core, 2 halo (Genki), 3 beam, 4 dust ring,
 // 5 aura shell, 6 hit flash, 7 sun core, 8 sun halo, 9 saw disc, 10 Kienzan disc, 11 Makankosappo spirals, 12 wind,
 // 13 Sasuke's Katon shell (forja/sasuke-chidori/katon.js), 14 its wall of fire on the ground, 15 Shikamaru's shadow running
-// on the ground, 16 his Xeque-mate's flood of shadow (forja/shikamaru/shika.js; both flat squares).
+// on the ground, 16 his Xeque-mate's flood of shadow (forja/shikamaru/shika.js; both flat squares). Ino (forja/ino-kit/ino.js):
+// 17 a box of her spirit's body, 18 a mind thread, 19 the diamond seal, 20 the scrambled mind's spiral, 21 the Shinranshin's
+// cone, 22 a piece of the spirit's trail, 23 the Teatro Mental's dome, 24 its sky, 25 a lit solid (the flowers).
 in vec3 Position;
 
 uniform mat4 ModelViewMat;
@@ -36,6 +38,7 @@ uniform float R0;
 uniform float R1;
 uniform float Flare;
 uniform float Bend;
+uniform float Pulse;
 
 out vec3 vN;
 out vec3 vV;
@@ -148,9 +151,32 @@ void main() {
         float rr = 1. + 0.05 * (nn - 0.5) - 0.08 * h;
         P = vec3(d.x * rr, h * top, d.y * rr); n = normalize(vec3(d.x, 0.3, d.y));
         vH = h; vO = vec3(cos(ang) * 4., P.y * 2.2 - Time * 2.2, sin(ang) * 4.) + Seed;
+    } else if (kind == 17 || kind == 25) {                             // Ino: a box of the spirit / a lit solid piece (flowers)
+        P = Position; n = kind == 25 ? normalize(Position) : vec3(0., 1., 0.);
+    } else if (kind == 18 || kind == 22) {                             // Ino: a mind thread (sags and sways) / a piece of the spirit's trail
+        vec2 d = normalize(Position.xz + 1e-5); float u = Position.y;
+        vec3 c = vec3(0., u * Len, 0.); float r = W;
+        if (kind == 18) {
+            vec3 down = transpose(mat3(Model)) * vec3(0., -1., 0.); down.y = 0.;
+            float env = sin(3.14159 * u);
+            if (length(down) > 0.05) c += normalize(down) * Bend * env;
+            c.x += env * sin(Time * 2.1 + Seed + u * 4.) * 0.08; c.z += env * cos(Time * 1.7 + Seed * 1.3 + u * 3.) * 0.08;
+            vU = u;
+        } else {
+            r = mix(R0, R1, u); vU = mix(Pulse, Flow, u);
+        }
+        P = c + vec3(d.x * r, 0., d.y * r); n = vec3(d.x, 0., d.y); vDir = d;
+    } else if (kind == 19 || kind == 20) {                             // Ino: flat squares (the seal, the spiral)
+        P = Position; n = vec3(0., 1., 0.); vUv = Position.xz * 0.5 + 0.5;
+    } else if (kind == 21) {                                           // Ino: the Shinranshin's cone (y 0 at the forehead)
+        float h = Position.y; vec2 d = normalize(Position.xz + 1e-5);
+        float r = mix(R0, R1, h);
+        P = vec3(d.x * r, h * Len, d.y * r); n = normalize(vec3(d.x, -(R1 - R0) / max(Len, 0.01), d.y)); vDir = d; vH = h;
+    } else if (kind == 23 || kind == 24) {                             // Ino: the dome and the sky of the Teatro Mental
+        n = normalize(Position); P = Position; vO = n;
     }
     vec4 w = Model * vec4(P, 1.0);
-    vN = mat3(Model) * n;
+    vN = kind == 25 ? transpose(inverse(mat3(Model))) * n : mat3(Model) * n;   // (25: squashed petals keep their normals)
     vNv = mat3(ModelViewMat) * vN;                                     // the normal as the camera sees it (halo rays)
     vV = -w.xyz;
     vC = vec4((Model * vec4(0., 0., 0., 1.)).xyz, length(Model[0].xyz));   // the piece's center (camera-relative) and size

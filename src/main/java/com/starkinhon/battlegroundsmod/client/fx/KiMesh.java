@@ -25,7 +25,7 @@ import net.minecraft.client.renderer.ShaderInstance;
 // pieces before near ones, like the pages' renderOrder.
 public final class KiMesh {
     public enum Mesh {
-        BLAST(112, 84), AURA(128, 96), BALL(96, 72), HALO(64, 48), FLASH(32, 24), TUBE(72, 200), SPIRAL(48, 600), WIND(64, 60), QUAD(1, 1);
+        BLAST(112, 84), AURA(128, 96), BALL(96, 72), HALO(64, 48), FLASH(32, 24), TUBE(72, 200), SPIRAL(48, 600), WIND(64, 60), QUAD(1, 1), BOX(1, 1), DOME(96, 64), THIN(8, 40);
 
         final int a;
         final int b;
@@ -39,6 +39,10 @@ public final class KiMesh {
 
     public static final int BLAST = 0, GENKI = 1, HALO = 2, BEAM = 3, RING = 4, SHELL = 5, FLASH = 6, SUN = 7, SUN_HALO = 8, SAW = 9, KIEN = 10,
             SPIRAL = 11, WIND = 12, KATON = 13, KATON_RING = 14, SHADOW_PATH = 15, SHADOW_SEA = 16;
+    // Ino (forja/ino-kit): her spirit's boxes, a mind thread, the diamond seal, the spiral, the Shinranshin's cone, the
+    // spirit's trail, the Teatro Mental's dome and sky, a lit solid (flowers).
+    public static final int INO_GHOST = 17, INO_THREAD = 18, INO_SEAL = 19, INO_SPIRAL = 20, INO_WAVE = 21, INO_TAIL = 22, INO_DOME = 23, INO_SKY = 24,
+            INO_SOLID = 25;
     public static final int FRONT = 1, BACK = 2, BOTH = 3;
 
     // Everything souls_ki reads; queue() keeps a copy, so one P can be reused for the next piece.
@@ -290,8 +294,9 @@ public final class KiMesh {
             }
             BufferBuilder b = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION);
             switch (m) {
-                case TUBE, SPIRAL, WIND -> tube(b, m.a, m.b);
+                case TUBE, SPIRAL, WIND, THIN -> tube(b, m.a, m.b);
                 case QUAD -> quad(b);
+                case BOX -> box(b);
                 default -> sphere(b, m.a, m.b);
             }
             VertexBuffer vbo = new VertexBuffer(VertexBuffer.Usage.STATIC);
@@ -338,6 +343,17 @@ public final class KiMesh {
         float[] a = {-1, 0, -1}, c = {1, 0, -1}, d = {1, 0, 1}, e = {-1, 0, 1};
         tri(b, a, d, c);
         tri(b, a, e, d);
+    }
+
+    // Unit box from -0.5 to 0.5 (THREE.BoxGeometry(1, 1, 1)), outward faces.
+    private static void box(BufferBuilder b) {
+        float h = 0.5f;
+        float[][] v = {{-h, -h, -h}, {h, -h, -h}, {h, h, -h}, {-h, h, -h}, {-h, -h, h}, {h, -h, h}, {h, h, h}, {-h, h, h}};
+        int[][] f = {{0, 3, 2, 1}, {4, 5, 6, 7}, {0, 4, 7, 3}, {1, 2, 6, 5}, {3, 7, 6, 2}, {0, 1, 5, 4}};
+        for (int[] q : f) {
+            tri(b, v[q[0]], v[q[1]], v[q[2]]);
+            tri(b, v[q[0]], v[q[2]], v[q[3]]);
+        }
     }
 
     private static void tri(BufferBuilder b, float[] p, float[] q, float[] r) {

@@ -227,6 +227,8 @@ public final class PowerLogic {
         if (power != null) {
             com.starkinhon.battlegroundsmod.power.powers.sub.nr.NrCommon.recordCast(caster, power.id(), slot);
         }
+        // The Ino's Leitura Mental: every Ino near feels the skill start.
+        com.starkinhon.battlegroundsmod.power.powers.sub.nr.Ino.sense(caster, level);
         if (power != null && PowerData.isUlt(slot)) {
             announceUlt(caster, power, slot);
         }
