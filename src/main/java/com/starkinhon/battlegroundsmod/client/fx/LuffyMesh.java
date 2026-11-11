@@ -27,7 +27,9 @@ public final class LuffyMesh {
         // SphereGeometry(1, 112, 84) (lighter here), TorusGeometry(0.4, 0.15, 24, 72), BoxGeometry(1, 1, 1)
         ARM, ARM48, BOLT, QUAD, SPHERE, BLAST, TORUS, BOX, VEST_L, VEST_R,
         // Boundman (forja/luffy-g4): BoxGeometry(1, 1, 1, 6, 6, 6) for the haki, a light sphere for each lump of steam
-        RBOX, BLOB;
+        RBOX, BLOB,
+        // Gear 5 (forja/luffy-g5): the neck cloud with more segments for its flames, and the thin ring of the fur hems
+        TORUS_F, FUR;
 
         VertexBuffer vbo;
     }
@@ -184,6 +186,8 @@ public final class LuffyMesh {
                 case VEST_R -> sphere(b, 40, 28, 1.012, Math.PI * 1.96, Math.PI * 0.42, 0.25, 1.15);
                 case RBOX -> box(b, 6);
                 case BLOB -> sphere(b, 20, 14);
+                case TORUS_F -> torus(b, 0.4f, 0.15f, 32, 160);
+                case FUR -> torus(b, 0.7f, 0.1f, 12, 64);
             }
             VertexBuffer vbo = new VertexBuffer(VertexBuffer.Usage.STATIC);
             vbo.bind();

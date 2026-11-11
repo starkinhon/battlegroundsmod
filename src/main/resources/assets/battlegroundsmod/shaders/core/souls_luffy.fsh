@@ -87,10 +87,12 @@ void main() {
         if (GlowPass > 0.5) { fragColor = vec4(0.); return; }
         fragColor = vec4(c * a, a);
     } else if (k == 3) {
-        // COLLAR_F
+        // COLLAR_F (forja/luffy-g5): the flames' tips tear into wisps that rise (vH = how far up the flame, vU = round the ring)
+        if (vH > .4) { float w = gn(vec3(vU * 4., vH * 3.2 - T * 2.6, Seed)); if (w < (vH - .4) * 2.6 - .75) discard; }
         float l = dot(Nw, normalize(vec3(0.4, 0.8, -0.45))) * 0.5 + 0.5 + (fbm3(vP * 6.) * 0.2);
         vec3 c = l > 0.6 ? vec3(1.) : l > 0.38 ? vec3(0.88, 0.9, 0.95) : vec3(0.72, 0.76, 0.86);
         if (rim > 0.9) c = vec3(0.55, 0.6, 0.72);
+        c = mix(c, c * vec3(.9, .86, 1.), smoothstep(.3, 1., vH));
         if (GlowPass > 0.5) { fragColor = vec4(0.); return; }
         fragColor = vec4(c * A, A);
     } else if (k == 4) {

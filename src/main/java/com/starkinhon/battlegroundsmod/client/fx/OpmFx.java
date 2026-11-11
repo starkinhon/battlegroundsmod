@@ -218,8 +218,10 @@ public final class OpmFx {
                     puff(pos, 14, 1.2);
                     shake(pos, b >= 2 ? 1.6 : 1.0);
                 }
-                if (b >= 2 && near(pos, 48)) {
-                    ScreenFx.impactFrame(new int[] {4, 3, 4}, 1, 0xFFFFFF, pos, 0);
+                // every skill's blow gets its impact frame (Stark 2026-11-11): the normal ones (last of the Socos, Gancho,
+                // Chute) a short one, the Counter's flick the page's three
+                if (b >= 1 && near(pos, 48)) {
+                    ScreenFx.impactFrame(b >= 2 ? new int[] {4, 3, 4} : new int[] {4, 3}, 1, 0xFFFFFF, pos, 0);
                 }
             }
             case SubNet.OPM_RING -> RINGS.add(new Ring(pos, a, b, now, (float) (rnd() * 10)));
@@ -958,7 +960,9 @@ public final class OpmFx {
         }
         double ns0 = 0.25, nsd = 0.075, nsf = ns0 + 14 * nsd;
         Vec3 fwd = OpmShape.Frame.of(caster.position(), caster.getLookAngle()).forward();
-        Vec3 chest = target != null ? target.position().add(0, target.getBbHeight() * 0.69, 0) : caster.position().add(fwd.scale(2)).add(0, 1.25, 0);
+        // where he aims (the crosshair, pitch included), never chasing a target off it (Stark: "na mira, sem ser teleguiado")
+        Vec3 look = caster.getViewVector(1).normalize();
+        Vec3 chest = caster.getEyePosition().add(look.scale(2.2)).add(0, -0.2, 0);
         if (t >= ns0 && t < nsf) {
             // short afterimages of each instant, and the arms the eye missed
             m.ghostT += dt;

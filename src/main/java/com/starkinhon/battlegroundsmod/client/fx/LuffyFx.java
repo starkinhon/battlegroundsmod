@@ -119,6 +119,12 @@ public final class LuffyFx {
         double steamScale = 1;
         float[] light = {0, 1, 0};
         final List<Col> cols = new ArrayList<>();
+        // Gear 5 (forja/luffy-g5): the cloud's strength this frame; standing still he sits down and bounces on his
+        // backside (sitK 0 walking .. 1 bouncing), the sash's loose end
+        double collarA, sitK, bounceT, stillFor, lastPh = -1;
+        Vec3 lastPos;
+        double[][] rib;
+        long ribNs;
 
         Body(int id) {
             this.id = id;
@@ -667,17 +673,9 @@ public final class LuffyFx {
     private static void steamG4(double alpha, double rise, double bob) {
     }
 
-    // the page puts it at 0.72; in the game it sat over half his head (his head is smaller and lower), so it goes lower
+    // G5's cloud is drawn with his body now (drawNika: at the base of his neck, with its flames); this sets how strong
     private static void collar(double alpha) {
-        // seen from inside his own head it covered the whole screen (worst as the Giant): only the others see it
-        if (SELF_FP) {
-            return;
-        }
-        LuffyMesh.P p = LuffyMesh.p(LuffyMesh.COLLAR);
-        p.t = (float) TIME;
-        p.alpha = (float) alpha;
-        p.glow = false;
-        LuffyMesh.queue(LuffyMesh.Mesh.TORUS, basis(UP(0, 0.56, 0), CAM).scale((float) MS).rotateX((float) (Math.PI / 2)), p, LuffyMesh.FRONT, 13);
+        B.collarA = Math.max(B.collarA, alpha);
     }
 
     // ---------- every frame ----------
@@ -709,7 +707,9 @@ public final class LuffyFx {
                 continue;
             }
             B = bd;
+            bd.collarA = 0;
             SELF_FP = e == mc.player && mc.options.getCameraType().isFirstPerson();
+            sitIdle(bd, e, dt);
             // his rubber is his own skin: the hand's color from whatever skin the player uses
             TONE = SkinTone.of(e, SKIN);
             TONE_RIM = mix(TONE, 0xFFFFFF, 0.3);
@@ -1955,6 +1955,12 @@ public final class LuffyFx {
         for (ModelPart p : arms(m, bd.armOn || bd.hideArms, bd.hideArms)) {
             hide(p);
         }
+        // Gear 5 sitting: his arms and legs are drawn by the Layer in the sitting pose (setupAnim would undo ours)
+        if (sitting(bd)) {
+            for (ModelPart p : new ModelPart[] {m.rightArm, m.rightSleeve, m.leftArm, m.leftSleeve, m.rightLeg, m.rightPants, m.leftLeg, m.leftPants}) {
+                hide(p);
+            }
+        }
         // the Fusen: head, arms and legs are drawn pushed out round the balloon (onRenderPlayerPost)
         if (bd.balloon > 0.02) {
             for (ModelPart p : new ModelPart[] {m.head, m.hat, m.rightArm, m.rightSleeve, m.leftArm, m.leftSleeve, m.rightLeg, m.rightPants, m.leftLeg,
@@ -1976,6 +1982,23 @@ public final class LuffyFx {
         }
         if (bd.lift > 0) {
             pose.translate(0, bd.lift, 0);
+        }
+        // Gear 5 sitting (forja/luffy-g5): his hip drops to the ground, he leans back and bounces on his backside;
+        // the body turns about the hip (12 px up), as the page's root
+        if (sitting(bd)) {
+            double K = smooth(bd.sitK), sc = e.getScale();
+            double[] b = bounce(bd);
+            double y = b[0], squash = b[1], flight = b[2];
+            float lean = (float) (-0.55 * K + 0.12 * flight * K);
+            double hip0 = 12 / 16.0 * 0.9375;
+            double hipH = lerp(hip0, 2.2 / 16.0, K) + y;
+            pose.translate(0, hipH * sc, 0);
+            pose.mulPose(Axis.YP.rotation(-yaw));
+            pose.mulPose(Axis.XP.rotation(lean));
+            float sx = (float) (1 + 0.14 * squash), sy = (float) (1 - 0.2 * squash);
+            pose.scale(sx, sy, sx);
+            pose.mulPose(Axis.YP.rotation(yaw));
+            pose.translate(0, -hip0 * sc, 0);
         }
         // Jet Mergulho: upside down over the target, then a flip back onto his feet
         if (bd.flip >= 0) {
@@ -2057,14 +2080,8 @@ public final class LuffyFx {
                 if (boundman(bd)) {
                     drawBoundman(pose, buffer, light, player, m, bd, partialTick);
                 }
-            } else if (bd.lookLv == 4) {
-                int c = FastColor.ARGB32.color(Math.round(0.6f * k * 255), 0xF4, 0xF1, 0xEA);
-                m.body.render(pose, buf, light, overlay, c);
-                for (ModelPart p : limbs) {
-                    p.render(pose, buf, light, overlay, c);
-                }
-                // the face stays readable: a lighter white on the head
-                m.head.render(pose, buf, light, overlay, FastColor.ARGB32.color(Math.round(0.35f * k * 255), 0xF4, 0xF1, 0xEA));
+            } else if (bd.lookLv == 4 && RenderSystem.getVertexSorting() != VertexSorting.ORTHOGRAPHIC_Z) {
+                drawNika(pose, buffer, light, player, m, bd, partialTick);
             }
         }
     }
@@ -2380,6 +2397,315 @@ public final class LuffyFx {
         }
         if (!any && !on) {
             bd.cols.clear();
+        }
+    }
+
+    // ---------- Gear 5 · Nika (forja/luffy-g5, approved: "ÓTIMO PRA CARALHO") ----------
+
+    private static boolean sitting(Body bd) {
+        return bd.lookLv == 4 && bd.sitK > 0.001 && RenderSystem.getVertexSorting() != VertexSorting.ORTHOGRAPHIC_Z;
+    }
+
+    // Standing still in G5 he sits down (0.8 s) and bounces on his backside; moving, he gets up in 0.5 s.
+    private static void sitIdle(Body bd, Entity e, double dt) {
+        Vec3 p = e.position();
+        double moved = bd.lastPos == null ? 0 : Math.hypot(p.x - bd.lastPos.x, p.z - bd.lastPos.z) + Math.abs(p.y - bd.lastPos.y) * 0.5;
+        bd.lastPos = p;
+        boolean g5 = bd.g5Until > NOW && bd.move == null && !bd.holding;
+        boolean still = g5 && moved < 0.02 * Math.max(dt, 1e-3) * 20 && e.onGround();
+        bd.stillFor = still ? bd.stillFor + dt : 0;
+        boolean target = still && bd.stillFor > 0.35;
+        bd.sitK = target ? Math.min(1, bd.sitK + dt / 0.8) : Math.max(0, bd.sitK - dt / 0.5);
+        if (!g5) {
+            bd.sitK = 0;
+        }
+        if (bd.sitK <= 0) {
+            bd.bounceT = 0;
+            bd.lastPh = -1;
+            return;
+        }
+        bd.bounceT += dt * smooth(Math.min(1, bd.sitK * 1.5));
+        double ph = bd.bounceT % 1.0;
+        // each landing on his backside shakes the rubber ground
+        if (bd.lastPh > 0.5 && ph < 0.5 && bd.sitK > 0.6) {
+            double s = e instanceof LivingEntity l ? l.getScale() : 1;
+            RUBBERS.add(new Rubber(p, (float) (0.35 * smooth(bd.sitK)), NOW, (float) (0.4 * s)));
+        }
+        bd.lastPh = ph;
+    }
+
+    // the page's bounce: 0.22 s sinking into the rubber ground, 0.78 s in the air -> (height, squash, flight)
+    private static double[] bounce(Body bd) {
+        double K = smooth(bd.sitK), ph = bd.bounceT % 1.0;
+        if (ph < 0.22) {
+            double q = ph / 0.22, s = Math.sin(q * Math.PI);
+            return new double[] {-0.32 * K * s, s * K, 0};
+        }
+        double q = (ph - 0.22) / 0.78, fl = Math.sin(q * Math.PI);
+        return new double[] {1.0 * K * fl, -0.12 * K * (1 - q) * Math.sin(q * Math.PI), fl};
+    }
+
+    private static final int CLOTH = 0xFFF6F5F2, SASH = 0xFF8A45B8;
+
+    // The page's G5 over his own skin: the open white shirt, the wide sleeves and the shorts with their fur hems, the
+    // purple sash with its loose end, the cloud at his neck with its flames; sitting, his arms and legs in the page's pose.
+    private static void drawNika(PoseStack pose, MultiBufferSource buffer, int light, AbstractClientPlayer player, PlayerModel<AbstractClientPlayer> m,
+            Body bd, float partial) {
+        int ov = LivingEntityRenderer.getOverlayCoords(player, 0);
+        Vec3 cam = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
+        VertexConsumer cloth = buffer.getBuffer(RenderType.entityCutoutNoCull(WHITE_TEX));
+        boolean sit = sitting(bd);
+        ModelPart[] limbs = {m.rightArm, m.leftArm, m.rightLeg, m.leftLeg};
+        float[][] saved = new float[4][];
+        for (int i = 0; i < 4; i++) {
+            saved[i] = new float[] {limbs[i].xRot, limbs[i].yRot, limbs[i].zRot};
+        }
+        if (sit) {
+            // the page's sitting pose (the page's z turns the other way in the model's y-down frame)
+            float K = (float) smooth(bd.sitK);
+            double[] b = bounce(bd);
+            double fl = b[2] * K, sq = Math.max(0, b[1]) * K, t = (player.tickCount + partial) / 20.0, wig = Math.sin(t * 6.5);
+            float[][] sitPose = {{(float) (-2.75 + 0.1 * wig), -0.35f}, {(float) (-0.9 + 0.3 * wig - 0.5 * fl), (float) -(1.3 + 0.5 * fl + 0.3 * sq)},
+                    {(float) (-1.95 - 0.25 * fl + 0.12 * wig), 0.22f}, {(float) (-1.35 - 0.2 * fl - 0.12 * wig), -0.3f}};
+            ModelPart[] over = {m.rightSleeve, m.leftSleeve, m.rightPants, m.leftPants};
+            VertexConsumer skin = buffer.getBuffer(RenderType.entityCutoutNoCull(player.getSkin().texture()));
+            for (int i = 0; i < 4; i++) {
+                ModelPart p = limbs[i];
+                p.xRot = Mth.lerp(K, saved[i][0], sitPose[i][0]);
+                p.yRot = Mth.lerp(K, saved[i][1], 0);
+                p.zRot = Mth.lerp(K, saved[i][2], sitPose[i][1]);
+                over[i].copyFrom(p);
+                for (ModelPart q : new ModelPart[] {p, over[i]}) {
+                    boolean was = q.visible;
+                    q.visible = true;
+                    q.render(pose, skin, light, ov);
+                    q.visible = was;
+                }
+            }
+        }
+        boolean slim = player.getSkin().model() == net.minecraft.client.resources.PlayerSkin.Model.SLIM;
+        // the shirt, the waist and the sash on his trunk (page pixels, y from his feet; the trunk turns at 24)
+        pose.pushPose();
+        m.body.translateAndRotate(pose);
+        pageFrame(pose, 24);
+        Cloth c = new Cloth(pose, cloth, light, ov);
+        c.box(0, 17.9f, -2.3f, 8.9f, 12.2f, 0.6f, 0, 0, CLOTH);
+        for (int s = -1; s <= 1; s += 2) {
+            c.box(s * 4.3f, 17.9f, 0, 0.6f, 12.2f, 4.6f, 0, 0, CLOTH);
+            c.box(s * 3.25f, 17.9f, 2.35f, 2.3f, 12.2f, 0.6f, s * 0.28f, 0, CLOTH);
+            c.box(s * 2.35f, 21.2f, 2.55f, 1.4f, 6, 0.7f, -s * 0.2f, -s * 0.32f, CLOTH);
+            c.box(s * 3.2f, 25, -0.4f, 2.4f, 2.6f, 4.2f, 0, s * 0.35f, CLOTH);
+        }
+        c.box(0, 24.2f, 0, 8.9f, 0.6f, 4.6f, 0, 0, CLOTH);
+        c.box(0, 11, 0, 8.8f, 3.2f, 4.8f, 0, 0, CLOTH);
+        c.box(0, 12.3f, 0, 9.3f, 2.6f, 5.3f, 0, 0, SASH);
+        pose.pushPose();
+        pose.translate(3.3f, 12.2f, 2.7f);
+        pose.mulPose(Axis.ZP.rotation(0.5f));
+        c.box(0, 0, 0, 2.6f, 2.4f, 1.6f, 0, 0, SASH);
+        pose.popPose();
+        Vec3 knot = c.at(3.3f, 11.2f, 3.1f, cam), side = c.dir(1, 0, 0), back = c.dir(0, 0, -1);
+        // the cloud at the base of his neck: upright (it does not lean back with him), facing where he faces
+        Vec3 neck = c.at(0, 22.4f, -0.8f, cam);
+        pose.popPose();
+        // sleeves and trouser legs, with the fur hems
+        for (int s = -1; s <= 1; s += 2) {
+            ModelPart arm = s < 0 ? m.rightArm : m.leftArm, leg = s < 0 ? m.rightLeg : m.leftLeg;
+            float ax = s * (slim ? 0.5f : 1);
+            pose.pushPose();
+            arm.translateAndRotate(pose);
+            pageFrame(pose, 0);
+            Cloth a = new Cloth(pose, cloth, light, ov);
+            a.sleeve(ax, -2.3f, 0, 4.8f, 6.6f, 8.5f);
+            a.fur(ax, -6.6f, 0, 3.9f, s * 3.7f + 11, bd);
+            pose.popPose();
+            pose.pushPose();
+            leg.translateAndRotate(pose);
+            pageFrame(pose, 0);
+            Cloth l = new Cloth(pose, cloth, light, ov);
+            l.sleeve(0, -3.6f, 0, 5, 6.2f, 7.6f);
+            l.fur(0, -7.4f, 0, 3.7f, s * 5.1f + 3, bd);
+            pose.popPose();
+        }
+        for (int i = 0; i < 4; i++) {
+            limbs[i].xRot = saved[i][0];
+            limbs[i].yRot = saved[i][1];
+            limbs[i].zRot = saved[i][2];
+        }
+        float sc = player.getScale();
+        double A = Math.max(bd.collarA, bd.lookK);
+        if (A > 0.01) {
+            Vec3 fwd = new Vec3(-back.x, 0, -back.z), left = new Vec3(side.x, 0, side.z);
+            if (fwd.lengthSqr() < 1e-6 || left.lengthSqr() < 1e-6) {
+                fwd = new Vec3(0, 0, 1);
+                left = new Vec3(1, 0, 0);
+            }
+            fwd = fwd.normalize();
+            left = left.normalize();
+            Matrix4f M = new Matrix4f((float) left.x, 0, (float) left.z, 0, 0, 1, 0, 0, (float) fwd.x, 0, (float) fwd.z, 0, (float) (neck.x - cam.x),
+                    (float) (neck.y - cam.y), (float) (neck.z - cam.z), 1).scale((float) (MS * 0.85 * sc)).rotateX((float) (Math.PI / 2));
+            LuffyMesh.P p = LuffyMesh.p(LuffyMesh.COLLAR);
+            p.t = (float) TIME;
+            p.alpha = (float) Math.min(1, A);
+            p.glow = false;
+            p.seed = 1.7f;
+            p.p0[0] = 0.55f;
+            LuffyMesh.queue(LuffyMesh.Mesh.TORUS_F, M, p, LuffyMesh.FRONT, 13);
+        }
+        ribbon(bd, knot, side, back, player, sc, cloth, light, ov, cam);
+    }
+
+    // the model's part frame (y down, front at -z, in blocks) -> the page's (y up, front at +z, in pixels), with
+    // y0 = the page height of the part's pivot
+    private static void pageFrame(PoseStack pose, float y0) {
+        pose.mulPose(Axis.XP.rotation((float) Math.PI));
+        pose.scale(1 / 16f, 1 / 16f, 1 / 16f);
+        pose.translate(0, -y0, 0);
+    }
+
+    private record Cloth(PoseStack pose, VertexConsumer vc, int light, int ov) {
+        Vec3 at(float x, float y, float z, Vec3 cam) {
+            Vector3f v = pose.last().pose().transformPosition(x, y, z, new Vector3f());
+            return cam.add(v.x, v.y, v.z);
+        }
+
+        Vec3 dir(float x, float y, float z) {
+            Vector3f v = pose.last().pose().transformDirection(x, y, z, new Vector3f()).normalize();
+            return new Vec3(v.x, v.y, v.z);
+        }
+
+        void quad(PoseStack.Pose p, float[] a, float[] b, float[] c, float[] d, int col) {
+            float nx = (b[1] - a[1]) * (d[2] - a[2]) - (b[2] - a[2]) * (d[1] - a[1]);
+            float ny = (b[2] - a[2]) * (d[0] - a[0]) - (b[0] - a[0]) * (d[2] - a[2]);
+            float nz = (b[0] - a[0]) * (d[1] - a[1]) - (b[1] - a[1]) * (d[0] - a[0]);
+            // (b - a) x (d - a) points inward for these corner orders: turned outward
+            float l = -((float) Math.sqrt(nx * nx + ny * ny + nz * nz) + 1e-6f);
+            float[][] q = {a, b, c, d};
+            float[][] uv = {{0, 0}, {1, 0}, {1, 1}, {0, 1}};
+            for (int i = 0; i < 4; i++) {
+                vc.addVertex(p, q[i][0], q[i][1], q[i][2]).setColor(col).setUv(uv[i][0], uv[i][1]).setOverlay(ov).setLight(light).setNormal(p, nx / l, ny / l, nz / l);
+            }
+        }
+
+        // a box of w x h x d pixels at (x, y, z), turned ry then rz (three's order)
+        void box(float x, float y, float z, float w, float h, float d, float ry, float rz, int col) {
+            pose.pushPose();
+            pose.translate(x, y, z);
+            pose.mulPose(Axis.YP.rotation(ry));
+            pose.mulPose(Axis.ZP.rotation(rz));
+            frustum(w, w, d, d, h, col, true);
+            pose.popPose();
+        }
+
+        // a 4-sided tube, top w0 x d0, bottom w1 x d1, h tall, centred (caps only for a box)
+        void frustum(float w0, float w1, float d0, float d1, float h, int col, boolean caps) {
+            PoseStack.Pose p = pose.last();
+            float Y = h / 2, a = w0 / 2, b = w1 / 2, c = d0 / 2, e = d1 / 2;
+            float[] t0 = {-a, Y, -c}, t1 = {a, Y, -c}, t2 = {a, Y, c}, t3 = {-a, Y, c};
+            float[] b0 = {-b, -Y, -e}, b1 = {b, -Y, -e}, b2 = {b, -Y, e}, b3 = {-b, -Y, e};
+            quad(p, t3, t2, b2, b3, col);
+            quad(p, t1, t0, b0, b1, col);
+            quad(p, t0, t3, b3, b0, col);
+            quad(p, t2, t1, b1, b2, col);
+            if (caps) {
+                quad(p, t0, t1, t2, t3, col);
+                quad(p, b3, b2, b1, b0, col);
+            }
+        }
+
+        void sleeve(float x, float y, float z, float top, float bottom, float len) {
+            pose.pushPose();
+            pose.translate(x, y, z);
+            frustum(top, bottom, top, bottom, len, CLOTH, false);
+            pose.popPose();
+        }
+
+        // the fur hem: the cloud, small and with no flames, lying round the limb
+        void fur(float x, float y, float z, float R, float seed, Body bd) {
+            LuffyMesh.P p = LuffyMesh.p(LuffyMesh.COLLAR);
+            p.t = (float) TIME;
+            p.glow = false;
+            p.seed = seed;
+            Matrix4f M = new Matrix4f(pose.last().pose()).translate(x, y, z).rotateX((float) (Math.PI / 2)).scale(R / 0.7f);
+            LuffyMesh.queue(LuffyMesh.Mesh.FUR, M, p, LuffyMesh.FRONT, 13);
+        }
+    }
+
+    // The sash's loose end: a chain of points hung from the knot, pulled by gravity and a soft wind behind him, never
+    // through the ground, drawn as one purple strip.
+    private static void ribbon(Body bd, Vec3 knot, Vec3 side, Vec3 back, AbstractClientPlayer player, float sc, VertexConsumer vc, int light, int ov, Vec3 cam) {
+        int N = 13;
+        double seg = 1.25 / 16 * 0.9375 * sc;
+        long ns = System.nanoTime();
+        double dt = bd.rib == null ? 0 : Math.min(0.05, (ns - bd.ribNs) / 1e9);
+        bd.ribNs = ns;
+        if (bd.rib == null || bd.rib[0][0] == 0 && bd.rib[0][1] == 0 || knot.distanceToSqr(bd.rib[0][0], bd.rib[0][1], bd.rib[0][2]) > 9 * sc * sc) {
+            bd.rib = new double[N][6];
+            for (int i = 0; i < N; i++) {
+                bd.rib[i] = new double[] {knot.x, knot.y - i * seg, knot.z, knot.x, knot.y - i * seg, knot.z};
+            }
+        }
+        double t = (player.tickCount) / 20.0, floor = player.getY() + 0.02;
+        int sub = 3;
+        double h = dt / sub;
+        for (int s = 0; s < sub && dt > 0; s++) {
+            for (int i = 1; i < N; i++) {
+                double[] q = bd.rib[i];
+                double wb = 0.35 + 0.35 * Math.sin(t * 2.1 + i * 0.4), ws = 0.5 * Math.sin(t * 1.3 + i * 0.7);
+                double ax = back.x * wb + side.x * ws, ay = -7 + back.y * wb + side.y * ws, az = back.z * wb + side.z * ws;
+                double vx = (q[0] - q[3]) * 0.985, vy = (q[1] - q[4]) * 0.985, vz = (q[2] - q[5]) * 0.985;
+                q[3] = q[0];
+                q[4] = q[1];
+                q[5] = q[2];
+                q[0] += vx + ax * sc * h * h;
+                q[1] += vy + ay * sc * h * h;
+                q[2] += vz + az * sc * h * h;
+            }
+            bd.rib[0] = new double[] {knot.x, knot.y, knot.z, knot.x, knot.y, knot.z};
+            for (int it = 0; it < 6; it++) {
+                for (int i = 1; i < N; i++) {
+                    double[] a = bd.rib[i - 1], b = bd.rib[i];
+                    double dx = b[0] - a[0], dy = b[1] - a[1], dz = b[2] - a[2], l = Math.sqrt(dx * dx + dy * dy + dz * dz) + 1e-9, k = (l - seg) / l;
+                    if (i == 1) {
+                        b[0] -= dx * k;
+                        b[1] -= dy * k;
+                        b[2] -= dz * k;
+                    } else {
+                        a[0] += dx * k * 0.5;
+                        a[1] += dy * k * 0.5;
+                        a[2] += dz * k * 0.5;
+                        b[0] -= dx * k * 0.5;
+                        b[1] -= dy * k * 0.5;
+                        b[2] -= dz * k * 0.5;
+                    }
+                }
+            }
+            for (int i = 1; i < N; i++) {
+                bd.rib[i][1] = Math.max(bd.rib[i][1], floor);
+            }
+        }
+        // drawn relative to the camera, in the world's axes
+        PoseStack.Pose id = new PoseStack().last();
+        double w = 3.2 / 16 * 0.9375 / 2 * sc;
+        float[][] L = new float[N][], R = new float[N][];
+        float[][] nrm = new float[N][];
+        for (int i = 0; i < N; i++) {
+            double[] p = bd.rib[i], a = bd.rib[Math.max(0, i - 1)], b = bd.rib[Math.min(N - 1, i + 1)];
+            Vec3 along = new Vec3(b[0] - a[0], b[1] - a[1], b[2] - a[2]).normalize();
+            Vec3 wd = side.subtract(along.scale(side.dot(along))).normalize();
+            Vec3 n = along.cross(wd).normalize();
+            double ww = w * (i == N - 1 ? 0.75 : 1);
+            L[i] = new float[] {(float) (p[0] - wd.x * ww - cam.x), (float) (p[1] - wd.y * ww - cam.y), (float) (p[2] - wd.z * ww - cam.z)};
+            R[i] = new float[] {(float) (p[0] + wd.x * ww - cam.x), (float) (p[1] + wd.y * ww - cam.y), (float) (p[2] + wd.z * ww - cam.z)};
+            nrm[i] = new float[] {(float) n.x, (float) n.y, (float) n.z};
+        }
+        for (int i = 0; i < N - 1; i++) {
+            float[][] q = {L[i], R[i], R[i + 1], L[i + 1]};
+            float[][] nn = {nrm[i], nrm[i], nrm[i + 1], nrm[i + 1]};
+            for (int k = 0; k < 4; k++) {
+                vc.addVertex(id, q[k][0], q[k][1], q[k][2]).setColor(SASH).setUv(k == 1 || k == 2 ? 1 : 0, k >= 2 ? 1 : 0).setOverlay(ov).setLight(light)
+                        .setNormal(id, nn[k][0], nn[k][1], nn[k][2]);
+            }
         }
     }
 

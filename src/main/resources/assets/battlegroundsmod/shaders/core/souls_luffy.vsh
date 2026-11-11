@@ -81,10 +81,25 @@ void main() {
         P.xz *= 1. + up * 0.35 * P0.x;
         Nl = n; vH = n.y * 0.5 + 0.5;
     } else if (k == 3) {
-        // COLLAR_V (a torus lying flat)
+        // COLLAR_V (a torus lying flat: its up is local -z, its front local +y), forja/luffy-g5: thin and low in front (the
+        // face and the chest show), full on the shoulders, high behind the head; P0.x = the flames' height (0 = none,
+        // the fur hems): the top of the tube pulled up in tongues that change and rise
         vec3 n = normalize(Normal);
         float b = fbm3(P * 3.1 + vec3(T * 0.5, 0., -T * 0.3)) * 0.5 + 0.5;
         P += n * (b * 0.22 + 0.06 * sin(atan(P.z, P.x) * 7. + T * 2.));
+        vec3 UPL = vec3(0., 0., -1.);
+        float ang = atan(Position.y, Position.x); vU = ang;
+        float front = max(0., sin(ang)), back = max(0., -sin(ang));
+        vec3 C = vec3(cos(ang), sin(ang), 0.) * .4;
+        P = C + (P - C) * mix(1., .38, smoothstep(.2, .95, front));
+        P += UPL * (back * back * .32 - front * .12);
+        float up = max(dot(n, UPL), 0.);
+        float tg = fbm3(vec3(cos(ang) * 4.2, sin(ang) * 4.2, -T * 1.6) + Seed) * .5 + .5;
+        float lick = smoothstep(.42, .74, tg);
+        float h = pow(up, 1.4) * P0.x * (.18 + 1.25 * lick) * (.35 + .9 * back + .25 * (1. - front));
+        vec3 tn = vec3(-sin(ang), cos(ang), 0.);
+        P += UPL * h + tn * sin(h * 6. - T * 3.2 + ang * 3.) * h * .22;
+        vH = P0.x > 0. ? h / (P0.x * 1.43) : 0.;
         Nl = n;
     } else if (k == 4) {
         // FIRE_V: P0.x = Trail
