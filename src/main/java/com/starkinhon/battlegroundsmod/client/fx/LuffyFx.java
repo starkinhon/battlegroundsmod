@@ -721,9 +721,9 @@ public final class LuffyFx {
     private static void setLook(Body bd, int lv, double k) {
         bd.lookLv = lv;
         bd.lookK = k;
-        SX = lv == 3 ? 1 + 0.55 * k : 1;
+        SX = lv == 3 ? 1 + 0.35 * k : 1;
         SY = lv == 3 ? 1 + 0.12 * k : 1;
-        SZ = lv == 3 ? 1 + 0.75 * k : 1;
+        SZ = lv == 3 ? 1 + 0.3 * k : 1;
         BODYY = lv == 1 ? -0.2 : lv == 3 ? 0.15 : 0;
     }
 
@@ -1902,18 +1902,19 @@ public final class LuffyFx {
         PlayerModel<AbstractClientPlayer> m = event.getRenderer().getModel();
         HIDDEN.clear();
         double now = ScreenFx.now();
-        // Boundman: the trunk blown up, short thick legs, the arm into the fist
+        // Boundman: the trunk blown up, thick legs, the arm into the fist
+        // (kept to his height: the old 1.75 depth, a head only widened and legs 18% shorter read as a flat, squashed skin)
         float b = bd.lookLv == 3 ? (float) bd.lookK : 0;
         for (ModelPart p : new ModelPart[] {m.body, m.jacket}) {
-            scale(p, 1 + 0.55f * b, 1 + 0.12f * b, 1 + 0.75f * b);
+            scale(p, 1 + 0.35f * b, 1 + 0.12f * b, 1 + 0.3f * b);
         }
-        scale(m.head, 1 + 0.25f * b, 1, 1 + 0.25f * b);
-        scale(m.hat, 1 + 0.25f * b, 1, 1 + 0.25f * b);
+        scale(m.head, 1 + 0.1f * b, 1 + 0.1f * b, 1 + 0.1f * b);
+        scale(m.hat, 1 + 0.1f * b, 1 + 0.1f * b, 1 + 0.1f * b);
         for (ModelPart p : new ModelPart[] {m.rightLeg, m.leftLeg, m.rightPants, m.leftPants}) {
-            scale(p, 1 + 0.5f * b, 1 - 0.18f * b, 1 + 0.5f * b);
+            scale(p, 1 + 0.3f * b, 1, 1 + 0.3f * b);
         }
         for (ModelPart p : arms(m, true, true)) {
-            scale(p, 1 + 0.6f * b, 1, 1 + 0.6f * b);
+            scale(p, 1 + 0.45f * b, 1, 1 + 0.45f * b);
         }
         // the rubber arm is drawn instead of his right arm; both arms out for the barrages
         for (ModelPart p : arms(m, bd.armOn || bd.hideArms, bd.hideArms)) {
@@ -2009,17 +2010,27 @@ public final class LuffyFx {
             var buf = buffer.getBuffer(RenderType.entityTranslucent(WHITE_TEX));
             int overlay = OverlayTexture.NO_OVERLAY;
             float k = (float) bd.lookK;
+            // only the inner parts: the skin's outer layer (hat, jacket, sleeves, pants) is a bigger box that is mostly
+            // see-through, and painted with a plain texture it became a solid shell over the whole body (the white cape of G5)
+            ModelPart[] limbs = {m.rightArm, m.leftArm, m.rightLeg, m.leftLeg};
             if (bd.lookLv == 1) {
                 int c = FastColor.ARGB32.color(Math.round(0.42f * k * 255), 0xF3, 0x9A, 0x92);
-                m.renderToBuffer(pose, buf, light, overlay, c);
+                for (ModelPart p : new ModelPart[] {m.head, m.body, m.rightArm, m.leftArm, m.rightLeg, m.leftLeg}) {
+                    p.render(pose, buf, light, overlay, c);
+                }
             } else if (bd.lookLv == 3) {
                 int c = FastColor.ARGB32.color(Math.round(0.93f * k * 255), 0x1C, 0x17, 0x1C);
-                for (ModelPart p : new ModelPart[] {m.rightArm, m.leftArm, m.rightSleeve, m.leftSleeve, m.rightLeg, m.leftLeg, m.rightPants, m.leftPants}) {
+                for (ModelPart p : limbs) {
                     p.render(pose, buf, light, overlay, c);
                 }
             } else if (bd.lookLv == 4) {
                 int c = FastColor.ARGB32.color(Math.round(0.6f * k * 255), 0xF4, 0xF1, 0xEA);
-                m.renderToBuffer(pose, buf, light, overlay, c);
+                m.body.render(pose, buf, light, overlay, c);
+                for (ModelPart p : limbs) {
+                    p.render(pose, buf, light, overlay, c);
+                }
+                // the face stays readable: a lighter white on the head
+                m.head.render(pose, buf, light, overlay, FastColor.ARGB32.color(Math.round(0.35f * k * 255), 0xF4, 0xF1, 0xEA));
             }
         }
     }
