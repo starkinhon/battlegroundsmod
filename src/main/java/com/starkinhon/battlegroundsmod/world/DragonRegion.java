@@ -48,11 +48,15 @@ public final class DragonRegion extends Region {
             for (ResourceKey<Biome> dry : java.util.List.of(Biomes.DESERT, Biomes.BADLANDS, Biomes.ERODED_BADLANDS)) {
                 builder.replaceBiome(dry, ModWorldgen.DESERTO_VERMELHO);
             }
+            // The thick woods become the Terra Sagrada de Karin (the dense forest of Korin's tower).
+            for (ResourceKey<Biome> woods : java.util.List.of(Biomes.FOREST, Biomes.DARK_FOREST, Biomes.OLD_GROWTH_BIRCH_FOREST,
+                    Biomes.JUNGLE, Biomes.SPARSE_JUNGLE, Biomes.BAMBOO_JUNGLE, Biomes.MANGROVE_SWAMP)) {
+                builder.replaceBiome(woods, ModWorldgen.TERRA_SAGRADA);
+            }
             for (ResourceKey<Biome> green : java.util.List.of(Biomes.PLAINS, Biomes.SUNFLOWER_PLAINS, Biomes.SAVANNA,
-                    Biomes.MEADOW, Biomes.CHERRY_GROVE, Biomes.FOREST, Biomes.FLOWER_FOREST, Biomes.BIRCH_FOREST,
-                    Biomes.OLD_GROWTH_BIRCH_FOREST, Biomes.DARK_FOREST, Biomes.TAIGA, Biomes.OLD_GROWTH_PINE_TAIGA,
-                    Biomes.OLD_GROWTH_SPRUCE_TAIGA, Biomes.SNOWY_PLAINS, Biomes.SNOWY_TAIGA, Biomes.ICE_SPIKES, Biomes.SWAMP,
-                    Biomes.MANGROVE_SWAMP, Biomes.JUNGLE, Biomes.SPARSE_JUNGLE, Biomes.BAMBOO_JUNGLE)) {
+                    Biomes.MEADOW, Biomes.CHERRY_GROVE, Biomes.FLOWER_FOREST, Biomes.BIRCH_FOREST, Biomes.TAIGA,
+                    Biomes.OLD_GROWTH_PINE_TAIGA, Biomes.OLD_GROWTH_SPRUCE_TAIGA, Biomes.SNOWY_PLAINS, Biomes.SNOWY_TAIGA,
+                    Biomes.ICE_SPIKES, Biomes.SWAMP)) {
                 builder.replaceBiome(green, ModWorldgen.TERRAS_DO_DRAGAO);
             }
         });

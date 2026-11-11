@@ -134,6 +134,9 @@ public final class UniverseSpawns {
         if (biome.is(com.starkinhon.battlegroundsmod.world.ModWorldgen.DESERTO_VERMELHO)) {
             return List.of("saibaman", "saibaman", "bandido_deserto", "raptor");
         }
+        if (biome.is(com.starkinhon.battlegroundsmod.world.ModWorldgen.TERRA_SAGRADA)) {
+            return List.of("raptor", "raptor", "tiranossauro", "soldado_red_ribbon");
+        }
         if (biome.is(com.starkinhon.battlegroundsmod.world.ModWorldgen.PICOS_DO_DRAGAO)) {
             return List.of("soldado_red_ribbon", "soldado_red_ribbon", "yeti", "raptor");
         }

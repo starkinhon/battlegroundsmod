@@ -33,6 +33,7 @@ public final class ModWorldgen {
     public static final ResourceKey<Biome> TERRAS_DO_DRAGAO = biome("terras_do_dragao");
     public static final ResourceKey<Biome> PICOS_DO_DRAGAO = biome("picos_do_dragao");
     public static final ResourceKey<Biome> DESERTO_VERMELHO = biome("deserto_vermelho");
+    public static final ResourceKey<Biome> TERRA_SAGRADA = biome("terra_sagrada_de_karin");
     public static final TagKey<Biome> DRAGONBALL_BIOMES = TagKey.create(Registries.BIOME,
             ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "universe_dragonball"));
 

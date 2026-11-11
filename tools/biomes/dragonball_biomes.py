@@ -53,6 +53,12 @@ biome("picos_do_dragao", 1.0, 0xE3B65E, 0xF0D29A, 0x2FB6D6, 0x10586A, 0x8FBF4E, 
       features(["battlegroundsmod:dragon_pillar_peaks"],
                ["minecraft:patch_grass_badlands", "minecraft:trees_savanna", "minecraft:patch_dead_bush_badlands"]),
       music="minecraft:music.overworld.badlands")
+# Terra Sagrada de Karin: the dense forest where Korin's tower stands (Stark 2026-11-11: "aquela floresta densa, que é
+# onde fica a Torre do Karin"). Jungle trees and vines; a pillar now and then breaking out of the canopy.
+biome("terra_sagrada_de_karin", 0.95, SKY, FOG, 0x2FB6D6, 0x10586A, 0x4FC23A, 0x3FAE2E,
+      features(["battlegroundsmod:dragon_pillar_forest"],
+               ["minecraft:trees_jungle", "minecraft:flower_warm", "minecraft:patch_grass_jungle",
+                "minecraft:patch_sugar_cane", "minecraft:vines"]))
 biome("deserto_vermelho", 2.0, 0xEDB95C, 0xF6D79A, 0x3FA9C9, 0x10586A, 0x9E9E4E, 0x9E8E3E,
       features(["battlegroundsmod:dragon_pillar_desert"],
                ["minecraft:patch_dead_bush_badlands", "minecraft:patch_cactus_decorated"], ["minecraft:ore_gold_extra"]),
@@ -64,7 +70,7 @@ os.makedirs(f"{R}/worldgen/placed_feature", exist_ok=True)
 with open(f"{R}/worldgen/configured_feature/dragon_pillar.json", "w") as f:
     json.dump({"type": "battlegroundsmod:dragon_pillar", "config": {}}, f, indent=2)
     f.write("\n")
-for name, chance in (("plains", 3), ("peaks", 2), ("desert", 4)):
+for name, chance in (("plains", 3), ("peaks", 2), ("desert", 4), ("forest", 7)):
     with open(f"{R}/worldgen/placed_feature/dragon_pillar_{name}.json", "w") as f:
         json.dump({"feature": "battlegroundsmod:dragon_pillar", "placement": [
             {"type": "minecraft:rarity_filter", "chance": chance},
@@ -77,6 +83,6 @@ for name, chance in (("plains", 3), ("peaks", 2), ("desert", 4)):
 os.makedirs(f"{R}/tags/worldgen/biome", exist_ok=True)
 with open(f"{R}/tags/worldgen/biome/universe_dragonball.json", "w") as f:
     json.dump({"values": ["battlegroundsmod:terras_do_dragao", "battlegroundsmod:picos_do_dragao",
-                          "battlegroundsmod:deserto_vermelho"]}, f, indent=2)
+                          "battlegroundsmod:deserto_vermelho", "battlegroundsmod:terra_sagrada_de_karin"]}, f, indent=2)
     f.write("\n")
 print("ok")

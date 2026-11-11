@@ -23,7 +23,7 @@ import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
 // The universes as biomes of the normal overworld (Stark 2026-11-11). universeAt says whose a spot is: in the overworld
 // by its biome (tags/worldgen/biome/universe_<id>), elsewhere by the dimension (Namek, the old universe worlds).
-// Walking into a universe's land shows its name on screen, like a new area ("Você entrou em Terras do Dragão").
+// Walking into a universe's land shows its name on screen, like a new area (just "Terras do Dragão").
 public final class UniverseBiomes {
     private static final Map<UUID, String> LAST = new HashMap<>();
 
@@ -64,8 +64,8 @@ public final class UniverseBiomes {
             player.connection.send(new ClientboundSetTitlesAnimationPacket(15, 50, 20));
             player.connection.send(new ClientboundSetTitleTextPacket(Component.translatable(name)
                     .withStyle(s -> s.withColor(0xF2C94C).withBold(true))));
-            player.connection.send(new ClientboundSetSubtitleTextPacket(Component.translatable(
-                    "message.battlegroundsmod.entrou_universo." + universe).withStyle(s -> s.withColor(0xE6E0EE))));
+            // Only the place's name: the player works out whose land it is (Stark 2026-11-11).
+            player.connection.send(new ClientboundSetSubtitleTextPacket(Component.empty()));
         } else {
             // From one of its biomes to another: just the name over the hotbar.
             player.displayClientMessage(Component.translatable("message.battlegroundsmod.entrou_bioma", Component.translatable(name))

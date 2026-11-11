@@ -81,6 +81,8 @@ public class BattlegroundsModClient {
         modContainer.registerConfig(ModConfig.Type.CLIENT, FxConfig.SPEC);
         modContainer.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
         NeoForge.EVENT_BUS.addListener(MeteorRenderer::onRenderLevel);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.DragonWind::onRenderLevel);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.DragonWind::onClientTick);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.CreativeSubTabs::onInit);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.CreativeSubTabs::onRenderPre);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.CreativeSubTabs::onRenderPost);
@@ -216,6 +218,10 @@ public class BattlegroundsModClient {
         // Kokushibo's form names in kanji beside him, with the lines.
         event.registerBelowAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "form_kanji"),
                 com.starkinhon.battlegroundsmod.client.FormKanji::renderGui);
+        // The warm orange grade of the Dragon Ball lands, over the HUD too (Stark: "mexer um pouco na GUI, deixar mais
+        // alaranjado"); under the cutscenes.
+        event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "dragon_grade"),
+                com.starkinhon.battlegroundsmod.client.fx.DragonWind::renderGrade);
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "cutscene_bars"), GrabCutscene::renderGui);
         // The Duelo de Expansões: its title, the minigame and the result (over the HUD, which the duel hides).
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "expansion_duel"),

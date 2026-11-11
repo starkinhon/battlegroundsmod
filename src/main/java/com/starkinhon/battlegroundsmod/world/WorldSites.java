@@ -49,7 +49,9 @@ public final class WorldSites {
     public static final String CAPSULE = "capsula", GOKU = "goku", KARIN = "karin", CELL_RING = "cell", WRECK = "nave",
             RADITZ = "raditz", BABIDI = "babidi", BUU = "buu", KAME = "kame", LOOKOUT = "lookout";
 
-    private static final List<String> LANDS = List.of(CAPSULE, GOKU, KARIN, CELL_RING, RADITZ, CAPSULE, GOKU);
+    private static final List<String> LANDS = List.of(CAPSULE, GOKU, CELL_RING, RADITZ, CAPSULE, GOKU);
+    // Korin's tower stands in the dense forest (Stark 2026-11-11), Goku's house now and then at its edge.
+    private static final List<String> FOREST = List.of(KARIN, KARIN, GOKU);
     private static final List<String> DESERT = List.of(WRECK, RADITZ, BABIDI, CELL_RING);
 
     private WorldSites() {
@@ -134,6 +136,9 @@ public final class WorldSites {
         }
         if (biome.is(ModWorldgen.DESERTO_VERMELHO)) {
             return DESERT.get(roll % DESERT.size());
+        }
+        if (biome.is(ModWorldgen.TERRA_SAGRADA)) {
+            return FOREST.get(roll % FOREST.size());
         }
         if (biome.is(ModWorldgen.PICOS_DO_DRAGAO)) {
             return BUU;

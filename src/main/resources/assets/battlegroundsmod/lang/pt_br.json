@@ -1169,7 +1169,6 @@
   "biome.battlegroundsmod.terras_do_dragao": "Terras do Dragão",
   "biome.battlegroundsmod.picos_do_dragao": "Picos do Dragão",
   "biome.battlegroundsmod.deserto_vermelho": "Deserto Vermelho",
-  "message.battlegroundsmod.entrou_universo.dragonball": "Você entrou no universo de Dragon Ball",
   "message.battlegroundsmod.entrou_bioma": "%s",
   "message.battlegroundsmod.universe_no_mundo": "Os universos agora ficam no seu próprio mundo: procure os biomas deles.",
   "entity.battlegroundsmod.pterodactilo": "Pterodáctilo",
@@ -1278,5 +1277,6 @@
   "advancements.battlegroundsmod.souls.sala_tempo.title": "Um Ano em Um Dia",
   "advancements.battlegroundsmod.souls.sala_tempo.description": "Fique o ano inteiro na Sala do Espírito e do Tempo",
   "advancements.battlegroundsmod.souls.namek.title": "Planeta Verde",
-  "advancements.battlegroundsmod.souls.namek.description": "Pise em Namekusei"
+  "advancements.battlegroundsmod.souls.namek.description": "Pise em Namekusei",
+  "biome.battlegroundsmod.terra_sagrada_de_karin": "Terra Sagrada de Karin"
 }
