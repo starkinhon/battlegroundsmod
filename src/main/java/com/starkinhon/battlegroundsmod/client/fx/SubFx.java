@@ -199,7 +199,7 @@ public final class SubFx {
     }
 
     public static boolean active() {
-        return !SHOTS.isEmpty() || !TRACKED.isEmpty() || IceShell.active() || DbFx.active();
+        return !SHOTS.isEmpty() || !TRACKED.isEmpty() || IceShell.active() || DbFx.active() || OpmFx.active();
     }
 
     public static void clear() {
@@ -207,6 +207,7 @@ public final class SubFx {
         TRACKED.clear();
         IceShell.clear();
         DbFx.clear();
+        OpmFx.clear();
     }
 
     // ---------- the two passes ----------

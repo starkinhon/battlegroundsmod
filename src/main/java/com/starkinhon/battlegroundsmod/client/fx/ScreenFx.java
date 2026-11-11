@@ -171,6 +171,18 @@ public final class ScreenFx {
         }
     }
 
+    // Same, with the three numbers given as they are (mode 12, Saitama's silence: how grey, how dark the edges, how
+    // many focus lines).
+    public static void sustainGrade(int mode, float amount, float x, float y, float z, Vec3 pos) {
+        if (amount > 0.004f) {
+            gradeMode = mode;
+            gradeAmount = Mth.clamp(amount, 0, 1);
+            gradeTint = new float[] {x, y, z};
+            gradePos = pos;
+            gradeAt = ticks;
+        }
+    }
+
     private static boolean grading() {
         return ticks - gradeAt <= 1 && gradeAmount > 0.004f && FxConfig.on(FxConfig.IMPACT_FRAMES);
     }

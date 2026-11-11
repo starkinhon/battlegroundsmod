@@ -37,7 +37,7 @@ public final class PowerLogic {
     private static final int SYNC_INTERVAL = 4;
     private static final double ULT_TITLE_RANGE = 48;
     // Powers whose ult draws its own title, so the vanilla one is not sent.
-    private static final java.util.Set<String> OWN_ULT_TITLE = java.util.Set.of("strongest");
+    private static final java.util.Set<String> OWN_ULT_TITLE = java.util.Set.of("strongest", "one_punch");
 
     private PowerLogic() {
     }
@@ -125,7 +125,7 @@ public final class PowerLogic {
         boolean ultimate = PowerData.isUlt(slot);
         // Creative mode skips the costs so moves can be recorded freely.
         boolean free = player.isCreative() || data.noCooldown;
-        if (!free && ultimate && data.ult < PowerData.MAX_ULT) {
+        if (!free && ultimate && data.ult < PowerData.MAX_ULT && !com.starkinhon.battlegroundsmod.power.powers.opm.Opm.freeUlt(player)) {
             player.displayClientMessage(Component.translatable("message.battlegroundsmod.ult_not_ready"), true);
             return;
         }

@@ -316,6 +316,30 @@ public final class SubNet {
     // Shikamaru's signal flare (stream): pos = the light, a = how bright, b = 1 while it still climbs, c = 1 ends it.
     public static final int FLARE = 168;
 
+    // Saitama (Cara de um Soco), drawn by client/fx/OpmFx. Each serious move is one message at its start: the client plays
+    // the whole approved page from it (pos = his feet, dir = forward, a = seed), in step with the server's ticks.
+    public static final int OPM_SOCO = 200;
+    // The Saltos: pos = the target's feet, b = the target's id (the hops go round it).
+    public static final int OPM_SALTOS = 201;
+    // The Mesa: pos = his feet, dir = forward (one of the four sides), a = seed, c = 1: the ground really turns over.
+    public static final int OPM_MESA = 202;
+    public static final int OPM_ESPIRRO = 203;
+    // Socos Consecutivos: id = Saitama, a = the target's id (-1 none).
+    public static final int OPM_SOCOS = 204;
+    // A small hit flash at pos: a = size, b = 1 with a little shock wave, 2 with a short impact frame too.
+    public static final int OPM_FLASH = 205;
+    // The dust ring on the ground at pos: a = radius, b = seconds.
+    public static final int OPM_RING = 206;
+    // Someone thrown by him: id = them, pos = where from. Gone far over the horizon, a star twinkles where they went.
+    public static final int OPM_LAUNCH = 207;
+    // Modo Serio on (a = 1, b = ticks) or off (a = 0): id = Saitama.
+    public static final int OPM_SERIO = 208;
+    // His words over his head: id = Saitama, a = which (0 "ok.", 1 "Ha...", 2 "Ha... ha...!", 3 "ATCHIM!", 4 "... foi mal.").
+    public static final int OPM_SAY = 209;
+    // Small craters of the Saltos (the dent's wave on the ground): pos, a = strength.
+    public static final int OPM_DENT = 210;
+    public static final int OPM_LAST = 219;
+
     public static final int STYLE_SUKUNA = 0;
     public static final int STYLE_PINK = 1;
     public static final int STYLE_CRIMSON = 2;

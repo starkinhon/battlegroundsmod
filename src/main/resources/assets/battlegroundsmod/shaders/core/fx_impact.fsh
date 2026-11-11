@@ -269,6 +269,37 @@ vec3 bfGrade(vec3 c, float k, float red) {
 void main() {
     vec3 c = texture(DiffuseSampler, uv).rgb;
     float l = lum(c);
+    if (Mode > 11.5) {
+        // Saitama's silence (Mode 12, a grade): the world loses its color and the edges go dark (Tint.x how grey, Tint.y
+        // how dark), and the manga focus lines close in from the edges (Tint.z), redrawn 9 times a second (Seed).
+        float k = clamp(Age, 0.0, 1.0);
+        vec3 g = mix(c, vec3(l) * vec3(0.98, 1.0, 1.04), Tint.x * k);
+        float e = length((uv - 0.5) * vec2(1.4, 1.0));
+        g *= 1.0 - Tint.y * k * smoothstep(0.35, 0.85, e);
+        float amt = Tint.z * k * (Reduced > 0.5 ? 0.4 : 1.0);
+        if (amt > 0.001) {
+            float aspect = Screen.x / Screen.y;
+            vec2 p = (uv - 0.5) * 2.0;
+            float ee = length(p);
+            float ang = atan(p.y, p.x * aspect) / 6.2831853 + 0.5;
+            float u = ang * 150.0;
+            float kk = floor(u), f = fract(u);
+            float sd = kk * 1.7 + floor(Seed / 2.0) * 13.1;
+            float line = 0.0;
+            if (fract(sin(sd * 12.9898 + 78.233) * 43758.5453) < 0.55) {
+                float inner = mix(0.72, 0.93, fract(sin((sd + 4.1) * 12.9898 + 78.233) * 43758.5453)) + (1.0 - amt) * 0.35;
+                float along = clamp((ee - inner) / 0.35, 0.0, 1.0);
+                float w = mix(0.06, 0.32, fract(sin((sd + 1.3) * 12.9898 + 78.233) * 43758.5453)) * (0.15 + 0.85 * along);
+                float aa = 150.0 / (6.2831853 * max(ee, 0.2) * Screen.y * 0.5);
+                float at = mix(0.3, 0.7, fract(sin((sd + 2.9) * 12.9898 + 78.233) * 43758.5453));
+                line = (1.0 - smoothstep(w - aa, w + aa, abs(f - at))) * smoothstep(0.0, 0.1, along);
+            }
+            g = mix(g, vec3(1.0), line * 0.8 * amt);
+            g *= 1.0 - 0.12 * amt * smoothstep(0.9, 1.4, ee);
+        }
+        fragColor = vec4(g, 1.0);
+        return;
+    }
     if (Mode > 5.5) {
         vec3 bf = Mode > 9.5 ? bfGrade(c, Age, Mode - 10.0) : bfFrame(Mode);
         if (Reduced > 0.5) {

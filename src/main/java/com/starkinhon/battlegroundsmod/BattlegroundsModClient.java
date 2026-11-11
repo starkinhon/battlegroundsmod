@@ -85,6 +85,9 @@ public class BattlegroundsModClient {
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.CreativeSubTabs::onRenderPre);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.CreativeSubTabs::onRenderPost);
         NeoForge.EVENT_BUS.addListener(FxWorld::onRenderLevel);
+        // Saitama: the hole in the clouds (before the game draws them) and his afterimages (from his drawn frames).
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.OpmFx::onRenderLevel);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.OpmGhosts::onRenderPlayer);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.DomainPanorama::onRenderFrame);
         NeoForge.EVENT_BUS.addListener(EventPriority.HIGHEST, false, RenderLivingEvent.Pre.class, com.starkinhon.battlegroundsmod.client.fx.SukunaDomainScene::onRenderLivingPre);
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, true, RenderLivingEvent.Post.class, com.starkinhon.battlegroundsmod.client.fx.SukunaDomainScene::onRenderLivingPost);
@@ -196,6 +199,9 @@ public class BattlegroundsModClient {
                 com.starkinhon.battlegroundsmod.client.StaminaBar::render);
         // Impact frames and flashes cover the world and the hand, but not the HUD.
         event.registerBelowAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "screen_fx"), ScreenFx::renderGui);
+        // Saitama's serious caption and the Modo Serio's time.
+        event.registerBelowAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "opm_caption"),
+                com.starkinhon.battlegroundsmod.client.fx.OpmFx::renderGui);
         event.registerBelowAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "domain_void"),
                 com.starkinhon.battlegroundsmod.client.fx.DomainScene::renderGui);
         // Inside Aizen's Black Box the dark closes in over the view (below the HUD).

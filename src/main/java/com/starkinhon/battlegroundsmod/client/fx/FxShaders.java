@@ -34,6 +34,8 @@ public final class FxShaders {
     static ShaderInstance smoke;
     // The Dragon Ball kits' 3D effects (KiMesh); on its own, so a problem here only hides them.
     static ShaderInstance ki;
+    // Saitama's serious moves (OpmMesh).
+    static ShaderInstance opm;
     // Sukuna's Fuga (FugaRenderer); without them the Fuga only darkens the world.
     static ShaderInstance fugaFlame;
     static ShaderInstance fugaArrow;
@@ -94,6 +96,11 @@ public final class FxShaders {
             register(event, "souls_ki", DefaultVertexFormat.POSITION, s -> ki = s);
         } catch (Exception e) {
             BattlegroundsMod.LOGGER.error("Could not load the Dragon Ball 3D effect shader", e);
+        }
+        try {
+            register(event, "souls_opm", DefaultVertexFormat.POSITION, s -> opm = s);
+        } catch (Exception e) {
+            BattlegroundsMod.LOGGER.error("Could not load Saitama's effect shader", e);
         }
         // On its own: a problem here only hides the smoke, never the other effects.
         try {
