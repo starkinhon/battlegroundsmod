@@ -375,7 +375,7 @@ public final class Itadori {
         });
     }
 
-    private static void sendFlash(ServerLevel level, ModPayloads.BlackFlash payload) {
+    static void sendFlash(ServerLevel level, ModPayloads.BlackFlash payload) {
         for (ServerPlayer player : level.players()) {
             if (player.distanceToSqr(payload.pos()) < 160 * 160) {
                 PacketDistributor.sendToPlayer(player, payload);

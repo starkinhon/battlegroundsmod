@@ -116,7 +116,7 @@ final class JjFx {
     private static boolean stream(int kind) {
         return switch (kind) {
             case SubNet.DIV_AURA, SubNet.DIV_MARK, SubNet.CUT_LOOP, SubNet.BLOOD_SWEEP, SubNet.MAX_CHARGE, SubNet.METEOR, SubNet.BF_RING, SubNet.GUARD, SubNet.DASH_TRAIL, SubNet.BLOOD_BALL, SubNet.BLOOD_ORBS, SubNet.ROPE,
-                    SubNet.GROUND_MARK, SubNet.NAIL, SubNet.DOLL, SubNet.SIMPLE_DOMAIN -> true;
+                    SubNet.GROUND_MARK, SubNet.NAIL, SubNet.DOLL, SubNet.SIMPLE_DOMAIN, SubNet.TODO_FLAME -> true;
             default -> false;
         };
     }
@@ -184,6 +184,7 @@ final class JjFx {
             case SubNet.INK_BURST -> 20;
             case SubNet.CUT_SNAP -> 21;
             case SubNet.GROUND_SPIKES -> 41;
+            case SubNet.BF_SPARKS -> 26;
             case SubNet.ARC -> 8;
             case SubNet.CRACKS -> 70;
             case SubNet.BLOOD_BEAM -> 30;
@@ -212,6 +213,7 @@ final class JjFx {
             case SubNet.CUT_LOOP -> 3;
             case SubNet.BLOOD_SWEEP -> 6;
             case SubNet.MAX_CHARGE, SubNet.METEOR -> 3;
+            case SubNet.TODO_FLAME -> 5;
             case SubNet.BLOOD_POOL -> 12;
             case SubNet.BF_RING -> 2;
             case SubNet.ROPE -> 6;
@@ -257,6 +259,7 @@ final class JjFx {
                 case SubNet.ARC -> arc(f, age);
                 case SubNet.CUT_SNAP -> cutSnap(f, age);
                 case SubNet.GROUND_SPIKES -> groundSpikes(f, age);
+                case SubNet.BF_SPARKS -> bfSparks(f, age);
                 case SubNet.CRACKS -> {
                     Vector3f c = rel(f.pos);
                     crackRing(c, age, f.a, 5 + (int) f.b, Math.max(5, (int) f.b), 0.9f * (1 - smooth((age - 46) / 22)));
@@ -318,6 +321,7 @@ final class JjFx {
                 case SubNet.BLOOD_SWEEP -> bloodSweep(f, age, out);
                 case SubNet.MAX_CHARGE -> maxCharge(f, age, partial, out);
                 case SubNet.METEOR -> meteor(f, age, out);
+                case SubNet.TODO_FLAME -> todoFlame(f, age, partial, out);
                 case SubNet.BF_RING -> bfRing(f, age, out);
                 case SubNet.GUARD -> guard(f, partial, out);
                 case SubNet.DASH_TRAIL -> dashTrail(f, partial, out);
@@ -780,6 +784,81 @@ final class JjFx {
             float ph = DbFx.fract(age * (0.03f + 0.02f * hash(f.id, i, 4)) + hash(f.id, i, 5));
             Vector3f p = add(chest, (hash(f.id, i, 6) - 0.5f) * 0.6f, 0.2f + ph * 0.9f, (hash(f.id, i, 7) - 0.5f) * 0.6f);
             bb(p, 0.12f + 0.08f * hash(f.id, i, 8), 0, FxDraw.SOFT, 0.6f, GHOST, 0.5f * on * Mth.sin(ph * Mth.PI), true);
+        }
+    }
+
+    private static final float[] TD_CYAN = FxDraw.rgb(0x5BF2FF);
+    private static final float[] TD_TEAL = FxDraw.rgb(0x0B7A8C);
+    private static final float[] TD_FIRE = FxDraw.rgb(0xFF7A14);
+    private static final float[] TD_EMBER = FxDraw.rgb(0xD8240A);
+
+    // Todo's cursed energy bursting from both shoulders: two fans of flame streaks thrown back and up (each streak with its own
+    // length, lean and flicker; white at the shoulder, cyan, dark teal at the tip). On the wind-up, a fire glow behind him.
+    private static void todoFlame(Fx f, float age, float partial, float out) {
+        LivingEntity e = living(f.id);
+        if (e == null || !DbFx.pass) {
+            return;
+        }
+        Body b = body(e, partial);
+        float k = f.a * out;
+        boolean dash = f.b == 1;
+        Vector3f back = vec(b.fwd).negate();
+        Vector3f side = vec(b.right);
+        for (int sd = -1; sd <= 1; sd += 2) {
+            Vector3f sh = rel(b.point(-0.05, sd * 0.3, 1.55));
+            Vector3f axis = new Vector3f(back).mul(dash ? 1f : 0.75f).add(0, dash ? 0.35f : 0.6f, 0).add(new Vector3f(side).mul(sd * 0.45f)).normalize();
+            Vector3f[] bs = basis(axis);
+            for (int i = 0; i < 22; i++) {
+                int s = f.id * 7 + sd * 101 + i;
+                float h = hash(s, i, 1);
+                float fl = 0.8f + 0.2f * Mth.sin(age * (0.7f + 0.5f * h) + h * 40);
+                float len = (0.5f + 1.5f * h * h) * k * fl * (dash ? 1.45f : 1);
+                if (len < 0.05f) {
+                    continue;
+                }
+                float ang = (i + hash(s, i, 2) * 0.6f) / 22f * Mth.TWO_PI;
+                float spread = 0.25f + 0.35f * hash(s, i, 3);
+                Vector3f d = new Vector3f(axis).add(new Vector3f(bs[0]).mul(Mth.cos(ang) * spread)).add(new Vector3f(bs[1]).mul(Mth.sin(ang) * spread)).normalize();
+                Vector3f mid = at(sh, d, len * 0.5f);
+                mid.y += 0.08f * len * Mth.sin(age * 0.5f + h * 9);
+                Vector3f tip = at(at(sh, d, len), axis, 0.15f * len);
+                float w = 0.05f + 0.05f * hash(s, i, 4);
+                Vector3f[] pts = {sh, mid, tip};
+                FxDraw.strip(pts, new float[] {w * 1.6f, w * 1.1f, 0}, new float[] {0, 0.5f, 1}, FxDraw.SOLID, 0, TD_TEAL, 0.5f * k, true);
+                FxDraw.strip(pts, new float[] {w, w * 0.6f, 0}, new float[] {0, 0.5f, 1}, FxDraw.SOLID, 0, TD_CYAN, 0.85f * k, true);
+                FxDraw.strip(new Vector3f[] {sh, at(sh, d, len * 0.35f)}, new float[] {w * 0.5f, 0}, new float[] {0, 1}, FxDraw.SOLID, 0, WHITE, 0.9f * k, true);
+            }
+        }
+        if (!dash) {
+            Vector3f c = rel(b.point(-0.9, 0, 1.0));
+            bb(c, 3.4f * k, age * 0.01f, FxDraw.SOFT, 0.2f, TD_EMBER, 0.35f * k, true);
+            bb(add(c, 0, -0.5f, 0), 2.2f * k, -age * 0.013f, FxDraw.SOFT, 0.35f, TD_FIRE, 0.4f * k, true);
+        }
+    }
+
+    // Sparks of black lightning: each a short zigzag of its own (black, red edge) flying out from the blow and flickering out.
+    private static void bfSparks(Fx f, float age) {
+        Vector3f c = rel(f.pos);
+        Vector3f fw = safe(vec(f.dir));
+        int n = Math.max(1, (int) f.a);
+        for (int i = 0; i < n; i++) {
+            int s = f.id * 13 + i;
+            float life = 9 + 16 * hash(s, i, 1);
+            float a = age - 2 * hash(s, i, 2);
+            if (a < 0 || a > life) {
+                continue;
+            }
+            float u = a / life;
+            if (u > 0.55f && hash(s, (int) (age * 2), 3) < u - 0.2f) {
+                continue;
+            }
+            Vector3f d = new Vector3f(fw).mul(0.5f * hash(s, i, 4)).add(sphere(s, i)).normalize();
+            float dist = (1.5f + 5.5f * hash(s, i, 5)) * easeOut(Math.min(1, a / life * 1.6f));
+            Vector3f p = at(c, d, dist);
+            p.y -= 0.6f * u * u;
+            float len = (0.25f + 0.7f * hash(s, i, 6)) * (1 - u * u);
+            Vector3f dd = new Vector3f(d).add(sphere(s + 9, i).mul(0.7f)).normalize();
+            bfBolt(p, at(p, dd, len), s + (int) (age / 3), 0.012f + 0.016f * hash(s, i, 7), 1 - u * u * u);
         }
     }
 
