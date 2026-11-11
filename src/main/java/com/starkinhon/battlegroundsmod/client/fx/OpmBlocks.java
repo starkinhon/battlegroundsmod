@@ -57,7 +57,7 @@ public final class OpmBlocks {
         BlockState st;
         double px, py, pz, vx, vy, vz, drag;
         float sx, sy, sz, rx, ry, rz, wx, wy, wz, age, life;
-        boolean rest, flt;
+        boolean rest, flt, bouncy;
         // turning round a point while floating (the Saltos)
         boolean orbit;
         double ox, oz, ow, of, oph;
@@ -249,7 +249,7 @@ public final class OpmBlocks {
                 if (d.py < g && d.py > g - 3) {
                     d.py = g;
                     if (d.vy < -5) {
-                        d.vy *= -0.28;
+                        d.vy *= d.bouncy ? -0.72 : -0.28;
                         d.vx *= 0.5;
                         d.vz *= 0.5;
                         d.wx *= 0.5f;

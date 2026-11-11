@@ -98,7 +98,7 @@ public final class OpmFx {
 
     public static boolean active() {
         return !MOVES.isEmpty() || !FLASHES.isEmpty() || !RINGS.isEmpty() || !LAUNCHES.isEmpty() || !STARS.isEmpty() || !ARMS.isEmpty()
-                || OpmBlocks.active() || OpmGhosts.active();
+                || OpmBlocks.active() || OpmGhosts.active() || LuffyFx.active();
     }
 
     public static void clear() {
@@ -111,6 +111,7 @@ public final class OpmFx {
         SERIO.clear();
         OpmBlocks.clear();
         OpmGhosts.clear();
+        LuffyFx.clear();
         caption = null;
     }
 
@@ -126,7 +127,7 @@ public final class OpmFx {
         return OpmShape.clamp(x, a, b);
     }
 
-    private static boolean near(Vec3 p, double r) {
+    static boolean near(Vec3 p, double r) {
         Minecraft mc = Minecraft.getInstance();
         return mc.player != null && mc.player.position().distanceToSqr(p) < r * r;
     }
@@ -267,7 +268,7 @@ public final class OpmFx {
     // ---------- the screen, as the page's helpers ----------
 
     // shake(a): the page's camera shake (fades 1.4 a second).
-    private static void shake(Vec3 at, double a) {
+    static void shake(Vec3 at, double a) {
         if (near(at, 90)) {
             ScreenShake.start((float) Math.min(2.6, a * 0.55), (int) Math.min(50, 6 + a / 1.4 * 20));
         }
@@ -290,18 +291,18 @@ public final class OpmFx {
     }
 
     // shock(at, pow, color, dur): the ring of bent air.
-    private static void shock(Vec3 at, float pow, int color, float dur) {
+    static void shock(Vec3 at, float pow, int color, float dur) {
         if (near(at, 140)) {
             ScreenFx.warp(at, 2.5f + pow * 2.2f, Math.min(0.6f, 0.12f + 0.08f * pow), 30, 0, new Vec3(0, 1, 0), color, 0.12f, Math.max(4, Math.round(dur * 20)), -1,
                     null, 0);
         }
     }
 
-    private static void lines(double now) {
+    static void lines(double now) {
         linesAt = now;
     }
 
-    private static void whiteCut(Vec3 at, double now) {
+    static void whiteCut(Vec3 at, double now) {
         if (near(at, 140)) {
             whiteAt = now;
             ScreenFx.flash(0xFFFFFF, 0.85f, 3);
@@ -325,6 +326,35 @@ public final class OpmFx {
             OpmBlocks.spawn(st, new Vec3(p.x + Math.cos(g) * 0.4, gy + 0.08, p.z + Math.sin(g) * 0.4),
                     new Vec3(Math.cos(g) * (1 + rnd() * 3) * pw, (2 + rnd() * 4) * pw, Math.sin(g) * (1 + rnd() * 3) * pw), 0.06 + Math.pow(rnd(), 2) * 0.18, false,
                     0);
+        }
+    }
+
+    // ---------- for Luffy (LuffyFx): the same little pieces and the same screen ----------
+
+    static void flash(Vec3 p, float size) {
+        FLASHES.add(new Flash(p, size, ScreenFx.now(), (float) (rnd() * 10)));
+    }
+
+    static void ring(Vec3 c, float r, float dur) {
+        RINGS.add(new Ring(c, r, dur, ScreenFx.now(), (float) (rnd() * 10)));
+    }
+
+    // A move's caption (the strongest near the camera this frame wins).
+    static void caption(Vec3 at, String jp, String pt, float a) {
+        if (near(at, 96) && a > captionA) {
+            captionA = a;
+            caption = new String[] {jp, pt};
+        }
+    }
+
+    // The storm of the Kaminari: grey and dark edges (s 0..1), like the serious moves' silence.
+    static void storm(Vec3 at, float s) {
+        if (near(at, 96) && s > 0.004f) {
+            if (0.67f * s > sil) {
+                sil = 0.67f * s;
+                silAt = at;
+            }
+            vig = Math.max(vig, 0.9f * s);
         }
     }
 
@@ -394,6 +424,8 @@ public final class OpmFx {
                 }
             }
         }
+        // Luffy's moves (their pieces queued on LuffyMesh, their ground pieces here)
+        LuffyFx.render(cam, now, partial, dt, time);
         OpmBlocks.SLAB.bake();
         OpmBlocks.step((float) (stop ? 0 : dt), time);
         // the ground's pieces and the slab are solid: drawn first
@@ -611,7 +643,7 @@ public final class OpmFx {
     }
 
     // The clouds pushed out round the hole (drawn with the effects), and the hole for the cloud pass (onRenderLevel).
-    private static void clouds(Frame f, double hx, double hz, double r, double time, Vec3 cam) {
+    static void clouds(Frame f, double hx, double hz, double r, double time, Vec3 cam) {
         double y = cloudY();
         if (r <= 0.5 || Double.isNaN(y)) {
             return;

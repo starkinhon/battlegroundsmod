@@ -339,6 +339,20 @@ public final class SubNet {
     // Small craters of the Saltos (the dent's wave on the ground): pos, a = strength.
     public static final int OPM_DENT = 210;
     public static final int OPM_LAST = 219;
+    // Luffy (client/fx/LuffyFx). The charge of a held key: id, a = key (0 Z, 1 X, 2 C, 3 V), b = gear (0 base .. 4 G5),
+    // c = 0 started, 1 went up a gear, 2 over (released or broken).
+    public static final int LUFFY_CHARGE = 220;
+    // A move goes off: id, pos = his feet, dir = toward the target, a = key, b = gear, c = the target's id (-1 none).
+    public static final int LUFFY_FIRE = 221;
+    // Gear 5 (the Tambores da Libertacao): id, a = 1 on / 0 off, b = ticks left; a = 2 the hunger after it (b ticks).
+    public static final int LUFFY_G5 = 222;
+    // A crater the blow opened: pos, a = radius, b = how many pieces fly, c = 0 earth, 1 rubber (bouncing).
+    public static final int LUFFY_DENT = 223;
+    // The ground turns to rubber (G5): pos, a = strength.
+    public static final int LUFFY_RUBBER = 224;
+    // How he looks after a move: id, a = 1 tiny (G3's cost) / 2 tired (G4's), b = ticks.
+    public static final int LUFFY_AFTER = 225;
+    public static final int LUFFY_LAST = 239;
 
     public static final int STYLE_SUKUNA = 0;
     public static final int STYLE_PINK = 1;

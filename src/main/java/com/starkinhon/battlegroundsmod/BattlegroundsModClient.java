@@ -57,6 +57,7 @@ import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
 import net.neoforged.neoforge.client.event.RegisterParticleProvidersEvent;
 import net.neoforged.neoforge.client.event.RenderLivingEvent;
+import net.neoforged.neoforge.client.event.RenderPlayerEvent;
 import net.neoforged.neoforge.client.gui.ConfigurationScreen;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
@@ -88,6 +89,11 @@ public class BattlegroundsModClient {
         // Saitama: the hole in the clouds (before the game draws them) and his afterimages (from his drawn frames).
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.OpmFx::onRenderLevel);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.OpmGhosts::onRenderPlayer);
+        // Luffy: his body in each Gear (Boundman, small after the G3, upside down in the Jet Mergulho, the Fusen) and whoever he squashed.
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, false, RenderPlayerEvent.Pre.class, com.starkinhon.battlegroundsmod.client.fx.LuffyFx::onRenderPlayerPre);
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, true, RenderPlayerEvent.Post.class, com.starkinhon.battlegroundsmod.client.fx.LuffyFx::onRenderPlayerPost);
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, false, RenderLivingEvent.Pre.class, com.starkinhon.battlegroundsmod.client.fx.LuffyFx::onRenderLivingPre);
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, true, RenderLivingEvent.Post.class, com.starkinhon.battlegroundsmod.client.fx.LuffyFx::onRenderLivingPost);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.DomainPanorama::onRenderFrame);
         NeoForge.EVENT_BUS.addListener(EventPriority.HIGHEST, false, RenderLivingEvent.Pre.class, com.starkinhon.battlegroundsmod.client.fx.SukunaDomainScene::onRenderLivingPre);
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, true, RenderLivingEvent.Post.class, com.starkinhon.battlegroundsmod.client.fx.SukunaDomainScene::onRenderLivingPost);
@@ -202,6 +208,9 @@ public class BattlegroundsModClient {
         // Saitama's serious caption and the Modo Serio's time.
         event.registerBelowAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "opm_caption"),
                 com.starkinhon.battlegroundsmod.client.fx.OpmFx::renderGui);
+        // Luffy's Gear 5 time and the hunger after it.
+        event.registerBelowAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "luffy_hud"),
+                com.starkinhon.battlegroundsmod.client.fx.LuffyFx::renderGui);
         event.registerBelowAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "domain_void"),
                 com.starkinhon.battlegroundsmod.client.fx.DomainScene::renderGui);
         // Inside Aizen's Black Box the dark closes in over the view (below the HUD).
@@ -334,6 +343,7 @@ public class BattlegroundsModClient {
             if (event.getSkin(model) instanceof PlayerRenderer renderer) {
                 renderer.addLayer(new AuraEyesLayer<>(renderer));
                 renderer.addLayer(new com.starkinhon.battlegroundsmod.client.outfit.OutfitLayer(renderer));
+                renderer.addLayer(new com.starkinhon.battlegroundsmod.client.fx.LuffyFx.Layer(renderer));
                 renderer.addLayer(new com.starkinhon.battlegroundsmod.client.outfit.KokushiboSheathLayer<>(renderer));
             }
         }

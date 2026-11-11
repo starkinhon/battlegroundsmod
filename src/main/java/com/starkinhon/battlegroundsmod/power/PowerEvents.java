@@ -246,6 +246,12 @@ public final class PowerEvents {
             com.starkinhon.battlegroundsmod.combat.DamageDebug.blocked("Counter do Saitama");
             return;
         }
+        // Luffy's Fusen: the blow sinks into the balloon and goes back.
+        com.starkinhon.battlegroundsmod.power.powers.luffy.LuffyMoves.onIncomingDamage(event);
+        if (event.isCanceled()) {
+            com.starkinhon.battlegroundsmod.combat.DamageDebug.blocked("Fusen do Luffy");
+            return;
+        }
         com.starkinhon.battlegroundsmod.power.powers.sub.SubDefense.onIncomingDamage(event);
         if (event.isCanceled()) {
             com.starkinhon.battlegroundsmod.combat.DamageDebug.blocked("defesa de SubAlma (SubDefense)");

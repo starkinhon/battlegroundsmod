@@ -340,7 +340,7 @@ public final class OpmSerious {
     }
 
     // A small bowl where a foot or a fist came down: R wide, deep at the middle.
-    private static void dent(ServerLevel level, Vec3 at, double rr, double deep) {
+    public static void dent(ServerLevel level, Vec3 at, double rr, double deep) {
         if (!BlockRules.canBreak(level)) {
             return;
         }
