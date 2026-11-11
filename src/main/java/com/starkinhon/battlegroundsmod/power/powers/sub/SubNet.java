@@ -336,6 +336,24 @@ public final class SubNet {
     public static final int BL_ICE = 206;
     // The Bankai's ice flower on id (pos = its feet): frozen, the flower opens, all shatters 2.15 s later.
     public static final int BL_FLOWER = 207;
+    // Byakuya's Senbonzakura: id = Byakuya; c = 0 the river starts from his hand (it follows his aim), 1 let go (it comes back).
+    public static final int BL_SENBON = 210;
+    // A petal's cut: a short pink spark at pos.
+    public static final int BL_CUT = 211;
+    // Gokei: id = its own, pos = the sphere's center; c = 0 closing (held), 1 let go (it crushes).
+    public static final int BL_GOKEI = 212;
+    // Senka: id = Byakuya, pos = where he was (the afterimage), a = the target's id.
+    public static final int BL_SENKA = 213;
+    // Byakurai: id = Byakuya, pos = where the bolt lands.
+    public static final int BL_BYAKURAI = 214;
+    // Danku: id = Byakuya; c = 0 the wall rises (pos = his feet, dir = his facing), 1 something hit it at pos, 2 gone.
+    public static final int BL_DANKU = 215;
+    // Bankai Senbonzakura Kageyoshi: id = Byakuya, pos = his feet; c = 0 starts, 1 ends.
+    public static final int BL_KAGEYOSHI = 216;
+    // Senkei: id = Byakuya, pos = the target's feet, a = its id.
+    public static final int BL_SENKEI = 217;
+    // Shukei Hakuteiken: id = Byakuya, a = the target's id.
+    public static final int BL_HAKUTEI = 218;
     public static final int BL_LAST = 239;
     public static final int ICE_TSUKI = 0, ICE_HAKUREN = 1, ICE_SHIRA = 2, ICE_TRAP = 3, ICE_FLOWER = 4;
 

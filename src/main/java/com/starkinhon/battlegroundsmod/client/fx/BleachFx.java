@@ -305,6 +305,11 @@ public final class BleachFx {
             return new Quaternionf(rot).conjugate().transform(v);
         }
 
+        // A direction of the game's world in this frame.
+        Vector3f localDir(Vec3 d) {
+            return new Quaternionf(rot).conjugate().transform(new Vector3f((float) d.x, (float) d.y, (float) d.z)).normalize();
+        }
+
         Vec3 dirWorld(float x, float y, float z) {
             Vector3f v = rot.transform(new Vector3f(x, y, z));
             return new Vec3(v.x, v.y, v.z);
@@ -354,6 +359,21 @@ public final class BleachFx {
         Body(int id) {
             this.id = id;
         }
+    }
+
+    // Senka's afterimage: the body drawn again, see-through white, where it stood.
+    static final class Ghost {
+        Vec3 at;
+        float alpha;
+        VertexBuffer vbo;
+    }
+
+    private static final Map<Integer, Ghost> GHOSTS = new HashMap<>();
+
+    static void ghost(int id, Vec3 at, float alpha) {
+        Ghost g = GHOSTS.computeIfAbsent(id, k -> new Ghost());
+        g.at = at;
+        g.alpha = alpha;
     }
 
     static Body body(int id) {
@@ -492,6 +512,75 @@ public final class BleachFx {
             }
             case SubNet.BL_ICE -> ice(id, pos, dir, a, (int) b, (int) c);
             case SubNet.BL_FLOWER -> RUNS.add(new Rk.Flower(id, pos));
+            case SubNet.BL_SENBON -> {
+                for (Run r : RUNS) {
+                    if (r instanceof Bk.Senbon s && s.caster == id && !s.done && s.rel < 0) {
+                        if (c >= 1) {
+                            s.release();
+                        }
+                        return;
+                    }
+                }
+                if (c == 0) {
+                    RUNS.add(new Bk.Senbon(id, pos));
+                }
+            }
+            case SubNet.BL_CUT -> RUNS.add(new Bk.Cut(pos));
+            case SubNet.BL_GOKEI -> {
+                for (Run r : RUNS) {
+                    if (r instanceof Bk.Gokei g && g.key == id && !g.done) {
+                        if (c >= 1) {
+                            g.release();
+                        }
+                        return;
+                    }
+                }
+                if (c == 0) {
+                    Bk.Gokei g = new Bk.Gokei(pos);
+                    g.key = id;
+                    RUNS.add(g);
+                }
+            }
+            case SubNet.BL_SENKA -> RUNS.add(new Bk.Senka(id, pos, (int) a));
+            case SubNet.BL_BYAKURAI -> RUNS.add(new Bk.Byakurai(id, pos));
+            case SubNet.BL_DANKU -> {
+                if (c == 0) {
+                    RUNS.add(new Bk.Danku(id, pos, dir));
+                    return;
+                }
+                for (Run r : RUNS) {
+                    if (r instanceof Bk.Danku dk && dk.caster == id && !dk.done) {
+                        if (c >= 2) {
+                            dk.done = true;
+                        } else {
+                            dk.hit(pos);
+                        }
+                    }
+                }
+            }
+            case SubNet.BL_KAGEYOSHI, SubNet.BL_SENKEI, SubNet.BL_HAKUTEI -> {
+                Bk.Kageyoshi k = null;
+                for (Run r : RUNS) {
+                    if (r instanceof Bk.Kageyoshi kg && kg.caster == id && !kg.done && kg.end < 0) {
+                        k = kg;
+                    }
+                }
+                if (kind == SubNet.BL_KAGEYOSHI) {
+                    if (c >= 1) {
+                        if (k != null) {
+                            k.stop();
+                        }
+                    } else if (k == null) {
+                        RUNS.add(new Bk.Kageyoshi(id, pos));
+                    }
+                } else if (k != null) {
+                    if (kind == SubNet.BL_SENKEI) {
+                        k.senkei((int) a, pos);
+                    } else {
+                        k.hakuteiken((int) a);
+                    }
+                }
+            }
             default -> {
             }
         }
@@ -542,7 +631,7 @@ public final class BleachFx {
     }
 
     public static boolean active() {
-        return !RUNS.isEmpty() || !BODIES.isEmpty() || !SHARDS.isEmpty() || !SNOW.isEmpty();
+        return !RUNS.isEmpty() || !BODIES.isEmpty() || !SHARDS.isEmpty() || !SNOW.isEmpty() || !GHOSTS.isEmpty();
     }
 
     public static void clear() {
@@ -551,6 +640,12 @@ public final class BleachFx {
             close(b);
         }
         BODIES.clear();
+        for (Ghost g : GHOSTS.values()) {
+            if (g.vbo != null) {
+                g.vbo.close();
+            }
+        }
+        GHOSTS.clear();
         SHARDS.clear();
         SNOW.clear();
         last = -1;
@@ -594,6 +689,7 @@ public final class BleachFx {
         stepShards(dt);
         stepSnow();
         bodies(partial, dt);
+        ghosts(Minecraft.getInstance(), partial);
     }
 
     private static void stepShards(float dt) {
@@ -710,6 +806,34 @@ public final class BleachFx {
                     p.glow = false;
                     BleachMesh.queue(b.skin, p);
                 }
+            }
+        }
+    }
+
+    private static void ghosts(Minecraft mc, float partial) {
+        Iterator<Map.Entry<Integer, Ghost>> it = GHOSTS.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry<Integer, Ghost> en = it.next();
+            Ghost g = en.getValue();
+            Entity ent = FxAnchor.entity(en.getKey());
+            if (g.alpha <= 0.002f || !(ent instanceof LivingEntity e)) {
+                if (g.vbo != null) {
+                    g.vbo.close();
+                }
+                it.remove();
+                continue;
+            }
+            if (!BleachMesh.ready()) {
+                continue;
+            }
+            g.vbo = capture(mc, e, g.at.subtract(cam), partial, 0.004f, g.vbo);
+            if (g.vbo != null) {
+                BleachMesh.Piece p = BleachMesh.piece(BleachMesh.TINT);
+                p.sides = BleachMesh.FRONT;
+                p.order = 11;
+                p.a(g.alpha / 0.92f, 0, 0, 0);
+                p.glow = false;
+                BleachMesh.queue(g.vbo, p);
             }
         }
     }
