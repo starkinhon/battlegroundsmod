@@ -1,0 +1,176 @@
+{
+    "vertex": "battlegroundsmod:souls_bleach",
+    "fragment": "battlegroundsmod:souls_bleach",
+    "samplers": [],
+    "uniforms": [
+        {
+            "name": "ModelViewMat",
+            "type": "matrix4x4",
+            "count": 16,
+            "values": [
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1
+            ]
+        },
+        {
+            "name": "ProjMat",
+            "type": "matrix4x4",
+            "count": 16,
+            "values": [
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1
+            ]
+        },
+        {
+            "name": "Model",
+            "type": "matrix4x4",
+            "count": 16,
+            "values": [
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1
+            ]
+        },
+        {
+            "name": "Kind",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0
+            ]
+        },
+        {
+            "name": "Life",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0
+            ]
+        },
+        {
+            "name": "Seed",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0
+            ]
+        },
+        {
+            "name": "Time",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0
+            ]
+        },
+        {
+            "name": "Alpha",
+            "type": "float",
+            "count": 1,
+            "values": [
+                1
+            ]
+        },
+        {
+            "name": "GlowPass",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0
+            ]
+        },
+        {
+            "name": "A",
+            "type": "float",
+            "count": 4,
+            "values": [
+                0,
+                0,
+                0,
+                0
+            ]
+        },
+        {
+            "name": "B",
+            "type": "float",
+            "count": 4,
+            "values": [
+                0,
+                0,
+                0,
+                0
+            ]
+        },
+        {
+            "name": "Color",
+            "type": "float",
+            "count": 3,
+            "values": [
+                1,
+                1,
+                1
+            ]
+        },
+        {
+            "name": "Color2",
+            "type": "float",
+            "count": 3,
+            "values": [
+                0.53,
+                0.6,
+                0.67
+            ]
+        },
+        {
+            "name": "Anchor",
+            "type": "float",
+            "count": 3,
+            "values": [
+                0,
+                0,
+                0
+            ]
+        }
+    ]
+}

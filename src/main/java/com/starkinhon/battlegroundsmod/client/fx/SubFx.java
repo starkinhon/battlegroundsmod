@@ -93,6 +93,10 @@ public final class SubFx {
     }
 
     public static void receive(int kind, int id, Vec3 pos, Vec3 dir, float a, float b, float c) {
+        if (BleachFx.handles(kind)) {
+            BleachFx.receive(kind, id, pos, dir, a, b, c);
+            return;
+        }
         if (kind >= SubNet.KI_BEAM) {
             DbFx.receive(kind, id, pos, dir, a, b, c);
             return;
@@ -199,7 +203,7 @@ public final class SubFx {
     }
 
     public static boolean active() {
-        return !SHOTS.isEmpty() || !TRACKED.isEmpty() || IceShell.active() || DbFx.active();
+        return !SHOTS.isEmpty() || !TRACKED.isEmpty() || IceShell.active() || DbFx.active() || BleachFx.active();
     }
 
     public static void clear() {
@@ -207,6 +211,7 @@ public final class SubFx {
         TRACKED.clear();
         IceShell.clear();
         DbFx.clear();
+        BleachFx.clear();
     }
 
     // ---------- the two passes ----------
@@ -315,6 +320,7 @@ public final class SubFx {
         }
         IceShell.draw(camera, now, partial, glow);
         DbFx.draw(camera, now, partial, glow);
+        BleachFx.draw(camera, partial, glow);
     }
 
     // ---------- Byakuya ----------
