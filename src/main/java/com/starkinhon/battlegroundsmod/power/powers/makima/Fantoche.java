@@ -170,8 +170,7 @@ public final class Fantoche {
         Vec3 side = new Vec3(-look.z, 0, look.x);
         double[][] spots = {{-1.6, -1.4}, {1.7, -1.2}, {0.3, -2.6}};
         double[] sp = spots[Math.min(out, 2)];
-        Vec3 at = caster.position().add(side.scale(sp[0])).add(look.scale(sp[1]));
-        at = SubCommon.ground(level, at);
+        Vec3 at = SubCommon.ground(level, caster.position().add(side.scale(sp[0])).add(look.scale(sp[1])));
         puppet.moveTo(at.x, at.y, at.z, caster.getYRot(), 0);
         if (puppet instanceof Mob mob) {
             mob.finalizeSpawn(level, level.getCurrentDifficultyAt(mob.blockPosition()), MobSpawnType.MOB_SUMMONED, null);
