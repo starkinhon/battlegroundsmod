@@ -30,7 +30,7 @@ import terrablender.api.SurfaceRuleManager;
 // - the temperate band: Montanhas Paozu on its dry side, Terra Sagrada de Karin on its wet side, vanilla between;
 // - the warm band: vanilla, but its mountains in the middle humidity are the Picos do Dragão and its seas and
 //   beaches the Mar do Sul;
-// - the hot band: Deserto do Diabo on its dry side, Terras do Dragão on its wet side, vanilla between.
+// - the hot band: Deserto do Diabo on its dry and middle side, Terras do Dragão on its wettest, vanilla between.
 // Temperature and humidity change slowly, so a band covers a big area; to go from one to another the land passes
 // through the band between. Rivers, caves and the mushroom islands stay vanilla, and the land keeps vanilla's shape.
 public final class DragonRegion extends Region {
@@ -87,7 +87,9 @@ public final class DragonRegion extends Region {
             case 3:
                 return h == 2 && MOUNTAINS.contains(vanilla) ? ModWorldgen.PICOS_DO_DRAGAO : vanilla;
             case 4:
-                return h <= 1 ? ModWorldgen.DESERTO_VERMELHO : h >= 3 ? ModWorldgen.TERRAS_DO_DRAGAO : vanilla;
+                // the desert also takes the middle humidity (Stark: "muito bonito pra ser tão raro"), Terras do Dragão
+                // only the wettest, the band between them stays vanilla
+                return h <= 2 ? ModWorldgen.DESERTO_VERMELHO : h == 4 ? ModWorldgen.TERRAS_DO_DRAGAO : vanilla;
             default:
                 return vanilla;
         }
