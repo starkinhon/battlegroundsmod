@@ -315,6 +315,8 @@ public final class SubNet {
     public static final int SHADOW_SEA = 167;
     // Shikamaru's signal flare (stream): pos = the light, a = how bright, b = 1 while it still climbs, c = 1 ends it.
     public static final int FLARE = 168;
+    // Naruto's Henge Armadilha: a = 0 the rock (a clone waiting), 1 the Fuuma Shuriken (dir = where it flies); stream
+    public static final int HENGE = 175;
 
     public static final int STYLE_SUKUNA = 0;
     public static final int STYLE_PINK = 1;

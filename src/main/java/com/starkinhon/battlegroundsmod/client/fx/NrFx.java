@@ -70,6 +70,10 @@ final class NrFx {
     private static final float[] KAMUI_RING = FxDraw.rgb(0x6A4A8A);
     private static final float[] STORM = {0.13f, 0.13f, 0.17f};
     private static final Vector3f UP = new Vector3f(0, 1, 0);
+    private static final float[] POOF_SMOKE = {0.74f, 0.76f, 0.8f};
+    private static final float[] DOME_BLUE = FxDraw.rgb(0x4FB0FF);
+    private static final float[] ROCK = FxDraw.rgb(0x7F8187);
+    private static final float[] STEEL = FxDraw.rgb(0xA3A9B2);
 
     private static final class Fx {
         final int kind;
@@ -111,7 +115,7 @@ final class NrFx {
         return switch (kind) {
             case SubNet.RASENGAN, SubNet.DRILL, SubNet.RASENSHURIKEN, SubNet.SAGE_GATHER, SubNet.CHIDORI, SubNet.SAND_HAND, SubNet.SAND_SHELL,
                     SubNet.SAND_PLAT, SubNet.SHADOW, SubNet.BODY_SHADOW, SubNet.NECK_HAND, SubNet.SPIKES, SubNet.TAG, SubNet.SPIRIT, SubNet.THREAD,
-                    SubNet.RAIJU, SubNet.KAMUI, SubNet.KATON, SubNet.SHADOW_SEA, SubNet.FLARE -> true;
+                    SubNet.RAIJU, SubNet.KAMUI, SubNet.KATON, SubNet.SHADOW_SEA, SubNet.FLARE, SubNet.HENGE -> true;
             default -> false;
         };
     }
@@ -300,6 +304,7 @@ final class NrFx {
                 case SubNet.RAIJU -> raiju(f, age, out);
                 case SubNet.KAMUI -> kamui(f, age, out);
                 case SubNet.KATON -> katonBall(f, age, now, out);
+                case SubNet.HENGE -> henge(f, age, now, out);
                 default -> {
                 }
             }
@@ -511,6 +516,23 @@ final class NrFx {
         if (age < 0 || age > 22) {
             return;
         }
+        if (KiMesh.ready()) {
+            // forja/naruto-kit: ONE cel-shaded smoke ball in 3 bands of light that tears from the inside out (each its own seed)
+            if (DbFx.pass && age <= 17) {
+                float k = age / 17;
+                KiMesh.P sm = KiMesh.p(KiMesh.BLAST);
+                sm.smoke = 1;
+                sm.skirt = 0;
+                sm.glow = false;
+                sm.life = 0.2f + 0.8f * k;
+                sm.time = age / 20f;
+                sm.seed = 1.7f + (seed % 23) * 0.61f;
+                sm.flat = 0.05f;
+                sm.color = POOF_SMOKE;
+                KiMesh.queue(KiMesh.Mesh.BLAST, KiMesh.sphere(add(at, 0, k * 0.5f, 0), s * (0.35f + 0.8f * easeOut(age / 4.4f))), sm, KiMesh.BOTH, 18);
+            }
+            return;
+        }
         float k = age / 22;
         float e = easeOut(age / 8);
         for (int i = 0; i < 10; i++) {
@@ -528,6 +550,11 @@ final class NrFx {
     // Azul's style 4 (glass, thin bright rim, white flames inside, frost off the rim).
     static void rasengan(Vector3f at, float r, float t, float a, float[] col) {
         if (a <= 0 || r <= 0.005f) {
+            return;
+        }
+        if (KiMesh.ready()) {
+            rasenganKi(at, r, t, a, 0);
+            warp(at, r * 2.4f, 0.4f * a, 2, t, null);
             return;
         }
         bb(at, r * 4, 0, FxDraw.SOFT, 0.2f, col, 0.35f * a, true);
@@ -548,6 +575,30 @@ final class NrFx {
             rib(q, p, r * 0.16f, FxDraw.STREAK, 0.9f, BOLT_HOT, 0.8f * a, true);
         }
         warp(at, r * 2.4f, 0.4f * a, 2, t, null);
+    }
+
+    // The Rasengan of the Realista+Anime kit (forja/naruto-kit, approved 2026-11-11): the glass core with the swirl seen
+    // through it, the shell of wind streaks on three tilted orbits (gather 1 = still far out, closing in as it forms) and
+    // the halo of rays. One piece each, queued once a frame (glow pass).
+    static void rasenganKi(Vector3f at, float r, float t, float a, float gather) {
+        if (!DbFx.pass || a <= 0) {
+            return;
+        }
+        float sec = t / 20f;
+        KiMesh.P core = KiMesh.p(KiMesh.RASEN);
+        core.time = sec;
+        core.rot = sec * 7;
+        core.alpha = a;
+        KiMesh.queue(KiMesh.Mesh.BALL, KiMesh.sphere(at, r), core, KiMesh.FRONT, 15);
+        KiMesh.P wind = KiMesh.p(KiMesh.RASEN_WIND);
+        wind.time = sec;
+        wind.phase = sec * 11;
+        wind.alpha = a * (0.6f + 0.4f * (1 - gather));
+        KiMesh.queue(KiMesh.Mesh.BALL, KiMesh.sphere(at, r * (1.3f + 1.1f * gather)), wind, KiMesh.BOTH, 17);
+        KiMesh.P halo = KiMesh.p(KiMesh.HALO);
+        halo.time = sec;
+        halo.alpha = a;
+        KiMesh.queue(KiMesh.Mesh.HALO, KiMesh.sphere(at, r * 1.65f), halo, KiMesh.BACK, 12);
     }
 
     static void nrBolt(Vector3f a, Vector3f b, int seed, float w, float[] col, float op, float jag, int segs, int br) {
@@ -679,10 +730,100 @@ final class NrFx {
 
     // ---------- Naruto ----------
 
+    // ---------- Henge Armadilha (forja/naruto-kit, B) ----------
+    // a = 0: a clone turned into a rock, waiting (lumpy and lit, each one its own shape from its id, breathing a little: the
+    // tell for whoever pays attention). a = 1: the Fuuma Shuriken, four curved blades flat on its spin, flying along dir.
+    private static void henge(Fx f, float age, double now, float out) {
+        if (out <= 0) {
+            return;
+        }
+        Vec3 pp = f.pos;
+        if (f.endAt < 0 && f.trail.size() >= 2) {
+            Iterator<Vec3> it = f.trail.descendingIterator();
+            Vec3 last = it.next(), prev = it.next();
+            if (last.distanceToSqr(prev) < 9) {
+                pp = last.add(last.subtract(prev).scale(Math.min(1.5, Math.max(0, now - f.updated))));
+            }
+        }
+        Vector3f c = rel(pp);
+        if (f.a < 0.5f) {
+            rock(c, f.id, 1 + 0.018f * Math.max(0, Mth.sin(age / 20f * 2.4f)), out);
+        } else {
+            fuuma(c, age * 1.3f, f.b > 0 ? f.b : 0.9f, out);
+        }
+    }
+
+    private static Vector3f rockPoint(int id, int i, int j, float breathe) {
+        int ii = i % 8;
+        float th = ii / 8f * Mth.TWO_PI, ph = j / 6f * Mth.PI;
+        float k = j == 0 || j == 6 ? 0.95f : 0.8f + 0.5f * hash(id, ii * 7 + j, 3);
+        float r = 0.62f * k;
+        return v(Mth.sin(ph) * Mth.cos(th) * r, Mth.cos(ph) * r * 0.72f * breathe, Mth.sin(ph) * Mth.sin(th) * r);
+    }
+
+    private static void rock(Vector3f c, int id, float breathe, float out) {
+        Vector3f base = add(c, 0, 0.32f, 0);
+        Vector3f light = v(-0.45f, 0.8f, -0.35f).normalize();
+        for (int j = 0; j < 6; j++) {
+            for (int i = 0; i < 8; i++) {
+                Vector3f p0 = rockPoint(id, i, j, breathe), p1 = rockPoint(id, i + 1, j, breathe), p2 = rockPoint(id, i + 1, j + 1, breathe), p3 = rockPoint(id, i, j + 1, breathe);
+                Vector3f n = new Vector3f(p1).sub(p0).cross(new Vector3f(p3).sub(p0));
+                if (n.lengthSquared() < 1.0E-8f) {
+                    n = new Vector3f(p2).sub(p1).cross(new Vector3f(p3).sub(p1));
+                }
+                n.normalize();
+                if (n.dot(new Vector3f(p0).add(p2)) < 0) {
+                    n.negate();
+                }
+                float l = 0.5f + 0.5f * Math.max(0, n.dot(light)) + 0.08f * (hash(id, i, j) - 0.5f);
+                float[] col = {ROCK[0] * l, ROCK[1] * l, ROCK[2] * l};
+                FxDraw.quad(new Vector3f(base).add(p0), new Vector3f(base).add(p1), new Vector3f(base).add(p2), new Vector3f(base).add(p3), FxDraw.SOLID, 0,
+                        col, out, false);
+            }
+        }
+    }
+
+    private static void fuuma(Vector3f c, float spin, float size, float out) {
+        Vector3f light = v(-0.45f, 0.8f, -0.35f).normalize();
+        float shade = 0.75f + 0.25f * light.y;
+        for (int b = 0; b < 4; b++) {
+            float a0 = spin + b * Mth.HALF_PI;
+            // the blade's outline: from the hub out to the tip on a curve, then back in on a tighter one
+            Vector3f[] edge = new Vector3f[13];
+            for (int j = 0; j <= 6; j++) {
+                float u = j / 6f;
+                float r = Mth.lerp(u * u, 0.22f, 1.0f) * (1 - 0.05f * Mth.sin(u * Mth.PI));
+                float an = a0 - 0.35f + 0.67f * u;
+                edge[j] = add(c, Mth.cos(an) * r * size, 0, Mth.sin(an) * r * size);
+            }
+            for (int j = 1; j <= 6; j++) {
+                float u = j / 6f;
+                float r = Mth.lerp(u, 1.0f, 0.22f) * (1 - 0.3f * Mth.sin(u * Mth.PI));
+                float an = a0 + 0.32f + 0.63f * u;
+                edge[6 + j] = add(c, Mth.cos(an) * r * size, 0, Mth.sin(an) * r * size);
+            }
+            Vector3f mid = add(c, Mth.cos(a0 + 0.3f) * 0.42f * size, 0, Mth.sin(a0 + 0.3f) * 0.42f * size);
+            float[] col = {STEEL[0] * shade * (0.92f + 0.08f * b / 3f), STEEL[1] * shade, STEEL[2] * shade};
+            for (int j = 0; j < 12; j++) {
+                FxDraw.quad(mid, edge[j], edge[j + 1], edge[j + 1], FxDraw.SOLID, 0, col, out, false);
+                FxDraw.quad(mid, edge[j + 1], edge[j], edge[j], FxDraw.SOLID, 0, col, out, false);
+            }
+        }
+        dsk(add(c, 0, 0.01f, 0), UP, 0.24f * size, FxDraw.RING, 0.3f, KUNAI, out, false);
+    }
+
     private static void rasenganFx(Fx f, float age, float out) {
         Vector3f at = rel(f.pos);
         float a = f.b * out;
-        if (f.c == 2) {
+        if (KiMesh.ready()) {
+            boolean grinding = f.dir.lengthSqr() > 1.0E-4;
+            float gather = f.c == 2 ? 1 - smooth((age - 6) / 28) : 0;
+            rasenganKi(at, f.a, grinding ? age * 1.6f : age, a, gather);
+            warp(at, f.a * 2.4f, 0.4f * a, 2, age, null);
+            if (!grinding) {
+                return;
+            }
+        } else if (f.c == 2) {
             // The chakra spirals into the palm.
             float k = smooth((age - 6) / 28);
             for (int i = 0; i < 12; i++) {
@@ -695,7 +836,9 @@ final class NrFx {
             }
         }
         boolean grind = f.dir.lengthSqr() > 1.0E-4;
-        rasengan(at, f.a, grind ? age * 1.6f : age, a, BLUE);
+        if (!KiMesh.ready()) {
+            rasengan(at, f.a, grind ? age * 1.6f : age, a, BLUE);
+        }
         if (grind) {
             // Grinding against the body: a ring flat on the chest and streaks thrown round it.
             Vector3f[] bs = basis(vec(f.dir));
@@ -748,6 +891,18 @@ final class NrFx {
         if (k <= 0) {
             return;
         }
+        if (KiMesh.ready()) {
+            // forja/naruto-kit (Stark: lying flat): the Rasengan's core in the middle of ONE disc of four saw blades of wind
+            rasenganKi(at, 0.26f, t, Math.min(1, k * 1.5f), 0);
+            if (DbFx.pass) {
+                KiMesh.P d = KiMesh.p(KiMesh.RASENSHURIKEN);
+                d.time = t / 20f;
+                d.rot = t / 20f * 26;
+                d.alpha = Math.min(1, k * 1.5f);
+                KiMesh.queue(KiMesh.Mesh.QUAD, KiMesh.flat(at, r * k), d, KiMesh.BOTH, 19);
+            }
+            return;
+        }
         rasengan(at, 0.24f, t, 1, BLUE);
         for (int b = 0; b < 4; b++) {
             float a0 = t * 1.5f + b * Mth.PI / 2;
@@ -780,9 +935,23 @@ final class NrFx {
         float fade = 1 - smooth((a - lasts) / 16);
         float r = f.a * grow * (a > lasts ? 1 - smooth((a - lasts) / 16) * 0.6f : 1);
         Vector3f floor = v(tgt.x, ground, tgt.z);
+        boolean ki = KiMesh.ready();
+        if (ki && DbFx.pass && fade > 0) {
+            // forja/naruto-kit: ONE blue dome of wind that tears into tongues round the needles
+            KiMesh.P d = KiMesh.p(KiMesh.BLAST);
+            d.color = DOME_BLUE;
+            d.life = clamp(0.3f + a / 52f, 0, 1);
+            d.time = a / 20f;
+            d.seed = 4.1f;
+            d.flat = 0.3f;
+            d.alpha = fade;
+            KiMesh.queue(KiMesh.Mesh.BLAST, KiMesh.sphere(tgt, r * 0.95f), d, KiMesh.BOTH, 14);
+        }
         if (fade > 0) {
-            bb(tgt, r * 2.4f, 0, FxDraw.SOFT, 0.35f, PALE, 0.5f * fade, true);
-            bb(tgt, r * 1.2f, 0, FxDraw.SOFT, 0.9f, WHITE, 0.3f * fade, true);
+            if (!ki) {
+                bb(tgt, r * 2.4f, 0, FxDraw.SOFT, 0.35f, PALE, 0.5f * fade, true);
+                bb(tgt, r * 1.2f, 0, FxDraw.SOFT, 0.9f, WHITE, 0.3f * fade, true);
+            }
             dsk(tgt, toCam(tgt), r * 2.05f, FxDraw.RING, 0.04f, WHITE, 0.65f * fade, true);
             dsk(tgt, toCam(tgt), r * 1.6f, FxDraw.RING, 0.03f, PALE, 0.4f * fade, true);
             int tk = (int) Math.floor(a);
