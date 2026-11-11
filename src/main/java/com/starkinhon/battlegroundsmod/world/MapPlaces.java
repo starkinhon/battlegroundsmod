@@ -237,6 +237,19 @@ public final class MapPlaces {
     }
 
     private static boolean put(ServerLevel level, Build.Put put) {
+        if (put.column()) {
+            int top = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE, put.pos().getX(), put.pos().getZ());
+            boolean any = false;
+            BlockPos.MutableBlockPos p = put.pos().mutable();
+            for (int y = put.pos().getY(); y < top; y++) {
+                p.setY(y);
+                if (!level.getBlockState(p).isAir()) {
+                    level.setBlock(p, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
+                    any = true;
+                }
+            }
+            return any;
+        }
         if (put.state().isAir() && level.getBlockState(put.pos()).isAir()) {
             return false;
         }

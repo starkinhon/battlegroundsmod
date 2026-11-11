@@ -26,7 +26,11 @@ import net.minecraft.world.level.block.state.BlockState;
 // A list of blocks to place, written relative to a place's center (x, z) and its floor (y = first air above the
 // ground). MapPlaces puts them in the world a few thousand per tick, in the order they were added (later ones win).
 public final class Build {
-    public record Put(BlockPos pos, BlockState state) {
+    // column: clear from pos up through everything above it in that column (MapPlaces), so no hill is left floating.
+    public record Put(BlockPos pos, BlockState state, boolean column) {
+        public Put(BlockPos pos, BlockState state) {
+            this(pos, state, false);
+        }
     }
 
     public final int x, y, z;
@@ -82,9 +86,12 @@ public final class Build {
         for (int i = -r; i <= r; i++) {
             for (int k = -r; k <= r; k++) {
                 if (i * i + k * k <= radius * radius) {
-                    for (int j = y0; j <= y1; j++) {
+                    for (int j = y0; j < y1; j++) {
                         set(i, j, k, Blocks.AIR.defaultBlockState());
                     }
+                    // The top of the cylinder takes the rest of the column with it: on the normal world's hills a
+                    // clear up to y1 only left the ground above it hanging in the air (Stark 2026-11-11).
+                    puts.add(new Put(new BlockPos(x + i, y + y1, z + k), Blocks.AIR.defaultBlockState(), true));
                 }
             }
         }
