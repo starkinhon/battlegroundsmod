@@ -1,7 +1,6 @@
 package com.starkinhon.battlegroundsmod.world;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Set;
 import java.util.function.Consumer;
 
 import com.mojang.datafixers.util.Pair;
@@ -13,6 +12,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.biome.Climate;
+import net.minecraft.world.level.biome.OverworldBiomeBuilder;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.levelgen.Noises;
 import net.minecraft.world.level.levelgen.SurfaceRules;
@@ -22,60 +22,75 @@ import terrablender.api.Regions;
 import terrablender.api.SurfaceRuleManager;
 
 // The Dragon Ball universe as a part of the normal overworld (Stark 2026-11-11: universos viram biomas, "ambiente
-// incrível"). One TerraBlender region per Dragon Ball biome (Stark's test: "deixe todos bem grandes" and "é pra serem
-// separados", they used to come packed side by side in one region): in its region every land climate becomes that
-// biome, so it covers the whole region (big), and the vanilla regions around keep the biomes apart. The Mar do Sul's
-// region turns only its seas and beaches. Rivers stay, and the shape of the land is vanilla's for each climate, so the
-// mountains are real mountains everywhere (the pillars, rocks, spires and crystals on top are each biome's features).
+// incrível"; then "deixe todos bem grandes" and "é pra serem separados", they kept coming glued to each other). One
+// TerraBlender region with vanilla's climate layout where each Dragon Ball biome takes whole climate bands, and the
+// bands between them stay vanilla, so between two Dragon Ball biomes there is always a stretch of normal land:
+// - the frozen band: Norte Gelado (all of it, mountains too);
+// - the cold band: vanilla;
+// - the temperate band: Montanhas Paozu on its dry side, Terra Sagrada de Karin on its wet side, vanilla between;
+// - the warm band: vanilla, but its mountains in the middle humidity are the Picos do Dragão and its seas and
+//   beaches the Mar do Sul;
+// - the hot band: Deserto do Diabo on its dry side, Terras do Dragão on its wet side, vanilla between.
+// Temperature and humidity change slowly, so a band covers a big area; to go from one to another the land passes
+// through the band between. Rivers, caves and the mushroom islands stay vanilla, and the land keeps vanilla's shape.
 public final class DragonRegion extends Region {
-    // Each region against vanilla's 10: together a bit over a third of the world, in big separate patches.
-    private static final int WEIGHT = 1;
+    // Against vanilla's 10.
+    private static final int WEIGHT = 8;
 
-    // Every vanilla land biome but the rivers, the beaches and the cave biomes.
-    private static final List<ResourceKey<Biome>> LAND = List.of(Biomes.PLAINS, Biomes.SUNFLOWER_PLAINS, Biomes.SNOWY_PLAINS,
-            Biomes.ICE_SPIKES, Biomes.DESERT, Biomes.SWAMP, Biomes.MANGROVE_SWAMP, Biomes.FOREST, Biomes.FLOWER_FOREST,
-            Biomes.BIRCH_FOREST, Biomes.DARK_FOREST, Biomes.OLD_GROWTH_BIRCH_FOREST, Biomes.OLD_GROWTH_PINE_TAIGA,
-            Biomes.OLD_GROWTH_SPRUCE_TAIGA, Biomes.TAIGA, Biomes.SNOWY_TAIGA, Biomes.SAVANNA, Biomes.SAVANNA_PLATEAU,
-            Biomes.WINDSWEPT_HILLS, Biomes.WINDSWEPT_GRAVELLY_HILLS, Biomes.WINDSWEPT_FOREST, Biomes.WINDSWEPT_SAVANNA,
-            Biomes.JUNGLE, Biomes.SPARSE_JUNGLE, Biomes.BAMBOO_JUNGLE, Biomes.BADLANDS, Biomes.ERODED_BADLANDS,
-            Biomes.WOODED_BADLANDS, Biomes.MEADOW, Biomes.CHERRY_GROVE, Biomes.GROVE, Biomes.SNOWY_SLOPES,
-            Biomes.FROZEN_PEAKS, Biomes.JAGGED_PEAKS, Biomes.STONY_PEAKS, Biomes.MUSHROOM_FIELDS, Biomes.STONY_SHORE);
-    private static final List<ResourceKey<Biome>> COAST = List.of(Biomes.BEACH, Biomes.SNOWY_BEACH);
-    private static final List<ResourceKey<Biome>> SEAS = List.of(Biomes.WARM_OCEAN, Biomes.LUKEWARM_OCEAN,
+    private static final Set<ResourceKey<Biome>> SEAS = Set.of(Biomes.WARM_OCEAN, Biomes.LUKEWARM_OCEAN,
             Biomes.DEEP_LUKEWARM_OCEAN, Biomes.OCEAN, Biomes.DEEP_OCEAN, Biomes.COLD_OCEAN, Biomes.DEEP_COLD_OCEAN,
-            Biomes.FROZEN_OCEAN, Biomes.DEEP_FROZEN_OCEAN);
+            Biomes.FROZEN_OCEAN, Biomes.DEEP_FROZEN_OCEAN, Biomes.BEACH, Biomes.SNOWY_BEACH, Biomes.STONY_SHORE);
+    private static final Set<ResourceKey<Biome>> NOT_LAND = Set.of(Biomes.RIVER, Biomes.FROZEN_RIVER, Biomes.MUSHROOM_FIELDS,
+            Biomes.DRIPSTONE_CAVES, Biomes.LUSH_CAVES, Biomes.DEEP_DARK);
+    private static final Set<ResourceKey<Biome>> MOUNTAINS = Set.of(Biomes.JAGGED_PEAKS, Biomes.STONY_PEAKS, Biomes.FROZEN_PEAKS,
+            Biomes.SNOWY_SLOPES, Biomes.GROVE, Biomes.WINDSWEPT_HILLS, Biomes.WINDSWEPT_GRAVELLY_HILLS, Biomes.WINDSWEPT_FOREST,
+            Biomes.WINDSWEPT_SAVANNA, Biomes.SAVANNA_PLATEAU, Biomes.WOODED_BADLANDS, Biomes.MEADOW, Biomes.CHERRY_GROVE);
 
-    private final ResourceKey<Biome> biome;
-    private final List<ResourceKey<Biome>> replaced;
-
-    private DragonRegion(String name, ResourceKey<Biome> biome, List<ResourceKey<Biome>> replaced) {
-        super(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, name), RegionType.OVERWORLD, WEIGHT);
-        this.biome = biome;
-        this.replaced = replaced;
+    private DragonRegion() {
+        super(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "dragonball"), RegionType.OVERWORLD, WEIGHT);
     }
 
     public static void register() {
-        List<ResourceKey<Biome>> land = new ArrayList<>(LAND);
-        land.addAll(COAST);
-        Regions.register(new DragonRegion("db_terras", ModWorldgen.TERRAS_DO_DRAGAO, land));
-        Regions.register(new DragonRegion("db_picos", ModWorldgen.PICOS_DO_DRAGAO, LAND));
-        Regions.register(new DragonRegion("db_deserto", ModWorldgen.DESERTO_VERMELHO, land));
-        Regions.register(new DragonRegion("db_karin", ModWorldgen.TERRA_SAGRADA, LAND));
-        Regions.register(new DragonRegion("db_paozu", ModWorldgen.MONTANHAS_PAOZU, LAND));
-        Regions.register(new DragonRegion("db_norte", ModWorldgen.NORTE_GELADO, land));
-        List<ResourceKey<Biome>> sea = new ArrayList<>(SEAS);
-        sea.addAll(COAST);
-        Regions.register(new DragonRegion("db_mar_do_sul", ModWorldgen.MAR_DO_SUL, sea));
+        Regions.register(new DragonRegion());
         SurfaceRuleManager.addSurfaceRules(SurfaceRuleManager.RuleCategory.OVERWORLD, BattlegroundsMod.MODID, surface());
     }
 
     @Override
     public void addBiomes(Registry<Biome> registry, Consumer<Pair<Climate.ParameterPoint, ResourceKey<Biome>>> mapper) {
-        this.addModifiedVanillaOverworldBiomes(mapper, builder -> {
-            for (ResourceKey<Biome> vanilla : replaced) {
-                builder.replaceBiome(vanilla, biome);
-            }
-        });
+        new OverworldBiomeBuilder().addBiomes(pair -> mapper.accept(Pair.of(pair.getFirst(), choose(pair.getFirst(), pair.getSecond()))));
+    }
+
+    // The band (0 to 4) a climate parameter's middle falls in, by vanilla's band edges.
+    private static int band(Climate.Parameter p, float... edges) {
+        float mid = Climate.unquantizeCoord((p.min() + p.max()) / 2);
+        int i = 0;
+        while (i < edges.length && mid > edges[i]) {
+            i++;
+        }
+        return i;
+    }
+
+    private static ResourceKey<Biome> choose(Climate.ParameterPoint point, ResourceKey<Biome> vanilla) {
+        if (NOT_LAND.contains(vanilla)) {
+            return vanilla;
+        }
+        int t = band(point.temperature(), -0.45f, -0.15f, 0.2f, 0.55f);
+        int h = band(point.humidity(), -0.35f, -0.1f, 0.1f, 0.3f);
+        if (SEAS.contains(vanilla)) {
+            return t == 3 && vanilla != Biomes.STONY_SHORE ? ModWorldgen.MAR_DO_SUL : vanilla;
+        }
+        switch (t) {
+            case 0:
+                return ModWorldgen.NORTE_GELADO;
+            case 2:
+                return h <= 1 ? ModWorldgen.MONTANHAS_PAOZU : h >= 3 ? ModWorldgen.TERRA_SAGRADA : vanilla;
+            case 3:
+                return h == 2 && MOUNTAINS.contains(vanilla) ? ModWorldgen.PICOS_DO_DRAGAO : vanilla;
+            case 4:
+                return h <= 1 ? ModWorldgen.DESERTO_VERMELHO : h >= 3 ? ModWorldgen.TERRAS_DO_DRAGAO : vanilla;
+            default:
+                return vanilla;
+        }
     }
 
     // The ground of each biome: the peaks striped like badlands (orange, white, yellow, red: the Dragon World's rock)
