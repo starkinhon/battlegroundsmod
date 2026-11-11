@@ -3,33 +3,51 @@
   "skill": "jj.batto_stance",
   "nome": "Postura Batto",
   "tempo": {
-    "atrasoTicks": 3,
+    "atrasoTicks": 2,
     "duracaoTicks": 57
   },
   "animacao": {
     "transicaoTicks": 3,
     "preparo": {
-      "cabeca": 0,
-      "tronco": 4,
+      "cabeca": 5,
+      "tronco": 16,
       "bracoDir": {
-        "frente": 18,
-        "abrir": 10
+        "frente": 32,
+        "abrir": -38
       },
       "bracoEsq": {
-        "frente": 18,
-        "abrir": -10
+        "frente": 20,
+        "abrir": 10
+      },
+      "giro": -12,
+      "pernaDir": {
+        "frente": 28,
+        "abrir": 0
+      },
+      "pernaEsq": {
+        "frente": -18,
+        "abrir": 0
       }
     },
     "sopro": {
-      "cabeca": 0,
-      "tronco": 8,
+      "cabeca": 8,
+      "tronco": 22,
       "bracoDir": {
-        "frente": 30,
-        "abrir": 16
+        "frente": 36,
+        "abrir": -42
       },
       "bracoEsq": {
-        "frente": 30,
-        "abrir": -16
+        "frente": 22,
+        "abrir": 12
+      },
+      "giro": -16,
+      "pernaDir": {
+        "frente": 34,
+        "abrir": 0
+      },
+      "pernaEsq": {
+        "frente": -22,
+        "abrir": 0
       }
     },
     "retornoTicks": 6

@@ -170,6 +170,71 @@ void main() {
         fragColor = vec4(c * a, a);
         return;
     }
+    if (kind >= 23 && kind <= 27) {                                    // Miwa, Realista+Anime (forja/miwa-kit SLASH_F / CUT_F / DOMAIN_F / WALL_F / STREAK_F, line by line)
+        vec3 c; float a;
+        if (kind == 23) {                                              // the draw's arc: Life = uK, Thresh = uFade, RingR = uArc, W = uW, Pitch = uDir, Tail = uTail
+            vec2 p = (vUv * 2. - 1.) * 1.25; float r = length(p), ang = atan(p.y, p.x) * Pitch;
+            float e = 1. - pow(1. - clamp(Life, 0., 1.), 3.);
+            float a0 = -RingR * .5, head = a0 + RingR * e, tail = max(a0, head - RingR * Tail);
+            float s = (ang - tail) / max(head - tail, 1e-3);
+            if (ang < a0 - 0.02 || s < 0. || s > 1.) discard;
+            float w = W * pow(s, 0.7);
+            float d = (r - 1.) / max(w, 1e-4);
+            if (d > 1.5 || d < -1.3) discard;
+            float px = fwidth(d), u = clamp(-d, 0., 1.);
+            float tear = fbm3(vec3(ang * 2.2, r * 3., Seed)) * .5 + .5;
+            float live = smoothstep(Thresh * 1.2 - 0.15, Thresh * 1.2, tear * 0.85 + s * 0.15);
+            float outer = 1. - smoothstep(0., px * 1.5, d);
+            float streak = pow(gn(vec3(ang * 2.5, r * 38., Seed)) * .5 + .5, 1.5);
+            a = outer * pow(1. - u, 1.3) * (0.55 + 0.6 * streak) * smoothstep(0., 0.12, s) * live;
+            c = mix(vec3(0.17, 0.45, 1.), vec3(0.6, 0.87, 1.), smoothstep(0.8, 0.25, u));
+            c = mix(c, vec3(0.97, 0.99, 1.), smoothstep(0.22, 0.02, u) * smoothstep(0.2, 0.8, s));
+        } else if (kind == 24) {                                       // the cut on the body: Len = uL, W = uH, Life = uDraw, Growth = uOpen, Thresh = uFade, Pulse = uMark
+            float x = vUv.x, y = (vUv.y - .5) * 2. * W;
+            if (x > Life) discard;
+            float env = pow(sin(3.14159 * x), .5), fr = gn(vec3(x * Len * 6., Seed, Time * 2.));
+            float g = Growth * 0.075 * env * (0.8 + 0.4 * fr), d = abs(y) - g, px = fwidth(y) * 1.2;
+            float tear = fbm3(vec3(x * Len * 3., y * 8., Seed)) * .5 + .5, live = smoothstep(Thresh - 0.1, Thresh + 0.05, tear * 0.9 + 0.1);
+            float ma = mix(1., 0.45, Pulse);
+            float edge = exp(-pow(d / (px + 0.005), 2.)) * env, inside = step(d, 0.) * step(0.001, g), q = clamp(abs(y) / max(g, 1e-4), 0., 1.);
+            float halo = exp(-max(d, 0.) * 22.) * 0.5 * Growth * env;
+            vec3 ci = mix(vec3(0.97, 0.99, 1.), vec3(0.55, 0.85, 1.), q), co = mix(vec3(0.16, 0.48, 1.), vec3(0.96, 0.99, 1.), clamp(edge, 0., 1.));
+            a = max(max(edge, inside), halo) * live * ma; c = mix(co, ci, inside);
+        } else if (kind == 25) {                                       // the domain on the ground: RingMax = uR, Life = uK, Thresh = uFade, Rot = uFA, Phase = uFT
+            vec2 p = (vUv * 2. - 1.) * RingMax * 1.15; float r = length(p), ang = atan(p.y, p.x);
+            float R = RingMax * (1. - pow(1. - clamp(Life, 0., 1.), 3.)); if (R < 0.01) discard;
+            float px = fwidth(r), lv = 1. - Thresh;
+            float fd = abs(mod(ang - Rot + 3.14159, 6.28318) - 3.14159), fl = exp(-fd * fd * 8.) * exp(-Phase * 5.);
+            float e = r - R, edge = exp(-pow(e / (px + 0.025), 2.)), band = smoothstep(-0.55, 0., e) * step(e, 0.) * 0.55;
+            float sw = gn(vec3(ang * 3. - Time * 1.6 + r * 1.1, r * 2.2, Seed)) * .5 + .5;
+            float swirl = pow(sw, 4.) * 1.3 * step(r, R) * smoothstep(0.2, R, r);
+            float dash = pow(gn(vec3(cos(ang - Time * 2.) * R * 2., sin(ang - Time * 2.) * R * 2., Seed + 3.)) * .5 + .5, 6.) * 3. * exp(-e * e * 40.);
+            a = clamp(edge + band * (0.5 + 0.5 * sw) + swirl * 0.5 + dash + fl * (edge * 2. + band), 0., 1.) * lv;
+            c = mix(vec3(0.15, 0.45, 1.), vec3(0.62, 0.88, 1.), clamp(band + swirl, 0., 1.));
+            c = mix(c, vec3(0.97, 0.99, 1.), clamp(edge * 0.9 + fl + dash * 0.5, 0., 1.));
+        } else if (kind == 26) {                                       // the wall of streaks: W = the domain's radius, Alpha = uA
+            float ang = atan(vDir.y, vDir.x), h = vH;
+            float s = pow(gn(vec3(cos(ang) * W * 6., sin(ang) * W * 6., h * 1.2 - Time * 2.2 + Seed)) * .5 + .5, 7.) * 2.2;
+            a = s * pow(1. - h, 2.) * Alpha; if (a < .003) discard;
+            c = mix(vec3(0.3, 0.65, 1.), vec3(0.9, 0.97, 1.), smoothstep(0.4, 1., s));
+            if (GlowPass > 0.5) { fragColor = vec4(c * a * 0.3, 0.); return; }
+            fragColor = vec4(c * a, a * 0.6);
+            return;
+        } else {                                                       // the Line Cut's trail: Len = uL, Life = uK, Thresh = uFade
+            float x = vUv.x, y = vUv.y * 2. - 1.;
+            float head = 1. - pow(1. - clamp(Life, 0., 1.), 3.); if (x > head) discard;
+            float s = x / max(head, 1e-3);
+            float tear = fbm3(vec3(x * Len * 1.5, y * 2., Seed)) * .5 + .5, live = smoothstep(Thresh * 1.2 - 0.15, Thresh * 1.2, tear * 0.8 + s * 0.2);
+            float w = 0.25 + 0.75 * s, d = abs(y) / w, streak = pow(gn(vec3(x * Len * 0.6, y * 9., Seed)) * .5 + .5, 1.5);
+            a = exp(-d * d * 3.) * (0.5 + 0.7 * streak) * live; float core = exp(-d * d * 40.);
+            c = mix(vec3(0.17, 0.45, 1.), vec3(0.97, 0.99, 1.), clamp(core + streak * 0.3, 0., 1.));
+        }
+        a *= Alpha;
+        if (a < 0.003) discard;
+        if (GlowPass > 0.5) { fragColor = vec4(c * a * 0.45, 0.); return; }
+        fragColor = vec4(c * a, a);
+        return;
+    }
     if (kind >= 19 && kind <= 22) {                                    // Nobara (forja/nobara-kit TRAIL_F / THORN_F / BURST_F / LINK_F, line by line)
         // Color = ink, Color2 = rim; Time in seconds; Life = the preview's uK (age 0..1); Pulse = the thread's pulse
         vec3 c; float a;

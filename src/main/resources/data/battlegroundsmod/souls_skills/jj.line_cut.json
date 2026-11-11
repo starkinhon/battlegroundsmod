@@ -9,29 +9,47 @@
   "animacao": {
     "transicaoTicks": 1,
     "preparo": {
-      "cabeca": 0,
-      "tronco": 4,
+      "cabeca": 5,
+      "tronco": 25,
       "bracoDir": {
-        "frente": 18,
-        "abrir": 10
+        "frente": 36,
+        "abrir": -42
       },
       "bracoEsq": {
-        "frente": 18,
-        "abrir": -10
+        "frente": 20,
+        "abrir": 10
+      },
+      "giro": -12,
+      "pernaDir": {
+        "frente": 30,
+        "abrir": 0
+      },
+      "pernaEsq": {
+        "frente": -20,
+        "abrir": 0
       }
     },
     "sopro": {
       "cabeca": 0,
-      "tronco": 8,
+      "tronco": 28,
       "bracoDir": {
-        "frente": 30,
-        "abrir": 16
+        "frente": 80,
+        "abrir": -50
       },
       "bracoEsq": {
-        "frente": 30,
-        "abrir": -16
+        "frente": 15,
+        "abrir": 20
+      },
+      "giro": -25,
+      "pernaDir": {
+        "frente": 45,
+        "abrir": 0
+      },
+      "pernaEsq": {
+        "frente": -35,
+        "abrir": 0
       }
     },
-    "retornoTicks": 8
+    "retornoTicks": 6
   }
 }

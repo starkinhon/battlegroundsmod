@@ -235,6 +235,12 @@ public final class JjCommon {
             fought(target, now);
             fought(enemy, now);
         }
+        // Miwa's New Shadow Counter: a blow in the window vanishes and she is behind the attacker already cutting.
+        if (attacker instanceof LivingEntity enemy && SubCommon.hasState(target, Miwa.COUNTER) && enemy.distanceTo(target) < 8) {
+            event.setCanceled(true);
+            Miwa.counter(target, level, enemy);
+            return;
+        }
         // Itadori's Manji Kick: a blow from the front is caught and answered with the kick.
         if (attacker instanceof LivingEntity enemy && SubCommon.hasState(target, MANJI)) {
             Vec3 to = SubCommon.flat(enemy.position().subtract(target.position()));
@@ -287,6 +293,10 @@ public final class JjCommon {
         // Nobara drew blood: her Resonance can follow it for 10 s.
         if (attacker instanceof LivingEntity enemy && "nobara".equals(power(enemy))) {
             SubCommon.setState(target, NOBARA_BLOOD, 200);
+        }
+        // Miwa's Bainha Calma: any blow of hers resets the calm.
+        if (attacker instanceof LivingEntity enemy && "miwa".equals(power(enemy))) {
+            Miwa.struck(enemy);
         }
         // Itadori's Ritmo: every blow he lands fills it.
         if (attacker instanceof LivingEntity enemy && "itadori".equals(power(enemy))) {

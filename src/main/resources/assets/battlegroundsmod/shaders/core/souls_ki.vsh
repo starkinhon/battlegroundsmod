@@ -8,7 +8,8 @@
 // 13 Sasuke's Katon shell (forja/sasuke-chidori/katon.js), 14 its wall of fire on the ground, 15 Shikamaru's shadow running
 // on the ground, 16 his Xeque-mate's flood of shadow (forja/shikamaru/shika.js; both flat squares), 17 Inumaki's voice (a cone
 // of ink rings) and 18 the rings that hold the one he stopped (forja/inumaki-kit/inumaki.js VOICE_F / BIND_F); 19-22 Nobara's
-// nail sheath, Resonance thorn, Hairpin burst and the ult's thread (forja/nobara-kit/nobara.js).
+// nail sheath, Resonance thorn, Hairpin burst and the ult's thread (forja/nobara-kit/nobara.js); 23-27 Miwa's sword arc, the
+// cut that opens on the body, the Simple Domain on the ground, its wall of streaks and the Line Cut's trail (forja/miwa-kit/miwa.js).
 in vec3 Position;
 
 uniform mat4 ModelViewMat;
@@ -112,7 +113,7 @@ void main() {
         float r = W * prof * (1. + 0.4 * tg);
         P = vec3(d.x * r, along, d.y * r); n = vec3(d.x, 0., d.y);
         vU = along; vD = tg; vQ = vec2(tw, along);
-    } else if (kind == 4 || kind == 9 || kind == 10 || kind == 15 || kind == 16) {   // flat square: dust ring, saw and Kienzan discs, shadows
+    } else if (kind == 4 || kind == 9 || kind == 10 || kind == 15 || kind == 16 || kind == 23 || kind == 24 || kind == 25 || kind == 27) {   // flat square: dust ring, discs, shadows, Miwa's cuts
         P = Position; n = vec3(0., 1., 0.); vUv = Position.xz * 0.5 + 0.5;
         vQ = Position.xz * vec2(length(Model[0].xyz), length(Model[2].xyz));   // in blocks, across and along the square
     } else if (kind == 5) {                                            // aura shell
@@ -168,6 +169,9 @@ void main() {
             r = W * (0.8 + 0.4 * (gn(vec3(d, h * Len * 1.2 - Time * 2. + Seed)) * 0.5 + 0.5));
         }
         P = vec3(d.x * r + (kind == 20 ? Bend * h * h * L : 0.), h * L, d.y * r); n = vec3(d.x, 0., d.y); vDir = d; vH = h;
+    } else if (kind == 26) {                                           // Miwa's Simple Domain: the wall of streaks at its edge (tube, y 0..1; WALL_F reads vDir / vH)
+        float h = Position.y; vec2 d = normalize(Position.xz + 1e-5);
+        P = Position; n = vec3(d.x, 0., d.y); vDir = d; vH = h;
     } else if (kind == 21) {                                           // Nobara's Hairpin: ONE sphere bursting into spikes (BURST_V; Life = age 0..1, radius = Model)
         vec3 d = normalize(Position);
         float ri = 1. - abs(gn(d * 3.1 + Seed)), sp = pow(ri, 7.);

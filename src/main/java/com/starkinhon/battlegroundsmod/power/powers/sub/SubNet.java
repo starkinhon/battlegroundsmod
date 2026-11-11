@@ -321,7 +321,8 @@ public final class SubNet {
     public static final int SLEEP = 155;
     // Miwa. The light blue line of a cut at pos along dir: a = half length, b = width.
     public static final int MIWA_LINE = 160;
-    // Simple Domain's circle (stream): id = Miwa, pos = center, a = how open (0..1), b = radius.
+    // Simple Domain's circle (stream, kinds 25 and 26): id = its own, pos = center, a = how open (0..1), b = radius,
+    // dir = (x, flashes so far, z): the last cut's direction and a count, so each new cut lights the circle where it was.
     public static final int SIMPLE_DOMAIN = 161;
     // The draw's sweep round her: pos = her middle, dir = forward, a = radius.
     public static final int MIWA_ARC = 162;
@@ -356,6 +357,21 @@ public final class SubNet {
     public static final int HAMMER = 175;
     // The nail in her own palm during the ult (stream): id = Nobara, pos = the palm.
     public static final int PALM_NAIL = 176;
+    // Miwa, remade (forja/miwa-kit, Realista+Anime, souls_ki kinds 23-27). The draw's arc: ONE thin crescent round pos
+    // (kind 23): dir = the middle of the sweep, a = radius, b = arc (radians), c = width (sign = which way it sweeps),
+    // id = style (0 a draw, 1 the ult's full ring, 2 the ult's inner ring).
+    public static final int MW_SLASH = 177;
+    // The cut that appears on a body a moment later (kind 24): id = the one cut, dir = (angle, height, 1 front / -1 back),
+    // a = how wide it opens, b = life in seconds, c = when it opens (seconds).
+    public static final int MW_CUT = 178;
+    // The ult's mark (stream): the faint line across someone inside Lua Partida, still uncut. id = the one marked.
+    public static final int MW_MARK = 179;
+    // The Line Cut's trail from pos to pos + dir (kind 27): a = half height, b = life in seconds.
+    public static final int MW_STREAK = 180;
+    // The Line Cut's slit in the ground from pos to pos + dir (kind 24 lying down): a = life in seconds.
+    public static final int MW_GASH = 181;
+    // The scabbard's click (a four-point glint at pos): a = size.
+    public static final int MW_GLINT = 182;
 
     public static final int STYLE_SUKUNA = 0;
     public static final int STYLE_PINK = 1;

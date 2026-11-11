@@ -64,6 +64,8 @@ final class JjFx {
     private static final float[] ROCK_D = {0.28f, 0.28f, 0.3f};
     private static final float[] CRACK = {0.04f, 0.035f, 0.03f};
     private static final float[] MIWA = FxDraw.rgb(0x8FD0FF);
+    private static final float[] MW_GLINT_C = FxDraw.rgb(0xC8E4FF);
+    private static final float[] MW_SPARK_B = {0.25f, 0.6f, 1f};
     private static final float[] AIR = FxDraw.rgb(0xE8F4FF);
     private static final float[] DUST = {0.42f, 0.4f, 0.38f};
     private static final float[] SMOKE_COL = {0.45f, 0.41f, 0.36f};
@@ -117,7 +119,7 @@ final class JjFx {
         return switch (kind) {
             case SubNet.DIV_AURA, SubNet.DIV_MARK, SubNet.CUT_LOOP, SubNet.BLOOD_SWEEP, SubNet.MAX_CHARGE, SubNet.METEOR, SubNet.BF_RING, SubNet.GUARD, SubNet.DASH_TRAIL, SubNet.BLOOD_BALL, SubNet.BLOOD_ORBS, SubNet.ROPE,
                     SubNet.GROUND_MARK, SubNet.NAIL, SubNet.DOLL, SubNet.SIMPLE_DOMAIN, SubNet.TODO_FLAME, SubNet.MEGAPHONE, SubNet.NB_LINK, SubNet.HAMMER,
-                    SubNet.PALM_NAIL -> true;
+                    SubNet.PALM_NAIL, SubNet.MW_MARK -> true;
             default -> false;
         };
     }
@@ -177,6 +179,7 @@ final class JjFx {
     static void clear() {
         SHOTS.clear();
         TRACKED.clear();
+        MW_FLASH.clear();
     }
 
     private static double life(Fx f) {
@@ -206,6 +209,11 @@ final class JjFx {
             case SubNet.MIWA_ARC -> 4;
             case SubNet.DASH_LINE -> 9;
             case SubNet.DOMAIN_POP -> 15;
+            case SubNet.MW_SLASH -> f.id == 1 ? 24 : 18;
+            case SubNet.MW_CUT -> f.b * 20 + 2;
+            case SubNet.MW_STREAK -> (0.08 + f.b) * 20 + 2;
+            case SubNet.MW_GASH -> f.a * 20 + 2;
+            case SubNet.MW_GLINT -> 6;
             default -> 40;
         };
     }
@@ -224,6 +232,7 @@ final class JjFx {
             case SubNet.NB_LINK -> 7;
             case SubNet.HAMMER -> 3;
             case SubNet.PALM_NAIL -> 6;
+            case SubNet.MW_MARK -> 3;
             default -> 8;
         };
     }
@@ -303,6 +312,18 @@ final class JjFx {
                 case SubNet.MIWA_LINE -> miwaLine(rel(f.pos), vec(f.dir), f.a, age, 6, f.b > 0 ? f.b : 0.06f);
                 case SubNet.MIWA_ARC -> miwaArc(f, age);
                 case SubNet.DASH_LINE -> dashLine(f, age);
+                case SubNet.MW_SLASH -> mwSlash(f, age);
+                case SubNet.MW_CUT -> mwCut(f, age, partial);
+                case SubNet.MW_STREAK -> mwStreak(f, age);
+                case SubNet.MW_GASH -> mwGash(f, age);
+                case SubNet.MW_GLINT -> {
+                    float k = age / 4.4f;
+                    if (k < 1) {
+                        float op = Mth.sin(k * Mth.PI) * 1.3f;
+                        bb(rel(f.pos), f.a, 0, FxDraw.FLARE, 4 / 32f, MW_GLINT_C, Math.min(1, op), false);
+                        bb(rel(f.pos), f.a * 1.4f, 0, FxDraw.FLARE, 4 / 32f, MW_GLINT_C, 0.6f * Math.min(1, op), true);
+                    }
+                }
                 case SubNet.DOMAIN_POP -> {
                     Vector3f c = rel(f.pos);
                     for (int i = 0; i < 12; i++) {
@@ -353,7 +374,8 @@ final class JjFx {
                 case SubNet.HOLD_RINGS -> holdRings(f, age, partial, out);
                 case SubNet.COUGH -> cough(f, age, partial, out);
                 case SubNet.SLEEP -> sleep(f, age, partial, out);
-                case SubNet.SIMPLE_DOMAIN -> simpleDomain(f, age, out);
+                case SubNet.SIMPLE_DOMAIN -> simpleDomain(f, now, age, out);
+                case SubNet.MW_MARK -> mwMark(f, age, partial, out);
                 default -> {
                 }
             }
@@ -2072,21 +2094,192 @@ final class JjFx {
     }
 
     // Simple Domain: a thin circle on the ground, a faint fill, an inner white line and ticks round the edge.
-    private static void simpleDomain(Fx f, float age, float out) {
-        Vector3f c = rel(f.pos);
-        float k = f.a * out;
-        float r = f.b;
-        if (k <= 0) {
+    // ---------- Miwa, remade (forja/miwa-kit, Realista+Anime; souls_ki kinds 23-27, the page's shaders line by line) ----------
+    // The preview's planes are THREE.PlaneGeometry in x/y; KiMesh's quad lies in x/z, so the page's y goes in the z column.
+
+    private static final Map<Integer, double[]> MW_FLASH = new HashMap<>();
+
+    private static Matrix4f plane(Vector3f c, Vector3f ax, float hx, Vector3f n, Vector3f ay, float hy) {
+        return new Matrix4f(ax.x * hx, ax.y * hx, ax.z * hx, 0, n.x, n.y, n.z, 0, ay.x * hy, ay.y * hy, ay.z * hy, 0, c.x, c.y, c.z, 1);
+    }
+
+    private static float seedOf(Fx f, int salt) {
+        return hash((int) (f.pos.x * 31 + f.pos.z * 17 + f.pos.y * 7), (int) f.born, salt) * 20;
+    }
+
+    // The Simple Domain: the lit ring with its swirl on the ground (kind 25) and the wall of streaks rising at its edge (kind 26).
+    private static void simpleDomain(Fx f, double now, float age, float out) {
+        if (!DbFx.pass || !KiMesh.ready() || out <= 0) {
             return;
         }
-        dsk(add(c, 0, 0.04f, 0), UP, r * 2, FxDraw.RING, 0.012f, MIWA, 0.9f * k, true);
-        dsk(add(c, 0, 0.035f, 0), UP, r * 2, FxDraw.SOFT, 0.05f, MIWA, 0.12f * k, true);
-        dsk(add(c, 0, 0.04f, 0), UP, r * 2 * 0.94f, FxDraw.RING, 0.006f, WHITE, 0.5f * k, true);
-        for (int i = 0; i < 24; i++) {
-            float a = i / 24f * Mth.TWO_PI + age * 0.002f;
-            float r0 = r * (i % 2 != 0 ? 0.88f : 0.92f);
-            rib(add(c, Mth.cos(a) * r0, 0.045f, Mth.sin(a) * r0), add(c, Mth.cos(a) * r * 0.99f, 0.045f, Mth.sin(a) * r * 0.99f), 0.03f, FxDraw.BEAM,
-                    0.9f, MIWA, 0.7f * k, true);
+        double[] fl = MW_FLASH.get(f.id);
+        if (fl == null || fl[0] != f.dir.y) {
+            fl = new double[] {f.dir.y, f.dir.y > 0 ? now : -1000};
+            MW_FLASH.put(f.id, fl);
         }
+        float r = f.b, t = age / 20f;
+        Vector3f c = add(rel(f.pos), 0, 0.04f, 0);
+        KiMesh.P p = KiMesh.p(KiMesh.MW_DOMAIN);
+        p.ringMax = r;
+        p.life = f.a;
+        p.time = t;
+        p.thresh = 1 - out;
+        p.seed = (f.id % 97) * 0.37f;
+        p.rot = (float) Math.atan2(-f.dir.z, f.dir.x);
+        p.phase = (float) ((now - fl[1]) / 20);
+        KiMesh.queue(KiMesh.Mesh.QUAD, plane(c, v(1, 0, 0), r * 1.15f, v(0, 1, 0), v(0, 0, -1), r * 1.15f), p, KiMesh.BOTH, 7);
+        if (r < 1) {
+            return;                                                    // the counter's small window: the ring alone
+        }
+        KiMesh.P w = KiMesh.p(KiMesh.MW_WALL);
+        w.time = t;
+        w.alpha = 0.8f * smooth(f.a) * out;
+        w.seed = (f.id % 89) * 0.53f;
+        w.w = r;
+        KiMesh.queue(KiMesh.Mesh.TUBE, new Matrix4f().translation(rel(f.pos)).scale(r, 1.5f, r), w, KiMesh.BOTH, 7);
+    }
+
+    // The draw's arc (SLASH_F): sweeps in `sweep` s, then tears from the tail.
+    private static void mwSlash(Fx f, float age) {
+        if (!DbFx.pass || !KiMesh.ready()) {
+            return;
+        }
+        float t = age / 20f;
+        float sweep = f.id == 1 ? 0.12f : f.id == 2 ? 0.1f : 0.07f, life = f.id == 1 ? 0.9f : 0.45f, tail = f.id == 1 ? 1 : f.id == 2 ? 0.7f : 0.8f;
+        if (t > sweep + life) {
+            return;
+        }
+        Vector3f fwd = safe(vec(f.dir));
+        Vector3f n = f.id == 0 ? new Vector3f(0, 1, 0).add(new Vector3f(fwd).mul(0.12f)).normalize() : v(0, 1, 0);
+        Vector3f x = new Vector3f(fwd).sub(new Vector3f(n).mul(fwd.dot(n))).normalize();
+        Vector3f y = new Vector3f(n).cross(x).normalize();
+        KiMesh.P p = KiMesh.p(KiMesh.MW_SLASH);
+        p.life = t / sweep;
+        p.thresh = smooth((t - sweep - life * 0.25f) / (life * 0.75f));
+        p.ringR = f.b;
+        p.w = Math.abs(f.c);
+        p.pitch = f.c < 0 ? -1 : 1;
+        p.tail = tail;
+        p.seed = seedOf(f, 23);
+        KiMesh.queue(KiMesh.Mesh.QUAD, plane(rel(f.pos), x, f.a * 1.25f, n, y, f.a * 1.25f), p, KiMesh.BOTH, 8);
+    }
+
+    // Where a cut sits on a body: its middle, the line's direction and the side it faces (dir = angle, height, 1 front / -1 back).
+    private static Vector3f[] cutFrame(LivingEntity e, Vec3 d, float partial) {
+        Body b = body(e, partial);
+        double side = d.z >= 0 ? 1 : -1, th = d.x;
+        Vec3 mid = b.point(0.17 * side, 0, d.y);
+        Vec3 along = b.right().scale(Math.cos(th)).add(0, Math.sin(th), 0).normalize();
+        Vec3 face = b.fwd().scale(side);
+        return new Vector3f[] {rel(mid), vec(along), vec(face), v((float) b.s(), 0, 0)};
+    }
+
+    private static void cutQuad(Vector3f[] fr, float len, float draw, float open, float fade, float time, float mark, float seed, float alpha) {
+        KiMesh.P p = KiMesh.p(KiMesh.MW_CUT);
+        p.len = len;
+        p.w = 0.4f;
+        p.life = draw;
+        p.growth = open;
+        p.thresh = fade;
+        p.time = time;
+        p.pulse = mark;
+        p.seed = seed;
+        p.alpha = alpha;
+        Vector3f y = new Vector3f(fr[2]).cross(fr[1]).normalize();
+        KiMesh.queue(KiMesh.Mesh.QUAD, plane(fr[0], fr[1], len * 0.52f, fr[2], y, 0.4f), p, KiMesh.BOTH, 9);
+    }
+
+    // CUT_F on someone: the hairline drawn in 0.05 s, opening at c s, light leaking out; sparks fly when it opens.
+    private static void mwCut(Fx f, float age, float partial) {
+        LivingEntity e = living(f.id);
+        float t = age / 20f;
+        if (e == null || t > f.b) {
+            return;
+        }
+        Vector3f[] fr = cutFrame(e, f.dir, partial);
+        float len = 0.95f * fr[3].x, k = t - f.c;
+        if (DbFx.pass && KiMesh.ready()) {
+            cutQuad(fr, len, Math.min(1.02f, t / 0.05f), k < 0 ? 0 : f.a * easeOut(k / 0.12f), smooth((t - f.b * 0.6f) / (f.b * 0.4f)), t, 0, seedOf(f, 24), 1);
+        }
+        if (k >= 0) {
+            mwSparks(fr[0], fr[2], k, Math.round(18 * f.a), f.id + (int) f.born);
+        }
+    }
+
+    // The ult's mark: the same line, faint and shut, waiting for the draw.
+    private static void mwMark(Fx f, float age, float partial, float out) {
+        LivingEntity e = living(f.id);
+        if (e == null || !DbFx.pass || !KiMesh.ready()) {
+            return;
+        }
+        Vector3f[] fr = cutFrame(e, new Vec3(0, 1.0, 1), partial);
+        float t = age / 20f;
+        cutQuad(fr, 0.75f * fr[3].x, Math.min(1.02f, t / 0.05f), 0, 0, t, 1, (f.id % 71) * 0.41f, out);
+    }
+
+    // Sparks, each its own speed, size and life (no state: all from the hash), white cooling to blue.
+    private static void mwSparks(Vector3f p, Vector3f dir, float t, int n, int seed) {
+        for (int i = 0; i < n; i++) {
+            float life = 0.2f + 0.4f * hash(seed, i, 1);
+            if (t > life) {
+                continue;
+            }
+            float sp = 3 + 6 * hash(seed, i, 2);
+            Vector3f vel = new Vector3f(dir).mul(sp).add((hash(seed, i, 3) - 0.5f) * 4, hash(seed, i, 4) * 3, (hash(seed, i, 5) - 0.5f) * 4);
+            float drag = (1 - (float) Math.exp(-2 * t)) / 2;
+            Vector3f q = new Vector3f(p).add(new Vector3f(vel).mul(drag)).add(0, -4.5f * t * t, 0);
+            float k = 1 - t / life, s = 0.03f + 0.07f * hash(seed, i, 6) * hash(seed, i, 7);
+            float[] col = {MW_SPARK_B[0] + (1 - MW_SPARK_B[0]) * Math.min(1, k * 1.3f), MW_SPARK_B[1] + (1 - MW_SPARK_B[1]) * Math.min(1, k * 1.3f), 1};
+            bb(q, s * 2.2f, 0, FxDraw.SOFT, 0, col, k, false);
+            bb(q, s * 3.5f, 0, FxDraw.SOFT, 0, col, 0.6f * k, true);
+        }
+    }
+
+    // The Line Cut's trail (STREAK_F): a ribbon standing up from start to finish, tearing from the tail.
+    private static void mwStreak(Fx f, float age) {
+        if (!DbFx.pass || !KiMesh.ready()) {
+            return;
+        }
+        float t = age / 20f, life = f.b;
+        Vector3f d = vec(f.dir);
+        float len = d.length();
+        if (len < 0.1f || t > 0.08f + life) {
+            return;
+        }
+        Vector3f x = new Vector3f(d).normalize(), z = new Vector3f(x).cross(UP);
+        if (z.lengthSquared() < 1.0E-4f) {
+            z.set(1, 0, 0);
+        }
+        z.normalize();
+        Vector3f y = new Vector3f(z).cross(x).normalize();
+        KiMesh.P p = KiMesh.p(KiMesh.MW_STREAK);
+        p.len = len;
+        p.life = t / 0.08f;
+        p.thresh = smooth((t - 0.08f - life * 0.2f) / (life * 0.8f));
+        p.seed = seedOf(f, 27);
+        KiMesh.queue(KiMesh.Mesh.QUAD, plane(new Vector3f(rel(f.pos)).add(new Vector3f(x).mul(len / 2)), x, len / 2, z, y, f.a), p, KiMesh.BOTH, 8);
+    }
+
+    // The slit in the ground: the cut's line lying down, opening and staying a while.
+    private static void mwGash(Fx f, float age) {
+        if (!DbFx.pass || !KiMesh.ready()) {
+            return;
+        }
+        float t = age / 20f, life = f.a;
+        Vector3f d = vec(f.dir);
+        float len = d.length();
+        if (len < 0.1f || t > life) {
+            return;
+        }
+        Vector3f x = new Vector3f(d).normalize(), y = new Vector3f(UP).cross(x).normalize(), n = new Vector3f(x).cross(y).normalize();
+        KiMesh.P p = KiMesh.p(KiMesh.MW_CUT);
+        p.len = len;
+        p.w = 0.3f;
+        p.life = Math.min(1.02f, t / 0.08f);
+        p.growth = 0.7f * easeOut((t - 0.06f) / 0.2f);
+        p.thresh = smooth((t - life * 0.6f) / (life * 0.4f));
+        p.time = t;
+        p.seed = seedOf(f, 25);
+        KiMesh.queue(KiMesh.Mesh.QUAD, plane(new Vector3f(rel(f.pos)).add(new Vector3f(x).mul(len / 2)), x, len / 2, n, y, 0.3f), p, KiMesh.BOTH, 7);
     }
 }
