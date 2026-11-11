@@ -40,6 +40,9 @@ public final class MakimaFx {
     static final float[] CHAIN_HOT = FxDraw.rgb(0xFF6A60);
     private static final float[] GOLD = FxDraw.rgb(0xFFB020);
     private static final float[] GOLD_W = FxDraw.rgb(0xFFF0A8);
+    // Her rings over the rats in the vision (forja/makima-ratos): orange, brighter on the one picked.
+    private static final float[] RAT_RING = {1f, 0.58f, 0.12f};
+    private static final float[] RAT_SEL = {1f, 0.86f, 0.42f};
     private static final float[] RED = FxDraw.rgb(0xE0283C);
     private static final float[] WHITE = {1, 1, 1};
     private static final float[] SHADOW = {0.02f, 0.016f, 0.024f};
@@ -862,9 +865,12 @@ public final class MakimaFx {
                 float pop = 1 + 0.6f * (1 - smooth((float) (now - visionStart - 7 - r.rank * 1.5f) / 4));
                 Vector3f p = rel(at.add(0, 0.62, 0), cam);
                 float dim = visionPick >= 0 && !sel ? 0.4f : 1;
-                FxDraw.billboard(p, 0.55f * s * pop, 0, FxDraw.RING, 0.16f, GOLD, on * dim, true);
-                FxDraw.billboard(p, 0.32f * s * pop, (float) now * 0.08f + r.index, FxDraw.RING, 0.24f, GOLD_W, on * dim, true);
-                FxDraw.billboard(p, 0.8f * s, 0, FxDraw.SOFT, 0.1f, GOLD, 0.25f * on * dim, true);
+                // The preview's thin orange rings (1, .58, .12), a pulsing inner one and a small core; no soft halo, which
+                // the gray of the vision washed into a white bubble.
+                float inner = 0.62f + 0.03f * Mth.sin((float) now * 0.25f + r.index);
+                FxDraw.billboard(p, 0.5f * s * pop, 0, FxDraw.RING, 0.08f, RAT_RING, on * dim, false);
+                FxDraw.billboard(p, 0.5f * inner * s * pop, 0, FxDraw.RING, 0.1f, RAT_RING, 0.8f * on * dim, false);
+                FxDraw.billboard(p, 0.09f * s * pop, 0, FxDraw.DISC, 0.5f, sel ? RAT_SEL : RAT_RING, 0.7f * on * dim, false);
             }
         }
     }
