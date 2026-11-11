@@ -3,33 +3,33 @@
   "skill": "jj.nail_throw",
   "nome": "Pregos",
   "tempo": {
-    "atrasoTicks": 2,
-    "duracaoTicks": 6
+    "atrasoTicks": 6,
+    "duracaoTicks": 8
   },
   "animacao": {
     "transicaoTicks": 2,
     "preparo": {
       "cabeca": 0,
-      "tronco": 4,
+      "tronco": 2,
       "bracoDir": {
-        "frente": 18,
+        "frente": 165,
         "abrir": 10
       },
       "bracoEsq": {
-        "frente": 18,
+        "frente": 80,
         "abrir": -10
       }
     },
     "sopro": {
       "cabeca": 0,
-      "tronco": 8,
+      "tronco": 10,
       "bracoDir": {
-        "frente": 30,
-        "abrir": 16
+        "frente": 50,
+        "abrir": 6
       },
       "bracoEsq": {
-        "frente": 30,
-        "abrir": -16
+        "frente": 25,
+        "abrir": -15
       }
     },
     "retornoTicks": 8

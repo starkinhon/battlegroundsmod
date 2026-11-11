@@ -1,0 +1,37 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "jj.nail_field",
+  "nome": "Campo de Pregos",
+  "tempo": {
+    "atrasoTicks": 5,
+    "duracaoTicks": 8
+  },
+  "animacao": {
+    "transicaoTicks": 2,
+    "preparo": {
+      "cabeca": 10,
+      "tronco": 25,
+      "bracoDir": {
+        "frente": 110,
+        "abrir": 20
+      },
+      "bracoEsq": {
+        "frente": 20,
+        "abrir": -10
+      }
+    },
+    "sopro": {
+      "cabeca": 10,
+      "tronco": 30,
+      "bracoDir": {
+        "frente": 15,
+        "abrir": 30
+      },
+      "bracoEsq": {
+        "frente": 10,
+        "abrir": -15
+      }
+    },
+    "retornoTicks": 8
+  }
+}

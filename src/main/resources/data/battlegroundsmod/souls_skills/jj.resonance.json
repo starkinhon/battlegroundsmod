@@ -3,33 +3,33 @@
   "skill": "jj.resonance",
   "nome": "Ressonância",
   "tempo": {
-    "atrasoTicks": 4,
-    "duracaoTicks": 16
+    "atrasoTicks": 11,
+    "duracaoTicks": 10
   },
   "animacao": {
-    "transicaoTicks": 4,
+    "transicaoTicks": 3,
     "preparo": {
-      "cabeca": 0,
+      "cabeca": 12,
       "tronco": 4,
       "bracoDir": {
-        "frente": 18,
+        "frente": 165,
         "abrir": 10
       },
       "bracoEsq": {
-        "frente": 18,
-        "abrir": -10
+        "frente": 70,
+        "abrir": -25
       }
     },
     "sopro": {
-      "cabeca": 0,
-      "tronco": 8,
+      "cabeca": 10,
+      "tronco": 10,
       "bracoDir": {
-        "frente": 30,
-        "abrir": 16
+        "frente": 55,
+        "abrir": 8
       },
       "bracoEsq": {
-        "frente": 30,
-        "abrir": -16
+        "frente": 70,
+        "abrir": -25
       }
     },
     "retornoTicks": 8

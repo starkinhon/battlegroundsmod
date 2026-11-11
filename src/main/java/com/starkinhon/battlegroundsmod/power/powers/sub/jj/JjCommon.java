@@ -280,6 +280,10 @@ public final class JjCommon {
         if (attacker instanceof LivingEntity enemy && SubCommon.hasState(enemy, Nanami.OVERTIME_FIRST)) {
             Nanami.firstHit(enemy, level, target);
         }
+        // Nobara's Shared Resonance: a hit on her comes back doubled along the thread.
+        if ("nobara".equals(power(target))) {
+            Nobara.onHurt(target, level, event.getAmount());
+        }
         // Nobara drew blood: her Resonance can follow it for 10 s.
         if (attacker instanceof LivingEntity enemy && "nobara".equals(power(enemy))) {
             SubCommon.setState(target, NOBARA_BLOOD, 200);
@@ -288,6 +292,16 @@ public final class JjCommon {
         if (attacker instanceof LivingEntity enemy && "itadori".equals(power(enemy))) {
             Itadori.landed(enemy);
         }
+    }
+
+    // A real stun by the tier rule: full on someone of the caster's tier or weaker (bosses too); on stronger ones a little
+    // less for each tier above, never under a real stun (Stun.INTERRUPT_TICKS). Apply it with Stun.apply(t, ticks, true).
+    public static int tierStun(LivingEntity caster, LivingEntity t, int ticks) {
+        int gap = Tiers.of(caster) - Tiers.of(t);
+        if (gap > 0) {
+            ticks = Math.max(com.starkinhon.battlegroundsmod.combat.Stun.INTERRUPT_TICKS, ticks - 6 * gap);
+        }
+        return ticks;
     }
 
     // Is someone inside Miwa's Simple Domain (the Infinite Void spares them)?

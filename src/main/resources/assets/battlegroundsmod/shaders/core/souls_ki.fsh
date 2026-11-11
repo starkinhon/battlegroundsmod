@@ -170,6 +170,50 @@ void main() {
         fragColor = vec4(c * a, a);
         return;
     }
+    if (kind >= 19 && kind <= 22) {                                    // Nobara (forja/nobara-kit TRAIL_F / THORN_F / BURST_F / LINK_F, line by line)
+        // Color = ink, Color2 = rim; Time in seconds; Life = the preview's uK (age 0..1); Pulse = the thread's pulse
+        vec3 c; float a;
+        if (kind == 19) {
+            float s = vH * Len;
+            float n = fbm3(vec3(vDir * 1.3, s * 1.6 + Time * 14. + Seed)) * 0.5 + 0.5;
+            a = smoothstep(vH * 1.05 - 0.12, vH * 1.05 + 0.04, n + (1. - vH) * 0.35) * Alpha;
+            if (a < 0.01) discard;
+            float rm = 1. - smoothstep(0.12, 0.45, f);
+            c = mix(Color, Color2, clamp(rm * 0.9 + smoothstep(0.62, 0.85, n) * 0.5 * (1. - vH), 0., 1.));
+            c = mix(c, vec3(0.92, 0.97, 1.), rm * (1. - smoothstep(0., 0.25, vH)) * 0.6);
+        } else if (kind == 20) {
+            float s = vH * Len, q = floor(Time * 12.);
+            float v = abs(gn(vec3(vDir * 2.2, s * 1.3 + q * 0.41 + Seed)));
+            float vein = 1. - smoothstep(0.015, 0.045, v);
+            float tear = fbm3(vec3(vDir * 2.5, s * 2. + Seed * 3.)) * 0.5 + 0.5;
+            float th = Life * 1.15 - 0.1 + vH * 0.35 * Life;
+            a = smoothstep(th, th + 0.1, tear) * Alpha;
+            if (a < 0.01) discard;
+            float rm = 1. - smoothstep(0.12, 0.42, f);
+            c = mix(Color, Color2, max(rm * 0.7, vein * 0.9));
+            c = mix(c, vec3(0.92, 0.97, 1.), vein * step(0.5, fract(q * 0.5 + vH * 2.)) * 0.6 + rm * (1. - Life) * 0.25);
+        } else if (kind == 21) {
+            float tear = fbm3(vO * 4. + Seed * 2.) * 0.5 + 0.5;
+            a = smoothstep(Life - 0.08, Life + 0.06, tear * 0.85 + vD * 0.25) * Alpha;
+            if (a < 0.01) discard;
+            float rm = 1. - smoothstep(0.08, 0.3, f), hot = 1. - smoothstep(0.04, 0.12, Life), tip = smoothstep(0.55, 0.9, vD);
+            c = mix(Color, Color2, clamp(rm * 0.85 + tip * 0.5, 0., 1.));
+            c = mix(c, vec3(0.9, 0.96, 1.), max(hot * 0.9, tip * (1. - smoothstep(0., 0.3, Life)) * 0.6));
+        } else {
+            float s = vH * Len, n = gn(vec3(vDir * 1.5, s * 2. - Time * 3. + Seed)) * 0.5 + 0.5;
+            float pulse = exp(-pow((vH - Pulse) * Len * 0.9, 2.));
+            float tear = fbm3(vec3(vDir * 2., s * 1.4 + Seed)) * 0.5 + 0.5;
+            a = (0.75 + 0.25 * n) * smoothstep(Life - 0.05, Life + 0.08, tear) * Alpha;
+            if (a < 0.01) discard;
+            c = mix(Color, Color2, clamp(smoothstep(0.55, 0.8, n) * 0.45 + pulse, 0., 1.)); c = mix(c, vec3(1., 0.88, 0.88), pulse * 0.6);
+        }
+        if (GlowPass > 0.5) {                                          // the ink stays ink: only the lit rim and veins reach the bloom
+            fragColor = vec4(c * a * 0.35, 0.);
+            return;
+        }
+        fragColor = vec4(c * a, a);
+        return;
+    }
     if (kind == 13 || kind == 14) {                                    // Sasuke's Katon (RingR = the ground's height, camera-relative)
         if (-vV.y < RingR) discard;
         float fz = kind == 13 ? facing() : f, edge = 1. - fz;

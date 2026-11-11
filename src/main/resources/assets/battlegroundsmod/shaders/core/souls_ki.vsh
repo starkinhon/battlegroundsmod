@@ -7,7 +7,8 @@
 // 5 aura shell, 6 hit flash, 7 sun core, 8 sun halo, 9 saw disc, 10 Kienzan disc, 11 Makankosappo spirals, 12 wind,
 // 13 Sasuke's Katon shell (forja/sasuke-chidori/katon.js), 14 its wall of fire on the ground, 15 Shikamaru's shadow running
 // on the ground, 16 his Xeque-mate's flood of shadow (forja/shikamaru/shika.js; both flat squares), 17 Inumaki's voice (a cone
-// of ink rings) and 18 the rings that hold the one he stopped (forja/inumaki-kit/inumaki.js VOICE_F / BIND_F).
+// of ink rings) and 18 the rings that hold the one he stopped (forja/inumaki-kit/inumaki.js VOICE_F / BIND_F); 19-22 Nobara's
+// nail sheath, Resonance thorn, Hairpin burst and the ult's thread (forja/nobara-kit/nobara.js).
 in vec3 Position;
 
 uniform mat4 ModelViewMat;
@@ -153,6 +154,26 @@ void main() {
         float h = Position.y; vec2 d = normalize(Position.xz + 1e-5);
         float r = kind == 17 ? mix(R0, R1, h) : W;
         P = vec3(d.x * r, h * Len, d.y * r); n = vec3(d.x, 0., d.y); vDir = d; vH = h;
+    } else if (kind == 19 || kind == 20 || kind == 22) {               // Nobara's tubes (forja/nobara-kit/nobara.js TRAIL_V / THORN_V / LINK_V, line by line):
+        float h = Position.y; vec2 d = normalize(Position.xz + 1e-5); // 19 the nail's sheath (W = width), 20 Resonance's barbed thorn (W, Growth, Bend),
+        float r, L = Len;                                              // 22 the ult's thread (W, Growth)
+        if (kind == 19) {
+            r = W * (0.3 + 0.7 * smoothstep(0., 0.1, h)) * pow(1. - h, 0.8);
+        } else if (kind == 20) {
+            L = Len * Growth;
+            float barb = 1. + 0.55 * pow(fract(h * (3. + Len * 0.8) + Seed), 3.);   // barbs: each segment swells and thins
+            r = W * pow(1. - h, 1.15) * (0.72 + 0.56 * (gn(vec3(d * 1.7, h * 5. + Seed)) * 0.5 + 0.5)) * barb;
+        } else {
+            L = Len * Growth;
+            r = W * (0.8 + 0.4 * (gn(vec3(d, h * Len * 1.2 - Time * 2. + Seed)) * 0.5 + 0.5));
+        }
+        P = vec3(d.x * r + (kind == 20 ? Bend * h * h * L : 0.), h * L, d.y * r); n = vec3(d.x, 0., d.y); vDir = d; vH = h;
+    } else if (kind == 21) {                                           // Nobara's Hairpin: ONE sphere bursting into spikes (BURST_V; Life = age 0..1, radius = Model)
+        vec3 d = normalize(Position);
+        float ri = 1. - abs(gn(d * 3.1 + Seed)), sp = pow(ri, 7.);
+        float lump = fbm3(d * 2. + Seed * 1.7) * 0.5 + 0.5;
+        float grow = 1. - pow(1. - clamp(Life * 4., 0., 1.), 3.);
+        P = d * grow * (0.5 + 0.35 * lump + 1.25 * sp); n = d; vO = d; vD = sp;
     }
     vec4 w = Model * vec4(P, 1.0);
     vN = mat3(Model) * n;

@@ -345,6 +345,17 @@ public final class SubNet {
     public static final int BF_SPARKS = 170;
     // Inumaki's megaphone in his hand (stream): id = Inumaki, a = 1 while held, c = 1 put away.
     public static final int MEGAPHONE = 171;
+    // Nobara, remade (forja/nobara-kit, souls_ki kinds 19-22). The Hairpin's burst: ONE sphere that bursts into spikes of
+    // black ink with a blue rim (kind 21): a = radius, b = life in seconds, c = 1 the red ink of the ult.
+    public static final int NB_BURST = 172;
+    // Resonance's barbed thorns tearing out of a body at pos (kind 20): dir = away from her, a = power, id = seed.
+    public static final int THORNS = 173;
+    // The ult's red thread (stream): id = the one tied, pos = her palm, dir = to the nail in them, a = hits come back so far.
+    public static final int NB_LINK = 174;
+    // The hammer in her right hand (stream): id = Nobara, a = 1 once it swings through.
+    public static final int HAMMER = 175;
+    // The nail in her own palm during the ult (stream): id = Nobara, pos = the palm.
+    public static final int PALM_NAIL = 176;
 
     public static final int STYLE_SUKUNA = 0;
     public static final int STYLE_PINK = 1;

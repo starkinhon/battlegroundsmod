@@ -1,10 +1,10 @@
 {
   "formato": "souls-skill/1",
   "skill": "jj.point_blank",
-  "nome": "Prego à queima-roupa",
+  "nome": "Martelada",
   "tempo": {
-    "atrasoTicks": 2,
-    "duracaoTicks": 6
+    "atrasoTicks": 4,
+    "duracaoTicks": 8
   },
   "animacao": {
     "transicaoTicks": 2,
@@ -12,24 +12,24 @@
       "cabeca": 0,
       "tronco": 4,
       "bracoDir": {
-        "frente": 18,
+        "frente": 165,
         "abrir": 10
       },
       "bracoEsq": {
-        "frente": 18,
-        "abrir": -10
+        "frente": 85,
+        "abrir": -5
       }
     },
     "sopro": {
       "cabeca": 0,
-      "tronco": 8,
+      "tronco": 12,
       "bracoDir": {
-        "frente": 30,
-        "abrir": 16
+        "frente": 50,
+        "abrir": 5
       },
       "bracoEsq": {
-        "frente": 30,
-        "abrir": -16
+        "frente": 35,
+        "abrir": -10
       }
     },
     "retornoTicks": 8
