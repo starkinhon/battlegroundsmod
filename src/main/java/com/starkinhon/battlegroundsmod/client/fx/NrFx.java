@@ -19,6 +19,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
 import com.starkinhon.battlegroundsmod.power.powers.sub.SubNet;
@@ -115,7 +116,7 @@ final class NrFx {
         return switch (kind) {
             case SubNet.RASENGAN, SubNet.DRILL, SubNet.RASENSHURIKEN, SubNet.SAGE_GATHER, SubNet.CHIDORI, SubNet.SAND_HAND, SubNet.SAND_SHELL,
                     SubNet.SAND_PLAT, SubNet.SHADOW, SubNet.BODY_SHADOW, SubNet.NECK_HAND, SubNet.SPIKES, SubNet.TAG, SubNet.SPIRIT, SubNet.THREAD,
-                    SubNet.RAIJU, SubNet.KAMUI, SubNet.KATON, SubNet.SHADOW_SEA, SubNet.FLARE, SubNet.HENGE -> true;
+                    SubNet.RAIJU, SubNet.KAMUI, SubNet.KK_HOUND, SubNet.KK_VORTEX, SubNet.KK_SEAL, SubNet.KK_DOGS, SubNet.KATON, SubNet.SHADOW_SEA, SubNet.FLARE, SubNet.HENGE -> true;
             default -> false;
         };
     }
@@ -127,6 +128,14 @@ final class NrFx {
 
     static void receive(int kind, int id, Vec3 pos, Vec3 dir, float a, float b, float c) {
         double now = ScreenFx.now();
+        if (kind == SubNet.KK_SUSANOO || kind == SubNet.KK_SHURIKEN) {
+            KakashiSusanoo.receive(kind, id, pos, dir, a, b, c, now);
+            return;
+        }
+        if (kind == SubNet.KK_SENNEN && a < 0.5f) {
+            KakashiTitle.show(now);
+            return;
+        }
         if (stream(kind)) {
             Fx f = TRACKED.get(key(kind, id));
             if (kind == SubNet.SHADOW && c == 1 && dir.lengthSqr() < 1.0E-6) {
@@ -177,12 +186,13 @@ final class NrFx {
     }
 
     static boolean active() {
-        return !SHOTS.isEmpty() || !TRACKED.isEmpty();
+        return !SHOTS.isEmpty() || !TRACKED.isEmpty() || KakashiSusanoo.active();
     }
 
     static void clear() {
         SHOTS.clear();
         TRACKED.clear();
+        KakashiSusanoo.clear();
     }
 
     private static double life(Fx f) {
@@ -206,6 +216,7 @@ final class NrFx {
             case SubNet.PULSE -> 9;
             case SubNet.DUST -> 52;
             case SubNet.KATON_BOOM -> 60;
+            case SubNet.KK_SENNEN -> 14;
             default -> 40;
         };
     }
@@ -219,6 +230,9 @@ final class NrFx {
             case SubNet.SAND_HAND -> 10;
             case SubNet.EYES -> 6;
             case SubNet.KATON -> 2;
+            case SubNet.KK_SEAL -> 12;
+            case SubNet.KK_DOGS -> 3;
+            case SubNet.KK_VORTEX -> 6;
             default -> 8;
         };
     }
@@ -270,6 +284,7 @@ final class NrFx {
                 case SubNet.PULSE -> pulse(f, age);
                 case SubNet.DUST -> dust(f, age);
                 case SubNet.KATON_BOOM -> katonBoom(f, age);
+                case SubNet.KK_SENNEN -> star(f, age);
                 default -> {
                 }
             }
@@ -301,7 +316,10 @@ final class NrFx {
                 case SubNet.SPIRIT -> spirit(f, age, out);
                 case SubNet.CONFUSED -> confused(f, age, partial, out);
                 case SubNet.THREAD -> thread(rel(f.pos), rel(f.pos.add(f.dir)), f.a, f.b * out, age);
-                case SubNet.RAIJU -> raiju(f, age, out);
+                case SubNet.KK_HOUND -> hound(f, age, out);
+                case SubNet.KK_VORTEX -> bigVortex(f, age, out);
+                case SubNet.KK_SEAL -> seal(f, age, out);
+                case SubNet.KK_DOGS -> dogs(f, age, out);
                 case SubNet.KAMUI -> kamui(f, age, out);
                 case SubNet.KATON -> katonBall(f, age, now, out);
                 case SubNet.HENGE -> henge(f, age, now, out);
@@ -1861,72 +1879,248 @@ final class NrFx {
         }
     }
 
-    // ---------- Kakashi ----------
+    // ---------- Kakashi (forja/kakashi-kit v13: kakashi.js houndBolts, VORT_F; kakashi2.js NINKEN, SEAL_F) ----------
 
-    // The lightning hound: a body of bolts along its last steps, a head with jaws and ears, legs flickering to the ground.
-    private static void raiju(Fx f, float t, float out) {
-        if (f.trail.isEmpty()) {
-            return;
+    private static final float[] KK_BODY = FxDraw.rgb(0xD6ECFF);
+    private static final float[] KK_EDGE = FxDraw.rgb(0x4F86FF);
+    private static final float[] VORT_BODY = FxDraw.rgb(0x5FC8FF);
+    private static final float[] VORT_EDGE = FxDraw.rgb(0x122A8F);
+    private static final float[] STAR = FxDraw.rgb(0xFFF6C8);
+    // One page unit is 0.9 blocks (the page's Kakashi is 2 units tall).
+    private static final float PU = 0.9f;
+
+    // A bolt through several points (the page's chainBolt): each stretch its own seed, finer the longer it is.
+    private static void chain(Vector3f[] pts, int seed, float w, float[] col, float op) {
+        for (int i = 0; i < pts.length - 1; i++) {
+            int segs = Math.max(3, Math.round(pts[i].distance(pts[i + 1]) * 9 / PU));
+            nrBolt(pts[i], pts[i + 1], seed + i * 7, w, col, op, 0.18f, segs, 0);
         }
-        Vec3[] tr = f.trail.toArray(new Vec3[0]);
-        int last = tr.length - 1;
-        Vector3f head = rel(tr[last]);
-        int tk = (int) Math.floor(t);
-        Vector3f[] pts = new Vector3f[5];
-        for (int i = 0; i < 5; i++) {
-            pts[i] = rel(tr[Math.max(0, last - i)]);
-        }
-        for (int i = 1; i < pts.length; i++) {
-            nrBolt(add(pts[i], 0, 0.2f - 0.35f, 0), add(pts[i - 1], 0, 0.25f - 0.35f, 0), tk * 5 + i, 0.08f, BOLT, out, 0.35f, 4, 1);
-            nrBolt(add(pts[i], 0, -0.35f, 0), add(pts[i - 1], 0, -0.35f, 0), tk * 7 + i, 0.05f, BOLT_HOT, 0.8f * out, 0.4f, 3, 0);
-        }
-        Vector3f h = add(head, 0, -0.05f, 0);
-        bb(h, 1.8f, 0, FxDraw.SOFT, 0.4f, BOLT, 0.6f * out, true);
-        bb(h, 1.2f, t * 0.4f, FxDraw.FLARE, 5 / 32f, BOLT_HOT, 0.9f * out, true);
+    }
+
+    // Raiju Tsuiga: the hound drawn only with bolts, each stroke with its own job (the page's houndBolts): back to the
+    // snout, jaw, chest and belly, pointed ears, four legs in a gallop, lightning fur crackling off the back and two bolts
+    // dragging behind on the ground. pos = its feet on the ground, dir = where it runs, a = gait, b = jaw.
+    private static void hound(Fx f, float t, float out) {
+        Vector3f p = rel(f.pos);
         Vector3f dir = vec(f.dir);
         dir.y = 0;
         if (dir.lengthSquared() < 1.0E-4f) {
             dir.set(0, 0, 1);
         }
         dir.normalize();
-        Vector3f side = v(-dir.z, 0, dir.x);
-        for (int s = -1; s <= 1; s += 2) {
-            nrBolt(add(h, 0, 0.1f, 0), add(at(at(h, side, s * 0.18f), dir, -0.15f), 0, 0.5f, 0), tk * 13 + s, 0.04f, BOLT_HOT, 0.9f * out, 0.2f, 3, 0);
-            nrBolt(add(h, 0, -0.15f, 0), add(at(at(h, dir, 0.75f), side, s * 0.18f), 0, s * 0.16f, 0), tk + s * 3, 0.05f, BOLT_HOT, 0.9f * out, 0.3f, 3, 0);
+        Vector3f side = v(dir.z, 0, -dir.x);
+        float sc = 1.7f * PU, gait = f.a, jaw = f.b, k = out;
+        int tk = (int) Math.floor(t);
+        java.util.function.BiFunction<float[], Float, Vector3f> L = (fu, s) -> at(at(add(p, 0, fu[1] * sc, 0), dir, fu[0] * sc), side, s * sc);
+        float bob = Mth.sin(gait * 2) * 0.05f, stretch = Mth.sin(gait) * 0.12f;
+        Vector3f hip = L.apply(new float[] {-0.6f - stretch * 0.5f, 0.62f + bob}, 0f), sh = L.apply(new float[] {0.45f + stretch * 0.5f, 0.72f - bob}, 0f);
+        Vector3f neck = L.apply(new float[] {0.72f, 0.98f}, 0f), head = L.apply(new float[] {0.98f, 1.1f}, 0f);
+        Vector3f snout = L.apply(new float[] {1.48f, 1.0f}, 0f), nose = L.apply(new float[] {1.55f, 0.94f}, 0f);
+        Vector3f jawTip = L.apply(new float[] {1.42f, 0.86f - 0.22f * jaw}, 0f), throat = L.apply(new float[] {1.0f, 0.8f}, 0f);
+        Vector3f tail = L.apply(new float[] {-1.05f, 0.98f + 0.12f * Mth.sin(gait * 1.7f)}, 0.08f * Mth.sin(gait * 2.3f));
+        float w = 0.06f * PU * k;
+        chain(new Vector3f[] {tail, hip, sh, neck, head, snout, nose}, 2001 + tk, w * 1.3f, BOLT, k);
+        chain(new Vector3f[] {nose, jawTip, throat, L.apply(new float[] {0.6f, 0.48f}, 0f), L.apply(new float[] {-0.1f, 0.42f + bob}, 0f),
+                L.apply(new float[] {-0.62f, 0.48f}, 0f), hip}, 2101 + tk, w, BOLT, k);
+        for (int j = 0; j < 2; j++) {
+            float s = j == 0 ? -1 : 1;
+            chain(new Vector3f[] {L.apply(new float[] {0.86f, 1.12f}, 0.1f * s), L.apply(new float[] {0.82f, 1.42f}, 0.14f * s),
+                    L.apply(new float[] {1.02f, 1.16f}, 0.1f * s)}, 2201 + j * 13 + tk, w * 0.8f, BOLT_HOT, k);
+            float fa = gait + (j == 1 ? 0.6f : 0), ba = gait + Mth.PI + (j == 1 ? 0.5f : 0);
+            Vector3f fk = L.apply(new float[] {0.5f + 0.25f * Mth.sin(fa), 0.32f + 0.08f * Mth.cos(fa)}, 0.16f * s);
+            Vector3f fp = L.apply(new float[] {0.55f + 0.45f * Mth.sin(fa), Math.max(0.02f, 0.1f * Mth.cos(fa) + 0.04f)}, 0.16f * s);
+            Vector3f bk = L.apply(new float[] {-0.5f + 0.22f * Mth.sin(ba), 0.36f}, 0.17f * s);
+            Vector3f bp = L.apply(new float[] {-0.62f + 0.42f * Mth.sin(ba), Math.max(0.02f, 0.1f * Mth.cos(ba) + 0.04f)}, 0.17f * s);
+            chain(new Vector3f[] {L.apply(new float[] {0.45f, 0.66f}, 0.15f * s), fk, fp}, 2301 + j * 17 + tk, w * 1.1f, BOLT, k);
+            chain(new Vector3f[] {L.apply(new float[] {-0.55f, 0.6f}, 0.15f * s), bk, bp}, 2401 + j * 17 + tk, w * 1.1f, BOLT, k);
         }
-        for (int l = 0; l < 4; l++) {
-            Vector3f b = pts[Math.min(4, 1 + l)];
-            Vector3f foot = add(b, (hash(tk, l, 1) - 0.5f) * 0.3f, -0.35f + 0.02f, (hash(tk, l, 2) - 0.5f) * 0.3f);
-            nrBolt(add(b, 0, -0.2f, 0), foot, tk * 3 + l, 0.025f, BOLT, 0.7f * out, 0.4f, 3, 0);
+        // lightning fur: short crackles off the back, each with its own life and size
+        for (int i = 0; i < 9; i++) {
+            int life = 1 + (int) Math.floor(hash(77, i, 1) * 3);
+            int ep = (int) Math.floor((tk + hash(77, i, 2) * life) / life);
+            Vector3f a = add(lerp(hip, sh, hash(77, i, ep)), 0, 0.05f, 0);
+            Vector3f d = v((hash(78, i, ep) - 0.5f) * 1.2f, 0.6f + 0.6f * hash(79, i, ep), (hash(80, i, ep) - 0.5f) * 1.2f).normalize();
+            d = at(d, dir, -0.7f).normalize();
+            nrBolt(a, at(a, d, (0.2f + 0.35f * hash(81, i, ep)) * PU), 2600 + i * 9 + ep, 0.016f * PU * k, BOLT_HOT, 0.9f * k, 0.4f, 4, 0);
         }
-        Vector3f tail = rel(tr[Math.max(0, last - 12)]);
-        rib(add(tail, 0, -0.32f, 0), add(head, 0, -0.32f, 0), 0.12f, FxDraw.BEAM, 0.6f, SCORCH, 0.7f * out, false);
+        // the trail: two bolts left behind stuck to the ground
+        for (int i = 0; i < 2; i++) {
+            int ep = tk / 2;
+            Vector3f b = L.apply(new float[] {-1.6f - 1.3f * hash(82, i, ep), 0.03f}, (hash(83, i, ep) - 0.5f));
+            nrBolt(hip, b, 2800 + i * 5 + ep, 0.03f * PU * k, BOLT, 0.85f * k, 0.3f, 9, 0);
+        }
+        Vector3f chest = L.apply(new float[] {0.55f, 0.7f}, 0f);
+        float flick = (tk & 1) != 0 ? 0.9f : 1.06f;
+        bb(chest, 1.1f * k * flick, 0, FxDraw.SOFT, 0.5f, KK_BODY, 0.55f * k, true);
+        bb(chest, 0.6f * k * flick, t * 0.4f, FxDraw.FLARE, 5 / 32f, BOLT_HOT, 0.9f * k, true);
+        rib(add(hip, 0, -hip.y + p.y + 0.03f, 0), add(sh, 0, -sh.y + p.y + 0.03f, 0), 0.12f, FxDraw.BEAM, 0.6f, SCORCH, 0.5f * k, false);
     }
 
-    // Kamui: the space round the target twisting into a dark spiral with purple glints, a hole in the middle.
+    // The Kamui: a ball of space turned into a spiral and swallowed (the page's VORT_F, souls_ki kind 33), the picture of
+    // the world twisting round it. life 0..1 how far in; spin < 0 turns it the other way (spitting out).
+    static void vortex(Vector3f c, Vector3f axis, float r, float life, float spin, float alpha, float age) {
+        if (r <= 0.01f || alpha <= 0.002f) {
+            return;
+        }
+        if (DbFx.pass && KiMesh.ready()) {
+            KiMesh.P k = KiMesh.p(KiMesh.KAMUI_VORTEX);
+            k.size = new float[] {axis.x, axis.y, axis.z};
+            k.rot = spin;
+            k.life = Math.max(0, Math.min(1, life));
+            k.time = age / 20f;
+            k.alpha = alpha;
+            k.color = VORT_BODY;
+            k.color2 = VORT_EDGE;
+            KiMesh.queue(KiMesh.Mesh.BALL, KiMesh.sphere(c, r), k, KiMesh.FRONT, 19);
+        }
+        warp(c, r * 1.65f, (0.35f + 0.65f * Math.max(0, Math.min(1, life))) * alpha, 1, age, axis);
+    }
+
+    // X Kamui round the target (a = how open, b = how far in; b < 0 it spits the target back out).
     private static void kamui(Fx f, float t, float out) {
-        Vector3f c = rel(f.pos);
         float open = f.a * out;
         if (open <= 0) {
             return;
         }
-        Vector3f[] bs = basis(vec(f.dir));
-        Vector3f n = bs[2];
-        warp(c, 2.2f * open, 0.9f * open, 1, t, n);
-        for (int i = 0; i < 18; i++) {
-            float ph = fract(t * 0.04f + i / 18f);
-            float r = (1 - ph) * 2 * open;
-            float ang = i * 0.9f + ph * 6 + t * 0.1f;
-            Vector3f p0 = at(at(c, bs[0], Mth.cos(ang) * r), bs[1], Mth.sin(ang) * r);
-            Vector3f p1 = at(at(c, bs[0], Mth.cos(ang + 0.8f) * r * 0.8f), bs[1], Mth.sin(ang + 0.8f) * r * 0.8f);
-            rib(p0, p1, 0.12f, FxDraw.STREAK, 0.2f, KAMUI_DARK, 0.85f * open, false);
-            if (i % 3 == 0) {
-                Vector3f q1 = at(at(c, bs[0], Mth.cos(ang + 0.6f) * r * 0.85f), bs[1], Mth.sin(ang + 0.6f) * r * 0.85f);
-                rib(at(p0, n, 0.02f), at(q1, n, 0.02f), 0.04f, FxDraw.STREAK, 0.6f, KAMUI_LIT, 0.6f * open, true);
-            }
+        Vector3f c = rel(f.pos);
+        Vector3f ax = vec(f.dir);
+        if (ax.lengthSquared() < 1.0E-4f) {
+            ax.set(0, 0, 1);
         }
-        dsk(c, n, 0.8f * open, FxDraw.DISC, 0.4f, new float[] {0.02f, 0.01f, 0.03f}, 0.9f * open, false);
-        dsk(c, n, 1.0f * open, FxDraw.RING, 0.1f, KAMUI_RING, 0.6f * open, true);
+        ax.normalize();
+        boolean spit = f.b < 0;
+        float sec = t / 20f;
+        float spin = spit ? sec * 9 : -sec * 7 - sec * sec * 5;
+        vortex(c, ax, 1.8f * PU * open, Math.abs(f.b), spin, 1, t);
+    }
+
+    // The big Kamui (the shurikens' hit) and Shift+X round himself: a = radius, b = how far in.
+    private static void bigVortex(Fx f, float t, float out) {
+        Vector3f ax = vec(f.dir);
+        if (ax.lengthSquared() < 1.0E-4f) {
+            ax.set(0, 0, -1);
+        }
+        ax.normalize();
+        float sec = t / 20f;
+        vortex(rel(f.pos), ax, f.a * out, f.b, -sec * 6 - sec * sec * 4, out, t);
+    }
+
+    // The ninken seal of blood on the ground (souls_ki kind 34): a = opacity, b = lit.
+    private static void seal(Fx f, float t, float out) {
+        if (!DbFx.pass || !KiMesh.ready() || f.a * out <= 0.002f) {
+            return;
+        }
+        KiMesh.P k = KiMesh.p(KiMesh.NINKEN_SEAL);
+        k.alpha = f.a * out;
+        k.pulse = f.b;
+        k.time = t / 20f;
+        k.glow = f.b > 0.05f;
+        KiMesh.queue(KiMesh.Mesh.QUAD, KiMesh.flat(add(rel(f.pos), 0, 0.03f, 0), 1.6f * PU), k, KiMesh.BOTH, 8);
+    }
+
+    // The eight ninken, each its own (Pakkun small in his vest, Bull huge...): scale, length, height, coat, second color,
+    // snout, ears up or down, tail, curled tail, vest.
+    private record Ninken(float s, float len, float h, float[] c, float[] c2, float snout, boolean earUp, float tail, boolean curl, boolean vest, String part) {
+    }
+
+    private static final Ninken[] NINKEN = {
+            new Ninken(0.55f, 0.75f, 0.42f, FxDraw.rgb(0xB98A52), FxDraw.rgb(0x3A4F8A), 0.12f, false, 0.15f, false, true, "arm"),
+            new Ninken(1.25f, 0.95f, 0.62f, FxDraw.rgb(0x6B5A4C), FxDraw.rgb(0xD8D0C4), 0.16f, false, 0.12f, false, false, "leg"),
+            new Ninken(0.85f, 1.0f, 0.52f, FxDraw.rgb(0x3C3A3A), FxDraw.rgb(0xE8E2D8), 0.3f, true, 0.4f, false, false, "arm"),
+            new Ninken(0.8f, 0.95f, 0.5f, FxDraw.rgb(0xD6A35A), FxDraw.rgb(0xF2E8D8), 0.24f, true, 0.3f, true, false, "leg"),
+            new Ninken(0.82f, 1.0f, 0.5f, FxDraw.rgb(0x8A6A4A), FxDraw.rgb(0xC9B49A), 0.26f, false, 0.35f, false, false, "arm"),
+            new Ninken(0.9f, 1.05f, 0.55f, FxDraw.rgb(0x2C2B30), FxDraw.rgb(0xA8A4B4), 0.28f, true, 0.38f, false, false, "body"),
+            new Ninken(0.88f, 1.0f, 0.56f, FxDraw.rgb(0x5E4A36), FxDraw.rgb(0xD2B896), 0.22f, true, 0.42f, false, false, "leg"),
+            new Ninken(0.86f, 1.1f, 0.5f, FxDraw.rgb(0x9A9590), FxDraw.rgb(0x4A4744), 0.3f, true, 0.45f, false, false, "arm")};
+    private static final float[] NOSE = FxDraw.rgb(0x151515);
+
+    // Where ninken i stands round the target and where it came out of the ground (blocks, from the target's feet / the seal).
+    public static float slotAngle(int i) {
+        return i / 8f * Mth.TWO_PI + 0.3f;
+    }
+
+    private static void ldBox(Matrix4f m, float x, float y, float z, float w, float h, float d, float[] col, float op) {
+        Vector3f c = m.transformPosition(new Vector3f(x, y, z));
+        obox(c, m.transformDirection(new Vector3f(w / 2, 0, 0)), m.transformDirection(new Vector3f(0, h / 2, 0)), m.transformDirection(new Vector3f(0, 0, d / 2)), col,
+                op);
+    }
+
+    // B Cães Ninja: they come out of the ground round the seal, leap and bite arms, legs and body (a = ticks since).
+    private static void dogs(Fx f, float t, float out) {
+        if (DbFx.pass) {
+            return;
+        }
+        Vector3f tp = rel(f.pos);
+        Vector3f seal = rel(f.dir);
+        float sec = t / 20f;
+        boolean hold = sec > 0.75f;
+        for (int i = 0; i < NINKEN.length; i++) {
+            Ninken o = NINKEN[i];
+            float a = slotAngle(i), r = (1.0f + 0.25f * o.s) * PU, delay = 0.04f * i + 0.02f * ((i * 5) % 3), lt = sec - delay;
+            if (lt < 0) {
+                continue;
+            }
+            Vector3f from = v(seal.x + Mth.cos(a) * 2.6f * PU, seal.y, seal.z + Mth.sin(a) * 2.6f * PU);
+            Vector3f goal = v(tp.x + Mth.cos(a) * r, tp.y, tp.z + Mth.sin(a) * r);
+            float k = smooth(lt / 0.35f);
+            Vector3f p = hold ? goal : lerp(from, goal, k);
+            float hop = hold ? 0 : Mth.sin(Math.min(1, lt / 0.35f) * Mth.PI) * 0.9f - 1.2f * (1 - smooth(lt / 0.12f));
+            boolean high = o.part.equals("arm");
+            p.y += (hop + (high ? 0.35f * k : 0)) * PU;
+            float yaw = (float) Math.atan2(-(tp.x - p.x), -(tp.z - p.z));
+            float pitch = hold ? (o.part.equals("leg") ? 0.15f : -0.35f) + Mth.sin(sec * 30 + i) * 0.05f : -0.4f * Mth.sin(Math.min(1, lt / 0.35f) * Mth.PI);
+            float gait = sec * 18 + i, gk = hold ? 0.15f : 1 - k;
+            Matrix4f m = new Matrix4f().translation(p).rotateY(yaw).scale(o.s * PU).rotateX(pitch);
+            float L = o.len, H = o.h;
+            ldBox(m, 0, H, 0, 0.34f, 0.3f, L, o.c, out);
+            if (o.vest) {
+                ldBox(m, 0, H + 0.01f, -0.05f, 0.38f, 0.32f, L * 0.5f, o.c2, out);
+            } else {
+                ldBox(m, 0, H - 0.15f, 0.05f, 0.3f, 0.06f, L * 0.7f, o.c2, out);
+            }
+            Matrix4f hd = new Matrix4f(m).translate(0, H + 0.2f, -L / 2 - 0.08f);
+            ldBox(hd, 0, 0, 0, 0.32f, 0.3f, 0.3f, o.c, out);
+            ldBox(hd, 0, -0.06f, -0.15f - o.snout / 2, 0.2f, 0.15f, o.snout, o.c2, out);
+            ldBox(hd, 0, -0.01f, -0.15f - o.snout, 0.08f, 0.06f, 0.05f, NOSE, out);
+            Matrix4f jw = new Matrix4f(hd).translate(0, -0.16f, -0.14f).rotateX(hold ? 0.05f : 0.5f * (1 - k));
+            ldBox(jw, 0, 0, -o.snout / 2, 0.18f, 0.05f, o.snout * 0.9f, o.c2, out);
+            for (int s = -1; s <= 1; s += 2) {
+                if (o.earUp) {
+                    ldBox(hd, 0.11f * s, 0.22f, 0.06f, 0.09f, 0.16f, 0.05f, o.c, out);
+                } else {
+                    ldBox(new Matrix4f(hd).translate(0.17f * s, 0.08f, 0.06f).rotateZ(0.5f * s), 0, 0, 0, 0.09f, 0.12f, 0.05f, o.c, out);
+                }
+                ldBox(hd, 0.08f * s, 0.05f, -0.155f, 0.06f, 0.04f, 0.01f, NOSE, out);
+            }
+            for (int l = 0; l < 4; l++) {
+                int sx = l % 2 == 0 ? -1 : 1, sz = l < 2 ? -1 : 1;
+                float swing = Mth.sin(gait + (l < 2 ? 0 : Mth.PI) + (l % 2) * 0.4f) * 0.8f * gk;
+                Matrix4f lg = new Matrix4f(m).translate(0.11f * sx, H - 0.1f, sz * (L / 2 - 0.1f)).rotateX(swing);
+                ldBox(lg, 0, -(H - 0.05f) / 2, 0, 0.1f, H - 0.05f, 0.1f, o.c, out);
+            }
+            Matrix4f tl = new Matrix4f(m).translate(0, H + 0.08f, L / 2).rotateY(Mth.sin(gait * 1.3f) * 0.4f).rotateX(o.curl ? 1.4f : 0.6f);
+            ldBox(tl, 0, 0, o.tail / 2, 0.06f, 0.06f, o.tail, o.c, out);
+        }
+    }
+
+    // Sennen Goroshi: the target turned into a little star blinking high up (a = 1). The title is KakashiTitle.
+    private static void star(Fx f, float t) {
+        float k = t / 12f;
+        if (k >= 1) {
+            return;
+        }
+        Vector3f c = rel(f.pos);
+        float s = 0.01f + 0.9f * Mth.sin(Math.min(1, k) * Mth.PI) * 1.6f;
+        // an eight-point star: four long points and four short ones, turning
+        Vector3f view = new Vector3f(c).normalize();
+        Vector3f[] bs = basis(view);
+        for (int i = 0; i < 4; i++) {
+            float ang = i * Mth.PI / 4 + t * 0.15f;
+            float len = (i % 2 == 0 ? 1 : 0.55f) * s;
+            Vector3f d = new Vector3f(bs[0]).mul(Mth.cos(ang)).add(new Vector3f(bs[1]).mul(Mth.sin(ang)));
+            rib(at(c, d, -len), at(c, d, len), 0.16f * s, FxDraw.STREAK, 0.6f, STAR, 1, true);
+        }
+        bb(c, 0.9f * s, 0, FxDraw.SOFT, 0.5f, STAR, 0.8f, true);
     }
 
     // Dust thrown up where something slammed into the ground.

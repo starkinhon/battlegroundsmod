@@ -316,7 +316,29 @@ public final class SubNet {
     // Shikamaru's signal flare (stream): pos = the light, a = how bright, b = 1 while it still climbs, c = 1 ends it.
     public static final int FLARE = 168;
     // Naruto's Henge Armadilha: a = 0 the rock (a clone waiting), 1 the Fuuma Shuriken (dir = where it flies); stream
-    public static final int HENGE = 175;
+    public static final int HENGE = 180;
+    // 180-199 belong to the Naruto kits (Naruto, Kakashi, Gaara): NrFx draws them. The Jujutsu kits use 169-176, other
+    // threads 200-239; keep new kinds out of those ranges.
+    public static final int NARUTO_MIN = 180, NARUTO_MAX = 199;
+    // Kakashi's Perfect Susanoo (stream): id = caster, pos = its feet, dir = (yaw in radians, arms forward 0..1, throw 0..1),
+    // a = how far it has risen (0..1.15), b = opacity; c = 1 gone.
+    public static final int KK_SUSANOO = 181;
+    // A Kamui shuriken (stream): id = its own, pos, dir = the way it flies (zero while held), a = size in blocks, b = opacity.
+    public static final int KK_SHURIKEN = 182;
+    // The Kamui swallowing a ball of space (stream): id = its own, pos = center, dir = axis, a = radius in blocks,
+    // b = how far it has swallowed (0..1), c = 1 gone. Big or small (X Kamui, the shuriken's hit, Shift+X round himself).
+    public static final int KK_VORTEX = 183;
+    // The ninken seal on the ground (stream): pos, a = opacity, b = 1 it lit up (dogs out); c = 1 gone.
+    public static final int KK_SEAL = 184;
+    // The eight ninken holding a target (stream): id = the target, pos = its feet, a = ticks since they came out of the
+    // ground (from the seal at dir), c = 1 they vanish in smoke.
+    public static final int KK_DOGS = 185;
+    // Sennen Goroshi: the calligraphy title on the screens of who sees it, and the target turned into a star (pos) when it
+    // is high up: a = 0 the title, 1 the star.
+    public static final int KK_SENNEN = 186;
+    // The Raiju hound (stream): id = its own, pos = its chest on the ground, dir = where it runs, a = gait phase,
+    // b = jaw open 0..1; c = 1 gone.
+    public static final int KK_HOUND = 187;
 
     public static final int STYLE_SUKUNA = 0;
     public static final int STYLE_PINK = 1;

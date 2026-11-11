@@ -244,6 +244,7 @@ public final class FxWorld {
             source.endBatch(FxRenderTypes.FLAT_ADD);
             endDecals(source);
             KiMesh.flush(false);
+            KakashiSusanoo.flush(camera, now, false);
         } else {
             // The Susanoo arm's depth goes in first, so its color only lands on the front surface.
             source.endBatch(FxRenderTypes.SUS_DEPTH);
@@ -253,6 +254,7 @@ public final class FxWorld {
             source.endBatch(MoonFormsRenderer.Types.BODY);
             endDecals(source);
             KiMesh.flush(false);
+            KakashiSusanoo.flush(camera, now, false);
             boolean outline = !space && Aura.drawMask(event, camera, partial);
             FxPost.beginGlow();
             if (outline) {
@@ -262,6 +264,7 @@ public final class FxWorld {
             source.endBatch(FxRenderTypes.VFX_ADD);
             source.endBatch(MoonSlashRenderer.Types.GLOW);
             KiMesh.flush(true);
+            KakashiSusanoo.flush(camera, now, true);
             FxPost.endGlow(FxConfig.on(FxConfig.BLOOM));
         }
         // Piccolo's stretched arm with its owner's skin.

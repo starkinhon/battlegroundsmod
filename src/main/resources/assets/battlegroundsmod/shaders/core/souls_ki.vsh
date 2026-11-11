@@ -6,8 +6,9 @@
 // (relative to the camera). Kind says which effect: 0 blast/smoke, 1 Genki core, 2 halo (Genki), 3 beam, 4 dust ring,
 // 5 aura shell, 6 hit flash, 7 sun core, 8 sun halo, 9 saw disc, 10 Kienzan disc, 11 Makankosappo spirals, 12 wind,
 // 13 Sasuke's Katon shell (forja/sasuke-chidori/katon.js), 14 its wall of fire on the ground, 15 Shikamaru's shadow running
-// on the ground, 16 his Xeque-mate's flood of shadow (forja/shikamaru/shika.js; both flat squares), 21 the Rasengan's glass
-// core, 22 its shell of wind streaks, 23 the Rasenshuriken's disc of four saw blades (forja/naruto-kit/naruto.js, naruto2.js).
+// on the ground, 16 his Xeque-mate's flood of shadow (forja/shikamaru/shika.js; both flat squares), 30 the Rasengan's glass
+// core, 31 its shell of wind streaks, 32 the Rasenshuriken's disc of four saw blades (forja/naruto-kit/naruto.js, naruto2.js), 33 Kakashi's Kamui
+// vortex (a sphere; Size = the axis), 34 his ninken seal of blood on the ground (flat square; forja/kakashi-kit).
 in vec3 Position;
 
 uniform mat4 ModelViewMat;
@@ -100,7 +101,7 @@ void main() {
         n = normalize(Position);
         float b = gn(n * 3.5 + vec3(0., -Time * 0.7, Time * 0.3)) * 0.03 + gn(n * 9. + Time * 1.1) * 0.01;
         P = n * (1. + b); vO = n;
-    } else if (kind == 2 || kind == 6 || kind == 8 || kind == 21) {    // plain spheres (halos, hit flash, the Rasengan's glass core)
+    } else if (kind == 2 || kind == 6 || kind == 8 || kind == 30 || kind == 33) {    // plain spheres (halos, hit flash, the Rasengan's glass core)
         n = normalize(Position); P = Position; vO = n;
     } else if (kind == 3) {                                            // ki beam: one tube, twisted and swollen
         float along = Position.y * Len; vec2 d = normalize(Position.xz + 1e-5); float ang = atan(d.y, d.x);
@@ -111,9 +112,9 @@ void main() {
         float r = W * prof * (1. + 0.4 * tg);
         P = vec3(d.x * r, along, d.y * r); n = vec3(d.x, 0., d.y);
         vU = along; vD = tg; vQ = vec2(tw, along);
-    } else if (kind == 22) {                                           // Rasengan: the shell of wind round the core, swelling a little
+    } else if (kind == 31) {                                           // Rasengan: the shell of wind round the core, swelling a little
         n = normalize(Position); P = n * (1. + gn(n * 3. + vec3(Time * 2., 0., -Time * 1.6)) * 0.08); vO = n;
-    } else if (kind == 4 || kind == 9 || kind == 10 || kind == 15 || kind == 16 || kind == 23) {   // flat square: dust ring, saw and Kienzan discs, shadows, Rasenshuriken
+    } else if (kind == 4 || kind == 9 || kind == 10 || kind == 15 || kind == 16 || kind == 32 || kind == 34) {   // flat square: dust ring, saw and Kienzan discs, shadows, Rasenshuriken
         P = Position; n = vec3(0., 1., 0.); vUv = Position.xz * 0.5 + 0.5;
         vQ = Position.xz * vec2(length(Model[0].xyz), length(Model[2].xyz));   // in blocks, across and along the square
     } else if (kind == 5) {                                            // aura shell

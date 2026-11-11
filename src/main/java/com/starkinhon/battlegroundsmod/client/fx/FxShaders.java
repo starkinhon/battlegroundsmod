@@ -34,6 +34,9 @@ public final class FxShaders {
     static ShaderInstance smoke;
     // The Dragon Ball kits' 3D effects (KiMesh); on its own, so a problem here only hides them.
     static ShaderInstance ki;
+    // Kakashi's Perfect Susanoo (KakashiSusanoo): the body, its flames and outline, and the mist round its feet.
+    static ShaderInstance kkSus;
+    static ShaderInstance kkMist;
     // Sukuna's Fuga (FugaRenderer); without them the Fuga only darkens the world.
     static ShaderInstance fugaFlame;
     static ShaderInstance fugaArrow;
@@ -94,6 +97,12 @@ public final class FxShaders {
             register(event, "souls_ki", DefaultVertexFormat.POSITION, s -> ki = s);
         } catch (Exception e) {
             BattlegroundsMod.LOGGER.error("Could not load the Dragon Ball 3D effect shader", e);
+        }
+        try {
+            register(event, "souls_kk_sus", DefaultVertexFormat.POSITION_TEX_COLOR_NORMAL, s -> kkSus = s);
+            register(event, "souls_kk_mist", DefaultVertexFormat.POSITION, s -> kkMist = s);
+        } catch (Exception e) {
+            BattlegroundsMod.LOGGER.error("Could not load Kakashi's Susanoo shaders", e);
         }
         // On its own: a problem here only hides the smoke, never the other effects.
         try {

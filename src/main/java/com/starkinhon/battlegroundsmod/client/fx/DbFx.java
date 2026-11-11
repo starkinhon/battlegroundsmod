@@ -153,7 +153,7 @@ public final class DbFx {
     }
 
     static void receive(int kind, int id, Vec3 pos, Vec3 dir, float a, float b, float c) {
-        if (kind == SubNet.KATON || kind == SubNet.KATON_BOOM || kind == SubNet.SHADOW_SEA || kind == SubNet.FLARE || kind == SubNet.HENGE) {
+        if (kind == SubNet.KATON || kind == SubNet.KATON_BOOM || kind == SubNet.SHADOW_SEA || kind == SubNet.FLARE || kind >= SubNet.NARUTO_MIN && kind <= SubNet.NARUTO_MAX) {
             NrFx.receive(kind, id, pos, dir, a, b, c);
             return;
         }
