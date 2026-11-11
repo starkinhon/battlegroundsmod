@@ -110,8 +110,9 @@ public final class Corrente {
                 // The stamina runs out of them down the chain (80% over the hold); a mob without stamina bleeds a little.
                 if (target instanceof Player) {
                     Stamina.drain(target, 80.0 / (X_RELEASE - X_WRAP));
-                } else if (age % 10 == 0) {
-                    Combat.hurt(caster, target, 2);
+                } else if (age % 10 == 0 && target.getHealth() > 3) {
+                    // Drained, not struck: no hurt flash, so the body doesn't stay red the whole hold.
+                    target.setHealth(target.getHealth() - 2);
                 }
             }
             if (age >= X_RELEASE) {

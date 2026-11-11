@@ -26,7 +26,31 @@ public final class MakimaSheet extends Screen {
     private static final String DITTO = "〃";
     private static final int PAPER = 0xF4EFE4, RULE = 0xC9D4E4, MARGIN = 0xD8606A, INK = 0x1D1A24, BLOOD = 0x8E0B1E;
 
-    private record Known(String name, String origin, String type) {
+    private record Known(String name, String origin, String type, List<String> aliases) {
+        // The name, or another one it answers to (the boss's id, the kind of mob).
+        boolean starts(String q) {
+            if (name.toLowerCase(Locale.ROOT).startsWith(q)) {
+                return true;
+            }
+            for (String a : aliases) {
+                if (a.toLowerCase(Locale.ROOT).startsWith(q)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        boolean has(String q) {
+            if (name.toLowerCase(Locale.ROOT).contains(q)) {
+                return true;
+            }
+            for (String a : aliases) {
+                if (a.toLowerCase(Locale.ROOT).contains(q)) {
+                    return true;
+                }
+            }
+            return false;
+        }
     }
 
     private final List<Known> known = new ArrayList<>();
@@ -45,7 +69,8 @@ public final class MakimaSheet extends Screen {
         java.util.Arrays.fill(lines, "");
         for (String e : entries) {
             String[] p = e.split("\\|", -1);
-            known.add(new Known(p[0], p.length > 1 ? p[1] : "", p.length > 2 ? p[2] : ""));
+            List<String> aliases = p.length > 3 && !p[3].isEmpty() ? List.of(p[3].split(",")) : List.of();
+            known.add(new Known(p[0], p.length > 1 ? p[1] : "", p.length > 2 ? p[2] : "", aliases));
         }
     }
 
@@ -79,13 +104,12 @@ public final class MakimaSheet extends Screen {
             return out;
         }
         for (Known k : known) {
-            if (k.name().toLowerCase(Locale.ROOT).startsWith(q)) {
+            if (k.starts(q)) {
                 out.add(k);
             }
         }
         for (Known k : known) {
-            String n = k.name().toLowerCase(Locale.ROOT);
-            if (!n.startsWith(q) && n.contains(q)) {
+            if (!k.starts(q) && k.has(q)) {
                 out.add(k);
             }
         }
@@ -160,7 +184,8 @@ public final class MakimaSheet extends Screen {
                 return true;
             }
             case GLFW.GLFW_KEY_ENTER, GLFW.GLFW_KEY_KP_ENTER -> {
-                boolean exact = s.stream().anyMatch(k -> k.name().equalsIgnoreCase(lines[line].trim()));
+                String typed = lines[line].trim();
+                boolean exact = s.stream().anyMatch(k -> k.name().equalsIgnoreCase(typed));
                 if (!s.isEmpty() && !exact) {
                     lines[line] = s.get(Math.min(sug, s.size() - 1)).name();
                     return true;

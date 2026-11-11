@@ -107,7 +107,11 @@ public final class Ritual {
                 Entity e = level.getEntity(k.id());
                 if (e instanceof LivingEntity le && le.isAlive()) {
                     String type = BuiltInRegistries.ENTITY_TYPE.getKey(le.getType()).getPath();
-                    entries.add(k.name() + "|" + k.origin() + "|" + type);
+                    // Other names that find it too (the boss's own id, the kind of mob), so "Madara" finds the Uchiha
+                    // Ghost on the sheet as it does in the ritual.
+                    String alias = type.replace('_', ' ') + "," + le.getType().getDescription().getString()
+                            + (le instanceof SoulBoss boss ? "," + boss.bossId() : "");
+                    entries.add(k.name() + "|" + k.origin() + "|" + type + "|" + alias.replace("|", ""));
                 }
             }
         }
