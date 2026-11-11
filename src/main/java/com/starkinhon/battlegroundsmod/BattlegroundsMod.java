@@ -72,6 +72,7 @@ public class BattlegroundsMod {
         com.starkinhon.battlegroundsmod.universe.BleachWorld.register();
         com.starkinhon.battlegroundsmod.universe.DemonSlayerWorld.register();
         FightRod.register();
+        com.starkinhon.battlegroundsmod.power.powers.makima.MakimaEvents.register();
         SoulCommand.addSubcommand(BossCommand::bossbar);
         SoulCommand.addSubcommand(com.starkinhon.battlegroundsmod.combat.DamageDebug::command);
         SoulCommand.addSubcommand(BossCommand::boss);

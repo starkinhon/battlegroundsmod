@@ -41,7 +41,7 @@ public final class FxWorld {
 
     static MultiBufferSource.BufferSource buffers() {
         if (buffers == null) {
-            for (RenderType type : List.of(FxRenderTypes.VFX_ALPHA, FxRenderTypes.VFX_ADD, FxRenderTypes.FLAT_ALPHA, FxRenderTypes.FLAT_ADD,
+            for (RenderType type : List.of(FxRenderTypes.SOLID, FxRenderTypes.VFX_ALPHA, FxRenderTypes.VFX_ADD, FxRenderTypes.FLAT_ALPHA, FxRenderTypes.FLAT_ADD,
                     FxRenderTypes.SUS_DEPTH, FxRenderTypes.SUS_COLOR, FxRenderTypes.SUS_GLOW, FxRenderTypes.SUS_FLAT,
                     MoonSlashRenderer.Types.BODY, MoonSlashRenderer.Types.GLOW, MoonFormsRenderer.Types.BODY)) {
                 FIXED.put(type, new ByteBufferBuilder(type.bufferSize()));
@@ -144,7 +144,7 @@ public final class FxWorld {
         FxPost.newFrame();
         ScreenFx.capture(event);
         boolean world = !PIECES.isEmpty() || MeteorRenderer.hasTrails() || Aura.active() || KatonBallRenderer.active() || AshDeath.hasSparks() || SoulCeremonyFx.active()
-                || SpaceScene.active() || EsferaRenderer.active() || HakaiRenderer.active() || EnergyRenderer.active() || BlackBoxRenderer.active() || AzulRenderer.active() || VermelhoRenderer.active() || BlackFlashRenderer.active() || RoxoRenderer.active() || AizenFx.active() || SwordFx.active() || MoonSlashRenderer.active() || MoonFormsRenderer.active() || PunchFxRenderer.active() || SubFx.active()
+                || SpaceScene.active() || EsferaRenderer.active() || HakaiRenderer.active() || EnergyRenderer.active() || BlackBoxRenderer.active() || AzulRenderer.active() || VermelhoRenderer.active() || BlackFlashRenderer.active() || RoxoRenderer.active() || AizenFx.active() || SwordFx.active() || MoonSlashRenderer.active() || MoonFormsRenderer.active() || PunchFxRenderer.active() || SubFx.active() || MakimaFx.active()
                 || SphereRenderer.active() || SusanooArm.active() || DomainScene.active() || VoidFlashScene.active() || FugaRenderer.active() || DismantleRenderer.active() || SukunaCutsRenderer.active() || SukunaDomainScene.active()
                 || ClivarRenderer.active() || CravadaRenderer.active();
         if (!world && !ScreenFx.needsScene()) {
@@ -232,11 +232,13 @@ public final class FxWorld {
             MoonFormsRenderer.render(source, camera, now, partial);
             PunchFxRenderer.render(camera, now, partial);
             SubFx.render(camera, now, partial);
+            MakimaFx.render(source, camera, now, partial);
             SphereRenderer.render(camera, now, partial);
             SusanooArm.render(source, flat, camera, now, partial);
             DomainScene.render(camera, now, partial);
         }
         if (flat) {
+            source.endBatch(FxRenderTypes.SOLID);
             source.endBatch(FxRenderTypes.SUS_FLAT);
             source.endBatch(MoonSlashRenderer.Types.BODY);
             source.endBatch(MoonFormsRenderer.Types.BODY);
@@ -248,6 +250,7 @@ public final class FxWorld {
             // The Susanoo arm's depth goes in first, so its color only lands on the front surface.
             source.endBatch(FxRenderTypes.SUS_DEPTH);
             source.endBatch(FxRenderTypes.SUS_COLOR);
+            source.endBatch(FxRenderTypes.SOLID);
             source.endBatch(FxRenderTypes.VFX_ALPHA);
             source.endBatch(MoonSlashRenderer.Types.BODY);
             source.endBatch(MoonFormsRenderer.Types.BODY);
@@ -264,6 +267,8 @@ public final class FxWorld {
             KiMesh.flush(true);
             FxPost.endGlow(FxConfig.on(FxConfig.BLOOM));
         }
+        // Makima's rats' vision: the red ghosts of whoever is near, over everything.
+        MakimaFx.ghosts(event, camera, partial);
         // Piccolo's stretched arm with its owner's skin.
         DbFx.drawArms();
         if (!space) {

@@ -60,6 +60,8 @@ public abstract class SoulBoss extends Monster {
     private SoulBossAI ai;
     // Its soul being stolen by the player who killed it (only after death).
     private SoulCeremony ceremony;
+    // Raised by Makima as a puppet of its soul (power/powers/makima/Almas): no boss fight, no soul to drop.
+    private LivingEntity puppetOwner;
 
     protected SoulBoss(EntityType<? extends SoulBoss> type, Level level) {
         super(type, level);
@@ -109,13 +111,22 @@ public abstract class SoulBoss extends Monster {
         return bossfight() ? spec().fase(phase) : mobFase(spec());
     }
 
+    public void puppetOf(LivingEntity owner) {
+        this.puppetOwner = owner;
+        setPersistenceRequired();
+    }
+
+    public LivingEntity puppetOwner() {
+        return puppetOwner;
+    }
+
     public int phase() {
         return level().isClientSide() ? entityData.get(DATA_PHASE) : phase;
     }
 
     // The boss fight (titles, bar, entrance, phases, final ult) is on: /gamerule soulbossfight.
     public boolean bossfight() {
-        return isBoss() && BossRules.bossfight(level());
+        return isBoss() && puppetOwner == null && BossRules.bossfight(level());
     }
 
     private static final java.util.Map<BossSpec, BossSpec.Fase> MOB_FASES = new java.util.IdentityHashMap<>();
@@ -434,6 +445,10 @@ public abstract class SoulBoss extends Monster {
     @Override
     protected void dropCustomDeathLoot(ServerLevel level, DamageSource source, boolean recentlyHit) {
         super.dropCustomDeathLoot(level, source, recentlyHit);
+        if (puppetOwner != null) {
+            // A soul Makima raised: it is already hers.
+            return;
+        }
         var soul = ModItems.SOULS.get(spec().poder());
         if (spec().dropAlma() && soul != null) {
             ServerPlayer killer = SoulCeremony.killer(source);

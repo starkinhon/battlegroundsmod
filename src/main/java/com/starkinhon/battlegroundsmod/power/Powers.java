@@ -47,6 +47,7 @@ public final class Powers {
     public static final Power STRONGEST = register(Strongest.create());
     public static final Power MOON_DEMON = register(MoonDemon.create());
     public static final Power SUKUNA = register(Sukuna.create());
+    public static final Power MAKIMA = register(com.starkinhon.battlegroundsmod.power.powers.makima.Makima.create());
 
     // SubAlmas (Bleach). The provisional Sukuna, Ichigo and Urahara were taken out for now (2026-11-07).
     public static final Power BYAKUYA = registerSub(Byakuya.create());

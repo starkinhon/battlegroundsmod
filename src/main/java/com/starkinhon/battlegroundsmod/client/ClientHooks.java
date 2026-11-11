@@ -395,4 +395,17 @@ public final class ClientHooks {
     public static void openPowerSelect() {
         Minecraft.getInstance().setScreen(new PowerSelectScreen());
     }
+
+    // Makima: the wheel of the mobs she keeps (C held) or the Ritual's sheet (B).
+    public static void makimaOpen(int kind, int count, java.util.List<String> entries) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null) {
+            return;
+        }
+        if (kind == 0) {
+            mc.setScreen(new MakimaWheel(count, entries));
+        } else {
+            mc.setScreen(new MakimaSheet(count, entries));
+        }
+    }
 }
