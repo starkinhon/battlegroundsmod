@@ -89,11 +89,6 @@ public class PeixeGigante extends DbCreature {
     }
 
     @Override
-    public boolean canBreatheUnderwater() {
-        return true;
-    }
-
-    @Override
     public boolean isPushedByFluid() {
         return false;
     }
