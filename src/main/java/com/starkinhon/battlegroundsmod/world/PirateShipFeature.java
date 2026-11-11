@@ -11,9 +11,9 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.ChestBlock;
-import net.minecraft.world.level.block.CrossCollisionBlock;
+import net.minecraft.world.level.block.PipeBlock;
 import net.minecraft.world.level.block.RotatedPillarBlock;
-import net.minecraft.world.level.block.entity.RandomizableContainer;
+import net.minecraft.world.RandomizableContainer;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.feature.Feature;
@@ -199,8 +199,8 @@ public final class PirateShipFeature extends Feature<NoneFeatureConfiguration> {
         }
 
         BlockState fence(BlockState state, Direction along) {
-            return state.setValue(CrossCollisionBlock.PROPERTY_BY_DIRECTION.get(along), true)
-                    .setValue(CrossCollisionBlock.PROPERTY_BY_DIRECTION.get(along.getOpposite()), true);
+            return state.setValue(PipeBlock.PROPERTY_BY_DIRECTION.get(along), true)
+                    .setValue(PipeBlock.PROPERTY_BY_DIRECTION.get(along.getOpposite()), true);
         }
 
         void chest(int u, int y, int v, ResourceKey<LootTable> loot, Direction facing) {
