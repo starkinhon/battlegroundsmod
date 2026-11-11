@@ -158,7 +158,8 @@ public final class Ratos {
             return false;
         }
         pack.jumped = true;
-        Vec3 rat = pack.rats.get(pick);
+        int picked = pick;
+        Vec3 rat = pack.rats.get(picked);
         Vec3 from = caster.position();
         // Beside the rat, facing the nearest enemy there.
         LivingEntity face = foe;
@@ -200,7 +201,7 @@ public final class Ratos {
             Freeze.hold(caster, RISE);
             MkNet.send(level, MkNet.POOL, caster.getId(), dest, 1.7f, 40, 0);
             MkNet.send(level, MkNet.SINK, caster.getId(), dest, 1, RISE, 0);
-            MkNet.send(level, MkNet.RAT, caster.getId(), rat, 0, -1, pick);
+            MkNet.send(level, MkNet.RAT, caster.getId(), rat, 0, -1, picked);
             SubCommon.sound(level, dest, SoundEvents.SCULK_BLOCK_SPREAD, 1.3f, 0.6f);
             SubCommon.sound(level, dest, SoundEvents.SILVERFISH_STEP, 1.0f, 1.2f);
             SubCommon.pose(caster, "makima.sobe");
