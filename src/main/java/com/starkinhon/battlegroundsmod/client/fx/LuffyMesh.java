@@ -213,8 +213,9 @@ public final class LuffyMesh {
             for (int i = 0; i < w; i++) {
                 double p0 = phi0 + dphi * i / w, p1 = phi0 + dphi * (i + 1) / w;
                 float[] a = sp(t0, p0), c = sp(t1, p0), d = sp(t1, p1), e = sp(t0, p1);
-                tri(b, mul(a, rr), mul(e, rr), mul(c, rr), a, e, c);
-                tri(b, mul(e, rr), mul(d, rr), mul(c, rr), e, d, c);
+                // wound outward (counter-clockwise seen from outside), as three's SphereGeometry: FRONT is the outer face
+                tri(b, mul(a, rr), mul(c, rr), mul(e, rr), a, c, e);
+                tri(b, mul(e, rr), mul(c, rr), mul(d, rr), e, c, d);
             }
         }
     }
@@ -241,8 +242,9 @@ public final class LuffyMesh {
                     float nx = x - cx, ny = y - cy, nz = z, l = (float) Math.sqrt(nx * nx + ny * ny + nz * nz);
                     n[q] = new float[] {nx / l, ny / l, nz / l};
                 }
-                tri(b, v[0], v[1], v[3], n[0], n[1], n[3]);
-                tri(b, v[1], v[2], v[3], n[1], n[2], n[3]);
+                // wound outward, as three's TorusGeometry
+                tri(b, v[0], v[3], v[1], n[0], n[3], n[1]);
+                tri(b, v[1], v[3], v[2], n[1], n[3], n[2]);
             }
         }
     }

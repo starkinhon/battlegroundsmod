@@ -1773,6 +1773,8 @@ public final class LuffyFx {
         p.zScale = z;
     }
 
+    private static final boolean[] WAS_VISIBLE = new boolean[10];
+
     public static void onRenderPlayerPre(RenderPlayerEvent.Pre event) {
         Body bd = BODIES.get(event.getEntity().getId());
         if (bd == null || event.isCanceled()) {
@@ -1803,9 +1805,12 @@ public final class LuffyFx {
         }
         // the Fusen: head, arms and legs are drawn pushed out round the balloon (onRenderPlayerPost)
         if (bd.balloon > 0.02) {
-            for (ModelPart p : new ModelPart[] {m.head, m.hat, m.rightArm, m.rightSleeve, m.leftArm, m.leftSleeve, m.rightLeg, m.rightPants, m.leftLeg,
-                    m.leftPants}) {
-                scale(p, 0, 0, 0);
+            ModelPart[] parts = {m.head, m.hat, m.rightArm, m.rightSleeve, m.leftArm, m.leftSleeve, m.rightLeg, m.rightPants, m.leftLeg, m.leftPants};
+            for (int i = 0; i < parts.length; i++) {
+                // hidden outright (not only scaled to 0), so no other renderer of the model brings them back inside the balloon
+                WAS_VISIBLE[i] = parts[i].visible;
+                parts[i].visible = false;
+                scale(parts[i], 0, 0, 0);
             }
         }
         PoseStack pose = event.getPoseStack();
@@ -1847,6 +1852,10 @@ public final class LuffyFx {
             scale(p, 1, 1, 1);
         }
         if (bd != null && bd.balloon > 0.02) {
+            ModelPart[] parts = {m.head, m.hat, m.rightArm, m.rightSleeve, m.leftArm, m.leftSleeve, m.rightLeg, m.rightPants, m.leftLeg, m.leftPants};
+            for (int i = 0; i < parts.length; i++) {
+                parts[i].visible = WAS_VISIBLE[i];
+            }
             // the Fusen: his head, arms and legs pushed out round the balloon (the page's balloonSet)
             float k = (float) Math.min(1, bd.balloon);
             AbstractClientPlayer player = (AbstractClientPlayer) event.getEntity();
