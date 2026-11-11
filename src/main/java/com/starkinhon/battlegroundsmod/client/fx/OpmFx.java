@@ -80,7 +80,7 @@ public final class OpmFx {
     }
 
     // One ghost arm of the barrage: from the shoulder toward its own point on the target.
-    private record Arm(Vec3 from, Vec3 to, float roll, float w, float len, float e0, float e1, float str, float life, float peak, double born) {
+    private record Arm(Vec3 from, Vec3 to, float roll, float w, float len, float e0, float e1, float str, float life, float peak, double born, int caster) {
     }
 
     private static final List<Move> MOVES = new ArrayList<>();
@@ -980,7 +980,7 @@ public final class OpmFx {
                 Vec3 aim = chest.add(body.dir((rnd() - 0.5) * 1.3, (rnd() - 0.4) * 1.5, -0.25));
                 float w = (float) (0.85 + rnd() * 0.3);
                 ARMS.add(new Arm(sh, aim, (float) (rnd() * 6.283), w, (float) ((sh.distanceTo(aim) - 0.15) / 0.88), (float) (0.25 + rnd() * 0.35),
-                        (float) (0.75 + rnd() * 0.35), (float) (1 + rnd() * 0.8), (float) (0.07 + Math.pow(rnd(), 1.5) * 0.11), (float) (0.65 + rnd() * 0.3), now));
+                        (float) (0.75 + rnd() * 0.35), (float) (1 + rnd() * 0.8), (float) (0.07 + Math.pow(rnd(), 1.5) * 0.11), (float) (0.65 + rnd() * 0.3), now, m.id));
             }
             if (ARMS.size() > 160) {
                 ARMS.subList(0, ARMS.size() - 160).clear();
@@ -1033,6 +1033,10 @@ public final class OpmFx {
                 continue;
             }
             Quaternionf q = new Quaternionf().rotationTo(0, 0, 1, (float) d.x, (float) d.y, (float) d.z).rotateZ(a.roll());
+            // the arm of his own skin (Stark 2026-11-11: the player's arm, as Luffy's), see-through and fading
+            if (skinArm(a, q, (float) (a.len() * ext * sm), alpha, cam)) {
+                continue;
+            }
             Matrix4f g = new Matrix4f().translation(a.from().subtract(cam).toVector3f()).rotate(q).scale(a.w(), a.w(), (float) (a.len() * ext * sm));
             OpmMesh.P p = OpmMesh.p(OpmMesh.GHOST);
             p.alpha = alpha;
@@ -1042,6 +1046,41 @@ public final class OpmFx {
             p.colA = new float[] {0.831f, 0.165f, 0.165f};
             OpmMesh.queue(OpmMesh.Mesh.BOX, new Matrix4f(g).translate(0, 0, 0.69f).scale(0.27f, 0.27f, 0.38f), p, OpmMesh.FRONT, 16);
         }
+        // the skin arms, all in one go
+        Minecraft.getInstance().renderBuffers().bufferSource().endBatch();
+    }
+
+    // One ghost arm drawn as the player's own right arm (and sleeve): from the shoulder along q, 0.88 x len long, w wide.
+    private static boolean skinArm(Arm a, Quaternionf q, float len, float alpha, Vec3 cam) {
+        Minecraft mc = Minecraft.getInstance();
+        if (!(mc.level.getEntity(a.caster()) instanceof net.minecraft.client.player.AbstractClientPlayer pl)
+                || !(mc.getEntityRenderDispatcher().getRenderer(pl) instanceof net.minecraft.client.renderer.entity.player.PlayerRenderer pr)) {
+            return false;
+        }
+        var model = pr.getModel();
+        boolean slim = pl.getSkin().model() == net.minecraft.client.resources.PlayerSkin.Model.SLIM;
+        var buf = mc.renderBuffers().bufferSource();
+        var vc = buf.getBuffer(net.minecraft.client.renderer.RenderType.entityTranslucent(pl.getSkin().texture()));
+        com.mojang.blaze3d.vertex.PoseStack pose = new com.mojang.blaze3d.vertex.PoseStack();
+        pose.translate(a.from().x - cam.x, a.from().y - cam.y, a.from().z - cam.z);
+        pose.mulPose(q);
+        // the arm part runs down its +y: turned onto +z, stretched to the ghost's length, its box centred on the line
+        pose.mulPose(com.mojang.math.Axis.XP.rotation((float) (Math.PI / 2)));
+        pose.scale(a.w(), 0.88f * len / 0.75f, a.w());
+        pose.translate((slim ? 0.5f : 1f) / 16f, 2 / 16f, 0);
+        int col = net.minecraft.util.FastColor.ARGB32.color(Math.round(Mth.clamp(alpha, 0, 1) * 255), 255, 255, 255);
+        for (var part : new net.minecraft.client.model.geom.ModelPart[] {model.rightArm, model.rightSleeve}) {
+            var keep = part.storePose();
+            boolean vis = part.visible;
+            part.setPos(0, 0, 0);
+            part.setRotation(0, 0, 0);
+            part.xScale = part.yScale = part.zScale = 1;
+            part.visible = true;
+            part.render(pose, vc, 0xF000F0, net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY, col);
+            part.loadPose(keep);
+            part.visible = vis;
+        }
+        return true;
     }
 
     // Whoever he threw: gone over the horizon (or out of sight far off), a star twinkles where they went.
