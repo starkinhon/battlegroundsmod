@@ -86,6 +86,8 @@ public final class LuffyFx {
     // Bazooka: how far back, time pulling, time coming, thickness, hand.
     private static final double[][] BP = {{3.2, 0.22, 0.1, 1, 1.1}, {2.2, 0.08, 0.03, 1, 1.1}, {5, 0.45, 0.22, 5.5, 7}, {0.3, 0.16, 0.34, 2.4, 3.8}, {7, 0.34, 0.12, 3, 11}};
 
+    // the current body's skin tone and its light rim (set per body in render(); default = the page's tan)
+    private static int TONE = 0xF0C09A, TONE_RIM = 0xFFE7CF;
     private static final int SKIN = 0xF0C09A, PINK = 0xF39A92, HAKI = 0x1C171C, WHITE = 0xF4F1EA, RIM = 0xFFE7CF, VEST = 0xC8262B, BAND = 0xC4202A;
     private static final int BOLT_N = 5;
 
@@ -514,13 +516,14 @@ public final class LuffyFx {
 
     private static Arm look(int lv, double k) {
         Arm a = new Arm();
-        int c = SKIN;
+        int c = TONE;
         if (lv == 1) {
-            c = mix(SKIN, PINK, k);
+            c = mix(TONE, PINK, k);
         }
         a.col = c;
+        a.rim = TONE_RIM;
         if (lv == 3) {
-            a.col = mix(SKIN, HAKI, k);
+            a.col = mix(TONE, HAKI, k);
             a.rim = 0xB04A6A;
             a.haki = k;
         }
@@ -641,6 +644,9 @@ public final class LuffyFx {
                 continue;
             }
             B = bd;
+            // his rubber is his own skin: the hand's color from whatever skin the player uses
+            TONE = SkinTone.of(e, SKIN);
+            TONE_RIM = mix(TONE, 0xFFFFFF, 0.55);
             Vec3 feet = e.getPosition(partial);
             FEET = feet;
             Vec3 look = bd.move != null ? bd.move.look : e.getViewVector(partial);
@@ -1564,7 +1570,7 @@ public final class LuffyFx {
         Vec3 bc = W(0, 0.75 + B.lift + 0.42, 0);
         Matrix4f m = basis(bc, CAM).scale((float) (Rb * (1 + 0.2 * sq)), (float) (Rb * (1 + 0.12 * sq)), (float) (Rb * (1 - 0.35 * sq)));
         LuffyMesh.P skin = LuffyMesh.p(LuffyMesh.SOLID);
-        skin.col = rgb(SKIN);
+        skin.col = rgb(TONE);
         skin.glow = false;
         LuffyMesh.queue(LuffyMesh.Mesh.SPHERE, m, skin, LuffyMesh.FRONT, 8);
         LuffyMesh.P vest = LuffyMesh.p(LuffyMesh.SOLID);
@@ -2029,7 +2035,7 @@ public final class LuffyFx {
         }
         // the axis that turns his head back toward Luffy (the page's rotation.x going negative)
         Vector3f axis = new Vector3f(0, 1, 0).cross(new Vector3f((float) -k.fwd.x, 0, (float) -k.fwd.z)).normalize();
-        float h = e.getBbHeight(), w = e.getBbWidth();
+        float h = e.getBbHeight();
         PoseStack pose = event.getPoseStack();
         pose.pushPose();
         SQUASHED.add(e.getId());
@@ -2044,9 +2050,13 @@ public final class LuffyFx {
             double q = (now - k.landed) / 20;
             double flat = q < 0.12 ? smooth(q / 0.12) : 1 - smooth((q - 2.3) / 0.3);
             float ang = (float) (Math.PI / 2 * flat);
-            pose.translate(0, w / 2 * flat, 0);
+            // resting on the back of the torso (half its depth), not on the hitbox's half width
+            pose.translate(0, 0.16f * flat, 0);
             pose.mulPose(new Quaternionf().rotationAxis(ang, axis));
         }
+        // turned away from Luffy, so falling head-first back toward him lands on the back:
+        // face up, arms and legs on the ground instead of hanging under a face-down body
+        pose.mulPose(Axis.YP.rotation((float) Math.PI));
     }
 
     public static void onRenderLivingPost(RenderLivingEvent.Post<?, ?> event) {
