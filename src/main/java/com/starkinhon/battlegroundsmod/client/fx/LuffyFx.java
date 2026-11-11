@@ -432,8 +432,11 @@ public final class LuffyFx {
                 int key = (int) a, gear = (int) b;
                 bd.holding = false;
                 Frame f = Frame.of(pos, dir);
-                Vec3 eye = pos.add(0, 1.62, 0);
-                Vec3 fallback = eye.add(dir.normalize().scale(REACH[Math.min(3, key)][gear]));
+                // the Giant's eye is 10x higher and he reaches 10x as far: without a target the move goes where he looks
+                Entity self = mc.level.getEntity(id);
+                double size = self instanceof LivingEntity giant && giant.getScale() > 1.5f ? giant.getScale() : 1;
+                Vec3 eye = pos.add(0, 1.62 * size, 0);
+                Vec3 fallback = eye.add(dir.normalize().scale(REACH[Math.min(3, key)][gear] * size));
                 Move m = new Move(id, key, gear, (int) c, now, pos, dir, fallback);
                 bd.move = m;
                 if (gear == 1 || gear == 3) {

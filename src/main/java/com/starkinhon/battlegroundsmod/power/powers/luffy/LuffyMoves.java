@@ -284,7 +284,7 @@ public final class LuffyMoves {
         int end = at(dur[gear]);
         SubCommon.busy(caster, end + 6);
         Freeze.holdLookFree(caster, end + 4);
-        double reach = REACH[1][gear];
+        double reach = REACH[1][gear] * k(caster);
         Tasks.add(age -> {
             if (guard.broken()) {
                 return true;
