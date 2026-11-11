@@ -309,6 +309,15 @@ public final class LuffyFx {
         ScreenFx.impactFrame(seq, 1, tint, at, 0);
     }
 
+    // the page's shock(): a ring on the screen that pushes the picture out, each color its own amount (the rainbow edge),
+    // with a soft glow; the glow follows the page's values for each power
+    private static void shock(Vec3 at, float pow, int color, float dur) {
+        if (OpmFx.near(at, 140)) {
+            float glow = pow < 1.3f ? 0.06f : pow < 2.8f ? 0.1f : pow < 3.3f ? 0.12f : pow < 5 ? 0.15f : 0.2f;
+            ScreenFx.shockRing(at, pow, color, dur, glow);
+        }
+    }
+
     private static final int[] I3 = {1, 0, 1}, I5 = {1, 0, 1, 0, 1}, I7 = {1, 0, 1, 0, 1, 0, 1}, I9 = {1, 0, 1, 0, 1, 0, 1, 0, 1};
 
     private static void say(int id, String text, boolean big) {
@@ -489,7 +498,7 @@ public final class LuffyFx {
         say(id, LVNAME[lv], false);
         OpmFx.ring(feet, 3 + lv, 0.5f);
         OpmFx.shake(feet, 0.35 + lv * 0.2);
-        OpmFx.shock(feet.add(0, 1.2, 0), 0.6f + 0.2f * lv, lv == 4 ? 0xFFFFFF : 0xFFE6D0, 0.4f);
+        shock(feet.add(0, 1.2, 0), 0.6f + 0.2f * lv, lv == 4 ? 0xFFFFFF : 0xFFE6D0, 0.4f);
     }
 
     // ---------- the look of each Gear (the page's look()) ----------
@@ -833,7 +842,7 @@ public final class LuffyFx {
                     if (at(0.12)) {
                         OpmFx.flash(C.add(D(0, 0, -0.4)), 0.5f);
                         OpmFx.shake(C, 0.6);
-                        OpmFx.shock(C, 0.9f, 0xFFF2D6, 0.4f);
+                        shock(C, 0.9f, 0xFFF2D6, 0.4f);
                         OpmFx.lines(NOW);
                     }
                     extendTo(a, 1, 0);
@@ -856,7 +865,7 @@ public final class LuffyFx {
                     jetLine(shoulder(), C, 1, 0, false);
                     impact(C, I3, 0xFFD0D0);
                     OpmFx.shake(C, 1.4);
-                    OpmFx.shock(C, 1.6f, 0xFFD8D8, 0.45f);
+                    shock(C, 1.6f, 0xFFD8D8, 0.45f);
                     OpmFx.lines(NOW);
                 }
             }
@@ -878,7 +887,7 @@ public final class LuffyFx {
                         impact(C, I5, 0xFFFFFF);
                         OpmFx.shake(C, 2.6);
                         OpmFx.ring(TG, 14, 1.0f);
-                        OpmFx.shock(TP.add(0, 1, 0), 3, 0xFFE8C8, 0.7f);
+                        shock(TP.add(0, 1, 0), 3, 0xFFE8C8, 0.7f);
                         OpmFx.lines(NOW);
                         squash(BURY);
                         for (int i = 0; i < 380; i++) {
@@ -928,7 +937,7 @@ public final class LuffyFx {
                 OpmFx.flash(c, 2.2f);
                 impact(c, king ? I9 : I7, 0xFFFFFF);
                 OpmFx.shake(c, 3.2);
-                OpmFx.shock(c, 4.5f, 0xFFE2E8, 0.9f);
+                shock(c, 4.5f, 0xFFE2E8, 0.9f);
                 OpmFx.lines(NOW);
                 Vec3 g0 = new Vec3(FEET.x, groundY(FEET.x, FEET.z), FEET.z);
                 OpmFx.ring(g0, 10, 0.8f);
@@ -938,7 +947,7 @@ public final class LuffyFx {
                             false);
                 }
                 if (king) {
-                    OpmFx.shock(c, 6, 0xFFD0D0, 1.1f);
+                    shock(c, 6, 0xFFD0D0, 1.1f);
                     for (int i = 0; i < 420; i++) {
                         double an = (rnd() - 0.5) * 1.3, sp = 18 + rnd() * 40;
                         deb(g0, (rnd() - 0.5) * 3, 0.2, 2 + rnd() * 14, Math.sin(an) * sp, 4 + rnd() * 12, Math.cos(an) * sp, 0.1 + Math.pow(rnd(), 2.4) * 0.8,
@@ -991,7 +1000,7 @@ public final class LuffyFx {
                 impact(C, I5, 0xFFFFFF);
                 OpmFx.shake(C, 2.4);
                 squash(PANCAKE);
-                OpmFx.shock(TP.add(0, 1, 0), 3.2f, 0xFFFFFF, 0.7f);
+                shock(TP.add(0, 1, 0), 3.2f, 0xFFFFFF, 0.7f);
                 OpmFx.lines(NOW);
                 say(m.id, "BOING!", true);
                 for (int i = 0; i < 300; i++) {
@@ -1109,7 +1118,7 @@ public final class LuffyFx {
                     jetLine(shoulder(), c, 1.3, 0, false);
                     impact(c, I3, 0xFFD0D0);
                     OpmFx.shake(c, 1.3);
-                    OpmFx.shock(c, 1.6f, 0xFFD8D8, 0.45f);
+                    shock(c, 1.6f, 0xFFD8D8, 0.45f);
                     OpmFx.lines(NOW);
                 }
                 case 2 -> {
@@ -1128,7 +1137,7 @@ public final class LuffyFx {
                     OpmFx.flash(c, 2.2f);
                     impact(c, I5, 0xFFFFFF);
                     OpmFx.shake(c, 3);
-                    OpmFx.shock(c, 4, 0xFFE2E8, 0.8f);
+                    shock(c, 4, 0xFFE2E8, 0.8f);
                     OpmFx.lines(NOW);
                 }
                 default -> {
@@ -1173,7 +1182,7 @@ public final class LuffyFx {
                 OpmFx.flash(p, 1.1f);
                 OpmFx.shake(p, 0.8);
                 if (rnd() < 0.35) {
-                    OpmFx.shock(p, 1.1f, 0xFFE2E8, 0.25f);
+                    shock(p, 1.1f, 0xFFE2E8, 0.25f);
                 }
                 for (int i = 0; i < 12; i++) {
                     double g = rnd() * 6.283, sp = 4 + rnd() * 10;
@@ -1254,13 +1263,13 @@ public final class LuffyFx {
         if (lv == 0) {
             OpmFx.flash(c.add(D(0, 0, -0.4)), 0.7f);
             OpmFx.shake(c, 0.9);
-            OpmFx.shock(c, 1.1f, 0xFFF2D6, 0.4f);
+            shock(c, 1.1f, 0xFFF2D6, 0.4f);
             OpmFx.lines(NOW);
         } else if (lv == 2) {
             OpmFx.flash(c, 2.6f);
             impact(c, I5, 0xFFFFFF);
             OpmFx.shake(c, 2.6);
-            OpmFx.shock(c, 3.2f, 0xFFE8C8, 0.7f);
+            shock(c, 3.2f, 0xFFE8C8, 0.7f);
             OpmFx.lines(NOW);
             for (int i = 0; i < 220; i++) {
                 double g = (rnd() - 0.5) * 1.6, sp = 6 + rnd() * 16;
@@ -1271,7 +1280,7 @@ public final class LuffyFx {
             OpmFx.flash(c, 2.4f);
             impact(c, I7, 0xFFFFFF);
             OpmFx.shake(c, 3.2);
-            OpmFx.shock(c, 4.5f, 0xFFE2E8, 0.9f);
+            shock(c, 4.5f, 0xFFE2E8, 0.9f);
             OpmFx.lines(NOW);
             Vec3 g0 = new Vec3(FEET.x, groundY(FEET.x, FEET.z), FEET.z);
             OpmFx.ring(g0, 10, 0.8f);
@@ -1296,7 +1305,7 @@ public final class LuffyFx {
         if (at(HT + 0.04)) {
             impact(c, I3, 0xFFD0D0);
             OpmFx.shake(c, 1.6);
-            OpmFx.shock(c, 1.9f, 0xFFD8D8, 0.45f);
+            shock(c, 1.9f, 0xFFD8D8, 0.45f);
             OpmFx.lines(NOW);
         }
     }
@@ -1393,7 +1402,7 @@ public final class LuffyFx {
         if (at(T2)) {
             impact(c, I5, 0xFFFFFF);
             OpmFx.shake(c, 3.2);
-            OpmFx.shock(c, 4, 0xFFFFFF, 1.0f);
+            shock(c, 4, 0xFFFFFF, 1.0f);
             OpmFx.lines(NOW);
             say(m.id, "CLAP!!", true);
             OpmFx.ring(TG, 24, 1.3f);
@@ -1436,7 +1445,7 @@ public final class LuffyFx {
                         Vec3 c = C, dir = c.subtract(shoulder()).normalize();
                         OpmFx.flash(c.add(D(0, 0, -0.4)), 0.6f);
                         OpmFx.shake(c, 1.1);
-                        OpmFx.shock(c, 1.2f, 0xFFF2D6, 0.45f);
+                        shock(c, 1.2f, 0xFFF2D6, 0.45f);
                         OpmFx.lines(NOW);
                         for (int i = 0; i < 7; i++) {
                             double an = i / 7.0 * 6.283;
@@ -1494,7 +1503,7 @@ public final class LuffyFx {
             Vec3 g = new Vec3(c.x, TG.y + 0.2, c.z);
             impact(c, I5, 0xFFD0D0);
             OpmFx.shake(c, 2.6);
-            OpmFx.shock(c.add(0, 1, 0), 2.6f, 0xFFD8D8, 0.6f);
+            shock(c.add(0, 1, 0), 2.6f, 0xFFD8D8, 0.6f);
             OpmFx.lines(NOW);
             burst(c.add(0, 2.3, 0), down, 3.4, 0.3, 0, 18, 0, 0, 0xC8DEFA, 0);
             burst(g, down, 7, 0.4, 0, 30, 0.6, 0.03, 0xC8DEFA, 0);
@@ -1634,7 +1643,7 @@ public final class LuffyFx {
             if (at(T4)) {
                 impact(c, I7, 0xFFF4A0);
                 OpmFx.shake(c, 3);
-                OpmFx.shock(c, 3.4f, 0xFFF2A0, 0.8f);
+                shock(c, 3.4f, 0xFFF2A0, 0.8f);
                 OpmFx.lines(NOW);
                 OpmFx.flash(c, 3);
                 squash(PANCAKE_K);
@@ -2008,7 +2017,8 @@ public final class LuffyFx {
             return;
         }
         double now = ScreenFx.now();
-        boolean ground = e.onGround();
+        // a mob's onGround is not always sent to us: no longer falling counts as down too
+        boolean ground = e.onGround() || (now - k.born) / 20 > 0.25 && Math.abs(e.getY() - e.yo) < 0.004 && e.getDeltaMovement().y <= 0.01;
         if (!ground) {
             k.flew = true;
         } else if (k.flew && k.landed < 0) {
