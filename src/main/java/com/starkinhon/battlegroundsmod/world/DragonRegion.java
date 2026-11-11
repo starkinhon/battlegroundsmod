@@ -65,13 +65,10 @@ public final class DragonRegion extends Region {
     }
 
     // The ground of each biome: the peaks striped like badlands (orange, white, yellow, red: the Dragon World's rock)
-    // with patches of grass, the desert red sand over red sandstone. Terras do Dragão is grass with patches of bare
+    // with patches of grass, the desert its own sand and rock (ModBlocks). Terras do Dragão is grass with patches of bare
     // yellow ground (yellow terracotta, its edge a ring of plain terracotta), like the anime's dry yellow earth (Stark).
     private static SurfaceRules.RuleSource surface() {
-        SurfaceRules.RuleSource redSand = SurfaceRules.state(Blocks.RED_SAND.defaultBlockState());
-        SurfaceRules.RuleSource redSandstone = SurfaceRules.state(Blocks.RED_SANDSTONE.defaultBlockState());
         SurfaceRules.RuleSource grass = SurfaceRules.state(Blocks.GRASS_BLOCK.defaultBlockState());
-        SurfaceRules.RuleSource orange = SurfaceRules.state(Blocks.ORANGE_TERRACOTTA.defaultBlockState());
         SurfaceRules.ConditionSource water = SurfaceRules.waterBlockCheck(-1, 0);
         SurfaceRules.RuleSource peaks = SurfaceRules.ifTrue(SurfaceRules.isBiome(ModWorldgen.PICOS_DO_DRAGAO), SurfaceRules.sequence(
                 SurfaceRules.ifTrue(SurfaceRules.ON_FLOOR, SurfaceRules.sequence(
@@ -81,16 +78,20 @@ public final class DragonRegion extends Region {
                 SurfaceRules.ifTrue(SurfaceRules.UNDER_FLOOR, SurfaceRules.bandlands()),
                 SurfaceRules.ifTrue(SurfaceRules.stoneDepthCheck(0, true, 8, net.minecraft.world.level.levelgen.placement.CaveSurface.FLOOR),
                         SurfaceRules.bandlands())));
-        // The desert's red sand has the same patches of yellow ground as the yellow lands.
-        SurfaceRules.RuleSource yellowDesert = SurfaceRules.state(Blocks.YELLOW_TERRACOTTA.defaultBlockState());
-        SurfaceRules.ConditionSource desertPatch = SurfaceRules.noiseCondition(Noises.SURFACE, 0.3, Double.MAX_VALUE);
+        // The Deserto do Diabo (Stark's Sand Land reference): orange-yellow sand, flat sandstone slabs breaking through it
+        // here and there, the slopes bare rock, rock under the sand.
+        SurfaceRules.RuleSource sand = SurfaceRules.state(com.starkinhon.battlegroundsmod.ModBlocks.DESERT_SAND.get().defaultBlockState());
+        SurfaceRules.RuleSource rock = SurfaceRules.state(com.starkinhon.battlegroundsmod.ModBlocks.DESERT_ROCK.get().defaultBlockState());
+        SurfaceRules.RuleSource lightRock = SurfaceRules.state(com.starkinhon.battlegroundsmod.ModBlocks.DESERT_ROCK_LIGHT.get().defaultBlockState());
+        SurfaceRules.ConditionSource slab = SurfaceRules.noiseCondition(Noises.SURFACE, 0.38, Double.MAX_VALUE);
+        SurfaceRules.ConditionSource slabEdge = SurfaceRules.noiseCondition(Noises.SURFACE, 0.32, 0.38);
         SurfaceRules.RuleSource desert = SurfaceRules.ifTrue(SurfaceRules.isBiome(ModWorldgen.DESERTO_VERMELHO), SurfaceRules.sequence(
                 SurfaceRules.ifTrue(SurfaceRules.ON_FLOOR, SurfaceRules.ifTrue(water, SurfaceRules.sequence(
-                        SurfaceRules.ifTrue(SurfaceRules.steep(), orange), SurfaceRules.ifTrue(desertPatch, yellowDesert), redSand))),
-                SurfaceRules.ifTrue(SurfaceRules.UNDER_FLOOR, SurfaceRules.sequence(
-                        SurfaceRules.ifTrue(SurfaceRules.steep(), orange), redSandstone)),
+                        SurfaceRules.ifTrue(SurfaceRules.steep(), rock), SurfaceRules.ifTrue(slab, lightRock),
+                        SurfaceRules.ifTrue(slabEdge, rock), sand))),
+                SurfaceRules.ifTrue(SurfaceRules.UNDER_FLOOR, rock),
                 SurfaceRules.ifTrue(SurfaceRules.stoneDepthCheck(0, true, 6, net.minecraft.world.level.levelgen.placement.CaveSurface.FLOOR),
-                        redSandstone)));
+                        rock)));
         SurfaceRules.RuleSource yellow = SurfaceRules.state(Blocks.YELLOW_TERRACOTTA.defaultBlockState());
         SurfaceRules.RuleSource plain = SurfaceRules.state(Blocks.TERRACOTTA.defaultBlockState());
         SurfaceRules.ConditionSource patch = SurfaceRules.noiseCondition(Noises.SURFACE, 0.34, Double.MAX_VALUE);

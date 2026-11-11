@@ -61,9 +61,11 @@ biome("picos_do_dragao", 1.0, 0xE3B65E, 0xF0D29A, 0x2FB6D6, 0x10586A, 0x8FBF4E, 
 biome("terra_sagrada_de_karin", 0.8, 0x6CC4EC, 0xE2F4DA, 0x3FB8D8, 0x10586A, 0x9CD24A, 0x8ACB3C,
       features([],
                ["battlegroundsmod:puffy_tree_karin", "minecraft:flower_default", "minecraft:patch_grass_forest"]))
-biome("deserto_vermelho", 2.0, 0xEDB95C, 0xF6D79A, 0x3FA9C9, 0x10586A, 0x9E9E4E, 0x9E8E3E,
-      features(["battlegroundsmod:dragon_pillar_desert"],
-               ["minecraft:patch_dead_bush_badlands", "minecraft:patch_cactus_decorated"], ["minecraft:ore_gold_extra"]),
+# Deserto do Diabo (the biome kept its old id): Stark's Sand Land reference, orange-yellow sand and sandstone hoodoos,
+# table rocks and boulders (world/DesertRockFeature) under a blue sky going golden in the dusty haze; dry bushes.
+biome("deserto_vermelho", 2.0, 0x8EC3E6, 0xEACF8C, 0x3FA9C9, 0x10586A, 0xB8A85A, 0xA8964A,
+      features(["battlegroundsmod:desert_rock"],
+               ["minecraft:patch_dead_bush_badlands"], ["minecraft:ore_gold_extra"]),
       music="minecraft:music.overworld.desert")
 
 # The pillars: one feature, three placements (how often per biome).
@@ -72,7 +74,7 @@ os.makedirs(f"{R}/worldgen/placed_feature", exist_ok=True)
 with open(f"{R}/worldgen/configured_feature/dragon_pillar.json", "w") as f:
     json.dump({"type": "battlegroundsmod:dragon_pillar", "config": {}}, f, indent=2)
     f.write("\n")
-for name, chance in (("plains", 3), ("peaks", 2), ("desert", 4)):
+for name, chance in (("plains", 3), ("peaks", 2)):
     with open(f"{R}/worldgen/placed_feature/dragon_pillar_{name}.json", "w") as f:
         json.dump({"feature": "battlegroundsmod:dragon_pillar", "placement": [
             {"type": "minecraft:rarity_filter", "chance": chance},
@@ -80,6 +82,19 @@ for name, chance in (("plains", 3), ("peaks", 2), ("desert", 4)):
             {"type": "minecraft:heightmap", "heightmap": "WORLD_SURFACE_WG"},
             {"type": "minecraft:biome"}]}, f, indent=2)
         f.write("\n")
+
+# The desert rocks: one or two a chunk, a hoodoo field here and there.
+with open(f"{R}/worldgen/configured_feature/desert_rock.json", "w") as f:
+    json.dump({"type": "battlegroundsmod:desert_rock", "config": {}}, f, indent=2)
+    f.write("\n")
+with open(f"{R}/worldgen/placed_feature/desert_rock.json", "w") as f:
+    json.dump({"feature": "battlegroundsmod:desert_rock", "placement": [
+        {"type": "minecraft:count", "count": {"type": "minecraft:weighted_list", "distribution": [
+            {"weight": 3, "data": 0}, {"weight": 5, "data": 1}, {"weight": 2, "data": 2}, {"weight": 1, "data": 4}]}},
+        {"type": "minecraft:in_square"},
+        {"type": "minecraft:heightmap", "heightmap": "OCEAN_FLOOR_WG"},
+        {"type": "minecraft:biome"}]}, f, indent=2)
+    f.write("\n")
 
 # The puffy trees: close together, on dry ground only.
 with open(f"{R}/worldgen/configured_feature/puffy_tree.json", "w") as f:

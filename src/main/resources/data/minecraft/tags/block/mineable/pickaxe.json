@@ -1,1 +1,9 @@
-{ "replace": false, "values": [ "battlegroundsmod:namek_rock", "battlegroundsmod:namek_rock_layer" ] }
+{
+  "replace": false,
+  "values": [
+    "battlegroundsmod:namek_rock",
+    "battlegroundsmod:namek_rock_layer",
+    "battlegroundsmod:deserto_rocha",
+    "battlegroundsmod:deserto_rocha_clara"
+  ]
+}

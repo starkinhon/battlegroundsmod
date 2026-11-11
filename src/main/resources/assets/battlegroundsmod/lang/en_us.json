@@ -1160,7 +1160,7 @@
   "npc.battlegroundsmod.gohan.esfera": "Gohan: This was my grandpa's, the four-star one. Keep it, you'll need it.",
   "biome.battlegroundsmod.terras_do_dragao": "Dragon Lands",
   "biome.battlegroundsmod.picos_do_dragao": "Dragon Peaks",
-  "biome.battlegroundsmod.deserto_vermelho": "Red Desert",
+  "biome.battlegroundsmod.deserto_vermelho": "Diablo Desert",
   "message.battlegroundsmod.entrou_bioma": "%s",
   "message.battlegroundsmod.universe_no_mundo": "The universes are in your own world now: look for their biomes.",
   "entity.battlegroundsmod.pterodactilo": "Pterodactyl",
@@ -1270,5 +1270,8 @@
   "advancements.battlegroundsmod.souls.sala_tempo.description": "Stay the whole year in the Hyperbolic Time Chamber",
   "advancements.battlegroundsmod.souls.namek.title": "Green Planet",
   "advancements.battlegroundsmod.souls.namek.description": "Set foot on Namek",
-  "biome.battlegroundsmod.terra_sagrada_de_karin": "Karin's Sacred Land"
+  "biome.battlegroundsmod.terra_sagrada_de_karin": "Karin's Sacred Land",
+  "block.battlegroundsmod.deserto_areia": "Diablo Desert Sand",
+  "block.battlegroundsmod.deserto_rocha": "Diablo Desert Rock",
+  "block.battlegroundsmod.deserto_rocha_clara": "Light Diablo Desert Rock"
 }

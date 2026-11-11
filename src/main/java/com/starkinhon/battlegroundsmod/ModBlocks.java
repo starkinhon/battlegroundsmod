@@ -21,8 +21,19 @@ public final class ModBlocks {
     public static final DeferredBlock<Block> NAMEK_SAND = BLOCKS.registerSimpleBlock("namek_sand",
             BlockBehaviour.Properties.of().mapColor(MapColor.SAND).strength(0.6f).sound(SoundType.GRAVEL));
 
+    // The Deserto do Diabo (Stark 2026-11-11, after his Sand Land reference): warm orange-yellow sand that falls like sand,
+    // and the sandstone rock of its flats and towers, darker and lighter (tools/blocks/desert_blocks.py).
+    public static final DeferredBlock<net.minecraft.world.level.block.ColoredFallingBlock> DESERT_SAND = BLOCKS.register("deserto_areia",
+            () -> new net.minecraft.world.level.block.ColoredFallingBlock(new net.minecraft.util.ColorRGBA(0xE2AC62),
+                    BlockBehaviour.Properties.of().mapColor(MapColor.SAND).strength(0.5f).sound(SoundType.SAND)));
+    public static final DeferredBlock<Block> DESERT_ROCK = rock("deserto_rocha", MapColor.TERRACOTTA_ORANGE);
+    public static final DeferredBlock<Block> DESERT_ROCK_LIGHT = rock("deserto_rocha_clara", MapColor.SAND);
+
     static {
         BLOCK_ITEMS.registerSimpleBlockItem(NAMEK_ROCK);
+        BLOCK_ITEMS.registerSimpleBlockItem(DESERT_SAND);
+        BLOCK_ITEMS.registerSimpleBlockItem(DESERT_ROCK);
+        BLOCK_ITEMS.registerSimpleBlockItem(DESERT_ROCK_LIGHT);
         BLOCK_ITEMS.registerSimpleBlockItem(NAMEK_ROCK_LAYER);
         BLOCK_ITEMS.registerSimpleBlockItem(NAMEK_SAND);
     }

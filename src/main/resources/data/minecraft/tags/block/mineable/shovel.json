@@ -1,1 +1,7 @@
-{ "replace": false, "values": [ "battlegroundsmod:namek_sand" ] }
+{
+  "replace": false,
+  "values": [
+    "battlegroundsmod:namek_sand",
+    "battlegroundsmod:deserto_areia"
+  ]
+}

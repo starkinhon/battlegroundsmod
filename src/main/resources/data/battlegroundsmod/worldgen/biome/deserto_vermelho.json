@@ -3,12 +3,12 @@
   "temperature": 2.0,
   "downfall": 0.0,
   "effects": {
-    "sky_color": 15579484,
-    "fog_color": 16177050,
+    "sky_color": 9356262,
+    "fog_color": 15388556,
     "water_color": 4172233,
     "water_fog_color": 1071210,
-    "grass_color": 10395214,
-    "foliage_color": 10391102,
+    "grass_color": 12101722,
+    "foliage_color": 11048522,
     "mood_sound": {
       "block_search_extent": 8,
       "offset": 2.0,
@@ -61,7 +61,7 @@
       "minecraft:monster_room_deep"
     ],
     [
-      "battlegroundsmod:dragon_pillar_desert"
+      "battlegroundsmod:desert_rock"
     ],
     [],
     [
@@ -103,8 +103,7 @@
     ],
     [
       "minecraft:glow_lichen",
-      "minecraft:patch_dead_bush_badlands",
-      "minecraft:patch_cactus_decorated"
+      "minecraft:patch_dead_bush_badlands"
     ],
     [
       "minecraft:freeze_top_layer"
