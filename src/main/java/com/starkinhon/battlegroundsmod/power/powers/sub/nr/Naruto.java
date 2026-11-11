@@ -370,10 +370,10 @@ public final class Naruto {
                 if (puppets[i] != null) {
                     // Each clone springs up off its own kick and lands again (no stiff standing: Stark, 2026-11-11).
                     int k0 = kicks[i] - age;
-                    double top = 1.0 + 0.35 * i;
+                    double hop = 1.0 + 0.35 * i;
                     Freeze.hold(puppets[i], land + 10 - age, b -> {
                         double u = (b - k0 + 2) / 13.0;
-                        return at.add(0, u > 0 && u < 1 ? Math.sin(u * Math.PI) * top : 0, 0);
+                        return at.add(0, u > 0 && u < 1 ? Math.sin(u * Math.PI) * hop : 0, 0);
                     });
                 }
             }
