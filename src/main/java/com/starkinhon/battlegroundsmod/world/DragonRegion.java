@@ -45,7 +45,8 @@ public final class DragonRegion extends Region {
                     Biomes.WINDSWEPT_FOREST, Biomes.WINDSWEPT_SAVANNA, Biomes.SAVANNA_PLATEAU, Biomes.WOODED_BADLANDS)) {
                 builder.replaceBiome(peak, ModWorldgen.PICOS_DO_DRAGAO);
             }
-            for (ResourceKey<Biome> dry : java.util.List.of(Biomes.DESERT, Biomes.BADLANDS, Biomes.ERODED_BADLANDS)) {
+            // The savanna's hot dry climate joins the desert, so the Deserto do Diabo spreads wide (Stark).
+            for (ResourceKey<Biome> dry : java.util.List.of(Biomes.DESERT, Biomes.BADLANDS, Biomes.ERODED_BADLANDS, Biomes.SAVANNA)) {
                 builder.replaceBiome(dry, ModWorldgen.DESERTO_VERMELHO);
             }
             // Every wooded climate becomes the Terra Sagrada de Karin (the dense forest of Korin's tower): vanilla's forest
@@ -57,7 +58,7 @@ public final class DragonRegion extends Region {
                     Biomes.BAMBOO_JUNGLE, Biomes.MANGROVE_SWAMP)) {
                 builder.replaceBiome(woods, ModWorldgen.TERRA_SAGRADA);
             }
-            for (ResourceKey<Biome> green : java.util.List.of(Biomes.PLAINS, Biomes.SUNFLOWER_PLAINS, Biomes.SAVANNA,
+            for (ResourceKey<Biome> green : java.util.List.of(Biomes.PLAINS, Biomes.SUNFLOWER_PLAINS,
                     Biomes.MEADOW, Biomes.CHERRY_GROVE, Biomes.SNOWY_PLAINS, Biomes.ICE_SPIKES, Biomes.SWAMP)) {
                 builder.replaceBiome(green, ModWorldgen.TERRAS_DO_DRAGAO);
             }

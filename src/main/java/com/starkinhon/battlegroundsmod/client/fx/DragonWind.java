@@ -42,6 +42,10 @@ public final class DragonWind {
     private static float lastStrength;
     // 0 in the yellow lands, 1 in the Terra Sagrada de Karin, whose grade is a soft yellow-green instead of orange.
     private static float green;
+    // 1 in the Deserto do Diabo: a drought, a dangerous place (Stark): a red-orange grade, a light haze of sand and
+    // stronger, faster, sand-colored wind.
+    private static float desert;
+    private static float lastDesert;
 
     private DragonWind() {
     }
@@ -49,6 +53,7 @@ public final class DragonWind {
     public static void onClientTick(ClientTickEvent.Post event) {
         Minecraft mc = Minecraft.getInstance();
         lastStrength = strength;
+        lastDesert = desert;
         if (mc.level == null || mc.player == null) {
             GUSTS.clear();
             strength = 0;
@@ -62,6 +67,7 @@ public final class DragonWind {
         if (inside) {
             green = Mth.clamp(green + (biome.is(ModWorldgen.TERRA_SAGRADA) ? 0.015f : -0.015f), 0, 1);
         }
+        desert = Mth.clamp(desert + (inside && biome.is(ModWorldgen.DESERTO_VERMELHO) ? 0.01f : -0.015f), 0, 1);
         strength = Mth.clamp(strength + (inside ? 0.012f : -0.02f), 0, 1);
         long now = mc.level.getGameTime();
         GUSTS.removeIf(g -> now - g.born() > g.life());
@@ -70,8 +76,13 @@ public final class DragonWind {
         }
         // A gust or so every few ticks, more when the breeze picks up (a slow swell of its own).
         double swell = 0.65 + 0.35 * Math.sin(now / 173.0) * Math.sin(now / 61.0 + 1.3);
-        if (GUSTS.size() < MAX_GUSTS && RANDOM.nextFloat() < 0.55f * strength * swell) {
-            GUSTS.add(newGust(mc, now));
+        int max = MAX_GUSTS + (int) (60 * desert);
+        float rate = 0.55f * strength * (float) swell * (1 + 2.2f * desert);
+        while (rate > 0 && GUSTS.size() < max) {
+            if (RANDOM.nextFloat() < Math.min(1, rate)) {
+                GUSTS.add(newGust(mc, now));
+            }
+            rate -= 1;
         }
     }
 
@@ -84,7 +95,7 @@ public final class DragonWind {
         double angle = windAngle(now) + (RANDOM.nextDouble() - 0.5) * 0.5;
         Vec3 dir = new Vec3(Math.cos(angle), (RANDOM.nextDouble() - 0.5) * 0.06, Math.sin(angle)).normalize();
         Vec3 side = new Vec3(-dir.z, 0, dir.x).normalize();
-        double speed = 0.45 + RANDOM.nextDouble() * 0.55;
+        double speed = (0.45 + RANDOM.nextDouble() * 0.55) * (1 + 0.7 * desert);
         double length = 4 + RANDOM.nextDouble() * 9;
         int life = 40 + RANDOM.nextInt(50);
         // Start upwind of the player so the gust crosses the view; mostly low over the ground, some higher up.
@@ -101,6 +112,10 @@ public final class DragonWind {
             origin = new Vec3(origin.x, ground + 0.4 + RANDOM.nextDouble() * 1.2, origin.z);
         }
         boolean curl = RANDOM.nextFloat() < 0.22f;
+        // In the desert most gusts carry sand: low over the ground, warm.
+        if (desert > 0.5f && RANDOM.nextFloat() < 0.6f) {
+            origin = new Vec3(origin.x, Math.min(origin.y, ground + 0.3 + RANDOM.nextDouble() * 1.6), origin.z);
+        }
         return new Gust(origin, dir, side, speed, length, life, 0.035 + RANDOM.nextDouble() * 0.05,
                 0.15 + RANDOM.nextDouble() * 0.9, 0.12 + RANDOM.nextDouble() * 0.35, RANDOM.nextDouble() * Mth.TWO_PI,
                 0.1 + RANDOM.nextDouble() * 0.5, 0.08 + RANDOM.nextDouble() * 0.25, RANDOM.nextDouble() * Mth.TWO_PI,
@@ -159,6 +174,9 @@ public final class DragonWind {
             }
             // pale warm white, a few a little more golden
             float r = 1f, gg = 0.95f - 0.12f * g.warm(), b = 0.84f - 0.3f * g.warm();
+            float sand = desert;
+            gg = Mth.lerp(sand, gg, 0.74f - 0.1f * g.warm());
+            b = Mth.lerp(sand, b, 0.46f - 0.12f * g.warm());
             for (int i = 0; i < SAMPLES; i++) {
                 Vec3 a = pts[i], c = pts[i + 1];
                 float ta = (float) i / SAMPLES, tc = (float) (i + 1) / SAMPLES;
@@ -205,15 +223,16 @@ public final class DragonWind {
             return;
         }
         int w = graphics.guiWidth(), h = graphics.guiHeight();
-        int wash = mix(0xFF9A30, 0xC8EC6A, green);
-        int edge = mix(0xB0480E, 0x4E8A20, green);
-        graphics.fill(0, 0, w, h, argb((0.07f - 0.015f * green) * fade, wash));
+        float dry = Mth.lerp(delta.getGameTimeDeltaPartialTick(false), lastDesert, desert);
+        int wash = mix(mix(0xFF9A30, 0xC8EC6A, green), 0xFF5E1A, dry);
+        int edge = mix(mix(0xB0480E, 0x4E8A20, green), 0x7A2006, dry);
+        graphics.fill(0, 0, w, h, argb((0.07f - 0.015f * green + 0.035f * dry) * fade, wash));
         // Vignette: burnt orange getting stronger toward the edges, in thin bands.
         int bands = 18;
         int depthX = Math.max(1, w / 5), depthY = Math.max(1, h / 4);
         for (int i = 0; i < bands; i++) {
             float k = 1 - (float) i / bands;
-            int color = argb((0.022f - 0.006f * green) * k * k * fade, edge);
+            int color = argb((0.022f - 0.006f * green + 0.014f * dry) * k * k * fade, edge);
             int x = depthX * i / bands, y = depthY * i / bands;
             int x2 = depthX * (i + 1) / bands, y2 = depthY * (i + 1) / bands;
             graphics.fill(x, 0, x2, h, color);
@@ -221,6 +240,31 @@ public final class DragonWind {
             graphics.fill(0, y, w, y2, color);
             graphics.fill(0, h - y2, w, h - y, color);
         }
+    }
+
+    // The sand haze of the desert: the fog comes closer (not thick: the far hills still show) and takes the dust's color,
+    // darker at night with the sky.
+    public static void onFog(net.neoforged.neoforge.client.event.ViewportEvent.RenderFog event) {
+        float d = (float) Mth.lerp(event.getPartialTick(), lastDesert, desert) * strength;
+        if (d <= 0.001f || event.getMode() != net.minecraft.client.renderer.FogRenderer.FogMode.FOG_TERRAIN) {
+            return;
+        }
+        float far = event.getFarPlaneDistance();
+        event.setNearPlaneDistance(Mth.lerp(d, event.getNearPlaneDistance(), 0));
+        event.setFarPlaneDistance(Mth.lerp(d, far, Math.max(56, far * 0.42f)));
+        event.setCanceled(true);
+    }
+
+    public static void onFogColor(net.neoforged.neoforge.client.event.ViewportEvent.ComputeFogColor event) {
+        float d = (float) Mth.lerp(event.getPartialTick(), lastDesert, desert) * strength;
+        if (d <= 0.001f) {
+            return;
+        }
+        float lum = Mth.clamp((event.getRed() + event.getGreen() + event.getBlue()) / 3f / 0.7f, 0.08f, 1.2f);
+        float k = 0.6f * d;
+        event.setRed(Mth.lerp(k, event.getRed(), 0.88f * lum));
+        event.setGreen(Mth.lerp(k, event.getGreen(), 0.56f * lum));
+        event.setBlue(Mth.lerp(k, event.getBlue(), 0.30f * lum));
     }
 
     private static int mix(int a, int b, float t) {

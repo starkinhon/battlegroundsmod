@@ -62,8 +62,9 @@ biome("terra_sagrada_de_karin", 0.8, 0x6CC4EC, 0xE2F4DA, 0x3FB8D8, 0x10586A, 0x9
       features([],
                ["battlegroundsmod:puffy_tree_karin", "minecraft:flower_default", "minecraft:patch_grass_forest"]))
 # Deserto do Diabo (the biome kept its old id): Stark's Sand Land reference, orange-yellow sand and sandstone hoodoos,
-# table rocks and boulders (world/DesertRockFeature) under a blue sky going golden in the dusty haze; dry bushes.
-biome("deserto_vermelho", 2.0, 0x8EC3E6, 0xEACF8C, 0x3FA9C9, 0x10586A, 0xB8A85A, 0xA8964A,
+# table rocks and boulders (world/DesertRockFeature) under a strong yellow sky, an orange haze of sand (client/fx/DragonWind
+# brings the fog in), dry bushes. A drought, a dangerous place (Stark).
+biome("deserto_vermelho", 2.0, 0xE8C46A, 0xE59A4E, 0x3FA9C9, 0x10586A, 0xB8A85A, 0xA8964A,
       features(["battlegroundsmod:desert_rock"],
                ["minecraft:patch_dead_bush_badlands"], ["minecraft:ore_gold_extra"]),
       music="minecraft:music.overworld.desert")
