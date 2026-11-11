@@ -225,6 +225,11 @@ public final class DragonWind {
             r = Mth.lerp(frost, r, 0.9f);
             gg = Mth.lerp(frost, gg, 0.95f);
             b = Mth.lerp(frost, b, 1f);
+            // the Montanhas Paozu's: cool misty white with a blue-green touch (Stark: it read orange, like the desert's)
+            float valley = hills;
+            r = Mth.lerp(valley, r, 0.86f - 0.06f * g.warm());
+            gg = Mth.lerp(valley, gg, 0.98f);
+            b = Mth.lerp(valley, b, 0.94f + 0.04f * g.warm());
             float sand = desert;
             gg = Mth.lerp(sand, gg, 0.74f - 0.1f * g.warm());
             b = Mth.lerp(sand, b, 0.46f - 0.12f * g.warm());
