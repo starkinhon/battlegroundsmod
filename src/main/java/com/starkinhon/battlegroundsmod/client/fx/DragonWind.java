@@ -230,6 +230,11 @@ public final class DragonWind {
             r = Mth.lerp(valley, r, 0.86f - 0.06f * g.warm());
             gg = Mth.lerp(valley, gg, 0.98f);
             b = Mth.lerp(valley, b, 0.94f + 0.04f * g.warm());
+            // Namek's: a pale green-white, like the haze
+            float planet = namek;
+            r = Mth.lerp(planet, r, 0.86f);
+            gg = Mth.lerp(planet, gg, 1f);
+            b = Mth.lerp(planet, b, 0.8f + 0.06f * g.warm());
             float sand = desert;
             gg = Mth.lerp(sand, gg, 0.74f - 0.1f * g.warm());
             b = Mth.lerp(sand, b, 0.46f - 0.12f * g.warm());
@@ -276,9 +281,10 @@ public final class DragonWind {
             PoseStack.Pose pose = event.getPoseStack().last();
             MultiBufferSource.BufferSource buf = mc.renderBuffers().bufferSource();
             VertexConsumer o = buf.getBuffer(FxRenderTypes.AREA);
-            halo(o, pose, sun, 0.55f * three, 46, 1f, 0.97f, 0.8f, false);
-            halo(o, pose, dir(40, 34), three, 40, 1f, 0.95f, 0.75f, true);
-            halo(o, pose, dir(205, 22), 0.85f * three, 34, 1f, 0.92f, 0.7f, true);
+            // small soft glows (Stark: the big ones came out as a huge banded blot in the corner of the screen)
+            halo(o, pose, sun, 0.4f * three, 15, 1f, 0.98f, 0.86f, false);
+            halo(o, pose, dir(40, 34), 0.75f * three, 13, 1f, 0.97f, 0.84f, true);
+            halo(o, pose, dir(205, 22), 0.65f * three, 11, 1f, 0.96f, 0.82f, true);
             buf.endBatch(FxRenderTypes.AREA);
         }
         float power = sunPower(mc, partial, sun);
@@ -467,7 +473,7 @@ public final class DragonWind {
         Vec3 right = dir.cross(up).normalize();
         Vec3 down = dir.cross(right).normalize();
         Vec3 center = dir.scale(100);
-        int rings = 12, segments = 36;
+        int rings = 28, segments = 40;
         for (int i = 0; i < rings; i++) {
             double r0 = radius * Math.pow((double) i / rings, 1.6), r1 = radius * Math.pow((double) (i + 1) / rings, 1.6);
             float a0 = power * glow((float) i / rings), a1 = power * glow((float) (i + 1) / rings);
@@ -483,7 +489,7 @@ public final class DragonWind {
             for (int j = 0; j < segments; j++) {
                 double t0 = j * Mth.TWO_PI / segments, t1 = (j + 1) * Mth.TWO_PI / segments;
                 for (int layer = 0; layer < 2; layer++) {
-                    double rr = layer == 0 ? 5.5 : 4;
+                    double rr = layer == 0 ? 3.2 : 2.3;
                     float a = layer == 0 ? 0.6f * power : power;
                     vertex(out, last, center, right, down, 0, t0, 1, 1, 0.94f, a);
                     vertex(out, last, center, right, down, rr, t0, 1, 1, 0.9f, a);
