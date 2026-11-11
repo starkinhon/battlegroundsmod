@@ -74,12 +74,17 @@ public final class LuffyMoves {
         LivingEntity best = null;
         double bestD = Double.MAX_VALUE;
         Vec3 eye = caster.getEyePosition(), look = caster.getLookAngle();
+        // The Giant reaches 10x as far, so a wide cone picked whatever stood anywhere ahead (Stark: "the moves went
+        // where I wasn't aiming"). He takes the one closest to his crosshair, in a narrow cone.
+        boolean giant = k(caster) > 1.5;
         for (LivingEntity e : Combat.inRadius((ServerLevel) caster.level(), eye, range + 1, caster)) {
             Vec3 to = Combat.center(e).subtract(eye);
             double d = to.length();
-            if (d < bestD && to.normalize().dot(look) > 0.8) {
+            double dot = to.normalize().dot(look);
+            double score = giant ? 1 - dot : d;
+            if (score < bestD && dot > (giant ? 0.97 : 0.8)) {
                 best = e;
-                bestD = d;
+                bestD = score;
             }
         }
         return best;

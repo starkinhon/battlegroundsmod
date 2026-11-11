@@ -245,6 +245,8 @@ public final class LuffyFx {
     // The Giant: GS = his size. While his moves draw, CAM/C/TP are taken into his "small world" (shrunk about his feet),
     // the moves run at normal size there, and what they make is put back at his size (LuffyMesh.worldScale, toReal).
     private static double GS = 1;
+    // the body being drawn is the local player seen in first person: what sits round his head stays off his screen
+    private static boolean SELF_FP;
 
     private static Vec3 toSmall(Vec3 p) {
         return GS == 1 || p == null ? p : FEET.add(p.subtract(FEET).scale(1 / GS));
@@ -619,6 +621,9 @@ public final class LuffyFx {
     // ---------- steam and cloud ----------
 
     private static void steam(Vec3 pos, double sx, double sy, double sz, double alpha, double rise, float r, float g, float b) {
+        if (SELF_FP) {
+            return;
+        }
         LuffyMesh.P p = LuffyMesh.p(LuffyMesh.STEAM);
         p.t = (float) TIME;
         p.alpha = (float) alpha;
@@ -638,6 +643,10 @@ public final class LuffyFx {
 
     // the page puts it at 0.72; in the game it sat over half his head (his head is smaller and lower), so it goes lower
     private static void collar(double alpha) {
+        // seen from inside his own head it covered the whole screen (worst as the Giant): only the others see it
+        if (SELF_FP) {
+            return;
+        }
         LuffyMesh.P p = LuffyMesh.p(LuffyMesh.COLLAR);
         p.t = (float) TIME;
         p.alpha = (float) alpha;
@@ -674,6 +683,7 @@ public final class LuffyFx {
                 continue;
             }
             B = bd;
+            SELF_FP = e == mc.player && mc.options.getCameraType().isFirstPerson();
             // his rubber is his own skin: the hand's color from whatever skin the player uses
             TONE = SkinTone.of(e, SKIN);
             TONE_RIM = mix(TONE, 0xFFFFFF, 0.3);
@@ -711,6 +721,7 @@ public final class LuffyFx {
         }
         GS = 1;
         CAM = cam;
+        SELF_FP = false;
         LuffyMesh.worldScale = 1;
         bursts();
         rubberGround(cam, now);

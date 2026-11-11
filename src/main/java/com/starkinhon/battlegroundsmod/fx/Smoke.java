@@ -214,17 +214,22 @@ public final class Smoke {
 
     // Each tick of a dash on the ground: a short trail of dust at the feet (first ticks) and wind along the body.
     public static void dashTrail(ServerLevel level, Vec3 feet, Vec3 dir, int color, int tick) {
+        dashTrail(level, feet, dir, color, tick, 1);
+    }
+
+    // Same for a body s times bigger (the Giant Luffy): everything grows and spreads with him.
+    public static void dashTrail(ServerLevel level, Vec3 feet, Vec3 dir, int color, int tick, double s) {
         Vec3 d = flat(dir, new Vec3(0, 0, 1));
         Vec3 side = side(d);
         if (tick <= 3) {
             for (int i = 0; i < 2; i++) {
-                put(level, SmokeOptions.DUST, color, 0.7, 0.26 + r() * 0.15, 1, 10 + ri(5), 0.85, 0, 0.5, 0, feet.add(0, 0.1, 0),
-                        side.scale(g() * 0.05).add(0, 0.02, 0));
+                put(level, SmokeOptions.DUST, color, 0.7, (0.26 + r() * 0.15) * s, 1, 10 + ri(5), 0.85, 0, 0.5, 0, feet.add(0, 0.1 * s, 0),
+                        side.scale(g() * 0.05 * s).add(0, 0.02 * s, 0));
             }
         }
         for (int i = 0; i < 3; i++) {
-            put(level, SmokeOptions.WISP, 0xFFFFFF, 0.7, 0.1, 0, 5 + ri(3), 0.8, 0, 1, 8 + r() * 6, feet.add(0, 0.3 + r() * 1.4, 0).add(side.scale(g() * 0.3)),
-                    d.scale(-0.25));
+            put(level, SmokeOptions.WISP, 0xFFFFFF, 0.7, 0.1 * s, 0, 5 + ri(3), 0.8, 0, 1, (8 + r() * 6) * s,
+                    feet.add(0, (0.3 + r() * 1.4) * s, 0).add(side.scale(g() * 0.3 * s)), d.scale(-0.25 * s));
         }
     }
 
