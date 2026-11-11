@@ -116,7 +116,7 @@ final class NrFx {
         return switch (kind) {
             case SubNet.RASENGAN, SubNet.DRILL, SubNet.RASENSHURIKEN, SubNet.SAGE_GATHER, SubNet.CHIDORI, SubNet.SAND_HAND, SubNet.SAND_SHELL,
                     SubNet.SAND_PLAT, SubNet.SHADOW, SubNet.BODY_SHADOW, SubNet.NECK_HAND, SubNet.SPIKES, SubNet.TAG, SubNet.SPIRIT, SubNet.THREAD,
-                    SubNet.RAIJU, SubNet.KAMUI, SubNet.KK_HOUND, SubNet.KK_VORTEX, SubNet.KK_SEAL, SubNet.KK_DOGS, SubNet.KATON, SubNet.SHADOW_SEA, SubNet.FLARE, SubNet.HENGE -> true;
+                    SubNet.RAIJU, SubNet.KAMUI, SubNet.KK_HOUND, SubNet.KK_VORTEX, SubNet.KK_SEAL, SubNet.KK_DOGS, SubNet.GA_HAND, SubNet.GA_COFFIN, SubNet.GA_STREAM, SubNet.GA_PLAT, SubNet.GA_QUICK, SubNet.GA_WAVE, SubNet.KATON, SubNet.SHADOW_SEA, SubNet.FLARE, SubNet.HENGE -> true;
             default -> false;
         };
     }
@@ -130,6 +130,22 @@ final class NrFx {
         double now = ScreenFx.now();
         if (kind == SubNet.KK_SUSANOO || kind == SubNet.KK_SHURIKEN) {
             KakashiSusanoo.receive(kind, id, pos, dir, a, b, c, now);
+            return;
+        }
+        if (kind == SubNet.GA_GRAINS) {
+            // a burst of loose grains: c = 0 a cone along dir (its length = strength), 1 a ring thrown out over radius b
+            if (c < 0.5f) {
+                GaaraSand.spray(pos, dir, (int) a, dir.length(), b, Double.NaN);
+            } else {
+                for (int i = 0; i < (int) a; i++) {
+                    double ang = GaaraSand.rng().nextDouble() * 6.283, r = b * Math.sqrt(GaaraSand.rng().nextDouble());
+                    double out = 3 + 9 * GaaraSand.rng().nextDouble();
+                    GaaraSand.Grain g = GaaraSand.grain(pos.add(Math.cos(ang) * r, (0.3 + GaaraSand.rng().nextDouble() * 1.5) * GaaraSand.PU, Math.sin(ang) * r),
+                            new Vec3(Math.cos(ang) * out, 2 + 8 * GaaraSand.rng().nextDouble(), Math.sin(ang) * out).scale(GaaraSand.PU), pos.y);
+                    g.life = 1 + GaaraSand.rng().nextFloat();
+                    g.s = (0.03f + 0.09f * GaaraSand.rng().nextFloat() * GaaraSand.rng().nextFloat()) * GaaraSand.PU;
+                }
+            }
             return;
         }
         if (kind == SubNet.KK_SENNEN && a < 0.5f) {
@@ -186,13 +202,14 @@ final class NrFx {
     }
 
     static boolean active() {
-        return !SHOTS.isEmpty() || !TRACKED.isEmpty() || KakashiSusanoo.active();
+        return !SHOTS.isEmpty() || !TRACKED.isEmpty() || KakashiSusanoo.active() || GaaraSand.active();
     }
 
     static void clear() {
         SHOTS.clear();
         TRACKED.clear();
         KakashiSusanoo.clear();
+        GaaraSand.clear();
     }
 
     private static double life(Fx f) {
@@ -207,7 +224,7 @@ final class NrFx {
             case SubNet.STORM -> f.a + 44;
             case SubNet.KIRIN -> 50;
             case SubNet.AFTERIMAGE -> 15;
-            case SubNet.SAND_WALL -> 64;
+            case SubNet.SAND_WALL -> 54;
             case SubNet.SAND_BURST -> 62;
             case SubNet.SAND_FLOW -> f.a + 10;
             case SubNet.KUNAI -> f.a + 1;
@@ -233,6 +250,12 @@ final class NrFx {
             case SubNet.KK_SEAL -> 12;
             case SubNet.KK_DOGS -> 3;
             case SubNet.KK_VORTEX -> 6;
+            case SubNet.GA_HAND -> 14;
+            case SubNet.GA_COFFIN -> f.dir.y > 0.5 ? 4 : 14;
+            case SubNet.GA_STREAM -> 12;
+            case SubNet.GA_PLAT -> 12;
+            case SubNet.GA_QUICK -> 10;
+            case SubNet.GA_WAVE -> 12;
             default -> 8;
         };
     }
@@ -275,7 +298,7 @@ final class NrFx {
                 case SubNet.STORM -> storm(f, age);
                 case SubNet.KIRIN -> kirin(f, age);
                 case SubNet.AFTERIMAGE -> afterimage(f, age);
-                case SubNet.SAND_WALL -> sandWall(f, age, partial);
+                case SubNet.SAND_WALL -> gaWall(f, age);
                 case SubNet.SAND_BURST -> sandBurstFx(f, age);
                 case SubNet.SAND_FLOW -> sandFlow(f, age);
                 case SubNet.KUNAI -> kunai(f, age);
@@ -320,6 +343,12 @@ final class NrFx {
                 case SubNet.KK_VORTEX -> bigVortex(f, age, out);
                 case SubNet.KK_SEAL -> seal(f, age, out);
                 case SubNet.KK_DOGS -> dogs(f, age, out);
+                case SubNet.GA_HAND -> gaHand(f, age, out);
+                case SubNet.GA_COFFIN -> gaCoffin(f, age, out);
+                case SubNet.GA_STREAM -> gaStream(f, age, out);
+                case SubNet.GA_PLAT -> gaPlat(f, age, partial, out);
+                case SubNet.GA_QUICK -> gaQuick(f, age, out);
+                case SubNet.GA_WAVE -> gaWave(f, age, out);
                 case SubNet.KAMUI -> kamui(f, age, out);
                 case SubNet.KATON -> katonBall(f, age, now, out);
                 case SubNet.HENGE -> henge(f, age, now, out);
@@ -1515,6 +1544,347 @@ final class NrFx {
             bb(p, 0.05f + 0.07f * hash(i, 9, 3), 0, FxDraw.DISC, 0.4f, SAND_TONES[i % 5], 0.95f * (1 - smooth((age - run) / 8)), false);
         }
         sandHaze(lerp(from, to, clamp(age / run, 0, 1)), 0.9f, 6, age, 61, 0.8f * (1 - smooth((age - run) / 8)), 0.3f);
+    }
+
+    // ---------- Gaara (forja/gaara-kit/gaara.js v1): real sand in the page's sand material (GaaraSand) ----------
+
+    private static float e3(float t) {
+        t = clamp(t, 0, 1);
+        return 1 - (1 - t) * (1 - t) * (1 - t);
+    }
+
+    // grains per second scaled to this frame
+    private static int rate(float perSecond) {
+        float n = perSecond * GaaraSand.dt;
+        int k = (int) n;
+        return k + (GaaraSand.rng().nextFloat() < n - k ? 1 : 0);
+    }
+
+    private static float rnd() {
+        return GaaraSand.rng().nextFloat();
+    }
+
+    private static Vec3 world(Vector3f relPos) {
+        return DbFx.cam.add(relPos.x, relPos.y, relPos.z);
+    }
+
+    // a point of a page frame (page units) in the world
+    private static Vec3 world(Matrix4f m, float x, float y, float z) {
+        return world(m.transformPosition(new Vector3f(x, y, z)));
+    }
+
+    private static Vector3f fwdOf(float yaw) {
+        return v(Mth.sin(yaw), 0, Mth.cos(yaw));
+    }
+
+    private static final float[][] FINGERS = {{-0.72f, 0.9f, 0.82f}, {-0.25f, 1.12f, 1.0f}, {0.24f, 1.08f, 0.94f}, {0.7f, 0.86f, 0.74f}};
+    private static final float[] SEGS = {0.44f, 0.33f, 0.26f};
+
+    // Z Sand Hand: palm, four fingers of three joints each its own size, the thumb, held to the ground by a forearm of sand
+    // (the page's makeSandHand + place). pos = the ground under the wrist, dir = (lean, curl, wrist height in page units),
+    // a = facing, b = crumble, c = -(how high it has come up + 1) or 1 gone.
+    private static void gaHand(Fx f, float t, float out) {
+        if (DbFx.pass) {
+            return;
+        }
+        Vector3f g = rel(f.pos);
+        Vector3f fwd = fwdOf(f.a);
+        float lean = (float) f.dir.x, curl = (float) f.dir.y, wy = (float) f.dir.z;
+        float rise = f.c < 0 ? -f.c - 1 : 4;
+        float dis = Math.max(f.b, 1 - out);
+        Matrix4f F = GaaraSand.frame(g, fwd);
+        float riseY = g.y + rise * PU;
+        GaaraSand.piece(0.14f, 0.8f, 1, dis, riseY, 9, m -> {
+            Matrix4f hand = new Matrix4f(F).translate(0, wy, 0).rotateX(-lean);
+            m.sphere(new Matrix4f(hand).scale(1.05f, 1.2f, 0.45f), 32, 24);
+            for (int fi = 0; fi < 4; fi++) {
+                float[] fg = FINGERS[fi];
+                Matrix4f j = new Matrix4f(hand);
+                for (int k = 0; k < 3; k++) {
+                    j.translate(k == 0 ? fg[0] : 0, k == 0 ? fg[1] : fg[2] * SEGS[k - 1], 0);
+                    j.rotateX(-curl * new float[] {1.15f, 1.35f, 1.2f}[k] * (0.92f + 0.08f * fi)).rotateZ((fi - 1.5f) * 0.06f * (1 - curl));
+                    float len = fg[2] * SEGS[k], r = 0.21f - 0.035f * k + (fi == 1 ? 0.02f : 0);
+                    m.cylinder(new Matrix4f(j).translate(0, len / 2, 0), r * 0.88f, r, len, 14, 2, false, 0, Mth.TWO_PI);
+                    m.sphere(new Matrix4f(j).scale(r * 1.05f), 12, 9);
+                    if (k == 2) {
+                        m.sphere(new Matrix4f(j).translate(0, len, 0).scale(r * 0.9f, r * 1.17f, r * 0.9f), 12, 9);
+                    }
+                }
+            }
+            Matrix4f th = new Matrix4f(hand);
+            float[][] tj = {{1.0f, -0.15f}, {0, 0.42f}, {0, 0.34f}};
+            for (int k = 0; k < 3; k++) {
+                th.translate(tj[k][0], tj[k][1], 0);
+                th.rotateX(-curl * (k == 0 ? 0.6f : 0.9f));
+                if (k == 0) {
+                    th.rotateZ(-0.75f);
+                }
+                float len = new float[] {0.42f, 0.34f, 0.28f}[k], r = 0.22f - 0.035f * k;
+                m.cylinder(new Matrix4f(th).translate(0, len / 2, 0), r * 0.9f, r, len, 14, 2, false, 0, Mth.TWO_PI);
+                m.sphere(new Matrix4f(th).scale(r * 1.05f), 12, 9);
+            }
+            Vector3f[] arm = {v(0, -0.3f, 2.6f + 0.8f * (1 - lean)), v(0, 0.5f, 1.7f), v(0, wy - 1.5f, 0.7f), v(0, wy - 0.95f, 0.2f)};
+            m.tube(F, arm, s -> 0.95 - 0.45 * s + 0.4 * Math.pow(1 - s, 3), 30, 16, 1);
+        });
+        // sand pouring off it all the time
+        double floor = f.pos.y;
+        if (dis < 1) {
+            for (int i = rate(rise < 3.9f ? 420 : 300); i > 0; i--) {
+                Vec3 p = world(F, (rnd() - 0.5f) * 1.8f, wy * (0.2f + 0.9f * rnd()), (rnd() - 0.2f) * 2);
+                GaaraSand.grain(p, new Vec3((rnd() - 0.5f) * 0.9, rise < 3.9f ? 2 + 3 * rnd() : -0.9, (rnd() - 0.5f) * 0.9), floor);
+            }
+        }
+    }
+
+    private static final float[][] COFFIN = {{0.05f, -0.05f}, {0.66f, 0}, {0.76f, 0.45f}, {0.66f, 0.95f}, {0.72f, 1.3f}, {0.82f, 1.55f}, {0.7f, 1.95f},
+            {0.46f, 2.3f}, {0.16f, 2.48f}, {0.02f, 2.5f}};
+
+    // X Sabaku Kyu: ONE shell rising from the feet over the whole body, grains spiralling up as it climbs; squeezed by the
+    // Soso. pos = feet, dir = (size of the body, squeeze, -), a = how far up, b = crumble.
+    private static void gaCoffin(Fx f, float t, float out) {
+        if (DbFx.pass) {
+            return;
+        }
+        Vector3f p = rel(f.pos);
+        float sc = (float) Math.max(0.5, f.dir.x), sq = (float) f.dir.y, rise = f.a;
+        float dis = Math.max(f.b, f.endAt >= 0 ? 1 - out : 0);
+        float riseY = p.y + (-0.2f + rise * 2.9f) * PU * sc;
+        GaaraSand.piece(0.13f + 0.12f * sq, 0.9f, 1, dis, riseY, 9, m -> m.lathe(new Matrix4f().translation(p).scale(PU * sc).scale(1 - 0.3f * sq, 1 - 0.12f * sq, 1 - 0.3f * sq), COFFIN, 40));
+        if (rise > 0.02f && rise < 0.99f) {
+            for (int i = rate(380); i > 0; i--) {
+                GaaraSand.orbit(f.pos, (0.75 + 0.2 * rnd()) * PU * sc, 7 + 4 * rnd(), f.pos.y + (0.05 + 2.4 * rise * rnd()) * PU * sc, (1.2 + 1.5 * rnd()) * PU,
+                        0.35f + 0.4f * rnd());
+            }
+        } else if (rise >= 0.99f && dis <= 0 && rnd() < GaaraSand.dt * 30) {
+            Vec3 top = f.pos.add((rnd() - 0.5) * 1.1 * sc, 2.1 * sc, (rnd() - 0.5) * 1.1 * sc);
+            GaaraSand.Grain gr = GaaraSand.grain(top, new Vec3(0, -0.2, 0), f.pos.y);
+            gr.grav = 5 * PU;
+        }
+    }
+
+    // A stream of sand running along the ground from pos to pos + dir, shown up to a = how far, b = crumble; c = its
+    // thickness (page units, under 1) or 1 gone.
+    private static void gaStream(Fx f, float t, float out) {
+        if (DbFx.pass) {
+            return;
+        }
+        Vector3f a = rel(f.pos);
+        Vec3 dw = f.dir;
+        float len = (float) dw.length() / PU;
+        if (len < 0.2f) {
+            return;
+        }
+        Vector3f d = v((float) dw.x, (float) dw.y, (float) dw.z).div(PU);
+        Vector3f dn = new Vector3f(d).normalize();
+        Vector3f side = v(-dn.z, 0, dn.x);
+        if (side.lengthSquared() < 1e-6f) {
+            side.set(1, 0, 0);
+        }
+        side.normalize();
+        float r = f.c > 0 && f.c < 1 ? f.c : 0.38f;
+        Vector3f b = new Vector3f(d);
+        Vector3f[] pts = {v(0, 0, 0), new Vector3f(d).mul(0.3f).add(new Vector3f(side).mul(-0.6f)), new Vector3f(d).mul(0.65f).add(new Vector3f(side).mul(0.5f)),
+                new Vector3f(b).sub(new Vector3f(dn).mul(Math.min(0.7f, len * 0.2f))), b};
+        float seed = (f.id % 17) * 0.37f;
+        float dis = Math.max(f.b, f.endAt >= 0 ? 1 - out : 0);
+        GaaraSand.piece(0.1f, 1.6f, 1.3f, dis, 99, f.a, m -> m.tube(new Matrix4f().translation(a).scale(PU), pts,
+                s -> r * (0.55 + 0.45 * Math.sin(Math.PI * Math.min(1, s * 1.2 + 0.08))) * (0.85 + 0.15 * (Math.sin(s * 23 + seed) * 0.6 + Math.sin(s * 9.3 + seed * 3) * 0.4 + 1)),
+                44, 12, 0.5f));
+        if (f.a < 1 && dis <= 0) {
+            Vec3 head = f.pos.add(f.dir.scale(Math.max(0, f.a)));
+            for (int i = rate(160); i > 0; i--) {
+                GaaraSand.grain(head.add((rnd() - 0.5) * 0.55, 0.05, (rnd() - 0.5) * 0.55), new Vec3((rnd() - 0.5) * 1.3, (1 + 2 * rnd()) * PU, (rnd() - 0.5) * 1.3), f.pos.y);
+            }
+        }
+    }
+
+    // C Sand Platform: a thick disc with its underside dripping grains all the time, a trail of sand dust behind at speed.
+    // pos = his feet, dir = (facing, pitch, bank), a = how formed, b = crumble.
+    private static void gaPlat(Fx f, float t, float partial, float out) {
+        if (DbFx.pass) {
+            return;
+        }
+        Vec3 at = f.pos;
+        Entity e = FxAnchor.entity(f.id);
+        if (e != null && f.endAt < 0) {
+            at = e.getPosition(partial);
+        }
+        Vector3f p = rel(at);
+        float yaw = (float) f.dir.x, pitch = (float) f.dir.y, bank = (float) f.dir.z;
+        Matrix4f F = new Matrix4f().translation(p).rotateY((float) Math.atan2(-Mth.sin(yaw), -Mth.cos(yaw))).rotateX(pitch).rotateZ(bank).scale(PU);
+        float riseY = f.a >= 0.999f ? 99 : p.y + (-1.22f + 1.4f * f.a) * PU;
+        float dis = Math.max(f.b, f.endAt >= 0 ? 1 - out : 0);
+        GaaraSand.piece(0.1f, 1.0f, 1, dis, riseY, 9, m -> {
+            m.cylinder(new Matrix4f(F).translate(0, -0.21f, 0), 1.25f, 0.9f, 0.42f, 48, 4, false, 0, Mth.TWO_PI);
+            m.cylinder(new Matrix4f(F).translate(0, -0.62f, 0).rotateX(Mth.PI), 0, 0.85f, 0.7f, 36, 4, true, 0, Mth.TWO_PI);
+        });
+        if (dis >= 1) {
+            return;
+        }
+        // speed from its last steps (blocks a second)
+        Vec3 vel = Vec3.ZERO;
+        if (f.trail.size() >= 2) {
+            Iterator<Vec3> it = f.trail.descendingIterator();
+            Vec3 last = it.next(), prev = it.next();
+            vel = last.subtract(prev).scale(20);
+        }
+        double v = vel.length();
+        double floor = at.y - 40;
+        for (int i = rate(f.a < 0.999f ? 700 : 260); i > 0; i--) {
+            if (f.a < 0.999f) {
+                double ang = rnd() * 6.283, r = (1.6 + 1.5 * rnd()) * PU;
+                GaaraSand.Grain gr = GaaraSand.grain(at.add(Math.cos(ang) * r, -0.35, Math.sin(ang) * r),
+                        new Vec3(-Math.cos(ang) * r * 2.4, (1.5 + rnd()) * PU, -Math.sin(ang) * r * 2.4), at.y - 0.4);
+                gr.grav = 6 * PU;
+                gr.life = 0.35f + 0.2f * rnd();
+            } else {
+                Vec3 q = world(F, (rnd() - 0.5f) * 1.4f, -0.5f - 0.4f * rnd(), (rnd() - 0.5f) * 1.4f);
+                GaaraSand.Grain gr = GaaraSand.grain(q, vel.scale(0.15 * rnd()).add(0, -(1 + rnd()) * PU, 0), floor);
+                gr.grav = 9 * PU;
+            }
+        }
+        if (v > 1) {
+            Vec3 dir = vel.normalize();
+            for (int i = rate((float) (v * 0.6 * 60 / PU)); i > 0; i--) {
+                Vec3 q = at.add(dir.scale(-(1.1 + rnd() * 0.6) * PU)).add((rnd() - 0.5) * 1.4, -0.3 + (rnd() - 0.5) * 0.4, (rnd() - 0.5) * 1.4);
+                GaaraSand.Grain gr = GaaraSand.grain(q, new Vec3(rnd() - 0.5, (rnd() - 0.5) * 0.4, rnd() - 0.5).scale(PU), floor);
+                gr.grav = 0.6f * PU;
+                gr.drag = 1.5f;
+                gr.life = 0.6f + 0.9f * rnd();
+                gr.s = (0.02f + 0.03f * rnd()) * PU;
+            }
+        }
+    }
+
+    // B / V quicksand: a spiral of sand turning into the middle, almost hidden until someone sinks (souls_ki kind 35).
+    // pos = center on the ground, dir.x = radius (blocks), a = how visible, b = sinking.
+    private static void gaQuick(Fx f, float t, float out) {
+        float alpha = f.a * out;
+        if (alpha <= 0.002f) {
+            return;
+        }
+        if (DbFx.pass && KiMesh.ready()) {
+            KiMesh.P k = KiMesh.p(KiMesh.SAND_QUICK);
+            k.alpha = alpha;
+            k.pulse = f.b;
+            k.rot = t / 20f * (0.4f + 2.6f * f.b);
+            k.time = t / 20f;
+            k.glow = false;
+            k.color = GaaraSand.BASE;
+            k.color2 = GaaraSand.SHADE;
+            k.dust = GaaraSand.DEEP;
+            k.size = GaaraSand.LIGHT;
+            KiMesh.queue(KiMesh.Mesh.QUAD, KiMesh.flat(add(rel(f.pos), 0, 0.03f, 0), (float) f.dir.x), k, KiMesh.BOTH, 5);
+        }
+        if (!DbFx.pass && f.b > 0.05f) {
+            float r = (float) f.dir.x;
+            for (int i = rate(30 * f.b * Math.min(6, r)); i > 0; i--) {
+                double ang = rnd() * 6.283, rr = r * 0.8 * Math.sqrt(rnd());
+                GaaraSand.grain(f.pos.add(Math.cos(ang) * rr, 0.05, Math.sin(ang) * rr), new Vec3((rnd() - 0.5) * 1.3, (1.5 + rnd()) * PU, (rnd() - 0.5) * 1.3), f.pos.y);
+            }
+        }
+    }
+
+    // V Sabaku Taiso: the ring of sand rising round the area (a profile turned round it), curling in and closing in a dome,
+    // then falling. pos = center on the ground, dir = (area radius in page units, crumble, squash), a = height, b = curl.
+    private static void gaWave(Fx f, float t, float out) {
+        if (DbFx.pass) {
+            return;
+        }
+        float R = (float) f.dir.x, ext = f.a, phi = f.b, thick = 1.6f, sy = (float) Math.max(0.05, f.dir.z <= 0 ? 1 : f.dir.z);
+        float sx = 1 + 0.08f * (1 - sy) / 0.95f;
+        float dis = Math.max((float) f.dir.y, f.endAt >= 0 ? 1 - out : 0);
+        int N = 22;
+        float[][] outer = new float[N + 1][], inner = new float[N + 1][];
+        float x = R + 0.8f, y = 0, step = ext / N;
+        for (int i = 0; i <= N; i++) {
+            float s = (float) i / N, a = phi * (float) Math.pow(s, 1.35), w = thick * (1.25f * (1 - s) + 0.28f) * (1 + 0.25f * Mth.sin(s * 9));
+            float nx = Mth.cos(a), ny = Mth.sin(a);
+            outer[i] = new float[] {Math.max(0.05f, x + nx * w * 0.5f), y + ny * w * 0.5f};
+            inner[i] = new float[] {Math.max(0.05f, x - nx * w * 0.5f), Math.max(-0.2f, y - ny * w * 0.5f)};
+            x -= Mth.sin(a) * step;
+            y += Mth.cos(a) * step;
+        }
+        float[][] pts = new float[2 * N + 4][];
+        pts[0] = new float[] {R + 0.8f + thick, -0.3f};
+        for (int i = 0; i <= N; i++) {
+            pts[1 + i] = outer[i];
+            pts[2 * N + 2 - i] = inner[i];
+        }
+        pts[2 * N + 3] = new float[] {R + 0.8f - thick, -0.3f};
+        Vector3f c = rel(f.pos);
+        float tipX = x, tipY = y;
+        GaaraSand.piece(0.32f, 1.1f, 0.7f, dis, 99, 9, m -> m.lathe(new Matrix4f().translation(c).scale(PU * sx, PU * sy, PU * sx), pts, 72));
+        if (dis <= 0 && sy > 0.9f) {
+            for (int i = rate(900); i > 0; i--) {
+                double ang = rnd() * 6.283, r = Math.max(0.3, tipX) * PU;
+                GaaraSand.Grain gr = GaaraSand.grain(f.pos.add(Math.cos(ang) * r, (tipY + (rnd() - 0.5) * 0.6) * PU, Math.sin(ang) * r),
+                        new Vec3(-Math.cos(ang) * 1.5 * rnd(), -0.5 - 2 * rnd(), -Math.sin(ang) * 1.5 * rnd()).scale(PU), f.pos.y);
+                gr.grav = 9 * PU;
+                gr.life = 1 + 0.6f * rnd();
+                gr.s = (0.04f + 0.08f * rnd() * rnd()) * PU;
+            }
+        }
+    }
+
+    // The passive Sand Shield: the sand leaves the gourd on its own over his shoulder, runs to the ground and rises in a
+    // curved wall toward the blow (pos = his feet, dir = toward it); what hits sticks; then it crumbles and runs back.
+    private static void gaWall(Fx f, float age) {
+        if (DbFx.pass) {
+            return;
+        }
+        float t = age / 20f;
+        Vector3f g = rel(f.pos);
+        Vector3f fwd = vec(f.dir);
+        fwd.y = 0;
+        if (fwd.lengthSquared() < 1e-6f) {
+            fwd.set(0, 0, 1);
+        }
+        fwd.normalize();
+        Matrix4f F = GaaraSand.frame(g, fwd);
+        float prog, riseY, dis = 0;
+        if (t < 0.3f) {
+            prog = clamp(t / 0.16f, 0, 1);
+            riseY = -0.2f + 3.1f * e3((t - 0.1f) / 0.18f);
+        } else {
+            float t2 = t - 0.3f;
+            dis = smooth((t2 - 1.3f) / 0.7f);
+            prog = 1 - smooth((t2 - 1.6f) / 0.5f);
+            riseY = 3;
+        }
+        float rise = clamp((t - 0.1f) / 0.18f, 0, 1);
+        if (rise > 0 && dis < 1) {
+            float ry = g.y + riseY * PU;
+            float d = dis;
+            GaaraSand.piece(0.16f, 0.7f, 1, d, ry, 9,
+                    m -> m.cylinder(new Matrix4f(F).translate(0, 1.35f, 0), 1.45f, 1.6f, 2.7f, 60, 10, true, Mth.PI - 1.25f, 2.5f));
+        }
+        if (prog > 0.001f) {
+            Vector3f[] pts = {v(0.37f, 1.73f, 0.38f), v(0.87f, 2.18f, 0.28f), v(0.7f, 1.5f, -0.7f), v(0.5f, 0.25f, -1.2f), v(0, 0.08f, -1.55f)};
+            GaaraSand.piece(0.1f, 1.6f, 1.3f, 0, 99, prog, m -> m.tube(F, pts,
+                    s -> 0.16 * (0.55 + 0.45 * Math.sin(Math.PI * Math.min(1, s * 1.2 + 0.08))), 40, 10, 0.5f));
+        }
+        double floor = f.pos.y;
+        if (rise > 0 && rise < 1) {
+            for (int i = rate(360); i > 0; i--) {
+                float a = Mth.PI - 1.2f + 2.4f * rnd();
+                GaaraSand.grain(world(F, Mth.sin(a) * 1.5f, 2.9f * e3(rise), Mth.cos(a) * 1.5f), new Vec3(0, (1 + 2 * rnd()) * PU, 0), floor);
+            }
+        }
+        if (dis > 0 && dis < 1) {
+            for (int i = rate(540); i > 0; i--) {
+                float a = Mth.PI - 1.2f + 2.4f * rnd();
+                GaaraSand.Grain gr = GaaraSand.grain(world(F, Mth.sin(a) * 1.5f, 0.2f + 2.6f * rnd(), Mth.cos(a) * 1.5f), new Vec3(0, -0.45, 0), floor);
+                gr.life = 0.6f + 0.6f * rnd();
+            }
+        }
+        if (t > 0.33f && t < 1.5f) {
+            for (int i = rate(120); i > 0; i--) {
+                float a = Mth.PI - 1.2f + 2.4f * rnd();
+                GaaraSand.Grain gr = GaaraSand.grain(world(F, Mth.sin(a) * 1.48f, 2.8f, Mth.cos(a) * 1.48f), new Vec3(0, -0.27, 0), floor);
+                gr.grav = 6 * PU;
+            }
+        }
     }
 
     // ---------- Shikamaru: shadows ----------

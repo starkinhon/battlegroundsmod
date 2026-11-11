@@ -33,6 +33,10 @@ public final class Flight {
         if (!(event.getEntity() instanceof ServerPlayer player) || player.isCreative() || player.isSpectator() || !knows(player)) {
             return;
         }
+        // Gaara's sand platform runs its own flight (speed and stamina) while it lasts.
+        if (com.starkinhon.battlegroundsmod.power.powers.sub.nr.Gaara.flying(player)) {
+            return;
+        }
         Abilities abilities = player.getAbilities();
         boolean changed = false;
         if (!abilities.mayfly) {

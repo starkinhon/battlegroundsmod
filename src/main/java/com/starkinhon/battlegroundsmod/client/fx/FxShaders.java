@@ -37,6 +37,7 @@ public final class FxShaders {
     // Kakashi's Perfect Susanoo (KakashiSusanoo): the body, its flames and outline, and the mist round its feet.
     static ShaderInstance kkSus;
     static ShaderInstance kkMist;
+    static ShaderInstance sand;
     // Sukuna's Fuga (FugaRenderer); without them the Fuga only darkens the world.
     static ShaderInstance fugaFlame;
     static ShaderInstance fugaArrow;
@@ -103,6 +104,11 @@ public final class FxShaders {
             register(event, "souls_kk_mist", DefaultVertexFormat.POSITION, s -> kkMist = s);
         } catch (Exception e) {
             BattlegroundsMod.LOGGER.error("Could not load Kakashi's Susanoo shaders", e);
+        }
+        try {
+            register(event, "souls_sand", DefaultVertexFormat.POSITION_TEX_COLOR_NORMAL, s -> sand = s);
+        } catch (Exception e) {
+            BattlegroundsMod.LOGGER.error("Could not load Gaara's sand shader", e);
         }
         // On its own: a problem here only hides the smoke, never the other effects.
         try {

@@ -39,8 +39,8 @@ public final class KiMesh {
 
     public static final int BLAST = 0, GENKI = 1, HALO = 2, BEAM = 3, RING = 4, SHELL = 5, FLASH = 6, SUN = 7, SUN_HALO = 8, SAW = 9, KIEN = 10,
             SPIRAL = 11, WIND = 12, KATON = 13, KATON_RING = 14, SHADOW_PATH = 15, SHADOW_SEA = 16,
-            // 17-22 the Jujutsu kits (Inumaki, Nobara); 23-29 free; 30-32 the Naruto kit (forja/naruto-kit); 33-39 Kakashi
-            RASEN = 30, RASEN_WIND = 31, RASENSHURIKEN = 32, KAMUI_VORTEX = 33, NINKEN_SEAL = 34;
+            // 17-22 the Jujutsu kits (Inumaki, Nobara); 23-29 free; 30-32 the Naruto kit (forja/naruto-kit); 33-34 Kakashi, 35 Gaara
+            RASEN = 30, RASEN_WIND = 31, RASENSHURIKEN = 32, KAMUI_VORTEX = 33, NINKEN_SEAL = 34, SAND_QUICK = 35;
     public static final int FRONT = 1, BACK = 2, BOTH = 3;
 
     // Everything souls_ki reads; queue() keeps a copy, so one P can be reused for the next piece.

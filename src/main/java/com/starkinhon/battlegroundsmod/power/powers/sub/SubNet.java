@@ -339,6 +339,28 @@ public final class SubNet {
     // The Raiju hound (stream): id = its own, pos = its chest on the ground, dir = where it runs, a = gait phase,
     // b = jaw open 0..1; c = 1 gone.
     public static final int KK_HOUND = 187;
+    // Gaara's sand hand (stream): id = its own, pos = the ground under the wrist, dir = (lean, curl 0..1, wrist height in
+    // page units), a = yaw (atan2 of the way it faces), b = how far it has crumbled (0..1), c = -(rise + 1) while it lives
+    // (rise 0..1), 1 gone.
+    public static final int GA_HAND = 188;
+    // The sand coffin (stream): id = the target, pos = its feet, dir = (scale, squeeze 0..1, -), a = how far the sand has
+    // risen (0..1), b = how far it has crumbled; c = 1 gone (dir.y > 0.5: it burst, fades fast).
+    public static final int GA_COFFIN = 189;
+    // A stream of sand from A (pos) to B (pos + dir): id = its own, a = how far it has run (0..1), b = crumbled, c = radius in
+    // blocks (< 1) or 1 gone.
+    public static final int GA_STREAM = 190;
+    // The flying sand platform (stream): id = the rider, pos = its feet, dir = (yaw, pitch, bank) in radians, a = how far it
+    // has formed (0..1), b = crumbled; c = 1 gone. The speed comes from how it moves.
+    public static final int GA_PLAT = 191;
+    // Quicksand on the ground (stream): id = its own, pos = center, dir.x = radius in blocks, a = opacity, b = hot 0..1
+    // (someone sinking); c = 1 gone.
+    public static final int GA_QUICK = 192;
+    // Sabaku Taiso, the wave of sand (stream): id = its own, pos = center, dir = (radius in page units, crumbled, squash in
+    // y), a = how far it has grown, b = how far it has curled over (radians); c = 1 gone.
+    public static final int GA_WAVE = 193;
+    // Loose sand grains (shot): pos, dir = direction times strength (blocks/s), a = count, b = cone (mode 0) or ring radius
+    // in blocks (mode 1), c = mode.
+    public static final int GA_GRAINS = 194;
 
     public static final int STYLE_SUKUNA = 0;
     public static final int STYLE_PINK = 1;

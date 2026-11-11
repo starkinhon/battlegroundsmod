@@ -245,6 +245,7 @@ public final class FxWorld {
             endDecals(source);
             KiMesh.flush(false);
             KakashiSusanoo.flush(camera, now, false);
+            GaaraSand.flush(camera, now, false);
         } else {
             // The Susanoo arm's depth goes in first, so its color only lands on the front surface.
             source.endBatch(FxRenderTypes.SUS_DEPTH);
@@ -255,6 +256,7 @@ public final class FxWorld {
             endDecals(source);
             KiMesh.flush(false);
             KakashiSusanoo.flush(camera, now, false);
+            GaaraSand.flush(camera, now, false);
             boolean outline = !space && Aura.drawMask(event, camera, partial);
             FxPost.beginGlow();
             if (outline) {

@@ -361,6 +361,19 @@ void main() {
         float m = clamp(ring + spokes * 0.85 + script * 0.7 + blood, 0., 1.) * Alpha; if (m < 0.01) discard;
         vec3 col = mix(vec3(0.32, 0.03, 0.03), vec3(1., 0.35, 0.2), Pulse * (0.6 + 0.4 * sin(Time * 20.)));
         emit(col * m, m * 0.9);
+    } else if (kind == 35) {                                           // Gaara's quicksand: a spiral of sand turning into the middle (Rot = spin, Pulse = sinking; Color/Color2/Dust/Size = base/shade/deep/light)
+        if (GlowPass > 0.5) discard;
+        vec2 p = vUv * 2. - 1.; float r = length(p), a = atan(p.y, p.x);
+        float sw = a - Rot + log(max(r, 0.04)) * 2.4;
+        float n = fbm3(vec3(cos(sw) * r * 3.2, sin(sw) * r * 3.2, Time * 0.15)) * 0.5 + 0.5;
+        float arms = sin(sw * 3. + n * 2.) * 0.5 + 0.5, l = n * 0.65 + arms * 0.35 * smoothstep(1., 0.3, r);
+        vec3 col = l > 0.6 ? Color : l > 0.42 ? Color2 : Dust;
+        col = mix(col, Dust * 0.55, smoothstep(0.42, 0., r) * (0.45 + 0.4 * Pulse));
+        float g = fract(sin(dot(floor((p + vec2(cos(sw), sin(sw)) * 0.02) * 140.), vec2(12.9898, 78.233))) * 43758.5453);
+        col = mix(col, Size, step(0.975, g) * 0.3); col *= 0.7;
+        float edge = 1. - smoothstep(0.7, 1.0, r + fbm3(vec3(p * 3.4, 2.)) * 0.18);
+        float al = edge * Alpha; if (al < 0.003) discard;
+        emit(col * al, al);
     } else {
         discard;
     }

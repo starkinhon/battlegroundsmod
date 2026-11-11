@@ -8,7 +8,8 @@
 // 13 Sasuke's Katon shell (forja/sasuke-chidori/katon.js), 14 its wall of fire on the ground, 15 Shikamaru's shadow running
 // on the ground, 16 his Xeque-mate's flood of shadow (forja/shikamaru/shika.js; both flat squares), 30 the Rasengan's glass
 // core, 31 its shell of wind streaks, 32 the Rasenshuriken's disc of four saw blades (forja/naruto-kit/naruto.js, naruto2.js), 33 Kakashi's Kamui
-// vortex (a sphere; Size = the axis), 34 his ninken seal of blood on the ground (flat square; forja/kakashi-kit).
+// vortex (a sphere; Size = the axis), 34 his ninken seal of blood on the ground (flat square; forja/kakashi-kit), 35 Gaara's quicksand (flat
+// square; forja/gaara-kit).
 in vec3 Position;
 
 uniform mat4 ModelViewMat;
@@ -114,7 +115,7 @@ void main() {
         vU = along; vD = tg; vQ = vec2(tw, along);
     } else if (kind == 31) {                                           // Rasengan: the shell of wind round the core, swelling a little
         n = normalize(Position); P = n * (1. + gn(n * 3. + vec3(Time * 2., 0., -Time * 1.6)) * 0.08); vO = n;
-    } else if (kind == 4 || kind == 9 || kind == 10 || kind == 15 || kind == 16 || kind == 32 || kind == 34) {   // flat square: dust ring, saw and Kienzan discs, shadows, Rasenshuriken
+    } else if (kind == 4 || kind == 9 || kind == 10 || kind == 15 || kind == 16 || kind == 32 || kind == 34 || kind == 35) {   // flat square: dust ring, saw and Kienzan discs, shadows, Rasenshuriken
         P = Position; n = vec3(0., 1., 0.); vUv = Position.xz * 0.5 + 0.5;
         vQ = Position.xz * vec2(length(Model[0].xyz), length(Model[2].xyz));   // in blocks, across and along the square
     } else if (kind == 5) {                                            // aura shell
