@@ -50,6 +50,11 @@ public final class ModWorldgen {
     // The Montanhas Paozu: the karst spires (worldgen/placed_feature/karst_spire).
     public static final Supplier<KarstSpireFeature> KARST_SPIRE = FEATURES.register("karst_spire",
             () -> new KarstSpireFeature(NoneFeatureConfiguration.CODEC));
+    // Namek's rock towers and trees (worldgen/placed_feature/namek_spire, namek_tree; tools/biomes/namek.py).
+    public static final Supplier<NamekSpireFeature> NAMEK_SPIRE = FEATURES.register("namek_spire",
+            () -> new NamekSpireFeature(NoneFeatureConfiguration.CODEC));
+    public static final Supplier<NamekTreeFeature> NAMEK_TREE = FEATURES.register("namek_tree",
+            () -> new NamekTreeFeature(NoneFeatureConfiguration.CODEC));
 
     // The Dragon Ball biomes of the normal overworld (tools/biomes/dragonball_biomes.py, put there by DragonRegion).
     public static final ResourceKey<Biome> TERRAS_DO_DRAGAO = biome("terras_do_dragao");
@@ -59,6 +64,7 @@ public final class ModWorldgen {
     public static final ResourceKey<Biome> MAR_DO_SUL = biome("mar_do_sul");
     public static final ResourceKey<Biome> NORTE_GELADO = biome("norte_gelado");
     public static final ResourceKey<Biome> MONTANHAS_PAOZU = biome("montanhas_paozu");
+    public static final ResourceKey<Biome> NAMEK = biome("namek");
     public static final TagKey<Biome> DRAGONBALL_BIOMES = TagKey.create(Registries.BIOME,
             ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "universe_dragonball"));
 

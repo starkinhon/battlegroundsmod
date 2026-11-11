@@ -33,7 +33,9 @@ import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 //   to driven snow and the white closing in, a cold blue grade with frost at the screen's edges, and at night the aurora:
 //   curtains of green light with violet tops waving slowly across the sky, rays running along them;
 // - in the Montanhas Paozu: mist lying in the valleys between the stone spires, sheets of it at a few heights drifting
-//   slowly, thick and thin by a moving pattern of its own, thicker at dawn and at night; the spires rise through it.
+//   slowly, thick and thin by a moving pattern of its own, thicker at dawn and at night; the spires rise through it;
+// - on Namek (Stark: "uma neblina leve verde, o céu de Namek"): a light green haze, a green grade, and the planet's
+//   three suns, each with its glowing halo.
 public final class DragonWind {
     private static final int MAX_GUSTS = 46;
     private static final int SAMPLES = 22;
@@ -63,6 +65,9 @@ public final class DragonWind {
     // 1 in the Montanhas Paozu.
     private static float hills;
     private static float lastHills;
+    // 1 on Namek.
+    private static float namek;
+    private static float lastNamek;
 
     private DragonWind() {
     }
@@ -74,6 +79,7 @@ public final class DragonWind {
         lastSea = sea;
         lastCold = cold;
         lastHills = hills;
+        lastNamek = namek;
         if (mc.level == null || mc.player == null) {
             GUSTS.clear();
             strength = 0;
@@ -83,7 +89,9 @@ public final class DragonWind {
             return;
         }
         var biome = mc.level.getBiome(mc.player.blockPosition());
-        boolean inside = biome.is(ModWorldgen.DRAGONBALL_BIOMES);
+        boolean onNamek = biome.is(ModWorldgen.NAMEK);
+        boolean inside = biome.is(ModWorldgen.DRAGONBALL_BIOMES) || onNamek;
+        namek = Mth.clamp(namek + (onNamek ? 0.02f : -0.02f), 0, 1);
         if (inside) {
             green = Mth.clamp(green + (biome.is(ModWorldgen.TERRA_SAGRADA) ? 0.015f : -0.015f), 0, 1);
         }
@@ -256,6 +264,18 @@ public final class DragonWind {
         }
         float partial = event.getPartialTick().getGameTimeDeltaPartialTick(false);
         Vec3 sun = sunDir(mc, partial);
+        float three = Mth.lerp(partial, lastNamek, namek);
+        if (three > 0.001f) {
+            // Namek's three suns: the sky's own one with a halo, and two more of ours, each a white-hot disc in a
+            // golden glow, at their fixed places in the sky (it's always day there).
+            PoseStack.Pose pose = event.getPoseStack().last();
+            MultiBufferSource.BufferSource buf = mc.renderBuffers().bufferSource();
+            VertexConsumer o = buf.getBuffer(FxRenderTypes.AREA);
+            halo(o, pose, sun, 0.55f * three, 46, 1f, 0.97f, 0.8f, false);
+            halo(o, pose, dir(40, 34), three, 40, 1f, 0.95f, 0.75f, true);
+            halo(o, pose, dir(205, 22), 0.85f * three, 34, 1f, 0.92f, 0.7f, true);
+            buf.endBatch(FxRenderTypes.AREA);
+        }
         float power = sunPower(mc, partial, sun);
         if (power <= 0.001f || mc.level.isRaining()) {
             return;
@@ -430,6 +450,45 @@ public final class DragonWind {
                 (float) (Math.cos(el) * Math.sin(az) * d)).setColor(r, g, b, a);
     }
 
+    private static Vec3 dir(double azimuth, double elevation) {
+        double a = Math.toRadians(azimuth), e = Math.toRadians(elevation);
+        return new Vec3(Math.cos(e) * Math.cos(a), Math.sin(e), Math.cos(e) * Math.sin(a));
+    }
+
+    // A glow around a direction in the sky, with a solid bright disc in the middle for a sun of our own.
+    private static void halo(VertexConsumer out, PoseStack.Pose last, Vec3 dir, float power, double radius, float r, float g,
+            float b, boolean disc) {
+        Vec3 up = Math.abs(dir.z) < 0.9 ? new Vec3(0, 0, 1) : new Vec3(1, 0, 0);
+        Vec3 right = dir.cross(up).normalize();
+        Vec3 down = dir.cross(right).normalize();
+        Vec3 center = dir.scale(100);
+        int rings = 12, segments = 36;
+        for (int i = 0; i < rings; i++) {
+            double r0 = radius * Math.pow((double) i / rings, 1.6), r1 = radius * Math.pow((double) (i + 1) / rings, 1.6);
+            float a0 = power * glow((float) i / rings), a1 = power * glow((float) (i + 1) / rings);
+            for (int j = 0; j < segments; j++) {
+                double t0 = j * Mth.TWO_PI / segments, t1 = (j + 1) * Mth.TWO_PI / segments;
+                vertex(out, last, center, right, down, r0, t0, r, g, b, a0);
+                vertex(out, last, center, right, down, r1, t0, r, g, b, a1);
+                vertex(out, last, center, right, down, r1, t1, r, g, b, a1);
+                vertex(out, last, center, right, down, r0, t1, r, g, b, a0);
+            }
+        }
+        if (disc) {
+            for (int j = 0; j < segments; j++) {
+                double t0 = j * Mth.TWO_PI / segments, t1 = (j + 1) * Mth.TWO_PI / segments;
+                for (int layer = 0; layer < 2; layer++) {
+                    double rr = layer == 0 ? 5.5 : 4;
+                    float a = layer == 0 ? 0.6f * power : power;
+                    vertex(out, last, center, right, down, 0, t0, 1, 1, 0.94f, a);
+                    vertex(out, last, center, right, down, rr, t0, 1, 1, 0.9f, a);
+                    vertex(out, last, center, right, down, rr, t1, 1, 1, 0.9f, a);
+                    vertex(out, last, center, right, down, 0, t1, 1, 1, 0.94f, a);
+                }
+            }
+        }
+    }
+
     // The halo's brightness from its middle (0) to its rim (1).
     private static float glow(float k) {
         return 0.55f * (float) Math.pow(1 - k, 2.4) + 0.25f * (float) Math.exp(-k * k * 60);
@@ -478,8 +537,11 @@ public final class DragonWind {
         float sunny = Mth.lerp(partial, lastSea, sea);
         float chill = Mth.lerp(partial, lastCold, cold);
         float lush = Mth.lerp(partial, lastHills, hills);
-        int wash = mix(mix(mix(mix(mix(0xFF9A30, 0xC8EC6A, green), 0xFF5E1A, dry), 0xFFE07A, sunny), 0xA2B2C6, chill), 0x86E2CC, lush);
-        int edge = mix(mix(mix(mix(mix(0xB0480E, 0x4E8A20, green), 0x7A2006, dry), 0xC88A30, sunny), 0xD8E2EC, chill), 0x1E6A60, lush);
+        float nk = Mth.lerp(partial, lastNamek, namek);
+        int wash = mix(mix(mix(mix(mix(mix(0xFF9A30, 0xC8EC6A, green), 0xFF5E1A, dry), 0xFFE07A, sunny), 0xA2B2C6, chill), 0x86E2CC, lush),
+                0xA8F07A, nk);
+        int edge = mix(mix(mix(mix(mix(mix(0xB0480E, 0x4E8A20, green), 0x7A2006, dry), 0xC88A30, sunny), 0xD8E2EC, chill), 0x1E6A60, lush),
+                0x2E6E1E, nk);
         graphics.fill(0, 0, w, h, argb((0.07f - 0.015f * green + 0.035f * dry - 0.025f * sunny + 0.03f * chill + 0.02f * lush) * fade, wash));
         // The glare of the tropical sun when the player looks toward it.
         Minecraft mc = Minecraft.getInstance();
@@ -515,6 +577,8 @@ public final class DragonWind {
         // a light cold haze over the Norte Gelado all the time, the blizzard on top of it
         float white = Math.max(whiteout((float) event.getPartialTick()),
                 Mth.lerp((float) event.getPartialTick(), lastCold, cold) * strength * 0.18f);
+        // Namek's light green haze, a bit closer than the cold's
+        white = Math.max(white, Mth.lerp((float) event.getPartialTick(), lastNamek, namek) * 0.4f);
         if ((d <= 0.001f && white <= 0.001f) || event.getMode() != net.minecraft.client.renderer.FogRenderer.FogMode.FOG_TERRAIN) {
             return;
         }
@@ -546,7 +610,15 @@ public final class DragonWind {
             event.setGreen(Mth.lerp(grey, event.getGreen(), 0.75f * lum));
             event.setBlue(Mth.lerp(grey, event.getBlue(), 0.82f * lum));
         }
-        if (white > 0.001f) {
+        float haze = Mth.lerp((float) event.getPartialTick(), lastNamek, namek);
+        if (haze > 0.001f) {
+            float lum = Mth.clamp((event.getRed() + event.getGreen() + event.getBlue()) / 3f / 0.7f, 0.08f, 1.2f);
+            float k = 0.55f * haze;
+            event.setRed(Mth.lerp(k, event.getRed(), 0.66f * lum));
+            event.setGreen(Mth.lerp(k, event.getGreen(), 0.9f * lum));
+            event.setBlue(Mth.lerp(k, event.getBlue(), 0.52f * lum));
+        }
+        if (white > 0.001f && haze < 0.5f) {
             float lum = Mth.clamp((event.getRed() + event.getGreen() + event.getBlue()) / 3f / 0.7f, 0.08f, 1.2f);
             float k = 0.75f * white;
             event.setRed(Mth.lerp(k, event.getRed(), 0.84f * lum));

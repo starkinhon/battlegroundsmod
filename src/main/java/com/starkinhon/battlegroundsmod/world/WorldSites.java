@@ -184,6 +184,12 @@ public final class WorldSites {
     // Where someone gets the buildings and pads once a site is known (and again after a restart).
     private static void links(ServerLevel level, Site site) {
         MapPlaces.addWorldPlace(place(site));
+        if (CAPSULE.equals(site.kind())) {
+            // Bulma's ship went to Namek: the pad by Capsule Corp takes you there
+            MapPlaces.addWorldPad(new MapPlaces.Pad(id(site) + "/ir_namek", id(site),
+                    new BlockPos(site.x(), site.y(), site.z() + NAMEK_PAD), NamekWorld.PAD_PLACE, NamekWorld.besidePad(),
+                    "message.battlegroundsmod.pad_namek", NamekWorld.MAP));
+        }
         if (KARIN.equals(site.kind())) {
             MapPlaces.addWorldPlace(lookoutPlace(site));
             BlockPos korinPad = new BlockPos(site.x() + 14, site.y() + KORIN_FLOOR, site.z());
@@ -226,7 +232,7 @@ public final class WorldSites {
         BlockState grass = s(Blocks.GRASS_BLOCK), dirt = s(Blocks.DIRT);
         BlockState sand = s(Blocks.RED_SAND), sandstone = s(Blocks.RED_SANDSTONE);
         return switch (site.kind()) {
-            case CAPSULE -> b.clearUp(38, 0, 32).foundation(37, 10, grass, dirt).template("dragonball/capsule_corp", 0, 0, 0);
+            case CAPSULE -> namekPad(b.clearUp(38, 0, 32).foundation(37, 10, grass, dirt).template("dragonball/capsule_corp", 0, 0, 0));
             case GOKU -> b.clearUp(24, 0, 24).foundation(23, 10, grass, dirt).template("dragonball/goku_house", 0, 0, 0);
             case KARIN -> b.clearUp(20, 0, 14).foundation(19, 8, grass, dirt).template("dragonball/korin_tower", 0, 0, 0);
             case CELL_RING -> b.clearUp(34, 0, 48).foundation(33, 10, s(Blocks.STONE), s(Blocks.STONE))
@@ -264,6 +270,28 @@ public final class WorldSites {
             }
         }
         b.template("dragonball/kame_house", 0, 0, 0);
+        return b;
+    }
+
+    // The pad to Namek on Capsule Corp's grounds, toward the edge of its lawn.
+    private static final int NAMEK_PAD = 34;
+
+    private static Build namekPad(Build b) {
+        b.disc(0, -1, NAMEK_PAD, 2.6, s(Blocks.SMOOTH_STONE));
+        b.disc(0, -1, NAMEK_PAD, 1.6, s(Blocks.LIGHT_BLUE_CONCRETE));
+        b.set(0, -1, NAMEK_PAD, Blocks.SEA_LANTERN);
+        for (int[] c : new int[][] {{2, 2}, {-2, 2}, {2, -2}, {-2, -2}}) {
+            b.set(c[0], 0, NAMEK_PAD + c[1], Blocks.END_ROD);
+        }
+        for (int i = -3; i <= 3; i++) {
+            for (int k = -3; k <= 3; k++) {
+                for (int j = 0; j < 4; j++) {
+                    if (!(Math.abs(i) == 2 && Math.abs(k) == 2 && j == 0)) {
+                        b.set(i, j, NAMEK_PAD + k, Blocks.AIR);
+                    }
+                }
+            }
+        }
         return b;
     }
 

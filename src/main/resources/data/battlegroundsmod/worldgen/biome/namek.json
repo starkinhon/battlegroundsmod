@@ -4,14 +4,51 @@
   "downfall": 0.0,
   "effects": {
     "sky_color": 6472252,
-    "fog_color": 14479264,
+    "fog_color": 13494688,
     "water_color": 4177786,
     "water_fog_color": 2788442,
     "grass_color": 5224150,
-    "foliage_color": 3114680
+    "foliage_color": 3114680,
+    "mood_sound": {
+      "block_search_extent": 8,
+      "offset": 2.0,
+      "sound": "minecraft:ambient.cave",
+      "tick_delay": 6000
+    }
   },
-  "spawners": {},
+  "spawners": {
+    "ambient": [],
+    "axolotls": [],
+    "creature": [],
+    "misc": [],
+    "monster": [],
+    "underground_water_creature": [],
+    "water_ambient": [],
+    "water_creature": []
+  },
   "spawn_costs": {},
-  "carvers": {},
-  "features": []
+  "carvers": {
+    "air": [
+      "minecraft:cave",
+      "minecraft:canyon"
+    ]
+  },
+  "features": [
+    [],
+    [],
+    [],
+    [],
+    [
+      "battlegroundsmod:namek_spire"
+    ],
+    [],
+    [],
+    [],
+    [],
+    [
+      "battlegroundsmod:namek_tree",
+      "battlegroundsmod:namek_grass"
+    ],
+    []
+  ]
 }
