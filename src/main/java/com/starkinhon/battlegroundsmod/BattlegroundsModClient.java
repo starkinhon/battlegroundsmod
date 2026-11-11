@@ -165,6 +165,20 @@ public class BattlegroundsModClient {
 
     // Aizen's sword item is drawn by its own renderer (the 3D model from the Armario Souls viewer).
     private static void onRegisterClientExtensions(RegisterClientExtensionsEvent event) {
+        // the Esferas do Dragão: the 3D ball of the Shenlong cutscene, one renderer for all seven
+        com.starkinhon.battlegroundsmod.client.DragonBallRenderer[] dragonBall = new com.starkinhon.battlegroundsmod.client.DragonBallRenderer[1];
+        IClientItemExtensions dragonBallExt = new IClientItemExtensions() {
+            @Override
+            public BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                if (dragonBall[0] == null) {
+                    dragonBall[0] = new com.starkinhon.battlegroundsmod.client.DragonBallRenderer();
+                }
+                return dragonBall[0];
+            }
+        };
+        for (var ball : ModItems.DRAGON_BALLS) {
+            event.registerItem(dragonBallExt, ball.get());
+        }
         AizenSwordRenderer[] renderer = new AizenSwordRenderer[1];
         event.registerItem(new IClientItemExtensions() {
             @Override

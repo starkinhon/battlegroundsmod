@@ -72,6 +72,8 @@ public final class FxShaders {
     static ShaderInstance sdDrop;
     static ShaderInstance sdWave;
     static ShaderInstance sdPano;
+    // The Esferas do Dragão (DragonBallRenderer), the ball of the Shenlong cutscene.
+    static ShaderInstance dball;
 
     private static Boolean irisPresent;
 
@@ -166,6 +168,12 @@ public final class FxShaders {
             register(event, "souls_sd_pano", DefaultVertexFormat.POSITION, s -> sdPano = s);
         } catch (Exception e) {
             BattlegroundsMod.LOGGER.error("Could not load the Sukuna Domain Expansion shaders", e);
+        }
+        // On its own: without it the Esferas do Dragão are drawn plain orange (no stars).
+        try {
+            register(event, "souls_dball", DefaultVertexFormat.NEW_ENTITY, s -> dball = s);
+        } catch (Exception e) {
+            BattlegroundsMod.LOGGER.error("Could not load the Dragon Ball shader", e);
         }
         // On its own: without it the duel still plays, just without its sky.
         try {

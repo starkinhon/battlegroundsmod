@@ -234,6 +234,20 @@ public final class FxRenderTypes extends RenderType {
                         .createCompositeState(true)));
     }
 
+    // The Esferas do Dragão (DragonBallRenderer): souls_dball, solid, lit by the lightmap. The vertex color carries the
+    // ball's own normal and the number of stars (see souls_dball.vsh).
+    private static final ShaderStateShard DBALL_SHADER = new ShaderStateShard(() -> FxShaders.dball);
+    public static final RenderType DBALL = create("battlegroundsmod_dball", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 8192,
+            true, false, CompositeState.builder()
+                    .setShaderState(DBALL_SHADER)
+                    .setLightmapState(LIGHTMAP)
+                    .setCullState(CULL)
+                    .createCompositeState(true));
+
+    public static boolean dballReady() {
+        return FxShaders.dball != null && !FxShaders.flat();
+    }
+
     // The texture a vanilla render type draws with, or null when it has none or can't be read.
     private static final java.util.Map<RenderType, java.util.Optional<ResourceLocation>> TEXTURES = new java.util.HashMap<>();
 
