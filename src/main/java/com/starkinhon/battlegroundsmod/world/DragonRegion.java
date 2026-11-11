@@ -41,7 +41,7 @@ public final class DragonRegion extends Region {
     public void addBiomes(Registry<Biome> registry, Consumer<Pair<Climate.ParameterPoint, ResourceKey<Biome>>> mapper) {
         this.addModifiedVanillaOverworldBiomes(mapper, builder -> {
             for (ResourceKey<Biome> peak : java.util.List.of(Biomes.JAGGED_PEAKS, Biomes.STONY_PEAKS,
-                    Biomes.WINDSWEPT_SAVANNA, Biomes.SAVANNA_PLATEAU, Biomes.WOODED_BADLANDS)) {
+                    Biomes.WOODED_BADLANDS)) {
                 builder.replaceBiome(peak, ModWorldgen.PICOS_DO_DRAGAO);
             }
             // The savanna's hot dry climate joins the desert, so the Deserto do Diabo spreads wide (Stark).
@@ -52,8 +52,7 @@ public final class DragonRegion extends Region {
             // alone is small patches, so the taigas and birch woods join it and the forest spreads wide (Stark: "é como
             // se ele fosse minúsculo").
             for (ResourceKey<Biome> woods : java.util.List.of(Biomes.FOREST, Biomes.FLOWER_FOREST, Biomes.DARK_FOREST,
-                    Biomes.BIRCH_FOREST, Biomes.OLD_GROWTH_BIRCH_FOREST, Biomes.TAIGA, Biomes.OLD_GROWTH_PINE_TAIGA,
-                    Biomes.OLD_GROWTH_SPRUCE_TAIGA, Biomes.JUNGLE, Biomes.SPARSE_JUNGLE,
+                    Biomes.BIRCH_FOREST, Biomes.OLD_GROWTH_BIRCH_FOREST, Biomes.JUNGLE, Biomes.SPARSE_JUNGLE,
                     Biomes.BAMBOO_JUNGLE, Biomes.MANGROVE_SWAMP)) {
                 builder.replaceBiome(woods, ModWorldgen.TERRA_SAGRADA);
             }
@@ -69,8 +68,11 @@ public final class DragonRegion extends Region {
             }
             // The green hills and windswept highlands become the Montanhas Paozu (Stark 2026-11-11: "um diferencial
             // foda"): a forest of steep karst spires (KarstSpireFeature) with mist lying between them, Goku's home.
+            // Stark's test: it was small (Karin on one side, snow right ahead), so the taigas and the savanna highlands
+            // join it too.
             for (ResourceKey<Biome> hills : java.util.List.of(Biomes.WINDSWEPT_HILLS, Biomes.WINDSWEPT_GRAVELLY_HILLS,
-                    Biomes.WINDSWEPT_FOREST, Biomes.MEADOW, Biomes.CHERRY_GROVE)) {
+                    Biomes.WINDSWEPT_FOREST, Biomes.MEADOW, Biomes.CHERRY_GROVE, Biomes.TAIGA, Biomes.OLD_GROWTH_PINE_TAIGA,
+                    Biomes.OLD_GROWTH_SPRUCE_TAIGA, Biomes.WINDSWEPT_SAVANNA, Biomes.SAVANNA_PLATEAU)) {
                 builder.replaceBiome(hills, ModWorldgen.MONTANHAS_PAOZU);
             }
             // The cold climates, flat or mountain, become the Norte Gelado (Stark 2026-11-11: "pode meter bala"): snow,

@@ -88,7 +88,9 @@ biome("mar_do_sul", 0.95, 0x6FC6FF, 0xFFF0BC, 0x2EE0D2, 0x14A4B4, 0x6FE04A, 0x4F
 # Muscle Tower stood. Deep snow with glazed ice ponds, huge ice crystal clusters (world/IceCrystalFeature) and tall pines
 # loaded with snow (world/SnowPineFeature); a pale cold sky, and (client/fx/DragonWind) blizzards that come and go, a cold
 # grade with frost at the screen's edges and the aurora over it all at night. It snows when it rains.
-biome("norte_gelado", -0.6, 0x9CC6EE, 0xDCEAF6, 0x3D57D6, 0x050533, 0x80B497, 0x60A17C,
+# Stark's test: the sky a greyer, less saturated blue, as if the icy wind covered the sun (so it doesn't look like the
+# vanilla snow next to it).
+biome("norte_gelado", -0.6, 0x98A8BA, 0xC6D0DA, 0x3D57D6, 0x050533, 0x80B497, 0x60A17C,
       features(["battlegroundsmod:ice_crystal"], ["battlegroundsmod:snow_pine"]),
       music="minecraft:music.overworld.frozen_peaks", snow=True)
 
@@ -97,7 +99,8 @@ biome("norte_gelado", -0.6, 0x9CC6EE, 0xDCEAF6, 0x3D57D6, 0x050533, 0x80B497, 0x
 # steep karst spires rising out of them like Guilin's (world/KarstSpireFeature: rock columns, moss, vines, a tree on the
 # crown, waterfalls), puffy trees between them, lush grass; clear blue sky and (client/fx/DragonWind) mist lying in the
 # valleys between the spires, thicker in the morning and at night.
-biome("montanhas_paozu", 0.7, 0x86CDF2, 0xE4F2E2, 0x3FC4E0, 0x0F5A6E, 0x6CC64A, 0x4DB43A,
+# Stark's test: a blue-green look (teal sky, minty haze, yellow-green grass).
+biome("montanhas_paozu", 0.7, 0x74D2CC, 0xD2F0E2, 0x3FC4E0, 0x0F5A6E, 0x86D24C, 0x5CBE3E,
       features(["battlegroundsmod:karst_spire"],
                ["battlegroundsmod:puffy_tree_paozu", "minecraft:flower_default", "minecraft:patch_grass_forest"]))
 

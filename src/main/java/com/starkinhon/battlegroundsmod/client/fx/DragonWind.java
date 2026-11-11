@@ -478,9 +478,9 @@ public final class DragonWind {
         float sunny = Mth.lerp(partial, lastSea, sea);
         float chill = Mth.lerp(partial, lastCold, cold);
         float lush = Mth.lerp(partial, lastHills, hills);
-        int wash = mix(mix(mix(mix(mix(0xFF9A30, 0xC8EC6A, green), 0xFF5E1A, dry), 0xFFE07A, sunny), 0x8CC4FF, chill), 0xB8F0C8, lush);
-        int edge = mix(mix(mix(mix(mix(0xB0480E, 0x4E8A20, green), 0x7A2006, dry), 0xC88A30, sunny), 0xEAF6FF, chill), 0x2E7050, lush);
-        graphics.fill(0, 0, w, h, argb((0.07f - 0.015f * green + 0.035f * dry - 0.025f * sunny - 0.01f * chill) * fade, wash));
+        int wash = mix(mix(mix(mix(mix(0xFF9A30, 0xC8EC6A, green), 0xFF5E1A, dry), 0xFFE07A, sunny), 0xA2B2C6, chill), 0x86E2CC, lush);
+        int edge = mix(mix(mix(mix(mix(0xB0480E, 0x4E8A20, green), 0x7A2006, dry), 0xC88A30, sunny), 0xD8E2EC, chill), 0x1E6A60, lush);
+        graphics.fill(0, 0, w, h, argb((0.07f - 0.015f * green + 0.035f * dry - 0.025f * sunny + 0.03f * chill + 0.02f * lush) * fade, wash));
         // The glare of the tropical sun when the player looks toward it.
         Minecraft mc = Minecraft.getInstance();
         if (sunny > 0.001f && mc.level != null && mc.player != null && !mc.level.isRaining()) {
@@ -512,7 +512,9 @@ public final class DragonWind {
     // darker at night with the sky.
     public static void onFog(net.neoforged.neoforge.client.event.ViewportEvent.RenderFog event) {
         float d = (float) Mth.lerp(event.getPartialTick(), lastDesert, desert) * strength;
-        float white = whiteout((float) event.getPartialTick());
+        // a light cold haze over the Norte Gelado all the time, the blizzard on top of it
+        float white = Math.max(whiteout((float) event.getPartialTick()),
+                Mth.lerp((float) event.getPartialTick(), lastCold, cold) * strength * 0.18f);
         if ((d <= 0.001f && white <= 0.001f) || event.getMode() != net.minecraft.client.renderer.FogRenderer.FogMode.FOG_TERRAIN) {
             return;
         }
@@ -536,6 +538,14 @@ public final class DragonWind {
 
     public static void onFogColor(net.neoforged.neoforge.client.event.ViewportEvent.ComputeFogColor event) {
         float white = whiteout((float) event.getPartialTick());
+        // the Norte Gelado's grey: the icy wind dulls the light even when calm
+        float grey = Mth.lerp((float) event.getPartialTick(), lastCold, cold) * strength * 0.35f;
+        if (grey > 0.001f) {
+            float lum = Mth.clamp((event.getRed() + event.getGreen() + event.getBlue()) / 3f / 0.7f, 0.08f, 1.2f);
+            event.setRed(Mth.lerp(grey, event.getRed(), 0.7f * lum));
+            event.setGreen(Mth.lerp(grey, event.getGreen(), 0.75f * lum));
+            event.setBlue(Mth.lerp(grey, event.getBlue(), 0.82f * lum));
+        }
         if (white > 0.001f) {
             float lum = Mth.clamp((event.getRed() + event.getGreen() + event.getBlue()) / 3f / 0.7f, 0.08f, 1.2f);
             float k = 0.75f * white;

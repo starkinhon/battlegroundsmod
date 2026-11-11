@@ -140,7 +140,8 @@ public final class UniverseSpawns {
         }
         if (biome.is(com.starkinhon.battlegroundsmod.world.ModWorldgen.NORTE_GELADO)) {
             // the frozen north: the yeti and the Red Ribbon (its Muscle Tower stood in the snow)
-            return List.of("yeti", "yeti", "soldado_red_ribbon", "soldado_red_ribbon");
+            // only the yeti (Stark 2026-11-11)
+            return List.of("yeti");
         }
         if (biome.is(com.starkinhon.battlegroundsmod.world.ModWorldgen.MAR_DO_SUL)) {
             // the islands and the ships' decks: the pirates' sea
@@ -255,6 +256,11 @@ public final class UniverseSpawns {
         int x = player.getBlockX() + (int) Math.round(Math.cos(angle) * dist);
         int z = player.getBlockZ() + (int) Math.round(Math.sin(angle) * dist);
         if (!level.hasChunkAt(new BlockPos(x, 0, z)) || UniverseBiomes.universeAt(level, new BlockPos(x, 64, z)) == null) {
+            return;
+        }
+        // none over the Norte Gelado (Stark 2026-11-11: only the yeti lives there)
+        if (level.getBiome(new BlockPos(x, 64, z)).is(com.starkinhon.battlegroundsmod.world.ModWorldgen.NORTE_GELADO)
+                || level.getBiome(player.blockPosition()).is(com.starkinhon.battlegroundsmod.world.ModWorldgen.NORTE_GELADO)) {
             return;
         }
         int y = Math.max(level.getHeight(Heightmap.Types.MOTION_BLOCKING, x, z), player.getBlockY()) + 24 + random.nextInt(18);
