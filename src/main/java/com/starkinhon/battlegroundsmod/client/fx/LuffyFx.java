@@ -1751,25 +1751,23 @@ public final class LuffyFx {
         BlockPos.MutableBlockPos at = new BlockPos.MutableBlockPos();
         int drawn = 0;
         for (Rubber rb : RUBBERS) {
-            double age = (now - rb.born()) / 20, R = age * 26, wid = 5 + age * 6, fade = Math.exp(-age * 0.9) * rb.w();
-            double r0 = Math.max(0, R - wid * 1.8), r1 = Math.min(48, R + wid * 1.8);
+            // slower and narrower than the page (26 blocks/s): at Minecraft's scale the page's ring went past any spot
+            // in a fifth of a second and read as nothing; this one rolls past Luffy's feet in waves you can follow
+            double age = (now - rb.born()) / 20, R = age * 13, wid = 3 + age * 2.5, fade = Math.exp(-age * 0.7) * rb.w();
+            double r0 = Math.max(0, R - wid * 1.4), r1 = Math.min(40, R + wid * 1.4);
             if (fade < 0.04 || r0 >= r1) {
                 continue;
             }
             int cx = Mth.floor(rb.c().x), cz = Mth.floor(rb.c().z), n = (int) Math.ceil(r1);
-            // the cap must hold a whole ring (about 3000 raised blocks at its widest): a smaller one filled up
-            // on the first rows of x and left the wave only on one side
-            for (int x = -n; x <= n && drawn < 4500; x++) {
-                for (int z = -n; z <= n && drawn < 4500; z++) {
+            for (int x = -n; x <= n && drawn < 12000; x++) {
+                for (int z = -n; z <= n && drawn < 12000; z++) {
                     double r = Math.sqrt(x * x + z * z);
                     if (r < r0 || r > r1) {
                         continue;
                     }
                     int wx = cx + x, wz = cz + z;
-                    double s = hash(wx, wz);
-                    double env = Math.exp(-Math.pow((r - R) / wid, 2)) * fade;
-                    double dy = Math.sin((r - R) * 0.55 - age * 9) * env * (1.1 + 0.6 * s);
-                    if (dy < 0.12) {
+                    double h = swell(cx, cz, wx, wz, age, R, wid, fade);
+                    if (h < 0.1) {
                         continue;
                     }
                     int top = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, wx, wz) - 1;
@@ -1779,19 +1777,35 @@ public final class LuffyFx {
                         continue;
                     }
                     int light = LevelRenderer.getLightColor(level, at.above());
+                    BlockState under = st.is(Blocks.GRASS_BLOCK) ? Blocks.DIRT.defaultBlockState() : st;
                     pose.pushPose();
-                    pose.translate(wx - cam.x, top + dy - cam.y, wz - cam.z);
+                    pose.translate(wx - cam.x, top + h - cam.y, wz - cam.z);
                     blocks.renderSingleBlock(st, pose, source, light, OverlayTexture.NO_OVERLAY);
-                    if (dy > 0.55) {
+                    drawn++;
+                    // the column's side down to the real ground, so the swell reads as earth and not a floating slab
+                    // (only as deep as the lowest neighbour column leaves showing)
+                    double low = Math.min(Math.min(swell(cx, cz, wx + 1, wz, age, R, wid, fade), swell(cx, cz, wx - 1, wz, age, R, wid, fade)),
+                            Math.min(swell(cx, cz, wx, wz + 1, age, R, wid, fade), swell(cx, cz, wx, wz - 1, age, R, wid, fade)));
+                    int sides = Math.min(4, (int) Math.ceil(h - Math.max(0, low)));
+                    for (int k = 1; k <= sides; k++) {
                         pose.translate(0, -1, 0);
-                        blocks.renderSingleBlock(st.is(Blocks.GRASS_BLOCK) ? Blocks.DIRT.defaultBlockState() : st, pose, source, light, OverlayTexture.NO_OVERLAY);
+                        blocks.renderSingleBlock(under, pose, source, light, OverlayTexture.NO_OVERLAY);
+                        drawn++;
                     }
                     pose.popPose();
-                    drawn++;
                 }
             }
         }
         source.endBatch();
+    }
+
+    // The real ground can't sink, so the wave rides on a swell: the band lifts with the envelope and the page's ring
+    // rolls on top of it (never below the real ground, so no hole shows through).
+    private static double swell(int cx, int cz, int wx, int wz, double age, double R, double wid, double fade) {
+        double dx = wx - cx, dz = wz - cz, r = Math.sqrt(dx * dx + dz * dz);
+        double env = Math.exp(-Math.pow((r - R) / wid, 2)) * fade;
+        double ring = Math.sin((r - R) * 0.9 - age * 9);
+        return env * (1.6 + 1.3 * ring * (0.8 + 0.4 * hash(wx, wz)));
     }
 
     private static double hash(int x, int z) {
