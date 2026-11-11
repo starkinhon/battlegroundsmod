@@ -160,6 +160,15 @@ public final class ModEntities {
             () -> EntityType.Builder.<com.starkinhon.battlegroundsmod.animal.Dinosaur>of(com.starkinhon.battlegroundsmod.animal.Dinosaur::new, MobCategory.MONSTER)
                     .sized(0.9f, 1.3f).eyeHeight(1.15f).clientTrackingRange(10).build("raptor"));
 
+    // The Dragon Ball start (Stark 2026-11-10): Raditz's opening fight, the Cell Jr. of Cell's ring, Babidi's guardians.
+    public static final Supplier<EntityType<SoulMob>> RADITZ = mob("raditz");
+    public static final Supplier<EntityType<SoulMob>> CELL_JR = ENTITY_TYPES.register("cell_jr", () -> EntityType.Builder.<SoulMob>of(SoulMob::new, MobCategory.MONSTER)
+            .sized(0.5f, 1.3f).eyeHeight(1.15f).clientTrackingRange(10).build("cell_jr"));
+    public static final Supplier<EntityType<SoulMob>> PUI_PUI = mob("pui_pui");
+    public static final Supplier<EntityType<SoulMob>> YAKON = ENTITY_TYPES.register("yakon", () -> EntityType.Builder.<SoulMob>of(SoulMob::new, MobCategory.MONSTER)
+            .sized(0.8f, 2.3f).eyeHeight(2.05f).clientTrackingRange(10).build("yakon"));
+    public static final Supplier<EntityType<SoulMob>> DABURA = mob("dabura");
+
     // Common enemies of Naruto.
     public static final Supplier<EntityType<SoulMob>> NINJA_RENEGADO = mob("ninja_renegado");
     public static final Supplier<EntityType<SoulMob>> NINJA_SOM = mob("ninja_som");
@@ -181,11 +190,14 @@ public final class ModEntities {
     public static final java.util.List<Supplier<EntityType<SoulMob>>> FIGHTERS = java.util.List.of(FIGHTER_HUMANO, FIGHTER_RUA, FIGHTER_QUARTEIRAO,
             SOLDADO_RED_RIBBON, SAIBAMAN, SOLDADO_FREEZA, BANDIDO_DESERTO, PIRATA, YETI, NINJA_RENEGADO, NINJA_SOM, ANBU_RAIZ,
             MALDICAO_MENOR, MALDICAO_GRAU2, FEITICEIRO_RENEGADO, HOLLOW, ARRANCAR, MENOS_GRANDE,
-            ONI_COMUM, ONI_LUA_INFERIOR, ONI_ESPADACHIM);
+            ONI_COMUM, ONI_LUA_INFERIOR, ONI_ESPADACHIM, RADITZ, CELL_JR, PUI_PUI, YAKON, DABURA);
 
     // Friendly NPCs of the universes (npc/UniverseNpc): they teach, give and talk, never fight.
     public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.npc.UniverseNpc>> NPC_GOHAN = npc("npc_gohan");
     public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.npc.UniverseNpc>> NPC_KORIN = npc("npc_korin");
+    public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.npc.UniverseNpc>> NPC_BULMA = npc("npc_bulma");
+    public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.npc.UniverseNpc>> NPC_MESTRE_KAME = npc("npc_mestre_kame");
+    public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.npc.UniverseNpc>> NPC_BOO = npc("npc_boo");
     public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.npc.UniverseNpc>> NPC_JIRAIYA = npc("npc_jiraiya");
     public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.npc.UniverseNpc>> NPC_TEUCHI = npc("npc_teuchi");
     public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.npc.UniverseNpc>> NPC_SHOKO = npc("npc_shoko");
@@ -253,6 +265,9 @@ public final class ModEntities {
         event.put(RAPTOR.get(), com.starkinhon.battlegroundsmod.animal.Dinosaur.attributes(false).build());
         event.put(NPC_GOHAN.get(), com.starkinhon.battlegroundsmod.npc.UniverseNpc.createAttributes().build());
         event.put(NPC_KORIN.get(), com.starkinhon.battlegroundsmod.npc.UniverseNpc.createAttributes().build());
+        event.put(NPC_BULMA.get(), com.starkinhon.battlegroundsmod.npc.UniverseNpc.createAttributes().build());
+        event.put(NPC_MESTRE_KAME.get(), com.starkinhon.battlegroundsmod.npc.UniverseNpc.createAttributes().build());
+        event.put(NPC_BOO.get(), com.starkinhon.battlegroundsmod.npc.UniverseNpc.createAttributes().build());
         event.put(NPC_JIRAIYA.get(), com.starkinhon.battlegroundsmod.npc.UniverseNpc.createAttributes().build());
         event.put(NPC_TEUCHI.get(), com.starkinhon.battlegroundsmod.npc.UniverseNpc.createAttributes().build());
         event.put(NPC_SHOKO.get(), com.starkinhon.battlegroundsmod.npc.UniverseNpc.createAttributes().build());

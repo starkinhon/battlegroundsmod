@@ -91,6 +91,7 @@ public final class SkillEffects {
             SkillAudio.clear();
             FlightFx.clear();
             com.starkinhon.battlegroundsmod.client.FlightClient.clear();
+            com.starkinhon.battlegroundsmod.client.QuestHud.clear();
             return;
         }
         long now = ScreenFx.now();

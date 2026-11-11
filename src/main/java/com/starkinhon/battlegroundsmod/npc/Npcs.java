@@ -78,8 +78,19 @@ public final class Npcs {
 
     public static void talk(ServerPlayer player, UniverseNpc npc) {
         switch (npc.npcId()) {
-            case "gohan" -> gohan(player, npc);
-            case "korin" -> korin(player, npc);
+            case "gohan" -> {
+                gohan(player, npc);
+                if (com.starkinhon.battlegroundsmod.universe.Flight.knows(player)) {
+                    com.starkinhon.battlegroundsmod.universe.DbQuests.grandpaBall(player);
+                }
+            }
+            case "korin" -> {
+                korin(player, npc);
+                com.starkinhon.battlegroundsmod.universe.DbQuests.advance(player, "karin", 1);
+            }
+            case "bulma" -> com.starkinhon.battlegroundsmod.universe.DbActivities.bulma(player, npc);
+            case "mestre_kame" -> com.starkinhon.battlegroundsmod.universe.DbActivities.roshi(player, npc);
+            case "boo" -> com.starkinhon.battlegroundsmod.universe.DbActivities.boo(player, npc);
             case "jiraiya" -> jiraiya(player, npc);
             case "shoko" -> shoko(player, npc);
             case "yoruichi" -> teach(player, npc, "yoruichi", com.starkinhon.battlegroundsmod.universe.BleachWorld.SHUNPO);

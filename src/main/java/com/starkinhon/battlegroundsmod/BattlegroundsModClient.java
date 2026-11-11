@@ -193,6 +193,8 @@ public class BattlegroundsModClient {
 
     private static void onRegisterGuiLayers(RegisterGuiLayersEvent event) {
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "power_hud"), PowerHud::render);
+        event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "quest_hud"),
+                com.starkinhon.battlegroundsmod.client.QuestHud::render);
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "scouter"),
                 com.starkinhon.battlegroundsmod.client.ScouterHud::render);
         // After every vanilla bar, so it knows how tall the hearts, armor and food stand.
@@ -314,6 +316,26 @@ public class BattlegroundsModClient {
         event.registerEntityRenderer(ModEntities.NPC_UROKODAKI.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_urokodaki"));
         event.registerEntityRenderer(ModEntities.NPC_TAMAYO.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_tamayo"));
         event.registerEntityRenderer(ModEntities.NPC_GOHAN.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_gohan"));
+        event.registerEntityRenderer(ModEntities.RADITZ.get(), context -> new SoulBossRenderer<>(context, "raditz", false));
+        // the Cell Jr.: child-sized
+        event.registerEntityRenderer(ModEntities.CELL_JR.get(), context -> new SoulBossRenderer<>(context, "cell_jr", false) {
+            @Override
+            protected void scale(com.starkinhon.battlegroundsmod.boss.SoulMob entity, com.mojang.blaze3d.vertex.PoseStack pose, float partialTick) {
+                pose.scale(0.72f, 0.72f, 0.72f);
+            }
+        });
+        event.registerEntityRenderer(ModEntities.PUI_PUI.get(), context -> new SoulBossRenderer<>(context, "pui_pui", false));
+        // Yakon: a head taller and broad
+        event.registerEntityRenderer(ModEntities.YAKON.get(), context -> new SoulBossRenderer<>(context, "yakon", false) {
+            @Override
+            protected void scale(com.starkinhon.battlegroundsmod.boss.SoulMob entity, com.mojang.blaze3d.vertex.PoseStack pose, float partialTick) {
+                pose.scale(1.3f, 1.28f, 1.3f);
+            }
+        });
+        event.registerEntityRenderer(ModEntities.DABURA.get(), context -> new SoulBossRenderer<>(context, "dabura", false));
+        event.registerEntityRenderer(ModEntities.NPC_BULMA.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_bulma"));
+        event.registerEntityRenderer(ModEntities.NPC_MESTRE_KAME.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_mestre_kame"));
+        event.registerEntityRenderer(ModEntities.NPC_BOO.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_boo"));
         event.registerEntityRenderer(ModEntities.NPC_KORIN.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_korin"));
         event.registerEntityRenderer(ModEntities.FIGHTER_HUMANO.get(),
                 context -> new SoulBossRenderer<>(context, false, "fighter_humano_0", "fighter_humano_1", "fighter_humano_2"));

@@ -347,6 +347,24 @@ public final class ModPayloads {
         }
     }
 
+    // Server -> client: the Dragon Ball mission on the HUD (universe/DbQuests): its id, progress, the place it points to.
+    public record QuestSync(String id, int count, int goal, int x, int z, int flags) implements CustomPacketPayload {
+        public static final Type<QuestSync> TYPE = payloadType("quest_sync");
+        public static final StreamCodec<ByteBuf, QuestSync> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.STRING_UTF8, QuestSync::id,
+                ByteBufCodecs.VAR_INT, QuestSync::count,
+                ByteBufCodecs.VAR_INT, QuestSync::goal,
+                ByteBufCodecs.VAR_INT, QuestSync::x,
+                ByteBufCodecs.VAR_INT, QuestSync::z,
+                ByteBufCodecs.VAR_INT, QuestSync::flags,
+                QuestSync::new);
+
+        @Override
+        public Type<QuestSync> type() {
+            return TYPE;
+        }
+    }
+
     // Server -> client: the player's attack stamina, its max and the exhaustion ticks left (combat/Stamina).
     public record SyncStamina(float stamina, float max, int exhaustedTicks) implements CustomPacketPayload {
         public static final Type<SyncStamina> TYPE = payloadType("sync_stamina");
@@ -1616,6 +1634,8 @@ public final class ModPayloads {
                 com.starkinhon.battlegroundsmod.universe.Flight.boost(sp, payload.on());
             }
         }));
+        registrar.playToClient(QuestSync.TYPE, QuestSync.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.quest(payload.id(), payload.count(), payload.goal(), payload.x(), payload.z(), payload.flags())));
         registrar.playToClient(FlightState.TYPE, FlightState.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.flightState(payload.entityId(), payload.state())));
         registrar.playToClient(SyncStamina.TYPE, SyncStamina.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> payload.applyTo(context.player())));

@@ -78,7 +78,14 @@ public final class DbMobs {
         return power("db_soldado_freeza", 0xE060C0, DbMobs::tripleShot, 200, DbMobs::kiBomb, 320);
     }
 
-    // ---------- shared ----------
+    // Raditz, the opening fight of the Dragon Ball world (Stark 2026-11-10, the start was too still): Z Double Sunday (a
+    // purple ball in each hand, then two beams crossing on the target), X Saturday Crush (a dense ball thrown from
+    // overhead that blows up big).
+    public static Power raditz() {
+        return power("db_raditz", 0x8A3FD0, DbMobs::doubleSunday, 180, DbMobs::saturdayCrush, 260);
+    }
+
+        // ---------- shared ----------
 
     // The one it fights: a mob's target, else whoever it aims at.
     static LivingEntity target(LivingEntity caster, double range) {
@@ -648,6 +655,121 @@ public final class DbMobs {
             DbCommon.screen(level, next, 9);
             DbCommon.hurtRadius(caster, level, next, 3.6, 140, 1.3, 0.5);
             dent(level, next, 2.4);
+            return true;
+        });
+        return true;
+    }
+
+    // ================= Raditz =================
+
+    // Z Double Sunday: both arms out to the sides, a ball grows in each hand; then each hand fires a beam, the two
+    // sweeping in from the sides and crossing on the target (dodging sideways can take one of them, not both).
+    private static boolean doubleSunday(LivingEntity caster, ServerLevel level) {
+        LivingEntity target = target(caster, 24);
+        if (target == null) {
+            return false;
+        }
+        SubCommon.pose(caster, "db.palma_dir");
+        SubCommon.busy(caster, 30);
+        SubCommon.sound(level, caster.position(), SoundEvents.BEACON_ACTIVATE, 1f, 1.3f);
+        int left = SubNet.newId();
+        int right = SubNet.newId();
+        Set<Integer> hit = DbCommon.once();
+        Tasks.add(age -> {
+            if (gone(caster) || !target.isAlive()) {
+                SubNet.send(level, SubNet.KI_BALL, left, caster.position(), Vec3.ZERO, 0, Db.PURPLE, 1);
+                SubNet.send(level, SubNet.KI_BALL, right, caster.position(), Vec3.ZERO, 0, Db.PURPLE, 1);
+                return true;
+            }
+            Vec3 fwd = SubCommon.flat(caster.getLookAngle());
+            Vec3 side = fwd.cross(new Vec3(0, 1, 0)).normalize();
+            Vec3 chest = caster.position().add(0, 1.35, 0);
+            Vec3 l = chest.add(side.scale(-0.9)).add(fwd.scale(0.2));
+            Vec3 r = chest.add(side.scale(0.9)).add(fwd.scale(0.2));
+            if (age < 14) {
+                face(caster, Combat.center(target));
+                float size = 0.12f + 0.3f * SubCommon.smooth(age / 14f);
+                SubNet.send(level, SubNet.KI_BALL, left, l, Vec3.ZERO, size, Db.PURPLE + 16, 0);
+                SubNet.send(level, SubNet.KI_BALL, right, r, Vec3.ZERO, size, Db.PURPLE + 16, 0);
+                return false;
+            }
+            if (age == 14) {
+                SubNet.send(level, SubNet.KI_BALL, left, l, Vec3.ZERO, 0, Db.PURPLE, 1);
+                SubNet.send(level, SubNet.KI_BALL, right, r, Vec3.ZERO, 0, Db.PURPLE, 1);
+                SubCommon.sound(level, chest, SoundEvents.BLAZE_SHOOT, 1.6f, 0.5f);
+                SubCommon.sound(level, chest, SoundEvents.BEACON_POWER_SELECT, 1.2f, 1.6f);
+            }
+            if (age > 24) {
+                return true;
+            }
+            // the two beams close in from the sides onto the target over 10 ticks
+            float k = (age - 14) / 10f;
+            Vec3 aim = Combat.center(target);
+            for (int hand = 0; hand < 2; hand++) {
+                Vec3 from = hand == 0 ? l : r;
+                Vec3 wide = aim.add(side.scale((hand == 0 ? -1 : 1) * 4.0 * (1 - k)));
+                Vec3 end = clip(level, caster, from, toward(from, wide), 26);
+                SubNet.send(level, SubNet.STREAK, 0, from, end.subtract(from), 0.55f, Db.PURPLE, 3);
+                for (LivingEntity t : Combat.alongLine(level, from, end, 0.7, caster)) {
+                    if (hit.add(t.getId() * 2 + hand)) {
+                        Combat.hurtMagic(caster, t, 70);
+                        Stun.apply(t, 8);
+                        DbCommon.hit(level, Combat.center(t), 1.4f, Db.PURPLE);
+                    }
+                }
+                if (age == 24) {
+                    DbCommon.boom(level, end, 1.6f, Db.PURPLE, SubCommon.RANDOM.nextInt(100));
+                }
+            }
+            return false;
+        });
+        return true;
+    }
+
+    // X Saturday Crush: one hand up, a small dense ball, thrown fast in an arc; a wide blast where it lands.
+    private static boolean saturdayCrush(LivingEntity caster, ServerLevel level) {
+        LivingEntity target = target(caster, 22);
+        if (target == null) {
+            return false;
+        }
+        SubCommon.pose(caster, "db.mao_alto");
+        SubCommon.busy(caster, 22);
+        int id = SubNet.newId();
+        Vec3[] at = {null};
+        Vec3[] vel = {null};
+        Tasks.add(age -> {
+            if (gone(caster) && at[0] == null) {
+                SubNet.send(level, SubNet.KI_BALL, id, DbCommon.raised(caster), Vec3.ZERO, 0, Db.PURPLE, 1);
+                return true;
+            }
+            if (age < 10) {
+                face(caster, Combat.center(target));
+                SubNet.send(level, SubNet.KI_BALL, id, DbCommon.raised(caster).add(0, 0.3, 0), Vec3.ZERO, 0.1f + 0.2f * age / 10f,
+                        Db.PURPLE + 16, 0);
+                return false;
+            }
+            if (at[0] == null) {
+                SubCommon.pose(caster, "db.arremesso");
+                at[0] = DbCommon.raised(caster).add(0, 0.3, 0);
+                Vec3 to = target.position().add(target.getDeltaMovement().scale(6));
+                Vec3 d = to.subtract(at[0]);
+                double flat = Math.sqrt(d.x * d.x + d.z * d.z);
+                int ticks = Math.max(6, (int) (flat / 1.4));
+                vel[0] = new Vec3(d.x / ticks, d.y / ticks + 0.04 * ticks / 2.0, d.z / ticks);
+                SubCommon.sound(level, at[0], SoundEvents.BLAZE_SHOOT, 1.3f, 0.8f);
+            }
+            Vec3 next = at[0].add(vel[0]);
+            vel[0] = vel[0].add(0, -0.04, 0);
+            boolean hit = blocked(level, next) || age > 70 || !Combat.alongLine(level, at[0], next, 0.7, caster).isEmpty();
+            at[0] = next;
+            SubNet.send(level, SubNet.KI_BALL, id, next, Vec3.ZERO, 0.32f, Db.PURPLE + 16 * 2, hit ? 1 : 0);
+            if (!hit) {
+                return false;
+            }
+            DbCommon.boom(level, next, 2.8f, Db.PURPLE, SubCommon.RANDOM.nextInt(100));
+            DbCommon.screen(level, next, 9);
+            DbCommon.hurtRadius(caster, level, next, 3.2, 110, 1.1, 0.5);
+            dent(level, next, 2.0);
             return true;
         });
         return true;

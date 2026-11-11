@@ -160,6 +160,16 @@ public final class DragonBallWorld {
         return Component.translatable("direction.battlegroundsmod." + names[index]);
     }
 
+    // Whether the player carries at least one Dragon Ball (DbQuests' first ball).
+    public static boolean hasAnyBall(ServerPlayer player) {
+        for (var ball : ModItems.DRAGON_BALLS) {
+            if (player.getInventory().findSlotMatchingItem(new ItemStack(ball.get())) >= 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     // With all seven: they fly off and Shenlong appears for one wish (60 s to choose, in the chat).
     public static void summon(ServerPlayer player) {
         List<Item> missing = missing(player);

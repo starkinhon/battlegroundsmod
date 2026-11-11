@@ -221,7 +221,7 @@ public final class TimeChamber {
     }
 
     // Poder from training, in fractions of an enemy of the player's own tier; kept small until it adds up.
-    private static void train(ServerPlayer player, double enemies) {
+    public static void train(ServerPlayer player, double enemies) {
         if (!Progression.on(player)) {
             return;
         }
@@ -304,7 +304,7 @@ public final class TimeChamber {
         }
     }
 
-    private static void setGravity(ServerPlayer player, int zone) {
+    public static void setGravity(ServerPlayer player, int zone) {
         modify(player, Attributes.GRAVITY, GRAVITY_ID, GRAVITY[zone]);
         modify(player, Attributes.MOVEMENT_SPEED, SPEED_ID, SPEED[zone]);
         modify(player, Attributes.JUMP_STRENGTH, JUMP_ID, JUMP[zone]);
@@ -317,7 +317,7 @@ public final class TimeChamber {
         }
     }
 
-    private static void clearGravity(ServerPlayer player) {
+    public static void clearGravity(ServerPlayer player) {
         for (var pair : new Object[][] {{Attributes.GRAVITY, GRAVITY_ID}, {Attributes.MOVEMENT_SPEED, SPEED_ID},
                 {Attributes.JUMP_STRENGTH, JUMP_ID}}) {
             @SuppressWarnings("unchecked")

@@ -111,6 +111,22 @@ public final class ModItems {
             () -> new DeferredSpawnEggItem(ModEntities.RAPTOR, 0x8C6A3E, 0x3C2C1C, new Item.Properties()));
     public static final DeferredItem<DeferredSpawnEggItem> SOLDADO_FREEZA_SPAWN_EGG = BattlegroundsMod.ITEMS.register("soldado_freeza_spawn_egg",
             () -> new DeferredSpawnEggItem(ModEntities.SOLDADO_FREEZA, 0xE8E8E0, 0x6A3C8E, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> RADITZ_SPAWN_EGG = BattlegroundsMod.ITEMS.register("raditz_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.RADITZ, 0x2A2A3A, 0xE8E4D8, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> CELL_JR_SPAWN_EGG = BattlegroundsMod.ITEMS.register("cell_jr_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.CELL_JR, 0x82BEAA, 0x2E6A3C, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> PUI_PUI_SPAWN_EGG = BattlegroundsMod.ITEMS.register("pui_pui_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.PUI_PUI, 0x965AAA, 0xE8E4D8, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> YAKON_SPAWN_EGG = BattlegroundsMod.ITEMS.register("yakon_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.YAKON, 0x1C1A1E, 0xE6C828, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> DABURA_SPAWN_EGG = BattlegroundsMod.ITEMS.register("dabura_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.DABURA, 0xBE322D, 0x1E1C20, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> NPC_BULMA_SPAWN_EGG = BattlegroundsMod.ITEMS.register("npc_bulma_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.NPC_BULMA, 0xE678A0, 0x3CBEBE, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> NPC_MESTRE_KAME_SPAWN_EGG = BattlegroundsMod.ITEMS.register("npc_mestre_kame_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.NPC_MESTRE_KAME, 0xE8A040, 0x4A8A3A, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> NPC_BOO_SPAWN_EGG = BattlegroundsMod.ITEMS.register("npc_boo_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.NPC_BOO, 0xF096BE, 0x7838A0, new Item.Properties()));
     public static final DeferredItem<DeferredSpawnEggItem> NPC_GOHAN_SPAWN_EGG = BattlegroundsMod.ITEMS.register("npc_gohan_spawn_egg",
             () -> new DeferredSpawnEggItem(ModEntities.NPC_GOHAN, 0x5A2D82, 0xE8C27A, new Item.Properties()));
     public static final DeferredItem<DeferredSpawnEggItem> NPC_KORIN_SPAWN_EGG = BattlegroundsMod.ITEMS.register("npc_korin_spawn_egg",

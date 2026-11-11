@@ -85,6 +85,7 @@ public final class Powers {
     public static final Power DB_PIRATE = registerHidden(com.starkinhon.battlegroundsmod.power.powers.sub.db.DbMobs.pirate());
     public static final Power DB_RED_RIBBON = registerHidden(com.starkinhon.battlegroundsmod.power.powers.sub.db.DbMobs.redRibbon());
     public static final Power DB_YETI = registerHidden(com.starkinhon.battlegroundsmod.power.powers.sub.db.DbMobs.yeti());
+    public static final Power DB_RADITZ = registerHidden(com.starkinhon.battlegroundsmod.power.powers.sub.db.DbMobs.raditz());
     public static final Power DB_FREEZA_SOLDIER = registerHidden(com.starkinhon.battlegroundsmod.power.powers.sub.db.DbMobs.freezaSoldier());
 
     private Powers() {
