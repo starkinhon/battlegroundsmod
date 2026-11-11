@@ -53,6 +53,8 @@ void main() {
         vec3 c = Col * band * (0.75 + 0.25 * hemi(Nw));
         c += Col2 * pow(rim, 3.) * (0.35 + 0.9 * P3.x);
         if (P2.x > 0.5 && rim > 0.82) c = vec3(0.06, 0.05, 0.08);
+        // the Kaminari's light on the rubber (the page's boltLight): P3.y = strength, P3.z = blocks from the hand it reaches fully
+        if (P3.y > 0.) { float bl = P3.y * exp(-max(0., (1. - vU) * P0.x - P3.z) / 14.); c = mix(c, vec3(1., 0.97, 0.84), clamp(bl, 0., 1.)) + vec3(0.25, 0.2, 0.05) * clamp(bl - 1., 0., 1.); }
         float al = 1. - P2.w * (0.35 + 0.5 * smoothstep(0.1, 1., vU));
         if (GlowPass > 0.5) { fragColor = vec4(0.); return; }
         fragColor = vec4(c * al, al);

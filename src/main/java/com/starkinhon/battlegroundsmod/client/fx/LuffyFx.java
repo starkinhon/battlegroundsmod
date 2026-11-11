@@ -507,7 +507,7 @@ public final class LuffyFx {
 
     private static final class Arm {
         Vec3 from, aim;
-        double L = 0.75, fs = 1, infl = 1, amp, ph, n = 2, bx = -1, ba, toon, tw, hx, blur, haki, spin;
+        double L = 0.75, fs = 1, infl = 1, amp, ph, n = 2, bx = -1, ba, toon, tw, hx, blur, haki, spin, lit, litOff;
         int col = SKIN, rim = RIM;
         boolean fist = true, thumb = true, kkg;
         double fx = 1, fy = 1, fz = 1, off = 0.12;
@@ -550,7 +550,7 @@ public final class LuffyFx {
         p.p0 = new float[] {(float) a.L, 0.115f, (float) a.infl, (float) a.amp};
         p.p1 = new float[] {(float) a.ph, (float) a.n, (float) a.bx, (float) a.ba};
         p.p2 = new float[] {(float) a.toon, (float) a.tw, (float) a.hx, (float) a.blur};
-        p.p3 = new float[] {(float) a.haki, 0, 0, 0};
+        p.p3 = new float[] {(float) a.haki, (float) a.lit, (float) a.litOff, 0};
         p.col = rgb(a.col);
         p.col2 = rgb(a.rim);
         p.glow = false;
@@ -1600,6 +1600,8 @@ public final class LuffyFx {
             a.amp = 0.9;
             a.ph = TIME * 5;
             Vec3 hand = sh.add(a.aim.subtract(sh).normalize().scale(a.L + 0.5 * a.fs));
+            a.lit = 1.6;
+            a.litOff = 6;
             bolt(0, hand.add(D(4, 60, -3)), hand, 0.9, 5, 0, 0, 18, false, 14, true);
             bolt(1, hand, sh.add(0, 1.2, 0), 0.55, 2.2, 0, 0, 40, false, 14, true);
             bolt(2, hand.add(D(-14, 40, 6)), hand.add(D(-2, 8, 1)), 0.4, 3, 0, 0, 12, false, 14, true);
@@ -1619,6 +1621,8 @@ public final class LuffyFx {
             a.ph = TIME * 8;
             Vec3 hand = sh.add(a.aim.subtract(sh).normalize().scale(a.L + 0.5 * a.fs));
             double len = lerp(30, 7, k);
+            a.lit = 0.45;
+            a.litOff = 1;
             bolt(0, hand, hand.add(0, len, 0), lerp(0.9, 0.55, k), lerp(4, 0.35, k), 1.4 * k, 0, lerp(18, 6, k), k > 0.3, 18, false);
             if (u > 0.4 && !m.said1) {
                 m.said1 = true;
@@ -1632,6 +1636,8 @@ public final class LuffyFx {
             a.amp = 0.15;
             Vec3 hand = sh.add(a.aim.subtract(sh).normalize().scale(a.L + 0.5 * a.fs)), dc = c.subtract(hand).normalize();
             Vec3 tip = hand.add(dc.scale(7)).add(0, 1.6 * (1 - k), 0);
+            a.lit = 0.4;
+            a.litOff = 0.5;
             bolt(0, hand.add(dc.scale(-2.5)), tip, 0.5, 0.35, 0.9 + 0.4 * Math.sin(u * 22), 0.8 * Math.sin(u * 17), 6, true, 26, false);
             if (!m.said2) {
                 m.said2 = true;
@@ -1751,8 +1757,10 @@ public final class LuffyFx {
                 continue;
             }
             int cx = Mth.floor(rb.c().x), cz = Mth.floor(rb.c().z), n = (int) Math.ceil(r1);
-            for (int x = -n; x <= n && drawn < 1400; x++) {
-                for (int z = -n; z <= n && drawn < 1400; z++) {
+            // the cap must hold a whole ring (about 3000 raised blocks at its widest): a smaller one filled up
+            // on the first rows of x and left the wave only on one side
+            for (int x = -n; x <= n && drawn < 4500; x++) {
+                for (int z = -n; z <= n && drawn < 4500; z++) {
                     double r = Math.sqrt(x * x + z * z);
                     if (r < r0 || r > r1) {
                         continue;
