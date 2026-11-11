@@ -10,10 +10,10 @@ import org.lwjgl.opengl.GL11;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexBuffer;
 import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.blaze3d.vertex.VertexFormatElement;
 
 import net.minecraft.client.renderer.ShaderInstance;
 
@@ -29,6 +29,9 @@ public final class LuffyMesh {
 
         VertexBuffer vbo;
     }
+
+    // position and normal (the game has no such format of its own)
+    public static final VertexFormat FORMAT = VertexFormat.builder().add("Position", VertexFormatElement.POSITION).add("Normal", VertexFormatElement.NORMAL).build();
 
     public static final int ARM = 0, BURST = 1, STEAM = 2, COLLAR = 3, FIRE = 4, BLAST = 5, BOLT = 6, SOLID = 7;
     public static final int FRONT = 1, BACK = 2, BOTH = 3;
@@ -157,7 +160,7 @@ public final class LuffyMesh {
             if (m.vbo != null) {
                 continue;
             }
-            BufferBuilder b = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_NORMAL);
+            BufferBuilder b = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, FORMAT);
             switch (m) {
                 case ARM -> squareTube(b, 96);
                 case ARM48 -> squareTube(b, 48);

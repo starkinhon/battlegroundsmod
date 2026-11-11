@@ -105,7 +105,7 @@ public final class FxShaders {
             BattlegroundsMod.LOGGER.error("Could not load Saitama's effect shader", e);
         }
         try {
-            register(event, "souls_luffy", DefaultVertexFormat.POSITION_NORMAL, s -> luffy = s);
+            register(event, "souls_luffy", LuffyMesh.FORMAT, s -> luffy = s);
         } catch (Exception e) {
             BattlegroundsMod.LOGGER.error("Could not load Luffy's effect shader", e);
         }
