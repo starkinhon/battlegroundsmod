@@ -42,6 +42,26 @@ adv("todas_divinas", "alma_bills", B + "soul_destruction_god", "challenge", J,
     "Colecionador de Deuses", "Absorva as seis Almas Divinas: Gojo, Sukuna, Kokushibo, Madara, Bills e Aizen",
     "God Collector", "Absorb all six Divine Souls: Gojo, Sukuna, Kokushibo, Madara, Beerus and Aizen")
 
+# Almas Divinas derrotadas (Stark 2026-11-11): as conquistas principais do mod; todas = zerar.
+# Só os bosses que já existem; Aizen, Luffy, Saitama, Shigaraki entram quando tiverem boss (e em power/Achievements).
+DIVINE_BOSSES = [
+    ("madara", "uchiha_ghost", "Madara", "Madara"),
+    ("gojo", "strongest", "Gojo", "Gojo"),
+    ("sukuna", "sukuna", "Sukuna", "Sukuna"),
+    ("kokushibo", "moon_demon", "Kokushibo", "Kokushibo"),
+    ("bills", "destruction_god", "Bills", "Beerus"),
+]
+adv("almas_divinas", "root", "minecraft:nether_star", "goal", J,
+    "Caçador de Deuses", "Derrote sua primeira Alma Divina",
+    "God Hunter", "Defeat your first Divine Soul")
+for id, power, pt, en in DIVINE_BOSSES:
+    adv("derrotar_" + id, "almas_divinas", B + "soul_" + power, "challenge", J,
+        f"Derrote {pt}", f"Vença a Alma Divina de {pt}",
+        f"Defeat {en}", f"Beat {en}'s Divine Soul")
+adv("devorador_de_deuses", "derrotar_bills", "minecraft:dragon_egg", "challenge", J,
+    "Devorador de Deuses", "Derrote todas as Almas Divinas. Você zerou o Souls",
+    "Devourer of Gods", "Defeat every Divine Soul. You beat Souls")
+
 # Armas (roubadas dos desafios e dos universos): any one opens the branch.
 WEAPONS = [
     ("espada_z", "espada_z", "A Lenda da Espada Z", "Consiga a Espada Z", "Legend of the Z Sword", "Get the Z Sword"),

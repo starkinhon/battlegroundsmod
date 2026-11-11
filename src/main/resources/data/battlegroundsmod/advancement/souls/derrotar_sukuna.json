@@ -1,0 +1,28 @@
+{
+  "parent": "battlegroundsmod:souls/almas_divinas",
+  "display": {
+    "icon": {
+      "id": "battlegroundsmod:soul_sukuna"
+    },
+    "title": {
+      "translate": "advancements.battlegroundsmod.souls.derrotar_sukuna.title"
+    },
+    "description": {
+      "translate": "advancements.battlegroundsmod.souls.derrotar_sukuna.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ]
+}

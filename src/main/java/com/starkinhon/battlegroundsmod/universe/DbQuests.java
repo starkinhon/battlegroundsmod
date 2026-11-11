@@ -14,6 +14,7 @@ import com.starkinhon.battlegroundsmod.power.Tiers;
 import com.starkinhon.battlegroundsmod.power.powers.sub.db.Db;
 import com.starkinhon.battlegroundsmod.power.powers.sub.db.DbCommon;
 import com.starkinhon.battlegroundsmod.world.TimeChamber;
+import com.starkinhon.battlegroundsmod.world.WorldSites;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -24,10 +25,12 @@ import net.minecraft.network.protocol.game.ClientboundSetTitlesAnimationPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.stats.Stats;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.NeoForge;
@@ -47,9 +50,11 @@ public final class DbQuests {
     private static final String COUNT = "souls_dbq_n";
     private static final String RADITZ_AT = "souls_dbq_raditz";
     private static final String GRANDPA_BALL = "souls_dbq_esfera4";
+    private static final String RADITZ_SEEN = "souls_dbq_raditz_veio";
 
-    // id (lang quest.battlegroundsmod.<id>), how many, the place it points to, Poder as a part of the tier, items
-    private record Step(String id, int goal, int x, int z, boolean way, double poder, Supplier<List<ItemStack>> items) {
+    // id (lang quest.battlegroundsmod.<id>), how many, the kind of place it points to (WorldSites, null for none), Poder as
+    // a part of the tier, items
+    private record Step(String id, int goal, String kind, double poder, Supplier<List<ItemStack>> items) {
     }
 
     @SafeVarargs
@@ -64,20 +69,20 @@ public final class DbQuests {
     }
 
     private static final List<Step> STEPS = List.of(
-            new Step("raditz", 1, 0, 0, false, 0.6, items(() -> new ItemStack(ModItems.SCOUTER.get()))),
-            new Step("bulma", 1, DbActivities.BULMA_X, DbActivities.BULMA_Z, true, 0.2, items(() -> new ItemStack(ModItems.DRAGON_RADAR.get()))),
-            new Step("saibamen", 3, 0, 0, false, 0.3, items(() -> new ItemStack(ModItems.SENZU.get(), 2))),
-            new Step("esfera", 1, 0, 0, false, 0.3, items()),
-            new Step("kame", 1, DbActivities.KAME_X, DbActivities.KAME_Z, true, 0.4, items()),
-            new Step("livro", 2, 0, 0, false, 0.5, items(() -> new ItemStack(ModItems.SENZU.get(), 2))),
-            new Step("gohan", 1, DbActivities.GOKU_X, DbActivities.GOKU_Z, true, 0.3, items()),
-            new Step("karin", 1, -407, -87, true, 0.3, items()),
-            new Step("sala", 1, -407, -87, true, 0.3, items()),
-            new Step("nave", 60, DbActivities.WRECK_X, DbActivities.WRECK_Z, true, 0.4, items()),
-            new Step("cell", 1, DbActivities.CELL_X, DbActivities.CELL_Z, true, 0.6, items(() -> new ItemStack(ModItems.SENZU.get(), 3))),
-            new Step("babidi", 1, DbActivities.BABIDI_X, DbActivities.BABIDI_Z, true, 0.8, items(() -> new ItemStack(ModItems.Z_SWORD.get()))),
-            new Step("boo", 1, DbActivities.BOO_X, DbActivities.BOO_Z, true, 0.3, items()),
-            new Step("freeza", 1, 0, 0, false, 1.0, items(() -> new ItemStack(ModItems.MULTIVERSAL_CRYSTAL.get(), 2))));
+            new Step("raditz", 1, null, 0.6, items(() -> new ItemStack(ModItems.SCOUTER.get()))),
+            new Step("bulma", 1, WorldSites.CAPSULE, 0.2, items(() -> new ItemStack(ModItems.DRAGON_RADAR.get()))),
+            new Step("saibamen", 3, null, 0.3, items(() -> new ItemStack(ModItems.SENZU.get(), 2))),
+            new Step("esfera", 1, null, 0.3, items()),
+            new Step("kame", 1, WorldSites.KAME, 0.4, items()),
+            new Step("livro", 2, null, 0.5, items(() -> new ItemStack(ModItems.SENZU.get(), 2))),
+            new Step("gohan", 1, WorldSites.GOKU, 0.3, items()),
+            new Step("karin", 1, WorldSites.KARIN, 0.3, items()),
+            new Step("sala", 1, WorldSites.KARIN, 0.3, items()),
+            new Step("nave", 60, WorldSites.WRECK, 0.4, items()),
+            new Step("cell", 1, WorldSites.CELL_RING, 0.6, items(() -> new ItemStack(ModItems.SENZU.get(), 3))),
+            new Step("babidi", 1, WorldSites.BABIDI, 0.8, items(() -> new ItemStack(ModItems.Z_SWORD.get()))),
+            new Step("boo", 1, WorldSites.BUU, 0.3, items()),
+            new Step("freeza", 1, null, 1.0, items(() -> new ItemStack(ModItems.MULTIVERSAL_CRYSTAL.get(), 2))));
 
     private DbQuests() {
     }
@@ -92,8 +97,53 @@ public final class DbQuests {
         return player.level().dimension().equals(Universes.key("dragonball"));
     }
 
+    // Born in the old Dragon Ball dimension, or in the normal world (where Dragon Ball is the first universe met).
     private static boolean on(ServerPlayer player) {
-        return Progression.on(player) && "dragonball".equals(player.getData(com.starkinhon.battlegroundsmod.ModAttachments.UNIVERSE));
+        String home = player.getData(com.starkinhon.battlegroundsmod.ModAttachments.UNIVERSE);
+        return Progression.on(player) && ("dragonball".equals(home) || Universes.WORLD.equals(home));
+    }
+
+    // Where the missions are shown: the old Dragon Ball dimension, and the normal world.
+    private static boolean shown(ServerPlayer player) {
+        return inDragonBall(player) || player.level().dimension() == Level.OVERWORLD;
+    }
+
+    // In the normal world Raditz comes only once the player has walked into the Terras do Dragão and has played a few
+    // minutes (Stark 2026-11-11: he came down in the face right at the start, the mission already running).
+    private static final int RADITZ_PLAYTIME = 20 * 60 * 5;
+
+    private static boolean raditzReady(ServerPlayer player) {
+        if (inDragonBall(player)) {
+            return true;
+        }
+        return player.level().dimension() == Level.OVERWORLD
+                && "dragonball".equals(UniverseBiomes.universeAt(player.level(), player.blockPosition()))
+                && player.getStats().getValue(Stats.CUSTOM.get(Stats.PLAY_TIME)) >= RADITZ_PLAYTIME;
+    }
+
+    // The arrow's target for the current mission: in the normal world the nearest place of that kind, built or not yet
+    // (WorldSites.locate, looked up again every 15 s or when the mission changes); in the old dimension its fixed spot.
+    private record Way(String kind, BlockPos pos, long at) {
+    }
+
+    private static final java.util.Map<java.util.UUID, Way> WAYS = new java.util.HashMap<>();
+
+    private static BlockPos way(ServerPlayer player, Step step) {
+        if (step.kind() == null) {
+            return null;
+        }
+        if (player.level().dimension() != Level.OVERWORLD) {
+            int[] p = DbActivities.place(player, step.kind());
+            return p == null ? null : new BlockPos(p[0], 0, p[1]);
+        }
+        long now = player.serverLevel().getGameTime();
+        Way cached = WAYS.get(player.getUUID());
+        if (cached != null && cached.kind().equals(step.kind()) && now - cached.at() < 300) {
+            return cached.pos();
+        }
+        BlockPos pos = WorldSites.locate(player.serverLevel(), step.kind(), player.blockPosition(), 6);
+        WAYS.put(player.getUUID(), new Way(step.kind(), pos, now));
+        return pos;
     }
 
     private static Step current(ServerPlayer player) {
@@ -165,12 +215,12 @@ public final class DbQuests {
         if (!on(player)) {
             return;
         }
-        boolean here = inDragonBall(player);
+        boolean here = shown(player);
         Step step = current(player);
         if (step != null) {
             switch (step.id()) {
                 case "raditz" -> {
-                    if (here) {
+                    if (raditzReady(player)) {
                         raditz(player);
                     }
                 }
@@ -232,6 +282,7 @@ public final class DbQuests {
             return;
         }
         Entity raditz = ModEntities.RADITZ.get().spawn(level, spot, MobSpawnType.EVENT);
+        tag.putBoolean(RADITZ_SEEN, true);
         if (raditz instanceof Mob mob) {
             mob.setTarget(player);
             mob.setPersistenceRequired();
@@ -280,11 +331,15 @@ public final class DbQuests {
             return;
         }
         Step step = current(player);
-        if (step == null || !on(player)) {
+        // nothing on the HUD before Raditz has come down (in the old dimension he comes right away)
+        if (step == null || !on(player) || "raditz".equals(step.id()) && !inDragonBall(player)
+                && !player.getPersistentData().getBoolean(RADITZ_SEEN)) {
             send(player, "", 0, 0, 0, 0, false);
             return;
         }
-        send(player, step.id(), player.getPersistentData().getInt(COUNT), step.goal(), step.x(), step.z(), step.way() && inDragonBall(player));
+        BlockPos to = shown(player) ? way(player, step) : null;
+        send(player, step.id(), player.getPersistentData().getInt(COUNT), step.goal(), to == null ? 0 : to.getX(),
+                to == null ? 0 : to.getZ(), to != null);
     }
 
     private static void send(ServerPlayer player, String id, int count, int goal, int x, int z, boolean way) {

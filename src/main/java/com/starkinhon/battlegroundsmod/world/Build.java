@@ -91,6 +91,23 @@ public final class Build {
         return this;
     }
 
+    // Ground under a building put on uneven land (the normal world, WorldSites): a top block at y -1 and fill below,
+    // in a cylinder, so nothing hangs over a slope.
+    public Build foundation(double radius, int depth, BlockState top, BlockState fill) {
+        int r = (int) Math.ceil(radius);
+        for (int i = -r; i <= r; i++) {
+            for (int k = -r; k <= r; k++) {
+                if (i * i + k * k <= radius * radius) {
+                    set(i, -1, k, top);
+                    for (int j = 2; j <= depth; j++) {
+                        set(i, -j, k, fill);
+                    }
+                }
+            }
+        }
+        return this;
+    }
+
     // Flat disc of one block at height dy.
     public Build disc(int cx, int dy, int cz, double radius, BlockState state) {
         int r = (int) Math.ceil(radius);

@@ -41,8 +41,39 @@ public final class Achievements {
     private Achievements() {
     }
 
+    // The Divine Souls beaten (Stark 2026-11-11: the main achievements, all of them = the mod beaten): power -> id.
+    private static final String[][] DIVINE_BOSSES = {
+            {"uchiha_ghost", "derrotar_madara"}, {"strongest", "derrotar_gojo"}, {"sukuna", "derrotar_sukuna"},
+            {"moon_demon", "derrotar_kokushibo"}, {"destruction_god", "derrotar_bills"}};
+    // Aizen (manipulator), Luffy (rubber_boy), Saitama (one_punch) and Shigaraki come in when they get a boss.
+
     public static void register() {
         NeoForge.EVENT_BUS.addListener(Achievements::onTick);
+        NeoForge.EVENT_BUS.addListener(Achievements::onDeath);
+    }
+
+    private static void onDeath(net.neoforged.neoforge.event.entity.living.LivingDeathEvent event) {
+        if (!(event.getEntity() instanceof com.starkinhon.battlegroundsmod.boss.SoulBoss boss) || !boss.isBoss()
+                || !(event.getSource().getEntity() instanceof ServerPlayer player)) {
+            return;
+        }
+        String power;
+        try {
+            power = com.starkinhon.battlegroundsmod.boss.BossSpec.get(boss.bossId()).poder();
+        } catch (RuntimeException e) {
+            return;
+        }
+        boolean all = true;
+        for (String[] divine : DIVINE_BOSSES) {
+            if (divine[0].equals(power)) {
+                grant(player, "almas_divinas");
+                grant(player, divine[1]);
+            }
+            all &= has(player, divine[1]);
+        }
+        if (all) {
+            grant(player, "devorador_de_deuses");
+        }
     }
 
     // Gives souls/<id> (all its criteria) if the player doesn't have it yet.

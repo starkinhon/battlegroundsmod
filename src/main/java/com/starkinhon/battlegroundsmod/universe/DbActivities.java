@@ -16,6 +16,7 @@ import com.starkinhon.battlegroundsmod.power.Tiers;
 import com.starkinhon.battlegroundsmod.power.powers.sub.db.Db;
 import com.starkinhon.battlegroundsmod.power.powers.sub.db.DbCommon;
 import com.starkinhon.battlegroundsmod.world.TimeChamber;
+import com.starkinhon.battlegroundsmod.world.WorldSites;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -32,6 +33,7 @@ import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -61,14 +63,48 @@ public final class DbActivities {
     private static final int GRAVITY_SECONDS = 120;
     private static final int MILK_TICKS = 20 * 50;
 
-    private record Home(Supplier<? extends EntityType<UniverseNpc>> type, int x, int z) {
+    // An NPC and where it stands: a kind of place (WorldSites) and its offset from the place's center.
+    private record Home(Supplier<? extends EntityType<UniverseNpc>> type, String kind, int dx, int dz) {
     }
 
     private static final List<Home> HOMES = List.of(
-            new Home(ModEntities.NPC_BULMA, BULMA_X, BULMA_Z),
-            new Home(ModEntities.NPC_MESTRE_KAME, KAME_X + 9, KAME_Z + 7),
-            new Home(ModEntities.NPC_GOHAN, GOKU_X + 12, GOKU_Z + 12),
-            new Home(ModEntities.NPC_BOO, BOO_X + 12, BOO_Z + 8));
+            new Home(ModEntities.NPC_BULMA, WorldSites.CAPSULE, 0, 0),
+            new Home(ModEntities.NPC_MESTRE_KAME, WorldSites.KAME, 9, 7),
+            new Home(ModEntities.NPC_GOHAN, WorldSites.GOKU, 12, 12),
+            new Home(ModEntities.NPC_BOO, WorldSites.BUU, 12, 8));
+
+    // Where a place of this kind is for this player: in the normal world the nearest one built (WorldSites), in the old
+    // drawn Dragon Ball dimension its fixed spot. Null when there is none near.
+    static int[] place(ServerPlayer player, String kind) {
+        if (player.level().dimension() == Level.OVERWORLD) {
+            WorldSites.Site site = WorldSites.near(player.level(), kind, player.blockPosition(), 260);
+            return site == null ? null : new int[] {site.x(), site.z()};
+        }
+        if (!DbQuests.inDragonBall(player)) {
+            return null;
+        }
+        return switch (kind) {
+            case WorldSites.CAPSULE -> new int[] {BULMA_X, BULMA_Z};
+            case WorldSites.KAME -> new int[] {KAME_X, KAME_Z};
+            case WorldSites.GOKU -> new int[] {GOKU_X, GOKU_Z};
+            case WorldSites.WRECK -> new int[] {WRECK_X, WRECK_Z};
+            case WorldSites.CELL_RING -> new int[] {CELL_X, CELL_Z};
+            case WorldSites.BABIDI -> new int[] {BABIDI_X, BABIDI_Z};
+            case WorldSites.BUU -> new int[] {BOO_X, BOO_Z};
+            case WorldSites.KARIN -> new int[] {-407, -87};
+            default -> null;
+        };
+    }
+
+    private static boolean nearPlace(ServerPlayer player, String kind, int dx, int dz, double r) {
+        int[] p = place(player, kind);
+        return p != null && near(player, p[0] + dx, p[1] + dz, r);
+    }
+
+    // The activities run in the old Dragon Ball dimension and anywhere in the normal world (the places are there).
+    static boolean active(ServerPlayer player) {
+        return DbQuests.inDragonBall(player) || player.level().dimension() == Level.OVERWORLD;
+    }
 
     // What the HUD shows while an activity runs.
     public record Hud(String id, int count, int goal, int x, int z, boolean way) {
@@ -76,6 +112,7 @@ public final class DbActivities {
 
     private static final class Milk {
         BlockPos spot;
+        BlockPos home;
         long until;
         boolean delivered;
     }
@@ -158,7 +195,7 @@ public final class DbActivities {
     }
 
     private static void onTick(PlayerTickEvent.Post event) {
-        if (!(event.getEntity() instanceof ServerPlayer player) || !Progression.on(player) || !DbQuests.inDragonBall(player)) {
+        if (!(event.getEntity() instanceof ServerPlayer player) || !Progression.on(player) || !active(player)) {
             if (event.getEntity() instanceof ServerPlayer p && IN_GRAVITY.remove(p.getUUID()) != null) {
                 TimeChamber.clearGravity(p);
             }
@@ -179,15 +216,17 @@ public final class DbActivities {
     private static void homes(ServerPlayer player) {
         ServerLevel level = player.serverLevel();
         for (Home home : HOMES) {
-            if (!near(player, home.x(), home.z(), 80)) {
+            int[] place = place(player, home.kind());
+            if (place == null || !near(player, place[0] + home.dx(), place[1] + home.dz(), 80)) {
                 continue;
             }
+            int hx = place[0] + home.dx(), hz = place[1] + home.dz();
             EntityType<UniverseNpc> type = home.type().get();
-            if (!level.getEntities(type, new AABB(home.x() - 48, level.getMinBuildHeight(), home.z() - 48, home.x() + 48,
-                    level.getMaxBuildHeight(), home.z() + 48), Entity::isAlive).isEmpty()) {
+            if (!level.getEntities(type, new AABB(hx - 48, level.getMinBuildHeight(), hz - 48, hx + 48,
+                    level.getMaxBuildHeight(), hz + 48), Entity::isAlive).isEmpty()) {
                 continue;
             }
-            BlockPos at = dryGround(level, home.x(), home.z(), 10);
+            BlockPos at = dryGround(level, hx, hz, 10);
             if (at == null) {
                 continue;
             }
@@ -199,7 +238,7 @@ public final class DbActivities {
             }
         }
         // the Gohan of older worlds still stands at the arrival point: he moves to Goku's house
-        if (!near(player, GOKU_X, GOKU_Z, 200)) {
+        if (DbQuests.inDragonBall(player) && !near(player, GOKU_X, GOKU_Z, 200)) {
             for (UniverseNpc old : level.getEntities(ModEntities.NPC_GOHAN.get(), player.getBoundingBox().inflate(64), Entity::isAlive)) {
                 old.discard();
             }
@@ -240,16 +279,21 @@ public final class DbActivities {
         }
         // the milk goes to a spot on the island the old man points at
         ServerLevel level = player.serverLevel();
+        int[] island = place(player, WorldSites.KAME);
+        if (island == null) {
+            island = new int[] {npc.getBlockX() - 9, npc.getBlockZ() - 7};
+        }
         BlockPos spot = null;
         for (int tries = 0; tries < 8 && spot == null; tries++) {
             double a = player.getRandom().nextDouble() * Math.PI * 2;
-            spot = dryGround(level, KAME_X + (int) Math.round(Math.cos(a) * 22), KAME_Z + (int) Math.round(Math.sin(a) * 22), 6);
+            spot = dryGround(level, island[0] + (int) Math.round(Math.cos(a) * 22), island[1] + (int) Math.round(Math.sin(a) * 22), 6);
         }
         if (spot == null) {
             spot = npc.blockPosition().offset(12, 0, 0);
         }
         milk = new Milk();
         milk.spot = spot;
+        milk.home = npc.blockPosition();
         milk.until = level.getGameTime() + MILK_TICKS;
         MILK.put(player.getUUID(), milk);
         ItemStack bucket = new ItemStack(Items.MILK_BUCKET);
@@ -327,7 +371,7 @@ public final class DbActivities {
     // ---------- the gravity machine in the crashed ship ----------
 
     private static void gravity(ServerPlayer player) {
-        boolean inside = near(player, WRECK_X, WRECK_Z, WRECK_RADIUS);
+        boolean inside = nearPlace(player, WorldSites.WRECK, 0, 0, WRECK_RADIUS);
         var tag = player.getPersistentData();
         long today = day(player);
         if (tag.getLong("souls_gravidade_dia") != today) {
@@ -364,11 +408,11 @@ public final class DbActivities {
         ServerLevel level = player.serverLevel();
         Waves w = WAVES.get(player.getUUID());
         if (w == null) {
-            if (near(player, CELL_X, CELL_Z, 5) && dailyFree(player, "souls_cell_dia")) {
+            if (nearPlace(player, WorldSites.CELL_RING, 0, 0, 5) && dailyFree(player, "souls_cell_dia")) {
                 start(player, "cell", List.of(List.of(ModEntities.CELL_JR.get(), ModEntities.CELL_JR.get()),
                         List.of(ModEntities.CELL_JR.get(), ModEntities.CELL_JR.get(), ModEntities.CELL_JR.get()),
                         List.of(ModEntities.CELL_JR.get(), ModEntities.CELL_JR.get(), ModEntities.CELL_JR.get(), ModEntities.CELL_JR.get())));
-            } else if (near(player, BABIDI_X, BABIDI_Z, 14) && dailyFree(player, "souls_babidi_dia")) {
+            } else if (nearPlace(player, WorldSites.BABIDI, 0, 0, 14) && dailyFree(player, "souls_babidi_dia")) {
                 start(player, "babidi", List.of(List.of(ModEntities.PUI_PUI.get()), List.of(ModEntities.YAKON.get()), List.of(ModEntities.DABURA.get())));
             }
             return;
@@ -453,7 +497,7 @@ public final class DbActivities {
         Milk milk = MILK.get(player.getUUID());
         if (milk != null) {
             int left = (int) Math.max(0, (milk.until - player.serverLevel().getGameTime()) / 20);
-            return milk.delivered ? new Hud("kame_volta", left, 0, KAME_X + 9, KAME_Z + 7, true)
+            return milk.delivered ? new Hud("kame_volta", left, 0, milk.home.getX(), milk.home.getZ(), true)
                     : new Hud("kame_leite", left, 0, milk.spot.getX(), milk.spot.getZ(), true);
         }
         if (IN_GRAVITY.containsKey(player.getUUID())) {

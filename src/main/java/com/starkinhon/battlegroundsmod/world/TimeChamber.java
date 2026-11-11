@@ -113,6 +113,12 @@ public final class TimeChamber {
                 ServerLevel level = player.serverLevel();
                 boolean pad = DragonBallPlaces.MAP.equals(mapOf(level)) && onPad(player, doorPad())
                         && level.getBlockState(doorPad()).is(net.minecraft.world.level.block.Blocks.SEA_LANTERN);
+                if (!pad && level.dimension() == Level.OVERWORLD && player.getY() > 250) {
+                    // a lookout floating in the normal world (WorldSites)
+                    BlockPos door = WorldSites.doorPadNear(level, player.blockPosition());
+                    pad = door != null && onPad(player, door)
+                            && level.getBlockState(door).is(net.minecraft.world.level.block.Blocks.SEA_LANTERN);
+                }
                 pad(player, pad, true);
             }
         }
@@ -158,6 +164,9 @@ public final class TimeChamber {
             return;
         }
         build(room);
+        // where to come back: in front of this door, a few steps toward the palace
+        player.getPersistentData().putString(BACK_LEVEL, player.level().dimension().location().toString());
+        player.getPersistentData().putLong(BACK_POS, player.blockPosition().offset(0, 0, 19).asLong());
         Fx.burst(player.serverLevel(), ParticleTypes.REVERSE_PORTAL, player.position().add(0, 1, 0), 60, 0.6, 0.6);
         player.teleportTo(room, 0.5, FLOOR_Y + 3, -1.5, 0f, 0f);
         player.fallDistance = 0;
@@ -169,8 +178,25 @@ public final class TimeChamber {
                 day(player), YEAR)));
     }
 
+    private static final String BACK_LEVEL = "souls_sala_volta_mundo";
+    private static final String BACK_POS = "souls_sala_volta";
+
     private static void leave(ServerPlayer player) {
         clearGravity(player);
+        var tag = player.getPersistentData();
+        if (tag.contains(BACK_POS)) {
+            net.minecraft.resources.ResourceLocation dim = net.minecraft.resources.ResourceLocation.tryParse(tag.getString(BACK_LEVEL));
+            ServerLevel to = dim == null ? null : player.server.getLevel(net.minecraft.resources.ResourceKey.create(
+                    net.minecraft.core.registries.Registries.DIMENSION, dim));
+            if (to != null) {
+                BlockPos at = BlockPos.of(tag.getLong(BACK_POS));
+                Fx.burst(player.serverLevel(), ParticleTypes.REVERSE_PORTAL, player.position().add(0, 1, 0), 60, 0.6, 0.6);
+                player.teleportTo(to, at.getX() + 0.5, at.getY() + 0.5, at.getZ() + 0.5, 0f, 0f);
+                player.fallDistance = 0;
+                Fx.sound(to, player.position(), SoundEvents.BEACON_DEACTIVATE, 0.8f, 1.2f);
+                return;
+            }
+        }
         ServerLevel back = player.server.getLevel(Universes.key("dragonball"));
         if (back == null) {
             back = player.server.overworld();
