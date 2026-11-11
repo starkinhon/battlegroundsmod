@@ -575,12 +575,13 @@ public final class LuffyFx {
         steam(W(0, 1.9 + bob, -0.1), 0.9, 0.55, 0.6, alpha, rise, 0.95f, 0.95f, 1);
     }
 
+    // the page puts it at 0.72; in the game it sat over half his head (his head is smaller and lower), so it goes lower
     private static void collar(double alpha) {
         LuffyMesh.P p = LuffyMesh.p(LuffyMesh.COLLAR);
         p.t = (float) TIME;
         p.alpha = (float) alpha;
         p.glow = false;
-        LuffyMesh.queue(LuffyMesh.Mesh.TORUS, basis(UP(0, 0.72, 0), CAM).scale((float) MS).rotateX((float) (Math.PI / 2)), p, LuffyMesh.FRONT, 13);
+        LuffyMesh.queue(LuffyMesh.Mesh.TORUS, basis(UP(0, 0.56, 0), CAM).scale((float) MS).rotateX((float) (Math.PI / 2)), p, LuffyMesh.FRONT, 13);
     }
 
     // ---------- every frame ----------
@@ -1775,7 +1776,14 @@ public final class LuffyFx {
         p.zScale = z;
     }
 
-    private static final boolean[] WAS_VISIBLE = new boolean[10];
+    // parts hidden for this draw, with whether they were shown: hidden outright, not scaled to 0 (the animation library
+    // draws the parts its own way and a 0 scale does not reach it, so his own arm stayed beside the rubber one)
+    private static final Map<ModelPart, Boolean> HIDDEN = new java.util.IdentityHashMap<>();
+
+    private static void hide(ModelPart p) {
+        HIDDEN.putIfAbsent(p, p.visible);
+        p.visible = false;
+    }
 
     public static void onRenderPlayerPre(RenderPlayerEvent.Pre event) {
         Body bd = BODIES.get(event.getEntity().getId());
@@ -1787,6 +1795,7 @@ public final class LuffyFx {
             return;
         }
         PlayerModel<AbstractClientPlayer> m = event.getRenderer().getModel();
+        HIDDEN.clear();
         double now = ScreenFx.now();
         // Boundman: the trunk blown up, short thick legs, the arm into the fist
         float b = bd.lookLv == 3 ? (float) bd.lookK : 0;
@@ -1803,16 +1812,13 @@ public final class LuffyFx {
         }
         // the rubber arm is drawn instead of his right arm; both arms out for the barrages
         for (ModelPart p : arms(m, bd.armOn || bd.hideArms, bd.hideArms)) {
-            scale(p, 0, 0, 0);
+            hide(p);
         }
         // the Fusen: head, arms and legs are drawn pushed out round the balloon (onRenderPlayerPost)
         if (bd.balloon > 0.02) {
-            ModelPart[] parts = {m.head, m.hat, m.rightArm, m.rightSleeve, m.leftArm, m.leftSleeve, m.rightLeg, m.rightPants, m.leftLeg, m.leftPants};
-            for (int i = 0; i < parts.length; i++) {
-                // hidden outright (not only scaled to 0), so no other renderer of the model brings them back inside the balloon
-                WAS_VISIBLE[i] = parts[i].visible;
-                parts[i].visible = false;
-                scale(parts[i], 0, 0, 0);
+            for (ModelPart p : new ModelPart[] {m.head, m.hat, m.rightArm, m.rightSleeve, m.leftArm, m.leftSleeve, m.rightLeg, m.rightPants, m.leftLeg,
+                    m.leftPants}) {
+                hide(p);
             }
         }
         PoseStack pose = event.getPoseStack();
@@ -1853,11 +1859,9 @@ public final class LuffyFx {
                 m.rightSleeve, m.leftSleeve}) {
             scale(p, 1, 1, 1);
         }
+        HIDDEN.forEach((p, was) -> p.visible = was);
+        HIDDEN.clear();
         if (bd != null && bd.balloon > 0.02) {
-            ModelPart[] parts = {m.head, m.hat, m.rightArm, m.rightSleeve, m.leftArm, m.leftSleeve, m.rightLeg, m.rightPants, m.leftLeg, m.leftPants};
-            for (int i = 0; i < parts.length; i++) {
-                parts[i].visible = WAS_VISIBLE[i];
-            }
             // the Fusen: his head, arms and legs pushed out round the balloon (the page's balloonSet)
             // (the head goes 1.3 up, not the page's 1.2: the game's head is smaller and lower, so this shows the same share of it)
             float k = (float) Math.min(1, bd.balloon);
