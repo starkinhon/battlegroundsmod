@@ -76,8 +76,10 @@ public final class UniverseSpawns {
             if (DragonBallWorld.UNIVERSE.equals(id)) {
                 if (com.starkinhon.battlegroundsmod.world.DragonBallPlaces.onNamek(player)) {
                     spawnNamek(level, player);
+                    spawnNamekians(level, player);
                 } else {
                     spawnEarth(level, player);
+                    DbCreatureSpawns.tick(level, player);
                     if (level.dimension() == net.minecraft.world.level.Level.OVERWORLD) {
                         skyLife(level, player);
                     }
@@ -118,7 +120,7 @@ public final class UniverseSpawns {
     // and raptors, the snow the Red Ribbon (its Muscle Tower stood in the snow) and the yeti, the islands and beaches
     // the pirates; around the Red Ribbon base its soldiers. A group is picked for the spot it lands on.
     static final List<String> EARTH_MOBS = List.of("saibaman", "soldado_red_ribbon", "bandido_deserto", "pirata", "yeti",
-            "raptor", "tiranossauro");
+            "raptor", "tiranossauro", "ladrao_urso");
 
     // In the normal overworld (Stark 2026-11-11: o universo virou biomas): by the Dragon Ball biome of the spot. The
     // pirates by the sea, the Saibamen and bandits in the red desert, the Red Ribbon and the yeti in the peaks, the
@@ -134,9 +136,17 @@ public final class UniverseSpawns {
         if (biome.is(com.starkinhon.battlegroundsmod.world.ModWorldgen.DESERTO_VERMELHO)) {
             return List.of("saibaman", "saibaman", "bandido_deserto", "raptor");
         }
+        // Korin's tower (Stark 2026-11-11): Bora guards it (DbCreatureSpawns), no dinosaurs around; the Red Ribbon still
+        // comes after the dragon ball there
+        if (com.starkinhon.battlegroundsmod.world.WorldSites.near(level, com.starkinhon.battlegroundsmod.world.WorldSites.KARIN,
+                new BlockPos(x, 0, z), 90) != null) {
+            return List.of("soldado_red_ribbon");
+        }
         if (biome.is(com.starkinhon.battlegroundsmod.world.ModWorldgen.MONTANHAS_PAOZU)) {
-            // Goku's mountains: the dinosaurs he grew up hunting
-            return List.of("raptor", "raptor", "tiranossauro", "tiranossauro");
+            // Goku's mountains: the dinosaurs he grew up hunting, and the Bear Thief: rare by day, he hunts at night
+            // (then fewer dinosaurs; Stark 2026-11-11)
+            return level.isDay() ? List.of("raptor", "raptor", "tiranossauro", "tiranossauro", "raptor", "tiranossauro", "ladrao_urso")
+                    : List.of("ladrao_urso", "ladrao_urso", "ladrao_urso", "raptor", "tiranossauro");
         }
         if (biome.is(com.starkinhon.battlegroundsmod.world.ModWorldgen.NORTE_GELADO)) {
             // the frozen north: the yeti and the Red Ribbon (its Muscle Tower stood in the snow)
@@ -229,7 +239,7 @@ public final class UniverseSpawns {
             return false;
         }
         // the big ones alone, the raptors in packs
-        int count = "tiranossauro".equals(id) || "yeti".equals(id) ? 1 : "raptor".equals(id) ? 2 : 1 + random.nextInt(2);
+        int count = "tiranossauro".equals(id) || "yeti".equals(id) || "ladrao_urso".equals(id) ? 1 : "raptor".equals(id) ? 2 : 1 + random.nextInt(2);
         count = Math.min(count, room);
         // the pirates live by the sea; the rest keep off it
         boolean shore = "pirata".equals(id);
@@ -274,29 +284,64 @@ public final class UniverseSpawns {
                 com.starkinhon.battlegroundsmod.BattlegroundsMod.MODID, "soldado_freeza"));
         AABB around = player.getBoundingBox().inflate(NEARBY_RADIUS);
         int nearby = level.getEntitiesOfClass(SoulBoss.class, around, mob -> "soldado_freeza".equals(mob.bossId())).size();
-        if (type == EntityType.PIG || nearby >= NEARBY_CAP) {
+        // twice as many at night (Stark 2026-11-11)
+        int cap = level.getServer().overworld().isDay() ? NEARBY_CAP : NEARBY_CAP * 2;
+        if (type == EntityType.PIG || nearby >= cap) {
             return;
         }
-        RandomSource random = level.getRandom();
-        double angle = random.nextDouble() * Math.PI * 2;
-        int dist = MIN_DIST + random.nextInt(MAX_DIST - MIN_DIST + 1);
-        int x = player.getBlockX() + (int) Math.round(Math.cos(angle) * dist);
-        int z = player.getBlockZ() + (int) Math.round(Math.sin(angle) * dist);
         // never past the cap (Stark's test 2026-11-10: a group of 3 on top of 5 made 8), and away from Namek's green
-        // sea, where they ended up swimming
-        int count = Math.min(1 + random.nextInt(3), NEARBY_CAP - nearby);
-        for (int i = 0; i < count; i++) {
-            BlockPos pos = ground(level, x + random.nextInt(5) - 2, z + random.nextInt(5) - 2);
-            if (pos != null && !nearWater(level, pos)) {
-                type.spawn(level, pos, MobSpawnType.EVENT);
+        // sea, where they ended up swimming. A few spots per try: Namek is islands, most single spots were water and
+        // nothing came (Stark 2026-11-11: no soldiers on Namek)
+        groupOn(level, player, type, Math.min(1 + level.getRandom().nextInt(3), cap - nearby));
+    }
+
+    // The Namekians (Stark 2026-11-11): by day groups of 2 to 4 walk Namek's islands; at night they stay home.
+    private static void spawnNamekians(ServerLevel level, ServerPlayer player) {
+        if (!level.getServer().overworld().isDay() || level.getRandom().nextInt(3) != 0) {
+            return;
+        }
+        int nearby = level.getEntitiesOfClass(com.starkinhon.battlegroundsmod.animal.db.Namekiano.class,
+                player.getBoundingBox().inflate(NEARBY_RADIUS)).size();
+        if (nearby >= 8) {
+            return;
+        }
+        groupOn(level, player, com.starkinhon.battlegroundsmod.ModEntities.NAMEKIANO.get(), Math.min(2 + level.getRandom().nextInt(3), 8 - nearby));
+    }
+
+    // A group of this type on dry ground 24-48 blocks from the player, trying a few spots; true when any came.
+    static boolean groupOn(ServerLevel level, ServerPlayer player, EntityType<?> type, int count) {
+        RandomSource random = level.getRandom();
+        for (int attempt = 0; attempt < 6 && count > 0; attempt++) {
+            double angle = random.nextDouble() * Math.PI * 2;
+            int dist = MIN_DIST + random.nextInt(MAX_DIST - MIN_DIST + 1);
+            int x = player.getBlockX() + (int) Math.round(Math.cos(angle) * dist);
+            int z = player.getBlockZ() + (int) Math.round(Math.sin(angle) * dist);
+            BlockPos first = ground(level, x, z);
+            if (first == null || nearWater(level, first, 2)) {
+                continue;
+            }
+            boolean any = false;
+            for (int i = 0; i < count; i++) {
+                BlockPos pos = i == 0 ? first : ground(level, x + random.nextInt(5) - 2, z + random.nextInt(5) - 2);
+                if (pos != null && !nearWater(level, pos, 2)) {
+                    any |= type.spawn(level, pos, MobSpawnType.EVENT) != null;
+                }
+            }
+            if (any) {
+                return true;
             }
         }
+        return false;
     }
 
     private static boolean nearWater(ServerLevel level, BlockPos pos) {
+        return nearWater(level, pos, 4);
+    }
+
+    static boolean nearWater(ServerLevel level, BlockPos pos, int r) {
         BlockPos.MutableBlockPos p = new BlockPos.MutableBlockPos();
-        for (int dx = -4; dx <= 4; dx += 2) {
-            for (int dz = -4; dz <= 4; dz += 2) {
+        for (int dx = -r; dx <= r; dx += 2) {
+            for (int dz = -r; dz <= r; dz += 2) {
                 for (int dy = -2; dy <= 0; dy++) {
                     if (!level.getFluidState(p.set(pos.getX() + dx, pos.getY() + dy, pos.getZ() + dz)).isEmpty()) {
                         return true;
@@ -308,7 +353,7 @@ public final class UniverseSpawns {
     }
 
     // A dry spot on top of solid ground in a loaded chunk, or null.
-    private static BlockPos ground(ServerLevel level, int x, int z) {
+    static BlockPos ground(ServerLevel level, int x, int z) {
         if (!level.hasChunkAt(new BlockPos(x, 0, z))) {
             return null;
         }

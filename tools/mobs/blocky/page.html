@@ -1,0 +1,255 @@
+<title>Mobs do Dragon Ball</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Russo+One&family=Inter:wght@400;600&family=JetBrains+Mono:wght@400&display=swap">
+<style>
+/* Layout: palco 3D grande à esquerda, painel do mob à direita; embaixo a tabela de spawn por bioma. Tema único escuro (céu de fim de tarde). */
+:root {
+  --bg: #12151d; --panel: #1b202b; --line: #2c3342; --fg: #e9ecf2; --mute: #9aa3b5;
+  --accent: #f39a2b; --accent-fg: #1a1206; --good: #6fcf7a; --warn: #f2c14e; --bad: #ef6b5b;
+  --f-display: "Russo One", "Arial Black", sans-serif; --f-body: Inter, system-ui, sans-serif; --f-mono: "JetBrains Mono", ui-monospace, monospace;
+  color-scheme: dark;
+}
+body { background: var(--bg); color: var(--fg); font-family: var(--f-body); }
+.wrap { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 18px 40px; max-width: 1280px; margin: 0 auto; display: grid; gap: 18px; }
+header h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(22px, 3vw, 32px); margin: 0; letter-spacing: .01em; text-wrap: balance; }
+header p { color: var(--mute); margin: 4px 0 0; max-width: 70ch; line-height: 1.5; }
+.tabs { display: flex; flex-wrap: wrap; gap: 8px; }
+.tabs button, .seg button { font: 600 13px var(--f-body); color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 7px 14px; cursor: pointer; }
+.tabs button[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+.tabs button small { font-weight: 400; opacity: .75; margin-left: 4px; }
+.main { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 18px; }
+@media (max-width: 900px) { .main { grid-template-columns: minmax(0, 1fr); } }
+.stage { position: relative; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; aspect-ratio: 4 / 3; max-width: 100%; touch-action: none; }
+.stage canvas { display: block; width: 100%; height: 100%; cursor: grab; }
+.hud { position: absolute; left: 10px; right: 10px; bottom: 10px; display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; pointer-events: none; }
+.seg { display: flex; gap: 4px; pointer-events: auto; background: rgba(10, 12, 18, .7); padding: 4px; border-radius: 999px; }
+.seg button { padding: 5px 11px; border: 0; background: transparent; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); }
+.side { display: grid; gap: 14px; align-content: start; min-width: 0; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; min-width: 0; }
+.card h2 { font-family: var(--f-display); font-weight: 400; font-size: 22px; margin: 0; }
+.card .bio { color: var(--accent); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; margin-top: 2px; }
+dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; margin: 12px 0 0; font-size: 13px; line-height: 1.45; }
+dt { color: var(--mute); }
+dd { margin: 0; }
+.tex { display: flex; gap: 12px; align-items: start; }
+.tex canvas { image-rendering: pixelated; width: 128px; height: 128px; background: repeating-conic-gradient(#222 0 25%, #2a2a2a 0 50%) 0 0 / 16px 16px; border-radius: 4px; flex: none; }
+.tex p { margin: 0; font-size: 12px; color: var(--mute); line-height: 1.45; }
+.mono { font-family: var(--f-mono); font-size: 12px; }
+.var { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+h3 { font-family: var(--f-display); font-weight: 400; font-size: 20px; margin: 6px 0 0; }
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; }
+table { border-collapse: collapse; width: 100%; min-width: 760px; font-size: 13px; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; line-height: 1.45; }
+th { color: var(--mute); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; background: var(--panel); }
+tr:last-child td { border-bottom: 0; }
+.pill { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; margin-right: 4px; }
+.novo { background: var(--accent); color: var(--accent-fg); }
+.fica { background: #2b3a2d; color: var(--good); }
+.sai { background: #3d2522; color: var(--bad); }
+.note { color: var(--mute); font-size: 13px; line-height: 1.5; max-width: 80ch; margin: 0; }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Mobs do Dragon Ball</h1>
+    <p>Um mob novo por bioma. Cada um é feito de cubos como os do jogo e tem a textura pintada pixel a pixel. Arraste o palco pra girar e use a rodinha pra dar zoom. O boneco cinza tem a altura do jogador (1,8 bloco) e cada quadrado do chão é um bloco.</p>
+  </header>
+  <nav class="tabs" id="tabs" aria-label="Mob"></nav>
+  <div class="main">
+    <div class="stage" id="stage">
+      <div class="hud">
+        <div class="seg" id="modes" aria-label="Animação"></div>
+        <div class="seg" id="cams" aria-label="Câmera"></div>
+      </div>
+    </div>
+    <aside class="side">
+      <div class="card">
+        <h2 id="m-nome"></h2>
+        <div class="bio" id="m-bioma"></div>
+        <div class="var" id="m-var"></div>
+        <dl id="m-info"></dl>
+      </div>
+      <div class="card tex">
+        <canvas id="m-tex" width="128" height="128"></canvas>
+        <p>Textura do jogo, do jeito que vai pro mod. <span class="mono" id="m-texsize"></span></p>
+      </div>
+    </aside>
+  </div>
+
+  <h3>Spawn por bioma</h3>
+  <p class="note">Valem as regras de antes: os mobs comuns só nascem no próprio bioma, longe das casas e do ponto de chegada, e os monstros vanilla continuam fora dos biomas do Dragon Ball.</p>
+  <div class="tablewrap"><table id="spawn"></table></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<!--ENGINE-->
+<!--MOBS-->
+<script>
+'use strict';
+const SPAWN = [
+  ['Namek', [['novo', 'Namekiano'], ['fica', 'Soldado do Freeza (consertar: hoje não aparece)']],
+    'Namekianos em grupos de 2 a 4, misturando tipos. Soldados em 1 a 3, no máximo 6 por perto.',
+    'Dia: mais namekianos. Noite: namekianos somem pra perto da água e os soldados dobram. Soldado que vê namekiano ataca, e você pode entrar na briga.'],
+  ['Mar do Sul', [['novo', 'Peixe gigante'], ['fica', 'Pirata']],
+    'Peixe: 1 por vez num raio de 64 blocos, só em água com 5 ou mais de fundo. Piratas na praia e no navio.',
+    'Dia: raro. Noite: o dobro, e ele salta mais alto.'],
+  ['Norte Gelado', [['novo', 'Androide 8'], ['fica', 'Yeti']],
+    'Androide 8: sozinho e raro, no máximo 1 a cada 128 blocos. Yetis de 1 em 1.',
+    'Igual de dia e de noite. Na nevasca nascem mais yetis.'],
+  ['Montanhas Paozu', [['novo', 'Ladrão Urso'], ['fica', 'Raptor e tiranossauro']],
+    'Ladrão Urso sempre sozinho e no máximo 1 por perto. Raptores em dupla, tiranossauro sozinho.',
+    'Dia: dinossauros, urso raro. Noite: o urso vira o comum e os dinossauros diminuem.'],
+  ['Terra Sagrada de Karin', [['novo', 'Bora'], ['fica', 'Soldado Red Ribbon'], ['sai', 'Dinossauros']],
+    'Bora: 1 só, perto da Torre Karin (até 40 blocos). Volta um dia do jogo depois de morrer. Red Ribbon em grupos de 2.',
+    'Igual de dia e de noite. Bora e Red Ribbon brigam quando se veem, como no anime.'],
+];
+const ICON = { novo: 'novo', fica: 'fica', sai: 'sai' };
+(function table() {
+  const t = document.getElementById('spawn');
+  t.innerHTML = '<thead><tr><th>Bioma</th><th>Quem vive lá</th><th>Quantos e onde</th><th>Dia e noite</th></tr></thead>' +
+    '<tbody>' + SPAWN.map(([b, who, where, dn]) => `<tr><td><b>${b}</b></td><td>${who.map(([k, n]) =>
+      `<div><span class="pill ${k}">${k === 'novo' ? 'novo' : k === 'fica' ? 'fica' : 'sai'}</span>${n}</div>`).join('')}</td><td>${where}</td><td>${dn}</td></tr>`).join('') + '</tbody>';
+})();
+
+// ---------- palco ----------
+const stage = document.getElementById('stage');
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+stage.prepend(renderer.domElement);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x1d2433);
+scene.fog = new THREE.Fog(0x1d2433, 18, 40);
+const camera = new THREE.PerspectiveCamera(50, 4 / 3, 0.05, 200);
+scene.add(new THREE.HemisphereLight(0xdfe8ff, 0x3a3226, 0.75));
+const sun = new THREE.DirectionalLight(0xffffff, 0.75);
+sun.position.set(-4, 9, -6);
+scene.add(sun);
+const grid = new THREE.GridHelper(24, 24, 0x56607a, 0x343c4f);
+scene.add(grid);
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(24, 24), new THREE.MeshLambertMaterial({ color: 0x252c3b }));
+floor.rotation.x = -Math.PI / 2; floor.position.y = -0.002;
+scene.add(floor);
+// jogador de referência (1,8 bloco), parado ao lado
+const ref = new THREE.Group();
+const gm = new THREE.MeshLambertMaterial({ color: 0x8a92a6 });
+const bx = (w, h, d, x, y, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), gm); m.position.set(x, y, z); ref.add(m); };
+bx(0.5, 0.5, 0.5, 0, 1.55, 0); bx(0.5, 0.75, 0.25, 0, 0.975, 0); bx(0.25, 0.75, 0.25, -0.375, 0.975, 0); bx(0.25, 0.75, 0.25, 0.375, 0.975, 0);
+bx(0.24, 0.75, 0.25, -0.125, 0.375, 0); bx(0.24, 0.75, 0.25, 0.125, 0.375, 0);
+scene.add(ref);
+const water = new THREE.Mesh(new THREE.PlaneGeometry(24, 24), new THREE.MeshLambertMaterial({ color: 0x2a7fb8, transparent: true, opacity: 0.34, depthWrite: false, side: THREE.DoubleSide }));
+water.rotation.x = -Math.PI / 2;
+water.visible = false;
+scene.add(water);
+
+let yaw = -0.55, pitch = 0.18, dist = 7, look = new THREE.Vector3(0, 1.4, 0);
+function placeCam() {
+  camera.position.set(look.x + Math.sin(yaw) * Math.cos(pitch) * dist, look.y + Math.sin(pitch) * dist, look.z - Math.cos(yaw) * Math.cos(pitch) * dist);
+  camera.lookAt(look);
+}
+let drag = null;
+renderer.domElement.addEventListener('pointerdown', e => { drag = [e.clientX, e.clientY]; renderer.domElement.setPointerCapture(e.pointerId); });
+renderer.domElement.addEventListener('pointermove', e => {
+  if (!drag) return;
+  yaw += (e.clientX - drag[0]) * 0.008; pitch = Math.max(-0.2, Math.min(1.45, pitch + (e.clientY - drag[1]) * 0.006));
+  drag = [e.clientX, e.clientY]; setCam(null);
+});
+renderer.domElement.addEventListener('pointerup', () => { drag = null; });
+renderer.domElement.addEventListener('wheel', e => { e.preventDefault(); dist = Math.max(2, Math.min(30, dist * (1 + Math.sign(e.deltaY) * 0.1))); }, { passive: false });
+function resize() {
+  const r = stage.getBoundingClientRect();
+  renderer.setSize(r.width, r.height, false);
+  camera.aspect = r.width / r.height; camera.updateProjectionMatrix();
+}
+new ResizeObserver(resize).observe(stage);
+
+// ---------- mobs ----------
+const make = v => { const model = ENG.build(v.def); const tex = ENG.paint(model, model.W, model.H); const obj = ENG.toThree(model, tex); return { v, model, tex, obj }; };
+const built = window.MOBS.map(m => ({ m, vs: (m.variants || [{ nome: null, def: m.def }]).map(make) }));
+let cur = 0, curV = 0, mode = 'parado', cam = 'jogador', t0 = performance.now();
+const tabs = document.getElementById('tabs');
+built.forEach((b, i) => {
+  const btn = document.createElement('button');
+  btn.id = 'tab-' + b.m.id;
+  btn.innerHTML = `${b.m.nome}<small>${b.m.bioma}</small>`;
+  btn.onclick = () => select(i, 0);
+  tabs.appendChild(btn);
+});
+const MODES = [['parado', 'Parado'], ['andar', 'Andar'], ['atacar', 'Atacar']];
+const CAMS = [['jogador', 'Jogador'], ['lado', 'Lado'], ['cima', 'Cima']];
+function seg(el, list, get, set) {
+  el.innerHTML = '';
+  for (const [k, n] of list) { const b = document.createElement('button'); b.id = el.id + '-' + k; b.textContent = n; b.onclick = () => set(k); el.appendChild(b); }
+  el.refresh = () => [...el.children].forEach((b, i) => b.setAttribute('aria-pressed', list[i][0] === get()));
+}
+const modesEl = document.getElementById('modes'), camsEl = document.getElementById('cams');
+seg(modesEl, MODES, () => mode, k => { mode = k; t0 = performance.now(); modesEl.refresh(); });
+seg(camsEl, CAMS, () => cam, k => setCam(k));
+function setCam(k) {
+  cam = k;
+  const m = built[cur].m;
+  if (k) {
+    dist = m.cam || 7;
+    look.set(0, m.lookY || 1.4, 0);
+    if (k === 'jogador') { yaw = m.camYaw ?? -0.5; pitch = m.camPitch ?? 0.16; }
+    if (k === 'lado') { yaw = -Math.PI / 2; pitch = 0.05; }
+    if (k === 'cima') { yaw = -0.3; pitch = 1.3; }
+  }
+  camsEl.refresh();
+}
+function select(i, vi) {
+  if (built[cur]) scene.remove(built[cur].vs[curV].obj);
+  cur = i; curV = vi;
+  const b = built[i], e = b.vs[vi];
+  scene.add(e.obj);
+  [...tabs.children].forEach((c, j) => c.setAttribute('aria-pressed', j === i));
+  ref.position.set(b.m.refX || 2.2, 0, 0);
+  water.visible = !!b.m.water; water.position.y = b.m.water || 0;
+  document.getElementById('m-nome').textContent = b.m.nome;
+  document.getElementById('m-bioma').textContent = b.m.bioma;
+  const ve = document.getElementById('m-var');
+  ve.innerHTML = '';
+  if (b.vs.length > 1) b.vs.forEach((x, j) => {
+    const bt = document.createElement('button'); bt.className = ''; bt.id = 'var-' + j;
+    bt.textContent = x.v.nome; bt.setAttribute('aria-pressed', j === vi);
+    bt.style.cssText = 'font:600 12px var(--f-body);padding:5px 11px;border-radius:999px;border:1px solid var(--line);cursor:pointer;' +
+      (j === vi ? 'background:var(--accent);color:var(--accent-fg);border-color:var(--accent)' : 'background:transparent;color:var(--fg)');
+    bt.onclick = () => select(i, j); ve.appendChild(bt);
+  });
+  if (b.m.randomVariant) {
+    const bt = document.createElement('button'); bt.id = 'var-sortear';
+    bt.textContent = 'Sortear outro';
+    bt.style.cssText = 'font:600 12px var(--f-body);padding:5px 11px;border-radius:999px;border:1px dashed var(--accent);cursor:pointer;background:transparent;color:var(--accent)';
+    bt.onclick = () => { b.vs.push(make(b.m.randomVariant())); select(i, b.vs.length - 1); };
+    ve.appendChild(bt);
+  }
+  const info = Object.assign({}, b.m.info, e.v.info || {});
+  document.getElementById('m-info').innerHTML = Object.entries(info).map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('');
+  const tc = document.getElementById('m-tex');
+  tc.width = e.tex.width; tc.height = e.tex.height;
+  tc.getContext('2d').drawImage(e.tex, 0, 0);
+  document.getElementById('m-texsize').textContent = `${e.tex.width}×${e.tex.height}`;
+  modesEl.refresh();
+  setCam(cam || 'jogador');
+  if (!cam) setCam('jogador');
+}
+select(0, 0);
+setCam('jogador');
+
+function frame(now) {
+  const b = built[cur], e = b.vs[curV];
+  const t = (now - t0) / 1000;
+  ENG.reset(e.model);
+  e.obj.position.set(0, 1.5, 0);
+  e.obj.rotation.set(0, 0, 0);
+  const len = b.m.attackLen || 1.6;
+  b.m.anim(e.model.parts, t, mode, (t % len) / len, e.obj, e.v);
+  placeCam();
+  renderer.render(scene, camera);
+  requestAnimationFrame(frame);
+}
+resize();
+requestAnimationFrame(frame);
+window.__set = (i, vi, md, cm, tt) => { select(i, vi || 0); mode = md; modesEl.refresh(); setCam(cm); t0 = performance.now() - (tt || 0) * 1000; };
+</script>

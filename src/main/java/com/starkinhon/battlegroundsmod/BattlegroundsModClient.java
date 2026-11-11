@@ -295,6 +295,14 @@ public class BattlegroundsModClient {
                 pose.scale(1.35f, 1.35f, 1.35f);
             }
         });
+        // the Dragon Ball biomes' creatures, box models from the approved preview (client/blocky)
+        event.registerEntityRenderer(ModEntities.NAMEKIANO.get(), context -> new com.starkinhon.battlegroundsmod.client.blocky.BlockyRenderer<>(context,
+                java.util.stream.IntStream.range(0, com.starkinhon.battlegroundsmod.animal.db.Namekiano.VARIANTS).mapToObj(i -> "namekiano_" + i).toList(),
+                com.starkinhon.battlegroundsmod.client.blocky.DbAnims::namek, 0.6f));
+        event.registerEntityRenderer(ModEntities.PEIXE_GIGANTE.get(), context -> new com.starkinhon.battlegroundsmod.client.blocky.BlockyRenderer<>(context, "peixe_gigante", com.starkinhon.battlegroundsmod.client.blocky.DbAnims::peixe, 1.4f));
+        event.registerEntityRenderer(ModEntities.ANDROIDE_8.get(), context -> new com.starkinhon.battlegroundsmod.client.blocky.BlockyRenderer<>(context, "androide_8", com.starkinhon.battlegroundsmod.client.blocky.DbAnims::androide, 1.1f));
+        event.registerEntityRenderer(ModEntities.LADRAO_URSO.get(), context -> new com.starkinhon.battlegroundsmod.client.blocky.BlockyRenderer<>(context, "ladrao_urso", com.starkinhon.battlegroundsmod.client.blocky.DbAnims::urso, 1.0f));
+        event.registerEntityRenderer(ModEntities.BORA.get(), context -> new com.starkinhon.battlegroundsmod.client.blocky.BlockyRenderer<>(context, "bora", com.starkinhon.battlegroundsmod.client.blocky.DbAnims::bora, 0.7f));
         event.registerEntityRenderer(ModEntities.TIRANOSSAURO.get(),
                 context -> new com.starkinhon.battlegroundsmod.client.animal.DinoRenderer(context, "tiranossauro", 2.6f));
         event.registerEntityRenderer(ModEntities.PTERODACTILO.get(), com.starkinhon.battlegroundsmod.client.animal.PteroRenderer::new);

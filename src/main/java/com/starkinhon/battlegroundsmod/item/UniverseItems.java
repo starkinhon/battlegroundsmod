@@ -27,6 +27,8 @@ public final class UniverseItems {
             Map.entry("soldado_red_ribbon", "dragonball"), Map.entry("saibaman", "dragonball"),
             Map.entry("soldado_freeza", "dragonball"), Map.entry("bandido_deserto", "dragonball"), Map.entry("pirata", "dragonball"),
             Map.entry("yeti", "dragonball"), Map.entry("raptor", "dragonball"), Map.entry("tiranossauro", "dragonball"),
+            Map.entry("namekiano", "dragonball"), Map.entry("peixe_gigante", "dragonball"), Map.entry("androide_8", "dragonball"),
+            Map.entry("ladrao_urso", "dragonball"), Map.entry("bora", "dragonball"),
             Map.entry("npc_gohan", "dragonball"), Map.entry("npc_korin", "dragonball"),
             Map.entry("uchiha_ghost", "naruto"), Map.entry("madara", "naruto"),
             Map.entry("naruto", "naruto"), Map.entry("sasuke", "naruto"), Map.entry("kakashi", "naruto"),

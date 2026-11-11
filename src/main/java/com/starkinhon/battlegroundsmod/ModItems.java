@@ -109,6 +109,16 @@ public final class ModItems {
             () -> new DeferredSpawnEggItem(ModEntities.TIRANOSSAURO, 0x5E7A3A, 0xD8C79A, new Item.Properties()));
     public static final DeferredItem<DeferredSpawnEggItem> RAPTOR_SPAWN_EGG = BattlegroundsMod.ITEMS.register("raptor_spawn_egg",
             () -> new DeferredSpawnEggItem(ModEntities.RAPTOR, 0x8C6A3E, 0x3C2C1C, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> NAMEKIANO_SPAWN_EGG = BattlegroundsMod.ITEMS.register("namekiano_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.NAMEKIANO, 0x4E9A3A, 0xE8DCC0, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> PEIXE_GIGANTE_SPAWN_EGG = BattlegroundsMod.ITEMS.register("peixe_gigante_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.PEIXE_GIGANTE, 0x2E6E8E, 0xE0A040, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> ANDROIDE_8_SPAWN_EGG = BattlegroundsMod.ITEMS.register("androide_8_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.ANDROIDE_8, 0x3E7A4A, 0xC8B89A, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> LADRAO_URSO_SPAWN_EGG = BattlegroundsMod.ITEMS.register("ladrao_urso_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.LADRAO_URSO, 0x5A3A22, 0xC23A2A, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> BORA_SPAWN_EGG = BattlegroundsMod.ITEMS.register("bora_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.BORA, 0x4A2E22, 0xD8C080, new Item.Properties()));
     public static final DeferredItem<DeferredSpawnEggItem> SOLDADO_FREEZA_SPAWN_EGG = BattlegroundsMod.ITEMS.register("soldado_freeza_spawn_egg",
             () -> new DeferredSpawnEggItem(ModEntities.SOLDADO_FREEZA, 0xE8E8E0, 0x6A3C8E, new Item.Properties()));
     public static final DeferredItem<DeferredSpawnEggItem> RADITZ_SPAWN_EGG = BattlegroundsMod.ITEMS.register("raditz_spawn_egg",

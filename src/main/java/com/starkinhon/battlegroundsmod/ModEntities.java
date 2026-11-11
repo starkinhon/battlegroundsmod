@@ -160,6 +160,24 @@ public final class ModEntities {
             () -> EntityType.Builder.<com.starkinhon.battlegroundsmod.animal.Dinosaur>of(com.starkinhon.battlegroundsmod.animal.Dinosaur::new, MobCategory.MONSTER)
                     .sized(0.9f, 1.3f).eyeHeight(1.15f).clientTrackingRange(10).build("raptor"));
 
+    // The Dragon Ball biomes' own creatures (Stark 2026-11-11, prévia mobs-db aprovada; animal/db): the Namekians of
+    // Namek, the giant fish of the Mar do Sul, Android 8 in the Norte Gelado, the Bear Thief in Paozu, Bora by Karin.
+    public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.animal.db.Namekiano>> NAMEKIANO = ENTITY_TYPES.register("namekiano",
+            () -> EntityType.Builder.<com.starkinhon.battlegroundsmod.animal.db.Namekiano>of(com.starkinhon.battlegroundsmod.animal.db.Namekiano::new, MobCategory.MONSTER)
+                    .sized(0.85f, 2.2f).eyeHeight(1.95f).clientTrackingRange(10).build("namekiano"));
+    public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.animal.db.PeixeGigante>> PEIXE_GIGANTE = ENTITY_TYPES.register("peixe_gigante",
+            () -> EntityType.Builder.<com.starkinhon.battlegroundsmod.animal.db.PeixeGigante>of(com.starkinhon.battlegroundsmod.animal.db.PeixeGigante::new, MobCategory.MONSTER)
+                    .sized(2.6f, 1.8f).eyeHeight(1.1f).clientTrackingRange(12).build("peixe_gigante"));
+    public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.animal.db.Androide8>> ANDROIDE_8 = ENTITY_TYPES.register("androide_8",
+            () -> EntityType.Builder.<com.starkinhon.battlegroundsmod.animal.db.Androide8>of(com.starkinhon.battlegroundsmod.animal.db.Androide8::new, MobCategory.MONSTER)
+                    .sized(1.6f, 3.1f).eyeHeight(2.8f).clientTrackingRange(12).build("androide_8"));
+    public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.animal.db.LadraoUrso>> LADRAO_URSO = ENTITY_TYPES.register("ladrao_urso",
+            () -> EntityType.Builder.<com.starkinhon.battlegroundsmod.animal.db.LadraoUrso>of(com.starkinhon.battlegroundsmod.animal.db.LadraoUrso::new, MobCategory.MONSTER)
+                    .sized(1.5f, 2.9f).eyeHeight(2.5f).clientTrackingRange(10).build("ladrao_urso"));
+    public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.animal.db.Bora>> BORA = ENTITY_TYPES.register("bora",
+            () -> EntityType.Builder.<com.starkinhon.battlegroundsmod.animal.db.Bora>of(com.starkinhon.battlegroundsmod.animal.db.Bora::new, MobCategory.MONSTER)
+                    .sized(1.0f, 2.7f).eyeHeight(2.45f).clientTrackingRange(10).build("bora"));
+
     // The pterodactyls over the Dragon Ball biomes: scenery (animal/Pterodactyl).
     public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.animal.Pterodactyl>> PTERODACTILO = ENTITY_TYPES.register("pterodactilo",
             () -> EntityType.Builder.<com.starkinhon.battlegroundsmod.animal.Pterodactyl>of(com.starkinhon.battlegroundsmod.animal.Pterodactyl::new, MobCategory.AMBIENT)
@@ -269,6 +287,11 @@ public final class ModEntities {
         event.put(TIRANOSSAURO.get(), com.starkinhon.battlegroundsmod.animal.Dinosaur.attributes(true).build());
         event.put(RAPTOR.get(), com.starkinhon.battlegroundsmod.animal.Dinosaur.attributes(false).build());
         event.put(PTERODACTILO.get(), com.starkinhon.battlegroundsmod.animal.Pterodactyl.attributes().build());
+        event.put(NAMEKIANO.get(), com.starkinhon.battlegroundsmod.animal.db.Namekiano.attributes().build());
+        event.put(PEIXE_GIGANTE.get(), com.starkinhon.battlegroundsmod.animal.db.PeixeGigante.attributes().build());
+        event.put(ANDROIDE_8.get(), com.starkinhon.battlegroundsmod.animal.db.Androide8.attributes().build());
+        event.put(LADRAO_URSO.get(), com.starkinhon.battlegroundsmod.animal.db.LadraoUrso.attributes().build());
+        event.put(BORA.get(), com.starkinhon.battlegroundsmod.animal.db.Bora.attributes().build());
         event.put(NPC_GOHAN.get(), com.starkinhon.battlegroundsmod.npc.UniverseNpc.createAttributes().build());
         event.put(NPC_KORIN.get(), com.starkinhon.battlegroundsmod.npc.UniverseNpc.createAttributes().build());
         event.put(NPC_BULMA.get(), com.starkinhon.battlegroundsmod.npc.UniverseNpc.createAttributes().build());
