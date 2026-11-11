@@ -36,6 +36,10 @@ public final class UniverseSpawns {
     private static final int MIN_DIST = 24;
     private static final int MAX_DIST = 48;
     private static final float VANILLA_KEPT = 0.5f;
+    private static final int EARTH_CAP_DAY = 3;
+    private static final int EARTH_CAP_NIGHT = 4;
+    private static final int EARTH_MIN_DIST = 32;
+    private static final int EARTH_MAX_DIST = 56;
 
     private UniverseSpawns() {
     }
@@ -43,6 +47,8 @@ public final class UniverseSpawns {
     public static void register() {
         NeoForge.EVENT_BUS.addListener(UniverseSpawns::onServerTick);
         NeoForge.EVENT_BUS.addListener(UniverseSpawns::onFinalizeSpawn);
+        NeoForge.EVENT_BUS.addListener(UniverseSpawns::onFinalizeAny);
+        NeoForge.EVENT_BUS.addListener(UniverseSpawns::onSleepFinished);
     }
 
     private static void onServerTick(ServerTickEvent.Post event) {
@@ -115,20 +121,21 @@ public final class UniverseSpawns {
         double rx = x - com.starkinhon.battlegroundsmod.world.DragonBallPlaces.RED_RIBBON_X;
         double rz = z - com.starkinhon.battlegroundsmod.world.DragonBallPlaces.RED_RIBBON_Z;
         if (rx * rx + rz * rz < 90 * 90) {
-            return List.of("soldado_red_ribbon", "soldado_red_ribbon", "saibaman");
+            return List.of("soldado_red_ribbon");
         }
         com.starkinhon.battlegroundsmod.world.WorldMap map = com.starkinhon.battlegroundsmod.world.WorldMap.get(
                 com.starkinhon.battlegroundsmod.world.DragonBallPlaces.MAP);
         int kind = map.kind(x, z);
         if (kind == com.starkinhon.battlegroundsmod.world.WorldMap.SAND || map.landSize(x, z) < ISLAND) {
-            return List.of("pirata", "pirata", "pirata", "saibaman", "raptor");
+            return List.of("pirata");
         }
+        // Each enemy only in its own region (Stark's test 2026-11-10: Saibamen are the desert's, not Capsule Corp's)
         return switch (kind) {
             case com.starkinhon.battlegroundsmod.world.WorldMap.SNOW -> List.of("soldado_red_ribbon", "soldado_red_ribbon", "yeti");
             case com.starkinhon.battlegroundsmod.world.WorldMap.DESERT, com.starkinhon.battlegroundsmod.world.WorldMap.CANYON,
                     com.starkinhon.battlegroundsmod.world.WorldMap.REDROCK, com.starkinhon.battlegroundsmod.world.WorldMap.CRATER,
-                    com.starkinhon.battlegroundsmod.world.WorldMap.LAVA -> List.of("bandido_deserto", "bandido_deserto", "raptor");
-            default -> List.of("saibaman", "saibaman", "saibaman", "raptor", "raptor", "tiranossauro");
+                    com.starkinhon.battlegroundsmod.world.WorldMap.LAVA -> List.of("saibaman", "saibaman", "bandido_deserto");
+            default -> List.of("raptor", "raptor", "tiranossauro", "soldado_red_ribbon");
         };
     }
 
@@ -137,16 +144,26 @@ public final class UniverseSpawns {
 
     private static void spawnEarth(ServerLevel level, ServerPlayer player) {
         RandomSource random = level.getRandom();
+        // Much calmer (Stark's test 2026-11-10: five Saibamen in his first minute, hordes at night): a try every 15 s by
+        // day and 10 s at night, at most 3 (4 at night) around, farther away, and never by the houses or the arrival.
+        boolean night = !level.isDay();
+        if (random.nextInt(night ? 2 : 3) != 0) {
+            return;
+        }
+        int cap = night ? EARTH_CAP_NIGHT : EARTH_CAP_DAY;
         AABB around = player.getBoundingBox().inflate(NEARBY_RADIUS);
         int nearby = level.getEntitiesOfClass(net.minecraft.world.entity.Mob.class, around, mob -> EARTH_MOBS.contains(
                 BuiltInRegistries.ENTITY_TYPE.getKey(mob.getType()).getPath())).size();
-        if (nearby >= NEARBY_CAP) {
+        if (nearby >= cap) {
             return;
         }
         double angle = random.nextDouble() * Math.PI * 2;
-        int dist = MIN_DIST + random.nextInt(MAX_DIST - MIN_DIST + 1);
+        int dist = EARTH_MIN_DIST + random.nextInt(EARTH_MAX_DIST - EARTH_MIN_DIST + 1);
         int x = player.getBlockX() + (int) Math.round(Math.cos(angle) * dist);
         int z = player.getBlockZ() + (int) Math.round(Math.sin(angle) * dist);
+        if (com.starkinhon.battlegroundsmod.world.DragonBallPlaces.safe(x, z)) {
+            return;
+        }
         List<String> mobs = earthMobs(x, z);
         String id = mobs.get(random.nextInt(mobs.size()));
         EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.get(ResourceLocation.fromNamespaceAndPath(
@@ -155,9 +172,8 @@ public final class UniverseSpawns {
             return;
         }
         // the big ones alone, the raptors in packs
-        int count = "tiranossauro".equals(id) || "yeti".equals(id) ? 1 : "raptor".equals(id) ? 2 + random.nextInt(2)
-                : 1 + random.nextInt(3);
-        count = Math.min(count, NEARBY_CAP - nearby);
+        int count = "tiranossauro".equals(id) || "yeti".equals(id) ? 1 : "raptor".equals(id) ? 2 : 1 + random.nextInt(2);
+        count = Math.min(count, cap - nearby);
         for (int i = 0; i < count; i++) {
             BlockPos pos = ground(level, x + random.nextInt(5) - 2, z + random.nextInt(5) - 2);
             if (pos != null && !nearWater(level, pos)) {
@@ -220,6 +236,18 @@ public final class UniverseSpawns {
         return pos;
     }
 
+    // A bed in a universe world: vanilla sets the morning on the sleeping level, but the universes read the
+    // overworld's clock and ignore that (Stark's test 2026-11-10: slept and it stayed night). Move the overworld's.
+    private static void onSleepFinished(net.neoforged.neoforge.event.level.SleepFinishedTimeEvent event) {
+        if (!(event.getLevel() instanceof ServerLevel level) || Universes.universeOf(level.dimension()) == null) {
+            return;
+        }
+        ServerLevel overworld = level.getServer().overworld();
+        if (overworld != level) {
+            overworld.setDayTime(event.getNewTime());
+        }
+    }
+
     private static void onFinalizeSpawn(FinalizeSpawnEvent event) {
         if (event.getSpawnType() != MobSpawnType.NATURAL || !(event.getEntity() instanceof Monster)
                 || event.getEntity() instanceof SoulBoss
@@ -227,9 +255,30 @@ public final class UniverseSpawns {
             return;
         }
         ServerLevel level = event.getLevel().getLevel();
-        if (Universes.universeOf(level.dimension()) != null && Progression.on(level.getServer())
-                && level.getRandom().nextFloat() >= VANILLA_KEPT) {
+        String universe = Universes.universeOf(level.dimension());
+        if (universe != null && Progression.on(level.getServer())
+                && (DragonBallWorld.UNIVERSE.equals(universe) || level.getRandom().nextFloat() >= VANILLA_KEPT)) {
             event.setSpawnCancelled(true);
         }
+    }
+
+    // In the Dragon Ball worlds nothing comes from the vanilla spawner (Stark's test 2026-11-10: zombies, spiders and
+    // skeletons by the dozen at night, inside Capsule Corp, plus the overworld Fighters and its own enemies spawned
+    // the vanilla way on top of these): only this class's spawns, and the challenge characters (rare, by their rules).
+    private static void onFinalizeAny(FinalizeSpawnEvent event) {
+        if (event.getSpawnType() != MobSpawnType.NATURAL && event.getSpawnType() != MobSpawnType.CHUNK_GENERATION) {
+            return;
+        }
+        if (event.getEntity().getType().getCategory() != MobCategory.MONSTER) {
+            return;
+        }
+        ServerLevel level = event.getLevel().getLevel();
+        if (!DragonBallWorld.UNIVERSE.equals(Universes.universeOf(level.dimension())) || !Progression.on(level.getServer())) {
+            return;
+        }
+        if (event.getEntity() instanceof SoulBoss boss && ChallengeSpec.get().universeOf(boss.bossId()) != null) {
+            return;
+        }
+        event.setSpawnCancelled(true);
     }
 }

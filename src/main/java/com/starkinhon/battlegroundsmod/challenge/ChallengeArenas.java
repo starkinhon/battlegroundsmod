@@ -86,6 +86,8 @@ public final class ChallengeArenas {
         long fightAt;
         long doneAt;
         UUID boss;
+        boolean bossDied;
+        int respawns;
         State state = State.COUNTDOWN;
     }
 
@@ -228,7 +230,23 @@ public final class ChallengeArenas {
         if (level == null) {
             level = player.server.overworld();
         }
+        // A soul still lying in the arena goes home with the player: it is the prize of the fight.
+        List<ItemStack> souls = new ArrayList<>();
+        ServerLevel arena = player.server.getLevel(ARENAS);
+        if (arena != null && session.center != null) {
+            AABB box = new AABB(session.center).inflate(80, 64, 80);
+            for (net.minecraft.world.entity.item.ItemEntity item : arena.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, box,
+                    e -> e.getItem().getItem() instanceof com.starkinhon.battlegroundsmod.item.SoulItem)) {
+                souls.add(item.getItem().copy());
+                item.discard();
+            }
+        }
         player.teleportTo(level, session.backPos.x, session.backPos.y, session.backPos.z, session.backYaw, 0);
+        for (ItemStack soul : souls) {
+            if (!player.getInventory().add(soul)) {
+                player.drop(soul, false);
+            }
+        }
     }
 
     private static void removeBoss(MinecraftServer server, Session session) {
@@ -274,7 +292,12 @@ public final class ChallengeArenas {
                 }
                 case FIGHT -> {
                     Entity boss = session.boss == null ? null : arena.getEntity(session.boss);
-                    if (boss == null || !boss.isAlive()) {
+                    if (boss == null && !session.bossDied && session.respawns < 3) {
+                        // Gone without dying (Stark's test 2026-11-10: he came in flying and Kuririn was "born dead",
+                        // a win for nothing): bring the character back instead of counting a win.
+                        session.respawns++;
+                        spawnBoss(player, arena, session);
+                    } else if (boss == null || !boss.isAlive()) {
                         win(player, session, now);
                     } else if (now % 20 == 0 && boss instanceof Mob mob && mob.getTarget() != player) {
                         mob.setTarget(player);
@@ -356,6 +379,11 @@ public final class ChallengeArenas {
 
     // Dying in the arena ends the fight; the player respawns at home as usual.
     private static void onDeath(LivingDeathEvent event) {
+        for (Session session : SESSIONS.values()) {
+            if (event.getEntity().getUUID().equals(session.boss)) {
+                session.bossDied = true;
+            }
+        }
         if (event.getEntity() instanceof ServerPlayer player) {
             Session session = SESSIONS.remove(player.getUUID());
             if (session != null) {

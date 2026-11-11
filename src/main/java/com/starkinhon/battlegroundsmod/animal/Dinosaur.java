@@ -22,7 +22,8 @@ import net.minecraft.world.level.block.state.BlockState;
 
 // The dinosaurs of the Dragon World (Stark 2026-11-10: "o que mais tem no verso"): the tyrannosaur, big and alone, slow
 // to turn but one bite takes a lot, and the raptors, small and fast, in packs. Plain animals with a bite, no skills;
-// their tier comes from their health like any monster's (padrao.progressao.json mobsVanilla). One class for both: the
+// their tier comes from their health like any monster's (padrao.progressao.json mobsVanilla): raptor 24 = Tier 10,
+// tyrannosaur 160 = Tier 8 (Stark 2026-11-10: every enemy was Tier 10, nothing grew a player past Tier 7). One class for both: the
 // entity type says which (rex()).
 public class Dinosaur extends Monster {
     public Dinosaur(EntityType<? extends Dinosaur> type, Level level) {
@@ -36,7 +37,7 @@ public class Dinosaur extends Monster {
 
     public static AttributeSupplier.Builder attributes(boolean rex) {
         return Monster.createMonsterAttributes()
-                .add(Attributes.MAX_HEALTH, rex ? 90 : 24)
+                .add(Attributes.MAX_HEALTH, rex ? 160 : 24)
                 .add(Attributes.ATTACK_DAMAGE, rex ? 7 : 2.5)
                 .add(Attributes.MOVEMENT_SPEED, rex ? 0.27 : 0.36)
                 .add(Attributes.FOLLOW_RANGE, rex ? 28 : 24)

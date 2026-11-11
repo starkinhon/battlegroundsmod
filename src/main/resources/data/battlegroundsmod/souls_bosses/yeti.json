@@ -2,10 +2,10 @@
   "formato": "souls-boss/1",
   "boss": "yeti",
   "poder": "fighter",
-  "tier": 9,
+  "tier": 8,
   "dropAlma": false,
   "atributos": {
-    "vida": 40,
+    "vida": 60,
     "armadura": 0,
     "velocidade": 0.3,
     "resistenciaEmpurrao": 0.5,

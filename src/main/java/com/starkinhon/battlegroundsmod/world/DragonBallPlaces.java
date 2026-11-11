@@ -23,6 +23,28 @@ public final class DragonBallPlaces {
     private DragonBallPlaces() {
     }
 
+    // Where no enemy comes (Stark's test 2026-11-10: hordes at the Kame House and inside Capsule Corp, and five
+    // Saibamen on him one minute after arriving): the arrival point, the houses and the tower. {x, z, radius}.
+    private static final int[][] SAFE = {
+            {412, 88, 60}, {-149, -152, 70}, {323, -29, 50}, {-407, -87, 30}, {-268, -430, 30}, {-54, -289, 45},
+            {-239, 95, 30}, {250, -195, 25}, {-319, 57, 25}};
+    private static final int ARRIVAL_SAFE = 110;
+
+    public static boolean safe(int x, int z) {
+        WorldMap map = WorldMap.get(MAP);
+        long ax = x - map.arrivalX, az = z - map.arrivalZ;
+        if (ax * ax + az * az < (long) ARRIVAL_SAFE * ARRIVAL_SAFE) {
+            return true;
+        }
+        for (int[] s : SAFE) {
+            long dx = x - s[0], dz = z - s[1];
+            if (dx * dx + dz * dz < (long) s[2] * s[2]) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     // Namek is its own planet now (Stark, 2026-11-10): a sub-dimension of the Dragon Ball universe (NamekWorld).
     public static boolean onNamek(net.minecraft.world.entity.player.Player player) {
         return player.level().dimension() == NamekWorld.LEVEL;

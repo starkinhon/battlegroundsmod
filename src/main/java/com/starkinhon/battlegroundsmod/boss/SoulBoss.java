@@ -187,7 +187,17 @@ public abstract class SoulBoss extends Monster {
             targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, SoulBoss.class, 10, true, false,
                     other -> other.getType() != getType() && other instanceof SoulBoss boss && boss.isBoss()));
         }
-        targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Player.class, true));
+        targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Player.class, 10, true, false, player -> !neutral()));
+    }
+
+    // The characters of a challenge book met out in their world (Kuririn, Piccolo...) are neutral (Stark 2026-11-10):
+    // they only fight a player who hits them first (HurtByTargetGoal). In their arena or outside the universes (a boss
+    // fight in the overworld) they come at you as always.
+    private boolean neutral() {
+        if (com.starkinhon.battlegroundsmod.challenge.Universes.universeOf(level().dimension()) == null) {
+            return false;
+        }
+        return com.starkinhon.battlegroundsmod.skill.ChallengeSpec.get().universeOf(bossId()) != null;
     }
 
     @Override
@@ -435,7 +445,7 @@ public abstract class SoulBoss extends Monster {
     protected void dropCustomDeathLoot(ServerLevel level, DamageSource source, boolean recentlyHit) {
         super.dropCustomDeathLoot(level, source, recentlyHit);
         var soul = ModItems.SOULS.get(spec().poder());
-        if (spec().dropAlma() && soul != null) {
+        if (soul != null && dropsSoul(level, source)) {
             ServerPlayer killer = SoulCeremony.killer(source);
             if (killer != null) {
                 // Killed by a player: the soul leaves the body and becomes the item (SoulCeremony), dropped there.
@@ -444,6 +454,24 @@ public abstract class SoulBoss extends Monster {
                 spawnAtLocation(new ItemStack(soul.get()));
             }
         }
+    }
+
+    // Taking a character's soul is the heart of the mod (Stark 2026-11-10: "a mecânica principal"). Beaten in its
+    // challenge arena by a player, it always gives its soul; met out in the world, now and then (WORLD_SOUL_CHANCE).
+    // Fighters and common enemies have no soul item, so they never get here. dropAlma in the json: always.
+    private static final float WORLD_SOUL_CHANCE = 0.15f;
+
+    private boolean dropsSoul(ServerLevel level, DamageSource source) {
+        if (spec().dropAlma()) {
+            return true;
+        }
+        if (SoulCeremony.killer(source) == null) {
+            return false;
+        }
+        if (level.dimension() == com.starkinhon.battlegroundsmod.challenge.ChallengeArenas.ARENAS) {
+            return true;
+        }
+        return random.nextFloat() < WORLD_SOUL_CHANCE;
     }
 
     // While its soul ceremony plays the body stays lying where it fell (vanilla would take it away after 20 ticks).

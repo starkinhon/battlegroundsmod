@@ -85,6 +85,7 @@ public class BattlegroundsModClient {
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.CreativeSubTabs::onRenderPre);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.CreativeSubTabs::onRenderPost);
         NeoForge.EVENT_BUS.addListener(FxWorld::onRenderLevel);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.TierInventoryInfo::onRenderPost);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.DomainPanorama::onRenderFrame);
         NeoForge.EVENT_BUS.addListener(EventPriority.HIGHEST, false, RenderLivingEvent.Pre.class, com.starkinhon.battlegroundsmod.client.fx.SukunaDomainScene::onRenderLivingPre);
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, true, RenderLivingEvent.Post.class, com.starkinhon.battlegroundsmod.client.fx.SukunaDomainScene::onRenderLivingPost);

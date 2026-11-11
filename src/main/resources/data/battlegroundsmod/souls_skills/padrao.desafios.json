@@ -19,7 +19,7 @@
         {"id": "kame", "foco": "Selamento. O Mafuba prende o alvo no pote e o Punho Bêbado esquiva de tudo.", "itens": ["battlegroundsmod:radar_dragao"]},
         {"id": "goku", "foco": "Equilíbrio. Kamehameha, teleporte nas suas costas, Kaioken e a Genki Dama.", "itens": ["battlegroundsmod:bastao_magico"]},
         {"id": "vegeta", "foco": "Explosão. Rajadas que cobrem o alvo de fumaça, Big Bang e Final Flash.", "itens": ["battlegroundsmod:scouter"]},
-        {"id": "freeza", "foco": "Precisão. Death Beam rápido, telecinese, Disco da Morte e Supernova.", "itens": ["battlegroundsmod:capsula_hoipoi 2"]},
+        {"id": "freeza", "foco": "Precisão. Death Beam rápido, telecinese, Disco da Morte e Supernova.", "itens": ["battlegroundsmod:senzu 3"]},
         {"id": "bills", "foco": "Destruição. O Hakai apaga quem estiver fraco. O deus deste universo.", "itens": ["battlegroundsmod:espada_z"]}
       ]
     },

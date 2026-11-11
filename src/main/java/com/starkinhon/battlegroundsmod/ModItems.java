@@ -192,8 +192,6 @@ public final class ModItems {
             com.starkinhon.battlegroundsmod.item.SenzuItem::new, new Item.Properties().rarity(Rarity.UNCOMMON));
     public static final DeferredItem<com.starkinhon.battlegroundsmod.item.ScouterItem> SCOUTER = BattlegroundsMod.ITEMS.registerItem("scouter",
             com.starkinhon.battlegroundsmod.item.ScouterItem::new, new Item.Properties().rarity(Rarity.UNCOMMON));
-    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.CapsuleItem> CAPSULE = BattlegroundsMod.ITEMS.registerItem("capsula_hoipoi",
-            com.starkinhon.battlegroundsmod.item.CapsuleItem::new, new Item.Properties().rarity(Rarity.UNCOMMON));
     public static final DeferredItem<com.starkinhon.battlegroundsmod.item.DragonRadarItem> DRAGON_RADAR = BattlegroundsMod.ITEMS.registerItem("radar_dragao",
             com.starkinhon.battlegroundsmod.item.DragonRadarItem::new, new Item.Properties().rarity(Rarity.RARE));
     public static final DeferredItem<com.starkinhon.battlegroundsmod.item.PowerPoleItem> POWER_POLE = BattlegroundsMod.ITEMS.registerItem("bastao_magico",

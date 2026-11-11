@@ -80,7 +80,6 @@ public final class DragonBallWorld {
         switch (id) {
             case "soldado_freeza" -> chance(level, victim, ModItems.SCOUTER.get(), 0.06);
             case "saibaman" -> chance(level, victim, ModItems.SENZU.get(), 0.06);
-            case "soldado_red_ribbon" -> chance(level, victim, ModItems.CAPSULE.get(), 0.05);
             default -> {
             }
         }

@@ -2,10 +2,10 @@
   "formato": "souls-boss/1",
   "boss": "soldado_freeza",
   "poder": "fighter",
-  "tier": 9,
+  "tier": 8,
   "dropAlma": false,
   "atributos": {
-    "vida": 32,
+    "vida": 50,
     "armadura": 0,
     "velocidade": 0.3,
     "resistenciaEmpurrao": 0.0,
