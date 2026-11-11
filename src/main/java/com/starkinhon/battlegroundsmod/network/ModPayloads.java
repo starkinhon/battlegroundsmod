@@ -317,6 +317,32 @@ public final class ModPayloads {
         }
     }
 
+    // Client -> server: the boost of the Dragon Ball flight on (Ctrl while flying) or off (universe/Flight).
+    public record FlightBoost(boolean on) implements CustomPacketPayload {
+        public static final Type<FlightBoost> TYPE = payloadType("flight_boost");
+        public static final StreamCodec<ByteBuf, FlightBoost> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.BOOL, FlightBoost::on, FlightBoost::new);
+
+        @Override
+        public Type<FlightBoost> type() {
+            return TYPE;
+        }
+    }
+
+    // Server -> client: how a player flies (universe/Flight bits FLYING, BOOST, TIRED; 0 = not flying).
+    public record FlightState(int entityId, int state) implements CustomPacketPayload {
+        public static final Type<FlightState> TYPE = payloadType("flight_state");
+        public static final StreamCodec<ByteBuf, FlightState> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, FlightState::entityId,
+                ByteBufCodecs.VAR_INT, FlightState::state,
+                FlightState::new);
+
+        @Override
+        public Type<FlightState> type() {
+            return TYPE;
+        }
+    }
+
     // Server -> client: the player's attack stamina, its max and the exhaustion ticks left (combat/Stamina).
     public record SyncStamina(float stamina, float max, int exhaustedTicks) implements CustomPacketPayload {
         public static final Type<SyncStamina> TYPE = payloadType("sync_stamina");
@@ -1581,6 +1607,13 @@ public final class ModPayloads {
             }
         }));
         registrar.playToClient(SyncProgress.TYPE, SyncProgress.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> payload.applyTo(context.player())));
+        registrar.playToServer(FlightBoost.TYPE, FlightBoost.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
+            if (context.player() instanceof net.minecraft.server.level.ServerPlayer sp) {
+                com.starkinhon.battlegroundsmod.universe.Flight.boost(sp, payload.on());
+            }
+        }));
+        registrar.playToClient(FlightState.TYPE, FlightState.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.flightState(payload.entityId(), payload.state())));
         registrar.playToClient(SyncStamina.TYPE, SyncStamina.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> payload.applyTo(context.player())));
         registrar.playToClient(SyncCharge.TYPE, SyncCharge.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> payload.applyTo(context.player())));
         registrar.playToClient(PlaySkillAnimation.TYPE, PlaySkillAnimation.STREAM_CODEC, (payload, context) -> context.enqueueWork(

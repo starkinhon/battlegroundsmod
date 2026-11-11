@@ -99,6 +99,21 @@ public final class Stamina {
         return uses(entity) && !free(entity);
     }
 
+    // Flying (universe/Flight): takes percent of the max but never below floorPct, so flying never exhausts anyone
+    // (they glide down tired instead). Nothing while exhausted.
+    public static void tire(LivingEntity entity, double percent, double floorPct) {
+        if (!drains(entity) || exhausted(entity) || percent <= 0) {
+            return;
+        }
+        PowerData data = entity.getData(ModAttachments.POWER);
+        double max = max(entity);
+        double floor = max * floorPct / 100.0;
+        float now = get(entity);
+        if (now > floor) {
+            data.stamina = (float) Math.max(floor, now - max * percent / 100.0);
+        }
+    }
+
     // Gives back percent of the max (a punch, a hit, a dash, a base attack). Nothing while exhausted.
     public static void gain(LivingEntity entity, double percent) {
         if (!uses(entity) || exhausted(entity) || percent <= 0) {
@@ -166,7 +181,9 @@ public final class Stamina {
         } else if (left > 0) {
             int total = Math.max(1, spec.vulneravelSegundos() * 20);
             data.stamina = (float) (max * spec.voltaComPct() / 100.0 * (1 - Math.min(1, left / (double) total)));
-        } else if (!CombatMode.in(entity) && spec.regenForaDeCombatePorSegundo() > 0) {
+        } else if (!CombatMode.in(entity) && spec.regenForaDeCombatePorSegundo() > 0
+                && !(entity instanceof net.minecraft.world.entity.player.Player player && com.starkinhon.battlegroundsmod.universe.Flight.flying(player))) {
+            // (flying pays stamina, so it does not fill back up in the air)
             data.stamina = (float) Math.min(max, now + max * spec.regenForaDeCombatePorSegundo() / 100.0 / 20.0);
         }
         if (!data.abilityHeld) {

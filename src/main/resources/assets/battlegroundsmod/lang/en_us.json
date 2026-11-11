@@ -877,6 +877,7 @@
   "message.battlegroundsmod.wish_none": "There is no wish to make.",
   "message.battlegroundsmod.shenlong_done": "Shenron: Your wish has been granted. Farewell!",
   "message.battlegroundsmod.flight_tired": "No energy to fly: eat something.",
+  "message.battlegroundsmod.flight_tired_stamina": "Out of breath: gliding down to land.",
   "message.battlegroundsmod.technique_learned": "Technique learned",
   "technique.battlegroundsmod.voo": "Flight: jump twice to fly",
   "hud.battlegroundsmod.scouter.idle": "Scouter: scanning...",

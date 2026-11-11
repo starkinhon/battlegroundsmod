@@ -885,6 +885,7 @@
   "message.battlegroundsmod.wish_none": "Não há desejo pra fazer.",
   "message.battlegroundsmod.shenlong_done": "Shenlong: Seu desejo foi realizado. Adeus!",
   "message.battlegroundsmod.flight_tired": "Sem energia pra voar: coma alguma coisa.",
+  "message.battlegroundsmod.flight_tired_stamina": "Sem fôlego: descendo pra pousar.",
   "message.battlegroundsmod.technique_learned": "Técnica aprendida",
   "technique.battlegroundsmod.voo": "Voo: pule duas vezes pra voar",
   "hud.battlegroundsmod.scouter.idle": "Scouter: procurando...",

@@ -96,7 +96,11 @@ public final class Movement {
         if (!free(entity) || entity.level().getGameTime() + slack < data.readyAt[kind.ordinal()]) {
             return false;
         }
-        if (!spec.funcionaNoCriativo() && entity instanceof Player player && player.getAbilities().mayfly) {
+        // Creative fliers (and anyone in the air on the Dragon Ball flight) keep Minecraft's flying; whoever only
+        // knows the flight (universe/Flight gives mayfly) still dodges and dashes on foot, and their double jump takes
+        // off instead of jumping again in the air.
+        if (!spec.funcionaNoCriativo() && entity instanceof Player player
+                && (player.getAbilities().instabuild || player.getAbilities().flying || kind == Kind.PULO_DUPLO && player.getAbilities().mayfly)) {
             return false;
         }
         // The side dodge and the dash are fight moves: players only get them in combat mode.

@@ -40,6 +40,10 @@ public final class ClientHooks {
         }
     }
 
+    public static void flightState(int entityId, int state) {
+        FlightClient.state(entityId, state);
+    }
+
     public static void guardPose(int entityId, boolean on) {
         SkillAnimations.guard(entityId, on);
     }

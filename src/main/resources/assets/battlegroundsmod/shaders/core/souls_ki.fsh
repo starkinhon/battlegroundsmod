@@ -288,6 +288,26 @@ void main() {
         float al = body * clamp(0.12 + rimD + hub + rings * 0.35 + swirl * 0.18, 0., 1.) * Alpha;
         if (al < 0.003) discard;
         emit(col * al * 1.1, al * 0.6);
+    } else if (kind == 17) {                                           // flight boost shell (voo.html): flames running back along it, torn back edge
+        float s = vH; vec2 cs = vDir;
+        float flow = fbm4(vec3(cs * 1.8, s * 3.2 - Time * 7.) + Seed);
+        float streak = fbm3(vec3(cs * 7., s * .7 - Time * 4.) + Seed * 2.);
+        float fres = pow(1. - f, 1.6);
+        float tail = 1. - smoothstep(.55, 1., s + flow * .35 + (streak * .5 + .5) * .2);
+        float nose = smoothstep(.03, .2, s);
+        float a = (fres * .7 + smoothstep(.15, .6, streak) * .4 + smoothstep(.25, .75, flow) * .15) * tail * nose * Alpha;
+        if (a < 0.003) discard;
+        vec3 col = mix(Color, vec3(1.), .45 + fres * .4);
+        emit(col * a * .9, a * .45);
+    } else if (kind == 18) {                                           // flight ki ring (voo.html): one spiky ring blowing out
+        vec2 p = vUv * 2. - 1.; float r = length(p); float ang = atan(p.y, p.x); vec2 cs = vec2(cos(ang), sin(ang));
+        float spikes = pow(abs(gn(vec3(cs * 5., Seed))), .6) * .5 + fbm3(vec3(cs * 2.2, Seed + Life * 2.)) * .35;
+        float outer = .72 + spikes * .32, inner = .5 + spikes * .15 + Life * .25;
+        float band = smoothstep(inner - .12, inner, r) * (1. - smoothstep(outer - .03, outer + .02, r));
+        float swirl = fbm3(vec3(cs * 4., r * 6. - Life * 5.) + Seed) * .5 + .5;
+        float a = band * (.55 + .6 * swirl) * pow(1. - Life, 1.3) * Alpha; if (a < 0.003) discard;
+        vec3 col = mix(Color, vec3(1.), .55 + .35 * swirl);
+        emit(col * a * 1.6, a * .7);
     } else if (kind == 11) {                                           // Makankosappo: two spirals, yellow and pink, each with its own living thickness
         if (vU < Tail) discard;
         float s = atan(vDir.y, vDir.x) / 6.2832 + vU * Pitch - Time * 5.5;

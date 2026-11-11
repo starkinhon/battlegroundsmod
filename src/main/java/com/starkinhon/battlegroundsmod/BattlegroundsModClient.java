@@ -128,6 +128,11 @@ public class BattlegroundsModClient {
         NeoForge.EVENT_BUS.addListener(MovementInputUpdateEvent.class, com.starkinhon.battlegroundsmod.client.fx.SukunaDomainScene::onMovementInput);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.FirstPersonAnimation::onRenderHand);
         NeoForge.EVENT_BUS.addListener(BattlegroundsModClient::onClientTickPre);
+        // The Dragon Ball flight's body turn (lying down into the cruise, turning into the curves).
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, false, net.neoforged.neoforge.client.event.RenderPlayerEvent.Pre.class,
+                com.starkinhon.battlegroundsmod.client.FlightPose::onRenderPre);
+        NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.client.event.RenderPlayerEvent.Post.class,
+                com.starkinhon.battlegroundsmod.client.FlightPose::onRenderPost);
         NeoForge.EVENT_BUS.addListener(BattlegroundsModClient::onClientTick);
         NeoForge.EVENT_BUS.addListener(BossBars::onBossBar);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.RealismoCommand::register);
@@ -367,5 +372,6 @@ public class BattlegroundsModClient {
         BossBars.tick();
         Fear.tick();
         com.starkinhon.battlegroundsmod.client.fx.SkillAudio.tick();
+        com.starkinhon.battlegroundsmod.client.fx.FlightFx.tick();
     }
 }

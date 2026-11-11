@@ -54,6 +54,8 @@
 //  32 tongue  a cartoon tongue of ki (the Zanka no Tachi study): a drop from root (u = 0) to tip (u = 1) with a whip and a
 //             fork, 5 nested bands moved by their own fields, swirl strokes, a hard edge, dying torn from the top, drawn
 //             at 12 frames a second (alpha layer); param byte = life (0..15) * 16 + seed (0..15); the color is its skin
+//  35 flight trail  the Dragon Ball flight's trail from the feet (forja voo/voo.html): a strip with u from the feet
+//             (0) to the oldest point (1), strands of ki opening back with a white core
 // A very dark color never burns white (dark rims and lines stay dark).
 // Near walls and the ground the effect fades out instead of cutting a hard line (soft particles).
 uniform sampler2D Sampler1;
@@ -1132,6 +1134,16 @@ void main() {
         base = mix(ink, col, fill * (1.0 - inkIn));
         alpha = outer;
         core = 0.0;
+    } else if (shape == 35) {
+        float along = uv.x;
+        float across = uv.y * 2.0 - 1.0;
+        float strands = fbm(vec2(across * 3.5, along * 2.5 - time * 0.6) + vec2(1.7, 4.1)) * 2.0 - 1.0;
+        float k = smoothstep(0.0, 0.35, strands);
+        float edge = 1.0 - smoothstep(0.55, 1.0, abs(across));
+        float hot = exp(-across * across * 18.0) * (1.0 - along);
+        alpha = (k * edge * 0.55 + hot * 0.5) * pow(max(0.0, 1.0 - along), 1.5) * smoothstep(0.0, 0.06, along);
+        base = mix(color.rgb, vec3(1.0), 0.5);
+        core = hot * 0.3;
     } else if (shape == 34) {
         // Same text as the Visualizador's shape 29 (BRUSH): the Divergent Fist's aura (Stark's ref). A flat opaque blot of
         // color with a black brush outline only in parts of the edge, scratchy ink hairs, one tip of flame on top; the
