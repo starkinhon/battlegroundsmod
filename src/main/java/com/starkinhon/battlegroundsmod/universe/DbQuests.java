@@ -3,7 +3,6 @@ package com.starkinhon.battlegroundsmod.universe;
 import java.util.List;
 import java.util.function.Supplier;
 
-import com.starkinhon.battlegroundsmod.ModEntities;
 import com.starkinhon.battlegroundsmod.ModItems;
 import com.starkinhon.battlegroundsmod.challenge.ChallengeArenas;
 import com.starkinhon.battlegroundsmod.challenge.Universes;
@@ -11,8 +10,6 @@ import com.starkinhon.battlegroundsmod.combat.Fx;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
 import com.starkinhon.battlegroundsmod.power.Progression;
 import com.starkinhon.battlegroundsmod.power.Tiers;
-import com.starkinhon.battlegroundsmod.power.powers.sub.db.Db;
-import com.starkinhon.battlegroundsmod.power.powers.sub.db.DbCommon;
 import com.starkinhon.battlegroundsmod.world.TimeChamber;
 import com.starkinhon.battlegroundsmod.world.WorldSites;
 
@@ -22,17 +19,10 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket;
 import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
 import net.minecraft.network.protocol.game.ClientboundSetTitlesAnimationPacket;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
-import net.minecraft.stats.Stats;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.AABB;
-import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
@@ -40,17 +30,17 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 // The Dragon Ball start, a chain of missions (Stark 2026-11-10: the start was still, "parece um jogo pra refletir sobre a
 // vida"; he picked all three: an opening fight, Bulma's missions with an arrow on the HUD, and the radar leading to the
-// balls). Raditz comes down a little after arriving; beating him sends the player to Bulma at Capsule Corp, and from
-// there each mission leads to one place of the map and its own activity (DbActivities): the Saibamen, the first ball with
+// balls). The first mission sends the player to Bulma at Capsule Corp (Raditz no longer falls from the sky, Stark
+// 2026-11-11), and from there each mission leads to one place of the map and its own activity (DbActivities): the Saibamen, the first ball with
 // the radar, Roshi's training, the book's arenas, Gohan's flight, Korin, the Time Chamber, the gravity machine, Cell's
 // ring, Babidi's ship, Buu's house, and Freeza last. Each pays Poder (a part of the player's tier) and some items.
 // Only with progression on. Kept per player in its persistent data; the HUD (client/QuestHud) gets it every second.
 public final class DbQuests {
     private static final String STEP = "souls_dbq";
     private static final String COUNT = "souls_dbq_n";
-    private static final String RADITZ_AT = "souls_dbq_raditz";
+    // Saves from before the Raditz mission went away count one mission too many: moved back once (see migrate).
+    private static final String NO_RADITZ = "souls_dbq_sem_raditz";
     private static final String GRANDPA_BALL = "souls_dbq_esfera4";
-    private static final String RADITZ_SEEN = "souls_dbq_raditz_veio";
 
     // id (lang quest.battlegroundsmod.<id>), how many, the kind of place it points to (WorldSites, null for none), Poder as
     // a part of the tier, items
@@ -69,8 +59,7 @@ public final class DbQuests {
     }
 
     private static final List<Step> STEPS = List.of(
-            new Step("raditz", 1, null, 0.6, items(() -> new ItemStack(ModItems.SCOUTER.get()))),
-            new Step("bulma", 1, WorldSites.CAPSULE, 0.2, items(() -> new ItemStack(ModItems.DRAGON_RADAR.get()))),
+            new Step("bulma", 1, WorldSites.CAPSULE, 0.2, items(() -> new ItemStack(ModItems.DRAGON_RADAR.get()), () -> new ItemStack(ModItems.SCOUTER.get()))),
             new Step("saibamen", 3, null, 0.3, items(() -> new ItemStack(ModItems.SENZU.get(), 2))),
             new Step("esfera", 1, null, 0.3, items()),
             new Step("kame", 1, WorldSites.KAME, 0.4, items()),
@@ -80,7 +69,7 @@ public final class DbQuests {
             new Step("sala", 1, WorldSites.KARIN, 0.3, items()),
             new Step("nave", 60, WorldSites.WRECK, 0.4, items()),
             new Step("cell", 1, WorldSites.CELL_RING, 0.6, items(() -> new ItemStack(ModItems.SENZU.get(), 3))),
-            new Step("babidi", 1, WorldSites.BABIDI, 0.8, items(() -> new ItemStack(ModItems.Z_SWORD.get()))),
+            new Step("babidi", 1, WorldSites.BABIDI, 0.8, items(() -> new ItemStack(ModItems.SENZU.get(), 3))),
             new Step("boo", 1, WorldSites.BUU, 0.3, items()),
             new Step("freeza", 1, null, 1.0, items(() -> new ItemStack(ModItems.MULTIVERSAL_CRYSTAL.get(), 2))));
 
@@ -106,19 +95,6 @@ public final class DbQuests {
     // Where the missions are shown: the old Dragon Ball dimension, and the normal world.
     private static boolean shown(ServerPlayer player) {
         return inDragonBall(player) || player.level().dimension() == Level.OVERWORLD;
-    }
-
-    // In the normal world Raditz comes only once the player has walked into the Terras do Dragão and has played a few
-    // minutes (Stark 2026-11-11: he came down in the face right at the start, the mission already running).
-    private static final int RADITZ_PLAYTIME = 20 * 60 * 5;
-
-    private static boolean raditzReady(ServerPlayer player) {
-        if (inDragonBall(player)) {
-            return true;
-        }
-        return player.level().dimension() == Level.OVERWORLD
-                && "dragonball".equals(UniverseBiomes.universeAt(player.level(), player.blockPosition()))
-                && player.getStats().getValue(Stats.CUSTOM.get(Stats.PLAY_TIME)) >= RADITZ_PLAYTIME;
     }
 
     // The arrow's target for the current mission: in the normal world the nearest place of that kind, built or not yet
@@ -215,15 +191,11 @@ public final class DbQuests {
         if (!on(player)) {
             return;
         }
+        migrate(player);
         boolean here = shown(player);
         Step step = current(player);
         if (step != null) {
             switch (step.id()) {
-                case "raditz" -> {
-                    if (raditzReady(player)) {
-                        raditz(player);
-                    }
-                }
                 case "esfera" -> {
                     if (DragonBallWorld.hasAnyBall(player)) {
                         advance(player, "esfera", 1);
@@ -259,41 +231,17 @@ public final class DbQuests {
 
     private static final java.util.Set<java.util.UUID> SHOWN = new java.util.HashSet<>();
 
-    // The opening fight: a little after arriving Raditz comes down near the player; if he is gone without being beaten,
-    // another comes a minute later.
-    private static void raditz(ServerPlayer player) {
-        ServerLevel level = player.serverLevel();
-        long now = level.getGameTime();
+    private static void migrate(ServerPlayer player) {
         var tag = player.getPersistentData();
-        long at = tag.getLong(RADITZ_AT);
-        if (at == 0) {
-            tag.putLong(RADITZ_AT, now + 300);
+        if (tag.getBoolean(NO_RADITZ)) {
             return;
         }
-        if (now < at || !level.getEntities(ModEntities.RADITZ.get(), new AABB(player.blockPosition()).inflate(96), Entity::isAlive).isEmpty()) {
-            return;
+        tag.putBoolean(NO_RADITZ, true);
+        if (tag.getInt(STEP) > 0) {
+            tag.putInt(STEP, tag.getInt(STEP) - 1);
+        } else {
+            tag.putInt(COUNT, 0);
         }
-        tag.putLong(RADITZ_AT, now + 1200);
-        Vec3 look = player.getLookAngle();
-        Vec3 flat = new Vec3(look.x, 0, look.z);
-        flat = flat.lengthSqr() < 1.0E-4 ? new Vec3(0, 0, 1) : flat.normalize();
-        BlockPos spot = DbActivities.dryGround(level, (int) Math.floor(player.getX() + flat.x * 9), (int) Math.floor(player.getZ() + flat.z * 9), 6);
-        if (spot == null) {
-            return;
-        }
-        Entity raditz = ModEntities.RADITZ.get().spawn(level, spot, MobSpawnType.EVENT);
-        tag.putBoolean(RADITZ_SEEN, true);
-        if (raditz instanceof Mob mob) {
-            mob.setTarget(player);
-            mob.setPersistenceRequired();
-        }
-        Vec3 c = Vec3.atBottomCenterOf(spot);
-        DbCommon.boom(level, c, 3.2f, Db.PURPLE, level.getRandom().nextInt(100));
-        DbCommon.screen(level, c, 9);
-        player.connection.send(new ClientboundSetTitlesAnimationPacket(6, 50, 15));
-        player.connection.send(new ClientboundSetTitleTextPacket(Component.literal("RADITZ").withStyle(s -> s.withColor(0xA060FF).withBold(true))));
-        player.connection.send(new ClientboundSetSubtitleTextPacket(Component.translatable("message.battlegroundsmod.raditz_chegou")));
-        Fx.sound(level, c, SoundEvents.GENERIC_EXPLODE.value(), 1.6f, 0.6f);
     }
 
     private static void onDeath(LivingDeathEvent event) {
@@ -302,7 +250,6 @@ public final class DbQuests {
         }
         String id = BuiltInRegistries.ENTITY_TYPE.getKey(event.getEntity().getType()).getPath();
         switch (id) {
-            case "raditz" -> advance(player, "raditz", 1);
             case "saibaman" -> advance(player, "saibamen", 1);
             default -> {
             }
@@ -331,9 +278,7 @@ public final class DbQuests {
             return;
         }
         Step step = current(player);
-        // nothing on the HUD before Raditz has come down (in the old dimension he comes right away)
-        if (step == null || !on(player) || "raditz".equals(step.id()) && !inDragonBall(player)
-                && !player.getPersistentData().getBoolean(RADITZ_SEEN)) {
+        if (step == null || !on(player)) {
             send(player, "", 0, 0, 0, 0, false);
             return;
         }

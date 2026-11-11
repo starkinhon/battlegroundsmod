@@ -50,9 +50,9 @@ public final class UniverseItems {
     // Items, by item id.
     private static final Map<String, String> ITEMS = Map.ofEntries(
             Map.entry("senzu", "dragonball"), Map.entry("scouter", "dragonball"), 
-            Map.entry("radar_dragao", "dragonball"), Map.entry("bastao_magico", "dragonball"), Map.entry("espada_z", "dragonball"),
+            Map.entry("radar_dragao", "dragonball"), 
             Map.entry("kunai_hiraishin", "naruto"), Map.entry("pilula_soldado", "naruto"), Map.entry("ramen", "naruto"),
-            Map.entry("pergaminho_ninken", "naruto"), Map.entry("papel_bomba", "naruto"), Map.entry("bandana_ninja", "naruto"),
+            Map.entry("pergaminho_ninken", "naruto"), Map.entry("bandana_ninja", "naruto"),
             Map.entry("samehada", "naruto"), Map.entry("kusanagi", "naruto"),
             Map.entry("dedo_sukuna", "jujutsu"), Map.entry("venda_gojo", "jujutsu"), Map.entry("boneco_palha", "jujutsu"),
             Map.entry("boneco_amaldicoado", "jujutsu"), Map.entry("nuvem_brincalhona", "jujutsu"), Map.entry("lanca_invertida", "jujutsu"),
@@ -62,7 +62,7 @@ public final class UniverseItems {
             Map.entry("flor_glicinia", "demonslayer"), Map.entry("remedio_tamayo", "demonslayer"));
 
     // Weapons that are not TieredItem (thrown or special).
-    private static final Set<String> WEAPONS = Set.of("bastao_magico", "kunai_hiraishin", "samehada", "kusanagi", "espada_z");
+    private static final Set<String> WEAPONS = Set.of("kunai_hiraishin", "samehada", "kusanagi");
 
     private UniverseItems() {
     }

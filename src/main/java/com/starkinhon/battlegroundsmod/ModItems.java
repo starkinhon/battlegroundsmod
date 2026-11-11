@@ -213,17 +213,14 @@ public final class ModItems {
             "cristal_multiversal", com.starkinhon.battlegroundsmod.item.MultiversalCrystalItem::new,
             new Item.Properties().stacksTo(16).rarity(Rarity.RARE));
 
-    // Dragon Ball items and weapons (universe/DragonBallWorld). Placeholder looks; what they do is what matters for now.
+    // Dragon Ball items (universe/DragonBallWorld). Stark 2026-11-11: only the balls, the radar, the scouter and the senzu
+    // stay; the Espada Z, the Bastão Mágico and the Papel-Bomba went away.
     public static final DeferredItem<com.starkinhon.battlegroundsmod.item.SenzuItem> SENZU = BattlegroundsMod.ITEMS.registerItem("senzu",
             com.starkinhon.battlegroundsmod.item.SenzuItem::new, new Item.Properties().rarity(Rarity.UNCOMMON));
     public static final DeferredItem<com.starkinhon.battlegroundsmod.item.ScouterItem> SCOUTER = BattlegroundsMod.ITEMS.registerItem("scouter",
             com.starkinhon.battlegroundsmod.item.ScouterItem::new, new Item.Properties().rarity(Rarity.UNCOMMON));
     public static final DeferredItem<com.starkinhon.battlegroundsmod.item.DragonRadarItem> DRAGON_RADAR = BattlegroundsMod.ITEMS.registerItem("radar_dragao",
             com.starkinhon.battlegroundsmod.item.DragonRadarItem::new, new Item.Properties().rarity(Rarity.RARE));
-    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.PowerPoleItem> POWER_POLE = BattlegroundsMod.ITEMS.registerItem("bastao_magico",
-            com.starkinhon.battlegroundsmod.item.PowerPoleItem::new, new Item.Properties().rarity(Rarity.RARE));
-    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.ZSwordItem> Z_SWORD = BattlegroundsMod.ITEMS.registerItem("espada_z",
-            com.starkinhon.battlegroundsmod.item.ZSwordItem::new, new Item.Properties().rarity(Rarity.EPIC).fireResistant());
     // Naruto items and weapons (universe/NarutoWorld, universe/SageMode).
     public static final DeferredItem<com.starkinhon.battlegroundsmod.item.HiraishinKunaiItem> HIRAISHIN_KUNAI = BattlegroundsMod.ITEMS.registerItem("kunai_hiraishin",
             com.starkinhon.battlegroundsmod.item.HiraishinKunaiItem::new, new Item.Properties().rarity(Rarity.RARE));
@@ -233,8 +230,6 @@ public final class ModItems {
             com.starkinhon.battlegroundsmod.item.RamenItem::new, new Item.Properties().rarity(Rarity.COMMON));
     public static final DeferredItem<com.starkinhon.battlegroundsmod.item.SummonScrollItem> SUMMON_SCROLL = BattlegroundsMod.ITEMS.registerItem("pergaminho_ninken",
             com.starkinhon.battlegroundsmod.item.SummonScrollItem::new, new Item.Properties().rarity(Rarity.RARE));
-    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.PaperBombItem> PAPER_BOMB = BattlegroundsMod.ITEMS.registerItem("papel_bomba",
-            com.starkinhon.battlegroundsmod.item.PaperBombItem::new, new Item.Properties().rarity(Rarity.COMMON));
     public static final DeferredItem<com.starkinhon.battlegroundsmod.item.NinjaHeadbandItem> NINJA_HEADBAND = BattlegroundsMod.ITEMS.registerItem("bandana_ninja",
             com.starkinhon.battlegroundsmod.item.NinjaHeadbandItem::new, new Item.Properties().rarity(Rarity.UNCOMMON));
     public static final DeferredItem<com.starkinhon.battlegroundsmod.item.SamehadaItem> SAMEHADA = BattlegroundsMod.ITEMS.registerItem("samehada",

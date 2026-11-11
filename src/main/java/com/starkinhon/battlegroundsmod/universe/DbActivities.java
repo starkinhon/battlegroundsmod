@@ -346,14 +346,10 @@ public final class DbActivities {
         dailyUse(player, "souls_boo_dia");
         int roll = player.getRandom().nextInt(100);
         ItemStack gift;
-        if (roll < 10) {
-            gift = new ItemStack(ModItems.Z_SWORD.get());
-        } else if (roll < 30) {
+        if (roll < 30) {
             gift = new ItemStack(ModItems.DRAGON_BALLS.get(player.getRandom().nextInt(ModItems.DRAGON_BALLS.size())).get());
         } else if (roll < 50) {
             gift = new ItemStack(ModItems.MULTIVERSAL_CRYSTAL.get());
-        } else if (roll < 70) {
-            gift = new ItemStack(ModItems.POWER_POLE.get());
         } else {
             gift = new ItemStack(ModItems.SENZU.get(), 3);
         }

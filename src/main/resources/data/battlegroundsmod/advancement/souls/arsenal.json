@@ -1,5 +1,5 @@
 {
-  "parent": "battlegroundsmod:souls/arma_espada_z",
+  "parent": "battlegroundsmod:souls/primeira_arma",
   "display": {
     "icon": {
       "id": "battlegroundsmod:lanca_invertida"
@@ -16,26 +16,6 @@
     "hidden": false
   },
   "criteria": {
-    "espada_z": {
-      "trigger": "minecraft:inventory_changed",
-      "conditions": {
-        "items": [
-          {
-            "items": "battlegroundsmod:espada_z"
-          }
-        ]
-      }
-    },
-    "bastao_magico": {
-      "trigger": "minecraft:inventory_changed",
-      "conditions": {
-        "items": [
-          {
-            "items": "battlegroundsmod:bastao_magico"
-          }
-        ]
-      }
-    },
     "nuvem_brincalhona": {
       "trigger": "minecraft:inventory_changed",
       "conditions": {
@@ -118,12 +98,6 @@
     }
   },
   "requirements": [
-    [
-      "espada_z"
-    ],
-    [
-      "bastao_magico"
-    ],
     [
       "nuvem_brincalhona"
     ],
