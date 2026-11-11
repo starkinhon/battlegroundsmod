@@ -56,9 +56,10 @@ biome("picos_do_dragao", 1.0, 0xE3B65E, 0xF0D29A, 0x2FB6D6, 0x10586A, 0x8FBF4E, 
 # Terra Sagrada de Karin: the dense forest where Korin's tower stands (Stark 2026-11-11: "aquela floresta densa, que é
 # onde fica a Torre do Karin"; his frames of the anime: a turquoise sky going pale mint at the horizon over a sea of round
 # puffy crowns in light yellow-green). A temperate forest, not a jungle: the puffy trees (world/PuffyTreeFeature), close
-# together, flowers and grass under them, a pillar now and then breaking out of the canopy.
+# together, flowers and grass under them. No rock pillars: those are the yellow lands' and the desert's, and in the
+# forest they made it look like the same place (Stark).
 biome("terra_sagrada_de_karin", 0.8, 0x6CC4EC, 0xE2F4DA, 0x3FB8D8, 0x10586A, 0x9CD24A, 0x8ACB3C,
-      features(["battlegroundsmod:dragon_pillar_forest"],
+      features([],
                ["battlegroundsmod:puffy_tree_karin", "minecraft:flower_default", "minecraft:patch_grass_forest"]))
 biome("deserto_vermelho", 2.0, 0xEDB95C, 0xF6D79A, 0x3FA9C9, 0x10586A, 0x9E9E4E, 0x9E8E3E,
       features(["battlegroundsmod:dragon_pillar_desert"],
@@ -71,7 +72,7 @@ os.makedirs(f"{R}/worldgen/placed_feature", exist_ok=True)
 with open(f"{R}/worldgen/configured_feature/dragon_pillar.json", "w") as f:
     json.dump({"type": "battlegroundsmod:dragon_pillar", "config": {}}, f, indent=2)
     f.write("\n")
-for name, chance in (("plains", 3), ("peaks", 2), ("desert", 4), ("forest", 7)):
+for name, chance in (("plains", 3), ("peaks", 2), ("desert", 4)):
     with open(f"{R}/worldgen/placed_feature/dragon_pillar_{name}.json", "w") as f:
         json.dump({"feature": "battlegroundsmod:dragon_pillar", "placement": [
             {"type": "minecraft:rarity_filter", "chance": chance},
