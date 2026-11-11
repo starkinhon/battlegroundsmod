@@ -25,7 +25,10 @@ import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 //   two sine curves with random phases, sometimes a curl), bright at the head and thinning to nothing at the tail; no
 //   texture or particle, every point comes from the gust's own numbers, so no two are alike;
 // - the warm grade over the screen: a light orange wash and a burnt-orange vignette at the edges, over the HUD too
-//   (a soft yellow-green one in the Terra Sagrada de Karin, Stark: "amarelo é do deserto").
+//   (a soft yellow-green one in the Terra Sagrada de Karin, Stark: "amarelo é do deserto");
+// - in the Mar do Sul (Stark: "uma vibe bem ensolarada, um sol forte"): a sea breeze, fewer and whiter gusts, a light
+//   golden grade, and the strong tropical sun: a wide warm halo around it in the sky (behind the land, drawn right after
+//   the sky) and a glare over the screen when the player looks toward it.
 public final class DragonWind {
     private static final int MAX_GUSTS = 46;
     private static final int SAMPLES = 22;
@@ -46,6 +49,9 @@ public final class DragonWind {
     // stronger, faster, sand-colored wind.
     private static float desert;
     private static float lastDesert;
+    // 1 in the Mar do Sul.
+    private static float sea;
+    private static float lastSea;
 
     private DragonWind() {
     }
@@ -54,6 +60,7 @@ public final class DragonWind {
         Minecraft mc = Minecraft.getInstance();
         lastStrength = strength;
         lastDesert = desert;
+        lastSea = sea;
         if (mc.level == null || mc.player == null) {
             GUSTS.clear();
             strength = 0;
@@ -68,6 +75,7 @@ public final class DragonWind {
             green = Mth.clamp(green + (biome.is(ModWorldgen.TERRA_SAGRADA) ? 0.015f : -0.015f), 0, 1);
         }
         desert = Mth.clamp(desert + (inside && biome.is(ModWorldgen.DESERTO_VERMELHO) ? 0.01f : -0.015f), 0, 1);
+        sea = Mth.clamp(sea + (inside && biome.is(ModWorldgen.MAR_DO_SUL) ? 0.012f : -0.015f), 0, 1);
         strength = Mth.clamp(strength + (inside ? 0.012f : -0.02f), 0, 1);
         long now = mc.level.getGameTime();
         GUSTS.removeIf(g -> now - g.born() > g.life());
@@ -77,7 +85,7 @@ public final class DragonWind {
         // A gust or so every few ticks, more when the breeze picks up (a slow swell of its own).
         double swell = 0.65 + 0.35 * Math.sin(now / 173.0) * Math.sin(now / 61.0 + 1.3);
         int max = MAX_GUSTS + (int) (60 * desert);
-        float rate = 0.55f * strength * (float) swell * (1 + 2.2f * desert);
+        float rate = 0.55f * strength * (float) swell * (1 + 2.2f * desert) * (1 - 0.45f * sea);
         while (rate > 0 && GUSTS.size() < max) {
             if (RANDOM.nextFloat() < Math.min(1, rate)) {
                 GUSTS.add(newGust(mc, now));
@@ -141,6 +149,10 @@ public final class DragonWind {
     }
 
     public static void onRenderLevel(RenderLevelStageEvent event) {
+        if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_SKY) {
+            renderSunHalo(event);
+            return;
+        }
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS || GUSTS.isEmpty()) {
             return;
         }
@@ -192,6 +204,68 @@ public final class DragonWind {
         buffers.endBatch(FxRenderTypes.AREA);
     }
 
+    // Where the sun is: straight up at noon, rising in the east (+x), setting in the west (as the sky draws it).
+    private static Vec3 sunDir(Minecraft mc, float partial) {
+        float a = mc.level.getSunAngle(partial);
+        return new Vec3(-Mth.sin(a), Mth.cos(a), 0);
+    }
+
+    // How strong the tropical sun is: in the Mar do Sul, by day, fading as it sets.
+    private static float sunPower(Minecraft mc, float partial, Vec3 sun) {
+        float s = Mth.lerp(partial, lastSea, sea) * Mth.lerp(partial, lastStrength, strength);
+        return s * Mth.clamp((float) sun.y * 3 + 0.25f, 0, 1);
+    }
+
+    // The halo of the strong sun: soft rings around it, a bright core fading to nothing far out, golden white at noon
+    // and orange when it's low. Drawn right after the sky, so the land and the sea cover it.
+    private static void renderSunHalo(RenderLevelStageEvent event) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null) {
+            return;
+        }
+        float partial = event.getPartialTick().getGameTimeDeltaPartialTick(false);
+        Vec3 sun = sunDir(mc, partial);
+        float power = sunPower(mc, partial, sun);
+        if (power <= 0.001f || mc.level.isRaining()) {
+            return;
+        }
+        Vec3 up = Math.abs(sun.z) < 0.9 ? new Vec3(0, 0, 1) : new Vec3(1, 0, 0);
+        Vec3 right = sun.cross(up).normalize();
+        Vec3 down = sun.cross(right).normalize();
+        Vec3 center = sun.scale(100);
+        float low = 1 - Mth.clamp((float) sun.y * 2.5f, 0, 1);
+        float r = 1f, g = Mth.lerp(low, 0.95f, 0.72f), b = Mth.lerp(low, 0.74f, 0.42f);
+        PoseStack.Pose last = event.getPoseStack().last();
+        MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
+        VertexConsumer out = buffers.getBuffer(FxRenderTypes.AREA);
+        int rings = 14, segments = 40;
+        double radius = 62;
+        for (int i = 0; i < rings; i++) {
+            double r0 = radius * Math.pow((double) i / rings, 1.6), r1 = radius * Math.pow((double) (i + 1) / rings, 1.6);
+            float a0 = power * glow((float) i / rings), a1 = power * glow((float) (i + 1) / rings);
+            for (int j = 0; j < segments; j++) {
+                double t0 = j * Mth.TWO_PI / segments, t1 = (j + 1) * Mth.TWO_PI / segments;
+                vertex(out, last, center, right, down, r0, t0, r, g, b, a0);
+                vertex(out, last, center, right, down, r1, t0, r, g, b, a1);
+                vertex(out, last, center, right, down, r1, t1, r, g, b, a1);
+                vertex(out, last, center, right, down, r0, t1, r, g, b, a0);
+            }
+        }
+        buffers.endBatch(FxRenderTypes.AREA);
+    }
+
+    // The halo's brightness from its middle (0) to its rim (1).
+    private static float glow(float k) {
+        return 0.55f * (float) Math.pow(1 - k, 2.4) + 0.25f * (float) Math.exp(-k * k * 60);
+    }
+
+    private static void vertex(VertexConsumer out, PoseStack.Pose last, Vec3 center, Vec3 right, Vec3 down, double radius,
+            double angle, float r, float g, float b, float a) {
+        double c = Math.cos(angle) * radius, s = Math.sin(angle) * radius;
+        out.addVertex(last, (float) (center.x + right.x * c + down.x * s), (float) (center.y + right.y * c + down.y * s),
+                (float) (center.z + right.z * c + down.z * s)).setColor(r, g, b, a);
+    }
+
     // Along the streak (0 tail, 1 head): grows from nothing, strongest near the head, a soft tip.
     private static float alpha(float t) {
         float body = t * t * (3 - 2 * t);
@@ -223,16 +297,28 @@ public final class DragonWind {
             return;
         }
         int w = graphics.guiWidth(), h = graphics.guiHeight();
-        float dry = Mth.lerp(delta.getGameTimeDeltaPartialTick(false), lastDesert, desert);
-        int wash = mix(mix(0xFF9A30, 0xC8EC6A, green), 0xFF5E1A, dry);
-        int edge = mix(mix(0xB0480E, 0x4E8A20, green), 0x7A2006, dry);
-        graphics.fill(0, 0, w, h, argb((0.07f - 0.015f * green + 0.035f * dry) * fade, wash));
+        float partial = delta.getGameTimeDeltaPartialTick(false);
+        float dry = Mth.lerp(partial, lastDesert, desert);
+        float sunny = Mth.lerp(partial, lastSea, sea);
+        int wash = mix(mix(mix(0xFF9A30, 0xC8EC6A, green), 0xFF5E1A, dry), 0xFFE07A, sunny);
+        int edge = mix(mix(mix(0xB0480E, 0x4E8A20, green), 0x7A2006, dry), 0xC88A30, sunny);
+        graphics.fill(0, 0, w, h, argb((0.07f - 0.015f * green + 0.035f * dry - 0.025f * sunny) * fade, wash));
+        // The glare of the tropical sun when the player looks toward it.
+        Minecraft mc = Minecraft.getInstance();
+        if (sunny > 0.001f && mc.level != null && mc.player != null && !mc.level.isRaining()) {
+            Vec3 sun = sunDir(mc, partial);
+            float look = (float) mc.player.getViewVector(partial).dot(sun);
+            float glare = sunPower(mc, partial, sun) * Mth.clamp((look - 0.55f) / 0.45f, 0, 1);
+            if (glare > 0.001f) {
+                graphics.fill(0, 0, w, h, argb(0.2f * glare * glare, 0xFFF4D0));
+            }
+        }
         // Vignette: burnt orange getting stronger toward the edges, in thin bands.
         int bands = 18;
         int depthX = Math.max(1, w / 5), depthY = Math.max(1, h / 4);
         for (int i = 0; i < bands; i++) {
             float k = 1 - (float) i / bands;
-            int color = argb((0.022f - 0.006f * green + 0.014f * dry) * k * k * fade, edge);
+            int color = argb((0.022f - 0.006f * green + 0.014f * dry - 0.01f * sunny) * k * k * fade, edge);
             int x = depthX * i / bands, y = depthY * i / bands;
             int x2 = depthX * (i + 1) / bands, y2 = depthY * (i + 1) / bands;
             graphics.fill(x, 0, x2, h, color);

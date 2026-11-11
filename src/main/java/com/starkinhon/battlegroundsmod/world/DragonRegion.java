@@ -22,7 +22,7 @@ import terrablender.api.SurfaceRuleManager;
 // The Dragon Ball universe as a part of the normal overworld (Stark 2026-11-11: universos viram biomas, "ambiente
 // incrível"). A TerraBlender region with the vanilla climate layout where the land biomes become the Dragon World's:
 // the mountains (peaks, slopes, windswept hills) Picos do Dragão, the dry ones Deserto Vermelho, the rest Terras do
-// Dragão. Oceans, rivers and beaches stay (Kame House needs its island). The shape of the land is vanilla's for that
+// Dragão. The warm seas are the Mar do Sul; rivers and the cold seas stay. The shape of the land is vanilla's for that
 // climate, so the peaks are real mountains; the pillars and mesas on top are DragonPillarFeature.
 public final class DragonRegion extends Region {
     // Against vanilla's 10: about a quarter of the world's regions.
@@ -57,6 +57,12 @@ public final class DragonRegion extends Region {
                     Biomes.OLD_GROWTH_SPRUCE_TAIGA, Biomes.SNOWY_TAIGA, Biomes.JUNGLE, Biomes.SPARSE_JUNGLE,
                     Biomes.BAMBOO_JUNGLE, Biomes.MANGROVE_SWAMP)) {
                 builder.replaceBiome(woods, ModWorldgen.TERRA_SAGRADA);
+            }
+            // The warm and temperate seas and their beaches become the Mar do Sul (Stark 2026-11-11: the Kame House's
+            // tropical islands, pirates, a strong sun). The cold and frozen seas stay for the Norte Gelado.
+            for (ResourceKey<Biome> sea : java.util.List.of(Biomes.WARM_OCEAN, Biomes.LUKEWARM_OCEAN, Biomes.DEEP_LUKEWARM_OCEAN,
+                    Biomes.OCEAN, Biomes.DEEP_OCEAN, Biomes.BEACH)) {
+                builder.replaceBiome(sea, ModWorldgen.MAR_DO_SUL);
             }
             for (ResourceKey<Biome> green : java.util.List.of(Biomes.PLAINS, Biomes.SUNFLOWER_PLAINS,
                     Biomes.MEADOW, Biomes.CHERRY_GROVE, Biomes.SNOWY_PLAINS, Biomes.ICE_SPIKES, Biomes.SWAMP)) {
@@ -102,6 +108,13 @@ public final class DragonRegion extends Region {
                         SurfaceRules.ifTrue(patch, yellow), SurfaceRules.ifTrue(rim, plain)))),
                 SurfaceRules.ifTrue(SurfaceRules.UNDER_FLOOR, SurfaceRules.sequence(
                         SurfaceRules.ifTrue(patch, yellow), SurfaceRules.ifTrue(rim, plain)))));
-        return SurfaceRules.ifTrue(SurfaceRules.abovePreliminarySurface(), SurfaceRules.sequence(peaks, desert, lands));
+        // The Mar do Sul: white sand on the beaches and all over the sea floor (the turquoise water over it), sandstone under.
+        SurfaceRules.RuleSource white = SurfaceRules.state(Blocks.SAND.defaultBlockState());
+        SurfaceRules.RuleSource sea = SurfaceRules.ifTrue(SurfaceRules.isBiome(ModWorldgen.MAR_DO_SUL), SurfaceRules.sequence(
+                SurfaceRules.ifTrue(SurfaceRules.ON_FLOOR, white),
+                SurfaceRules.ifTrue(SurfaceRules.UNDER_FLOOR, white),
+                SurfaceRules.ifTrue(SurfaceRules.stoneDepthCheck(0, true, 6, net.minecraft.world.level.levelgen.placement.CaveSurface.FLOOR),
+                        SurfaceRules.state(Blocks.SANDSTONE.defaultBlockState()))));
+        return SurfaceRules.ifTrue(SurfaceRules.abovePreliminarySurface(), SurfaceRules.sequence(peaks, desert, lands, sea));
     }
 }

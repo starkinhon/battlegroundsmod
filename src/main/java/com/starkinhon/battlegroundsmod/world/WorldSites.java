@@ -143,6 +143,10 @@ public final class WorldSites {
         if (biome.is(ModWorldgen.PICOS_DO_DRAGAO)) {
             return BUU;
         }
+        if (biome.is(ModWorldgen.MAR_DO_SUL)) {
+            // The Kame House on its own palm island, in about a third of the Mar do Sul's cells.
+            return roll % 3 == 0 ? KAME : null;
+        }
         if (biome.is(BiomeTags.IS_BEACH) || biome.is(BiomeTags.IS_OCEAN)) {
             // The Kame House: on the coast of a Dragon Ball land.
             for (int a = 0; a < 8; a++) {
@@ -225,12 +229,38 @@ public final class WorldSites {
                     .template("dragonball/cell_arena", 0, 0, 0);
             case BABIDI -> b.clearUp(20, 0, 12).template("dragonball/babidi_ship", 0, 0, 0);
             case BUU -> b.clearUp(17, 0, 18).foundation(16, 10, grass, dirt).template("dragonball/buu_house", 0, 0, 0);
-            case KAME -> b.clearUp(17, 0, 24).foundation(16, 6, s(Blocks.SAND), s(Blocks.SANDSTONE))
-                    .template("dragonball/kame_house", 0, 0, 0);
+            case KAME -> kame(b);
             case WRECK -> wreck(b, sand, sandstone);
             case RADITZ -> raditz(b);
             default -> b;
         };
+    }
+
+    // The Kame House on its little tropical island (Stark 2026-11-11): a round beach of white sand, the sand going down
+    // in a slope under the water so the sea turns light around it, the house (with its own palms) in the middle.
+    private static Build kame(Build b) {
+        double radius = 19 + b.random.nextDouble() * 2;
+        double shelf = 9;
+        int r = (int) Math.ceil(radius + shelf);
+        b.clearUp(radius + 2, 0, 24);
+        BlockState sand = s(Blocks.SAND), sandstone = s(Blocks.SANDSTONE);
+        for (int i = -r; i <= r; i++) {
+            for (int k = -r; k <= r; k++) {
+                double angle = Math.atan2(k, i);
+                double edge = radius * (1 + 0.08 * Math.sin(3 * angle + 1.3) + 0.05 * Math.sin(5 * angle + 0.4));
+                double d = Math.sqrt(i * i + k * k);
+                if (d > edge + shelf) {
+                    continue;
+                }
+                // the beach at y -1 (just over the sea), then down under the water past the edge
+                int top = d <= edge ? -1 : -2 - (int) Math.round(14 * Math.pow((d - edge) / shelf, 0.8));
+                for (int j = top; j >= -18; j--) {
+                    b.set(i, j, k, top - j < 3 ? sand : sandstone);
+                }
+            }
+        }
+        b.template("dragonball/kame_house", 0, 0, 0);
+        return b;
     }
 
     // The crashed Capsule Corp ship, sunk in a scorched patch with wreckage and smoke around it.

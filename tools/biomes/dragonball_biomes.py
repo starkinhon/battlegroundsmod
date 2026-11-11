@@ -23,7 +23,7 @@ def features(surface, vegetal, extra_ores=()):
             ["minecraft:spring_water", "minecraft:spring_lava"], ["minecraft:glow_lichen"] + vegetal,
             ["minecraft:freeze_top_layer"]]
 
-def biome(name, temp, sky, fog, water, water_fog, grass, foliage, feats, music=None):
+def biome(name, temp, sky, fog, water, water_fog, grass, foliage, feats, music=None, water_life=None):
     effects = {"sky_color": sky, "fog_color": fog, "water_color": water, "water_fog_color": water_fog,
                "grass_color": grass, "foliage_color": foliage,
                "mood_sound": {"block_search_extent": 8, "offset": 2.0, "sound": "minecraft:ambient.cave", "tick_delay": 6000}}
@@ -32,7 +32,8 @@ def biome(name, temp, sky, fog, water, water_fog, grass, foliage, feats, music=N
     data = {"has_precipitation": False, "temperature": temp, "downfall": 0.0, "effects": effects,
             "spawners": {"ambient": [], "axolotls": [], "creature": [], "misc": [], "monster": [],
                          "underground_water_creature": [{"type": "minecraft:glow_squid", "maxCount": 6, "minCount": 4, "weight": 10}],
-                         "water_ambient": [], "water_creature": []},
+                         "water_ambient": (water_life or {}).get("ambient", []),
+                         "water_creature": (water_life or {}).get("creature", [])},
             "spawn_costs": {},
             "carvers": {"air": ["minecraft:cave", "minecraft:cave_extra_underground", "minecraft:canyon"]},
             "features": feats}
@@ -68,6 +69,20 @@ biome("deserto_vermelho", 2.0, 0xE8C46A, 0xE59A4E, 0x3FA9C9, 0x10586A, 0xB8A85A,
       features(["battlegroundsmod:desert_rock"],
                ["minecraft:patch_dead_bush_badlands"], ["minecraft:ore_gold_extra"]),
       music="minecraft:music.overworld.desert")
+
+# Mar do Sul (Stark 2026-11-11: "ilhas tropicais da Kame House com piratas", "uma vibe bem ensolarada, um sol forte,
+# azul, amarelado"): the warm seas around the Dragon Ball lands. A bright azure sky going warm yellow at the horizon,
+# turquoise water over white sand, little palm islands (world/TropicalIslandFeature) and palms on the beaches
+# (world/PalmTreeFeature), now and then a pirate ship at anchor (world/PirateShipFeature); warm-sea coral, seagrass, sea
+# pickles and kelp under the water (vanilla's, in vanilla's order); tropical fish, pufferfish and dolphins.
+biome("mar_do_sul", 0.95, 0x6FC6FF, 0xFFF0BC, 0x2EE0D2, 0x14A4B4, 0x6FE04A, 0x4FD23A,
+      features(["battlegroundsmod:tropical_island", "battlegroundsmod:pirate_ship"],
+               ["minecraft:warm_ocean_vegetation", "minecraft:seagrass_warm", "minecraft:sea_pickle", "minecraft:kelp_warm",
+                "battlegroundsmod:palm_tree_beach"]),
+      water_life={"ambient": [{"type": "minecraft:tropical_fish", "maxCount": 8, "minCount": 8, "weight": 25},
+                              {"type": "minecraft:pufferfish", "maxCount": 3, "minCount": 1, "weight": 15}],
+                  "creature": [{"type": "minecraft:dolphin", "maxCount": 2, "minCount": 1, "weight": 2},
+                               {"type": "minecraft:squid", "maxCount": 4, "minCount": 1, "weight": 1}]})
 
 # The pillars: one feature, three placements (how often per biome).
 os.makedirs(f"{R}/worldgen/configured_feature", exist_ok=True)
@@ -110,10 +125,39 @@ with open(f"{R}/worldgen/placed_feature/puffy_tree_karin.json", "w") as f:
         {"type": "minecraft:biome"}]}, f, indent=2)
     f.write("\n")
 
+# The Mar do Sul's features: islands every few chunks, a pirate ship now and then, palms on any dry beach sand.
+for name, data in (("tropical_island", "tropical_island"), ("pirate_ship", "pirate_ship"), ("palm_tree", "palm_tree")):
+    with open(f"{R}/worldgen/configured_feature/{name}.json", "w") as f:
+        json.dump({"type": f"battlegroundsmod:{data}", "config": {}}, f, indent=2)
+        f.write("\n")
+with open(f"{R}/worldgen/placed_feature/tropical_island.json", "w") as f:
+    json.dump({"feature": "battlegroundsmod:tropical_island", "placement": [
+        {"type": "minecraft:rarity_filter", "chance": 5},
+        {"type": "minecraft:in_square"},
+        {"type": "minecraft:heightmap", "heightmap": "OCEAN_FLOOR_WG"},
+        {"type": "minecraft:biome"}]}, f, indent=2)
+    f.write("\n")
+with open(f"{R}/worldgen/placed_feature/pirate_ship.json", "w") as f:
+    json.dump({"feature": "battlegroundsmod:pirate_ship", "placement": [
+        {"type": "minecraft:rarity_filter", "chance": 70},
+        {"type": "minecraft:in_square"},
+        {"type": "minecraft:heightmap", "heightmap": "OCEAN_FLOOR_WG"},
+        {"type": "minecraft:biome"}]}, f, indent=2)
+    f.write("\n")
+with open(f"{R}/worldgen/placed_feature/palm_tree_beach.json", "w") as f:
+    json.dump({"feature": "battlegroundsmod:palm_tree", "placement": [
+        {"type": "minecraft:count", "count": {"type": "minecraft:weighted_list", "distribution": [
+            {"weight": 4, "data": 0}, {"weight": 3, "data": 1}, {"weight": 1, "data": 2}]}},
+        {"type": "minecraft:in_square"},
+        {"type": "minecraft:surface_water_depth_filter", "max_water_depth": 0},
+        {"type": "minecraft:heightmap", "heightmap": "OCEAN_FLOOR"},
+        {"type": "minecraft:biome"}]}, f, indent=2)
+    f.write("\n")
+
 # Which biomes are the Dragon Ball universe's (universe/UniverseBiomes).
 os.makedirs(f"{R}/tags/worldgen/biome", exist_ok=True)
 with open(f"{R}/tags/worldgen/biome/universe_dragonball.json", "w") as f:
     json.dump({"values": ["battlegroundsmod:terras_do_dragao", "battlegroundsmod:picos_do_dragao",
-                          "battlegroundsmod:deserto_vermelho", "battlegroundsmod:terra_sagrada_de_karin"]}, f, indent=2)
+                          "battlegroundsmod:deserto_vermelho", "battlegroundsmod:terra_sagrada_de_karin", "battlegroundsmod:mar_do_sul"]}, f, indent=2)
     f.write("\n")
 print("ok")

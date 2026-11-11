@@ -134,6 +134,10 @@ public final class UniverseSpawns {
         if (biome.is(com.starkinhon.battlegroundsmod.world.ModWorldgen.DESERTO_VERMELHO)) {
             return List.of("saibaman", "saibaman", "bandido_deserto", "raptor");
         }
+        if (biome.is(com.starkinhon.battlegroundsmod.world.ModWorldgen.MAR_DO_SUL)) {
+            // the islands and the ships' decks: the pirates' sea
+            return List.of("pirata");
+        }
         if (biome.is(com.starkinhon.battlegroundsmod.world.ModWorldgen.TERRA_SAGRADA)) {
             return List.of("raptor", "raptor", "tiranossauro", "soldado_red_ribbon");
         }

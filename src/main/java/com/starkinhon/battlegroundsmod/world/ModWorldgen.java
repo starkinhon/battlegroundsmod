@@ -34,12 +34,21 @@ public final class ModWorldgen {
     // The round puffy trees of the Terra Sagrada de Karin (worldgen/placed_feature/puffy_tree_karin).
     public static final Supplier<PuffyTreeFeature> PUFFY_TREE = FEATURES.register("puffy_tree",
             () -> new PuffyTreeFeature(NoneFeatureConfiguration.CODEC));
+    // The Mar do Sul: palms, little tropical islands, pirate ships (worldgen/placed_feature/palm_tree_*, tropical_island,
+    // pirate_ship).
+    public static final Supplier<PalmTreeFeature> PALM_TREE = FEATURES.register("palm_tree",
+            () -> new PalmTreeFeature(NoneFeatureConfiguration.CODEC));
+    public static final Supplier<TropicalIslandFeature> TROPICAL_ISLAND = FEATURES.register("tropical_island",
+            () -> new TropicalIslandFeature(NoneFeatureConfiguration.CODEC));
+    public static final Supplier<PirateShipFeature> PIRATE_SHIP = FEATURES.register("pirate_ship",
+            () -> new PirateShipFeature(NoneFeatureConfiguration.CODEC));
 
     // The Dragon Ball biomes of the normal overworld (tools/biomes/dragonball_biomes.py, put there by DragonRegion).
     public static final ResourceKey<Biome> TERRAS_DO_DRAGAO = biome("terras_do_dragao");
     public static final ResourceKey<Biome> PICOS_DO_DRAGAO = biome("picos_do_dragao");
     public static final ResourceKey<Biome> DESERTO_VERMELHO = biome("deserto_vermelho");
     public static final ResourceKey<Biome> TERRA_SAGRADA = biome("terra_sagrada_de_karin");
+    public static final ResourceKey<Biome> MAR_DO_SUL = biome("mar_do_sul");
     public static final TagKey<Biome> DRAGONBALL_BIOMES = TagKey.create(Registries.BIOME,
             ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "universe_dragonball"));
 
