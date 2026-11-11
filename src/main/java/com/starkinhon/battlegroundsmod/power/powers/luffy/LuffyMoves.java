@@ -91,9 +91,17 @@ public final class LuffyMoves {
         return d.lengthSqr() < 1.0E-4 ? SubCommon.flat(caster.getLookAngle()) : d.normalize();
     }
 
+    // The Giant (10x) reaches and breaks with his size, hits 3x as hard and throws twice as far.
+    private static double k(LivingEntity caster) {
+        return Luffy.size(caster);
+    }
+
     static void launch(ServerLevel level, LivingEntity caster, LivingEntity target, Vec3 velocity) {
         boolean boss = target instanceof SoulBoss b && b.isBoss();
         Vec3 v = boss ? velocity.multiply(0.35, 0.5, 0.35) : velocity;
+        if (k(caster) > 1.5) {
+            v = v.scale(2);
+        }
         target.setDeltaMovement(v);
         target.hurtMarked = true;
         Tasks.later(1, () -> {
@@ -106,25 +114,32 @@ public final class LuffyMoves {
     }
 
     private static void hit(LivingEntity caster, LivingEntity target, float damage, int stun) {
-        Combat.hurt(caster, target, damage);
+        Combat.hurt(caster, target, k(caster) > 1.5 ? damage * 3 : damage);
         if (stun > 0) {
             Stun.apply(target, stun);
         }
     }
 
-    private static void dent(ServerLevel level, Vec3 at, double r, double deep, int pieces, int rubber) {
+    private static void dent(LivingEntity caster, ServerLevel level, Vec3 at, double r, double deep, int pieces, int rubber) {
+        // the giant's holes are his size, up to 4x (more would stall the server breaking blocks)
+        double g = Math.min(4, k(caster));
+        r *= g;
+        deep *= Math.min(3, g);
+        pieces = (int) Math.min(900, pieces * Math.min(2.5, g));
         SubNet.send(level, SubNet.LUFFY_DENT, 0, at, Vec3.ZERO, (float) r, pieces, rubber);
         if (rubber == 0 && BlockRules.canBreak(level)) {
             OpmSerious.dent(level, SubCommon.ground(level, at), r, deep);
         }
     }
 
-    private static void rubber(ServerLevel level, Vec3 at, double strength) {
-        SubNet.send(level, SubNet.LUFFY_RUBBER, 0, SubCommon.ground(level, at), Vec3.ZERO, (float) strength, 0, 0);
+    private static void rubber(LivingEntity caster, ServerLevel level, Vec3 at, double strength) {
+        // b = how much bigger the ring runs (the giant's)
+        SubNet.send(level, SubNet.LUFFY_RUBBER, 0, SubCommon.ground(level, at), Vec3.ZERO, (float) strength, (float) Math.min(3, k(caster)), 0);
     }
 
     // Everyone around p (but the caster) bounces up as the rubber wave passes them (the page's dummies).
     private static void reverb(ServerLevel level, LivingEntity caster, Vec3 p, double radius, float damage, Set<LivingEntity> skip) {
+        radius *= k(caster);
         for (LivingEntity e : Combat.inRadius(level, p, radius, caster)) {
             if (skip.contains(e)) {
                 continue;
@@ -148,7 +163,7 @@ public final class LuffyMoves {
     // ---------- a move goes off ----------
 
     static boolean fire(LivingEntity caster, ServerLevel level, int key, int gear) {
-        double reach = REACH[key][gear];
+        double reach = REACH[key][gear] * k(caster);
         LivingEntity target = key == 3 && gear == 2 ? null : front(caster, reach);
         Vec3 aim = target != null ? Combat.center(target) : caster.getEyePosition().add(caster.getLookAngle().scale(reach));
         Vec3 dir = flatTo(caster, aim);
@@ -174,6 +189,7 @@ public final class LuffyMoves {
 
     // Whoever is where the fist lands: the target, or anyone along the line up to the aim point.
     private static List<LivingEntity> struck(LivingEntity caster, ServerLevel level, LivingEntity target, Vec3 aim, double radius) {
+        radius *= k(caster);
         if (target != null && target.isAlive()) {
             Vec3 c = Combat.center(target);
             List<LivingEntity> near = Combat.inRadius(level, c, radius, caster);
@@ -218,7 +234,7 @@ public final class LuffyMoves {
                         hit(caster, e, e == target ? 40f : 24f, 46);
                         Freeze.hold(e, 18);
                     }
-                    dent(level, new Vec3(p.x, p.y, p.z), 3.4, 2.2, 380, 0);
+                    dent(caster, level, new Vec3(p.x, p.y, p.z), 3.4, 2.2, 380, 0);
                     sound(level, p, SoundEvents.GENERIC_EXPLODE.value(), 1.4f, 0.6f);
                 }
                 case 3 -> {
@@ -230,7 +246,7 @@ public final class LuffyMoves {
                     caster.hurtMarked = true;
                     Vec3 o = caster.position();
                     for (int i = 0; i < 6; i++) {
-                        dent(level, o.add(dir.scale(2 + i * 2.2)), 0.6 + i * 0.12 + 0.6, 1, i == 0 ? 260 : 0, 0);
+                        dent(caster, level, o.add(dir.scale(2 + i * 2.2)), 0.6 + i * 0.12 + 0.6, 1, i == 0 ? 260 : 0, 0);
                     }
                     sound(level, p, SoundEvents.GENERIC_EXPLODE.value(), 1.6f, 0.7f);
                 }
@@ -246,8 +262,8 @@ public final class LuffyMoves {
                             }
                         });
                     }
-                    rubber(level, p, 1);
-                    dent(level, p, 6, 0, 300, 1);
+                    rubber(caster, level, p, 1);
+                    dent(caster, level, p, 6, 0, 300, 1);
                     reverb(level, caster, p, 14, 8f, hitSet);
                     sound(level, p, SoundEvents.SLIME_BLOCK_FALL, 2f, 0.5f);
                     sound(level, p, SoundEvents.GENERIC_EXPLODE.value(), 1.2f, 0.9f);
@@ -283,12 +299,12 @@ public final class LuffyMoves {
                     }
                     if (gear == 2 && age % 4 == 0 && t != null) {
                         Vec3 c = t.position();
-                        dent(level, c.add(SubCommon.RANDOM.nextDouble() * 2 - 1, 0, SubCommon.RANDOM.nextDouble() * 2 - 1), 1.2 + SubCommon.RANDOM.nextDouble() * 0.8, 1,
+                        dent(caster, level, c.add(SubCommon.RANDOM.nextDouble() * 2 - 1, 0, SubCommon.RANDOM.nextDouble() * 2 - 1), 1.2 + SubCommon.RANDOM.nextDouble() * 0.8, 1,
                                 26, 0);
                     }
                     if (gear == 4 && age % 3 == 0 && t != null) {
-                        rubber(level, t.position(), 0.55 + SubCommon.RANDOM.nextDouble() * 0.25);
-                        dent(level, t.position(), 4, 0, 14, 1);
+                        rubber(caster, level, t.position(), 0.55 + SubCommon.RANDOM.nextDouble() * 0.25);
+                        dent(caster, level, t.position(), 4, 0, 14, 1);
                     }
                     sound(level, caster.getEyePosition().add(dir.scale(2)), gear == 2 ? SoundEvents.GENERIC_EXPLODE.value() : SoundEvents.PLAYER_ATTACK_WEAK,
                             gear == 2 ? 0.6f : 0.5f, 1.1f + 0.3f * SubCommon.RANDOM.nextFloat());
@@ -310,10 +326,10 @@ public final class LuffyMoves {
                 }
             }
             if (gear == 2) {
-                dent(level, p, 3.6, 2.2, 300, 0);
+                dent(caster, level, p, 3.6, 2.2, 300, 0);
             }
             if (gear == 4) {
-                rubber(level, p, 1);
+                rubber(caster, level, p, 1);
                 reverb(level, caster, p, 12, 6f, hitSet);
             }
             sound(level, p, SoundEvents.GENERIC_EXPLODE.value(), 1f + 0.2f * gear, 1.4f - 0.15f * gear);
@@ -369,18 +385,18 @@ public final class LuffyMoves {
                 case 2 -> {
                     Vec3 g = target != null ? target.position() : aim;
                     for (int i = 0; i < 6; i++) {
-                        dent(level, g.add(dir.scale(2 + i * 3.2)), 1 + 0.2 * i + 0.4, 1.4, i == 0 ? 220 : 0, 0);
+                        dent(caster, level, g.add(dir.scale(2 + i * 3.2)), 1 + 0.2 * i + 0.4, 1.4, i == 0 ? 220 : 0, 0);
                     }
                 }
                 case 3 -> {
                     caster.setDeltaMovement(dir.scale(-0.45).add(0, 0.05, 0));
                     caster.hurtMarked = true;
-                    dent(level, caster.position().add(dir.scale(4)), 1.6, 1, 240, 0);
+                    dent(caster, level, caster.position().add(dir.scale(4)), 1.6, 1, 240, 0);
                 }
                 case 4 -> {
                     Vec3 g = target != null ? target.position() : aim;
-                    rubber(level, g, 1.7);
-                    dent(level, g, 16, 0, 420, 1);
+                    rubber(caster, level, g, 1.7);
+                    dent(caster, level, g, 16, 0, 420, 1);
                     reverb(level, caster, g, 18, 10f, hitSet);
                 }
                 default -> {
@@ -445,7 +461,7 @@ public final class LuffyMoves {
                     hit(caster, e, 55f, 56);
                     Freeze.hold(e, 20);
                 }
-                dent(level, c, 3.4, 2.4, 340, 0);
+                dent(caster, level, c, 3.4, 2.4, 340, 0);
                 sound(level, c, SoundEvents.GENERIC_EXPLODE.value(), 1.6f, 0.8f);
             }
             if (age > land && age < endT) {
@@ -529,7 +545,7 @@ public final class LuffyMoves {
             caster.hurtMarked = true;
             Vec3 o = caster.position();
             for (int i = 0; i < 10; i++) {
-                dent(level, o.add(dir.scale(3 + i * 3)), 1 + i * 0.15 + 0.5, 1.6, i == 0 ? 420 : 0, 0);
+                dent(caster, level, o.add(dir.scale(3 + i * 3)), 1 + i * 0.15 + 0.5, 1.6, i == 0 ? 420 : 0, 0);
             }
             sound(level, aim, SoundEvents.GENERIC_EXPLODE.value(), 2.4f, 0.5f);
             sound(level, aim, SoundEvents.LIGHTNING_BOLT_THUNDER, 0.8f, 1.6f);
@@ -561,13 +577,13 @@ public final class LuffyMoves {
                 });
             }
             // the branches of the bolt running over the ground
-            for (LivingEntity e : Combat.inRadius(level, p, 8, caster)) {
+            for (LivingEntity e : Combat.inRadius(level, p, 8 * k(caster), caster)) {
                 if (!hitSet.contains(e)) {
                     hit(caster, e, 30f, 30);
                 }
             }
-            rubber(level, p, 1.3);
-            dent(level, p, 7, 0, 260, 1);
+            rubber(caster, level, p, 1.3);
+            dent(caster, level, p, 7, 0, 260, 1);
             sound(level, p, SoundEvents.LIGHTNING_BOLT_IMPACT, 2.4f, 0.8f);
             sound(level, p, SoundEvents.LIGHTNING_BOLT_THUNDER, 2f, 0.7f);
         });

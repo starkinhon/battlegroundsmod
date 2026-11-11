@@ -148,7 +148,7 @@ public final class LuffyFx {
     private record Burst(Vec3 pos, Vec3 dir, float size, float life, double born, float arc, float sp, float thin, float seed, float[] tint, float drift) {
     }
 
-    private record Rubber(Vec3 c, float w, double born) {
+    private record Rubber(Vec3 c, float w, double born, float size) {
     }
 
     private record Squash(int type, double born, Vec3 fwd) {
@@ -242,6 +242,17 @@ public final class LuffyFx {
 
     private static Frame F;
     private static Vec3 CAM, C, TP, TG, FEET;
+    // The Giant: GS = his size. While his moves draw, CAM/C/TP are taken into his "small world" (shrunk about his feet),
+    // the moves run at normal size there, and what they make is put back at his size (LuffyMesh.worldScale, toReal).
+    private static double GS = 1;
+
+    private static Vec3 toSmall(Vec3 p) {
+        return GS == 1 || p == null ? p : FEET.add(p.subtract(FEET).scale(1 / GS));
+    }
+
+    private static Vec3 toReal(Vec3 p) {
+        return GS == 1 || p == null ? p : FEET.add(p.subtract(FEET).scale(GS));
+    }
     private static double U, PU, DT, NOW, TIME, BODYY;
     private static final double MS = 0.9375;
     private static double SX = 1, SY = 1, SZ = 1;
@@ -314,6 +325,8 @@ public final class LuffyFx {
     // the page's shock(): a ring on the screen that pushes the picture out, each color its own amount (the rainbow edge),
     // with a soft glow; the glow follows the page's values for each power
     private static void shock(Vec3 at, float pow, int color, float dur) {
+        at = toReal(at);
+        pow *= (float) Math.sqrt(GS);
         if (OpmFx.near(at, 140)) {
             float glow = pow < 1.3f ? 0.06f : pow < 2.8f ? 0.1f : pow < 3.3f ? 0.12f : pow < 5 ? 0.15f : 0.2f;
             ScreenFx.shockRing(at, pow, color, dur, glow);
@@ -332,6 +345,9 @@ public final class LuffyFx {
             BURSTS.remove(0);
         }
         Vec3 d = dir.lengthSqr() < 1.0E-8 ? F.forward() : dir.normalize();
+        pos = toReal(pos);
+        size *= GS;
+        drift *= GS;
         BURSTS.add(new Burst(pos, d, (float) size, (float) life, NOW + delay * 20, (float) arc, sp > 0 ? sp : 12 + (int) (rnd() * 9), (float) thin,
                 (float) (rnd() * 10), rgb(tint), (float) drift));
     }
@@ -360,11 +376,16 @@ public final class LuffyFx {
 
     // a piece of the real ground (the page's spawnDeb): at base + (lx, ly, lz) of his frame, flying (vx, vy, vz)
     private static void deb(Vec3 base, double lx, double ly, double lz, double vx, double vy, double vz, double size, boolean deep, boolean bouncy) {
-        Vec3 p = base.add(D(lx, 0, lz)).add(0, ly, 0);
-        OpmBlocks.Deb d = OpmBlocks.spawn(OpmBlocks.stateAt(p.x, p.z, deep), p, D(vx, vy, vz), size, false, 0);
+        Vec3 p = toReal(base.add(D(lx, 0, lz)).add(0, ly, 0));
+        double vs = Math.sqrt(GS);
+        OpmBlocks.Deb d = OpmBlocks.spawn(OpmBlocks.stateAt(p.x, p.z, deep), p, D(vx * vs, vy * vs, vz * vs), size * Math.min(3, GS), false, 0);
         if (d != null) {
             d.bouncy = bouncy;
         }
+    }
+
+    private static void ring(Vec3 at, double r, float a) {
+        OpmFx.ring(toReal(at), (float) (r * GS), a);
     }
 
     private static void squash(int type) {
@@ -434,7 +455,16 @@ public final class LuffyFx {
             }
             case SubNet.LUFFY_G5 -> {
                 Body bd = body(id);
-                if (a > 1.5f) {
+                if (a > 3.5f) {
+                    // back to his size
+                    say(id, "...", false);
+                } else if (a > 2.5f) {
+                    // Gomu Gomu no Giant!
+                    say(id, "Gomu Gomu no... GIANT!", true);
+                    OpmFx.whiteCut(pos, now);
+                    OpmFx.lines(now);
+                    OpmFx.shake(pos, 2);
+                } else if (a > 1.5f) {
                     bd.g5Until = -1;
                     bd.fomeUntil = now + b;
                 } else if (a > 0.5f) {
@@ -485,7 +515,7 @@ public final class LuffyFx {
                 if (RUBBERS.size() > 6) {
                     RUBBERS.remove(0);
                 }
-                RUBBERS.add(new Rubber(pos, a, now));
+                RUBBERS.add(new Rubber(pos, a, now, Math.max(1, b)));
             }
             default -> {
             }
@@ -649,6 +679,9 @@ public final class LuffyFx {
             TONE_RIM = mix(TONE, 0xFFFFFF, 0.3);
             Vec3 feet = e.getPosition(partial);
             FEET = feet;
+            GS = e instanceof LivingEntity giant && giant.getScale() > 1.5f ? giant.getScale() : 1;
+            CAM = GS == 1 ? cam : feet.add(cam.subtract(feet).scale(1 / GS));
+            LuffyMesh.worldScale = (float) GS;
             Vec3 look = bd.move != null ? bd.move.look : e.getViewVector(partial);
             F = Frame.of(feet, look);
             if (bd.move != null) {
@@ -676,6 +709,9 @@ public final class LuffyFx {
                 collar(1);
             }
         }
+        GS = 1;
+        CAM = cam;
+        LuffyMesh.worldScale = 1;
         bursts();
         rubberGround(cam, now);
         SQUASH.values().removeIf(s -> (now - s.born()) / 20 > 2.4);
@@ -795,7 +831,7 @@ public final class LuffyFx {
         int lv = m.gear;
         setLook(bd, lv, 1);
         Entity t = m.target >= 0 ? level.getEntity(m.target) : null;
-        if (t != null && t.isAlive() && (m.lastC == null || t.position().distanceTo(FEET) < REACH[m.key][lv] * 1.7 + 6)) {
+        if (t != null && t.isAlive() && (m.lastC == null || t.position().distanceTo(FEET) < (REACH[m.key][lv] * 1.7 + 6) * GS)) {
             TGT = t;
             TP = t.getPosition(partial);
             C = TP.add(0, t.getBbHeight() * 0.69, 0);
@@ -805,7 +841,11 @@ public final class LuffyFx {
             C = m.lastC != null ? m.lastC : m.fallback;
             TP = C.subtract(0, 1.25, 0);
         }
-        TG = new Vec3(TP.x, groundY(TP.x, TP.z), TP.z);
+        if (GS != 1) {
+            C = toSmall(C);
+            TP = toSmall(TP);
+        }
+        TG = new Vec3(TP.x, GS == 1 ? groundY(TP.x, TP.z) : TP.y, TP.z);
         // the blow sent it flying (the server's launch): from here it tumbles and lands flat, as on the page
         if (TGT instanceof LivingEntity le && !SQUASH.containsKey(le.getId()) && !KNOCK.containsKey(le.getId()) && !le.onGround()
                 && le.getDeltaMovement().y > 0.08) {
@@ -892,7 +932,7 @@ public final class LuffyFx {
                         OpmFx.flash(C, 2.4f);
                         impact(C, I5, 0xFFFFFF);
                         OpmFx.shake(C, 2.6);
-                        OpmFx.ring(TG, 14, 1.0f);
+                        ring(TG, 14, 1.0f);
                         shock(TP.add(0, 1, 0), 3, 0xFFE8C8, 0.7f);
                         OpmFx.lines(NOW);
                         squash(BURY);
@@ -946,7 +986,7 @@ public final class LuffyFx {
                 shock(c, 4.5f, 0xFFE2E8, 0.9f);
                 OpmFx.lines(NOW);
                 Vec3 g0 = new Vec3(FEET.x, groundY(FEET.x, FEET.z), FEET.z);
-                OpmFx.ring(g0, 10, 0.8f);
+                ring(g0, 10, 0.8f);
                 for (int i = 0; i < 260; i++) {
                     double an = (rnd() - 0.5) * 1.1, sp = 14 + rnd() * 30;
                     deb(g0, (rnd() - 0.5) * 2, 0.2, 2 + rnd() * 8, Math.sin(an) * sp, 3 + rnd() * 9, Math.cos(an) * sp, 0.08 + Math.pow(rnd(), 2.4) * 0.6, false,
@@ -1131,7 +1171,7 @@ public final class LuffyFx {
                     OpmFx.flash(c, 2.4f);
                     impact(c, I5, 0xFFFFFF);
                     OpmFx.shake(c, 2.4);
-                    OpmFx.ring(TG, 13, 1);
+                    ring(TG, 13, 1);
                     squash(BURY2);
                     for (int i = 0; i < 300; i++) {
                         double g = rnd() * 6.283, r = 0.6 + rnd() * 3.4, sp = 4 + rnd() * 11;
@@ -1289,7 +1329,7 @@ public final class LuffyFx {
             shock(c, 4.5f, 0xFFE2E8, 0.9f);
             OpmFx.lines(NOW);
             Vec3 g0 = new Vec3(FEET.x, groundY(FEET.x, FEET.z), FEET.z);
-            OpmFx.ring(g0, 10, 0.8f);
+            ring(g0, 10, 0.8f);
             for (int i = 0; i < 240; i++) {
                 double g = (rnd() - 0.5) * 1.2, sp = 14 + rnd() * 30;
                 deb(g0, (rnd() - 0.5) * 2, 0.2, 2 + rnd() * 8, Math.sin(g) * sp, 3 + rnd() * 9, Math.cos(g) * sp, 0.08 + Math.pow(rnd(), 2.4) * 0.6, false, false);
@@ -1411,7 +1451,7 @@ public final class LuffyFx {
             shock(c, 4, 0xFFFFFF, 1.0f);
             OpmFx.lines(NOW);
             say(m.id, "CLAP!!", true);
-            OpmFx.ring(TG, 24, 1.3f);
+            ring(TG, 24, 1.3f);
             squash(CLAP);
             Vec3 up = new Vec3(0, 1, 0);
             burst(c, up, 7.5, 0.4, 0, 24, 0, 0, 0xC8DEFA, 0);
@@ -1517,7 +1557,7 @@ public final class LuffyFx {
             for (int s = -1; s <= 1; s += 2) {
                 burst(g.add(D(s * 1.5, 0.4, 0)), D(s, 0, 0), 2.6, 0.34, 1, 0, 0.35, 0.02, 0xC8DEFA, 5);
             }
-            OpmFx.ring(TG, 15, 1);
+            ring(TG, 15, 1);
             squash(BURY);
             for (int i = 0; i < 340; i++) {
                 double an = rnd() * 6.283, r = 0.6 + rnd() * 3.4, sp = 4 + rnd() * 12;
@@ -1753,8 +1793,9 @@ public final class LuffyFx {
         for (Rubber rb : RUBBERS) {
             // slower and narrower than the page (26 blocks/s): at Minecraft's scale the page's ring went past any spot
             // in a fifth of a second and read as nothing; this one rolls past Luffy's feet in waves you can follow
-            double age = (now - rb.born()) / 20, R = age * 13, wid = 3 + age * 2.5, fade = Math.exp(-age * 0.7) * rb.w();
-            double r0 = Math.max(0, R - wid * 1.4), r1 = Math.min(40, R + wid * 1.4);
+            // (the Giant's ring runs bigger: rb.size up to 3x)
+            double age = (now - rb.born()) / 20, R = age * 13 * rb.size(), wid = (3 + age * 2.5) * rb.size(), fade = Math.exp(-age * 0.7) * rb.w() * Math.sqrt(rb.size());
+            double r0 = Math.max(0, R - wid * 1.4), r1 = Math.min(56, R + wid * 1.4);
             if (fade < 0.04 || r0 >= r1) {
                 continue;
             }

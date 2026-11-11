@@ -13,6 +13,9 @@ import com.starkinhon.battlegroundsmod.power.PowerLogic;
 import com.starkinhon.battlegroundsmod.power.powers.sub.SubCommon;
 import com.starkinhon.battlegroundsmod.power.powers.sub.SubNet;
 
+import com.starkinhon.battlegroundsmod.BattlegroundsMod;
+
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -21,6 +24,9 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.phys.Vec3;
 
 // Luffy (Garoto Borracha, Stark 2026-11-11, the approved page forja/luffy-gears): holding a key climbs the Gears and
@@ -28,9 +34,18 @@ import net.minecraft.world.phys.Vec3;
 // shows the Gear at once (LuffyFx), so whoever watches can read it. Holding stops at G4: the G5 comes only from the
 // Tambores da Libertacao (the ult bar, filled fighting): B with it full turns him into the total Gear 5 for 1 minute,
 // every key in its G5 version at once, no holding. When it ends he is starving and spent: no stamina, slow, weak and
-// without Gears for a while (as in the anime).
+// without Gears for a while (as in the anime). B again inside the G5: Gomu Gomu no Giant, 10x his size, every move with
+// his size (reach, areas, damage).
 public final class Luffy {
     public static final String ID = "rubber_boy";
+    // Gomu Gomu no Giant (Stark 2026-11-11): B again while in Gear 5 makes him 10x a player, every move with him
+    public static final String GIANT = "luffy_giant";
+    public static final double GIANT_SCALE = 10;
+    private static final int GROW_TICKS = 24;
+    private static final ResourceLocation GIANT_SIZE = ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "luffy_giant_size"),
+            GIANT_STEP = ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "luffy_giant_step"),
+            GIANT_FALL = ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "luffy_giant_fall"),
+            GIANT_SPEED = ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "luffy_giant_speed");
     public static final String G5 = "luffy_g5", FOME = "luffy_fome", TINY = "luffy_tiny", TIRED = "luffy_tired", FUSEN = "luffy_fusen";
     // The page's TH in ticks: toque, G2, G3, G4, G5.
     static final int[] TH = {0, 5, 10, 18, 28};
@@ -58,6 +73,70 @@ public final class Luffy {
 
     public static boolean g5(LivingEntity caster) {
         return SubCommon.hasState(caster, G5);
+    }
+
+    public static boolean giant(LivingEntity caster) {
+        return SubCommon.hasState(caster, GIANT);
+    }
+
+    // How much bigger his moves are right now (reach, areas, the size of what they break): his real size.
+    public static double size(LivingEntity caster) {
+        return giant(caster) ? Math.max(1, caster.getScale()) : 1;
+    }
+
+    // B in Gear 5: Gomu Gomu no Giant. He grows to 10x in a second (and back the same way on B again or when the G5 ends).
+    private static boolean toggleGiant(LivingEntity caster, ServerLevel level) {
+        boolean on = !giant(caster);
+        if (on) {
+            SubCommon.setState(caster, GIANT, G5_TICKS);
+        } else {
+            SubCommon.clearState(caster, GIANT);
+        }
+        grow(caster, level, on);
+        SubNet.send(level, SubNet.LUFFY_G5, caster.getId(), caster.position(), Vec3.ZERO, on ? 3 : 4, 0, 0);
+        SubCommon.sound(level, caster.position(), SoundEvents.SLIME_JUMP, 2f, on ? 0.5f : 1.2f);
+        SubCommon.sound(level, caster.position(), SoundEvents.NOTE_BLOCK_BASEDRUM.value(), 2f, 0.5f);
+        return true;
+    }
+
+    private static void grow(LivingEntity caster, ServerLevel level, boolean on) {
+        AttributeInstance scale = caster.getAttribute(Attributes.SCALE);
+        if (scale == null) {
+            return;
+        }
+        double from = scale.getModifier(GIANT_SIZE) != null ? scale.getModifier(GIANT_SIZE).amount() : 0, to = on ? GIANT_SCALE - 1 : 0;
+        // a giant steps over hills and lands from his own height without a scratch, and walks with his size
+        mod(caster, Attributes.STEP_HEIGHT, GIANT_STEP, on ? 4 : 0, AttributeModifier.Operation.ADD_VALUE);
+        mod(caster, Attributes.SAFE_FALL_DISTANCE, GIANT_FALL, on ? 60 : 0, AttributeModifier.Operation.ADD_VALUE);
+        mod(caster, Attributes.MOVEMENT_SPEED, GIANT_SPEED, on ? 1.2 : 0, AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
+        Tasks.add(age -> {
+            double k = Math.min(1, (age + 1) / (double) GROW_TICKS);
+            // a rubber overshoot at the end, like the page's bounces
+            double e = 1 - Math.pow(1 - k, 3) + 0.06 * Math.sin(k * Math.PI) * (on ? 1 : 0);
+            mod(caster, Attributes.SCALE, GIANT_SIZE, from + (to - from) * e, AttributeModifier.Operation.ADD_VALUE);
+            return k >= 1 || !caster.isAlive();
+        });
+    }
+
+    private static void mod(LivingEntity caster, net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> attr, ResourceLocation id,
+            double amount, AttributeModifier.Operation op) {
+        AttributeInstance inst = caster.getAttribute(attr);
+        if (inst == null) {
+            return;
+        }
+        inst.removeModifier(id);
+        if (Math.abs(amount) > 1.0E-4) {
+            inst.addTransientModifier(new AttributeModifier(id, amount, op));
+        }
+    }
+
+    // The G5 is over (or broken): back to his size.
+    private static void shrink(LivingEntity caster, ServerLevel level) {
+        if (giant(caster) || caster.getAttribute(Attributes.SCALE) != null && caster.getAttribute(Attributes.SCALE).getModifier(GIANT_SIZE) != null) {
+            SubCommon.clearState(caster, GIANT);
+            grow(caster, level, false);
+            SubNet.send(level, SubNet.LUFFY_G5, caster.getId(), caster.position(), Vec3.ZERO, 4, 0, 0);
+        }
     }
 
     // V is each Gear's own big move, not the bar's: it never waits for the Tambores.
@@ -151,7 +230,7 @@ public final class Luffy {
 
     static boolean gear5(LivingEntity caster, ServerLevel level) {
         if (g5(caster)) {
-            return false;
+            return toggleGiant(caster, level);
         }
         PowerData data = caster.getData(ModAttachments.POWER);
         boolean free = caster instanceof ServerPlayer p && (p.isCreative() || data.noCooldown);
@@ -186,6 +265,7 @@ public final class Luffy {
         Tasks.add(age -> {
             if (guard.broken()) {
                 SubCommon.clearState(caster, G5);
+                shrink(caster, level);
                 SubNet.send(level, SubNet.LUFFY_G5, caster.getId(), caster.position(), Vec3.ZERO, 0, 0, 0);
                 return true;
             }
@@ -209,6 +289,7 @@ public final class Luffy {
     // The G5 is over: starving, no stamina, slow and weak, no Gears until it passes.
     private static void starve(LivingEntity caster, ServerLevel level) {
         SubCommon.clearState(caster, G5);
+        shrink(caster, level);
         SubCommon.setState(caster, FOME, FOME_TICKS);
         SubNet.send(level, SubNet.LUFFY_G5, caster.getId(), caster.position(), Vec3.ZERO, 2, FOME_TICKS, 0);
         Stamina.exhaust(caster);

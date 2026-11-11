@@ -70,9 +70,16 @@ public final class LuffyMesh {
         return FxShaders.luffy != null && !broken;
     }
 
+    // The Giant (LuffyFx): his pieces are built at his normal size around the camera seen from his small world, then
+    // scaled up about the camera, which puts them at his real size and place.
+    public static float worldScale = 1;
+
     public static void queue(Mesh mesh, Matrix4f model, P p, int sides, int order) {
         if (!ready() || p.alpha <= 0.002f) {
             return;
+        }
+        if (worldScale != 1) {
+            model = new Matrix4f().scaling(worldScale).mul(model);
         }
         Vector3f c = model.getTranslation(new Vector3f());
         QUEUE.add(new Cmd(mesh, new Matrix4f(model), p.copy(), sides, c.length(), order));
