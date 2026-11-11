@@ -81,9 +81,12 @@ public final class DragonRegion extends Region {
                 SurfaceRules.ifTrue(SurfaceRules.UNDER_FLOOR, SurfaceRules.bandlands()),
                 SurfaceRules.ifTrue(SurfaceRules.stoneDepthCheck(0, true, 8, net.minecraft.world.level.levelgen.placement.CaveSurface.FLOOR),
                         SurfaceRules.bandlands())));
+        // The desert's red sand has the same patches of yellow ground as the yellow lands.
+        SurfaceRules.RuleSource yellowDesert = SurfaceRules.state(Blocks.YELLOW_TERRACOTTA.defaultBlockState());
+        SurfaceRules.ConditionSource desertPatch = SurfaceRules.noiseCondition(Noises.SURFACE, 0.3, Double.MAX_VALUE);
         SurfaceRules.RuleSource desert = SurfaceRules.ifTrue(SurfaceRules.isBiome(ModWorldgen.DESERTO_VERMELHO), SurfaceRules.sequence(
                 SurfaceRules.ifTrue(SurfaceRules.ON_FLOOR, SurfaceRules.ifTrue(water, SurfaceRules.sequence(
-                        SurfaceRules.ifTrue(SurfaceRules.steep(), orange), redSand))),
+                        SurfaceRules.ifTrue(SurfaceRules.steep(), orange), SurfaceRules.ifTrue(desertPatch, yellowDesert), redSand))),
                 SurfaceRules.ifTrue(SurfaceRules.UNDER_FLOOR, SurfaceRules.sequence(
                         SurfaceRules.ifTrue(SurfaceRules.steep(), orange), redSandstone)),
                 SurfaceRules.ifTrue(SurfaceRules.stoneDepthCheck(0, true, 6, net.minecraft.world.level.levelgen.placement.CaveSurface.FLOOR),
