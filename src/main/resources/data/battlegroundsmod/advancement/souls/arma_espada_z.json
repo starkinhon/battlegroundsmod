@@ -1,0 +1,35 @@
+{
+  "parent": "battlegroundsmod:souls/primeira_arma",
+  "display": {
+    "icon": {
+      "id": "battlegroundsmod:espada_z"
+    },
+    "title": {
+      "translate": "advancements.battlegroundsmod.souls.arma_espada_z.title"
+    },
+    "description": {
+      "translate": "advancements.battlegroundsmod.souls.arma_espada_z.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "got": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "battlegroundsmod:espada_z"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "got"
+    ]
+  ]
+}

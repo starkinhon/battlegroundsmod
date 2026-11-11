@@ -1,0 +1,28 @@
+{
+  "parent": "battlegroundsmod:souls/root",
+  "display": {
+    "icon": {
+      "id": "battlegroundsmod:soul_kuririn"
+    },
+    "title": {
+      "translate": "advancements.battlegroundsmod.souls.primeira_alma.title"
+    },
+    "description": {
+      "translate": "advancements.battlegroundsmod.souls.primeira_alma.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ]
+}

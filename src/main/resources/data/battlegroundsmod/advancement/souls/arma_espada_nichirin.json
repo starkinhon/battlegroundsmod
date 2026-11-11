@@ -1,0 +1,35 @@
+{
+  "parent": "battlegroundsmod:souls/primeira_arma",
+  "display": {
+    "icon": {
+      "id": "battlegroundsmod:espada_nichirin"
+    },
+    "title": {
+      "translate": "advancements.battlegroundsmod.souls.arma_espada_nichirin.title"
+    },
+    "description": {
+      "translate": "advancements.battlegroundsmod.souls.arma_espada_nichirin.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "got": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "battlegroundsmod:espada_nichirin"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "got"
+    ]
+  ]
+}

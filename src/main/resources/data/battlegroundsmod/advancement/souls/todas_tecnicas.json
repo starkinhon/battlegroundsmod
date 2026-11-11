@@ -1,0 +1,28 @@
+{
+  "parent": "battlegroundsmod:souls/tecnica_reversao",
+  "display": {
+    "icon": {
+      "id": "minecraft:totem_of_undying"
+    },
+    "title": {
+      "translate": "advancements.battlegroundsmod.souls.todas_tecnicas.title"
+    },
+    "description": {
+      "translate": "advancements.battlegroundsmod.souls.todas_tecnicas.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ]
+}

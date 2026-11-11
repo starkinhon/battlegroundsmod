@@ -57,6 +57,7 @@ public class BattlegroundsMod {
         com.starkinhon.battlegroundsmod.power.powers.kokushibo.MoonImpactRule.init();
         PowerEvents.register();
         com.starkinhon.battlegroundsmod.power.Progression.register();
+        com.starkinhon.battlegroundsmod.power.Achievements.register();
         com.starkinhon.battlegroundsmod.challenge.ChallengeArenas.register();
         com.starkinhon.battlegroundsmod.challenge.Universes.register();
         com.starkinhon.battlegroundsmod.universe.DragonBallWorld.register();

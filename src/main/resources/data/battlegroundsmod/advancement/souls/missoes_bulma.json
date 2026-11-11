@@ -1,0 +1,28 @@
+{
+  "parent": "battlegroundsmod:souls/raditz",
+  "display": {
+    "icon": {
+      "id": "battlegroundsmod:radar_dragao"
+    },
+    "title": {
+      "translate": "advancements.battlegroundsmod.souls.missoes_bulma.title"
+    },
+    "description": {
+      "translate": "advancements.battlegroundsmod.souls.missoes_bulma.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ]
+}

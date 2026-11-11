@@ -101,6 +101,15 @@ public final class DbQuests {
         return i >= 0 && i < STEPS.size() ? STEPS.get(i) : null;
     }
 
+    // How many missions the player finished, out of total() (power/Achievements).
+    public static int done(ServerPlayer player) {
+        return Math.max(0, Math.min(player.getPersistentData().getInt(STEP), STEPS.size()));
+    }
+
+    public static int total() {
+        return STEPS.size();
+    }
+
     public static boolean at(ServerPlayer player, String id) {
         Step step = current(player);
         return on(player) && step != null && step.id().equals(id);

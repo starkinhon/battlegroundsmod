@@ -1,0 +1,28 @@
+{
+  "parent": "battlegroundsmod:souls/root",
+  "display": {
+    "icon": {
+      "id": "minecraft:lily_pad"
+    },
+    "title": {
+      "translate": "advancements.battlegroundsmod.souls.tecnica_modo_sabio.title"
+    },
+    "description": {
+      "translate": "advancements.battlegroundsmod.souls.tecnica_modo_sabio.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ]
+}

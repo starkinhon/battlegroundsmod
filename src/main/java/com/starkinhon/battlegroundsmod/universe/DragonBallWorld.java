@@ -198,6 +198,7 @@ public final class DragonBallWorld {
         player.connection.send(new ClientboundSetTitlesAnimationPacket(10, 70, 20));
         player.connection.send(new ClientboundSetTitleTextPacket(Component.literal("SHENLONG").withStyle(s -> s.withColor(0x3FD46A).withBold(true))));
         player.connection.send(new ClientboundSetSubtitleTextPacket(Component.translatable("message.battlegroundsmod.shenlong_sub")));
+        com.starkinhon.battlegroundsmod.power.Achievements.grant(player, "shenlong");
         player.getPersistentData().putLong(WISH_TAG, level.getGameTime() + 1200);
         player.sendSystemMessage(Component.translatable("message.battlegroundsmod.shenlong_ask").withStyle(s -> s.withColor(0x3FD46A)));
         for (String wish : new String[] {"poder", "alma", "rival", "imortal", "senzu", "viagem"}) {

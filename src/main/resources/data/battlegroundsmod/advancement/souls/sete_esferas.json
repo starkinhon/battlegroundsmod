@@ -1,0 +1,113 @@
+{
+  "parent": "battlegroundsmod:souls/raditz",
+  "display": {
+    "icon": {
+      "id": "battlegroundsmod:esfera_dragao_4"
+    },
+    "title": {
+      "translate": "advancements.battlegroundsmod.souls.sete_esferas.title"
+    },
+    "description": {
+      "translate": "advancements.battlegroundsmod.souls.sete_esferas.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "e1": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "battlegroundsmod:esfera_dragao_1"
+          }
+        ]
+      }
+    },
+    "e2": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "battlegroundsmod:esfera_dragao_2"
+          }
+        ]
+      }
+    },
+    "e3": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "battlegroundsmod:esfera_dragao_3"
+          }
+        ]
+      }
+    },
+    "e4": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "battlegroundsmod:esfera_dragao_4"
+          }
+        ]
+      }
+    },
+    "e5": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "battlegroundsmod:esfera_dragao_5"
+          }
+        ]
+      }
+    },
+    "e6": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "battlegroundsmod:esfera_dragao_6"
+          }
+        ]
+      }
+    },
+    "e7": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "battlegroundsmod:esfera_dragao_7"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "e1"
+    ],
+    [
+      "e2"
+    ],
+    [
+      "e3"
+    ],
+    [
+      "e4"
+    ],
+    [
+      "e5"
+    ],
+    [
+      "e6"
+    ],
+    [
+      "e7"
+    ]
+  ]
+}

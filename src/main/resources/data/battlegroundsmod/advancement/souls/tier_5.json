@@ -1,0 +1,28 @@
+{
+  "parent": "battlegroundsmod:souls/tier_7",
+  "display": {
+    "icon": {
+      "id": "minecraft:diamond"
+    },
+    "title": {
+      "translate": "advancements.battlegroundsmod.souls.tier_5.title"
+    },
+    "description": {
+      "translate": "advancements.battlegroundsmod.souls.tier_5.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ]
+}

@@ -51,6 +51,11 @@ public final class TimeChamber {
     public static final int YEAR = 365;
     private static final String DAYS = "battlegroundsmod_sala_ticks";
     private static final String DONE = "battlegroundsmod_sala_ano";
+
+    // Whether the player already spent their whole year in the room (power/Achievements).
+    public static boolean yearDone(ServerPlayer player) {
+        return player.getPersistentData().getBoolean(DONE);
+    }
     private static final String KI = "battlegroundsmod_sala_ki";
     // Gravity zones: name, gravity multiplier, speed and jump changes, Poder per minute of training (in enemies of the
     // player's own tier).

@@ -1,0 +1,31 @@
+{
+  "parent": "battlegroundsmod:souls/raditz",
+  "display": {
+    "icon": {
+      "id": "minecraft:lime_dye"
+    },
+    "title": {
+      "translate": "advancements.battlegroundsmod.souls.namek.title"
+    },
+    "description": {
+      "translate": "advancements.battlegroundsmod.souls.namek.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "went": {
+      "trigger": "minecraft:changed_dimension",
+      "conditions": {
+        "to": "battlegroundsmod:namek"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "went"
+    ]
+  ]
+}
