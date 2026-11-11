@@ -97,7 +97,7 @@ public final class OpmBlocks {
         if (level == null || COLS.containsKey(key(x, z))) {
             return;
         }
-        int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z) - 1;
+        int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING, x, z) - 1;
         BlockPos.MutableBlockPos p = new BlockPos.MutableBlockPos(x, y, z);
         BlockState top = level.getBlockState(p);
         if (!drawable(top)) {

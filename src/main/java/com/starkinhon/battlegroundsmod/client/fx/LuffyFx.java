@@ -1770,7 +1770,9 @@ public final class LuffyFx {
                     if (h < 0.1) {
                         continue;
                     }
-                    int top = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, wx, wz) - 1;
+                    // MOTION_BLOCKING: the client only keeps WORLD_SURFACE and MOTION_BLOCKING; NO_LEAVES reads the
+                    // world's bottom there, so every column came out as void air and nothing was drawn
+                    int top = level.getHeight(Heightmap.Types.MOTION_BLOCKING, wx, wz) - 1;
                     at.set(wx, top, wz);
                     BlockState st = level.getBlockState(at);
                     if (st.isAir() || !st.getFluidState().isEmpty()) {
