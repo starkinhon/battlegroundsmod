@@ -717,7 +717,7 @@ public final class DbMobs {
     // Raptor X Garras: two claw slashes crossing in an X; the target bleeds for 4 s.
     public static boolean claws(Mob caster, ServerLevel level) {
         LivingEntity target = caster.getTarget();
-        if (target == null || !target.isAlive() || caster.distanceTo(target) > 3.5) {
+        if (target == null || !target.isAlive() || caster.distanceTo(target) > 3.0) {
             return false;
         }
         caster.getNavigation().stop();
@@ -736,8 +736,8 @@ public final class DbMobs {
             SubNet.send(level, SubNet.SLASH, 0, c, swing, 1.1f, 0.18f, SubNet.STYLE_CRIMSON);
             SubCommon.sound(level, c, SoundEvents.PLAYER_ATTACK_SWEEP, 1.2f, 1.5f);
             caster.swing(net.minecraft.world.InteractionHand.MAIN_HAND);
-            if (caster.distanceTo(target) < 3.8) {
-                Combat.hurtMagic(caster, target, 35);
+            if (caster.distanceTo(target) < 3.0) {
+                Combat.hurtMagic(caster, target, 28);
                 Stun.apply(target, 6);
                 if (age == 8) {
                     bleed(caster, level, target);
@@ -838,7 +838,7 @@ public final class DbMobs {
     // dust runs round; everyone on the ground near it takes it and is knocked off balance (stun).
     public static boolean rexStomp(Mob caster, ServerLevel level) {
         LivingEntity target = caster.getTarget();
-        if (target == null || !target.isAlive() || caster.distanceTo(target) > 8) {
+        if (target == null || !target.isAlive() || caster.distanceTo(target) > 5) {
             return false;
         }
         caster.getNavigation().stop();
@@ -858,11 +858,11 @@ public final class DbMobs {
                 SubNet.send(level, SubNet.SCAR, 0, g.add(0, 0.05, 0), dir.scale(5.5 + SubCommon.RANDOM.nextDouble() * 2.5), 0.6f, 120, 0);
             }
             DbCommon.screen(level, g, 10);
-            for (LivingEntity t : Combat.inRadius(level, g, 6.5, caster)) {
+            for (LivingEntity t : Combat.inRadius(level, g, 5.0, caster)) {
                 if (!t.onGround()) {
                     continue;   // a jump in time dodges it
                 }
-                double k = 1 - 0.5 * Math.min(1, t.position().distanceTo(g) / 6.5);
+                double k = 1 - 0.5 * Math.min(1, t.position().distanceTo(g) / 5.0);
                 Combat.hurtMagic(caster, t, (float) (120 * k));
                 Stun.apply(t, 25);
                 Combat.pushFrom(t, g, 0.5 * k, 0.5);

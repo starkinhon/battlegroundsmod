@@ -31,6 +31,11 @@ public final class TierInventoryInfo {
         GuiGraphics graphics = event.getGuiGraphics();
         Font font = minecraft.font;
         Component name = Tiers.name(data.tier);
+        // The Poder in numbers too (Stark 2026-11-10), "Humano · Poder 40 / 120".
+        if (Progression.clientOn && Progression.cost(data.tier) > 0) {
+            name = name.copy().append(Component.literal("  ·  Poder " + Math.round(data.poder) + " / " + Math.round(Progression.cost(data.tier)))
+                    .withStyle(s -> s.withColor(0xC8B88A)));
+        }
         int width = Math.max(110, font.width(name) + 16);
         int x1 = screen.getGuiLeft() + (176 - width) / 2;
         int y1 = screen.getGuiTop() - 26;

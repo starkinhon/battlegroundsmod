@@ -29,7 +29,8 @@ import net.minecraft.world.phys.AABB;
 // The universes' friendly NPCs (Stark 2026-11-10: "NPCs that teach you, like DragonMineZ; good ones that help, bad ones
 // that attack, and the bosses"). The bad ones are the common enemies (ModEntities, Saibaman...). The good ones live
 // near each universe's arrival point and come back if they go missing:
-// - Gohan (Dragon Ball) teaches Voo once the player reaches Tier 9;
+// - Gohan (Dragon Ball) teaches Voo once the player reaches Tier 9; he lives at Goku's house (world/DragonBallPlaces),
+//   not by the arrival point;
 // - Korin (Dragon Ball) gives one Senzu per day and hints about the universe; he lives on top of the Torre do Karin
 //   (world/DragonBallPlaces), not by the arrival point;
 // - Jiraiya (Naruto) teaches Modo Sábio once the player reaches Tier 8;
@@ -42,7 +43,6 @@ public final class Npcs {
     }
 
     private static final List<Home> HOMES = List.of(
-            new Home("dragonball", ModEntities.NPC_GOHAN, 6, 3),
             new Home("naruto", ModEntities.NPC_JIRAIYA, 6, 3),
             new Home("naruto", ModEntities.NPC_TEUCHI, -5, 4),
             new Home("jujutsu", ModEntities.NPC_SHOKO, 6, 3),

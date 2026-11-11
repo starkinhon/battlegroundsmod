@@ -36,8 +36,8 @@ public final class UniverseSpawns {
     private static final int MIN_DIST = 24;
     private static final int MAX_DIST = 48;
     private static final float VANILLA_KEPT = 0.5f;
-    private static final int EARTH_CAP_DAY = 3;
-    private static final int EARTH_CAP_NIGHT = 4;
+    private static final int EARTH_CAP_DAY = 4;
+    private static final int EARTH_CAP_NIGHT = 5;
     private static final int EARTH_MIN_DIST = 32;
     private static final int EARTH_MAX_DIST = 56;
 
@@ -157,29 +157,43 @@ public final class UniverseSpawns {
         if (nearby >= cap) {
             return;
         }
+        // A few spots per try: outside the desert most single spots failed (water by the islands, trees, the houses) and
+        // almost nothing came (Stark's test 2026-11-10, the desert was right).
+        for (int attempt = 0; attempt < 5; attempt++) {
+            if (spawnEarthAt(level, player, random, cap - nearby)) {
+                return;
+            }
+        }
+    }
+
+    private static boolean spawnEarthAt(ServerLevel level, ServerPlayer player, RandomSource random, int room) {
         double angle = random.nextDouble() * Math.PI * 2;
         int dist = EARTH_MIN_DIST + random.nextInt(EARTH_MAX_DIST - EARTH_MIN_DIST + 1);
         int x = player.getBlockX() + (int) Math.round(Math.cos(angle) * dist);
         int z = player.getBlockZ() + (int) Math.round(Math.sin(angle) * dist);
         if (com.starkinhon.battlegroundsmod.world.DragonBallPlaces.safe(x, z)) {
-            return;
+            return false;
         }
         List<String> mobs = earthMobs(x, z);
         String id = mobs.get(random.nextInt(mobs.size()));
         EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.get(ResourceLocation.fromNamespaceAndPath(
                 com.starkinhon.battlegroundsmod.BattlegroundsMod.MODID, id));
         if (type == EntityType.PIG) {
-            return;
+            return false;
         }
         // the big ones alone, the raptors in packs
         int count = "tiranossauro".equals(id) || "yeti".equals(id) ? 1 : "raptor".equals(id) ? 2 : 1 + random.nextInt(2);
-        count = Math.min(count, cap - nearby);
+        count = Math.min(count, room);
+        // the pirates live by the sea; the rest keep off it
+        boolean shore = "pirata".equals(id);
+        boolean any = false;
         for (int i = 0; i < count; i++) {
             BlockPos pos = ground(level, x + random.nextInt(5) - 2, z + random.nextInt(5) - 2);
-            if (pos != null && !nearWater(level, pos)) {
-                type.spawn(level, pos, MobSpawnType.EVENT);
+            if (pos != null && (shore || !nearWater(level, pos))) {
+                any |= type.spawn(level, pos, MobSpawnType.EVENT) != null;
             }
         }
+        return any;
     }
 
     // Freeza's soldiers on Namek (its own dimension now): in groups on dry ground around the player, never too many.

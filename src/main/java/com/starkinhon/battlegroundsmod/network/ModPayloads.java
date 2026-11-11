@@ -262,6 +262,10 @@ public final class ModPayloads {
 
         void applyTo(Player player) {
             player.setData(ModAttachments.ARENA_WINS, List.copyOf(wins));
+            // Kept apart from the player too: the client makes a new player on every respawn and change of world
+            // (the arenas are a world of their own), and that one starts with no wins (Stark 2026-11-10: the book
+            // forgot every win after an arena or a change of power).
+            com.starkinhon.battlegroundsmod.challenge.ChallengeArenas.clientWins = List.copyOf(wins);
         }
 
         @Override

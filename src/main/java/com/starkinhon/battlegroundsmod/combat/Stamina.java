@@ -182,8 +182,8 @@ public final class Stamina {
             int total = Math.max(1, spec.vulneravelSegundos() * 20);
             data.stamina = (float) (max * spec.voltaComPct() / 100.0 * (1 - Math.min(1, left / (double) total)));
         } else if (!CombatMode.in(entity) && spec.regenForaDeCombatePorSegundo() > 0
-                && !(entity instanceof net.minecraft.world.entity.player.Player player && com.starkinhon.battlegroundsmod.universe.Flight.flying(player))) {
-            // (flying pays stamina, so it does not fill back up in the air)
+                && !(entity instanceof net.minecraft.world.entity.player.Player player && com.starkinhon.battlegroundsmod.universe.Flight.paying(player))) {
+            // (moving through the air pays stamina, so it does not fill back up then; floating still in the air does)
             data.stamina = (float) Math.min(max, now + max * spec.regenForaDeCombatePorSegundo() / 100.0 / 20.0);
         }
         if (!data.abilityHeld) {

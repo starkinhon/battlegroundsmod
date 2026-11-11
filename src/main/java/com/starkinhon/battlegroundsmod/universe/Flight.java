@@ -23,19 +23,19 @@ import net.neoforged.neoforge.network.PacketDistributor;
 // The flight itself is the approved page's (forja voo/voo.html, Stark 2026-11-10 "bem melhor"): the client moves the
 // player (client/FlightClient: cruise, arcs in the turns, the boost on Ctrl) and the server only allows it, pays it
 // and tells everyone around how that player flies (FlightState), so they see the pose, the shell and the trail.
-// Flying burns attack stamina (Stark 2026-11-10): a little while floating, more while cruising, a lot with the boost.
-// Running low the player is "tired": the boost goes out and they glide down to the ground instead of dropping
+// Flying burns attack stamina (Stark 2026-11-10): more while cruising, a lot with the boost; floating still costs
+// nothing and lets it fill back up (after his test the same day: it ran out too fast and he did not know how to get it
+// back). Running low the player is "tired": the boost goes out and they glide down to the ground instead of dropping
 // (never exhausted by flying, that is for fights). Without a power (no stamina) it burns hunger like before.
 // No flying in the challenge arenas (Stark 2026-11-10; Kuririn was born dead when he came in flying).
 public final class Flight {
     public static final String TECHNIQUE = "voo";
     private static final int MIN_FOOD = 6;
     // stamina, % of the max per second
-    private static final double FLOAT_COST = 0.8;
-    private static final double CRUISE_COST = 1.6;
-    private static final double BOOST_COST = 6.0;
+    private static final double CRUISE_COST = 0.7;
+    private static final double BOOST_COST = 3.5;
     // % paid at once when the boost goes off (the burst)
-    private static final double BURST_COST = 4.0;
+    private static final double BURST_COST = 2.5;
     // below this % they are tired (glide down, no boost); taking off again needs TAKEOFF_PCT
     private static final double TIRED_PCT = 3.0;
     private static final double TAKEOFF_PCT = 10.0;
@@ -46,6 +46,8 @@ public final class Flight {
     private static final Map<UUID, Integer> SENT = new HashMap<>();
     private static final Map<UUID, Boolean> BOOSTING = new HashMap<>();
     private static final Map<UUID, Boolean> TIRED_NOW = new HashMap<>();
+    // flying and paying for it this tick (cruising or boosting): no stamina coming back meanwhile
+    private static final java.util.Set<UUID> PAYING = new java.util.HashSet<>();
 
     private Flight() {
     }
@@ -63,6 +65,11 @@ public final class Flight {
     // Whether player is flying with the technique right now (not the creative flight).
     public static boolean flying(Player player) {
         return player instanceof ServerPlayer sp && !sp.isCreative() && !sp.isSpectator() && sp.getAbilities().flying && knows(sp);
+    }
+
+    // Whether the flight is paying stamina right now (Stamina keeps it from filling back up then).
+    public static boolean paying(Player player) {
+        return PAYING.contains(player.getUUID()) && flying(player);
     }
 
     private static boolean inArena(ServerPlayer player) {
@@ -124,8 +131,13 @@ public final class Flight {
             boolean boosting = BOOSTING.getOrDefault(player.getUUID(), false) && !tired;
             if (stamina) {
                 double speed = player.getDeltaMovement().length() * 20;
-                double cost = boosting ? BOOST_COST : speed > 3 ? CRUISE_COST : FLOAT_COST;
-                Stamina.tire(player, cost / 20.0, TIRED_PCT);
+                double cost = boosting ? BOOST_COST : speed > 3 ? CRUISE_COST : 0;
+                if (cost > 0) {
+                    PAYING.add(player.getUUID());
+                    Stamina.tire(player, cost / 20.0, TIRED_PCT);
+                } else {
+                    PAYING.remove(player.getUUID());
+                }
                 if (!tired && pct(player) <= TIRED_PCT + 0.01) {
                     tired = true;
                     player.displayClientMessage(Component.translatable("message.battlegroundsmod.flight_tired_stamina"), true);
@@ -146,6 +158,7 @@ public final class Flight {
         } else {
             BOOSTING.remove(player.getUUID());
             TIRED_NOW.remove(player.getUUID());
+            PAYING.remove(player.getUUID());
         }
         if (changed) {
             player.onUpdateAbilities();
@@ -176,5 +189,6 @@ public final class Flight {
         SENT.remove(id);
         BOOSTING.remove(id);
         TIRED_NOW.remove(id);
+        PAYING.remove(id);
     }
 }

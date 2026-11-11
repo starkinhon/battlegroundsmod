@@ -34,12 +34,18 @@ public final class MovementInput {
         boolean pressed = down && !jumpWasDown;
         jumpWasDown = down;
         // A quick tap can press and release Ctrl between two ticks, which isDown misses, so the key's clicks count too.
+        // Holding the key makes the system repeat its clicks (#127), so a click only counts when the key was up the
+        // tick before (Stark 2026-11-10: holding Ctrl while flying fired the boost over and over and ate the stamina).
         boolean sprintDown = options.keySprint.isDown();
         boolean sprintTap = sprintDown && !sprintWasDown;
-        sprintWasDown = sprintDown;
+        boolean clicked = false;
         while (options.keySprint.consumeClick()) {
+            clicked = true;
+        }
+        if (clicked && !sprintWasDown) {
             sprintTap = true;
         }
+        sprintWasDown = sprintDown;
         boolean dash = false;
         while (Keybinds.DASH.consumeClick()) {
             dash = true;

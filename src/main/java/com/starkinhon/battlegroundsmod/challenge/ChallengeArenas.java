@@ -100,9 +100,22 @@ public final class ChallengeArenas {
         NeoForge.EVENT_BUS.addListener(ChallengeArenas::onServerTick);
         NeoForge.EVENT_BUS.addListener(ChallengeArenas::onDeath);
         NeoForge.EVENT_BUS.addListener(ChallengeArenas::onLogin);
+        NeoForge.EVENT_BUS.addListener((PlayerEvent.PlayerChangedDimensionEvent e) -> {
+            if (e.getEntity() instanceof ServerPlayer player) {
+                syncWins(player);
+            }
+        });
+        NeoForge.EVENT_BUS.addListener((PlayerEvent.PlayerRespawnEvent e) -> {
+            if (e.getEntity() instanceof ServerPlayer player) {
+                syncWins(player);
+            }
+        });
         NeoForge.EVENT_BUS.addListener(ChallengeArenas::onLogout);
         NeoForge.EVENT_BUS.addListener(ChallengeArenas::onFinalizeSpawn);
     }
+
+    // The client's copy of its own wins (ModPayloads.SyncArenaWins), for the book.
+    public static volatile List<String> clientWins = List.of();
 
     public static List<String> wins(Player player) {
         return player.getData(ModAttachments.ARENA_WINS);
@@ -299,8 +312,11 @@ public final class ChallengeArenas {
                         spawnBoss(player, arena, session);
                     } else if (boss == null || !boss.isAlive()) {
                         win(player, session, now);
-                    } else if (now % 20 == 0 && boss instanceof Mob mob && mob.getTarget() != player) {
-                        mob.setTarget(player);
+                    } else {
+                        keepInside(boss, session);
+                        if (now % 20 == 0 && boss instanceof Mob mob && mob.getTarget() != player) {
+                            mob.setTarget(player);
+                        }
                     }
                 }
                 case DONE -> {
@@ -310,6 +326,20 @@ public final class ChallengeArenas {
                     }
                 }
             }
+        }
+    }
+
+    // Thrown out of the ring (Stark 2026-11-10: the Shikamaru's shadow walked the Kakashi out of it, and the fight and
+    // the soul were lost): back in, at the far side from the player's start.
+    private static void keepInside(Entity boss, Session session) {
+        int radius = ChallengeSpec.get().raio();
+        double dx = boss.getX() - (session.center.getX() + 0.5);
+        double dz = boss.getZ() - (session.center.getZ() + 0.5);
+        boolean out = dx * dx + dz * dz > (radius - 1.0) * (radius - 1.0) || boss.getY() < FLOOR_Y - 4 || boss.getY() > FLOOR_Y + 60;
+        if (out) {
+            boss.teleportTo(session.center.getX() + 0.5, FLOOR_Y + 1, session.center.getZ() + radius / 2.0 + 0.5);
+            boss.setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
+            boss.fallDistance = 0;
         }
     }
 

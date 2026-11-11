@@ -27,7 +27,9 @@ public final class DragonBallPlaces {
     // Saibamen on him one minute after arriving): the arrival point, the houses and the tower. {x, z, radius}.
     private static final int[][] SAFE = {
             {412, 88, 60}, {-149, -152, 70}, {323, -29, 50}, {-407, -87, 30}, {-268, -430, 30}, {-54, -289, 45},
-            {-239, 95, 30}, {250, -195, 25}, {-319, 57, 25}};
+            {-239, 95, 30}, {250, -195, 25}, {-319, 57, 25},
+            // Kami's lookout (pirates came up and tore its carpet, Stark 2026-11-10)
+            {-400, -408, 50}};
     private static final int ARRIVAL_SAFE = 110;
 
     public static boolean safe(int x, int z) {
@@ -69,7 +71,9 @@ public final class DragonBallPlaces {
         place("babidi", -319, 57, DragonBallPlaces::wreck);
         // The six places Stark marked on the 2D map (2026-11-10), drawn after his references by
         // tools/structures/dragonball2.py. The spots are the ones tools/build_worldmap.py flattened.
-        place("goku", 323, -29, (map, x, z) -> structure(map, x, z, "goku", 24, 24, "dragonball/goku_house"));
+        // Gohan lives at Goku's house (Stark 2026-11-10: a fixed place, not standing in the player's face at the arrival).
+        MapPlaces.add(MAP, new MapPlaces.Place("goku", 323, -29,
+                map -> structure(map, 323, -29, "goku", 24, 24, "dragonball/goku_house"), DragonBallPlaces::gokuDone));
         place("buu", -268, -430, (map, x, z) -> structure(map, x, z, "buu", 16, 18, "dragonball/buu_house"));
         place("cell", -54, -289, (map, x, z) -> structure(map, x, z, "cell", 34, 48, "dragonball/cell_arena"));
         place("babidi_nave", -239, 95, (map, x, z) -> structure(map, x, z, "babidi_nave", 18, 14, "dragonball/babidi_ship"));
@@ -255,6 +259,20 @@ public final class DragonBallPlaces {
                 "message.battlegroundsmod.pad_kami"));
         MapPlaces.add(MAP, new MapPlaces.Pad("voltar_karin", "lookout", lookoutPad, "karin", besideKorin,
                 "message.battlegroundsmod.pad_karin"));
+    }
+
+    private static void gokuDone(ServerLevel level, Build b) {
+        BlockPos at = level.getHeightmapPos(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+                new BlockPos(b.x + 9, 0, b.z + 9));
+        if (!level.getEntities(ModEntities.NPC_GOHAN.get(), new AABB(at).inflate(48, 64, 48), e -> e.isAlive()).isEmpty()) {
+            return;
+        }
+        UniverseNpc gohan = ModEntities.NPC_GOHAN.get().spawn(level, at, MobSpawnType.EVENT);
+        if (gohan != null) {
+            gohan.restrictTo(at, 8);
+            gohan.setCustomName(gohan.getType().getDescription());
+            gohan.setCustomNameVisible(true);
+        }
     }
 
     private static void karinDone(ServerLevel level, Build b) {

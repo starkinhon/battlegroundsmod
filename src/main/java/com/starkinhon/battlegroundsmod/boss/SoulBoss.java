@@ -490,6 +490,9 @@ public abstract class SoulBoss extends Monster {
     @Override
     public void startSeenByPlayer(ServerPlayer player) {
         super.startSeenByPlayer(player);
+        // Set before the player is added: a bar starts visible, and a common mob that was just born flashed one at the
+        // top of the screen until its first tick hid it (Stark 2026-11-10).
+        bossEvent.setVisible(bossfight());
         bossEvent.addPlayer(player);
         BossSpec.Barra barra = spec().barra();
         if (barra != null && barra.textura() != null) {

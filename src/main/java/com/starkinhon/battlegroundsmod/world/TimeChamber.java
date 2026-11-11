@@ -238,7 +238,8 @@ public final class TimeChamber {
     }
 
     // Hitting a training dummy out in the gravity trains three times faster than walking (at most two hits a second).
-    private static void onHurt(net.neoforged.neoforge.event.entity.living.LivingDamageEvent.Post event) {
+    // (on the incoming hit, not after the damage: Stark 2026-11-10 hit the dummies and the bar did not move)
+    private static void onHurt(net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent event) {
         if (!(event.getSource().getEntity() instanceof ServerPlayer player) || !in(player)
                 || !(event.getEntity() instanceof com.starkinhon.battlegroundsmod.dummy.TrainingDummy)) {
             return;

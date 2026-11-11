@@ -3,7 +3,6 @@ package com.starkinhon.battlegroundsmod.client;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.boss.BossSpec;
 import com.starkinhon.battlegroundsmod.challenge.ChallengeArenas;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
@@ -109,7 +108,7 @@ public class ChallengeScreen extends Screen {
             return;
         }
         int accent = universe.color();
-        List<String> wins = minecraft != null && minecraft.player != null ? minecraft.player.getData(ModAttachments.ARENA_WINS) : List.of();
+        List<String> wins = ChallengeArenas.clientWins;
 
         graphics.pose().pushPose();
         graphics.pose().translate(0, -scroll, 0);
@@ -197,7 +196,7 @@ public class ChallengeScreen extends Screen {
                 return true;
             }
             double my = mouseY + scroll;
-            List<String> wins = minecraft != null && minecraft.player != null ? minecraft.player.getData(ModAttachments.ARENA_WINS) : List.of();
+            List<String> wins = ChallengeArenas.clientWins;
             for (Card card : cards) {
                 if (card.hit(mouseX, my) && !ChallengeArenas.locked(wins, card.id(), !Progression.clientOn)) {
                     PacketDistributor.sendToServer(new ModPayloads.ChallengeStart(card.id()));

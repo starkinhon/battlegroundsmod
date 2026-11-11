@@ -49,7 +49,7 @@ public class Dinosaur extends Monster {
     public static AttributeSupplier.Builder attributes(boolean rex) {
         return Monster.createMonsterAttributes()
                 .add(Attributes.MAX_HEALTH, rex ? 160 : 24)
-                .add(Attributes.ATTACK_DAMAGE, rex ? 7 : 2.5)
+                .add(Attributes.ATTACK_DAMAGE, rex ? 5 : 2)
                 .add(Attributes.MOVEMENT_SPEED, rex ? 0.27 : 0.36)
                 .add(Attributes.FOLLOW_RANGE, rex ? 28 : 24)
                 .add(Attributes.KNOCKBACK_RESISTANCE, rex ? 0.85 : 0.1)
@@ -84,7 +84,7 @@ public class Dinosaur extends Monster {
         }
         double d = distanceTo(target);
         if (rex()) {
-            if (xCooldown <= 0 && d <= 6 && onGround() && DbMobs.rexStomp(this, server)) {
+            if (xCooldown <= 0 && d <= 4.5 && onGround() && DbMobs.rexStomp(this, server)) {
                 xCooldown = 200 + random.nextInt(80);
                 busy = 26;
             } else if (zCooldown <= 0 && d >= 7 && d <= 18 && onGround() && DbMobs.rexCharge(this, server)) {
@@ -93,20 +93,21 @@ public class Dinosaur extends Monster {
             }
         } else {
             if (xCooldown <= 0 && d <= 3 && DbMobs.claws(this, server)) {
-                xCooldown = 110 + random.nextInt(60);
+                xCooldown = 160 + random.nextInt(80);
                 busy = 12;
-            } else if (zCooldown <= 0 && d >= 4 && d <= 10 && onGround() && DbMobs.pounce(this, server)) {
-                zCooldown = 170 + random.nextInt(80);
+            } else if (zCooldown <= 0 && d >= 3.5 && d <= 7 && onGround() && DbMobs.pounce(this, server)) {
+                zCooldown = 240 + random.nextInt(120);
                 busy = 40;
             }
         }
     }
 
-    // The big one bites from farther away (its head is far out in front).
+    // The big one bites from a little farther away (its head is out in front); less than before, Stark 2026-11-10 found
+    // the dinosaurs' reach too long.
     @Override
     public boolean isWithinMeleeAttackRange(LivingEntity target) {
         if (rex()) {
-            return getBoundingBox().inflate(1.6, 0.5, 1.6).intersects(target.getBoundingBox());
+            return getBoundingBox().inflate(0.9, 0.4, 0.9).intersects(target.getBoundingBox());
         }
         return super.isWithinMeleeAttackRange(target);
     }
