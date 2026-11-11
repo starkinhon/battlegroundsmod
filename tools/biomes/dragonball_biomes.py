@@ -14,9 +14,12 @@ ORES = ["minecraft:ore_dirt","minecraft:ore_gravel","minecraft:ore_granite_upper
     "minecraft:ore_diamond_large","minecraft:ore_diamond_buried","minecraft:ore_lapis","minecraft:ore_lapis_buried",
     "minecraft:ore_copper","minecraft:underwater_magma","minecraft:disk_sand","minecraft:disk_clay","minecraft:disk_gravel"]
 
+# The extra ores go before the soft disks (sand, clay, gravel), as in vanilla badlands: the features of a step must keep
+# the same order in every biome, or the game stops with "Feature order cycle found".
 def features(surface, vegetal, extra_ores=()):
+    ores = ORES[:-3] + list(extra_ores) + ORES[-3:]
     return [[], ["minecraft:lake_lava_underground", "minecraft:lake_lava_surface"], ["minecraft:amethyst_geode"],
-            ["minecraft:monster_room", "minecraft:monster_room_deep"], surface, [], ORES + list(extra_ores), [],
+            ["minecraft:monster_room", "minecraft:monster_room_deep"], surface, [], ores, [],
             ["minecraft:spring_water", "minecraft:spring_lava"], ["minecraft:glow_lichen"] + vegetal,
             ["minecraft:freeze_top_layer"]]
 
