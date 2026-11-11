@@ -79,6 +79,13 @@ public final class Powers {
 
     // Mob only.
     public static final Power FIGHTER = registerHidden(Fighter.create());
+    // The Dragon World's enemies, two moves each (DbMobs).
+    public static final Power DB_SAIBAMAN = registerHidden(com.starkinhon.battlegroundsmod.power.powers.sub.db.DbMobs.saibaman());
+    public static final Power DB_BANDIT = registerHidden(com.starkinhon.battlegroundsmod.power.powers.sub.db.DbMobs.bandit());
+    public static final Power DB_PIRATE = registerHidden(com.starkinhon.battlegroundsmod.power.powers.sub.db.DbMobs.pirate());
+    public static final Power DB_RED_RIBBON = registerHidden(com.starkinhon.battlegroundsmod.power.powers.sub.db.DbMobs.redRibbon());
+    public static final Power DB_YETI = registerHidden(com.starkinhon.battlegroundsmod.power.powers.sub.db.DbMobs.yeti());
+    public static final Power DB_FREEZA_SOLDIER = registerHidden(com.starkinhon.battlegroundsmod.power.powers.sub.db.DbMobs.freezaSoldier());
 
     private Powers() {
     }

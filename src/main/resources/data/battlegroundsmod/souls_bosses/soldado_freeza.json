@@ -1,7 +1,7 @@
 {
   "formato": "souls-boss/1",
   "boss": "soldado_freeza",
-  "poder": "fighter",
+  "poder": "db_soldado_freeza",
   "tier": 8,
   "dropAlma": false,
   "atributos": {
@@ -121,6 +121,32 @@
       "giroGrausPorTick": 10,
       "avisoCor": "#ffffff",
       "avisoSom": "minecraft:entity.player.attack.sweep"
+    },
+    "rajada_tripla": {
+      "slot": 0,
+      "tipo": "alcance",
+      "peso": 1.3,
+      "recargaTicks": 200,
+      "recargaMaxTicks": 300,
+      "avisoTicks": 8,
+      "distanciaMin": 4,
+      "distanciaMax": 22,
+      "giroGrausPorTick": 14,
+      "avisoCor": "#e060c0",
+      "avisoSom": "minecraft:block.beacon.activate"
+    },
+    "bomba_ki": {
+      "slot": 1,
+      "tipo": "alcance",
+      "peso": 1.1,
+      "recargaTicks": 320,
+      "recargaMaxTicks": 440,
+      "avisoTicks": 14,
+      "distanciaMin": 5,
+      "distanciaMax": 22,
+      "giroGrausPorTick": 14,
+      "avisoCor": "#c060ff",
+      "avisoSom": "minecraft:block.beacon.power_select"
     }
   },
   "combos": {
@@ -149,7 +175,9 @@
       "skills": [
         "forte",
         "barragem",
-        "dash_attack"
+        "dash_attack",
+        "rajada_tripla",
+        "bomba_ki"
       ],
       "combos": [
         "tres_e_forte",
