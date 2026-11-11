@@ -1342,7 +1342,7 @@ final class JjFx {
             {".", "#", ".", ".", ".", "#", "."},
             {".###.", "#...#", "....#", "..##.", "....#", "#...#", ".###."}};
     private static final int[] GLYPH_X = {1, 7, 9};
-    private static final float[] INK = FxDraw.rgb(0x14141A);
+    private static final float[] RULER_INK = FxDraw.rgb(0x14141A);
     private static final float[] SHADOW = FxDraw.rgb(0x3F3F3F);
     private static final float[] SHADOW_3 = FxDraw.rgb(0x3F3315);
     private static final float[] LABEL_3 = FxDraw.rgb(0xFFCF4A);
@@ -1363,7 +1363,7 @@ final class JjFx {
         float w = 1.15f * s;
         Vector3f left = at(c, right, -w / 2);
         if (!DbFx.pass) {
-            panel(left, right, toCam, 0, -0.05f * s, (w + 0.05f * s) * len, 0.1f * s, 0, INK, 0.85f * a);
+            panel(left, right, toCam, 0, -0.05f * s, (w + 0.05f * s) * len, 0.1f * s, 0, RULER_INK, 0.85f * a);
             panel(left, right, toCam, 0, -0.025f * s, w * len, 0.05f * s, 0.01f, WHITE, a);
             for (int i = 0; i <= 10; i++) {
                 float g = clamp((len - i / 10f) * 8, 0, 1);
