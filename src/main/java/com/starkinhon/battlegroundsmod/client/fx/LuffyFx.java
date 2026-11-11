@@ -10,7 +10,10 @@ import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.blaze3d.vertex.VertexSorting;
 import com.mojang.math.Axis;
 import com.starkinhon.battlegroundsmod.client.FalaRender;
 import com.starkinhon.battlegroundsmod.power.powers.opm.OpmShape.Frame;
@@ -29,6 +32,7 @@ import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.BlockRenderDispatcher;
+import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import net.minecraft.client.renderer.entity.RenderLayerParent;
 import net.minecraft.client.renderer.entity.layers.RenderLayer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
@@ -108,11 +112,30 @@ public final class LuffyFx {
         double flip = -1, spin, lift, balloon;
         int lookLv;
         double lookK;
+        // Boundman's steam (forja/luffy-g4): where each column leaves his body this frame (set while his body is drawn),
+        // his size and the page's light turned with him
+        final Vec3[] steamSrc = new Vec3[COLS.length];
+        int steamFrame = -1;
+        double steamScale = 1;
+        float[] light = {0, 1, 0};
+        final List<Col> cols = new ArrayList<>();
 
         Body(int id) {
             this.id = id;
         }
     }
+
+    // One column of steam: the points it let go, the oldest first (x, y, z, vx, vy, vz, age).
+    private static final class Col {
+        final List<double[]> pts = new ArrayList<>();
+        double acc;
+    }
+
+    // the page's columns: thickness (px), life (s), points a second, seed; from the right shoulder, the left shoulder,
+    // three on the back, the elbows and the knees
+    private static final double[][] COLS = {{1.5, 1.7, 18, 1.3}, {1.7, 1.9, 17, 2.9}, {1.9, 2.0, 16, 4.1}, {1.6, 1.8, 17, 5.7}, {1.3, 1.5, 19, 6.6},
+            {1.5, 1.5, 18, 7.4}, {1.6, 1.6, 18, 8.8}, {1.1, 1.2, 20, 9.9}, {1.2, 1.3, 20, 11.2}};
+    private static int FRAME;
 
     private static final class Move {
         final int id, key, gear, target;
@@ -640,8 +663,8 @@ public final class LuffyFx {
         steam(W(0, 1.0, 0), 0.62, 1.05, 0.45, alpha, rise, 1, 0.84f, 0.84f);
     }
 
+    // Boundman's steam is his own now (the columns, the collar and the elbow tails, drawn with his body)
     private static void steamG4(double alpha, double rise, double bob) {
-        steam(W(0, 1.9 + bob, -0.1), 0.9, 0.55, 0.6, alpha, rise, 0.95f, 0.95f, 1);
     }
 
     // the page puts it at 0.72; in the game it sat over half his head (his head is smaller and lower), so it goes lower
@@ -726,6 +749,11 @@ public final class LuffyFx {
         CAM = cam;
         SELF_FP = false;
         LuffyMesh.worldScale = 1;
+        for (Body bd : BODIES.values()) {
+            Entity e = level.getEntity(bd.id);
+            columns(bd, cam, dt, e == mc.player && mc.options.getCameraType().isFirstPerson());
+        }
+        FRAME++;
         bursts();
         rubberGround(cam, now);
         SQUASH.values().removeIf(s -> (now - s.born()) / 20 > 2.4);
@@ -1916,19 +1944,12 @@ public final class LuffyFx {
         PlayerModel<AbstractClientPlayer> m = event.getRenderer().getModel();
         HIDDEN.clear();
         double now = ScreenFx.now();
-        // Boundman: the trunk blown up, thick legs, the arm into the fist
-        // (kept to his height: the old 1.75 depth, a head only widened and legs 18% shorter read as a flat, squashed skin)
-        float b = bd.lookLv == 3 ? (float) bd.lookK : 0;
-        for (ModelPart p : new ModelPart[] {m.body, m.jacket}) {
-            scale(p, 1 + 0.35f * b, 1 + 0.12f * b, 1 + 0.3f * b);
-        }
-        scale(m.head, 1 + 0.1f * b, 1 + 0.1f * b, 1 + 0.1f * b);
-        scale(m.hat, 1 + 0.1f * b, 1 + 0.1f * b, 1 + 0.1f * b);
-        for (ModelPart p : new ModelPart[] {m.rightLeg, m.leftLeg, m.rightPants, m.leftPants}) {
-            scale(p, 1 + 0.3f * b, 1, 1 + 0.3f * b);
-        }
-        for (ModelPart p : arms(m, true, true)) {
-            scale(p, 1 + 0.45f * b, 1, 1 + 0.45f * b);
+        // Boundman: his whole body is drawn by the Layer (his skin on the page's boxes, the haki, the steam)
+        if (boundman(bd)) {
+            for (ModelPart p : new ModelPart[] {m.head, m.hat, m.body, m.jacket, m.rightArm, m.rightSleeve, m.leftArm, m.leftSleeve, m.rightLeg,
+                    m.rightPants, m.leftLeg, m.leftPants}) {
+                hide(p);
+            }
         }
         // the rubber arm is drawn instead of his right arm; both arms out for the barrages
         for (ModelPart p : arms(m, bd.armOn || bd.hideArms, bd.hideArms)) {
@@ -2033,9 +2054,8 @@ public final class LuffyFx {
                     p.render(pose, buf, light, overlay, c);
                 }
             } else if (bd.lookLv == 3) {
-                int c = FastColor.ARGB32.color(Math.round(0.93f * k * 255), 0x1C, 0x17, 0x1C);
-                for (ModelPart p : limbs) {
-                    p.render(pose, buf, light, overlay, c);
+                if (boundman(bd)) {
+                    drawBoundman(pose, buffer, light, player, m, bd, partialTick);
                 }
             } else if (bd.lookLv == 4) {
                 int c = FastColor.ARGB32.color(Math.round(0.6f * k * 255), 0xF4, 0xF1, 0xEA);
@@ -2046,6 +2066,320 @@ public final class LuffyFx {
                 // the face stays readable: a lighter white on the head
                 m.head.render(pose, buf, light, overlay, FastColor.ARGB32.color(Math.round(0.35f * k * 255), 0xF4, 0xF1, 0xEA));
             }
+        }
+    }
+
+    // ---------- Boundman (forja/luffy-g4, approved: "haki quadrado") ----------
+
+    // his body is ours to draw: in the world only (the inventory's little player keeps his plain skin)
+    private static boolean boundman(Body bd) {
+        return bd.lookLv == 3 && bd.lookK > 0.01 && LuffyMesh.ready() && RenderSystem.getVertexSorting() != VertexSorting.ORTHOGRAPHIC_Z;
+    }
+
+    // the page's light (0.55, 0.85, 0.65), in the page's body frame
+    private static final Vector3f PAGE_LIGHT = new Vector3f(0.55f, 0.85f, 0.65f).normalize();
+
+    // The page's build() and step(): the skin on the page's boxes (barrel chest, sunk head, short thighs), haki forearms,
+    // fists and shins, bouncing every 1.1 s; the steam collar and the elbow tails go with him, the columns are let go here
+    // and rise in the world (columns()).
+    private static void drawBoundman(PoseStack pose, MultiBufferSource buffer, int light, AbstractClientPlayer player, PlayerModel<AbstractClientPlayer> m,
+            Body bd, float partial) {
+        BoundmanSkin.Skin sk = BoundmanSkin.of(player);
+        VertexConsumer vc = buffer.getBuffer(RenderType.entityCutoutNoCull(sk.tex()));
+        int ov = LivingEntityRenderer.getOverlayCoords(player, 0);
+        Vec3 cam = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
+        double t = (player.tickCount + partial) / 20.0 + bd.id * 0.37;
+        double ph = (t % 1.1) / 1.1;
+        double air = Math.pow(Math.sin(ph * Math.PI), 0.75);
+        double contact = Math.max(0, 1 - ph / 0.1) + Math.max(0, (ph - 0.93) / 0.07);
+        float k = (float) smooth(bd.lookK);
+        pose.pushPose();
+        // the model's frame (y down, his front at -z, at his neck) -> the page's (y up from his feet, front at +z, in pixels)
+        pose.translate(0, 1.501, 0);
+        pose.mulPose(Axis.XP.rotation((float) Math.PI));
+        pose.scale(1 / 16f, 1 / 16f, 1 / 16f);
+        pose.scale(0.75f + 0.25f * k, 0.75f + 0.25f * k, 0.75f + 0.25f * k);
+        pose.translate(0, air * 8, 0);
+        pose.scale((float) (1 + 0.06 * contact), (float) (1 - 0.08 * contact + 0.03 * air), (float) (1 + 0.06 * contact));
+        Vector3f L = pose.last().pose().transformDirection(new Vector3f(PAGE_LIGHT)).normalize();
+        bd.light = new float[] {L.x, L.y, L.z};
+        bd.steamScale = player.getScale();
+        bd.steamFrame = FRAME;
+        java.util.Arrays.fill(bd.steamSrc, null);
+        BoxDraw d = new BoxDraw(pose, vc, light, ov, bd.light, cam);
+        // short legs: the thigh with the skin's trousers, haki shin and foot
+        for (int s = -1; s <= 1; s += 2) {
+            pose.pushPose();
+            pose.translate(s * 4.2f, 14, 0);
+            pose.mulPose(Axis.XP.rotation((s < 0 ? m.rightLeg.xRot : m.leftLeg.xRot) * 0.6f));
+            pose.mulPose(Axis.ZP.rotation(s * 0.16f));
+            d.skin(s < 0 ? BoundmanSkin.RLEG : sk.lleg(), 0, -2.6f, 0, 6.4f, 5.5f, 6.4f, 0, 6);
+            pose.translate(0, -5.2f, 0.4f);
+            pose.mulPose(Axis.XP.rotation((float) (0.12 + 0.35 * contact)));
+            bd.steamSrc[s < 0 ? 7 : 8] = d.at(0, 0, -1);
+            d.haki(0, -4, 0, 6, 8.5f, 6.2f, s * 3.1f);
+            d.haki(0, -8.4f, 1.6f, 6.3f, 2.6f, 9.4f, s * 5.7f);
+            pose.popPose();
+        }
+        // barrel trunk: the belly (the skin's lower rows) and a huge chest (the upper rows)
+        d.skin(BoundmanSkin.BODY, 0, 15.6f, 0.3f, 15, 5.5f, 10.5f, 7, 12);
+        d.skin(BoundmanSkin.BODY, 0, 24.5f, 0, 20, 13, 12.5f, 0, 9);
+        // trapezius and deltoid: the chest's corner into the arm (no gap to the sky)
+        for (int s = -1; s <= 1; s += 2) {
+            pose.pushPose();
+            pose.translate(s * 9.6f, 29.4f, 0);
+            pose.mulPose(Axis.ZP.rotation(-s * 0.42f));
+            d.skin(BoundmanSkin.BODY, 0, 0, 0, 9, 6, 11, 0, 4);
+            pose.popPose();
+            pose.pushPose();
+            pose.translate(s * 12.2f, 27.6f, 0);
+            pose.mulPose(Axis.ZP.rotation(s * 0.5f));
+            d.skin(s < 0 ? sk.rarm() : sk.larm(), 0, 0, 0, 8, 6, 8.5f, 0, 3);
+            pose.popPose();
+        }
+        bd.steamSrc[2] = d.at(-4.5f, 31, -6.5f);
+        bd.steamSrc[3] = d.at(3.5f, 30.5f, -6.2f);
+        bd.steamSrc[4] = d.at(9.5f, 27, -4);
+        // the head sunk between the shoulders, a bit forward, looking where he looks
+        pose.pushPose();
+        pose.translate(0, 28.4f, 1.6f);
+        pose.mulPose(Axis.YP.rotation(-m.head.yRot));
+        pose.mulPose(Axis.XP.rotation(m.head.xRot));
+        d.skin(BoundmanSkin.HEAD, 0, 4, 0, 8, 8, 8, 0, 8);
+        pose.popPose();
+        // arms on guard: the shoulder with the skin, haki forearm and fist (the rubber arm takes the right one's place in a move)
+        for (int s = -1; s <= 1; s += 2) {
+            boolean gone = s < 0 ? bd.armOn || bd.hideArms : bd.hideArms;
+            if (gone) {
+                continue;
+            }
+            pose.pushPose();
+            pose.translate(s * 11.5f, 28, 0);
+            pose.mulPose(Axis.XP.rotation((float) (-0.15 + (s < 0 ? -0.35 : 0.1)) + (s < 0 ? m.rightArm.xRot : m.leftArm.xRot) * 0.5f));
+            pose.mulPose(Axis.ZP.rotation(s * 0.95f));
+            bd.steamSrc[s < 0 ? 0 : 1] = d.at(s * 1.5f, 1, s < 0 ? -1.5f : -0.5f);
+            d.skin(s < 0 ? sk.rarm() : sk.larm(), 0, -3.2f, 0, 7.2f, 7, 7.2f, 0, 6);
+            pose.translate(0, -6.8f, 0);
+            pose.mulPose(Axis.XP.rotation((float) (s < 0 ? -1.4 - 0.12 * air : -1.85 + 0.1 * air)));
+            pose.mulPose(Axis.ZP.rotation(-s * 0.55f));
+            bd.steamSrc[s < 0 ? 5 : 6] = d.at(0, -1, 0);
+            d.haki(0, -4.2f, 0, 8, 9, 8.4f, s * 1.7f + 9);
+            pose.translate(0, -12.5f, 0.3f);
+            d.haki(0, 0, 0, 11.5f, 10.5f, 11, s * 2.3f + 17);
+            // the knuckles: four bumps of their own sizes on the fist's front
+            for (int q = 0; q < 4; q++) {
+                float w = (float) (2.4 + 0.5 * BoundmanSkin.hash(q, s + 3)), h = (float) (2.6 + 0.6 * BoundmanSkin.hash(s + 5, q));
+                pose.pushPose();
+                pose.translate((q - 1.5f) * 2.75f, -5.6f, (float) (2.4 + 0.5 * BoundmanSkin.hash(q + 9, s)));
+                pose.mulPose(Axis.XP.rotation((float) (0.2 + 0.15 * BoundmanSkin.hash(q, s * 7))));
+                d.haki(0, 0, 0, w, h, 3.2f, q * 4.1f + s);
+                pose.popPose();
+            }
+            pose.popPose();
+        }
+        // the steam collar (low at his chest, over the shoulders, up behind his head) and a tail from each elbow
+        for (double[] c : RING) {
+            d.cloud(c, 1.3f);
+        }
+        for (double[] c : TAILS) {
+            d.cloud(c, 2.1f);
+        }
+        pose.popPose();
+    }
+
+    // one Boundman draw: the skin's boxes in the game's buffer, the haki and the steam on LuffyMesh at the same place
+    private record BoxDraw(PoseStack pose, VertexConsumer vc, int light, int ov, float[] L, Vec3 cam) {
+        Vec3 at(float x, float y, float z) {
+            Vector3f v = pose.last().pose().transformPosition(x, y, z, new Vector3f());
+            return cam.add(v.x, v.y, v.z);
+        }
+
+        // the page's mcBox: w, h, d pixels with the skin's box on it (sides: only rows r0..r1)
+        void skin(int[] box, float x, float y, float z, float w, float h, float dd, int r0, int r1) {
+            int[][] f = BoundmanSkin.faces(box);
+            float X = w / 2, Y = h / 2, Z = dd / 2;
+            PoseStack.Pose p = pose.last();
+            // top, bottom, right, front, left, back -> the page's corners
+            float[][][] q = {{{-X, Y, -Z}, {X, Y, -Z}, {X, Y, Z}, {-X, Y, Z}}, {{-X, -Y, Z}, {X, -Y, Z}, {X, -Y, -Z}, {-X, -Y, -Z}},
+                    {{-X, Y, -Z}, {-X, Y, Z}, {-X, -Y, Z}, {-X, -Y, -Z}}, {{-X, Y, Z}, {X, Y, Z}, {X, -Y, Z}, {-X, -Y, Z}},
+                    {{X, Y, Z}, {X, Y, -Z}, {X, -Y, -Z}, {X, -Y, Z}}, {{X, Y, -Z}, {-X, Y, -Z}, {-X, -Y, -Z}, {X, -Y, -Z}}};
+            float[][] n = {{0, 1, 0}, {0, -1, 0}, {-1, 0, 0}, {0, 0, 1}, {1, 0, 0}, {0, 0, -1}};
+            for (int i = 0; i < 6; i++) {
+                int[] r = f[i];
+                float v0 = r[1], v1 = r[1] + r[3];
+                if (i >= 2) {
+                    v0 = r[1] + r0;
+                    v1 = r[1] + Math.min(r1, r[3]);
+                }
+                float u0 = r[0] / 64f, u1 = (r[0] + r[2]) / 64f;
+                float[][] uv = {{u0, v0 / 64f}, {u1, v0 / 64f}, {u1, v1 / 64f}, {u0, v1 / 64f}};
+                for (int c = 0; c < 4; c++) {
+                    vc.addVertex(p, x + q[i][c][0], y + q[i][c][1], z + q[i][c][2]).setColor(-1).setUv(uv[c][0], uv[c][1]).setOverlay(ov).setLight(light)
+                            .setNormal(p, n[i][0], n[i][1], n[i][2]);
+                }
+            }
+        }
+
+        // the page's hakiBox (square: corners rounded 0.35 px) with the page's haki shader
+        void haki(float x, float y, float z, float w, float h, float dd, float seed) {
+            LuffyMesh.P p = LuffyMesh.p(LuffyMesh.HAKI);
+            p.glow = false;
+            p.seed = seed;
+            p.p0 = new float[] {w, h, dd, 0.35f};
+            p.p1 = new float[] {L[0], L[1], L[2], 0};
+            LuffyMesh.queue(LuffyMesh.Mesh.RBOX, new Matrix4f(pose.last().pose()).translate(x, y, z), p, LuffyMesh.FRONT, 9);
+        }
+
+        // a lump of the collar or a tail: c = (x, y, z, radius, u) in pixels on his body
+        void cloud(double[] c, float seed) {
+            float r = (float) c[3];
+            Matrix4f M = new Matrix4f(pose.last().pose()).translate((float) c[0], (float) c[1], (float) c[2]).scale(r);
+            float[] anchor = {(float) (c[0] / 16 + seed * 7), (float) (c[1] / 16), (float) (c[2] / 16), r / 16};
+            float[] p3 = {(float) (1.12 / r), (float) c[4], 0, 0};
+            LuffyMesh.P p = cloudP(0, 0, (float) (1.4 / r), seed, anchor, L, p3);
+            LuffyMesh.queue(LuffyMesh.Mesh.BLOB, M, p, LuffyMesh.FRONT, 9);
+            LuffyMesh.P o = cloudP(0, (float) (0.24 / r), (float) (1.4 / r), seed, anchor, L, p3);
+            o.p0[2] = 1;
+            LuffyMesh.queue(LuffyMesh.Mesh.BLOB, M, o, LuffyMesh.BACK, 9);
+        }
+    }
+
+    private static LuffyMesh.P cloudP(float age, float grow, float lump, float seed, float[] anchor, float[] L, float[] p3) {
+        LuffyMesh.P p = LuffyMesh.p(LuffyMesh.CLOUD);
+        p.glow = false;
+        p.t = (float) TIME;
+        p.seed = seed;
+        p.p0 = new float[] {age, grow, 0, lump};
+        p.p1 = new float[] {L[0], L[1], L[2], 0};
+        p.p2 = anchor;
+        p.p3 = p3;
+        return p;
+    }
+
+    // the page's collar ring and elbow tails, sampled along their curves into lumps: (x, y, z, radius, u) in pixels
+    private static final double[][] RING, TAILS;
+
+    static {
+        double[][] ring = new double[16][];
+        for (int i = 0; i < 16; i++) {
+            double a = i / 16.0 * Math.PI * 2, c = Math.cos(a), back = Math.max(0, -c), front = Math.max(0, c);
+            ring[i] = new double[] {Math.sin(a) * (15.5 + 2 * BoundmanSkin.hash(i, 2)) * (1 - 0.25 * back), 30.5 - front * 6.5 + back * back * 12 + 1.5 * BoundmanSkin.hash(i, 5),
+                    c * (8.4 + 1.5 * BoundmanSkin.hash(i, 9)) - back * 2};
+        }
+        List<double[]> r = new ArrayList<>();
+        // the ring thins in front of the chest (u near 0 and 1), so the face and the tattoo show
+        sample(ring, true, 2.7, 1.4, r, u -> 0.5 + 0.5 * smooth(Math.min(u, 1 - u) / 0.22));
+        RING = r.toArray(new double[0][]);
+        List<double[]> tl = new ArrayList<>();
+        for (int s = -1; s <= 1; s += 2) {
+            int k = s < 0 ? 0 : 1;
+            double[][] pts = {{s * 16, 22, -2}, {s * (21 + k), 22.5, -7}, {s * (25.5 - k), 26 + k, -7.5}, {s * (27 + k), 31, -3.5}, {s * (24.5 + k), 34.5 - k, 0.5},
+                    {s * 21.5, 33, 2}};
+            sample(pts, false, 2.1 - 0.2 * k, 1.1, tl, u -> Math.max(0.12, Math.pow(clamp((1 - u) * 1.15, 0, 1), 0.55)));
+        }
+        TAILS = tl.toArray(new double[0][]);
+    }
+
+    // a Catmull-Rom curve through the points, a lump every `step` pixels, each as thick as the curve is there
+    private static void sample(double[][] P, boolean closed, double rad, double step, List<double[]> out, java.util.function.DoubleUnaryOperator thick) {
+        int n = P.length, segs = closed ? n : n - 1;
+        List<double[]> fine = new ArrayList<>();
+        for (int i = 0; i < segs; i++) {
+            double[] p0 = P[closed ? (i - 1 + n) % n : Math.max(0, i - 1)], p1 = P[i % n], p2 = P[(i + 1) % n], p3 = P[closed ? (i + 2) % n : Math.min(n - 1, i + 2)];
+            for (int j = 0; j < 40; j++) {
+                double t = j / 40.0, t2 = t * t, t3 = t2 * t;
+                double[] q = new double[3];
+                for (int a = 0; a < 3; a++) {
+                    q[a] = 0.5 * (2 * p1[a] + (-p0[a] + p2[a]) * t + (2 * p0[a] - 5 * p1[a] + 4 * p2[a] - p3[a]) * t2 + (-p0[a] + 3 * p1[a] - 3 * p2[a] + p3[a]) * t3);
+                }
+                fine.add(q);
+            }
+        }
+        if (!closed) {
+            fine.add(P[n - 1].clone());
+        }
+        double total = 0;
+        double[] len = new double[fine.size()];
+        for (int i = 1; i < fine.size(); i++) {
+            double[] a = fine.get(i - 1), b = fine.get(i);
+            total += Math.sqrt((a[0] - b[0]) * (a[0] - b[0]) + (a[1] - b[1]) * (a[1] - b[1]) + (a[2] - b[2]) * (a[2] - b[2]));
+            len[i] = total;
+        }
+        double next = 0;
+        for (int i = 0; i < fine.size(); i++) {
+            if (len[i] + 1e-9 >= next) {
+                double u = len[i] / total, r = rad * thick.applyAsDouble(u);
+                double[] q = fine.get(i);
+                out.add(new double[] {q[0], q[1], q[2], r, u});
+                next += Math.max(0.6, step * r / rad);
+            }
+        }
+    }
+
+    // The page's tickColumn: each column lets points go from his skin; they rise, sway, thicken and tear away up high.
+    // Each point is a lump of steam; the lumps sit so close and share one noise, so a column reads as one tube.
+    private static void columns(Body bd, Vec3 cam, double dt, boolean selfFp) {
+        boolean on = bd.steamFrame == FRAME && bd.lookLv == 3;
+        if (bd.cols.isEmpty()) {
+            for (int i = 0; i < COLS.length; i++) {
+                bd.cols.add(new Col());
+            }
+        }
+        double K = 0.9375 * bd.steamScale, time = TIME;
+        boolean any = false;
+        for (int i = 0; i < COLS.length; i++) {
+            Col c = bd.cols.get(i);
+            double[] spec = COLS[i];
+            double life = spec[1], seed = spec[3];
+            Vec3 head = on ? bd.steamSrc[i] : null;
+            if (head != null) {
+                c.acc += dt * spec[2];
+                while (c.acc >= 1) {
+                    c.acc -= 1;
+                    c.pts.add(new double[] {head.x, head.y, head.z, (rnd() - 0.5) * 0.06 * K, (0.28 + 0.14 * rnd()) * K, (-0.05 - 0.06 * rnd()) * K, 0});
+                }
+            }
+            for (double[] q : c.pts) {
+                q[6] += dt / life;
+                q[4] += 0.18 * K * dt;
+                q[3] += Math.sin(q[1] / K * 6 + time * 1.3 + seed) * 0.25 * K * dt;
+                q[5] += Math.cos(q[1] / K * 5 + time * 1.1 + seed * 2) * 0.2 * K * dt;
+                q[0] += q[3] * dt;
+                q[1] += q[4] * dt;
+                q[2] += q[5] * dt;
+                // a column stays above where it leaves him: when he drops from a bounce it is pushed along
+                if (head != null) {
+                    q[1] = Math.max(q[1], head.y + q[6] * life * 0.26 * K);
+                }
+            }
+            c.pts.removeIf(q -> q[6] >= 1);
+            while (c.pts.size() > 47) {
+                c.pts.remove(0);
+            }
+            any |= !c.pts.isEmpty();
+            // seen from inside his own head the steam would fill his screen
+            if (selfFp) {
+                continue;
+            }
+            double base = spec[0] / 16 * K;
+            int cnt = c.pts.size();
+            for (int j = 0; j <= cnt; j++) {
+                double[] q = j < cnt ? c.pts.get(j) : head == null ? null : new double[] {head.x, head.y, head.z, 0, 0, 0, 0};
+                if (q == null) {
+                    break;
+                }
+                double age = q[6], r = base * (0.45 + 2.0 * Math.pow(age, 0.75)) * (j == cnt ? 0.6 : 1);
+                Matrix4f M = new Matrix4f().translation((float) (q[0] - cam.x), (float) (q[1] - cam.y), (float) (q[2] - cam.z)).scale((float) r);
+                float[] anchor = {(float) (q[0] % 1024), (float) (q[1] % 1024), (float) (q[2] % 1024), (float) r};
+                float lump = 0.85f;
+                LuffyMesh.queue(LuffyMesh.Mesh.BLOB, M, cloudP((float) age, 0, lump, (float) seed, anchor, bd.light, new float[4]), LuffyMesh.FRONT, 9);
+                LuffyMesh.P o = cloudP((float) age, (float) ((0.005 * K + r * 0.1) / r), lump, (float) seed, anchor, bd.light, new float[4]);
+                o.p0[2] = 1;
+                LuffyMesh.queue(LuffyMesh.Mesh.BLOB, M, o, LuffyMesh.BACK, 9);
+            }
+        }
+        if (!any && !on) {
+            bd.cols.clear();
         }
     }
 

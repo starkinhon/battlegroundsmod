@@ -23,6 +23,7 @@ in float vH;
 in float vBack;
 in float vD;
 in vec3 vO;
+in vec3 vL;
 
 out vec4 fragColor;
 
@@ -128,6 +129,28 @@ void main() {
         vec3 c = f > 0.45 ? vec3(1., 1., 0.92) : f > 0.18 ? vec3(1., 0.9, 0.35) : vec3(1., 0.76, 0.16);
         if (P1.w > 0.5 && f < 0.07) c = vec3(0.08, 0.05, 0.1);
         fragColor = GlowPass > 0.5 ? vec4(c * 0.8 * A, 0.) : vec4(c * 1.6 * A, A);
+    } else if (k == 8) {
+        // HAKI_F (forja/luffy-g4): black, a wine half-tone, red veins, a hard varnish highlight, the red rim
+        vec3 L = normalize(vL); float d = dot(N, L);
+        vec3 c = d > .4 ? vec3(.12, .025, .035) : d > -.1 ? vec3(.055, .014, .02) : vec3(.018, .006, .009);
+        float vn = gn(vO * .9 + Seed); float vein = 1. - smoothstep(.02, .07, abs(vn));
+        c = mix(c, vec3(.62, .06, .09), vein * .8);
+        vec3 hh = normalize(L + V); float sp = pow(max(dot(N, hh), 0.), 38.);
+        c = mix(c, vec3(.85, .25, .28), step(.4, sp) * .75); c = mix(c, vec3(1., .88, .88), step(.85, sp));
+        c = mix(c, vec3(.6, .05, .08), smoothstep(.7, .76, rim) * .85);
+        if (GlowPass > 0.5) { fragColor = vec4(0.); return; }
+        fragColor = vec4(c, 1.);
+    } else if (k == 9) {
+        // CLOUD_F (forja/luffy-g4 steam): torn by noise as it ages (P0.x), cel in 3 bands, P0.z = the outline
+        float n = gn(vO * 2.7 + vec3(0., -T * .5, 0.)) * .8 + gn(vO * 6.6) * .2;
+        float thr = -1.25 + 2.25 * pow(P0.x, 3.2);
+        if (n < thr) discard;
+        if (GlowPass > 0.5) { fragColor = vec4(0.); return; }
+        if (P0.z > 0.5) { fragColor = vec4(.42, .47, .58, 1.); return; }
+        float d = dot(N, normalize(vL));
+        vec3 c = d > .25 ? vec3(.97, .98, 1.) : d > -.25 ? vec3(.84, .87, .93) : vec3(.64, .69, .8);
+        if (n < thr + .08) c = vec3(.72, .77, .87);
+        fragColor = vec4(c, 1.);
     } else {
         // a solid piece (Lambert under the page's hemisphere light); P0.x = 1: the King Kong Gun's fist
         vec3 c = Col;

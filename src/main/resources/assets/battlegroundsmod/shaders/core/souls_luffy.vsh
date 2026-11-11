@@ -30,6 +30,7 @@ out float vH;
 out float vBack;
 out float vD;
 out vec3 vO;
+out vec3 vL;
 
 vec3 h33(vec3 p) { p = fract(p * vec3(.1031, .1030, .0973)); p += dot(p, p.yxz + 33.33); return fract((p.xxy + p.yxx) * p.zyx) * 2. - 1.; }
 float gn(vec3 p) {
@@ -47,6 +48,7 @@ void main() {
     vec3 P = Position;
     vec3 Nl = Normal;
     vUv = vec2(0.); vU = 0.; vH = 0.; vBack = 0.; vD = 0.; vO = normalize(Position + vec3(1e-6));
+    vL = mat3(ModelViewMat) * normalize(P1.xyz + vec3(0., 1e-4, 0.));
     if (k == 0) {
         // ARM_V: P0 = (L, R, Infl, Amp), P1 = (Ph, N, Bx, Ba), P2 = (Toon, Tw, Hx, Blur)
         float uL = P0.x, uR = P0.y, uInfl = P0.z, uAmp = P0.w, uPh = P1.x, uN = P1.y, uBx = P1.z, uBa = P1.w, uToon = P2.x, uTw = P2.y, uHx = P2.z;
@@ -100,6 +102,25 @@ void main() {
         Nl = n; vD = d; vO = n;
     } else if (k == 1) {
         vUv = Position.xy * 0.5 + 0.5;
+    } else if (k == 8) {
+        // HAKI_V (forja/luffy-g4): a box of P0.xyz pixels with its corners rounded by P0.w (the page's hakiBox);
+        // P1.xyz = the page's light, relative to the camera
+        vec3 hs = P0.xyz * 0.5; float r = min(P0.w, min(hs.x, min(hs.y, hs.z)) - 1e-3);
+        vec3 p = Position * P0.xyz, c = clamp(p, -hs + r, hs - r), d = p - c; float l = length(d);
+        P = l > 1e-5 ? c + d / l * min(r, l) : p;
+        Nl = l > 1e-5 ? d / l : Normal;
+        vO = P / 16.;
+    } else if (k == 9) {
+        // CLOUD_V (forja/luffy-g4 steam): a lump of the steam. P2.xyz = where its noise is anchored (blocks), P2.w = its
+        // radius (blocks), so the lumps next to each other share one noise and read as one tube; P0.w = how far the noise
+        // pushes it out, P0.y = the outline's extra size; P3.x = the page's sway (in radii), P3.y = its place along the tube
+        vec3 n = normalize(Position);
+        vec3 wp = P2.xyz + n * P2.w;
+        float lump = gn(wp * 3.2 + vec3(Seed, -T * 0.6, 0.)) * 0.7 + gn(wp * 7.5 + vec3(0., -T, Seed)) * 0.22;
+        vec3 sway = vec3(gn(vec3(P3.y * 5. - T * 0.7, T * 0.25, 1.3)), gn(vec3(P3.y * 5. - T * 0.7, T * 0.25, 7.1)) * 0.7, gn(vec3(P3.y * 5. - T * 0.7, T * 0.25, 4.2)));
+        P = n * (1. + lump * P0.w + P0.y) + sway * P3.x;
+        Nl = normalize(n + vec3(0., 0.35, 0.));
+        vO = wp;
     }
     vec4 mv = ModelViewMat * (Model * vec4(P, 1.));
     mat3 nm = transpose(inverse(mat3(ModelViewMat * Model)));

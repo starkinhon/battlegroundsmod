@@ -25,7 +25,9 @@ public final class LuffyMesh {
     public enum Mesh {
         // squareTubeGeo(96), squareTubeGeo(48), squareTubeGeo(220), PlaneGeometry(2, 2), SphereGeometry(1, 64, 48),
         // SphereGeometry(1, 112, 84) (lighter here), TorusGeometry(0.4, 0.15, 24, 72), BoxGeometry(1, 1, 1)
-        ARM, ARM48, BOLT, QUAD, SPHERE, BLAST, TORUS, BOX, VEST_L, VEST_R;
+        ARM, ARM48, BOLT, QUAD, SPHERE, BLAST, TORUS, BOX, VEST_L, VEST_R,
+        // Boundman (forja/luffy-g4): BoxGeometry(1, 1, 1, 6, 6, 6) for the haki, a light sphere for each lump of steam
+        RBOX, BLOB;
 
         VertexBuffer vbo;
     }
@@ -33,7 +35,7 @@ public final class LuffyMesh {
     // position and normal (the game has no such format of its own)
     public static final VertexFormat FORMAT = VertexFormat.builder().add("Position", VertexFormatElement.POSITION).add("Normal", VertexFormatElement.NORMAL).build();
 
-    public static final int ARM = 0, BURST = 1, STEAM = 2, COLLAR = 3, FIRE = 4, BLAST = 5, BOLT = 6, SOLID = 7;
+    public static final int ARM = 0, BURST = 1, STEAM = 2, COLLAR = 3, FIRE = 4, BLAST = 5, BOLT = 6, SOLID = 7, HAKI = 8, CLOUD = 9;
     public static final int FRONT = 1, BACK = 2, BOTH = 3;
 
     public static final class P {
@@ -62,7 +64,7 @@ public final class LuffyMesh {
     public static P p(int kind) {
         P p = new P();
         p.kind = kind;
-        p.solid = kind == ARM || kind == SOLID || kind == BOLT;
+        p.solid = kind == ARM || kind == SOLID || kind == BOLT || kind == HAKI || kind == CLOUD;
         return p;
     }
 
@@ -180,6 +182,8 @@ public final class LuffyMesh {
                 // the vest's two halves over the Fusen's balloon (three's SphereGeometry(1.012, 40, 28, phi0, dphi, 0.25, 1.15))
                 case VEST_L -> sphere(b, 40, 28, 1.012, Math.PI * 0.62, Math.PI * 0.42, 0.25, 1.15);
                 case VEST_R -> sphere(b, 40, 28, 1.012, Math.PI * 1.96, Math.PI * 0.42, 0.25, 1.15);
+                case RBOX -> box(b, 6);
+                case BLOB -> sphere(b, 20, 14);
             }
             VertexBuffer vbo = new VertexBuffer(VertexBuffer.Usage.STATIC);
             vbo.bind();
@@ -266,6 +270,28 @@ public final class LuffyMesh {
             tri(b, v[q[0]], v[q[1]], v[q[2]], nn[i], nn[i], nn[i]);
             tri(b, v[q[0]], v[q[2]], v[q[3]], nn[i], nn[i], nn[i]);
         }
+    }
+
+    // a unit box with each face cut into n x n (the haki's corners are rounded in the shader)
+    private static void box(BufferBuilder b, int n) {
+        float[][] nn = {{0, 0, 1}, {0, 0, -1}, {1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}};
+        for (float[] N : nn) {
+            // two axes across the face, so that (t1 x t2) = N (wound outward)
+            float[] t1 = Math.abs(N[1]) > 0.5f ? new float[] {N[1], 0, 0} : new float[] {-N[2], 0, N[0]};
+            float[] t2 = {N[1] * t1[2] - N[2] * t1[1], N[2] * t1[0] - N[0] * t1[2], N[0] * t1[1] - N[1] * t1[0]};
+            for (int j = 0; j < n; j++) {
+                for (int i = 0; i < n; i++) {
+                    float[] a = fp(N, t1, t2, i, j, n), c = fp(N, t1, t2, i + 1, j, n), d = fp(N, t1, t2, i + 1, j + 1, n), e = fp(N, t1, t2, i, j + 1, n);
+                    tri(b, a, c, d, N, N, N);
+                    tri(b, a, d, e, N, N, N);
+                }
+            }
+        }
+    }
+
+    private static float[] fp(float[] N, float[] t1, float[] t2, int i, int j, int n) {
+        float u = i / (float) n - 0.5f, v = j / (float) n - 0.5f;
+        return new float[] {N[0] * 0.5f + t1[0] * u + t2[0] * v, N[1] * 0.5f + t1[1] * u + t2[1] * v, N[2] * 0.5f + t1[2] * u + t2[2] * v};
     }
 
     private static void tri(BufferBuilder b, float[] p, float[] q, float[] r, float[] np, float[] nq, float[] nr) {
