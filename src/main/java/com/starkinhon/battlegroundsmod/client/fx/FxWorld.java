@@ -269,6 +269,8 @@ public final class FxWorld {
         if (!space) {
             // The Mafuba jar's 魔封波 seal, written in the kanji font after the effects.
             DbFx.drawTags();
+            // Inumaki's words in the air, in the same font.
+            JjFx.drawWords();
         }
         if (!space && HakaiRenderer.active()) {
             // Dark lines on top of the glow, so the light doesn't wash them out.

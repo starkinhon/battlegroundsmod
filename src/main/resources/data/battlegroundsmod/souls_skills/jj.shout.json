@@ -1,0 +1,37 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "jj.shout",
+  "nome": "Exploda",
+  "tempo": {
+    "atrasoTicks": 1,
+    "duracaoTicks": 16
+  },
+  "animacao": {
+    "transicaoTicks": 2,
+    "preparo": {
+      "cabeca": 4,
+      "tronco": 10,
+      "bracoDir": {
+        "frente": 10,
+        "abrir": 60
+      },
+      "bracoEsq": {
+        "frente": 10,
+        "abrir": -60
+      }
+    },
+    "sopro": {
+      "cabeca": 6,
+      "tronco": 14,
+      "bracoDir": {
+        "frente": 6,
+        "abrir": 70
+      },
+      "bracoEsq": {
+        "frente": 6,
+        "abrir": -70
+      }
+    },
+    "retornoTicks": 10
+  }
+}

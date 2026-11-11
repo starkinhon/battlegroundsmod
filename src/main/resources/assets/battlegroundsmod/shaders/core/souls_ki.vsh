@@ -6,7 +6,8 @@
 // (relative to the camera). Kind says which effect: 0 blast/smoke, 1 Genki core, 2 halo (Genki), 3 beam, 4 dust ring,
 // 5 aura shell, 6 hit flash, 7 sun core, 8 sun halo, 9 saw disc, 10 Kienzan disc, 11 Makankosappo spirals, 12 wind,
 // 13 Sasuke's Katon shell (forja/sasuke-chidori/katon.js), 14 its wall of fire on the ground, 15 Shikamaru's shadow running
-// on the ground, 16 his Xeque-mate's flood of shadow (forja/shikamaru/shika.js; both flat squares).
+// on the ground, 16 his Xeque-mate's flood of shadow (forja/shikamaru/shika.js; both flat squares), 17 Inumaki's voice (a cone
+// of ink rings) and 18 the rings that hold the one he stopped (forja/inumaki-kit/inumaki.js VOICE_F / BIND_F).
 in vec3 Position;
 
 uniform mat4 ModelViewMat;
@@ -148,6 +149,10 @@ void main() {
         float rr = 1. + 0.05 * (nn - 0.5) - 0.08 * h;
         P = vec3(d.x * rr, h * top, d.y * rr); n = normalize(vec3(d.x, 0.3, d.y));
         vH = h; vO = vec3(cos(ang) * 4., P.y * 2.2 - Time * 2.2, sin(ang) * 4.) + Seed;
+    } else if (kind == 17 || kind == 18) {                             // Inumaki: the voice's open cone (R0 at the mouth, R1 at the end) / the rings' cylinder (W)
+        float h = Position.y; vec2 d = normalize(Position.xz + 1e-5);
+        float r = kind == 17 ? mix(R0, R1, h) : W;
+        P = vec3(d.x * r, h * Len, d.y * r); n = vec3(d.x, 0., d.y); vDir = d; vH = h;
     }
     vec4 w = Model * vec4(P, 1.0);
     vN = mat3(Model) * n;

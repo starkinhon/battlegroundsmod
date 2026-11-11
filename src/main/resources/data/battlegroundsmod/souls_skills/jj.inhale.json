@@ -1,0 +1,37 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "jj.inhale",
+  "nome": "Puxa o ar",
+  "tempo": {
+    "atrasoTicks": 4,
+    "duracaoTicks": 12
+  },
+  "animacao": {
+    "transicaoTicks": 2,
+    "preparo": {
+      "cabeca": -6,
+      "tronco": -6,
+      "bracoDir": {
+        "frente": 14,
+        "abrir": 30
+      },
+      "bracoEsq": {
+        "frente": 14,
+        "abrir": -30
+      }
+    },
+    "sopro": {
+      "cabeca": -12,
+      "tronco": -10,
+      "bracoDir": {
+        "frente": 20,
+        "abrir": 40
+      },
+      "bracoEsq": {
+        "frente": 20,
+        "abrir": -40
+      }
+    },
+    "retornoTicks": 4
+  }
+}

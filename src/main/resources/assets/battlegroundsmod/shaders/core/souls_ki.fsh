@@ -135,6 +135,41 @@ void main() {
         fragColor = vec4(mix(vec3(0.018, 0.015, 0.024), vec3(0.09, 0.08, 0.11), edge * 0.6) * a, a);
         return;
     }
+    if (kind == 17 || kind == 18) {                                    // Inumaki's Cursed Speech: ink rings (forja/inumaki-kit VOICE_F / BIND_F, line by line)
+        float ang = atan(vDir.y, vDir.x), a, rm, w;
+        if (kind == 17) {
+            // Flow = speed (blocks/s), Life = how long a ring lives (s), Pitch = ring density, Time in seconds
+            float s = vH * Len;
+            float k = (Time - s / Flow) / Life;                        // each ring born as the front passes
+            if (k < 0. || k > 1.) discard;
+            w = fbm3(vec3(cos(ang) * 1.4, sin(ang) * 1.4, s * 0.3 + Seed));
+            float ph = (s + w * 0.9) * Pitch - Time * Flow * Pitch * 0.18;
+            float r = fract(ph);
+            float body = smoothstep(0.0, 0.05, r) * (1. - smoothstep(0.26 + 0.12 * w, 0.36 + 0.12 * w, r));
+            rm = smoothstep(0.22 + 0.12 * w, 0.28 + 0.12 * w, r) * (1. - smoothstep(0.3 + 0.12 * w, 0.36 + 0.12 * w, r));
+            float tear = fbm3(vec3(cos(ang) * 3., sin(ang) * 3., s * 0.8 + Seed * 2.)) * 0.5 + 0.5;
+            a = body * smoothstep(k * 0.95, k * 0.95 + 0.12, tear);   // tears instead of fading
+            a *= (0.55 + 0.45 * rim) * smoothstep(0., 0.6, s) * Alpha;
+        } else {
+            // Growth = how closed (0..1)
+            w = fbm3(vec3(cos(ang) * 1.6, sin(ang) * 1.6, vH * 3. + Seed));
+            float r = fract(vH * 4.3 + w * 0.22 + floor(Time * 12.) * 0.013);
+            float body = smoothstep(0., 0.04, r) * (1. - smoothstep(0.16, 0.24, r));
+            rm = smoothstep(0.13, 0.17, r) * (1. - smoothstep(0.19, 0.24, r));
+            float tear = fbm3(vec3(cos(ang) * 4., sin(ang) * 4., vH * 9. + Seed)) * 0.5 + 0.5;
+            a = body * smoothstep(1. - Growth, 1.12 - Growth, tear) * smoothstep(0., 0.08, vH) * smoothstep(1., 0.9, vH) * Alpha;
+        }
+        if (a < 0.01) discard;
+        vec3 c = mix(Color, Color2, rm);
+        if (kind == 17) c = mix(c, vec3(1.), rm * smoothstep(0.6, 1., w * 0.5 + 0.5) * 0.7);
+        if (GlowPass > 0.5) {                                          // only the violet edge glows (the ink stays ink)
+            if (rm * a < 0.02) discard;
+            fragColor = vec4(Color2 * rm * a * 0.35, 0.);
+            return;
+        }
+        fragColor = vec4(c * a, a);
+        return;
+    }
     if (kind == 13 || kind == 14) {                                    // Sasuke's Katon (RingR = the ground's height, camera-relative)
         if (-vV.y < RingR) discard;
         float fz = kind == 13 ? facing() : f, edge = 1. - fz;

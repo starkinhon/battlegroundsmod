@@ -116,7 +116,7 @@ final class JjFx {
     private static boolean stream(int kind) {
         return switch (kind) {
             case SubNet.DIV_AURA, SubNet.DIV_MARK, SubNet.CUT_LOOP, SubNet.BLOOD_SWEEP, SubNet.MAX_CHARGE, SubNet.METEOR, SubNet.BF_RING, SubNet.GUARD, SubNet.DASH_TRAIL, SubNet.BLOOD_BALL, SubNet.BLOOD_ORBS, SubNet.ROPE,
-                    SubNet.GROUND_MARK, SubNet.NAIL, SubNet.DOLL, SubNet.SIMPLE_DOMAIN, SubNet.TODO_FLAME -> true;
+                    SubNet.GROUND_MARK, SubNet.NAIL, SubNet.DOLL, SubNet.SIMPLE_DOMAIN, SubNet.TODO_FLAME, SubNet.MEGAPHONE -> true;
             default -> false;
         };
     }
@@ -197,7 +197,7 @@ final class JjFx {
             case SubNet.RESO_LINE -> 9;
             case SubNet.CLAP -> 13;
             case SubNet.SWAP -> 11;
-            case SubNet.VOICE -> 40;
+            case SubNet.VOICE -> 44;
             case SubNet.CRUSH -> 62;
             case SubNet.MIWA_LINE -> 9;
             case SubNet.MIWA_ARC -> 4;
@@ -290,7 +290,7 @@ final class JjFx {
                 }
                 case SubNet.CLAP -> clapFx(rel(f.pos), age, f.a == 1);
                 case SubNet.SWAP -> swapFlash(rel(f.pos), age);
-                case SubNet.VOICE -> speech(rel(f.pos), at(rel(f.pos), vec(f.dir), 1), age, f.b == 1 ? LILAC : VIOLET, f.a, f.c > 0 ? f.c : 10);
+                case SubNet.VOICE -> voice(f, age);
                 case SubNet.CRUSH -> crush(f, age);
                 case SubNet.MIWA_LINE -> miwaLine(rel(f.pos), vec(f.dir), f.a, age, 6, f.b > 0 ? f.b : 0.06f);
                 case SubNet.MIWA_ARC -> miwaArc(f, age);
@@ -322,6 +322,7 @@ final class JjFx {
                 case SubNet.MAX_CHARGE -> maxCharge(f, age, partial, out);
                 case SubNet.METEOR -> meteor(f, age, out);
                 case SubNet.TODO_FLAME -> todoFlame(f, age, partial, out);
+                case SubNet.MEGAPHONE -> megaphone(f, age, partial, out);
                 case SubNet.BF_RING -> bfRing(f, age, out);
                 case SubNet.GUARD -> guard(f, partial, out);
                 case SubNet.DASH_TRAIL -> dashTrail(f, partial, out);
@@ -1641,78 +1642,165 @@ final class JjFx {
 
     // ---------- Inumaki ----------
 
-    // Rings of voice flying from the mouth to the target, growing as they go.
-    static void speech(Vector3f from, Vector3f to, float age, float[] col, float s, float life) {
-        if (age < 0) {
-            return;
-        }
-        Vector3f d = new Vector3f(to).sub(from);
+    // The voice (forja/inumaki-kit VOICE_F): ONE open cone from the mouth, its ink rings born as the front passes and
+    // tearing as they die (souls_ki kind 17), and the word written in the air in the kanji font. Styles (Inumaki.V_*):
+    // {r0, speed (blocks/s), life (s), ring density, word size (blocks per em), word life (s), word flight (blocks), lilac}.
+    private static final float[][] VOICE_STYLE = {
+            {0.12f, 70, 0.45f, 0.9f, 0.43f, 0.9f, 1.6f, 0},      // an order
+            {0.12f, 22, 0.8f, 0.6f, 0.43f, 1.3f, 1.6f, 1},       // "Sleep": slower, lighter
+            {0.35f, 34, 0.4f, 1.3f, 0, 0, 0, 0},                 // "Get crushed": the weight from above
+            {0.3f, 24, 0.9f, 0.55f, 0.89f, 1.4f, 2.6f, 0},       // through the megaphone
+            {0.3f, 24, 0.9f, 0.55f, 0.89f, 1.4f, 2.6f, 1},       // "Sleep" through the megaphone
+            {0.3f, 32, 0.7f, 0.75f, 1.19f, 1.4f, 3.5f, 0},       // "Blow away"
+            {0, 0, 0, 0, 0.5f, 0.9f, 1.6f, 0}};                  // the word alone
+    private static final String[] WORD_TEXT = {"", "止まれ", "潰れろ", "眠れ", "吹っ飛べ"};
+    private static final float[] VOICE_INK = FxDraw.rgb(0x140B20);
+    private static final float[] VOICE_RIM = FxDraw.rgb(0x8F5BFF);
+    private static final float[] SLEEP_INK = FxDraw.rgb(0x2A2142);
+    private static final float[] SLEEP_RIM = FxDraw.rgb(0xC4B2FF);
+
+    private static void voice(Fx f, float age) {
+        int style = Mth.clamp((int) f.b, 0, VOICE_STYLE.length - 1);
+        float[] st = VOICE_STYLE[style];
+        float t = age / 20f;
+        Vector3f from = rel(f.pos);
+        Vector3f d = vec(f.dir);
         float len = d.length();
-        Vector3f dn = safe(d);
-        float end = 1 - smooth((age - life) / 6);
-        for (int i = 0; i < 5; i++) {
-            float u = age * 0.09f - i * 0.18f;
-            if (u < 0 || u > 1) {
-                continue;
-            }
-            Vector3f p = at(from, dn, u * len);
-            float fo = (1 - u) * 0.8f + 0.2f;
-            dsk(p, dn, (0.5f + u * 1.6f) * s, FxDraw.RING, 0.05f, col, 0.7f * fo * end, true);
-            dsk(p, dn, (0.5f + u * 1.6f) * s, FxDraw.RING, 0.02f, WHITE, 0.4f * fo * end, true);
-            if (i == 0) {
-                warp(p, 0.9f * s, 0.5f, 0, age, null);
-            }
+        if (st[1] > 0 && len > 0.1f && t < len / st[1] + st[2] && DbFx.pass && KiMesh.ready()) {
+            KiMesh.P p = KiMesh.p(KiMesh.VOICE);
+            p.len = len;
+            p.r0 = st[0];
+            p.r1 = Math.max(st[0], f.a);
+            p.flow = st[1];
+            p.life = st[2];
+            p.pitch = st[3];
+            p.time = t;
+            p.seed = Math.floorMod(f.id * 7 + (int) (f.born * 3), 97) * 0.093f;
+            p.color = st[7] > 0 ? SLEEP_INK : VOICE_INK;
+            p.color2 = st[7] > 0 ? SLEEP_RIM : VOICE_RIM;
+            KiMesh.queue(KiMesh.Mesh.TUBE, KiMesh.along(from, d), p, KiMesh.BOTH, 6);
+        }
+        int w = (int) f.c;
+        if (w > 0 && w < WORD_TEXT.length && st[4] > 0) {
+            Vector3f dir = len > 0.1f ? new Vector3f(d).div(len) : v(0, 0, 1);
+            word(WORD_TEXT[w], from, dir, t, st[4], st[5], st[6], f.id + w);
         }
     }
+
+    // A word in the air (the preview's makeWord): flies `fly` blocks along dir easing out, rises a little, grows in,
+    // shakes like a drawing on 12 fps, fades at the end. Facing back toward the speaker. em: blocks per em.
+    private record Word(String text, Vector3f at, float yaw, float em, float alpha) {
+    }
+
+    private static final List<Word> WORDS = new ArrayList<>();
+    private static final net.minecraft.resources.ResourceLocation KANJI = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(
+            com.starkinhon.battlegroundsmod.BattlegroundsMod.MODID, "kanji");
+
+    private static void word(String text, Vector3f from, Vector3f dir, float t, float em, float life, float fly, int seed) {
+        float k = t / life;
+        if (k >= 1 || k < 0) {
+            return;
+        }
+        int step = (int) Math.floor(t * 12);
+        Vector3f j = v(hash(step, 1, seed) - 0.5f, hash(step, 2, seed) - 0.5f, 0).mul(0.06f);
+        float e3 = 1 - (1 - k) * (1 - k) * (1 - k);
+        float k2 = Math.min(1, k * 2);
+        float grow = 0.7f + 0.5f * (1 - (1 - k2) * (1 - k2) * (1 - k2));
+        float a = 1 - smooth((k - 0.65f) / 0.35f);
+        Vector3f at = at(from, dir, fly * e3).add(0, 0.35f + 0.1f * k, 0).add(j);
+        Vector3f flat = v(-dir.x, 0, -dir.z);
+        if (flat.lengthSquared() < 1.0E-4f) {
+            flat = v(-FxDraw.left().z, 0, FxDraw.left().x);
+        }
+        flat.normalize();
+        if (DbFx.pass) {
+            // the violet glow round the letters (the preview's canvas shadow)
+            bb(at, em * 3.4f * grow, 0, FxDraw.SOFT, 0.15f, VOICE_RIM, 0.45f * a, true);
+        } else {
+            WORDS.add(new Word(text, at, (float) Math.atan2(flat.x, flat.z), em * grow, a));
+        }
+    }
+
+    // Drawn after the effects (FxWorld, with the Mafuba's seal): dark letters with a white outline, the mod's kanji font.
+    static void drawWords() {
+        if (WORDS.isEmpty()) {
+            return;
+        }
+        net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+        net.minecraft.client.gui.Font font = mc.font;
+        net.minecraft.client.renderer.MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
+        for (Word w : WORDS) {
+            int alpha = (int) (Mth.clamp(w.alpha(), 0, 1) * 255);
+            if (alpha < 8) {
+                continue;
+            }
+            com.mojang.blaze3d.vertex.PoseStack pose = new com.mojang.blaze3d.vertex.PoseStack();
+            pose.translate(w.at().x, w.at().y, w.at().z);
+            pose.mulPose(com.mojang.math.Axis.YP.rotation(w.yaw()));
+            float k = w.em() / 11f;
+            pose.scale(k, -k, k);
+            net.minecraft.network.chat.Component c = net.minecraft.network.chat.Component.literal(w.text()).withStyle(st -> st.withFont(KANJI));
+            font.drawInBatch8xOutline(c.getVisualOrderText(), -font.width(c) / 2f, -5.5f, alpha << 24 | 0x140B20, alpha << 24 | 0xF4F0FF,
+                    pose.last().pose(), buffers, 0xF000F0);
+        }
+        buffers.endBatch();
+        WORDS.clear();
+    }
+
+    // The snake-and-fangs mark on his mouth (the preview's sealTex, textures/fx/inumaki_seal.png), facing out of his face.
+    private static final net.minecraft.resources.ResourceLocation SEAL = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(
+            com.starkinhon.battlegroundsmod.BattlegroundsMod.MODID, "textures/fx/inumaki_seal.png");
 
     private static void sealMarks(Fx f, float age, float partial, float out) {
         LivingEntity e = living(f.id);
-        if (e == null) {
+        if (e == null || DbFx.pass) {
             return;
         }
-        float a = smooth(age / 4) * out;
-        for (Vector3f eye : eyesOf(e, partial)) {
-            bb(add(eye, 0, -0.16f, 0), 0.1f, 0, FxDraw.SOFT, 0.6f, VIOLET, 0.8f * a, true);
-        }
-        bb(mouthOf(e, partial), 0.35f, age * 0.1f, FxDraw.FLARE, 4 / 32f, LILAC, 0.5f * a, true);
+        float a = smooth(age / 3) * out;
+        Vec3 look = e.getViewVector(partial);
+        Vec3 flat = new Vec3(look.x, 0, look.z);
+        flat = flat.lengthSqr() < 1.0E-4 ? new Vec3(0, 0, 1) : flat.normalize();
+        float s = e.getBbHeight() / 1.8f;
+        Vector3f fw = vec(flat);
+        Vector3f right = v(-fw.z, 0, fw.x);
+        Vector3f c = rel(e.getEyePosition(partial).add(flat.scale(0.26 * s)).add(0, -0.2 * s, 0));
+        float hw = 0.23f * s, hh = 0.115f * s;
+        // seen from the front, the picture's left is his right
+        FxDraw.quad(FxWorld.decal(SEAL), at(add(c, 0, hh, 0), right, hw), at(add(c, 0, hh, 0), right, -hw), at(add(c, 0, -hh, 0), right, -hw),
+                at(add(c, 0, -hh, 0), right, hw), FxDraw.SOLID, 0, WHITE, a);
     }
 
+    // "Stop": the ink rings closing on the body (forja/inumaki-kit BIND_F, souls_ki kind 18): wide, then tight on it.
     private static void holdRings(Fx f, float age, float partial, float out) {
         LivingEntity e = living(f.id);
-        if (e == null) {
+        if (e == null || !DbFx.pass || !KiMesh.ready()) {
             return;
         }
-        Vector3f c = add(rel(e.getPosition(partial)), 0, e.getBbHeight() * 0.55f, 0);
-        float s = e.getBbWidth() / 0.6f;
-        for (int i = 0; i < 3; i++) {
-            dsk(add(c, 0, (-0.5f + i * 0.5f) * e.getBbHeight() / 1.8f, 0), UP, (1 + 0.05f * Mth.sin(age * 0.6f + i)) * s, FxDraw.RING, 0.04f, VIOLET,
-                    0.6f * out, true);
-        }
-        for (Vector3f eye : eyesOf(e, partial)) {
-            bb(eye, 0.12f, 0, FxDraw.SOFT, 0.8f, VIOLET, 0.8f * out, true);
-        }
+        float h = e.getBbHeight();
+        Vector3f feet = rel(e.getPosition(partial));
+        KiMesh.P p = KiMesh.p(KiMesh.BIND);
+        p.len = h * 1.15f;
+        p.w = (1.5f - 0.9f * smooth(age / 4)) * Math.max(1, e.getBbWidth() / 0.6f);
+        p.growth = smooth(age / 3.6f) * out;
+        p.time = age / 20f;
+        p.seed = Math.floorMod(f.id, 11) * 0.71f;
+        p.color = VOICE_INK;
+        p.color2 = VOICE_RIM;
+        KiMesh.queue(KiMesh.Mesh.TUBE, KiMesh.along(add(feet, 0, -0.04f * h, 0), UP), p, KiMesh.BOTH, 6);
     }
 
-    // "Get crushed!": streaks coming down, a ring and a crater-dark patch, cracks and dust.
+    // "Get crushed": the ground gives way under the weight (the preview's flash, shock and cracks; a white impact
+    // frame on a critical).
     private static void crush(Fx f, float age) {
         Vector3f c = rel(f.pos);
         float r = f.a;
-        if (age < 6) {
-            float fo = 1 - smooth(age / 6);
-            for (int i = 0; i < 10; i++) {
-                float x = (hash(i, 14, 1) - 0.5f) * r * 0.7f;
-                float z = (hash(i, 14, 2) - 0.5f) * r * 0.7f;
-                float y0 = 4 - ((age + 4) / 6) * 3;
-                rib(add(c, x, y0 + 1, z), add(c, x, y0, z), 0.08f, FxDraw.STREAK, 0.6f, LILAC, 0.6f * fo, true);
-            }
+        if (age < 8) {
+            float fo = 1 - age / 8;
+            bb(add(c, 0, 0.6f, 0), (0.8f + 0.9f * smooth(age / 3)) * (f.b == 1 ? 1.4f : 1), 0, FxDraw.SOFT, 0.6f, LILAC, fo, true);
+            warp(add(c, 0, 0.4f, 0), f.b == 1 ? 3f : 2.2f, 0.9f * fo, 0, age, null);
         }
-        if (age < 18) {
-            dsk(add(c, 0, 0.05f, 0), UP, 1 + age * 0.3f, FxDraw.RING, 0.1f, VIOLET, 1 - age / 18, true);
-            warp(add(c, 0, 0.4f, 0), 2.2f, 0.9f * (1 - age / 18), 0, age, null);
-        }
-        crackRing(c, age, r, 6, 10, 0.9f * (1 - smooth((age - 40) / 20)));
+        crackRing(c, age, r * 1.5f, 6, 9, 0.9f * (1 - smooth((age - 40) / 20)));
         DbFx.nrDust(c, age, 71, 12, 1.2f, DUST, 40);
-        dsk(add(c, 0, 0.03f, 0), UP, r, FxDraw.SOFT, 0.12f, DIRT, 0.9f * smooth(age / 4) * (1 - smooth((age - 40) / 20)), false);
     }
 
     private static void cough(Fx f, float age, float partial, float out) {
@@ -1722,27 +1810,64 @@ final class JjFx {
         }
         Vector3f m = mouthOf(e, partial);
         Vector3f fw = vec(body(e, partial).fwd);
-        for (int i = 0; i < 8; i++) {
-            float t0 = (i % 4) * 6;
-            float b = DbFx.fract((age - t0) / 24f) * 24;
-            if (age < t0 || b > 16) {
+        // each drop its own size, speed and moment (the preview's blood.spit)
+        for (int i = 0; i < 14; i++) {
+            float t0 = (i % 7) * 4 + hash(i, 15, 3) * 3;
+            float b = age - t0;
+            if (b < 0 || b > 14 || t0 > 28) {
                 continue;
             }
-            Vector3f p = add(at(at(m, FxDraw.left(), (hash(i, 15, 1) - 0.5f) * 0.2f), fw, 0.03f * b), 0, -0.01f * b * b, 0);
-            bb(p, 0.06f + 0.04f * hash(i, 15, 2), 0, FxDraw.SOFT, 0.9f, BLOOD, (1 - b / 16) * out, false);
+            float sp = 0.05f + 0.1f * hash(i, 15, 4);
+            Vector3f side = v(-fw.z, 0, fw.x);
+            Vector3f p = add(at(at(m, side, (hash(i, 15, 1) - 0.5f) * 0.07f * b), fw, sp * b), 0, (0.03f + 0.04f * hash(i, 15, 5)) * b - 0.0175f * b * b, 0);
+            bb(p, 0.04f + 0.05f * hash(i, 15, 2) * hash(i, 15, 6), 0, FxDraw.SOFT, 0.95f, BLOOD, (1 - b / 14) * out, false);
         }
     }
 
+    // Asleep: nothing hangs over them (the preview shows only the body going limp); a faint lilac on the head.
     private static void sleep(Fx f, float age, float partial, float out) {
         LivingEntity e = living(f.id);
         if (e == null) {
             return;
         }
-        Vector3f head = add(rel(e.getPosition(partial)), 0.2f, e.getBbHeight() * 0.4f, 0);
-        for (int i = 0; i < 3; i++) {
-            float ph = DbFx.fract(age * 0.02f + i / 3f);
-            bb(add(head, ph * 0.4f, ph * 1.2f, 0), 0.12f + ph * 0.18f, 0, FxDraw.RING, 0.2f, LILAC, 0.8f * (1 - ph) * out, true);
+        Vector3f head = add(rel(e.getPosition(partial)), 0, e.getBbHeight() * 0.85f, 0);
+        bb(head, 0.9f * e.getBbHeight() / 1.8f, 0, FxDraw.SOFT, 0.2f, SLEEP_RIM, 0.25f * smooth(age / 8) * out, true);
+    }
+
+    // The megaphone in his right hand (the preview's model): a white horn with a dark rim and a handle, at his mouth.
+    private static void megaphone(Fx f, float age, float partial, float out) {
+        LivingEntity e = living(f.id);
+        if (e == null || DbFx.pass) {
+            return;
         }
+        float k = smooth(age / 6);
+        Vec3 look = e.getViewVector(partial);
+        float s = e.getBbHeight() / 1.8f;
+        Vec3 right = look.cross(new Vec3(0, 1, 0));
+        right = right.lengthSqr() < 1.0E-4 ? new Vec3(1, 0, 0) : right.normalize();
+        Vec3 base = e.getEyePosition(partial).add(0, -0.2 * s, 0).add(look.scale(0.4 * s)).add(right.scale(0.1 * s)).add(0, -0.3 * (1 - k), 0);
+        Vector3f d = vec(look).normalize();
+        Vector3f u = safe(new Vector3f(d).cross(vec(right)));
+        Vector3f r = vec(right);
+        Vector3f b0 = rel(base);
+        float[] white = FxDraw.rgb(0xE8E4DA), dark = FxDraw.rgb(0x3A3A44);
+        int n = 16;
+        float len = 0.5f * s, ra = 0.07f * s, rb = 0.24f * s;
+        for (int i = 0; i < n; i++) {
+            float a0 = i * Mth.TWO_PI / n, a1 = (i + 1) * Mth.TWO_PI / n;
+            Vector3f o0 = new Vector3f(r).mul(Mth.cos(a0)).add(new Vector3f(u).mul(Mth.sin(a0)));
+            Vector3f o1 = new Vector3f(r).mul(Mth.cos(a1)).add(new Vector3f(u).mul(Mth.sin(a1)));
+            float light = 0.6f + 0.4f * Math.max(0, (o0.y + o1.y) * 0.5f + 0.4f);
+            float[] lc = {white[0] * light, white[1] * light, white[2] * light};
+            Vector3f p0 = at(b0, o0, ra), p1 = at(b0, o1, ra);
+            Vector3f q0 = at(at(b0, d, len), o0, rb), q1 = at(at(b0, d, len), o1, rb);
+            FxDraw.quad(p0, p1, q1, q0, FxDraw.SOLID, 0, lc, out, false);
+            Vector3f w0 = at(at(b0, d, len + 0.03f * s), o0, rb + 0.025f * s), w1 = at(at(b0, d, len + 0.03f * s), o1, rb + 0.025f * s);
+            FxDraw.quad(q0, q1, w1, w0, FxDraw.SOLID, 0, dark, out, false);
+        }
+        Vector3f g = at(b0, u, -0.06f * s);
+        FxDraw.quad(at(g, r, -0.03f * s), at(g, r, 0.03f * s), at(at(g, r, 0.03f * s), u, -0.2f * s), at(at(g, r, -0.03f * s), u, -0.2f * s), FxDraw.SOLID, 0, dark, out,
+                false);
     }
 
     // ---------- Miwa ----------

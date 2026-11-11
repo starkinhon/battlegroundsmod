@@ -306,13 +306,14 @@ public final class SubNet {
     public static final int CLAP = 140;
     // A swap: the flash where someone was (pos = feet).
     public static final int SWAP = 141;
-    // Inumaki. Rings of voice from pos to pos + dir: a = size, b = 0 violet, 1 lilac.
+    // Inumaki. The voice: ONE cone of ink rings from pos to pos + dir (forja/inumaki-kit VOICE_F, souls_ki kind 17): id = the
+    // speaker, a = the cone's radius at the end, b = style (Inumaki.V_*), c = the word written in the air (Inumaki.W_*, 0 none).
     public static final int VOICE = 150;
     // The seal marks lit on his face: id = Inumaki, a = ticks.
     public static final int SEAL_MARKS = 151;
-    // Rings round someone stopped by "Stop": id = the target, a = ticks.
+    // The ink rings closing on someone stopped by "Stop" (souls_ki kind 18): id = the target, a = ticks.
     public static final int HOLD_RINGS = 152;
-    // "Get crushed": the unseen weight coming down on pos: a = radius.
+    // "Get crushed": the ground giving way at pos: a = radius, b = 1 a critical (he was frozen).
     public static final int CRUSH = 153;
     // Coughing blood: id = Inumaki, a = ticks.
     public static final int COUGH = 154;
@@ -342,6 +343,8 @@ public final class SubNet {
     // short zigzags of black lightning with a red edge flying out.
     public static final int TODO_FLAME = 169;
     public static final int BF_SPARKS = 170;
+    // Inumaki's megaphone in his hand (stream): id = Inumaki, a = 1 while held, c = 1 put away.
+    public static final int MEGAPHONE = 171;
 
     public static final int STYLE_SUKUNA = 0;
     public static final int STYLE_PINK = 1;
