@@ -68,6 +68,11 @@ public final class UniverseSpawns {
             if (universe == null || universe.mobs() == null || universe.mobs().isEmpty()) {
                 continue;
             }
+            if (NarutoWorld.UNIVERSE.equals(id) && level.dimension() == net.minecraft.world.level.Level.OVERWORLD) {
+                // The Naruto biomes (Stark 2026-11-11): their mobs are being redone, one biome at a time with a preview;
+                // until then the old ninjas of the Naruto dimension do not come out in the Floresta da Folha.
+                continue;
+            }
             if (DemonSlayerWorld.UNIVERSE.equals(id) && level.isDay()) {
                 // The demons hide from the sun.
                 continue;
@@ -130,7 +135,7 @@ public final class UniverseSpawns {
             return earthMobs(x, z);
         }
         var biome = level.getBiome(new BlockPos(x, level.getSeaLevel(), z));
-        if (UniverseBiomes.universeOf(biome) == null) {
+        if (!DragonBallWorld.UNIVERSE.equals(UniverseBiomes.universeOf(biome))) {
             return null;
         }
         if (biome.is(com.starkinhon.battlegroundsmod.world.ModWorldgen.DESERTO_VERMELHO)) {
@@ -265,7 +270,7 @@ public final class UniverseSpawns {
         int dist = 30 + random.nextInt(35);
         int x = player.getBlockX() + (int) Math.round(Math.cos(angle) * dist);
         int z = player.getBlockZ() + (int) Math.round(Math.sin(angle) * dist);
-        if (!level.hasChunkAt(new BlockPos(x, 0, z)) || UniverseBiomes.universeAt(level, new BlockPos(x, 64, z)) == null) {
+        if (!level.hasChunkAt(new BlockPos(x, 0, z)) || !DragonBallWorld.UNIVERSE.equals(UniverseBiomes.universeAt(level, new BlockPos(x, 64, z)))) {
             return;
         }
         // none over the Norte Gelado (Stark 2026-11-11: only the yeti lives there)

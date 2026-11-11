@@ -43,7 +43,10 @@ public final class UniverseBiomes {
     }
 
     public static String universeOf(Holder<Biome> biome) {
-        return biome.is(ModWorldgen.DRAGONBALL_BIOMES) ? DragonBallWorld.UNIVERSE : null;
+        if (biome.is(ModWorldgen.DRAGONBALL_BIOMES)) {
+            return DragonBallWorld.UNIVERSE;
+        }
+        return biome.is(ModWorldgen.NARUTO_BIOMES) ? NarutoWorld.UNIVERSE : null;
     }
 
     private static void onTick(PlayerTickEvent.Post event) {

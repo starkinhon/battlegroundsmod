@@ -29,7 +29,22 @@ public final class ModBlocks {
     public static final DeferredBlock<Block> DESERT_ROCK = rock("deserto_rocha", MapColor.TERRACOTTA_ORANGE);
     public static final DeferredBlock<Block> DESERT_ROCK_LIGHT = rock("deserto_rocha_clara", MapColor.SAND);
 
+    // The Floresta da Folha (Stark 2026-11-11, the approved preview): the leaves of its trees in three tones of their own
+    // (the cluster's light top, the middle, the dark underside), not tinted by the biome, so the forest looks in the game
+    // as in the preview; and the fallen leaves lying under the crowns (tools/blocks/leaf_forest_blocks.py).
+    public static final DeferredBlock<net.minecraft.world.level.block.LeavesBlock> LEAF_LEAVES = leaves("folhas_da_folha");
+    public static final DeferredBlock<net.minecraft.world.level.block.LeavesBlock> LEAF_LEAVES_LIGHT = leaves("folhas_da_folha_clara");
+    public static final DeferredBlock<net.minecraft.world.level.block.LeavesBlock> LEAF_LEAVES_DARK = leaves("folhas_da_folha_escura");
+    public static final DeferredBlock<net.minecraft.world.level.block.CarpetBlock> FALLEN_LEAVES = BLOCKS.register("folhas_caidas",
+            () -> new net.minecraft.world.level.block.CarpetBlock(BlockBehaviour.Properties.of().mapColor(MapColor.PLANT)
+                    .strength(0.1f).sound(SoundType.GRASS).noOcclusion().pushReaction(
+                            net.minecraft.world.level.material.PushReaction.DESTROY)));
+
     static {
+        BLOCK_ITEMS.registerSimpleBlockItem(LEAF_LEAVES);
+        BLOCK_ITEMS.registerSimpleBlockItem(LEAF_LEAVES_LIGHT);
+        BLOCK_ITEMS.registerSimpleBlockItem(LEAF_LEAVES_DARK);
+        BLOCK_ITEMS.registerSimpleBlockItem(FALLEN_LEAVES);
         BLOCK_ITEMS.registerSimpleBlockItem(NAMEK_ROCK);
         BLOCK_ITEMS.registerSimpleBlockItem(DESERT_SAND);
         BLOCK_ITEMS.registerSimpleBlockItem(DESERT_ROCK);
@@ -39,6 +54,11 @@ public final class ModBlocks {
     }
 
     private ModBlocks() {
+    }
+
+    private static DeferredBlock<net.minecraft.world.level.block.LeavesBlock> leaves(String name) {
+        return BLOCKS.register(name, () -> new net.minecraft.world.level.block.LeavesBlock(
+                BlockBehaviour.Properties.ofFullCopy(net.minecraft.world.level.block.Blocks.OAK_LEAVES)));
     }
 
     private static DeferredBlock<Block> rock(String name, MapColor color) {

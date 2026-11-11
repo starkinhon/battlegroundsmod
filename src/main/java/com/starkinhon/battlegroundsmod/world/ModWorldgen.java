@@ -56,6 +56,16 @@ public final class ModWorldgen {
     public static final Supplier<NamekTreeFeature> NAMEK_TREE = FEATURES.register("namek_tree",
             () -> new NamekTreeFeature(NoneFeatureConfiguration.CODEC));
 
+    // The woods of the Floresta da Folha: its giant and medium trees, logs, bushes and ground, chunk by chunk
+    // (worldgen/placed_feature/leaf_forest; LeafTreeGen).
+    public static final Supplier<LeafForestFeature> LEAF_FOREST = FEATURES.register("leaf_forest",
+            () -> new LeafForestFeature(NoneFeatureConfiguration.CODEC));
+
+    // The Naruto biomes of the normal overworld (put there by NarutoRegion).
+    public static final ResourceKey<Biome> FLORESTA_DA_FOLHA = biome("floresta_da_folha");
+    public static final TagKey<Biome> NARUTO_BIOMES = TagKey.create(Registries.BIOME,
+            ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "universe_naruto"));
+
     // The Dragon Ball biomes of the normal overworld (tools/biomes/dragonball_biomes.py, put there by DragonRegion).
     public static final ResourceKey<Biome> TERRAS_DO_DRAGAO = biome("terras_do_dragao");
     public static final ResourceKey<Biome> PICOS_DO_DRAGAO = biome("picos_do_dragao");
