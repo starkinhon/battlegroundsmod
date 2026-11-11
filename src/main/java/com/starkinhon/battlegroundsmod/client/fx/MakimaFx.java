@@ -225,7 +225,7 @@ public final class MakimaFx {
             case MkNet.IMPACT -> impact(pos, (int) a);
             case MkNet.VOICE -> {
                 SHOTS.add(new Fx(kind, id, pos, dir, a, b, c, now));
-                ScreenFx.warp(pos.add(dir.scale(0.5)), (float) Math.max(2, dir.length() * 0.6), 0.35f, 1.4f, 0, dir.normalize(), 0, 0, 10, id);
+                ScreenFx.warp(pos.add(dir.scale(0.5)), (float) Math.max(2, dir.length() * 0.6), 0.35f, 1.4f, 0, dir.normalize(), 0, 0, 10, id, null, 0);
             }
             default -> SHOTS.add(new Fx(kind, id, pos, dir, a, b, c, now));
         }
@@ -294,7 +294,7 @@ public final class MakimaFx {
         int steps = (int) Math.min(8, Math.max(2, len / 4));
         for (int i = 0; i < steps; i++) {
             double u = (i + 0.5) / steps;
-            ScreenFx.warp(tip.add(dir.scale(u)), 1.6f + (kind > 1 ? 0.8f : 0), 0.45f, 2.2f, 0, n, 0, 0, 6 + i, -1);
+            ScreenFx.warp(tip.add(dir.scale(u)), 1.6f + (kind > 1 ? 0.8f : 0), 0.45f, 2.2f, 0, n, 0, 0, 6 + i, -1, null, 0);
         }
         HUD_BANGS.add(new double[] {ScreenFx.now(), tip.x, tip.y, tip.z, kind});
     }
@@ -1106,7 +1106,7 @@ public final class MakimaFx {
         FxDraw.billboard(c, f.a * 1.6f * g, seed, FxDraw.FLARE, 10 / 32f, CHAIN_HOT, 0.7f * k, true);
         FxDraw.billboard(c, f.a * 0.8f, 0, FxDraw.SOFT, 0.8f, WHITE, 0.9f * (1 - smooth(age / 4)), true);
         if (age < 1.5f) {
-            ScreenFx.warp(f.pos, f.a * 1.4f, 0.5f, 3f, 0, new Vec3(0, 1, 0), 0, 0, 8, -1);
+            ScreenFx.warp(f.pos, f.a * 1.4f, 0.5f, 3f, 0, new Vec3(0, 1, 0), 0, 0, 8, -1, null, 0);
         }
     }
 
@@ -1249,7 +1249,7 @@ public final class MakimaFx {
             FxDraw.billboard(p, 2.2f * s, -age * 0.1f, FxDraw.RING, 0.1f, AZUL, 0.6f * k, true);
             FxDraw.billboard(p, 0.5f * s, 0, FxDraw.SOFT, 1f, WHITE, k, true);
             if (age < 19) {
-                ScreenFx.warp(c, 2.2f, 0.4f, 1, 1, new Vec3(0, 1, 0), 0x3A7BFF, 0.1f, 2, f.id);
+                ScreenFx.warp(c, 2.2f, 0.4f, 1, 1, new Vec3(0, 1, 0), 0x3A7BFF, 0.1f, 2, f.id, null, 0);
             }
         } else {
             int tick = (int) Math.floor(age);
