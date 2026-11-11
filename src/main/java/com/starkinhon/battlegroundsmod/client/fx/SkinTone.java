@@ -65,26 +65,48 @@ public final class SkinTone {
                 img.downloadTexture(0, false);
                 int s = w / 64;
                 boolean overlay = h >= w;
-                // the right arm's front (44..46) and outer (40..43) faces, bottom four rows = the hand
+                // the hand only: the arm's bottom face (x 48..49 is inside it for wide and slim arms) and the
+                // last two rows all round the arm. Bracelets, cuffs and sleeve ends sit higher up.
                 List<int[]> px = new ArrayList<>();
-                for (int y = 28; y < 32; y++) {
-                    for (int x = 40; x < 47; x++) {
-                        int c = pick(img, x * s, y * s, overlay ? (y + 16) * s : -1);
-                        if (c != 0) {
-                            px.add(new int[] { (c >> 16) & 255, (c >> 8) & 255, c & 255 });
-                        }
+                for (int y = 16; y < 20; y++) {
+                    for (int x = 48; x < 50; x++) {
+                        add(px, pick(img, x * s, y * s, overlay ? (y + 16) * s : -1));
+                    }
+                }
+                for (int y = 30; y < 32; y++) {
+                    for (int x = 40; x < 52; x++) {
+                        add(px, pick(img, x * s, y * s, overlay ? (y + 16) * s : -1));
                     }
                 }
                 if (px.size() < 4) {
                     return null;
                 }
-                // median by brightness: a stray outline or highlight pixel doesn't tint the whole arm
-                px.sort((a, b) -> Integer.compare(a[0] * 3 + a[1] * 6 + a[2], b[0] * 3 + b[1] * 6 + b[2]));
-                int[] m = px.get(px.size() / 2);
+                // the most common color (in coarse bins), then the average of the pixels in that bin: a hand is
+                // mostly one tone, and a highlight, an outline or a ring must not tint the whole arm
+                Map<Integer, int[]> bins = new HashMap<>();
+                int[] best = null;
+                for (int[] c : px) {
+                    int key = (c[0] >> 5) << 6 | (c[1] >> 5) << 3 | (c[2] >> 5);
+                    int[] b = bins.computeIfAbsent(key, q -> new int[4]);
+                    b[0] += c[0];
+                    b[1] += c[1];
+                    b[2] += c[2];
+                    b[3]++;
+                    if (best == null || b[3] > best[3]) {
+                        best = b;
+                    }
+                }
+                int[] m = {best[0] / best[3], best[1] / best[3], best[2] / best[3]};
                 return (m[0] << 16) | (m[1] << 8) | m[2];
             }
         } catch (RuntimeException ex) {
             return null;
+        }
+    }
+
+    private static void add(List<int[]> px, int c) {
+        if (c != 0) {
+            px.add(new int[] {(c >> 16) & 255, (c >> 8) & 255, c & 255});
         }
     }
 

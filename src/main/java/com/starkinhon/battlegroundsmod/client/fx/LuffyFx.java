@@ -646,7 +646,7 @@ public final class LuffyFx {
             B = bd;
             // his rubber is his own skin: the hand's color from whatever skin the player uses
             TONE = SkinTone.of(e, SKIN);
-            TONE_RIM = mix(TONE, 0xFFFFFF, 0.55);
+            TONE_RIM = mix(TONE, 0xFFFFFF, 0.3);
             Vec3 feet = e.getPosition(partial);
             FEET = feet;
             Vec3 look = bd.move != null ? bd.move.look : e.getViewVector(partial);
