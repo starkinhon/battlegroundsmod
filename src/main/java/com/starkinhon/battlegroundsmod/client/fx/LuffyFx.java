@@ -222,6 +222,7 @@ public final class LuffyFx {
     private static Frame F;
     private static Vec3 CAM, C, TP, TG, FEET;
     private static double U, PU, DT, NOW, TIME, BODYY;
+    private static final double MS = 0.9375;
     private static double SX = 1, SY = 1, SZ = 1;
     private static Body B;
     private static Entity TGT;
@@ -237,7 +238,8 @@ public final class LuffyFx {
 
     // a point of his upper body (the page's luf.up: 0.75 up, Boundman's scale)
     private static Vec3 UP(double x, double y, double z) {
-        return W(x * SX, 0.75 + BODYY + y * SY, z * SZ);
+        // the page's body is 2 units tall; the game's player model is drawn at 0.9375 (1.875 blocks), so his upper body is too
+        return W(x * SX * MS, (0.75 + y * SY) * MS + BODYY, z * SZ * MS);
     }
 
     private static Vec3 shoulder() {
@@ -578,7 +580,7 @@ public final class LuffyFx {
         p.t = (float) TIME;
         p.alpha = (float) alpha;
         p.glow = false;
-        LuffyMesh.queue(LuffyMesh.Mesh.TORUS, basis(UP(0, 0.72, 0), CAM).rotateX((float) (Math.PI / 2)), p, LuffyMesh.FRONT, 13);
+        LuffyMesh.queue(LuffyMesh.Mesh.TORUS, basis(UP(0, 0.72, 0), CAM).scale((float) MS).rotateX((float) (Math.PI / 2)), p, LuffyMesh.FRONT, 13);
     }
 
     // ---------- every frame ----------
@@ -1857,12 +1859,13 @@ public final class LuffyFx {
                 parts[i].visible = WAS_VISIBLE[i];
             }
             // the Fusen: his head, arms and legs pushed out round the balloon (the page's balloonSet)
+            // (the head goes 1.3 up, not the page's 1.2: the game's head is smaller and lower, so this shows the same share of it)
             float k = (float) Math.min(1, bd.balloon);
             AbstractClientPlayer player = (AbstractClientPlayer) event.getEntity();
             float yaw = Mth.rotLerp(event.getPartialTick(), player.yBodyRotO, player.yBodyRot);
             var buf = event.getMultiBufferSource().getBuffer(RenderType.entityCutoutNoCull(event.getRenderer().getTextureLocation(player)));
             int light = event.getPackedLight();
-            Object[][] moved = {{m.head, 0f, 1.2f}, {m.hat, 0f, 1.2f}, {m.rightArm, 1.35f, 0.25f}, {m.rightSleeve, 1.35f, 0.25f}, {m.leftArm, -1.35f, 0.25f},
+            Object[][] moved = {{m.head, 0f, 1.3f}, {m.hat, 0f, 1.3f}, {m.rightArm, 1.35f, 0.25f}, {m.rightSleeve, 1.35f, 0.25f}, {m.leftArm, -1.35f, 0.25f},
                     {m.leftSleeve, -1.35f, 0.25f}, {m.rightLeg, 0.45f, 0f}, {m.rightPants, 0.45f, 0f}, {m.leftLeg, -0.45f, 0f}, {m.leftPants, -0.45f, 0f}};
             for (Object[] o : moved) {
                 ModelPart p = (ModelPart) o[0];
