@@ -480,7 +480,7 @@ public final class GaaraSand {
         // One loose grain: a little stone (an octahedron, the page's low icosahedron) at camera-relative x, y, z.
         void grain(float x, float y, float z, float s, Quaternionf q, float[] col) {
             Matrix4f m = new Matrix4f().translation(x, y, z).rotate(q).scale(s);
-            Matrix3f nm = new Matrix3f(m).normalize3x3();
+            Matrix3f nm = new Matrix3f().rotation(q);
             int r = (int) (Math.min(1, col[0]) * 255), g = (int) (Math.min(1, col[1]) * 255), bl = (int) (Math.min(1, col[2]) * 255);
             float[][] P = {{1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}};
             int[][] F = {{0, 2, 4}, {2, 1, 4}, {1, 3, 4}, {3, 0, 4}, {2, 0, 5}, {1, 2, 5}, {3, 1, 5}, {0, 3, 5}};
