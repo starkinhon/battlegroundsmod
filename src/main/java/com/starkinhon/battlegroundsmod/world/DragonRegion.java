@@ -65,7 +65,8 @@ public final class DragonRegion extends Region {
     }
 
     // The ground of each biome: the peaks striped like badlands (orange, white, yellow, red: the Dragon World's rock)
-    // with patches of grass, the desert red sand over red sandstone. Terras do Dragão keeps vanilla grass and dirt.
+    // with patches of grass, the desert red sand over red sandstone. Terras do Dragão is grass with patches of bare
+    // yellow ground (yellow terracotta, its edge a ring of plain terracotta), like the anime's dry yellow earth (Stark).
     private static SurfaceRules.RuleSource surface() {
         SurfaceRules.RuleSource redSand = SurfaceRules.state(Blocks.RED_SAND.defaultBlockState());
         SurfaceRules.RuleSource redSandstone = SurfaceRules.state(Blocks.RED_SANDSTONE.defaultBlockState());
@@ -87,6 +88,15 @@ public final class DragonRegion extends Region {
                         SurfaceRules.ifTrue(SurfaceRules.steep(), orange), redSandstone)),
                 SurfaceRules.ifTrue(SurfaceRules.stoneDepthCheck(0, true, 6, net.minecraft.world.level.levelgen.placement.CaveSurface.FLOOR),
                         redSandstone)));
-        return SurfaceRules.ifTrue(SurfaceRules.abovePreliminarySurface(), SurfaceRules.sequence(peaks, desert));
+        SurfaceRules.RuleSource yellow = SurfaceRules.state(Blocks.YELLOW_TERRACOTTA.defaultBlockState());
+        SurfaceRules.RuleSource plain = SurfaceRules.state(Blocks.TERRACOTTA.defaultBlockState());
+        SurfaceRules.ConditionSource patch = SurfaceRules.noiseCondition(Noises.SURFACE, 0.34, Double.MAX_VALUE);
+        SurfaceRules.ConditionSource rim = SurfaceRules.noiseCondition(Noises.SURFACE, 0.28, 0.34);
+        SurfaceRules.RuleSource lands = SurfaceRules.ifTrue(SurfaceRules.isBiome(ModWorldgen.TERRAS_DO_DRAGAO), SurfaceRules.sequence(
+                SurfaceRules.ifTrue(SurfaceRules.ON_FLOOR, SurfaceRules.ifTrue(water, SurfaceRules.sequence(
+                        SurfaceRules.ifTrue(patch, yellow), SurfaceRules.ifTrue(rim, plain)))),
+                SurfaceRules.ifTrue(SurfaceRules.UNDER_FLOOR, SurfaceRules.sequence(
+                        SurfaceRules.ifTrue(patch, yellow), SurfaceRules.ifTrue(rim, plain)))));
+        return SurfaceRules.ifTrue(SurfaceRules.abovePreliminarySurface(), SurfaceRules.sequence(peaks, desert, lands));
     }
 }
