@@ -66,6 +66,8 @@ public class BattlegroundsMod {
         com.starkinhon.battlegroundsmod.universe.NarutoWorld.register();
         com.starkinhon.battlegroundsmod.universe.SageMode.register();
         com.starkinhon.battlegroundsmod.universe.UniverseSpawns.register();
+        com.starkinhon.battlegroundsmod.universe.UniverseBiomes.register();
+        com.starkinhon.battlegroundsmod.universe.RoamingSouls.register();
         com.starkinhon.battlegroundsmod.world.MapBorder.register();
         com.starkinhon.battlegroundsmod.world.MapPlaces.register();
         com.starkinhon.battlegroundsmod.world.TimeChamber.register();
@@ -90,5 +92,6 @@ public class BattlegroundsMod {
 
     private void commonSetup(FMLCommonSetupEvent event) {
         LOGGER.info("Battlegrounds Mod carregado!");
+        event.enqueueWork(com.starkinhon.battlegroundsmod.world.DragonRegion::register);
     }
 }

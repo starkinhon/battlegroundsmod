@@ -93,7 +93,7 @@ public final class Progression {
     public static Component barName(String power, String home) {
         ProgressionSpec spec = ProgressionSpec.get();
         String universe = power == null || spec.universos() == null ? null : spec.universos().get(power);
-        if (universe == null && home != null && !home.isEmpty()) {
+        if (universe == null && home != null && !home.isEmpty() && !"mundo".equals(home)) {
             universe = home;
         }
         return Component.translatable("progression.battlegroundsmod.bar." + (universe != null ? universe : "poder"));

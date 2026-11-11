@@ -482,8 +482,10 @@ public final class ChallengeArenas {
         ChallengeSpec spec = ChallengeSpec.get();
         // A universe's common enemies (Saibaman...) only in that universe.
         ChallengeSpec.Universe mobUniverse = spec.universeOfMob(boss.bossId());
+        BlockPos at = BlockPos.containing(event.getX(), event.getY(), event.getZ());
+        String here = com.starkinhon.battlegroundsmod.universe.UniverseBiomes.universeAt(level, at);
         if (mobUniverse != null) {
-            if (Progression.on(level.getServer()) && !mobUniverse.id().equals(Universes.universeOf(level.dimension()))) {
+            if (Progression.on(level.getServer()) && !mobUniverse.id().equals(here)) {
                 event.setSpawnCancelled(true);
             }
             return;
@@ -492,11 +494,26 @@ public final class ChallengeArenas {
         if (universe == null || !Progression.on(level.getServer())) {
             return;
         }
-        if (!universe.id().equals(Universes.universeOf(level.dimension()))) {
+        Player nearest = level.getNearestPlayer(event.getX(), event.getY(), event.getZ(), 128, false);
+        if (level.dimension() == Level.OVERWORLD) {
+            // The universes are biomes of the normal world now (Stark 2026-11-11): the characters roam the whole world,
+            // rare, and nobody more than two tiers above the nearest player (a Tier 10 meets up to Tier 8), so the
+            // world grows with them.
+            Integer bossTier = null;
+            try {
+                bossTier = BossSpec.get(boss.bossId()).tier();
+            } catch (RuntimeException ignored) {
+            }
+            int playerTier = nearest instanceof ServerPlayer sp ? com.starkinhon.battlegroundsmod.power.Tiers.of(sp)
+                    : com.starkinhon.battlegroundsmod.power.Tiers.HUMANO;
+            if (nearest == null || (bossTier != null && bossTier < playerTier - 2)) {
+                event.setSpawnCancelled(true);
+                return;
+            }
+        } else if (!universe.id().equals(here)) {
             event.setSpawnCancelled(true);
             return;
         }
-        Player nearest = level.getNearestPlayer(event.getX(), event.getY(), event.getZ(), 128, false);
         boolean beaten = nearest != null && wins(nearest).contains(boss.bossId());
         if (!beaten && level.getRandom().nextDouble() >= spec.chanceRara()) {
             event.setSpawnCancelled(true);

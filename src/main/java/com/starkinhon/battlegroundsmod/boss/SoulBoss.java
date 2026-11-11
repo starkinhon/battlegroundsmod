@@ -194,7 +194,9 @@ public abstract class SoulBoss extends Monster {
     // they only fight a player who hits them first (HurtByTargetGoal). In their arena or outside the universes (a boss
     // fight in the overworld) they come at you as always.
     private boolean neutral() {
-        if (com.starkinhon.battlegroundsmod.challenge.Universes.universeOf(level().dimension()) == null) {
+        if (com.starkinhon.battlegroundsmod.challenge.Universes.universeOf(level().dimension()) == null
+                && !(level().dimension() == net.minecraft.world.level.Level.OVERWORLD && level() instanceof net.minecraft.server.level.ServerLevel server
+                        && com.starkinhon.battlegroundsmod.power.Progression.on(server.getServer()))) {
             return false;
         }
         return com.starkinhon.battlegroundsmod.skill.ChallengeSpec.get().universeOf(bossId()) != null;

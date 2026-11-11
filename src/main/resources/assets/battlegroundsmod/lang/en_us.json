@@ -1249,5 +1249,12 @@
   "advancements.battlegroundsmod.souls.sala_tempo.title": "A Year in a Day",
   "advancements.battlegroundsmod.souls.sala_tempo.description": "Stay the whole year in the Hyperbolic Time Chamber",
   "advancements.battlegroundsmod.souls.namek.title": "Green Planet",
-  "advancements.battlegroundsmod.souls.namek.description": "Set foot on Namek"
+  "advancements.battlegroundsmod.souls.namek.description": "Set foot on Namek",
+  "biome.battlegroundsmod.terras_do_dragao": "Dragon Lands",
+  "biome.battlegroundsmod.picos_do_dragao": "Dragon Peaks",
+  "biome.battlegroundsmod.deserto_vermelho": "Red Desert",
+  "message.battlegroundsmod.entrou_universo.dragonball": "You entered the Dragon Ball universe",
+  "message.battlegroundsmod.entrou_bioma": "%s",
+  "message.battlegroundsmod.universe_no_mundo": "The universes are in your own world now: look for their biomes.",
+  "entity.battlegroundsmod.pterodactilo": "Pterodactyl"
 }

@@ -160,6 +160,11 @@ public final class ModEntities {
             () -> EntityType.Builder.<com.starkinhon.battlegroundsmod.animal.Dinosaur>of(com.starkinhon.battlegroundsmod.animal.Dinosaur::new, MobCategory.MONSTER)
                     .sized(0.9f, 1.3f).eyeHeight(1.15f).clientTrackingRange(10).build("raptor"));
 
+    // The pterodactyls over the Dragon Ball biomes: scenery (animal/Pterodactyl).
+    public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.animal.Pterodactyl>> PTERODACTILO = ENTITY_TYPES.register("pterodactilo",
+            () -> EntityType.Builder.<com.starkinhon.battlegroundsmod.animal.Pterodactyl>of(com.starkinhon.battlegroundsmod.animal.Pterodactyl::new, MobCategory.AMBIENT)
+                    .sized(1.6f, 0.8f).clientTrackingRange(16).build("pterodactilo"));
+
     // The Dragon Ball start (Stark 2026-11-10): Raditz's opening fight, the Cell Jr. of Cell's ring, Babidi's guardians.
     public static final Supplier<EntityType<SoulMob>> RADITZ = mob("raditz");
     public static final Supplier<EntityType<SoulMob>> CELL_JR = ENTITY_TYPES.register("cell_jr", () -> EntityType.Builder.<SoulMob>of(SoulMob::new, MobCategory.MONSTER)
@@ -263,6 +268,7 @@ public final class ModEntities {
         }
         event.put(TIRANOSSAURO.get(), com.starkinhon.battlegroundsmod.animal.Dinosaur.attributes(true).build());
         event.put(RAPTOR.get(), com.starkinhon.battlegroundsmod.animal.Dinosaur.attributes(false).build());
+        event.put(PTERODACTILO.get(), com.starkinhon.battlegroundsmod.animal.Pterodactyl.attributes().build());
         event.put(NPC_GOHAN.get(), com.starkinhon.battlegroundsmod.npc.UniverseNpc.createAttributes().build());
         event.put(NPC_KORIN.get(), com.starkinhon.battlegroundsmod.npc.UniverseNpc.createAttributes().build());
         event.put(NPC_BULMA.get(), com.starkinhon.battlegroundsmod.npc.UniverseNpc.createAttributes().build());

@@ -289,6 +289,7 @@ public class BattlegroundsModClient {
         });
         event.registerEntityRenderer(ModEntities.TIRANOSSAURO.get(),
                 context -> new com.starkinhon.battlegroundsmod.client.animal.DinoRenderer(context, "tiranossauro", 2.6f));
+        event.registerEntityRenderer(ModEntities.PTERODACTILO.get(), com.starkinhon.battlegroundsmod.client.animal.PteroRenderer::new);
         event.registerEntityRenderer(ModEntities.RAPTOR.get(),
                 context -> new com.starkinhon.battlegroundsmod.client.animal.DinoRenderer(context, "raptor", 1.0f));
         event.registerEntityRenderer(ModEntities.SOLDADO_FREEZA.get(),
@@ -348,6 +349,8 @@ public class BattlegroundsModClient {
     private static void onRegisterLayerDefinitions(EntityRenderersEvent.RegisterLayerDefinitions event) {
         event.registerLayerDefinition(com.starkinhon.battlegroundsmod.client.animal.DinoModel.LAYER,
                 com.starkinhon.battlegroundsmod.client.animal.DinoModel::create);
+        event.registerLayerDefinition(com.starkinhon.battlegroundsmod.client.animal.PteroModel.LAYER,
+                com.starkinhon.battlegroundsmod.client.animal.PteroModel::create);
     }
 
     // Players' eyes can trail light too (Mangekyo, see Aura), so their renderers learn where the eyes are.

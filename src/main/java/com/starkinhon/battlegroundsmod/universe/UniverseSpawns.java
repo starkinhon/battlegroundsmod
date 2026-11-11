@@ -63,7 +63,7 @@ public final class UniverseSpawns {
             if (level.getDifficulty() == Difficulty.PEACEFUL || !level.getGameRules().getBoolean(net.minecraft.world.level.GameRules.RULE_DOMOBSPAWNING)) {
                 continue;
             }
-            String id = Universes.universeOf(level.dimension());
+            String id = UniverseBiomes.universeAt(level, player.blockPosition());
             ChallengeSpec.Universe universe = id == null ? null : ChallengeSpec.get().universe(id);
             if (universe == null || universe.mobs() == null || universe.mobs().isEmpty()) {
                 continue;
@@ -78,6 +78,9 @@ public final class UniverseSpawns {
                     spawnNamek(level, player);
                 } else {
                     spawnEarth(level, player);
+                    if (level.dimension() == net.minecraft.world.level.Level.OVERWORLD) {
+                        skyLife(level, player);
+                    }
                 }
                 continue;
             }
@@ -116,6 +119,26 @@ public final class UniverseSpawns {
     // the pirates; around the Red Ribbon base its soldiers. A group is picked for the spot it lands on.
     static final List<String> EARTH_MOBS = List.of("saibaman", "soldado_red_ribbon", "bandido_deserto", "pirata", "yeti",
             "raptor", "tiranossauro");
+
+    // In the normal overworld (Stark 2026-11-11: o universo virou biomas): by the Dragon Ball biome of the spot. The
+    // pirates by the sea, the Saibamen and bandits in the red desert, the Red Ribbon and the yeti in the peaks, the
+    // dinosaurs and Saibamen in the green lands. Null outside the Dragon Ball biomes.
+    static List<String> earthMobs(ServerLevel level, int x, int z) {
+        if (level.getChunkSource().getGenerator() instanceof com.starkinhon.battlegroundsmod.world.MapChunkGenerator) {
+            return earthMobs(x, z);
+        }
+        var biome = level.getBiome(new BlockPos(x, level.getSeaLevel(), z));
+        if (UniverseBiomes.universeOf(biome) == null) {
+            return null;
+        }
+        if (biome.is(com.starkinhon.battlegroundsmod.world.ModWorldgen.DESERTO_VERMELHO)) {
+            return List.of("saibaman", "saibaman", "bandido_deserto", "raptor");
+        }
+        if (biome.is(com.starkinhon.battlegroundsmod.world.ModWorldgen.PICOS_DO_DRAGAO)) {
+            return List.of("soldado_red_ribbon", "soldado_red_ribbon", "yeti", "raptor");
+        }
+        return List.of("raptor", "raptor", "tiranossauro", "saibaman", "soldado_red_ribbon");
+    }
 
     static List<String> earthMobs(int x, int z) {
         double rx = x - com.starkinhon.battlegroundsmod.world.DragonBallPlaces.RED_RIBBON_X;
@@ -171,10 +194,18 @@ public final class UniverseSpawns {
         int dist = EARTH_MIN_DIST + random.nextInt(EARTH_MAX_DIST - EARTH_MIN_DIST + 1);
         int x = player.getBlockX() + (int) Math.round(Math.cos(angle) * dist);
         int z = player.getBlockZ() + (int) Math.round(Math.sin(angle) * dist);
-        if (com.starkinhon.battlegroundsmod.world.DragonBallPlaces.safe(x, z)) {
+        boolean drawn = level.getChunkSource().getGenerator() instanceof com.starkinhon.battlegroundsmod.world.MapChunkGenerator;
+        if (drawn && com.starkinhon.battlegroundsmod.world.DragonBallPlaces.safe(x, z)) {
             return false;
         }
-        List<String> mobs = earthMobs(x, z);
+        List<String> mobs = earthMobs(level, x, z);
+        if (mobs == null) {
+            return false;
+        }
+        if (!drawn && nearWater(level, new BlockPos(x, level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z), z))) {
+            // the shore of a Dragon Ball biome: pirates
+            mobs = List.of("pirata");
+        }
         String id = mobs.get(random.nextInt(mobs.size()));
         EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.get(ResourceLocation.fromNamespaceAndPath(
                 com.starkinhon.battlegroundsmod.BattlegroundsMod.MODID, id));
@@ -194,6 +225,26 @@ public final class UniverseSpawns {
             }
         }
         return any;
+    }
+
+    // Pterodactyls circling high over the Dragon Ball biomes (Stark 2026-11-11), two to four in sight.
+    private static void skyLife(ServerLevel level, ServerPlayer player) {
+        int near = level.getEntitiesOfClass(com.starkinhon.battlegroundsmod.animal.Pterodactyl.class,
+                player.getBoundingBox().inflate(96, 128, 96)).size();
+        RandomSource random = level.getRandom();
+        if (near >= 2 + random.nextInt(3)) {
+            return;
+        }
+        double angle = random.nextDouble() * Math.PI * 2;
+        int dist = 30 + random.nextInt(35);
+        int x = player.getBlockX() + (int) Math.round(Math.cos(angle) * dist);
+        int z = player.getBlockZ() + (int) Math.round(Math.sin(angle) * dist);
+        if (!level.hasChunkAt(new BlockPos(x, 0, z)) || UniverseBiomes.universeAt(level, new BlockPos(x, 64, z)) == null) {
+            return;
+        }
+        int y = Math.max(level.getHeight(Heightmap.Types.MOTION_BLOCKING, x, z), player.getBlockY()) + 24 + random.nextInt(18);
+        y = Math.min(y, level.getMaxBuildHeight() - 8);
+        com.starkinhon.battlegroundsmod.ModEntities.PTERODACTILO.get().spawn(level, new BlockPos(x, y, z), MobSpawnType.EVENT);
     }
 
     // Freeza's soldiers on Namek (its own dimension now): in groups on dry ground around the player, never too many.
@@ -269,7 +320,7 @@ public final class UniverseSpawns {
             return;
         }
         ServerLevel level = event.getLevel().getLevel();
-        String universe = Universes.universeOf(level.dimension());
+        String universe = UniverseBiomes.universeAt(level, event.getEntity().blockPosition());
         if (universe != null && Progression.on(level.getServer())
                 && (DragonBallWorld.UNIVERSE.equals(universe) || level.getRandom().nextFloat() >= VANILLA_KEPT)) {
             event.setSpawnCancelled(true);
@@ -287,7 +338,7 @@ public final class UniverseSpawns {
             return;
         }
         ServerLevel level = event.getLevel().getLevel();
-        if (!DragonBallWorld.UNIVERSE.equals(Universes.universeOf(level.dimension())) || !Progression.on(level.getServer())) {
+        if (!DragonBallWorld.UNIVERSE.equals(UniverseBiomes.universeAt(level, event.getEntity().blockPosition())) || !Progression.on(level.getServer())) {
             return;
         }
         if (event.getEntity() instanceof SoulBoss boss && ChallengeSpec.get().universeOf(boss.bossId()) != null) {
