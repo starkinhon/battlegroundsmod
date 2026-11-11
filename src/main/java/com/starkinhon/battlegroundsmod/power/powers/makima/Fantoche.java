@@ -84,6 +84,8 @@ public final class Fantoche {
         if (list.size() < MAX_STOCK) {
             list.add(new Stored(type, puppet.getName().getString()));
             save(owner, list);
+        } else {
+            SubCommon.warn(owner, "makima.c_cheio", puppet.getName().getString());
         }
     }
 
@@ -91,15 +93,11 @@ public final class Fantoche {
 
     public static boolean use(LivingEntity caster, ServerLevel level) {
         List<Stored> list = stock(caster);
-        if (list.isEmpty()) {
-            SubCommon.warn(caster, "makima.c_none");
-            return false;
-        }
-        if (Puppets.count(caster, Puppets.MOB) >= MAX_OUT) {
-            SubCommon.warn(caster, "makima.c_full");
-            return false;
-        }
+        boolean anyOut = !Puppets.of(caster, -1).isEmpty();
         if (!(caster instanceof ServerPlayer player)) {
+            if (list.isEmpty() || Puppets.count(caster, Puppets.MOB) >= MAX_OUT) {
+                return false;
+            }
             // A boss lets out the toughest one it has.
             int best = 0;
             for (int i = 1; i < list.size(); i++) {
@@ -109,6 +107,10 @@ public final class Fantoche {
             }
             return summon(caster, level, best);
         }
+        if (list.isEmpty() && !anyOut) {
+            SubCommon.warn(caster, "makima.c_none");
+            return false;
+        }
         SubCommon.Guard guard = SubCommon.guard(caster);
         Tasks.add(age -> {
             if (guard.broken()) {
@@ -116,14 +118,22 @@ public final class Fantoche {
             }
             if (!SubCommon.held(caster, age, 0)) {
                 // A tap: the first one kept.
-                summon(caster, level, 0);
+                if (stock(caster).isEmpty()) {
+                    SubCommon.warn(caster, "makima.c_none");
+                } else if (Puppets.count(caster, Puppets.MOB) >= MAX_OUT) {
+                    SubCommon.warn(caster, "makima.c_full");
+                } else {
+                    summon(caster, level, 0);
+                }
                 return true;
             }
             if (age >= HOLD) {
+                // Held: the wheel, with the ones kept and the ones out (her mobs and her souls) to command.
                 List<String> names = new ArrayList<>();
                 for (Stored s : stock(caster)) {
                     names.add(s.name() + "|" + s.type());
                 }
+                names.addAll(Puppets.wheel(caster));
                 PacketDistributor.sendToPlayer(player, new ModPayloads.MkOpen(0, Puppets.count(caster, Puppets.MOB), names));
                 return true;
             }

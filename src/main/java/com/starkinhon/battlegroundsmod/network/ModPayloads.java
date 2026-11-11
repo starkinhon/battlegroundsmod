@@ -1082,7 +1082,7 @@ public final class ModPayloads {
     }
 
     // Server -> client: Makima opens one of her screens (power/powers/makima). kind 0 the puppet wheel (entries = the
-    // stored mobs' names), 1 the Ritual's sheet (count = her puppets out, entries = "name|origin" of everyone she has
+    // stored mobs' "name|type", then the puppets out as "@id|kind|order|type|name"), 1 the Ritual's sheet (count = her puppets out, entries = "name|origin" of everyone she has
     // seen).
     public record MkOpen(int kind, int count, List<String> entries) implements CustomPacketPayload {
         public static final Type<MkOpen> TYPE = payloadType("mk_open");
@@ -1104,6 +1104,19 @@ public final class ModPayloads {
 
         @Override
         public Type<MkPick> type() {
+            return TYPE;
+        }
+    }
+
+    // Client -> server: an order given on Makima's wheel to a puppet that is out (entity id), or to all of them
+    // (Puppets.order: 0 back, 1 attack her target, 2 follow, 3 stay, 4 free, 5 let go, 6 all back, 7 all attack).
+    public record MkOrder(int action, int entity) implements CustomPacketPayload {
+        public static final Type<MkOrder> TYPE = payloadType("mk_order");
+        public static final StreamCodec<ByteBuf, MkOrder> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, MkOrder::action, ByteBufCodecs.VAR_INT, MkOrder::entity, MkOrder::new);
+
+        @Override
+        public Type<MkOrder> type() {
             return TYPE;
         }
     }
@@ -1725,6 +1738,11 @@ public final class ModPayloads {
         registrar.playToServer(MkPick.TYPE, MkPick.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer player) {
                 Tasks.as(player, () -> com.starkinhon.battlegroundsmod.power.powers.makima.Fantoche.pick(player, payload.index()));
+            }
+        }));
+        registrar.playToServer(MkOrder.TYPE, MkOrder.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
+            if (context.player() instanceof ServerPlayer player) {
+                Tasks.as(player, () -> com.starkinhon.battlegroundsmod.power.powers.makima.Puppets.order(player, payload.action(), payload.entity()));
             }
         }));
         registrar.playToServer(MkNames.TYPE, MkNames.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
