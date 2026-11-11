@@ -104,12 +104,14 @@ public final class Progression {
         if (victim.level().isClientSide) {
             return;
         }
-        if (victim instanceof ServerPlayer dead && on(dead)) {
+        if (victim instanceof ServerPlayer dead && on(dead) && !com.starkinhon.battlegroundsmod.universe.DragonBallWorld.immortal(dead)) {
             PowerData data = dead.getData(ModAttachments.POWER);
             data.poder = (float) Math.max(0, data.poder * (1 - ProgressionSpec.get().perdaMorte()));
         }
         ServerPlayer killer = killer(event);
-        if (killer == null || killer == victim || !on(killer)) {
+        // In the challenge arenas the win pays (ChallengeArenas.arenaPoder), not the kill.
+        if (killer == null || killer == victim || !on(killer)
+                || victim.level().dimension().equals(com.starkinhon.battlegroundsmod.challenge.ChallengeArenas.ARENAS)) {
             return;
         }
         Integer victimTier = tierOf(victim);

@@ -1,11 +1,15 @@
 package com.starkinhon.battlegroundsmod.item;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
+import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Fx;
+import com.starkinhon.battlegroundsmod.power.powers.sub.SubNet;
+import com.starkinhon.battlegroundsmod.power.powers.sub.db.DbCommon;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
 
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
@@ -25,11 +29,38 @@ import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
-// Papel-Bomba (Kibaku Fuda, Naruto): right click throws it up to 24 blocks. It sticks to whoever it hits (and follows
-// them) or to the wall, hisses for 1.5 s and blows up. The blast hurts but breaks no blocks.
+// Papel-Bomba (Kibaku Fuda, Naruto): right click throws one up to 24 blocks. It sticks to whoever it hits (and follows
+// them) or to the ground or wall, burns for 1.2 s and blows up like the Shikamaru's tags (the same tag and fire
+// effects): the blast grows with the user's tier like any move, and every other armed tag within 4.6 blocks goes off
+// with it, one after the other, so a few thrown around a spot make a chain (Stark 2026-11-10: the old one, a plain
+// vanilla explosion of fixed size, was "uma bosta"). Throws every 0.4 s.
 public class PaperBombItem extends Item {
     private static final double RANGE = 24;
-    private static final int FUSE = 30;
+    private static final int FUSE = 24;
+    private static final double CHAIN = 4.6;
+    // raw damage on the Tier 0 scale (Combat.hurtMagic scales it by the thrower's tier)
+    private static final float DAMAGE = 110;
+
+    private static final class Tag {
+        final int id = SubNet.newId();
+        final Player owner;
+        final ServerLevel level;
+        final Entity stuck;
+        final Vec3 offset;
+        Vec3 pos;
+        int fuse = FUSE;
+        boolean gone;
+
+        Tag(Player owner, ServerLevel level, Entity stuck, Vec3 pos) {
+            this.owner = owner;
+            this.level = level;
+            this.stuck = stuck;
+            this.pos = pos;
+            this.offset = stuck != null ? pos.subtract(stuck.position()) : Vec3.ZERO;
+        }
+    }
+
+    private static final List<Tag> ARMED = new ArrayList<>();
 
     public PaperBombItem(Properties properties) {
         super(properties.stacksTo(16));
@@ -47,24 +78,70 @@ public class PaperBombItem extends Item {
                     e -> e instanceof LivingEntity && e != player && e.isAlive(), 0.3f);
             Entity stuck = hit != null ? hit.getEntity() : null;
             Vec3 spot = stuck != null ? hit.getLocation() : end;
-            Vec3 offset = stuck != null ? spot.subtract(stuck.position()) : Vec3.ZERO;
+            Tag tag = new Tag(player, server, stuck, spot);
+            ARMED.add(tag);
+            int fly = Math.max(2, (int) Math.round(spot.distanceTo(eye) / 3.0));
+            Vec3 hand0 = eye.add(player.getLookAngle().scale(0.5)).add(0, -0.3, 0);
+            SubNet.send(server, SubNet.KUNAI, 0, hand0, spot.subtract(hand0), fly, 0, 0);
             Fx.sound(server, player.position(), SoundEvents.BOOK_PAGE_TURN, 1f, 1.4f);
-            Tasks.repeat(FUSE, age -> {
-                Vec3 at = stuck != null && stuck.isAlive() ? stuck.position().add(offset) : spot;
-                server.sendParticles(ParticleTypes.SMOKE, at.x, at.y, at.z, 2, 0.05, 0.05, 0.05, 0.01);
+            Tasks.add(age -> {
+                if (tag.gone) {
+                    return true;
+                }
+                if (tag.stuck != null && tag.stuck.isAlive()) {
+                    tag.pos = tag.stuck.position().add(tag.offset);
+                }
+                if (age < fly) {
+                    return false;
+                }
+                SubNet.send(server, SubNet.TAG, tag.id, tag.pos, Vec3.ZERO, 1, 1 - tag.fuse / (float) FUSE, 0);
                 if (age % 6 == 0) {
-                    Fx.sound(server, at, SoundEvents.TNT_PRIMED, 0.5f, 1.8f);
+                    Fx.sound(server, tag.pos, SoundEvents.FIRECHARGE_USE, 0.4f, 1.8f);
                 }
-                if (age == FUSE - 1) {
-                    server.explode(player, at.x, at.y, at.z, 2.6f, Level.ExplosionInteraction.NONE);
+                if (tag.fuse-- <= 0) {
+                    boom(tag);
+                    return true;
                 }
+                return false;
             });
-            player.getCooldowns().addCooldown(this, 20);
+            player.getCooldowns().addCooldown(this, 8);
             if (!player.getAbilities().instabuild) {
                 stack.shrink(1);
             }
         }
         return InteractionResultHolder.sidedSuccess(stack, level.isClientSide);
+    }
+
+    private static void boom(Tag tag) {
+        if (tag.gone) {
+            return;
+        }
+        tag.gone = true;
+        ARMED.remove(tag);
+        ServerLevel level = tag.level;
+        Vec3 at = tag.pos;
+        double r = 3.2;
+        SubNet.send(level, SubNet.TAG, tag.id, at, Vec3.ZERO, 1, 0, 1);
+        SubNet.send(level, SubNet.KATON_BOOM, 0, at, new Vec3(at.y, 0, 0), (float) r, 0, tag.id % 40);
+        DbCommon.screen(level, at, 58);
+        Fx.sound(level, at, SoundEvents.GENERIC_EXPLODE.value(), 1.6f, 0.9f + level.getRandom().nextFloat() * 0.2f);
+        for (LivingEntity t : Combat.inRadius(level, at, r, tag.owner)) {
+            double k = 1 - 0.5 * Math.min(1, Combat.center(t).distanceTo(at) / r);
+            Combat.hurtMagic(tag.owner, t, (float) (DAMAGE * k));
+            Combat.pushFrom(t, at, 0.7 * k, 0.4);
+        }
+        // the chain: the nearest armed tags go next, a few ticks apart
+        List<Tag> next = new ArrayList<>();
+        for (Tag other : ARMED) {
+            if (!other.gone && other.level == level && other.pos.distanceTo(at) <= CHAIN) {
+                next.add(other);
+            }
+        }
+        next.sort(Comparator.comparingDouble(o -> o.pos.distanceToSqr(at)));
+        for (int i = 0; i < next.size(); i++) {
+            Tag other = next.get(i);
+            other.fuse = Math.min(other.fuse, 2 + i * 2);
+        }
     }
 
     @Override

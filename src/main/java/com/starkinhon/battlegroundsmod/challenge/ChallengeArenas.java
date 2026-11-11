@@ -375,10 +375,36 @@ public final class ChallengeArenas {
             syncWins(player);
             giveItems(player, ChallengeSpec.get().challenge(session.id));
         }
+        arenaPoder(player, session.id, first);
         title(player, Component.translatable("message.battlegroundsmod.arena_won").withStyle(s -> s.withColor(0xD8352A).withBold(true)), name(session.id).copy());
         player.displayClientMessage(Component.translatable(first ? "message.battlegroundsmod.arena_unlocked" : "message.battlegroundsmod.arena_again",
                 name(session.id), RETURN_DELAY / 20), false);
         Fx.sound(player.serverLevel(), player.position(), SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, 1f, 1f);
+    }
+
+    // Poder for beating a challenge (Stark 2026-11-10: "os bosses dos desafios darem poder quando você vencer"). The kill
+    // in the arena pays nothing by itself (Progression skips the arenas), this does: the first win a good part of the
+    // player's tier (a whole tier for a book boss like Freeza), a rematch a little, nothing once 3+ tiers above it.
+    private static void arenaPoder(ServerPlayer player, String id, boolean first) {
+        if (!Progression.on(player)) {
+            return;
+        }
+        int tier = com.starkinhon.battlegroundsmod.power.Tiers.of(player);
+        int bossTier = tier;
+        try {
+            Integer t = BossSpec.get(id).tier();
+            bossTier = t == null ? tier : t;
+        } catch (RuntimeException ignored) {
+        }
+        var spec = com.starkinhon.battlegroundsmod.skill.ProgressionSpec.get();
+        double worth = Progression.value(bossTier) * spec.multSubAlma();
+        double gain;
+        if (first) {
+            gain = isBoss(id) ? Progression.cost(tier) : Math.max(Progression.cost(tier) * 0.5, worth);
+        } else {
+            gain = bossTier - tier >= spec.abaixoZera() ? 0 : worth * 0.3;
+        }
+        Progression.add(player, gain);
     }
 
     // The challenge's items, the first time it is beaten.
