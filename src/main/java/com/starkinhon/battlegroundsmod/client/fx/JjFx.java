@@ -18,11 +18,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.joml.Matrix4f;
+import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 import com.starkinhon.battlegroundsmod.power.powers.sub.SubNet;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -37,6 +38,8 @@ import net.minecraft.world.phys.Vec3;
 // effect's own age.
 final class JjFx {
     private static final float[] CE_INK = FxDraw.rgb(0x2CC8F2);
+    // Itadori's cursed energy in the shell aura (the Visualizador's IT_CE).
+    private static final float[] IT_CE = FxDraw.rgb(0x3D86FF);
     private static final float[] CE = FxDraw.rgb(0x4AA8FF);
     private static final float[] CE_W = FxDraw.rgb(0xDCEFFF);
     private static final float[] DIV_CYAN = FxDraw.rgb(0x5AD8FF);
@@ -102,9 +105,6 @@ final class JjFx {
 
     private static final List<Fx> SHOTS = new ArrayList<>();
     private static final Map<Long, Fx> TRACKED = new HashMap<>();
-    // Where each aura's fists were, tick by tick (the echoes that lag behind).
-    private static final Map<Integer, ArrayDeque<Vec3[]>> FISTS = new HashMap<>();
-    private static long fistTick = Long.MIN_VALUE;
 
     private JjFx() {
     }
@@ -115,7 +115,7 @@ final class JjFx {
 
     private static boolean stream(int kind) {
         return switch (kind) {
-            case SubNet.DIV_AURA, SubNet.BF_RING, SubNet.GUARD, SubNet.DASH_TRAIL, SubNet.BLOOD_BALL, SubNet.BLOOD_ORBS, SubNet.ROPE,
+            case SubNet.DIV_AURA, SubNet.DIV_MARK, SubNet.CUT_LOOP, SubNet.BF_RING, SubNet.GUARD, SubNet.DASH_TRAIL, SubNet.BLOOD_BALL, SubNet.BLOOD_ORBS, SubNet.ROPE,
                     SubNet.GROUND_MARK, SubNet.NAIL, SubNet.DOLL, SubNet.SIMPLE_DOMAIN -> true;
             default -> false;
         };
@@ -124,7 +124,7 @@ final class JjFx {
     // Kinds that last a while on one message, following an entity (a = ticks, 0 stops).
     private static boolean timed(int kind) {
         return switch (kind) {
-            case SubNet.SCALE, SubNet.RATIO, SubNet.GOLD_AURA, SubNet.SEAL_MARKS, SubNet.HOLD_RINGS, SubNet.COUGH, SubNet.SLEEP -> true;
+            case SubNet.SOUL, SubNet.SCALE, SubNet.RATIO, SubNet.GOLD_AURA, SubNet.SEAL_MARKS, SubNet.HOLD_RINGS, SubNet.COUGH, SubNet.SLEEP -> true;
             default -> false;
         };
     }
@@ -176,13 +176,13 @@ final class JjFx {
     static void clear() {
         SHOTS.clear();
         TRACKED.clear();
-        FISTS.clear();
     }
 
     private static double life(Fx f) {
         return switch (f.kind) {
             case SubNet.DIVERGENT -> f.a + 42;
             case SubNet.INK_BURST -> 20;
+            case SubNet.CUT_SNAP -> 21;
             case SubNet.ARC -> 8;
             case SubNet.CRACKS -> 70;
             case SubNet.BLOOD_BEAM -> 30;
@@ -207,7 +207,8 @@ final class JjFx {
 
     private static float fadeOut(Fx f) {
         return switch (f.kind) {
-            case SubNet.DIV_AURA, SubNet.GUARD -> 5;
+            case SubNet.DIV_AURA, SubNet.DIV_MARK, SubNet.GUARD -> 5;
+            case SubNet.CUT_LOOP -> 3;
             case SubNet.BF_RING -> 2;
             case SubNet.ROPE -> 6;
             case SubNet.SIMPLE_DOMAIN -> 10;
@@ -236,7 +237,6 @@ final class JjFx {
         boolean glow = DbFx.pass;
         if (glow) {
             prune(now);
-            recordFists(now, partial);
         }
         for (Fx f : SHOTS) {
             float age = (float) (now - f.born);
@@ -251,6 +251,7 @@ final class JjFx {
                     DbFx.nrHit(rel(f.pos), age, col, f.a, f.id + 5, 12);
                 }
                 case SubNet.ARC -> arc(f, age);
+                case SubNet.CUT_SNAP -> cutSnap(f, age);
                 case SubNet.CRACKS -> {
                     Vector3f c = rel(f.pos);
                     crackRing(c, age, f.a, 5 + (int) f.b, Math.max(5, (int) f.b), 0.9f * (1 - smooth((age - 46) / 22)));
@@ -305,6 +306,9 @@ final class JjFx {
             }
             switch (f.kind) {
                 case SubNet.DIV_AURA -> divAuraOf(f, age, partial, out);
+                case SubNet.DIV_MARK -> divMark(f, age, partial, out);
+                case SubNet.CUT_LOOP -> cutLoop(f, age, partial, out);
+                case SubNet.SOUL -> soul(f, age, partial, out);
                 case SubNet.BF_RING -> bfRing(f, age, out);
                 case SubNet.GUARD -> guard(f, partial, out);
                 case SubNet.DASH_TRAIL -> dashTrail(f, partial, out);
@@ -474,105 +478,80 @@ final class JjFx {
         }
     }
 
-    // The Divergent Fist's aura (approved by Stark, v56): a flat half-opaque blot of color (shape BRUSH) right behind the
-    // fist, black brush outline in parts, one tip on top, and black ink hairs leaking off the tip with a pinch of cyan.
-    static void divAura(Vector3f q, Vector3f d, float t, float s, float op, int seed) {
-        if (op <= 0.02f) {
+    // Itadori's cursed energy as the approved shell aura (Stark, 2026-11-11: the brush style is out for good): one 3D
+    // shell bent by noise into tongues, the same shader as the Visualizador's makeAura, in blue. c = the shell's middle,
+    // up = where its tongues point, stretch = how long it is along up.
+    static void ceShell(Vector3f c, Vector3f up, float stretch, float sx, float sy, float sz, float t, float growth, float alpha, float flash,
+            float seed, float tongue, float upAmt, float crown, float spike) {
+        if (!DbFx.pass || growth <= 0.001f || alpha <= 0.001f) {
             return;
         }
-        s /= 2.5f;
-        Vector3f lk = look(q);
-        Vector3f left = FxDraw.left();
-        Vector3f up = FxDraw.up();
-        Vector3f p = at(at(q, lk, 0.08f * s), d, -0.04f * s);
-        bb(at(p, up, 0.3f * s), 2.1f * s, 0, DbFx.BRUSH, DbFx.fract(seed * 0.137f), DIV_CYAN, op, false);
-        Vector3f top = at(at(p, up, 0.85f * s), lk, -0.03f * s);
-        for (int i = 0; i < 6; i++) {
-            float ph = DbFx.fract(t * 0.045f + hash(seed, i, 31));
-            float x0 = (hash(seed, i, 32) - 0.5f) * 0.35f * s;
-            float len = (0.35f + 0.35f * hash(seed, i, 33)) * s;
-            float fade = Mth.sin(ph * Mth.PI);
-            Vector3f last = null;
-            for (int j = 0; j <= 7; j++) {
-                float u = j / 7f;
-                float y = (ph * 0.5f + u * 0.5f) * len * 1.6f - 0.12f * s;
-                float w = Mth.sin(u * 3 + t * 0.25f + i * 1.7f) * 0.06f * s * u;
-                Vector3f pt = at(at(top, left, x0 * (1 - 0.4f * u) + w), up, y);
-                if (last != null) {
-                    float wd = (0.07f * (1 - u) + 0.012f) * s * fade;
-                    rib(last, pt, wd, FxDraw.SOLID, 0, INK, op, false);
-                    if (i % 2 == 0 && j >= 2 && j <= 4) {
-                        rib(last, pt, wd * 0.5f, FxDraw.SOLID, 0, DIV_CYAN, op, false);
-                    }
-                }
-                last = pt;
-            }
-        }
-    }
-
-    // Every tick, where each aura's fists are (for the echoes).
-    private static void recordFists(double now, float partial) {
-        long tick = (long) Math.floor(now);
-        if (tick == fistTick) {
+        if (!KiMesh.ready()) {
+            bb(c, 1.4f * sy * stretch, 0, FxDraw.SOFT, 0.2f, IT_CE, 0.4f * alpha * growth, true);
             return;
         }
-        fistTick = tick;
-        FISTS.keySet().removeIf(id -> !TRACKED.containsKey(key(SubNet.DIV_AURA, id)));
-        for (Fx f : TRACKED.values()) {
-            if (f.kind != SubNet.DIV_AURA) {
-                continue;
-            }
-            LivingEntity e = living(f.id);
-            if (e == null) {
-                continue;
-            }
-            Body b = body(e, partial);
-            ArrayDeque<Vec3[]> h = FISTS.computeIfAbsent(f.id, k -> new ArrayDeque<>());
-            h.addLast(new Vec3[] {fist(b, 1), fist(b, -1)});
-            while (h.size() > 10) {
-                h.removeFirst();
-            }
-        }
+        KiMesh.P p = KiMesh.p(KiMesh.SHELL);
+        p.phase = t / 20f * 1.5f;
+        p.time = t / 20f * 1.6f;
+        p.growth = Math.min(1, growth);
+        p.flashAmt = flash;
+        p.alpha = Math.min(1, alpha);
+        p.color = IT_CE;
+        p.seed = seed;
+        p.tongue = tongue;
+        p.up = upAmt;
+        p.crown = crown;
+        p.spike = spike;
+        p.thresh = 0.6f;
+        p.size = new float[] {sx, sy, sz};
+        Quaternionf q = new Quaternionf().rotationTo(0, 1, 0, up.x, up.y, up.z);
+        Matrix4f m = new Matrix4f().translation(c).rotate(q).scale(1, stretch, 1);
+        KiMesh.queue(KiMesh.Mesh.AURA, m, p, KiMesh.BOTH, 10);
     }
 
-    // The aura on the fists: it doesn't follow the fist, it lags in echoes (4 and 8 ticks behind) and only catches up an
-    // instant later, with a snap.
+    static void fistShell(Vector3f fist, float t, float growth, float flash, float seed) {
+        ceShell(add(fist, 0, 0.1f, 0), UP, 1, 0.2f, 0.34f, 0.2f, t, growth, 1, flash, seed, 0.5f, 0.75f, 0.9f, 0.12f);
+    }
+
+    // The cursed energy on Itadori: on the fist that strikes (b = 0), both fists in the zone (b = 1), or the fist and
+    // the whole body while the Divergent delay holds (b = 2). In first person the body shell would wrap the camera.
     private static void divAuraOf(Fx f, float age, float partial, float out) {
         LivingEntity e = living(f.id);
         if (e == null) {
             return;
         }
         Body b = body(e, partial);
-        ArrayDeque<Vec3[]> h = FISTS.get(f.id);
-        Vec3[][] hist = h == null ? new Vec3[0][] : h.toArray(new Vec3[0][]);
-        float op = f.a * out;
-        for (int side = 1; side >= -1; side -= 2) {
-            if (side == -1 && f.b < 1) {
-                break;
-            }
-            int k = side == 1 ? 0 : 1;
-            Vector3f now = rel(fist(b, side));
-            Vector3f d = safe(new Vector3f(now).sub(rel(shoulder(b, side))));
-            float gap1 = 0;
-            float gap2 = 0;
-            if (hist.length >= 9) {
-                Vector3f e1 = rel(hist[hist.length - 5][k]);
-                Vector3f e2 = rel(hist[hist.length - 9][k]);
-                gap1 = e1.distance(now);
-                gap2 = e2.distance(now);
-                divAura(e2, d, age, 1.1f, clamp(gap2 * 2, 0, 0.55f) * op, 7 + k);
-                divAura(e1, d, age, 1.2f, clamp(gap1 * 2.5f, 0, 0.8f) * op, 5 + k);
-            }
-            boolean moving = gap2 > 0.05f;
-            divAura(now, d, age, 1.3f, (moving ? 0.35f : 1) * op, 3 + k * 8);
+        float g = f.a * out;
+        boolean self = FxAnchor.firstPersonSelf(f.id);
+        fistShell(rel(fist(b, 1)), age, g, f.b == 2 ? 0.6f : 0, 1.3f);
+        if (f.b == 1) {
+            fistShell(rel(fist(b, -1)), age, g, 0, 2.9f);
+        }
+        if (f.b == 2 && !self) {
+            float s = (float) b.s();
+            ceShell(rel(b.point(0, 0, 1.0)), UP, 1, 0.66f * s, 1.16f * s, 0.54f * s, age, g, 0.9f, 0, 4.1f, 0.42f, 0.75f, 0.7f, 0.12f);
         }
     }
 
-    // The Divergent Fist: a dry white first impact, the energy late (waves up the arm, a mark swelling on the chest while
-    // the color drains), then the second impact goes through the body and out of the back in a cone of ink with rings.
+    // The delay stored on someone (holding Z): a small blue flame on the chest, pulsing.
+    private static void divMark(Fx f, float age, float partial, float out) {
+        LivingEntity e = living(f.id);
+        if (e == null) {
+            return;
+        }
+        Body b = body(e, partial);
+        float pulse = 0.75f + 0.25f * Mth.sin(age * 0.45f);
+        float s = (float) b.s();
+        ceShell(rel(b.point(0.22, 0, 1.2)), UP, 1, 0.13f * s, 0.2f * s, 0.13f * s, age, smooth(age / 4) * pulse * out, 1, 0, 6.7f, 0.5f, 0.75f, 0.7f,
+                0.12f);
+    }
+
+    // The Divergent Fist (preview v2): a dry white first impact, the energy late (the fist and body auras come from
+    // DIV_AURA), then the second impact goes through the body and out of the back as a jet of the shell aura, with rings
+    // and white streaks. b = 1: the stored delay going off (only the second impact).
     private static void divergent(Fx f, float age, float partial) {
         float delay = f.a;
-        float p1 = age;
+        float p1 = f.b == 1 ? -1 : age;
         float a = age - delay;
         Vector3f c = rel(f.pos);
         Vector3f dir = safe(vec(f.dir));
@@ -589,82 +568,41 @@ final class JjFx {
             }
         }
         if (p1 >= 0 && a < 2) {
-            LivingEntity e = living(f.id);
-            if (e != null) {
-                Body b = body(e, partial);
-                Vector3f fistP = rel(b.point(0.75, -0.3, 1.32));
-                Vector3f sh = rel(shoulder(b, 1));
-                Vector3f adir = safe(new Vector3f(fistP).sub(sh));
-                for (int k = 0; k < 3; k++) {
-                    float u = clamp((p1 - k * 3.5f) / 7, 0, 1);
-                    if (u <= 0 || u >= 1) {
-                        continue;
-                    }
-                    Vector3f p = lerp(sh, fistP, u);
-                    float sn = Mth.sin(u * Mth.PI);
-                    dsk(p, adir, (0.16f + 0.1f * sn) * 2, FxDraw.RING, 0.12f, CE_INK, sn, true);
-                    dsk(p, adir, (0.12f + 0.08f * sn) * 2, FxDraw.RING, 0.08f, CE_W, sn * 0.8f, false);
-                    ceTongue(p, safe(new Vector3f(adir).negate().add(0, 0.5f, 0)), 0.5f, 0.35f, 70 + k + (int) Math.floor(age / 2), sn, CE_INK);
-                }
-                warp(lerp(sh, fistP, 0.6f), 0.6f, 0.5f, 0, p1, null);
-            }
-            float sw = smooth(p1 / delay);
-            float pulse = 1 + 0.12f * Mth.sin(age * 1.8f);
-            bb(at(c, dir, 0.05f), 0.25f + 0.75f * sw * pulse, age * 0.02f, DbFx.CEINK, 0.83f, CE_INK, 1, false);
-            bb(c, 1.8f * sw, 0, FxDraw.SOFT, 0.2f, CE_INK, 0.45f * sw, true);
-            for (int i = 0; i < 8; i++) {
-                Vector3f d = sphere(41 + (int) Math.floor(age / 2), i);
-                float along = d.dot(dir);
-                d.sub(new Vector3f(dir).mul(along)).add(new Vector3f(dir).mul(Math.abs(along) * 0.3f)).normalize();
-                ceTongue(at(c, d, 0.15f), d, 0.4f + 0.5f * sw, 0.3f, 80 + i + (int) Math.floor(age / 2), sw * 0.8f, CE_INK);
-            }
-            warp(c, 1.2f + sw, 0.9f * sw, 2, p1, null);
-            if (DbFx.pass && a < 0) {
-                Minecraft mc = Minecraft.getInstance();
-                float near = mc.player == null ? 0 : 1 - smooth((float) (mc.player.position().distanceTo(f.pos) - 20) / 20);
-                ScreenFx.sustainGrade(10, smooth((p1 - 1) / 4) * 0.7f * near, 0x0A3A5A, f.pos);
-            }
+            // The energy late: a small flame swelling on the chest where it will come out.
+            float sw = smooth(p1 / Math.max(1, delay));
+            ceShell(at(c, dir, 0.05f), UP, 1, 0.13f, 0.2f, 0.13f, age, sw, 1, 0, 6.7f, 0.5f, 0.75f, 0.7f, 0.12f);
+            warp(c, 1.2f + sw, 0.6f * sw, 2, p1, null);
         }
         if (a >= 0) {
-            float g = easeOut(Math.min(1, a / 5));
-            float fo = a < 8 ? 1 : 1 - smooth((a - 8) / 16);
+            float fo = a < 5 ? 1 : 1 - smooth((a - 5) / 9);
+            float s = easeOut(Math.min(1, a / 5));
+            // The jet of cursed energy out of the back (the preview's burstA).
+            if (a < 14) {
+                Vector3f jet = at(c, dir, 0.9f + 1.2f * s);
+                ceShell(jet, dir, 0.7f + 1.5f * s, 0.42f, 1.0f, 0.42f, a, Math.min(1, a / 2), fo, a < 3 ? 1 : 0, 8.3f, 0.55f, 0.95f, 1, 0.2f);
+            }
             Vector3f back = at(c, dir, 0.35f);
             if (a < 6) {
-                bb(c, 7 * (1 - a / 7), 0, FxDraw.SOFT, 0.4f, CE_W, 1 - a / 6, true);
-                bb(c, 4, 0.2f, FxDraw.FLARE, 12 / 32f, CE_INK, 1 - a / 6, true);
+                bb(c, 5 * (1 - a / 7), 0, FxDraw.SOFT, 0.4f, CE_W, 0.8f * (1 - a / 6), true);
+                bb(c, 3, 0.2f, FxDraw.FLARE, 12 / 32f, IT_CE, 1 - a / 6, true);
             }
-            int tk = (int) Math.floor(a / 2);
-            if (fo > 0.02f) {
-                for (int i = 0; i < 20; i++) {
-                    Vector3f d = sphere(91, i).mul(0.55f).add(new Vector3f(dir)).add(0, 0.1f, 0).normalize();
-                    ceTongue(at(back, d, 0.1f), d, (1.6f + 2.4f * hash(91, i, 5)) * g, 0.9f + 0.5f * hash(91, i, 6), 300 + i * 7 + tk, fo, CE_INK);
-                }
-                for (int i = 0; i < 7; i++) {
-                    Vector3f d = sphere(93, i).mul(0.8f).add(new Vector3f(dir).mul(-0.6f)).add(0, 0.2f, 0).normalize();
-                    ceTongue(at(c, d, 0.1f), d, (0.6f + 0.6f * hash(93, i, 5)) * g, 0.5f, 400 + i * 5 + tk, fo * 0.8f, CE_INK);
-                }
-            }
-            if (a < 9) {
-                bb(c, (1.2f + 1.4f * g) * (1 - a / 12), a * 0.04f, DbFx.CEINK, 0.71f, CE_INK, 1, false);
-            }
-            for (int r = 0; r < 5; r++) {
+            for (int r = 0; r < 4; r++) {
                 float ar = a - r * 1.5f;
-                if (ar < 0 || ar > 18) {
+                if (ar < 0 || ar > 16) {
                     continue;
                 }
-                float k = ar / 18;
+                float k = ar / 16;
                 Vector3f p = at(back, dir, 0.3f + r * 0.9f + ar * 0.28f);
                 float rad = (0.5f + 0.35f * r) * (0.6f + 1.2f * easeOut(k));
-                dsk(p, dir, rad * 2, FxDraw.RING, 0.07f, CE_INK, (1 - k) * 0.95f, true);
-                dsk(p, dir, (rad - 0.02f) * 2, FxDraw.RING, 0.05f, BLACK, (1 - k) * 0.85f, false);
+                dsk(p, dir, rad * 2, FxDraw.RING, 0.07f, IT_CE, (1 - k) * 0.9f, true);
             }
             if (a < 14) {
-                dsk(c, new Vector3f(c).negate(), (0.6f + 3.2f * easeOut(a / 14)) * 2, FxDraw.RING, 0.06f, CE_W, 1 - a / 14, true);
+                dsk(c, new Vector3f(c).negate(), (0.6f + 3.2f * easeOut(a / 14)) * 2, FxDraw.RING, 0.06f, CE_W, 0.8f * (1 - a / 14), true);
             }
             if (a < 16) {
                 Vector3f gr = add(c, 0, -f.c + 0.05f, 0);
-                dsk(at(gr, dir, 0.3f), UP, (0.6f + 4.5f * easeOut(a / 16)) * 2, FxDraw.RING, 0.08f, CE_INK, 0.8f * (1 - a / 16), true);
-                warp(c, 3.5f, 1.3f * (1 - a / 16), 0, a, null);
+                dsk(at(gr, dir, 0.3f), UP, (0.6f + 4.5f * easeOut(a / 16)) * 2, FxDraw.RING, 0.08f, IT_CE, 0.6f * (1 - a / 16), true);
+                warp(c, 3.5f, 1.0f * (1 - a / 16), 0, a, null);
             }
             if (a <= 14) {
                 for (int i = 0; i < 14; i++) {
@@ -674,6 +612,165 @@ final class JjFx {
                 }
             }
             DbFx.nrDust(add(at(c, dir, 1.6f), 0, -f.c, 0), a - 3, 27, 14, 1.5f, new float[] {0.4f, 0.42f, 0.46f}, 40);
+        }
+    }
+
+    // ---------- Itadori: Corte de Tesoura and Golpe na Alma ----------
+
+    private static final float[] GHOST = {0.78f, 0.9f, 1f};
+
+    // A "cut here" loop (manga style): a dashed black line round the thing, each dash its own length, and white
+    // scissors with a black outline waiting on it, each pair its own size and snip. When it closes (a = 0..1) every
+    // pair runs along its stretch of the line, cutting the dashes behind it.
+    private static void cutLoop(Fx f, float age, float partial, float out) {
+        float r = (float) f.dir.x;
+        float k = f.a;
+        if (f.dir.y == 1) {
+            LivingEntity e = living((int) f.dir.z);
+            if (e == null) {
+                return;
+            }
+            float h = e.getBbHeight();
+            Vector3f feet = rel(e.getPosition(partial));
+            drawLoop(add(feet, 0, h * 0.72f, 0), r, 0.22f, f.id * 7 + 1, age, k, out, 2);
+            drawLoop(add(feet, 0, h * 0.45f, 0), r * 0.92f, -0.12f, f.id * 7 + 4, age, k, out, 1);
+        } else {
+            drawLoop(rel(f.pos), r, 0.04f, f.id * 7 + 2, age, k, out, 3);
+        }
+    }
+
+    private static void drawLoop(Vector3f c, float r, float tilt, int seed, float age, float k, float out, int pairs) {
+        float yaw = hash(seed, 1, 5) * Mth.TWO_PI;
+        Vector3f n = v(Mth.sin(tilt) * Mth.cos(yaw), Mth.cos(tilt), Mth.sin(tilt) * Mth.sin(yaw)).normalize();
+        Vector3f[] bs = basis(n);
+        float drawIn = smooth(age / 5);
+        int dashes = 22 + (int) (hash(seed, 2, 5) * 6);
+        float span = Mth.TWO_PI / pairs;
+        float[] start = new float[pairs];
+        for (int j = 0; j < pairs; j++) {
+            start[j] = j * span + hash(seed, j, 6) * 0.4f;
+        }
+        Vector3f look = FxDraw.left().cross(FxDraw.up(), new Vector3f()).normalize();
+        for (int i = 0; i < dashes; i++) {
+            float a0 = i / (float) dashes * Mth.TWO_PI;
+            if (i / (float) dashes > drawIn) {
+                break;
+            }
+            float len = (0.42f + 0.22f * hash(seed, i, 7)) * Mth.TWO_PI / dashes;
+            boolean cut = false;
+            for (int j = 0; j < pairs; j++) {
+                float rel = ((a0 - start[j]) % Mth.TWO_PI + Mth.TWO_PI) % Mth.TWO_PI;
+                if (rel < span && rel < k * span) {
+                    cut = true;
+                }
+            }
+            if (cut) {
+                continue;
+            }
+            Vector3f p0 = loopAt(c, bs, r, a0);
+            Vector3f p1 = loopAt(c, bs, r, a0 + len);
+            rib(p0, p1, 0.05f, FxDraw.SOLID, 0, INK, out, false);
+        }
+        for (int j = 0; j < pairs; j++) {
+            float sz = 0.2f + 0.1f * hash(seed, j, 8);
+            float ang = start[j] + (k > 0 ? k * span : Mth.sin(age * (0.05f + 0.03f * hash(seed, j, 9)) + j) * 0.18f);
+            Vector3f p = loopAt(c, bs, r + 0.07f, ang);
+            Vector3f t = safe(loopAt(c, bs, r, ang + 0.05f).sub(loopAt(c, bs, r, ang - 0.05f)));
+            Vector3f o = safe(new Vector3f(p).sub(c));
+            float snip = k > 0 ? 0.5f + 0.5f * Mth.sin(age * 2.6f + j) : 0.5f + 0.5f * Mth.sin(age * (0.25f + 0.15f * hash(seed, j, 10)) + j * 2);
+            scissors(p, t, o, look, sz * drawIn, 0.08f + 0.42f * snip, out);
+        }
+    }
+
+    private static Vector3f loopAt(Vector3f c, Vector3f[] bs, float r, float ang) {
+        return at(at(c, bs[0], Mth.cos(ang) * r), bs[1], Mth.sin(ang) * r);
+    }
+
+    // A pair of scissors at p pointing along t (o = out from the loop): two blades opening by open (radians), white
+    // inside a black outline, and two ring handles behind the pivot.
+    private static void scissors(Vector3f p, Vector3f t, Vector3f o, Vector3f look, float s, float open, float op) {
+        if (s <= 0.01f) {
+            return;
+        }
+        Vector3f toCam = safe(new Vector3f(p).negate());
+        Vector3f front = at(p, toCam, 0.012f);
+        for (int side = -1; side <= 1; side += 2) {
+            Vector3f d = safe(at(new Vector3f(t), o, side * open));
+            Vector3f tip = at(p, d, s);
+            Vector3f mid = at(p, d, s * 0.45f);
+            rib(at(p, d, -0.03f), tip, 0.075f * s / 0.25f, FxDraw.SOLID, 0, INK, op, false);
+            rib(at(front, d, 0.0f), at(mid, toCam, 0.012f), 0.042f * s / 0.25f, FxDraw.SOLID, 0, WHITE, op, false);
+            rib(at(mid, toCam, 0.012f), at(at(tip, d, -0.04f), toCam, 0.012f), 0.022f * s / 0.25f, FxDraw.SOLID, 0, WHITE, op, false);
+            Vector3f hd = safe(at(new Vector3f(t).negate(), o, -side * (0.6f + open)));
+            Vector3f handle = at(p, hd, s * 0.42f);
+            dsk(handle, toCam, s * 0.62f, FxDraw.RING, 0.32f, INK, op, false);
+            dsk(at(handle, toCam, 0.012f), toCam, s * 0.5f, FxDraw.RING, 0.22f, WHITE, op, false);
+        }
+        bb(at(p, toCam, 0.02f), 0.05f * s / 0.25f, 0, FxDraw.SOFT, 0.9f, INK, op, false);
+    }
+
+    // The scissors met: a white cut line across, a thin flash ring, and on a block the stone giving way.
+    private static void cutSnap(Fx f, float age) {
+        if (age > 20) {
+            return;
+        }
+        Vector3f c = rel(f.pos);
+        float r = f.a;
+        float k = age / 10;
+        Vector3f side = safe(FxDraw.left());
+        if (age < 10) {
+            rib(at(c, side, -r * 1.7f), at(c, side, r * 1.7f), 0.12f * (1 - k), FxDraw.SOLID, 0, INK, 1 - k, false);
+            rib(at(c, side, -r * 1.9f), at(c, side, r * 1.9f), 0.06f * (1 - k), FxDraw.STREAK, 0.9f, WHITE, 1 - k, true);
+            dsk(c, UP, r * 2 * (1 + easeOut(k) * 1.4f), FxDraw.RING, 0.05f, WHITE, 0.9f * (1 - k), true);
+        }
+        if (age < 4) {
+            bb(c, 1.2f + r, age * 0.2f, FxDraw.FLARE, 6 / 32f, WHITE, 1 - age / 4, true);
+        }
+        if (f.b == 0) {
+            debris(add(c, 0, 0.1f, 0), age, f.id, 8, r / 1.6f, v(0, 0, 0), ROCK);
+            DbFx.nrDust(add(c, 0, -0.4f, 0), age, f.id + 3, 10, r, DUST, 30);
+        }
+    }
+
+    // Golpe na Alma: the soul knocked out of the body (a pale see-through copy thrown back, then snapping in), and while
+    // the power is sealed, a dashed black band round the chest and pale wisps.
+    private static void soul(Fx f, float age, float partial, float out) {
+        LivingEntity e = living(f.id);
+        if (e == null) {
+            return;
+        }
+        Body b = body(e, partial);
+        Vector3f back = safe(vec(f.dir));
+        if (age < 18) {
+            float push = age < 8 ? easeOut(age / 8) : 1 - smooth((age - 8) / 10);
+            float op = 0.6f * (age < 12 ? 1 : 1 - smooth((age - 12) / 6));
+            Vector3f off = new Vector3f(back).mul(1.1f * push).add(0, 0.25f * push, 0);
+            Vector3f head = rel(b.point(0, 0, 1.62)).add(off);
+            Vector3f neck = rel(b.point(0, 0, 1.42)).add(off);
+            Vector3f hip = rel(b.point(0, 0, 0.82)).add(off);
+            bb(head, 0.55f, 0, FxDraw.SOFT, 0.5f, GHOST, op, true);
+            rib(neck, hip, 0.42f, FxDraw.BEAM, 0.4f, GHOST, op, true);
+            for (int side = -1; side <= 1; side += 2) {
+                Vector3f sh = rel(shoulder(b, side)).add(off);
+                Vector3f hand = rel(b.point(-0.05, -0.42 * side, 0.85)).add(off).add(new Vector3f(back).mul(0.25f * push));
+                rib(sh, hand, 0.16f, FxDraw.BEAM, 0.3f, GHOST, op * 0.85f, true);
+                Vector3f foot = rel(b.point(0, -0.13 * side, 0.05)).add(off).add(new Vector3f(back).mul(0.35f * push));
+                rib(hip, foot, 0.18f, FxDraw.BEAM, 0.3f, GHOST, op * 0.85f, true);
+            }
+        }
+        float on = smooth(age / 4) * out;
+        Vector3f chest = rel(b.point(0, 0, 1.15));
+        float r = (float) (0.42 * b.s());
+        for (int i = 0; i < 16; i++) {
+            float a0 = i / 16f * Mth.TWO_PI + age * 0.03f;
+            float a1 = a0 + (0.5f + 0.2f * hash(f.id, i, 3)) * Mth.TWO_PI / 16;
+            rib(add(chest, Mth.cos(a0) * r, 0, Mth.sin(a0) * r), add(chest, Mth.cos(a1) * r, 0, Mth.sin(a1) * r), 0.04f, FxDraw.SOLID, 0, INK, on,
+                    false);
+        }
+        for (int i = 0; i < 5; i++) {
+            float ph = DbFx.fract(age * (0.03f + 0.02f * hash(f.id, i, 4)) + hash(f.id, i, 5));
+            Vector3f p = add(chest, (hash(f.id, i, 6) - 0.5f) * 0.6f, 0.2f + ph * 0.9f, (hash(f.id, i, 7) - 0.5f) * 0.6f);
+            bb(p, 0.12f + 0.08f * hash(f.id, i, 8), 0, FxDraw.SOFT, 0.6f, GHOST, 0.5f * on * Mth.sin(ph * Mth.PI), true);
         }
     }
 

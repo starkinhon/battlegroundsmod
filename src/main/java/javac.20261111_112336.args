@@ -1,0 +1,5 @@
+-d
+/tmp/claude-0/jc
+-proc:none
+com/starkinhon/battlegroundsmod/power/powers/sub/jj/Itadori.java
+com/starkinhon/battlegroundsmod/client/fx/JjFx.java

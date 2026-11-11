@@ -104,6 +104,10 @@ public final class PowerLogic {
             // V with his Santuário open: Sukuna closes it (the second press right after the first: the fast version).
             return;
         }
+        if (PowerData.isUlt(slot) && com.starkinhon.battlegroundsmod.power.powers.sub.jj.Itadori.tesouraPress(player)) {
+            // V with the Corte de Tesoura marks up: Itadori marks one more thing, or closes every pair of scissors.
+            return;
+        }
         if (slot == 0 && com.starkinhon.battlegroundsmod.power.powers.uchiha.Katon.cancel(player)) {
             // Z while Madara breathes fire: he stops it.
             return;

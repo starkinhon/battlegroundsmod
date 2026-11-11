@@ -227,10 +227,11 @@ public final class SubNet {
     public static final int DUST = 99;
 
     // ---------- Jujutsu (power/powers/sub/jj, client/fx/JjFx) ----------
-    // The Divergent Fist's aura (stream): id = the entity, a = how strong (0..1), b = 0 the right fist, 1 both; it lags
-    // behind the fist in echoes when the fist moves.
+    // The cursed energy on the fists (stream): id = the entity, a = how strong (0..1), b = 0 the right fist, 1 both, 2 the
+    // whole body (the Divergent delay). Drawn as the approved shell aura, in blue.
     public static final int DIV_AURA = 100;
-    // The Divergent Fist: id = Itadori, pos = where it landed, dir = the punch; the second impact comes a ticks later.
+    // The Divergent Fist: id = Itadori, pos = where it landed, dir = the punch; the second impact comes a ticks later
+    // (b = 1: only the second impact, the stored delay going off; c = height above the ground).
     public static final int DIVERGENT = 101;
     // The Black Flash's ring closing on the fist (stream): id = Itadori, pos = the fist, a = how closed (0..1).
     public static final int BF_RING = 102;
@@ -244,6 +245,15 @@ public final class SubNet {
     public static final int CRACKS = 106;
     // Speed lines behind a dashing entity (stream): id = the entity, a = color (0 cyan, 1 red, 2 air).
     public static final int DASH_TRAIL = 107;
+    // Itadori. The Divergent Fist's delay stored on someone (stream): id = the target, a = how strong (0..1).
+    public static final int DIV_MARK = 108;
+    // A "cut here" loop of the Corte de Tesoura (stream): id = the mark, pos = its middle, dir.x = radius, dir.y = 1 on an
+    // entity (dir.z = its id, the loops follow the body), a = how far the scissors have closed (0..1).
+    public static final int CUT_LOOP = 109;
+    // The scissors snapped shut at pos: a = radius, b = 1 on an entity (blood), 0 on a block.
+    public static final int CUT_SNAP = 118;
+    // Golpe na Alma: the soul knocked out of someone and sealed (timed): id = the target, a = ticks.
+    public static final int SOUL = 119;
     // Choso. The ball of blood between his palms (stream): id = Choso, pos = between the hands, a = radius, b = how
     // compressed (0..1).
     public static final int BLOOD_BALL = 110;

@@ -148,18 +148,31 @@
       "avisoCor": "#6ff3ff",
       "avisoSom": "minecraft:item.armor.equip_iron"
     },
-    "dash": {
+    "tesoura": {
       "slot": 3,
       "tipo": "ult",
-      "peso": 0.7,
-      "recargaTicks": 900,
-      "recargaMaxTicks": 1305,
-      "avisoTicks": 6,
-      "distanciaMin": 4,
-      "distanciaMax": 11,
+      "peso": 0.8,
+      "recargaTicks": 700,
+      "recargaMaxTicks": 1000,
+      "avisoTicks": 4,
+      "distanciaMin": 0,
+      "distanciaMax": 3.8,
       "giroGrausPorTick": 14,
-      "avisoCor": "#6ff3ff",
-      "avisoSom": "minecraft:block.stone.break"
+      "avisoCor": "#ffffff",
+      "avisoSom": "minecraft:entity.sheep.shear"
+    },
+    "golpe_alma": {
+      "slot": 7,
+      "tipo": "golpe",
+      "peso": 0.7,
+      "recargaTicks": 400,
+      "recargaMaxTicks": 560,
+      "avisoTicks": 3,
+      "distanciaMin": 0,
+      "distanciaMax": 4,
+      "giroGrausPorTick": 14,
+      "avisoCor": "#cfe4ff",
+      "avisoSom": "minecraft:particle.soul_escape"
     }
   },
   "combos": {
@@ -175,9 +188,9 @@
     "itadori_2": {
       "peso": 1.0,
       "passos": [
-        "dash",
         "aproximar",
-        "black_flash"
+        "tesoura",
+        "divergente"
       ]
     },
     "itadori_3": {
@@ -185,6 +198,14 @@
       "passos": [
         "soco",
         "soco",
+        "black_flash"
+      ]
+    },
+    "itadori_4": {
+      "peso": 0.8,
+      "passos": [
+        "aproximar",
+        "golpe_alma",
         "black_flash"
       ]
     }
@@ -198,12 +219,14 @@
         "divergente",
         "black_flash",
         "manji",
-        "dash"
+        "tesoura",
+        "golpe_alma"
       ],
       "combos": [
         "itadori_1",
         "itadori_2",
-        "itadori_3"
+        "itadori_3",
+        "itadori_4"
       ],
       "agressividade": 0.75,
       "multRecarga": 1.0,

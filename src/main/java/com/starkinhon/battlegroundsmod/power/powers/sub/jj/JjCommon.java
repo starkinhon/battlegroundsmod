@@ -269,6 +269,10 @@ public final class JjCommon {
         if (attacker instanceof LivingEntity enemy && "nobara".equals(power(enemy))) {
             SubCommon.setState(target, NOBARA_BLOOD, 200);
         }
+        // Itadori's Ritmo: every blow he lands fills it.
+        if (attacker instanceof LivingEntity enemy && "itadori".equals(power(enemy))) {
+            Itadori.landed(enemy);
+        }
     }
 
     // Is someone inside Miwa's Simple Domain (the Infinite Void spares them)?
