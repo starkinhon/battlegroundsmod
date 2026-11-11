@@ -178,10 +178,25 @@ public final class DragonWind {
         return p;
     }
 
+    private static PoseStack.Pose skyPose;
+
     public static void onRenderLevel(RenderLevelStageEvent event) {
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_SKY) {
-            renderSunHalo(event);
-            renderAurora(event);
+            // After the sky the model-view isn't the camera's any more, so the halos and the aurora came out stuck to the
+            // screen (Stark on Namek: "ele não tá no mundo, tá na minha tela"). Draw them with the camera's rotation set
+            // explicitly, and an identity pose on top.
+            org.joml.Matrix4fStack view = com.mojang.blaze3d.systems.RenderSystem.getModelViewStack();
+            view.pushMatrix();
+            view.set(event.getModelViewMatrix());
+            com.mojang.blaze3d.systems.RenderSystem.applyModelViewMatrix();
+            skyPose = new PoseStack().last();
+            try {
+                renderSunHalo(event);
+                renderAurora(event);
+            } finally {
+                view.popMatrix();
+                com.mojang.blaze3d.systems.RenderSystem.applyModelViewMatrix();
+            }
             return;
         }
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS) {
@@ -278,7 +293,7 @@ public final class DragonWind {
         if (three > 0.001f) {
             // Namek's three suns: the sky's own one with a halo, and two more of ours, each a white-hot disc in a
             // golden glow, at their fixed places in the sky (it's always day there).
-            PoseStack.Pose pose = event.getPoseStack().last();
+            PoseStack.Pose pose = skyPose;
             MultiBufferSource.BufferSource buf = mc.renderBuffers().bufferSource();
             VertexConsumer o = buf.getBuffer(FxRenderTypes.AREA);
             // small soft glows (Stark: the big ones came out as a huge banded blot in the corner of the screen)
@@ -297,7 +312,7 @@ public final class DragonWind {
         Vec3 center = sun.scale(100);
         float low = 1 - Mth.clamp((float) sun.y * 2.5f, 0, 1);
         float r = 1f, g = Mth.lerp(low, 0.95f, 0.72f), b = Mth.lerp(low, 0.74f, 0.42f);
-        PoseStack.Pose last = event.getPoseStack().last();
+        PoseStack.Pose last = skyPose;
         MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
         VertexConsumer out = buffers.getBuffer(FxRenderTypes.AREA);
         int rings = 14, segments = 40;
@@ -335,7 +350,7 @@ public final class DragonWind {
         }
         long nightId = Math.floorDiv(mc.level.getDayTime() + 6000, 24000);
         RandomSource seed = new net.minecraft.world.level.levelgen.SingleThreadedRandomSource(nightId * 7919L + 17);
-        PoseStack.Pose last = event.getPoseStack().last();
+        PoseStack.Pose last = skyPose;
         MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
         VertexConsumer out = buffers.getBuffer(FxRenderTypes.AREA);
         int curtains = 3 + seed.nextInt(3);
