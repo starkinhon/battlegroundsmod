@@ -149,9 +149,10 @@ public final class PirateShipFeature extends Feature<NoneFeatureConfiguration> {
             put(castle + 2, deck + 1, (int) beam - 1, Blocks.BARREL.defaultBlockState());
             put(castle + 2, deck + 2, (int) beam - 1, Blocks.BARREL.defaultBlockState());
             chest(castle + 3, deck + 1, -((int) beam - 1), SUPPLY, bow.getCounterClockWise());
-            // The bowsprit, rising out over the water.
-            for (int i = 1; i <= 4; i++) {
-                put(half + 1 + i, deck + 1 + i / 2, 0, fence());
+            // The bowsprit: a spar along the ship, from the deck out over the water. It was four fences going up in steps
+            // that never joined and looked like loose posts floating by the bow (Stark's print 2026-11-12).
+            for (int u = half - 1; u <= half + 4; u++) {
+                put(u, deck + 1, 0, trim);
             }
             mast(half / 2, 11 + random.nextInt(3));
             mast(-half / 2 + 1, 9 + random.nextInt(3));

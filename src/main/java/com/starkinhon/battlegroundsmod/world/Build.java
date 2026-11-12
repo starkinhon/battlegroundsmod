@@ -27,9 +27,14 @@ import net.minecraft.world.level.block.state.BlockState;
 // ground). MapPlaces puts them in the world a few thousand per tick, in the order they were added (later ones win).
 public final class Build {
     // column: clear from pos up through everything above it in that column (MapPlaces), so no hill is left floating.
-    public record Put(BlockPos pos, BlockState state, boolean column) {
+    // fill: only where the world has air, water or plants (a skirt of ground under a place, never cutting the hills).
+    public record Put(BlockPos pos, BlockState state, boolean column, boolean fill) {
         public Put(BlockPos pos, BlockState state) {
-            this(pos, state, false);
+            this(pos, state, false, false);
+        }
+
+        public Put(BlockPos pos, BlockState state, boolean column) {
+            this(pos, state, column, false);
         }
     }
 
@@ -114,6 +119,27 @@ public final class Build {
 
     // Ground under a building put on uneven land (the normal world, WorldSites): a top block at y -1 and fill below,
     // in a cylinder, so nothing hangs over a slope.
+    // Ground poured under a place where the world has none (air or water), widening as it goes down so the place sits on
+    // a mound that meets the terrain or the sea floor instead of a cut platform hanging over a slope or the sea (Stark's
+    // 2026-11-12 print of the crashed ship on the coast). spread: blocks of radius gained per block down.
+    public Build skirt(double radius, int depth, double spread, BlockState top, BlockState fill) {
+        for (int j = 1; j <= depth; j++) {
+            double r = radius + spread * (j - 1);
+            int ri = (int) Math.ceil(r);
+            for (int i = -ri; i <= ri; i++) {
+                for (int k = -ri; k <= ri; k++) {
+                    double d = Math.sqrt(i * i + k * k);
+                    if (d <= r) {
+                        // the top of the slope (its outer ring) is the top block, the rest the fill
+                        BlockState state = d > r - spread - 1 ? top : fill;
+                        puts.add(new Put(new BlockPos(x + i, y - j, z + k), state, false, true));
+                    }
+                }
+            }
+        }
+        return this;
+    }
+
     public Build foundation(double radius, int depth, BlockState top, BlockState fill) {
         int r = (int) Math.ceil(radius);
         for (int i = -r; i <= r; i++) {

@@ -297,18 +297,23 @@ public final class WorldSites {
 
     // The crashed Capsule Corp ship, sunk in a scorched patch with wreckage and smoke around it.
     private static Build wreck(Build b, BlockState sand, BlockState sandstone) {
-        b.clearUp(14, 0, 16).foundation(13, 6, sand, sandstone);
+        // the scorched ground, and under it a mound down to the land or the sea floor (on a coast it hung as a flat
+        // platform over the water, Stark's print 2026-11-12)
+        b.clearUp(14, 0, 16).foundation(13, 6, sand, sandstone).skirt(13, 18, 0.8, sand, sandstone);
         for (int n = 0; n < 30; n++) {
             double a = b.random.nextDouble() * Math.PI * 2;
-            int r = 9 + b.random.nextInt(9);
+            // inside the scorched ground: out to 17 blocks they fell past its edge and hung in the air
+            int r = 9 + b.random.nextInt(4);
             int i = (int) Math.round(Math.cos(a) * r), k = (int) Math.round(Math.sin(a) * r);
-            Block piece = switch (b.random.nextInt(6)) {
-                case 0 -> Blocks.IRON_BLOCK;
-                case 1 -> Blocks.WHITE_CONCRETE;
-                case 2 -> Blocks.LIGHT_GRAY_CONCRETE;
-                case 3 -> Blocks.CHAIN;
-                case 4 -> Blocks.IRON_BARS;
-                default -> Blocks.COARSE_DIRT;
+            BlockState piece = switch (b.random.nextInt(6)) {
+                case 0 -> s(Blocks.IRON_BLOCK);
+                case 1 -> s(Blocks.WHITE_CONCRETE);
+                case 2 -> s(Blocks.LIGHT_GRAY_CONCRETE);
+                // a chain lies on the ground like a torn cable (standing up alone it looked hung from nothing)
+                case 3 -> s(Blocks.CHAIN).setValue(net.minecraft.world.level.block.ChainBlock.AXIS,
+                        b.random.nextBoolean() ? net.minecraft.core.Direction.Axis.X : net.minecraft.core.Direction.Axis.Z);
+                case 4 -> s(Blocks.IRON_BARS);
+                default -> s(Blocks.COARSE_DIRT);
             };
             b.set(i, 0, k, piece);
         }
