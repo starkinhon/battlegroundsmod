@@ -6146,6 +6146,872 @@ const DBFX = (() => {
 })();
 
 </script>
+<script>
+// Tao Pai Pai (vagando pelas Terras do Dragão). O assassino contratado que todo mundo reconhece e que a gente derruba
+// rápido: alto e magro, roupa chinesa rosa até o joelho, trança comprida, bigodinho fino e cara de deboche.
+// Golpes: Dodonpa (aponta o dedo, junta uma faísca amarela e solta um raio fino que fura) e Pilar Voador (arranca
+// um pilar de pedra do chão, arremessa, pula em cima, voa nele e salta numa voadora).
+'use strict';
+(() => {
+  const { n3, mix, mul } = ENG;
+  const { seq, loop } = FX;
+  const fr = x => x - Math.floor(x);
+  const cel = ENG.cel;
+  const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
+
+  function variant(seed) {
+    const R = FX.rnd(seed);
+    return { seed, robe: [[236, 150, 160], [226, 136, 150], [240, 170, 176]][Math.floor(R() * 3)], cyborg: R() < 0.3 };
+  }
+
+  function painters(v) {
+    const S = v.seed;
+    const shade = (base, q, s, lo = 0.84, hi = 1.12) => cel(base, 0.62 - 0.38 * q.ny + 0.1 * (n3(q.ax * 0.3, q.ay * 0.3, q.az * 0.3, s + S) - 0.5) + (q.f === 'top' ? 0.25 : 0) - (q.f === 'bottom' ? 0.3 : 0), lo, hi);
+    const SK = [240, 214, 190];
+    const P = {};
+    P.skin = q => shade(SK, q, 1);
+    // roupa: rosa com gola alta, botões de nó na frente e o sinal de "matar" nas costas (traços pretos, desenhados por posição)
+    P.robe = q => {
+      let c = shade(v.robe, q, 2);
+      if (q.f === 'north' && Math.abs(q.px - q.b.w * 0.62) < 0.35 && fr(q.py / 2.2) < 0.35) c = [60, 40, 44];
+      if (q.f === 'north' && Math.abs(q.px - (q.b.w * 0.62 - q.py * 0.0)) < 0.18) c = mul(c, 0.85);
+      if (q.f === 'south') {
+        const u = q.px / q.b.w, w = q.py / q.b.h;
+        const strokes = [[0.3, 0.18, 0.7, 0.18], [0.5, 0.1, 0.5, 0.7], [0.25, 0.42, 0.75, 0.42], [0.3, 0.7, 0.5, 0.45], [0.7, 0.7, 0.52, 0.5]];
+        for (const [x0, y0, x1, y1] of strokes) {
+          const dx = x1 - x0, dy = y1 - y0, l2 = dx * dx + dy * dy, k = Math.max(0, Math.min(1, ((u - x0) * dx + (w - y0) * dy) / l2));
+          if (Math.hypot(u - x0 - dx * k, w - y0 - dy * k) < 0.05) c = [30, 20, 24];
+        }
+      }
+      return c;
+    };
+    P.skirt = q => { if (q.f === 'top' || q.f === 'bottom') return null; let c = shade(v.robe, q, 3); if (q.py > q.b.h - 0.6) c = mul(c, 0.8); return c; };
+    P.pants = q => shade([240, 236, 230], q, 4);
+    P.shoe = q => shade([34, 30, 32], q, 5);
+    P.hair = q => { let c = shade([30, 28, 32], q, 6, 0.8, 1.3); if (fr(q.ay * 0.9 + q.ax * 0.3) < 0.2) c = mul(c, 0.7); return c; };
+    P.metal = q => { let c = shade([170, 176, 184], q, 7, 0.8, 1.3); if (fr(q.ay * 0.7) < 0.15) c = mul(c, 0.7); return c; };
+    P.head = q => {
+      let c = shade(SK, q, 8, 0.88, 1.06);
+      if (q.f === 'top' || (q.f !== 'north' && q.py < 2.2) || (q.f === 'south' && q.py < 5)) c = shade([30, 28, 32], q, 9, 0.8, 1.3);
+      if (v.cyborg && q.f === 'west' && q.py > 1.5 && q.py < 5) c = shade([170, 176, 184], q, 10, 0.8, 1.3);
+      if (q.f !== 'north') return c;
+      // rosto 7x7: franja curta, sobrancelha fina subindo, olho estreito, bigodinho fino caindo dos lados
+      const x = Math.min(6, Math.floor(q.px)), y = Math.min(6, Math.floor(q.py)), m = Math.min(x, 6 - x);
+      if (y === 0) c = [30, 28, 32];
+      if (y === 2 && m === 1) c = [40, 30, 30];
+      if (y === 3 && (m === 1 || m === 2)) c = m === 2 ? [30, 24, 24] : [236, 232, 226];
+      if (y === 5 && m >= 1 && m <= 2) c = [40, 30, 30];
+      if (y === 6 && m === 1) c = [40, 30, 30];
+      if (y === 5 && m === 3) c = mul(SK, 0.75);
+      if (v.cyborg && x === 0 && y >= 2 && y <= 4) c = [200, 40, 40];
+      return c;
+    };
+    return P;
+  }
+
+  function rigDef(P, v, low) {
+    const w = 7.2, L = 1.6;
+    const arm = s => ({
+      name: s < 0 ? 'bracoD' : 'bracoE', pivot: [s * (w / 2 + 1.4), -9 - L, 0], boxes: [{ x: -1.4, y: -1, z: -1.4, w: 2.8, h: 5.6, d: 2.8, p: P.robe }],
+      kids: [{
+        name: s < 0 ? 'anteD' : 'anteE', pivot: [0, 4.6, 0], boxes: [{ x: -1.5, y: 0, z: -1.5, w: 3, h: 3.6, d: 3, p: P.robe }, { x: -1.1, y: 3.4, z: -1.1, w: 2.2, h: 1.2, d: 2.2, p: v.cyborg && s > 0 ? P.metal : P.skin }],
+        kids: [{
+          name: s < 0 ? 'maoD' : 'maoE', pivot: [0, 4.6, 0], boxes: [{ x: -1.2, y: -0.2, z: -1.2, w: 2.4, h: 2.2, d: 2.4, p: v.cyborg && s > 0 ? P.metal : P.skin }],
+          kids: s < 0 ? [{ name: 'dedo', pivot: [0, 1.9, -0.6], boxes: [{ x: -0.35, y: 0, z: -0.35, w: 0.7, h: 2, d: 0.7, p: P.skin }] }] : [],
+        }],
+      }],
+    });
+    const leg = s => ({
+      name: s < 0 ? 'pernaD' : 'pernaE', pivot: [s * 1.8, 12 - L, 0], boxes: [{ x: -1.7, y: 0, z: -1.7, w: 3.4, h: 6.8, d: 3.4, p: P.pants }],
+      kids: [{ name: s < 0 ? 'canelaD' : 'canelaE', pivot: [0, 6.8, 0], boxes: [{ x: -1.6, y: 0, z: -1.6, w: 3.2, h: 5.4, d: 3.2, p: P.pants }, { x: -1.8, y: 5.4, z: -2.6, w: 3.6, h: 1.4, d: 4.4, p: P.shoe }] }],
+    });
+    return {
+      name: 'raiz', pivot: [0, 0, 0], kids: [{
+        name: 'quadril', pivot: [0, 12 - L, 0], boxes: [{ x: -w / 2, y: -2.4, z: -2, w, h: 2.6, d: 4, p: P.robe }],
+        kids: [
+          // aba da roupa na frente e atrás (balança com as pernas)
+          { name: 'abaF', pivot: [0, 0, -2.1], boxes: [{ x: -w / 2 + 0.4, y: 0, z: -0.3, w: w - 0.8, h: 6.6, d: 0.6, p: P.skirt }] },
+          { name: 'abaT', pivot: [0, 0, 2.1], boxes: [{ x: -w / 2 + 0.4, y: 0, z: -0.3, w: w - 0.8, h: 6.6, d: 0.6, p: P.skirt }] },
+          {
+            name: 'tronco', pivot: [0, -2.2, 0], boxes: [{ x: -w / 2, y: -10 - L, z: -2, w, h: 10 + L, d: 4, p: P.robe }, { x: -2.2, y: -11.8 - L, z: -2.2, w: 4.4, h: 1.6, d: 4.4, p: P.robe }], kids: [
+              {
+                name: 'cabeca', pivot: [0, -11.4 - L, 0], boxes: [{ x: -3.5, y: -7, z: -3.5, w: 7, h: 7, d: 7, p: P.head }, { x: -3.7, y: -7.4, z: -3.7, w: 7.4, h: 1.6, d: 7.4, p: P.hair }],
+                kids: low ? [] : [{
+                  name: 'tranca1', pivot: [0, -3.6, 3.4], rot: [0.25, 0, 0], boxes: [{ x: -0.9, y: 0, z: -0.9, w: 1.8, h: 6, d: 1.8, p: P.hair }],
+                  kids: [{ name: 'tranca2', pivot: [0, 6, 0], boxes: [{ x: -0.75, y: 0, z: -0.75, w: 1.5, h: 6, d: 1.5, p: P.hair }, { x: -0.5, y: 6, z: -0.5, w: 1, h: 1.6, d: 1, p: P.hair }] }],
+                }],
+              },
+              arm(-1), arm(1),
+            ],
+          },
+        ],
+      }, leg(-1), leg(1)],
+    };
+  }
+
+  function stance(r) {
+    r('pernaD', -0.1, 0.25, 0.08); r('pernaE', 0.1, -0.15, -0.08);
+    // mãos pra trás, de nariz empinado
+    r('bracoD', 0.35, 0, 0.1); r('anteD', -0.6, 0, 0); r('bracoE', 0.35, 0, -0.1); r('anteE', -0.6, 0, 0);
+    r('cabeca', -0.12, 0, 0);
+  }
+  function beam(c1) {
+    const mat = new THREE.ShaderMaterial({
+      transparent: true, depthWrite: false, side: THREE.DoubleSide,
+      uniforms: { uK: { value: 1 }, uT: { value: 0 }, uL: { value: 1 }, uC: { value: new THREE.Color(...c1) } },
+      vertexShader: 'varying vec3 vN; varying vec3 vV; varying vec2 vU; void main(){ vN=normalize(normalMatrix*normal); vec4 mv=modelViewMatrix*vec4(position,1.0); vV=normalize(-mv.xyz); vU=uv; gl_Position=projectionMatrix*mv; }',
+      fragmentShader: `varying vec3 vN; varying vec3 vV; varying vec2 vU; uniform float uK, uT, uL; uniform vec3 uC;
+        float h(vec2 p){ return fract(sin(dot(p, vec2(41.3, 289.1)))*43758.5); }
+        float n(vec2 x){ vec2 i=floor(x), f=fract(x); f=f*f*(3.0-2.0*f); return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x),f.y); }
+        void main(){ float face = abs(dot(vN, vV));
+          float w = n(vec2(vU.x * 8.0, vU.y * uL * 4.0 - uT * 30.0));
+          vec3 c = mix(uC * 0.8, uC, smoothstep(0.1, 0.5, face));
+          c = mix(c, vec3(1.0, 1.0, 0.92), smoothstep(0.45, 0.9, face + 0.2 * (w - 0.5)));
+          gl_FragColor = vec4(c, smoothstep(0.0, 0.3, face) * uK); }`,
+    });
+    const g = new THREE.CylinderGeometry(1, 1, 1, 16, 1, true); g.rotateX(Math.PI / 2);
+    const m = new THREE.Mesh(g, mat); m.frustumCulled = false;
+    m.at = (a, b, r, k, t) => { m.visible = k > 0.01; const L = b.distanceTo(a); m.position.copy(a).add(b).multiplyScalar(0.5); m.lookAt(b); m.scale.set(r, r, L); mat.uniforms.uK.value = k; mat.uniforms.uT.value = t; mat.uniforms.uL.value = L; };
+    return m;
+  }
+  // pilar de pedra: textura pintada por posição (veios, lascas), base com terra grudada
+  function pillar() {
+    const cv = document.createElement('canvas'); cv.width = 32; cv.height = 128;
+    const g = cv.getContext('2d'); const img = g.createImageData(32, 128);
+    for (let y = 0; y < 128; y++) for (let x = 0; x < 32; x++) {
+      const k = ENG.n3(x * 0.2, y * 0.08, 0, 151), vein = Math.abs(ENG.n3(x * 0.1, y * 0.03, 3, 152) - 0.5) < 0.03;
+      let c = [150 + 40 * k, 140 + 36 * k, 124 + 30 * k];
+      if (vein) c = [110, 100, 90];
+      if (y > 112) c = mix(c, [110, 86, 60], (y - 112) / 16);
+      const i = (y * 32 + x) * 4; img.data[i] = c[0]; img.data[i + 1] = c[1]; img.data[i + 2] = c[2]; img.data[i + 3] = 255;
+    }
+    g.putImageData(img, 0, 0);
+    const tex = new THREE.CanvasTexture(cv); tex.magFilter = THREE.NearestFilter;
+    const geo = new THREE.CylinderGeometry(0.32, 0.38, 3.2, 9, 4);
+    const pos = geo.attributes.position;
+    for (let i = 0; i < pos.count; i++) { const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i); const k = 1 + 0.12 * (ENG.n3(x * 3, y * 2, z * 3, 153) - 0.5); pos.setX(i, x * k); pos.setZ(i, z * k); }
+    geo.computeVertexNormals();
+    const m = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ map: tex, flatShading: true }));
+    m.frustumCulled = false;
+    return m;
+  }
+
+  function anim(P, t, mode, a, obj, e, ctx) {
+    const r = (n, x, y, z) => { if (!P[n]) return; const o = P[n].obj.rotation; o.x += x; o.y += y; o.z += z; };
+    const at = (n, off) => { obj.updateMatrixWorld(true); return P[n].obj.localToWorld(off.clone()); };
+    const braid = (sw, k = 1) => { r('tranca1', 0.1 * Math.sin(t * 1.4) * k, 0, 0.15 * Math.sin(t * 1.1) * k + sw); r('tranca2', 0.15 * Math.sin(t * 1.4 - 0.7) * k, 0, 0.2 * Math.sin(t * 1.1 - 0.7) * k); };
+
+    if (mode === 'parado') {
+      stance(r); braid(0);
+      // alisa o bigode de vez em quando, com desdém
+      const st = seq([[0.6, 0], [0.68, 1, 'out'], [0.88, 1], [0.95, 0]], fr(t / 5));
+      r('bracoD', -1.2 * st - 0.35 * st, 0, 0.2 * st); r('anteD', -1.7 * st + 0.6 * st, 0, 0); r('cabeca', 0, 0.15 * st, 0);
+      return;
+    }
+    if (mode === 'andar') {
+      const ph = t * 1.0;
+      for (const [s, off] of [['D', 0], ['E', 0.5]]) {
+        r('perna' + s, 0.5 * Math.sin((ph + off) * Math.PI * 2), 0, 0); r('canela' + s, 0.4 * Math.max(0, Math.sin((ph + off) * Math.PI * 2 + 1.4)), 0, 0);
+        r('braco' + s, 0.35, 0, 0); r('ante' + s, -0.6, 0, 0);   // anda de mão pra trás
+      }
+      r('abaF', -0.3 * Math.abs(Math.sin(ph * Math.PI * 2)), 0, 0); r('abaT', 0.2 * Math.abs(Math.sin(ph * Math.PI * 2)), 0, 0);
+      P.quadril.obj.position.y += 0.4 * Math.abs(Math.sin(ph * Math.PI * 2));
+      r('cabeca', -0.12, 0, 0); braid(0, 1.5);
+      return;
+    }
+
+    if (mode === 'dodonpa') {
+      const T = t % 3.0;
+      const R = ctx.ref; const RZ = -7.5; R.place(0, RZ, 0);
+      // vira de lado, estica o braço e aponta só o indicador; faísca cresce no dedo; o raio fino sai e fura
+      const aim = seq([[0, 0], [0.35, 1, 'out'], [1.9, 1], [2.3, 0, 'io']], T);
+      const charge = seq([[0.4, 0], [1.05, 1, 'in']], T);
+      r('quadril', 0, 0.6 * aim, 0); r('tronco', 0, 0.3 * aim, 0); r('cabeca', 0, -0.85 * aim, 0);
+      r('bracoD', -1.55 * aim, -0.55 * aim, 0); r('anteD', 0.05 * aim, 0, 0); r('maoD', -0.1 * aim, 0, 0);
+      r('bracoE', 0.35, 0, -0.1); r('anteE', -0.6, 0, 0);
+      r('pernaD', -0.2 * aim, 0, 0.15 * aim); r('pernaE', 0.2 * aim, 0, -0.1 * aim);
+      braid(0.3 * aim);
+      const tip = at('dedo', V3(0, 2.2, 0));
+      if (T > 0.4 && T < 1.15) {
+        ctx.get('faisca', () => DBFX.glow([1.0, 0.9, 0.3])).at(tip, 0.04 + 0.1 * charge + 0.02 * Math.sin(T * 60), 0.9, T);
+        ctx.get('luzD', () => DBFX.light(0xffe060)).at(tip, 1.5 * charge, 3);
+      }
+      if (T >= 1.1 && T < 1.8) {
+        const tgt = V3(0, 1.25, RZ + 0.2);
+        const out = seq([[1.1, 0], [1.16, 1]], T), fade = seq([[1.4, 1], [1.8, 0]], T);
+        ctx.get('raio', () => beam([1.0, 0.85, 0.25])).at(tip, tip.clone().lerp(tgt, out), 0.035 * fade + 0.01, fade, T);
+        ctx.get('luzD', () => DBFX.light(0xffe060)).at(tgt, 2.5 * fade, 4);
+        if (out >= 1) {
+          const k = (T - 1.16) / 0.9;
+          ctx.get('furo', FX.volume).set(tgt.clone().add(V3(0, 0, -0.35)), 0.45, Math.min(1, k), { fire: 0.8, seed: 8.8, dens: 9, rise: 0.4, smoke: [0.35, 0.32, 0.3] });
+          if (k < 0.15) { ctx.flash(tgt, 1); ctx.shake(0.4); }
+          ctx.get('fagulha', () => DBFX.grains({ n: 30, seed: 161, palette: [[255, 230, 120], [255, 255, 220], [255, 180, 60]], size: [0.012, 0.03], drag: 2, grav: 4, life: 0.5, spread: 0.05, add: true, cone: Rr => [(Rr() - 0.5) * 2, Rr() * 2, -2 - Rr() * 2] })).at(tgt, T - 1.16);
+        }
+      }
+      R.lean(-0.5 * seq([[1.16, 0], [1.3, 1, 'out'], [2.2, 1], [2.8, 0]], T));
+      return;
+    }
+
+    if (mode === 'pilar') {
+      const T = t % 5.2;
+      const R = ctx.ref; const RZ = -9; R.place(0, RZ, 0);
+      // 0-0.9 enfia a mão no chão e arranca o pilar (sobe com terra); 0.9-1.3 ergue e arremessa;
+      // 1.35 pula atrás e cai em pé em cima; 1.5-2.6 voa em pé no pilar, braços cruzados;
+      // 2.6 salta numa voadora no alvo; o pilar passa e se espatifa; 3.6 volta
+      const pz0 = -1.0;
+      const pullUp = seq([[0.2, 0], [0.9, 1, 'out']], T);
+      const lift = seq([[0.9, 0], [1.2, 1, 'out']], T);
+      const flight = seq([[1.25, 0], [2.9, 1, 'in']], T);
+      const pil = ctx.get('pilar', pillar); pil.visible = T < 3.3;
+      let pp = V3(0, -1.6 + 1.8 * pullUp, pz0), prot = 0;
+      if (T >= 0.9) { pp = V3(0, 0.2 + 1.8 + 0.6 * lift, pz0); prot = -Math.PI / 2 * lift; }
+      if (T >= 1.25) { const zz = pz0 + (RZ - 1.5 - pz0) * flight; pp = V3(0, 2.6 + 0.3 * Math.sin(Math.PI * flight), zz); prot = -Math.PI / 2; }
+      if (T >= 2.9) { const k = (T - 2.9) / 0.4; pp = V3(0.3 * k, 2.6 - 2.4 * k * k, RZ - 1.5 - 1.5 * k); prot = -Math.PI / 2 + 0.6 * k; }
+      pil.position.copy(pp); pil.rotation.set(prot, 0, 0);
+      // corpo
+      const crouch = seq([[0, 0], [0.2, 1, 'out'], [0.9, 1], [1.0, 0]], T);
+      r('tronco', 0.9 * crouch, 0, 0); r('pernaD', -0.8 * crouch, 0, 0); r('pernaE', -0.8 * crouch, 0, 0); r('canelaD', 1.3 * crouch, 0, 0); r('canelaE', 1.3 * crouch, 0, 0);
+      P.quadril.obj.position.y += 4 * crouch;
+      r('bracoD', -1.2 * crouch - 2.6 * lift * (1 - seq([[1.2, 0], [1.3, 1]], T)), 0, 0); r('bracoE', -1.2 * crouch - 2.6 * lift * (1 - seq([[1.2, 0], [1.3, 1]], T)), 0, 0);
+      if (T >= 1.3 && T < 2.6) {
+        // em pé no pilar, braços cruzados, roupa e trança batendo no vento
+        obj.position.set(0, pp.y + 0.35 + 1.5, pp.z + 0.6);
+        r('bracoD', -0.8, 0.6, 0); r('anteD', -1.8, 0, 0); r('bracoE', -0.8, -0.6, 0); r('anteE', -1.8, 0, 0);
+        r('abaF', 0.6 + 0.15 * Math.sin(T * 30), 0, 0); r('abaT', 0.9 + 0.2 * Math.sin(T * 26), 0, 0);
+        braid(0, 0); r('tranca1', 1.2 + 0.1 * Math.sin(T * 20), 0, 0); r('tranca2', 0.3 + 0.2 * Math.sin(T * 20 - 1), 0, 0);
+        r('cabeca', -0.2, 0, 0);
+      } else if (T >= 1.25 && T < 1.3) {
+        obj.position.set(0, 1.5 + 1.2, -0.3);
+      } else if (T >= 2.6 && T < 3.3) {
+        // voadora: perna direita esticada, a outra dobrada
+        const k = seq([[2.6, 0], [2.85, 1, 'out']], T);
+        const zz = (pz0 + (RZ - 1.5 - pz0) * 0.83) + 0.6;
+        obj.position.set(0, 4.45 + (1.9 - 4.45) * k + 0.4 * Math.sin(Math.PI * k), zz + (RZ + 1.0 - zz) * k);
+        obj.rotation.y = 0;
+        r('pernaD', -1.5 * k, 0, 0); r('pernaE', 0.2 * k, 0, 0); r('canelaE', 1.6 * k, 0, 0);
+        r('tronco', 0.4 * k, 0, 0); r('bracoD', -0.4, 0, 1.2 * k); r('bracoE', -0.4, 0, -1.2 * k);
+        r('abaF', 0.5, 0, 0); r('abaT', 0.7, 0, 0);
+      } else if (T >= 3.3) {
+        const k = seq([[3.3, 0], [4.2, 1, 'io']], T);
+        obj.position.set(0, 1.5, (RZ + 1.0) * (1 - k));
+        stance(r);
+      } else { braid(0); }
+      if (T > 0.2 && T < 1.4) ctx.get('terra', () => FX.debris(26, 167, [[120, 96, 70], [90, 74, 60], [150, 130, 100], [80, 110, 60]])).at(V3(0, 0.05, pz0), T - 0.2);
+      if (T > 0.2 && T < 1.0) ctx.shake(0.3);
+      const kick = T - 2.85;
+      if (kick > 0) {
+        const hp = V3(0, 1.3, RZ + 0.3);
+        if (kick < 0.08) { ctx.flash(hp, 1); ctx.get('impacto', () => DBFX.muzzle()).at(hp, ctx.camera, 1 - kick / 0.08, 3, 1.3); }
+        ctx.shake(Math.max(0, 0.8 - kick * 2));
+        const fly = seq([[2.85, 0], [3.5, 1, 'out']], T);
+        R.place(0, RZ - 3 * fly, 0.9 * Math.sin(Math.PI * fly)); R.lean(-1.3 * fly * (1 - seq([[4.5, 0], [5.2, 1]], T)));
+      }
+      if (T > 3.2 && T < 4.6) {
+        const k = (T - 3.2) / 1.4;
+        ctx.get('pilarQuebra', () => FX.debris(30, 171, [[170, 160, 140], [140, 130, 116], [190, 180, 160]])).at(V3(0.3, 0.3, RZ - 3), T - 3.2);
+        ctx.get('poeira', FX.volume).set(V3(0.3, 0.4, RZ - 3), 1.0, k, { fire: 0, seed: 4.1, dens: 7, rise: 0.4, smoke: [0.62, 0.56, 0.48] });
+      }
+      return;
+    }
+  }
+
+  window.MOBS = window.MOBS || [];
+  const fixed = [variant(4), variant(12)];
+  fixed[0].cyborg = false; fixed[1].cyborg = true;
+  const def = v => ({ def: rigDef(painters(v), v, false), low: rigDef(painters(v), v, true) });
+  window.MOBS.push({
+    id: 'tao_pai_pai', nome: 'Tao Pai Pai', bioma: 'Vilões do mundo', tier: 'Médio · tier 6 (raro)',
+    variants: fixed.map((v, i) => ({ nome: ['Assassino', 'Ciborgue (voltou)'][i], v, ...def(v) })),
+    randomVariant: () => { const v = variant(Math.floor(Math.random() * 1e5)); return { nome: 'Sorteado', v, ...def(v) }; },
+    anim, modes: [['parado', 'Parado'], ['andar', 'Andar'], ['dodonpa', 'Dodonpa'], ['pilar', 'Pilar Voador']],
+    cam: 6.5, lookY: 1.3, lookZ: { dodonpa: -3.5, pilar: -4.4 }, camFar: { dodonpa: 9.5, pilar: 13 }, camYaw: { dodonpa: -1.25, pilar: -1.3 },
+    info: {
+      'Tamanho': '2,1 blocos (alto e magro)',
+      'Vida': '90 (tier 6). Raro: só 1 por mundo de cada vez. Quando cai, dá pra ver ele de novo semanas depois na versão ciborgue.',
+      'Jeito': 'Vaga sozinho pelas Terras do Dragão e perto da torre do Karin. Quem passa perto vira "alvo contratado": ele avisa com uma fala e persegue.',
+      'Dodonpa': 'Vira de lado e aponta o dedo: a faísca amarela no dedo é o aviso. Raio finíssimo e muito rápido que fura (ignora parte da armadura). Dano em pacotes no jogo (Escudo de tier).',
+      'Pilar Voador': 'Arranca um pilar do chão (treme e espirra terra), arremessa, voa em cima dele de braços cruzados e salta numa voadora. Quebrar o pilar no ar (bater nele) derruba ele.',
+      'Solta': 'Trança do Tao Pai Pai (troféu), roupa rosa; raro: Alma do Tao Pai Pai.',
+      'Variações': 'Tom da roupa; a versão ciborgue tem braço e lado da cabeça de metal.',
+    },
+  });
+})();
+
+</script>
+<script>
+// Spopovich e Yamu (Deserto do Diabo). A dupla com a marca Majin que o Babidi solta pelo deserto pra caçar energia
+// pra reviver o Majin Boo. Andam juntos: o Spopovich segura, o Yamu suga com o aparelho.
+// Spopovich: Abraço Esmagador (agarra, levanta e esmaga; as veias saltam) e Investida Majin (corre de ombro).
+// Yamu: Sugar Energia (crava a agulha do aparelho e o frasco enche de luz) e Rajada Majin (bola de ki vermelha).
+'use strict';
+(() => {
+  const { n3, mix, mul } = ENG;
+  const { seq, loop } = FX;
+  const fr = x => x - Math.floor(x);
+  const cel = ENG.cel;
+  const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
+
+  function painters(v) {
+    const S = v.seed;
+    const shade = (base, q, s, lo = 0.84, hi = 1.12) => cel(base, 0.62 - 0.38 * q.ny + 0.1 * (n3(q.ax * 0.3, q.ay * 0.3, q.az * 0.3, s + S) - 0.5) + (q.f === 'top' ? 0.25 : 0) - (q.f === 'bottom' ? 0.3 : 0), lo, hi);
+    const P = {};
+    // pele com músculo marcado (sombra nas divisões) e veias quando "inchado" (v.veins controla no pintor da prévia)
+    P.skin = q => { let c = shade(v.skin, q, 1); if (v.big && q.f === 'north' && Math.abs(q.px - q.b.w / 2) < 0.3) c = mul(c, 0.88); return c; };
+    P.vein = q => { let c = shade(v.skin, q, 1); const k = Math.abs(n3(q.ax * 0.5, q.ay * 0.25, q.az * 0.5, 180 + S) - 0.5); if (k < 0.025) c = mix(c, [150, 70, 80], 0.3); return c; };
+    // macacão de luta (calça larga) com faixa na cintura e o M grande no peito
+    P.gi = q => {
+      let c = shade(v.gi, q, 2);
+      if (q.f !== 'top' && q.f !== 'bottom' && fr(q.ay * 0.3 + q.ax * 0.05) < 0.08) c = mul(c, 0.86);
+      return c;
+    };
+    P.vest = q => {
+      let c = shade(v.vest, q, 3);
+      if (q.f === 'north') {
+        const u = q.px / q.b.w, w = q.py / q.b.h;
+        // "M" do Majin em traços: duas pernas e o V no meio
+        const M = [[0.3, 0.7, 0.3, 0.3], [0.3, 0.3, 0.5, 0.55], [0.5, 0.55, 0.7, 0.3], [0.7, 0.3, 0.7, 0.7]];
+        for (const [x0, y0, x1, y1] of M) { const dx = x1 - x0, dy = y1 - y0, l2 = dx * dx + dy * dy, k = Math.max(0, Math.min(1, ((u - x0) * dx + (w - y0) * dy) / l2)); if (Math.hypot(u - x0 - dx * k, w - y0 - dy * k) < 0.055) c = [190, 40, 50]; }
+      }
+      return c;
+    };
+    P.belt = q => shade(v.belt, q, 4);
+    P.boot = q => shade([50, 44, 40], q, 5);
+    P.head = q => {
+      let c = shade(v.skin, q, 6, 0.88, 1.06);
+      if (q.f !== 'north') { if (v.hair && (q.f === 'west' || q.f === 'east') && q.py > 2.2 && q.py < 4 && q.pz > 3) c = shade([40, 36, 34], q, 7); return c; }
+      const W = q.b.w, x = Math.min(W - 1, Math.floor(q.px)), y = Math.min(q.b.h - 1, Math.floor(q.py)), m = Math.min(x, W - 1 - x);
+      // marca Majin na testa (M preto pequeno), olho pequeno e mau, boca
+      // M de 5x3 centrado na testa
+      const s0 = (W - 5) / 2, mx = x - s0;
+      const MM = ['X...X', 'XX.XX', 'X.X.X'];
+      if (y <= 2 && mx >= 0 && mx < 5 && MM[y][mx] === 'X') c = [30, 26, 30];
+      if (y === 4 && m === 1) c = v.big ? [30, 24, 24] : [240, 236, 230];
+      if (y === 4 && m === 2) c = v.big ? mul(v.skin, 0.75) : [30, 24, 24];
+      if (v.big && y === 5 && m === 2) c = mul(v.skin, 0.8);
+      if (y === q.b.h - 1 && m >= 2) c = v.big ? [120, 60, 60] : mul(v.skin, 0.6);
+      if (!v.big && y === q.b.h - 2 && m >= 2 && m <= 3) c = [50, 40, 36];   // bigodinho do Yamu
+      return c;
+    };
+    P.ear = q => shade(mul(v.skin, 0.92), q, 8);
+    P.device = q => { let c = shade([140, 146, 156], q, 9, 0.8, 1.3); if (fr(q.ay * 1.2) < 0.15) c = mul(c, 0.7); return c; };
+    P.flask = q => mix([150, 200, 220], [255, 255, 255], q.f === 'north' ? 0.3 : 0.1);
+    P.needle = q => [220, 224, 230];
+    return P;
+  }
+
+  function rigDef(P, v, low) {
+    const big = v.big, w = big ? 12 : 8, L = big ? 2.6 : 0, armW = big ? 4.4 : 3, hw = big ? 9 : 7, hh = big ? 7 : 7;
+    const arm = s => ({
+      name: s < 0 ? 'bracoD' : 'bracoE', pivot: [s * (w / 2 + armW / 2), -9 - L, 0], boxes: [{ x: -armW / 2, y: -1, z: -armW / 2, w: armW, h: 5 + L * 0.6, d: armW, p: big ? P.vein : P.skin }],
+      kids: [{
+        name: s < 0 ? 'anteD' : 'anteE', pivot: [0, 4 + L * 0.6, 0], boxes: [{ x: -armW / 2 + 0.2, y: 0, z: -armW / 2 + 0.2, w: armW - 0.4, h: 4.4 + L * 0.3, d: armW - 0.4, p: big ? P.vein : P.skin }],
+        kids: [{
+          name: s < 0 ? 'maoD' : 'maoE', pivot: [0, 4.4 + L * 0.3, 0], boxes: [{ x: -armW / 2, y: -0.4, z: -armW / 2, w: armW, h: big ? 3.6 : 3, d: armW, p: P.skin }],
+          // aparelho de sugar energia do Yamu: frasco, corpo de metal e agulha comprida
+          kids: !big && s < 0 ? [{ name: 'aparelho', pivot: [0, 1.8, -0.2], boxes: [{ x: -1, y: -0.6, z: -1, w: 2, h: 3.4, d: 2, p: P.device }, ...(low ? [] : [{ x: -0.8, y: 2.8, z: -0.8, w: 1.6, h: 1.2, d: 1.6, p: P.device }]), { x: -0.25, y: 4, z: -0.25, w: 0.5, h: 3, d: 0.5, p: P.needle }, { x: -0.9, y: -0.4, z: -2.6, w: 1.8, h: 3, d: 1.6, p: P.flask }] }] : [],
+        }],
+      }],
+    });
+    const leg = s => ({
+      name: s < 0 ? 'pernaD' : 'pernaE', pivot: [s * (big ? 3 : 2), 12 - L, 0], boxes: [{ x: big ? -2.8 : -2.1, y: 0, z: big ? -2.8 : -2.1, w: big ? 5.6 : 4.2, h: 6 + L / 2, d: big ? 5.6 : 4.2, p: P.gi }],
+      kids: [{ name: s < 0 ? 'canelaD' : 'canelaE', pivot: [0, 6 + L / 2, 0], boxes: [{ x: big ? -2.6 : -2, y: 0, z: big ? -2.6 : -2, w: big ? 5.2 : 4, h: 4 + L / 2, d: big ? 5.2 : 4, p: P.gi }, { x: big ? -2.8 : -2.2, y: 4 + L / 2, z: big ? -3.4 : -2.8, w: big ? 5.6 : 4.4, h: 2, d: big ? 6.4 : 5, p: P.boot }] }],
+    });
+    const ears = v.ears ? [{ x: -hw / 2 - 1.2, y: -5, z: -0.5, w: 1.2, h: 2.4, d: 1.2, p: P.ear }, { x: hw / 2, y: -5, z: -0.5, w: 1.2, h: 2.4, d: 1.2, p: P.ear }] : [];
+    return {
+      name: 'raiz', pivot: [0, 0, 0], kids: [{
+        name: 'quadril', pivot: [0, 12 - L, 0], boxes: [{ x: -w / 2, y: -2.6, z: -2.4, w, h: 2.8, d: 4.8, p: P.belt }], kids: [{
+          name: 'tronco', pivot: [0, -2.4, 0], boxes: [
+            { x: -w / 2, y: -10 - L, z: big ? -3.2 : -2, w, h: 10 + L, d: big ? 6.4 : 4, p: big ? P.vein : P.skin },
+            { x: -w / 2 - 0.3, y: -10.2 - L, z: big ? -3.5 : -2.3, w: w + 0.6, h: 7.4 + L, d: big ? 7 : 4.6, p: P.vest },
+          ], kids: [
+            { name: 'cabeca', pivot: [0, -10 - L, big ? -0.8 : 0], boxes: [{ x: -hw / 2, y: -hh, z: -hw / 2, w: hw, h: hh, d: hw, p: P.head }, ...ears] },
+            arm(-1), arm(1),
+          ],
+        }],
+      }, leg(-1), leg(1)],
+    };
+  }
+
+  function stance(r, big) {
+    r('pernaD', -0.1, 0.2, big ? 0.12 : 0.06); r('pernaE', 0.1, -0.2, big ? -0.12 : -0.06);
+    r('bracoD', -0.1, 0, big ? 0.3 : 0.12); r('anteD', -0.4, 0, 0); r('bracoE', -0.1, 0, big ? -0.3 : -0.12); r('anteE', -0.4, 0, 0);
+  }
+  function kiBall(c1, c2) {
+    const mat = new THREE.ShaderMaterial({
+      transparent: true, depthWrite: false,
+      uniforms: { uA: { value: new THREE.Color(...c1) }, uB: { value: new THREE.Color(...c2) }, uK: { value: 1 }, uT: { value: 0 } },
+      vertexShader: 'varying vec3 vN; varying vec3 vV; varying vec3 vP; void main(){ vN=normalize(normalMatrix*normal); vec4 mv=modelViewMatrix*vec4(position,1.0); vV=normalize(-mv.xyz); vP=position; gl_Position=projectionMatrix*mv; }',
+      fragmentShader: `varying vec3 vN; varying vec3 vV; varying vec3 vP; uniform vec3 uA, uB; uniform float uK, uT;
+        float h(vec3 p){ p=fract(p*0.3183+vec3(.71,.11,.42)); p*=17.0; return fract(p.x*p.y*p.z*(p.x+p.y+p.z)); }
+        float n(vec3 x){ vec3 i=floor(x), f=fract(x); f=f*f*(3.0-2.0*f);
+          return mix(mix(mix(h(i),h(i+vec3(1,0,0)),f.x),mix(h(i+vec3(0,1,0)),h(i+vec3(1,1,0)),f.x),f.y),
+                     mix(mix(h(i+vec3(0,0,1)),h(i+vec3(1,0,1)),f.x),mix(h(i+vec3(0,1,1)),h(i+vec3(1,1,1)),f.x),f.y),f.z); }
+        void main(){ float face = abs(dot(vN, vV));
+          float a1 = atan(vP.z, vP.x) + uT * 6.0 + vP.y * 2.5;
+          float sw = n(vec3(cos(a1) * 2.0, vP.y * 3.0 - uT * 4.0, sin(a1) * 2.0) + uT);
+          vec3 c = mix(uA * 0.75, uA, smoothstep(0.2, 0.6, face));
+          c = mix(c, uB, smoothstep(0.5, 1.0, face + 0.25 * sw));
+          gl_FragColor = vec4(c, smoothstep(0.0, 0.25, face) * uK); }`,
+    });
+    const m = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 18), mat); m.frustumCulled = false;
+    m.at = (p, r, k, t) => { m.visible = k > 0.01; m.position.copy(p); m.scale.setScalar(r); mat.uniforms.uK.value = k; mat.uniforms.uT.value = t; };
+    return m;
+  }
+  // energia sugada: fio de luz ondulando do alvo até o frasco
+  function drainStream() {
+    const N = 60, pos = new Float32Array(N * 3), al = new Float32Array(N);
+    const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(pos, 3)); geo.setAttribute('al', new THREE.BufferAttribute(al, 1));
+    const mat = new THREE.ShaderMaterial({
+      transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+      vertexShader: 'attribute float al; varying float vA; void main(){ vA=al; vec4 mv=modelViewMatrix*vec4(position,1.0); gl_PointSize = 0.12*420.0/-mv.z*(0.6+al); gl_Position=projectionMatrix*mv; }',
+      fragmentShader: 'varying float vA; void main(){ vec2 d=gl_PointCoord-0.5; float r=length(d); if(r>0.5) discard; gl_FragColor=vec4(vec3(1.0,0.95,0.6)*vA*(1.0-r*1.6), 1.0); }',
+    });
+    const pts = new THREE.Points(geo, mat); pts.frustumCulled = false;
+    pts.at = (a, b, t, k) => {
+      pts.visible = k > 0.01;
+      for (let i = 0; i < N; i++) {
+        const f = fr(i / N + t * 1.4), p = a.clone().lerp(b, f);
+        p.y += 0.12 * Math.sin(f * 14 + t * 9 + i) * (1 - f); p.x += 0.1 * Math.cos(f * 11 + i) * (1 - f);
+        pos.set([p.x, p.y, p.z], i * 3); al[i] = k * Math.sin(Math.PI * f);
+      }
+      geo.attributes.position.needsUpdate = true; geo.attributes.al.needsUpdate = true;
+    };
+    return pts;
+  }
+
+  function animSpo(P, t, mode, a, obj, e, ctx) {
+    const r = (n, x, y, z) => { if (!P[n]) return; const o = P[n].obj.rotation; o.x += x; o.y += y; o.z += z; };
+    const at = (n, off) => { obj.updateMatrixWorld(true); return P[n].obj.localToWorld(off.clone()); };
+    const breath = loop([[0, 0], [0.45, 1], [0.999, 0]], t / 2.6);
+    if (mode === 'parado') {
+      stance(r, true);
+      // respira bufando, ombros subindo, olhar vidrado de quem está controlado
+      r('tronco', -0.05 * breath, 0, 0); r('bracoD', 0, 0, 0.08 * breath); r('bracoE', 0, 0, -0.08 * breath);
+      r('cabeca', 0.08, 0.15 * Math.sin(t * 0.6), 0.05 * Math.sin(t * 0.8));
+      return;
+    }
+    if (mode === 'andar') {
+      const ph = t * 0.85;
+      for (const [s, off] of [['D', 0], ['E', 0.5]]) {
+        r('perna' + s, 0.4 * Math.sin((ph + off) * Math.PI * 2), 0, 0); r('canela' + s, 0.35 * Math.max(0, Math.sin((ph + off) * Math.PI * 2 + 1.4)), 0, 0);
+        r('braco' + s, -0.3 * Math.sin((ph + off) * Math.PI * 2), 0, 0.25 * (s === 'D' ? 1 : -1)); r('ante' + s, -0.4, 0, 0);
+      }
+      P.quadril.obj.position.y += 0.7 * Math.abs(Math.sin(ph * Math.PI * 2));
+      r('tronco', 0, 0.12 * Math.sin(ph * Math.PI * 2), 0);
+      return;
+    }
+    if (mode === 'abraco') {
+      const T = t % 4.0;
+      const R = ctx.ref; const RZ = -3.5;
+      stance(r, true);
+      // avança, abre os braços, abraça e levanta; aperta três vezes (veias pulsam, aura escura); joga no chão
+      const go = seq([[0, 0], [0.6, 1, 'io']], T);
+      obj.position.z += (RZ + 1.4) * go;
+      const open = seq([[0.1, 0], [0.5, 1, 'out'], [0.75, 1], [0.85, 0]], T);
+      const hug = seq([[0.75, 0], [0.9, 1, 'snap'], [2.9, 1], [3.1, 0]], T);
+      const lift = seq([[0.9, 0], [1.3, 1, 'out'], [2.9, 1], [3.05, 0]], T);
+      const sq = [1.4, 1.9, 2.4].reduce((k, st) => k + seq([[st, 0], [st + 0.08, 1, 'snap'], [st + 0.35, 0]], T), 0);
+      r('bracoD', -0.4 * open - 1.3 * hug, -0.8 * open, 0.9 * open + 0.2 * hug); r('bracoE', -0.4 * open - 1.3 * hug, 0.8 * open, -0.9 * open - 0.2 * hug);
+      r('anteD', -1.4 * hug - 0.3 * sq, 0.4 * hug, 0); r('anteE', -1.4 * hug - 0.3 * sq, -0.4 * hug, 0);
+      r('tronco', -0.35 * lift + 0.08 * sq, 0, 0); r('cabeca', -0.2 * lift - 0.15 * sq, 0, 0);
+      r('pernaD', 0.1 * lift, 0, 0.1 * lift); r('pernaE', 0.1 * lift, 0, -0.1 * lift);
+      const drop = seq([[2.9, 0], [3.2, 1, 'in']], T);
+      R.place(0, RZ + 0.75 * hug * (1 - drop) + 0.1, (0.9 * lift) * (1 - drop));
+      if (T < 0.75) R.place(0, RZ, 0);
+      R.lean(0.25 * hug * (1 - drop) - 1.4 * seq([[3.0, 0], [3.25, 1], [3.7, 1], [4.0, 0]], T));
+      R.armsOut(-0.0); R.punch(0);
+      if (T > 0.9 && T < 3.0) {
+        // aura escura com faíscas vermelhas da marca Majin
+        ctx.get('aura', FX.volume).set(at('tronco', V3(0, -8, 0)), 1.0 + 0.1 * sq, 0.35 + 0.1 * Math.sin(T * 3), { fire: 0.15, seed: 11.1, dens: 2.5, rise: 1.2, smoke: [0.16, 0.1, 0.16] });
+        ctx.get('faiscasM', () => DBFX.grains({ n: 40, seed: 191, palette: [[255, 60, 60], [255, 140, 120], [180, 20, 30]], size: [0.015, 0.035], drag: 3, grav: -1, life: 0.4, spread: 2.0, add: true, cone: Rr => { const a = Rr() * 6.28; return [Math.cos(a) * 1.4, 1 + Rr() * 2, Math.sin(a) * 1.4]; } })).at(at('tronco', V3(0, -6, 0)), T - 0.9);
+      }
+      if (sq > 0.8) { ctx.shake(0.35); ctx.flash(at('tronco', V3(0, -8, -4)), 0.25); }
+      if (T > 3.1 && T < 3.5) { ctx.shake(0.7); ctx.get('chao', () => FX.debris(20, 193, [[150, 110, 80], [120, 90, 64], [180, 140, 100]])).at(V3(0, 0.05, RZ - 0.5), T - 3.1); }
+      return;
+    }
+    if (mode === 'investida') {
+      const T = t % 3.2;
+      const R = ctx.ref; const RZ = -8; R.place(0, RZ, 0);
+      stance(r, true);
+      // abaixa o ombro, pisa forte, corre que nem touro e trombou; poeira atrás
+      const crouch = seq([[0, 0], [0.4, 1, 'out'], [0.6, 1]], T) * (1 - seq([[1.6, 0], [2.0, 1]], T));
+      const run = seq([[0.55, 0], [1.25, 1, 'in']], T), back = seq([[2.2, 0], [2.9, 1, 'io']], T);
+      obj.position.z += (RZ + 1.6) * run * (1 - back);
+      r('tronco', 0.6 * crouch, -0.35 * crouch, 0); r('cabeca', -0.4 * crouch, 0.2 * crouch, 0);
+      r('bracoD', 0.3 * crouch, 0, 0.4 * crouch); r('bracoE', -0.6 * crouch, 0, -0.2 * crouch);
+      const ph = T * 6;
+      if (T > 0.55 && T < 1.3) { r('pernaD', 0.8 * Math.sin(ph * Math.PI), 0, 0); r('pernaE', -0.8 * Math.sin(ph * Math.PI), 0, 0); r('canelaD', 0.6 * Math.max(0, Math.sin(ph * Math.PI + 1)), 0, 0); r('canelaE', 0.6 * Math.max(0, -Math.sin(ph * Math.PI + 1)), 0, 0); P.quadril.obj.position.y += 1.0 * Math.abs(Math.sin(ph * Math.PI)); }
+      if (T > 0.55 && T < 1.8) ctx.get('rastro', () => DBFX.grains({ n: 70, seed: 197, palette: [[190, 150, 110], [150, 120, 90], [210, 180, 140]], size: [0.03, 0.07], drag: 2, grav: 2, life: 0.8, spread: 0.7, cone: Rr => [(Rr() - 0.5) * 1.5, 0.5 + Rr(), 1.5 + Rr() * 2] })).at(V3(0, 0.05, obj.position.z + 0.5), T - 0.55);
+      if (T > 1.2) {
+        const k = T - 1.25;
+        const hp = V3(0, 1.3, RZ + 0.3);
+        if (k > 0 && k < 0.08) { ctx.flash(hp, 1); ctx.get('impacto', () => DBFX.muzzle()).at(hp, ctx.camera, 1 - k / 0.08, 7, 1.4); }
+        if (k > 0) ctx.shake(Math.max(0, 0.9 - k * 2));
+        const fly = seq([[1.25, 0], [1.9, 1, 'out']], T);
+        R.place(0, RZ - 3.5 * fly, 1.2 * Math.sin(Math.PI * fly)); R.lean(-1.4 * fly * (1 - seq([[2.6, 0], [3.2, 1]], T)));
+      }
+      return;
+    }
+  }
+
+  function animYamu(P, t, mode, a, obj, e, ctx) {
+    const r = (n, x, y, z) => { if (!P[n]) return; const o = P[n].obj.rotation; o.x += x; o.y += y; o.z += z; };
+    const at = (n, off) => { obj.updateMatrixWorld(true); return P[n].obj.localToWorld(off.clone()); };
+    const breath = loop([[0, 0], [0.45, 1], [0.999, 0]], t / 2.6);
+    if (mode === 'parado') {
+      stance(r, false);
+      // confere o frasco do aparelho, impaciente
+      const look = seq([[0.5, 0], [0.6, 1, 'out'], [0.85, 1], [0.95, 0]], fr(t / 4));
+      r('bracoD', -1.2 * look, 0.3 * look, 0); r('anteD', -0.9 * look, 0, 0); r('cabeca', 0.25 * look, 0.25 * look, 0);
+      r('tronco', -0.03 * breath, 0, 0);
+      return;
+    }
+    if (mode === 'andar') {
+      const ph = t * 1.1;
+      for (const [s, off] of [['D', 0], ['E', 0.5]]) {
+        r('perna' + s, 0.5 * Math.sin((ph + off) * Math.PI * 2), 0, 0); r('canela' + s, 0.4 * Math.max(0, Math.sin((ph + off) * Math.PI * 2 + 1.4)), 0, 0);
+        r('braco' + s, -0.4 * Math.sin((ph + off) * Math.PI * 2), 0, 0); r('ante' + s, -0.3, 0, 0);
+      }
+      P.quadril.obj.position.y += 0.5 * Math.abs(Math.sin(ph * Math.PI * 2));
+      return;
+    }
+    if (mode === 'sugar') {
+      const T = t % 4.2;
+      const R = ctx.ref; const RZ = -3.2; R.place(0, RZ, 0);
+      stance(r, false);
+      // avança rápido, crava a agulha no peito; o alvo dobra, a luz sobe pela agulha e enche o frasco; puxa e recua rindo
+      const dash = seq([[0, 0], [0.45, 1, 'out']], T) * (1 - seq([[3.2, 0], [3.8, 1, 'io']], T));
+      obj.position.z += (RZ + 1.35) * dash;
+      const stab = seq([[0.35, 0], [0.5, 1, 'snap'], [2.9, 1], [3.1, 0]], T);
+      r('bracoD', -1.5 * stab, -0.3 * stab, 0); r('anteD', 0.1 * stab, 0, 0); r('maoD', -0.2 * stab, 0, 0);
+      r('bracoE', -0.6 * stab, 0, -0.5 * stab); r('anteE', -0.8 * stab, 0, 0);
+      r('tronco', 0.15 * stab, 0, 0); r('pernaD', -0.4 * stab, 0, 0); r('canelaD', 0.4 * stab, 0, 0);
+      const drain = seq([[0.6, 0], [2.8, 1, 'io']], T);
+      const flask = at('aparelho', V3(0, 1.1, -1.8)), tip = at('aparelho', V3(0, 7, 0));
+      if (T > 0.6 && T < 3.0) {
+        ctx.get('fio', drainStream).at(V3(0, 1.2, RZ), tip, T, 1);
+        ctx.get('frasco', () => kiBall([1.0, 0.85, 0.35], [1.0, 1.0, 0.85])).at(flask, 0.04 + 0.11 * drain, 1, T);
+        ctx.get('luzF', () => DBFX.light(0xffe080)).at(flask, 1.5 * drain, 3);
+      }
+      if (T >= 3.0 && T < 4.2) ctx.get('frasco', () => kiBall([1.0, 0.85, 0.35], [1.0, 1.0, 0.85])).at(flask, 0.15, 1, T);
+      // alvo: dobra pra frente, perde a cor (fica mais escuro) e cai de joelho
+      const weak = seq([[0.5, 0], [0.7, 0.5, 'out'], [2.9, 1], [3.6, 1], [4.2, 0]], T);
+      R.lean(0.5 * weak); R.place(0, RZ, -0.25 * Math.max(0, weak - 0.5) * 2);
+      if (T > 0.5 && T < 0.6) { ctx.flash(tip, 0.6); ctx.shake(0.3); }
+      return;
+    }
+    if (mode === 'rajada') {
+      const T = t % 3.0;
+      const R = ctx.ref; const RZ = -7; R.place(0, RZ, 0);
+      stance(r, false);
+      // empurra a mão esquerda aberta pra frente: bola vermelho-escura da marca Majin
+      const aim = seq([[0, 0], [0.35, 1, 'out'], [1.6, 1], [2.0, 0, 'io']], T);
+      r('bracoE', -1.55 * aim, 0.3 * aim, 0); r('maoE', -0.9 * aim, 0, 0); r('tronco', 0, -0.4 * aim, 0); r('quadril', 0, -0.2 * aim, 0);
+      const palm = at('maoE', V3(0, 3, -1.2));
+      const grow = seq([[0.3, 0], [0.85, 1, 'in']], T);
+      const red = [[0.85, 0.1, 0.2], [1.0, 0.75, 0.75]];
+      if (T > 0.3 && T < 0.9) ctx.get('bola', () => kiBall(...red)).at(palm, 0.05 + 0.2 * grow, 1, T);
+      if (T >= 0.9 && T < 1.3) { const f = (T - 0.9) / 0.4; ctx.get('bola', () => kiBall(...red)).at(palm.clone().lerp(V3(0, 1.1, RZ + 0.2), f), 0.25, 1, T); ctx.get('rastro', () => DBFX.tracer([1, 0.2, 0.3])).at(palm, V3(0, 1.1, RZ + 0.2), f, 1.2); }
+      if (T >= 1.3) {
+        const k = (T - 1.3) / 1.2;
+        ctx.get('boom', FX.volume).set(V3(0, 1.1, RZ), 0.9, Math.min(1, k), { fire: 0.7, seed: 9.9, dens: 10, rise: 0.5, smoke: [0.3, 0.18, 0.2] });
+        if (k < 0.15) { ctx.flash(V3(0, 1.1, RZ), 1); ctx.shake(0.6); }
+        const fly = seq([[1.3, 0], [2.0, 1, 'out']], T);
+        R.place(0, RZ - 2 * fly, 0.6 * Math.sin(Math.PI * fly)); R.lean(-1.1 * fly * (1 - seq([[2.5, 0], [3.0, 1]], T)));
+      }
+      return;
+    }
+  }
+
+  window.MOBS = window.MOBS || [];
+  const spo = [{ seed: 3, big: true, skin: [240, 206, 176], gi: [60, 44, 80], vest: [40, 34, 46], belt: [200, 170, 70], hair: false, ears: false },
+               { seed: 9, big: true, skin: [222, 186, 156], gi: [44, 44, 70], vest: [34, 30, 40], belt: [170, 40, 40], hair: false, ears: false }];
+  const yam = [{ seed: 5, big: false, skin: [236, 200, 170], gi: [60, 44, 80], vest: [40, 34, 46], belt: [200, 170, 70], hair: true, ears: true },
+               { seed: 11, big: false, skin: [220, 180, 150], gi: [44, 44, 70], vest: [34, 30, 40], belt: [170, 40, 40], hair: true, ears: true }];
+  const def = v => ({ def: rigDef(painters(v), v, false), low: rigDef(painters(v), v, true) });
+  window.MOBS.push({
+    id: 'spopovich', nome: 'Spopovich', bioma: 'Vilões do mundo', tier: 'Forte · tier 5',
+    variants: spo.map((v, i) => ({ nome: ['Roupa roxa', 'Roupa azul'][i], v, ...def(v) })),
+    randomVariant: () => { const v = { ...spo[Math.floor(Math.random() * 2)], seed: Math.floor(Math.random() * 1e5) }; return { nome: 'Sorteado', v, ...def(v) }; },
+    anim: animSpo, modes: [['parado', 'Parado'], ['andar', 'Andar'], ['abraco', 'Abraço Esmagador'], ['investida', 'Investida Majin']],
+    cam: 7, lookY: 1.5, lookZ: { abraco: -1.8, investida: -3.6 }, camFar: { abraco: 7.5, investida: 11 }, camYaw: { abraco: -1.0, investida: -1.25 },
+    info: {
+      'Tamanho': '2,4 blocos, largão',
+      'Vida': '180 (tier 5). Aguenta muito e não sente dor (stun pela metade).',
+      'Jeito': 'Anda com o Yamu pelo Deserto do Diabo, de noite. Os dois caçam quem tem muita energia (Poder alto chama mais). Se o Yamu cai, ele fica furioso (mais rápido).',
+      'Abraço Esmagador': 'Abre os braços (aviso), abraça, levanta e esmaga três vezes; depois joga no chão. Esmagar em pacotes (Escudo de tier). Bater nele 3 vezes rápido solta.',
+      'Investida Majin': 'Abaixa o ombro e corre que nem touro até 8 blocos. Desviar de lado faz ele tropeçar e ficar atordoado.',
+      'Solta': 'Pedaço da roupa com o M, Faixa Majin; raro: Alma do Spopovich.',
+      'Variações': 'Cor da roupa e da faixa.',
+    },
+  });
+  window.MOBS.push({
+    id: 'yamu', nome: 'Yamu', bioma: 'Vilões do mundo', tier: 'Médio · tier 6',
+    variants: yam.map((v, i) => ({ nome: ['Roupa roxa', 'Roupa azul'][i], v, ...def(v) })),
+    randomVariant: () => { const v = { ...yam[Math.floor(Math.random() * 2)], seed: Math.floor(Math.random() * 1e5) }; return { nome: 'Sorteado', v, ...def(v) }; },
+    anim: animYamu, modes: [['parado', 'Parado'], ['andar', 'Andar'], ['sugar', 'Sugar Energia'], ['rajada', 'Rajada Majin']],
+    cam: 5.5, lookY: 1.1, lookZ: { sugar: -1.6, rajada: -3.3 }, camFar: { sugar: 6.5, rajada: 9.5 }, camYaw: { sugar: -1.1, rajada: -1.25 },
+    info: {
+      'Tamanho': '1,8 bloco',
+      'Vida': '90 (tier 6)',
+      'Jeito': 'Sempre perto do Spopovich, atrás dele. Espera o Spopovich segurar e entra pra sugar.',
+      'Sugar Energia': 'Avança e crava a agulha: o fio de luz sobe e enche o frasco. Rouba estamina e ki enquanto dura. Quebrar o frasco (acertar a mão dele) devolve tudo.',
+      'Rajada Majin': 'Bola vermelho-escura da mão aberta, carrega meio segundo. Dano em pacotes no jogo.',
+      'Solta': 'Aparelho de sugar energia (cheio: guarda ki pra usar depois), frasco vazio; raro: Alma do Yamu.',
+      'Variações': 'Cor da roupa e da faixa.',
+    },
+  });
+})();
+
+</script>
+<script>
+// Babidi (dentro da nave dele, no último andar). Bruxo baixinho, cabeçudo e enrugado, orelhas pontudas e capa de gola
+// alta. Fraco no braço, perigoso na magia. Foge se você chega perto.
+// Golpes: Paparapa (círculo de magia embaixo do alvo: incha, brilha e explode por dentro; dá pra sair do círculo)
+// e Controle Majin (o fio de magia escura acha a sua cabeça e acende o M na testa: você vira contra os seus).
+'use strict';
+(() => {
+  const { n3, mix, mul } = ENG;
+  const { seq, loop } = FX;
+  const fr = x => x - Math.floor(x);
+  const cel = ENG.cel;
+  const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
+
+  function painters(v) {
+    const S = v.seed;
+    const shade = (base, q, s, lo = 0.84, hi = 1.12) => cel(base, 0.62 - 0.38 * q.ny + 0.1 * (n3(q.ax * 0.3, q.ay * 0.3, q.az * 0.3, s + S) - 0.5) + (q.f === 'top' ? 0.25 : 0) - (q.f === 'bottom' ? 0.3 : 0), lo, hi);
+    const P = {};
+    // pele enrugada: dobras curvas na testa e na cabeça (linhas escuras finas que seguem a curva)
+    P.skin = q => shade(v.skin, q, 1);
+    P.head = q => {
+      let c = shade(v.skin, q, 2, 0.86, 1.08);
+      const wr = fr(q.ay * 0.55 + 0.25 * Math.sin(q.ax * 0.5 + q.az * 0.4));
+      if (q.f !== 'bottom' && wr < 0.1 && q.py < q.b.h * 0.55) c = mul(c, 0.82);
+      if (q.f !== 'north') return c;
+      const W = q.b.w, x = Math.min(W - 1, Math.floor(q.px)), y = Math.min(q.b.h - 1, Math.floor(q.py)), m = Math.min(x, W - 1 - x);
+      // olhão redondo: branco com pupila grande, sobrancelha nenhuma; nariz pequeno; boca larga de sorriso maldoso
+      if ((y === 5 || y === 6) && (m === 1 || m === 2 || m === 3)) c = (m === 3 || (y === 5 && m === 1)) ? [250, 248, 240] : [24, 20, 30];
+      if (y === 6 && m === 1) c = [250, 248, 240];
+      if (y === 7 && m === 4) c = mul(v.skin, 0.75);
+      if (y === 8 && m >= 2 && m <= 4) c = [90, 40, 50];
+      if (y === 8 && m === 1) c = mul(v.skin, 0.75);
+      return c;
+    };
+    P.ear = q => { if (q.f !== 'north' && q.f !== 'south') return null; const d = q.ax < 0 ? q.px / q.b.w : 1 - q.px / q.b.w, w = q.py / q.b.h; if (Math.abs(w - 0.55) > 0.5 * d + 0.03) return null; let c = shade(mul(v.skin, 0.95), q, 3); if (q.f === 'north' && Math.abs(w - 0.55) < 0.25 * d && d > 0.4) c = mul(c, 0.82); return c; };
+    P.cape = q => { let c = shade(v.cape, q, 4); if (q.f !== 'top' && fr(q.px * 0.5 + q.pz * 0.5) < 0.1) c = mul(c, 0.86); return c; };
+    P.collar = q => { if (q.f === 'top' || q.f === 'bottom') return null; let c = shade(mul(v.cape, 0.85), q, 5); if (q.py < 0.6) c = shade([220, 190, 90], q, 6); return c; };
+    P.robe = q => shade(v.robe, q, 7);
+    P.belt = q => { let c = shade([200, 170, 70], q, 8); if (q.f === 'north' && Math.abs(q.px - q.b.w / 2) < 0.8) c = [170, 40, 70]; return c; };
+    P.boot = q => shade([90, 60, 80], q, 9);
+    return P;
+  }
+
+  function rigDef(P, v, low) {
+    const arm = s => ({
+      name: s < 0 ? 'bracoD' : 'bracoE', pivot: [s * 3.4, -6.4, 0], boxes: [{ x: -1.1, y: -0.6, z: -1.1, w: 2.2, h: 3.6, d: 2.2, p: P.robe }],
+      kids: [{ name: s < 0 ? 'anteD' : 'anteE', pivot: [0, 3, 0], boxes: [{ x: -1, y: 0, z: -1, w: 2, h: 2.6, d: 2, p: P.robe }], kids: [{ name: s < 0 ? 'maoD' : 'maoE', pivot: [0, 2.6, 0], boxes: [{ x: -1, y: -0.2, z: -1, w: 2, h: 1.8, d: 2, p: P.skin }] }] }],
+    });
+    const leg = s => ({ name: s < 0 ? 'pernaD' : 'pernaE', pivot: [s * 1.4, 18, 0], boxes: [{ x: -1.3, y: 0, z: -1.3, w: 2.6, h: 4, d: 2.6, p: P.robe }, { x: -1.4, y: 4, z: -2.2, w: 2.8, h: 2, d: 3.6, p: P.boot }] });
+    return {
+      name: 'raiz', pivot: [0, 0, 0], kids: [{
+        name: 'quadril', pivot: [0, 18, 0], boxes: [{ x: -2.8, y: -1.6, z: -1.8, w: 5.6, h: 1.8, d: 3.6, p: P.belt }], kids: [{
+          name: 'tronco', pivot: [0, -1.4, 0], boxes: [{ x: -2.8, y: -6.6, z: -1.8, w: 5.6, h: 6.6, d: 3.6, p: P.robe }], kids: [
+            {
+              name: 'cabeca', pivot: [0, -6.6, -0.2], boxes: [{ x: -5, y: -10, z: -4.5, w: 10, h: 10, d: 9, p: P.head }, ...(low ? [] : [{ x: -4.2, y: -11, z: -3.6, w: 8.4, h: 1.2, d: 7.2, p: P.head }])],
+              kids: [
+                { name: 'orelhaD', pivot: [-4.8, -5.6, 0.6], rot: [0, 0.2, 0.3], boxes: [{ x: -6, y: -2.4, z: -0.3, w: 6, h: 4.4, d: 0.6, p: P.ear }] },
+                { name: 'orelhaE', pivot: [4.8, -5.6, 0.6], rot: [0, -0.2, -0.3], boxes: [{ x: 0, y: -2.4, z: -0.3, w: 6, h: 4.4, d: 0.6, p: P.ear }] },
+              ],
+            },
+            // capa: gola alta em volta da cabeça e o pano caindo atrás
+            ...(low ? [] : [{ name: 'gola', pivot: [0, -6.6, 0], boxes: [{ x: -4.6, y: -3, z: 1.4, w: 9.2, h: 3.6, d: 0.6, p: P.collar }, { x: -4.6, y: -3, z: -2.6, w: 0.6, h: 3.6, d: 4.4, p: P.collar }, { x: 4, y: -3, z: -2.6, w: 0.6, h: 3.6, d: 4.4, p: P.collar }] }]),
+            { name: 'capa', pivot: [0, -6, 2], boxes: [{ x: -4.2, y: 0, z: 0, w: 8.4, h: 11.6, d: 0.6, p: P.cape }] },
+            arm(-1), arm(1),
+          ],
+        }],
+      }, leg(-1), leg(1)],
+    };
+  }
+
+  // círculo de magia: anéis, runas angulares sorteadas por setor (nenhuma igual à outra) e um pentagrama girando
+  function circle(col) {
+    const mat = new THREE.ShaderMaterial({
+      transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: THREE.NormalBlending,
+      uniforms: { uT: { value: 0 }, uK: { value: 0 }, uC: { value: new THREE.Color(...col) } },
+      vertexShader: 'varying vec2 vP; void main(){ vP=position.xy; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }',
+      fragmentShader: `varying vec2 vP; uniform float uT, uK; uniform vec3 uC;
+        float h(float x){ return fract(sin(x*61.3)*43758.5); }
+        float seg(vec2 p, vec2 a, vec2 b){ vec2 pa=p-a, ba=b-a; float k=clamp(dot(pa,ba)/dot(ba,ba),0.0,1.0); return length(pa-ba*k); }
+        void main(){
+          float r = length(vP), a = atan(vP.y, vP.x);
+          float line = 0.0;
+          line += smoothstep(0.04, 0.0, abs(r - 0.95)) + smoothstep(0.03, 0.0, abs(r - 0.86)) + smoothstep(0.025, 0.0, abs(r - 0.52));
+          // runas entre os dois anéis de fora: cada setor tem 3 traços com ângulo sorteado
+          float N = 18.0, sid = floor((a + uT * 0.4) / 6.2832 * N);
+          float sa = (sid + 0.5) / N * 6.2832 - uT * 0.4;
+          vec2 c = vec2(cos(sa), sin(sa)) * 0.905;
+          vec2 tg = vec2(-sin(sa), cos(sa)), nr = vec2(cos(sa), sin(sa));
+          for (int i = 0; i < 3; i++) {
+            float fi = float(i);
+            vec2 p0 = c + tg * (h(sid * 7.0 + fi) - 0.5) * 0.12 + nr * (h(sid * 3.0 + fi + 9.0) - 0.5) * 0.06;
+            vec2 p1 = c + tg * (h(sid * 5.0 + fi + 2.0) - 0.5) * 0.12 + nr * (h(sid * 11.0 + fi + 4.0) - 0.5) * 0.06;
+            line += smoothstep(0.02, 0.0, seg(vP, p0, p1));
+          }
+          // estrela de cinco pontas girando ao contrário
+          for (int i = 0; i < 5; i++) {
+            float a0 = float(i) * 1.2566 - uT * 0.7, a1 = a0 + 2.5133;
+            line += smoothstep(0.025, 0.0, seg(vP, vec2(cos(a0), sin(a0)) * 0.84, vec2(cos(a1), sin(a1)) * 0.84));
+          }
+          float glow = smoothstep(1.0, 0.0, r) * 0.35;
+          float k = clamp(line, 0.0, 1.0);
+          // revela girando: o desenho aparece por ângulo conforme uK
+          float rev = step(fract((a + 3.1416) / 6.2832), uK);
+          float al = (k + glow * (0.5 + 0.5 * sin(uT * 6.0))) * rev * min(1.0, uK * 2.0);
+          if (al < 0.01 || r > 1.0) discard;
+          gl_FragColor = vec4(mix(uC, vec3(1.0), k * 0.4), al);
+        }`,
+    });
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), mat); m.rotation.x = -Math.PI / 2; m.frustumCulled = false;
+    m.at = (p, r, k, t) => { m.visible = k > 0.01; m.position.copy(p); m.scale.setScalar(r); mat.uniforms.uK.value = k; mat.uniforms.uT.value = t; };
+    return m;
+  }
+  // M que acende na testa do alvo: plaquinha desenhada em pixel, sempre virada pra câmera
+  function mSign() {
+    const cv = document.createElement('canvas'); cv.width = 5; cv.height = 3;
+    const g = cv.getContext('2d'); g.fillStyle = '#ff2040';
+    ['X...X', 'XX.XX', 'X.X.X'].forEach((row, y) => [...row].forEach((ch, x) => { if (ch === 'X') g.fillRect(x, y, 1, 1); }));
+    const tex = new THREE.CanvasTexture(cv); tex.magFilter = THREE.NearestFilter;
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false }));
+    s.at = (p, k) => { s.visible = k > 0.01; s.position.copy(p); s.scale.set(0.3 * k, 0.18 * k, 1); s.material.opacity = k; };
+    return s;
+  }
+  // fio de magia escura: fita torcida do dedo até a cabeça do alvo
+  function tendril() {
+    const N = 40, pos = new Float32Array(N * 2 * 3), al = new Float32Array(N * 2), idx = [];
+    for (let i = 0; i < N - 1; i++) { const a = i * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
+    const geo = new THREE.BufferGeometry(); geo.setIndex(idx);
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3)); geo.setAttribute('al', new THREE.BufferAttribute(al, 1));
+    const m = new THREE.Mesh(geo, new THREE.ShaderMaterial({
+      transparent: true, depthWrite: false, side: THREE.DoubleSide,
+      vertexShader: 'attribute float al; varying float vA; void main(){ vA=al; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }',
+      fragmentShader: 'varying float vA; void main(){ gl_FragColor = vec4(mix(vec3(0.25,0.05,0.3), vec3(0.9,0.3,0.6), vA*0.6), vA); }',
+    }));
+    m.frustumCulled = false;
+    m.at = (a, b, k, t) => {
+      m.visible = k > 0.01;
+      for (let i = 0; i < N; i++) {
+        const f = i / (N - 1) * k, p = a.clone().lerp(b, f);
+        const tw = Math.sin(f * 12 - t * 8) * 0.18 * Math.sin(Math.PI * f / Math.max(k, 0.01));
+        p.y += tw + 0.4 * Math.sin(Math.PI * f / Math.max(k, 0.01)); p.x += Math.cos(f * 9 - t * 6) * 0.12;
+        const wdt = 0.05 * (1 - f * 0.5);
+        pos.set([p.x, p.y + wdt, p.z, p.x, p.y - wdt, p.z], i * 6);
+        al[i * 2] = al[i * 2 + 1] = 0.85 * (0.4 + 0.6 * Math.abs(Math.sin(f * 20 - t * 10)));
+      }
+      geo.attributes.position.needsUpdate = true; geo.attributes.al.needsUpdate = true;
+    };
+    return m;
+  }
+
+  function anim(P, t, mode, a, obj, e, ctx) {
+    const r = (n, x, y, z) => { if (!P[n]) return; const o = P[n].obj.rotation; o.x += x; o.y += y; o.z += z; };
+    const at = (n, off) => { obj.updateMatrixWorld(true); return P[n].obj.localToWorld(off.clone()); };
+    const breath = loop([[0, 0], [0.45, 1], [0.999, 0]], t / 2.2);
+    const cape = (k = 1) => r('capa', 0.08 + 0.05 * Math.sin(t * 2.1) * k, 0, 0.03 * Math.sin(t * 1.7) * k);
+
+    if (mode === 'parado') {
+      // mãos juntas na frente esfregando, risadinha (ombros sacudindo), cabeça balançando
+      r('bracoD', -0.7, 0.4, 0); r('anteD', -0.9, 0, 0); r('bracoE', -0.7, -0.4, 0); r('anteE', -0.9, 0, 0);
+      const giggle = seq([[0.5, 0], [0.55, 1], [0.85, 1], [0.9, 0]], fr(t / 3.5));
+      r('tronco', -0.05 * breath + 0.05 * giggle * Math.sin(t * 40), 0, 0); r('cabeca', -0.1 * giggle, 0.2 * Math.sin(t * 0.7), 0.05 * Math.sin(t * 1.3));
+      r('maoD', 0.2 * Math.sin(t * 8), 0, 0); r('maoE', -0.2 * Math.sin(t * 8), 0, 0);
+      cape();
+      return;
+    }
+    if (mode === 'andar') {
+      const ph = t * 1.5;
+      for (const [s, off] of [['D', 0], ['E', 0.5]]) { r('perna' + s, 0.5 * Math.sin((ph + off) * Math.PI * 2), 0, 0); r('braco' + s, -0.3 * Math.sin((ph + off) * Math.PI * 2), 0, 0); r('ante' + s, -0.4, 0, 0); }
+      P.quadril.obj.position.y += 0.4 * Math.abs(Math.sin(ph * Math.PI * 2));
+      r('cabeca', 0, 0, 0.08 * Math.sin(ph * Math.PI * 2)); cape(2); r('capa', 0.15, 0, 0);
+      return;
+    }
+
+    if (mode === 'paparapa') {
+      const T = t % 4.4;
+      const R = ctx.ref; const RZ = -6; R.place(0, RZ, 0);
+      // "Paparapa!": braços pra cima balançando, o círculo acende em volta do alvo (1,6 s pra sair dele),
+      // aponta as duas mãos e fecha: o alvo incha, brilha por dentro e explode
+      const up = seq([[0, 0], [0.3, 1, 'out'], [1.7, 1], [1.85, 0]], T);
+      const wave = Math.sin(T * 12) * up;
+      r('bracoD', -2.6 * up, 0, 0.4 * up + 0.2 * wave); r('bracoE', -2.6 * up, 0, -0.4 * up - 0.2 * wave); r('maoD', 0.4 * wave, 0, 0); r('maoE', -0.4 * wave, 0, 0);
+      r('cabeca', -0.25 * up, 0, 0.1 * wave);
+      const point = seq([[1.75, 0], [1.9, 1, 'snap'], [2.6, 1], [3.0, 0]], T);
+      r('bracoD', -1.5 * point, 0.2 * point, 0); r('bracoE', -1.5 * point, -0.2 * point, 0); r('tronco', 0.15 * point, 0, 0);
+      cape(1 + up);
+      const rev = seq([[0.2, 0], [1.2, 1, 'out']], T), pulse = 1 + 0.06 * Math.sin(T * 20) * up;
+      if (T < 2.3) ctx.get('circulo', () => circle([0.85, 0.1, 0.6])).at(V3(0, 0.03, RZ), 1.3 * pulse, rev, T);
+      ctx.get('maos', () => DBFX.glow([0.95, 0.3, 0.8])).at(at('maoD', V3(0, 2, 0)).lerp(at('maoE', V3(0, 2, 0)), 0.5), 0.1 + 0.05 * Math.sin(T * 30), 0.5 * (up + point), T);
+      // alvo: sobe um pouco, treme, incha (escala) e explode
+      const swell = seq([[1.9, 0], [2.5, 1, 'in']], T);
+      if (T > 1.9 && T < 2.55) { R.place(0, RZ, 0.3 * swell); R.lean(0.15 * Math.sin(T * 50) * swell); ctx.get('dentro', () => DBFX.glow([1, 0.4, 0.8])).at(V3(0, 1.0 + 0.3 * swell, RZ), 0.3 + 0.6 * swell, 0.6 * swell, T); }
+      if (T >= 2.5) {
+        const k = (T - 2.5) / 1.4;
+        ctx.get('boom', FX.volume).set(V3(0, 1.0, RZ), 1.4, Math.min(1, k), { fire: 0.9, seed: 12.2, dens: 11, rise: 0.6, smoke: [0.4, 0.2, 0.36] });
+        if (k < 0.2) { ctx.flash(V3(0, 1, RZ), 1 - k * 5); ctx.shake(1 - k * 4); }
+        ctx.roarRing(V3(0, 0.03, RZ), Math.min(1, k * 1.3));
+        const fly = seq([[2.5, 0], [3.1, 1, 'out']], T);
+        R.place(0, RZ - 2.5 * fly, 1.4 * Math.sin(Math.PI * fly)); R.lean(-1.3 * fly * (1 - seq([[3.8, 0], [4.4, 1]], T))); R.spin(2 * fly);
+      }
+      return;
+    }
+
+    if (mode === 'controle') {
+      const T = t % 5.0;
+      const R = ctx.ref; const RZ = -5; R.place(0, RZ, 0);
+      // estica um dedo, fio escuro serpenteia até a cabeça do alvo; o alvo segura a cabeça, o M acende na testa,
+      // ele se endireita de olhar vazio e vira de costas pro Babidi (agora protege ele). Babidi gargalha.
+      const aim = seq([[0, 0], [0.35, 1, 'out'], [2.4, 1], [2.7, 0]], T);
+      r('bracoD', -1.6 * aim, 0, 0); r('bracoE', -0.6 * aim, 0, -0.6 * aim); r('anteE', -1.2 * aim, 0, 0); r('cabeca', 0.1 * aim, 0, 0);
+      cape(1);
+      const reach = seq([[0.4, 0], [1.1, 1, 'out']], T);
+      const finger = at('maoD', V3(0, 2, 0)), head = V3(0, 1.75, RZ);
+      if (T > 0.4 && T < 2.6) ctx.get('fio', tendril).at(finger, head, reach * (1 - seq([[2.3, 0], [2.6, 1]], T)), T);
+      const pain = seq([[1.1, 0], [1.25, 1], [2.2, 1], [2.4, 0]], T);
+      R.armsOut(-0.6 * pain); R.lean(0.35 * pain + 0.1 * Math.sin(T * 30) * pain);
+      const mk = seq([[1.6, 0], [1.9, 1, 'out']], T);
+      ctx.get('M', mSign).at(V3(0, 1.82, RZ + 0.27), mk);
+      if (T > 1.6 && T < 2.2) ctx.get('estalo', () => DBFX.grains({ n: 30, seed: 211, palette: [[255, 60, 90], [255, 160, 180], [120, 10, 40]], size: [0.012, 0.03], drag: 3, grav: 0, life: 0.4, spread: 0.3, add: true, cone: Rr => { const a = Rr() * 6.28; return [Math.cos(a) * 1.5, Rr(), Math.sin(a) * 1.5]; } })).at(head, T - 1.6);
+      const turn = seq([[2.5, 0], [3.0, 1, 'io']], T);
+      R.spin(Math.PI * turn); if (T > 2.5) R.armsOut(0.25 * turn);
+      // gargalhada: tronco pra trás sacudindo
+      const laugh = seq([[2.6, 0], [2.8, 1], [4.4, 1], [4.8, 0]], T);
+      r('tronco', -0.3 * laugh + 0.06 * Math.sin(T * 35) * laugh, 0, 0); r('cabeca', -0.3 * laugh, 0, 0); r('bracoD', -0.4 * laugh, 0, 0.5 * laugh); r('bracoE', -0.4 * laugh, 0, -0.5 * laugh);
+      if (T > 4.6) ctx.get('M', mSign).at(V3(0, 1.82, RZ - 0.27), 1 - (T - 4.6) / 0.4);
+      return;
+    }
+  }
+
+  window.MOBS = window.MOBS || [];
+  const vs = [{ seed: 2, skin: [222, 214, 150], cape: [70, 40, 90], robe: [120, 70, 120] }, { seed: 7, skin: [210, 200, 160], cape: [40, 40, 80], robe: [90, 60, 110] }];
+  const def = v => ({ def: rigDef(painters(v), v, false), low: rigDef(painters(v), v, true) });
+  window.MOBS.push({
+    id: 'babidi', nome: 'Babidi', bioma: 'Vilões do mundo', tier: 'Mago · chefe da nave',
+    variants: vs.map((v, i) => ({ nome: ['Capa roxa', 'Capa azul'][i], v, ...def(v) })),
+    randomVariant: () => { const v = { ...vs[Math.floor(Math.random() * 2)], seed: Math.floor(Math.random() * 1e5) }; return { nome: 'Sorteado', v, ...def(v) }; },
+    anim, modes: [['parado', 'Parado'], ['andar', 'Andar'], ['paparapa', 'Paparapa'], ['controle', 'Controle Majin']],
+    cam: 4.5, lookY: 0.9, lookZ: { paparapa: -3, controle: -2.5 }, camFar: { paparapa: 9, controle: 8 }, camYaw: { paparapa: -1.15, controle: -1.0 }, refX: 2.2,
+    info: {
+      'Tamanho': '1,5 bloco (metade é cabeça)',
+      'Vida': '60 (fraco no corpo). Chefe do último andar da nave: luta escondido atrás dos que ele controla e se teleporta quando você chega perto.',
+      'Jeito': 'Só na nave dele. Antes da luta ele já marcou 2 ou 3 mobs do andar com o M (eles lutam do lado dele). Vencer o Yakon e a dupla Spopovich/Yamu abre a porta dele.',
+      'Paparapa': 'Braços pra cima e o círculo de magia acende em volta de você: 1,6 s pra sair. Se ficar, incha e explode por dentro (dano alto, em pacotes no jogo).',
+      'Controle Majin': 'O fio escuro procura a sua cabeça (dá pra quebrar a linha de visão). Em mob: vira aliado dele com o M na testa. Em jogador: 4 s com o M aceso, controles trocados e o golpe acerta os seus amigos.',
+      'Solta': 'Livro de magia do Babidi (ensina Paparapa), capa; raro: Alma do Babidi. Vencer ele no fim da nave libera o caminho do Majin Boo.',
+      'Variações': 'Cor da capa e da roupa.',
+    },
+  });
+})();
+
+</script>
 
 <script>
 'use strict';
@@ -6174,6 +7040,9 @@ const SPAWN = {
   ],
   'Vilões do mundo': [
     ['Androide do Gero', 'Duplas e trios em volta do laboratório escondido do Gero (Terras do Dragão); às vezes 1 vagando sozinho.', 'Dia e noite iguais (máquina).'],
+    ['Tao Pai Pai', 'Raro: 1 por mundo, vagando pelas Terras do Dragão e perto da torre do Karin.', 'Dia: anda. Noite: fica parado de tocaia em cima de uma pedra.'],
+    ['Spopovich e Yamu', 'Sempre os dois juntos, no Deserto do Diabo, caçando energia pra reviver o Majin Boo.', 'Só de noite (de dia ficam na nave do Babidi).'],
+    ['Babidi', 'Só no último andar da nave dele, com 2 ou 3 mobs controlados pelo M.', 'Sempre lá; volta depois de 7 dias se você vencer.'],
   ],
 };
 let biome = 'Terras e Deserto';

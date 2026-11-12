@@ -63,6 +63,9 @@ const SPAWN = {
   ],
   'Vilões do mundo': [
     ['Androide do Gero', 'Duplas e trios em volta do laboratório escondido do Gero (Terras do Dragão); às vezes 1 vagando sozinho.', 'Dia e noite iguais (máquina).'],
+    ['Tao Pai Pai', 'Raro: 1 por mundo, vagando pelas Terras do Dragão e perto da torre do Karin.', 'Dia: anda. Noite: fica parado de tocaia em cima de uma pedra.'],
+    ['Spopovich e Yamu', 'Sempre os dois juntos, no Deserto do Diabo, caçando energia pra reviver o Majin Boo.', 'Só de noite (de dia ficam na nave do Babidi).'],
+    ['Babidi', 'Só no último andar da nave dele, com 2 ou 3 mobs controlados pelo M.', 'Sempre lá; volta depois de 7 dias se você vencer.'],
   ],
 };
 let biome = 'Terras e Deserto';
