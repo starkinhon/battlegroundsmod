@@ -43,6 +43,7 @@ public class BattlegroundsMod {
         ModEntities.ENTITY_TYPES.register(modEventBus);
         ModItems.init();
         ModCreativeTabs.init();
+        com.starkinhon.battlegroundsmod.universe.NarutoGear.register(modEventBus);
         ITEMS.register(modEventBus);
         CREATIVE_MODE_TABS.register(modEventBus);
         ModAttachments.ATTACHMENT_TYPES.register(modEventBus);

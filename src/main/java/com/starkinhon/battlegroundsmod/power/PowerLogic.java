@@ -428,22 +428,24 @@ public final class PowerLogic {
     }
 
     private static ModPayloads.SheathState sheathState(ServerPlayer player, int code) {
-        return new ModPayloads.SheathState(player.getId(), (code & 1) != 0, (code & 2) != 0, (code & 4) != 0);
+        return new ModPayloads.SheathState(player.getId(), (code & 1) != 0, (code & 2) != 0, (code & 4) != 0, (code & 8) != 0);
     }
 
     // 0: no sheath. 1: the sword rests in the sheath, also while in hand out of combat mode (Stark, 2026-11-07: it only
     // comes out to fight). 3: drawn, held in combat mode (or by someone without a power, who never enters it), or in the
     // off hand. +4: Kokushibo has the sword stretched (H): the sheath's flesh went into the blade, so there is no sheath on
     // the hip and the long sword stays in his hand even out of combat mode (Stark, 2026-11-08).
+    // +8: the Cabaça de Areia is in the inventory (it rides on the back, client GourdLayer).
     public static int sheathCode(ServerPlayer player) {
+        int gourd = com.starkinhon.battlegroundsmod.universe.NarutoGear.hasGourd(player) ? 8 : 0;
         if (!carriesSheath(player)) {
-            return 0;
+            return gourd;
         }
         boolean main = player.getMainHandItem().getItem() instanceof com.starkinhon.battlegroundsmod.item.KokushiboSwordItem;
         boolean off = player.getOffhandItem().getItem() instanceof com.starkinhon.battlegroundsmod.item.KokushiboSwordItem;
         boolean stretched = com.starkinhon.battlegroundsmod.power.powers.MoonDemon.stretched(player);
         boolean fighting = stretched || !player.getData(ModAttachments.POWER).hasPower() || com.starkinhon.battlegroundsmod.combat.CombatMode.in(player);
-        return (main && fighting || off ? 3 : 1) | (stretched ? 4 : 0);
+        return (main && fighting || off ? 3 : 1) | (stretched ? 4 : 0) | gourd;
     }
 
     // Kokushibo's sheath goes on the hip of whoever has his sword anywhere in the inventory.

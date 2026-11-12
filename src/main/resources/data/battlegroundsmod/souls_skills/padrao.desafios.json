@@ -31,7 +31,7 @@
       "pilar": "minecraft:oak_log",
       "desafios": [
         {"id": "shikamaru", "foco": "Prender. A sombra dele segura você no lugar.", "itens": []},
-        {"id": "ino", "foco": "Mente. Entra na sua cabeça e troca de corpo.", "itens": ["battlegroundsmod:pergaminho_ninken"]},
+        {"id": "ino", "foco": "Mente. Entra na sua cabeça e troca de corpo.", "itens": ["battlegroundsmod:pergaminho_selamento"]},
         {"id": "kakashi", "foco": "Técnica. Raikiri e jutsus copiados com o Sharingan.", "itens": ["battlegroundsmod:cristal_multiversal"]},
         {"id": "gaara", "foco": "Defesa. A areia bloqueia tudo e esmaga quem chega perto.", "itens": ["battlegroundsmod:bandana_ninja"]},
         {"id": "naruto", "foco": "Pressão. Clones por todo lado e Rasengan.", "itens": ["battlegroundsmod:kunai_hiraishin"]},
