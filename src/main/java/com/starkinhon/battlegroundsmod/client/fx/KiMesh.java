@@ -41,8 +41,8 @@ public final class KiMesh {
             SPIRAL = 11, WIND = 12, KATON = 13, KATON_RING = 14, SHADOW_PATH = 15, SHADOW_SEA = 16;
     // Ino (forja/ino-kit): her spirit's boxes, a mind thread, the diamond seal, the spiral, the Shinranshin's cone, the
     // spirit's trail, the Teatro Mental's dome and sky, a lit solid (flowers).
-    public static final int INO_GHOST = 17, INO_THREAD = 18, INO_SEAL = 19, INO_SPIRAL = 20, INO_WAVE = 21, INO_TAIL = 22, INO_DOME = 23, INO_SKY = 24,
-            INO_SOLID = 25;
+    public static final int INO_GHOST = 60, INO_THREAD = 61, INO_SEAL = 62, INO_SPIRAL = 63, INO_WAVE = 64, INO_TAIL = 65, INO_DOME = 66, INO_SKY = 67,
+            INO_SOLID = 68;
     public static final int FRONT = 1, BACK = 2, BOTH = 3;
 
     // Everything souls_ki reads; queue() keeps a copy, so one P can be reused for the next piece.

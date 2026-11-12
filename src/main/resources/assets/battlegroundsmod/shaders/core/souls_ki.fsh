@@ -135,8 +135,8 @@ void main() {
         fragColor = vec4(mix(vec3(0.018, 0.015, 0.024), vec3(0.09, 0.08, 0.11), edge * 0.6) * a, a);
         return;
     }
-    if (kind >= 17 && kind <= 25) {                                     // Ino (forja/ino-kit/ino.js), the page's shaders line by line
-        if (kind == 17) {                                              // GHOST_F: her spirit (Dust = where the camera is, from the spirit's anchor)
+    if (kind >= 60 && kind <= 68) {                                     // Ino (forja/ino-kit/ino.js), the page's shaders line by line
+        if (kind == 60) {                                              // GHOST_F: her spirit (Dust = where the camera is, from the spirit's anchor)
             vec3 W3 = -vV + Dust; vec3 Nf = normalize(cross(dFdx(vV), dFdy(vV))); float ff = abs(dot(Nf, V)), rr = 1. - ff;
             float dn = fbm3(W3 * 3.1 + 7.) * 0.5 + 0.5; if (dn < Thresh) discard;
             float n = fbm3(W3 * 2.4 + vec3(0., -Time * 1.3, 0.)) * 0.5 + 0.5;
@@ -148,7 +148,7 @@ void main() {
             float a = clamp((0.2 + 0.7 * pow(rr, 1.3) + lines * 0.3 + (n - 0.5) * 0.2 + edge) * Alpha, 0., 1.); if (a < 0.003) discard;
             emit(col * a, a * 0.5); return;
         }
-        if (kind == 18) {                                              // THREAD_F (Growth = how far it ran, Pulse = where the pulse is, Thresh = snapping)
+        if (kind == 61) {                                              // THREAD_F (Growth = how far it ran, Pulse = where the pulse is, Thresh = snapping)
             if (vU > Growth) discard;
             float n = gn(vec3(vU * 18. - Time * 3., Seed, 0.)) * 0.5 + 0.5;
             float dn = gn(vec3(vU * 9., Seed * 2., 1.)) * 0.5 + 0.5; if (dn < Thresh) discard;
@@ -159,7 +159,7 @@ void main() {
             if (a < 0.003) discard;
             emit(col * a * (1. + 1.4 * p), a * 0.4); return;
         }
-        if (kind == 19) {                                              // SEAL_F (Life = how far it opened)
+        if (kind == 62) {                                              // SEAL_F (Life = how far it opened)
             vec2 p = vUv * 2. - 1.; float d = abs(p.x) + abs(p.y);
             vec2 q = mat2(0.7071, -0.7071, 0.7071, 0.7071) * p; float sq = max(abs(q.x), abs(q.y));
             float grow = smoothstep(0., 1., Life * 2.);
@@ -170,14 +170,14 @@ void main() {
             float a = (l1 + l2 * 0.8 + l3 * 0.6 + exp(-d * d * 12.) * 0.6) * Alpha; if (a < 0.003) discard;
             vec3 c = mix(vec3(0.65, 0.4, 1.), vec3(1.), clamp(a * 0.7, 0., 1.)); emit(c * a, a * 0.4); return;
         }
-        if (kind == 20) {                                              // SPIRAL_F
+        if (kind == 63) {                                              // SPIRAL_F
             vec2 p = vUv * 2. - 1.; float r = length(p), an = atan(p.y, p.x);
             float arm = sin(an * 3. + log(max(r, 0.02)) * 7. - Time * 7. + Seed + gn(vec3(p * 3., Time * 0.8 + Seed)) * 1.2);
             float w = fwidth(arm) * 1.5; float m = smoothstep(0.55 - w, 0.55 + w, arm) * smoothstep(0.12, 0.25, r) * (1. - smoothstep(0.75, 1., r));
             float a = m * Alpha; if (a < 0.003) discard;
             vec3 c = mix(vec3(0.95, 0.55, 0.95), vec3(0.6, 0.35, 1.), r); emit(c * a, a * 0.6); return;
         }
-        if (kind == 21) {                                              // WAVE_F (Growth = where the front is, 0..1)
+        if (kind == 64) {                                              // WAVE_F (Growth = where the front is, 0..1)
             float v = vH; if (v > Growth) discard;
             float ux = atan(vDir.y, vDir.x) / 6.2832 + 0.5;
             float n = fbm3(vec3(ux * 9., v * 5. - Time * 2., 0.)) * 0.5 + 0.5;
@@ -188,19 +188,19 @@ void main() {
             if (a < 0.003) discard;
             vec3 c = mix(vec3(0.6, 0.35, 1.), vec3(0.97, 0.92, 1.), clamp(front + rings * 0.3, 0., 1.)); emit(c * a, a * 0.4); return;
         }
-        if (kind == 22) {                                              // TAIL_F (vU = 0 the oldest end, 1 the spirit)
+        if (kind == 65) {                                              // TAIL_F (vU = 0 the oldest end, 1 the spirit)
             float uy = atan(vDir.y, vDir.x) / 6.2832 + 0.5;
             float n = fbm3(vec3(vU * 6. - Time * 2., uy * 3., 0.)) * 0.5 + 0.5;
             float m = smoothstep(0.3, 0.6, n + vU * 0.6 - 0.25); float a = m * (0.15 + 0.6 * (1. - f)) * pow(vU, 1.2) * Alpha; if (a < 0.003) discard;
             vec3 c = mix(vec3(0.5, 0.25, 0.95), vec3(0.95, 0.9, 1.), (1. - f) * vU); emit(c * a, a * 0.5); return;
         }
-        if (kind == 23) {                                              // DOME_F
+        if (kind == 66) {                                              // DOME_F
             float n = fbm3(vO * 4. + vec3(0., -Time * 0.4, 0.)) * 0.5 + 0.5;
             float waves = sin(vO.y * 60. - Time * 3. + n * 4.); float w = fwidth(waves) * 1.5; float lines = smoothstep(0.85 - w, 0.85 + w, waves);
             float a = (0.03 + 0.5 * pow(rim, 3.) + lines * 0.12 * (0.4 + rim)) * Alpha * smoothstep(-0.02, 0.05, vO.y); if (a < 0.003) discard;
             vec3 c = mix(vec3(0.45, 0.2, 0.85), vec3(0.95, 0.85, 1.), clamp(pow(rim, 4.) + lines * 0.3, 0., 1.)); emit(c * a, a * 0.5); return;
         }
-        if (kind == 24) {                                              // NEB_F: the mind's sky
+        if (kind == 67) {                                              // NEB_F: the mind's sky
             vec3 d = normalize(vO); float n = fbm4(d * 2.2 + vec3(Time * 0.03, 0., 0.)) * 0.5 + 0.5, m = fbm3(d * 5. - vec3(0., Time * 0.05, 0.)) * 0.5 + 0.5;
             vec3 c = mix(vec3(0.06, 0.02, 0.14), vec3(0.32, 0.1, 0.5), smoothstep(0.3, 0.75, n)); c = mix(c, vec3(0.85, 0.4, 0.75), smoothstep(0.62, 0.9, n * m * 1.6) * 0.6);
             float star = step(0.995, fract(sin(dot(floor(d * 160.), vec3(12.9, 78.2, 37.7))) * 43758.5)) * (0.5 + 0.5 * sin(Time * 3. + n * 20.));

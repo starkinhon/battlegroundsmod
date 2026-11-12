@@ -151,12 +151,12 @@ void main() {
         float rr = 1. + 0.05 * (nn - 0.5) - 0.08 * h;
         P = vec3(d.x * rr, h * top, d.y * rr); n = normalize(vec3(d.x, 0.3, d.y));
         vH = h; vO = vec3(cos(ang) * 4., P.y * 2.2 - Time * 2.2, sin(ang) * 4.) + Seed;
-    } else if (kind == 17 || kind == 25) {                             // Ino: a box of the spirit / a lit solid piece (flowers)
-        P = Position; n = kind == 25 ? normalize(Position) : vec3(0., 1., 0.);
-    } else if (kind == 18 || kind == 22) {                             // Ino: a mind thread (sags and sways) / a piece of the spirit's trail
+    } else if (kind == 60 || kind == 68) {                             // Ino: a box of the spirit / a lit solid piece (flowers)
+        P = Position; n = kind == 68 ? normalize(Position) : vec3(0., 1., 0.);
+    } else if (kind == 61 || kind == 65) {                             // Ino: a mind thread (sags and sways) / a piece of the spirit's trail
         vec2 d = normalize(Position.xz + 1e-5); float u = Position.y;
         vec3 c = vec3(0., u * Len, 0.); float r = W;
-        if (kind == 18) {
+        if (kind == 61) {
             vec3 down = transpose(mat3(Model)) * vec3(0., -1., 0.); down.y = 0.;
             float env = sin(3.14159 * u);
             if (length(down) > 0.05) c += normalize(down) * Bend * env;
@@ -166,17 +166,17 @@ void main() {
             r = mix(R0, R1, u); vU = mix(Pulse, Flow, u);
         }
         P = c + vec3(d.x * r, 0., d.y * r); n = vec3(d.x, 0., d.y); vDir = d;
-    } else if (kind == 19 || kind == 20) {                             // Ino: flat squares (the seal, the spiral)
+    } else if (kind == 62 || kind == 63) {                             // Ino: flat squares (the seal, the spiral)
         P = Position; n = vec3(0., 1., 0.); vUv = Position.xz * 0.5 + 0.5;
-    } else if (kind == 21) {                                           // Ino: the Shinranshin's cone (y 0 at the forehead)
+    } else if (kind == 64) {                                           // Ino: the Shinranshin's cone (y 0 at the forehead)
         float h = Position.y; vec2 d = normalize(Position.xz + 1e-5);
         float r = mix(R0, R1, h);
         P = vec3(d.x * r, h * Len, d.y * r); n = normalize(vec3(d.x, -(R1 - R0) / max(Len, 0.01), d.y)); vDir = d; vH = h;
-    } else if (kind == 23 || kind == 24) {                             // Ino: the dome and the sky of the Teatro Mental
+    } else if (kind == 66 || kind == 67) {                             // Ino: the dome and the sky of the Teatro Mental
         n = normalize(Position); P = Position; vO = n;
     }
     vec4 w = Model * vec4(P, 1.0);
-    vN = kind == 25 ? transpose(inverse(mat3(Model))) * n : mat3(Model) * n;   // (25: squashed petals keep their normals)
+    vN = kind == 68 ? transpose(inverse(mat3(Model))) * n : mat3(Model) * n;   // (68: squashed petals keep their normals)
     vNv = mat3(ModelViewMat) * vN;                                     // the normal as the camera sees it (halo rays)
     vV = -w.xyz;
     vC = vec4((Model * vec4(0., 0., 0., 1.)).xyz, length(Model[0].xyz));   // the piece's center (camera-relative) and size
