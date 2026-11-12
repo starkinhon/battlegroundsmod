@@ -45,11 +45,20 @@ public final class SkillStop {
         }
     }
 
-    // A dead fighter's moves are over: their sounds and effects too.
+    // A dead fighter's moves are over: their sounds and effects too. A player's move is cut off like a stun would
+    // (interrupts++, so the move's own task stops and cleans up, its pose cleared on every client) and the guard drops;
+    // otherwise the pose of the move they died in stayed on the body after the respawn (same entity id), until another
+    // move replaced it.
     public static void onDeath(LivingDeathEvent event) {
-        if (!event.isCanceled() && !event.getEntity().level().isClientSide()) {
-            com.starkinhon.battlegroundsmod.power.powers.sukuna.Fuga.onDeath(event.getEntity(), event.getSource());
-            stop(event.getEntity());
+        LivingEntity entity = event.getEntity();
+        if (!event.isCanceled() && !entity.level().isClientSide()) {
+            com.starkinhon.battlegroundsmod.power.powers.sukuna.Fuga.onDeath(entity, event.getSource());
+            if (entity instanceof ServerPlayer) {
+                Defense.stop(entity);
+                com.starkinhon.battlegroundsmod.power.PowerLogic.interrupt(entity);
+            } else {
+                stop(entity);
+            }
         }
     }
 
