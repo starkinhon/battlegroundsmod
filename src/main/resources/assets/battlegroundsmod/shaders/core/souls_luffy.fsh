@@ -161,6 +161,8 @@ void main() {
         vec3 Tt = normalize(vL), Vp = V - Tt * dot(V, Tt);
         float fb = length(Vp) < 1e-3 ? 1. : abs(dot(N, normalize(Vp)));
         float tip = (1. - smoothstep(P2.x - 0.06, P2.x, vU)) * smoothstep(P2.y, P2.y + 0.06, vU);
+        // right by the lens a bolt would fill the screen like a plate: it fades out under ~3 blocks
+        tip *= smoothstep(0.9, 3.2, length(vV));
         if (GlowPass > 0.5) { fragColor = vec4(0.); return; }
         if (P2.z > 0.5) {
             float a = pow(fb, 3.) * 0.55 * A * tip;

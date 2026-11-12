@@ -73,6 +73,8 @@ public final class HakiFx {
     private static final List<Shell> SHELLS = new ArrayList<>();
     private static final List<Ring> RINGS = new ArrayList<>();
     private static final Map<Integer, Leak> LEAKS = new HashMap<>();
+    // blows still crackling: x, y, z, dir x/y/z, mix, size, born (ticks), time to the next bolt (s)
+    private static final List<double[]> CRACKLE = new ArrayList<>();
     // whoever is weakened by his haki: until when (ticks)
     private static final Map<Integer, Double> WEAK = new HashMap<>();
     private static double now, wrapAcc;
@@ -82,11 +84,12 @@ public final class HakiFx {
     }
 
     public static boolean active() {
-        return !BOLTS.isEmpty() || !MARKS.isEmpty() || !PEBBLES.isEmpty() || !SHELLS.isEmpty() || !RINGS.isEmpty() || !WEAK.isEmpty();
+        return !BOLTS.isEmpty() || !CRACKLE.isEmpty() || !MARKS.isEmpty() || !PEBBLES.isEmpty() || !SHELLS.isEmpty() || !RINGS.isEmpty() || !WEAK.isEmpty();
     }
 
     public static void clear() {
         BOLTS.clear();
+        CRACKLE.clear();
         MARKS.clear();
         PEBBLES.clear();
         SHELLS.clear();
@@ -320,8 +323,8 @@ public final class HakiFx {
     // ---------- every blow imbued (G4: red; G5: red and yellow) ----------
 
     // the fist of a rubber arm this frame (LuffyFx.drawArm): the haki winds round it
-    static void wrap(Vec3 fist, Vec3 shoulder, boolean mix, double s) {
-        if (wrapAcc < 0.035 * 20) {
+    static void wrap(Vec3 fist, Vec3 shoulder, boolean mix, double s, double fistR) {
+        if (wrapAcc < 0.03 * 20) {
             return;
         }
         wrapAcc = 0;
@@ -330,10 +333,17 @@ public final class HakiFx {
             return;
         }
         d = d.normalize();
-        double back = (rnd() * 0.5 + 0.2) * s, sp = rnd() * Math.PI * 2;
-        Vec3 side = new Vec3(Math.cos(sp), Math.sin(sp), 0).cross(d);
-        Vec3 to = fist.add(d.scale(back)).add(side.lengthSqr() < 1e-6 ? Vec3.ZERO : side.normalize().scale(0.12 * s));
-        bolt(at(fist), at(to), 0.1 + 0.08 * rnd(), (0.03 + 0.02 * rnd()) * s, 0.06 + 0.06 * rnd(), 6 + 5 * rnd(), 0, 0.05, 30, 0.25, 0.4, 0.2, col(mix));
+        // from a point just outside the fist's surface, back along the arm and round it (the fist can be a block wide in G4)
+        double sp = rnd() * Math.PI * 2, sp2 = sp + (rnd() - 0.5) * 2.2;
+        Vec3 u = Math.abs(d.y) > 0.9 ? new Vec3(1, 0, 0) : new Vec3(0, 1, 0);
+        Vec3 ax = d.cross(u).normalize(), ay = d.cross(ax).normalize();
+        double rr = fistR * (1.05 + 0.25 * rnd());
+        Vec3 from = fist.add(ax.scale(Math.cos(sp) * rr)).add(ay.scale(Math.sin(sp) * rr)).subtract(d.scale(fistR * (0.6 * rnd() - 0.3)));
+        double back = fistR * (1.2 + 2.6 * rnd()) + 0.3 * s * rnd(), rr2 = fistR * (0.5 + 0.7 * rnd());
+        Vec3 to = fist.add(d.scale(back)).add(ax.scale(Math.cos(sp2) * rr2)).add(ay.scale(Math.sin(sp2) * rr2));
+        double th = Math.max(0.03 * s, fistR * 0.07);
+        bolt(at(from), at(to), 0.12 + 0.1 * rnd(), th * (0.8 + 0.5 * rnd()), (0.08 + 0.1 * rnd()) * Math.max(s, fistR * 2), 6 + 5 * rnd(), 0, 0.05, 30, 0.25, 0.4, 0.2,
+                col(mix));
     }
 
     // the blow lands: it hits without touching. A thick bolt closes the gap, the haki bursts on him in bolts, two shells,
@@ -341,7 +351,7 @@ public final class HakiFx {
     static void hit(Vec3 c, Vec3 dir, boolean mix, double s) {
         Vec3 d = dir.lengthSqr() < 1e-6 ? new Vec3(0, 0, 1) : dir.normalize();
         Vec3 hitP = c.subtract(d.scale(0.28 * s)), from = hitP.subtract(d.scale(1.2 * s));
-        bolt(at(from), at(hitP), 0.26, 0.06 * s, 0.06 * s, 5, 0, 0, 8, 0.06, 0.5, 0.05, col(mix));
+        bolt(at(from), at(hitP), 0.45, 0.06 * s, 0.06 * s, 5, 0, 0, 8, 0.06, 0.5, 0.05, col(mix));
         int n = (mix ? 6 : 5) + (int) (rnd() * 4);
         for (int i = 0; i < n; i++) {
             double a = rnd() * Math.PI * 2, el = (rnd() - 0.3) * 1.4;
@@ -349,11 +359,16 @@ public final class HakiFx {
             Vec3 to = hitP.add(out.scale((1.4 + 3.2 * rnd()) * s));
             double g = ground(to);
             Vec3 to2 = new Vec3(to.x, Math.max(g + 0.01, to.y), to.z);
-            Bolt b = bolt(at(hitP), at(to2), 0.24 + 0.24 * rnd(), (0.034 + 0.03 * rnd()) * s, (0.2 + 0.3 * rnd()) * s, 4 + 4 * rnd(), (rnd() - 0.5) * 0.3 * s, 0, 10, 0.15, 0.5,
+            Bolt b = bolt(at(hitP), at(to2), 0.38 + 0.34 * rnd(), (0.034 + 0.03 * rnd()) * s, (0.2 + 0.3 * rnd()) * s, 4 + 4 * rnd(), (rnd() - 0.5) * 0.3 * s, 0, 10, 0.15, 0.5,
                     0.2, col(mix));
             if (b != null && to2.y < g + 0.05) {
                 b.onHit = q -> strike(q, 0.6, b.edge);
             }
+        }
+        // it keeps crackling on him for a moment after the blow (the G4/G5 impact frames cover the instant it lands)
+        CRACKLE.add(new double[] {hitP.x, hitP.y, hitP.z, d.x, d.y, d.z, mix ? 1 : 0, s, now, 0});
+        if (CRACKLE.size() > 12) {
+            CRACKLE.remove(0);
         }
         float[] e = col(mix)[0];
         SHELLS.add(new Shell(hitP, now, 0.28, 0.9 * s, 1, (float) (rnd() * 10), e));
@@ -361,6 +376,31 @@ public final class HakiFx {
         Vec3 under = new Vec3(c.x, ground(c) + 0.02, c.z);
         if (c.y - under.y < 3) {
             strike(under, 1, e);
+        }
+    }
+
+    private static void crackle(double sec) {
+        for (Iterator<double[]> it = CRACKLE.iterator(); it.hasNext(); ) {
+            double[] q = it.next();
+            double age = (now - q[8]) / 20;
+            if (age > 0.95) {
+                it.remove();
+                continue;
+            }
+            q[9] -= sec;
+            if (q[9] > 0) {
+                continue;
+            }
+            // fewer and shorter as it dies down
+            double k = 1 - age / 0.95, s = q[7];
+            q[9] = 0.06 + 0.1 * rnd() + 0.08 * (1 - k);
+            Vec3 c = new Vec3(q[0], q[1], q[2]), d = new Vec3(q[3], q[4], q[5]);
+            double a = rnd() * Math.PI * 2, el = (rnd() - 0.4) * 1.6;
+            Vec3 out = new Vec3(Math.cos(a) * Math.cos(el), Math.sin(el), Math.sin(a) * Math.cos(el)).add(d.scale(0.5)).normalize();
+            Vec3 from = c.add(out.scale(0.2 * s * rnd()));
+            Vec3 to = c.add(out.scale((0.7 + 1.9 * rnd()) * s * (0.5 + 0.5 * k)));
+            bolt(at(from), at(to), 0.14 + 0.16 * rnd(), (0.025 + 0.025 * rnd()) * s, (0.12 + 0.2 * rnd()) * s, 4 + 5 * rnd(), (rnd() - 0.5) * 0.2 * s, 0.04, 20, 0.2, 0.45,
+                    0.25, col(q[6] > 0.5));
         }
     }
 
@@ -442,6 +482,7 @@ public final class HakiFx {
         // the leaks of the ones no longer in G5
         LEAKS.values().removeIf(l -> nowTicks - l.last > 10);
         WEAK.values().removeIf(u -> u < nowTicks);
+        crackle(sec);
         for (Iterator<Bolt> it = BOLTS.iterator(); it.hasNext(); ) {
             Bolt b = it.next();
             double age = (now - b.born) / 20;

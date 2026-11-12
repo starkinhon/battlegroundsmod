@@ -640,7 +640,7 @@ public final class LuffyFx {
         if (B != null && B.move != null && (B.move.gear == 3 || B.move.gear == 4)) {
             Vec3 fistW = HakiFx.world(M, 0, 0, (float) (a.L + a.off * a.fs), REALCAM, GS);
             Vec3 rootW = HakiFx.world(M, 0, 0, 0, REALCAM, GS);
-            HakiFx.wrap(fistW, rootW, B.move.gear == 4, GS);
+            HakiFx.wrap(fistW, rootW, B.move.gear == 4, GS, 0.17 * a.fs * Math.max(a.fx, a.fz) * GS);
         }
         Matrix4f fm = new Matrix4f(M).translate(0, 0, (float) (a.L + a.off * a.fs)).rotateZ((float) a.spin)
                 .scale((float) (a.fs * a.fx), (float) (a.fs * a.fy), (float) (a.fs * a.fz));
