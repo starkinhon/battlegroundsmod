@@ -87,7 +87,10 @@ public final class DeathForestFx {
         if (bx != groundX || bz != groundZ || Math.abs(p.y - groundY) > 3 || now - groundAt > 60) {
             measureGround(mc.level, bx, bz, Mth.floor(p.y));
         }
-        if (now - shaftsAt > 40) {
+        if (roofed(mc.level, p)) {
+            // indoors at once, not at the next search (the shafts are drawn over the walls)
+            SHAFTS.clear();
+        } else if (now - shaftsAt > 40 || SHAFTS.isEmpty() && now - shaftsAt > 5) {
             findShafts(mc.level, p);
             shaftsAt = now;
         }
@@ -138,20 +141,24 @@ public final class DeathForestFx {
     }
 
     // Holes in the crown the sun comes through: open all the way along the sun's slant, leaves all around up high.
+    // Under a roof (the Exam tower, the Snake's Den) the shafts showed through the walls: none indoors (the canopy's
+    // leaves don't count as a roof).
+    private static boolean roofed(ClientLevel level, Vec3 p) {
+        BlockPos head = BlockPos.containing(p).above();
+        for (int k = 1; k <= 40; k++) {
+            BlockState roof = level.getBlockState(head.above(k));
+            if (!roof.isAir() && !roof.is(BlockTags.LEAVES) && roof.isSolid()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private static void findShafts(ClientLevel level, Vec3 p) {
         SHAFTS.clear();
         Vec3 sun = sunDir(level, 0);
         if (sun.y < 0.25) {
             return;
-        }
-        // under a roof (the Exam tower, the Snake's Den) the shafts showed through the walls: none indoors (the canopy's
-        // leaves don't count as a roof)
-        BlockPos head = BlockPos.containing(p).above();
-        for (int k = 1; k <= 40; k++) {
-            BlockState roof = level.getBlockState(head.above(k));
-            if (!roof.isAir() && !roof.is(BlockTags.LEAVES) && roof.isSolid()) {
-                return;
-            }
         }
         BlockPos.MutableBlockPos at = new BlockPos.MutableBlockPos();
         int px = Mth.floor(p.x), pz = Mth.floor(p.z);
