@@ -1,6 +1,11 @@
 {
-  "parent": "minecraft:item/generated",
-  "textures": {
-    "layer0": "minecraft:item/recovery_compass_16"
+  "loader": "neoforge:separate_transforms",
+  "base": {
+    "parent": "battlegroundsmod:item/radar_dragao_3d"
+  },
+  "perspectives": {
+    "gui": {
+      "parent": "battlegroundsmod:item/radar_dragao_icone"
+    }
   }
 }
