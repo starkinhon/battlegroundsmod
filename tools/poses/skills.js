@@ -597,15 +597,43 @@ S['nr.investida'] = hold(nrDash, 2, 20, 8);
 // nr.selo_cruz: W3 E18 back8. The cross seal in front of the chest ("Kage Bunshin no Jutsu!").
 const nrCross = { lean: 4, ...wide, ra: { yaw: -40, pitch: -28 }, la: { yaw: -40, pitch: -22 }, head: { yaw: 0, pitch: 6 } };
 S['nr.selo_cruz'] = hold(nrCross, 3, 18, 8);
-// nr.chute_alto: W2 E10 back8. A clone's kick straight up under the chin, arms flung back.
+// nr.chute_alto: W2 E10 back8. A clone's kick straight up under the chin, arms flung back. Pose to pose (Stark,
+// 2026-11-11: "não gosto de animação dura"): crouches into it, the kick snaps in 1 tick, overshoots, the body follows
+// through up off the kick and settles; nothing holds stiff.
 const nrUpKick = { lean: -18, rl: { pitch: 112, out: 2 }, ll: { pitch: -8, out: 3 }, ra: { yaw: 30, pitch: -120 }, la: { yaw: 30, pitch: -120 }, head: { yaw: 0, pitch: -16 } };
-S['nr.chute_alto'] = hold(nrUpKick, 2, 10, 8, { ...nrUpKick, lean: 8, rl: { pitch: 30, out: 3 } });
-// nr.salto: W3 E16 back6. In the air over the target: knees tucked, arms up for balance.
+S['nr.chute_alto'] = { keys: [
+  P(0, REST),
+  P(3, { lean: 14, drop: 3, rl: { pitch: -22, out: 3 }, ll: { pitch: 16, out: 3 }, ra: { yaw: 22, pitch: -48 }, la: { yaw: 22, pitch: -52 }, head: { yaw: 0, pitch: 10 } }, 'out'),
+  P(4, nrUpKick, 'snap'),
+  P(6, { ...nrUpKick, lean: -24, rl: { pitch: 126, out: 2 }, ra: { yaw: 36, pitch: -128 }, la: { yaw: 36, pitch: -126 } }, 'out'),
+  P(11, { lean: -6, rl: { pitch: 42, out: 3 }, ll: { pitch: -2, out: 3 }, ra: { yaw: 40, pitch: -84 }, la: { yaw: 40, pitch: -88 }, head: { yaw: 0, pitch: -6 } }, 'inout'),
+  P(18, REST, 'inout'),
+] };
+// nr.salto: W3 E16 back6. Crouch, spring up with the arms swinging, tuck over the target, then open up with the heel
+// raised over the head for the drop (nr.calcanhar takes over from that pose).
 const nrJump = { lean: -6, rl: { pitch: 64, out: 4 }, ll: { pitch: 52, out: 4 }, ra: { yaw: 50, pitch: 30 }, la: { yaw: 50, pitch: 30 }, head: { yaw: 0, pitch: 20 } };
-S['nr.salto'] = hold(nrJump, 3, 16, 6);
-// nr.calcanhar: W2 E10 back10. The heel brought down from over the head ("Uzumaki Naruto Rendan!").
+const nrHeelUp = { lean: -12, rl: { pitch: 150, out: 2 }, ll: { pitch: -8, out: 3 }, ra: { yaw: 56, pitch: 26 }, la: { yaw: 56, pitch: 22 }, head: { yaw: 0, pitch: 26 } };
+S['nr.salto'] = { keys: [
+  P(0, REST),
+  P(2, { lean: 20, drop: 4, rl: { pitch: -26, out: 4 }, ll: { pitch: 22, out: 4 }, ra: { yaw: 28, pitch: -122 }, la: { yaw: 28, pitch: -118 }, head: { yaw: 0, pitch: 8 } }, 'out'),
+  P(4, { lean: -14, rl: { pitch: -10, out: 3 }, ll: { pitch: 40, out: 3 }, ra: { yaw: 20, pitch: 64 }, la: { yaw: 20, pitch: 58 }, head: { yaw: 0, pitch: -10 } }, 'snap'),
+  P(9, nrJump, 'out'),
+  P(13, { ...nrJump, lean: -2, rl: { pitch: 82, out: 4 }, ll: { pitch: 70, out: 4 }, ra: { yaw: 44, pitch: 40 }, la: { yaw: 50, pitch: 46 } }, 'inout'),
+  P(18, nrHeelUp, 'inout'),
+  P(22, nrHeelUp, 'inout'),
+  P(30, REST, 'inout'),
+] };
+// nr.calcanhar: W2 E10 back10. The heel brought down from over the head ("Uzumaki Naruto Rendan!"): starts on the
+// jump's last pose, the heel snaps down, the body squashes on the impact, holds it, then comes up.
 const nrHeel = { lean: 20, rl: { pitch: 18, out: 2 }, ll: { pitch: -10, out: 3 }, ra: { yaw: 40, pitch: -60 }, la: { yaw: 40, pitch: -60 }, head: { yaw: 0, pitch: 24 } };
-S['nr.calcanhar'] = hold(nrHeel, 2, 10, 10, { ...nrHeel, lean: -10, rl: { pitch: 150, out: 2 }, ra: { yaw: 50, pitch: 20 }, la: { yaw: 50, pitch: 20 } });
+S['nr.calcanhar'] = { keys: [
+  P(0, nrHeelUp),
+  P(2, { ...nrHeelUp, lean: -16, rl: { pitch: 158, out: 2 } }, 'out'),
+  P(3, nrHeel, 'snap'),
+  P(6, { ...nrHeel, lean: 28, drop: 4, rl: { pitch: 4, out: 3 }, ll: { pitch: -22, out: 4 }, ra: { yaw: 50, pitch: -40 }, la: { yaw: 50, pitch: -44 } }, 'out'),
+  P(12, { ...nrHeel, lean: 24, drop: 3, rl: { pitch: 8, out: 3 }, ll: { pitch: -18, out: 4 } }, 'inout'),
+  P(22, REST, 'inout'),
+] };
 // nr.meditar: W8 E88 back12. Sitting cross-legged gathering nature energy, hands together in the lap, head bowed.
 const nrSit = { lean: 4, drop: 9, rl: { pitch: 84, out: 16 }, ll: { pitch: 84, out: 16 }, ra: { yaw: -30, pitch: -52 }, la: { yaw: -30, pitch: -52 }, head: { yaw: 0, pitch: 12 } };
 S['nr.meditar'] = hold(nrSit, 8, 88, 12);

@@ -272,6 +272,9 @@ public class BattlegroundsModClient {
         // Luffy's Gear 5 time and the hunger after it.
         event.registerBelowAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "luffy_hud"),
                 com.starkinhon.battlegroundsmod.client.fx.LuffyFx::renderGui);
+        // Kakashi's Sennen Goroshi title (over the world, under the HUD).
+        event.registerBelowAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "kakashi_title"),
+                com.starkinhon.battlegroundsmod.client.fx.KakashiTitle::render);
         event.registerBelowAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "domain_void"),
                 com.starkinhon.battlegroundsmod.client.fx.DomainScene::renderGui);
         // Inside Aizen's Black Box the dark closes in over the view (below the HUD).

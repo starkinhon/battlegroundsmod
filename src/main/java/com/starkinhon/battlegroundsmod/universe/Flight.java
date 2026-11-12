@@ -106,6 +106,10 @@ public final class Flight {
             send(player, 0);
             return;
         }
+        // Gaara's sand platform runs its own flight (speed and stamina) while it lasts.
+        if (com.starkinhon.battlegroundsmod.power.powers.sub.nr.Gaara.flying(player)) {
+            return;
+        }
         Abilities abilities = player.getAbilities();
         boolean changed = false;
         boolean stamina = Stamina.drains(player);

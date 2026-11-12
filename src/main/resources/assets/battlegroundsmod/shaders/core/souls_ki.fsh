@@ -28,6 +28,7 @@ uniform float Pitch;
 uniform float Twist;
 uniform float GlowPass;
 uniform float W;
+uniform vec3 Size;
 
 in vec3 vN;
 in vec3 vV;
@@ -326,6 +327,73 @@ void main() {
         float a = st * ends * Alpha * mix(1., 0.55, f); if (a < 0.004) discard;
         vec3 col = mix(Color, vec3(1.), smoothstep(0.45, 0.8, n));
         emit(col * a, a * 0.8);
+    } else if (kind == 30) {                                           // Rasengan: glass core, the swirl seen through it (Rot = spin)
+        float fz = facing();
+        vec3 o = vO; o.xz = mat2(cos(Rot), -sin(Rot), sin(Rot), cos(Rot)) * o.xz;
+        float w = fbm3(o * 2.2 + vec3(0., Time * 0.6, 0.)), ang = atan(o.z, o.x);
+        float l1 = pow(1. - abs(sin(ang * 3. + o.y * 7. + w * 3.)), 7.), l2 = pow(1. - abs(sin(ang * 5. - o.y * 4. + w * 5. + 1.7)), 9.) * 0.6;
+        vec3 rimC = vec3(0.03, 0.26, 0.92), body = vec3(0.22, 0.66, 1.), wh = vec3(0.93, 0.98, 1.);
+        vec3 col = mix(rimC, body, smoothstep(0., 0.55, fz)); col = mix(col, wh, smoothstep(0.72, 1.02, fz + (l1 + l2) * 0.3));
+        col += wh * (l1 + l2) * 0.45 * (1. - smoothstep(0.4, 0.95, fz));
+        float al = mix(1., 0.62, smoothstep(0.3, 0.9, fz)) * Alpha; if (al < 0.003) discard;
+        emit(col * al, al);
+    } else if (kind == 31) {                                           // Rasengan: three tilted orbits of wind streaks, each streak from the noise
+        vec3 o = normalize(vO); float s = 0.;
+        for (int i = 0; i < 3; i++) { float fi = float(i);
+            vec3 ax = normalize(vec3(sin(fi * 2.1 + 0.3), 1.0 + fi * 0.3, cos(fi * 1.7 + 0.9) * 0.8)); vec3 t1 = normalize(cross(ax, vec3(0.3, 0.1, 1.))), t2 = cross(ax, t1);
+            float an = atan(dot(o, t2), dot(o, t1)) - Phase * (1. + fi * 0.37), lat = dot(o, ax);
+            float n = gn(vec3(lat * 7. + fi * 5., cos(an) * 1.3, sin(an) * 1.3 + fi * 3.1)) * 0.5 + 0.5;
+            s += smoothstep(0.58, 0.8, n) * (1. - smoothstep(0.55, 0.95, abs(lat))); }
+        float a = clamp(s, 0., 1.) * (0.35 + 0.65 * pow(rim, 1.2)) * Alpha; if (a < 0.003) discard;
+        vec3 col = mix(vec3(0.55, 0.85, 1.), vec3(1.), clamp(s - 0.4, 0., 1.));
+        emit(col * a, a * 0.5);
+    } else if (kind == 32) {                                           // Rasenshuriken: four saw blades of wind, each its own edge and streaks (Rot = spin)
+        vec2 p = vUv * 2. - 1.; float r = length(p), a = atan(p.y, p.x) - Rot;
+        float u = fract(a / 6.2831853 * 4.), id = floor(a / 6.2831853 * 4. + 8.);
+        float edge = 0.3 + 0.68 * pow(1. - u, 1.35) + 0.07 * gn(vec3(r * 5., u * 4., id * 7.3 + Time * 2.));
+        float blade = smoothstep(edge, edge - 0.04, r) * smoothstep(0.16, 0.24, r) * smoothstep(0., 0.05, u);
+        float streak = smoothstep(0.35, 0.8, gn(vec3(r * 26., u * 2.5, id * 3.1 + Time * 4.)) * 0.5 + 0.5);
+        float blur = smoothstep(1., 0.85, r) * smoothstep(0.15, 0.4, r) * 0.18;
+        float hum = exp(-pow((r - 0.98) * 40., 2.)) * 0.5;
+        float al = clamp(blade * (0.55 + 0.45 * streak) + blur + hum, 0., 1.) * Alpha; if (al < 0.003) discard;
+        vec3 col = mix(vec3(0.55, 0.85, 1.), vec3(1.), blade * streak * 0.8 + smoothstep(0.35, 0.2, r));
+        emit(col * al, al * 0.6);
+    } else if (kind == 33) {                                           // Kamui: the space turns into a spiral and is swallowed (Size = axis, Rot = spin, Life = how far in)
+        vec3 o = normalize(vO); vec3 ax = normalize(Size + vec3(1e-5)); vec3 sx = normalize(cross(ax, abs(ax.y) > 0.9 ? vec3(1., 0., 0.) : vec3(0., 1., 0.))), ux = cross(sx, ax);
+        vec2 q = vec2(dot(o, sx), dot(o, ux)); float r = length(q), a = atan(q.y, q.x);
+        float arms = sin(a * 4. + log(max(r, 0.03)) * 7. + Rot) * 0.5 + 0.5;
+        float n = fbm3(vec3(q * 4., Time * 0.5)) * 0.5 + 0.5;
+        float body = smoothstep(0.35, 0.75, arms + (n - 0.5) * 0.6) * (1. - smoothstep(0.92, 1., r));
+        float voidc = 1. - smoothstep(0.1 + 0.5 * Life, 0.35 + 0.6 * Life, r);
+        vec3 col = mix(Color2, Color, body); col = mix(col, vec3(0.015, 0.01, 0.04), voidc);
+        float al = (0.5 * body * smoothstep(0.15, 0.6, r) + 0.95 * voidc) * Alpha * f; if (al < 0.004) discard;
+        if (GlowPass > 0.5) { fragColor = vec4(col * al * body * 0.45, 0.); return; }
+        fragColor = vec4(col * al, al * 0.85);
+    } else if (kind == 34) {                                           // Ninken seal: rings, spokes and writing in dark blood, a stain in the middle (Pulse = it lights up)
+        if (GlowPass > 0.5 && Pulse < 0.05) discard;
+        vec2 p = vUv * 2. - 1.; float r = length(p);
+        float ring = smoothstep(0.035, 0., abs(r - 0.86)) + smoothstep(0.025, 0., abs(r - 0.56)) * 0.8;
+        float n = gn(vec3(p * 5., 1.7)) * 0.5 + 0.5;
+        float spokes = 0.; for (int i = 0; i < 8; i++) { float ai = float(i) * 0.7854 + 0.2; vec2 d = vec2(cos(ai), sin(ai)); float t = dot(p, d), q2 = abs(dot(p, vec2(-d.y, d.x)));
+            float len = 0.62 + 0.2 * fract(sin(float(i) * 12.9898) * 437.5); spokes += smoothstep(0.03, 0.0, q2) * step(0.1, t) * step(t, len); }
+        float script = step(0.62, n) * smoothstep(0.62, 0.66, r) * smoothstep(0.84, 0.8, r);
+        float blood = smoothstep(0.2, 0., r) * (0.6 + 0.4 * n);
+        float m = clamp(ring + spokes * 0.85 + script * 0.7 + blood, 0., 1.) * Alpha; if (m < 0.01) discard;
+        vec3 col = mix(vec3(0.32, 0.03, 0.03), vec3(1., 0.35, 0.2), Pulse * (0.6 + 0.4 * sin(Time * 20.)));
+        emit(col * m, m * 0.9);
+    } else if (kind == 35) {                                           // Gaara's quicksand: a spiral of sand turning into the middle (Rot = spin, Pulse = sinking; Color/Color2/Dust/Size = base/shade/deep/light)
+        if (GlowPass > 0.5) discard;
+        vec2 p = vUv * 2. - 1.; float r = length(p), a = atan(p.y, p.x);
+        float sw = a - Rot + log(max(r, 0.04)) * 2.4;
+        float n = fbm3(vec3(cos(sw) * r * 3.2, sin(sw) * r * 3.2, Time * 0.15)) * 0.5 + 0.5;
+        float arms = sin(sw * 3. + n * 2.) * 0.5 + 0.5, l = n * 0.65 + arms * 0.35 * smoothstep(1., 0.3, r);
+        vec3 col = l > 0.6 ? Color : l > 0.42 ? Color2 : Dust;
+        col = mix(col, Dust * 0.55, smoothstep(0.42, 0., r) * (0.45 + 0.4 * Pulse));
+        float g = fract(sin(dot(floor((p + vec2(cos(sw), sin(sw)) * 0.02) * 140.), vec2(12.9898, 78.233))) * 43758.5453);
+        col = mix(col, Size, step(0.975, g) * 0.3); col *= 0.7;
+        float edge = 1. - smoothstep(0.7, 1.0, r + fbm3(vec3(p * 3.4, 2.)) * 0.18);
+        float al = edge * Alpha; if (al < 0.003) discard;
+        emit(col * al, al);
     } else {
         discard;
     }
