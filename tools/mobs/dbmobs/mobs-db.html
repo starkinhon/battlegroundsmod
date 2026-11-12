@@ -2860,6 +2860,1562 @@ const DBFX = (() => {
 })();
 
 </script>
+<script>
+// Raptor, o dino pequeno (Paozu, Terras do Dragão e Deserto). Estilo do desenho: cabeção, olho redondo, couro liso
+// de duas cores com a barriga em gomos. Fraco, tier 8. Caçador de bando: corpo na horizontal, cauda de
+// contrapeso, pernas de ave com a garra-foice levantada no dedo de dentro.
+// Golpes: Bote (agacha, rebola, salta em cima do alvo, prende no chão e morde três vezes) e Garras (pula e chuta
+// com as duas foices, deixando um X de cortes que sangra).
+'use strict';
+(() => {
+  const { n3, mix, mul } = ENG;
+  const { seq, loop } = FX;
+  const fr = x => x - Math.floor(x);
+  const cel = ENG.cel;
+  const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
+
+  const SKINS = [[96, 150, 70], [176, 112, 64], [128, 104, 156], [190, 150, 70], [90, 130, 140], [150, 90, 70]];
+  const CRESTS = [[200, 60, 40], [230, 150, 40], [60, 110, 190], [40, 40, 44], [220, 210, 190]];
+  function variant(seed) {
+    const R = FX.rnd(seed);
+    const pick = a => a[Math.floor(R() * a.length)];
+    const skin = pick(SKINS).map(c => c * (0.92 + R() * 0.12));
+    return {
+      seed, skin, belly: mix(skin, [244, 226, 176], 0.72), stripe: mul(skin, 0.55 + R() * 0.12), crest: pick(CRESTS),
+      stripes: 0.8 + R() * 0.6, quills: R() < 0.55, scar: R() < 0.3, eye: R() < 0.5 ? [236, 200, 60] : [230, 120, 40],
+    };
+  }
+
+  function painters(v) {
+    const S = v.seed;
+    const shade = (base, q, s, lo = 0.8, hi = 1.14) => {
+      const f = 0.62 - 0.38 * q.ny + 0.14 * (n3(q.ax * 0.3, q.ay * 0.3, q.az * 0.3, s + S) - 0.5) + (q.f === 'top' ? 0.25 : 0) - (q.f === 'bottom' ? 0.3 : 0);
+      return cel(base, f, lo, hi);
+    };
+    // couro: barriga clara, faixas escuras que atravessam as costas e a cauda, escamas pequenas
+    // couro liso como no desenho: duas cores (costas e barriga creme com gomos), sombra em faixas, quase sem ruído
+    const hide = (q, s = 1) => {
+      const under = q.f === 'bottom' || (q.f !== 'top' && q.ny > 0.6);
+      let c = shade(under ? v.belly : v.skin, q, s, 0.84, 1.1);
+      if (under && fr(q.az * 0.5) < 0.16) c = mul(c, 0.82);                                        // gomos da barriga
+      if (!under && q.f !== 'bottom') {
+        const band = fr(q.az * 0.09 * v.stripes + 0.3);
+        if (band < 0.12 && q.f === 'top') c = shade(v.stripe, q, s + 1, 0.84, 1.1);
+      }
+      return c;
+    };
+    const limb = (q, s = 6) => { let c = shade(v.skin, q, s, 0.84, 1.1); if (q.ny > 0.75 && q.f !== 'top') c = mix(c, v.belly, 0.35); return c; };
+    const P = { hide, limb };
+    P.head = q => {
+      let c = hide(q, 2);
+      const x = q.pz, y = q.py;
+      if (q.f === 'west' || q.f === 'east') {
+        // olho redondo de desenho: branco, pupila preta olhando pra frente, sobrancelha brava por cima
+        const ex = 2.6, ey = 1.5, d = Math.hypot((x - ex) / 1.15, (y - ey) / 1.0);
+        if (d < 1) { c = [246, 244, 232]; if (Math.hypot(x - (ex - 0.45), y - ey) < 0.55) c = [18, 16, 14]; }
+        if (y < ey - 0.75 && y > ey - 1.4 && Math.abs(x - ex) < 1.5 && (y - (ey - 1.1)) < (ex - x) * 0.25 + 0.3) c = mul(v.skin, 0.55);
+        if (v.scar && q.f === 'west' && Math.abs(y - (2.9 - (x - 4.5) * 0.6)) < 0.3 && x > 4 && x < 6.5) c = mul(v.skin, 0.62);
+      }
+      return c;
+    };
+    P.snout = q => {
+      let c = hide(q, 3);
+      if ((q.f === 'west' || q.f === 'east') && q.py > 2.0) { const k = fr(q.pz / 1.4); if (k < 0.5 && (q.py - 2.0) < 0.9 * (1 - Math.abs(k - 0.25) * 4)) c = [244, 240, 226]; }   // dentes de cima, poucos e grandes
+      if (q.f === 'north' && q.py < 0.8 && (Math.floor(q.px) === 0 || Math.floor(q.px) === 2)) c = [30, 24, 20];                       // narinas
+      return c;
+    };
+    P.jaw = q => {
+      let c = hide(q, 4);
+      if ((q.f === 'west' || q.f === 'east') && q.py < 0.6 && q.pz < 7) { const k = fr(q.pz / 1.6 + 0.5); if (k < 0.45 && q.py < 0.6 * (1 - Math.abs(k - 0.22) * 4)) c = [244, 240, 226]; }
+      if (q.f === 'top') c = [150, 60, 70];
+      return c;
+    };
+    P.mouth = () => [120, 40, 50];
+    P.claw = q => cel([40, 34, 30], 0.4 + 0.6 * (1 - q.ny), 0.8, 1.6);
+    P.quill = q => { const k = Math.floor(q.az); const cut = 3 * (0.4 + 0.6 * n3(k * 1.3, 0, 0, 40 + S)); if (q.f === 'top' || q.f === 'bottom') return null; if ((3 - q.py) > cut) return null; return shade(v.crest, q, 5); };
+    return P;
+  }
+
+  function rigDef(P, v) {
+    const leg = s => {
+      const D = s < 0;
+      return {
+        name: D ? 'pernaD' : 'pernaE', pivot: [s * 2.8, 8.6, 0.6], rot: [-0.55, 0, 0], boxes: [{ x: -1.9, y: -1.5, z: -2.4, w: 3.8, h: 8, d: 4.8, p: P.limb }],
+        kids: [{
+          name: D ? 'canelaD' : 'canelaE', pivot: [0, 6, 0], rot: [1.1, 0, 0], boxes: [{ x: -1.25, y: 0, z: -1.3, w: 2.5, h: 6.2, d: 2.6, p: P.limb }],
+          kids: [{
+            name: D ? 'metaD' : 'metaE', pivot: [0, 6, 0], rot: [-0.75, 0, 0], boxes: [{ x: -0.95, y: 0, z: -1, w: 1.9, h: 4.6, d: 2, p: P.limb }],
+            kids: [{
+              name: D ? 'peD' : 'peE', pivot: [0, 4.5, 0], rot: [0.2, 0, 0], boxes: [
+                { x: -1.5, y: -0.4, z: -3.2, w: 3, h: 1.4, d: 4, p: P.limb },
+                { x: -1.4, y: 0.1, z: -4.2, w: 0.9, h: 0.9, d: 1.2, p: P.claw },
+                { x: 0.4, y: 0.1, z: -4.3, w: 0.9, h: 0.9, d: 1.3, p: P.claw },
+              ],
+              kids: [{ name: D ? 'foiceD' : 'foiceE', pivot: [-s * 1.1, 0.2, -1.4], rot: [-1.0, 0, 0], boxes: [{ x: -0.4, y: -2.4, z: -0.45, w: 0.8, h: 2.6, d: 0.9, p: P.claw }, { x: -0.3, y: -2.9, z: -1.1, w: 0.6, h: 0.8, d: 0.9, p: P.claw }] }],
+            }],
+          }],
+        }],
+      };
+    };
+    const arm = s => ({
+      name: s < 0 ? 'bracoD' : 'bracoE', pivot: [s * 2.5, 2.4, -6.3], rot: [0.7, 0, s * -0.2], boxes: [{ x: -0.7, y: 0, z: -0.8, w: 1.4, h: 3.6, d: 1.6, p: P.limb }],
+      kids: [{
+        name: s < 0 ? 'anteD' : 'anteE', pivot: [0, 3.4, 0], rot: [-1.3, 0, 0], boxes: [{ x: -0.6, y: 0, z: -0.6, w: 1.2, h: 3, d: 1.2, p: P.limb }],
+        kids: [{ name: s < 0 ? 'maoD' : 'maoE', pivot: [0, 2.8, 0], rot: [0.5, 0, 0], boxes: [{ x: -0.7, y: 0, z: -0.4, w: 0.5, h: 1.6, d: 0.6, p: P.claw }, { x: 0.2, y: 0, z: -0.4, w: 0.5, h: 1.8, d: 0.6, p: P.claw }] }],
+      }],
+    });
+    return {
+      name: 'raiz', pivot: [0, 0, 0], kids: [
+        {
+          name: 'quadril', pivot: [0, 8.6, 1], boxes: [
+            { x: -3.4, y: -3.2, z: -8, w: 6.8, h: 6.8, d: 11, p: P.hide },
+            { x: -3.1, y: -2.8, z: -8.8, w: 6.2, h: 7.4, d: 5.2, p: P.hide },                         // peito
+          ], kids: [
+            {
+              name: 'pescoco', pivot: [0, -1, -7.6], rot: [0.62, 0, 0], boxes: [
+                { x: -1.7, y: -6.6, z: -1.9, w: 3.4, h: 7.2, d: 3.8, p: P.hide },
+                ...(v.quills ? [{ x: -0.15, y: -9.2, z: 1.2, w: 0.3, h: 3, d: 3.2, p: P.quill }] : []),
+              ],
+              kids: [{
+                name: 'cabeca', pivot: [0, -6.2, 0], rot: [-0.62, 0, 0], boxes: [
+                  { x: -2.9, y: -3.6, z: -5.2, w: 5.8, h: 4.0, d: 7.2, p: P.head },
+                  { x: -2.3, y: -2.6, z: -9.0, w: 4.6, h: 2.9, d: 4.2, p: P.snout },
+                  ...(v.quills ? [{ x: -0.15, y: -5.6, z: -1.5, w: 0.3, h: 3, d: 3.4, p: P.quill }] : []),
+                ],
+                kids: [{ name: 'mandibula', pivot: [0, 0.3, 0.8], boxes: [{ x: -2.4, y: 0, z: -9.2, w: 4.8, h: 1.6, d: 9.6, p: P.jaw }, { x: -1.9, y: -0.25, z: -8.6, w: 3.8, h: 0.3, d: 8, p: P.mouth }] }],
+              }],
+            },
+            arm(-1), arm(1),
+            {
+              name: 'cauda1', pivot: [0, -1, 3], rot: [-0.12, 0, 0], boxes: [{ x: -2.4, y: -2, z: 0, w: 4.8, h: 4, d: 7, p: P.hide }],
+              kids: [{
+                name: 'cauda2', pivot: [0, 0, 6.8], rot: [0.05, 0, 0], boxes: [{ x: -1.6, y: -1.4, z: 0, w: 3.2, h: 2.8, d: 7.2, p: P.hide }],
+                kids: [{ name: 'cauda3', pivot: [0, 0, 7], rot: [0.05, 0, 0], boxes: [{ x: -0.9, y: -0.8, z: 0, w: 1.8, h: 1.6, d: 7, p: P.hide }] }],
+              }],
+            },
+          ],
+        },
+        leg(-1), leg(1),
+      ],
+    };
+  }
+  function rigLow(P, v) {
+    const leg = s => ({
+      name: s < 0 ? 'pernaD' : 'pernaE', pivot: [s * 2.8, 8.6, 0.6], rot: [-0.55, 0, 0], boxes: [{ x: -1.8, y: -1.5, z: -2.3, w: 3.6, h: 8, d: 4.6, p: P.limb }],
+      kids: [{
+        name: s < 0 ? 'canelaD' : 'canelaE', pivot: [0, 6, 0], rot: [1.1, 0, 0], boxes: [{ x: -1.2, y: 0, z: -1.2, w: 2.4, h: 6.2, d: 2.4, p: P.limb }],
+        kids: [{ name: s < 0 ? 'metaD' : 'metaE', pivot: [0, 6, 0], rot: [-0.55, 0, 0], boxes: [{ x: -1, y: 0, z: -1, w: 2, h: 4.8, d: 2, p: P.limb }, { x: -1.5, y: 4.2, z: -3.2, w: 3, h: 1.4, d: 4, p: P.limb }] }],
+      }],
+    });
+    return {
+      name: 'raiz', pivot: [0, 0, 0], kids: [
+        {
+          name: 'quadril', pivot: [0, 8.6, 1], boxes: [{ x: -3, y: -3, z: -8.6, w: 6, h: 6.6, d: 11.6, p: P.hide }], kids: [
+            {
+              name: 'pescoco', pivot: [0, -1, -7.6], rot: [0.62, 0, 0], boxes: [{ x: -1.7, y: -6.6, z: -1.9, w: 3.4, h: 7.2, d: 3.8, p: P.hide }],
+              kids: [{ name: 'cabeca', pivot: [0, -6.2, 0], rot: [-0.62, 0, 0], boxes: [{ x: -2.3, y: -2.8, z: -5, w: 4.6, h: 3.1, d: 6.6, p: P.head }, { x: -1.7, y: -2.1, z: -8.6, w: 3.4, h: 2.4, d: 3.8, p: P.snout }], kids: [{ name: 'mandibula', pivot: [0, 0.3, 0.8], boxes: [{ x: -1.9, y: 0, z: -9.0, w: 3.8, h: 1.3, d: 9, p: P.jaw }] }] }],
+            },
+            { name: 'cauda1', pivot: [0, -1, 3], rot: [-0.12, 0, 0], boxes: [{ x: -2.2, y: -2, z: 0, w: 4.4, h: 3.8, d: 9, p: P.hide }], kids: [{ name: 'cauda2', pivot: [0, 0, 8.8], rot: [0.1, 0, 0], boxes: [{ x: -1.2, y: -1.1, z: 0, w: 2.4, h: 2.2, d: 11, p: P.hide }] }] },
+          ],
+        },
+        leg(-1), leg(1),
+      ],
+    };
+  }
+
+  // Marcas de garra: 2 cortes que se cruzam em X, cada corte com 3 riscos (a foice no meio, mais grossa e comprida,
+  // os dois dedos do lado mais finos e curtos). Brilham quando passam e ficam vermelhos no alvo até sumir.
+  function clawX() {
+    const SEG = 22, LINES = 6;
+    const N = LINES * (SEG + 1) * 2;
+    const pos = new Float32Array(N * 3), al = new Float32Array(N), hot = new Float32Array(N), idx = [];
+    for (let l = 0; l < LINES; l++) for (let s = 0; s < SEG; s++) { const a = (l * (SEG + 1) + s) * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
+    const geo = new THREE.BufferGeometry();
+    geo.setIndex(idx);
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    geo.setAttribute('al', new THREE.BufferAttribute(al, 1));
+    geo.setAttribute('hot', new THREE.BufferAttribute(hot, 1));
+    const m = new THREE.Mesh(geo, new THREE.ShaderMaterial({
+      transparent: true, depthWrite: false, side: THREE.DoubleSide,
+      vertexShader: 'attribute float al; attribute float hot; varying float vA; varying float vH; void main(){ vA=al; vH=hot; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }',
+      fragmentShader: 'varying float vA; varying float vH; void main(){ vec3 c = mix(vec3(0.5,0.03,0.05), vec3(1.0,0.96,0.92), vH); gl_FragColor = vec4(c, vA); }',
+    }));
+    m.frustumCulled = false;
+    // [início, fim] no plano do alvo (x lateral, y altura), largura e deslocamento de cada risco
+    const CUTS = [{ a: [-0.42, 1.55], b: [0.38, 0.75], bend: 0.12 }, { a: [0.44, 1.5], b: [-0.36, 0.7], bend: -0.1 }];
+    const LN = [{ off: -0.085, len: 0.82, w: 0.018 }, { off: 0, len: 1, w: 0.036 }, { off: 0.09, len: 0.78, w: 0.016 }];
+    m.at = (c, ages) => {
+      m.visible = true;
+      let k = 0;
+      CUTS.forEach((cut, ci) => {
+        const age = ages[ci];
+        const dx = cut.b[0] - cut.a[0], dy = cut.b[1] - cut.a[1], L = Math.hypot(dx, dy);
+        const nx = -dy / L, ny = dx / L;
+        LN.forEach(ln => {
+          for (let s = 0; s <= SEG; s++) {
+            const f = s / SEG;
+            const ff = (1 - ln.len) * 0.5 + f * ln.len;
+            const bow = Math.sin(Math.PI * ff) * cut.bend;
+            const x = c.x + cut.a[0] + dx * ff + nx * (ln.off + bow), y = c.y + cut.a[1] + dy * ff + ny * (ln.off + bow);
+            const w = ln.w * Math.sin(Math.PI * Math.min(1, Math.max(0, f))) ** 0.5;
+            const lead = Math.min(1, Math.max(0, age) * 5);
+            let a = 0, h = 0;
+            if (age > 0 && f <= lead) {
+              const fresh = Math.max(0, 1 - (lead - f) * 3 - Math.max(0, age - 0.2) * 3);
+              h = fresh;
+              a = Math.max(fresh, 0.85 * (1 - Math.max(0, (age - 0.3) / 0.7)));
+            }
+            const i = (k * (SEG + 1) + s) * 2;
+            pos.set([x - nx * w, y - ny * w, c.z, x + nx * w, y + ny * w, c.z], i * 3);
+            al[i] = al[i + 1] = Math.max(0, a); hot[i] = hot[i + 1] = h;
+          }
+          k++;
+        });
+      });
+      geo.attributes.position.needsUpdate = true; geo.attributes.al.needsUpdate = true; geo.attributes.hot.needsUpdate = true;
+    };
+    return m;
+  }
+  const blood = (seed, n, up) => () => DBFX.grains({
+    n, seed, palette: [[150, 10, 16], [120, 6, 12], [180, 24, 24], [90, 4, 8]], size: [0.02, 0.05], drag: 2.2, grav: 9, life: 0.7, spread: up ? 0.08 : 1.6,
+    cone: Rr => up ? [(Rr() - 0.5) * 2.4, 1 + Rr() * 2.4, (Rr() - 0.5) * 2.4] : [(Rr() - 0.5) * 0.4, -0.2 - Rr() * 0.5, 0.3 + Rr() * 0.4],
+  });
+
+  function stance(r, P) {
+    r('pernaD', 0, 0, 0.05); r('pernaE', 0, 0, -0.05);
+  }
+  const WALK_T = [[0, -0.5], [0.2, -0.25], [0.45, 0.35], [0.55, 0.42], [0.7, 0.1], [0.88, -0.45]];
+  const WALK_K = [[0, 0], [0.45, 0], [0.6, 0.5], [0.75, 0.9], [0.9, 0.3]];
+
+  function anim(P, t, mode, a, obj, e, ctx) {
+    const r = (n, x, y, z) => { if (!P[n]) return; const o = P[n].obj.rotation; o.x += x; o.y += y; o.z += z; };
+    const breath = loop([[0, 0], [0.45, 1], [0.999, 0]], t / 1.6);
+    const tailSway = (k, ph) => { r('cauda1', 0, 0.1 * k * Math.sin(ph), 0); r('cauda2', 0, 0.16 * k * Math.sin(ph - 0.7), 0); r('cauda3', 0, 0.22 * k * Math.sin(ph - 1.4), 0); };
+
+    if (mode === 'parado') {
+      stance(r, P);
+      r('quadril', -0.02 * breath, 0, 0);
+      // cabeça de ave: vira em trancos, para, cheira
+      const look = [[0, 0], [0.12, 0], [0.16, 0.5], [0.4, 0.5], [0.44, -0.4], [0.7, -0.4], [0.74, 0]];
+      const ph = fr(t / 4.2);
+      let yaw = 0; for (let i = 0; i < look.length - 1; i++) if (ph >= look[i][0] && ph < look[i + 1][0]) { const k = (ph - look[i][0]) / (look[i + 1][0] - look[i][0]); yaw = look[i][1] + (look[i + 1][1] - look[i][1]) * (k > 0.5 || look[i][1] === look[i + 1][1] ? 1 : k * 2) * (look[i][1] === look[i + 1][1] ? 0 : 1); if (look[i][1] === look[i + 1][1]) yaw = look[i][1]; }
+      r('pescoco', 0.04 * breath, yaw * 0.5, 0); r('cabeca', 0, yaw * 0.5, 0);
+      const sniff = seq([[0.8, 0], [0.84, 1], [0.88, 0], [0.92, 1], [0.96, 0]], ph);
+      r('cabeca', -0.1 * sniff, 0, 0);
+      r('mandibula', 0.05 * breath, 0, 0);
+      tailSway(0.6, t * 1.7);
+      return;
+    }
+    if (mode === 'andar') {
+      const ph = t * 1.5;
+      for (const [s, off] of [['D', 0], ['E', 0.5]]) {
+        r('perna' + s, loop(WALK_T, ph + off), 0, 0);
+        r('canela' + s, 0.4 * loop(WALK_K, ph + off), 0, 0);
+        r('meta' + s, -0.5 * loop(WALK_K, ph + off), 0, 0);
+        r('pe' + s, 0.6 * loop(WALK_K, ph + off - 0.05), 0, 0);
+      }
+      P.quadril.obj.position.y += 0.6 * Math.abs(Math.sin(ph * Math.PI * 2));
+      r('quadril', 0.03, 0.05 * Math.sin(ph * Math.PI * 2), 0);
+      r('pescoco', -0.05 * Math.sin(ph * Math.PI * 4), -0.05 * Math.sin(ph * Math.PI * 2), 0);
+      tailSway(0.8, ph * Math.PI * 2 + 1);
+      return;
+    }
+
+    if (mode === 'bote') {
+      const T = t % 4.0;
+      const R = ctx.ref; const RZ = -5.0; R.place(0, RZ, 0);
+      stance(r, P);
+      // agacha e rebola, salta, prende o alvo no chão e morde três vezes; depois pula pra trás
+      const crouch = seq([[0, 0], [0.45, 1, 'out'], [0.85, 1], [0.95, 0]], T);
+      const wig = T > 0.4 && T < 0.85 ? Math.sin(T * 26) : 0;
+      const jump = seq([[0.88, 0], [1.25, 1, 'io']], T);
+      const pin = seq([[1.2, 0], [1.3, 1, 'out'], [2.9, 1], [3.05, 0]], T);
+      const back = seq([[2.95, 0], [3.4, 1, 'io']], T);
+      const air = Math.sin(Math.PI * jump) * (T < 1.25 ? 1 : 0), air2 = Math.sin(Math.PI * back) * (T < 3.4 ? 1 : 0);
+      P.quadril.obj.position.y += 3.2 * crouch;
+      r('quadril', 0.1 * crouch + 0.3 * pin - 0.25 * air, 0.08 * wig, 0);
+      r('pescoco', -0.5 * crouch + 0.3 * air, 0, 0); r('cabeca', 0.45 * crouch - 0.2 * air, 0, 0);
+      r('cauda1', -0.3 * crouch + 0.2 * air, 0.25 * wig, 0); r('cauda2', -0.1 * crouch, 0.3 * wig, 0);
+      for (const s of ['D', 'E']) {
+        r('perna' + s, -0.5 * crouch + 0.8 * air - 0.9 * pin, 0, 0); r('canela' + s, 0.8 * crouch - 0.5 * air + 0.5 * pin, 0, 0);
+        r('meta' + s, -0.6 * crouch + 0.2 * pin, 0, 0); r('foice' + s, -0.5 * (air + pin), 0, 0);
+        r('braco' + s, -0.8 * (air + pin), 0, 0);
+      }
+      obj.position.z += (RZ + 1.3) * jump - (RZ + 1.3 - 0.0) * back * 0.75;
+      obj.position.y += 1.3 * air + 0.38 * pin + 0.6 * air2;
+      // o alvo cai de costas e fica preso
+      const fall = seq([[1.22, 0], [1.42, 1, 'out'], [3.2, 1], [3.8, 0, 'io']], T);
+      R.lean(-1.4 * fall); R.place(0, RZ + 0.3 * fall, 0); R.armsOut(0.5 * fall);
+      if (T > 1.22 && T < 1.4) ctx.shake(0.5);
+      // três mordidas, cada uma com seu ritmo
+      const BITES = [1.55, 1.98, 2.5];
+      BITES.forEach((bt, i) => {
+        const op = seq([[bt - 0.22, 0], [bt - 0.06, 1, 'out'], [bt, 0, 'snap']], T);
+        const dip = seq([[bt - 0.1, 0], [bt, 1, 'snap'], [bt + 0.18, 0]], T);
+        r('mandibula', 0.75 * op, 0, 0);
+        r('pescoco', 0.55 * dip, (i - 1) * 0.15 * dip, 0); r('cabeca', 0.25 * dip, 0, (i - 1) * 0.12 * dip);
+        if (T > bt && T < bt + 0.7) ctx.get('sangue' + i, blood(70 + i * 13, 24 + i * 6, true)).at(V3((i - 1) * 0.12, 0.42, RZ - 0.15), T - bt, 0.02);
+        if (T > bt && T < bt + 0.12) { ctx.shake(0.35); ctx.dark(0.18); }
+      });
+      return;
+    }
+
+    if (mode === 'garras') {
+      const T = t % 3.2;
+      const R = ctx.ref; const RZ = -2.9; R.place(0, RZ, 0);
+      stance(r, P);
+      // ergue o corpo, pula e chuta com a foice direita e depois a esquerda: os cortes cruzam em X
+      const rear = seq([[0, 0], [0.4, 1, 'out'], [1.3, 1], [1.7, 0, 'io']], T);
+      const hop = seq([[0.35, 0], [0.55, 1, 'out'], [1.15, 1], [1.35, 0, 'in']], T);
+      const k1 = seq([[0.48, 0], [0.6, 1, 'snap'], [0.75, 0.3]], T) * (T < 0.95 ? 1 : 0);
+      const k2 = seq([[0.8, 0], [0.92, 1, 'snap'], [1.1, 0.3], [1.4, 0]], T);
+      r('quadril', -0.55 * rear, 0.25 * k1 - 0.25 * k2, 0);
+      r('pescoco', -0.35 * rear, 0, 0); r('cabeca', 0.5 * rear, 0, 0);
+      r('mandibula', 0.4 * rear, 0, 0);
+      r('cauda1', 0.35 * rear, 0, 0); r('cauda2', 0.2 * rear, 0, 0);
+      r('pernaD', -1.5 * k1 - 0.3 * rear, 0, 0.2 * k1); r('canelaD', -0.6 * k1, 0, 0); r('foiceD', -0.9 * k1, 0, 0);
+      r('pernaE', -1.5 * k2 - 0.3 * rear, 0, -0.2 * k2); r('canelaE', -0.6 * k2, 0, 0); r('foiceE', -0.9 * k2, 0, 0);
+      r('bracoD', -0.8 * rear, 0, 0.4 * rear); r('bracoE', -0.8 * rear, 0, -0.4 * rear);
+      obj.position.y += 0.55 * hop;
+      obj.position.z -= 0.9 * hop;
+      const ages = [(T - 0.52) / 1.7, (T - 0.84) / 1.7];
+      if (T > 0.52 && T < 2.6) ctx.get('xis', clawX).at(V3(0, 0, RZ + 0.32), ages);
+      [0.56, 0.88].forEach((kt, i) => { if (T > kt && T < kt + 0.1) ctx.shake(0.4); });
+      const flinch = seq([[0.58, 0], [0.66, 1, 'out'], [1.0, 0.5], [1.5, 0]], T) + seq([[0.9, 0], [0.98, 1, 'out'], [1.4, 0]], T);
+      R.lean(-0.2 * flinch); R.spin(0.25 * (seq([[0.58, 0], [0.66, 1]], T) - 2 * seq([[0.9, 0], [0.98, 1]], T)));
+      // sangra: gotas caem do peito por um tempo
+      if (T > 1.0) ctx.get('sangra', blood(99, 40, false)).at(V3(0, 1.1, RZ + 0.25), T - 1.0, 0.02);
+      return;
+    }
+  }
+
+  window.MOBS = window.MOBS || [];
+  const fixed = [variant(5), variant(27), variant(63)];
+  fixed[0].skin = SKINS[0]; fixed[0].quills = true; fixed[0].crest = CRESTS[0];
+  fixed[1].skin = SKINS[1]; fixed[1].quills = false; fixed[1].scar = true;
+  fixed[2].skin = SKINS[2]; fixed[2].quills = true; fixed[2].crest = CRESTS[1];
+  for (const v of fixed) { v.belly = mix(v.skin, [244, 226, 176], 0.72); v.stripe = mul(v.skin, 0.6); }
+  const def = v => ({ def: rigDef(painters(v), v), low: rigLow(painters(v), v) });
+  window.MOBS.push({
+    id: 'raptor', nome: 'Raptor', bioma: 'Dinossauros', tier: 'Pequeno · fraco · tier 8', refX: 2.4,
+    variants: fixed.map((v, i) => ({ nome: ['Verde', 'Laranja', 'Roxo'][i], v, ...def(v) })),
+    randomVariant: () => { const v = variant(Math.floor(Math.random() * 1e5)); return { nome: 'Sorteado', v, ...def(v) }; },
+    anim, modes: [['parado', 'Parado'], ['andar', 'Andar'], ['bote', 'Bote'], ['garras', 'Garras']],
+    cam: 5, lookY: 0.8, lookZ: { bote: -2.6, garras: -1.6 }, camFar: { bote: 8, garras: 6.5 }, camYaw: { bote: -1.3, garras: -0.9 },
+    info: {
+      'Tamanho': '1,3 bloco de altura, 2,4 de comprimento com a cauda',
+      'Vida': '34 (tier 8)',
+      'Jeito': 'Hostil, em bando de 2 a 3. Um vê e grita, os outros dão a volta pra cercar. Foge quando sobra só um e está fraco.',
+      'Bote': 'Agacha e rebola, salta até 10 blocos e cai em cima: você fica preso no chão (não anda nem usa skill) enquanto ele morde três vezes. Bater nele enquanto morde faz ele soltar.',
+      'Garras': 'Ergue o corpo, pula e chuta com as duas foices do pé. Os cortes cruzam em X e você sangra por 4 s.',
+      'Solta': 'Carne de dinossauro (crua e assada), couro de raptor; raro: garra-foice (adaga leve).',
+      'Variações': 'Cor do couro, desenho das faixas, crista de espinhos colorida, cor do olho e cicatriz sorteados.',
+    },
+  });
+})();
+
+</script>
+<script>
+// Chifrudo, o dino médio (Paozu, Terras do Dragão e Deserto). Quatro patas, cabeçorra com gola e três chifres,
+// bico, e a cauda termina numa clava cheia de pontas. Estilo do desenho: couro liso de duas cores, olho redondo bravo.
+// Golpes: Chifrada (bate a pata no chão, abaixa a cabeça, corre e arremessa o alvo por cima) e Clava (gira o corpo
+// e varre com a cauda).
+'use strict';
+(() => {
+  const { n3, mix, mul } = ENG;
+  const { seq, loop } = FX;
+  const fr = x => x - Math.floor(x);
+  const cel = ENG.cel;
+  const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
+
+  const SKINS = [[186, 120, 70], [80, 140, 140], [140, 100, 160], [130, 140, 70], [170, 80, 64], [96, 120, 170]];
+  const FRILLS = [[230, 190, 70], [220, 90, 60], [70, 170, 150], [240, 220, 190], [200, 120, 200]];
+  function variant(seed) {
+    const R = FX.rnd(seed);
+    const pick = a => a[Math.floor(R() * a.length)];
+    const skin = pick(SKINS).map(c => c * (0.92 + R() * 0.12));
+    return { seed, skin, belly: mix(skin, [244, 226, 176], 0.7), frill: pick(FRILLS), rings: 2 + Math.floor(R() * 2), broken: R() < 0.3, plates: R() < 0.6, scar: R() < 0.3 };
+  }
+
+  function painters(v) {
+    const S = v.seed;
+    const shade = (base, q, s, lo = 0.84, hi = 1.1) => {
+      const f = 0.62 - 0.38 * q.ny + 0.12 * (n3(q.ax * 0.25, q.ay * 0.25, q.az * 0.25, s + S) - 0.5) + (q.f === 'top' ? 0.25 : 0) - (q.f === 'bottom' ? 0.3 : 0);
+      return cel(base, f, lo, hi);
+    };
+    const hide = (q, s = 1) => {
+      const under = q.f === 'bottom' || (q.f !== 'top' && q.ny > 0.66);
+      let c = shade(under ? v.belly : v.skin, q, s);
+      if (under && fr(q.az * 0.42) < 0.14) c = mul(c, 0.84);
+      // manchas grandes nas costas, poucas, como pintadas à mão
+      if (!under && n3(q.ax * 0.16, q.ay * 0.16, q.az * 0.16, 50 + S) > 0.66) c = mul(c, 0.82);
+      return c;
+    };
+    const limb = (q, s = 6) => { let c = shade(v.skin, q, s); if (q.ny > 0.8 && q.f !== 'top') c = mix(c, v.belly, 0.3); return c; };
+    const bone = q => cel([236, 226, 196], 0.35 + 0.65 * (1 - q.ny) + (q.f === 'top' ? 0.2 : 0), 0.8, 1.1);
+    const P = { hide, limb, bone };
+    P.head = q => {
+      let c = hide(q, 2);
+      if (q.f === 'west' || q.f === 'east') {
+        const x = q.pz, y = q.py, ex = 3.4, ey = 2.3;
+        if (Math.hypot((x - ex) / 1.2, y - ey) < 1) { c = [246, 244, 232]; if (Math.hypot(x - (ex - 0.5), y - ey - 0.1) < 0.55) c = [18, 16, 14]; }
+        if (y < ey - 0.8 && y > ey - 1.5 && Math.abs(x - ex) < 1.6) c = mul(v.skin, 0.55);
+        if (v.scar && q.f === 'east' && Math.abs(y - (4.6 - (x - 5) * 0.5)) < 0.3 && x > 4.5 && x < 8) c = mul(v.skin, 0.6);
+      }
+      return c;
+    };
+    // gola: borda de cima em ondas, anéis coloridos e pontinhas de osso na beirada
+    P.frill = q => {
+      // escudo: elipse que nasce atrás da cabeça e abre pra cima, beirada em ondas
+      const cx = (q.px - 7.5) / 7.5, cy = (8.2 - q.py) / 8.2;
+      const ang = Math.atan2(cx, cy);
+      const r = Math.hypot(cx, cy) * 7.0;
+      const edge = 6.4 + 0.55 * Math.cos(ang * 9);
+      if (r > edge || q.f === 'top') return null;
+      let c = shade(v.skin, q, 8);
+      if (q.f === 'north' || q.f === 'south') {
+        const ring = fr(r / 7.0 * v.rings);
+        if (ring > 0.6 && ring < 0.82) c = shade(v.frill, q, 9);
+        if (r > edge - 0.9) c = bone(q);
+        if (q.f === 'north') c = mul(c, 0.92);
+      }
+      return c;
+    };
+    P.beak = q => cel([150, 132, 112], 0.45 + 0.5 * (1 - q.ny) + (q.f === 'top' ? 0.2 : 0), 0.8, 1.3);
+    P.jaw = q => (q.f === 'top' ? [140, 70, 76] : hide(q, 4));
+    P.nail = q => cel([70, 60, 56], 0.5 + 0.4 * (1 - q.ny), 0.8, 1.3);
+    P.club = q => { let c = shade(mul(v.skin, 0.85), q, 10); if (n3(q.ax * 0.5, q.ay * 0.5, q.az * 0.5, 60 + S) > 0.62) c = mul(c, 0.8); return c; };
+    P.plate = q => shade(mix(v.skin, v.frill, 0.4), q, 11);
+    return P;
+  }
+
+  function rigDef(P, v) {
+    const leg = (side, front) => {
+      const s = side, k = (front ? 'F' : 'T') + (s < 0 ? 'D' : 'E');
+      const w = front ? 4.4 : 5.4;
+      return {
+        name: 'perna' + k, pivot: [s * 4.6, front ? 2.4 : 1.8, front ? -6 : 6], boxes: [{ x: -w / 2, y: -1.5, z: -w / 2, w, h: 8, d: w, p: P.limb }],
+        kids: [{
+          name: 'canela' + k, pivot: [0, 6.5, 0], boxes: [{ x: -w / 2 + 0.3, y: 0, z: -w / 2 + 0.3, w: w - 0.6, h: 6, d: w - 0.6, p: P.limb }],
+          kids: [{
+            name: 'pe' + k, pivot: [0, 6, 0], boxes: [
+              { x: -w / 2 - 0.2, y: 0, z: -w / 2 - 0.6, w: w + 0.4, h: 2, d: w + 0.6, p: P.limb },
+              { x: -w / 2, y: 0.7, z: -w / 2 - 1.2, w: 1.2, h: 1.3, d: 0.8, p: P.nail },
+              { x: -0.6, y: 0.7, z: -w / 2 - 1.3, w: 1.2, h: 1.3, d: 0.9, p: P.nail },
+              { x: w / 2 - 1.2, y: 0.7, z: -w / 2 - 1.2, w: 1.2, h: 1.3, d: 0.8, p: P.nail },
+            ],
+          }],
+        }],
+      };
+    };
+    const plates = v.plates ? [[-6, 1.6], [-1.5, 2.2], [3, 1.8], [7, 1.4]].map(([z, h]) => ({ x: -0.6, y: -5 - h, z: z - 1, w: 1.2, h, d: 2.2, p: P.plate })) : [];
+    return {
+      name: 'raiz', pivot: [0, 0, 0], kids: [
+        {
+          name: 'quadril', pivot: [0, 7.1, 0], boxes: [
+            { x: -6, y: -5, z: -9, w: 12, h: 9.5, d: 18, p: P.hide },
+            { x: -5.4, y: -4.2, z: -10.2, w: 10.8, h: 8, d: 2, p: P.hide },
+            ...plates,
+          ], kids: [
+            {
+              name: 'cabeca', pivot: [0, -3.2, -9.6], rot: [0.05, 0, 0], boxes: [
+                { x: -4.2, y: -4.2, z: -9, w: 8.4, h: 6.6, d: 9.4, p: P.head },
+                { x: -2.5, y: -2.6, z: -12.2, w: 5, h: 4.4, d: 3.4, p: P.beak },
+              ],
+              kids: [
+                { name: 'gola', pivot: [0, -3.0, -0.6], rot: [-0.22, 0, 0], boxes: [{ x: -7.5, y: -11.5, z: -0.6, w: 15, h: 12.5, d: 1.2, p: P.frill }] },
+                { name: 'chifreD', pivot: [-2.4, -4, -5.5], rot: [0.75, 0.15, 0], boxes: [{ x: -0.7, y: -5.6, z: -0.7, w: 1.4, h: 5.8, d: 1.4, p: P.bone }, { x: -0.4, y: -7.4, z: -0.4, w: 0.8, h: 2, d: 0.8, p: P.bone }] },
+                { name: 'chifreE', pivot: [2.4, -4, -5.5], rot: [0.75, -0.15, 0], boxes: [{ x: -0.7, y: -5.6, z: -0.7, w: 1.4, h: 5.8, d: 1.4, p: P.bone }, ...(v.broken ? [] : [{ x: -0.4, y: -7.4, z: -0.4, w: 0.8, h: 2, d: 0.8, p: P.bone }])] },
+                { name: 'chifreN', pivot: [0, -2.6, -11], rot: [0.35, 0, 0], boxes: [{ x: -0.6, y: -2.6, z: -0.6, w: 1.2, h: 2.8, d: 1.2, p: P.bone }] },
+                { name: 'mandibula', pivot: [0, 2.4, -2], boxes: [{ x: -3.4, y: 0, z: -9, w: 6.8, h: 2.2, d: 9, p: P.jaw }, { x: -2, y: -0.5, z: -10.4, w: 4, h: 2.4, d: 1.8, p: P.beak }] },
+              ],
+            },
+            leg(-1, true), leg(1, true), leg(-1, false), leg(1, false),
+            {
+              name: 'cauda1', pivot: [0, -1, 8.6], rot: [0.08, 0, 0], boxes: [{ x: -3.2, y: -3, z: 0, w: 6.4, h: 5.6, d: 7.4, p: P.hide }],
+              kids: [{
+                name: 'cauda2', pivot: [0, 0, 7], boxes: [{ x: -2, y: -1.8, z: 0, w: 4, h: 3.6, d: 7.4, p: P.hide }],
+                kids: [{
+                  name: 'clava', pivot: [0, 0, 7.2], boxes: [
+                    { x: -3.6, y: -2.4, z: 0, w: 7.2, h: 4.6, d: 5, p: P.club },
+                    { x: -4.6, y: -1, z: 1.4, w: 1.2, h: 1.6, d: 1.6, p: P.bone }, { x: 3.4, y: -1, z: 1.8, w: 1.2, h: 1.6, d: 1.6, p: P.bone },
+                    { x: -0.7, y: -3.4, z: 2.2, w: 1.4, h: 1.2, d: 1.5, p: P.bone },
+                  ],
+                }],
+              }],
+            },
+          ],
+        },
+      ],
+    };
+  }
+  function rigLow(P, v) {
+    const leg = (s, front) => {
+      const k = (front ? 'F' : 'T') + (s < 0 ? 'D' : 'E'), w = front ? 4.4 : 5.4;
+      return { name: 'perna' + k, pivot: [s * 4.6, front ? 2.4 : 1.8, front ? -6 : 6], boxes: [{ x: -w / 2, y: -1.5, z: -w / 2, w, h: 15.5, d: w, p: P.limb }] };
+    };
+    return {
+      name: 'raiz', pivot: [0, 0, 0], kids: [{
+        name: 'quadril', pivot: [0, 7.1, 0], boxes: [{ x: -6, y: -5, z: -10, w: 12, h: 9.5, d: 19, p: P.hide }], kids: [
+          { name: 'cabeca', pivot: [0, -3.2, -9.6], rot: [0.05, 0, 0], boxes: [{ x: -4.2, y: -4.2, z: -12, w: 8.4, h: 8.6, d: 12.2, p: P.head }], kids: [{ name: 'gola', pivot: [0, -3.0, -0.6], rot: [-0.22, 0, 0], boxes: [{ x: -7.5, y: -11.5, z: -0.6, w: 15, h: 12.5, d: 1.2, p: P.frill }] }, { name: 'chifreD', pivot: [-2.4, -4, -5.5], rot: [0.75, 0.15, 0], boxes: [{ x: -0.7, y: -7, z: -0.7, w: 1.4, h: 7, d: 1.4, p: P.bone }] }, { name: 'chifreE', pivot: [2.4, -4, -5.5], rot: [0.75, -0.15, 0], boxes: [{ x: -0.7, y: -7, z: -0.7, w: 1.4, h: 7, d: 1.4, p: P.bone }] }] },
+          leg(-1, true), leg(1, true), leg(-1, false), leg(1, false),
+          { name: 'cauda1', pivot: [0, -1, 8.6], boxes: [{ x: -2.8, y: -2.6, z: 0, w: 5.6, h: 4.8, d: 14, p: P.hide }], kids: [{ name: 'clava', pivot: [0, 0, 14], boxes: [{ x: -3.6, y: -2.4, z: 0, w: 7.2, h: 4.6, d: 5, p: P.club }] }] },
+        ],
+      }],
+    };
+  }
+
+  // rastro da clava: faixa larga de poeira que acompanha o arco da cauda
+  function sweep() {
+    const SEG = 30, pos = new Float32Array((SEG + 1) * 6), al = new Float32Array((SEG + 1) * 2), rr = new Float32Array((SEG + 1) * 2), idx = [];
+    for (let s = 0; s < SEG; s++) { const a = s * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
+    for (let s = 0; s <= SEG; s++) { rr[s * 2] = 0; rr[s * 2 + 1] = 1; }
+    const geo = new THREE.BufferGeometry(); geo.setIndex(idx);
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3)); geo.setAttribute('al', new THREE.BufferAttribute(al, 1)); geo.setAttribute('rr', new THREE.BufferAttribute(rr, 1));
+    const m = new THREE.Mesh(geo, new THREE.ShaderMaterial({
+      transparent: true, depthWrite: false, side: THREE.DoubleSide,
+      vertexShader: 'attribute float al; attribute float rr; varying float vA; varying float vR; void main(){ vA=al; vR=rr; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }',
+      fragmentShader: 'varying float vA; varying float vR; void main(){ vec3 c = mix(vec3(0.62,0.5,0.36), vec3(0.96,0.9,0.78), smoothstep(0.3,1.0,vR)); gl_FragColor = vec4(c, vA * (0.25 + 0.75 * vR)); }',
+    }));
+    m.frustumCulled = false;
+    m.at = (c, a0, a1, R1, R2, y, age) => {
+      m.visible = true;
+      const lead = Math.min(1, age * 3.2);
+      for (let s = 0; s <= SEG; s++) {
+        const f = s / SEG, ang = a0 + (a1 - a0) * f * lead;
+        pos.set([c.x + Math.sin(ang) * R1, y, c.z + Math.cos(ang) * R1, c.x + Math.sin(ang) * R2, y + 0.1, c.z + Math.cos(ang) * R2], s * 6);
+        const a = Math.max(0, 1 - (1 - f) * 1.6) * (1 - age) * Math.sin(Math.PI * Math.min(1, f * 1.05));
+        al[s * 2] = al[s * 2 + 1] = a;
+      }
+      geo.attributes.position.needsUpdate = true; geo.attributes.al.needsUpdate = true;
+    };
+    return m;
+  }
+
+  const TROT = [[0, -0.4], [0.5, 0.4]];
+  function anim(P, t, mode, a, obj, e, ctx) {
+    const r = (n, x, y, z) => { if (!P[n]) return; const o = P[n].obj.rotation; o.x += x; o.y += y; o.z += z; };
+    const breath = loop([[0, 0], [0.45, 1], [0.999, 0]], t / 2.6);
+    const legs = (ph, amp) => {
+      for (const [k, off] of [['FD', 0], ['TE', 0.02], ['FE', 0.5], ['TD', 0.52]]) {
+        const sw = loop(TROT, ph + off) * amp, lift = Math.max(0, Math.sin((ph + off) * Math.PI * 2));
+        r('perna' + k, sw, 0, 0); r('canela' + k, 0.5 * lift * amp, 0, 0); r('pe' + k, -0.3 * lift * amp, 0, 0);
+      }
+    };
+
+    if (mode === 'parado') {
+      r('quadril', -0.02 * breath, 0, 0);
+      // de vez em quando abaixa a cabeça e fuça o chão
+      const graze = seq([[0.5, 0], [0.6, 1, 'io'], [0.85, 1], [0.95, 0, 'io']], fr(t / 6));
+      r('cabeca', 0.5 * graze + 0.04 * breath, 0.1 * Math.sin(t * 0.7) * (1 - graze), 0);
+      r('mandibula', 0.15 * graze * Math.max(0, Math.sin(t * 9)), 0, 0);
+      r('cauda1', 0, 0.12 * Math.sin(t * 1.1), 0); r('cauda2', 0, 0.16 * Math.sin(t * 1.1 - 0.8), 0);
+      return;
+    }
+    if (mode === 'andar') {
+      const ph = t * 0.9;
+      legs(ph, 1);
+      P.quadril.obj.position.y += 0.4 * Math.abs(Math.sin(ph * Math.PI * 2));
+      r('quadril', 0, 0, 0.03 * Math.sin(ph * Math.PI * 2));
+      r('cabeca', 0.04 * Math.sin(ph * Math.PI * 4), 0.05 * Math.sin(ph * Math.PI * 2), 0);
+      r('cauda1', 0, 0.12 * Math.sin(ph * Math.PI * 2 + 1), 0); r('cauda2', 0, 0.16 * Math.sin(ph * Math.PI * 2), 0);
+      return;
+    }
+
+    if (mode === 'chifrada') {
+      const T = t % 3.8;
+      const R = ctx.ref; const RZ = -6.4; R.place(0, RZ, 0);
+      // bate a pata duas vezes, abaixa a cabeça, corre e joga o alvo pra cima com os chifres
+      const paw1 = seq([[0.1, 0], [0.25, 1, 'out'], [0.38, 0, 'in']], T), paw2 = seq([[0.48, 0], [0.62, 1, 'out'], [0.75, 0, 'in']], T);
+      const low = seq([[0.75, 0], [1.0, 1, 'out'], [1.62, 1], [1.7, 0]], T);
+      const run = seq([[1.0, 0], [1.62, 1, 'in']], T);
+      const toss = seq([[1.6, 0], [1.75, 1, 'snap'], [2.2, 1], [2.8, 0, 'io']], T);
+      r('pernaFD', -0.7 * (paw1 + paw2), 0, 0); r('canelaFD', 0.8 * (paw1 + paw2), 0, 0);
+      r('cabeca', 0.45 * low - 0.75 * toss, 0, 0.1 * Math.sin(T * 9) * (paw1 + paw2));
+      r('mandibula', 0.35 * toss, 0, 0);
+      if (run > 0 && run < 1) legs(T * 2.6, 1.6);
+      r('quadril', 0.08 * low - 0.15 * toss, 0, 0);
+      obj.position.z += (RZ + 2.0) * run;
+      if (T > 1.0 && T < 1.75) obj.position.y += 0.12 * Math.abs(Math.sin(T * 16));
+      // poeira da pata e do galope
+      [0.25, 0.62].forEach((pt, i) => { if (T > pt && T < pt + 1.0) ctx.get('pata' + i, FX.volume).set(V3(-0.3, 0.2, -0.6), 0.32 + i * 0.06, (T - pt) / 1.0, { seed: 3.1 + i * 4.4, dens: 6, rise: 0.4, smoke: [0.8, 0.68, 0.5] }); });
+      if (T > 1.05 && T < 2.6) {
+        [0, 1, 2, 3].forEach(i => {
+          const st = 1.05 + i * 0.14, age = (T - st) / 1.0;
+          if (age <= 0 || age >= 1) return;
+          const z = (RZ + 2.0) * seq([[1.0, 0], [1.62, 1, 'in']], st) + 0.8;
+          ctx.get('galope' + i, FX.volume).set(V3((i % 2 ? 0.4 : -0.4), 0.3, z), 0.45 + i * 0.05, age, { seed: 9.7 + i * 3.3, dens: 6, rise: 0.35, smoke: [0.82, 0.7, 0.52] });
+        });
+      }
+      // o alvo voa por cima e cai atrás
+      if (T > 1.62) {
+        const fly = seq([[1.62, 0], [2.35, 1, 'out']], T), down = seq([[2.35, 0], [2.6, 1, 'in']], T);
+        R.place(0.3 * fly, RZ + 1.2 - 2.6 * fly, 2.2 * Math.sin(Math.PI * Math.min(1, fly * 0.75)) * (1 - down));
+        R.spin(-2.6 * fly); R.lean(-1.3 * Math.min(1, fly * 1.5));
+        if (T < 1.8) ctx.shake(0.6);
+        if (T > 2.55 && T < 3.4) { ctx.get('queda', FX.volume).set(V3(0.3, 0.25, RZ - 1.4), 0.6, (T - 2.55) / 0.85, { seed: 21.3, dens: 6, rise: 0.3, smoke: [0.82, 0.7, 0.52] }); }
+      }
+      return;
+    }
+
+    if (mode === 'clava') {
+      const T = t % 3.2;
+      const R = ctx.ref; R.place(-2.6, 2.6, 0);
+      // gira o corpo de lado, arma a cauda e varre: a clava passa num arco baixo e arremessa pro lado
+      const turn = seq([[0, 0], [0.5, 1, 'io'], [1.6, 1], [2.3, 0, 'io']], T);
+      const cock = seq([[0.4, 0], [0.75, 1, 'out'], [0.8, 1]], T);
+      const swing = seq([[0.8, 0], [0.98, 1, 'snap'], [1.5, 1], [2.3, 0, 'io']], T);
+      const cw = cock * (1 - swing);
+      r('quadril', 0, -0.5 * turn, 0);
+      legs(T * 0.8, 0.3 * turn * (1 - swing));
+      r('cauda1', -0.1 * cw, 0.5 * cw - 0.6 * swing, 0); r('cauda2', 0, 0.5 * cw - 0.7 * swing, 0); r('clava', 0, 0.4 * cw - 0.5 * swing, 0);
+      r('cabeca', 0, 0.4 * turn, 0);
+      if (T > 0.8 && T < 1.7) ctx.get('rastro', sweep).at(V3(0, 0, 0.4), 0.6, -1.5, 1.4, 2.5, 0.55, (T - 0.8) / 0.9);
+      const hit = seq([[0.92, 0], [1.05, 1, 'out']], T);
+      if (T > 0.9 && T < 1.1) ctx.shake(0.7);
+      const fly = seq([[0.95, 0], [1.6, 1, 'out']], T);
+      R.place(-2.6 - 2.8 * fly, 2.6 - 1.2 * fly, 1.3 * Math.sin(Math.PI * fly));
+      R.spin(1.6 * fly); R.lean(-1.0 * Math.min(1, fly * 1.6) * (1 - seq([[2.4, 0], [3.1, 1]], T)));
+      if (T > 0.95 && T < 1.9) ctx.get('fagulha', () => FX.debris(14, 81, [[176, 140, 100], [140, 110, 80], [210, 180, 140]])).at(V3(-2.4, 0.6, 2.4), T - 0.95);
+      return;
+    }
+  }
+
+  window.MOBS = window.MOBS || [];
+  const fixed = [variant(8), variant(31), variant(77)];
+  fixed[0].skin = SKINS[0]; fixed[0].frill = FRILLS[0]; fixed[1].skin = SKINS[1]; fixed[1].frill = FRILLS[1]; fixed[1].broken = true; fixed[2].skin = SKINS[2]; fixed[2].frill = FRILLS[2];
+  for (const v of fixed) v.belly = mix(v.skin, [244, 226, 176], 0.7);
+  const def = v => ({ def: rigDef(painters(v), v), low: rigLow(painters(v), v) });
+  window.MOBS.push({
+    id: 'dino_chifrudo', nome: 'Chifrudo', bioma: 'Dinossauros', tier: 'Médio · tier 7', refX: 3.2,
+    variants: fixed.map((v, i) => ({ nome: ['Laranja', 'Verde-água', 'Roxo'][i], v, ...def(v) })),
+    randomVariant: () => { const v = variant(Math.floor(Math.random() * 1e5)); return { nome: 'Sorteado', v, ...def(v) }; },
+    anim, modes: [['parado', 'Parado'], ['andar', 'Andar'], ['chifrada', 'Chifrada'], ['clava', 'Clava']],
+    cam: 7, lookY: 1.0, lookZ: { chifrada: -3.2, clava: 0.6 }, camFar: { chifrada: 11, clava: 8.5 }, camYaw: { chifrada: -1.3, clava: -0.4 },
+    info: {
+      'Tamanho': '1,7 bloco de altura com a gola, 3,4 de comprimento',
+      'Vida': '80 (tier 7)',
+      'Jeito': 'Neutro, em casal ou trio pastando. Se apanhar, o bando todo fica bravo e ataca.',
+      'Chifrada': 'Bate a pata no chão duas vezes (aviso), abaixa a cabeça e corre em linha reta. Quem estiver na frente voa por cima dele e cai atrás. Desviar pro lado escapa.',
+      'Clava': 'Quando você fica do lado ou atrás, ele vira o corpo e varre com a clava da cauda: arremessa pro lado e quebra blocos fracos no caminho.',
+      'Solta': 'Carne de dinossauro, couro grosso; raro: chifre (vira lança curta) e pedaço da clava.',
+      'Variações': 'Cor do couro e da gola, número de anéis da gola, placas nas costas, chifre quebrado e cicatriz sorteados.',
+    },
+  });
+})();
+
+</script>
+<script>
+// Tiranossauro, o dino grandão (Paozu, Terras do Dragão e Deserto). Como o do desenho: cabeçorra quadrada, olho
+// pequeno e bravo, dentes grandes e poucos, calombos em fileira nas costas, barriga creme em gomos, bracinhos.
+// Golpes: Investida (ruge, abaixa a cabeça e atropela tudo em linha reta) e Pisão Sísmico (levanta a pata e pisa:
+// o chão racha e uma onda de terra corre pra fora jogando quem estiver em cima).
+'use strict';
+(() => {
+  const { n3, mix, mul } = ENG;
+  const { seq, loop } = FX;
+  const fr = x => x - Math.floor(x);
+  const cel = ENG.cel;
+  const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
+
+  const SKINS = [[150, 104, 66], [100, 130, 70], [160, 80, 60], [110, 100, 130], [140, 130, 80]];
+  function variant(seed) {
+    const R = FX.rnd(seed);
+    const pick = a => a[Math.floor(R() * a.length)];
+    const skin = pick(SKINS).map(c => c * (0.92 + R() * 0.12));
+    return { seed, skin, belly: mix(skin, [244, 226, 176], 0.72), spots: R() < 0.6, bumps: 5 + Math.floor(R() * 3), scar: R() < 0.4, chipped: R() < 0.35 };
+  }
+
+  function painters(v) {
+    const S = v.seed;
+    const shade = (base, q, s, lo = 0.84, hi = 1.1) => {
+      const f = 0.62 - 0.38 * q.ny + 0.12 * (n3(q.ax * 0.15, q.ay * 0.15, q.az * 0.15, s + S) - 0.5) + (q.f === 'top' ? 0.25 : 0) - (q.f === 'bottom' ? 0.3 : 0);
+      return cel(base, f, lo, hi);
+    };
+    const hide = (q, s = 1) => {
+      const under = q.f === 'bottom' || (q.f !== 'top' && q.ny > 0.64);
+      let c = shade(under ? v.belly : v.skin, q, s);
+      if (under && fr(q.az * 0.26) < 0.12) c = mul(c, 0.84);
+      if (!under && v.spots && n3(q.ax * 0.11, q.ay * 0.11, q.az * 0.11, 70 + S) > 0.68) c = mul(c, 0.8);
+      return c;
+    };
+    const limb = (q, s = 6) => { let c = shade(v.skin, q, s); if (q.ny > 0.8 && q.f !== 'top') c = mix(c, v.belly, 0.25); if (q.f === 'north' && fr(q.ay * 0.3) < 0.08) c = mul(c, 0.88); return c; };
+    const P = { hide, limb };
+    P.head = q => {
+      let c = hide(q, 2);
+      if (q.f === 'west' || q.f === 'east') {
+        const x = q.pz, y = q.py, ex = 8.2, ey = 3.0;
+        // olho pequeno, bravo, embaixo de uma sobrancelha grossa
+        if (Math.hypot((x - ex) / 1.2, y - ey) < 1) { c = [246, 238, 200]; if (Math.hypot(x - (ex - 0.4), y - ey) < 0.6) c = [18, 14, 12]; }
+        if (y > ey - 2.1 && y < ey - 0.9 && Math.abs(x - ex) < 2.2 && (y - (ey - 2.1)) < 1.2 - (ex - x) * 0.25) c = mul(v.skin, 0.55);
+        if (v.scar && q.f === 'east' && Math.abs(y - (1.5 + (x - 12) * 0.5)) < 0.4 && x > 11 && x < 16) c = mul(v.skin, 0.6);
+        // dentes de cima: poucos, grandes, triangulares
+        if (y > 7.2) { const k = fr((x - 2) / 2.6); if (x > 2 && x < 21 && k < 0.6 && (y - 7.2) < 1.8 * (1 - Math.abs(k - 0.3) / 0.3) && !(v.chipped && x > 9 && x < 11.6)) c = [246, 240, 222]; }
+      }
+      if (q.f === 'north' && q.py < 2 && (Math.floor(q.px) === 4 || Math.floor(q.px) === 9)) c = [30, 22, 18];        // narinas
+      return c;
+    };
+    P.jaw = q => {
+      let c = hide(q, 3);
+      if (q.f === 'top') return [150, 64, 70];
+      if ((q.f === 'west' || q.f === 'east') && q.py < 1.6) { const k = fr((q.pz - 1) / 2.4 + 0.4); if (q.pz > 1 && q.pz < 17 && k < 0.55 && q.py < 1.5 * (1 - Math.abs(k - 0.27) / 0.27)) c = [246, 240, 222]; }
+      return c;
+    };
+    P.mouth = () => [120, 36, 46];
+    P.claw = q => cel([60, 50, 44], 0.45 + 0.5 * (1 - q.ny), 0.8, 1.4);
+    P.bump = q => shade(mul(v.skin, 0.82), q, 9);
+    return P;
+  }
+
+  function rigDef(P, v) {
+    const leg = s => {
+      const D = s < 0;
+      return {
+        name: D ? 'pernaD' : 'pernaE', pivot: [s * 7.5, -9, 3], rot: [-0.3, 0, s * 0.04], boxes: [{ x: -4.6, y: -4, z: -5.6, w: 9.2, h: 17, d: 11.2, p: P.limb }],
+        kids: [{
+          name: D ? 'canelaD' : 'canelaE', pivot: [0, 12.5, 0], rot: [0.62, 0, 0], boxes: [{ x: -3.2, y: 0, z: -3.4, w: 6.4, h: 12, d: 6.8, p: P.limb }],
+          kids: [{
+            name: D ? 'metaD' : 'metaE', pivot: [0, 11.4, 0], rot: [-0.55, 0, 0], boxes: [{ x: -2.6, y: 0, z: -2.6, w: 5.2, h: 8, d: 5.2, p: P.limb }],
+            kids: [{
+              name: D ? 'peD' : 'peE', pivot: [0, 7.6, 0], rot: [0.23, 0, 0], boxes: [
+                { x: -4, y: -0.5, z: -9, w: 8, h: 3.2, d: 12, p: P.limb },
+                { x: -4.2, y: 0.8, z: -11, w: 2, h: 1.8, d: 2.2, p: P.claw }, { x: -1, y: 0.8, z: -11.4, w: 2, h: 1.8, d: 2.6, p: P.claw }, { x: 2.2, y: 0.8, z: -11, w: 2, h: 1.8, d: 2.2, p: P.claw },
+              ],
+            }],
+          }],
+        }],
+      };
+    };
+    const arm = s => ({
+      name: s < 0 ? 'bracoD' : 'bracoE', pivot: [s * 7.6, 2.5, -11], rot: [0.5, 0, s * -0.15], boxes: [{ x: -1.4, y: 0, z: -1.5, w: 2.8, h: 6.4, d: 3, p: P.limb }],
+      kids: [{ name: s < 0 ? 'anteD' : 'anteE', pivot: [0, 6, 0], rot: [-1.2, 0, 0], boxes: [{ x: -1.1, y: 0, z: -1.2, w: 2.2, h: 4.4, d: 2.4, p: P.limb }, { x: -1.1, y: 4.2, z: -1.2, w: 0.9, h: 1.8, d: 0.9, p: P.claw }, { x: 0.3, y: 4.2, z: -1.2, w: 0.9, h: 2, d: 0.9, p: P.claw }] }],
+    });
+    // calombos: fileira nas costas e na cauda, cada um de um tamanho
+    const R = FX.rnd(v.seed + 3);
+    const bumps = []; for (let i = 0; i < v.bumps; i++) { const h = 1.6 + R() * 1.8, z = -11 + i * (22 / v.bumps); bumps.push({ x: -1.2, y: -9 - h, z, w: 2.4, h: h + 0.2, d: 3 + R(), p: P.bump }); }
+    const tb = (n, len) => { const out = []; for (let i = 0; i < n; i++) { const h = 1 + R() * 1.2; out.push({ x: -0.9, y: -len - h, z: 2 + i * 5, w: 1.8, h: h + 0.2, d: 2.4, p: P.bump }); } return out; };
+    return {
+      name: 'raiz', pivot: [0, 0, 0], kids: [
+        {
+          name: 'quadril', pivot: [0, -9, 0], rot: [-0.22, 0, 0], boxes: [
+            { x: -8, y: -9, z: -14, w: 16, h: 18, d: 26, p: P.hide },
+            { x: -7, y: -7.6, z: -16, w: 14, h: 15, d: 3, p: P.hide },
+            ...bumps,
+          ], kids: [
+            {
+              name: 'pescoco', pivot: [0, -3, -14], rot: [0.55, 0, 0], boxes: [{ x: -5.6, y: -11, z: -6.4, w: 11.2, h: 14, d: 11.6, p: P.hide }],
+              kids: [{
+                name: 'cabeca', pivot: [0, -9.5, -1], rot: [-0.35, 0, 0], boxes: [
+                  { x: -7, y: -9.4, z: -18, w: 14, h: 9.8, d: 22.4, p: P.head },
+                  { x: -7.4, y: -10.6, z: -11, w: 3.4, h: 2.4, d: 5, p: P.bump }, { x: 4, y: -10.6, z: -11, w: 3.4, h: 2.4, d: 5, p: P.bump },     // sobrancelhas de calombo
+                  { x: -1.6, y: -11.4, z: -4, w: 3.2, h: 2.4, d: 6, p: P.bump },
+                ],
+                kids: [{ name: 'mandibula', pivot: [0, 0.4, 2.6], boxes: [{ x: -6.6, y: 0, z: -19.6, w: 13.2, h: 5.4, d: 21, p: P.jaw }, { x: -5.6, y: -0.3, z: -18.6, w: 11.2, h: 0.4, d: 19, p: P.mouth }] }],
+              }],
+            },
+            arm(-1), arm(1),
+            {
+              name: 'cauda1', pivot: [0, -3, 11.5], rot: [-0.05, 0, 0], boxes: [{ x: -6, y: -6, z: 0, w: 12, h: 12, d: 14, p: P.hide }, ...tb(2, 6)],
+              kids: [{
+                name: 'cauda2', pivot: [0, 0, 13.5], rot: [0.05, 0, 0], boxes: [{ x: -4.2, y: -4.2, z: 0, w: 8.4, h: 8.4, d: 14, p: P.hide }, ...tb(2, 4.2)],
+                kids: [{
+                  name: 'cauda3', pivot: [0, 0, 13.5], rot: [0.06, 0, 0], boxes: [{ x: -2.7, y: -2.7, z: 0, w: 5.4, h: 5.4, d: 14, p: P.hide }],
+                  kids: [{ name: 'cauda4', pivot: [0, 0, 13.5], rot: [0.06, 0, 0], boxes: [{ x: -1.5, y: -1.5, z: 0, w: 3, h: 3, d: 10, p: P.hide }] }],
+                }],
+              }],
+            },
+          ],
+        },
+        leg(-1), leg(1),
+      ],
+    };
+  }
+  function rigLow(P, v) {
+    const leg = s => ({
+      name: s < 0 ? 'pernaD' : 'pernaE', pivot: [s * 7.5, -9, 3], rot: [-0.3, 0, 0], boxes: [{ x: -4.6, y: -4, z: -5.6, w: 9.2, h: 17, d: 11.2, p: P.limb }],
+      kids: [{ name: s < 0 ? 'canelaD' : 'canelaE', pivot: [0, 12.5, 0], rot: [0.3, 0, 0], boxes: [{ x: -3, y: 0, z: -3, w: 6, h: 20, d: 6, p: P.limb }, { x: -4, y: 17.5, z: -9, w: 8, h: 3.2, d: 12, p: P.limb }] }],
+    });
+    return {
+      name: 'raiz', pivot: [0, 0, 0], kids: [
+        {
+          name: 'quadril', pivot: [0, -9, 0], rot: [-0.22, 0, 0], boxes: [{ x: -8, y: -9, z: -16, w: 16, h: 18, d: 28, p: P.hide }], kids: [
+            { name: 'pescoco', pivot: [0, -3, -14], rot: [0.55, 0, 0], boxes: [{ x: -5.6, y: -11, z: -6.4, w: 11.2, h: 14, d: 11.6, p: P.hide }], kids: [{ name: 'cabeca', pivot: [0, -9.5, -1], rot: [-0.35, 0, 0], boxes: [{ x: -7, y: -9.4, z: -18, w: 14, h: 9.8, d: 22.4, p: P.head }], kids: [{ name: 'mandibula', pivot: [0, 0.4, 2.6], boxes: [{ x: -6.6, y: 0, z: -19.6, w: 13.2, h: 5.4, d: 21, p: P.jaw }] }] }] },
+            { name: 'cauda1', pivot: [0, -3, 11.5], boxes: [{ x: -5.4, y: -5.4, z: 0, w: 10.8, h: 10.8, d: 22, p: P.hide }], kids: [{ name: 'cauda2', pivot: [0, 0, 22], rot: [0.1, 0, 0], boxes: [{ x: -2.6, y: -2.6, z: 0, w: 5.2, h: 5.2, d: 24, p: P.hide }] }] },
+          ],
+        },
+        leg(-1), leg(1),
+      ],
+    };
+  }
+
+  // Rachaduras no chão: riscos que saem do pé em raios tortos e se ligam em células perto do centro.
+  function cracks() {
+    const mat = new THREE.ShaderMaterial({
+      transparent: true, depthWrite: false,
+      uniforms: { uR: { value: 0 }, uFade: { value: 1 }, uSeed: { value: 0 } },
+      vertexShader: 'varying vec2 vP; void main(){ vP = position.xz; gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0); }',
+      fragmentShader: `
+        uniform float uR, uFade, uSeed; varying vec2 vP;
+        vec2 h2(vec2 p){ p = vec2(dot(p, vec2(127.1, 311.7)), dot(p, vec2(269.5, 183.3))); return fract(sin(p) * 43758.5453); }
+        float n1(float x){ float i = floor(x), f = fract(x); f = f*f*(3.0-2.0*f); return mix(fract(sin(i*91.7+uSeed)*4375.5), fract(sin((i+1.0)*91.7+uSeed)*4375.5), f); }
+        void main(){
+          float r = length(vP), a = atan(vP.y, vP.x);
+          if (r > uR) discard;
+          // raios: cada um com a sua torção
+          float k = a / 6.2831 * 13.0 + (n1(r * 1.3) - 0.5) * 0.9 + (n1(r * 4.1 + 7.0) - 0.5) * 0.25;
+          float ray = abs(fract(k) - 0.5);
+          float width = 0.035 * (1.0 - r / max(uR, 0.01)) + 0.008;
+          float line = 1.0 - smoothstep(width, width + 0.02, ray * (1.0 + r * 0.4));
+          line *= step(0.3, n1(floor(k) * 3.7 + 1.0) + (1.0 - r / 6.0) * 0.6);
+          // células perto do centro
+          vec2 p = vP * 2.2; vec2 ip = floor(p); float f1 = 9.0, f2 = 9.0;
+          for (int j = -1; j <= 1; j++) for (int i = -1; i <= 1; i++) { vec2 g = vec2(float(i), float(j)); vec2 o = h2(ip + g + uSeed); float e = length(g + o - fract(p)); if (e < f1) { f2 = f1; f1 = e; } else if (e < f2) f2 = e; }
+          float cell = (1.0 - smoothstep(0.0, 0.06, f2 - f1)) * (1.0 - smoothstep(0.6, 1.6, r));
+          float m = max(line, cell);
+          if (m < 0.02) discard;
+          float tip = smoothstep(uR, uR - 0.4, r);
+          gl_FragColor = vec4(vec3(0.16, 0.1, 0.06), m * tip * uFade * 0.92);
+        }`,
+    });
+    const g = new THREE.PlaneGeometry(16, 16); g.rotateX(-Math.PI / 2);
+    const m = new THREE.Mesh(g, mat); m.frustumCulled = false;
+    m.at = (c, R, fade, seed) => { m.visible = true; m.position.set(c.x, 0.03, c.z); mat.uniforms.uR.value = R; mat.uniforms.uFade.value = fade; mat.uniforms.uSeed.value = seed; };
+    return m;
+  }
+  // Onda de terra: o chão sobe numa crista que corre pra fora; a crista é quebrada em blocos irregulares.
+  function quake() {
+    const g = new THREE.PlaneGeometry(18, 18, 160, 160); g.rotateX(-Math.PI / 2);
+    const mat = new THREE.ShaderMaterial({
+      transparent: true, side: THREE.DoubleSide,
+      uniforms: { uR: { value: 0 }, uAmp: { value: 1 }, uC: { value: new THREE.Color(0xb48c5a) } },
+      vertexShader: `
+        uniform float uR, uAmp; varying float vH; varying vec2 vP;
+        float h(vec2 p){ return fract(sin(dot(floor(p), vec2(12.9898, 78.233))) * 43758.5453); }
+        void main(){
+          vec3 p = position; float r = length(p.xz);
+          float wave = exp(-pow((r - uR) / 0.55, 2.0)) * (r < uR + 0.6 ? 1.0 : 0.0);
+          float blocky = 0.55 + 0.9 * h(p.xz * 2.5);
+          p.y = wave * uAmp * blocky * smoothstep(0.4, 1.2, r);
+          vH = p.y; vP = p.xz;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
+        }`,
+      fragmentShader: `
+        uniform vec3 uC; varying float vH; varying vec2 vP;
+        float h(vec2 p){ return fract(sin(dot(floor(p), vec2(12.9898, 78.233))) * 43758.5453); }
+        void main(){
+          if (vH < 0.03) discard;
+          vec3 c = uC * (0.7 + 0.45 * h(vP * 2.5)) * (0.75 + 0.4 * clamp(vH, 0.0, 1.0));
+          c = mix(c, vec3(0.38, 0.26, 0.16), smoothstep(0.03, 0.1, vH) * (1.0 - smoothstep(0.1, 0.3, vH)) * 0.5);
+          gl_FragColor = vec4(c, 1.0);
+        }`,
+    });
+    const m = new THREE.Mesh(g, mat); m.frustumCulled = false;
+    m.at = (c, R, amp) => { m.visible = amp > 0.01; m.position.set(c.x, 0, c.z); mat.uniforms.uR.value = R; mat.uniforms.uAmp.value = amp; };
+    return m;
+  }
+
+  const WALK_T = [[0, -0.42], [0.2, -0.2], [0.45, 0.3], [0.55, 0.36], [0.7, 0.1], [0.88, -0.38]];
+  const WALK_K = [[0, 0], [0.45, 0], [0.6, 0.5], [0.75, 0.8], [0.9, 0.25]];
+  function anim(P, t, mode, a, obj, e, ctx) {
+    const r = (n, x, y, z) => { if (!P[n]) return; const o = P[n].obj.rotation; o.x += x; o.y += y; o.z += z; };
+    const breath = loop([[0, 0], [0.45, 1], [0.999, 0]], t / 3.2);
+    const tail = (k, ph) => { r('cauda1', 0, 0.06 * k * Math.sin(ph), 0); r('cauda2', 0, 0.1 * k * Math.sin(ph - 0.7), 0); r('cauda3', 0, 0.14 * k * Math.sin(ph - 1.4), 0); r('cauda4', 0, 0.18 * k * Math.sin(ph - 2.1), 0); };
+    const walk = (ph, amp) => {
+      for (const [s, off] of [['D', 0], ['E', 0.5]]) {
+        r('perna' + s, loop(WALK_T, ph + off) * amp, 0, 0);
+        r('canela' + s, 0.4 * loop(WALK_K, ph + off) * amp, 0, 0);
+        r('meta' + s, -0.4 * loop(WALK_K, ph + off) * amp, 0, 0);
+        r('pe' + s, 0.45 * loop(WALK_K, ph + off - 0.05) * amp, 0, 0);
+      }
+      P.quadril.obj.position.y += 1.2 * amp * Math.abs(Math.sin(ph * Math.PI * 2));
+      r('quadril', 0, 0.04 * amp * Math.sin(ph * Math.PI * 2), 0.03 * amp * Math.sin(ph * Math.PI * 2));
+    };
+
+    if (mode === 'parado') {
+      r('quadril', -0.02 * breath, 0, 0);
+      r('pescoco', 0.03 * breath, 0.15 * Math.sin(t * 0.5), 0); r('cabeca', 0, 0.1 * Math.sin(t * 0.5 - 0.5), 0);
+      r('mandibula', 0.06 * breath + 0.25 * seq([[0.7, 0], [0.75, 1], [0.9, 1], [0.98, 0]], fr(t / 5.5)), 0, 0);
+      r('anteD', 0.15 * Math.sin(t * 2.1), 0, 0); r('anteE', 0.15 * Math.sin(t * 2.1 + 1), 0, 0);
+      tail(0.7, t * 0.9);
+      return;
+    }
+    if (mode === 'andar') {
+      const ph = t * 0.55;
+      walk(ph, 1);
+      r('pescoco', -0.04 * Math.sin(ph * Math.PI * 4), -0.04 * Math.sin(ph * Math.PI * 2), 0);
+      tail(1, ph * Math.PI * 2 + 1);
+      if (fr(ph * 2) < 0.06) ctx.shake(0.12);
+      return;
+    }
+
+    if (mode === 'investida') {
+      const T = t % 4.2;
+      const R = ctx.ref; const RZ = -10; R.place(0, RZ, 0);
+      // ruge, abaixa a cabeça e corre: passa por cima do que tiver no caminho
+      const roar = seq([[0, 0], [0.2, 1, 'out'], [0.75, 1], [0.9, 0]], T);
+      const low = seq([[0.8, 0], [1.0, 1, 'out'], [2.0, 1], [2.5, 0, 'io']], T);
+      const run = seq([[0.95, 0], [1.95, 1, 'in']], T);
+      const stop = seq([[1.95, 0], [2.4, 1, 'out']], T);
+      r('pescoco', -0.35 * roar + 0.3 * low, 0.1 * Math.sin(T * 30) * roar, 0); r('cabeca', -0.25 * roar + 0.25 * low, 0, 0);
+      r('mandibula', 0.65 * roar + 0.2 * low, 0, 0);
+      r('quadril', 0.12 * low, 0, 0);
+      if (run > 0 && run < 1) walk(T * 1.6, 1.5);
+      obj.position.z += (RZ + 3.5) * run + (-1.2) * stop;
+      if (roar > 0.5) ctx.shake(0.3);
+      if (T > 0.95 && T < 2.4) {
+        ctx.shake(0.5);
+        for (let i = 0; i < 6; i++) {
+          const st = 1.0 + i * 0.18, age = (T - st) / 1.3;
+          if (age <= 0 || age >= 1) continue;
+          const z = (RZ + 3.5) * seq([[0.95, 0], [1.95, 1, 'in']], st) + 1.4;
+          ctx.get('poeira' + i, FX.volume).set(V3(i % 2 ? 0.9 : -0.9, 0.5, z), 0.75 + 0.12 * (i % 3), age, { seed: 5.3 + i * 2.71, dens: 6, rise: 0.4, smoke: [0.8, 0.66, 0.48] });
+        }
+      }
+      if (T > 1.72) {
+        // o alvo é atropelado e voa longe
+        const fly = seq([[1.72, 0], [2.6, 1, 'out']], T);
+        R.place(-0.6 * fly, RZ - 5.5 * fly, 2.6 * Math.sin(Math.PI * Math.min(1, fly * 0.85)));
+        R.spin(-3 * fly); R.lean(-1.3 * Math.min(1, fly * 2) * (1 - seq([[3.3, 0], [4.0, 1]], T)));
+        if (T < 1.9) ctx.shake(1.0);
+        ctx.get('pedras', () => FX.debris(22, 13, [[176, 140, 100], [140, 108, 74], [214, 184, 140], [96, 80, 66]])).at(V3(0, 0.3, RZ + 0.6), T - 1.72);
+      }
+      return;
+    }
+
+    if (mode === 'pisao') {
+      const T = t % 4.0;
+      const R = ctx.ref; const RZ = -8; R.place(0.8, RZ, 0);
+      // levanta a pata alta, segura, pisa com o corpo todo
+      const lift = seq([[0, 0], [0.7, 1, 'out'], [0.95, 1], [1.05, 0, 'in']], T);
+      const lean = seq([[0.2, 0], [0.8, 1], [1.05, 0]], T);
+      const settle = seq([[1.05, 0], [1.2, 1], [1.8, 0, 'io']], T);
+      r('pernaD', -1.25 * lift, 0, 0.1 * lift); r('canelaD', 1.1 * lift, 0, 0); r('peD', -0.3 * lift, 0, 0);
+      r('quadril', -0.18 * lean + 0.1 * settle, 0, 0.1 * lean); P.quadril.obj.position.y -= 2 * lean - 2.5 * settle;
+      r('pescoco', -0.3 * lean + 0.25 * settle, 0, 0); r('mandibula', 0.5 * lean + 0.4 * settle, 0, 0);
+      r('pernaE', 0.1 * lean, 0, -0.06 * lean); r('canelaE', 0.2 * settle, 0, 0);
+      const C = V3(-0.48, 0, -0.45);
+      if (T > 1.05) {
+        const k = T - 1.05;
+        ctx.shake(Math.max(0, 1.1 - k * 0.9));
+        ctx.get('rachas', cracks).at(C, Math.min(6.5, 0.6 + k * 12), 1 - seq([[3.0, 0], [4.0, 1]], T), 3.7);
+        const R2 = 0.6 + k * 5.2;
+        ctx.get('onda', quake).at(C, R2, 0.7 * Math.max(0, 1 - k / 1.7));
+        ctx.get('poPe', FX.volume).set(V3(C.x, 0.4, C.z), 1.0, k / 1.4, { seed: 8.2, dens: 6, rise: 0.4, smoke: [0.82, 0.68, 0.5] });
+        ctx.get('lascas', () => FX.debris(30, 19, [[180, 144, 100], [150, 116, 80], [210, 180, 136], [110, 90, 70]])).at(V3(C.x, 0.1, C.z), k);
+        // a onda chega no alvo e ele salta
+        const d = Math.hypot(0.8 - C.x, RZ - C.z), hitT = (d - 0.6) / 5.2;
+        const up = seq([[hitT, 0], [hitT + 0.25, 1, 'out'], [hitT + 0.55, 0, 'in']], k);
+        R.place(0.8, RZ - 0.4 * seq([[hitT, 0], [hitT + 0.55, 1]], k), 1.3 * up);
+        R.lean(-0.7 * seq([[hitT, 0], [hitT + 0.4, 1], [hitT + 1.6, 1], [hitT + 2.2, 0]], k)); R.armsOut(0.5 * up);
+      }
+      return;
+    }
+  }
+
+  window.MOBS = window.MOBS || [];
+  const fixed = [variant(4), variant(22), variant(57)];
+  fixed[0].skin = SKINS[0]; fixed[1].skin = SKINS[1]; fixed[1].scar = true; fixed[2].skin = SKINS[2]; fixed[2].chipped = true;
+  for (const v of fixed) v.belly = mix(v.skin, [244, 226, 176], 0.72);
+  const def = v => ({ def: rigDef(painters(v), v), low: rigLow(painters(v), v) });
+  window.MOBS.push({
+    id: 'tiranossauro', nome: 'Tiranossauro', bioma: 'Dinossauros', tier: 'Grandão · forte · tier 5', refX: 5,
+    variants: fixed.map((v, i) => ({ nome: ['Marrom', 'Verde', 'Vermelho'][i], v, ...def(v) })),
+    randomVariant: () => { const v = variant(Math.floor(Math.random() * 1e5)); return { nome: 'Sorteado', v, ...def(v) }; },
+    anim, modes: [['parado', 'Parado'], ['andar', 'Andar'], ['investida', 'Investida'], ['pisao', 'Pisão Sísmico']],
+    cam: 13, lookY: 2.0, lookZ: { investida: -5, pisao: -4 }, camFar: { investida: 19, pisao: 16 }, camYaw: { investida: -1.35, pisao: -0.9 },
+    info: {
+      'Tamanho': '3,6 blocos de altura, 7 de comprimento',
+      'Vida': '220 (tier 5)',
+      'Jeito': 'Territorial e sozinho. Ruge quando você entra no espaço dele; se continuar, ataca. Come os outros dinos se estiver com fome.',
+      'Investida': 'Ruge (aviso), abaixa a cabeça e corre em linha reta derrubando árvores e blocos fracos. Quem é atropelado voa longe. Ele demora pra frear: dá pra contra-atacar por trás.',
+      'Pisão Sísmico': 'Levanta a pata alta e pisa: o chão racha e uma onda de terra corre pra fora até 6 blocos. Pular na hora certa escapa.',
+      'Solta': 'Carne grande de dinossauro (enche muito a fome), couro grosso; raro: dente de tiranossauro.',
+      'Variações': 'Cor do couro, manchas, quantos calombos nas costas, cicatriz e dente quebrado sorteados.',
+    },
+  });
+})();
+
+</script>
+<script>
+// Pterodáctilo, o dino que voa (céu de Paozu, Terras do Dragão e Deserto). Como o do desenho: bicão comprido,
+// crista pra trás, olho bravo, asa de pele com nervuras. Fica rodando no céu e desce pra pegar.
+// Golpes: Mergulho (fecha as asas, mergulha, agarra o alvo com os pés, sobe e solta lá de cima) e Ventania (para no
+// ar e bate as asas com força: um vendaval de areia empurra o alvo pra trás).
+'use strict';
+(() => {
+  const { n3, mix, mul } = ENG;
+  const { seq, loop } = FX;
+  const fr = x => x - Math.floor(x);
+  const cel = ENG.cel;
+  const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
+
+  const SKINS = [[140, 96, 150], [160, 110, 70], [96, 120, 150], [170, 80, 70], [120, 130, 90]];
+  const WINGS = [[200, 150, 170], [214, 170, 120], [170, 190, 210], [220, 140, 110], [190, 196, 150]];
+  function variant(seed) {
+    const R = FX.rnd(seed);
+    const i = Math.floor(R() * SKINS.length);
+    return { seed, skin: SKINS[i].map(c => c * (0.92 + R() * 0.12)), wing: WINGS[i], crest: R() < 0.5 ? [220, 70, 50] : [240, 190, 60], torn: R() < 0.3, big: R() < 0.3 };
+  }
+
+  function painters(v) {
+    const S = v.seed;
+    const shade = (base, q, s, lo = 0.84, hi = 1.1) => cel(base, 0.62 - 0.38 * q.ny + 0.12 * (n3(q.ax * 0.3, q.ay * 0.3, q.az * 0.3, s + S) - 0.5) + (q.f === 'top' ? 0.25 : 0) - (q.f === 'bottom' ? 0.3 : 0), lo, hi);
+    const belly = mix(v.skin, [240, 222, 190], 0.6);
+    const hide = (q, s = 1) => shade(q.f === 'bottom' || (q.f !== 'top' && q.ny > 0.65) ? belly : v.skin, q, s);
+    const P = { hide };
+    P.head = q => {
+      let c = hide(q, 2);
+      if (q.f === 'west' || q.f === 'east') {
+        const x = q.pz, y = q.py, ex = 2.4, ey = 1.3;
+        if (Math.hypot((x - ex) / 1.1, y - ey) < 0.9) { c = [246, 240, 210]; if (Math.hypot(x - (ex - 0.35), y - ey) < 0.45) c = [16, 14, 12]; }
+        if (y < ey - 0.6 && y > ey - 1.2 && Math.abs(x - ex) < 1.4) c = mul(v.skin, 0.55);
+      }
+      return c;
+    };
+    P.beak = q => { let c = cel([228, 196, 110], 0.5 + 0.4 * (1 - q.ny) + (q.f === 'top' ? 0.2 : 0), 0.82, 1.12); if (q.nz < 0.12) c = mul(c, 0.8); return c; };
+    P.crest = q => {
+      // crista em lâmina: a borda de trás é curva e afina na ponta
+      const k = q.pz / 7, top = 5.5 * (1 - k * k) + 0.4;
+      if ((5.6 - q.py) > top) return null;
+      if (q.f === 'top' || q.f === 'bottom') return null;
+      let c = shade(v.crest, q, 3);
+      if (fr(q.pz * 0.5) < 0.18) c = mul(c, 0.85);
+      return c;
+    };
+    // pele da asa: borda de trás em arcos entre os dedos, nervuras que saem do braço, rasgo em algumas
+    P.wing = (len, depth, inner, D) => q => {
+      if (q.f !== 'top' && q.f !== 'bottom') return null;
+      const x = D ? 1 - q.px / len : q.px / len;
+            const edge = depth * (inner ? 1 - 0.15 * x : (1 - x) * 0.95 + 0.05) - 0.9 * Math.abs(Math.sin(x * Math.PI * (inner ? 2 : 1.5)));
+      if (q.pz > edge) return null;
+      if (v.torn && !inner && x > 0.45 && x < 0.55 && q.pz > edge * 0.5) return null;
+      let c = cel(v.wing, 0.62 + (q.f === 'top' ? 0.2 : -0.15) + 0.08 * (n3(q.ax * 0.4, 0, q.az * 0.4, 5 + S) - 0.5), 0.84, 1.08);
+      const vein = Math.abs(fr(q.pz / Math.max(1, edge) * 3 + x * 0.6) - 0.5);
+      if (vein < 0.04) c = mul(c, 0.82);
+      if (q.pz > edge - 0.6) c = mul(c, 0.88);
+      if (q.pz < 0.6) c = shade(v.skin, q, 4);
+      return c;
+    };
+    P.claw = q => cel([50, 44, 40], 0.5 + 0.4 * (1 - q.ny), 0.8, 1.4);
+    return P;
+  }
+
+  function rigDef(P, v, low) {
+    const k = v.big ? 1.15 : 1;
+    const wing = s => {
+      const D = s < 0;
+      const L1 = 11 * k, L2 = 14 * k;
+      return {
+        name: D ? 'asaD' : 'asaE', pivot: [s * 2.4, -1.6, -2.4], boxes: [
+          { x: D ? -L1 : 0, y: -0.7, z: -0.9, w: L1, h: 1.4, d: 1.8, p: P.hide },
+          ...(low ? [] : [{ x: D ? -L1 : 0, y: -0.15, z: 0.4, w: L1, h: 0.3, d: 9 * k, p: P.wing(L1, 9 * k, true, D) }]),
+        ],
+        kids: [{
+          name: D ? 'pontaD' : 'pontaE', pivot: [s * L1, 0, 0], boxes: [
+            { x: D ? -L2 : 0, y: -0.5, z: -0.7, w: L2, h: 1, d: 1.4, p: P.hide },
+            { x: D ? -L2 : 0, y: -0.15, z: 0.4, w: L2, h: 0.3, d: 8.6 * k, p: P.wing(L2, 8.6 * k, false, D) },
+            { x: D ? -0.6 : -0.6, y: -0.4, z: -2.4, w: 1.2, h: 1, d: 1.8, p: P.claw },
+          ],
+        }],
+      };
+    };
+    return {
+      name: 'raiz', pivot: [0, 0, 0], kids: [{
+        name: 'corpo', pivot: [0, 8, 0], boxes: [{ x: -2.6, y: -2.6, z: -5.2, w: 5.2, h: 5.4, d: 9.6, p: P.hide }], kids: [
+          {
+            name: 'pescoco', pivot: [0, -1, -5], rot: [0.9, 0, 0], boxes: [{ x: -1.2, y: -5.4, z: -1.2, w: 2.4, h: 5.8, d: 2.4, p: P.hide }],
+            kids: [{
+              name: 'cabeca', pivot: [0, -5, 0], rot: [-0.9, 0, 0], boxes: [
+                { x: -2, y: -2.4, z: -4, w: 4, h: 3.6, d: 6, p: P.head },
+                { x: -1.3, y: -1.6, z: -13.5, w: 2.6, h: 2, d: 9.6, p: P.beak },
+                { x: -0.3, y: -6.2, z: 0.4, w: 0.6, h: 5.6, d: 7, p: P.crest },
+              ],
+              kids: [{ name: 'mandibula', pivot: [0, 0.4, -3], boxes: [{ x: -1.1, y: 0, z: -9.8, w: 2.2, h: 1, d: 10, p: P.beak }] }],
+            }],
+          },
+          wing(-1), wing(1),
+          { name: 'pernaD', pivot: [-1.5, 2.2, 3], rot: [1.2, 0, 0], boxes: [{ x: -0.6, y: 0, z: -0.6, w: 1.2, h: 4.4, d: 1.2, p: P.hide }], kids: [{ name: 'peD', pivot: [0, 4.2, 0], boxes: [{ x: -1, y: 0, z: -1.6, w: 2, h: 0.8, d: 2.2, p: P.claw }] }] },
+          { name: 'pernaE', pivot: [1.5, 2.2, 3], rot: [1.2, 0, 0], boxes: [{ x: -0.6, y: 0, z: -0.6, w: 1.2, h: 4.4, d: 1.2, p: P.hide }], kids: [{ name: 'peE', pivot: [0, 4.2, 0], boxes: [{ x: -1, y: 0, z: -1.6, w: 2, h: 0.8, d: 2.2, p: P.claw }] }] },
+          { name: 'cauda', pivot: [0, -0.5, 4.2], rot: [-0.1, 0, 0], boxes: [{ x: -0.5, y: -0.5, z: 0, w: 1, h: 1, d: 5, p: P.hide }] },
+        ],
+      }],
+    };
+  }
+
+  // vendaval: listras de areia que correm do pterodáctilo até o alvo, cada uma com altura e atraso próprios
+  function gust() {
+    const N = 26, SEG = 14;
+    const pos = new Float32Array(N * (SEG + 1) * 2 * 3), al = new Float32Array(N * (SEG + 1) * 2), idx = [];
+    for (let l = 0; l < N; l++) for (let s = 0; s < SEG; s++) { const a = (l * (SEG + 1) + s) * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
+    const geo = new THREE.BufferGeometry(); geo.setIndex(idx);
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3)); geo.setAttribute('al', new THREE.BufferAttribute(al, 1));
+    const m = new THREE.Mesh(geo, new THREE.ShaderMaterial({
+      transparent: true, depthWrite: false, side: THREE.DoubleSide,
+      vertexShader: 'attribute float al; varying float vA; void main(){ vA=al; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }',
+      fragmentShader: 'varying float vA; void main(){ gl_FragColor = vec4(vec3(0.93,0.84,0.66), vA); }',
+    }));
+    m.frustumCulled = false;
+    const R = FX.rnd(404), L = [];
+    for (let l = 0; l < N; l++) L.push({ x: (R() - 0.5) * 2.6, y: 0.2 + R() * 2.2, dl: R() * 0.8, len: 1.2 + R() * 2.2, sp: 7 + R() * 5, wob: R() * 6, w: 0.015 + R() * 0.03 });
+    m.at = (from, to, age) => {
+      m.visible = true;
+      L.forEach((l, i) => {
+        const a = age - l.dl;
+        const head = a * l.sp;
+        for (let s = 0; s <= SEG; s++) {
+          const f = s / SEG, d = head - (1 - f) * l.len;
+          const z = from.z + (to.z - from.z) * Math.min(1.2, d / Math.abs(to.z - from.z));
+          const y = l.y + 0.12 * Math.sin(d * 2 + l.wob), x = l.x * (0.6 + 0.4 * Math.min(1, d / 6)) + 0.08 * Math.sin(d * 3 + l.wob);
+          const k = (i * (SEG + 1) + s) * 2;
+          pos.set([x, y - l.w, z, x, y + l.w, z], k * 3);
+          const vis = a > 0 && d > 0 && d < Math.abs(to.z - from.z) + 2 ? Math.sin(Math.PI * f) * 0.7 * (1 - Math.max(0, age - 1.6) / 0.6) : 0;
+          al[k] = al[k + 1] = Math.max(0, vis);
+        }
+      });
+      geo.attributes.position.needsUpdate = true; geo.attributes.al.needsUpdate = true;
+    };
+    return m;
+  }
+
+  function anim(P, t, mode, a, obj, e, ctx) {
+    const r = (n, x, y, z) => { if (!P[n]) return; const o = P[n].obj.rotation; o.x += x; o.y += y; o.z += z; };
+    const flap = (ph, amp) => {
+      const w = Math.sin(ph * Math.PI * 2), w2 = Math.sin(ph * Math.PI * 2 - 0.9);
+      r('asaD', 0, 0, -0.75 * w * amp); r('asaE', 0, 0, 0.75 * w * amp);
+      r('pontaD', 0, 0, -0.45 * w2 * amp); r('pontaE', 0, 0, 0.45 * w2 * amp);
+      P.corpo.obj.position.y += 1.2 * w * amp;
+    };
+    const glide = k => { r('asaD', 0, 0, 0.12 * k); r('asaE', 0, 0, -0.12 * k); };
+
+    if (mode === 'parado') {
+      // plana em círculo devagar, batendo a asa de vez em quando
+      obj.position.y += 2.2;
+      const ph = fr(t / 3.2);
+      const fl = ph < 0.35 ? 1 : 0;
+      if (fl) flap(ph / 0.35 * 2, 0.8); else glide(1);
+      r('corpo', 0, 0, 0.18 * Math.sin(t * 0.6));
+      r('cabeca', 0, 0.25 * Math.sin(t * 0.9), 0);
+      r('mandibula', 0.25 * seq([[0.6, 0], [0.64, 1], [0.7, 0], [0.74, 1], [0.8, 0]], fr(t / 4.6)), 0, 0);
+      return;
+    }
+    if (mode === 'andar') {
+      obj.position.y += 2.2;
+      flap(t * 1.4, 1);
+      r('corpo', 0.08, 0, 0);
+      r('pescoco', -0.05 * Math.sin(t * 1.4 * Math.PI * 2), 0, 0);
+      return;
+    }
+
+    if (mode === 'mergulho') {
+      const T = t % 4.4;
+      const R = ctx.ref; const RZ = -6; R.place(0, RZ, 0);
+      // grita, fecha as asas e mergulha em cima do alvo; pega com os pés, sobe batendo as asas e solta
+      const scream = seq([[0, 0], [0.15, 1], [0.6, 1], [0.7, 0]], T);
+      const dive = seq([[0.65, 0], [1.25, 1, 'in']], T);
+      const grab = T > 1.25 && T < 2.9 ? 1 : 0;
+      const climb = seq([[1.3, 0], [2.9, 1, 'out']], T);
+      const away = seq([[2.9, 0], [3.8, 1, 'out']], T);
+      r('mandibula', 0.6 * scream * Math.max(0, Math.sin(T * 30)) + 0.5 * scream, 0, 0);
+      r('pescoco', -0.3 * scream, 0, 0);
+      const start = V3(0, 5.5, 0), low = V3(0, 0.9, RZ + 0.1), top = V3(0, 6.5, RZ - 2.5), far = V3(0, 7.5, RZ - 9);
+      let p;
+      if (T < 0.65) p = start.clone();
+      else if (T < 1.25) p = start.clone().lerp(low, dive);
+      else if (T < 2.9) p = low.clone().lerp(top, climb);
+      else p = top.clone().lerp(far, away);
+      obj.position.set(p.x, p.y + 1.5, p.z);
+      if (T < 0.65) flap(T * 1.6, 0.8);
+      else if (T < 1.25) { r('asaD', 0, 0.9 * dive, 0.6 * dive); r('asaE', 0, -0.9 * dive, -0.6 * dive); r('corpo', 0.75 * dive, 0, 0); r('cabeca', -0.4 * dive, 0, 0); }
+      else flap(T * 1.8, 1.1);
+      r('pernaD', -1.6 * (grab + dive * 0.6), 0, 0); r('pernaE', -1.6 * (grab + dive * 0.6), 0, 0);
+      // o alvo pendurado nos pés, depois cai
+      if (grab) { R.place(p.x, p.z + 0.15, p.y - 2.0); R.armsOut(0.8); R.lean(0.15 * Math.sin(T * 6)); ctx.shake(T < 1.4 ? 0.6 : 0); }
+      if (T >= 2.9) {
+        const f = seq([[2.9, 0], [3.55, 1, 'in']], T);
+        R.place(top.x, top.z + 0.15 - 0.6 * f, (top.y - 2.0) * (1 - f)); R.armsOut(0.8 * (1 - f)); R.lean(-1.3 * f);
+        if (T > 3.55 && T < 4.3) { ctx.shake(Math.max(0, 0.7 - (T - 3.55))); ctx.get('queda', FX.volume).set(V3(0, 0.3, RZ - 2.4), 0.7, (T - 3.55) / 0.75, { seed: 6.6, dens: 6, rise: 0.3, smoke: [0.84, 0.72, 0.54] }); }
+      }
+      if (T > 1.2 && T < 2.2) ctx.get('poAgarra', FX.volume).set(V3(0, 0.3, RZ), 0.8, (T - 1.2) / 1.0, { seed: 2.2, dens: 5, rise: 0.4, smoke: [0.84, 0.72, 0.54] });
+      return;
+    }
+
+    if (mode === 'ventania') {
+      const T = t % 3.8;
+      const R = ctx.ref; const RZ = -5.5; R.place(0, RZ, 0);
+      // para no ar, abre as asas pra trás e bate três vezes com força
+      obj.position.y += 1.8;
+      const open = seq([[0, 0], [0.5, 1, 'out']], T);
+      const beats = T > 0.5 && T < 2.3 ? (T - 0.5) / 0.6 : 0;
+      r('corpo', -0.55 * open, 0, 0); r('pescoco', 0.3 * open, 0, 0); r('cabeca', 0.25 * open, 0, 0);
+      if (beats > 0) flap(beats + 0.25, 1.5); else { r('asaD', 0, -0.5 * open, -0.4 * open); r('asaE', 0, 0.5 * open, 0.4 * open); }
+      r('mandibula', 0.5 * open, 0, 0);
+      r('pernaD', -0.6 * open, 0, 0); r('pernaE', -0.6 * open, 0, 0);
+      if (T > 0.6) {
+        ctx.get('vento', gust).at(V3(0, 0, -0.5), V3(0, 0, RZ), T - 0.6);
+        [0.62, 1.22, 1.82].forEach((bt, i) => {
+          const age = (T - bt) / 1.3; if (age <= 0 || age >= 1) return;
+          ctx.get('areia' + i, FX.volume).set(V3((i - 1) * 0.5, 0.4, -0.8 + (RZ + 1.5) * Math.min(1, age * 1.6)), 0.6 + 0.2 * i, age, { seed: 12.5 + i * 3.9, dens: 5, rise: 0.15, squash: 0.8, smoke: [0.86, 0.76, 0.58] });
+          if (age < 0.15) ctx.shake(0.3);
+        });
+        // empurrado pra trás aos trancos, cobrindo o rosto
+        const push = seq([[0.75, 0], [1.0, 0.35], [1.35, 0.4], [1.6, 0.75], [1.95, 0.8], [2.2, 1.2], [2.6, 1.3]], T);
+        R.place(0, RZ - 2.2 * push, 0); R.lean(-0.25 * Math.min(1, push)); R.punch(-0.7 * Math.min(1, push * 2) * (1 - seq([[2.8, 0], [3.4, 1]], T)));
+        ctx.blur(0.08 * (T < 2.6 ? 1 : 0));
+      }
+      return;
+    }
+  }
+
+  window.MOBS = window.MOBS || [];
+  const fixed = [variant(3), variant(17), variant(44)];
+  fixed[0].skin = SKINS[0]; fixed[0].wing = WINGS[0]; fixed[1].skin = SKINS[1]; fixed[1].wing = WINGS[1]; fixed[1].torn = true; fixed[2].skin = SKINS[2]; fixed[2].wing = WINGS[2]; fixed[2].big = true;
+  const def = v => ({ def: rigDef(painters(v), v, false), low: rigDef(painters(v), v, true) });
+  window.MOBS.push({
+    id: 'pterodactilo', nome: 'Pterodáctilo', bioma: 'Dinossauros', tier: 'Voador · tier 8', refX: 3,
+    variants: fixed.map((v, i) => ({ nome: ['Roxo', 'Pardo (asa rasgada)', 'Azul (grande)'][i], v, ...def(v) })),
+    randomVariant: () => { const v = variant(Math.floor(Math.random() * 1e5)); return { nome: 'Sorteado', v, ...def(v) }; },
+    anim, modes: [['parado', 'Planando'], ['andar', 'Voando'], ['mergulho', 'Mergulho'], ['ventania', 'Ventania']],
+    cam: 8, lookY: 2.6, lookZ: { mergulho: -4, ventania: -2.6 }, camFar: { mergulho: 14, ventania: 10 }, camYaw: { mergulho: -1.4, ventania: -1.1 },
+    info: {
+      'Tamanho': 'Corpo de 1 bloco, asa aberta de 3,5 a 4 blocos',
+      'Vida': '30 (tier 8)',
+      'Jeito': 'Em dupla ou trio rodando alto. Ataca quem está sozinho ou voando perto. Pousa em pico de rocha e árvore alta.',
+      'Mergulho': 'Grita (aviso), fecha as asas e mergulha. Se pegar, sobe uns 6 blocos com você nos pés e solta. Bater nele enquanto carrega faz soltar mais baixo.',
+      'Ventania': 'Para no ar e bate as asas três vezes: um vendaval de areia empurra pra trás e atrapalha a visão. Quem está voando é jogado longe.',
+      'Solta': 'Couro de asa (planador simples), carne; raro: crista de pterodáctilo.',
+      'Variações': 'Cor do corpo e da asa, cor da crista, asa rasgada e tamanho sorteados.',
+    },
+  });
+})();
+
+</script>
+<script>
+// Dragão (Paozu, Terras do Dragão e Deserto). Grandão e bonzinho, como os dragões que as crianças montam no desenho:
+// cara redonda, olho grande, dois chifres pra trás, asas de morcego, barriga creme em gomos e cauda com ponta de folha.
+// Dá pra domar e MONTAR: voa com você nas costas. Selvagem, só ataca se apanhar.
+// Golpes: Bafo de Fogo (enche o peito e solta um jato de fogo) e, montado, você manda ele soltar o bafo também.
+'use strict';
+(() => {
+  const { n3, mix, mul } = ENG;
+  const { seq, loop } = FX;
+  const fr = x => x - Math.floor(x);
+  const cel = ENG.cel;
+  const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
+
+  const SKINS = [[150, 120, 176], [80, 150, 130], [200, 110, 70], [110, 140, 200], [170, 160, 90]];
+  const WINGS = [[214, 170, 200], [170, 214, 180], [240, 190, 140], [190, 210, 240], [230, 214, 160]];
+  function variant(seed) {
+    const R = FX.rnd(seed);
+    const i = Math.floor(R() * SKINS.length);
+    const skin = SKINS[i].map(c => c * (0.94 + R() * 0.1));
+    return { seed, skin, belly: mix(skin, [248, 232, 190], 0.74), wing: WINGS[i], horn: R() < 0.5 ? [236, 222, 190] : [120, 96, 80], spikes: 6 + Math.floor(R() * 3), young: R() < 0.3 };
+  }
+
+  function painters(v) {
+    const S = v.seed;
+    const shade = (base, q, s, lo = 0.85, hi = 1.1) => cel(base, 0.62 - 0.38 * q.ny + 0.1 * (n3(q.ax * 0.12, q.ay * 0.12, q.az * 0.12, s + S) - 0.5) + (q.f === 'top' ? 0.25 : 0) - (q.f === 'bottom' ? 0.3 : 0), lo, hi);
+    const hide = (q, s = 1) => {
+      const under = q.f === 'bottom' || (q.f !== 'top' && q.ny > 0.62);
+      let c = shade(under ? v.belly : v.skin, q, s);
+      if (under && fr(q.az * 0.22) < 0.12) c = mul(c, 0.86);
+      return c;
+    };
+    const limb = (q, s = 6) => { let c = shade(v.skin, q, s); if (q.ny > 0.8 && q.f !== 'top') c = mix(c, v.belly, 0.25); return c; };
+    const P = { hide, limb };
+    P.head = q => {
+      let c = hide(q, 2);
+      if (q.f === 'west' || q.f === 'east') {
+        // olho grande e redondo, brilho em cima: cara de amigo
+        const x = q.pz, y = q.py, ex = 4.8, ey = 3.2;
+        const d = Math.hypot((x - ex) / 1.6, (y - ey) / 1.5);
+        if (d < 1) {
+          c = [248, 246, 236];
+          if (Math.hypot(x - (ex - 0.6), y - ey - 0.1) < 1.0) c = [30, 24, 40];
+          if (Math.hypot(x - (ex - 0.9), y - ey + 0.5) < 0.35) c = [255, 255, 255];
+        }
+        if (Math.abs(d - 1.15) < 0.15 && y < ey) c = mul(v.skin, 0.6);
+      }
+      return c;
+    };
+    P.snout = q => {
+      let c = hide(q, 3);
+      if (q.f === 'north' && q.py < 2 && (Math.floor(q.px) === 1 || Math.floor(q.px) === 5)) c = [40, 30, 40];
+      if ((q.f === 'west' || q.f === 'east') && q.py > 4.2) { const k = fr(q.pz / 1.6); if (k < 0.4 && q.py - 4.2 < 0.8 * (1 - Math.abs(k - 0.2) * 5)) c = [248, 244, 232]; }
+      return c;
+    };
+    P.jaw = q => (q.f === 'top' ? [170, 80, 96] : hide(q, 4));
+    P.horn = q => { let c = cel(v.horn, 0.4 + 0.6 * (1 - q.ny) + (q.f === 'top' ? 0.15 : 0), 0.82, 1.12); if (fr(q.ay * 0.7) < 0.15) c = mul(c, 0.86); return c; };
+    P.spike = q => shade(mix(v.skin, v.wing, 0.5), q, 8);
+    P.claw = q => cel([60, 52, 50], 0.5 + 0.4 * (1 - q.ny), 0.8, 1.4);
+    P.wing = (len, depth, inner, D) => q => {
+      if (q.f !== 'top' && q.f !== 'bottom') return null;
+      const x = D ? 1 - q.px / len : q.px / len;
+      const edge = depth * (inner ? 1 - 0.1 * x : (1 - x) * 0.9 + 0.1) - 1.6 * Math.abs(Math.sin(x * Math.PI * (inner ? 2 : 2.5)));
+      if (q.pz > edge) return null;
+      let c = cel(v.wing, 0.64 + (q.f === 'top' ? 0.16 : -0.14) + 0.06 * (n3(q.ax * 0.3, 0, q.az * 0.3, 7 + S) - 0.5), 0.86, 1.08);
+      if (Math.abs(fr(q.pz / Math.max(1, edge) * 3 + x * 0.8) - 0.5) < 0.035) c = mul(c, 0.82);
+      if (q.pz < 0.9) c = shade(v.skin, q, 5);
+      return c;
+    };
+    P.fin = q => {
+      // ponta da cauda em folha
+      const k = q.pz / 7, half = 3.6 * Math.sin(Math.PI * Math.min(1, k)) * (1 - 0.3 * k);
+      if (Math.abs(q.px - 3.6) > half || q.f === 'top' || q.f === 'bottom') return null;
+      let c = shade(mix(v.skin, v.wing, 0.5), q, 9);
+      if (Math.abs(q.px - 3.6) < 0.3) c = mul(c, 0.8);
+      return c;
+    };
+    return P;
+  }
+
+  function rigDef(P, v, low) {
+    const k = v.young ? 0.85 : 1;
+    const wing = s => {
+      const D = s < 0, L1 = 15 * k, L2 = 17 * k;
+      return {
+        name: D ? 'asaD' : 'asaE', pivot: [s * 7.5, -7.5, -6], boxes: [{ x: D ? -L1 : 0, y: -1, z: -1.2, w: L1, h: 2, d: 2.4, p: P.limb }, { x: D ? -L1 : 0, y: -0.2, z: 0.6, w: L1, h: 0.4, d: 14 * k, p: P.wing(L1, 14 * k, true, D) }],
+        kids: [{ name: D ? 'pontaD' : 'pontaE', pivot: [s * L1, 0, 0], boxes: [{ x: D ? -L2 : 0, y: -0.7, z: -0.9, w: L2, h: 1.4, d: 1.8, p: P.limb }, { x: D ? -L2 : 0, y: -0.2, z: 0.6, w: L2, h: 0.4, d: 12 * k, p: P.wing(L2, 12 * k, false, D) }, { x: -0.8, y: -0.8, z: -3, w: 1.6, h: 1.6, d: 2.4, p: P.claw }] }],
+      };
+    };
+    const leg = (s, front) => {
+      const kk = (front ? 'F' : 'T') + (s < 0 ? 'D' : 'E'), w = front ? 6 : 8;
+      if (low) return { name: 'perna' + kk, pivot: [s * 7.4, front ? 4 : 3, front ? -9 : 8], boxes: [{ x: -w / 2, y: -2, z: -w / 2, w, h: 19, d: w, p: P.limb }, { x: -w / 2 - 0.5, y: 15.5, z: -w / 2 - 2, w: w + 1, h: 3, d: w + 2.5, p: P.limb }] };
+      return {
+        name: 'perna' + kk, pivot: [s * 7.4, front ? 4 : 3, front ? -9 : 8], boxes: [{ x: -w / 2, y: -2, z: -w / 2, w, h: 11, d: w + (front ? 0 : 1), p: P.limb }],
+        kids: [{
+          name: 'canela' + kk, pivot: [0, 9, 0], boxes: [{ x: -w / 2 + 0.6, y: 0, z: -w / 2 + 0.6, w: w - 1.2, h: 7.5, d: w - 1.2, p: P.limb }],
+          kids: [{ name: 'pe' + kk, pivot: [0, 7.5, 0], boxes: [{ x: -w / 2 - 0.5, y: 0, z: -w / 2 - 2, w: w + 1, h: 3, d: w + 2.5, p: P.limb }, { x: -w / 2, y: 1.2, z: -w / 2 - 3.2, w: 1.6, h: 1.6, d: 1.4, p: P.claw }, { x: -0.8, y: 1.2, z: -w / 2 - 3.4, w: 1.6, h: 1.6, d: 1.6, p: P.claw }, { x: w / 2 - 1.6, y: 1.2, z: -w / 2 - 3.2, w: 1.6, h: 1.6, d: 1.4, p: P.claw }] }],
+        }],
+      };
+    };
+    const R = FX.rnd(v.seed + 9);
+    const spikes = low ? [] : Array.from({ length: v.spikes }, (_, i) => { const h = 2 + R() * 1.6; return { x: -0.9, y: -9 - h, z: -12 + i * (24 / v.spikes), w: 1.8, h: h + 0.2, d: 2.6, p: P.spike }; });
+    return {
+      name: 'raiz', pivot: [0, 0, 0], kids: [{
+        name: 'corpo', pivot: [0, 0.5, 2], boxes: [{ x: -9, y: -9, z: -14, w: 18, h: 18, d: 28, p: P.hide }, { x: -8, y: -7.5, z: -16, w: 16, h: 15, d: 3, p: P.hide }, ...spikes],
+        kids: [
+          {
+            name: 'pescoco1', pivot: [0, -4, -14], rot: [0.55, 0, 0], boxes: [{ x: -4.2, y: -11, z: -4.2, w: 8.4, h: 12, d: 8.4, p: P.hide }],
+            kids: [{
+              name: 'pescoco2', pivot: [0, -10.5, 0], rot: [-0.2, 0, 0], boxes: [{ x: -3.6, y: -10, z: -3.6, w: 7.2, h: 10.6, d: 7.2, p: P.hide }],
+              kids: [{
+                name: 'cabeca', pivot: [0, -9.5, 0], rot: [-0.35, 0, 0], boxes: [
+                  { x: -5, y: -7.4, z: -9, w: 10, h: 8.4, d: 12, p: P.head },
+                  { x: -3.6, y: -4.6, z: -15.4, w: 7.2, h: 5.6, d: 6.6, p: P.snout },
+                ],
+                kids: [
+                  { name: 'chifreD', pivot: [-3, -6.4, 0.5], rot: [-1.0, 0, -0.15], boxes: [{ x: -0.9, y: -6, z: -0.9, w: 1.8, h: 6.4, d: 1.8, p: P.horn }, { x: -0.6, y: -9, z: 0.2, w: 1.2, h: 3.4, d: 1.2, p: P.horn }] },
+                  { name: 'chifreE', pivot: [3, -6.4, 0.5], rot: [-1.0, 0, 0.15], boxes: [{ x: -0.9, y: -6, z: -0.9, w: 1.8, h: 6.4, d: 1.8, p: P.horn }, { x: -0.6, y: -9, z: 0.2, w: 1.2, h: 3.4, d: 1.2, p: P.horn }] },
+                  { name: 'mandibula', pivot: [0, 1, -2], boxes: [{ x: -3.4, y: 0, z: -13.2, w: 6.8, h: 2.6, d: 14, p: P.jaw }] },
+                ],
+              }],
+            }],
+          },
+          wing(-1), wing(1),
+          leg(-1, true), leg(1, true), leg(-1, false), leg(1, false),
+          {
+            name: 'cauda1', pivot: [0, -2, 13.5], rot: [-0.1, 0, 0], boxes: [{ x: -5, y: -5, z: 0, w: 10, h: 10, d: 14, p: P.hide }],
+            kids: [{
+              name: 'cauda2', pivot: [0, 0, 13.5], rot: [0.06, 0, 0], boxes: [{ x: -3.4, y: -3.4, z: 0, w: 6.8, h: 6.8, d: 14, p: P.hide }],
+              kids: [{
+                name: 'cauda3', pivot: [0, 0, 13.5], rot: [0.06, 0, 0], boxes: [{ x: -2.2, y: -2.2, z: 0, w: 4.4, h: 4.4, d: 13, p: P.hide }],
+                kids: [{ name: 'cauda4', pivot: [0, 0, 12.5], rot: [0.06, 0, 0], boxes: [{ x: -1.3, y: -1.3, z: 0, w: 2.6, h: 2.6, d: 9, p: P.hide }, ...(low ? [] : [{ x: -3.6, y: -0.2, z: 6, w: 7.2, h: 0.4, d: 7, p: P.fin }, { x: -0.2, y: -3.6, z: 6, w: 0.4, h: 7.2, d: 7, p: P.fin }])] }],
+              }],
+            }],
+          },
+        ],
+      }],
+    };
+  }
+
+  // quem monta: jogador genérico sentado nas costas, mãos no pescoço
+  function riderModel() {
+    const sk = [214, 170, 130], shirt = [60, 96, 170], pants = [50, 50, 70], hair = [70, 46, 30];
+    const sh = (c, q) => cel(c, 0.6 - 0.35 * q.ny + (q.f === 'top' ? 0.2 : 0), 0.85, 1.1);
+    const head = q => {
+      if (q.f === 'top' || q.py < 2) return sh(hair, q);
+      if (q.f !== 'north') return q.f === 'south' ? sh(hair, q) : sh(sk, q);
+      const x = Math.floor(q.px), y = Math.floor(q.py);
+      if (y === 4 && (x === 2 || x === 5)) return [40, 40, 60];
+      if (y === 6 && x >= 3 && x <= 4) return [150, 90, 80];
+      return sh(sk, q);
+    };
+    const def = {
+      name: 'rraiz', pivot: [0, -9.6, -3], kids: [{
+        name: 'rcorpo', pivot: [0, 0, 0], boxes: [{ x: -4, y: -12, z: -2, w: 8, h: 12, d: 4, p: q => sh(shirt, q) }], kids: [
+          { name: 'rcabeca', pivot: [0, -12, 0], boxes: [{ x: -4, y: -8, z: -4, w: 8, h: 8, d: 8, p: head }] },
+          { name: 'rbracoD', pivot: [-6, -11, 0], rot: [-1.0, 0, 0.15], boxes: [{ x: -2, y: -1, z: -2, w: 4, h: 12, d: 4, p: q => (q.py > 8 ? sh(sk, q) : sh(shirt, q)) }] },
+          { name: 'rbracoE', pivot: [6, -11, 0], rot: [-1.0, 0, -0.15], boxes: [{ x: -2, y: -1, z: -2, w: 4, h: 12, d: 4, p: q => (q.py > 8 ? sh(sk, q) : sh(shirt, q)) }] },
+          { name: 'rpernaD', pivot: [-2, 0, 0], rot: [-1.35, 0, 0.75], boxes: [{ x: -2, y: 0, z: -2, w: 4, h: 12, d: 4, p: q => (q.py > 9 ? sh([60, 40, 30], q) : sh(pants, q)) }] },
+          { name: 'rpernaE', pivot: [2, 0, 0], rot: [-1.35, 0, -0.75], boxes: [{ x: -2, y: 0, z: -2, w: 4, h: 12, d: 4, p: q => (q.py > 9 ? sh([60, 40, 30], q) : sh(pants, q)) }] },
+        ],
+      }],
+    };
+    const m = ENG.build(def);
+    const outer = ENG.toThree(m, ENG.paint(m, m.W, m.H));
+    const o = outer.children[0]; outer.remove(o);             // sem a escala de fora: já está dentro do dragão
+    o.model = m;
+    return o;
+  }
+
+  function anim(P, t, mode, a, obj, e, ctx) {
+    const r = (n, x, y, z) => { if (!P[n]) return; const o = P[n].obj.rotation; o.x += x; o.y += y; o.z += z; };
+    // dragãozão: o modelo inteiro 40% maior que os cubos de 1/16 (o filhote 20%); quem monta fica no tamanho normal
+    const K = e.v.young ? 1.2 : 1.4;
+    obj.scale.set(-K / 16, -K / 16, K / 16); obj.position.y += 1.5 * (K - 1);
+    const breath = loop([[0, 0], [0.45, 1], [0.999, 0]], t / 3.4);
+    const tail = (k, ph) => { r('cauda1', 0, 0.08 * k * Math.sin(ph), 0); r('cauda2', 0, 0.12 * k * Math.sin(ph - 0.7), 0); r('cauda3', 0, 0.16 * k * Math.sin(ph - 1.4), 0); r('cauda4', 0, 0.2 * k * Math.sin(ph - 2.1), 0); };
+    const fold = k => { r('asaD', 0, 1.35 * k, -0.3 * k); r('asaE', 0, -1.35 * k, 0.3 * k); r('pontaD', 0, -2.7 * k, 0.1 * k); r('pontaE', 0, 2.7 * k, -0.1 * k); };
+    const flap = (ph, amp) => {
+      const w = Math.sin(ph * Math.PI * 2), w2 = Math.sin(ph * Math.PI * 2 - 1);
+      r('asaD', 0, 0, -0.85 * w * amp); r('asaE', 0, 0, 0.85 * w * amp); r('pontaD', 0, 0, -0.5 * w2 * amp); r('pontaE', 0, 0, 0.5 * w2 * amp);
+      P.corpo.obj.position.y += 1.6 * w * amp;
+    };
+    const legsTuck = k => { for (const s of ['FD', 'FE']) { r('perna' + s, -0.9 * k, 0, 0); r('canela' + s, 1.3 * k, 0, 0); } for (const s of ['TD', 'TE']) { r('perna' + s, 1.0 * k, 0, 0); r('canela' + s, 0.5 * k, 0, 0); } };
+    const rider = on => {
+      const o = ctx.attach('cavaleiro', P.corpo, riderModel);
+      o.visible = on;
+      if (on) { ENG.reset(o.model); o.scale.setScalar(1 / K); }
+      return o.model.parts;
+    };
+    const fire = (T0, T, mouthObj, dir, key, len) => {
+      // jato de fogo: nuvens de fogo em volume que saem da boca, crescem e viram fumaça
+      const mouth = mouthObj;
+      for (let i = 0; i < 9; i++) {
+        const st = T0 + i * 0.09, age = (T - st) / 1.0;
+        if (age <= 0 || age >= 1) continue;
+        const travel = Math.min(1, age * 2.2);
+        const c = mouth.clone().add(dir.clone().multiplyScalar(0.4 + len * travel * (0.75 + 0.05 * i)));
+        c.y = Math.max(c.y, 0.4);
+        ctx.get(key + i, FX.volume).set(c, 0.35 + 0.65 * travel + 0.05 * i, age, { fire: 1, seed: 3.3 + i * 4.71, dens: 9, rise: 0.3, smoke: [0.22, 0.2, 0.2] });
+      }
+      ctx.flash(mouth.clone().add(dir.clone().multiplyScalar(1.5)), 0.6);
+      ctx.ember(mouth, T);
+    };
+    const mouthOf = () => { obj.updateMatrixWorld(true); return P.mandibula.obj.localToWorld(V3(0, 0, -14)); };
+
+    if (mode === 'parado') {
+      rider(false);
+      fold(1);
+      r('corpo', -0.02 * breath, 0, 0);
+      r('pescoco1', 0.03 * breath, 0.12 * Math.sin(t * 0.4), 0); r('cabeca', 0.05 * Math.sin(t * 0.7), 0.15 * Math.sin(t * 0.4 - 0.4), 0.06 * Math.sin(t * 0.3));
+      r('mandibula', 0.05 * breath, 0, 0);
+      r('asaD', 0, 0, 0.05 * breath); r('asaE', 0, 0, -0.05 * breath);
+      tail(0.8, t * 0.8);
+      // fumacinha no nariz de vez em quando
+      const k = fr(t / 4.0);
+      if (k > 0.6) ctx.get('narina', FX.volume).set(mouthOf().add(V3(0, 0.25, 0.3)), 0.18, (k - 0.6) / 0.4, { seed: Math.floor(t / 4) * 2.3, dens: 4, rise: 0.6, smoke: [0.6, 0.58, 0.56] });
+      return;
+    }
+    if (mode === 'andar') {
+      rider(false);
+      fold(1);
+      const ph = t * 0.65;
+      for (const [s, off] of [['FD', 0], ['TE', 0.05], ['FE', 0.5], ['TD', 0.55]]) {
+        const sw = Math.sin((ph + off) * Math.PI * 2), lift = Math.max(0, Math.sin((ph + off) * Math.PI * 2 + 1.2));
+        r('perna' + s, 0.35 * sw, 0, 0); r('canela' + s, 0.45 * lift, 0, 0); r('pe' + s, -0.3 * lift, 0, 0);
+      }
+      P.corpo.obj.position.y += 0.6 * Math.abs(Math.sin(ph * Math.PI * 2));
+      r('corpo', 0, 0.04 * Math.sin(ph * Math.PI * 2), 0.03 * Math.sin(ph * Math.PI * 2));
+      r('pescoco1', 0.05 * Math.sin(ph * Math.PI * 4), -0.06 * Math.sin(ph * Math.PI * 2), 0);
+      tail(1, ph * Math.PI * 2 + 1);
+      return;
+    }
+
+    if (mode === 'voar') {
+      // voando com você nas costas: asas batendo, pernas recolhidas, cauda de leme; você segura no pescoço
+      const R2 = rider(true);
+      obj.position.y += 3.2;
+      const ph = t * 0.75;
+      flap(ph, 1);
+      legsTuck(1);
+      r('corpo', 0.05 + 0.05 * Math.sin(ph * Math.PI * 2), 0, 0.12 * Math.sin(t * 0.5));
+      r('pescoco1', 0.55, 0, 0); r('pescoco2', 0.2, 0.1 * Math.sin(t * 0.5), 0); r('cabeca', -0.5, 0, 0);
+      r('cauda1', 0.1, 0, 0); tail(0.5, ph * Math.PI * 2);
+      // o corpo do cavaleiro acompanha a batida da asa
+      R2.rcorpo.obj.rotation.x += -0.12 - 0.08 * Math.sin(ph * Math.PI * 2 + 0.6);
+      R2.rcabeca.obj.rotation.y += 0.25 * Math.sin(t * 0.4);
+      // vento passando: riscos finos de ar
+      ctx.get('ventoVoo', () => DBFX.grains({ n: 60, seed: 515, palette: [[255, 255, 255], [230, 240, 250]], size: [0.012, 0.025], drag: 0.1, grav: 0, life: 0.6, spread: 2.0, cone: Rr => [(Rr() - 0.5) * 2, (Rr() - 0.5) * 1.2, 9 + Rr() * 4] })).at(V3(0, 4.6, -3), fr(t / 2) * 2, -9);
+      return;
+    }
+
+    if (mode === 'decolar') {
+      // você monta, ele agacha, abre as asas e pula: a primeira batida levanta poeira em roda
+      const T = t % 4.6;
+      const R2 = rider(true);
+      const crouch = seq([[0.3, 0], [0.9, 1, 'out'], [1.1, 1], [1.2, 0]], T);
+      const open = seq([[0.5, 0], [1.1, 1, 'out']], T);
+      const up = seq([[1.15, 0], [3.4, 1, 'io']], T);
+      fold(1 - open);
+      if (T > 1.15) flap((T - 1.15) * 1.2, 1.15); else { r('asaD', 0, 0, 0.5 * open); r('asaE', 0, 0, -0.5 * open); }
+      P.corpo.obj.position.y += 4 * crouch;
+      for (const s of ['FD', 'FE', 'TD', 'TE']) { r('perna' + s, (s[0] === 'F' ? -0.4 : 0.5) * crouch, 0, 0); r('canela' + s, 0.7 * crouch, 0, 0); }
+      legsTuck(seq([[1.3, 0], [1.9, 1]], T));
+      r('corpo', -0.25 * seq([[1.1, 0], [1.4, 1], [2.5, 0.2]], T), 0, 0);
+      r('pescoco1', -0.3 * open, 0, 0); r('cabeca', 0.3 * open, 0, 0);
+      r('mandibula', 0.5 * seq([[1.1, 0], [1.2, 1], [1.7, 0]], T), 0, 0);
+      obj.position.y += 4.2 * up; obj.position.z -= 2.5 * up;
+      R2.rcorpo.obj.rotation.x += -0.25 * crouch - 0.15 * up;
+      R2.rbracoE.obj.rotation.x += -1.6 * seq([[2.6, 0], [2.9, 1], [3.6, 1], [3.9, 0]], T);       // você levanta o braço lá em cima
+      [1.2, 1.97, 2.75].forEach((bt, i) => {
+        const age = (T - bt) / 1.4; if (age <= 0 || age >= 1) return;
+        ctx.roarRing(V3(0, 0.03, -0.6 - 0.8 * i), age);
+        ctx.get('poAsa' + i, FX.volume).set(V3((i - 1) * 1.6, 0.5, -0.5 - 0.6 * i), 1.1 + 0.2 * i, age, { seed: 4.5 + i * 3.1, dens: 5, rise: 0.25, squash: 0.7, smoke: [0.86, 0.74, 0.56] });
+        if (age < 0.12) ctx.shake(0.4);
+      });
+      return;
+    }
+
+    if (mode === 'fogo') {
+      const T = t % 3.8;
+      rider(false);
+      const R = ctx.ref; const RZ = -9; R.place(0, RZ, 0);
+      // enche o peito (a barriga incha), estica o pescoço e solta o jato de fogo
+      fold(1 - 0.5 * seq([[0.2, 0], [0.7, 1], [2.6, 1], [3.2, 0]], T));
+      const inh = seq([[0, 0], [0.75, 1, 'out'], [0.85, 1]], T);
+      const blow = seq([[0.8, 0], [0.92, 1, 'snap'], [2.3, 1], [2.8, 0, 'io']], T);
+      const pre = inh * (1 - blow);
+      r('corpo', -0.12 * pre + 0.06 * blow, 0, 0);
+      r('pescoco1', -0.45 * pre + 0.25 * blow, 0, 0); r('pescoco2', -0.2 * pre + 0.15 * blow, 0, 0); r('cabeca', 0.25 * pre - 0.1 * blow, 0, 0);
+      r('mandibula', 0.15 * pre + 0.7 * blow, 0, 0);
+      tail(0.6, T * 2);
+      if (pre > 0.3) ctx.get('brasa', () => DBFX.light(0xff7a30)).at(mouthOf(), 1.5 * pre, 3);
+      if (T > 0.85 && T < 3.6) {
+        const m = mouthOf(), dir = V3(0, 1.0, RZ).sub(m).normalize();
+        fire(0.85, T, m, dir, 'chama', 6.5);
+        if (T < 2.4) ctx.shake(0.35);
+        ctx.get('faiscas', () => DBFX.grains({ n: 90, seed: 77, palette: [[255, 220, 120], [255, 160, 60], [255, 110, 40]], size: [0.02, 0.05], drag: 1.2, grav: -0.6, life: 0.8, spread: 1.4, add: true, cone: Rr => [(Rr() - 0.5) * 3, (Rr() - 0.3) * 2, 7 + Rr() * 3] })).at(m, T - 0.85, 0, { f: dir, r: V3(-dir.z, 0, dir.x).normalize(), u: V3(0, 1, 0) });
+      }
+      if (T > 1.3) { const burn = seq([[1.3, 0], [1.5, 1], [2.6, 1], [3.2, 0]], T); R.lean(-0.3 * burn); R.punch(-0.8 * burn); R.place(0, RZ - 0.8 * seq([[1.3, 0], [2.4, 1]], T), 0); }
+      return;
+    }
+  }
+
+  window.MOBS = window.MOBS || [];
+  const fixed = [variant(9), variant(35), variant(70)];
+  fixed[0].skin = SKINS[0]; fixed[0].wing = WINGS[0]; fixed[1].skin = SKINS[1]; fixed[1].wing = WINGS[1]; fixed[1].horn = [120, 96, 80]; fixed[2].skin = SKINS[2]; fixed[2].wing = WINGS[2]; fixed[2].young = true;
+  for (const v of fixed) v.belly = mix(v.skin, [248, 232, 190], 0.74);
+  const def = v => ({ def: rigDef(painters(v), v, false), low: rigDef(painters(v), v, true) });
+  window.MOBS.push({
+    id: 'dragao', nome: 'Dragão', bioma: 'Dinossauros', tier: 'Montaria · tier 5', refX: 6,
+    variants: fixed.map((v, i) => ({ nome: ['Lilás', 'Verde', 'Filhote laranja'][i], v, ...def(v) })),
+    randomVariant: () => { const v = variant(Math.floor(Math.random() * 1e5)); return { nome: 'Sorteado', v, ...def(v) }; },
+    anim, modes: [['parado', 'Parado'], ['andar', 'Andar'], ['decolar', 'Decolar com você'], ['voar', 'Voando com você'], ['fogo', 'Bafo de Fogo']],
+    cam: 14, lookY: 2.4, lookZ: { fogo: -4, decolar: -1.5 }, camFar: { fogo: 18, decolar: 17, voar: 13 }, camYaw: { fogo: -1.3, decolar: -0.7, voar: -0.6 },
+    info: {
+      'Tamanho': '4 blocos de altura (cabeça), 9 de comprimento, asa aberta de 10 blocos: cabe você sentado no pescoço. O filhote é menor (3,5 de altura) e já aguenta uma pessoa.',
+      'Vida': '200 (tier 5)',
+      'Jeito': 'Neutro e raro: um por vez, pousado em pico de rocha, oásis ou perto de água. Só ataca se apanhar.',
+      'Montar': 'Dá carne de dinossauro assada pra ele (3 a 5 vezes, cada vez um coração aparece) até ele abaixar a cabeça: ficou seu. Clique direito pra montar. No chão anda; Espaço decola e sobe, Shift desce, ele voa rápido e longe. Cansa depois de 3 minutos no ar e precisa pousar pra descansar um pouco.',
+      'Bafo de Fogo': 'Selvagem, enche o peito e solta um jato de fogo de 7 blocos que põe fogo no chão. Montado, você aperta o ataque e ele solta o bafo pra onde você olha.',
+      'Solta': 'Selvagem: escama de dragão (armadura leve, resiste a fogo). Domado não solta nada.',
+      'Variações': 'Cor do corpo e da asa, cor dos chifres, quantos espinhos nas costas e filhote sorteados.',
+    },
+  });
+})();
+
+</script>
 
 <script>
 'use strict';
@@ -2872,6 +4428,10 @@ const SPAWN = {
   'Mar do Sul e Norte': [
     ['Pirata', 'Grupos de 2 a 3 nas praias e ilhas do Mar do Sul, e no convés do navio pirata.', 'Noite: o dobro, e acendem tochas.'],
     ['Yeti', 'Sozinho, só no Norte Gelado. No máximo 1 por perto.', 'Nevasca: anda mais rápido e o Rugido vai mais longe.'],
+  ],
+  'Dinossauros': [
+    ['Raptor', 'Bandos de 2 a 3 nas Montanhas Paozu, Terras do Dragão e Deserto do Diabo. Caçam juntos: um chama, os outros cercam.', 'Dia: mais lentos. Noite: o dobro e mais rápidos.'],
+    ['Tiranossauro', 'Sozinho, só nas Montanhas Paozu. No máximo 1 num raio grande.', 'Dia e noite iguais; dorme no meio do dia (acorda se apanhar).'],
   ],
 };
 let biome = 'Terras e Deserto';
@@ -2962,6 +4522,7 @@ const BIOMES = [...new Set(built.map(b => b.m.bioma))];
 const LOOKS = {
   'Terras e Deserto': { sky: 0x6a4a3a, floor: 0x7a4a34, g1: 0x9a6448, g2: 0x6a4030 },
   'Mar do Sul e Norte': { sky: 0x6f8aa0, floor: 0xb9c6d0, g1: 0xdde6ee, g2: 0x9fb0be },
+  'Dinossauros': { sky: 0x8aa0a8, floor: 0xb48c5a, g1: 0xcaa272, g2: 0x8e6a42 },
 };
 // chuva do bioma: cada gota com velocidade e posição próprias, caindo levemente inclinada
 const RAIN_N = 700, rainPos = new Float32Array(RAIN_N * 6), rainSeed = [];

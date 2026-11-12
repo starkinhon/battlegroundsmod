@@ -48,6 +48,10 @@ const SPAWN = {
     ['Pirata', 'Grupos de 2 a 3 nas praias e ilhas do Mar do Sul, e no convés do navio pirata.', 'Noite: o dobro, e acendem tochas.'],
     ['Yeti', 'Sozinho, só no Norte Gelado. No máximo 1 por perto.', 'Nevasca: anda mais rápido e o Rugido vai mais longe.'],
   ],
+  'Dinossauros': [
+    ['Raptor', 'Bandos de 2 a 3 nas Montanhas Paozu, Terras do Dragão e Deserto do Diabo. Caçam juntos: um chama, os outros cercam.', 'Dia: mais lentos. Noite: o dobro e mais rápidos.'],
+    ['Tiranossauro', 'Sozinho, só nas Montanhas Paozu. No máximo 1 num raio grande.', 'Dia e noite iguais; dorme no meio do dia (acorda se apanhar).'],
+  ],
 };
 let biome = 'Terras e Deserto';
 function table() {
@@ -137,6 +141,7 @@ const BIOMES = [...new Set(built.map(b => b.m.bioma))];
 const LOOKS = {
   'Terras e Deserto': { sky: 0x6a4a3a, floor: 0x7a4a34, g1: 0x9a6448, g2: 0x6a4030 },
   'Mar do Sul e Norte': { sky: 0x6f8aa0, floor: 0xb9c6d0, g1: 0xdde6ee, g2: 0x9fb0be },
+  'Dinossauros': { sky: 0x8aa0a8, floor: 0xb48c5a, g1: 0xcaa272, g2: 0x8e6a42 },
 };
 // chuva do bioma: cada gota com velocidade e posição próprias, caindo levemente inclinada
 const RAIN_N = 700, rainPos = new Float32Array(RAIN_N * 6), rainSeed = [];
