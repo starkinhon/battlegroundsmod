@@ -418,9 +418,10 @@ public class NarutoMob extends DbCreature {
         NarutoMoves.idle(this);
     }
 
+    // canBreatheUnderwater is final under NeoForge: the shark breathes in water through the fluid-type hook
     @Override
-    public boolean canBreatheUnderwater() {
-        return spec().move == Move.WATER || super.canBreatheUnderwater();
+    public boolean canDrownInFluidType(net.neoforged.neoforge.fluids.FluidType type) {
+        return spec().move != Move.WATER && super.canDrownInFluidType(type);
     }
 
     @Override
