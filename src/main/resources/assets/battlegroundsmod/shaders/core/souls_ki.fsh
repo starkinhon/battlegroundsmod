@@ -237,7 +237,7 @@ void main() {
     }
     if (kind >= 19 && kind <= 22) {                                    // Nobara (forja/nobara-kit TRAIL_F / THORN_F / BURST_F / LINK_F, line by line)
         // Color = ink, Color2 = rim; Time in seconds; Life = the preview's uK (age 0..1); Pulse = the thread's pulse
-        vec3 c; float a;
+        vec3 c, g = vec3(-1.); float a;                                // g >= 0: what reaches the bloom, if not all of c
         if (kind == 19) {
             float s = vH * Len;
             float n = fbm3(vec3(vDir * 1.3, s * 1.6 + Time * 14. + Seed)) * 0.5 + 0.5;
@@ -257,6 +257,7 @@ void main() {
             float rm = 1. - smoothstep(0.12, 0.42, f);
             c = mix(Color, Color2, max(rm * 0.7, vein * 0.9));
             c = mix(c, vec3(0.92, 0.97, 1.), vein * step(0.5, fract(q * 0.5 + vH * 2.)) * 0.6 + rm * (1. - Life) * 0.25);
+            g = Color2 * vein * 0.8;                                   // a thin thorn is nearly all rim: only the veins glow, or the bloom paints it light blue
         } else if (kind == 21) {
             float tear = fbm3(vO * 4. + Seed * 2.) * 0.5 + 0.5;
             a = smoothstep(Life - 0.08, Life + 0.06, tear * 0.85 + vD * 0.25) * Alpha;
@@ -273,7 +274,7 @@ void main() {
             c = mix(Color, Color2, clamp(smoothstep(0.55, 0.8, n) * 0.45 + pulse, 0., 1.)); c = mix(c, vec3(1., 0.88, 0.88), pulse * 0.6);
         }
         if (GlowPass > 0.5) {                                          // the ink stays ink: only the lit rim and veins reach the bloom
-            fragColor = vec4(c * a * 0.35, 0.);
+            fragColor = vec4((g.x >= 0. ? g : c) * a * 0.35, 0.);
             return;
         }
         fragColor = vec4(c * a, a);
