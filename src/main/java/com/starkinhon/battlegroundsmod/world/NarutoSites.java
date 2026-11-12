@@ -200,7 +200,9 @@ public final class NarutoSites {
             }
             Holder<Biome> around = biomeAt(level, x + (int) (Math.cos(angle) * reach), z + (int) (Math.sin(angle) * reach));
             // the Morte's places may spill into the Folha around it (and the other way round)
-            boolean ok = death ? around.is(ModWorldgen.FLORESTA_DA_MORTE) || around.is(ModWorldgen.FLORESTA_DA_FOLHA) : around.is(key);
+            // (4th PC test: still 6,500 blocks out with the Folha's ring; the Morte's patches are small, so its places
+            // only need their middle in it)
+            boolean ok = death || around.is(key);
             if (!ok) {
                 return null;
             }

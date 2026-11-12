@@ -806,7 +806,9 @@ public final class NarutoStructGen {
         double nx = -L * ca - 2 * ca, nz = -L * sa - 2 * sa;
         for (int x = floor(nx - 11); x <= nx + 11; x++) {
             for (int z = floor(nz - 11); z <= nz + 11; z++) {
-                for (int y = Y - 14; y < ground.at(x, z) - 2; y++) {
+                // in the world the nest is under the ground even where the ground is low (a river bank, PC test of
+                // 2026-11-12): the rock reaches the floor at least
+                for (int y = Y - 14; y < Math.max(ground.at(x, z) - 2, Y - 1); y++) {
                     w.set(x, y, z, STONE);
                 }
             }
@@ -883,6 +885,25 @@ public final class NarutoStructGen {
                         w.force(x, fy + 1, z, BONE);
                     }
                 }
+            }
+        }
+        // the trunk's open end with a clear way in, even where it lies against a hill (PC test of 2026-11-12: the mouth
+        // was full of earth)
+        for (int x = -R; x <= R; x++) {
+            for (int z = -R; z <= R; z++) {
+                double u = x * ca + z * sa, v = -x * sa + z * ca;
+                if (u < L - 6 || u > L + 12 || Math.abs(v) > RI - 0.5) {
+                    continue;
+                }
+                double endU = L - valueNoise(v * 3, 0, seed + 7, 2) * 4;
+                if (u < endU - 0.5) {
+                    continue;
+                }
+                double roof = cy + Math.sqrt(Math.max(0, RI * RI - v * v)) - (u - endU) * 0.4;
+                for (int y = Y + 1; y <= Math.max(roof, Y + 3); y++) {
+                    w.force(x, y, z, AIR);
+                }
+                w.force(x, Y, z, PODZOL);
             }
         }
         beam(w, (-L + 5) * ca, Y + 1, (-L + 5) * sa, nx, Y - 6, nz, 2.4, AIR, false);

@@ -144,6 +144,15 @@ public final class DeathForestFx {
         if (sun.y < 0.25) {
             return;
         }
+        // under a roof (the Exam tower, the Snake's Den) the shafts showed through the walls: none indoors (the canopy's
+        // leaves don't count as a roof)
+        BlockPos head = BlockPos.containing(p).above();
+        for (int k = 1; k <= 16; k++) {
+            BlockState roof = level.getBlockState(head.above(k));
+            if (!roof.isAir() && !roof.is(BlockTags.LEAVES) && roof.isSolid()) {
+                return;
+            }
+        }
         BlockPos.MutableBlockPos at = new BlockPos.MutableBlockPos();
         int px = Mth.floor(p.x), pz = Mth.floor(p.z);
         for (int x = (px & ~3) - 48; x <= px + 48 && SHAFTS.size() < 8; x += 4) {
