@@ -20,14 +20,19 @@ import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 import net.neoforged.neoforge.network.PacketDistributor;
 
-// A universe's Livro dos Desafios: one card per character of that universe (its SubAlmas and its bosses) with its name,
-// tier and what its power is about. Clicking a card goes to that character's arena (challenge/ChallengeArenas); a beaten
+// The Livro dos Desafios, general since the universes stopped being maps (Stark 2026-11-12): every universe in one book,
+// a section each (its name and how many of it were beaten), one card per character (its SubAlmas and its bosses) with
+// its name, tier and what its power is about. Opened from an old per-universe book it starts at that universe's section. Clicking a card goes to that character's arena (challenge/ChallengeArenas); a beaten
 // character's card is stamped DERROTADO. A boss's card stays locked until some of the universe's SubAlmas are beaten
 // (ChallengeArenas.locked; free in arena mode and flat worlds). Inside the arenas the book also offers the way back.
 public class ChallengeScreen extends Screen {
     private static final int TEXT = 0xFFE6E0EE;
     private static final int MUTED = 0xFF9A93A6;
     private static final int STAMP = 0xD8352A;
+
+    // A universe's title over its cards.
+    private record Header(ChallengeSpec.Universe universe, int y, int total) {
+    }
 
     private record Card(String id, Component name, int tier, int color, String foco, boolean items, int x, int y, int w, int h) {
         boolean hit(double mx, double my) {
@@ -37,6 +42,8 @@ public class ChallengeScreen extends Screen {
 
     private final String universeId;
     private final List<Card> cards = new ArrayList<>();
+    private final List<Header> headers = new ArrayList<>();
+    private boolean scrolledToStart;
     private int scroll;
     private int contentHeight;
     private int backX1, backY1, backX2, backY2;
@@ -46,9 +53,6 @@ public class ChallengeScreen extends Screen {
         this.universeId = universe;
     }
 
-    private ChallengeSpec.Universe universe() {
-        return ChallengeSpec.get().universe(universeId);
-    }
 
     private boolean inArena() {
         Minecraft mc = Minecraft.getInstance();
@@ -62,10 +66,7 @@ public class ChallengeScreen extends Screen {
 
     private void layout() {
         cards.clear();
-        ChallengeSpec.Universe universe = universe();
-        if (universe == null) {
-            return;
-        }
+        headers.clear();
         int margin = 20;
         int columns = width >= 520 ? 3 : width >= 340 ? 2 : 1;
         int gap = 8;
@@ -73,41 +74,52 @@ public class ChallengeScreen extends Screen {
         int cardH = 78;
         int totalW = columns * cardW + (columns - 1) * gap;
         int left = (width - totalW) / 2;
-        int top = 54;
-        int i = 0;
-        for (ChallengeSpec.Challenge challenge : universe.desafios()) {
-            int col = i % columns;
-            int row = i / columns;
-            Component name = Component.literal(challenge.id());
-            int tier = Tiers.HUMANO;
-            int color = universe.color();
-            try {
-                BossSpec spec = BossSpec.get(challenge.id());
-                Power power = Powers.get(spec.poder());
-                if (power != null) {
-                    name = power.name();
-                    color = power.color();
-                }
-                tier = spec.tier() != null ? spec.tier() : Tiers.HUMANO;
-            } catch (RuntimeException ignored) {
+        int top = 50;
+        int startY = -1;
+        for (ChallengeSpec.Universe universe : ChallengeSpec.get().universos()) {
+            if (universe.desafios().isEmpty()) {
+                continue;
             }
-            cards.add(new Card(challenge.id(), name, tier, color, challenge.foco(), challenge.itens() != null && !challenge.itens().isEmpty(),
-                    left + col * (cardW + gap), top + row * (cardH + gap), cardW, cardH));
-            i++;
+            if (universe.id().equals(universeId)) {
+                startY = top;
+            }
+            headers.add(new Header(universe, top, universe.desafios().size()));
+            top += 20;
+            int i = 0;
+            for (ChallengeSpec.Challenge challenge : universe.desafios()) {
+                int col = i % columns;
+                int row = i / columns;
+                Component name = Component.literal(challenge.id());
+                int tier = Tiers.HUMANO;
+                int color = universe.color();
+                try {
+                    BossSpec spec = BossSpec.get(challenge.id());
+                    Power power = Powers.get(spec.poder());
+                    if (power != null) {
+                        name = power.name();
+                        color = power.color();
+                    }
+                    tier = spec.tier() != null ? spec.tier() : Tiers.HUMANO;
+                } catch (RuntimeException ignored) {
+                }
+                cards.add(new Card(challenge.id(), name, tier, color, challenge.foco(), challenge.itens() != null && !challenge.itens().isEmpty(),
+                        left + col * (cardW + gap), top + row * (cardH + gap), cardW, cardH));
+                i++;
+            }
+            top += (i + columns - 1) / columns * (cardH + gap) + 10;
         }
-        int rows = (cards.size() + columns - 1) / columns;
-        contentHeight = top + rows * (cardH + gap) + 30;
+        contentHeight = top + 22;
+        if (!scrolledToStart && startY > 0) {
+            scroll = startY - 8;
+        }
+        scrolledToStart = true;
         scroll = Mth.clamp(scroll, 0, Math.max(0, contentHeight - height));
     }
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         graphics.fillGradient(0, 0, width, height, 0xE0080510, 0xF0030206);
-        ChallengeSpec.Universe universe = universe();
-        if (universe == null) {
-            return;
-        }
-        int accent = universe.color();
+        int accent = 0xD8B471;
         List<String> wins = ChallengeArenas.clientWins;
 
         graphics.pose().pushPose();
@@ -119,14 +131,33 @@ public class ChallengeScreen extends Screen {
                 beaten++;
             }
         }
-        Component sub = Component.literal(universe.nome()).append(Component.literal("  ·  ").withStyle(s -> s.withColor(MUTED)))
-                .append(Component.translatable("screen.battlegroundsmod.challenges.count", beaten, cards.size()));
+        Component sub = Component.translatable("screen.battlegroundsmod.challenges.count", beaten, cards.size());
         GuiDraw.centeredText(graphics, font, sub, width / 2f, 32, 1f, TEXT, true);
 
+        for (Header header : headers) {
+            ChallengeSpec.Universe universe = header.universe();
+            int won = 0;
+            for (ChallengeSpec.Challenge challenge : universe.desafios()) {
+                if (wins.contains(challenge.id())) {
+                    won++;
+                }
+            }
+            int color = universe.color();
+            int y = header.y();
+            Component name = Component.literal(universe.nome()).append(Component.literal("   " + won + "/" + header.total())
+                    .withStyle(s -> s.withColor(MUTED)));
+            int w = font.width(name);
+            GuiDraw.centeredText(graphics, font, name, width / 2f, y + 2, 1f, 0xFF000000 | GuiDraw.mix(color, 0xFFFFFF, 0.3f), true);
+            int line = GuiDraw.argb(120, color);
+            graphics.fill(width / 2 - w / 2 - 70, y + 6, width / 2 - w / 2 - 8, y + 7, line);
+            graphics.fill(width / 2 + w / 2 + 8, y + 6, width / 2 + w / 2 + 70, y + 7, line);
+        }
+
         int my = mouseY + scroll;
-        int needed = ChallengeArenas.subsNeeded(universe);
         for (Card card : cards) {
             boolean locked = ChallengeArenas.locked(wins, card.id(), !Progression.clientOn);
+            ChallengeSpec.Universe universe = ChallengeSpec.get().universeOf(card.id());
+            int needed = universe == null ? 0 : ChallengeArenas.subsNeeded(universe);
             drawCard(graphics, card, wins.contains(card.id()), locked, needed, !locked && card.hit(mouseX, my));
         }
         GuiDraw.centeredText(graphics, font, Component.translatable("screen.battlegroundsmod.challenges.hint"), width / 2f,

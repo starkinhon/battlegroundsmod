@@ -41,6 +41,8 @@ public final class DbQuests {
     // Saves from before the Raditz mission went away count one mission too many: moved back once (see migrate).
     private static final String NO_RADITZ = "souls_dbq_sem_raditz";
     private static final String GRANDPA_BALL = "souls_dbq_esfera4";
+    // The chain only starts when the player talks to Bulma (Stark 2026-11-12: no missions popping up when a game starts).
+    private static final String STARTED = "souls_dbq_iniciada";
 
     // id (lang quest.battlegroundsmod.<id>), how many, the kind of place it points to (WorldSites, null for none), Poder as
     // a part of the tier, items
@@ -86,10 +88,23 @@ public final class DbQuests {
         return player.level().dimension().equals(Universes.key("dragonball"));
     }
 
-    // Born in the old Dragon Ball dimension, or in the normal world (where Dragon Ball is the first universe met).
+    // Born in the old Dragon Ball dimension, or in the normal world (where Dragon Ball is the first universe met), and
+    // the chain started by talking to Bulma. Saves already past the first mission count as started.
     private static boolean on(ServerPlayer player) {
         String home = player.getData(com.starkinhon.battlegroundsmod.ModAttachments.UNIVERSE);
-        return Progression.on(player) && ("dragonball".equals(home) || Universes.WORLD.equals(home));
+        return Progression.on(player) && ("dragonball".equals(home) || Universes.WORLD.equals(home)) && started(player);
+    }
+
+    private static boolean started(ServerPlayer player) {
+        var tag = player.getPersistentData();
+        return tag.getBoolean(STARTED) || tag.getInt(STEP) > 0;
+    }
+
+    // Talking to Bulma for the first time starts the chain (DbActivities.bulma).
+    public static void start(ServerPlayer player) {
+        if (Progression.on(player)) {
+            player.getPersistentData().putBoolean(STARTED, true);
+        }
     }
 
     // Where the missions are shown: the old Dragon Ball dimension, and the normal world.
