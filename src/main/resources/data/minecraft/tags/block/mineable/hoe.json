@@ -1,0 +1,23 @@
+{
+  "replace": false,
+  "values": [
+    "battlegroundsmod:folhas_da_folha",
+    "battlegroundsmod:folhas_da_folha_clara",
+    "battlegroundsmod:folhas_da_folha_escura",
+    "battlegroundsmod:folhas_da_morte",
+    "battlegroundsmod:folhas_da_morte_clara",
+    "battlegroundsmod:folhas_da_morte_escura",
+    "battlegroundsmod:chapeu_cogumelo",
+    "battlegroundsmod:petala_carnivora",
+    "battlegroundsmod:petala_carnivora_pintada",
+    "battlegroundsmod:boca_carnivora",
+    "battlegroundsmod:folhas_de_pinheiro",
+    "battlegroundsmod:folhas_de_pinheiro_escura",
+    "battlegroundsmod:folha_gigante",
+    "battlegroundsmod:folha_gigante_amarela",
+    "battlegroundsmod:folha_gigante_escura",
+    "battlegroundsmod:petala_gigante",
+    "battlegroundsmod:petala_gigante_ponta",
+    "battlegroundsmod:miolo_de_flor"
+  ]
+}

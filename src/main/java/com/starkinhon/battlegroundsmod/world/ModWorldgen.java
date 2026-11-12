@@ -56,6 +56,40 @@ public final class ModWorldgen {
     public static final Supplier<NamekTreeFeature> NAMEK_TREE = FEATURES.register("namek_tree",
             () -> new NamekTreeFeature(NoneFeatureConfiguration.CODEC));
 
+    // The woods of the Floresta da Folha: its giant and medium trees, logs, bushes and ground, chunk by chunk
+    // (worldgen/placed_feature/leaf_forest; LeafTreeGen).
+    public static final Supplier<LeafForestFeature> LEAF_FOREST = FEATURES.register("leaf_forest",
+            () -> new LeafForestFeature(NoneFeatureConfiguration.CODEC));
+    // The Floresta da Morte's woods, mushrooms, flowers, pools and ground (DeathForestFeature).
+    public static final Supplier<DeathForestFeature> DEATH_FOREST = FEATURES.register("death_forest",
+            () -> new DeathForestFeature(NoneFeatureConfiguration.CODEC));
+    // The Deserto do Vento's dunes, wind-carved rock, bones and dead trees (WindDesertFeature).
+    public static final Supplier<WindDesertFeature> WIND_DESERT = FEATURES.register("wind_desert",
+            () -> new WindDesertFeature(NoneFeatureConfiguration.CODEC));
+    // The Mar da Névoa's stone pillars, islets, needles, old piers and rope bridges (MistSeaFeature).
+    public static final Supplier<MistSeaFeature> MIST_SEA = FEATURES.register("mist_sea",
+            () -> new MistSeaFeature(NoneFeatureConfiguration.CODEC));
+    // The Vila da Chuva's ground, metal towers, stumps and pipes (RainVillageFeature).
+    public static final Supplier<RainVillageFeature> RAIN_VILLAGE = FEATURES.register("rain_village",
+            () -> new RainVillageFeature(NoneFeatureConfiguration.CODEC));
+    // The Vale do Fim's valley with the waterfall and the two statues, and the marks of the fight (EndValleyFeature).
+    public static final Supplier<EndValleyFeature> END_VALLEY = FEATURES.register("end_valley",
+            () -> new EndValleyFeature(NoneFeatureConfiguration.CODEC));
+    // The Monte Myoboku's stone spires, giant plants, oil ponds and stone toads (MyobokuFeature).
+    public static final Supplier<MyobokuFeature> MYOBOKU = FEATURES.register("myoboku",
+            () -> new MyobokuFeature(NoneFeatureConfiguration.CODEC));
+
+    // The Naruto biomes of the normal overworld (put there by NarutoRegion).
+    public static final ResourceKey<Biome> FLORESTA_DA_FOLHA = biome("floresta_da_folha");
+    public static final ResourceKey<Biome> FLORESTA_DA_MORTE = biome("floresta_da_morte");
+    public static final ResourceKey<Biome> DESERTO_DO_VENTO = biome("deserto_do_vento");
+    public static final ResourceKey<Biome> MAR_DA_NEVOA = biome("mar_da_nevoa");
+    public static final ResourceKey<Biome> VILA_DA_CHUVA = biome("vila_da_chuva");
+    public static final ResourceKey<Biome> VALE_DO_FIM = biome("vale_do_fim");
+    public static final ResourceKey<Biome> MONTE_MYOBOKU = biome("monte_myoboku");
+    public static final TagKey<Biome> NARUTO_BIOMES = TagKey.create(Registries.BIOME,
+            ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "universe_naruto"));
+
     // The Dragon Ball biomes of the normal overworld (tools/biomes/dragonball_biomes.py, put there by DragonRegion).
     public static final ResourceKey<Biome> TERRAS_DO_DRAGAO = biome("terras_do_dragao");
     public static final ResourceKey<Biome> PICOS_DO_DRAGAO = biome("picos_do_dragao");

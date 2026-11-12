@@ -2,6 +2,7 @@
   "replace": false,
   "values": [
     "battlegroundsmod:namek_sand",
-    "battlegroundsmod:deserto_areia"
+    "battlegroundsmod:deserto_areia",
+    "battlegroundsmod:camada_de_areia"
   ]
 }

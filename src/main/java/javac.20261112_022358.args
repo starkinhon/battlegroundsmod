@@ -1,0 +1,6 @@
+-d
+/tmp/claude-0/jc
+-XDshould-stop.at=ATTR
+com/starkinhon/battlegroundsmod/world/MyobokuFeature.java
+com/starkinhon/battlegroundsmod/client/fx/MyobokuFx.java
+com/starkinhon/battlegroundsmod/world/MyobokuGen.java

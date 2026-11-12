@@ -1,0 +1,28 @@
+{
+  "variants": {
+    "layers=1": {
+      "model": "battlegroundsmod:block/camada_de_areia_height2"
+    },
+    "layers=2": {
+      "model": "battlegroundsmod:block/camada_de_areia_height4"
+    },
+    "layers=3": {
+      "model": "battlegroundsmod:block/camada_de_areia_height6"
+    },
+    "layers=4": {
+      "model": "battlegroundsmod:block/camada_de_areia_height8"
+    },
+    "layers=5": {
+      "model": "battlegroundsmod:block/camada_de_areia_height10"
+    },
+    "layers=6": {
+      "model": "battlegroundsmod:block/camada_de_areia_height12"
+    },
+    "layers=7": {
+      "model": "battlegroundsmod:block/camada_de_areia_height14"
+    },
+    "layers=8": {
+      "model": "minecraft:block/sand"
+    }
+  }
+}
