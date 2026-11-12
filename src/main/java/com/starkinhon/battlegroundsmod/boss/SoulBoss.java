@@ -291,6 +291,9 @@ public abstract class SoulBoss extends Monster {
         if (target != null && !stillHunting(target)) {
             super.setTarget(null);
         }
+        if (getTarget() == null && isBoss() && tickCount % 20 == 0) {
+            sense(level);
+        }
         bossEvent.setProgress(getHealth() / getMaxHealth());
     }
 
@@ -429,6 +432,28 @@ public abstract class SoulBoss extends Monster {
             return;
         }
         super.setTarget(target);
+    }
+
+    // The vanilla goal only takes a player it sees: a boss spawned in a hole or behind a wall stood there for minutes
+    // (Shigaraki in the Soco Serio's trench, 2026-11-12). A player close by for 3 s is felt even unseen; the AI's
+    // teleport gets to them.
+    private int unseenTicks;
+
+    private void sense(ServerLevel level) {
+        if (neutral()) {
+            unseenTicks = 0;
+            return;
+        }
+        Player near = level.getNearestPlayer(getX(), getY(), getZ(), 24, player -> player instanceof Player p && stillHunting(p) && !p.isInvisible());
+        if (near == null) {
+            unseenTicks = 0;
+            return;
+        }
+        unseenTicks += 20;
+        if (unseenTicks >= 60) {
+            unseenTicks = 0;
+            setTarget(near);
+        }
     }
 
     private boolean stillHunting(LivingEntity target) {

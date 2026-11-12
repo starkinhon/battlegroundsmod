@@ -33,7 +33,8 @@ public final class Regeneracao {
         SubCommon.pose(caster, "shig.regen");
         SubNet.send(level, Shigaraki.REGEN, caster.getId(), caster.position(), caster.getLookAngle(), LENGTH, 0, 0);
         Runnable release = Freeze.holdLookFree(caster, HEAL_TO + 2);
-        float total = caster.getMaxHealth() * SHARE;
+        // A boss heals half as much: 70% from 29% gave him the whole fight back (test 2026-11-12).
+        float total = caster.getMaxHealth() * (caster instanceof com.starkinhon.battlegroundsmod.boss.SoulBoss ? SHARE * 0.5f : SHARE);
         float per = total / (HEAL_TO - HEAL_FROM);
         float drainPer = STAMINA / (HEAL_TO - 4);
         Tasks.add(age -> {
