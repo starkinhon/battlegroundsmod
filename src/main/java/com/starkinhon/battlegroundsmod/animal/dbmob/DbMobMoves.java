@@ -1158,7 +1158,8 @@ public final class DbMobMoves {
                         Vec3 p = ground(m, at.add(Math.cos(a) * r, 0, Math.sin(a) * r));
                         Vec3 lean = new Vec3(Math.cos(a) * 0.4, 1, Math.sin(a) * 0.4).normalize();
                         int delay = ring * 3;
-                        DbCommon.later(delay, () -> SubNet.send(level, SubNet.ICE_SPIKE, 0, p, lean, 1.0f + ring * 0.25f + level.getRandom().nextFloat() * 0.5f, 50, 0));
+                        float size = 1.0f + ring * 0.25f + level.getRandom().nextFloat() * 0.5f;
+                        DbCommon.later(delay, () -> SubNet.send(level, SubNet.ICE_SPIKE, 0, p, lean, size, 50, 0));
                     }
                 }
                 wave(m, at, 4, 90, 0.4, 0.85, true);
