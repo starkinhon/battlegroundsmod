@@ -288,43 +288,54 @@ public final class EndValleyFeature extends Feature<NoneFeatureConfiguration> {
         }
     }
 
-    // The cell's valley: its spot first, then a grid over the cell, the first place where the valley fits.
+    // The cell's valley: its spot first, then a fine grid over the cell, each with eight turns of the valley (eight
+    // seeds, each a whole valley of the preview's), the first place where it fits. The PC test of 2026-11-12: with the
+    // spot and a 5 by 5 grid in one turn no valley ever fit in 12000 by 12000 blocks, though the footprint fit in 1876
+    // places there.
     private static ValeGen.Frame findFrame(int i, int j, int seed, int sea, ChunkGenerator generator, RandomState random,
             IntBinaryOperator natural) {
         ValeGen.Obj o = ValeGen.cellObject(ValeGen.Kind.VALE, i, j, seed);
         if (o == null) {
             return null;
         }
-        int fseed = o.seed();
-        double a = new LeafTreeGen.Rng(fseed).range(0, Math.PI * 2);
-        double c = StrictMath.cos(a), s = StrictMath.sin(a);
         ValeGen.Kind k = ValeGen.Kind.VALE;
         List<int[]> spots = new ArrayList<>();
         spots.add(new int[] {o.x(), o.z()});
-        int step = (k.size - 2 * k.pad) / 4;
-        for (int gi = 0; gi < 5; gi++) {
-            for (int gj = 0; gj < 5; gj++) {
+        int n = 9, step = (k.size - 2 * k.pad) / (n - 1);
+        for (int gi = 0; gi < n; gi++) {
+            for (int gj = 0; gj < n; gj++) {
                 spots.add(new int[] {i * k.size + k.pad + gi * step, j * k.size + k.pad + gj * step});
             }
         }
+        int[] seeds = new int[8];
+        double[] cs = new double[8], ss = new double[8];
+        for (int t = 0; t < 8; t++) {
+            seeds[t] = t == 0 ? o.seed() : o.seed() ^ (t * 0x9E3779B1);
+            double a = new LeafTreeGen.Rng(seeds[t]).range(0, Math.PI * 2);
+            cs[t] = StrictMath.cos(a);
+            ss[t] = StrictMath.sin(a);
+        }
         for (int[] p : spots) {
-            // the frame's origin is upstream of the middle of the river
-            double cx = p[0] - c * MID, cz = p[1] - s * MID;
-            if (!biomeAll(cx, cz, c, s, sea, generator, random)) {
-                continue;
-            }
-            ValeGen.Frame F = ValeGen.valleyFrame(cx, cz, fseed, natural);
-            if (F.base < sea - 2) {
-                continue;
-            }
-            int hi = Integer.MIN_VALUE;
-            for (int u = ValeGen.UMIN; u <= ValeGen.UMAX; u += 34) {
-                for (int v = -66; v <= 66; v += 33) {
-                    hi = Math.max(hi, natural.applyAsInt(F.worldX(u, v), F.worldZ(u, v)));
+            for (int t = 0; t < 8; t++) {
+                double c = cs[t], s = ss[t];
+                // the frame's origin is upstream of the middle of the river
+                double cx = p[0] - c * MID, cz = p[1] - s * MID;
+                if (!biomeAll(cx, cz, c, s, sea, generator, random)) {
+                    continue;
                 }
-            }
-            if (hi <= F.base + 45) {
-                return F;
+                ValeGen.Frame F = ValeGen.valleyFrame(cx, cz, seeds[t], natural);
+                if (F.base < sea - 2) {
+                    continue;
+                }
+                int hi = Integer.MIN_VALUE;
+                for (int u = ValeGen.UMIN; u <= ValeGen.UMAX; u += 34) {
+                    for (int v = -66; v <= 66; v += 33) {
+                        hi = Math.max(hi, natural.applyAsInt(F.worldX(u, v), F.worldZ(u, v)));
+                    }
+                }
+                if (hi <= F.base + 45) {
+                    return F;
+                }
             }
         }
         return null;
