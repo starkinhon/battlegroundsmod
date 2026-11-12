@@ -16,11 +16,13 @@ import com.starkinhon.battlegroundsmod.client.FlightClient;
 import com.starkinhon.battlegroundsmod.client.FlightPose;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec3;
 
 // The Dragon Ball flight's effects (forja voo/voo.html, approved by Stark 2026-11-10), for everyone who flies:
@@ -40,6 +42,12 @@ public final class FlightFx {
     private static final List<Ring> RINGS = new ArrayList<>();
     // per player: the feet over the last ticks (newest first)
     private static final Map<Integer, ArrayDeque<Vec3>> TRAILS = new HashMap<>();
+    // per flier skimming low and fast: the ground under it and how strong the wake was there (newest first)
+    private record Wake(Vec3 at, float strength) {
+    }
+
+    private static final Map<Integer, ArrayDeque<Wake>> WAKES = new HashMap<>();
+    private static final int WAKE = 34;
 
     private FlightFx() {
     }
@@ -86,7 +94,7 @@ public final class FlightFx {
     }
 
     public static boolean active() {
-        return !RINGS.isEmpty() || !TRAILS.isEmpty() || anyFlying();
+        return !RINGS.isEmpty() || !TRAILS.isEmpty() || !WAKES.isEmpty() || anyFlying();
     }
 
     private static boolean anyFlying() {
@@ -105,6 +113,7 @@ public final class FlightFx {
     public static void clear() {
         RINGS.clear();
         TRAILS.clear();
+        WAKES.clear();
     }
 
     // Every client tick: the feet go into each flier's trail.
@@ -124,8 +133,73 @@ public final class FlightFx {
             while (trail.size() > TRAIL) {
                 trail.removeLast();
             }
+            wakeTick(minecraft, p);
         }
+        WAKES.entrySet().removeIf(en -> {
+            if (minecraft.level.getEntity(en.getKey()) instanceof LivingEntity p && FlightPose.lastUp(p) != null) {
+                return false;
+            }
+            // the flier is gone or landed: what is on the ground fades by itself
+            ArrayDeque<Wake> w = en.getValue();
+            w.addFirst(w.isEmpty() ? new Wake(Vec3.ZERO, 0) : new Wake(w.peekFirst().at(), 0));
+            while (w.size() > WAKE) {
+                w.removeLast();
+            }
+            return w.stream().allMatch(k -> k.strength() < 0.01f);
+        });
         TRAILS.keySet().removeIf(id -> !(minecraft.level.getEntity(id) instanceof LivingEntity p) || FlightPose.lastUp(p) == null);
+    }
+
+    // The page's wake (Kuririn's rasante): flying under 8 blocks over the ground faster than 15 blocks a second, the
+    // ground under the flier is torn into two bands of dust opening out behind it (stronger on the boost).
+    private static void wakeTick(Minecraft minecraft, LivingEntity p) {
+        double sp = new Vec3(p.getX() - p.xo, p.getY() - p.yo, p.getZ() - p.zo).length() * 20;
+        BlockPos below = p.blockPosition();
+        int floor = minecraft.level.getHeight(Heightmap.Types.MOTION_BLOCKING, below.getX(), below.getZ());
+        double y = p.getY() - floor;
+        float low = FlightClient.flying(p) && !p.isInvisible()
+                ? Mth.clamp((float) (8 - y) / 6, 0, 1) * Mth.clamp((float) (sp - 15) / 20, 0, 1) : 0;
+        ArrayDeque<Wake> w = WAKES.get(p.getId());
+        if (w == null) {
+            if (low < 0.01f) {
+                return;
+            }
+            w = new ArrayDeque<>();
+            WAKES.put(p.getId(), w);
+        }
+        w.addFirst(new Wake(new Vec3(p.getX(), floor + 0.08, p.getZ()), low));
+        while (w.size() > WAKE) {
+            w.removeLast();
+        }
+        if (w.stream().allMatch(k -> k.strength() < 0.01f)) {
+            WAKES.remove(p.getId());
+        }
+    }
+
+    private static void wakes(Vec3 camera, float partial) {
+        Minecraft minecraft = Minecraft.getInstance();
+        for (Map.Entry<Integer, ArrayDeque<Wake>> en : WAKES.entrySet()) {
+            ArrayDeque<Wake> history = en.getValue();
+            if (history.size() < 3) {
+                continue;
+            }
+            float boost = minecraft.level.getEntity(en.getKey()) instanceof LivingEntity p ? FlightPose.boost(p, partial) : 0;
+            int n = history.size();
+            Vector3f[] pts = new Vector3f[n];
+            float[] widths = new float[n];
+            float[] us = new float[n];
+            float strongest = 0;
+            int i = 0;
+            for (Wake k : history) {
+                pts[i] = k.at().subtract(camera).toVector3f();
+                us[i] = i / (float) (n - 1);
+                // the page's side: 1.4 + 2.5 boost each way, opening as it ages; how strong it was there scales it
+                widths[i] = 2 * (1.4f + 2.5f * boost) * k.strength();
+                strongest = Math.max(strongest, k.strength());
+                i++;
+            }
+            FxDraw.stripFlat(pts, widths, us, 36, 0, AURA, strongest, false);
+        }
     }
 
     static void render(Vec3 camera, double now, float partial) {
@@ -152,6 +226,7 @@ public final class FlightFx {
                 trail(p, center, up, camera, weight, partial);
             }
         }
+        wakes(camera, partial);
         rings(camera, now);
     }
 

@@ -56,6 +56,8 @@
 //             at 12 frames a second (alpha layer); param byte = life (0..15) * 16 + seed (0..15); the color is its skin
 //  35 flight trail  the Dragon Ball flight's trail from the feet (forja voo/voo.html): a strip with u from the feet
 //             (0) to the oldest point (1), strands of ki opening back with a white core
+//  36 flight wake  the wake a fast flier skims over the ground (forja db-voo-mobs, Kuririn's rasante): a strip lying
+//             on the ground, u from the flier (0) back, two bands of torn dust/spray opening out to the sides
 // A very dark color never burns white (dark rims and lines stay dark).
 // Near walls and the ground the effect fades out instead of cutting a hard line (soft particles).
 uniform sampler2D Sampler1;
@@ -1144,6 +1146,15 @@ void main() {
         alpha = (k * edge * 0.55 + hot * 0.5) * pow(max(0.0, 1.0 - along), 1.5) * smoothstep(0.0, 0.06, along);
         base = mix(color.rgb, vec3(1.0), 0.5);
         core = hot * 0.3;
+    } else if (shape == 36) {
+        float along = uv.x;
+        float across = uv.y * 2.0 - 1.0;
+        float spread = 0.25 + along * 0.75;
+        float sideBand = smoothstep(spread, spread - 0.35, abs(across)) * smoothstep(spread - 0.7, spread - 0.3, abs(across) + 0.15);
+        float n = fbm(vec2(across * 4.0, along * 9.0 - time * 1.5) + vec2(3.1, 0.7));
+        alpha = sideBand * smoothstep(0.3, 0.7, n) * pow(max(0.0, 1.0 - along), 1.2) * 0.8;
+        base = vec3(0.93, 0.9, 0.82);
+        core = 0.0;
     } else if (shape == 34) {
         // Same text as the Visualizador's shape 29 (BRUSH): the Divergent Fist's aura (Stark's ref). A flat opaque blot of
         // color with a black brush outline only in parts of the edge, scratchy ink hairs, one tip of flame on top; the
