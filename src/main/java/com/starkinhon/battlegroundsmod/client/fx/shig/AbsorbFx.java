@@ -189,6 +189,9 @@ public final class AbsorbFx {
             if (!(caster instanceof LivingEntity lc)) {
                 continue;
             }
+            if (lc == me && Minecraft.getInstance().options.getCameraType().isFirstPerson()) {
+                continue; // his own body isn't drawn in first person: a shell around nothing, on the screen
+            }
             Stolen s = en.getValue();
             float gIn = ShigDraw.smooth((float) (now - s.start) / 0.4f), out = ShigDraw.smooth((float) (now - s.until + 1.2) / 1.2f);
             aura(sh, lc, s.element, 0.08f + (1 - gIn) + out, camera, partial, 0.35f, 0.8f, 1.4f);
@@ -208,6 +211,16 @@ public final class AbsorbFx {
 
     private static void shell(ShaderInstance sh, int el, float mode, float amp, float rise, float life, float a, float cx, float cy, float cz, float sx,
             float sy, float sz, int ws, int hs) {
+        // The camera inside the shell (his own aura in first person, a burst going off a few blocks away, the shoulder
+        // camera close behind him): its inside faces would cover the whole screen, see-through, over his body and
+        // everything. It fades out as the camera gets in (the vertices are camera-relative: the camera is 0, 0, 0).
+        float pad = 1 + Math.abs(amp) * 1.6f;
+        float qx = cx / (sx * pad), qy = cy / (sy * pad), qz = cz / (sz * pad);
+        float in = ShigDraw.smooth(((float) Math.sqrt(qx * qx + qy * qy + qz * qz) - 1.05f) / 0.6f);
+        if (in < 0.01f) {
+            return;
+        }
+        a *= in;
         float[][] E = ELEM[Math.floorMod(el, 3)];
         sh.safeGetUniform("Amp").set(amp);
         sh.safeGetUniform("Rise").set(rise);

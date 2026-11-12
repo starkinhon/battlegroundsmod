@@ -7,7 +7,7 @@ import net.minecraft.util.RandomSource;
 // Camera shake from big impacts. strength 1 is about a degree and a half of jitter, fading out over the ticks.
 // Applied by CameraMixin on top of whatever the camera is doing.
 public final class ScreenShake {
-    private static final RandomSource RANDOM = RandomSource.create();
+    private static final RandomSource RANDOM = RandomSource.createThreadSafe();
     private static final float DEGREES_PER_STRENGTH = 1.5f;
 
     private static float strength;

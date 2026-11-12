@@ -135,6 +135,24 @@ public final class SkillAnimations {
         }
     }
 
+    // Drops every pose this entity had (the local player respawned: same entity id, its clock back to 0).
+    public static void forget(int entityId) {
+        PLAYING.remove(entityId);
+        KEYFRAMED.remove(entityId);
+        WRIST.remove(entityId);
+        SQUARE.remove(entityId);
+        GUARDING.remove(entityId);
+    }
+
+    // Left the world: nothing from it may pose an entity that later gets the same id.
+    public static void clear() {
+        PLAYING.clear();
+        KEYFRAMED.clear();
+        WRIST.clear();
+        SQUARE.clear();
+        GUARDING.clear();
+    }
+
     public static void guard(int entityId, boolean on) {
         if (on) {
             GUARDING.add(entityId);
@@ -285,8 +303,12 @@ public final class SkillAnimations {
         }
         Playing playing = PLAYING.get(entity.getId());
         double raw = playing == null ? -1 : ageInTicks - playing.startTick();
-        if (playing != null && raw > playing.end()) {
+        // (raw far below 0: started on an older clock of this id, a body that died and respawned; it would come back
+        // to life once the new clock got there)
+        if (playing != null && (raw > playing.end() || ageInTicks != 0 && raw < -1)) {
             PLAYING.remove(entity.getId());
+            playing = null;
+            raw = -1;
         }
         // First person hands are posed with ageInTicks 0, which lands here as t < 0 and leaves the animation running.
         boolean animating = raw >= 0 && raw <= playing.end();

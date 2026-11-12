@@ -54,6 +54,11 @@ public final class UniverseItems {
             Map.entry("kunai_hiraishin", "naruto"), Map.entry("pilula_soldado", "naruto"), Map.entry("ramen", "naruto"),
             Map.entry("pergaminho_ninken", "naruto"), Map.entry("bandana_ninja", "naruto"),
             Map.entry("samehada", "naruto"), Map.entry("kusanagi", "naruto"),
+            Map.entry("guizo", "naruto"), Map.entry("pergaminho_ceu", "naruto"), Map.entry("pergaminho_terra", "naruto"),
+            Map.entry("pele_cobra", "naruto"), Map.entry("pergaminho_marionete", "naruto"), Map.entry("kubikiribocho", "naruto"),
+            Map.entry("asas_de_papel", "naruto"), Map.entry("bolsa_veneno", "naruto"), Map.entry("celula_hashirama", "naruto"),
+            Map.entry("pergaminho_sapo", "naruto"), Map.entry("sharingan", "naruto"), Map.entry("selo_de_papel", "naruto"),
+            Map.entry("fio_de_chakra", "naruto"),
             Map.entry("dedo_sukuna", "jujutsu"), Map.entry("venda_gojo", "jujutsu"), Map.entry("boneco_palha", "jujutsu"),
             Map.entry("boneco_amaldicoado", "jujutsu"), Map.entry("nuvem_brincalhona", "jujutsu"), Map.entry("lanca_invertida", "jujutsu"),
             Map.entry("aizen_sword", "bleach"), Map.entry("pilula_alma", "bleach"), Map.entry("mascara_hollow", "bleach"),
@@ -86,6 +91,9 @@ public final class UniverseItems {
             character = id.substring("soul_".length());
         } else if (id.endsWith("_spawn_egg")) {
             character = id.substring(0, id.length() - "_spawn_egg".length());
+        }
+        if (character != null && com.starkinhon.battlegroundsmod.animal.naruto.NarutoSpec.get(character) != null) {
+            return "naruto";
         }
         String universe = character == null ? null : CHARACTERS.get(character);
         return universe == null || universe.isEmpty() ? null : universe;

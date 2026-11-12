@@ -25,8 +25,8 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 // The Dragon Ball flight on the client (universe/Flight), the approved page's physics (forja voo/voo.html) line by
 // line: it moves the local player itself every tick (Minecraft's flying push is zero, see Flight), so the flight has
-// its own feel: a cruise that keeps its momentum, turns that run in an arc instead of cutting through the middle,
-// floating up and down a little when no key is held, and the boost.
+// its own feel: a cruise that answers the keys at once in every direction (see the steering in tick), floating up and
+// down a little when no key is held, and the boost.
 // Keys: jump twice takes off (Minecraft's), WASD flies where the camera looks, Space up, Shift down (Shift near the ground
 // and slow lands), Ctrl while flying turns the boost on (half of it at once, the ki ring and the boom), letting go of W
 // or Ctrl again turns it off. Tired (low stamina, server side) the boost goes out and the player glides down.
@@ -166,12 +166,9 @@ public final class FlightClient {
         }
 
         Vec3 look = player.getLookAngle();
-        double rx = -look.z, rz = look.x;
-        double rl = Math.sqrt(rx * rx + rz * rz);
-        if (rl > 1.0E-4) {
-            rx /= rl;
-            rz /= rl;
-        }
+        // Right from the yaw alone, so A/D still strafe at full speed while looking straight up or down.
+        double yaw = Math.toRadians(player.getYRot());
+        double rx = -Math.cos(yaw), rz = -Math.sin(yaw);
         double wx = look.x * forward + rx * right;
         double wy = look.y * forward + up * 0.8;
         double wz = look.z * forward + rz * right;
@@ -189,47 +186,31 @@ public final class FlightClient {
             ty = Math.min(ty, -4);
             has = true;
         }
-        // Soft acceleration: picks up fast, slows down a bit slower (the flight glides).
-        float k = has ? (boost ? 3.2f : 2.6f) : 1.6f;
-        double cur = Math.sqrt(vx * vx + vy * vy + vz * vz);
-        if (has && cur > 3 && top > 0) {
-            // Turns in an arc: with momentum the direction swings round at a limited rate.
-            double dx = vx / cur, dy = vy / cur, dz = vz / cur;
+        // Responsive steering (Stark 2026-11-12: "trocar de direção toda hora certinho e para todos os lados"): the
+        // speed is split into the part along where the keys and camera point and the part across it. The part across
+        // dies fast (no drifting sideways out of a turn, strafes and diagonals go exactly where pressed), the part along
+        // picks up fast, and pressing the opposite way brakes hard before speeding back up. The boost turns a bit wider
+        // so it still feels heavy, and only slows down gently from above the top speed (the kick and its end don't jerk).
+        // Letting go of every key stops in about half a second, with a short glide.
+        if (has) {
             double tl = Math.sqrt(tx * tx + ty * ty + tz * tz);
             double ex = tx / tl, ey = ty / tl, ez = tz / tl;
-            double ang = Math.acos(Mth.clamp(dx * ex + dy * ey + dz * ez, -1, 1));
-            if (ang < 2.5) {
-                double turn = (boost ? 1.8 : 2.4) * DT;
-                double f = ang > 1.0E-4 ? Math.min(1, turn / ang) : 1;
-                dx += (ex - dx) * f;
-                dy += (ey - dy) * f;
-                dz += (ez - dz) * f;
-                double dl = Math.sqrt(dx * dx + dy * dy + dz * dz);
-                if (dl > 1.0E-3) {
-                    dx /= dl;
-                    dy /= dl;
-                    dz /= dl;
-                } else {
-                    dx = ex;
-                    dy = ey;
-                    dz = ez;
-                }
-                double sp = cur + (tl - cur) * damp(k);
-                vx = dx * sp;
-                vy = dy * sp;
-                vz = dz * sp;
-            } else {
-                // Turning right round: brakes and turns.
-                float kk = damp(k * 0.8f);
-                vx += (tx - vx) * kk;
-                vy += (ty - vy) * kk;
-                vz += (tz - vz) * kk;
-            }
+            double along = vx * ex + vy * ey + vz * ez;
+            double px = vx - ex * along, py = vy - ey * along, pz = vz - ez * along;
+            float across = damp(boost ? 7f : 12f);
+            px -= px * across;
+            py -= py * across;
+            pz -= pz * across;
+            float ka = along < 0 ? 12f : along < tl ? (boost ? 6f : 8f) : 3f;
+            along += (tl - along) * damp(ka);
+            vx = ex * along + px;
+            vy = ey * along + py;
+            vz = ez * along + pz;
         } else {
-            float kk = damp(k);
-            vx += (tx - vx) * kk;
-            vy += (ty - vy) * kk;
-            vz += (tz - vz) * kk;
+            float stop = damp(6f);
+            vx -= vx * stop;
+            vy -= vy * stop;
+            vz -= vz * stop;
         }
         if (!has) {
             // floating: rising and sinking a little

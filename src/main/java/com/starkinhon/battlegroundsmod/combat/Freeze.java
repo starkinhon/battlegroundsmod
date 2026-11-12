@@ -143,6 +143,11 @@ public final class Freeze {
         if (hold.grips.isEmpty() && entity instanceof Mob mob) {
             hold.hadNoAi = mob.isNoAi();
             mob.setNoAi(true);
+            if (!hold.hadNoAi) {
+                // Saved with the mob: if it is written to disk while held (the world closed, its chunk unloaded), NoAI
+                // went with it and it came back a statue for good. onJoin turns its AI back on when it loads.
+                mob.addTag(FROZEN_TAG);
+            }
         }
         Grip grip = new Grip(Tasks.owner(), anchor, lookFree, slack, entity.getYRot(), entity.getXRot());
         hold.grips.add(grip);
@@ -370,10 +375,38 @@ public final class Freeze {
         HELD.remove(entity);
         if (entity instanceof Mob mob) {
             mob.setNoAi(hold.hadNoAi);
+            mob.removeTag(FROZEN_TAG);
         }
     }
 
     public static void clear() {
         HELD.clear();
+    }
+
+    private static final String FROZEN_TAG = "battlegroundsmod.frozen";
+
+    // For other code that switches a mob's AI off for a while (Ino piloting it): the same saved mark, so a mob written to
+    // disk meanwhile comes back with its AI. untagNoAi when it is given back.
+    public static void tagNoAi(Mob mob) {
+        mob.addTag(FROZEN_TAG);
+    }
+
+    public static void untagNoAi(Mob mob) {
+        if (!HELD.containsKey(mob)) {
+            mob.removeTag(FROZEN_TAG);
+        }
+    }
+
+    public static void register() {
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(Freeze::onJoin);
+    }
+
+    // A mob saved while a hold had switched its AI off comes back with it on.
+    private static void onJoin(net.neoforged.neoforge.event.entity.EntityJoinLevelEvent event) {
+        if (!event.getLevel().isClientSide() && event.getEntity() instanceof Mob mob && mob.getTags().contains(FROZEN_TAG)
+                && !HELD.containsKey(mob)) {
+            mob.removeTag(FROZEN_TAG);
+            mob.setNoAi(false);
+        }
     }
 }

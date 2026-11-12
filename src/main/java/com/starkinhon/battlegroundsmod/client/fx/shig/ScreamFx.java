@@ -18,7 +18,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec3;
 
 // X, Onda Sônica (preview v3, "MUITO FODA"): the scream leaves his mouth as a curved shell torn at the rim (34 blocks a
@@ -180,7 +179,7 @@ public final class ScreamFx {
                     continue;
                 }
                 int x = cx + dx, z = cz + dz;
-                int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z) - 1;
+                int y = com.starkinhon.battlegroundsmod.client.fx.ClientGround.noLeaves(level, x, z) - 1;
                 if (Math.abs(y - s.o.y + 1.6) > 5) {
                     continue;
                 }

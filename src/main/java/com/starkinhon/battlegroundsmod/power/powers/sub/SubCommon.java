@@ -138,4 +138,9 @@ public final class SubCommon {
         float u = 1 - x;
         return 1 - u * u * u;
     }
+
+    // The world closed (ServerReset): nothing of it is kept for the next one (old entities, old game times).
+    public static void resetStatics() {
+        STATES.clear();
+    }
 }

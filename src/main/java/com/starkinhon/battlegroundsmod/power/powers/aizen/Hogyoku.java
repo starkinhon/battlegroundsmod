@@ -114,7 +114,7 @@ public final class Hogyoku {
                 now.awakened = true;
             }
             return false;
-        });
+        }, () -> end(caster, level, spec, state));
         return true;
     }
 

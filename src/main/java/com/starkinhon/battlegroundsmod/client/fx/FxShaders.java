@@ -43,6 +43,8 @@ public final class FxShaders {
     static ShaderInstance kkMist;
     static ShaderInstance sand;
     static ShaderInstance bleach;
+    // Bleach's own glow composite (halo only, like the pages).
+    static ShaderInstance bleachComp;
     // Sukuna's Fuga (FugaRenderer); without them the Fuga only darkens the world.
     static ShaderInstance fugaFlame;
     static ShaderInstance fugaArrow;
@@ -136,6 +138,7 @@ public final class FxShaders {
         // Bleach (Rukia, Byakuya): the same GLSL text as the approved pages (forja/bleach/mod-shaders.sh).
         try {
             register(event, "souls_bleach", DefaultVertexFormat.POSITION, s -> bleach = s);
+            register(event, "souls_bleach_comp", DefaultVertexFormat.POSITION, s -> bleachComp = s);
         } catch (Exception e) {
             BattlegroundsMod.LOGGER.error("Could not load the Bleach 3D effect shader", e);
         }

@@ -65,7 +65,7 @@ public final class LeafForestFx {
         if (mc.isPaused()) {
             return;
         }
-        boolean inside = mc.level.getBiome(mc.player.blockPosition()).is(ModWorldgen.FLORESTA_DA_FOLHA);
+        boolean inside = BiomeAura.in("floresta_da_folha", b -> b.is(ModWorldgen.FLORESTA_DA_FOLHA));
         strength = Mth.clamp(strength + (inside ? 0.012f : -0.02f), 0, 1);
         if (strength <= 0) {
             LEAVES.clear();

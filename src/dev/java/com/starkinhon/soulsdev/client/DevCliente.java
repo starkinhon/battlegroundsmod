@@ -40,7 +40,10 @@ public final class DevCliente {
             "/devc print <nome>  - PNG em _claude_shots (subpastas valem: luffy/z1)",
             "/devc gravar <nome> [cada N quadros]  /  gravar parar  - um PNG por quadro",
             "/devc marca <texto>  - escreve no latest.log (pra achar o momento depois)",
-            "/devc fechar  - fecha a tela aberta   /devc sair  - fecha o jogo"};
+            "/devc fechar  - fecha a tela aberta   /devc sair  - fecha o jogo",
+            "/devc mouse <x> <y>  - põe o mouse nesse ponto da tela (pixels de GUI)",
+            "/devc alvo <alma <id>|aba <n>|constelacao <id>|voltar|selo|despertar|traje>  - mouse em cima disso no Livro das Almas",
+            "/devc clique  /  segurar  /  soltar  - botão esquerdo na tela aberta"};
 
     private DevCliente() {
     }
@@ -183,6 +186,22 @@ public final class DevCliente {
         root.then(Commands.literal("marca")
                 .then(Commands.argument("texto", StringArgumentType.greedyString())
                         .executes(c -> ok(c, "MARCA " + StringArgumentType.getString(c, "texto")))));
+        root.then(Commands.literal("mouse")
+                .then(Commands.argument("x", DoubleArgumentType.doubleArg(0, 10000))
+                        .then(Commands.argument("y", DoubleArgumentType.doubleArg(0, 10000))
+                                .executes(c -> {
+                                    TelaMouse.mover(DoubleArgumentType.getDouble(c, "x"), DoubleArgumentType.getDouble(c, "y"));
+                                    return ok(c, "mouse em " + DoubleArgumentType.getDouble(c, "x") + " " + DoubleArgumentType.getDouble(c, "y"));
+                                }))));
+        root.then(Commands.literal("alvo")
+                .then(Commands.argument("tipo", StringArgumentType.word())
+                        .suggests((c, b) -> SharedSuggestionProvider.suggest(List.of("alma", "aba", "constelacao", "voltar", "selo", "despertar", "traje"), b))
+                        .executes(c -> alvo(c, StringArgumentType.getString(c, "tipo"), ""))
+                        .then(Commands.argument("valor", StringArgumentType.word())
+                                .executes(c -> alvo(c, StringArgumentType.getString(c, "tipo"), StringArgumentType.getString(c, "valor"))))));
+        root.then(Commands.literal("clique").executes(c -> ok(c, TelaMouse.clicar(true, true))));
+        root.then(Commands.literal("segurar").executes(c -> ok(c, TelaMouse.clicar(true, false))));
+        root.then(Commands.literal("soltar").executes(c -> ok(c, TelaMouse.clicar(false, true))));
         root.then(Commands.literal("fechar").executes(c -> {
             Minecraft.getInstance().setScreen(null);
             return ok(c, "tela fechada");
@@ -201,6 +220,11 @@ public final class DevCliente {
             source.sendSuccess(() -> Component.literal(linha), false);
         }
         return AJUDA.length;
+    }
+
+    private static int alvo(CommandContext<CommandSourceStack> c, String tipo, String valor) {
+        String r = TelaMouse.alvo(tipo, valor);
+        return r.startsWith("ERRO") ? erro(c, r) : ok(c, r);
     }
 
     private static int ok(CommandContext<CommandSourceStack> c, String texto) {

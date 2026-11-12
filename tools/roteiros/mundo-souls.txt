@@ -1,0 +1,73 @@
+# Teste do tipo de mundo Souls (PR #297). Rodar com:
+# gradlew runClient -Pmundo=SoulsTipo3 -PmundoTipo=battlegroundsmod:souls -Proteiro=mundo-souls
+espera 200
+dev preparar
+devc hud off
+devc marca spawn
+execute as @s run data get entity @s Pos
+devc print souls/00_spawn_chao
+tp @s ~ ~60 ~ 0 30
+espera 100
+devc print souls/01_spawn_alto
+devc marca locate
+locate biome battlegroundsmod:terras_do_dragao
+locate biome battlegroundsmod:picos_do_dragao
+locate biome battlegroundsmod:deserto_vermelho
+locate biome battlegroundsmod:terra_sagrada_de_karin
+locate biome battlegroundsmod:mar_do_sul
+locate biome battlegroundsmod:norte_gelado
+locate biome battlegroundsmod:montanhas_paozu
+locate biome battlegroundsmod:floresta_da_folha
+locate biome battlegroundsmod:floresta_da_morte
+locate biome battlegroundsmod:deserto_do_vento
+locate biome battlegroundsmod:mar_da_nevoa
+locate biome battlegroundsmod:vila_da_chuva
+locate biome battlegroundsmod:vale_do_fim
+locate biome battlegroundsmod:monte_myoboku
+locate biome minecraft:plains
+locate biome minecraft:forest
+locate biome minecraft:ocean
+locate biome minecraft:lush_caves
+devc marca tags
+execute if biome ~ ~ ~ #minecraft:is_overworld run say TAG_IS_OVERWORLD_OK
+execute if biome ~ ~ ~ #minecraft:has_structure/stronghold run say TAG_STRONGHOLD_OK
+execute if biome ~ ~ ~ #minecraft:has_structure/mineshaft run say TAG_MINESHAFT_OK
+locate structure minecraft:trial_chambers
+locate structure minecraft:stronghold
+locate structure minecraft:mineshaft
+locate structure minecraft:village_plains
+espera 400
+devc marca chunks
+# voo em linha reta pra ver vários biomas carregando
+tp @s 600 180 0 -90 35
+espera 160
+devc print souls/02_x600
+tp @s 1500 180 0 -90 35
+espera 160
+devc print souls/03_x1500
+tp @s 0 180 1500 0 35
+espera 160
+devc print souls/04_z1500
+tp @s -1500 180 0 90 35
+espera 160
+devc print souls/05_xm1500
+tp @s 0 180 -1500 180 35
+espera 160
+devc print souls/06_zm1500
+devc marca subsolo
+tp @s 0 -20 0
+espera 100
+devc print souls/07_subsolo
+devc marca nether
+execute in minecraft:the_nether run tp @s 0 80 0
+espera 200
+devc print souls/08_nether
+devc marca end
+execute in minecraft:the_end run tp @s 100 80 0
+espera 200
+devc print souls/09_end
+# volta pro overworld pra recarga abrir no mundo certo
+execute in minecraft:overworld run tp @s ~ 200 ~
+espera 40
+devc marca fim
+sair

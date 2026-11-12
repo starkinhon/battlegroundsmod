@@ -136,7 +136,9 @@ public final class ModCreativeTabs {
     }
 
     private static boolean isRemoved(Item item) {
-        return REMOVED.contains(BuiltInRegistries.ITEM.getKey(item).getPath());
+        String id = BuiltInRegistries.ITEM.getKey(item).getPath();
+        // The old per-universe Livros dos Desafios: one general book replaced them (Stark 2026-11-12).
+        return REMOVED.contains(id) || id.startsWith("livro_desafios_");
     }
 
     private static ResourceKey<CreativeModeTab> key(String name) {

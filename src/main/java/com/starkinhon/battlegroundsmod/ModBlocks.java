@@ -87,6 +87,16 @@ public final class ModBlocks {
             () -> new net.minecraft.world.level.block.ChainBlock(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD)
                     .strength(0.8f).sound(SoundType.WOOL).noOcclusion().ignitedByLava()));
 
+    // The Naruto structures (Stark 2026-11-12, world/NarutoSites): the paper seals stuck on rocks and altars, and the
+    // chakra threads the puppets of the Puppeteer's Workshop hang from (a faint blue glow, nothing to bump into).
+    public static final DeferredBlock<com.starkinhon.battlegroundsmod.world.PaperSealBlock> PAPER_SEAL = BLOCKS.register("selo_de_papel",
+            () -> new com.starkinhon.battlegroundsmod.world.PaperSealBlock(BlockBehaviour.Properties.of().mapColor(MapColor.WOOL)
+                    .strength(0.3f).sound(SoundType.WOOL).noCollission().noOcclusion().ignitedByLava()
+                    .pushReaction(net.minecraft.world.level.material.PushReaction.DESTROY)));
+    public static final DeferredBlock<net.minecraft.world.level.block.ChainBlock> CHAKRA_THREAD = BLOCKS.register("fio_de_chakra",
+            () -> new net.minecraft.world.level.block.ChainBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_LIGHT_BLUE)
+                    .strength(0.2f).sound(SoundType.WOOL).noCollission().noOcclusion().lightLevel(state -> 6)));
+
     // Vila da Chuva (Stark 2026-11-11): the towers' dark metal in panels, the reinforcing rings, rust in two tones, the
     // windows (dark, and lit amber at night), the pipes and the crown's spikes.
     public static final DeferredBlock<Block> RAIN_METAL = metal("metal_da_chuva", 0);
@@ -133,6 +143,8 @@ public final class ModBlocks {
         BLOCK_ITEMS.registerSimpleBlockItem(PINE_LEAVES);
         BLOCK_ITEMS.registerSimpleBlockItem(PINE_LEAVES_DARK);
         BLOCK_ITEMS.registerSimpleBlockItem(ROPE);
+        BLOCK_ITEMS.registerSimpleBlockItem(PAPER_SEAL);
+        BLOCK_ITEMS.registerSimpleBlockItem(CHAKRA_THREAD);
         BLOCK_ITEMS.registerSimpleBlockItem(RAIN_METAL);
         BLOCK_ITEMS.registerSimpleBlockItem(RAIN_METAL_DARK);
         BLOCK_ITEMS.registerSimpleBlockItem(RAIN_RIB);

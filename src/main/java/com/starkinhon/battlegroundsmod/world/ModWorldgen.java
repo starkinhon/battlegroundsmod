@@ -108,6 +108,8 @@ public final class ModWorldgen {
 
     public static final Supplier<MapCodec<MapChunkGenerator>> MAP = CHUNK_GENERATORS.register("map", () -> MapChunkGenerator.CODEC);
     public static final Supplier<MapCodec<MapBiomeSource>> MAP_BIOMES = BIOME_SOURCES.register("map", () -> MapBiomeSource.CODEC);
+    // The "Souls" world type's overworld: only the universe biomes (worldgen/world_preset/souls.json, SoulsWorld).
+    public static final Supplier<MapCodec<SoulsBiomeSource>> SOULS_BIOMES = BIOME_SOURCES.register("souls", () -> SoulsBiomeSource.CODEC);
 
     private ModWorldgen() {
     }
@@ -116,5 +118,6 @@ public final class ModWorldgen {
         CHUNK_GENERATORS.register(bus);
         BIOME_SOURCES.register(bus);
         FEATURES.register(bus);
+        SoulsWorld.register();
     }
 }

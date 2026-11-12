@@ -73,12 +73,24 @@ public final class ModEffects {
         Harmful(int color) {
             super(MobEffectCategory.HARMFUL, color);
         }
+
+        // Not cured by milk (or a totem): the mod sets and ends these itself, a bucket of milk mid-fight would shake off a
+        // stun, the domain's Brain Damage or a move's root.
+        @Override
+        public void fillEffectCures(java.util.Set<net.neoforged.neoforge.common.EffectCure> cures, net.minecraft.world.effect.MobEffectInstance effect) {
+        }
     }
 
     // An effect that does nothing by itself: other code checks for it.
     private static final class Marker extends MobEffect {
         Marker(int color) {
             super(MobEffectCategory.BENEFICIAL, color);
+        }
+
+        // Not cured by milk (or a totem): the mod sets and ends these itself, a bucket of milk mid-fight would shake off a
+        // stun, the domain's Brain Damage or a move's root.
+        @Override
+        public void fillEffectCures(java.util.Set<net.neoforged.neoforge.common.EffectCure> cures, net.minecraft.world.effect.MobEffectInstance effect) {
         }
     }
 }

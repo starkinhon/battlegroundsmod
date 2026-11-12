@@ -167,6 +167,7 @@ public final class Movement {
         entity.setDeltaMovement(velocity);
         entity.hasImpulse = true;
         entity.hurtMarked = true;
+        com.starkinhon.battlegroundsmod.power.powers.opm.Opm.own(entity);
         spend(entity, kind);
         effects(level, entity, kind, velocity);
         return true;

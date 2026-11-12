@@ -73,7 +73,7 @@ public final class RainVillageFx {
             return;
         }
         ClientLevel level = mc.level;
-        boolean inside = level.getBiome(mc.player.blockPosition()).is(ModWorldgen.VILA_DA_CHUVA);
+        boolean inside = BiomeAura.in("vila_da_chuva", b -> b.is(ModWorldgen.VILA_DA_CHUVA));
         strength = Mth.clamp(strength + (inside ? 0.015f : -0.02f), 0, 1);
         flash = Math.max(0, flash - 0.13f);
         if (strength <= 0) {

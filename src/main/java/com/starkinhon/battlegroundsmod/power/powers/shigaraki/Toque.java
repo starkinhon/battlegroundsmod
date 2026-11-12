@@ -43,9 +43,12 @@ public final class Toque {
         int interrupts = data.interrupts;
         LivingEntity target = lock(caster);
         Vec3 from = caster.position();
-        Vec3 dir = target != null ? Shigaraki.flatTo(caster, target.position()) : Combat.flatLook(caster);
-        // grab: stop 0.72 short of the target's middle; miss: 3 blocks ahead
-        Vec3 to = target != null ? new Vec3(target.getX(), from.y, target.getZ()).subtract(dir.scale(0.72)) : from.add(dir.scale(3));
+        Vec3 dir0 = target != null ? Shigaraki.flatTo(caster, target.position()) : Combat.flatLook(caster);
+        // grab: stop 0.72 short of the target's middle; miss: 3 blocks ahead. Both follow the target while he dashes (a
+        // boss never stands still for 0.55 s: the spot fixed at the press left him 3+ blocks short, the grab became the
+        // miss's crack and the boss never decayed).
+        Vec3[] way = {dir0, target != null ? new Vec3(target.getX(), from.y, target.getZ()).subtract(dir0.scale(0.72)) : from.add(dir0.scale(3))};
+        Vec3 to = way[1];
         boolean hit = target != null;
         BUSY.put(caster, true);
         SubCommon.busy(caster, CONTACT + 8);
@@ -64,11 +67,19 @@ public final class Toque {
                 return false;
             }
             if (age < CONTACT) {
+                if (hit && target.isAlive() && target.position().distanceTo(from) < RANGE + 4) {
+                    Vec3 d = new Vec3(target.getX() - from.x, 0, target.getZ() - from.z);
+                    if (d.lengthSqr() > 1e-4) {
+                        way[0] = d.normalize();
+                        way[1] = new Vec3(target.getX(), from.y, target.getZ()).subtract(way[0].scale(0.72));
+                    }
+                }
+                Vec3 to1 = way[1];
                 // the dash: ease out over 0.3 s (preview easeOut3), as a velocity so walls still stop him
                 float k0 = ease((age - WIND) / (float) (CONTACT - WIND)), k1 = ease((age + 1 - WIND) / (float) (CONTACT - WIND));
-                // the curve's own step to the spot fixed at the press (the preview), not want - position: a player's position on
+                // the curve's own step to the spot (the preview's; it follows the target, landOn finishes it at the contact), not want - position: a player's position on
                 // the server is a tick behind their client, so that overshot past the target, shoved it and missed the grab
-                Vec3 step = to.subtract(from).scale(k1 - k0);
+                Vec3 step = to1.subtract(from).scale(k1 - k0);
                 caster.setDeltaMovement(step.x, Math.min(caster.getDeltaMovement().y, 0.05), step.z);
                 caster.hurtMarked = true;
                 caster.resetFallDistance();
@@ -80,11 +91,14 @@ public final class Toque {
             if (age == CONTACT) {
                 caster.setDeltaMovement(Vec3.ZERO);
                 caster.hurtMarked = true;
-                Shigaraki.landOn(caster, to);
-                if (hit && Combat.isTarget(target, caster) && target.distanceTo(caster) < 3.2) {
-                    grab(caster, target, level, dir);
+                Shigaraki.landOn(caster, way[1]);
+                // the reach to the body's box, not its middle: a wide boss counts from its skin
+                boolean reach = target != null && (target.distanceTo(caster) < 3.2
+                        || target.getBoundingBox().distanceToSqr(caster.getBoundingBox().getCenter()) < 2.4 * 2.4);
+                if (hit && Combat.isTarget(target, caster) && reach) {
+                    grab(caster, target, level, way[0]);
                 } else {
-                    slam(caster, level, dir);
+                    slam(caster, level, way[0]);
                 }
             }
             if (age >= LENGTH - 10) {

@@ -67,6 +67,7 @@ public class BattlegroundsMod {
         com.starkinhon.battlegroundsmod.universe.NarutoWorld.register();
         com.starkinhon.battlegroundsmod.universe.SageMode.register();
         com.starkinhon.battlegroundsmod.universe.UniverseSpawns.register();
+        com.starkinhon.battlegroundsmod.animal.naruto.NarutoMob.register();
         com.starkinhon.battlegroundsmod.universe.UniverseBiomes.register();
         com.starkinhon.battlegroundsmod.universe.RoamingSouls.register();
         com.starkinhon.battlegroundsmod.world.MapBorder.register();
@@ -77,11 +78,14 @@ public class BattlegroundsMod {
         com.starkinhon.battlegroundsmod.universe.BleachWorld.register();
         com.starkinhon.battlegroundsmod.universe.DemonSlayerWorld.register();
         FightRod.register();
+        com.starkinhon.battlegroundsmod.combat.Freeze.register();
+        com.starkinhon.battlegroundsmod.combat.ServerReset.register();
         com.starkinhon.battlegroundsmod.power.powers.makima.MakimaEvents.register();
         SoulCommand.addSubcommand(BossCommand::bossbar);
         SoulCommand.addSubcommand(com.starkinhon.battlegroundsmod.combat.DamageDebug::command);
         SoulCommand.addSubcommand(BossCommand::boss);
         SoulCommand.addSubcommand(com.starkinhon.battlegroundsmod.power.Progression::command);
+        SoulCommand.addSubcommand(com.starkinhon.battlegroundsmod.power.SoulSync::command);
         SoulCommand.addSubcommand(com.starkinhon.battlegroundsmod.challenge.ChallengeArenas::command);
         SoulCommand.addSubcommand(com.starkinhon.battlegroundsmod.challenge.Universes::command);
         SoulCommand.addSubcommand(com.starkinhon.battlegroundsmod.universe.DragonBallWorld::command);

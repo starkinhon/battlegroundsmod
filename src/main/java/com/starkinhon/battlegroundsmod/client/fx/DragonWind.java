@@ -88,17 +88,17 @@ public final class DragonWind {
         if (mc.isPaused()) {
             return;
         }
-        var biome = mc.level.getBiome(mc.player.blockPosition());
-        boolean onNamek = biome.is(ModWorldgen.NAMEK);
-        boolean inside = biome.is(ModWorldgen.DRAGONBALL_BIOMES) || onNamek;
+        // Each ambience reaches a little around its biome, so a border mixed with vanilla biomes doesn't flicker (BiomeAura).
+        boolean onNamek = BiomeAura.in("namek", b -> b.is(ModWorldgen.NAMEK));
+        boolean inside = BiomeAura.in("dragonball", b -> b.is(ModWorldgen.DRAGONBALL_BIOMES)) || onNamek;
         namek = Mth.clamp(namek + (onNamek ? 0.02f : -0.02f), 0, 1);
         if (inside) {
-            green = Mth.clamp(green + (biome.is(ModWorldgen.TERRA_SAGRADA) ? 0.015f : -0.015f), 0, 1);
+            green = Mth.clamp(green + (BiomeAura.in("terra_sagrada", b -> b.is(ModWorldgen.TERRA_SAGRADA)) ? 0.015f : -0.015f), 0, 1);
         }
-        desert = Mth.clamp(desert + (inside && biome.is(ModWorldgen.DESERTO_VERMELHO) ? 0.01f : -0.015f), 0, 1);
-        sea = Mth.clamp(sea + (inside && biome.is(ModWorldgen.MAR_DO_SUL) ? 0.012f : -0.015f), 0, 1);
-        cold = Mth.clamp(cold + (inside && biome.is(ModWorldgen.NORTE_GELADO) ? 0.01f : -0.015f), 0, 1);
-        hills = Mth.clamp(hills + (inside && biome.is(ModWorldgen.MONTANHAS_PAOZU) ? 0.01f : -0.015f), 0, 1);
+        desert = Mth.clamp(desert + (inside && BiomeAura.in("deserto_vermelho", b -> b.is(ModWorldgen.DESERTO_VERMELHO)) ? 0.01f : -0.015f), 0, 1);
+        sea = Mth.clamp(sea + (inside && BiomeAura.in("mar_do_sul", b -> b.is(ModWorldgen.MAR_DO_SUL)) ? 0.012f : -0.015f), 0, 1);
+        cold = Mth.clamp(cold + (inside && BiomeAura.in("norte_gelado", b -> b.is(ModWorldgen.NORTE_GELADO)) ? 0.01f : -0.015f), 0, 1);
+        hills = Mth.clamp(hills + (inside && BiomeAura.in("montanhas_paozu", b -> b.is(ModWorldgen.MONTANHAS_PAOZU)) ? 0.01f : -0.015f), 0, 1);
         strength = Mth.clamp(strength + (inside ? 0.012f : -0.02f), 0, 1);
         long now = mc.level.getGameTime();
         GUSTS.removeIf(g -> now - g.born() > g.life());

@@ -1,9 +1,7 @@
 package com.starkinhon.battlegroundsmod.power.powers.bills;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.function.Function;
 
 import com.starkinhon.battlegroundsmod.BattlegroundsMod;
@@ -47,7 +45,9 @@ public final class Hakai {
             ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "hakai"));
 
     // Whoever is falling apart right now, so a second hit doesn't start it again.
-    private static final Set<LivingEntity> ERASING = new HashSet<>();
+    // Who is being erased, until when (game time). With an end time and weak keys, so a cut task (the Izanami turning time
+    // back) never leaves someone marked for good, immune to every later hakaizinho.
+    private static final java.util.Map<LivingEntity, Long> ERASING = new java.util.WeakHashMap<>();
 
     private Hakai() {
     }
@@ -157,11 +157,14 @@ public final class Hakai {
     // Erases target without the cutscene (the hakaizinho finishing someone low on life): it stops where it is, lights up
     // and falls apart into purple sparks like under the Hakai, and is gone at the end.
     public static void disintegrate(LivingEntity caster, LivingEntity target, boolean awakened) {
-        if (!target.isAlive() || !ERASING.add(target)) {
-            return;
-        }
         HakaiSpec spec = HakaiSpec.get(awakened);
         int ticks = spec.killTick() - spec.dissolveTick();
+        long now = target.level().getGameTime();
+        Long until = ERASING.get(target);
+        if (!target.isAlive() || until != null && until >= now) {
+            return;
+        }
+        ERASING.put(target, now + ticks + 2);
         Freeze.hold(target, ticks + 1);
         Stun.apply(target, ticks + 1);
         PowerLogic.seal(target, ticks + 1);

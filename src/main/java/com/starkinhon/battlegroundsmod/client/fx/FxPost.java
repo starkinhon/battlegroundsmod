@@ -25,6 +25,7 @@ public final class FxPost {
 
     private static TextureTarget scene;
     private static TextureTarget glow;
+    private static TextureTarget bleachGlow;
     private static TextureTarget auraMask;
     private static final TextureTarget[] BLOOM = new TextureTarget[BLOOM_LEVELS];
     private static boolean depthThisFrame;
@@ -189,6 +190,53 @@ public final class FxPost {
         FxShaders.bloomComp.setSampler("BloomSampler", bloom ? BLOOM[0].getColorTextureId() : glow.getColorTextureId());
         FxShaders.bloomComp.safeGetUniform("Intensity").set(bloom ? 1.1f : 0f);
         fullScreen(FxShaders.bloomComp);
+        endPasses();
+    }
+
+    // Bleach (Rukia, Byakuya): its glowing pieces go into a layer of their own and only their halo is added, the way the
+    // approved pages do it (forja/bleach/lib.js renderGlow + GLOWADD). The shared layer above also adds the sharp light
+    // itself, which on these pieces doubled them into white blobs and sparkles.
+    static boolean beginBleachGlow() {
+        if (FxShaders.bleachComp == null) {
+            return false;
+        }
+        RenderTarget main = main();
+        bleachGlow = fit(bleachGlow, main.width, main.height, true);
+        bleachGlow.setClearColor(0, 0, 0, 0);
+        bleachGlow.clear(Minecraft.ON_OSX);
+        bleachGlow.copyDepthFrom(main);
+        bleachGlow.bindWrite(false);
+        return true;
+    }
+
+    static void endBleachGlow() {
+        RenderTarget main = main();
+        beginPasses();
+        TextureTarget source = bleachGlow;
+        for (int i = 0; i < BLOOM_LEVELS; i++) {
+            BLOOM[i] = fit(BLOOM[i], Math.max(1, main.width >> (i + 1)), Math.max(1, main.height >> (i + 1)), false);
+            BLOOM[i].bindWrite(true);
+            FxShaders.bloomDown.setSampler("DiffuseSampler", source.getColorTextureId());
+            FxShaders.bloomDown.safeGetUniform("Texel").set(1f / source.width, 1f / source.height);
+            FxShaders.bloomDown.safeGetUniform("Threshold").set(0f);
+            fullScreen(FxShaders.bloomDown);
+            source = BLOOM[i];
+        }
+        RenderSystem.enableBlend();
+        RenderSystem.blendFunc(GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ONE);
+        for (int i = BLOOM_LEVELS - 1; i > 0; i--) {
+            BLOOM[i - 1].bindWrite(true);
+            FxShaders.bloomUp.setSampler("DiffuseSampler", BLOOM[i].getColorTextureId());
+            FxShaders.bloomUp.safeGetUniform("Texel").set(1f / BLOOM[i].width, 1f / BLOOM[i].height);
+            fullScreen(FxShaders.bloomUp);
+        }
+        main.bindWrite(true);
+        RenderSystem.enableBlend();
+        RenderSystem.blendFunc(GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ONE);
+        FxShaders.bleachComp.setSampler("DiffuseSampler", bleachGlow.getColorTextureId());
+        FxShaders.bleachComp.setSampler("BloomSampler", BLOOM[0].getColorTextureId());
+        FxShaders.bleachComp.safeGetUniform("Intensity").set(0.6f);
+        fullScreen(FxShaders.bleachComp);
         endPasses();
     }
 }

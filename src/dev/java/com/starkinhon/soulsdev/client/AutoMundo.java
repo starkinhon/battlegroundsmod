@@ -69,7 +69,9 @@ public final class AutoMundo {
         SoulsDev.log("criando mundo " + mundo + " (" + id + ")");
         LevelSettings settings = new LevelSettings(mundo, GameType.CREATIVE, false, Difficulty.NORMAL, true, new GameRules(),
                 WorldDataConfiguration.DEFAULT);
-        mc.createWorldOpenFlows().createFreshLevel(mundo, settings, new WorldOptions(1L, false, false),
+        // estruturas ligadas fora do mundo plano (o teste do tipo de mundo Souls precisa achar fortaleza e minas)
+        boolean estruturas = !id.getPath().equals("flat");
+        mc.createWorldOpenFlows().createFreshLevel(mundo, settings, new WorldOptions(1L, estruturas, false),
                 registries -> registries.registryOrThrow(Registries.WORLD_PRESET).getHolderOrThrow(preset).value().createWorldDimensions(),
                 new TitleScreen());
     }
