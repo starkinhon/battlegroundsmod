@@ -263,6 +263,11 @@ public final class NarutoSites {
         NarutoActivities.built(level, known != null ? known : site);
     }
 
+    // The build of a known place, made again without placing anything (StructureLoot's /soul bau).
+    static Build buildOf(ServerLevel level, Site s) {
+        return build(level, s);
+    }
+
     private static Build build(ServerLevel level, Site s) {
         int sea = level.getSeaLevel() - 1;
         int[] heights = new int[9];

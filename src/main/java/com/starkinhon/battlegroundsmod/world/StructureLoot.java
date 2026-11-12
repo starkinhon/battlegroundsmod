@@ -7,7 +7,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.mojang.brigadier.arguments.StringArgumentType;
 import com.starkinhon.battlegroundsmod.BattlegroundsMod;
+import com.starkinhon.battlegroundsmod.command.SoulCommand;
+
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.levelgen.Heightmap;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -118,6 +126,27 @@ public final class StructureLoot {
         return list;
     }
 
+    // The table of each container, in the order of containers(): the structure's own on the nearest chest (the first
+    // barrel when there is no chest), "comum" on the other chests, "suprimentos" on the barrels.
+    private static List<String> names(String kind, List<Map.Entry<BlockPos, BlockState>> list) {
+        boolean desert = DESERT.contains(kind);
+        boolean anyChest = list.stream().anyMatch(e -> e.getValue().getBlock() instanceof ChestBlock);
+        boolean mainGiven = false;
+        List<String> names = new ArrayList<>();
+        for (Map.Entry<BlockPos, BlockState> e : list) {
+            boolean chest = e.getValue().getBlock() instanceof ChestBlock;
+            if (!mainGiven && (chest || !anyChest)) {
+                names.add(kind);
+                mainGiven = true;
+            } else if (chest) {
+                names.add(desert ? "comum_deserto" : "comum");
+            } else {
+                names.add(desert ? "suprimentos_deserto" : "suprimentos");
+            }
+        }
+        return names;
+    }
+
     // Gives the place's containers their tables. retro: a place built before this existed (the player's old worlds):
     // only containers still standing and still empty get loot, and a missing one is put back only where there is air.
     public static void fill(ServerLevel level, String map, String id, Build b, boolean retro) {
@@ -125,23 +154,11 @@ public final class StructureLoot {
         if (!has(kind)) {
             return;
         }
-        boolean desert = DESERT.contains(kind);
         List<Map.Entry<BlockPos, BlockState>> list = containers(b);
-        boolean anyChest = list.stream().anyMatch(e -> e.getValue().getBlock() instanceof ChestBlock);
-        boolean mainGiven = false;
-        for (Map.Entry<BlockPos, BlockState> e : list) {
-            BlockPos pos = e.getKey();
-            BlockState want = e.getValue();
-            boolean chest = want.getBlock() instanceof ChestBlock;
-            String name;
-            if (!mainGiven && (chest || !anyChest)) {
-                name = kind;
-                mainGiven = true;
-            } else if (chest) {
-                name = desert ? "comum_deserto" : "comum";
-            } else {
-                name = desert ? "suprimentos_deserto" : "suprimentos";
-            }
+        List<String> names = names(kind, list);
+        for (int i = 0; i < list.size(); i++) {
+            BlockPos pos = list.get(i).getKey();
+            BlockState want = list.get(i).getValue();
             if (retro) {
                 BlockState now = level.getBlockState(pos);
                 if (now.isAir()) {
@@ -154,7 +171,7 @@ public final class StructureLoot {
                 if (retro && (box.getLootTable() != null || !box.isEmpty())) {
                     continue;
                 }
-                box.setLootTable(table(name), level.random.nextLong());
+                box.setLootTable(table(names.get(i)), level.random.nextLong());
                 box.setChanged();
             }
         }
@@ -166,6 +183,108 @@ public final class StructureLoot {
             box.setLootTable(table(kind), level.random.nextLong());
             box.setChanged();
         }
+    }
+
+    // /soul bau <tipo> (ops, for testing): to the nearest place of a kind (Dragon Ball or Naruto); once it is built,
+    // lists its chests and barrels with their tables in the chat (and the log) and puts you beside the main one, facing it.
+    static void register() {
+        SoulCommand.addSubcommand(() -> Commands.literal("bau").requires(s -> s.hasPermission(2))
+                .then(Commands.argument("tipo", StringArgumentType.word()).executes(c -> bau(c.getSource(),
+                        StringArgumentType.getString(c, "tipo")))));
+    }
+
+    private static final Set<String> NARUTO = Set.of(NarutoStructGen.FOLHA, NarutoStructGen.MORTE, NarutoStructGen.COVIL,
+            NarutoStructGen.DESERTO, NarutoStructGen.NEVOA, NarutoStructGen.CHUVA, NarutoStructGen.MYOBOKU, NarutoStructGen.PICO);
+
+    private static int bau(CommandSourceStack source, String kind) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ServerPlayer player = source.getPlayerOrException();
+        ServerLevel level = player.serverLevel();
+        boolean naruto = NARUTO.contains(kind);
+        String id;
+        Build build;
+        BlockPos pod = null;
+        if (naruto) {
+            NarutoSites.Site site = NarutoSites.near(level, kind, player.blockPosition(), 600);
+            if (site == null || !MapPlaces.built(level, site.id())) {
+                return go(source, player, level, site == null ? NarutoSites.locate(level, kind, player.blockPosition(), 14) : site.pos(), kind);
+            }
+            id = site.id();
+            build = NarutoSites.buildOf(level, site);
+        } else {
+            WorldSites.Site site = WorldSites.near(level, kind, player.blockPosition(), 600);
+            if (site == null || !MapPlaces.built(level, WorldSites.idOf(site))) {
+                return go(source, player, level, site == null ? WorldSites.locate(level, kind, player.blockPosition(), 14) : site.pos(), kind);
+            }
+            id = WorldSites.idOf(site);
+            build = WorldSites.buildOf(site);
+            if (WorldSites.RADITZ.equals(kind)) {
+                pod = WorldSites.podChestPos(site);
+            }
+        }
+        List<Map.Entry<BlockPos, BlockState>> list = containers(build);
+        List<String> names = names(kind(null, id), list);
+        List<BlockPos> spots = new ArrayList<>();
+        List<String> tables = new ArrayList<>();
+        if (pod != null) {
+            spots.add(pod);
+            tables.add("chests/pod_saiyajin");
+        }
+        for (int i = 0; i < list.size(); i++) {
+            spots.add(list.get(i).getKey());
+            tables.add("estruturas/" + names.get(i));
+        }
+        if (spots.isEmpty()) {
+            source.sendFailure(Component.literal("[bau] " + id + ": nenhum baú"));
+            return 0;
+        }
+        for (int i = 0; i < spots.size(); i++) {
+            BlockPos p = spots.get(i);
+            BlockState now = level.getBlockState(p);
+            String state = level.getBlockEntity(p) instanceof RandomizableContainerBlockEntity box
+                    ? (box.getLootTable() != null ? "loot=" + box.getLootTable().location() : "sem loot, " + (box.isEmpty() ? "vazio" : "com itens"))
+                    : "sem baú (" + net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(now.getBlock()) + ")";
+            String line = "[bau] " + id + " #" + i + " " + p.toShortString() + " quer " + tables.get(i) + " | " + state;
+            source.sendSuccess(() -> Component.literal(line), false);
+            BattlegroundsMod.LOGGER.info(line);
+        }
+        BlockPos main = spots.get(0);
+        BlockPos feet = null;
+        for (int r = 1; r <= 3 && feet == null; r++) {
+            for (Direction d : Direction.Plane.HORIZONTAL) {
+                for (int dy = 0; dy >= -1 && feet == null; dy--) {
+                    BlockPos q = main.relative(d, r).above(dy);
+                    if (level.getBlockState(q).getCollisionShape(level, q).isEmpty()
+                            && level.getBlockState(q.above()).getCollisionShape(level, q.above()).isEmpty()
+                            && !level.getBlockState(q.below()).getCollisionShape(level, q.below()).isEmpty()) {
+                        feet = q;
+                        break;
+                    }
+                }
+            }
+        }
+        if (feet == null) {
+            feet = main.above();
+        }
+        double ex = feet.getX() + 0.5, ey = feet.getY() + 1.62, ez = feet.getZ() + 0.5;
+        double dx = main.getX() + 0.5 - ex, dy = main.getY() + 0.5 - ey, dz = main.getZ() + 0.5 - ez;
+        float yaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
+        float pitch = (float) -Math.toDegrees(Math.atan2(dy, Math.sqrt(dx * dx + dz * dz)));
+        player.teleportTo(level, ex, feet.getY(), ez, yaw, pitch);
+        return 1;
+    }
+
+    // Not built yet: high over it (it builds when someone comes near); run /soul bau again once it is up.
+    private static int go(CommandSourceStack source, ServerPlayer player, ServerLevel level, BlockPos at, String kind) {
+        if (at == null) {
+            source.sendFailure(Component.literal("[bau] nenhum " + kind + " por perto"));
+            return 0;
+        }
+        int y = Math.max(level.getHeight(Heightmap.Types.MOTION_BLOCKING, at.getX(), at.getZ()) + 30, 140);
+        player.teleportTo(at.getX() + 0.5, y, at.getZ() + 40.5);
+        String line = "[bau] indo pro " + kind + " em " + at.getX() + " " + at.getZ() + " (construindo; rode de novo)";
+        source.sendSuccess(() -> Component.literal(line), false);
+        BattlegroundsMod.LOGGER.info(line);
+        return 1;
     }
 
     // Whether all of a build's containers are in loaded chunks (the retro waits for that).

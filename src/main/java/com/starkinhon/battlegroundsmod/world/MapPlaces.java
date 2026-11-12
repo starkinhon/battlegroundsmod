@@ -77,6 +77,7 @@ public final class MapPlaces {
             PADS.remove(WORLD);
             PLACES.remove(WORLD);
         });
+        StructureLoot.register();
         DragonBallPlaces.register();
         NamekWorld.register();
         WorldSites.register();

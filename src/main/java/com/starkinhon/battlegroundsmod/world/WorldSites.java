@@ -242,6 +242,15 @@ public final class WorldSites {
         return block.defaultBlockState();
     }
 
+    // The build of a known place, made again without placing anything (StructureLoot's /soul bau).
+    static Build buildOf(Site site) {
+        return build(site);
+    }
+
+    static String idOf(Site site) {
+        return id(site);
+    }
+
     private static Build build(Site site) {
         Build b = new Build(site.x(), site.y() + 1, site.z(), (long) site.x() * 31 + site.z());
         BlockState grass = s(Blocks.GRASS_BLOCK), dirt = s(Blocks.DIRT);
@@ -374,7 +383,7 @@ public final class WorldSites {
             ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "chests/pod_saiyajin"));
 
     // Inside the pod of a crater site (its floor is one below the build's; the pod's middle is 3 under that floor).
-    private static BlockPos podChestPos(Site site) {
+    static BlockPos podChestPos(Site site) {
         return new BlockPos(site.x() + 1, site.y() - 2, site.z());
     }
 
