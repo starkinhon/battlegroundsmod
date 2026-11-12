@@ -8,6 +8,15 @@
           "type": "minecraft:item",
           "name": "battlegroundsmod:senzu"
         }
+      ]
+    },
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "battlegroundsmod:senzu"
+        }
       ],
       "conditions": [
         {

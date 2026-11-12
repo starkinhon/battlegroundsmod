@@ -6,6 +6,20 @@
       "entries": [
         {
           "type": "minecraft:item",
+          "name": "battlegroundsmod:senzu",
+          "weight": 4
+        },
+        {
+          "type": "minecraft:item",
+          "name": "battlegroundsmod:esfera_dragao_1"
+        }
+      ]
+    },
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
           "name": "battlegroundsmod:senzu"
         }
       ],

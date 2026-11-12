@@ -6,6 +6,25 @@
       "entries": [
         {
           "type": "minecraft:item",
+          "name": "battlegroundsmod:pilula_soldado",
+          "weight": 4
+        },
+        {
+          "type": "minecraft:item",
+          "name": "battlegroundsmod:ramen",
+          "weight": 3
+        },
+        {
+          "type": "minecraft:item",
+          "name": "battlegroundsmod:kunai_hiraishin"
+        }
+      ]
+    },
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
           "name": "minecraft:golden_apple"
         }
       ],

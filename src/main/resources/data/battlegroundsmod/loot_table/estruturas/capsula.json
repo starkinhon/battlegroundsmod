@@ -6,6 +6,31 @@
       "entries": [
         {
           "type": "minecraft:item",
+          "name": "battlegroundsmod:senzu",
+          "weight": 6
+        },
+        {
+          "type": "minecraft:item",
+          "name": "battlegroundsmod:scouter",
+          "weight": 2
+        },
+        {
+          "type": "minecraft:item",
+          "name": "battlegroundsmod:radar_dragao",
+          "weight": 2
+        },
+        {
+          "type": "minecraft:item",
+          "name": "battlegroundsmod:cristal_multiversal",
+          "weight": 2
+        }
+      ]
+    },
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
           "name": "battlegroundsmod:radar_dragao"
         }
       ],

@@ -6,6 +6,21 @@
       "entries": [
         {
           "type": "minecraft:item",
+          "name": "battlegroundsmod:scouter",
+          "weight": 3
+        },
+        {
+          "type": "minecraft:item",
+          "name": "battlegroundsmod:senzu",
+          "weight": 3
+        }
+      ]
+    },
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
           "name": "battlegroundsmod:scouter"
         }
       ],

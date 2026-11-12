@@ -6,6 +6,25 @@
       "entries": [
         {
           "type": "minecraft:item",
+          "name": "battlegroundsmod:pilula_soldado",
+          "weight": 4
+        },
+        {
+          "type": "minecraft:item",
+          "name": "battlegroundsmod:bolsa_veneno",
+          "weight": 3
+        },
+        {
+          "type": "minecraft:item",
+          "name": "battlegroundsmod:celula_hashirama"
+        }
+      ]
+    },
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
           "name": "battlegroundsmod:celula_hashirama"
         }
       ],

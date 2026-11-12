@@ -158,13 +158,41 @@ T['pico'] = table(thing('golden_apple', 0.4), thing('M:pilula_soldado', 0.4, 1, 
 # A second chest in the same building: a little of everything.
 T['comum'] = table(useful((2, 4)))
 T['comum_deserto'] = table(useful((2, 4), desert=True))
-# Barrels: supplies, often half empty.
-T['suprimentos'] = table(pool((0, 3), [('bread', 6, 1, 4), ('apple', 5, 1, 4), ('carrot', 4, 2, 5), ('potato', 4, 2, 5),
+# Barrels: supplies, a few things each (an empty one looked broken in the PC test of 2026-11-12).
+T['suprimentos'] = table(pool((1, 3), [('bread', 6, 1, 4), ('apple', 5, 1, 4), ('carrot', 4, 2, 5), ('potato', 4, 2, 5),
                                        ('coal', 5, 2, 6), ('torch', 4, 3, 8), ('arrow', 3, 3, 10), ('string', 2, 1, 4),
                                        ('wheat', 3, 2, 6), ('ender_pearl', 1), ('iron_nugget', 3, 3, 9)]))
-T['suprimentos_deserto'] = table(pool((0, 3), [('bread', 5, 1, 4), ('gunpowder', 6, 1, 4), ('coal', 5, 2, 6),
+T['suprimentos_deserto'] = table(pool((1, 3), [('bread', 5, 1, 4), ('gunpowder', 6, 1, 4), ('coal', 5, 2, 6),
                                                ('torch', 4, 3, 8), ('string', 3, 1, 4), ('iron_nugget', 4, 3, 9),
                                                ('ender_pearl', 1)]))
+
+# Every structure's own chest has at least one item of its universe (PC test 2026-11-12: some opened with only
+# Minecraft things). One draw from these, on top of the rarer chances above.
+THEME = {
+    'capsula': [('M:senzu', 6), ('M:scouter', 2), ('M:radar_dragao', 2), ('M:cristal_multiversal', 2)],
+    'goku': [('M:senzu', 6), ('M:esfera_dragao_4', 1)],
+    'cell': [('M:senzu', 6), ('M:cristal_multiversal', 1)],
+    'nave': [('M:senzu', 5), ('M:scouter', 3), ('M:radar_dragao', 1)],
+    'babidi': [('M:senzu', 5), ('M:cristal_multiversal', 2)],
+    'buu': [('M:senzu', 1)],
+    'kame': [('M:senzu', 1)],
+    'lookout': [('M:senzu', 1)],
+    'sala_tempo': [('M:senzu', 1)],
+    'nave_freeza': [('M:scouter', 3), ('M:senzu', 3)],
+    'nave_capsula': [('M:senzu', 5), ('M:radar_dragao', 1)],
+    'vila': [('M:senzu', 4), ('M:esfera_dragao_1', 1)],
+    'guru': [('M:senzu', 4), ('M:cristal_multiversal', 2)],
+    'folha': [('M:ramen', 5), ('M:pilula_soldado', 4), ('M:bandana_ninja', 1)],
+    'morte': [('M:pilula_soldado', 5), ('M:ramen', 3), ('M:kunai_hiraishin', 1)],
+    'covil': [('M:pilula_soldado', 4), ('M:bolsa_veneno', 3), ('M:celula_hashirama', 1)],
+    'deserto': [('M:bolsa_veneno', 4), ('M:pilula_soldado', 4), ('M:bandana_ninja', 1)],
+    'nevoa': [('M:pilula_soldado', 4), ('M:ramen', 4), ('M:bandana_ninja', 1)],
+    'chuva': [('M:pilula_soldado', 4), ('M:ramen', 3), ('M:bandana_ninja', 1)],
+    'myoboku': [('M:ramen', 5), ('M:pilula_soldado', 3)],
+    'pico': [('M:pilula_soldado', 4), ('M:ramen', 3), ('M:kunai_hiraishin', 1)],
+}
+for name, items in THEME.items():
+    T[name]['pools'].insert(0, pool(1, items))
 
 os.makedirs(OUT, exist_ok=True)
 for name, t in T.items():

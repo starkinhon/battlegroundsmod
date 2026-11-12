@@ -7,6 +7,20 @@
         {
           "type": "minecraft:item",
           "name": "battlegroundsmod:senzu",
+          "weight": 6
+        },
+        {
+          "type": "minecraft:item",
+          "name": "battlegroundsmod:cristal_multiversal"
+        }
+      ]
+    },
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "battlegroundsmod:senzu",
           "functions": [
             {
               "function": "minecraft:set_count",

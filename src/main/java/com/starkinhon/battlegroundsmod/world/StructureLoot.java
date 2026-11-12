@@ -210,6 +210,10 @@ public final class StructureLoot {
             }
             id = site.id();
             build = NarutoSites.buildOf(level, site);
+            if (NarutoStructGen.COVIL.equals(kind) && site.first("nest") != null) {
+                // the den's chest is put on the nest by its activity, not by the build
+                pod = site.first("nest").above();
+            }
         } else {
             WorldSites.Site site = WorldSites.near(level, kind, player.blockPosition(), 600);
             if (site == null || !MapPlaces.built(level, WorldSites.idOf(site))) {
@@ -227,7 +231,7 @@ public final class StructureLoot {
         List<String> tables = new ArrayList<>();
         if (pod != null) {
             spots.add(pod);
-            tables.add("chests/pod_saiyajin");
+            tables.add(WorldSites.RADITZ.equals(kind) ? "chests/pod_saiyajin" : "estruturas/" + kind);
         }
         for (int i = 0; i < list.size(); i++) {
             spots.add(list.get(i).getKey());
@@ -247,7 +251,9 @@ public final class StructureLoot {
             source.sendSuccess(() -> Component.literal(line), false);
             BattlegroundsMod.LOGGER.info(line);
         }
-        BlockPos main = spots.get(0);
+        // beside the structure's own chest (not a barrel of supplies that happens to be nearer)
+        int mainAt = Math.max(0, tables.indexOf(WorldSites.RADITZ.equals(kind) ? "chests/pod_saiyajin" : "estruturas/" + kind));
+        BlockPos main = spots.get(mainAt);
         BlockPos feet = null;
         for (int r = 1; r <= 3 && feet == null; r++) {
             for (Direction d : Direction.Plane.HORIZONTAL) {
