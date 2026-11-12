@@ -571,6 +571,9 @@ public final class NarutoStructGen {
             res.mark("target", x, Y + 2, z);
             targets++;
         }
+        // the loot (StructureLoot): behind the middle stump, the lunch Kakashi left
+        w.force(0, Y + 1, -7, CHEST);
+        res.mark("loot", 0, Y + 1, -7);
         res.mark("center", 0, Y + 1, -2);
         return res;
     }
@@ -1510,6 +1513,9 @@ public final class NarutoStructGen {
             }
         }
         res.mark("pit", PX, Y - 5, PZ);
+        // the loot (StructureLoot): on the tower's ground floor, against the west wall, clear of the stair
+        w.force(-6, Y + 1, 0, CHEST);
+        res.mark("loot", -6, Y + 1, 0);
         res.mark("tower", 0, Y + 1, 0);
         res.mark("center", 0, Y + 1, 12);
         return res;
@@ -1684,6 +1690,9 @@ public final class NarutoStructGen {
         }
         w.force(cx - 6, cg + 1, cz - 2, LANTERN);
         w.force(cx - 6, cg + 1, cz + 2, LANTERN);
+        // the loot (StructureLoot): the toads' pantry, against the back wall of the house
+        w.force(cx + 4, cg + 1, cz, CHEST);
+        res.mark("loot", cx + 4, cg + 1, cz);
         res.mark("center", 0, Y + 1, 6);
         return res;
     }
@@ -1748,6 +1757,9 @@ public final class NarutoStructGen {
             int x = round(cos(a) * 7.8), z = round(sin(a) * 7.8);
             w.force(x, TY + 1, z, LANTERN);
         }
+        // the loot (StructureLoot): the prize of the climb, on the edge of the summoning circle
+        w.force(6, TY + 1, 3, CHEST);
+        res.mark("loot", 6, TY + 1, 3);
         res.mark("top", 0, TY + 1, 0);
         res.mark("foot", round(cos(Y * 0.24) * 9), Y + 1, round(sin(Y * 0.24) * 9));
         res.mark("center", 0, TY + 1, 0);

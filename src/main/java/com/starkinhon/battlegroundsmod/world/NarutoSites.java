@@ -96,6 +96,9 @@ public final class NarutoSites {
             for (Site site : data.sites.values()) {
                 if (!MapPlaces.built(level, site.id())) {
                     MapPlaces.startAt(level, place(level, site));
+                } else if (!VALE.equals(site.kind())) {
+                    // known to MapPlaces so a place built before the loot gets it when someone comes by (StructureLoot)
+                    MapPlaces.addWorldPlace(place(level, site));
                 }
             }
         }
