@@ -21,7 +21,6 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LeavesBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkGenerator;
-import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.RandomState;
 import net.minecraft.world.level.levelgen.feature.Feature;
 import net.minecraft.world.level.levelgen.feature.FeaturePlaceContext;
@@ -36,7 +35,6 @@ import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConf
 public final class LeafForestFeature extends Feature<NoneFeatureConfiguration> {
     // The voxels of the last trees grown: one giant is asked for by some 30 chunks.
     private static final Cache<Long, int[]> TREES = CacheBuilder.newBuilder().maximumSize(400).build();
-    private static final Cache<Long, Integer> HEIGHTS = CacheBuilder.newBuilder().maximumSize(60000).build();
 
     public LeafForestFeature(Codec<NoneFeatureConfiguration> codec) {
         super(codec);
@@ -118,12 +116,7 @@ public final class LeafForestFeature extends Feature<NoneFeatureConfiguration> {
     // The ground's first air block at a column, as the terrain is shaped before anything is built on it.
     // Keyed by the world's seed too: another world opened in the same game has other heights.
     static int height(ChunkGenerator generator, WorldGenLevel level, RandomState random, int seed, int x, int z) {
-        long key = (((long) x << 32) | (z & 0xFFFFFFFFL)) ^ ((long) seed * 0x9E3779B97F4A7C15L);
-        try {
-            return HEIGHTS.get(key, () -> generator.getBaseHeight(x, z, Heightmap.Types.OCEAN_FLOOR_WG, level, random));
-        } catch (ExecutionException e) {
-            return generator.getSeaLevel();
-        }
+        return TerrainHeight.at(generator, level, random, seed, x, z);
     }
 
     private static boolean biomeAt(ChunkGenerator generator, RandomState random, int x, int y, int z) {
