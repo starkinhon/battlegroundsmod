@@ -146,7 +146,7 @@ public final class FxWorld {
         boolean world = !PIECES.isEmpty() || MeteorRenderer.hasTrails() || Aura.active() || KatonBallRenderer.active() || AshDeath.hasSparks() || SoulCeremonyFx.active()
                 || SpaceScene.active() || EsferaRenderer.active() || HakaiRenderer.active() || EnergyRenderer.active() || BlackBoxRenderer.active() || AzulRenderer.active() || VermelhoRenderer.active() || BlackFlashRenderer.active() || RoxoRenderer.active() || AizenFx.active() || SwordFx.active() || MoonSlashRenderer.active() || MoonFormsRenderer.active() || PunchFxRenderer.active() || SubFx.active() || MakimaFx.active()
                 || SphereRenderer.active() || SusanooArm.active() || DomainScene.active() || VoidFlashScene.active() || FugaRenderer.active() || DismantleRenderer.active() || SukunaCutsRenderer.active() || SukunaDomainScene.active()
-                || ClivarRenderer.active() || CravadaRenderer.active() || FlightFx.active() || OpmFx.active();
+                || ClivarRenderer.active() || CravadaRenderer.active() || FlightFx.active() || OpmFx.active() || com.starkinhon.battlegroundsmod.client.fx.shig.ShigFx.active();
         if (!world && !ScreenFx.needsScene()) {
             return;
         }
@@ -364,6 +364,8 @@ public final class FxWorld {
             SukunaCutsRenderer.render(camera);
             ClivarRenderer.render(camera);
             CravadaRenderer.render(camera);
+            // Shigaraki's kit: the Decadência, the hands, the scream, the power, the dust (client/fx/shig).
+            com.starkinhon.battlegroundsmod.client.fx.shig.ShigFx.render(camera, partial);
         }
         if (!space) {
             // Sukuna's Fuga, over everything else: its fire is its own light in the dark.

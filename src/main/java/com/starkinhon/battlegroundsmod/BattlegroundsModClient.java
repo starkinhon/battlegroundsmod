@@ -119,6 +119,8 @@ public class BattlegroundsModClient {
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, true, RenderPlayerEvent.Post.class, com.starkinhon.battlegroundsmod.client.fx.LuffyFx::onRenderPlayerPost);
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, false, RenderLivingEvent.Pre.class, com.starkinhon.battlegroundsmod.client.fx.LuffyFx::onRenderLivingPre);
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, true, RenderLivingEvent.Post.class, com.starkinhon.battlegroundsmod.client.fx.LuffyFx::onRenderLivingPost);
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOW, false, RenderLivingEvent.Pre.class, com.starkinhon.battlegroundsmod.client.fx.shig.RegenFx::onRenderPre);
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOW, false, RenderLivingEvent.Post.class, com.starkinhon.battlegroundsmod.client.fx.shig.RegenFx::onRenderPost);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.DomainPanorama::onRenderFrame);
         NeoForge.EVENT_BUS.addListener(EventPriority.HIGHEST, false, RenderLivingEvent.Pre.class, com.starkinhon.battlegroundsmod.client.fx.SukunaDomainScene::onRenderLivingPre);
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, true, RenderLivingEvent.Post.class, com.starkinhon.battlegroundsmod.client.fx.SukunaDomainScene::onRenderLivingPost);
@@ -485,6 +487,7 @@ public class BattlegroundsModClient {
         ScreenFx.tick();
         FxWorld.tick();
         AshDeath.tick();
+        com.starkinhon.battlegroundsmod.client.fx.shig.ShigFx.tick();
         com.starkinhon.battlegroundsmod.client.fx.SoulCeremonyFx.tick();
         Aura.tick();
         SkillEffects.tick();

@@ -803,4 +803,94 @@ S['jj.batto_draw'] = hold(jjDraw, 1, 6, 8);
 const jjLine = { twist: -30, lean: 26, drop: 5, rl: { pitch: 50, out: 4 }, ll: { pitch: -40, out: 4 }, ra: { yaw: 50, pitch: -30 }, la: { yaw: 20, pitch: -90 }, head: { yaw: 0, pitch: -6 } };
 S['jj.line_cut'] = hold(jjLine, 1, 10, 8);
 
+// ===================== SHIGARAKI (My Hero Academia) =====================
+// The approved preview's poses (forja/shigaraki-tentaculos, poseZ/poseX/poseC/poseB/poseRG/poseShig/poseFM), the same
+// functions sampled every tick: "JOGO = PRÉVIA". The preview's figure faces +z with its armR/legR on +x, the character's
+// LEFT, so armR drives la and legR drives ll (the arm that regrows in the Regeneração, the preview's armL, is the MC
+// right arm, as in client/fx/shig/RegenFx). Its rotations are chest-relative (radians), the group's rotation.x is the lean
+// and position.y the crouch (blocks).
+const shigSm = (x) => { x = Math.max(0, Math.min(1, x)); return x * x * (3 - 2 * x); };
+const shigEo = (x) => 1 - Math.pow(1 - Math.max(0, Math.min(1, x)), 3);
+const SHIG_D = 180 / Math.PI;
+// One preview arm (rotation.x, rotation.z with + = out) to a world-relative arm of this file (yaw + = out, pitch + = up).
+function shigArm(rx, rz, lean) {
+  const out = Math.sin(rz), up = -Math.cos(rz) * Math.cos(rx), fwd = -Math.cos(rz) * Math.sin(rx);
+  const h = Math.hypot(out, fwd);
+  const pitch = Math.atan2(up, h) * SHIG_D;
+  const yaw = h < 0.04 ? 0 : Math.atan2(out, fwd) * SHIG_D;
+  return { yaw, pitch: pitch - lean };
+}
+// p: { g: {rx, y}, armR: [x, z], armL: [x, z], legR, legL, head } as the preview sets them.
+function shigKey(t, p) {
+  const lean = (p.g ? p.g.rx || 0 : 0) * SHIG_D;
+  const aR = p.armR || [0, 0.15], aL = p.armL || [0, -0.15];
+  return P(t, {
+    lean, drop: -(p.g ? p.g.y || 0 : 0) * 16,
+    la: shigArm(aR[0], aR[1], lean), ra: shigArm(aL[0], -aL[1], lean),
+    ll: { pitch: -(p.legR || 0) * SHIG_D, out: 2 }, rl: { pitch: -(p.legL || 0) * SHIG_D, out: 2 },
+    head: { yaw: 0, pitch: (p.head || 0) * SHIG_D },
+  }, 'linear');
+}
+function shigBake(len, fn) {
+  const keys = [];
+  for (let k = 0; k <= len; k++) keys.push(shigKey(k, fn(k / 20)));
+  keys.push(P(len + 1, REST, 'inout'));
+  return { keys };
+}
+// Z, the dash and the grab (Toque: CONTACT 11, LENGTH 48); missed, the palm comes down on the ground at 0.52 s.
+function shigZ(hit) {
+  return (t) => {
+    const wind = shigSm(t / 0.26), dash = shigEo((t - 0.26) / 0.3), rec = shigSm((t - 1.9) / 0.45);
+    let armX = 0.6 * wind - 2.2 * dash, lean = 0.25 * wind + 0.25 * dash, crouch = 0.1 * wind;
+    if (!hit) { const sl = shigSm((t - 0.52) / 0.1); armX += sl * 1.25; lean -= sl * 0.15; crouch += sl * 0.38; }
+    armX *= 1 - rec; lean *= 1 - rec; crouch *= 1 - rec;
+    return { g: { rx: lean, y: -crouch }, armR: [armX, 0.12 * (1 - dash)], armL: [-0.3 * dash * (1 - rec), -0.35 - 0.3 * wind * (1 - rec)],
+      legR: -0.5 * lean, legL: 0.4 * lean, head: 0.1 * lean - (hit ? 0.1 * shigSm((t - 0.55) / 0.2) * (1 - rec) : 0) };
+  };
+}
+S['shig.toque'] = shigBake(48, shigZ(true));
+S['shig.toque_erra'] = shigBake(48, shigZ(false));
+// X, the breath in and the scream (Onda: BREATH 6, the scream out at 0.3 s).
+S['shig.grito'] = shigBake(42, (t) => {
+  const inh = shigSm(t / 0.3) * (1 - shigSm((t - 0.3) / 0.06)), scr = shigSm((t - 0.3) / 0.08) * (1 - shigSm((t - 1.55) / 0.5));
+  return { g: { rx: 0.12 * inh - 0.14 * scr, y: -0.06 * inh }, head: 0.3 * inh - 0.42 * scr,
+    armR: [-0.35 * inh + 0.55 * scr, 0.1 + 0.6 * scr], armL: [-0.35 * inh + 0.55 * scr, -0.1 - 0.6 * scr], legR: -0.2 * scr, legL: 0.25 * scr };
+});
+// C, the slap on the ground (0.3 s).
+S['shig.tapa'] = shigBake(22, (t) => {
+  const wind = shigSm(t / 0.3), sl = shigSm((t - 0.3) / 0.08), rec = shigSm((t - 0.75) / 0.35), k = 1 - rec;
+  return { g: { rx: (0.2 * wind + 0.45 * sl) * k, y: -(0.12 * wind + 0.3 * sl) * k }, armR: [(0.5 * wind - 2.3 * sl) * k, 0.1],
+    armL: [-0.2 * sl * k, -0.3 * sl * k], legR: -0.7 * sl * k, legL: 0.35 * sl * k, head: -0.15 * sl * k };
+});
+// B, the look, the dash and the hand on the head while the power drains (Absorver: LENGTH 50).
+S['shig.absorver'] = shigBake(50, (t) => {
+  const look = shigSm(t / 0.35), dash = shigEo((t - 0.4) / 0.25), rec = shigSm((t - 2.0) / 0.45);
+  return { g: { rx: 0.15 * dash * (1 - rec), y: 0 }, head: -0.12 * look * (1 - dash) + 0.1 * dash * (1 - rec),
+    armR: [-1.75 * dash * (1 - rec), 0.1], armL: [-0.4 * dash * (1 - rec), -0.25], legR: -0.3 * dash * (1 - rec), legL: 0.25 * dash * (1 - rec) };
+});
+// B again, the stolen power out of the hand: the arm comes up in 0.12 s and holds to 0.6 s.
+S['shig.usar'] = shigBake(18, (t) => ({ armR: [-1.6 * shigSm(t / 0.12) * (1 - shigSm((t - 0.6) / 0.3)), 0.1] }));
+// Shift+Z, hunched, the free hand holding the shoulder that remakes itself, the heartbeat in the body (LENGTH 88).
+S['shig.regen'] = shigBake(88, (t) => {
+  const hunch = shigSm(t / 0.3) * (1 - shigSm((t - 3.7) / 0.5));
+  const ph = (t * 1.55) % 1, hb = Math.exp(-ph * 18) + 0.6 * Math.exp(-Math.max(ph - 0.16, 0) * 22) * (ph > 0.16 ? 1 : 0);
+  return { g: { rx: 0.32 * hunch + 0.03 * hb * hunch, y: -0.14 * hunch }, legR: -0.5 * hunch, legL: 0.25 * hunch, head: 0.42 * hunch,
+    armR: [-1.25 * hunch, -0.85 * hunch], armL: [-0.15 * hunch, -0.18 * hunch + Math.sin(t * 31) * 0.03 * hunch * (1 - shigSm((t - 2.6) / 0.4))] };
+});
+// V, the arms open like in the anime while the hands sprout from his back (Tentaculos: LENGTH 184).
+S['shig.tentaculos'] = shigBake(184, (t) => {
+  const open = shigSm(t / 0.45) * (1 - shigSm((t - 7.6) / 0.8)), br = Math.sin(t * 2) * 0.03;
+  return { armR: [-open * 0.5, 0.15 + open * 1.25 + br], armL: [-open * 0.5, -0.15 - open * 1.25 - br], head: -open * 0.18 + Math.sin(t * 13) * 0.02 * open };
+});
+// Shift+V, down on one knee, the open hand raised over the head and slammed flat on the ground at 1.5 s (FimDoMundo:
+// TOUCH 30, LENGTH 230).
+S['shig.fim'] = shigBake(230, (t) => {
+  const T = 1.5, kneel = shigSm(t / 0.9) * (1 - shigSm((t - 9.6) / 1.0)), raise = shigSm((t - 0.35) / 0.7);
+  const slam = shigEo((t - (T - 0.16)) / 0.16), up = 1 - shigSm((t - 9.6) / 1.0), lean = (0.12 * kneel + 0.42 * slam) * up;
+  const armUp = -2.85 * raise * (1 - slam), armDown = (-lean - 0.32) * slam;
+  return { g: { rx: lean, y: -0.42 * kneel }, legR: 1.35 * kneel, legL: -1.05 * kneel,
+    armR: [(armUp + armDown) * up, 0.18 * (1 - slam) * raise], armL: [-0.2 * kneel, -0.55 * kneel],
+    head: (0.35 * kneel - 0.2 * raise * (1 - slam) + 0.25 * slam) * up };
+});
+
 module.exports = S;

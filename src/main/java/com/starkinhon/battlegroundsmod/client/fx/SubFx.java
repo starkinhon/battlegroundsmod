@@ -97,6 +97,10 @@ public final class SubFx {
             BleachFx.receive(kind, id, pos, dir, a, b, c);
             return;
         }
+        if (com.starkinhon.battlegroundsmod.client.fx.shig.ShigFx.handles(kind)) {
+            com.starkinhon.battlegroundsmod.client.fx.shig.ShigFx.receive(kind, id, pos, dir, a, b, c);
+            return;
+        }
         if (kind >= SubNet.KI_BEAM) {
             DbFx.receive(kind, id, pos, dir, a, b, c);
             return;

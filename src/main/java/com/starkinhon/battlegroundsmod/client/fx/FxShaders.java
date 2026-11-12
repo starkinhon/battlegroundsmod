@@ -227,6 +227,8 @@ public final class FxShaders {
         } catch (Exception e) {
             BattlegroundsMod.LOGGER.error("Could not load the Shenlong shaders", e);
         }
+        // Shigaraki's (each on its own inside).
+        com.starkinhon.battlegroundsmod.client.fx.shig.ShigShaders.register(event);
         // On its own: without it the duel still plays, just without its sky.
         try {
             register(event, "souls_duel_sky", DefaultVertexFormat.POSITION, s -> duelSky = s);
