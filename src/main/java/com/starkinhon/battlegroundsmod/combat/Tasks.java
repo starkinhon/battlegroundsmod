@@ -157,6 +157,11 @@ public final class Tasks {
             Entry entry = it.next();
             if (entry.cancelled) {
                 it.remove();
+                if (entry.link != null) {
+                    // The attack it was moving is over too: it no longer counts as flying (bots dodged a ghost of it, the
+                    // hakaizinho could "erase" it) until Destructible dropped it two minutes later.
+                    entry.link.end();
+                }
                 if (entry.onCancel != null) {
                     Entity before = current;
                     current = entry.owner;
