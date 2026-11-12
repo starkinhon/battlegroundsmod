@@ -1,5 +1,5 @@
 # Reabre o mundo Souls já criado e confere fortaleza/minas/tags depois de carregar do disco.
-# gradlew runClient -Pmundo=SoulsTipo2 -Proteiro=mundo-souls-recarga
+# gradlew runClient -Pmundo=SoulsTipo3 -Proteiro=mundo-souls-recarga
 espera 200
 devc marca recarga
 execute as @s run data get entity @s Pos
@@ -8,5 +8,5 @@ locate structure minecraft:stronghold
 locate structure minecraft:mineshaft
 locate structure minecraft:trial_chambers
 locate biome battlegroundsmod:terras_do_dragao
-espera 40
+espera 600
 sair
