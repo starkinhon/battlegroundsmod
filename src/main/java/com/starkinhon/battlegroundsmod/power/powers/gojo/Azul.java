@@ -940,4 +940,10 @@ public final class Azul {
         x = Mth.clamp(x, 0, 1);
         return x * x * (3 - 2 * x);
     }
+
+    // The world closed (ServerReset): nothing of it is kept for the next one (old entities, old game times).
+    public static void resetStatics() {
+        CONTROLS.clear();
+        LIVE.clear();
+    }
 }
