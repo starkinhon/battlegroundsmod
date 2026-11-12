@@ -1335,5 +1335,15 @@
   "block.battlegroundsmod.folhas_de_pinheiro": "Pine Needles",
   "block.battlegroundsmod.folhas_de_pinheiro_escura": "Dark Pine Needles",
   "block.battlegroundsmod.corda": "Rope",
-  "biome.battlegroundsmod.mar_da_nevoa": "Mist Sea"
+  "biome.battlegroundsmod.mar_da_nevoa": "Mist Sea",
+  "block.battlegroundsmod.metal_da_chuva": "Rain Metal",
+  "block.battlegroundsmod.metal_da_chuva_escuro": "Dark Rain Metal",
+  "block.battlegroundsmod.anel_de_metal": "Metal Ring",
+  "block.battlegroundsmod.ferrugem": "Rust",
+  "block.battlegroundsmod.ferrugem_clara": "Light Rust",
+  "block.battlegroundsmod.janela_escura": "Dark Window",
+  "block.battlegroundsmod.janela_acesa": "Lit Window",
+  "block.battlegroundsmod.cano_de_metal": "Metal Pipe",
+  "block.battlegroundsmod.espeto_de_metal": "Metal Spike",
+  "biome.battlegroundsmod.vila_da_chuva": "Rain Village"
 }

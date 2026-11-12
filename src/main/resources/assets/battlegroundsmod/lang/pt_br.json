@@ -1343,5 +1343,15 @@
   "block.battlegroundsmod.folhas_de_pinheiro": "Folhas de Pinheiro",
   "block.battlegroundsmod.folhas_de_pinheiro_escura": "Folhas de Pinheiro Escuras",
   "block.battlegroundsmod.corda": "Corda",
-  "biome.battlegroundsmod.mar_da_nevoa": "Mar da Névoa"
+  "biome.battlegroundsmod.mar_da_nevoa": "Mar da Névoa",
+  "block.battlegroundsmod.metal_da_chuva": "Metal da Chuva",
+  "block.battlegroundsmod.metal_da_chuva_escuro": "Metal da Chuva Escuro",
+  "block.battlegroundsmod.anel_de_metal": "Anel de Metal",
+  "block.battlegroundsmod.ferrugem": "Ferrugem",
+  "block.battlegroundsmod.ferrugem_clara": "Ferrugem Clara",
+  "block.battlegroundsmod.janela_escura": "Janela Escura",
+  "block.battlegroundsmod.janela_acesa": "Janela Acesa",
+  "block.battlegroundsmod.cano_de_metal": "Cano de Metal",
+  "block.battlegroundsmod.espeto_de_metal": "Espeto de Metal",
+  "biome.battlegroundsmod.vila_da_chuva": "Vila da Chuva"
 }

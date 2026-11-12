@@ -69,12 +69,16 @@ public final class ModWorldgen {
     // The Mar da Névoa's stone pillars, islets, needles, old piers and rope bridges (MistSeaFeature).
     public static final Supplier<MistSeaFeature> MIST_SEA = FEATURES.register("mist_sea",
             () -> new MistSeaFeature(NoneFeatureConfiguration.CODEC));
+    // The Vila da Chuva's ground, metal towers, stumps and pipes (RainVillageFeature).
+    public static final Supplier<RainVillageFeature> RAIN_VILLAGE = FEATURES.register("rain_village",
+            () -> new RainVillageFeature(NoneFeatureConfiguration.CODEC));
 
     // The Naruto biomes of the normal overworld (put there by NarutoRegion).
     public static final ResourceKey<Biome> FLORESTA_DA_FOLHA = biome("floresta_da_folha");
     public static final ResourceKey<Biome> FLORESTA_DA_MORTE = biome("floresta_da_morte");
     public static final ResourceKey<Biome> DESERTO_DO_VENTO = biome("deserto_do_vento");
     public static final ResourceKey<Biome> MAR_DA_NEVOA = biome("mar_da_nevoa");
+    public static final ResourceKey<Biome> VILA_DA_CHUVA = biome("vila_da_chuva");
     public static final TagKey<Biome> NARUTO_BIOMES = TagKey.create(Registries.BIOME,
             ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "universe_naruto"));
 

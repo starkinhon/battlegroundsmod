@@ -87,6 +87,18 @@ public final class ModBlocks {
             () -> new net.minecraft.world.level.block.ChainBlock(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD)
                     .strength(0.8f).sound(SoundType.WOOL).noOcclusion().ignitedByLava()));
 
+    // Vila da Chuva (Stark 2026-11-11): the towers' dark metal in panels, the reinforcing rings, rust in two tones, the
+    // windows (dark, and lit amber at night), the pipes and the crown's spikes.
+    public static final DeferredBlock<Block> RAIN_METAL = metal("metal_da_chuva", 0);
+    public static final DeferredBlock<Block> RAIN_METAL_DARK = metal("metal_da_chuva_escuro", 0);
+    public static final DeferredBlock<Block> RAIN_RIB = metal("anel_de_metal", 0);
+    public static final DeferredBlock<Block> RUST = metal("ferrugem", 0);
+    public static final DeferredBlock<Block> RUST_LIGHT = metal("ferrugem_clara", 0);
+    public static final DeferredBlock<Block> RAIN_WINDOW = metal("janela_escura", 0);
+    public static final DeferredBlock<Block> RAIN_WINDOW_LIT = metal("janela_acesa", 12);
+    public static final DeferredBlock<Block> RAIN_PIPE = metal("cano_de_metal", 0);
+    public static final DeferredBlock<Block> RAIN_SPIKE = metal("espeto_de_metal", 0);
+
     static {
         BLOCK_ITEMS.registerSimpleBlockItem(DEATH_LEAVES);
         BLOCK_ITEMS.registerSimpleBlockItem(DEATH_LEAVES_LIGHT);
@@ -105,6 +117,15 @@ public final class ModBlocks {
         BLOCK_ITEMS.registerSimpleBlockItem(PINE_LEAVES);
         BLOCK_ITEMS.registerSimpleBlockItem(PINE_LEAVES_DARK);
         BLOCK_ITEMS.registerSimpleBlockItem(ROPE);
+        BLOCK_ITEMS.registerSimpleBlockItem(RAIN_METAL);
+        BLOCK_ITEMS.registerSimpleBlockItem(RAIN_METAL_DARK);
+        BLOCK_ITEMS.registerSimpleBlockItem(RAIN_RIB);
+        BLOCK_ITEMS.registerSimpleBlockItem(RUST);
+        BLOCK_ITEMS.registerSimpleBlockItem(RUST_LIGHT);
+        BLOCK_ITEMS.registerSimpleBlockItem(RAIN_WINDOW);
+        BLOCK_ITEMS.registerSimpleBlockItem(RAIN_WINDOW_LIT);
+        BLOCK_ITEMS.registerSimpleBlockItem(RAIN_PIPE);
+        BLOCK_ITEMS.registerSimpleBlockItem(RAIN_SPIKE);
         BLOCK_ITEMS.registerSimpleBlockItem(LEAF_LEAVES);
         BLOCK_ITEMS.registerSimpleBlockItem(LEAF_LEAVES_LIGHT);
         BLOCK_ITEMS.registerSimpleBlockItem(LEAF_LEAVES_DARK);
@@ -133,6 +154,11 @@ public final class ModBlocks {
         return BLOCKS.register(name, () -> new net.minecraft.world.level.block.CarpetBlock(BlockBehaviour.Properties.of()
                 .mapColor(MapColor.DIRT).strength(0.1f).sound(SoundType.GRASS).noOcclusion().pushReaction(
                         net.minecraft.world.level.material.PushReaction.DESTROY)));
+    }
+
+    private static DeferredBlock<Block> metal(String name, int light) {
+        return BLOCKS.registerSimpleBlock(name, BlockBehaviour.Properties.of().mapColor(MapColor.METAL)
+                .requiresCorrectToolForDrops().strength(4.0f, 6.0f).sound(SoundType.METAL).lightLevel(state -> light));
     }
 
     private static DeferredBlock<Block> rock(String name, MapColor color) {

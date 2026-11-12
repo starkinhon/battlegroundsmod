@@ -24,8 +24,8 @@ import terrablender.api.Regions;
 // and jungles there), the big warm woods of Konoha. Its mountains, rivers and caves stay vanilla, and the land keeps
 // vanilla's shape. The Floresta da Morte (Stark 2026-11-11) borders it on the wettest side, as in the anime it lies
 // inside Konoha's woods. The Deserto do Vento (Stark 2026-11-11) takes the same band's dry side, and the Mar da Névoa
-// (Stark 2026-11-11) the cold and middle seas. The other Naruto biomes come into the bands still vanilla here, one by
-// one.
+// (Stark 2026-11-11) the cold and middle seas. The Vila da Chuva (Stark 2026-11-11) takes the cool band's wet side. The
+// other Naruto biomes come into the bands still vanilla here, one by one.
 public final class NarutoRegion extends Region {
     // Against vanilla's 10 and the Dragon Ball's 8.
     private static final int WEIGHT = 6;
@@ -79,6 +79,10 @@ public final class NarutoRegion extends Region {
         }
         if (t == 3 && h >= 2) {
             return ModWorldgen.FLORESTA_DA_FOLHA;
+        }
+        // the Vila da Chuva on the cool band's wet side (vanilla's taigas there), next to the Mar da Névoa's cold seas
+        if (t == 1 && h >= 2) {
+            return ModWorldgen.VILA_DA_CHUVA;
         }
         // the Deserto do Vento on the warm band's dry side (vanilla's savannas there), next to the Folha like the Land of
         // Wind next to the Land of Fire
