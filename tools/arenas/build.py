@@ -1,9 +1,11 @@
 """Builds the challenge arenas: one structure file per arena for the mod and one mesh per arena for the web preview.
 
-  MC_ASSETS=<extracted client jar> python3 tools/arenas/build.py <out dir> [arena ids...]
+  MC_ASSETS=<extracted client jar> python3 tools/arenas/build.py <out dir> [arena ids...] [--mod src/main/resources]
 
-Writes <out>/arenas/<id>.bin (preview mesh), <out>/atlas.png/json, <out>/arenas.json (names, sky, fight radius,
-spawn points) and, with --nbt <dir>, the structure files the mod loads (data/battlegroundsmod/structure/arena/<id>.nbt).
+Writes <out>/arenas/<id>.wasm (preview mesh), <out>/atlas.png/json, <out>/arenas.json (names, sky, fight radius,
+spawn points) and, with --mod <resources dir>, what the mod loads (modexport.py): the blocks of each arena
+(data/battlegroundsmod/souls_arenas/<id>.bin), their meta (souls_arenas/arenas.json) and one biome per arena for its
+sky, fog and grass colours (worldgen/biome/arena_<id>.json). The game places exactly these blocks: JOGO = PRÉVIA.
 """
 import json, os, sys, time
 sys.path.insert(0, os.path.dirname(__file__))
@@ -12,9 +14,9 @@ from arenas_all import ARENAS
 
 def main():
     args = sys.argv[1:]
-    nbt_dir = None
-    if '--nbt' in args:
-        i = args.index('--nbt'); nbt_dir = args[i + 1]; del args[i:i + 2]
+    mod_dir = None
+    if '--mod' in args:
+        i = args.index('--mod'); mod_dir = args[i + 1]; del args[i:i + 2]
     out = args[0]
     want = args[1:] or list(ARENAS)
     os.makedirs(os.path.join(out, 'arenas'), exist_ok=True)
@@ -32,9 +34,9 @@ def main():
         m['blocks'] = sum(1 for b in v.b.values() if b != 'minecraft:air')
         m['quads'] = (len(o.idx) + len(tr.idx)) // 6
         meta[aid] = m
-        if nbt_dir:
-            os.makedirs(nbt_dir, exist_ok=True)
-            v.save_nbt(os.path.join(nbt_dir, aid + '.nbt'))
+        if mod_dir:
+            import modexport
+            modexport.export(mod_dir, aid, v, m)
         print(aid, m['blocks'], 'blocks', m['quads'], 'quads', '%.1fs' % (time.time() - t), flush=True)
     # one atlas for everything built in this run (re-run all arenas together for the final page)
     atlas.save(os.path.join(out, 'atlas.png'), os.path.join(out, 'atlas.json'))

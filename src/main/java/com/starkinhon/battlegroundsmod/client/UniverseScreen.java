@@ -45,7 +45,7 @@ public class UniverseScreen extends Screen {
         cards.clear();
         Minecraft mc = Minecraft.getInstance();
         String here = mc.player == null ? null : Universes.universeOf(mc.player.level().dimension());
-        List<ChallengeSpec.Universe> universes = ChallengeSpec.get().universos();
+        List<ChallengeSpec.Universe> universes = ChallengeSpec.get().universos().stream().filter(ChallengeSpec.Universe::world).toList();
         int margin = 20;
         int columns = width >= 560 ? 3 : width >= 360 ? 2 : 1;
         int gap = 10;

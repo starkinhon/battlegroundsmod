@@ -63,23 +63,38 @@ import net.neoforged.neoforge.network.PacketDistributor;
 // - stamps the card DERROTADO in the book;
 // - lets that character spawn in its universe's world (before that, only rarely: chanceRara);
 // - brings the player back home after a few seconds (time to pick up the soul).
-// All arenas live in one void dimension (battlegroundsmod:arenas), one slot each, built from code in the universe's
-// blocks (padrao.desafios.json) and rebuilt clean before every fight. Dying or leaving ends the fight.
+// All arenas live in a void dimension (battlegroundsmod:arenas, or arenas_noite for the ones that happen at night), one
+// slot each. Each arena is the canon place of that fight (Stark 2026-11-12), made by tools/arenas and read from
+// souls_arenas/<id>.bin (ArenaTemplate): the same blocks the web preview shows. Before every fight it is put back the
+// way the generator made it over a few ticks (the fight circle cleaned of what the last fight left), with its own
+// biome for the sky, fog and grass colours, and invisible walls round the fight circle. Dying or leaving ends the fight.
 // A universe's bosses open once the player beats some of its SubAlmas (subAlmasParaChefes).
 // With /gamerule soulsProgressao false (arena mode) or in a flat world everything stays free, spawns included.
 public final class ChallengeArenas {
     public static final ResourceKey<Level> ARENAS = ResourceKey.create(Registries.DIMENSION,
             ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "arenas"));
-    private static final int SPACING = 400;
+    // Same void, the clock stopped at midnight: Shibuya on Halloween night, the metro, the Infinity Castle.
+    public static final ResourceKey<Level> ARENAS_NIGHT = ResourceKey.create(Registries.DIMENSION,
+            ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "arenas_noite"));
+    // The scenery of an arena reaches ~180 blocks from its centre; the old round arenas (every 400 blocks on z = 0)
+    // stay behind, out of sight, on their own row.
+    public static final int SPACING = 1024;
+    public static final int ROW_Z = 8192;
     private static final int FLOOR_Y = 64;
+    // Blocks checked or placed per tick while an arena is being put back (the biggest has ~600k).
+    private static final int BUILD_BUDGET = 40000;
+    private static final int FLAGS = Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE | Block.UPDATE_SUPPRESS_DROPS;
     private static final int COUNTDOWN = 80;
     private static final int RETURN_DELAY = 240;
 
-    private enum State { COUNTDOWN, FIGHT, DONE }
+    private enum State { BUILDING, COUNTDOWN, FIGHT, DONE }
 
     private static final class Session {
         String id;
         BlockPos center;
+        ResourceKey<Level> arena;
+        ArenaTemplate.Meta meta;
+        Build build;
         ResourceKey<Level> backLevel;
         Vec3 backPos;
         float backYaw;
@@ -94,6 +109,40 @@ public final class ChallengeArenas {
     private static final Map<UUID, Session> SESSIONS = new HashMap<>();
 
     private ChallengeArenas() {
+    }
+
+    public static boolean isArena(ResourceKey<Level> dimension) {
+        return dimension.equals(ARENAS) || dimension.equals(ARENAS_NIGHT);
+    }
+
+    // Which arena a position in the arena dimensions belongs to (the client's fog, Fx), or null.
+    public static String arenaAt(double x, double z) {
+        if (Math.abs(z - ROW_Z) > SPACING / 2.0) {
+            return null;
+        }
+        int slot = (int) Math.round(x / SPACING);
+        ChallengeSpec spec = ChallengeSpec.get();
+        int index = 0;
+        for (ChallengeSpec.Universe universe : spec.universos()) {
+            for (ChallengeSpec.Challenge c : universe.desafios()) {
+                if (index++ == slot) {
+                    return c.id();
+                }
+            }
+        }
+        return null;
+    }
+
+    // The fight floor's height: low enough for the tallest scenery, high enough for the deepest (the world is 0-255).
+    private static int floorY(ArenaTemplate.Meta meta) {
+        int y = Math.max(FLOOR_Y, 2 - meta.minY());
+        return Math.min(y, 254 - meta.maxY());
+    }
+
+    // What an arena without a generated file falls back to: the old round arena of its universe's blocks.
+    private static ArenaTemplate.Meta discMeta(String id, ChallengeSpec spec) {
+        int r = spec.raio();
+        return new ArenaTemplate.Meta(id, r, spec.altura(), new int[] {0, 1, -r / 2}, new int[] {0, 1, r / 2}, null, false, -3, 0, id);
     }
 
     public static void register() {
@@ -177,7 +226,13 @@ public final class ChallengeArenas {
         ChallengeSpec spec = ChallengeSpec.get();
         int slot = spec.slot(id);
         ChallengeSpec.Universe universe = spec.universeOf(id);
-        ServerLevel arena = player.server.getLevel(ARENAS);
+        ArenaTemplate.Meta meta = ArenaTemplate.meta(id);
+        ArenaTemplate template = meta == null ? null : ArenaTemplate.get(id);
+        if (template == null) {
+            meta = discMeta(id, spec);
+        }
+        ResourceKey<Level> key = meta.noite() && player.server.getLevel(ARENAS_NIGHT) != null ? ARENAS_NIGHT : ARENAS;
+        ServerLevel arena = player.server.getLevel(key);
         if (slot < 0 || universe == null) {
             return;
         }
@@ -205,17 +260,45 @@ public final class ChallengeArenas {
         }
         Session session = new Session();
         session.id = id;
-        session.center = new BlockPos(slot * SPACING, FLOOR_Y, 0);
-        boolean fromArena = player.level().dimension().equals(ARENAS);
+        session.meta = meta;
+        session.arena = key;
+        session.center = new BlockPos(slot * SPACING, template == null ? FLOOR_Y : floorY(meta), ROW_Z);
+        boolean fromArena = isArena(player.level().dimension());
         session.backLevel = fromArena ? Universes.homeLevel(player).dimension() : player.level().dimension();
         session.backPos = fromArena ? Universes.homePos(player) : player.position();
         session.backYaw = player.getYRot();
-        build(arena, session.center, spec, universe);
-        session.fightAt = arena.getGameTime() + COUNTDOWN;
         SESSIONS.put(player.getUUID(), session);
-        player.teleportTo(arena, session.center.getX() + 0.5, FLOOR_Y + 1, session.center.getZ() - spec.raio() / 2.0 + 0.5, 0, 0);
-        title(player, Component.translatable("message.battlegroundsmod.arena_title", name(id))
-                .withStyle(s -> s.withColor(universe.color()).withBold(true)), Component.translatable("message.battlegroundsmod.arena_ready"));
+        if (template == null) {
+            buildDisc(arena, session.center, spec, universe);
+            enter(player, arena, session);
+            return;
+        }
+        // Put the arena back over the next ticks; the player goes in when it is ready (about a second).
+        session.state = State.BUILDING;
+        session.build = new Build(template, meta, session.center, arena);
+        player.displayClientMessage(Component.translatable("message.battlegroundsmod.arena_building", name(id)), true);
+    }
+
+    // The arena is ready: the player comes in at their side, facing the challenger's, and the countdown starts.
+    private static void enter(ServerPlayer player, ServerLevel arena, Session session) {
+        ArenaTemplate.Meta meta = session.meta;
+        int r = meta.raio();
+        AABB box = new AABB(session.center).inflate(r + 3, 0, r + 3).expandTowards(0, meta.altura() + 4, 0).expandTowards(0, -16, 0);
+        for (Entity entity : arena.getEntities((Entity) null, box, e -> !(e instanceof Player))) {
+            entity.discard();
+        }
+        BlockPos c = session.center;
+        double px = c.getX() + meta.jogador()[0] + 0.5, py = c.getY() + meta.jogador()[1], pz = c.getZ() + meta.jogador()[2] + 0.5;
+        double dx = meta.desafiante()[0] - meta.jogador()[0], dz = meta.desafiante()[2] - meta.jogador()[2];
+        float yaw = (float) (Mth.atan2(dz, dx) * Mth.RAD_TO_DEG) - 90f;
+        session.fightAt = arena.getGameTime() + COUNTDOWN;
+        session.state = State.COUNTDOWN;
+        player.teleportTo(arena, px, py, pz, yaw, 0);
+        player.fallDistance = 0;
+        ChallengeSpec.Universe universe = ChallengeSpec.get().universeOf(session.id);
+        int color = universe == null ? 0xFFFFFF : universe.color();
+        title(player, Component.translatable("message.battlegroundsmod.arena_title", name(session.id))
+                .withStyle(s -> s.withColor(color).withBold(true)), Component.translatable("message.battlegroundsmod.arena_ready"));
         Fx.sound(arena, Vec3.atCenterOf(session.center), SoundEvents.END_PORTAL_SPAWN, 0.6f, 1.4f);
     }
 
@@ -223,7 +306,7 @@ public final class ChallengeArenas {
     public static void leave(ServerPlayer player) {
         Session session = SESSIONS.remove(player.getUUID());
         if (session == null) {
-            if (player.level().dimension().equals(ARENAS)) {
+            if (isArena(player.level().dimension())) {
                 Vec3 home = Universes.homePos(player);
                 player.teleportTo(Universes.homeLevel(player), home.x, home.y, home.z, player.getYRot(), 0);
             }
@@ -245,7 +328,7 @@ public final class ChallengeArenas {
         }
         // A soul still lying in the arena goes home with the player: it is the prize of the fight.
         List<ItemStack> souls = new ArrayList<>();
-        ServerLevel arena = player.server.getLevel(ARENAS);
+        ServerLevel arena = session.arena == null ? null : player.server.getLevel(session.arena);
         if (arena != null && session.center != null) {
             AABB box = new AABB(session.center).inflate(80, 64, 80);
             for (net.minecraft.world.entity.item.ItemEntity item : arena.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, box,
@@ -263,7 +346,7 @@ public final class ChallengeArenas {
     }
 
     private static void removeBoss(MinecraftServer server, Session session) {
-        ServerLevel arena = server.getLevel(ARENAS);
+        ServerLevel arena = session.arena == null ? null : server.getLevel(session.arena);
         if (arena != null && session.boss != null) {
             Entity boss = arena.getEntity(session.boss);
             if (boss != null && boss.isAlive()) {
@@ -282,17 +365,23 @@ public final class ChallengeArenas {
             return;
         }
         MinecraftServer server = event.getServer();
-        ServerLevel arena = server.getLevel(ARENAS);
         for (Map.Entry<UUID, Session> entry : new ArrayList<>(SESSIONS.entrySet())) {
             Session session = entry.getValue();
             ServerPlayer player = server.getPlayerList().getPlayer(entry.getKey());
-            if (player == null || arena == null || player.level() != arena) {
+            ServerLevel arena = server.getLevel(session.arena);
+            if (player == null || arena == null || (session.state != State.BUILDING && player.level() != arena)) {
                 SESSIONS.remove(entry.getKey());
                 removeBoss(server, session);
                 continue;
             }
             long now = arena.getGameTime();
             switch (session.state) {
+                case BUILDING -> {
+                    if (session.build.step(BUILD_BUDGET)) {
+                        session.build = null;
+                        enter(player, arena, session);
+                    }
+                }
                 case COUNTDOWN -> {
                     long left = session.fightAt - now;
                     if (left == 60 || left == 40 || left == 20) {
@@ -332,12 +421,15 @@ public final class ChallengeArenas {
     // Thrown out of the ring (Stark 2026-11-10: the Shikamaru's shadow walked the Kakashi out of it, and the fight and
     // the soul were lost): back in, at the far side from the player's start.
     private static void keepInside(Entity boss, Session session) {
-        int radius = ChallengeSpec.get().raio();
+        ArenaTemplate.Meta meta = session.meta;
+        int radius = meta.raio();
         double dx = boss.getX() - (session.center.getX() + 0.5);
         double dz = boss.getZ() - (session.center.getZ() + 0.5);
-        boolean out = dx * dx + dz * dz > (radius - 1.0) * (radius - 1.0) || boss.getY() < FLOOR_Y - 4 || boss.getY() > FLOOR_Y + 60;
+        double y = boss.getY() - session.center.getY();
+        boolean out = dx * dx + dz * dz > (radius - 1.0) * (radius - 1.0) || y < -12 || y > meta.altura() + 20;
         if (out) {
-            boss.teleportTo(session.center.getX() + 0.5, FLOOR_Y + 1, session.center.getZ() + radius / 2.0 + 0.5);
+            BlockPos at = spawnPos(session);
+            boss.teleportTo(at.getX() + 0.5, at.getY(), at.getZ() + 0.5);
             boss.setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
             boss.fallDistance = 0;
         }
@@ -345,9 +437,7 @@ public final class ChallengeArenas {
 
     private static void spawnBoss(ServerPlayer player, ServerLevel arena, Session session) {
         EntityType<?> type = entityType(session.id);
-        int radius = ChallengeSpec.get().raio();
-        Entity boss = type == null ? null
-                : type.spawn(arena, session.center.offset(0, 1, radius / 2), MobSpawnType.EVENT);
+        Entity boss = type == null ? null : type.spawn(arena, spawnPos(session), MobSpawnType.EVENT);
         if (boss == null) {
             SESSIONS.remove(player.getUUID());
             sendBack(player, session);
@@ -362,6 +452,11 @@ public final class ChallengeArenas {
         session.state = State.FIGHT;
         title(player, Component.translatable("message.battlegroundsmod.arena_fight").withStyle(s -> s.withColor(0xFF4A3A).withBold(true)), Component.empty());
         Fx.sound(arena, player.position(), SoundEvents.RAID_HORN.value(), 0.7f, 1.2f);
+    }
+
+    private static BlockPos spawnPos(Session session) {
+        int[] d = session.meta.desafiante();
+        return session.center.offset(d[0], d[1], d[2]);
     }
 
     private static void win(ServerPlayer player, Session session, long now) {
@@ -453,7 +548,7 @@ public final class ChallengeArenas {
     private static void onLogin(PlayerEvent.PlayerLoggedInEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
             syncWins(player);
-            if (player.level().dimension().equals(ARENAS) && !SESSIONS.containsKey(player.getUUID())) {
+            if (isArena(player.level().dimension()) && !SESSIONS.containsKey(player.getUUID())) {
                 leave(player);
             }
         }
@@ -520,9 +615,164 @@ public final class ChallengeArenas {
         }
     }
 
-    // Builds (or cleans) one arena: a round floor of the universe's blocks over two solid layers and a barrier, broken
-    // pillars around the edge, invisible walls and ceiling, and nothing left inside from the last fight.
-    private static void build(ServerLevel level, BlockPos center, ChallengeSpec spec, ChallengeSpec.Universe universe) {
+    // Puts one generated arena back, a slice per tick (step): 1. every block the generator made (only where the world
+    // differs, so after the first time it is mostly checking); 2. the fight circle and a little past it cleaned of what
+    // the last fight left (holes filled above, blocks that were not there removed); 3. invisible walls round the circle
+    // and a ceiling at its height, only where the scenery leaves air; 4. the arena's own biome (sky, fog, grass).
+    private static final class Build {
+        private final ArenaTemplate t;
+        private final ArenaTemplate.Meta m;
+        private final BlockPos c;
+        private final ServerLevel level;
+        private final int half;
+        private final int[] index;
+        private final BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+        private int phase;
+        private int cursor;
+        private int minCx, maxCx, minCz, maxCz;
+        private final List<net.minecraft.world.level.chunk.ChunkAccess> changed = new ArrayList<>();
+
+        Build(ArenaTemplate t, ArenaTemplate.Meta m, BlockPos c, ServerLevel level) {
+            this.t = t;
+            this.m = m;
+            this.c = c;
+            this.level = level;
+            this.half = m.raio() + 3;
+            this.index = t.index(half);
+            int x0 = 0, x1 = 0, z0 = 0, z1 = 0;
+            for (int i = 0; i < t.columns; i++) {
+                x0 = Math.min(x0, t.colX[i]);
+                x1 = Math.max(x1, t.colX[i]);
+                z0 = Math.min(z0, t.colZ[i]);
+                z1 = Math.max(z1, t.colZ[i]);
+            }
+            minCx = (c.getX() + x0) >> 4;
+            maxCx = (c.getX() + x1) >> 4;
+            minCz = (c.getZ() + z0) >> 4;
+            maxCz = (c.getZ() + z1) >> 4;
+        }
+
+        private int put(int x, int y, int z, BlockState state) {
+            if (y < level.getMinBuildHeight() || y >= level.getMaxBuildHeight()) {
+                return 0;
+            }
+            pos.set(x, y, z);
+            if (level.getBlockState(pos) != state) {
+                level.setBlock(pos, state, FLAGS);
+            }
+            return 1;
+        }
+
+        private int column(int dx, int dz) {
+            if (dx < -half || dz < -half || dx > half || dz > half) {
+                return -1;
+            }
+            return index[(dx + half) * (half * 2 + 1) + dz + half];
+        }
+
+        // Returns true when the arena is ready.
+        boolean step(int budget) {
+            int ops = 0;
+            int side = half * 2 + 1;
+            while (ops < budget) {
+                switch (phase) {
+                    case 0 -> {
+                        if (cursor >= t.columns) {
+                            phase = 1;
+                            cursor = 0;
+                            continue;
+                        }
+                        int x = c.getX() + t.colX[cursor];
+                        int z = c.getZ() + t.colZ[cursor];
+                        for (int r = t.runStart[cursor]; r < t.runStart[cursor + 1]; r++) {
+                            BlockState state = t.palette[t.runBlock[r]];
+                            for (int y = t.runY[r], end = t.runY[r] + t.runLen[r]; y < end; y++) {
+                                ops += put(x, c.getY() + y, z, state);
+                            }
+                        }
+                        cursor++;
+                    }
+                    case 1, 2 -> {
+                        if (cursor >= side * side) {
+                            phase++;
+                            cursor = 0;
+                            continue;
+                        }
+                        int dx = cursor / side - half;
+                        int dz = cursor % side - half;
+                        cursor++;
+                        double d = Math.sqrt(dx * dx + dz * dz);
+                        int col = column(dx, dz);
+                        int low = col >= 0 ? t.lowest(col) : -8;
+                        int top = m.altura() + 1;
+                        if (phase == 1) {
+                            if (d > half) {
+                                continue;
+                            }
+                            BlockState air = Blocks.AIR.defaultBlockState();
+                            for (int y = low; y <= top; y++) {
+                                if (col < 0 || !t.solid(col, y)) {
+                                    ops += put(c.getX() + dx, c.getY() + y, c.getZ() + dz, air);
+                                }
+                            }
+                        } else {
+                            BlockState barrier = Blocks.BARRIER.defaultBlockState();
+                            boolean ring = d > m.raio() + 0.5 && d <= m.raio() + 1.5;
+                            if (ring) {
+                                for (int y = low; y <= top; y++) {
+                                    if (col < 0 || !t.solid(col, y)) {
+                                        ops += put(c.getX() + dx, c.getY() + y, c.getZ() + dz, barrier);
+                                    }
+                                }
+                            } else if (d <= m.raio() + 0.5 && (col < 0 || !t.solid(col, top))) {
+                                ops += put(c.getX() + dx, c.getY() + top, c.getZ() + dz, barrier);
+                            }
+                        }
+                    }
+                    case 3 -> {
+                        int w = maxCx - minCx + 1;
+                        int total = w * (maxCz - minCz + 1);
+                        if (cursor >= total) {
+                            if (!changed.isEmpty()) {
+                                level.getChunkSource().chunkMap.resendBiomesForChunks(changed);
+                            }
+                            phase = 4;
+                            return true;
+                        }
+                        biome(minCx + cursor % w, minCz + cursor / w);
+                        cursor++;
+                        ops += 1500;
+                    }
+                    default -> {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        private void biome(int cx, int cz) {
+            ResourceKey<net.minecraft.world.level.biome.Biome> key = ResourceKey.create(Registries.BIOME,
+                    ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "arena_" + m.id()));
+            var holder = level.registryAccess().registryOrThrow(Registries.BIOME).getHolder(key);
+            if (holder.isEmpty()) {
+                return;
+            }
+            net.minecraft.world.level.chunk.ChunkAccess chunk = level.getChunk(cx, cz);
+            int qy = net.minecraft.core.QuartPos.fromBlock(c.getY());
+            if (chunk.getNoiseBiome(net.minecraft.core.QuartPos.fromBlock(cx << 4), qy, net.minecraft.core.QuartPos.fromBlock(cz << 4)).is(key)) {
+                return;
+            }
+            var biome = holder.get();
+            chunk.fillBiomesFromNoise((x, y, z, sampler) -> biome, level.getChunkSource().randomState().sampler());
+            chunk.setUnsaved(true);
+            changed.add(chunk);
+        }
+    }
+
+    // The fallback for a character with no generated arena: a round floor of the universe's blocks over two solid layers
+    // and a barrier, broken pillars around the edge, invisible walls and ceiling, nothing left from the last fight.
+    private static void buildDisc(ServerLevel level, BlockPos center, ChallengeSpec spec, ChallengeSpec.Universe universe) {
         int radius = spec.raio();
         int height = spec.altura();
         List<BlockState> floor = new ArrayList<>();

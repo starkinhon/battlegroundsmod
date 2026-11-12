@@ -1,0 +1,662 @@
+{
+ "bills": {
+  "R": 44,
+  "altura": 60,
+  "jogador": [
+   0,
+   1,
+   30
+  ],
+  "desafiante": [
+   0,
+   1,
+   -22
+  ],
+  "neblina": [
+   90,
+   260
+  ],
+  "noite": false,
+  "minY": -74,
+  "maxY": 76,
+  "nome": "Planeta do Bills"
+ },
+ "byakuya": {
+  "R": 40,
+  "altura": 46,
+  "jogador": [
+   0,
+   1,
+   26
+  ],
+  "desafiante": [
+   0,
+   1,
+   -18
+  ],
+  "neblina": [
+   80,
+   230
+  ],
+  "noite": false,
+  "minY": -73,
+  "maxY": 45,
+  "nome": "Colina Sokyoku"
+ },
+ "choso": {
+  "R": 26,
+  "altura": 7,
+  "jogador": [
+   -18,
+   1,
+   0
+  ],
+  "desafiante": [
+   18,
+   1,
+   0
+  ],
+  "neblina": [
+   30,
+   110
+  ],
+  "noite": true,
+  "minY": -11,
+  "maxY": 177,
+  "nome": "Plataforma do metrô"
+ },
+ "freeza": {
+  "R": 44,
+  "altura": 60,
+  "jogador": [
+   0,
+   1,
+   26
+  ],
+  "desafiante": [
+   0,
+   1,
+   -22
+  ],
+  "neblina": [
+   70,
+   210
+  ],
+  "noite": false,
+  "minY": -10,
+  "maxY": 66,
+  "nome": "Namek explodindo"
+ },
+ "gaara": {
+  "R": 42,
+  "altura": 40,
+  "jogador": [
+   0,
+   1,
+   26
+  ],
+  "desafiante": [
+   0,
+   1,
+   -24
+  ],
+  "neblina": [
+   60,
+   220
+  ],
+  "noite": false,
+  "minY": -5,
+  "maxY": 54,
+  "nome": "Deserto de Suna"
+ },
+ "gojo": {
+  "R": 44,
+  "altura": 60,
+  "jogador": [
+   0,
+   1,
+   28
+  ],
+  "desafiante": [
+   0,
+   1,
+   -24
+  ],
+  "neblina": [
+   70,
+   220
+  ],
+  "noite": false,
+  "minY": -26,
+  "maxY": 65,
+  "nome": "Shinjuku"
+ },
+ "goku": {
+  "R": 36,
+  "altura": 60,
+  "jogador": [
+   0,
+   1,
+   20
+  ],
+  "desafiante": [
+   0,
+   1,
+   -8
+  ],
+  "neblina": [
+   90,
+   240
+  ],
+  "noite": false,
+  "minY": -116,
+  "maxY": 8,
+  "nome": "Planeta do Senhor Kaioh"
+ },
+ "ino": {
+  "R": 30,
+  "altura": 28,
+  "jogador": [
+   0,
+   1,
+   22
+  ],
+  "desafiante": [
+   0,
+   1,
+   -20
+  ],
+  "neblina": [
+   140,
+   280
+  ],
+  "noite": false,
+  "minY": -1,
+  "maxY": 31,
+  "nome": "Salão das preliminares"
+ },
+ "inumaki": {
+  "R": 36,
+  "altura": 40,
+  "jogador": [
+   0,
+   1,
+   26
+  ],
+  "desafiante": [
+   0,
+   1,
+   -24
+  ],
+  "neblina": [
+   70,
+   210
+  ],
+  "noite": false,
+  "minY": -3,
+  "maxY": 46,
+  "nome": "Escola Jujutsu de Tóquio"
+ },
+ "itadori": {
+  "R": 36,
+  "altura": 40,
+  "jogador": [
+   0,
+   1,
+   22
+  ],
+  "desafiante": [
+   0,
+   1,
+   -20
+  ],
+  "neblina": [
+   60,
+   190
+  ],
+  "noite": true,
+  "minY": -26,
+  "maxY": 81,
+  "nome": "Cruzamento de Shibuya"
+ },
+ "joy_boy": {
+  "R": 34,
+  "altura": 60,
+  "jogador": [
+   0,
+   1,
+   22
+  ],
+  "desafiante": [
+   0,
+   1,
+   -20
+  ],
+  "neblina": [
+   90,
+   280
+  ],
+  "noite": false,
+  "minY": -80,
+  "maxY": 86,
+  "nome": "Telhado do Domo da Caveira"
+ },
+ "kakashi": {
+  "R": 38,
+  "altura": 34,
+  "jogador": [
+   0,
+   1,
+   24
+  ],
+  "desafiante": [
+   0,
+   1,
+   -18
+  ],
+  "neblina": [
+   70,
+   220
+  ],
+  "noite": false,
+  "minY": -3,
+  "maxY": 51,
+  "nome": "Campo de treino 3"
+ },
+ "kame": {
+  "R": 36,
+  "altura": 40,
+  "jogador": [
+   0,
+   3,
+   18
+  ],
+  "desafiante": [
+   0,
+   3,
+   -2
+  ],
+  "neblina": [
+   90,
+   260
+  ],
+  "noite": false,
+  "minY": -8,
+  "maxY": 13,
+  "nome": "Ilha da Kame House"
+ },
+ "kokushibo": {
+  "R": 40,
+  "altura": 26,
+  "jogador": [
+   0,
+   1,
+   26
+  ],
+  "desafiante": [
+   0,
+   1,
+   -24
+  ],
+  "neblina": [
+   40,
+   150
+  ],
+  "noite": true,
+  "minY": -69,
+  "maxY": 96,
+  "nome": "Castelo Infinito"
+ },
+ "kuririn": {
+  "R": 36,
+  "altura": 40,
+  "jogador": [
+   0,
+   3,
+   16
+  ],
+  "desafiante": [
+   0,
+   3,
+   -16
+  ],
+  "neblina": [
+   90,
+   240
+  ],
+  "noite": false,
+  "minY": -2,
+  "maxY": 17,
+  "nome": "Torneio de Artes Marciais"
+ },
+ "madara": {
+  "R": 40,
+  "altura": 44,
+  "jogador": [
+   -15,
+   1,
+   24
+  ],
+  "desafiante": [
+   13,
+   1,
+   -20
+  ],
+  "neblina": [
+   70,
+   210
+  ],
+  "noite": false,
+  "minY": -31,
+  "maxY": 83,
+  "nome": "Vale do Fim"
+ },
+ "makima": {
+  "R": 30,
+  "altura": 30,
+  "jogador": [
+   0,
+   1,
+   20
+  ],
+  "desafiante": [
+   0,
+   1,
+   -18
+  ],
+  "neblina": [
+   100,
+   320
+  ],
+  "noite": false,
+  "minY": -50,
+  "maxY": 99,
+  "nome": "Telhado da Segurança Pública"
+ },
+ "miwa": {
+  "R": 36,
+  "altura": 40,
+  "jogador": [
+   0,
+   1,
+   26
+  ],
+  "desafiante": [
+   0,
+   1,
+   -24
+  ],
+  "neblina": [
+   70,
+   210
+  ],
+  "noite": false,
+  "minY": -3,
+  "maxY": 46,
+  "nome": "Escola Jujutsu de Kyoto"
+ },
+ "nanami": {
+  "R": 30,
+  "altura": 12,
+  "jogador": [
+   0,
+   1,
+   16
+  ],
+  "desafiante": [
+   0,
+   1,
+   -16
+  ],
+  "neblina": [
+   25,
+   100
+  ],
+  "noite": false,
+  "minY": -1,
+  "maxY": 19,
+  "nome": "Esgoto"
+ },
+ "naruto": {
+  "R": 40,
+  "altura": 40,
+  "jogador": [
+   0,
+   1,
+   26
+  ],
+  "desafiante": [
+   0,
+   1,
+   -24
+  ],
+  "neblina": [
+   80,
+   220
+  ],
+  "noite": false,
+  "minY": -2,
+  "maxY": 47,
+  "nome": "Estádio das finais"
+ },
+ "nobara": {
+  "R": 38,
+  "altura": 13,
+  "jogador": [
+   -20,
+   1,
+   18
+  ],
+  "desafiante": [
+   20,
+   1,
+   -18
+  ],
+  "neblina": [
+   60,
+   200
+  ],
+  "noite": false,
+  "minY": -4,
+  "maxY": 20,
+  "nome": "Ponte Yasohachi"
+ },
+ "piccolo": {
+  "R": 44,
+  "altura": 60,
+  "jogador": [
+   0,
+   1,
+   28
+  ],
+  "desafiante": [
+   0,
+   1,
+   -24
+  ],
+  "neblina": [
+   80,
+   230
+  ],
+  "noite": false,
+  "minY": -5,
+  "maxY": 57,
+  "nome": "Planalto rochoso"
+ },
+ "rukia": {
+  "R": 42,
+  "altura": 44,
+  "jogador": [
+   0,
+   1,
+   26
+  ],
+  "desafiante": [
+   0,
+   1,
+   -24
+  ],
+  "neblina": [
+   70,
+   260
+  ],
+  "noite": false,
+  "minY": -4,
+  "maxY": 134,
+  "nome": "Las Noches"
+ },
+ "saitama": {
+  "R": 36,
+  "altura": 50,
+  "jogador": [
+   0,
+   1,
+   24
+  ],
+  "desafiante": [
+   0,
+   1,
+   -22
+  ],
+  "neblina": [
+   80,
+   260
+  ],
+  "noite": false,
+  "minY": -8,
+  "maxY": 44,
+  "nome": "Cidade Z depois do meteoro"
+ },
+ "sasuke": {
+  "R": 38,
+  "altura": 40,
+  "jogador": [
+   0,
+   1,
+   26
+  ],
+  "desafiante": [
+   0,
+   4,
+   -38
+  ],
+  "neblina": [
+   40,
+   160
+  ],
+  "noite": false,
+  "minY": -3,
+  "maxY": 22,
+  "nome": "Esconderijo Uchiha"
+ },
+ "shigaraki": {
+  "R": 36,
+  "altura": 40,
+  "jogador": [
+   0,
+   1,
+   22
+  ],
+  "desafiante": [
+   0,
+   1,
+   -20
+  ],
+  "neblina": [
+   40,
+   170
+  ],
+  "noite": false,
+  "minY": -6,
+  "maxY": 52,
+  "nome": "Cidade Jaku em pó"
+ },
+ "shikamaru": {
+  "R": 36,
+  "altura": 34,
+  "jogador": [
+   0,
+   1,
+   24
+  ],
+  "desafiante": [
+   0,
+   1,
+   -22
+  ],
+  "neblina": [
+   40,
+   130
+  ],
+  "noite": false,
+  "minY": -3,
+  "maxY": 41,
+  "nome": "Floresta dos Nara"
+ },
+ "sukuna": {
+  "R": 42,
+  "altura": 50,
+  "jogador": [
+   0,
+   1,
+   26
+  ],
+  "desafiante": [
+   0,
+   1,
+   -24
+  ],
+  "neblina": [
+   50,
+   180
+  ],
+  "noite": true,
+  "minY": -26,
+  "maxY": 65,
+  "nome": "Shibuya destruída"
+ },
+ "todo": {
+  "R": 36,
+  "altura": 34,
+  "jogador": [
+   0,
+   1,
+   24
+  ],
+  "desafiante": [
+   0,
+   1,
+   -22
+  ],
+  "neblina": [
+   30,
+   120
+  ],
+  "noite": false,
+  "minY": -5,
+  "maxY": 50,
+  "nome": "Floresta do intercâmbio"
+ },
+ "vegeta": {
+  "R": 44,
+  "altura": 60,
+  "jogador": [
+   0,
+   1,
+   28
+  ],
+  "desafiante": [
+   0,
+   1,
+   -24
+  ],
+  "neblina": [
+   80,
+   230
+  ],
+  "noite": false,
+  "minY": -9,
+  "maxY": 49,
+  "nome": "Deserto dos Saiyajins"
+ }
+}

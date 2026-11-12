@@ -889,6 +889,7 @@
   "message.battlegroundsmod.arena_no_entity": "Esse personagem ainda não tem mob no jogo: %s",
   "message.battlegroundsmod.arena_title": "Arena: %s",
   "message.battlegroundsmod.arena_ready": "Prepare-se...",
+  "message.battlegroundsmod.arena_building": "Preparando a arena de %s...",
   "message.battlegroundsmod.arena_fight": "LUTE!",
   "message.battlegroundsmod.arena_won": "DERROTADO",
   "message.battlegroundsmod.arena_unlocked": "%s agora aparece no mundo. Voltando em %s s.",

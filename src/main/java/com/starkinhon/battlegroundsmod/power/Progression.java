@@ -114,7 +114,7 @@ public final class Progression {
         ServerPlayer killer = killer(event);
         // In the challenge arenas the win pays (ChallengeArenas.arenaPoder), not the kill.
         if (killer == null || killer == victim || !on(killer)
-                || victim.level().dimension().equals(com.starkinhon.battlegroundsmod.challenge.ChallengeArenas.ARENAS)) {
+                || com.starkinhon.battlegroundsmod.challenge.ChallengeArenas.isArena(victim.level().dimension())) {
             return;
         }
         Integer victimTier = tierOf(victim);

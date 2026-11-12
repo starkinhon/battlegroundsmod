@@ -659,7 +659,7 @@ def cidade_z():
     for f in range(3):
         for s in range(4):
             x = AX0 + AW + 1 + (s if f % 2 == 0 else 3 - s)
-            v.set(x, 2 + f * 4 + s, AZ0 + AD - 2, 'smooth_stone_stairs[facing=%s,half=bottom,shape=straight]' % ('east' if f % 2 == 0 else 'west'))
+            v.set(x, 2 + f * 4 + s, AZ0 + AD - 2, 'stone_stairs[facing=%s,half=bottom,shape=straight]' % ('east' if f % 2 == 0 else 'west'))
     for y in range(1, 15):
         for z in (AZ0 + AD - 3, AZ0 + AD - 1):
             v.set(AX0 + AW + 5, y, z, 'iron_bars')

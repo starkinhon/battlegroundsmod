@@ -169,6 +169,9 @@ public final class Achievements {
         }
         boolean all = true;
         for (ChallengeSpec.Universe universe : spec.universos()) {
+            if (!universe.world()) {
+                continue;                   // a book page with no world yet (ChallengeSpec.Universe.mundo)
+            }
             boolean ruled = universe.desafios() != null && !universe.desafios().isEmpty();
             if (ruled) {
                 for (ChallengeSpec.Challenge challenge : universe.desafios()) {
