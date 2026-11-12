@@ -121,7 +121,21 @@ public final class NarutoActivities {
                     player.teleportTo(at.getX() + 0.5, Math.max(y, 140), at.getZ() + 40.5);
                     c.getSource().sendSuccess(() -> Component.translatable("message.battlegroundsmod.naruto.indo", kind, at.getX(), at.getZ()), false);
                     return 1;
-                })));
+                }).then(Commands.argument("marca", StringArgumentType.word()).executes(c -> {
+                    // /soul estrutura <tipo> <marca>: onto a mark of the built place nearby (center, bell, altar, nest...)
+                    ServerPlayer player = c.getSource().getPlayerOrException();
+                    String kind = StringArgumentType.getString(c, "tipo");
+                    String mark = StringArgumentType.getString(c, "marca");
+                    NarutoSites.Site site = NarutoSites.near(player.serverLevel(), kind, player.blockPosition(), 400);
+                    BlockPos at = site == null ? null : site.first(mark);
+                    if (at == null) {
+                        c.getSource().sendFailure(Component.translatable("message.battlegroundsmod.naruto.nenhuma", kind + " " + mark));
+                        return 0;
+                    }
+                    player.teleportTo(at.getX() + 0.5, at.getY() + 1, at.getZ() + 0.5);
+                    c.getSource().sendSuccess(() -> Component.translatable("message.battlegroundsmod.naruto.indo", kind + " " + mark, at.getX(), at.getZ()), false);
+                    return 1;
+                }))));
     }
 
     // ================================================================ helpers
