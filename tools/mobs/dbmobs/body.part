@@ -57,6 +57,9 @@ const SPAWN = {
     ['Cell Jr.', 'Só no evento do Cell (Jogos do Cell): 7 de uma vez. Nunca nasce sozinho no mundo.', 'Some quando o evento acaba.'],
     ['Yakon', 'Só dentro da nave do Babidi, guardando o andar dele. 1 por mundo.', 'Na escuridão dele, mais forte; perto de luz forte, enjoa.'],
   ],
+  'Rios e florestas': [
+    ['Tigre-dente-de-sabre', 'Sozinho, nas florestas de Paozu e na beira dos rios. No máximo 2 por perto.', 'Noite: caça mais e fica de tocaia no mato.'],
+  ],
 };
 let biome = 'Terras e Deserto';
 function table() {
@@ -148,6 +151,7 @@ const LOOKS = {
   'Mar do Sul e Norte': { sky: 0x6f8aa0, floor: 0xb9c6d0, g1: 0xdde6ee, g2: 0x9fb0be },
   'Dinossauros': { sky: 0x8aa0a8, floor: 0xb48c5a, g1: 0xcaa272, g2: 0x8e6a42 },
   'Namek e estruturas': { sky: 0x8fc4a0, floor: 0x5f9a8c, g1: 0x7ab8a4, g2: 0x4a8070 },
+  'Rios e florestas': { sky: 0x9cc4dc, floor: 0x5f8f3e, g1: 0x78a850, g2: 0x4a7432 },
 };
 // chuva do bioma: cada gota com velocidade e posição próprias, caindo levemente inclinada
 const RAIN_N = 700, rainPos = new Float32Array(RAIN_N * 6), rainSeed = [];
