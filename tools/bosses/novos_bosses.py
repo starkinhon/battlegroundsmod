@@ -62,7 +62,8 @@ def write(d):
 # ---------------------------------------------------------------- Joy Boy (Luffy), tier 2
 # The Gear of each blow comes from JoyBoyTactics (G2 above 60%, G4 below, G5 at 25%).
 RED = '#c0392b'
-d = base('joy_boy', 'rubber_boy', 2, 450, 0.36, 'Joy Boy', 'O guerreiro da libertação', RED, ideal=6, intervalo_soco=10,
+# Speed and the close fight like the Madara (test 2026-11-12: he stayed far on Pistols and lost every exchange up close).
+d = base('joy_boy', 'rubber_boy', 2, 450, 0.42, 'Joy Boy', 'O guerreiro da libertação', RED, ideal=4, intervalo_soco=9,
          decisao=5, tecnicas=60, correr=1.5, investida=(50, 6, 1.8, 0.25), sombra=(90, 0.25, 0.08, 0.45), empurrao=0.7,
          reacoes={'chanceEsquivarSkill': 0.45, 'chanceEsquivarProjetil': 0.45, 'chanceContraAtaque': 0.55, 'chanceEsquivarUlt': 0.85,
                   'golpesParaContra': 3, 'janelaPressaoTicks': 30, 'punirTicks': 100, 'multPunir': 3, 'golpesParaFugir': 2,
@@ -98,7 +99,7 @@ write(d)
 # SaitamaTactics keeps each set to its mode and gives the Modo Serio its own clock.
 YEL = '#f2c94c'
 # Not the calm "deus" walk any more: bored or not, he is the fastest thing there (the blitz is his shadow step).
-d = base('saitama', 'one_punch', 1, 650, 0.3, 'Saitama', 'Um herói por hobby', YEL, ideal=3, intervalo_soco=9,
+d = base('saitama', 'one_punch', 1, 650, 0.38, 'Saitama', 'Um herói por hobby', YEL, ideal=3, intervalo_soco=9,
          decisao=5, tecnicas=70, andar=0.9, correr=1.6, investida=(45, 5, 2.0, 0.2), sombra=(70, 0.35, 0.15, 0.5), empurrao=1.0,
          reacoes={'chanceEsquivarSkill': 0.45, 'chanceEsquivarProjetil': 0.5, 'chanceContraAtaque': 0.7, 'chanceEsquivarUlt': 0.7,
                   'golpesParaContra': 3, 'janelaPressaoTicks': 30, 'punirTicks': 100, 'multPunir': 3, 'golpesParaFugir': 99,
@@ -132,7 +133,7 @@ write(d)
 
 # ---------------------------------------------------------------- Shigaraki, tier 3
 GRAY = '#8e1515'
-d = base('shigaraki', 'shigaraki', 3, 360, 0.33, 'Tomura Shigaraki', 'Herdeiro do All For One', GRAY, ideal=7, decisao=5,
+d = base('shigaraki', 'shigaraki', 3, 360, 0.4, 'Tomura Shigaraki', 'Herdeiro do All For One', GRAY, ideal=6, intervalo_soco=9, decisao=5,
          tecnicas=70, correr=1.5, investida=(60, 7, 1.8, 0.2), sombra=(90, 0.25, 0.08, 0.45),
          reacoes={'chanceEsquivarSkill': 0.45, 'chanceEsquivarProjetil': 0.45, 'chanceContraAtaque': 0.5, 'chanceEsquivarUlt': 0.85,
                   'golpesParaContra': 3, 'janelaPressaoTicks': 30, 'punirTicks': 100, 'multPunir': 3, 'golpesParaFugir': 2,

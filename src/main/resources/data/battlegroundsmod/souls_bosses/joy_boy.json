@@ -7,7 +7,7 @@
   "atributos": {
     "vida": 450,
     "armadura": 0,
-    "velocidade": 0.36,
+    "velocidade": 0.42,
     "resistenciaEmpurrao": 0.7,
     "alcanceVisao": 64,
     "multDano": 1.0
@@ -26,8 +26,8 @@
   },
   "distancias": {
     "soco": 3.0,
-    "ideal": 6,
-    "intervaloSocoTicks": 10
+    "ideal": 4,
+    "intervaloSocoTicks": 9
   },
   "movimento": {
     "velocidadeAndar": 0.9,

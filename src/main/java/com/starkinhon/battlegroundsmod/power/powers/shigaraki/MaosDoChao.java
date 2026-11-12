@@ -22,7 +22,7 @@ import net.minecraft.world.phys.Vec3;
 public final class MaosDoChao {
     static final double TRIGGER = 1.4;
     static final int ARM = 22, HOLD = 52, DISSOLVE = 16, WAIT = 400;
-    private static final float DAMAGE = 10;
+    private static final float DAMAGE = 18;
 
     private static final Map<LivingEntity, int[]> TRAP = new WeakHashMap<>();
 
@@ -37,7 +37,13 @@ public final class MaosDoChao {
         Vec3 feet = caster.position();
         Vec3 dir;
         Vec3 p;
-        if (aim != null && aim.distanceTo(caster) > 5 && aim.distanceTo(caster) < 30) {
+        if (caster instanceof com.starkinhon.battlegroundsmod.boss.SoulBoss && aim != null && aim.distanceTo(caster) < 30) {
+            // A boss sets the trap where the target will be (its warning already gave them time): halfway it caught
+            // nothing (test 2026-11-12: 5-11 damage a fight in 7-8 uses).
+            dir = Shigaraki.flatTo(caster, aim.position());
+            Vec3 lead = aim.getDeltaMovement().multiply(8, 0, 8);
+            p = aim.position().add(lead.length() > 4 ? lead.normalize().scale(4) : lead);
+        } else if (aim != null && aim.distanceTo(caster) > 5 && aim.distanceTo(caster) < 30) {
             dir = Shigaraki.flatTo(caster, aim.position());
             p = feet.add(new Vec3(aim.getX() - feet.x, 0, aim.getZ() - feet.z).scale(0.55));
         } else {

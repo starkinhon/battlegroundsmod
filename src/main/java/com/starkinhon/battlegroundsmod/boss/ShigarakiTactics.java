@@ -97,6 +97,9 @@ final class ShigarakiTactics extends TacticsBase {
                 return 0;
             }
             case "toque" -> {
+                if (!com.starkinhon.battlegroundsmod.power.powers.shigaraki.Toque.ready(boss)) {
+                    return 0;
+                }
                 m *= held || ai.stunned() ? 2.5 : 1;
                 m *= distance <= 10 ? 1.2 : 1;
             }
@@ -110,14 +113,14 @@ final class ShigarakiTactics extends TacticsBase {
                 m *= distance <= 12 ? 1.3 : 0.8;
             }
             case "absorver" -> {
-                if (Absorver.holding(boss)) {
+                if (Absorver.holding(boss) || !Absorver.ready(boss)) {
                     return 0;
                 }
                 m *= strongFoe ? 1.6 : 1;
                 m *= distance <= 14 ? 1.2 : 0.6;
             }
             case "usar" -> {
-                if (!Absorver.holding(boss)) {
+                if (!Absorver.holding(boss) || !Absorver.ready(boss)) {
                     return 0;
                 }
                 m = 2.2;
@@ -129,6 +132,9 @@ final class ShigarakiTactics extends TacticsBase {
             }
             default -> {
             }
+        }
+        if ("forte".equals(name) && counterReady(ai.target())) {
+            m *= 0.15;
         }
         m *= jitter();
         return score * m;

@@ -51,6 +51,16 @@ public final class Absorver {
         return s != null && s.element >= 0 && caster.level().getGameTime() < s.until;
     }
 
+    // B would go off now: not mid-steal, and with a stolen power its next use is due.
+    public static boolean ready(LivingEntity caster) {
+        State s = STATE.get(caster);
+        if (s == null) {
+            return true;
+        }
+        long now = caster.level().getGameTime();
+        return now >= s.busyUntil && (!(s.element >= 0 && now < s.until) || now >= s.nextUse);
+    }
+
     public static boolean use(LivingEntity caster, ServerLevel level) {
         State s = STATE.computeIfAbsent(caster, c -> new State());
         long now = level.getGameTime();

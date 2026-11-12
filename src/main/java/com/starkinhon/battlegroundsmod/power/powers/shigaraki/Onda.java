@@ -28,7 +28,7 @@ import net.minecraft.world.phys.Vec3;
 public final class Onda {
     static final double SPEED = 34, RANGE = 46, PUSH_R = 26, HALF = 0.5, STUN_R = 14;
     private static final int BREATH = 6, LENGTH = 52;
-    private static final float DAMAGE = 22;
+    private static final float DAMAGE = 30;
 
     private Onda() {
     }

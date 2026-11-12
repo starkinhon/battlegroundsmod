@@ -7,7 +7,7 @@
   "atributos": {
     "vida": 650,
     "armadura": 0,
-    "velocidade": 0.3,
+    "velocidade": 0.38,
     "resistenciaEmpurrao": 1.0,
     "alcanceVisao": 64,
     "multDano": 1.0

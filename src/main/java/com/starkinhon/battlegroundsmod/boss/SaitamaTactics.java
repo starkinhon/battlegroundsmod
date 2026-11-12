@@ -125,6 +125,9 @@ final class SaitamaTactics extends TacticsBase {
             default -> {
             }
         }
+        if ("forte".equals(name) && counterReady(ai.target())) {
+            m *= 0.15;
+        }
         m *= jitter();
         return score * m;
     }

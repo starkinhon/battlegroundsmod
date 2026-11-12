@@ -35,6 +35,11 @@ public final class Toque {
     private Toque() {
     }
 
+    // Z would go off now (the boss's tactics ask before picking it).
+    public static boolean ready(LivingEntity caster) {
+        return Movement.free(caster) && !BUSY.containsKey(caster);
+    }
+
     public static boolean use(LivingEntity caster, ServerLevel level) {
         if (!Movement.free(caster) || BUSY.containsKey(caster)) {
             return false;
