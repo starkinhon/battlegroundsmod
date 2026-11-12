@@ -1050,17 +1050,35 @@ public final class OpmFx {
         Minecraft.getInstance().renderBuffers().bufferSource().endBatch();
     }
 
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static net.minecraft.resources.ResourceLocation textureOf(com.starkinhon.battlegroundsmod.client.SoulBossRenderer r,
+            com.starkinhon.battlegroundsmod.boss.SoulBoss boss) {
+        return r.getTextureLocation(boss);
+    }
+
     // One ghost arm drawn as the player's own right arm (and sleeve): from the shoulder along q, 0.88 x len long, w wide.
     private static boolean skinArm(Arm a, Quaternionf q, float len, float alpha, Vec3 cam) {
         Minecraft mc = Minecraft.getInstance();
-        if (!(mc.level.getEntity(a.caster()) instanceof net.minecraft.client.player.AbstractClientPlayer pl)
-                || !(mc.getEntityRenderDispatcher().getRenderer(pl) instanceof net.minecraft.client.renderer.entity.player.PlayerRenderer pr)) {
+        net.minecraft.client.model.PlayerModel<?> model;
+        boolean slim;
+        net.minecraft.resources.ResourceLocation tex;
+        net.minecraft.world.entity.Entity who = mc.level.getEntity(a.caster());
+        if (who instanceof net.minecraft.client.player.AbstractClientPlayer pl
+                && mc.getEntityRenderDispatcher().getRenderer(pl) instanceof net.minecraft.client.renderer.entity.player.PlayerRenderer pr) {
+            model = pr.getModel();
+            slim = pl.getSkin().model() == net.minecraft.client.resources.PlayerSkin.Model.SLIM;
+            tex = pl.getSkin().texture();
+        } else if (who instanceof com.starkinhon.battlegroundsmod.boss.SoulBoss boss
+                && mc.getEntityRenderDispatcher().getRenderer(boss) instanceof com.starkinhon.battlegroundsmod.client.SoulBossRenderer<?> br) {
+            // The Saitama boss: his own skin's arm.
+            model = br.getModel();
+            slim = false;
+            tex = textureOf(br, boss);
+        } else {
             return false;
         }
-        var model = pr.getModel();
-        boolean slim = pl.getSkin().model() == net.minecraft.client.resources.PlayerSkin.Model.SLIM;
         var buf = mc.renderBuffers().bufferSource();
-        var vc = buf.getBuffer(net.minecraft.client.renderer.RenderType.entityTranslucent(pl.getSkin().texture()));
+        var vc = buf.getBuffer(net.minecraft.client.renderer.RenderType.entityTranslucent(tex));
         com.mojang.blaze3d.vertex.PoseStack pose = new com.mojang.blaze3d.vertex.PoseStack();
         pose.translate(a.from().x - cam.x, a.from().y - cam.y, a.from().z - cam.z);
         pose.mulPose(q);

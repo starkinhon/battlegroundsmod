@@ -45,6 +45,12 @@ public final class Absorver {
     private Absorver() {
     }
 
+    // A stolen power in hand right now (B again uses it).
+    public static boolean holding(LivingEntity caster) {
+        State s = STATE.get(caster);
+        return s != null && s.element >= 0 && caster.level().getGameTime() < s.until;
+    }
+
     public static boolean use(LivingEntity caster, ServerLevel level) {
         State s = STATE.computeIfAbsent(caster, c -> new State());
         long now = level.getGameTime();

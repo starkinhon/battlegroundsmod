@@ -78,6 +78,32 @@ public final class Fantoche {
         Tasks.later(12, () -> SubCommon.sound(level, owner.position(), SoundEvents.SCULK_BLOCK_SPREAD, 1.0f, 0.6f));
     }
 
+    // The Makima boss comes with her own puppets kept (Stark 2026-11-12: she starts with 3), once per body.
+    public static void seed(LivingEntity owner, List<String> types) {
+        if (owner.getPersistentData().getBoolean("makima_seeded")) {
+            return;
+        }
+        owner.getPersistentData().putBoolean("makima_seeded", true);
+        List<Stored> list = stock(owner);
+        for (String type : types) {
+            if (list.size() < MAX_STOCK) {
+                EntityType<?> t = EntityType.byString(type).orElse(null);
+                list.add(new Stored(type, t == null ? type : t.getDescription().getString()));
+            }
+        }
+        save(owner, list);
+    }
+
+    // How many she keeps in her shadow.
+    public static int kept(LivingEntity owner) {
+        return stock(owner).size();
+    }
+
+    // How many of her mobs are out now.
+    public static int out(LivingEntity owner) {
+        return Puppets.count(owner, Puppets.MOB);
+    }
+
     // A puppet that sank back by her (not killed): kept again.
     static void back(LivingEntity owner, String type, LivingEntity puppet) {
         List<Stored> list = stock(owner);
@@ -184,6 +210,14 @@ public final class Fantoche {
         puppet.moveTo(at.x, at.y, at.z, caster.getYRot(), 0);
         if (puppet instanceof Mob mob) {
             mob.finalizeSpawn(level, level.getCurrentDifficultyAt(mob.blockPosition()), MobSpawnType.MOB_SUMMONED, null);
+        }
+        if (caster instanceof com.starkinhon.battlegroundsmod.boss.SoulBoss) {
+            // The boss's puppets are her shield (the Primeiro-Ministro takes the fatal blow on them): tougher than the mob
+            // was, so killing them is a fight of its own and not a single swing.
+            net.minecraft.world.entity.ai.attributes.AttributeInstance hp = puppet.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH);
+            if (hp != null) {
+                hp.setBaseValue(Math.max(hp.getBaseValue() * 3, 60));
+            }
         }
         puppet.setHealth(puppet.getMaxHealth());
         if (s.name() != null && !s.name().isEmpty() && !s.name().equals(puppet.getType().getDescription().getString())) {

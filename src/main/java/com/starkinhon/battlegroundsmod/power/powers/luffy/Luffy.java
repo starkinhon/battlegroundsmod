@@ -8,6 +8,7 @@ import com.starkinhon.battlegroundsmod.combat.Charge;
 import com.starkinhon.battlegroundsmod.combat.Stamina;
 import com.starkinhon.battlegroundsmod.combat.Stun;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
+import com.starkinhon.battlegroundsmod.power.BossOrder;
 import com.starkinhon.battlegroundsmod.power.PowerData;
 import com.starkinhon.battlegroundsmod.power.PowerLogic;
 import com.starkinhon.battlegroundsmod.power.powers.sub.SubCommon;
@@ -73,6 +74,16 @@ public final class Luffy {
 
     public static boolean g5(LivingEntity caster) {
         return SubCommon.hasState(caster, G5);
+    }
+
+    // Holding a key right now (the Gear climbing): nothing else starts until it is let go.
+    public static boolean holding(LivingEntity caster) {
+        return HOLDING.containsKey(caster);
+    }
+
+    // Starving after the Gear 5 (no Gears, slow and weak).
+    public static boolean starving(LivingEntity caster) {
+        return SubCommon.hasState(caster, FOME);
     }
 
     public static boolean giant(LivingEntity caster) {
@@ -169,8 +180,11 @@ public final class Luffy {
         Keep keep = KEEP.get(caster);
         int startGear = keep != null && keep.until() > level.getGameTime() ? Math.min(top, keep.gear()) : 0;
         int start = TH[startGear];
-        // Bots pick how long they hold (a Gear that fits the fight, not always the top).
-        int botHold = TH[Math.min(top, SubCommon.RANDOM.nextInt(4))] + 1;
+        // Bots pick how long they hold (a Gear that fits the fight, not always the top). A boss with tactics (the Joy Boy
+        // boss) says which Gear it wants through BossOrder: charge 0 = the tap, 1/3 = G2, 2/3 = G3, 1 = G4.
+        BossOrder.Order order = BossOrder.take(caster);
+        int wanted = order == null ? SubCommon.RANDOM.nextInt(4) : !order.hold() ? 0 : (int) Math.round(order.charge() * 3);
+        int botHold = TH[Math.max(0, Math.min(top, wanted))] + 1;
         SubCommon.Guard guard = SubCommon.guard(caster);
         HOLDING.put(caster, key);
         PowerData data = caster.getData(ModAttachments.POWER);
@@ -258,7 +272,8 @@ public final class Luffy {
         Tasks.later(8, () -> SubCommon.sound(level, caster.position(), SoundEvents.NOTE_BLOCK_BASEDRUM.value(), 2f, 0.6f));
         Tasks.later(20, () -> SubCommon.sound(level, caster.position(), SoundEvents.NOTE_BLOCK_BASEDRUM.value(), 2f, 0.6f));
         Tasks.later(28, () -> SubCommon.sound(level, caster.position(), SoundEvents.NOTE_BLOCK_BASEDRUM.value(), 2f, 0.6f));
-        caster.heal(caster.getMaxHealth() * 0.25f);
+        // The drums wake him up (a quarter of his life; a boss less, or its last phase would last as long as the rest).
+        caster.heal(caster.getMaxHealth() * (caster instanceof com.starkinhon.battlegroundsmod.boss.SoulBoss ? 0.12f : 0.25f));
         Stamina.refill(caster);
         SubCommon.Guard guard = SubCommon.guard(caster);
         long until = level.getGameTime() + G5_TICKS;

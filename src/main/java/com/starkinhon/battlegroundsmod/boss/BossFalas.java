@@ -113,6 +113,9 @@ public final class BossFalas {
         return switch (power == null ? "" : power) {
             case "sukuna" -> new int[] {0x7A0E14, 0xFF6A50};
             case "makima" -> new int[] {0xA3122A, 0xFFD6DC};
+            case "rubber_boy" -> new int[] {0x9E1B12, 0xFFD36B};
+            case "one_punch" -> new int[] {0xB07A10, 0xFFF3B0};
+            case "shigaraki" -> new int[] {0x5A0E0E, 0xDADCE4};
             case "strongest" -> new int[] {0x1E5FD0, 0x8FE0FF};
             case "uchiha_ghost" -> new int[] {0x8A1A14, 0xFF5A3C};
             case "destruction_god" -> new int[] {0x6A2AC0, 0xE2B4FF};
@@ -141,6 +144,18 @@ public final class BossFalas {
                 if ("sukuna".equals(boss.powerData().power)) {
                     sayNow(boss, "strongest".equals(powerOf(target)) ? "fala.battlegroundsmod.sukuna.inicio_gojo"
                             : "fala.battlegroundsmod.sukuna.inicio");
+                }
+                // The four of 2026-11-12: each opens the fight with its line.
+                String power = boss.powerData().power;
+                String opening = switch (power == null ? "" : power) {
+                    case "rubber_boy" -> "fala.battlegroundsmod.luffy.inicio";
+                    case "one_punch" -> "fala.battlegroundsmod.saitama.inicio";
+                    case "shigaraki" -> "fala.battlegroundsmod.shigaraki.inicio";
+                    case "makima" -> "fala.battlegroundsmod.makima.inicio";
+                    default -> null;
+                };
+                if (opening != null) {
+                    sayNow(boss, opening);
                 }
             }
             state.lastTarget = now;
@@ -231,6 +246,8 @@ public final class BossFalas {
             // Sukuna: to Gojo his farewell; to anyone of his tier or above, "stand proud"; the weak get nothing.
             case "sukuna" -> "strongest".equals(powerOf(victim)) ? "fala.battlegroundsmod.sukuna.matou_gojo"
                     : tierOf(victim) <= boss.powerData().tier ? "fala.battlegroundsmod.sukuna.matou_forte" : null;
+            // Saitama: someone who was a fight (a player or another soul), over again in no time.
+            case "one_punch" -> victim instanceof Player || victim instanceof SoulBoss ? "fala.battlegroundsmod.saitama.matou" : null;
             default -> null;
         };
         if (key != null) {

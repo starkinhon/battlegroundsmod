@@ -1933,15 +1933,25 @@ public final class LuffyFx {
     }
 
     public static void onRenderPlayerPre(RenderPlayerEvent.Pre event) {
-        Body bd = BODIES.get(event.getEntity().getId());
-        if (bd == null || event.isCanceled()) {
-            return;
+        if (!event.isCanceled() && !pre(event.getEntity(), event.getRenderer().getModel(), event.getPoseStack(), event.getPartialTick())) {
+            event.setCanceled(true);
+        }
+    }
+
+    // The Joy Boy boss (a mob with Luffy's power) is drawn the same way as a player with it.
+    private static boolean luffyMob(LivingEntity e) {
+        return !(e instanceof net.minecraft.world.entity.player.Player) && BODIES.containsKey(e.getId());
+    }
+
+    // Before the body is drawn: the parts the Gears draw themselves hidden, his size and lean. False = don't draw him.
+    private static boolean pre(LivingEntity entity, PlayerModel<?> m, PoseStack pose, float partialTick) {
+        Body bd = BODIES.get(entity.getId());
+        if (bd == null) {
+            return true;
         }
         if (bd.hidden) {
-            event.setCanceled(true);
-            return;
+            return false;
         }
-        PlayerModel<AbstractClientPlayer> m = event.getRenderer().getModel();
         HIDDEN.clear();
         double now = ScreenFx.now();
         // Boundman: his whole body is drawn by the Layer (his skin on the page's boxes, the haki, the steam)
@@ -1968,11 +1978,10 @@ public final class LuffyFx {
                 hide(p);
             }
         }
-        PoseStack pose = event.getPoseStack();
         pose.pushPose();
         PUSHED.add(bd.id);
-        LivingEntity e = event.getEntity();
-        float yaw = Mth.rotLerp(event.getPartialTick(), e.yBodyRotO, e.yBodyRot) * Mth.DEG_TO_RAD;
+        LivingEntity e = entity;
+        float yaw = Mth.rotLerp(partialTick, e.yBodyRotO, e.yBodyRot) * Mth.DEG_TO_RAD;
         // small for a while after the G3 (the manga's cost)
         if (bd.tinyEnd > now) {
             double age = (now - bd.tinyStart) / 20, len = (bd.tinyEnd - bd.tinyStart) / 20;
@@ -2009,16 +2018,21 @@ public final class LuffyFx {
             pose.mulPose(Axis.YP.rotation(yaw));
             pose.translate(0, -0.9, 0);
         }
+        return true;
     }
 
     public static void onRenderPlayerPost(RenderPlayerEvent.Post event) {
-        int id = event.getEntity().getId();
+        post(event.getEntity(), event.getRenderer().getModel(), event.getPoseStack(), event.getMultiBufferSource(), event.getPackedLight(),
+                event.getPartialTick(), event.getRenderer().getTextureLocation((AbstractClientPlayer) event.getEntity()));
+    }
+
+    private static void post(LivingEntity entity, PlayerModel<?> m, PoseStack pose, MultiBufferSource buffers, int packedLight, float partialTick,
+            ResourceLocation texture) {
+        int id = entity.getId();
         if (!PUSHED.remove(id)) {
             return;
         }
-        PlayerModel<AbstractClientPlayer> m = event.getRenderer().getModel();
         Body bd = BODIES.get(id);
-        PoseStack pose = event.getPoseStack();
         for (ModelPart p : new ModelPart[] {m.body, m.jacket, m.head, m.hat, m.rightLeg, m.leftLeg, m.rightPants, m.leftPants, m.rightArm, m.leftArm,
                 m.rightSleeve, m.leftSleeve}) {
             scale(p, 1, 1, 1);
@@ -2029,10 +2043,10 @@ public final class LuffyFx {
             // the Fusen: his head, arms and legs pushed out round the balloon (the page's balloonSet)
             // (the head goes 1.3 up, not the page's 1.2: the game's head is smaller and lower, so this shows the same share of it)
             float k = (float) Math.min(1, bd.balloon);
-            AbstractClientPlayer player = (AbstractClientPlayer) event.getEntity();
-            float yaw = Mth.rotLerp(event.getPartialTick(), player.yBodyRotO, player.yBodyRot);
-            var buf = event.getMultiBufferSource().getBuffer(RenderType.entityCutoutNoCull(event.getRenderer().getTextureLocation(player)));
-            int light = event.getPackedLight();
+            LivingEntity player = entity;
+            float yaw = Mth.rotLerp(partialTick, player.yBodyRotO, player.yBodyRot);
+            var buf = buffers.getBuffer(RenderType.entityCutoutNoCull(texture));
+            int light = packedLight;
             Object[][] moved = {{m.head, 0f, 1.3f}, {m.hat, 0f, 1.3f}, {m.rightArm, 1.35f, 0.25f}, {m.rightSleeve, 1.35f, 0.25f}, {m.leftArm, -1.35f, 0.25f},
                     {m.leftSleeve, -1.35f, 0.25f}, {m.rightLeg, 0.45f, 0f}, {m.rightPants, 0.45f, 0f}, {m.leftLeg, -0.45f, 0f}, {m.leftPants, -0.45f, 0f}};
             for (Object[] o : moved) {
@@ -2052,19 +2066,29 @@ public final class LuffyFx {
     }
 
     // The color of each Gear over his own skin: pink in G2, black Haki limbs in G4, all white in G5.
-    public static final class Layer extends RenderLayer<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> {
-        public Layer(RenderLayerParent<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> parent) {
+    // On the player renderers, and on the Joy Boy boss's (whose skin is its own texture, wide arms).
+    public static final class Layer<T extends LivingEntity> extends RenderLayer<T, PlayerModel<T>> {
+        public Layer(RenderLayerParent<T, PlayerModel<T>> parent) {
             super(parent);
         }
 
         @Override
-        public void render(PoseStack pose, MultiBufferSource buffer, int light, AbstractClientPlayer player, float limbSwing, float limbSwingAmount,
+        public void render(PoseStack pose, MultiBufferSource buffer, int light, T player, float limbSwing, float limbSwingAmount,
                 float partialTick, float ageInTicks, float netHeadYaw, float headPitch) {
             Body bd = BODIES.get(player.getId());
             if (bd == null || bd.lookLv == 0 || bd.lookLv == 2 || bd.lookK <= 0.01) {
                 return;
             }
-            PlayerModel<AbstractClientPlayer> m = getParentModel();
+            PlayerModel<T> m = getParentModel();
+            ResourceLocation skinTex;
+            boolean skinSlim;
+            if (player instanceof AbstractClientPlayer p) {
+                skinTex = p.getSkin().texture();
+                skinSlim = p.getSkin().model() == net.minecraft.client.resources.PlayerSkin.Model.SLIM;
+            } else {
+                skinTex = getTextureLocation(player);
+                skinSlim = false;
+            }
             var buf = buffer.getBuffer(RenderType.entityTranslucent(WHITE_TEX));
             int overlay = OverlayTexture.NO_OVERLAY;
             float k = (float) bd.lookK;
@@ -2078,10 +2102,10 @@ public final class LuffyFx {
                 }
             } else if (bd.lookLv == 3) {
                 if (boundman(bd)) {
-                    drawBoundman(pose, buffer, light, player, m, bd, partialTick);
+                    drawBoundman(pose, buffer, light, player, skinTex, skinSlim, m, bd, partialTick);
                 }
             } else if (bd.lookLv == 4 && RenderSystem.getVertexSorting() != VertexSorting.ORTHOGRAPHIC_Z) {
-                drawNika(pose, buffer, light, player, m, bd, partialTick);
+                drawNika(pose, buffer, light, player, skinTex, skinSlim, m, bd, partialTick);
             }
         }
     }
@@ -2141,9 +2165,9 @@ public final class LuffyFx {
     // The page's build() and step(): the skin on the page's boxes (barrel chest, sunk head, short thighs), haki forearms,
     // fists and shins, bouncing every 1.1 s; the steam collar and the elbow tails go with him, the columns are let go here
     // and rise in the world (columns()).
-    private static void drawBoundman(PoseStack pose, MultiBufferSource buffer, int light, AbstractClientPlayer player, PlayerModel<AbstractClientPlayer> m,
+    private static void drawBoundman(PoseStack pose, MultiBufferSource buffer, int light, LivingEntity player, ResourceLocation skinTex, boolean skinSlim, PlayerModel<?> m,
             Body bd, float partial) {
-        BoundmanSkin.Skin sk = BoundmanSkin.of(player);
+        BoundmanSkin.Skin sk = BoundmanSkin.of(skinTex, skinSlim);
         VertexConsumer vc = buffer.getBuffer(RenderType.entityCutoutNoCull(sk.tex()));
         int ov = LivingEntityRenderer.getOverlayCoords(player, 0);
         Vec3 cam = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
@@ -2491,7 +2515,7 @@ public final class LuffyFx {
 
     // The page's G5 over his own skin: the open white shirt, the wide sleeves and the shorts with their fur hems, the
     // purple sash with its loose end, the cloud at his neck with its flames; sitting, his arms and legs in the page's pose.
-    private static void drawNika(PoseStack pose, MultiBufferSource buffer, int light, AbstractClientPlayer player, PlayerModel<AbstractClientPlayer> m,
+    private static void drawNika(PoseStack pose, MultiBufferSource buffer, int light, LivingEntity player, ResourceLocation skinTex, boolean skinSlim, PlayerModel<?> m,
             Body bd, float partial) {
         int ov = LivingEntityRenderer.getOverlayCoords(player, 0);
         Vec3 cam = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
@@ -2509,7 +2533,7 @@ public final class LuffyFx {
             float[][] sitPose = {{(float) (-2.75 + 0.1 * wig), -0.35f}, {(float) (-0.9 + 0.3 * wig - 0.5 * fl), (float) -(1.3 + 0.5 * fl + 0.3 * sq)},
                     {(float) (-1.95 - 0.25 * fl + 0.12 * wig), 0.22f}, {(float) (-1.35 - 0.2 * fl - 0.12 * wig), -0.3f}};
             ModelPart[] over = {m.rightSleeve, m.leftSleeve, m.rightPants, m.leftPants};
-            VertexConsumer skin = buffer.getBuffer(RenderType.entityCutoutNoCull(player.getSkin().texture()));
+            VertexConsumer skin = buffer.getBuffer(RenderType.entityCutoutNoCull(skinTex));
             for (int i = 0; i < 4; i++) {
                 ModelPart p = limbs[i];
                 p.xRot = Mth.lerp(K, saved[i][0], sitPose[i][0]);
@@ -2526,7 +2550,7 @@ public final class LuffyFx {
         }
         // taken after the sitting limbs: asking the buffer for the skin's type ends any builder taken before it
         VertexConsumer cloth = buffer.getBuffer(RenderType.entityCutoutNoCull(WHITE_TEX));
-        boolean slim = player.getSkin().model() == net.minecraft.client.resources.PlayerSkin.Model.SLIM;
+        boolean slim = skinSlim;
         // the shirt, the waist and the sash on his trunk (page pixels, y from his feet; the trunk turns at 24)
         pose.pushPose();
         m.body.translateAndRotate(pose);
@@ -2676,7 +2700,7 @@ public final class LuffyFx {
 
     // The sash's loose end: a chain of points hung from the knot, pulled by gravity and a soft wind behind him, never
     // through the ground, drawn as one purple strip.
-    private static void ribbon(Body bd, Vec3 knot, Vec3 side, Vec3 back, AbstractClientPlayer player, float sc, VertexConsumer vc, int light, int ov, Vec3 cam) {
+    private static void ribbon(Body bd, Vec3 knot, Vec3 side, Vec3 back, LivingEntity player, float sc, VertexConsumer vc, int light, int ov, Vec3 cam) {
         int N = 13;
         double seg = 1.25 / 16 * 0.9375 * sc;
         long ns = System.nanoTime();
@@ -2757,7 +2781,15 @@ public final class LuffyFx {
     private static final java.util.Set<Integer> SQUASHED = new java.util.HashSet<>();
 
     public static void onRenderLivingPre(RenderLivingEvent.Pre<?, ?> event) {
-        if (SQUASH.isEmpty() && KNOCK.isEmpty() || event.isCanceled()) {
+        if (event.isCanceled()) {
+            return;
+        }
+        if (luffyMob(event.getEntity()) && event.getRenderer().getModel() instanceof PlayerModel<?> pm
+                && !pre(event.getEntity(), pm, event.getPoseStack(), event.getPartialTick())) {
+            event.setCanceled(true);
+            return;
+        }
+        if (SQUASH.isEmpty() && KNOCK.isEmpty()) {
             return;
         }
         Squash s = SQUASH.get(event.getEntity().getId());
@@ -2852,9 +2884,15 @@ public final class LuffyFx {
         pose.mulPose(Axis.YP.rotation((float) Math.PI));
     }
 
+    @SuppressWarnings({"unchecked", "rawtypes"})
     public static void onRenderLivingPost(RenderLivingEvent.Post<?, ?> event) {
         if (SQUASHED.remove(event.getEntity().getId())) {
             event.getPoseStack().popPose();
+        }
+        LivingEntity e = event.getEntity();
+        if (luffyMob(e) && event.getRenderer().getModel() instanceof PlayerModel<?> pm) {
+            net.minecraft.client.renderer.entity.LivingEntityRenderer r = event.getRenderer();
+            post(e, pm, event.getPoseStack(), event.getMultiBufferSource(), event.getPackedLight(), event.getPartialTick(), r.getTextureLocation(e));
         }
     }
 

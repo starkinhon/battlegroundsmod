@@ -216,6 +216,12 @@ public final class Corrente {
         return true;
     }
 
+    // Her chains out of the ground hold someone right now (V again says "Morram.").
+    public static boolean grounded(LivingEntity caster) {
+        Ground g = GROUND.get(caster.getUUID());
+        return g != null && !g.over && !g.morram;
+    }
+
     // V again while the chains hold: "Morram." (from 2.9 s on; earlier it waits for that).
     public static boolean morram(LivingEntity caster) {
         Ground g = GROUND.get(caster.getUUID());
