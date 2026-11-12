@@ -39,18 +39,6 @@
       "maxCount": 3
     },
     {
-      "type": "battlegroundsmod:ninja_renegado",
-      "weight": 14,
-      "minCount": 1,
-      "maxCount": 3
-    },
-    {
-      "type": "battlegroundsmod:ninja_som",
-      "weight": 9,
-      "minCount": 2,
-      "maxCount": 3
-    },
-    {
       "type": "battlegroundsmod:anbu_raiz",
       "weight": 5,
       "minCount": 1,

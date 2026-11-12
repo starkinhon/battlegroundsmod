@@ -16,7 +16,9 @@ import com.starkinhon.battlegroundsmod.world.LeafTreeGen.Rng;
 // moss); vines hang down the cliffs. The sea is the game's: the bottom stays vanilla.
 public final class SeaGen {
     public static final byte AIR = 0, STONE = 1, ANDESITE = 2, TUFF = 3, MOSSY = 4, GRASS = 5, DIRT = 6, MOSS = 7, LOG = 8, PINE = 9,
-            PINE_DARK = 10, VINE = 11, PLANK = 12, ROPE = 13, POST = 14, GRAVEL = 15, SAND = 16, CLAY = 17;
+            PINE_DARK = 10, VINE = 11, PLANK = 12, ROPE = 13, POST = 14, GRAVEL = 15, SAND = 16, CLAY = 17,
+            // the game's rope runs along one axis per block (ROPE is along x)
+            ROPE_Z = 18, ROPE_Y = 19;
 
     private SeaGen() {
     }
@@ -319,25 +321,72 @@ public final class SeaGen {
         int n = (int) Math.ceil(L * 2.5);
         double dx = (bx - ax) / L, dz = (bz - az) / L, sx = -dz, sz = dx;
         double sag = 1 + L * 0.08;
-        for (int i = 0; i <= n; i++) {
-            double t = i / (double) n;
-            double x = ax + (bx - ax) * t, z = az + (bz - az) * t;
-            double y = ya + (yb - ya) * t - sag * 4 * t * (1 - t);
-            for (int s = -1; s <= 1; s++) {
-                w.set(round(x + sx * s), round(y) - 1 + 1, round(z + sz * s), PLANK);
-            }
-            for (int s = -2; s <= 2; s += 4) {
-                w.set(round(x + sx * s), round(y) + 1, round(z + sz * s), ROPE);
-            }
+        // flat over each top out to past its rim, the sag only over the water between (it used to start sagging on the
+        // top, so the deck went down into the pillar's own dirt and came out as loose steps beside the cliff)
+        double da = a0.R * 0.65, db = b0.R * 0.65;
+        if (L - da - db < 6) {
+            da = db = 0;
         }
+        // the posts first, so the rope tied to them doesn't take their middle block (it left the top block floating)
         double[][] ends = {{ax, az, ya}, {bx, bz, yb}};
         for (double[] p : ends) {
             for (int s = -2; s <= 2; s += 4) {
                 for (int k = 0; k <= 2; k++) {
-                    w.set(round(p[0] + sx * s), (int) p[2] + k, round(p[1] + sz * s), POST);
+                    w.force(round(p[0] + sx * s), (int) p[2] + k, round(p[1] + sz * s), POST);
                 }
             }
         }
+        for (int i = 0; i <= n; i++) {
+            double t = i / (double) n;
+            double x = ax + (bx - ax) * t, z = az + (bz - az) * t;
+            double y = deckY(t, L, da, db, ya, yb, sag);
+            for (int s = -1; s <= 1; s++) {
+                w.set(round(x + sx * s), round(y) - 1 + 1, round(z + sz * s), PLANK);
+            }
+        }
+        // The rope on each side: the preview draws a line through its blocks, diagonals too; a block of rope in the game is
+        // straight along one axis, so the line goes block to block along the axes (a step in x, then in z, then in y),
+        // each block turned the way the rope leaves it, and it reads as one rope instead of loose sticks (Stark's print
+        // of 2026-11-12).
+        for (int s = -2; s <= 2; s += 4) {
+            int cx = 0, cy = 0, cz = 0;
+            for (int i = 0; i <= n; i++) {
+                double t = i / (double) n;
+                double x = ax + (bx - ax) * t, z = az + (bz - az) * t;
+                double y = deckY(t, L, da, db, ya, yb, sag);
+                int rx = round(x + sx * s), ry = round(y) + 1, rz = round(z + sz * s);
+                if (i == 0) {
+                    cx = rx;
+                    cy = ry;
+                    cz = rz;
+                    continue;
+                }
+                while (cx != rx || cz != rz || cy != ry) {
+                    byte type = cx != rx ? ROPE : cz != rz ? ROPE_Z : ROPE_Y;
+                    w.set(cx, cy, cz, type);
+                    if (cx != rx) {
+                        cx += Integer.signum(rx - cx);
+                    } else if (cz != rz) {
+                        cz += Integer.signum(rz - cz);
+                    } else {
+                        cy += Integer.signum(ry - cy);
+                    }
+                }
+            }
+            w.set(cx, cy, cz, Math.abs(bx - ax) >= Math.abs(bz - az) ? ROPE : ROPE_Z);
+        }
+    }
+
+    private static double deckY(double t, double L, double da, double db, int ya, int yb, double sag) {
+        double d = t * L;
+        if (d <= da) {
+            return ya;
+        }
+        if (d >= L - db) {
+            return yb;
+        }
+        double u = (d - da) / (L - da - db);
+        return ya + (yb - ya) * u - sag * 4 * u * (1 - u);
     }
 
     // ---- cells ----------------------------------------------------------------------------------------------------

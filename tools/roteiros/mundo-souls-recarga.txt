@@ -1,0 +1,14 @@
+# Reabre o mundo Souls já criado e confere fortaleza/minas/tags depois de carregar do disco.
+# gradlew runClient -Pmundo=SoulsTipo3 -Proteiro=mundo-souls-recarga
+espera 200
+devc marca recarga
+execute in minecraft:overworld run tp @s -612 120 976
+espera 100
+execute as @s run data get entity @s Pos
+execute if biome ~ ~ ~ #minecraft:is_overworld run say TAG_IS_OVERWORLD_OK
+locate structure minecraft:stronghold
+locate structure minecraft:mineshaft
+locate structure minecraft:trial_chambers
+locate biome battlegroundsmod:terras_do_dragao
+espera 600
+sair

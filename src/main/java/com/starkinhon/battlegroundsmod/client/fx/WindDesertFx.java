@@ -94,7 +94,7 @@ public final class WindDesertFx {
         if (mc.isPaused()) {
             return;
         }
-        boolean inside = mc.level.getBiome(mc.player.blockPosition()).is(ModWorldgen.DESERTO_DO_VENTO);
+        boolean inside = BiomeAura.in("deserto_do_vento", b -> b.is(ModWorldgen.DESERTO_DO_VENTO));
         strength = Mth.clamp(strength + (inside ? 0.015f : -0.02f), 0, 1);
         if (strength <= 0) {
             clear();

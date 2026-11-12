@@ -17,6 +17,8 @@ import net.neoforged.neoforge.network.PacketDistributor;
 public final class MovementInput {
     private static boolean jumpWasDown = false;
     private static boolean sprintWasDown = false;
+    // Holding the dash key repeated its clicks (#127): it dashed again on its own every time the cooldown ran out.
+    private static boolean dashWasDown = false;
     private static int lastSprintTap = -100;
     // Creative players toggle flying with a double tap; when the air jump is on in creative, that toggle is undone.
     private static boolean undoFlight = false;
@@ -46,10 +48,12 @@ public final class MovementInput {
             sprintTap = true;
         }
         sprintWasDown = sprintDown;
-        boolean dash = false;
+        boolean dashClicked = false;
         while (Keybinds.DASH.consumeClick()) {
-            dash = true;
+            dashClicked = true;
         }
+        boolean dash = dashClicked && !dashWasDown;
+        dashWasDown = Keybinds.DASH.isDown();
         if (player == null) {
             FlightClient.tick(false);
             return;

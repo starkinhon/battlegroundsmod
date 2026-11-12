@@ -61,7 +61,7 @@ public final class EndValleyFx {
         }
         ClientLevel level = mc.level;
         long time = level.getGameTime();
-        boolean inside = level.getBiome(mc.player.blockPosition()).is(ModWorldgen.VALE_DO_FIM);
+        boolean inside = BiomeAura.in("vale_do_fim", b -> b.is(ModWorldgen.VALE_DO_FIM));
         if (inside && (time - scannedAt > 40 || time < scannedAt)) {
             scan(level, mc.player.blockPosition());
             scannedAt = time;

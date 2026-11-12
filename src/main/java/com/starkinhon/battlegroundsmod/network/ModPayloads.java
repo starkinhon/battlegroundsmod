@@ -359,6 +359,39 @@ public final class ModPayloads {
         }
     }
 
+    // Server -> client: every soul's Sincronia (power/SoulSync), whether skills are gated, and the player's tier.
+    public record SyncSoulSync(net.minecraft.nbt.CompoundTag map, boolean on, int tier) implements CustomPacketPayload {
+        public static final Type<SyncSoulSync> TYPE = payloadType("sync_soul_sync");
+        public static final StreamCodec<ByteBuf, SyncSoulSync> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.COMPOUND_TAG, SyncSoulSync::map,
+                ByteBufCodecs.BOOL, SyncSoulSync::on,
+                ByteBufCodecs.VAR_INT, SyncSoulSync::tier,
+                SyncSoulSync::new);
+
+        void applyTo(Player player) {
+            com.starkinhon.battlegroundsmod.power.SoulSync.apply(player, map, on);
+        }
+
+        @Override
+        public Type<SyncSoulSync> type() {
+            return TYPE;
+        }
+    }
+
+    // Client -> server: spend a Sincronia point to awaken a skill (Livro das Almas).
+    public record AwakenSkill(String power, int slot) implements CustomPacketPayload {
+        public static final Type<AwakenSkill> TYPE = payloadType("awaken_skill");
+        public static final StreamCodec<ByteBuf, AwakenSkill> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.STRING_UTF8, AwakenSkill::power,
+                ByteBufCodecs.VAR_INT, AwakenSkill::slot,
+                AwakenSkill::new);
+
+        @Override
+        public Type<AwakenSkill> type() {
+            return TYPE;
+        }
+    }
+
     // Client -> server: the boost of the Dragon Ball flight on (Ctrl while flying) or off (universe/Flight).
     public record FlightBoost(boolean on) implements CustomPacketPayload {
         public static final Type<FlightBoost> TYPE = payloadType("flight_boost");
@@ -1751,6 +1784,12 @@ public final class ModPayloads {
         registrar.playToServer(ShenlongWish.TYPE, ShenlongWish.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer player) {
                 com.starkinhon.battlegroundsmod.universe.shenlong.ShenlongServer.pick(player, payload.wish());
+            }
+        }));
+        registrar.playToClient(SyncSoulSync.TYPE, SyncSoulSync.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> payload.applyTo(context.player())));
+        registrar.playToServer(AwakenSkill.TYPE, AwakenSkill.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
+            if (context.player() instanceof ServerPlayer player) {
+                com.starkinhon.battlegroundsmod.power.SoulSync.awaken(player, payload.power(), payload.slot());
             }
         }));
         registrar.playToClient(SyncProgress.TYPE, SyncProgress.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> payload.applyTo(context.player())));

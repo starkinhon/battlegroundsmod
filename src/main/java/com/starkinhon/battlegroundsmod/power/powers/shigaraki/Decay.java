@@ -45,6 +45,8 @@ public final class Decay {
     private static final int QUIET = 2 | 16;
     // The crumbling starts this long after the Decadência reaches a block (preview: age 0.5 s).
     public static final float CRUMBLE = 0.5f;
+    // A drying body takes its damage in blows this many ticks apart (Decay.body).
+    private static final int CHUNK = 10;
 
     private record Due(long tick, long pos) implements Comparable<Due> {
         @Override
@@ -253,6 +255,10 @@ public final class Decay {
         Stun.apply(target, Math.max(stun, ticks));
         int id = target.getId();
         float per = total / ticks;
+        // The damage goes in a few blows (every CHUNK ticks), not a tiny one each tick: the Escudo de tier takes a flat
+        // part off every blow, so 39 blows of 0.1 against a higher tier did nothing at all (#291's test: Madara 225 ->
+        // 225 even at the same tier only 8.6 of it went in).
+        float[] owed = {0};
         Tasks.addSystem(age -> {
             if (!target.isAlive() || target.isRemoved()) {
                 DECAYING.remove(id);
@@ -260,9 +266,13 @@ public final class Decay {
             }
             boolean wasAlive = !target.isDeadOrDying();
             // the drying body stays where it was touched (the preview): a hurt every tick would knock it away
-            Vec3 v = target.getDeltaMovement();
-            Combat.hurt(caster, target, per);
-            target.setDeltaMovement(v);
+            owed[0] += per;
+            if (age % CHUNK == CHUNK - 1 || age >= ticks) {
+                Vec3 v = target.getDeltaMovement();
+                Combat.hurt(caster, target, owed[0]);
+                target.setDeltaMovement(v);
+                owed[0] = 0;
+            }
             if (wasAlive && target.isDeadOrDying()) {
                 // it went to dust: the clients draw it crumbling from the touch out (never the normal death)
                 CustomDeath.mark(target);
@@ -282,5 +292,11 @@ public final class Decay {
 
     public static boolean decaying(LivingEntity target) {
         return DECAYING.contains(target.getId());
+    }
+
+    // The world closed (ServerReset): nothing of it is kept for the next one (old entities, old game times).
+    public static void resetStatics() {
+        SCHED.clear();
+        DECAYING.clear();
     }
 }

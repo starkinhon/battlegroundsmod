@@ -1,0 +1,335 @@
+# Estruturas Naruto (PR #301): vistas de fora e por dentro de cada uma, mais os itens novos.
+# Mundo normal: -Pmundo=NarutoEstruturas -PmundoTipo=normal -Proteiro=estruturas-naruto
+/dev preparar
+/gamemode creative
+/effect give @s minecraft:slow_falling infinite 0 true
+/gamerule doDaylightCycle false
+/time set 6000
+/devc fov 70
+/devc vista primeira
+espera 40
+# ---- folha
+/devc marca folha
+/soul estrutura folha
+espera 700
+# chão firme: a construção vai em ticks; espera e volta pro alto
+/soul estrutura folha
+/tp @s ~ ~ ~ 180 50
+/devc hud off
+espera 30
+/devc print naruto-estruturas/folha_sul
+/tp @s ~-40 ~ ~-40 -90 50
+espera 30
+/devc print naruto-estruturas/folha_oeste
+/tp @s ~80 ~ ~ 90 50
+espera 30
+/devc print naruto-estruturas/folha_leste
+/tp @s ~-40 ~30 ~ 0 89
+espera 30
+/devc print naruto-estruturas/folha_cima
+/soul estrutura folha center
+/tp @s ~ ~ ~ 0 15
+espera 20
+/devc print naruto-estruturas/folha_center_a
+/tp @s ~ ~ ~ 180 15
+espera 10
+/devc print naruto-estruturas/folha_center_b
+/soul estrutura folha bell
+/tp @s ~ ~ ~ 0 15
+espera 20
+/devc print naruto-estruturas/folha_bell_a
+/tp @s ~ ~ ~ 180 15
+espera 10
+/devc print naruto-estruturas/folha_bell_b
+/soul estrutura folha target
+/tp @s ~ ~ ~ 0 15
+espera 20
+/devc print naruto-estruturas/folha_target_a
+/tp @s ~ ~ ~ 180 15
+espera 10
+/devc print naruto-estruturas/folha_target_b
+# ---- morte
+/devc marca morte
+/soul estrutura morte
+espera 700
+# chão firme: a construção vai em ticks; espera e volta pro alto
+/soul estrutura morte
+/tp @s ~ ~ ~ 180 50
+/devc hud off
+espera 30
+/devc print naruto-estruturas/morte_sul
+/tp @s ~-40 ~ ~-40 -90 50
+espera 30
+/devc print naruto-estruturas/morte_oeste
+/tp @s ~80 ~ ~ 90 50
+espera 30
+/devc print naruto-estruturas/morte_leste
+/tp @s ~-40 ~30 ~ 0 89
+espera 30
+/devc print naruto-estruturas/morte_cima
+/soul estrutura morte center
+/tp @s ~ ~ ~ 0 15
+espera 20
+/devc print naruto-estruturas/morte_center_a
+/tp @s ~ ~ ~ 180 15
+espera 10
+/devc print naruto-estruturas/morte_center_b
+/soul estrutura morte altar
+/tp @s ~ ~ ~ 0 15
+espera 20
+/devc print naruto-estruturas/morte_altar_a
+/tp @s ~ ~ ~ 180 15
+espera 10
+/devc print naruto-estruturas/morte_altar_b
+/soul estrutura morte chest
+/tp @s ~ ~ ~ 0 15
+espera 20
+/devc print naruto-estruturas/morte_chest_a
+/tp @s ~ ~ ~ 180 15
+espera 10
+/devc print naruto-estruturas/morte_chest_b
+# ---- covil
+/devc marca covil
+/soul estrutura covil
+espera 700
+# chão firme: a construção vai em ticks; espera e volta pro alto
+/soul estrutura covil
+/tp @s ~ ~ ~ 180 50
+/devc hud off
+espera 30
+/devc print naruto-estruturas/covil_sul
+/tp @s ~-40 ~ ~-40 -90 50
+espera 30
+/devc print naruto-estruturas/covil_oeste
+/tp @s ~80 ~ ~ 90 50
+espera 30
+/devc print naruto-estruturas/covil_leste
+/tp @s ~-40 ~30 ~ 0 89
+espera 30
+/devc print naruto-estruturas/covil_cima
+/soul estrutura covil mouth
+/tp @s ~ ~ ~ 0 15
+espera 20
+/devc print naruto-estruturas/covil_mouth_a
+/tp @s ~ ~ ~ 180 15
+espera 10
+/devc print naruto-estruturas/covil_mouth_b
+/soul estrutura covil nest
+/tp @s ~ ~ ~ 0 15
+espera 20
+/devc print naruto-estruturas/covil_nest_a
+/tp @s ~ ~ ~ 180 15
+espera 10
+/devc print naruto-estruturas/covil_nest_b
+# ---- deserto
+/devc marca deserto
+/soul estrutura deserto
+espera 700
+# chão firme: a construção vai em ticks; espera e volta pro alto
+/soul estrutura deserto
+/tp @s ~ ~ ~ 180 50
+/devc hud off
+espera 30
+/devc print naruto-estruturas/deserto_sul
+/tp @s ~-40 ~ ~-40 -90 50
+espera 30
+/devc print naruto-estruturas/deserto_oeste
+/tp @s ~80 ~ ~ 90 50
+espera 30
+/devc print naruto-estruturas/deserto_leste
+/tp @s ~-40 ~30 ~ 0 89
+espera 30
+/devc print naruto-estruturas/deserto_cima
+/soul estrutura deserto hall
+/tp @s ~ ~ ~ 0 15
+espera 20
+/devc print naruto-estruturas/deserto_hall_a
+/tp @s ~ ~ ~ 180 15
+espera 10
+/devc print naruto-estruturas/deserto_hall_b
+/soul estrutura deserto seal
+/tp @s ~ ~ ~ 0 15
+espera 20
+/devc print naruto-estruturas/deserto_seal_a
+/tp @s ~ ~ ~ 180 15
+espera 10
+/devc print naruto-estruturas/deserto_seal_b
+/soul estrutura deserto puppet
+/tp @s ~ ~ ~ 0 15
+espera 20
+/devc print naruto-estruturas/deserto_puppet_a
+/tp @s ~ ~ ~ 180 15
+espera 10
+/devc print naruto-estruturas/deserto_puppet_b
+# ---- nevoa
+/devc marca nevoa
+/soul estrutura nevoa
+espera 700
+# chão firme: a construção vai em ticks; espera e volta pro alto
+/soul estrutura nevoa
+/tp @s ~ ~ ~ 180 50
+/devc hud off
+espera 30
+/devc print naruto-estruturas/nevoa_sul
+/tp @s ~-40 ~ ~-40 -90 50
+espera 30
+/devc print naruto-estruturas/nevoa_oeste
+/tp @s ~80 ~ ~ 90 50
+espera 30
+/devc print naruto-estruturas/nevoa_leste
+/tp @s ~-40 ~30 ~ 0 89
+espera 30
+/devc print naruto-estruturas/nevoa_cima
+/soul estrutura nevoa center
+/tp @s ~ ~ ~ 0 15
+espera 20
+/devc print naruto-estruturas/nevoa_center_a
+/tp @s ~ ~ ~ 180 15
+espera 10
+/devc print naruto-estruturas/nevoa_center_b
+/soul estrutura nevoa blade
+/tp @s ~ ~ ~ 0 15
+espera 20
+/devc print naruto-estruturas/nevoa_blade_a
+/tp @s ~ ~ ~ 180 15
+espera 10
+/devc print naruto-estruturas/nevoa_blade_b
+/soul estrutura nevoa grave
+/tp @s ~ ~ ~ 0 15
+espera 20
+/devc print naruto-estruturas/nevoa_grave_a
+/tp @s ~ ~ ~ 180 15
+espera 10
+/devc print naruto-estruturas/nevoa_grave_b
+# ---- chuva
+/devc marca chuva
+/soul estrutura chuva
+espera 700
+# chão firme: a construção vai em ticks; espera e volta pro alto
+/soul estrutura chuva
+/tp @s ~ ~ ~ 180 50
+/devc hud off
+espera 30
+/devc print naruto-estruturas/chuva_sul
+/tp @s ~-40 ~ ~-40 -90 50
+espera 30
+/devc print naruto-estruturas/chuva_oeste
+/tp @s ~80 ~ ~ 90 50
+espera 30
+/devc print naruto-estruturas/chuva_leste
+/tp @s ~-40 ~30 ~ 0 89
+espera 30
+/devc print naruto-estruturas/chuva_cima
+/soul estrutura chuva tower
+/tp @s ~ ~ ~ 0 15
+espera 20
+/devc print naruto-estruturas/chuva_tower_a
+/tp @s ~ ~ ~ 180 15
+espera 10
+/devc print naruto-estruturas/chuva_tower_b
+/soul estrutura chuva flower
+/tp @s ~ ~ ~ 0 15
+espera 20
+/devc print naruto-estruturas/chuva_flower_a
+/tp @s ~ ~ ~ 180 15
+espera 10
+/devc print naruto-estruturas/chuva_flower_b
+/soul estrutura chuva pit
+/tp @s ~ ~ ~ 0 15
+espera 20
+/devc print naruto-estruturas/chuva_pit_a
+/tp @s ~ ~ ~ 180 15
+espera 10
+/devc print naruto-estruturas/chuva_pit_b
+# ---- myoboku
+/devc marca myoboku
+/soul estrutura myoboku
+espera 700
+# chão firme: a construção vai em ticks; espera e volta pro alto
+/soul estrutura myoboku
+/tp @s ~ ~ ~ 180 50
+/devc hud off
+espera 30
+/devc print naruto-estruturas/myoboku_sul
+/tp @s ~-40 ~ ~-40 -90 50
+espera 30
+/devc print naruto-estruturas/myoboku_oeste
+/tp @s ~80 ~ ~ 90 50
+espera 30
+/devc print naruto-estruturas/myoboku_leste
+/tp @s ~-40 ~30 ~ 0 89
+espera 30
+/devc print naruto-estruturas/myoboku_cima
+/soul estrutura myoboku center
+/tp @s ~ ~ ~ 0 15
+espera 20
+/devc print naruto-estruturas/myoboku_center_a
+/tp @s ~ ~ ~ 180 15
+espera 10
+/devc print naruto-estruturas/myoboku_center_b
+/soul estrutura myoboku stone
+/tp @s ~ ~ ~ 0 15
+espera 20
+/devc print naruto-estruturas/myoboku_stone_a
+/tp @s ~ ~ ~ 180 15
+espera 10
+/devc print naruto-estruturas/myoboku_stone_b
+# ---- pico
+/devc marca pico
+/soul estrutura pico
+espera 700
+# chão firme: a construção vai em ticks; espera e volta pro alto
+/soul estrutura pico
+/tp @s ~ ~ ~ 180 50
+/devc hud off
+espera 30
+/devc print naruto-estruturas/pico_sul
+/tp @s ~-40 ~ ~-40 -90 50
+espera 30
+/devc print naruto-estruturas/pico_oeste
+/tp @s ~80 ~ ~ 90 50
+espera 30
+/devc print naruto-estruturas/pico_leste
+/tp @s ~-40 ~30 ~ 0 89
+espera 30
+/devc print naruto-estruturas/pico_cima
+/soul estrutura pico foot
+/tp @s ~ ~ ~ 0 15
+espera 20
+/devc print naruto-estruturas/pico_foot_a
+/tp @s ~ ~ ~ 180 15
+espera 10
+/devc print naruto-estruturas/pico_foot_b
+/soul estrutura pico top
+/tp @s ~ ~ ~ 0 15
+espera 20
+/devc print naruto-estruturas/pico_top_a
+/tp @s ~ ~ ~ 180 15
+espera 10
+/devc print naruto-estruturas/pico_top_b
+# ---- itens
+/devc hud on
+/title @s clear
+/clear @s
+/give @s battlegroundsmod:guizo
+/give @s battlegroundsmod:pergaminho_ceu
+/give @s battlegroundsmod:pergaminho_terra
+/give @s battlegroundsmod:pele_cobra
+/give @s battlegroundsmod:pergaminho_marionete
+/give @s battlegroundsmod:kubikiribocho
+/give @s battlegroundsmod:asas_de_papel
+/give @s battlegroundsmod:bolsa_veneno
+/give @s battlegroundsmod:celula_hashirama
+/tp @s ~ ~ ~ 0 60
+espera 20
+/devc print naruto-estruturas/itens_hotbar
+/clear @s
+/title @s clear
+/give @s battlegroundsmod:pergaminho_sapo
+/give @s battlegroundsmod:sharingan
+/give @s battlegroundsmod:selo_de_papel
+/give @s battlegroundsmod:fio_de_chakra
+espera 20
+/devc print naruto-estruturas/itens_hotbar2
+espera 20
+sair

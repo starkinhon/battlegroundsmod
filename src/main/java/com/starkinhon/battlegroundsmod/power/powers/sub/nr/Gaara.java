@@ -841,4 +841,11 @@ public final class Gaara {
         }
         return new Vec3(c.x + dx / d * r, p.y, c.z + dz / d * r);
     }
+
+    // The world closed (ServerReset): nothing of it is kept for the next one (old entities, old game times).
+    public static void resetStatics() {
+        COFFINS.clear();
+        QUICKS.clear();
+        SINKS.clear();
+    }
 }

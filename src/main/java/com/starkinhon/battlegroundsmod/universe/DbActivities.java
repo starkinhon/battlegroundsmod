@@ -248,6 +248,7 @@ public final class DbActivities {
     // ---------- the NPCs' talk (Npcs.talk) ----------
 
     public static void bulma(ServerPlayer player, UniverseNpc npc) {
+        DbQuests.start(player);
         if (DbQuests.at(player, "bulma")) {
             say(player, npc, Component.translatable("npc.battlegroundsmod.bulma.radar"));
             DbQuests.advance(player, "bulma", 1);

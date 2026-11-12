@@ -11,7 +11,6 @@ import com.starkinhon.battlegroundsmod.skill.VfxSpec.Efeito;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.Mth;
-import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec3;
 
 // The world effects of Bills' Planetary Destruction (bills.destruction_touch.json), drawn like the rest of FxWorld from the
@@ -105,7 +104,10 @@ final class DestructionFx {
         float[] line = FxDraw.mix(FxDraw.rgb(0x5A0A04), cor, heat);
         float[] core = FxDraw.mix(FxDraw.rgb(0x8A1A06), hot, heat);
         float flicker = 0.9f + 0.1f * Mth.sin(age * 0.9f);
-        Vector3f origin = new Vector3f(at).sub((float) world.x, (float) world.y, (float) world.z);
+        // The web is stored relative to where it hit (world); at is that same point relative to the camera. Subtracting
+        // world from at here put the whole web around the world's 0, 0, 0 instead (in the sky over a flat world near
+        // the origin, nowhere to be seen anywhere else).
+        Vector3f origin = new Vector3f(at);
         float[] s = web.segments;
         float view = loadedReach();
         for (int i = 0; i < s.length; i += STRIP) {
@@ -294,7 +296,7 @@ final class DestructionFx {
                 if (level == null) {
                     return new float[] {0.05f, 0, baseY + 1};
                 }
-                int top = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
+                int top = ClientGround.noLeaves(level, x, z);
                 int trunk = 0;
                 var pos = new net.minecraft.core.BlockPos.MutableBlockPos(x, top - 1, z);
                 while (trunk < 32 && level.getBlockState(pos).is(net.minecraft.tags.BlockTags.LOGS)) {

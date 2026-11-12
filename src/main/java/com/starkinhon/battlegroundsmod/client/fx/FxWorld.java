@@ -281,8 +281,12 @@ public final class FxWorld {
             OpmMesh.flush(true);
             LuffyMesh.flush(true);
             KakashiSusanoo.flush(camera, now, true);
-            BleachMesh.flush(true);
             FxPost.endGlow(FxConfig.on(FxConfig.BLOOM));
+            // Bleach: its own layer, only the halo added (as on the approved pages); with bloom off, no halo at all.
+            if (BleachMesh.pending() && FxConfig.on(FxConfig.BLOOM) && FxPost.beginBleachGlow()) {
+                BleachMesh.flush(true);
+                FxPost.endBleachGlow();
+            }
         }
         // Makima's rats' vision: the red ghosts of whoever is near, over everything.
         MakimaFx.ghosts(event, camera, partial);

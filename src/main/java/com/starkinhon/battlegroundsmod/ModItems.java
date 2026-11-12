@@ -49,6 +49,14 @@ public final class ModItems {
             () -> new DeferredSpawnEggItem(ModEntities.GOJO, 0x14161C, 0x4FC3FF, new Item.Properties()));
     public static final DeferredItem<DeferredSpawnEggItem> SUKUNA_SPAWN_EGG = BattlegroundsMod.ITEMS.register("sukuna_spawn_egg",
             () -> new DeferredSpawnEggItem(ModEntities.SUKUNA, 0x16090B, 0xC8321E, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> JOY_BOY_SPAWN_EGG = BattlegroundsMod.ITEMS.register("joy_boy_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.JOY_BOY, 0xC0392B, 0xF2D16B, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> SAITAMA_SPAWN_EGG = BattlegroundsMod.ITEMS.register("saitama_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.SAITAMA, 0xF2C94C, 0xE8E8E8, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> SHIGARAKI_SPAWN_EGG = BattlegroundsMod.ITEMS.register("shigaraki_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.SHIGARAKI, 0x23232B, 0xB9BEC8, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> MAKIMA_SPAWN_EGG = BattlegroundsMod.ITEMS.register("makima_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.MAKIMA, 0x1C1E26, 0xC9665A, new Item.Properties()));
     public static final DeferredItem<DeferredSpawnEggItem> KOKUSHIBO_SPAWN_EGG = BattlegroundsMod.ITEMS.register("kokushibo_spawn_egg",
             () -> new DeferredSpawnEggItem(ModEntities.KOKUSHIBO, 0x2D1531, 0xC9A2FF, new Item.Properties()));
 
@@ -141,10 +149,29 @@ public final class ModItems {
             () -> new DeferredSpawnEggItem(ModEntities.NPC_GOHAN, 0x5A2D82, 0xE8C27A, new Item.Properties()));
     public static final DeferredItem<DeferredSpawnEggItem> NPC_KORIN_SPAWN_EGG = BattlegroundsMod.ITEMS.register("npc_korin_spawn_egg",
             () -> new DeferredSpawnEggItem(ModEntities.NPC_KORIN, 0xF2F2EE, 0x8A6A4F, new Item.Properties()));
-    public static final DeferredItem<DeferredSpawnEggItem> NINJA_RENEGADO_SPAWN_EGG = BattlegroundsMod.ITEMS.register("ninja_renegado_spawn_egg",
-            () -> new DeferredSpawnEggItem(ModEntities.NINJA_RENEGADO, 0x5A5A66, 0x9A9AA8, new Item.Properties()));
-    public static final DeferredItem<DeferredSpawnEggItem> NINJA_SOM_SPAWN_EGG = BattlegroundsMod.ITEMS.register("ninja_som_spawn_egg",
-            () -> new DeferredSpawnEggItem(ModEntities.NINJA_SOM, 0x6A5A8E, 0xD8C8A0, new Item.Properties()));
+    // The Naruto biomes' creatures (animal/naruto): one egg each, the old renegade and Sound ninja eggs kept by id.
+    public static final Map<String, DeferredItem<DeferredSpawnEggItem>> NARUTO_EGGS = new LinkedHashMap<>();
+
+    static {
+        Map<String, int[]> colors = Map.ofEntries(
+                Map.entry("ninja_renegado", new int[] {0x5A5A66, 0x9A9AA8}), Map.entry("ninken", new int[] {0xB98A52, 0x2A3A6A}),
+                Map.entry("cobra_gigante", new int[] {0x6A4A8A, 0xD8C890}), Map.entry("tigre", new int[] {0xE08A2A, 0x1A1410}),
+                Map.entry("ninja_som", new int[] {0x6A5A8E, 0xD8C8A0}), Map.entry("centopeia", new int[] {0x6A2A1A, 0xD8A040}),
+                Map.entry("ninja_leque", new int[] {0xC8A878, 0x6A2A2A}), Map.entry("escorpiao_areia", new int[] {0xC9A76B, 0x5A3A1A}),
+                Map.entry("marionete", new int[] {0xE8E0D0, 0xB02020}), Map.entry("marionetista", new int[] {0x3A2A2A, 0x6AA8FF}),
+                Map.entry("espadachim_nevoa", new int[] {0x4A5A6A, 0xB8C8D8}), Map.entry("tubarao_agua", new int[] {0x3A6A9A, 0xD8E8F0}),
+                Map.entry("caranguejo_gigante", new int[] {0xC0402A, 0xF0C090}), Map.entry("cacador_nevoa", new int[] {0xE8E8E8, 0xB02A2A}),
+                Map.entry("ninja_chuva", new int[] {0x4A4E5C, 0x8A9AB0}), Map.entry("garca_papel", new int[] {0xF0EAD8, 0xC02020}),
+                Map.entry("salamandra_venenosa", new int[] {0x3A2A4A, 0x9AD04A}), Map.entry("zetsu_branco", new int[] {0xF0F0E8, 0x4A7A3A}),
+                Map.entry("corvo_uchiha", new int[] {0x14141A, 0xD01010}), Map.entry("clone_madeira", new int[] {0x8A6A44, 0x5A8A3A}),
+                Map.entry("sapo_ninja", new int[] {0x6A9A3A, 0xE8A040}), Map.entry("sapo_gigante", new int[] {0xD8782A, 0x6A3A1A}),
+                Map.entry("inseto_gigante", new int[] {0x2A4A6A, 0x8AD0C0}));
+        for (String id : ModEntities.NARUTO_MOBS.keySet()) {
+            int[] c = colors.getOrDefault(id, new int[] {0x444444, 0x999999});
+            NARUTO_EGGS.put(id, BattlegroundsMod.ITEMS.register(id + "_spawn_egg",
+                    () -> new DeferredSpawnEggItem(ModEntities.NARUTO_MOBS.get(id), c[0], c[1], new Item.Properties())));
+        }
+    }
     public static final DeferredItem<DeferredSpawnEggItem> ANBU_RAIZ_SPAWN_EGG = BattlegroundsMod.ITEMS.register("anbu_raiz_spawn_egg",
             () -> new DeferredSpawnEggItem(ModEntities.ANBU_RAIZ, 0x2A2A30, 0xE8E8E8, new Item.Properties()));
     public static final DeferredItem<DeferredSpawnEggItem> NPC_JIRAIYA_SPAWN_EGG = BattlegroundsMod.ITEMS.register("npc_jiraiya_spawn_egg",
@@ -207,6 +234,12 @@ public final class ModItems {
         }
     }
 
+    // The general Livro dos Desafios: every universe in one book (Stark 2026-11-12). The per-universe ones above stay so old
+    // saves and the advancements' icons keep working; they open the same board.
+    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.ChallengeBookItem> CHALLENGE_BOOK = BattlegroundsMod.ITEMS.registerItem(
+            "livro_desafios", properties -> new com.starkinhon.battlegroundsmod.item.ChallengeBookItem("", properties),
+            new Item.Properties().stacksTo(1).rarity(Rarity.EPIC));
+
     // Cristal Multiversal: takes the player to another universe (challenge/Universes). Simple for now; the Fenda with
     // its tunnel comes later (Stark 2026-11-10).
     public static final DeferredItem<com.starkinhon.battlegroundsmod.item.MultiversalCrystalItem> MULTIVERSAL_CRYSTAL = BattlegroundsMod.ITEMS.registerItem(
@@ -236,6 +269,29 @@ public final class ModItems {
             com.starkinhon.battlegroundsmod.item.SamehadaItem::new, new Item.Properties().rarity(Rarity.EPIC));
     public static final DeferredItem<com.starkinhon.battlegroundsmod.item.KusanagiItem> KUSANAGI = BattlegroundsMod.ITEMS.registerItem("kusanagi",
             com.starkinhon.battlegroundsmod.item.KusanagiItem::new, new Item.Properties().rarity(Rarity.EPIC));
+    // The Naruto structures' items (Stark 2026-11-12, world/NarutoSites, universe/NarutoActivities).
+    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.NarutoLootItems.Lore> GUIZO = BattlegroundsMod.ITEMS.registerItem("guizo",
+            p -> new com.starkinhon.battlegroundsmod.item.NarutoLootItems.Lore(p, "guizo", 0xE8B93A), new Item.Properties().stacksTo(2).rarity(Rarity.UNCOMMON));
+    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.NarutoLootItems.Lore> SCROLL_HEAVEN = BattlegroundsMod.ITEMS.registerItem("pergaminho_ceu",
+            p -> new com.starkinhon.battlegroundsmod.item.NarutoLootItems.Lore(p, "pergaminho_ceu", 0x8FC3FF), new Item.Properties().stacksTo(16).rarity(Rarity.UNCOMMON));
+    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.NarutoLootItems.Lore> SCROLL_EARTH = BattlegroundsMod.ITEMS.registerItem("pergaminho_terra",
+            p -> new com.starkinhon.battlegroundsmod.item.NarutoLootItems.Lore(p, "pergaminho_terra", 0xE0B070), new Item.Properties().stacksTo(16).rarity(Rarity.UNCOMMON));
+    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.NarutoLootItems.SnakeSkin> SNAKE_SKIN = BattlegroundsMod.ITEMS.registerItem("pele_cobra",
+            com.starkinhon.battlegroundsmod.item.NarutoLootItems.SnakeSkin::new, new Item.Properties().stacksTo(16).rarity(Rarity.RARE));
+    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.NarutoLootItems.PuppetScroll> PUPPET_SCROLL = BattlegroundsMod.ITEMS.registerItem("pergaminho_marionete",
+            com.starkinhon.battlegroundsmod.item.NarutoLootItems.PuppetScroll::new, new Item.Properties().stacksTo(1).rarity(Rarity.RARE));
+    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.NarutoLootItems.Kubikiribocho> KUBIKIRIBOCHO = BattlegroundsMod.ITEMS.registerItem("kubikiribocho",
+            com.starkinhon.battlegroundsmod.item.NarutoLootItems.Kubikiribocho::new, new Item.Properties().rarity(Rarity.EPIC));
+    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.NarutoLootItems.PaperWings> PAPER_WINGS = BattlegroundsMod.ITEMS.registerItem("asas_de_papel",
+            com.starkinhon.battlegroundsmod.item.NarutoLootItems.PaperWings::new, new Item.Properties().stacksTo(1).rarity(Rarity.RARE));
+    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.NarutoLootItems.PoisonPouch> POISON_POUCH = BattlegroundsMod.ITEMS.registerItem("bolsa_veneno",
+            com.starkinhon.battlegroundsmod.item.NarutoLootItems.PoisonPouch::new, new Item.Properties().stacksTo(16).rarity(Rarity.UNCOMMON));
+    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.NarutoLootItems.HashiramaCell> HASHIRAMA_CELL = BattlegroundsMod.ITEMS.registerItem("celula_hashirama",
+            com.starkinhon.battlegroundsmod.item.NarutoLootItems.HashiramaCell::new, new Item.Properties().stacksTo(16).rarity(Rarity.RARE));
+    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.NarutoLootItems.ToadScroll> TOAD_SCROLL = BattlegroundsMod.ITEMS.registerItem("pergaminho_sapo",
+            com.starkinhon.battlegroundsmod.item.NarutoLootItems.ToadScroll::new, new Item.Properties().stacksTo(1).rarity(Rarity.EPIC));
+    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.NarutoLootItems.Sharingan> SHARINGAN = BattlegroundsMod.ITEMS.registerItem("sharingan",
+            com.starkinhon.battlegroundsmod.item.NarutoLootItems.Sharingan::new, new Item.Properties().stacksTo(1).rarity(Rarity.EPIC));
     // Jujutsu items and weapons (universe/JujutsuWorld, universe/ReverseCurse).
     public static final DeferredItem<com.starkinhon.battlegroundsmod.item.SukunaFingerItem> SUKUNA_FINGER = BattlegroundsMod.ITEMS.registerItem("dedo_sukuna",
             com.starkinhon.battlegroundsmod.item.SukunaFingerItem::new, new Item.Properties().rarity(Rarity.EPIC));

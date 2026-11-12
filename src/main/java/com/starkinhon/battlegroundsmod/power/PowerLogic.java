@@ -77,6 +77,11 @@ public final class PowerLogic {
             player.displayClientMessage(Component.translatable("message.battlegroundsmod.no_power"), true);
             return;
         }
+        if (power != null && !SoulSync.awake(player, power, slot)) {
+            // Not awakened yet: the Sincronia opens it in the Livro das Almas.
+            player.displayClientMessage(Component.translatable("message.battlegroundsmod.sync_locked", power.abilityName(slot)), true);
+            return;
+        }
         if (slot >= 0 && slot < PowerData.SLOT_COUNT && player.isAlive() && !player.isSpectator()) {
             // Any skill key puts the fighter in combat mode (and gives it its full 30 s again) right away, before the
             // move itself: also the second presses below (closing the domain, stopping the Katon, commanding the Blue)
@@ -292,12 +297,10 @@ public final class PowerLogic {
     }
 
     public static void selectFromBook(ServerPlayer player, String id) {
-        if (!hasBook(player)) {
-            player.displayClientMessage(Component.translatable("message.battlegroundsmod.need_book"), true);
-            return;
-        }
-        // With universes and progression souls come only from beating their characters (creative still picks freely).
-        if (Progression.on(player) && !player.isCreative()) {
+        // The Livro das Almas also opens on U (it replaced the old constellation screen), so no book in hand is needed.
+        // With universes and progression souls come only from beating their characters (creative still picks freely);
+        // a soul already worn once can be put back on from the book, with its own Sincronia (SoulSync).
+        if (Progression.on(player) && !player.isCreative() && !SoulSync.known(player, id)) {
             player.displayClientMessage(Component.translatable("message.battlegroundsmod.book_locked"), true);
             return;
         }
@@ -310,6 +313,7 @@ public final class PowerLogic {
     public static void select(ServerPlayer player, Power power) {
         PowerData data = player.getData(ModAttachments.POWER);
         data.power = power.id();
+        SoulSync.touch(player, power.id());
         data.ult = 0;
         data.outfit = true;
         data.resetCombat();
@@ -463,5 +467,6 @@ public final class PowerLogic {
         PacketDistributor.sendToPlayer(player, ModPayloads.SyncPower.of(player.getData(ModAttachments.POWER)));
         com.starkinhon.battlegroundsmod.combat.Stamina.sync(player);
         Progression.sync(player);
+        SoulSync.sync(player);
     }
 }

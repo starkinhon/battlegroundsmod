@@ -153,6 +153,61 @@ void main() {
         vec3 c = d > .25 ? vec3(.97, .98, 1.) : d > -.25 ? vec3(.84, .87, .93) : vec3(.64, .69, .8);
         if (n < thr + .08) c = vec3(.72, .77, .87);
         fragColor = vec4(c, 1.);
+    } else if (k == 10) {
+        // HAO_F (forja/luffy-haki): black core, a thin edge in the haki's color (Col) with a light rim, eaten from the root
+        // (P2.y) and grown to the tip (P2.x); P2.z = 1 the soft glow (Col2) around it. The light is measured across the tube,
+        // so a bolt seen along its length does not turn into a bright plate.
+        if (vU > P2.x || vU < P2.y) discard;
+        vec3 Tt = normalize(vL), Vp = V - Tt * dot(V, Tt);
+        float fb = length(Vp) < 1e-3 ? 1. : abs(dot(N, normalize(Vp)));
+        float tip = (1. - smoothstep(P2.x - 0.06, P2.x, vU)) * smoothstep(P2.y, P2.y + 0.06, vU);
+        // right by the lens a bolt would fill the screen like a plate: it fades out from 4 blocks in, gone under 1.2
+        tip *= smoothstep(1.2, 4.0, length(vV));
+        if (GlowPass > 0.5) { fragColor = vec4(0.); return; }
+        if (P2.z > 0.5) {
+            float a = pow(fb, 3.) * 0.55 * A * tip;
+            fragColor = vec4(mix(Col2, vec3(1.), pow(fb, 6.) * 0.25) * a, a);
+            return;
+        }
+        vec3 c = fb > 0.3 ? vec3(0.02, 0.003, 0.01) : fb > 0.13 ? Col : mix(Col, vec3(1.), 0.4);
+        float a = A * tip;
+        fragColor = vec4(c * a, a);
+    } else if (k == 11) {
+        // the burnt mark where a bolt hit the ground: P0 = (age s, half size of the quad, mark size, 0), in 1/16 pixels
+        vec2 q = floor(vO.xy * P0.y * 16.) / 16. + 1. / 32.;
+        float r = length(q), an = atan(q.y, q.x), m = P0.z;
+        float cr = abs(gn(vec3(an * 2.6, r * 1.5, Seed)));
+        float crack = step(cr, 0.06) * (1. - smoothstep(m * 0.4, m * 2.6, r));
+        float burn = step(r + gn(vec3(q * 7., Seed)) * 0.05, m * 0.55);
+        float fade = 1. - smoothstep(1.4, 2.6, P0.x);
+        float hot = (1. - smoothstep(0., 0.5, P0.x)) * 0.9;
+        vec3 c = crack > 0.5 ? mix(vec3(0.03, 0.02, 0.02), Col, hot) : vec3(0.1, 0.08, 0.07);
+        float a = max(burn * 0.8, crack * 0.95) * fade * A;
+        if (a < 0.01 || GlowPass > 0.5) discard;
+        fragColor = vec4(c * a, a);
+    } else if (k == 12) {
+        // the pressure ring running out over the ground: P0 = (age s, half size of the quad); a dark band, the haki's edge
+        // and the white dust raised in swirls just behind it
+        vec2 q = floor(vO.xy * P0.y * 16.) / 16. + 1. / 32.;
+        float r = length(q), ag = P0.x, R = ag * 15., fl = 1. - ag / 1.4;
+        float band = (1. - smoothstep(0., 0.5, abs(r - R))) * fl;
+        float edge = (1. - smoothstep(0., 0.08, abs(r - R - 0.4))) * fl * 0.8;
+        float an = atan(q.y, q.x);
+        float sw = gn(vec3(an * 3. + r * 0.9 - ag * 4., r * 0.6, Seed));
+        float dust = smoothstep(0.15, 0.3, sw) * (1. - smoothstep(0., 1.6, abs(r - R * 0.82 - 0.4))) * (1. - smoothstep(0.5, 1.4, ag)) * step(1.2, r) * 0.9;
+        vec4 o = vec4(0., 0., 0., band * 0.55);
+        o = o * (1. - edge) + vec4(Col * edge, edge);
+        o = o * (1. - dust) + vec4(vec3(0.96, 0.96, 0.98) * dust, dust);
+        if (o.a < 0.01 || GlowPass > 0.5) discard;
+        fragColor = o * A;
+    } else if (k == 13) {
+        // the shock shell: dark and see-through, a thin edge in the haki's color, torn by noise as it fades (P0.x = 1 .. 0)
+        float n = fbm3(vO * 3.2 + vec3(0., -T * 2., Seed)) * 0.5 + 0.5;
+        float d = rim * (0.65 + 0.7 * n) - (1. - P0.x) * 0.9;
+        if (d < 0.45 || GlowPass > 0.5) discard;
+        vec3 c = d > 0.86 ? Col : vec3(0.05, 0.005, 0.02);
+        float a = smoothstep(0.45, 0.6, d) * (d > 0.86 ? 0.7 : 0.18) * A;
+        fragColor = vec4(c * a, a);
     } else {
         // a solid piece (Lambert under the page's hemisphere light); P0.x = 1: the King Kong Gun's fist
         vec3 c = Col;

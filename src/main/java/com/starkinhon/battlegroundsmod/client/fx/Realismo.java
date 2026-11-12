@@ -72,7 +72,7 @@ public final class Realismo {
     }
 
     private static final List<Vol> VOLS = new ArrayList<>();
-    private static final RandomSource RANDOM = RandomSource.create();
+    private static final RandomSource RANDOM = RandomSource.createThreadSafe();
     private static int frame;
 
     private Realismo() {

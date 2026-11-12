@@ -50,6 +50,11 @@ public final class ModAttachments {
     public static final Supplier<AttachmentType<java.util.List<String>>> TECHNIQUES = ATTACHMENT_TYPES.register("techniques",
             () -> AttachmentType.<java.util.List<String>>builder(() -> java.util.List.of()).serialize(Codec.STRING.listOf()).copyOnDeath().build());
 
+    // Sincronia per soul (power/SoulSync): level, points to spend and the skills awake. Saved and kept on death.
+    public static final Supplier<AttachmentType<java.util.Map<String, com.starkinhon.battlegroundsmod.power.SoulSync.Entry>>> SOUL_SYNC = ATTACHMENT_TYPES.register("soul_sync",
+            () -> AttachmentType.<java.util.Map<String, com.starkinhon.battlegroundsmod.power.SoulSync.Entry>>builder(() -> java.util.Map.of())
+                    .serialize(com.starkinhon.battlegroundsmod.power.SoulSync.MAP_CODEC).copyOnDeath().build());
+
     private ModAttachments() {
     }
 }

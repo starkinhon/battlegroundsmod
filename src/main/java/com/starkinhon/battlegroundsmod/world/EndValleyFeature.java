@@ -247,6 +247,17 @@ public final class EndValleyFeature extends Feature<NoneFeatureConfiguration> {
                 random.sampler()).is(ModWorldgen.VALE_DO_FIM);
     }
 
+    // The valleys around a box of the running world (NarutoSites: the seals on the statues), the same frames the
+    // feature builds from.
+    public static List<ValeGen.Frame> framesNear(ServerLevel level, int bx0, int bz0, int bx1, int bz1) {
+        ChunkGenerator generator = level.getChunkSource().getGenerator();
+        RandomState random = level.getChunkSource().randomState();
+        long worldSeed = level.getSeed();
+        int worldKey = (int) (worldSeed ^ (worldSeed >>> 32));
+        IntBinaryOperator natural = (x, z) -> LeafForestFeature.height(generator, level, random, worldKey, x, z) - 1;
+        return framesNear(bx0, bz0, bx1, bz1, worldKey ^ SALT, generator.getSeaLevel(), generator, random, natural);
+    }
+
     // The valleys whose footprint (with its blending margin) touches the box.
     private static List<ValeGen.Frame> framesNear(int bx0, int bz0, int bx1, int bz1, int seed, int sea, ChunkGenerator generator,
             RandomState random, IntBinaryOperator natural) {

@@ -183,7 +183,13 @@ public final class PowerHud {
             GuiDraw.glow(graphics, x + SLOT / 2f, y + SLOT / 2f, SLOT * 1.15f, ULT_COLOR, 0.35f + 0.3f * pulse);
         }
         graphics.fill(x, y, x + SLOT, y + SLOT, 0xF0100A14);
-        SkillIcons.draw(graphics, font, power, slot, ix, iy, ICON, cooling || waitingUlt ? 0.42f : 1f);
+        boolean locked = !com.starkinhon.battlegroundsmod.power.SoulSync.awake(net.minecraft.client.Minecraft.getInstance().player, power, slot);
+        SkillIcons.draw(graphics, font, power, slot, ix, iy, ICON, locked ? 0.22f : cooling || waitingUlt ? 0.42f : 1f);
+        if (locked) {
+            // Not awakened yet (Sincronia, Livro das Almas): a small padlock instead of the cooldown.
+            SoulBookDraw.padlock(graphics, x + SLOT / 2 - 4, y + SLOT / 2 - 5);
+            return;
+        }
 
         if (cooling) {
             float fraction = spent ? 1 : Mth.clamp(cooldown / (float) Math.max(1, FULL[slot]), 0, 1);

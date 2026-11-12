@@ -30,6 +30,7 @@ public final class NarutoWorld {
     public static void register() {
         NeoForge.EVENT_BUS.addListener(NarutoWorld::onDeath);
         NeoForge.EVENT_BUS.addListener(NarutoWorld::onTick);
+        NarutoActivities.register();
     }
 
     private static void onDeath(LivingDeathEvent event) {
@@ -40,7 +41,6 @@ public final class NarutoWorld {
         }
         ServerLevel level = player.serverLevel();
         switch (BuiltInRegistries.ENTITY_TYPE.getKey(victim.getType()).getPath()) {
-            case "ninja_som" -> chance(level, victim, new ItemStack(ModItems.SOLDIER_PILL.get()), 0.08);
             case "anbu_raiz" -> {
                 chance(level, victim, new ItemStack(ModItems.SUMMON_SCROLL.get()), 0.05);
                 chance(level, victim, new ItemStack(ModItems.HIRAISHIN_KUNAI.get()), 0.03);

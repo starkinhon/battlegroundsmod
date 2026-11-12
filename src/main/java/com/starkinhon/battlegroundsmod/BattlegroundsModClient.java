@@ -83,6 +83,13 @@ public class BattlegroundsModClient {
         modContainer.registerConfig(ModConfig.Type.CLIENT, FxConfig.SPEC);
         modContainer.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
         NeoForge.EVENT_BUS.addListener(MeteorRenderer::onRenderLevel);
+        // Respawning keeps the entity id with a new body (clock back to 0): drop the poses of the move it died in.
+        NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent.Clone e) -> {
+            com.starkinhon.battlegroundsmod.client.SkillAnimations.forget(e.getOldPlayer().getId());
+            com.starkinhon.battlegroundsmod.client.SkillAnimations.forget(e.getNewPlayer().getId());
+        });
+        NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent.LoggingOut e) ->
+                com.starkinhon.battlegroundsmod.client.SkillAnimations.clear());
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.DragonWind::onRenderLevel);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.DragonWind::onClientTick);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.DragonWind::onFog);
@@ -120,6 +127,8 @@ public class BattlegroundsModClient {
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, true, RenderPlayerEvent.Post.class, com.starkinhon.battlegroundsmod.client.fx.LuffyFx::onRenderPlayerPost);
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, false, RenderLivingEvent.Pre.class, com.starkinhon.battlegroundsmod.client.fx.LuffyFx::onRenderLivingPre);
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, true, RenderLivingEvent.Post.class, com.starkinhon.battlegroundsmod.client.fx.LuffyFx::onRenderLivingPost);
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, false, RenderLivingEvent.Pre.class, com.starkinhon.battlegroundsmod.client.fx.HakiFx::onRenderLivingPre);
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, true, RenderLivingEvent.Post.class, com.starkinhon.battlegroundsmod.client.fx.HakiFx::onRenderLivingPost);
         NeoForge.EVENT_BUS.addListener(EventPriority.LOW, false, RenderLivingEvent.Pre.class, com.starkinhon.battlegroundsmod.client.fx.shig.RegenFx::onRenderPre);
         NeoForge.EVENT_BUS.addListener(EventPriority.LOW, false, RenderLivingEvent.Post.class, com.starkinhon.battlegroundsmod.client.fx.shig.RegenFx::onRenderPost);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.DomainPanorama::onRenderFrame);
@@ -344,6 +353,15 @@ public class BattlegroundsModClient {
         event.registerEntityRenderer(ModEntities.GOJO.get(), context -> new SoulBossRenderer<>(context, "gojo", true));
         event.registerEntityRenderer(ModEntities.KOKUSHIBO.get(), com.starkinhon.battlegroundsmod.client.KokushiboRenderer::new);
         event.registerEntityRenderer(ModEntities.SUKUNA.get(), context -> new SoulBossRenderer<>(context, "sukuna", false));
+        event.registerEntityRenderer(ModEntities.JOY_BOY.get(), context -> {
+            SoulBossRenderer<com.starkinhon.battlegroundsmod.boss.JoyBoyEntity> r = new SoulBossRenderer<>(context, "joy_boy", false);
+            // His Gears drawn on the boss as on a player (pink G2, Boundman, the Nika clothes).
+            r.addLayer(new com.starkinhon.battlegroundsmod.client.fx.LuffyFx.Layer<>(r));
+            return r;
+        });
+        event.registerEntityRenderer(ModEntities.SAITAMA.get(), context -> new SoulBossRenderer<>(context, "saitama", false));
+        event.registerEntityRenderer(ModEntities.SHIGARAKI.get(), context -> new SoulBossRenderer<>(context, "shigaraki", false));
+        event.registerEntityRenderer(ModEntities.MAKIMA.get(), context -> new SoulBossRenderer<>(context, "makima", true));
         event.registerEntityRenderer(ModEntities.DUMMY.get(), context -> new DummyRenderer<>(context, "steve"));
         event.registerEntityRenderer(ModEntities.DUMMY_ATTACKER.get(), context -> new DummyRenderer<>(context, "kai"));
         event.registerEntityRenderer(ModEntities.AIZEN_ILLUSION.get(), AizenIllusionRenderer::new);
@@ -399,9 +417,11 @@ public class BattlegroundsModClient {
                 context -> new com.starkinhon.battlegroundsmod.client.animal.DinoRenderer(context, "raptor", 1.0f));
         event.registerEntityRenderer(ModEntities.SOLDADO_FREEZA.get(),
                 context -> new SoulBossRenderer<>(context, false, "soldado_freeza_0", "soldado_freeza_1"));
-        event.registerEntityRenderer(ModEntities.NINJA_RENEGADO.get(),
-                context -> new SoulBossRenderer<>(context, false, "ninja_renegado_0", "ninja_renegado_1"));
-        event.registerEntityRenderer(ModEntities.NINJA_SOM.get(), context -> new SoulBossRenderer<>(context, "ninja_som", false));
+        // the Naruto biomes' creatures (animal/naruto): the preview's models and baked animation
+        for (var e : ModEntities.NARUTO_MOBS.entrySet()) {
+            String id = e.getKey();
+            event.registerEntityRenderer(e.getValue().get(), context -> new com.starkinhon.battlegroundsmod.client.blocky.NarutoMobRenderer(context, id));
+        }
         event.registerEntityRenderer(ModEntities.ANBU_RAIZ.get(), context -> new SoulBossRenderer<>(context, "anbu_raiz", false));
         event.registerEntityRenderer(ModEntities.NPC_JIRAIYA.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_jiraiya"));
         event.registerEntityRenderer(ModEntities.NPC_TEUCHI.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_teuchi"));
@@ -464,7 +484,7 @@ public class BattlegroundsModClient {
             if (event.getSkin(model) instanceof PlayerRenderer renderer) {
                 renderer.addLayer(new AuraEyesLayer<>(renderer));
                 renderer.addLayer(new com.starkinhon.battlegroundsmod.client.outfit.OutfitLayer(renderer));
-                renderer.addLayer(new com.starkinhon.battlegroundsmod.client.fx.LuffyFx.Layer(renderer));
+                renderer.addLayer(new com.starkinhon.battlegroundsmod.client.fx.LuffyFx.Layer<>(renderer));
                 com.starkinhon.battlegroundsmod.client.fx.LuffyFx.wrapHeldLayer(renderer);
                 renderer.addLayer(new com.starkinhon.battlegroundsmod.client.outfit.KokushiboSheathLayer<>(renderer));
             }

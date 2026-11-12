@@ -13,11 +13,13 @@ import com.starkinhon.battlegroundsmod.combat.Melee;
 import com.starkinhon.battlegroundsmod.combat.Stun;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
 import com.starkinhon.battlegroundsmod.movement.Movement;
+import com.starkinhon.battlegroundsmod.network.ModPayloads;
 import com.starkinhon.battlegroundsmod.power.powers.uchiha.Izanami;
 import com.starkinhon.battlegroundsmod.power.powers.uchiha.Susanoo;
 import com.starkinhon.battlegroundsmod.skill.ComboSpec;
 
 import net.minecraft.network.chat.Component;
+import net.neoforged.neoforge.network.PacketDistributor;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.damagesource.DamageTypes;
@@ -140,6 +142,9 @@ public final class PowerEvents {
         if (event.getEntity() instanceof ServerPlayer player) {
             player.getData(ModAttachments.POWER).resetCombat();
             PowerLogic.sync(player);
+            // The new body keeps the dead one's entity id: no pose or guard of the move they died in carries over.
+            PacketDistributor.sendToPlayersTrackingEntityAndSelf(player, new ModPayloads.PlaySkillAnimation(player.getId(), "", false));
+            PacketDistributor.sendToPlayersTrackingEntityAndSelf(player, new ModPayloads.GuardPose(player.getId(), false));
         }
     }
 

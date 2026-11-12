@@ -116,10 +116,26 @@ public final class LuffyMoves {
         SubNet.send(level, SubNet.OPM_LAUNCH, target.getId(), caster.position(), v, 0, 0, 0);
     }
 
+    // The Conqueror's haki in his blows: 1 = G4 (red), 2 = G5 (red and yellow), set by the move that went off last.
+    private static final java.util.Map<LivingEntity, Integer> HAKI = new java.util.WeakHashMap<>();
+    // when each target last showed the haki (a gatling lands many times a second: one burst every 2 ticks)
+    private static final java.util.Map<LivingEntity, Long> HAKI_SHOWN = new java.util.WeakHashMap<>();
+
     private static void hit(LivingEntity caster, LivingEntity target, float damage, int stun) {
         Combat.hurt(caster, target, k(caster) > 1.5 ? damage * 3 : damage);
         if (stun > 0) {
             Stun.apply(target, stun);
+        }
+        int haki = HAKI.getOrDefault(caster, 0);
+        if (haki > 0 && caster.level() instanceof ServerLevel level) {
+            long t = level.getGameTime();
+            Long last = HAKI_SHOWN.get(target);
+            if (last == null || t - last >= 2) {
+                HAKI_SHOWN.put(target, t);
+                Vec3 c = Combat.center(target);
+                Vec3 d = c.subtract(caster.getEyePosition());
+                SubNet.send(level, SubNet.LUFFY_HAKI, target.getId(), c, d.lengthSqr() < 1e-6 ? caster.getLookAngle() : d.normalize(), haki, (float) k(caster), 0);
+            }
         }
     }
 
@@ -171,6 +187,8 @@ public final class LuffyMoves {
         Vec3 aim = target != null ? Combat.center(target) : caster.getEyePosition().add(caster.getLookAngle().scale(reach));
         Vec3 dir = flatTo(caster, aim);
         SubNet.send(level, SubNet.LUFFY_FIRE, caster.getId(), caster.position(), caster.getLookAngle(), key, gear, target == null ? -1 : target.getId());
+        // only G4 (red) and G5 (red and yellow) carry the Conqueror's haki
+        HAKI.put(caster, Luffy.g5(caster) || gear == 4 ? 2 : gear == 3 ? 1 : 0);
         String[] poses = {"luffy.pistol", "luffy.gatling", "luffy.bazooka", "luffy.v"};
         SubCommon.pose(caster, poses[key] + (gear + 1));
         SubCommon.Guard guard = SubCommon.guard(caster);

@@ -1,0 +1,387 @@
+<div class="wrap">
+  <header>
+    <h1>Mobs de Naruto</h1>
+    <p>Os mobs dos biomas de Naruto, bioma por bioma. A Floresta da Folha já foi aprovada; a Floresta da Morte é a nova. Cada mob é feito de cubos como os do jogo, com a textura pintada pixel a pixel, e tem versão low poly. Arraste pra girar, rodinha pra zoom. O boneco cinza é o jogador (1,8 bloco) e cada quadrado do chão é um bloco.</p>
+  </header>
+  <nav class="tabs" id="biomes" aria-label="Bioma"></nav>
+  <nav class="tabs" id="tabs" aria-label="Mob"></nav>
+  <div class="main">
+    <div class="stage" id="stage">
+      <div id="veil" style="position:absolute;inset:0;pointer-events:none;opacity:0"></div>
+      <div class="hud">
+        <div class="seg" id="modes" aria-label="Animação"></div>
+        <div class="seg" id="cams" aria-label="Câmera"></div>
+        <div class="seg" id="lods" aria-label="Detalhe"></div>
+      </div>
+    </div>
+    <aside class="side">
+      <div class="card">
+        <h2 id="m-nome"></h2>
+        <div class="bio" id="m-bioma"></div>
+        <div class="var" id="m-var"></div>
+        <dl id="m-info"></dl>
+      </div>
+      <div class="card tex">
+        <canvas id="m-tex" width="128" height="128"></canvas>
+        <p>Textura do jogo, do jeito que vai pro mod. <span class="mono" id="m-texsize"></span><br><span id="m-boxes"></span></p>
+      </div>
+    </aside>
+  </div>
+
+  <h3 id="spawn-h">Spawn</h3>
+  <p class="note">Só nascem no próprio bioma, longe das casas e do ponto de chegada. Os monstros vanilla continuam fora dos biomas de Naruto.</p>
+  <div class="tablewrap"><table id="spawn"></table></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<!--ENGINE-->
+<!--MOBS-->
+<script>
+'use strict';
+const SPAWN = {
+  'Floresta da Folha': [
+    ['Ninja Renegado', 'Duplas, no máximo 4 por perto. Preferem as bordas da floresta e os galhos grossos das árvores grandes da Folha.', 'Dia: raros. Noite: o dobro. Esperam em cima dos galhos e caem em quem passa.'],
+    ['Ninken', 'Matilha de 3 a 4, raças misturadas, 1 matilha a cada 96 blocos.', 'Dia e noite iguais. Neutros: só atacam se você atacar um deles.'],
+    ['SubAlmas da Folha', 'Naruto, Sasuke, Kakashi, Shikamaru e Ino aparecem bem mais aqui do que no resto do mundo.', 'Igual de dia e de noite.'],
+  ],
+  'Mar da Névoa': [
+    ['Espadachim da Névoa', 'Sozinho, sobre a água e nas pontes de corda. A névoa dele cobre 12 blocos.', 'Dia e noite iguais; com neblina forte no bioma, o dobro.'],
+    ['Caçador da Névoa', 'Sozinho, raro. Aparece mais pra quem está com SubAlma vestida.', 'Noite: o dobro.'],
+    ['Tubarão de Água', 'De 1 a 2 por trecho de mar, perto das pontes.', 'Dia e noite iguais. Nunca sai da água.'],
+    ['Caranguejo Gigante', 'Grupos de 3 a 6 na praia e nas pedras. O mais comum do bioma.', 'Dia: na areia. Noite: entram na água.'],
+  ],
+  'Vila da Chuva': [
+    ['Ninja da Chuva', 'Duplas nos canos e passarelas das torres.', 'Chove sempre no bioma: ficam mais rápidos.'],
+    ['Garça de Papel', 'Bandos de 3 a 5 voando entre as torres. Raras.', 'Só de dia (de noite o papel encharca e elas pousam).'],
+    ['Salamandra Venenosa', 'Uma por região, só nos Canos Gigantes embaixo da Torre (estrutura).', 'Dorme de dia; de noite sai do cano.'],
+  ],
+  'Monte Myoboku': [
+    ['Sapo Ninja', 'Grupos de 2 a 5 nas folhas gigantes e na beira do óleo. O mais comum do bioma.', 'Dia e noite iguais. Neutros: só brigam se você bater em um deles.'],
+    ['Inseto Gigante', 'Grupos de 2 a 4 embaixo das flores gigantes.', 'Noite: o dobro. Fogem dos sapos.'],
+    ['Sapo Gigante', 'Um só, no Pico do Sábio (estrutura). Nunca nasce solto.', 'Medita de dia e de noite; acorda com você no topo.'],
+  ],
+  'Vale do Fim': [
+    ['Zetsu Branco', 'Bandos de 3 a 6, saindo do chão entre as pedras e as margens do rio.', 'Dia: dentro da terra (o chão borbulha). Noite: andam na superfície, o dobro.'],
+    ['Corvo Uchiha', 'De 2 a 5 pousados nas cabeças das estátuas e nas pedras da cachoeira. O mais comum do bioma.', 'Dia e noite iguais. Neutros.'],
+    ['Clone de Madeira', 'Raro: 1 ou 2 perto das estátuas, parados como guardas.', 'Dia e noite iguais. Neutros até você chegar perto das estátuas.'],
+  ],
+  'Floresta da Morte': [
+    ['Cobra Gigante', 'Uma só por região (a cada ~600 blocos). Dorme enrolada nas raízes das árvores gigantes. Volta 2 dias do jogo depois de morrer.', 'Acorda com luta ou barulho perto, de dia ou de noite.'],
+    ['Tigre da Floresta', 'Sozinho, no máximo 1 por perto.', 'Dia: raro. Noite: comum.'],
+    ['Ninja do Som', 'Trios, no máximo 1 trio por perto. Perto das clareiras.', 'Dia e noite iguais. Brigam com os ninken se se encontrarem.'],
+    ['Centopeia Gigante', 'De 1 a 2, saindo das raízes ocas. A mais comum do bioma.', 'Noite: o dobro.'],
+  ],
+  'Deserto do Vento': [
+    ['Escorpião de Areia', 'De 2 a 3 enterrados perto das ossadas e das rochas. O mais comum do bioma.', 'Dia: enterrados, só o ferrão de fora. Noite: andam na superfície.'],
+    ['Ninja do Leque', 'Sozinho ou em dupla, no alto das dunas e das pedras.', 'Dia e noite iguais. Na tempestade de areia o Kamaitachi vai o dobro de longe.'],
+    ['Marionetista + Marionete', 'Um par por vez, raro. A marionete vem na frente; o marionetista fica 3 a 4 blocos atrás, escondido.', 'Só aparece durante a tempestade de areia, de dia ou de noite.'],
+    ['SubAlma do Deserto', 'Gaara aparece bem mais aqui do que no resto do mundo.', 'Igual de dia e de noite.'],
+  ],
+};
+let biome = 'Deserto do Vento';
+function table() {
+  const t = document.getElementById('spawn');
+  document.getElementById('spawn-h').textContent = 'Spawn na ' + biome;
+  t.innerHTML = '<thead><tr><th>Mob</th><th>Quantos e onde</th><th>Dia e noite</th></tr></thead><tbody>' +
+    (SPAWN[biome] || []).map(([m, w, d]) => `<tr><td><span class="pill novo">novo</span><b>${m}</b></td><td>${w}</td><td>${d}</td></tr>`).join('') + '</tbody>';
+}
+
+// ---------- palco ----------
+const stage = document.getElementById('stage');
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+stage.prepend(renderer.domElement);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x1c2a24);
+scene.fog = new THREE.Fog(0x1c2a24, 18, 40);
+const camera = new THREE.PerspectiveCamera(50, 4 / 3, 0.05, 200);
+scene.add(new THREE.HemisphereLight(0xe8f2e0, 0x34302a, 0.78));
+const sun = new THREE.DirectionalLight(0xffffff, 0.72);
+sun.position.set(-4, 9, -6);
+scene.add(sun);
+const flashLight = new THREE.PointLight(0xffb060, 0, 9, 2);
+scene.add(flashLight);
+const emberLight = new THREE.PointLight(0xff8a30, 0, 2.5, 2);
+scene.add(emberLight);
+const grid = new THREE.GridHelper(48, 48, 0x587060, 0x34443a);
+scene.add(grid);
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(48, 48), new THREE.MeshLambertMaterial({ color: 0x26342c }));
+floor.rotation.x = -Math.PI / 2; floor.position.y = -0.002;
+scene.add(floor);
+
+// jogador de referência com articulações, pra apanhar nos golpes
+const ref = new THREE.Group();
+const gm = new THREE.MeshLambertMaterial({ color: 0x8a92a6 });
+function limb(w, h, d, px, py, pz, cy) { const g = new THREE.Group(); g.position.set(px, py, pz); const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), gm); m.position.y = cy; g.add(m); return g; }
+const refBody = new THREE.Group(); ref.add(refBody);           // pivô no quadril, pra inclinar
+refBody.position.y = 0.75;
+const RP = {
+  head: limb(0.5, 0.5, 0.5, 0, 0.75, 0, 0.25),
+  torso: limb(0.5, 0.75, 0.25, 0, 0, 0, 0.375),
+  armR: limb(0.25, 0.75, 0.25, -0.375, 0.7, 0, -0.3),
+  armL: limb(0.25, 0.75, 0.25, 0.375, 0.7, 0, -0.3),
+};
+for (const k in RP) refBody.add(RP[k]);
+const legR = limb(0.24, 0.75, 0.25, -0.125, 0.75, 0, -0.375), legL = limb(0.24, 0.75, 0.25, 0.125, 0.75, 0, -0.375);
+ref.add(legR, legL);
+scene.add(ref);
+const REF = {
+  reset(x) { ref.position.set(x, 0, 0); ref.rotation.set(0, 0, 0); refBody.rotation.set(0, 0, 0); RP.armR.rotation.set(0, 0, 0); RP.armL.rotation.set(0, 0, 0); RP.armR.position.x = -0.375; RP.armL.position.x = 0.375; },
+  place(x, z, y = 0) { ref.position.set(x, y, z); },
+  punch(k) { RP.armR.rotation.x = k < 0 ? -k * 0.9 : -1.55 * k; refBody.rotation.y = -0.25 * k; },  // olha pro +Z
+  armsOut(k) { RP.armR.rotation.z = -1.0 * k; RP.armL.rotation.z = 1.0 * k; RP.armR.rotation.x = -0.4 * k; RP.armL.rotation.x = -0.4 * k; },
+  lean(a) { refBody.rotation.x += a; },
+  spin(a) { ref.rotation.y = a; },
+};
+
+let yaw = -0.55, pitch = 0.18, dist = 7, look = new THREE.Vector3(0, 1.4, 0), shakeK = 0;
+function placeCam(t) {
+  camera.position.set(look.x + Math.sin(yaw) * Math.cos(pitch) * dist, look.y + Math.sin(pitch) * dist, look.z - Math.cos(yaw) * Math.cos(pitch) * dist);
+  camera.lookAt(look);
+  if (shakeK > 0) { camera.position.x += (ENG.n3(t * 40, 0, 0, 1) - 0.5) * 0.12 * shakeK; camera.position.y += (ENG.n3(0, t * 40, 0, 2) - 0.5) * 0.12 * shakeK; }
+}
+let drag = null;
+renderer.domElement.addEventListener('pointerdown', e => { drag = [e.clientX, e.clientY]; renderer.domElement.setPointerCapture(e.pointerId); });
+renderer.domElement.addEventListener('pointermove', e => {
+  if (!drag) return;
+  yaw += (e.clientX - drag[0]) * 0.008; pitch = Math.max(-0.2, Math.min(1.45, pitch + (e.clientY - drag[1]) * 0.006));
+  drag = [e.clientX, e.clientY]; setCam(null);
+});
+renderer.domElement.addEventListener('pointerup', () => { drag = null; });
+renderer.domElement.addEventListener('wheel', e => { e.preventDefault(); dist = Math.max(2, Math.min(30, dist * (1 + Math.sign(e.deltaY) * 0.1))); }, { passive: false });
+function resize() {
+  const r = stage.getBoundingClientRect();
+  renderer.setSize(r.width, r.height, false);
+  camera.aspect = r.width / r.height; camera.updateProjectionMatrix();
+}
+new ResizeObserver(resize).observe(stage);
+
+// ---------- mobs ----------
+const make = (v, low) => { const def = low ? v.low : v.def; const model = ENG.build(def); const tex = ENG.paint(model, model.W, model.H); const obj = ENG.toThree(model, tex); return { v: v.v, meta: v, model, tex, obj, attached: {} }; };
+const built = window.MOBS.map(m => ({ m, vs: m.variants.map(v => ({ v, hi: make(v, false), lo: make(v, true) })) }));
+let cur = 0, curV = 0, mode = 'parado', cam = 'jogador', lod = 'hi', t0 = performance.now();
+const tabs = document.getElementById('tabs'), biomesEl = document.getElementById('biomes');
+const BIOMES = [...new Set(built.map(b => b.m.bioma))];
+// cor do chão e do céu de cada bioma (o resto usa a floresta)
+const LOOKS = {
+  'Deserto do Vento': { sky: 0x45372a, floor: 0x6c5638, g1: 0x8a7050, g2: 0x5e4b31 },
+  'Mar da Névoa': { sky: 0x5a6670, floor: 0x2c4250, g1: 0x56707e, g2: 0x3a5260 },
+  'Vila da Chuva': { sky: 0x2a3038, floor: 0x262b31, g1: 0x48525c, g2: 0x343c44, rain: true },
+  'Monte Myoboku': { sky: 0x7a6a44, floor: 0x46562e, g1: 0x748a46, g2: 0x5a6c38 },
+  'Vale do Fim': { sky: 0x4a4e5c, floor: 0x45443f, g1: 0x6c6a62, g2: 0x55534c },
+};
+// chuva do bioma: cada gota com velocidade e posição próprias, caindo levemente inclinada
+const RAIN_N = 700, rainPos = new Float32Array(RAIN_N * 6), rainSeed = [];
+const rainGeo = new THREE.BufferGeometry(); rainGeo.setAttribute('position', new THREE.BufferAttribute(rainPos, 3));
+const rain = new THREE.LineSegments(rainGeo, new THREE.LineBasicMaterial({ color: 0x9fb4c8, transparent: true, opacity: 0.45 }));
+rain.frustumCulled = false; rain.visible = false; scene.add(rain);
+{ const R = FX.rnd(808); for (let i = 0; i < RAIN_N; i++) rainSeed.push([R() * 18 - 9, R() * 18 - 9, R(), 0.8 + R() * 0.5]); }
+function rainStep(t) {
+  if (!rain.visible) return;
+  rainSeed.forEach(([x, z, o, sp], i) => {
+    const y = 9 - ((t * 9 * sp + o * 9) % 9);
+    rainPos.set([x + y * 0.06, y, z, x + (y + 0.35) * 0.06, y + 0.35, z], i * 6);
+  });
+  rainGeo.attributes.position.needsUpdate = true;
+}
+function biomeLook() {
+  const L = LOOKS[biome] || { sky: 0x1c2a24, floor: 0x26342c, g1: 0x587060, g2: 0x34443a };
+  rain.visible = !!L.rain;
+  scene.background.setHex(L.sky); scene.fog.color.setHex(L.sky); floor.material.color.setHex(L.floor);
+  const cols = grid.geometry.attributes.color, c1 = new THREE.Color(L.g1), c2 = new THREE.Color(L.g2);
+  for (let i = 0; i < cols.count; i++) { const c = Math.floor(i / 4) === 24 ? c1 : c2; cols.setXYZ(i, c.r, c.g, c.b); }
+  cols.needsUpdate = true;
+}
+function drawBiomes() {
+  biomeLook();
+  biomesEl.innerHTML = '';
+  for (const bn of BIOMES) {
+    const btn = document.createElement('button'); btn.textContent = bn; btn.setAttribute('aria-pressed', bn === biome);
+    btn.onclick = () => { biome = bn; drawBiomes(); select(built.findIndex(b => b.m.bioma === bn), 0); };
+    biomesEl.appendChild(btn);
+  }
+  tabs.innerHTML = '';
+  built.forEach((b, i) => {
+    if (b.m.bioma !== biome) return;
+    const btn = document.createElement('button');
+    btn.id = 'tab-' + b.m.id; btn.dataset.i = i;
+    btn.innerHTML = `${b.m.nome}<small>${b.m.tier}</small>`;
+    btn.onclick = () => select(i, 0);
+    tabs.appendChild(btn);
+  });
+  table();
+}
+const CAMS = [['jogador', 'Jogador'], ['lado', 'Lado'], ['cima', 'Cima']];
+const LODS = [['hi', 'Normal'], ['lo', 'Low poly']];
+function seg(el, list, get, set) {
+  el.innerHTML = '';
+  for (const [k, n] of list) { const b = document.createElement('button'); b.id = el.id + '-' + k; b.textContent = n; b.onclick = () => set(k); el.appendChild(b); }
+  el.refresh = () => [...el.children].forEach((b, i) => b.setAttribute('aria-pressed', list[i][0] === get()));
+}
+const modesEl = document.getElementById('modes'), camsEl = document.getElementById('cams'), lodsEl = document.getElementById('lods');
+seg(camsEl, CAMS, () => cam, k => setCam(k));
+seg(lodsEl, LODS, () => lod, k => { lod = k; select(cur, curV, true); });
+function setMode(k) { mode = k; t0 = performance.now(); modesEl.refresh(); if (cam) setCam(cam); }
+function setCam(k) {
+  cam = k;
+  const m = built[cur].m;
+  if (k) {
+    const far = m.camFar && m.camFar[mode];
+    dist = far || m.cam || 7;
+    look.set(0, (m.lookYs && m.lookYs[mode]) || m.lookY || 1.4, (m.lookZ && m.lookZ[mode]) || 0);
+    if (k === 'jogador') { yaw = (m.camYaw && m.camYaw[mode]) ?? -0.6; pitch = 0.2; }
+    if (k === 'lado') { yaw = -Math.PI / 2; pitch = 0.05; }
+    if (k === 'cima') { yaw = -0.3; pitch = 1.3; }
+  }
+  camsEl.refresh();
+}
+let shownObj = null;
+function ent() { const e = built[cur].vs[curV]; return lod === 'hi' ? e.hi : e.lo; }
+function select(i, vi, keepMode) {
+  if (shownObj) scene.remove(shownObj);
+  if (cur !== i && !keepMode) mode = 'parado';
+  cur = i; curV = vi;
+  const b = built[i], e = ent();
+  scene.add(e.obj); shownObj = e.obj;
+  if (b.m.bioma !== biome) { biome = b.m.bioma; drawBiomes(); }
+  [...tabs.children].forEach(c => c.setAttribute('aria-pressed', +c.dataset.i === i));
+  seg(modesEl, b.m.modes, () => mode, setMode);
+  document.getElementById('m-nome').textContent = b.m.nome;
+  document.getElementById('m-bioma').textContent = b.m.bioma + ' · ' + b.m.tier;
+  const ve = document.getElementById('m-var');
+  ve.innerHTML = '';
+  const btnCss = on => 'font:600 12px var(--f-body);padding:5px 11px;border-radius:999px;border:1px solid var(--line);cursor:pointer;' +
+    (on ? 'background:var(--accent);color:var(--accent-fg);border-color:var(--accent)' : 'background:transparent;color:var(--fg)');
+  b.vs.forEach((x, j) => {
+    const bt = document.createElement('button'); bt.id = 'var-' + j; bt.textContent = x.v.nome; bt.style.cssText = btnCss(j === vi);
+    bt.onclick = () => select(i, j, true); ve.appendChild(bt);
+  });
+  if (b.m.randomVariant) {
+    const bt = document.createElement('button'); bt.id = 'var-sortear'; bt.textContent = 'Sortear outro';
+    bt.style.cssText = 'font:600 12px var(--f-body);padding:5px 11px;border-radius:999px;border:1px dashed var(--accent);cursor:pointer;background:transparent;color:var(--accent)';
+    bt.onclick = () => { const nv = b.m.randomVariant(); b.vs.push({ v: nv, hi: make(nv, false), lo: make(nv, true) }); select(i, b.vs.length - 1, true); };
+    ve.appendChild(bt);
+  }
+  document.getElementById('m-info').innerHTML = Object.entries(b.m.info).map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('');
+  const tc = document.getElementById('m-tex');
+  tc.width = e.tex.width; tc.height = e.tex.height;
+  tc.getContext('2d').drawImage(e.tex, 0, 0);
+  document.getElementById('m-texsize').textContent = `${e.tex.width}×${e.tex.height}`;
+  document.getElementById('m-boxes').textContent = `${e.model.allBoxes.length} caixas (${lod === 'hi' ? 'normal' : 'low poly'})`;
+  modesEl.refresh(); lodsEl.refresh();
+  setCam(cam || 'jogador');
+}
+
+// ---------- efeitos compartilhados ----------
+const cache = {};
+const extrasShown = new Set();
+function slashMesh() {
+  const SEG = 36, geo = new THREE.BufferGeometry(), pos = new Float32Array((SEG + 1) * 6), al = new Float32Array((SEG + 1) * 2), idx = [];
+  for (let s = 0; s < SEG; s++) { const a = s * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
+  geo.setIndex(idx); geo.setAttribute('position', new THREE.BufferAttribute(pos, 3)); geo.setAttribute('al', new THREE.BufferAttribute(al, 1));
+  const m = new THREE.Mesh(geo, new THREE.ShaderMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending,
+    vertexShader: 'attribute float al; varying float vA; void main(){ vA=al; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }',
+    fragmentShader: 'varying float vA; void main(){ gl_FragColor=vec4(vec3(1.0,1.0,1.0)*vA*1.4, vA); }' }));
+  m.frustumCulled = false;
+  m.at = (c, age) => {
+    m.visible = age >= 0 && age < 1;
+    // arco diagonal de cima pra baixo, o rastro some do fim pro começo
+    for (let s = 0; s <= SEG; s++) {
+      const f = s / SEG, ang = 2.3 - f * 2.6, R = 0.75;
+      const x = c.x + Math.cos(ang) * R * 0.9, y = c.y + Math.sin(ang) * R * 0.75, z = c.z + Math.sin(f * 3.1) * 0.12;
+      const w = 0.14 * Math.sin(Math.PI * f) * (1 - 0.6 * age);
+      pos.set([x, y - w, z, x, y + w, z], s * 6);
+      const a = Math.max(0, Math.min(1, (f - age * 1.3) * 3)) * (1 - age);
+      al[s * 2] = a; al[s * 2 + 1] = a;
+    }
+    geo.attributes.position.needsUpdate = true; geo.attributes.al.needsUpdate = true;
+  };
+  return m;
+}
+function emberMesh() {
+  const g = new THREE.Group(), sparks = [];
+  for (let i = 0; i < 9; i++) { const m = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.025, 0.025), new THREE.MeshBasicMaterial({ color: 0xffc060 })); g.add(m); sparks.push({ m, a: i * 2.39, s: 0.6 + (i % 4) * 0.25 }); }
+  g.at = (p, t) => {
+    g.visible = true;
+    for (const sp of sparks) {
+      const life = ((t * sp.s * 2.2 + sp.a) % 1);
+      sp.m.position.set(p.x + Math.cos(sp.a + t) * 0.08 * life, p.y + life * 0.25, p.z + Math.sin(sp.a * 1.7) * 0.08 * life);
+      sp.m.visible = life < 0.8;
+    }
+  };
+  return g;
+}
+const veil = document.getElementById('veil');
+let veilK = 0, veilCol = '', dizzyK = 0, blurK = 0;
+function clawMesh() {
+  const g = new THREE.Group(); g.list = [];
+  for (let i = 0; i < 3; i++) { const m = slashMesh(); g.add(m); g.list.push(m); }
+  g.at = (c, age) => { g.visible = true; g.list.forEach((m, i) => m.at(new THREE.Vector3(c.x + (i - 1) * 0.16, c.y - (i - 1) * 0.06, c.z + (i - 1) * 0.04), age - i * 0.05)); };
+  return g;
+}
+function groundRing() {
+  const mat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide, uniforms: { uA: { value: 0 } },
+    vertexShader: 'varying vec2 vP; void main(){ vP=position.xy; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }',
+    fragmentShader: `varying vec2 vP; uniform float uA;
+      float h(float x){ return fract(sin(x*61.3)*43758.5); }
+      float n(float x){ float i=floor(x), f=fract(x); f=f*f*(3.0-2.0*f); return mix(h(i),h(i+1.0),f); }
+      void main(){ float r=length(vP), a=atan(vP.y,vP.x); float e=0.82+0.08*(n(a*4.0)-0.5)+0.05*(n(a*11.0+3.0)-0.5);
+        float k=smoothstep(0.12,0.0,abs(r-e))*uA; if(k<0.01) discard; gl_FragColor=vec4(vec3(0.92,0.88,0.8),k*0.7); }` });
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), mat); m.rotation.x = -Math.PI / 2;
+  m.at = (p, age) => { m.visible = age > 0 && age < 1; m.position.copy(p); m.scale.setScalar(0.4 + age * 6); mat.uniforms.uA.value = 1 - age; };
+  return m;
+}
+const ctx = {
+  ref: REF,
+  camera,
+  dark(k) { veilK = Math.max(veilK, k * 0.92); veilCol = 'radial-gradient(circle at 50% 50%, rgba(40,6,14,.85), rgba(6,2,4,1) 70%)'; },
+  blur(k) { blurK = Math.max(blurK, k); if (k > veilK) { veilK = Math.max(veilK, k * 0.4); veilCol = 'radial-gradient(circle at 50% 50%, rgba(230,244,255,.3) 20%, rgba(220,238,255,.95) 100%)'; } },
+  drown(k) { if (k * 0.5 > veilK) { veilK = k * 0.5; veilCol = 'radial-gradient(circle at 50% 50%, rgba(40,110,170,.25) 30%, rgba(14,50,96,.95) 100%)'; } },
+  poison(k) { if (k > veilK * 0.5) { veilK = Math.max(veilK, k * 0.35); veilCol = 'radial-gradient(circle at 50% 50%, rgba(80,160,40,0) 40%, rgba(70,150,30,.9) 100%)'; } },
+  dizzy(k) { dizzyK = Math.max(dizzyK, k); },
+  claw(c, age) { ctx.get('_claw', clawMesh).at(c, age); },
+  roarRing(p, age) { ctx.get('_ring', groundRing).at(p, age); },
+  get(key, factory) { const k = built[cur].m.id + ':' + key; if (!cache[k]) { cache[k] = factory(); scene.add(cache[k]); } return cache[k]; },
+  attach(key, part, factory) { const e = ent(); if (!e.attached[key]) { e.attached[key] = factory(); part.obj.add(e.attached[key]); } return e.attached[key]; },
+  extra(j) {
+    const b = built[cur]; const idx = (curV + j) % b.vs.length; if (b.vs.length < 2) return null;
+    const e = lod === 'hi' ? b.vs[idx].hi : b.vs[idx].lo;
+    if (!extrasShown.has(e)) { scene.add(e.obj); extrasShown.add(e); }
+    e.obj.visible = true;
+    ENG.reset(e.model); e.obj.position.set(0, 1.5, 0); e.obj.rotation.set(0, 0, 0);
+    const P = e.model.parts;
+    return { obj: e.obj, P, ent: e, r: (n, x, y, z) => { if (!P[n]) return; const o = P[n].obj.rotation; o.x += x; o.y += y; o.z += z; } };
+  },
+  slash(c, age) { ctx.get('_slash', slashMesh).at(c, age); },
+  ember(p, t) { ctx.get('_ember', emberMesh).at(p, t); emberLight.position.copy(p); emberLight.intensity = 1.2 + 0.6 * ENG.n3(t * 18, 0, 0, 3); },
+  flash(p, k) { flashLight.position.copy(p); flashLight.intensity = 6 * k; },
+  shake(k) { shakeK = Math.max(shakeK, k); },
+};
+
+drawBiomes();
+select(built.findIndex(b => b.m.bioma === biome), 0);
+setCam('jogador');
+
+function frame(now) {
+  const b = built[cur], e = ent();
+  const t = window.__T != null ? window.__T : (now - t0) / 1000;
+  for (const k in cache) cache[k].visible = false;
+  for (const x of extrasShown) { if (x !== e) x.obj.visible = false; }
+  flashLight.intensity = 0; emberLight.intensity = 0; shakeK = 0; veilK = 0; dizzyK = 0; blurK = 0;
+  REF.reset(mode === 'parado' || mode === 'andar' ? (b.m.refX || 2.2) : 99);
+  ENG.reset(e.model);
+  e.obj.visible = true;
+  e.obj.position.set(0, 1.5, 0);
+  e.obj.rotation.set(0, 0, 0);
+  b.m.anim(e.model.parts, t, mode, 0, e.obj, e, ctx);
+  rainStep(t);
+  placeCam(t);
+  if (dizzyK > 0) { camera.rotateZ(Math.sin(t * 3.1) * 0.06 * dizzyK); camera.rotateX(Math.sin(t * 2.3 + 1) * 0.025 * dizzyK); }
+  veil.style.opacity = veilK; renderer.domElement.style.filter = blurK > 0.01 ? `blur(${(blurK * 6).toFixed(1)}px)` : ''; if (veilK > 0) veil.style.background = veilCol;
+  renderer.render(scene, camera);
+  requestAnimationFrame(frame);
+}
+resize();
+requestAnimationFrame(frame);
+window.__set = (i, vi, md, cm, tt, ld) => { if (ld) lod = ld; select(i, vi || 0, true); mode = md; modesEl.refresh(); setCam(cm); t0 = performance.now() - (tt || 0) * 1000; };
+</script>
