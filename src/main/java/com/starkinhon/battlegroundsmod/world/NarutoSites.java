@@ -335,7 +335,7 @@ public final class NarutoSites {
         if (below == NarutoStructGen.AIR || !solid(below)) {
             return false;
         }
-        for (int dy = 2; dy <= 6; dy++) {
+        for (int dy = 2; dy <= 14; dy++) {
             int t = w.get(x, y + dy, z);
             if (t != NarutoStructGen.AIR && solid(t)) {
                 return true;

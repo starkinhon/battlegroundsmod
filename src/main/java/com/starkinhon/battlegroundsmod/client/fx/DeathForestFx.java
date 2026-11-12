@@ -147,7 +147,7 @@ public final class DeathForestFx {
         // under a roof (the Exam tower, the Snake's Den) the shafts showed through the walls: none indoors (the canopy's
         // leaves don't count as a roof)
         BlockPos head = BlockPos.containing(p).above();
-        for (int k = 1; k <= 16; k++) {
+        for (int k = 1; k <= 40; k++) {
             BlockState roof = level.getBlockState(head.above(k));
             if (!roof.isAir() && !roof.is(BlockTags.LEAVES) && roof.isSolid()) {
                 return;

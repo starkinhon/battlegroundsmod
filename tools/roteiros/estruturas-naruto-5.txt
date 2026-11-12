@@ -1,0 +1,58 @@
+# Estruturas Naruto, 6ª rodada: salão da Morte (luz e feixes) e túnel do Covil olhando pra dentro.
+# Mundo normal: -Pmundo=NarutoEstruturas -PmundoTipo=normal -Proteiro=estruturas-naruto
+/dev preparar
+/gamemode creative
+/effect give @s minecraft:slow_falling infinite 0 true
+/gamerule doDaylightCycle false
+/time set 6000
+/devc fov 70
+/devc vista primeira
+espera 40
+# ---- morte
+/devc marca morte
+/soul estrutura morte
+espera 700
+# chão firme: a construção vai em ticks; espera e volta pro alto
+/soul estrutura morte
+/tp @s ~ ~ ~ 180 50
+/devc hud off
+espera 30
+/devc print naruto-estruturas/morte_sul
+/tp @s ~-40 ~ ~-40 -90 50
+espera 30
+/devc print naruto-estruturas/morte_oeste
+/tp @s ~80 ~ ~ 90 50
+espera 30
+/devc print naruto-estruturas/morte_leste
+/tp @s ~-40 ~30 ~ 0 89
+espera 30
+/devc print naruto-estruturas/morte_cima
+/soul estrutura morte center
+/tp @s ~ ~ ~ 0 15
+espera 20
+/devc print naruto-estruturas/morte_center_a
+/tp @s ~ ~ ~ 180 15
+espera 10
+/devc print naruto-estruturas/morte_center_b
+/soul estrutura morte altar
+/tp @s ~ ~ ~ 0 15
+espera 20
+/devc print naruto-estruturas/morte_altar_a
+/tp @s ~ ~ ~ 180 15
+espera 10
+/devc print naruto-estruturas/morte_altar_b
+/soul estrutura morte chest
+/tp @s ~ ~ ~ 0 15
+espera 20
+/devc print naruto-estruturas/morte_chest_a
+/tp @s ~ ~ ~ 180 15
+espera 10
+/devc print naruto-estruturas/morte_chest_b
+/soul estrutura covil mouth
+/tp @s ~ ~ ~ 90 10
+espera 20
+/devc print naruto-estruturas/covil_tunel_90
+/tp @s ~ ~ ~ -90 10
+espera 20
+/devc print naruto-estruturas/covil_tunel_-90
+sair
