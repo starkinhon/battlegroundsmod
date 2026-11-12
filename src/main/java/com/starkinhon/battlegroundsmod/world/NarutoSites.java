@@ -133,7 +133,21 @@ public final class NarutoSites {
         RandomSource random = RandomSource.create(level.getSeed() ^ (cx * 341873128712L) ^ (cz * 132897987541L) ^ 0x7A2B0L);
         int x = cx * CELL + MARGIN + random.nextInt(CELL - 2 * MARGIN);
         int z = cz * CELL + MARGIN + random.nextInt(CELL - 2 * MARGIN);
-        return new int[] {x, z, random.nextInt(1 << 20), random.nextInt()};
+        int[] spot = {x, z, random.nextInt(1 << 20), random.nextInt()};
+        // the Floresta da Morte is thin patches on the Folha's wettest edge (3 PC tests of 2026-11-12: one place in 7,800
+        // blocks): a cell with any of it puts its place there
+        if (!biomeAt(level, x, z).is(ModWorldgen.FLORESTA_DA_MORTE)) {
+            for (int gx = cx * CELL + MARGIN; gx < (cx + 1) * CELL - MARGIN; gx += 56) {
+                for (int gz = cz * CELL + MARGIN; gz < (cz + 1) * CELL - MARGIN; gz += 56) {
+                    if (biomeAt(level, gx, gz).is(ModWorldgen.FLORESTA_DA_MORTE)) {
+                        spot[0] = gx;
+                        spot[1] = gz;
+                        return spot;
+                    }
+                }
+            }
+        }
+        return spot;
     }
 
     private static Holder<Biome> biomeAt(ServerLevel level, int x, int z) {

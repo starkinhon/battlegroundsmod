@@ -132,14 +132,31 @@ public final class NarutoActivities {
                         c.getSource().sendFailure(Component.translatable("message.battlegroundsmod.naruto.nenhuma", kind + " " + mark));
                         return 0;
                     }
-                    // up to the first two free blocks (a mark can be a block in a wall or under a roof)
-                    BlockPos.MutableBlockPos feet = at.above().mutable();
+                    // the nearest spot with two free blocks over a floor, beside the mark first (a mark can be a block
+                    // in a wall or under a roof; climbing straight up went out through the roofs)
                     ServerLevel sl = player.serverLevel();
-                    for (int i = 0; i < 24 && !(sl.getBlockState(feet).getCollisionShape(sl, feet).isEmpty()
-                            && sl.getBlockState(feet.above()).getCollisionShape(sl, feet.above()).isEmpty()); i++) {
-                        feet.move(0, 1, 0);
+                    BlockPos feet = null;
+                    for (int r = 0; r <= 4 && feet == null; r++) {
+                        for (int dy = -1; dy <= 3 && feet == null; dy++) {
+                            for (int dx = -r; dx <= r && feet == null; dx++) {
+                                for (int dz = -r; dz <= r && feet == null; dz++) {
+                                    if (Math.max(Math.abs(dx), Math.abs(dz)) != r) {
+                                        continue;
+                                    }
+                                    BlockPos p = at.offset(dx, dy, dz);
+                                    if (sl.getBlockState(p).getCollisionShape(sl, p).isEmpty()
+                                            && sl.getBlockState(p.above()).getCollisionShape(sl, p.above()).isEmpty()
+                                            && !sl.getBlockState(p.below()).getCollisionShape(sl, p.below()).isEmpty()) {
+                                        feet = p;
+                                    }
+                                }
+                            }
+                        }
                     }
-                    player.teleportTo(at.getX() + 0.5, feet.getY(), at.getZ() + 0.5);
+                    if (feet == null) {
+                        feet = at.above();
+                    }
+                    player.teleportTo(feet.getX() + 0.5, feet.getY(), feet.getZ() + 0.5);
                     c.getSource().sendSuccess(() -> Component.translatable("message.battlegroundsmod.naruto.indo", kind + " " + mark, at.getX(), at.getZ()), false);
                     return 1;
                 }))));
