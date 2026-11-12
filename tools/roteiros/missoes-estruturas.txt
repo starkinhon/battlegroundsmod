@@ -103,7 +103,7 @@ devc tecla usar
 espera 30
 devc print missoes/06_capsula_bulma
 item replace entity @s weapon.mainhand with battlegroundsmod:capsula_hoipoi
-spreadplayers ~70 ~ 0 1 false @s
+spreadplayers ~70 ~ 0 24 false @s
 espera 40
 tp @s ~ ~ ~ 0 70
 espera 10

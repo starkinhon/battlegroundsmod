@@ -67,6 +67,7 @@ import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 // What each place asks is shown on entering it (StructureMissions).
 // The NPCs stand at fixed places and come back when a player is near and they are missing.
 public final class DbActivities {
+    private static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger();
     public static final int BULMA_X = -131, BULMA_Z = -123;
     public static final int KAME_X = 412, KAME_Z = 88;
     public static final int GOKU_X = 323, GOKU_Z = -29;
@@ -401,6 +402,7 @@ public final class DbActivities {
         milk.until = level.getGameTime() + ticks;
         milk.training = training;
         MILK.put(player.getUUID(), milk);
+        LOGGER.info("[missoes] Mestre Kame: leite {} para {} (treino={})", player.getScoreboardName(), spot, training);
         ItemStack bucket = new ItemStack(Items.MILK_BUCKET);
         if (!player.getInventory().add(bucket)) {
             player.drop(bucket, false);
@@ -451,6 +453,7 @@ public final class DbActivities {
             }
             player.getInventory().removeItem(slot, 1);
             milk.delivered = true;
+            LOGGER.info("[missoes] Mestre Kame: leite entregue por {}", player.getScoreboardName());
             Fx.sound(player.serverLevel(), player.position(), SoundEvents.BUCKET_EMPTY, 1f, 1f);
             player.displayClientMessage(Component.translatable("message.battlegroundsmod.kame_volte"), true);
         }
@@ -472,6 +475,9 @@ public final class DbActivities {
         ItemStack gift = rare(player);
         say(player, npc, Component.translatable("npc.battlegroundsmod.boo.obrigado"));
         Fx.sound(player.serverLevel(), npc.position(), SoundEvents.GENERIC_EAT, 1f, 0.7f);
+        // what he gave, on screen (in the test the gift went into the inventory without a word)
+        title(player, Component.translatable("message.battlegroundsmod.boo_presente"), gift.getHoverName().copy()
+                .append(gift.getCount() > 1 ? " x" + gift.getCount() : ""), 0xF5A3C7);
         reward(player, 0.1, gift);
         DbQuests.advance(player, "boo", 1);
     }
@@ -687,8 +693,10 @@ public final class DbActivities {
         npc.discard();
         Entity e = ModEntities.KAME.get().spawn(level, BlockPos.containing(at), MobSpawnType.EVENT);
         if (!(e instanceof Mob kame)) {
+            LOGGER.warn("[missoes] Mestre Kame: a luta não começou (o corpo de luta não nasceu em {})", at);
             return;
         }
+        LOGGER.info("[missoes] Mestre Kame: luta com {}", player.getScoreboardName());
         kame.addTag(SPAR_TAG);
         kame.setPersistenceRequired();
         kame.setCustomName(Component.translatable("message.battlegroundsmod.kame_nome_treino"));

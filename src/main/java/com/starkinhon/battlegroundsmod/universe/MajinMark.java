@@ -72,8 +72,8 @@ public final class MajinMark {
     static void toggle(ServerPlayer player) {
         boolean on = !active(player);
         player.getPersistentData().putBoolean(OFF, !on);
-        DbActivities.title(player, Component.translatable(on ? "message.battlegroundsmod.majin_volta" : "message.battlegroundsmod.majin_solta"),
-                Component.empty(), 0xB04AD0);
+        DbActivities.title(player, Component.translatable("message.battlegroundsmod.majin_titulo"),
+                Component.translatable(on ? "message.battlegroundsmod.majin_volta" : "message.battlegroundsmod.majin_solta"), 0xB04AD0);
         if (on) {
             burst(player);
             Fx.sound(player.serverLevel(), player.position(), SoundEvents.WITHER_AMBIENT, 0.6f, 1.2f);

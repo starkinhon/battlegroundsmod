@@ -20,5 +20,8 @@ public final class SoulsDevClient {
         NeoForge.EVENT_BUS.register(Gravador.class);
         NeoForge.EVENT_BUS.register(AutoMundo.class);
         NeoForge.EVENT_BUS.register(Mira.class);
+        // Sem o tutorial "Mova-se com WASD" fixo no canto dos prints.
+        NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent.LoggingIn e) ->
+                net.minecraft.client.Minecraft.getInstance().getTutorial().setStep(net.minecraft.client.tutorial.TutorialSteps.NONE));
     }
 }

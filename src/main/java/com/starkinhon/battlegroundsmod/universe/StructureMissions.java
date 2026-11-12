@@ -174,7 +174,7 @@ public final class StructureMissions {
         }
     }
 
-    // The place's name as the title and its mission under it, once every few minutes per place.
+    // The place's name as the title and "new mission" under it, once every few minutes per place.
     private static void greet(ServerPlayer player, Here here) {
         long now = player.serverLevel().getGameTime();
         Map<String, Long> seen = GREETED.computeIfAbsent(player.getUUID(), u -> new HashMap<>());
@@ -186,8 +186,10 @@ public final class StructureMissions {
         player.connection.send(new ClientboundSetTitlesAnimationPacket(8, 60, 16));
         player.connection.send(new ClientboundSetTitleTextPacket(Component.translatable("quest.battlegroundsmod." + here.id() + ".titulo")
                 .withStyle(s -> s.withColor(here.color()).withBold(true))));
-        player.connection.send(new ClientboundSetSubtitleTextPacket(Component.translatable("quest.battlegroundsmod." + here.id(),
-                here.count(), here.goal()).withStyle(s -> s.withColor(0xE6E0EE))));
+        // the mission itself goes in the corner panel (QuestHud); the title only says there is one (a long line here
+        // ran off both sides of the screen in the test)
+        player.connection.send(new ClientboundSetSubtitleTextPacket(Component.translatable("message.battlegroundsmod.est_nova")
+                .withStyle(s -> s.withColor(0xE6E0EE))));
         Fx.sound(player.serverLevel(), player.position(), SoundEvents.UI_TOAST_IN, 1f, 1f);
     }
 
