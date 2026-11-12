@@ -316,51 +316,51 @@ public final class SubNet {
     // Shikamaru's signal flare (stream): pos = the light, a = how bright, b = 1 while it still climbs, c = 1 ends it.
     public static final int FLARE = 168;
     // Naruto's Henge Armadilha: a = 0 the rock (a clone waiting), 1 the Fuuma Shuriken (dir = where it flies); stream
-    public static final int HENGE = 180;
+    public static final int HENGE = 240;
     // 180-199 belong to the Naruto kits (Naruto, Kakashi, Gaara): NrFx draws them. The Jujutsu kits use 169-176, other
     // threads 200-239; keep new kinds out of those ranges.
-    public static final int NARUTO_MIN = 180, NARUTO_MAX = 199;
+    public static final int NARUTO_MIN = 240, NARUTO_MAX = 259;
     // Kakashi's Perfect Susanoo (stream): id = caster, pos = its feet, dir = (yaw in radians, arms forward 0..1, throw 0..1),
     // a = how far it has risen (0..1.15), b = opacity; c = 1 gone.
-    public static final int KK_SUSANOO = 181;
+    public static final int KK_SUSANOO = 241;
     // A Kamui shuriken (stream): id = its own, pos, dir = the way it flies (zero while held), a = size in blocks, b = opacity.
-    public static final int KK_SHURIKEN = 182;
+    public static final int KK_SHURIKEN = 242;
     // The Kamui swallowing a ball of space (stream): id = its own, pos = center, dir = axis, a = radius in blocks,
     // b = how far it has swallowed (0..1), c = 1 gone. Big or small (X Kamui, the shuriken's hit, Shift+X round himself).
-    public static final int KK_VORTEX = 183;
+    public static final int KK_VORTEX = 243;
     // The ninken seal on the ground (stream): pos, a = opacity, b = 1 it lit up (dogs out); c = 1 gone.
-    public static final int KK_SEAL = 184;
+    public static final int KK_SEAL = 244;
     // The eight ninken holding a target (stream): id = the target, pos = its feet, a = ticks since they came out of the
     // ground (from the seal at dir), c = 1 they vanish in smoke.
-    public static final int KK_DOGS = 185;
+    public static final int KK_DOGS = 245;
     // Sennen Goroshi: the calligraphy title on the screens of who sees it, and the target turned into a star (pos) when it
     // is high up: a = 0 the title, 1 the star.
-    public static final int KK_SENNEN = 186;
+    public static final int KK_SENNEN = 246;
     // The Raiju hound (stream): id = its own, pos = its chest on the ground, dir = where it runs, a = gait phase,
     // b = jaw open 0..1; c = 1 gone.
-    public static final int KK_HOUND = 187;
+    public static final int KK_HOUND = 247;
     // Gaara's sand hand (stream): id = its own, pos = the ground under the wrist, dir = (lean, curl 0..1, wrist height in
     // page units), a = yaw (atan2 of the way it faces), b = how far it has crumbled (0..1), c = -(rise + 1) while it lives
     // (rise 0..1), 1 gone.
-    public static final int GA_HAND = 188;
+    public static final int GA_HAND = 248;
     // The sand coffin (stream): id = the target, pos = its feet, dir = (scale, squeeze 0..1, -), a = how far the sand has
     // risen (0..1), b = how far it has crumbled; c = 1 gone (dir.y > 0.5: it burst, fades fast).
-    public static final int GA_COFFIN = 189;
+    public static final int GA_COFFIN = 249;
     // A stream of sand from A (pos) to B (pos + dir): id = its own, a = how far it has run (0..1), b = crumbled, c = radius in
     // blocks (< 1) or 1 gone.
-    public static final int GA_STREAM = 190;
+    public static final int GA_STREAM = 250;
     // The flying sand platform (stream): id = the rider, pos = its feet, dir = (yaw, pitch, bank) in radians, a = how far it
     // has formed (0..1), b = crumbled; c = 1 gone. The speed comes from how it moves.
-    public static final int GA_PLAT = 191;
+    public static final int GA_PLAT = 251;
     // Quicksand on the ground (stream): id = its own, pos = center, dir.x = radius in blocks, a = opacity, b = hot 0..1
     // (someone sinking); c = 1 gone.
-    public static final int GA_QUICK = 192;
+    public static final int GA_QUICK = 252;
     // Sabaku Taiso, the wave of sand (stream): id = its own, pos = center, dir = (radius in page units, crumbled, squash in
     // y), a = how far it has grown, b = how far it has curled over (radians); c = 1 gone.
-    public static final int GA_WAVE = 193;
+    public static final int GA_WAVE = 253;
     // Loose sand grains (shot): pos, dir = direction times strength (blocks/s), a = count, b = cone (mode 0) or ring radius
     // in blocks (mode 1), c = mode.
-    public static final int GA_GRAINS = 194;
+    public static final int GA_GRAINS = 254;
 
     public static final int STYLE_SUKUNA = 0;
     public static final int STYLE_PINK = 1;
