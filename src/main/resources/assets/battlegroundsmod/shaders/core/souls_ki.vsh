@@ -113,7 +113,7 @@ void main() {
         float r = W * prof * (1. + 0.4 * tg);
         P = vec3(d.x * r, along, d.y * r); n = vec3(d.x, 0., d.y);
         vU = along; vD = tg; vQ = vec2(tw, along);
-    } else if (kind == 4 || kind == 9 || kind == 10 || kind == 15 || kind == 16 || kind == 23 || kind == 24 || kind == 25 || kind == 27) {   // flat square: dust ring, discs, shadows, Miwa's cuts
+    } else if (kind == 4 || kind == 9 || kind == 10 || kind == 15 || kind == 16 || kind == 46 || kind == 47 || kind == 48 || kind == 50) {   // flat square: dust ring, discs, shadows, Miwa's cuts
         P = Position; n = vec3(0., 1., 0.); vUv = Position.xz * 0.5 + 0.5;
         vQ = Position.xz * vec2(length(Model[0].xyz), length(Model[2].xyz));   // in blocks, across and along the square
     } else if (kind == 5) {                                            // aura shell
@@ -151,16 +151,16 @@ void main() {
         float rr = 1. + 0.05 * (nn - 0.5) - 0.08 * h;
         P = vec3(d.x * rr, h * top, d.y * rr); n = normalize(vec3(d.x, 0.3, d.y));
         vH = h; vO = vec3(cos(ang) * 4., P.y * 2.2 - Time * 2.2, sin(ang) * 4.) + Seed;
-    } else if (kind == 17 || kind == 18) {                             // Inumaki: the voice's open cone (R0 at the mouth, R1 at the end) / the rings' cylinder (W)
+    } else if (kind == 40 || kind == 41) {                             // Inumaki: the voice's open cone (R0 at the mouth, R1 at the end) / the rings' cylinder (W)
         float h = Position.y; vec2 d = normalize(Position.xz + 1e-5);
-        float r = kind == 17 ? mix(R0, R1, h) : W;
+        float r = kind == 40 ? mix(R0, R1, h) : W;
         P = vec3(d.x * r, h * Len, d.y * r); n = vec3(d.x, 0., d.y); vDir = d; vH = h;
-    } else if (kind == 19 || kind == 20 || kind == 22) {               // Nobara's tubes (forja/nobara-kit/nobara.js TRAIL_V / THORN_V / LINK_V, line by line):
+    } else if (kind == 42 || kind == 43 || kind == 45) {               // Nobara's tubes (forja/nobara-kit/nobara.js TRAIL_V / THORN_V / LINK_V, line by line):
         float h = Position.y; vec2 d = normalize(Position.xz + 1e-5); // 19 the nail's sheath (W = width), 20 Resonance's barbed thorn (W, Growth, Bend),
         float r, L = Len;                                              // 22 the ult's thread (W, Growth)
-        if (kind == 19) {
+        if (kind == 42) {
             r = W * (0.3 + 0.7 * smoothstep(0., 0.1, h)) * pow(1. - h, 0.8);
-        } else if (kind == 20) {
+        } else if (kind == 43) {
             L = Len * Growth;
             float barb = 1. + 0.55 * pow(fract(h * (3. + Len * 0.8) + Seed), 3.);   // barbs: each segment swells and thins
             r = W * pow(1. - h, 1.15) * (0.72 + 0.56 * (gn(vec3(d * 1.7, h * 5. + Seed)) * 0.5 + 0.5)) * barb;
@@ -168,11 +168,11 @@ void main() {
             L = Len * Growth;
             r = W * (0.8 + 0.4 * (gn(vec3(d, h * Len * 1.2 - Time * 2. + Seed)) * 0.5 + 0.5));
         }
-        P = vec3(d.x * r + (kind == 20 ? Bend * h * h * L : 0.), h * L, d.y * r); n = vec3(d.x, 0., d.y); vDir = d; vH = h;
-    } else if (kind == 26) {                                           // Miwa's Simple Domain: the wall of streaks at its edge (tube, y 0..1; WALL_F reads vDir / vH)
+        P = vec3(d.x * r + (kind == 43 ? Bend * h * h * L : 0.), h * L, d.y * r); n = vec3(d.x, 0., d.y); vDir = d; vH = h;
+    } else if (kind == 49) {                                           // Miwa's Simple Domain: the wall of streaks at its edge (tube, y 0..1; WALL_F reads vDir / vH)
         float h = Position.y; vec2 d = normalize(Position.xz + 1e-5);
         P = Position; n = vec3(d.x, 0., d.y); vDir = d; vH = h;
-    } else if (kind == 21) {                                           // Nobara's Hairpin: ONE sphere bursting into spikes (BURST_V; Life = age 0..1, radius = Model)
+    } else if (kind == 44) {                                           // Nobara's Hairpin: ONE sphere bursting into spikes (BURST_V; Life = age 0..1, radius = Model)
         vec3 d = normalize(Position);
         float ri = 1. - abs(gn(d * 3.1 + Seed)), sp = pow(ri, 7.);
         float lump = fbm3(d * 2. + Seed * 1.7) * 0.5 + 0.5;

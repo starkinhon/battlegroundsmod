@@ -135,9 +135,9 @@ void main() {
         fragColor = vec4(mix(vec3(0.018, 0.015, 0.024), vec3(0.09, 0.08, 0.11), edge * 0.6) * a, a);
         return;
     }
-    if (kind == 17 || kind == 18) {                                    // Inumaki's Cursed Speech: ink rings (forja/inumaki-kit VOICE_F / BIND_F, line by line)
+    if (kind == 40 || kind == 41) {                                    // Inumaki's Cursed Speech: ink rings (forja/inumaki-kit VOICE_F / BIND_F, line by line)
         float ang = atan(vDir.y, vDir.x), a, rm, w;
-        if (kind == 17) {
+        if (kind == 40) {
             // Flow = speed (blocks/s), Life = how long a ring lives (s), Pitch = ring density, Time in seconds
             float s = vH * Len;
             float k = (Time - s / Flow) / Life;                        // each ring born as the front passes
@@ -161,7 +161,7 @@ void main() {
         }
         if (a < 0.01) discard;
         vec3 c = mix(Color, Color2, rm);
-        if (kind == 17) c = mix(c, vec3(1.), rm * smoothstep(0.6, 1., w * 0.5 + 0.5) * 0.7);
+        if (kind == 40) c = mix(c, vec3(1.), rm * smoothstep(0.6, 1., w * 0.5 + 0.5) * 0.7);
         if (GlowPass > 0.5) {                                          // only the violet edge glows (the ink stays ink)
             if (rm * a < 0.02) discard;
             fragColor = vec4(Color2 * rm * a * 0.35, 0.);
@@ -170,9 +170,9 @@ void main() {
         fragColor = vec4(c * a, a);
         return;
     }
-    if (kind >= 23 && kind <= 27) {                                    // Miwa, Realista+Anime (forja/miwa-kit SLASH_F / CUT_F / DOMAIN_F / WALL_F / STREAK_F, line by line)
+    if (kind >= 46 && kind <= 50) {                                    // Miwa, Realista+Anime (forja/miwa-kit SLASH_F / CUT_F / DOMAIN_F / WALL_F / STREAK_F, line by line)
         vec3 c; float a;
-        if (kind == 23) {                                              // the draw's arc: Life = uK, Thresh = uFade, RingR = uArc, W = uW, Pitch = uDir, Tail = uTail
+        if (kind == 46) {                                              // the draw's arc: Life = uK, Thresh = uFade, RingR = uArc, W = uW, Pitch = uDir, Tail = uTail
             vec2 p = (vUv * 2. - 1.) * 1.25; float r = length(p), ang = atan(p.y, p.x) * Pitch;
             float e = 1. - pow(1. - clamp(Life, 0., 1.), 3.);
             float a0 = -RingR * .5, head = a0 + RingR * e, tail = max(a0, head - RingR * Tail);
@@ -189,7 +189,7 @@ void main() {
             a = outer * pow(1. - u, 1.3) * (0.55 + 0.6 * streak) * smoothstep(0., 0.12, s) * live;
             c = mix(vec3(0.17, 0.45, 1.), vec3(0.6, 0.87, 1.), smoothstep(0.8, 0.25, u));
             c = mix(c, vec3(0.97, 0.99, 1.), smoothstep(0.22, 0.02, u) * smoothstep(0.2, 0.8, s));
-        } else if (kind == 24) {                                       // the cut on the body: Len = uL, W = uH, Life = uDraw, Growth = uOpen, Thresh = uFade, Pulse = uMark
+        } else if (kind == 47) {                                       // the cut on the body: Len = uL, W = uH, Life = uDraw, Growth = uOpen, Thresh = uFade, Pulse = uMark
             float x = vUv.x, y = (vUv.y - .5) * 2. * W;
             if (x > Life) discard;
             float env = pow(sin(3.14159 * x), .5), fr = gn(vec3(x * Len * 6., Seed, Time * 2.));
@@ -200,7 +200,7 @@ void main() {
             float halo = exp(-max(d, 0.) * 22.) * 0.5 * Growth * env;
             vec3 ci = mix(vec3(0.97, 0.99, 1.), vec3(0.55, 0.85, 1.), q), co = mix(vec3(0.16, 0.48, 1.), vec3(0.96, 0.99, 1.), clamp(edge, 0., 1.));
             a = max(max(edge, inside), halo) * live * ma; c = mix(co, ci, inside);
-        } else if (kind == 25) {                                       // the domain on the ground: RingMax = uR, Life = uK, Thresh = uFade, Rot = uFA, Phase = uFT
+        } else if (kind == 48) {                                       // the domain on the ground: RingMax = uR, Life = uK, Thresh = uFade, Rot = uFA, Phase = uFT
             vec2 p = (vUv * 2. - 1.) * RingMax * 1.15; float r = length(p), ang = atan(p.y, p.x);
             float R = RingMax * (1. - pow(1. - clamp(Life, 0., 1.), 3.)); if (R < 0.01) discard;
             float px = fwidth(r), lv = 1. - Thresh;
@@ -212,7 +212,7 @@ void main() {
             a = clamp(edge + band * (0.5 + 0.5 * sw) + swirl * 0.5 + dash + fl * (edge * 2. + band), 0., 1.) * lv;
             c = mix(vec3(0.15, 0.45, 1.), vec3(0.62, 0.88, 1.), clamp(band + swirl, 0., 1.));
             c = mix(c, vec3(0.97, 0.99, 1.), clamp(edge * 0.9 + fl + dash * 0.5, 0., 1.));
-        } else if (kind == 26) {                                       // the wall of streaks: W = the domain's radius, Alpha = uA
+        } else if (kind == 49) {                                       // the wall of streaks: W = the domain's radius, Alpha = uA
             float ang = atan(vDir.y, vDir.x), h = vH;
             float s = pow(gn(vec3(cos(ang) * W * 6., sin(ang) * W * 6., h * 1.2 - Time * 2.2 + Seed)) * .5 + .5, 7.) * 2.2;
             a = s * pow(1. - h, 2.) * Alpha; if (a < .003) discard;
@@ -235,10 +235,10 @@ void main() {
         fragColor = vec4(c * a, a);
         return;
     }
-    if (kind >= 19 && kind <= 22) {                                    // Nobara (forja/nobara-kit TRAIL_F / THORN_F / BURST_F / LINK_F, line by line)
+    if (kind >= 42 && kind <= 45) {                                    // Nobara (forja/nobara-kit TRAIL_F / THORN_F / BURST_F / LINK_F, line by line)
         // Color = ink, Color2 = rim; Time in seconds; Life = the preview's uK (age 0..1); Pulse = the thread's pulse
         vec3 c, g = vec3(-1.); float a;                                // g >= 0: what reaches the bloom, if not all of c
-        if (kind == 19) {
+        if (kind == 42) {
             float s = vH * Len;
             float n = fbm3(vec3(vDir * 1.3, s * 1.6 + Time * 14. + Seed)) * 0.5 + 0.5;
             a = smoothstep(vH * 1.05 - 0.12, vH * 1.05 + 0.04, n + (1. - vH) * 0.35) * Alpha;
@@ -246,7 +246,7 @@ void main() {
             float rm = 1. - smoothstep(0.12, 0.45, f);
             c = mix(Color, Color2, clamp(rm * 0.9 + smoothstep(0.62, 0.85, n) * 0.5 * (1. - vH), 0., 1.));
             c = mix(c, vec3(0.92, 0.97, 1.), rm * (1. - smoothstep(0., 0.25, vH)) * 0.6);
-        } else if (kind == 20) {
+        } else if (kind == 43) {
             float s = vH * Len, q = floor(Time * 12.);
             float v = abs(gn(vec3(vDir * 2.2, s * 1.3 + q * 0.41 + Seed)));
             float vein = 1. - smoothstep(0.015, 0.045, v);
@@ -258,7 +258,7 @@ void main() {
             c = mix(Color, Color2, max(rm * 0.7, vein * 0.9));
             c = mix(c, vec3(0.92, 0.97, 1.), vein * step(0.5, fract(q * 0.5 + vH * 2.)) * 0.6 + rm * (1. - Life) * 0.25);
             g = Color2 * vein * 0.8;                                   // a thin thorn is nearly all rim: only the veins glow, or the bloom paints it light blue
-        } else if (kind == 21) {
+        } else if (kind == 44) {
             float tear = fbm3(vO * 4. + Seed * 2.) * 0.5 + 0.5;
             a = smoothstep(Life - 0.08, Life + 0.06, tear * 0.85 + vD * 0.25) * Alpha;
             if (a < 0.01) discard;
