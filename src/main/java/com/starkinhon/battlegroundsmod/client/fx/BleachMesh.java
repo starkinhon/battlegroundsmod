@@ -112,15 +112,15 @@ public final class BleachMesh {
         Piece q = p.copy();
         // A round piece wrapping the camera (a mist, a halo, a flash over a third-person camera): the pages never put
         // the camera inside one, here it would paint the whole screen, so it fades out as the camera gets in.
-        if (mesh == Mesh.SPH || mesh == Mesh.HALO) {
-            Vector3f s = model.getScale(new Vector3f());
-            float r = Math.max(s.x, Math.max(s.y, s.z)) * (q.kind == MIST || q.kind == BURST ? 1.3f : 1.05f);
-            if (dist < r * 1.2f && (q.kind == MIST || q.kind == HALO || q.kind == FLASH || q.kind == BURST)) {
-                float k = Math.max(0, Math.min(1, (dist / r - 0.8f) / 0.4f));
-                q.alpha *= k * k * (3 - 2 * k);
-                if (q.alpha <= 0.002f) {
-                    return;
-                }
+        if ((mesh == Mesh.SPH || mesh == Mesh.HALO) && (q.kind == MIST || q.kind == HALO || q.kind == FLASH || q.kind == BURST)) {
+            // How far the camera is in the piece's own unit space (its scale may be flat, like the Bankai's dome): only
+            // when it is really inside does the piece fade, never a dome the camera sees from outside.
+            Vector3f local = new Matrix4f(model).invert().transformPosition(new Vector3f());
+            float edge = q.kind == MIST || q.kind == BURST ? 1.25f : 1.05f;
+            float k = Math.max(0, Math.min(1, (local.length() / edge - 0.8f) / 0.4f));
+            q.alpha *= k * k * (3 - 2 * k);
+            if (q.alpha <= 0.002f) {
+                return;
             }
         }
         Matrix4f m = new Matrix4f(model);
