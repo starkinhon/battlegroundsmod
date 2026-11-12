@@ -2,6 +2,7 @@
 # Mundo normal: -Pmundo=NarutoEstruturas -PmundoTipo=normal -Proteiro=estruturas-naruto
 /dev preparar
 /gamemode creative
+/effect give @s minecraft:slow_falling infinite 0 true
 /gamerule doDaylightCycle false
 /time set 6000
 /devc fov 70
