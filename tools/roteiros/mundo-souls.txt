@@ -1,5 +1,5 @@
 # Teste do tipo de mundo Souls (PR #297). Rodar com:
-# gradlew runClient -Pmundo=SoulsTipo -PmundoTipo=battlegroundsmod:souls -Proteiro=mundo-souls
+# gradlew runClient -Pmundo=SoulsTipo2 -PmundoTipo=battlegroundsmod:souls -Proteiro=mundo-souls
 espera 200
 dev preparar
 devc hud off
@@ -28,6 +28,11 @@ locate biome minecraft:plains
 locate biome minecraft:forest
 locate biome minecraft:ocean
 locate biome minecraft:lush_caves
+devc marca tags
+execute if biome ~ ~ ~ #minecraft:is_overworld run say TAG_IS_OVERWORLD_OK
+execute if biome ~ ~ ~ #minecraft:has_structure/stronghold run say TAG_STRONGHOLD_OK
+execute if biome ~ ~ ~ #minecraft:has_structure/mineshaft run say TAG_MINESHAFT_OK
+locate structure minecraft:trial_chambers
 locate structure minecraft:stronghold
 locate structure minecraft:mineshaft
 locate structure minecraft:village_plains

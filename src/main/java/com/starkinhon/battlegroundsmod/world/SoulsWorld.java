@@ -76,25 +76,31 @@ public final class SoulsWorld {
         if (!(event.getLevel() instanceof ServerLevel level) || !is(level)) {
             return;
         }
-        BlockPos spawn = findSpawn(level);
+        BlockPos spawn = findSpawn(level, biome -> biome.is(ModWorldgen.TERRAS_DO_DRAGAO));
         if (spawn == null) {
-            // no dry Terras do Dragão near (it would take a strange seed): vanilla's own search
+            // no dry Terras do Dragão near (it would take a strange seed): any universe land
+            spawn = findSpawn(level, biome -> !biome.is(ModWorldgen.MAR_DO_SUL) && !biome.is(ModWorldgen.MAR_DA_NEVOA)
+                    && (biome.is(ModWorldgen.DRAGONBALL_BIOMES) || biome.is(ModWorldgen.NARUTO_BIOMES)));
+        }
+        if (spawn == null) {
+            // vanilla's own search
             return;
         }
+        BlockPos at = spawn;
         event.getSettings().setSpawn(spawn, 0.0F);
         event.setCanceled(true);
         // cancelling skips vanilla's bonus chest too, so it is placed here when the world asked for one
         if (level.getServer().getWorldData().worldGenOptions().generateBonusChest()) {
             level.registryAccess().registry(Registries.CONFIGURED_FEATURE)
                     .flatMap(features -> features.getHolder(MiscOverworldFeatures.BONUS_CHEST))
-                    .ifPresent(feature -> feature.value().place(level, level.getChunkSource().getGenerator(), level.random, spawn));
+                    .ifPresent(feature -> feature.value().place(level, level.getChunkSource().getGenerator(), level.random, at));
         }
     }
 
-    // The nearest Terras do Dragão to the world's center, found from the biome noise alone (nothing generated), then a
+    // The nearest biome of the kind to the world's center, found from the biome noise alone (nothing generated), then a
     // column on it that is dry land above the sea: the base height from the noise, with no water over it.
-    private static BlockPos findSpawn(ServerLevel level) {
-        Pair<BlockPos, Holder<Biome>> lands = level.findClosestBiome3d(biome -> biome.is(ModWorldgen.TERRAS_DO_DRAGAO),
+    private static BlockPos findSpawn(ServerLevel level, java.util.function.Predicate<Holder<Biome>> kind) {
+        Pair<BlockPos, Holder<Biome>> lands = level.findClosestBiome3d(kind,
                 new BlockPos(0, level.getSeaLevel(), 0), 6400, 32, 64);
         if (lands == null) {
             return null;
@@ -116,8 +122,7 @@ public final class SoulsWorld {
                     if (floor != surface || floor <= level.getSeaLevel()) {
                         continue;
                     }
-                    if (!level.getChunkSource().getGenerator().getBiomeSource().getNoiseBiome(x >> 2, floor >> 2, z >> 2,
-                            random.sampler()).is(ModWorldgen.TERRAS_DO_DRAGAO)) {
+                    if (!kind.test(generator.getBiomeSource().getNoiseBiome(x >> 2, floor >> 2, z >> 2, random.sampler()))) {
                         continue;
                     }
                     return new BlockPos(x, floor, z);
