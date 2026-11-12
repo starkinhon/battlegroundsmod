@@ -2,7 +2,7 @@
   "parent": "battlegroundsmod:souls/root",
   "display": {
     "icon": {
-      "id": "battlegroundsmod:espada_z"
+      "id": "battlegroundsmod:kusanagi"
     },
     "title": {
       "translate": "advancements.battlegroundsmod.souls.primeira_arma.title"
