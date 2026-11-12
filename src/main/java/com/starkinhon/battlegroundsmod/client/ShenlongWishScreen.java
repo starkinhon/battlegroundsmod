@@ -151,15 +151,22 @@ public class ShenlongWishScreen extends Screen {
             int tx = ix + 16 * icon + 8, tw = c[0] + c[2] - 8 - tx;
             Component name = Component.translatable("shenlong.battlegroundsmod.desejo." + WISHES[i]);
             g.drawString(font, name, tx, iy, 0xE7F7E8, false);
-            List<FormattedCharSequence> lines = font.split(Component.translatable("shenlong.battlegroundsmod.desejo." + WISHES[i] + ".desc"), Math.max(20, tw));
-            int ly = iy + 11, maxY = c[1] + c[3] - 4;
+            // The description a size smaller than the name (12.5 vs 16 px in the preview), so the whole line fits.
+            float ds = 0.8f;
+            List<FormattedCharSequence> lines = font.split(Component.translatable("shenlong.battlegroundsmod.desejo." + WISHES[i] + ".desc"),
+                    Math.max(20, (int) (tw / ds)));
+            float ly = iy + 11, maxY = c[1] + c[3] - 3;
+            g.pose().pushPose();
+            g.pose().translate(tx, 0, 0);
+            g.pose().scale(ds, ds, 1);
             for (FormattedCharSequence line : lines) {
-                if (ly + 9 > maxY) {
+                if (ly + 8 * ds > maxY) {
                     break;
                 }
-                g.drawString(font, line, tx, ly, 0x9FC2A6, false);
-                ly += 10;
+                g.drawString(font, line, 0, Math.round(ly / ds), 0x9FC2A6, false);
+                ly += 9 * ds;
             }
+            g.pose().popPose();
         }
         if (!note.getString().isEmpty()) {
             g.drawCenteredString(font, note, x0 + w / 2, y0 + h - pad() - 10, 0xFFB03A);

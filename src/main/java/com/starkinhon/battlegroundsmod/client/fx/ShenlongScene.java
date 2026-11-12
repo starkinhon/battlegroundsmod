@@ -115,6 +115,11 @@ public final class ShenlongScene {
         return mine();
     }
 
+    // The storm over the sky now (the Mine's clouds hide under it: LevelRendererMixin).
+    public static double stormNow() {
+        return summoner < 0 ? 0 : Shen.storm(time(Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false)));
+    }
+
     public static String wish() {
         return wish;
     }
@@ -299,6 +304,26 @@ public final class ShenlongScene {
     }
 
     private static double[] lastCam;
+    private static double lift;
+    private static long liftStart = Long.MIN_VALUE;
+
+    private static double lift(Vec3 p) {
+        Minecraft mc = Minecraft.getInstance();
+        if (liftStart != start) {
+            liftStart = start;
+            lift = 0;
+        }
+        double top = -1e9;
+        int bx = Mth.floor(p.x), bz = Mth.floor(p.z);
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                top = Math.max(top, mc.level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, bx + dx, bz + dz));
+            }
+        }
+        double target = Math.max(0, top + 0.9 - p.y);
+        lift = target > lift ? target : lift + (target - lift) * 0.06;
+        return lift;
+    }
 
     // The camera of the summoner (CameraMixin), or null.
     public static FaceCutscene.Shot shot(float partial) {
@@ -312,6 +337,8 @@ public final class ShenlongScene {
         double[] c = cinema(t, headPos);
         lastCam = c;
         Vec3 p = world(new double[] {c[0], c[1], c[2]}), at = world(new double[] {c[3], c[4], c[5]});
+        // The preview's ground is flat; the Mine's is not: the low shots rise over hills, trees and grass in the way.
+        p = p.add(0, lift(p), 0);
         Vec3 d = at.subtract(p).normalize();
         float yRot = (float) Math.toDegrees(Math.atan2(-d.x, d.z));
         float xRot = (float) -Math.toDegrees(Math.asin(Mth.clamp(d.y, -1, 1)));
@@ -592,16 +619,28 @@ public final class ShenlongScene {
         RenderSystem.blendFunc(GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ONE);
         RenderSystem.setShader(() -> sh);
         BufferBuilder b = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION);
-        int n = 40;
-        double size = 60, y = 0.04;
+        // The preview's ground is a plane; here the disc lies on the real ground (its surface under each corner),
+        // instead of floating over a slope or cutting into a hill.
+        int n = 60;
+        double size = 60;
+        float[][] y = new float[n + 1][n + 1];
+        Minecraft mc = Minecraft.getInstance();
+        for (int i = 0; i <= n; i++) {
+            for (int j = 0; j <= n; j++) {
+                double x = Shen.BALLS[0] - size + 2 * size * i / n, z = Shen.BALLS[2] - size + 2 * size * j / n;
+                Vec3 w = world(new double[] {x, 0, z});
+                int top = mc.level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE, Mth.floor(w.x), Mth.floor(w.z));
+                y[i][j] = (float) (top - origin.y + 0.04);
+            }
+        }
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < n; j++) {
-                double x0 = Shen.BALLS[0] - size + 2 * size * i / n, x1 = Shen.BALLS[0] - size + 2 * size * (i + 1) / n;
-                double z0 = Shen.BALLS[2] - size + 2 * size * j / n, z1 = Shen.BALLS[2] - size + 2 * size * (j + 1) / n;
-                b.addVertex((float) x0, (float) y, (float) z0);
-                b.addVertex((float) x0, (float) y, (float) z1);
-                b.addVertex((float) x1, (float) y, (float) z1);
-                b.addVertex((float) x1, (float) y, (float) z0);
+                float x0 = (float) (Shen.BALLS[0] - size + 2 * size * i / n), x1 = (float) (Shen.BALLS[0] - size + 2 * size * (i + 1) / n);
+                float z0 = (float) (Shen.BALLS[2] - size + 2 * size * j / n), z1 = (float) (Shen.BALLS[2] - size + 2 * size * (j + 1) / n);
+                b.addVertex(x0, y[i][j], z0);
+                b.addVertex(x0, y[i][j + 1], z1);
+                b.addVertex(x1, y[i + 1][j + 1], z1);
+                b.addVertex(x1, y[i + 1][j], z0);
             }
         }
         BufferUploader.drawWithShader(b.buildOrThrow());

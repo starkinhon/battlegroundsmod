@@ -118,7 +118,6 @@ public final class ShenlongServer {
         Call call = new Call(player, player.position(), player.getYRot(), level.getGameTime());
         CALLS.put(player.getUUID(), call);
         broadcast(level, call);
-        com.starkinhon.battlegroundsmod.power.Achievements.grant(player, "shenlong");
     }
 
     // The wish from the menu (or /soul desejo), only while the menu is up.
@@ -197,6 +196,8 @@ public final class ShenlongServer {
                     }
                     if (since >= END_TICKS) {
                         end(server, call);
+                        // after the scene, so its toast does not cover the cutscene
+                        com.starkinhon.battlegroundsmod.power.Achievements.grant(player, "shenlong");
                         it.remove();
                     }
                 }

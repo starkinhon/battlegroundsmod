@@ -2,7 +2,9 @@ package com.starkinhon.battlegroundsmod.mixin;
 
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.starkinhon.battlegroundsmod.BattlegroundsMod;
 import com.starkinhon.battlegroundsmod.world.NamekWorld;
@@ -24,5 +26,13 @@ public abstract class LevelRendererMixin {
     private ResourceLocation battlegroundsmod$noSunOnNamek(ResourceLocation texture) {
         Minecraft mc = Minecraft.getInstance();
         return mc.level != null && mc.level.dimension() == NamekWorld.LEVEL ? BATTLEGROUNDSMOD$NO_SUN : texture;
+    }
+
+    // Under Shenlong's storm the Mine's flat clouds would hang in front of the storm sky (it is drawn at the far plane).
+    @Inject(method = "renderClouds", at = @At("HEAD"), cancellable = true, require = 0)
+    private void battlegroundsmod$noCloudsInStorm(CallbackInfo ci) {
+        if (com.starkinhon.battlegroundsmod.client.fx.ShenlongScene.stormNow() > 0.15) {
+            ci.cancel();
+        }
     }
 }
