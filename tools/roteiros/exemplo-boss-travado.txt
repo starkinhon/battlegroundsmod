@@ -1,0 +1,36 @@
+# Exemplo de roteiro do Souls Dev (mod só de teste, src/dev).
+# Rodar sozinho:  gradlew runClient -Pmundo=SoulsDev -Proteiro=exemplo-boss-travado
+# Ou no jogo:     /devc roteiro exemplo-boss-travado
+# Cada linha é um comando (com ou sem /). "espera N" espera N ticks (20 = 1 s). "sair" fecha o jogo.
+
+# Mundo limpo e tela pronta pra gravar
+/devc fechar
+/dev preparar
+/devc hud off
+/devc fov 70
+/soul escolher gojo
+/soul semcooldown
+espera 20
+
+# Boss travado na frente, imortal (toma o golpe e volta com vida cheia)
+/dev invocar battlegroundsmod:sukuna 8
+/dev imortal @e[type=battlegroundsmod:sukuna,limit=1,sort=nearest]
+espera 20
+
+# Câmera de lado e gravação
+/devc camera lado 9 1.5
+espera 10
+/devc gravar exemplo/gojo-azul 2
+/devc marca antes do Z
+/dev acertar z @e[type=battlegroundsmod:sukuna,limit=1,sort=nearest]
+espera 80
+/devc gravar parar
+/devc print exemplo/depois
+
+# Limpa e fecha
+/dev soltar
+/kill @e[type=battlegroundsmod:sukuna]
+/devc camera jogador
+/devc hud on
+espera 20
+sair
