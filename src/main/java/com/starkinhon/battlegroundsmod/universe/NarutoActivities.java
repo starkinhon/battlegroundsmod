@@ -132,7 +132,14 @@ public final class NarutoActivities {
                         c.getSource().sendFailure(Component.translatable("message.battlegroundsmod.naruto.nenhuma", kind + " " + mark));
                         return 0;
                     }
-                    player.teleportTo(at.getX() + 0.5, at.getY() + 1, at.getZ() + 0.5);
+                    // up to the first two free blocks (a mark can be a block in a wall or under a roof)
+                    BlockPos.MutableBlockPos feet = at.above().mutable();
+                    ServerLevel sl = player.serverLevel();
+                    for (int i = 0; i < 24 && !(sl.getBlockState(feet).getCollisionShape(sl, feet).isEmpty()
+                            && sl.getBlockState(feet.above()).getCollisionShape(sl, feet.above()).isEmpty()); i++) {
+                        feet.move(0, 1, 0);
+                    }
+                    player.teleportTo(at.getX() + 0.5, feet.getY(), at.getZ() + 0.5);
                     c.getSource().sendSuccess(() -> Component.translatable("message.battlegroundsmod.naruto.indo", kind + " " + mark, at.getX(), at.getZ()), false);
                     return 1;
                 }))));

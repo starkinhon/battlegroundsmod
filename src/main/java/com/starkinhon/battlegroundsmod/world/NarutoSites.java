@@ -147,13 +147,22 @@ public final class NarutoSites {
         Holder<Biome> biome = biomeAt(level, x, z);
         String kind;
         int reach;
-        if (biome.is(ModWorldgen.FLORESTA_DA_FOLHA)) {
+        boolean death = biome.is(ModWorldgen.FLORESTA_DA_MORTE);
+        if (!death && biome.is(ModWorldgen.FLORESTA_DA_FOLHA)) {
+            // the Floresta da Morte is a thin strip on the Folha's wettest edge (2nd PC test of 2026-11-12: the first
+            // whole spot 6,400 blocks out): a Folha spot with the Morte beside it takes the Morte's place, on the edge
+            for (int a = 0; a < 8 && !death; a++) {
+                double angle = a * Math.PI / 4;
+                death = biomeAt(level, x + (int) (Math.cos(angle) * 48), z + (int) (Math.sin(angle) * 48)).is(ModWorldgen.FLORESTA_DA_MORTE);
+            }
+        }
+        if (death) {
+            // the Snake's Den is the rarer one (the only home of the cobra_gigante)
+            kind = roll % 5 < 2 ? NarutoStructGen.COVIL : NarutoStructGen.MORTE;
+            reach = 32;
+        } else if (biome.is(ModWorldgen.FLORESTA_DA_FOLHA)) {
             kind = NarutoStructGen.FOLHA;
             reach = 40;
-        } else if (biome.is(ModWorldgen.FLORESTA_DA_MORTE)) {
-            // the Snake's Den is the rare one (the only home of the cobra_gigante)
-            kind = roll % 3 == 0 ? NarutoStructGen.COVIL : NarutoStructGen.MORTE;
-            reach = 32;
         } else if (biome.is(ModWorldgen.DESERTO_DO_VENTO)) {
             kind = NarutoStructGen.DESERTO;
             reach = 48;
@@ -176,9 +185,8 @@ public final class NarutoSites {
                 return null;
             }
             Holder<Biome> around = biomeAt(level, x + (int) (Math.cos(angle) * reach), z + (int) (Math.sin(angle) * reach));
-            // the Floresta da Morte is a thin strip on the Folha's wettest edge (the PC test of 2026-11-12 found none
-            // whole in 7,800 blocks): its places may spill into the Folha around it
-            boolean ok = around.is(key) || (biome.is(ModWorldgen.FLORESTA_DA_MORTE) && around.is(ModWorldgen.FLORESTA_DA_FOLHA));
+            // the Morte's places may spill into the Folha around it (and the other way round)
+            boolean ok = death ? around.is(ModWorldgen.FLORESTA_DA_MORTE) || around.is(ModWorldgen.FLORESTA_DA_FOLHA) : around.is(key);
             if (!ok) {
                 return null;
             }
@@ -300,11 +308,11 @@ public final class NarutoSites {
     }
 
     // Rooms lit without lamps on show (the PC test of 2026-11-12: the Rain tower was pitch dark inside): an invisible
-    // light every 5 blocks on the floor of carved air under a roof.
-    private static final BlockState LIGHT = Blocks.LIGHT.defaultBlockState().setValue(net.minecraft.world.level.block.LightBlock.LEVEL, 11);
+    // light every 4 blocks on the floor of carved air under a roof.
+    private static final BlockState LIGHT = Blocks.LIGHT.defaultBlockState().setValue(net.minecraft.world.level.block.LightBlock.LEVEL, 13);
 
     private static boolean roofed(NarutoStructGen.Vox w, int x, int y, int z) {
-        if (Math.floorMod(x, 5) != 0 || Math.floorMod(z, 5) != 0) {
+        if (Math.floorMod(x, 4) != 0 || Math.floorMod(z, 4) != 0) {
             return false;
         }
         int below = w.get(x, y - 1, z);
