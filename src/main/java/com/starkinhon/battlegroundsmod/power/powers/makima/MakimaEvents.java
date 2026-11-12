@@ -123,13 +123,19 @@ public final class MakimaEvents {
         return best;
     }
 
-    // What she kills is hers: a mob goes to her stock of puppets, a soul to her souls.
+    // How long after her last blow a death is still hers (a fall after the Bang, the fire, the void): 5 s.
+    private static final int CREDIT_TICKS = 100;
+
+    // What she kills is hers: a mob goes to her stock of puppets, a soul to her souls. Her own blow, the blow of one of
+    // her puppets or souls (the "Morram." too), or a death that comes up to 5 s after one of those blows with nobody
+    // else's hand in it.
     private static void onDeath(LivingDeathEvent event) {
         LivingEntity dead = event.getEntity();
-        if (dead.level().isClientSide() || !(event.getSource().getEntity() instanceof LivingEntity killer) || !Makima.is(killer)) {
+        if (dead.level().isClientSide() || Puppets.isPuppet(dead)) {
             return;
         }
-        if (Puppets.isPuppet(dead)) {
+        LivingEntity killer = killerOf(dead, event.getSource().getEntity());
+        if (killer == null) {
             return;
         }
         if (dead instanceof Player) {
@@ -143,6 +149,30 @@ public final class MakimaEvents {
         if (dead instanceof Mob) {
             Fantoche.store(killer, dead);
         }
+    }
+
+    // The Makima a death belongs to, or null.
+    private static LivingEntity killerOf(LivingEntity dead, Entity source) {
+        if (source instanceof LivingEntity living) {
+            LivingEntity owner = makimaOf(living);
+            if (owner != null || living != dead) {
+                // Someone else's hand (another player, a wolf) keeps the kill theirs.
+                return owner;
+            }
+        }
+        LivingEntity last = dead.getLastHurtByMob();
+        if (last == null || dead.tickCount - dead.getLastHurtByMobTimestamp() > CREDIT_TICKS) {
+            return null;
+        }
+        return makimaOf(last);
+    }
+
+    private static LivingEntity makimaOf(LivingEntity e) {
+        if (Makima.is(e)) {
+            return e;
+        }
+        LivingEntity owner = Puppets.ownerOf(e);
+        return owner != null && owner.isAlive() && Makima.is(owner) ? owner : null;
     }
 
     private static boolean isSoulMob(SoulBoss boss) {
