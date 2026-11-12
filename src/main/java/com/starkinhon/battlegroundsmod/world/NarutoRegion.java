@@ -25,7 +25,7 @@ import terrablender.api.Regions;
 // vanilla's shape. The Floresta da Morte (Stark 2026-11-11) borders it on the wettest side, as in the anime it lies
 // inside Konoha's woods. The Deserto do Vento (Stark 2026-11-11) takes the same band's dry side, and the Mar da Névoa
 // (Stark 2026-11-11) the cold and middle seas. The Vila da Chuva (Stark 2026-11-11) takes the cool band's wet side. The
-// Vale do Fim (Stark 2026-11-12) the temperate band's middle humidity, between the Folha and the Vila da Chuva as the
+// Vale do Fim (Stark 2026-11-12) the temperate band but its ends, between the Folha and the Vila da Chuva as the
 // valley lies on the Land of Fire's border. The Monte Myoboku (Stark 2026-11-12) takes the cool band's dry side, its
 // plains, apart from the other lands as the toads' mountain is hidden from the ninja world. With it all seven Naruto
 // biomes are in.
@@ -38,9 +38,11 @@ public final class NarutoRegion extends Region {
             Biomes.FROZEN_OCEAN, Biomes.DEEP_FROZEN_OCEAN, Biomes.BEACH, Biomes.SNOWY_BEACH, Biomes.STONY_SHORE);
     private static final Set<ResourceKey<Biome>> NOT_LAND = Set.of(Biomes.RIVER, Biomes.FROZEN_RIVER, Biomes.MUSHROOM_FIELDS,
             Biomes.DRIPSTONE_CAVES, Biomes.LUSH_CAVES, Biomes.DEEP_DARK, Biomes.SWAMP, Biomes.MANGROVE_SWAMP);
+    // Only the bare peaks stay vanilla: the slopes, meadows, groves and windswept hills of a Naruto band become the Naruto
+    // biome too (they are cut out per band like the lowlands), so each biome is one big piece instead of patches between
+    // them (the PC test of 2026-11-12: the Vale do Fim's largest piece was 32 blocks wide, too small for its valley).
     private static final Set<ResourceKey<Biome>> MOUNTAINS = Set.of(Biomes.JAGGED_PEAKS, Biomes.STONY_PEAKS, Biomes.FROZEN_PEAKS,
-            Biomes.SNOWY_SLOPES, Biomes.GROVE, Biomes.WINDSWEPT_HILLS, Biomes.WINDSWEPT_GRAVELLY_HILLS, Biomes.WINDSWEPT_FOREST,
-            Biomes.WINDSWEPT_SAVANNA, Biomes.SAVANNA_PLATEAU, Biomes.WOODED_BADLANDS, Biomes.MEADOW, Biomes.CHERRY_GROVE);
+            Biomes.SNOWY_SLOPES);
 
     private NarutoRegion() {
         super(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "naruto"), RegionType.OVERWORLD, WEIGHT);
@@ -91,9 +93,9 @@ public final class NarutoRegion extends Region {
         if (t == 1 && h <= 1) {
             return ModWorldgen.MONTE_MYOBOKU;
         }
-        // the Vale do Fim on the temperate band's middle humidity (vanilla's forests there), which the Dragon Ball leaves
-        // vanilla
-        if (t == 2 && h == 2) {
+        // the Vale do Fim on the temperate band (vanilla's forests and plains there) but its driest and wettest ends, so
+        // it is wide enough for the valley's 316 by 176 blocks
+        if (t == 2 && h >= 1 && h <= 3) {
             return ModWorldgen.VALE_DO_FIM;
         }
         // the Deserto do Vento on the warm band's dry side (vanilla's savannas there), next to the Folha like the Land of
