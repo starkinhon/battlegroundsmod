@@ -1,0 +1,31 @@
+# Souls Dev: ferramentas de TESTE do mod Souls (travar boss, roteiros, câmeras, gravação).
+# Só entra no runClient e no jar separado soulsdev-*.jar. NUNCA vai no jar de lançamento.
+modLoader="javafml"
+loaderVersion="[1,)"
+license="All Rights Reserved"
+
+[[mods]]
+modId="soulsdev"
+version="0.1.0"
+displayName="Souls Dev (só testes)"
+authors="starkinhon, Claude"
+description='''
+Ferramentas só de desenvolvimento do mod Souls. Não distribuir.
+'''
+
+[[mixins]]
+config="soulsdev.mixins.json"
+
+[[dependencies.soulsdev]]
+    modId="battlegroundsmod"
+    type="required"
+    versionRange="[0,)"
+    ordering="AFTER"
+    side="BOTH"
+
+[[dependencies.soulsdev]]
+    modId="neoforge"
+    type="required"
+    versionRange="[21.1,)"
+    ordering="NONE"
+    side="BOTH"
