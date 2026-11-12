@@ -12,6 +12,7 @@ import numpy as np
 sys.path.insert(0, os.path.dirname(__file__))
 import vox
 from vox import Vox
+from furni import sofa, chair, rug, lamp_floor, bed, tv, wardrobe, bookshelf_wall, slab
 from dragonball import stairs, leaves, palm, OUT
 
 PREV = sys.argv[1] if len(sys.argv) > 1 else os.path.join(OUT, '..', '..', '..', '..', '..', '..', 'build', 'previews')
@@ -408,6 +409,10 @@ def kami_lookout():
     v.disc(0, -1, 40, 2.6, 'smooth_quartz'); v.disc(0, -1, 40, 1.6, 'light_blue_concrete'); v.set(0, -1, 40, 'sea_lantern')
     for c in ((2, 42), (-2, 42), (2, 38), (-2, 38)):
         v.set(c[0], 0, c[1], 'end_rod[facing=up]')
+    # lights where the rooms stayed dark (2026-11-12 check: block light 0 = monsters could spawn there at night)
+    for x in (-8, 7):
+        v.set(x, 6, -28, 'lantern[hanging=true,waterlogged=false]')
+    v.set(-7, 5, -37, 'lantern[hanging=true,waterlogged=false]'); v.set(7, 5, -37, 'lantern[hanging=true,waterlogged=false]')
     return v
 
 
@@ -472,22 +477,48 @@ def buu_house():
     for sz in (-5, 5):
         solid(v, lambda X, Y, Z, sz=sz: ((X + 6) / 3.5) ** 2 + (Y / 1.2) ** 2 + ((Z - sz) / 2.0) ** 2 <= 1,
               (-10, -2, 0, 1, sz - 3, sz + 3), white, fill=True)
-    # inside: floor, cake table, couch, light, ladder to the capsule
+    # inside (redone 2026-11-12: loose wool blocks and a cake on a fence): Buu's sweet living room. Pink and white
+    # tiles, a round rug, the pink sofa in front of his TV (he loved watching it), the table with cakes and candles, a
+    # candy shelf, lamps, and the ladder up into the capsule head, his bedroom.
     carve(v, lambda X, Y, Z: (((X - 1) / 6.2) ** 2 + (Z / 6.2) ** 2 <= 1) & (Y == 0) | ((((X - 8.5) / 4.2) ** 2 + (Z / 4.2) ** 2 <= 1) & (Y == 0)),
-          (-6, 13, 0, 0, -7, 7), lambda x, y, z: 'pink_wool' if (x + z) % 2 else 'white_wool')
-    v.set(0, 1, 0, 'dark_oak_fence'); v.set(0, 2, 0, 'pink_carpet') if False else None
-    v.set(0, 2, 0, 'cake[bites=0]'); v.set(0, 1, 2, 'pink_wool'); v.set(0, 1, -2, 'pink_wool')
-    v.set(-1, 1, 3, 'pink_wool'); v.set(1, 1, 3, 'pink_wool')
+          (-6, 13, 0, 0, -7, 7), lambda x, y, z: 'pink_concrete' if (x + z) % 2 else 'white_concrete')
+    for x in range(-3, 6):
+        for z in range(-4, 5):
+            if ((x - 1) ** 2 + z * z) <= 9.5 and v.get(x, 1, z) in (None, 'minecraft:air'):
+                v.set(x, 1, z, 'magenta_carpet' if (x - 1) ** 2 + z * z > 6 else 'pink_carpet')
+    sofa(v, -2, 1, -3, 'east', n=3, block='cherry_stairs', arm='cherry_trapdoor')            # z -3..-1, facing the TV
+    tv(v, 4, 1, -1, 'west', w=2)
+    v.set(1, 1, 2, 'cherry_fence'); v.set(1, 2, 2, 'cake[bites=0]')
+    v.set(2, 1, 2, 'cherry_fence'); v.set(2, 2, 2, 'cake[bites=2]')
+    chair(v, 1, 1, 3, 'north', 'cherry_stairs'); chair(v, 2, 1, 3, 'north', 'cherry_stairs')
+    v.set(-3, 1, 3, 'pink_shulker_box[facing=up]'); v.set(-3, 2, 3, 'potted_pink_tulip')
+    lamp_floor(v, -3, 1, -4, post='cherry_fence')
     v.set(1, 5, 0, 'lantern[hanging=true,waterlogged=false]')
+    v.set(9, 4, 0, 'lantern[hanging=true,waterlogged=false]')
+    v.set(10, 1, 2, 'chest[facing=west,type=single,waterlogged=false]'); v.set(10, 1, -2, 'barrel[facing=up,open=false]')
+    v.set(10, 2, -2, 'pink_candle[candles=3,lit=true,waterlogged=false]')
     ladder(v, 5, 0, 1, 9, facing='west', support='white_concrete')
     v.set(6, 1, 0, 'white_concrete')
-    # capsule floor (Buu's room up there): bed of blue wool, window seat
+    # the capsule head: Buu's bedroom. Its floor one block higher than before so the room is 7 wide, not a 5 wide tube;
+    # the hollow under it is filled (a dark gap there let spiders spawn)
+    F = 9
     for x in range(-1, 17):
-        for z in range(-2, 3):
-            if v.get(x, 8, z) in (None, 'minecraft:air') and not (x == 5 and z == 0):
-                v.set(x, 8, z, 'blue_wool' if x < 11 else 'pink_wool')
-    v.set(9, 9, 1, 'cake[bites=0]')
-    v.set(11, 15, 0, 'lantern[hanging=true,waterlogged=false]')
+        for z in range(-4, 5):
+            if v.get(x, F, z) in (None, 'minecraft:air') and cap(np.array(float(x)), np.array(float(F)), np.array(float(z))):
+                v.set(x, F, z, 'cherry_planks' if x % 2 else 'birch_planks')
+                if v.get(x, F - 1, z) in (None, 'minecraft:air') and cap(np.array(float(x)), np.array(float(F - 1)), np.array(float(z))):
+                    v.set(x, F - 1, z, 'white_concrete')
+    v.set(5, F, 0, 'ladder[facing=west,waterlogged=false]'); v.set(5, F - 1, 0, 'ladder[facing=west,waterlogged=false]')
+    v.set(6, F, 0, 'white_concrete'); v.set(6, F - 1, 0, 'white_concrete')
+    bed(v, 14, F + 1, -1, 'east', 'pink'); bed(v, 14, F + 1, 1, 'east', 'pink')
+    v.set(14, F + 1, 0, 'barrel[facing=up,open=false]'); v.set(14, F + 2, 0, 'lantern[hanging=false,waterlogged=false]')
+    rug(v, 8, -2, 11, 2, F + 1, 'pink', border='white')
+    v.set(2, F + 1, -3, 'cherry_fence'); v.set(2, F + 2, -3, 'cake[bites=0]')
+    v.set(2, F + 1, 3, 'chest[facing=north,type=single,waterlogged=false]')
+    v.set(7, F + 1, 3, 'potted_pink_tulip'); v.set(7, F + 1, -3, 'potted_allium')
+    tv(v, -1, F + 1, -1, 'east', w=3)
+    sofa(v, 3, F + 1, 1, 'west', n=3, block='cherry_stairs', arm='cherry_trapdoor')
+    v.set(11, 15, 0, 'lantern[hanging=true,waterlogged=false]'); v.set(4, 15, 0, 'lantern[hanging=true,waterlogged=false]')
     return v
 
 
@@ -732,6 +763,8 @@ def korin_tower():
     ladder(v, 3, 0, 0, LF, facing='east', support='cut_sandstone')
     ladder(v, 0, 9, LF + 1, FL - 1, facing='north', support='smooth_sandstone')
     trapdoor(v, 0, FL, 9, facing='south')
+    # lights where the rooms stayed dark (2026-11-12 check: block light 0 = monsters could spawn there at night)
+    v.set(-2, 151, 0, 'lantern[hanging=true,waterlogged=false]'); v.set(0, 151, -2, 'lantern[hanging=true,waterlogged=false]')
     return v
 
 
@@ -792,10 +825,25 @@ def babidi_ship():
             v.set(round((r - 2) * math.cos(a)), cy + h - 3, round((r - 2) * math.sin(a)), 'sea_lantern')
     plain = lambda c: (lambda x, z, d: c)
     ringed = lambda c, c2: (lambda x, z, d: c2 if abs(d - 5) < 0.6 else c)
-    room(-8, 8, 6, plain('light_blue_concrete'))                                         # entrance hall / flight deck
+    room(-8, 8, 6, lambda x, z, d: 'light_blue_concrete' if abs(d - 5) < 0.6 else 'polished_diorite' if (x + z) % 2 else 'smooth_quartz')   # entrance hall
     def speck(x, z):
         return (x * 73856093 ^ z * 19349663) % 11 == 0                  # the black pebbles on every floor
-    def stage_floor(c):
+    # Stages 1-4 (redone 2026-11-12: they were flat rooms of one saturated concrete colour with gold walls). Each stage
+    # is now the place its fighter brings: 1 Pui Pui's rocky planet Zoon, 2 Yakon's dark planet, 3 Dabura's demon
+    # realm, 4 the pink Majin flesh around Buu's seal. The gold hatch with the sun rays stays in the middle.
+    THEMES = [
+        dict(floor=['andesite', 'stone', 'gravel', 'tuff', 'cobblestone'], wall='stone_bricks', ceil='andesite',
+             win='light_blue_stained_glass', rock=['stone', 'andesite', 'cobblestone', 'mossy_cobblestone'], deco='rocks'),
+        dict(floor=['blackstone', 'basalt[axis=y]', 'polished_blackstone', 'black_concrete_powder', 'smooth_basalt'],
+             wall='polished_blackstone_bricks', ceil='blackstone', win='purple_stained_glass',
+             rock=['blackstone', 'basalt[axis=y]', 'blackstone', 'obsidian'], deco='dark'),
+        dict(floor=['netherrack', 'crimson_nylium', 'nether_bricks', 'netherrack', 'nether_wart_block'], wall='red_nether_bricks',
+             ceil='nether_bricks', win='orange_stained_glass', rock=['netherrack', 'blackstone', 'nether_bricks'], deco='demon'),
+        dict(floor=['pink_terracotta', 'pink_concrete', 'magenta_terracotta', 'pink_terracotta', 'pink_concrete_powder'],
+             wall='pink_terracotta', ceil='magenta_terracotta', win='magenta_stained_glass',
+             rock=['pink_concrete', 'magenta_terracotta', 'pink_terracotta'], deco='majin'),
+    ]
+    def stage_floor(t):
         def f(x, z, d):
             a = math.atan2(z, x)
             if d <= 1.2:
@@ -804,21 +852,47 @@ def babidi_ship():
                 return 'gold_block'
             if d <= 3.6:
                 return 'gold_block' if (a * 16 / math.pi) % 2 < 1 else 'yellow_terracotta'   # the sun rays
-            return 'black_concrete' if speck(x, z) else c
+            h = (x * 73856093 ^ z * 19349663) & 0xffff
+            return t['floor'][h % len(t['floor'])]
         return f
-    stages = [(-16, 'blue_concrete'), (-24, 'red_concrete'), (-32, 'orange_concrete'), (-40, 'lime_concrete')]
-    for cy, c1 in stages:                                                                # Stages 1-4 (ref colors)
-        room(cy, 9, 6, stage_floor(c1), wall='gold_block', ceil='yellow_terracotta', windows='black_concrete')
+    stages = [(-16, THEMES[0]), (-24, THEMES[1]), (-32, THEMES[2]), (-40, THEMES[3])]
+    srnd = random.Random(77)
+    for cy, t in stages:
+        room(cy, 9, 6, stage_floor(t), wall=t['wall'], ceil=t['ceil'], windows=t['win'])
         # the white egg door of the stage
         solid(v, lambda X, Y, Z, cy=cy: ((X + 5) / 1.9) ** 2 + ((Y - cy - 2) / 2.7) ** 2 + ((Z + 5) / 1.9) ** 2 <= 1,
               (-8, -2, cy - 1, cy + 5, -8, -2), lambda x, y, z, s: 'white_concrete', fill=True)
         v.box(-4, cy, -4, -4, cy + 2, -4, 'black_concrete')                # its dark doorway, facing the arena
+        # boulders and the stage's own details, kept off the middle, the door and the ladder side
+        def free_spot(x, z):
+            d = math.hypot(x, z)
+            return 4.2 < d < 7.6 and not (x >= 4 and abs(z) <= 2) and math.hypot(x + 5, z + 5) > 3.2
+        spots = [(x, z) for x in range(-8, 9) for z in range(-8, 9) if free_spot(x, z)]
+        srnd.shuffle(spots)
+        for (x, z) in spots[:7]:
+            v.set(x, cy, z, srnd.choice(t['rock']))
+            if srnd.random() < 0.45:
+                v.set(x, cy + 1, z, srnd.choice(t['rock']))
+            for dx, dz in ((1, 0), (0, 1)):
+                if srnd.random() < 0.5 and free_spot(x + dx, z + dz):
+                    v.set(x + dx, cy, z + dz, srnd.choice(t['rock']))
+        for (x, z) in spots[7:15]:
+            if v.get(x, cy, z) not in (None, 'minecraft:air'):
+                continue
+            if t['deco'] == 'rocks':
+                v.set(x, cy, z, srnd.choice(['andesite_slab[type=bottom,waterlogged=false]', 'cobblestone_slab[type=bottom,waterlogged=false]', 'stone_button[face=floor,facing=north,powered=false]']))
+            elif t['deco'] == 'dark':
+                v.set(x, cy, z, srnd.choice(['soul_lantern[hanging=false,waterlogged=false]', 'amethyst_cluster[facing=up,waterlogged=false]']))
+            elif t['deco'] == 'demon':
+                v.set(x, cy, z, srnd.choice(['nether_brick_slab[type=bottom,waterlogged=false]', 'soul_campfire[facing=north,lit=true,signal_fire=false,waterlogged=false]']))
+            else:
+                v.set(x, cy, z, srnd.choice(['pink_candle[candles=3,lit=true,waterlogged=false]', 'magenta_candle[candles=2,lit=true,waterlogged=false]', 'pink_carpet']))
     def cc_floor(x, z, d):
         if d <= 1.4:
             return 'black_concrete'
         if d <= 3.2:
             return 'light_blue_concrete' if d > 2.3 else 'blue_concrete'
-        return 'black_concrete' if speck(x, z) else 'blue_concrete'
+        return 'polished_deepslate' if speck(x, z) else 'deepslate_tiles' if (int(d) % 3 == 0) else 'polished_blackstone'
     room(-53, 17, 8, cc_floor, wall='blue_terracotta', ceil='blue_terracotta', windows='black_concrete')   # Command Center
     # Babidi's console at the side of the Command Center
     v.set(-9, -53, 0, 'blue_concrete'); v.set(-9, -52, 0, 'light_blue_concrete'); v.set(-10, -53, 0, 'blue_concrete')
@@ -909,6 +983,13 @@ def babidi_ship():
             v.set(x, 0, z, rnd.choice(['granite', 'terracotta', 'coarse_dirt', 'packed_mud']))
             if rnd.random() < 0.25:
                 v.set(x, 1, z, 'granite')
+    # lights where the rooms stayed dark (2026-11-12 check: block light 0 = monsters could spawn there at night)
+    for k in range(10):
+        a = k * math.pi / 5 + 0.3
+        for rr in (8, 13):
+            v.set(round(rr * math.cos(a)), -54, round(rr * math.sin(a)), 'sea_lantern')
+    v.set(0, -1, 7, 'sea_lantern') if v.get(0, -1, 7) not in (None, 'minecraft:air') else None
+    v.set(0, -1, -8, 'sea_lantern') if v.get(0, -1, -8) not in (None, 'minecraft:air') else None
     return v
 
 
@@ -970,7 +1051,18 @@ def goku_house():
     v.box(-14, 2, 5, -12, 3, 5, 'blue_stained_glass')
     v.box(-18, 2, -2, -18, 3, 1, 'blue_stained_glass')
     v.box(-11, 0, -2, -9, 2, 2, 'air')                                                   # opening into the dome
-    v.set(-14, 0, -3, 'red_wool'); v.set(-14, 0, -2, 'red_wool'); v.set(-16, 0, -3, 'blue_wool'); v.set(-16, 0, -2, 'blue_wool')
+    # the annex is the bedroom (2026-11-12: it had loose wool blocks on the floor for beds): Goku's and Chi-Chi's beds,
+    # Gohan's study desk with his books, a wardrobe, rug and lights
+    bed(v, -17, 0, -3, 'west', 'orange'); bed(v, -17, 0, -1, 'west', 'blue')
+    v.set(-17, 0, -4, 'barrel[facing=up,open=false]'); v.set(-17, 1, -4, 'lantern[hanging=false,waterlogged=false]')
+    v.set(-17, 0, 0, 'barrel[facing=up,open=false]'); v.set(-17, 1, 0, 'potted_white_tulip')
+    rug(v, -15, -3, -12, 0, 0, 'orange', border='brown')
+    v.box(-17, 0, 3, -15, 0, 3, 'spruce_slab[type=top,waterlogged=false]')          # Gohan's desk
+    v.set(-16, 1, 3, 'potted_bamboo'); v.set(-15, 1, 3, 'candle[candles=2,lit=true,waterlogged=false]')
+    chair(v, -16, 0, 2, 'north', 'spruce_stairs')
+    bookshelf_wall(v, -17, 3, -17, 3, 1, 2, facing='south')
+    wardrobe(v, -12, 0, -4, 'south', w=2, wood='dark_oak')
+    v.set(-14, 4, 0, 'lantern[hanging=true,waterlogged=false]')
     goku_interior(v, dome)
     # Grandpa Gohan's house, behind on the right
     gx, gz = 18, -15
@@ -997,9 +1089,19 @@ def goku_house():
     for y in range(round(5 + 6 ** 2.2 * 0.24), round(5 + 6 ** 2.2 * 0.24) + 4):
         v.set(gx, y, gz, 'blue_concrete')
     v.set(gx, round(5 + 6 ** 2.2 * 0.24) + 4, gz, 'lightning_rod[facing=up,powered=false,waterlogged=false]')
-    # the four-star ball on a little red cushion
-    v.set(gx, 0, gz - 1, 'dark_oak_planks'); v.set(gx, 1, gz - 1, 'red_carpet')
-    v.set(gx, 2, gz - 1, 'shroomlight')
+    # inside (2026-11-12: it was an empty brick box): woven floor, the four-star ball on a cushion in a little shrine on
+    # the back wall with candles and incense, the futon, a low table with a teapot, a chest, the hanging lantern
+    v.box(gx - 2, -1, gz - 2, gx + 2, -1, gz + 2, 'bamboo_mosaic')
+    v.box(gx - 2, 0, gz - 2, gx + 2, 0, gz - 2, 'dark_oak_planks')
+    v.set(gx - 1, 0, gz - 2, 'dark_oak_stairs[facing=north,half=top,shape=straight,waterlogged=false]')
+    v.set(gx + 1, 0, gz - 2, 'dark_oak_stairs[facing=north,half=top,shape=straight,waterlogged=false]')
+    v.set(gx, 1, gz - 2, 'red_carpet'); v.set(gx, 2, gz - 2, 'shroomlight')            # the ball
+    v.set(gx - 2, 1, gz - 2, 'candle[candles=3,lit=true,waterlogged=false]'); v.set(gx + 2, 1, gz - 2, 'candle[candles=2,lit=true,waterlogged=false]')
+    v.set(gx - 1, 1, gz - 2, 'flower_pot'); v.set(gx + 1, 1, gz - 2, 'potted_dead_bush')
+    v.set(gx - 2, 0, gz + 1, 'white_carpet'); v.set(gx - 2, 0, gz, 'white_carpet'); v.set(gx - 2, 0, gz - 1, 'light_gray_carpet')
+    v.set(gx + 1, 0, gz, 'spruce_trapdoor[facing=north,half=top,open=false,powered=false,waterlogged=false]')
+    v.set(gx + 2, 0, gz + 2, 'chest[facing=west,type=single,waterlogged=false]')
+    v.set(gx, 4, gz, 'lantern[hanging=true,waterlogged=false]')
     # yard: path, tree, stones
     for z in range(9, 18):
         for x in (-1, 0, 1):
@@ -1014,6 +1116,8 @@ def goku_house():
             for z in range(-4, 5):
                 if (x * x + z * z) / 16.0 + ((y - 8) / 3.0) ** 2 <= 1 + rnd.random() * 0.15:
                     v.set(tx + x, y, tz + z, leaves('oak_leaves'))
+    # lights where the rooms stayed dark (2026-11-12 check: block light 0 = monsters could spawn there at night)
+    v.set(1, 3, 7, 'lantern[hanging=true,waterlogged=false]')
     return v
 
 
@@ -1238,6 +1342,9 @@ def time_chamber():
         for c in ((1, 0), (-1, 0), (0, 1), (0, -1)):
             v.set(lx + c[0], 10, -6 + c[1], 'light_blue_stained_glass')
         v.set(lx, 11, -6, 'gold_block')
+    # lights where the rooms stayed dark (2026-11-12 check: block light 0 = monsters could spawn there at night)
+    v.set(-1, 6, -5, 'lantern[hanging=true,waterlogged=false]')
+    v.set(9, 6, -9, 'lantern[hanging=true,waterlogged=false]'); v.set(-9, 6, -9, 'lantern[hanging=true,waterlogged=false]')
     return v
 
 BUILDINGS = {'kami_lookout': kami_lookout, 'buu_house': buu_house, 'cell_arena': cell_arena,
