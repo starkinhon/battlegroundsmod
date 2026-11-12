@@ -35,11 +35,12 @@ MAP = {
     'RAIL': 'rail[shape=east_west]', 'TUNNEL': 'andesite', 'TUNNEL_LIGHT': 'sea_lantern', 'TRAIN': 'light_gray_concrete',
     'TRAIN_STRIPE': 'orange_concrete', 'TRAIN_WIN': 'glass', 'TRAIN_DOOR': 'light_gray_concrete', 'TRAIN_ROOF': 'gray_concrete',
     'TRAIN_END': 'light_gray_concrete', 'TRAIN_UNDER': 'black_concrete', 'TRAIN_FRONT': 'black_stained_glass', 'HEADLIGHT': 'sea_lantern',
+    'CROWN_LED': 'white_concrete', 'FIN': 'white_concrete', 'DECK_GLASS': 'light_blue_stained_glass', 'LOUVER': 'gray_concrete',
 }
 # at night what glows in the generator glows here too
 NIGHT = {'SHOP': 'ochre_froglight[axis=y]', 'GLYPH': 'sea_lantern', 'TRAFFIC_R': 'redstone_lamp[lit=true]',
          'TRAFFIC_G': 'verdant_froglight[axis=y]', 'AVIATION': 'redstone_lamp[lit=true]', 'CURSE_GLOW': 'crying_obsidian',
-         'DOOR': 'ochre_froglight[axis=y]', 'VENDING': 'sea_lantern'}
+         'DOOR': 'ochre_froglight[axis=y]', 'VENDING': 'sea_lantern', 'CROWN_LED': 'sea_lantern'}
 
 def shibuya(seed, cx=0, cy=0, cz=0, ext=104, night=True):
     """Shibuya around (cx, cy, cz), moved so that point is the arena's (0, 0, 0)."""

@@ -22,7 +22,7 @@ const NAMES = [
   'TORII', 'TORII_TOP', 'SHRINE_WOOD', 'SHRINE_ROOF', 'LANTERN',
   'CURSE_STAIN', 'CURSE_VEIN', 'CURSE_GLOW', 'CURSE_FLOOR', 'BOARD', 'TAPE', 'TALISMAN', 'DEAD_SIGN',
   'TILE_WALL', 'TILE_LINE', 'TILE_FLOOR', 'CEIL', 'CEIL_LIGHT', 'PILLAR', 'GATE', 'EDGE', 'STAIR', 'BENCH', 'METRO_SIGN',
-  'SIGN_DARK', 'BALLAST', 'RAIL', 'TUNNEL', 'TUNNEL_LIGHT',
+  'SIGN_DARK', 'BALLAST', 'RAIL', 'TUNNEL', 'TUNNEL_LIGHT', 'CROWN_LED', 'FIN', 'DECK_GLASS', 'LOUVER',
   'TRAIN', 'TRAIN_STRIPE', 'TRAIN_WIN', 'TRAIN_DOOR', 'TRAIN_ROOF', 'TRAIN_END', 'TRAIN_UNDER', 'TRAIN_FRONT', 'HEADLIGHT',
 ];
 const B = {};
@@ -150,9 +150,11 @@ function blockPlan(i, j, seed) {
   const n = street('x', i, seed), s = street('x', i + 1, seed), w = street('z', j, seed), e = street('z', j + 1, seed);
   const rect = { x0: w.c + w.s1 + 1, x1: e.c + e.s0 - 1, z0: n.c + n.s1 + 1, z1: s.c + s.s0 - 1 };
   const av = { n: n.avenue, s: s.avenue, w: w.avenue, e: e.avenue };
+  const W = rect.x1 - rect.x0 + 1, D = rect.z1 - rect.z0 + 1;
+  // arranha-céu raro: a quadra inteira vira base + torre (Stark 2026-11-12: "um bem altão, raro, Shibuya vibes")
+  if (towerBlock(i, j, seed) && W >= 30 && D >= 30) return { rect, alleys: [], lots: [], tower: { av, seed: hashInt(i, j, 29, seed) } };
   const rng = Rng(hashInt(i, j, 11, seed));
   const alleys = [], lots = [];
-  const W = rect.x1 - rect.x0 + 1, D = rect.z1 - rect.z0 + 1;
   let parts = [{ ...rect, f: { n: true, s: true, w: true, e: true }, alley: {} }];
   if (rng.next() < 0.5 && Math.max(W, D) >= 32) {
     // beco de 3 cortando a quadra de rua a rua
@@ -202,6 +204,153 @@ function blockPlan(i, j, seed) {
     if (lot) { lot.kind = 'building'; lot.screen = { [a]: true, [b]: true }; lot.avenue = true; }
   }
   return { rect, alleys, lots };
+}
+
+// Uma quadra a cada 3 x 3 (num lugar sorteado dela), com 55% de chance, e nunca num canto de cruzamento grande (lá
+// ficam os telões): ~1 arranha-céu a cada 190 x 190 blocos de cidade, uns 6 num bioma de 1.000 a 1.500 blocos.
+function towerBlock(i, j, seed) {
+  const si = Math.floor(i / 3), sj = Math.floor(j / 3);
+  if (hash3(si, sj, 27, seed) >= 0.55) return false;
+  const ti = si * 3 + Math.floor(hash3(si, sj, 28, seed) * 3), tj = sj * 3 + Math.floor(hash3(sj, si, 28, seed) * 3);
+  if (ti !== i || tj !== j) return false;
+  return !scramble(i, j, seed) && !scramble(i + 1, j, seed) && !scramble(i, j + 1, seed) && !scramble(i + 1, j + 1, seed);
+}
+
+// ---------------------------------------------------------------- arranha-céu
+
+// Arranha-céu: base comercial larga (lojas, telão, letreiros) e, saindo dela, uma torre de vidro de 120 a 175 blocos,
+// sorteada inteira: planta (quadrada de cantos chanfrados, com recuos em degrau, ou afinando), tom do vidro, aletas
+// brancas verticais, faixas de andar técnico com venezianas, escritórios acesos de noite, e no topo o mirante a céu
+// aberto com guarda-corpo de vidro, a coroa de LED, o heliponto com o H e a antena com luzes vermelhas.
+function skyscraper(w, plan, seed) {
+  const r = plan.rect, rng = Rng(plan.tower.seed), put = (x, y, z, t) => w.force(x, y, z, t);
+  const W = r.x1 - r.x0 + 1, D = r.z1 - r.z0 + 1;
+  // base: 3 a 5 andares, ocupando a quadra toda menos 1
+  const podFloors = rng.int(3, 5), podTop = 1 + 5 + podFloors * 4 - 1;
+  const podWall = B.WALL0 + rng.int(0, 7), podSign = B.SIGN0 + rng.int(0, 7);
+  const bx0 = r.x0 + 1, bx1 = r.x1 - 1, bz0 = r.z0 + 1, bz1 = r.z1 - 1;
+  for (let x = r.x0; x <= r.x1; x++) for (let z = r.z0; z <= r.z1; z++) put(x, 0, z, B.SIDEWALK2);
+  const faceOf = (x, z) => (z === bz0 ? 0 : z === bz1 ? 1 : x === bx0 ? 2 : 3);
+  for (let y = 1; y <= podTop; y++) {
+    const yRel = y - 1;
+    for (let x = bx0; x <= bx1; x++) for (let z = bz0; z <= bz1; z++) {
+      const edge = x === bx0 || x === bx1 || z === bz0 || z === bz1;
+      if (!edge) { if (y === podTop) put(x, y, z, B.ROOF); continue; }
+      const f = faceOf(x, z), u = f < 2 ? x - bx0 : z - bz0, len = f < 2 ? bx1 - bx0 + 1 : bz1 - bz0 + 1;
+      const corner = u === 0 || u === len - 1;
+      let t;
+      if (corner) t = B.CORNER;
+      else if (yRel < 5) t = yRel === 4 ? (glyph(u, 1, plan.tower.seed + f) && u > 2 && u < len - 3 ? B.GLYPH : podSign)
+        : (Math.abs(u - Math.floor(len / 2)) <= 1 && yRel <= 2 ? B.DOOR : B.SHOP);
+      else {
+        const rr = (yRel - 5) & 3;
+        t = rr === 0 ? podWall : (u % 6 === 0 ? B.FIN : B.SHOP);
+      }
+      if (y === podTop) t = B.PARAPET;
+      put(x, y, z, t);
+    }
+  }
+  // telão grande numa das frentes da base que dá pra avenida (ou na primeira)
+  const avs = ['n', 's', 'w', 'e'].filter((k) => plan.tower.av[k]);
+  const sf = avs.length ? avs[rng.int(0, avs.length - 1)] : 'n', horiz = sf === 'n' || sf === 's';
+  const len = horiz ? W - 2 : D - 2, sw = Math.min(22, len - 6), sh = Math.min(podTop - 7, 12), u0 = rng.int(3, len - 3 - sw);
+  for (let u = u0; u < u0 + sw; u++) for (let y = 7; y < 7 + sh; y++) {
+    const x = horiz ? bx0 + u : (sf === 'w' ? bx0 - 1 : bx1 + 1), z = horiz ? (sf === 'n' ? bz0 - 1 : bz1 + 1) : bz0 + u;
+    put(x, y, z, u === u0 || u === u0 + sw - 1 || y === 7 || y === 6 + sh ? B.SIGN_FRAME : B.SCREEN);
+  }
+
+  // torre
+  const S = Math.max(16, Math.min(26, Math.min(W, D) - 8));
+  const hx0 = S / 2, hz0 = (S - 2 * rng.int(0, 2)) / 2;
+  const cx = Math.floor((bx0 + bx1) / 2) + rng.int(-2, 2), cz = Math.floor((bz0 + bz1) / 2) + rng.int(-2, 2);
+  const top = rng.int(120, 175), deck = top - rng.int(8, 11);
+  const shape = ['chamfer', 'steps', 'taper'][rng.int(0, 2)];
+  const cham = rng.int(3, 5), glass = B.GLASS0 + rng.int(0, 3);
+  const steps = [podTop + Math.floor((top - podTop) * rng.range(0.45, 0.6)), podTop + Math.floor((top - podTop) * rng.range(0.72, 0.85))];
+  const finEvery = rng.int(4, 6), mech = rng.int(26, 34);
+  const half = (y) => {
+    let k = 0;
+    if (shape === 'steps') k = (y >= steps[0] ? 2 : 0) + (y >= steps[1] ? 2 : 0);
+    else if (shape === 'taper') k = Math.floor(3 * (y - podTop) / (top - podTop));
+    return [hx0 - k, hz0 - k];
+  };
+  const inside = (dx, dz, y) => {
+    const [hx, hz] = half(y), c = shape === 'steps' ? 2 : cham;
+    const ax = Math.abs(dx + 0.5), az = Math.abs(dz + 0.5);
+    return ax <= hx && az <= hz && ax + az <= hx + hz - c;
+  };
+  const R = Math.ceil(Math.max(hx0, hz0)) + 1;
+  for (let y = podTop + 1; y <= top; y++) {
+    const yRel = y - podTop - 1, f = yRel >> 2, rr = yRel & 3;
+    const mechBand = yRel % mech >= mech - 2 && y < deck - 2;
+    for (let dx = -R; dx <= R; dx++) for (let dz = -R; dz <= R; dz++) {
+      if (!inside(dx, dz, y)) continue;
+      const shell = !inside(dx + 1, dz, y) || !inside(dx - 1, dz, y) || !inside(dx, dz + 1, y) || !inside(dx, dz - 1, y);
+      const x = cx + dx, z = cz + dz;
+      if (!shell) {
+        // laje de cima de cada degrau / telhado, e o piso do mirante
+        if (y === top || y === deck || !inside(dx, dz, y + 1)) put(x, y, z, B.ROOF);
+        continue;
+      }
+      // coordenada ao longo da fachada pras aletas
+      const u = Math.abs(dx) >= Math.abs(dz) ? dz + 100 : dx + 100;
+      let t;
+      if (y > deck) t = y === top ? B.CROWN_LED : (y === deck + 1 ? B.SLAB : B.DECK_GLASS);
+      else if (y === deck) t = B.CROWN_LED;
+      else if (mechBand) t = B.LOUVER;
+      else if (u % finEvery === 0) t = B.FIN;
+      else if (rr === 0) t = B.SLAB;
+      else {
+        t = glass;
+        const hh = hash3(Math.floor(u / finEvery) + 7 * (dx > 0) + 13 * (dz > 0), f, 5, plan.tower.seed);
+        if (hh < 0.55) t |= LIT | (hash3(u, f, 7, plan.tower.seed) < 0.85 ? COOL : 0);
+      }
+      put(x, y, z, t);
+    }
+  }
+  // mirante: só a borda de vidro sobe acima do piso do deck; o meio fica aberto até o topo (coroa)
+  for (let dx = -R; dx <= R; dx++) for (let dz = -R; dz <= R; dz++) {
+    if (!inside(dx, dz, deck)) continue;
+    const shell = !inside(dx + 1, dz, deck) || !inside(dx - 1, dz, deck) || !inside(dx, dz + 1, deck) || !inside(dx, dz - 1, deck);
+    for (let y = deck + 1; y <= top; y++) {
+      if (shell) continue;
+      // o miolo abre a céu aberto, com o heliponto no telhado da casa de máquinas no meio
+      const [hx, hz] = half(deck);
+      const core = Math.abs(dx + 0.5) <= hx - 4 && Math.abs(dz + 0.5) <= hz - 4;
+      if (!core) w.force(cx + dx, y, cz + dz, 0);
+      else if (y === top) {
+        const hX = Math.abs(dx + 0.5) <= 2.5 && Math.abs(dz + 0.5) <= 3 && (Math.abs(dx + 0.5) >= 2 || Math.abs(dz + 0.5) <= 0.5);
+        const ring = Math.abs(Math.hypot(dx + 0.5, dz + 0.5) - (Math.min(hx, hz) - 5)) < 0.6;
+        w.force(cx + dx, y, cz + dz, hX || ring ? B.PARK_LINE : B.ROOF);
+      } else w.force(cx + dx, y, cz + dz, Math.abs(dx + 0.5) >= hx - 4.5 || Math.abs(dz + 0.5) >= hz - 4.5 ? B.DECK_GLASS : B.WALL4);
+    }
+    // guarda-corpo de vidro em volta da borda do deck aberto
+    if (!shell) {
+      const [hx, hz] = half(deck);
+      const core = Math.abs(dx + 0.5) <= hx - 4 && Math.abs(dz + 0.5) <= hz - 4;
+      const nearShell = !inside(dx + 2, dz, deck) || !inside(dx - 2, dz, deck) || !inside(dx, dz + 2, deck) || !inside(dx, dz - 2, deck);
+      if (!core && nearShell) w.force(cx + dx, deck + 1, cz + dz, B.DECK_GLASS);
+    }
+  }
+  // tira a casca de vidro acima do deck: o mirante é aberto, só o guarda-corpo e a coroa de LED no topo da casa central
+  for (let dx = -R; dx <= R; dx++) for (let dz = -R; dz <= R; dz++) {
+    if (!inside(dx, dz, deck)) continue;
+    const shell = !inside(dx + 1, dz, deck) || !inside(dx - 1, dz, deck) || !inside(dx, dz + 1, deck) || !inside(dx, dz - 1, deck);
+    if (!shell) continue;
+    for (let y = deck + 2; y <= top; y++) w.force(cx + dx, y, cz + dz, 0);
+    w.force(cx + dx, deck + 1, cz + dz, B.DECK_GLASS);
+  }
+  // antena no topo da casa central, com luzes vermelhas, e luzes nos cantos do deck
+  const mast = rng.int(14, 26);
+  for (let y = top + 1; y <= top + mast; y++) w.force(cx, y, cz, y % 6 === 0 ? B.AVIATION : B.POLE);
+  w.force(cx, top + mast + 1, cz, B.AVIATION);
+  const [hx, hz] = half(deck);
+  for (const [sx, sz] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) {
+    // canto chanfrado: a luz vai no meio do chanfro
+    const ex = Math.round(sx * (hx - (shape === 'steps' ? 1 : cham / 2)) - 0.5), ez = Math.round(sz * (hz - (shape === 'steps' ? 1 : cham / 2)) - 0.5);
+    w.force(cx + ex, deck + 2, cz + ez, B.AVIATION);
+  }
+  return { x0: r.x0, z0: r.z0, x1: r.x1, z1: r.z1, top: top + mast + 1, cursed: false, floors: Math.floor((top - 5) / 4), screen: true, tower: true, cx, cz };
 }
 
 // ---------------------------------------------------------------- prédio
@@ -764,6 +913,7 @@ function shibuyaPiece(seed, half) {
     for (const a of plan.alleys) for (let x = a.x0; x <= a.x1; x++) for (let z = a.z0; z <= a.z1; z++) w.force(x, 0, z, B.ALLEY);
   }
   const st = metro(w, seed, half);
+  for (const plan of blocks) if (plan.tower) buildings.push(skyscraper(w, plan, seed));
   for (const plan of blocks) for (const lot of plan.lots) {
     if (lot.kind === 'shrine') shrine(w, lot, seed);
     else if (lot.kind === 'parking') parking(w, lot);
@@ -780,4 +930,4 @@ function shibuyaPiece(seed, half) {
   return { w, buildings, walks, station: st, cross: { x: Z0.c, z: X0.c, X: X0, Z: Z0 } };
 }
 
-if (typeof module !== 'undefined') module.exports = { B, NAMES, LIT, COOL, base, Rng, hash3, hashInt, Vox, valueNoise3, CELL, street, streetAt, scramble, groundAt, blockPlan, glyph, building, shrine, parking, METRO, metro, furniture, shibuyaPiece };
+if (typeof module !== 'undefined') module.exports = { towerBlock, skyscraper, B, NAMES, LIT, COOL, base, Rng, hash3, hashInt, Vox, valueNoise3, CELL, street, streetAt, scramble, groundAt, blockPlan, glyph, building, shrine, parking, METRO, metro, furniture, shibuyaPiece };
