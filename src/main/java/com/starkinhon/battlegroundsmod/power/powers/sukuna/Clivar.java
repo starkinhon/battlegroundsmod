@@ -122,7 +122,7 @@ public final class Clivar {
             caster.hurtMarked = true;
             caster.resetFallDistance();
             return false;
-        });
+        }, () -> BUSY.remove(caster));
         return true;
     }
 
@@ -284,6 +284,10 @@ public final class Clivar {
                 return true;
             }
             return false;
+        }, () -> {
+            freeCaster.run();
+            freeTarget.run();
+            BUSY.remove(caster);
         });
     }
 

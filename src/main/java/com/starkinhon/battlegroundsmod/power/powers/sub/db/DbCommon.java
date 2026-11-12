@@ -280,4 +280,9 @@ public final class DbCommon {
     public static void later(int ticks, Runnable r) {
         Tasks.later(ticks, r);
     }
+
+    // The world closed (ServerReset): nothing of it is kept for the next one (old entities, old game times).
+    public static void resetStatics() {
+        LAST_COUNTER.clear();
+    }
 }

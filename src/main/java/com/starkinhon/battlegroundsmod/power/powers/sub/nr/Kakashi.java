@@ -747,4 +747,9 @@ public final class Kakashi {
         });
         return true;
     }
+
+    // The world closed (ServerReset): nothing of it is kept for the next one (old entities, old game times).
+    public static void resetStatics() {
+        SEALS.clear();
+    }
 }

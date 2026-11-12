@@ -293,4 +293,10 @@ public final class Decay {
     public static boolean decaying(LivingEntity target) {
         return DECAYING.contains(target.getId());
     }
+
+    // The world closed (ServerReset): nothing of it is kept for the next one (old entities, old game times).
+    public static void resetStatics() {
+        SCHED.clear();
+        DECAYING.clear();
+    }
 }

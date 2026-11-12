@@ -763,4 +763,9 @@ public final class Naruto {
             return false;
         });
     }
+
+    // The world closed (ServerReset): nothing of it is kept for the next one (old entities, old game times).
+    public static void resetStatics() {
+        TRAPS.clear();
+    }
 }

@@ -95,8 +95,26 @@ public final class KyokaSuigetsu {
                 breakIllusion(caster);
             }
             return false;
+        }, () -> {
+            if (!state.breaking) {
+                drop(caster, state);
+            }
         });
         return true;
+    }
+
+    // The illusion cut off (the Izanami dropping his tasks): the clone goes and he is seen again at once, so ACTIVE never
+    // keeps him for good (X dead, a clone standing forever).
+    private static void drop(LivingEntity caster, State state) {
+        state.breaking = true;
+        if (state.clone != null) {
+            state.clone.discard();
+        }
+        ACTIVE.remove(caster, state);
+        if (caster.isAlive()) {
+            hide(caster, 0);
+            caster.removeEffect(MobEffects.INVISIBILITY);
+        }
     }
 
     private static void swapIn(LivingEntity caster, ServerLevel level, State state, int limit) {
@@ -150,7 +168,10 @@ public final class KyokaSuigetsu {
         Vec3 facing = Combat.flatLook(clone);
         AizenNet.send(level, AizenNet.MIRROR_CRACK, clone.getId(), feet, facing, crack, 0);
         SkillSounds.play(level, spec.sons(), "rachar", 0, 0, where, List.of());
-        Tasks.later(crack, () -> {
+        Tasks.add(age -> {
+            if (age < crack) {
+                return false;
+            }
             Vec3 middle = feet.add(0, 1.1, 0);
             AizenNet.send(level, AizenNet.MIRROR_BREAK, clone.getId(), feet, facing, 0, 0);
             SkillSounds.play(level, spec.sons(), "quebrar", 0, 0, onde -> "alvo".equals(onde) ? middle : Combat.center(caster), List.of());
@@ -172,7 +193,8 @@ public final class KyokaSuigetsu {
                     PowerLogic.sync(player);
                 }
             }
-        });
+            return true;
+        }, () -> drop(caster, state));
     }
 
     public static boolean active(LivingEntity caster) {

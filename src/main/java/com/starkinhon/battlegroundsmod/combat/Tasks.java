@@ -31,6 +31,8 @@ public final class Tasks {
         Destructible.Attack link;
         int age;
         boolean cancelled;
+        // Run once if the task is dropped by cancelSince/cancelOwned before it finishes (null: nothing to undo).
+        Runnable onCancel;
 
         Entry(Task task, boolean system) {
             this.task = task;
@@ -57,6 +59,15 @@ public final class Tasks {
 
     public static void add(Task task) {
         PENDING.add(new Entry(task, false));
+    }
+
+    // Like add, and onCancel runs if the task is cut off before it finishes (the Izanami, VazioRelampago): a move that
+    // keeps state outside its task (a busy flag, a buff it must take back) frees it there, so being cut never leaves it
+    // stuck for good.
+    public static void add(Task task, Runnable onCancel) {
+        Entry entry = new Entry(task, false);
+        entry.onCancel = onCancel;
+        PENDING.add(entry);
     }
 
     // A task cancelSince never stops.
@@ -146,6 +157,22 @@ public final class Tasks {
             Entry entry = it.next();
             if (entry.cancelled) {
                 it.remove();
+                if (entry.link != null) {
+                    // The attack it was moving is over too: it no longer counts as flying (bots dodged a ghost of it, the
+                    // hakaizinho could "erase" it) until Destructible dropped it two minutes later.
+                    entry.link.end();
+                }
+                if (entry.onCancel != null) {
+                    Entity before = current;
+                    current = entry.owner;
+                    try {
+                        entry.onCancel.run();
+                    } catch (Exception e) {
+                        BattlegroundsMod.LOGGER.error("Battlegrounds task cancel failed", e);
+                    } finally {
+                        current = before;
+                    }
+                }
                 continue;
             }
             if (entry.link != null && entry.link.held()) {

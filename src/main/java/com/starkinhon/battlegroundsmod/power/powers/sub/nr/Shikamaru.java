@@ -795,4 +795,15 @@ public final class Shikamaru {
         });
         return true;
     }
+
+    // The world closed (ServerReset): nothing of it is kept for the next one (old entities, old game times).
+    public static void resetStatics() {
+        HOLDS.clear();
+        NUIS.clear();
+        TAGS.clear();
+        POUCH.clear();
+        HITS.clear();
+        SCREEN.clear();
+        FANNING.clear();
+    }
 }

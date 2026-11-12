@@ -163,10 +163,13 @@ public final class Combat {
                 ? (float) com.starkinhon.battlegroundsmod.skill.TierSpec.get().multSubAlmas() : 1f;
     }
 
-    // Magic damage ignores armor.
+    // Magic damage ignores armor. The same multipliers as hurtBase (Nanami's Overtime and the Strength effect were left out
+    // here, so they did nothing for the moves that hurt through this one).
     public static boolean hurtMagic(LivingEntity player, LivingEntity target, float damage) {
         damage *= Tiers.damageMultiplier(player) * com.starkinhon.battlegroundsmod.power.powers.sub.nr.NrCommon.damageMultiplier(player)
-                * com.starkinhon.battlegroundsmod.power.powers.kokushibo.OniBody.damageMultiplier(player) * subScale(player);
+                * com.starkinhon.battlegroundsmod.power.powers.sub.jj.JjCommon.damageMultiplier(player)
+                * com.starkinhon.battlegroundsmod.power.powers.kokushibo.OniBody.damageMultiplier(player) * subScale(player)
+                * strength(player);
         target.invulnerableTime = 0;
         return DamageDebug.hurt(player, target, player.damageSources().indirectMagic(player, player), damage);
     }
