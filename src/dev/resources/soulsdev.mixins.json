@@ -1,0 +1,12 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.starkinhon.soulsdev.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "client": [
+    "CameraDevMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

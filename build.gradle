@@ -47,6 +47,16 @@ base {
 // Mojang ships Java 21 to end users in 1.21.1, so mods should target Java 21.
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
+// Souls Dev (src/dev): um segundo mod, SÓ DE TESTE (travar boss, roteiros, câmeras, gravação; Stark 2026-11-12).
+// Entra no runClient e no jar separado build/devlibs/soulsdev-*.jar (tarefa devJar). NUNCA no jar do mod (build/libs),
+// então não precisa lembrar de tirar antes do lançamento. -PnoDevMods deixa ele de fora do runClient/runServer.
+sourceSets {
+    dev
+}
+configurations {
+    devImplementation.extendsFrom implementation
+}
+
 neoForge {
     // Specify the version of NeoForge to use.
     version = project.neo_version
@@ -66,6 +76,13 @@ neoForge {
             client()
             // Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            // Souls Dev: gradlew runClient -Pmundo=Teste [-PmundoTipo=plano|normal|<preset>] [-Proteiro=<nome|caminho>] [-Pshots=<pasta>]
+            // abre direto no mundo (cria se não existir) e roda o roteiro sozinho. Ver src/dev.
+            ['mundo', 'mundoTipo', 'roteiro', 'shots'].each { name ->
+                if (project.hasProperty(name)) {
+                    systemProperty "soulsdev.${name}", project.property(name).toString()
+                }
+            }
         }
 
         server {
@@ -114,6 +131,12 @@ neoForge {
         "${mod_id}" {
             sourceSet(sourceSets.main)
         }
+        // Mod de teste (src/dev), fora do jar de lançamento.
+        if (!project.hasProperty('noDevMods')) {
+            soulsdev {
+                sourceSet(sourceSets.dev)
+            }
+        }
     }
 }
 
@@ -124,6 +147,8 @@ neoForge {
 configurations {
     runtimeClasspath.extendsFrom localRuntime
 }
+
+neoForge.addModdingDependenciesTo(sourceSets.dev)
 
 dependencies {
     // TerraBlender (NeoForge 1.21.1-4.1.0.8, CurseForge 940057 file 6054947): puts the universes' biomes into the
@@ -139,7 +164,11 @@ dependencies {
         localRuntime "maven.modrinth:neat:kALoScYM"
         // Shoulder Surfing Reloaded (over-the-shoulder camera), version 1.21.1-5.2.0+neoforge (Modrinth id woekHsje).
         localRuntime "maven.modrinth:shoulder-surfing-reloaded:woekHsje"
+        // Souls Dev (src/dev): ferramentas de teste, só no runClient.
+        localRuntime sourceSets.dev.output
     }
+    // Souls Dev usa as classes do mod (PowerLogic, Tasks...).
+    devImplementation sourceSets.main.output
 
     // Example optional mod dependency with JEI
     // The JEI API is declared for compile time use, while the full JEI artifact is used at runtime
@@ -187,6 +216,21 @@ var generateModMetadata = tasks.register("generateModMetadata", ProcessResources
 sourceSets.main.resources.srcDir generateModMetadata
 // To avoid having to run "generateModMetadata" manually, make it run on every project reload
 neoForge.ideSyncTask generateModMetadata
+
+// Jar separado do Souls Dev, pra testar com o jar do mod num launcher (põe os dois na pasta mods). Fica em
+// build/devlibs, longe de build/libs, que é o que vai pra release.
+var devJar = tasks.register('devJar', Jar) {
+    group = 'build'
+    description = 'Souls Dev (so testes): jar separado, nunca vai no lancamento.'
+    archiveBaseName = 'soulsdev'
+    archiveVersion = project.mod_version
+    destinationDirectory = layout.buildDirectory.dir('devlibs')
+    from sourceSets.dev.output
+}
+// O build compila o Souls Dev junto, pra o CI pegar erro nele também.
+tasks.named('build') {
+    dependsOn devJar
+}
 
 // Example configuration to allow publishing using the maven-publish plugin
 publishing {
