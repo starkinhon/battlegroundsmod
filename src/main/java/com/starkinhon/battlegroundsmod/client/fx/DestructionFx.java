@@ -104,7 +104,10 @@ final class DestructionFx {
         float[] line = FxDraw.mix(FxDraw.rgb(0x5A0A04), cor, heat);
         float[] core = FxDraw.mix(FxDraw.rgb(0x8A1A06), hot, heat);
         float flicker = 0.9f + 0.1f * Mth.sin(age * 0.9f);
-        Vector3f origin = new Vector3f(at).sub((float) world.x, (float) world.y, (float) world.z);
+        // The web is stored relative to where it hit (world); at is that same point relative to the camera. Subtracting
+        // world from at here put the whole web around the world's 0, 0, 0 instead (in the sky over a flat world near
+        // the origin, nowhere to be seen anywhere else).
+        Vector3f origin = new Vector3f(at);
         float[] s = web.segments;
         float view = loadedReach();
         for (int i = 0; i < s.length; i += STRIP) {
