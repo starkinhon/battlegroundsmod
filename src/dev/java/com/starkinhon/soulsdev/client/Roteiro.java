@@ -44,7 +44,7 @@ public final class Roteiro {
         }
         Path pasta = Minecraft.getInstance().gameDirectory.toPath().resolve("soulsdev").resolve("roteiros");
         // No runClient a pasta do jogo é <repo>/run, então os roteiros do repo (tools/roteiros) também valem.
-        Path doRepo = Minecraft.getInstance().gameDirectory.toPath().toAbsolutePath().getParent().resolve("tools").resolve("roteiros");
+        Path doRepo = Minecraft.getInstance().gameDirectory.toPath().toAbsolutePath().normalize().getParent().resolve("tools").resolve("roteiros");
         for (Path p : List.of(pasta.resolve(nomeOuCaminho + ".txt"), pasta.resolve(nomeOuCaminho), doRepo.resolve(nomeOuCaminho + ".txt"),
                 Minecraft.getInstance().gameDirectory.toPath().resolve(nomeOuCaminho))) {
             if (Files.isRegularFile(p)) {
@@ -57,7 +57,7 @@ public final class Roteiro {
     public static String iniciar(String nomeOuCaminho, int esperaAntes) throws IOException {
         Path arquivo = achar(nomeOuCaminho);
         if (arquivo == null) {
-            throw new IOException("roteiro não encontrado: " + nomeOuCaminho + " (procurei em soulsdev/roteiros/)");
+            throw new IOException("roteiro não encontrado: " + nomeOuCaminho + " (procurei em soulsdev/roteiros/ e tools/roteiros/)");
         }
         linhas = new ArrayList<>(Files.readAllLines(arquivo, StandardCharsets.UTF_8));
         proxima = 0;
