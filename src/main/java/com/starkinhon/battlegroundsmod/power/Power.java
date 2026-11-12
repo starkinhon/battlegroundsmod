@@ -31,6 +31,10 @@ public record Power(String id, int color, float meleeMultiplier, List<Ability> a
 
     // The skill slots this power has, in the order they are listed on screen (the ult last).
     public List<Integer> slots() {
+        if (abilities.size() < 4) {
+            // A technique taught by a master (Powers.INNATE): only its own keys, Z first.
+            return java.util.stream.IntStream.range(0, abilities.size()).boxed().toList();
+        }
         return abilities.size() > 4
                 ? List.of(0, 1, 2, PowerData.SLOT_EXTRA, PowerData.SLOT_ULT)
                 : List.of(0, 1, 2, PowerData.SLOT_ULT);

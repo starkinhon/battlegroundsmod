@@ -48,6 +48,10 @@ public final class ClientHooks {
         FlightClient.state(entityId, state);
     }
 
+    public static void majin(int entityId, boolean on) {
+        com.starkinhon.battlegroundsmod.client.fx.MajinMarkLayer.set(entityId, on);
+    }
+
     public static void guardPose(int entityId, boolean on) {
         SkillAnimations.guard(entityId, on);
     }

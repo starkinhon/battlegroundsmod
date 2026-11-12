@@ -50,7 +50,7 @@ public final class UniverseItems {
     // Items, by item id.
     private static final Map<String, String> ITEMS = Map.ofEntries(
             Map.entry("senzu", "dragonball"), Map.entry("scouter", "dragonball"), 
-            Map.entry("radar_dragao", "dragonball"), 
+            Map.entry("radar_dragao", "dragonball"), Map.entry("capsula_hoipoi", "dragonball"),
             Map.entry("kunai_hiraishin", "naruto"), Map.entry("pilula_soldado", "naruto"), Map.entry("ramen", "naruto"),
             Map.entry("pergaminho_ninken", "naruto"), Map.entry("bandana_ninja", "naruto"),
             Map.entry("samehada", "naruto"), Map.entry("kusanagi", "naruto"),

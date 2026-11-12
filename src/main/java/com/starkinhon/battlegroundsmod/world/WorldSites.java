@@ -44,7 +44,7 @@ public final class WorldSites {
     private static final double TRIGGER = 170;
     private static final int LOOKOUT_Y = 281;
     private static final int LOOKOUT_OFFSET = 110;
-    private static final int KORIN_FLOOR = 162;
+    public static final int KORIN_FLOOR = 162;
 
     public static final String CAPSULE = "capsula", GOKU = "goku", KARIN = "karin", CELL_RING = "cell", WRECK = "nave",
             RADITZ = "raditz", BABIDI = "babidi", BUU = "buu", KAME = "kame", LOOKOUT = "lookout";
