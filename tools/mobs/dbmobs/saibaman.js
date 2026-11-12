@@ -298,7 +298,7 @@
       r('tronco', -0.45 * inhale + 0.4 * spit, 0, 0);
       r('cabeca', -0.55 * inhale + 0.55 * spit, 0, 0);
       r('quadril', -0.1 * inhale + 0.1 * spit, 0, 0);
-      P.tronco.obj.scale.set(1 + 0.1 * inhale, 1, 1 + 0.12 * inhale);
+      if (P.tronco) P.tronco.obj.scale.set(1 + 0.1 * inhale, 1, 1 + 0.12 * inhale);
       r('mandibula', 0.15 * inhale + 0.85 * spit, 0, 0);
       r('bracoD', 0.4 * inhale - 0.3 * spit, 0, 0.4 * inhale); r('bracoE', 0.4 * inhale - 0.3 * spit, 0, -0.4 * inhale);
       r('pernaD', -0.25 * inhale, 0, 0); r('canelaD', 0.3 * inhale, 0, 0);

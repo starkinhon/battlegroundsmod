@@ -153,6 +153,10 @@ public final class DbFx {
     }
 
     static void receive(int kind, int id, Vec3 pos, Vec3 dir, float a, float b, float c) {
+        if (DmFx.handles(kind)) {
+            DmFx.receive(kind, id, pos, dir, a, b, c);
+            return;
+        }
         if (NmFx.handles(kind)) {
             NmFx.receive(kind, id, pos, dir, a, b, c);
             return;
@@ -314,7 +318,7 @@ public final class DbFx {
     }
 
     static boolean active() {
-        return !SHOTS.isEmpty() || !TRACKED.isEmpty() || NrFx.active() || JjFx.active() || InoFx.active() || NmFx.active();
+        return !SHOTS.isEmpty() || !TRACKED.isEmpty() || NrFx.active() || JjFx.active() || InoFx.active() || NmFx.active() || DmFx.active();
     }
 
     static void clear() {
@@ -325,6 +329,7 @@ public final class DbFx {
         MakimaFx.clear();
         InoFx.clear();
         NmFx.clear();
+        DmFx.clear();
     }
 
     private static double life(Fx f) {
@@ -450,6 +455,7 @@ public final class DbFx {
         JjFx.draw(now, partial);
         InoFx.draw(now, partial);
         NmFx.draw(now, partial);
+        DmFx.draw(now, partial);
     }
 
     // ---------- drawing in the right pass ----------

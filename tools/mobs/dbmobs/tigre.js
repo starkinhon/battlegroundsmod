@@ -216,7 +216,7 @@
   fixed[0].scar = false; fixed[0].white = false; fixed[1].scar = true; fixed[1].white = false; fixed[2].white = true;
   const def = v => ({ def: rigDef(painters(v), v, false), low: rigDef(painters(v), v, true) });
   window.MOBS.push({
-    id: 'tigre', nome: 'Tigre-dente-de-sabre', bioma: 'Rios e florestas', tier: 'Médio · tier 7',
+    id: 'tigre_sabre', nome: 'Tigre-dente-de-sabre', bioma: 'Rios e florestas', tier: 'Médio · tier 7',
     variants: fixed.map((v, i) => ({ nome: ['Laranja', 'Cicatriz', 'Branco (raro)'][i], v, ...def(v) })),
     randomVariant: () => { const v = variant(Math.floor(Math.random() * 1e5)); return { nome: 'Sorteado', v, ...def(v) }; },
     anim, modes: [['parado', 'Parado'], ['andar', 'Andar'], ['bote', 'Bote'], ['patada', 'Patada Dupla']],

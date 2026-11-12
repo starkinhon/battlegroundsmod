@@ -35,6 +35,14 @@ public final class Stun {
         if (!full && target instanceof SoulBoss boss && boss.isBoss()) {
             ticks = (int) Math.round(ticks * ComboSpec.get().atordoado().multiplicadorBoss());
         }
+        // the Dragon Ball creatures that feel no pain (Gero's androids, Spopovich): a light stun does nothing, a strong
+        // one is halved
+        if (!full && target instanceof com.starkinhon.battlegroundsmod.animal.dbmob.DbMob d && d.painless()) {
+            if (ticks < INTERRUPT_TICKS) {
+                return;
+            }
+            ticks /= 2;
+        }
         boolean wasStunned = is(target);
         if (ticks > 0) {
             target.addEffect(new MobEffectInstance(ModEffects.ATORDOADO, ticks, 0, false, false, true));

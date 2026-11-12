@@ -128,7 +128,7 @@ public final class UniverseSpawns {
     // and raptors, the snow the Red Ribbon (its Muscle Tower stood in the snow) and the yeti, the islands and beaches
     // the pirates; around the Red Ribbon base its soldiers. A group is picked for the spot it lands on.
     static final List<String> EARTH_MOBS = List.of("saibaman", "soldado_red_ribbon", "bandido_deserto", "pirata", "yeti",
-            "raptor", "tiranossauro", "ladrao_urso");
+            "raptor", "tiranossauro", "ladrao_urso", "dino_chifrudo", "tigre_sabre", "androide_gero", "soldado_freeza");
 
     // In the normal overworld (Stark 2026-11-11: o universo virou biomas): by the Dragon Ball biome of the spot. The
     // pirates by the sea, the Saibamen and bandits in the red desert, the Red Ribbon and the yeti in the peaks, the
@@ -141,8 +141,13 @@ public final class UniverseSpawns {
         if (!DragonBallWorld.UNIVERSE.equals(UniverseBiomes.universeOf(biome))) {
             return null;
         }
+        // around the wrecked Saiyan ship (Stark 2026-11-12, mobs-db: "em volta das naves"): Freeza's soldiers
+        if (com.starkinhon.battlegroundsmod.world.WorldSites.near(level, com.starkinhon.battlegroundsmod.world.WorldSites.WRECK,
+                new BlockPos(x, 0, z), 60) != null) {
+            return List.of("soldado_freeza");
+        }
         if (biome.is(com.starkinhon.battlegroundsmod.world.ModWorldgen.DESERTO_VERMELHO)) {
-            return List.of("saibaman", "saibaman", "bandido_deserto", "raptor");
+            return List.of("saibaman", "saibaman", "bandido_deserto", "raptor", "dino_chifrudo");
         }
         // Korin's tower (Stark 2026-11-11): Bora guards it (DbCreatureSpawns), no dinosaurs around; the Red Ribbon still
         // comes after the dragon ball there
@@ -153,8 +158,9 @@ public final class UniverseSpawns {
         if (biome.is(com.starkinhon.battlegroundsmod.world.ModWorldgen.MONTANHAS_PAOZU)) {
             // Goku's mountains: the dinosaurs he grew up hunting, and the Bear Thief: rare by day, he hunts at night
             // (then fewer dinosaurs; Stark 2026-11-11)
-            return level.isDay() ? List.of("raptor", "raptor", "tiranossauro", "tiranossauro", "raptor", "tiranossauro", "ladrao_urso")
-                    : List.of("ladrao_urso", "ladrao_urso", "ladrao_urso", "raptor", "tiranossauro");
+            // and the sabertooth by the rivers (mobs-db 2026-11-12)
+            return level.isDay() ? List.of("raptor", "raptor", "tiranossauro", "tiranossauro", "dino_chifrudo", "dino_chifrudo", "tigre_sabre",
+                    "ladrao_urso") : List.of("ladrao_urso", "ladrao_urso", "ladrao_urso", "tigre_sabre", "raptor", "tiranossauro");
         }
         if (biome.is(com.starkinhon.battlegroundsmod.world.ModWorldgen.NORTE_GELADO)) {
             // the frozen north: the yeti and the Red Ribbon (its Muscle Tower stood in the snow)
@@ -166,12 +172,13 @@ public final class UniverseSpawns {
             return List.of("pirata");
         }
         if (biome.is(com.starkinhon.battlegroundsmod.world.ModWorldgen.TERRA_SAGRADA)) {
-            return List.of("raptor", "raptor", "tiranossauro", "soldado_red_ribbon");
+            return List.of("raptor", "raptor", "dino_chifrudo", "tiranossauro", "soldado_red_ribbon");
         }
         if (biome.is(com.starkinhon.battlegroundsmod.world.ModWorldgen.PICOS_DO_DRAGAO)) {
-            return List.of("soldado_red_ribbon", "soldado_red_ribbon", "yeti", "raptor");
+            // the yeti only in the north now (mobs-db: "nas Montanhas do Norte"); Gero's androids wander the peaks
+            return List.of("soldado_red_ribbon", "soldado_red_ribbon", "raptor", "dino_chifrudo", "androide_gero");
         }
-        return List.of("raptor", "raptor", "tiranossauro", "saibaman", "soldado_red_ribbon");
+        return List.of("raptor", "raptor", "tiranossauro", "dino_chifrudo", "saibaman", "soldado_red_ribbon", "soldado_red_ribbon", "androide_gero");
     }
 
     static List<String> earthMobs(int x, int z) {
@@ -248,8 +255,17 @@ public final class UniverseSpawns {
         if (type == EntityType.PIG) {
             return false;
         }
-        // the big ones alone, the raptors in packs
-        int count = "tiranossauro".equals(id) || "yeti".equals(id) || "ladrao_urso".equals(id) ? 1 : "raptor".equals(id) ? 2 + random.nextInt(2) : 1 + random.nextInt(3);
+        // the group sizes of the preview (mobs-db 2026-11-12): the big ones and the hunters alone, the raptors, the horned
+        // dinosaurs, the patrols and the pirates 2 to 3, the Saibamen 2 to 4, the bandits 1 to 2, the androids 1 to 3,
+        // Freeza's squads 3 to 4
+        int count = switch (id) {
+            case "tiranossauro", "yeti", "ladrao_urso", "tigre_sabre" -> 1;
+            case "raptor", "dino_chifrudo", "soldado_red_ribbon", "pirata" -> 2 + random.nextInt(2);
+            case "saibaman" -> 2 + random.nextInt(3);
+            case "bandido_deserto" -> 1 + random.nextInt(2);
+            case "soldado_freeza" -> 3 + random.nextInt(2);
+            default -> 1 + random.nextInt(3);
+        };
         count = Math.min(count, room);
         // the pirates live by the sea; the rest keep off it
         boolean shore = "pirata".equals(id);
@@ -263,10 +279,11 @@ public final class UniverseSpawns {
         return any;
     }
 
-    // Pterodactyls circling high over the Dragon Ball biomes (Stark 2026-11-11), two to four in sight.
+    // Pterodactyls circling high over the Dragon Ball biomes (Stark 2026-11-11), two to four in sight, in pairs or
+    // threes (mobs-db 2026-11-12).
     private static void skyLife(ServerLevel level, ServerPlayer player) {
-        int near = level.getEntitiesOfClass(com.starkinhon.battlegroundsmod.animal.Pterodactyl.class,
-                player.getBoundingBox().inflate(96, 128, 96)).size();
+        int near = level.getEntitiesOfClass(com.starkinhon.battlegroundsmod.animal.dbmob.DbMob.class,
+                player.getBoundingBox().inflate(96, 128, 96), m -> "pterodactilo".equals(m.id())).size();
         RandomSource random = level.getRandom();
         if (near >= 2 + random.nextInt(3)) {
             return;
@@ -285,7 +302,11 @@ public final class UniverseSpawns {
         }
         int y = Math.max(level.getHeight(Heightmap.Types.MOTION_BLOCKING, x, z), player.getBlockY()) + 24 + random.nextInt(18);
         y = Math.min(y, level.getMaxBuildHeight() - 8);
-        com.starkinhon.battlegroundsmod.ModEntities.PTERODACTILO.get().spawn(level, new BlockPos(x, y, z), MobSpawnType.EVENT);
+        int n = Math.min(2 + random.nextInt(2), 4 - near);
+        for (int i = 0; i < n; i++) {
+            com.starkinhon.battlegroundsmod.ModEntities.PTERODACTILO.get().spawn(level, new BlockPos(x + random.nextInt(7) - 3, y + random.nextInt(4),
+                    z + random.nextInt(7) - 3), MobSpawnType.EVENT);
+        }
     }
 
     // Freeza's soldiers on Namek (its own dimension now): in groups on dry ground around the player, never too many.
@@ -293,7 +314,8 @@ public final class UniverseSpawns {
         EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.get(ResourceLocation.fromNamespaceAndPath(
                 com.starkinhon.battlegroundsmod.BattlegroundsMod.MODID, "soldado_freeza"));
         AABB around = player.getBoundingBox().inflate(NEARBY_RADIUS);
-        int nearby = level.getEntitiesOfClass(SoulBoss.class, around, mob -> "soldado_freeza".equals(mob.bossId())).size();
+        int nearby = level.getEntitiesOfClass(com.starkinhon.battlegroundsmod.animal.dbmob.DbMob.class, around,
+                mob -> "soldado_freeza".equals(mob.id())).size();
         // twice as many at night (Stark 2026-11-11)
         int cap = level.getServer().overworld().isDay() ? NEARBY_CAP : NEARBY_CAP * 2;
         if (type == EntityType.PIG || nearby >= cap) {
@@ -302,7 +324,8 @@ public final class UniverseSpawns {
         // never past the cap (Stark's test 2026-11-10: a group of 3 on top of 5 made 8), and away from Namek's green
         // sea, where they ended up swimming. A few spots per try: Namek is islands, most single spots were water and
         // nothing came (Stark 2026-11-11: no soldiers on Namek)
-        groupOn(level, player, type, Math.min(1 + level.getRandom().nextInt(3), cap - nearby));
+        // in squads of 3 to 4 (mobs-db 2026-11-12)
+        groupOn(level, player, type, Math.min(3 + level.getRandom().nextInt(2), cap - nearby));
     }
 
     // The Namekians (Stark 2026-11-11): by day groups of 2 to 4 walk Namek's islands; at night they stay home.

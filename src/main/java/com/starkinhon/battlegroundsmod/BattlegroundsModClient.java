@@ -389,34 +389,19 @@ public class BattlegroundsModClient {
         event.registerEntityRenderer(ModEntities.INUMAKI.get(), context -> new SoulBossRenderer<>(context, "inumaki", false));
         event.registerEntityRenderer(ModEntities.MIWA.get(), context -> new SoulBossRenderer<>(context, "miwa", true));
         event.registerEntityRenderer(ModEntities.NARUTO_CLONE.get(), com.starkinhon.battlegroundsmod.client.NarutoCloneRenderer::new);
-        event.registerEntityRenderer(ModEntities.SOLDADO_RED_RIBBON.get(),
-                context -> new SoulBossRenderer<>(context, false, "soldado_red_ribbon_0", "soldado_red_ribbon_1"));
-        event.registerEntityRenderer(ModEntities.SAIBAMAN.get(), context -> new SoulBossRenderer<>(context, "saibaman", false));
-        event.registerEntityRenderer(ModEntities.BANDIDO_DESERTO.get(),
-                context -> new SoulBossRenderer<>(context, false, "bandido_deserto_0", "bandido_deserto_1"));
-        event.registerEntityRenderer(ModEntities.PIRATA.get(), context -> new SoulBossRenderer<>(context, false, "pirata_0", "pirata_1"));
-        // the yeti: a head and a half taller than a man
-        event.registerEntityRenderer(ModEntities.YETI.get(), context -> new SoulBossRenderer<>(context, "yeti", false) {
-            @Override
-            protected void scale(com.starkinhon.battlegroundsmod.boss.SoulMob entity, com.mojang.blaze3d.vertex.PoseStack pose, float partialTick) {
-                pose.scale(1.35f, 1.35f, 1.35f);
-            }
-        });
         // the Dragon Ball biomes' creatures, box models from the approved preview (client/blocky)
         event.registerEntityRenderer(ModEntities.NAMEKIANO.get(), context -> new com.starkinhon.battlegroundsmod.client.blocky.BlockyRenderer<>(context,
                 java.util.stream.IntStream.range(0, com.starkinhon.battlegroundsmod.animal.db.Namekiano.VARIANTS).mapToObj(i -> "namekiano_" + i).toList(),
                 com.starkinhon.battlegroundsmod.client.blocky.DbAnims::namek, 0.6f));
-        event.registerEntityRenderer(ModEntities.PEIXE_GIGANTE.get(), context -> new com.starkinhon.battlegroundsmod.client.blocky.BlockyRenderer<>(context, "peixe_gigante", com.starkinhon.battlegroundsmod.client.blocky.DbAnims::peixe, 1.4f));
         event.registerEntityRenderer(ModEntities.ANDROIDE_8.get(), context -> new com.starkinhon.battlegroundsmod.client.blocky.BlockyRenderer<>(context, "androide_8", com.starkinhon.battlegroundsmod.client.blocky.DbAnims::androide, 1.1f));
         event.registerEntityRenderer(ModEntities.LADRAO_URSO.get(), context -> new com.starkinhon.battlegroundsmod.client.blocky.BlockyRenderer<>(context, "ladrao_urso", com.starkinhon.battlegroundsmod.client.blocky.DbAnims::urso, 1.0f));
         event.registerEntityRenderer(ModEntities.BORA.get(), context -> new com.starkinhon.battlegroundsmod.client.blocky.BlockyRenderer<>(context, "bora", com.starkinhon.battlegroundsmod.client.blocky.DbAnims::bora, 0.7f));
-        event.registerEntityRenderer(ModEntities.TIRANOSSAURO.get(),
-                context -> new com.starkinhon.battlegroundsmod.client.animal.DinoRenderer(context, "tiranossauro", 2.6f));
-        event.registerEntityRenderer(ModEntities.PTERODACTILO.get(), com.starkinhon.battlegroundsmod.client.animal.PteroRenderer::new);
-        event.registerEntityRenderer(ModEntities.RAPTOR.get(),
-                context -> new com.starkinhon.battlegroundsmod.client.animal.DinoRenderer(context, "raptor", 1.0f));
-        event.registerEntityRenderer(ModEntities.SOLDADO_FREEZA.get(),
-                context -> new SoulBossRenderer<>(context, false, "soldado_freeza_0", "soldado_freeza_1"));
+        // the Dragon Ball creatures (animal/dbmob): the preview's models and baked animation, the same renderer
+        for (var e : ModEntities.DB_MOBS.entrySet()) {
+            String id = e.getKey();
+            event.registerEntityRenderer(e.getValue().get(), context -> new com.starkinhon.battlegroundsmod.client.blocky.NarutoMobRenderer(context, id,
+                    com.starkinhon.battlegroundsmod.animal.dbmob.DbMobSpec.get(id), "db", com.starkinhon.battlegroundsmod.animal.dbmob.DbTravel::of));
+        }
         // the Naruto biomes' creatures (animal/naruto): the preview's models and baked animation
         for (var e : ModEntities.NARUTO_MOBS.entrySet()) {
             String id = e.getKey();
@@ -443,21 +428,7 @@ public class BattlegroundsModClient {
         event.registerEntityRenderer(ModEntities.NPC_TAMAYO.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_tamayo"));
         event.registerEntityRenderer(ModEntities.NPC_GOHAN.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_gohan"));
         event.registerEntityRenderer(ModEntities.RADITZ.get(), context -> new SoulBossRenderer<>(context, "raditz", false));
-        // the Cell Jr.: child-sized
-        event.registerEntityRenderer(ModEntities.CELL_JR.get(), context -> new SoulBossRenderer<>(context, "cell_jr", false) {
-            @Override
-            protected void scale(com.starkinhon.battlegroundsmod.boss.SoulMob entity, com.mojang.blaze3d.vertex.PoseStack pose, float partialTick) {
-                pose.scale(0.72f, 0.72f, 0.72f);
-            }
-        });
         event.registerEntityRenderer(ModEntities.PUI_PUI.get(), context -> new SoulBossRenderer<>(context, "pui_pui", false));
-        // Yakon: a head taller and broad
-        event.registerEntityRenderer(ModEntities.YAKON.get(), context -> new SoulBossRenderer<>(context, "yakon", false) {
-            @Override
-            protected void scale(com.starkinhon.battlegroundsmod.boss.SoulMob entity, com.mojang.blaze3d.vertex.PoseStack pose, float partialTick) {
-                pose.scale(1.3f, 1.28f, 1.3f);
-            }
-        });
         event.registerEntityRenderer(ModEntities.DABURA.get(), context -> new SoulBossRenderer<>(context, "dabura", false));
         event.registerEntityRenderer(ModEntities.NPC_BULMA.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_bulma"));
         event.registerEntityRenderer(ModEntities.NPC_MESTRE_KAME.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_mestre_kame"));
@@ -472,10 +443,6 @@ public class BattlegroundsModClient {
     }
 
     private static void onRegisterLayerDefinitions(EntityRenderersEvent.RegisterLayerDefinitions event) {
-        event.registerLayerDefinition(com.starkinhon.battlegroundsmod.client.animal.DinoModel.LAYER,
-                com.starkinhon.battlegroundsmod.client.animal.DinoModel::create);
-        event.registerLayerDefinition(com.starkinhon.battlegroundsmod.client.animal.PteroModel.LAYER,
-                com.starkinhon.battlegroundsmod.client.animal.PteroModel::create);
     }
 
     // Players' eyes can trail light too (Mangekyo, see Aura), so their renderers learn where the eyes are.

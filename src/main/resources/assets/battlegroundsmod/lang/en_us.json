@@ -1723,5 +1723,22 @@
   "entity.battlegroundsmod.sapo_gigante": "Giant Toad",
   "item.battlegroundsmod.sapo_gigante_spawn_egg": "Giant Toad Spawn Egg",
   "entity.battlegroundsmod.inseto_gigante": "Giant Beetle",
-  "item.battlegroundsmod.inseto_gigante_spawn_egg": "Giant Beetle Spawn Egg"
+  "item.battlegroundsmod.inseto_gigante_spawn_egg": "Giant Beetle Spawn Egg",
+  "entity.battlegroundsmod.dino_chifrudo": "Horned Dinosaur",
+  "item.battlegroundsmod.dino_chifrudo_spawn_egg": "Horned Dinosaur Spawn Egg",
+  "entity.battlegroundsmod.dragao": "Dragon",
+  "item.battlegroundsmod.dragao_spawn_egg": "Dragon Spawn Egg",
+  "entity.battlegroundsmod.tigre_sabre": "Sabertooth Tiger",
+  "item.battlegroundsmod.tigre_sabre_spawn_egg": "Sabertooth Tiger Spawn Egg",
+  "entity.battlegroundsmod.androide_gero": "Dr. Gero's Android",
+  "item.battlegroundsmod.androide_gero_spawn_egg": "Dr. Gero's Android Spawn Egg",
+  "entity.battlegroundsmod.tao_pai_pai": "Tao Pai Pai",
+  "item.battlegroundsmod.tao_pai_pai_spawn_egg": "Tao Pai Pai Spawn Egg",
+  "entity.battlegroundsmod.spopovich": "Spopovich",
+  "item.battlegroundsmod.spopovich_spawn_egg": "Spopovich Spawn Egg",
+  "entity.battlegroundsmod.yamu": "Yamu",
+  "item.battlegroundsmod.yamu_spawn_egg": "Yamu Spawn Egg",
+  "entity.battlegroundsmod.babidi": "Babidi",
+  "item.battlegroundsmod.babidi_spawn_egg": "Babidi Spawn Egg",
+  "message.battlegroundsmod.dragao_domado": "The dragon trusts you now. Right click to ride."
 }

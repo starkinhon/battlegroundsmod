@@ -15,7 +15,6 @@ import com.starkinhon.battlegroundsmod.power.Progression;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -64,13 +63,7 @@ public final class DragonBallWorld {
             return;
         }
         ServerLevel level = player.serverLevel();
-        String id = BuiltInRegistries.ENTITY_TYPE.getKey(victim.getType()).getPath();
-        switch (id) {
-            case "soldado_freeza" -> chance(level, victim, ModItems.SCOUTER.get(), 0.06);
-            case "saibaman" -> chance(level, victim, ModItems.SENZU.get(), 0.06);
-            default -> {
-            }
-        }
+        // the creatures' own drops (Scouter, Senzu, Radar) are in their kit now (animal/dbmob/DbMobMoves.drop)
         boolean sub = victim instanceof SoulBoss boss && Powers.isSub(boss.powerData().power);
         double ball = (sub ? BALL_CHANCE_SUB : BALL_CHANCE) * (has(player, ModItems.DRAGON_RADAR.get()) ? 3 : 1);
         if (level.getRandom().nextDouble() < ball) {
@@ -81,12 +74,6 @@ public final class DragonBallWorld {
                 Fx.burst(level, ParticleTypes.END_ROD, victim.position().add(0, 1, 0), 30, 0.4, 0.1);
                 Fx.sound(level, victim.position(), SoundEvents.AMETHYST_BLOCK_CHIME, 1.2f, 1.4f);
             }
-        }
-    }
-
-    private static void chance(ServerLevel level, LivingEntity victim, Item item, double chance) {
-        if (level.getRandom().nextDouble() < chance) {
-            drop(level, victim, item);
         }
     }
 

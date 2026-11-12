@@ -25,6 +25,14 @@ public final class PunchInput {
     public static void onInteraction(InputEvent.InteractionKeyMappingTriggered event) {
         Minecraft minecraft = Minecraft.getInstance();
         LocalPlayer player = minecraft.player;
+        // riding the dragon: the left click is its fire, whatever the hand holds (animal/dbmob/DbMob.rideFire)
+        if (event.isAttack() && player != null && player.getVehicle() instanceof com.starkinhon.battlegroundsmod.animal.dbmob.DbMob dragon
+                && dragon.isDragon() && dragon.getControllingPassenger() == player) {
+            event.setCanceled(true);
+            event.setSwingHand(false);
+            PacketDistributor.sendToServer(new ModPayloads.Punch(false));
+            return;
+        }
         if (!event.isAttack() || event.getHand() != InteractionHand.MAIN_HAND || player == null || player.isSpectator()
                 || !CombatMode.freeHand(player) || !com.starkinhon.battlegroundsmod.combat.CombatMode.fighter(player)
                 || !player.getData(ModAttachments.POWER).combat) {

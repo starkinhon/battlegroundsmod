@@ -26,7 +26,7 @@ public final class NarutoSpec {
     // A blow: the preview's mode, its length and hit tick (ticks from the start, 1 = the first), the distance band it
     // is used from, and its cooldown. reactive = only as an answer to a blow taken (the renegade's Substituição).
     public record Attack(String mode, int length, int impact, double min, double max, int cooldown, boolean reactive) {
-        static Attack of(String mode, int frames, int react, double min, double max, int cooldown) {
+        public static Attack of(String mode, int frames, int react, double min, double max, int cooldown) {
             return new Attack(mode, frames, react + 1, min, max, cooldown, false);
         }
     }
@@ -53,7 +53,7 @@ public final class NarutoSpec {
         public float shadow = 0.5f;
         public boolean exclusive;
 
-        Spec(String id) {
+        public Spec(String id) {
             this.id = id;
         }
 
@@ -75,79 +75,79 @@ public final class NarutoSpec {
             return f == null ? -1 : f;
         }
 
-        Spec hp(float v) {
+        public Spec hp(float v) {
             health = v;
             return this;
         }
 
-        Spec speed(double v) {
+        public Spec speed(double v) {
             speed = v;
             return this;
         }
 
-        Spec size(float w, float h) {
+        public Spec size(float w, float h) {
             width = w;
             height = h;
             return this;
         }
 
-        Spec xp(int v) {
+        public Spec xp(int v) {
             xp = v;
             return this;
         }
 
-        Spec kb(double v) {
+        public Spec kb(double v) {
             knockback = v;
             return this;
         }
 
-        Spec neutral() {
+        public Spec neutral() {
             behavior = Behavior.NEUTRAL;
             return this;
         }
 
-        Spec guard(double r) {
+        public Spec guard(double r) {
             behavior = Behavior.TERRITORIAL;
             guard = r;
             return this;
         }
 
-        Spec flyer() {
+        public Spec flyer() {
             move = Move.FLYER;
             return this;
         }
 
-        Spec water() {
+        public Spec water() {
             move = Move.WATER;
             return this;
         }
 
-        Spec variants(int n) {
+        public Spec variants(int n) {
             variants = n;
             return this;
         }
 
-        Spec keep(double d) {
+        public Spec keep(double d) {
             keep = d;
             return this;
         }
 
-        Spec tp(String mode, int frame) {
+        public Spec tp(String mode, int frame) {
             teleport.put(mode, frame);
             return this;
         }
 
-        Spec shadow(float s) {
+        public Spec shadow(float s) {
             shadow = s;
             return this;
         }
 
-        Spec exclusive() {
+        public Spec exclusive() {
             exclusive = true;
             return this;
         }
 
-        Spec attacks(Attack... a) {
+        public Spec attacks(Attack... a) {
             attacks = a;
             return this;
         }

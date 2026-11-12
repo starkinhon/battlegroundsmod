@@ -182,31 +182,43 @@ public final class ModEntities {
 
     public static final java.util.List<Supplier<EntityType<SoulMob>>> SUB_MOBS = java.util.List.of(BYAKUYA, RUKIA, GOKU, VEGETA, FREEZA, PICCOLO, KAME, KURIRIN,
             NARUTO, SASUKE, KAKASHI, GAARA, SHIKAMARU, INO, ITADORI, CHOSO, NANAMI, NOBARA, TODO, INUMAKI, MIWA);
-    // Common enemies of Dragon Ball (only spawn in its universe: padrao.desafios.json "mobs"), base combat only for now.
-    public static final Supplier<EntityType<SoulMob>> SOLDADO_RED_RIBBON = mob("soldado_red_ribbon");
-    public static final Supplier<EntityType<SoulMob>> SAIBAMAN = mob("saibaman");
-    public static final Supplier<EntityType<SoulMob>> SOLDADO_FREEZA = mob("soldado_freeza");
-    // The Earth's regions (Stark 2026-11-10): desert bandits, pirates on the islands, the yeti in the snow.
-    public static final Supplier<EntityType<SoulMob>> BANDIDO_DESERTO = mob("bandido_deserto");
-    public static final Supplier<EntityType<SoulMob>> PIRATA = mob("pirata");
-    public static final Supplier<EntityType<SoulMob>> YETI = ENTITY_TYPES.register("yeti", () -> EntityType.Builder.<SoulMob>of(SoulMob::new, MobCategory.MONSTER)
-            .sized(0.85f, 2.45f).eyeHeight(2.2f).clientTrackingRange(10).build("yeti"));
-    // The dinosaurs of the Dragon World: the big tyrannosaur alone, the raptors in packs (animal/Dinosaur).
-    public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.animal.Dinosaur>> TIRANOSSAURO = ENTITY_TYPES.register("tiranossauro",
-            () -> EntityType.Builder.<com.starkinhon.battlegroundsmod.animal.Dinosaur>of(com.starkinhon.battlegroundsmod.animal.Dinosaur::new, MobCategory.MONSTER)
-                    .sized(2.2f, 3.6f).eyeHeight(3.2f).clientTrackingRange(12).build("tiranossauro"));
-    public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.animal.Dinosaur>> RAPTOR = ENTITY_TYPES.register("raptor",
-            () -> EntityType.Builder.<com.starkinhon.battlegroundsmod.animal.Dinosaur>of(com.starkinhon.battlegroundsmod.animal.Dinosaur::new, MobCategory.MONSTER)
-                    .sized(0.9f, 1.3f).eyeHeight(1.15f).clientTrackingRange(10).build("raptor"));
+    // The Dragon Ball creatures (Stark 2026-11-12, preview tools/mobs/dbmobs approved): one entity type per kind, all one
+    // class (animal/dbmob/DbMob, its kind from the id), the same framework as the Naruto ones. The old ids stay, so the
+    // worlds keep their spawn eggs and the structures their mobs.
+    public static final Map<String, Supplier<EntityType<com.starkinhon.battlegroundsmod.animal.dbmob.DbMob>>> DB_MOBS = new LinkedHashMap<>();
+
+    static {
+        for (com.starkinhon.battlegroundsmod.animal.naruto.NarutoSpec.Spec spec : com.starkinhon.battlegroundsmod.animal.dbmob.DbMobSpec.all()) {
+            float w = spec.width, h = spec.height;
+            final float fw = w, fh = h;
+            DB_MOBS.put(spec.id, ENTITY_TYPES.register(spec.id, () -> EntityType.Builder
+                    .<com.starkinhon.battlegroundsmod.animal.dbmob.DbMob>of(com.starkinhon.battlegroundsmod.animal.dbmob.DbMob::new, MobCategory.MONSTER)
+                    .sized(fw, fh).eyeHeight(fh * 0.85f).clientTrackingRange(spec.height > 3 || spec.width > 1.5f ? 12 : 10).build(spec.id)));
+        }
+    }
+
+    public static EntityType<com.starkinhon.battlegroundsmod.animal.dbmob.DbMob> db(String id) {
+        return DB_MOBS.get(id).get();
+    }
+
+    public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.animal.dbmob.DbMob>> SOLDADO_RED_RIBBON = DB_MOBS.get("soldado_red_ribbon");
+    public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.animal.dbmob.DbMob>> SAIBAMAN = DB_MOBS.get("saibaman");
+    public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.animal.dbmob.DbMob>> SOLDADO_FREEZA = DB_MOBS.get("soldado_freeza");
+    public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.animal.dbmob.DbMob>> BANDIDO_DESERTO = DB_MOBS.get("bandido_deserto");
+    public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.animal.dbmob.DbMob>> PIRATA = DB_MOBS.get("pirata");
+    public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.animal.dbmob.DbMob>> YETI = DB_MOBS.get("yeti");
+    public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.animal.dbmob.DbMob>> TIRANOSSAURO = DB_MOBS.get("tiranossauro");
+    public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.animal.dbmob.DbMob>> RAPTOR = DB_MOBS.get("raptor");
+    public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.animal.dbmob.DbMob>> PTERODACTILO = DB_MOBS.get("pterodactilo");
+    public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.animal.dbmob.DbMob>> PEIXE_GIGANTE = DB_MOBS.get("peixe_gigante");
+    public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.animal.dbmob.DbMob>> CELL_JR = DB_MOBS.get("cell_jr");
+    public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.animal.dbmob.DbMob>> YAKON = DB_MOBS.get("yakon");
 
     // The Dragon Ball biomes' own creatures (Stark 2026-11-11, prévia mobs-db aprovada; animal/db): the Namekians of
     // Namek, the giant fish of the Mar do Sul, Android 8 in the Norte Gelado, the Bear Thief in Paozu, Bora by Karin.
     public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.animal.db.Namekiano>> NAMEKIANO = ENTITY_TYPES.register("namekiano",
             () -> EntityType.Builder.<com.starkinhon.battlegroundsmod.animal.db.Namekiano>of(com.starkinhon.battlegroundsmod.animal.db.Namekiano::new, MobCategory.MONSTER)
                     .sized(0.85f, 2.2f).eyeHeight(1.95f).clientTrackingRange(10).build("namekiano"));
-    public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.animal.db.PeixeGigante>> PEIXE_GIGANTE = ENTITY_TYPES.register("peixe_gigante",
-            () -> EntityType.Builder.<com.starkinhon.battlegroundsmod.animal.db.PeixeGigante>of(com.starkinhon.battlegroundsmod.animal.db.PeixeGigante::new, MobCategory.MONSTER)
-                    .sized(2.6f, 1.8f).eyeHeight(1.1f).clientTrackingRange(12).build("peixe_gigante"));
     public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.animal.db.Androide8>> ANDROIDE_8 = ENTITY_TYPES.register("androide_8",
             () -> EntityType.Builder.<com.starkinhon.battlegroundsmod.animal.db.Androide8>of(com.starkinhon.battlegroundsmod.animal.db.Androide8::new, MobCategory.MONSTER)
                     .sized(1.6f, 3.1f).eyeHeight(2.8f).clientTrackingRange(12).build("androide_8"));
@@ -217,18 +229,9 @@ public final class ModEntities {
             () -> EntityType.Builder.<com.starkinhon.battlegroundsmod.animal.db.Bora>of(com.starkinhon.battlegroundsmod.animal.db.Bora::new, MobCategory.MONSTER)
                     .sized(1.0f, 2.7f).eyeHeight(2.45f).clientTrackingRange(10).build("bora"));
 
-    // The pterodactyls over the Dragon Ball biomes: scenery (animal/Pterodactyl).
-    public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.animal.Pterodactyl>> PTERODACTILO = ENTITY_TYPES.register("pterodactilo",
-            () -> EntityType.Builder.<com.starkinhon.battlegroundsmod.animal.Pterodactyl>of(com.starkinhon.battlegroundsmod.animal.Pterodactyl::new, MobCategory.AMBIENT)
-                    .sized(1.6f, 0.8f).clientTrackingRange(16).build("pterodactilo"));
-
-    // The Dragon Ball start (Stark 2026-11-10): Raditz's opening fight, the Cell Jr. of Cell's ring, Babidi's guardians.
+    // The Dragon Ball start (Stark 2026-11-10): Raditz's opening fight, Babidi's guardians (the Cell Jr. and Yakon are DB_MOBS).
     public static final Supplier<EntityType<SoulMob>> RADITZ = mob("raditz");
-    public static final Supplier<EntityType<SoulMob>> CELL_JR = ENTITY_TYPES.register("cell_jr", () -> EntityType.Builder.<SoulMob>of(SoulMob::new, MobCategory.MONSTER)
-            .sized(0.5f, 1.3f).eyeHeight(1.15f).clientTrackingRange(10).build("cell_jr"));
     public static final Supplier<EntityType<SoulMob>> PUI_PUI = mob("pui_pui");
-    public static final Supplier<EntityType<SoulMob>> YAKON = ENTITY_TYPES.register("yakon", () -> EntityType.Builder.<SoulMob>of(SoulMob::new, MobCategory.MONSTER)
-            .sized(0.8f, 2.3f).eyeHeight(2.05f).clientTrackingRange(10).build("yakon"));
     public static final Supplier<EntityType<SoulMob>> DABURA = mob("dabura");
 
     // Common enemies of Naruto.
@@ -277,9 +280,9 @@ public final class ModEntities {
     public static final Supplier<EntityType<SoulMob>> ONI_ESPADACHIM = mob("oni_espadachim");
 
     public static final java.util.List<Supplier<EntityType<SoulMob>>> FIGHTERS = java.util.List.of(FIGHTER_HUMANO, FIGHTER_RUA, FIGHTER_QUARTEIRAO,
-            SOLDADO_RED_RIBBON, SAIBAMAN, SOLDADO_FREEZA, BANDIDO_DESERTO, PIRATA, YETI, ANBU_RAIZ,
+            ANBU_RAIZ,
             MALDICAO_MENOR, MALDICAO_GRAU2, FEITICEIRO_RENEGADO, HOLLOW, ARRANCAR, MENOS_GRANDE,
-            ONI_COMUM, ONI_LUA_INFERIOR, ONI_ESPADACHIM, RADITZ, CELL_JR, PUI_PUI, YAKON, DABURA);
+            ONI_COMUM, ONI_LUA_INFERIOR, ONI_ESPADACHIM, RADITZ, PUI_PUI, DABURA);
 
     // Friendly NPCs of the universes (npc/UniverseNpc): they teach, give and talk, never fight.
     public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.npc.UniverseNpc>> NPC_GOHAN = npc("npc_gohan");
@@ -354,14 +357,14 @@ public final class ModEntities {
         for (Supplier<EntityType<SoulMob>> type : FIGHTERS) {
             event.put(type.get(), SoulBoss.createAttributes().build());
         }
-        event.put(TIRANOSSAURO.get(), com.starkinhon.battlegroundsmod.animal.Dinosaur.attributes(true).build());
-        event.put(RAPTOR.get(), com.starkinhon.battlegroundsmod.animal.Dinosaur.attributes(false).build());
-        event.put(PTERODACTILO.get(), com.starkinhon.battlegroundsmod.animal.Pterodactyl.attributes().build());
         event.put(NAMEKIANO.get(), com.starkinhon.battlegroundsmod.animal.db.Namekiano.attributes().build());
-        event.put(PEIXE_GIGANTE.get(), com.starkinhon.battlegroundsmod.animal.db.PeixeGigante.attributes().build());
         event.put(ANDROIDE_8.get(), com.starkinhon.battlegroundsmod.animal.db.Androide8.attributes().build());
         event.put(LADRAO_URSO.get(), com.starkinhon.battlegroundsmod.animal.db.LadraoUrso.attributes().build());
         event.put(BORA.get(), com.starkinhon.battlegroundsmod.animal.db.Bora.attributes().build());
+        for (var e : DB_MOBS.entrySet()) {
+            event.put(e.getValue().get(), com.starkinhon.battlegroundsmod.animal.dbmob.DbMob
+                    .attributes(com.starkinhon.battlegroundsmod.animal.dbmob.DbMobSpec.get(e.getKey())).build());
+        }
         for (var e : NARUTO_MOBS.entrySet()) {
             event.put(e.getValue().get(), com.starkinhon.battlegroundsmod.animal.naruto.NarutoMob
                     .attributes(com.starkinhon.battlegroundsmod.animal.naruto.NarutoSpec.get(e.getKey())).build());

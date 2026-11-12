@@ -972,7 +972,7 @@ const DBFX = (() => {
       r('tronco', -0.45 * inhale + 0.4 * spit, 0, 0);
       r('cabeca', -0.55 * inhale + 0.55 * spit, 0, 0);
       r('quadril', -0.1 * inhale + 0.1 * spit, 0, 0);
-      P.tronco.obj.scale.set(1 + 0.1 * inhale, 1, 1 + 0.12 * inhale);
+      if (P.tronco) P.tronco.obj.scale.set(1 + 0.1 * inhale, 1, 1 + 0.12 * inhale);
       r('mandibula', 0.15 * inhale + 0.85 * spit, 0, 0);
       r('bracoD', 0.4 * inhale - 0.3 * spit, 0, 0.4 * inhale); r('bracoE', 0.4 * inhale - 0.3 * spit, 0, -0.4 * inhale);
       r('pernaD', -0.25 * inhale, 0, 0); r('canelaD', 0.3 * inhale, 0, 0);
@@ -5598,7 +5598,7 @@ const DBFX = (() => {
   fixed[0].scar = false; fixed[0].white = false; fixed[1].scar = true; fixed[1].white = false; fixed[2].white = true;
   const def = v => ({ def: rigDef(painters(v), v, false), low: rigDef(painters(v), v, true) });
   window.MOBS.push({
-    id: 'tigre', nome: 'Tigre-dente-de-sabre', bioma: 'Rios e florestas', tier: 'Médio · tier 7',
+    id: 'tigre_sabre', nome: 'Tigre-dente-de-sabre', bioma: 'Rios e florestas', tier: 'Médio · tier 7',
     variants: fixed.map((v, i) => ({ nome: ['Laranja', 'Cicatriz', 'Branco (raro)'][i], v, ...def(v) })),
     randomVariant: () => { const v = variant(Math.floor(Math.random() * 1e5)); return { nome: 'Sorteado', v, ...def(v) }; },
     anim, modes: [['parado', 'Parado'], ['andar', 'Andar'], ['bote', 'Bote'], ['patada', 'Patada Dupla']],

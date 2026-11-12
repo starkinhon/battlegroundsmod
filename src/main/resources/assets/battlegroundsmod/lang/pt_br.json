@@ -1733,5 +1733,22 @@
   "entity.battlegroundsmod.sapo_gigante": "Sapo Gigante",
   "item.battlegroundsmod.sapo_gigante_spawn_egg": "Ovo de Sapo Gigante",
   "entity.battlegroundsmod.inseto_gigante": "Inseto Gigante",
-  "item.battlegroundsmod.inseto_gigante_spawn_egg": "Ovo de Inseto Gigante"
+  "item.battlegroundsmod.inseto_gigante_spawn_egg": "Ovo de Inseto Gigante",
+  "entity.battlegroundsmod.dino_chifrudo": "Dinossauro Chifrudo",
+  "item.battlegroundsmod.dino_chifrudo_spawn_egg": "Ovo de Dinossauro Chifrudo",
+  "entity.battlegroundsmod.dragao": "Dragão",
+  "item.battlegroundsmod.dragao_spawn_egg": "Ovo de Dragão",
+  "entity.battlegroundsmod.tigre_sabre": "Tigre Dente-de-Sabre",
+  "item.battlegroundsmod.tigre_sabre_spawn_egg": "Ovo de Tigre Dente-de-Sabre",
+  "entity.battlegroundsmod.androide_gero": "Androide do Dr. Gero",
+  "item.battlegroundsmod.androide_gero_spawn_egg": "Ovo de Androide do Dr. Gero",
+  "entity.battlegroundsmod.tao_pai_pai": "Tao Pai Pai",
+  "item.battlegroundsmod.tao_pai_pai_spawn_egg": "Ovo de Tao Pai Pai",
+  "entity.battlegroundsmod.spopovich": "Spopovich",
+  "item.battlegroundsmod.spopovich_spawn_egg": "Ovo de Spopovich",
+  "entity.battlegroundsmod.yamu": "Yamu",
+  "item.battlegroundsmod.yamu_spawn_egg": "Ovo de Yamu",
+  "entity.battlegroundsmod.babidi": "Babidi",
+  "item.battlegroundsmod.babidi_spawn_egg": "Ovo de Babidi",
+  "message.battlegroundsmod.dragao_domado": "O dragão confia em você agora. Clique com o direito para montar."
 }
