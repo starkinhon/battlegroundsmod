@@ -187,7 +187,7 @@ public final class RainVillageFeature extends Feature<NoneFeatureConfiguration> 
         if (y < sea - 14 || !biomeAt(generator, random, o.x(), Math.max(y, sea), o.z())) {
             return false;
         }
-        // a tower's 40 blocks of reach are its pipes' and balconies' far ends; its body is 20 across at most, and any
+        // a tower's 40 blocks of reach are its pipes' and balconies' far ends; its body is at most about 11 from its axis, and any
         // chunk with a bit of the biome builds its part, so the biome only has to be all around the body (the PC test of
         // 2026-11-12: with the whole reach no tower fitted in the biome's pieces, about 66 blocks across)
         int reach = o.kind() == RainGen.Kind.TOWER ? 20 : o.reach();
@@ -205,7 +205,9 @@ public final class RainVillageFeature extends Feature<NoneFeatureConfiguration> 
                 lo = Math.min(lo, h);
                 hi = Math.max(hi, h);
             }
-            if (hi - lo > 8) {
+            // a tower's foot goes down to the ground up to 14 blocks where the land falls away, so it stands on a
+            // steeper slope than a stump (the Vila lies on the cool band's hills: with 8 only 1 tower in 3 pieces)
+            if (hi - lo > (o.kind() == RainGen.Kind.TOWER ? 14 : 8)) {
                 return false;
             }
         }
