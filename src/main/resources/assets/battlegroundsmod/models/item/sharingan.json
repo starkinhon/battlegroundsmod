@@ -1,1 +1,13 @@
-{"parent": "minecraft:item/generated", "textures": {"layer0": "battlegroundsmod:item/sharingan"}}
+{
+  "loader": "neoforge:separate_transforms",
+  "gui_light": "front",
+  "base": {
+    "parent": "battlegroundsmod:item/sharingan_3d",
+    "render_type": "minecraft:translucent"
+  },
+  "perspectives": {
+    "gui": {
+      "parent": "battlegroundsmod:item/sharingan_icone"
+    }
+  }
+}

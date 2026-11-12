@@ -1,0 +1,191 @@
+# Itens de Naruto (2026-11-12): os 24 itens com modelo 3D e ícone 32x32, mais as mecânicas dos 7 novos.
+# Prints em _claude_shots/itensnaruto. Rodar: gradlew runClient -Pmundo=SoulsDev -Proteiro=itens-naruto
+
+/devc fechar
+/dev preparar
+/devc janela 1600 900
+/devc fov 70
+/kill @e[type=!player]
+/clear @s
+/gamerule sendCommandFeedback false
+/item replace entity @s hotbar.0 with battlegroundsmod:kunai_hiraishin
+/item replace entity @s hotbar.1 with battlegroundsmod:kusanagi
+/item replace entity @s hotbar.2 with battlegroundsmod:samehada
+/item replace entity @s hotbar.3 with battlegroundsmod:kubikiribocho
+/item replace entity @s hotbar.4 with battlegroundsmod:kunai 16
+/item replace entity @s hotbar.5 with battlegroundsmod:shuriken 16
+/item replace entity @s hotbar.6 with battlegroundsmod:leque_temari
+/item replace entity @s hotbar.7 with battlegroundsmod:papel_bomba 16
+/item replace entity @s hotbar.8 with battlegroundsmod:pergaminho_selamento
+/item replace entity @s inventory.0 with battlegroundsmod:pilula_soldado
+/item replace entity @s inventory.1 with battlegroundsmod:ramen
+/item replace entity @s inventory.2 with battlegroundsmod:bandana_ninja
+/item replace entity @s inventory.3 with battlegroundsmod:guizo
+/item replace entity @s inventory.4 with battlegroundsmod:pergaminho_ceu
+/item replace entity @s inventory.5 with battlegroundsmod:pergaminho_terra
+/item replace entity @s inventory.6 with battlegroundsmod:pele_cobra
+/item replace entity @s inventory.7 with battlegroundsmod:pergaminho_marionete
+/item replace entity @s inventory.8 with battlegroundsmod:asas_de_papel
+/item replace entity @s inventory.9 with battlegroundsmod:bolsa_veneno
+/item replace entity @s inventory.10 with battlegroundsmod:celula_hashirama
+/item replace entity @s inventory.11 with battlegroundsmod:pergaminho_sapo
+/item replace entity @s inventory.12 with battlegroundsmod:sharingan
+/item replace entity @s inventory.13 with battlegroundsmod:cabaca_gaara
+/item replace entity @s inventory.14 with battlegroundsmod:manto_akatsuki
+/item replace entity @s inventory.15 with minecraft:diamond_sword
+/item replace entity @s inventory.16 with minecraft:iron_helmet
+/gamemode survival
+/tp @s ~ ~ ~ 180 10
+espera 40
+
+# Inventário aberto: os 24 ícones ao lado de itens vanilla
+/devc tecla e 2
+espera 20
+/devc print itensnaruto/01_inventario
+/devc fechar
+espera 10
+
+# Primeira pessoa, cada arma na mão (F3 ligado na Samehada pra ver o FPS)
+/devc vista primeira
+/devc tecla 1 2
+espera 15
+/devc print itensnaruto/02_mao_hiraishin
+/devc tecla 2 2
+espera 15
+/devc print itensnaruto/03_mao_kusanagi
+/devc tecla 3 2
+espera 15
+/devc print itensnaruto/04_mao_samehada
+/devc tecla f3 2
+espera 40
+/devc print itensnaruto/05_mao_samehada_fps
+/devc tecla f3 2
+/devc tecla 4 2
+espera 15
+/devc print itensnaruto/06_mao_kubikiribocho
+/devc tecla 5 2
+espera 15
+/devc print itensnaruto/07_mao_kunai
+/devc tecla 6 2
+espera 15
+/devc print itensnaruto/08_mao_shuriken
+/devc tecla 7 2
+espera 15
+/devc print itensnaruto/09_mao_leque
+/devc tecla 8 2
+espera 15
+/devc print itensnaruto/10_mao_papel_bomba
+/devc tecla 9 2
+espera 15
+/devc print itensnaruto/11_mao_selamento
+
+# Terceira pessoa: armas na mão, frente e lado
+/devc hud off
+/devc tecla 2 2
+/devc camera frente 3.5 1.2
+espera 10
+/devc print itensnaruto/12_3p_kusanagi_frente
+/devc camera lado 3.5 1.2
+espera 10
+/devc print itensnaruto/13_3p_kusanagi_lado
+/devc tecla 3 2
+espera 10
+/devc print itensnaruto/14_3p_samehada_lado
+/devc tecla 4 2
+espera 10
+/devc print itensnaruto/15_3p_kubikiribocho_lado
+/devc tecla 1 2
+espera 10
+/devc print itensnaruto/16_3p_hiraishin_lado
+/devc tecla 7 2
+espera 10
+/devc print itensnaruto/17_3p_leque_lado
+
+# Vestidos: bandana na cabeça, manto no peito, cabaça nas costas (está no inventário)
+/item replace entity @s armor.head with battlegroundsmod:bandana_ninja
+/item replace entity @s armor.chest with battlegroundsmod:manto_akatsuki
+/devc tecla 5 2
+/devc camera frente 2.6 1.4
+espera 15
+/devc print itensnaruto/18_vestido_frente
+/devc camera tras 2.8 1.4
+espera 15
+/devc print itensnaruto/19_vestido_costas_cabaca
+/devc camera lado 2.8 1.4
+espera 15
+/devc print itensnaruto/20_vestido_lado
+/item replace entity @s armor.head with minecraft:air
+/item replace entity @s armor.chest with minecraft:air
+
+# No chão e no quadro
+/summon item ~-2 ~ ~-2 {Item:{id:"battlegroundsmod:kusanagi",count:1},PickupDelay:32767,Age:-32768}
+/summon item ~-1 ~ ~-2 {Item:{id:"battlegroundsmod:sharingan",count:1},PickupDelay:32767,Age:-32768}
+/summon item ~ ~ ~-2 {Item:{id:"battlegroundsmod:celula_hashirama",count:1},PickupDelay:32767,Age:-32768}
+/summon item ~1 ~ ~-2 {Item:{id:"battlegroundsmod:shuriken",count:1},PickupDelay:32767,Age:-32768}
+/summon item ~2 ~ ~-2 {Item:{id:"battlegroundsmod:ramen",count:1},PickupDelay:32767,Age:-32768}
+/setblock ~-1 ~1 ~-5 minecraft:stone
+/setblock ~ ~1 ~-5 minecraft:stone
+/setblock ~1 ~1 ~-5 minecraft:stone
+/summon item_frame ~-1 ~1 ~-4 {Facing:3b,Fixed:1b,Item:{id:"battlegroundsmod:samehada",count:1}}
+/summon item_frame ~ ~1 ~-4 {Facing:3b,Fixed:1b,Item:{id:"battlegroundsmod:pergaminho_selamento",count:1}}
+/summon item_frame ~1 ~1 ~-4 {Facing:3b,Fixed:1b,Item:{id:"battlegroundsmod:leque_temari",count:1}}
+/item replace entity @s weapon.mainhand with minecraft:air
+/devc camera jogador
+/devc vista primeira
+/tp @s ~ ~ ~ 180 25
+espera 30
+/devc print itensnaruto/21_chao_e_quadro
+/kill @e[type=item]
+/kill @e[type=item_frame]
+
+# Mecânicas: alvo na frente; shuriken, kunai, papel-bomba grudado, leque (gravado)
+/item replace entity @s hotbar.4 with battlegroundsmod:kunai 16
+/dev invocar minecraft:zombie 6
+/dev imortal @e[type=zombie]
+/devc mirar
+/devc hud on
+espera 10
+/devc gravar itensnaruto/mec 2
+/devc tecla 6 2
+espera 5
+/devc tecla usar 2
+espera 15
+/devc tecla 5 2
+espera 15
+/devc tecla usar 2
+espera 15
+/devc tecla 8 2
+espera 15
+/devc tecla usar 2
+espera 60
+/devc tecla 7 2
+espera 15
+/devc tecla usar 2
+espera 30
+/devc gravar parar
+/devc print itensnaruto/22_depois_mecanicas
+
+# Selamento: zumbi ferido é selado e solto como aliado
+/dev soltar
+/kill @e[type=!player]
+/dev invocar minecraft:zombie 3
+/dev travar @e[type=zombie]
+/effect give @e[type=zombie] minecraft:instant_damage 1 0
+/devc mirar
+/devc tecla 9 2
+espera 10
+/devc tecla usar 2
+espera 20
+/devc print itensnaruto/23_selou
+/devc tecla e 2
+espera 10
+/devc print itensnaruto/24_tooltip_selado
+/devc fechar
+/devc olhar 180 10
+/devc tecla usar 2
+espera 30
+/devc print itensnaruto/25_soltou_aliado
+
+/devc camera jogador
+espera 20
+sair
