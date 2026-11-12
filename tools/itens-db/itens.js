@@ -145,8 +145,8 @@
       fixed: { translation: [5, 0, 0], scale: [0.9, 0.9, 0.9] },
       thirdperson_righthand: { rotation: [0, 90, 0], translation: [0, 1, 2], scale: [0.45, 0.45, 0.45] },
       thirdperson_lefthand: { rotation: [0, 90, 0], translation: [0, 1, 2], scale: [0.45, 0.45, 0.45] },
-      firstperson_righthand: { rotation: [0, 200, 0], translation: [2, 3, 0], scale: [0.55, 0.55, 0.55] },
-      firstperson_lefthand: { rotation: [0, 200, 0], translation: [2, 3, 0], scale: [0.55, 0.55, 0.55] },
+      firstperson_righthand: { rotation: [0, 160, 0], translation: [-2, 3, -5], scale: [0.5, 0.5, 0.5] },
+      firstperson_lefthand: { rotation: [0, 160, 0], translation: [-2, 3, -5], scale: [0.5, 0.5, 0.5] },
     },
   });
 
