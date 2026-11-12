@@ -1039,6 +1039,24 @@ public final class ModPayloads {
 
     // Client -> server: one move of the player's in the Duelo de Expansões minigame, measured on their client: index (the
     // key, beat or round) and value (its points).
+    // Client -> server: what the player driving a body with the Ino's Shintenshin presses this tick.
+    public record InoPilotInput(float forward, float strafe, boolean jump, float yaw, float pitch, int attacks) implements CustomPacketPayload {
+        public static final Type<InoPilotInput> TYPE = payloadType("ino_pilot_input");
+        public static final StreamCodec<ByteBuf, InoPilotInput> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.FLOAT, InoPilotInput::forward,
+                ByteBufCodecs.FLOAT, InoPilotInput::strafe,
+                ByteBufCodecs.BOOL, InoPilotInput::jump,
+                ByteBufCodecs.FLOAT, InoPilotInput::yaw,
+                ByteBufCodecs.FLOAT, InoPilotInput::pitch,
+                ByteBufCodecs.VAR_INT, InoPilotInput::attacks,
+                InoPilotInput::new);
+
+        @Override
+        public Type<InoPilotInput> type() {
+            return TYPE;
+        }
+    }
+
     public record ExpansionDuelInput(int index, int value) implements CustomPacketPayload {
         public static final Type<ExpansionDuelInput> TYPE = payloadType("expansion_duel_input");
         public static final StreamCodec<ByteBuf, ExpansionDuelInput> STREAM_CODEC = StreamCodec.composite(
@@ -1657,11 +1675,21 @@ public final class ModPayloads {
             if (!(context.player() instanceof ServerPlayer player) || !CombatMode.fighter(player) || player.isSpectator()) {
                 return;
             }
+            // Driving a body with the Ino's Shintenshin: that body hits instead.
+            if (com.starkinhon.battlegroundsmod.power.powers.sub.nr.Ino.pilotPunch(player)) {
+                return;
+            }
             if (payload.key()) {
                 CombatMode.enter(player);
                 Tasks.as(player, () -> Melee.punch(player, null));
             } else if (CombatMode.freeHand(player) && CombatMode.in(player)) {
                 Tasks.as(player, () -> Melee.punch(player, null));
+            }
+        }));
+        registrar.playToServer(InoPilotInput.TYPE, InoPilotInput.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
+            if (context.player() instanceof ServerPlayer player) {
+                com.starkinhon.battlegroundsmod.power.powers.sub.nr.Ino.input(player, payload.forward(), payload.strafe(), payload.jump(), payload.yaw(),
+                        payload.pitch(), payload.attacks());
             }
         }));
         registrar.playToServer(ExpansionDuelInput.TYPE, ExpansionDuelInput.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {

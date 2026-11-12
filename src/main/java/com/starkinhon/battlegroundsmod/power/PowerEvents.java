@@ -87,6 +87,7 @@ public final class PowerEvents {
         Intangible.clear();
         com.starkinhon.battlegroundsmod.combat.Capture.clear();
         com.starkinhon.battlegroundsmod.power.powers.sub.nr.NrCommon.clear();
+        com.starkinhon.battlegroundsmod.power.powers.sub.nr.Ino.clear();
         com.starkinhon.battlegroundsmod.power.powers.sub.jj.JjCommon.clear();
         Destructible.clear();
         Defense.clear();

@@ -281,6 +281,85 @@ void main() {
         fragColor = vec4(c * a, a);
         return;
     }
+    if (kind >= 60 && kind <= 68) {                                     // Ino (forja/ino-kit/ino.js), the page's shaders line by line
+        if (kind == 60) {                                              // GHOST_F: her spirit (Dust = where the camera is, from the spirit's anchor)
+            vec3 W3 = -vV + Dust; vec3 Nf = normalize(cross(dFdx(vV), dFdy(vV))); float ff = abs(dot(Nf, V)), rr = 1. - ff;
+            float dn = fbm3(W3 * 3.1 + 7.) * 0.5 + 0.5; if (dn < Thresh) discard;
+            float n = fbm3(W3 * 2.4 + vec3(0., -Time * 1.3, 0.)) * 0.5 + 0.5;
+            float lines = pow(1. - abs(gn(vec3(W3.x * 3., W3.y * 1.2 - Time * 2.2, W3.z * 3.))), 10.);
+            vec3 deep = vec3(0.29, 0.09, 0.56), body = vec3(0.64, 0.42, 1.), wht = vec3(0.94, 0.89, 1.);
+            vec3 col = mix(deep, body, smoothstep(0.1, 0.8, rr + (n - 0.5) * 0.5));
+            col = mix(col, wht, clamp(smoothstep(0.7, 1., rr) * 0.7 + lines * 0.55, 0., 1.));
+            float edge = smoothstep(Thresh + 0.06, Thresh, dn) * step(0.001, Thresh); col = mix(col, wht, edge);
+            float a = clamp((0.2 + 0.7 * pow(rr, 1.3) + lines * 0.3 + (n - 0.5) * 0.2 + edge) * Alpha, 0., 1.); if (a < 0.003) discard;
+            emit(col * a, a * 0.5); return;
+        }
+        if (kind == 61) {                                              // THREAD_F (Growth = how far it ran, Pulse = where the pulse is, Thresh = snapping)
+            if (vU > Growth) discard;
+            float n = gn(vec3(vU * 18. - Time * 3., Seed, 0.)) * 0.5 + 0.5;
+            float dn = gn(vec3(vU * 9., Seed * 2., 1.)) * 0.5 + 0.5; if (dn < Thresh) discard;
+            float tip = smoothstep(Growth, Growth - 0.05, vU);
+            float p = exp(-pow((vU - Pulse) * 9., 2.));
+            vec3 col = mix(vec3(0.62, 0.38, 1.), vec3(0.96, 0.92, 1.), clamp(f * 0.6 + p + n * 0.25, 0., 1.));
+            float a = clamp((0.55 + 0.45 * f) * (0.75 + 0.35 * n) * Alpha * mix(1., 1.6, p) * (0.4 + 0.6 * tip), 0., 1.);
+            if (a < 0.003) discard;
+            emit(col * a * (1. + 1.4 * p), a * 0.4); return;
+        }
+        if (kind == 62) {                                              // SEAL_F (Life = how far it opened)
+            vec2 p = vUv * 2. - 1.; float d = abs(p.x) + abs(p.y);
+            vec2 q = mat2(0.7071, -0.7071, 0.7071, 0.7071) * p; float sq = max(abs(q.x), abs(q.y));
+            float grow = smoothstep(0., 1., Life * 2.);
+            float aa1 = fwidth(d) * 1.2, aa2 = fwidth(sq) * 1.2;
+            float l1 = 1. - smoothstep(0.035 - aa1, 0.035 + aa1, abs(d - 0.86 * grow));
+            float l2 = 1. - smoothstep(0.018 - aa1, 0.018 + aa1, abs(d - 0.6 * grow));
+            float l3 = 1. - smoothstep(0.015 - aa2, 0.015 + aa2, abs(sq - 0.34 * grow));
+            float a = (l1 + l2 * 0.8 + l3 * 0.6 + exp(-d * d * 12.) * 0.6) * Alpha; if (a < 0.003) discard;
+            vec3 c = mix(vec3(0.65, 0.4, 1.), vec3(1.), clamp(a * 0.7, 0., 1.)); emit(c * a, a * 0.4); return;
+        }
+        if (kind == 63) {                                              // SPIRAL_F
+            vec2 p = vUv * 2. - 1.; float r = length(p), an = atan(p.y, p.x);
+            float arm = sin(an * 3. + log(max(r, 0.02)) * 7. - Time * 7. + Seed + gn(vec3(p * 3., Time * 0.8 + Seed)) * 1.2);
+            float w = fwidth(arm) * 1.5; float m = smoothstep(0.55 - w, 0.55 + w, arm) * smoothstep(0.12, 0.25, r) * (1. - smoothstep(0.75, 1., r));
+            float a = m * Alpha; if (a < 0.003) discard;
+            vec3 c = mix(vec3(0.95, 0.55, 0.95), vec3(0.6, 0.35, 1.), r); emit(c * a, a * 0.6); return;
+        }
+        if (kind == 64) {                                              // WAVE_F (Growth = where the front is, 0..1)
+            float v = vH; if (v > Growth) discard;
+            float ux = atan(vDir.y, vDir.x) / 6.2832 + 0.5;
+            float n = fbm3(vec3(ux * 9., v * 5. - Time * 2., 0.)) * 0.5 + 0.5;
+            float ring = sin((v - Growth) * 46. + n * 3.); float w = fwidth(ring) * 1.4;
+            float rings = smoothstep(0.6 - w, 0.6 + w, ring) * exp(-(Growth - v) * 3.2);
+            float front = exp(-pow((Growth - v) * 22., 2.));
+            float a = (rings * 0.9 + front * 1.4 + 0.08) * (0.55 + 0.6 * (1. - f)) * smoothstep(0., 0.08, v) * Alpha * (0.7 + 0.5 * n);
+            if (a < 0.003) discard;
+            vec3 c = mix(vec3(0.6, 0.35, 1.), vec3(0.97, 0.92, 1.), clamp(front + rings * 0.3, 0., 1.)); emit(c * a, a * 0.4); return;
+        }
+        if (kind == 65) {                                              // TAIL_F (vU = 0 the oldest end, 1 the spirit)
+            float uy = atan(vDir.y, vDir.x) / 6.2832 + 0.5;
+            float n = fbm3(vec3(vU * 6. - Time * 2., uy * 3., 0.)) * 0.5 + 0.5;
+            float m = smoothstep(0.3, 0.6, n + vU * 0.6 - 0.25); float a = m * (0.15 + 0.6 * (1. - f)) * pow(vU, 1.2) * Alpha; if (a < 0.003) discard;
+            vec3 c = mix(vec3(0.5, 0.25, 0.95), vec3(0.95, 0.9, 1.), (1. - f) * vU); emit(c * a, a * 0.5); return;
+        }
+        if (kind == 66) {                                              // DOME_F
+            float n = fbm3(vO * 4. + vec3(0., -Time * 0.4, 0.)) * 0.5 + 0.5;
+            float waves = sin(vO.y * 60. - Time * 3. + n * 4.); float w = fwidth(waves) * 1.5; float lines = smoothstep(0.85 - w, 0.85 + w, waves);
+            float a = (0.03 + 0.5 * pow(rim, 3.) + lines * 0.12 * (0.4 + rim)) * Alpha * smoothstep(-0.02, 0.05, vO.y); if (a < 0.003) discard;
+            vec3 c = mix(vec3(0.45, 0.2, 0.85), vec3(0.95, 0.85, 1.), clamp(pow(rim, 4.) + lines * 0.3, 0., 1.)); emit(c * a, a * 0.5); return;
+        }
+        if (kind == 67) {                                              // NEB_F: the mind's sky
+            vec3 d = normalize(vO); float n = fbm4(d * 2.2 + vec3(Time * 0.03, 0., 0.)) * 0.5 + 0.5, m = fbm3(d * 5. - vec3(0., Time * 0.05, 0.)) * 0.5 + 0.5;
+            vec3 c = mix(vec3(0.06, 0.02, 0.14), vec3(0.32, 0.1, 0.5), smoothstep(0.3, 0.75, n)); c = mix(c, vec3(0.85, 0.4, 0.75), smoothstep(0.62, 0.9, n * m * 1.6) * 0.6);
+            float star = step(0.995, fract(sin(dot(floor(d * 160.), vec3(12.9, 78.2, 37.7))) * 43758.5)) * (0.5 + 0.5 * sin(Time * 3. + n * 20.));
+            float strands = pow(1. - abs(gn(vec3(d.x * 3., d.y * 8. - Time * 0.2, d.z * 3.))), 60.) * 0.35;
+            c += vec3(0.9, 0.85, 1.) * (star + strands);
+            if (GlowPass > 0.5) discard;
+            fragColor = vec4(c * Alpha, Alpha); return;
+        }
+        // 25: a lit solid (MeshLambertMaterial under the page's hemisphere and sun)
+        if (GlowPass > 0.5) discard;
+        float l = 0.62 + 0.38 * N.y + 0.5 * max(dot(N, normalize(vec3(4., 8., 3.))), 0.);
+        fragColor = vec4(Color * l * 0.75, 1.); return;
+    }
     if (kind == 13 || kind == 14) {                                    // Sasuke's Katon (RingR = the ground's height, camera-relative)
         if (-vV.y < RingR) discard;
         float fz = kind == 13 ? facing() : f, edge = 1. - fz;

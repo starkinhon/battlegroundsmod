@@ -266,7 +266,7 @@ public final class NrCommon {
                         continue;
                     }
                     later.add(() -> {
-                        SubNet.send(level, SubNet.PULSE, 0, target.getEyePosition().add(0, 0.3, 0),
+                        SubNet.send(level, SubNet.INO_PULSE, 0, target.getEyePosition().add(0, 0.3, 0),
                                 other.getEyePosition().add(0, 0.3, 0).subtract(target.getEyePosition().add(0, 0.3, 0)), 0, 0, 0);
                         Tasks.later(8, () -> {
                             if (other.isAlive()) {

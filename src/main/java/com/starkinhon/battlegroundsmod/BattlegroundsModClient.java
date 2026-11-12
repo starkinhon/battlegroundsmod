@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.starkinhon.battlegroundsmod.client.BossBars;
 import com.starkinhon.battlegroundsmod.client.BossCutscene;
+import com.starkinhon.battlegroundsmod.client.InoClient;
 import com.starkinhon.battlegroundsmod.client.EsferaCutscene;
 import com.starkinhon.battlegroundsmod.client.FaceCutscene;
 import com.starkinhon.battlegroundsmod.client.Fear;
@@ -184,6 +185,13 @@ public class BattlegroundsModClient {
         NeoForge.EVENT_BUS.addListener(BossBars::onBossBar);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.RealismoCommand::register);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.SoulsCommand::register);
+        // The Ino's Shintenshin (driving a body) and Shinranshin (inverted controls): before the punch, so a click drives the body.
+        NeoForge.EVENT_BUS.addListener(EventPriority.HIGH, false, InputEvent.InteractionKeyMappingTriggered.class, InoClient::onInteraction);
+        NeoForge.EVENT_BUS.addListener(MovementInputUpdateEvent.class, InoClient::onMovementInput);
+        NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.client.event.CalculatePlayerTurnEvent.class, InoClient::onTurn);
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOW, false, net.neoforged.neoforge.client.event.ViewportEvent.ComputeCameraAngles.class,
+                InoClient::onCameraAngles);
+        NeoForge.EVENT_BUS.addListener(ClientTickEvent.Post.class, InoClient::tick);
         NeoForge.EVENT_BUS.addListener(InputEvent.InteractionKeyMappingTriggered.class, PunchInput::onInteraction);
         NeoForge.EVENT_BUS.addListener(InputEvent.MouseScrollingEvent.class, com.starkinhon.battlegroundsmod.client.fx.AzulRenderer::onScroll);
         // The Duelo de Expansões minigame's keys.
