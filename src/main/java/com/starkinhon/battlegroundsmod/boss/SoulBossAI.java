@@ -1240,6 +1240,7 @@ public class SoulBossAI extends Goal {
         boss.setDeltaMovement(dir.x * investida.forca(), investida.altura(), dir.z * investida.forca());
         boss.hasImpulse = true;
         boss.hurtMarked = true;
+        com.starkinhon.battlegroundsmod.power.powers.opm.Opm.own(boss);
         dashCooldown = fast ? spec.ritmo().recargaInvestidaRapido() : investida.recargaTicks();
         if (chaos) {
             dashCooldown /= 2;

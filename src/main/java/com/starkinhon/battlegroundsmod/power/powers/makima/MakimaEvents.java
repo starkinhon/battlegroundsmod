@@ -105,6 +105,11 @@ public final class MakimaEvents {
                 return p;
             }
         }
+        if (makima instanceof SoulBoss) {
+            // The boss: only her own puppets take the blow (Stark 2026-11-12: "o jogo é matar os fantoches primeiro"); a
+            // cow in the next field doesn't make her immortal.
+            return null;
+        }
         LivingEntity best = null;
         double bd = PM_RANGE * PM_RANGE;
         AABB box = makima.getBoundingBox().inflate(PM_RANGE);

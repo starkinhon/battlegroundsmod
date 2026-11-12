@@ -118,24 +118,56 @@ public final class Opm {
 
     // ---------- Pedra Viva ----------
 
+    // His own motion (dash attack, the combo's steps, a mob's dodge): marked with the velocity he gave himself, so Pedra
+    // Viva keeps it and only undoes what someone else pushed on top of it.
+    private record Own(Vec3 velocity, long at) {
+    }
+
+    private static final Map<LivingEntity, Own> OWN = new WeakHashMap<>();
+
+    // Call right after the entity set its own velocity (and marked it).
+    public static void own(LivingEntity entity) {
+        if (is(entity)) {
+            OWN.put(entity, new Own(entity.getDeltaMovement(), entity.level().getGameTime()));
+        }
+    }
+
     // Start of each level tick, before the game sends anyone's motion: whatever pushed him since is undone (a push is
-    // only sent on when it was marked, so unmarking it is enough for a player; a mob loses the push itself).
+    // only sent on when it was marked, so unmarking it is enough for a player; a mob loses the push itself). A motion he
+    // gave himself stays: if a blow changed it since, his own velocity comes back.
     public static void onLevelTick(LevelTickEvent.Pre event) {
         if (!(event.getLevel() instanceof ServerLevel level)) {
             return;
         }
         OpmSerious.runDigs(level);
+        long now = level.getGameTime();
         for (ServerPlayer player : level.players()) {
             if (player.hurtMarked && is(player)) {
-                player.hurtMarked = false;
+                Vec3 mine = mine(player, now);
+                if (mine == null) {
+                    player.hurtMarked = false;
+                } else if (!player.getDeltaMovement().equals(mine)) {
+                    player.setDeltaMovement(mine);
+                }
             }
         }
         for (LivingEntity mob : MOBS) {
             if (mob.level() == level && mob.hurtMarked && is(mob)) {
-                mob.hurtMarked = false;
-                mob.setDeltaMovement(0, Math.min(0, mob.getDeltaMovement().y), 0);
+                Vec3 mine = mine(mob, now);
+                if (mine == null) {
+                    mob.hurtMarked = false;
+                    mob.setDeltaMovement(0, Math.min(0, mob.getDeltaMovement().y), 0);
+                } else if (!mob.getDeltaMovement().equals(mine)) {
+                    mob.setDeltaMovement(mine);
+                }
             }
         }
+    }
+
+    // The velocity he gave himself in the last couple of ticks, if any (used once).
+    private static Vec3 mine(LivingEntity entity, long now) {
+        Own own = OWN.remove(entity);
+        return own != null && now - own.at() <= 2 ? own.velocity() : null;
     }
 
     // Before the defenses: the counter's catch.

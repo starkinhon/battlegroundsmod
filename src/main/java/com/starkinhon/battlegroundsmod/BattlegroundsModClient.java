@@ -344,6 +344,15 @@ public class BattlegroundsModClient {
         event.registerEntityRenderer(ModEntities.GOJO.get(), context -> new SoulBossRenderer<>(context, "gojo", true));
         event.registerEntityRenderer(ModEntities.KOKUSHIBO.get(), com.starkinhon.battlegroundsmod.client.KokushiboRenderer::new);
         event.registerEntityRenderer(ModEntities.SUKUNA.get(), context -> new SoulBossRenderer<>(context, "sukuna", false));
+        event.registerEntityRenderer(ModEntities.JOY_BOY.get(), context -> {
+            SoulBossRenderer<com.starkinhon.battlegroundsmod.boss.JoyBoyEntity> r = new SoulBossRenderer<>(context, "joy_boy", false);
+            // His Gears drawn on the boss as on a player (pink G2, Boundman, the Nika clothes).
+            r.addLayer(new com.starkinhon.battlegroundsmod.client.fx.LuffyFx.Layer<>(r));
+            return r;
+        });
+        event.registerEntityRenderer(ModEntities.SAITAMA.get(), context -> new SoulBossRenderer<>(context, "saitama", false));
+        event.registerEntityRenderer(ModEntities.SHIGARAKI.get(), context -> new SoulBossRenderer<>(context, "shigaraki", false));
+        event.registerEntityRenderer(ModEntities.MAKIMA.get(), context -> new SoulBossRenderer<>(context, "makima", true));
         event.registerEntityRenderer(ModEntities.DUMMY.get(), context -> new DummyRenderer<>(context, "steve"));
         event.registerEntityRenderer(ModEntities.DUMMY_ATTACKER.get(), context -> new DummyRenderer<>(context, "kai"));
         event.registerEntityRenderer(ModEntities.AIZEN_ILLUSION.get(), AizenIllusionRenderer::new);
@@ -464,7 +473,7 @@ public class BattlegroundsModClient {
             if (event.getSkin(model) instanceof PlayerRenderer renderer) {
                 renderer.addLayer(new AuraEyesLayer<>(renderer));
                 renderer.addLayer(new com.starkinhon.battlegroundsmod.client.outfit.OutfitLayer(renderer));
-                renderer.addLayer(new com.starkinhon.battlegroundsmod.client.fx.LuffyFx.Layer(renderer));
+                renderer.addLayer(new com.starkinhon.battlegroundsmod.client.fx.LuffyFx.Layer<>(renderer));
                 com.starkinhon.battlegroundsmod.client.fx.LuffyFx.wrapHeldLayer(renderer);
                 renderer.addLayer(new com.starkinhon.battlegroundsmod.client.outfit.KokushiboSheathLayer<>(renderer));
             }

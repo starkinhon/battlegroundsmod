@@ -1,0 +1,322 @@
+{
+  "formato": "souls-boss/1",
+  "boss": "saitama",
+  "poder": "one_punch",
+  "tier": 1,
+  "estilo": "deus",
+  "dropAlma": true,
+  "atributos": {
+    "vida": 650,
+    "armadura": 0,
+    "velocidade": 0.3,
+    "resistenciaEmpurrao": 1.0,
+    "alcanceVisao": 64,
+    "multDano": 1.0
+  },
+  "intro": {
+    "duracaoTicks": 60,
+    "titulo": "Saitama",
+    "subtitulo": "Um herói por hobby",
+    "cor": "#f2c94c"
+  },
+  "percepcao": {
+    "intervaloDecisaoTicks": 6,
+    "aleatoriedade": 0.2,
+    "trocarHumorTicks": 60,
+    "intervaloTecnicasTicks": 80
+  },
+  "distancias": {
+    "soco": 3.0,
+    "ideal": 3,
+    "intervaloSocoTicks": 10
+  },
+  "movimento": {
+    "velocidadeAndar": 0.7,
+    "velocidadeCorrer": 0.8,
+    "trocarLadoTicks": 40
+  },
+  "ritmo": {
+    "calmoMinTicks": 100,
+    "calmoMaxTicks": 200,
+    "rapidoMinTicks": 100,
+    "rapidoMaxTicks": 200,
+    "velocidadeCalmo": 0.85,
+    "velocidadeRapido": 0.95,
+    "recargaInvestidaRapido": 1000
+  },
+  "investida": {
+    "recargaTicks": 1000,
+    "distanciaMin": 999,
+    "forca": 0,
+    "altura": 0
+  },
+  "passoSombra": {
+    "recargaTicks": 200,
+    "distanciaMin": 3,
+    "distanciaMax": 16,
+    "atras": 1.8,
+    "chance": 0.03,
+    "chanceCalmo": 0.02,
+    "chanceNaEsquiva": 0.2
+  },
+  "puloDuplo": {
+    "alturaMin": 2.5,
+    "distanciaMax": 6
+  },
+  "teleporte": {
+    "ativo": true,
+    "presoTicks": 60,
+    "distancia": 2
+  },
+  "reacoes": {
+    "chanceEsquivarSkill": 0.15,
+    "chanceEsquivarProjetil": 0.2,
+    "chanceContraAtaque": 0.6,
+    "chanceEsquivarUlt": 0.4,
+    "golpesParaContra": 3,
+    "janelaPressaoTicks": 30,
+    "punirTicks": 100,
+    "multPunir": 2,
+    "golpesParaFugir": 99,
+    "chanceFugirAoApanhar": 0.0
+  },
+  "ultFinal": {
+    "ativa": false
+  },
+  "skills": {
+    "socos": {
+      "slot": 0,
+      "tipo": "golpe",
+      "peso": 1.4,
+      "recargaTicks": 80,
+      "recargaMaxTicks": 120,
+      "avisoTicks": 4,
+      "distanciaMin": 0,
+      "distanciaMax": 5,
+      "giroGrausPorTick": 25,
+      "avisoCor": "#f2c94c",
+      "avisoSom": "minecraft:entity.player.attack.sweep"
+    },
+    "gancho": {
+      "slot": 1,
+      "tipo": "controle",
+      "peso": 1.3,
+      "recargaTicks": 110,
+      "recargaMaxTicks": 160,
+      "avisoTicks": 4,
+      "distanciaMin": 0,
+      "distanciaMax": 5,
+      "giroGrausPorTick": 30,
+      "avisoCor": "#f2c94c",
+      "avisoSom": "minecraft:entity.player.attack.strong"
+    },
+    "chute": {
+      "slot": 2,
+      "tipo": "controle",
+      "peso": 1.2,
+      "recargaTicks": 130,
+      "recargaMaxTicks": 180,
+      "avisoTicks": 4,
+      "distanciaMin": 0,
+      "distanciaMax": 5,
+      "giroGrausPorTick": 30,
+      "avisoCor": "#f2c94c",
+      "avisoSom": "minecraft:entity.player.attack.strong"
+    },
+    "counter": {
+      "slot": 7,
+      "tipo": "contra",
+      "peso": 1.0,
+      "recargaTicks": 160,
+      "recargaMaxTicks": 240,
+      "avisoTicks": 0,
+      "distanciaMin": 0,
+      "distanciaMax": 5,
+      "giroGrausPorTick": 30,
+      "avisoCor": "#f2c94c",
+      "avisoSom": ""
+    },
+    "modo_serio": {
+      "slot": 3,
+      "tipo": "roteiro",
+      "peso": 1.0,
+      "recargaTicks": 20,
+      "recargaMaxTicks": 20,
+      "avisoTicks": 10,
+      "distanciaMin": 0,
+      "distanciaMax": 64,
+      "giroGrausPorTick": 30,
+      "avisoCor": "#ffffff",
+      "avisoSom": "minecraft:block.beacon.activate"
+    },
+    "soco_serio": {
+      "slot": 0,
+      "tipo": "alcance",
+      "peso": 1.0,
+      "recargaTicks": 60,
+      "recargaMaxTicks": 60,
+      "avisoTicks": 30,
+      "distanciaMin": 0,
+      "distanciaMax": 80,
+      "giroGrausPorTick": 12,
+      "avisoCor": "#ffffff",
+      "avisoSom": "minecraft:block.beacon.power_select"
+    },
+    "saltos": {
+      "slot": 1,
+      "tipo": "alcance",
+      "peso": 1.0,
+      "recargaTicks": 60,
+      "recargaMaxTicks": 60,
+      "avisoTicks": 24,
+      "distanciaMin": 0,
+      "distanciaMax": 14,
+      "giroGrausPorTick": 30,
+      "avisoCor": "#ffffff",
+      "avisoSom": "minecraft:block.beacon.power_select"
+    },
+    "mesa": {
+      "slot": 2,
+      "tipo": "alcance",
+      "peso": 1.0,
+      "recargaTicks": 60,
+      "recargaMaxTicks": 60,
+      "avisoTicks": 24,
+      "distanciaMin": 0,
+      "distanciaMax": 30,
+      "giroGrausPorTick": 30,
+      "avisoCor": "#ffffff",
+      "avisoSom": "minecraft:block.beacon.power_select"
+    },
+    "espirro": {
+      "slot": 3,
+      "tipo": "alcance",
+      "peso": 1.0,
+      "recargaTicks": 60,
+      "recargaMaxTicks": 60,
+      "avisoTicks": 28,
+      "distanciaMin": 0,
+      "distanciaMax": 50,
+      "giroGrausPorTick": 12,
+      "avisoCor": "#ffffff",
+      "avisoSom": "minecraft:block.beacon.power_select"
+    },
+    "forte": {
+      "slot": 4,
+      "tipo": "golpe",
+      "peso": 1.0,
+      "recargaTicks": 240,
+      "recargaMaxTicks": 360,
+      "avisoTicks": 4,
+      "distanciaMin": 0,
+      "distanciaMax": 4,
+      "giroGrausPorTick": 20,
+      "avisoCor": "#f2c94c",
+      "avisoSom": "minecraft:entity.player.attack.sweep"
+    },
+    "barragem": {
+      "slot": 5,
+      "tipo": "barragem",
+      "peso": 1.0,
+      "recargaTicks": 280,
+      "recargaMaxTicks": 400,
+      "avisoTicks": 5,
+      "distanciaMin": 0,
+      "distanciaMax": 3.5,
+      "giroGrausPorTick": 10,
+      "avisoCor": "#f2c94c",
+      "avisoSom": "minecraft:entity.player.attack.sweep"
+    }
+  },
+  "combos": {
+    "soco_normal": {
+      "peso": 1.0,
+      "passos": [
+        "soco",
+        "soco",
+        "socos"
+      ]
+    },
+    "gancho_e_chute": {
+      "peso": 1.0,
+      "encadeado": true,
+      "passos": [
+        "gancho",
+        "chute"
+      ]
+    },
+    "porrada": {
+      "peso": 0.9,
+      "passos": [
+        "soco",
+        "soco",
+        "forte"
+      ]
+    }
+  },
+  "fases": [
+    {
+      "comecaEm": 1.0,
+      "skills": [
+        "socos",
+        "gancho",
+        "chute",
+        "counter",
+        "forte",
+        "barragem"
+      ],
+      "combos": [
+        "soco_normal",
+        "gancho_e_chute",
+        "porrada"
+      ],
+      "agressividade": 0.6,
+      "multRecarga": 1.0,
+      "menosRecargaTicks": 0,
+      "multVelocidade": 1.0,
+      "multAviso": 1.0,
+      "reacaoTicks": 7,
+      "chanceReacao": 0.7,
+      "pausaTicks": 12,
+      "despertado": false,
+      "corBarra": "red",
+      "transicaoTicks": 0,
+      "titulo": "",
+      "subtitulo": ""
+    },
+    {
+      "comecaEm": 0.5,
+      "skills": [
+        "socos",
+        "gancho",
+        "chute",
+        "counter",
+        "forte",
+        "barragem",
+        "modo_serio",
+        "soco_serio",
+        "saltos",
+        "mesa",
+        "espirro"
+      ],
+      "combos": [
+        "soco_normal",
+        "gancho_e_chute",
+        "porrada"
+      ],
+      "agressividade": 0.75,
+      "multRecarga": 1.0,
+      "menosRecargaTicks": 0,
+      "multVelocidade": 1.0,
+      "multAviso": 1.0,
+      "reacaoTicks": 6,
+      "chanceReacao": 0.9,
+      "pausaTicks": 12,
+      "despertado": false,
+      "corBarra": "yellow",
+      "transicaoTicks": 40,
+      "titulo": "Modo Sério",
+      "subtitulo": "..."
+    }
+  ]
+}

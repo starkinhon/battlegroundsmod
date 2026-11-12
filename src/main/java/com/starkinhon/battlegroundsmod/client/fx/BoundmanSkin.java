@@ -48,8 +48,11 @@ public final class BoundmanSkin {
     /** The tattooed copy of this player's skin; the skin itself (no tattoo) until it can be read. */
     public static Skin of(AbstractClientPlayer p) {
         PlayerSkin s = p.getSkin();
-        boolean slim = s.model() == PlayerSkin.Model.SLIM;
-        ResourceLocation loc = s.texture();
+        return of(s.texture(), s.model() == PlayerSkin.Model.SLIM);
+    }
+
+    /** The tattooed copy of any skin texture (a boss's own, the Joy Boy). */
+    public static Skin of(ResourceLocation loc, boolean slim) {
         Skin c = CACHE.get(loc);
         if (c == null) {
             c = make(loc, slim);

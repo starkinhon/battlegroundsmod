@@ -68,6 +68,42 @@ public final class ModEntities {
                     .clientTrackingRange(16)
                     .build("sukuna"));
 
+    // Joy Boy (Luffy) boss (2026-11-12): player sized.
+    public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.boss.JoyBoyEntity>> JOY_BOY = ENTITY_TYPES.register("joy_boy",
+            () -> EntityType.Builder.of(com.starkinhon.battlegroundsmod.boss.JoyBoyEntity::new, MobCategory.MONSTER)
+                    .sized(0.6f, 1.8f)
+                    .eyeHeight(1.62f)
+                    .fireImmune()
+                    .clientTrackingRange(16)
+                    .build("joy_boy"));
+
+    // Saitama boss (2026-11-12): player sized.
+    public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.boss.SaitamaEntity>> SAITAMA = ENTITY_TYPES.register("saitama",
+            () -> EntityType.Builder.of(com.starkinhon.battlegroundsmod.boss.SaitamaEntity::new, MobCategory.MONSTER)
+                    .sized(0.6f, 1.8f)
+                    .eyeHeight(1.62f)
+                    .fireImmune()
+                    .clientTrackingRange(16)
+                    .build("saitama"));
+
+    // Shigaraki boss (2026-11-12): player sized.
+    public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.boss.ShigarakiEntity>> SHIGARAKI = ENTITY_TYPES.register("shigaraki",
+            () -> EntityType.Builder.of(com.starkinhon.battlegroundsmod.boss.ShigarakiEntity::new, MobCategory.MONSTER)
+                    .sized(0.6f, 1.8f)
+                    .eyeHeight(1.62f)
+                    .fireImmune()
+                    .clientTrackingRange(16)
+                    .build("shigaraki"));
+
+    // Makima boss (2026-11-12): player sized.
+    public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.boss.MakimaEntity>> MAKIMA = ENTITY_TYPES.register("makima",
+            () -> EntityType.Builder.of(com.starkinhon.battlegroundsmod.boss.MakimaEntity::new, MobCategory.MONSTER)
+                    .sized(0.6f, 1.8f)
+                    .eyeHeight(1.62f)
+                    .fireImmune()
+                    .clientTrackingRange(16)
+                    .build("makima"));
+
     // Test dummies: one only takes hits, the other also punches back on a steady rhythm.
     public static final Supplier<EntityType<TrainingDummy>> DUMMY = ENTITY_TYPES.register("dummy",
             () -> EntityType.Builder.<TrainingDummy>of(TrainingDummy::new, MobCategory.MISC)
@@ -274,6 +310,10 @@ public final class ModEntities {
         event.put(GOJO.get(), SoulBoss.createAttributes().build());
         event.put(KOKUSHIBO.get(), SoulBoss.createAttributes().build());
         event.put(SUKUNA.get(), SoulBoss.createAttributes().build());
+        event.put(JOY_BOY.get(), SoulBoss.createAttributes().build());
+        event.put(SAITAMA.get(), SoulBoss.createAttributes().build());
+        event.put(SHIGARAKI.get(), SoulBoss.createAttributes().build());
+        event.put(MAKIMA.get(), SoulBoss.createAttributes().build());
         event.put(DUMMY.get(), TrainingDummy.createAttributes().build());
         event.put(DUMMY_ATTACKER.get(), TrainingDummy.createAttributes().build());
         event.put(AIZEN_ILLUSION.get(), AizenIllusion.createAttributes().build());
