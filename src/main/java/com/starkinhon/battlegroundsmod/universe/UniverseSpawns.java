@@ -370,14 +370,10 @@ public final class UniverseSpawns {
         BlockPos pos = new BlockPos(x, y, z);
         BlockPos below = pos.below();
         net.minecraft.world.level.block.state.BlockState under = level.getBlockState(below);
-        if (under.getBlock() instanceof net.minecraft.world.level.block.SnowLayerBlock) {
-            // standing in the snow: the ground is the block under it
-            pos = below;
-            below = pos.below();
-            under = level.getBlockState(below);
-        }
+        // a snow layer of any depth is ground too: the mob stands on top of it
+        boolean snow = under.getBlock() instanceof net.minecraft.world.level.block.SnowLayerBlock;
         if (y <= level.getMinBuildHeight() || !under.getFluidState().isEmpty()
-                || !under.isFaceSturdy(level, below, net.minecraft.core.Direction.UP)
+                || !(snow || under.isFaceSturdy(level, below, net.minecraft.core.Direction.UP))
                 || !walkable(level, pos) || !walkable(level, pos.above())) {
             return null;
         }
