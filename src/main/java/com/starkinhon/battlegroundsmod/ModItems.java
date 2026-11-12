@@ -141,10 +141,29 @@ public final class ModItems {
             () -> new DeferredSpawnEggItem(ModEntities.NPC_GOHAN, 0x5A2D82, 0xE8C27A, new Item.Properties()));
     public static final DeferredItem<DeferredSpawnEggItem> NPC_KORIN_SPAWN_EGG = BattlegroundsMod.ITEMS.register("npc_korin_spawn_egg",
             () -> new DeferredSpawnEggItem(ModEntities.NPC_KORIN, 0xF2F2EE, 0x8A6A4F, new Item.Properties()));
-    public static final DeferredItem<DeferredSpawnEggItem> NINJA_RENEGADO_SPAWN_EGG = BattlegroundsMod.ITEMS.register("ninja_renegado_spawn_egg",
-            () -> new DeferredSpawnEggItem(ModEntities.NINJA_RENEGADO, 0x5A5A66, 0x9A9AA8, new Item.Properties()));
-    public static final DeferredItem<DeferredSpawnEggItem> NINJA_SOM_SPAWN_EGG = BattlegroundsMod.ITEMS.register("ninja_som_spawn_egg",
-            () -> new DeferredSpawnEggItem(ModEntities.NINJA_SOM, 0x6A5A8E, 0xD8C8A0, new Item.Properties()));
+    // The Naruto biomes' creatures (animal/naruto): one egg each, the old renegade and Sound ninja eggs kept by id.
+    public static final Map<String, DeferredItem<DeferredSpawnEggItem>> NARUTO_EGGS = new LinkedHashMap<>();
+
+    static {
+        Map<String, int[]> colors = Map.ofEntries(
+                Map.entry("ninja_renegado", new int[] {0x5A5A66, 0x9A9AA8}), Map.entry("ninken", new int[] {0xB98A52, 0x2A3A6A}),
+                Map.entry("cobra_gigante", new int[] {0x6A4A8A, 0xD8C890}), Map.entry("tigre", new int[] {0xE08A2A, 0x1A1410}),
+                Map.entry("ninja_som", new int[] {0x6A5A8E, 0xD8C8A0}), Map.entry("centopeia", new int[] {0x6A2A1A, 0xD8A040}),
+                Map.entry("ninja_leque", new int[] {0xC8A878, 0x6A2A2A}), Map.entry("escorpiao_areia", new int[] {0xC9A76B, 0x5A3A1A}),
+                Map.entry("marionete", new int[] {0xE8E0D0, 0xB02020}), Map.entry("marionetista", new int[] {0x3A2A2A, 0x6AA8FF}),
+                Map.entry("espadachim_nevoa", new int[] {0x4A5A6A, 0xB8C8D8}), Map.entry("tubarao_agua", new int[] {0x3A6A9A, 0xD8E8F0}),
+                Map.entry("caranguejo_gigante", new int[] {0xC0402A, 0xF0C090}), Map.entry("cacador_nevoa", new int[] {0xE8E8E8, 0xB02A2A}),
+                Map.entry("ninja_chuva", new int[] {0x4A4E5C, 0x8A9AB0}), Map.entry("garca_papel", new int[] {0xF0EAD8, 0xC02020}),
+                Map.entry("salamandra_venenosa", new int[] {0x3A2A4A, 0x9AD04A}), Map.entry("zetsu_branco", new int[] {0xF0F0E8, 0x4A7A3A}),
+                Map.entry("corvo_uchiha", new int[] {0x14141A, 0xD01010}), Map.entry("clone_madeira", new int[] {0x8A6A44, 0x5A8A3A}),
+                Map.entry("sapo_ninja", new int[] {0x6A9A3A, 0xE8A040}), Map.entry("sapo_gigante", new int[] {0xD8782A, 0x6A3A1A}),
+                Map.entry("inseto_gigante", new int[] {0x2A4A6A, 0x8AD0C0}));
+        for (String id : ModEntities.NARUTO_MOBS.keySet()) {
+            int[] c = colors.getOrDefault(id, new int[] {0x444444, 0x999999});
+            NARUTO_EGGS.put(id, BattlegroundsMod.ITEMS.register(id + "_spawn_egg",
+                    () -> new DeferredSpawnEggItem(ModEntities.NARUTO_MOBS.get(id), c[0], c[1], new Item.Properties())));
+        }
+    }
     public static final DeferredItem<DeferredSpawnEggItem> ANBU_RAIZ_SPAWN_EGG = BattlegroundsMod.ITEMS.register("anbu_raiz_spawn_egg",
             () -> new DeferredSpawnEggItem(ModEntities.ANBU_RAIZ, 0x2A2A30, 0xE8E8E8, new Item.Properties()));
     public static final DeferredItem<DeferredSpawnEggItem> NPC_JIRAIYA_SPAWN_EGG = BattlegroundsMod.ITEMS.register("npc_jiraiya_spawn_egg",

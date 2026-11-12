@@ -69,8 +69,8 @@ public final class UniverseSpawns {
                 continue;
             }
             if (NarutoWorld.UNIVERSE.equals(id) && level.dimension() == net.minecraft.world.level.Level.OVERWORLD) {
-                // The Naruto biomes (Stark 2026-11-11): their mobs are being redone, one biome at a time with a preview;
-                // until then the old ninjas of the Naruto dimension do not come out in the Floresta da Folha.
+                // The Naruto biomes have their own creatures, each in its biome (NarutoMobSpawns).
+                NarutoMobSpawns.tick(level, player);
                 continue;
             }
             if (DemonSlayerWorld.UNIVERSE.equals(id) && level.isDay()) {
@@ -94,6 +94,9 @@ public final class UniverseSpawns {
             AABB around = player.getBoundingBox().inflate(NEARBY_RADIUS);
             List<String> pool = mobs;
             int nearby = level.getEntitiesOfClass(SoulBoss.class, around, mob -> pool.contains(mob.bossId())).size();
+            // the Naruto dimension's ninjas are Naruto creatures now, not SoulBoss
+            nearby += level.getEntitiesOfClass(com.starkinhon.battlegroundsmod.animal.naruto.NarutoMob.class, around,
+                    mob -> pool.contains(mob.id())).size();
             if (nearby < NEARBY_CAP) {
                 spawnGroup(level, player, mobs);
             }

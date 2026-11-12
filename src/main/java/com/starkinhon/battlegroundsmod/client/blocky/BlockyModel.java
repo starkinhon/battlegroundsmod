@@ -100,7 +100,13 @@ public class BlockyModel<T extends DbCreature> extends HierarchicalModel<T> {
     @Override
     public void setupAnim(T entity, float limbSwing, float amount, float age, float headYaw, float headPitch) {
         // back to the rest pose every frame, then the animation adds on top
-        root.getAllParts().forEach(ModelPart::resetPose);
+        root.getAllParts().forEach(p -> {
+            p.resetPose();
+            // resetPose leaves the scale alone: the baked animations scale parts
+            p.xScale = 1;
+            p.yScale = 1;
+            p.zScale = 1;
+        });
         anim.apply(this, entity, limbSwing, Math.min(1f, amount), age, headYaw, headPitch);
     }
 }

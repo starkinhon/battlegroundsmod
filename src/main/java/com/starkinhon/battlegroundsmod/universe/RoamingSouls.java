@@ -59,10 +59,13 @@ public final class RoamingSouls {
                 continue;
             }
             RandomSource random = level.getRandom();
-            if (random.nextDouble() >= CHANCE) {
+            List<String> pool = pool(Tiers.of(player));
+            // in their own biome they turn up more, and more of them are the ones who live there (Stark 2026-11-12:
+            // the Leaf's ninja in the Floresta da Folha, Gaara in the Deserto do Vento)
+            List<String> home = home(level, player.blockPosition(), pool);
+            if (random.nextDouble() >= (home.isEmpty() ? CHANCE : HOME_CHANCE)) {
                 continue;
             }
-            List<String> pool = pool(Tiers.of(player));
             boolean someone = !level.getEntitiesOfClass(SoulBoss.class, player.getBoundingBox().inflate(NEARBY),
                     boss -> pool.contains(boss.bossId())).isEmpty();
             if (pool.isEmpty() || someone) {
@@ -72,7 +75,9 @@ public final class RoamingSouls {
             if (at == null) {
                 continue;
             }
-            String first = pool.get(random.nextInt(pool.size()));
+            List<String> homeHere = home(level, at, pool);
+            String first = !homeHere.isEmpty() && random.nextDouble() < HOME_PICK ? homeHere.get(random.nextInt(homeHere.size()))
+                    : pool.get(random.nextInt(pool.size()));
             Entity a = spawn(level, first, at);
             if (a == null || random.nextDouble() >= PAIR_CHANCE) {
                 continue;
@@ -98,6 +103,29 @@ public final class RoamingSouls {
                 bb.setLastHurtByMob(ba);
             }
         }
+    }
+
+    private static final double HOME_CHANCE = 0.7;
+    private static final double HOME_PICK = 0.75;
+    private static final java.util.Map<net.minecraft.resources.ResourceKey<net.minecraft.world.level.biome.Biome>, List<String>> HOMES = java.util.Map.of(
+            com.starkinhon.battlegroundsmod.world.ModWorldgen.FLORESTA_DA_FOLHA, List.of("naruto", "sasuke", "kakashi", "shikamaru", "ino"),
+            com.starkinhon.battlegroundsmod.world.ModWorldgen.DESERTO_DO_VENTO, List.of("gaara"));
+
+    // The SubAlmas of the pool who live in the biome at pos.
+    private static List<String> home(ServerLevel level, BlockPos pos, List<String> pool) {
+        var biome = level.getBiome(pos);
+        for (var e : HOMES.entrySet()) {
+            if (biome.is(e.getKey())) {
+                List<String> out = new ArrayList<>();
+                for (String id : e.getValue()) {
+                    if (pool.contains(id)) {
+                        out.add(id);
+                    }
+                }
+                return out;
+            }
+        }
+        return List.of();
     }
 
     // The SubAlmas of every challenge book whose tier is at most two above the player's.

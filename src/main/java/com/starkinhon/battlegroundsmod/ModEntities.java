@@ -1,5 +1,8 @@
 package com.starkinhon.battlegroundsmod;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 import java.util.function.Supplier;
 
 import com.starkinhon.battlegroundsmod.boss.BillsEntity;
@@ -193,8 +196,35 @@ public final class ModEntities {
     public static final Supplier<EntityType<SoulMob>> DABURA = mob("dabura");
 
     // Common enemies of Naruto.
-    public static final Supplier<EntityType<SoulMob>> NINJA_RENEGADO = mob("ninja_renegado");
-    public static final Supplier<EntityType<SoulMob>> NINJA_SOM = mob("ninja_som");
+    // The Naruto biomes' creatures (Stark 2026-11-12, preview tools/mobs/naruto approved): one entity type per kind, all
+    // one class (animal/naruto/NarutoMob, its kind from the id). The renegade and the Sound ninja keep their old ids.
+    public static final Map<String, Supplier<EntityType<com.starkinhon.battlegroundsmod.animal.naruto.NarutoMob>>> NARUTO_MOBS = new LinkedHashMap<>();
+
+    static {
+        for (com.starkinhon.battlegroundsmod.animal.naruto.NarutoSpec.Spec spec : com.starkinhon.battlegroundsmod.animal.naruto.NarutoSpec.all()) {
+            float w = spec.width, h = spec.height;
+            if (spec.scale != null) {
+                float k = 0;
+                for (float v : spec.scale) {
+                    k = Math.max(k, v);
+                }
+                w *= k;
+                h *= k;
+            }
+            final float fw = w, fh = h;
+            NARUTO_MOBS.put(spec.id, ENTITY_TYPES.register(spec.id, () -> EntityType.Builder
+                    .<com.starkinhon.battlegroundsmod.animal.naruto.NarutoMob>of(com.starkinhon.battlegroundsmod.animal.naruto.NarutoMob::new,
+                            MobCategory.MONSTER)
+                    .sized(fw, fh).eyeHeight(fh * 0.85f).clientTrackingRange(spec.height > 3 || spec.width > 1.5f ? 12 : 10).build(spec.id)));
+        }
+    }
+
+    public static EntityType<com.starkinhon.battlegroundsmod.animal.naruto.NarutoMob> naruto(String id) {
+        return NARUTO_MOBS.get(id).get();
+    }
+
+    public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.animal.naruto.NarutoMob>> NINJA_RENEGADO = NARUTO_MOBS.get("ninja_renegado");
+    public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.animal.naruto.NarutoMob>> NINJA_SOM = NARUTO_MOBS.get("ninja_som");
     public static final Supplier<EntityType<SoulMob>> ANBU_RAIZ = mob("anbu_raiz");
 
     // Common enemies of Jujutsu.
@@ -211,7 +241,7 @@ public final class ModEntities {
     public static final Supplier<EntityType<SoulMob>> ONI_ESPADACHIM = mob("oni_espadachim");
 
     public static final java.util.List<Supplier<EntityType<SoulMob>>> FIGHTERS = java.util.List.of(FIGHTER_HUMANO, FIGHTER_RUA, FIGHTER_QUARTEIRAO,
-            SOLDADO_RED_RIBBON, SAIBAMAN, SOLDADO_FREEZA, BANDIDO_DESERTO, PIRATA, YETI, NINJA_RENEGADO, NINJA_SOM, ANBU_RAIZ,
+            SOLDADO_RED_RIBBON, SAIBAMAN, SOLDADO_FREEZA, BANDIDO_DESERTO, PIRATA, YETI, ANBU_RAIZ,
             MALDICAO_MENOR, MALDICAO_GRAU2, FEITICEIRO_RENEGADO, HOLLOW, ARRANCAR, MENOS_GRANDE,
             ONI_COMUM, ONI_LUA_INFERIOR, ONI_ESPADACHIM, RADITZ, CELL_JR, PUI_PUI, YAKON, DABURA);
 
@@ -292,6 +322,10 @@ public final class ModEntities {
         event.put(ANDROIDE_8.get(), com.starkinhon.battlegroundsmod.animal.db.Androide8.attributes().build());
         event.put(LADRAO_URSO.get(), com.starkinhon.battlegroundsmod.animal.db.LadraoUrso.attributes().build());
         event.put(BORA.get(), com.starkinhon.battlegroundsmod.animal.db.Bora.attributes().build());
+        for (var e : NARUTO_MOBS.entrySet()) {
+            event.put(e.getValue().get(), com.starkinhon.battlegroundsmod.animal.naruto.NarutoMob
+                    .attributes(com.starkinhon.battlegroundsmod.animal.naruto.NarutoSpec.get(e.getKey())).build());
+        }
         event.put(NPC_GOHAN.get(), com.starkinhon.battlegroundsmod.npc.UniverseNpc.createAttributes().build());
         event.put(NPC_KORIN.get(), com.starkinhon.battlegroundsmod.npc.UniverseNpc.createAttributes().build());
         event.put(NPC_BULMA.get(), com.starkinhon.battlegroundsmod.npc.UniverseNpc.createAttributes().build());

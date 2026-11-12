@@ -87,6 +87,9 @@ public final class UniverseItems {
         } else if (id.endsWith("_spawn_egg")) {
             character = id.substring(0, id.length() - "_spawn_egg".length());
         }
+        if (character != null && com.starkinhon.battlegroundsmod.animal.naruto.NarutoSpec.get(character) != null) {
+            return "naruto";
+        }
         String universe = character == null ? null : CHARACTERS.get(character);
         return universe == null || universe.isEmpty() ? null : universe;
     }
