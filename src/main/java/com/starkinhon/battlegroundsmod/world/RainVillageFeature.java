@@ -36,6 +36,9 @@ import net.minecraft.world.level.material.Fluids;
 // Writes only inside its own chunk.
 public final class RainVillageFeature extends Feature<NoneFeatureConfiguration> {
     private static final Cache<Long, int[]> PIECES = CacheBuilder.newBuilder().maximumSize(300).build();
+    // good() for a spot, kept: a tower that can't stand on its own spot tries up to 16 more (RainGen.towerAt), and the
+    // same towers are asked about by every chunk near them
+    private static final Cache<Long, Boolean> GOOD = CacheBuilder.newBuilder().maximumSize(20000).build();
 
     public RainVillageFeature(Codec<NoneFeatureConfiguration> codec) {
         super(codec);
@@ -92,7 +95,7 @@ public final class RainVillageFeature extends Feature<NoneFeatureConfiguration> 
         }
 
         // 2. Towers, stumps and pipes.
-        List<RainGen.Obj> objs = RainGen.objectsNear(x0, z0, x1, z1, seed, o -> good(o, generator, random, ground, sea));
+        List<RainGen.Obj> objs = RainGen.objectsNear(x0, z0, x1, z1, seed, o -> goodKept(o, worldKey, generator, random, ground, sea));
         objs.sort((a, b) -> Integer.compare(order(a), order(b)));
         for (RainGen.Obj o : objs) {
             int foot = o.kind() == RainGen.Kind.LINK ? 0 : ground.applyAsInt(o.x(), o.z());
@@ -182,6 +185,19 @@ public final class RainVillageFeature extends Feature<NoneFeatureConfiguration> 
 
     // Is the spot good: the biome all around as far as the piece reaches; a tower or a stump on ground not too steep (or
     // in a lake not deeper than 14); a pipe between towers is good when both towers are (RainGen asks for each).
+    private static boolean goodKept(RainGen.Obj o, int worldKey, ChunkGenerator generator, RandomState random, IntBinaryOperator ground,
+            int sea) {
+        if (o.kind() == RainGen.Kind.LINK) {
+            return good(o, generator, random, ground, sea);
+        }
+        long key = ((long) o.x() << 36) ^ ((long) (o.z() & 0xFFFFFFFL) << 8) ^ o.kind().ordinal() ^ ((long) worldKey * 0x9E3779B97F4A7C15L);
+        try {
+            return GOOD.get(key, () -> good(o, generator, random, ground, sea));
+        } catch (ExecutionException e) {
+            return false;
+        }
+    }
+
     private static boolean good(RainGen.Obj o, ChunkGenerator generator, RandomState random, IntBinaryOperator ground, int sea) {
         int y = ground.applyAsInt(o.x(), o.z());
         if (y < sea - 14 || !biomeAt(generator, random, o.x(), Math.max(y, sea), o.z())) {

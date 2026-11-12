@@ -330,15 +330,38 @@ public final class RainGen {
         return new Obj(c, x, z, floor(hash3(i, c.salt + 3, j, seed) * 1e9) + 1, c.reach, i, j, null, null);
     }
 
+    // The cell's tower: its spot, or where the game says it can't stand there (outside the biome, too steep), the first
+    // of a 4 by 4 grid over the cell where it can, the same tower moved (the PC test of 2026-11-12: the Vila's pieces
+    // are small and most spots fell outside them, 2 towers in 3000 by 3000 blocks). The preview accepts every spot, so
+    // there it is always the cell's spot.
+    private static Obj towerAt(int i, int j, int seed, Predicate<Obj> accept) {
+        Kind c = Kind.TOWER;
+        Obj o = cellObject(c, i, j, seed);
+        if (o == null || accept.test(o)) {
+            return o;
+        }
+        int span = c.size - 2 * c.pad;
+        for (int gi = 0; gi < 4; gi++) {
+            for (int gj = 0; gj < 4; gj++) {
+                Obj m = new Obj(c, i * c.size + c.pad + gi * span / 3, j * c.size + c.pad + gj * span / 3, o.seed, c.reach, i, j,
+                        null, null);
+                if (accept.test(m)) {
+                    return m;
+                }
+            }
+        }
+        return null;
+    }
+
     // Nothing touches a tower (except its own pipes).
-    private static boolean crowded(Obj o, int seed) {
+    private static boolean crowded(Obj o, int seed, Predicate<Obj> accept) {
         if (o.kind == Kind.TOWER) {
             return false;
         }
         Kind c = Kind.TOWER;
         for (int i = floor((o.x - 30 - c.size) / (double) c.size); i <= floor((o.x + 30) / (double) c.size); i++) {
             for (int j = floor((o.z - 30 - c.size) / (double) c.size); j <= floor((o.z + 30) / (double) c.size); j++) {
-                Obj g = cellObject(c, i, j, seed);
+                Obj g = towerAt(i, j, seed, accept);
                 if (g != null && Math.hypot(g.x - o.x, g.z - o.z) < towerSize(g.seed).R * 1.2 + (o.kind == Kind.ARCH ? 22 : 8)) {
                     return true;
                 }
@@ -355,8 +378,8 @@ public final class RainGen {
         int[][] dirs = {{1, 0}, {0, 1}};
         for (int[] dd : dirs) {
             int di = dd[0], dj = dd[1];
-            Obj q = cellObject(c, p.i + di, p.j + dj, seed);
-            if (q == null || !accept.test(q)) {
+            Obj q = towerAt(p.i + di, p.j + dj, seed, accept);
+            if (q == null) {
                 continue;
             }
             Size sq2 = towerSize(q.seed);
@@ -379,8 +402,8 @@ public final class RainGen {
             int reach = c == Kind.TOWER ? c.reach + 46 : c.reach; // a tower's pipe reaches farther
             for (int i = floor((x0 - reach) / (double) c.size); i <= floor((x1 + reach) / (double) c.size); i++) {
                 for (int j = floor((z0 - reach) / (double) c.size); j <= floor((z1 + reach) / (double) c.size); j++) {
-                    Obj o = cellObject(c, i, j, seed);
-                    if (o == null || crowded(o, seed) || !accept.test(o)) {
+                    Obj o = c == Kind.TOWER ? towerAt(i, j, seed, accept) : cellObject(c, i, j, seed);
+                    if (o == null || crowded(o, seed, accept) || c != Kind.TOWER && !accept.test(o)) {
                         continue;
                     }
                     if (c == Kind.TOWER) {
