@@ -49,10 +49,12 @@ public class GourdLayer<T extends LivingEntity> extends RenderLayer<T, PlayerMod
         poseStack.pushPose();
         // model space: +y down, +z the back; the body's pivot is at the neck
         getParentModel().body.translateAndRotate(poseStack);
-        poseStack.translate(0, 0.42, 0.27);
+        // conferido fora do jogo (scratchpad gourd.js, mesmo encadeamento de transformações): rolha acima do ombro
+        // direito, fundo na cintura esquerda, encostada nas costas
+        poseStack.translate(0, 0.3, 0.27);
         poseStack.mulPose(Axis.ZP.rotationDegrees(180 - 28));
         poseStack.mulPose(Axis.YP.rotationDegrees(180));
-        poseStack.scale(0.9f, 0.9f, 0.9f);
+        poseStack.scale(0.85f, 0.85f, 0.85f);
         Minecraft.getInstance().getItemRenderer().renderStatic(stack, ItemDisplayContext.NONE, light, OverlayTexture.NO_OVERLAY,
                 poseStack, buffer, entity.level(), entity.getId());
         poseStack.popPose();
