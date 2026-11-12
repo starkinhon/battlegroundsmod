@@ -83,6 +83,7 @@ public final class DashAttack {
             Vec3 velocity = dir[0].scale(spec.velocidade());
             attacker.setDeltaMovement(velocity.x, Math.min(attacker.getDeltaMovement().y, 0.1), velocity.z);
             attacker.hurtMarked = true;
+            com.starkinhon.battlegroundsmod.power.powers.opm.Opm.own(attacker);
             attacker.resetFallDistance();
             trail(level, attacker, dir[0], spec, age);
             return false;
@@ -137,6 +138,7 @@ public final class DashAttack {
         }
         attacker.setDeltaMovement(Vec3.ZERO);
         attacker.hurtMarked = true;
+        com.starkinhon.battlegroundsmod.power.powers.opm.Opm.own(attacker);
 
         ComboSpec combo = ComboSpec.get();
         int step = Math.floorMod(spec.golpeDoCombo(), combo.golpes().size());
@@ -163,6 +165,7 @@ public final class DashAttack {
             Vec3 now = attacker.getDeltaMovement();
             attacker.setDeltaMovement(now.x * 0.3, now.y, now.z * 0.3);
             attacker.hurtMarked = true;
+            com.starkinhon.battlegroundsmod.power.powers.opm.Opm.own(attacker);
         }
     }
 

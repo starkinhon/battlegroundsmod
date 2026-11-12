@@ -186,6 +186,7 @@ public final class Combat {
     public static void launchSelf(ServerPlayer player, Vec3 velocity) {
         player.setDeltaMovement(velocity);
         player.hurtMarked = true;
+        com.starkinhon.battlegroundsmod.power.powers.opm.Opm.own(player);
     }
 
     // Breaks blocks only under mobGriefing and soulsBlockDestruction (BlockRules). The caster is never hurt by their

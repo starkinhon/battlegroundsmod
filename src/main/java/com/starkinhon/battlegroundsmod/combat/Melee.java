@@ -129,6 +129,7 @@ public final class Melee {
             Vec3 step = flat.normalize().scale(passo.impulso());
             attacker.setDeltaMovement(step.x, Math.min(attacker.getDeltaMovement().y, 0.1), step.z);
             attacker.hurtMarked = true;
+            com.starkinhon.battlegroundsmod.power.powers.opm.Opm.own(attacker);
             return false;
         });
     }
@@ -177,6 +178,7 @@ public final class Melee {
             Vec3 now = attacker.getDeltaMovement();
             attacker.setDeltaMovement(now.x + look.x, now.y, now.z + look.z);
             attacker.hurtMarked = true;
+            com.starkinhon.battlegroundsmod.power.powers.opm.Opm.own(attacker);
         }
         int interrupts = data.interrupts;
         data.swingStart = attacker.level().getGameTime();
