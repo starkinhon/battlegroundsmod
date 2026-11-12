@@ -26,14 +26,12 @@ espera 20
 /devc fechar
 espera 10
 
-# Hotbar com HUD
+# Primeira pessoa (a mão some com o HUD desligado, então o HUD fica ligado aqui)
+/gamerule sendCommandFeedback false
 /devc vista primeira
 /devc tecla 1 2
 espera 15
 /devc print itensdb/02_hotbar_mao_senzu
-/devc hud off
-espera 5
-/devc print itensdb/03_mao_senzu
 /devc tecla 2 2
 espera 15
 /devc print itensdb/04_mao_scouter
@@ -44,6 +42,7 @@ espera 5
 /devc print itensdb/06_mao_radar_q1
 espera 5
 /devc print itensdb/07_mao_radar_q2
+/devc hud off
 
 # Terceira pessoa segurando o Radar
 /devc camera frente 3.5 1.2
