@@ -514,8 +514,17 @@ public final class Gaara {
                         player.onUpdateAbilities();
                     }
                     caster.setNoGravity(false);
-                    if (SubCommon.ground(level, at).y < at.y - 1.5) {
-                        caster.addEffect(new MobEffectInstance(MobEffects.SLOW_FALLING, 60, 0, false, false));
+                    if (!caster.onGround()) {
+                        // Floats down however high he was (until he touches the ground, at most 30 s).
+                        caster.addEffect(new MobEffectInstance(MobEffects.SLOW_FALLING, 600, 0, false, false));
+                        Tasks.add(a -> {
+                            caster.fallDistance = 0;
+                            if (a > 2 && (caster.onGround() || caster.isInWater()) || a > 600 || !caster.isAlive()) {
+                                caster.removeEffect(MobEffects.SLOW_FALLING);
+                                return true;
+                            }
+                            return false;
+                        });
                     }
                     caster.fallDistance = 0;
                     SubCommon.sound(level, at, SoundEvents.SAND_BREAK, 1.4f, 0.6f);
