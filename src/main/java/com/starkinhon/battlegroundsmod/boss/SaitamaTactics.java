@@ -9,7 +9,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
 
 // How the Saitama boss fights (Stark, 2026-11-12). The strategy is the character's: he takes it, hits back, GG.
-// - Bored (above half life): he walks up slowly and lets them hit first (6 s at most), then the normal moves: the
+// - Bored (above half life): he walks up slowly and lets them hit first (3 s at most; never against another boss), then the normal moves: the
 //   consecutive punches, the hook (it cuts off whatever the target is winding up), the kick (stun), and the counter's
 //   flick when they press him. Nothing pushes him (Pedra Viva).
 // - Serious (half life down): every so often the face goes from "ok" to serious (V, the Modo Sério) and the next move is a
@@ -18,7 +18,8 @@ import net.minecraft.world.phys.Vec3;
 //   looked, not where they went), so whoever gets out of the line lives.
 // Between serious moves he fights with the normal ones.
 final class SaitamaTactics extends TacticsBase {
-    private static final int BORED = 120;
+    // At most 3 s waiting to be hit first (a boss that kites him with fire got minutes of free shots at 6 s a fight).
+    private static final int BORED = 60;
     private static final double SERIOUS_LIFE = 0.5, PUNCH_LIFE = 0.2;
     // Ticks between two serious modes (his own clock: the V's slot is reset by the mode itself).
     private static final int SERIOUS_GAP_MIN = 420, SERIOUS_GAP_MAX = 600;
@@ -57,7 +58,8 @@ final class SaitamaTactics extends TacticsBase {
             locked = null;
             lockedFor = null;
         }
-        if (boss.getHealth() < boss.getMaxHealth() - 0.5f || boss.hurtTime > 0) {
+        // Another boss is no bored fight: he takes it seriously from the start (Madara made him look like nothing).
+        if (boss.getHealth() < boss.getMaxHealth() - 0.5f || boss.hurtTime > 0 || target instanceof SoulBoss) {
             provoked = true;
         }
         if (ai.usingMove() || Freeze.isFrozen(boss)) {
