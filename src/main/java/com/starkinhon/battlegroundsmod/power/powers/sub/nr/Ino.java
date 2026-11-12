@@ -348,6 +348,9 @@ public final class Ino {
                     mob.setTarget(null);
                     if (caster instanceof ServerPlayer) {
                         mob.setNoAi(true);
+                        if (!s.hostWasNoAi) {
+                            com.starkinhon.battlegroundsmod.combat.Freeze.tagNoAi(mob);
+                        }
                     }
                 }
                 if (caster instanceof ServerPlayer p) {
@@ -487,6 +490,7 @@ public final class Ino {
         SubNet.send(level, SubNet.EYES, t.getId(), t.getEyePosition(), Vec3.ZERO, 0, 0, 0);
         if (t instanceof Mob mob && !s.hostWasNoAi) {
             mob.setNoAi(false);
+            com.starkinhon.battlegroundsmod.combat.Freeze.untagNoAi(mob);
         }
         if (caster instanceof ServerPlayer p) {
             SubNet.sendTo(p, SubNet.INO_PILOT, -1, caster.position(), Vec3.ZERO, 0, 0, 0);
