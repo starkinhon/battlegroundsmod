@@ -121,8 +121,12 @@ public final class LuffyMoves {
     // when each target last showed the haki (a gatling lands many times a second: one burst every 2 ticks)
     private static final java.util.Map<LivingEntity, Long> HAKI_SHOWN = new java.util.WeakHashMap<>();
 
+    // Every punch of the kit (Stark 2026-11-12: in the same tier the Madara out-damaged him ~1.6x in 6 recorded fights, DPS
+    // 2.8-3.1 against 4.1-5.3, with the movement already equal).
+    private static final float DAMAGE_MULT = 1.4f;
+
     private static void hit(LivingEntity caster, LivingEntity target, float damage, int stun) {
-        Combat.hurt(caster, target, k(caster) > 1.5 ? damage * 3 : damage);
+        Combat.hurt(caster, target, (k(caster) > 1.5 ? damage * 3 : damage) * DAMAGE_MULT);
         if (stun > 0) {
             Stun.apply(target, stun);
         }

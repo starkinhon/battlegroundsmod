@@ -92,7 +92,7 @@ public final class MaosDoChao {
         SubNet.send(level, Shigaraki.TRAP, id, target.position(), dir, 2, target.getId(), 0);
         SubCommon.sound(level, target.position(), SoundEvents.ROOTED_DIRT_BREAK, 1.5f, 0.5f);
         SubCommon.sound(level, target.position(), SoundEvents.GRAVEL_BREAK, 1.5f, 0.6f);
-        Combat.hurt(caster, target, DAMAGE);
+        Combat.hurt(caster, target, DAMAGE * Shigaraki.DAMAGE_MULT);
         Stun.apply(target, HOLD + 4);
         Vec3 at = target.position();
         Tasks.addSystem(age -> {

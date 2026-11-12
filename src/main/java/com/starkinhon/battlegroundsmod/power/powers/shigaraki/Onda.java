@@ -71,7 +71,7 @@ public final class Onda {
                 }
                 pushed.add(t.getId());
                 double k = 1 - dist / PUSH_R;
-                Combat.hurt(caster, t, (float) (DAMAGE * (0.4 + 0.6 * k)));
+                Combat.hurt(caster, t, (float) (DAMAGE * Shigaraki.DAMAGE_MULT * (0.4 + 0.6 * k)));
                 Combat.push(t, to, 0.5 + 1.6 * k, 0.45 + 0.5 * k);
                 Stun.apply(t, dist < STUN_R ? 50 : 25);
             }

@@ -133,7 +133,7 @@ public final class Absorver {
                 victim.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, KEEP, 2, false, false, true));
                 victim.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, KEEP, 1, false, false, true));
                 SubNet.send(level, Shigaraki.ABSORB, victim.getId(), victim.position(), dir, 4, KEEP, element);
-                Combat.hurt(caster, victim, 12);
+                Combat.hurt(caster, victim, 12 * Shigaraki.DAMAGE_MULT);
             }
             if (age >= LENGTH) {
                 return true;
