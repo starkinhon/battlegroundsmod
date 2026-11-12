@@ -51,6 +51,7 @@ Efeito comum (do jogo ou do mod): `/effect give <alvo> <efeito> <segundos> <nív
 | `/devc tecla <tecla> [ticks]` | aperta de verdade (z x c v b, shift, alt, espaco, ataque, usar, frente, tras, letras, f1-f12); segurar = mais ticks |
 | `/devc camera lado\|frente\|tras <dist> [altura]` | segue e olha pro jogador, girada pelo rumo dele na hora |
 | `/devc camera cima <dist>` | de cima |
+| `/devc camera duelo <dist> [altura]` | de lado, centrada entre você e o mob/boss mais perto (cabem os dois) |
 | `/devc camera ponto <x> <y> <z>` | parada, olhando pro jogador |
 | `/devc camera fixa <x> <y> <z> <yaw> <pitch>` / `congelar` / `jogador` | fixa / fica onde está / volta ao normal |
 | `/devc vista primeira\|terceira\|frente` | câmera normal (F5) |
@@ -59,7 +60,7 @@ Efeito comum (do jogo ou do mod): `/effect give <alvo> <efeito> <segundos> <nív
 | `/devc forja <skill> [momento] [dist]` | toca a lista vfx da Forja da skill parada na frente |
 | `/devc hud on\|off`, `fov <n>`, `janela <w> <h>` | tela |
 | `/devc print <nome>` | PNG (subpasta vale: `luffy/z1`) |
-| `/devc gravar <nome> [cada N quadros]` / `parar` | um PNG por quadro: `f00000_t000123.png` (quadro e tick) |
+| `/devc gravar <nome> [cada N quadros de tela, não ticks]` / `parar` | um PNG por quadro: `f00000_t000123.png` (quadro e tick) |
 | `/devc marca <texto>` | marca no log |
 | `/devc fechar` / `sair` | fecha a tela aberta / fecha o jogo |
 

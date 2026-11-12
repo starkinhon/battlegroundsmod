@@ -19,7 +19,7 @@ espera 20
 espera 20
 
 # Câmera de lado e gravação
-/devc camera lado 9 1.5
+/devc camera duelo 9 1.5
 espera 10
 /devc gravar exemplo/gojo-azul 2
 /devc marca antes do Z

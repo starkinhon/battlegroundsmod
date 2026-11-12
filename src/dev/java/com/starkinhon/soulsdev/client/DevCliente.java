@@ -30,6 +30,7 @@ public final class DevCliente {
             "/devc roteiro <nome|caminho>  - roda soulsdev/roteiros/<nome>.txt (/devc roteiro parar)",
             "/devc tecla <tecla> [ticks]  - aperta de verdade: z x c v b, shift, alt, espaco, ataque, usar, frente...",
             "/devc camera lado|frente|tras <dist> [altura]  /  cima <dist>  - segue e olha pro jogador",
+            "/devc camera duelo <dist> [altura]  - de lado, centrada entre você e o mob/boss mais perto",
             "/devc camera ponto <x> <y> <z>  /  fixa <x> <y> <z> <yaw> <pitch>  /  congelar  /  jogador",
             "/devc vista primeira|terceira|frente  - câmera normal do Minecraft (F5)",
             "/devc olhar <yaw> <pitch>  - gira o jogador",
@@ -67,7 +68,7 @@ public final class DevCliente {
                         .then(Commands.argument("ticks", IntegerArgumentType.integer(1))
                                 .executes(c -> tecla(c, IntegerArgumentType.getInteger(c, "ticks"))))));
         LiteralArgumentBuilder<CommandSourceStack> camera = Commands.literal("camera");
-        for (String nome : List.of("lado", "frente", "tras")) {
+        for (String nome : List.of("lado", "frente", "tras", "duelo")) {
             camera.then(Commands.literal(nome)
                     .then(Commands.argument("dist", DoubleArgumentType.doubleArg(0.5, 200))
                             .executes(c -> camera(c, nome, DoubleArgumentType.getDouble(c, "dist"), 0))

@@ -17,6 +17,7 @@ import net.neoforged.neoforge.client.event.RenderHandEvent;
 // Modos (todos menos fixa olham pro peito do jogador e seguem ele):
 //   lado/frente/tras <dist> [altura]  - do lado direito / na frente / atrás, girado pelo rumo do jogador NA HORA do comando
 //   cima <dist>                       - de cima pra baixo
+//   duelo <dist> [altura]             - de lado, no meio entre você e o mob/boss mais perto (cabem os dois)
 //   ponto x y z                       - parada nesse ponto, olhando pro jogador
 //   fixa x y z yaw pitch              - parada, olhando pra onde mandar
 //   congelar                          - fica onde está agora (vira fixa)
@@ -26,7 +27,7 @@ public final class CameraDev {
     }
 
     private enum Modo {
-        LADO, FRENTE, TRAS, CIMA, PONTO, FIXA
+        LADO, FRENTE, TRAS, CIMA, PONTO, FIXA, DUELO
     }
 
     private static Modo modo;
@@ -52,6 +53,7 @@ public final class CameraDev {
             case "frente" -> Modo.FRENTE;
             case "tras" -> Modo.TRAS;
             case "cima" -> Modo.CIMA;
+            case "duelo" -> Modo.DUELO;
             default -> throw new IllegalArgumentException("câmera desconhecida: " + nome);
         };
         rumo = player == null ? 0 : player.getYRot();
@@ -113,9 +115,25 @@ public final class CameraDev {
             case CIMA -> new Pose(peito.add(0, dist, 0), rumo, 90f);
             case PONTO -> olhando(ponto, peito);
             case FIXA -> new Pose(ponto, fixaYaw, fixaPitch);
+            case DUELO -> duelo(player, peito, partialTick);
         };
         ultima = pose;
         return pose;
+    }
+
+    // De lado, olhando pro meio entre o jogador e o mob/boss mais perto, longe o bastante pra caber os dois.
+    private static Pose duelo(Player player, Vec3 peito, float partialTick) {
+        net.minecraft.world.entity.LivingEntity alvo = Mira.maisPerto();
+        if (alvo == null) {
+            return olhando(peito.add(new Vec3(-Mth.cos(rumo * Mth.DEG_TO_RAD), 0, -Mth.sin(rumo * Mth.DEG_TO_RAD)).scale(dist)), peito);
+        }
+        Vec3 outro = alvo.getPosition(partialTick).add(0, alvo.getBbHeight() * 0.6, 0);
+        Vec3 meio = peito.add(outro).scale(0.5);
+        Vec3 linha = outro.subtract(peito);
+        Vec3 lado = new Vec3(-linha.z, 0, linha.x);
+        lado = lado.lengthSqr() < 1.0E-6 ? new Vec3(1, 0, 0) : lado.normalize();
+        double longe = Math.max(dist, linha.length() * 0.9 + 3);
+        return olhando(meio.add(lado.scale(longe)).add(0, altura, 0), meio);
     }
 
     // Sem a mão flutuando na frente da câmera de teste.
