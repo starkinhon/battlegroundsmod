@@ -13,52 +13,114 @@
   function painters(v) {
     const S = v.seed;
     const shade = (base, q, s, lo = 0.84, hi = 1.12) => cel(base, 0.62 - 0.38 * q.ny + 0.1 * (n3(q.ax * 0.3, q.ay * 0.3, q.az * 0.3, s + S) - 0.5) + (q.f === 'top' ? 0.25 : 0) - (q.f === 'bottom' ? 0.3 : 0), lo, hi);
+    const SK = v.skin;
     const P = {};
-    // pele enrugada: dobras curvas na testa e na cabeça (linhas escuras finas que seguem a curva)
-    P.skin = q => shade(v.skin, q, 1);
-    P.head = q => {
-      let c = shade(v.skin, q, 2, 0.86, 1.08);
-      const wr = fr(q.ay * 0.55 + 0.25 * Math.sin(q.ax * 0.5 + q.az * 0.4));
-      if (q.f !== 'bottom' && wr < 0.1 && q.py < q.b.h * 0.55) c = mul(c, 0.82);
-      if (q.f !== 'north') return c;
-      const W = q.b.w, x = Math.min(W - 1, Math.floor(q.px)), y = Math.min(q.b.h - 1, Math.floor(q.py)), m = Math.min(x, W - 1 - x);
-      // olhão redondo: branco com pupila grande, sobrancelha nenhuma; nariz pequeno; boca larga de sorriso maldoso
-      if ((y === 5 || y === 6) && (m === 1 || m === 2 || m === 3)) c = (m === 3 || (y === 5 && m === 1)) ? [250, 248, 240] : [24, 20, 30];
-      if (y === 6 && m === 1) c = [250, 248, 240];
-      if (y === 7 && m === 4) c = mul(v.skin, 0.75);
-      if (y === 8 && m >= 2 && m <= 4) c = [90, 40, 50];
-      if (y === 8 && m === 1) c = mul(v.skin, 0.75);
+    P.skin = q => { let c = shade(SK, q, 1); if (fr(q.ay * 0.9 + 0.3 * Math.sin(q.ax)) < 0.12) c = mul(c, 0.86); return c; };
+    // cabeção: domo amarelo com dobras (rugas em arco que seguem a curva da cabeça) e uns pelinhos escuros espetados
+    const wrinkles = (q, c) => {
+      const arc = q.ay * 0.62 + 0.18 * Math.sin(q.ax * 0.45) + 0.12 * Math.sin(q.az * 0.5 + 1);
+      if (fr(arc) < 0.13) c = mul(c, 0.8);
+      if (n3(q.ax * 1.7, q.ay * 1.7, q.az * 1.7, 230 + S) > 0.8 && q.ay < -3) c = [90, 70, 40];   // pelinhos
       return c;
     };
-    P.ear = q => { if (q.f !== 'north' && q.f !== 'south') return null; const d = q.ax < 0 ? q.px / q.b.w : 1 - q.px / q.b.w, w = q.py / q.b.h; if (Math.abs(w - 0.55) > 0.5 * d + 0.03) return null; let c = shade(mul(v.skin, 0.95), q, 3); if (q.f === 'north' && Math.abs(w - 0.55) < 0.25 * d && d > 0.4) c = mul(c, 0.82); return c; };
-    P.cape = q => { let c = shade(v.cape, q, 4); if (q.f !== 'top' && fr(q.px * 0.5 + q.pz * 0.5) < 0.1) c = mul(c, 0.86); return c; };
-    P.collar = q => { if (q.f === 'top' || q.f === 'bottom') return null; let c = shade(mul(v.cape, 0.85), q, 5); if (q.py < 0.6) c = shade([220, 190, 90], q, 6); return c; };
-    P.robe = q => shade(v.robe, q, 7);
-    P.belt = q => { let c = shade([200, 170, 70], q, 8); if (q.f === 'north' && Math.abs(q.px - q.b.w / 2) < 0.8) c = [170, 40, 70]; return c; };
-    P.boot = q => shade([90, 60, 80], q, 9);
+    P.head = q => {
+      let c = wrinkles(q, shade(SK, q, 2, 0.84, 1.1));
+      if (q.f !== 'north') return c;
+      const x = Math.min(9, Math.floor(q.px)), y = Math.min(8, Math.floor(q.py)), m = Math.min(x, 9 - x);
+      // rosto 10x9 (só a metade de baixo; em cima é testa enrugada): pálpebra pesada caída, olho branco estreito
+      // com a íris verde virada pro lado, bochecha funda
+      if (y <= 2) return c;
+      c = shade(SK, q, 3, 0.86, 1.08);
+      if (y === 3 && m >= 1 && m <= 3) c = mul(SK, 0.5);                  // pálpebra pesada caída
+      if (y === 4 && m >= 1 && m <= 3) c = m === 2 ? [60, 170, 60] : [248, 246, 238];
+      if (y === 4 && m === 2 && x > 4) c = [248, 246, 238];
+      if (y === 4 && m === 3 && x > 4) c = [60, 170, 60];                  // os dois olham pro mesmo lado
+      if (y === 5 && m >= 1 && m <= 3) c = mul(SK, 0.78);                  // olheira
+      if (y >= 6 && m <= 1) c = mul(SK, 0.82);
+      return c;
+    };
+    // focinho: o nariz de camelo com as duas narinas e a boca fechada pra baixo
+    P.snout = q => {
+      let c = shade(SK, q, 4, 0.86, 1.1);
+      if (q.f === 'north') {
+        const u = q.px / q.b.w, w = q.py / q.b.h;
+        if (w < 0.45 && Math.abs(Math.abs(u - 0.5) - 0.17) < 0.09 && w > 0.15) c = [70, 50, 30];
+        if (Math.abs(w - 0.62) < 0.07 && Math.abs(u - 0.5) < 0.3) c = mul(SK, 0.55);
+        if (w > 0.66 && w < 0.85 && Math.abs(Math.abs(u - 0.5) - 0.3) < 0.07) c = mul(SK, 0.6);   // canto da boca caindo
+      }
+      return c;
+    };
+    P.whisker = q => shade(mix(SK, [255, 240, 160], 0.2), q, 5, 0.8, 1.15);
+    P.hair = q => shade([70, 54, 30], q, 6, 0.8, 1.2);
+    P.top = q => { let c = shade([34, 34, 40], q, 7, 0.8, 1.3); if (q.f === 'north' && q.py > q.b.h - 0.6) c = mul(c, 0.85); return c; };
+    // saia azul-clara comprida em sino, com pregas verticais, e o pano branco com o M na frente
+    P.skirt = q => {
+      let c = shade(v.robe, q, 8, 0.82, 1.12);
+      const pl = fr((q.f === 'north' || q.f === 'south' ? q.ax : q.az) * 0.45 + 0.15 * Math.sin(q.ay * 0.3));
+      if (q.f !== 'top' && q.f !== 'bottom' && pl < 0.15) c = mul(c, 0.84);
+      if (q.f !== 'top' && q.f !== 'bottom' && pl > 0.85) c = mul(c, 1.07);
+      if (q.f === 'top') c = mul(c, 0.82);
+      return c;
+    };
+    P.patch = q => {
+      if (q.f !== 'north') return shade([240, 240, 236], q, 9);
+      let c = shade([244, 244, 240], q, 9, 0.92, 1.04);
+      // M do Majin em pixel (5x4), com as pontas de baixo viradas pra fora
+      const x = Math.min(4, Math.floor(q.px)), y = Math.min(3, Math.floor(q.py));
+      const MM = ['X...X', 'XX.XX', 'X.X.X', 'X...X'];
+      if (MM[y][x] === 'X') c = [30, 30, 36];
+      return c;
+    };
+    // capa laranja: dobras largas que descem, borda de dentro mais escura
+    P.cape = q => {
+      let c = shade(v.cape, q, 10, 0.78, 1.15);
+      const fold = Math.sin((q.f === 'north' || q.f === 'south' ? q.ax : q.az) * 0.7 + q.ay * 0.08);
+      c = mul(c, 0.92 + 0.1 * fold);
+      if (q.f === 'north') c = mul(c, 0.8);
+      return c;
+    };
+    P.shoe = q => { let c = shade([110, 80, 60], q, 11); if (q.f === 'top' && q.pz < 1.2) c = mul(c, 0.85); return c; };
     return P;
   }
 
   function rigDef(P, v, low) {
     const arm = s => ({
-      name: s < 0 ? 'bracoD' : 'bracoE', pivot: [s * 3.4, -6.4, 0], boxes: [{ x: -1.1, y: -0.6, z: -1.1, w: 2.2, h: 3.6, d: 2.2, p: P.robe }],
-      kids: [{ name: s < 0 ? 'anteD' : 'anteE', pivot: [0, 3, 0], boxes: [{ x: -1, y: 0, z: -1, w: 2, h: 2.6, d: 2, p: P.robe }], kids: [{ name: s < 0 ? 'maoD' : 'maoE', pivot: [0, 2.6, 0], boxes: [{ x: -1, y: -0.2, z: -1, w: 2, h: 1.8, d: 2, p: P.skin }] }] }],
+      name: s < 0 ? 'bracoD' : 'bracoE', pivot: [s * 3.2, -4.4, -0.4], boxes: [{ x: -0.9, y: -0.6, z: -0.9, w: 1.8, h: 3.4, d: 1.8, p: P.skin }],
+      kids: [{ name: s < 0 ? 'anteD' : 'anteE', pivot: [0, 2.8, 0], boxes: [{ x: -0.8, y: 0, z: -0.8, w: 1.6, h: 2.8, d: 1.6, p: P.skin }], kids: [{ name: s < 0 ? 'maoD' : 'maoE', pivot: [0, 2.8, 0], boxes: [{ x: -0.9, y: -0.2, z: -0.9, w: 1.8, h: 1.6, d: 1.8, p: P.skin }] }] }],
     });
-    const leg = s => ({ name: s < 0 ? 'pernaD' : 'pernaE', pivot: [s * 1.4, 18, 0], boxes: [{ x: -1.3, y: 0, z: -1.3, w: 2.6, h: 4, d: 2.6, p: P.robe }, { x: -1.4, y: 4, z: -2.2, w: 2.8, h: 2, d: 3.6, p: P.boot }] });
+    // pé pontudo marrom saindo debaixo da saia
+    const leg = s => ({ name: s < 0 ? 'pernaD' : 'pernaE', pivot: [s * 1.6, 21, 0], boxes: [{ x: -1.1, y: 0, z: -1.1, w: 2.2, h: 1.6, d: 2.2, p: P.skin }, { x: -1.2, y: 1.4, z: -2.6, w: 2.4, h: 1.6, d: 3.8, p: P.shoe }, ...(low ? [] : [{ x: -0.6, y: 1.8, z: -3.8, w: 1.2, h: 1.0, d: 1.4, p: P.shoe }])] });
+    const hairs = low ? [] : [[-2.4, -1.5], [1.2, -2.6], [3.0, 0.8], [-3.2, 1.6], [0.2, 2.8], [-1, 0.2], [2.2, -0.6]].map(([x, z], i) => ({ x, y: -11.6 - (i % 3) * 0.3, z, w: 0.3, h: 1 + (i % 2) * 0.6, d: 0.3, p: P.hair }));
     return {
       name: 'raiz', pivot: [0, 0, 0], kids: [{
-        name: 'quadril', pivot: [0, 18, 0], boxes: [{ x: -2.8, y: -1.6, z: -1.8, w: 5.6, h: 1.8, d: 3.6, p: P.belt }], kids: [{
-          name: 'tronco', pivot: [0, -1.4, 0], boxes: [{ x: -2.8, y: -6.6, z: -1.8, w: 5.6, h: 6.6, d: 3.6, p: P.robe }], kids: [
+        name: 'quadril', pivot: [0, 13, 0], boxes: [
+          ...(low ? [[7.2, 6, -0.6, 3.6], [9.2, 7.6, 3, 3.8], [11, 9, 6.8, 3.8]] : Array.from({ length: 10 }, (_, i) => [7.2 + i * 0.42, 6 + i * 0.32, -0.6 + i * 1.05, 1.1 + (i === 9 ? 0.5 : 0)])).map(([w, d, y, h]) => ({ x: -w / 2, y, z: -d / 2 - 0.2, w, h, d, p: P.skirt })),
+          { x: -2.5, y: -0.4, z: -3.5, w: 5, h: 4, d: 0.5, p: P.patch },
+        ], kids: [{
+          name: 'tronco', pivot: [0, -0.4, 0], rot: [0.3, 0, 0], boxes: [{ x: -3.2, y: -5.2, z: -2.6, w: 6.4, h: 5.4, d: 5.2, p: P.top }], kids: [
             {
-              name: 'cabeca', pivot: [0, -6.6, -0.2], boxes: [{ x: -5, y: -10, z: -4.5, w: 10, h: 10, d: 9, p: P.head }, ...(low ? [] : [{ x: -4.2, y: -11, z: -3.6, w: 8.4, h: 1.2, d: 7.2, p: P.head }])],
-              kids: [
-                { name: 'orelhaD', pivot: [-4.8, -5.6, 0.6], rot: [0, 0.2, 0.3], boxes: [{ x: -6, y: -2.4, z: -0.3, w: 6, h: 4.4, d: 0.6, p: P.ear }] },
-                { name: 'orelhaE', pivot: [4.8, -5.6, 0.6], rot: [0, -0.2, -0.3], boxes: [{ x: 0, y: -2.4, z: -0.3, w: 6, h: 4.4, d: 0.6, p: P.ear }] },
+              name: 'cabeca', pivot: [0, -5.2, -1.2], rot: [-0.25, 0, 0], boxes: [
+                { x: -5, y: -8, z: -5, w: 10, h: 8, d: 9.4, p: P.head },
+                { x: -5.6, y: -7.4, z: -4.2, w: 11.2, h: 4.4, d: 7.8, p: P.head },
+                { x: -4.4, y: -9.6, z: -4.4, w: 8.8, h: 1.8, d: 8.8, p: P.head },
+                ...(low ? [] : [{ x: -3.4, y: -10.8, z: -3.4, w: 6.8, h: 1.4, d: 6.8, p: P.head }, { x: -4.4, y: -8.8, z: 4.2, w: 8.8, h: 6, d: 1.0, p: P.head }]),
+                { x: -1.6, y: -3.0, z: -6.4, w: 3.2, h: 3, d: 1.6, p: P.snout },
+                ...hairs,
               ],
+              kids: low ? [] : [-1, 1].map(s => ({
+                name: s < 0 ? 'bigodeD' : 'bigodeE', pivot: [s * 1.5, -1.4, -6.2], rot: [0, 0, s * 0.5], boxes: [{ x: -0.25, y: 0, z: -0.25, w: 0.5, h: 2.2, d: 0.5, p: P.whisker }],
+                kids: [{ name: s < 0 ? 'bigodeD2' : 'bigodeE2', pivot: [0, 2.1, 0], rot: [0.3, 0, -s * 0.9], boxes: [{ x: -0.22, y: 0, z: -0.22, w: 0.44, h: 2, d: 0.44, p: P.whisker }] }],
+              })),
             },
-            // capa: gola alta em volta da cabeça e o pano caindo atrás
-            ...(low ? [] : [{ name: 'gola', pivot: [0, -6.6, 0], boxes: [{ x: -4.6, y: -3, z: 1.4, w: 9.2, h: 3.6, d: 0.6, p: P.collar }, { x: -4.6, y: -3, z: -2.6, w: 0.6, h: 3.6, d: 4.4, p: P.collar }, { x: 4, y: -3, z: -2.6, w: 0.6, h: 3.6, d: 4.4, p: P.collar }] }]),
-            { name: 'capa', pivot: [0, -6, 2], boxes: [{ x: -4.2, y: 0, z: 0, w: 8.4, h: 11.6, d: 0.6, p: P.cape }] },
+            // capa: volume nos ombros (gola erguida em volta da cabeça) e o pano que cai atrás até o chão
+            { name: 'ombD', pivot: [-3.4, -5, 0], boxes: [{ x: -2.6, y: -1.6, z: -3, w: 3.6, h: 3.6, d: 6.4, p: P.cape }] },
+            { name: 'ombE', pivot: [3.4, -5, 0], boxes: [{ x: -1, y: -1.6, z: -3, w: 3.6, h: 3.6, d: 6.4, p: P.cape }] },
+            ...(low ? [] : [{ name: 'gola', pivot: [0, -5.6, 2.6], boxes: [{ x: -5, y: -3.6, z: -0.4, w: 10, h: 4, d: 1.2, p: P.cape }] }]),
+            {
+              name: 'capa', pivot: [0, -4.6, 3.4], rot: [-0.1, 0, 0], boxes: [{ x: -6.6, y: 0, z: 0, w: 13.2, h: 8, d: 0.9, p: P.cape }],
+              kids: [{ name: 'capa2', pivot: [0, 8, 0], rot: [-0.1, 0, 0], boxes: [{ x: -7.2, y: 0, z: -0.2, w: 14.4, h: 9.4, d: 0.9, p: P.cape }] }],
+            },
+            ...[-1, 1].map(s => ({ name: s < 0 ? 'abaD' : 'abaE', pivot: [s * 5.6, -4, -0.6], rot: [-0.15, 0, -s * 0.14], boxes: [{ x: -0.45, y: 0, z: -2.0, w: 0.9, h: 15.5, d: 5.6, p: P.cape }] })),
             arm(-1), arm(1),
           ],
         }],
@@ -149,11 +211,11 @@
     const r = (n, x, y, z) => { if (!P[n]) return; const o = P[n].obj.rotation; o.x += x; o.y += y; o.z += z; };
     const at = (n, off) => { obj.updateMatrixWorld(true); return P[n].obj.localToWorld(off.clone()); };
     const breath = loop([[0, 0], [0.45, 1], [0.999, 0]], t / 2.2);
-    const cape = (k = 1) => r('capa', 0.08 + 0.05 * Math.sin(t * 2.1) * k, 0, 0.03 * Math.sin(t * 1.7) * k);
+    const cape = (k = 1) => { r('capa', 0.04 * Math.sin(t * 2.1) * k, 0, 0.02 * Math.sin(t * 1.7) * k); r('capa2', 0.05 + 0.05 * Math.sin(t * 2.1 - 0.8) * k, 0, 0); r('bigodeD', 0, 0, 0.1 * Math.sin(t * 1.3)); r('bigodeE', 0, 0, -0.1 * Math.sin(t * 1.3 + 0.5)); };
 
     if (mode === 'parado') {
-      // mãos juntas na frente esfregando, risadinha (ombros sacudindo), cabeça balançando
-      r('bracoD', -0.7, 0.4, 0); r('anteD', -0.9, 0, 0); r('bracoE', -0.7, -0.4, 0); r('anteE', -0.9, 0, 0);
+      // corcunda, mãos juntas na frente esfregando por baixo da capa, olho de lado, risadinha
+      r('bracoD', -0.5, 0.4, 0); r('anteD', -1.0, 0, 0); r('bracoE', -0.5, -0.4, 0); r('anteE', -1.0, 0, 0);
       const giggle = seq([[0.5, 0], [0.55, 1], [0.85, 1], [0.9, 0]], fr(t / 3.5));
       r('tronco', -0.05 * breath + 0.05 * giggle * Math.sin(t * 40), 0, 0); r('cabeca', -0.1 * giggle, 0.2 * Math.sin(t * 0.7), 0.05 * Math.sin(t * 1.3));
       r('maoD', 0.2 * Math.sin(t * 8), 0, 0); r('maoE', -0.2 * Math.sin(t * 8), 0, 0);
@@ -224,22 +286,22 @@
   }
 
   window.MOBS = window.MOBS || [];
-  const vs = [{ seed: 2, skin: [222, 214, 150], cape: [70, 40, 90], robe: [120, 70, 120] }, { seed: 7, skin: [210, 200, 160], cape: [40, 40, 80], robe: [90, 60, 110] }];
+  const vs = [{ seed: 2, skin: [214, 184, 92], cape: [232, 104, 52], robe: [100, 186, 222] }, { seed: 7, skin: [206, 176, 88], cape: [210, 84, 44], robe: [86, 170, 210] }];
   const def = v => ({ def: rigDef(painters(v), v, false), low: rigDef(painters(v), v, true) });
   window.MOBS.push({
     id: 'babidi', nome: 'Babidi', bioma: 'Vilões do mundo', tier: 'Mago · chefe da nave',
-    variants: vs.map((v, i) => ({ nome: ['Capa roxa', 'Capa azul'][i], v, ...def(v) })),
+    variants: vs.map((v, i) => ({ nome: ['Babidi', 'Babidi (capa gasta)'][i], v, ...def(v) })),
     randomVariant: () => { const v = { ...vs[Math.floor(Math.random() * 2)], seed: Math.floor(Math.random() * 1e5) }; return { nome: 'Sorteado', v, ...def(v) }; },
     anim, modes: [['parado', 'Parado'], ['andar', 'Andar'], ['paparapa', 'Paparapa'], ['controle', 'Controle Majin']],
     cam: 4.5, lookY: 0.9, lookZ: { paparapa: -3, controle: -2.5 }, camFar: { paparapa: 9, controle: 8 }, camYaw: { paparapa: -1.15, controle: -1.0 }, refX: 2.2,
     info: {
-      'Tamanho': '1,5 bloco (metade é cabeça)',
+      'Tamanho': '1,5 bloco, corcunda (o cabeção é quase metade)',
       'Vida': '60 (fraco no corpo). Chefe do último andar da nave: luta escondido atrás dos que ele controla e se teleporta quando você chega perto.',
       'Jeito': 'Só na nave dele. Antes da luta ele já marcou 2 ou 3 mobs do andar com o M (eles lutam do lado dele). Vencer o Yakon e a dupla Spopovich/Yamu abre a porta dele.',
       'Paparapa': 'Braços pra cima e o círculo de magia acende em volta de você: 1,6 s pra sair. Se ficar, incha e explode por dentro (dano alto, em pacotes no jogo).',
       'Controle Majin': 'O fio escuro procura a sua cabeça (dá pra quebrar a linha de visão). Em mob: vira aliado dele com o M na testa. Em jogador: 4 s com o M aceso, controles trocados e o golpe acerta os seus amigos.',
       'Solta': 'Livro de magia do Babidi (ensina Paparapa), capa; raro: Alma do Babidi. Vencer ele no fim da nave libera o caminho do Majin Boo.',
-      'Variações': 'Cor da capa e da roupa.',
+      'Visual': 'Do desenho: cabeção amarelo enrugado com pelinhos, olho verde de lado, nariz de camelo, bigodinho caindo, regata preta, saia azul-clara com o M e capa laranja.',
     },
   });
 })();
