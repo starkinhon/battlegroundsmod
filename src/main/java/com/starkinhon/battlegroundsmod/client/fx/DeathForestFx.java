@@ -90,7 +90,7 @@ public final class DeathForestFx {
         if (roofed(mc.level, p)) {
             // indoors at once, not at the next search (the shafts are drawn over the walls)
             SHAFTS.clear();
-        } else if (now - shaftsAt > 40 || SHAFTS.isEmpty() && now - shaftsAt > 5) {
+        } else if (now - shaftsAt > 40) {
             findShafts(mc.level, p);
             shaftsAt = now;
         }
