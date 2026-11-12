@@ -83,15 +83,16 @@ public final class Absorver {
             if (age >= LOOK && age < DASH_END) {
                 // the dash (preview: 0.4 to 0.65 s, ease out) to 1.9 blocks short
                 Vec3 goal = new Vec3(victim.getX(), caster.getY(), victim.getZ()).subtract(dir.scale(1.9));
-                float k = ease((age + 1 - LOOK) / (float) (DASH_END - LOOK));
-                Vec3 want = from.add(goal.subtract(from).scale(k));
-                Vec3 step = want.subtract(caster.position());
+                float k0 = ease((age - LOOK) / (float) (DASH_END - LOOK)), k = ease((age + 1 - LOOK) / (float) (DASH_END - LOOK));
+                // the curve's own step (a player's server position is a tick behind their client: want - position overshot)
+                Vec3 step = goal.subtract(from).scale(k - k0);
                 caster.setDeltaMovement(step.x, Math.min(caster.getDeltaMovement().y, 0.05), step.z);
                 caster.hurtMarked = true;
             }
             if (age == DASH_END) {
                 caster.setDeltaMovement(Vec3.ZERO);
                 caster.hurtMarked = true;
+                Shigaraki.landOn(caster, new Vec3(victim.getX(), caster.getY(), victim.getZ()).subtract(dir.scale(1.9)));
                 if (victim.distanceTo(caster) > 4.5) {
                     s.busyUntil = 0;
                     SubCommon.warn(caster, "shigaraki.b_miss");

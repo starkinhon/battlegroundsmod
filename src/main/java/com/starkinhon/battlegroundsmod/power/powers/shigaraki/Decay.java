@@ -1,5 +1,6 @@
 package com.starkinhon.battlegroundsmod.power.powers.shigaraki;
 
+import java.util.ArrayDeque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -83,6 +84,9 @@ public final class Decay {
             if (mode == GROUND && ground && y < py - 1) {
                 continue; // the ground goes only two layers deep (the preview's world)
             }
+            if (mode == STRUCTURE && !ground) {
+                continue; // what stands above the ground: only what the seed's own building holds (below)
+            }
             float limit = mode == GROUND ? (ground ? maxR : Math.min(maxR, 2.5f)) : (ground ? Math.min(maxR, 2.5f) : maxR);
             if (Math.abs(dy) > limit + 1.6f) {
                 continue;
@@ -108,6 +112,50 @@ public final class Decay {
                         continue;
                     }
                     out.accept(new Hit(at.immutable(), st, delay));
+                }
+            }
+        }
+        if (mode == STRUCTURE) {
+            structure(level, p, speed, maxR, gy, out);
+        }
+    }
+
+    // A STRUCTURE seed above the ground: the blocks joined to the one it hit (the preview's groups: a tentacle on one
+    // building never takes the next one across the street), within the same reach and with the same delays as above.
+    private static void structure(BlockGetter level, Vec3 p, float speed, float maxR, int gy, Consumer<Hit> out) {
+        float lim = maxR + 1.6f;
+        BlockPos start = BlockPos.containing(p);
+        if (start.getY() < gy) {
+            return;
+        }
+        Set<Long> seen = new HashSet<>();
+        ArrayDeque<BlockPos> open = new ArrayDeque<>();
+        seen.add(start.asLong());
+        open.add(start);
+        while (!open.isEmpty()) {
+            BlockPos at = open.poll();
+            BlockState st = level.getBlockState(at);
+            if (!decays(level, at, st)) {
+                continue;
+            }
+            float cx = at.getX() + 0.5f, cy = at.getY() + 0.5f, cz = at.getZ() + 0.5f;
+            float d = (float) Math.sqrt((cx - p.x) * (cx - p.x) + (cy - p.y) * (cy - p.y) + (cz - p.z) * (cz - p.z));
+            float delay = DecayNoise.delay(cx, cy, cz, d, speed, maxR);
+            if (delay >= 0) {
+                out.accept(new Hit(at, st, delay));
+            }
+            for (int dx = -1; dx <= 1; dx++) {
+                for (int dy = -1; dy <= 1; dy++) {
+                    for (int dz = -1; dz <= 1; dz++) {
+                        BlockPos n = at.offset(dx, dy, dz);
+                        if (n.getY() < gy || !seen.add(n.asLong())) {
+                            continue;
+                        }
+                        float nx = n.getX() + 0.5f - (float) p.x, ny = n.getY() + 0.5f - (float) p.y, nz = n.getZ() + 0.5f - (float) p.z;
+                        if (nx * nx + ny * ny + nz * nz <= lim * lim) {
+                            open.add(n);
+                        }
+                    }
                 }
             }
         }
@@ -211,7 +259,10 @@ public final class Decay {
                 return true;
             }
             boolean wasAlive = !target.isDeadOrDying();
+            // the drying body stays where it was touched (the preview): a hurt every tick would knock it away
+            Vec3 v = target.getDeltaMovement();
             Combat.hurt(caster, target, per);
+            target.setDeltaMovement(v);
             if (wasAlive && target.isDeadOrDying()) {
                 // it went to dust: the clients draw it crumbling from the touch out (never the normal death)
                 CustomDeath.mark(target);

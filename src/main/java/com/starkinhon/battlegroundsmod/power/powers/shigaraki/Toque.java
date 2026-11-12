@@ -66,10 +66,9 @@ public final class Toque {
             if (age < CONTACT) {
                 // the dash: ease out over 0.3 s (preview easeOut3), as a velocity so walls still stop him
                 float k0 = ease((age - WIND) / (float) (CONTACT - WIND)), k1 = ease((age + 1 - WIND) / (float) (CONTACT - WIND));
-                Vec3 goal = (hit && Combat.isTarget(target, caster)) ? new Vec3(target.getX(), from.y, target.getZ())
-                        .subtract(Shigaraki.flatTo(caster, target.position()).scale(0.72)) : to;
-                Vec3 want = from.add(goal.subtract(from).scale(k1));
-                Vec3 step = want.subtract(caster.position());
+                // the curve's own step to the spot fixed at the press (the preview), not want - position: a player's position on
+                // the server is a tick behind their client, so that overshot past the target, shoved it and missed the grab
+                Vec3 step = to.subtract(from).scale(k1 - k0);
                 caster.setDeltaMovement(step.x, Math.min(caster.getDeltaMovement().y, 0.05), step.z);
                 caster.hurtMarked = true;
                 caster.resetFallDistance();
@@ -81,6 +80,7 @@ public final class Toque {
             if (age == CONTACT) {
                 caster.setDeltaMovement(Vec3.ZERO);
                 caster.hurtMarked = true;
+                Shigaraki.landOn(caster, to);
                 if (hit && Combat.isTarget(target, caster) && target.distanceTo(caster) < 3.2) {
                     grab(caster, target, level, dir);
                 } else {

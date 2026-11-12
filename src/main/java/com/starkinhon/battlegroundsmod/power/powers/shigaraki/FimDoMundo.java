@@ -35,7 +35,7 @@ public final class FimDoMundo {
     static final float SPEED = 24, REACH = 150, CLIMB = 12;
     private static final int TOUCH = 30, LENGTH = 230, UP = 192;
     private static final float DAMAGE = 160, BODY_SPEED = 3f;
-    private static final double SAFE_R = 2.2;
+    private static final double SAFE_R = 1.6;
 
     // Every column offset within REACH, closest first (built once).
     private static int[] OFFSETS;

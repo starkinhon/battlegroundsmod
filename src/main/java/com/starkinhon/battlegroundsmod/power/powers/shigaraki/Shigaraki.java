@@ -10,6 +10,7 @@ import com.starkinhon.battlegroundsmod.power.Power;
 import com.starkinhon.battlegroundsmod.power.PowerData;
 
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
@@ -82,6 +83,22 @@ public final class Shigaraki {
         Vec3 d = to.subtract(from.position());
         Vec3 flat = new Vec3(d.x, 0, d.z);
         return flat.lengthSqr() < 1.0E-4 ? Combat.flatLook(from) : flat.normalize();
+    }
+
+    // The end of a dash, exact: a player moves on their own client, where the dash's velocities drift on (friction) between
+    // the server's ticks or get dropped (two in one client tick), so they end blocks short or past the goal; put them on it,
+    // unless a wall stands between (the dash stops at walls).
+    static void landOn(LivingEntity caster, Vec3 goal) {
+        if (caster instanceof ServerPlayer p) {
+            double dx = goal.x - p.getX(), dz = goal.z - p.getZ();
+            int n = (int) Math.ceil(Math.sqrt(dx * dx + dz * dz) / 0.5);
+            for (int i = 1; i <= n; i++) {
+                if (!p.level().noCollision(p, p.getBoundingBox().move(dx * i / n, 0, dz * i / n))) {
+                    return;
+                }
+            }
+            p.connection.teleport(goal.x, p.getY(), goal.z, p.getYRot(), p.getXRot());
+        }
     }
 
     static PowerData data(LivingEntity caster) {
