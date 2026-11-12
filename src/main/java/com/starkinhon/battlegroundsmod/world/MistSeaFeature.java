@@ -78,9 +78,9 @@ public final class MistSeaFeature extends Feature<NoneFeatureConfiguration> {
                     if (state == null) {
                         continue;
                     }
-                } else if (t == SeaGen.ROPE) {
-                    boolean alongX = Math.abs(o.b().x() - o.a().x()) >= Math.abs(o.b().z() - o.a().z());
-                    state = ModBlocks.ROPE.get().defaultBlockState().setValue(ChainBlock.AXIS, alongX ? Direction.Axis.X : Direction.Axis.Z);
+                } else if (t == SeaGen.ROPE || t == SeaGen.ROPE_Z || t == SeaGen.ROPE_Y) {
+                    state = ModBlocks.ROPE.get().defaultBlockState().setValue(ChainBlock.AXIS,
+                            t == SeaGen.ROPE ? Direction.Axis.X : t == SeaGen.ROPE_Z ? Direction.Axis.Z : Direction.Axis.Y);
                 } else {
                     state = block(t);
                 }
