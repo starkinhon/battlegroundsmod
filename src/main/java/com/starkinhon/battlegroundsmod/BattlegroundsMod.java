@@ -57,13 +57,18 @@ public class BattlegroundsMod {
         com.starkinhon.battlegroundsmod.power.powers.kokushibo.MoonImpactRule.init();
         PowerEvents.register();
         com.starkinhon.battlegroundsmod.power.Progression.register();
+        com.starkinhon.battlegroundsmod.power.Achievements.register();
         com.starkinhon.battlegroundsmod.challenge.ChallengeArenas.register();
         com.starkinhon.battlegroundsmod.challenge.Universes.register();
         com.starkinhon.battlegroundsmod.universe.DragonBallWorld.register();
+        com.starkinhon.battlegroundsmod.universe.shenlong.ShenlongServer.register();
+        com.starkinhon.battlegroundsmod.universe.DbQuests.register();
         com.starkinhon.battlegroundsmod.universe.Flight.register();
         com.starkinhon.battlegroundsmod.universe.NarutoWorld.register();
         com.starkinhon.battlegroundsmod.universe.SageMode.register();
         com.starkinhon.battlegroundsmod.universe.UniverseSpawns.register();
+        com.starkinhon.battlegroundsmod.universe.UniverseBiomes.register();
+        com.starkinhon.battlegroundsmod.universe.RoamingSouls.register();
         com.starkinhon.battlegroundsmod.world.MapBorder.register();
         com.starkinhon.battlegroundsmod.world.MapPlaces.register();
         com.starkinhon.battlegroundsmod.world.TimeChamber.register();
@@ -72,6 +77,7 @@ public class BattlegroundsMod {
         com.starkinhon.battlegroundsmod.universe.BleachWorld.register();
         com.starkinhon.battlegroundsmod.universe.DemonSlayerWorld.register();
         FightRod.register();
+        com.starkinhon.battlegroundsmod.power.powers.makima.MakimaEvents.register();
         SoulCommand.addSubcommand(BossCommand::bossbar);
         SoulCommand.addSubcommand(com.starkinhon.battlegroundsmod.combat.DamageDebug::command);
         SoulCommand.addSubcommand(BossCommand::boss);
@@ -88,5 +94,7 @@ public class BattlegroundsMod {
 
     private void commonSetup(FMLCommonSetupEvent event) {
         LOGGER.info("Battlegrounds Mod carregado!");
+        event.enqueueWork(com.starkinhon.battlegroundsmod.world.DragonRegion::register);
+        event.enqueueWork(com.starkinhon.battlegroundsmod.world.NarutoRegion::register);
     }
 }

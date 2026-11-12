@@ -41,7 +41,7 @@ public final class FxWorld {
 
     static MultiBufferSource.BufferSource buffers() {
         if (buffers == null) {
-            for (RenderType type : List.of(FxRenderTypes.VFX_ALPHA, FxRenderTypes.VFX_ADD, FxRenderTypes.FLAT_ALPHA, FxRenderTypes.FLAT_ADD,
+            for (RenderType type : List.of(FxRenderTypes.SOLID, FxRenderTypes.VFX_ALPHA, FxRenderTypes.VFX_ADD, FxRenderTypes.FLAT_ALPHA, FxRenderTypes.FLAT_ADD,
                     FxRenderTypes.SUS_DEPTH, FxRenderTypes.SUS_COLOR, FxRenderTypes.SUS_GLOW, FxRenderTypes.SUS_FLAT,
                     MoonSlashRenderer.Types.BODY, MoonSlashRenderer.Types.GLOW, MoonFormsRenderer.Types.BODY)) {
                 FIXED.put(type, new ByteBufferBuilder(type.bufferSize()));
@@ -144,9 +144,9 @@ public final class FxWorld {
         FxPost.newFrame();
         ScreenFx.capture(event);
         boolean world = !PIECES.isEmpty() || MeteorRenderer.hasTrails() || Aura.active() || KatonBallRenderer.active() || AshDeath.hasSparks() || SoulCeremonyFx.active()
-                || SpaceScene.active() || EsferaRenderer.active() || HakaiRenderer.active() || EnergyRenderer.active() || BlackBoxRenderer.active() || AzulRenderer.active() || VermelhoRenderer.active() || BlackFlashRenderer.active() || RoxoRenderer.active() || AizenFx.active() || SwordFx.active() || MoonSlashRenderer.active() || MoonFormsRenderer.active() || PunchFxRenderer.active() || SubFx.active()
+                || SpaceScene.active() || EsferaRenderer.active() || HakaiRenderer.active() || EnergyRenderer.active() || BlackBoxRenderer.active() || AzulRenderer.active() || VermelhoRenderer.active() || BlackFlashRenderer.active() || RoxoRenderer.active() || AizenFx.active() || SwordFx.active() || MoonSlashRenderer.active() || MoonFormsRenderer.active() || PunchFxRenderer.active() || SubFx.active() || MakimaFx.active()
                 || SphereRenderer.active() || SusanooArm.active() || DomainScene.active() || VoidFlashScene.active() || FugaRenderer.active() || DismantleRenderer.active() || SukunaCutsRenderer.active() || SukunaDomainScene.active()
-                || ClivarRenderer.active() || CravadaRenderer.active();
+                || ClivarRenderer.active() || CravadaRenderer.active() || FlightFx.active() || OpmFx.active() || com.starkinhon.battlegroundsmod.client.fx.shig.ShigFx.active();
         if (!world && !ScreenFx.needsScene()) {
             return;
         }
@@ -216,6 +216,7 @@ public final class FxWorld {
             MeteorRenderer.emitTrails(camera, now, partial);
             KatonBallRenderer.render(camera, now, partial);
             Aura.render(event.getCamera(), now, partial);
+            FlightFx.render(camera, now, partial);
             AshDeath.sparks(camera, now, partial);
             SoulCeremonyFx.render(camera, now, partial);
             EsferaRenderer.render(camera, now, partial);
@@ -232,11 +233,15 @@ public final class FxWorld {
             MoonFormsRenderer.render(source, camera, now, partial);
             PunchFxRenderer.render(camera, now, partial);
             SubFx.render(camera, now, partial);
+            MakimaFx.render(source, camera, now, partial);
             SphereRenderer.render(camera, now, partial);
             SusanooArm.render(source, flat, camera, now, partial);
             DomainScene.render(camera, now, partial);
+            // Saitama: the ground's real blocks, the slab, the afterimages; his pieces queued for the passes below.
+            OpmFx.render(camera, now, partial);
         }
         if (flat) {
+            source.endBatch(FxRenderTypes.SOLID);
             source.endBatch(FxRenderTypes.SUS_FLAT);
             source.endBatch(MoonSlashRenderer.Types.BODY);
             source.endBatch(MoonFormsRenderer.Types.BODY);
@@ -244,15 +249,26 @@ public final class FxWorld {
             source.endBatch(FxRenderTypes.FLAT_ADD);
             endDecals(source);
             KiMesh.flush(false);
+            OpmMesh.flush(false);
+            LuffyMesh.flush(false);
+            KakashiSusanoo.flush(camera, now, false);
+            GaaraSand.flush(camera, now, false);
+            BleachMesh.flush(false);
         } else {
             // The Susanoo arm's depth goes in first, so its color only lands on the front surface.
             source.endBatch(FxRenderTypes.SUS_DEPTH);
             source.endBatch(FxRenderTypes.SUS_COLOR);
+            source.endBatch(FxRenderTypes.SOLID);
             source.endBatch(FxRenderTypes.VFX_ALPHA);
             source.endBatch(MoonSlashRenderer.Types.BODY);
             source.endBatch(MoonFormsRenderer.Types.BODY);
             endDecals(source);
             KiMesh.flush(false);
+            OpmMesh.flush(false);
+            LuffyMesh.flush(false);
+            KakashiSusanoo.flush(camera, now, false);
+            GaaraSand.flush(camera, now, false);
+            BleachMesh.flush(false);
             boolean outline = !space && Aura.drawMask(event, camera, partial);
             FxPost.beginGlow();
             if (outline) {
@@ -262,13 +278,21 @@ public final class FxWorld {
             source.endBatch(FxRenderTypes.VFX_ADD);
             source.endBatch(MoonSlashRenderer.Types.GLOW);
             KiMesh.flush(true);
+            OpmMesh.flush(true);
+            LuffyMesh.flush(true);
+            KakashiSusanoo.flush(camera, now, true);
+            BleachMesh.flush(true);
             FxPost.endGlow(FxConfig.on(FxConfig.BLOOM));
         }
+        // Makima's rats' vision: the red ghosts of whoever is near, over everything.
+        MakimaFx.ghosts(event, camera, partial);
         // Piccolo's stretched arm with its owner's skin.
         DbFx.drawArms();
         if (!space) {
             // The Mafuba jar's 魔封波 seal, written in the kanji font after the effects.
             DbFx.drawTags();
+            // Inumaki's words in the air, in the same font.
+            JjFx.drawWords();
         }
         if (!space && HakaiRenderer.active()) {
             // Dark lines on top of the glow, so the light doesn't wash them out.
@@ -340,6 +364,8 @@ public final class FxWorld {
             SukunaCutsRenderer.render(camera);
             ClivarRenderer.render(camera);
             CravadaRenderer.render(camera);
+            // Shigaraki's kit: the Decadência, the hands, the scream, the power, the dust (client/fx/shig).
+            com.starkinhon.battlegroundsmod.client.fx.shig.ShigFx.render(camera, partial);
         }
         if (!space) {
             // Sukuna's Fuga, over everything else: its fire is its own light in the dark.
@@ -354,6 +380,9 @@ public final class FxWorld {
         }
 
         KiMesh.endFrame();
+        OpmMesh.endFrame();
+        LuffyMesh.endFrame();
+        BleachMesh.endFrame();
         RenderSystem.restoreProjectionMatrix();
         modelView.popMatrix();
         RenderSystem.applyModelViewMatrix();

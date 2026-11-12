@@ -233,6 +233,11 @@ public final class SkillAnimations {
         return keyframed == null ? 0 : keyframed.startTick();
     }
 
+    // Whether a move, a keyframe animation or the guard poses this entity right now (the flight pose waits for it).
+    public static boolean busy(Entity entity) {
+        return PLAYING.containsKey(entity.getId()) || KEYFRAMED.containsKey(entity.getId()) || GUARDING.contains(entity.getId());
+    }
+
     // How the main hand item is turned about the wrist right now (null: as vanilla holds it). Set while the body is posed.
     public static float[] wrist(Entity entity) {
         return WRIST.get(entity.getId());

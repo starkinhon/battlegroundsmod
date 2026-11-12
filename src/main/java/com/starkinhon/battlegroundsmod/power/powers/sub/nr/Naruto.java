@@ -1,7 +1,11 @@
 package com.starkinhon.battlegroundsmod.power.powers.sub.nr;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 import com.starkinhon.battlegroundsmod.ModEntities;
 import com.starkinhon.battlegroundsmod.combat.Combat;
@@ -34,9 +38,17 @@ import net.minecraft.world.phys.Vec3;
 // V Sage Mode: he sits and meditates 4 s (a hit breaks it), nature energy flows in, orange around the eyes. In the mode
 //   (30 s) every punch reaches 2 blocks farther and hits harder (Kawazu Kumite). V again: the Rasenshuriken, thrown; at the
 //   target a giant sphere of wind needles tears up the ground. It ends the mode.
+// B Henge Armadilha (forja/naruto-kit, Stark 2026-11-11): a clone goes out in a puff where you aim (16 blocks) and
+//   turns into a rock. Up to 45 s; when an enemy passes by it, it bursts into smoke, Naruto comes out behind them, molds
+//   a Rasengan in a blink and drives it in (the Z's grind and launch). Two armed at most.
+// Shift+B: the clone turns into a Fuuma Shuriken and you throw it. If the enemy dodges, it turns into Naruto behind
+//   them and hits the Rasengan (the trick against Zabuza); if it hits, the Rasengan comes right after the cut.
 public final class Naruto {
     private static final int SAGE_TICKS = 600;
     private static final int CLONE_TICKS = 400;
+    private static final int TRAP_TICKS = 900;
+    private static final int TRAP_MAX = 2;
+    private static final Map<UUID, Integer> TRAPS = new HashMap<>();
 
     private Naruto() {
     }
@@ -46,7 +58,9 @@ public final class Naruto {
                 new Ability(160, 0, Naruto::rasengan),
                 new Ability(300, 0, Naruto::kageBunshin),
                 new Ability(260, 0, Naruto::rendan),
-                new Ability(900, 0, Naruto::sage)));
+                new Ability(900, 0, Naruto::sage),
+                new Ability(360, 0, Naruto::henge)),
+                Arrays.asList(null, null, null, null, new Ability(360, 0, Naruto::fuuma)));
     }
 
     // The clones that fight (not the Rendan's puppets) of this caster.
@@ -126,8 +140,8 @@ public final class Naruto {
                 }
                 Vec3 ball = hand.add(look.scale(0.18)).add(0, 0.05, 0);
                 SubNet.send(level, SubNet.RASENGAN, id, ball, Vec3.ZERO, r, 1, 0);
-                // Runs 14 blocks with the sphere in front.
-                Vec3 run = SubCommon.flat(look).scale(1.0);
+                // Runs with the sphere in front.
+                Vec3 run = SubCommon.flat(look).scale(1.3);   // ~18 blocks (Stark, 2026-11-11: reach to fight bosses)
                 caster.setDeltaMovement(run.x, Math.min(caster.getDeltaMovement().y, 0.05), run.z);
                 caster.hurtMarked = true;
                 caster.fallDistance = 0;
@@ -158,30 +172,34 @@ public final class Naruto {
                 }
                 return false;
             }
-            LivingEntity t = hit[0];
-            int a = age - contact[0];
-            Vec3 cp = Combat.center(t).add(look.scale(-t.getBbWidth() * 0.5));
-            if (a < 10) {
-                // Grinds against the chest: several small hits.
-                SubNet.send(level, SubNet.RASENGAN, id, cp, look, r + 0.12f * SubCommon.smooth(a / 4f), 1, 0);
-                if (a % 2 == 0) {
-                    Combat.hurtMagic(caster, t, big ? 2.6f : 1.8f);
-                    SubCommon.sound(level, cp, SoundEvents.GRINDSTONE_USE, 1.2f, 1.4f);
-                }
-                return false;
-            }
-            SubNet.send(level, SubNet.RASENGAN, id, cp, Vec3.ZERO, 0, 0, 1);
-            Freeze.free(t);
-            Combat.hurtMagic(caster, t, big ? 13 : 9);
-            Stun.apply(t, 30);
-            Combat.push(t, look, big ? 2.0 : 1.6, 0.6);
-            DbCommon.hit(level, cp, 1.6f, Db.KAME);
-            DbCommon.screen(level, cp, 18);
-            SubCommon.sound(level, cp, SoundEvents.GENERIC_EXPLODE.value(), 1.2f, 1.5f);
-            SubCommon.sound(level, cp, SoundEvents.BREEZE_CHARGE, 1.5f, 0.6f);
-            drill(level, t, 32);
-            return true;
+            return grind(caster, hit[0], level, id, big, r, look, age - contact[0]);
         });
+        return true;
+    }
+
+    // The Rasengan grinding into t (a = ticks since the contact): small hits for half a second, then the blow that
+    // launches them spinning like a drill. True when it is over. The stun holds a boss too (>= 25 ticks after its half).
+    static boolean grind(LivingEntity owner, LivingEntity t, ServerLevel level, int id, boolean big, float r, Vec3 look, int a) {
+        Vec3 cp = Combat.center(t).add(look.scale(-t.getBbWidth() * 0.5));
+        if (a < 10) {
+            // Grinds against the chest: several small hits.
+            SubNet.send(level, SubNet.RASENGAN, id, cp, look, r + 0.12f * SubCommon.smooth(a / 4f), 1, 0);
+            if (a % 2 == 0) {
+                Combat.hurtMagic(owner, t, big ? 2.6f : 1.8f);
+                SubCommon.sound(level, cp, SoundEvents.GRINDSTONE_USE, 1.2f, 1.4f);
+            }
+            return false;
+        }
+        SubNet.send(level, SubNet.RASENGAN, id, cp, Vec3.ZERO, 0, 0, 1);
+        Freeze.free(t);
+        Combat.hurtMagic(owner, t, big ? 13 : 9);
+        Stun.apply(t, 52);
+        Combat.push(t, look, big ? 2.0 : 1.6, 0.6);
+        DbCommon.hit(level, cp, 1.6f, Db.KAME);
+        DbCommon.screen(level, cp, 18);
+        SubCommon.sound(level, cp, SoundEvents.GENERIC_EXPLODE.value(), 1.2f, 1.5f);
+        SubCommon.sound(level, cp, SoundEvents.BREEZE_CHARGE, 1.5f, 0.6f);
+        drill(level, t, 32);
         return true;
     }
 
@@ -296,7 +314,7 @@ public final class Naruto {
     // ---------- C: Uzumaki Naruto Rendan ----------
 
     private static boolean rendan(LivingEntity caster, ServerLevel level) {
-        LivingEntity target = NrCommon.target(caster, 6);
+        LivingEntity target = NrCommon.target(caster, 10);
         if (target == null) {
             SubCommon.warn(caster, "naruto.rendan_no_target");
             return false;
@@ -349,6 +367,15 @@ public final class Naruto {
                 int i = age - 10;
                 Vec3 at = SubCommon.ground(level, base.add(side.scale(offs[i][0])).add(face.scale(offs[i][1])));
                 puppets[i] = spawnClone(caster, level, at, NrCommon.yawTo(at, base), 90, true);
+                if (puppets[i] != null) {
+                    // Each clone springs up off its own kick and lands again (no stiff standing: Stark, 2026-11-11).
+                    int k0 = kicks[i] - age;
+                    double hop = 1.0 + 0.35 * i;
+                    Freeze.hold(puppets[i], land + 10 - age, b -> {
+                        double u = (b - k0 + 2) / 13.0;
+                        return at.add(0, u > 0 && u < 1 ? Math.sin(u * Math.PI) * hop : 0, 0);
+                    });
+                }
             }
             for (int i = 0; i < 4; i++) {
                 if (age == kicks[i] - 3 && puppets[i] != null) {
@@ -372,7 +399,7 @@ public final class Naruto {
             }
             if (age == land) {
                 Combat.hurt(caster, target, 11);
-                Stun.apply(target, 34);
+                Stun.apply(target, 52);
                 SubNet.send(level, SubNet.DUST, 0, base, Vec3.ZERO, 1.3f, 0, 0);
                 DbCommon.screen(level, base, 20);
                 SubCommon.sound(level, base, SoundEvents.GENERIC_EXPLODE.value(), 1f, 1.3f);
@@ -564,6 +591,173 @@ public final class Naruto {
                     Combat.pushFrom(t, c, 1.2, 0.5);
                 }
                 DbCommon.screen(level, c, 18);
+                return true;
+            }
+            return false;
+        });
+    }
+
+    // ---------- B: Henge Armadilha ----------
+
+    private static void trapGone(LivingEntity caster) {
+        TRAPS.computeIfPresent(caster.getUUID(), (k, n) -> n > 1 ? n - 1 : null);
+    }
+
+    private static boolean henge(LivingEntity caster, ServerLevel level) {
+        if (TRAPS.getOrDefault(caster.getUUID(), 0) >= TRAP_MAX) {
+            SubCommon.warn(caster, "naruto.henge_full");
+            return false;
+        }
+        SubCommon.Guard guard = SubCommon.guard(caster);
+        Vec3 spot = SubCommon.ground(level, SubCommon.aimPoint(caster, 16));
+        int id = SubNet.newId();
+        SubCommon.pose(caster, "nr.selo_cruz");
+        SubCommon.busy(caster, 8);
+        TRAPS.merge(caster.getUUID(), 1, Integer::sum);
+        Tasks.add(age -> {
+            if (age < 6) {
+                if (guard.broken()) {
+                    trapGone(caster);
+                    return true;
+                }
+                return false;
+            }
+            if (age == 6) {
+                // The clone goes out in a puff and is a rock when the smoke opens.
+                SubNet.send(level, SubNet.POOF, 0, spot.add(0, 0.8, 0), Vec3.ZERO, 1.25f, 0, 0);
+                SubCommon.sound(level, spot, SoundEvents.FIRE_EXTINGUISH, 0.8f, 1.5f);
+            }
+            if (age >= 6 + TRAP_TICKS || !caster.isAlive() || caster.level() != level) {
+                SubNet.send(level, SubNet.HENGE, id, spot, Vec3.ZERO, 0, 1, 1);
+                SubNet.send(level, SubNet.POOF, 0, spot.add(0, 0.6, 0), Vec3.ZERO, 0.9f, 0, 0);
+                trapGone(caster);
+                return true;
+            }
+            if (age >= 8 && age % 2 == 0) {
+                SubNet.send(level, SubNet.HENGE, id, spot, Vec3.ZERO, 0, 1, 0);
+            }
+            if (age > 16) {
+                for (LivingEntity t : Combat.inRadius(level, spot.add(0, 0.8, 0), 3.0, caster)) {
+                    if (t instanceof NarutoClone) {
+                        continue;
+                    }
+                    SubNet.send(level, SubNet.HENGE, id, spot, Vec3.ZERO, 0, 1, 1);
+                    trapGone(caster);
+                    // Behind them: on the side away from where they look (back at the rock if a wall is there).
+                    Vec3 at = SubCommon.ground(level, t.position().add(SubCommon.flat(t.getLookAngle()).scale(-1.2)));
+                    ambush(caster, level, SubCommon.solid(level, at.add(0, 0.5, 0)) ? spot : at, spot, t, 6);
+                    return true;
+                }
+            }
+            return false;
+        });
+        return true;
+    }
+
+    // Shift+B: the clone becomes a Fuuma Shuriken and is thrown (32 blocks).
+    private static boolean fuuma(LivingEntity caster, ServerLevel level) {
+        SubCommon.Guard guard = SubCommon.guard(caster);
+        LivingEntity lock = NrCommon.target(caster, 32);
+        int id = SubNet.newId();
+        SubCommon.pose(caster, "nr.selo_cruz");
+        SubCommon.busy(caster, 12);
+        Vec3[] p = {null};
+        Vec3[] v = {null};
+        Tasks.add(age -> {
+            if (age < 6) {
+                return guard.broken();
+            }
+            if (age == 6) {
+                Vec3 side = SubCommon.flat(caster.getLookAngle()).cross(new Vec3(0, 1, 0)).scale(0.6);
+                p[0] = caster.getEyePosition().add(side).add(0, -0.35, 0);
+                Vec3 aim = lock != null && lock.isAlive() ? Combat.center(lock) : SubCommon.aimPoint(caster, 32).add(0, 1, 0);
+                v[0] = aim.subtract(p[0]).normalize().scale(0.95);
+                SubNet.send(level, SubNet.POOF, 0, p[0], Vec3.ZERO, 0.9f, 0, 0);
+                SubCommon.pose(caster, "db.arremesso");
+                SubCommon.sound(level, p[0], SoundEvents.TRIDENT_THROW.value(), 1.3f, 0.7f);
+                return false;
+            }
+            int a = age - 6;
+            p[0] = p[0].add(v[0]);
+            SubNet.send(level, SubNet.HENGE, id, p[0], v[0], 1, 0.9f, 0);
+            if (a % 3 == 0) {
+                SubCommon.sound(level, p[0], SoundEvents.PLAYER_ATTACK_SWEEP, 0.6f, 1.6f);
+            }
+            for (LivingEntity t : Combat.inRadius(level, p[0], 1.15, caster)) {
+                if (t instanceof NarutoClone) {
+                    continue;
+                }
+                // It did not dodge: the cut, and the Rasengan right after it.
+                Combat.hurt(caster, t, 6);
+                Stun.apply(t, 12);
+                DbCommon.hit(level, p[0], 0.7f, Db.WHITE);
+                SubCommon.sound(level, p[0], SoundEvents.PLAYER_ATTACK_CRIT, 1.2f, 0.8f);
+                SubNet.send(level, SubNet.HENGE, id, p[0], v[0], 1, 0.9f, 1);
+                Vec3 at = SubCommon.ground(level, Combat.center(t).subtract(SubCommon.flat(v[0]).normalize().scale(1.2)));
+                ambush(caster, level, at, p[0], t, 4);
+                return true;
+            }
+            if (lock != null && lock.isAlive()) {
+                // Dodged: it has gone past the one it was thrown at, close by. It turns into Naruto behind them.
+                Vec3 rel = p[0].subtract(Combat.center(lock));
+                if (rel.dot(v[0]) > 0 && rel.length() > 1.4 && rel.length() < 3.6) {
+                    SubNet.send(level, SubNet.HENGE, id, p[0], v[0], 1, 0.9f, 1);
+                    ambush(caster, level, SubCommon.ground(level, p[0]), p[0], lock, 6);
+                    return true;
+                }
+            }
+            if (a > 34 || SubCommon.solid(level, p[0]) || !caster.isAlive()) {
+                SubNet.send(level, SubNet.HENGE, id, p[0], v[0], 1, 0.9f, 1);
+                SubNet.send(level, SubNet.POOF, 0, p[0], Vec3.ZERO, 0.9f, 0, 0);
+                SubCommon.warn(caster, "naruto.fuuma_miss");
+                return true;
+            }
+            return false;
+        });
+        return true;
+    }
+
+    // The clone comes out of the smoke at `at` (smoke at `smoke`), molds a Rasengan in `form` ticks and drives it into t.
+    // The surprise holds them the moment it takes (they turn too late).
+    private static void ambush(LivingEntity owner, ServerLevel level, Vec3 at, Vec3 smoke, LivingEntity t, int form) {
+        SubNet.send(level, SubNet.POOF, 0, smoke.add(0, 0.8, 0), Vec3.ZERO, 1.3f, 0, 0);
+        SubCommon.sound(level, smoke, SoundEvents.ILLUSIONER_MIRROR_MOVE, 1f, 1.3f);
+        NarutoClone c = spawnClone(owner, level, at, NrCommon.yawTo(at, t.position()), 80, true);
+        if (c == null) {
+            return;
+        }
+        SubCommon.pose(c, "nr.molda");
+        Stun.apply(t, form + 6);
+        int id = SubNet.newId();
+        Tasks.add(age -> {
+            if (!c.isAlive() || !t.isAlive() || !owner.isAlive()) {
+                SubNet.send(level, SubNet.RASENGAN, id, c.position(), Vec3.ZERO, 0, 0, 1);
+                c.poof();
+                return true;
+            }
+            Vec3 look = SubCommon.flat(t.position().subtract(c.position()));
+            if (look.lengthSqr() < 1.0E-6) {
+                look = SubCommon.flat(t.getLookAngle());
+            }
+            c.setYRot(NrCommon.yawTo(c.position(), t.position()));
+            c.setYHeadRot(c.getYRot());
+            c.setYBodyRot(c.getYRot());
+            if (age < form) {
+                float k = SubCommon.smooth(age / (float) form);
+                SubNet.send(level, SubNet.RASENGAN, id, DbCommon.hand(c).add(look.scale(0.15)), Vec3.ZERO, 0.04f + 0.17f * k, 1, 2);
+                if (age == 0) {
+                    SubCommon.sound(level, c.position(), SoundEvents.BREEZE_CHARGE, 0.9f, 1.6f);
+                }
+                return false;
+            }
+            if (age == form) {
+                SubCommon.pose(c, "nr.investida");
+                Freeze.hold(t, 12);
+                DbCommon.screen(level, Combat.center(t), 0);
+                SubCommon.sound(level, t.position(), SoundEvents.PLAYER_ATTACK_STRONG, 1.2f, 0.8f);
+            }
+            if (grind(owner, t, level, id, false, 0.21f, look, age - form)) {
+                Tasks.later(6, c::poof);
                 return true;
             }
             return false;

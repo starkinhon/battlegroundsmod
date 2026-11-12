@@ -1,0 +1,28 @@
+{
+  "parent": "battlegroundsmod:souls/tier_9",
+  "display": {
+    "icon": {
+      "id": "minecraft:gold_ingot"
+    },
+    "title": {
+      "translate": "advancements.battlegroundsmod.souls.tier_7.title"
+    },
+    "description": {
+      "translate": "advancements.battlegroundsmod.souls.tier_7.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ]
+}

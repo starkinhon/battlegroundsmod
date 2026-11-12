@@ -32,7 +32,9 @@ public class MultiversalCrystalItem extends Item {
                 server.displayClientMessage(Component.translatable("message.battlegroundsmod.universe_off"), true);
                 return InteractionResultHolder.fail(stack);
             }
-            PacketDistributor.sendToPlayer(server, new ModPayloads.OpenUniverses(false));
+            // The universes are biomes of the player's own world now (Stark 2026-11-11): nothing to travel to.
+            server.displayClientMessage(Component.translatable("message.battlegroundsmod.universe_no_mundo"), true);
+            return InteractionResultHolder.fail(stack);
         }
         return InteractionResultHolder.sidedSuccess(stack, level.isClientSide);
     }

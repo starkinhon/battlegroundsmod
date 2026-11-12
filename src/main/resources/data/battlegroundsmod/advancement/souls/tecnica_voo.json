@@ -1,0 +1,28 @@
+{
+  "parent": "battlegroundsmod:souls/root",
+  "display": {
+    "icon": {
+      "id": "minecraft:feather"
+    },
+    "title": {
+      "translate": "advancements.battlegroundsmod.souls.tecnica_voo.title"
+    },
+    "description": {
+      "translate": "advancements.battlegroundsmod.souls.tecnica_voo.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ]
+}

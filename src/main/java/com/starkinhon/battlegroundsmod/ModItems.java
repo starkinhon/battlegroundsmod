@@ -109,8 +109,34 @@ public final class ModItems {
             () -> new DeferredSpawnEggItem(ModEntities.TIRANOSSAURO, 0x5E7A3A, 0xD8C79A, new Item.Properties()));
     public static final DeferredItem<DeferredSpawnEggItem> RAPTOR_SPAWN_EGG = BattlegroundsMod.ITEMS.register("raptor_spawn_egg",
             () -> new DeferredSpawnEggItem(ModEntities.RAPTOR, 0x8C6A3E, 0x3C2C1C, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> NAMEKIANO_SPAWN_EGG = BattlegroundsMod.ITEMS.register("namekiano_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.NAMEKIANO, 0x4E9A3A, 0xE8DCC0, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> PEIXE_GIGANTE_SPAWN_EGG = BattlegroundsMod.ITEMS.register("peixe_gigante_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.PEIXE_GIGANTE, 0x2E6E8E, 0xE0A040, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> ANDROIDE_8_SPAWN_EGG = BattlegroundsMod.ITEMS.register("androide_8_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.ANDROIDE_8, 0x3E7A4A, 0xC8B89A, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> LADRAO_URSO_SPAWN_EGG = BattlegroundsMod.ITEMS.register("ladrao_urso_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.LADRAO_URSO, 0x5A3A22, 0xC23A2A, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> BORA_SPAWN_EGG = BattlegroundsMod.ITEMS.register("bora_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.BORA, 0x4A2E22, 0xD8C080, new Item.Properties()));
     public static final DeferredItem<DeferredSpawnEggItem> SOLDADO_FREEZA_SPAWN_EGG = BattlegroundsMod.ITEMS.register("soldado_freeza_spawn_egg",
             () -> new DeferredSpawnEggItem(ModEntities.SOLDADO_FREEZA, 0xE8E8E0, 0x6A3C8E, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> RADITZ_SPAWN_EGG = BattlegroundsMod.ITEMS.register("raditz_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.RADITZ, 0x2A2A3A, 0xE8E4D8, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> CELL_JR_SPAWN_EGG = BattlegroundsMod.ITEMS.register("cell_jr_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.CELL_JR, 0x82BEAA, 0x2E6A3C, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> PUI_PUI_SPAWN_EGG = BattlegroundsMod.ITEMS.register("pui_pui_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.PUI_PUI, 0x965AAA, 0xE8E4D8, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> YAKON_SPAWN_EGG = BattlegroundsMod.ITEMS.register("yakon_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.YAKON, 0x1C1A1E, 0xE6C828, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> DABURA_SPAWN_EGG = BattlegroundsMod.ITEMS.register("dabura_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.DABURA, 0xBE322D, 0x1E1C20, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> NPC_BULMA_SPAWN_EGG = BattlegroundsMod.ITEMS.register("npc_bulma_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.NPC_BULMA, 0xE678A0, 0x3CBEBE, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> NPC_MESTRE_KAME_SPAWN_EGG = BattlegroundsMod.ITEMS.register("npc_mestre_kame_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.NPC_MESTRE_KAME, 0xE8A040, 0x4A8A3A, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> NPC_BOO_SPAWN_EGG = BattlegroundsMod.ITEMS.register("npc_boo_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.NPC_BOO, 0xF096BE, 0x7838A0, new Item.Properties()));
     public static final DeferredItem<DeferredSpawnEggItem> NPC_GOHAN_SPAWN_EGG = BattlegroundsMod.ITEMS.register("npc_gohan_spawn_egg",
             () -> new DeferredSpawnEggItem(ModEntities.NPC_GOHAN, 0x5A2D82, 0xE8C27A, new Item.Properties()));
     public static final DeferredItem<DeferredSpawnEggItem> NPC_KORIN_SPAWN_EGG = BattlegroundsMod.ITEMS.register("npc_korin_spawn_egg",
@@ -187,19 +213,14 @@ public final class ModItems {
             "cristal_multiversal", com.starkinhon.battlegroundsmod.item.MultiversalCrystalItem::new,
             new Item.Properties().stacksTo(16).rarity(Rarity.RARE));
 
-    // Dragon Ball items and weapons (universe/DragonBallWorld). Placeholder looks; what they do is what matters for now.
+    // Dragon Ball items (universe/DragonBallWorld). Stark 2026-11-11: only the balls, the radar, the scouter and the senzu
+    // stay; the Espada Z, the Bastão Mágico and the Papel-Bomba went away.
     public static final DeferredItem<com.starkinhon.battlegroundsmod.item.SenzuItem> SENZU = BattlegroundsMod.ITEMS.registerItem("senzu",
             com.starkinhon.battlegroundsmod.item.SenzuItem::new, new Item.Properties().rarity(Rarity.UNCOMMON));
     public static final DeferredItem<com.starkinhon.battlegroundsmod.item.ScouterItem> SCOUTER = BattlegroundsMod.ITEMS.registerItem("scouter",
             com.starkinhon.battlegroundsmod.item.ScouterItem::new, new Item.Properties().rarity(Rarity.UNCOMMON));
-    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.CapsuleItem> CAPSULE = BattlegroundsMod.ITEMS.registerItem("capsula_hoipoi",
-            com.starkinhon.battlegroundsmod.item.CapsuleItem::new, new Item.Properties().rarity(Rarity.UNCOMMON));
     public static final DeferredItem<com.starkinhon.battlegroundsmod.item.DragonRadarItem> DRAGON_RADAR = BattlegroundsMod.ITEMS.registerItem("radar_dragao",
             com.starkinhon.battlegroundsmod.item.DragonRadarItem::new, new Item.Properties().rarity(Rarity.RARE));
-    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.PowerPoleItem> POWER_POLE = BattlegroundsMod.ITEMS.registerItem("bastao_magico",
-            com.starkinhon.battlegroundsmod.item.PowerPoleItem::new, new Item.Properties().rarity(Rarity.RARE));
-    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.ZSwordItem> Z_SWORD = BattlegroundsMod.ITEMS.registerItem("espada_z",
-            com.starkinhon.battlegroundsmod.item.ZSwordItem::new, new Item.Properties().rarity(Rarity.EPIC).fireResistant());
     // Naruto items and weapons (universe/NarutoWorld, universe/SageMode).
     public static final DeferredItem<com.starkinhon.battlegroundsmod.item.HiraishinKunaiItem> HIRAISHIN_KUNAI = BattlegroundsMod.ITEMS.registerItem("kunai_hiraishin",
             com.starkinhon.battlegroundsmod.item.HiraishinKunaiItem::new, new Item.Properties().rarity(Rarity.RARE));
@@ -209,8 +230,6 @@ public final class ModItems {
             com.starkinhon.battlegroundsmod.item.RamenItem::new, new Item.Properties().rarity(Rarity.COMMON));
     public static final DeferredItem<com.starkinhon.battlegroundsmod.item.SummonScrollItem> SUMMON_SCROLL = BattlegroundsMod.ITEMS.registerItem("pergaminho_ninken",
             com.starkinhon.battlegroundsmod.item.SummonScrollItem::new, new Item.Properties().rarity(Rarity.RARE));
-    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.PaperBombItem> PAPER_BOMB = BattlegroundsMod.ITEMS.registerItem("papel_bomba",
-            com.starkinhon.battlegroundsmod.item.PaperBombItem::new, new Item.Properties().rarity(Rarity.COMMON));
     public static final DeferredItem<com.starkinhon.battlegroundsmod.item.NinjaHeadbandItem> NINJA_HEADBAND = BattlegroundsMod.ITEMS.registerItem("bandana_ninja",
             com.starkinhon.battlegroundsmod.item.NinjaHeadbandItem::new, new Item.Properties().rarity(Rarity.UNCOMMON));
     public static final DeferredItem<com.starkinhon.battlegroundsmod.item.SamehadaItem> SAMEHADA = BattlegroundsMod.ITEMS.registerItem("samehada",

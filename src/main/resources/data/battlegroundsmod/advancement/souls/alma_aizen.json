@@ -1,0 +1,28 @@
+{
+  "parent": "battlegroundsmod:souls/primeira_alma",
+  "display": {
+    "icon": {
+      "id": "battlegroundsmod:soul_manipulator"
+    },
+    "title": {
+      "translate": "advancements.battlegroundsmod.souls.alma_aizen.title"
+    },
+    "description": {
+      "translate": "advancements.battlegroundsmod.souls.alma_aizen.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ]
+}

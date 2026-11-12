@@ -1,7 +1,7 @@
 {
   "formato": "souls-boss/1",
   "boss": "pirata",
-  "poder": "fighter",
+  "poder": "db_pirata",
   "tier": 10,
   "dropAlma": false,
   "atributos": {
@@ -121,6 +121,32 @@
       "giroGrausPorTick": 10,
       "avisoCor": "#ffffff",
       "avisoSom": "minecraft:entity.player.attack.sweep"
+    },
+    "corte_sabre": {
+      "slot": 0,
+      "tipo": "golpe",
+      "peso": 1.3,
+      "recargaTicks": 200,
+      "recargaMaxTicks": 300,
+      "avisoTicks": 6,
+      "distanciaMin": 0,
+      "distanciaMax": 6,
+      "giroGrausPorTick": 14,
+      "avisoCor": "#c8d8ff",
+      "avisoSom": "minecraft:item.armor.equip_iron"
+    },
+    "bomba_polvora": {
+      "slot": 1,
+      "tipo": "alcance",
+      "peso": 1.1,
+      "recargaTicks": 280,
+      "recargaMaxTicks": 400,
+      "avisoTicks": 8,
+      "distanciaMin": 4,
+      "distanciaMax": 16,
+      "giroGrausPorTick": 14,
+      "avisoCor": "#ff9a3a",
+      "avisoSom": "minecraft:entity.tnt.primed"
     }
   },
   "combos": {
@@ -149,7 +175,9 @@
       "skills": [
         "forte",
         "barragem",
-        "dash_attack"
+        "dash_attack",
+        "corte_sabre",
+        "bomba_polvora"
       ],
       "combos": [
         "tres_e_forte",

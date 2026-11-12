@@ -60,6 +60,8 @@ public abstract class SoulBoss extends Monster {
     private SoulBossAI ai;
     // Its soul being stolen by the player who killed it (only after death).
     private SoulCeremony ceremony;
+    // Raised by Makima as a puppet of its soul (power/powers/makima/Almas): no boss fight, no soul to drop.
+    private LivingEntity puppetOwner;
 
     protected SoulBoss(EntityType<? extends SoulBoss> type, Level level) {
         super(type, level);
@@ -109,13 +111,22 @@ public abstract class SoulBoss extends Monster {
         return bossfight() ? spec().fase(phase) : mobFase(spec());
     }
 
+    public void puppetOf(LivingEntity owner) {
+        this.puppetOwner = owner;
+        setPersistenceRequired();
+    }
+
+    public LivingEntity puppetOwner() {
+        return puppetOwner;
+    }
+
     public int phase() {
         return level().isClientSide() ? entityData.get(DATA_PHASE) : phase;
     }
 
     // The boss fight (titles, bar, entrance, phases, final ult) is on: /gamerule soulbossfight.
     public boolean bossfight() {
-        return isBoss() && BossRules.bossfight(level());
+        return isBoss() && puppetOwner == null && BossRules.bossfight(level());
     }
 
     private static final java.util.Map<BossSpec, BossSpec.Fase> MOB_FASES = new java.util.IdentityHashMap<>();
@@ -187,7 +198,19 @@ public abstract class SoulBoss extends Monster {
             targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, SoulBoss.class, 10, true, false,
                     other -> other.getType() != getType() && other instanceof SoulBoss boss && boss.isBoss()));
         }
-        targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Player.class, true));
+        targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Player.class, 10, true, false, player -> !neutral()));
+    }
+
+    // The characters of a challenge book met out in their world (Kuririn, Piccolo...) are neutral (Stark 2026-11-10):
+    // they only fight a player who hits them first (HurtByTargetGoal). In their arena or outside the universes (a boss
+    // fight in the overworld) they come at you as always.
+    private boolean neutral() {
+        if (com.starkinhon.battlegroundsmod.challenge.Universes.universeOf(level().dimension()) == null
+                && !(level().dimension() == net.minecraft.world.level.Level.OVERWORLD && level() instanceof net.minecraft.server.level.ServerLevel server
+                        && com.starkinhon.battlegroundsmod.power.Progression.on(server.getServer()))) {
+            return false;
+        }
+        return com.starkinhon.battlegroundsmod.skill.ChallengeSpec.get().universeOf(bossId()) != null;
     }
 
     @Override
@@ -434,8 +457,12 @@ public abstract class SoulBoss extends Monster {
     @Override
     protected void dropCustomDeathLoot(ServerLevel level, DamageSource source, boolean recentlyHit) {
         super.dropCustomDeathLoot(level, source, recentlyHit);
+        if (puppetOwner != null) {
+            // A soul Makima raised: it is already hers.
+            return;
+        }
         var soul = ModItems.SOULS.get(spec().poder());
-        if (spec().dropAlma() && soul != null) {
+        if (soul != null && dropsSoul(level, source)) {
             ServerPlayer killer = SoulCeremony.killer(source);
             if (killer != null) {
                 // Killed by a player: the soul leaves the body and becomes the item (SoulCeremony), dropped there.
@@ -444,6 +471,24 @@ public abstract class SoulBoss extends Monster {
                 spawnAtLocation(new ItemStack(soul.get()));
             }
         }
+    }
+
+    // Taking a character's soul is the heart of the mod (Stark 2026-11-10: "a mecânica principal"). Beaten in its
+    // challenge arena by a player, it always gives its soul; met out in the world, now and then (WORLD_SOUL_CHANCE).
+    // Fighters and common enemies have no soul item, so they never get here. dropAlma in the json: always.
+    private static final float WORLD_SOUL_CHANCE = 0.15f;
+
+    private boolean dropsSoul(ServerLevel level, DamageSource source) {
+        if (spec().dropAlma()) {
+            return true;
+        }
+        if (SoulCeremony.killer(source) == null) {
+            return false;
+        }
+        if (level.dimension() == com.starkinhon.battlegroundsmod.challenge.ChallengeArenas.ARENAS) {
+            return true;
+        }
+        return random.nextFloat() < WORLD_SOUL_CHANCE;
     }
 
     // While its soul ceremony plays the body stays lying where it fell (vanilla would take it away after 20 ticks).
@@ -462,6 +507,9 @@ public abstract class SoulBoss extends Monster {
     @Override
     public void startSeenByPlayer(ServerPlayer player) {
         super.startSeenByPlayer(player);
+        // Set before the player is added: a bar starts visible, and a common mob that was just born flashed one at the
+        // top of the screen until its first tick hid it (Stark 2026-11-10).
+        bossEvent.setVisible(bossfight());
         bossEvent.addPlayer(player);
         BossSpec.Barra barra = spec().barra();
         if (barra != null && barra.textura() != null) {

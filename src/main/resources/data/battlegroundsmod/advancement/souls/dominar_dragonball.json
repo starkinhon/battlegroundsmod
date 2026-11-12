@@ -1,0 +1,28 @@
+{
+  "parent": "battlegroundsmod:souls/primeiro_desafio",
+  "display": {
+    "icon": {
+      "id": "battlegroundsmod:livro_desafios_dragonball"
+    },
+    "title": {
+      "translate": "advancements.battlegroundsmod.souls.dominar_dragonball.title"
+    },
+    "description": {
+      "translate": "advancements.battlegroundsmod.souls.dominar_dragonball.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ]
+}

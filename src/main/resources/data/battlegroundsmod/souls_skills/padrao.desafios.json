@@ -17,10 +17,10 @@
         {"id": "kuririn", "foco": "Truques. O Kienzan corta qualquer coisa e o Taiyoken cega. Fraco de perto, perigoso de longe.", "itens": ["battlegroundsmod:senzu 3"]},
         {"id": "piccolo", "foco": "Controle. O Makankosappo perfura, o braço esticado puxa e o Hellzone cerca você.", "itens": ["battlegroundsmod:cristal_multiversal"]},
         {"id": "kame", "foco": "Selamento. O Mafuba prende o alvo no pote e o Punho Bêbado esquiva de tudo.", "itens": ["battlegroundsmod:radar_dragao"]},
-        {"id": "goku", "foco": "Equilíbrio. Kamehameha, teleporte nas suas costas, Kaioken e a Genki Dama.", "itens": ["battlegroundsmod:bastao_magico"]},
+        {"id": "goku", "foco": "Equilíbrio. Kamehameha, teleporte nas suas costas, Kaioken e a Genki Dama.", "itens": ["battlegroundsmod:senzu 5"]},
         {"id": "vegeta", "foco": "Explosão. Rajadas que cobrem o alvo de fumaça, Big Bang e Final Flash.", "itens": ["battlegroundsmod:scouter"]},
-        {"id": "freeza", "foco": "Precisão. Death Beam rápido, telecinese, Disco da Morte e Supernova.", "itens": ["battlegroundsmod:capsula_hoipoi 2"]},
-        {"id": "bills", "foco": "Destruição. O Hakai apaga quem estiver fraco. O deus deste universo.", "itens": ["battlegroundsmod:espada_z"]}
+        {"id": "freeza", "foco": "Precisão. Death Beam rápido, telecinese, Disco da Morte e Supernova.", "itens": ["battlegroundsmod:senzu 3"]},
+        {"id": "bills", "foco": "Destruição. O Hakai apaga quem estiver fraco. O deus deste universo.", "itens": ["battlegroundsmod:esfera_dragao_7"]}
       ]
     },
     {
@@ -30,7 +30,7 @@
       "piso": ["minecraft:grass_block", "minecraft:moss_block", "minecraft:grass_block", "minecraft:coarse_dirt"],
       "pilar": "minecraft:oak_log",
       "desafios": [
-        {"id": "shikamaru", "foco": "Prender. A sombra dele segura você no lugar.", "itens": ["battlegroundsmod:papel_bomba 6"]},
+        {"id": "shikamaru", "foco": "Prender. A sombra dele segura você no lugar.", "itens": []},
         {"id": "ino", "foco": "Mente. Entra na sua cabeça e troca de corpo.", "itens": ["battlegroundsmod:pergaminho_ninken"]},
         {"id": "kakashi", "foco": "Técnica. Raikiri e jutsus copiados com o Sharingan.", "itens": ["battlegroundsmod:cristal_multiversal"]},
         {"id": "gaara", "foco": "Defesa. A areia bloqueia tudo e esmaga quem chega perto.", "itens": ["battlegroundsmod:bandana_ninja"]},

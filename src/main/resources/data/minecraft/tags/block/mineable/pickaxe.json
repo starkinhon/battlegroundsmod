@@ -1,1 +1,25 @@
-{ "replace": false, "values": [ "battlegroundsmod:namek_rock", "battlegroundsmod:namek_rock_layer" ] }
+{
+  "replace": false,
+  "values": [
+    "battlegroundsmod:namek_rock",
+    "battlegroundsmod:namek_rock_layer",
+    "battlegroundsmod:deserto_rocha",
+    "battlegroundsmod:deserto_rocha_clara",
+    "battlegroundsmod:metal_da_chuva",
+    "battlegroundsmod:metal_da_chuva_escuro",
+    "battlegroundsmod:anel_de_metal",
+    "battlegroundsmod:ferrugem",
+    "battlegroundsmod:ferrugem_clara",
+    "battlegroundsmod:janela_escura",
+    "battlegroundsmod:janela_acesa",
+    "battlegroundsmod:cano_de_metal",
+    "battlegroundsmod:espeto_de_metal",
+    "battlegroundsmod:pedra_da_estatua",
+    "battlegroundsmod:pedra_da_estatua_escura",
+    "battlegroundsmod:pedra_da_estatua_musgo",
+    "battlegroundsmod:pedra_da_estatua_sombra",
+    "battlegroundsmod:pedra_do_pico",
+    "battlegroundsmod:pedra_do_pico_escura",
+    "battlegroundsmod:pedra_do_pico_clara"
+  ]
+}

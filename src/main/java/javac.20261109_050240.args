@@ -1,6 +1,0 @@
--d
-/tmp/claude-0/jc
--proc:none
-com/starkinhon/battlegroundsmod/client/fx/DbFx.java
-com/starkinhon/battlegroundsmod/client/fx/FxWorld.java
-com/starkinhon/battlegroundsmod/power/powers/sub/db/Kame.java

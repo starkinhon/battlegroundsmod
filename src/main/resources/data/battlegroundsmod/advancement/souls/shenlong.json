@@ -1,0 +1,28 @@
+{
+  "parent": "battlegroundsmod:souls/sete_esferas",
+  "display": {
+    "icon": {
+      "id": "minecraft:dragon_head"
+    },
+    "title": {
+      "translate": "advancements.battlegroundsmod.souls.shenlong.title"
+    },
+    "description": {
+      "translate": "advancements.battlegroundsmod.souls.shenlong.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ]
+}

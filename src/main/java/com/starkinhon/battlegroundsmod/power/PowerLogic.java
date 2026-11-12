@@ -37,7 +37,7 @@ public final class PowerLogic {
     private static final int SYNC_INTERVAL = 4;
     private static final double ULT_TITLE_RANGE = 48;
     // Powers whose ult draws its own title, so the vanilla one is not sent.
-    private static final java.util.Set<String> OWN_ULT_TITLE = java.util.Set.of("strongest");
+    private static final java.util.Set<String> OWN_ULT_TITLE = java.util.Set.of("strongest", "one_punch", "rubber_boy");
 
     private PowerLogic() {
     }
@@ -104,6 +104,20 @@ public final class PowerLogic {
             // V with his Santuário open: Sukuna closes it (the second press right after the first: the fast version).
             return;
         }
+        if (PowerData.isUlt(slot) && com.starkinhon.battlegroundsmod.power.powers.makima.Makima.ultAgain(player)) {
+            // V with her chains or her souls out: Makima's "Morram."
+            return;
+        }
+        if (slot == com.starkinhon.battlegroundsmod.power.powers.makima.Ratos.SLOT
+                && com.starkinhon.battlegroundsmod.power.powers.makima.Makima.is(player)
+                && com.starkinhon.battlegroundsmod.power.powers.makima.Ratos.press(player)) {
+            // Shift+C with her rats out: Makima goes to the one she looks at.
+            return;
+        }
+        if (PowerData.isUlt(slot) && com.starkinhon.battlegroundsmod.power.powers.sub.jj.Itadori.tesouraPress(player)) {
+            // V with the Corte de Tesoura marks up: Itadori marks one more thing, or closes every pair of scissors.
+            return;
+        }
         if (slot == 0 && com.starkinhon.battlegroundsmod.power.powers.uchiha.Katon.cancel(player)) {
             // Z while Madara breathes fire: he stops it.
             return;
@@ -125,14 +139,16 @@ public final class PowerLogic {
         boolean ultimate = PowerData.isUlt(slot);
         // Creative mode skips the costs so moves can be recorded freely.
         boolean free = player.isCreative() || data.noCooldown;
-        if (!free && ultimate && data.ult < PowerData.MAX_ULT) {
+        if (!free && ultimate && data.ult < PowerData.MAX_ULT && !com.starkinhon.battlegroundsmod.power.powers.opm.Opm.freeUlt(player)
+                && !com.starkinhon.battlegroundsmod.power.powers.luffy.Luffy.freeUlt(player)) {
             player.displayClientMessage(Component.translatable("message.battlegroundsmod.ult_not_ready"), true);
             return;
         }
         if (!cast(player, slot)) {
             return;
         }
-        if (!free && ultimate) {
+        // (Luffy's V is each Gear's own move: his bar is the Tambores da Libertacao, spent by B)
+        if (!free && ultimate && !com.starkinhon.battlegroundsmod.power.powers.luffy.Luffy.is(player)) {
             data.ult = 0;
         }
         if (skill) {
@@ -227,6 +243,8 @@ public final class PowerLogic {
         if (power != null) {
             com.starkinhon.battlegroundsmod.power.powers.sub.nr.NrCommon.recordCast(caster, power.id(), slot);
         }
+        // The Ino's Leitura Mental: every Ino near feels the skill start.
+        com.starkinhon.battlegroundsmod.power.powers.sub.nr.Ino.sense(caster, level);
         if (power != null && PowerData.isUlt(slot)) {
             announceUlt(caster, power, slot);
         }

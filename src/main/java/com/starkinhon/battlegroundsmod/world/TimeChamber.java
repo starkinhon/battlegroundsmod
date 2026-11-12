@@ -51,6 +51,11 @@ public final class TimeChamber {
     public static final int YEAR = 365;
     private static final String DAYS = "battlegroundsmod_sala_ticks";
     private static final String DONE = "battlegroundsmod_sala_ano";
+
+    // Whether the player already spent their whole year in the room (power/Achievements).
+    public static boolean yearDone(ServerPlayer player) {
+        return player.getPersistentData().getBoolean(DONE);
+    }
     private static final String KI = "battlegroundsmod_sala_ki";
     // Gravity zones: name, gravity multiplier, speed and jump changes, Poder per minute of training (in enemies of the
     // player's own tier).
@@ -108,6 +113,12 @@ public final class TimeChamber {
                 ServerLevel level = player.serverLevel();
                 boolean pad = DragonBallPlaces.MAP.equals(mapOf(level)) && onPad(player, doorPad())
                         && level.getBlockState(doorPad()).is(net.minecraft.world.level.block.Blocks.SEA_LANTERN);
+                if (!pad && level.dimension() == Level.OVERWORLD && player.getY() > 250) {
+                    // a lookout floating in the normal world (WorldSites)
+                    BlockPos door = WorldSites.doorPadNear(level, player.blockPosition());
+                    pad = door != null && onPad(player, door)
+                            && level.getBlockState(door).is(net.minecraft.world.level.block.Blocks.SEA_LANTERN);
+                }
                 pad(player, pad, true);
             }
         }
@@ -153,6 +164,9 @@ public final class TimeChamber {
             return;
         }
         build(room);
+        // where to come back: in front of this door, a few steps toward the palace
+        player.getPersistentData().putString(BACK_LEVEL, player.level().dimension().location().toString());
+        player.getPersistentData().putLong(BACK_POS, player.blockPosition().offset(0, 0, 19).asLong());
         Fx.burst(player.serverLevel(), ParticleTypes.REVERSE_PORTAL, player.position().add(0, 1, 0), 60, 0.6, 0.6);
         player.teleportTo(room, 0.5, FLOOR_Y + 3, -1.5, 0f, 0f);
         player.fallDistance = 0;
@@ -164,8 +178,25 @@ public final class TimeChamber {
                 day(player), YEAR)));
     }
 
+    private static final String BACK_LEVEL = "souls_sala_volta_mundo";
+    private static final String BACK_POS = "souls_sala_volta";
+
     private static void leave(ServerPlayer player) {
         clearGravity(player);
+        var tag = player.getPersistentData();
+        if (tag.contains(BACK_POS)) {
+            net.minecraft.resources.ResourceLocation dim = net.minecraft.resources.ResourceLocation.tryParse(tag.getString(BACK_LEVEL));
+            ServerLevel to = dim == null ? null : player.server.getLevel(net.minecraft.resources.ResourceKey.create(
+                    net.minecraft.core.registries.Registries.DIMENSION, dim));
+            if (to != null) {
+                BlockPos at = BlockPos.of(tag.getLong(BACK_POS));
+                Fx.burst(player.serverLevel(), ParticleTypes.REVERSE_PORTAL, player.position().add(0, 1, 0), 60, 0.6, 0.6);
+                player.teleportTo(to, at.getX() + 0.5, at.getY() + 0.5, at.getZ() + 0.5, 0f, 0f);
+                player.fallDistance = 0;
+                Fx.sound(to, player.position(), SoundEvents.BEACON_DEACTIVATE, 0.8f, 1.2f);
+                return;
+            }
+        }
         ServerLevel back = player.server.getLevel(Universes.key("dragonball"));
         if (back == null) {
             back = player.server.overworld();
@@ -221,7 +252,7 @@ public final class TimeChamber {
     }
 
     // Poder from training, in fractions of an enemy of the player's own tier; kept small until it adds up.
-    private static void train(ServerPlayer player, double enemies) {
+    public static void train(ServerPlayer player, double enemies) {
         if (!Progression.on(player)) {
             return;
         }
@@ -238,7 +269,8 @@ public final class TimeChamber {
     }
 
     // Hitting a training dummy out in the gravity trains three times faster than walking (at most two hits a second).
-    private static void onHurt(net.neoforged.neoforge.event.entity.living.LivingDamageEvent.Post event) {
+    // (on the incoming hit, not after the damage: Stark 2026-11-10 hit the dummies and the bar did not move)
+    private static void onHurt(net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent event) {
         if (!(event.getSource().getEntity() instanceof ServerPlayer player) || !in(player)
                 || !(event.getEntity() instanceof com.starkinhon.battlegroundsmod.dummy.TrainingDummy)) {
             return;
@@ -303,7 +335,7 @@ public final class TimeChamber {
         }
     }
 
-    private static void setGravity(ServerPlayer player, int zone) {
+    public static void setGravity(ServerPlayer player, int zone) {
         modify(player, Attributes.GRAVITY, GRAVITY_ID, GRAVITY[zone]);
         modify(player, Attributes.MOVEMENT_SPEED, SPEED_ID, SPEED[zone]);
         modify(player, Attributes.JUMP_STRENGTH, JUMP_ID, JUMP[zone]);
@@ -316,7 +348,7 @@ public final class TimeChamber {
         }
     }
 
-    private static void clearGravity(ServerPlayer player) {
+    public static void clearGravity(ServerPlayer player) {
         for (var pair : new Object[][] {{Attributes.GRAVITY, GRAVITY_ID}, {Attributes.MOVEMENT_SPEED, SPEED_ID},
                 {Attributes.JUMP_STRENGTH, JUMP_ID}}) {
             @SuppressWarnings("unchecked")

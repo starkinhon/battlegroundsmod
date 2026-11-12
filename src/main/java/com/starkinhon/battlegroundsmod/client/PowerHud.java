@@ -129,6 +129,12 @@ public final class PowerHud {
         Component second = shift
                 ? Component.literal("Shift")
                 : Tiers.name(data.tier);
+        double cost = com.starkinhon.battlegroundsmod.power.Progression.cost(data.tier);
+        if (!shift && com.starkinhon.battlegroundsmod.power.Progression.clientOn && cost > 0) {
+            // the Poder in numbers next to the tier (Stark 2026-11-10)
+            second = second.copy().append(Component.literal("  " + Math.round(data.poder) + "/" + Math.round(cost))
+                    .withStyle(s -> s.withColor(0x7F7890)));
+        }
         int width = Math.max(font.width(name), font.width(second)) + 10;
         int x1 = Math.min(left, right - width);
         int y1 = top - 25;

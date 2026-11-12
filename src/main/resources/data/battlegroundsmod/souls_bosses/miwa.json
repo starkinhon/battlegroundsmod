@@ -147,6 +147,32 @@
       "giroGrausPorTick": 14,
       "avisoCor": "#6fb8e8",
       "avisoSom": "minecraft:entity.player.attack.sweep"
+    },
+    "lua_partida": {
+      "slot": 3,
+      "tipo": "ult",
+      "peso": 0.8,
+      "recargaTicks": 1000,
+      "recargaMaxTicks": 1300,
+      "avisoTicks": 8,
+      "distanciaMin": 0,
+      "distanciaMax": 7,
+      "giroGrausPorTick": 14,
+      "avisoCor": "#8fd0ff",
+      "avisoSom": "minecraft:block.beacon.activate"
+    },
+    "contra": {
+      "slot": 7,
+      "tipo": "contra",
+      "peso": 0.9,
+      "recargaTicks": 240,
+      "recargaMaxTicks": 340,
+      "avisoTicks": 0,
+      "distanciaMin": 0,
+      "distanciaMax": 4,
+      "giroGrausPorTick": 14,
+      "avisoCor": "#8fd0ff",
+      "avisoSom": ""
     }
   },
   "combos": {
@@ -164,6 +190,28 @@
         "batto",
         "soco"
       ]
+    },
+    "miwa_3": {
+      "peso": 0.9,
+      "passos": [
+        "dominio_simples",
+        "batto"
+      ]
+    },
+    "miwa_4": {
+      "peso": 0.8,
+      "passos": [
+        "aproximar",
+        "contra",
+        "batto"
+      ]
+    },
+    "miwa_5": {
+      "peso": 0.7,
+      "passos": [
+        "corte_linha",
+        "lua_partida"
+      ]
     }
   },
   "fases": [
@@ -174,11 +222,16 @@
         "barragem",
         "batto",
         "dominio_simples",
-        "corte_linha"
+        "corte_linha",
+        "lua_partida",
+        "contra"
       ],
       "combos": [
         "miwa_1",
-        "miwa_2"
+        "miwa_2",
+        "miwa_3",
+        "miwa_4",
+        "miwa_5"
       ],
       "agressividade": 0.75,
       "multRecarga": 1.0,

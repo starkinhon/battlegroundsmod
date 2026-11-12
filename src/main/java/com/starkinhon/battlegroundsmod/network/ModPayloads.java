@@ -262,6 +262,10 @@ public final class ModPayloads {
 
         void applyTo(Player player) {
             player.setData(ModAttachments.ARENA_WINS, List.copyOf(wins));
+            // Kept apart from the player too: the client makes a new player on every respawn and change of world
+            // (the arenas are a world of their own), and that one starts with no wins (Stark 2026-11-10: the book
+            // forgot every win after an arena or a change of power).
+            com.starkinhon.battlegroundsmod.challenge.ChallengeArenas.clientWins = List.copyOf(wins);
         }
 
         @Override
@@ -279,6 +283,44 @@ public final class ModPayloads {
 
         @Override
         public Type<OpenUniverses> type() {
+            return TYPE;
+        }
+    }
+
+    // Server -> client: a Shenlong cutscene (universe/shenlong/ShenlongServer): who called him, where (the scene's
+    // origin and the way he faced), the game time it started, the wish once picked ("" before) and the game time it
+    // was picked (0 before). Sent at the start and again when the wish is picked; summoner -1 ends it.
+    public record ShenlongState(int summoner, double x, double y, double z, float yaw, long start, String wish, long picked)
+            implements CustomPacketPayload {
+        public static final Type<ShenlongState> TYPE = payloadType("shenlong_state");
+        public static final StreamCodec<io.netty.buffer.ByteBuf, ShenlongState> STREAM_CODEC = StreamCodec.of(
+                (buf, p) -> {
+                    buf.writeInt(p.summoner);
+                    buf.writeDouble(p.x);
+                    buf.writeDouble(p.y);
+                    buf.writeDouble(p.z);
+                    buf.writeFloat(p.yaw);
+                    buf.writeLong(p.start);
+                    ByteBufCodecs.STRING_UTF8.encode(buf, p.wish);
+                    buf.writeLong(p.picked);
+                },
+                buf -> new ShenlongState(buf.readInt(), buf.readDouble(), buf.readDouble(), buf.readDouble(), buf.readFloat(), buf.readLong(),
+                        ByteBufCodecs.STRING_UTF8.decode(buf), buf.readLong()));
+
+        @Override
+        public Type<ShenlongState> type() {
+            return TYPE;
+        }
+    }
+
+    // Client -> server: the wish picked on Shenlong's menu.
+    public record ShenlongWish(String wish) implements CustomPacketPayload {
+        public static final Type<ShenlongWish> TYPE = payloadType("shenlong_wish");
+        public static final StreamCodec<ByteBuf, ShenlongWish> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.STRING_UTF8, ShenlongWish::wish, ShenlongWish::new);
+
+        @Override
+        public Type<ShenlongWish> type() {
             return TYPE;
         }
     }
@@ -313,6 +355,50 @@ public final class ModPayloads {
 
         @Override
         public Type<SyncProgress> type() {
+            return TYPE;
+        }
+    }
+
+    // Client -> server: the boost of the Dragon Ball flight on (Ctrl while flying) or off (universe/Flight).
+    public record FlightBoost(boolean on) implements CustomPacketPayload {
+        public static final Type<FlightBoost> TYPE = payloadType("flight_boost");
+        public static final StreamCodec<ByteBuf, FlightBoost> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.BOOL, FlightBoost::on, FlightBoost::new);
+
+        @Override
+        public Type<FlightBoost> type() {
+            return TYPE;
+        }
+    }
+
+    // Server -> client: how a player flies (universe/Flight bits FLYING, BOOST, TIRED; 0 = not flying).
+    public record FlightState(int entityId, int state) implements CustomPacketPayload {
+        public static final Type<FlightState> TYPE = payloadType("flight_state");
+        public static final StreamCodec<ByteBuf, FlightState> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, FlightState::entityId,
+                ByteBufCodecs.VAR_INT, FlightState::state,
+                FlightState::new);
+
+        @Override
+        public Type<FlightState> type() {
+            return TYPE;
+        }
+    }
+
+    // Server -> client: the Dragon Ball mission on the HUD (universe/DbQuests): its id, progress, the place it points to.
+    public record QuestSync(String id, int count, int goal, int x, int z, int flags) implements CustomPacketPayload {
+        public static final Type<QuestSync> TYPE = payloadType("quest_sync");
+        public static final StreamCodec<ByteBuf, QuestSync> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.STRING_UTF8, QuestSync::id,
+                ByteBufCodecs.VAR_INT, QuestSync::count,
+                ByteBufCodecs.VAR_INT, QuestSync::goal,
+                ByteBufCodecs.VAR_INT, QuestSync::x,
+                ByteBufCodecs.VAR_INT, QuestSync::z,
+                ByteBufCodecs.VAR_INT, QuestSync::flags,
+                QuestSync::new);
+
+        @Override
+        public Type<QuestSync> type() {
             return TYPE;
         }
     }
@@ -953,6 +1039,24 @@ public final class ModPayloads {
 
     // Client -> server: one move of the player's in the Duelo de Expansões minigame, measured on their client: index (the
     // key, beat or round) and value (its points).
+    // Client -> server: what the player driving a body with the Ino's Shintenshin presses this tick.
+    public record InoPilotInput(float forward, float strafe, boolean jump, float yaw, float pitch, int attacks) implements CustomPacketPayload {
+        public static final Type<InoPilotInput> TYPE = payloadType("ino_pilot_input");
+        public static final StreamCodec<ByteBuf, InoPilotInput> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.FLOAT, InoPilotInput::forward,
+                ByteBufCodecs.FLOAT, InoPilotInput::strafe,
+                ByteBufCodecs.BOOL, InoPilotInput::jump,
+                ByteBufCodecs.FLOAT, InoPilotInput::yaw,
+                ByteBufCodecs.FLOAT, InoPilotInput::pitch,
+                ByteBufCodecs.VAR_INT, InoPilotInput::attacks,
+                InoPilotInput::new);
+
+        @Override
+        public Type<InoPilotInput> type() {
+            return TYPE;
+        }
+    }
+
     public record ExpansionDuelInput(int index, int value) implements CustomPacketPayload {
         public static final Type<ExpansionDuelInput> TYPE = payloadType("expansion_duel_input");
         public static final StreamCodec<ByteBuf, ExpansionDuelInput> STREAM_CODEC = StreamCodec.composite(
@@ -1077,6 +1181,58 @@ public final class ModPayloads {
 
         @Override
         public Type<SubFx> type() {
+            return TYPE;
+        }
+    }
+
+    // Server -> client: Makima opens one of her screens (power/powers/makima). kind 0 the puppet wheel (entries = the
+    // stored mobs' "name|type", then the puppets out as "@id|kind|order|type|name"), 1 the Ritual's sheet (count = her puppets out, entries = "name|origin" of everyone she has
+    // seen).
+    public record MkOpen(int kind, int count, List<String> entries) implements CustomPacketPayload {
+        public static final Type<MkOpen> TYPE = payloadType("mk_open");
+        public static final StreamCodec<ByteBuf, MkOpen> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, MkOpen::kind, ByteBufCodecs.VAR_INT, MkOpen::count,
+                ByteBufCodecs.STRING_UTF8.apply(ByteBufCodecs.list()), MkOpen::entries, MkOpen::new);
+
+        @Override
+        public Type<MkOpen> type() {
+            return TYPE;
+        }
+    }
+
+    // Client -> server: the puppet picked on Makima's wheel (-1 none).
+    public record MkPick(int index) implements CustomPacketPayload {
+        public static final Type<MkPick> TYPE = payloadType("mk_pick");
+        public static final StreamCodec<ByteBuf, MkPick> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, MkPick::index, MkPick::new);
+
+        @Override
+        public Type<MkPick> type() {
+            return TYPE;
+        }
+    }
+
+    // Client -> server: an order given on Makima's wheel to a puppet that is out (entity id), or to all of them
+    // (Puppets.order: 0 back, 1 attack her target, 2 follow, 3 stay, 4 free, 5 let go, 6 all back, 7 all attack).
+    public record MkOrder(int action, int entity) implements CustomPacketPayload {
+        public static final Type<MkOrder> TYPE = payloadType("mk_order");
+        public static final StreamCodec<ByteBuf, MkOrder> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, MkOrder::action, ByteBufCodecs.VAR_INT, MkOrder::entity, MkOrder::new);
+
+        @Override
+        public Type<MkOrder> type() {
+            return TYPE;
+        }
+    }
+
+    // Client -> server: the names Makima wrote on the Ritual's sheet, one per line (empty: the sheet was closed).
+    public record MkNames(List<String> names) implements CustomPacketPayload {
+        public static final Type<MkNames> TYPE = payloadType("mk_names");
+        public static final StreamCodec<ByteBuf, MkNames> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.STRING_UTF8.apply(ByteBufCodecs.list()), MkNames::names, MkNames::new);
+
+        @Override
+        public Type<MkNames> type() {
             return TYPE;
         }
     }
@@ -1519,11 +1675,21 @@ public final class ModPayloads {
             if (!(context.player() instanceof ServerPlayer player) || !CombatMode.fighter(player) || player.isSpectator()) {
                 return;
             }
+            // Driving a body with the Ino's Shintenshin: that body hits instead.
+            if (com.starkinhon.battlegroundsmod.power.powers.sub.nr.Ino.pilotPunch(player)) {
+                return;
+            }
             if (payload.key()) {
                 CombatMode.enter(player);
                 Tasks.as(player, () -> Melee.punch(player, null));
             } else if (CombatMode.freeHand(player) && CombatMode.in(player)) {
                 Tasks.as(player, () -> Melee.punch(player, null));
+            }
+        }));
+        registrar.playToServer(InoPilotInput.TYPE, InoPilotInput.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
+            if (context.player() instanceof ServerPlayer player) {
+                com.starkinhon.battlegroundsmod.power.powers.sub.nr.Ino.input(player, payload.forward(), payload.strafe(), payload.jump(), payload.yaw(),
+                        payload.pitch(), payload.attacks());
             }
         }));
         registrar.playToServer(ExpansionDuelInput.TYPE, ExpansionDuelInput.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
@@ -1580,7 +1746,23 @@ public final class ModPayloads {
                 com.starkinhon.battlegroundsmod.challenge.Universes.pick(player, payload.id());
             }
         }));
+        registrar.playToClient(ShenlongState.TYPE, ShenlongState.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> com.starkinhon.battlegroundsmod.client.fx.ShenlongScene.state(payload)));
+        registrar.playToServer(ShenlongWish.TYPE, ShenlongWish.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
+            if (context.player() instanceof ServerPlayer player) {
+                com.starkinhon.battlegroundsmod.universe.shenlong.ShenlongServer.pick(player, payload.wish());
+            }
+        }));
         registrar.playToClient(SyncProgress.TYPE, SyncProgress.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> payload.applyTo(context.player())));
+        registrar.playToServer(FlightBoost.TYPE, FlightBoost.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
+            if (context.player() instanceof net.minecraft.server.level.ServerPlayer sp) {
+                com.starkinhon.battlegroundsmod.universe.Flight.boost(sp, payload.on());
+            }
+        }));
+        registrar.playToClient(QuestSync.TYPE, QuestSync.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.quest(payload.id(), payload.count(), payload.goal(), payload.x(), payload.z(), payload.flags())));
+        registrar.playToClient(FlightState.TYPE, FlightState.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.flightState(payload.entityId(), payload.state())));
         registrar.playToClient(SyncStamina.TYPE, SyncStamina.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> payload.applyTo(context.player())));
         registrar.playToClient(SyncCharge.TYPE, SyncCharge.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> payload.applyTo(context.player())));
         registrar.playToClient(PlaySkillAnimation.TYPE, PlaySkillAnimation.STREAM_CODEC, (payload, context) -> context.enqueueWork(
@@ -1681,6 +1863,23 @@ public final class ModPayloads {
                 () -> ClientHooks.limp(payload.entity(), payload.phase(), payload.ticks(), payload.strength())));
         registrar.playToClient(VoidFlash.TYPE, VoidFlash.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.voidFlash(payload.caster(), payload.center())));
+        registrar.playToClient(MkOpen.TYPE, MkOpen.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.makimaOpen(payload.kind(), payload.count(), payload.entries())));
+        registrar.playToServer(MkPick.TYPE, MkPick.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
+            if (context.player() instanceof ServerPlayer player) {
+                Tasks.as(player, () -> com.starkinhon.battlegroundsmod.power.powers.makima.Fantoche.pick(player, payload.index()));
+            }
+        }));
+        registrar.playToServer(MkOrder.TYPE, MkOrder.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
+            if (context.player() instanceof ServerPlayer player) {
+                Tasks.as(player, () -> com.starkinhon.battlegroundsmod.power.powers.makima.Puppets.order(player, payload.action(), payload.entity()));
+            }
+        }));
+        registrar.playToServer(MkNames.TYPE, MkNames.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
+            if (context.player() instanceof ServerPlayer player) {
+                Tasks.as(player, () -> com.starkinhon.battlegroundsmod.power.powers.makima.Ritual.written(player, payload.names()));
+            }
+        }));
         registrar.playToClient(SubFx.TYPE, SubFx.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.subFx(payload.kind(), payload.id(), payload.pos(), payload.dir(), payload.a(), payload.b(), payload.c())));
         registrar.playToClient(PunchFx.TYPE, PunchFx.STREAM_CODEC, (payload, context) -> context.enqueueWork(

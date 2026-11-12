@@ -93,7 +93,7 @@ public final class Progression {
     public static Component barName(String power, String home) {
         ProgressionSpec spec = ProgressionSpec.get();
         String universe = power == null || spec.universos() == null ? null : spec.universos().get(power);
-        if (universe == null && home != null && !home.isEmpty()) {
+        if (universe == null && home != null && !home.isEmpty() && !"mundo".equals(home)) {
             universe = home;
         }
         return Component.translatable("progression.battlegroundsmod.bar." + (universe != null ? universe : "poder"));
@@ -104,12 +104,17 @@ public final class Progression {
         if (victim.level().isClientSide) {
             return;
         }
-        if (victim instanceof ServerPlayer dead && on(dead)) {
+        if (victim instanceof ServerPlayer dead && on(dead) && !com.starkinhon.battlegroundsmod.universe.DragonBallWorld.immortal(dead)) {
             PowerData data = dead.getData(ModAttachments.POWER);
+            float before = data.poder;
             data.poder = (float) Math.max(0, data.poder * (1 - ProgressionSpec.get().perdaMorte()));
+            // what "Reviver" (Shenlong's wish) gives back
+            com.starkinhon.battlegroundsmod.universe.shenlong.ShenlongServer.lostPoder(dead, before - data.poder);
         }
         ServerPlayer killer = killer(event);
-        if (killer == null || killer == victim || !on(killer)) {
+        // In the challenge arenas the win pays (ChallengeArenas.arenaPoder), not the kill.
+        if (killer == null || killer == victim || !on(killer)
+                || victim.level().dimension().equals(com.starkinhon.battlegroundsmod.challenge.ChallengeArenas.ARENAS)) {
             return;
         }
         Integer victimTier = tierOf(victim);

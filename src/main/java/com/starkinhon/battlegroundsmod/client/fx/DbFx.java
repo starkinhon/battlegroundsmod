@@ -153,8 +153,24 @@ public final class DbFx {
     }
 
     static void receive(int kind, int id, Vec3 pos, Vec3 dir, float a, float b, float c) {
-        if (kind == SubNet.KATON || kind == SubNet.KATON_BOOM || kind == SubNet.SHADOW_SEA || kind == SubNet.FLARE) {
+        if (InoFx.handles(kind)) {
+            InoFx.receive(kind, id, pos, dir, a, b, c);
+            return;
+        }
+        if (kind >= SubNet.LUFFY_CHARGE && kind <= SubNet.LUFFY_LAST) {
+            LuffyFx.receive(kind, id, pos, dir, a, b, c);
+            return;
+        }
+        if (kind >= SubNet.OPM_SOCO && kind <= SubNet.OPM_LAST) {
+            OpmFx.receive(kind, id, pos, dir, a, b, c);
+            return;
+        }
+        if (kind == SubNet.KATON || kind == SubNet.KATON_BOOM || kind == SubNet.SHADOW_SEA || kind == SubNet.FLARE || kind >= SubNet.NARUTO_MIN && kind <= SubNet.NARUTO_MAX) {
             NrFx.receive(kind, id, pos, dir, a, b, c);
+            return;
+        }
+        if (kind >= com.starkinhon.battlegroundsmod.power.powers.makima.MkNet.EYES && kind <= com.starkinhon.battlegroundsmod.power.powers.makima.MkNet.LAST) {
+            MakimaFx.receive(kind, id, pos, dir, a, b, c);
             return;
         }
         if (kind >= SubNet.DIV_AURA) {
@@ -294,7 +310,7 @@ public final class DbFx {
     }
 
     static boolean active() {
-        return !SHOTS.isEmpty() || !TRACKED.isEmpty() || NrFx.active() || JjFx.active();
+        return !SHOTS.isEmpty() || !TRACKED.isEmpty() || NrFx.active() || JjFx.active() || InoFx.active();
     }
 
     static void clear() {
@@ -302,6 +318,8 @@ public final class DbFx {
         TRACKED.clear();
         NrFx.clear();
         JjFx.clear();
+        MakimaFx.clear();
+        InoFx.clear();
     }
 
     private static double life(Fx f) {
@@ -425,6 +443,7 @@ public final class DbFx {
         }
         NrFx.draw(now, partial);
         JjFx.draw(now, partial);
+        InoFx.draw(now, partial);
     }
 
     // ---------- drawing in the right pass ----------
@@ -2630,15 +2649,21 @@ public final class DbFx {
                 ScreenFx.impactFrame(new int[] {2, 3}, 1, 0xA070FF, pos, 0);
                 ScreenShake.start(1.3f * near, 16);
             }
-            // Miwa's draw.
+            // Miwa's cut opening (Realista+Anime, forja/miwa-kit hitFx): two manga frames.
             case 43 -> {
-                ScreenFx.impactFrame(new int[] {0}, 1, 0x8FD0FF, pos, 0);
-                ScreenShake.start(0.4f * near, 4);
+                ScreenFx.impactFrame(new int[] {4, 3}, 1, 0xFFFFFF, pos, 0);
+                ScreenShake.start(0.55f * near, 6);
             }
-            // Miwa's Line Cut and Simple Domain cutting.
+            // Miwa's Batto Perfeito and the counter from behind: five manga frames.
             case 44 -> {
-                ScreenFx.impactFrame(new int[] {0, 2}, 1, 0x8FD0FF, pos, 0);
-                ScreenShake.start(0.6f * near, 8);
+                ScreenFx.impactFrame(new int[] {4, 3, 4, 3, 4}, 1, 0xFFFFFF, pos, 0);
+                ScreenShake.start(1.2f * near, 12);
+            }
+            // Miwa's Lua Partida: the one draw over the whole circle.
+            case 59 -> {
+                ScreenFx.flash(0xE8F4FF, 0.45f * near, 6);
+                ScreenFx.impactFrame(new int[] {4, 3, 4, 3, 4}, 1, 0xFFFFFF, pos, 0);
+                ScreenShake.start(1.6f * near, 20);
             }
             // Realista+Anime: a ki beam let go (no impact frame on the throw, only light and the shake).
             case 45 -> {

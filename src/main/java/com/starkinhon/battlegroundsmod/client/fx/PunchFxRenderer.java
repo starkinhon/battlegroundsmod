@@ -25,7 +25,7 @@ import net.minecraft.world.phys.Vec3;
 //   a big bend, an impact frame in the soul color and a radial blur.
 // - The Dash Attack sliding: a tinted vapor cone in front of the body, soul flames behind it and dust at the feet.
 public final class PunchFxRenderer {
-    private record Hit(int kind, Vec3 pos, Vector3f dir, float[] color, float[] light, float charge, double ground, double born, int seed) {
+    private record Hit(int kind, Vec3 pos, Vector3f dir, float[] color, float[] light, float charge, double ground, double born, int seed, float size) {
     }
 
     private record Follow(int kind, int entityId, Vector3f dir, float[] color, float[] light, float a, double seen) {
@@ -55,6 +55,8 @@ public final class PunchFxRenderer {
     public static void receive(int packed, int entityId, Vec3 pos, Vec3 dir, float a, float b) {
         int kind = packed & 0xF;
         int rgb = packed >>> 4 & 0xFFFFFF;
+        // the puncher's scale (combat/PunchFx sizeBits): a giant's hit is drawn as big as his fist
+        float size = (packed >>> 28) + 1;
         float[] color = FxDraw.rgb(rgb);
         float[] light = FxDraw.mix(color, WHITE, 0.65f);
         Vec3 d = dir.lengthSqr() < 1.0E-6 ? new Vec3(0, 0, 1) : dir.normalize();
@@ -67,8 +69,8 @@ public final class PunchFxRenderer {
                     return;
                 }
                 CHARGES.remove(entityId);
-                HITS.add(new Hit(kind, pos, d.toVector3f(), color, light, a, b, now, 7919 * ++seeds));
-                screen(kind, pos, d, rgb, a);
+                HITS.add(new Hit(kind, pos, d.toVector3f(), color, light, a, b, now, 7919 * ++seeds, size));
+                screen(kind, pos, d, rgb, a, size);
             }
         }
     }
@@ -88,17 +90,17 @@ public final class PunchFxRenderer {
     }
 
     // What the hit does to the screen: the bend for everyone who sees it, the impact frame and the blur only up close.
-    private static void screen(int kind, Vec3 pos, Vec3 dir, int rgb, float charge) {
+    private static void screen(int kind, Vec3 pos, Vec3 dir, int rgb, float charge, float size) {
         if (kind == PunchFx.SWING) {
             return;
         }
-        float s = SCALE[kind];
+        float s = SCALE[kind] * size;
         boolean big = kind == PunchFx.FINAL || kind == PunchFx.FORTE || kind == PunchFx.DASH;
         ScreenFx.warp(pos, 1.6f * s, (big ? 0.45f : 0.25f) * (kind == PunchFx.FORTE ? 1 + 0.5f * charge : 1), 10, 0, dir, rgb, 0.04f,
                 big ? 14 : 10, -1, null, 0);
         LocalPlayer player = Minecraft.getInstance().player;
         double distance = player == null ? 0 : player.getEyePosition().distanceTo(pos);
-        float near = (float) Math.max(0, 1 - distance / SCREEN_REACH);
+        float near = (float) Math.max(0, 1 - distance / (SCREEN_REACH * size));
         if (near <= 0) {
             return;
         }
@@ -124,24 +126,29 @@ public final class PunchFxRenderer {
         for (Follow f : CHARGES.values()) {
             Entity e = level.getEntity(f.entityId);
             if (e != null) {
+                float sc = scale(e);
                 // Where the server puts the fist (combat/Combat.handPos), at this frame.
-                Vec3 hand = e.getEyePosition(partial).add(e.getViewVector(partial).scale(0.6)).add(0, -0.35, 0);
-                charge(f, hand.subtract(camera).toVector3f(), (float) now);
+                Vec3 hand = e.getEyePosition(partial).add(e.getViewVector(partial).scale(0.6 * sc)).add(0, -0.35 * sc, 0);
+                charge(f, hand.subtract(camera).toVector3f(), (float) now, sc);
             }
         }
         for (Follow f : TRAILS.values()) {
             Entity e = level.getEntity(f.entityId);
             if (e != null) {
                 Vec3 feet = e.getPosition(partial);
-                trail(f, feet.subtract(camera).toVector3f(), e.getBbHeight(), (float) now);
+                trail(f, feet.subtract(camera).toVector3f(), e.getBbHeight(), (float) now, scale(e));
             }
         }
+    }
+
+    private static float scale(Entity e) {
+        return e instanceof net.minecraft.world.entity.LivingEntity living ? Math.max(1, living.getScale()) : 1;
     }
 
     // One hit, age ticks after it landed.
     private static void hit(Hit h, Vector3f at, float age, float groundY) {
         int k = h.kind;
-        float s = SCALE[k];
+        float s = SCALE[k] * h.size;
         boolean big = k == PunchFx.FINAL || k == PunchFx.FORTE || k == PunchFx.DASH;
         boolean swing = k == PunchFx.SWING;
         if (swing) {
@@ -217,32 +224,32 @@ public final class PunchFxRenderer {
             }
         }
         if (k == PunchFx.FORTE || k == PunchFx.DASH) {
-            dust(at, groundY, age - 1, k == PunchFx.FORTE ? 1.3f : 1, h.seed);
+            dust(at, groundY, age - 1, (k == PunchFx.FORTE ? 1.3f : 1) * h.size, h.seed);
         }
     }
 
     // The Forte charging: tinted rings closing on the fist, a glow and flames on it.
-    private static void charge(Follow f, Vector3f fist, float now) {
+    private static void charge(Follow f, Vector3f fist, float now, float sc) {
         float k = Mth.clamp(f.a, 0, 1);
         for (int i = 0; i < 3; i++) {
             float ph = frac(now * 0.08f + i / 3f);
-            vapor(new Vector3f(f.dir).mul(0.1f).add(fist), f.dir, (1 - ph) * 1.4f + 0.15f, (0.25f + 0.75f * k) * ph * 0.8f, f.color, f.light);
+            vapor(new Vector3f(f.dir).mul(0.1f * sc).add(fist), f.dir, ((1 - ph) * 1.4f + 0.15f) * sc, (0.25f + 0.75f * k) * ph * 0.8f, f.color, f.light);
         }
-        FxDraw.billboard(fist, 0.5f + 0.7f * k, 0, FxDraw.SOFT, 0.5f, f.color, 0.2f + 0.3f * k, true);
+        FxDraw.billboard(fist, (0.5f + 0.7f * k) * sc, 0, FxDraw.SOFT, 0.5f, f.color, 0.2f + 0.3f * k, true);
         for (int i = 0; i < 4; i++) {
             float ph = frac(now * 0.07f + i / 4f);
-            Vector3f p = new Vector3f((FxWorld.hash(i, 1, 3) - 0.5f) * 0.3f, ph * 0.6f, (FxWorld.hash(i, 2, 3) - 0.5f) * 0.3f).add(fist);
-            wisp(p, 0.3f * (1 - ph) * (0.5f + k), f.color, f.light, (0.3f + 0.7f * k) * (1 - ph), i, now);
+            Vector3f p = new Vector3f((FxWorld.hash(i, 1, 3) - 0.5f) * 0.3f, ph * 0.6f, (FxWorld.hash(i, 2, 3) - 0.5f) * 0.3f).mul(sc).add(fist);
+            wisp(p, 0.3f * (1 - ph) * (0.5f + k) * sc, f.color, f.light, (0.3f + 0.7f * k) * (1 - ph), i, now);
         }
     }
 
     // The Dash Attack sliding.
-    private static void trail(Follow f, Vector3f feet, float height, float now) {
+    private static void trail(Follow f, Vector3f feet, float height, float now, float sc) {
         Vector3f dir = f.dir;
         Vector3f center = new Vector3f(feet).add(0, height * 0.55f, 0);
-        Vector3f cone = new Vector3f(dir).mul(0.9f).add(center);
+        Vector3f cone = new Vector3f(dir).mul(0.9f * sc).add(center);
         for (int j = 0; j < 2; j++) {
-            vapor(new Vector3f(dir).mul(-j * 0.5f).add(cone), dir, 1.5f - j * 0.3f, 0.6f - j * 0.2f, f.color, f.light);
+            vapor(new Vector3f(dir).mul(-j * 0.5f * sc).add(cone), dir, (1.5f - j * 0.3f) * sc, 0.6f - j * 0.2f, f.color, f.light);
         }
         Vector3f side = new Vector3f(-dir.z, 0, dir.x);
         if (side.lengthSquared() < 1.0E-4f) {
@@ -252,15 +259,15 @@ public final class PunchFxRenderer {
         int tick = Mth.floor(now);
         for (int i = 0; i < 3; i++) {
             float a = frac(now * 0.5f + i);
-            Vector3f p = new Vector3f(side).mul((FxWorld.hash(i, tick, 1) - 0.5f) * 0.8f).add(feet).add(0, 0.25f + a * 0.3f, 0)
-                    .add(new Vector3f(dir).mul(-a * 1.4f));
-            FxDraw.billboard(p, 0.5f + a * 0.6f, i + now * 0.1f, FxDraw.SMOKE, 0.3f + a * 0.3f, DUST, 0.5f * (1 - a), false);
+            Vector3f p = new Vector3f(side).mul((FxWorld.hash(i, tick, 1) - 0.5f) * 0.8f * sc).add(feet).add(0, (0.25f + a * 0.3f) * sc, 0)
+                    .add(new Vector3f(dir).mul(-a * 1.4f * sc));
+            FxDraw.billboard(p, (0.5f + a * 0.6f) * sc, i + now * 0.1f, FxDraw.SMOKE, 0.3f + a * 0.3f, DUST, 0.5f * (1 - a), false);
         }
         for (int i = 0; i < 6; i++) {
             float a = frac(now * 0.25f + i / 6f);
-            Vector3f p = new Vector3f(side).mul((FxWorld.hash(i, 4, 1) - 0.5f) * 0.6f).add(center)
-                    .add(0, (FxWorld.hash(i, 5, 1) - 0.5f) * height * 0.75f + a * 0.3f, 0).add(new Vector3f(dir).mul(-a * 2.2f));
-            wisp(p, 0.4f * (1 - a) + 0.08f, f.color, f.light, 0.7f * (1 - a), i, now);
+            Vector3f p = new Vector3f(side).mul((FxWorld.hash(i, 4, 1) - 0.5f) * 0.6f * sc).add(center)
+                    .add(0, (FxWorld.hash(i, 5, 1) - 0.5f) * height * 0.75f + a * 0.3f * sc, 0).add(new Vector3f(dir).mul(-a * 2.2f * sc));
+            wisp(p, (0.4f * (1 - a) + 0.08f) * sc, f.color, f.light, 0.7f * (1 - a), i, now);
         }
     }
 

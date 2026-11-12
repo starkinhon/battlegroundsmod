@@ -23,6 +23,30 @@ public final class DragonBallPlaces {
     private DragonBallPlaces() {
     }
 
+    // Where no enemy comes (Stark's test 2026-11-10: hordes at the Kame House and inside Capsule Corp, and five
+    // Saibamen on him one minute after arriving): the arrival point, the houses and the tower. {x, z, radius}.
+    private static final int[][] SAFE = {
+            {412, 88, 60}, {-149, -152, 70}, {323, -29, 50}, {-407, -87, 30}, {-268, -430, 30}, {-54, -289, 45},
+            {-239, 95, 30}, {250, -195, 25}, {-319, 57, 25},
+            // Kami's lookout (pirates came up and tore its carpet, Stark 2026-11-10)
+            {-400, -408, 50}};
+    private static final int ARRIVAL_SAFE = 110;
+
+    public static boolean safe(int x, int z) {
+        WorldMap map = WorldMap.get(MAP);
+        long ax = x - map.arrivalX, az = z - map.arrivalZ;
+        if (ax * ax + az * az < (long) ARRIVAL_SAFE * ARRIVAL_SAFE) {
+            return true;
+        }
+        for (int[] s : SAFE) {
+            long dx = x - s[0], dz = z - s[1];
+            if (dx * dx + dz * dz < (long) s[2] * s[2]) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     // Namek is its own planet now (Stark, 2026-11-10): a sub-dimension of the Dragon Ball universe (NamekWorld).
     public static boolean onNamek(net.minecraft.world.entity.player.Player player) {
         return player.level().dimension() == NamekWorld.LEVEL;
@@ -47,6 +71,7 @@ public final class DragonBallPlaces {
         place("babidi", -319, 57, DragonBallPlaces::wreck);
         // The six places Stark marked on the 2D map (2026-11-10), drawn after his references by
         // tools/structures/dragonball2.py. The spots are the ones tools/build_worldmap.py flattened.
+        // (Gohan lives here: universe/DbActivities keeps him at the door.)
         place("goku", 323, -29, (map, x, z) -> structure(map, x, z, "goku", 24, 24, "dragonball/goku_house"));
         place("buu", -268, -430, (map, x, z) -> structure(map, x, z, "buu", 16, 18, "dragonball/buu_house"));
         place("cell", -54, -289, (map, x, z) -> structure(map, x, z, "cell", 34, 48, "dragonball/cell_arena"));

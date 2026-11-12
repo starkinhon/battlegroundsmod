@@ -1,0 +1,28 @@
+{
+  "parent": "battlegroundsmod:souls/primeira_alma",
+  "display": {
+    "icon": {
+      "id": "battlegroundsmod:soul_destruction_god"
+    },
+    "title": {
+      "translate": "advancements.battlegroundsmod.souls.alma_bills.title"
+    },
+    "description": {
+      "translate": "advancements.battlegroundsmod.souls.alma_bills.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ]
+}

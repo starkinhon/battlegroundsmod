@@ -112,6 +112,7 @@ public final class BossFalas {
     public static int[] colors(String power) {
         return switch (power == null ? "" : power) {
             case "sukuna" -> new int[] {0x7A0E14, 0xFF6A50};
+            case "makima" -> new int[] {0xA3122A, 0xFFD6DC};
             case "strongest" -> new int[] {0x1E5FD0, 0x8FE0FF};
             case "uchiha_ghost" -> new int[] {0x8A1A14, 0xFF5A3C};
             case "destruction_god" -> new int[] {0x6A2AC0, 0xE2B4FF};

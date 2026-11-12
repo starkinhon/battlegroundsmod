@@ -1,0 +1,28 @@
+{
+  "parent": "battlegroundsmod:souls/tier_3",
+  "display": {
+    "icon": {
+      "id": "minecraft:end_crystal"
+    },
+    "title": {
+      "translate": "advancements.battlegroundsmod.souls.tier_1.title"
+    },
+    "description": {
+      "translate": "advancements.battlegroundsmod.souls.tier_1.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ]
+}

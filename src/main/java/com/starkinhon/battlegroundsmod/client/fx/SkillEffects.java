@@ -89,6 +89,9 @@ public final class SkillEffects {
             SukunaDomainScene.clear();
             DuelScene.clear();
             SkillAudio.clear();
+            FlightFx.clear();
+            com.starkinhon.battlegroundsmod.client.FlightClient.clear();
+            com.starkinhon.battlegroundsmod.client.QuestHud.clear();
             return;
         }
         long now = ScreenFx.now();

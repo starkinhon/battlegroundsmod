@@ -113,11 +113,11 @@
       "slot": 0,
       "tipo": "alcance",
       "peso": 1.2,
-      "recargaTicks": 220,
-      "recargaMaxTicks": 319,
+      "recargaTicks": 200,
+      "recargaMaxTicks": 290,
       "avisoTicks": 6,
       "distanciaMin": 3,
-      "distanciaMax": 24,
+      "distanciaMax": 25,
       "giroGrausPorTick": 14,
       "avisoCor": "#c0202a",
       "avisoSom": "minecraft:block.honey_block.slide"
@@ -126,8 +126,8 @@
       "slot": 1,
       "tipo": "livre",
       "peso": 0.9,
-      "recargaTicks": 380,
-      "recargaMaxTicks": 551,
+      "recargaTicks": 360,
+      "recargaMaxTicks": 522,
       "avisoTicks": 4,
       "distanciaMin": 0,
       "distanciaMax": 6,
@@ -139,8 +139,8 @@
       "slot": 2,
       "tipo": "controle",
       "peso": 1.0,
-      "recargaTicks": 280,
-      "recargaMaxTicks": 406,
+      "recargaTicks": 260,
+      "recargaMaxTicks": 377,
       "avisoTicks": 4,
       "distanciaMin": 3,
       "distanciaMax": 12,
@@ -148,18 +148,31 @@
       "avisoCor": "#c0202a",
       "avisoSom": "minecraft:entity.fishing_bobber.throw"
     },
-    "escama": {
+    "maximo": {
       "slot": 3,
       "tipo": "ult",
-      "peso": 0.7,
-      "recargaTicks": 900,
-      "recargaMaxTicks": 1305,
+      "peso": 0.8,
+      "recargaTicks": 700,
+      "recargaMaxTicks": 1000,
       "avisoTicks": 6,
-      "distanciaMin": 0,
-      "distanciaMax": 4,
+      "distanciaMin": 3,
+      "distanciaMax": 30,
       "giroGrausPorTick": 14,
       "avisoCor": "#ff3a3a",
       "avisoSom": "minecraft:entity.warden.heartbeat"
+    },
+    "meteorito": {
+      "slot": 7,
+      "tipo": "alcance",
+      "peso": 0.9,
+      "recargaTicks": 300,
+      "recargaMaxTicks": 435,
+      "avisoTicks": 5,
+      "distanciaMin": 5,
+      "distanciaMax": 22,
+      "giroGrausPorTick": 14,
+      "avisoCor": "#8a0c14",
+      "avisoSom": "minecraft:block.honey_block.place"
     }
   },
   "combos": {
@@ -182,8 +195,22 @@
     "choso_3": {
       "peso": 1.0,
       "passos": [
-        "escama",
-        "sangue"
+        "amarra",
+        "maximo"
+      ]
+    },
+    "choso_4": {
+      "peso": 1.0,
+      "passos": [
+        "sangue",
+        "meteorito"
+      ]
+    },
+    "choso_5": {
+      "peso": 0.8,
+      "passos": [
+        "meteorito",
+        "supernova"
       ]
     }
   },
@@ -196,12 +223,15 @@
         "sangue",
         "supernova",
         "amarra",
-        "escama"
+        "maximo",
+        "meteorito"
       ],
       "combos": [
         "choso_1",
         "choso_2",
-        "choso_3"
+        "choso_3",
+        "choso_4",
+        "choso_5"
       ],
       "agressividade": 0.75,
       "multRecarga": 1.0,

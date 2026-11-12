@@ -42,6 +42,7 @@ public class SoulItem extends Item {
         }
         if (player instanceof ServerPlayer serverPlayer) {
             PowerLogic.select(serverPlayer, power());
+            com.starkinhon.battlegroundsmod.power.Achievements.soul(serverPlayer);
             stack.consume(1, player);
         }
         return InteractionResultHolder.sidedSuccess(stack, level.isClientSide);

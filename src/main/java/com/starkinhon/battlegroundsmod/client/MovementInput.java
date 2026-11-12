@@ -20,6 +20,8 @@ public final class MovementInput {
     private static int lastSprintTap = -100;
     // Creative players toggle flying with a double tap; when the air jump is on in creative, that toggle is undone.
     private static boolean undoFlight = false;
+    // The Dragon Ball flight: Minecraft's double tap of jump would switch it off in mid air (a fall); it is put back.
+    private static boolean flyingBefore = false;
 
     private MovementInput() {
     }
@@ -32,20 +34,32 @@ public final class MovementInput {
         boolean pressed = down && !jumpWasDown;
         jumpWasDown = down;
         // A quick tap can press and release Ctrl between two ticks, which isDown misses, so the key's clicks count too.
+        // Holding the key makes the system repeat its clicks (#127), so a click only counts when the key was up the
+        // tick before (Stark 2026-11-10: holding Ctrl while flying fired the boost over and over and ate the stamina).
         boolean sprintDown = options.keySprint.isDown();
         boolean sprintTap = sprintDown && !sprintWasDown;
-        sprintWasDown = sprintDown;
+        boolean clicked = false;
         while (options.keySprint.consumeClick()) {
+            clicked = true;
+        }
+        if (clicked && !sprintWasDown) {
             sprintTap = true;
         }
+        sprintWasDown = sprintDown;
         boolean dash = false;
         while (Keybinds.DASH.consumeClick()) {
             dash = true;
         }
         if (player == null) {
+            FlightClient.tick(false);
             return;
         }
+        flyingBefore = player.getAbilities().flying;
         Movement.tick(player);
+        // The Dragon Ball flight moves the player itself and takes the Ctrl taps for its boost while flying.
+        if (FlightClient.tick(sprintTap)) {
+            sprintTap = false;
+        }
         if (minecraft.screen != null) {
             return;
         }
@@ -84,5 +98,11 @@ public final class MovementInput {
             player.onUpdateAbilities();
         }
         undoFlight = false;
+        if (player != null && flyingBefore && !player.getAbilities().flying && player.getAbilities().mayfly && !player.isCreative()
+                && !player.isSpectator() && !player.onGround() && Minecraft.getInstance().options.keyJump.isDown()) {
+            player.getAbilities().flying = true;
+            player.onUpdateAbilities();
+        }
+        flyingBefore = false;
     }
 }

@@ -1,0 +1,112 @@
+{
+  "parent": "battlegroundsmod:souls/root",
+  "display": {
+    "icon": {
+      "id": "battlegroundsmod:kusanagi"
+    },
+    "title": {
+      "translate": "advancements.battlegroundsmod.souls.primeira_arma.title"
+    },
+    "description": {
+      "translate": "advancements.battlegroundsmod.souls.primeira_arma.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "nuvem_brincalhona": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "battlegroundsmod:nuvem_brincalhona"
+          }
+        ]
+      }
+    },
+    "samehada": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "battlegroundsmod:samehada"
+          }
+        ]
+      }
+    },
+    "kusanagi": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "battlegroundsmod:kusanagi"
+          }
+        ]
+      }
+    },
+    "dedo_sukuna": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "battlegroundsmod:dedo_sukuna"
+          }
+        ]
+      }
+    },
+    "venda_gojo": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "battlegroundsmod:venda_gojo"
+          }
+        ]
+      }
+    },
+    "lanca_invertida": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "battlegroundsmod:lanca_invertida"
+          }
+        ]
+      }
+    },
+    "zanpakuto": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "battlegroundsmod:zanpakuto"
+          }
+        ]
+      }
+    },
+    "espada_nichirin": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "battlegroundsmod:espada_nichirin"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "nuvem_brincalhona",
+      "samehada",
+      "kusanagi",
+      "dedo_sukuna",
+      "venda_gojo",
+      "lanca_invertida",
+      "zanpakuto",
+      "espada_nichirin"
+    ]
+  ]
+}

@@ -37,6 +37,15 @@ public final class FxRenderTypes extends RenderType {
                     .setCullState(NO_CULL)
                     .createCompositeState(false));
 
+    // Seen through everything: the red ghosts of Makima's rats' vision (MakimaFx), the bodies' own shape over the world.
+    public static final RenderType GHOST = create("battlegroundsmod_fx_ghost", DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS, 262144,
+            false, true, CompositeState.builder()
+                    .setShaderState(POSITION_COLOR_SHADER)
+                    .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                    .setDepthTestState(NO_DEPTH_TEST)
+                    .setWriteMaskState(COLOR_WRITE)
+                    .setCullState(NO_CULL)
+                    .createCompositeState(false));
 
     // The souls_vfx shapes (see FxDraw). The additive one is drawn into the glow layer, which gets the bloom.
     private static final ShaderStateShard VFX_SHADER = new ShaderStateShard(() -> FxShaders.vfx);
@@ -232,6 +241,20 @@ public final class FxRenderTypes extends RenderType {
                         .setLightmapState(LIGHTMAP)
                         .setCullState(NO_CULL)
                         .createCompositeState(true)));
+    }
+
+    // The Esferas do Dragão (DragonBallRenderer): souls_dball, solid, lit by the lightmap. The vertex color carries the
+    // ball's own normal and the number of stars (see souls_dball.vsh).
+    private static final ShaderStateShard DBALL_SHADER = new ShaderStateShard(() -> FxShaders.dball);
+    public static final RenderType DBALL = create("battlegroundsmod_dball", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 8192,
+            true, false, CompositeState.builder()
+                    .setShaderState(DBALL_SHADER)
+                    .setLightmapState(LIGHTMAP)
+                    .setCullState(CULL)
+                    .createCompositeState(true));
+
+    public static boolean dballReady() {
+        return FxShaders.dball != null && !FxShaders.flat();
     }
 
     // The texture a vanilla render type draws with, or null when it has none or can't be read.

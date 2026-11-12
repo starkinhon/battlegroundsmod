@@ -38,6 +38,7 @@ public abstract class CameraMixin {
         // Sukuna's Expansão de Domínio holds the camera of everyone caught in it while its cutscene plays.
         // The Duelo de Expansões holds the camera of the two (and of those watching inside) on their faces.
         FaceCutscene.Shot shot = com.starkinhon.battlegroundsmod.client.fx.DuelScene.cutscene() ? com.starkinhon.battlegroundsmod.client.fx.DuelScene.shot(partialTick)
+                : com.starkinhon.battlegroundsmod.client.fx.ShenlongScene.cutscene() ? com.starkinhon.battlegroundsmod.client.fx.ShenlongScene.shot(partialTick)
                 : com.starkinhon.battlegroundsmod.client.fx.SukunaDomainScene.cutscene() ? com.starkinhon.battlegroundsmod.client.fx.SukunaDomainScene.shot(partialTick)
                 : CutscenePlayer.active() ? CutscenePlayer.shot(partialTick)
                 : BossCutscene.active() ? BossCutscene.shot(partialTick)
@@ -49,6 +50,13 @@ public abstract class CameraMixin {
         if (shot != null) {
             setRotation(shot.yaw(), shot.pitch());
             setPosition(shot.position());
+        } else if (detached && entity != null) {
+            // Kakashi in third person inside his Perfect Susanoo: seen from outside.
+            Camera camera = (Camera) (Object) this;
+            Vec3 back = com.starkinhon.battlegroundsmod.client.fx.KakashiSusanoo.pullBack(entity.getId(), camera.getPosition(), camera.getLookVector(), partialTick);
+            if (back != null) {
+                setPosition(back);
+            }
         }
         float[] shake = ScreenShake.offsets();
         if (shake != null) {

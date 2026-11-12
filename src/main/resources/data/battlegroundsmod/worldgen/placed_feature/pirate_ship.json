@@ -1,0 +1,19 @@
+{
+  "feature": "battlegroundsmod:pirate_ship",
+  "placement": [
+    {
+      "type": "minecraft:rarity_filter",
+      "chance": 70
+    },
+    {
+      "type": "minecraft:in_square"
+    },
+    {
+      "type": "minecraft:heightmap",
+      "heightmap": "OCEAN_FLOOR_WG"
+    },
+    {
+      "type": "minecraft:biome"
+    }
+  ]
+}

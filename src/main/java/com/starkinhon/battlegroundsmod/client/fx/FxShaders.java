@@ -34,6 +34,15 @@ public final class FxShaders {
     static ShaderInstance smoke;
     // The Dragon Ball kits' 3D effects (KiMesh); on its own, so a problem here only hides them.
     static ShaderInstance ki;
+    // Saitama's serious moves (OpmMesh).
+    static ShaderInstance opm;
+    // Luffy's moves (LuffyMesh).
+    static ShaderInstance luffy;
+    // Kakashi's Perfect Susanoo (KakashiSusanoo): the body, its flames and outline, and the mist round its feet.
+    static ShaderInstance kkSus;
+    static ShaderInstance kkMist;
+    static ShaderInstance sand;
+    static ShaderInstance bleach;
     // Sukuna's Fuga (FugaRenderer); without them the Fuga only darkens the world.
     static ShaderInstance fugaFlame;
     static ShaderInstance fugaArrow;
@@ -72,6 +81,14 @@ public final class FxShaders {
     static ShaderInstance sdDrop;
     static ShaderInstance sdWave;
     static ShaderInstance sdPano;
+    // The Esferas do Dragão (DragonBallRenderer), the ball of the Shenlong cutscene.
+    static ShaderInstance dball;
+    // The Shenlong cutscene (ShenlongScene): the preview's shaders (forja/shenlong/glsl.js).
+    static ShaderInstance shenBody;
+    static ShaderInstance shenGlow;
+    static ShaderInstance shenSky;
+    static ShaderInstance shenGround;
+    static ShaderInstance shenBolt;
 
     private static Boolean irisPresent;
 
@@ -94,6 +111,33 @@ public final class FxShaders {
             register(event, "souls_ki", DefaultVertexFormat.POSITION, s -> ki = s);
         } catch (Exception e) {
             BattlegroundsMod.LOGGER.error("Could not load the Dragon Ball 3D effect shader", e);
+        }
+        try {
+            register(event, "souls_opm", DefaultVertexFormat.POSITION, s -> opm = s);
+        } catch (Exception e) {
+            BattlegroundsMod.LOGGER.error("Could not load Saitama's effect shader", e);
+        }
+        try {
+            register(event, "souls_luffy", LuffyMesh.FORMAT, s -> luffy = s);
+        } catch (Exception e) {
+            BattlegroundsMod.LOGGER.error("Could not load Luffy's effect shader", e);
+        }
+        try {
+            register(event, "souls_kk_sus", DefaultVertexFormat.POSITION_TEX_COLOR_NORMAL, s -> kkSus = s);
+            register(event, "souls_kk_mist", DefaultVertexFormat.POSITION, s -> kkMist = s);
+        } catch (Exception e) {
+            BattlegroundsMod.LOGGER.error("Could not load Kakashi's Susanoo shaders", e);
+        }
+        try {
+            register(event, "souls_sand", DefaultVertexFormat.POSITION_TEX_COLOR_NORMAL, s -> sand = s);
+        } catch (Exception e) {
+            BattlegroundsMod.LOGGER.error("Could not load Gaara's sand shader", e);
+        }
+        // Bleach (Rukia, Byakuya): the same GLSL text as the approved pages (forja/bleach/mod-shaders.sh).
+        try {
+            register(event, "souls_bleach", DefaultVertexFormat.POSITION, s -> bleach = s);
+        } catch (Exception e) {
+            BattlegroundsMod.LOGGER.error("Could not load the Bleach 3D effect shader", e);
         }
         // On its own: a problem here only hides the smoke, never the other effects.
         try {
@@ -167,6 +211,24 @@ public final class FxShaders {
         } catch (Exception e) {
             BattlegroundsMod.LOGGER.error("Could not load the Sukuna Domain Expansion shaders", e);
         }
+        // On its own: without it the Esferas do Dragão are drawn plain orange (no stars).
+        try {
+            register(event, "souls_dball", DefaultVertexFormat.NEW_ENTITY, s -> dball = s);
+        } catch (Exception e) {
+            BattlegroundsMod.LOGGER.error("Could not load the Dragon Ball shader", e);
+        }
+        // On their own: without them Shenlong's cutscene doesn't draw (the wish still happens, by the menu).
+        try {
+            register(event, "souls_shen_body", DefaultVertexFormat.NEW_ENTITY, s -> shenBody = s);
+            register(event, "souls_shen_glow", DefaultVertexFormat.NEW_ENTITY, s -> shenGlow = s);
+            register(event, "souls_shen_sky", DefaultVertexFormat.POSITION, s -> shenSky = s);
+            register(event, "souls_shen_ground", DefaultVertexFormat.POSITION, s -> shenGround = s);
+            register(event, "souls_shen_bolt", DefaultVertexFormat.POSITION_TEX, s -> shenBolt = s);
+        } catch (Exception e) {
+            BattlegroundsMod.LOGGER.error("Could not load the Shenlong shaders", e);
+        }
+        // Shigaraki's (each on its own inside).
+        com.starkinhon.battlegroundsmod.client.fx.shig.ShigShaders.register(event);
         // On its own: without it the duel still plays, just without its sky.
         try {
             register(event, "souls_duel_sky", DefaultVertexFormat.POSITION, s -> duelSky = s);

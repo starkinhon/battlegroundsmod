@@ -117,14 +117,30 @@ public final class Universes {
         }
         for (ServerPlayer player : event.getServer().getPlayerList().getPlayers()) {
             if (home(player).isEmpty() && player.tickCount > 40 && player.isAlive()) {
-                PacketDistributor.sendToPlayer(player, new ModPayloads.OpenUniverses(true));
+                bornInWorld(player);
             }
         }
+    }
+
+    // The player's home when the universes are biomes of their own world (Stark 2026-11-11): the overworld itself.
+    public static final String WORLD = "mundo";
+
+    // First time in a normal world: born right there, human, with the Livro dos Desafios. No screen, no other world:
+    // the universes are the biomes around (universe/UniverseBiomes).
+    private static void bornInWorld(ServerPlayer player) {
+        player.setData(ModAttachments.UNIVERSE, WORLD);
+        bornHuman(player);
+        giveBook(player, "dragonball");
+        Progression.sync(player);
     }
 
     // From the screen: the player chose a universe (first time, or with a Cristal Multiversal in hand).
     public static void pick(ServerPlayer player, String universe) {
         if (!Progression.on(player) || ChallengeSpec.get().universe(universe) == null) {
+            return;
+        }
+        if (WORLD.equals(home(player))) {
+            player.displayClientMessage(Component.translatable("message.battlegroundsmod.universe_no_mundo"), true);
             return;
         }
         if (home(player).isEmpty()) {

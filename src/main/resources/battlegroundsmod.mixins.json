@@ -9,6 +9,7 @@
     "CreativeScreenMixin",
     "ItemInHandLayerMixin",
     "ItemInHandRendererMixin",
+    "LevelRendererMixin",
     "LivingEntityRendererMixin",
     "PlayerModelMixin"
   ],

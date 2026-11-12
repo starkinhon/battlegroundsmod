@@ -1,11 +1,16 @@
 package com.starkinhon.battlegroundsmod.animal;
 
+import com.starkinhon.battlegroundsmod.combat.Stun;
+import com.starkinhon.battlegroundsmod.power.powers.sub.db.DbMobs;
+
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
@@ -21,10 +26,17 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
 // The dinosaurs of the Dragon World (Stark 2026-11-10: "o que mais tem no verso"): the tyrannosaur, big and alone, slow
-// to turn but one bite takes a lot, and the raptors, small and fast, in packs. Plain animals with a bite, no skills;
-// their tier comes from their health like any monster's (padrao.progressao.json mobsVanilla). One class for both: the
+// to turn but one bite takes a lot, and the raptors, small and fast, in packs. Each has two moves (power/powers/sub/db/
+// DbMobs, Stark 2026-11-10 "faz os outros poderes dos inimigos"): the raptor pounces (Bote) and claws (Garras), the
+// tyrannosaur charges (Investida) and stomps (Pisão Sísmico), picked by distance with their own cooldowns; their tier comes from their health like any monster's (padrao.progressao.json mobsVanilla): raptor 24 = Tier 10,
+// tyrannosaur 160 = Tier 8 (Stark 2026-11-10: every enemy was Tier 10, nothing grew a player past Tier 7). One class for both: the
 // entity type says which (rex()).
 public class Dinosaur extends Monster {
+    // ticks until each move is ready again, and while one is playing out
+    private int zCooldown = 60;
+    private int xCooldown = 40;
+    private int busy;
+
     public Dinosaur(EntityType<? extends Dinosaur> type, Level level) {
         super(type, level);
         this.xpReward = rex() ? 20 : 6;
@@ -36,8 +48,8 @@ public class Dinosaur extends Monster {
 
     public static AttributeSupplier.Builder attributes(boolean rex) {
         return Monster.createMonsterAttributes()
-                .add(Attributes.MAX_HEALTH, rex ? 90 : 24)
-                .add(Attributes.ATTACK_DAMAGE, rex ? 7 : 2.5)
+                .add(Attributes.MAX_HEALTH, rex ? 160 : 24)
+                .add(Attributes.ATTACK_DAMAGE, rex ? 5 : 2)
                 .add(Attributes.MOVEMENT_SPEED, rex ? 0.27 : 0.36)
                 .add(Attributes.FOLLOW_RANGE, rex ? 28 : 24)
                 .add(Attributes.KNOCKBACK_RESISTANCE, rex ? 0.85 : 0.1)
@@ -56,11 +68,46 @@ public class Dinosaur extends Monster {
         targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, true));
     }
 
-    // The big one bites from farther away (its head is far out in front).
     @Override
-    public boolean isWithinMeleeAttackRange(net.minecraft.world.entity.LivingEntity target) {
+    protected void customServerAiStep() {
+        super.customServerAiStep();
+        zCooldown = Math.max(0, zCooldown - 1);
+        xCooldown = Math.max(0, xCooldown - 1);
+        if (busy > 0) {
+            busy--;
+            return;
+        }
+        LivingEntity target = getTarget();
+        if (target == null || !target.isAlive() || !(level() instanceof ServerLevel server) || Stun.real(this)
+                || !hasLineOfSight(target)) {
+            return;
+        }
+        double d = distanceTo(target);
         if (rex()) {
-            return getBoundingBox().inflate(1.6, 0.5, 1.6).intersects(target.getBoundingBox());
+            if (xCooldown <= 0 && d <= 4.5 && onGround() && DbMobs.rexStomp(this, server)) {
+                xCooldown = 200 + random.nextInt(80);
+                busy = 26;
+            } else if (zCooldown <= 0 && d >= 7 && d <= 18 && onGround() && DbMobs.rexCharge(this, server)) {
+                zCooldown = 260 + random.nextInt(100);
+                busy = 45;
+            }
+        } else {
+            if (xCooldown <= 0 && d <= 3 && DbMobs.claws(this, server)) {
+                xCooldown = 160 + random.nextInt(80);
+                busy = 12;
+            } else if (zCooldown <= 0 && d >= 3.5 && d <= 7 && onGround() && DbMobs.pounce(this, server)) {
+                zCooldown = 240 + random.nextInt(120);
+                busy = 40;
+            }
+        }
+    }
+
+    // The big one bites from a little farther away (its head is out in front); less than before, Stark 2026-11-10 found
+    // the dinosaurs' reach too long.
+    @Override
+    public boolean isWithinMeleeAttackRange(LivingEntity target) {
+        if (rex()) {
+            return getBoundingBox().inflate(0.9, 0.4, 0.9).intersects(target.getBoundingBox());
         }
         return super.isWithinMeleeAttackRange(target);
     }

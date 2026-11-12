@@ -6,7 +6,16 @@
 // (relative to the camera). Kind says which effect: 0 blast/smoke, 1 Genki core, 2 halo (Genki), 3 beam, 4 dust ring,
 // 5 aura shell, 6 hit flash, 7 sun core, 8 sun halo, 9 saw disc, 10 Kienzan disc, 11 Makankosappo spirals, 12 wind,
 // 13 Sasuke's Katon shell (forja/sasuke-chidori/katon.js), 14 its wall of fire on the ground, 15 Shikamaru's shadow running
-// on the ground, 16 his Xeque-mate's flood of shadow (forja/shikamaru/shika.js; both flat squares).
+// on the ground, 16 his Xeque-mate's flood of shadow (forja/shikamaru/shika.js; both flat squares), 17 the Dragon Ball flight's
+// boost shell and 18 its ki ring (forja voo/voo.html: a cone from the nose back, a flat square), 30 the Rasengan's glass
+// core, 31 its shell of wind streaks, 32 the Rasenshuriken's disc of four saw blades (forja/naruto-kit/naruto.js, naruto2.js), 33 Kakashi's Kamui
+// vortex (a sphere; Size = the axis), 34 his ninken seal of blood on the ground (flat square; forja/kakashi-kit), 35 Gaara's quicksand (flat
+// square; forja/gaara-kit), 40 Inumaki's voice (a cone of ink rings) and 41 the rings that hold the one he stopped
+// (forja/inumaki-kit/inumaki.js VOICE_F / BIND_F); 42-45 Nobara's nail sheath, Resonance thorn, Hairpin burst and the ult's
+// thread (forja/nobara-kit/nobara.js); 46-50 Miwa's sword arc, the cut that opens on the body, the Simple Domain on the
+// ground, its wall of streaks and the Line Cut's trail (forja/miwa-kit/miwa.js), 60-68 Ino (forja/ino-kit/ino.js):
+// a box of her spirit's body, a mind thread, the diamond seal, the scrambled mind's spiral, the Shinranshin's cone, a piece
+// of the spirit's trail, the Teatro Mental's dome, its sky, a lit solid (the flowers).
 in vec3 Position;
 
 uniform mat4 ModelViewMat;
@@ -36,6 +45,7 @@ uniform float R0;
 uniform float R1;
 uniform float Flare;
 uniform float Bend;
+uniform float Pulse;
 
 out vec3 vN;
 out vec3 vV;
@@ -99,7 +109,7 @@ void main() {
         n = normalize(Position);
         float b = gn(n * 3.5 + vec3(0., -Time * 0.7, Time * 0.3)) * 0.03 + gn(n * 9. + Time * 1.1) * 0.01;
         P = n * (1. + b); vO = n;
-    } else if (kind == 2 || kind == 6 || kind == 8) {                  // plain spheres (halos, hit flash)
+    } else if (kind == 2 || kind == 6 || kind == 8 || kind == 30 || kind == 33) {    // plain spheres (halos, hit flash, the Rasengan's glass core)
         n = normalize(Position); P = Position; vO = n;
     } else if (kind == 3) {                                            // ki beam: one tube, twisted and swollen
         float along = Position.y * Len; vec2 d = normalize(Position.xz + 1e-5); float ang = atan(d.y, d.x);
@@ -110,7 +120,9 @@ void main() {
         float r = W * prof * (1. + 0.4 * tg);
         P = vec3(d.x * r, along, d.y * r); n = vec3(d.x, 0., d.y);
         vU = along; vD = tg; vQ = vec2(tw, along);
-    } else if (kind == 4 || kind == 9 || kind == 10 || kind == 15 || kind == 16) {   // flat square: dust ring, saw and Kienzan discs, shadows
+    } else if (kind == 31) {                                           // Rasengan: the shell of wind round the core, swelling a little
+        n = normalize(Position); P = n * (1. + gn(n * 3. + vec3(Time * 2., 0., -Time * 1.6)) * 0.08); vO = n;
+    } else if (kind == 4 || kind == 9 || kind == 10 || kind == 15 || kind == 16 || kind == 18 || kind == 32 || kind == 34 || kind == 35 || kind == 46 || kind == 47 || kind == 48 || kind == 50) {   // flat square: dust ring, discs, shadows, Rasenshuriken, Miwa's cuts
         P = Position; n = vec3(0., 1., 0.); vUv = Position.xz * 0.5 + 0.5;
         vQ = Position.xz * vec2(length(Model[0].xyz), length(Model[2].xyz));   // in blocks, across and along the square
     } else if (kind == 5) {                                            // aura shell
@@ -128,6 +140,10 @@ void main() {
         float h = Position.y; vec2 d = normalize(Position.xz + 1e-5);
         float r = mix(R0, R1, pow(h, Flare)) * (1. + 0.1 * sin(h * 11. - Time * 8. + d.x * 3.));
         P = vec3(d.x * r + Bend * h * h, h * Len, d.y * r); n = vec3(d.x, 0., d.y); vDir = d; vH = h;
+    } else if (kind == 17) {                                           // flight boost shell: a cone opening back from the nose (tube, y 0..1)
+        float s = Position.y; vec2 d = normalize(Position.xz + 1e-5);
+        float r = 0.3 + 1.45 * pow(s, 0.6), dr = 0.87 * pow(max(s, 0.02), -0.4) / max(Len, 0.01);
+        P = vec3(d.x * r, s * Len, d.y * r); n = normalize(vec3(d.x, -dr, d.y)); vDir = d; vH = s;
     } else if (kind == 13) {                                           // Katon: ONE fire shell (the ball with its tail, the blast dome turning to smoke)
         vec3 nr = normalize(Position), ax = normalize(vec3(0.25, 1., 0.15));
         float ca = cos(-Phase), sa = sin(-Phase);                       // Phase = how far the drawing has turned (with the ball)
@@ -148,9 +164,59 @@ void main() {
         float rr = 1. + 0.05 * (nn - 0.5) - 0.08 * h;
         P = vec3(d.x * rr, h * top, d.y * rr); n = normalize(vec3(d.x, 0.3, d.y));
         vH = h; vO = vec3(cos(ang) * 4., P.y * 2.2 - Time * 2.2, sin(ang) * 4.) + Seed;
+    } else if (kind == 40 || kind == 41) {                             // Inumaki: the voice's open cone (R0 at the mouth, R1 at the end) / the rings' cylinder (W)
+        float h = Position.y; vec2 d = normalize(Position.xz + 1e-5);
+        float r = kind == 40 ? mix(R0, R1, h) : W;
+        P = vec3(d.x * r, h * Len, d.y * r); n = vec3(d.x, 0., d.y); vDir = d; vH = h;
+    } else if (kind == 42 || kind == 43 || kind == 45) {               // Nobara's tubes (forja/nobara-kit/nobara.js TRAIL_V / THORN_V / LINK_V, line by line):
+        float h = Position.y; vec2 d = normalize(Position.xz + 1e-5); // 19 the nail's sheath (W = width), 20 Resonance's barbed thorn (W, Growth, Bend),
+        float r, L = Len;                                              // 22 the ult's thread (W, Growth)
+        if (kind == 42) {
+            r = W * (0.3 + 0.7 * smoothstep(0., 0.1, h)) * pow(1. - h, 0.8);
+        } else if (kind == 43) {
+            L = Len * Growth;
+            float barb = 1. + 0.55 * pow(fract(h * (3. + Len * 0.8) + Seed), 3.);   // barbs: each segment swells and thins
+            r = W * pow(1. - h, 1.15) * (0.72 + 0.56 * (gn(vec3(d * 1.7, h * 5. + Seed)) * 0.5 + 0.5)) * barb;
+        } else {
+            L = Len * Growth;
+            r = W * (0.8 + 0.4 * (gn(vec3(d, h * Len * 1.2 - Time * 2. + Seed)) * 0.5 + 0.5));
+        }
+        P = vec3(d.x * r + (kind == 43 ? Bend * h * h * L : 0.), h * L, d.y * r); n = vec3(d.x, 0., d.y); vDir = d; vH = h;
+    } else if (kind == 49) {                                           // Miwa's Simple Domain: the wall of streaks at its edge (tube, y 0..1; WALL_F reads vDir / vH)
+        float h = Position.y; vec2 d = normalize(Position.xz + 1e-5);
+        P = Position; n = vec3(d.x, 0., d.y); vDir = d; vH = h;
+    } else if (kind == 44) {                                           // Nobara's Hairpin: ONE sphere bursting into spikes (BURST_V; Life = age 0..1, radius = Model)
+        vec3 d = normalize(Position);
+        float ri = 1. - abs(gn(d * 3.1 + Seed)), sp = pow(ri, 7.);
+        float lump = fbm3(d * 2. + Seed * 1.7) * 0.5 + 0.5;
+        float grow = 1. - pow(1. - clamp(Life * 4., 0., 1.), 3.);
+        P = d * grow * (0.5 + 0.35 * lump + 1.25 * sp); n = d; vO = d; vD = sp;
+    } else if (kind == 60 || kind == 68) {                             // Ino: a box of the spirit / a lit solid piece (flowers)
+        P = Position; n = kind == 68 ? normalize(Position) : vec3(0., 1., 0.);
+    } else if (kind == 61 || kind == 65) {                             // Ino: a mind thread (sags and sways) / a piece of the spirit's trail
+        vec2 d = normalize(Position.xz + 1e-5); float u = Position.y;
+        vec3 c = vec3(0., u * Len, 0.); float r = W;
+        if (kind == 61) {
+            vec3 down = transpose(mat3(Model)) * vec3(0., -1., 0.); down.y = 0.;
+            float env = sin(3.14159 * u);
+            if (length(down) > 0.05) c += normalize(down) * Bend * env;
+            c.x += env * sin(Time * 2.1 + Seed + u * 4.) * 0.08; c.z += env * cos(Time * 1.7 + Seed * 1.3 + u * 3.) * 0.08;
+            vU = u;
+        } else {
+            r = mix(R0, R1, u); vU = mix(Pulse, Flow, u);
+        }
+        P = c + vec3(d.x * r, 0., d.y * r); n = vec3(d.x, 0., d.y); vDir = d;
+    } else if (kind == 62 || kind == 63) {                             // Ino: flat squares (the seal, the spiral)
+        P = Position; n = vec3(0., 1., 0.); vUv = Position.xz * 0.5 + 0.5;
+    } else if (kind == 64) {                                           // Ino: the Shinranshin's cone (y 0 at the forehead)
+        float h = Position.y; vec2 d = normalize(Position.xz + 1e-5);
+        float r = mix(R0, R1, h);
+        P = vec3(d.x * r, h * Len, d.y * r); n = normalize(vec3(d.x, -(R1 - R0) / max(Len, 0.01), d.y)); vDir = d; vH = h;
+    } else if (kind == 66 || kind == 67) {                             // Ino: the dome and the sky of the Teatro Mental
+        n = normalize(Position); P = Position; vO = n;
     }
     vec4 w = Model * vec4(P, 1.0);
-    vN = mat3(Model) * n;
+    vN = kind == 68 ? transpose(inverse(mat3(Model))) * n : mat3(Model) * n;   // (68: squashed petals keep their normals)
     vNv = mat3(ModelViewMat) * vN;                                     // the normal as the camera sees it (halo rays)
     vV = -w.xyz;
     vC = vec4((Model * vec4(0., 0., 0., 1.)).xyz, length(Model[0].xyz));   // the piece's center (camera-relative) and size

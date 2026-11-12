@@ -7,7 +7,9 @@
 //   2: twist axis in view space (xyz), unused
 //   3: tint (rgb), tint amount
 // Modes: 0 ripple (rings running outwards), 1 swirl around the axis, 2 lens (pulls the middle in, like a black hole),
-// 3 whole screen (the edges of the screen wobble), 4 whirl only around the sphere (Gojo's Purple in flight).
+// 3 whole screen (the edges of the screen wobble), 4 whirl only around the sphere (Gojo's Purple in flight),
+// 5 shock ring (Luffy's page: a ring on the screen that pushes out in front and pulls behind, each color shifted its own
+//   amount, with a glow on the ring; column 0 w = power, column 1 = glow, age, duration, 5, column 3 rgb = glow color).
 uniform sampler2D DiffuseSampler;
 uniform sampler2D DepthSampler;
 uniform mat4 WarpProj;
@@ -52,6 +54,9 @@ void main() {
 
     vec2 off = vec2(0.0);
     vec3 tint = vec3(1.0);
+    vec2 shockOff = vec2(0.0);
+    vec3 shockGlow = vec3(0.0);
+    float aspect = WarpProj[1][1] / max(WarpProj[0][0], 1.0e-4);
     for (int i = 0; i < 8; i++) {
         if (float(i) >= Count) {
             break;
@@ -64,6 +69,30 @@ void main() {
         float speed = s[1].z;
         float mode = s[1].w;
 
+        if (mode > 4.5) {
+            // The page's SHOCK pass, line by line (its radius and width come from the distance and the power).
+            float t = age / max(speed, 0.01);
+            if (t >= 1.0 || c.z > -0.05) {
+                continue;
+            }
+            float pw = s[0].w;
+            float e = 1.0 - pow(1.0 - t, 3.0);
+            float dist = length(c);
+            vec2 center = screenOf(c) + 0.5;
+            float uRadius = (0.03 + 1.6 * e) / max(dist, 1.5) * pw;
+            float uWidth = (0.05 + 0.05 * e) * pw / max(dist / 4.0, 0.6);
+            float uStrength = 0.05 * (1.0 - t) * min(pw, 2.5);
+            vec2 d = uv - center;
+            d.x *= aspect;
+            float rr = length(d);
+            float sv = (rr - uRadius) / max(uWidth, 1.0e-4);
+            float prof = sv * exp(-sv * sv) * 2.33;
+            vec2 dir = d / max(rr, 1.0e-4);
+            dir.x /= aspect;
+            shockOff += dir * prof * uStrength;
+            shockGlow += s[3].rgb * exp(-sv * sv * 1.5) * strength * (1.0 - t) * (1.0 - t);
+            continue;
+        }
         if (mode > 2.5 && mode < 3.5) {
             // Whole screen: the edges of the screen push outwards in quick waves.
             float r = length(ndc);
@@ -139,7 +168,8 @@ void main() {
     vec2 at = clamp(uv + off, 0.001, 0.999);
     // A hair of color split along the bend, like light through glass.
     vec2 split = off * 0.08;
-    vec3 col = vec3(texture(DiffuseSampler, clamp(at + split, 0.001, 0.999)).r, texture(DiffuseSampler, at).g,
-            texture(DiffuseSampler, clamp(at - split, 0.001, 0.999)).b);
-    fragColor = vec4(col * tint, 1.0);
+    vec3 col = vec3(texture(DiffuseSampler, clamp(at + split - shockOff * 1.18, 0.001, 0.999)).r,
+            texture(DiffuseSampler, clamp(at - shockOff, 0.001, 0.999)).g,
+            texture(DiffuseSampler, clamp(at - split - shockOff * 0.82, 0.001, 0.999)).b);
+    fragColor = vec4(col * tint + shockGlow, 1.0);
 }

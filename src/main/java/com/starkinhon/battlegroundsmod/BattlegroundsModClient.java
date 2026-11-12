@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.starkinhon.battlegroundsmod.client.BossBars;
 import com.starkinhon.battlegroundsmod.client.BossCutscene;
+import com.starkinhon.battlegroundsmod.client.InoClient;
 import com.starkinhon.battlegroundsmod.client.EsferaCutscene;
 import com.starkinhon.battlegroundsmod.client.FaceCutscene;
 import com.starkinhon.battlegroundsmod.client.Fear;
@@ -57,6 +58,7 @@ import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
 import net.neoforged.neoforge.client.event.RegisterParticleProvidersEvent;
 import net.neoforged.neoforge.client.event.RenderLivingEvent;
+import net.neoforged.neoforge.client.event.RenderPlayerEvent;
 import net.neoforged.neoforge.client.gui.ConfigurationScreen;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
@@ -81,10 +83,45 @@ public class BattlegroundsModClient {
         modContainer.registerConfig(ModConfig.Type.CLIENT, FxConfig.SPEC);
         modContainer.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
         NeoForge.EVENT_BUS.addListener(MeteorRenderer::onRenderLevel);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.DragonWind::onRenderLevel);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.DragonWind::onClientTick);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.DragonWind::onFog);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.DragonWind::onFogColor);
+        // The Floresta da Folha's falling leaves, golden light and warm haze.
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.LeafForestFx::onRenderLevel);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.LeafForestFx::onClientTick);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.LeafForestFx::onFog);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.DeathForestFx::onRenderLevel);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.DeathForestFx::onClientTick);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.DeathForestFx::onFog);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.WindDesertFx::onRenderLevel);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.WindDesertFx::onClientTick);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.WindDesertFx::onFog);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.MistSeaFx::onRenderLevel);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.MistSeaFx::onClientTick);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.MistSeaFx::onFog);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.RainVillageFx::onRenderLevel);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.RainVillageFx::onClientTick);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.RainVillageFx::onFog);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.EndValleyFx::onRenderLevel);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.EndValleyFx::onClientTick);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.MyobokuFx::onRenderLevel);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.MyobokuFx::onClientTick);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.CreativeSubTabs::onInit);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.CreativeSubTabs::onRenderPre);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.CreativeSubTabs::onRenderPost);
         NeoForge.EVENT_BUS.addListener(FxWorld::onRenderLevel);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.TierInventoryInfo::onRenderPost);
+        // Saitama: the hole in the clouds (before the game draws them) and his afterimages (from his drawn frames).
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.OpmFx::onRenderLevel);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.OpmGhosts::onRenderPlayer);
+        // Luffy: his body in each Gear (Boundman, small after the G3, upside down in the Jet Mergulho, the Fusen) and whoever he squashed.
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, false, RenderPlayerEvent.Pre.class, com.starkinhon.battlegroundsmod.client.fx.LuffyFx::onRenderPlayerPre);
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, true, RenderPlayerEvent.Post.class, com.starkinhon.battlegroundsmod.client.fx.LuffyFx::onRenderPlayerPost);
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, false, RenderLivingEvent.Pre.class, com.starkinhon.battlegroundsmod.client.fx.LuffyFx::onRenderLivingPre);
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, true, RenderLivingEvent.Post.class, com.starkinhon.battlegroundsmod.client.fx.LuffyFx::onRenderLivingPost);
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOW, false, RenderLivingEvent.Pre.class, com.starkinhon.battlegroundsmod.client.fx.shig.RegenFx::onRenderPre);
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOW, false, RenderLivingEvent.Post.class, com.starkinhon.battlegroundsmod.client.fx.shig.RegenFx::onRenderPost);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.DomainPanorama::onRenderFrame);
         NeoForge.EVENT_BUS.addListener(EventPriority.HIGHEST, false, RenderLivingEvent.Pre.class, com.starkinhon.battlegroundsmod.client.fx.SukunaDomainScene::onRenderLivingPre);
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, true, RenderLivingEvent.Post.class, com.starkinhon.battlegroundsmod.client.fx.SukunaDomainScene::onRenderLivingPost);
@@ -110,6 +147,11 @@ public class BattlegroundsModClient {
         NeoForge.EVENT_BUS.addListener(RenderLivingEvent.Pre.class, com.starkinhon.battlegroundsmod.client.fx.ClivarRenderer::onRenderLiving);
         NeoForge.EVENT_BUS.addListener(RenderLivingEvent.Pre.class, com.starkinhon.battlegroundsmod.client.fx.SoulCeremonyFx::onRenderLiving);
         NeoForge.EVENT_BUS.addListener(RenderLivingEvent.Pre.class, Vanish::onRenderLiving);
+        // Makima: a body sinking into (or rising from) the dark ground, and one crushed flat by the Ritual.
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, false, RenderLivingEvent.Pre.class,
+                com.starkinhon.battlegroundsmod.client.fx.MakimaFx::onRenderLivingPre);
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, true, RenderLivingEvent.Post.class,
+                com.starkinhon.battlegroundsmod.client.fx.MakimaFx::onRenderLivingPost);
         NeoForge.EVENT_BUS.addListener(RenderLivingEvent.Pre.class, com.starkinhon.battlegroundsmod.client.fx.SwordFx::onRenderLivingPre);
         NeoForge.EVENT_BUS.addListener(EventPriority.LOW, false, RenderLivingEvent.Pre.class,
                 com.starkinhon.battlegroundsmod.client.fx.EsferaRenderer::onRenderPre);
@@ -127,10 +169,29 @@ public class BattlegroundsModClient {
         NeoForge.EVENT_BUS.addListener(MovementInputUpdateEvent.class, com.starkinhon.battlegroundsmod.client.fx.SukunaDomainScene::onMovementInput);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.FirstPersonAnimation::onRenderHand);
         NeoForge.EVENT_BUS.addListener(BattlegroundsModClient::onClientTickPre);
+        // The Dragon Ball flight's body turn (lying down into the cruise, turning into the curves).
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, false, net.neoforged.neoforge.client.event.RenderPlayerEvent.Pre.class,
+                com.starkinhon.battlegroundsmod.client.FlightPose::onRenderPre);
+        NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.client.event.RenderPlayerEvent.Post.class,
+                com.starkinhon.battlegroundsmod.client.FlightPose::onRenderPost);
         NeoForge.EVENT_BUS.addListener(BattlegroundsModClient::onClientTick);
+        // Shenlong's summoning (the world dims, the dragon rises, the wish menu).
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.ShenlongScene::onRenderLevel);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.ShenlongScene::onComputeFov);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.ShenlongScene::onFogColor);
+        NeoForge.EVENT_BUS.addListener(MovementInputUpdateEvent.class, com.starkinhon.battlegroundsmod.client.fx.ShenlongScene::onMovementInput);
+        NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.client.event.RenderPlayerEvent.Pre.class,
+                com.starkinhon.battlegroundsmod.client.fx.ShenlongScene::onRenderPlayer);
         NeoForge.EVENT_BUS.addListener(BossBars::onBossBar);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.RealismoCommand::register);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.SoulsCommand::register);
+        // The Ino's Shintenshin (driving a body) and Shinranshin (inverted controls): before the punch, so a click drives the body.
+        NeoForge.EVENT_BUS.addListener(EventPriority.HIGH, false, InputEvent.InteractionKeyMappingTriggered.class, InoClient::onInteraction);
+        NeoForge.EVENT_BUS.addListener(MovementInputUpdateEvent.class, InoClient::onMovementInput);
+        NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.client.event.CalculatePlayerTurnEvent.class, InoClient::onTurn);
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOW, false, net.neoforged.neoforge.client.event.ViewportEvent.ComputeCameraAngles.class,
+                InoClient::onCameraAngles);
+        NeoForge.EVENT_BUS.addListener(ClientTickEvent.Post.class, InoClient::tick);
         NeoForge.EVENT_BUS.addListener(InputEvent.InteractionKeyMappingTriggered.class, PunchInput::onInteraction);
         NeoForge.EVENT_BUS.addListener(InputEvent.MouseScrollingEvent.class, com.starkinhon.battlegroundsmod.client.fx.AzulRenderer::onScroll);
         // The Duelo de Expansões minigame's keys.
@@ -155,6 +216,20 @@ public class BattlegroundsModClient {
 
     // Aizen's sword item is drawn by its own renderer (the 3D model from the Armario Souls viewer).
     private static void onRegisterClientExtensions(RegisterClientExtensionsEvent event) {
+        // the Esferas do Dragão: the 3D ball of the Shenlong cutscene, one renderer for all seven
+        com.starkinhon.battlegroundsmod.client.DragonBallRenderer[] dragonBall = new com.starkinhon.battlegroundsmod.client.DragonBallRenderer[1];
+        IClientItemExtensions dragonBallExt = new IClientItemExtensions() {
+            @Override
+            public BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                if (dragonBall[0] == null) {
+                    dragonBall[0] = new com.starkinhon.battlegroundsmod.client.DragonBallRenderer();
+                }
+                return dragonBall[0];
+            }
+        };
+        for (var ball : ModItems.DRAGON_BALLS) {
+            event.registerItem(dragonBallExt, ball.get());
+        }
         AizenSwordRenderer[] renderer = new AizenSwordRenderer[1];
         event.registerItem(new IClientItemExtensions() {
             @Override
@@ -187,15 +262,29 @@ public class BattlegroundsModClient {
 
     private static void onRegisterGuiLayers(RegisterGuiLayersEvent event) {
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "power_hud"), PowerHud::render);
+        event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "quest_hud"),
+                com.starkinhon.battlegroundsmod.client.QuestHud::render);
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "scouter"),
                 com.starkinhon.battlegroundsmod.client.ScouterHud::render);
         // After every vanilla bar, so it knows how tall the hearts, armor and food stand.
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "base_attacks"), BaseAttacks::render);
+        // Makima's BANG over her finger.
+        event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "makima_bang"),
+                com.starkinhon.battlegroundsmod.client.MakimaHud::render);
         // The attack stamina: beside the player in third person, on the left of the screen in first person.
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "stamina_bar"),
                 com.starkinhon.battlegroundsmod.client.StaminaBar::render);
         // Impact frames and flashes cover the world and the hand, but not the HUD.
         event.registerBelowAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "screen_fx"), ScreenFx::renderGui);
+        // Saitama's serious caption and the Modo Serio's time.
+        event.registerBelowAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "opm_caption"),
+                com.starkinhon.battlegroundsmod.client.fx.OpmFx::renderGui);
+        // Luffy's Gear 5 time and the hunger after it.
+        event.registerBelowAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "luffy_hud"),
+                com.starkinhon.battlegroundsmod.client.fx.LuffyFx::renderGui);
+        // Kakashi's Sennen Goroshi title (over the world, under the HUD).
+        event.registerBelowAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "kakashi_title"),
+                com.starkinhon.battlegroundsmod.client.fx.KakashiTitle::render);
         event.registerBelowAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "domain_void"),
                 com.starkinhon.battlegroundsmod.client.fx.DomainScene::renderGui);
         // Inside Aizen's Black Box the dark closes in over the view (below the HUD).
@@ -208,11 +297,27 @@ public class BattlegroundsModClient {
         // Kokushibo's form names in kanji beside him, with the lines.
         event.registerBelowAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "form_kanji"),
                 com.starkinhon.battlegroundsmod.client.FormKanji::renderGui);
+        // The warm orange grade of the Dragon Ball lands, over the HUD too (Stark: "mexer um pouco na GUI, deixar mais
+        // alaranjado"); under the cutscenes.
+        event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "dragon_grade"),
+                com.starkinhon.battlegroundsmod.client.fx.DragonWind::renderGrade);
+        event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "leaf_forest_grade"),
+                com.starkinhon.battlegroundsmod.client.fx.LeafForestFx::renderGrade);
+        event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "death_forest_grade"),
+                com.starkinhon.battlegroundsmod.client.fx.DeathForestFx::renderGrade);
+        event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "wind_desert_grade"),
+                com.starkinhon.battlegroundsmod.client.fx.WindDesertFx::renderGrade);
+        event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "mist_sea_grade"),
+                com.starkinhon.battlegroundsmod.client.fx.MistSeaFx::renderGrade);
+        event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "rain_village_grade"),
+                com.starkinhon.battlegroundsmod.client.fx.RainVillageFx::renderGrade);
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "cutscene_bars"), GrabCutscene::renderGui);
         // The Duelo de Expansões: its title, the minigame and the result (over the HUD, which the duel hides).
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "expansion_duel"),
                 com.starkinhon.battlegroundsmod.client.fx.DuelScene::renderGui);
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "bop_cutscene"), BopCutscene::renderGui);
+        event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "shenlong"),
+                com.starkinhon.battlegroundsmod.client.fx.ShenlongScene::renderGui);
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "hakai_cutscene"), HakaiCutscene::renderGui);
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "esfera_cutscene"), EsferaCutscene::renderGui);
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "editor_cutscene"), CutscenePlayer::renderGui);
@@ -279,8 +384,17 @@ public class BattlegroundsModClient {
                 pose.scale(1.35f, 1.35f, 1.35f);
             }
         });
+        // the Dragon Ball biomes' creatures, box models from the approved preview (client/blocky)
+        event.registerEntityRenderer(ModEntities.NAMEKIANO.get(), context -> new com.starkinhon.battlegroundsmod.client.blocky.BlockyRenderer<>(context,
+                java.util.stream.IntStream.range(0, com.starkinhon.battlegroundsmod.animal.db.Namekiano.VARIANTS).mapToObj(i -> "namekiano_" + i).toList(),
+                com.starkinhon.battlegroundsmod.client.blocky.DbAnims::namek, 0.6f));
+        event.registerEntityRenderer(ModEntities.PEIXE_GIGANTE.get(), context -> new com.starkinhon.battlegroundsmod.client.blocky.BlockyRenderer<>(context, "peixe_gigante", com.starkinhon.battlegroundsmod.client.blocky.DbAnims::peixe, 1.4f));
+        event.registerEntityRenderer(ModEntities.ANDROIDE_8.get(), context -> new com.starkinhon.battlegroundsmod.client.blocky.BlockyRenderer<>(context, "androide_8", com.starkinhon.battlegroundsmod.client.blocky.DbAnims::androide, 1.1f));
+        event.registerEntityRenderer(ModEntities.LADRAO_URSO.get(), context -> new com.starkinhon.battlegroundsmod.client.blocky.BlockyRenderer<>(context, "ladrao_urso", com.starkinhon.battlegroundsmod.client.blocky.DbAnims::urso, 1.0f));
+        event.registerEntityRenderer(ModEntities.BORA.get(), context -> new com.starkinhon.battlegroundsmod.client.blocky.BlockyRenderer<>(context, "bora", com.starkinhon.battlegroundsmod.client.blocky.DbAnims::bora, 0.7f));
         event.registerEntityRenderer(ModEntities.TIRANOSSAURO.get(),
                 context -> new com.starkinhon.battlegroundsmod.client.animal.DinoRenderer(context, "tiranossauro", 2.6f));
+        event.registerEntityRenderer(ModEntities.PTERODACTILO.get(), com.starkinhon.battlegroundsmod.client.animal.PteroRenderer::new);
         event.registerEntityRenderer(ModEntities.RAPTOR.get(),
                 context -> new com.starkinhon.battlegroundsmod.client.animal.DinoRenderer(context, "raptor", 1.0f));
         event.registerEntityRenderer(ModEntities.SOLDADO_FREEZA.get(),
@@ -308,6 +422,26 @@ public class BattlegroundsModClient {
         event.registerEntityRenderer(ModEntities.NPC_UROKODAKI.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_urokodaki"));
         event.registerEntityRenderer(ModEntities.NPC_TAMAYO.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_tamayo"));
         event.registerEntityRenderer(ModEntities.NPC_GOHAN.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_gohan"));
+        event.registerEntityRenderer(ModEntities.RADITZ.get(), context -> new SoulBossRenderer<>(context, "raditz", false));
+        // the Cell Jr.: child-sized
+        event.registerEntityRenderer(ModEntities.CELL_JR.get(), context -> new SoulBossRenderer<>(context, "cell_jr", false) {
+            @Override
+            protected void scale(com.starkinhon.battlegroundsmod.boss.SoulMob entity, com.mojang.blaze3d.vertex.PoseStack pose, float partialTick) {
+                pose.scale(0.72f, 0.72f, 0.72f);
+            }
+        });
+        event.registerEntityRenderer(ModEntities.PUI_PUI.get(), context -> new SoulBossRenderer<>(context, "pui_pui", false));
+        // Yakon: a head taller and broad
+        event.registerEntityRenderer(ModEntities.YAKON.get(), context -> new SoulBossRenderer<>(context, "yakon", false) {
+            @Override
+            protected void scale(com.starkinhon.battlegroundsmod.boss.SoulMob entity, com.mojang.blaze3d.vertex.PoseStack pose, float partialTick) {
+                pose.scale(1.3f, 1.28f, 1.3f);
+            }
+        });
+        event.registerEntityRenderer(ModEntities.DABURA.get(), context -> new SoulBossRenderer<>(context, "dabura", false));
+        event.registerEntityRenderer(ModEntities.NPC_BULMA.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_bulma"));
+        event.registerEntityRenderer(ModEntities.NPC_MESTRE_KAME.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_mestre_kame"));
+        event.registerEntityRenderer(ModEntities.NPC_BOO.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_boo"));
         event.registerEntityRenderer(ModEntities.NPC_KORIN.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_korin"));
         event.registerEntityRenderer(ModEntities.FIGHTER_HUMANO.get(),
                 context -> new SoulBossRenderer<>(context, false, "fighter_humano_0", "fighter_humano_1", "fighter_humano_2"));
@@ -320,6 +454,8 @@ public class BattlegroundsModClient {
     private static void onRegisterLayerDefinitions(EntityRenderersEvent.RegisterLayerDefinitions event) {
         event.registerLayerDefinition(com.starkinhon.battlegroundsmod.client.animal.DinoModel.LAYER,
                 com.starkinhon.battlegroundsmod.client.animal.DinoModel::create);
+        event.registerLayerDefinition(com.starkinhon.battlegroundsmod.client.animal.PteroModel.LAYER,
+                com.starkinhon.battlegroundsmod.client.animal.PteroModel::create);
     }
 
     // Players' eyes can trail light too (Mangekyo, see Aura), so their renderers learn where the eyes are.
@@ -328,6 +464,8 @@ public class BattlegroundsModClient {
             if (event.getSkin(model) instanceof PlayerRenderer renderer) {
                 renderer.addLayer(new AuraEyesLayer<>(renderer));
                 renderer.addLayer(new com.starkinhon.battlegroundsmod.client.outfit.OutfitLayer(renderer));
+                renderer.addLayer(new com.starkinhon.battlegroundsmod.client.fx.LuffyFx.Layer(renderer));
+                com.starkinhon.battlegroundsmod.client.fx.LuffyFx.wrapHeldLayer(renderer);
                 renderer.addLayer(new com.starkinhon.battlegroundsmod.client.outfit.KokushiboSheathLayer<>(renderer));
             }
         }
@@ -344,6 +482,7 @@ public class BattlegroundsModClient {
         }
         com.starkinhon.battlegroundsmod.client.LimpBody.tick();
         FaceCutscene.tick();
+        com.starkinhon.battlegroundsmod.client.fx.ShenlongScene.tick();
         BossCutscene.tick();
         ShoulderCutscene.tick();
         GrabCutscene.tick();
@@ -356,6 +495,7 @@ public class BattlegroundsModClient {
         ScreenFx.tick();
         FxWorld.tick();
         AshDeath.tick();
+        com.starkinhon.battlegroundsmod.client.fx.shig.ShigFx.tick();
         com.starkinhon.battlegroundsmod.client.fx.SoulCeremonyFx.tick();
         Aura.tick();
         SkillEffects.tick();
@@ -366,5 +506,6 @@ public class BattlegroundsModClient {
         BossBars.tick();
         Fear.tick();
         com.starkinhon.battlegroundsmod.client.fx.SkillAudio.tick();
+        com.starkinhon.battlegroundsmod.client.fx.FlightFx.tick();
     }
 }

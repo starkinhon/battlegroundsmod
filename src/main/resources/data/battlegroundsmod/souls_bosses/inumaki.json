@@ -147,6 +147,32 @@
       "giroGrausPorTick": 14,
       "avisoCor": "#c0a8ff",
       "avisoSom": "minecraft:block.enchantment_table.use"
+    },
+    "exploda": {
+      "slot": 3,
+      "tipo": "ult",
+      "peso": 0.9,
+      "recargaTicks": 1000,
+      "recargaMaxTicks": 1450,
+      "avisoTicks": 8,
+      "distanciaMin": 3,
+      "distanciaMax": 24,
+      "giroGrausPorTick": 14,
+      "avisoCor": "#8f5bff",
+      "avisoSom": "minecraft:entity.player.breath"
+    },
+    "megafone": {
+      "slot": 7,
+      "tipo": "livre",
+      "peso": 0.7,
+      "recargaTicks": 340,
+      "recargaMaxTicks": 493,
+      "avisoTicks": 3,
+      "distanciaMin": 3,
+      "distanciaMax": 16,
+      "giroGrausPorTick": 14,
+      "avisoCor": "#c4b2ff",
+      "avisoSom": "minecraft:item.armor.equip_iron"
     }
   },
   "combos": {
@@ -164,6 +190,30 @@
         "aproximar",
         "forte"
       ]
+    },
+    "inumaki_3": {
+      "peso": 0.9,
+      "passos": [
+        "megafone",
+        "durma",
+        "aproximar",
+        "forte"
+      ]
+    },
+    "inumaki_4": {
+      "peso": 0.8,
+      "passos": [
+        "megafone",
+        "pare",
+        "esmague"
+      ]
+    },
+    "inumaki_5": {
+      "peso": 0.8,
+      "passos": [
+        "durma",
+        "esmague"
+      ]
     }
   },
   "fases": [
@@ -174,11 +224,16 @@
         "barragem",
         "pare",
         "esmague",
-        "durma"
+        "durma",
+        "exploda",
+        "megafone"
       ],
       "combos": [
         "inumaki_1",
-        "inumaki_2"
+        "inumaki_2",
+        "inumaki_3",
+        "inumaki_4",
+        "inumaki_5"
       ],
       "agressividade": 0.75,
       "multRecarga": 1.0,

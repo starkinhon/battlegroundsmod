@@ -1,0 +1,1 @@
+{"parent": "minecraft:block/carpet", "render_type": "minecraft:cutout", "textures": {"wool": "battlegroundsmod:block/folhas_podres", "particle": "battlegroundsmod:block/folhas_podres"}}

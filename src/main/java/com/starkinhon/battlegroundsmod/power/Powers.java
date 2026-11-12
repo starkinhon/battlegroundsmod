@@ -14,6 +14,7 @@ import com.starkinhon.battlegroundsmod.power.powers.OnePunch;
 import com.starkinhon.battlegroundsmod.power.powers.RubberBoy;
 import com.starkinhon.battlegroundsmod.power.powers.Strongest;
 import com.starkinhon.battlegroundsmod.power.powers.Sukuna;
+import com.starkinhon.battlegroundsmod.power.powers.shigaraki.Shigaraki;
 import com.starkinhon.battlegroundsmod.power.powers.UchihaGhost;
 import com.starkinhon.battlegroundsmod.power.powers.sub.Byakuya;
 import com.starkinhon.battlegroundsmod.power.powers.sub.Rukia;
@@ -47,6 +48,8 @@ public final class Powers {
     public static final Power STRONGEST = register(Strongest.create());
     public static final Power MOON_DEMON = register(MoonDemon.create());
     public static final Power SUKUNA = register(Sukuna.create());
+    public static final Power MAKIMA = register(com.starkinhon.battlegroundsmod.power.powers.makima.Makima.create());
+    public static final Power SHIGARAKI = register(Shigaraki.create());
 
     // SubAlmas (Bleach). The provisional Sukuna, Ichigo and Urahara were taken out for now (2026-11-07).
     public static final Power BYAKUYA = registerSub(Byakuya.create());
@@ -79,6 +82,14 @@ public final class Powers {
 
     // Mob only.
     public static final Power FIGHTER = registerHidden(Fighter.create());
+    // The Dragon World's enemies, two moves each (DbMobs).
+    public static final Power DB_SAIBAMAN = registerHidden(com.starkinhon.battlegroundsmod.power.powers.sub.db.DbMobs.saibaman());
+    public static final Power DB_BANDIT = registerHidden(com.starkinhon.battlegroundsmod.power.powers.sub.db.DbMobs.bandit());
+    public static final Power DB_PIRATE = registerHidden(com.starkinhon.battlegroundsmod.power.powers.sub.db.DbMobs.pirate());
+    public static final Power DB_RED_RIBBON = registerHidden(com.starkinhon.battlegroundsmod.power.powers.sub.db.DbMobs.redRibbon());
+    public static final Power DB_YETI = registerHidden(com.starkinhon.battlegroundsmod.power.powers.sub.db.DbMobs.yeti());
+    public static final Power DB_RADITZ = registerHidden(com.starkinhon.battlegroundsmod.power.powers.sub.db.DbMobs.raditz());
+    public static final Power DB_FREEZA_SOLDIER = registerHidden(com.starkinhon.battlegroundsmod.power.powers.sub.db.DbMobs.freezaSoldier());
 
     private Powers() {
     }

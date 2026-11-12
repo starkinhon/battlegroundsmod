@@ -1,11 +1,11 @@
 {
   "formato": "souls-boss/1",
   "boss": "yeti",
-  "poder": "fighter",
-  "tier": 9,
+  "poder": "db_yeti",
+  "tier": 8,
   "dropAlma": false,
   "atributos": {
-    "vida": 40,
+    "vida": 60,
     "armadura": 0,
     "velocidade": 0.3,
     "resistenciaEmpurrao": 0.5,
@@ -121,6 +121,32 @@
       "giroGrausPorTick": 10,
       "avisoCor": "#ffffff",
       "avisoSom": "minecraft:entity.player.attack.sweep"
+    },
+    "rugido_congelante": {
+      "slot": 0,
+      "tipo": "controle",
+      "peso": 1.2,
+      "recargaTicks": 320,
+      "recargaMaxTicks": 440,
+      "avisoTicks": 10,
+      "distanciaMin": 0,
+      "distanciaMax": 9,
+      "giroGrausPorTick": 14,
+      "avisoCor": "#bfe8ff",
+      "avisoSom": "minecraft:entity.polar_bear.warning"
+    },
+    "pisao_avalanche": {
+      "slot": 1,
+      "tipo": "golpe",
+      "peso": 1.2,
+      "recargaTicks": 260,
+      "recargaMaxTicks": 380,
+      "avisoTicks": 8,
+      "distanciaMin": 3,
+      "distanciaMax": 13,
+      "giroGrausPorTick": 14,
+      "avisoCor": "#e8f6ff",
+      "avisoSom": "minecraft:entity.ravager.roar"
     }
   },
   "combos": {
@@ -149,7 +175,9 @@
       "skills": [
         "forte",
         "barragem",
-        "dash_attack"
+        "dash_attack",
+        "rugido_congelante",
+        "pisao_avalanche"
       ],
       "combos": [
         "tres_e_forte",

@@ -1,0 +1,55 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "jj.miwa_counter",
+  "nome": "Contra Nova Sombra",
+  "tempo": {
+    "atrasoTicks": 0,
+    "duracaoTicks": 16
+  },
+  "animacao": {
+    "transicaoTicks": 2,
+    "preparo": {
+      "cabeca": -5,
+      "tronco": 26,
+      "bracoDir": {
+        "frente": 42,
+        "abrir": -46
+      },
+      "bracoEsq": {
+        "frente": 26,
+        "abrir": 12
+      },
+      "giro": -18,
+      "pernaDir": {
+        "frente": 40,
+        "abrir": 0
+      },
+      "pernaEsq": {
+        "frente": -26,
+        "abrir": 0
+      }
+    },
+    "sopro": {
+      "cabeca": -8,
+      "tronco": 28,
+      "bracoDir": {
+        "frente": 44,
+        "abrir": -48
+      },
+      "bracoEsq": {
+        "frente": 28,
+        "abrir": 14
+      },
+      "giro": -20,
+      "pernaDir": {
+        "frente": 42,
+        "abrir": 0
+      },
+      "pernaEsq": {
+        "frente": -28,
+        "abrir": 0
+      }
+    },
+    "retornoTicks": 5
+  }
+}

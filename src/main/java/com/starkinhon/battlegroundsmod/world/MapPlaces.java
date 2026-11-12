@@ -74,9 +74,12 @@ public final class MapPlaces {
             QUEUE.clear();
             QUEUED.clear();
             ON_PAD.clear();
+            PADS.remove(WORLD);
+            PLACES.remove(WORLD);
         });
         DragonBallPlaces.register();
         NamekWorld.register();
+        WorldSites.register();
     }
 
     public static void add(String map, Place place) {
@@ -109,11 +112,48 @@ public final class MapPlaces {
     }
 
     private static String mapOf(ServerLevel level) {
-        return level.getChunkSource().getGenerator() instanceof MapChunkGenerator drawn ? drawn.mapName() : null;
+        if (level.getChunkSource().getGenerator() instanceof MapChunkGenerator drawn) {
+            return drawn.mapName();
+        }
+        // Namek's terrain is generated now (tools/biomes/namek.py), but its places and pads are still its map's
+        return level.dimension() == NamekWorld.LEVEL ? NamekWorld.MAP : null;
     }
+
+    // A pad's toMap for the way back to the Earth (the normal overworld): it lands beside the Earth pad the player
+    // left from, or at the world's spawn.
+    public static final String EARTH = "terra";
+    private static final Map<java.util.UUID, BlockPos> LAST_EARTH = new HashMap<>();
 
     private static WorldMap map(ServerLevel level) {
         return ((MapChunkGenerator) level.getChunkSource().getGenerator()).map();
+    }
+
+    // The places of the normal world (WorldSites): the same build queue, for a place found at run time.
+    public static void startAt(ServerLevel level, Place place) {
+        start(level, place, false);
+    }
+
+    // Pads of the normal world's places, added when a place is found (WorldSites).
+    private static final String WORLD = "";
+
+    public static void addWorldPad(Pad pad) {
+        List<Pad> pads = PADS.computeIfAbsent(WORLD, k -> new ArrayList<>());
+        for (Pad p : pads) {
+            if (p.id().equals(pad.id())) {
+                return;
+            }
+        }
+        pads.add(pad);
+    }
+
+    public static void addWorldPlace(Place place) {
+        List<Place> places = PLACES.computeIfAbsent(WORLD, k -> new ArrayList<>());
+        for (Place p : places) {
+            if (p.id().equals(place.id())) {
+                return;
+            }
+        }
+        places.add(place);
     }
 
     private static void onServerTick(ServerTickEvent.Post event) {
@@ -125,6 +165,10 @@ public final class MapPlaces {
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             ServerLevel level = player.serverLevel();
             String map = mapOf(level);
+            if (map == null && level.dimension() == Level.OVERWORLD && !player.isSpectator()) {
+                pads(player, level, WORLD);
+                continue;
+            }
             if (map == null || player.isSpectator()) {
                 ON_PAD.remove(player.getUUID());
                 continue;
@@ -161,7 +205,7 @@ public final class MapPlaces {
             }
         }
         if (job == null) {
-            Build build = place.build().apply(map(level));
+            Build build = place.build().apply(level.getChunkSource().getGenerator() instanceof MapChunkGenerator ? map(level) : null);
             job = new Job(level.dimension(), place, build, new int[] {0});
             QUEUED.add(key);
             QUEUE.add(job);
@@ -202,6 +246,19 @@ public final class MapPlaces {
     }
 
     private static boolean put(ServerLevel level, Build.Put put) {
+        if (put.column()) {
+            int top = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE, put.pos().getX(), put.pos().getZ());
+            boolean any = false;
+            BlockPos.MutableBlockPos p = put.pos().mutable();
+            for (int y = put.pos().getY(); y < top; y++) {
+                p.setY(y);
+                if (!level.getBlockState(p).isAir()) {
+                    level.setBlock(p, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
+                    any = true;
+                }
+            }
+            return any;
+        }
         if (put.state().isAir() && level.getBlockState(put.pos()).isAir()) {
             return false;
         }
@@ -256,18 +313,27 @@ public final class MapPlaces {
         ON_PAD.remove(player.getUUID());
         ServerLevel dest = level;
         String destMap = map;
-        if (on.toMap() != null) {
+        BlockPos to = on.to();
+        if (level.dimension() == Level.OVERWORLD && on.toMap() != null) {
+            LAST_EARTH.put(player.getUUID(), on.at().east(3));
+        }
+        if (EARTH.equals(on.toMap())) {
+            dest = level.getServer().overworld();
+            to = LAST_EARTH.getOrDefault(player.getUUID(), dest.getSharedSpawnPos());
+            to = new BlockPos(to.getX(), dest.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+                    to.getX(), to.getZ()) - 1, to.getZ());
+            destMap = null;
+        } else if (on.toMap() != null) {
             dest = level.getServer().getLevel(com.starkinhon.battlegroundsmod.challenge.Universes.key(on.toMap()));
             destMap = on.toMap();
             if (dest == null) {
                 return;
             }
         }
-        Place target = place(destMap, on.toPlace());
+        Place target = destMap == null || on.toPlace() == null ? null : place(destMap, on.toPlace());
         if (target != null) {
             start(dest, target, true);
         }
-        BlockPos to = on.to();
         Fx.burst(level, ParticleTypes.REVERSE_PORTAL, player.position().add(0, 1, 0), 60, 0.6, 0.6);
         player.teleportTo(dest, to.getX() + 0.5, to.getY() + 1, to.getZ() + 0.5, player.getYRot(), player.getXRot());
         player.fallDistance = 0;

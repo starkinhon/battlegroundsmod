@@ -1,0 +1,55 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "jj.miwa_lua",
+  "nome": "Lua Partida",
+  "tempo": {
+    "atrasoTicks": 3,
+    "duracaoTicks": 100
+  },
+  "animacao": {
+    "transicaoTicks": 6,
+    "preparo": {
+      "cabeca": 22,
+      "tronco": 12,
+      "bracoDir": {
+        "frente": 30,
+        "abrir": -38
+      },
+      "bracoEsq": {
+        "frente": 16,
+        "abrir": 8
+      },
+      "giro": -8,
+      "pernaDir": {
+        "frente": 20,
+        "abrir": 0
+      },
+      "pernaEsq": {
+        "frente": -12,
+        "abrir": 0
+      }
+    },
+    "sopro": {
+      "cabeca": 26,
+      "tronco": 14,
+      "bracoDir": {
+        "frente": 32,
+        "abrir": -40
+      },
+      "bracoEsq": {
+        "frente": 18,
+        "abrir": 9
+      },
+      "giro": -10,
+      "pernaDir": {
+        "frente": 22,
+        "abrir": 0
+      },
+      "pernaEsq": {
+        "frente": -14,
+        "abrir": 0
+      }
+    },
+    "retornoTicks": 6
+  }
+}

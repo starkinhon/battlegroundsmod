@@ -1,0 +1,35 @@
+{
+  "parent": "battlegroundsmod:souls/primeira_arma",
+  "display": {
+    "icon": {
+      "id": "battlegroundsmod:venda_gojo"
+    },
+    "title": {
+      "translate": "advancements.battlegroundsmod.souls.arma_venda_gojo.title"
+    },
+    "description": {
+      "translate": "advancements.battlegroundsmod.souls.arma_venda_gojo.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "got": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "battlegroundsmod:venda_gojo"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "got"
+    ]
+  ]
+}

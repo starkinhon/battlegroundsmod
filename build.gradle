@@ -126,6 +126,10 @@ configurations {
 }
 
 dependencies {
+    // TerraBlender (NeoForge 1.21.1-4.1.0.8, CurseForge 940057 file 6054947): puts the universes' biomes into the
+    // normal overworld next to the vanilla ones and other terrain mods (Stark 2026-11-11: universos viram biomas).
+    implementation "curse.maven:terrablender-neoforge-940057:6054947"
+
     // FreeCam by Zergatul (MIT, NeoForge 1.21 build), only in runClient for watching and recording moves.
     // F6 toggles it. Not shipped with the mod and not a dependency of it.
     // It is client-only, so the dedicated server smoke test in CI passes -PnoDevMods to leave it out.

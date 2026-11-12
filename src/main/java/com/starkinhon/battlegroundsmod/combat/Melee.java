@@ -50,12 +50,21 @@ public final class Melee {
         float buff = com.starkinhon.battlegroundsmod.power.powers.sub.db.DbCommon.meleeMultiplier(player)
                 * com.starkinhon.battlegroundsmod.power.powers.sub.nr.NrCommon.meleeMultiplier(player)
                 * com.starkinhon.battlegroundsmod.power.powers.sub.jj.JjCommon.meleeMultiplier(player);
+        // the Giant Luffy hits 3x as hard with his bare fists too, like his moves
+        if (com.starkinhon.battlegroundsmod.power.powers.luffy.Luffy.size(player) > 1.5) {
+            buff *= 3;
+        }
         return power == null ? buff : power.meleeMultiplier() * buff;
+    }
+
+    // How big the puncher is (the SCALE attribute: the Giant Luffy is 10): reach and the look of the hits go with it.
+    static double size(LivingEntity attacker) {
+        return Math.max(1, attacker.getScale());
     }
 
     // How far a punch reaches: the combo's reach, plus the Sage Mode's 2 blocks (Kawazu Kumite).
     static double reach(LivingEntity attacker, ComboSpec spec) {
-        return spec.alcance() + com.starkinhon.battlegroundsmod.power.powers.sub.nr.NrCommon.extraReach(attacker);
+        return spec.alcance() * size(attacker) + com.starkinhon.battlegroundsmod.power.powers.sub.nr.NrCommon.extraReach(attacker);
     }
 
     static int fistColor(LivingEntity player) {
@@ -86,7 +95,7 @@ public final class Melee {
         }
         ComboSpec.Passo passo = spec.passo();
         if (target == null) {
-            target = closestInFront(attacker, passo.distanciaMax(), passo.cone());
+            target = closestInFront(attacker, passo.distanciaMax() * size(attacker), passo.cone());
             if (target != null) {
                 chase(attacker, target, spec);
                 return true;
@@ -262,7 +271,7 @@ public final class Melee {
         ServerLevel level = Combat.level(attacker);
         Vec3 at = hitPos(attacker, hit);
         Fx.effects(level, ComboSpec.get().skill(), false, momento, at, attacker.getLookAngle());
-        PunchFx.hit(level, kind, at, attacker.getLookAngle(), fistColor(attacker), charge, hit.getY());
+        PunchFx.hit(level, kind, at, attacker.getLookAngle(), fistColor(attacker), charge, hit.getY(), size(attacker));
     }
 
     static void shake(LivingEntity entity, float strength, int ticks) {
@@ -349,10 +358,10 @@ public final class Melee {
             }
             float power = 1 + STRONG_CHARGE_BONUS * charge;
             Vec3 look = player.getLookAngle();
-            Vec3 front = player.getEyePosition().add(look.scale(2.5));
-            LivingEntity target = Combat.raycastTarget(player, 4.5);
+            Vec3 front = player.getEyePosition().add(look.scale(2.5 * size(player)));
+            LivingEntity target = Combat.raycastTarget(player, 4.5 * size(player));
             if (target == null) {
-                PunchFx.swing(level, front, look, color, 1 + 0.5f * charge);
+                PunchFx.swing(level, front, look, color, 1 + 0.5f * charge, size(player));
             }
             Fx.sound(level, front, SoundEvents.PLAYER_ATTACK_STRONG, 1.5f, 0.6f - charge * 0.15f);
             if (target != null) {
@@ -392,8 +401,10 @@ public final class Melee {
 
     // poses: plays the base move's own punches (soco.barragem, then soco.barragem_final); the powers' barrages keep
     // their own poses.
-    private static void barrage(LivingEntity player, int ticks, int maxTicks, double range, float hitDamage, float finisherDamage, int fistColor, boolean poses) {
+    private static void barrage(LivingEntity player, int ticks, int maxTicks, double baseRange, float hitDamage, float finisherDamage, int fistColor, boolean poses) {
         ServerLevel level = Combat.level(player);
+        double scale = size(player);
+        double range = baseRange * scale;
         PowerData data = player.getData(ModAttachments.POWER);
         int interrupts = data.interrupts;
         data.busyTicks = ticks + 4;
@@ -416,7 +427,7 @@ public final class Melee {
                 if (age % 2 == 0) {
                     // Each punch pushes a small tinted vapor ring into the air in front.
                     Vec3 offset = new Vec3(level.random.nextDouble() - 0.5, level.random.nextDouble() - 0.5, level.random.nextDouble() - 0.5).scale(0.9);
-                    PunchFx.swing(level, eye.add(look.scale(range * 0.4)).add(offset), look, fistColor, 0.4f);
+                    PunchFx.swing(level, eye.add(look.scale(range * 0.4)).add(offset.scale(scale)), look, fistColor, 0.4f, scale);
                     for (LivingEntity target : Combat.inCone(player, range, 0.55)) {
                         if (Combat.hurtBasic(player, target, hitDamage)) {
                             hitFx(player, target, "golpe", PunchFx.BARRAGEM, 0);
@@ -434,8 +445,8 @@ public final class Melee {
             if (poses) {
                 anim(player, sukuna ? com.starkinhon.battlegroundsmod.power.powers.sukuna.SukunaMelee.BARRAGE_END_POSE : BARRAGE_END_POSE);
             }
-            Vec3 front = eye.add(look.scale(2));
-            PunchFx.swing(level, front, look, fistColor, 1.1f);
+            Vec3 front = eye.add(look.scale(2 * scale));
+            PunchFx.swing(level, front, look, fistColor, 1.1f, scale);
             Fx.sound(level, front, SoundEvents.PLAYER_ATTACK_KNOCKBACK, 1.5f, 0.6f);
             List<LivingEntity> finished = Combat.inCone(player, range, 0.55);
             if (sukuna) {

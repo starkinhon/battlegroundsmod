@@ -1,0 +1,35 @@
+{
+  "parent": "battlegroundsmod:souls/primeira_arma",
+  "display": {
+    "icon": {
+      "id": "battlegroundsmod:samehada"
+    },
+    "title": {
+      "translate": "advancements.battlegroundsmod.souls.arma_samehada.title"
+    },
+    "description": {
+      "translate": "advancements.battlegroundsmod.souls.arma_samehada.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "got": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "battlegroundsmod:samehada"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "got"
+    ]
+  ]
+}

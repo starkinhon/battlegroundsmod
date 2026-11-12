@@ -86,6 +86,8 @@ public final class ChallengeArenas {
         long fightAt;
         long doneAt;
         UUID boss;
+        boolean bossDied;
+        int respawns;
         State state = State.COUNTDOWN;
     }
 
@@ -98,9 +100,22 @@ public final class ChallengeArenas {
         NeoForge.EVENT_BUS.addListener(ChallengeArenas::onServerTick);
         NeoForge.EVENT_BUS.addListener(ChallengeArenas::onDeath);
         NeoForge.EVENT_BUS.addListener(ChallengeArenas::onLogin);
+        NeoForge.EVENT_BUS.addListener((PlayerEvent.PlayerChangedDimensionEvent e) -> {
+            if (e.getEntity() instanceof ServerPlayer player) {
+                syncWins(player);
+            }
+        });
+        NeoForge.EVENT_BUS.addListener((PlayerEvent.PlayerRespawnEvent e) -> {
+            if (e.getEntity() instanceof ServerPlayer player) {
+                syncWins(player);
+            }
+        });
         NeoForge.EVENT_BUS.addListener(ChallengeArenas::onLogout);
         NeoForge.EVENT_BUS.addListener(ChallengeArenas::onFinalizeSpawn);
     }
+
+    // The client's copy of its own wins (ModPayloads.SyncArenaWins), for the book.
+    public static volatile List<String> clientWins = List.of();
 
     public static List<String> wins(Player player) {
         return player.getData(ModAttachments.ARENA_WINS);
@@ -228,7 +243,23 @@ public final class ChallengeArenas {
         if (level == null) {
             level = player.server.overworld();
         }
+        // A soul still lying in the arena goes home with the player: it is the prize of the fight.
+        List<ItemStack> souls = new ArrayList<>();
+        ServerLevel arena = player.server.getLevel(ARENAS);
+        if (arena != null && session.center != null) {
+            AABB box = new AABB(session.center).inflate(80, 64, 80);
+            for (net.minecraft.world.entity.item.ItemEntity item : arena.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, box,
+                    e -> e.getItem().getItem() instanceof com.starkinhon.battlegroundsmod.item.SoulItem)) {
+                souls.add(item.getItem().copy());
+                item.discard();
+            }
+        }
         player.teleportTo(level, session.backPos.x, session.backPos.y, session.backPos.z, session.backYaw, 0);
+        for (ItemStack soul : souls) {
+            if (!player.getInventory().add(soul)) {
+                player.drop(soul, false);
+            }
+        }
     }
 
     private static void removeBoss(MinecraftServer server, Session session) {
@@ -274,10 +305,18 @@ public final class ChallengeArenas {
                 }
                 case FIGHT -> {
                     Entity boss = session.boss == null ? null : arena.getEntity(session.boss);
-                    if (boss == null || !boss.isAlive()) {
+                    if (boss == null && !session.bossDied && session.respawns < 3) {
+                        // Gone without dying (Stark's test 2026-11-10: he came in flying and Kuririn was "born dead",
+                        // a win for nothing): bring the character back instead of counting a win.
+                        session.respawns++;
+                        spawnBoss(player, arena, session);
+                    } else if (boss == null || !boss.isAlive()) {
                         win(player, session, now);
-                    } else if (now % 20 == 0 && boss instanceof Mob mob && mob.getTarget() != player) {
-                        mob.setTarget(player);
+                    } else {
+                        keepInside(boss, session);
+                        if (now % 20 == 0 && boss instanceof Mob mob && mob.getTarget() != player) {
+                            mob.setTarget(player);
+                        }
                     }
                 }
                 case DONE -> {
@@ -287,6 +326,20 @@ public final class ChallengeArenas {
                     }
                 }
             }
+        }
+    }
+
+    // Thrown out of the ring (Stark 2026-11-10: the Shikamaru's shadow walked the Kakashi out of it, and the fight and
+    // the soul were lost): back in, at the far side from the player's start.
+    private static void keepInside(Entity boss, Session session) {
+        int radius = ChallengeSpec.get().raio();
+        double dx = boss.getX() - (session.center.getX() + 0.5);
+        double dz = boss.getZ() - (session.center.getZ() + 0.5);
+        boolean out = dx * dx + dz * dz > (radius - 1.0) * (radius - 1.0) || boss.getY() < FLOOR_Y - 4 || boss.getY() > FLOOR_Y + 60;
+        if (out) {
+            boss.teleportTo(session.center.getX() + 0.5, FLOOR_Y + 1, session.center.getZ() + radius / 2.0 + 0.5);
+            boss.setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
+            boss.fallDistance = 0;
         }
     }
 
@@ -322,10 +375,36 @@ public final class ChallengeArenas {
             syncWins(player);
             giveItems(player, ChallengeSpec.get().challenge(session.id));
         }
+        arenaPoder(player, session.id, first);
         title(player, Component.translatable("message.battlegroundsmod.arena_won").withStyle(s -> s.withColor(0xD8352A).withBold(true)), name(session.id).copy());
         player.displayClientMessage(Component.translatable(first ? "message.battlegroundsmod.arena_unlocked" : "message.battlegroundsmod.arena_again",
                 name(session.id), RETURN_DELAY / 20), false);
         Fx.sound(player.serverLevel(), player.position(), SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, 1f, 1f);
+    }
+
+    // Poder for beating a challenge (Stark 2026-11-10: "os bosses dos desafios darem poder quando você vencer"). The kill
+    // in the arena pays nothing by itself (Progression skips the arenas), this does: the first win a good part of the
+    // player's tier (a whole tier for a book boss like Freeza), a rematch a little, nothing once 3+ tiers above it.
+    private static void arenaPoder(ServerPlayer player, String id, boolean first) {
+        if (!Progression.on(player)) {
+            return;
+        }
+        int tier = com.starkinhon.battlegroundsmod.power.Tiers.of(player);
+        int bossTier = tier;
+        try {
+            Integer t = BossSpec.get(id).tier();
+            bossTier = t == null ? tier : t;
+        } catch (RuntimeException ignored) {
+        }
+        var spec = com.starkinhon.battlegroundsmod.skill.ProgressionSpec.get();
+        double worth = Progression.value(bossTier) * spec.multSubAlma();
+        double gain;
+        if (first) {
+            gain = isBoss(id) ? Progression.cost(tier) : Math.max(Progression.cost(tier) * 0.5, worth);
+        } else {
+            gain = bossTier - tier >= spec.abaixoZera() ? 0 : worth * 0.3;
+        }
+        Progression.add(player, gain);
     }
 
     // The challenge's items, the first time it is beaten.
@@ -356,6 +435,11 @@ public final class ChallengeArenas {
 
     // Dying in the arena ends the fight; the player respawns at home as usual.
     private static void onDeath(LivingDeathEvent event) {
+        for (Session session : SESSIONS.values()) {
+            if (event.getEntity().getUUID().equals(session.boss)) {
+                session.bossDied = true;
+            }
+        }
         if (event.getEntity() instanceof ServerPlayer player) {
             Session session = SESSIONS.remove(player.getUUID());
             if (session != null) {
@@ -398,8 +482,10 @@ public final class ChallengeArenas {
         ChallengeSpec spec = ChallengeSpec.get();
         // A universe's common enemies (Saibaman...) only in that universe.
         ChallengeSpec.Universe mobUniverse = spec.universeOfMob(boss.bossId());
+        BlockPos at = BlockPos.containing(event.getX(), event.getY(), event.getZ());
+        String here = com.starkinhon.battlegroundsmod.universe.UniverseBiomes.universeAt(level, at);
         if (mobUniverse != null) {
-            if (Progression.on(level.getServer()) && !mobUniverse.id().equals(Universes.universeOf(level.dimension()))) {
+            if (Progression.on(level.getServer()) && !mobUniverse.id().equals(here)) {
                 event.setSpawnCancelled(true);
             }
             return;
@@ -408,11 +494,26 @@ public final class ChallengeArenas {
         if (universe == null || !Progression.on(level.getServer())) {
             return;
         }
-        if (!universe.id().equals(Universes.universeOf(level.dimension()))) {
+        Player nearest = level.getNearestPlayer(event.getX(), event.getY(), event.getZ(), 128, false);
+        if (level.dimension() == Level.OVERWORLD) {
+            // The universes are biomes of the normal world now (Stark 2026-11-11): the characters roam the whole world,
+            // rare, and nobody more than two tiers above the nearest player (a Tier 10 meets up to Tier 8), so the
+            // world grows with them.
+            Integer bossTier = null;
+            try {
+                bossTier = BossSpec.get(boss.bossId()).tier();
+            } catch (RuntimeException ignored) {
+            }
+            int playerTier = nearest instanceof ServerPlayer sp ? com.starkinhon.battlegroundsmod.power.Tiers.of(sp)
+                    : com.starkinhon.battlegroundsmod.power.Tiers.HUMANO;
+            if (nearest == null || (bossTier != null && bossTier < playerTier - 2)) {
+                event.setSpawnCancelled(true);
+                return;
+            }
+        } else if (!universe.id().equals(here)) {
             event.setSpawnCancelled(true);
             return;
         }
-        Player nearest = level.getNearestPlayer(event.getX(), event.getY(), event.getZ(), 128, false);
         boolean beaten = nearest != null && wins(nearest).contains(boss.bossId());
         if (!beaten && level.getRandom().nextDouble() >= spec.chanceRara()) {
             event.setSpawnCancelled(true);

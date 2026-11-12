@@ -1,0 +1,28 @@
+{
+  "parent": "battlegroundsmod:souls/derrotar_bills",
+  "display": {
+    "icon": {
+      "id": "minecraft:dragon_egg"
+    },
+    "title": {
+      "translate": "advancements.battlegroundsmod.souls.devorador_de_deuses.title"
+    },
+    "description": {
+      "translate": "advancements.battlegroundsmod.souls.devorador_de_deuses.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ]
+}

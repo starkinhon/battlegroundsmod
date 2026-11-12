@@ -1,0 +1,28 @@
+{
+  "parent": "battlegroundsmod:souls/alma_bills",
+  "display": {
+    "icon": {
+      "id": "battlegroundsmod:soul_destruction_god"
+    },
+    "title": {
+      "translate": "advancements.battlegroundsmod.souls.todas_divinas.title"
+    },
+    "description": {
+      "translate": "advancements.battlegroundsmod.souls.todas_divinas.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ]
+}

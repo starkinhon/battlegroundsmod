@@ -27,6 +27,7 @@ public final class SubDefense {
         final long until;
         final BiConsumer<Shield, Entity> onBlock;
         boolean down;
+        boolean silent;
 
         Shield(LivingEntity owner, ServerLevel level, Vec3 center, Vec3 facing, double size, long until, BiConsumer<Shield, Entity> onBlock) {
             this.owner = owner;
@@ -40,7 +41,9 @@ public final class SubDefense {
 
         public void takeDown() {
             down = true;
-            SubNet.send(level, SubNet.SHIELD, owner.getId(), center, facing, 0, 0, 0);
+            if (!silent) {
+                SubNet.send(level, SubNet.SHIELD, owner.getId(), center, facing, 0, 0, 0);
+            }
         }
     }
 
@@ -54,7 +57,11 @@ public final class SubDefense {
         SHIELDS.removeIf(s -> s.owner == owner);
         Shield s = new Shield(owner, level, center, facing, size, level.getGameTime() + ticks, onBlock);
         SHIELDS.add(s);
-        SubNet.send(level, SubNet.SHIELD, owner.getId(), center, facing, ticks, style, (float) size);
+        // style < 0: the caller draws its own wall (Byakuya's Danku), so no old shield visual.
+        s.silent = style < 0;
+        if (!s.silent) {
+            SubNet.send(level, SubNet.SHIELD, owner.getId(), center, facing, ticks, style, (float) size);
+        }
         return s;
     }
 
@@ -85,7 +92,9 @@ public final class SubDefense {
                     continue;
                 }
                 event.setCanceled(true);
-                SubNet.send(s.level, SubNet.SHIELD_HIT, s.owner.getId(), s.center, s.facing, 0, 0, 0);
+                if (!s.silent) {
+                    SubNet.send(s.level, SubNet.SHIELD_HIT, s.owner.getId(), s.center, s.facing, 0, 0, 0);
+                }
                 SubCommon.sound(s.level, s.center, SoundEvents.AMETHYST_BLOCK_CHIME, 1.4f, 0.7f);
                 SubCommon.sound(s.level, s.center, SoundEvents.SHIELD_BLOCK, 1f, 1.2f);
                 if (s.onBlock != null) {
