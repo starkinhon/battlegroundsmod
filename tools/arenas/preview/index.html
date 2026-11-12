@@ -1,0 +1,171 @@
+<title>Arenas de Desafio</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;700&family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@400&display=swap">
+<style>
+/* Layout: the arena fills the screen; a slim book-like index on the left picks the fight, camera chips float bottom. */
+:root{
+  --bg:#0d0f14; --panel:#151922; --line:#262c3a; --fg:#e7e9ef; --dim:#8a92a6; --accent:#f0b43c; --hot:#e0563f;
+  --f-display:"Chakra Petch",system-ui,sans-serif; --f-body:"IBM Plex Sans",system-ui,sans-serif; --f-mono:"IBM Plex Mono",ui-monospace,monospace;
+  color-scheme:dark;
+}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);overflow:hidden}
+#app{display:grid;grid-template-columns:260px 1fr;height:100%}
+#side{background:var(--panel);border-right:1px solid var(--line);overflow-y:auto;padding-block:14px;padding-left:max(14px,env(safe-area-inset-left,0px));padding-right:12px;display:flex;flex-direction:column;gap:14px}
+h1{font-family:var(--f-display);font-size:20px;margin:0;letter-spacing:.02em}
+.sub{color:var(--dim);font-size:12px;margin:2px 0 0}
+.uni h2{font-family:var(--f-display);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin:0 0 6px}
+.uni ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.uni button{all:unset;cursor:pointer;display:flex;justify-content:space-between;gap:8px;width:100%;box-sizing:border-box;padding:6px 8px;border-radius:6px;font-size:13px}
+.uni button:hover{background:#1d2230}
+.uni button:focus-visible{outline:2px solid var(--accent)}
+.uni button[aria-current="true"]{background:#262b3b;color:var(--accent)}
+.uni button .pl{color:var(--dim);font-size:11.5px;text-align:right}
+.uni button.todo{opacity:.4;cursor:default}
+#view{position:relative;min-width:0}
+canvas{display:block;width:100%;height:100%}
+#info{position:absolute;top:14px;left:16px;right:16px;pointer-events:none;display:flex;flex-direction:column;gap:2px;text-shadow:0 1px 3px #000a}
+#info .t{font-family:var(--f-display);font-size:26px;font-weight:700}
+#info .c{font-size:13px;color:#d6d9e2;max-width:62ch}
+#info .m{font-family:var(--f-mono);font-size:11px;color:#b9bfcc}
+#cams{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom,0px));display:flex;gap:6px;flex-wrap:wrap;justify-content:center;background:#0d0f14cc;padding:6px;border-radius:10px;border:1px solid var(--line)}
+#cams button{all:unset;cursor:pointer;font-family:var(--f-display);font-size:13px;padding:6px 12px;border-radius:7px;color:var(--fg)}
+#cams button[aria-pressed="true"]{background:var(--accent);color:#141414}
+#cams button:focus-visible{outline:2px solid var(--accent)}
+[hidden]{display:none!important}
+#load{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--f-mono);color:var(--dim);pointer-events:none}
+.legend{font-size:11.5px;color:var(--dim);line-height:1.5}
+.legend b{color:var(--fg);font-weight:600}
+.sw{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px;vertical-align:0}
+@media (max-width:720px){
+  #app{grid-template-columns:1fr;grid-template-rows:auto 1fr}
+  #side{max-height:34vh;border-right:0;border-bottom:1px solid var(--line);padding-right:max(14px,env(safe-area-inset-right,0px))}
+  #info .t{font-size:20px}
+}
+</style>
+<div id="app">
+  <nav id="side" aria-label="Arenas">
+    <div><h1>Arenas de Desafio</h1><p class="sub">Livro dos Desafios · prévia dos blocos que vão pro jogo</p></div>
+    <div id="list"></div>
+    <p class="legend"><span class="sw" style="background:#4aa3ff"></span><b>Você</b> no ponto de entrada · <span class="sw" style="background:#ff5a4a"></span><b>Desafiante</b> onde ele aparece · anel amarelo = parede invisível da luta. Arraste para girar, roda do mouse para zoom.</p>
+  </nav>
+  <main id="view">
+    <canvas id="c"></canvas>
+    <div id="info"><div class="t" id="t"></div><div class="c" id="cn"></div><div class="m" id="mm"></div></div>
+    <div id="cams" role="group" aria-label="Câmera">
+      <button id="cam-jogador" aria-pressed="false">Jogador</button>
+      <button id="cam-lado" aria-pressed="true">Lado</button>
+      <button id="cam-cima" aria-pressed="false">Cima</button>
+      <button id="cam-parede" aria-pressed="true">Parede</button>
+    </div>
+    <div id="load">carregando…</div>
+  </main>
+</div>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+
+const UNIS=[['dragonball','Dragon Ball'],['naruto','Naruto'],['jujutsu','Jujutsu Kaisen'],['bleach','Bleach'],['demonslayer','Demon Slayer']];
+const canvas=document.getElementById('c');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,preserveDrawingBuffer:true});
+renderer.setPixelRatio(Math.min(2,devicePixelRatio));
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(70,1,0.1,2000);
+const controls=new OrbitControls(camera,canvas);
+controls.enableDamping=true;
+let meta={},atlasTex,current=null,group=null,camMode='lado',wall=true;
+
+const vtx=`attribute vec4 col;varying vec2 vUv;varying vec4 vC;varying float vD;
+void main(){vUv=uv;vC=col;vec4 mv=modelViewMatrix*vec4(position,1.);vD=-mv.z;gl_Position=projectionMatrix*mv;}`;
+const frg=`uniform sampler2D map;uniform vec3 fogC;uniform vec2 fogR;uniform float alphaCut;varying vec2 vUv;varying vec4 vC;varying float vD;
+void main(){vec4 t=texture2D(map,vUv);if(t.a<alphaCut)discard;vec3 c=t.rgb*vC.rgb;
+float f=smoothstep(fogR.x,fogR.y,vD);gl_FragColor=vec4(mix(c,fogC,f),t.a);
+#include <colorspace_fragment>
+}`;
+function mat(trans,m){return new THREE.ShaderMaterial({vertexShader:vtx,fragmentShader:frg,transparent:trans,depthWrite:!trans,side:THREE.DoubleSide,
+  uniforms:{map:{value:atlasTex},fogC:{value:new THREE.Color(m.ceu[1])},fogR:{value:new THREE.Vector2(m.neblina[0],m.neblina[1])},alphaCut:{value:trans?0.02:0.5}}});}
+
+function skyDome(m){
+  const g=new THREE.SphereGeometry(1500,32,16);
+  const s=new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,uniforms:{a:{value:new THREE.Color(m.ceu[0])},b:{value:new THREE.Color(m.ceu[1])}},
+    vertexShader:`varying vec3 p;void main(){p=normalize(position);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+    fragmentShader:`uniform vec3 a,b;varying vec3 p;void main(){float h=clamp(p.y*1.6,0.,1.);gl_FragColor=vec4(mix(b,a,pow(h,.7)),1.);
+#include <colorspace_fragment>
+}`});
+  const sky=new THREE.Mesh(g,s);sky.renderOrder=-1;sky.frustumCulled=false;return sky;}
+
+function person(color,h){const g=new THREE.Group(),m=new THREE.MeshBasicMaterial({color});
+  const box=(w,hh,d,x,y,z)=>{const b=new THREE.Mesh(new THREE.BoxGeometry(w,hh,d),m);b.position.set(x,y,z);g.add(b);};
+  box(.5,.5,.5,0,1.55,0);box(.5,.75,.25,0,.95,0);box(.25,.75,.25,-.375,.95,0);box(.25,.75,.25,.375,.95,0);box(.25,.6,.25,-.125,.3,0);box(.25,.6,.25,.125,.3,0);
+  g.scale.setScalar(h/1.8);return g;}
+
+async function load(id){
+  const m=meta[id];if(!m)return;current=id;
+  document.querySelectorAll('.uni button').forEach(b=>b.setAttribute('aria-current',b.dataset.id===id));
+  document.getElementById('load').hidden=false;
+  const res=await fetch('arenas/'+id+'.wasm');
+  const buf=await new Response(res.body.pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();
+  if(current!==id)return;
+  const h=new Uint32Array(buf,0,4);let off=16;const parts=[];
+  for(let k=0;k<2;k++){const nv=h[k*2];const nvp=nv+(nv%2);
+    const pos=new Int16Array(buf,off,nv*3);off+=nvp*6;const uv=new Uint16Array(buf,off,nv*2);off+=nv*4;const col=new Uint8Array(buf,off,nv*4);off+=nv*4;
+    const idx=new Uint32Array(nv/4*6);for(let q=0,i=0;q<nv;q+=4){idx[i++]=q;idx[i++]=q+1;idx[i++]=q+2;idx[i++]=q;idx[i++]=q+2;idx[i++]=q+3;}
+    parts.push({nv,pos,uv,col,idx});}
+  if(group){scene.remove(group);group.traverse(o=>{o.geometry&&o.geometry.dispose();});}
+  group=new THREE.Group();
+  group.add(skyDome(m));
+  parts.forEach((p,k)=>{if(!p.idx.length)return;const g=new THREE.BufferGeometry();
+    const pa=new THREE.BufferAttribute(p.pos,3,false);g.setAttribute('position',pa);
+    g.setAttribute('uv',new THREE.BufferAttribute(p.uv,2,true));g.setAttribute('col',new THREE.BufferAttribute(p.col,4,true));
+    g.setIndex(new THREE.BufferAttribute(p.idx,1));const mesh=new THREE.Mesh(g,mat(k===1,m));mesh.scale.setScalar(1/16);mesh.frustumCulled=false;if(k===1)mesh.renderOrder=2;group.add(mesh);});
+  const P=m.jogador,B=m.desafiante;
+  const you=person(0x4aa3ff,1.8);you.position.set(P[0]+.5,P[1],P[2]+.5);group.add(you);
+  const boss=person(0xff5a4a,m.alturaDesafiante||1.8);boss.position.set(B[0]+.5,B[1],B[2]+.5);group.add(boss);
+  const ring=new THREE.Mesh(new THREE.CylinderGeometry(m.R+1,m.R+1,m.altura,96,1,true),new THREE.MeshBasicMaterial({color:0xf0b43c,transparent:true,opacity:.07,side:THREE.DoubleSide,depthWrite:false}));
+  ring.position.set(.5,1+m.altura/2,.5);ring.name='wall';ring.visible=wall;group.add(ring);
+  const line=new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(Array.from({length:128},(_,i)=>new THREE.Vector3(Math.cos(i/128*6.283)*(m.R+1)+.5,1.05,Math.sin(i/128*6.283)*(m.R+1)+.5))),new THREE.LineBasicMaterial({color:0xf0b43c}));
+  line.name='wall2';line.visible=wall;group.add(line);
+  scene.add(group);
+  document.getElementById('t').textContent=m.nome;
+  document.getElementById('cn').textContent=m.canon;
+  document.getElementById('mm').textContent=`luta: raio ${m.R} · altura ${m.altura} · ${m.blocks.toLocaleString('pt-BR')} blocos`;
+  document.getElementById('load').hidden=true;
+  setCam(camMode);
+  try{localStorage.setItem('arena',id)}catch(e){}
+}
+
+function setCam(mode){camMode=mode;const m=meta[current];if(!m)return;
+  ['jogador','lado','cima'].forEach(k=>document.getElementById('cam-'+k).setAttribute('aria-pressed',k===mode));
+  const P=m.jogador,B=m.desafiante;controls.enabled=true;
+  if(mode==='jogador'){camera.position.set(P[0]+.5,P[1]+1.62,P[2]+.5);controls.target.set(B[0]+.5,B[1]+1.5,B[2]+.5);
+    const d=new THREE.Vector3().subVectors(controls.target,camera.position).normalize();controls.target.copy(camera.position).addScaledVector(d,0.5);}
+  else if(mode==='lado'){const v=m.camLado||[m.R*1.55,m.R*0.55,m.R*0.9];camera.position.set(v[0],v[1],v[2]);controls.target.set(0,m.alvoY||4,0);}
+  else{camera.position.set(0.01,m.R*2.4,m.R*0.35);controls.target.set(0,0,0);}
+  controls.update();}
+
+['jogador','lado','cima'].forEach(k=>document.getElementById('cam-'+k).onclick=()=>setCam(k));
+document.getElementById('cam-parede').onclick=e=>{wall=!wall;e.currentTarget.setAttribute('aria-pressed',wall);if(group)group.children.forEach(o=>{if(o.name.startsWith('wall'))o.visible=wall;});};
+
+function resize(){const r=canvas.parentElement.getBoundingClientRect();renderer.setSize(r.width,r.height,false);camera.aspect=r.width/r.height;camera.updateProjectionMatrix();}
+addEventListener('resize',resize);window.__v={camera,controls,THREE};
+(function loop(){requestAnimationFrame(loop);controls.update();renderer.render(scene,camera);})();
+
+(async()=>{
+  resize();
+  meta=await (await fetch('arenas.json')).json();
+  atlasTex=await new THREE.TextureLoader().loadAsync('atlas.png');
+  atlasTex.magFilter=THREE.NearestFilter;atlasTex.minFilter=THREE.NearestFilter;atlasTex.generateMipmaps=false;atlasTex.colorSpace=THREE.SRGBColorSpace;atlasTex.flipY=false;
+  const list=document.getElementById('list');
+  for(const [u,nome] of UNIS){const ids=Object.keys(meta).filter(k=>meta[k].universo===u);if(!ids.length)continue;
+    const d=document.createElement('div');d.className='uni';d.innerHTML=`<h2>${nome}</h2><ul></ul>`;
+    for(const id of ids){const li=document.createElement('li'),b=document.createElement('button');b.dataset.id=id;
+      b.innerHTML=`<span>${meta[id].personagem}</span><span class="pl">${meta[id].lugar}</span>`;b.onclick=()=>load(id);li.append(b);d.querySelector('ul').append(li);}
+    list.append(d);}
+  let first=Object.keys(meta)[0];try{const s=localStorage.getItem('arena');if(s&&meta[s])first=s}catch(e){}
+  const h=location.hash.slice(1);if(meta[h])first=h;
+  load(first);
+})();
+</script>
