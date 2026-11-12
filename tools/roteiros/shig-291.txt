@@ -1,0 +1,74 @@
+# PR #291 (Shigaraki): B não cobre a tela; Z agarra e desintegra boss andando.
+# gradlew runClient -Pmundo=SoulsDev -Proteiro=shig-291
+
+/devc fechar
+/dev preparar
+/devc hud off
+/devc fov 70
+/soul escolher shigaraki
+/soul semcooldown
+espera 20
+
+# ---------- B: rouba fogo do blaze, usa num husk a 3,5 blocos ----------
+/dev invocar minecraft:blaze 6
+/dev invocar minecraft:husk 3.5
+espera 20
+/devc vista primeira
+/devc mirar
+/devc gravar shig291/B_1p_roubo 1
+/devc tecla b
+espera 60
+/devc gravar parar
+/kill @e[type=minecraft:blaze]
+espera 10
+/devc gravar shig291/B_1p_uso 1
+/dev acertar b @e[type=minecraft:husk,limit=1,sort=nearest]
+espera 80
+/devc gravar parar
+
+/dev invocar minecraft:blaze 6
+/dev invocar minecraft:husk 3.5
+espera 20
+/devc vista terceira
+/devc mirar
+/devc gravar shig291/B_3p_roubo 1
+/devc tecla b
+espera 60
+/devc gravar parar
+/kill @e[type=minecraft:blaze]
+espera 10
+/devc gravar shig291/B_3p_uso 1
+/dev acertar b @e[type=minecraft:husk,limit=1,sort=nearest]
+espera 80
+/devc gravar parar
+/kill @e[type=minecraft:husk]
+/devc vista primeira
+espera 20
+
+# ---------- Z: Madara andando (passivo: anda, não ataca), vida antes/depois ----------
+/dev invocar battlegroundsmod:madara 9 solto
+/dev passivo @e[type=battlegroundsmod:madara,limit=1,sort=nearest]
+espera 100
+/devc camera duelo 9 1.5
+/devc marca Z1 antes
+/dev info @e[type=battlegroundsmod:madara,limit=1,sort=nearest]
+/devc gravar shig291/Z1 1
+/dev acertar z @e[type=battlegroundsmod:madara,limit=1,sort=nearest]
+espera 80
+/devc gravar parar
+/dev info @e[type=battlegroundsmod:madara,limit=1,sort=nearest]
+espera 40
+/devc marca Z2 antes
+/dev info @e[type=battlegroundsmod:madara,limit=1,sort=nearest]
+/devc gravar shig291/Z2 1
+/dev acertar z @e[type=battlegroundsmod:madara,limit=1,sort=nearest]
+espera 80
+/devc gravar parar
+/dev info @e[type=battlegroundsmod:madara,limit=1,sort=nearest]
+
+/dev soltar
+/kill @e[type=battlegroundsmod:madara]
+/devc camera jogador
+/devc hud on
+espera 20
+sair
