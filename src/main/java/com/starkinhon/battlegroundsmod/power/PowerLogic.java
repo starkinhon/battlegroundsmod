@@ -114,6 +114,10 @@ public final class PowerLogic {
             // Shift+C with her rats out: Makima goes to the one she looks at.
             return;
         }
+        if (PowerData.isUlt(slot) && com.starkinhon.battlegroundsmod.power.powers.sub.jj.Itadori.tesouraPress(player)) {
+            // V with the Corte de Tesoura marks up: Itadori marks one more thing, or closes every pair of scissors.
+            return;
+        }
         if (slot == 0 && com.starkinhon.battlegroundsmod.power.powers.uchiha.Katon.cancel(player)) {
             // Z while Madara breathes fire: he stops it.
             return;

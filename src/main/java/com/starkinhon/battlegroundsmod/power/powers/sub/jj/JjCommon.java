@@ -120,7 +120,12 @@ public final class JjCommon {
 
     // Every physical hit (not magic): Overtime makes them all heavier.
     public static float damageMultiplier(LivingEntity attacker) {
-        return SubCommon.hasState(attacker, OVERTIME) ? 1.4f : 1;
+        float k = SubCommon.hasState(attacker, OVERTIME) ? 1.4f : 1;
+        // Nanami's Expediente: after a minute of fighting every blow weighs more.
+        if ("nanami".equals(power(attacker)) && fighting(attacker) >= 1200) {
+            k *= 1.2f;
+        }
+        return k;
     }
 
     // ---------- the fight clock (Overtime) ----------
@@ -230,6 +235,12 @@ public final class JjCommon {
             fought(target, now);
             fought(enemy, now);
         }
+        // Miwa's New Shadow Counter: a blow in the window vanishes and she is behind the attacker already cutting.
+        if (attacker instanceof LivingEntity enemy && SubCommon.hasState(target, Miwa.COUNTER) && enemy.distanceTo(target) < 8) {
+            event.setCanceled(true);
+            Miwa.counter(target, level, enemy);
+            return;
+        }
         // Itadori's Manji Kick: a blow from the front is caught and answered with the kick.
         if (attacker instanceof LivingEntity enemy && SubCommon.hasState(target, MANJI)) {
             Vec3 to = SubCommon.flat(enemy.position().subtract(target.position()));
@@ -240,6 +251,16 @@ public final class JjCommon {
                 Itadori.counter(target, level, enemy);
                 return;
             }
+        }
+        // Nanami's Counter of the Office: a blow on him is stopped on the cloth and answered on the 7:3 point.
+        if (attacker instanceof LivingEntity enemy && SubCommon.hasState(target, Nanami.COUNTER) && enemy.distanceTo(target) < 7) {
+            event.setCanceled(true);
+            Nanami.counter(target, level, enemy);
+            return;
+        }
+        // Nanami's 7:3: his blow on the point of someone he measured is a critical with 2 s of stun.
+        if (attacker instanceof LivingEntity enemy && "nanami".equals(power(enemy)) && SubCommon.hasState(target, RATIO) && Nanami.onPoint(enemy, level, target)) {
+            event.setAmount(event.getAmount() * 2);
         }
         // Choso's Supernova: an orb takes the hit (a punch or a shot) and bursts.
         if (Choso.orbTakes(target, level, direct != null ? direct : attacker)) {
@@ -265,10 +286,32 @@ public final class JjCommon {
         if (attacker instanceof LivingEntity enemy && SubCommon.hasState(enemy, Nanami.OVERTIME_FIRST)) {
             Nanami.firstHit(enemy, level, target);
         }
+        // Nobara's Shared Resonance: a hit on her comes back doubled along the thread.
+        if ("nobara".equals(power(target))) {
+            Nobara.onHurt(target, level, event.getAmount());
+        }
         // Nobara drew blood: her Resonance can follow it for 10 s.
         if (attacker instanceof LivingEntity enemy && "nobara".equals(power(enemy))) {
             SubCommon.setState(target, NOBARA_BLOOD, 200);
         }
+        // Miwa's Bainha Calma: any blow of hers resets the calm.
+        if (attacker instanceof LivingEntity enemy && "miwa".equals(power(enemy))) {
+            Miwa.struck(enemy);
+        }
+        // Itadori's Ritmo: every blow he lands fills it.
+        if (attacker instanceof LivingEntity enemy && "itadori".equals(power(enemy))) {
+            Itadori.landed(enemy);
+        }
+    }
+
+    // A real stun by the tier rule: full on someone of the caster's tier or weaker (bosses too); on stronger ones a little
+    // less for each tier above, never under a real stun (Stun.INTERRUPT_TICKS). Apply it with Stun.apply(t, ticks, true).
+    public static int tierStun(LivingEntity caster, LivingEntity t, int ticks) {
+        int gap = Tiers.of(caster) - Tiers.of(t);
+        if (gap > 0) {
+            ticks = Math.max(com.starkinhon.battlegroundsmod.combat.Stun.INTERRUPT_TICKS, ticks - 6 * gap);
+        }
+        return ticks;
     }
 
     // Is someone inside Miwa's Simple Domain (the Infinite Void spares them)?

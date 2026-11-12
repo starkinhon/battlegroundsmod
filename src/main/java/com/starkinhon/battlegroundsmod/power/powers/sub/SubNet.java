@@ -227,10 +227,11 @@ public final class SubNet {
     public static final int DUST = 99;
 
     // ---------- Jujutsu (power/powers/sub/jj, client/fx/JjFx) ----------
-    // The Divergent Fist's aura (stream): id = the entity, a = how strong (0..1), b = 0 the right fist, 1 both; it lags
-    // behind the fist in echoes when the fist moves.
+    // The cursed energy on the fists (stream): id = the entity, a = how strong (0..1), b = 0 the right fist, 1 both, 2 the
+    // whole body (the Divergent delay). Drawn as the approved shell aura, in blue.
     public static final int DIV_AURA = 100;
-    // The Divergent Fist: id = Itadori, pos = where it landed, dir = the punch; the second impact comes a ticks later.
+    // The Divergent Fist: id = Itadori, pos = where it landed, dir = the punch; the second impact comes a ticks later
+    // (b = 1: only the second impact, the stored delay going off; c = height above the ground).
     public static final int DIVERGENT = 101;
     // The Black Flash's ring closing on the fist (stream): id = Itadori, pos = the fist, a = how closed (0..1).
     public static final int BF_RING = 102;
@@ -244,6 +245,15 @@ public final class SubNet {
     public static final int CRACKS = 106;
     // Speed lines behind a dashing entity (stream): id = the entity, a = color (0 cyan, 1 red, 2 air).
     public static final int DASH_TRAIL = 107;
+    // Itadori. The Divergent Fist's delay stored on someone (stream): id = the target, a = how strong (0..1).
+    public static final int DIV_MARK = 108;
+    // A "cut here" loop of the Corte de Tesoura (stream): id = the mark, pos = its middle, dir.x = radius, dir.y = 1 on an
+    // entity (dir.z = its id, the loops follow the body), a = how far the scissors have closed (0..1).
+    public static final int CUT_LOOP = 109;
+    // The scissors snapped shut at pos: a = radius, b = 1 on an entity (blood), 0 on a block.
+    public static final int CUT_SNAP = 118;
+    // Golpe na Alma: the soul knocked out of someone and sealed (timed): id = the target, a = ticks.
+    public static final int SOUL = 119;
     // Choso. The ball of blood between his palms (stream): id = Choso, pos = between the hands, a = radius, b = how
     // compressed (0..1).
     public static final int BLOOD_BALL = 110;
@@ -272,6 +282,18 @@ public final class SubNet {
     public static final int SLAM = 123;
     // Overtime's gold energy: id = the entity, a = ticks (0 stops it).
     public static final int GOLD_AURA = 124;
+    // Choso (kit of 2026-11-11). A pool of his blood on the ground (timed): id = the pool, pos = on the ground, a = ticks,
+    // b = radius.
+    public static final int BLOOD_POOL = 125;
+    // A sustained Piercing Blood that sweeps (stream): id = the beam, pos = between his palms, dir = to its end, a = width.
+    public static final int BLOOD_SWEEP = 126;
+    // The Perfurante Maximo's charge (stream): id = Choso, a = how far (0..1): his blood leaves the body in drops that
+    // spiral into the ball between his palms.
+    public static final int MAX_CHARGE = 127;
+    // Blood spikes bursting out of the ground at pos: a = radius, b = how many, c = how tall.
+    public static final int GROUND_SPIKES = 128;
+    // The Blood Meteorite in flight (stream): id = the meteorite, pos = where it is, a = radius.
+    public static final int METEOR = 129;
     // Nobara. A nail (stream): id = its own, pos = its tip, dir = where it points, a = 0 flying, 1 stuck.
     public static final int NAIL = 130;
     // Resonance's spike of energy at pos along dir: a = size.
@@ -284,13 +306,14 @@ public final class SubNet {
     public static final int CLAP = 140;
     // A swap: the flash where someone was (pos = feet).
     public static final int SWAP = 141;
-    // Inumaki. Rings of voice from pos to pos + dir: a = size, b = 0 violet, 1 lilac.
+    // Inumaki. The voice: ONE cone of ink rings from pos to pos + dir (forja/inumaki-kit VOICE_F, souls_ki kind 17): id = the
+    // speaker, a = the cone's radius at the end, b = style (Inumaki.V_*), c = the word written in the air (Inumaki.W_*, 0 none).
     public static final int VOICE = 150;
     // The seal marks lit on his face: id = Inumaki, a = ticks.
     public static final int SEAL_MARKS = 151;
-    // Rings round someone stopped by "Stop": id = the target, a = ticks.
+    // The ink rings closing on someone stopped by "Stop" (souls_ki kind 18): id = the target, a = ticks.
     public static final int HOLD_RINGS = 152;
-    // "Get crushed": the unseen weight coming down on pos: a = radius.
+    // "Get crushed": the ground giving way at pos: a = radius, b = 1 a critical (he was frozen).
     public static final int CRUSH = 153;
     // Coughing blood: id = Inumaki, a = ticks.
     public static final int COUGH = 154;
@@ -298,7 +321,8 @@ public final class SubNet {
     public static final int SLEEP = 155;
     // Miwa. The light blue line of a cut at pos along dir: a = half length, b = width.
     public static final int MIWA_LINE = 160;
-    // Simple Domain's circle (stream): id = Miwa, pos = center, a = how open (0..1), b = radius.
+    // Simple Domain's circle (stream, kinds 25 and 26): id = its own, pos = center, a = how open (0..1), b = radius,
+    // dir = (x, flashes so far, z): the last cut's direction and a count, so each new cut lights the circle where it was.
     public static final int SIMPLE_DOMAIN = 161;
     // The draw's sweep round her: pos = her middle, dir = forward, a = radius.
     public static final int MIWA_ARC = 162;
@@ -399,6 +423,40 @@ public final class SubNet {
     // How he looks after a move: id, a = 1 tiny (G3's cost) / 2 tired (G4's), b = ticks.
     public static final int LUFFY_AFTER = 225;
     public static final int LUFFY_LAST = 239;
+
+    // Todo's Black Flash Garantido. TODO_FLAME (stream): id = Todo, a = 0..1 how strong, b = 1 while he dashes (the flames
+    // stretch back; the orange fire behind him only on the wind-up). BF_SPARKS (shot): pos = contact, dir = the blow, a = count:
+    // short zigzags of black lightning with a red edge flying out.
+    public static final int TODO_FLAME = 169;
+    public static final int BF_SPARKS = 170;
+    // Inumaki's megaphone in his hand (stream): id = Inumaki, a = 1 while held, c = 1 put away.
+    public static final int MEGAPHONE = 171;
+    // Nobara, remade (forja/nobara-kit, souls_ki kinds 19-22). The Hairpin's burst: ONE sphere that bursts into spikes of
+    // black ink with a blue rim (kind 21): a = radius, b = life in seconds, c = 1 the red ink of the ult.
+    public static final int NB_BURST = 172;
+    // Resonance's barbed thorns tearing out of a body at pos (kind 20): dir = away from her, a = power, id = seed.
+    public static final int THORNS = 173;
+    // The ult's red thread (stream): id = the one tied, pos = her palm, dir = to the nail in them, a = hits come back so far.
+    public static final int NB_LINK = 174;
+    // The hammer in her right hand (stream): id = Nobara, a = 1 once it swings through.
+    public static final int HAMMER = 175;
+    // The nail in her own palm during the ult (stream): id = Nobara, pos = the palm.
+    public static final int PALM_NAIL = 176;
+    // Miwa, remade (forja/miwa-kit, Realista+Anime, souls_ki kinds 23-27). The draw's arc: ONE thin crescent round pos
+    // (kind 23): dir = the middle of the sweep, a = radius, b = arc (radians), c = width (sign = which way it sweeps),
+    // id = style (0 a draw, 1 the ult's full ring, 2 the ult's inner ring).
+    public static final int MW_SLASH = 177;
+    // The cut that appears on a body a moment later (kind 24): id = the one cut, dir = (angle, height, 1 front / -1 back),
+    // a = how wide it opens, b = life in seconds, c = when it opens (seconds).
+    public static final int MW_CUT = 178;
+    // The ult's mark (stream): the faint line across someone inside Lua Partida, still uncut. id = the one marked.
+    public static final int MW_MARK = 179;
+    // The Line Cut's trail from pos to pos + dir (kind 27): a = half height, b = life in seconds.
+    public static final int MW_STREAK = 180;
+    // The Line Cut's slit in the ground from pos to pos + dir (kind 24 lying down): a = life in seconds.
+    public static final int MW_GASH = 181;
+    // The scabbard's click (a four-point glint at pos): a = size.
+    public static final int MW_GLINT = 182;
 
     public static final int STYLE_SUKUNA = 0;
     public static final int STYLE_PINK = 1;

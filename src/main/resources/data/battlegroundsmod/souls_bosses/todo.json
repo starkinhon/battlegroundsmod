@@ -147,6 +147,45 @@
       "giroGrausPorTick": 14,
       "avisoCor": "#ffffff",
       "avisoSom": "minecraft:entity.player.attack.knockback"
+    },
+    "turbilhao": {
+      "slot": 3,
+      "tipo": "ult",
+      "peso": 0.8,
+      "recargaTicks": 900,
+      "recargaMaxTicks": 1305,
+      "avisoTicks": 6,
+      "distanciaMin": 0,
+      "distanciaMax": 16,
+      "giroGrausPorTick": 14,
+      "avisoCor": "#b48cff",
+      "avisoSom": "minecraft:entity.player.attack.knockback"
+    },
+    "vibraslap": {
+      "slot": 7,
+      "tipo": "livre",
+      "peso": 0.9,
+      "recargaTicks": 700,
+      "recargaMaxTicks": 1015,
+      "avisoTicks": 6,
+      "distanciaMin": 2,
+      "distanciaMax": 14,
+      "giroGrausPorTick": 14,
+      "avisoCor": "#d8e0ea",
+      "avisoSom": "minecraft:block.chain.hit"
+    },
+    "black_flash": {
+      "slot": 11,
+      "tipo": "ult",
+      "peso": 0.8,
+      "recargaTicks": 900,
+      "recargaMaxTicks": 1305,
+      "avisoTicks": 6,
+      "distanciaMin": 6,
+      "distanciaMax": 40,
+      "giroGrausPorTick": 14,
+      "avisoCor": "#ff2a2a",
+      "avisoSom": "minecraft:entity.warden.sonic_charge"
     }
   },
   "combos": {
@@ -173,6 +212,20 @@
         "boogie",
         "soco"
       ]
+    },
+    "todo_4": {
+      "peso": 1.0,
+      "passos": [
+        "boogie",
+        "vibraslap"
+      ]
+    },
+    "todo_5": {
+      "peso": 0.8,
+      "passos": [
+        "palma_falsa",
+        "black_flash"
+      ]
     }
   },
   "fases": [
@@ -183,12 +236,17 @@
         "barragem",
         "boogie",
         "bloco",
-        "palma_falsa"
+        "palma_falsa",
+        "turbilhao",
+        "vibraslap",
+        "black_flash"
       ],
       "combos": [
         "todo_1",
         "todo_2",
-        "todo_3"
+        "todo_3",
+        "todo_4",
+        "todo_5"
       ],
       "agressividade": 0.75,
       "multRecarga": 1.0,

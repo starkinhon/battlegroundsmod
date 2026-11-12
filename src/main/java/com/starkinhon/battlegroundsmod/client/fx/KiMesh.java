@@ -40,7 +40,10 @@ public final class KiMesh {
     public static final int BLAST = 0, GENKI = 1, HALO = 2, BEAM = 3, RING = 4, SHELL = 5, FLASH = 6, SUN = 7, SUN_HALO = 8, SAW = 9, KIEN = 10,
             SPIRAL = 11, WIND = 12, KATON = 13, KATON_RING = 14, SHADOW_PATH = 15, SHADOW_SEA = 16, FLIGHT_SHELL = 17, FLIGHT_RING = 18,
             // 17-18 the Dragon Ball flight; 19-29 free; 30-32 the Naruto kit (forja/naruto-kit); 33-34 Kakashi, 35 Gaara
-            RASEN = 30, RASEN_WIND = 31, RASENSHURIKEN = 32, KAMUI_VORTEX = 33, NINKEN_SEAL = 34, SAND_QUICK = 35;
+            RASEN = 30, RASEN_WIND = 31, RASENSHURIKEN = 32, KAMUI_VORTEX = 33, NINKEN_SEAL = 34, SAND_QUICK = 35,
+            // 40-59 the Jujutsu kits (Inumaki, Nobara, Miwa)
+            VOICE = 40, BIND = 41, NAIL_TRAIL = 42, THORN = 43, NB_BURST = 44, NB_LINK = 45,
+            MW_SLASH = 46, MW_CUT = 47, MW_DOMAIN = 48, MW_WALL = 49, MW_STREAK = 50;
     public static final int FRONT = 1, BACK = 2, BOTH = 3;
 
     // Everything souls_ki reads; queue() keeps a copy, so one P can be reused for the next piece.

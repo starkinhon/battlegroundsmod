@@ -117,7 +117,7 @@
       "recargaMaxTicks": 246,
       "avisoTicks": 4,
       "distanciaMin": 3,
-      "distanciaMax": 18,
+      "distanciaMax": 22,
       "giroGrausPorTick": 14,
       "avisoCor": "#d07a40",
       "avisoSom": "minecraft:entity.arrow.shoot"
@@ -132,21 +132,47 @@
       "distanciaMin": 3,
       "distanciaMax": 40,
       "giroGrausPorTick": 14,
-      "avisoCor": "#7a4aff",
+      "avisoCor": "#3d8bff",
       "avisoSom": "minecraft:block.amethyst_block.resonate"
     },
-    "queima_roupa": {
+    "martelada": {
       "slot": 2,
       "tipo": "golpe",
       "peso": 0.9,
-      "recargaTicks": 130,
-      "recargaMaxTicks": 188,
+      "recargaTicks": 150,
+      "recargaMaxTicks": 220,
       "avisoTicks": 4,
       "distanciaMin": 0,
-      "distanciaMax": 2.6,
+      "distanciaMax": 3.0,
       "giroGrausPorTick": 14,
       "avisoCor": "#d07a40",
       "avisoSom": "minecraft:block.anvil.land"
+    },
+    "compartilhada": {
+      "slot": 3,
+      "tipo": "ult",
+      "peso": 0.8,
+      "recargaTicks": 1000,
+      "recargaMaxTicks": 1300,
+      "avisoTicks": 8,
+      "distanciaMin": 3,
+      "distanciaMax": 30,
+      "giroGrausPorTick": 14,
+      "avisoCor": "#ff2d3f",
+      "avisoSom": "minecraft:block.anvil.land"
+    },
+    "campo": {
+      "slot": 7,
+      "tipo": "livre",
+      "peso": 0.9,
+      "recargaTicks": 380,
+      "recargaMaxTicks": 520,
+      "avisoTicks": 4,
+      "distanciaMin": 4,
+      "distanciaMax": 14,
+      "giroGrausPorTick": 14,
+      "avisoCor": "#3d8bff",
+      "avisoSom": "minecraft:block.chain.fall"
     }
   },
   "combos": {
@@ -161,8 +187,30 @@
       "peso": 1.0,
       "passos": [
         "aproximar",
-        "queima_roupa",
+        "martelada",
         "pregos"
+      ]
+    },
+    "nobara_3": {
+      "peso": 0.9,
+      "passos": [
+        "campo",
+        "pregos"
+      ]
+    },
+    "nobara_4": {
+      "peso": 0.9,
+      "passos": [
+        "aproximar",
+        "martelada",
+        "ressonancia"
+      ]
+    },
+    "nobara_5": {
+      "peso": 0.7,
+      "passos": [
+        "pregos",
+        "compartilhada"
       ]
     }
   },
@@ -174,11 +222,16 @@
         "barragem",
         "pregos",
         "ressonancia",
-        "queima_roupa"
+        "martelada",
+        "compartilhada",
+        "campo"
       ],
       "combos": [
         "nobara_1",
-        "nobara_2"
+        "nobara_2",
+        "nobara_3",
+        "nobara_4",
+        "nobara_5"
       ],
       "agressividade": 0.75,
       "multRecarga": 1.0,

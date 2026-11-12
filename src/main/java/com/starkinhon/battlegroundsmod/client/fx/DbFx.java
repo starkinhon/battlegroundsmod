@@ -2643,15 +2643,21 @@ public final class DbFx {
                 ScreenFx.impactFrame(new int[] {2, 3}, 1, 0xA070FF, pos, 0);
                 ScreenShake.start(1.3f * near, 16);
             }
-            // Miwa's draw.
+            // Miwa's cut opening (Realista+Anime, forja/miwa-kit hitFx): two manga frames.
             case 43 -> {
-                ScreenFx.impactFrame(new int[] {0}, 1, 0x8FD0FF, pos, 0);
-                ScreenShake.start(0.4f * near, 4);
+                ScreenFx.impactFrame(new int[] {4, 3}, 1, 0xFFFFFF, pos, 0);
+                ScreenShake.start(0.55f * near, 6);
             }
-            // Miwa's Line Cut and Simple Domain cutting.
+            // Miwa's Batto Perfeito and the counter from behind: five manga frames.
             case 44 -> {
-                ScreenFx.impactFrame(new int[] {0, 2}, 1, 0x8FD0FF, pos, 0);
-                ScreenShake.start(0.6f * near, 8);
+                ScreenFx.impactFrame(new int[] {4, 3, 4, 3, 4}, 1, 0xFFFFFF, pos, 0);
+                ScreenShake.start(1.2f * near, 12);
+            }
+            // Miwa's Lua Partida: the one draw over the whole circle.
+            case 59 -> {
+                ScreenFx.flash(0xE8F4FF, 0.45f * near, 6);
+                ScreenFx.impactFrame(new int[] {4, 3, 4, 3, 4}, 1, 0xFFFFFF, pos, 0);
+                ScreenShake.start(1.6f * near, 20);
             }
             // Realista+Anime: a ki beam let go (no impact frame on the throw, only light and the shake).
             case 45 -> {
