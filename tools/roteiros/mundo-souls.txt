@@ -66,5 +66,8 @@ devc marca end
 execute in minecraft:the_end run tp @s 100 80 0
 espera 200
 devc print souls/09_end
+# volta pro overworld pra recarga abrir no mundo certo
+execute in minecraft:overworld run tp @s ~ 200 ~
+espera 40
 devc marca fim
 sair
