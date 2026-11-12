@@ -49,7 +49,14 @@ public final class Keybinds {
     // Whether each skill key (the 4 slots, then the extra one) was down last tick. Holding a key makes the system repeat
     // its press (like holding Q drops item after item); only a press of a key that was up counts as a new use, so
     // holding a key is one use, never many.
-    private static final boolean[] WAS_DOWN = new boolean[5];
+    private static final boolean[] WAS_DOWN = new boolean[9];
+    // WAS_DOWN slots of the toggle keys: held, the system repeated the press and K flipped combat on and off every few
+    // ticks (same as the #127 skill keys), the sword stretched and shrank, the attack list spun.
+    private static final int TOGGLE_INDEX = 5;
+    private static final int STRETCH_INDEX = 6;
+    private static final int CYCLE_INDEX = 7;
+    // The base attack's key too: held, a Forte or Barragem that ended started again by itself.
+    private static final int USE_INDEX = 8;
 
     // A real press of the key this tick (not the system repeating it while held). The clicks are always drained.
     private static boolean pressed(KeyMapping key, int index) {
@@ -102,27 +109,19 @@ public final class Keybinds {
                 ConstellationScreen.open();
             }
         }
-        while (TOGGLE_COMBAT.consumeClick()) {
-            if (hasPower) {
-                PacketDistributor.sendToServer(new ModPayloads.ToggleCombat());
-            }
+        if (pressed(TOGGLE_COMBAT, TOGGLE_INDEX) && hasPower) {
+            PacketDistributor.sendToServer(new ModPayloads.ToggleCombat());
         }
-        while (STRETCH_SWORD.consumeClick()) {
-            if (hasPower) {
-                PacketDistributor.sendToServer(new ModPayloads.StretchSword());
-            }
+        if (pressed(STRETCH_SWORD, STRETCH_INDEX) && hasPower) {
+            PacketDistributor.sendToServer(new ModPayloads.StretchSword());
         }
-        while (CYCLE_ATTACK.consumeClick()) {
-            if (hasPower) {
-                BaseAttacks.cycle(minecraft.options.keyShift.isDown());
-            }
+        if (pressed(CYCLE_ATTACK, CYCLE_INDEX) && hasPower) {
+            BaseAttacks.cycle(minecraft.options.keyShift.isDown());
         }
         // Down before the use, so the server already knows the key is held when the attack starts.
         BaseAttacks.holdKey(hasPower && USE_ATTACK.isDown());
-        while (USE_ATTACK.consumeClick()) {
-            if (hasPower) {
-                BaseAttacks.use();
-            }
+        if (pressed(USE_ATTACK, USE_INDEX) && hasPower) {
+            BaseAttacks.use();
         }
     }
 }

@@ -544,6 +544,15 @@ public abstract class SoulBoss extends Monster {
         configured = tag.getBoolean("BossConfigured");
         phase = tag.getInt("BossPhase");
         ultUsed = tag.getBoolean("BossUltUsed");
+        if (configured && !level().isClientSide()) {
+            // The bar's color is set when a phase starts: after a reload it was back to red until the next phase.
+            try {
+                BossSpec spec = spec();
+                bossEvent.setColor(barColor(spec.fase(Math.min(phase, spec.fases().size() - 1)).corBarra()));
+            } catch (RuntimeException e) {
+                // no file for it (yet): keeps the default bar
+            }
+        }
         if (hasCustomName()) {
             bossEvent.setName(getDisplayName());
         }
