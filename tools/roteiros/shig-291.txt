@@ -10,32 +10,34 @@
 espera 20
 
 # ---------- B: rouba fogo do blaze, usa num husk a 3,5 blocos ----------
+# só o blaze primeiro: /devc mirar pegaria o husk, mais perto, e o B roubaria gelo
 /dev invocar minecraft:blaze 6
-/dev invocar minecraft:husk 3.5
 espera 20
 /devc vista primeira
-/devc mirar
+/dev mirar @e[type=minecraft:blaze,limit=1,sort=nearest]
 /devc gravar shig291/B_1p_roubo 1
 /devc tecla b
 espera 60
 /devc gravar parar
 /kill @e[type=minecraft:blaze]
+/dev invocar minecraft:husk 3.5
 espera 10
 /devc gravar shig291/B_1p_uso 1
 /dev acertar b @e[type=minecraft:husk,limit=1,sort=nearest]
 espera 80
 /devc gravar parar
 
+# só o blaze primeiro: /devc mirar pegaria o husk, mais perto, e o B roubaria gelo
 /dev invocar minecraft:blaze 6
-/dev invocar minecraft:husk 3.5
 espera 20
 /devc vista terceira
-/devc mirar
+/dev mirar @e[type=minecraft:blaze,limit=1,sort=nearest]
 /devc gravar shig291/B_3p_roubo 1
 /devc tecla b
 espera 60
 /devc gravar parar
 /kill @e[type=minecraft:blaze]
+/dev invocar minecraft:husk 3.5
 espera 10
 /devc gravar shig291/B_3p_uso 1
 /dev acertar b @e[type=minecraft:husk,limit=1,sort=nearest]
