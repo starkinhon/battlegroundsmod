@@ -105,10 +105,17 @@ public final class BoundmanSkin {
             ResourceLocation out = Minecraft.getInstance().getTextureManager().register("battlegroundsmod_boundman_" + next++, dyn);
             com.starkinhon.battlegroundsmod.BattlegroundsMod.LOGGER.info("Boundman skin made from {} ({}x{}, slim {}, legacy {}) as {}", loc, w, h, slim, legacy, out);
             if (Boolean.getBoolean("souls.boundmanDump")) {
-                img.writeToFile(Minecraft.getInstance().gameDirectory.toPath().resolve("screenshots").resolve(out.getPath().replace('/', '_') + ".png"));
+                // a failed dump must not fail the skin (it was made again, a new texture, every frame)
+                try {
+                    java.nio.file.Path dir = Minecraft.getInstance().gameDirectory.toPath().resolve("screenshots");
+                    java.nio.file.Files.createDirectories(dir);
+                    img.writeToFile(dir.resolve(out.getPath().replace('/', '_') + ".png"));
+                } catch (java.io.IOException ex) {
+                    warn(loc, "dump failed", ex);
+                }
             }
             return new Skin(out, slim, legacy);
-        } catch (RuntimeException | java.io.IOException ex) {
+        } catch (RuntimeException ex) {
             warn(loc, "failed", ex);
             return null;
         }
