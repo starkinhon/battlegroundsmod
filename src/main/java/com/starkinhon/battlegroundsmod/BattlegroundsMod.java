@@ -82,6 +82,7 @@ public class BattlegroundsMod {
         SoulCommand.addSubcommand(com.starkinhon.battlegroundsmod.combat.DamageDebug::command);
         SoulCommand.addSubcommand(BossCommand::boss);
         SoulCommand.addSubcommand(com.starkinhon.battlegroundsmod.power.Progression::command);
+        SoulCommand.addSubcommand(com.starkinhon.battlegroundsmod.power.SoulSync::command);
         SoulCommand.addSubcommand(com.starkinhon.battlegroundsmod.challenge.ChallengeArenas::command);
         SoulCommand.addSubcommand(com.starkinhon.battlegroundsmod.challenge.Universes::command);
         SoulCommand.addSubcommand(com.starkinhon.battlegroundsmod.universe.DragonBallWorld::command);
