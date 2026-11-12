@@ -80,6 +80,7 @@ public final class MapPlaces {
         DragonBallPlaces.register();
         NamekWorld.register();
         WorldSites.register();
+        NarutoSites.register();
     }
 
     public static void add(String map, Place place) {

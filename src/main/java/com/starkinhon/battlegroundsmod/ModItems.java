@@ -236,6 +236,29 @@ public final class ModItems {
             com.starkinhon.battlegroundsmod.item.SamehadaItem::new, new Item.Properties().rarity(Rarity.EPIC));
     public static final DeferredItem<com.starkinhon.battlegroundsmod.item.KusanagiItem> KUSANAGI = BattlegroundsMod.ITEMS.registerItem("kusanagi",
             com.starkinhon.battlegroundsmod.item.KusanagiItem::new, new Item.Properties().rarity(Rarity.EPIC));
+    // The Naruto structures' items (Stark 2026-11-12, world/NarutoSites, universe/NarutoActivities).
+    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.NarutoLootItems.Lore> GUIZO = BattlegroundsMod.ITEMS.registerItem("guizo",
+            p -> new com.starkinhon.battlegroundsmod.item.NarutoLootItems.Lore(p, "guizo", 0xE8B93A), new Item.Properties().stacksTo(2).rarity(Rarity.UNCOMMON));
+    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.NarutoLootItems.Lore> SCROLL_HEAVEN = BattlegroundsMod.ITEMS.registerItem("pergaminho_ceu",
+            p -> new com.starkinhon.battlegroundsmod.item.NarutoLootItems.Lore(p, "pergaminho_ceu", 0x8FC3FF), new Item.Properties().stacksTo(16).rarity(Rarity.UNCOMMON));
+    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.NarutoLootItems.Lore> SCROLL_EARTH = BattlegroundsMod.ITEMS.registerItem("pergaminho_terra",
+            p -> new com.starkinhon.battlegroundsmod.item.NarutoLootItems.Lore(p, "pergaminho_terra", 0xE0B070), new Item.Properties().stacksTo(16).rarity(Rarity.UNCOMMON));
+    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.NarutoLootItems.SnakeSkin> SNAKE_SKIN = BattlegroundsMod.ITEMS.registerItem("pele_cobra",
+            com.starkinhon.battlegroundsmod.item.NarutoLootItems.SnakeSkin::new, new Item.Properties().stacksTo(16).rarity(Rarity.RARE));
+    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.NarutoLootItems.PuppetScroll> PUPPET_SCROLL = BattlegroundsMod.ITEMS.registerItem("pergaminho_marionete",
+            com.starkinhon.battlegroundsmod.item.NarutoLootItems.PuppetScroll::new, new Item.Properties().stacksTo(1).rarity(Rarity.RARE));
+    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.NarutoLootItems.Kubikiribocho> KUBIKIRIBOCHO = BattlegroundsMod.ITEMS.registerItem("kubikiribocho",
+            com.starkinhon.battlegroundsmod.item.NarutoLootItems.Kubikiribocho::new, new Item.Properties().rarity(Rarity.EPIC));
+    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.NarutoLootItems.PaperWings> PAPER_WINGS = BattlegroundsMod.ITEMS.registerItem("asas_de_papel",
+            com.starkinhon.battlegroundsmod.item.NarutoLootItems.PaperWings::new, new Item.Properties().stacksTo(1).rarity(Rarity.RARE));
+    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.NarutoLootItems.PoisonPouch> POISON_POUCH = BattlegroundsMod.ITEMS.registerItem("bolsa_veneno",
+            com.starkinhon.battlegroundsmod.item.NarutoLootItems.PoisonPouch::new, new Item.Properties().stacksTo(16).rarity(Rarity.UNCOMMON));
+    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.NarutoLootItems.HashiramaCell> HASHIRAMA_CELL = BattlegroundsMod.ITEMS.registerItem("celula_hashirama",
+            com.starkinhon.battlegroundsmod.item.NarutoLootItems.HashiramaCell::new, new Item.Properties().stacksTo(16).rarity(Rarity.RARE));
+    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.NarutoLootItems.ToadScroll> TOAD_SCROLL = BattlegroundsMod.ITEMS.registerItem("pergaminho_sapo",
+            com.starkinhon.battlegroundsmod.item.NarutoLootItems.ToadScroll::new, new Item.Properties().stacksTo(1).rarity(Rarity.EPIC));
+    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.NarutoLootItems.Sharingan> SHARINGAN = BattlegroundsMod.ITEMS.registerItem("sharingan",
+            com.starkinhon.battlegroundsmod.item.NarutoLootItems.Sharingan::new, new Item.Properties().stacksTo(1).rarity(Rarity.EPIC));
     // Jujutsu items and weapons (universe/JujutsuWorld, universe/ReverseCurse).
     public static final DeferredItem<com.starkinhon.battlegroundsmod.item.SukunaFingerItem> SUKUNA_FINGER = BattlegroundsMod.ITEMS.registerItem("dedo_sukuna",
             com.starkinhon.battlegroundsmod.item.SukunaFingerItem::new, new Item.Properties().rarity(Rarity.EPIC));

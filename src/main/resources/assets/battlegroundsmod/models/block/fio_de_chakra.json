@@ -1,0 +1,1 @@
+{"parent": "minecraft:block/chain", "render_type": "minecraft:cutout", "textures": {"particle": "battlegroundsmod:block/fio_de_chakra", "all": "battlegroundsmod:block/fio_de_chakra"}}

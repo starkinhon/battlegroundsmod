@@ -30,6 +30,7 @@ public final class NarutoWorld {
     public static void register() {
         NeoForge.EVENT_BUS.addListener(NarutoWorld::onDeath);
         NeoForge.EVENT_BUS.addListener(NarutoWorld::onTick);
+        NarutoActivities.register();
     }
 
     private static void onDeath(LivingDeathEvent event) {
