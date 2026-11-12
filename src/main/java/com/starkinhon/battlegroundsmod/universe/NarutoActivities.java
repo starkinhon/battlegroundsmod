@@ -27,6 +27,7 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket;
 import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
 import net.minecraft.network.protocol.game.ClientboundSetTitlesAnimationPacket;
@@ -138,7 +139,7 @@ public final class NarutoActivities {
         player.getPersistentData().putLong(tag, day(player.level()) + 1);
     }
 
-    private static Component msg(String key, Object... args) {
+    private static MutableComponent msg(String key, Object... args) {
         return Component.translatable("message.battlegroundsmod.naruto." + key, args);
     }
 

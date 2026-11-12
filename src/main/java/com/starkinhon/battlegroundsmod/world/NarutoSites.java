@@ -28,7 +28,7 @@ import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.BellBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.CrossCollisionBlock;
+import net.minecraft.world.level.block.PipeBlock;
 import net.minecraft.world.level.block.LanternBlock;
 import net.minecraft.world.level.block.LeavesBlock;
 import net.minecraft.world.level.block.Rotation;
@@ -413,7 +413,7 @@ public final class NarutoSites {
         for (Direction dir : SIDES) {
             int t = w.get(x + dir.getStepX(), y, z + dir.getStepZ());
             boolean join = t == NarutoStructGen.FENCE || t == NarutoStructGen.BARS || (t != NarutoStructGen.AIR && solid(t));
-            s = s.setValue(CrossCollisionBlock.PROPERTY_BY_DIRECTION.get(dir), join);
+            s = s.setValue(PipeBlock.PROPERTY_BY_DIRECTION.get(dir), join);
         }
         return s;
     }
