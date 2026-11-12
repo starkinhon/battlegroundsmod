@@ -35,7 +35,8 @@ import net.minecraft.world.level.biome.OverworldBiomeBuilder;
 // the order, so the frozen north never touches the hot deserts:
 //   temperature < -0.5 (about 9%):   Norte Gelado
 //   -0.5 to -0.25 (about 20%):        Monte Myoboku (humidity < 0) | Vila da Chuva
-//   -0.25 to 0 (about 25%):           Montanhas Paozu (humidity < -0.1) | Vale do Fim | Terra Sagrada de Karin (> 0.1)
+//   -0.25 to 0 (about 25%):           Montanhas Paozu (humidity < -0.1) | Vale do Fim (< 0) | Templos Antigos (< 0.1)
+//                                     | Terra Sagrada de Karin
 //   0 to 0.25 (about 25%):            Deserto do Vento (< -0.1) | Floresta da Folha | Floresta da Morte (> 0.1)
 //   0.25 and up (about 20%):          Deserto do Diabo (humidity < 0) | Terras do Dragão
 // The high peaks: the Norte Gelado where it is cold, the Picos do Dragão elsewhere. The seas and beaches: the Mar da Névoa
@@ -113,7 +114,8 @@ public final class SoulsBiomeSource extends BiomeSource {
             return humidity < 0.0f ? ModWorldgen.MONTE_MYOBOKU : ModWorldgen.VILA_DA_CHUVA;
         }
         if (temperature < 0.0f) {
-            return humidity < -0.1f ? ModWorldgen.MONTANHAS_PAOZU : humidity < 0.1f ? ModWorldgen.VALE_DO_FIM : ModWorldgen.TERRA_SAGRADA;
+            return humidity < -0.1f ? ModWorldgen.MONTANHAS_PAOZU : humidity < 0.0f ? ModWorldgen.VALE_DO_FIM
+                    : humidity < 0.1f ? ModWorldgen.TEMPLOS_ANTIGOS : ModWorldgen.TERRA_SAGRADA;
         }
         if (temperature < 0.25f) {
             return humidity < -0.1f ? ModWorldgen.DESERTO_DO_VENTO : humidity < 0.1f ? ModWorldgen.FLORESTA_DA_FOLHA

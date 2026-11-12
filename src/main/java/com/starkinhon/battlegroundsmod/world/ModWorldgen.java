@@ -78,6 +78,9 @@ public final class ModWorldgen {
     // The Monte Myoboku's stone spires, giant plants, oil ponds and stone toads (MyobokuFeature).
     public static final Supplier<MyobokuFeature> MYOBOKU = FEATURES.register("myoboku",
             () -> new MyobokuFeature(NoneFeatureConfiguration.CODEC));
+    // The Templos Antigos' temples, stairways with torii, cedars, sakuras and hokoras (TemploFeature).
+    public static final Supplier<TemploFeature> TEMPLOS_ANTIGOS_FEATURE = FEATURES.register("templos_antigos",
+            () -> new TemploFeature(NoneFeatureConfiguration.CODEC));
 
     // The Naruto biomes of the normal overworld (put there by NarutoRegion).
     public static final ResourceKey<Biome> FLORESTA_DA_FOLHA = biome("floresta_da_folha");
@@ -89,6 +92,11 @@ public final class ModWorldgen {
     public static final ResourceKey<Biome> MONTE_MYOBOKU = biome("monte_myoboku");
     public static final TagKey<Biome> NARUTO_BIOMES = TagKey.create(Registries.BIOME,
             ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "universe_naruto"));
+
+    // The Jujutsu biomes of the normal overworld (put there by JujutsuRegion).
+    public static final ResourceKey<Biome> TEMPLOS_ANTIGOS = biome("templos_antigos");
+    public static final TagKey<Biome> JUJUTSU_BIOMES = TagKey.create(Registries.BIOME,
+            ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "universe_jujutsu"));
 
     // The Dragon Ball biomes of the normal overworld (tools/biomes/dragonball_biomes.py, put there by DragonRegion).
     public static final ResourceKey<Biome> TERRAS_DO_DRAGAO = biome("terras_do_dragao");

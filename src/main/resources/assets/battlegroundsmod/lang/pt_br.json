@@ -1733,5 +1733,19 @@
   "entity.battlegroundsmod.sapo_gigante": "Sapo Gigante",
   "item.battlegroundsmod.sapo_gigante_spawn_egg": "Ovo de Sapo Gigante",
   "entity.battlegroundsmod.inseto_gigante": "Inseto Gigante",
-  "item.battlegroundsmod.inseto_gigante_spawn_egg": "Ovo de Inseto Gigante"
+  "item.battlegroundsmod.inseto_gigante_spawn_egg": "Ovo de Inseto Gigante",
+  "block.battlegroundsmod.madeira_vermelha": "Madeira Vermelha Laqueada",
+  "block.battlegroundsmod.laca_preta": "Laca Preta",
+  "block.battlegroundsmod.cascalho_branco": "Cascalho Branco",
+  "block.battlegroundsmod.shoji": "Shoji",
+  "block.battlegroundsmod.reboco": "Reboco Branco",
+  "block.battlegroundsmod.lanterna_de_pedra_acesa": "Lanterna de Pedra Acesa",
+  "block.battlegroundsmod.shimenawa": "Shimenawa",
+  "block.battlegroundsmod.shide": "Shide",
+  "block.battlegroundsmod.folhas_de_cedro": "Folhas de Cedro",
+  "block.battlegroundsmod.folhas_de_cedro_clara": "Folhas de Cedro Claras",
+  "block.battlegroundsmod.folhas_de_sakura_escura": "Folhas de Sakura Escuras",
+  "block.battlegroundsmod.folhas_de_sakura_clara": "Folhas de Sakura Claras",
+  "block.battlegroundsmod.folhas_de_sakura_branca": "Folhas de Sakura Brancas",
+  "biome.battlegroundsmod.templos_antigos": "Templos Antigos"
 }

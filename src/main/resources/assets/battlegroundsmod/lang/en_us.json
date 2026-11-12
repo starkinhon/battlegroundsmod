@@ -1723,5 +1723,19 @@
   "entity.battlegroundsmod.sapo_gigante": "Giant Toad",
   "item.battlegroundsmod.sapo_gigante_spawn_egg": "Giant Toad Spawn Egg",
   "entity.battlegroundsmod.inseto_gigante": "Giant Beetle",
-  "item.battlegroundsmod.inseto_gigante_spawn_egg": "Giant Beetle Spawn Egg"
+  "item.battlegroundsmod.inseto_gigante_spawn_egg": "Giant Beetle Spawn Egg",
+  "block.battlegroundsmod.madeira_vermelha": "Vermilion Lacquered Wood",
+  "block.battlegroundsmod.laca_preta": "Black Lacquer",
+  "block.battlegroundsmod.cascalho_branco": "White Gravel",
+  "block.battlegroundsmod.shoji": "Shoji",
+  "block.battlegroundsmod.reboco": "White Plaster",
+  "block.battlegroundsmod.lanterna_de_pedra_acesa": "Lit Stone Lantern",
+  "block.battlegroundsmod.shimenawa": "Shimenawa",
+  "block.battlegroundsmod.shide": "Shide",
+  "block.battlegroundsmod.folhas_de_cedro": "Cedar Leaves",
+  "block.battlegroundsmod.folhas_de_cedro_clara": "Light Cedar Leaves",
+  "block.battlegroundsmod.folhas_de_sakura_escura": "Dark Sakura Leaves",
+  "block.battlegroundsmod.folhas_de_sakura_clara": "Light Sakura Leaves",
+  "block.battlegroundsmod.folhas_de_sakura_branca": "White Sakura Leaves",
+  "biome.battlegroundsmod.templos_antigos": "Ancient Temples"
 }

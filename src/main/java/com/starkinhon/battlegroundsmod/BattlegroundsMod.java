@@ -100,5 +100,6 @@ public class BattlegroundsMod {
         LOGGER.info("Battlegrounds Mod carregado!");
         event.enqueueWork(com.starkinhon.battlegroundsmod.world.DragonRegion::register);
         event.enqueueWork(com.starkinhon.battlegroundsmod.world.NarutoRegion::register);
+        event.enqueueWork(com.starkinhon.battlegroundsmod.world.JujutsuRegion::register);
     }
 }

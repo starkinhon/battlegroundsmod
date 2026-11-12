@@ -46,7 +46,8 @@ public final class UniverseBiomes {
             Map.entry("deserto_do_vento", 0xE6C57E),
             Map.entry("monte_myoboku", 0xA8DC74),
             Map.entry("mar_da_nevoa", 0xC4D2E0),
-            Map.entry("mar_do_sul", 0x6FD0E8));
+            Map.entry("mar_do_sul", 0x6FD0E8),
+            Map.entry("templos_antigos", 0xF2B8C8));
 
     private UniverseBiomes() {
     }
@@ -69,6 +70,9 @@ public final class UniverseBiomes {
     public static String universeOf(Holder<Biome> biome) {
         if (biome.is(ModWorldgen.DRAGONBALL_BIOMES)) {
             return DragonBallWorld.UNIVERSE;
+        }
+        if (biome.is(ModWorldgen.JUJUTSU_BIOMES)) {
+            return JujutsuWorld.UNIVERSE;
         }
         return biome.is(ModWorldgen.NARUTO_BIOMES) ? NarutoWorld.UNIVERSE : null;
     }
