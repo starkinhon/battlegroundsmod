@@ -72,7 +72,7 @@ public final class DeathForestFx {
         if (mc.isPaused()) {
             return;
         }
-        boolean inside = mc.level.getBiome(mc.player.blockPosition()).is(ModWorldgen.FLORESTA_DA_MORTE);
+        boolean inside = BiomeAura.in("floresta_da_morte", b -> b.is(ModWorldgen.FLORESTA_DA_MORTE));
         strength = Mth.clamp(strength + (inside ? 0.012f : -0.02f), 0, 1);
         if (strength <= 0) {
             SPORES.clear();
