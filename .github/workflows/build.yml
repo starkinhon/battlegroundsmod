@@ -40,6 +40,13 @@ jobs:
           name: souls-mod-jar
           path: build/libs/*.jar
 
+      # Souls Dev (ferramentas de teste, src/dev): jar separado, nunca entra na release.
+      - name: Upload Souls Dev jar (so testes)
+        uses: actions/upload-artifact@v4
+        with:
+          name: soulsdev-jar-so-testes
+          path: build/devlibs/*.jar
+
       # Boots a real dedicated server with the mod to catch client-only code loaded on the server.
       - name: Dedicated server smoke test
         run: |
