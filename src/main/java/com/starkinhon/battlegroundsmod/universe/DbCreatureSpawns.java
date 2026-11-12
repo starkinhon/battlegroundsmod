@@ -41,7 +41,7 @@ final class DbCreatureSpawns {
     }
 
     private static void fish(ServerLevel level, ServerPlayer player, RandomSource random) {
-        if (random.nextInt(level.isDay() ? 6 : 3) != 0
+        if (random.nextInt(level.isDay() ? 3 : 2) != 0
                 || !level.getEntitiesOfClass(PeixeGigante.class, player.getBoundingBox().inflate(64)).isEmpty()) {
             return;
         }
@@ -64,7 +64,7 @@ final class DbCreatureSpawns {
     }
 
     private static void android(ServerLevel level, ServerPlayer player, RandomSource random) {
-        if (random.nextInt(30) != 0 || !level.getBiome(player.blockPosition()).is(ModWorldgen.NORTE_GELADO)
+        if (random.nextInt(10) != 0 || !level.getBiome(player.blockPosition()).is(ModWorldgen.NORTE_GELADO)
                 || !level.getEntitiesOfClass(Androide8.class, player.getBoundingBox().inflate(128)).isEmpty()) {
             return;
         }
