@@ -98,6 +98,11 @@ public final class ModBlocks {
     public static final DeferredBlock<Block> RAIN_WINDOW_LIT = metal("janela_acesa", 12);
     public static final DeferredBlock<Block> RAIN_PIPE = metal("cano_de_metal", 0);
     public static final DeferredBlock<Block> RAIN_SPIKE = metal("espeto_de_metal", 0);
+    // Vale do Fim: the two statues' weathered stone (light, darker, mossy, and the dark of the belt and face shadows)
+    public static final DeferredBlock<Block> STATUE_STONE = rock("pedra_da_estatua", MapColor.STONE);
+    public static final DeferredBlock<Block> STATUE_STONE_DARK = rock("pedra_da_estatua_escura", MapColor.STONE);
+    public static final DeferredBlock<Block> STATUE_STONE_MOSS = rock("pedra_da_estatua_musgo", MapColor.COLOR_GREEN);
+    public static final DeferredBlock<Block> STATUE_STONE_SHADOW = rock("pedra_da_estatua_sombra", MapColor.COLOR_GRAY);
 
     static {
         BLOCK_ITEMS.registerSimpleBlockItem(DEATH_LEAVES);
@@ -126,6 +131,10 @@ public final class ModBlocks {
         BLOCK_ITEMS.registerSimpleBlockItem(RAIN_WINDOW_LIT);
         BLOCK_ITEMS.registerSimpleBlockItem(RAIN_PIPE);
         BLOCK_ITEMS.registerSimpleBlockItem(RAIN_SPIKE);
+        BLOCK_ITEMS.registerSimpleBlockItem(STATUE_STONE);
+        BLOCK_ITEMS.registerSimpleBlockItem(STATUE_STONE_DARK);
+        BLOCK_ITEMS.registerSimpleBlockItem(STATUE_STONE_MOSS);
+        BLOCK_ITEMS.registerSimpleBlockItem(STATUE_STONE_SHADOW);
         BLOCK_ITEMS.registerSimpleBlockItem(LEAF_LEAVES);
         BLOCK_ITEMS.registerSimpleBlockItem(LEAF_LEAVES_LIGHT);
         BLOCK_ITEMS.registerSimpleBlockItem(LEAF_LEAVES_DARK);

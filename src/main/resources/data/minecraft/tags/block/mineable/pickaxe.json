@@ -13,6 +13,10 @@
     "battlegroundsmod:janela_escura",
     "battlegroundsmod:janela_acesa",
     "battlegroundsmod:cano_de_metal",
-    "battlegroundsmod:espeto_de_metal"
+    "battlegroundsmod:espeto_de_metal",
+    "battlegroundsmod:pedra_da_estatua",
+    "battlegroundsmod:pedra_da_estatua_escura",
+    "battlegroundsmod:pedra_da_estatua_musgo",
+    "battlegroundsmod:pedra_da_estatua_sombra"
   ]
 }
