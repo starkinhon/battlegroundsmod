@@ -1,0 +1,41 @@
+# Spawn dos mobs DB (PR #296), passo 2: trocar KX KZ etc pelas coordenadas do passo 1.
+# Fica 60 s de dia e 40 s de noite em cada bioma e conta os mobs a 80 blocos.
+espera 60
+difficulty normal
+gamerule doMobSpawning true
+gamerule doDaylightCycle false
+time set 1000
+spreadplayers KX KZ 0 1 false @s
+espera 1200
+execute if entity @e[type=battlegroundsmod:raptor,distance=..80]
+execute if entity @e[type=battlegroundsmod:tiranossauro,distance=..80]
+execute if entity @e[type=battlegroundsmod:soldado_red_ribbon,distance=..80]
+execute if entity @e[type=battlegroundsmod:bora,distance=..120]
+devc print spawn296/karin_dia
+time set 14000
+espera 800
+execute if entity @e[type=battlegroundsmod:raptor,distance=..80]
+execute if entity @e[type=battlegroundsmod:tiranossauro,distance=..80]
+execute if entity @e[type=battlegroundsmod:soldado_red_ribbon,distance=..80]
+devc print spawn296/karin_noite
+time set 1000
+spreadplayers PX PZ 0 1 false @s
+espera 1200
+execute if entity @e[type=battlegroundsmod:raptor,distance=..80]
+execute if entity @e[type=battlegroundsmod:tiranossauro,distance=..80]
+execute if entity @e[type=battlegroundsmod:ladrao_urso,distance=..80]
+devc print spawn296/paozu_dia
+spreadplayers NX NZ 0 1 false @s
+espera 1200
+execute if entity @e[type=battlegroundsmod:yeti,distance=..80]
+execute if entity @e[type=battlegroundsmod:androide_8,distance=..140]
+devc print spawn296/norte_dia
+spreadplayers TX TZ 0 1 false @s
+espera 1200
+execute if entity @e[type=battlegroundsmod:raptor,distance=..80]
+execute if entity @e[type=battlegroundsmod:tiranossauro,distance=..80]
+execute if entity @e[type=battlegroundsmod:saibaman,distance=..80]
+execute if entity @e[type=battlegroundsmod:soldado_red_ribbon,distance=..80]
+devc print spawn296/terras_dia
+espera 40
+sair

@@ -1,0 +1,13 @@
+# Spawn dos mobs DB (PR #296), passo 1: achar os biomas. Coordenadas saem no log ([CHAT]).
+espera 60
+difficulty normal
+gamerule doMobSpawning true
+locate biome battlegroundsmod:terra_sagrada_de_karin
+espera 40
+locate biome battlegroundsmod:montanhas_paozu
+espera 40
+locate biome battlegroundsmod:norte_gelado
+espera 40
+locate biome battlegroundsmod:terras_do_dragao
+espera 60
+sair
