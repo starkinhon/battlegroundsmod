@@ -36,10 +36,10 @@ public final class UniverseSpawns {
     private static final int MIN_DIST = 24;
     private static final int MAX_DIST = 48;
     private static final float VANILLA_KEPT = 0.5f;
-    private static final int EARTH_CAP_DAY = 4;
-    private static final int EARTH_CAP_NIGHT = 5;
-    private static final int EARTH_MIN_DIST = 32;
-    private static final int EARTH_MAX_DIST = 56;
+    private static final int EARTH_CAP_DAY = 6;
+    private static final int EARTH_CAP_NIGHT = 8;
+    private static final int EARTH_MIN_DIST = 24;
+    private static final int EARTH_MAX_DIST = 52;
 
     private UniverseSpawns() {
     }
@@ -200,8 +200,10 @@ public final class UniverseSpawns {
         RandomSource random = level.getRandom();
         // Much calmer (Stark's test 2026-11-10: five Saibamen in his first minute, hordes at night): a try every 15 s by
         // day and 10 s at night, at most 3 (4 at night) around, farther away, and never by the houses or the arrival.
+        // Stark 2026-11-12 ("o spawn tá muito baixinho"): a try every 5 s at night and 2 of 3 by day, up to 6 (8 at
+        // night) around, and closer so they are seen.
         boolean night = !level.isDay();
-        if (random.nextInt(night ? 2 : 3) != 0) {
+        if (!night && random.nextInt(3) == 0) {
             return;
         }
         int cap = night ? EARTH_CAP_NIGHT : EARTH_CAP_DAY;
@@ -244,7 +246,7 @@ public final class UniverseSpawns {
             return false;
         }
         // the big ones alone, the raptors in packs
-        int count = "tiranossauro".equals(id) || "yeti".equals(id) || "ladrao_urso".equals(id) ? 1 : "raptor".equals(id) ? 2 : 1 + random.nextInt(2);
+        int count = "tiranossauro".equals(id) || "yeti".equals(id) || "ladrao_urso".equals(id) ? 1 : "raptor".equals(id) ? 2 + random.nextInt(2) : 1 + random.nextInt(3);
         count = Math.min(count, room);
         // the pirates live by the sea; the rest keep off it
         boolean shore = "pirata".equals(id);
@@ -357,19 +359,30 @@ public final class UniverseSpawns {
         return false;
     }
 
-    // A dry spot on top of solid ground in a loaded chunk, or null.
+    // A dry spot on top of solid ground in a loaded chunk, or null. The spot and the one above only need to be free to
+    // walk through (Stark 2026-11-12: no new mob anywhere): grass, ferns, flowers and a thin snow layer are fine. Asking
+    // for pure air there failed almost every green or snowy column, so only the desert ever got its mobs.
     static BlockPos ground(ServerLevel level, int x, int z) {
         if (!level.hasChunkAt(new BlockPos(x, 0, z))) {
             return null;
         }
         int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
         BlockPos pos = new BlockPos(x, y, z);
-        if (y <= level.getMinBuildHeight() || !level.getFluidState(pos.below()).isEmpty()
-                || !level.getBlockState(pos.below()).isSolidRender(level, pos.below())
-                || !level.getBlockState(pos).isAir() || !level.getBlockState(pos.above()).isAir()) {
+        BlockPos below = pos.below();
+        net.minecraft.world.level.block.state.BlockState under = level.getBlockState(below);
+        // a snow layer of any depth is ground too: the mob stands on top of it
+        boolean snow = under.getBlock() instanceof net.minecraft.world.level.block.SnowLayerBlock;
+        if (y <= level.getMinBuildHeight() || !under.getFluidState().isEmpty()
+                || !(snow || under.isFaceSturdy(level, below, net.minecraft.core.Direction.UP))
+                || !walkable(level, pos) || !walkable(level, pos.above())) {
             return null;
         }
         return pos;
+    }
+
+    private static boolean walkable(ServerLevel level, BlockPos pos) {
+        net.minecraft.world.level.block.state.BlockState state = level.getBlockState(pos);
+        return state.getFluidState().isEmpty() && state.getCollisionShape(level, pos).isEmpty();
     }
 
     // A bed in a universe world: vanilla sets the morning on the sleeping level, but the universes read the

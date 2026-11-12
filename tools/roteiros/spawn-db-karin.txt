@@ -1,0 +1,32 @@
+# Spawn dos mobs DB (PR #296), refazendo Karin e os raptores do Paozu. Copiar pra run/soulsdev/roteiros e trocar KX KZ, PX PZ.
+espera 60
+difficulty normal
+gamerule doMobSpawning true
+gamerule doDaylightCycle false
+time set 1000
+kill @e[type=!minecraft:player]
+spreadplayers KX KZ 1 24 false @s
+espera 40
+devc marca karin_posicao
+execute at @s run locate biome battlegroundsmod:terra_sagrada_de_karin
+espera 1800
+execute if entity @e[type=battlegroundsmod:raptor,distance=..80]
+execute if entity @e[type=battlegroundsmod:tiranossauro,distance=..80]
+execute if entity @e[type=battlegroundsmod:soldado_red_ribbon,distance=..80]
+execute if entity @e[type=battlegroundsmod:bora,distance=..120]
+devc print spawn296/karin2_dia
+time set 14000
+espera 1200
+execute if entity @e[type=battlegroundsmod:raptor,distance=..80]
+execute if entity @e[type=battlegroundsmod:tiranossauro,distance=..80]
+execute if entity @e[type=battlegroundsmod:soldado_red_ribbon,distance=..80]
+devc print spawn296/karin2_noite
+time set 1000
+spreadplayers PX PZ 1 24 false @s
+espera 2400
+execute if entity @e[type=battlegroundsmod:raptor]
+execute if entity @e[type=battlegroundsmod:tiranossauro]
+execute if entity @e[type=battlegroundsmod:ladrao_urso]
+devc print spawn296/paozu2_dia
+espera 40
+sair
