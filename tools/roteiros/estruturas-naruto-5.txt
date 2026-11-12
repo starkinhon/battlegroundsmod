@@ -48,6 +48,8 @@ espera 20
 /tp @s ~ ~ ~ 180 15
 espera 10
 /devc print naruto-estruturas/morte_chest_b
+/soul estrutura covil
+espera 700
 /soul estrutura covil mouth
 /tp @s ~ ~ ~ 90 10
 espera 20
