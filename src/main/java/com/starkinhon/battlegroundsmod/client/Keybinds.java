@@ -99,7 +99,7 @@ public final class Keybinds {
         boolean hasPower = ready && com.starkinhon.battlegroundsmod.combat.CombatMode.fighter(minecraft.player);
         while (SKILLS_MENU.consumeClick()) {
             if (ready) {
-                ConstellationScreen.open();
+                PowerSelectScreen.open();
             }
         }
         while (TOGGLE_COMBAT.consumeClick()) {

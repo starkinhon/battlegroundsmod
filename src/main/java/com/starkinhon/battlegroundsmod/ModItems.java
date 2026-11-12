@@ -215,6 +215,12 @@ public final class ModItems {
         }
     }
 
+    // The general Livro dos Desafios: every universe in one book (Stark 2026-11-12). The per-universe ones above stay so old
+    // saves and the advancements' icons keep working; they open the same board.
+    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.ChallengeBookItem> CHALLENGE_BOOK = BattlegroundsMod.ITEMS.registerItem(
+            "livro_desafios", properties -> new com.starkinhon.battlegroundsmod.item.ChallengeBookItem("", properties),
+            new Item.Properties().stacksTo(1).rarity(Rarity.EPIC));
+
     // Cristal Multiversal: takes the player to another universe (challenge/Universes). Simple for now; the Fenda with
     // its tunnel comes later (Stark 2026-11-10).
     public static final DeferredItem<com.starkinhon.battlegroundsmod.item.MultiversalCrystalItem> MULTIVERSAL_CRYSTAL = BattlegroundsMod.ITEMS.registerItem(

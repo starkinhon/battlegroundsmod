@@ -9,8 +9,9 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
-// A universe's Livro dos Desafios: right click opens its board of characters, each with its own arena
-// (client/ChallengeScreen, challenge/ChallengeArenas).
+// The Livro dos Desafios: right click opens the board of every universe's characters, each with its own arena
+// (client/ChallengeScreen, challenge/ChallengeArenas). One general book since the universes stopped being maps (Stark
+// 2026-11-12); the old per-universe books still open it, at their universe's section. universe is empty for the general one.
 public class ChallengeBookItem extends Item {
     private final String universe;
 

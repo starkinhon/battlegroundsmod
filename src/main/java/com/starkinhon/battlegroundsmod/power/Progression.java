@@ -172,6 +172,8 @@ public final class Progression {
         }
         PowerData data = player.getData(ModAttachments.POWER);
         data.poder += (float) amount;
+        // the same Poder fills the worn soul's Sincronia (SoulSync)
+        SoulSync.gain(player, amount);
         climb(player);
         Component bar = barName(data.power, player.getData(ModAttachments.UNIVERSE));
         double need = cost(data.tier);

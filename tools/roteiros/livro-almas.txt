@@ -1,0 +1,65 @@
+# Livro das Almas (thread "Menu & Hud"): entrada na cabeça, órbita, cartão, Sincronia, constelações, absorver, travas.
+# gradlew runClient -Pmundo=LivroAlmas -PmundoTipo=battlegroundsmod:souls -Proteiro=livro-almas
+dev preparar
+devc janela 1600 900
+espera 20
+soul escolher goku
+espera 40
+devc marca X trancada (só o Z vem com a alma)
+devc tecla x
+espera 10
+devc print livro/01-x-trancada
+devc tecla u
+devc gravar livro/entrada 3
+espera 60
+devc gravar parar
+devc print livro/02-dentro
+devc alvo alma vegeta
+espera 6
+devc print livro/03-hover-vegeta
+devc clique
+espera 10
+devc print livro/04-cartao-vegeta
+devc alvo voltar
+devc clique
+espera 12
+devc print livro/05-constelacoes
+devc alvo constelacao jujutsu
+espera 8
+devc print livro/06-hover-jujutsu
+devc clique
+devc gravar livro/viagem 2
+espera 30
+devc gravar parar
+devc print livro/07-jujutsu
+devc alvo alma itadori
+devc clique
+espera 6
+devc alvo selo
+devc segurar
+espera 25
+devc soltar
+devc gravar livro/absorver 3
+espera 60
+devc gravar parar
+devc print livro/08-absorvida
+soul poder 200
+espera 10
+devc print livro/09-sincronia
+devc alvo despertar
+espera 4
+devc print livro/10-despertar-hover
+devc clique
+espera 10
+devc print livro/11-despertou
+devc alvo aba 0
+devc clique
+espera 12
+devc print livro/12-divinas
+devc fechar
+espera 10
+devc print livro/13-hud
+soul skillcompleta
+espera 10
+devc print livro/14-hud-completo
+devc marca fim do roteiro do Livro das Almas

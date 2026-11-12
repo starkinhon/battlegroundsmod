@@ -41,7 +41,7 @@ public final class MyobokuFx {
             return;
         }
         ClientLevel level = mc.level;
-        boolean inside = level.getBiome(mc.player.blockPosition()).is(ModWorldgen.MONTE_MYOBOKU);
+        boolean inside = BiomeAura.in("monte_myoboku", b -> b.is(ModWorldgen.MONTE_MYOBOKU));
         strength = Mth.clamp(strength + (inside ? 0.015f : -0.02f), 0, 1);
         if (strength <= 0) {
             return;

@@ -600,15 +600,13 @@ public final class ChallengeArenas {
         player.connection.send(new ClientboundSetSubtitleTextPacket(small));
     }
 
-    // /soul desafios: the books of every universe. /soul desafios sair: leave the arena.
+    // /soul desafios: the Livro dos Desafios (every universe in one book). /soul desafios sair: leave the arena.
     // /soul desafios liberar <id|todos> [jogador] and /soul desafios zerar [jogador] (ops): for testing.
     public static LiteralArgumentBuilder<CommandSourceStack> command() {
         return Commands.literal("desafios")
                 .executes(context -> {
                     ServerPlayer player = context.getSource().getPlayerOrException();
-                    for (var book : ModItems.CHALLENGE_BOOKS.values()) {
-                        player.getInventory().add(new ItemStack(book.get()));
-                    }
+                    player.getInventory().add(new ItemStack(ModItems.CHALLENGE_BOOK.get()));
                     return 1;
                 })
                 .then(Commands.literal("sair").executes(context -> {

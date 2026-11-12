@@ -229,12 +229,12 @@ public final class Universes {
         PowerLogic.sync(player);
     }
 
+    // The general Livro dos Desafios (every universe in one book), once. The universe no longer picks the book.
     private static void giveBook(ServerPlayer player, String universe) {
-        var book = ModItems.CHALLENGE_BOOKS.get(universe);
-        if (book == null || player.getInventory().contains(new ItemStack(book.get()))) {
+        if (player.getInventory().contains(new ItemStack(ModItems.CHALLENGE_BOOK.get()))) {
             return;
         }
-        ItemStack stack = new ItemStack(book.get());
+        ItemStack stack = new ItemStack(ModItems.CHALLENGE_BOOK.get());
         if (!player.getInventory().add(stack)) {
             player.drop(stack, false);
         }

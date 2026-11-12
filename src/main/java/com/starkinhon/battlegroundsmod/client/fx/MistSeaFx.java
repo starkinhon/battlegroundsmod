@@ -76,7 +76,7 @@ public final class MistSeaFx {
         if (mc.isPaused()) {
             return;
         }
-        boolean inside = mc.level.getBiome(mc.player.blockPosition()).is(ModWorldgen.MAR_DA_NEVOA);
+        boolean inside = BiomeAura.in("mar_da_nevoa", b -> b.is(ModWorldgen.MAR_DA_NEVOA));
         strength = Mth.clamp(strength + (inside ? 0.012f : -0.015f), 0, 1);
         if (strength <= 0) {
             gridX = Integer.MIN_VALUE;
