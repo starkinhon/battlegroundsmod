@@ -8,7 +8,8 @@
 /dev preparar
 /devc hud off
 /devc fov 70
-/soul escolher gojo
+# Gojo é "strongest" no /soul escolher
+/soul escolher strongest
 /soul semcooldown
 espera 20
 

@@ -163,13 +163,22 @@ public final class DevCliente {
         root.then(Commands.literal("print")
                 .then(Commands.argument("nome", StringArgumentType.greedyString())
                         .executes(c -> ok(c, "print " + Gravador.print(StringArgumentType.getString(c, "nome"))))));
+        // nome com "/" (subpasta) precisa de texto livre: o último pedaço, se for número, é o "cada N quadros".
         root.then(Commands.literal("gravar")
                 .then(Commands.literal("parar").executes(c -> ok(c, Gravador.parar())))
-                .then(Commands.argument("nome", StringArgumentType.string())
-                        .executes(c -> ok(c, "gravando em " + Gravador.gravar(StringArgumentType.getString(c, "nome"), 1)))
-                        .then(Commands.argument("cada", IntegerArgumentType.integer(1, 60))
-                                .executes(c -> ok(c, "gravando em " + Gravador.gravar(StringArgumentType.getString(c, "nome"),
-                                        IntegerArgumentType.getInteger(c, "cada")))))));
+                .then(Commands.argument("nome", StringArgumentType.greedyString()).executes(c -> {
+                    String[] partes = StringArgumentType.getString(c, "nome").trim().split("\\s+");
+                    int cada = 1;
+                    String nome = partes[0];
+                    if (partes.length > 1) {
+                        try {
+                            cada = Integer.parseInt(partes[partes.length - 1]);
+                        } catch (NumberFormatException e) {
+                            return erro(c, "gravar <nome> [cada N quadros]");
+                        }
+                    }
+                    return ok(c, "gravando em " + Gravador.gravar(nome, Math.max(1, Math.min(60, cada))));
+                })));
         root.then(Commands.literal("marca")
                 .then(Commands.argument("texto", StringArgumentType.greedyString())
                         .executes(c -> ok(c, "MARCA " + StringArgumentType.getString(c, "texto")))));
