@@ -23,7 +23,6 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.levelgen.Heightmap;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
@@ -180,18 +179,9 @@ public final class RoamingSouls {
         return null;
     }
 
-    // Dry, solid ground with room to stand, in a loaded chunk; or null.
+    // Dry, solid ground with room to stand, in a loaded chunk; or null. The same test as the universe mobs (Stark
+    // 2026-11-12: no SubAlma ever seen): its old copy asked for pure air, so grass, flowers and snow failed the spot.
     private static BlockPos ground(ServerLevel level, int x, int z) {
-        if (!level.hasChunkAt(new BlockPos(x, 0, z))) {
-            return null;
-        }
-        int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
-        BlockPos pos = new BlockPos(x, y, z);
-        if (y <= level.getMinBuildHeight() || !level.getFluidState(pos.below()).isEmpty()
-                || !level.getBlockState(pos.below()).isSolidRender(level, pos.below())
-                || !level.getBlockState(pos).isAir() || !level.getBlockState(pos.above()).isAir()) {
-            return null;
-        }
-        return pos;
+        return UniverseSpawns.ground(level, x, z);
     }
 }
