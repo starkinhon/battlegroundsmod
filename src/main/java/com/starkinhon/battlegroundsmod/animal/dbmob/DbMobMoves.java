@@ -53,7 +53,7 @@ import net.minecraft.world.phys.Vec3;
 // many times (the Punho do Lobo, the machine gun, the ki pistol, the bites) add their damage up and land it in a few
 // bigger packets, so the tier Shield never eats each little hit (#291/#307). Every hold has its own length (combate
 // limpo: nobody is in two prisons) and ends with the blow, so a blow cut short never leaves one on.
-final class DbMobMoves {
+public final class DbMobMoves {
     private DbMobMoves() {
     }
 
