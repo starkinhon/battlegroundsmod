@@ -6,6 +6,7 @@
 /gamerule doDaylightCycle false
 /time set 6000
 /devc fov 70
+/devc vista primeira
 espera 40
 # ---- folha
 /devc marca folha
@@ -23,7 +24,7 @@ espera 30
 /tp @s ~80 ~ ~ 90 50
 espera 30
 /devc print naruto-estruturas/folha_leste
-/tp @s ~-40 ~30 ~-40 0 89
+/tp @s ~-40 ~30 ~ 0 89
 espera 30
 /devc print naruto-estruturas/folha_cima
 /soul estrutura folha center
@@ -63,7 +64,7 @@ espera 30
 /tp @s ~80 ~ ~ 90 50
 espera 30
 /devc print naruto-estruturas/morte_leste
-/tp @s ~-40 ~30 ~-40 0 89
+/tp @s ~-40 ~30 ~ 0 89
 espera 30
 /devc print naruto-estruturas/morte_cima
 /soul estrutura morte center
@@ -103,7 +104,7 @@ espera 30
 /tp @s ~80 ~ ~ 90 50
 espera 30
 /devc print naruto-estruturas/covil_leste
-/tp @s ~-40 ~30 ~-40 0 89
+/tp @s ~-40 ~30 ~ 0 89
 espera 30
 /devc print naruto-estruturas/covil_cima
 /soul estrutura covil mouth
@@ -136,7 +137,7 @@ espera 30
 /tp @s ~80 ~ ~ 90 50
 espera 30
 /devc print naruto-estruturas/deserto_leste
-/tp @s ~-40 ~30 ~-40 0 89
+/tp @s ~-40 ~30 ~ 0 89
 espera 30
 /devc print naruto-estruturas/deserto_cima
 /soul estrutura deserto hall
@@ -176,7 +177,7 @@ espera 30
 /tp @s ~80 ~ ~ 90 50
 espera 30
 /devc print naruto-estruturas/nevoa_leste
-/tp @s ~-40 ~30 ~-40 0 89
+/tp @s ~-40 ~30 ~ 0 89
 espera 30
 /devc print naruto-estruturas/nevoa_cima
 /soul estrutura nevoa center
@@ -216,7 +217,7 @@ espera 30
 /tp @s ~80 ~ ~ 90 50
 espera 30
 /devc print naruto-estruturas/chuva_leste
-/tp @s ~-40 ~30 ~-40 0 89
+/tp @s ~-40 ~30 ~ 0 89
 espera 30
 /devc print naruto-estruturas/chuva_cima
 /soul estrutura chuva tower
@@ -256,7 +257,7 @@ espera 30
 /tp @s ~80 ~ ~ 90 50
 espera 30
 /devc print naruto-estruturas/myoboku_leste
-/tp @s ~-40 ~30 ~-40 0 89
+/tp @s ~-40 ~30 ~ 0 89
 espera 30
 /devc print naruto-estruturas/myoboku_cima
 /soul estrutura myoboku center
@@ -289,7 +290,7 @@ espera 30
 /tp @s ~80 ~ ~ 90 50
 espera 30
 /devc print naruto-estruturas/pico_leste
-/tp @s ~-40 ~30 ~-40 0 89
+/tp @s ~-40 ~30 ~ 0 89
 espera 30
 /devc print naruto-estruturas/pico_cima
 /soul estrutura pico foot
@@ -308,6 +309,7 @@ espera 10
 /devc print naruto-estruturas/pico_top_b
 # ---- itens
 /devc hud on
+/title @s clear
 /clear @s
 /give @s battlegroundsmod:guizo
 /give @s battlegroundsmod:pergaminho_ceu
@@ -322,6 +324,7 @@ espera 10
 espera 20
 /devc print naruto-estruturas/itens_hotbar
 /clear @s
+/title @s clear
 /give @s battlegroundsmod:pergaminho_sapo
 /give @s battlegroundsmod:sharingan
 /give @s battlegroundsmod:selo_de_papel

@@ -153,7 +153,7 @@ public final class NarutoSites {
         } else if (biome.is(ModWorldgen.FLORESTA_DA_MORTE)) {
             // the Snake's Den is the rare one (the only home of the cobra_gigante)
             kind = roll % 3 == 0 ? NarutoStructGen.COVIL : NarutoStructGen.MORTE;
-            reach = 40;
+            reach = 32;
         } else if (biome.is(ModWorldgen.DESERTO_DO_VENTO)) {
             kind = NarutoStructGen.DESERTO;
             reach = 48;
@@ -172,7 +172,14 @@ public final class NarutoSites {
         var key = biome.unwrapKey().orElse(null);
         for (int a = 0; a < 8; a++) {
             double angle = a * Math.PI / 4;
-            if (key == null || !biomeAt(level, x + (int) (Math.cos(angle) * reach), z + (int) (Math.sin(angle) * reach)).is(key)) {
+            if (key == null) {
+                return null;
+            }
+            Holder<Biome> around = biomeAt(level, x + (int) (Math.cos(angle) * reach), z + (int) (Math.sin(angle) * reach));
+            // the Floresta da Morte is a thin strip on the Folha's wettest edge (the PC test of 2026-11-12 found none
+            // whole in 7,800 blocks): its places may spill into the Folha around it
+            boolean ok = around.is(key) || (biome.is(ModWorldgen.FLORESTA_DA_MORTE) && around.is(ModWorldgen.FLORESTA_DA_FOLHA));
+            if (!ok) {
                 return null;
             }
         }
@@ -283,13 +290,34 @@ public final class NarutoSites {
         for (long k : keys) {
             int lx = NarutoStructGen.Vox.kx(k), ly = NarutoStructGen.Vox.ky(k), lz = NarutoStructGen.Vox.kz(k);
             int t = res.w.m.get(k);
-            BlockState state = t == NarutoStructGen.AIR ? air : state(s.kind(), t, res.w, lx, ly, lz);
+            BlockState state = t == NarutoStructGen.AIR ? (roofed(res.w, lx, ly, lz) ? LIGHT : air) : state(s.kind(), t, res.w, lx, ly, lz);
             if (state == null) {
                 continue;
             }
             b.puts.add(new Build.Put(new BlockPos(wx(s, lx, lz), ly, wz(s, lx, lz)), state.rotate(rot)));
         }
         return b;
+    }
+
+    // Rooms lit without lamps on show (the PC test of 2026-11-12: the Rain tower was pitch dark inside): an invisible
+    // light every 5 blocks on the floor of carved air under a roof.
+    private static final BlockState LIGHT = Blocks.LIGHT.defaultBlockState().setValue(net.minecraft.world.level.block.LightBlock.LEVEL, 11);
+
+    private static boolean roofed(NarutoStructGen.Vox w, int x, int y, int z) {
+        if (Math.floorMod(x, 5) != 0 || Math.floorMod(z, 5) != 0) {
+            return false;
+        }
+        int below = w.get(x, y - 1, z);
+        if (below == NarutoStructGen.AIR || !solid(below)) {
+            return false;
+        }
+        for (int dy = 2; dy <= 6; dy++) {
+            int t = w.get(x, y + dy, z);
+            if (t != NarutoStructGen.AIR && solid(t)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     // ---------------------------------------------------------------- the preview's blocks in Minecraft
