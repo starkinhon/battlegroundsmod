@@ -103,6 +103,17 @@ public final class ModBlocks {
     public static final DeferredBlock<Block> STATUE_STONE_DARK = rock("pedra_da_estatua_escura", MapColor.STONE);
     public static final DeferredBlock<Block> STATUE_STONE_MOSS = rock("pedra_da_estatua_musgo", MapColor.COLOR_GREEN);
     public static final DeferredBlock<Block> STATUE_STONE_SHADOW = rock("pedra_da_estatua_sombra", MapColor.COLOR_GRAY);
+    // Monte Myoboku: the spires' warm stone in three layers, and the giant plants (stalk, leaves, petals, the core)
+    public static final DeferredBlock<Block> SPIRE_STONE = rock("pedra_do_pico", MapColor.TERRACOTTA_LIGHT_GRAY);
+    public static final DeferredBlock<Block> SPIRE_STONE_DARK = rock("pedra_do_pico_escura", MapColor.TERRACOTTA_GRAY);
+    public static final DeferredBlock<Block> SPIRE_STONE_LIGHT = rock("pedra_do_pico_clara", MapColor.SAND);
+    public static final DeferredBlock<Block> GIANT_STALK = plant("caule_gigante", MapColor.COLOR_GREEN, 0, 1.0f);
+    public static final DeferredBlock<Block> GIANT_LEAF = plant("folha_gigante", MapColor.PLANT, 0, 0.3f);
+    public static final DeferredBlock<Block> GIANT_LEAF_YELLOW = plant("folha_gigante_amarela", MapColor.COLOR_YELLOW, 0, 0.3f);
+    public static final DeferredBlock<Block> GIANT_LEAF_DARK = plant("folha_gigante_escura", MapColor.COLOR_GREEN, 0, 0.3f);
+    public static final DeferredBlock<Block> GIANT_PETAL = plant("petala_gigante", MapColor.COLOR_ORANGE, 0, 0.3f);
+    public static final DeferredBlock<Block> GIANT_PETAL_TIP = plant("petala_gigante_ponta", MapColor.COLOR_YELLOW, 0, 0.3f);
+    public static final DeferredBlock<Block> FLOWER_CORE = plant("miolo_de_flor", MapColor.GOLD, 7, 0.4f);
 
     static {
         BLOCK_ITEMS.registerSimpleBlockItem(DEATH_LEAVES);
@@ -135,6 +146,16 @@ public final class ModBlocks {
         BLOCK_ITEMS.registerSimpleBlockItem(STATUE_STONE_DARK);
         BLOCK_ITEMS.registerSimpleBlockItem(STATUE_STONE_MOSS);
         BLOCK_ITEMS.registerSimpleBlockItem(STATUE_STONE_SHADOW);
+        BLOCK_ITEMS.registerSimpleBlockItem(SPIRE_STONE);
+        BLOCK_ITEMS.registerSimpleBlockItem(SPIRE_STONE_DARK);
+        BLOCK_ITEMS.registerSimpleBlockItem(SPIRE_STONE_LIGHT);
+        BLOCK_ITEMS.registerSimpleBlockItem(GIANT_STALK);
+        BLOCK_ITEMS.registerSimpleBlockItem(GIANT_LEAF);
+        BLOCK_ITEMS.registerSimpleBlockItem(GIANT_LEAF_YELLOW);
+        BLOCK_ITEMS.registerSimpleBlockItem(GIANT_LEAF_DARK);
+        BLOCK_ITEMS.registerSimpleBlockItem(GIANT_PETAL);
+        BLOCK_ITEMS.registerSimpleBlockItem(GIANT_PETAL_TIP);
+        BLOCK_ITEMS.registerSimpleBlockItem(FLOWER_CORE);
         BLOCK_ITEMS.registerSimpleBlockItem(LEAF_LEAVES);
         BLOCK_ITEMS.registerSimpleBlockItem(LEAF_LEAVES_LIGHT);
         BLOCK_ITEMS.registerSimpleBlockItem(LEAF_LEAVES_DARK);
@@ -168,6 +189,12 @@ public final class ModBlocks {
     private static DeferredBlock<Block> metal(String name, int light) {
         return BLOCKS.registerSimpleBlock(name, BlockBehaviour.Properties.of().mapColor(MapColor.METAL)
                 .requiresCorrectToolForDrops().strength(4.0f, 6.0f).sound(SoundType.METAL).lightLevel(state -> light));
+    }
+
+    // The giant plants of Myoboku: soft plant tissue (axe/hoe, grass sound), the stalk a bit harder.
+    private static DeferredBlock<Block> plant(String name, MapColor color, int light, float strength) {
+        return BLOCKS.registerSimpleBlock(name, BlockBehaviour.Properties.of().mapColor(color).strength(strength)
+                .sound(SoundType.GRASS).lightLevel(state -> light));
     }
 
     private static DeferredBlock<Block> rock(String name, MapColor color) {

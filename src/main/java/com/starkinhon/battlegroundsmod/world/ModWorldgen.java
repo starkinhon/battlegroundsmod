@@ -75,6 +75,9 @@ public final class ModWorldgen {
     // The Vale do Fim's valley with the waterfall and the two statues, and the marks of the fight (EndValleyFeature).
     public static final Supplier<EndValleyFeature> END_VALLEY = FEATURES.register("end_valley",
             () -> new EndValleyFeature(NoneFeatureConfiguration.CODEC));
+    // The Monte Myoboku's stone spires, giant plants, oil ponds and stone toads (MyobokuFeature).
+    public static final Supplier<MyobokuFeature> MYOBOKU = FEATURES.register("myoboku",
+            () -> new MyobokuFeature(NoneFeatureConfiguration.CODEC));
 
     // The Naruto biomes of the normal overworld (put there by NarutoRegion).
     public static final ResourceKey<Biome> FLORESTA_DA_FOLHA = biome("floresta_da_folha");
@@ -83,6 +86,7 @@ public final class ModWorldgen {
     public static final ResourceKey<Biome> MAR_DA_NEVOA = biome("mar_da_nevoa");
     public static final ResourceKey<Biome> VILA_DA_CHUVA = biome("vila_da_chuva");
     public static final ResourceKey<Biome> VALE_DO_FIM = biome("vale_do_fim");
+    public static final ResourceKey<Biome> MONTE_MYOBOKU = biome("monte_myoboku");
     public static final TagKey<Biome> NARUTO_BIOMES = TagKey.create(Registries.BIOME,
             ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "universe_naruto"));
 

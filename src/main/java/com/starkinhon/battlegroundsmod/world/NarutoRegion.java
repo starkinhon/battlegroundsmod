@@ -26,7 +26,9 @@ import terrablender.api.Regions;
 // inside Konoha's woods. The Deserto do Vento (Stark 2026-11-11) takes the same band's dry side, and the Mar da Névoa
 // (Stark 2026-11-11) the cold and middle seas. The Vila da Chuva (Stark 2026-11-11) takes the cool band's wet side. The
 // Vale do Fim (Stark 2026-11-12) the temperate band's middle humidity, between the Folha and the Vila da Chuva as the
-// valley lies on the Land of Fire's border. The other Naruto biomes come into the bands still vanilla here, one by one.
+// valley lies on the Land of Fire's border. The Monte Myoboku (Stark 2026-11-12) takes the cool band's dry side, its
+// plains, apart from the other lands as the toads' mountain is hidden from the ninja world. With it all seven Naruto
+// biomes are in.
 public final class NarutoRegion extends Region {
     // Against vanilla's 10 and the Dragon Ball's 8.
     private static final int WEIGHT = 6;
@@ -84,6 +86,10 @@ public final class NarutoRegion extends Region {
         // the Vila da Chuva on the cool band's wet side (vanilla's taigas there), next to the Mar da Névoa's cold seas
         if (t == 1 && h >= 2) {
             return ModWorldgen.VILA_DA_CHUVA;
+        }
+        // the Monte Myoboku on the cool band's dry side (vanilla's plains there), free of the Dragon Ball
+        if (t == 1 && h <= 1) {
+            return ModWorldgen.MONTE_MYOBOKU;
         }
         // the Vale do Fim on the temperate band's middle humidity (vanilla's forests there), which the Dragon Ball leaves
         // vanilla
