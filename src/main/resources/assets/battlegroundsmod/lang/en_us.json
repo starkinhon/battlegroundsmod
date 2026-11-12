@@ -315,7 +315,7 @@
   "ability.battlegroundsmod.rukia.3.desc": "You freeze over and turn white; absolute zero spreads around you and turns everyone close into crystal.",
   "item.battlegroundsmod.soul_insect": "Soul Insect",
   "item.battlegroundsmod.soul_insect.tip1": "Eat it once: you never go hungry again",
-  "item.battlegroundsmod.soul_insect.tip2": "Your hunger bar always stays full (permanent passive)",
+  "item.battlegroundsmod.soul_insect.tip2": "Hunger always full; out of combat mode it slowly heals your life (permanent passive)",
   "message.battlegroundsmod.teleport_domain": "Can't teleport into or out of a Domain Expansion",
   "message.battlegroundsmod.soul_insect.eaten": "The Soul Insect lives in you now: you will never go hungry again",
   "message.battlegroundsmod.soul_insect.already": "Your soul already carries a Soul Insect",

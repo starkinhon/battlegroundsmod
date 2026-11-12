@@ -323,7 +323,7 @@
   "ability.battlegroundsmod.rukia.3.tags": "Especial,Área,Congela",
   "item.battlegroundsmod.soul_insect": "Inseto de Alma",
   "item.battlegroundsmod.soul_insect.tip1": "Coma uma vez: você nunca mais passa fome",
-  "item.battlegroundsmod.soul_insect.tip2": "A barra de fome fica sempre cheia (passiva permanente)",
+  "item.battlegroundsmod.soul_insect.tip2": "Fome sempre cheia; fora do modo de combate cura a vida devagar (passiva permanente)",
   "message.battlegroundsmod.teleport_domain": "Não dá pra teleportar pra dentro ou pra fora da Expansão de Domínio",
   "message.battlegroundsmod.soul_insect.eaten": "O Inseto de Alma vive em você agora: nunca mais vai passar fome",
   "message.battlegroundsmod.soul_insect.already": "Sua alma já carrega um Inseto de Alma",
