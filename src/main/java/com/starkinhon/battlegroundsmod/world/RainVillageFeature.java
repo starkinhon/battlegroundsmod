@@ -187,7 +187,10 @@ public final class RainVillageFeature extends Feature<NoneFeatureConfiguration> 
         if (y < sea - 14 || !biomeAt(generator, random, o.x(), Math.max(y, sea), o.z())) {
             return false;
         }
-        int reach = o.reach();
+        // a tower's 40 blocks of reach are its pipes' and balconies' far ends; its body is 20 across at most, and any
+        // chunk with a bit of the biome builds its part, so the biome only has to be all around the body (the PC test of
+        // 2026-11-12: with the whole reach no tower fitted in the biome's pieces, about 66 blocks across)
+        int reach = o.kind() == RainGen.Kind.TOWER ? 20 : o.reach();
         for (int a = 0; a < 8; a++) {
             int x = o.x() + (int) Math.round(Math.cos(a * Math.PI / 4) * reach);
             int z = o.z() + (int) Math.round(Math.sin(a * Math.PI / 4) * reach);
