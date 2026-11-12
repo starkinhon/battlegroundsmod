@@ -253,6 +253,7 @@ public final class FxWorld {
             LuffyMesh.flush(false);
             KakashiSusanoo.flush(camera, now, false);
             GaaraSand.flush(camera, now, false);
+            BleachMesh.flush(false);
         } else {
             // The Susanoo arm's depth goes in first, so its color only lands on the front surface.
             source.endBatch(FxRenderTypes.SUS_DEPTH);
@@ -267,6 +268,7 @@ public final class FxWorld {
             LuffyMesh.flush(false);
             KakashiSusanoo.flush(camera, now, false);
             GaaraSand.flush(camera, now, false);
+            BleachMesh.flush(false);
             boolean outline = !space && Aura.drawMask(event, camera, partial);
             FxPost.beginGlow();
             if (outline) {
@@ -279,6 +281,7 @@ public final class FxWorld {
             OpmMesh.flush(true);
             LuffyMesh.flush(true);
             KakashiSusanoo.flush(camera, now, true);
+            BleachMesh.flush(true);
             FxPost.endGlow(FxConfig.on(FxConfig.BLOOM));
         }
         // Makima's rats' vision: the red ghosts of whoever is near, over everything.
@@ -377,6 +380,7 @@ public final class FxWorld {
         KiMesh.endFrame();
         OpmMesh.endFrame();
         LuffyMesh.endFrame();
+        BleachMesh.endFrame();
         RenderSystem.restoreProjectionMatrix();
         modelView.popMatrix();
         RenderSystem.applyModelViewMatrix();

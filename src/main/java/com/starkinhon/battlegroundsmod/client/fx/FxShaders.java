@@ -42,6 +42,7 @@ public final class FxShaders {
     static ShaderInstance kkSus;
     static ShaderInstance kkMist;
     static ShaderInstance sand;
+    static ShaderInstance bleach;
     // Sukuna's Fuga (FugaRenderer); without them the Fuga only darkens the world.
     static ShaderInstance fugaFlame;
     static ShaderInstance fugaArrow;
@@ -131,6 +132,12 @@ public final class FxShaders {
             register(event, "souls_sand", DefaultVertexFormat.POSITION_TEX_COLOR_NORMAL, s -> sand = s);
         } catch (Exception e) {
             BattlegroundsMod.LOGGER.error("Could not load Gaara's sand shader", e);
+        }
+        // Bleach (Rukia, Byakuya): the same GLSL text as the approved pages (forja/bleach/mod-shaders.sh).
+        try {
+            register(event, "souls_bleach", DefaultVertexFormat.POSITION, s -> bleach = s);
+        } catch (Exception e) {
+            BattlegroundsMod.LOGGER.error("Could not load the Bleach 3D effect shader", e);
         }
         // On its own: a problem here only hides the smoke, never the other effects.
         try {

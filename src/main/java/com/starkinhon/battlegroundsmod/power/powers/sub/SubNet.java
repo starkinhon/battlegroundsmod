@@ -458,6 +458,47 @@ public final class SubNet {
     // The scabbard's click (a four-point glint at pos): a = size.
     public static final int MW_GLINT = 182;
 
+    // ---- Bleach remake (client/fx/BleachFx: the approved pages forja/bleach, timelines run on the client) ----
+    public static final int BL_FIRST = 280;
+    // Rukia's Tsukishiro: the circle at pos (ground), a = radius; the column rises 0.4 s later.
+    public static final int BL_TSUKI = 280;
+    // Rukia's Hakuren: pos = her feet, dir = where she faces.
+    public static final int BL_HAKUREN = 281;
+    // Rukia's Shirafune: id = Rukia, pos = the blade's base, dir = the lance's way, a = where it stops, b = 0 pierced
+    // someone there, 1 stuck in the ground there (the stake, 8 s), 2 nothing in reach.
+    public static final int BL_SHIRAFUNE = 282;
+    // Rukia's Rikujokoro on id (pos = its feet).
+    public static final int BL_RIKU = 283;
+    // Rukia's Soren Sokatsui: id = Rukia; c = 0 the chant starts, 1 fired at pos (the target), -1 called off.
+    public static final int BL_SOREN = 284;
+    // Rukia's Bankai: id = Rukia, pos = her feet; c = 0 starts, 1 ends (she thaws).
+    public static final int BL_BANKAI = 285;
+    // Ice over a body (id): c = 0 freezes from pos (dir.x = how much of the body per second, a = height for a body 2 tall,
+    // b = mode (0 feet up, 1 out from pos) + 2 * style), 1 shatters (b = style), 2 thaws.
+    public static final int BL_ICE = 286;
+    // The Bankai's ice flower on id (pos = its feet): frozen, the flower opens, all shatters 2.15 s later.
+    public static final int BL_FLOWER = 287;
+    // Byakuya's Senbonzakura: id = Byakuya; c = 0 the river starts from his hand (it follows his aim), 1 let go (it comes back).
+    public static final int BL_SENBON = 290;
+    // A petal's cut: a short pink spark at pos.
+    public static final int BL_CUT = 291;
+    // Gokei: id = its own, pos = the sphere's center; c = 0 closing (held), 1 let go (it crushes).
+    public static final int BL_GOKEI = 292;
+    // Senka: id = Byakuya, pos = where he was (the afterimage), a = the target's id.
+    public static final int BL_SENKA = 293;
+    // Byakurai: id = Byakuya, pos = where the bolt lands.
+    public static final int BL_BYAKURAI = 294;
+    // Danku: id = Byakuya; c = 0 the wall rises (pos = his feet, dir = his facing), 1 something hit it at pos, 2 gone.
+    public static final int BL_DANKU = 295;
+    // Bankai Senbonzakura Kageyoshi: id = Byakuya, pos = his feet; c = 0 starts, 1 ends.
+    public static final int BL_KAGEYOSHI = 296;
+    // Senkei: id = Byakuya, pos = the target's feet, a = its id.
+    public static final int BL_SENKEI = 297;
+    // Shukei Hakuteiken: id = Byakuya, a = the target's id.
+    public static final int BL_HAKUTEI = 298;
+    public static final int BL_LAST = 319;
+    public static final int ICE_TSUKI = 0, ICE_HAKUREN = 1, ICE_SHIRA = 2, ICE_TRAP = 3, ICE_FLOWER = 4;
+
     public static final int STYLE_SUKUNA = 0;
     public static final int STYLE_PINK = 1;
     public static final int STYLE_CRIMSON = 2;
