@@ -18,7 +18,8 @@ espera 10
 /devc camera jogador
 /devc vista primeira
 /dev soltar
-/kill @e[type=battlegroundsmod:ninja_renegado,limit=1,sort=nearest]
+/tp @e[type=battlegroundsmod:ninja_renegado,limit=1,sort=nearest] 0 -200 0
+espera 25
 /dev invocar battlegroundsmod:ninja_renegado 30
 /devc fov 20
 espera 15
@@ -37,7 +38,8 @@ espera 10
 /devc camera jogador
 /devc vista primeira
 /dev soltar
-/kill @e[type=battlegroundsmod:ninken,limit=1,sort=nearest]
+/tp @e[type=battlegroundsmod:ninken,limit=1,sort=nearest] 0 -200 0
+espera 25
 /dev invocar battlegroundsmod:ninken 30
 /devc fov 20
 espera 15
@@ -56,7 +58,8 @@ espera 10
 /devc camera jogador
 /devc vista primeira
 /dev soltar
-/kill @e[type=battlegroundsmod:cobra_gigante,limit=1,sort=nearest]
+/tp @e[type=battlegroundsmod:cobra_gigante,limit=1,sort=nearest] 0 -200 0
+espera 25
 /dev invocar battlegroundsmod:cobra_gigante 30
 /devc fov 20
 espera 15
@@ -75,7 +78,8 @@ espera 10
 /devc camera jogador
 /devc vista primeira
 /dev soltar
-/kill @e[type=battlegroundsmod:tigre,limit=1,sort=nearest]
+/tp @e[type=battlegroundsmod:tigre,limit=1,sort=nearest] 0 -200 0
+espera 25
 /dev invocar battlegroundsmod:tigre 30
 /devc fov 20
 espera 15
@@ -94,7 +98,8 @@ espera 10
 /devc camera jogador
 /devc vista primeira
 /dev soltar
-/kill @e[type=battlegroundsmod:ninja_som,limit=1,sort=nearest]
+/tp @e[type=battlegroundsmod:ninja_som,limit=1,sort=nearest] 0 -200 0
+espera 25
 /dev invocar battlegroundsmod:ninja_som 30
 /devc fov 20
 espera 15
@@ -113,7 +118,8 @@ espera 10
 /devc camera jogador
 /devc vista primeira
 /dev soltar
-/kill @e[type=battlegroundsmod:centopeia,limit=1,sort=nearest]
+/tp @e[type=battlegroundsmod:centopeia,limit=1,sort=nearest] 0 -200 0
+espera 25
 /dev invocar battlegroundsmod:centopeia 30
 /devc fov 20
 espera 15
@@ -132,7 +138,8 @@ espera 10
 /devc camera jogador
 /devc vista primeira
 /dev soltar
-/kill @e[type=battlegroundsmod:ninja_leque,limit=1,sort=nearest]
+/tp @e[type=battlegroundsmod:ninja_leque,limit=1,sort=nearest] 0 -200 0
+espera 25
 /dev invocar battlegroundsmod:ninja_leque 30
 /devc fov 20
 espera 15
@@ -151,7 +158,8 @@ espera 10
 /devc camera jogador
 /devc vista primeira
 /dev soltar
-/kill @e[type=battlegroundsmod:escorpiao_areia,limit=1,sort=nearest]
+/tp @e[type=battlegroundsmod:escorpiao_areia,limit=1,sort=nearest] 0 -200 0
+espera 25
 /dev invocar battlegroundsmod:escorpiao_areia 30
 /devc fov 20
 espera 15
@@ -170,7 +178,8 @@ espera 10
 /devc camera jogador
 /devc vista primeira
 /dev soltar
-/kill @e[type=battlegroundsmod:marionete,limit=1,sort=nearest]
+/tp @e[type=battlegroundsmod:marionete,limit=1,sort=nearest] 0 -200 0
+espera 25
 /dev invocar battlegroundsmod:marionete 30
 /devc fov 20
 espera 15
@@ -189,7 +198,8 @@ espera 10
 /devc camera jogador
 /devc vista primeira
 /dev soltar
-/kill @e[type=battlegroundsmod:marionetista,limit=1,sort=nearest]
+/tp @e[type=battlegroundsmod:marionetista,limit=1,sort=nearest] 0 -200 0
+espera 25
 /dev invocar battlegroundsmod:marionetista 30
 /devc fov 20
 espera 15
@@ -208,7 +218,8 @@ espera 10
 /devc camera jogador
 /devc vista primeira
 /dev soltar
-/kill @e[type=battlegroundsmod:espadachim_nevoa,limit=1,sort=nearest]
+/tp @e[type=battlegroundsmod:espadachim_nevoa,limit=1,sort=nearest] 0 -200 0
+espera 25
 /dev invocar battlegroundsmod:espadachim_nevoa 30
 /devc fov 20
 espera 15
@@ -227,7 +238,8 @@ espera 10
 /devc camera jogador
 /devc vista primeira
 /dev soltar
-/kill @e[type=battlegroundsmod:caranguejo_gigante,limit=1,sort=nearest]
+/tp @e[type=battlegroundsmod:caranguejo_gigante,limit=1,sort=nearest] 0 -200 0
+espera 25
 /dev invocar battlegroundsmod:caranguejo_gigante 30
 /devc fov 20
 espera 15
@@ -246,7 +258,8 @@ espera 10
 /devc camera jogador
 /devc vista primeira
 /dev soltar
-/kill @e[type=battlegroundsmod:tubarao_agua,limit=1,sort=nearest]
+/tp @e[type=battlegroundsmod:tubarao_agua,limit=1,sort=nearest] 0 -200 0
+espera 25
 /dev invocar battlegroundsmod:tubarao_agua 30
 /devc fov 20
 espera 15
@@ -265,7 +278,8 @@ espera 10
 /devc camera jogador
 /devc vista primeira
 /dev soltar
-/kill @e[type=battlegroundsmod:cacador_nevoa,limit=1,sort=nearest]
+/tp @e[type=battlegroundsmod:cacador_nevoa,limit=1,sort=nearest] 0 -200 0
+espera 25
 /dev invocar battlegroundsmod:cacador_nevoa 30
 /devc fov 20
 espera 15
@@ -284,7 +298,8 @@ espera 10
 /devc camera jogador
 /devc vista primeira
 /dev soltar
-/kill @e[type=battlegroundsmod:ninja_chuva,limit=1,sort=nearest]
+/tp @e[type=battlegroundsmod:ninja_chuva,limit=1,sort=nearest] 0 -200 0
+espera 25
 /dev invocar battlegroundsmod:ninja_chuva 30
 /devc fov 20
 espera 15
@@ -303,7 +318,8 @@ espera 10
 /devc camera jogador
 /devc vista primeira
 /dev soltar
-/kill @e[type=battlegroundsmod:garca_papel,limit=1,sort=nearest]
+/tp @e[type=battlegroundsmod:garca_papel,limit=1,sort=nearest] 0 -200 0
+espera 25
 /dev invocar battlegroundsmod:garca_papel 30
 /devc fov 20
 espera 15
@@ -322,7 +338,8 @@ espera 10
 /devc camera jogador
 /devc vista primeira
 /dev soltar
-/kill @e[type=battlegroundsmod:salamandra_venenosa,limit=1,sort=nearest]
+/tp @e[type=battlegroundsmod:salamandra_venenosa,limit=1,sort=nearest] 0 -200 0
+espera 25
 /dev invocar battlegroundsmod:salamandra_venenosa 30
 /devc fov 20
 espera 15
@@ -341,7 +358,8 @@ espera 10
 /devc camera jogador
 /devc vista primeira
 /dev soltar
-/kill @e[type=battlegroundsmod:zetsu_branco,limit=1,sort=nearest]
+/tp @e[type=battlegroundsmod:zetsu_branco,limit=1,sort=nearest] 0 -200 0
+espera 25
 /dev invocar battlegroundsmod:zetsu_branco 30
 /devc fov 20
 espera 15
@@ -360,7 +378,8 @@ espera 10
 /devc camera jogador
 /devc vista primeira
 /dev soltar
-/kill @e[type=battlegroundsmod:corvo_uchiha,limit=1,sort=nearest]
+/tp @e[type=battlegroundsmod:corvo_uchiha,limit=1,sort=nearest] 0 -200 0
+espera 25
 /dev invocar battlegroundsmod:corvo_uchiha 30
 /devc fov 20
 espera 15
@@ -379,7 +398,8 @@ espera 10
 /devc camera jogador
 /devc vista primeira
 /dev soltar
-/kill @e[type=battlegroundsmod:clone_madeira,limit=1,sort=nearest]
+/tp @e[type=battlegroundsmod:clone_madeira,limit=1,sort=nearest] 0 -200 0
+espera 25
 /dev invocar battlegroundsmod:clone_madeira 30
 /devc fov 20
 espera 15
@@ -398,7 +418,8 @@ espera 10
 /devc camera jogador
 /devc vista primeira
 /dev soltar
-/kill @e[type=battlegroundsmod:sapo_ninja,limit=1,sort=nearest]
+/tp @e[type=battlegroundsmod:sapo_ninja,limit=1,sort=nearest] 0 -200 0
+espera 25
 /dev invocar battlegroundsmod:sapo_ninja 30
 /devc fov 20
 espera 15
@@ -417,7 +438,8 @@ espera 10
 /devc camera jogador
 /devc vista primeira
 /dev soltar
-/kill @e[type=battlegroundsmod:sapo_gigante,limit=1,sort=nearest]
+/tp @e[type=battlegroundsmod:sapo_gigante,limit=1,sort=nearest] 0 -200 0
+espera 25
 /dev invocar battlegroundsmod:sapo_gigante 30
 /devc fov 20
 espera 15
@@ -436,7 +458,8 @@ espera 10
 /devc camera jogador
 /devc vista primeira
 /dev soltar
-/kill @e[type=battlegroundsmod:inseto_gigante,limit=1,sort=nearest]
+/tp @e[type=battlegroundsmod:inseto_gigante,limit=1,sort=nearest] 0 -200 0
+espera 25
 /dev invocar battlegroundsmod:inseto_gigante 30
 /devc fov 20
 espera 15

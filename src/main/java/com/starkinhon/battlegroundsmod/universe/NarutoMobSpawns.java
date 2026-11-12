@@ -89,7 +89,7 @@ final class NarutoMobSpawns {
             list.add(e("garca_papel", 2, 3, 5, Place.AIR));
         } else if (biome.is(ModWorldgen.VALE_DO_FIM)) {
             // by day the Zetsu stay underground
-            list.add(e("zetsu_branco", day ? 1 : 6, 3, 6));
+            list.add(e("zetsu_branco", day ? 0 : 6, 3, 6));
             list.add(e("corvo_uchiha", 3, 1, 3));
             list.add(e("clone_madeira", 2, 1, 1));
         } else if (biome.is(ModWorldgen.MONTE_MYOBOKU)) {

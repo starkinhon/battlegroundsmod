@@ -231,7 +231,7 @@ espera 260
 espera 20
 
 # tubarao_agua: piscina funda
-/fill -10 -64 -10 10 -61 10 minecraft:water
+/fill -10 -63 -10 10 -61 10 minecraft:water
 /tp @s 0.5 -62 0.5 180 0
 espera 10
 /summon battlegroundsmod:tubarao_agua 0.5 -63 -6.5
@@ -250,7 +250,7 @@ espera 260
 /effect clear @s minecraft:blindness
 /effect clear @s minecraft:darkness
 espera 20
-/fill -10 -64 -10 10 -61 10 minecraft:grass_block replace minecraft:water
+/fill -10 -63 -10 10 -61 10 minecraft:grass_block replace minecraft:water
 /fill -10 -61 -10 10 -61 10 minecraft:grass_block
 /tp @s 0.5 -60 0.5 180 0
 espera 10
