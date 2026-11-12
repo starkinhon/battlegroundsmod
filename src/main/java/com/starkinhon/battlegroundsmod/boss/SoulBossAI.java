@@ -155,7 +155,7 @@ public class SoulBossAI extends Goal {
     @Override
     public boolean canUse() {
         LivingEntity t = boss.getTarget();
-        return t != null && t.isAlive() && !boss.staged();
+        return t != null && t.isAlive() && !boss.staged() && !AirCombat.owns(boss);
     }
 
     @Override

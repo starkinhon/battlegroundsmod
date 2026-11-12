@@ -31,7 +31,8 @@ public class SoulMob extends SoulBoss {
 
     @Override
     public boolean removeWhenFarAway(double distance) {
-        return true;
+        // the ones flying across the sky are born far from everyone (SkyPassers takes them away itself)
+        return !AirCombat.passing(this);
     }
 
     // One placed with a spawn egg stays (for testing and videos); natural ones come and go.

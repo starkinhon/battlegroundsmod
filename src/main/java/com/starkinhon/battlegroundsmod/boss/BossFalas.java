@@ -121,6 +121,8 @@ public final class BossFalas {
             case "destruction_god" -> new int[] {0x6A2AC0, 0xE2B4FF};
             case "manipulator" -> new int[] {0x4C1CA8, 0xC8A2FF};
             case "moon_demon" -> new int[] {0x7A1A9E, 0xFF9AE8};
+            case "vegeta" -> new int[] {0x23379E, 0xFFE27A};
+            case "freeza" -> new int[] {0x5A1A7A, 0xF0B8FF};
             default -> new int[] {0xFFFFFF, 0xFFFFFF};
         };
     }

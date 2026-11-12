@@ -1733,5 +1733,8 @@
   "entity.battlegroundsmod.sapo_gigante": "Sapo Gigante",
   "item.battlegroundsmod.sapo_gigante_spawn_egg": "Ovo de Sapo Gigante",
   "entity.battlegroundsmod.inseto_gigante": "Inseto Gigante",
-  "item.battlegroundsmod.inseto_gigante_spawn_egg": "Ovo de Inseto Gigante"
+  "item.battlegroundsmod.inseto_gigante_spawn_egg": "Ovo de Inseto Gigante",
+  "fala.battlegroundsmod.ceu.freeza_ameaca": "Saia da minha frente, verme... antes que eu mude de ideia.",
+  "fala.battlegroundsmod.ceu.vegeta_treinar": "Hmpf. Fraco demais. Vá treinar, verme, e volte quando for digno de lutar comigo.",
+  "fala.battlegroundsmod.ceu.vegeta_desafio": "Eu sou o príncipe dos Saiyajins! Vou provar que sou mais forte que você!"
 }

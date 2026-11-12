@@ -3,9 +3,11 @@ package com.starkinhon.battlegroundsmod.client.fx;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
@@ -14,7 +16,10 @@ import com.starkinhon.battlegroundsmod.client.FlightClient;
 import com.starkinhon.battlegroundsmod.client.FlightPose;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 
@@ -29,7 +34,7 @@ public final class FlightFx {
     private static final double RING_LIFE = 0.42;
     private static final int TRAIL = 30;
 
-    private record Ring(Vec3 at, Vec3 dir, float scale, double born, float seed) {
+    private record Ring(Vec3 at, Vec3 dir, float scale, double born, float seed, float[] color) {
     }
 
     private static final List<Ring> RINGS = new ArrayList<>();
@@ -45,7 +50,39 @@ public final class FlightFx {
 
     // A ki ring at `at` facing `dir` (scale 1 = the boost's, 0.8 the take-off's).
     public static void burst(Vec3 at, Vec3 dir, float scale) {
-        RINGS.add(new Ring(at, dir, scale, ScreenFx.now(), (float) (Math.random() * 50)));
+        burst(at, dir, scale, AURA);
+    }
+
+    public static void burst(Vec3 at, Vec3 dir, float scale, float[] color) {
+        RINGS.add(new Ring(at, dir, scale, ScreenFx.now(), (float) (Math.random() * 50), color));
+    }
+
+    // The ki color of a flier's rings: the players' white-blue, each flying soul its own (boss/AirCombat).
+    public static float[] colorOf(Entity entity) {
+        if (!(entity instanceof LivingEntity) || entity instanceof Player) {
+            return AURA;
+        }
+        return switch (BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).getPath()) {
+            case "goku" -> new float[] {0.55f, 0.8f, 1f};
+            case "vegeta" -> new float[] {1f, 0.9f, 0.45f};
+            case "piccolo" -> new float[] {0.9f, 1f, 0.75f};
+            case "kuririn" -> new float[] {1f, 0.85f, 0.6f};
+            case "freeza" -> new float[] {0.95f, 0.65f, 1f};
+            default -> AURA;
+        };
+    }
+
+    // Everyone flying, or fading out of it: the players and the flying souls.
+    private static List<LivingEntity> fliers(Minecraft minecraft) {
+        List<LivingEntity> out = new ArrayList<>(minecraft.level.players());
+        Set<Integer> ids = new HashSet<>(FlightClient.ids());
+        ids.addAll(FlightPose.ids());
+        for (int id : ids) {
+            if (minecraft.level.getEntity(id) instanceof LivingEntity e && !(e instanceof Player)) {
+                out.add(e);
+            }
+        }
+        return out;
     }
 
     public static boolean active() {
@@ -57,7 +94,7 @@ public final class FlightFx {
         if (minecraft.level == null) {
             return false;
         }
-        for (Player p : minecraft.level.players()) {
+        for (LivingEntity p : fliers(minecraft)) {
             if (FlightClient.flying(p)) {
                 return true;
             }
@@ -77,7 +114,7 @@ public final class FlightFx {
             clear();
             return;
         }
-        for (Player p : minecraft.level.players()) {
+        for (LivingEntity p : fliers(minecraft)) {
             Vec3 up = FlightPose.lastUp(p);
             if (up == null) {
                 continue;
@@ -88,7 +125,7 @@ public final class FlightFx {
                 trail.removeLast();
             }
         }
-        TRAILS.keySet().removeIf(id -> !(minecraft.level.getEntity(id) instanceof Player p) || FlightPose.lastUp(p) == null);
+        TRAILS.keySet().removeIf(id -> !(minecraft.level.getEntity(id) instanceof LivingEntity p) || FlightPose.lastUp(p) == null);
     }
 
     static void render(Vec3 camera, double now, float partial) {
@@ -98,7 +135,11 @@ public final class FlightFx {
         }
         double t = seconds(now);
         boolean firstPerson = minecraft.options.getCameraType().isFirstPerson();
-        for (Player p : minecraft.level.players()) {
+        for (LivingEntity p : fliers(minecraft)) {
+            if (p.isInvisible()) {
+                // a soul's Zanzoken: gone for a moment, shell and trail too
+                continue;
+            }
             Vec3 up = FlightPose.bodyUp(p, partial);
             if (up == null) {
                 continue;
@@ -114,7 +155,7 @@ public final class FlightFx {
         rings(camera, now);
     }
 
-    private static void shell(Player p, Vec3 center, Vec3 up, Vec3 camera, double t, float partial) {
+    private static void shell(LivingEntity p, Vec3 center, Vec3 up, Vec3 camera, double t, float partial) {
         float a = FlightPose.shell(p, partial);
         if (a <= 0.01f || !KiMesh.ready()) {
             return;
@@ -130,7 +171,7 @@ public final class FlightFx {
         KiMesh.queue(KiMesh.Mesh.TUBE, KiMesh.along(nose, up.scale(-1).toVector3f()), k, KiMesh.BOTH, 10);
     }
 
-    private static void trail(Player p, Vec3 center, Vec3 up, Vec3 camera, float weight, float partial) {
+    private static void trail(LivingEntity p, Vec3 center, Vec3 up, Vec3 camera, float weight, float partial) {
         ArrayDeque<Vec3> history = TRAILS.get(p.getId());
         if (history == null || history.size() < 2) {
             return;
@@ -179,7 +220,7 @@ public final class FlightFx {
             KiMesh.P k = KiMesh.p(KiMesh.FLIGHT_RING);
             k.life = L;
             k.seed = r.seed();
-            k.color = AURA;
+            k.color = r.color();
             Vector3f n = r.dir().toVector3f();
             if (n.lengthSquared() < 1.0E-6f) {
                 n.set(0, 1, 0);

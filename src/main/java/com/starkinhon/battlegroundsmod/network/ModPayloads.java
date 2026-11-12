@@ -418,6 +418,23 @@ public final class ModPayloads {
         }
     }
 
+    // Server -> client: a flying soul's blow throws the local player, who is flying (boss/AirCombat): their own flight
+    // (FlightClient) flies off at `velocity` (blocks per second) without control for `ticks`; slam = straight into the
+    // ground, landing there.
+    public record FlightKnock(Vec3 velocity, int ticks, boolean slam) implements CustomPacketPayload {
+        public static final Type<FlightKnock> TYPE = payloadType("flight_knock");
+        public static final StreamCodec<ByteBuf, FlightKnock> STREAM_CODEC = StreamCodec.composite(
+                VEC3, FlightKnock::velocity,
+                ByteBufCodecs.VAR_INT, FlightKnock::ticks,
+                ByteBufCodecs.BOOL, FlightKnock::slam,
+                FlightKnock::new);
+
+        @Override
+        public Type<FlightKnock> type() {
+            return TYPE;
+        }
+    }
+
     // Server -> client: the Dragon Ball mission on the HUD (universe/DbQuests): its id, progress, the place it points to.
     public record QuestSync(String id, int count, int goal, int x, int z, int flags) implements CustomPacketPayload {
         public static final Type<QuestSync> TYPE = payloadType("quest_sync");
@@ -1802,6 +1819,8 @@ public final class ModPayloads {
                 () -> ClientHooks.quest(payload.id(), payload.count(), payload.goal(), payload.x(), payload.z(), payload.flags())));
         registrar.playToClient(FlightState.TYPE, FlightState.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.flightState(payload.entityId(), payload.state())));
+        registrar.playToClient(FlightKnock.TYPE, FlightKnock.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.flightKnock(payload.velocity(), payload.ticks(), payload.slam())));
         registrar.playToClient(SyncStamina.TYPE, SyncStamina.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> payload.applyTo(context.player())));
         registrar.playToClient(SyncCharge.TYPE, SyncCharge.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> payload.applyTo(context.player())));
         registrar.playToClient(PlaySkillAnimation.TYPE, PlaySkillAnimation.STREAM_CODEC, (payload, context) -> context.enqueueWork(

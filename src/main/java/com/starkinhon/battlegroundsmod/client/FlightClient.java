@@ -19,6 +19,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -57,14 +58,34 @@ public final class FlightClient {
         } else {
             STATES.put(entityId, state);
         }
+        if (minecraft.level == null || minecraft.player == null || entityId == minecraft.player.getId()
+                || !(minecraft.level.getEntity(entityId) instanceof LivingEntity other)) {
+            return;
+        }
+        float[] color = FlightFx.colorOf(other);
         // Someone else lighting the boost: everyone around sees the ring and hears the boom (the local player's own ones
         // go off the moment the key is pressed, see tick).
-        if (minecraft.level != null && minecraft.player != null && entityId != minecraft.player.getId()
-                && (state & Flight.BOOST) != 0 && (old & Flight.BOOST) == 0 && minecraft.level.getEntity(entityId) instanceof Player other) {
+        if ((state & Flight.BOOST) != 0 && (old & Flight.BOOST) == 0) {
             Vec3 dir = other.getDeltaMovement().lengthSqr() > 1.0E-4 ? other.getDeltaMovement().normalize() : other.getLookAngle();
-            FlightFx.burst(other.position().add(0, 1, 0).add(dir.scale(0.6)), dir, 1);
+            FlightFx.burst(other.position().add(0, 1, 0).add(dir.scale(0.6)), dir, 1, color);
             boom(other.position(), true);
         }
+        // A flying soul (boss/AirCombat) taking off and landing: the players' own take-off is in tick.
+        if (!(other instanceof Player)) {
+            if ((state & Flight.FLYING) != 0 && (old & Flight.FLYING) == 0) {
+                FlightFx.burst(other.position().add(0, 0.15, 0), new Vec3(0, 1, 0), 0.9f, color);
+                boom(other.position(), false);
+            } else if ((state & Flight.FLYING) == 0 && (old & Flight.FLYING) != 0 && other.isAlive()) {
+                FlightFx.burst(other.position().add(0, 0.1, 0), new Vec3(0, 1, 0), 1.3f, color);
+                minecraft.level.playLocalSound(other.getX(), other.getY(), other.getZ(), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE,
+                        0.45f, 1.5f, false);
+            }
+        }
+    }
+
+    // Who the server says flies (players and the flying souls).
+    public static java.util.Set<Integer> ids() {
+        return STATES.keySet();
     }
 
     public static int state(Entity entity) {
@@ -82,6 +103,8 @@ public final class FlightClient {
     public static void clear() {
         STATES.clear();
         active = false;
+        knockTicks = 0;
+        slam = false;
         boost = false;
     }
 
@@ -98,16 +121,42 @@ public final class FlightClient {
         return boostAmt;
     }
 
-    static float cruise(Player player) {
-        return 11 + (Tiers.HUMANO - Tiers.of(player)) * 1.4f;
+    static float cruise(LivingEntity entity) {
+        if (!(entity instanceof Player)) {
+            // the flying souls (boss/AirCombat): their cruise and the investida's boost
+            return 16;
+        }
+        return 11 + (Tiers.HUMANO - Tiers.of(entity)) * 1.4f;
     }
 
-    static float boostSpeed(Player player) {
-        return cruise(player) * 2.3f;
+    static float boostSpeed(LivingEntity entity) {
+        return entity instanceof Player ? cruise(entity) * 2.3f : 46;
     }
 
-    public static float boostSpeedOf(Player player) {
-        return boostSpeed(player);
+    public static float boostSpeedOf(LivingEntity entity) {
+        return boostSpeed(entity);
+    }
+
+    // Thrown by a flying soul's blow (boss/AirCombat): off at `velocity` without control for `ticks`, the speed dying
+    // out (the page's 2.2) unless it is the Martelo's slam, which goes straight into the ground and lands there.
+    private static int knockTicks;
+    private static boolean slam;
+
+    public static void knock(Vec3 velocity, int ticks, boolean slammed) {
+        if (!active) {
+            return;
+        }
+        vx = velocity.x;
+        vy = velocity.y;
+        vz = velocity.z;
+        knockTicks = Math.max(knockTicks, ticks);
+        slam = slammed;
+        if (boost) {
+            Minecraft minecraft = Minecraft.getInstance();
+            if (minecraft.player != null) {
+                setBoost(minecraft.player, false, boostSpeed(minecraft.player));
+            }
+        }
     }
 
     private static float damp(float k) {
@@ -129,6 +178,8 @@ public final class FlightClient {
                 land();
             }
             active = false;
+            knockTicks = 0;
+            slam = false;
             boostAmt = Math.max(0, boostAmt - 0.15f);
             stopWind();
             return false;
@@ -145,6 +196,31 @@ public final class FlightClient {
             boost = false;
             FlightFx.burst(player.position().add(0, 0.2, 0), new Vec3(0, 1, 0), 0.8f);
             boom(player.position(), false);
+        }
+        if (knockTicks > 0) {
+            knockTicks--;
+            if (!slam) {
+                float drag = damp(2.2f);
+                vx -= vx * drag;
+                vy -= vy * drag;
+                vz -= vz * drag;
+            } else if (knockTicks == 0) {
+                slam = false;
+            }
+            if (!Double.isFinite(vx + vy + vz)) {
+                vx = vy = vz = 0;
+            }
+            // thrown against a wall: the speed into it is gone
+            if (player.horizontalCollision) {
+                vx *= 0.2;
+                vz *= 0.2;
+            }
+            player.setDeltaMovement(vx * DT, vy * DT, vz * DT);
+            player.fallDistance = 0;
+            speed01 = (float) Mth.clamp(Math.sqrt(vx * vx + vy * vy + vz * vz) / boostSpeed(player), 0, 1);
+            ScreenFx.sustainFov(speed01 * 18);
+            wind(player);
+            return false;
         }
         Options options = minecraft.options;
         boolean keys = minecraft.screen == null;

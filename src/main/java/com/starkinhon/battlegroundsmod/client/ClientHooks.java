@@ -48,6 +48,10 @@ public final class ClientHooks {
         FlightClient.state(entityId, state);
     }
 
+    public static void flightKnock(net.minecraft.world.phys.Vec3 velocity, int ticks, boolean slam) {
+        FlightClient.knock(velocity, ticks, slam);
+    }
+
     public static void guardPose(int entityId, boolean on) {
         SkillAnimations.guard(entityId, on);
     }

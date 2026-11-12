@@ -4,7 +4,10 @@ import com.starkinhon.battlegroundsmod.BattlegroundsMod;
 import com.starkinhon.battlegroundsmod.boss.SoulBoss;
 import com.starkinhon.battlegroundsmod.client.fx.AuraEyesLayer;
 
+import com.mojang.blaze3d.vertex.PoseStack;
+
 import net.minecraft.client.model.PlayerModel;
+import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.HumanoidMobRenderer;
@@ -26,6 +29,19 @@ public class SoulBossRenderer<T extends SoulBoss> extends HumanoidMobRenderer<T,
 
     public SoulBossRenderer(EntityRendererProvider.Context context, String skin, boolean slim) {
         this(context, slim, skin);
+    }
+
+    // The flying Dragon Ball souls (boss/AirCombat) are turned for the flight like a flying player (FlightPose).
+    @Override
+    public void render(T entity, float yaw, float partial, PoseStack pose, MultiBufferSource buffers, int light) {
+        boolean pushed = FlightPose.push(entity, pose, partial);
+        try {
+            super.render(entity, yaw, partial, pose, buffers, light);
+        } finally {
+            if (pushed) {
+                pose.popPose();
+            }
+        }
     }
 
     @Override

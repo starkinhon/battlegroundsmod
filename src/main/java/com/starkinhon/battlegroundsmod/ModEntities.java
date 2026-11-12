@@ -155,12 +155,12 @@ public final class ModEntities {
     // SubAlma mobs: each fights with its SubAlma's skills (souls_bosses/<id>.json), as a plain monster.
     public static final Supplier<EntityType<SoulMob>> BYAKUYA = mob("byakuya");
     public static final Supplier<EntityType<SoulMob>> RUKIA = mob("rukia");
-    public static final Supplier<EntityType<SoulMob>> GOKU = mob("goku");
-    public static final Supplier<EntityType<SoulMob>> VEGETA = mob("vegeta");
-    public static final Supplier<EntityType<SoulMob>> FREEZA = mob("freeza");
-    public static final Supplier<EntityType<SoulMob>> PICCOLO = mob("piccolo");
+    public static final Supplier<EntityType<SoulMob>> GOKU = mob("goku", 16);
+    public static final Supplier<EntityType<SoulMob>> VEGETA = mob("vegeta", 16);
+    public static final Supplier<EntityType<SoulMob>> FREEZA = mob("freeza", 16);
+    public static final Supplier<EntityType<SoulMob>> PICCOLO = mob("piccolo", 16);
     public static final Supplier<EntityType<SoulMob>> KAME = mob("kame");
-    public static final Supplier<EntityType<SoulMob>> KURIRIN = mob("kuririn");
+    public static final Supplier<EntityType<SoulMob>> KURIRIN = mob("kuririn", 16);
     public static final Supplier<EntityType<SoulMob>> NARUTO = mob("naruto");
     public static final Supplier<EntityType<SoulMob>> SASUKE = mob("sasuke");
     public static final Supplier<EntityType<SoulMob>> KAKASHI = mob("kakashi");
@@ -306,10 +306,17 @@ public final class ModEntities {
     }
 
     private static Supplier<EntityType<SoulMob>> mob(String id) {
+        return mob(id, 10);
+    }
+
+    // The Dragon Ball souls fly across the sky far off (universe/SkyPassers): seen from further away.
+    private static Supplier<EntityType<SoulMob>> mob(String id, int trackingChunks) {
         return ENTITY_TYPES.register(id, () -> EntityType.Builder.<SoulMob>of(SoulMob::new, MobCategory.MONSTER)
                 .sized(0.6f, 1.8f)
                 .eyeHeight(1.62f)
-                .clientTrackingRange(10)
+                .clientTrackingRange(trackingChunks)
+                // fast in the air (up to 62 blocks a second): every tick, or the client sees them jump
+                .updateInterval(trackingChunks > 10 ? 1 : 3)
                 .build(id));
     }
 

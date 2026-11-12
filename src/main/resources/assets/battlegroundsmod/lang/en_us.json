@@ -1723,5 +1723,8 @@
   "entity.battlegroundsmod.sapo_gigante": "Giant Toad",
   "item.battlegroundsmod.sapo_gigante_spawn_egg": "Giant Toad Spawn Egg",
   "entity.battlegroundsmod.inseto_gigante": "Giant Beetle",
-  "item.battlegroundsmod.inseto_gigante_spawn_egg": "Giant Beetle Spawn Egg"
+  "item.battlegroundsmod.inseto_gigante_spawn_egg": "Giant Beetle Spawn Egg",
+  "fala.battlegroundsmod.ceu.freeza_ameaca": "Get out of my sight, worm... before I change my mind.",
+  "fala.battlegroundsmod.ceu.vegeta_treinar": "Hmph. Too weak. Go train, worm, and come back when you are worthy of fighting me.",
+  "fala.battlegroundsmod.ceu.vegeta_desafio": "I am the prince of all Saiyans! I will prove I am stronger than you!"
 }
