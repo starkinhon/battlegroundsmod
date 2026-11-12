@@ -54,6 +54,8 @@ class Vox:
 
     # ---- vanilla structure .nbt -------------------------------------------------------------------------------
     def save_nbt(self, path, data_version=3955):
+        from furni import finish
+        finish(self)                     # panes/fences/lanterns agree with their neighbours (no updates in game)
         blocks = {k: v for k, v in self.b.items()}
         xs = [k[0] for k in blocks]; ys = [k[1] for k in blocks]; zs = [k[2] for k in blocks]
         ox, oy, oz = min(xs), min(ys), min(zs)

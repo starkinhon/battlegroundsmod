@@ -10,6 +10,7 @@ import vox
 from vox import Vox
 from dragonball import OUT
 from dragonball2 import solid, carve, ladder, door, trapdoor
+from furni import sofa, chair, rug, lamp_floor, bed, tv, wardrobe, bookshelf_wall, slab
 
 PREV = sys.argv[1] if len(sys.argv) > 1 else os.path.join(OUT, '..', '..', '..', '..', '..', '..', 'build', 'previews')
 vox.COLORS.update({'purple_stained_glass': (127, 63, 178), 'magenta_stained_glass': (178, 76, 216),
@@ -80,6 +81,18 @@ def freeza_ship():
             d = math.hypot(x, z)
             if d <= R - 4:
                 v.set(x, B, z, 'purple_concrete' if d < 3 else 'gray_concrete' if (int(d) % 4) else 'light_gray_concrete')
+    # the red carpet from the door to the throne, the soldiers' standing marks, a medical tank (2026-11-12)
+    for z in range(-(R - 4), -1):
+        v.set(0, B + 1, z, 'red_carpet')
+        if z % 3 == 0:
+            v.set(-2, B + 1, z, 'purple_carpet'); v.set(2, B + 1, z, 'purple_carpet')
+    for sx in (-1, 1):
+        mx, mz = sx * 7, 7
+        v.box(mx - 1, B + 1, mz - 1, mx + 1, B + 1, mz + 1, 'light_gray_concrete')
+        v.box(mx - 1, B + 2, mz - 1, mx + 1, B + 4, mz + 1, 'light_blue_stained_glass')
+        v.set(mx, B + 2, mz, 'water'); v.set(mx, B + 3, mz, 'water'); v.set(mx, B + 4, mz, 'light_blue_stained_glass')
+        v.box(mx - 1, B + 5, mz - 1, mx + 1, B + 5, mz + 1, 'light_gray_concrete'); v.set(mx, B + 5, mz, 'sea_lantern')
+        v.set(mx, B + 1, mz - 2, 'polished_andesite'); v.set(mx, B + 2, mz - 2, 'lime_stained_glass_pane')
     # Freeza's hover-throne in the middle, consoles around, lights
     v.set(0, B + 1, 0, 'white_concrete'); v.set(0, B + 2, 0, 'quartz_stairs[facing=east,half=bottom,shape=straight,waterlogged=false]')
     v.set(-1, B + 2, 0, 'purple_concrete'); v.set(-1, B + 3, 0, 'purple_concrete'); v.set(0, B + 2, 1, 'white_concrete'); v.set(0, B + 2, -1, 'white_concrete')
@@ -130,6 +143,10 @@ def freeza_ship():
         a = k * 2 * math.pi / 7 + rnd.random() * 0.4
         d = 25 + rnd.random() * 6
         pod(v, round(d * math.cos(a)), round(d * math.sin(a)), rnd)
+    # lights where the rooms stayed dark (2026-11-12 check: block light 0 = monsters could spawn there at night)
+    for k in range(10):
+        a = k * math.pi / 5 + 0.2
+        v.set(round(12 * math.cos(a)), B, round(12 * math.sin(a)), 'sea_lantern')
     return v
 
 
@@ -152,8 +169,23 @@ def namek_capsule():
     v.disc(0, cy - 4, 0, 4.2, 'light_gray_concrete')
     for y in range(cy - 3, cy + 3):
         v.disc(0, y, 0, 0.8, 'white_concrete' if y != cy else 'sea_lantern')
-    v.set(0, cy - 3, 2, 'red_concrete'); v.set(-3, cy - 3, -1, 'white_bed[facing=north,occupied=false,part=foot]')
-    v.set(-3, cy - 3, -2, 'white_bed[facing=north,occupied=false,part=head]')
+    # inside (2026-11-12: a red block and a bed in an empty sphere): the gravity panel on the column, a ring on the
+    # floor, the bunk, lockers, the console under the portholes, the hatch light
+    for x in range(-4, 5):
+        for z in range(-4, 5):
+            d = math.hypot(x, z)
+            if d <= 4.2:
+                v.set(x, cy - 4, z, 'blue_concrete' if 2.4 < d <= 3.3 else 'light_gray_concrete' if d > 1 else 'smooth_stone')
+    v.set(0, cy - 3, 1, 'red_concrete'); v.set(0, cy - 2, 1, 'black_stained_glass_pane')
+    v.set(0, cy - 3, 2, 'stone_button[face=floor,facing=south,powered=false]')
+    bed(v, -3, cy - 3, -2, 'north', 'white')
+    v.set(-2, cy - 3, -3, 'barrel[facing=up,open=false]')
+    v.set(3, cy - 3, -2, 'iron_block'); v.set(3, cy - 2, -2, 'iron_block')
+    v.set(2, cy - 3, -2, 'iron_trapdoor[facing=west,half=bottom,open=true,powered=false,waterlogged=false]')
+    v.set(2, cy - 2, -2, 'iron_trapdoor[facing=west,half=bottom,open=true,powered=false,waterlogged=false]')
+    v.set(3, cy - 3, 1, 'polished_andesite'); v.set(3, cy - 2, 1, 'lime_stained_glass_pane')
+    chair(v, 2, cy - 3, 1, 'east', 'quartz_stairs')
+    v.set(-3, cy - 3, 2, 'chest[facing=east,type=single,waterlogged=false]')
     for lx, lz in ((1, 1), (1, -1), (-1, 1), (-1, -1)):
         for i in range(5):
             v.set(round(lx * (4 + i * 0.6)), cy - 5 - i if cy - 5 - i >= 0 else 0, round(lz * (4 + i * 0.6)), 'light_gray_concrete')
@@ -192,7 +224,34 @@ def namek_house(v, cx, cz, r, h, rnd, door_dir):
             x, z = cx + dx * k, cz + dz * k
             if y < 2 or k >= r - 1:
                 v.set(x, y, z, 'air')
-    v.set(cx, 0, cz, 'red_carpet') if rnd.random() < 0.5 else v.set(cx + 1, 0, cz, 'white_carpet')
+    # inside (2026-11-12: they were empty, with a carpet sunk into a hole in the floor): a round woven rug, the low round
+    # table with the water jug (Namekians only drink water), sleeping mats along the wall, pottery, a potted Ajisa
+    # sapling and the lantern
+    for x in range(cx - r + 1, cx + r):
+        for z in range(cz - r + 1, cz + r):
+            d = math.hypot(x - cx, z - cz)
+            if d <= r - 1.6 and v.get(x, 1, z) in (None, 'minecraft:air') and v.get(x, 0, z) not in (None, 'minecraft:air'):
+                v.set(x, 1, z, 'lime_carpet' if d > r - 2.6 else 'white_carpet' if d > 1.2 else 'green_carpet')
+    v.set(cx, 1, cz, 'stripped_birch_wood[axis=y]')
+    v.set(cx, 2, cz, 'water_cauldron[level=2]' if r < 5 else 'decorated_pot[cracked=false,facing=north,waterlogged=false]')
+    for (ox, oz) in ((1, 0), (-1, 0), (0, -1)):
+        if (ox, oz) != (-dx, -dz) and (ox, oz) != (dx, dz):
+            v.set(cx + ox, 1, cz + oz, f'birch_trapdoor[facing=north,half=bottom,open=false,powered=false,waterlogged=false]')
+    # sleeping mats on the side away from the door
+    bx, bz = cx - dx * (r - 2), cz - dz * (r - 2)
+    px, pz = dz, dx                                                    # along the wall
+    for k in (-1, 0, 1):
+        x, z = bx + px * k, bz + pz * k
+        if v.get(x, 1, z) not in (None, 'minecraft:air') and 'carpet' not in v.get(x, 1, z) or v.get(x, 0, z) in (None, 'minecraft:air'):
+            continue
+        v.set(x, 1, z, 'white_carpet' if k else 'lime_carpet')
+    for (ox, oz, blk) in ((r - 2, 1, 'decorated_pot[cracked=false,facing=north,waterlogged=false]'), (-(r - 2), -1, 'potted_jungle_sapling'),
+                          (1, r - 2, 'flower_pot'), (-1, -(r - 2), 'decorated_pot[cracked=false,facing=north,waterlogged=false]')):
+        x, z = cx + ox, cz + oz
+        if (ox * dx > 0 and abs(oz) <= 1) or (oz * dz > 0 and abs(ox) <= 1):
+            continue                                                  # keep the doorway clear
+        if (v.get(x, 1, z) in (None, 'minecraft:air') or 'carpet' in (v.get(x, 1, z) or '')) and v.get(x, 0, z) not in (None, 'minecraft:air'):
+            v.set(x, 1, z, blk)
     v.set(cx, h - 2, cz, 'lantern[hanging=true,waterlogged=false]')
 
 
@@ -231,9 +290,32 @@ def guru_house():
         for x in (-1, 0, 1):
             for z in range(6, 10):
                 v.set(x, y, z, 'air')
-    # the Grand Elder's seat
-    v.box(-2, 0, -5, 2, 0, -3, 'purple_wool')
-    v.box(-2, 1, -6, 2, 3, -6, 'white_concrete'); v.box(-3, 1, -5, -3, 2, -3, 'white_concrete'); v.box(3, 1, -5, 3, 2, -3, 'white_concrete')
+    # inside (redone 2026-11-12: it was an empty dome with a purple block): a pale floor with a green ring, the Grand
+    # Elder's huge seat on a stepped dais at the back (the high rounded back, the arms, the purple cushion), the path of
+    # carpet from the door, tall pots with plants, lamps round the wall and the big lantern in the dome
+    v.disc(0, 0, 0, 7.4, 'smooth_quartz')
+    for x in range(-8, 9):
+        for z in range(-8, 9):
+            if 5.4 < math.hypot(x, z) <= 6.4 and v.get(x, 0, z) == 'minecraft:smooth_quartz':
+                v.set(x, 0, z, 'lime_terracotta')
+    v.box(-3, 1, -6, 3, 1, -3, 'quartz_block')                                    # dais
+    v.box(-3, 1, -2, 3, 1, -2, 'quartz_stairs[facing=north,half=bottom,shape=straight,waterlogged=false]')
+    v.box(-2, 2, -5, 2, 2, -3, 'purple_wool')                                     # the cushion
+    v.box(-2, 2, -6, 2, 5, -6, 'white_concrete'); v.box(-1, 6, -6, 1, 6, -6, 'white_concrete')   # the high back
+    v.box(-3, 2, -6, -3, 3, -3, 'white_concrete'); v.box(3, 2, -6, 3, 3, -3, 'white_concrete')   # the arms
+    v.set(-3, 4, -3, 'smooth_quartz_slab[type=bottom,waterlogged=false]'); v.set(3, 4, -3, 'smooth_quartz_slab[type=bottom,waterlogged=false]')
+    for z in range(-1, 9):
+        if v.get(0, 1, z) in (None, 'minecraft:air') and v.get(0, 0, z) not in (None, 'minecraft:air'):
+            v.set(0, 1, z, 'purple_carpet')
+    for (x, z) in ((-5, 2), (5, 2), (-5, -3), (5, -3)):
+        v.set(x, 1, z, 'decorated_pot[cracked=false,facing=north,waterlogged=false]')
+    for (x, z) in ((-4, 4), (4, 4)):
+        v.set(x, 1, z, 'potted_jungle_sapling')
+    for k in range(8):
+        a = k * math.pi / 4 + math.pi / 8
+        x, z = round(6.6 * math.cos(a)), round(6.6 * math.sin(a))
+        if z < 5 and v.get(x, 1, z) in (None, 'minecraft:air'):
+            lamp_floor(v, x, 1, z, post='birch_fence')
     v.set(0, 10, 0, 'lantern[hanging=true,waterlogged=false]')
     return v
 
