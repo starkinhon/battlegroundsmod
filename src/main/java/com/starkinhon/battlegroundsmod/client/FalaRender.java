@@ -56,9 +56,9 @@ public final class FalaRender {
     private static Vec3 camera = Vec3.ZERO;
     private static boolean captured;
 
-    private record Line(String text, int color1, int color2, long start) {
+    private record Line(String text, int color1, int color2, long start, float hold) {
         float total() {
-            return HOLD + FADE;
+            return hold + FADE;
         }
     }
 
@@ -68,6 +68,11 @@ public final class FalaRender {
     }
 
     public static void add(int entityId, String text, int color1, int color2) {
+        add(entityId, text, color1, color2, HOLD);
+    }
+
+    // Same, staying whole for hold ticks (Saitama's short words: "ok.", "Ha...", "ATCHIM!"). An empty text takes the line off.
+    public static void add(int entityId, String text, int color1, int color2, float hold) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null) {
             return;
@@ -81,7 +86,11 @@ public final class FalaRender {
                 it.remove();
             }
         }
-        LINES.put(entityId, new Line(shown, color1, color2, now));
+        if (text.isEmpty()) {
+            LINES.remove(entityId);
+            return;
+        }
+        LINES.put(entityId, new Line(shown, color1, color2, now, hold));
     }
 
     // The camera of the frame, to place the lines on screen.
@@ -145,7 +154,7 @@ public final class FalaRender {
     }
 
     private static void draw(GuiGraphics graphics, Minecraft mc, Entity entity, Line line, float age, float partial) {
-        float out = age > HOLD ? (age - HOLD) / FADE : 0;
+        float out = age > line.hold() ? (age - line.hold()) / FADE : 0;
         float smoothOut = out * out * (3 - 2 * out);
         float alpha = 1 - smoothOut;
         int a = Math.round(alpha * 255);

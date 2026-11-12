@@ -57,6 +57,7 @@ public final class PowerEvents {
         NeoForge.EVENT_BUS.addListener(PowerEvents::onEntityJoin);
         NeoForge.EVENT_BUS.addListener(PowerEvents::onIncomingDamage);
         NeoForge.EVENT_BUS.addListener(PowerEvents::onKnockBack);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.power.powers.opm.Opm::onLevelTick);
         NeoForge.EVENT_BUS.addListener(PowerEvents::onProjectileImpact);
         NeoForge.EVENT_BUS.addListener(PowerEvents::onRightClickItem);
         NeoForge.EVENT_BUS.addListener(PowerEvents::onRightClickBlock);
@@ -239,6 +240,18 @@ public final class PowerEvents {
             com.starkinhon.battlegroundsmod.combat.DamageDebug.blocked("Um Dedo do Aizen");
             return;
         }
+        // Saitama's B: the blow is caught in his hand.
+        com.starkinhon.battlegroundsmod.power.powers.opm.Opm.onIncomingDamage(event);
+        if (event.isCanceled()) {
+            com.starkinhon.battlegroundsmod.combat.DamageDebug.blocked("Counter do Saitama");
+            return;
+        }
+        // Luffy's Fusen: the blow sinks into the balloon and goes back.
+        com.starkinhon.battlegroundsmod.power.powers.luffy.LuffyMoves.onIncomingDamage(event);
+        if (event.isCanceled()) {
+            com.starkinhon.battlegroundsmod.combat.DamageDebug.blocked("Fusen do Luffy");
+            return;
+        }
         com.starkinhon.battlegroundsmod.power.powers.sub.SubDefense.onIncomingDamage(event);
         if (event.isCanceled()) {
             com.starkinhon.battlegroundsmod.combat.DamageDebug.blocked("defesa de SubAlma (SubDefense)");
@@ -271,6 +284,8 @@ public final class PowerEvents {
         // The target's Resistencia (2026-11-09): every blow, the same tier's too; the Armadura comes after this, in vanilla.
         if (!event.isCanceled()) {
             event.setAmount(Tiers.resist(event.getEntity(), event.getSource(), event.getAmount()));
+            // Saitama's Pedra Viva: he takes a lot of beating (and the blows fill his Barra Seria).
+            event.setAmount(com.starkinhon.battlegroundsmod.power.powers.opm.Opm.resist(event.getEntity(), event.getAmount()));
             com.starkinhon.battlegroundsmod.combat.DamageDebug.finished(event.getAmount());
         } else {
             com.starkinhon.battlegroundsmod.combat.DamageDebug.blocked("Susanoo");
@@ -278,7 +293,8 @@ public final class PowerEvents {
     }
 
     private static void onKnockBack(LivingKnockBackEvent event) {
-        if (Intangible.untouchable(event.getEntity())) {
+        // Saitama's Pedra Viva: nothing moves him.
+        if (Intangible.untouchable(event.getEntity()) || com.starkinhon.battlegroundsmod.power.powers.opm.Opm.is(event.getEntity())) {
             event.setCanceled(true);
         }
     }

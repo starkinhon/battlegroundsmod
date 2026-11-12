@@ -37,7 +37,12 @@ public final class PunchFx {
 
     // A punch landing at pos, the fist going along dir. ground: the height of the target's feet (for the dust).
     public static void hit(ServerLevel level, int kind, Vec3 pos, Vec3 dir, int color, float charge, double ground) {
-        send(level, kind, -1, pos, dir, color, charge, (float) ground);
+        hit(level, kind, pos, dir, color, charge, ground, 1);
+    }
+
+    // Same, drawn size times bigger (the puncher's own scale: the Giant Luffy hits with a 10x fist).
+    public static void hit(ServerLevel level, int kind, Vec3 pos, Vec3 dir, int color, float charge, double ground, double size) {
+        send(level, kind | sizeBits(size), -1, pos, dir, color, charge, (float) ground);
     }
 
     public static void follow(ServerLevel level, int kind, LivingEntity entity, Vec3 dir, int color, float a) {
@@ -45,13 +50,22 @@ public final class PunchFx {
     }
 
     public static void swing(ServerLevel level, Vec3 pos, Vec3 dir, int color, float size) {
-        send(level, SWING, -1, pos, dir, color, size, 0);
+        swing(level, pos, dir, color, size, 1);
+    }
+
+    public static void swing(ServerLevel level, Vec3 pos, Vec3 dir, int color, float size, double scale) {
+        send(level, SWING | sizeBits(scale), -1, pos, dir, color, size, 0);
+    }
+
+    // The puncher's scale rides in the top 4 bits of the packed kind/color (1 to 16, whole steps).
+    private static int sizeBits(double size) {
+        return ((int) Math.max(1, Math.min(16, Math.round(size))) - 1) << 28;
     }
 
     private static void send(ServerLevel level, int kind, int entity, Vec3 pos, Vec3 dir, int color, float a, float b) {
-        ModPayloads.PunchFx payload = new ModPayloads.PunchFx(kind | (color & 0xFFFFFF) << 4, entity, pos, dir, a, b);
+        ModPayloads.PunchFx payload = new ModPayloads.PunchFx((kind & 0xF0000000) | kind & 0xF | (color & 0xFFFFFF) << 4, entity, pos, dir, a, b);
         for (ServerPlayer player : level.players()) {
-            if (player.distanceToSqr(pos) < VIEW_DISTANCE_SQR) {
+            if (player.distanceToSqr(pos) < VIEW_DISTANCE_SQR * Math.max(1, (kind >>> 28) + 1)) {
                 PacketDistributor.sendToPlayer(player, payload);
             }
         }

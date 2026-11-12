@@ -146,7 +146,7 @@ public final class FxWorld {
         boolean world = !PIECES.isEmpty() || MeteorRenderer.hasTrails() || Aura.active() || KatonBallRenderer.active() || AshDeath.hasSparks() || SoulCeremonyFx.active()
                 || SpaceScene.active() || EsferaRenderer.active() || HakaiRenderer.active() || EnergyRenderer.active() || BlackBoxRenderer.active() || AzulRenderer.active() || VermelhoRenderer.active() || BlackFlashRenderer.active() || RoxoRenderer.active() || AizenFx.active() || SwordFx.active() || MoonSlashRenderer.active() || MoonFormsRenderer.active() || PunchFxRenderer.active() || SubFx.active() || MakimaFx.active()
                 || SphereRenderer.active() || SusanooArm.active() || DomainScene.active() || VoidFlashScene.active() || FugaRenderer.active() || DismantleRenderer.active() || SukunaCutsRenderer.active() || SukunaDomainScene.active()
-                || ClivarRenderer.active() || CravadaRenderer.active() || FlightFx.active();
+                || ClivarRenderer.active() || CravadaRenderer.active() || FlightFx.active() || OpmFx.active();
         if (!world && !ScreenFx.needsScene()) {
             return;
         }
@@ -237,6 +237,8 @@ public final class FxWorld {
             SphereRenderer.render(camera, now, partial);
             SusanooArm.render(source, flat, camera, now, partial);
             DomainScene.render(camera, now, partial);
+            // Saitama: the ground's real blocks, the slab, the afterimages; his pieces queued for the passes below.
+            OpmFx.render(camera, now, partial);
         }
         if (flat) {
             source.endBatch(FxRenderTypes.SOLID);
@@ -247,6 +249,8 @@ public final class FxWorld {
             source.endBatch(FxRenderTypes.FLAT_ADD);
             endDecals(source);
             KiMesh.flush(false);
+            OpmMesh.flush(false);
+            LuffyMesh.flush(false);
         } else {
             // The Susanoo arm's depth goes in first, so its color only lands on the front surface.
             source.endBatch(FxRenderTypes.SUS_DEPTH);
@@ -257,6 +261,8 @@ public final class FxWorld {
             source.endBatch(MoonFormsRenderer.Types.BODY);
             endDecals(source);
             KiMesh.flush(false);
+            OpmMesh.flush(false);
+            LuffyMesh.flush(false);
             boolean outline = !space && Aura.drawMask(event, camera, partial);
             FxPost.beginGlow();
             if (outline) {
@@ -266,6 +272,8 @@ public final class FxWorld {
             source.endBatch(FxRenderTypes.VFX_ADD);
             source.endBatch(MoonSlashRenderer.Types.GLOW);
             KiMesh.flush(true);
+            OpmMesh.flush(true);
+            LuffyMesh.flush(true);
             FxPost.endGlow(FxConfig.on(FxConfig.BLOOM));
         }
         // Makima's rats' vision: the red ghosts of whoever is near, over everything.
@@ -360,6 +368,8 @@ public final class FxWorld {
         }
 
         KiMesh.endFrame();
+        OpmMesh.endFrame();
+        LuffyMesh.endFrame();
         RenderSystem.restoreProjectionMatrix();
         modelView.popMatrix();
         RenderSystem.applyModelViewMatrix();

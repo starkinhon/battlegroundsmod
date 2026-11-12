@@ -297,13 +297,15 @@ public final class Movement {
         }
         Vec3 feet = entity.position();
         Vec3 push = new Vec3(velocity.x, 0, velocity.z);
-        double sizeScale = poeira.tamanho() / 0.7;
+        // a bigger body (the Giant Luffy, SCALE 10) kicks up dust as big as he is
+        double body = Math.max(1, entity.getScale());
+        double sizeScale = poeira.tamanho() / 0.7 * body;
         if (kind == Kind.PULO_DUPLO || push.lengthSqr() < 1.0E-4) {
-            Smoke.airJump(level, feet.add(0, 0.05, 0), poeira.rgb(), poeira.tamanho() / 0.8);
+            Smoke.airJump(level, feet.add(0, 0.05, 0), poeira.rgb(), poeira.tamanho() / 0.8 * body);
             return;
         }
-        Smoke.kick(level, feet, push.normalize(), Smoke.groundColor(level, feet), sizeScale, poeira.vidaTicks() / 14.0, poeira.velocidade() / 0.22,
-                poeira.quantidade());
+        Smoke.kick(level, feet, push.normalize(), Smoke.groundColor(level, feet), sizeScale, poeira.vidaTicks() / 14.0 * Math.sqrt(body),
+                poeira.velocidade() / 0.22 * body, (int) Math.round(poeira.quantidade() * Math.min(3, body)));
         MovementData data = data(entity);
         data.trailDir = push.normalize();
     }
@@ -319,7 +321,8 @@ public final class Movement {
         // The first ticks of a dash on the ground: dust trail at the feet and wind along the body.
         if (data.trailDir != null && entity.level() instanceof ServerLevel level) {
             if (sinceMove >= 1 && sinceMove <= 6) {
-                Smoke.dashTrail(level, entity.position(), data.trailDir, Smoke.groundColor(level, entity.position()), entity.onGround() ? (int) sinceMove : 99);
+                Smoke.dashTrail(level, entity.position(), data.trailDir, Smoke.groundColor(level, entity.position()), entity.onGround() ? (int) sinceMove : 99,
+                        Math.max(1, entity.getScale()));
             } else if (sinceMove > 6) {
                 data.trailDir = null;
             }

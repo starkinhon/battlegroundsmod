@@ -153,6 +153,14 @@ public final class DbFx {
     }
 
     static void receive(int kind, int id, Vec3 pos, Vec3 dir, float a, float b, float c) {
+        if (kind >= SubNet.LUFFY_CHARGE && kind <= SubNet.LUFFY_LAST) {
+            LuffyFx.receive(kind, id, pos, dir, a, b, c);
+            return;
+        }
+        if (kind >= SubNet.OPM_SOCO && kind <= SubNet.OPM_LAST) {
+            OpmFx.receive(kind, id, pos, dir, a, b, c);
+            return;
+        }
         if (kind == SubNet.KATON || kind == SubNet.KATON_BOOM || kind == SubNet.SHADOW_SEA || kind == SubNet.FLARE) {
             NrFx.receive(kind, id, pos, dir, a, b, c);
             return;

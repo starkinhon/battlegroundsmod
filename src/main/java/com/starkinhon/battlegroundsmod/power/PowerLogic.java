@@ -37,7 +37,7 @@ public final class PowerLogic {
     private static final int SYNC_INTERVAL = 4;
     private static final double ULT_TITLE_RANGE = 48;
     // Powers whose ult draws its own title, so the vanilla one is not sent.
-    private static final java.util.Set<String> OWN_ULT_TITLE = java.util.Set.of("strongest");
+    private static final java.util.Set<String> OWN_ULT_TITLE = java.util.Set.of("strongest", "one_punch", "rubber_boy");
 
     private PowerLogic() {
     }
@@ -135,14 +135,16 @@ public final class PowerLogic {
         boolean ultimate = PowerData.isUlt(slot);
         // Creative mode skips the costs so moves can be recorded freely.
         boolean free = player.isCreative() || data.noCooldown;
-        if (!free && ultimate && data.ult < PowerData.MAX_ULT) {
+        if (!free && ultimate && data.ult < PowerData.MAX_ULT && !com.starkinhon.battlegroundsmod.power.powers.opm.Opm.freeUlt(player)
+                && !com.starkinhon.battlegroundsmod.power.powers.luffy.Luffy.freeUlt(player)) {
             player.displayClientMessage(Component.translatable("message.battlegroundsmod.ult_not_ready"), true);
             return;
         }
         if (!cast(player, slot)) {
             return;
         }
-        if (!free && ultimate) {
+        // (Luffy's V is each Gear's own move: his bar is the Tambores da Libertacao, spent by B)
+        if (!free && ultimate && !com.starkinhon.battlegroundsmod.power.powers.luffy.Luffy.is(player)) {
             data.ult = 0;
         }
         if (skill) {

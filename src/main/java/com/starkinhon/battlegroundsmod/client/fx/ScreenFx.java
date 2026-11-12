@@ -121,6 +121,12 @@ public final class ScreenFx {
                 SkillEffects.owner()));
     }
 
+    // Luffy's shock ring (warp mode 5): the page's screen ring with its color split and glow; pow scales it, dur in seconds.
+    public static void shockRing(Vec3 pos, float pow, int color, float dur, float glow) {
+        WARPS.add(new Warp(pos, pow, glow, dur, 5, new Vec3(0, 1, 0), rgb(color), 0, ticks, Math.max(1, Math.round(dur * 20)), -1, null, 0,
+                SkillEffects.owner()));
+    }
+
     // owner's move was cut off: its bending is gone.
     public static void stopOwner(int owner) {
         WARPS.removeIf(w -> w.owner() == owner);
@@ -166,6 +172,18 @@ public final class ScreenFx {
             gradeMode = mode;
             gradeAmount = Mth.clamp(amount, 0, 1);
             gradeTint = rgb(tint);
+            gradePos = pos;
+            gradeAt = ticks;
+        }
+    }
+
+    // Same, with the three numbers given as they are (mode 14, Saitama's silence: how grey, how dark the edges, how
+    // many focus lines).
+    public static void sustainGrade(int mode, float amount, float x, float y, float z, Vec3 pos) {
+        if (amount > 0.004f) {
+            gradeMode = mode;
+            gradeAmount = Mth.clamp(amount, 0, 1);
+            gradeTint = new float[] {x, y, z};
             gradePos = pos;
             gradeAt = ticks;
         }
@@ -387,7 +405,7 @@ public final class ScreenFx {
             if (count >= MAX_WARPS) {
                 break;
             }
-            float env = w.envelope(now);
+            float env = w.mode() == 5 ? 1 : w.envelope(now);
             if (env <= 0) {
                 continue;
             }
