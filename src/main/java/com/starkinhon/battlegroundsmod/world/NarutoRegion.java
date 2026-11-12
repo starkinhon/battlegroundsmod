@@ -21,10 +21,11 @@ import terrablender.api.Regions;
 // Dragon Ball one. Stark: "bioma de db -> bioma normal do mine -> bioma de naruto", so the Naruto biomes take climate
 // bands that DragonRegion leaves vanilla: where the two regions meet at the same climate, the Dragon Ball side there is
 // normal land. For now the Floresta da Folha: the warm band's lowlands on its middle and wet side (vanilla's forests
-// and jungles there), the big warm woods of Konoha. Its mountains, seas, rivers and caves stay vanilla, and the land
-// keeps vanilla's shape. The Floresta da Morte (Stark 2026-11-11) borders it on the wettest side, as in the anime it
-// lies inside Konoha's woods. The Deserto do Vento (Stark 2026-11-11) takes the same band's dry side. The other Naruto
-// biomes come into the bands still vanilla here, one by one.
+// and jungles there), the big warm woods of Konoha. Its mountains, rivers and caves stay vanilla, and the land keeps
+// vanilla's shape. The Floresta da Morte (Stark 2026-11-11) borders it on the wettest side, as in the anime it lies
+// inside Konoha's woods. The Deserto do Vento (Stark 2026-11-11) takes the same band's dry side, and the Mar da Névoa
+// (Stark 2026-11-11) the cold and middle seas. The other Naruto biomes come into the bands still vanilla here, one by
+// one.
 public final class NarutoRegion extends Region {
     // Against vanilla's 10 and the Dragon Ball's 8.
     private static final int WEIGHT = 6;
@@ -62,10 +63,15 @@ public final class NarutoRegion extends Region {
     }
 
     private static ResourceKey<Biome> choose(Climate.ParameterPoint point, ResourceKey<Biome> vanilla) {
-        if (NOT_LAND.contains(vanilla) || SEAS.contains(vanilla) || MOUNTAINS.contains(vanilla)) {
+        int t = band(point.temperature(), -0.45f, -0.15f, 0.2f, 0.55f);
+        // the Mar da Névoa on the cold and the middle seas (the Dragon Ball's Mar do Sul takes the lukewarm ones), with
+        // its beaches; the stony shores and the frozen and warm seas stay vanilla
+        if (SEAS.contains(vanilla)) {
+            return (t == 1 || t == 2) && vanilla != Biomes.STONY_SHORE ? ModWorldgen.MAR_DA_NEVOA : vanilla;
+        }
+        if (NOT_LAND.contains(vanilla) || MOUNTAINS.contains(vanilla)) {
             return vanilla;
         }
-        int t = band(point.temperature(), -0.45f, -0.15f, 0.2f, 0.55f);
         int h = band(point.humidity(), -0.35f, -0.1f, 0.1f, 0.3f);
         // the Floresta da Morte next to the Folha, on its wettest side (vanilla's jungles there)
         if (t == 3 && h == 4) {

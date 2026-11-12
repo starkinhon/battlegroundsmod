@@ -96,7 +96,7 @@ public final class DesertGen {
         final Map<Long, Byte> m = new HashMap<>();
 
         static long key(int x, int y, int z) {
-            return ((x + 2048L) * 4096 + (y + 256)) * 4096 + (z + 2048);
+            return LeafTreeGen.Keys.key(x, y, z);
         }
 
         int get(int x, int y, int z) {
@@ -131,10 +131,7 @@ public final class DesertGen {
                     continue;
                 }
                 long k = e.getKey();
-                int z = (int) (k % 4096) - 2048;
-                long r = (k - (z + 2048)) / 4096;
-                int y = (int) (r % 4096) - 256;
-                int x = (int) ((r - (y + 256)) / 4096) - 2048;
+                int x = LeafTreeGen.Keys.x(k), y = LeafTreeGen.Keys.y(k), z = LeafTreeGen.Keys.z(k);
                 out[i++] = x;
                 out[i++] = y;
                 out[i++] = z;

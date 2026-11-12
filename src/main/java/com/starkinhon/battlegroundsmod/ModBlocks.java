@@ -79,6 +79,14 @@ public final class ModBlocks {
                             net.minecraft.world.level.material.PushReaction.DESTROY),
                     Block.box(2, 0, 2, 14, 13, 14)));
 
+    // Mar da Névoa (Stark 2026-11-11): the coastal pines' needles in two tones (the pads' tops and their dark undersides),
+    // and the rope of the bridges, a thin cord on an axis like the chain.
+    public static final DeferredBlock<net.minecraft.world.level.block.LeavesBlock> PINE_LEAVES = leaves("folhas_de_pinheiro");
+    public static final DeferredBlock<net.minecraft.world.level.block.LeavesBlock> PINE_LEAVES_DARK = leaves("folhas_de_pinheiro_escura");
+    public static final DeferredBlock<net.minecraft.world.level.block.ChainBlock> ROPE = BLOCKS.register("corda",
+            () -> new net.minecraft.world.level.block.ChainBlock(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD)
+                    .strength(0.8f).sound(SoundType.WOOL).noOcclusion().ignitedByLava()));
+
     static {
         BLOCK_ITEMS.registerSimpleBlockItem(DEATH_LEAVES);
         BLOCK_ITEMS.registerSimpleBlockItem(DEATH_LEAVES_LIGHT);
@@ -94,6 +102,9 @@ public final class ModBlocks {
         BLOCK_ITEMS.registerSimpleBlockItem(GLOW_MUSHROOM);
         BLOCK_ITEMS.registerSimpleBlockItem(SAND_LAYER);
         BLOCK_ITEMS.registerSimpleBlockItem(DRY_GRASS);
+        BLOCK_ITEMS.registerSimpleBlockItem(PINE_LEAVES);
+        BLOCK_ITEMS.registerSimpleBlockItem(PINE_LEAVES_DARK);
+        BLOCK_ITEMS.registerSimpleBlockItem(ROPE);
         BLOCK_ITEMS.registerSimpleBlockItem(LEAF_LEAVES);
         BLOCK_ITEMS.registerSimpleBlockItem(LEAF_LEAVES_LIGHT);
         BLOCK_ITEMS.registerSimpleBlockItem(LEAF_LEAVES_DARK);

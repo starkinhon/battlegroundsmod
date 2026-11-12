@@ -1331,5 +1331,9 @@
   "shenlong.battlegroundsmod.desejo.amigo.resposta": "Your friend is at your side. Your wish has been granted.",
   "shenlong.battlegroundsmod.desejo.dominar": "Rule the world",
   "shenlong.battlegroundsmod.desejo.dominar.desc": "Pilaf's wish.",
-  "shenlong.battlegroundsmod.desejo.dominar.resposta": "That is beyond my power. Choose another wish."
+  "shenlong.battlegroundsmod.desejo.dominar.resposta": "That is beyond my power. Choose another wish.",
+  "block.battlegroundsmod.folhas_de_pinheiro": "Pine Needles",
+  "block.battlegroundsmod.folhas_de_pinheiro_escura": "Dark Pine Needles",
+  "block.battlegroundsmod.corda": "Rope",
+  "biome.battlegroundsmod.mar_da_nevoa": "Mist Sea"
 }

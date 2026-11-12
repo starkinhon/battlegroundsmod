@@ -66,11 +66,15 @@ public final class ModWorldgen {
     // The Deserto do Vento's dunes, wind-carved rock, bones and dead trees (WindDesertFeature).
     public static final Supplier<WindDesertFeature> WIND_DESERT = FEATURES.register("wind_desert",
             () -> new WindDesertFeature(NoneFeatureConfiguration.CODEC));
+    // The Mar da Névoa's stone pillars, islets, needles, old piers and rope bridges (MistSeaFeature).
+    public static final Supplier<MistSeaFeature> MIST_SEA = FEATURES.register("mist_sea",
+            () -> new MistSeaFeature(NoneFeatureConfiguration.CODEC));
 
     // The Naruto biomes of the normal overworld (put there by NarutoRegion).
     public static final ResourceKey<Biome> FLORESTA_DA_FOLHA = biome("floresta_da_folha");
     public static final ResourceKey<Biome> FLORESTA_DA_MORTE = biome("floresta_da_morte");
     public static final ResourceKey<Biome> DESERTO_DO_VENTO = biome("deserto_do_vento");
+    public static final ResourceKey<Biome> MAR_DA_NEVOA = biome("mar_da_nevoa");
     public static final TagKey<Biome> NARUTO_BIOMES = TagKey.create(Registries.BIOME,
             ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "universe_naruto"));
 

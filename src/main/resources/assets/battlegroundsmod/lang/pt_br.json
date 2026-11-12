@@ -1339,5 +1339,9 @@
   "shenlong.battlegroundsmod.desejo.amigo.resposta": "Seu amigo está ao seu lado. Seu desejo foi realizado.",
   "shenlong.battlegroundsmod.desejo.dominar": "Dominar o mundo",
   "shenlong.battlegroundsmod.desejo.dominar.desc": "O desejo do Pilaf.",
-  "shenlong.battlegroundsmod.desejo.dominar.resposta": "Isso está além do meu poder. Escolha outro desejo."
+  "shenlong.battlegroundsmod.desejo.dominar.resposta": "Isso está além do meu poder. Escolha outro desejo.",
+  "block.battlegroundsmod.folhas_de_pinheiro": "Folhas de Pinheiro",
+  "block.battlegroundsmod.folhas_de_pinheiro_escura": "Folhas de Pinheiro Escuras",
+  "block.battlegroundsmod.corda": "Corda",
+  "biome.battlegroundsmod.mar_da_nevoa": "Mar da Névoa"
 }

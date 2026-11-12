@@ -24,6 +24,32 @@ public final class LeafTreeGen {
 
     // ---- random -------------------------------------------------------------------------------------------------
 
+    // A voxel's position as one long key: x and z in 26 bits each (the whole world, +-33 million blocks), y in 12. The
+    // first version packed x and z in 12 bits, so a tree farther than 2048 blocks from the world's centre came out
+    // scrambled.
+    public static final class Keys {
+        private static final int H = 1 << 25;
+
+        private Keys() {
+        }
+
+        public static long key(int x, int y, int z) {
+            return ((long) (x + H) << 38) | ((long) (z + H) << 12) | (y + 2048);
+        }
+
+        public static int x(long k) {
+            return (int) (k >>> 38) - H;
+        }
+
+        public static int z(long k) {
+            return (int) ((k >>> 12) & 0x3FFFFFF) - H;
+        }
+
+        public static int y(long k) {
+            return (int) (k & 0xFFF) - 2048;
+        }
+    }
+
     static final class Rng {
         private int s;
 
@@ -75,7 +101,7 @@ public final class LeafTreeGen {
         final Map<Long, Byte> m = new HashMap<>();
 
         static long key(int x, int y, int z) {
-            return ((x + 2048L) * 4096 + (y + 256)) * 4096 + (z + 2048);
+            return LeafTreeGen.Keys.key(x, y, z);
         }
 
         int get(int x, int y, int z) {
@@ -105,10 +131,7 @@ public final class LeafTreeGen {
             int i = 0;
             for (Map.Entry<Long, Byte> e : m.entrySet()) {
                 long k = e.getKey();
-                int z = (int) (k % 4096) - 2048;
-                long r = (k - (z + 2048)) / 4096;
-                int y = (int) (r % 4096) - 256;
-                int x = (int) ((r - (y + 256)) / 4096) - 2048;
+                int x = LeafTreeGen.Keys.x(k), y = LeafTreeGen.Keys.y(k), z = LeafTreeGen.Keys.z(k);
                 out[i++] = x;
                 out[i++] = y;
                 out[i++] = z;
@@ -373,10 +396,7 @@ public final class LeafTreeGen {
                 continue;
             }
             long k = e.getKey();
-            int z = (int) (k % 4096) - 2048;
-            long r = (k - (z + 2048)) / 4096;
-            int y = (int) (r % 4096) - 256;
-            int x = (int) ((r - (y + 256)) / 4096) - 2048;
+            int x = LeafTreeGen.Keys.x(k), y = LeafTreeGen.Keys.y(k), z = LeafTreeGen.Keys.z(k);
             if (w.get(x, y + 1, z) != 0) {
                 continue;
             }
