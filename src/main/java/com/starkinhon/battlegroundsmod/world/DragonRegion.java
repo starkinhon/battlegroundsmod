@@ -153,6 +153,15 @@ public final class DragonRegion extends Region {
                         SurfaceRules.ifTrue(SurfaceRules.noiseCondition(Noises.SURFACE, 0.36, 0.46), packed),
                         snow))),
                 SurfaceRules.ifTrue(SurfaceRules.UNDER_FLOOR, SurfaceRules.ifTrue(SurfaceRules.not(SurfaceRules.steep()), snow))));
-        return SurfaceRules.ifTrue(SurfaceRules.abovePreliminarySurface(), SurfaceRules.sequence(peaks, desert, lands, sea, north));
+        // The Naruto Deserto do Vento (Stark 2026-11-11): plain sand over sandstone, the steep faces bare sandstone; the dunes,
+        // the cracked plates and the rocks come from WindDesertFeature.
+        SurfaceRules.RuleSource sandstone = SurfaceRules.state(Blocks.SANDSTONE.defaultBlockState());
+        SurfaceRules.RuleSource wind = SurfaceRules.ifTrue(SurfaceRules.isBiome(ModWorldgen.DESERTO_DO_VENTO), SurfaceRules.sequence(
+                SurfaceRules.ifTrue(SurfaceRules.ON_FLOOR, SurfaceRules.ifTrue(water, SurfaceRules.sequence(
+                        SurfaceRules.ifTrue(SurfaceRules.steep(), sandstone), white))),
+                SurfaceRules.ifTrue(SurfaceRules.UNDER_FLOOR, SurfaceRules.sequence(SurfaceRules.ifTrue(SurfaceRules.steep(), sandstone), white)),
+                SurfaceRules.ifTrue(SurfaceRules.stoneDepthCheck(0, true, 6, net.minecraft.world.level.levelgen.placement.CaveSurface.FLOOR),
+                        sandstone)));
+        return SurfaceRules.ifTrue(SurfaceRules.abovePreliminarySurface(), SurfaceRules.sequence(peaks, desert, lands, sea, north, wind));
     }
 }

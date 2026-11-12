@@ -66,6 +66,18 @@ public final class ModBlocks {
                     .noCollission().noOcclusion().instabreak().sound(SoundType.FUNGUS).lightLevel(state -> 6).pushReaction(
                             net.minecraft.world.level.material.PushReaction.DESTROY),
                     Block.box(2, 0, 2, 14, 10, 14)));
+    // Deserto do Vento (Stark 2026-11-11): the dunes' smooth sand, in eighths of a block like snow layers (no random
+    // ticks, so it never melts away), and the dry grass between the rocks.
+    public static final DeferredBlock<net.minecraft.world.level.block.SnowLayerBlock> SAND_LAYER = BLOCKS.register("camada_de_areia",
+            () -> new net.minecraft.world.level.block.SnowLayerBlock(BlockBehaviour.Properties.of().mapColor(MapColor.SAND)
+                    .replaceable().forceSolidOff().strength(0.5f).sound(SoundType.SAND)
+                    .isViewBlocking((state, level, pos) -> state.getValue(net.minecraft.world.level.block.SnowLayerBlock.LAYERS) >= 8)
+                    .pushReaction(net.minecraft.world.level.material.PushReaction.DESTROY)));
+    public static final DeferredBlock<com.starkinhon.battlegroundsmod.world.ThinPlantBlock> DRY_GRASS = BLOCKS.register("capim_seco",
+            () -> new com.starkinhon.battlegroundsmod.world.ThinPlantBlock(BlockBehaviour.Properties.of().mapColor(MapColor.SAND)
+                    .replaceable().noCollission().noOcclusion().instabreak().sound(SoundType.GRASS).pushReaction(
+                            net.minecraft.world.level.material.PushReaction.DESTROY),
+                    Block.box(2, 0, 2, 14, 13, 14)));
 
     static {
         BLOCK_ITEMS.registerSimpleBlockItem(DEATH_LEAVES);
@@ -80,6 +92,8 @@ public final class ModBlocks {
         BLOCK_ITEMS.registerSimpleBlockItem(ROTTEN_LEAVES);
         BLOCK_ITEMS.registerSimpleBlockItem(BARE_ROOTS);
         BLOCK_ITEMS.registerSimpleBlockItem(GLOW_MUSHROOM);
+        BLOCK_ITEMS.registerSimpleBlockItem(SAND_LAYER);
+        BLOCK_ITEMS.registerSimpleBlockItem(DRY_GRASS);
         BLOCK_ITEMS.registerSimpleBlockItem(LEAF_LEAVES);
         BLOCK_ITEMS.registerSimpleBlockItem(LEAF_LEAVES_LIGHT);
         BLOCK_ITEMS.registerSimpleBlockItem(LEAF_LEAVES_DARK);
