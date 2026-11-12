@@ -4416,6 +4416,853 @@ const DBFX = (() => {
 })();
 
 </script>
+<script>
+// Soldado do Freeza (Namek, naves e bases do Freeza). Fraco, tier 8. Armadura de batalha com ombreiras, scouter no
+// olho, e cada um de uma raça: pele de cor diferente, chifrinhos, barbatanas, careca com calombos ou orelhão.
+// Golpes: Rajada Tripla (estica o braço e solta três tiros de ki em sequência) e Bomba de Ki (junta uma bola roxa
+// acima da cabeça e arremessa: explode em área).
+'use strict';
+(() => {
+  const { n3, mix, mul } = ENG;
+  const { seq, loop } = FX;
+  const fr = x => x - Math.floor(x);
+  const cel = ENG.cel;
+  const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
+
+  const SKINS = [[230, 150, 170], [120, 170, 220], [130, 190, 110], [240, 170, 90], [170, 140, 210], [220, 200, 150]];
+  const HEADS = ['chifres', 'barbatanas', 'calombos', 'orelhas'];
+  const SUITS = [[40, 46, 70], [60, 40, 70], [30, 60, 60], [50, 50, 54]];
+  const PADS = [[200, 170, 80], [150, 110, 70], [90, 130, 170], [200, 200, 200]];
+  const LENS = [[90, 230, 120], [240, 90, 90], [90, 160, 250]];
+  function variant(seed) {
+    const R = FX.rnd(seed);
+    const pick = a => a[Math.floor(R() * a.length)];
+    return { seed, skin: pick(SKINS), head: pick(HEADS), suit: pick(SUITS), pad: pick(PADS), lens: pick(LENS), fat: R() < 0.3, scar: R() < 0.3, eye: R() < 0.5 ? 'normal' : 'grande' };
+  }
+
+  function painters(v) {
+    const S = v.seed;
+    const shade = (base, q, s, lo = 0.84, hi = 1.12) => cel(base, 0.62 - 0.38 * q.ny + 0.12 * (n3(q.ax * 0.3, q.ay * 0.3, q.az * 0.3, s + S) - 0.5) + (q.f === 'top' ? 0.25 : 0) - (q.f === 'bottom' ? 0.3 : 0), lo, hi);
+    const P = {};
+    P.skin = q => shade(v.skin, q, 1);
+    P.suit = q => { let c = shade(v.suit, q, 2); if (q.f !== 'top' && fr(q.ay * 0.25) < 0.06) c = mul(c, 0.86); return c; };
+    // peitoral: branco-creme, linhas de placa, a borda de baixo com faixa marrom
+    P.armor = q => {
+      let c = shade([236, 230, 214], q, 3, 0.86, 1.08);
+      if (q.py > q.b.h - 1.2) c = shade(v.pad, q, 4);
+      if (q.f === 'north' && Math.abs(q.px - q.b.w / 2) < 0.25 && q.py < q.b.h - 1.2) c = mul(c, 0.86);
+      if (q.f === 'north' && fr(q.py / 3.2) < 0.08) c = mul(c, 0.9);
+      return c;
+    };
+    P.pad = q => { let c = shade(v.pad, q, 5); if (q.f === 'top' && q.nx > 0.85) c = mul(c, 0.85); return c; };
+    P.boot = q => shade([236, 230, 214], q, 6);
+    P.glove = q => shade([236, 230, 214], q, 7);
+    P.head = q => {
+      let c = shade(v.skin, q, 8, 0.86, 1.08);
+      if (v.head === 'calombos' && q.f === 'top' && n3(q.ax * 0.9, 0, q.az * 0.9, 30 + S) > 0.6) c = mul(c, 0.86);
+      if (q.f !== 'north') return c;
+      const x = Math.floor(q.px), y = Math.floor(q.py);
+      const big = v.eye === 'grande';
+      if (y === 3 || (big && y === 2)) { if (x === 1 || x === 5) c = big ? [20, 20, 30] : [240, 240, 236]; if (!big && (x === 2 || x === 4)) c = [24, 24, 30]; }
+      if (y === 2 && !big && (x === 1 || x === 2 || x === 4 || x === 5)) c = mul(v.skin, 0.7);
+      if (y === 5 && x >= 2 && x <= 4) c = mul(v.skin, 0.6);
+      if (v.scar && x === 5 && y >= 1 && y <= 4) c = mix(c, [130, 60, 60], 0.5);
+      return c;
+    };
+    P.horn = q => cel([236, 226, 200], 0.4 + 0.6 * (1 - q.ny), 0.84, 1.1);
+    P.fin = q => { if (q.f === 'top' || q.f === 'bottom') return null; const top = 4 * (1 - q.pz / q.b.d) + 0.6; if ((q.b.h - q.py) > top) return null; return shade(mul(v.skin, 0.85), q, 9); };
+    P.scouterBand = q => shade([70, 70, 76], q, 10);
+    P.lens = q => mix(v.lens, [255, 255, 255], q.f === 'west' || q.f === 'east' ? 0.1 : 0.25);
+    return P;
+  }
+
+  function rigDef(P, v, low) {
+    const w = v.fat ? 9.4 : 8;
+    const arm = s => ({
+      name: s < 0 ? 'bracoD' : 'bracoE', pivot: [s * (w / 2 + 1.5), -9, 0], boxes: [{ x: -1.5, y: -1, z: -1.5, w: 3, h: 5, d: 3, p: P.suit }],
+      kids: [{
+        name: s < 0 ? 'anteD' : 'anteE', pivot: [0, 4, 0], boxes: [{ x: -1.4, y: 0, z: -1.4, w: 2.8, h: 4, d: 2.8, p: P.suit }],
+        kids: [{ name: s < 0 ? 'maoD' : 'maoE', pivot: [0, 4, 0], boxes: [{ x: -1.5, y: -1, z: -1.5, w: 3, h: 3.4, d: 3, p: P.glove }] }],
+      }],
+    });
+    const leg = s => ({
+      name: s < 0 ? 'pernaD' : 'pernaE', pivot: [s * 2, 12, 0], boxes: [{ x: -2, y: 0, z: -2, w: 4, h: 6, d: 4, p: P.suit }],
+      kids: [{ name: s < 0 ? 'canelaD' : 'canelaE', pivot: [0, 6, 0], boxes: [{ x: -2.1, y: 0, z: -2.1, w: 4.2, h: 6, d: 4.2, p: P.boot }] }],
+    });
+    const extras = [];
+    if (v.head === 'chifres') extras.push({ x: -3.4, y: -9.4, z: -1, w: 1.2, h: 2.6, d: 1.2, p: P.horn }, { x: 2.2, y: -9.4, z: -1, w: 1.2, h: 2.6, d: 1.2, p: P.horn });
+    if (v.head === 'barbatanas' && !low) extras.push({ x: -4.2, y: -8, z: -2, w: 0.4, h: 5, d: 6, p: P.fin }, { x: 3.8, y: -8, z: -2, w: 0.4, h: 5, d: 6, p: P.fin }, { x: -0.2, y: -11, z: -3, w: 0.4, h: 4, d: 7, p: P.fin });
+    if (v.head === 'orelhas') extras.push({ x: -5.6, y: -6, z: -0.6, w: 2, h: 3.4, d: 1.2, p: P.skin }, { x: 3.6, y: -6, z: -0.6, w: 2, h: 3.4, d: 1.2, p: P.skin });
+    if (v.head === 'calombos') extras.push({ x: -2, y: -8.8, z: -2, w: 4, h: 1, d: 4, p: P.head });
+    return {
+      name: 'raiz', pivot: [0, 0, 0], kids: [{
+        name: 'quadril', pivot: [0, 12, 0], boxes: [{ x: -w / 2, y: -2.4, z: -2.1, w, h: 2.6, d: 4.2, p: P.suit }], kids: [{
+          name: 'tronco', pivot: [0, -2.2, 0], boxes: [{ x: -w / 2, y: -10, z: -2, w, h: 10, d: 4, p: P.suit }, { x: -w / 2 - 0.4, y: -10.2, z: -2.5, w: w + 0.8, h: 8.8, d: 5, p: P.armor }], kids: [
+            {
+              name: 'cabeca', pivot: [0, -10, 0], boxes: [
+                { x: -3.5, y: -7, z: -3.5, w: 7, h: 7, d: 7, p: P.head }, ...extras,
+                { x: -3.8, y: -5.6, z: -2, w: 0.6, h: 1.2, d: 4.4, p: P.scouterBand }, { x: -4.1, y: -6.1, z: -2.6, w: 1.2, h: 2, d: 1.4, p: P.scouterBand },
+                ...(low ? [] : [{ x: -3.9, y: -5.4, z: -4.0, w: 3, h: 2.2, d: 0.4, p: P.lens }]),
+              ],
+            },
+            arm(-1), arm(1),
+            ...[-1, 1].map(s => ({ name: s < 0 ? 'ombD' : 'ombE', pivot: [s * (w / 2 - 0.6), -9.6, 0], rot: [0, 0, -s * 0.32], boxes: [{ x: s < 0 ? -5.4 : 0, y: -1.2, z: -2.9, w: 5.4, h: 1.6, d: 5.8, p: P.pad }, ...(low ? [] : [{ x: s < 0 ? -5.0 : 0.4, y: 0.4, z: -2.6, w: 4.6, h: 1.2, d: 5.2, p: P.pad }])] })),
+          ],
+        }],
+      }, leg(-1), leg(1)],
+    };
+  }
+
+  function stance(r) {
+    r('pernaD', -0.15, 0.2, 0.06); r('canelaD', 0.2, 0, 0); r('pernaE', 0.1, -0.1, -0.06); r('canelaE', 0.1, 0, 0);
+    r('bracoD', -0.15, 0, 0.12); r('anteD', -0.35, 0, 0); r('bracoE', -0.1, 0, -0.12); r('anteE', -0.3, 0, 0);
+  }
+  const KI = [1.0, 0.42, 0.85];
+  // bola de energia opaca (não estoura em branco contra céu claro): cor cheia na borda, miolo claro, faixas que giram
+  function kiBall(c1, c2) {
+    const mat = new THREE.ShaderMaterial({
+      transparent: true, depthWrite: false,
+      uniforms: { uA: { value: new THREE.Color(...c1) }, uB: { value: new THREE.Color(...c2) }, uK: { value: 1 }, uT: { value: 0 } },
+      vertexShader: 'varying vec3 vN; varying vec3 vV; varying vec3 vP; void main(){ vN=normalize(normalMatrix*normal); vec4 mv=modelViewMatrix*vec4(position,1.0); vV=normalize(-mv.xyz); vP=position; gl_Position=projectionMatrix*mv; }',
+      fragmentShader: `varying vec3 vN; varying vec3 vV; varying vec3 vP; uniform vec3 uA, uB; uniform float uK, uT;
+        float h(vec3 p){ p=fract(p*0.3183+vec3(.71,.11,.42)); p*=17.0; return fract(p.x*p.y*p.z*(p.x+p.y+p.z)); }
+        float n(vec3 x){ vec3 i=floor(x), f=fract(x); f=f*f*(3.0-2.0*f);
+          return mix(mix(mix(h(i),h(i+vec3(1,0,0)),f.x),mix(h(i+vec3(0,1,0)),h(i+vec3(1,1,0)),f.x),f.y),
+                     mix(mix(h(i+vec3(0,0,1)),h(i+vec3(1,0,1)),f.x),mix(h(i+vec3(0,1,1)),h(i+vec3(1,1,1)),f.x),f.y),f.z); }
+        void main(){
+          float face = abs(dot(vN, vV));
+          float a1 = atan(vP.z, vP.x) + uT*5.0 + vP.y*2.0;
+          float sw = n(vec3(cos(a1)*2.0, vP.y*3.0 - uT*3.0, sin(a1)*2.0) + uT);
+          float core = smoothstep(0.55, 1.0, face + 0.25*sw);
+          vec3 c = mix(uA*0.75, uA, smoothstep(0.2, 0.6, face));
+          c = mix(c, uB, core);
+          c += uA * 0.35 * smoothstep(0.55, 0.85, sw);
+          float a = smoothstep(0.0, 0.25, face) * uK;
+          gl_FragColor = vec4(c, a);
+        }`,
+    });
+    const m = new THREE.Mesh(new THREE.SphereGeometry(1, 28, 20), mat);
+    m.frustumCulled = false;
+    m.at = (p, r, k, t) => { m.visible = k > 0.01; m.position.copy(p); m.scale.setScalar(r); mat.uniforms.uK.value = k; mat.uniforms.uT.value = t; };
+    return m;
+  }
+  const PURP = [[0.62, 0.22, 0.95], [1.0, 0.85, 1.0]], PINK = [[1.0, 0.35, 0.75], [1.0, 0.92, 0.97]];
+  function anim(P, t, mode, a, obj, e, ctx) {
+    const r = (n, x, y, z) => { if (!P[n]) return; const o = P[n].obj.rotation; o.x += x; o.y += y; o.z += z; };
+    const breath = loop([[0, 0], [0.45, 1], [0.999, 0]], t / 3);
+    const handOf = (n, off = V3(0, 3.6, 0)) => { obj.updateMatrixWorld(true); return P[n].obj.localToWorld(off.clone()); };
+
+    if (mode === 'parado') {
+      stance(r);
+      r('tronco', -0.03 * breath, 0, 0);
+      // aperta o botão do scouter de vez em quando
+      const scan = seq([[0.6, 0], [0.68, 1, 'out'], [0.85, 1], [0.92, 0]], fr(t / 5));
+      r('bracoD', -2.1 * scan, 0, 0.5 * scan); r('anteD', -1.4 * scan, 0, 0); r('cabeca', -0.1 * scan, 0.2 * scan, 0);
+      if (scan > 0.8) ctx.get('scan', () => DBFX.glow(e.v.lens.map(c => c / 255))).at(handOf('cabeca', V3(-2.4, -4.3, -4.2)), 0.12, 0.6 + 0.4 * Math.sin(t * 40), t);
+      return;
+    }
+    if (mode === 'andar') {
+      const ph = t * 1.1;
+      for (const [s, off] of [['D', 0], ['E', 0.5]]) {
+        r('perna' + s, 0.5 * Math.sin((ph + off) * Math.PI * 2), 0, 0); r('canela' + s, 0.4 * Math.max(0, Math.sin((ph + off) * Math.PI * 2 + 1.4)), 0, 0);
+        r('braco' + s, -0.4 * Math.sin((ph + off) * Math.PI * 2), 0, 0); r('ante' + s, -0.3, 0, 0);
+      }
+      P.quadril.obj.position.y += 0.5 * Math.abs(Math.sin(ph * Math.PI * 2));
+      return;
+    }
+
+    if (mode === 'rajada') {
+      const T = t % 2.8;
+      const R = ctx.ref; const RZ = -6.5; R.place(0, RZ, 0);
+      stance(r);
+      // vira de lado, estica o braço direito com a palma aberta e solta três tiros, o braço dá um tranco a cada um
+      const aim = seq([[0, 0], [0.35, 1, 'out'], [1.6, 1], [2.0, 0, 'io']], T);
+      const SH = [0.6, 0.86, 1.12];
+      const kick = SH.reduce((k, st) => k + seq([[st, 0], [st + 0.03, 1], [st + 0.16, 0]], T), 0);
+      r('tronco', 0, 0.55 * aim, 0); r('quadril', 0, 0.3 * aim, 0);
+      r('bracoD', -1.55 * aim + 0.25 * kick, -0.5 * aim, 0); r('anteD', 0.05 * aim, 0, 0); r('maoD', -0.9 * aim, 0, 0);
+      r('bracoE', 0.2 * aim, 0, -0.3 * aim);
+      r('cabeca', 0, -0.45 * aim, 0);
+      const palm = handOf('maoD', V3(0, 3, -1.2));
+      if (T > 0.35 && T < 1.3) ctx.get('palma', () => kiBall(...PINK)).at(palm, 0.09 + 0.03 * Math.sin(T * 30), 1, T); ctx.get('palmaH', () => DBFX.glow(KI)).at(palm, 0.22, 0.3, T);
+      SH.forEach((st, i) => {
+        const age = T - st; if (age < 0 || age > 0.9) return;
+        const tgt = V3((i - 1) * 0.25, 1.1 + (i === 2 ? 0.3 : 0), RZ + 0.2);
+        const f = Math.min(1, age / 0.22);
+        const p = palm.clone().lerp(tgt, f);
+        if (f < 1) {
+          ctx.get('tiro' + i, () => kiBall(...PINK)).at(p, 0.13, 1, T + i);
+          ctx.get('halo' + i, () => DBFX.glow(KI)).at(p, 0.3, 0.35, T + i);
+          ctx.get('rastro' + i, () => DBFX.tracer(KI)).at(palm, tgt, f, 1.2);
+        } else {
+          const k = (age - 0.22) / 0.6;
+          if (k < 1) ctx.get('boom' + i, FX.volume).set(tgt, 0.45, k, { fire: 0.6, seed: 4.4 + i * 3.1, dens: 9, rise: 0.4, smoke: [0.42, 0.3, 0.48] });
+          if (k < 0.2) { ctx.flash(tgt, 0.8); ctx.shake(0.35); }
+        }
+        if (age < 0.06) ctx.get('clarao', () => DBFX.muzzle()).at(palm, ctx.camera, 1 - age / 0.06, st * 7, 0.7);
+      });
+      const fl = SH.reduce((k, st) => k + seq([[st + 0.22, 0], [st + 0.28, 1], [st + 0.5, 0]], T), 0);
+      R.lean(-0.25 * fl); R.place(0, RZ - 0.25 * seq([[0.8, 0], [1.5, 1]], T), 0);
+      return;
+    }
+
+    if (mode === 'bomba') {
+      const T = t % 3.6;
+      const R = ctx.ref; const RZ = -7; R.place(0, RZ, 0);
+      stance(r);
+      // ergue as duas mãos, a bola roxa cresce estalando, e ele arremessa por cima do ombro
+      const raise = seq([[0, 0], [0.4, 1, 'out'], [1.45, 1], [1.55, 0]], T);
+      const thr = seq([[1.45, 0], [1.58, 1, 'snap'], [2.0, 1], [2.5, 0, 'io']], T);
+      const grow = seq([[0.35, 0], [1.4, 1, 'in']], T);
+      r('bracoD', -2.9 * raise - 1.4 * thr, 0, 0.25 * raise); r('bracoE', -2.9 * raise - 1.4 * thr, 0, -0.25 * raise);
+      r('anteD', -0.4 * raise, 0, 0); r('anteE', -0.4 * raise, 0, 0);
+      r('tronco', -0.25 * raise + 0.4 * thr, 0, 0); r('cabeca', -0.3 * raise + 0.2 * thr, 0, 0);
+      r('pernaD', -0.3 * thr, 0, 0); r('canelaD', 0.3 * thr, 0, 0);
+      const top = V3(0, 3.0 + 0.2 * grow, 0.1);
+      const land = V3(0, 0.5, RZ + 0.3);
+      if (T > 0.35 && T < 1.55) {
+        ctx.get('bola', () => kiBall(...PURP)).at(top, 0.08 + 0.4 * grow, 1, T);
+        ctx.get('miolo', () => DBFX.glow([0.75, 0.3, 1.0])).at(top, 0.15 + 0.75 * grow, 0.3, T * 1.7);
+        ctx.get('estalos', () => DBFX.grains({ n: 50, seed: 17, palette: [[230, 150, 255], [255, 220, 255], [180, 90, 250]], size: [0.015, 0.035], drag: 4, grav: 0, life: 0.25, spread: 1.1, add: true, cone: Rr => { const a = Rr() * 6.28, b = Rr() * 3.14; return [Math.sin(b) * Math.cos(a) * 3, Math.cos(b) * 3, Math.sin(b) * Math.sin(a) * 3]; } })).at(top, T - 0.35);
+        ctx.get('luzBola', () => DBFX.light(0xb060ff)).at(top, 2.5 * grow, 5);
+      }
+      if (T >= 1.55 && T < 2.1) {
+        const f = (T - 1.55) / 0.55;
+        const p = top.clone().lerp(land, f); p.y += 1.6 * Math.sin(Math.PI * f);
+        ctx.get('bola', () => kiBall(...PURP)).at(p, 0.48, 1, T);
+        ctx.get('miolo', () => DBFX.glow([0.75, 0.3, 1.0])).at(p, 0.9, 0.3, T * 1.7);
+      }
+      if (T >= 2.1) {
+        const k = (T - 2.1) / 1.3;
+        ctx.get('explosao', FX.volume).set(land.clone().add(V3(0, 0.4, 0)), 1.5, k, { fire: 0.8, seed: 7.7, dens: 11, rise: 0.5, smoke: [0.4, 0.28, 0.5] });
+        ctx.flash(land, Math.max(0, 1 - k * 4)); ctx.shake(Math.max(0, 0.9 - k * 1.5));
+        ctx.roarRing(V3(land.x, 0.03, land.z), k * 1.6);
+        ctx.get('terra', () => FX.debris(24, 41, [[110, 160, 130], [80, 130, 100], [140, 120, 100], [60, 90, 70]])).at(land.clone(), T - 2.1);
+        const fly = seq([[2.1, 0], [2.6, 1, 'out']], T);
+        R.place(0, RZ - 2 * fly, 1.0 * Math.sin(Math.PI * fly)); R.lean(-1.2 * Math.min(1, fly * 2) * (1 - seq([[3.1, 0], [3.6, 1]], T)));
+      }
+      return;
+    }
+  }
+
+  window.MOBS = window.MOBS || [];
+  const fixed = [variant(2), variant(16), variant(39)];
+  fixed[0].head = 'chifres'; fixed[0].skin = SKINS[0]; fixed[1].head = 'barbatanas'; fixed[1].skin = SKINS[1]; fixed[1].lens = LENS[1]; fixed[2].head = 'calombos'; fixed[2].skin = SKINS[3]; fixed[2].fat = true; fixed[2].eye = 'grande';
+  const def = v => ({ def: rigDef(painters(v), v, false), low: rigDef(painters(v), v, true) });
+  window.MOBS.push({
+    id: 'soldado_freeza', nome: 'Soldado do Freeza', bioma: 'Namek e estruturas', tier: 'Fraco · tier 8',
+    variants: fixed.map((v, i) => ({ nome: ['Chifrudo', 'Barbatana', 'Gordo careca'][i], v, ...def(v) })),
+    randomVariant: () => { const v = variant(Math.floor(Math.random() * 1e5)); return { nome: 'Sorteado', v, ...def(v) }; },
+    anim, modes: [['parado', 'Parado'], ['andar', 'Andar'], ['rajada', 'Rajada Tripla'], ['bomba', 'Bomba de Ki']],
+    cam: 6, lookY: 1.1, lookZ: { rajada: -3, bomba: -3.2 }, camFar: { rajada: 9, bomba: 10 }, camYaw: { rajada: -1.25, bomba: -1.2 },
+    info: {
+      'Tamanho': '1,85 bloco (chifre e barbatana passam um pouco)',
+      'Vida': '34 (tier 8)',
+      'Jeito': 'Hostil, em esquadrão de 3 a 4 em Namek e em volta das naves. Um aperta o scouter e chama os outros.',
+      'Rajada Tripla': 'Estica o braço e solta três tiros rosados seguidos. No jogo o dano dos três é somado em pacotes (o Escudo de tier não come cada tirinho).',
+      'Bomba de Ki': 'Ergue as mãos, junta uma bola roxa por 1 s (dá pra ver e correr) e arremessa: explode em área e abre um buraco.',
+      'Solta': 'Scouter quebrado (conserta na bancada), pedaço de armadura; raro: cápsula de nave.',
+      'Variações': 'Raça (cor da pele, chifres, barbatanas, calombos ou orelhão), olho, cor do macacão, ombreiras, lente do scouter e corpo gordo sorteados.',
+    },
+  });
+})();
+
+</script>
+<script>
+// Cell Jr. (evento dos Jogos do Cell). Pequeno (1,3 bloco), rápido e debochado. Corpo azul com pintas escuras, rosto
+// claro com as listras roxas do Cell, coroa de cristas e asinhas pretas nas costas.
+// Golpes: Kamehameha Jr. (junta as mãos do lado, bola azul cresce e solta o raio) e Golpe Sumido (pisca, some,
+// aparece atrás do alvo e chuta).
+'use strict';
+(() => {
+  const { n3, mix, mul } = ENG;
+  const { seq, loop } = FX;
+  const fr = x => x - Math.floor(x);
+  const cel = ENG.cel;
+  const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
+
+  const BODIES = [[110, 175, 230], [96, 160, 220], [126, 186, 236], [104, 170, 214]];
+  const SPOTS = [[36, 64, 118], [44, 58, 104], [30, 70, 110]];
+  function variant(seed) {
+    const R = FX.rnd(seed);
+    const pick = a => a[Math.floor(R() * a.length)];
+    return { seed, body: pick(BODIES), spot: pick(SPOTS), spotK: 0.69 + R() * 0.05, grin: R() < 0.5 };
+  }
+
+  function painters(v) {
+    const S = v.seed;
+    const shade = (base, q, s, lo = 0.84, hi = 1.12) => cel(base, 0.62 - 0.38 * q.ny + 0.1 * (n3(q.ax * 0.3, q.ay * 0.3, q.az * 0.3, s + S) - 0.5) + (q.f === 'top' ? 0.25 : 0) - (q.f === 'bottom' ? 0.3 : 0), lo, hi);
+    // pintas do Cell: manchas redondas de tamanhos diferentes, não um padrão repetido
+    const spots = (q, c) => { const k = n3(q.ax * 0.55, q.ay * 0.55, q.az * 0.55, 70 + S); return k > v.spotK ? mix(c, v.spot, k > v.spotK + 0.05 ? 1 : 0.5) : c; };
+    const P = {};
+    P.body = q => spots(q, shade(v.body, q, 1));
+    P.belly = q => { const c = shade(mix(v.body, [230, 236, 246], 0.55), q, 2); return q.f === 'north' && fr(q.py / 1.6) < 0.18 ? mul(c, 0.9) : c; };
+    P.pale = q => shade([236, 232, 242], q, 3, 0.86, 1.08);
+    P.dark = q => shade([34, 34, 44], q, 4, 0.8, 1.25);
+    P.head = q => {
+      let c = shade(v.body, q, 5, 0.86, 1.08);
+      if (q.f !== 'north') return spots(q, c);
+      // rosto em pixel de Minecraft (8x7): moldura azul, rosto claro, olho branco com íris rosa pro meio,
+      // sobrancelha escura, listras roxas das bochechas e boca
+      const x = Math.min(7, Math.floor(q.px)), y = Math.min(6, Math.floor(q.py)), m = Math.min(x, 7 - x);
+      const PALE = shade([238, 234, 244], q, 6, 0.9, 1.05);
+      if (y >= 1 && m >= 1 && !(y === 6 && m === 1)) c = PALE;
+      if (y === 1 && (m === 1 || m === 2)) c = [50, 40, 64];
+      if (y === 2 && m === 1) c = [250, 248, 252];
+      if (y === 2 && m === 2) c = [205, 45, 100];
+      if ((y === 3 || y === 4) && m === 1) c = [150, 70, 170];
+      if (y === 5 && (m === 3 || (v.grin && m === 2))) c = v.grin ? (m === 3 ? [110, 30, 80] : [150, 60, 120]) : [150, 70, 140];
+      return c;
+    };
+    P.crest = q => { let c = shade(mul(v.body, 0.85), q, 7); if (q.py < 0.6) c = mul(c, 1.15); return spots(q, c); };
+    P.wing = q => {
+      if (q.f === 'top' || q.f === 'bottom') return null;
+      // élitro: oval cortado, brilho na borda
+      const u = q.px / q.b.w, w = q.py / q.b.h;
+      const e = ((u - 0.5) / 0.5) ** 2 + ((w - 0.45) / 0.55) ** 2;
+      if (e > 1) return null;
+      return e > 0.7 ? [70, 72, 92] : shade([28, 28, 38], q, 8, 0.8, 1.3);
+    };
+    return P;
+  }
+
+  function rigDef(P, v, low) {
+    const arm = s => ({
+      name: s < 0 ? 'bracoD' : 'bracoE', pivot: [s * 4, -5.4, 0], boxes: [{ x: -1.2, y: -0.8, z: -1.2, w: 2.4, h: 3.6, d: 2.4, p: P.body }],
+      kids: [{
+        name: s < 0 ? 'anteD' : 'anteE', pivot: [0, 2.8, 0], boxes: [{ x: -1.1, y: 0, z: -1.1, w: 2.2, h: 3, d: 2.2, p: P.body }],
+        kids: [{ name: s < 0 ? 'maoD' : 'maoE', pivot: [0, 3, 0], boxes: [{ x: -1.15, y: -0.4, z: -1.15, w: 2.3, h: 2.2, d: 2.3, p: P.dark }] }],
+      }],
+    });
+    const leg = s => ({
+      name: s < 0 ? 'pernaD' : 'pernaE', pivot: [s * 1.6, 13, 0], boxes: [{ x: -1.5, y: 0, z: -1.5, w: 3, h: 5.5, d: 3, p: P.body }],
+      kids: [{ name: s < 0 ? 'canelaD' : 'canelaE', pivot: [0, 5.5, 0], boxes: [{ x: -1.55, y: 0, z: -1.55, w: 3.1, h: 3.5, d: 3.1, p: P.body }, { x: -1.7, y: 3.5, z: -2.2, w: 3.4, h: 2, d: 3.8, p: P.pale }] }],
+    });
+    const crests = low ? [{ x: -4.2, y: -9.4, z: -3, w: 8.4, h: 2.6, d: 6, p: P.crest }] : [
+      { x: -4.4, y: -9.4, z: -3.2, w: 1.6, h: 3.4, d: 6.2, p: P.crest }, { x: 2.8, y: -9.4, z: -3.2, w: 1.6, h: 3.4, d: 6.2, p: P.crest },
+      { x: -4.0, y: -10.8, z: -2.0, w: 1.3, h: 1.8, d: 4.0, p: P.crest }, { x: 2.7, y: -10.8, z: -2.0, w: 1.3, h: 1.8, d: 4.0, p: P.crest },
+      { x: -0.7, y: -8.4, z: -4.2, w: 1.4, h: 1.6, d: 2.0, p: P.crest },
+    ];
+    return {
+      name: 'raiz', pivot: [0, 0, 0], kids: [{
+        name: 'quadril', pivot: [0, 13, 0], boxes: [{ x: -3, y: -1.6, z: -1.8, w: 6, h: 2, d: 3.6, p: P.body }], kids: [{
+          name: 'tronco', pivot: [0, -1.4, 0], boxes: [{ x: -3.2, y: -6, z: -1.9, w: 6.4, h: 6, d: 3.8, p: P.body }, { x: -2.2, y: -5.4, z: -2.1, w: 4.4, h: 5, d: 0.4, p: P.belly }], kids: [
+            { name: 'cabeca', pivot: [0, -6, 0], boxes: [{ x: -4, y: -7, z: -3.5, w: 8, h: 7, d: 7, p: P.head }, ...crests] },
+            arm(-1), arm(1),
+            ...(low ? [] : [-1, 1].map(s => ({ name: s < 0 ? 'asaD' : 'asaE', pivot: [s * 0.6, -5.6, 1.9], rot: [0.12, -s * 0.35, -s * 0.15], boxes: [{ x: s < 0 ? -4 : 0, y: 0, z: 0, w: 4, h: 6.4, d: 0.4, p: P.wing }] }))),
+          ],
+        }],
+      }, leg(-1), leg(1)],
+    };
+  }
+
+  function stance(r) {
+    r('pernaD', -0.2, 0.2, 0.08); r('canelaD', 0.3, 0, 0); r('pernaE', 0.15, -0.15, -0.08); r('canelaE', 0.15, 0, 0);
+    r('bracoD', -0.1, 0, 0.2); r('anteD', -0.4, 0, 0); r('bracoE', -0.1, 0, -0.2); r('anteE', -0.4, 0, 0);
+  }
+
+  // raio do Kamehameha: tubo com miolo claro, borda azul e ondas correndo pra frente (normal blending, não estoura no céu)
+  function beam() {
+    const mat = new THREE.ShaderMaterial({
+      transparent: true, depthWrite: false, side: THREE.DoubleSide,
+      uniforms: { uK: { value: 1 }, uT: { value: 0 }, uL: { value: 1 } },
+      vertexShader: 'varying vec3 vN; varying vec3 vV; varying vec2 vU; void main(){ vN=normalize(normalMatrix*normal); vec4 mv=modelViewMatrix*vec4(position,1.0); vV=normalize(-mv.xyz); vU=uv; gl_Position=projectionMatrix*mv; }',
+      fragmentShader: `varying vec3 vN; varying vec3 vV; varying vec2 vU; uniform float uK, uT, uL;
+        float h(vec2 p){ return fract(sin(dot(p, vec2(41.3, 289.1)))*43758.5); }
+        float n(vec2 x){ vec2 i=floor(x), f=fract(x); f=f*f*(3.0-2.0*f); return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x),f.y); }
+        void main(){
+          float face = abs(dot(vN, vV));
+          float along = vU.y * uL * 3.0;
+          float w = n(vec2(vU.x * 8.0, along - uT * 14.0)) * 0.6 + n(vec2(vU.x * 19.0, along * 2.3 - uT * 22.0)) * 0.4;
+          float core = smoothstep(0.45, 0.95, face + 0.2 * (w - 0.5));
+          vec3 c = mix(vec3(0.18, 0.45, 1.0), vec3(0.55, 0.85, 1.0), smoothstep(0.1, 0.5, face));
+          c = mix(c, vec3(0.94, 0.98, 1.0), core);
+          float a = smoothstep(0.0, 0.3, face) * (0.75 + 0.25 * w) * uK;
+          gl_FragColor = vec4(c, a);
+        }`,
+    });
+    const g = new THREE.CylinderGeometry(1, 1, 1, 28, 1, true); g.rotateX(Math.PI / 2);
+    const m = new THREE.Mesh(g, mat);
+    m.frustumCulled = false;
+    m.at = (a, b, r, k, t) => {
+      m.visible = k > 0.01;
+      const d = b.clone().sub(a), L = d.length();
+      m.position.copy(a).add(b).multiplyScalar(0.5); m.lookAt(b); m.scale.set(r, r, L);
+      mat.uniforms.uK.value = k; mat.uniforms.uT.value = t; mat.uniforms.uL.value = L;
+    };
+    return m;
+  }
+  function ball(c1, c2) {
+    const mat = new THREE.ShaderMaterial({
+      transparent: true, depthWrite: false,
+      uniforms: { uA: { value: new THREE.Color(...c1) }, uB: { value: new THREE.Color(...c2) }, uK: { value: 1 }, uT: { value: 0 } },
+      vertexShader: 'varying vec3 vN; varying vec3 vV; varying vec3 vP; void main(){ vN=normalize(normalMatrix*normal); vec4 mv=modelViewMatrix*vec4(position,1.0); vV=normalize(-mv.xyz); vP=position; gl_Position=projectionMatrix*mv; }',
+      fragmentShader: `varying vec3 vN; varying vec3 vV; varying vec3 vP; uniform vec3 uA, uB; uniform float uK, uT;
+        float h(vec3 p){ p=fract(p*0.3183+vec3(.71,.11,.42)); p*=17.0; return fract(p.x*p.y*p.z*(p.x+p.y+p.z)); }
+        float n(vec3 x){ vec3 i=floor(x), f=fract(x); f=f*f*(3.0-2.0*f);
+          return mix(mix(mix(h(i),h(i+vec3(1,0,0)),f.x),mix(h(i+vec3(0,1,0)),h(i+vec3(1,1,0)),f.x),f.y),
+                     mix(mix(h(i+vec3(0,0,1)),h(i+vec3(1,0,1)),f.x),mix(h(i+vec3(0,1,1)),h(i+vec3(1,1,1)),f.x),f.y),f.z); }
+        void main(){
+          float face = abs(dot(vN, vV));
+          float a1 = atan(vP.z, vP.x) + uT * 6.0 + vP.y * 2.5;
+          float sw = n(vec3(cos(a1) * 2.0, vP.y * 3.0 - uT * 4.0, sin(a1) * 2.0) + uT);
+          vec3 c = mix(uA * 0.8, uA, smoothstep(0.2, 0.6, face));
+          c = mix(c, uB, smoothstep(0.5, 1.0, face + 0.25 * sw));
+          gl_FragColor = vec4(c, smoothstep(0.0, 0.25, face) * uK);
+        }`,
+    });
+    const m = new THREE.Mesh(new THREE.SphereGeometry(1, 28, 20), mat);
+    m.frustumCulled = false;
+    m.at = (p, r, k, t) => { m.visible = k > 0.01; m.position.copy(p); m.scale.setScalar(r); mat.uniforms.uK.value = k; mat.uniforms.uT.value = t; };
+    return m;
+  }
+  const BLUE = [[0.3, 0.6, 1.0], [0.92, 0.97, 1.0]];
+  const K = 0.68, Y0 = 1.5 * K;
+
+  // fantasma do corpo (imagem residual do sumiço): cópia translúcida que copia a pose do original a cada quadro
+  function ghost(src) {
+    const g = src.clone(true);
+    g.traverse(o => { if (o.material) { o.material = o.material.clone(); o.material.transparent = true; o.material.depthWrite = false; o.material.alphaTest = 0.01; o.material.color = new THREE.Color(0.6, 0.85, 1.0); } });
+    const A = [], B = [];
+    src.traverse(o => A.push(o)); g.traverse(o => B.push(o));
+    g.at = (p, ry, k) => {
+      g.visible = k > 0.01;
+      for (let i = 1; i < A.length; i++) { B[i].position.copy(A[i].position); B[i].rotation.copy(A[i].rotation); B[i].scale.copy(A[i].scale); }
+      g.position.copy(p); g.rotation.set(0, ry, 0); g.scale.copy(src.scale);
+      g.traverse(o => { if (o.material) o.material.opacity = k; });
+    };
+    return g;
+  }
+
+  function anim(P, t, mode, a, obj, e, ctx) {
+    // modelo em escala de criança: 0,68 do tamanho (1,3 bloco com as cristas)
+    obj.scale.set(-K / 16, -K / 16, K / 16); obj.position.y += Y0 - 1.5;
+    const r = (n, x, y, z) => { if (!P[n]) return; const o = P[n].obj.rotation; o.x += x; o.y += y; o.z += z; };
+    const at = (n, off) => { obj.updateMatrixWorld(true); return P[n].obj.localToWorld(off.clone()); };
+    const breath = loop([[0, 0], [0.45, 1], [0.999, 0]], t / 2.2);
+    const wings = k => { r('asaD', 0, -0.5 * k, -0.3 * k); r('asaE', 0, 0.5 * k, 0.3 * k); };
+
+    if (mode === 'parado') {
+      stance(r);
+      // pulinho debochado no lugar, mão na cintura e cabeça inclinada rindo
+      const hop = Math.abs(Math.sin(t * 2.4));
+      obj.position.y += 0.05 * hop;
+      r('bracoE', 0, 0, -0.6); r('anteE', -1.6, 0, 0);
+      r('cabeca', -0.05 * breath, 0, 0.18 + 0.05 * Math.sin(t * 2.4));
+      r('tronco', -0.04 * breath, 0, 0);
+      wings(0.15 + 0.15 * Math.sin(t * 9));
+      return;
+    }
+    if (mode === 'andar') {
+      const ph = t * 1.6;
+      for (const [s, off] of [['D', 0], ['E', 0.5]]) {
+        r('perna' + s, 0.6 * Math.sin((ph + off) * Math.PI * 2), 0, 0); r('canela' + s, 0.5 * Math.max(0, Math.sin((ph + off) * Math.PI * 2 + 1.4)), 0, 0);
+        r('braco' + s, -0.5 * Math.sin((ph + off) * Math.PI * 2), 0, 0); r('ante' + s, -0.4, 0, 0);
+      }
+      P.quadril.obj.position.y += 0.5 * Math.abs(Math.sin(ph * Math.PI * 2));
+      r('tronco', 0.12, 0, 0);
+      wings(0.2);
+      return;
+    }
+
+    if (mode === 'kame') {
+      const T = t % 3.4;
+      const R = ctx.ref; const RZ = -7; R.place(0, RZ, 0);
+      stance(r);
+      // ka-me-ha-me: gira o tronco, mãos em concha do lado direito; HA: empurra pra frente com as pernas abertas
+      const cup = seq([[0, 0], [0.35, 1, 'out'], [1.25, 1], [1.35, 0]], T);
+      const push = seq([[1.25, 0], [1.38, 1, 'snap'], [2.3, 1], [2.8, 0, 'io']], T);
+      const grow = seq([[0.3, 0], [1.25, 1, 'in']], T);
+      r('tronco', 0.1 * cup, 0.7 * cup, 0); r('quadril', 0, 0.25 * cup, 0); r('cabeca', 0, -0.6 * cup, 0);
+      r('bracoD', -0.5 * cup - 1.5 * push, 0.4 * cup, 0.2 * cup); r('anteD', -1.3 * cup + 0.9 * push * 0, 0, 0);
+      r('bracoE', -0.9 * cup - 1.5 * push, 0.9 * cup, 0.5 * cup - 0.05 * push); r('anteE', -1.1 * cup, 0, 0);
+      r('maoD', -0.6 * push, 0, 0); r('maoE', -0.6 * push, 0, 0);
+      r('pernaD', -0.25 * push, 0, 0.25 * push); r('pernaE', 0.25 * push, 0, -0.25 * push); r('canelaD', 0.35 * push, 0, 0);
+      r('tronco', 0.2 * push, 0, 0);
+      obj.position.z += 0.25 * push * (1 - seq([[2.3, 0], [2.8, 1]], T));
+      wings(0.4 * push);
+      const hands = at('maoD', V3(0, 1.6, 0)).lerp(at('maoE', V3(0, 1.6, 0)), 0.5);
+      if (T > 0.3 && T < 1.4) {
+        ctx.get('bola', () => ball(...BLUE)).at(hands, 0.04 + 0.16 * grow, 1, T);
+        ctx.get('halo', () => DBFX.glow([0.3, 0.6, 1.0])).at(hands, 0.1 + 0.35 * grow, 0.35, T);
+        ctx.get('faisca', () => DBFX.grains({ n: 36, seed: 23, palette: [[150, 210, 255], [230, 245, 255], [90, 160, 255]], size: [0.012, 0.028], drag: 3, grav: 0, life: 0.3, spread: 1.0, add: true, cone: Rr => { const a = Rr() * 6.28, b = Rr() * 3.14; return [-Math.sin(b) * Math.cos(a) * 1.6, -Math.cos(b) * 1.6, -Math.sin(b) * Math.sin(a) * 1.6]; } })).at(hands, T - 0.3);
+        ctx.get('luz', () => DBFX.light(0x60a0ff)).at(hands, 1.5 * grow, 4);
+      }
+      if (T >= 1.35 && T < 2.6) {
+        const tgt = V3(0, 1.0, RZ + 0.3);
+        const out = seq([[1.35, 0], [1.5, 1, 'out']], T), fade = seq([[2.2, 1], [2.6, 0]], T);
+        const tip = hands.clone().lerp(tgt, out);
+        const rr = 0.2 * fade + 0.03 * Math.sin(T * 50);
+        ctx.get('raio', beam).at(hands, tip, rr, fade, T);
+        ctx.get('ponta', () => ball(...BLUE)).at(tip, rr * 1.5, fade, T);
+        ctx.get('boca', () => ball(...BLUE)).at(hands, rr * 1.4, fade, T + 3);
+        ctx.get('luz', () => DBFX.light(0x60a0ff)).at(tip, 3 * fade, 6);
+        if (out >= 1) {
+          const k = (T - 1.5) / 1.1;
+          ctx.get('estouro', FX.volume).set(tgt.clone().add(V3(0, 0.2, -0.3)), 0.9, Math.min(1, k), { fire: 0.5, seed: 3.3, dens: 10, rise: 0.6, smoke: [0.5, 0.62, 0.8] });
+          ctx.flash(tgt, Math.max(0, 1 - k * 3)); ctx.shake(0.6 * fade);
+          const fly = seq([[1.5, 0], [2.4, 1, 'out']], T);
+          R.place(0, RZ - 2.2 * fly, 0.6 * Math.sin(Math.PI * fly)); R.lean(-1.0 * fly * (1 - seq([[2.9, 0], [3.4, 1]], T)));
+        }
+      }
+      return;
+    }
+
+    if (mode === 'sumir') {
+      const T = t % 3.2;
+      const R = ctx.ref; const RZ = -4.5; R.place(0, RZ, 0);
+      stance(r);
+      // 0-0.55: ri e pisca (o corpo treme); 0.55: some num estalo, fica um vulto azul que se desfaz;
+      // 0.75: aparece atrás do alvo já girando; 0.85-1.05: chute giratório nas costas; alvo voa pra frente
+      const flick = T > 0.3 && T < 0.55 ? (Math.sin(T * 90) > 0.2 ? 1 : 0) : 0;
+      if (T < 0.55) {
+        r('cabeca', 0, 0, 0.2 * Math.sin(T * 30)); r('tronco', 0.15, 0, 0); r('pernaD', -0.4, 0, 0); r('canelaD', 0.6, 0, 0);
+        obj.position.x += flick * 0.06;
+        if (T > 0.45) ctx.get('vulto', () => ghost(obj)).at(V3(-0.15, Y0, 0.05), 0, 0.35);
+      } else if (T < 0.78) {
+        obj.visible = false;
+        const k = (T - 0.55) / 0.23;
+        ctx.get('vulto', () => ghost(obj)).at(V3(0, Y0, 0), 0, 0.55 * (1 - k));
+        ctx.get('poeiraA', () => DBFX.grains({ n: 40, seed: 31, palette: [[170, 220, 255], [235, 245, 255], [130, 180, 240]], size: [0.012, 0.03], drag: 5, grav: -0.4, life: 0.35, spread: 0.5, add: true, cone: Rr => { const a = Rr() * 6.28; return [Math.cos(a) * 2, 1 + Rr(), Math.sin(a) * 2]; } })).at(V3(0, 0.8, 0), T - 0.55);
+      } else {
+        const k = T - 0.78;
+        obj.position.set(0, Y0, RZ - 1.1); obj.rotation.y = Math.PI;
+        const spin = seq([[0.78, 0], [0.98, 1, 'out']], T), back = seq([[1.6, 0], [2.0, 1, 'io']], T);
+        obj.rotation.y += 2 * Math.PI * spin * (1 - back) - 0.0;
+        r('pernaD', -1.6 * spin * (1 - back), 0, 0.3 * spin * (1 - back)); r('canelaD', -0.1 * spin, 0, 0);
+        r('tronco', -0.35 * spin * (1 - back), 0, 0); r('bracoD', 0, 0, 0.9 * spin * (1 - back)); r('bracoE', 0, 0, -0.9 * spin * (1 - back));
+        wings(0.5 * spin * (1 - back));
+        ctx.get('poeiraB', () => DBFX.grains({ n: 40, seed: 37, palette: [[170, 220, 255], [235, 245, 255], [130, 180, 240]], size: [0.012, 0.03], drag: 5, grav: -0.4, life: 0.35, spread: 0.5, add: true, cone: Rr => { const a = Rr() * 6.28; return [Math.cos(a) * 2, 1 + Rr(), Math.sin(a) * 2]; } })).at(V3(0, 0.8, RZ - 1.1), k);
+        if (k < 0.12) ctx.get('vultoB', () => ghost(obj)).at(V3(0, Y0, RZ - 1.45), Math.PI, 0.5 * (1 - k / 0.12));
+        const hit = T - 0.95;
+        if (hit > 0) {
+          const hp = V3(0, 1.1, RZ - 0.3);
+          if (hit < 0.08) { ctx.flash(hp, 1); ctx.get('impacto', () => DBFX.muzzle()).at(hp, ctx.camera, 1 - hit / 0.08, 5, 1.1); }
+          ctx.shake(Math.max(0, 0.7 - hit * 2));
+          if (hit < 0.6) ctx.get('anel', () => DBFX.glow([0.6, 0.85, 1.0])).at(hp, 0.15 + hit * 1.5, 0.5 * (1 - hit / 0.6), T);
+          const fly = seq([[0.95, 0], [1.6, 1, 'out']], T);
+          R.place(0, RZ + 3.0 * fly, 0.8 * Math.sin(Math.PI * fly)); R.lean(1.1 * fly * (1 - seq([[2.6, 0], [3.2, 1]], T)));
+        }
+      }
+      return;
+    }
+  }
+
+  window.MOBS = window.MOBS || [];
+  const fixed = [variant(4), variant(11), variant(29)];
+  fixed[0].grin = true; fixed[1].body = BODIES[1]; fixed[2].grin = false;
+  const def = v => ({ def: rigDef(painters(v), v, false), low: rigDef(painters(v), v, true) });
+  window.MOBS.push({
+    id: 'cell_jr', nome: 'Cell Jr.', bioma: 'Namek e estruturas', tier: 'Médio · tier 6',
+    variants: fixed.map((v, i) => ({ nome: ['Risonho', 'Azul escuro', 'Sério'][i], v, ...def(v) })),
+    randomVariant: () => { const v = variant(Math.floor(Math.random() * 1e5)); return { nome: 'Sorteado', v, ...def(v) }; },
+    anim, modes: [['parado', 'Parado'], ['andar', 'Andar'], ['kame', 'Kamehameha Jr.'], ['sumir', 'Golpe Sumido']],
+    cam: 4.5, lookY: 0.8, lookZ: { kame: -3.2, sumir: -2.4 }, camFar: { kame: 9, sumir: 7.5 }, camYaw: { kame: -1.25, sumir: -1.3 },
+    info: {
+      'Tamanho': '1,3 bloco',
+      'Vida': '60 (tier 6). Pequeno mas forte: os 7 juntos são uma luta de verdade.',
+      'Jeito': 'Só no evento dos Jogos do Cell: nascem 7 de uma vez em volta da arena, riem, pulam e atacam em bando. Fogem rindo se ficam sozinhos com pouca vida.',
+      'Kamehameha Jr.': 'Junta as mãos do lado por 1 s (a bola azul avisa) e solta o raio reto. No jogo o dano do raio vem em pacotes (o Escudo de tier não come cada tick).',
+      'Golpe Sumido': 'Pisca, some num estalo deixando um vulto, aparece atrás de você e dá um chute giratório que te joga pra frente. Olhar pra trás na hora certa bloqueia.',
+      'Solta': 'Fragmento de Cell (célula), pedaço de asa; raro: Alma do Cell Jr. (lembrança do evento).',
+      'Variações': 'Tom do azul, cor e tamanho das pintas, e cara (risonho ou sério) sorteados.',
+    },
+  });
+})();
+
+</script>
+<script>
+// Yakon (nave do Babidi). Grandão (2,6 blocos), corcunda, pele preta-azulada com listras douradas em zigue-zague,
+// cabeção com dobras no crânio, marca Majin na testa, olhos amarelos e uma bocarra cheia de dente.
+// Golpes: Escuridão (apaga a luz em volta; no escuro só as listras e os olhos dele brilham; pula e rasga)
+// e Devorar Luz (abre a boca e suga a luz do lugar e a energia do alvo: incha, brilha e se cura).
+'use strict';
+(() => {
+  const { n3, mix, mul } = ENG;
+  const { seq, loop } = FX;
+  const fr = x => x - Math.floor(x);
+  const cel = ENG.cel;
+  const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
+  const GOLD = [236, 192, 58];
+
+  function variant(seed) {
+    const R = FX.rnd(seed);
+    return { seed, skin: [[30, 32, 48], [36, 30, 50], [26, 36, 46]][Math.floor(R() * 3)], zig: 5.0 + R() * 1.5, off: R() * 4, tooth: R() < 0.5 ? 'serra' : 'presas' };
+  }
+
+  function painters(v) {
+    const S = v.seed;
+    const shade = (base, q, s, lo = 0.8, hi = 1.3) => cel(base, 0.62 - 0.38 * q.ny + 0.12 * (n3(q.ax * 0.3, q.ay * 0.3, q.az * 0.3, s + S) - 0.5) + (q.f === 'top' ? 0.25 : 0) - (q.f === 'bottom' ? 0.3 : 0), lo, hi);
+    // listras douradas: faixas horizontais em zigue-zague, cada uma com período e fase próprios (nada repetido)
+    const zig = q => {
+      const band = Math.floor((q.ay + v.off) / 5);
+      const per = v.zig + 0.6 * (n3(band, 0, 0, 90 + S) - 0.5), amp = 1.8 + 0.8 * n3(band, 1, 0, 91 + S);
+      const tri = Math.abs(fr((q.ax + q.az * 0.7) / per + band * 0.37) - 0.5) * 2;
+      const y = fr((q.ay + v.off) / 5) * 5;
+      return Math.abs(y - (1.2 + amp * tri)) < 0.6;
+    };
+    const P = {};
+    P.skin = q => zig(q) && q.f !== 'bottom' ? GOLD : shade(v.skin, q, 1);
+    P.limb = q => zig(q) && q.f !== 'top' && q.f !== 'bottom' ? GOLD : shade(v.skin, q, 2);
+    P.belt = q => { let c = shade([82, 58, 44], q, 3, 0.85, 1.15); if (q.f === 'north' && Math.abs(q.px - q.b.w / 2) < 1 && q.py < 1.4) c = [200, 170, 90]; return c; };
+    P.cloth = q => { if (q.f === 'top' || q.f === 'bottom') return null; const w = q.px / q.b.w; if (q.py > q.b.h - 1.2 * Math.abs(Math.sin(w * 9.4 + S))) return null; return shade([70, 40, 54], q, 4, 0.85, 1.15); };
+    P.claw = q => cel([226, 214, 186], 0.4 + 0.6 * (1 - q.ny), 0.8, 1.1);
+    P.ridge = q => zig(q) && q.f === 'top' ? GOLD : shade(mix(v.skin, [70, 70, 96], 0.25), q, 5);
+    P.head = q => {
+      let c = shade(v.skin, q, 6);
+      if (q.f !== 'north') return zig(q) && q.f !== 'top' ? GOLD : c;
+      // rosto 9x6 em pixel de Minecraft: marca Majin na testa, sobrancelha pesada, olho amarelo com fenda,
+      // e a fileira de dentes de cima
+      const x = Math.min(8, Math.floor(q.px)), y = Math.min(5, Math.floor(q.py)), m = Math.min(x, 8 - x);
+      const M = [[2, 6], [2, 3, 5, 6], [2, 4, 6]];
+      if (y <= 2 && M[y].includes(x)) c = [170, 30, 40];
+      if (y === 3 && m >= 1 && m <= 2) c = mul(v.skin, 0.5);
+      if (y === 4 && (m === 1 || m === 2)) c = m === 2 ? [255, 236, 90] : [240, 190, 50];
+      if (y === 5) c = v.tooth === 'serra' ? (x % 2 ? [244, 240, 226] : [210, 200, 180]) : (m === 1 || m === 3 ? [248, 244, 230] : [70, 20, 26]);
+      return c;
+    };
+    P.jaw = q => {
+      if (q.f === 'top') { const fz = q.pz; return fz < 1.2 ? (Math.floor(q.px) % 2 ? [244, 240, 226] : [200, 190, 170]) : shade([120, 30, 40], q, 7, 0.8, 1.1); }
+      if (q.f === 'north' && q.py < 1) return Math.floor(q.px) % 2 ? [244, 240, 226] : [70, 20, 26];
+      return zig(q) ? GOLD : shade(v.skin, q, 8);
+    };
+    P.ear = q => shade(mix(v.skin, [60, 50, 80], 0.3), q, 9);
+    return P;
+  }
+
+  function rigDef(P, v, low) {
+    const claws = low ? [] : [-1, 0, 1].map(i => ({ x: -0.5 + i * 1.2, y: 3.2, z: -1.4, w: 0.8, h: 1.8, d: 0.8, p: P.claw }));
+    const arm = s => ({
+      name: s < 0 ? 'bracoD' : 'bracoE', pivot: [s * 7.2, -9.5, -0.5], boxes: [{ x: -2.1, y: -1.5, z: -2.1, w: 4.2, h: 8, d: 4.2, p: P.limb }],
+      kids: [{
+        name: s < 0 ? 'anteD' : 'anteE', pivot: [0, 6.4, 0], boxes: [{ x: -1.9, y: 0, z: -1.9, w: 3.8, h: 7, d: 3.8, p: P.limb }],
+        kids: [{ name: s < 0 ? 'maoD' : 'maoE', pivot: [0, 7, 0], boxes: [{ x: -2.1, y: -0.5, z: -2.1, w: 4.2, h: 3.8, d: 4.2, p: P.skin }, ...claws] }],
+      }],
+    });
+    const leg = s => ({
+      name: s < 0 ? 'pernaD' : 'pernaE', pivot: [s * 3, 12, 0], boxes: [{ x: -2.4, y: 0, z: -2.4, w: 4.8, h: 6, d: 4.8, p: P.limb }],
+      kids: [{ name: s < 0 ? 'canelaD' : 'canelaE', pivot: [0, 6, 0], boxes: [{ x: -2.2, y: 0, z: -2.2, w: 4.4, h: 5, d: 4.4, p: P.limb }, { x: -2.5, y: 5, z: -3.6, w: 5, h: 1, d: 6, p: P.skin }] }],
+    });
+    const ridges = low ? [{ x: -3.8, y: -9.2, z: -3.6, w: 7.6, h: 1.4, d: 7, p: P.ridge }] : [-3.4, -0.7, 2.0].map((x, i) => ({ x, y: -9.4 + (i === 1 ? -0.5 : 0), z: -3.8, w: 1.4, h: 2, d: 7.6, p: P.ridge }));
+    return {
+      name: 'raiz', pivot: [0, 0, 0], kids: [{
+        name: 'quadril', pivot: [0, 12, 0], boxes: [{ x: -5, y: -3, z: -2.8, w: 10, h: 3.4, d: 5.6, p: P.belt }, ...(low ? [] : [{ x: -3, y: 0.4, z: -3, w: 6, h: 4.4, d: 0.4, p: P.cloth }])], kids: [{
+          name: 'tronco', pivot: [0, -2.6, 0], rot: [0.28, 0, 0], boxes: [{ x: -6.2, y: -10.5, z: -3.2, w: 12.4, h: 10.5, d: 6.4, p: P.skin }, ...(low ? [] : [{ x: -5, y: -9.5, z: 2.6, w: 10, h: 5, d: 1.8, p: P.skin }])], kids: [
+            {
+              name: 'cabeca', pivot: [0, -10.2, -1.6], rot: [-0.2, 0, 0], boxes: [{ x: -4.5, y: -8, z: -4, w: 9, h: 6, d: 8, p: P.head }, ...ridges, { x: -6, y: -6.4, z: -0.6, w: 1.6, h: 2.6, d: 1.4, p: P.ear }, { x: 4.4, y: -6.4, z: -0.6, w: 1.6, h: 2.6, d: 1.4, p: P.ear }],
+              kids: [{ name: 'mandibula', pivot: [0, -2, 2.6], boxes: [{ x: -4.2, y: 0, z: -7.2, w: 8.4, h: 2.8, d: 7.2, p: P.jaw }] }],
+            },
+            arm(-1), arm(1),
+          ],
+        }],
+      }, leg(-1), leg(1)],
+    };
+  }
+
+  function stance(r) {
+    r('pernaD', -0.2, 0.2, 0.1); r('canelaD', 0.35, 0, 0); r('pernaE', 0.15, -0.2, -0.1); r('canelaE', 0.3, 0, 0);
+    r('bracoD', -0.15, 0, 0.18); r('anteD', -0.35, 0, 0); r('bracoE', -0.1, 0, -0.18); r('anteE', -0.35, 0, 0);
+  }
+
+  // Cópia do corpo que desenha só o dourado (listras e olhos) brilhando por cima; copia a pose do original a cada quadro.
+  function glowSkin(src) {
+    const g = src.clone(true);
+    const mat = new THREE.ShaderMaterial({
+      transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide,
+      uniforms: { map: { value: null }, uK: { value: 0 }, uT: { value: 0 } },
+      vertexShader: 'varying vec2 vU; varying vec3 vW; void main(){ vU=uv; vW=(modelMatrix*vec4(position,1.0)).xyz; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }',
+      fragmentShader: `uniform sampler2D map; uniform float uK, uT; varying vec2 vU; varying vec3 vW;
+        void main(){ vec4 c = texture2D(map, vU);
+          float gold = step(0.7, c.r) * step(0.5, c.g) * step(c.b, 0.4);
+          if (gold < 0.5 || c.a < 0.5) discard;
+          float pulse = 0.75 + 0.25 * sin(uT * 7.0 - vW.y * 5.0);
+          gl_FragColor = vec4(vec3(1.0, 0.82, 0.3) * uK * pulse, 1.0); }`,
+    });
+    let first = true;
+    g.traverse(o => { if (o.material) { if (first) { mat.uniforms.map.value = o.material.map; first = false; } o.material = mat; o.renderOrder = 11; } });
+    const A = [], B = [];
+    src.traverse(o => A.push(o)); g.traverse(o => B.push(o));
+    g.at = (k, t) => {
+      g.visible = k > 0.01;
+      for (let i = 0; i < A.length; i++) { B[i].position.copy(A[i].position); B[i].rotation.copy(A[i].rotation); B[i].scale.copy(A[i].scale); }
+      mat.uniforms.uK.value = k; mat.uniforms.uT.value = t;
+    };
+    return g;
+  }
+  // Escuro em volta da câmera: uma esfera preta com fumaça mexendo, desenhada por cima da cena (as listras vêm depois)
+  function darkness(camera) {
+    const mat = new THREE.ShaderMaterial({
+      transparent: true, depthWrite: false, depthTest: false, side: THREE.BackSide,
+      uniforms: { uK: { value: 0 }, uT: { value: 0 } },
+      vertexShader: 'varying vec3 vP; void main(){ vP=position; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }',
+      fragmentShader: `varying vec3 vP; uniform float uK, uT;
+        float h(vec3 p){ p=fract(p*0.3183+vec3(.71,.11,.42)); p*=17.0; return fract(p.x*p.y*p.z*(p.x+p.y+p.z)); }
+        float n(vec3 x){ vec3 i=floor(x), f=fract(x); f=f*f*(3.0-2.0*f);
+          return mix(mix(mix(h(i),h(i+vec3(1,0,0)),f.x),mix(h(i+vec3(0,1,0)),h(i+vec3(1,1,0)),f.x),f.y),
+                     mix(mix(h(i+vec3(0,0,1)),h(i+vec3(1,0,1)),f.x),mix(h(i+vec3(0,1,1)),h(i+vec3(1,1,1)),f.x),f.y),f.z); }
+        void main(){ vec3 d = normalize(vP);
+          float s = n(d * 3.0 + vec3(0.0, uT * 0.4, uT * 0.2)) * 0.6 + n(d * 7.0 - vec3(uT * 0.5)) * 0.4;
+          vec3 c = mix(vec3(0.015, 0.012, 0.03), vec3(0.08, 0.06, 0.12), s);
+          gl_FragColor = vec4(c, clamp(uK * (0.86 + 0.14 * s), 0.0, 0.97)); }`,
+    });
+    const m = new THREE.Mesh(new THREE.SphereGeometry(1.5, 24, 16), mat);
+    m.frustumCulled = false; m.renderOrder = 10;
+    m.at = (k, t) => { m.visible = k > 0.01; m.position.copy(camera.position); mat.uniforms.uK.value = k; mat.uniforms.uT.value = t; };
+    return m;
+  }
+  // Luz sugada: cada grão nasce num ponto diferente em volta (e do alvo) e entra na boca em espiral
+  function suck(n, seed) {
+    const R = FX.rnd(seed);
+    const pos = new Float32Array(n * 3), col = new Float32Array(n * 3), it = [];
+    for (let i = 0; i < n; i++) {
+      const fromRef = R() < 0.35;
+      const a = R() * 6.28, b = 0.3 + R() * 2.2, rr = 2.2 + R() * 2.6;
+      it.push({ fromRef, a, b, rr, ph: R(), sp: 0.7 + R() * 0.8, sw: (R() - 0.5) * 3, off: [R() - 0.5, R() * 1.6, R() - 0.5] });
+      const c = R() < 0.3 ? [1, 0.97, 0.85] : [1, 0.78 + R() * 0.15, 0.3];
+      col.set(c, i * 3);
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3)); geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    const al = new Float32Array(n); geo.setAttribute('al', new THREE.BufferAttribute(al, 1));
+    const mat = new THREE.ShaderMaterial({
+      transparent: true, depthWrite: false, vertexColors: true, blending: THREE.AdditiveBlending,
+      vertexShader: 'attribute float al; varying vec3 vC; varying float vA; void main(){ vC=color; vA=al; vec4 mv=modelViewMatrix*vec4(position,1.0); gl_PointSize = 0.075*420.0/-mv.z*(0.5+al); gl_Position=projectionMatrix*mv; }',
+      fragmentShader: 'varying vec3 vC; varying float vA; void main(){ vec2 d=gl_PointCoord-0.5; if(max(abs(d.x),abs(d.y))>0.5) discard; gl_FragColor=vec4(vC*vA, vA); }',
+    });
+    const pts = new THREE.Points(geo, mat); pts.frustumCulled = false; pts.renderOrder = 12;
+    pts.at = (mouth, ref, t, k) => {
+      pts.visible = k > 0.01;
+      for (let i = 0; i < n; i++) {
+        const p = it[i], f = fr(t * p.sp * 0.7 + p.ph), e = f * f;
+        let sx, sy, sz;
+        if (p.fromRef) { sx = ref.x + p.off[0]; sy = ref.y + p.off[1]; sz = ref.z + p.off[2]; }
+        else { sx = mouth.x + Math.cos(p.a) * p.rr; sy = p.b; sz = mouth.z + Math.sin(p.a) * p.rr; }
+        // espiral que aperta chegando na boca
+        const sp = p.sw * (1 - e) * Math.sin(e * 6.0);
+        const x = sx + (mouth.x - sx) * e + sp * 0.3, y = sy + (mouth.y - sy) * e + Math.sin(e * 9 + i) * 0.12 * (1 - e), z = sz + (mouth.z - sz) * e - sp * 0.3;
+        pos.set([x, y, z], i * 3);
+        al[i] = k * Math.min(1, f * 5) * (1 - Math.max(0, (f - 0.92) / 0.08));
+      }
+      geo.attributes.position.needsUpdate = true; geo.attributes.al.needsUpdate = true;
+    };
+    return pts;
+  }
+
+  const K = 1.3, Y0 = 1.5 * K;
+  function anim(P, t, mode, a, obj, e, ctx) {
+    obj.scale.set(-K / 16, -K / 16, K / 16); obj.position.y += Y0 - 1.5 + 0.09;
+    const r = (n, x, y, z) => { if (!P[n]) return; const o = P[n].obj.rotation; o.x += x; o.y += y; o.z += z; };
+    const at = (n, off) => { obj.updateMatrixWorld(true); return P[n].obj.localToWorld(off.clone()); };
+    const breath = loop([[0, 0], [0.45, 1], [0.999, 0]], t / 3.4);
+
+    if (mode === 'parado') {
+      stance(r);
+      // corcunda respirando pesado, boca entreaberta mastigando, cabeça farejando de um lado pro outro
+      r('tronco', 0.06 * breath, 0, 0); r('cabeca', -0.05 * breath, 0.35 * Math.sin(t * 0.7), 0.06 * Math.sin(t * 0.9));
+      r('mandibula', 0.12 + 0.1 * Math.max(0, Math.sin(t * 5.5)), 0, 0);
+      r('bracoD', 0.08 * breath, 0, 0); r('bracoE', 0.08 * breath, 0, 0);
+      return;
+    }
+    if (mode === 'andar') {
+      const ph = t * 0.8;
+      for (const [s, off] of [['D', 0], ['E', 0.5]]) {
+        r('perna' + s, 0.45 * Math.sin((ph + off) * Math.PI * 2), 0, 0); r('canela' + s, 0.45 * Math.max(0, Math.sin((ph + off) * Math.PI * 2 + 1.4)), 0, 0);
+        r('braco' + s, -0.35 * Math.sin((ph + off) * Math.PI * 2), 0, 0); r('ante' + s, -0.3, 0, 0);
+      }
+      P.quadril.obj.position.y += 0.8 * Math.abs(Math.sin(ph * Math.PI * 2));
+      r('tronco', 0, 0.12 * Math.sin(ph * Math.PI * 2), 0); r('mandibula', 0.15, 0, 0);
+      return;
+    }
+
+    if (mode === 'escuro') {
+      const T = t % 4.4;
+      const R = ctx.ref; const RZ = -5.5; R.place(0, RZ, 0);
+      stance(r);
+      // 0-1.0: abre os braços e ruge, a luz morre em volta (só as listras e os olhos dele ficam acesos)
+      // 1.5: some no escuro e pula; 1.9 e 2.15: dois rasgos com as garras; 2.8: volta pro lugar; 3.6: a luz volta
+      const dk = seq([[0.2, 0], [1.0, 1, 'in'], [3.5, 1], [4.1, 0]], T);
+      const roar = seq([[0, 0], [0.4, 1, 'out'], [1.2, 1], [1.45, 0]], T);
+      r('bracoD', -0.4 * roar, 0, 1.0 * roar); r('bracoE', -0.4 * roar, 0, -1.0 * roar); r('anteD', -0.6 * roar, 0, 0); r('anteE', -0.6 * roar, 0, 0);
+      r('tronco', -0.35 * roar, 0, 0); r('cabeca', -0.4 * roar, 0, 0); r('mandibula', 0.9 * roar, 0, 0);
+      const jump = seq([[1.45, 0], [1.85, 1, 'io']], T), home = seq([[2.6, 0], [3.0, 1, 'io']], T);
+      const zz = (RZ + 1.6) * jump * (1 - home);
+      obj.position.z += zz; obj.position.y += 1.4 * Math.sin(Math.PI * jump) * (jump < 1 ? 1 : 0) + 1.2 * Math.sin(Math.PI * home) * (home > 0 ? 1 : 0);
+      const s1 = seq([[1.8, 0], [1.95, 1, 'snap'], [2.1, 1]], T), s2 = seq([[2.05, 0], [2.2, 1, 'snap'], [2.4, 1]], T);
+      const up = seq([[1.6, 0], [1.8, 1, 'out']], T) * (1 - home);
+      r('bracoD', -2.6 * up + 2.0 * s1, 0, 0.4 * up); r('bracoE', -2.6 * up + 2.0 * s2, 0, -0.4 * up);
+      r('tronco', 0.4 * (s1 + s2) * 0.5 * (1 - home), 0, 0.15 * (s1 - s2));
+      r('pernaD', -0.5 * jump * (1 - home), 0, 0); r('pernaE', 0.3 * jump * (1 - home), 0, 0);
+      ctx.get('escuro', () => darkness(ctx.camera)).at(dk * 0.93, T);
+      ctx.get('brilho', () => glowSkin(obj)).at(dk * 1.2, T);
+      const eyeL = at('cabeca', V3(-2.5, -3.5, -4.2)), eyeR = at('cabeca', V3(2.5, -3.5, -4.2));
+      const eyeGlow = () => { const g = DBFX.glow([1.0, 0.8, 0.25]); g.renderOrder = 12; return g; };
+      ctx.get('olhoD', eyeGlow).at(eyeL, 0.18, dk, T);
+      ctx.get('olhoE', eyeGlow).at(eyeR, 0.18, dk, T + 1);
+      for (const [k, st] of [['c1', 1.9], ['c2', 2.15]]) {
+        const age = (T - st) / 0.5;
+        if (age > 0 && age < 1) { ctx.get(k, () => { const s = clawMesh(); s.traverse(o => { o.renderOrder = 12; }); return s; }).at(V3(k === 'c1' ? -0.15 : 0.15, 1.1, RZ + 0.35), age); }
+      }
+      const hit = Math.max(seq([[1.95, 0], [2.0, 1], [2.3, 0]], T), seq([[2.2, 0], [2.25, 1], [2.55, 0]], T));
+      ctx.shake(0.5 * hit);
+      R.lean(-0.5 * seq([[1.95, 0], [2.1, 1], [3.2, 1], [3.8, 0]], T)); R.spin(0.3 * seq([[2.2, 0], [2.35, 1], [3.4, 1], [3.9, 0]], T));
+      return;
+    }
+
+    if (mode === 'devorar') {
+      const T = t % 4.2;
+      const R = ctx.ref; const RZ = -5; R.place(0, RZ, 0);
+      stance(r);
+      // abre a bocarra pra cima e suga: a luz de todo lado e a energia do alvo entram em espiral; ele incha e
+      // as listras acendem; 2.5: fecha a boca num gole, arrota um anel dourado e se cura
+      const open = seq([[0, 0], [0.4, 1, 'out'], [2.4, 1], [2.55, 0, 'snap']], T);
+      const eat = seq([[0.4, 0], [2.4, 1, 'in'], [3.2, 1], [4.0, 0, 'io']], T);
+      const gulp = seq([[2.45, 0], [2.6, 1, 'snap'], [2.9, 0]], T);
+      r('tronco', -0.3 * open + 0.25 * gulp, 0, 0); r('cabeca', -0.55 * open + 0.4 * gulp, 0, 0); r('mandibula', 1.15 * open, 0, 0);
+      r('bracoD', -0.3 * open, 0, 0.7 * open); r('bracoE', -0.3 * open, 0, -0.7 * open); r('anteD', -1.0 * open, 0, 0); r('anteE', -1.0 * open, 0, 0);
+      const sw = 1 + 0.16 * eat + 0.05 * gulp;
+      P.tronco.obj.scale.set(sw, 1 + 0.06 * eat, sw); P.cabeca.obj.scale.set(1 / sw * (1 + 0.08 * eat), 1, 1 / sw * (1 + 0.08 * eat));
+      const mouth = at('cabeca', V3(0, -2, -5));
+      const refC = V3(0, 1.1, RZ);
+      // ele come a luz do lugar: escurece em volta enquanto suga
+      ctx.get('escuro', () => darkness(ctx.camera)).at(0.6 * open * eat + 0.2 * open, T);
+      ctx.get('luz', () => suck(260, 61)).at(mouth, refC, T, open);
+      ctx.get('brilho', () => glowSkin(obj)).at(0.9 * eat + 0.6 * gulp, T);
+      ctx.get('boca', () => DBFX.glow([1.0, 0.85, 0.4])).at(mouth, 0.2 + 0.25 * open * eat, 0.6 * open, T);
+      ctx.get('luzBoca', () => DBFX.light(0xffc860)).at(mouth, 2.5 * open, 5);
+      R.lean(0.35 * open * (1 - seq([[2.6, 0], [3.4, 1]], T)));
+      if (T > 2.5) {
+        const k = (T - 2.5) / 1.2;
+        ctx.roarRing(V3(0, 0.03, 0), Math.min(1, k * 1.2));
+        ctx.get('cura', () => DBFX.grains({ n: 46, seed: 73, palette: [[140, 255, 150], [220, 255, 200], [90, 230, 120], [255, 230, 120]], size: [0.02, 0.045], drag: 1.2, grav: -1.4, life: 1.1, spread: 0.6, add: true, cone: Rr => { const a = Rr() * 6.28, rr = 0.6 + Rr() * 0.6; return [Math.cos(a) * rr, 0.6 + Rr(), Math.sin(a) * rr]; } })).at(V3(0, 0.3, 0), T - 2.5);
+        if (k < 0.15) ctx.flash(mouth, 1 - k / 0.15);
+      }
+      return;
+    }
+  }
+
+  window.MOBS = window.MOBS || [];
+  const fixed = [variant(5), variant(13)];
+  fixed[0].tooth = 'serra'; fixed[1].tooth = 'presas'; fixed[1].skin = [36, 30, 50];
+  const def = v => ({ def: rigDef(painters(v), v, false), low: rigDef(painters(v), v, true) });
+  window.MOBS.push({
+    id: 'yakon', nome: 'Yakon', bioma: 'Namek e estruturas', tier: 'Forte · tier 6 (guarda da nave)',
+    variants: fixed.map((v, i) => ({ nome: ['Dente de serra', 'Presas'][i], v, ...def(v) })),
+    randomVariant: () => { const v = variant(Math.floor(Math.random() * 1e5)); return { nome: 'Sorteado', v, ...def(v) }; },
+    anim, modes: [['parado', 'Parado'], ['andar', 'Andar'], ['escuro', 'Escuridão'], ['devorar', 'Devorar Luz']],
+    cam: 8, lookY: 1.5, lookZ: { escuro: -2.6, devorar: -2.4 }, camFar: { escuro: 10, devorar: 10 }, camYaw: { escuro: -1.2, devorar: -1.15 },
+    info: {
+      'Tamanho': '2,6 blocos, corcunda',
+      'Vida': '220 (guarda de andar, tier 6). Mini-chefe da nave do Babidi.',
+      'Jeito': 'Fica parado no andar dele farejando. Quando você entra, apaga a luz e caça no escuro. Tocha e ki claro atraem ele.',
+      'Escuridão': 'Apaga a luz em volta (cegueira leve). No escuro só as listras douradas e os olhos dele aparecem: dá pra ler o pulo. Pula e dá dois rasgos.',
+      'Devorar Luz': 'Abre a boca e suga a luz do lugar e a sua energia (estamina e ki). Incha, brilha e se cura. Jogar ki forte DEMAIS enquanto ele suga faz ele estourar (como no anime com o Goku SSJ).',
+      'Solta': 'Dente do Yakon, couro listrado; raro: Alma do Yakon.',
+      'Variações': 'Tom da pele, desenho das listras e dentes (serra ou presas) sorteados.',
+    },
+  });
+})();
+
+</script>
 
 <script>
 'use strict';
@@ -4432,6 +5279,11 @@ const SPAWN = {
   'Dinossauros': [
     ['Raptor', 'Bandos de 2 a 3 nas Montanhas Paozu, Terras do Dragão e Deserto do Diabo. Caçam juntos: um chama, os outros cercam.', 'Dia: mais lentos. Noite: o dobro e mais rápidos.'],
     ['Tiranossauro', 'Sozinho, só nas Montanhas Paozu. No máximo 1 num raio grande.', 'Dia e noite iguais; dorme no meio do dia (acorda se apanhar).'],
+  ],
+  'Namek e estruturas': [
+    ['Soldado do Freeza', 'Esquadrões de 3 a 4 em Namek e em volta da nave do Freeza.', 'Dia e noite iguais (Namek tem três sóis).'],
+    ['Cell Jr.', 'Só no evento do Cell (Jogos do Cell): 7 de uma vez. Nunca nasce sozinho no mundo.', 'Some quando o evento acaba.'],
+    ['Yakon', 'Só dentro da nave do Babidi, guardando o andar dele. 1 por mundo.', 'Na escuridão dele, mais forte; perto de luz forte, enjoa.'],
   ],
 };
 let biome = 'Terras e Deserto';
@@ -4523,6 +5375,7 @@ const LOOKS = {
   'Terras e Deserto': { sky: 0x6a4a3a, floor: 0x7a4a34, g1: 0x9a6448, g2: 0x6a4030 },
   'Mar do Sul e Norte': { sky: 0x6f8aa0, floor: 0xb9c6d0, g1: 0xdde6ee, g2: 0x9fb0be },
   'Dinossauros': { sky: 0x8aa0a8, floor: 0xb48c5a, g1: 0xcaa272, g2: 0x8e6a42 },
+  'Namek e estruturas': { sky: 0x8fc4a0, floor: 0x5f9a8c, g1: 0x7ab8a4, g2: 0x4a8070 },
 };
 // chuva do bioma: cada gota com velocidade e posição próprias, caindo levemente inclinada
 const RAIN_N = 700, rainPos = new Float32Array(RAIN_N * 6), rainSeed = [];
