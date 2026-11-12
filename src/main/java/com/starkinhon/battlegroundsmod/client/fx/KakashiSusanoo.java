@@ -58,6 +58,8 @@ public final class KakashiSusanoo {
     }
 
     private static final Map<Integer, State> SUS = new HashMap<>();
+    // The camera pull-back of each caster: {born, ended (-1 not yet), last update}; outlives SUS by the ease out.
+    private static final Map<Integer, double[]> CAM = new HashMap<>();
     private static final Map<Integer, Shuriken> SHURIKENS = new HashMap<>();
     private static final List<Piece> PIECES = new ArrayList<>();
     private static Piece shurikenMesh;
@@ -87,6 +89,15 @@ public final class KakashiSusanoo {
                 s = new State();
                 s.born = now;
                 SUS.put(id, s);
+            }
+            double[] cam = CAM.get(id);
+            if (cam == null || cam[1] >= 0 && s.born == now) {
+                cam = new double[] {now, -1, now};
+                CAM.put(id, cam);
+            }
+            cam[2] = now;
+            if (c >= 1) {
+                cam[1] = now;
             }
             s.feet = pos;
             s.yaw = (float) dir.x;
@@ -119,12 +130,38 @@ public final class KakashiSusanoo {
         }
     }
 
+    // Third person inside his own Susanoo: the camera is pulled back (12 blocks more, eased in and out) so the giant is
+    // seen from outside instead of filling the screen from within. Null when the viewer has no Susanoo.
+    public static Vec3 pullBack(int viewerId, Vec3 camPos, Vector3f look, float partial) {
+        double[] c = CAM.get(viewerId);
+        if (c == null) {
+            return null;
+        }
+        double now = ScreenFx.now() + partial;
+        State s = SUS.get(viewerId);
+        double endAt = s != null && s.endAt < 0 && now - s.updated <= 6 ? -1 : c[1] >= 0 ? c[1] : c[2];
+        float k = smooth((float) (now - c[0]) / 18f);
+        if (endAt >= 0) {
+            k *= 1 - smooth((float) (now - endAt) / 18f);
+            if (now - endAt > 18) {
+                CAM.remove(viewerId);
+                return null;
+            }
+        }
+        if (k <= 0.001f) {
+            return null;
+        }
+        double d = 12 * k;
+        return camPos.add(-look.x() * d, -look.y() * d + 2.5 * k, -look.z() * d);
+    }
+
     static boolean active() {
         return !SUS.isEmpty() || !SHURIKENS.isEmpty();
     }
 
     static void clear() {
         SUS.clear();
+        CAM.clear();
         SHURIKENS.clear();
     }
 

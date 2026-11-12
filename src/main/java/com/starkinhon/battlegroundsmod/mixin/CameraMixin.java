@@ -49,6 +49,13 @@ public abstract class CameraMixin {
         if (shot != null) {
             setRotation(shot.yaw(), shot.pitch());
             setPosition(shot.position());
+        } else if (detached && entity != null) {
+            // Kakashi in third person inside his Perfect Susanoo: seen from outside.
+            Camera camera = (Camera) (Object) this;
+            Vec3 back = com.starkinhon.battlegroundsmod.client.fx.KakashiSusanoo.pullBack(entity.getId(), camera.getPosition(), camera.getLookVector(), partialTick);
+            if (back != null) {
+                setPosition(back);
+            }
         }
         float[] shake = ScreenShake.offsets();
         if (shake != null) {
