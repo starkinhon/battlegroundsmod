@@ -1,0 +1,442 @@
+# Criaturas Naruto (PR #303). Rodar: gradlew runClient -Pmundo=SoulsDev -Proteiro=naruto-mobs-luta
+/devc fechar
+/dev preparar
+/devc hud off
+/devc fov 70
+/dev soltar
+/kill @e[type=!player]
+/tp @s 0.5 -60 0.5 180 0
+espera 20
+/gamemode survival
+/dev imortal @s
+/effect give @s minecraft:resistance 100000 2 true
+/effect give @s minecraft:regeneration 100000 3 true
+/effect give @s minecraft:saturation 100000 1 true
+espera 10
+
+# ninja_renegado
+/dev invocar battlegroundsmod:ninja_renegado 7 solto
+espera 5
+/damage @e[type=battlegroundsmod:ninja_renegado,limit=1,sort=nearest] 1 minecraft:player_attack by @s
+/devc camera duelo 10 1.8
+/devc marca luta ninja_renegado
+/devc gravar naruto-mobs/luta/ninja_renegado 6
+espera 260
+/devc gravar parar
+/dev info @e[type=battlegroundsmod:ninja_renegado,limit=1,sort=nearest]
+/kill @e[type=!player]
+/effect give @s minecraft:instant_health 1 5 true
+/effect clear @s minecraft:slowness
+/effect clear @s minecraft:poison
+/effect clear @s minecraft:blindness
+/effect clear @s minecraft:darkness
+espera 20
+
+# ninken
+/dev invocar battlegroundsmod:ninken 7 solto
+espera 5
+/damage @e[type=battlegroundsmod:ninken,limit=1,sort=nearest] 1 minecraft:player_attack by @s
+/devc camera duelo 10 1.8
+/devc marca luta ninken
+/devc gravar naruto-mobs/luta/ninken 6
+espera 260
+/devc gravar parar
+/dev info @e[type=battlegroundsmod:ninken,limit=1,sort=nearest]
+/kill @e[type=!player]
+/effect give @s minecraft:instant_health 1 5 true
+/effect clear @s minecraft:slowness
+/effect clear @s minecraft:poison
+/effect clear @s minecraft:blindness
+/effect clear @s minecraft:darkness
+espera 20
+
+# cobra_gigante
+/dev invocar battlegroundsmod:cobra_gigante 7 solto
+espera 5
+/damage @e[type=battlegroundsmod:cobra_gigante,limit=1,sort=nearest] 1 minecraft:player_attack by @s
+/devc camera duelo 10 1.8
+/devc marca luta cobra_gigante
+/devc gravar naruto-mobs/luta/cobra_gigante 6
+espera 260
+/devc gravar parar
+/dev info @e[type=battlegroundsmod:cobra_gigante,limit=1,sort=nearest]
+/kill @e[type=!player]
+/effect give @s minecraft:instant_health 1 5 true
+/effect clear @s minecraft:slowness
+/effect clear @s minecraft:poison
+/effect clear @s minecraft:blindness
+/effect clear @s minecraft:darkness
+espera 20
+
+# tigre
+/dev invocar battlegroundsmod:tigre 7 solto
+espera 5
+/damage @e[type=battlegroundsmod:tigre,limit=1,sort=nearest] 1 minecraft:player_attack by @s
+/devc camera duelo 10 1.8
+/devc marca luta tigre
+/devc gravar naruto-mobs/luta/tigre 6
+espera 260
+/devc gravar parar
+/dev info @e[type=battlegroundsmod:tigre,limit=1,sort=nearest]
+/kill @e[type=!player]
+/effect give @s minecraft:instant_health 1 5 true
+/effect clear @s minecraft:slowness
+/effect clear @s minecraft:poison
+/effect clear @s minecraft:blindness
+/effect clear @s minecraft:darkness
+espera 20
+
+# ninja_som
+/dev invocar battlegroundsmod:ninja_som 7 solto
+espera 5
+/damage @e[type=battlegroundsmod:ninja_som,limit=1,sort=nearest] 1 minecraft:player_attack by @s
+/devc camera duelo 10 1.8
+/devc marca luta ninja_som
+/devc gravar naruto-mobs/luta/ninja_som 6
+espera 260
+/devc gravar parar
+/dev info @e[type=battlegroundsmod:ninja_som,limit=1,sort=nearest]
+/kill @e[type=!player]
+/effect give @s minecraft:instant_health 1 5 true
+/effect clear @s minecraft:slowness
+/effect clear @s minecraft:poison
+/effect clear @s minecraft:blindness
+/effect clear @s minecraft:darkness
+espera 20
+
+# centopeia
+/dev invocar battlegroundsmod:centopeia 7 solto
+espera 5
+/damage @e[type=battlegroundsmod:centopeia,limit=1,sort=nearest] 1 minecraft:player_attack by @s
+/devc camera duelo 10 1.8
+/devc marca luta centopeia
+/devc gravar naruto-mobs/luta/centopeia 6
+espera 260
+/devc gravar parar
+/dev info @e[type=battlegroundsmod:centopeia,limit=1,sort=nearest]
+/kill @e[type=!player]
+/effect give @s minecraft:instant_health 1 5 true
+/effect clear @s minecraft:slowness
+/effect clear @s minecraft:poison
+/effect clear @s minecraft:blindness
+/effect clear @s minecraft:darkness
+espera 20
+
+# ninja_leque
+/dev invocar battlegroundsmod:ninja_leque 7 solto
+espera 5
+/damage @e[type=battlegroundsmod:ninja_leque,limit=1,sort=nearest] 1 minecraft:player_attack by @s
+/devc camera duelo 10 1.8
+/devc marca luta ninja_leque
+/devc gravar naruto-mobs/luta/ninja_leque 6
+espera 260
+/devc gravar parar
+/dev info @e[type=battlegroundsmod:ninja_leque,limit=1,sort=nearest]
+/kill @e[type=!player]
+/effect give @s minecraft:instant_health 1 5 true
+/effect clear @s minecraft:slowness
+/effect clear @s minecraft:poison
+/effect clear @s minecraft:blindness
+/effect clear @s minecraft:darkness
+espera 20
+
+# escorpiao_areia
+/dev invocar battlegroundsmod:escorpiao_areia 7 solto
+espera 5
+/damage @e[type=battlegroundsmod:escorpiao_areia,limit=1,sort=nearest] 1 minecraft:player_attack by @s
+/devc camera duelo 10 1.8
+/devc marca luta escorpiao_areia
+/devc gravar naruto-mobs/luta/escorpiao_areia 6
+espera 260
+/devc gravar parar
+/dev info @e[type=battlegroundsmod:escorpiao_areia,limit=1,sort=nearest]
+/kill @e[type=!player]
+/effect give @s minecraft:instant_health 1 5 true
+/effect clear @s minecraft:slowness
+/effect clear @s minecraft:poison
+/effect clear @s minecraft:blindness
+/effect clear @s minecraft:darkness
+espera 20
+
+# marionete
+/dev invocar battlegroundsmod:marionete 7 solto
+espera 5
+/damage @e[type=battlegroundsmod:marionete,limit=1,sort=nearest] 1 minecraft:player_attack by @s
+/devc camera duelo 10 1.8
+/devc marca luta marionete
+/devc gravar naruto-mobs/luta/marionete 6
+espera 260
+/devc gravar parar
+/dev info @e[type=battlegroundsmod:marionete,limit=1,sort=nearest]
+/kill @e[type=!player]
+/effect give @s minecraft:instant_health 1 5 true
+/effect clear @s minecraft:slowness
+/effect clear @s minecraft:poison
+/effect clear @s minecraft:blindness
+/effect clear @s minecraft:darkness
+espera 20
+
+# marionetista
+/dev invocar battlegroundsmod:marionetista 7 solto
+espera 5
+/damage @e[type=battlegroundsmod:marionetista,limit=1,sort=nearest] 1 minecraft:player_attack by @s
+/devc camera duelo 10 1.8
+/devc marca luta marionetista
+/devc gravar naruto-mobs/luta/marionetista 6
+espera 260
+/devc gravar parar
+/dev info @e[type=battlegroundsmod:marionetista,limit=1,sort=nearest]
+/kill @e[type=!player]
+/effect give @s minecraft:instant_health 1 5 true
+/effect clear @s minecraft:slowness
+/effect clear @s minecraft:poison
+/effect clear @s minecraft:blindness
+/effect clear @s minecraft:darkness
+espera 20
+
+# espadachim_nevoa
+/dev invocar battlegroundsmod:espadachim_nevoa 7 solto
+espera 5
+/damage @e[type=battlegroundsmod:espadachim_nevoa,limit=1,sort=nearest] 1 minecraft:player_attack by @s
+/devc camera duelo 10 1.8
+/devc marca luta espadachim_nevoa
+/devc gravar naruto-mobs/luta/espadachim_nevoa 6
+espera 260
+/devc gravar parar
+/dev info @e[type=battlegroundsmod:espadachim_nevoa,limit=1,sort=nearest]
+/kill @e[type=!player]
+/effect give @s minecraft:instant_health 1 5 true
+/effect clear @s minecraft:slowness
+/effect clear @s minecraft:poison
+/effect clear @s minecraft:blindness
+/effect clear @s minecraft:darkness
+espera 20
+
+# caranguejo_gigante
+/dev invocar battlegroundsmod:caranguejo_gigante 7 solto
+espera 5
+/damage @e[type=battlegroundsmod:caranguejo_gigante,limit=1,sort=nearest] 1 minecraft:player_attack by @s
+/devc camera duelo 10 1.8
+/devc marca luta caranguejo_gigante
+/devc gravar naruto-mobs/luta/caranguejo_gigante 6
+espera 260
+/devc gravar parar
+/dev info @e[type=battlegroundsmod:caranguejo_gigante,limit=1,sort=nearest]
+/kill @e[type=!player]
+/effect give @s minecraft:instant_health 1 5 true
+/effect clear @s minecraft:slowness
+/effect clear @s minecraft:poison
+/effect clear @s minecraft:blindness
+/effect clear @s minecraft:darkness
+espera 20
+
+# tubarao_agua: piscina funda
+/fill -10 -64 -10 10 -61 10 minecraft:water
+/tp @s 0.5 -62 0.5 180 0
+espera 10
+/summon battlegroundsmod:tubarao_agua 0.5 -63 -6.5
+espera 5
+/damage @e[type=battlegroundsmod:tubarao_agua,limit=1,sort=nearest] 1 minecraft:player_attack by @s
+/devc camera duelo 10 1.8
+/devc marca luta tubarao_agua
+/devc gravar naruto-mobs/luta/tubarao_agua 6
+espera 260
+/devc gravar parar
+/dev info @e[type=battlegroundsmod:tubarao_agua,limit=1,sort=nearest]
+/kill @e[type=!player]
+/effect give @s minecraft:instant_health 1 5 true
+/effect clear @s minecraft:slowness
+/effect clear @s minecraft:poison
+/effect clear @s minecraft:blindness
+/effect clear @s minecraft:darkness
+espera 20
+/fill -10 -64 -10 10 -61 10 minecraft:grass_block replace minecraft:water
+/fill -10 -61 -10 10 -61 10 minecraft:grass_block
+/tp @s 0.5 -60 0.5 180 0
+espera 10
+
+# cacador_nevoa
+/dev invocar battlegroundsmod:cacador_nevoa 7 solto
+espera 5
+/damage @e[type=battlegroundsmod:cacador_nevoa,limit=1,sort=nearest] 1 minecraft:player_attack by @s
+/devc camera duelo 10 1.8
+/devc marca luta cacador_nevoa
+/devc gravar naruto-mobs/luta/cacador_nevoa 6
+espera 260
+/devc gravar parar
+/dev info @e[type=battlegroundsmod:cacador_nevoa,limit=1,sort=nearest]
+/kill @e[type=!player]
+/effect give @s minecraft:instant_health 1 5 true
+/effect clear @s minecraft:slowness
+/effect clear @s minecraft:poison
+/effect clear @s minecraft:blindness
+/effect clear @s minecraft:darkness
+espera 20
+
+# ninja_chuva
+/dev invocar battlegroundsmod:ninja_chuva 7 solto
+espera 5
+/damage @e[type=battlegroundsmod:ninja_chuva,limit=1,sort=nearest] 1 minecraft:player_attack by @s
+/devc camera duelo 10 1.8
+/devc marca luta ninja_chuva
+/devc gravar naruto-mobs/luta/ninja_chuva 6
+espera 260
+/devc gravar parar
+/dev info @e[type=battlegroundsmod:ninja_chuva,limit=1,sort=nearest]
+/kill @e[type=!player]
+/effect give @s minecraft:instant_health 1 5 true
+/effect clear @s minecraft:slowness
+/effect clear @s minecraft:poison
+/effect clear @s minecraft:blindness
+/effect clear @s minecraft:darkness
+espera 20
+
+# garca_papel
+/dev invocar battlegroundsmod:garca_papel 7 solto
+espera 5
+/damage @e[type=battlegroundsmod:garca_papel,limit=1,sort=nearest] 1 minecraft:player_attack by @s
+/devc camera duelo 10 1.8
+/devc marca luta garca_papel
+/devc gravar naruto-mobs/luta/garca_papel 6
+espera 260
+/devc gravar parar
+/dev info @e[type=battlegroundsmod:garca_papel,limit=1,sort=nearest]
+/kill @e[type=!player]
+/effect give @s minecraft:instant_health 1 5 true
+/effect clear @s minecraft:slowness
+/effect clear @s minecraft:poison
+/effect clear @s minecraft:blindness
+/effect clear @s minecraft:darkness
+espera 20
+
+# salamandra_venenosa
+/dev invocar battlegroundsmod:salamandra_venenosa 7 solto
+espera 5
+/damage @e[type=battlegroundsmod:salamandra_venenosa,limit=1,sort=nearest] 1 minecraft:player_attack by @s
+/devc camera duelo 10 1.8
+/devc marca luta salamandra_venenosa
+/devc gravar naruto-mobs/luta/salamandra_venenosa 6
+espera 260
+/devc gravar parar
+/dev info @e[type=battlegroundsmod:salamandra_venenosa,limit=1,sort=nearest]
+/kill @e[type=!player]
+/effect give @s minecraft:instant_health 1 5 true
+/effect clear @s minecraft:slowness
+/effect clear @s minecraft:poison
+/effect clear @s minecraft:blindness
+/effect clear @s minecraft:darkness
+espera 20
+
+# zetsu_branco
+/dev invocar battlegroundsmod:zetsu_branco 7 solto
+espera 5
+/damage @e[type=battlegroundsmod:zetsu_branco,limit=1,sort=nearest] 1 minecraft:player_attack by @s
+/devc camera duelo 10 1.8
+/devc marca luta zetsu_branco
+/devc gravar naruto-mobs/luta/zetsu_branco 6
+espera 260
+/devc gravar parar
+/dev info @e[type=battlegroundsmod:zetsu_branco,limit=1,sort=nearest]
+/kill @e[type=!player]
+/effect give @s minecraft:instant_health 1 5 true
+/effect clear @s minecraft:slowness
+/effect clear @s minecraft:poison
+/effect clear @s minecraft:blindness
+/effect clear @s minecraft:darkness
+espera 20
+
+# corvo_uchiha
+/dev invocar battlegroundsmod:corvo_uchiha 7 solto
+espera 5
+/damage @e[type=battlegroundsmod:corvo_uchiha,limit=1,sort=nearest] 1 minecraft:player_attack by @s
+/devc camera duelo 10 1.8
+/devc marca luta corvo_uchiha
+/devc gravar naruto-mobs/luta/corvo_uchiha 6
+espera 260
+/devc gravar parar
+/dev info @e[type=battlegroundsmod:corvo_uchiha,limit=1,sort=nearest]
+/kill @e[type=!player]
+/effect give @s minecraft:instant_health 1 5 true
+/effect clear @s minecraft:slowness
+/effect clear @s minecraft:poison
+/effect clear @s minecraft:blindness
+/effect clear @s minecraft:darkness
+espera 20
+
+# clone_madeira
+/dev invocar battlegroundsmod:clone_madeira 7 solto
+espera 5
+/damage @e[type=battlegroundsmod:clone_madeira,limit=1,sort=nearest] 1 minecraft:player_attack by @s
+/devc camera duelo 10 1.8
+/devc marca luta clone_madeira
+/devc gravar naruto-mobs/luta/clone_madeira 6
+espera 260
+/devc gravar parar
+/dev info @e[type=battlegroundsmod:clone_madeira,limit=1,sort=nearest]
+/kill @e[type=!player]
+/effect give @s minecraft:instant_health 1 5 true
+/effect clear @s minecraft:slowness
+/effect clear @s minecraft:poison
+/effect clear @s minecraft:blindness
+/effect clear @s minecraft:darkness
+espera 20
+
+# sapo_ninja
+/dev invocar battlegroundsmod:sapo_ninja 7 solto
+espera 5
+/damage @e[type=battlegroundsmod:sapo_ninja,limit=1,sort=nearest] 1 minecraft:player_attack by @s
+/devc camera duelo 10 1.8
+/devc marca luta sapo_ninja
+/devc gravar naruto-mobs/luta/sapo_ninja 6
+espera 260
+/devc gravar parar
+/dev info @e[type=battlegroundsmod:sapo_ninja,limit=1,sort=nearest]
+/kill @e[type=!player]
+/effect give @s minecraft:instant_health 1 5 true
+/effect clear @s minecraft:slowness
+/effect clear @s minecraft:poison
+/effect clear @s minecraft:blindness
+/effect clear @s minecraft:darkness
+espera 20
+
+# sapo_gigante
+/dev invocar battlegroundsmod:sapo_gigante 7 solto
+espera 5
+/damage @e[type=battlegroundsmod:sapo_gigante,limit=1,sort=nearest] 1 minecraft:player_attack by @s
+/devc camera duelo 10 1.8
+/devc marca luta sapo_gigante
+/devc gravar naruto-mobs/luta/sapo_gigante 6
+espera 260
+/devc gravar parar
+/dev info @e[type=battlegroundsmod:sapo_gigante,limit=1,sort=nearest]
+/kill @e[type=!player]
+/effect give @s minecraft:instant_health 1 5 true
+/effect clear @s minecraft:slowness
+/effect clear @s minecraft:poison
+/effect clear @s minecraft:blindness
+/effect clear @s minecraft:darkness
+espera 20
+
+# inseto_gigante
+/dev invocar battlegroundsmod:inseto_gigante 7 solto
+espera 5
+/damage @e[type=battlegroundsmod:inseto_gigante,limit=1,sort=nearest] 1 minecraft:player_attack by @s
+/devc camera duelo 10 1.8
+/devc marca luta inseto_gigante
+/devc gravar naruto-mobs/luta/inseto_gigante 6
+espera 260
+/devc gravar parar
+/dev info @e[type=battlegroundsmod:inseto_gigante,limit=1,sort=nearest]
+/kill @e[type=!player]
+/effect give @s minecraft:instant_health 1 5 true
+/effect clear @s minecraft:slowness
+/effect clear @s minecraft:poison
+/effect clear @s minecraft:blindness
+/effect clear @s minecraft:darkness
+espera 20
+
+/devc camera jogador
+/devc hud on
+/gamemode creative
+espera 20
+sair

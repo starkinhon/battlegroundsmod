@@ -1,0 +1,452 @@
+# Criaturas Naruto (PR #303). Rodar: gradlew runClient -Pmundo=SoulsDev -Proteiro=naruto-mobs-galeria
+/devc fechar
+/dev preparar
+/devc hud off
+/devc fov 70
+/dev soltar
+/kill @e[type=!player]
+/tp @s 0.5 -60 0.5 180 0
+espera 20
+/gamemode creative
+
+# ninja_renegado
+/dev invocar battlegroundsmod:ninja_renegado 6
+espera 15
+/devc camera duelo 7 1.2
+espera 10
+/devc print naruto-mobs/galeria/ninja_renegado_perto
+/devc camera jogador
+/devc vista primeira
+/dev soltar
+/kill @e[type=battlegroundsmod:ninja_renegado,limit=1,sort=nearest]
+/dev invocar battlegroundsmod:ninja_renegado 30
+/devc fov 20
+espera 15
+/devc print naruto-mobs/galeria/ninja_renegado_longe_lowpoly
+/devc fov 70
+/dev soltar
+/kill @e[type=!player]
+espera 5
+
+# ninken
+/dev invocar battlegroundsmod:ninken 6
+espera 15
+/devc camera duelo 7 1.2
+espera 10
+/devc print naruto-mobs/galeria/ninken_perto
+/devc camera jogador
+/devc vista primeira
+/dev soltar
+/kill @e[type=battlegroundsmod:ninken,limit=1,sort=nearest]
+/dev invocar battlegroundsmod:ninken 30
+/devc fov 20
+espera 15
+/devc print naruto-mobs/galeria/ninken_longe_lowpoly
+/devc fov 70
+/dev soltar
+/kill @e[type=!player]
+espera 5
+
+# cobra_gigante
+/dev invocar battlegroundsmod:cobra_gigante 6
+espera 15
+/devc camera duelo 7 1.2
+espera 10
+/devc print naruto-mobs/galeria/cobra_gigante_perto
+/devc camera jogador
+/devc vista primeira
+/dev soltar
+/kill @e[type=battlegroundsmod:cobra_gigante,limit=1,sort=nearest]
+/dev invocar battlegroundsmod:cobra_gigante 30
+/devc fov 20
+espera 15
+/devc print naruto-mobs/galeria/cobra_gigante_longe_lowpoly
+/devc fov 70
+/dev soltar
+/kill @e[type=!player]
+espera 5
+
+# tigre
+/dev invocar battlegroundsmod:tigre 6
+espera 15
+/devc camera duelo 7 1.2
+espera 10
+/devc print naruto-mobs/galeria/tigre_perto
+/devc camera jogador
+/devc vista primeira
+/dev soltar
+/kill @e[type=battlegroundsmod:tigre,limit=1,sort=nearest]
+/dev invocar battlegroundsmod:tigre 30
+/devc fov 20
+espera 15
+/devc print naruto-mobs/galeria/tigre_longe_lowpoly
+/devc fov 70
+/dev soltar
+/kill @e[type=!player]
+espera 5
+
+# ninja_som
+/dev invocar battlegroundsmod:ninja_som 6
+espera 15
+/devc camera duelo 7 1.2
+espera 10
+/devc print naruto-mobs/galeria/ninja_som_perto
+/devc camera jogador
+/devc vista primeira
+/dev soltar
+/kill @e[type=battlegroundsmod:ninja_som,limit=1,sort=nearest]
+/dev invocar battlegroundsmod:ninja_som 30
+/devc fov 20
+espera 15
+/devc print naruto-mobs/galeria/ninja_som_longe_lowpoly
+/devc fov 70
+/dev soltar
+/kill @e[type=!player]
+espera 5
+
+# centopeia
+/dev invocar battlegroundsmod:centopeia 6
+espera 15
+/devc camera duelo 7 1.2
+espera 10
+/devc print naruto-mobs/galeria/centopeia_perto
+/devc camera jogador
+/devc vista primeira
+/dev soltar
+/kill @e[type=battlegroundsmod:centopeia,limit=1,sort=nearest]
+/dev invocar battlegroundsmod:centopeia 30
+/devc fov 20
+espera 15
+/devc print naruto-mobs/galeria/centopeia_longe_lowpoly
+/devc fov 70
+/dev soltar
+/kill @e[type=!player]
+espera 5
+
+# ninja_leque
+/dev invocar battlegroundsmod:ninja_leque 6
+espera 15
+/devc camera duelo 7 1.2
+espera 10
+/devc print naruto-mobs/galeria/ninja_leque_perto
+/devc camera jogador
+/devc vista primeira
+/dev soltar
+/kill @e[type=battlegroundsmod:ninja_leque,limit=1,sort=nearest]
+/dev invocar battlegroundsmod:ninja_leque 30
+/devc fov 20
+espera 15
+/devc print naruto-mobs/galeria/ninja_leque_longe_lowpoly
+/devc fov 70
+/dev soltar
+/kill @e[type=!player]
+espera 5
+
+# escorpiao_areia
+/dev invocar battlegroundsmod:escorpiao_areia 6
+espera 15
+/devc camera duelo 7 1.2
+espera 10
+/devc print naruto-mobs/galeria/escorpiao_areia_perto
+/devc camera jogador
+/devc vista primeira
+/dev soltar
+/kill @e[type=battlegroundsmod:escorpiao_areia,limit=1,sort=nearest]
+/dev invocar battlegroundsmod:escorpiao_areia 30
+/devc fov 20
+espera 15
+/devc print naruto-mobs/galeria/escorpiao_areia_longe_lowpoly
+/devc fov 70
+/dev soltar
+/kill @e[type=!player]
+espera 5
+
+# marionete
+/dev invocar battlegroundsmod:marionete 6
+espera 15
+/devc camera duelo 7 1.2
+espera 10
+/devc print naruto-mobs/galeria/marionete_perto
+/devc camera jogador
+/devc vista primeira
+/dev soltar
+/kill @e[type=battlegroundsmod:marionete,limit=1,sort=nearest]
+/dev invocar battlegroundsmod:marionete 30
+/devc fov 20
+espera 15
+/devc print naruto-mobs/galeria/marionete_longe_lowpoly
+/devc fov 70
+/dev soltar
+/kill @e[type=!player]
+espera 5
+
+# marionetista
+/dev invocar battlegroundsmod:marionetista 6
+espera 15
+/devc camera duelo 7 1.2
+espera 10
+/devc print naruto-mobs/galeria/marionetista_perto
+/devc camera jogador
+/devc vista primeira
+/dev soltar
+/kill @e[type=battlegroundsmod:marionetista,limit=1,sort=nearest]
+/dev invocar battlegroundsmod:marionetista 30
+/devc fov 20
+espera 15
+/devc print naruto-mobs/galeria/marionetista_longe_lowpoly
+/devc fov 70
+/dev soltar
+/kill @e[type=!player]
+espera 5
+
+# espadachim_nevoa
+/dev invocar battlegroundsmod:espadachim_nevoa 6
+espera 15
+/devc camera duelo 7 1.2
+espera 10
+/devc print naruto-mobs/galeria/espadachim_nevoa_perto
+/devc camera jogador
+/devc vista primeira
+/dev soltar
+/kill @e[type=battlegroundsmod:espadachim_nevoa,limit=1,sort=nearest]
+/dev invocar battlegroundsmod:espadachim_nevoa 30
+/devc fov 20
+espera 15
+/devc print naruto-mobs/galeria/espadachim_nevoa_longe_lowpoly
+/devc fov 70
+/dev soltar
+/kill @e[type=!player]
+espera 5
+
+# caranguejo_gigante
+/dev invocar battlegroundsmod:caranguejo_gigante 6
+espera 15
+/devc camera duelo 7 1.2
+espera 10
+/devc print naruto-mobs/galeria/caranguejo_gigante_perto
+/devc camera jogador
+/devc vista primeira
+/dev soltar
+/kill @e[type=battlegroundsmod:caranguejo_gigante,limit=1,sort=nearest]
+/dev invocar battlegroundsmod:caranguejo_gigante 30
+/devc fov 20
+espera 15
+/devc print naruto-mobs/galeria/caranguejo_gigante_longe_lowpoly
+/devc fov 70
+/dev soltar
+/kill @e[type=!player]
+espera 5
+
+# tubarao_agua
+/dev invocar battlegroundsmod:tubarao_agua 6
+espera 15
+/devc camera duelo 7 1.2
+espera 10
+/devc print naruto-mobs/galeria/tubarao_agua_perto
+/devc camera jogador
+/devc vista primeira
+/dev soltar
+/kill @e[type=battlegroundsmod:tubarao_agua,limit=1,sort=nearest]
+/dev invocar battlegroundsmod:tubarao_agua 30
+/devc fov 20
+espera 15
+/devc print naruto-mobs/galeria/tubarao_agua_longe_lowpoly
+/devc fov 70
+/dev soltar
+/kill @e[type=!player]
+espera 5
+
+# cacador_nevoa
+/dev invocar battlegroundsmod:cacador_nevoa 6
+espera 15
+/devc camera duelo 7 1.2
+espera 10
+/devc print naruto-mobs/galeria/cacador_nevoa_perto
+/devc camera jogador
+/devc vista primeira
+/dev soltar
+/kill @e[type=battlegroundsmod:cacador_nevoa,limit=1,sort=nearest]
+/dev invocar battlegroundsmod:cacador_nevoa 30
+/devc fov 20
+espera 15
+/devc print naruto-mobs/galeria/cacador_nevoa_longe_lowpoly
+/devc fov 70
+/dev soltar
+/kill @e[type=!player]
+espera 5
+
+# ninja_chuva
+/dev invocar battlegroundsmod:ninja_chuva 6
+espera 15
+/devc camera duelo 7 1.2
+espera 10
+/devc print naruto-mobs/galeria/ninja_chuva_perto
+/devc camera jogador
+/devc vista primeira
+/dev soltar
+/kill @e[type=battlegroundsmod:ninja_chuva,limit=1,sort=nearest]
+/dev invocar battlegroundsmod:ninja_chuva 30
+/devc fov 20
+espera 15
+/devc print naruto-mobs/galeria/ninja_chuva_longe_lowpoly
+/devc fov 70
+/dev soltar
+/kill @e[type=!player]
+espera 5
+
+# garca_papel
+/dev invocar battlegroundsmod:garca_papel 6
+espera 15
+/devc camera duelo 7 1.2
+espera 10
+/devc print naruto-mobs/galeria/garca_papel_perto
+/devc camera jogador
+/devc vista primeira
+/dev soltar
+/kill @e[type=battlegroundsmod:garca_papel,limit=1,sort=nearest]
+/dev invocar battlegroundsmod:garca_papel 30
+/devc fov 20
+espera 15
+/devc print naruto-mobs/galeria/garca_papel_longe_lowpoly
+/devc fov 70
+/dev soltar
+/kill @e[type=!player]
+espera 5
+
+# salamandra_venenosa
+/dev invocar battlegroundsmod:salamandra_venenosa 6
+espera 15
+/devc camera duelo 7 1.2
+espera 10
+/devc print naruto-mobs/galeria/salamandra_venenosa_perto
+/devc camera jogador
+/devc vista primeira
+/dev soltar
+/kill @e[type=battlegroundsmod:salamandra_venenosa,limit=1,sort=nearest]
+/dev invocar battlegroundsmod:salamandra_venenosa 30
+/devc fov 20
+espera 15
+/devc print naruto-mobs/galeria/salamandra_venenosa_longe_lowpoly
+/devc fov 70
+/dev soltar
+/kill @e[type=!player]
+espera 5
+
+# zetsu_branco
+/dev invocar battlegroundsmod:zetsu_branco 6
+espera 15
+/devc camera duelo 7 1.2
+espera 10
+/devc print naruto-mobs/galeria/zetsu_branco_perto
+/devc camera jogador
+/devc vista primeira
+/dev soltar
+/kill @e[type=battlegroundsmod:zetsu_branco,limit=1,sort=nearest]
+/dev invocar battlegroundsmod:zetsu_branco 30
+/devc fov 20
+espera 15
+/devc print naruto-mobs/galeria/zetsu_branco_longe_lowpoly
+/devc fov 70
+/dev soltar
+/kill @e[type=!player]
+espera 5
+
+# corvo_uchiha
+/dev invocar battlegroundsmod:corvo_uchiha 6
+espera 15
+/devc camera duelo 7 1.2
+espera 10
+/devc print naruto-mobs/galeria/corvo_uchiha_perto
+/devc camera jogador
+/devc vista primeira
+/dev soltar
+/kill @e[type=battlegroundsmod:corvo_uchiha,limit=1,sort=nearest]
+/dev invocar battlegroundsmod:corvo_uchiha 30
+/devc fov 20
+espera 15
+/devc print naruto-mobs/galeria/corvo_uchiha_longe_lowpoly
+/devc fov 70
+/dev soltar
+/kill @e[type=!player]
+espera 5
+
+# clone_madeira
+/dev invocar battlegroundsmod:clone_madeira 6
+espera 15
+/devc camera duelo 7 1.2
+espera 10
+/devc print naruto-mobs/galeria/clone_madeira_perto
+/devc camera jogador
+/devc vista primeira
+/dev soltar
+/kill @e[type=battlegroundsmod:clone_madeira,limit=1,sort=nearest]
+/dev invocar battlegroundsmod:clone_madeira 30
+/devc fov 20
+espera 15
+/devc print naruto-mobs/galeria/clone_madeira_longe_lowpoly
+/devc fov 70
+/dev soltar
+/kill @e[type=!player]
+espera 5
+
+# sapo_ninja
+/dev invocar battlegroundsmod:sapo_ninja 6
+espera 15
+/devc camera duelo 7 1.2
+espera 10
+/devc print naruto-mobs/galeria/sapo_ninja_perto
+/devc camera jogador
+/devc vista primeira
+/dev soltar
+/kill @e[type=battlegroundsmod:sapo_ninja,limit=1,sort=nearest]
+/dev invocar battlegroundsmod:sapo_ninja 30
+/devc fov 20
+espera 15
+/devc print naruto-mobs/galeria/sapo_ninja_longe_lowpoly
+/devc fov 70
+/dev soltar
+/kill @e[type=!player]
+espera 5
+
+# sapo_gigante
+/dev invocar battlegroundsmod:sapo_gigante 6
+espera 15
+/devc camera duelo 7 1.2
+espera 10
+/devc print naruto-mobs/galeria/sapo_gigante_perto
+/devc camera jogador
+/devc vista primeira
+/dev soltar
+/kill @e[type=battlegroundsmod:sapo_gigante,limit=1,sort=nearest]
+/dev invocar battlegroundsmod:sapo_gigante 30
+/devc fov 20
+espera 15
+/devc print naruto-mobs/galeria/sapo_gigante_longe_lowpoly
+/devc fov 70
+/dev soltar
+/kill @e[type=!player]
+espera 5
+
+# inseto_gigante
+/dev invocar battlegroundsmod:inseto_gigante 6
+espera 15
+/devc camera duelo 7 1.2
+espera 10
+/devc print naruto-mobs/galeria/inseto_gigante_perto
+/devc camera jogador
+/devc vista primeira
+/dev soltar
+/kill @e[type=battlegroundsmod:inseto_gigante,limit=1,sort=nearest]
+/dev invocar battlegroundsmod:inseto_gigante 30
+/devc fov 20
+espera 15
+/devc print naruto-mobs/galeria/inseto_gigante_longe_lowpoly
+/devc fov 70
+/dev soltar
+/kill @e[type=!player]
+espera 5
+
+/devc camera jogador
+/devc hud on
+espera 20
+sair
