@@ -214,7 +214,7 @@ public final class NarutoActivities {
             if (t == null) {
                 continue;
             }
-            Entity e = t.spawn(level, at, MobSpawnType.EVENT);
+            Entity e = t.spawn(level, at, MobSpawnType.STRUCTURE);
             if (e == null) {
                 continue;
             }
@@ -1017,7 +1017,7 @@ public final class NarutoActivities {
         if (!level.getEntities(t, new AABB(nest).inflate(40), Entity::isAlive).isEmpty()) {
             return;
         }
-        Entity snake = t.spawn(level, nest.above(), MobSpawnType.EVENT);
+        Entity snake = t.spawn(level, nest.above(), MobSpawnType.STRUCTURE);
         if (snake instanceof Mob mob) {
             mob.setTarget(player);
             mob.setPersistenceRequired();
@@ -1050,7 +1050,7 @@ public final class NarutoActivities {
         if (t == null || !level.getEntities(t, new AABB(pit).inflate(30), Entity::isAlive).isEmpty()) {
             return;
         }
-        Entity sal = t.spawn(level, pit, MobSpawnType.EVENT);
+        Entity sal = t.spawn(level, pit, MobSpawnType.STRUCTURE);
         if (sal instanceof Mob mob) {
             mob.setTarget(player);
             mob.setPersistenceRequired();
@@ -1081,7 +1081,7 @@ public final class NarutoActivities {
         if (!level.getEntities(t, new AABB(top).inflate(30), e -> e.isAlive() && e.getTags().contains("souls_naruto_pico")).isEmpty()) {
             return;
         }
-        Entity toad = t.spawn(level, top, MobSpawnType.EVENT);
+        Entity toad = t.spawn(level, top, MobSpawnType.STRUCTURE);
         if (toad instanceof Mob mob) {
             mob.addTag("souls_naruto_pico");
             mob.setTarget(player);
@@ -1103,7 +1103,7 @@ public final class NarutoActivities {
         }
         for (BlockPos root : site.mark("roots")) {
             if (nearFlat(player, root, 40) && level.getEntities(type, new AABB(root).inflate(48), Entity::isAlive).size() < 3) {
-                Entity z = type.spawn(level, root, MobSpawnType.EVENT);
+                Entity z = type.spawn(level, root, MobSpawnType.STRUCTURE);
                 if (z != null) {
                     level.sendParticles(ParticleTypes.SPORE_BLOSSOM_AIR, z.getX(), z.getY(), z.getZ(), 30, 0.5, 0.2, 0.5, 0.01);
                 }
