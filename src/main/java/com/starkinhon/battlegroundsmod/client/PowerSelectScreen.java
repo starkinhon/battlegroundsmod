@@ -633,7 +633,7 @@ public class PowerSelectScreen extends Screen {
                 for (int slot : SoulSync.skills(hover)) {
                     boolean awake = SoulSync.awake(minecraft.player, hover, slot) && (hover.id().equals(current()) || !Progression.clientOn
                             || SoulSync.get(minecraft.player, hover.id()).has(slot) || slot == 0);
-                    ls.add(Component.literal(keyLabel(hover, slot) + "  ").append(hover.abilityName(slot))
+                    ls.add(Component.literal((slot >= PowerData.SLOT_SHIFT ? "Shift+" : "") + keyLabel(hover, slot) + "  ").append(hover.abilityName(slot))
                             .withStyle(s -> s.withColor(awake ? 0xFFFFFF : 0x6E6882)));
                 }
                 if (!owned(hover)) {
@@ -753,7 +753,7 @@ public class PowerSelectScreen extends Screen {
         if (k.length() > 3) {
             k = k.substring(0, 3);
         }
-        return (slot >= PowerData.SLOT_SHIFT ? "⇧" : "") + k;
+        return k;
     }
 
     // ---------- card ----------
@@ -761,11 +761,11 @@ public class PowerSelectScreen extends Screen {
         int x = cardX(), w = cardW(), c = ink(s);
         List<Component> tip = null;
         List<FormattedCharSequence> desc = font.split(s.description(), w - 16);
-        int dl = Math.min(3, desc.size());
+        int dl = Math.min(6, desc.size());
         List<Integer> skills = SoulSync.skills(s);
         int per = Math.min(5, skills.size());
         int rows = (skills.size() + per - 1) / per;
-        int h = 66 + dl * 9 + rows * 30 + 48;
+        int h = 66 + dl * 9 + rows * 32 + 48;
         int y = narrow() ? Math.round(height * 0.45f) : Math.max(52, Math.min(Math.round(height * 0.16f), height - h - 26));
         SoulBookDraw.frame(g, x, y, w, h, c, true, true, 0.92f);
         int yy = y + 8;
@@ -829,7 +829,7 @@ public class PowerSelectScreen extends Screen {
         int awakeCount = 0;
         for (int i = 0; i < skills.size(); i++) {
             int slot = skills.get(i);
-            int sx = gx + (i % per) * sw, sy = yy + (i / per) * (sw + 6);
+            int sx = gx + (i % per) * sw, sy = yy + (i / per) * (sw + 8);
             boolean awake = !gated || slot == 0 || e.has(slot);
             if (awake) {
                 awakeCount++;
@@ -847,7 +847,16 @@ public class PowerSelectScreen extends Screen {
                 r(g, sx + 19, sy - 1, 1, 5, 0xFFFFFFFF);
                 r(g, sx + 17, sy + 1, 5, 1, 0xFFFFFFFF);
             }
-            GuiDraw.centeredText(g, font, Component.literal(keyLabel(s, slot)), sx + 11, sy + 23, 0.6f, awake ? 0xFFE6DEF0 : 0xFF6E6882, false);
+            if (slot >= PowerData.SLOT_SHIFT) {
+                // Shift variant: a little yellow arrow in the corner (Stark 2026-11-12), same key below
+                int ax = sx + 16, ay = sy + 2;
+                r(g, ax + 2, ay, 1, 1, 0xFFFFD84A);
+                r(g, ax + 1, ay + 1, 3, 1, 0xFFFFD84A);
+                r(g, ax, ay + 2, 5, 1, 0xFFFFD84A);
+                r(g, ax + 2, ay + 3, 1, 2, 0xFFFFD84A);
+            }
+            GuiDraw.centeredText(g, font, Component.literal(keyLabel(s, slot)), sx + 11, sy + 24, 0.75f,
+                    awake ? 0xFFE6DEF0 : 0xFF6E6882, false);
             if (hv) {
                 r(g, sx + 3, sy + 3, 16, 16, 0x40FFFFFF);
                 tip = new ArrayList<>();
@@ -906,7 +915,7 @@ public class PowerSelectScreen extends Screen {
                 hits.add(new Hit(sx, sy, 22, 22, null, 0, -1, null, false, false, next ? slot : -1));
             }
         }
-        yy += rows * (sw + 6) + 2;
+        yy += rows * (sw + 8) + 2;
         GuiDraw.centeredText(g, font, Component.translatable("screen.battlegroundsmod.soul_book.awake_count", awakeCount, skills.size()),
                 x + w / 2f, yy, 0.75f, 0xFF9C93B4, false);
 
@@ -1083,9 +1092,11 @@ public class PowerSelectScreen extends Screen {
         int c = ink(titled);
         g.pose().pushPose();
         g.pose().translate(0, 0, 350);
-        GuiDraw.centeredText(g, font, Component.translatable("screen.battlegroundsmod.soul_book.absorbed"), width / 2f, height * 0.2f, 2.5f,
+        float tx = narrow() ? width / 2f : cx();
+        float ty = Math.max(74, gy() - 32 * unit - 70);
+        GuiDraw.centeredText(g, font, Component.translatable("screen.battlegroundsmod.soul_book.absorbed"), tx, ty, 2f,
                 a(mix(c, WHITE, 0.6f), al), true);
-        GuiDraw.centeredText(g, font, titled.name(), width / 2f, height * 0.2f + 26, 1.5f, a(c, al), true);
+        GuiDraw.centeredText(g, font, titled.name(), tx, ty + 20, 1.25f, a(c, al), true);
         g.pose().popPose();
     }
 
