@@ -95,6 +95,51 @@ public final class StructureMissions {
         NeoForge.EVENT_BUS.addListener(StructureMissions::onRightClickBlock);
         NeoForge.EVENT_BUS.addListener(StructureMissions::onClone);
         MajinMark.register();
+        // /soul estruturadb <tipo>: over the nearest Dragon Ball place of a kind (capsula, goku, karin, cell, nave, raditz,
+        // babidi, buu, kame), found or not yet built (testing; ops only). Namek's places are at fixed spots (GURU, VILLAGE).
+        com.starkinhon.battlegroundsmod.command.SoulCommand.addSubcommand(() -> net.minecraft.commands.Commands.literal("estruturadb")
+                .requires(s -> s.hasPermission(2))
+                .then(net.minecraft.commands.Commands.argument("tipo", com.mojang.brigadier.arguments.StringArgumentType.word()).executes(c -> {
+                    ServerPlayer player = c.getSource().getPlayerOrException();
+                    String kind = com.mojang.brigadier.arguments.StringArgumentType.getString(c, "tipo");
+                    ServerLevel level = player.server.overworld();
+                    BlockPos at = WorldSites.locate(level, kind, player.blockPosition(), 24);
+                    if (at == null) {
+                        c.getSource().sendFailure(Component.translatable("message.battlegroundsmod.naruto.nenhuma", kind));
+                        return 0;
+                    }
+                    player.teleportTo(level, at.getX() + 0.5, 200, at.getZ() + 30.5, 180, 30);
+                    c.getSource().sendSuccess(() -> Component.translatable("message.battlegroundsmod.naruto.indo", kind, at.getX(), at.getZ()), false);
+                    return 1;
+                }).then(net.minecraft.commands.Commands.literal("centro").executes(c -> {
+                    // /soul estruturadb <tipo> centro: onto the ground in the middle of the built place nearby
+                    ServerPlayer player = c.getSource().getPlayerOrException();
+                    String kind = com.mojang.brigadier.arguments.StringArgumentType.getString(c, "tipo");
+                    ServerLevel level = player.server.overworld();
+                    WorldSites.Site site = WorldSites.near(level, kind, player.blockPosition(), 400);
+                    if (site == null) {
+                        c.getSource().sendFailure(Component.translatable("message.battlegroundsmod.naruto.nenhuma", kind));
+                        return 0;
+                    }
+                    BlockPos ground = DbActivities.dryGround(level, site.x(), site.z(), 8);
+                    BlockPos to = ground != null ? ground : site.pos().above(2);
+                    player.teleportTo(level, to.getX() + 0.5, to.getY(), to.getZ() + 0.5, player.getYRot(), 20);
+                    return 1;
+                }))));
+        // /soul missaoponto: to the spot the running activity points at (Mestre Kame's milk, then back to him); testing
+        com.starkinhon.battlegroundsmod.command.SoulCommand.addSubcommand(() -> net.minecraft.commands.Commands.literal("missaoponto")
+                .requires(s -> s.hasPermission(2)).executes(c -> {
+                    ServerPlayer player = c.getSource().getPlayerOrException();
+                    DbActivities.Hud hud = DbActivities.hud(player);
+                    if (hud == null || !hud.way()) {
+                        return 0;
+                    }
+                    BlockPos to = DbActivities.dryGround(player.serverLevel(), hud.x(), hud.z(), 4);
+                    if (to != null) {
+                        player.teleportTo(to.getX() + 0.5, to.getY(), to.getZ() + 0.5);
+                    }
+                    return 1;
+                }));
     }
 
     // ---------------------------------------------------------------- where the player is
