@@ -99,6 +99,8 @@ public final class ChallengeArenas {
         Vec3 backPos;
         float backYaw;
         long fightAt;
+        long buildStart;
+        long buildNanos;
         long doneAt;
         UUID boss;
         boolean bossDied;
@@ -276,6 +278,7 @@ public final class ChallengeArenas {
         // Put the arena back over the next ticks; the player goes in when it is ready (about a second).
         session.state = State.BUILDING;
         session.build = new Build(template, meta, session.center, arena);
+        session.buildStart = arena.getGameTime();
         player.displayClientMessage(Component.translatable("message.battlegroundsmod.arena_building", name(id)), true);
     }
 
@@ -377,7 +380,13 @@ public final class ChallengeArenas {
             long now = arena.getGameTime();
             switch (session.state) {
                 case BUILDING -> {
-                    if (session.build.step(BUILD_BUDGET)) {
+                    long t0 = System.nanoTime();
+                    boolean ready = session.build.step(BUILD_BUDGET);
+                    session.buildNanos += System.nanoTime() - t0;
+                    if (ready) {
+                        // For the tests on Stark's PC: how long the arena took and how much server time it ate.
+                        BattlegroundsMod.LOGGER.info("[arena] {} pronta em {} ticks, {} ms de servidor ({} blocos)", session.id,
+                                now - session.buildStart + 1, session.buildNanos / 1_000_000, session.build.t.blocks);
                         session.build = null;
                         enter(player, arena, session);
                     }
@@ -851,7 +860,8 @@ public final class ChallengeArenas {
     }
 
     // /soul desafios: the Livro dos Desafios (every universe in one book). /soul desafios sair: leave the arena.
-    // /soul desafios liberar <id|todos> [jogador] and /soul desafios zerar [jogador] (ops): for testing.
+    // /soul desafios liberar <id|todos> [jogador], /soul desafios zerar [jogador] and /soul desafios ir <id> (ops): for
+    // testing (ir = the book's button, straight into that arena).
     public static LiteralArgumentBuilder<CommandSourceStack> command() {
         return Commands.literal("desafios")
                 .executes(context -> {
@@ -859,6 +869,25 @@ public final class ChallengeArenas {
                     player.getInventory().add(new ItemStack(ModItems.CHALLENGE_BOOK.get()));
                     return 1;
                 })
+                .then(Commands.literal("ir").requires(source -> source.hasPermission(2))
+                        .then(Commands.argument("id", StringArgumentType.word())
+                                .suggests((context, builder) -> {
+                                    for (ChallengeSpec.Universe universe : ChallengeSpec.get().universos()) {
+                                        for (ChallengeSpec.Challenge challenge : universe.desafios()) {
+                                            builder.suggest(challenge.id());
+                                        }
+                                    }
+                                    return builder.buildFuture();
+                                })
+                                .executes(context -> {
+                                    ServerPlayer player = context.getSource().getPlayerOrException();
+                                    Session old = SESSIONS.remove(player.getUUID());
+                                    if (old != null) {
+                                        removeBoss(player.server, old);       // tests jump from arena to arena
+                                    }
+                                    start(player, StringArgumentType.getString(context, "id"));
+                                    return 1;
+                                })))
                 .then(Commands.literal("sair").executes(context -> {
                     leave(context.getSource().getPlayerOrException());
                     return 1;
