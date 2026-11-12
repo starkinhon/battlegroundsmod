@@ -422,6 +422,9 @@ public final class SubNet {
     public static final int LUFFY_RUBBER = 224;
     // How he looks after a move: id, a = 1 tiny (G3's cost) / 2 tired (G4's), b = ticks.
     public static final int LUFFY_AFTER = 225;
+    // The Conqueror's haki (client/fx/HakiFx): a = 1 a G4 blow lands (red bolts; id = target, pos = its centre, dir = the
+    // blow, b = his size), 2 a G5 blow (red and yellow), 3 the target is weakened by the G5 leak (id, b = ticks).
+    public static final int LUFFY_HAKI = 226;
     public static final int LUFFY_LAST = 239;
 
     // Todo's Black Flash Garantido. TODO_FLAME (stream): id = Todo, a = 0..1 how strong, b = 1 while he dashes (the flames

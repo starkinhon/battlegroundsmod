@@ -29,7 +29,9 @@ public final class LuffyMesh {
         // Boundman (forja/luffy-g4): BoxGeometry(1, 1, 1, 6, 6, 6) for the haki, a light sphere for each lump of steam
         RBOX, BLOB,
         // Gear 5 (forja/luffy-g5): the neck cloud with more segments for its flames, and the thin ring of the fur hems
-        TORUS_F, FUR;
+        TORUS_F, FUR,
+        // the Conqueror's Haki (forja/luffy-haki): the bolt's core (squareTubeGeo(120)) and its soft glow (a round tube of 10 sides)
+        HAO, HALO;
 
         VertexBuffer vbo;
     }
@@ -37,7 +39,8 @@ public final class LuffyMesh {
     // position and normal (the game has no such format of its own)
     public static final VertexFormat FORMAT = VertexFormat.builder().add("Position", VertexFormatElement.POSITION).add("Normal", VertexFormatElement.NORMAL).build();
 
-    public static final int ARM = 0, BURST = 1, STEAM = 2, COLLAR = 3, FIRE = 4, BLAST = 5, BOLT = 6, SOLID = 7, HAKI = 8, CLOUD = 9;
+    public static final int ARM = 0, BURST = 1, STEAM = 2, COLLAR = 3, FIRE = 4, BLAST = 5, BOLT = 6, SOLID = 7, HAKI = 8, CLOUD = 9, HAO = 10, SCORCH = 11, RING = 12,
+            SHELL = 13;
     public static final int FRONT = 1, BACK = 2, BOTH = 3;
 
     public static final class P {
@@ -188,6 +191,8 @@ public final class LuffyMesh {
                 case BLOB -> sphere(b, 20, 14);
                 case TORUS_F -> torus(b, 0.4f, 0.15f, 32, 160);
                 case FUR -> torus(b, 0.7f, 0.1f, 12, 64);
+                case HAO -> squareTube(b, 120);
+                case HALO -> roundTube(b, 120, 10);
             }
             VertexBuffer vbo = new VertexBuffer(VertexBuffer.Usage.STATIC);
             vbo.bind();
@@ -207,6 +212,21 @@ public final class LuffyMesh {
                 float[] n = {nx, ny, 0};
                 tri(b, a, c, d, n, n, n);
                 tri(b, c, e, d, n, n, n);
+            }
+        }
+    }
+
+    // The haki's glow: a round tube from -1 to 1 across, z from 0 to 1, its normal pointing out.
+    private static void roundTube(BufferBuilder b, int along, int sides) {
+        for (int j = 0; j < along; j++) {
+            float u0 = j / (float) along, u1 = (j + 1) / (float) along;
+            for (int k = 0; k < sides; k++) {
+                double a0 = k * Math.PI * 2 / sides, a1 = (k + 1) * Math.PI * 2 / sides;
+                float c0 = (float) Math.cos(a0), s0 = (float) Math.sin(a0), c1 = (float) Math.cos(a1), s1 = (float) Math.sin(a1);
+                float[] a = {c0, s0, u0}, c = {c1, s1, u0}, d = {c0, s0, u1}, e = {c1, s1, u1};
+                float[] na = {c0, s0, 0}, nc = {c1, s1, 0};
+                tri(b, a, c, d, na, nc, na);
+                tri(b, c, e, d, nc, nc, na);
             }
         }
     }
