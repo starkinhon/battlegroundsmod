@@ -269,6 +269,10 @@ public final class Luffy {
                 SubNet.send(level, SubNet.LUFFY_G5, caster.getId(), caster.position(), Vec3.ZERO, 0, 0, 0);
                 return true;
             }
+            // the Conqueror's haki leaks out of him: whoever is weaker (a lower tier) close by is crushed by it
+            if (age % 10 == 0) {
+                haki(caster, level);
+            }
             // the drums keep beating
             if (age % 40 == 0) {
                 SubCommon.sound(level, caster.position(), SoundEvents.NOTE_BLOCK_BASEDRUM.value(), 1.2f, 0.6f);
@@ -284,6 +288,25 @@ public final class Luffy {
             PowerLogic.sync(player);
         }
         return true;
+    }
+
+    // Gear 5's Conqueror's haki: the weaker ones near him (a higher tier number than his) are slowed and weakened, and
+    // drawn bent over and shaking (LuffyFx/HakiFx). Refreshed every 10 ticks while the G5 lasts.
+    private static void haki(LivingEntity caster, ServerLevel level) {
+        int mine = tier(caster);
+        double r = 4.5 * size(caster);
+        for (LivingEntity e : com.starkinhon.battlegroundsmod.combat.Combat.inRadius(level, caster.position(), r, caster)) {
+            if (tier(e) <= mine) {
+                continue;
+            }
+            e.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 25, 1, false, false));
+            e.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 25, 0, false, false));
+            SubNet.send(level, SubNet.LUFFY_HAKI, e.getId(), e.position(), Vec3.ZERO, 3, 25, 0);
+        }
+    }
+
+    private static int tier(LivingEntity e) {
+        return e.hasData(ModAttachments.POWER) ? com.starkinhon.battlegroundsmod.power.Tiers.of(e) : com.starkinhon.battlegroundsmod.power.Tiers.HUMANO;
     }
 
     // The G5 is over: starving, no stamina, slow and weak, no Gears until it passes.

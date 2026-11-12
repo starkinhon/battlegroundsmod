@@ -209,7 +209,7 @@ public final class LuffyFx {
     private static final double[] SPIN = {-2.5, -9, -2, -14, -6};
 
     public static boolean active() {
-        if (!BURSTS.isEmpty() || !RUBBERS.isEmpty() || !SQUASH.isEmpty() || !KNOCK.isEmpty()) {
+        if (!BURSTS.isEmpty() || !RUBBERS.isEmpty() || !SQUASH.isEmpty() || !KNOCK.isEmpty() || HakiFx.active()) {
             return true;
         }
         double now = ScreenFx.now();
@@ -227,6 +227,7 @@ public final class LuffyFx {
         RUBBERS.clear();
         SQUASH.clear();
         KNOCK.clear();
+        HakiFx.clear();
     }
 
     // ---------- small math ----------
@@ -271,6 +272,8 @@ public final class LuffyFx {
 
     private static Frame F;
     private static Vec3 CAM, C, TP, TG, FEET;
+    // the real camera (CAM is moved for the Giant, whose pieces are drawn small about it)
+    private static Vec3 REALCAM = Vec3.ZERO;
     // The Giant: GS = his size. While his moves draw, CAM/C/TP are taken into his "small world" (shrunk about his feet),
     // the moves run at normal size there, and what they make is put back at his size (LuffyMesh.worldScale, toReal).
     private static double GS = 1;
@@ -512,6 +515,14 @@ public final class LuffyFx {
                     bd.g5Until = -1;
                 }
             }
+            case SubNet.LUFFY_HAKI -> {
+                // the Conqueror's haki: a = 1 a G4 blow lands (red), 2 a G5 blow (red and yellow), 3 he is weakened (b ticks)
+                if (a > 2.5f) {
+                    HakiFx.weak(id, now + Math.max(1, b));
+                } else {
+                    HakiFx.hit(pos, dir, a > 1.5f, Math.max(0.5, b));
+                }
+            }
             case SubNet.LUFFY_AFTER -> {
                 Body bd = body(id);
                 if (a < 1.5f) {
@@ -625,6 +636,12 @@ public final class LuffyFx {
         if (!a.fist) {
             return;
         }
+        // the Conqueror's haki winds round the fist: G4 red, G5 red and yellow (nothing in the other gears)
+        if (B != null && B.move != null && (B.move.gear == 3 || B.move.gear == 4)) {
+            Vec3 fistW = HakiFx.world(M, 0, 0, (float) (a.L + a.off * a.fs), REALCAM, GS);
+            Vec3 rootW = HakiFx.world(M, 0, 0, 0, REALCAM, GS);
+            HakiFx.wrap(fistW, rootW, B.move.gear == 4, GS);
+        }
         Matrix4f fm = new Matrix4f(M).translate(0, 0, (float) (a.L + a.off * a.fs)).rotateZ((float) a.spin)
                 .scale((float) (a.fs * a.fx), (float) (a.fs * a.fy), (float) (a.fs * a.fz));
         solidBox(fm, 0, 0, 0, 0.3, 0.28, 0.3, a.col, a.kkg);
@@ -688,6 +705,7 @@ public final class LuffyFx {
             return;
         }
         CAM = cam;
+        REALCAM = cam;
         NOW = now;
         TIME = time;
         DT = dt;
@@ -720,6 +738,10 @@ public final class LuffyFx {
             LuffyMesh.worldScale = (float) GS;
             Vec3 look = bd.move != null ? bd.move.look : e.getViewVector(partial);
             F = Frame.of(feet, look);
+            // G5: the Conqueror's haki leaks out of him (red and yellow bolts)
+            if (bd.g5Until > now) {
+                HakiFx.leak(e, now, dt, SELF_FP);
+            }
             if (bd.move != null) {
                 Move m = bd.move;
                 double u = (now - m.start) / 20;
@@ -753,6 +775,7 @@ public final class LuffyFx {
             Entity e = level.getEntity(bd.id);
             columns(bd, cam, dt, e == mc.player && mc.options.getCameraType().isFirstPerson());
         }
+        HakiFx.render(cam, now, partial, dt);
         FRAME++;
         bursts();
         rubberGround(cam, now);

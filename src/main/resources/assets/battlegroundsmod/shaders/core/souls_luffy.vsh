@@ -6,7 +6,8 @@
 // twists for the Rifle, cartoon in G5), 1 an anime air burst (ring of points or a half moon, faces the camera),
 // 2 the steam shell of G2/G4, 3 the cloud collar of G5, 4 the fire shell of the fist, 5 the blast dome (fire or smoke),
 // 6 the lightning of the Kaminari, 7 a solid piece (fist, balloon, cannonball, joints; P0.x = 1 the King Kong Gun's
-// black with red lines).
+// black with red lines), 8 Boundman's haki, 9 his steam, 10 the Conqueror's Haki bolt, 11 its burnt mark on the ground,
+// 12 its pressure ring, 13 its shock shell.
 in vec3 Position;
 in vec3 Normal;
 
@@ -136,6 +137,21 @@ void main() {
         P = n * (1. + lump * P0.w + P0.y) + sway * P3.x;
         Nl = normalize(n + vec3(0., 0.35, 0.));
         vO = wp;
+    } else if (k == 10) {
+        // HAO_V (forja/luffy-haki, the Conqueror's Haki): the BOLT's zigzag, thick in the middle and pointed at both ends.
+        // P0 = (L, R, Zig, Ph), P1 = (Bend, Wob, K, Halo: the soft glow is the same bolt, wider); vL = its axis in view space
+        float u = Position.z; vec2 cs = Position.xy; float env = sin(u * 3.14159);
+        float f = u * P1.z, i = floor(f), t = fract(f);
+        vec2 zig = mix(vec2(hz(i), hz(i + 31.)), vec2(hz(i + 1.), hz(i + 32.)), t);
+        vec2 off = zig * P0.z * (0.3 + 0.7 * env) + vec2(sin(u * 6.2832 - P0.w), 0.7 * cos(u * 4.7 - P0.w * 1.3)) * P1.y * env + vec2(0., P1.x * env);
+        float r = P0.y * (0.1 + 0.9 * pow(env, 0.45)) * (1. + 0.25 * P1.y * sin(u * 20. - P0.w * 2.)) * P1.w;
+        P = vec3(off + cs * r, u * P0.x);
+        Nl = vec3(Normal.xy, 0.);
+        vU = u;
+        vL = normalize(mat3(ModelViewMat * Model) * vec3(0., 0., 1.));
+    } else if (k == 11 || k == 12 || k == 13) {
+        // the haki's burnt mark and pressure ring (a flat quad) and its shock shell (a sphere): shaped in the fragment
+        vO = Position;
     }
     vec4 mv = ModelViewMat * (Model * vec4(P, 1.));
     mat3 nm = transpose(inverse(mat3(ModelViewMat * Model)));
