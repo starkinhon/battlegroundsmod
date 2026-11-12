@@ -415,9 +415,11 @@ public class BattlegroundsModClient {
                 context -> new com.starkinhon.battlegroundsmod.client.animal.DinoRenderer(context, "raptor", 1.0f));
         event.registerEntityRenderer(ModEntities.SOLDADO_FREEZA.get(),
                 context -> new SoulBossRenderer<>(context, false, "soldado_freeza_0", "soldado_freeza_1"));
-        event.registerEntityRenderer(ModEntities.NINJA_RENEGADO.get(),
-                context -> new SoulBossRenderer<>(context, false, "ninja_renegado_0", "ninja_renegado_1"));
-        event.registerEntityRenderer(ModEntities.NINJA_SOM.get(), context -> new SoulBossRenderer<>(context, "ninja_som", false));
+        // the Naruto biomes' creatures (animal/naruto): the preview's models and baked animation
+        for (var e : ModEntities.NARUTO_MOBS.entrySet()) {
+            String id = e.getKey();
+            event.registerEntityRenderer(e.getValue().get(), context -> new com.starkinhon.battlegroundsmod.client.blocky.NarutoMobRenderer(context, id));
+        }
         event.registerEntityRenderer(ModEntities.ANBU_RAIZ.get(), context -> new SoulBossRenderer<>(context, "anbu_raiz", false));
         event.registerEntityRenderer(ModEntities.NPC_JIRAIYA.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_jiraiya"));
         event.registerEntityRenderer(ModEntities.NPC_TEUCHI.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_teuchi"));
