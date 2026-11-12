@@ -1,0 +1,64 @@
+# Tour pelos biomas do mundo Souls (semente 1), print de cada um visto do alto.
+# gradlew runClient -Pmundo=SoulsTipo3 -Proteiro=mundo-souls-tour
+espera 200
+dev preparar
+devc hud off
+gamemode spectator
+devc marca terras_do_dragao
+tp @s -674 150 899 -45 30
+espera 220
+devc print souls_tour/00_terras_do_dragao
+devc marca picos_do_dragao
+tp @s -1986 150 867 -45 30
+espera 220
+devc print souls_tour/01_picos_do_dragao
+devc marca deserto_vermelho
+tp @s -1282 150 1475 -45 30
+espera 220
+devc print souls_tour/02_deserto_vermelho
+devc marca terra_sagrada_de_karin
+tp @s 222 150 3 -45 30
+espera 220
+devc print souls_tour/03_terra_sagrada_de_karin
+devc marca mar_do_sul
+tp @s -706 150 867 -45 30
+espera 220
+devc print souls_tour/04_mar_do_sul
+devc marca norte_gelado
+tp @s -706 150 -925 -45 30
+espera 220
+devc print souls_tour/05_norte_gelado
+devc marca montanhas_paozu
+tp @s 382 150 195 -45 30
+espera 220
+devc print souls_tour/06_montanhas_paozu
+devc marca floresta_da_folha
+tp @s -482 150 739 -45 30
+espera 220
+devc print souls_tour/07_floresta_da_folha
+devc marca floresta_da_morte
+tp @s -642 150 899 -45 30
+espera 220
+devc print souls_tour/08_floresta_da_morte
+devc marca deserto_do_vento
+tp @s -162 150 739 -45 30
+espera 220
+devc print souls_tour/09_deserto_do_vento
+devc marca mar_da_nevoa
+tp @s -514 150 67 -45 30
+espera 220
+devc print souls_tour/10_mar_da_nevoa
+devc marca vila_da_chuva
+tp @s -258 150 -765 -45 30
+espera 220
+devc print souls_tour/11_vila_da_chuva
+devc marca vale_do_fim
+tp @s 94 150 99 -45 30
+espera 220
+devc print souls_tour/12_vale_do_fim
+devc marca monte_myoboku
+tp @s -706 150 -477 -45 30
+espera 220
+devc print souls_tour/13_monte_myoboku
+espera 40
+sair
