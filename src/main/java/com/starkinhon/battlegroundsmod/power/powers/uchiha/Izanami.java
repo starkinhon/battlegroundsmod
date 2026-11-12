@@ -231,8 +231,17 @@ public final class Izanami {
     // Time stops: everyone is frozen and untouchable, what was going on is cut off, and the camera goes to the eyes.
     private static void stop(Recording r, int scene, int back, boolean awakened) {
         r.recording = false;
-        // Only the moves of those caught in it (a player across the map keeps theirs).
-        Tasks.cancelSince(r.taskMark, owner -> owner instanceof LivingEntity living && r.tracks.containsKey(living));
+        // Only the moves of those caught in it (a player across the map keeps theirs). The interrupt (below) comes first and
+        // the tasks are dropped a couple of ticks later: a move that reads the interrupt closes itself on its next tick
+        // (frees its key and its busy flags). Dropping them at once left those flags stuck for good (Sukuna's Clivar never
+        // usable again until death), the same bug VazioRelampago had (#245). The Izanami's own tasks are system tasks.
+        Tasks.addSystem(age -> {
+            if (age < 2) {
+                return false;
+            }
+            Tasks.cancelSince(r.taskMark, owner -> owner instanceof LivingEntity living && r.tracks.containsKey(living));
+            return true;
+        });
         int last = Math.max(0, r.tick);
         for (Track track : r.tracks.values()) {
             LivingEntity entity = track.entity;
