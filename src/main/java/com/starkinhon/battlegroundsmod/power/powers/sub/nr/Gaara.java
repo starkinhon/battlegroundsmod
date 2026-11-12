@@ -204,7 +204,7 @@ public final class Gaara {
                 lean = 0.15f + 0.35f * s;
                 curl = grab[0] ? 0.1f : 0;
                 if (age % 2 == 0) {
-                    JjCommon.crater(level, w.add(dir.scale(2.4 * PU)), 0.55 * PU, 0.3, 1);
+                    JjCommon.crater(level, w.add(dir.scale(2.4 * PU)), 0.55 * PU, 0.3, 0);
                 }
                 if (age == t1 || age == t1 + 6) {
                     SubCommon.sound(level, w, SoundEvents.SAND_PLACE, 1.6f, 0.5f);
