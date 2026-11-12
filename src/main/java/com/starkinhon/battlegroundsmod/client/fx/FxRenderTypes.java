@@ -37,6 +37,15 @@ public final class FxRenderTypes extends RenderType {
                     .setCullState(NO_CULL)
                     .createCompositeState(false));
 
+    // Seen through everything: the red ghosts of Makima's rats' vision (MakimaFx), the bodies' own shape over the world.
+    public static final RenderType GHOST = create("battlegroundsmod_fx_ghost", DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS, 262144,
+            false, true, CompositeState.builder()
+                    .setShaderState(POSITION_COLOR_SHADER)
+                    .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                    .setDepthTestState(NO_DEPTH_TEST)
+                    .setWriteMaskState(COLOR_WRITE)
+                    .setCullState(NO_CULL)
+                    .createCompositeState(false));
 
     // The souls_vfx shapes (see FxDraw). The additive one is drawn into the glow layer, which gets the bloom.
     private static final ShaderStateShard VFX_SHADER = new ShaderStateShard(() -> FxShaders.vfx);

@@ -157,6 +157,10 @@ public final class DbFx {
             NrFx.receive(kind, id, pos, dir, a, b, c);
             return;
         }
+        if (kind >= com.starkinhon.battlegroundsmod.power.powers.makima.MkNet.EYES) {
+            MakimaFx.receive(kind, id, pos, dir, a, b, c);
+            return;
+        }
         if (kind >= SubNet.DIV_AURA) {
             JjFx.receive(kind, id, pos, dir, a, b, c);
             return;
@@ -302,6 +306,7 @@ public final class DbFx {
         TRACKED.clear();
         NrFx.clear();
         JjFx.clear();
+        MakimaFx.clear();
     }
 
     private static double life(Fx f) {

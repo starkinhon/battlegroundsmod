@@ -135,6 +135,11 @@ public class BattlegroundsModClient {
         NeoForge.EVENT_BUS.addListener(RenderLivingEvent.Pre.class, com.starkinhon.battlegroundsmod.client.fx.ClivarRenderer::onRenderLiving);
         NeoForge.EVENT_BUS.addListener(RenderLivingEvent.Pre.class, com.starkinhon.battlegroundsmod.client.fx.SoulCeremonyFx::onRenderLiving);
         NeoForge.EVENT_BUS.addListener(RenderLivingEvent.Pre.class, Vanish::onRenderLiving);
+        // Makima: a body sinking into (or rising from) the dark ground, and one crushed flat by the Ritual.
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, false, RenderLivingEvent.Pre.class,
+                com.starkinhon.battlegroundsmod.client.fx.MakimaFx::onRenderLivingPre);
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, true, RenderLivingEvent.Post.class,
+                com.starkinhon.battlegroundsmod.client.fx.MakimaFx::onRenderLivingPost);
         NeoForge.EVENT_BUS.addListener(RenderLivingEvent.Pre.class, com.starkinhon.battlegroundsmod.client.fx.SwordFx::onRenderLivingPre);
         NeoForge.EVENT_BUS.addListener(EventPriority.LOW, false, RenderLivingEvent.Pre.class,
                 com.starkinhon.battlegroundsmod.client.fx.EsferaRenderer::onRenderPre);
@@ -244,6 +249,9 @@ public class BattlegroundsModClient {
                 com.starkinhon.battlegroundsmod.client.ScouterHud::render);
         // After every vanilla bar, so it knows how tall the hearts, armor and food stand.
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "base_attacks"), BaseAttacks::render);
+        // Makima's BANG over her finger.
+        event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "makima_bang"),
+                com.starkinhon.battlegroundsmod.client.MakimaHud::render);
         // The attack stamina: beside the player in third person, on the left of the screen in first person.
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "stamina_bar"),
                 com.starkinhon.battlegroundsmod.client.StaminaBar::render);

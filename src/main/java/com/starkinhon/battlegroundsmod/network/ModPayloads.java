@@ -1167,6 +1167,58 @@ public final class ModPayloads {
         }
     }
 
+    // Server -> client: Makima opens one of her screens (power/powers/makima). kind 0 the puppet wheel (entries = the
+    // stored mobs' "name|type", then the puppets out as "@id|kind|order|type|name"), 1 the Ritual's sheet (count = her puppets out, entries = "name|origin" of everyone she has
+    // seen).
+    public record MkOpen(int kind, int count, List<String> entries) implements CustomPacketPayload {
+        public static final Type<MkOpen> TYPE = payloadType("mk_open");
+        public static final StreamCodec<ByteBuf, MkOpen> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, MkOpen::kind, ByteBufCodecs.VAR_INT, MkOpen::count,
+                ByteBufCodecs.STRING_UTF8.apply(ByteBufCodecs.list()), MkOpen::entries, MkOpen::new);
+
+        @Override
+        public Type<MkOpen> type() {
+            return TYPE;
+        }
+    }
+
+    // Client -> server: the puppet picked on Makima's wheel (-1 none).
+    public record MkPick(int index) implements CustomPacketPayload {
+        public static final Type<MkPick> TYPE = payloadType("mk_pick");
+        public static final StreamCodec<ByteBuf, MkPick> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, MkPick::index, MkPick::new);
+
+        @Override
+        public Type<MkPick> type() {
+            return TYPE;
+        }
+    }
+
+    // Client -> server: an order given on Makima's wheel to a puppet that is out (entity id), or to all of them
+    // (Puppets.order: 0 back, 1 attack her target, 2 follow, 3 stay, 4 free, 5 let go, 6 all back, 7 all attack).
+    public record MkOrder(int action, int entity) implements CustomPacketPayload {
+        public static final Type<MkOrder> TYPE = payloadType("mk_order");
+        public static final StreamCodec<ByteBuf, MkOrder> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, MkOrder::action, ByteBufCodecs.VAR_INT, MkOrder::entity, MkOrder::new);
+
+        @Override
+        public Type<MkOrder> type() {
+            return TYPE;
+        }
+    }
+
+    // Client -> server: the names Makima wrote on the Ritual's sheet, one per line (empty: the sheet was closed).
+    public record MkNames(List<String> names) implements CustomPacketPayload {
+        public static final Type<MkNames> TYPE = payloadType("mk_names");
+        public static final StreamCodec<ByteBuf, MkNames> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.STRING_UTF8.apply(ByteBufCodecs.list()), MkNames::names, MkNames::new);
+
+        @Override
+        public Type<MkNames> type() {
+            return TYPE;
+        }
+    }
+
     // Server -> client: Aizen's Black Box (power/powers/aizen/BlackBox). mode 0 held (every tick), 1 shut (once), 2 gone.
     // base: the bottom middle of the box; size: x = half its width, y = its height, z = the charge (0 to 1).
     public record BlackBox(int id, int mode, Vec3 base, Vec3 size, boolean awakened) implements CustomPacketPayload {
@@ -1783,6 +1835,23 @@ public final class ModPayloads {
                 () -> ClientHooks.limp(payload.entity(), payload.phase(), payload.ticks(), payload.strength())));
         registrar.playToClient(VoidFlash.TYPE, VoidFlash.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.voidFlash(payload.caster(), payload.center())));
+        registrar.playToClient(MkOpen.TYPE, MkOpen.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.makimaOpen(payload.kind(), payload.count(), payload.entries())));
+        registrar.playToServer(MkPick.TYPE, MkPick.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
+            if (context.player() instanceof ServerPlayer player) {
+                Tasks.as(player, () -> com.starkinhon.battlegroundsmod.power.powers.makima.Fantoche.pick(player, payload.index()));
+            }
+        }));
+        registrar.playToServer(MkOrder.TYPE, MkOrder.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
+            if (context.player() instanceof ServerPlayer player) {
+                Tasks.as(player, () -> com.starkinhon.battlegroundsmod.power.powers.makima.Puppets.order(player, payload.action(), payload.entity()));
+            }
+        }));
+        registrar.playToServer(MkNames.TYPE, MkNames.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
+            if (context.player() instanceof ServerPlayer player) {
+                Tasks.as(player, () -> com.starkinhon.battlegroundsmod.power.powers.makima.Ritual.written(player, payload.names()));
+            }
+        }));
         registrar.playToClient(SubFx.TYPE, SubFx.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.subFx(payload.kind(), payload.id(), payload.pos(), payload.dir(), payload.a(), payload.b(), payload.c())));
         registrar.playToClient(PunchFx.TYPE, PunchFx.STREAM_CODEC, (payload, context) -> context.enqueueWork(

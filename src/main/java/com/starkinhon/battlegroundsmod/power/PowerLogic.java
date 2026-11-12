@@ -104,6 +104,16 @@ public final class PowerLogic {
             // V with his Santuário open: Sukuna closes it (the second press right after the first: the fast version).
             return;
         }
+        if (PowerData.isUlt(slot) && com.starkinhon.battlegroundsmod.power.powers.makima.Makima.ultAgain(player)) {
+            // V with her chains or her souls out: Makima's "Morram."
+            return;
+        }
+        if (slot == com.starkinhon.battlegroundsmod.power.powers.makima.Ratos.SLOT
+                && com.starkinhon.battlegroundsmod.power.powers.makima.Makima.is(player)
+                && com.starkinhon.battlegroundsmod.power.powers.makima.Ratos.press(player)) {
+            // Shift+C with her rats out: Makima goes to the one she looks at.
+            return;
+        }
         if (slot == 0 && com.starkinhon.battlegroundsmod.power.powers.uchiha.Katon.cancel(player)) {
             // Z while Madara breathes fire: he stops it.
             return;
