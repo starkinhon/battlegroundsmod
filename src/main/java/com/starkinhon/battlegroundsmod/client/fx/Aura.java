@@ -75,7 +75,7 @@ public final class Aura {
     private static final Map<Integer, EyesOn> EYES_ON = new HashMap<>();
     // Eyes switched off with a fade: entity id -> when (the trail left behind fades, and so does the glow).
     private static final Map<Integer, Long> FADING = new HashMap<>();
-    private static final RandomSource RANDOM = RandomSource.create();
+    private static final RandomSource RANDOM = RandomSource.createThreadSafe();
     private static MultiBufferSource.BufferSource buffers;
     private static ClientLevel lastLevel;
     private static boolean drawing;

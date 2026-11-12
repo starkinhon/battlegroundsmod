@@ -11,7 +11,6 @@ import com.starkinhon.battlegroundsmod.skill.VfxSpec.Efeito;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.Mth;
-import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec3;
 
 // The world effects of Bills' Planetary Destruction (bills.destruction_touch.json), drawn like the rest of FxWorld from the
@@ -294,7 +293,7 @@ final class DestructionFx {
                 if (level == null) {
                     return new float[] {0.05f, 0, baseY + 1};
                 }
-                int top = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
+                int top = ClientGround.noLeaves(level, x, z);
                 int trunk = 0;
                 var pos = new net.minecraft.core.BlockPos.MutableBlockPos(x, top - 1, z);
                 while (trunk < 32 && level.getBlockState(pos).is(net.minecraft.tags.BlockTags.LOGS)) {
