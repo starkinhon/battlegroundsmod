@@ -39,6 +39,7 @@ public final class BoundmanSkin {
     }
 
     private static final Map<ResourceLocation, Skin> CACHE = new HashMap<>();
+    private static final java.util.Set<ResourceLocation> WARNED = new java.util.HashSet<>();
     private static int next;
 
     private BoundmanSkin() {
@@ -71,8 +72,10 @@ public final class BoundmanSkin {
         if (!RenderSystem.isOnRenderThread()) {
             return null;
         }
-        AbstractTexture tex = Minecraft.getInstance().getTextureManager().getTexture(loc, null);
+        // (the one-argument getTexture loads it if nothing drew it yet, e.g. he went Boundman before he was ever seen)
+        AbstractTexture tex = Minecraft.getInstance().getTextureManager().getTexture(loc);
         if (tex == null) {
+            warn(loc, "no texture", null);
             return null;
         }
         try {
@@ -80,6 +83,7 @@ public final class BoundmanSkin {
             int w = GL11.glGetTexLevelParameteri(GL11.GL_TEXTURE_2D, 0, GL11.GL_TEXTURE_WIDTH);
             int h = GL11.glGetTexLevelParameteri(GL11.GL_TEXTURE_2D, 0, GL11.GL_TEXTURE_HEIGHT);
             if (w < 64 || h < w / 2) {
+                warn(loc, "size " + w + "x" + h, null);
                 return null;
             }
             NativeImage img = new NativeImage(w, h, false);
@@ -99,9 +103,21 @@ public final class BoundmanSkin {
             tattoo(img, s, sk);
             DynamicTexture dyn = new DynamicTexture(img);
             ResourceLocation out = Minecraft.getInstance().getTextureManager().register("battlegroundsmod_boundman_" + next++, dyn);
+            com.starkinhon.battlegroundsmod.BattlegroundsMod.LOGGER.info("Boundman skin made from {} ({}x{}, slim {}, legacy {}) as {}", loc, w, h, slim, legacy, out);
+            if (Boolean.getBoolean("souls.boundmanDump")) {
+                img.writeToFile(Minecraft.getInstance().gameDirectory.toPath().resolve("screenshots").resolve(out.getPath().replace('/', '_') + ".png"));
+            }
             return new Skin(out, slim, legacy);
-        } catch (RuntimeException ex) {
+        } catch (RuntimeException | java.io.IOException ex) {
+            warn(loc, "failed", ex);
             return null;
+        }
+    }
+
+    // once per skin: why the tattooed copy could not be made (he is drawn with the plain skin meanwhile)
+    private static void warn(ResourceLocation loc, String why, Exception ex) {
+        if (WARNED.add(loc)) {
+            com.starkinhon.battlegroundsmod.BattlegroundsMod.LOGGER.warn("Boundman skin from {}: {}", loc, why, ex);
         }
     }
 

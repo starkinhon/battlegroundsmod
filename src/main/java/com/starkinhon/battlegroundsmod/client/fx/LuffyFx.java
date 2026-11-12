@@ -2086,6 +2086,48 @@ public final class LuffyFx {
         }
     }
 
+    // What he holds is drawn at the vanilla hand, which neither Boundman's fists nor the sitting G5 arms are: there it
+    // floated by his knee or hip (the Power Book, seen in the scripted test). Those poses hold nothing.
+    public static boolean hidesHeld(AbstractClientPlayer player) {
+        Body bd = BODIES.get(player.getId());
+        return bd != null && (boundman(bd) || sitting(bd));
+    }
+
+    // The player renderer's item-in-hand layer, wrapped so it skips the frames where hidesHeld says so.
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public static void wrapHeldLayer(net.minecraft.client.renderer.entity.LivingEntityRenderer<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> renderer) {
+        try {
+            java.lang.reflect.Field f = net.minecraft.client.renderer.entity.LivingEntityRenderer.class.getDeclaredField("layers");
+            f.setAccessible(true);
+            java.util.List<RenderLayer> layers = (java.util.List<RenderLayer>) f.get(renderer);
+            for (int i = 0; i < layers.size(); i++) {
+                RenderLayer inner = layers.get(i);
+                if (inner instanceof net.minecraft.client.renderer.entity.layers.ItemInHandLayer) {
+                    layers.set(i, new HeldLayer(renderer, inner));
+                }
+            }
+        } catch (ReflectiveOperationException | RuntimeException ex) {
+            com.starkinhon.battlegroundsmod.BattlegroundsMod.LOGGER.warn("Luffy: could not wrap the held-item layer; items show in G4/G5 poses", ex);
+        }
+    }
+
+    private static final class HeldLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> {
+        private final RenderLayer<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> inner;
+
+        HeldLayer(RenderLayerParent<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> parent, RenderLayer<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> inner) {
+            super(parent);
+            this.inner = inner;
+        }
+
+        @Override
+        public void render(PoseStack pose, MultiBufferSource buffer, int light, AbstractClientPlayer player, float limbSwing, float limbSwingAmount,
+                float partialTick, float ageInTicks, float netHeadYaw, float headPitch) {
+            if (!hidesHeld(player)) {
+                inner.render(pose, buffer, light, player, limbSwing, limbSwingAmount, partialTick, ageInTicks, netHeadYaw, headPitch);
+            }
+        }
+    }
+
     // ---------- Boundman (forja/luffy-g4, approved: "haki quadrado") ----------
 
     // his body is ours to draw: in the world only (the inventory's little player keeps his plain skin)
@@ -2453,7 +2495,6 @@ public final class LuffyFx {
             Body bd, float partial) {
         int ov = LivingEntityRenderer.getOverlayCoords(player, 0);
         Vec3 cam = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
-        VertexConsumer cloth = buffer.getBuffer(RenderType.entityCutoutNoCull(WHITE_TEX));
         boolean sit = sitting(bd);
         ModelPart[] limbs = {m.rightArm, m.leftArm, m.rightLeg, m.leftLeg};
         float[][] saved = new float[4][];
@@ -2483,6 +2524,8 @@ public final class LuffyFx {
                 }
             }
         }
+        // taken after the sitting limbs: asking the buffer for the skin's type ends any builder taken before it
+        VertexConsumer cloth = buffer.getBuffer(RenderType.entityCutoutNoCull(WHITE_TEX));
         boolean slim = player.getSkin().model() == net.minecraft.client.resources.PlayerSkin.Model.SLIM;
         // the shirt, the waist and the sash on his trunk (page pixels, y from his feet; the trunk turns at 24)
         pose.pushPose();

@@ -219,9 +219,9 @@ public final class OpmFx {
                     shake(pos, b >= 2 ? 1.6 : 1.0);
                 }
                 // every skill's blow gets its impact frame (Stark 2026-11-11): the normal ones (last of the Socos, Gancho,
-                // Chute) a short one, the Counter's flick the page's three
+                // Chute) three frames like Luffy's short ones (two went by unseen), the Counter's flick five
                 if (b >= 1 && near(pos, 48)) {
-                    ScreenFx.impactFrame(b >= 2 ? new int[] {4, 3, 4} : new int[] {4, 3}, 1, 0xFFFFFF, pos, 0);
+                    ScreenFx.impactFrame(b >= 2 ? new int[] {4, 3, 4, 3, 4} : new int[] {4, 3, 4}, 1, 0xFFFFFF, pos, 0);
                 }
             }
             case SubNet.OPM_RING -> RINGS.add(new Ring(pos, a, b, now, (float) (rnd() * 10)));
