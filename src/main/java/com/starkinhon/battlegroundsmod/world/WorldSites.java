@@ -227,18 +227,20 @@ public final class WorldSites {
         return block.defaultBlockState();
     }
 
+    // Every place on a foundation also gets a skirt of ground under it (Build.skirt), so on a slope or a coast it sits on
+    // a mound instead of a cut platform hanging in the air (the crashed ship did, Stark's print 2026-11-12).
     private static Build build(Site site) {
         Build b = new Build(site.x(), site.y() + 1, site.z(), (long) site.x() * 31 + site.z());
         BlockState grass = s(Blocks.GRASS_BLOCK), dirt = s(Blocks.DIRT);
         BlockState sand = s(Blocks.RED_SAND), sandstone = s(Blocks.RED_SANDSTONE);
         return switch (site.kind()) {
-            case CAPSULE -> namekPad(b.clearUp(38, 0, 32).foundation(37, 10, grass, dirt).template("dragonball/capsule_corp", 0, 0, 0));
-            case GOKU -> b.clearUp(24, 0, 24).foundation(23, 10, grass, dirt).template("dragonball/goku_house", 0, 0, 0);
-            case KARIN -> b.clearUp(20, 0, 14).foundation(19, 8, grass, dirt).template("dragonball/korin_tower", 0, 0, 0);
-            case CELL_RING -> b.clearUp(34, 0, 48).foundation(33, 10, s(Blocks.STONE), s(Blocks.STONE))
+            case CAPSULE -> namekPad(b.clearUp(38, 0, 32).foundation(37, 10, grass, dirt).skirt(37, 16, 0.8, grass, dirt).template("dragonball/capsule_corp", 0, 0, 0));
+            case GOKU -> b.clearUp(24, 0, 24).foundation(23, 10, grass, dirt).skirt(23, 16, 0.8, grass, dirt).template("dragonball/goku_house", 0, 0, 0);
+            case KARIN -> b.clearUp(20, 0, 14).foundation(19, 8, grass, dirt).skirt(19, 16, 0.8, grass, dirt).template("dragonball/korin_tower", 0, 0, 0);
+            case CELL_RING -> b.clearUp(34, 0, 48).foundation(33, 10, s(Blocks.STONE), s(Blocks.STONE)).skirt(33, 16, 0.8, s(Blocks.STONE), s(Blocks.STONE))
                     .template("dragonball/cell_arena", 0, 0, 0);
             case BABIDI -> b.clearUp(20, 0, 12).template("dragonball/babidi_ship", 0, 0, 0);
-            case BUU -> b.clearUp(17, 0, 18).foundation(16, 10, grass, dirt).template("dragonball/buu_house", 0, 0, 0);
+            case BUU -> b.clearUp(17, 0, 18).foundation(16, 10, grass, dirt).skirt(16, 16, 0.8, grass, dirt).template("dragonball/buu_house", 0, 0, 0);
             case KAME -> kame(b);
             case WRECK -> wreck(b, sand, sandstone);
             case RADITZ -> raditz(b);
