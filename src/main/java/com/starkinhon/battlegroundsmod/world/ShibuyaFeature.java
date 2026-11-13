@@ -100,7 +100,7 @@ public final class ShibuyaFeature extends Feature<NoneFeatureConfiguration> {
             for (int z = z0; z <= z1; z++) {
                 int h = ground.applyAsInt(x, z);
                 if (city.at(x, z)) {
-                    clear(level, pos, x, z, cityY + 1, Math.max(h, cityY) + CLEAR, maxY);
+                    clear(level, pos, x, z, cityY + 1, Math.max(Math.max(h, cityY) + CLEAR, surface(level, x, z)), maxY);
                     for (int y = Math.max(minY, h + 1); y <= cityY - 3; y++) {
                         level.setBlock(pos.set(x, y, z), Blocks.STONE.defaultBlockState(), 2);
                     }
@@ -116,7 +116,7 @@ public final class ShibuyaFeature extends Feature<NoneFeatureConfiguration> {
                 double k = 1 - d / (double) (SKIRT + 1);
                 k = k * k * (3 - 2 * k);
                 int top = JjkGen.round(h + (cityY - h) * k);
-                clear(level, pos, x, z, top + 1, Math.max(h, top) + CLEAR, maxY);
+                clear(level, pos, x, z, top + 1, Math.max(Math.max(h, top) + CLEAR, surface(level, x, z)), maxY);
                 for (int y = Math.max(minY, h + 1); y < top; y++) {
                     level.setBlock(pos.set(x, y, z), (top - y > 3 ? Blocks.STONE : Blocks.DIRT).defaultBlockState(), 2);
                 }
@@ -238,6 +238,12 @@ public final class ShibuyaFeature extends Feature<NoneFeatureConfiguration> {
         for (int i = 0; i < v.length; i += 4) {
             w.force(v[i], v[i + 1], v[i + 2], v[i + 3] == ShibuyaGen.CARVE ? ShibuyaGen.AIR : v[i + 3]);
         }
+    }
+
+    // The real top of a column (overhangs, arches and floating bits above the noise's ground included), so the cut takes
+    // everything over the city and nothing is left hanging in the air.
+    private static int surface(WorldGenLevel level, int x, int z) {
+        return level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE_WG, x, z);
     }
 
     private static void clear(WorldGenLevel level, BlockPos.MutableBlockPos pos, int x, int z, int y0, int y1, int maxY) {

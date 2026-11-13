@@ -95,7 +95,7 @@ public final class ColoniaFeature extends Feature<NoneFeatureConfiguration> {
                     }
                     int h = ground.applyAsInt(x, z);
                     if (d <= 0) {
-                        clear(level, pos, x, z, cityY + 1, Math.max(h, cityY) + CLEAR, maxY);
+                        clear(level, pos, x, z, cityY + 1, Math.max(Math.max(h, cityY) + CLEAR, surface(level, x, z)), maxY);
                         for (int y = Math.max(minY, h + 1); y <= cityY - 4; y++) {
                             level.setBlock(pos.set(x, y, z), Blocks.STONE.defaultBlockState(), 2);
                         }
@@ -103,7 +103,7 @@ public final class ColoniaFeature extends Feature<NoneFeatureConfiguration> {
                         double k = 1 - d / (double) (SKIRT + 1);
                         k = k * k * (3 - 2 * k);
                         int top = JjkGen.round(h + (cityY - h) * k);
-                        clear(level, pos, x, z, top + 1, Math.max(h, top) + CLEAR, maxY);
+                        clear(level, pos, x, z, top + 1, Math.max(Math.max(h, top) + CLEAR, surface(level, x, z)), maxY);
                         for (int y = Math.max(minY, h + 1); y < top; y++) {
                             level.setBlock(pos.set(x, y, z), (top - y > 3 ? Blocks.STONE : Blocks.DIRT).defaultBlockState(), 2);
                         }
@@ -162,6 +162,12 @@ public final class ColoniaFeature extends Feature<NoneFeatureConfiguration> {
             level.setBlock(pos, block(t), 2);
         });
         return true;
+    }
+
+    // The real top of a column (overhangs, arches and floating bits above the noise's ground included), so the cut takes
+    // everything over the city and nothing is left hanging in the air.
+    private static int surface(WorldGenLevel level, int x, int z) {
+        return level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE_WG, x, z);
     }
 
     // Cuts the land away from y0 to y1 (whatever is there: hills, trees, water).
