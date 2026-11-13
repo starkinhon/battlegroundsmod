@@ -61,7 +61,7 @@
    110
   ],
   "noite": true,
-  "minY": -11,
+  "minY": -12,
   "maxY": 177,
   "nome": "Plataforma do metrô"
  },
@@ -79,11 +79,11 @@
    -22
   ],
   "neblina": [
-   70,
-   210
+   75,
+   230
   ],
   "noite": false,
-  "minY": -10,
+  "minY": -13,
   "maxY": 66,
   "nome": "Namek explodindo"
  },
@@ -105,7 +105,7 @@
    220
   ],
   "noite": false,
-  "minY": -5,
+  "minY": -11,
   "maxY": 54,
   "nome": "Deserto de Suna"
  },
@@ -171,7 +171,7 @@
    280
   ],
   "noite": false,
-  "minY": -1,
+  "minY": -10,
   "maxY": 31,
   "nome": "Salão das preliminares"
  },
@@ -193,7 +193,7 @@
    210
   ],
   "noite": false,
-  "minY": -3,
+  "minY": -10,
   "maxY": 46,
   "nome": "Escola Jujutsu de Tóquio"
  },
@@ -259,7 +259,7 @@
    220
   ],
   "noite": false,
-  "minY": -3,
+  "minY": -12,
   "maxY": 51,
   "nome": "Campo de treino 3"
  },
@@ -281,7 +281,7 @@
    260
   ],
   "noite": false,
-  "minY": -8,
+  "minY": -14,
   "maxY": 13,
   "nome": "Ilha da Kame House"
  },
@@ -325,7 +325,7 @@
    240
   ],
   "noite": false,
-  "minY": -2,
+  "minY": -10,
   "maxY": 17,
   "nome": "Torneio de Artes Marciais"
  },
@@ -391,7 +391,7 @@
    210
   ],
   "noite": false,
-  "minY": -3,
+  "minY": -10,
   "maxY": 46,
   "nome": "Escola Jujutsu de Kyoto"
  },
@@ -413,7 +413,7 @@
    100
   ],
   "noite": false,
-  "minY": -1,
+  "minY": -11,
   "maxY": 19,
   "nome": "Esgoto"
  },
@@ -435,7 +435,7 @@
    220
   ],
   "noite": false,
-  "minY": -2,
+  "minY": -10,
   "maxY": 47,
   "nome": "Estádio das finais"
  },
@@ -457,7 +457,7 @@
    200
   ],
   "noite": false,
-  "minY": -4,
+  "minY": -11,
   "maxY": 20,
   "nome": "Ponte Yasohachi"
  },
@@ -479,7 +479,7 @@
    230
   ],
   "noite": false,
-  "minY": -5,
+  "minY": -11,
   "maxY": 57,
   "nome": "Planalto rochoso"
  },
@@ -501,7 +501,7 @@
    260
   ],
   "noite": false,
-  "minY": -4,
+  "minY": -11,
   "maxY": 134,
   "nome": "Las Noches"
  },
@@ -523,7 +523,7 @@
    260
   ],
   "noite": false,
-  "minY": -8,
+  "minY": -15,
   "maxY": 44,
   "nome": "Cidade Z depois do meteoro"
  },
@@ -545,7 +545,7 @@
    160
   ],
   "noite": false,
-  "minY": -3,
+  "minY": -10,
   "maxY": 22,
   "nome": "Esconderijo Uchiha"
  },
@@ -567,7 +567,7 @@
    170
   ],
   "noite": false,
-  "minY": -6,
+  "minY": -15,
   "maxY": 52,
   "nome": "Cidade Jaku em pó"
  },
@@ -589,7 +589,7 @@
    130
   ],
   "noite": false,
-  "minY": -3,
+  "minY": -10,
   "maxY": 41,
   "nome": "Floresta dos Nara"
  },
@@ -633,7 +633,7 @@
    120
   ],
   "noite": false,
-  "minY": -5,
+  "minY": -12,
   "maxY": 50,
   "nome": "Floresta do intercâmbio"
  },
@@ -655,7 +655,7 @@
    230
   ],
   "noite": false,
-  "minY": -9,
+  "minY": -16,
   "maxY": 49,
   "nome": "Deserto dos Saiyajins"
  }

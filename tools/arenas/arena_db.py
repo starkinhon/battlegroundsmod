@@ -321,10 +321,74 @@ def namek_explodindo():
                 for dz in range(-4, 5):
                     if (dx / r) ** 2 + (dy / (r * 0.8)) ** 2 + (dz / r) ** 2 <= 1 + n.f3(x + dx, dy, z + dz, 2) * 0.4:
                         v.set(x + dx, 1 + dy, z + dz, NR if dy < r * 0.5 else NL)
+    # ---- the planet dying (Stark 2026-11-13: "laranja de fogo invadindo no fundo") ----
+    # the sea boils over magma, and past the shallows it is already lava; a crust of blackstone keeps the two apart
+    for (x, z), h in H.items():
+        if h is None or h >= 0 or abs(x) > 118 or abs(z) > 118:
+            continue
+        r = math.hypot(x, z) + n.f2(x, z, 14, 2) * 6
+        if r >= 96:
+            for y in range(h + 1, 0):
+                v.set(x, y, z, 'lava')
+            v.set(x, h, z, 'magma_block')
+        elif r >= 93:
+            for y in range(h + 1, 0):
+                v.set(x, y, z, 'blackstone' if y < -1 else 'basalt[axis=y]')
+        elif n.f2(x * 2, z * 2, 5) > -0.2:
+            v.set(x, h, z, 'magma_block')                     # bubble columns: the sea boiling
+    # the ground beyond the fight burning: scorched rock, magma seams, grass gone to ash near the lava sea
+    for (x, z), h in H.items():
+        if h is None or h < 0:
+            continue
+        r = math.hypot(x, z)
+        if r < R + 10:
+            continue
+        k = n.f2(x * 0.8 + 50, z * 0.8, 10, 3) + (r - 70) / 60
+        b = v.get(x, h, z)
+        if b is None or 'grass' not in b and 'namek_sand' not in b:
+            continue
+        if k > 0.55:
+            v.set(x, h, z, 'magma_block')
+        elif k > 0.3:
+            v.set(x, h, z, 'blackstone')
+        elif k > 0.1:
+            v.set(x, h, z, 'coarse_dirt')
+    # volcanoes torn open on the horizon, lava pouring down their flanks into the burning sea
+    vents = []
+    for i in range(40):
+        if len(vents) >= 6:
+            break
+        a = rng.uniform(0, 2 * math.pi); d = rng.uniform(82, 112)
+        x, z = math.cos(a) * d, math.sin(a) * d
+        if any(math.hypot(x - a2, z - b2) < 26 for a2, b2 in mesas + vents):
+            continue
+        vents.append((x, z))
+        hgt = rng.uniform(26, 46); rb = rng.uniform(13, 20); rc = rng.uniform(3, 5)
+        flows = [rng.uniform(0, 2 * math.pi) for _ in range(int(rng.integers(2, 4)))]
+        RB = int(rb + 4)
+        for dx in range(-RB, RB + 1):
+            for dz in range(-RB, RB + 1):
+                q = math.hypot(dx, dz)
+                ang = math.atan2(dz, dx)
+                top = hgt * max(0.0, 1 - q / rb) ** 1.3 + n.f2(x + dx, z + dz, 4, 2) * 2.5
+                if q < rc:
+                    top = hgt - 3                                  # the crater
+                if top < 1:
+                    continue
+                groove = any(abs(math.remainder(ang - f, 2 * math.pi)) * q < 1.3 for f in flows) and q > rc
+                px, pz = int(x) + dx, int(z) + dz
+                for y in range(-5, int(top) + 1):
+                    t = y / hgt
+                    b = 'magma_block' if n.f3(px, y * 0.7, pz, 3) > 0.45 - t * 0.3 else (
+                        'basalt[axis=y]' if (y + dx) % 7 == 0 else 'blackstone')
+                    v.set(px, y, pz, b)
+                if groove or q < rc:
+                    v.set(px, int(top), pz, 'lava')                # lava rivers and the crater's lake
+                    v.set(px, int(top) - 1, pz, 'magma_block')
     seal_fluids(v, NR)
     meta = dict(universo='dragonball', personagem='Freeza', lugar='Namek explodindo', nome='Namek explodindo',
-                canon='Os últimos cinco minutos de Namek: a planície da luta contra o Goku, chão rachado com lava, o mar fervendo, as torres de pedra e as árvores azuis.',
-                R=R, altura=60, ceu=['#16301f', '#5f7f45'], neblina=[70, 210],
+                canon='Os últimos cinco minutos de Namek: a planície da luta contra o Goku, chão rachado com lava, o mar fervendo e virando lava no horizonte, vulcões abertos, as torres de pedra e as árvores azuis, tudo sob um céu de fogo.',
+                R=R, altura=60, ceu=['#2a0907', '#ff6420'], neblina=[75, 230],
                 jogador=[0, 1, 26], desafiante=[0, 1, -22], camLado=[64, 38, 76], alvoY=10,
                 tints={'grass': (79, 182, 214), 'foliage': (47, 134, 184), 'water': (63, 191, 122)})
     return v, meta
@@ -652,12 +716,23 @@ def planeta_do_kaioh():
     for (dx, dz) in ((-2, -2), (2, -2), (-2, 2), (2, 2)):
         v.set(cx_ + dx, s2 + 1, cz_ + dz, 'black_concrete')
     tree(v, -18, surf(-18, -6) + 1, -6, rng, 'oak', height=9, crown=4)
-    # the road at the end of Snake Way meets the planet
-    for i in range(0, 40):
-        z = 30 + i
-        y = (surf(0, min(z, PR - 1)) or cy) - int(i * 0.3)
-        for x in range(-1, 2):
-            v.set(x, y, z, 'yellow_terracotta' if x == 0 else 'orange_terracotta')
+    # the road that goes all the way round the little planet (a great circle, past the house and the car), and Snake
+    # Way leaving it tangent to the lawn, yellow, out into the sky
+    a = math.radians(30); nx, nz = math.cos(a), math.sin(a)
+    for (x, y, z), b in list(v.b.items()):
+        if b and 'grass_block' in b and abs(x * nx + z * nz) <= 1.6:
+            v.set(x, y, z, 'dirt_path')
+    tx, tz = -nz, nx
+    y0 = surf(int(tx * 30), int(tz * 30))
+    for i in range(0, 90):
+        d = 30 + i * 0.5
+        y = int(round(y0 - i * 0.15))
+        for k in (-1.0, -0.5, 0.0, 0.5, 1.0):
+            x, z = int(round(tx * d + nx * k)), int(round(tz * d + nz * k))
+            s0 = surf(x, z)
+            if s0 is not None and s0 >= y:
+                continue
+            v.set(x, y, z, 'yellow_terracotta' if abs(k) < 0.6 else 'orange_terracotta')
     # the yellow clouds of Other World far below
     for i in range(160):
         x, z = (int(a) for a in rng.uniform(-120, 120, 2))
@@ -668,8 +743,8 @@ def planeta_do_kaioh():
                 if dx * dx + dz * dz <= r * r * (1 + n.f2(x + dx, z + dz, 3) * 0.3):
                     v.set(x + dx, y, z + dz, 'yellow_wool' if rng.random() < 0.7 else 'white_wool')
     meta = dict(universo='dragonball', personagem='Goku', lugar='Planeta do Senhor Kaioh', nome='Planeta do Senhor Kaioh',
-                canon='O planetinha do Senhor Kaioh no fim do Caminho da Serpente, onde o Goku treinou: gramado curvo, a casa redonda, o carro, a árvore e as nuvens amarelas do Outro Mundo lá embaixo.',
-                R=R, altura=60, ceu=['#e8b84a', '#fbe7a6'], neblina=[90, 240],
+                canon='O planetinha do Senhor Kaioh no fim do Caminho da Serpente, onde o Goku treinou: gramado curvo com a estradinha que dá a volta no planeta inteiro, a casa redonda, o carro, a árvore, o céu rosado e as nuvens amarelas do Outro Mundo lá embaixo.',
+                R=R, altura=60, ceu=['#e48fb6', '#fbd3e2'], neblina=[90, 240],
                 jogador=[0, 1, 20], desafiante=[0, 1, -8], camLado=[50, 26, 62], alvoY=-2,
                 tints={'grass': (110, 200, 90), 'foliage': (80, 170, 60)})
     return v, meta

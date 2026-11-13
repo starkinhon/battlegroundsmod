@@ -489,3 +489,42 @@ def safe_spawn(v, p, reach=10):
         if best is not None and best[0] <= (r + 1) ** 2:
             return best[1]
     return best[1] if best else list(p)
+
+_SOFT = ('leaves', 'glass', 'pane', 'slab', 'stairs', 'wall', 'fence', 'carpet', 'water', 'lava', 'path', 'snow', 'ice',
+         'wool', 'log', 'wood', 'planks', 'door', 'bars', 'chain', 'lantern', 'grass', 'farmland', 'magma', 'mud')
+
+def _fill_block(b):
+    nm = _name(b)
+    if nm in GRAVITY:
+        return 'minecraft:' + GRAVITY[nm]
+    if nm in ('grass_block', 'podzol', 'mycelium', 'dirt_path', 'farmland', 'moss_block', 'rooted_dirt', 'mud'):
+        return 'minecraft:dirt'
+    if '[' in b or any(s in nm for s in _SOFT):
+        return 'minecraft:stone'
+    return b
+
+def underlay(v, R, depth=10, reach=6):
+    """The arenas are destructible (Stark 2026-11-13): a technique that digs the floor must hit more ground, never open
+    a hole into the void. Under every column of the fight circle (and a few blocks past it) the first ground at or below
+    the fight floor gets `depth` solid layers under it, in the column's own deep material (dirt under grass, stone
+    under anything that is not a plain full block). Only empty cells are filled: caves, water and lava stay."""
+    cols = {}
+    for (x, y, z), b in v.b.items():
+        if x * x + z * z <= (R + reach) ** 2:
+            cols.setdefault((x, z), {})[y] = b
+    n = 0
+    for (x, z), c in cols.items():
+        ys = sorted((y for y in c if y <= 2), reverse=True)
+        top = next((y for y in ys if _ground(v, x, y, z)), None)
+        if top is None:
+            continue
+        mat = None
+        for y in range(top, top - depth - 1, -1):
+            b = c.get(y)
+            if b is not None and _ground(v, x, y, z):
+                mat = _fill_block(b)
+            elif b is None or _name(b) == 'air':
+                if y < top:
+                    v.b[(x, y, z)] = mat or 'minecraft:stone'
+                    n += 1
+    return n

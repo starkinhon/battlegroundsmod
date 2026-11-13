@@ -10,12 +10,12 @@
 /devc fov 70
 /gamemode creative
 /gamerule sendCommandFeedback false
-espera 20
+espera 300
 
 # kuririn: Torneio de Artes Marciais
 /soul desafios ir kuririn
 espera arena kuririn 1200
-espera 20
+espera 300
 /devc vista primeira
 /devc print arenas/01_kuririn_jogador
 /devc camera lado 40 18
@@ -29,7 +29,7 @@ espera 10
 # piccolo: Planalto rochoso
 /soul desafios ir piccolo
 espera arena piccolo 1200
-espera 20
+espera 300
 /devc vista primeira
 /devc print arenas/02_piccolo_jogador
 /devc camera lado 40 18
@@ -43,7 +43,7 @@ espera 10
 # kame: Ilha da Kame House
 /soul desafios ir kame
 espera arena kame 1200
-espera 20
+espera 300
 /devc vista primeira
 /devc print arenas/03_kame_jogador
 /devc camera lado 40 18
@@ -57,7 +57,7 @@ espera 10
 # goku: Planeta do Senhor Kaioh
 /soul desafios ir goku
 espera arena goku 1200
-espera 20
+espera 300
 /devc vista primeira
 /devc print arenas/04_goku_jogador
 /devc camera lado 40 18
@@ -71,7 +71,7 @@ espera 10
 # vegeta: Deserto dos Saiyajins
 /soul desafios ir vegeta
 espera arena vegeta 1200
-espera 20
+espera 300
 /devc vista primeira
 /devc print arenas/05_vegeta_jogador
 /devc camera lado 40 18
@@ -85,7 +85,7 @@ espera 10
 # freeza: Namek explodindo
 /soul desafios ir freeza
 espera arena freeza 1200
-espera 20
+espera 300
 /devc vista primeira
 /devc print arenas/06_freeza_jogador
 /devc camera lado 40 18
@@ -99,7 +99,7 @@ espera 10
 # bills: Planeta do Bills
 /soul desafios ir bills
 espera arena bills 1200
-espera 20
+espera 300
 /devc vista primeira
 /devc print arenas/07_bills_jogador
 /devc camera lado 40 18
@@ -113,7 +113,7 @@ espera 10
 # shikamaru: Floresta dos Nara
 /soul desafios ir shikamaru
 espera arena shikamaru 1200
-espera 20
+espera 300
 /devc vista primeira
 /devc print arenas/08_shikamaru_jogador
 /devc camera lado 40 18
@@ -127,7 +127,7 @@ espera 10
 # ino: Salão das preliminares
 /soul desafios ir ino
 espera arena ino 1200
-espera 20
+espera 300
 /devc vista primeira
 /devc print arenas/09_ino_jogador
 /devc camera lado 40 18
@@ -141,7 +141,7 @@ espera 10
 # kakashi: Campo de treino 3
 /soul desafios ir kakashi
 espera arena kakashi 1200
-espera 20
+espera 300
 /devc vista primeira
 /devc print arenas/10_kakashi_jogador
 /devc camera lado 40 18
@@ -155,7 +155,7 @@ espera 10
 # gaara: Deserto de Suna
 /soul desafios ir gaara
 espera arena gaara 1200
-espera 20
+espera 300
 /devc vista primeira
 /devc print arenas/11_gaara_jogador
 /devc camera lado 40 18
@@ -169,7 +169,7 @@ espera 10
 # naruto: Estádio das finais
 /soul desafios ir naruto
 espera arena naruto 1200
-espera 20
+espera 300
 /devc vista primeira
 /devc print arenas/12_naruto_jogador
 /devc camera lado 40 18
@@ -183,7 +183,7 @@ espera 10
 # sasuke: Esconderijo Uchiha
 /soul desafios ir sasuke
 espera arena sasuke 1200
-espera 20
+espera 300
 /devc vista primeira
 /devc print arenas/13_sasuke_jogador
 /devc camera lado 40 18
@@ -197,7 +197,7 @@ espera 10
 # madara: Vale do Fim
 /soul desafios ir madara
 espera arena madara 1200
-espera 20
+espera 300
 /devc vista primeira
 /devc print arenas/14_madara_jogador
 /devc camera lado 40 18
@@ -211,7 +211,7 @@ espera 10
 # nobara: Ponte Yasohachi
 /soul desafios ir nobara
 espera arena nobara 1200
-espera 20
+espera 300
 /devc vista primeira
 /devc print arenas/15_nobara_jogador
 /devc camera lado 40 18
@@ -225,7 +225,7 @@ espera 10
 # miwa: Escola Jujutsu de Kyoto
 /soul desafios ir miwa
 espera arena miwa 1200
-espera 20
+espera 300
 /devc vista primeira
 /devc print arenas/16_miwa_jogador
 /devc camera lado 40 18
@@ -239,7 +239,7 @@ espera 10
 # nanami: Esgoto
 /soul desafios ir nanami
 espera arena nanami 1200
-espera 20
+espera 300
 /devc vista primeira
 /devc print arenas/17_nanami_jogador
 /devc camera lado 40 18
@@ -253,7 +253,7 @@ espera 10
 # inumaki: Escola Jujutsu de Tóquio
 /soul desafios ir inumaki
 espera arena inumaki 1200
-espera 20
+espera 300
 /devc vista primeira
 /devc print arenas/18_inumaki_jogador
 /devc camera lado 40 18
@@ -267,7 +267,7 @@ espera 10
 # itadori: Cruzamento de Shibuya
 /soul desafios ir itadori
 espera arena itadori 1200
-espera 20
+espera 300
 /devc vista primeira
 /devc print arenas/19_itadori_jogador
 /devc camera lado 40 18
@@ -281,7 +281,7 @@ espera 10
 # choso: Plataforma do metrô
 /soul desafios ir choso
 espera arena choso 1200
-espera 20
+espera 300
 /devc vista primeira
 /devc print arenas/20_choso_jogador
 /devc camera lado 40 18
@@ -295,7 +295,7 @@ espera 10
 # todo: Floresta do intercâmbio
 /soul desafios ir todo
 espera arena todo 1200
-espera 20
+espera 300
 /devc vista primeira
 /devc print arenas/21_todo_jogador
 /devc camera lado 40 18
@@ -309,7 +309,7 @@ espera 10
 # gojo: Shinjuku
 /soul desafios ir gojo
 espera arena gojo 1200
-espera 20
+espera 300
 /devc vista primeira
 /devc print arenas/22_gojo_jogador
 /devc camera lado 40 18
@@ -323,7 +323,7 @@ espera 10
 # sukuna: Shibuya destruída
 /soul desafios ir sukuna
 espera arena sukuna 1200
-espera 20
+espera 300
 /devc vista primeira
 /devc print arenas/23_sukuna_jogador
 /devc camera lado 40 18
@@ -337,7 +337,7 @@ espera 10
 # rukia: Las Noches
 /soul desafios ir rukia
 espera arena rukia 1200
-espera 20
+espera 300
 /devc vista primeira
 /devc print arenas/24_rukia_jogador
 /devc camera lado 40 18
@@ -351,7 +351,7 @@ espera 10
 # byakuya: Colina Sokyoku
 /soul desafios ir byakuya
 espera arena byakuya 1200
-espera 20
+espera 300
 /devc vista primeira
 /devc print arenas/25_byakuya_jogador
 /devc camera lado 40 18
@@ -365,7 +365,7 @@ espera 10
 # kokushibo: Castelo Infinito
 /soul desafios ir kokushibo
 espera arena kokushibo 1200
-espera 20
+espera 300
 /devc vista primeira
 /devc print arenas/26_kokushibo_jogador
 /devc camera lado 40 18
@@ -379,7 +379,7 @@ espera 10
 # shigaraki: Cidade Jaku em pó
 /soul desafios ir shigaraki
 espera arena shigaraki 1200
-espera 20
+espera 300
 /devc vista primeira
 /devc print arenas/27_shigaraki_jogador
 /devc camera lado 40 18
@@ -393,7 +393,7 @@ espera 10
 # joy_boy: Telhado do Domo da Caveira
 /soul desafios ir joy_boy
 espera arena joy_boy 1200
-espera 20
+espera 300
 /devc vista primeira
 /devc print arenas/28_joy_boy_jogador
 /devc camera lado 40 18
@@ -407,7 +407,7 @@ espera 10
 # makima: Telhado da Segurança Pública
 /soul desafios ir makima
 espera arena makima 1200
-espera 20
+espera 300
 /devc vista primeira
 /devc print arenas/29_makima_jogador
 /devc camera lado 40 18
@@ -421,7 +421,7 @@ espera 10
 # saitama: Cidade Z depois do meteoro
 /soul desafios ir saitama
 espera arena saitama 1200
-espera 20
+espera 300
 /devc vista primeira
 /devc print arenas/30_saitama_jogador
 /devc camera lado 40 18

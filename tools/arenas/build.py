@@ -27,8 +27,9 @@ def main():
     for aid in want:
         t = time.time()
         v, m = ARENAS[aid]()
-        from lib import support_gravity, safe_spawn
+        from lib import support_gravity, safe_spawn, underlay
         fixed = support_gravity(v)
+        underlay(v, m['R'])
         for k in ('jogador', 'desafiante'):
             m[k] = safe_spawn(v, m[k])
         from furni import finish
