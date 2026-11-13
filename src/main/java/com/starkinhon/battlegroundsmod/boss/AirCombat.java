@@ -88,6 +88,50 @@ public final class AirCombat {
 
     public static void register() {
         NeoForge.EVENT_BUS.addListener(AirCombat::onStartTracking);
+        com.starkinhon.battlegroundsmod.command.SoulCommand.addSubcommand(AirCombat::command);
+    }
+
+    // /soul aereo <golpe>: the nearest flying soul (64 blocks) does that move next (tests and videos).
+    private static com.mojang.brigadier.builder.LiteralArgumentBuilder<net.minecraft.commands.CommandSourceStack> command() {
+        return net.minecraft.commands.Commands.literal("aereo").requires(source -> source.hasPermission(2))
+                .then(net.minecraft.commands.Commands.argument("golpe", com.mojang.brigadier.arguments.StringArgumentType.word())
+                        .suggests((context, builder) -> {
+                            for (Act a : Act.values()) {
+                                if (a != Act.NONE) {
+                                    builder.suggest(a.name().toLowerCase(java.util.Locale.ROOT));
+                                }
+                            }
+                            return builder.buildFuture();
+                        }).executes(context -> {
+                            String name = com.mojang.brigadier.arguments.StringArgumentType.getString(context, "golpe").toUpperCase(java.util.Locale.ROOT);
+                            Act act;
+                            try {
+                                act = Act.valueOf(name);
+                            } catch (IllegalArgumentException e) {
+                                act = Act.NONE;
+                            }
+                            if (act == Act.NONE) {
+                                context.getSource().sendFailure(net.minecraft.network.chat.Component.literal("Golpes: investida, martelo, rajada, sumico, persegue, choque"));
+                                return 0;
+                            }
+                            Vec3 at = context.getSource().getPosition();
+                            SoulBoss best = null;
+                            for (SoulBoss b : context.getSource().getLevel().getEntitiesOfClass(SoulBoss.class, new net.minecraft.world.phys.AABB(at, at).inflate(64))) {
+                                if (b.air != null && b.air.st == St.AR && !b.air.passer && (best == null || b.distanceToSqr(at) < best.distanceToSqr(at))) {
+                                    best = b;
+                                }
+                            }
+                            if (best == null) {
+                                context.getSource().sendFailure(net.minecraft.network.chat.Component.literal("Nenhum mob de Dragon Ball lutando no ar por perto."));
+                                return 0;
+                            }
+                            best.air.act = Act.NONE;
+                            best.air.phase = 0;
+                            best.air.forced = act;
+                            String shown = act.name().toLowerCase(java.util.Locale.ROOT);
+                            context.getSource().sendSuccess(() -> net.minecraft.network.chat.Component.literal("Próximo golpe aéreo: " + shown), false);
+                            return 1;
+                        }));
     }
 
     public static boolean flier(SoulBoss boss) {
@@ -393,6 +437,9 @@ public final class AirCombat {
 
     // ------------------------------------------------------------------ the moves
 
+    // The next move asked for by /soul aereo (tests and videos), or null.
+    private Act forced;
+
     private void start(Act a) {
         act = a;
         at = 0;
@@ -433,9 +480,20 @@ public final class AirCombat {
                 }
                 steer(wish, 16, 3);
                 cd -= DT;
-                if (cd <= 0) {
+                if (forced != null) {
+                    start(forced);
+                    forced = null;
+                } else if (cd <= 0) {
                     double r = boss.getRandom().nextDouble();
-                    start(r < 0.48 ? Act.INVESTIDA : r < 0.78 ? Act.RAJADA : Act.SUMICO);
+                    // high over the ground, now and then the Martelo straight away (in the first test it only came after
+                    // a whole Investida with the target stunned, and never showed in a minute of fight)
+                    double above = target.getY() - DbCommon.groundY(level, target.position());
+                    if (above > 6 && r < 0.14) {
+                        start(Act.MARTELO);
+                    } else {
+                        r = boss.getRandom().nextDouble();
+                        start(r < 0.45 ? Act.INVESTIDA : r < 0.73 ? Act.RAJADA : Act.SUMICO);
+                    }
                 }
             }
         }
@@ -497,7 +555,7 @@ public final class AirCombat {
         }
         if (at > 0.75) {
             double above = target.getY() - DbCommon.groundY(level, target.position());
-            if (above > 5 && boss.getRandom().nextDouble() < 0.7 && Stun.is(target)) {
+            if (above > 3 && boss.getRandom().nextDouble() < 0.8 && Stun.is(target)) {
                 start(Act.MARTELO);
             } else {
                 endAct(1.3);

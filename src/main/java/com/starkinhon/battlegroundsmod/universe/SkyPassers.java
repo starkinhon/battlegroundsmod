@@ -370,6 +370,9 @@ public final class SkyPassers {
             if (e.leaving) {
                 int i = e.ents.indexOf(b);
                 d = d.add(e.perp.scale((i % 2 == 0 ? 1 : -1) * Math.sin(e.t * 3) * 0.2));
+                if (!"rasante".equals(e.kind)) {
+                    d = d.add(0, 0.15, 0);
+                }
             }
             air.steerTo(d, e.leaving ? ("duelo".equals(e.kind) ? 60 : 50) : e.speed, 2);
         }
@@ -449,7 +452,8 @@ public final class SkyPassers {
                     continue;
                 }
                 air.boost(true);
-                air.velocity(e.dir.scale(40));
+                // off on the boost and climbing a little, never straight through the player
+                air.velocity(e.dir.scale(40).add(0, 10, 0));
             }
         }
     }

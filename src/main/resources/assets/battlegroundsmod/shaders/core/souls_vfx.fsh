@@ -1152,7 +1152,7 @@ void main() {
         float spread = 0.25 + along * 0.75;
         float sideBand = smoothstep(spread, spread - 0.35, abs(across)) * smoothstep(spread - 0.7, spread - 0.3, abs(across) + 0.15);
         float n = fbm(vec2(across * 4.0, along * 9.0 - time * 1.5) + vec2(3.1, 0.7));
-        alpha = sideBand * smoothstep(0.3, 0.7, n) * pow(max(0.0, 1.0 - along), 1.2) * 0.8;
+        alpha = sideBand * smoothstep(0.25, 0.6, n) * pow(max(0.0, 1.0 - along), 1.2);
         base = vec3(0.93, 0.9, 0.82);
         core = 0.0;
     } else if (shape == 34) {
@@ -1202,8 +1202,9 @@ void main() {
 
     float fade = 1.0;
     // The Black Box's walls and lances stay solid right in front of whoever is inside, and shards, wings and orbs sit
-    // right on bodies (no soft fade), and so does the Red's orb at Gojo's fingertip.
-    if (SoftOn > 0.5 && (shape < 12 || shape > 16) && shape != 20 && shape != 21 && shape != 28 && shape != 33 && shape != 34) {
+    // right on bodies (no soft fade), and so does the Red's orb at Gojo's fingertip. The flight's wake (36) lies on the
+    // ground itself: faded there it was all but gone (first test of #318).
+    if (SoftOn > 0.5 && (shape < 12 || shape > 16) && shape != 20 && shape != 21 && shape != 28 && shape != 33 && shape != 34 && shape != 36) {
         float scene = linearDepth(texture(Sampler1, gl_FragCoord.xy / Screen).r);
         fade = clamp((scene - viewDist) / 0.6, 0.0, 1.0);
     }

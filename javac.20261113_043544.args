@@ -1,0 +1,6 @@
+-d
+/tmp/jc
+-proc:none
+src/main/java/com/starkinhon/battlegroundsmod/boss/AirCombat.java
+src/main/java/com/starkinhon/battlegroundsmod/client/fx/FlightFx.java
+src/main/java/com/starkinhon/battlegroundsmod/universe/SkyPassers.java

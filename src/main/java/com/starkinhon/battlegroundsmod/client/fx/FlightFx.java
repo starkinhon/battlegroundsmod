@@ -194,11 +194,11 @@ public final class FlightFx {
                 pts[i] = k.at().subtract(camera).toVector3f();
                 us[i] = i / (float) (n - 1);
                 // the page's side: 1.4 + 2.5 boost each way, opening as it ages; how strong it was there scales it
-                widths[i] = 2 * (1.4f + 2.5f * boost) * k.strength();
+                widths[i] = 2 * (1.4f + 2.5f * boost) * (k.strength() < 0.01f ? 0 : 0.55f + 0.45f * k.strength());
                 strongest = Math.max(strongest, k.strength());
                 i++;
             }
-            FxDraw.stripFlat(pts, widths, us, 36, 0, AURA, strongest, false);
+            FxDraw.stripFlat(pts, widths, us, 36, 0, AURA, Math.min(1, strongest * 1.5f), false);
         }
     }
 
