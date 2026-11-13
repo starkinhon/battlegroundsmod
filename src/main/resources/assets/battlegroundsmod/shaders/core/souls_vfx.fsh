@@ -56,7 +56,7 @@
 //             at 12 frames a second (alpha layer); param byte = life (0..15) * 16 + seed (0..15); the color is its skin
 //  35 flight trail  the Dragon Ball flight's trail from the feet (forja voo/voo.html): a strip with u from the feet
 //             (0) to the oldest point (1), strands of ki opening back with a white core
-//  36 flight wake  the wake a fast flier skims over the ground (forja db-voo-mobs, Kuririn's rasante): a strip lying
+//  42 flight wake  the wake a fast flier skims over the ground (forja db-voo-mobs, Kuririn's rasante): a strip lying
 //             on the ground, u from the flier (0) back, two bands of torn dust/spray opening out to the sides
 // A very dark color never burns white (dark rims and lines stay dark).
 // Near walls and the ground the effect fades out instead of cutting a hard line (soft particles).
@@ -1146,7 +1146,7 @@ void main() {
         alpha = (k * edge * 0.55 + hot * 0.5) * pow(max(0.0, 1.0 - along), 1.5) * smoothstep(0.0, 0.06, along);
         base = mix(color.rgb, vec3(1.0), 0.5);
         core = hot * 0.3;
-    } else if (shape == 36) {
+    } else if (shape == 42) {
         float along = uv.x;
         float across = uv.y * 2.0 - 1.0;
         float spread = 0.25 + along * 0.75;
@@ -1202,9 +1202,9 @@ void main() {
 
     float fade = 1.0;
     // The Black Box's walls and lances stay solid right in front of whoever is inside, and shards, wings and orbs sit
-    // right on bodies (no soft fade), and so does the Red's orb at Gojo's fingertip. The flight's wake (36) lies on the
+    // right on bodies (no soft fade), and so does the Red's orb at Gojo's fingertip. The flight's wake (42) lies on the
     // ground itself: faded there it was all but gone (first test of #318).
-    if (SoftOn > 0.5 && (shape < 12 || shape > 16) && shape != 20 && shape != 21 && shape != 28 && shape != 33 && shape != 34 && shape != 36) {
+    if (SoftOn > 0.5 && (shape < 12 || shape > 16) && shape != 20 && shape != 21 && shape != 28 && shape != 33 && shape != 34 && shape != 42) {
         float scene = linearDepth(texture(Sampler1, gl_FragCoord.xy / Screen).r);
         fade = clamp((scene - viewDist) / 0.6, 0.0, 1.0);
     }
