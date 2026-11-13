@@ -61,7 +61,7 @@ public final class PowerLogic {
             case PowerData.SLOT_BARRAGE -> Melee.BARRAGE;
             case PowerData.SLOT_DASH_ATTACK -> DashAttack.ability();
             case PowerData.SLOT_EXTRA -> power.abilities().size() > 4 ? power.abilities().get(4) : null;
-            default -> power.abilities().get(slot);
+            default -> slot < power.abilities().size() ? power.abilities().get(slot) : null;
         };
     }
 

@@ -159,6 +159,14 @@ public class PowerSelectScreen extends Screen {
     private List<Power> orbit() {
         List<Power> list = new ArrayList<>(tab == 0 ? Powers.divine() : Powers.sub().stream().filter(p -> uniId(p).equals(uni)).toList());
         list.sort(Comparator.comparing(PowerSelectScreen::uniId));
+        if (tab == 0 && minecraft != null && minecraft.player != null) {
+            // The techniques a master taught (the Kamehameha from Mestre Kame), so the player can go back to them.
+            for (Power p : Powers.innate()) {
+                if (SoulSync.known(minecraft.player, p.id()) || p.id().equals(current())) {
+                    list.add(0, p);
+                }
+            }
+        }
         return list;
     }
 
@@ -776,7 +784,8 @@ public class PowerSelectScreen extends Screen {
         int yy = y + 8;
         GuiDraw.centeredText(g, font, s.name(), x + w / 2f, yy, 1.25f, a(mix(c, WHITE, 0.3f), 1), true);
         yy += 15;
-        String kind = Component.translatable(Powers.isSub(s.id()) ? "screen.battlegroundsmod.soul_book.sub" : "screen.battlegroundsmod.soul_book.divine").getString();
+        String kind = Component.translatable(Powers.isInnate(s.id()) ? "screen.battlegroundsmod.soul_book.inata"
+                : Powers.isSub(s.id()) ? "screen.battlegroundsmod.soul_book.sub" : "screen.battlegroundsmod.soul_book.divine").getString();
         String un = uniName(s);
         GuiDraw.centeredText(g, font, Component.literal(kind + (un.isEmpty() ? "" : " · " + un.toUpperCase())), x + w / 2f, yy, 0.75f, 0xFFAAA0C3, false);
         yy += 10;
