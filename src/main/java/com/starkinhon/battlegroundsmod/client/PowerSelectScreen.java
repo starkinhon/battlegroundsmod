@@ -274,7 +274,7 @@ public class PowerSelectScreen extends Screen {
             return;
         }
         int i = 0;
-        for (ChallengeSpec.Universe u : spec.universos()) {
+        for (ChallengeSpec.Universe u : spec.universos().stream().filter(ChallengeSpec.Universe::world).toList()) {
             List<Power> subs = Powers.sub().stream().filter(p -> uniId(p).equals(u.id())).toList();
             Random r = new Random(31 + i * 17L);
             int n = Math.max(4, subs.size());

@@ -18,6 +18,8 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
 // Roteiro de teste: um .txt com um comando por linha, rodado sozinho pelo cliente. Linhas:
 //   # comentário (e linha vazia) - ignorada
 //   espera <ticks>                - espera (20 ticks = 1 s de relógio, mesmo com /tick rate lento)
+//   espera arena <id> <max>       - espera o jogador entrar na arena de desafio <id> (ela fica pronta e ele é levado
+//                                   pra lá), no máximo <max> ticks
 //   sair                          - fecha o jogo (salva o mundo)
 //   qualquer outra coisa          - comando, com ou sem "/" (/dev..., /devc..., /soul..., /tp, /tick rate 5...)
 // Cada linha vai pro latest.log com [soulsdev] e o tick, pra casar com os quadros gravados.
@@ -31,6 +33,7 @@ public final class Roteiro {
     private static List<String> linhas = List.of();
     private static int proxima;
     private static int espera;
+    private static String esperaArena;
     private static String nome;
     private static boolean pendenteAuto;
 
@@ -110,6 +113,17 @@ public final class Roteiro {
         }
         if (espera > 0) {
             espera--;
+            if (esperaArena != null) {
+                if (com.starkinhon.battlegroundsmod.challenge.ChallengeArenas.isArena(mc.player.level().dimension())
+                        && esperaArena.equals(com.starkinhon.battlegroundsmod.challenge.ChallengeArenas.arenaAt(mc.player.getX(), mc.player.getZ()))) {
+                    SoulsDev.log("roteiro " + nome + ": arena " + esperaArena + " pronta");
+                    esperaArena = null;
+                    espera = 0;
+                } else if (espera == 0) {
+                    SoulsDev.log("roteiro " + nome + ": arena " + esperaArena + " NAO ficou pronta a tempo");
+                    esperaArena = null;
+                }
+            }
             return;
         }
         while (nome != null && proxima < linhas.size()) {
@@ -119,6 +133,17 @@ public final class Roteiro {
                 continue;
             }
             SoulsDev.log("roteiro " + nome + ":" + numero + " > " + linha);
+            if (linha.startsWith("espera arena ")) {
+                String[] p = linha.substring(13).trim().split("\\s+");
+                try {
+                    esperaArena = p[0];
+                    espera = Integer.parseInt(p[1]);
+                } catch (RuntimeException e) {
+                    esperaArena = null;
+                    erro(numero, "espera arena <id> <max>: " + linha);
+                }
+                return;
+            }
             if (linha.startsWith("espera ")) {
                 try {
                     espera = Integer.parseInt(linha.substring(7).trim());

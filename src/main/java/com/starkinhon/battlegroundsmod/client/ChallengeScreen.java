@@ -56,7 +56,7 @@ public class ChallengeScreen extends Screen {
 
     private boolean inArena() {
         Minecraft mc = Minecraft.getInstance();
-        return mc.player != null && mc.player.level().dimension().equals(ChallengeArenas.ARENAS);
+        return mc.player != null && ChallengeArenas.isArena(mc.player.level().dimension());
     }
 
     @Override

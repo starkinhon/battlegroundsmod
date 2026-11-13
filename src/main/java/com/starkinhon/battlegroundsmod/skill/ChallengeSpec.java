@@ -18,7 +18,15 @@ import java.util.List;
 // never feels empty (Stark 2026-11-10). Once beaten it spawns normally.
 public record ChallengeSpec(int raio, int altura, int subAlmasParaChefes, double chanceRara, List<Universe> universos) {
 
-    public record Universe(String id, String nome, String cor, String descricao, List<String> mobs, List<String> piso, String pilar, List<Challenge> desafios) {
+    // mundo: false for a universe that only has its book page and arenas so far (no world or biome to live in: the
+    // bosses that came before their universe, Stark 2026-11-12). It is left out of the screen where the player picks a
+    // universe to live in, the constellation and the "dominate the universe" achievements.
+    public record Universe(String id, String nome, String cor, String descricao, List<String> mobs, List<String> piso, String pilar,
+                           List<Challenge> desafios, Boolean mundo) {
+        public boolean world() {
+            return mundo == null || mundo;
+        }
+
         public int color() {
             try {
                 return Integer.parseInt(cor.replace("#", ""), 16);
