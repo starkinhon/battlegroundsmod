@@ -27,8 +27,8 @@ import net.minecraft.world.phys.Vec3;
 //   Shift+V Fim do Mundo (FimDoMundo): five fingers on the ground, the Decadência takes everything to the horizon.
 public final class Shigaraki {
     // Every blow of the kit (Stark 2026-11-12: in the same tier the Madara out-damaged him 2.5-3x in 6 recorded fights,
-    // DPS 2.1-2.5 against 5.5-7.0, with the movement already equal).
-    public static final float DAMAGE_MULT = 1.6f;
+    // DPS 2.1-2.5 against 5.5-7.0, with the movement already equal; at 1.6 still 2.9 against 5.9, 2026-11-13).
+    public static final float DAMAGE_MULT = 2.0f;
 
     public static final String ID = "shigaraki";
     public static final int COLOR = 0x8E1515;

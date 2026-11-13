@@ -142,8 +142,16 @@ final class ShigarakiTactics extends TacticsBase {
 
     @Override
     public BossOrder.Order order(SoulBossAI ai, String name) {
+        ShigarakiEntity me = (ShigarakiEntity) boss;
+        long now = boss.level().getGameTime();
         if ("fim".equals(name)) {
             BossFalas.sayNow(boss, "fala.battlegroundsmod.shigaraki.fim");
+            // armored once the fingers touch (the kneel stays open to the blow that cuts it)
+            me.armorFrom = me.kneelUntil;
+            me.armorUntil = now + 10 + 192;
+        } else if ("tentaculos".equals(name)) {
+            me.armorFrom = now;
+            me.armorUntil = now + 14 + 184;
         }
         return null;
     }
