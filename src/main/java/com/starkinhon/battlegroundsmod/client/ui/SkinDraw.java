@@ -82,6 +82,8 @@ public final class SkinDraw {
     private static PlayerModel<LivingEntity> model() {
         if (model == null) {
             model = new PlayerModel<>(Minecraft.getInstance().getEntityModels().bakeLayer(ModelLayers.PLAYER), false);
+            // a new model starts as a baby (EntityModel.young = true: big head, half body); the game sets it per entity
+            model.young = false;
         }
         return model;
     }

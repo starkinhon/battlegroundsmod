@@ -45,8 +45,9 @@ public final class Px {
         Window window = minecraft.getWindow();
         int ww = window.getWidth(), wh = window.getHeight();
         S = Math.max(1, (int) Math.floor(Math.min(ww / 460f, wh / 262f)));
-        GW = ww / S;
-        GH = wh / S;
+        // rounded up: the last grid pixel may run past the window, so nothing of the world shows on the right or bottom edge
+        GW = (ww + S - 1) / S;
+        GH = (wh + S - 1) / S;
         double scale = window.getGuiScale();
         k = (float) (S / scale);
         g = graphics;

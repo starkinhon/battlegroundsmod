@@ -211,15 +211,6 @@ public class ChallengeScreen extends Screen {
         }
         float tx = Math.max(10 + tw(title, 12, true) + 14, GW - 10 - tot);
         int ty = 6;
-        {
-            String sub = tr("sub");
-            float sx1 = 10 + tw(title, 12, true) + 8, sx2 = 22 + tw(taken, 7) + 10;
-            if (sx1 + tw(sub, 6) < tx - 4) {
-                T(sub, sx1, 10, rgb(150, 130, 190), 6);
-            } else if (sx2 + tw(sub, 6) < tx - 4) {
-                T(sub, sx2, 21, rgb(150, 130, 190), 6);
-            }
-        }
         for (int i = 0; i < unis.size(); i++) {
             Uni un = unis.get(i);
             int col = un.cor, w = widths[i], hh = 24;
@@ -358,7 +349,7 @@ public class ChallengeScreen extends Screen {
                 }
             }
             UiIcons.crystal(c.soul(), col, ax, ay, sz, wonS ? 0.35f : 1, !wonS, false, c.id().length());
-            T(wonS ? tr("alma_tomada") : tr("alma_de", c.nome().toUpperCase()), ax, ay - sz / 2 - 10, wonS ? rgb(150, 140, 170)
+            T(wonS ? tr("alma_tomada") : tr("alma"), ax, ay - sz / 2 - 10, wonS ? rgb(150, 140, 170)
                     : mix(ink(col), WHITE, 0.45f), 6, false, 0, true, 1);
         } else {
             // two crossed chains over the silhouette, link by link, and the padlock in the middle
@@ -623,12 +614,10 @@ public class ChallengeScreen extends Screen {
         int n = list.size(), need = BookData.subsNeeded(u), got = BookData.subsBeaten(u);
         int cell = (int) Math.min(42, Math.floor(w / n) - 4);
         float cx = x;
-        T(tr("fraco"), cx - 6, y + cell / 2f, MUTED, 6, false, 1, true, 1);
         boolean hasBoss = false;
         for (Ch ch : list) {
             hasBoss |= ch.boss();
         }
-        T(tr("chefe_seta"), cx + n * (cell + 4) + (hasBoss ? 14 : 0) + 4, y + cell / 2f, MUTED, 6);
         boolean firstBoss = true;
         hov = null;
         for (Ch c : list) {
