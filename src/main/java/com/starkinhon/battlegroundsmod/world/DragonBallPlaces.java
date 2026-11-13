@@ -67,7 +67,8 @@ public final class DragonBallPlaces {
         place("capsula", -149, -152, DragonBallPlaces::capsule);
         MapPlaces.keepClear(MAP, 412, 88, 17);
         MapPlaces.keepClear(MAP, -149, -152, 38);
-        place("raditz", 250, -195, DragonBallPlaces::raditz);
+        MapPlaces.add(MAP, new MapPlaces.Place("raditz", 250, -195, map -> raditz(map, 250, -195),
+                (level, b) -> WorldSites.podChest(level, new BlockPos(b.x + 1, b.y + 1, b.z))));
         place("babidi", -319, 57, DragonBallPlaces::wreck);
         // The six places Stark marked on the 2D map (2026-11-10), drawn after his references by
         // tools/structures/dragonball2.py. The spots are the ones tools/build_worldmap.py flattened.

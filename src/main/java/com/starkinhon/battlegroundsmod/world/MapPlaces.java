@@ -77,6 +77,7 @@ public final class MapPlaces {
             PADS.remove(WORLD);
             PLACES.remove(WORLD);
         });
+        StructureLoot.register();
         DragonBallPlaces.register();
         NamekWorld.register();
         WorldSites.register();
@@ -168,11 +169,17 @@ public final class MapPlaces {
             String map = mapOf(level);
             if (map == null && level.dimension() == Level.OVERWORLD && !player.isSpectator()) {
                 pads(player, level, WORLD);
+                if (server.getTickCount() % 100 == 0) {
+                    lootOld(player, level, WORLD);
+                }
                 continue;
             }
             if (map == null || player.isSpectator()) {
                 ON_PAD.remove(player.getUUID());
                 continue;
+            }
+            if (server.getTickCount() % 100 == 0) {
+                lootOld(player, level, map);
             }
             if (server.getTickCount() % 20 == 0) {
                 for (Place place : PLACES.getOrDefault(map, List.of())) {
@@ -276,6 +283,39 @@ public final class MapPlaces {
         if (job.place().done() != null) {
             job.place().done().accept(level, job.build());
         }
+        // the loot of its chests and barrels (after done: an activity's own items go in first)
+        StructureLoot.fill(level, mapOf(level), job.place().id(), job.build(), false);
+        if (data.looted.add(job.place().id())) {
+            data.setDirty();
+        }
+    }
+
+    // Places built before they had loot (Stark's worlds, 2026-11-12): when a player comes near one, its build is made
+    // again (nothing is placed) to know where its chests and barrels are, and the ones still there and empty get loot.
+    private static void lootOld(ServerPlayer player, ServerLevel level, String map) {
+        Data data = data(level);
+        for (Place place : PLACES.getOrDefault(map, List.of())) {
+            if (data.looted.contains(place.id()) || !data.built.contains(place.id())) {
+                continue;
+            }
+            double dx = player.getX() - place.x();
+            double dz = player.getZ() - place.z();
+            if (dx * dx + dz * dz > 64 * 64) {
+                continue;
+            }
+            if (!StructureLoot.has(StructureLoot.kind(map, place.id()))) {
+                data.looted.add(place.id());
+                data.setDirty();
+                continue;
+            }
+            Build build = place.build().apply(level.getChunkSource().getGenerator() instanceof MapChunkGenerator ? map(level) : null);
+            if (!StructureLoot.loaded(level, build)) {
+                continue;
+            }
+            StructureLoot.fill(level, map, place.id(), build, true);
+            data.looted.add(place.id());
+            data.setDirty();
+        }
     }
 
     public static boolean built(ServerLevel level, String id) {
@@ -352,12 +392,18 @@ public final class MapPlaces {
 
     public static final class Data extends SavedData {
         final Set<String> built = new HashSet<>();
+        // places whose chests and barrels already got their loot (StructureLoot), so it happens once
+        final Set<String> looted = new HashSet<>();
 
         static Data load(CompoundTag tag, HolderLookup.Provider registries) {
             Data data = new Data();
             ListTag list = tag.getList("built", 8);
             for (int i = 0; i < list.size(); i++) {
                 data.built.add(list.getString(i));
+            }
+            ListTag looted = tag.getList("looted", 8);
+            for (int i = 0; i < looted.size(); i++) {
+                data.looted.add(looted.getString(i));
             }
             return data;
         }
@@ -369,11 +415,16 @@ public final class MapPlaces {
                 list.add(StringTag.valueOf(id));
             }
             tag.put("built", list);
+            ListTag looted = new ListTag();
+            for (String id : this.looted) {
+                looted.add(StringTag.valueOf(id));
+            }
+            tag.put("looted", looted);
             return tag;
         }
 
         void forget(String id) {
-            if (built.remove(id)) {
+            if (built.remove(id) | looted.remove(id)) {
                 setDirty();
             }
         }

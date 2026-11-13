@@ -1,0 +1,283 @@
+# Loot nas estruturas (PR #310). Mundo Souls novo:
+# gradlew runClient -Pmundo=LootEstruturas -PmundoTipo=battlegroundsmod:souls -Proteiro=loot-estruturas
+/dev preparar
+/gamemode creative
+/effect give @s minecraft:slow_falling infinite 0 true
+/effect give @s minecraft:night_vision infinite 0 true
+/gamerule doDaylightCycle false
+/time set 6000
+/devc fov 70
+/devc vista primeira
+espera 60
+# ---- toda tabela carrega (o chat vai pro log)
+/devc marca tabelas
+/loot give @s loot battlegroundsmod:estruturas/capsula
+/loot give @s loot battlegroundsmod:estruturas/goku
+/loot give @s loot battlegroundsmod:estruturas/karin
+/loot give @s loot battlegroundsmod:estruturas/cell
+/loot give @s loot battlegroundsmod:estruturas/nave
+/loot give @s loot battlegroundsmod:estruturas/babidi
+/loot give @s loot battlegroundsmod:estruturas/buu
+/loot give @s loot battlegroundsmod:estruturas/kame
+/loot give @s loot battlegroundsmod:estruturas/lookout
+/loot give @s loot battlegroundsmod:estruturas/sala_tempo
+/loot give @s loot battlegroundsmod:estruturas/nave_freeza
+/loot give @s loot battlegroundsmod:estruturas/nave_capsula
+/loot give @s loot battlegroundsmod:estruturas/vila
+/loot give @s loot battlegroundsmod:estruturas/guru
+/loot give @s loot battlegroundsmod:estruturas/folha
+/loot give @s loot battlegroundsmod:estruturas/morte
+/loot give @s loot battlegroundsmod:estruturas/covil
+/loot give @s loot battlegroundsmod:estruturas/deserto
+/loot give @s loot battlegroundsmod:estruturas/nevoa
+/loot give @s loot battlegroundsmod:estruturas/chuva
+/loot give @s loot battlegroundsmod:estruturas/myoboku
+/loot give @s loot battlegroundsmod:estruturas/pico
+/loot give @s loot battlegroundsmod:estruturas/comum
+/loot give @s loot battlegroundsmod:estruturas/comum_deserto
+/loot give @s loot battlegroundsmod:estruturas/suprimentos
+/loot give @s loot battlegroundsmod:estruturas/suprimentos_deserto
+/loot give @s loot battlegroundsmod:chests/pod_saiyajin
+espera 10
+/devc print loot/tabelas_inventario
+/clear @s
+# ---- raditz
+/devc marca raditz
+/soul bau raditz
+espera 700
+/soul bau raditz
+espera 60
+/soul bau raditz
+espera 30
+/devc print loot/raditz_frente
+/devc tecla usar
+espera 20
+/devc print loot/raditz_aberto
+/devc fechar
+espera 10
+# ---- goku
+/devc marca goku
+/soul bau goku
+espera 700
+/soul bau goku
+espera 60
+/soul bau goku
+espera 30
+/devc print loot/goku_frente
+/devc tecla usar
+espera 20
+/devc print loot/goku_aberto
+/devc fechar
+espera 10
+# ---- capsula
+/devc marca capsula
+/soul bau capsula
+espera 700
+/soul bau capsula
+espera 60
+/soul bau capsula
+espera 30
+/devc print loot/capsula_frente
+/devc tecla usar
+espera 20
+/devc print loot/capsula_aberto
+/devc fechar
+espera 10
+# ---- karin
+/devc marca karin
+/soul bau karin
+espera 700
+/soul bau karin
+espera 60
+/soul bau karin
+espera 30
+/devc print loot/karin_frente
+/devc tecla usar
+espera 20
+/devc print loot/karin_aberto
+/devc fechar
+espera 10
+# ---- cell
+/devc marca cell
+/soul bau cell
+espera 700
+/soul bau cell
+espera 60
+/soul bau cell
+espera 30
+/devc print loot/cell_frente
+/devc tecla usar
+espera 20
+/devc print loot/cell_aberto
+/devc fechar
+espera 10
+# ---- nave
+/devc marca nave
+/soul bau nave
+espera 700
+/soul bau nave
+espera 60
+/soul bau nave
+espera 30
+/devc print loot/nave_frente
+/devc tecla usar
+espera 20
+/devc print loot/nave_aberto
+/devc fechar
+espera 10
+# ---- babidi
+/devc marca babidi
+/soul bau babidi
+espera 700
+/soul bau babidi
+espera 60
+/soul bau babidi
+espera 30
+/devc print loot/babidi_frente
+/devc tecla usar
+espera 20
+/devc print loot/babidi_aberto
+/devc fechar
+espera 10
+# ---- buu
+/devc marca buu
+/soul bau buu
+espera 700
+/soul bau buu
+espera 60
+/soul bau buu
+espera 30
+/devc print loot/buu_frente
+/devc tecla usar
+espera 20
+/devc print loot/buu_aberto
+/devc fechar
+espera 10
+# ---- kame
+/devc marca kame
+/soul bau kame
+espera 700
+/soul bau kame
+espera 60
+/soul bau kame
+espera 30
+/devc print loot/kame_frente
+/devc tecla usar
+espera 20
+/devc print loot/kame_aberto
+/devc fechar
+espera 10
+# ---- folha
+/devc marca folha
+/soul bau folha
+espera 700
+/soul bau folha
+espera 60
+/soul bau folha
+espera 30
+/devc print loot/folha_frente
+/devc tecla usar
+espera 20
+/devc print loot/folha_aberto
+/devc fechar
+espera 10
+# ---- morte
+/devc marca morte
+/soul bau morte
+espera 700
+/soul bau morte
+espera 60
+/soul bau morte
+espera 30
+/devc print loot/morte_frente
+/devc tecla usar
+espera 20
+/devc print loot/morte_aberto
+/devc fechar
+espera 10
+# ---- covil
+/devc marca covil
+/soul bau covil
+espera 700
+/soul bau covil
+espera 60
+/soul bau covil
+espera 30
+/devc print loot/covil_frente
+/devc tecla usar
+espera 20
+/devc print loot/covil_aberto
+/devc fechar
+espera 10
+# ---- deserto
+/devc marca deserto
+/soul bau deserto
+espera 700
+/soul bau deserto
+espera 60
+/soul bau deserto
+espera 30
+/devc print loot/deserto_frente
+/devc tecla usar
+espera 20
+/devc print loot/deserto_aberto
+/devc fechar
+espera 10
+# ---- nevoa
+/devc marca nevoa
+/soul bau nevoa
+espera 700
+/soul bau nevoa
+espera 60
+/soul bau nevoa
+espera 30
+/devc print loot/nevoa_frente
+/devc tecla usar
+espera 20
+/devc print loot/nevoa_aberto
+/devc fechar
+espera 10
+# ---- chuva
+/devc marca chuva
+/soul bau chuva
+espera 700
+/soul bau chuva
+espera 60
+/soul bau chuva
+espera 30
+/devc print loot/chuva_frente
+/devc tecla usar
+espera 20
+/devc print loot/chuva_aberto
+/devc fechar
+espera 10
+# ---- myoboku
+/devc marca myoboku
+/soul bau myoboku
+espera 700
+/soul bau myoboku
+espera 60
+/soul bau myoboku
+espera 30
+/devc print loot/myoboku_frente
+/devc tecla usar
+espera 20
+/devc print loot/myoboku_aberto
+/devc fechar
+espera 10
+# ---- pico
+/devc marca pico
+/soul bau pico
+espera 700
+/soul bau pico
+espera 60
+/soul bau pico
+espera 30
+/devc print loot/pico_frente
+/devc tecla usar
+espera 20
+/devc print loot/pico_aberto
+/devc fechar
+espera 10
+espera 20
+sair

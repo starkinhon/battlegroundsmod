@@ -375,6 +375,7 @@ public final class NarutoActivities {
                         ? new ItemStack[] {new ItemStack(ModItems.SNAKE_SKIN.get()), new ItemStack(ModItems.KUSANAGI.get())}
                         : new ItemStack[] {new ItemStack(ModItems.SNAKE_SKIN.get())};
                 fill(level, nest.above(), loot);
+                com.starkinhon.battlegroundsmod.world.StructureLoot.give(level, nest.above(), NarutoStructGen.COVIL);
             }
         }
     }

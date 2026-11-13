@@ -96,6 +96,9 @@ public final class NarutoSites {
             for (Site site : data.sites.values()) {
                 if (!MapPlaces.built(level, site.id())) {
                     MapPlaces.startAt(level, place(level, site));
+                } else if (!VALE.equals(site.kind())) {
+                    // known to MapPlaces so a place built before the loot gets it when someone comes by (StructureLoot)
+                    MapPlaces.addWorldPlace(place(level, site));
                 }
             }
         }
@@ -258,6 +261,11 @@ public final class NarutoSites {
         Data data = data(level);
         Site known = data.sites.get(site.id());
         NarutoActivities.built(level, known != null ? known : site);
+    }
+
+    // The build of a known place, made again without placing anything (StructureLoot's /soul bau).
+    static Build buildOf(ServerLevel level, Site s) {
+        return build(level, s);
     }
 
     private static Build build(ServerLevel level, Site s) {

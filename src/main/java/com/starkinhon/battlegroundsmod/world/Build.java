@@ -289,6 +289,7 @@ public final class Build {
         } catch (IOException e) {
             throw new IllegalStateException("Construção ilegível: " + file, e);
         }
+        StructureLoot.extraChest(this, path, dx, dy, dz);
         return this;
     }
 

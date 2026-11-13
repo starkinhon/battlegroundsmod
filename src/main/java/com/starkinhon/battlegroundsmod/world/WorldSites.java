@@ -3,30 +3,43 @@ package com.starkinhon.battlegroundsmod.world;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
+import com.starkinhon.battlegroundsmod.BattlegroundsMod;
 import com.starkinhon.battlegroundsmod.ModEntities;
 import com.starkinhon.battlegroundsmod.npc.UniverseNpc;
 import com.starkinhon.battlegroundsmod.power.Progression;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.QuartPos;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.StringTag;
+import net.minecraft.nbt.Tag;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.BiomeTags;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.RandomizableContainer;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.ChestBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.saveddata.SavedData;
+import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
@@ -80,6 +93,7 @@ public final class WorldSites {
                 links(level, site);
             }
         }
+        podChestsForOldCraters(level, data);
         for (ServerPlayer player : level.players()) {
             int pcx = Math.floorDiv(player.getBlockX(), CELL);
             int pcz = Math.floorDiv(player.getBlockZ(), CELL);
@@ -214,7 +228,8 @@ public final class WorldSites {
 
     private static MapPlaces.Place place(Site site) {
         return new MapPlaces.Place(id(site), site.x(), site.z(), map -> build(site),
-                KARIN.equals(site.kind()) ? (level, b) -> korin(level, b) : null);
+                KARIN.equals(site.kind()) ? (level, b) -> korin(level, b)
+                        : RADITZ.equals(site.kind()) ? (level, b) -> podChest(level, site) : null);
     }
 
     private static MapPlaces.Place lookoutPlace(Site site) {
@@ -225,6 +240,15 @@ public final class WorldSites {
 
     private static BlockState s(Block block) {
         return block.defaultBlockState();
+    }
+
+    // The build of a known place, made again without placing anything (StructureLoot's /soul bau).
+    static Build buildOf(Site site) {
+        return build(site);
+    }
+
+    static String idOf(Site site) {
+        return id(site);
     }
 
     private static Build build(Site site) {
@@ -351,6 +375,50 @@ public final class WorldSites {
         return b;
     }
 
+    // The Saiyan pod's loot (Stark 2026-11-12: "absurdo não ter um lootzinho aqui", and a scouter would fit): a chest
+    // inside the pod, right behind the open hatch so it is seen and reached from outside, filled from
+    // loot_table/chests/pod_saiyajin (the scouter always, senzu now and then, metal scraps of the pod). Placed once, when
+    // the crater finishes building.
+    public static final ResourceKey<LootTable> POD_LOOT = ResourceKey.create(Registries.LOOT_TABLE,
+            ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "chests/pod_saiyajin"));
+
+    // Inside the pod of a crater site (its floor is one below the build's; the pod's middle is 3 under that floor).
+    static BlockPos podChestPos(Site site) {
+        return new BlockPos(site.x() + 1, site.y() - 2, site.z());
+    }
+
+    private static void podChest(ServerLevel level, Site site) {
+        Data data = data(level);
+        if (data.pods.add(id(site))) {
+            data.setDirty();
+            podChest(level, podChestPos(site));
+        }
+    }
+
+    // Craters built before the pod had loot (Stark's worlds): once the chunk is loaded, the chest goes in, only once and
+    // only if the spot inside the pod is still empty (a pod someone already broke stays as it is).
+    private static void podChestsForOldCraters(ServerLevel level, Data data) {
+        for (Site site : data.sites()) {
+            if (!RADITZ.equals(site.kind()) || data.pods.contains(id(site)) || !MapPlaces.built(level, id(site))) {
+                continue;
+            }
+            BlockPos pos = podChestPos(site);
+            if (!level.isLoaded(pos)) {
+                continue;
+            }
+            data.pods.add(id(site));
+            data.setDirty();
+            if (level.getBlockState(pos).isAir()) {
+                podChest(level, pos);
+            }
+        }
+    }
+
+    static void podChest(ServerLevel level, BlockPos pos) {
+        level.setBlock(pos, Blocks.CHEST.defaultBlockState().setValue(ChestBlock.FACING, Direction.EAST), Block.UPDATE_CLIENTS);
+        RandomizableContainer.setBlockEntityLootTable(level, level.random, pos, POD_LOOT);
+    }
+
     // Korin on top of his tower.
     private static void korin(ServerLevel level, Build b) {
         BlockPos top = new BlockPos(b.x - 8, b.y + KORIN_FLOOR + 1, b.z);
@@ -430,6 +498,8 @@ public final class WorldSites {
 
     public static final class Data extends SavedData {
         final Map<String, String> cells = new HashMap<>();
+        // Craters whose pod already got its chest (so a looted, broken chest never comes back).
+        final Set<String> pods = new HashSet<>();
         boolean restored;
 
         static Data load(CompoundTag tag, HolderLookup.Provider registries) {
@@ -437,6 +507,10 @@ public final class WorldSites {
             CompoundTag cells = tag.getCompound("cells");
             for (String key : cells.getAllKeys()) {
                 data.cells.put(key, cells.getString(key));
+            }
+            ListTag pods = tag.getList("pods", Tag.TAG_STRING);
+            for (int i = 0; i < pods.size(); i++) {
+                data.pods.add(pods.getString(i));
             }
             return data;
         }
@@ -446,6 +520,11 @@ public final class WorldSites {
             CompoundTag cells = new CompoundTag();
             this.cells.forEach(cells::putString);
             tag.put("cells", cells);
+            ListTag pods = new ListTag();
+            for (String pod : this.pods) {
+                pods.add(StringTag.valueOf(pod));
+            }
+            tag.put("pods", pods);
             return tag;
         }
 
