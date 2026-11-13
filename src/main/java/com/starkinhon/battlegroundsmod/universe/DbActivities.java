@@ -298,7 +298,10 @@ public final class DbActivities {
         if (DbQuests.at(player, "bulma")) {
             say(player, npc, Component.translatable("npc.battlegroundsmod.bulma.radar"));
             DbQuests.advance(player, "bulma", 1);
-            return;
+            // came with the capsule's parts too: she builds it right away (in the test the radar line ate the trade)
+            if (!(count(player, Items.IRON_INGOT) >= CAPSULE_IRON && count(player, Items.REDSTONE) >= CAPSULE_REDSTONE)) {
+                return;
+            }
         }
         // the Hoi-Poi capsule: iron and redstone for a house in your pocket, one a day
         if (dailyFree(player, CAPSULE_DAY)) {
@@ -575,6 +578,7 @@ public final class DbActivities {
             // the Cell Games have rules: off the ring, out of the games
             end(level, w);
             WAVES.remove(player.getUUID());
+            dailyUse(player, "souls_cell_dia");
             title(player, Component.translatable("message.battlegroundsmod.cell_ringout"), Component.translatable("message.battlegroundsmod.cell_ringout_sub"),
                     0x82BEAA);
             Fx.sound(level, player.position(), SoundEvents.ANVIL_LAND, 0.7f, 0.6f);

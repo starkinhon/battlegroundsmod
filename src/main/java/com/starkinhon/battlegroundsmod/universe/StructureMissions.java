@@ -126,6 +126,46 @@ public final class StructureMissions {
                     player.teleportTo(level, to.getX() + 0.5, to.getY(), to.getZ() + 0.5, player.getYRot(), 20);
                     return 1;
                 }))));
+        // /soul falar: talk to the nearest NPC as a right click would (testing: the scripted click missed the short ones)
+        com.starkinhon.battlegroundsmod.command.SoulCommand.addSubcommand(() -> net.minecraft.commands.Commands.literal("falar")
+                .requires(s -> s.hasPermission(2)).executes(c -> {
+                    ServerPlayer player = c.getSource().getPlayerOrException();
+                    com.starkinhon.battlegroundsmod.npc.UniverseNpc npc = player.serverLevel().getNearestEntity(
+                            com.starkinhon.battlegroundsmod.npc.UniverseNpc.class, net.minecraft.world.entity.ai.targeting.TargetingConditions.forNonCombat()
+                                    .ignoreLineOfSight(), player, player.getX(), player.getY(), player.getZ(), player.getBoundingBox().inflate(8));
+                    if (npc == null) {
+                        return 0;
+                    }
+                    npc.getNavigation().stop();
+                    npc.lookAt(player, 360, 360);
+                    com.starkinhon.battlegroundsmod.npc.Npcs.talk(player, npc);
+                    return 1;
+                }));
+        // /soul korin base|topo: the ground at the tower's foot, or Korin's floor up top
+        com.starkinhon.battlegroundsmod.command.SoulCommand.addSubcommand(() -> net.minecraft.commands.Commands.literal("korin")
+                .requires(s -> s.hasPermission(2))
+                .then(net.minecraft.commands.Commands.argument("onde", com.mojang.brigadier.arguments.StringArgumentType.word()).executes(c -> {
+                    ServerPlayer player = c.getSource().getPlayerOrException();
+                    ServerLevel level = player.serverLevel();
+                    WorldSites.Site s = WorldSites.near(level, WorldSites.KARIN, player.blockPosition(), 400);
+                    if (s == null) {
+                        return 0;
+                    }
+                    if ("topo".equals(com.mojang.brigadier.arguments.StringArgumentType.getString(c, "onde"))) {
+                        player.teleportTo(s.x() + 14.5, s.y() + WorldSites.KORIN_FLOOR + 1, s.z() + 3.5);
+                        return 1;
+                    }
+                    // the first open spot over the ground on the side away from the palace
+                    int x = s.x(), z = s.z() - 12;
+                    for (int y = s.y() - 6; y < s.y() + 24; y++) {
+                        BlockPos p = new BlockPos(x, y, z);
+                        if (level.getBlockState(p.below()).isSolid() && level.getBlockState(p).isAir() && level.getBlockState(p.above()).isAir()) {
+                            player.teleportTo(x + 0.5, y, z + 0.5);
+                            return 1;
+                        }
+                    }
+                    return 0;
+                })));
         // /soul missaoponto: to the spot the running activity points at (Mestre Kame's milk, then back to him); testing
         com.starkinhon.battlegroundsmod.command.SoulCommand.addSubcommand(() -> net.minecraft.commands.Commands.literal("missaoponto")
                 .requires(s -> s.hasPermission(2)).executes(c -> {
@@ -317,11 +357,11 @@ public final class StructureMissions {
     private static Here namek(ServerPlayer player) {
         if (near(player, GURU, 18)) {
             if (player.getPersistentData().getBoolean(GURU_DONE)) {
-                return null;
+                return new Here("namek/guru", "est_guru_feito", 0, 0, 0x7FD67A);
             }
             if (near(player, GURU, 8)) {
                 guru(player);
-                return null;
+                return new Here("namek/guru", "est_guru_feito", 0, 0, 0x7FD67A);
             }
             return new Here("namek/guru", "est_guru", 0, 0, 0x7FD67A);
         }
@@ -524,8 +564,9 @@ public final class StructureMissions {
             return;
         }
         int n = CROUCH.merge(player.getUUID(), 1, Integer::sum);
-        if (n >= 3) {
-            CROUCH.remove(player.getUUID());
+        if (n == 3) {
+            // one flip per crouch: staying down doesn't flip it back (stand up and crouch again for that)
+            CROUCH.put(player.getUUID(), Integer.MIN_VALUE / 2);
             MajinMark.toggle(player);
         }
     }
