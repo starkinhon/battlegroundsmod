@@ -268,7 +268,7 @@ public class DbMob extends NarutoMob {
     }
 
     private int rideCool;
-    // a click that came during the breath or the pace waits a little, instead of being lost (test 2026-11-13: one click in two did nothing)
+    // a click that came during the breath or the pace waits for it, instead of being lost (test 2026-11-13: one click in two did nothing)
     private int rideQueued;
 
     @Override
@@ -293,7 +293,8 @@ public class DbMob extends NarutoMob {
         }
         // its own pace when ridden (2.5 s), not the wild cooldown of 8 s (test 2026-11-13: the rider's clicks fell on it)
         if (attacking() || rideCool > 0) {
-            rideQueued = 20;
+            // kept until the breath and the pace are over (at most 2.5 s), so a click never falls between them
+            rideQueued = 60;
             return true;
         }
         breathe(player);

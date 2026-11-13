@@ -75,8 +75,8 @@ public class NarutoMobRenderer extends MobRenderer<NarutoMob, BlockyModel<Naruto
             }
             JsonObject jHi = json(context, "blocky/" + folder + "/" + name + ".json");
             JsonObject jLo = json(context, "blocky/" + folder + "/" + name + "_low.json");
-            hi.add(new BlockyModel<>(jHi, (m, e, ls, amt, age, hy, hp) -> pose(m, animHi, age)));
-            lo.add(new BlockyModel<>(jLo, (m, e, ls, amt, age, hy, hp) -> pose(m, animLo, age)));
+            hi.add(new BlockyModel<>(jHi, (m, e, ls, amt, age, hy, hp) -> pose(m, e, animHi, age)));
+            lo.add(new BlockyModel<>(jLo, (m, e, ls, amt, age, hy, hp) -> pose(m, e, animLo, age)));
             scaleHi.add(jHi.has("scale") ? jHi.get("scale").getAsFloat() : 1f);
             scaleLo.add(jLo.has("scale") ? jLo.get("scale").getAsFloat() : 1f);
             texHi.add(tex(name));
@@ -141,7 +141,9 @@ public class NarutoMobRenderer extends MobRenderer<NarutoMob, BlockyModel<Naruto
             }
         }
         java.util.Arrays.fill(root, 0);
-        float rest = 1 - attackW;
+        // a blow in flight (the ridden dragon's fire): the flight goes on and only the neck and head blow
+        airBlow = attack != null && e.loopMode() != null && e instanceof com.starkinhon.battlegroundsmod.animal.dbmob.DbMob d && d.isDragon();
+        float rest = airBlow ? 1 : 1 - attackW;
         float[] tmp = new float[BakedAnim.ROOT];
         String loop = e.loopMode();
         loopAnim = loop == null ? null : a.mode(loop);
@@ -161,7 +163,7 @@ public class NarutoMobRenderer extends MobRenderer<NarutoMob, BlockyModel<Naruto
         tmp[4] = 0;
         tmp[6] = 0;
         add(root, tmp);
-        if (attack != null) {
+        if (attack != null && !airBlow) {
             java.util.Arrays.fill(tmp, 0);
             attackRoot(a, at.mode(), attack, attackFrame, tmp);
             for (int k = 0; k < BakedAnim.ROOT; k++) {
@@ -201,18 +203,34 @@ public class NarutoMobRenderer extends MobRenderer<NarutoMob, BlockyModel<Naruto
         out[6] = now[6];
     }
 
+    // the parts that blow in flight (the rest keeps flying)
+    private static final java.util.Set<String> NECK = java.util.Set.of("cabeca", "mandibula", "pescoco1", "pescoco2");
+    private boolean airBlow;
+
     // the model's pose this frame (the parts; the body's offset is in setupRotations)
-    private void pose(BlockyModel<NarutoMob> m, BakedAnim a, float age) {
+    private void pose(BlockyModel<NarutoMob> m, NarutoMob e, BakedAnim a, float age) {
         float rest = 1 - attackW;
         if (loopAnim != null) {
-            BakedAnim.apply(m, a.mode(loopAnim.name), age, true, rest);
+            if (airBlow) {
+                BakedAnim.apply(m, a.mode(loopAnim.name), age, true, 1, part -> !NECK.contains(part));
+                BakedAnim.apply(m, a.mode(loopAnim.name), age, true, rest, NECK::contains);
+            } else {
+                BakedAnim.apply(m, a.mode(loopAnim.name), age, true, rest);
+            }
         } else {
             BakedAnim.apply(m, a.mode("parado"), age, true, rest * (1 - walkW));
             BakedAnim.apply(m, a.mode("andar"), age, true, rest * walkW);
         }
         if (attack != null) {
             BakedAnim.Mode mode = a.mode(attack.name);
-            BakedAnim.apply(m, mode, attackFrame, false, attackW);
+            BakedAnim.apply(m, mode, attackFrame, false, attackW, airBlow ? NECK::contains : null);
+        }
+        if (e.getControllingPassenger() instanceof net.minecraft.world.entity.player.Player rider) {
+            // ridden: the neck and head tip where the rider looks (up and down; the turn is the body's own)
+            float pitch = Mth.clamp(rider.getXRot(), -50, 60) * Mth.DEG_TO_RAD;
+            m.rot("pescoco1", pitch * 0.3f, 0, 0);
+            m.rot("pescoco2", pitch * 0.3f, 0, 0);
+            m.rot("cabeca", pitch * 0.4f, 0, 0);
         }
     }
 
