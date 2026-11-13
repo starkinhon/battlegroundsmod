@@ -614,12 +614,18 @@ public class ChallengeScreen extends Screen {
     private void drawLadder(Uni u, float x, float y, float w) {
         List<Ch> list = u.desafios;
         int n = list.size(), need = BookData.subsNeeded(u), got = BookData.subsBeaten(u);
-        int cell = (int) Math.min(42, Math.floor(w / n) - 4);
-        float cx = x;
         boolean hasBoss = false;
         for (Ch ch : list) {
             hasBoss |= ch.boss();
         }
+        // the same square size in every universe (Stark 2026-11-13: Jujutsu's came out bigger than Dragon Ball's): the
+        // longest ladder of all decides it, counting the chain's gap before the bosses
+        int most = n;
+        for (Uni other : BookData.unis()) {
+            most = Math.max(most, other.desafios.size());
+        }
+        int cell = (int) Math.min(42, Math.floor((w - 14) / most) - 4);
+        float cx = x;
         boolean firstBoss = true;
         hov = null;
         for (Ch c : list) {
@@ -650,8 +656,10 @@ public class ChallengeScreen extends Screen {
             // the portrait's background: its arena
             Px.g.enableScissor(Math.round(cx + 1), Math.round(y + lift + 1), Math.round(cx + cell - 1), Math.round(y + lift + cell + 7));
             arenaBg(c, cx - cell * 0.4f, y + lift - 2, cell * 1.8f, cell * 1.1f, lk ? 0.15f : 0.45f, won);
+            // head and chest framed in the square: the head's top 3 px under the edge, the waist at the name bar
             SkinDraw.Pose bp = new SkinDraw.Pose(-0.45f, 0.18f);
-            SkinDraw.draw(c.skin(), cx + cell / 2f, y + lift + cell + 4, cell / 24f, bp, SkinDraw.BUST, lk ? 0xF2080610 : won ? 0xFF6E6E72 : 0xFFFFFFFF);
+            float bk = cell / 22f;
+            SkinDraw.draw(c.skin(), cx + cell / 2f, y + lift + 4 + 32 * bk, bk, bp, SkinDraw.BUST, lk ? 0xF2080610 : won ? 0xFF6E6E72 : 0xFFFFFFFF);
             Px.g.disableScissor();
             if (won) {
                 // defeated: gray (the mob and its background)
