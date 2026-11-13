@@ -42,7 +42,9 @@ public final class Tentaculos {
         float yaw = (float) Math.toDegrees(Math.atan2(-face.x, face.z));
         SubCommon.busy(caster, LENGTH);
         SubCommon.pose(caster, "shig.tentaculos");
-        SubNet.send(level, Shigaraki.TENTACLES, caster.getId(), feet, face, 0, 0, 0);
+        // the one he fights (a boss's target, else who he locks on): the tentacles follow it (TentacleSpine.home)
+        LivingEntity mark = caster instanceof net.minecraft.world.entity.Mob mob && mob.getTarget() != null ? mob.getTarget() : Toque.lock(caster);
+        SubNet.send(level, Shigaraki.TENTACLES, caster.getId(), feet, face, 0, mark == null ? 0 : mark.getId() + 1, 0);
         SubCommon.sound(level, feet, SoundEvents.WARDEN_EMERGE, 1.4f, 0.7f);
         Runnable release = Freeze.holdLookFree(caster, LENGTH);
         List<Vec3> ground = new ArrayList<>(), struct = new ArrayList<>();
@@ -55,6 +57,8 @@ public final class Tentaculos {
                 return true;
             }
             float t = age / 20f;
+            float[] aim = mark != null && mark.isAlive() && mark.level() == level
+                    ? TentacleSpine.toFrame(mark.getX(), mark.getY() + 0.4, mark.getZ(), feet.x, feet.y, feet.z, yaw) : null;
             if (age == 9 || age == 16) {
                 SubCommon.sound(level, feet.add(0, 1.5, 0), SoundEvents.SCULK_SHRIEKER_SHRIEK, 1.2f, 0.5f);
             }
@@ -66,7 +70,7 @@ public final class Tentaculos {
                 if (g <= 0) {
                     continue;
                 }
-                TentacleSpine.spine(d, t, S);
+                TentacleSpine.spine(d, t, aim, S);
                 for (int k = 0; k < TentacleSpine.KK; k++) {
                     float dd = k / (float) (TentacleSpine.KK - 1) * d.L;
                     if (dd > g * d.L - 1) {

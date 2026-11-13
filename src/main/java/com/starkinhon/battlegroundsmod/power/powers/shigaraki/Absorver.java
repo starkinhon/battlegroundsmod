@@ -1,5 +1,7 @@
 package com.starkinhon.battlegroundsmod.power.powers.shigaraki;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
 
@@ -8,13 +10,17 @@ import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.combat.Stun;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
+import com.starkinhon.battlegroundsmod.power.Ability;
 import com.starkinhon.battlegroundsmod.power.Power;
 import com.starkinhon.battlegroundsmod.power.PowerData;
+import com.starkinhon.battlegroundsmod.power.PowerLogic;
 import com.starkinhon.battlegroundsmod.power.Powers;
 import com.starkinhon.battlegroundsmod.power.powers.sub.SubCommon;
 import com.starkinhon.battlegroundsmod.power.powers.sub.SubNet;
 
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -29,6 +35,9 @@ import net.minecraft.world.phys.Vec3;
 // Fogo: a ball flies to the target and bursts in a dome that throws and chars; Raio: a bolt at once, stuns 2.4 s;
 // Gelo: a row of spikes to the target, frozen 3 s.
 // Which power: the victim's soul (by its colour) or, for a mob without one, what the mob is.
+// All For One for real (Stark, 2026-11-13): from a victim with a soul he also takes one of its techniques at random (not a
+// Divine Soul's ult) and B uses that technique itself while he keeps it; the victim can't use it for those 15 s. A mob
+// without a soul, or a technique that fails in his hands, falls back to the element's attack above.
 public final class Absorver {
     static final double RANGE = 18, USE_RANGE = 32;
     private static final int LOOK = 8, DASH_END = 13, STEAL = 36, LENGTH = 50, KEEP = 300, USE_COOLDOWN = 60;
@@ -38,6 +47,8 @@ public final class Absorver {
         long until;
         long nextUse;
         long busyUntil;
+        Ability ability;
+        Component name;
     }
 
     private static final Map<LivingEntity, State> STATE = new WeakHashMap<>();
@@ -70,6 +81,14 @@ public final class Absorver {
         if (s.element >= 0 && now < s.until) {
             if (now < s.nextUse) {
                 return false;
+            }
+            if (s.ability != null) {
+                if (s.ability.action().use(caster, level)) {
+                    // the stolen technique's own recharge, kept between 3 and 8 s so it is neither spammed nor dead
+                    s.nextUse = now + Math.max(USE_COOLDOWN, Math.min(s.ability.cooldown(), 160));
+                    return true;
+                }
+                SubCommon.warn(caster, "shigaraki.b_failed", s.name);
             }
             s.nextUse = now + USE_COOLDOWN;
             Usar.use(caster, level, s.element);
@@ -125,6 +144,7 @@ public final class Absorver {
             }
             if (age == STEAL) {
                 s.element = element;
+                stealTechnique(caster, victim, s);
                 s.until = level.getGameTime() + KEEP;
                 s.nextUse = 0;
                 SubNet.send(level, Shigaraki.ABSORB, caster.getId(), caster.position(), dir, 2, KEEP, element);
@@ -143,10 +163,51 @@ public final class Absorver {
         Tasks.later(KEEP + STEAL, () -> {
             if (s.element >= 0 && level.getGameTime() >= s.until) {
                 s.element = -1;
+                s.ability = null;
+                s.name = null;
                 SubNet.send(level, Shigaraki.ABSORB, caster.getId(), caster.position(), Vec3.ZERO, 3, 0, 0);
             }
         });
         return true;
+    }
+
+    // One of the victim's techniques at random (Z, X, C, B and their Shift variants; the ult only from a Sub-Soul, like the
+    // Sharingan's copy), taken from it for KEEP ticks.
+    private static void stealTechnique(LivingEntity caster, LivingEntity victim, State s) {
+        s.ability = null;
+        s.name = null;
+        if (!victim.hasData(ModAttachments.POWER)) {
+            return;
+        }
+        PowerData data = victim.getData(ModAttachments.POWER);
+        Power p = data.power == null ? null : Powers.get(data.power);
+        if (p == null || "shigaraki".equals(p.id())) {
+            return;
+        }
+        List<Integer> slots = new ArrayList<>();
+        List<Integer> all = new ArrayList<>(p.slots());
+        all.addAll(p.shiftSlots());
+        for (int slot : all) {
+            if (PowerData.isUlt(slot) && !Powers.isSub(p.id())) {
+                continue;
+            }
+            Ability a = PowerLogic.ability(p, slot);
+            if (a != null && !slots.contains(slot)) {
+                slots.add(slot);
+            }
+        }
+        if (slots.isEmpty()) {
+            return;
+        }
+        int slot = slots.get(caster.getRandom().nextInt(slots.size()));
+        s.ability = PowerLogic.ability(p, slot);
+        s.name = p.abilityName(slot);
+        SubCommon.warn(caster, "shigaraki.b_stole", s.name);
+        data.cooldowns[slot] = Math.max(data.cooldowns[slot], KEEP);
+        if (victim instanceof ServerPlayer player) {
+            PowerLogic.sync(player);
+            SubCommon.warn(victim, "shigaraki.b_stolen", s.name);
+        }
     }
 
     private static float ease(float x) {
