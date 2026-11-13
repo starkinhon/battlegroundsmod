@@ -41,6 +41,9 @@ public final class Flight {
     private static final double TAKEOFF_PCT = 10.0;
     private static final double BOOST_MIN_PCT = 12.0;
 
+    // Minecraft's own flying push (Abilities default)
+    private static final float VANILLA_SPEED = 0.05f;
+
     public static final int FLYING = 1, BOOST = 2, TIRED = 4;
 
     private static final Map<UUID, Integer> SENT = new HashMap<>();
@@ -103,6 +106,7 @@ public final class Flight {
             return;
         }
         if (player.isCreative() || player.isSpectator() || !knows(player)) {
+            release(player);
             send(player, 0);
             return;
         }
@@ -168,6 +172,22 @@ public final class Flight {
             player.onUpdateAbilities();
         }
         send(player, state);
+    }
+
+    // Hands the flight back to Minecraft (Stark 2026-11-13: after flying with the technique and switching to creative or
+    // spectator in the air the player could not move at all). The technique keeps Minecraft's flying push at zero
+    // (onTick) and changing the game mode never resets it, so the creative and the spectator flight had no push left.
+    // Only a zero push is put back, so a spectator's own speed (mouse wheel) is left alone.
+    private static void release(ServerPlayer player) {
+        UUID id = player.getUUID();
+        BOOSTING.remove(id);
+        TIRED_NOW.remove(id);
+        PAYING.remove(id);
+        Abilities abilities = player.getAbilities();
+        if (Math.abs(abilities.getFlyingSpeed()) < 1e-4) {
+            abilities.setFlyingSpeed(VANILLA_SPEED);
+            player.onUpdateAbilities();
+        }
     }
 
     private static void send(ServerPlayer player, int state) {
