@@ -178,6 +178,18 @@ public final class ColoniaFeature extends Feature<NoneFeatureConfiguration> {
                 level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2);
             }
         }
+        // The heightmap can miss what a neighbour chunk's feature put here (a Dragon World pillar left floating over
+        // the city, 2026-11-13), so the cut goes on up while it still finds something, until 8 blocks of air in a row.
+        int air = 0;
+        for (int y = Math.max(y0, y1 + 1); y <= maxY && air < 8; y++) {
+            BlockState b = level.getBlockState(pos.set(x, y, z));
+            if (b.isAir()) {
+                air++;
+            } else if (!b.is(Blocks.BEDROCK)) {
+                air = 0;
+                level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2);
+            }
+        }
     }
 
     private static boolean biomeAt(ChunkGenerator generator, RandomState random, int x, int y, int z) {
