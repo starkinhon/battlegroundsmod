@@ -98,6 +98,15 @@ public final class ModEntities {
                     .clientTrackingRange(16)
                     .build("hashirama"));
 
+    // Freeza Poder Total boss (2026-11-13, end game): player sized.
+    public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.boss.FreezaTotalEntity>> FREEZA_TOTAL = ENTITY_TYPES.register("freeza_total",
+            () -> EntityType.Builder.of(com.starkinhon.battlegroundsmod.boss.FreezaTotalEntity::new, MobCategory.MONSTER)
+                    .sized(0.6f, 1.8f)
+                    .eyeHeight(1.62f)
+                    .fireImmune()
+                    .clientTrackingRange(16)
+                    .build("freeza_total"));
+
     // Shigaraki boss (2026-11-12): player sized.
     public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.boss.ShigarakiEntity>> SHIGARAKI = ENTITY_TYPES.register("shigaraki",
             () -> EntityType.Builder.of(com.starkinhon.battlegroundsmod.boss.ShigarakiEntity::new, MobCategory.MONSTER)
@@ -353,6 +362,7 @@ public final class ModEntities {
         event.put(SAITAMA.get(), SoulBoss.createAttributes().build());
         event.put(SHIGARAKI.get(), SoulBoss.createAttributes().build());
         event.put(HASHIRAMA.get(), SoulBoss.createAttributes().build());
+        event.put(FREEZA_TOTAL.get(), SoulBoss.createAttributes().build());
         event.put(MAKIMA.get(), SoulBoss.createAttributes().build());
         event.put(DUMMY.get(), TrainingDummy.createAttributes().build());
         event.put(DUMMY_ATTACKER.get(), TrainingDummy.createAttributes().build());

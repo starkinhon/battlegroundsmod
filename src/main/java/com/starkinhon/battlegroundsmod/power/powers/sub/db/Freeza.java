@@ -624,7 +624,7 @@ public final class Freeza {
 
     // One point of a crack: the columns across it dug down (magma at the bottom, or in the last dug block when the one
     // under it can't break), and the lips on both sides pushed up a block here and there.
-    private static void crack(ServerLevel level, Vec3 c, double[] q, Set<Long> done) {
+    public static void crack(ServerLevel level, Vec3 c, double[] q, Set<Long> done) {
         double a = q[5];
         double sx = -Math.sin(a), sz = Math.cos(a);
         int width = (int) q[4];

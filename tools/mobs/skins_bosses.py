@@ -371,3 +371,94 @@ def hashirama(sage):
 hashirama(0)
 hashirama(1)
 print('ok')
+
+# ---------------------------------------------------------------- Freeza Poder Total (final form; at 100% the muscles)
+# The tail's own texture sits in the free corner x 56-63, y 16-31: white at the top (rows 16-23), purple tip below.
+FW, FP, FP2, FE, FL, VEIN = (240, 236, 242), (122, 58, 176), (92, 40, 140), (200, 24, 40), (110, 40, 120), (185, 163, 200)
+SHADE = (214, 208, 222)
+
+
+def freeza_total(full):
+    s = Skin(120 + full)
+
+    def head(f, x, y, w, h):
+        if f == 'top':
+            return FP
+        if f == 'bottom':
+            return FW
+        if f == 'back':
+            return FP if y < 4 else FW
+        if f in ('right', 'left'):
+            return FP if y < 3 else FW
+        # the purple dome over the brow, sharp red eyes with dark lines under them, purple lips
+        if y < 2:
+            return FP
+        if y == 2 and x in (0, 7):
+            return FP
+        if y == 3 and x in (1, 2, 5, 6):
+            return FL if x in (1, 6) else (60, 20, 70)
+        if y == 4 and x in (1, 2, 5, 6):
+            return FE if x in (2, 5) else (250, 246, 250)
+        if y == 5 and x in (1, 6):
+            return FL
+        if y == 6 and x in (3, 4):
+            return (120, 50, 150)
+        return FW
+
+    s.part('head', head)
+
+    def body(f, x, y, w, h):
+        if f in ('top', 'bottom'):
+            return FW
+        if f == 'front':
+            # the purple chest plate, two darker pecs on it
+            if 1 <= y <= 4 and 1 <= x <= 6:
+                return FP2 if y >= 3 and x in (2, 5) else FP
+            if full and y >= 6 and x in (3, 4) and y % 2 == 0:
+                return SHADE
+            if full and y in (5, 7, 9) and 2 <= x <= 5:
+                return SHADE
+            return FW
+        if f == 'back':
+            return SHADE if full and x in (3, 4) else FW
+        return FW
+
+    s.part('body', body)
+
+    def arm(f, x, y, w, h):
+        # the shoulder dome, the band of the forearm
+        if f == 'top' or y < 3:
+            return FP
+        if 7 <= y <= 9:
+            return FP
+        if full and f in ('front', 'right', 'left') and y in (4, 5) and x == 1:
+            return VEIN
+        if full and y == 6 and f == 'front':
+            return SHADE
+        return FW
+
+    both(s, 'rarm', 'larm', arm)
+
+    def leg(f, x, y, w, h):
+        # the knee guard and the purple shin
+        if y in (4, 5):
+            return FP2
+        if 7 <= y <= 11:
+            return FP
+        if f == 'bottom':
+            return FW
+        if full and y in (1, 2) and f == 'front':
+            return SHADE
+        return FW
+
+    both(s, 'rleg', 'lleg', leg)
+    # the tail's corner
+    for y in range(16, 32):
+        for x in range(56, 64):
+            s.px(x, y, (FW if (x + y) % 5 else SHADE) if y < 24 else (FP if (x + y) % 4 else FP2))
+    s.save('freeza_total_100' if full else 'freeza_total')
+
+
+freeza_total(0)
+freeza_total(1)
+print('freeza ok')

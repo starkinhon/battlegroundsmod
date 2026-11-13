@@ -163,6 +163,11 @@ final class FxDraw {
         disk(glow ? additive : alpha, center, normal, size, 0, shape, param, rgb, opacity);
     }
 
+    // Turned by spin radians around its normal, in the glow or the alpha pass.
+    static void diskSpin(Vector3f center, Vector3f normal, float size, float spin, int shape, float param, float[] rgb, float opacity, boolean glow) {
+        disk(glow ? additive : alpha, center, normal, size, spin, shape, param, rgb, opacity);
+    }
+
     // Same, turned by spin radians around its normal, into any buffer (textured decals use their own).
     static void disk(VertexConsumer out, Vector3f center, Vector3f normal, float size, float spin, int shape, float param, float[] rgb, float opacity) {
         Vector3f n = new Vector3f(normal).normalize();

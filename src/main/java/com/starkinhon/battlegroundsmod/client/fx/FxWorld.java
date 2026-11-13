@@ -382,6 +382,8 @@ public final class FxWorld {
             FugaRenderer.render(camera, partial);
             // Freeza's Supernova: the fire dome (DbFx said where this frame).
             NovaRenderer.render(camera);
+            // Freeza Poder Total: the torn-out island's blocks, flying.
+            FzFx.renderBlocks(camera);
             // Sukuna's Expansão de Domínio: the shrine, its cuts and its light, then what it does to the screen.
             SukunaDomainScene.render(camera, partial);
             SukunaDomainScene.screen();

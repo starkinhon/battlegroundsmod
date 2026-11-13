@@ -1,0 +1,284 @@
+{
+  "formato": "souls-boss/1",
+  "boss": "freeza_total",
+  "poder": "freeza_total",
+  "tier": 0,
+  "dropAlma": false,
+  "atributos": {
+    "vida": 640,
+    "armadura": 4,
+    "velocidade": 0.36,
+    "resistenciaEmpurrao": 0.9,
+    "alcanceVisao": 72,
+    "multDano": 1.0
+  },
+  "intro": {
+    "duracaoTicks": 70,
+    "titulo": "Freeza",
+    "subtitulo": "O Imperador do Universo",
+    "cor": "#b27cff"
+  },
+  "percepcao": {
+    "intervaloDecisaoTicks": 6,
+    "aleatoriedade": 0.2,
+    "trocarHumorTicks": 60,
+    "intervaloTecnicasTicks": 80
+  },
+  "distancias": {
+    "soco": 3.0,
+    "ideal": 10,
+    "intervaloSocoTicks": 11
+  },
+  "movimento": {
+    "velocidadeAndar": 0.9,
+    "velocidadeCorrer": 1.25,
+    "trocarLadoTicks": 40
+  },
+  "ritmo": {
+    "calmoMinTicks": 80,
+    "calmoMaxTicks": 160,
+    "rapidoMinTicks": 60,
+    "rapidoMaxTicks": 120,
+    "velocidadeCalmo": 0.8,
+    "velocidadeRapido": 1.25,
+    "recargaInvestidaRapido": 60
+  },
+  "investida": {
+    "recargaTicks": 90,
+    "distanciaMin": 7,
+    "forca": 1.5,
+    "altura": 0.2
+  },
+  "passoSombra": {
+    "recargaTicks": 110,
+    "distanciaMin": 3,
+    "distanciaMax": 16,
+    "atras": 1.8,
+    "chance": 0.18,
+    "chanceCalmo": 0.08,
+    "chanceNaEsquiva": 0.45
+  },
+  "puloDuplo": {
+    "alturaMin": 2.5,
+    "distanciaMax": 6
+  },
+  "teleporte": {
+    "ativo": true,
+    "presoTicks": 60,
+    "distancia": 2
+  },
+  "reacoes": {
+    "chanceEsquivarSkill": 0.35,
+    "chanceEsquivarProjetil": 0.35,
+    "chanceContraAtaque": 0.45,
+    "chanceEsquivarUlt": 0.7,
+    "golpesParaContra": 3,
+    "janelaPressaoTicks": 30,
+    "punirTicks": 100,
+    "multPunir": 2,
+    "golpesParaFugir": 4,
+    "chanceFugirAoApanhar": 0.2
+  },
+  "ultFinal": {
+    "ativa": false
+  },
+  "skills": {
+    "kienzan": {
+      "slot": 0,
+      "tipo": "alcance",
+      "peso": 1.3,
+      "recargaTicks": 180,
+      "recargaMaxTicks": 260,
+      "avisoTicks": 4,
+      "distanciaMin": 5,
+      "distanciaMax": 40,
+      "giroGrausPorTick": 30,
+      "avisoCor": "#ff4fd8",
+      "avisoSom": "minecraft:block.beacon.activate"
+    },
+    "ilha": {
+      "slot": 1,
+      "tipo": "alcance",
+      "peso": 1.2,
+      "recargaTicks": 280,
+      "recargaMaxTicks": 360,
+      "avisoTicks": 4,
+      "distanciaMin": 6,
+      "distanciaMax": 34,
+      "giroGrausPorTick": 30,
+      "avisoCor": "#b77cff",
+      "avisoSom": "minecraft:block.rooted_dirt.break"
+    },
+    "rajada": {
+      "slot": 2,
+      "tipo": "alcance",
+      "peso": 1.4,
+      "recargaTicks": 200,
+      "recargaMaxTicks": 280,
+      "avisoTicks": 4,
+      "distanciaMin": 4,
+      "distanciaMax": 28,
+      "giroGrausPorTick": 30,
+      "avisoCor": "#ff4fd8",
+      "avisoSom": "minecraft:block.beacon.power_select"
+    },
+    "chuva": {
+      "slot": 3,
+      "tipo": "ult",
+      "peso": 1.3,
+      "recargaTicks": 600,
+      "recargaMaxTicks": 760,
+      "avisoTicks": 8,
+      "distanciaMin": 6,
+      "distanciaMax": 46,
+      "giroGrausPorTick": 30,
+      "avisoCor": "#ff3a7a",
+      "avisoSom": "minecraft:block.beacon.activate"
+    },
+    "blitz": {
+      "slot": 7,
+      "tipo": "alcance",
+      "peso": 1.3,
+      "recargaTicks": 180,
+      "recargaMaxTicks": 240,
+      "avisoTicks": 2,
+      "distanciaMin": 3,
+      "distanciaMax": 20,
+      "giroGrausPorTick": 30,
+      "avisoCor": "#c58cff",
+      "avisoSom": "minecraft:entity.enderman.teleport"
+    },
+    "onda": {
+      "slot": 8,
+      "tipo": "roteiro",
+      "peso": 1.0,
+      "recargaTicks": 240,
+      "recargaMaxTicks": 300,
+      "avisoTicks": 2,
+      "distanciaMin": 0,
+      "distanciaMax": 4,
+      "giroGrausPorTick": 30,
+      "avisoCor": "#d9a6ff",
+      "avisoSom": "minecraft:block.beacon.activate"
+    },
+    "poder_total": {
+      "slot": 11,
+      "tipo": "roteiro",
+      "peso": 1.0,
+      "recargaTicks": 6000,
+      "recargaMaxTicks": 6000,
+      "avisoTicks": 10,
+      "distanciaMin": 0,
+      "distanciaMax": 64,
+      "giroGrausPorTick": 30,
+      "avisoCor": "#e2b8ff",
+      "avisoSom": "minecraft:entity.warden.roar"
+    },
+    "forte": {
+      "slot": 4,
+      "tipo": "golpe",
+      "peso": 1.0,
+      "recargaTicks": 240,
+      "recargaMaxTicks": 360,
+      "avisoTicks": 4,
+      "distanciaMin": 0,
+      "distanciaMax": 4,
+      "giroGrausPorTick": 20,
+      "avisoCor": "#ffffff",
+      "avisoSom": "minecraft:entity.player.attack.sweep"
+    },
+    "barragem": {
+      "slot": 5,
+      "tipo": "barragem",
+      "peso": 1.0,
+      "recargaTicks": 280,
+      "recargaMaxTicks": 400,
+      "avisoTicks": 5,
+      "distanciaMin": 0,
+      "distanciaMax": 3.5,
+      "giroGrausPorTick": 10,
+      "avisoCor": "#ffffff",
+      "avisoSom": "minecraft:entity.player.attack.sweep"
+    }
+  },
+  "combos": {
+    "rajada_e_blitz": {
+      "peso": 1.2,
+      "encadeado": true,
+      "passos": [
+        "rajada",
+        "blitz"
+      ]
+    },
+    "imperador": {
+      "peso": 1.0,
+      "passos": [
+        "soco",
+        "soco",
+        "blitz"
+      ]
+    }
+  },
+  "fases": [
+    {
+      "comecaEm": 1.0,
+      "skills": [
+        "kienzan",
+        "ilha",
+        "rajada",
+        "blitz",
+        "onda",
+        "forte",
+        "barragem"
+      ],
+      "combos": [
+        "rajada_e_blitz",
+        "imperador"
+      ],
+      "agressividade": 0.6,
+      "multRecarga": 1.0,
+      "menosRecargaTicks": 0,
+      "multVelocidade": 1.0,
+      "multAviso": 1.0,
+      "reacaoTicks": 7,
+      "chanceReacao": 0.7,
+      "pausaTicks": 12,
+      "despertado": false,
+      "corBarra": "purple",
+      "transicaoTicks": 0,
+      "titulo": "",
+      "subtitulo": ""
+    },
+    {
+      "comecaEm": 0.5,
+      "skills": [
+        "kienzan",
+        "ilha",
+        "rajada",
+        "blitz",
+        "onda",
+        "chuva",
+        "poder_total",
+        "forte",
+        "barragem"
+      ],
+      "combos": [
+        "rajada_e_blitz",
+        "imperador"
+      ],
+      "agressividade": 0.8,
+      "multRecarga": 1.0,
+      "menosRecargaTicks": 60,
+      "multVelocidade": 1.0,
+      "multAviso": 0.9,
+      "reacaoTicks": 6,
+      "chanceReacao": 0.9,
+      "pausaTicks": 12,
+      "despertado": false,
+      "corBarra": "purple",
+      "transicaoTicks": 20,
+      "titulo": "Poder Total",
+      "subtitulo": "Namek explode em 5 minutos"
+    }
+  ]
+}

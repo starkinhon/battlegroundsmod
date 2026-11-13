@@ -157,6 +157,10 @@ public final class DbFx {
             com.starkinhon.battlegroundsmod.client.fx.hs.HsFx.receive(kind, id, pos, dir, a, b, c);
             return;
         }
+        if (FzFx.handles(kind)) {
+            FzFx.receive(kind, id, pos, dir, a, b, c);
+            return;
+        }
         if (NmFx.handles(kind)) {
             NmFx.receive(kind, id, pos, dir, a, b, c);
             return;
@@ -318,7 +322,7 @@ public final class DbFx {
     }
 
     static boolean active() {
-        return !SHOTS.isEmpty() || !TRACKED.isEmpty() || NrFx.active() || JjFx.active() || InoFx.active() || NmFx.active();
+        return !SHOTS.isEmpty() || !TRACKED.isEmpty() || NrFx.active() || JjFx.active() || InoFx.active() || NmFx.active() || FzFx.active();
     }
 
     static void clear() {
@@ -329,6 +333,7 @@ public final class DbFx {
         MakimaFx.clear();
         InoFx.clear();
         NmFx.clear();
+        FzFx.clear();
     }
 
     private static double life(Fx f) {
@@ -454,6 +459,7 @@ public final class DbFx {
         JjFx.draw(now, partial);
         InoFx.draw(now, partial);
         NmFx.draw(now, partial);
+        FzFx.draw(now, partial);
     }
 
     // ---------- drawing in the right pass ----------

@@ -549,6 +549,11 @@ public abstract class SoulBoss extends Monster {
         bossEvent.removePlayer(player);
     }
 
+    // A boss whose bar says more than its name (Freeza Poder Total's clock); null puts the name back.
+    protected void setBarName(net.minecraft.network.chat.Component name) {
+        bossEvent.setName(name == null ? getDisplayName() : name);
+    }
+
     @Override
     public void setCustomName(net.minecraft.network.chat.Component name) {
         super.setCustomName(name);

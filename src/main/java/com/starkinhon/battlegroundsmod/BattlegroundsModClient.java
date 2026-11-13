@@ -142,6 +142,8 @@ public class BattlegroundsModClient {
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.FugaRenderer::onRenderLevel);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.FugaRenderer::onFog);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.FugaRenderer::onFogColor);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.FzFx::onFog);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.FzFx::onFogColor);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.TimeChamberClient::onFog);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.TimeChamberClient::onFogColor);
         NeoForge.EVENT_BUS.addListener(RenderLivingEvent.Pre.class, AshDeath::onRenderLiving);
@@ -365,6 +367,7 @@ public class BattlegroundsModClient {
         event.registerEntityRenderer(ModEntities.SAITAMA.get(), context -> new SoulBossRenderer<>(context, "saitama", false));
         event.registerEntityRenderer(ModEntities.SHIGARAKI.get(), context -> new SoulBossRenderer<>(context, "shigaraki", false));
         event.registerEntityRenderer(ModEntities.HASHIRAMA.get(), com.starkinhon.battlegroundsmod.client.HashiramaRenderer::new);
+        event.registerEntityRenderer(ModEntities.FREEZA_TOTAL.get(), com.starkinhon.battlegroundsmod.client.FreezaTotalRenderer::new);
         event.registerEntityRenderer(ModEntities.MAKIMA.get(), context -> new SoulBossRenderer<>(context, "makima", true));
         event.registerEntityRenderer(ModEntities.DUMMY.get(), context -> new DummyRenderer<>(context, "steve"));
         event.registerEntityRenderer(ModEntities.DUMMY_ATTACKER.get(), context -> new DummyRenderer<>(context, "kai"));
