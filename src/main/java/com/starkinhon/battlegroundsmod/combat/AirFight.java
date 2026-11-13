@@ -65,6 +65,12 @@ public final class AirFight {
             LOCK.remove(player.getUUID());
         } else {
             LOCK.put(player.getUUID(), id);
+            // Locking on a soul from the sky calls it out: it takes the player as its target even past its follow
+            // range (a Vegeta on the ground 48 blocks under a flying player never noticed him, so never took off).
+            if (Flight.flying(player) && player.level().getEntity(id) instanceof SoulBoss boss && boss.air() != null
+                    && boss.isAlive() && boss.getTarget() == null && Combat.isTarget(player, boss)) {
+                boss.setTarget(player);
+            }
         }
     }
 

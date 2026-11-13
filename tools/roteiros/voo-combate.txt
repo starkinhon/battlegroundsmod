@@ -29,8 +29,9 @@ espera 4
 /devc tecla espaco 2
 espera 4
 espera 10
-/devc tecla espaco 25
-espera 27
+# sobe só um pouco (com 25 ticks ia a 48 blocos do Vegeta, fora do alcance dele)
+/devc tecla espaco 8
+espera 10
 espera 10
 
 # Vegeta na frente; o Dash Attack (G) começa a briga
