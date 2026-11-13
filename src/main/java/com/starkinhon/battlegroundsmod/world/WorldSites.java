@@ -178,13 +178,18 @@ public final class WorldSites {
         return null;
     }
 
-    // The floor of a place: the middle height of the ground around it (the sea's surface for the Kame House).
+    // The floor of a place: the middle height of the ground around it (the sea's surface for the Kame House). From the
+    // terrain noise, not the world: level.getHeight gives the bottom of the world for a chunk that is not loaded yet, and
+    // the spot is picked 170 blocks away, so every place came out at the sea's level (2026-11-12 test: Goku's house sunk
+    // in a crater or buried in a mountain, Cell's ring at the bottom of a cut canyon).
     private static int floor(ServerLevel level, String kind, int x, int z) {
+        var generator = level.getChunkSource().getGenerator();
+        var random = level.getChunkSource().randomState();
         int[] heights = new int[9];
         int n = 0;
         for (int dx = -12; dx <= 12; dx += 12) {
             for (int dz = -12; dz <= 12; dz += 12) {
-                heights[n++] = level.getHeight(Heightmap.Types.OCEAN_FLOOR, x + dx, z + dz);
+                heights[n++] = generator.getBaseHeight(x + dx, z + dz, Heightmap.Types.OCEAN_FLOOR_WG, level, random);
             }
         }
         Arrays.sort(heights);
@@ -251,18 +256,20 @@ public final class WorldSites {
         return id(site);
     }
 
+    // Every place on a foundation also gets a skirt of ground under it (Build.skirt), so on a slope or a coast it sits on
+    // a mound instead of a cut platform hanging in the air (the crashed ship did, Stark's print 2026-11-12).
     private static Build build(Site site) {
         Build b = new Build(site.x(), site.y() + 1, site.z(), (long) site.x() * 31 + site.z());
         BlockState grass = s(Blocks.GRASS_BLOCK), dirt = s(Blocks.DIRT);
         BlockState sand = s(Blocks.RED_SAND), sandstone = s(Blocks.RED_SANDSTONE);
         return switch (site.kind()) {
-            case CAPSULE -> namekPad(b.clearUp(38, 0, 32).foundation(37, 10, grass, dirt).template("dragonball/capsule_corp", 0, 0, 0));
-            case GOKU -> b.clearUp(24, 0, 24).foundation(23, 10, grass, dirt).template("dragonball/goku_house", 0, 0, 0);
-            case KARIN -> b.clearUp(20, 0, 14).foundation(19, 8, grass, dirt).template("dragonball/korin_tower", 0, 0, 0);
-            case CELL_RING -> b.clearUp(34, 0, 48).foundation(33, 10, s(Blocks.STONE), s(Blocks.STONE))
+            case CAPSULE -> namekPad(b.clearUp(38, 0, 32).foundation(37, 10, grass, dirt).skirt(37, 16, 0.8, grass, dirt).template("dragonball/capsule_corp", 0, 0, 0));
+            case GOKU -> b.clearUp(24, 0, 24).foundation(23, 10, grass, dirt).skirt(23, 16, 0.8, grass, dirt).template("dragonball/goku_house", 0, 0, 0);
+            case KARIN -> b.clearUp(20, 0, 14).foundation(19, 8, grass, dirt).skirt(19, 16, 0.8, grass, dirt).template("dragonball/korin_tower", 0, 0, 0);
+            case CELL_RING -> b.clearUp(34, 0, 48).foundation(33, 10, s(Blocks.STONE), s(Blocks.STONE)).skirt(33, 16, 0.8, s(Blocks.STONE), s(Blocks.STONE))
                     .template("dragonball/cell_arena", 0, 0, 0);
             case BABIDI -> b.clearUp(20, 0, 12).template("dragonball/babidi_ship", 0, 0, 0);
-            case BUU -> b.clearUp(17, 0, 18).foundation(16, 10, grass, dirt).template("dragonball/buu_house", 0, 0, 0);
+            case BUU -> b.clearUp(17, 0, 18).foundation(16, 10, grass, dirt).skirt(16, 16, 0.8, grass, dirt).template("dragonball/buu_house", 0, 0, 0);
             case KAME -> kame(b);
             case WRECK -> wreck(b, sand, sandstone);
             case RADITZ -> raditz(b);
@@ -321,18 +328,23 @@ public final class WorldSites {
 
     // The crashed Capsule Corp ship, sunk in a scorched patch with wreckage and smoke around it.
     private static Build wreck(Build b, BlockState sand, BlockState sandstone) {
-        b.clearUp(14, 0, 16).foundation(13, 6, sand, sandstone);
+        // the scorched ground, and under it a mound down to the land or the sea floor (on a coast it hung as a flat
+        // platform over the water, Stark's print 2026-11-12)
+        b.clearUp(14, 0, 16).foundation(13, 6, sand, sandstone).skirt(13, 18, 0.8, sand, sandstone);
         for (int n = 0; n < 30; n++) {
             double a = b.random.nextDouble() * Math.PI * 2;
-            int r = 9 + b.random.nextInt(9);
+            // inside the scorched ground: out to 17 blocks they fell past its edge and hung in the air
+            int r = 9 + b.random.nextInt(4);
             int i = (int) Math.round(Math.cos(a) * r), k = (int) Math.round(Math.sin(a) * r);
-            Block piece = switch (b.random.nextInt(6)) {
-                case 0 -> Blocks.IRON_BLOCK;
-                case 1 -> Blocks.WHITE_CONCRETE;
-                case 2 -> Blocks.LIGHT_GRAY_CONCRETE;
-                case 3 -> Blocks.CHAIN;
-                case 4 -> Blocks.IRON_BARS;
-                default -> Blocks.COARSE_DIRT;
+            BlockState piece = switch (b.random.nextInt(6)) {
+                case 0 -> s(Blocks.IRON_BLOCK);
+                case 1 -> s(Blocks.WHITE_CONCRETE);
+                case 2 -> s(Blocks.LIGHT_GRAY_CONCRETE);
+                // a chain lies on the ground like a torn cable (standing up alone it looked hung from nothing)
+                case 3 -> s(Blocks.CHAIN).setValue(net.minecraft.world.level.block.ChainBlock.AXIS,
+                        b.random.nextBoolean() ? net.minecraft.core.Direction.Axis.X : net.minecraft.core.Direction.Axis.Z);
+                case 4 -> s(Blocks.IRON_BARS);
+                default -> s(Blocks.COARSE_DIRT);
             };
             b.set(i, 0, k, piece);
         }

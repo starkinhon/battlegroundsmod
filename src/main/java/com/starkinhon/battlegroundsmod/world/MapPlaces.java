@@ -270,6 +270,12 @@ public final class MapPlaces {
         if (put.state().isAir() && level.getBlockState(put.pos()).isAir()) {
             return false;
         }
+        if (put.fill()) {
+            net.minecraft.world.level.block.state.BlockState there = level.getBlockState(put.pos());
+            if (!there.isAir() && there.getFluidState().isEmpty() && !there.canBeReplaced()) {
+                return false;
+            }
+        }
         level.setBlock(put.pos(), put.state(), Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
         return true;
     }
