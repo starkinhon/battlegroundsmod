@@ -68,7 +68,12 @@ public final class Fantoche {
     // A mob she killed: pulled to her by a chain and sunk into her shadow (MkNet.STORE), kept if there is room.
     static void store(LivingEntity owner, LivingEntity dead) {
         List<Stored> list = stock(owner);
-        if (list.size() >= MAX_STOCK || !(owner.level() instanceof ServerLevel level)) {
+        if (!(owner.level() instanceof ServerLevel level)) {
+            return;
+        }
+        if (list.size() >= MAX_STOCK) {
+            // Never in silence: she knows it fell apart.
+            SubCommon.warn(owner, "makima.c_cheio", dead.getName().getString());
             return;
         }
         ResourceLocation key = BuiltInRegistries.ENTITY_TYPE.getKey(dead.getType());
