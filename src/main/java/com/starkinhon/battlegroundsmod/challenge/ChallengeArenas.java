@@ -208,6 +208,8 @@ public final class ChallengeArenas {
 
     // The client's copy of its own wins (ModPayloads.SyncArenaWins), for the book.
     public static volatile List<String> clientWins = List.of();
+    // The client's copy of its records (ModPayloads.SyncArenaRecords): id -> {wins, best seconds}.
+    public static volatile java.util.Map<String, int[]> clientRecords = java.util.Map.of();
 
     public static List<String> wins(Player player) {
         return player.getData(ModAttachments.ARENA_WINS);
@@ -215,6 +217,7 @@ public final class ChallengeArenas {
 
     public static void syncWins(ServerPlayer player) {
         PacketDistributor.sendToPlayer(player, new ModPayloads.SyncArenaWins(List.copyOf(wins(player))));
+        PacketDistributor.sendToPlayer(player, new ModPayloads.SyncArenaRecords(List.copyOf(player.getData(ModAttachments.ARENA_RECORDS))));
     }
 
     private static Component name(String id) {
@@ -547,6 +550,7 @@ public final class ChallengeArenas {
         session.doneAt = now + RETURN_DELAY;
         List<String> wins = new ArrayList<>(wins(player));
         boolean first = !wins.contains(session.id);
+        record(player, session.id, (int) Math.max(1, (now - session.fightAt) / 20));
         if (first) {
             wins.add(session.id);
             player.setData(ModAttachments.ARENA_WINS, List.copyOf(wins));
@@ -558,6 +562,27 @@ public final class ChallengeArenas {
         player.displayClientMessage(Component.translatable(first ? "message.battlegroundsmod.arena_unlocked" : "message.battlegroundsmod.arena_again",
                 name(session.id), RETURN_DELAY / 20), false);
         Fx.sound(player.serverLevel(), player.position(), SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, 1f, 1f);
+    }
+
+    // One more win against this challenger and, when it was faster, the new best time (the book's medals).
+    private static void record(ServerPlayer player, String id, int seconds) {
+        List<String> out = new ArrayList<>();
+        boolean found = false;
+        for (String entry : player.getData(ModAttachments.ARENA_RECORDS)) {
+            String[] p = entry.split(":");
+            if (p.length == 3 && p[0].equals(id)) {
+                int wins = Integer.parseInt(p[1]) + 1, best = Integer.parseInt(p[2]);
+                out.add(id + ":" + wins + ":" + (best <= 0 ? seconds : Math.min(best, seconds)));
+                found = true;
+            } else {
+                out.add(entry);
+            }
+        }
+        if (!found) {
+            out.add(id + ":1:" + seconds);
+        }
+        player.setData(ModAttachments.ARENA_RECORDS, List.copyOf(out));
+        PacketDistributor.sendToPlayer(player, new ModPayloads.SyncArenaRecords(List.copyOf(out)));
     }
 
     // Poder for beating a challenge (Stark 2026-11-10: "os bosses dos desafios darem poder quando você vencer"). The kill

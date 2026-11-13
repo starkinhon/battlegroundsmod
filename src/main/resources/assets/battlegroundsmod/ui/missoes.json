@@ -1,0 +1,628 @@
+{
+ "dragonball": [
+  {
+   "id": "kame",
+   "lugar": "Kame House",
+   "npc": "npc_mestre_kame",
+   "quem": "Mestre Kame",
+   "tipo": "ÚNICA → DIÁRIA",
+   "nome": "Treino da Tartaruga",
+   "fala": "Ho ho! Quer aprender o Kamehameha? Primeiro vai carregar esse casco nas costas e entregar o leite. Sem voar, hein!",
+   "passos": [
+    [
+     "Pegue o casco e o leite com o Mestre Kame",
+     1,
+     1
+    ],
+    [
+     "Leve o leite até o ponto, sem voar",
+     1,
+     1
+    ],
+    [
+     "Volte pro Mestre Kame",
+     0,
+     1
+    ],
+    [
+     "Derrube o velho até a metade da vida",
+     0,
+     1
+    ]
+   ],
+   "rec": [
+    [
+     "__tecnica",
+     1,
+     "Kamehameha",
+     "Técnica inata (vai com qualquer alma)"
+    ],
+    [
+     "__poder",
+     1
+    ],
+    [
+     "milk_bucket",
+     1
+    ]
+   ],
+   "estado": "andamento",
+   "dist": [
+    38,
+    1
+   ]
+  },
+  {
+   "id": "capsula",
+   "lugar": "Capsule Corp",
+   "npc": "npc_bulma",
+   "quem": "Bulma",
+   "tipo": "DIÁRIA",
+   "nome": "Cápsula Hoi-Poi",
+   "fala": "Me traz umas peças que eu monto uma Cápsula Hoi-Poi pra você. É só jogar no chão e pronto: uma casa inteira!",
+   "entrega": [
+    [
+     "iron_ingot",
+     6,
+     9
+    ],
+    [
+     "redstone",
+     3,
+     1
+    ]
+   ],
+   "passos": [
+    [
+     "Traga 6 barras de ferro e 3 redstones",
+     0,
+     1
+    ]
+   ],
+   "rec": [
+    [
+     "capsula_hoipoi",
+     1
+    ],
+    [
+     "__poder",
+     1
+    ]
+   ],
+   "estado": "pronta",
+   "dist": [
+    612,
+    -2
+   ]
+  },
+  {
+   "id": "goku",
+   "lugar": "Casa do Goku",
+   "npc": "npc_gohan",
+   "quem": "Gohan",
+   "tipo": "ÚNICA",
+   "nome": "Aprender a voar",
+   "fala": "Você quer voar? O papai me ensinou: é só juntar o ki embaixo dos pés. Mas precisa estar pelo menos no Tier 9!",
+   "passos": [
+    [
+     "Chegue no Tier 9",
+     1,
+     1
+    ],
+    [
+     "Fale com o Gohan",
+     1,
+     1
+    ]
+   ],
+   "rec": [
+    [
+     "__voo",
+     1,
+     "Voo",
+     "Dois toques no pulo"
+    ],
+    [
+     "esfera_dragao_4",
+     1
+    ]
+   ],
+   "estado": "feita",
+   "dist": [
+    380,
+    3
+   ]
+  },
+  {
+   "id": "karin",
+   "lugar": "Torre do Korin",
+   "npc": "npc_korin",
+   "quem": "Mestre Karin",
+   "tipo": "ÚNICA",
+   "nome": "Subir a torre",
+   "fala": "Subiu até aqui sem voar? Então merece a Água Sagrada. E pegue uma Senzu, tem uma por dia aqui em cima.",
+   "passos": [
+    [
+     "Suba a torre sem voar (161 blocos)",
+     161,
+     161
+    ],
+    [
+     "Fale com o Mestre Karin",
+     1,
+     1
+    ]
+   ],
+   "rec": [
+    [
+     "__poder",
+     1,
+     "Água Sagrada",
+     "Poder: metade de um tier"
+    ],
+    [
+     "senzu",
+     2
+    ]
+   ],
+   "estado": "concluida",
+   "dist": [
+    1420,
+    -1
+   ]
+  },
+  {
+   "id": "nave",
+   "lugar": "Nave Caída",
+   "npc": null,
+   "mob": "saibaman",
+   "quem": "Máquina de gravidade",
+   "tipo": "DIÁRIA",
+   "nome": "Gravidade 50x",
+   "fala": "A máquina de gravidade da nave ainda funciona. Aguente 120 segundos a 50x e o seu corpo sai mais forte.",
+   "passos": [
+    [
+     "Treine na máquina de gravidade",
+     54,
+     120
+    ]
+   ],
+   "rec": [
+    [
+     "__poder",
+     1
+    ]
+   ],
+   "estado": "andamento",
+   "dist": [
+    210,
+    0
+   ]
+  },
+  {
+   "id": "cell",
+   "lugar": "Ringue do Cell",
+   "npc": null,
+   "mob": "cell_jr",
+   "quem": "Cell Jr.",
+   "tipo": "DIÁRIA",
+   "nome": "Jogos do Cell",
+   "fala": "Três ondas de Cell Jr. no ringue. Caiu do ringue, perdeu.",
+   "passos": [
+    [
+     "Vença as 3 ondas sem cair",
+     0,
+     3
+    ]
+   ],
+   "rec": [
+    [
+     "senzu",
+     2
+    ],
+    [
+     "__poder",
+     1
+    ]
+   ],
+   "estado": "pronta",
+   "dist": [
+    740,
+    4
+   ]
+  },
+  {
+   "id": "raditz",
+   "lugar": "Cratera do Raditz",
+   "npc": null,
+   "mob": "saibaman",
+   "quem": "Pod do Raditz",
+   "tipo": "ÚNICA",
+   "nome": "O scouter apita",
+   "fala": "O scouter do pod está apitando... três Saibamen saem do chão quando você chega perto.",
+   "passos": [
+    [
+     "Derrote os Saibamen",
+     0,
+     3
+    ],
+    [
+     "Abra o pod",
+     0,
+     1
+    ]
+   ],
+   "rec": [
+    [
+     "scouter",
+     1,
+     "Baú do pod",
+     "Loot do pod"
+    ]
+   ],
+   "estado": "oculta",
+   "dica": "Dizem que caiu uma nave pequena num campo de terra..."
+  },
+  {
+   "id": "babidi",
+   "lugar": "Nave do Babidi",
+   "npc": null,
+   "mob": "dabura",
+   "quem": "Babidi",
+   "tipo": "ÚNICA + DIÁRIA",
+   "nome": "A Marca Majin",
+   "fala": "Pui Pui, Yakon e Dabura guardam a nave. Vença os três e o Babidi te oferece a Marca Majin.",
+   "passos": [
+    [
+     "Vença Pui Pui",
+     0,
+     1
+    ],
+    [
+     "Vença Yakon",
+     0,
+     1
+    ],
+    [
+     "Vença Dabura",
+     0,
+     1
+    ]
+   ],
+   "rec": [
+    [
+     "__marca",
+     1,
+     "Marca Majin",
+     "+20% de dano, sem regenerar em combate"
+    ],
+    [
+     "cristal_multiversal",
+     1
+    ]
+   ],
+   "estado": "pronta",
+   "dist": [
+    905,
+    -3
+   ]
+  },
+  {
+   "id": "buu",
+   "lugar": "Casa do Majin Boo",
+   "npc": "npc_boo",
+   "quem": "Majin Boo",
+   "tipo": "DIÁRIA",
+   "nome": "Doce pro Boo",
+   "fala": "Boo quer doce! Dá doce pro Boo e Boo dá presente!",
+   "entrega": [
+    [
+     "cake",
+     1,
+     0
+    ],
+    [
+     "cookie",
+     1,
+     12
+    ],
+    [
+     "pumpkin_pie",
+     1,
+     0
+    ],
+    [
+     "honey_bottle",
+     1,
+     2
+    ]
+   ],
+   "escolha": true,
+   "passos": [
+    [
+     "Dê um doce pro Majin Boo",
+     0,
+     1
+    ]
+   ],
+   "rec": [
+    [
+     "__rare",
+     1,
+     "Item raro",
+     "Qualquer item raro de qualquer universo"
+    ],
+    [
+     "__poder",
+     1
+    ]
+   ],
+   "estado": "pronta",
+   "dist": [
+    1880,
+    2
+   ]
+  },
+  {
+   "id": "guru",
+   "lugar": "Casa do Grande Patriarca",
+   "npc": null,
+   "mob": "namekiano_7",
+   "quem": "Grande Patriarca",
+   "tipo": "ÚNICA",
+   "nome": "Poder oculto",
+   "fala": "Aproxime-se... vejo um grande poder adormecido dentro de você.",
+   "passos": [
+    [
+     "Entre na casa do Grande Patriarca",
+     0,
+     1
+    ]
+   ],
+   "rec": [
+    [
+     "__poder",
+     1,
+     "Poder oculto",
+     "Poder: 80% de um tier"
+    ]
+   ],
+   "estado": "oculta",
+   "dica": "Em Namek, uma casa no alto de uma rocha..."
+  },
+  {
+   "id": "vila",
+   "lugar": "Vila Namekuseijin",
+   "npc": null,
+   "mob": "namekiano_0",
+   "quem": "Anciã da vila",
+   "tipo": "DIÁRIA",
+   "nome": "Defender a vila",
+   "fala": "Os soldados do Freeza estão vindo atrás das esferas! Ajude a gente!",
+   "passos": [
+    [
+     "Defenda a vila: 3 ondas",
+     0,
+     3
+    ]
+   ],
+   "rec": [
+    [
+     "senzu",
+     3
+    ],
+    [
+     "__poder",
+     1
+    ]
+   ],
+   "estado": "oculta",
+   "dica": "Em Namek, casas redondas perto da água..."
+  }
+ ],
+ "naruto": [
+  {
+   "id": "folha",
+   "lugar": "Campo de Treino 3",
+   "npc": null,
+   "mob": "ninja_renegado_0",
+   "quem": "Teste dos Guizos",
+   "tipo": "DIÁRIA",
+   "nome": "Teste dos Guizos",
+   "fala": "Pegue um guizo no toco do meio e segure 60 s. Ninjas Renegados e Ninken vêm tomar. Dois guizos = prêmio dobrado.",
+   "passos": [
+    [
+     "Segure um guizo por 60 s",
+     0,
+     60
+    ]
+   ],
+   "rec": [
+    [
+     "pilula_soldado",
+     2
+    ],
+    [
+     "bandana_ninja",
+     1
+    ],
+    [
+     "guizo",
+     1
+    ]
+   ],
+   "estado": "pronta",
+   "dist": [
+    260,
+    1
+   ]
+  },
+  {
+   "id": "morte",
+   "lugar": "Torre do Exame Chunin",
+   "npc": null,
+   "mob": "ninja_som_0",
+   "quem": "Exame Chunin",
+   "tipo": "DIÁRIA",
+   "nome": "Céu e Terra",
+   "fala": "Tome os pergaminhos do Céu e da Terra dos ninjas do Som e abra os dois no altar.",
+   "passos": [
+    [
+     "Pergaminho do Céu",
+     1,
+     1
+    ],
+    [
+     "Pergaminho da Terra",
+     0,
+     1
+    ],
+    [
+     "Abra no altar",
+     0,
+     1
+    ]
+   ],
+   "rec": [
+    [
+     "pilula_soldado",
+     2
+    ],
+    [
+     "kunai_hiraishin",
+     1
+    ]
+   ],
+   "estado": "andamento",
+   "dist": [
+    540,
+    -1
+   ]
+  },
+  {
+   "id": "nevoa",
+   "lugar": "Túmulo do Espadachim",
+   "npc": null,
+   "mob": "espadachim_nevoa_0",
+   "quem": "Espadachins da Névoa",
+   "tipo": "ÚNICA",
+   "nome": "A espada do túmulo",
+   "fala": "Puxe a espada do túmulo e a névoa fecha. Três ondas de espadachins.",
+   "passos": [
+    [
+     "Puxe a espada",
+     0,
+     1
+    ],
+    [
+     "Vença as 3 ondas",
+     0,
+     3
+    ]
+   ],
+   "rec": [
+    [
+     "kubikiribocho",
+     1
+    ]
+   ],
+   "estado": "pronta",
+   "dist": [
+    1210,
+    3
+   ]
+  },
+  {
+   "id": "chuva",
+   "lugar": "Torre do Anjo",
+   "npc": null,
+   "mob": "ninja_chuva_0",
+   "quem": "Torre do Anjo",
+   "tipo": "DIÁRIA",
+   "nome": "A flor de papel",
+   "fala": "Pegue a flor de papel na língua da estátua e desça com ela em 90 s.",
+   "passos": [
+    [
+     "Pegue a flor",
+     0,
+     1
+    ],
+    [
+     "Desça e saia em 90 s",
+     0,
+     90
+    ]
+   ],
+   "rec": [
+    [
+     "asas_de_papel",
+     1
+    ]
+   ],
+   "estado": "oculta",
+   "dica": "Dizem que chove sem parar numa vila de torres..."
+  },
+  {
+   "id": "vale",
+   "lugar": "Vale do Fim",
+   "npc": null,
+   "mob": "zetsu_branco_0",
+   "quem": "Vale do Fim",
+   "tipo": "DIÁRIA",
+   "nome": "Senju ou Uchiha",
+   "fala": "Ao pôr do sol, toque um selo no alto de uma estátua: Senju ou Uchiha.",
+   "passos": [
+    [
+     "Toque um selo ao pôr do sol",
+     0,
+     1
+    ]
+   ],
+   "rec": [
+    [
+     "celula_hashirama",
+     1
+    ],
+    [
+     "sharingan",
+     1
+    ]
+   ],
+   "estado": "feita",
+   "dist": [
+    860,
+    -2
+   ]
+  },
+  {
+   "id": "myoboku",
+   "lugar": "Pico do Sábio",
+   "npc": null,
+   "mob": "sapo_ninja_0",
+   "quem": "Sapo guerreiro",
+   "tipo": "ÚNICA",
+   "nome": "O sapo guerreiro",
+   "fala": "Suba a agulha e vença o sapo guerreiro lá em cima.",
+   "passos": [
+    [
+     "Suba a agulha",
+     0,
+     1
+    ],
+    [
+     "Vença o sapo guerreiro",
+     0,
+     1
+    ]
+   ],
+   "rec": [
+    [
+     "pergaminho_sapo",
+     1
+    ]
+   ],
+   "estado": "oculta",
+   "dica": "Sapos falantes guardam uma montanha cheia de agulhas..."
+  }
+ ]
+}

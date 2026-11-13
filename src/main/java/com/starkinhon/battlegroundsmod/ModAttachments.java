@@ -36,6 +36,11 @@ public final class ModAttachments {
 
     // The characters this player beat in their challenge arenas (challenge/ChallengeArenas): their cards are stamped and
     // they spawn in the world. Saved and kept on death.
+    // The player's record in each arena, "id:wins:best seconds" (the Livro dos Desafios' best time and medals, Stark
+    // 2026-11-13). Saved and kept on death.
+    public static final Supplier<AttachmentType<java.util.List<String>>> ARENA_RECORDS = ATTACHMENT_TYPES.register("arena_records",
+            () -> AttachmentType.<java.util.List<String>>builder(() -> java.util.List.of()).serialize(Codec.STRING.listOf()).copyOnDeath().build());
+
     public static final Supplier<AttachmentType<java.util.List<String>>> ARENA_WINS = ATTACHMENT_TYPES.register("arena_wins",
             () -> AttachmentType.<java.util.List<String>>builder(() -> java.util.List.of()).serialize(Codec.STRING.listOf()).copyOnDeath().build());
 

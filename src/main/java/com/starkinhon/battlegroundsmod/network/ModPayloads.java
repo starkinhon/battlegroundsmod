@@ -274,6 +274,30 @@ public final class ModPayloads {
         }
     }
 
+    // Server -> client: the player's arena records ("id:wins:best seconds"), for the book's best time and medals.
+    public record SyncArenaRecords(List<String> records) implements CustomPacketPayload {
+        public static final Type<SyncArenaRecords> TYPE = payloadType("sync_arena_records");
+        public static final StreamCodec<ByteBuf, SyncArenaRecords> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.STRING_UTF8.apply(ByteBufCodecs.list()), SyncArenaRecords::records, SyncArenaRecords::new);
+
+        void apply() {
+            java.util.Map<String, int[]> map = new java.util.HashMap<>();
+            for (String entry : records) {
+                String[] p = entry.split(":");
+                try {
+                    map.put(p[0], new int[] {Integer.parseInt(p[1]), Integer.parseInt(p[2])});
+                } catch (RuntimeException ignored) {
+                }
+            }
+            com.starkinhon.battlegroundsmod.challenge.ChallengeArenas.clientRecords = map;
+        }
+
+        @Override
+        public Type<SyncArenaRecords> type() {
+            return TYPE;
+        }
+    }
+
     // Server -> client: open the universe screen. first = the player has none yet (can't be closed); otherwise a
     // Cristal Multiversal was used.
     public record OpenUniverses(boolean first) implements CustomPacketPayload {
@@ -1776,6 +1800,7 @@ public final class ModPayloads {
         }));
         registrar.playToClient(SyncPower.TYPE, SyncPower.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> payload.applyTo(context.player())));
         registrar.playToClient(SyncArenaWins.TYPE, SyncArenaWins.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> payload.applyTo(context.player())));
+        registrar.playToClient(SyncArenaRecords.TYPE, SyncArenaRecords.STREAM_CODEC, (payload, context) -> context.enqueueWork(payload::apply));
         registrar.playToServer(ChallengeStart.TYPE, ChallengeStart.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer player) {
                 com.starkinhon.battlegroundsmod.challenge.ChallengeArenas.start(player, payload.id());
