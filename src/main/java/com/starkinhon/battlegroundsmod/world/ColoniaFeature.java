@@ -41,7 +41,7 @@ public final class ColoniaFeature extends Feature<NoneFeatureConfiguration> {
     private static final int CELL = 360;
     private static final int SKIRT = 16;
     private static final int CLEAR = 24; // how high above the old ground the cut goes (trees, hills' tops)
-    private static final Cache<Long, Built> PIECES = CacheBuilder.newBuilder().maximumSize(6).build();
+    private static final Cache<Long, Built> PIECES = CacheBuilder.newBuilder().maximumSize(12).build();
     private static final Cache<Long, int[]> SITES = CacheBuilder.newBuilder().maximumSize(4096).build();
     private static final int[] NONE = {};
 

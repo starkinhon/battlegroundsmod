@@ -47,8 +47,12 @@ public final class ShibuyaFeature extends Feature<NoneFeatureConfiguration> {
     private static final int SKIRT = 8;
     private static final int CLEAR = 24;
     private static final int STATION_HALF = 110;
-    private static final Cache<Long, int[]> PLANS = CacheBuilder.newBuilder().maximumSize(96).build();
-    private static final Cache<Long, int[]> STATIONS = CacheBuilder.newBuilder().maximumSize(8).build();
+    // Built blocks and stations, and apart from them the keys found empty (cheap to keep, many): a chunk asks for ~16 blocks
+    // and ~28 stations, from several generator threads at once, so a small cache kept throwing them away and building
+    // the same metro stations again and again (the Souls world test of 2026-11-13 fell many seconds behind).
+    private static final Cache<Long, int[]> PLANS = CacheBuilder.newBuilder().maximumSize(256).build();
+    private static final Cache<Long, int[]> STATIONS = CacheBuilder.newBuilder().maximumSize(48).build();
+    private static final Cache<Long, Boolean> EMPTY = CacheBuilder.newBuilder().maximumSize(16384).build();
     private static final Cache<Long, Boolean> QUARTS = CacheBuilder.newBuilder().maximumSize(65536).build();
     private static final Cache<Long, int[]> FOOTPRINTS = CacheBuilder.newBuilder().maximumSize(1024).build();
     private static final int[] NONE = {};
@@ -272,16 +276,25 @@ public final class ShibuyaFeature extends Feature<NoneFeatureConfiguration> {
             return quart(x >> 2, z >> 2);
         }
 
+        // The answer is the same for the 16 columns of a quart: kept per quart for this chunk's work (a chunk asks it
+        // for every column of its box and of the skirt around, tens of thousands of times).
+        private final java.util.HashMap<Long, Boolean> cityQuarts = new java.util.HashMap<>();
+
         boolean at(int x, int z) {
             int qx = x >> 2, qz = z >> 2;
-            for (int a = -2; a <= 2; a++) {
-                for (int b = -2; b <= 2; b++) {
-                    if (!quart(qx + a, qz + b)) {
-                        return false;
-                    }
+            long k = ((long) qx << 32) ^ (qz & 0xFFFFFFFFL);
+            Boolean known = cityQuarts.get(k);
+            if (known != null) {
+                return known;
+            }
+            boolean all = true;
+            for (int a = -2; a <= 2 && all; a++) {
+                for (int b = -2; b <= 2 && all; b++) {
+                    all = quart(qx + a, qz + b);
                 }
             }
-            return true;
+            cityQuarts.put(k, all);
+            return all;
         }
 
         // The distance (in blocks, square) to the nearest city column, up to max (more is max + 1).
@@ -304,8 +317,11 @@ public final class ShibuyaFeature extends Feature<NoneFeatureConfiguration> {
             return NONE;
         }
         long k = ((long) i << 36) ^ ((long) (j & 0xFFFFFFFL) << 8) ^ ((long) worldKey * 0x9E3779B97F4A7C15L) ^ 0x5A;
+        if (EMPTY.getIfPresent(k) != null) {
+            return NONE;
+        }
         try {
-            return STATIONS.get(k, () -> {
+            int[] out = STATIONS.get(k, () -> {
                 int c = ShibuyaGen.street('x', i, seed).c(), ox = ShibuyaGen.street('z', j, seed).c();
                 for (int a = -STATION_HALF; a <= STATION_HALF; a += 22) {
                     if (!city.at(ox + a, c - 12) || !city.at(ox + a, c + 12)) {
@@ -316,6 +332,11 @@ public final class ShibuyaFeature extends Feature<NoneFeatureConfiguration> {
                 ShibuyaGen.metro(v, seed, STATION_HALF, i, ox);
                 return v.pack();
             });
+            if (out == NONE) {
+                EMPTY.put(k, Boolean.TRUE);
+                STATIONS.invalidate(k);
+            }
+            return out;
         } catch (ExecutionException e) {
             return NONE;
         }
@@ -348,8 +369,11 @@ public final class ShibuyaFeature extends Feature<NoneFeatureConfiguration> {
     // whole. The street's ground around it is there while building (the drink machines look at it) but is not kept.
     private static int[] plan(int i, int j, int seed, int worldKey, City city) {
         long k = ((long) i << 36) ^ ((long) (j & 0xFFFFFFFL) << 8) ^ ((long) worldKey * 0x9E3779B97F4A7C15L);
+        if (EMPTY.getIfPresent(k) != null) {
+            return NONE;
+        }
         try {
-            return PLANS.get(k, () -> {
+            int[] built = PLANS.get(k, () -> {
                 ShibuyaGen.Plan plan = ShibuyaGen.blockPlan(i, j, seed);
                 int cx = (plan.x0 + plan.x1) >> 1, cz = (plan.z0 + plan.z1) >> 1;
                 if (!city.at(plan.x0 - 4, plan.z0 - 4) || !city.at(plan.x1 + 4, plan.z0 - 4) || !city.at(plan.x0 - 4, plan.z1 + 4)
@@ -404,6 +428,11 @@ public final class ShibuyaFeature extends Feature<NoneFeatureConfiguration> {
                 }
                 return out;
             });
+            if (built == NONE) {
+                EMPTY.put(k, Boolean.TRUE);
+                PLANS.invalidate(k);
+            }
+            return built;
         } catch (ExecutionException e) {
             return NONE;
         }
