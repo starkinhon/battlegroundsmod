@@ -164,13 +164,18 @@ public final class WorldSites {
         return null;
     }
 
-    // The floor of a place: the middle height of the ground around it (the sea's surface for the Kame House).
+    // The floor of a place: the middle height of the ground around it (the sea's surface for the Kame House). From the
+    // terrain noise, not the world: level.getHeight gives the bottom of the world for a chunk that is not loaded yet, and
+    // the spot is picked 170 blocks away, so every place came out at the sea's level (2026-11-12 test: Goku's house sunk
+    // in a crater or buried in a mountain, Cell's ring at the bottom of a cut canyon).
     private static int floor(ServerLevel level, String kind, int x, int z) {
+        var generator = level.getChunkSource().getGenerator();
+        var random = level.getChunkSource().randomState();
         int[] heights = new int[9];
         int n = 0;
         for (int dx = -12; dx <= 12; dx += 12) {
             for (int dz = -12; dz <= 12; dz += 12) {
-                heights[n++] = level.getHeight(Heightmap.Types.OCEAN_FLOOR, x + dx, z + dz);
+                heights[n++] = generator.getBaseHeight(x + dx, z + dz, Heightmap.Types.OCEAN_FLOOR_WG, level, random);
             }
         }
         Arrays.sort(heights);
