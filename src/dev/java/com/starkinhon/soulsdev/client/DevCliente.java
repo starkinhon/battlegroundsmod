@@ -23,6 +23,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.client.event.RegisterClientCommandsEvent;
+import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
+import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 
 // /devc: comandos de teste do lado do cliente (não precisam de cheats). Ajuda: /devc ajuda.
 public final class DevCliente {
@@ -36,7 +38,7 @@ public final class DevCliente {
             "/devc olhar <yaw> <pitch>  - gira o jogador",
             "/devc mirar  /  mirar seguir  /  mirar parar  - mira no mob/boss mais perto (seguir = todo tick)",
             "/devc forja <skill> [momento] [distancia]  - efeitos da Forja da skill, parados na sua frente",
-            "/devc hud on|off   /devc fov <30-110>   /devc janela <largura> <altura>",
+            "/devc hud on|off   /devc chat on|off   /devc fov <30-110>   /devc janela <largura> <altura>",
             "/devc print <nome>  - PNG em _claude_shots (subpastas valem: luffy/z1)",
             "/devc gravar <nome> [cada N quadros]  /  gravar parar  - um PNG por quadro",
             "/devc marca <texto>  - escreve no latest.log (pra achar o momento depois)",
@@ -150,6 +152,10 @@ public final class DevCliente {
         root.then(Commands.literal("hud")
                 .then(Commands.literal("on").executes(c -> hud(c, true)))
                 .then(Commands.literal("off").executes(c -> hud(c, false))));
+        // chat escondido nas gravações (2ª rodada do #318: o chat cobria o personagem em 854x480)
+        root.then(Commands.literal("chat")
+                .then(Commands.literal("on").executes(c -> chat(c, true)))
+                .then(Commands.literal("off").executes(c -> chat(c, false))));
         root.then(Commands.literal("fov")
                 .then(Commands.argument("graus", IntegerArgumentType.integer(30, 110)).executes(c -> {
                     int graus = IntegerArgumentType.getInteger(c, "graus");
@@ -276,5 +282,24 @@ public final class DevCliente {
     private static int hud(CommandContext<CommandSourceStack> c, boolean on) {
         Minecraft.getInstance().options.hideGui = !on;
         return ok(c, "hud " + (on ? "on" : "off"));
+    }
+
+    private static boolean semChat;
+
+    // Esconde só a camada do chat (sem mexer na visibilidade do chat, que no servidor barra os comandos do roteiro).
+    @SubscribeEvent
+    public static void camada(RenderGuiLayerEvent.Pre event) {
+        if (semChat && event.getName().equals(VanillaGuiLayers.CHAT) && Minecraft.getInstance().screen == null) {
+            event.setCanceled(true);
+        }
+    }
+
+    private static int chat(CommandContext<CommandSourceStack> c, boolean on) {
+        int r = ok(c, "chat " + (on ? "on" : "off"));
+        semChat = !on;
+        if (!on) {
+            Minecraft.getInstance().gui.getChat().clearMessages(false);
+        }
+        return r;
     }
 }

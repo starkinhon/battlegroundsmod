@@ -30,7 +30,9 @@ public final class FlightPose {
     private static final float PIVOT = 0.95f;
 
     static final class S {
-        float weight, lean, bank, fist, pitch, yaw, yawRate, lagT, climb, shellA;
+        float weight, lean, bank, fist, pitch, yaw, yawRate, lagT, climb, shellA, wave;
+        // the combat flight: how much in it, the speed ahead / to the right / up seen from the facing, the guard
+        float cw, vf, vs, vu, guard;
         double lastHead = Double.NaN;
         double time = -1;
         double px, py, pz;
@@ -57,7 +59,7 @@ public final class FlightPose {
             STATES.clear();
             lastLevel = minecraft.level;
         }
-        boolean flying = entity instanceof Player && FlightClient.flying(entity);
+        boolean flying = FlightClient.flying(entity);
         S s = STATES.get(entity.getId());
         if (s == null) {
             if (!flying) {
@@ -73,8 +75,9 @@ public final class FlightPose {
         return s;
     }
 
-    // Walks the pose on (once per frame per player). Returns null when the player does not fly (anymore).
-    static S update(Player player, float partial) {
+    // Walks the pose on (once per frame per flier: players and the flying souls of boss/AirCombat). Returns null when it
+    // does not fly (anymore).
+    static S update(LivingEntity player, float partial) {
         S s = get(player);
         if (s == null) {
             return null;
@@ -108,16 +111,40 @@ public final class FlightPose {
             s.py = y;
             s.pz = z;
         }
-        float boostTarget = local != null ? FlightClient.boostAmount() : (state & Flight.BOOST) != 0 ? 1 : 0;
+        float boostTarget = local != null ? Math.max(FlightClient.boostAmount(), AirFightClient.dashing() != null ? 1 : 0)
+                : (state & Flight.BOOST) != 0 ? 1 : 0;
+        boolean combat = flying && AirFightClient.combat(player);
+        s.cw += ((combat ? 1 : 0) - s.cw) * damp(6, dt);
+        s.guard += ((combat && SkillAnimations.guarding(player) ? 1 : 0) - s.guard) * damp(14, dt);
         float strafe = local != null ? FlightClient.strafe() : 0;
         double v = s.vel.length();
         float c = FlightClient.cruise(player);
         float moving = flying ? Mth.clamp((float) (v - 2) / (c * 0.7f), 0, 1) : 0;
+        // Freeza floating by stands up the whole way; a soul throwing a blow stands up for it (the punch reads right).
+        if ((state & Flight.UPRIGHT) != 0 || !(player instanceof Player) && SkillAnimations.busy(player)) {
+            moving = 0;
+        }
+        // Combat: standing in the stance; on the dash leaning into it a little (the page's 0.3).
+        if (s.cw > 0.5) {
+            moving = boostTarget > 0.5 ? 0.3f : 0;
+        }
+        boolean crossed = (state & Flight.CROSSED) != 0;
+        s.hover.forced = crossed ? 1 : -1;
+        s.cruise.forced = crossed ? 4 : -1;
+        s.wave += (((state & Flight.WAVE) != 0 ? 1 : 0) - s.wave) * damp(8, dt);
         s.lean += (moving - s.lean) * damp(4, dt);
         s.fist += (boostTarget - s.fist) * damp(6, dt);
         s.shellA += ((s.fist > 0.15f ? s.fist : 0) - s.shellA) * damp(8, dt);
         // the body points along the speed when moving, along the look when floating
-        Vec3 dir = v > 1.5 ? s.vel.scale(1 / v) : horizontal(player.getViewVector(partial));
+        Vec3 dir = v > 1.5 && s.cw < 0.5 ? s.vel.scale(1 / v) : horizontal(player.getViewVector(partial));
+        {
+            // the speed seen from the facing, for the stance's lean and the limbs (combat)
+            Vec3 face = horizontal(player.getViewVector(partial));
+            Vec3 side = new Vec3(-face.z, 0, face.x);
+            s.vf += ((float) s.vel.dot(face) - s.vf) * damp(6, dt);
+            s.vs += ((float) s.vel.dot(side) - s.vs) * damp(6, dt);
+            s.vu += ((float) s.vel.y - s.vu) * damp(6, dt);
+        }
         float yawT = (float) Math.atan2(dir.x, dir.z);
         float dy = Mth.wrapDegrees((float) Math.toDegrees(yawT - s.yaw)) * Mth.DEG_TO_RAD;
         s.yaw += dy * damp(flying ? 5 : 10, dt);
@@ -132,6 +159,13 @@ public final class FlightPose {
         s.climb = (float) Math.asin(Mth.clamp(dir.y, -1, 1));
         float pitchT = -s.lean * ((float) Math.PI / 2 - 0.12f) + s.lean * s.climb * 0.9f
                 - (1 - s.lean) * Mth.clamp((float) s.vel.y * 0.02f, -0.2f, 0.2f);
+        if (s.cw > 0.001f) {
+            // the page's combat tilt: a little into where it goes (0.22 rad at 20 b/s), never lying down
+            float tF = Mth.clamp(s.vf / 20, -1, 1) * 0.22f;
+            float tS = Mth.clamp(s.vs / 20, -1, 1) * 0.22f;
+            pitchT = Mth.lerp(s.cw, pitchT, -s.lean * ((float) Math.PI / 2 - 0.12f) - tF);
+            s.bank += (Mth.lerp(s.cw, bankT, -tS) - bankT) * damp(4, dt);
+        }
         s.pitch += (pitchT - s.pitch) * damp(5, dt);
         if (!Float.isFinite(s.yaw + s.pitch + s.bank + s.yawRate)) {
             s.yaw = s.pitch = s.bank = s.yawRate = 0;
@@ -150,7 +184,7 @@ public final class FlightPose {
     }
 
     // The feet -> head line of the flying body (for the shell and the trail), or null.
-    public static Vec3 bodyUp(Player player, float partial) {
+    public static Vec3 bodyUp(LivingEntity player, float partial) {
         S s = update(player, partial);
         if (s == null) {
             return null;
@@ -160,7 +194,7 @@ public final class FlightPose {
     }
 
     // The same as the last frame drew it, without walking the pose on (for the trail's samples every tick).
-    public static Vec3 lastUp(Player player) {
+    public static Vec3 lastUp(LivingEntity player) {
         S s = STATES.get(player.getId());
         if (s == null || s.weight < 0.01f) {
             return null;
@@ -169,24 +203,28 @@ public final class FlightPose {
         return new Vec3(up.x, up.y, up.z);
     }
 
-    public static float shell(Player player, float partial) {
+    public static float shell(LivingEntity player, float partial) {
         S s = update(player, partial);
         return s == null ? 0 : s.shellA * s.weight;
     }
 
-    public static float weight(Player player, float partial) {
+    public static float weight(LivingEntity player, float partial) {
         S s = update(player, partial);
         return s == null ? 0 : s.weight;
     }
 
-    public static Vec3 velocity(Player player, float partial) {
+    public static Vec3 velocity(LivingEntity player, float partial) {
         S s = update(player, partial);
         return s == null ? Vec3.ZERO : s.vel;
     }
 
-    public static float boost(Player player, float partial) {
+    public static float boost(LivingEntity player, float partial) {
         S s = update(player, partial);
         return s == null ? 0 : s.fist;
+    }
+
+    public static java.util.Set<Integer> ids() {
+        return STATES.keySet();
     }
 
     public static float pivot() {
@@ -196,24 +234,38 @@ public final class FlightPose {
     // ---------- the whole body ----------
 
     public static void onRenderPre(RenderPlayerEvent.Pre event) {
-        pushed = false;
-        Player player = event.getEntity();
-        float partial = event.getPartialTick();
+        pushed = push(event.getEntity(), event.getPoseStack(), event.getPartialTick());
+    }
+
+    // Turns the whole body for the flight (around the hips), before Minecraft draws it. True when it pushed a pose
+    // (pop it after drawing). Players through RenderPlayerEvent, the flying souls from SoulBossRenderer.
+    public static boolean push(LivingEntity player, PoseStack pose, float partial) {
         S s = update(player, partial);
         if (s == null || s.weight < 0.001f) {
-            return;
+            return false;
         }
         // Minecraft turns the body by its body yaw after this; take that off and put the flight's turn instead.
         float body = Mth.rotLerp(partial, player.yBodyRotO, player.yBodyRot);
         Quaternionf vanilla = new Quaternionf().rotateY((float) Math.toRadians(180f - body));
         Quaternionf full = new Quaternionf(s.world).mul(new Quaternionf(vanilla).invert());
         Quaternionf q = new Quaternionf().slerp(full, s.weight);
-        PoseStack pose = event.getPoseStack();
         pose.pushPose();
         pose.translate(0, PIVOT, 0);
         pose.mulPose(q);
         pose.translate(0, -PIVOT, 0);
-        pushed = true;
+        return true;
+    }
+
+    // The whole body's turn in the world as push draws it (vanilla's body yaw plus the flight's), or null when not flying.
+    public static Quaternionf bodyTurn(LivingEntity entity, float partial) {
+        S s = update(entity, partial);
+        if (s == null || s.weight < 0.001f) {
+            return null;
+        }
+        float body = Mth.rotLerp(partial, entity.yBodyRotO, entity.yBodyRot);
+        Quaternionf vanilla = new Quaternionf().rotateY((float) Math.toRadians(180f - body));
+        Quaternionf full = new Quaternionf(s.world).mul(new Quaternionf(vanilla).invert());
+        return new Quaternionf().slerp(full, s.weight).mul(vanilla);
     }
 
     public static void onRenderPost(RenderPlayerEvent.Post event) {
@@ -227,7 +279,8 @@ public final class FlightPose {
 
     public static void apply(LivingEntity entity, HumanoidModel<?> model) {
         S s = STATES.get(entity.getId());
-        if (s == null || s.limbs == null || s.weight < 0.001f || !(entity instanceof Player) || SkillAnimations.busy(entity)) {
+        if (s == null || s.limbs == null || s.weight < 0.001f || SkillAnimations.posing(entity)
+                || SkillAnimations.guarding(entity) && s.cw < 0.5f) {
             return;
         }
         float w = s.weight;
@@ -296,6 +349,8 @@ public final class FlightPose {
         final Function<Float, float[]>[] lib;
         int cur, prev;
         float k = 1, hold;
+        // a pose it must hold (a soul's crossed arms), or -1
+        int forced = -1;
 
         Mixer(Function<Float, float[]>[] lib, float hold) {
             this.lib = lib;
@@ -304,7 +359,14 @@ public final class FlightPose {
 
         float[] at(float t, float dt, float rate) {
             hold -= dt * rate;
-            if (hold <= 0 && k >= 1) {
+            if (forced >= 0 && forced < lib.length) {
+                if (cur != forced && k >= 1) {
+                    prev = cur;
+                    cur = forced;
+                    k = 0;
+                }
+                hold = 1;
+            } else if (hold <= 0 && k >= 1) {
                 int n = cur;
                 while (lib.length > 1 && n == cur) {
                     n = (int) (Math.random() * lib.length);
@@ -323,6 +385,47 @@ public final class FlightPose {
             }
             return out;
         }
+    }
+
+    // ---------- the combat stance (one pose for each way it moves, Stark 2026-11-13: "cada coisinha tem uma animação") ----------
+
+    // fists up in front of the chin, the right knee drawn up, chin down a little (the page's guardaAr)
+    private static final float[] C_GUARD = {-1.3f, 0.38f, -1.5f, -0.3f, -0.95f, 0.1f, 0.22f, -0.07f, 0.12f, 0, 0.24f, 0.06f, 0.2f};
+    // closing in: both fists out ahead, the legs trailing back, the head up looking over the fists
+    private static final float[] C_FWD = {-1.6f, 0.22f, -1.78f, -0.18f, 0.22f, 0.05f, 0.7f, 0.42f, -0.05f, 0.9f, -0.18f, 0, 0.1f};
+    // backing off: guard higher and tighter, both knees up in front, chin tucked
+    private static final float[] C_BACK = {-1.8f, 0.5f, -1.9f, -0.45f, -1.15f, 0.12f, 0.35f, -0.62f, -0.1f, 0.5f, 0.32f, 0, 0.12f};
+    // circling to the right: the right shoulder leading, the left arm across the body, the legs trailing to the left
+    private static final float[] C_RIGHT = {-1.15f, 0.08f, -1.6f, -0.55f, -0.55f, -0.22f, 0.4f, 0.12f, -0.42f, 0.55f, 0.18f, -0.12f, -0.28f};
+    private static final float[] C_LEFT = mirror(C_RIGHT);
+    // rising: legs hanging long; sinking: knees up
+    private static final float[] C_UP = {-1.2f, 0.35f, -1.4f, -0.28f, 0.1f, 0.08f, 0.1f, 0.18f, -0.08f, 0.15f, 0.3f, 0, 0.15f};
+    private static final float[] C_DOWN = {-1.45f, 0.42f, -1.6f, -0.35f, -1.3f, 0.12f, 0.2f, -0.9f, -0.1f, 0.3f, 0.12f, 0, 0.2f};
+    // the guard in the air: forearms crossed in an X in front of the face, knees up, peeking over
+    private static final float[] C_BLOCK = {-2.0f, 0.75f, -1.9f, -0.72f, -0.8f, 0.1f, 0.5f, -0.4f, -0.08f, 0.6f, 0.32f, 0, 0};
+
+    private static float[] mirror(float[] p) {
+        return new float[] {p[2], -p[3], p[0], -p[1], p[7], -p[8], p[9], p[4], -p[5], p[6], p[10], -p[11], -p[12]};
+    }
+
+    private static float[] combatLimbs(S s, float t) {
+        float top = 16;
+        float f = Mth.clamp(s.vf / top, -1, 1), sd = Mth.clamp(s.vs / top, -1, 1), u = Mth.clamp(s.vu / top, -1, 1);
+        float wf = Math.max(f, 0), wb = Math.max(-f, 0), wr = Math.max(sd, 0), wl = Math.max(-sd, 0), wu = Math.max(u, 0), wd = Math.max(-u, 0);
+        float sum = wf + wb + wr + wl + wu + wd;
+        float norm = sum > 1 ? 1 / sum : 1;
+        float[] out = new float[13];
+        for (int i = 0; i < 13; i++) {
+            float g = C_GUARD[i];
+            out[i] = g + norm * (wf * (C_FWD[i] - g) + wb * (C_BACK[i] - g) + wr * (C_RIGHT[i] - g) + wl * (C_LEFT[i] - g)
+                    + wu * (C_UP[i] - g) + wd * (C_DOWN[i] - g));
+            out[i] = Mth.lerp(s.guard, out[i], C_BLOCK[i]);
+        }
+        // the fists bob a hair out of step with each other while floating (alive, not swinging)
+        float still = 1 - Math.min(1, sum);
+        out[0] += sin(t * 2.3) * 0.04f * still;
+        out[2] += sin(t * 2.3 + 2.1) * 0.04f * still;
+        return out;
     }
 
     private static void limbs(S s, float dt, float t, float v, float c, boolean flying) {
@@ -351,6 +454,18 @@ public final class FlightPose {
         q[2] += breath * 0.8f;
         q[4] += flut * 0.5f;
         q[7] -= flut * 0.5f;
+        if (s.cw > 0.001f) {
+            float[] cl = combatLimbs(s, t);
+            float w = s.cw;
+            for (int i = 0; i < 13; i++) {
+                q[i] = Mth.lerp(w, q[i], Mth.lerp(fi, cl[i], BOOST[i]));
+            }
+        }
+        // waving at you (Goku and Kuririn passing by): the right hand up, swinging side to side
+        if (s.wave > 0.01f) {
+            q[0] = Mth.lerp(s.wave, q[0], -2.75f);
+            q[1] = Mth.lerp(s.wave, q[1], -0.35f + sin(t * 9) * 0.4f);
+        }
         s.limbs = q;
     }
 }

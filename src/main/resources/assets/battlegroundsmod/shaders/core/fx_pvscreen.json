@@ -1,0 +1,16 @@
+{
+    "vertex": "battlegroundsmod:fx_blit",
+    "fragment": "battlegroundsmod:fx_pvscreen",
+    "samplers": [ { "name": "DiffuseSampler" } ],
+    "uniforms": [
+        { "name": "Center", "type": "float", "count": 2, "values": [ 0.5, 0.5 ] },
+        { "name": "Radius", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "Width", "type": "float", "count": 1, "values": [ 0.06 ] },
+        { "name": "Strength", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "Aspect", "type": "float", "count": 1, "values": [ 1.7777 ] },
+        { "name": "Amt", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "Frame", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "Res", "type": "float", "count": 1, "values": [ 450.0 ] },
+        { "name": "Mode", "type": "float", "count": 1, "values": [ 0.0 ] }
+    ]
+}

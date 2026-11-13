@@ -286,7 +286,7 @@ public final class KiMesh {
         s.safeGetUniform("Bend").set(p.bend);
         s.safeGetUniform("GlowPass").set(glow ? 1f : 0f);
         boolean highPass = p.kind == BLAST || p.kind == GENKI || p.kind == HALO || p.kind == SUN || p.kind == SUN_HALO
-                || p.kind == KATON || p.kind == KATON_RING;
+                || p.kind == KATON || p.kind == KATON_RING || p.kind == 19 || p.kind == 21 || p.kind == 22;
         s.safeGetUniform("HighPass").set(highPass ? 1f : 0f);
     }
 

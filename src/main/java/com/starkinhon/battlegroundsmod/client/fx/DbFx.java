@@ -574,11 +574,12 @@ public final class DbFx {
 
     // The ki aura in the mod's style (v58): fire of glow rising round the body, white jets, wind on the ground, pebbles.
     static void kiAura(Vector3f feet, float t, float[] col, float a, float s, int seed, boolean self) {
-        kiAura(feet, t, col, a, s, seed, self, a, 0);
+        kiAura(feet, t, col, a, s, seed, self, a, 0, null);
     }
 
     // growth: how far the 3D shell has grown (0 to 1, it rises from the feet); flash: the burst when it is lit (1 to 0).
-    static void kiAura(Vector3f feet, float t, float[] col, float a, float s, int seed, boolean self, float growth, float flash) {
+    // turn: how the shell is turned round the hips (the body's own turn and lean, and the drag of moving), or null upright.
+    static void kiAura(Vector3f feet, float t, float[] col, float a, float s, int seed, boolean self, float growth, float flash, Quaternionf turn) {
         if (a <= 0) {
             return;
         }
@@ -610,7 +611,7 @@ public final class DbFx {
                     p.spikeSharp = 2.4f;
                     p.crown = 0.9f;
                 }
-                if (sup && s > 1.2f) {
+                if ((sup || col == COLORS[Db.PURPLE]) && s > 1.2f) {
                     // Gathering everything (Final Flash, and more for the Explosao Final): taller, spikier, with a crown.
                     boolean peak = s > 1.35f;
                     p.tongue = peak ? 0.55f : 0.5f;
@@ -618,7 +619,13 @@ public final class DbFx {
                     p.crown = peak ? 1.1f : 1f;
                 }
                 p.size = new float[] {0.62f, 1.12f, 0.5f};
-                Matrix4f m = new Matrix4f().translation(feet.x, feet.y + 1.0f * s, feet.z).scale(s);
+                Matrix4f m = new Matrix4f().translation(feet.x, feet.y, feet.z);
+                if (turn != null) {
+                    // round the hips, like the body (client/FlightPose's pivot)
+                    float pivot = com.starkinhon.battlegroundsmod.client.FlightPose.pivot() * s;
+                    m.translate(0, pivot, 0).rotate(turn).translate(0, -pivot, 0);
+                }
+                m.translate(0, 1.0f * s, 0).scale(s);
                 KiMesh.queue(KiMesh.Mesh.AURA, m, p, KiMesh.BOTH, 10);
             }
             pebbles(feet, t, a, s, seed);
@@ -1167,6 +1174,40 @@ public final class DbFx {
         }
     }
 
+    // Stark 2026-11-13: the aura stood straight up while the body fought lying, leaning and turning. Now it follows the
+    // body: the flight's whole-body turn (lying into the cruise, the combat stance's lean), else the body's facing; and
+    // the flames trail back from where it moves (up to ~30 degrees at speed).
+    private static final Map<Integer, Quaternionf> AURA_DRAG = new HashMap<>();
+
+    private static Quaternionf auraTurn(Entity e, float partial) {
+        if (!(e instanceof net.minecraft.world.entity.LivingEntity living)) {
+            return null;
+        }
+        Quaternionf body = com.starkinhon.battlegroundsmod.client.FlightPose.bodyTurn(living, partial);
+        if (body == null) {
+            float yaw = Mth.rotLerp(partial, living.yBodyRotO, living.yBodyRot);
+            body = new Quaternionf().rotationY((float) Math.toRadians(180f - yaw));
+        }
+        Vec3 v = com.starkinhon.battlegroundsmod.client.FlightPose.velocity(living, partial);
+        if (v.lengthSqr() < 1.0E-6) {
+            v = new Vec3(living.getX() - living.xo, living.getY() - living.yo, living.getZ() - living.zo).scale(20);
+        }
+        double speed = v.length();
+        Vector3f up = new Vector3f(0, 1, 0);
+        Vector3f want = new Vector3f(up);
+        if (speed > 0.5) {
+            float k = (float) Math.min(0.55, speed / 40.0);
+            want.sub((float) (v.x / speed) * k, (float) (v.y / speed) * k * 0.6f, (float) (v.z / speed) * k).normalize();
+        }
+        Quaternionf target = new Quaternionf().rotationTo(up, want);
+        Quaternionf drag = AURA_DRAG.computeIfAbsent(e.getId(), id -> new Quaternionf());
+        drag.slerp(target, 0.15f);
+        if (AURA_DRAG.size() > 256) {
+            AURA_DRAG.clear();
+        }
+        return new Quaternionf(drag).mul(body);
+    }
+
     private static void aura(Fx f, float age, float partial, float out) {
         Entity e = FxAnchor.entity(f.id);
         if (e == null) {
@@ -1177,7 +1218,8 @@ public final class DbFx {
         // The shell grows up from the feet in 0.7 s and bursts when a strong aura is lit (Kaioken, Super Saiyajin).
         float growth = Math.min(smooth(age / 14), out);
         float flash = strength >= 0.6f && age < 6 ? 1 - age / 6 : 0;
-        kiAura(rel(e.getPosition(partial)), age, color(f.b), strength * in, Math.max(0.3f, f.c), f.id % 7 + 1, FxAnchor.firstPersonSelf(f.id), growth, flash);
+        kiAura(rel(e.getPosition(partial)), age, color(f.b), strength * in, Math.max(0.3f, f.c), f.id % 7 + 1, FxAnchor.firstPersonSelf(f.id), growth, flash,
+                auraTurn(e, partial));
     }
 
     private static void saw(Fx f, float age, float out) {

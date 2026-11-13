@@ -80,6 +80,11 @@ public final class Combat {
 
     // Where the player's view hits a block, or the point at max range.
     public static Vec3 raycastPoint(LivingEntity player, double range) {
+        LivingEntity locked = AirFight.target(player);
+        if (locked != null && player instanceof net.minecraft.server.level.ServerPlayer && locked.distanceTo(player) <= range + 1) {
+            // the combat flight aims at whoever it is locked on
+            return center(locked);
+        }
         Vec3 eye = player.getEyePosition();
         Vec3 end = eye.add(player.getLookAngle().scale(range));
         var hit = player.level().clip(new ClipContext(eye, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player));
@@ -88,6 +93,10 @@ public final class Combat {
 
     // The closest target in the player's view, stopped by walls. Slightly generous so moves feel good to land.
     public static LivingEntity raycastTarget(LivingEntity player, double range) {
+        LivingEntity locked = AirFight.target(player);
+        if (locked != null && player instanceof net.minecraft.server.level.ServerPlayer && locked.distanceTo(player) <= range + 1) {
+            return locked;
+        }
         Vec3 eye = player.getEyePosition();
         Vec3 end = raycastPoint(player, range);
         return alongLine(level(player), eye, end, 0.6, player).stream()
@@ -182,6 +191,12 @@ public final class Combat {
     public static void push(Entity target, Vec3 direction, double strength, double up) {
         Vec3 flat = new Vec3(direction.x, 0, direction.z);
         flat = flat.lengthSqr() < 1.0E-4 ? Vec3.ZERO : flat.normalize().scale(strength);
+        if (target instanceof net.minecraft.server.level.ServerPlayer player && com.starkinhon.battlegroundsmod.universe.Flight.flying(player)) {
+            // A flying player's own client moves them: told to fly off this way (in the air the push is the full 3D one).
+            Vec3 dir = direction.lengthSqr() < 1.0E-4 ? Vec3.ZERO : direction.normalize().scale(strength);
+            com.starkinhon.battlegroundsmod.boss.AirCombat.knock(player, new Vec3(dir.x, dir.y + up, dir.z).scale(20), 6, false);
+            return;
+        }
         target.setDeltaMovement(flat.x, up, flat.z);
         target.hurtMarked = true;
     }

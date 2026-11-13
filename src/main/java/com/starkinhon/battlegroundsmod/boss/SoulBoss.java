@@ -57,7 +57,9 @@ public abstract class SoulBoss extends Monster {
     private boolean ultUsed;
     private boolean ultPending;
     private boolean lethalBypass;
-    private SoulBossAI ai;
+    SoulBossAI ai;
+    // The Dragon Ball souls' flight and air fight (AirCombat), made on the first tick of one that flies.
+    AirCombat air;
     // Its soul being stolen by the player who killed it (only after death).
     private SoulCeremony ceremony;
     // Raised by Makima as a puppet of its soul (power/powers/makima/Almas): no boss fight, no soul to drop.
@@ -157,6 +159,22 @@ public abstract class SoulBoss extends Monster {
         builder.define(DATA_PHASE, 0);
     }
 
+    // Its air fight (null until it first flies, or for souls that don't fly).
+    public AirCombat air() {
+        return air;
+    }
+
+    // While AirCombat flies it, no goal may walk or jump it (the stroll would steer it on the ground's way).
+    void airControl(boolean owned) {
+        if (owned) {
+            goalSelector.disableControlFlag(net.minecraft.world.entity.ai.goal.Goal.Flag.MOVE);
+            goalSelector.disableControlFlag(net.minecraft.world.entity.ai.goal.Goal.Flag.JUMP);
+        } else {
+            goalSelector.enableControlFlag(net.minecraft.world.entity.ai.goal.Goal.Flag.MOVE);
+            goalSelector.enableControlFlag(net.minecraft.world.entity.ai.goal.Goal.Flag.JUMP);
+        }
+    }
+
     // Entrance, phase change, final ult, or waiting to start it: the AI holds still.
     public boolean staged() {
         return stagedTicks > 0 || ultPending;
@@ -220,6 +238,10 @@ public abstract class SoulBoss extends Monster {
     }
 
     private void tickAsOwner() {
+        if (!level().isClientSide) {
+            // Before it moves this tick: in the air it is moved by its own speed (AirCombat), not by Minecraft's AI.
+            AirCombat.tick(this);
+        }
         super.tick();
         if (!(level() instanceof ServerLevel level)) {
             return;

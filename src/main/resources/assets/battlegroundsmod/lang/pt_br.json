@@ -958,6 +958,10 @@
   "message.battlegroundsmod.shenlong_done": "Shenlong: Seu desejo foi realizado. Adeus!",
   "message.battlegroundsmod.flight_tired": "Sem energia pra voar: coma alguma coisa.",
   "message.battlegroundsmod.flight_tired_stamina": "Sem fôlego: descendo pra pousar. Parado no ar ou no chão a estamina volta.",
+  "message.battlegroundsmod.air_reflect": "Defesa perfeita: a bola de ki volta!",
+  "message.battlegroundsmod.air_guard_investida": "Investida defendida: ele ficou aberto!",
+  "message.battlegroundsmod.air_guard_martelo": "Martelo defendido: ele ficou aberto!",
+  "message.battlegroundsmod.air_guard_forte": "Forte defendido: ele ficou aberto!",
   "message.battlegroundsmod.technique_learned": "Técnica aprendida",
   "technique.battlegroundsmod.voo": "Voo: pule duas vezes pra voar",
   "hud.battlegroundsmod.scouter.idle": "Scouter: procurando...",
@@ -2133,5 +2137,8 @@
   "item.battlegroundsmod.yamu_spawn_egg": "Ovo de Yamu",
   "entity.battlegroundsmod.babidi": "Babidi",
   "item.battlegroundsmod.babidi_spawn_egg": "Ovo de Babidi",
-  "message.battlegroundsmod.dragao_domado": "O dragão confia em você agora. Clique com o direito para montar."
+  "message.battlegroundsmod.dragao_domado": "O dragão confia em você agora. Clique com o direito para montar.",
+  "fala.battlegroundsmod.ceu.freeza_ameaca": "Saia da minha frente, verme... antes que eu mude de ideia.",
+  "fala.battlegroundsmod.ceu.vegeta_treinar": "Hmpf. Fraco demais. Vá treinar, verme, e volte quando for digno de lutar comigo.",
+  "fala.battlegroundsmod.ceu.vegeta_desafio": "Eu sou o príncipe dos Saiyajins! Vou provar que sou mais forte que você!"
 }

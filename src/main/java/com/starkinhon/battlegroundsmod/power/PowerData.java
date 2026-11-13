@@ -88,6 +88,8 @@ public class PowerData {
     // landed and when that punch had started. Not saved.
     public long swingStart = 0;
     public long hitBySwing = -1;
+    // the last dodge of the combat flight (combat/AirFight), not saved
+    public long airDodgeAt = -100;
     public long hitAt = -1;
     // Players: what a held charged skill may still drain on top of its use cost.
     public float chargeLeft = 0;

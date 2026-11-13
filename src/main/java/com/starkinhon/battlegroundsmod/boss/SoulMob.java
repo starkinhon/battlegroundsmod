@@ -37,6 +37,10 @@ public class SoulMob extends SoulBoss {
 
     @Override
     public boolean removeWhenFarAway(double distanceSqr) {
+        // the ones flying across the sky are born far from everyone (SkyPassers takes them away itself)
+        if (AirCombat.passing(this)) {
+            return false;
+        }
         return distanceSqr > 128 * 128 || tickCount > LINGER;
     }
 

@@ -251,6 +251,16 @@ public final class SkillAnimations {
         return keyframed == null ? 0 : keyframed.startTick();
     }
 
+    // Holding the guard up (GuardPose from the server).
+    public static boolean guarding(Entity entity) {
+        return GUARDING.contains(entity.getId());
+    }
+
+    // A move or a keyframe animation posing it right now (not the guard).
+    public static boolean posing(Entity entity) {
+        return PLAYING.containsKey(entity.getId()) || KEYFRAMED.containsKey(entity.getId());
+    }
+
     // Whether a move, a keyframe animation or the guard poses this entity right now (the flight pose waits for it).
     public static boolean busy(Entity entity) {
         return PLAYING.containsKey(entity.getId()) || KEYFRAMED.containsKey(entity.getId()) || GUARDING.contains(entity.getId());

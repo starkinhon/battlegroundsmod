@@ -38,6 +38,12 @@ public final class PunchInput {
                 || !player.getData(ModAttachments.POWER).combat) {
             return;
         }
+        if (PreviewFight.punch()) {
+            // the combat flight's page punches on the client (PreviewFight)
+            event.setCanceled(true);
+            event.setSwingHand(false);
+            return;
+        }
         HitResult hit = minecraft.hitResult;
         if (hit != null && hit.getType() == HitResult.Type.BLOCK
                 && !someoneAhead(player, hit.getLocation().distanceTo(player.getEyePosition()))) {

@@ -42,6 +42,11 @@ public final class Flight {
     private static final double BOOST_MIN_PCT = 12.0;
 
     public static final int FLYING = 1, BOOST = 2, TIRED = 4;
+    // only for the flying Dragon Ball souls (boss/AirCombat, universe/SkyPassers): arms crossed, standing up while it
+    // moves (Freeza floating by), the right hand waving
+    public static final int CROSSED = 8, UPRIGHT = 16, WAVE = 32;
+    // the combat flight (combat/AirFight): standing up in the fighting stance, facing the target
+    public static final int COMBAT = 64;
 
     private static final Map<UUID, Integer> SENT = new HashMap<>();
     private static final Map<UUID, Boolean> BOOSTING = new HashMap<>();
@@ -65,6 +70,11 @@ public final class Flight {
     // Whether player is flying with the technique right now (not the creative flight).
     public static boolean flying(Player player) {
         return player instanceof ServerPlayer sp && !sp.isCreative() && !sp.isSpectator() && sp.getAbilities().flying && knows(sp);
+    }
+
+    // On the boost right now (the souls flying at them read it: AirCombat's clash of fists).
+    public static boolean boosting(Player player) {
+        return BOOSTING.getOrDefault(player.getUUID(), false) && flying(player);
     }
 
     // Whether the flight is paying stamina right now (Stamina keeps it from filling back up then).
@@ -158,7 +168,8 @@ public final class Flight {
                 boosting = false;
             }
             TIRED_NOW.put(player.getUUID(), tired);
-            state = FLYING | (boosting ? BOOST : 0) | (tired ? TIRED : 0);
+            state = FLYING | (boosting ? BOOST : 0) | (tired ? TIRED : 0)
+                    | (com.starkinhon.battlegroundsmod.combat.AirFight.active(player) ? COMBAT : 0);
         } else {
             BOOSTING.remove(player.getUUID());
             TIRED_NOW.remove(player.getUUID());

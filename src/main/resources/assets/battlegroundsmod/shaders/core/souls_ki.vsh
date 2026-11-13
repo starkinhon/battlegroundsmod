@@ -122,7 +122,7 @@ void main() {
         vU = along; vD = tg; vQ = vec2(tw, along);
     } else if (kind == 31) {                                           // Rasengan: the shell of wind round the core, swelling a little
         n = normalize(Position); P = n * (1. + gn(n * 3. + vec3(Time * 2., 0., -Time * 1.6)) * 0.08); vO = n;
-    } else if (kind == 4 || kind == 9 || kind == 10 || kind == 15 || kind == 16 || kind == 18 || kind == 32 || kind == 34 || kind == 35 || kind == 46 || kind == 47 || kind == 48 || kind == 50) {   // flat square: dust ring, discs, shadows, Rasenshuriken, Miwa's cuts
+    } else if (kind == 4 || kind == 20 || kind == 24 || kind == 9 || kind == 10 || kind == 15 || kind == 16 || kind == 18 || kind == 32 || kind == 34 || kind == 35 || kind == 46 || kind == 47 || kind == 48 || kind == 50) {   // flat square: dust ring, discs, shadows, Rasenshuriken, Miwa's cuts
         P = Position; n = vec3(0., 1., 0.); vUv = Position.xz * 0.5 + 0.5;
         vQ = Position.xz * vec2(length(Model[0].xyz), length(Model[2].xyz));   // in blocks, across and along the square
     } else if (kind == 5) {                                            // aura shell
@@ -214,6 +214,15 @@ void main() {
         P = vec3(d.x * r, h * Len, d.y * r); n = normalize(vec3(d.x, -(R1 - R0) / max(Len, 0.01), d.y)); vDir = d; vH = h;
     } else if (kind == 66 || kind == 67) {                             // Ino: the dome and the sky of the Teatro Mental
         n = normalize(Position); P = Position; vO = n;
+    } else if (kind == 19) {                                           // the combat flight page's hit star (forja db-voo-mobs STAR_VS): a spiky ball
+        vec3 d = normalize(Position);
+        float sp = pow(max(gn(d * 2.6 + Seed), 0.), 1.7) * 3.2 + fbm3(d * 4. + Seed) * .35;
+        P = d * (.35 + sp * (.4 + Life * .9)); n = d; vD = sp;
+    } else if (kind == 21 || kind == 22) {                             // the page's ki ball core / its halo (plain spheres; vO = the page's vP)
+        n = normalize(Position); P = Position; vO = Position;
+    } else if (kind == 23) {                                           // the page's beam: an open tube (y 0..1), vUv = the cylinder's uv
+        vec2 d = normalize(Position.xz + 1e-5); P = Position; n = vec3(d.x, 0., d.y);
+        vUv = vec2(atan(d.x, d.y) / 6.2831853 + .5, Position.y);
     }
     vec4 w = Model * vec4(P, 1.0);
     vN = kind == 68 ? transpose(inverse(mat3(Model))) * n : mat3(Model) * n;   // (68: squashed petals keep their normals)

@@ -191,6 +191,9 @@ public class BattlegroundsModClient {
                 com.starkinhon.battlegroundsmod.client.FlightPose::onRenderPre);
         NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.client.event.RenderPlayerEvent.Post.class,
                 com.starkinhon.battlegroundsmod.client.FlightPose::onRenderPost);
+        // The combat flight: the camera stays turned to the locked target.
+        NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.client.event.RenderFrameEvent.Pre.class,
+                com.starkinhon.battlegroundsmod.client.AirFightClient::onFrame);
         NeoForge.EVENT_BUS.addListener(BattlegroundsModClient::onClientTick);
         // Shenlong's summoning (the world dims, the dragon rises, the wish menu).
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.ShenlongScene::onRenderLevel);
@@ -210,6 +213,12 @@ public class BattlegroundsModClient {
                 InoClient::onCameraAngles);
         NeoForge.EVENT_BUS.addListener(ClientTickEvent.Post.class, InoClient::tick);
         NeoForge.EVENT_BUS.addListener(InputEvent.InteractionKeyMappingTriggered.class, PunchInput::onInteraction);
+        // the combat flight is the approved page run on the client (PreviewFight): the hotbar's numbers are its moves,
+        // and its afterimages are taken from the bodies as drawn
+        NeoForge.EVENT_BUS.addListener(InputEvent.Key.class, com.starkinhon.battlegroundsmod.client.PreviewFight::onKey);
+        NeoForge.EVENT_BUS.addListener(ClientTickEvent.Pre.class, com.starkinhon.battlegroundsmod.client.PreviewFight::tickPre);
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, true, RenderLivingEvent.Post.class,
+                com.starkinhon.battlegroundsmod.client.fx.PreviewFx::onRenderLiving);
         NeoForge.EVENT_BUS.addListener(InputEvent.MouseScrollingEvent.class, com.starkinhon.battlegroundsmod.client.fx.AzulRenderer::onScroll);
         // The Duelo de Expansões minigame's keys.
         NeoForge.EVENT_BUS.addListener(InputEvent.Key.class, com.starkinhon.battlegroundsmod.client.fx.DuelScene::onKey);

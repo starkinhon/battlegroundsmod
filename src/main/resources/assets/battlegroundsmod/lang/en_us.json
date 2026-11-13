@@ -950,6 +950,10 @@
   "message.battlegroundsmod.shenlong_done": "Shenron: Your wish has been granted. Farewell!",
   "message.battlegroundsmod.flight_tired": "No energy to fly: eat something.",
   "message.battlegroundsmod.flight_tired_stamina": "Out of breath: gliding down to land. Standing still in the air or on the ground brings it back.",
+  "message.battlegroundsmod.air_reflect": "Perfect guard: the ki ball goes back!",
+  "message.battlegroundsmod.air_guard_investida": "Rush guarded: they are open!",
+  "message.battlegroundsmod.air_guard_martelo": "Hammer guarded: they are open!",
+  "message.battlegroundsmod.air_guard_forte": "Strong guarded: they are open!",
   "message.battlegroundsmod.technique_learned": "Technique learned",
   "technique.battlegroundsmod.voo": "Flight: jump twice to fly",
   "hud.battlegroundsmod.scouter.idle": "Scouter: scanning...",
@@ -2123,5 +2127,8 @@
   "item.battlegroundsmod.yamu_spawn_egg": "Yamu Spawn Egg",
   "entity.battlegroundsmod.babidi": "Babidi",
   "item.battlegroundsmod.babidi_spawn_egg": "Babidi Spawn Egg",
-  "message.battlegroundsmod.dragao_domado": "The dragon trusts you now. Right click to ride."
+  "message.battlegroundsmod.dragao_domado": "The dragon trusts you now. Right click to ride.",
+  "fala.battlegroundsmod.ceu.freeza_ameaca": "Get out of my sight, worm... before I change my mind.",
+  "fala.battlegroundsmod.ceu.vegeta_treinar": "Hmph. Too weak. Go train, worm, and come back when you are worthy of fighting me.",
+  "fala.battlegroundsmod.ceu.vegeta_desafio": "I am the prince of all Saiyans! I will prove I am stronger than you!"
 }
