@@ -77,6 +77,8 @@ public final class DevComandos {
             "/dev depois <ticks> <comando>  - roda o comando uma vez daqui N ticks",
             "/dev preparar  - dia fixo, sem chuva, sem mobs nascendo",
             "/dev info <alvos>  - vida, posição, alvo, travas (também vai pro latest.log)",
+            "/dev tecnica <id> [tirar]  - ensina (ou tira) uma técnica de universo pra você (ex.: voo, sennin, reversao)",
+            "/dev voo  - modo de jogo, mayfly, voando, velocidade do voo, posição e velocidade (vai pro latest.log)",
             "Cliente: /devc ajuda (roteiro, teclas, câmera, print, gravar)"};
 
     @SubscribeEvent
@@ -150,7 +152,39 @@ public final class DevComandos {
         root.then(Commands.literal("info")
                 .then(Commands.argument("alvos", EntityArgument.entities())
                         .executes(c -> info(c.getSource(), EntityArgument.getEntities(c, "alvos")))));
+        root.then(Commands.literal("tecnica")
+                .then(Commands.argument("id", StringArgumentType.word())
+                        .executes(c -> tecnica(c.getSource(), StringArgumentType.getString(c, "id"), false))
+                        .then(Commands.literal("tirar")
+                                .executes(c -> tecnica(c.getSource(), StringArgumentType.getString(c, "id"), true)))));
+        root.then(Commands.literal("voo").executes(c -> voo(c.getSource())));
         dispatcher.register(root);
+    }
+
+    // Técnicas de universo (ModAttachments.TECHNIQUES) sem precisar achar o NPC que ensina.
+    private static int tecnica(CommandSourceStack source, String id, boolean tirar) throws CommandSyntaxException {
+        ServerPlayer player = source.getPlayerOrException();
+        List<String> lista = new ArrayList<>(player.getData(ModAttachments.TECHNIQUES));
+        if (tirar) {
+            lista.remove(id);
+        } else if (!lista.contains(id)) {
+            lista.add(id);
+        }
+        player.setData(ModAttachments.TECHNIQUES, List.copyOf(lista));
+        dizer(source, "técnicas: " + lista);
+        return 1;
+    }
+
+    // Estado do voo (o do Minecraft e o voo DB), pra roteiros que testam voo e troca de modo de jogo.
+    private static int voo(CommandSourceStack source) throws CommandSyntaxException {
+        ServerPlayer player = source.getPlayerOrException();
+        var ab = player.getAbilities();
+        Vec3 pos = player.position();
+        Vec3 vel = player.getDeltaMovement();
+        dizer(source, String.format(java.util.Locale.ROOT, "voo: modo=%s mayfly=%s voando=%s flySpeed=%.4f pos=%.2f %.2f %.2f vel=%.3f %.3f %.3f",
+                player.gameMode.getGameModeForPlayer().getName(), ab.mayfly, ab.flying, ab.getFlyingSpeed(),
+                pos.x, pos.y, pos.z, vel.x, vel.y, vel.z));
+        return 1;
     }
 
     private static int ajuda(CommandSourceStack source) {

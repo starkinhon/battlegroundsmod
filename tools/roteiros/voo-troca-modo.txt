@@ -1,0 +1,69 @@
+# Voo DB e troca de modo de jogo (PR #320): voar no survival, parar, trocar pro criativo e pro espectador e voar.
+# Rodar: gradlew runClient -Pmundo=SoulsDev -Proteiro=voo-troca-modo
+# Esperado: no voo DB flySpeed=0 (o cliente move); no criativo/espectador flySpeed=0.05 e a posição muda com W.
+/devc fechar
+/dev preparar
+/devc hud on
+/gamemode survival
+/dev tecnica voo
+/tp @s ~ ~ ~ 0 0
+espera 30
+/devc camera tras 6 2
+/devc gravar voo320/troca-modo 3
+/dev voo
+# decola: Espaço 2x
+/devc tecla espaco 2
+espera 5
+/devc tecla espaco 2
+espera 10
+/devc tecla espaco 20
+espera 25
+/devc marca voo DB voando
+/dev voo
+/devc tecla frente 30
+espera 15
+/dev voo
+espera 20
+# parado no ar
+espera 30
+/devc marca voo DB parado
+/dev voo
+/gamemode creative
+espera 10
+/devc marca criativo
+/dev voo
+/devc tecla frente 40
+espera 20
+/dev voo
+espera 25
+/dev voo
+/devc tecla espaco 20
+espera 25
+/dev voo
+/gamemode spectator
+espera 10
+/devc marca espectador
+/dev voo
+/devc tecla frente 40
+espera 20
+/dev voo
+espera 25
+/dev voo
+# volta pro survival no ar e decola de novo com o voo DB
+/gamemode survival
+espera 10
+/devc marca survival de novo
+/dev voo
+/devc tecla espaco 2
+espera 5
+/devc tecla espaco 2
+espera 10
+/devc tecla frente 30
+espera 15
+/dev voo
+espera 30
+/devc gravar parar
+/gamemode creative
+/devc camera jogador
+espera 20
+sair
