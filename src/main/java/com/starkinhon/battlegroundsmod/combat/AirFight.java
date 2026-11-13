@@ -173,7 +173,7 @@ public final class AirFight {
             }
             if (!dodged[0] && dist < 5 && target instanceof SoulBoss boss && boss.air() != null) {
                 dodged[0] = true;
-                if (level.random.nextDouble() < 0.08 && boss.air().zanzoken(player)) {
+                if (level.random.nextDouble() < 0.15 && boss.air().zanzoken(player)) {
                     end(player, data);
                     return true;
                 }

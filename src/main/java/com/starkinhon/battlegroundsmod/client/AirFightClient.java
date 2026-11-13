@@ -201,14 +201,12 @@ public final class AirFightClient {
             exDir = null;
             Vec3 flat = hz > 0.8 ? new Vec3(dv.x / hz, 0, dv.z / hz) : Vec3.directionFromRotation(0, player.getYRot());
             Vec3 right = new Vec3(-flat.z, 0, flat.x);
-            // Stark's 4th play: "a câmera tá meio desordenada". The page's tilt along the line (up to 0.5 rad) put the
-            // camera under the player looking at the sky whenever the target flew higher; here it stays near level,
-            // a bit above the shoulder, and looks closer to the player so both stay in the frame.
-            double el = Mth.clamp(Math.atan2(dv.y, Math.max(hz, 0.01)), -0.25, 0.25);
+            // exactly the page's numbers (Stark 2026-11-13: "copia exatamente a prévia")
+            double el = Mth.clamp(Math.atan2(dv.y, Math.max(hz, 0.01)), -0.5, 0.5);
             Vec3 back = flat.scale(Math.cos(el)).add(0, Math.sin(el), 0);
-            double side = 1.1 + 1.2 * Mth.clamp((7 - dl) / 5, 0, 1);
-            want = head.add(back.scale(-4.6)).add(0, 1.0, 0).add(right.scale(-side));
-            at = head.lerp(mc, Mth.clamp(1 - 2.5 / Math.max(dl, 0.1), 0.3, 0.6));
+            double side = 1.3 + 1.6 * Mth.clamp((7 - dl) / 5, 0, 1);
+            want = head.add(back.scale(-5.4)).add(0, 0.9, 0).add(right.scale(-side));
+            at = head.lerp(mc, Mth.clamp(1 - 2.5 / Math.max(dl, 0.1), 0.45, 0.8));
         }
         if (camPos == null) {
             camPos = want;
