@@ -274,6 +274,10 @@ LIGHT_LEVEL = {'glowstone': 15, 'sea_lantern': 15, 'shroomlight': 15, 'froglight
                'soul_lantern': 10, 'soul_torch': 10, 'soul_fire': 10, 'soul_campfire': 10, 'redstone_lamp[lit=true': 15}
 
 def light_of(state):
+    if state.split(':')[-1].startswith('light[') or state.split(':')[-1] == 'light':
+        import re
+        m = re.search(r'level=(\d+)', state)
+        return int(m.group(1)) if m else 15     # the invisible light block (lib.illuminate)
     best = 0
     for k, l in LIGHT_LEVEL.items():
         if k in state:
@@ -342,9 +346,10 @@ def brightness(sky, blk):
 
 def build(vox, atlas, tints=None, sky=15):
     tints = dict(TINT, **(tints or {}))
-    blocks = {k: v for k, v in vox.b.items() if v and _id(v.split('[')[0]) not in ('air', 'barrier', 'structure_void')}
+    lit = {k: v for k, v in vox.b.items() if v and _id(v.split('[')[0]) not in ('air', 'barrier', 'structure_void')}
+    blocks = {k: v for k, v in lit.items() if _id(v.split('[')[0]) != 'light'}     # light blocks glow, unseen
     full = {k for k, v in blocks.items() if is_full(v)}
-    light = Light(blocks, full, sky)
+    light = Light(lit, full, sky)
     opaque, trans = Mesh(), Mesh()
     def solid(x, y, z):
         return (x, y, z) in full

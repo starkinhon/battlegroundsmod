@@ -435,7 +435,7 @@ for _c in ('white', 'orange', 'magenta', 'light_blue', 'yellow', 'lime', 'pink',
     GRAVITY[_c + '_concrete_powder'] = _c + '_concrete'
 PASSABLE = ('short_grass', 'tall_grass', 'fern', 'large_fern', 'dead_bush', 'moss_carpet', 'snow', 'dandelion', 'poppy',
             'cornflower', 'azure_bluet', 'oxeye_daisy', 'allium', 'lily_of_the_valley', 'pink_petals', 'sweet_berry_bush',
-            'rail', 'redstone_wire', 'torch', 'fire')
+            'rail', 'redstone_wire', 'torch', 'fire', 'light')
 
 def _name(b):
     return b.split(':', 1)[-1].split('[')[0]
@@ -527,4 +527,36 @@ def underlay(v, R, depth=10, reach=6):
                 if y < top:
                     v.b[(x, y, z)] = mat or 'minecraft:stone'
                     n += 1
+    return n
+
+def illuminate(v, R, altura, target=11, level=14, step=6, reach=12, open_sky=False):
+    """Stark 2026-11-13: the closed arenas (Ino's hall, Nanami's sewer, the Infinity Castle, the hideout, the metro) came
+    out pitch black in the game. Invisible light blocks on a grid fill the covered air of the fight (and the scenery just
+    past it) wherever the light, counted as in daytime, is below `target`; open sky gets none, so the night arenas keep
+    their night (open_sky: a place that is never under a sky, like the Infinity Castle, is lit everywhere). Kept off the ring of the invisible wall and its ceiling so the barriers stay closed."""
+    import mesher
+    pad = R + reach
+    sub = {k: b for k, b in v.b.items() if abs(k[0]) <= pad + 16 and abs(k[2]) <= pad + 16 and -24 <= k[1] <= altura + 24
+           and b and _name(b) != 'air'}
+    if not sub:
+        return 0
+    full = {k for k, b in sub.items() if mesher.is_full(b)}
+    L = mesher.Light(sub, full, 0 if open_sky else 15)
+    n = 0
+    top = altura - 2
+    for x in range(-pad, pad + 1, step):
+        for z in range(-pad, pad + 1, step):
+            r = math.hypot(x, z)
+            if r > pad or R - 2 <= r <= R + 2:
+                continue
+            for y in range(1, top + 1, 4):
+                if not _free(v, x, y, z) or v.b.get((x, y, z)) is not None:
+                    continue
+                if not open_sky and not any(_ground(v, x, yy, z) for yy in range(y + 1, y + 60)):
+                    continue                                # open sky above: leave it to the sky
+                s_, b_ = L.at(x, y, z)
+                if max(s_, b_) >= target:
+                    continue
+                v.b[(x, y, z)] = 'minecraft:light[level=%d]' % level
+                n += 1
     return n

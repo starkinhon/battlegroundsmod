@@ -27,9 +27,10 @@ def main():
     for aid in want:
         t = time.time()
         v, m = ARENAS[aid]()
-        from lib import support_gravity, safe_spawn, underlay
+        from lib import support_gravity, safe_spawn, underlay, illuminate
         fixed = support_gravity(v)
         underlay(v, m['R'])
+        lights = illuminate(v, m['R'], m['altura'], open_sky=m.get('skyLight', 15) == 0)
         for k in ('jogador', 'desafiante'):
             m[k] = safe_spawn(v, m[k])
         from furni import finish
@@ -42,7 +43,7 @@ def main():
         if mod_dir:
             import modexport
             modexport.export(mod_dir, aid, v, m)
-        print(aid, m['blocks'], 'blocks', m['quads'], 'quads', '%.1fs' % (time.time() - t), flush=True)
+        print(aid, lights, 'luzes', m['blocks'], 'blocks', m['quads'], 'quads', '%.1fs' % (time.time() - t), flush=True)
     # one atlas for everything built in this run (re-run all arenas together for the final page)
     atlas.save(os.path.join(out, 'atlas.png'), os.path.join(out, 'atlas.json'))
     aj = json.load(open(os.path.join(out, 'atlas.json')))
