@@ -46,6 +46,11 @@ public final class JjkGen {
         return StrictMath.sin(a);
     }
 
+    // V8's Math.atan2 is fdlibm's, as StrictMath's.
+    public static double atan2(double y, double x) {
+        return StrictMath.atan2(y, x);
+    }
+
     public static int floor(double a) {
         return (int) Math.floor(a);
     }

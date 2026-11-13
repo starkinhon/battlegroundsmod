@@ -44,6 +44,14 @@ BIOMES = {
         sky="#5a9ad8", fog="#cfe2c6", water="#3a7a8a", water_fog="#1a3a40", grass="#4e8a34", foliage="#367f2e",
         particle=("minecraft:spore_blossom_air", 0.004),
         creature=[mob("minecraft:rabbit", 6, 2, 3), mob("minecraft:fox", 4, 2, 3)], ambient=[mob("minecraft:bat", 10, 8, 8)]),
+    "terras_do_jogo": dict(
+        pt="Terras do Jogo", en="Jogo's Lands", temp=2.0, down=0.0, rain=False,
+        sky="#6a4a3a", fog="#8a5a40", water="#6ab0b8", water_fog="#3a6a70", grass="#5a5040", foliage="#4a4030",
+        particle=("minecraft:white_ash", 0.02),
+        loop="minecraft:ambient.basalt_deltas.loop",
+        additions=("minecraft:ambient.basalt_deltas.additions", 0.0111),
+        mood="minecraft:ambient.basalt_deltas.mood",
+        creature=[], ambient=[]),
 }
 
 

@@ -1808,5 +1808,16 @@
   "block.battlegroundsmod.ponta_do_botao": "Bud Tip",
   "block.battlegroundsmod.oco_de_hanami": "Hanami's Hollow",
   "block.battlegroundsmod.cipo_de_hanami": "Hanami Vine",
-  "biome.battlegroundsmod.floresta_de_hanami": "Hanami's Forest"
+  "biome.battlegroundsmod.floresta_de_hanami": "Hanami's Forest",
+  "block.battlegroundsmod.basalto_do_jogo": "Jogo's Basalt",
+  "block.battlegroundsmod.basalto_escuro_do_jogo": "Jogo's Dark Basalt",
+  "block.battlegroundsmod.cinza_vulcanica": "Volcanic Ash",
+  "block.battlegroundsmod.basalto_rachado_de_magma": "Magma-Cracked Basalt",
+  "block.battlegroundsmod.coluna_de_basalto": "Basalt Column",
+  "block.battlegroundsmod.topo_de_coluna": "Column Top",
+  "block.battlegroundsmod.enxofre": "Sulfur",
+  "block.battlegroundsmod.rocha_derretida": "Molten Rock",
+  "block.battlegroundsmod.escoria": "Cinder",
+  "block.battlegroundsmod.faixa_de_ferro": "Iron Band",
+  "biome.battlegroundsmod.terras_do_jogo": "Jogo's Lands"
 }

@@ -111,6 +111,19 @@ public final class JujutsuBlocks {
     public static final DeferredBlock<ThinPlantBlock> HANAMI_VINE = plant("cipo_de_hanami", MapColor.PLANT, 0, SoundType.VINE,
             Block.box(2, 0, 2, 14, 16, 14));
 
+    // ---- Terras do Jogo: the basalt in two tones, the volcanic ash, the basalt cracked with glowing magma, the basalt
+    // columns and their tops, the sulfur, the molten rock of the meteor (glowing), the cinders, the volcano's iron bands.
+    public static final DeferredBlock<Block> JOGO_BASALT = stone("basalto_do_jogo", MapColor.COLOR_BLACK, 0);
+    public static final DeferredBlock<Block> JOGO_BASALT_DARK = stone("basalto_escuro_do_jogo", MapColor.COLOR_BLACK, 0);
+    public static final DeferredBlock<Block> VOLCANIC_ASH = cube("cinza_vulcanica", MapColor.COLOR_GRAY, 0.5f, SoundType.SAND, 0);
+    public static final DeferredBlock<Block> MAGMA_CRACKED_BASALT = stone("basalto_rachado_de_magma", MapColor.COLOR_ORANGE, 12);
+    public static final DeferredBlock<Block> BASALT_COLUMN = stone("coluna_de_basalto", MapColor.COLOR_GRAY, 0);
+    public static final DeferredBlock<Block> COLUMN_TOP = stone("topo_de_coluna", MapColor.COLOR_GRAY, 0);
+    public static final DeferredBlock<Block> SULFUR = cube("enxofre", MapColor.COLOR_YELLOW, 0.8f, SoundType.TUFF, 0);
+    public static final DeferredBlock<Block> MOLTEN_ROCK = stone("rocha_derretida", MapColor.COLOR_RED, 9);
+    public static final DeferredBlock<Block> CINDER = cube("escoria", MapColor.TERRACOTTA_BROWN, 0.6f, SoundType.GRAVEL, 0);
+    public static final DeferredBlock<Block> IRON_BAND = stone("faixa_de_ferro", MapColor.TERRACOTTA_BROWN, 0);
+
     private JujutsuBlocks() {
     }
 

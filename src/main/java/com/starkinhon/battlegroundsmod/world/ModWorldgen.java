@@ -93,6 +93,9 @@ public final class ModWorldgen {
     // The Floresta de Hanami's ancient trees, giant flowers and mushrooms, stakes and buds, and the Coração da Hanami.
     public static final Supplier<HanamiFeature> HANAMI_FEATURE = FEATURES.register("floresta_de_hanami",
             () -> new HanamiFeature(NoneFeatureConfiguration.CODEC));
+    // The Terras do Jogo's basalt fields, lava rivers, columns, fumaroles and hot springs, and the volcano with its meteor.
+    public static final Supplier<JogoFeature> JOGO_FEATURE = FEATURES.register("terras_do_jogo",
+            () -> new JogoFeature(NoneFeatureConfiguration.CODEC));
 
     // The Naruto biomes of the normal overworld (put there by NarutoRegion).
     public static final ResourceKey<Biome> FLORESTA_DA_FOLHA = biome("floresta_da_folha");
@@ -111,6 +114,7 @@ public final class ModWorldgen {
     public static final ResourceKey<Biome> ALDEIA_AMALDICOADA = biome("aldeia_amaldicoada");
     public static final ResourceKey<Biome> MAR_DE_DAGON = biome("mar_de_dagon");
     public static final ResourceKey<Biome> FLORESTA_DE_HANAMI = biome("floresta_de_hanami");
+    public static final ResourceKey<Biome> TERRAS_DO_JOGO = biome("terras_do_jogo");
     public static final TagKey<Biome> JUJUTSU_BIOMES = TagKey.create(Registries.BIOME,
             ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "universe_jujutsu"));
 

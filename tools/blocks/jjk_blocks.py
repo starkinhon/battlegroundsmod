@@ -351,6 +351,18 @@ BIOMES = {
         ("oco_de_hanami", "cube", "axe", ("glowing", 3431, rgb("#0c0806"), rgb("#2a4a1a")), "Oco de Hanami", "Hanami's Hollow"),
         ("cipo_de_hanami", "cross", None, ("cross_plant", 3433, rgb("#3a8a2e"), "vine"), "Cipó de Hanami", "Hanami Vine"),
     ],
+    "jogo": [
+        ("basalto_do_jogo", "cube", "pickaxe", ("speckle", 3501, rgb("#3a3634"), 0.14), "Basalto do Jogo", "Jogo's Basalt"),
+        ("basalto_escuro_do_jogo", "cube", "pickaxe", ("speckle", 3503, rgb("#2a2624"), 0.16), "Basalto Escuro do Jogo", "Jogo's Dark Basalt"),
+        ("cinza_vulcanica", "cube", "shovel", ("speckle", 3505, rgb("#6e6662"), 0.1), "Cinza Vulcânica", "Volcanic Ash"),
+        ("basalto_rachado_de_magma", "cube", "pickaxe", ("glow", 3507, rgb("#2a2624"), rgb("#ff7a2a")), "Basalto Rachado de Magma", "Magma-Cracked Basalt"),
+        ("coluna_de_basalto", "cube", "pickaxe", ("bark", 3509, rgb("#4a4644"), 0.16), "Coluna de Basalto", "Basalt Column"),
+        ("topo_de_coluna", "cube", "pickaxe", ("speckle", 3511, rgb("#5a5552"), 0.1), "Topo de Coluna", "Column Top"),
+        ("enxofre", "cube", "pickaxe", ("speckle", 3513, rgb("#d8c040"), 0.2), "Enxofre", "Sulfur"),
+        ("rocha_derretida", "cube", "pickaxe", ("glow", 3515, rgb("#3a1e14"), rgb("#ff5a14")), "Rocha Derretida", "Molten Rock"),
+        ("escoria", "cube", "shovel", ("speckle", 3517, rgb("#5a3a30"), 0.18), "Escória", "Cinder"),
+        ("faixa_de_ferro", "cube", "pickaxe", ("speckle", 3519, rgb("#6a4a3a"), 0.16), "Faixa de Ferro", "Iron Band"),
+    ],
 }
 
 

@@ -1818,5 +1818,16 @@
   "block.battlegroundsmod.ponta_do_botao": "Ponta do Botão",
   "block.battlegroundsmod.oco_de_hanami": "Oco de Hanami",
   "block.battlegroundsmod.cipo_de_hanami": "Cipó de Hanami",
-  "biome.battlegroundsmod.floresta_de_hanami": "Floresta de Hanami"
+  "biome.battlegroundsmod.floresta_de_hanami": "Floresta de Hanami",
+  "block.battlegroundsmod.basalto_do_jogo": "Basalto do Jogo",
+  "block.battlegroundsmod.basalto_escuro_do_jogo": "Basalto Escuro do Jogo",
+  "block.battlegroundsmod.cinza_vulcanica": "Cinza Vulcânica",
+  "block.battlegroundsmod.basalto_rachado_de_magma": "Basalto Rachado de Magma",
+  "block.battlegroundsmod.coluna_de_basalto": "Coluna de Basalto",
+  "block.battlegroundsmod.topo_de_coluna": "Topo de Coluna",
+  "block.battlegroundsmod.enxofre": "Enxofre",
+  "block.battlegroundsmod.rocha_derretida": "Rocha Derretida",
+  "block.battlegroundsmod.escoria": "Escória",
+  "block.battlegroundsmod.faixa_de_ferro": "Faixa de Ferro",
+  "biome.battlegroundsmod.terras_do_jogo": "Terras do Jogo"
 }
