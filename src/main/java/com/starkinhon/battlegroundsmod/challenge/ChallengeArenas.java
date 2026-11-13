@@ -711,6 +711,26 @@ public final class ChallengeArenas {
             };
         }
 
+        // Stark's PC test 2026-11-13: after 28 arenas in a row the Makima's chunks never loaded and the game then spun
+        // forever in "Saving worlds" (a chunk holder kept a generation claim). What the first missing chunk is doing.
+        private void logStuck(int cx, int cz, int missing) {
+            String info;
+            try {
+                java.lang.reflect.Method m = net.minecraft.server.level.ChunkMap.class.getDeclaredMethod("getUpdatingChunkIfPresent", long.class);
+                m.setAccessible(true);
+                Object h = m.invoke(level.getChunkSource().chunkMap, net.minecraft.world.level.ChunkPos.asLong(cx, cz));
+                if (h instanceof net.minecraft.server.level.ChunkHolder holder) {
+                    info = "status " + holder.getLatestStatus() + ", nível " + holder.getTicketLevel() + ", geração " + holder.getGenerationRefCount()
+                            + ", pendentes " + level.getChunkSource().getPendingTasksCount();
+                } else {
+                    info = "sem holder";
+                }
+            } catch (ReflectiveOperationException | RuntimeException e) {
+                info = "? (" + e + ")";
+            }
+            BattlegroundsMod.LOGGER.warn("[arena] {} esperando chunks há {} ticks: faltam {}, primeiro {} {}: {}", t.id, chunkWaitTicks, missing, cx, cz, info);
+        }
+
         void release() {
             if (ticketed) {
                 level.getChunkSource().removeRegionTicket(ARENA_TICKET, ticketAt, ticketRadius, ticketAt);
@@ -762,6 +782,9 @@ public final class ChallengeArenas {
                         }
                         if (cursor < total) {
                             chunkWaitTicks++;
+                            if (chunkWaitTicks % 200 == 0) {
+                                logStuck(minCx + cursor % w, minCz + cursor / w, total - cursor);
+                            }
                             return false;            // still loading: try again next tick
                         }
                         chunkCount = total;
