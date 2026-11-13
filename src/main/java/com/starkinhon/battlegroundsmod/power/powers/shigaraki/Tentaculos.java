@@ -30,7 +30,30 @@ public final class Tentaculos {
     private static final float DAMAGE = 90, BODY_SPEED = 2.4f;
     private static final int MAX_STRUCT = 8, MAX_GROUND = 60;
 
+    // The shockwave as the tentacles burst out of his back (Stark, 2026-11-13): whoever is within BLAST_RADIUS flies some
+    // 30-40 blocks away, so the homing tentacles have the room to chase them down.
+    private static final int BLAST = 10;
+    private static final double BLAST_RADIUS = 12, BLAST_SPEED = 3.4, BLAST_UP = 0.7;
+
     private Tentaculos() {
+    }
+
+    private static void blast(ServerLevel level, LivingEntity caster, Vec3 feet) {
+        com.starkinhon.battlegroundsmod.fx.Smoke.shockwave(level, feet.add(0, 0.1, 0), 0x5A0E0E, BLAST_RADIUS);
+        SubCommon.sound(level, feet, SoundEvents.GENERIC_EXPLODE.value(), 2.5f, 0.55f);
+        SubCommon.sound(level, feet, SoundEvents.WARDEN_SONIC_BOOM, 1.6f, 0.6f);
+        for (LivingEntity e : Combat.inRadius(level, feet, BLAST_RADIUS, caster)) {
+            Vec3 away = new Vec3(e.getX() - feet.x, 0, e.getZ() - feet.z);
+            if (away.lengthSqr() < 1e-4) {
+                away = Combat.flatLook(caster);
+            }
+            // in the air the drag (0.91 a tick) takes BLAST_SPEED to about 30 blocks before it lands, a bit more from
+            // farther out; the same push near or far, so everyone ends up out there
+            away = away.normalize().scale(BLAST_SPEED);
+            e.setDeltaMovement(away.x, BLAST_UP, away.z);
+            e.hurtMarked = true;
+            e.hasImpulse = true;
+        }
     }
 
     public static boolean use(LivingEntity caster, ServerLevel level) {
@@ -59,6 +82,9 @@ public final class Tentaculos {
             float t = age / 20f;
             float[] aim = mark != null && mark.isAlive() && mark.level() == level
                     ? TentacleSpine.toFrame(mark.getX(), mark.getY() + 0.4, mark.getZ(), feet.x, feet.y, feet.z, yaw) : null;
+            if (age == BLAST) {
+                blast(level, caster, feet);
+            }
             if (age == 9 || age == 16) {
                 SubCommon.sound(level, feet.add(0, 1.5, 0), SoundEvents.SCULK_SHRIEKER_SHRIEK, 1.2f, 0.5f);
             }

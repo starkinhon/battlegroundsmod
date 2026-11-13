@@ -221,7 +221,8 @@ public final class TentacleSpine {
         if (w <= 0) {
             return;
         }
-        float ax = clamp(aim[0], -16, 16), ay = clamp(aim[1], 0, 10), az = clamp(aim[2], 6, 28);
+        // as far as the Tentáculos' shockwave throws them (some 30-40 blocks)
+        float ax = clamp(aim[0], -20, 20), ay = clamp(aim[1], 0, 10), az = clamp(aim[2], 6, 36);
         float dx = (ax - REF[0]) * w, dy = (ay - REF[1]) * w, dz = (az - REF[2]) * w;
         float[] share = {0.25f, 0.55f, 1};
         for (int i = 0; i < 3; i++) {
