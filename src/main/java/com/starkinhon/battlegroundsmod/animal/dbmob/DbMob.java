@@ -268,6 +268,8 @@ public class DbMob extends NarutoMob {
     }
 
     private int rideCool;
+    // a click that came during the breath or the pace waits a little, instead of being lost (test 2026-11-13: one click in two did nothing)
+    private int rideQueued;
 
     @Override
     public void tick() {
@@ -275,18 +277,33 @@ public class DbMob extends NarutoMob {
         if (rideCool > 0) {
             rideCool--;
         }
+        if (rideQueued > 0 && !level().isClientSide) {
+            rideQueued--;
+            if (getControllingPassenger() instanceof Player rider && !attacking() && rideCool <= 0) {
+                rideQueued = 0;
+                breathe(rider);
+            }
+        }
     }
 
     // Ridden: left click breathes fire where the rider looks (PunchInput / the Punch payload).
     public boolean rideFire(Player player) {
-        // its own pace when ridden (2.5 s), not the wild cooldown of 8 s (test 2026-11-13: the rider's clicks fell on it)
-        if (!isDragon() || getControllingPassenger() != player || attacking() || rideCool > 0) {
-            return isDragon() && getControllingPassenger() == player;
+        if (!isDragon() || getControllingPassenger() != player) {
+            return false;
         }
+        // its own pace when ridden (2.5 s), not the wild cooldown of 8 s (test 2026-11-13: the rider's clicks fell on it)
+        if (attacking() || rideCool > 0) {
+            rideQueued = 20;
+            return true;
+        }
+        breathe(player);
+        return true;
+    }
+
+    private void breathe(Player player) {
         LivingEntity aim = com.starkinhon.battlegroundsmod.power.powers.sub.SubCommon.aimed(player, 12);
         DbMobMoves.rideFire(this, player, aim);
         rideCool = 50;
-        return true;
     }
 
     @Override

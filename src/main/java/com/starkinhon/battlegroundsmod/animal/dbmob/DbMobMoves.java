@@ -774,16 +774,21 @@ public final class DbMobMoves {
             }
             // ---------- Dragon: the jet of fire ----------
             case "dragao/fogo" -> {
+                boolean ridden = m.getControllingPassenger() instanceof Player;
                 if (m.getControllingPassenger() instanceof Player rider) {
-                    // ridden: the jet follows where the rider looks, all along
-                    m.setYRot(rider.getYRot());
-                    m.yBodyRot = rider.getYRot();
+                    // ridden: the jet follows where the rider looks, all along (the blow's own facing too, or it turns back)
+                    m.faceBlow(rider.getYRot());
                     AIM.put(m.getId(), rider.getEyePosition().add(rider.getLookAngle().scale(8)));
                 }
                 if (tick == 17) {
                     Vec3 mouth = dragonMouth(m);
                     Vec3 dir = fireDir(m, t);
-                    DmNet.send(level, DmNet.BREATH, m.getId(), mouth, dir.scale(7), 54, 0, 0);
+                    // ridden: a shorter breath (ends at 48), so the rider's next click (2.5 s) never falls inside it
+                    DmNet.send(level, DmNet.BREATH, m.getId(), mouth, dir.scale(7), ridden ? 31 : 54, 0, 0);
+                }
+                if (ridden && tick >= 48) {
+                    m.cutBlow();
+                    return;
                 }
                 if (tick >= 28 && tick <= 70 && tick % 7 == 0) {
                     Vec3 mouth = dragonMouth(m);
@@ -1569,9 +1574,7 @@ public final class DbMobMoves {
 
     static void rideFire(DbMob m, Player rider, @Nullable LivingEntity aim) {
         m.blow(0, aim);
-        m.setYRot(rider.getYRot());
-        m.yBodyRot = rider.getYRot();
-        m.yHeadRot = rider.getYRot();
+        m.faceBlow(rider.getYRot());
         // where the rider looks (the blow's target stays whatever is aimed at, if anything)
         AIM.put(m.getId(), rider.getEyePosition().add(rider.getLookAngle().scale(8)));
     }

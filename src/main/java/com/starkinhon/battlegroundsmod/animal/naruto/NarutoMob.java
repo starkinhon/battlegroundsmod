@@ -462,6 +462,14 @@ public class NarutoMob extends DbCreature {
         return travelYaw;
     }
 
+    // turns the blow under way (a ridden dragon breathes where its rider looks)
+    public void faceBlow(float yaw) {
+        travelYaw = yaw;
+        setYRot(yaw);
+        yBodyRot = yaw;
+        yHeadRot = yaw;
+    }
+
     public Vec3 forward() {
         float yaw = getYRot() * Mth.DEG_TO_RAD;
         return new Vec3(-Mth.sin(yaw), 0, Mth.cos(yaw));
