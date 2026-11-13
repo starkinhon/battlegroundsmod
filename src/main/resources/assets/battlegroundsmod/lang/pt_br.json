@@ -1783,5 +1783,22 @@
   "block.battlegroundsmod.arroz": "Arroz",
   "block.battlegroundsmod.madeira_de_torii_desbotada": "Madeira de Torii Desbotada",
   "block.battlegroundsmod.dique_de_barro": "Dique de Barro",
-  "biome.battlegroundsmod.aldeia_amaldicoada": "Aldeia Amaldiçoada"
+  "biome.battlegroundsmod.aldeia_amaldicoada": "Aldeia Amaldiçoada",
+  "block.battlegroundsmod.areia_de_dagon": "Areia de Dagon",
+  "block.battlegroundsmod.areia_molhada": "Areia Molhada",
+  "block.battlegroundsmod.tronco_de_coqueiro": "Tronco de Coqueiro",
+  "block.battlegroundsmod.folha_de_coqueiro": "Folha de Coqueiro",
+  "block.battlegroundsmod.folha_de_coqueiro_clara": "Folha Clara de Coqueiro",
+  "block.battlegroundsmod.coco": "Coco",
+  "block.battlegroundsmod.coral_rosa": "Coral Rosa",
+  "block.battlegroundsmod.coral_laranja": "Coral Laranja",
+  "block.battlegroundsmod.coral_roxo": "Coral Roxo",
+  "block.battlegroundsmod.coral_amarelo": "Coral Amarelo",
+  "block.battlegroundsmod.concha": "Concha",
+  "block.battlegroundsmod.estrela_do_mar": "Estrela-do-Mar",
+  "block.battlegroundsmod.tentaculo_de_dagon": "Tentáculo de Dagon",
+  "block.battlegroundsmod.tentaculo_de_dagon_escuro": "Tentáculo Escuro de Dagon",
+  "block.battlegroundsmod.ventosa": "Ventosa",
+  "block.battlegroundsmod.abismo": "Abismo",
+  "biome.battlegroundsmod.mar_de_dagon": "Mar de Dagon"
 }

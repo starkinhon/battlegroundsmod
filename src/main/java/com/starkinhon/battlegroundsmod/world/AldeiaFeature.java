@@ -148,14 +148,14 @@ public final class AldeiaFeature extends Feature<NoneFeatureConfiguration> {
             }
         }
 
-        // Into the world: only the chunk's own columns of the biome (a village is written whole, its site has the biome
-        // all around).
+        // Into the world: only the chunk's own columns, the swamp's ground only where the biome is (a village is written
+        // whole, its site has the biome all around).
         w.each((x, y, z, t) -> {
             if (y < minY || y > maxY || x < x0 || x > x1 || z < z0 || z > z1) {
                 return;
             }
-            if (!inBiome[((x - x0) << 4) | (z - z0)] && !near(x, z, sites, AldeiaGen.VILLAGE_REACH)) {
-                return;
+            if (ground(t) && !inBiome[((x - x0) << 4) | (z - z0)] && !near(x, z, sites, AldeiaGen.VILLAGE_REACH)) {
+                return; // the swamp's ground stops at the biome's edge; a cypress over it does not get cut
             }
             pos.set(x, y, z);
             BlockState there = level.getBlockState(pos);
@@ -261,6 +261,11 @@ public final class AldeiaFeature extends Feature<NoneFeatureConfiguration> {
         } catch (ExecutionException e) {
             return null;
         }
+    }
+
+    private static boolean ground(int t) {
+        return t == AldeiaGen.STONE || t == AldeiaGen.DIRT || t == AldeiaGen.MUD || t == AldeiaGen.GRASS || t == AldeiaGen.GRASS_WET
+                || t == AldeiaGen.WATER || t == AldeiaGen.REED || t == AldeiaGen.LILY;
     }
 
     private static boolean soft(int t) {

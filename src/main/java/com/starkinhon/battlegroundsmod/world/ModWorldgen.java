@@ -87,6 +87,9 @@ public final class ModWorldgen {
     // The Aldeia Amaldiçoada's swamp cypresses and the village on stilts with its paddies, shrine and cage shed.
     public static final Supplier<AldeiaFeature> ALDEIA_FEATURE = FEATURES.register("aldeia_amaldicoada",
             () -> new AldeiaFeature(NoneFeatureConfiguration.CODEC));
+    // The Mar de Dagon's coast (sand, reefs, palms, stranded fish) and the Nest with its giant tentacles.
+    public static final Supplier<DagonFeature> DAGON_FEATURE = FEATURES.register("mar_de_dagon",
+            () -> new DagonFeature(NoneFeatureConfiguration.CODEC));
 
     // The Naruto biomes of the normal overworld (put there by NarutoRegion).
     public static final ResourceKey<Biome> FLORESTA_DA_FOLHA = biome("floresta_da_folha");
@@ -103,6 +106,7 @@ public final class ModWorldgen {
     public static final ResourceKey<Biome> TEMPLOS_ANTIGOS = biome("templos_antigos");
     public static final ResourceKey<Biome> FLORESTA_NEGRA = biome("floresta_negra");
     public static final ResourceKey<Biome> ALDEIA_AMALDICOADA = biome("aldeia_amaldicoada");
+    public static final ResourceKey<Biome> MAR_DE_DAGON = biome("mar_de_dagon");
     public static final TagKey<Biome> JUJUTSU_BIOMES = TagKey.create(Registries.BIOME,
             ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "universe_jujutsu"));
 

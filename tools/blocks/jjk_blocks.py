@@ -230,9 +230,45 @@ def blades(seed, base, head=None, droop=False):
     return with_alpha(np.clip(c, 0, 255), a)
 
 
+def beach(seed, base, kind):
+    # seen from above, lying on the sand: a fan shell with its ribs, or a five-armed starfish with its bumps
+    rng = np.random.default_rng(seed)
+    a = np.zeros((N, N))
+    c = np.zeros((N, N, 3))
+    cx, cy = rng.uniform(6.5, 8.5), rng.uniform(6.5, 8.5)
+    ang = np.arctan2(Y + 0.5 - cy, X + 0.5 - cx)
+    d = np.hypot(X + 0.5 - cx, Y + 0.5 - cy)
+    if kind == "shell":
+        rot = rng.uniform(0, 2 * math.pi)
+        rel = (ang - rot + math.pi) % (2 * math.pi) - math.pi
+        m = (np.abs(rel) < 1.25) & (d < 7.0) | (d < 1.8)
+        a[m] = 1
+        k = 0.92 + 0.12 * np.cos(rel * 9) - 0.18 * (d / 7.0) ** 3
+        c[m] = (np.array(base, float)[None, :] * k[m][:, None])
+    else:
+        rot = rng.uniform(0, 2 * math.pi)
+        arm = np.cos(5 * (ang - rot))
+        rr = 2.0 + 4.6 * np.clip(arm, 0, 1) ** 1.2
+        m = d < rr
+        a[m] = 1
+        k = 1.0 - 0.25 * (d / 6.0) + 0.12 * (rng.random((N, N)) < 0.18)
+        c[m] = np.array(base, float)[None, :] * k[m][:, None]
+    return with_alpha(np.clip(c, 0, 255), a)
+
+
+def glowing(seed, base, glint):
+    # living coral: lumpy, pitted, the pits shining with plankton light
+    rng = np.random.default_rng(seed)
+    n = noise(seed, 4) * 0.6 + noise(seed + 1, 8) * 0.4
+    c = shade(base, 0.72 + 0.45 * n + rng.uniform(-0.05, 0.05, (N, N)))
+    pits = (noise(seed + 2, 8) > 0.68) | (rng.random((N, N)) < 0.04)
+    c[pits] = np.array(glint, float) * rng.uniform(0.85, 1.1, (pits.sum(), 1))
+    return opaque(np.clip(c, 0, 255))
+
+
 STYLES = {"speckle": speckle, "bark": bark, "leaves": leaves, "grass_top": grass_top, "glow": glow, "eye": eye,
           "flesh": flesh, "planks": planks, "cross_plant": cross_plant,
-          "thatch": thatch, "paper": paper, "blades": blades}
+          "thatch": thatch, "paper": paper, "blades": blades, "beach": beach, "glowing": glowing}
 
 
 # ---- the blocks -----------------------------------------------------------------------------------------------------
@@ -278,6 +314,24 @@ BIOMES = {
         ("madeira_de_torii_desbotada", "cube", "axe", ("planks", 3235, rgb("#9a4a36"), 0.25), "Madeira de Torii Desbotada", "Faded Torii Wood"),
         ("dique_de_barro", "cube", "shovel", ("speckle", 3237, rgb("#5a4a34"), 0.16), "Dique de Barro", "Clay Dike"),
     ],
+    "dagon": [
+        ("areia_de_dagon", "cube", "shovel", ("speckle", 3301, rgb("#ece2c6"), 0.08), "Areia de Dagon", "Dagon Sand"),
+        ("areia_molhada", "cube", "shovel", ("speckle", 3303, rgb("#d2c4a0"), 0.1), "Areia Molhada", "Wet Sand"),
+        ("tronco_de_coqueiro", "cube", "axe", ("bark", 3305, rgb("#8a6a48"), 0.18), "Tronco de Coqueiro", "Palm Trunk"),
+        ("folha_de_coqueiro", "leaves", "hoe", ("leaves", 3307, rgb("#3e8a2e"), 0.22), "Folha de Coqueiro", "Palm Frond"),
+        ("folha_de_coqueiro_clara", "leaves", "hoe", ("leaves", 3309, rgb("#56a03a"), 0.22), "Folha Clara de Coqueiro", "Light Palm Frond"),
+        ("coco", "cube", "axe", ("speckle", 3311, rgb("#5a3a1e"), 0.2), "Coco", "Coconut"),
+        ("coral_rosa", "cube", "pickaxe", ("glowing", 3313, rgb("#f06a8a"), rgb("#ffb0c8")), "Coral Rosa", "Pink Coral"),
+        ("coral_laranja", "cube", "pickaxe", ("glowing", 3315, rgb("#f0904a"), rgb("#ffc890")), "Coral Laranja", "Orange Coral"),
+        ("coral_roxo", "cube", "pickaxe", ("glowing", 3317, rgb("#9a5ad0"), rgb("#d0a8ff")), "Coral Roxo", "Purple Coral"),
+        ("coral_amarelo", "cube", "pickaxe", ("glowing", 3319, rgb("#e8d04a"), rgb("#fff0a0")), "Coral Amarelo", "Yellow Coral"),
+        ("concha", "flat", None, ("beach", 3321, rgb("#f2d8d0"), "shell"), "Concha", "Seashell"),
+        ("estrela_do_mar", "flat", None, ("beach", 3323, rgb("#e8603a"), "star"), "Estrela-do-Mar", "Starfish"),
+        ("tentaculo_de_dagon", "cube", "pickaxe", ("flesh", 3325, rgb("#b86a5a")), "Tentáculo de Dagon", "Dagon Tentacle"),
+        ("tentaculo_de_dagon_escuro", "cube", "pickaxe", ("flesh", 3327, rgb("#6a2e34")), "Tentáculo Escuro de Dagon", "Dark Dagon Tentacle"),
+        ("ventosa", "cube", "pickaxe", ("flesh", 3329, rgb("#f0c8b8")), "Ventosa", "Sucker"),
+        ("abismo", "cube", "pickaxe", ("speckle", 3331, rgb("#0a0812"), 0.3), "Abismo", "Abyss"),
+    ],
 }
 
 
@@ -322,7 +376,10 @@ def emit():
             Image.fromarray(img.astype(np.uint8), "RGBA").save(A + "textures/block/" + name + ".png")
             write(A + "blockstates/" + name + ".json", {"variants": {"": {"model": "battlegroundsmod:block/" + name}}})
             tx = "battlegroundsmod:block/" + name
-            if kind == "cross":
+            if kind == "flat":
+                write(A + "models/block/" + name + ".json", {"parent": "minecraft:block/carpet", "render_type": "minecraft:cutout", "textures": {"wool": tx, "particle": tx}})
+                write(A + "models/item/" + name + ".json", {"parent": "minecraft:item/generated", "textures": {"layer0": tx}})
+            elif kind == "cross":
                 write(A + "models/block/" + name + ".json", {"parent": "minecraft:block/cross", "render_type": "minecraft:cutout", "textures": {"cross": tx}})
                 write(A + "models/item/" + name + ".json", {"parent": "minecraft:item/generated", "textures": {"layer0": tx}})
             else:

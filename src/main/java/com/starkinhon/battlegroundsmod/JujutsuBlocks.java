@@ -67,6 +67,28 @@ public final class JujutsuBlocks {
     public static final DeferredBlock<Block> FADED_TORII = cube("madeira_de_torii_desbotada", MapColor.TERRACOTTA_RED, 2.0f, SoundType.WOOD, 0);
     public static final DeferredBlock<Block> CLAY_DIKE = cube("dique_de_barro", MapColor.DIRT, 0.6f, SoundType.MUD, 0);
 
+    // ---- Mar de Dagon: the white sand and the wet sand, the coconut palm (trunk, two fronds, coconut), the four living
+    // corals that glow faintly with plankton, the shells and starfish lying on the sand, the tentacles of the Nest (light
+    // and dark flesh, suckers) and the bottomless well.
+    public static final DeferredBlock<Block> DAGON_SAND = cube("areia_de_dagon", MapColor.SAND, 0.5f, SoundType.SAND, 0);
+    public static final DeferredBlock<Block> WET_SAND = cube("areia_molhada", MapColor.SAND, 0.5f, SoundType.SAND, 0);
+    public static final DeferredBlock<Block> PALM_TRUNK = cube("tronco_de_coqueiro", MapColor.WOOD, 2.0f, SoundType.WOOD, 0);
+    public static final DeferredBlock<LeavesBlock> PALM_FROND = leaves("folha_de_coqueiro");
+    public static final DeferredBlock<LeavesBlock> PALM_FROND_LIGHT = leaves("folha_de_coqueiro_clara");
+    public static final DeferredBlock<Block> COCONUT = cube("coco", MapColor.COLOR_BROWN, 1.0f, SoundType.WOOD, 0);
+    public static final DeferredBlock<Block> CORAL_PINK = coral("coral_rosa", MapColor.COLOR_PINK);
+    public static final DeferredBlock<Block> CORAL_ORANGE = coral("coral_laranja", MapColor.COLOR_ORANGE);
+    public static final DeferredBlock<Block> CORAL_PURPLE = coral("coral_roxo", MapColor.COLOR_PURPLE);
+    public static final DeferredBlock<Block> CORAL_YELLOW = coral("coral_amarelo", MapColor.COLOR_YELLOW);
+    public static final DeferredBlock<ThinPlantBlock> SEASHELL = plant("concha", MapColor.SNOW, 0, SoundType.BONE_BLOCK,
+            Block.box(1, 0, 1, 15, 1, 15));
+    public static final DeferredBlock<ThinPlantBlock> STARFISH = plant("estrela_do_mar", MapColor.COLOR_ORANGE, 0, SoundType.SLIME_BLOCK,
+            Block.box(1, 0, 1, 15, 1, 15));
+    public static final DeferredBlock<Block> DAGON_TENTACLE = stone("tentaculo_de_dagon", MapColor.TERRACOTTA_PINK, 0);
+    public static final DeferredBlock<Block> DAGON_TENTACLE_DARK = stone("tentaculo_de_dagon_escuro", MapColor.TERRACOTTA_RED, 0);
+    public static final DeferredBlock<Block> SUCKER = cube("ventosa", MapColor.TERRACOTTA_WHITE, 1.0f, SoundType.SLIME_BLOCK, 0);
+    public static final DeferredBlock<Block> ABYSS = stone("abismo", MapColor.COLOR_BLACK, 0);
+
     private JujutsuBlocks() {
     }
 
@@ -85,6 +107,11 @@ public final class JujutsuBlocks {
     private static DeferredBlock<Block> cube(String name, MapColor color, float strength, SoundType sound, int light) {
         return add(ModBlocks.BLOCKS.registerSimpleBlock(name, BlockBehaviour.Properties.of().mapColor(color).strength(strength)
                 .sound(sound).lightLevel(state -> light)));
+    }
+
+    private static DeferredBlock<Block> coral(String name, MapColor color) {
+        return add(ModBlocks.BLOCKS.registerSimpleBlock(name, BlockBehaviour.Properties.of().mapColor(color)
+                .requiresCorrectToolForDrops().strength(1.5f, 6.0f).sound(SoundType.CORAL_BLOCK).lightLevel(state -> 6)));
     }
 
     private static DeferredBlock<Block> stone(String name, MapColor color, int light) {

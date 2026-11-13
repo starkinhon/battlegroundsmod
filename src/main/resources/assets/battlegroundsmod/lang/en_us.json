@@ -1773,5 +1773,22 @@
   "block.battlegroundsmod.arroz": "Rice",
   "block.battlegroundsmod.madeira_de_torii_desbotada": "Faded Torii Wood",
   "block.battlegroundsmod.dique_de_barro": "Clay Dike",
-  "biome.battlegroundsmod.aldeia_amaldicoada": "Cursed Village"
+  "biome.battlegroundsmod.aldeia_amaldicoada": "Cursed Village",
+  "block.battlegroundsmod.areia_de_dagon": "Dagon Sand",
+  "block.battlegroundsmod.areia_molhada": "Wet Sand",
+  "block.battlegroundsmod.tronco_de_coqueiro": "Palm Trunk",
+  "block.battlegroundsmod.folha_de_coqueiro": "Palm Frond",
+  "block.battlegroundsmod.folha_de_coqueiro_clara": "Light Palm Frond",
+  "block.battlegroundsmod.coco": "Coconut",
+  "block.battlegroundsmod.coral_rosa": "Pink Coral",
+  "block.battlegroundsmod.coral_laranja": "Orange Coral",
+  "block.battlegroundsmod.coral_roxo": "Purple Coral",
+  "block.battlegroundsmod.coral_amarelo": "Yellow Coral",
+  "block.battlegroundsmod.concha": "Seashell",
+  "block.battlegroundsmod.estrela_do_mar": "Starfish",
+  "block.battlegroundsmod.tentaculo_de_dagon": "Dagon Tentacle",
+  "block.battlegroundsmod.tentaculo_de_dagon_escuro": "Dark Dagon Tentacle",
+  "block.battlegroundsmod.ventosa": "Sucker",
+  "block.battlegroundsmod.abismo": "Abyss",
+  "biome.battlegroundsmod.mar_de_dagon": "Dagon's Sea"
 }
