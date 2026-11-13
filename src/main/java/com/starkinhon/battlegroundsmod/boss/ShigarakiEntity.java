@@ -16,6 +16,10 @@ public class ShigarakiEntity extends SoulBoss {
     private ShigarakiTactics tactics;
     // Until this game tick he is kneeling, the five fingers not yet on the ground.
     long kneelUntil;
+    // Armor (half damage) over his long casts, the Tentáculos and the Fim do Mundo after the kneel: rooted 9-10 s, the
+    // Madara hit him for free the whole time (test 2026-11-13).
+    long armorFrom, armorUntil;
+    private static final float ARMOR = 0.5f;
 
     public ShigarakiEntity(EntityType<? extends ShigarakiEntity> type, Level level) {
         super(type, level);
@@ -23,11 +27,14 @@ public class ShigarakiEntity extends SoulBoss {
 
     @Override
     public boolean hurt(DamageSource source, float amount) {
-        boolean kneeling = !level().isClientSide() && level().getGameTime() < kneelUntil;
-        boolean hurt = super.hurt(source, amount);
+        long now = level().getGameTime();
+        boolean kneeling = !level().isClientSide() && now < kneelUntil;
+        boolean armored = !level().isClientSide() && now >= armorFrom && now < armorUntil;
+        boolean hurt = super.hurt(source, armored ? amount * ARMOR : amount);
         if (kneeling && amount >= BREAKS_KNEEL && source.getEntity() != null && source.getEntity() != this) {
             // Cut off: the hand never touches the ground (FimDoMundo watches his interrupts).
             kneelUntil = 0;
+            armorUntil = 0;
             PowerLogic.interrupt(this);
             if (tactics != null) {
                 tactics.endCut();

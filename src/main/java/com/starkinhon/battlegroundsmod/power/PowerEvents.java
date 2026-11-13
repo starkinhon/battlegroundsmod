@@ -269,6 +269,10 @@ public final class PowerEvents {
             return;
         }
         Susanoo.onIncomingDamage(event.getEntity(), event);
+        // A body under Shigaraki's piled-up Decadência takes more from everything.
+        if (!event.isCanceled()) {
+            event.setAmount(event.getAmount() * com.starkinhon.battlegroundsmod.power.powers.shigaraki.Esfarelar.vulnerability(event.getEntity()));
+        }
         // Bosses hit as hard as their file says.
         if (!event.isCanceled() && event.getSource().getEntity() instanceof SoulBoss boss) {
             event.setAmount(event.getAmount() * boss.atributos().multDano());
