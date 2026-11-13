@@ -81,8 +81,12 @@ public final class ChallengeArenas {
     public static final int SPACING = 1024;
     public static final int ROW_Z = 8192;
     private static final int FLOOR_Y = 64;
-    // Blocks checked or placed per tick while an arena is being put back (the biggest has ~600k).
-    private static final int BUILD_BUDGET = 40000;
+    // Server time per tick spent putting an arena back (the tick has 50 ms). Stark's PC test 2026-11-13: a fixed 40k
+    // blocks per tick ate 200-460 ms per tick, mostly generating the void chunks on the main thread; now the chunks are
+    // loaded first by a ticket (worker threads) and the placing stops after this much time.
+    private static final long BUILD_NANOS = 12_000_000L;
+    private static final net.minecraft.server.level.TicketType<net.minecraft.world.level.ChunkPos> ARENA_TICKET =
+            net.minecraft.server.level.TicketType.create("battlegroundsmod_arena", java.util.Comparator.comparingLong(net.minecraft.world.level.ChunkPos::toLong));
     private static final int FLAGS = Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE | Block.UPDATE_SUPPRESS_DROPS;
     private static final int COUNTDOWN = 80;
     private static final int RETURN_DELAY = 240;
@@ -349,6 +353,10 @@ public final class ChallengeArenas {
     }
 
     private static void removeBoss(MinecraftServer server, Session session) {
+        if (session.build != null) {
+            session.build.release();             // left while the arena was still being put back
+            session.build = null;
+        }
         ServerLevel arena = session.arena == null ? null : server.getLevel(session.arena);
         if (arena != null && session.boss != null) {
             Entity boss = arena.getEntity(session.boss);
@@ -381,12 +389,13 @@ public final class ChallengeArenas {
             switch (session.state) {
                 case BUILDING -> {
                     long t0 = System.nanoTime();
-                    boolean ready = session.build.step(BUILD_BUDGET);
+                    boolean ready = session.build.step(BUILD_NANOS);
                     session.buildNanos += System.nanoTime() - t0;
                     if (ready) {
                         // For the tests on Stark's PC: how long the arena took and how much server time it ate.
                         BattlegroundsMod.LOGGER.info("[arena] {} pronta em {} ticks, {} ms de servidor ({} blocos)", session.id,
                                 now - session.buildStart + 1, session.buildNanos / 1_000_000, session.build.t.blocks);
+                        session.build.release();
                         session.build = null;
                         enter(player, arena, session);
                     }
@@ -640,6 +649,9 @@ public final class ChallengeArenas {
         private int cursor;
         private int minCx, maxCx, minCz, maxCz;
         private final List<net.minecraft.world.level.chunk.ChunkAccess> changed = new ArrayList<>();
+        private final net.minecraft.world.level.ChunkPos ticketAt;
+        private final int ticketRadius;
+        private boolean ticketed;
 
         Build(ArenaTemplate t, ArenaTemplate.Meta m, BlockPos c, ServerLevel level) {
             this.t = t;
@@ -659,6 +671,16 @@ public final class ChallengeArenas {
             maxCx = (c.getX() + x1) >> 4;
             minCz = (c.getZ() + z0) >> 4;
             maxCz = (c.getZ() + z1) >> 4;
+            ticketAt = new net.minecraft.world.level.ChunkPos(c);
+            ticketRadius = Math.min(32, Math.max(Math.max(ticketAt.x - minCx, maxCx - ticketAt.x), Math.max(ticketAt.z - minCz, maxCz - ticketAt.z)) + 1);
+            phase = -1;
+        }
+
+        void release() {
+            if (ticketed) {
+                level.getChunkSource().removeRegionTicket(ARENA_TICKET, ticketAt, ticketRadius, ticketAt);
+                ticketed = false;
+            }
         }
 
         private int put(int x, int y, int z, BlockState state) {
@@ -679,12 +701,36 @@ public final class ChallengeArenas {
             return index[(dx + half) * (half * 2 + 1) + dz + half];
         }
 
-        // Returns true when the arena is ready.
-        boolean step(int budget) {
+        // Returns true when the arena is ready. Works until maxNanos of this tick are spent.
+        boolean step(long maxNanos) {
+            long deadline = System.nanoTime() + maxNanos;
             int ops = 0;
             int side = half * 2 + 1;
-            while (ops < budget) {
+            while (true) {
+                if (ops >= 2048) {
+                    ops = 0;
+                    if (System.nanoTime() > deadline) {
+                        return false;
+                    }
+                }
                 switch (phase) {
+                    case -1 -> {
+                        // 0. every chunk of the arena loaded (generated off the main thread) before touching a block
+                        if (!ticketed) {
+                            level.getChunkSource().addRegionTicket(ARENA_TICKET, ticketAt, ticketRadius, ticketAt);
+                            ticketed = true;
+                        }
+                        int w = maxCx - minCx + 1;
+                        int total = w * (maxCz - minCz + 1);
+                        while (cursor < total && level.getChunkSource().getChunkNow(minCx + cursor % w, minCz + cursor / w) != null) {
+                            cursor++;
+                        }
+                        if (cursor < total) {
+                            return false;            // still loading: try again next tick
+                        }
+                        phase = 0;
+                        cursor = 0;
+                    }
                     case 0 -> {
                         if (cursor >= t.columns) {
                             phase = 1;
@@ -757,7 +803,6 @@ public final class ChallengeArenas {
                     }
                 }
             }
-            return false;
         }
 
         private void biome(int cx, int cz) {
