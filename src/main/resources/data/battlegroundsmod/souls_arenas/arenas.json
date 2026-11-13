@@ -1,6 +1,6 @@
 {
  "bills": {
-  "R": 44,
+  "R": 76,
   "altura": 60,
   "jogador": [
    0,
@@ -22,7 +22,7 @@
   "nome": "Planeta do Bills"
  },
  "byakuya": {
-  "R": 40,
+  "R": 60,
   "altura": 46,
   "jogador": [
    0,
@@ -39,12 +39,12 @@
    230
   ],
   "noite": false,
-  "minY": -73,
+  "minY": -103,
   "maxY": 45,
   "nome": "Colina Sokyoku"
  },
  "choso": {
-  "R": 26,
+  "R": 39,
   "altura": 7,
   "jogador": [
    -18,
@@ -61,12 +61,12 @@
    110
   ],
   "noite": true,
-  "minY": -12,
+  "minY": -35,
   "maxY": 177,
   "nome": "Plataforma do metrô"
  },
  "freeza": {
-  "R": 44,
+  "R": 66,
   "altura": 60,
   "jogador": [
    0,
@@ -83,12 +83,12 @@
    230
   ],
   "noite": false,
-  "minY": -13,
+  "minY": -37,
   "maxY": 66,
   "nome": "Namek explodindo"
  },
  "gaara": {
-  "R": 42,
+  "R": 63,
   "altura": 40,
   "jogador": [
    0,
@@ -105,12 +105,12 @@
    220
   ],
   "noite": false,
-  "minY": -11,
+  "minY": -34,
   "maxY": 54,
   "nome": "Deserto de Suna"
  },
  "gojo": {
-  "R": 44,
+  "R": 88,
   "altura": 60,
   "jogador": [
    0,
@@ -127,12 +127,12 @@
    220
   ],
   "noite": false,
-  "minY": -26,
+  "minY": -41,
   "maxY": 65,
   "nome": "Shinjuku"
  },
  "goku": {
-  "R": 36,
+  "R": 47,
   "altura": 60,
   "jogador": [
    0,
@@ -149,12 +149,12 @@
    240
   ],
   "noite": false,
-  "minY": -119,
+  "minY": -142,
   "maxY": 3,
   "nome": "Planeta do Senhor Kaioh"
  },
  "ino": {
-  "R": 30,
+  "R": 45,
   "altura": 28,
   "jogador": [
    0,
@@ -171,12 +171,12 @@
    280
   ],
   "noite": false,
-  "minY": -10,
+  "minY": -33,
   "maxY": 31,
   "nome": "Salão das preliminares"
  },
  "inumaki": {
-  "R": 36,
+  "R": 54,
   "altura": 40,
   "jogador": [
    0,
@@ -193,12 +193,12 @@
    210
   ],
   "noite": false,
-  "minY": -10,
+  "minY": -33,
   "maxY": 46,
   "nome": "Escola Jujutsu de Tóquio"
  },
  "itadori": {
-  "R": 36,
+  "R": 54,
   "altura": 40,
   "jogador": [
    0,
@@ -215,12 +215,12 @@
    190
   ],
   "noite": true,
-  "minY": -26,
+  "minY": -41,
   "maxY": 81,
   "nome": "Cruzamento de Shibuya"
  },
  "joy_boy": {
-  "R": 34,
+  "R": 68,
   "altura": 60,
   "jogador": [
    0,
@@ -242,7 +242,7 @@
   "nome": "Telhado do Domo da Caveira"
  },
  "kakashi": {
-  "R": 38,
+  "R": 57,
   "altura": 34,
   "jogador": [
    0,
@@ -259,12 +259,12 @@
    220
   ],
   "noite": false,
-  "minY": -12,
-  "maxY": 51,
+  "minY": -35,
+  "maxY": 45,
   "nome": "Campo de treino 3"
  },
  "kame": {
-  "R": 36,
+  "R": 54,
   "altura": 40,
   "jogador": [
    0,
@@ -281,12 +281,12 @@
    260
   ],
   "noite": false,
-  "minY": -14,
+  "minY": -39,
   "maxY": 13,
   "nome": "Ilha da Kame House"
  },
  "kokushibo": {
-  "R": 40,
+  "R": 80,
   "altura": 26,
   "jogador": [
    0,
@@ -303,12 +303,12 @@
    150
   ],
   "noite": true,
-  "minY": -69,
+  "minY": -98,
   "maxY": 96,
   "nome": "Castelo Infinito"
  },
  "kuririn": {
-  "R": 36,
+  "R": 54,
   "altura": 40,
   "jogador": [
    0,
@@ -325,12 +325,12 @@
    240
   ],
   "noite": false,
-  "minY": -10,
+  "minY": -33,
   "maxY": 17,
   "nome": "Torneio de Artes Marciais"
  },
  "madara": {
-  "R": 40,
+  "R": 80,
   "altura": 44,
   "jogador": [
    -15,
@@ -347,12 +347,12 @@
    210
   ],
   "noite": false,
-  "minY": -31,
+  "minY": -37,
   "maxY": 83,
   "nome": "Vale do Fim"
  },
  "makima": {
-  "R": 30,
+  "R": 45,
   "altura": 30,
   "jogador": [
    0,
@@ -369,12 +369,12 @@
    320
   ],
   "noite": false,
-  "minY": -50,
+  "minY": -83,
   "maxY": 99,
   "nome": "Telhado da Segurança Pública"
  },
  "miwa": {
-  "R": 36,
+  "R": 54,
   "altura": 40,
   "jogador": [
    0,
@@ -391,12 +391,12 @@
    210
   ],
   "noite": false,
-  "minY": -10,
+  "minY": -33,
   "maxY": 46,
   "nome": "Escola Jujutsu de Kyoto"
  },
  "nanami": {
-  "R": 30,
+  "R": 42,
   "altura": 12,
   "jogador": [
    0,
@@ -413,12 +413,12 @@
    100
   ],
   "noite": false,
-  "minY": -11,
-  "maxY": 19,
+  "minY": -34,
+  "maxY": 17,
   "nome": "Esgoto"
  },
  "naruto": {
-  "R": 40,
+  "R": 60,
   "altura": 40,
   "jogador": [
    0,
@@ -435,12 +435,12 @@
    220
   ],
   "noite": false,
-  "minY": -10,
-  "maxY": 47,
+  "minY": -33,
+  "maxY": 51,
   "nome": "Estádio das finais"
  },
  "nobara": {
-  "R": 38,
+  "R": 57,
   "altura": 13,
   "jogador": [
    -11,
@@ -457,12 +457,12 @@
    200
   ],
   "noite": false,
-  "minY": -11,
+  "minY": -34,
   "maxY": 20,
   "nome": "Ponte Yasohachi"
  },
  "piccolo": {
-  "R": 44,
+  "R": 66,
   "altura": 60,
   "jogador": [
    0,
@@ -479,12 +479,12 @@
    230
   ],
   "noite": false,
-  "minY": -11,
+  "minY": -34,
   "maxY": 57,
   "nome": "Planalto rochoso"
  },
  "rukia": {
-  "R": 42,
+  "R": 63,
   "altura": 44,
   "jogador": [
    0,
@@ -501,12 +501,12 @@
    260
   ],
   "noite": false,
-  "minY": -11,
+  "minY": -35,
   "maxY": 134,
   "nome": "Las Noches"
  },
  "saitama": {
-  "R": 36,
+  "R": 72,
   "altura": 50,
   "jogador": [
    0,
@@ -523,12 +523,12 @@
    260
   ],
   "noite": false,
-  "minY": -15,
+  "minY": -38,
   "maxY": 44,
   "nome": "Cidade Z depois do meteoro"
  },
  "sasuke": {
-  "R": 38,
+  "R": 57,
   "altura": 40,
   "jogador": [
    0,
@@ -537,20 +537,20 @@
   ],
   "desafiante": [
    0,
-   3,
-   -38
+   1,
+   -18
   ],
   "neblina": [
    40,
    160
   ],
   "noite": false,
-  "minY": -10,
+  "minY": -33,
   "maxY": 22,
   "nome": "Esconderijo Uchiha"
  },
  "shigaraki": {
-  "R": 36,
+  "R": 72,
   "altura": 40,
   "jogador": [
    0,
@@ -567,12 +567,12 @@
    170
   ],
   "noite": false,
-  "minY": -15,
+  "minY": -38,
   "maxY": 52,
   "nome": "Cidade Jaku em pó"
  },
  "shikamaru": {
-  "R": 36,
+  "R": 54,
   "altura": 34,
   "jogador": [
    0,
@@ -589,12 +589,12 @@
    130
   ],
   "noite": false,
-  "minY": -10,
+  "minY": -33,
   "maxY": 41,
   "nome": "Floresta dos Nara"
  },
  "sukuna": {
-  "R": 42,
+  "R": 84,
   "altura": 50,
   "jogador": [
    0,
@@ -611,12 +611,12 @@
    180
   ],
   "noite": true,
-  "minY": -26,
-  "maxY": 65,
+  "minY": -41,
+  "maxY": 64,
   "nome": "Shibuya destruída"
  },
  "todo": {
-  "R": 36,
+  "R": 54,
   "altura": 34,
   "jogador": [
    1,
@@ -633,12 +633,12 @@
    120
   ],
   "noite": false,
-  "minY": -12,
+  "minY": -35,
   "maxY": 50,
   "nome": "Floresta do intercâmbio"
  },
  "vegeta": {
-  "R": 44,
+  "R": 66,
   "altura": 60,
   "jogador": [
    0,
@@ -655,7 +655,7 @@
    230
   ],
   "noite": false,
-  "minY": -16,
+  "minY": -39,
   "maxY": 49,
   "nome": "Deserto dos Saiyajins"
  }

@@ -95,6 +95,8 @@ def variants(state):
     bs = _blockstate(ns + ':' + name)
     if bs is None:
         return []
+    if name.endswith('_wall') and 'up' not in props:
+        props = dict(props, up='true')     # the game's default wall state has its post up
     out = []
     def add(v):
         if isinstance(v, list):

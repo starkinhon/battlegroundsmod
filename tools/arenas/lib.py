@@ -359,10 +359,14 @@ def big_tree(v, x, y, z, rng, log='spruce_log', leaves='spruce_leaves[persistent
     """A huge forest tree: thick round trunk with flaring roots, branches high up, wide layered crown."""
     h = height or int(rng.integers(22, 34)); r0 = trunk or rng.uniform(1.6, 2.6)
     lean = rng.normal(0, 0.06, 2)
+    prev = None
     for i in range(-2, h):
         t = max(0, i) / h
         rr = r0 * (1.6 - 0.6 * min(1, t * 4)) * (1 - 0.35 * t)
         cx, cz = x + lean[0] * i, z + lean[1] * i
+        if prev is not None:                  # a thin leaning trunk must not step on a corner: the crown would float
+            v.set(prev[0], y + i, prev[1], log + '[axis=y]')
+        prev = (int(round(cx)), int(round(cz)))
         R = int(rr + 2)
         for dx in range(-R, R + 1):
             for dz in range(-R, R + 1):
@@ -381,6 +385,8 @@ def big_tree(v, x, y, z, rng, log='spruce_log', leaves='spruce_leaves[persistent
         for j in range(int(L)):
             px, pz = int(round(x + math.cos(a) * j)), int(round(z + math.sin(a) * j))
             v.set(px, y + sy + j // 3, pz, log + '[axis=%s]' % ('x' if abs(math.cos(a)) > 0.7 else 'z'))
+            if j and j % 3 == 0:              # where the branch steps up, a block under it keeps it in one piece
+                v.set(px, y + sy + j // 3 - 1, pz, log + '[axis=%s]' % ('x' if abs(math.cos(a)) > 0.7 else 'z'))
         crowns.append((int(round(x + math.cos(a) * L)), y + sy + int(L) // 3 + 1, int(round(z + math.sin(a) * L))))
     for (cx, cy, cz) in crowns:
         rr = rng.uniform(4, 6.5)
@@ -495,6 +501,10 @@ _SOFT = ('leaves', 'glass', 'pane', 'slab', 'stairs', 'wall', 'fence', 'carpet',
 
 def _fill_block(b):
     nm = _name(b)
+    if 'planks' in nm or nm.endswith('_log') or nm.endswith('_wood'):
+        # wood floors stay wood underneath (Stark 2026-11-13: the Infinity Castle showed stone under the tatami)
+        base = nm.replace('stripped_', '').replace('_log', '').replace('_wood', '').replace('_planks', '')
+        return 'minecraft:' + base + '_planks'
     if nm in GRAVITY:
         return 'minecraft:' + GRAVITY[nm]
     if nm in ('grass_block', 'podzol', 'mycelium', 'dirt_path', 'farmland', 'moss_block', 'rooted_dirt', 'mud'):
@@ -503,11 +513,13 @@ def _fill_block(b):
         return 'minecraft:stone'
     return b
 
-def underlay(v, R, depth=10, reach=6):
+def underlay(v, R, depth=32, reach=6):
     """The arenas are destructible (Stark 2026-11-13): a technique that digs the floor must hit more ground, never open
     a hole into the void. Under every column of the fight circle (and a few blocks past it) the first ground at or below
     the fight floor gets `depth` solid layers under it, in the column's own deep material (dirt under grass, stone
-    under anything that is not a plain full block). Only empty cells are filled: caves, water and lava stay."""
+    under anything that is not a plain full block). Only empty cells are filled: caves, water and lava stay.
+    Stark 2026-11-13: Saitama, Shigaraki and the divine souls tear 10 layers away in seconds, so 32, and bedrock at the
+    bottom: however much they destroy, nobody falls into the void."""
     cols = {}
     for (x, y, z), b in v.b.items():
         if x * x + z * z <= (R + reach) ** 2:
@@ -527,6 +539,7 @@ def underlay(v, R, depth=10, reach=6):
                 if y < top:
                     v.b[(x, y, z)] = mat or 'minecraft:stone'
                     n += 1
+        v.b[(x, top - depth - 1, z)] = 'minecraft:bedrock'
     return n
 
 def illuminate(v, R, altura, target=11, level=14, step=6, reach=12, open_sky=False):
@@ -560,3 +573,180 @@ def illuminate(v, R, altura, target=11, level=14, step=6, reach=12, open_sky=Fal
                 v.b[(x, y, z)] = 'minecraft:light[level=%d]' % level
                 n += 1
     return n
+
+_SEE = ('glass', 'pane', 'bars', 'door', 'trapdoor', 'fence', 'chain', 'lantern', 'torch')
+
+def dark_interiors(v, R, reach=16, roof=14):
+    """Stark 2026-11-13: through the doors and windows of the scenery's houses and buildings one saw straight through to
+    the sky behind or into a lit empty box. Every empty cell inside a building (a roof above within `roof`, walls on at
+    least three sides within `reach`) that touches the outside or a window/door gets a black block, so openings read as
+    a dark room. Only past the fight circle (R + 3): the fight's own rooms are left alone."""
+    import numpy as np
+    import mesher
+    ks = [k for k in v.b if v.b[k] and _name(v.b[k]) != 'air']
+    if not ks:
+        return 0
+    xs = np.array([k[0] for k in ks]); ys = np.array([k[1] for k in ks]); zs = np.array([k[2] for k in ks])
+    o = (xs.min() - 1, ys.min() - 1, zs.min() - 1)
+    S = (xs.max() - o[0] + 2, ys.max() - o[1] + 2, zs.max() - o[2] + 2)
+    solid = np.zeros(S, bool); empty = np.ones(S, bool); see = np.zeros(S, bool)
+    for k in ks:
+        b = v.b[k]; i = (k[0] - o[0], k[1] - o[1], k[2] - o[2])
+        empty[i] = False
+        nm = _name(b)
+        if nm == 'light' or nm in PASSABLE:
+            empty[i] = True
+            continue
+        if any(t in nm for t in _SEE):
+            see[i] = True
+            solid[i] = True
+        elif mesher.is_full(b) or 'stairs' in nm or 'slab' in nm or 'wall' in nm:
+            solid[i] = True
+    big = 10 ** 6
+    def dist(axis, rev):
+        d = np.full(S, big, np.int32)
+        n = S[axis]
+        rng_ = range(n - 2, -1, -1) if not rev else range(1, n)
+        prev = np.full([S[a] for a in range(3) if a != axis], big, np.int32)
+        for t in rng_:
+            nb = t + 1 if not rev else t - 1
+            sl_nb = [slice(None)] * 3; sl_nb[axis] = nb
+            sl = [slice(None)] * 3; sl[axis] = t
+            prev = np.where(solid[tuple(sl_nb)], 1, np.minimum(prev + 1, big))
+            d[tuple(sl)] = prev
+        return d
+    up = dist(1, False) <= roof
+    walls = sum((dist(a, r) <= reach).astype(np.int8) for a in (0, 2) for r in (False, True))
+    inside = empty & up & (walls >= 3)
+    outside = empty & ~up
+    touch = np.zeros(S, bool)
+    for a in (0, 2):
+        for sh in (1, -1):
+            touch |= np.roll(outside | see, sh, axis=a)
+    black = inside & touch
+    gx = np.arange(S[0])[:, None, None] + o[0]; gz = np.arange(S[2])[None, None, :] + o[2]
+    black &= (gx * gx + gz * gz) > (R + 3) ** 2
+    n = 0
+    for i in zip(*np.nonzero(black)):
+        p = (int(i[0] + o[0]), int(i[1] + o[1]), int(i[2] + o[2]))
+        if v.b.get(p) is None:
+            v.b[p] = 'minecraft:black_concrete'
+            n += 1
+    return n
+
+_TERRAIN = ('grass_block', 'dirt', 'coarse_dirt', 'gravel', 'stone', 'andesite', 'sand', 'sandstone', 'cobblestone',
+            'podzol', 'moss_block', 'mud', 'clay', 'deepslate', 'tuff', 'blackstone', 'basalt')
+
+def ground_floaters(v):
+    """Stark 2026-11-13: a pillar stopping one block above the ground. Posts, trunks and walls whose foot hangs one or
+    two blocks over the ground get that gap filled with their own block."""
+    n = 0
+    for (x, y, z), b in list(v.b.items()):
+        nm = _name(b)
+        if not any(t in nm for t in ('_log', '_wood', 'pillar', '_wall', 'fence', 'quartz', 'bricks', 'concrete')):
+            continue
+        if not _free(v, x, y - 1, z):
+            continue
+        for gap in (1, 2):
+            g = v.b.get((x, y - gap - 1, z))
+            if g is not None and _ground(v, x, y - gap - 1, z) and any(t in _name(g) for t in _TERRAIN):
+                if all(_free(v, x, y - k, z) for k in range(1, gap + 1)):
+                    for k in range(1, gap + 1):
+                        v.b[(x, y - k, z)] = b
+                        n += 1
+                break
+    return n
+
+# ---- nothing hangs in the air --------------------------------------------------------------------------------------
+_AIRY = ('air', 'light', 'barrier', 'water', 'lava') + PASSABLE
+# blocks that share a face or an edge read as touching (stepped roofs, stairs); a corner alone does not
+_N18 = tuple((dx, dy, dz) for dx in (-1, 0, 1) for dy in (-1, 0, 1) for dz in (-1, 0, 1)
+             if 0 < abs(dx) + abs(dy) + abs(dz) <= 2)
+
+def _solid(b):
+    return bool(b) and _name(b) not in _AIRY
+
+def loose_groups(v, flutua=()):
+    """Every group of blocks that does not reach the ground through other blocks: (blocks, box). The ground is the
+    arena's bottom layer plus its biggest piece (a planet in the sky is its own ground). Groups inside one of the
+    `flutua` boxes (x0, y0, z0, x1, y1, z1) are meant to float (clouds, the Infinity Castle) and are left out."""
+    from collections import deque
+    pos = {k for k, b in v.b.items() if _solid(b)}
+    if not pos:
+        return []
+    def flood(start, pool):
+        comp = list(start); q = deque(start)
+        for s in start:
+            pool.discard(s)
+        while q:
+            x, y, z = q.popleft()
+            for dx, dy, dz in _N18:
+                k = (x + dx, y + dy, z + dz)
+                if k in pool:
+                    pool.discard(k); comp.append(k); q.append(k)
+        return comp
+    y0 = min(k[1] for k in pos)
+    rest = set(pos)
+    flood([k for k in pos if k[1] <= y0 + 1], rest)
+    comps = []
+    while rest:
+        comps.append(flood([rest.pop()], rest))
+    comps.sort(key=len, reverse=True)
+    if comps and len(comps[0]) > len(pos) // 5:
+        comps = comps[1:]                     # the floating planet itself
+    out = []
+    for comp in comps:
+        xs = [c[0] for c in comp]; ys = [c[1] for c in comp]; zs = [c[2] for c in comp]
+        box = tuple(int(t) for t in (min(xs), min(ys), min(zs), max(xs), max(ys), max(zs)))
+        if any(a[0] <= box[0] and a[1] <= box[1] and a[2] <= box[2] and box[3] <= a[3] and box[4] <= a[4]
+               and box[5] <= a[5] for a in flutua):
+            continue
+        out.append((comp, box))
+    return out
+
+def settle(v, flutua=(), small=400, gap=3):
+    """Stark 2026-11-13: fences, blocks and buildings floating over nothing. Loose bits of up to `small` blocks
+    (a lantern, a stray roof tile, a black interior cell) are removed; bigger groups get the gaps of up to `gap` blocks
+    under their feet filled with their own bottom block (a trunk, a wall), and the rest is returned for the builder
+    to fix by hand (floaters.py lists it)."""
+    removed = filled = 0
+    for _ in range(3):
+        groups = loose_groups(v, flutua)
+        if not groups:
+            break
+        changed = False
+        for comp, box in groups:
+            if len(comp) <= small:
+                for k in comp:
+                    del v.b[k]
+                removed += len(comp); changed = True
+                continue
+            bottom = {}
+            for (x, y, z) in comp:
+                if (x, z) not in bottom or y < bottom[(x, z)]:
+                    bottom[(x, z)] = y
+            for (x, z), y in bottom.items():
+                b = v.b[(x, y, z)]
+                nm = _name(b)
+                if 'leaves' in nm or nm.startswith('folha') or 'glass' in nm or 'lantern' in nm or 'chain' in nm:
+                    continue
+                air = 0
+                for g in range(1, 48):           # through a sea or a lava lake down to its bed: a rock stands on it
+                    under = v.b.get((x, y - g, z))
+                    if not _solid(under):
+                        if under is None or _name(under) not in ('water', 'lava'):
+                            air += 1
+                        if air > gap:
+                            break
+                        continue
+                    if True:
+                        if g > 1:
+                            fill = b if '[' not in b or '_log' in b or '_wood' in b else b.split('[')[0]
+                            fill = fill.replace('_slab', '_planks' if 'oak' in fill or 'spruce' in fill or 'birch' in fill else '')
+                            for k in range(1, g):
+                                v.b[(x, y - k, z)] = fill if fill.startswith('minecraft:') or ':' in fill else 'minecraft:' + fill
+                            filled += g - 1; changed = True
+                        break
+        if not changed:
+            break
+    return removed, filled, loose_groups(v, flutua)

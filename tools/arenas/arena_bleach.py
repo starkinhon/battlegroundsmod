@@ -48,7 +48,7 @@ def las_noches():
     for x in range(-110, 111):
         for y in range(0, 22):
             z = int(cz + 72 * math.sqrt(max(0, 1 - (x / 104) ** 2))) + 2
-            if z < -80:
+            if z < -80 and H.get((x, z)) is not None:      # never past the edge of the sand
                 v.set(x, y, z, 'quartz_bricks' if y % 6 else 'smooth_quartz')
     for (tx, th) in ((-40, 82), (0, 104), (40, 82), (-70, 60), (70, 60)):
         tz = cz + 20
@@ -69,7 +69,8 @@ def las_noches():
     meta = dict(universo='bleach', personagem='Rukia', lugar='Las Noches', nome='Las Noches',
                 canon='Hueco Mundo na frente de Las Noches: areia branca sem fim, céu preto com a lua em forquilha, árvores de quartzo e a cúpula do palácio do Aizen.',
                 R=R, altura=44, ceu=['#000000', '#1a1c24'], neblina=[70, 260],
-                jogador=[0, 1, 26], desafiante=[0, 1, -24], camLado=[50, 26, 66], alvoY=12, skyLight=15)
+                jogador=[0, 1, 26], desafiante=[0, 1, -24], camLado=[50, 26, 66], alvoY=12, skyLight=15,
+                flutua=[(44, 104, -62, 76, 136, -58)])          # the moon in the sky
     return v, meta
 
 @arena('byakuya')

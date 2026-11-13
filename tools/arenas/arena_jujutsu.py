@@ -109,6 +109,16 @@ def ruin(v, n, rng, R0, fire=True, cuts=0, trench=None):
             top = max([y for y in ys if y <= cap], default=None)
             if top and top > 1 and n.f2(x, z, 3) > -0.2:
                 v.set(x, top, z, rng.choice(['blackstone', 'basalt[axis=y]', 'cobblestone', 'gravel']))
+    # the city's ground is thin: give every column solid rock down to y = -9 so the trench and the crater walls never
+    # show the void through them (Stark 2026-11-13: "parte vazando em Shinjuku")
+    low = {}
+    for (x, y, z) in v.b:
+        if (x, z) not in low or y < low[(x, z)]:
+            low[(x, z)] = y
+    for (x, z), y0 in low.items():
+        for y in range(-9, min(y0, 1)):
+            if v.b.get((x, y, z)) is None:
+                v.set(x, y, z, 'stone')
     # slash cuts: thin vertical planes through everything, straight
     for c in range(cuts):
         a = rng.uniform(0, math.pi); off = rng.uniform(-60, 60); tilt = rng.uniform(-0.6, 0.6)
@@ -203,10 +213,15 @@ def ponte_yasohachi():
     # houses of the town up on the banks
     for i in range(36):
         sx = rng.choice([-1, 1]); x = sx * int(rng.uniform(44, 96)); z = int(rng.uniform(-100, 100))
-        h = H.get((x, z)) or 8
         w, dd, hh = int(rng.integers(3, 6)), int(rng.integers(3, 6)), int(rng.integers(5, 9))
+        foot = [H.get((x + dx, z + dz)) for dx in range(-w, w + 1) for dz in range(-dd, dd + 1)]
+        if any(f is None for f in foot):
+            continue                          # off the edge of the land: no house hanging over nothing
+        h = max(foot)
         for dx in range(-w, w + 1):
             for dz in range(-dd, dd + 1):
+                for y in range(H[(x + dx, z + dz)] + 1, h + 1):    # stone foundation down to the slope
+                    v.set(x + dx, y, z + dz, 'stone_bricks')
                 for y in range(1, hh):
                     if abs(dx) == w or abs(dz) == dd:
                         v.set(x + dx, h + y, z + dz, 'white_terracotta' if (y % 3 or abs(dx) == w and abs(dz) == dd) else 'glass_pane')
@@ -238,7 +253,11 @@ def temple(v, x, y, z, w, d, h, roof='deepslate_tiles', wall='white_terracotta',
             for s in (-1, 1):
                 zz = z + s * (d + 3 - k)
                 yy = y + h + k // 2 + (1 if k == 0 else 0)
-                v.set(x + dx, yy, zz, roof)
+                # two blocks thick so the steps never leave a see-through seam, and solid down to the walls over the
+                # hall (Stark 2026-11-13: the school roofs looked like loose floating strips)
+                low = y + h - 1 if abs(zz - z) <= d and abs(dx) <= w else yy - 1
+                for y2 in range(low, yy + 1):
+                    v.set(x + dx, y2, zz, roof)
         if d + 3 - k <= 0:
             break
     for dx in range(-w - 3, w + 4):
@@ -299,8 +318,8 @@ def _school(seed, nome, personagem, lugar, canon, kyoto):
                     v.set(px + dx, y0 + 5, pz + dz, 'deepslate_tiles')
                     if abs(dx) == w + 1 or abs(dz) == w + 1:
                         v.set(px + dx, y0 + 4, pz + dz, 'deepslate_tile_slab[type=top]')
-        for y in range(36, 46):
-            v.set(px, y, pz, 'gold_block' if y % 2 else 'chain[axis=y]')
+        for y in range(35, 46):                       # the spire, standing on the top roof
+            v.set(px, y, pz, 'gold_block' if y % 3 else 'polished_blackstone')
         # rows of torii up the hill (Kyoto)
         for k in range(8):
             torii(v, 40, (H.get((40, 40 + k * 5)) or 0) + 1, 40 + k * 5, 6, 3, 'x')
@@ -398,7 +417,7 @@ def esgoto():
     v = Vox(); n = Noise(8901); rng = np.random.default_rng(8901)
     R = 30
     brick = Pick(n, [('bricks', 3), ('stone_bricks', 3), ('mossy_stone_bricks', 2), ('cracked_stone_bricks', 1)], 4.0)
-    CH = 24          # chamber radius
+    CH = 52          # chamber radius (Stark 2026-11-13: room to run from the big techniques)
     def inside(x, y, z):
         r = math.hypot(x, z)
         if r <= CH and -2 <= y <= 14 - (r / CH) ** 2 * 4:

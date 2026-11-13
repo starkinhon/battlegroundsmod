@@ -190,6 +190,8 @@ def planeta_do_bills():
                 canon='O planeta onde o Deus da Destruição dorme: o gramado na frente do palácio em pirâmide, as torres de pedra com jardim no topo e as ilhas soltas no céu roxo.',
                 R=R, altura=60, ceu=['#1d1640', '#a688d6'], neblina=[90, 260],
                 jogador=[0, 1, 30], desafiante=[0, 1, -22], camLado=[70, 40, 80], alvoY=14,
+                flutua=[(12, 1, -124, 37, 34, -97), (-131, 32, -24, -103, 64, 2), (11, 37, -110, 35, 67, -87),
+                        (-134, 35, 22, -116, 48, 41), (-76, 28, -108, -61, 40, -93)],   # the floating islets
                 tints={'grass': (102, 196, 128), 'foliage': (160, 92, 200), 'water': (80, 140, 230)})
     return v, meta
 
@@ -812,6 +814,7 @@ def planeta_do_kaioh():
                 canon='O planetinha do Senhor Kaioh no fim do Caminho da Serpente, onde o Goku treinou: a bola verde lisinha, a estrada de lajotas que dá a volta no planeta inteiro, a casa em domo laranja e a cabana, as árvores redondas, o céu rosado e as nuvens amarelas do Outro Mundo lá embaixo.',
                 R=R, altura=60, ceu=['#e58ad0', '#f7c4e4'], neblina=[90, 240],
                 jogador=[0, 1, 13], desafiante=[0, 1, -4], camLado=[50, 26, 62], alvoY=-2,
+                flutua=[(-140, -95, -140, 140, -55, 140)],          # the clouds of Other World
                 tints={'grass': (138, 206, 72), 'foliage': (90, 180, 70)})
     return v, meta
 

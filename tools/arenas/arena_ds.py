@@ -184,5 +184,6 @@ def castelo_infinito():
     meta = dict(universo='demonslayer', personagem='Kokushibo', lugar='Castelo Infinito', nome='Castelo Infinito',
                 canon='A fortaleza do Muzan: o salão de tatame onde a Lua Superior Um espera, pendurado num labirinto sem fim de salas, escadas e colunas, algumas de lado e outras de cabeça para baixo.',
                 R=R, altura=26, ceu=['#0c0608', '#1e0f0c'], neblina=[40, 150],
-                jogador=[0, 1, 26], desafiante=[0, 1, -24], camLado=[38, 22, 52], alvoY=6, skyLight=0)
+                jogador=[0, 1, 26], desafiante=[0, 1, -24], camLado=[38, 22, 52], alvoY=6, skyLight=0,
+                flutua=[(-200, -200, -200, 200, 200, 200)])     # the castle's rooms hang in the void: that is the place
     return v, meta

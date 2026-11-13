@@ -341,6 +341,23 @@ def telhado_de_onigashima():
                     else:
                         b = 'white_terracotta'
                     v.set(x, y, z, b)
+                # the wall stands on something: a stone foundation down to whatever is below (Stark 2026-11-13)
+                for y in range(wall_y - wall_h - 1, wall_y - wall_h - 41, -1):
+                    if v.get(x, y, z) is not None:
+                        break
+                    v.set(x, y, z, 'polished_blackstone_bricks')
+        # the storeys behind the windows: plank floors every 5 blocks, a band 10 deep inside the wall, and the rooms
+        # behind them read as dark (Stark 2026-11-13: "plataformas de tábua pra simular uns 3 andares de piso")
+        for x in range(-ax, ax + 1):
+            for z in range(-az, az + 1):
+                if sq(x, z, ax - 1.5, az - 1.5) > 1 or sq(x, z, ax - 11, az - 11) <= 1:
+                    continue
+                for y in range(wall_y - wall_h, wall_y + 1):
+                    if (y - wall_y) % 5 == 0:
+                        if v.get(x, y, z) is None:
+                            v.set(x, y, z, 'spruce_planks')
+                    elif sq(x, z, ax - 3.5, az - 3.5) <= 1 and sq(x, z, ax - 4.6, az - 4.6) > 1 and v.get(x, y, z) is None:
+                        v.set(x, y, z, 'black_concrete')
     skirt(AX, AZ, -1, 7, 8, -2, 3)
     # lower tiers: wider, burning
     tiers = [(AX + 14, AZ + 12, -12, 8, 9, -13), (AX + 28, AZ + 24, -24, 9, 10, -25)]
@@ -443,9 +460,13 @@ def telhado_da_seguranca_publica():
     v.set(-32, 4, -29, 'sea_lantern')
     v.box(-36, 7, -36, -28, 7, -30, 'smooth_stone_slab[type=bottom]')
     # water tank on legs
-    for (lx, lz) in ((28, -34), (34, -34), (28, -28), (34, -28)):
+    for (lx, lz) in ((28, -34), (34, -34), (28, -28), (34, -28)):     # solid legs (thin bars looked like nothing)
         for y in range(1, 6):
-            v.set(lx, y, lz, 'iron_bars')
+            v.set(lx, y, lz, 'gray_concrete')
+    for y in (2, 4):                                                   # cross braces
+        for k in range(28, 35):
+            for (x, z) in ((k, -34), (k, -28), (28, k - 62), (34, k - 62)):
+                v.set(x, y, z, 'light_gray_concrete')
     v.cylinder(31, 6, -31, 5.2, 12, 'light_blue_terracotta', hollow=False)
     v.disc(31, 13, -31, 4.6, 'light_gray_concrete')
     for y in range(6, 13):
@@ -492,11 +513,19 @@ def telhado_da_seguranca_publica():
               roofs[int(rng.integers(len(roofs)))], lit=0.25)
     # Tokyo Tower on the horizon: orange and white bands, lattice legs, two observation decks
     TX, TZ, TH = -96, -150, 132
+    prev_hi = None
     for y in range(0, TH):
         t = y / TH
         half = 15 * (1 - t) ** 1.6 + 1.2
         hi = int(round(half))
         band = 'orange_concrete' if (y // 11) % 2 == 0 else 'white_concrete'
+        # where the legs step inwards, the corner of the level below continues on this one too: the four legs are one
+        # piece of steel all the way up, never cubes touching only by their corners (they read as floating)
+        for h in range(hi + 1, (prev_hi if prev_hi is not None else hi) + 1):
+            for sx in (-1, 1):
+                for sz in (-1, 1):
+                    v.set(TX + sx * h, BASE + 1 + y, TZ + sz * h, band)
+        prev_hi = hi
         for x in range(-hi, hi + 1):
             for z in range(-hi, hi + 1):
                 on_edge = abs(x) == hi or abs(z) == hi
@@ -660,6 +689,10 @@ def cidade_z():
         for s in range(4):
             x = AX0 + AW + 1 + (s if f % 2 == 0 else 3 - s)
             v.set(x, 2 + f * 4 + s, AZ0 + AD - 2, 'stone_stairs[facing=%s,half=bottom,shape=straight]' % ('east' if f % 2 == 0 else 'west'))
+            v.set(x, 1 + f * 4 + s, AZ0 + AD - 2, 'stone_stairs[facing=%s,half=top,shape=straight]' % ('west' if f % 2 == 0 else 'east'))
+    for f in range(3):                       # landings, so each flight rests on something
+        for x in range(AX0 + AW + 1, AX0 + AW + 5):
+            v.set(x, 5 + f * 4, AZ0 + AD - 2, 'smooth_stone_slab[type=top]')
     for y in range(1, 15):
         for z in (AZ0 + AD - 3, AZ0 + AD - 1):
             v.set(AX0 + AW + 5, y, z, 'iron_bars')
@@ -671,7 +704,7 @@ def cidade_z():
             if abs(x) < AV + 4 and abs(z) < AV + 4 or math.hypot(x, z) < R + 2 or math.hypot(x, z) > EXT - 4:
                 continue
             g = H.get((x, z), 0)
-            lean = 1 if (s // 18) % 5 == 2 else 0
+            lean = 0                         # a one-block jog reads as a broken pole, keep them straight
             for y in range(1, 11):
                 v.set(x + (lean * y // 6), g + y, z, 'andesite_wall')
             v.set(x + lean, g + 10, z + 1, 'spruce_fence'); v.set(x + lean, g + 10, z - 1, 'spruce_fence')

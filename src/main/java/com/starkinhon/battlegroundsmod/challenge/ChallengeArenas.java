@@ -117,6 +117,43 @@ public final class ChallengeArenas {
     private ChallengeArenas() {
     }
 
+    // While the arena itself is being placed or cleared (server thread only): its barriers and bedrock may change.
+    private static int placing;
+
+    // Stark 2026-11-13: Madara's meteor and Shigaraki's decay wiped out the invisible wall and the floor of the arenas
+    // (the skills set blocks directly, so a barrier's blast resistance never comes into it). In the arena dimensions
+    // nothing but the arena builder may change a barrier or bedrock block (LevelMixin asks here before every setBlock).
+    public static boolean protectedBlock(Level level, BlockPos pos) {
+        if (placing > 0 || level.isClientSide() || !isArena(level.dimension())) {
+            return false;
+        }
+        BlockState old = level.getBlockState(pos);
+        return old.is(Blocks.BARRIER) || old.is(Blocks.BEDROCK);
+    }
+
+    // A building that crosses the invisible wall is part of the wall (the barrier only fills the air around it). When a
+    // technique blows a hole in it, the hole becomes barrier, so the fight never leaks out through the rubble.
+    public static BlockState ringFill(Level level, BlockPos pos, BlockState state) {
+        if (placing > 0 || level.isClientSide() || !state.isAir() || !isArena(level.dimension())) {
+            return state;
+        }
+        for (Session s : SESSIONS.values()) {
+            if (s.center == null || s.meta == null || s.state == State.BUILDING || !level.dimension().equals(s.arena)) {
+                continue;
+            }
+            int y = pos.getY() - s.center.getY();
+            if (y < -40 || y > s.meta.altura() + 1) {
+                continue;
+            }
+            double dx = pos.getX() - s.center.getX(), dz = pos.getZ() - s.center.getZ();
+            double d = Math.sqrt(dx * dx + dz * dz);
+            if (d > s.meta.raio() + 0.5 && d <= s.meta.raio() + 1.5) {
+                return Blocks.BARRIER.defaultBlockState();
+            }
+        }
+        return state;
+    }
+
     public static boolean isArena(ResourceKey<Level> dimension) {
         return dimension.equals(ARENAS) || dimension.equals(ARENAS_NIGHT);
     }
@@ -275,7 +312,12 @@ public final class ChallengeArenas {
         session.backYaw = player.getYRot();
         SESSIONS.put(player.getUUID(), session);
         if (template == null) {
-            buildDisc(arena, session.center, spec, universe);
+            placing++;
+            try {
+                buildDisc(arena, session.center, spec, universe);
+            } finally {
+                placing--;
+            }
             enter(player, arena, session);
             return;
         }
@@ -451,7 +493,7 @@ public final class ChallengeArenas {
         double dx = boss.getX() - (session.center.getX() + 0.5);
         double dz = boss.getZ() - (session.center.getZ() + 0.5);
         double y = boss.getY() - session.center.getY();
-        boolean out = dx * dx + dz * dz > (radius - 1.0) * (radius - 1.0) || y < -12 || y > meta.altura() + 20;
+        boolean out = dx * dx + dz * dz > (radius - 1.0) * (radius - 1.0) || y < -40 || y > meta.altura() + 20;   // the floor is 32 deep now
         if (out) {
             BlockPos at = spawnPos(session);
             boss.teleportTo(at.getX() + 0.5, at.getY(), at.getZ() + 0.5);
@@ -673,6 +715,7 @@ public final class ChallengeArenas {
         private int minCx, maxCx, minCz, maxCz;
         private final List<net.minecraft.world.level.chunk.ChunkAccess> changed = new ArrayList<>();
         private final net.minecraft.world.level.ChunkPos ticketAt;
+        private final net.minecraft.world.level.levelgen.structure.BoundingBox fluidBox;
         private final int ticketRadius;
         private boolean ticketed;
         int chunkWaitTicks;
@@ -696,6 +739,8 @@ public final class ChallengeArenas {
             maxCx = (c.getX() + x1) >> 4;
             minCz = (c.getZ() + z0) >> 4;
             maxCz = (c.getZ() + z1) >> 4;
+            fluidBox = new net.minecraft.world.level.levelgen.structure.BoundingBox(c.getX() + x0, c.getY() + m.minY() - 1,
+                    c.getZ() + z0, c.getX() + x1, c.getY() + m.maxY() + 1, c.getZ() + z1);
             ticketAt = new net.minecraft.world.level.ChunkPos(c);
             ticketRadius = Math.min(32, Math.max(Math.max(ticketAt.x - minCx, maxCx - ticketAt.x), Math.max(ticketAt.z - minCz, maxCz - ticketAt.z)) + 1);
             phase = -1;
@@ -757,7 +802,24 @@ public final class ChallengeArenas {
         }
 
         // Returns true when the arena is ready. Works until maxNanos of this tick are spent.
+        // Placing water or lava always schedules a fluid tick (LiquidBlock.onPlace ignores the update flags), so the
+        // rivers flowed off their edges and the waterfalls drained away as soon as the arena was built (Stark's PC,
+        // 2026-11-13). The ticks the placing scheduled are dropped at the end of every step: the water stays exactly as
+        // the generator made it until a fight disturbs it.
         boolean step(long maxNanos) {
+            placing++;
+            try {
+                boolean ready = stepInner(maxNanos);
+                if (phase >= 0) {
+                    level.getFluidTicks().clearArea(fluidBox);
+                }
+                return ready;
+            } finally {
+                placing--;
+            }
+        }
+
+        private boolean stepInner(long maxNanos) {
             long deadline = System.nanoTime() + maxNanos;
             int ops = 0;
             int side = half * 2 + 1;

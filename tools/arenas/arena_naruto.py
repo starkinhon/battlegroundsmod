@@ -358,13 +358,11 @@ def campo_de_treino_3():
         trees.append((x, z))
         tree(v, x, (H.get((x, z)) or 0) + 1, z, rng, rng.choice(['oak', 'oak', 'birch']), height=int(rng.integers(7, 13)),
              crown=rng.uniform(3, 4.6), leaves_override='battlegroundsmod:folhas_da_folha' + rng.choice(['', '_clara', '_escura']))
-    # the village beyond the trees and the Hokage faces carved in the mountain
+    # the village beyond the trees, the Hokage mountain behind it (the carved faces went out: Stark 2026-11-13)
     for i in range(18):
         x = int(rng.uniform(-80, 80)); z = int(rng.uniform(-56, -46))
         konoha_house(v, x, (H.get((x, z)) or 0) + 1, z, int(rng.integers(3, 6)), int(rng.integers(3, 5)), int(rng.integers(4, 9)), rng,
                      roof=rng.choice(['red_terracotta', 'orange_terracotta', 'red_terracotta', 'light_blue_terracotta']))
-    for i, fx in enumerate((-36, -12, 12, 36)):
-        face(v, fx, 40 + (i % 2) * 2, -66, 9, n)
     plants(v, H, n, (('short_grass', 0.3), ('dandelion', 0.8), ('fern', -0.6)))
     meta = dict(universo='naruto', personagem='Kakashi', lugar='Campo de treino 3', nome='Campo de treino 3',
                 canon='O campo do teste dos sinos: os três postes de madeira, a pedra memorial, o rio e a vila com o Monte Hokage atrás das árvores.',
@@ -471,7 +469,7 @@ def salao_do_chunin():
     railings, the giant statue of two hands making the Ram seal on the back wall, high windows, the board."""
     v = Vox(); n = Noise(5401); rng = np.random.default_rng(5401)
     R = 30
-    W, D, HH = 34, 44, 30
+    W, D, HH = 56, 64, 30          # Stark 2026-11-13: room to run from the big techniques
     floor = Pick(n, [('polished_andesite', 4), ('smooth_stone', 3), ('andesite', 1)], 4.0)
     for x in range(-W, W + 1):
         for z in range(-D, D + 1):
@@ -591,23 +589,55 @@ def estadio_do_chunin():
             continue
         tree(v, x, 1, z, rng, 'oak', height=int(rng.integers(8, 12)), crown=rng.uniform(3.2, 4.4),
              leaves_override='battlegroundsmod:folhas_da_folha' + rng.choice(['', '_clara']))
-    # the Hokage's box: two stacked roofs over a covered platform, north side
+    # the Hokage's box, north side: a stone tower rising out of the stands, the open platform on top of it with a
+    # railing and posts, a wide red hipped roof, a small white cabin over it and a second, smaller roof with its finial.
+    # Everything rests on what is under it (Stark 2026-11-13: the old roofs were floating).
     bx, bz = 0, -(FW + 14)
-    for dx in range(-8, 9):
-        for dz in range(-6, 7):
-            v.set(bx + dx, 30, bz + dz, 'spruce_planks')
-            for y in (40, 46):
-                w = 10 if y == 40 else 7
-                if abs(dx) <= w and abs(dz) <= w - 2:
-                    v.set(bx + dx, y, bz + dz, 'red_terracotta')
-        for y in range(31, 40):
-            for (px, pz) in ((-8, -6), (8, -6), (-8, 6), (8, 6)):
-                v.set(bx + px, y, bz + pz, 'stripped_spruce_log[axis=y]')
-    for dx in range(-11, 12):
-        for dz in range(-9, 10):
-            if abs(dx) == 11 or abs(dz) == 9:
-                v.set(bx + dx, 39, bz + dz, 'red_terracotta')
-    v.set(bx, 47, bz, 'orange_terracotta')
+    PY = 30
+    for dx in range(-9, 10):
+        for dz in range(-7, 8):
+            edge = abs(dx) == 9 or abs(dz) == 7
+            corner = abs(dx) == 9 and abs(dz) == 7
+            for y in range(1, PY):
+                if corner:
+                    b_ = 'stripped_spruce_log[axis=y]'
+                elif edge:
+                    b_ = 'white_terracotta' if y >= PY - 4 else 'stone_bricks'
+                else:
+                    b_ = 'stone'
+                v.set(bx + dx, y, bz + dz, b_)
+            v.set(bx + dx, PY, bz + dz, 'spruce_planks')
+            if edge and dz != -7:
+                v.set(bx + dx, PY + 1, bz + dz, 'spruce_fence')
+    for (px, pz) in ((-9, -7), (9, -7), (-9, 7), (9, 7), (-3, 7), (3, 7), (-9, 0), (9, 0)):
+        for y in range(PY + 1, PY + 8):
+            v.set(bx + px, y, bz + pz, 'stripped_spruce_log[axis=y]')
+    for dx in range(-9, 10):                                   # the back wall, so the box is a room open to the field
+        for y in range(PY + 1, PY + 8):
+            v.set(bx + dx, y, bz - 7, 'white_terracotta' if dx % 6 else 'stripped_spruce_log[axis=y]')
+    def hip_roof(y0, wx, wz, layers, under=None):
+        for k in range(layers):
+            hx, hz = wx - k, wz - k
+            for dx in range(-hx, hx + 1):
+                for dz in range(-hz, hz + 1):
+                    rim = abs(dx) >= hx - 1 or abs(dz) >= hz - 1 or k == layers - 1
+                    if rim:
+                        v.set(bx + dx, y0 + k, bz + dz, 'red_terracotta' if k < layers - 1 else 'red_nether_bricks')
+        if under:
+            for dx in range(-wx, wx + 1):
+                for dz in range(-wz, wz + 1):
+                    if abs(dx) == wx or abs(dz) == wz:
+                        v.set(bx + dx, y0 - 1, bz + dz, under)
+    hip_roof(PY + 8, 12, 10, 5, under='orange_terracotta')    # eaves overhanging the posts
+    for dx in range(-4, 5):                                    # the cabin on the roof
+        for dz in range(-3, 4):
+            for y in range(PY + 13, PY + 16):
+                if abs(dx) == 4 or abs(dz) == 3:
+                    v.set(bx + dx, y, bz + dz, 'stripped_spruce_log[axis=y]' if abs(dx) == 4 and abs(dz) == 3 else 'white_terracotta')
+                else:
+                    v.set(bx + dx, y, bz + dz, 'spruce_planks')
+    hip_roof(PY + 16, 7, 6, 4, under='orange_terracotta')
+    v.set(bx, PY + 20, bz, 'orange_terracotta'); v.set(bx, PY + 21, bz, 'lightning_rod')
     # banners with the leaf crest between the tiers
     for i in range(16):
         a = i / 16 * 2 * math.pi
@@ -711,5 +741,5 @@ def esconderijo_uchiha():
     meta = dict(universo='naruto', personagem='Sasuke', lugar='Esconderijo Uchiha', nome='Esconderijo Uchiha',
                 canon='O esconderijo dos Uchiha onde Sasuke lutou com o Itachi: o salão com o leque do clã, o teto arrancado pelo Kirin, colunas partidas e a tempestade em cima.',
                 R=R, altura=40, ceu=['#20232c', '#5a5f6b'], neblina=[40, 160],
-                jogador=[0, 1, 26], desafiante=[0, 4, -38], camLado=[50, 34, 64], alvoY=8)
+                jogador=[0, 1, 26], desafiante=[0, 1, -18], camLado=[50, 34, 64], alvoY=8)
     return v, meta

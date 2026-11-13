@@ -12,6 +12,28 @@ sys.path.insert(0, os.path.dirname(__file__))
 import mesher
 from arenas_all import ARENAS
 
+# Stark 2026-11-13: the fight circles were a cage with a lion. The heavy hitters (Saitama's punches, Shigaraki's decay,
+# Madara's meteors, Gojo's Purple, Sukuna's arrows...) wreck a 40 block circle in seconds and leave nowhere to run, so
+# their circle is twice as wide and everyone else's half again, as far as the scenery around still has ground.
+BIG = ('shigaraki', 'bills', 'saitama', 'madara', 'joy_boy', 'kokushibo', 'gojo', 'sukuna')
+
+def grow(aid, v, m):
+    import math
+    want = m['R'] * (2.0 if aid in BIG else 1.5)
+    ground = {}
+    for (x, y, z), b in v.b.items():
+        if b and not b.endswith(':air') and not b.endswith(':water') and not b.endswith(':lava'):
+            ground[(x, z)] = True
+    # the ground reaches out to `ext` in every direction (the closest edge of the land around the circle)
+    ext = None
+    for k in range(72):
+        a = k / 72 * 2 * math.pi
+        r = m['R']
+        while ground.get((int(round(math.cos(a) * (r + 1))), int(round(math.sin(a) * (r + 1))))) and r < 400:
+            r += 1
+        ext = r if ext is None else min(ext, r)
+    m['R'] = int(max(m['R'], min(want, ext - 10)))
+
 def main():
     args = sys.argv[1:]
     mod_dir = None
@@ -27,9 +49,17 @@ def main():
     for aid in want:
         t = time.time()
         v, m = ARENAS[aid]()
-        from lib import support_gravity, safe_spawn, underlay, illuminate
+        grow(aid, v, m)
+        from lib import support_gravity, safe_spawn, underlay, illuminate, dark_interiors
         fixed = support_gravity(v)
+        from lib import ground_floaters
+        ground_floaters(v)
         underlay(v, m['R'])
+        dark = dark_interiors(v, m['R'])
+        from lib import settle
+        loose_rm, loose_fill, loose = settle(v, m.get('flutua') or ())    # nothing hangs in the air
+        if loose:
+            print('  ATENÇÃO %s: %d grupos ainda soltos (python3 tools/arenas/floaters.py %s)' % (aid, len(loose), aid))
         lights = illuminate(v, m['R'], m['altura'], open_sky=m.get('skyLight', 15) == 0)
         for k in ('jogador', 'desafiante'):
             m[k] = safe_spawn(v, m[k])
@@ -43,7 +73,7 @@ def main():
         if mod_dir:
             import modexport
             modexport.export(mod_dir, aid, v, m)
-        print(aid, lights, 'luzes', m['blocks'], 'blocks', m['quads'], 'quads', '%.1fs' % (time.time() - t), flush=True)
+        print(aid, lights, 'luzes', dark, 'pretos', loose_rm, 'soltos removidos', loose_fill, 'apoios', m['blocks'], 'blocks', m['quads'], 'quads', '%.1fs' % (time.time() - t), flush=True)
     # one atlas for everything built in this run (re-run all arenas together for the final page)
     atlas.save(os.path.join(out, 'atlas.png'), os.path.join(out, 'atlas.json'))
     aj = json.load(open(os.path.join(out, 'atlas.json')))
