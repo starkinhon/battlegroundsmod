@@ -933,6 +933,8 @@ public final class AirCombat {
                 aim = null;
                 beamHit = false;
                 SubCommon.pose(boss, "voo.feixe");
+                // the charge lights its aura in its own color
+                SubNet.send(level, SubNet.KI_AURA, boss.getId(), boss.position(), new Vec3(0.7, 0, 0), 46, auraColor(), 1.15f);
                 SubCommon.sound(level, boss.position(), SoundEvents.BEACON_ACTIVATE, 1.4f, 1.3f);
             }
             return;
@@ -1012,6 +1014,16 @@ public final class AirCombat {
         Vec3 look = (aim != null ? aim : Combat.center(target)).subtract(center(boss));
         look = look.lengthSqr() < 1.0E-4 ? boss.getLookAngle() : look.normalize();
         return center(boss).add(0, 0.25, 0).add(look.scale(0.8));
+    }
+
+    // Each one's aura (Stark 2026-11-13): Goku light, Vegeta purple, Freeza pink, Piccolo and Kuririn white, Bills purple.
+    private int auraColor() {
+        return switch (boss.bossId()) {
+            case "goku" -> Db.KAME;
+            case "vegeta", "bills" -> Db.PURPLE;
+            case "freeza" -> Db.PINK;
+            default -> Db.WHITE;
+        };
     }
 
     // Final Flash and Kamehameha wide, the Makankosappo and the Death Beam thin.

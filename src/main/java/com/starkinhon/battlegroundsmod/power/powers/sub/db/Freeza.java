@@ -375,6 +375,8 @@ public final class Freeza {
         int grow = 110;
         float R = 3.48f;
         SubCommon.pose(caster, "db.dedo_ceu_longo");
+        // his aura, pink (Stark 2026-11-13: each one's own aura color)
+        SubNet.send(level, SubNet.KI_AURA, caster.getId(), caster.position(), new Vec3(0.6, 0, 0), grow + 4, Db.PINK, 1.2f);
         SubCommon.sound(level, caster.position(), SoundEvents.BEACON_ACTIVATE, 2f, 0.5f);
         Vec3[] pos = {null};
         Vec3[] vel = {null};

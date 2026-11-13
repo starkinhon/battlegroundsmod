@@ -508,7 +508,7 @@ public final class Piccolo {
             boolean held = SubCommon.held(caster, c, bossHold);
             if (c == 0) {
                 SubCommon.pose(caster, "db.testa");
-                SubNet.send(level, SubNet.KI_AURA, aura, caster.position(), new Vec3(0.55, 0, 0), most + 6, Db.GOLD, 1);
+                SubNet.send(level, SubNet.KI_AURA, aura, caster.position(), new Vec3(0.55, 0, 0), most + 6, Db.WHITE, 1);
             }
             if ((held || c < least) && c < most) {
                 if (held) {

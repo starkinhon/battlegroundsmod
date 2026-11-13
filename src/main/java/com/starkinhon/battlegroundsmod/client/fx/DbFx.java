@@ -605,7 +605,7 @@ public final class DbFx {
                     p.spikeSharp = 2.4f;
                     p.crown = 0.9f;
                 }
-                if (sup && s > 1.2f) {
+                if ((sup || col == COLORS[Db.PURPLE]) && s > 1.2f) {
                     // Gathering everything (Final Flash, and more for the Explosao Final): taller, spikier, with a crown.
                     boolean peak = s > 1.35f;
                     p.tongue = peak ? 0.55f : 0.5f;
