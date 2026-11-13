@@ -34,14 +34,17 @@ import net.minecraft.world.level.biome.OverworldBiomeBuilder;
 // (simulated with vanilla's octaves) so every biome gets about the same share of the land, and temperature still decides
 // the order, so the frozen north never touches the hot deserts:
 //   temperature < -0.5 (about 9%):   Norte Gelado
-//   -0.5 to -0.25 (about 20%):        Monte Myoboku (humidity < 0) | Vila da Chuva
-//   -0.25 to 0 (about 25%):           Montanhas Paozu (humidity < -0.1) | Vale do Fim (< 0) | Templos Antigos (< 0.1)
-//                                     | Terra Sagrada de Karin
-//   0 to 0.25 (about 25%):            Deserto do Vento (< -0.1) | Floresta da Folha | Floresta da Morte (> 0.1)
-//   0.25 and up (about 20%):          Deserto do Diabo (humidity < 0) | Terras do Dragão
+//   -0.5 to -0.25 (about 20%):        Monte Myoboku (humidity < -0.1) | Outono de Kyoto (< 0.1) | Vila da Chuva
+//   -0.25 to 0 (about 25%):           Montanhas Paozu (humidity < -0.2) | Vale do Fim (< -0.1) | Templos Antigos (< 0)
+//                                     | Floresta Negra (< 0.1) | Aldeia Amaldiçoada (< 0.2) | Terra Sagrada de Karin
+//   0 to 0.25 (about 25%):            Deserto do Vento (< -0.2) | Colônia do Jogo do Abate (< -0.1) | Shibuya (< 0)
+//                                     | Floresta da Folha (< 0.2) | Floresta da Morte
+//   0.25 and up (about 20%):          Deserto do Diabo (humidity < -0.2) | Terras do Jogo (< -0.1) | Terras do Dragão
+//                                     (< 0.3) | Floresta de Hanami
+// (The Jujutsu biomes came in 2026-11-13; humidity's edges are about vanilla's fifths at -0.35, -0.1, 0.1 and 0.3.)
 // The high peaks: the Norte Gelado where it is cold, the Picos do Dragão elsewhere. The seas and beaches: the Mar da Névoa
-// where it is cold or mild, the Mar do Sul where it is warm (the far mushroom islands too: it has the tropical islands).
-// A new universe biome goes into this table.
+// where it is cold or mild, where it is warm the Mar de Dagon when humid (>= 0.1) and the Mar do Sul otherwise (the far
+// mushroom islands too: it has the tropical islands). A new universe biome goes into this table.
 public final class SoulsBiomeSource extends BiomeSource {
     public static final MapCodec<SoulsBiomeSource> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             RegistryOps.retrieveGetter(Registries.BIOME)).apply(instance, instance.stable(SoulsBiomeSource::new)));
@@ -56,7 +59,7 @@ public final class SoulsBiomeSource extends BiomeSource {
     private final Climate.ParameterList<Holder<Biome>> parameters;
 
     private static final float[] TEMPERATURE = {-0.5f, -0.25f, 0.0f, 0.25f};
-    private static final float[] HUMIDITY = {-0.1f, 0.0f, 0.1f};
+    private static final float[] HUMIDITY = {-0.2f, -0.1f, 0.0f, 0.1f, 0.2f, 0.3f};
 
     private SoulsBiomeSource(HolderGetter<Biome> biomes) {
         List<Pair<Climate.ParameterPoint, Holder<Biome>>> points = new ArrayList<>();
@@ -101,7 +104,7 @@ public final class SoulsBiomeSource extends BiomeSource {
             return ModWorldgen.MAR_DO_SUL;
         }
         if (SEAS.contains(vanilla)) {
-            return temperature < 0.0f ? ModWorldgen.MAR_DA_NEVOA : ModWorldgen.MAR_DO_SUL;
+            return temperature < 0.0f ? ModWorldgen.MAR_DA_NEVOA : humidity >= 0.1f ? ModWorldgen.MAR_DE_DAGON : ModWorldgen.MAR_DO_SUL;
         }
         if (PEAKS.contains(vanilla)) {
             return temperature < -0.25f ? ModWorldgen.NORTE_GELADO : ModWorldgen.PICOS_DO_DRAGAO;
@@ -111,17 +114,20 @@ public final class SoulsBiomeSource extends BiomeSource {
             return ModWorldgen.NORTE_GELADO;
         }
         if (temperature < -0.25f) {
-            return humidity < 0.0f ? ModWorldgen.MONTE_MYOBOKU : ModWorldgen.VILA_DA_CHUVA;
+            return humidity < -0.1f ? ModWorldgen.MONTE_MYOBOKU : humidity < 0.1f ? ModWorldgen.OUTONO_DE_KYOTO : ModWorldgen.VILA_DA_CHUVA;
         }
         if (temperature < 0.0f) {
-            return humidity < -0.1f ? ModWorldgen.MONTANHAS_PAOZU : humidity < 0.0f ? ModWorldgen.VALE_DO_FIM
-                    : humidity < 0.1f ? ModWorldgen.TEMPLOS_ANTIGOS : ModWorldgen.TERRA_SAGRADA;
+            return humidity < -0.2f ? ModWorldgen.MONTANHAS_PAOZU : humidity < -0.1f ? ModWorldgen.VALE_DO_FIM
+                    : humidity < 0.0f ? ModWorldgen.TEMPLOS_ANTIGOS : humidity < 0.1f ? ModWorldgen.FLORESTA_NEGRA
+                    : humidity < 0.2f ? ModWorldgen.ALDEIA_AMALDICOADA : ModWorldgen.TERRA_SAGRADA;
         }
         if (temperature < 0.25f) {
-            return humidity < -0.1f ? ModWorldgen.DESERTO_DO_VENTO : humidity < 0.1f ? ModWorldgen.FLORESTA_DA_FOLHA
+            return humidity < -0.2f ? ModWorldgen.DESERTO_DO_VENTO : humidity < -0.1f ? ModWorldgen.COLONIA_DO_JOGO_DO_ABATE
+                    : humidity < 0.0f ? ModWorldgen.SHIBUYA : humidity < 0.2f ? ModWorldgen.FLORESTA_DA_FOLHA
                     : ModWorldgen.FLORESTA_DA_MORTE;
         }
-        return humidity < 0.0f ? ModWorldgen.DESERTO_VERMELHO : ModWorldgen.TERRAS_DO_DRAGAO;
+        return humidity < -0.2f ? ModWorldgen.DESERTO_VERMELHO : humidity < -0.1f ? ModWorldgen.TERRAS_DO_JOGO
+                : humidity < 0.3f ? ModWorldgen.TERRAS_DO_DRAGAO : ModWorldgen.FLORESTA_DE_HANAMI;
     }
 
     @Override
