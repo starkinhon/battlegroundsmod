@@ -42,6 +42,7 @@ public final class FxShaders {
     static ShaderInstance kkSus;
     static ShaderInstance kkMist;
     static ShaderInstance sand;
+    public static ShaderInstance wood;
     static ShaderInstance bleach;
     // Bleach's own glow composite (halo only, like the pages).
     static ShaderInstance bleachComp;
@@ -136,6 +137,11 @@ public final class FxShaders {
             register(event, "souls_sand", DefaultVertexFormat.POSITION_TEX_COLOR_NORMAL, s -> sand = s);
         } catch (Exception e) {
             BattlegroundsMod.LOGGER.error("Could not load Gaara's sand shader", e);
+        }
+        try {
+            register(event, "souls_wood", DefaultVertexFormat.NEW_ENTITY, s -> wood = s);
+        } catch (Exception e) {
+            BattlegroundsMod.LOGGER.error("Could not load Hashirama's wood shader", e);
         }
         // Bleach (Rukia, Byakuya): the same GLSL text as the approved pages (forja/bleach/mod-shaders.sh).
         try {

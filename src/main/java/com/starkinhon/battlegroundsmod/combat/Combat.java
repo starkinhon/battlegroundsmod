@@ -52,6 +52,8 @@ public final class Combat {
     }
 
     public static List<LivingEntity> inRadius(ServerLevel level, Vec3 center, double radius, Entity owner) {
+        // Freeza Poder Total's island in the air breaks under any blow of his enemies.
+        com.starkinhon.battlegroundsmod.power.powers.freezaboss.FreezaTotal.probeBall(center, radius, owner);
         return level.getEntitiesOfClass(LivingEntity.class, AABB.ofSize(center, radius * 2, radius * 2, radius * 2),
                 e -> isTarget(e, owner) && center(e).distanceToSqr(center) <= radius * radius);
     }
@@ -68,6 +70,7 @@ public final class Combat {
     }
 
     public static List<LivingEntity> alongLine(ServerLevel level, Vec3 start, Vec3 end, double radius, Entity owner) {
+        com.starkinhon.battlegroundsmod.power.powers.freezaboss.FreezaTotal.probeLine(start, end, radius, owner);
         return level.getEntitiesOfClass(LivingEntity.class, new AABB(start, end).inflate(radius),
                 e -> {
                     if (!isTarget(e, owner)) {

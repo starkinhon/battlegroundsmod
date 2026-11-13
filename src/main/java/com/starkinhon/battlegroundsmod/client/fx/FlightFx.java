@@ -198,7 +198,7 @@ public final class FlightFx {
                 strongest = Math.max(strongest, k.strength());
                 i++;
             }
-            FxDraw.stripFlat(pts, widths, us, 36, 0, AURA, Math.min(1, strongest * 1.5f), false);
+            FxDraw.stripFlat(pts, widths, us, 42, 0, AURA, Math.min(1, strongest * 1.5f), false);
         }
     }
 

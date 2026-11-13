@@ -56,7 +56,16 @@
 //             at 12 frames a second (alpha layer); param byte = life (0..15) * 16 + seed (0..15); the color is its skin
 //  35 flight trail  the Dragon Ball flight's trail from the feet (forja voo/voo.html): a strip with u from the feet
 //             (0) to the oldest point (1), strands of ki opening back with a white core
-//  36 flight wake  the wake a fast flier skims over the ground (forja db-voo-mobs, Kuririn's rasante): a strip lying
+//  36-41 Freeza Poder Total's warnings and lava (forja freeza-boss: the preview's MARK_F, CRK_F, AIM_F and GEY_F):
+//  36 fz mark    a circle closing on the ground (the exact spot of what comes), param = how far it has closed (1 open)
+//  37 fz shadow  a dark shadow growing on the ground, param = how grown
+//  38 fz cracks  Voronoi cracks running out from the middle of a ground quad (alpha layer, dark); param byte = size class
+//                (0..3: 4, 7, 10, 36 blocks) * 64 + how far they ran (0..63); classes 0 and 1 have a lit ring at the edge
+//  39 fz cracks  the same, hot (additive: glowing purple or lava)
+//  40 fz aim     a thin aim line on the ground (u along its 22 blocks), dashed and blinking until it locks; param = lock
+//  41 fz lava    a lava geyser on a camera-facing ribbon (u from the ground up), crust boiling up it; param = how high
+//                it stands (0..1)
+//  42 flight wake  the wake a fast flier skims over the ground (forja db-voo-mobs, Kuririn's rasante): a strip lying
 //             on the ground, u from the flier (0) back, two bands of torn dust/spray opening out to the sides
 // A very dark color never burns white (dark rims and lines stay dark).
 // Near walls and the ground the effect fades out instead of cutting a hard line (soft particles).
@@ -699,6 +708,65 @@ vec4 barrier(vec2 p, vec2 uvq, float param, float time, out float core) {
     return vec4(color.rgb, clamp(a, 0.0, 1.0));
 }
 
+// ---- shapes 36-41: Freeza Poder Total (the preview's shaders, forja/freeza-boss) ----
+vec2 fzHh(vec2 q) {
+    q = vec2(dot(q, vec2(127.1, 311.7)), dot(q, vec2(269.5, 183.3)));
+    return fract(sin(q) * 43758.5453);
+}
+
+float fzVor(vec2 x, float sd) {
+    vec2 n = floor(x);
+    vec2 f = fract(x);
+    vec2 mg = vec2(0.0);
+    vec2 mr = vec2(0.0);
+    float md = 8.0;
+    for (int j = -1; j <= 1; j++) {
+        for (int i = -1; i <= 1; i++) {
+            vec2 g = vec2(float(i), float(j));
+            vec2 o = fzHh(n + g + sd);
+            vec2 rr = g + o - f;
+            float d = dot(rr, rr);
+            if (d < md) {
+                md = d;
+                mr = rr;
+                mg = g;
+            }
+        }
+    }
+    md = 8.0;
+    for (int j = -2; j <= 2; j++) {
+        for (int i = -2; i <= 2; i++) {
+            vec2 g = mg + vec2(float(i), float(j));
+            vec2 o = fzHh(n + g + sd);
+            vec2 rr = g + o - f;
+            if (dot(mr - rr, mr - rr) > 1.0e-5) {
+                md = min(md, dot(0.5 * (mr + rr), normalize(rr - mr)));
+            }
+        }
+    }
+    return md;
+}
+
+// The preview's CRK_F: rgb and alpha of the cracks. hot = 0 dark lines (alpha layer), 1 glowing (additive).
+vec4 fzCracks(vec2 p, float pb, float hot) {
+    float cls = floor(pb / 64.0);
+    float grow = mod(pb, 64.0) / 63.0;
+    float big = cls < 0.5 ? 4.0 : cls < 1.5 ? 7.0 : cls < 2.5 ? 10.0 : 36.0;
+    vec2 q = p * big * 1.1;
+    float rr = length(q);
+    float sd = 1.7 + cls * 3.1;
+    vec2 w = q + vec2(noise(q * 0.3 + sd) - 0.5, noise(q * 0.3 + 7.0 + sd) - 0.5) * 1.8;
+    float e = fzVor(w * 0.55, sd);
+    float e2 = fzVor(w * 1.4 + 3.0, sd);
+    float uR = grow * (big + 0.6);
+    float ring = cls < 1.5 ? 1.0 - smoothstep(0.0, 0.6, abs(rr - big)) : 0.0;
+    float inside = 1.0 - smoothstep(uR - 1.2, uR, rr);
+    float line = (1.0 - smoothstep(0.02, 0.07, e)) * inside + (1.0 - smoothstep(0.015, 0.045, e2)) * inside * 0.55 * (1.0 - smoothstep(uR * 0.5, uR, rr)) + ring * step(0.02, grow);
+    float a = clamp(line, 0.0, 1.0);
+    vec3 c = mix(color.rgb * 0.5, mix(color.rgb, vec3(1.0, 0.95, 0.7), 0.5), hot * (0.5 + 0.5 * sin(rr * 0.8 - sd * 3.0)));
+    return vec4(c * (0.6 + 1.3 * hot), a * (hot > 0.5 ? 1.0 : 0.9));
+}
+
 float linearDepth(float d) {
     float z = d * 2.0 - 1.0;
     return 2.0 * DepthRange.x * DepthRange.y / (DepthRange.y + DepthRange.x - z * (DepthRange.y - DepthRange.x));
@@ -1146,7 +1214,7 @@ void main() {
         alpha = (k * edge * 0.55 + hot * 0.5) * pow(max(0.0, 1.0 - along), 1.5) * smoothstep(0.0, 0.06, along);
         base = mix(color.rgb, vec3(1.0), 0.5);
         core = hot * 0.3;
-    } else if (shape == 36) {
+    } else if (shape == 42) {
         float along = uv.x;
         float across = uv.y * 2.0 - 1.0;
         float spread = 0.25 + along * 0.75;
@@ -1193,6 +1261,54 @@ void main() {
         base = mix(body, vec3(0.08, 0.08, 0.09), ink);
         alpha = max(fill * (0.58 + 0.4 * glow), ink);
         core = glow * 0.35 * (1.0 - ink);
+    } else if (shape == 36) {
+        // The preview's MARK_F, mode 0: the circle that closes.
+        float aa = max(fwidth(r) * 1.5, 1.0e-4);
+        float k = param;
+        alpha = 0.55 * (1.0 - smoothstep(k - aa, k + aa, r)) * (0.6 + 0.4 * r) + (1.0 - smoothstep(0.0, aa * 2.0, abs(r - 0.97))) * 0.9
+                + (1.0 - smoothstep(0.0, aa * 2.0, abs(r - k))) * 0.8;
+        alpha *= step(r, 1.0);
+        base = color.rgb;
+        core = 0.0;
+    } else if (shape == 37) {
+        // MARK_F, mode 1: the shadow that grows.
+        float sh = 1.0 - smoothstep(0.0, 1.0, r);
+        alpha = pow(sh, 0.8) * 0.78 * param;
+        base = color.rgb;
+        core = 0.0;
+    } else if (shape == 38 || shape == 39) {
+        vec4 ck = fzCracks(p, floor(param * 255.0 + 0.5), shape == 39 ? 1.0 : 0.0);
+        base = ck.rgb;
+        alpha = ck.a;
+        core = 0.0;
+    } else if (shape == 40) {
+        // The preview's AIM_F: a fine line with a soft glow, dashed and running while it aims, lit solid once it locks.
+        float v = abs(uv.y - 0.5) * 2.0;
+        float u = uv.x * 22.0;
+        float cr = exp(-v * v * 22.0);
+        float gl = exp(-v * v * 3.0) * 0.45;
+        float dash = 0.55 + 0.45 * step(0.5, fract(u * 0.8 - time * 3.0));
+        alpha = (cr * mix(dash, 1.0, param) + gl * (0.4 + 0.6 * param)) * (1.0 - smoothstep(0.85, 1.0, uv.x)) * smoothstep(0.0, 0.03, uv.x);
+        base = min(vec3(1.0), mix(vec3(1.0, 0.25, 0.8), vec3(1.0, 0.85, 0.97), cr * param * 0.7) * 1.4);
+        core = 0.0;
+    } else if (shape == 41) {
+        // The preview's GEY_F on a column: the profile widening to the top, torn at the top by noise, dark crust boiling up
+        // over hot yellow-orange lava.
+        float hu = uv.x;
+        float x = uv.y * 2.0 - 1.0;
+        vec2 q = vec2(x * 1.5, hu * 6.0 - time * 5.0) + seed;
+        float n = fbm(q + (fbm(q * 0.6 + 3.0) - 0.5) * 1.6);
+        float prof = mix(0.55, 1.0, pow(hu, 1.6)) * (0.85 + 0.3 * fbm(vec2(hu * 4.0 - time * 3.0, seed)));
+        float fw = max(fwidth(x), 1.0e-4);
+        float body = smoothstep(0.0, 1.5 * fw, prof - abs(x));
+        float top = 1.0 - smoothstep(0.75, 1.0, hu + (n - 0.5) * 0.4);
+        float crust = smoothstep(0.55, 0.75, n) * (0.4 + 0.6 * hu);
+        vec3 hot = mix(vec3(1.0, 0.42, 0.05), vec3(1.0, 0.88, 0.45), smoothstep(0.2, 0.55, n));
+        vec3 dark = vec3(0.22, 0.05, 0.02);
+        base = mix(hot, dark, crust * (1.0 - 0.6 * (1.0 - param))) * (1.2 - 0.4 * crust);
+        base = min(base, vec3(1.0));
+        alpha = body * step(0.5, top);
+        core = 0.0;
     } else {
         alpha = 1.0;
     }
@@ -1202,9 +1318,9 @@ void main() {
 
     float fade = 1.0;
     // The Black Box's walls and lances stay solid right in front of whoever is inside, and shards, wings and orbs sit
-    // right on bodies (no soft fade), and so does the Red's orb at Gojo's fingertip. The flight's wake (36) lies on the
-    // ground itself: faded there it was all but gone (first test of #318).
-    if (SoftOn > 0.5 && (shape < 12 || shape > 16) && shape != 20 && shape != 21 && shape != 28 && shape != 33 && shape != 34 && shape != 36) {
+    // right on bodies (no soft fade), and so does the Red's orb at Gojo's fingertip. The flight's wake (42) lies on the
+    // ground itself: faded there it was all but gone (first test of #318). Freeza's ground warnings (36-40) too.
+    if (SoftOn > 0.5 && (shape < 12 || shape > 16) && shape != 20 && shape != 21 && shape != 28 && shape != 33 && shape != 34 && (shape < 36 || shape > 40) && shape != 42) {
         float scene = linearDepth(texture(Sampler1, gl_FragCoord.xy / Screen).r);
         fade = clamp((scene - viewDist) / 0.6, 0.0, 1.0);
     }
