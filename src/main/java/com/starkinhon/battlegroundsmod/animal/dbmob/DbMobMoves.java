@@ -386,8 +386,10 @@ public final class DbMobMoves {
     }
 
     // a small hole of soft blocks, only with the destruction gamerule
+    // a crater, only for the android's self-destruct (the common mobs' bombs and shots never dig: test 2026-11-13,
+    // they holed the ground and the houses), only with the destruction gamerule and mobGriefing
     private static void dent(DbMob m, Vec3 at, double radius) {
-        if (BlockRules.canBreak(lvl(m))) {
+        if (BlockRules.canBreak(lvl(m)) && lvl(m).getGameRules().getBoolean(net.minecraft.world.level.GameRules.RULE_MOBGRIEFING)) {
             DbCommon.bigCrater(lvl(m), at, radius, radius * 0.6, 3);
         }
     }
@@ -395,7 +397,7 @@ public final class DbMobMoves {
     // weak blocks (plants, leaves, logs, glass) in the way of a charge, only with the destruction gamerule
     private static void smash(DbMob m, Vec3 at, double r, boolean logs) {
         ServerLevel level = lvl(m);
-        if (!BlockRules.canBreak(level)) {
+        if (!BlockRules.canBreak(level) || !level.getGameRules().getBoolean(net.minecraft.world.level.GameRules.RULE_MOBGRIEFING)) {
             return;
         }
         BlockPos c = BlockPos.containing(at);
@@ -671,9 +673,11 @@ public final class DbMobMoves {
             case "yeti/rugido" -> {
                 if (tick == 52) {
                     for (LivingEntity o : cone(m, m.position(), m.forward(), 8, 0.55)) {
-                        if (Freeze.isFrozen(o) && HIT_ONCE.getOrDefault(m.getId(), Set.of()).contains(o.getId())) {
+                        if (HIT_ONCE.getOrDefault(m.getId(), Set.of()).contains(o.getId())) {
                             SubNet.send(level, SubNet.FREEZE, o.getId(), o.position(), Vec3.ZERO, 0, 0, 1);
-                            magic(m, o, 60);
+                            if (Freeze.isFrozen(o)) {
+                                magic(m, o, 60);
+                            }
                         }
                     }
                     letGo(m);
@@ -770,6 +774,12 @@ public final class DbMobMoves {
             }
             // ---------- Dragon: the jet of fire ----------
             case "dragao/fogo" -> {
+                if (m.getControllingPassenger() instanceof Player rider) {
+                    // ridden: the jet follows where the rider looks, all along
+                    m.setYRot(rider.getYRot());
+                    m.yBodyRot = rider.getYRot();
+                    AIM.put(m.getId(), rider.getEyePosition().add(rider.getLookAngle().scale(8)));
+                }
                 if (tick == 17) {
                     Vec3 mouth = dragonMouth(m);
                     Vec3 dir = fireDir(m, t);
@@ -1078,7 +1088,8 @@ public final class DbMobMoves {
                 sound(m, SoundEvents.SAND_BREAK, 1.6f, 1.2f);
                 for (LivingEntity o : cone(m, m.position(), m.forward(), 4.8, 0.6)) {
                     magic(m, o, 10);
-                    o.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 60, 0, false, false), m);
+                    // sand in the eyes: a short blindness (test 2026-11-13: 3 s of black screen was too much), dizzy longer
+                    o.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 25, 0, false, false), m);
                     dizzy(m, o, 60);
                 }
             }
@@ -1101,6 +1112,7 @@ public final class DbMobMoves {
                 DbCommon.later(flight, () -> {
                     DbCommon.boom(level, boom, 3f, Db.RED_W, 1000 + level.getRandom().nextInt(100));
                     DbCommon.screen(level, boom, 8);
+                    SubNet.send(level, SubNet.CRACKS, 0, boom, Vec3.ZERO, 2.4f, 8, 1);
                     for (LivingEntity o : Combat.inRadius(level, boom, 3.4, m)) {
                         if (!ally(m, o)) {
                             double k = 1 - 0.5 * Math.min(1, Combat.center(o).distanceTo(boom) / 3.4);
@@ -1108,7 +1120,6 @@ public final class DbMobMoves {
                             Combat.pushFrom(o, boom, 1.2 * k, 0.5);
                         }
                     }
-                    dent(m, boom, 2.2);
                 });
             }
             // ---------- Pirata ----------
@@ -1126,7 +1137,7 @@ public final class DbMobMoves {
                 SubNet.send(level, SubNet.FIRE_BOOM, 0, at.add(0, 0.4, 0), new Vec3(at.y, 0, 0), 2.4f, 0, m.getRandom().nextInt(50));
                 sound(m, at, SoundEvents.GENERIC_EXPLODE.value(), 1.6f, 1.1f);
                 wave(m, at.add(0, 0.5, 0), 3, 95, 1.0, 0.45, false);
-                dent(m, at, 1.6);
+                SubNet.send(level, SubNet.CRACKS, 0, at, Vec3.ZERO, 1.8f, 7, 1);
             }
             // ---------- Yeti ----------
             case "yeti/rugido" -> {
@@ -1139,9 +1150,14 @@ public final class DbMobMoves {
                 for (LivingEntity o : cone(m, m.position(), dir, 7.5, 0.55)) {
                     magic(m, o, 30);
                     o.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 60, 1, false, true), m);
-                    if (once(m, o) && !Freeze.isFrozen(o) && m.heldId < 0) {
-                        hold(m, o, 30);
-                        SubNet.send(level, SubNet.FREEZE, o.getId(), o.position(), new Vec3(8, 0, 0), 30, 0, 0);
+                    if (once(m, o) && !Freeze.isFrozen(o) && m.heldId < 0 && hold(m, o, 32)) {
+                        SubNet.send(level, SubNet.FREEZE, o.getId(), o.position(), new Vec3(8, 0, 0), 32, 0, 0);
+                        // the ice always melts on the client, even if the yeti dies or is cut off before the shatter
+                        int id = o.getId();
+                        DbCommon.later(34, () -> {
+                            net.minecraft.world.entity.Entity e = level.getEntity(id);
+                            SubNet.send(level, SubNet.FREEZE, id, e != null ? e.position() : Vec3.ZERO, Vec3.ZERO, 0, 0, 1);
+                        });
                     }
                 }
             }
@@ -1238,6 +1254,7 @@ public final class DbMobMoves {
                 SubNet.send(level, SubNet.SHOT, SubNet.newId(), from, at.subtract(from), flight, Db.PURPLE, 0);
                 DbCommon.later(flight, () -> {
                     DbCommon.boom(level, at, 2.6f, Db.PURPLE, 1000 + level.getRandom().nextInt(100));
+                    SubNet.send(level, SubNet.CRACKS, 0, at, Vec3.ZERO, 2.2f, 8, 1);
                     for (LivingEntity o : Combat.inRadius(level, at, 3.2, m)) {
                         if (!ally(m, o)) {
                             double k = 1 - 0.5 * Math.min(1, Combat.center(o).distanceTo(at) / 3.2);
@@ -1245,7 +1262,6 @@ public final class DbMobMoves {
                             Combat.pushFrom(o, at, 0.9 * k, 0.4);
                         }
                     }
-                    dent(m, at, 2);
                 });
             }
             // ---------- Cell Jr.: the spin kick from behind ----------

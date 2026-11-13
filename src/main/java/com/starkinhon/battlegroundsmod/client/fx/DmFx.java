@@ -197,7 +197,7 @@ final class DmFx {
                 case DmNet.ACID -> acid(f, age);
                 case DmNet.BOMB -> bomb(f, age);
                 case DmNet.ROCKET -> rocket(f, age);
-                case DmNet.BREATH -> breath(f, age);
+                case DmNet.BREATH -> breath(f, age, partial);
                 case DmNet.SUCK -> suck(f, age);
                 case DmNet.SAND -> sand(f, age);
                 case DmNet.DARK -> dark(f, age);
@@ -582,9 +582,23 @@ final class DmFx {
 
     // A jet of fire from the mouth (pos) along dir over a ticks: tongues of flame each born at the mouth on its own tick
     // and flying out, swelling, rising and darkening into smoke; a white-hot core near the mouth.
-    private static void breath(Fx f, float age) {
+    private static void breath(Fx f, float age, float partial) {
         Vector3f mouth = rel(f.pos);
         Vector3f d = vec(f.dir);
+        // the jet stays on the mouth of a dragon that moves (above all a ridden one, flying fast), along where its rider
+        // looks: test 2026-11-13, the ridden fire was left behind at the tail
+        var level = Minecraft.getInstance().level;
+        Entity e = level == null ? null : level.getEntity(f.id);
+        if (e != null && age < f.a + 2) {
+            float yaw = Mth.lerp(partial, e.yRotO, e.getYRot()) * Mth.DEG_TO_RAD;
+            Vec3 at = e.getPosition(partial).add(-Mth.sin(yaw) * 3.6, 3.2, Mth.cos(yaw) * 3.6);
+            mouth = rel(at);
+            Entity rider = e.getControllingPassenger();
+            if (rider != null) {
+                Vec3 look = rider.getViewVector(partial).scale(d.length());
+                d = vec(look);
+            }
+        }
         float len = Math.max(1, d.length());
         Vector3f[] fr = frame(d);
         float dur = Math.max(1, f.a);
@@ -697,8 +711,9 @@ final class DmFx {
             var player = Minecraft.getInstance().player;
             if (player != null && player.position().distanceTo(f.pos) < R * in && player.getId() != f.id) {
                 float k = in * out;
-                ScreenFx.flash(0x020104, 0.82f * k, 3);
-                ScreenFx.vignette(0x000000, 0.98f * k, 4);
+                // dark, but the shapes still show (test 2026-11-13: the full black was too much)
+                ScreenFx.flash(0x020104, 0.55f * k, 3);
+                ScreenFx.vignette(0x000000, 0.9f * k, 4);
             }
             for (int i = 0; i < 10; i++) {
                 float ph = (age * 0.02f + hash(f.id, i, 9)) % 1f;
