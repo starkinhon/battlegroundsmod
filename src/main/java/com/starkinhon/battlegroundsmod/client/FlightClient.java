@@ -218,6 +218,11 @@ public final class FlightClient {
                 vx *= 0.2;
                 vz *= 0.2;
             }
+            // thrown down onto the ground (not the Martelo): it skims over it and keeps flying instead of landing
+            // (2nd scripted test of #318: a ground blow put the player on the ground and the air fight never started)
+            if (!slam && vy < 0 && !player.level().noCollision(player, player.getBoundingBox().move(0, vy * DT - 0.05, 0))) {
+                vy = 0;
+            }
             player.setDeltaMovement(vx * DT, vy * DT, vz * DT);
             player.fallDistance = 0;
             speed01 = (float) Mth.clamp(Math.sqrt(vx * vx + vy * vy + vz * vz) / boostSpeed(player), 0, 1);
@@ -421,8 +426,9 @@ public final class FlightClient {
             return used;
         }
         if (dash != null) {
-            // The ki dash: 62 b/s, homing on the target, ends on it.
-            Vec3 tc = dash.position().add(0, dash.getBbHeight() / 2, 0).subtract(me);
+            // The ki dash: 62 b/s, homing on the target, ends on it. At one on the ground it aims at the chest, a bit
+            // above, so the player stops in front of it still flying.
+            Vec3 tc = dash.position().add(0, Math.max(dash.getBbHeight() / 2, dash.onGround() ? 1.2 : 0), 0).subtract(me);
             double l = tc.length();
             if (l < 2.0) {
                 vx *= 0.3;

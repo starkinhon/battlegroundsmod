@@ -11,8 +11,12 @@
 /effect give @s resistance 99999 3 true
 /effect give @s saturation 99999 0 true
 /soul semcooldown
-/tp @s 0 -40 -400 0 0
+/gamerule sendCommandFeedback false
+# área nova (a de 0 -400 ficou cheia de crateras das rodadas anteriores)
+/tp @s 600 -40 -600 0 0
 /devc vista terceira
+/devc janela 1280 720
+/devc chat off
 espera 30
 
 # Decola (pulo duplo) e sobe
@@ -27,8 +31,10 @@ espera 27
 espera 10
 
 # Vegeta na frente; o Dash Attack (G) começa a briga
-/summon battlegroundsmod:vegeta 0 -58 -388
-espera 20
+/summon battlegroundsmod:vegeta 600 -58 -588
+# ele decola sozinho quando vê o alvo no ar (AirCombat: alvo no ar por 0,35 s)
+espera 80
+/devc print voo-combate/00-vegeta-decolou
 /devc tecla k
 espera 10
 /devc gravar voo-combate/01-trava-decola 3
