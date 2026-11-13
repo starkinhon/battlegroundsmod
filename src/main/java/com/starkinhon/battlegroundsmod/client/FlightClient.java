@@ -448,9 +448,12 @@ public final class FlightClient {
         if (SkillAnimations.guarding(player)) {
             top *= 0.35;
         }
+        // W/S along where the CAMERA looks (Stark's 2nd play: still "the game playing for me"); the lock only helps
+        // the aim. W stops short of the target instead of flying into it.
+        Vec3 look = player.getLookAngle();
         Vec3 wish = side.scale(right).add(0, up, 0);
-        if (forward > 0 && dist > 2.4 || forward < 0) {
-            wish = wish.add(fwd.scale(forward));
+        if (forward < 0 || !(dist < 2.4 && look.dot(fwd) > 0.5)) {
+            wish = wish.add(look.scale(forward));
         }
         double wl = wish.length();
         if (wl > 1) {

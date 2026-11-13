@@ -31,6 +31,9 @@ public final class AirFightClient {
     private static int dashTarget = -1;
     private static int dashTicks;
     private static long lastFrame;
+    // what the assist set last frame (NaN: nothing), to tell the player's own mouse from it
+    private static float setYaw = Float.NaN, setPitch;
+    private static float mouseHold;
 
     private AirFightClient() {
     }
@@ -156,18 +159,36 @@ public final class AirFightClient {
         float yaw = (float) (Mth.atan2(-to.x, to.z) * Mth.RAD_TO_DEG);
         // the elevation held in a band (72°: at 50° a target well below fell out of the shot in the 4th scripted test)
         float pitch = Mth.clamp((float) (-Mth.atan2(to.y, flat) * Mth.RAD_TO_DEG), -72, 72);
-        // Smooth and capped (Stark's first play: at 14 the view snapped round whenever the target zipped past, and
-        // with A/D on the camera's sides the direction felt out of control): eases in, at most 260 deg/s.
-        float k = 1 - (float) Math.exp(-6 * dt);
-        float cap = 260 * dt;
-        float y = player.getYRot() + Mth.clamp(Mth.wrapDegrees(yaw - player.getYRot()) * k, -cap, cap);
-        float x = player.getXRot() + Mth.clamp((pitch - player.getXRot()) * k, -cap, cap);
+        // A LIGHT aim assist, not a camera grab (Stark's 2nd play: "parece que é o jogo que tá jogando pra mim"; the
+        // preview felt "no controle, com leve auxílio"). The mouse always wins: moving it pauses the assist for a moment;
+        // the assist itself is slow, capped, and leaves alone a target already near the middle of the screen.
+        if (setYaw == setYaw && (Math.abs(Mth.wrapDegrees(player.getYRot() - setYaw)) > 0.05 || Math.abs(player.getXRot() - setPitch) > 0.05)) {
+            mouseHold = 0.6f;
+        }
+        mouseHold = Math.max(0, mouseHold - dt);
+        if (mouseHold > 0) {
+            setYaw = Float.NaN;
+            return;
+        }
+        float k = 1 - (float) Math.exp(-2.6 * dt);
+        float cap = 110 * dt;
+        float ey = soft(Mth.wrapDegrees(yaw - player.getYRot()), 7);
+        float ep = soft(pitch - player.getXRot(), 7);
+        float y = player.getYRot() + Mth.clamp(ey * k, -cap, cap);
+        float x = player.getXRot() + Mth.clamp(ep * k, -cap, cap);
+        setYaw = y;
+        setPitch = x;
         player.setYRot(y);
         player.setXRot(x);
         player.yRotO = y;
         player.xRotO = x;
         player.setYHeadRot(y);
         player.yHeadRotO = y;
+    }
+
+    // The error minus a dead zone in the middle of the screen.
+    private static float soft(float err, float dead) {
+        return Math.abs(err) <= dead ? 0 : err - Math.signum(err) * dead;
     }
 
     // Others: whether that player flies in the combat stance (Flight.COMBAT from the server).
