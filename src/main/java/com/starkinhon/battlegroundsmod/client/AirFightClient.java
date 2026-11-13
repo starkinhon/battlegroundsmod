@@ -37,7 +37,8 @@ public final class AirFightClient {
 
     // Every client tick from FlightClient, before the flight moves the player: keeps the lock right.
     static void tick(LocalPlayer player, boolean flying) {
-        boolean wants = flying && player.getData(ModAttachments.POWER).combat && !player.isSpectator();
+        boolean wants = flying && player.getData(ModAttachments.POWER).combat && !player.isSpectator()
+                && com.starkinhon.battlegroundsmod.universe.Flight.dbPower(player);
         LivingEntity current = entity(targetId);
         if (!wants) {
             targetId = -1;
@@ -131,6 +132,8 @@ public final class AirFightClient {
                 FlightClient.dashEnd();
             }
             dashTicks = 0;
+        } else if (kind == AirFight.MOVE_DENY) {
+            PreviewFight.deny(target);
         } else if (kind == AirFight.MOVE_STOP) {
             if (dashTicks > 0) {
                 FlightClient.dashEnd();
@@ -160,7 +163,8 @@ public final class AirFightClient {
         Minecraft minecraft = Minecraft.getInstance();
         LocalPlayer player = minecraft.player;
         PreviewFight.frame();
-        if (PreviewFight.running()) {
+        if (PreviewFight.running() || PreviewFight.scene()) {
+            // the page's fight, or a cutscene that has the camera (the lock must not turn the player under it)
             camPos = null;
             lastFrame = System.nanoTime();
             return;

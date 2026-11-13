@@ -107,7 +107,7 @@ public final class Goku {
             // Held after letting go: the beam grows thicker (0.6 to 1.8).
             float thick = (0.6f + 1.2f * SubCommon.smooth((t - 4) / 54f)) * big;
             boolean end = t >= 64 || (t >= 16 && !held);
-            Vec3 dir = caster.getLookAngle();
+            Vec3 dir = DbCommon.aim(caster);
             double width = thick * 0.6 + 0.4;
             Vec3 reachEnd = DbCommon.beamEnd(caster, level, hm, dir, 40, width, false);
             Vec3 to = hm.add(reachEnd.subtract(hm).scale(Math.min(1, t / 5.0)));
@@ -151,7 +151,11 @@ public final class Goku {
         SubNet.send(level, SubNet.SPARKS, SubNet.newId(), DbCommon.forehead(caster), Vec3.ZERO, 0.25f, Db.GOLD_W, 1);
         Vec3 from = caster.position();
         Vec3 behind = target.position().subtract(SubCommon.flat(target.getLookAngle()).scale(1.2));
-        if (SubCommon.solid(level, behind.add(0, 0.5, 0)) || SubCommon.solid(level, behind.add(0, 1.5, 0))) {
+        // In the air the soul's body faces where it flies, not who it fights (in the 2026-11-13 test Goku came out in
+        // front of Vegeta): behind is the far side from Goku, at its height.
+        boolean flier = com.starkinhon.battlegroundsmod.combat.AirFight.target(caster) == target
+                || com.starkinhon.battlegroundsmod.boss.AirCombat.flying(target);
+        if (flier || SubCommon.solid(level, behind.add(0, 0.5, 0)) || SubCommon.solid(level, behind.add(0, 1.5, 0))) {
             behind = target.position().add(SubCommon.flat(target.position().subtract(from)).scale(1.2));
         }
         SubNet.send(level, SubNet.VANISH, 0, from.add(0, 1, 0), Vec3.ZERO, 0, 0, 0);
@@ -369,6 +373,14 @@ public final class Goku {
                 }
                 if (target == null && caster instanceof Mob mob && mob.getTarget() != null && mob.getTarget().isAlive()) {
                     target = mob.getTarget();
+                }
+                // A player aiming at nobody: whoever they are fighting, if close enough (in the 2026-11-13 test Goku
+                // landed after the rush, the crosshair fell on the ground and the Genki blew up on him).
+                if (target == null && caster instanceof net.minecraft.world.entity.player.Player
+                        && caster.getData(com.starkinhon.battlegroundsmod.ModAttachments.POWER).foughtId >= 0
+                        && level.getEntity(caster.getData(com.starkinhon.battlegroundsmod.ModAttachments.POWER).foughtId) instanceof LivingEntity fought
+                        && fought.isAlive() && Combat.isTarget(fought, caster) && fought.distanceTo(caster) <= GENKI_RANGE) {
+                    target = fought;
                 }
                 locked[0] = target;
                 vel[0] = genkiGoal(caster, locked[0]).subtract(top).normalize().scale(0.3);

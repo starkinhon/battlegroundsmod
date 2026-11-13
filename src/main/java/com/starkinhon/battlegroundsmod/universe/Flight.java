@@ -50,6 +50,9 @@ public final class Flight {
     public static final int CROSSED = 8, UPRIGHT = 16, WAVE = 32;
     // the combat flight (combat/AirFight): standing up in the fighting stance, facing the target
     public static final int COMBAT = 64;
+    // a soul flown by the combat flight's page on a client (client/PreviewFight), taken by one of the player's skills
+    // (a real stun or a hold): the server moves it, the page follows it until the skill lets go
+    public static final int HELD = 128;
 
     private static final Map<UUID, Integer> SENT = new HashMap<>();
     private static final Map<UUID, Boolean> BOOSTING = new HashMap<>();
@@ -68,6 +71,25 @@ public final class Flight {
 
     public static boolean knows(ServerPlayer player) {
         return player.getData(ModAttachments.TECHNIQUES).contains(TECHNIQUE);
+    }
+
+    // The combat flight (K while flying: locked on the target, the approved page's fight) is Dragon Ball's only (Stark
+    // 2026-11-13): a player with Goku, Vegeta, Freeza, Piccolo, Kame, Kuririn or Bills. Any other power flies the normal
+    // way, as before.
+    public static boolean dbPower(net.minecraft.world.entity.LivingEntity entity) {
+        String power = entity.getData(ModAttachments.POWER).power;
+        if (power == null) {
+            return false;
+        }
+        for (com.starkinhon.battlegroundsmod.power.Power p : java.util.List.of(com.starkinhon.battlegroundsmod.power.Powers.GOKU,
+                com.starkinhon.battlegroundsmod.power.Powers.VEGETA, com.starkinhon.battlegroundsmod.power.Powers.FREEZA,
+                com.starkinhon.battlegroundsmod.power.Powers.PICCOLO, com.starkinhon.battlegroundsmod.power.Powers.KAME,
+                com.starkinhon.battlegroundsmod.power.Powers.KURIRIN, com.starkinhon.battlegroundsmod.power.Powers.DESTRUCTION_GOD)) {
+            if (p.id().equals(power)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     // Whether player is flying with the technique right now (not the creative flight).

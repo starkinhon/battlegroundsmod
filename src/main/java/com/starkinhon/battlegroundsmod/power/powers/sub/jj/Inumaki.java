@@ -238,14 +238,26 @@ public final class Inumaki {
                 Combat.hurtMagic(caster, t, held ? 22 : 15);
                 int down = wordStun(caster, t, 26);
                 Stun.apply(t, down, true);
-                Freeze.hold(t, down);
+                // Flying (the combat flight, a soul in the sky): the weight drives them all the way down into the
+                // ground, like every move that slams in the air; the dent opens where they land.
+                double above = SubCommon.aboveGround(level, t.position(), 64);
+                Vec3 top = t.position();
+                Vec3 floor = above < 64 ? top.subtract(0, above, 0) : top;
+                int fall = above > 2 && above < 64 ? Math.min(10, 3 + (int) (above / 6)) : 0;
+                if (fall > 0) {
+                    Freeze.hold(t, down + fall, a -> top.lerp(floor, Math.min(1, a / (double) fall)));
+                } else {
+                    Freeze.hold(t, down);
+                }
                 t.setDeltaMovement(0, -1, 0);
                 t.hurtMarked = true;
-                Vec3 at = SubCommon.ground(level, t.position());
                 Vec3 fw = SubCommon.flat(t.getLookAngle());
-                // the ground gives way in the shape of the body: longer along it, the arms' dents at the sides
-                JjCommon.crater(level, at.add(fw.scale(-0.3)), 1.4, 1.0, 5);
-                JjCommon.crater(level, at.add(fw.scale(0.5)), 1.0, 0.8, 3);
+                Tasks.later(fall, () -> {
+                    Vec3 at = fall > 0 ? floor : SubCommon.ground(level, t.position());
+                    // the ground gives way in the shape of the body: longer along it, the arms' dents at the sides
+                    JjCommon.crater(level, at.add(fw.scale(-0.3)), 1.4, 1.0, 5);
+                    JjCommon.crater(level, at.add(fw.scale(0.5)), 1.0, 0.8, 3);
+                });
                 DbCommon.screen(level, Combat.center(t), 42);
                 SubCommon.sound(level, t.position(), SoundEvents.ANVIL_LAND, 1.2f, 0.5f);
                 SubCommon.sound(level, t.position(), SoundEvents.GENERIC_EXPLODE.value(), 0.8f, 0.6f);

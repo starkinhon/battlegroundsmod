@@ -54,6 +54,8 @@ public final class AirFight {
     private static final Map<LivingEntity, Long> EXCHANGE = new HashMap<>();
 
     public static final int MOVE_DASH = 0, MOVE_STOP = 1, MOVE_EXCHANGE = 2;
+    // another player already flies that soul's page (multiplayer): the client leaves it to them for a while
+    public static final int MOVE_DENY = 3;
 
     private AirFight() {
     }
@@ -61,7 +63,7 @@ public final class AirFight {
     // ------------------------------------------------------------------ the lock
 
     public static void lock(ServerPlayer player, int id) {
-        if (id < 0) {
+        if (id < 0 || !Flight.dbPower(player)) {
             LOCK.remove(player.getUUID());
         } else {
             LOCK.put(player.getUUID(), id);
@@ -136,7 +138,9 @@ public final class AirFight {
                 || !Double.isFinite(pos.x + pos.y + pos.z)) {
             return;
         }
-        boss.air().pilot(player, pos, yaw, flags);
+        if (!boss.air().pilot(player, pos, yaw, flags)) {
+            move(player, MOVE_DENY, id, 0);
+        }
     }
 
     // kinds: the player's blows 0 punch, 1 heavy (the 4th punch, the dash, the kick from behind), 2 the Martelo,
@@ -147,7 +151,24 @@ public final class AirFight {
         if (t == null) {
             return;
         }
+        if (kind < 0 || kind > 16) {
+            return;
+        }
+        if (kind <= 4) {
+            // The client says when its blows land: never faster than the page can (punches, clashes and balls come
+            // 3 ticks apart at the quickest), so a changed client can't rain blows (multiplayer).
+            PowerData data = player.getData(ModAttachments.POWER);
+            long now = player.level().getGameTime();
+            if (now - data.airSimHitAt < 2) {
+                return;
+            }
+            data.airSimHitAt = now;
+        }
         float punch = (float) ComboSpec.get().golpe(0).dano() * Melee.multiplier(player);
+        // The page already threw the player (its own knockback): Minecraft's own from this hurt is undone, or the client
+        // would take it for a skill moving the player (FlightClient.serverMotion).
+        Vec3 keepSpeed = player.getDeltaMovement();
+        boolean keepMarked = player.hurtMarked;
         switch (kind) {
             case 0 -> Combat.hurtBasic(player, t, punch);
             case 1 -> Combat.hurtBasic(player, t, Math.max(punch * 2.2f, 25f * Melee.multiplier(player) * 0.9f));
@@ -163,6 +184,10 @@ public final class AirFight {
             case 16 -> Combat.hurtMagic(t, player, 3.6f);
             default -> {
             }
+        }
+        if (kind >= 10) {
+            player.setDeltaMovement(keepSpeed);
+            player.hurtMarked = keepMarked;
         }
     }
 

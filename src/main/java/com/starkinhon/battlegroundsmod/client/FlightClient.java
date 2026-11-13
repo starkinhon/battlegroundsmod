@@ -96,6 +96,11 @@ public final class FlightClient {
         return STATES.getOrDefault(entity.getId(), 0);
     }
 
+    // What the server said about it, never the page's own (client/PreviewFight reads Flight.HELD here).
+    static int serverState(Entity entity) {
+        return STATES.getOrDefault(entity.getId(), 0);
+    }
+
     public static boolean flying(Entity entity) {
         Minecraft minecraft = Minecraft.getInstance();
         if (entity == minecraft.player) {
@@ -110,6 +115,7 @@ public final class FlightClient {
         dodgeT = 0;
         active = false;
         knockTicks = 0;
+        driveTicks = 0;
         slam = false;
         boost = false;
     }
@@ -155,8 +161,63 @@ public final class FlightClient {
     private static int knockTicks;
     private static boolean slam;
 
+    // A skill of the player's own moving them (a dash: Madara's grab, Sukuna's Clivar, Chidori, Raikiri, Rasengan, Todo,
+    // Shigaraki's touch, Luffy's recoil...): the server sets the speed and the flight, which moves the player itself every
+    // tick, used to wipe it out on the next tick (the dash never went anywhere in the air). Now the server's speed is
+    // taken as it is while the skill keeps sending it, then the flight carries on from there.
+    private static int driveTicks;
+    private static double dvx, dvy, dvz;
+    // Below this (blocks per tick) it is a hit's knockback, not a skill moving the player.
+    private static final double DRIVE_MIN = 0.7;
+
+    // The server set the local player's speed (Minecraft's motion packet, see mixin/EntityMotionMixin).
+    public static void serverMotion(Vec3 v) {
+        if (!active) {
+            return;
+        }
+        double speed = v.length();
+        if (speed < DRIVE_MIN) {
+            if (driveTicks > 0) {
+                // the skill stopping the player (the dash's end)
+                driveTicks = speed < 0.05 ? 0 : 2;
+                dvx = v.x;
+                dvy = v.y;
+                dvz = v.z;
+                vx = v.x * 20;
+                vy = v.y * 20;
+                vz = v.z * 20;
+            }
+            return;
+        }
+        dvx = v.x;
+        dvy = v.y;
+        dvz = v.z;
+        driveTicks = 2;
+        vx = v.x * 20;
+        vy = v.y * 20;
+        vz = v.z * 20;
+        knockTicks = 0;
+        if (boost) {
+            Minecraft minecraft = Minecraft.getInstance();
+            if (minecraft.player != null) {
+                setBoost(minecraft.player, false, boostSpeed(minecraft.player));
+            }
+        }
+        PreviewFight.driven();
+    }
+
+    // Whether a skill of the player's own is moving them right now.
+    public static boolean driving() {
+        return driveTicks > 0;
+    }
+
     public static void knock(Vec3 velocity, int ticks, boolean slammed) {
         if (!active) {
+            return;
+        }
+        if (PreviewFight.running()) {
+            // the combat flight's page has the player: thrown off inside it (a skill's push, a soul's technique)
+            PreviewFight.knock(velocity, ticks, slammed);
             return;
         }
         vx = velocity.x;
@@ -193,6 +254,7 @@ public final class FlightClient {
             }
             active = false;
             knockTicks = 0;
+            driveTicks = 0;
             slam = false;
             boostAmt = Math.max(0, boostAmt - 0.15f);
             stopWind();
@@ -210,6 +272,23 @@ public final class FlightClient {
             boost = false;
             FlightFx.burst(player.position().add(0, 0.2, 0), new Vec3(0, 1, 0), 0.8f);
             boom(player.position(), false);
+        }
+        if (driveTicks > 0) {
+            // a skill moving the player (see serverMotion): its speed as it is, a little less each tick once it stops sending
+            driveTicks--;
+            player.setDeltaMovement(dvx, dvy, dvz);
+            dvx *= 0.85;
+            dvy *= 0.85;
+            dvz *= 0.85;
+            vx = dvx * 20;
+            vy = dvy * 20;
+            vz = dvz * 20;
+            player.fallDistance = 0;
+            if (PreviewFight.running() && sprintTap) {
+                PreviewFight.dodgeKey();
+                return true;
+            }
+            return false;
         }
         if (PreviewFight.running()) {
             // the combat flight's page moves the player itself, every frame (PreviewFight); Ctrl is its dodge

@@ -168,6 +168,18 @@ public final class PreviewFight {
     private static double sendAcc;
     // after the player came down (landed, slammed): no restart until it is up in the air again
     private static boolean parked;
+    // a skill has the mob (Flight.HELD): the page follows it
+    private static boolean held;
+    // where the page put the player last frame: anything else that moves it (a skill's teleport from the server) wins
+    private static Vec3 placed;
+    // the server has the player (a real stun, a hold, a skill's teleport): until when (System.nanoTime)
+    private static long pHeldUntil;
+    // this frame: the server has the player (pHeldUntil, a skill driving them, a stun)
+    private static boolean pHeld;
+    // a cutscene (a boss's, a skill's, the soul ceremony) has the camera: the page lets go until it ends
+    private static boolean scene;
+    // another player already flies this soul's page (multiplayer): not this one until then (System.nanoTime)
+    private static final java.util.Map<Integer, Long> DENIED = new java.util.HashMap<>();
 
     // the soul's AI (the page's AI object)
     private static String st = "ar", act, phase;
@@ -220,6 +232,36 @@ public final class PreviewFight {
             qStrong = true;
         }
         return true;
+    }
+
+    // Thrown by the server while the page runs (AirCombat.knock: a skill's push, a soul technique's blast): off this way
+    // inside the page, a short stun like the page's own blows; the slam goes down and lands like the Martelo.
+    static void knock(Vec3 velocity, int ticks, boolean slammed) {
+        if (!running || P == null) {
+            return;
+        }
+        if (pact != null) {
+            endPAct();
+        }
+        P.vel = velocity;
+        P.flying = true;
+        if (slammed) {
+            P.slam = true;
+            P.stun = 2;
+            P.tumble = 0.5;
+        } else {
+            P.stun = Math.max(P.stun, Math.min(0.8, ticks * 0.05));
+            P.tumble = velocity.length() > 20 ? 0.4 : P.tumble;
+        }
+        play(P, "apanha", Math.min(0.5, P.stun + 0.1));
+    }
+
+    // One of the player's own skills is moving them (FlightClient.serverMotion: a dash, a launch): the page lets the
+    // skill have the player and follows it, like after a teleport.
+    static void driven() {
+        if (running) {
+            pHeldUntil = Math.max(pHeldUntil, System.nanoTime() + 250_000_000L);
+        }
     }
 
     // Ctrl tapped in the flight (FlightClient): the page's doDodge.
@@ -329,6 +371,45 @@ public final class PreviewFight {
         return mc.level.getHeight(Heightmap.Types.MOTION_BLOCKING, Mth.floor(p.x), Mth.floor(p.z));
     }
 
+    // Some ground under it (not the void of the End, a domain's empty space, below the world): the page needs a floor.
+    private static boolean hasGround(Vec3 p) {
+        Minecraft mc = Minecraft.getInstance();
+        return mc.level != null && ground(p) > mc.level.getMinBuildHeight() + 1;
+    }
+
+    // Whether any cutscene has the camera now (the same list as CameraMixin's, the HUD's hiding).
+    private static boolean cutscene(Minecraft mc) {
+        float partial = mc.getTimer().getGameTimeDeltaPartialTick(true);
+        return com.starkinhon.battlegroundsmod.client.fx.DuelScene.cutscene() || com.starkinhon.battlegroundsmod.client.fx.ShenlongScene.cutscene()
+                || com.starkinhon.battlegroundsmod.client.fx.SukunaDomainScene.cutscene() || com.starkinhon.battlegroundsmod.client.cutscene.CutscenePlayer.active()
+                || BossCutscene.active() || HakaiCutscene.active() || EsferaCutscene.active() || GrabCutscene.active() || BopCutscene.active()
+                || ShoulderCutscene.active() || FaceCutscene.shot(partial) != null || CutsceneHud.hidden();
+    }
+
+    static boolean scene() {
+        return scene;
+    }
+
+    // The server said another player flies this soul's page (AirFight.MOVE_DENY): leave it to them for a while.
+    static void deny(int entityId) {
+        DENIED.put(entityId, System.nanoTime() + 3_000_000_000L);
+        if (running && M != null && M.ent.getId() == entityId) {
+            stop();
+        }
+    }
+
+    private static boolean denied(LivingEntity target) {
+        Long until = DENIED.get(target.getId());
+        if (until == null) {
+            return false;
+        }
+        if (System.nanoTime() > until) {
+            DENIED.remove(target.getId());
+            return false;
+        }
+        return true;
+    }
+
     private static double alt(E e) {
         return e.pos.y - ground(e.pos);
     }
@@ -392,6 +473,10 @@ public final class PreviewFight {
             return;
         }
         running = false;
+        held = false;
+        placed = null;
+        pHeldUntil = 0;
+        pHeld = false;
         if (P != null && P.ent != null) {
             P.ent.setInvisible(false);
             ClientHooks.guardPose(P.ent.getId(), false);
@@ -420,6 +505,8 @@ public final class PreviewFight {
     public static void clear() {
         stop();
         parked = false;
+        scene = false;
+        DENIED.clear();
         PreviewFx.clear();
     }
 
@@ -439,10 +526,18 @@ public final class PreviewFight {
             return;
         }
         double dt = Math.min(dtReal, 0.05);
+        // A cutscene has the camera (a boss's entrance or phase, Hakai, Bop, a domain, a skill's face shot, the soul
+        // ceremony): the page lets go and the cutscene plays as it does on the ground; it takes the fight back after.
+        scene = cutscene(mc);
+        if (scene) {
+            stop();
+            PreviewFx.step(dt, dt);
+            return;
+        }
         LivingEntity target = AirFightClient.target();
         boolean flying = FlightClient.velocity() != null || running;
         boolean want = flying && target instanceof SoulBoss && target.isAlive() && !target.isRemoved() && !player.isSpectator() && player.isAlive()
-                && player.getAbilities().flying;
+                && !player.isCreative() && player.getAbilities().flying && !denied(target) && hasGround(player.position());
         if (parked && player.getY() - ground(player.position()) > 2.5) {
             parked = false;
         }
@@ -463,12 +558,57 @@ public final class PreviewFight {
             dt *= 0.05;
         }
         clock += dt;
-        playerCombat(mc, dt);
+        if (placed != null && player.position().distanceToSqr(placed) > 0.09) {
+            // a skill moved the player (Goku's teleport, the Kaioken rush, Freeza's, a grab's hold): the page goes on
+            // from there, after the server is done with it
+            pHeldUntil = now + 400_000_000L;
+        }
+        // The server has the player: stunned for real (a boss's skill, another player's), held, teleported by a skill.
+        // Both stand still (no input, no blows from the soul) and the page follows the player where the server puts it.
+        pHeld = now < pHeldUntil || FlightClient.driving() || player.hasEffect(com.starkinhon.battlegroundsmod.ModEffects.ATORDOADO)
+                || player.hasEffect(com.starkinhon.battlegroundsmod.ModEffects.BRAIN_DAMAGE);
+        if (pHeld) {
+            P.pos = player.position();
+            P.vel = Vec3.ZERO;
+            P.boost = false;
+            pact = null;
+            setGuard(false);
+            qPunch = qDash = qStrong = qDodge = false;
+            if (EX != null) {
+                EX = null;
+                setVisible(P, true);
+                setVisible(M, true);
+                P.boost = M.boost = false;
+            }
+        } else {
+            playerCombat(mc, dt);
+        }
         if (!running) {
             PreviewFx.step(dt, camDt);
             return;
         }
-        mobUpdate(dt);
+        // One of the player's skills has it (Flight.HELD from the server: a real stun, a hold): the skill moves it
+        // there, the page only follows and takes it back when it lets go.
+        held = (FlightClient.serverState(M.ent) & Flight.HELD) != 0;
+        if (pHeld && !held) {
+            // the player is the server's right now: the soul waits where it is (no blows on someone who can't move)
+            M.vel = Vec3.ZERO;
+            M.boost = false;
+            act = null;
+        } else if (held) {
+            M.pos = M.ent.getPosition(mc.getTimer().getGameTimeDeltaPartialTick(true));
+            M.vel = Vec3.ZERO;
+            M.slam = false;
+            M.flying = true;
+            M.visible = true;
+            M.boost = false;
+            act = null;
+            if (!"ar".equals(st)) {
+                st = "ar";
+            }
+        } else {
+            mobUpdate(dt);
+        }
         physicsHits(dt);
         if (!running) {
             PreviewFx.step(dt, camDt);
@@ -486,7 +626,9 @@ public final class PreviewFight {
         shake = Math.max(0, shake - camDt * 1.6);
         PreviewFx.boostView = P.boostAmt * clamp(P.vel.length() / 42, 0, 1) * 0.4;
         place(P, true);
-        place(M, false);
+        if (!held) {
+            place(M, false);
+        }
         sendAcc += camDt;
         if (sendAcc >= 0.05) {
             sendAcc = 0;
@@ -518,11 +660,16 @@ public final class PreviewFight {
 
     private static void place(E e, boolean player) {
         LivingEntity en = e.ent;
-        en.setPos(e.pos.x, e.pos.y, e.pos.z);
-        en.xo = en.xOld = e.pos.x;
-        en.yo = en.yOld = e.pos.y;
-        en.zo = en.zOld = e.pos.z;
-        en.setDeltaMovement(Vec3.ZERO);
+        if (player && pHeld) {
+            // the server (or the player's own skill) moves the player: left where it is, with its speed (a dash keeps going)
+            e.pos = en.position();
+        } else {
+            en.setPos(e.pos.x, e.pos.y, e.pos.z);
+            en.xo = en.xOld = e.pos.x;
+            en.yo = en.yOld = e.pos.y;
+            en.zo = en.zOld = e.pos.z;
+            en.setDeltaMovement(Vec3.ZERO);
+        }
         float yaw = (float) -Math.toDegrees(e.yaw);
         en.setYRot(yaw);
         en.yRotO = yaw;
@@ -530,9 +677,20 @@ public final class PreviewFight {
         en.yHeadRotO = yaw;
         en.yBodyRot = yaw;
         en.yBodyRotO = yaw;
+        if (player) {
+            placed = e.pos;
+        }
         if (player && M != null) {
-            Vec3 d = M.pos.add(0, 0.9, 0).subtract(e.pos.add(0, 1.6, 0));
-            float pitch = (float) Mth.clamp(-Math.toDegrees(Math.atan2(d.y, Math.hypot(d.x, d.z))), -80, 80);
+            // The view looks right at the target (the body keeps the page's heading): every skill aims through the
+            // player's look (Kamehameha, Final Flash, the teleports), and in the first test of the page they all went
+            // off to the side (Stark 2026-11-13: "a mira dos ataques está totalmente errada").
+            Vec3 d = M.pos.add(0, M.ent.getBbHeight() * 0.55, 0).subtract(e.pos.add(0, en.getEyeHeight(), 0));
+            float aimYaw = (float) (Mth.atan2(-d.x, d.z) * Mth.RAD_TO_DEG);
+            float pitch = (float) Mth.clamp(-Math.toDegrees(Math.atan2(d.y, Math.hypot(d.x, d.z))), -89, 89);
+            en.setYRot(aimYaw);
+            en.yRotO = aimYaw;
+            en.setYHeadRot(aimYaw);
+            en.yHeadRotO = aimYaw;
             en.setXRot(pitch);
             en.xRotO = pitch;
         }
@@ -1019,7 +1177,16 @@ public final class PreviewFight {
             return;
         }
         double a = rnd() * Math.PI * 2;
-        Vec3 pt = e.center.add(Math.cos(a) * (3 + rnd() * 6), (rnd() - 0.4) * 7, Math.sin(a) * (3 + rnd() * 6));
+        // A guest on someone else's world (LAN, server) jumping more than 10 blocks in a tick is pulled back by the
+        // server ("moved too quickly"): there the clashes stay a bit closer together (the host's world has no such check).
+        boolean guest = !Minecraft.getInstance().hasSingleplayerServer();
+        Vec3 pt;
+        if (guest) {
+            double rr = 1.5 + rnd() * 2.5;
+            pt = e.center.add(Math.cos(a) * rr, (rnd() - 0.4) * 3.5, Math.sin(a) * rr);
+        } else {
+            pt = e.center.add(Math.cos(a) * (3 + rnd() * 6), (rnd() - 0.4) * 7, Math.sin(a) * (3 + rnd() * 6));
+        }
         pt = new Vec3(pt.x, Math.max(pt.y, ground(pt) + 4), pt.z);
         double b = rnd() * Math.PI * 2;
         Vec3 dir = norm(v(Math.cos(b), (rnd() - 0.5) * 0.5, Math.sin(b)));

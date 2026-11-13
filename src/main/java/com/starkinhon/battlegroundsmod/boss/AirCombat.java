@@ -6,6 +6,7 @@ import com.starkinhon.battlegroundsmod.combat.AirFight;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Defense;
 import com.starkinhon.battlegroundsmod.combat.Intangible;
+import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.combat.Stun;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
@@ -103,12 +104,134 @@ public final class AirCombat {
     private float pilotYaw;
     private int pilotFlags;
 
-    public void pilot(ServerPlayer player, Vec3 pos, float yaw, int flags) {
+    // A skill has it right now (a real stun or a hold): the page's fight lets go of it until then.
+    // Staged too: a boss's entrance, phase change or final ult holds it still for its cutscene.
+    private boolean held() {
+        return Stun.real(boss) || Freeze.isFrozen(boss) || boss.staged() || casting();
+    }
+
+    // ------------------------------------------------------------------ its own kit in the air
+
+    // Stark 2026-11-13: "todos devem usar todos seus golpes". Flying, SoulBossAI is off (it walks), so the soul's own
+    // techniques fire from here: every few seconds one that is off cooldown and fits the distance, aimed at the
+    // target. While it plays the skill has the soul (held: the page on the client follows it, the air AI waits).
+    private int kitWait = 60;
+
+    private boolean casting() {
+        var data = boss.powerData();
+        return data.busyTicks > 0 || com.starkinhon.battlegroundsmod.combat.Stamina.holding(boss);
+    }
+
+    // Each tick it flies and fights: the countdown, and the cast when it runs out. True when a technique started.
+    private boolean kit(LivingEntity target) {
+        if (kitWait > 0) {
+            kitWait--;
+            return false;
+        }
+        if (target == null || !target.isAlive() || boss.staged() || !Stun.canAttack(boss) || Freeze.isFrozen(boss)
+                || com.starkinhon.battlegroundsmod.power.PowerLogic.sealed(boss) || casting()) {
+            return false;
+        }
+        BossSpec spec = boss.spec();
+        BossSpec.Fase fase = boss.fase();
+        if (spec == null || fase == null) {
+            return false;
+        }
+        double dist = boss.distanceTo(target);
+        var data = boss.powerData();
+        java.util.List<String> ok = new java.util.ArrayList<>();
+        double total = 0;
+        for (String name : fase.skills()) {
+            BossSpec.Skill skill = spec.skills().get(name);
+            if (skill == null || skill.slot() < 0 || skill.slot() >= data.cooldowns.length || data.cooldowns[skill.slot()] > 0
+                    || skill.slot() == com.starkinhon.battlegroundsmod.power.PowerData.SLOT_STRONG
+                    || skill.slot() == com.starkinhon.battlegroundsmod.power.PowerData.SLOT_BARRAGE
+                    || "anti".equals(skill.tipo())
+                    || skill.needsStun() && !Stun.is(target)) {
+                continue;
+            }
+            // the distance it was made for, a little looser in the air (the fight keeps 9-12 blocks off)
+            double max = skill.distanciaMax() > 0 ? skill.distanciaMax() + 4 : 40;
+            if (dist > max || dist < skill.distanciaMin() * 0.5) {
+                continue;
+            }
+            ok.add(name);
+            total += Math.max(0.05, skill.peso());
+        }
+        if (ok.isEmpty()) {
+            kitWait = 10;
+            return false;
+        }
+        double roll = boss.getRandom().nextDouble() * total;
+        String pick = ok.get(ok.size() - 1);
+        for (String name : ok) {
+            roll -= Math.max(0.05, spec.skills().get(name).peso());
+            if (roll <= 0) {
+                pick = name;
+                break;
+            }
+        }
+        BossSpec.Skill skill = spec.skills().get(pick);
+        aimAt(target);
+        if (!com.starkinhon.battlegroundsmod.power.PowerLogic.cast(boss, skill.slot())) {
+            kitWait = 10;
+            return false;
+        }
+        int cooldown = skill.recargaTicks() + (skill.recargaMaxTicks() > skill.recargaTicks()
+                ? boss.getRandom().nextInt(skill.recargaMaxTicks() - skill.recargaTicks() + 1) : 0);
+        data.cooldowns[skill.slot()] = Math.max(20, (int) Math.round(cooldown * fase.multRecarga()) - fase.menosRecargaTicks());
+        // bosses a bit more often than the wandering souls; the page's own blows fill the gaps
+        int base = boss.isBoss() ? 70 : 110;
+        kitWait = base + boss.getRandom().nextInt(base);
+        return true;
+    }
+
+    // Looks straight at the target's middle (every technique aims through the look).
+    private void aimAt(LivingEntity target) {
+        Vec3 d = center(target).subtract(boss.getEyePosition());
+        float yaw = (float) (Mth.atan2(-d.x, d.z) * Mth.RAD_TO_DEG);
+        float pitch = (float) Mth.clamp(-Math.toDegrees(Math.atan2(d.y, Math.sqrt(d.x * d.x + d.z * d.z))), -89, 89);
+        boss.setYRot(yaw);
+        boss.yRotO = yaw;
+        boss.setYHeadRot(yaw);
+        boss.yHeadRotO = yaw;
+        boss.yBodyRot = yaw;
+        boss.setXRot(pitch);
+        boss.xRotO = pitch;
+    }
+
+    // While its own technique plays in the air: it hovers there facing the target, the skill does the rest.
+    private void hoverCasting(LivingEntity target) {
+        st = St.AR;
+        act = Act.NONE;
+        phase = 0;
+        pending = null;
+        boss.getNavigation().stop();
+        if (!Freeze.isFrozen(boss)) {
+            boss.setNoGravity(true);
+            boss.setDeltaMovement(boss.getDeltaMovement().scale(0.8));
+        }
+        boss.fallDistance = 0;
+        vel = Vec3.ZERO;
+        lastSet = null;
+        if (target != null && target.isAlive() && !Stun.is(boss) && !Freeze.isFrozen(boss)) {
+            aimAt(target);
+        }
+    }
+
+    // False when another player flies it right now (two clients pulling one soul two ways in multiplayer): only the
+    // first keeps it until its packets stop.
+    public boolean pilot(ServerPlayer player, Vec3 pos, float yaw, int flags) {
+        if (pilot != null && pilot != player && pilot.isAlive() && pilot.level() == player.level()
+                && player.level().getGameTime() <= pilotUntil) {
+            return false;
+        }
         pilot = player;
         pilotUntil = player.level().getGameTime() + 6;
         pilotPos = pos;
         pilotYaw = yaw;
         pilotFlags = flags;
+        return true;
     }
 
     private record Hit(boolean big, boolean slam, double knock, double reach, boolean finisher, float damage) {
@@ -215,6 +338,10 @@ public final class AirCombat {
 
     private void step(ServerLevel level) {
         if (!boss.isAlive()) {
+            // killed while the page had it hidden (the punch exchange): it dies in sight
+            if (pilot != null && boss.isInvisible()) {
+                boss.setInvisible(false);
+            }
             if (st != St.CHAO) {
                 land(level, false);
             }
@@ -222,6 +349,29 @@ public final class AirCombat {
             return;
         }
         if (pilot != null) {
+            if (pilot.isAlive() && pilot.level() == level && level.getGameTime() <= pilotUntil && held()) {
+                // Taken by one of the player's skills (a real stun, a hold: Kaioken rush, Piccolo's grab, the
+                // Kamehameha's push...): the skill moves it, the page's fight on the client follows (Flight.HELD) and
+                // takes it back when it lets go (Stark 2026-11-13: the techniques must work in the combat flight).
+                st = St.AR;
+                act = Act.NONE;
+                phase = 0;
+                pending = null;
+                boss.getNavigation().stop();
+                if (!Freeze.isFrozen(boss)) {
+                    boss.setNoGravity(true);
+                    boss.setDeltaMovement(boss.getDeltaMovement().scale(0.8));
+                }
+                boss.fallDistance = 0;
+                vel = Vec3.ZERO;
+                lastSet = null;
+                boss.setInvisible(false);
+                if (casting()) {
+                    hoverCasting(pilot);
+                }
+                send();
+                return;
+            }
             if (pilot.isAlive() && pilot.level() == level && level.getGameTime() <= pilotUntil) {
                 // flown by the page's fight on that player's client (combat/AirFight.sim): it only goes where it is told
                 st = St.AR;
@@ -248,6 +398,10 @@ public final class AirCombat {
                 lastSet = Vec3.ZERO;
                 boost = (pilotFlags & 2) != 0;
                 boss.setInvisible((pilotFlags & 4) != 0);
+                if ((pilotFlags & 4) == 0 && (pilotFlags & 1) != 0 && kit(pilot)) {
+                    // its own technique: held from the next tick on, the page follows it
+                    boss.setInvisible(false);
+                }
                 send();
                 return;
             }
@@ -292,6 +446,12 @@ public final class AirCombat {
             if (airT > 0.35 && !Stun.is(boss) && !boss.staged()) {
                 takeOffStart();
             }
+            send();
+            return;
+        }
+        // A skill has it (its own, or someone's stun or hold): it hangs there under it, the air AI waits.
+        if (!falling && (held() || st == St.AR && kit(target))) {
+            hoverCasting(target);
             send();
             return;
         }
@@ -438,7 +598,9 @@ public final class AirCombat {
     // In the air for the fight: flying with the technique (players), another soul flying, or well off the ground.
     static boolean airborne(LivingEntity target) {
         if (target instanceof Player player) {
-            return Flight.flying(player);
+            // A player without a Dragon Ball power is fought on the ground even while flying (Stark 2026-11-13): the soul
+            // comes down to them, the air fight is Dragon Ball's.
+            return Flight.flying(player) && Flight.dbPower(player);
         }
         if (target instanceof SoulBoss other && other.air != null) {
             return flying(other);
@@ -943,7 +1105,8 @@ public final class AirCombat {
 
     int state() {
         if (pilot != null) {
-            return (pilotFlags & 1) != 0 ? Flight.FLYING | Flight.COMBAT | (boost ? Flight.BOOST : 0) : 0;
+            int held = held() ? Flight.HELD : 0;
+            return (pilotFlags & 1) != 0 ? Flight.FLYING | Flight.COMBAT | (boost ? Flight.BOOST : 0) | held : held;
         }
         boolean fly = st == St.AR || st == St.MERGULHO;
         boolean stance = st == St.AR && !passer && act != Act.PERSEGUE && !(act == Act.RECUA && phase == 0) && boss.getTarget() != null;

@@ -567,6 +567,7 @@
   "message.battlegroundsmod.gaara.no_target": "Sabaku Kyu: nenhum alvo na mira.",
   "message.battlegroundsmod.gaara.platform_tired": "Plataforma de Areia: sem estamina, a areia esfarela.",
   "message.battlegroundsmod.shikamaru.no_target": "Kagemane: nenhum alvo ao alcance da sombra.",
+  "message.battlegroundsmod.shikamaru.too_high": "Kagemane: alto demais, a sombra dele não chega no chão.",
   "message.battlegroundsmod.shikamaru.escaped": "Kagemane: o alvo escapou da sombra.",
   "message.battlegroundsmod.shikamaru.held": "Sombra: esse alvo já está preso por outra técnica.",
   "message.battlegroundsmod.shikamaru.out_of_breath": "Sombra: a estamina acabou e a sombra soltou.",

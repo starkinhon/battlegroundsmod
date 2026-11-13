@@ -111,10 +111,15 @@ public final class HakaiBola {
                 }
                 // Slow and steady, straight through anything, turning a little each tick towards them.
                 Vec3 to = Combat.center(target).subtract(pos[0]);
-                Vec3 want = to.lengthSqr() < 1.0E-6 ? Vec3.ZERO : to.normalize().scale(bola.velocidade());
-                velocity[0] = velocity[0].lerp(want, Math.max(0.01, Math.min(1, bola.curva())));
-                if (velocity[0].length() > bola.velocidade()) {
-                    velocity[0] = velocity[0].normalize().scale(bola.velocidade());
+                // After someone flying (the combat flight: 11-46 blocks/s) the walking pace never got near: in the air
+                // it chases three times as fast and turns harder, still slower than a boost (fleeing on it works).
+                boolean air = target instanceof net.minecraft.world.entity.player.Player p ? com.starkinhon.battlegroundsmod.universe.Flight.flying(p)
+                        : com.starkinhon.battlegroundsmod.boss.AirCombat.flying(target);
+                double speed = bola.velocidade() * (air ? 3 : 1);
+                Vec3 want = to.lengthSqr() < 1.0E-6 ? Vec3.ZERO : to.normalize().scale(speed);
+                velocity[0] = velocity[0].lerp(want, Math.max(0.01, Math.min(1, bola.curva() * (air ? 2 : 1))));
+                if (velocity[0].length() > speed) {
+                    velocity[0] = velocity[0].normalize().scale(speed);
                 }
                 pos[0] = pos[0].add(velocity[0]);
                 attack[0].move(pos[0]);
