@@ -63,7 +63,7 @@ public final class AirFight {
     // ------------------------------------------------------------------ the lock
 
     public static void lock(ServerPlayer player, int id) {
-        if (id < 0) {
+        if (id < 0 || !Flight.dbPower(player)) {
             LOCK.remove(player.getUUID());
         } else {
             LOCK.put(player.getUUID(), id);
@@ -165,6 +165,10 @@ public final class AirFight {
             data.airSimHitAt = now;
         }
         float punch = (float) ComboSpec.get().golpe(0).dano() * Melee.multiplier(player);
+        // The page already threw the player (its own knockback): Minecraft's own from this hurt is undone, or the client
+        // would take it for a skill moving the player (FlightClient.serverMotion).
+        Vec3 keepSpeed = player.getDeltaMovement();
+        boolean keepMarked = player.hurtMarked;
         switch (kind) {
             case 0 -> Combat.hurtBasic(player, t, punch);
             case 1 -> Combat.hurtBasic(player, t, Math.max(punch * 2.2f, 25f * Melee.multiplier(player) * 0.9f));
@@ -180,6 +184,10 @@ public final class AirFight {
             case 16 -> Combat.hurtMagic(t, player, 3.6f);
             default -> {
             }
+        }
+        if (kind >= 10) {
+            player.setDeltaMovement(keepSpeed);
+            player.hurtMarked = keepMarked;
         }
     }
 

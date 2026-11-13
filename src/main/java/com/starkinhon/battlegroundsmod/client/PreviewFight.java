@@ -174,6 +174,8 @@ public final class PreviewFight {
     private static Vec3 placed;
     // the server has the player (a real stun, a hold, a skill's teleport): until when (System.nanoTime)
     private static long pHeldUntil;
+    // this frame: the server has the player (pHeldUntil, a skill driving them, a stun)
+    private static boolean pHeld;
     // a cutscene (a boss's, a skill's, the soul ceremony) has the camera: the page lets go until it ends
     private static boolean scene;
     // another player already flies this soul's page (multiplayer): not this one until then (System.nanoTime)
@@ -230,6 +232,36 @@ public final class PreviewFight {
             qStrong = true;
         }
         return true;
+    }
+
+    // Thrown by the server while the page runs (AirCombat.knock: a skill's push, a soul technique's blast): off this way
+    // inside the page, a short stun like the page's own blows; the slam goes down and lands like the Martelo.
+    static void knock(Vec3 velocity, int ticks, boolean slammed) {
+        if (!running || P == null) {
+            return;
+        }
+        if (pact != null) {
+            endPAct();
+        }
+        P.vel = velocity;
+        P.flying = true;
+        if (slammed) {
+            P.slam = true;
+            P.stun = 2;
+            P.tumble = 0.5;
+        } else {
+            P.stun = Math.max(P.stun, Math.min(0.8, ticks * 0.05));
+            P.tumble = velocity.length() > 20 ? 0.4 : P.tumble;
+        }
+        play(P, "apanha", Math.min(0.5, P.stun + 0.1));
+    }
+
+    // One of the player's own skills is moving them (FlightClient.serverMotion: a dash, a launch): the page lets the
+    // skill have the player and follows it, like after a teleport.
+    static void driven() {
+        if (running) {
+            pHeldUntil = Math.max(pHeldUntil, System.nanoTime() + 250_000_000L);
+        }
     }
 
     // Ctrl tapped in the flight (FlightClient): the page's doDodge.
@@ -444,6 +476,7 @@ public final class PreviewFight {
         held = false;
         placed = null;
         pHeldUntil = 0;
+        pHeld = false;
         if (P != null && P.ent != null) {
             P.ent.setInvisible(false);
             ClientHooks.guardPose(P.ent.getId(), false);
@@ -532,7 +565,7 @@ public final class PreviewFight {
         }
         // The server has the player: stunned for real (a boss's skill, another player's), held, teleported by a skill.
         // Both stand still (no input, no blows from the soul) and the page follows the player where the server puts it.
-        boolean pHeld = now < pHeldUntil || player.hasEffect(com.starkinhon.battlegroundsmod.ModEffects.ATORDOADO)
+        pHeld = now < pHeldUntil || FlightClient.driving() || player.hasEffect(com.starkinhon.battlegroundsmod.ModEffects.ATORDOADO)
                 || player.hasEffect(com.starkinhon.battlegroundsmod.ModEffects.BRAIN_DAMAGE);
         if (pHeld) {
             P.pos = player.position();
@@ -627,11 +660,16 @@ public final class PreviewFight {
 
     private static void place(E e, boolean player) {
         LivingEntity en = e.ent;
-        en.setPos(e.pos.x, e.pos.y, e.pos.z);
-        en.xo = en.xOld = e.pos.x;
-        en.yo = en.yOld = e.pos.y;
-        en.zo = en.zOld = e.pos.z;
-        en.setDeltaMovement(Vec3.ZERO);
+        if (player && pHeld) {
+            // the server (or the player's own skill) moves the player: left where it is, with its speed (a dash keeps going)
+            e.pos = en.position();
+        } else {
+            en.setPos(e.pos.x, e.pos.y, e.pos.z);
+            en.xo = en.xOld = e.pos.x;
+            en.yo = en.yOld = e.pos.y;
+            en.zo = en.zOld = e.pos.z;
+            en.setDeltaMovement(Vec3.ZERO);
+        }
         float yaw = (float) -Math.toDegrees(e.yaw);
         en.setYRot(yaw);
         en.yRotO = yaw;
