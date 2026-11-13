@@ -89,7 +89,8 @@ public final class Combat {
     // Where the player's view hits a block, or the point at max range.
     public static Vec3 raycastPoint(LivingEntity player, double range) {
         LivingEntity locked = AirFight.target(player);
-        if (locked != null && player instanceof net.minecraft.server.level.ServerPlayer && locked.distanceTo(player) <= lockReach(range)) {
+        if (locked != null && (player instanceof net.minecraft.server.level.ServerPlayer || player instanceof com.starkinhon.battlegroundsmod.boss.SoulBoss)
+                && locked.distanceTo(player) <= lockReach(range)) {
             // the combat flight aims at whoever it is locked on
             return center(locked);
         }
@@ -102,7 +103,8 @@ public final class Combat {
     // The closest target in the player's view, stopped by walls. Slightly generous so moves feel good to land.
     public static LivingEntity raycastTarget(LivingEntity player, double range) {
         LivingEntity locked = AirFight.target(player);
-        if (locked != null && player instanceof net.minecraft.server.level.ServerPlayer && locked.distanceTo(player) <= lockReach(range)) {
+        if (locked != null && (player instanceof net.minecraft.server.level.ServerPlayer || player instanceof com.starkinhon.battlegroundsmod.boss.SoulBoss)
+                && locked.distanceTo(player) <= lockReach(range)) {
             return locked;
         }
         Vec3 eye = player.getEyePosition();
