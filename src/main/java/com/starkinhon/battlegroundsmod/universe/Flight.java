@@ -73,7 +73,7 @@ public final class Flight {
     }
 
     private static boolean inArena(ServerPlayer player) {
-        return player.level().dimension().equals(ChallengeArenas.ARENAS);
+        return ChallengeArenas.isArena(player.level().dimension());
     }
 
     // The client asks for the boost (Ctrl while flying) or lets it go.

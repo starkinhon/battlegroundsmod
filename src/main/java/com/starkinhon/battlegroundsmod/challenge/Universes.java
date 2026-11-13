@@ -136,7 +136,8 @@ public final class Universes {
 
     // From the screen: the player chose a universe (first time, or with a Cristal Multiversal in hand).
     public static void pick(ServerPlayer player, String universe) {
-        if (!Progression.on(player) || ChallengeSpec.get().universe(universe) == null) {
+        ChallengeSpec.Universe picked = ChallengeSpec.get().universe(universe);
+        if (!Progression.on(player) || picked == null || !picked.world()) {
             return;
         }
         if (WORLD.equals(home(player))) {
@@ -329,6 +330,9 @@ public final class Universes {
                 .then(Commands.argument("id", StringArgumentType.word()).requires(source -> source.hasPermission(2))
                         .suggests((context, builder) -> {
                             for (ChallengeSpec.Universe universe : ChallengeSpec.get().universos()) {
+                                if (!universe.world()) {
+                                    continue;
+                                }
                                 builder.suggest(universe.id());
                             }
                             return builder.buildFuture();

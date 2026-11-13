@@ -77,6 +77,46 @@
       "desafios": [
         {"id": "kokushibo", "foco": "Luas. A Respiração da Lua corta em leque. A Lua Superior Um.", "itens": ["battlegroundsmod:cristal_multiversal", "battlegroundsmod:espada_nichirin"]}
       ]
+    },
+    {
+      "id": "mha", "nome": "My Hero Academia", "cor": "#8E1515", "mundo": false,
+      "descricao": "Cidades de heróis e vilões.",
+      "mobs": [],
+      "piso": ["minecraft:gravel", "minecraft:light_gray_concrete_powder", "minecraft:tuff"],
+      "pilar": "minecraft:polished_andesite",
+      "desafios": [
+        {"id": "shigaraki", "foco": "Decadência. Tudo que a mão dele toca vira pó, até o chão. Não deixe ele encostar.", "itens": ["battlegroundsmod:cristal_multiversal"]}
+      ]
+    },
+    {
+      "id": "onepiece", "nome": "One Piece", "cor": "#C0392B", "mundo": false,
+      "descricao": "O mar e as ilhas do Novo Mundo.",
+      "mobs": [],
+      "piso": ["minecraft:deepslate_tiles", "minecraft:polished_blackstone_bricks"],
+      "pilar": "minecraft:dark_oak_log",
+      "desafios": [
+        {"id": "joy_boy", "foco": "Gear 5. Borracha, risada e o cenário virando desenho. Quando ele cansa e fica faminto, é a hora.", "itens": ["battlegroundsmod:cristal_multiversal"]}
+      ]
+    },
+    {
+      "id": "chainsawman", "nome": "Chainsaw Man", "cor": "#C9665A", "mundo": false,
+      "descricao": "Tóquio dos caçadores de demônios.",
+      "mobs": [],
+      "piso": ["minecraft:light_gray_concrete", "minecraft:smooth_stone"],
+      "pilar": "minecraft:light_gray_concrete",
+      "desafios": [
+        {"id": "makima", "foco": "Controle. Ela luta de longe e faz os outros lutarem por ela. Encurte a distância.", "itens": ["battlegroundsmod:cristal_multiversal"]}
+      ]
+    },
+    {
+      "id": "opm", "nome": "One Punch Man", "cor": "#F2C94C", "mundo": false,
+      "descricao": "As cidades da Associação de Heróis.",
+      "mobs": [],
+      "piso": ["minecraft:gray_concrete", "minecraft:smooth_stone"],
+      "pilar": "minecraft:smooth_sandstone",
+      "desafios": [
+        {"id": "saitama", "foco": "Um soco. Ele brinca até ficar sério. Quando ficar sério, não esteja na frente.", "itens": ["battlegroundsmod:cristal_multiversal"]}
+      ]
     }
   ]
 }

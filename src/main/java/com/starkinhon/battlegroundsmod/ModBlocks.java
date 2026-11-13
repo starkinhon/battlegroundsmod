@@ -21,6 +21,15 @@ public final class ModBlocks {
     public static final DeferredBlock<Block> NAMEK_SAND = BLOCKS.registerSimpleBlock("namek_sand",
             BlockBehaviour.Properties.of().mapColor(MapColor.SAND).strength(0.6f).sound(SoundType.GRAVEL));
 
+    // King Kai's little planet (Stark 2026-11-13, after his anime frames; tools/blocks/kaioh_blocks.py): the lawn one flat
+    // cartoon green on every face so the sphere reads as a smooth ball, the road's pale flagstones, the houses' orange
+    // plaster and its light cap.
+    public static final DeferredBlock<Block> KAIOH_GRASS = BLOCKS.registerSimpleBlock("kaioh_grama",
+            BlockBehaviour.Properties.of().mapColor(MapColor.GRASS).strength(0.6f).sound(SoundType.GRASS));
+    public static final DeferredBlock<Block> KAIOH_ROAD = rock("kaioh_lajota", MapColor.QUARTZ);
+    public static final DeferredBlock<Block> KAIOH_HOUSE = rock("kaioh_casa", MapColor.COLOR_ORANGE);
+    public static final DeferredBlock<Block> KAIOH_HOUSE_LIGHT = rock("kaioh_casa_clara", MapColor.COLOR_YELLOW);
+
     // The Deserto do Diabo (Stark 2026-11-11, after his Sand Land reference): warm orange-yellow sand that falls like sand,
     // and the sandstone rock of its flats and towers, darker and lighter (tools/blocks/desert_blocks.py).
     public static final DeferredBlock<net.minecraft.world.level.block.ColoredFallingBlock> DESERT_SAND = BLOCKS.register("deserto_areia",
@@ -221,6 +230,10 @@ public final class ModBlocks {
         BLOCK_ITEMS.registerSimpleBlockItem(DESERT_ROCK_LIGHT);
         BLOCK_ITEMS.registerSimpleBlockItem(NAMEK_ROCK_LAYER);
         BLOCK_ITEMS.registerSimpleBlockItem(NAMEK_SAND);
+        BLOCK_ITEMS.registerSimpleBlockItem(KAIOH_GRASS);
+        BLOCK_ITEMS.registerSimpleBlockItem(KAIOH_ROAD);
+        BLOCK_ITEMS.registerSimpleBlockItem(KAIOH_HOUSE);
+        BLOCK_ITEMS.registerSimpleBlockItem(KAIOH_HOUSE_LIGHT);
     }
 
     private ModBlocks() {

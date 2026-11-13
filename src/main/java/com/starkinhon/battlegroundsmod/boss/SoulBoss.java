@@ -510,7 +510,7 @@ public abstract class SoulBoss extends Monster {
         if (SoulCeremony.killer(source) == null) {
             return false;
         }
-        if (level.dimension() == com.starkinhon.battlegroundsmod.challenge.ChallengeArenas.ARENAS) {
+        if (com.starkinhon.battlegroundsmod.challenge.ChallengeArenas.isArena(level.dimension())) {
             return true;
         }
         return random.nextFloat() < WORLD_SOUL_CHANCE;
