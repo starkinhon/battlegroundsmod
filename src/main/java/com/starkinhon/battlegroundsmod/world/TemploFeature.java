@@ -11,6 +11,8 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.mojang.serialization.Codec;
 import com.starkinhon.battlegroundsmod.ModBlocks;
+import com.starkinhon.battlegroundsmod.ModEntities;
+import com.starkinhon.battlegroundsmod.npc.UniverseNpc;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -19,11 +21,14 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.WorldGenLevel;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.DoorBlock;
 import net.minecraft.world.level.block.LeavesBlock;
 import net.minecraft.world.level.block.PinkPetalsBlock;
 import net.minecraft.world.level.block.RotatedPillarBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.levelgen.RandomState;
 import net.minecraft.world.level.levelgen.feature.Feature;
@@ -51,7 +56,9 @@ public final class TemploFeature extends Feature<NoneFeatureConfiguration> {
     private static final Cache<Long, TemploGen.Site> SITES = CacheBuilder.newBuilder().maximumSize(4096).build();
     private static final TemploGen.Site NONE = new TemploGen.Site(0, 0, 0, 'n', 0);
 
-    private record Built(int[] vox, Set<Long> solid, TemploGen.Site site) {
+    // clear = how far from the center the woods keep away (26 for a temple, 56 for the school); npcs = where the school's
+    // Yaga and Shoko stand (x, y, z each), empty for a temple.
+    private record Built(int[] vox, Set<Long> solid, TemploGen.Site site, int clear, int[] npcs) {
     }
 
     public TemploFeature(Codec<NoneFeatureConfiguration> codec) {
@@ -104,7 +111,7 @@ public final class TemploFeature extends Feature<NoneFeatureConfiguration> {
         // 2. The temples that reach the chunk, into the chunk's own map first (the preview's order of who wins).
         TemploGen.Vox w = new TemploGen.Vox(x0, z0, x1, z1);
         List<Built> temples = new ArrayList<>();
-        int r = TemploGen.TEMPLE_REACH + 26;
+        int r = Math.max(TemploGen.TEMPLE_REACH, TemploGen.ESCOLA_REACH) + 26;
         for (int ci = Math.floorDiv(x0 - r, TemploGen.SITE_CELL); ci <= Math.floorDiv(x1 + r, TemploGen.SITE_CELL); ci++) {
             for (int cj = Math.floorDiv(z0 - r, TemploGen.SITE_CELL); cj <= Math.floorDiv(z1 + r, TemploGen.SITE_CELL); cj++) {
                 Built b = temple(ci, cj, worldKey, seed, sea, generator, random, ground, maxY);
@@ -117,6 +124,15 @@ public final class TemploFeature extends Feature<NoneFeatureConfiguration> {
             int[] v = b.vox();
             for (int i = 0; i < v.length; i += 4) {
                 w.force(v[i], v[i + 1], v[i + 2], (byte) v[i + 3]);
+            }
+        }
+        // the school's Yaga and Shoko, each by the chunk that holds their spot
+        for (Built b : temples) {
+            int[] n = b.npcs();
+            for (int i = 0; i < n.length; i += 3) {
+                if (n[i] >= x0 && n[i] <= x1 && n[i + 2] >= z0 && n[i + 2] <= z1) {
+                    npc(level, i == 0 ? ModEntities.NPC_YAGA.get() : ModEntities.NPC_SHOKO.get(), n[i], n[i + 1], n[i + 2]);
+                }
             }
         }
 
@@ -196,7 +212,7 @@ public final class TemploFeature extends Feature<NoneFeatureConfiguration> {
             if (there.is(Blocks.BEDROCK)) {
                 return;
             }
-            if (t == TemploGen.CARVE) {
+            if (t == TemploGen.CARVE || t == TemploGen.DARK) {
                 if (!there.isAir()) {
                     level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2);
                 }
@@ -206,6 +222,10 @@ public final class TemploFeature extends Feature<NoneFeatureConfiguration> {
             boolean open = there.isAir() || there.canBeReplaced() && there.getFluidState().isEmpty();
             if (soft && !open) {
                 return; // leaves and plants only grow into the air, as the preview's set
+            }
+            if (t == TemploGen.DOOR) {
+                level.setBlock(pos, door(w, x, y, z), 2);
+                return;
             }
             level.setBlock(pos, block(t, x, y, z), 2);
         });
@@ -218,7 +238,7 @@ public final class TemploFeature extends Feature<NoneFeatureConfiguration> {
 
     private static boolean busy(int x, int z, List<Built> temples) {
         for (Built b : temples) {
-            if (Math.abs(x - b.site().cx()) < 26 && Math.abs(z - b.site().cz()) < 26) {
+            if (Math.abs(x - b.site().cx()) < b.clear() && Math.abs(z - b.site().cz()) < b.clear()) {
                 return true;
             }
         }
@@ -257,34 +277,42 @@ public final class TemploFeature extends Feature<NoneFeatureConfiguration> {
         try {
             TemploGen.Site site = SITES.get(key, () -> {
                 TemploGen.Site s = TemploGen.siteIn(ci, cj, seed, ground, sea);
-                return s != null && siteGood(s, generator, random, maxY) ? s : NONE;
+                return s != null && siteGood(s, TemploGen.isEscolaSite(s, seed) ? 60 : 24, generator, random, maxY) ? s : NONE;
             });
             if (site == NONE) {
                 return null;
             }
             return TEMPLES.get(key, () -> {
                 TemploGen.Vox v = new TemploGen.Vox();
-                TemploGen.temple(v, site, ground, seed, sea);
+                int[] npcs = {};
+                boolean school = TemploGen.isEscolaSite(site, seed);
+                if (school) {
+                    TemploGen.School sc = TemploGen.escola(v, site, ground, seed, sea);
+                    npcs = new int[] {sc.yaga()[0], sc.yaga()[1], sc.yaga()[2], sc.shoko()[0], sc.shoko()[1], sc.shoko()[2]};
+                } else {
+                    TemploGen.temple(v, site, ground, seed, sea);
+                }
                 Set<Long> solid = new HashSet<>();
                 v.each((x, y, z, t) -> {
                     if (t != TemploGen.CARVE) {
                         solid.add(LeafTreeGen.Keys.key(x, y, z));
                     }
                 });
-                return new Built(v.pack(), solid, site);
+                return new Built(v.pack(), solid, site, school ? 56 : 26, npcs);
             });
         } catch (ExecutionException e) {
             return null;
         }
     }
 
-    private static boolean siteGood(TemploGen.Site s, ChunkGenerator generator, RandomState random, int maxY) {
+    // The biome under the whole courtyard (radius 24; the school's terraces, 60) and room above it for the pagoda.
+    private static boolean siteGood(TemploGen.Site s, int radius, ChunkGenerator generator, RandomState random, int maxY) {
         if (s.y() + 70 > maxY || !biomeAt(generator, random, s.cx(), s.y(), s.cz())) {
             return false;
         }
         for (int a = 0; a < 8; a++) {
-            int x = s.cx() + (int) Math.round(Math.cos(a * Math.PI / 4) * 24);
-            int z = s.cz() + (int) Math.round(Math.sin(a * Math.PI / 4) * 24);
+            int x = s.cx() + (int) Math.round(Math.cos(a * Math.PI / 4) * radius);
+            int z = s.cz() + (int) Math.round(Math.sin(a * Math.PI / 4) * radius);
             if (!biomeAt(generator, random, x, s.y(), z)) {
                 return false;
             }
@@ -296,6 +324,28 @@ public final class TemploFeature extends Feature<NoneFeatureConfiguration> {
     private static boolean soft(int t) {
         return t == TemploGen.CEDAR_LEAF || t == TemploGen.CEDAR_LEAF2 || t == TemploGen.SAKURA0 || t == TemploGen.SAKURA1
                 || t == TemploGen.SAKURA2 || t == TemploGen.SAKURA_W || t == TemploGen.FERN || t == TemploGen.SHRUB;
+    }
+
+    // The classroom's door: two blocks high and three wide in a wall; the door looks out across the wall.
+    private static BlockState door(TemploGen.Vox w, int x, int y, int z) {
+        boolean upper = w.get(x, y - 1, z) == TemploGen.DOOR;
+        boolean alongX = w.get(x - 1, y, z) == TemploGen.DOOR || w.get(x + 1, y, z) == TemploGen.DOOR;
+        return Blocks.SPRUCE_DOOR.defaultBlockState().setValue(DoorBlock.HALF, upper ? DoubleBlockHalf.UPPER : DoubleBlockHalf.LOWER)
+                .setValue(DoorBlock.FACING, alongX ? Direction.SOUTH : Direction.EAST);
+    }
+
+    // A school NPC at its spot, kept near it (they come back to the same place) and never despawned.
+    private static void npc(WorldGenLevel level, EntityType<UniverseNpc> type, int x, int y, int z) {
+        UniverseNpc npc = type.create(level.getLevel());
+        if (npc == null) {
+            return;
+        }
+        npc.moveTo(x + 0.5, y, z + 0.5, 0, 0);
+        npc.setPersistenceRequired();
+        npc.restrictTo(new BlockPos(x, y, z), 10);
+        npc.setCustomName(npc.getType().getDescription());
+        npc.setCustomNameVisible(true);
+        level.addFreshEntity(npc);
     }
 
     private static BlockState petals(int x, int z, int seed) {
@@ -357,6 +407,9 @@ public final class TemploFeature extends Feature<NoneFeatureConfiguration> {
             case TemploGen.SHIDE -> ModBlocks.SHIDE.get().defaultBlockState();
             case TemploGen.FERN -> Blocks.FERN.defaultBlockState();
             case TemploGen.SHRUB -> Blocks.AZALEA.defaultBlockState();
+            case TemploGen.PACKED -> Blocks.COARSE_DIRT.defaultBlockState();
+            case TemploGen.GLASS -> Blocks.GLASS.defaultBlockState();
+            case TemploGen.STRAW -> Blocks.HAY_BLOCK.defaultBlockState();
             default -> Blocks.STONE.defaultBlockState();
         };
     }

@@ -24,7 +24,10 @@ public final class TemploGen {
             SAKURA0 = 15, SAKURA1 = 16, SAKURA2 = 17, SAKURA_W = 18, WALL_STONE = 19, STEP = 20, PLASTER = 21, WOOD = 22,
             WOOD_DARK = 23, VERMILION = 24, LATTICE = 25, FLOOR_WOOD = 26, ROOF_TILE = 27, ROOF_RIDGE = 28, ROOF_EAVE = 29,
             GOLD = 30, BRONZE = 31, TORII = 32, TORII_TOP = 33, LANTERN_STONE = 34, LANTERN_FIRE = 35, ROPE = 36, SHIDE = 37,
-            FERN = 38, SHRUB = 39;
+            FERN = 38, SHRUB = 39,
+            // Escola Jujutsu: the training field's packed earth, the classrooms' glass, the training dummies' straw, the
+            // wooden door, the dark of the way down to the Corredor das Estrelas
+            PACKED = 40, GLASS = 41, STRAW = 42, DOOR = 43, DARK = 44;
     // The preview's force(..., 0): in the preview the ground is in the same map and this takes it out; here it says
     // "make it air" to the feature.
     public static final byte CARVE = 100;
@@ -669,6 +672,410 @@ public final class TemploGen {
 
     private static int[] along(int cx, int cz, int[] F, int k, int side) {
         return new int[] {cx + F[0] * k + (F[1] != 0 ? side : 0), cz + F[1] * k + (F[0] != 0 ? side : 0)};
+    }
+
+    // ---- Escola Jujutsu ---------------------------------------------------------------------------------------------
+
+    // The Tokyo Jujutsu High (Stark 2026-11-12, "muito foda"): a temple-style campus on top of the mountain, hidden in the
+    // woods. Two walled terraces: on the lower one the two-storey gate (sanmon) at the top of the stairway, the classroom
+    // building (two floors, rows of glass windows, principal Yaga's room with the cursed dolls) and the training field of
+    // packed earth with a fence and straw dummies; on the upper one, up the stone stairs in the middle, the main hall, the
+    // pagoda, the long dormitory joined to the hall by a covered walkway, Shoko's infirmary and, in the back corner, the
+    // little stone house with the dark way down to the Corredor das Estrelas (Master Tengen's), the sacred cedar beside it.
+    // A plaster wall with a small roof all around. In the game 1 of every 10 temple spots is the school (isEscolaSite).
+    public static final int ESC_D = 46, ESC_W = 40, ESC_UP = 6;
+    // How far the school reaches from its center: the terraces (47 along, 41 across, so about 63 at the corners) and the
+    // stairway (up to 120 steps from 52, the torii's landing past it).
+    public static final int ESCOLA_REACH = 52 + 120 + 6;
+
+    public record School(int cx, int cz, int y, int top, char front, int stairs, int[] yaga, int[] shoko) {
+    }
+
+    public static boolean isEscolaSite(Site site, int seed) {
+        return hash3(site.cx(), 53, site.cz(), seed) < 0.1;
+    }
+
+    private static int[] rect(int cx, int cz, int[] F, int k0, int k1, int s0, int s1) {
+        int[] a = along(cx, cz, F, k0, s0), b = along(cx, cz, F, k1, s1);
+        return new int[] {Math.min(a[0], b[0]), Math.min(a[1], b[1]), Math.max(a[0], b[0]), Math.max(a[1], b[1])};
+    }
+
+    public static School escola(Vox w, Site site, IntBinaryOperator ground, int seed, int sea) {
+        Rng rng = new Rng(site.seed());
+        int cx = site.cx(), cz = site.cz(), y = site.y();
+        char front = site.front();
+        int[] F = dir(front);
+        // the side the +s looks to (and the -s), as a direction letter
+        char sideP = F[0] != 0 ? 's' : 'e', sideN = F[0] != 0 ? 'n' : 'w';
+        int y2 = y + ESC_UP;
+        // terraces: a stone retaining wall down to the ground, gravel on top, air up past the hill
+        for (int k = -ESC_D - 1; k <= ESC_D + 1; k++) {
+            for (int s = -ESC_W - 1; s <= ESC_W + 1; s++) {
+                int[] p = along(cx, cz, F, k, s);
+                int x = p[0], z = p[1];
+                int g = ground.applyAsInt(x, z), ly = k <= 7 ? y2 : y;
+                boolean rim = Math.abs(k) == ESC_D + 1 || Math.abs(s) == ESC_W + 1;
+                for (int yy = Math.min(g, ly) - 2; yy < ly; yy++) {
+                    w.force(x, yy, z, rim || yy < ly - 1 ? (hash3(x, yy, z, seed + 5) < 0.3 ? MOSSY_STONE : WALL_STONE) : DIRT);
+                }
+                w.force(x, ly, z, rim ? WALL_STONE : GRAVEL_W);
+                for (int yy = ly + 1; yy <= Math.max(g, ly) + 1; yy++) {
+                    w.force(x, yy, z, AIR);
+                }
+            }
+        }
+        // the step between the terraces: a stone retaining wall with the wide stairs in the middle
+        for (int s = -ESC_W; s <= ESC_W; s++) {
+            if (Math.abs(s) <= 4) {
+                continue;
+            }
+            int[] p = along(cx, cz, F, 8, s);
+            for (int yy = y; yy <= y2; yy++) {
+                w.force(p[0], yy, p[1], hash3(p[0], yy, p[1], seed + 6) < 0.25 ? MOSSY_STONE : WALL_STONE);
+            }
+        }
+        for (int j = 1; j <= ESC_UP; j++) {
+            for (int s = -4; s <= 4; s++) {
+                int[] p = along(cx, cz, F, 7 + j, s);
+                int sy = y2 - j;
+                for (int yy = y; yy <= sy; yy++) {
+                    w.force(p[0], yy, p[1], Math.abs(s) == 4 ? WALL_STONE : yy == sy ? STEP : WALL_STONE);
+                }
+                for (int yy = sy + 1; yy <= y2 + 2; yy++) {
+                    if (Math.abs(s) < 4) {
+                        w.force(p[0], yy, p[1], AIR);
+                    }
+                }
+            }
+        }
+        // the plaster wall with a small roof all around (tsuijibei), open at the gate
+        for (int k = -ESC_D; k <= ESC_D; k++) {
+            for (int s = -ESC_W; s <= ESC_W; s++) {
+                if (Math.abs(k) != ESC_D && Math.abs(s) != ESC_W) {
+                    continue;
+                }
+                if (k == ESC_D && Math.abs(s) <= 7) {
+                    continue;
+                }
+                int[] p = along(cx, cz, F, k, s);
+                int ly = k <= 7 ? y2 : y;
+                w.force(p[0], ly + 1, p[1], WALL_STONE);
+                w.force(p[0], ly + 2, p[1], PLASTER);
+                w.force(p[0], ly + 3, p[1], PLASTER);
+                w.force(p[0], ly + 4, p[1], (k + s) % 6 == 0 ? WOOD_DARK : PLASTER);
+                w.force(p[0], ly + 5, p[1], ROOF_TILE);
+            }
+        }
+        // the stone path from the gate to the middle stairs and from them to the hall
+        for (int k = -24; k <= ESC_D; k++) {
+            for (int s = -2; s <= 2; s++) {
+                if (k >= 8 && k <= 13) {
+                    continue;
+                }
+                int[] p = along(cx, cz, F, k, s);
+                w.force(p[0], k <= 7 ? y2 : y, p[1], PATH);
+            }
+        }
+        for (int k = 16; k <= ESC_D - 6; k += 5) {
+            for (int s : new int[] {-4, 4}) {
+                int[] p = along(cx, cz, F, k, s);
+                lantern(w, p[0], y + 1, p[1], true);
+            }
+        }
+        for (int k = -20; k <= 2; k += 5) {
+            for (int s : new int[] {-4, 4}) {
+                int[] p = along(cx, cz, F, k, s);
+                lantern(w, p[0], y2 + 1, p[1], true);
+            }
+        }
+
+        // the two-storey gate (sanmon) in the middle of the front wall
+        {
+            int gk = ESC_D;
+            for (int s : new int[] {-6, -2, 2, 6}) {
+                for (int dk : new int[] {-2, 2}) {
+                    int[] p = along(cx, cz, F, gk + dk, s);
+                    for (int k = 1; k <= 7; k++) {
+                        w.force(p[0], y + k, p[1], WOOD_DARK);
+                    }
+                }
+            }
+            for (int s = -6; s <= 6; s++) {
+                for (int dk = -2; dk <= 2; dk++) {
+                    int[] p = along(cx, cz, F, gk + dk, s);
+                    w.force(p[0], y + 8, p[1], WOOD_DARK);
+                    w.force(p[0], y, p[1], PATH);
+                }
+            }
+            int[] r1 = rect(cx, cz, F, gk - 4, gk + 4, -9, 9);
+            roof(w, r1[0], r1[1], r1[2], r1[3], y + 9, 1);
+            // the upper storey: lattice walls set back, and the upper roof
+            for (int s = -5; s <= 5; s++) {
+                for (int dk = -1; dk <= 1; dk++) {
+                    if (Math.abs(s) != 5 && Math.abs(dk) != 1) {
+                        continue;
+                    }
+                    int[] p = along(cx, cz, F, gk + dk, s);
+                    for (int k = 10; k <= 13; k++) {
+                        w.force(p[0], y + k, p[1], Math.abs(s) == 5 && Math.abs(dk) == 1 ? VERMILION : k == 13 ? WOOD_DARK : LATTICE);
+                    }
+                }
+            }
+            int[] r2 = rect(cx, cz, F, gk - 3, gk + 3, -8, 8);
+            roof(w, r2[0], r2[1], r2[2], r2[3], y + 14, 2);
+            int[] p = along(cx, cz, F, gk + 2, 0);
+            w.force(p[0], y + 7, p[1], GOLD);
+        }
+
+        // the classroom building: two floors, the row of windows on both, an eave between the floors
+        {
+            int[] cls = rect(cx, cz, F, 14, 36, -37, -15);
+            int x0 = cls[0], z0 = cls[1], x1 = cls[2], z1 = cls[3];
+            int fy = y + 1, story = 5;
+            for (int x = x0; x <= x1; x++) {
+                for (int z = z0; z <= z1; z++) {
+                    w.force(x, y, z, WALL_STONE);
+                    w.force(x, fy + story - 1, z, FLOOR_WOOD);
+                }
+            }
+            for (int f = 0; f < 2; f++) {
+                for (int yy = fy + f * story; yy < fy + (f + 1) * story; yy++) {
+                    for (int x = x0; x <= x1; x++) {
+                        for (int z = z0; z <= z1; z++) {
+                            boolean edgeX = x == x0 || x == x1, edgeZ = z == z0 || z == z1;
+                            if (!edgeX && !edgeZ) {
+                                continue;
+                            }
+                            int u = edgeZ ? x - x0 : z - z0;
+                            boolean corner = edgeX && edgeZ;
+                            int k = yy - (fy + f * story);
+                            byte t;
+                            if (corner || u % 4 == 0) {
+                                t = WOOD_DARK;
+                            } else if (k == story - 1) {
+                                t = WOOD;
+                            } else if (k == 0) {
+                                t = PLASTER;
+                            } else {
+                                t = (k == 1 || k == 2) ? GLASS : PLASTER;
+                            }
+                            w.force(x, yy, z, t);
+                        }
+                    }
+                }
+            }
+            // doors on the side facing the path (+s)
+            int[] d = along(cx, cz, F, 25, -15);
+            for (int a = -1; a <= 1; a++) {
+                for (int yy = fy; yy <= fy + 2; yy++) {
+                    int x = F[1] != 0 ? d[0] : d[0] + a, z = F[1] != 0 ? d[1] + a : d[1];
+                    w.force(x, yy, z, yy == fy + 2 ? WOOD : DOOR);
+                }
+            }
+            // the eave between the floors, and the hip roof
+            for (int x = x0 - 1; x <= x1 + 1; x++) {
+                for (int z = z0 - 1; z <= z1 + 1; z++) {
+                    if (x != x0 - 1 && x != x1 + 1 && z != z0 - 1 && z != z1 + 1) {
+                        continue;
+                    }
+                    w.force(x, fy + story, z, ROOF_EAVE);
+                }
+            }
+            for (int x = x0; x <= x1; x++) {
+                for (int z = z0; z <= z1; z++) {
+                    w.force(x, fy + story * 2, z, WOOD_DARK);
+                }
+            }
+            roof(w, x0 - 2, z0 - 2, x1 + 2, z1 + 2, fy + story * 2 + 1, 2);
+        }
+        // Yaga at his room's door, with three cursed dolls on the porch
+        int[] yagaAt = along(cx, cz, F, 25, -12);
+        int[] yaga = {yagaAt[0], y + 1, yagaAt[1]};
+        for (int[] ks : new int[][] {{20, -13}, {30, -13}, {31, -12}}) {
+            int[] p = along(cx, cz, F, ks[0], ks[1]);
+            w.force(p[0], y + 1, p[1], STRAW);
+            w.force(p[0], y + 2, p[1], LANTERN_STONE);
+        }
+
+        // the training field: packed earth, a wooden fence, straw dummies and the bench
+        {
+            for (int k = 14; k <= 40; k++) {
+                for (int s = 12; s <= 38; s++) {
+                    int[] p = along(cx, cz, F, k, s);
+                    int x = p[0], z = p[1];
+                    boolean edge = k == 14 || k == 40 || s == 12 || s == 38;
+                    w.force(x, y, z, hash3(x, 0, z, seed + 40) < 0.08 ? DIRT : PACKED);
+                    if (edge) {
+                        boolean post = (k + s) % 3 == 0;
+                        if (post) {
+                            w.force(x, y + 1, z, WOOD_DARK);
+                            w.force(x, y + 2, z, WOOD_DARK);
+                        } else if (!(s == 12 && k >= 25 && k <= 28)) {
+                            w.force(x, y + 2, z, WOOD);
+                        }
+                    }
+                }
+            }
+            // dummies: a post, a straw body, a wooden arm across, some crooked from all the beating
+            for (int i = 0; i < 5; i++) {
+                int k = 18 + i * 5 + rng.nextInt(-1, 1), s = rng.nextInt(20, 32);
+                int[] p = along(cx, cz, F, k, s);
+                int x = p[0], z = p[1];
+                w.force(x, y + 1, z, WOOD_DARK);
+                w.force(x, y + 2, z, STRAW);
+                w.force(x, y + 3, z, STRAW);
+                boolean tilt = rng.next() < 0.35;
+                int[] hp = tilt ? along(cx, cz, F, k + 1, s) : new int[] {x, z};
+                w.force(hp[0], y + 4, hp[1], STRAW);
+                for (int u : new int[] {-1, 1}) {
+                    int ax = F[1] != 0 ? x + u : x, az = F[1] != 0 ? z : z + u;
+                    w.force(ax, y + 3, az, WOOD);
+                }
+            }
+            for (int k = 20; k <= 32; k++) {
+                int[] p = along(cx, cz, F, k, 36);
+                w.force(p[0], y + 1, p[1], WOOD);
+            }
+        }
+
+        // the main hall at the back of the upper terrace
+        int[] H = rect(cx, cz, F, -42, -26, -13, 13);
+        int hallTop = hall(w, H[0], H[1], H[2], H[3], y2, front, true, rng);
+        // the pagoda on one side
+        int[] pg = along(cx, cz, F, -30, 28);
+        int pagTop = pagoda(w, pg[0], pg[1], y2, rng);
+        // the long dormitory on the other side, looking to the middle (+s)
+        int[] D = rect(cx, cz, F, -22, 4, -37, -22);
+        hall(w, D[0], D[1], D[2], D[3], y2, sideP, false, rng);
+        // the covered walkway from the hall to the dormitory
+        for (int s = -21; s <= -14; s++) {
+            for (int dk = -1; dk <= 1; dk++) {
+                int[] p = along(cx, cz, F, -30 + dk, s);
+                w.force(p[0], y2 + 1, p[1], FLOOR_WOOD);
+                if (Math.abs(dk) == 1 && s % 3 == 0) {
+                    for (int k = 2; k <= 4; k++) {
+                        w.force(p[0], y2 + k, p[1], WOOD_DARK);
+                    }
+                }
+                w.force(p[0], y2 + 5, p[1], WOOD_DARK);
+            }
+        }
+        {
+            int[] r = rect(cx, cz, F, -32, -28, -22, -13);
+            roof(w, r[0], r[1], r[2], r[3], y2 + 6, 0);
+        }
+        // Shoko's infirmary (looking to the middle, -s)
+        int[] E = rect(cx, cz, F, -14, 0, 17, 29);
+        hall(w, E[0], E[1], E[2], E[3], y2, sideN, false, rng);
+        int[] shokoAt = along(cx, cz, F, -7, 15);
+        int[] shoko = {shokoAt[0], y2 + 1, shokoAt[1]};
+        // the way down to the Corredor das Estrelas: a little stone house in the back corner, a dark door, stairs that
+        // vanish into the dark
+        {
+            int k0 = -44, s0 = 34;
+            for (int dk = -3; dk <= 3; dk++) {
+                for (int ds = -3; ds <= 3; ds++) {
+                    int[] p = along(cx, cz, F, k0 + dk, s0 + ds);
+                    boolean wall = Math.abs(dk) == 3 || Math.abs(ds) == 3;
+                    for (int k = 1; k <= 4; k++) {
+                        w.force(p[0], y2 + k, p[1], wall ? MOSSY_STONE : AIR);
+                    }
+                    w.force(p[0], y2 + 5, p[1], ROOF_TILE);
+                }
+            }
+            int[] rp = along(cx, cz, F, k0 - 4, s0);
+            w.force(rp[0], y2 + 6, rp[1], ROOF_RIDGE);
+            // the door on the side looking to the front
+            for (int ds = -1; ds <= 1; ds++) {
+                for (int k = 1; k <= 3; k++) {
+                    int[] p = along(cx, cz, F, k0 + 3, s0 + ds);
+                    w.force(p[0], y2 + k, p[1], AIR);
+                }
+            }
+            // stairs going down to the back, darker and darker, and the dark at the end
+            for (int j = 0; j < 9; j++) {
+                for (int ds = -1; ds <= 1; ds++) {
+                    int[] p = along(cx, cz, F, k0 + 2 - j, s0 + ds);
+                    int sy = y2 - j;
+                    w.force(p[0], sy, p[1], STEP);
+                    for (int yy = sy + 1; yy <= sy + 3; yy++) {
+                        w.force(p[0], yy, p[1], j > 5 ? DARK : AIR);
+                    }
+                }
+            }
+            int[] t = along(cx, cz, F, k0 + 6, s0 - 6);
+            for (int a = -2; a <= 3; a++) {
+                for (int b = -2; b <= 3; b++) {
+                    w.force(t[0] + a, y2, t[1] + b, MOSS);
+                }
+            }
+            cedar(w, t[0], y2 + 1, t[1], site.seed() + 77, true);
+        }
+        // sakuras: in the terraces' corners and along the inner wall
+        for (int[] ks : new int[][] {{42, -36}, {42, 36}, {11, -30}, {11, 30}, {-44, -36}, {-12, 36}}) {
+            int[] p = along(cx, cz, F, ks[0], ks[1]);
+            sakura(w, p[0], (ks[0] <= 7 ? y2 : y) + 1, p[1], site.seed() + 200 + ks[0] * 7 + ks[1]);
+        }
+        // the stairway from the gate down the hill, wide, with landings and lanterns; a torii at its foot
+        char axis = F[0] != 0 ? 'z' : 'x';
+        int sy = y, k = ESC_D + 6, flat = 0;
+        List<int[]> stairs = new ArrayList<>();
+        for (int kk = ESC_D + 2; kk < ESC_D + 6; kk++) {
+            for (int s = -4; s <= 4; s++) {
+                int[] p = along(cx, cz, F, kk, s);
+                int g = ground.applyAsInt(p[0], p[1]);
+                for (int yy = Math.min(g, y) - 2; yy <= y; yy++) {
+                    w.force(p[0], yy, p[1], yy == y ? PATH : WALL_STONE);
+                }
+                for (int yy = y + 1; yy <= Math.max(g, y) + 3; yy++) {
+                    w.force(p[0], yy, p[1], AIR);
+                }
+            }
+        }
+        while (stairs.size() < 120) {
+            int[] c = along(cx, cz, F, k, 0);
+            int g = ground.applyAsInt(c[0], c[1]);
+            if (g > sy + 1 || g < sea + 1) {
+                break;
+            }
+            int ny = Math.max(Math.min(g, sy), sy - 1);
+            flat = ny == sy ? flat + 1 : 0;
+            if (flat > 5 && stairs.size() > 8) {
+                break;
+            }
+            sy = ny;
+            for (int s = -4; s <= 4; s++) {
+                int[] p = along(cx, cz, F, k, s);
+                boolean edge = Math.abs(s) == 4;
+                int gs = ground.applyAsInt(p[0], p[1]);
+                for (int yy = Math.min(gs, sy) - 3; yy <= sy; yy++) {
+                    w.force(p[0], yy, p[1], edge ? WALL_STONE : yy == sy ? STEP : WALL_STONE);
+                }
+                for (int yy = sy + 1; yy <= Math.max(gs, sy) + 3; yy++) {
+                    w.force(p[0], yy, p[1], AIR);
+                }
+                if (edge && stairs.size() % 8 == 4) {
+                    lantern(w, p[0], sy + 1, p[1], true);
+                }
+            }
+            stairs.add(new int[] {k, sy});
+            k++;
+        }
+        if (!stairs.isEmpty()) {
+            int[] last = stairs.get(stairs.size() - 1);
+            int[] b = along(cx, cz, F, last[0] + 2, 0);
+            for (int a = -5; a <= 5; a++) {
+                for (int bb = 0; bb <= 3; bb++) {
+                    int[] p = along(cx, cz, F, last[0] + 1 + bb, a);
+                    w.force(p[0], last[1], p[1], PATH);
+                    for (int yy = last[1] + 1; yy < last[1] + 5; yy++) {
+                        w.force(p[0], yy, p[1], AIR);
+                    }
+                }
+            }
+            torii(w, b[0], last[1] + 1, b[1], axis, 5, 10);
+        }
+        return new School(cx, cz, y, Math.max(hallTop, pagTop), front, stairs.size(), yaga, shoko);
     }
 
     // A small shrine of the woods (hokora): a little wooden house on a stone plinth, with a small torii in front.
