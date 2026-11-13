@@ -52,7 +52,8 @@ public final class UniverseBiomes {
             Map.entry("aldeia_amaldicoada", 0x8FA060),
             Map.entry("mar_de_dagon", 0x2AC8C8),
             Map.entry("floresta_de_hanami", 0x7AD04A),
-            Map.entry("terras_do_jogo", 0xFF7A2A));
+            Map.entry("terras_do_jogo", 0xFF7A2A),
+            Map.entry("outono_de_kyoto", 0xE0682A));
 
     private UniverseBiomes() {
     }

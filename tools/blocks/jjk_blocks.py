@@ -78,7 +78,7 @@ def leaves(seed, base, holes=0.18, accent=None):
         c[m] = np.array(accent, float) * rng.uniform(0.85, 1.1, (m.sum(), 1))
     a = np.ones((N, N))
     a[(rng.random((N, N)) < holes) & (noise(seed + 3, 6) < 0.55)] = 0
-    return with_alpha(c, a)
+    return with_alpha(np.clip(c, 0, 255), a)
 
 
 def grass_top(seed, base, tips):
@@ -92,7 +92,7 @@ def grass_top(seed, base, tips):
         col = np.array(tips, float) * rng.uniform(0.8, 1.15)
         for j in range(l):
             c[(y - j) % N, (x + (j if rng.random() < 0.3 else 0)) % N] = col
-    return opaque(c)
+    return opaque(np.clip(c, 0, 255))
 
 
 def glow(seed, base, core):
@@ -362,6 +362,27 @@ BIOMES = {
         ("rocha_derretida", "cube", "pickaxe", ("glow", 3515, rgb("#3a1e14"), rgb("#ff5a14")), "Rocha Derretida", "Molten Rock"),
         ("escoria", "cube", "shovel", ("speckle", 3517, rgb("#5a3a30"), 0.18), "Escória", "Cinder"),
         ("faixa_de_ferro", "cube", "pickaxe", ("speckle", 3519, rgb("#6a4a3a"), 0.16), "Faixa de Ferro", "Iron Band"),
+    ],
+    "kyoto": [
+        ("chao_de_folhas_vermelhas", "cube", "shovel", ("grass_top", 3601, rgb("#a8382a"), rgb("#d04a30")), "Chão de Folhas Vermelhas", "Red Leaf Litter"),
+        ("chao_de_folhas_laranjas", "cube", "shovel", ("grass_top", 3603, rgb("#c06a2a"), rgb("#e88a3a")), "Chão de Folhas Laranjas", "Orange Leaf Litter"),
+        ("chao_de_folhas_douradas", "cube", "shovel", ("grass_top", 3605, rgb("#d0a838"), rgb("#f0c850")), "Chão de Folhas Douradas", "Golden Leaf Litter"),
+        ("tronco_de_bordo", "cube", "axe", ("bark", 3607, rgb("#4a3428"), 0.26), "Tronco de Bordo", "Maple Trunk"),
+        ("casca_escura_de_kyoto", "cube", "axe", ("bark", 3609, rgb("#3a2c24"), 0.3), "Casca Escura de Kyoto", "Kyoto Dark Bark"),
+        ("folhas_de_bordo_vermelhas", "leaves", "hoe", ("leaves", 3611, rgb("#c8301e"), 0.16, rgb("#e85a3a")), "Folhas de Bordo Vermelhas", "Red Maple Leaves"),
+        ("folhas_de_bordo_carmim", "leaves", "hoe", ("leaves", 3613, rgb("#9a1e18"), 0.16, rgb("#c8301e")), "Folhas de Bordo Carmim", "Crimson Maple Leaves"),
+        ("folhas_de_bordo_laranjas", "leaves", "hoe", ("leaves", 3615, rgb("#e0682a"), 0.16, rgb("#f0a040")), "Folhas de Bordo Laranjas", "Orange Maple Leaves"),
+        ("folhas_de_bordo_douradas", "leaves", "hoe", ("leaves", 3617, rgb("#e8a830"), 0.16, rgb("#f8d060")), "Folhas de Bordo Douradas", "Golden Maple Leaves"),
+        ("folhas_de_ginkgo", "leaves", "hoe", ("leaves", 3619, rgb("#f0c838"), 0.14, rgb("#fff080")), "Folhas de Ginkgo", "Ginkgo Leaves"),
+        ("agulhas_de_pinheiro_japones", "leaves", "hoe", ("leaves", 3621, rgb("#2e4a2a"), 0.12), "Agulhas de Pinheiro Japonês", "Japanese Pine Needles"),
+        ("folhas_de_bambu", "leaves", "hoe", ("leaves", 3623, rgb("#5a8a34"), 0.28), "Folhas de Bambu", "Bamboo Leaves"),
+        ("madeira_clara_de_kyoto", "cube", "axe", ("planks", 3625, rgb("#a07a50"), 0.0), "Madeira Clara de Kyoto", "Kyoto Light Wood"),
+        ("folha_de_ouro", "cube", "pickaxe", ("glowing", 3627, rgb("#e8b830"), rgb("#fff0a0")), "Folha de Ouro", "Gold Leaf"),
+        ("ouro_escuro", "cube", "pickaxe", ("speckle", 3629, rgb("#a87818"), 0.12), "Ouro Escuro", "Dark Gold"),
+        ("telhado_de_casca", "cube", "axe", ("planks", 3631, rgb("#3a3230"), 0.0), "Telhado de Casca", "Bark Roof"),
+        ("beiral_de_casca", "cube", "axe", ("planks", 3633, rgb("#2a2422"), 0.0), "Beiral de Casca", "Bark Eave"),
+        ("madeira_de_ponte", "cube", "axe", ("planks", 3635, rgb("#8a5a34"), 0.1), "Madeira de Ponte", "Bridge Wood"),
+        ("tatame", "cube", "hoe", ("thatch", 3637, rgb("#c8b878")), "Tatame", "Tatami"),
     ],
 }
 

@@ -52,6 +52,11 @@ BIOMES = {
         additions=("minecraft:ambient.basalt_deltas.additions", 0.0111),
         mood="minecraft:ambient.basalt_deltas.mood",
         creature=[], ambient=[]),
+    "outono_de_kyoto": dict(
+        pt="Outono de Kyoto", en="Kyoto Autumn", temp=0.6, down=0.6, rain=True,
+        sky="#6a9ad0", fog="#e8d0b4", water="#3a6a6a", water_fog="#1a3a3a", grass="#6a8a3a", foliage="#c8301e",
+        particle=("minecraft:cherry_leaves", 0.003),
+        creature=[mob("minecraft:fox", 6, 2, 3), mob("minecraft:rabbit", 4, 2, 3)], ambient=[mob("minecraft:bat", 10, 8, 8)]),
 }
 
 

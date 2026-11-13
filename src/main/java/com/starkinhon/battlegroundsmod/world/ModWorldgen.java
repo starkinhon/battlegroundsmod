@@ -96,6 +96,10 @@ public final class ModWorldgen {
     // The Terras do Jogo's basalt fields, lava rivers, columns, fumaroles and hot springs, and the volcano with its meteor.
     public static final Supplier<JogoFeature> JOGO_FEATURE = FEATURES.register("terras_do_jogo",
             () -> new JogoFeature(NoneFeatureConfiguration.CODEC));
+    // The Outono de Kyoto's maples, ginkgos, pines, bamboo groves and streams, and the pond garden with the Golden
+    // Pavilion.
+    public static final Supplier<KyotoFeature> KYOTO_FEATURE = FEATURES.register("outono_de_kyoto",
+            () -> new KyotoFeature(NoneFeatureConfiguration.CODEC));
 
     // The Naruto biomes of the normal overworld (put there by NarutoRegion).
     public static final ResourceKey<Biome> FLORESTA_DA_FOLHA = biome("floresta_da_folha");
@@ -115,6 +119,7 @@ public final class ModWorldgen {
     public static final ResourceKey<Biome> MAR_DE_DAGON = biome("mar_de_dagon");
     public static final ResourceKey<Biome> FLORESTA_DE_HANAMI = biome("floresta_de_hanami");
     public static final ResourceKey<Biome> TERRAS_DO_JOGO = biome("terras_do_jogo");
+    public static final ResourceKey<Biome> OUTONO_DE_KYOTO = biome("outono_de_kyoto");
     public static final TagKey<Biome> JUJUTSU_BIOMES = TagKey.create(Registries.BIOME,
             ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "universe_jujutsu"));
 

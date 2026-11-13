@@ -124,6 +124,30 @@ public final class JujutsuBlocks {
     public static final DeferredBlock<Block> CINDER = cube("escoria", MapColor.TERRACOTTA_BROWN, 0.6f, SoundType.GRAVEL, 0);
     public static final DeferredBlock<Block> IRON_BAND = stone("faixa_de_ferro", MapColor.TERRACOTTA_BROWN, 0);
 
+    // ---- Outono de Kyoto: the fallen leaves on the ground in three colors, the maple trunk and the dark bark of the
+    // ginkgos and pines, the maples' four autumn colors, the ginkgo's yellow, the pine needles, the bamboo leaves, the
+    // garden's light wood, the Golden Pavilion's gold leaf (shining) and dark gold, the bark roofs and eaves, the
+    // bridge's wood and the tatami.
+    public static final DeferredBlock<Block> LITTER_RED = cube("chao_de_folhas_vermelhas", MapColor.COLOR_RED, 0.6f, SoundType.GRASS, 0);
+    public static final DeferredBlock<Block> LITTER_ORANGE = cube("chao_de_folhas_laranjas", MapColor.COLOR_ORANGE, 0.6f, SoundType.GRASS, 0);
+    public static final DeferredBlock<Block> LITTER_GOLD = cube("chao_de_folhas_douradas", MapColor.COLOR_YELLOW, 0.6f, SoundType.GRASS, 0);
+    public static final DeferredBlock<Block> MAPLE_TRUNK = cube("tronco_de_bordo", MapColor.COLOR_BROWN, 2.0f, SoundType.WOOD, 0);
+    public static final DeferredBlock<Block> KYOTO_DARK_BARK = cube("casca_escura_de_kyoto", MapColor.COLOR_BROWN, 2.0f, SoundType.WOOD, 0);
+    public static final DeferredBlock<LeavesBlock> MAPLE_RED = leaves("folhas_de_bordo_vermelhas");
+    public static final DeferredBlock<LeavesBlock> MAPLE_CRIMSON = leaves("folhas_de_bordo_carmim");
+    public static final DeferredBlock<LeavesBlock> MAPLE_ORANGE = leaves("folhas_de_bordo_laranjas");
+    public static final DeferredBlock<LeavesBlock> MAPLE_GOLD = leaves("folhas_de_bordo_douradas");
+    public static final DeferredBlock<LeavesBlock> GINKGO_LEAVES = leaves("folhas_de_ginkgo");
+    public static final DeferredBlock<LeavesBlock> JAPANESE_PINE_NEEDLES = leaves("agulhas_de_pinheiro_japones");
+    public static final DeferredBlock<LeavesBlock> BAMBOO_LEAVES = leaves("folhas_de_bambu");
+    public static final DeferredBlock<Block> KYOTO_LIGHT_WOOD = cube("madeira_clara_de_kyoto", MapColor.WOOD, 2.0f, SoundType.WOOD, 0);
+    public static final DeferredBlock<Block> GOLD_LEAF = stone("folha_de_ouro", MapColor.GOLD, 3);
+    public static final DeferredBlock<Block> DARK_GOLD = stone("ouro_escuro", MapColor.GOLD, 0);
+    public static final DeferredBlock<Block> BARK_ROOF = cube("telhado_de_casca", MapColor.COLOR_BLACK, 2.0f, SoundType.WOOD, 0);
+    public static final DeferredBlock<Block> BARK_EAVE = cube("beiral_de_casca", MapColor.COLOR_BLACK, 2.0f, SoundType.WOOD, 0);
+    public static final DeferredBlock<Block> BRIDGE_WOOD = cube("madeira_de_ponte", MapColor.COLOR_BROWN, 2.0f, SoundType.WOOD, 0);
+    public static final DeferredBlock<Block> TATAMI = cube("tatame", MapColor.SAND, 0.8f, SoundType.GRASS, 0);
+
     private JujutsuBlocks() {
     }
 
