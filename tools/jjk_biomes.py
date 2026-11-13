@@ -27,6 +27,12 @@ BIOMES = {
         additions=("minecraft:ambient.soul_sand_valley.additions", 0.0111),
         mood="minecraft:ambient.soul_sand_valley.mood",
         creature=[], ambient=[mob("minecraft:bat", 10, 8, 8)]),
+    "aldeia_amaldicoada": dict(
+        pt="Aldeia Amaldiçoada", en="Cursed Village", temp=0.8, down=0.9, rain=True,
+        sky="#626a6a", fog="#8e958a", water="#2a3424", water_fog="#1a2018", grass="#5a6a3a", foliage="#46523a",
+        particle=("minecraft:spore_blossom_air", 0.0015),
+        additions=("minecraft:ambient.cave", 0.0011),
+        creature=[mob("minecraft:frog", 10, 2, 5)], ambient=[mob("minecraft:bat", 10, 8, 8)]),
 }
 
 

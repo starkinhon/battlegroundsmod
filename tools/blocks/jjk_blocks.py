@@ -175,8 +175,64 @@ def cross_plant(seed, base, kind):
     return with_alpha(np.clip(c, 0, 255), a)
 
 
+def thatch(seed, base, rot=0.0):
+    # thick straw thatch: long strands lying across, in loose rows that droop a little, dark gaps between bundles
+    rng = np.random.default_rng(seed)
+    k = 0.8 + 0.12 * noise(seed, 3)
+    k = np.repeat(k[..., None], 1, 2)[..., 0]
+    for _ in range(70):
+        y, x0, l = rng.uniform(0, N), rng.integers(0, N), rng.integers(4, 11)
+        sag, v = rng.uniform(-0.6, 0.6), rng.uniform(0.95, 1.3)
+        for j in range(l):
+            yy = int(y + sag * math.sin(j / l * math.pi)) % N
+            k[yy, (x0 + j) % N] = v
+    k[(Y % 5 == 4) & (noise(seed + 1, 8) < 0.7)] *= 0.62
+    if rot:
+        k[noise(seed + 2, 5) < rot] *= 0.66
+    return opaque(shade(base, k + rng.uniform(-0.03, 0.03, (N, N))))
+
+
+def paper(seed, base, frame, torn=0.0):
+    # shoji: paper in a wooden lattice; the old ones torn open in places and stained
+    rng = np.random.default_rng(seed)
+    c = shade(base, 0.9 + 0.08 * noise(seed, 4) + rng.uniform(-0.03, 0.03, (N, N)))
+    if torn:
+        stain = noise(seed + 1, 5)
+        c[stain < 0.35] *= 0.82
+        holes = (noise(seed + 2, 6) < torn) & (X % 5 != 0) & (Y % 5 != 0)
+        c[holes] = np.array(frame, float) * 0.45
+    lat = (X % 5 == 0) | (Y % 5 == 0)
+    c[lat] = np.array(frame, float) * rng.uniform(0.85, 1.1, (lat.sum(), 1))
+    return opaque(np.clip(c, 0, 255))
+
+
+def blades(seed, base, head=None, droop=False):
+    # reeds and rice: thin blades from the foot, leaning and bending; the reed's brown head, the rice's drooping grain
+    rng = np.random.default_rng(seed)
+    a = np.zeros((N, N))
+    c = np.zeros((N, N, 3))
+    for _ in range(7):
+        x0, top = rng.uniform(2, 14), rng.integers(1, 7)
+        lean = rng.uniform(-2.5, 2.5)
+        for y in range(top, N):
+            t = (N - 1 - y) / (N - 1 - top)
+            xx = int(round(x0 + lean * t * t))
+            if 0 <= xx < N:
+                a[y, xx] = 1
+                c[y, xx] = np.array(base, float) * (0.7 + 0.45 * t) * rng.uniform(0.9, 1.1)
+        if head is not None and rng.random() < 0.6:
+            xx = int(round(x0 + lean))
+            for j in range(3 if not droop else 4):
+                yy, xh = top + j, xx + (j // 2 if droop else 0)
+                if 0 <= xh < N and 0 <= yy < N:
+                    a[yy, xh] = 1
+                    c[yy, xh] = np.array(head, float) * rng.uniform(0.85, 1.1)
+    return with_alpha(np.clip(c, 0, 255), a)
+
+
 STYLES = {"speckle": speckle, "bark": bark, "leaves": leaves, "grass_top": grass_top, "glow": glow, "eye": eye,
-          "flesh": flesh, "planks": planks, "cross_plant": cross_plant}
+          "flesh": flesh, "planks": planks, "cross_plant": cross_plant,
+          "thatch": thatch, "paper": paper, "blades": blades}
 
 
 # ---- the blocks -----------------------------------------------------------------------------------------------------
@@ -200,6 +256,27 @@ BIOMES = {
         ("madeira_vermelha_podre", "cube", "axe", ("planks", 3125, rgb("#5e2218"), 0.35), "Madeira Vermelha Podre", "Rotten Red Wood"),
         ("cipo_negro", "cross", None, ("cross_plant", 3127, rgb("#2a3424"), "vine"), "Cipó Negro", "Black Vine"),
         ("fungo_amaldicoado", "cross", None, ("cross_plant", 3129, rgb("#a45cf0"), "fungus"), "Fungo Amaldiçoado", "Cursed Fungus"),
+    ],
+    "aldeia": [
+        ("capim_encharcado", "cube", "shovel", ("grass_top", 3201, rgb("#46553a"), rgb("#5e6e44")), "Capim Encharcado", "Soaked Grass"),
+        ("tabua_do_brejo", "cube", "axe", ("planks", 3203, rgb("#6a5238"), 0.22), "Tábua do Brejo", "Swamp Boards"),
+        ("madeira_de_fazenda", "cube", "axe", ("planks", 3205, rgb("#7a6040"), 0.08), "Madeira de Fazenda", "Farmhouse Wood"),
+        ("madeira_de_fazenda_escura", "cube", "axe", ("planks", 3207, rgb("#2e241c"), 0.15), "Madeira de Fazenda Escura", "Dark Farmhouse Wood"),
+        ("poste_do_brejo", "cube", "axe", ("bark", 3209, rgb("#3c2e22"), 0.25), "Poste do Brejo", "Swamp Post"),
+        ("palha_de_telhado", "cube", "hoe", ("thatch", 3211, rgb("#8a7448")), "Palha de Telhado", "Roof Thatch"),
+        ("palha_podre", "cube", "hoe", ("thatch", 3213, rgb("#6a5a3a"), 0.4), "Palha Podre", "Rotten Thatch"),
+        ("cumeeira", "cube", "axe", ("planks", 3215, rgb("#2a2420"), 0.1), "Cumeeira", "Roof Ridge"),
+        ("madeira_queimada", "cube", "axe", ("bark", 3217, rgb("#1c1a18"), 0.4), "Madeira Queimada", "Charred Wood"),
+        ("shoji_rasgado", "cube", "axe", ("paper", 3219, rgb("#9a9280"), rgb("#3c2e22"), 0.4), "Shoji Rasgado", "Torn Shoji"),
+        ("casca_de_cipreste", "cube", "axe", ("bark", 3221, rgb("#4a4038"), 0.28), "Casca de Cipreste", "Cypress Bark"),
+        ("raiz_de_cipreste", "cube", "axe", ("bark", 3223, rgb("#4e4238"), 0.2), "Joelho de Cipreste", "Cypress Knee"),
+        ("folhas_de_cipreste", "leaves", "hoe", ("leaves", 3225, rgb("#46523a"), 0.2), "Folhas de Cipreste", "Cypress Leaves"),
+        ("folhas_de_cipreste_claras", "leaves", "hoe", ("leaves", 3227, rgb("#56603e"), 0.2), "Folhas Claras de Cipreste", "Light Cypress Leaves"),
+        ("barba_de_velho", "cross", None, ("cross_plant", 3229, rgb("#6e7860"), "vine"), "Barba-de-Velho", "Old Man's Beard"),
+        ("junco", "cross", None, ("blades", 3231, rgb("#5c6234"), rgb("#4a3020")), "Junco", "Reed"),
+        ("arroz", "cross", None, ("blades", 3233, rgb("#5e7a34"), rgb("#b8a860"), True), "Arroz", "Rice"),
+        ("madeira_de_torii_desbotada", "cube", "axe", ("planks", 3235, rgb("#9a4a36"), 0.25), "Madeira de Torii Desbotada", "Faded Torii Wood"),
+        ("dique_de_barro", "cube", "shovel", ("speckle", 3237, rgb("#5a4a34"), 0.16), "Dique de Barro", "Clay Dike"),
     ],
 }
 

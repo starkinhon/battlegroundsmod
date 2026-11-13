@@ -41,6 +41,32 @@ public final class JujutsuBlocks {
     public static final DeferredBlock<ThinPlantBlock> CURSED_FUNGUS = plant("fungo_amaldicoado", MapColor.COLOR_PURPLE, 6,
             SoundType.FUNGUS, Block.box(2, 0, 2, 14, 10, 14));
 
+    // ---- Aldeia Amaldiçoada: the soaked grass by the water, the farmhouses' woods (boards over the swamp, posts,
+    // light and dark walls, the roof ridge, the burnt house), the thick thatch and the rotten one, the torn shoji, the
+    // swamp cypress (bark, knees, two leaves, old man's beard), the reeds, the rice, the faded torii and the paddies' dikes.
+    public static final DeferredBlock<Block> SOAKED_GRASS = cube("capim_encharcado", MapColor.GRASS, 0.6f, SoundType.GRASS, 0);
+    public static final DeferredBlock<Block> SWAMP_BOARDS = cube("tabua_do_brejo", MapColor.WOOD, 2.0f, SoundType.WOOD, 0);
+    public static final DeferredBlock<Block> FARM_WOOD = cube("madeira_de_fazenda", MapColor.WOOD, 2.0f, SoundType.WOOD, 0);
+    public static final DeferredBlock<Block> FARM_WOOD_DARK = cube("madeira_de_fazenda_escura", MapColor.COLOR_BROWN, 2.0f, SoundType.WOOD, 0);
+    public static final DeferredBlock<Block> SWAMP_POST = cube("poste_do_brejo", MapColor.COLOR_BROWN, 2.0f, SoundType.WOOD, 0);
+    public static final DeferredBlock<Block> THATCH = cube("palha_de_telhado", MapColor.COLOR_YELLOW, 0.5f, SoundType.GRASS, 0);
+    public static final DeferredBlock<Block> THATCH_ROTTEN = cube("palha_podre", MapColor.COLOR_BROWN, 0.5f, SoundType.GRASS, 0);
+    public static final DeferredBlock<Block> ROOF_RIDGE = cube("cumeeira", MapColor.COLOR_BLACK, 2.0f, SoundType.WOOD, 0);
+    public static final DeferredBlock<Block> CHARRED_WOOD = cube("madeira_queimada", MapColor.COLOR_BLACK, 1.5f, SoundType.WOOD, 0);
+    public static final DeferredBlock<Block> TORN_SHOJI = cube("shoji_rasgado", MapColor.TERRACOTTA_WHITE, 0.5f, SoundType.WOOD, 0);
+    public static final DeferredBlock<Block> CYPRESS_BARK = cube("casca_de_cipreste", MapColor.COLOR_BROWN, 2.0f, SoundType.WOOD, 0);
+    public static final DeferredBlock<Block> CYPRESS_KNEE = cube("raiz_de_cipreste", MapColor.COLOR_BROWN, 2.0f, SoundType.WOOD, 0);
+    public static final DeferredBlock<LeavesBlock> CYPRESS_LEAVES = leaves("folhas_de_cipreste");
+    public static final DeferredBlock<LeavesBlock> CYPRESS_LEAVES_LIGHT = leaves("folhas_de_cipreste_claras");
+    public static final DeferredBlock<ThinPlantBlock> OLD_MANS_BEARD = plant("barba_de_velho", MapColor.PLANT, 0, SoundType.VINE,
+            Block.box(2, 0, 2, 14, 16, 14));
+    public static final DeferredBlock<ThinPlantBlock> REED = plant("junco", MapColor.PLANT, 0, SoundType.GRASS,
+            Block.box(2, 0, 2, 14, 15, 14));
+    public static final DeferredBlock<ThinPlantBlock> RICE = plant("arroz", MapColor.PLANT, 0, SoundType.CROP,
+            Block.box(2, 0, 2, 14, 13, 14));
+    public static final DeferredBlock<Block> FADED_TORII = cube("madeira_de_torii_desbotada", MapColor.TERRACOTTA_RED, 2.0f, SoundType.WOOD, 0);
+    public static final DeferredBlock<Block> CLAY_DIKE = cube("dique_de_barro", MapColor.DIRT, 0.6f, SoundType.MUD, 0);
+
     private JujutsuBlocks() {
     }
 

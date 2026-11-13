@@ -48,7 +48,8 @@ public final class UniverseBiomes {
             Map.entry("mar_da_nevoa", 0xC4D2E0),
             Map.entry("mar_do_sul", 0x6FD0E8),
             Map.entry("templos_antigos", 0xF2B8C8),
-            Map.entry("floresta_negra", 0x9A5CE0));
+            Map.entry("floresta_negra", 0x9A5CE0),
+            Map.entry("aldeia_amaldicoada", 0x8FA060));
 
     private UniverseBiomes() {
     }
