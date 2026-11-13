@@ -161,6 +161,14 @@ public final class ModEntities {
                     .clientTrackingRange(16)
                     .build("naruto_clone"));
 
+    // What a ninja throws: Shuriken, Kunai, Papel-Bomba (item/NinjaThrown, Itens de Naruto 2026-11-12).
+    public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.item.NinjaThrown>> NINJA_THROWN = ENTITY_TYPES.register("ninja_thrown",
+            () -> EntityType.Builder.<com.starkinhon.battlegroundsmod.item.NinjaThrown>of(com.starkinhon.battlegroundsmod.item.NinjaThrown::new, MobCategory.MISC)
+                    .sized(0.25f, 0.25f)
+                    .clientTrackingRange(4)
+                    .updateInterval(10)
+                    .build("ninja_thrown"));
+
     // Sukuna's Malevolent Shrine: static blocky model (domain/MalevolentShrine, /soul santuario).
     public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.domain.MalevolentShrine>> MALEVOLENT_SHRINE = ENTITY_TYPES.register("malevolent_shrine",
             () -> EntityType.Builder.<com.starkinhon.battlegroundsmod.domain.MalevolentShrine>of(com.starkinhon.battlegroundsmod.domain.MalevolentShrine::new, MobCategory.MISC)

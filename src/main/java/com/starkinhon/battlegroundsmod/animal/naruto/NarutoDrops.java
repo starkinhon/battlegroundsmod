@@ -10,7 +10,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.ItemLike;
 
 // What each Naruto creature drops (the preview's "Solta"), with the items the mod already has: the ninja's ramen,
-// soldier pills and headbands, the Ninken summoning scroll, and the closest vanilla material for the rest (leather for
+// soldier pills and headbands, the ninja's shuriken, kunai and paper bombs (Itens de Naruto 2026-11-12), and the closest vanilla material for the rest (leather for
 // the tiger's striped hide, paper for the paper crane's chakra paper, a prismarine shard for the shark's tooth...).
 // The structures' own items (NarutoLootItems) stay in their chests.
 final class NarutoDrops {
@@ -23,12 +23,11 @@ final class NarutoDrops {
             case "ninja_renegado" -> {
                 some(m, Items.IRON_NUGGET, 1, 3, 0.6, r);
                 some(m, ModItems.RAMEN.get(), 1, 1, 0.12, r);
+                some(m, ModItems.SHURIKEN.get(), 1, 4, 0.35, r);
+                some(m, ModItems.PAPER_BOMB.get(), 1, 2, 0.15, r);
                 rare(m, ModItems.NINJA_HEADBAND.get(), 0.03, byPlayer, r);
             }
-            case "ninken" -> {
-                some(m, Items.BONE, 0, 2, 1, r);
-                rare(m, ModItems.SUMMON_SCROLL.get(), 0.02, byPlayer, r);
-            }
+            case "ninken" -> some(m, Items.BONE, 0, 2, 1, r);
             case "cobra_gigante" -> {
                 some(m, Items.LEATHER, 3, 6, 1, r);
                 some(m, Items.TURTLE_SCUTE, 1, 2, 0.35, r);
@@ -41,6 +40,7 @@ final class NarutoDrops {
             case "ninja_som" -> {
                 some(m, Items.IRON_NUGGET, 2, 4, 0.7, r);
                 some(m, ModItems.SOLDIER_PILL.get(), 1, 1, 0.08, r);
+                some(m, ModItems.KUNAI.get(), 1, 2, 0.25, r);
                 rare(m, Items.PAPER, 0.15, byPlayer, r);
             }
             case "centopeia" -> {
@@ -51,6 +51,7 @@ final class NarutoDrops {
                 some(m, Items.STICK, 1, 3, 0.7, r);
                 some(m, Items.WHITE_WOOL, 1, 1, 0.3, r);
                 rare(m, ModItems.NINJA_HEADBAND.get(), 0.03, byPlayer, r);
+                rare(m, ModItems.GIANT_FAN.get(), 0.04, byPlayer, r);
             }
             case "escorpiao_areia" -> {
                 some(m, Items.SPIDER_EYE, 1, 1, 0.5, r);
@@ -68,6 +69,8 @@ final class NarutoDrops {
                 some(m, Items.COD, 1, 2, 0.6, r);
                 some(m, Items.IRON_INGOT, 1, 1, 0.15, r);
                 rare(m, ModItems.NINJA_HEADBAND.get(), 0.05, byPlayer, r);
+                // the Samehada: rare loot of the Mist Sea (Stark 2026-11-12, Itens de Naruto)
+                rare(m, ModItems.SAMEHADA.get(), 0.015, byPlayer, r);
             }
             case "tubarao_agua" -> {
                 some(m, Items.COD, 1, 3, 1, r);

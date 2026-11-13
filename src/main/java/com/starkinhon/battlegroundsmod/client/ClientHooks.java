@@ -399,8 +399,9 @@ public final class ClientHooks {
         com.starkinhon.battlegroundsmod.client.outfit.Outfits.set(entityId, power);
     }
 
-    public static void sheathState(int entityId, boolean carrying, boolean drawn, boolean stretched) {
+    public static void sheathState(int entityId, boolean carrying, boolean drawn, boolean stretched, boolean gourd) {
         com.starkinhon.battlegroundsmod.client.outfit.Sheaths.set(entityId, carrying, drawn, stretched);
+        com.starkinhon.battlegroundsmod.client.outfit.GourdLayer.set(entityId, gourd);
     }
 
     public static void openChallenges(String universe) {

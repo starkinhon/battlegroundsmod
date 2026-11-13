@@ -1,0 +1,12 @@
+{
+  "loader": "neoforge:separate_transforms",
+  "gui_light": "front",
+  "base": {
+    "parent": "battlegroundsmod:item/shuriken_3d"
+  },
+  "perspectives": {
+    "gui": {
+      "parent": "battlegroundsmod:item/shuriken_icone"
+    }
+  }
+}

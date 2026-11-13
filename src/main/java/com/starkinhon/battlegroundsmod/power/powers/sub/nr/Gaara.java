@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import com.starkinhon.battlegroundsmod.universe.NarutoGear;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.combat.Intangible;
@@ -131,14 +132,15 @@ public final class Gaara {
 
     private static boolean sandHand(LivingEntity caster, ServerLevel level) {
         SubCommon.Guard guard = SubCommon.guard(caster);
-        LivingEntity target = NrCommon.target(caster, 20);
+        double g = NarutoGear.gourdBoost(caster);
+        LivingEntity target = NrCommon.target(caster, 20 * g);
         Vec3 me = caster.position();
         Vec3 fwd0 = SubCommon.flat(target != null ? target.position().subtract(me) : caster.getLookAngle());
         if (fwd0.lengthSqr() < 1.0E-6) {
             fwd0 = SubCommon.flat(caster.getLookAngle());
         }
         Vec3 fwd = fwd0;
-        Vec3 aim = target != null ? target.position() : SubCommon.ground(level, SubCommon.aimPoint(caster, 18));
+        Vec3 aim = target != null ? target.position() : SubCommon.ground(level, SubCommon.aimPoint(caster, 18 * g));
         Vec3 base = SubCommon.ground(level, me.add(fwd.scale(3 * PU)));
         int id = SubNet.newId();
         int point = 4;
@@ -319,7 +321,7 @@ public final class Gaara {
                 return false;
             }
         }
-        LivingEntity target = NrCommon.target(caster, 24);
+        LivingEntity target = NrCommon.target(caster, 24 * NarutoGear.gourdBoost(caster));
         if (target == null) {
             SubCommon.warn(caster, "gaara.no_target");
             return false;
@@ -347,7 +349,8 @@ public final class Gaara {
         int rise = 14;
         int full = run + rise;
         int hold = full + JjCommon.control(caster, target, 60);
-        float scale = Math.max(0.6f, target.getBbHeight() / 1.8f);
+        // with the gourd the coffin is a size bigger (Stark 2026-11-12, Itens de Naruto)
+        float scale = Math.max(0.6f, target.getBbHeight() / 1.8f) * (NarutoGear.gourdBoost(caster) > 1 ? 1.25f : 1f);
         Quick sunk = SINKS.get(target.getId());
         SubCommon.setState(caster, SAND_BUSY, hold + 20);
         if (from != null) {
@@ -597,7 +600,8 @@ public final class Gaara {
     private static boolean quicksand(LivingEntity caster, ServerLevel level) {
         SubCommon.Guard guard = SubCommon.guard(caster);
         LivingEntity aimedAt = caster instanceof Mob m ? m.getTarget() : null;
-        Vec3 at = SubCommon.ground(level, aimedAt != null && aimedAt.distanceTo(caster) < 20 ? aimedAt.position() : SubCommon.aimPoint(caster, 20));
+        double g = NarutoGear.gourdBoost(caster);
+        Vec3 at = SubCommon.ground(level, aimedAt != null && aimedAt.distanceTo(caster) < 20 * g ? aimedAt.position() : SubCommon.aimPoint(caster, 20 * g));
         Vec3 look = SubCommon.flat(at.subtract(caster.position()));
         if (look.lengthSqr() < 1.0E-4) {
             look = SubCommon.flat(caster.getLookAngle());
@@ -618,7 +622,7 @@ public final class Gaara {
         int run = 10;
         int arm = touch + run;
         int armed = 800;
-        float r = (float) (2.8 * PU);
+        float r = (float) (2.8 * PU * g);
         SubCommon.pose(caster, "nr.mao_chao");
         SubCommon.busy(caster, touch + 4);
         int[] sinkAt = {-1};
@@ -656,7 +660,7 @@ public final class Gaara {
             }
             if (sinkAt[0] < 0) {
                 SubNet.send(level, SubNet.GA_QUICK, q.id, at, new Vec3(r, 0, 0), 0.55f * SubCommon.smooth((age - arm) / 8f), 0, 0);
-                for (LivingEntity t : Combat.inRadius(level, at.add(0, 0.5, 0), 1.9, caster)) {
+                for (LivingEntity t : Combat.inRadius(level, at.add(0, 0.5, 0), 1.9 * g, caster)) {
                     if (Math.abs(t.getY() - at.y) < 1.4 && !SubCommon.hasState(t, SINKING)) {
                         q.victim = t;
                         sinkAt[0] = age;
@@ -722,7 +726,7 @@ public final class Gaara {
         SubCommon.Guard guard = SubCommon.guard(caster);
         LivingEntity aimedAt = caster instanceof Mob m ? m.getTarget() : NrCommon.target(caster, 30);
         Vec3 c = SubCommon.ground(level, aimedAt != null && aimedAt.distanceTo(caster) < 32 ? aimedAt.position() : SubCommon.aimPoint(caster, 30));
-        double radius = 10;
+        double radius = 10 * NarutoGear.gourdBoost(caster);
         float rPage = (float) (radius / PU);
         float quickR = (float) ((rPage + 1.2f) * PU);
         int wave = SubNet.newId();

@@ -19,7 +19,7 @@ import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
 // What fills the Naruto universe besides its characters (Stark 2026-11-10):
 // - its common enemies drop its items now and then: Ninja Renegado -> Papel-Bomba, Ninja do Som -> Pílula do Soldado,
-//   ANBU da Raiz -> Pergaminho de Invocação or the Kunai do Hiraishin (rare);
+//   ANBU da Raiz -> Kunai or the Kunai do Hiraishin (rare);
 // - the Bandana Ninja gives ninja speed and jumps while worn (any universe).
 public final class NarutoWorld {
     public static final String UNIVERSE = "naruto";
@@ -31,6 +31,7 @@ public final class NarutoWorld {
         NeoForge.EVENT_BUS.addListener(NarutoWorld::onDeath);
         NeoForge.EVENT_BUS.addListener(NarutoWorld::onTick);
         NarutoActivities.register();
+        NarutoGear.registerGame();
     }
 
     private static void onDeath(LivingDeathEvent event) {
@@ -42,7 +43,7 @@ public final class NarutoWorld {
         ServerLevel level = player.serverLevel();
         switch (BuiltInRegistries.ENTITY_TYPE.getKey(victim.getType()).getPath()) {
             case "anbu_raiz" -> {
-                chance(level, victim, new ItemStack(ModItems.SUMMON_SCROLL.get()), 0.05);
+                chance(level, victim, new ItemStack(ModItems.KUNAI.get(), 2), 0.2);
                 chance(level, victim, new ItemStack(ModItems.HIRAISHIN_KUNAI.get()), 0.03);
             }
             default -> {

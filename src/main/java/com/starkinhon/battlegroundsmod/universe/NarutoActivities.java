@@ -612,8 +612,9 @@ public final class NarutoActivities {
         if (level.random.nextFloat() < (both ? 0.6f : 0.3f)) {
             give(player, new ItemStack(ModItems.NINJA_HEADBAND.get()));
         }
-        if (both && level.random.nextFloat() < 0.5f) {
-            give(player, new ItemStack(ModItems.SUMMON_SCROLL.get()));
+        if (both) {
+            give(player, new ItemStack(ModItems.SHURIKEN.get(), 8));
+            give(player, new ItemStack(ModItems.KUNAI.get(), 4));
         }
         restoreBells(level, site);
         run.despawn(level);
@@ -666,6 +667,9 @@ public final class NarutoActivities {
             }
             if (i == 1) {
                 loot.add(new ItemStack(ModItems.NINJA_HEADBAND.get()));
+            }
+            if (i == 0) {
+                loot.add(new ItemStack(ModItems.SEAL_SCROLL.get()));
             }
             fill(level, chests.get(i), loot.toArray(ItemStack[]::new));
         }
@@ -752,6 +756,9 @@ public final class NarutoActivities {
         st.remove("puxando");
         st.putBoolean("tirada", true);
         give(player, new ItemStack(ModItems.KUBIKIRIBOCHO.get()));
+        if (level.random.nextFloat() < 0.15f) {
+            give(player, new ItemStack(ModItems.SAMEHADA.get()));
+        }
         player.removeEffect(MobEffects.BLINDNESS);
         title(player, "espada_tua", null, 0xB9C8D6);
         level.playSound(null, player.blockPosition(), SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, SoundSource.PLAYERS, 1f, 1f);
@@ -797,6 +804,9 @@ public final class NarutoActivities {
             }
             dailyUse(player, "souls_flor_dia");
             give(player, new ItemStack(ModItems.PAPER_WINGS.get()));
+            if (level.random.nextFloat() < 0.25f) {
+                give(player, new ItemStack(ModItems.AKATSUKI_CLOAK.get()));
+            }
             title(player, "flor_passou", null, 0x9FB6C8);
             level.playSound(null, player.blockPosition(), SoundEvents.PLAYER_LEVELUP, SoundSource.PLAYERS, 1f, 1.1f);
             return;
@@ -976,6 +986,9 @@ public final class NarutoActivities {
         List<ItemStack> loot = new ArrayList<>();
         loot.add(new ItemStack(ModItems.PUPPET_SCROLL.get()));
         loot.add(new ItemStack(ModItems.POISON_POUCH.get(), 2));
+        if (level.random.nextFloat() < 0.25f) {
+            loot.add(new ItemStack(ModItems.SAND_GOURD.get()));
+        }
         fill(level, site.first("chest"), loot.toArray(ItemStack[]::new));
         title(player, "selo_quebrou", "selo_quebrou_sub", 0xE0B070);
     }
@@ -1391,7 +1404,8 @@ public final class NarutoActivities {
         }
         // the Sharingan sees the blow coming
         if (victim instanceof ServerPlayer player && attacker != null && attacker != player
-                && player.getPersistentData().getLong("souls_sharingan_ate") > level.getGameTime() && level.random.nextFloat() < 0.33f) {
+                && player.getPersistentData().getLong("souls_sharingan_ate") > level.getGameTime()
+                && level.random.nextFloat() < (NarutoGear.uchiha(player) ? 0.5f : 0.33f)) {
             event.setCanceled(true);
             Vec3 away = player.position().subtract(attacker.position()).multiply(1, 0, 1).normalize();
             Vec3 side = new Vec3(-away.z, 0, away.x).scale(level.random.nextBoolean() ? 0.6 : -0.6);
@@ -1471,6 +1485,10 @@ public final class NarutoActivities {
     }
 
     public static void sharingan(ServerPlayer player, int ticks) {
+        // an Uchiha's soul (Sasuke, Madara) keeps it open twice as long (Stark 2026-11-12, Itens de Naruto)
+        if (NarutoGear.uchiha(player)) {
+            ticks *= 2;
+        }
         player.getPersistentData().putLong("souls_sharingan_ate", player.level().getGameTime() + ticks);
         player.addEffect(new MobEffectInstance(MobEffects.NIGHT_VISION, ticks, 0, false, false));
         player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, ticks, 0, false, false));
@@ -1481,7 +1499,7 @@ public final class NarutoActivities {
     // allies: entity -> { end tick }; the owner in the entity's persistent data
     private static final Map<UUID, long[]> ALLIES = new HashMap<>();
 
-    private static boolean isAllyOf(Entity ally, Entity owner) {
+    public static boolean isAllyOf(Entity ally, Entity owner) {
         return ally.getTags().contains(ALLY_TAG) && owner.getUUID().toString().equals(ally.getPersistentData().getString("souls_dono"));
     }
 
@@ -1511,6 +1529,14 @@ public final class NarutoActivities {
             SubCommon.warn(player, "naruto.invocacao_falhou");
             return false;
         }
+        adoptAlly(player, e, ticks);
+        level.playSound(null, at, SoundEvents.EVOKER_CAST_SPELL, SoundSource.PLAYERS, 1f, 0.8f);
+        return true;
+    }
+
+    // Makes an entity already in the world the player's ally for some ticks (the summons, the Pergaminho de Selamento).
+    public static void adoptAlly(ServerPlayer player, Entity e, int ticks) {
+        ServerLevel level = player.serverLevel();
         e.addTag(ALLY_TAG);
         e.getPersistentData().putString("souls_dono", player.getUUID().toString());
         if (e instanceof IronGolem golem) {
@@ -1522,7 +1548,5 @@ public final class NarutoActivities {
         }
         ALLIES.put(e.getUUID(), new long[] {level.getGameTime() + ticks});
         level.sendParticles(ParticleTypes.CLOUD, e.getX(), e.getY(0.5), e.getZ(), 60, 1, 1, 1, 0.05);
-        level.playSound(null, at, SoundEvents.EVOKER_CAST_SPELL, SoundSource.PLAYERS, 1f, 0.8f);
-        return true;
     }
 }

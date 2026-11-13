@@ -372,6 +372,7 @@ public class BattlegroundsModClient {
     // The Madara skin uses slim (3 pixel) arms.
     private static void onRegisterRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerBlockEntityRenderer(ModBlocks.TELAO.get(), com.starkinhon.battlegroundsmod.client.TelaoRenderer::new);
+        event.registerEntityRenderer(ModEntities.NINJA_THROWN.get(), net.minecraft.client.renderer.entity.ThrownItemRenderer::new);
         event.registerEntityRenderer(ModEntities.MADARA.get(), context -> new SoulBossRenderer<>(context, "madara", true));
         event.registerEntityRenderer(ModEntities.BILLS.get(), context -> new SoulBossRenderer<>(context, "bills", true));
         event.registerEntityRenderer(ModEntities.GOJO.get(), context -> new SoulBossRenderer<>(context, "gojo", true));
@@ -481,6 +482,7 @@ public class BattlegroundsModClient {
                 com.starkinhon.battlegroundsmod.client.fx.LuffyFx.wrapHeldLayer(renderer);
                 renderer.addLayer(new com.starkinhon.battlegroundsmod.client.outfit.KokushiboSheathLayer<>(renderer));
                 renderer.addLayer(new com.starkinhon.battlegroundsmod.client.fx.MajinMarkLayer<>(renderer));
+                renderer.addLayer(new com.starkinhon.battlegroundsmod.client.outfit.GourdLayer<>(renderer));
             }
         }
     }
