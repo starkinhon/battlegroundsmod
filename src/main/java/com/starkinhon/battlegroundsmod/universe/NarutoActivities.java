@@ -168,6 +168,26 @@ public final class NarutoActivities {
         return level.getDayTime() / 24000L;
     }
 
+    // For the mission journal (MissionJournal): a daily activity still free today, the run going on (its type: guizo,
+    // altar, espada, flor, vale, selos) and the saved state of a site.
+    static boolean journalFree(ServerPlayer player, String tag) {
+        return dailyFree(player, tag);
+    }
+
+    static String runType(ServerPlayer player) {
+        Run run = RUNS.get(player.getUUID());
+        return run == null ? "" : run.type;
+    }
+
+    static int runWave(ServerPlayer player) {
+        Run run = RUNS.get(player.getUUID());
+        return run == null ? 0 : run.wave;
+    }
+
+    static CompoundTag siteState(ServerLevel level, NarutoSites.Site site) {
+        return state(level, site);
+    }
+
     private static boolean dailyFree(ServerPlayer player, String tag) {
         return player.getPersistentData().getLong(tag) != day(player.level()) + 1;
     }
@@ -185,13 +205,35 @@ public final class NarutoActivities {
         player.displayClientMessage(msg(key, args), true);
     }
 
+    // The titles that close a mission of the Diário de Missões: MISSÃO CONCLUÍDA comes on screen instead (client/QuestHud),
+    // with the items given in the same tick.
+    private static final Map<String, String> DONE_TITLES = Map.of("guizo_passou", "folha", "espada_tua", "nevoa", "flor_passou", "chuva",
+            "senju_venceu", "vale", "uchiha_sharingan", "vale", "uchiha_venceu", "vale", "sapo_reconhece", "myoboku");
+    private static final Map<UUID, List<String>> GIVEN = new HashMap<>();
+    private static final Map<UUID, Long> GIVEN_AT = new HashMap<>();
+
     private static void title(ServerPlayer player, String key, String sub, int color) {
+        String mission = DONE_TITLES.get(key);
+        boolean now = GIVEN_AT.getOrDefault(player.getUUID(), -1L) == player.serverLevel().getGameTime();
+        // the toad recognizes you again on every later win: only the first one (the scroll given now) closes the mission
+        if (mission != null && (now || !mission.equals("myoboku"))) {
+            List<String> got = now ? GIVEN.getOrDefault(player.getUUID(), List.of()) : List.of();
+            GIVEN.remove(player.getUUID());
+            MissionJournal.done(player, mission, got, false);
+            return;
+        }
         player.connection.send(new ClientboundSetTitlesAnimationPacket(6, 50, 14));
         player.connection.send(new ClientboundSetTitleTextPacket(msg(key).withStyle(s -> s.withColor(color).withBold(true))));
         player.connection.send(new ClientboundSetSubtitleTextPacket(sub == null ? Component.empty() : msg(sub)));
     }
 
     private static void give(ServerPlayer player, ItemStack stack) {
+        long tick = player.serverLevel().getGameTime();
+        if (GIVEN_AT.getOrDefault(player.getUUID(), -1L) != tick) {
+            GIVEN.put(player.getUUID(), new ArrayList<>());
+            GIVEN_AT.put(player.getUUID(), tick);
+        }
+        GIVEN.get(player.getUUID()).add(BuiltInRegistries.ITEM.getKey(stack.getItem()) + " " + stack.getCount());
         if (!player.getInventory().add(stack)) {
             player.drop(stack, false);
         }

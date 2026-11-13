@@ -50,9 +50,36 @@ public class UniverseNpc extends PathfinderMob {
         if (player instanceof ServerPlayer server) {
             getNavigation().stop();
             lookAt(player, 360, 360);
-            Npcs.talk(server, this);
+            Talks.open(server, this);
         }
         return InteractionResult.sidedSuccess(level().isClientSide);
+    }
+
+    // In the talk scene (npc/Talks): stands still and looks at the player until the scene closes (or 30 s).
+    private Player talker;
+    private int talkUntil;
+
+    void hold(Player player) {
+        talker = player;
+        talkUntil = tickCount + 600;
+    }
+
+    void release() {
+        talker = null;
+    }
+
+    @Override
+    protected void customServerAiStep() {
+        super.customServerAiStep();
+        if (talker == null) {
+            return;
+        }
+        if (!talker.isAlive() || tickCount > talkUntil || distanceToSqr(talker) > 144) {
+            talker = null;
+            return;
+        }
+        getNavigation().stop();
+        getLookControl().setLookAt(talker, 30, 30);
     }
 
     @Override

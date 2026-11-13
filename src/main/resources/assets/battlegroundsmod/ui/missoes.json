@@ -11,12 +11,12 @@
    "passos": [
     [
      "Pegue o casco e o leite com o Mestre Kame",
-     1,
+     0,
      1
     ],
     [
      "Leve o leite até o ponto, sem voar",
-     1,
+     0,
      1
     ],
     [
@@ -46,11 +46,24 @@
      1
     ]
    ],
-   "estado": "andamento",
-   "dist": [
-    38,
-    1
-   ]
+   "passos2": [
+    [
+     "Pegue o leite com o Mestre Kame",
+     0,
+     1
+    ],
+    [
+     "Leve o leite até o ponto",
+     0,
+     1
+    ],
+    [
+     "Volte pro Mestre Kame",
+     0,
+     1
+    ]
+   ],
+   "mais": "Sem voar! O casco pesa, então vai devagar. Volta antes do tempo acabar e aí a gente treina de verdade: me derruba até a metade da vida."
   },
   {
    "id": "capsula",
@@ -63,13 +76,11 @@
    "entrega": [
     [
      "iron_ingot",
-     6,
-     9
+     6
     ],
     [
      "redstone",
-     3,
-     1
+     3
     ]
    ],
    "passos": [
@@ -89,11 +100,7 @@
      1
     ]
    ],
-   "estado": "pronta",
-   "dist": [
-    612,
-    -2
-   ]
+   "mais": "Ferro pro casco e redstone pros circuitos. Uma por dia, que eu também tenho que dormir!"
   },
   {
    "id": "goku",
@@ -106,12 +113,12 @@
    "passos": [
     [
      "Chegue no Tier 9",
-     1,
+     0,
      1
     ],
     [
      "Fale com o Gohan",
-     1,
+     0,
      1
     ]
    ],
@@ -127,11 +134,7 @@
      1
     ]
    ],
-   "estado": "feita",
-   "dist": [
-    380,
-    3
-   ]
+   "mais": "Junta o ki embaixo dos pés e empurra. Dois toques no pulo e pronto! Mas só a partir do Tier 9."
   },
   {
    "id": "karin",
@@ -144,12 +147,12 @@
    "passos": [
     [
      "Suba a torre sem voar (161 blocos)",
-     161,
+     0,
      161
     ],
     [
      "Fale com o Mestre Karin",
-     1,
+     0,
      1
     ]
    ],
@@ -165,11 +168,7 @@
      2
     ]
    ],
-   "estado": "concluida",
-   "dist": [
-    1420,
-    -1
-   ]
+   "mais": "Lá embaixo tem 161 blocos de torre. Sem voar, só escalando. Quem chega aqui em cima merece."
   },
   {
    "id": "nave",
@@ -183,7 +182,7 @@
    "passos": [
     [
      "Treine na máquina de gravidade",
-     54,
+     0,
      120
     ]
    ],
@@ -192,11 +191,6 @@
      "__poder",
      1
     ]
-   ],
-   "estado": "andamento",
-   "dist": [
-    210,
-    0
    ]
   },
   {
@@ -224,11 +218,6 @@
      "__poder",
      1
     ]
-   ],
-   "estado": "pronta",
-   "dist": [
-    740,
-    4
    ]
   },
   {
@@ -260,7 +249,6 @@
      "Loot do pod"
     ]
    ],
-   "estado": "oculta",
    "dica": "Dizem que caiu uma nave pequena num campo de terra..."
   },
   {
@@ -300,11 +288,6 @@
      "cristal_multiversal",
      1
     ]
-   ],
-   "estado": "pronta",
-   "dist": [
-    905,
-    -3
    ]
   },
   {
@@ -318,23 +301,19 @@
    "entrega": [
     [
      "cake",
-     1,
-     0
+     1
     ],
     [
      "cookie",
-     1,
-     12
+     1
     ],
     [
      "pumpkin_pie",
-     1,
-     0
+     1
     ],
     [
      "honey_bottle",
-     1,
-     2
+     1
     ]
    ],
    "escolha": true,
@@ -357,11 +336,7 @@
      1
     ]
    ],
-   "estado": "pronta",
-   "dist": [
-    1880,
-    2
-   ]
+   "mais": "Boo gosta de bolo, cookie, torta e mel! Boo não gosta de quem não traz doce."
   },
   {
    "id": "guru",
@@ -387,7 +362,6 @@
      "Poder: 80% de um tier"
     ]
    ],
-   "estado": "oculta",
    "dica": "Em Namek, uma casa no alto de uma rocha..."
   },
   {
@@ -416,7 +390,6 @@
      1
     ]
    ],
-   "estado": "oculta",
    "dica": "Em Namek, casas redondas perto da água..."
   }
  ],
@@ -451,11 +424,7 @@
      1
     ]
    ],
-   "estado": "pronta",
-   "dist": [
-    260,
-    1
-   ]
+   "mais": "Fica dentro do campo. Se te acertarem, o guizo pode cair da sua mão!"
   },
   {
    "id": "morte",
@@ -469,7 +438,7 @@
    "passos": [
     [
      "Pergaminho do Céu",
-     1,
+     0,
      1
     ],
     [
@@ -492,11 +461,6 @@
      "kunai_hiraishin",
      1
     ]
-   ],
-   "estado": "andamento",
-   "dist": [
-    540,
-    -1
    ]
   },
   {
@@ -525,11 +489,6 @@
      "kubikiribocho",
      1
     ]
-   ],
-   "estado": "pronta",
-   "dist": [
-    1210,
-    3
    ]
   },
   {
@@ -559,7 +518,6 @@
      1
     ]
    ],
-   "estado": "oculta",
    "dica": "Dizem que chove sem parar numa vila de torres..."
   },
   {
@@ -587,11 +545,6 @@
      "sharingan",
      1
     ]
-   ],
-   "estado": "feita",
-   "dist": [
-    860,
-    -2
    ]
   },
   {
@@ -621,7 +574,6 @@
      1
     ]
    ],
-   "estado": "oculta",
    "dica": "Sapos falantes guardam uma montanha cheia de agulhas..."
   }
  ]

@@ -46,7 +46,9 @@ public abstract class CameraMixin {
                 : EsferaCutscene.active() ? EsferaCutscene.shot(partialTick)
                 : GrabCutscene.active() ? GrabCutscene.shot(partialTick)
                 : BopCutscene.active() ? BopCutscene.shot(partialTick)
-                : ShoulderCutscene.active() ? ShoulderCutscene.shot(partialTick) : FaceCutscene.shot(partialTick);
+                : ShoulderCutscene.active() ? ShoulderCutscene.shot(partialTick)
+                : com.starkinhon.battlegroundsmod.client.TalkScreen.active() ? com.starkinhon.battlegroundsmod.client.TalkScreen.shot(partialTick)
+                : FaceCutscene.shot(partialTick);
         if (shot != null) {
             setRotation(shot.yaw(), shot.pitch());
             setPosition(shot.position());

@@ -254,6 +254,108 @@ public final class ModPayloads {
         }
     }
 
+    // ---------------------------------------------------------------- the mission journal, the corner HUD and the talk scene
+
+    // Server -> client: the Diário de Missões (universe/MissionJournal): one "id|state|steps|found|x|z|dimension" per
+    // mission, and the tracked one.
+    public record SyncJournal(List<String> entries, String tracked) implements CustomPacketPayload {
+        public static final Type<SyncJournal> TYPE = payloadType("sync_journal");
+        public static final StreamCodec<ByteBuf, SyncJournal> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.STRING_UTF8.apply(ByteBufCodecs.list()), SyncJournal::entries, ByteBufCodecs.STRING_UTF8, SyncJournal::tracked,
+                SyncJournal::new);
+
+        @Override
+        public Type<SyncJournal> type() {
+            return TYPE;
+        }
+    }
+
+    // Client -> server: track a mission in the corner ("" = none), or just ask for the journal (ask = true).
+    public record TrackMission(String id, boolean ask) implements CustomPacketPayload {
+        public static final Type<TrackMission> TYPE = payloadType("track_mission");
+        public static final StreamCodec<ByteBuf, TrackMission> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.STRING_UTF8, TrackMission::id, ByteBufCodecs.BOOL, TrackMission::ask, TrackMission::new);
+
+        @Override
+        public Type<TrackMission> type() {
+            return TYPE;
+        }
+    }
+
+    // Server -> client: the player walked into a structure (its name comes down on screen with its mission), or a
+    // mission there was done (MISSÃO CONCLUÍDA with what it gave: "__poder", "item_id count").
+    public record MissionEvent(String mission, String quest, int color, boolean done, List<String> rewards) implements CustomPacketPayload {
+        public static final Type<MissionEvent> TYPE = payloadType("mission_event");
+        public static final StreamCodec<ByteBuf, MissionEvent> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.STRING_UTF8, MissionEvent::mission, ByteBufCodecs.STRING_UTF8, MissionEvent::quest, ByteBufCodecs.INT, MissionEvent::color,
+                ByteBufCodecs.BOOL, MissionEvent::done, ByteBufCodecs.STRING_UTF8.apply(ByteBufCodecs.list()), MissionEvent::rewards, MissionEvent::new);
+
+        @Override
+        public Type<MissionEvent> type() {
+            return TYPE;
+        }
+    }
+
+    // Server -> client: open the talk scene with an NPC (npc/Talks): who, the mission it gives (or ""), its line, the
+    // line of "Me conta mais", the answer button (accept, deliver, sweet, learn, or "" = only goodbye) and what it asks
+    // for ("item_id count" each; choice = pick one of them). Lines are JSON text components.
+    public record OpenTalk(int npc, String skin, String name, String mission, String line, String more, String accept, List<String> delivery,
+                           boolean choice) implements CustomPacketPayload {
+        public static final Type<OpenTalk> TYPE = payloadType("open_talk");
+        public static final StreamCodec<ByteBuf, OpenTalk> STREAM_CODEC = new StreamCodec<>() {
+            @Override
+            public OpenTalk decode(ByteBuf buf) {
+                return new OpenTalk(ByteBufCodecs.VAR_INT.decode(buf), ByteBufCodecs.STRING_UTF8.decode(buf), ByteBufCodecs.STRING_UTF8.decode(buf),
+                        ByteBufCodecs.STRING_UTF8.decode(buf), ByteBufCodecs.STRING_UTF8.decode(buf), ByteBufCodecs.STRING_UTF8.decode(buf),
+                        ByteBufCodecs.STRING_UTF8.decode(buf), ByteBufCodecs.STRING_UTF8.apply(ByteBufCodecs.list()).decode(buf),
+                        ByteBufCodecs.BOOL.decode(buf));
+            }
+
+            @Override
+            public void encode(ByteBuf buf, OpenTalk t) {
+                ByteBufCodecs.VAR_INT.encode(buf, t.npc());
+                ByteBufCodecs.STRING_UTF8.encode(buf, t.skin());
+                ByteBufCodecs.STRING_UTF8.encode(buf, t.name());
+                ByteBufCodecs.STRING_UTF8.encode(buf, t.mission());
+                ByteBufCodecs.STRING_UTF8.encode(buf, t.line());
+                ByteBufCodecs.STRING_UTF8.encode(buf, t.more());
+                ByteBufCodecs.STRING_UTF8.encode(buf, t.accept());
+                ByteBufCodecs.STRING_UTF8.apply(ByteBufCodecs.list()).encode(buf, t.delivery());
+                ByteBufCodecs.BOOL.encode(buf, t.choice());
+            }
+        };
+
+        @Override
+        public Type<OpenTalk> type() {
+            return TYPE;
+        }
+    }
+
+    // Client -> server: the answer in the talk scene (0 accept/deliver, 2 goodbye), pick = the item chosen (Buu's sweet).
+    public record TalkChoice(int npc, int choice, String pick) implements CustomPacketPayload {
+        public static final Type<TalkChoice> TYPE = payloadType("talk_choice");
+        public static final StreamCodec<ByteBuf, TalkChoice> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, TalkChoice::npc, ByteBufCodecs.VAR_INT, TalkChoice::choice, ByteBufCodecs.STRING_UTF8, TalkChoice::pick,
+                TalkChoice::new);
+
+        @Override
+        public Type<TalkChoice> type() {
+            return TYPE;
+        }
+    }
+
+    // Server -> client: what the NPC said after the answer (JSON text components), shown in the scene.
+    public record TalkReply(List<String> lines, boolean accepted) implements CustomPacketPayload {
+        public static final Type<TalkReply> TYPE = payloadType("talk_reply");
+        public static final StreamCodec<ByteBuf, TalkReply> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.STRING_UTF8.apply(ByteBufCodecs.list()), TalkReply::lines, ByteBufCodecs.BOOL, TalkReply::accepted, TalkReply::new);
+
+        @Override
+        public Type<TalkReply> type() {
+            return TYPE;
+        }
+    }
+
     // Server -> client: the characters this player beat in their arenas (stamps in the Livros dos Desafios).
     public record SyncArenaWins(List<String> wins) implements CustomPacketPayload {
         public static final Type<SyncArenaWins> TYPE = payloadType("sync_arena_wins");
@@ -1801,6 +1903,28 @@ public final class ModPayloads {
         registrar.playToClient(SyncPower.TYPE, SyncPower.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> payload.applyTo(context.player())));
         registrar.playToClient(SyncArenaWins.TYPE, SyncArenaWins.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> payload.applyTo(context.player())));
         registrar.playToClient(SyncArenaRecords.TYPE, SyncArenaRecords.STREAM_CODEC, (payload, context) -> context.enqueueWork(payload::apply));
+        registrar.playToClient(SyncJournal.TYPE, SyncJournal.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> com.starkinhon.battlegroundsmod.client.ui.Journal.apply(payload.entries(), payload.tracked())));
+        registrar.playToServer(TrackMission.TYPE, TrackMission.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
+            if (context.player() instanceof ServerPlayer player) {
+                if (payload.ask()) {
+                    com.starkinhon.battlegroundsmod.universe.MissionJournal.send(player);
+                } else {
+                    com.starkinhon.battlegroundsmod.universe.MissionJournal.track(player, payload.id());
+                }
+            }
+        }));
+        registrar.playToClient(MissionEvent.TYPE, MissionEvent.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> com.starkinhon.battlegroundsmod.client.QuestHud.event(payload.mission(), payload.quest(), payload.color(), payload.done(), payload.rewards())));
+        registrar.playToClient(OpenTalk.TYPE, OpenTalk.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> com.starkinhon.battlegroundsmod.client.TalkScreen.open(payload)));
+        registrar.playToServer(TalkChoice.TYPE, TalkChoice.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
+            if (context.player() instanceof ServerPlayer player) {
+                com.starkinhon.battlegroundsmod.npc.Talks.choice(player, payload.npc(), payload.choice(), payload.pick());
+            }
+        }));
+        registrar.playToClient(TalkReply.TYPE, TalkReply.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> com.starkinhon.battlegroundsmod.client.TalkScreen.reply(payload.lines(), payload.accepted())));
         registrar.playToServer(ChallengeStart.TYPE, ChallengeStart.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer player) {
                 com.starkinhon.battlegroundsmod.challenge.ChallengeArenas.start(player, payload.id());

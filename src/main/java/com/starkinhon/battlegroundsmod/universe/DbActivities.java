@@ -181,6 +181,7 @@ public final class DbActivities {
         NeoForge.EVENT_BUS.addListener(DbActivities::onIncoming);
         NeoForge.EVENT_BUS.addListener(DbActivities::onDeath);
         StructureMissions.register();
+        MissionJournal.register();
     }
 
     private static long day(ServerPlayer player) {
@@ -191,12 +192,40 @@ public final class DbActivities {
         return !player.getPersistentData().contains(tag) || player.getPersistentData().getLong(tag) < day(player);
     }
 
+    // For the mission journal (MissionJournal): how far the player is in Mestre Kame's milk run (0 none, 1 carrying the
+    // milk, 2 delivered, 3 sparring with the old man), and whether a wave fight of a kind is running.
+    static int kameStage(ServerPlayer player) {
+        if (SPAR.containsKey(player.getUUID())) {
+            return 3;
+        }
+        Milk milk = MILK.get(player.getUUID());
+        return milk == null ? 0 : milk.delivered ? 2 : 1;
+    }
+
+    static int wavesStage(ServerPlayer player, String kind) {
+        Waves w = WAVES.get(player.getUUID());
+        return w == null || !w.kind.equals(kind) ? -1 : w.stage;
+    }
+
     static void dailyUse(ServerPlayer player, String tag) {
         player.getPersistentData().putLong(tag, day(player));
     }
 
     static void reward(ServerPlayer player, double tierPart, ItemStack... items) {
+        reward(player, null, tierPart, items);
+    }
+
+    // mission != null: a mission of the Diário de Missões was done, MISSÃO CONCLUÍDA comes on screen with what it gave
+    // (in place of the vanilla title, unless a tier-up took the screen).
+    static void reward(ServerPlayer player, String mission, double tierPart, ItemStack... items) {
         int tier = Tiers.of(player);
+        List<String> got = new java.util.ArrayList<>();
+        if (tierPart > 0) {
+            got.add("__poder");
+        }
+        for (ItemStack stack : items) {
+            got.add(net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem()) + " " + stack.getCount());
+        }
         Progression.add(player, Progression.cost(Tiers.of(player)) * tierPart);
         Component[] last = LAST_TITLE.get(player.getUUID());
         if (Tiers.of(player) != tier && last != null && player.serverLevel().getGameTime() - lastTitleAt(player) <= 1) {
@@ -211,6 +240,9 @@ public final class DbActivities {
             }
         }
         Fx.sound(player.serverLevel(), player.position(), SoundEvents.PLAYER_LEVELUP, 0.8f, 1.2f);
+        if (mission != null) {
+            MissionJournal.done(player, mission, got, Tiers.of(player) == tier);
+        }
     }
 
     static void title(ServerPlayer player, Component title, Component sub, int color) {
@@ -331,7 +363,7 @@ public final class DbActivities {
                 say(player, npc, Component.translatable("npc.battlegroundsmod.bulma.capsula"));
                 title(player, Component.translatable("message.battlegroundsmod.capsula_feita"), Component.empty(), 0x8FD3FF);
                 Fx.burst(player.serverLevel(), ParticleTypes.CLOUD, npc.position().add(0, 1, 0), 30, 0.4, 0.05);
-                reward(player, 0.1, new ItemStack(ModItems.HOI_POI_CAPSULE.get()));
+                reward(player, "capsula", 0.1, new ItemStack(ModItems.HOI_POI_CAPSULE.get()));
                 return;
             }
             if (player.getRandom().nextInt(2) == 0) {
@@ -340,6 +372,31 @@ public final class DbActivities {
             }
         }
         say(player, npc, Component.translatable("npc.battlegroundsmod.bulma.hint." + player.getRandom().nextInt(4)));
+    }
+
+    // The mission card the talk scene shows with this NPC (npc/Talks), or null when the NPC just talks (nothing to take
+    // today, a step already running, the radar line of Bulma's chain).
+    public static String talkMission(ServerPlayer player, String npc) {
+        UUID id = player.getUUID();
+        return switch (npc) {
+            case "bulma" -> !DbQuests.at(player, "bulma") && dailyFree(player, CAPSULE_DAY) ? "capsula" : null;
+            case "mestre_kame" -> !SPAR.containsKey(id) && !MILK.containsKey(id) && (!knowsKamehameha(player) || dailyFree(player, "souls_kame_dia"))
+                    ? "kame" : null;
+            case "boo" -> dailyFree(player, "souls_boo_dia") ? "buu" : null;
+            case "gohan" -> Flight.knows(player) ? null : "goku";
+            default -> null;
+        };
+    }
+
+    // The answer in the talk scene went through: the mission was taken (or delivered).
+    public static boolean talkTaken(ServerPlayer player, String mission) {
+        return switch (mission) {
+            case "capsula" -> !dailyFree(player, CAPSULE_DAY);
+            case "kame" -> MILK.containsKey(player.getUUID());
+            case "buu" -> !dailyFree(player, "souls_boo_dia");
+            case "goku" -> Flight.knows(player);
+            default -> false;
+        };
     }
 
     // How many of an item the player carries, and taking some away.
@@ -390,7 +447,7 @@ public final class DbActivities {
             dailyUse(player, "souls_kame_dia");
             say(player, npc, Component.translatable("npc.battlegroundsmod.mestre_kame.feito"));
             title(player, Component.translatable("message.battlegroundsmod.kame_feito"), Component.empty(), 0xE8A040);
-            reward(player, first ? 0.35 : 0.15, new ItemStack(Items.MILK_BUCKET));
+            reward(player, "kame", first ? 0.35 : 0.15, new ItemStack(Items.MILK_BUCKET));
             DbQuests.advance(player, "kame", 1);
             return;
         }
@@ -482,7 +539,21 @@ public final class DbActivities {
     }
 
     public static void boo(ServerPlayer player, UniverseNpc npc) {
+        boo(player, npc, null);
+    }
+
+    // pick: the sweet chosen in the talk scene (npc/Talks), taken from anywhere in the inventory; null = the one in hand.
+    public static void boo(ServerPlayer player, UniverseNpc npc, Item pick) {
         ItemStack hand = player.getMainHandItem();
+        if (pick != null) {
+            hand = ItemStack.EMPTY;
+            for (ItemStack stack : player.getInventory().items) {
+                if (stack.is(pick)) {
+                    hand = stack;
+                    break;
+                }
+            }
+        }
         boolean sweet = hand.is(Items.CAKE) || hand.is(Items.COOKIE) || hand.is(Items.PUMPKIN_PIE) || hand.is(Items.HONEY_BOTTLE);
         if (!sweet) {
             say(player, npc, Component.translatable("npc.battlegroundsmod.boo.quer." + player.getRandom().nextInt(3)));
@@ -500,7 +571,7 @@ public final class DbActivities {
         // what he gave, on screen (in the test the gift went into the inventory without a word)
         title(player, Component.translatable("message.battlegroundsmod.boo_presente"), gift.getHoverName().copy()
                 .append(gift.getCount() > 1 ? " x" + gift.getCount() : ""), 0xF5A3C7);
-        reward(player, 0.1, gift);
+        reward(player, "buu", 0.1, gift);
         DbQuests.advance(player, "boo", 1);
     }
 
@@ -524,6 +595,9 @@ public final class DbActivities {
     }
 
     private static void say(ServerPlayer player, UniverseNpc npc, Component line) {
+        if (com.starkinhon.battlegroundsmod.npc.Talks.capture(line)) {
+            return;
+        }
         player.sendSystemMessage(Component.empty().append(npc.getType().getDescription().copy().withStyle(s -> s.withColor(0xF2C94C).withBold(true)))
                 .append(Component.literal(": ").withStyle(s -> s.withColor(0xAAAAAA))).append(line.copy().withStyle(s -> s.withColor(0xE6E0EE))));
     }
@@ -544,6 +618,7 @@ public final class DbActivities {
                 TimeChamber.clearGravity(player);
                 if (used >= GRAVITY_SECONDS && inside) {
                     player.displayClientMessage(Component.translatable("message.battlegroundsmod.gravidade_fim"), true);
+                    MissionJournal.done(player, "nave", List.of("__poder"), false);
                 }
                 DbQuests.sync(player);
             }
@@ -618,10 +693,10 @@ public final class DbActivities {
             dailyUse(player, "souls_" + w.kind + "_dia");
             title(player, Component.translatable("message.battlegroundsmod." + w.kind + "_vitoria"), Component.empty(), color(w.kind));
             switch (w.kind) {
-                case "cell" -> reward(player, 0.4, new ItemStack(ModItems.SENZU.get(), 2));
-                case "namek" -> reward(player, 0.5, new ItemStack(ModItems.SENZU.get(), 3));
+                case "cell" -> reward(player, "cell", 0.4, new ItemStack(ModItems.SENZU.get(), 2));
+                case "namek" -> reward(player, "vila", 0.5, new ItemStack(ModItems.SENZU.get(), 3));
                 default -> {
-                    reward(player, 0.6, new ItemStack(ModItems.MULTIVERSAL_CRYSTAL.get()));
+                    reward(player, "babidi", 0.6, new ItemStack(ModItems.MULTIVERSAL_CRYSTAL.get()));
                     // the first time the guardians fall, Babidi marks you (StructureMissions, MajinMark)
                     MajinMark.grant(player);
                 }

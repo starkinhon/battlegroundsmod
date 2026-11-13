@@ -1,5 +1,7 @@
 package com.starkinhon.battlegroundsmod.universe;
 
+import com.starkinhon.battlegroundsmod.network.ModPayloads;
+import net.neoforged.neoforge.network.PacketDistributor;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -206,6 +208,7 @@ public final class StructureMissions {
         HERE.put(player.getUUID(), here);
         if (before == null || !before.key().equals(here.key())) {
             greet(player, here);
+            MissionJournal.found(player, MissionJournal.missionOf(here.id()), player.blockPosition());
         }
         DbQuests.sync(player);
     }
@@ -226,6 +229,12 @@ public final class StructureMissions {
             return;
         }
         seen.put(here.key(), now);
+        String mission = MissionJournal.missionOf(here.id());
+        if (mission != null) {
+            // the place's name comes down big with its mission under it (client/QuestHud, the approved preview)
+            PacketDistributor.sendToPlayer(player, new ModPayloads.MissionEvent(mission, here.id(), here.color(), false, List.of()));
+            return;
+        }
         player.connection.send(new ClientboundSetTitlesAnimationPacket(8, 60, 16));
         player.connection.send(new ClientboundSetTitleTextPacket(Component.translatable("quest.battlegroundsmod." + here.id() + ".titulo")
                 .withStyle(s -> s.withColor(here.color()).withBold(true))));
@@ -374,6 +383,29 @@ public final class StructureMissions {
         return null;
     }
 
+    // For the mission journal (MissionJournal).
+    static boolean korinDone(ServerPlayer player) {
+        return player.getPersistentData().getBoolean(KORIN_DONE);
+    }
+
+    static int climbing(ServerPlayer player) {
+        Integer from = CLIMB.get(player.getUUID());
+        return from == null ? -1 : Math.max(0, player.getBlockY() - from);
+    }
+
+    static boolean anyPodDone(ServerPlayer player) {
+        return !player.getPersistentData().getString(PODS_DONE).isEmpty();
+    }
+
+    static int podFight(ServerPlayer player) {
+        Pod pod = PODS.get(player.getUUID());
+        return pod == null ? -1 : 3 - aliveCount(player.serverLevel(), pod);
+    }
+
+    static boolean guruDone(ServerPlayer player) {
+        return player.getPersistentData().getBoolean(GURU_DONE);
+    }
+
     static boolean near(ServerPlayer player, int[] xz, double r) {
         double dx = player.getX() - xz[0], dz = player.getZ() - xz[1];
         return dx * dx + dz * dz < r * r;
@@ -389,7 +421,7 @@ public final class StructureMissions {
         Fx.sound(level, player.position(), SoundEvents.BEACON_ACTIVATE, 1f, 0.8f);
         DbActivities.title(player, Component.translatable("message.battlegroundsmod.guru_titulo"),
                 Component.translatable("message.battlegroundsmod.guru_sub"), 0x7FD67A);
-        DbActivities.reward(player, 0.8);
+        DbActivities.reward(player, "guru", 0.8);
         DbQuests.sync(player);
     }
 
@@ -427,7 +459,7 @@ public final class StructureMissions {
             DbActivities.title(player, Component.translatable("message.battlegroundsmod.korin_agua"),
                     Component.translatable("message.battlegroundsmod.korin_agua_sub"), 0xE6D27A);
             Fx.burst(level, ParticleTypes.SPLASH, player.position().add(0, 1, 0), 60, 0.5, 0.2);
-            DbActivities.reward(player, 0.5, new ItemStack(ModItems.SENZU.get(), 2));
+            DbActivities.reward(player, "karin", 0.5, new ItemStack(ModItems.SENZU.get(), 2));
             DbQuests.sync(player);
         }
     }
@@ -476,7 +508,7 @@ public final class StructureMissions {
                 player.getPersistentData().putString(PODS_DONE, done.isEmpty() ? pod.key() : done + ";" + pod.key());
                 DbActivities.title(player, Component.translatable("message.battlegroundsmod.raditz_livre"),
                         Component.translatable("message.battlegroundsmod.raditz_livre_sub"), 0xD04A3A);
-                DbActivities.reward(player, 0.3, new ItemStack(ModItems.SENZU.get()));
+                DbActivities.reward(player, "raditz", 0.3, new ItemStack(ModItems.SENZU.get()));
                 DbQuests.sync(player);
             }
             return;
@@ -541,7 +573,7 @@ public final class StructureMissions {
 
     // The player's persistent data is lost on respawn: what the structures remember (done once, used today) is carried
     // over, so dying neither resets a daily reward nor gives a once-only one again.
-    private static final List<String> KEEP = List.of(PODS_DONE, KORIN_DONE, GURU_DONE, "souls_majin_solta", DbActivities.CAPSULE_DAY,
+    private static final List<String> KEEP = List.of(PODS_DONE, KORIN_DONE, GURU_DONE, MissionJournal.FOUND, MissionJournal.TRACKED, "souls_majin_solta", DbActivities.CAPSULE_DAY,
             "souls_boo_dia", "souls_cell_dia", "souls_babidi_dia", "souls_namek_dia", "souls_kame_dia", "souls_kame_feito",
             "souls_gravidade_dia", "souls_gravidade_s");
 
