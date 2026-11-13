@@ -168,6 +168,10 @@ public final class PreviewFight {
     private static double sendAcc;
     // after the player came down (landed, slammed): no restart until it is up in the air again
     private static boolean parked;
+    // a skill has the mob (Flight.HELD): the page follows it
+    private static boolean held;
+    // where the page put the player last frame: anything else that moves it (a skill's teleport from the server) wins
+    private static Vec3 placed;
 
     // the soul's AI (the page's AI object)
     private static String st = "ar", act, phase;
@@ -392,6 +396,8 @@ public final class PreviewFight {
             return;
         }
         running = false;
+        held = false;
+        placed = null;
         if (P != null && P.ent != null) {
             P.ent.setInvisible(false);
             ClientHooks.guardPose(P.ent.getId(), false);
@@ -463,12 +469,33 @@ public final class PreviewFight {
             dt *= 0.05;
         }
         clock += dt;
+        if (placed != null && player.position().distanceToSqr(placed) > 0.09) {
+            // a skill moved the player (Goku's teleport, the Kaioken rush, Freeza's...): the page goes on from there
+            P.pos = player.position();
+            P.vel = Vec3.ZERO;
+        }
         playerCombat(mc, dt);
         if (!running) {
             PreviewFx.step(dt, camDt);
             return;
         }
-        mobUpdate(dt);
+        // One of the player's skills has it (Flight.HELD from the server: a real stun, a hold): the skill moves it
+        // there, the page only follows and takes it back when it lets go.
+        held = (FlightClient.serverState(M.ent) & Flight.HELD) != 0;
+        if (held) {
+            M.pos = M.ent.getPosition(mc.getTimer().getGameTimeDeltaPartialTick(true));
+            M.vel = Vec3.ZERO;
+            M.slam = false;
+            M.flying = true;
+            M.visible = true;
+            M.boost = false;
+            act = null;
+            if (!"ar".equals(st)) {
+                st = "ar";
+            }
+        } else {
+            mobUpdate(dt);
+        }
         physicsHits(dt);
         if (!running) {
             PreviewFx.step(dt, camDt);
@@ -486,7 +513,9 @@ public final class PreviewFight {
         shake = Math.max(0, shake - camDt * 1.6);
         PreviewFx.boostView = P.boostAmt * clamp(P.vel.length() / 42, 0, 1) * 0.4;
         place(P, true);
-        place(M, false);
+        if (!held) {
+            place(M, false);
+        }
         sendAcc += camDt;
         if (sendAcc >= 0.05) {
             sendAcc = 0;
@@ -530,9 +559,20 @@ public final class PreviewFight {
         en.yHeadRotO = yaw;
         en.yBodyRot = yaw;
         en.yBodyRotO = yaw;
+        if (player) {
+            placed = e.pos;
+        }
         if (player && M != null) {
-            Vec3 d = M.pos.add(0, 0.9, 0).subtract(e.pos.add(0, 1.6, 0));
-            float pitch = (float) Mth.clamp(-Math.toDegrees(Math.atan2(d.y, Math.hypot(d.x, d.z))), -80, 80);
+            // The view looks right at the target (the body keeps the page's heading): every skill aims through the
+            // player's look (Kamehameha, Final Flash, the teleports), and in the first test of the page they all went
+            // off to the side (Stark 2026-11-13: "a mira dos ataques está totalmente errada").
+            Vec3 d = M.pos.add(0, M.ent.getBbHeight() * 0.55, 0).subtract(e.pos.add(0, en.getEyeHeight(), 0));
+            float aimYaw = (float) (Mth.atan2(-d.x, d.z) * Mth.RAD_TO_DEG);
+            float pitch = (float) Mth.clamp(-Math.toDegrees(Math.atan2(d.y, Math.hypot(d.x, d.z))), -89, 89);
+            en.setYRot(aimYaw);
+            en.yRotO = aimYaw;
+            en.setYHeadRot(aimYaw);
+            en.yHeadRotO = aimYaw;
             en.setXRot(pitch);
             en.xRotO = pitch;
         }

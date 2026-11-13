@@ -78,10 +78,18 @@ public final class Combat {
                 });
     }
 
+    // In the combat flight the fight keeps 9-12 blocks off the target (the page's orbit), so a skill made for the ground
+    // (the Kaioken rush's 8, a grab's 7) never found it: locked on, every skill reaches it from the whole orbit.
+    private static final double LOCK_REACH = 32;
+
+    private static double lockReach(double range) {
+        return Math.max(range + 1, LOCK_REACH);
+    }
+
     // Where the player's view hits a block, or the point at max range.
     public static Vec3 raycastPoint(LivingEntity player, double range) {
         LivingEntity locked = AirFight.target(player);
-        if (locked != null && player instanceof net.minecraft.server.level.ServerPlayer && locked.distanceTo(player) <= range + 1) {
+        if (locked != null && player instanceof net.minecraft.server.level.ServerPlayer && locked.distanceTo(player) <= lockReach(range)) {
             // the combat flight aims at whoever it is locked on
             return center(locked);
         }
@@ -94,7 +102,7 @@ public final class Combat {
     // The closest target in the player's view, stopped by walls. Slightly generous so moves feel good to land.
     public static LivingEntity raycastTarget(LivingEntity player, double range) {
         LivingEntity locked = AirFight.target(player);
-        if (locked != null && player instanceof net.minecraft.server.level.ServerPlayer && locked.distanceTo(player) <= range + 1) {
+        if (locked != null && player instanceof net.minecraft.server.level.ServerPlayer && locked.distanceTo(player) <= lockReach(range)) {
             return locked;
         }
         Vec3 eye = player.getEyePosition();

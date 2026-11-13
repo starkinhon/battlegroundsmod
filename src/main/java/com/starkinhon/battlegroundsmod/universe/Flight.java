@@ -47,6 +47,9 @@ public final class Flight {
     public static final int CROSSED = 8, UPRIGHT = 16, WAVE = 32;
     // the combat flight (combat/AirFight): standing up in the fighting stance, facing the target
     public static final int COMBAT = 64;
+    // a soul flown by the combat flight's page on a client (client/PreviewFight), taken by one of the player's skills
+    // (a real stun or a hold): the server moves it, the page follows it until the skill lets go
+    public static final int HELD = 128;
 
     private static final Map<UUID, Integer> SENT = new HashMap<>();
     private static final Map<UUID, Boolean> BOOSTING = new HashMap<>();

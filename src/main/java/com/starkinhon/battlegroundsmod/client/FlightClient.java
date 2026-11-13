@@ -96,6 +96,11 @@ public final class FlightClient {
         return STATES.getOrDefault(entity.getId(), 0);
     }
 
+    // What the server said about it, never the page's own (client/PreviewFight reads Flight.HELD here).
+    static int serverState(Entity entity) {
+        return STATES.getOrDefault(entity.getId(), 0);
+    }
+
     public static boolean flying(Entity entity) {
         Minecraft minecraft = Minecraft.getInstance();
         if (entity == minecraft.player) {

@@ -1190,7 +1190,11 @@ public final class DbFx {
         Vector3f up = new Vector3f(0, 1, 0);
         Vector3f want = new Vector3f(up);
         if (speed > 0.5) {
-            float k = (float) Math.min(0.55, speed / 40.0);
+            // In the combat flight it darts round the target at 18-46 b/s all the time: the full drag laid the shell
+            // half a body off to the side and swung it with every turn (Stark's test 2026-11-13, the Kaioken). There
+            // it stays on the body, only a hint of the drag.
+            boolean fight = com.starkinhon.battlegroundsmod.client.AirFightClient.combat(living);
+            float k = (float) Math.min(fight ? 0.12 : 0.55, speed / (fight ? 120.0 : 40.0));
             want.sub((float) (v.x / speed) * k, (float) (v.y / speed) * k * 0.6f, (float) (v.z / speed) * k).normalize();
         }
         Quaternionf target = new Quaternionf().rotationTo(up, want);

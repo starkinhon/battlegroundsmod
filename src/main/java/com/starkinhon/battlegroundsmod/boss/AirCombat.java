@@ -6,6 +6,7 @@ import com.starkinhon.battlegroundsmod.combat.AirFight;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Defense;
 import com.starkinhon.battlegroundsmod.combat.Intangible;
+import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.combat.Stun;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
@@ -102,6 +103,11 @@ public final class AirCombat {
     private Vec3 pilotPos = Vec3.ZERO;
     private float pilotYaw;
     private int pilotFlags;
+
+    // A skill has it right now (a real stun or a hold): the page's fight lets go of it until then.
+    private boolean held() {
+        return Stun.real(boss) || Freeze.isFrozen(boss);
+    }
 
     public void pilot(ServerPlayer player, Vec3 pos, float yaw, int flags) {
         pilot = player;
@@ -222,6 +228,26 @@ public final class AirCombat {
             return;
         }
         if (pilot != null) {
+            if (pilot.isAlive() && pilot.level() == level && level.getGameTime() <= pilotUntil && held()) {
+                // Taken by one of the player's skills (a real stun, a hold: Kaioken rush, Piccolo's grab, the
+                // Kamehameha's push...): the skill moves it, the page's fight on the client follows (Flight.HELD) and
+                // takes it back when it lets go (Stark 2026-11-13: the techniques must work in the combat flight).
+                st = St.AR;
+                act = Act.NONE;
+                phase = 0;
+                pending = null;
+                boss.getNavigation().stop();
+                if (!Freeze.isFrozen(boss)) {
+                    boss.setNoGravity(true);
+                    boss.setDeltaMovement(boss.getDeltaMovement().scale(0.8));
+                }
+                boss.fallDistance = 0;
+                vel = Vec3.ZERO;
+                lastSet = null;
+                boss.setInvisible(false);
+                send();
+                return;
+            }
             if (pilot.isAlive() && pilot.level() == level && level.getGameTime() <= pilotUntil) {
                 // flown by the page's fight on that player's client (combat/AirFight.sim): it only goes where it is told
                 st = St.AR;
@@ -943,7 +969,8 @@ public final class AirCombat {
 
     int state() {
         if (pilot != null) {
-            return (pilotFlags & 1) != 0 ? Flight.FLYING | Flight.COMBAT | (boost ? Flight.BOOST : 0) : 0;
+            int held = held() ? Flight.HELD : 0;
+            return (pilotFlags & 1) != 0 ? Flight.FLYING | Flight.COMBAT | (boost ? Flight.BOOST : 0) | held : held;
         }
         boolean fly = st == St.AR || st == St.MERGULHO;
         boolean stance = st == St.AR && !passer && act != Act.PERSEGUE && !(act == Act.RECUA && phase == 0) && boss.getTarget() != null;
