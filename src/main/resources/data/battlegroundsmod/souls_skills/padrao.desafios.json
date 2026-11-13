@@ -10,7 +10,7 @@
     {
       "id": "dragonball", "nome": "Dragon Ball", "cor": "#FF9A2E",
       "descricao": "Planícies, savanas, desertos laranja e cânions. Começa perto de uma cidadezinha.",
-      "mobs": ["soldado_red_ribbon", "saibaman", "soldado_freeza", "bandido_deserto", "pirata", "yeti", "raptor", "tiranossauro"],
+      "mobs": ["soldado_red_ribbon", "saibaman", "soldado_freeza", "bandido_deserto", "pirata", "yeti", "raptor", "tiranossauro", "dino_chifrudo", "tigre_sabre", "androide_gero"],
       "piso": ["minecraft:red_sand", "minecraft:orange_terracotta", "minecraft:smooth_red_sandstone", "minecraft:red_sand"],
       "pilar": "minecraft:terracotta",
       "desafios": [
@@ -31,7 +31,7 @@
       "pilar": "minecraft:oak_log",
       "desafios": [
         {"id": "shikamaru", "foco": "Prender. A sombra dele segura você no lugar.", "itens": []},
-        {"id": "ino", "foco": "Mente. Entra na sua cabeça e troca de corpo.", "itens": ["battlegroundsmod:pergaminho_ninken"]},
+        {"id": "ino", "foco": "Mente. Entra na sua cabeça e troca de corpo.", "itens": ["battlegroundsmod:pergaminho_selamento"]},
         {"id": "kakashi", "foco": "Técnica. Raikiri e jutsus copiados com o Sharingan.", "itens": ["battlegroundsmod:cristal_multiversal"]},
         {"id": "gaara", "foco": "Defesa. A areia bloqueia tudo e esmaga quem chega perto.", "itens": ["battlegroundsmod:bandana_ninja"]},
         {"id": "naruto", "foco": "Pressão. Clones por todo lado e Rasengan.", "itens": ["battlegroundsmod:kunai_hiraishin"]},
@@ -76,6 +76,46 @@
       "pilar": "minecraft:spruce_log",
       "desafios": [
         {"id": "kokushibo", "foco": "Luas. A Respiração da Lua corta em leque. A Lua Superior Um.", "itens": ["battlegroundsmod:cristal_multiversal", "battlegroundsmod:espada_nichirin"]}
+      ]
+    },
+    {
+      "id": "mha", "nome": "My Hero Academia", "cor": "#8E1515", "mundo": false,
+      "descricao": "Cidades de heróis e vilões.",
+      "mobs": [],
+      "piso": ["minecraft:gravel", "minecraft:light_gray_concrete_powder", "minecraft:tuff"],
+      "pilar": "minecraft:polished_andesite",
+      "desafios": [
+        {"id": "shigaraki", "foco": "Decadência. Tudo que a mão dele toca vira pó, até o chão. Não deixe ele encostar.", "itens": ["battlegroundsmod:cristal_multiversal"]}
+      ]
+    },
+    {
+      "id": "onepiece", "nome": "One Piece", "cor": "#C0392B", "mundo": false,
+      "descricao": "O mar e as ilhas do Novo Mundo.",
+      "mobs": [],
+      "piso": ["minecraft:deepslate_tiles", "minecraft:polished_blackstone_bricks"],
+      "pilar": "minecraft:dark_oak_log",
+      "desafios": [
+        {"id": "joy_boy", "foco": "Gear 5. Borracha, risada e o cenário virando desenho. Quando ele cansa e fica faminto, é a hora.", "itens": ["battlegroundsmod:cristal_multiversal"]}
+      ]
+    },
+    {
+      "id": "chainsawman", "nome": "Chainsaw Man", "cor": "#C9665A", "mundo": false,
+      "descricao": "Tóquio dos caçadores de demônios.",
+      "mobs": [],
+      "piso": ["minecraft:light_gray_concrete", "minecraft:smooth_stone"],
+      "pilar": "minecraft:light_gray_concrete",
+      "desafios": [
+        {"id": "makima", "foco": "Controle. Ela luta de longe e faz os outros lutarem por ela. Encurte a distância.", "itens": ["battlegroundsmod:cristal_multiversal"]}
+      ]
+    },
+    {
+      "id": "opm", "nome": "One Punch Man", "cor": "#F2C94C", "mundo": false,
+      "descricao": "As cidades da Associação de Heróis.",
+      "mobs": [],
+      "piso": ["minecraft:gray_concrete", "minecraft:smooth_stone"],
+      "pilar": "minecraft:smooth_sandstone",
+      "desafios": [
+        {"id": "saitama", "foco": "Um soco. Ele brinca até ficar sério. Quando ficar sério, não esteja na frente.", "itens": ["battlegroundsmod:cristal_multiversal"]}
       ]
     }
   ]

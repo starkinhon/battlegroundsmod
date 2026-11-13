@@ -3,30 +3,43 @@ package com.starkinhon.battlegroundsmod.world;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
+import com.starkinhon.battlegroundsmod.BattlegroundsMod;
 import com.starkinhon.battlegroundsmod.ModEntities;
 import com.starkinhon.battlegroundsmod.npc.UniverseNpc;
 import com.starkinhon.battlegroundsmod.power.Progression;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.QuartPos;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.StringTag;
+import net.minecraft.nbt.Tag;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.BiomeTags;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.RandomizableContainer;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.ChestBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.saveddata.SavedData;
+import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
@@ -44,7 +57,7 @@ public final class WorldSites {
     private static final double TRIGGER = 170;
     private static final int LOOKOUT_Y = 281;
     private static final int LOOKOUT_OFFSET = 110;
-    private static final int KORIN_FLOOR = 162;
+    public static final int KORIN_FLOOR = 162;
 
     public static final String CAPSULE = "capsula", GOKU = "goku", KARIN = "karin", CELL_RING = "cell", WRECK = "nave",
             RADITZ = "raditz", BABIDI = "babidi", BUU = "buu", KAME = "kame", LOOKOUT = "lookout";
@@ -80,6 +93,7 @@ public final class WorldSites {
                 links(level, site);
             }
         }
+        podChestsForOldCraters(level, data);
         for (ServerPlayer player : level.players()) {
             int pcx = Math.floorDiv(player.getBlockX(), CELL);
             int pcz = Math.floorDiv(player.getBlockZ(), CELL);
@@ -164,13 +178,18 @@ public final class WorldSites {
         return null;
     }
 
-    // The floor of a place: the middle height of the ground around it (the sea's surface for the Kame House).
+    // The floor of a place: the middle height of the ground around it (the sea's surface for the Kame House). From the
+    // terrain noise, not the world: level.getHeight gives the bottom of the world for a chunk that is not loaded yet, and
+    // the spot is picked 170 blocks away, so every place came out at the sea's level (2026-11-12 test: Goku's house sunk
+    // in a crater or buried in a mountain, Cell's ring at the bottom of a cut canyon).
     private static int floor(ServerLevel level, String kind, int x, int z) {
+        var generator = level.getChunkSource().getGenerator();
+        var random = level.getChunkSource().randomState();
         int[] heights = new int[9];
         int n = 0;
         for (int dx = -12; dx <= 12; dx += 12) {
             for (int dz = -12; dz <= 12; dz += 12) {
-                heights[n++] = level.getHeight(Heightmap.Types.OCEAN_FLOOR, x + dx, z + dz);
+                heights[n++] = generator.getBaseHeight(x + dx, z + dz, Heightmap.Types.OCEAN_FLOOR_WG, level, random);
             }
         }
         Arrays.sort(heights);
@@ -214,7 +233,8 @@ public final class WorldSites {
 
     private static MapPlaces.Place place(Site site) {
         return new MapPlaces.Place(id(site), site.x(), site.z(), map -> build(site),
-                KARIN.equals(site.kind()) ? (level, b) -> korin(level, b) : null);
+                KARIN.equals(site.kind()) ? (level, b) -> korin(level, b)
+                        : RADITZ.equals(site.kind()) ? (level, b) -> podChest(level, site) : null);
     }
 
     private static MapPlaces.Place lookoutPlace(Site site) {
@@ -227,18 +247,29 @@ public final class WorldSites {
         return block.defaultBlockState();
     }
 
+    // The build of a known place, made again without placing anything (StructureLoot's /soul bau).
+    static Build buildOf(Site site) {
+        return build(site);
+    }
+
+    static String idOf(Site site) {
+        return id(site);
+    }
+
+    // Every place on a foundation also gets a skirt of ground under it (Build.skirt), so on a slope or a coast it sits on
+    // a mound instead of a cut platform hanging in the air (the crashed ship did, Stark's print 2026-11-12).
     private static Build build(Site site) {
         Build b = new Build(site.x(), site.y() + 1, site.z(), (long) site.x() * 31 + site.z());
         BlockState grass = s(Blocks.GRASS_BLOCK), dirt = s(Blocks.DIRT);
         BlockState sand = s(Blocks.RED_SAND), sandstone = s(Blocks.RED_SANDSTONE);
         return switch (site.kind()) {
-            case CAPSULE -> namekPad(b.clearUp(38, 0, 32).foundation(37, 10, grass, dirt).template("dragonball/capsule_corp", 0, 0, 0));
-            case GOKU -> b.clearUp(24, 0, 24).foundation(23, 10, grass, dirt).template("dragonball/goku_house", 0, 0, 0);
-            case KARIN -> b.clearUp(20, 0, 14).foundation(19, 8, grass, dirt).template("dragonball/korin_tower", 0, 0, 0);
-            case CELL_RING -> b.clearUp(34, 0, 48).foundation(33, 10, s(Blocks.STONE), s(Blocks.STONE))
+            case CAPSULE -> namekPad(b.clearUp(38, 0, 32).foundation(37, 10, grass, dirt).skirt(37, 16, 0.8, grass, dirt).template("dragonball/capsule_corp", 0, 0, 0));
+            case GOKU -> b.clearUp(24, 0, 24).foundation(23, 10, grass, dirt).skirt(23, 16, 0.8, grass, dirt).template("dragonball/goku_house", 0, 0, 0);
+            case KARIN -> b.clearUp(20, 0, 14).foundation(19, 8, grass, dirt).skirt(19, 16, 0.8, grass, dirt).template("dragonball/korin_tower", 0, 0, 0);
+            case CELL_RING -> b.clearUp(34, 0, 48).foundation(33, 10, s(Blocks.STONE), s(Blocks.STONE)).skirt(33, 16, 0.8, s(Blocks.STONE), s(Blocks.STONE))
                     .template("dragonball/cell_arena", 0, 0, 0);
             case BABIDI -> b.clearUp(20, 0, 12).template("dragonball/babidi_ship", 0, 0, 0);
-            case BUU -> b.clearUp(17, 0, 18).foundation(16, 10, grass, dirt).template("dragonball/buu_house", 0, 0, 0);
+            case BUU -> b.clearUp(17, 0, 18).foundation(16, 10, grass, dirt).skirt(16, 16, 0.8, grass, dirt).template("dragonball/buu_house", 0, 0, 0);
             case KAME -> kame(b);
             case WRECK -> wreck(b, sand, sandstone);
             case RADITZ -> raditz(b);
@@ -297,18 +328,23 @@ public final class WorldSites {
 
     // The crashed Capsule Corp ship, sunk in a scorched patch with wreckage and smoke around it.
     private static Build wreck(Build b, BlockState sand, BlockState sandstone) {
-        b.clearUp(14, 0, 16).foundation(13, 6, sand, sandstone);
+        // the scorched ground, and under it a mound down to the land or the sea floor (on a coast it hung as a flat
+        // platform over the water, Stark's print 2026-11-12)
+        b.clearUp(14, 0, 16).foundation(13, 6, sand, sandstone).skirt(13, 18, 0.8, sand, sandstone);
         for (int n = 0; n < 30; n++) {
             double a = b.random.nextDouble() * Math.PI * 2;
-            int r = 9 + b.random.nextInt(9);
+            // inside the scorched ground: out to 17 blocks they fell past its edge and hung in the air
+            int r = 9 + b.random.nextInt(4);
             int i = (int) Math.round(Math.cos(a) * r), k = (int) Math.round(Math.sin(a) * r);
-            Block piece = switch (b.random.nextInt(6)) {
-                case 0 -> Blocks.IRON_BLOCK;
-                case 1 -> Blocks.WHITE_CONCRETE;
-                case 2 -> Blocks.LIGHT_GRAY_CONCRETE;
-                case 3 -> Blocks.CHAIN;
-                case 4 -> Blocks.IRON_BARS;
-                default -> Blocks.COARSE_DIRT;
+            BlockState piece = switch (b.random.nextInt(6)) {
+                case 0 -> s(Blocks.IRON_BLOCK);
+                case 1 -> s(Blocks.WHITE_CONCRETE);
+                case 2 -> s(Blocks.LIGHT_GRAY_CONCRETE);
+                // a chain lies on the ground like a torn cable (standing up alone it looked hung from nothing)
+                case 3 -> s(Blocks.CHAIN).setValue(net.minecraft.world.level.block.ChainBlock.AXIS,
+                        b.random.nextBoolean() ? net.minecraft.core.Direction.Axis.X : net.minecraft.core.Direction.Axis.Z);
+                case 4 -> s(Blocks.IRON_BARS);
+                default -> s(Blocks.COARSE_DIRT);
             };
             b.set(i, 0, k, piece);
         }
@@ -349,6 +385,50 @@ public final class WorldSites {
         b.set(0, -3, 0, Blocks.AIR).set(0, -2, 0, Blocks.AIR).set(2, -3, 0, Blocks.AIR).set(2, -2, 0, Blocks.AIR);
         b.set(-3, -3, 2, Blocks.CAMPFIRE).set(2, -3, -3, Blocks.CAMPFIRE);
         return b;
+    }
+
+    // The Saiyan pod's loot (Stark 2026-11-12: "absurdo não ter um lootzinho aqui", and a scouter would fit): a chest
+    // inside the pod, right behind the open hatch so it is seen and reached from outside, filled from
+    // loot_table/chests/pod_saiyajin (the scouter always, senzu now and then, metal scraps of the pod). Placed once, when
+    // the crater finishes building.
+    public static final ResourceKey<LootTable> POD_LOOT = ResourceKey.create(Registries.LOOT_TABLE,
+            ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "chests/pod_saiyajin"));
+
+    // Inside the pod of a crater site (its floor is one below the build's; the pod's middle is 3 under that floor).
+    static BlockPos podChestPos(Site site) {
+        return new BlockPos(site.x() + 1, site.y() - 2, site.z());
+    }
+
+    private static void podChest(ServerLevel level, Site site) {
+        Data data = data(level);
+        if (data.pods.add(id(site))) {
+            data.setDirty();
+            podChest(level, podChestPos(site));
+        }
+    }
+
+    // Craters built before the pod had loot (Stark's worlds): once the chunk is loaded, the chest goes in, only once and
+    // only if the spot inside the pod is still empty (a pod someone already broke stays as it is).
+    private static void podChestsForOldCraters(ServerLevel level, Data data) {
+        for (Site site : data.sites()) {
+            if (!RADITZ.equals(site.kind()) || data.pods.contains(id(site)) || !MapPlaces.built(level, id(site))) {
+                continue;
+            }
+            BlockPos pos = podChestPos(site);
+            if (!level.isLoaded(pos)) {
+                continue;
+            }
+            data.pods.add(id(site));
+            data.setDirty();
+            if (level.getBlockState(pos).isAir()) {
+                podChest(level, pos);
+            }
+        }
+    }
+
+    static void podChest(ServerLevel level, BlockPos pos) {
+        level.setBlock(pos, Blocks.CHEST.defaultBlockState().setValue(ChestBlock.FACING, Direction.EAST), Block.UPDATE_CLIENTS);
+        RandomizableContainer.setBlockEntityLootTable(level, level.random, pos, POD_LOOT);
     }
 
     // Korin on top of his tower.
@@ -430,6 +510,8 @@ public final class WorldSites {
 
     public static final class Data extends SavedData {
         final Map<String, String> cells = new HashMap<>();
+        // Craters whose pod already got its chest (so a looted, broken chest never comes back).
+        final Set<String> pods = new HashSet<>();
         boolean restored;
 
         static Data load(CompoundTag tag, HolderLookup.Provider registries) {
@@ -437,6 +519,10 @@ public final class WorldSites {
             CompoundTag cells = tag.getCompound("cells");
             for (String key : cells.getAllKeys()) {
                 data.cells.put(key, cells.getString(key));
+            }
+            ListTag pods = tag.getList("pods", Tag.TAG_STRING);
+            for (int i = 0; i < pods.size(); i++) {
+                data.pods.add(pods.getString(i));
             }
             return data;
         }
@@ -446,6 +532,11 @@ public final class WorldSites {
             CompoundTag cells = new CompoundTag();
             this.cells.forEach(cells::putString);
             tag.put("cells", cells);
+            ListTag pods = new ListTag();
+            for (String pod : this.pods) {
+                pods.add(StringTag.valueOf(pod));
+            }
+            tag.put("pods", pods);
             return tag;
         }
 

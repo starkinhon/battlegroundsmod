@@ -35,6 +35,12 @@ public class NarutoMobRenderer extends MobRenderer<NarutoMob, BlockyModel<Naruto
     private final List<BlockyModel<NarutoMob>> lo = new ArrayList<>();
     private final List<ResourceLocation> texHi = new ArrayList<>();
     private final List<ResourceLocation> texLo = new ArrayList<>();
+    private final String folder;
+    private final java.util.function.BiFunction<String, String, float[][]> travel;
+    // each variant's size (Cell Jr. 0.68, the dragon 1.4, the Saibamen's drawn size), applied about the feet
+    private final List<Float> scaleHi = new ArrayList<>();
+    private final List<Float> scaleLo = new ArrayList<>();
+    private float scale = 1;
     private final BakedAnim animHi;
     private final BakedAnim animLo;
     private final float flyLift;
@@ -46,24 +52,33 @@ public class NarutoMobRenderer extends MobRenderer<NarutoMob, BlockyModel<Naruto
     private float attackW;
     private float walkW;
     private boolean low;
+    private BakedAnim.Mode loopAnim;
 
     public NarutoMobRenderer(EntityRendererProvider.Context context, String id) {
-        this(context, id, NarutoSpec.get(id));
+        this(context, id, NarutoSpec.get(id), "naruto", com.starkinhon.battlegroundsmod.animal.naruto.NarutoTravel::of);
     }
 
-    private NarutoMobRenderer(EntityRendererProvider.Context context, String id, NarutoSpec.Spec spec) {
+    // folder: the models' and skins' folder (blocky/<folder>, textures/entity/<folder>); travel: the kind's blow paths
+    public NarutoMobRenderer(EntityRendererProvider.Context context, String id, NarutoSpec.Spec spec, String folder,
+            java.util.function.BiFunction<String, String, float[][]> travel) {
         super(context, null, spec.shadow);
         this.spec = spec;
+        this.folder = folder;
+        this.travel = travel;
         this.animHi = anim(context, id);
         this.animLo = anim(context, id + "_low");
         for (int v = 0; ; v++) {
             String name = id + "_" + v;
-            ResourceLocation loc = ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "blocky/naruto/" + name + ".json");
+            ResourceLocation loc = ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "blocky/" + folder + "/" + name + ".json");
             if (context.getResourceManager().getResource(loc).isEmpty()) {
                 break;
             }
-            hi.add(model(context, name, animHi, false));
-            lo.add(model(context, name + "_low", animLo, true));
+            JsonObject jHi = json(context, "blocky/" + folder + "/" + name + ".json");
+            JsonObject jLo = json(context, "blocky/" + folder + "/" + name + "_low.json");
+            hi.add(new BlockyModel<>(jHi, (m, e, ls, amt, age, hy, hp) -> pose(m, e, animHi, age)));
+            lo.add(new BlockyModel<>(jLo, (m, e, ls, amt, age, hy, hp) -> pose(m, e, animLo, age)));
+            scaleHi.add(jHi.has("scale") ? jHi.get("scale").getAsFloat() : 1f);
+            scaleLo.add(jLo.has("scale") ? jLo.get("scale").getAsFloat() : 1f);
             texHi.add(tex(name));
             texLo.add(tex(name + "_low"));
         }
@@ -74,8 +89,8 @@ public class NarutoMobRenderer extends MobRenderer<NarutoMob, BlockyModel<Naruto
         this.flyLift = spec.move == NarutoSpec.Move.FLYER ? animHi.minY("parado") : 0;
     }
 
-    private static ResourceLocation tex(String name) {
-        return ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "textures/entity/naruto/" + name + ".png");
+    private ResourceLocation tex(String name) {
+        return ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "textures/entity/" + folder + "/" + name + ".png");
     }
 
     private static JsonObject json(EntityRendererProvider.Context context, String path) {
@@ -87,12 +102,8 @@ public class NarutoMobRenderer extends MobRenderer<NarutoMob, BlockyModel<Naruto
         }
     }
 
-    private static BakedAnim anim(EntityRendererProvider.Context context, String name) {
-        return new BakedAnim(json(context, "blocky/naruto/" + name + ".anim.json"));
-    }
-
-    private BlockyModel<NarutoMob> model(EntityRendererProvider.Context context, String name, BakedAnim anim, boolean isLow) {
-        return new BlockyModel<>(json(context, "blocky/naruto/" + name + ".json"), (m, e, ls, amt, age, hy, hp) -> pose(m, anim, age));
+    private BakedAnim anim(EntityRendererProvider.Context context, String name) {
+        return new BakedAnim(json(context, "blocky/" + folder + "/" + name + ".anim.json"));
     }
 
     private int index(NarutoMob e) {
@@ -130,17 +141,29 @@ public class NarutoMobRenderer extends MobRenderer<NarutoMob, BlockyModel<Naruto
             }
         }
         java.util.Arrays.fill(root, 0);
-        float rest = 1 - attackW;
+        // a blow in flight (the ridden dragon's fire): the flight goes on and only the neck and head blow
+        airBlow = attack != null && e.loopMode() != null && e instanceof com.starkinhon.battlegroundsmod.animal.dbmob.DbMob d && d.isDragon();
+        float rest = airBlow ? 1 : 1 - attackW;
         float[] tmp = new float[BakedAnim.ROOT];
-        BakedAnim.root(a.mode("parado"), age, true, rest * (1 - walkW), tmp);
-        BakedAnim.root(a.mode("andar"), age, true, rest * walkW, tmp);
+        String loop = e.loopMode();
+        loopAnim = loop == null ? null : a.mode(loop);
+        if (loopAnim != null) {
+            BakedAnim.root(loopAnim, age, true, rest, tmp);
+            // the loop's own height off the ground (the dragon's flight is drawn high in the preview) goes: the
+            // entity is already in the air, and its rider sits where the entity is (test 2026-11-13: the rider hung
+            // under the belly)
+            tmp[1] -= (a.minY(loop) - a.minY("parado")) * rest;
+        } else {
+            BakedAnim.root(a.mode("parado"), age, true, rest * (1 - walkW), tmp);
+            BakedAnim.root(a.mode("andar"), age, true, rest * walkW, tmp);
+        }
         // standing and walking: only the body's bob and lean; the path and turn are the entity's own
         tmp[0] = 0;
         tmp[2] = 0;
         tmp[4] = 0;
         tmp[6] = 0;
         add(root, tmp);
-        if (attack != null) {
+        if (attack != null && !airBlow) {
             java.util.Arrays.fill(tmp, 0);
             attackRoot(a, at.mode(), attack, attackFrame, tmp);
             for (int k = 0; k < BakedAnim.ROOT; k++) {
@@ -165,7 +188,7 @@ public class NarutoMobRenderer extends MobRenderer<NarutoMob, BlockyModel<Naruto
         BakedAnim.root(m, 0, false, 1, first);
         BakedAnim.root(m, m.frames - 1, false, 1, last);
         int tp = spec.teleportFrame(mode);
-        boolean travels = com.starkinhon.battlegroundsmod.animal.naruto.NarutoTravel.of(spec.id, mode) != null;
+        boolean travels = travel.apply(spec.id, mode) != null;
         boolean before = tp < 0 || f < tp;
         // x, z: walked by the server, or (before a teleport) the preview's own small moves from the start
         out[0] = travels || !before ? 0 : now[0] - first[0];
@@ -180,14 +203,34 @@ public class NarutoMobRenderer extends MobRenderer<NarutoMob, BlockyModel<Naruto
         out[6] = now[6];
     }
 
+    // the parts that blow in flight (the rest keeps flying)
+    private static final java.util.Set<String> NECK = java.util.Set.of("cabeca", "mandibula", "pescoco1", "pescoco2");
+    private boolean airBlow;
+
     // the model's pose this frame (the parts; the body's offset is in setupRotations)
-    private void pose(BlockyModel<NarutoMob> m, BakedAnim a, float age) {
+    private void pose(BlockyModel<NarutoMob> m, NarutoMob e, BakedAnim a, float age) {
         float rest = 1 - attackW;
-        BakedAnim.apply(m, a.mode("parado"), age, true, rest * (1 - walkW));
-        BakedAnim.apply(m, a.mode("andar"), age, true, rest * walkW);
+        if (loopAnim != null) {
+            if (airBlow) {
+                BakedAnim.apply(m, a.mode(loopAnim.name), age, true, 1, part -> !NECK.contains(part));
+                BakedAnim.apply(m, a.mode(loopAnim.name), age, true, rest, NECK::contains);
+            } else {
+                BakedAnim.apply(m, a.mode(loopAnim.name), age, true, rest);
+            }
+        } else {
+            BakedAnim.apply(m, a.mode("parado"), age, true, rest * (1 - walkW));
+            BakedAnim.apply(m, a.mode("andar"), age, true, rest * walkW);
+        }
         if (attack != null) {
             BakedAnim.Mode mode = a.mode(attack.name);
-            BakedAnim.apply(m, mode, attackFrame, false, attackW);
+            BakedAnim.apply(m, mode, attackFrame, false, attackW, airBlow ? NECK::contains : null);
+        }
+        if (e.getControllingPassenger() instanceof net.minecraft.world.entity.player.Player rider) {
+            // ridden: the neck and head tip where the rider looks (up and down; the turn is the body's own)
+            float pitch = Mth.clamp(rider.getXRot(), -50, 60) * Mth.DEG_TO_RAD;
+            m.rot("pescoco1", pitch * 0.3f, 0, 0);
+            m.rot("pescoco2", pitch * 0.3f, 0, 0);
+            m.rot("cabeca", pitch * 0.4f, 0, 0);
         }
     }
 
@@ -197,6 +240,7 @@ public class NarutoMobRenderer extends MobRenderer<NarutoMob, BlockyModel<Naruto
         low = e.position().distanceToSqr(cam) > LOD * LOD;
         int i = index(e);
         this.model = low ? lo.get(Math.min(i, lo.size() - 1)) : hi.get(i);
+        scale = low ? scaleLo.get(Math.min(i, scaleLo.size() - 1)) : scaleHi.get(i);
         work(e, partial);
         if (root[6] > 0.5f) {
             // hidden: the log, the mist, the flock
@@ -210,11 +254,15 @@ public class NarutoMobRenderer extends MobRenderer<NarutoMob, BlockyModel<Naruto
         super.setupRotations(e, pose, bob, bodyYaw, partial, scale);
         // the preview's body offset and turn, in its frame (y up, face to -z), about its pivot 1.5 blocks up
         pose.translate(root[0], root[1], root[2]);
-        pose.translate(0, 1.5f, 0);
+        pose.translate(0, 1.5f * scale, 0);
         pose.mulPose(Axis.XP.rotation(root[3]));
         pose.mulPose(Axis.YP.rotation(root[4]));
         pose.mulPose(Axis.ZP.rotation(root[5]));
-        pose.translate(0, -1.5f, 0);
+        pose.translate(0, -1.5f * scale, 0);
+        if (scale != 1) {
+            // about the feet: the model's origin stands 1.5 * scale up
+            pose.scale(scale, scale, scale);
+        }
     }
 
     @Override

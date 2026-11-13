@@ -171,6 +171,12 @@ public final class Shikamaru {
             SubCommon.warn(caster, "shikamaru.no_target");
             return false;
         }
+        // Flying (the combat flight, a soul in the sky): the shadow runs on the ground and catches the target's own
+        // shadow under it; too high up there is none on the ground for it to meet.
+        if (SubCommon.aboveGround(level, target.position(), 64) > SubCommon.SHADOW_REACH_UP) {
+            SubCommon.warn(caster, "shikamaru.too_high");
+            return false;
+        }
         if (Freeze.isFrozen(target)) {
             SubCommon.warn(caster, "shikamaru.held");
             return false;
@@ -306,6 +312,8 @@ public final class Shikamaru {
         }
         List<LivingEntity> targets = new ArrayList<>(Combat.inCone(caster, reach(caster, NUI_RANGE), 0.3));
         targets.removeIf(Freeze::isFrozen);
+        // the needles rise from the ground: whoever flies higher than a shadow reaches is out of them
+        targets.removeIf(t -> SubCommon.aboveGround(level, t.position(), 64) > SubCommon.SHADOW_REACH_UP);
         targets.sort(Comparator.comparingDouble(t -> t.distanceTo(caster)));
         if (targets.isEmpty()) {
             SubCommon.warn(caster, "shikamaru.no_target");

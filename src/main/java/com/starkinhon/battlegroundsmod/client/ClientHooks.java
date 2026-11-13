@@ -29,6 +29,14 @@ public final class ClientHooks {
     public static void comboAnimation(int entityId, int step) {
         // The punches have their own keyframe animations (soco.combo1..5); the Forja pose is the fallback.
         String keyframes = SkillAnimations.FIST_PREFIX + "combo" + (Math.floorMod(step, ComboSpec.get().golpes().size()) + 1);
+        var who = Minecraft.getInstance().level == null ? null : Minecraft.getInstance().level.getEntity(entityId);
+        if (who instanceof net.minecraft.world.entity.LivingEntity living && FlightClient.flying(living) && AirFightClient.combat(living)) {
+            // the combat flight has its own punches (voo.soco1..4: jab, cross, knee, the kick that throws)
+            String air = "voo.soco" + (Math.floorMod(step, 4) + 1);
+            if (KeyframeAnimation.of(air).isPresent()) {
+                keyframes = air;
+            }
+        }
         if (KeyframeAnimation.of(keyframes).isPresent()) {
             SkillAnimations.play(entityId, keyframes, false);
         } else {
@@ -46,6 +54,18 @@ public final class ClientHooks {
 
     public static void flightState(int entityId, int state) {
         FlightClient.state(entityId, state);
+    }
+
+    public static void majin(int entityId, boolean on) {
+        com.starkinhon.battlegroundsmod.client.fx.MajinMarkLayer.set(entityId, on);
+    }
+
+    public static void flightKnock(net.minecraft.world.phys.Vec3 velocity, int ticks, boolean slam) {
+        FlightClient.knock(velocity, ticks, slam);
+    }
+
+    public static void airMove(int kind, int target, int ticks) {
+        AirFightClient.move(kind, target, ticks);
     }
 
     public static void guardPose(int entityId, boolean on) {
@@ -379,8 +399,9 @@ public final class ClientHooks {
         com.starkinhon.battlegroundsmod.client.outfit.Outfits.set(entityId, power);
     }
 
-    public static void sheathState(int entityId, boolean carrying, boolean drawn, boolean stretched) {
+    public static void sheathState(int entityId, boolean carrying, boolean drawn, boolean stretched, boolean gourd) {
         com.starkinhon.battlegroundsmod.client.outfit.Sheaths.set(entityId, carrying, drawn, stretched);
+        com.starkinhon.battlegroundsmod.client.outfit.GourdLayer.set(entityId, gourd);
     }
 
     public static void openChallenges(String universe) {

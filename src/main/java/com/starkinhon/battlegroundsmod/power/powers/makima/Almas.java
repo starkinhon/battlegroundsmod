@@ -91,7 +91,8 @@ public final class Almas {
             return null;
         }
         List<EntityType<?>> types = new ArrayList<>(List.of(ModEntities.MADARA.get(), ModEntities.BILLS.get(), ModEntities.GOJO.get(),
-                ModEntities.KOKUSHIBO.get(), ModEntities.SUKUNA.get()));
+                ModEntities.KOKUSHIBO.get(), ModEntities.SUKUNA.get(), ModEntities.SHIGARAKI.get(), ModEntities.SAITAMA.get(),
+                ModEntities.JOY_BOY.get(), ModEntities.MAKIMA.get()));
         for (var t : ModEntities.SUB_MOBS) {
             types.add(t.get());
         }
@@ -117,8 +118,14 @@ public final class Almas {
         }
     }
 
+    // The boss too (Stark 2026-11-12, "bosses usam tudo que têm"): the souls she took in the fight come back for her.
     public static boolean canSummon(LivingEntity caster) {
-        return !(caster instanceof SoulBoss) && !stock(caster).isEmpty();
+        return !stock(caster).isEmpty();
+    }
+
+    // How many souls she has out now.
+    public static int out(LivingEntity owner) {
+        return Puppets.count(owner, Puppets.SOUL);
     }
 
     public static boolean summon(LivingEntity caster, ServerLevel level) {

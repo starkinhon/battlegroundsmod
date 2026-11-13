@@ -78,6 +78,34 @@ public final class ModWorldgen {
     // The Monte Myoboku's stone spires, giant plants, oil ponds and stone toads (MyobokuFeature).
     public static final Supplier<MyobokuFeature> MYOBOKU = FEATURES.register("myoboku",
             () -> new MyobokuFeature(NoneFeatureConfiguration.CODEC));
+    // The Templos Antigos' temples, stairways with torii, cedars, sakuras and hokoras (TemploFeature).
+    public static final Supplier<TemploFeature> TEMPLOS_ANTIGOS_FEATURE = FEATURES.register("templos_antigos",
+            () -> new TemploFeature(NoneFeatureConfiguration.CODEC));
+    // The Floresta Negra's black trees, rotten shrines, broken torii and the lair of the Árvore Matriz.
+    public static final Supplier<FlorestaNegraFeature> FLORESTA_NEGRA_FEATURE = FEATURES.register("floresta_negra",
+            () -> new FlorestaNegraFeature(NoneFeatureConfiguration.CODEC));
+    // The Aldeia Amaldiçoada's swamp cypresses and the village on stilts with its paddies, shrine and cage shed.
+    public static final Supplier<AldeiaFeature> ALDEIA_FEATURE = FEATURES.register("aldeia_amaldicoada",
+            () -> new AldeiaFeature(NoneFeatureConfiguration.CODEC));
+    // The Mar de Dagon's coast (sand, reefs, palms, stranded fish) and the Nest with its giant tentacles.
+    public static final Supplier<DagonFeature> DAGON_FEATURE = FEATURES.register("mar_de_dagon",
+            () -> new DagonFeature(NoneFeatureConfiguration.CODEC));
+    // The Floresta de Hanami's ancient trees, giant flowers and mushrooms, stakes and buds, and the Coração da Hanami.
+    public static final Supplier<HanamiFeature> HANAMI_FEATURE = FEATURES.register("floresta_de_hanami",
+            () -> new HanamiFeature(NoneFeatureConfiguration.CODEC));
+    // The Terras do Jogo's basalt fields, lava rivers, columns, fumaroles and hot springs, and the volcano with its meteor.
+    public static final Supplier<JogoFeature> JOGO_FEATURE = FEATURES.register("terras_do_jogo",
+            () -> new JogoFeature(NoneFeatureConfiguration.CODEC));
+    // The Outono de Kyoto's maples, ginkgos, pines, bamboo groves and streams, and the pond garden with the Golden
+    // Pavilion.
+    public static final Supplier<KyotoFeature> KYOTO_FEATURE = FEATURES.register("outono_de_kyoto",
+            () -> new KyotoFeature(NoneFeatureConfiguration.CODEC));
+    // The Colônia do Jogo do Abate's pieces of destroyed city: the colonies under the dome and the ruins.
+    public static final Supplier<ColoniaFeature> COLONIA_FEATURE = FEATURES.register("colonia_do_jogo_do_abate",
+            () -> new ColoniaFeature(NoneFeatureConfiguration.CODEC));
+    // Shibuya's city: streets, buildings, skyscrapers, shrines, the metro and the street furniture.
+    public static final Supplier<ShibuyaFeature> SHIBUYA_FEATURE = FEATURES.register("shibuya",
+            () -> new ShibuyaFeature(NoneFeatureConfiguration.CODEC));
 
     // The Naruto biomes of the normal overworld (put there by NarutoRegion).
     public static final ResourceKey<Biome> FLORESTA_DA_FOLHA = biome("floresta_da_folha");
@@ -89,6 +117,19 @@ public final class ModWorldgen {
     public static final ResourceKey<Biome> MONTE_MYOBOKU = biome("monte_myoboku");
     public static final TagKey<Biome> NARUTO_BIOMES = TagKey.create(Registries.BIOME,
             ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "universe_naruto"));
+
+    // The Jujutsu biomes of the normal overworld (put there by JujutsuRegion).
+    public static final ResourceKey<Biome> TEMPLOS_ANTIGOS = biome("templos_antigos");
+    public static final ResourceKey<Biome> FLORESTA_NEGRA = biome("floresta_negra");
+    public static final ResourceKey<Biome> ALDEIA_AMALDICOADA = biome("aldeia_amaldicoada");
+    public static final ResourceKey<Biome> MAR_DE_DAGON = biome("mar_de_dagon");
+    public static final ResourceKey<Biome> FLORESTA_DE_HANAMI = biome("floresta_de_hanami");
+    public static final ResourceKey<Biome> TERRAS_DO_JOGO = biome("terras_do_jogo");
+    public static final ResourceKey<Biome> OUTONO_DE_KYOTO = biome("outono_de_kyoto");
+    public static final ResourceKey<Biome> COLONIA_DO_JOGO_DO_ABATE = biome("colonia_do_jogo_do_abate");
+    public static final ResourceKey<Biome> SHIBUYA = biome("shibuya");
+    public static final TagKey<Biome> JUJUTSU_BIOMES = TagKey.create(Registries.BIOME,
+            ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "universe_jujutsu"));
 
     // The Dragon Ball biomes of the normal overworld (tools/biomes/dragonball_biomes.py, put there by DragonRegion).
     public static final ResourceKey<Biome> TERRAS_DO_DRAGAO = biome("terras_do_dragao");

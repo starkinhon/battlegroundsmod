@@ -1,1 +1,12 @@
-{"parent": "minecraft:item/generated", "textures": {"layer0": "battlegroundsmod:item/guizo"}}
+{
+  "loader": "neoforge:separate_transforms",
+  "gui_light": "front",
+  "base": {
+    "parent": "battlegroundsmod:item/guizo_3d"
+  },
+  "perspectives": {
+    "gui": {
+      "parent": "battlegroundsmod:item/guizo_icone"
+    }
+  }
+}

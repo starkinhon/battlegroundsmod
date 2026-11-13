@@ -80,7 +80,8 @@ public final class SoulsWorld {
         if (spawn == null) {
             // no dry Terras do Dragão near (it would take a strange seed): any universe land
             spawn = findSpawn(level, biome -> !biome.is(ModWorldgen.MAR_DO_SUL) && !biome.is(ModWorldgen.MAR_DA_NEVOA)
-                    && (biome.is(ModWorldgen.DRAGONBALL_BIOMES) || biome.is(ModWorldgen.NARUTO_BIOMES)));
+                    && (biome.is(ModWorldgen.DRAGONBALL_BIOMES) || biome.is(ModWorldgen.NARUTO_BIOMES)
+                    || biome.is(ModWorldgen.JUJUTSU_BIOMES)));
         }
         if (spawn == null) {
             // vanilla's own search
@@ -137,7 +138,7 @@ public final class SoulsWorld {
             return;
         }
         Holder<Biome> biome = event.getLevel().getBiome(event.getPos());
-        if (!biome.is(ModWorldgen.DRAGONBALL_BIOMES) && !biome.is(ModWorldgen.NARUTO_BIOMES)) {
+        if (!biome.is(ModWorldgen.DRAGONBALL_BIOMES) && !biome.is(ModWorldgen.NARUTO_BIOMES) && !biome.is(ModWorldgen.JUJUTSU_BIOMES)) {
             return;
         }
         if (biome.is(ModWorldgen.MAR_DO_SUL) || biome.is(ModWorldgen.MAR_DA_NEVOA)) {

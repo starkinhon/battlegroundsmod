@@ -1,0 +1,96 @@
+# Só as arenas fechadas/escuras (Stark 2026-11-13: "escuras pra caralho") e o Kaioh novo.
+
+/devc fechar
+/dev preparar
+/devc janela 1600 900
+/devc fov 70
+/gamemode creative
+/gamerule sendCommandFeedback false
+espera 300
+
+# ino: Salão das preliminares
+/soul desafios ir ino
+espera arena ino 1200
+espera 300
+/devc vista primeira
+/devc print arenas_luz/09_ino_jogador
+/devc camera lado 40 18
+espera 10
+/devc print arenas_luz/09_ino_lado
+/devc camera cima 70
+espera 10
+/devc print arenas_luz/09_ino_cima
+/devc camera jogador
+
+# nanami: Esgoto
+/soul desafios ir nanami
+espera arena nanami 1200
+espera 300
+/devc vista primeira
+/devc print arenas_luz/17_nanami_jogador
+/devc camera lado 40 18
+espera 10
+/devc print arenas_luz/17_nanami_lado
+/devc camera cima 70
+espera 10
+/devc print arenas_luz/17_nanami_cima
+/devc camera jogador
+
+# kokushibo: Castelo Infinito
+/soul desafios ir kokushibo
+espera arena kokushibo 1200
+espera 300
+/devc vista primeira
+/devc print arenas_luz/26_kokushibo_jogador
+/devc camera lado 40 18
+espera 10
+/devc print arenas_luz/26_kokushibo_lado
+/devc camera cima 70
+espera 10
+/devc print arenas_luz/26_kokushibo_cima
+/devc camera jogador
+
+# choso: Plataforma do metrô
+/soul desafios ir choso
+espera arena choso 1200
+espera 300
+/devc vista primeira
+/devc print arenas_luz/20_choso_jogador
+/devc camera lado 40 18
+espera 10
+/devc print arenas_luz/20_choso_lado
+/devc camera cima 70
+espera 10
+/devc print arenas_luz/20_choso_cima
+/devc camera jogador
+
+# sasuke: Esconderijo Uchiha
+/soul desafios ir sasuke
+espera arena sasuke 1200
+espera 300
+/devc vista primeira
+/devc print arenas_luz/13_sasuke_jogador
+/devc camera lado 40 18
+espera 10
+/devc print arenas_luz/13_sasuke_lado
+/devc camera cima 70
+espera 10
+/devc print arenas_luz/13_sasuke_cima
+/devc camera jogador
+
+# goku: Planeta do Senhor Kaioh
+/soul desafios ir goku
+espera arena goku 1200
+espera 300
+/devc vista primeira
+/devc print arenas_luz/04_goku_jogador
+/devc camera lado 40 18
+espera 10
+/devc print arenas_luz/04_goku_lado
+/devc camera cima 70
+espera 10
+/devc print arenas_luz/04_goku_cima
+/devc camera jogador
+
+/soul desafios sair
+sair

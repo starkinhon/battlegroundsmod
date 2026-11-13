@@ -80,9 +80,11 @@ public class BattlegroundsModClient {
         modEventBus.addListener(BattlegroundsModClient::onRegisterLayerDefinitions);
         modEventBus.addListener(FxShaders::onRegisterShaders);
         modEventBus.addListener(BattlegroundsModClient::onRegisterClientExtensions);
+        modEventBus.addListener(com.starkinhon.battlegroundsmod.client.ArenaClient::onRegisterEffects);
         modContainer.registerConfig(ModConfig.Type.CLIENT, FxConfig.SPEC);
         modContainer.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
         NeoForge.EVENT_BUS.addListener(MeteorRenderer::onRenderLevel);
+        com.starkinhon.battlegroundsmod.client.ChallengeScreen.register();
         // Respawning keeps the entity id with a new body (clock back to 0): drop the poses of the move it died in.
         NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent.Clone e) -> {
             com.starkinhon.battlegroundsmod.client.SkillAnimations.forget(e.getOldPlayer().getId());
@@ -114,6 +116,12 @@ public class BattlegroundsModClient {
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.EndValleyFx::onClientTick);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.MyobokuFx::onRenderLevel);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.MyobokuFx::onClientTick);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.TemploFx::onRenderLevel);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.TemploFx::onClientTick);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.JujutsuAirFx::onRenderLevel);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.JujutsuAirFx::onClientTick);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.JujutsuAirFx::onFogColor);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.JujutsuAirFx::onFog);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.CreativeSubTabs::onInit);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.CreativeSubTabs::onRenderPre);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.CreativeSubTabs::onRenderPost);
@@ -142,8 +150,11 @@ public class BattlegroundsModClient {
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.FugaRenderer::onRenderLevel);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.FugaRenderer::onFog);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.FugaRenderer::onFogColor);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.FzFx::onFog);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.FzFx::onFogColor);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.TimeChamberClient::onFog);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.TimeChamberClient::onFogColor);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.ArenaClient::onFog);
         NeoForge.EVENT_BUS.addListener(RenderLivingEvent.Pre.class, AshDeath::onRenderLiving);
         // The B's flight: both bodies keep facing the way it goes, the target's whole body tumbles and lies down (pushed last,
         // after anything that cancels the render, and always popped).
@@ -183,6 +194,9 @@ public class BattlegroundsModClient {
                 com.starkinhon.battlegroundsmod.client.FlightPose::onRenderPre);
         NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.client.event.RenderPlayerEvent.Post.class,
                 com.starkinhon.battlegroundsmod.client.FlightPose::onRenderPost);
+        // The combat flight: the camera stays turned to the locked target.
+        NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.client.event.RenderFrameEvent.Pre.class,
+                com.starkinhon.battlegroundsmod.client.AirFightClient::onFrame);
         NeoForge.EVENT_BUS.addListener(BattlegroundsModClient::onClientTick);
         // Shenlong's summoning (the world dims, the dragon rises, the wish menu).
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.ShenlongScene::onRenderLevel);
@@ -202,6 +216,12 @@ public class BattlegroundsModClient {
                 InoClient::onCameraAngles);
         NeoForge.EVENT_BUS.addListener(ClientTickEvent.Post.class, InoClient::tick);
         NeoForge.EVENT_BUS.addListener(InputEvent.InteractionKeyMappingTriggered.class, PunchInput::onInteraction);
+        // the combat flight is the approved page run on the client (PreviewFight): the hotbar's numbers are its moves,
+        // and its afterimages are taken from the bodies as drawn
+        NeoForge.EVENT_BUS.addListener(InputEvent.Key.class, com.starkinhon.battlegroundsmod.client.PreviewFight::onKey);
+        NeoForge.EVENT_BUS.addListener(ClientTickEvent.Pre.class, com.starkinhon.battlegroundsmod.client.PreviewFight::tickPre);
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, true, RenderLivingEvent.Post.class,
+                com.starkinhon.battlegroundsmod.client.fx.PreviewFx::onRenderLiving);
         NeoForge.EVENT_BUS.addListener(InputEvent.MouseScrollingEvent.class, com.starkinhon.battlegroundsmod.client.fx.AzulRenderer::onScroll);
         // The Duelo de Expansões minigame's keys.
         NeoForge.EVENT_BUS.addListener(InputEvent.Key.class, com.starkinhon.battlegroundsmod.client.fx.DuelScene::onKey);
@@ -294,6 +314,9 @@ public class BattlegroundsModClient {
         // Kakashi's Sennen Goroshi title (over the world, under the HUD).
         event.registerBelowAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "kakashi_title"),
                 com.starkinhon.battlegroundsmod.client.fx.KakashiTitle::render);
+        // Hashirama's flowers: the sleep closing in.
+        event.registerBelowAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "hashirama_sleep"),
+                com.starkinhon.battlegroundsmod.client.fx.hs.HsFx::renderGui);
         event.registerBelowAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "domain_void"),
                 com.starkinhon.battlegroundsmod.client.fx.DomainScene::renderGui);
         // Inside Aizen's Black Box the dark closes in over the view (below the HUD).
@@ -348,6 +371,8 @@ public class BattlegroundsModClient {
 
     // The Madara skin uses slim (3 pixel) arms.
     private static void onRegisterRenderers(EntityRenderersEvent.RegisterRenderers event) {
+        event.registerBlockEntityRenderer(ModBlocks.TELAO.get(), com.starkinhon.battlegroundsmod.client.TelaoRenderer::new);
+        event.registerEntityRenderer(ModEntities.NINJA_THROWN.get(), net.minecraft.client.renderer.entity.ThrownItemRenderer::new);
         event.registerEntityRenderer(ModEntities.MADARA.get(), context -> new SoulBossRenderer<>(context, "madara", true));
         event.registerEntityRenderer(ModEntities.BILLS.get(), context -> new SoulBossRenderer<>(context, "bills", true));
         event.registerEntityRenderer(ModEntities.GOJO.get(), context -> new SoulBossRenderer<>(context, "gojo", true));
@@ -361,6 +386,8 @@ public class BattlegroundsModClient {
         });
         event.registerEntityRenderer(ModEntities.SAITAMA.get(), context -> new SoulBossRenderer<>(context, "saitama", false));
         event.registerEntityRenderer(ModEntities.SHIGARAKI.get(), context -> new SoulBossRenderer<>(context, "shigaraki", false));
+        event.registerEntityRenderer(ModEntities.HASHIRAMA.get(), com.starkinhon.battlegroundsmod.client.HashiramaRenderer::new);
+        event.registerEntityRenderer(ModEntities.FREEZA_TOTAL.get(), com.starkinhon.battlegroundsmod.client.FreezaTotalRenderer::new);
         event.registerEntityRenderer(ModEntities.MAKIMA.get(), context -> new SoulBossRenderer<>(context, "makima", true));
         event.registerEntityRenderer(ModEntities.DUMMY.get(), context -> new DummyRenderer<>(context, "steve"));
         event.registerEntityRenderer(ModEntities.DUMMY_ATTACKER.get(), context -> new DummyRenderer<>(context, "kai"));
@@ -389,34 +416,19 @@ public class BattlegroundsModClient {
         event.registerEntityRenderer(ModEntities.INUMAKI.get(), context -> new SoulBossRenderer<>(context, "inumaki", false));
         event.registerEntityRenderer(ModEntities.MIWA.get(), context -> new SoulBossRenderer<>(context, "miwa", true));
         event.registerEntityRenderer(ModEntities.NARUTO_CLONE.get(), com.starkinhon.battlegroundsmod.client.NarutoCloneRenderer::new);
-        event.registerEntityRenderer(ModEntities.SOLDADO_RED_RIBBON.get(),
-                context -> new SoulBossRenderer<>(context, false, "soldado_red_ribbon_0", "soldado_red_ribbon_1"));
-        event.registerEntityRenderer(ModEntities.SAIBAMAN.get(), context -> new SoulBossRenderer<>(context, "saibaman", false));
-        event.registerEntityRenderer(ModEntities.BANDIDO_DESERTO.get(),
-                context -> new SoulBossRenderer<>(context, false, "bandido_deserto_0", "bandido_deserto_1"));
-        event.registerEntityRenderer(ModEntities.PIRATA.get(), context -> new SoulBossRenderer<>(context, false, "pirata_0", "pirata_1"));
-        // the yeti: a head and a half taller than a man
-        event.registerEntityRenderer(ModEntities.YETI.get(), context -> new SoulBossRenderer<>(context, "yeti", false) {
-            @Override
-            protected void scale(com.starkinhon.battlegroundsmod.boss.SoulMob entity, com.mojang.blaze3d.vertex.PoseStack pose, float partialTick) {
-                pose.scale(1.35f, 1.35f, 1.35f);
-            }
-        });
         // the Dragon Ball biomes' creatures, box models from the approved preview (client/blocky)
         event.registerEntityRenderer(ModEntities.NAMEKIANO.get(), context -> new com.starkinhon.battlegroundsmod.client.blocky.BlockyRenderer<>(context,
                 java.util.stream.IntStream.range(0, com.starkinhon.battlegroundsmod.animal.db.Namekiano.VARIANTS).mapToObj(i -> "namekiano_" + i).toList(),
                 com.starkinhon.battlegroundsmod.client.blocky.DbAnims::namek, 0.6f));
-        event.registerEntityRenderer(ModEntities.PEIXE_GIGANTE.get(), context -> new com.starkinhon.battlegroundsmod.client.blocky.BlockyRenderer<>(context, "peixe_gigante", com.starkinhon.battlegroundsmod.client.blocky.DbAnims::peixe, 1.4f));
         event.registerEntityRenderer(ModEntities.ANDROIDE_8.get(), context -> new com.starkinhon.battlegroundsmod.client.blocky.BlockyRenderer<>(context, "androide_8", com.starkinhon.battlegroundsmod.client.blocky.DbAnims::androide, 1.1f));
         event.registerEntityRenderer(ModEntities.LADRAO_URSO.get(), context -> new com.starkinhon.battlegroundsmod.client.blocky.BlockyRenderer<>(context, "ladrao_urso", com.starkinhon.battlegroundsmod.client.blocky.DbAnims::urso, 1.0f));
         event.registerEntityRenderer(ModEntities.BORA.get(), context -> new com.starkinhon.battlegroundsmod.client.blocky.BlockyRenderer<>(context, "bora", com.starkinhon.battlegroundsmod.client.blocky.DbAnims::bora, 0.7f));
-        event.registerEntityRenderer(ModEntities.TIRANOSSAURO.get(),
-                context -> new com.starkinhon.battlegroundsmod.client.animal.DinoRenderer(context, "tiranossauro", 2.6f));
-        event.registerEntityRenderer(ModEntities.PTERODACTILO.get(), com.starkinhon.battlegroundsmod.client.animal.PteroRenderer::new);
-        event.registerEntityRenderer(ModEntities.RAPTOR.get(),
-                context -> new com.starkinhon.battlegroundsmod.client.animal.DinoRenderer(context, "raptor", 1.0f));
-        event.registerEntityRenderer(ModEntities.SOLDADO_FREEZA.get(),
-                context -> new SoulBossRenderer<>(context, false, "soldado_freeza_0", "soldado_freeza_1"));
+        // the Dragon Ball creatures (animal/dbmob): the preview's models and baked animation, the same renderer
+        for (var e : ModEntities.DB_MOBS.entrySet()) {
+            String id = e.getKey();
+            event.registerEntityRenderer(e.getValue().get(), context -> new com.starkinhon.battlegroundsmod.client.blocky.NarutoMobRenderer(context, id,
+                    com.starkinhon.battlegroundsmod.animal.dbmob.DbMobSpec.get(id), "db", com.starkinhon.battlegroundsmod.animal.dbmob.DbTravel::of));
+        }
         // the Naruto biomes' creatures (animal/naruto): the preview's models and baked animation
         for (var e : ModEntities.NARUTO_MOBS.entrySet()) {
             String id = e.getKey();
@@ -443,21 +455,7 @@ public class BattlegroundsModClient {
         event.registerEntityRenderer(ModEntities.NPC_TAMAYO.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_tamayo"));
         event.registerEntityRenderer(ModEntities.NPC_GOHAN.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_gohan"));
         event.registerEntityRenderer(ModEntities.RADITZ.get(), context -> new SoulBossRenderer<>(context, "raditz", false));
-        // the Cell Jr.: child-sized
-        event.registerEntityRenderer(ModEntities.CELL_JR.get(), context -> new SoulBossRenderer<>(context, "cell_jr", false) {
-            @Override
-            protected void scale(com.starkinhon.battlegroundsmod.boss.SoulMob entity, com.mojang.blaze3d.vertex.PoseStack pose, float partialTick) {
-                pose.scale(0.72f, 0.72f, 0.72f);
-            }
-        });
         event.registerEntityRenderer(ModEntities.PUI_PUI.get(), context -> new SoulBossRenderer<>(context, "pui_pui", false));
-        // Yakon: a head taller and broad
-        event.registerEntityRenderer(ModEntities.YAKON.get(), context -> new SoulBossRenderer<>(context, "yakon", false) {
-            @Override
-            protected void scale(com.starkinhon.battlegroundsmod.boss.SoulMob entity, com.mojang.blaze3d.vertex.PoseStack pose, float partialTick) {
-                pose.scale(1.3f, 1.28f, 1.3f);
-            }
-        });
         event.registerEntityRenderer(ModEntities.DABURA.get(), context -> new SoulBossRenderer<>(context, "dabura", false));
         event.registerEntityRenderer(ModEntities.NPC_BULMA.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_bulma"));
         event.registerEntityRenderer(ModEntities.NPC_MESTRE_KAME.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_mestre_kame"));
@@ -472,10 +470,6 @@ public class BattlegroundsModClient {
     }
 
     private static void onRegisterLayerDefinitions(EntityRenderersEvent.RegisterLayerDefinitions event) {
-        event.registerLayerDefinition(com.starkinhon.battlegroundsmod.client.animal.DinoModel.LAYER,
-                com.starkinhon.battlegroundsmod.client.animal.DinoModel::create);
-        event.registerLayerDefinition(com.starkinhon.battlegroundsmod.client.animal.PteroModel.LAYER,
-                com.starkinhon.battlegroundsmod.client.animal.PteroModel::create);
     }
 
     // Players' eyes can trail light too (Mangekyo, see Aura), so their renderers learn where the eyes are.
@@ -487,6 +481,8 @@ public class BattlegroundsModClient {
                 renderer.addLayer(new com.starkinhon.battlegroundsmod.client.fx.LuffyFx.Layer<>(renderer));
                 com.starkinhon.battlegroundsmod.client.fx.LuffyFx.wrapHeldLayer(renderer);
                 renderer.addLayer(new com.starkinhon.battlegroundsmod.client.outfit.KokushiboSheathLayer<>(renderer));
+                renderer.addLayer(new com.starkinhon.battlegroundsmod.client.fx.MajinMarkLayer<>(renderer));
+                renderer.addLayer(new com.starkinhon.battlegroundsmod.client.outfit.GourdLayer<>(renderer));
             }
         }
     }

@@ -226,7 +226,7 @@ public final class Vegeta {
         SubCommon.pose(caster, "db.palma_dir");
         SubCommon.busy(caster, form + 6);
         caster.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, form, 3, false, false));
-        SubNet.send(level, SubNet.KI_AURA, caster.getId(), caster.position(), new Vec3(0.6, 0, 0), form + 4, Db.GOLD, 1);
+        SubNet.send(level, SubNet.KI_AURA, caster.getId(), caster.position(), new Vec3(0.6, 0, 0), form + 4, Db.PURPLE, 1);
         SubCommon.sound(level, caster.position(), SoundEvents.BEACON_ACTIVATE, 1.4f, 1.2f);
         Vec3[] from = {null};
         Vec3[] dir = {null};
@@ -341,7 +341,7 @@ public final class Vegeta {
         Vec3 start = caster.position();
         SubCommon.pose(caster, "db.bracos_abertos");
         // The aura at its peak (strength 1: it bursts when lit), bigger than ever.
-        SubNet.send(level, SubNet.KI_AURA, caster.getId(), start, new Vec3(1, 0, 0), FINAL_CHARGE + 6, Db.GOLD, 1.42f);
+        SubNet.send(level, SubNet.KI_AURA, caster.getId(), start, new Vec3(1, 0, 0), FINAL_CHARGE + 6, Db.PURPLE, 1.42f);
         SubCommon.sound(level, start, SoundEvents.BEACON_ACTIVATE, 2.5f, 0.6f);
         Runnable[] lift = {Freeze.hold(caster, FINAL_CHARGE + 2, a -> start.add(0, 0.9 * SubCommon.smooth(a / 48f), 0))};
         Tasks.add(age -> {
@@ -427,7 +427,7 @@ public final class Vegeta {
         int left = SubNet.newId();
         int beam = SubNet.newId();
         SubCommon.pose(caster, "db.bracos_abertos");
-        SubNet.send(level, SubNet.KI_AURA, caster.getId(), caster.position(), new Vec3(0.45, 0, 0), fire, Db.GOLD, 1.3f);
+        SubNet.send(level, SubNet.KI_AURA, caster.getId(), caster.position(), new Vec3(0.45, 0, 0), fire, Db.PURPLE, 1.3f);
         SubCommon.sound(level, caster.position(), SoundEvents.BEACON_ACTIVATE, 2f, 0.9f);
         Map<Integer, Integer> hitAt = new HashMap<>();
         Vec3[] start = {null};

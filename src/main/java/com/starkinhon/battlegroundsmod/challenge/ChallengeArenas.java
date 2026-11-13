@@ -63,27 +63,50 @@ import net.neoforged.neoforge.network.PacketDistributor;
 // - stamps the card DERROTADO in the book;
 // - lets that character spawn in its universe's world (before that, only rarely: chanceRara);
 // - brings the player back home after a few seconds (time to pick up the soul).
-// All arenas live in one void dimension (battlegroundsmod:arenas), one slot each, built from code in the universe's
-// blocks (padrao.desafios.json) and rebuilt clean before every fight. Dying or leaving ends the fight.
+// All arenas live in a void dimension (battlegroundsmod:arenas, or arenas_noite for the ones that happen at night), one
+// slot each. Each arena is the canon place of that fight (Stark 2026-11-12), made by tools/arenas and read from
+// souls_arenas/<id>.bin (ArenaTemplate): the same blocks the web preview shows. Before every fight it is put back the
+// way the generator made it over a few ticks (the fight circle cleaned of what the last fight left), with its own
+// biome for the sky, fog and grass colours, and invisible walls round the fight circle. Dying or leaving ends the fight.
 // A universe's bosses open once the player beats some of its SubAlmas (subAlmasParaChefes).
 // With /gamerule soulsProgressao false (arena mode) or in a flat world everything stays free, spawns included.
 public final class ChallengeArenas {
     public static final ResourceKey<Level> ARENAS = ResourceKey.create(Registries.DIMENSION,
             ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "arenas"));
-    private static final int SPACING = 400;
+    // Same void, the clock stopped at midnight: Shibuya on Halloween night, the metro, the Infinity Castle.
+    public static final ResourceKey<Level> ARENAS_NIGHT = ResourceKey.create(Registries.DIMENSION,
+            ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "arenas_noite"));
+    // The scenery of an arena reaches ~180 blocks from its centre; the old round arenas (every 400 blocks on z = 0)
+    // stay behind, out of sight, on their own row.
+    public static final int SPACING = 1024;
+    public static final int ROW_Z = 8192;
     private static final int FLOOR_Y = 64;
+    // Server time per tick spent putting an arena back (the tick has 50 ms). Stark's PC test 2026-11-13: a fixed 40k
+    // blocks per tick ate 200-460 ms per tick, mostly generating the void chunks on the main thread; now the chunks are
+    // loaded first by a ticket (worker threads) and the placing stops after this much time.
+    private static final long BUILD_NANOS = 12_000_000L;
+    private static final net.minecraft.server.level.TicketType<net.minecraft.world.level.ChunkPos> ARENA_TICKET =
+            net.minecraft.server.level.TicketType.create("battlegroundsmod_arena", java.util.Comparator.comparingLong(net.minecraft.world.level.ChunkPos::toLong));
+    private static final int FLAGS = Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE | Block.UPDATE_SUPPRESS_DROPS;
     private static final int COUNTDOWN = 80;
     private static final int RETURN_DELAY = 240;
 
-    private enum State { COUNTDOWN, FIGHT, DONE }
+    private enum State { BUILDING, COUNTDOWN, FIGHT, DONE }
 
     private static final class Session {
         String id;
         BlockPos center;
-        ResourceKey<Level> backLevel;
-        Vec3 backPos;
-        float backYaw;
+        ResourceKey<Level> arena;
+        ArenaTemplate.Meta meta;
+        Build build;
+        // Everyone who came in (also those who fell since: the win counts for them), where each goes back to, and
+        // who already took the soul home.
+        final List<UUID> members = new ArrayList<>();
+        final Map<UUID, Back> back = new HashMap<>();
+        final java.util.Set<UUID> paid = new java.util.HashSet<>();
         long fightAt;
+        long buildStart;
+        long buildNanos;
         long doneAt;
         UUID boss;
         boolean bossDied;
@@ -91,9 +114,84 @@ public final class ChallengeArenas {
         State state = State.COUNTDOWN;
     }
 
+    private record Back(ResourceKey<Level> level, Vec3 pos, float yaw) {
+    }
+
+    // Each player in a fight maps to it; a group's players share one.
     private static final Map<UUID, Session> SESSIONS = new HashMap<>();
 
     private ChallengeArenas() {
+    }
+
+    // While the arena itself is being placed or cleared (server thread only): its barriers and bedrock may change.
+    private static int placing;
+
+    // Stark 2026-11-13: Madara's meteor and Shigaraki's decay wiped out the invisible wall and the floor of the arenas
+    // (the skills set blocks directly, so a barrier's blast resistance never comes into it). In the arena dimensions
+    // nothing but the arena builder may change a barrier or bedrock block (LevelMixin asks here before every setBlock).
+    public static boolean protectedBlock(Level level, BlockPos pos) {
+        if (placing > 0 || level.isClientSide() || !isArena(level.dimension())) {
+            return false;
+        }
+        BlockState old = level.getBlockState(pos);
+        return old.is(Blocks.BARRIER) || old.is(Blocks.BEDROCK);
+    }
+
+    // A building that crosses the invisible wall is part of the wall (the barrier only fills the air around it). When a
+    // technique blows a hole in it, the hole becomes barrier, so the fight never leaks out through the rubble.
+    public static BlockState ringFill(Level level, BlockPos pos, BlockState state) {
+        if (placing > 0 || level.isClientSide() || !state.isAir() || !isArena(level.dimension())) {
+            return state;
+        }
+        for (Session s : SESSIONS.values()) {
+            if (s.center == null || s.meta == null || s.state == State.BUILDING || !level.dimension().equals(s.arena)) {
+                continue;
+            }
+            int y = pos.getY() - s.center.getY();
+            if (y < -40 || y > s.meta.altura() + 1) {
+                continue;
+            }
+            double dx = pos.getX() - s.center.getX(), dz = pos.getZ() - s.center.getZ();
+            double d = Math.sqrt(dx * dx + dz * dz);
+            if (d > s.meta.raio() + 0.5 && d <= s.meta.raio() + 1.5) {
+                return Blocks.BARRIER.defaultBlockState();
+            }
+        }
+        return state;
+    }
+
+    public static boolean isArena(ResourceKey<Level> dimension) {
+        return dimension.equals(ARENAS) || dimension.equals(ARENAS_NIGHT);
+    }
+
+    // Which arena a position in the arena dimensions belongs to (the client's fog, Fx), or null.
+    public static String arenaAt(double x, double z) {
+        if (Math.abs(z - ROW_Z) > SPACING / 2.0) {
+            return null;
+        }
+        int slot = (int) Math.round(x / SPACING);
+        ChallengeSpec spec = ChallengeSpec.get();
+        int index = 0;
+        for (ChallengeSpec.Universe universe : spec.universos()) {
+            for (ChallengeSpec.Challenge c : universe.desafios()) {
+                if (index++ == slot) {
+                    return c.id();
+                }
+            }
+        }
+        return null;
+    }
+
+    // The fight floor's height: low enough for the tallest scenery, high enough for the deepest (the world is 0-255).
+    private static int floorY(ArenaTemplate.Meta meta) {
+        int y = Math.max(FLOOR_Y, 2 - meta.minY());
+        return Math.min(y, 254 - meta.maxY());
+    }
+
+    // What an arena without a generated file falls back to: the old round arena of its universe's blocks.
+    private static ArenaTemplate.Meta discMeta(String id, ChallengeSpec spec) {
+        int r = spec.raio();
+        return new ArenaTemplate.Meta(id, r, spec.altura(), new int[] {0, 1, -r / 2}, new int[] {0, 1, r / 2}, null, false, -3, 0, id);
     }
 
     public static void register() {
@@ -116,6 +214,8 @@ public final class ChallengeArenas {
 
     // The client's copy of its own wins (ModPayloads.SyncArenaWins), for the book.
     public static volatile List<String> clientWins = List.of();
+    // The client's copy of its records (ModPayloads.SyncArenaRecords): id -> {wins, best seconds}.
+    public static volatile java.util.Map<String, int[]> clientRecords = java.util.Map.of();
 
     public static List<String> wins(Player player) {
         return player.getData(ModAttachments.ARENA_WINS);
@@ -123,6 +223,7 @@ public final class ChallengeArenas {
 
     public static void syncWins(ServerPlayer player) {
         PacketDistributor.sendToPlayer(player, new ModPayloads.SyncArenaWins(List.copyOf(wins(player))));
+        PacketDistributor.sendToPlayer(player, new ModPayloads.SyncArenaRecords(List.copyOf(player.getData(ModAttachments.ARENA_RECORDS))));
     }
 
     private static Component name(String id) {
@@ -172,58 +273,157 @@ public final class ChallengeArenas {
         return !free && universe != null && isBoss(id) && subsBeaten(wins, universe) < subsNeeded(universe);
     }
 
-    // From the book: go to that character's arena.
+    // From the book: go to that character's arena. The player's group (ArenaParty, Stark 2026-11-13: "eu e um amigo
+    // fazer uma arena junto") comes along: everyone in it who is online, alive and not in another fight.
     public static void start(ServerPlayer player, String id) {
+        if (!begin(player, id)) {
+            // the book's VS screen waits for the arena: it closes so the reason (action bar) shows
+            PacketDistributor.sendToPlayer(player, new ModPayloads.ChallengeStatus(false));
+        }
+    }
+
+    private static boolean begin(ServerPlayer player, String id) {
         ChallengeSpec spec = ChallengeSpec.get();
         int slot = spec.slot(id);
         ChallengeSpec.Universe universe = spec.universeOf(id);
-        ServerLevel arena = player.server.getLevel(ARENAS);
+        ArenaTemplate.Meta meta = ArenaTemplate.meta(id);
+        ArenaTemplate template = meta == null ? null : ArenaTemplate.get(id);
+        if (template == null) {
+            meta = discMeta(id, spec);
+        }
+        ResourceKey<Level> key = meta.noite() && player.server.getLevel(ARENAS_NIGHT) != null ? ARENAS_NIGHT : ARENAS;
+        ServerLevel arena = player.server.getLevel(key);
         if (slot < 0 || universe == null) {
-            return;
+            return false;
         }
         if (arena == null) {
             player.displayClientMessage(Component.translatable("message.battlegroundsmod.arena_missing"), false);
-            return;
+            return false;
         }
         if (SESSIONS.containsKey(player.getUUID())) {
             player.displayClientMessage(Component.translatable("message.battlegroundsmod.arena_busy"), true);
-            return;
+            return false;
         }
         if (locked(wins(player), id, !Progression.on(player))) {
             player.displayClientMessage(Component.translatable("message.battlegroundsmod.arena_locked", subsNeeded(universe), universe.nome()), true);
-            return;
+            return false;
         }
         if (entityType(id) == null) {
             player.displayClientMessage(Component.translatable("message.battlegroundsmod.arena_no_entity", id), false);
-            return;
+            return false;
         }
-        for (Session other : SESSIONS.values()) {
+        for (Session other : sessions()) {
             if (other.id.equals(id)) {
                 player.displayClientMessage(Component.translatable("message.battlegroundsmod.arena_taken"), true);
-                return;
+                return false;
             }
+        }
+        List<ServerPlayer> team = new ArrayList<>();
+        team.add(player);
+        for (ServerPlayer mate : ArenaParty.others(player)) {
+            if (SESSIONS.containsKey(mate.getUUID()) || !mate.isAlive() || mate.isSpectator()) {
+                player.displayClientMessage(Component.translatable("message.battlegroundsmod.arena_mate_busy", mate.getDisplayName()), false);
+                continue;
+            }
+            team.add(mate);
         }
         Session session = new Session();
         session.id = id;
-        session.center = new BlockPos(slot * SPACING, FLOOR_Y, 0);
-        boolean fromArena = player.level().dimension().equals(ARENAS);
-        session.backLevel = fromArena ? Universes.homeLevel(player).dimension() : player.level().dimension();
-        session.backPos = fromArena ? Universes.homePos(player) : player.position();
-        session.backYaw = player.getYRot();
-        build(arena, session.center, spec, universe);
+        session.meta = meta;
+        session.arena = key;
+        session.center = new BlockPos(slot * SPACING, template == null ? FLOOR_Y : floorY(meta), ROW_Z);
+        for (ServerPlayer p : team) {
+            boolean fromArena = isArena(p.level().dimension());
+            session.back.put(p.getUUID(), new Back(fromArena ? Universes.homeLevel(p).dimension() : p.level().dimension(),
+                    fromArena ? Universes.homePos(p) : p.position(), p.getYRot()));
+            session.members.add(p.getUUID());
+            SESSIONS.put(p.getUUID(), session);
+            if (p != player) {
+                p.displayClientMessage(Component.translatable("message.battlegroundsmod.arena_mate_took", player.getDisplayName(), name(id)), false);
+            }
+        }
+        if (template == null) {
+            placing++;
+            try {
+                buildDisc(arena, session.center, spec, universe);
+            } finally {
+                placing--;
+            }
+            enter(arena, session, team);
+            return true;
+        }
+        // Put the arena back over the next ticks; the players go in when it is ready (about a second).
+        session.state = State.BUILDING;
+        session.build = new Build(template, meta, session.center, arena);
+        session.buildStart = arena.getGameTime();
+        for (ServerPlayer p : team) {
+            p.displayClientMessage(Component.translatable("message.battlegroundsmod.arena_building", name(id)), true);
+        }
+        return true;
+    }
+
+    // Every fight once, though each of its players maps to it.
+    private static List<Session> sessions() {
+        List<Session> list = new ArrayList<>();
+        for (Session s : SESSIONS.values()) {
+            if (!list.contains(s)) {
+                list.add(s);
+            }
+        }
+        return list;
+    }
+
+    private static boolean anyoneIn(Session session) {
+        return SESSIONS.containsValue(session);
+    }
+
+    // The arena is ready: the players come in at their side, facing the challenger's, and the countdown starts. The
+    // first stands on the arena's spot, the others two blocks to each side of it.
+    private static void enter(ServerLevel arena, Session session, List<ServerPlayer> players) {
+        ArenaTemplate.Meta meta = session.meta;
+        int r = meta.raio();
+        AABB box = new AABB(session.center).inflate(r + 3, 0, r + 3).expandTowards(0, meta.altura() + 4, 0).expandTowards(0, -16, 0);
+        for (Entity entity : arena.getEntities((Entity) null, box, e -> !(e instanceof Player))) {
+            entity.discard();
+        }
+        BlockPos c = session.center;
+        double dx = meta.desafiante()[0] - meta.jogador()[0], dz = meta.desafiante()[2] - meta.jogador()[2];
+        float yaw = (float) (Mth.atan2(dz, dx) * Mth.RAD_TO_DEG) - 90f;
+        double len = Math.max(1e-3, Math.sqrt(dx * dx + dz * dz));
+        double sideX = -dz / len, sideZ = dx / len;
         session.fightAt = arena.getGameTime() + COUNTDOWN;
-        SESSIONS.put(player.getUUID(), session);
-        player.teleportTo(arena, session.center.getX() + 0.5, FLOOR_Y + 1, session.center.getZ() - spec.raio() / 2.0 + 0.5, 0, 0);
-        title(player, Component.translatable("message.battlegroundsmod.arena_title", name(id))
-                .withStyle(s -> s.withColor(universe.color()).withBold(true)), Component.translatable("message.battlegroundsmod.arena_ready"));
+        session.state = State.COUNTDOWN;
+        ChallengeSpec.Universe universe = ChallengeSpec.get().universeOf(session.id);
+        int color = universe == null ? 0xFFFFFF : universe.color();
+        BlockPos spot = c.offset(meta.jogador()[0], meta.jogador()[1], meta.jogador()[2]);
+        for (int i = 0; i < players.size(); i++) {
+            ServerPlayer player = players.get(i);
+            int step = (i + 1) / 2 * 2 * (i % 2 == 1 ? 1 : -1);          // 0, +2, -2, +4
+            BlockPos at = BlockPos.containing(spot.getX() + 0.5 + sideX * step, spot.getY(), spot.getZ() + 0.5 + sideZ * step);
+            if (step != 0 && !standable(arena, at)) {
+                at = spot;
+            }
+            player.teleportTo(arena, at.getX() + 0.5, at.getY(), at.getZ() + 0.5, yaw, 0);
+            player.fallDistance = 0;
+            // the book's VS screen held on while the arena loaded: now it flashes and opens on the arena
+            PacketDistributor.sendToPlayer(player, new ModPayloads.ChallengeStatus(true));
+            title(player, Component.translatable("message.battlegroundsmod.arena_title", name(session.id))
+                    .withStyle(s -> s.withColor(color).withBold(true)), Component.translatable("message.battlegroundsmod.arena_ready"));
+        }
         Fx.sound(arena, Vec3.atCenterOf(session.center), SoundEvents.END_PORTAL_SPAWN, 0.6f, 1.4f);
     }
 
-    // From the book's "back" button or the end of a fight: home again.
+    private static boolean standable(ServerLevel level, BlockPos at) {
+        return level.getBlockState(at).getCollisionShape(level, at).isEmpty()
+                && level.getBlockState(at.above()).getCollisionShape(level, at.above()).isEmpty()
+                && !level.getBlockState(at.below()).getCollisionShape(level, at.below()).isEmpty();
+    }
+
+    // From the book's "back" button or the end of a fight: home again. The others of the group stay.
     public static void leave(ServerPlayer player) {
-        Session session = SESSIONS.remove(player.getUUID());
+        Session session = SESSIONS.get(player.getUUID());
         if (session == null) {
-            if (player.level().dimension().equals(ARENAS)) {
+            if (isArena(player.level().dimension())) {
                 Vec3 home = Universes.homePos(player);
                 player.teleportTo(Universes.homeLevel(player), home.x, home.y, home.z, player.getYRot(), 0);
             }
@@ -231,39 +431,80 @@ public final class ChallengeArenas {
         }
         if (session.state == State.FIGHT) {
             player.displayClientMessage(Component.translatable("message.battlegroundsmod.arena_no_escape"), true);
-            SESSIONS.put(player.getUUID(), session);
             return;
         }
+        SESSIONS.remove(player.getUUID());
         sendBack(player, session);
+        closeIfEmpty(player.server, session);
     }
 
+    // Home, with a copy of every soul lying in the arena: each player of the group takes the prize home.
     private static void sendBack(ServerPlayer player, Session session) {
-        removeBoss(player.server, session);
-        ServerLevel level = player.server.getLevel(session.backLevel);
+        Back back = session.back.get(player.getUUID());
+        ServerLevel level = back == null ? null : player.server.getLevel(back.level());
         if (level == null) {
             level = player.server.overworld();
         }
-        // A soul still lying in the arena goes home with the player: it is the prize of the fight.
+        Vec3 pos = back == null ? Vec3.atBottomCenterOf(level.getSharedSpawnPos()) : back.pos();
+        float yaw = back == null ? player.getYRot() : back.yaw();
+        List<ItemStack> souls = souls(player.server, session, false);
+        player.teleportTo(level, pos.x, pos.y, pos.z, yaw, 0);
+        paySouls(player, session, souls);
+    }
+
+    private static void paySouls(ServerPlayer player, Session session, List<ItemStack> souls) {
+        if (souls.isEmpty() || !session.paid.add(player.getUUID())) {
+            return;
+        }
+        for (ItemStack soul : souls) {
+            ItemStack copy = soul.copy();
+            if (!player.getInventory().add(copy)) {
+                player.drop(copy, false);
+            }
+        }
+    }
+
+    // The soul crystals lying in the arena (copies); take = also remove them from the arena.
+    private static List<ItemStack> souls(MinecraftServer server, Session session, boolean take) {
         List<ItemStack> souls = new ArrayList<>();
-        ServerLevel arena = player.server.getLevel(ARENAS);
+        ServerLevel arena = session.arena == null ? null : server.getLevel(session.arena);
         if (arena != null && session.center != null) {
             AABB box = new AABB(session.center).inflate(80, 64, 80);
             for (net.minecraft.world.entity.item.ItemEntity item : arena.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, box,
                     e -> e.getItem().getItem() instanceof com.starkinhon.battlegroundsmod.item.SoulItem)) {
                 souls.add(item.getItem().copy());
-                item.discard();
+                if (take) {
+                    item.discard();
+                }
             }
         }
-        player.teleportTo(level, session.backPos.x, session.backPos.y, session.backPos.z, session.backYaw, 0);
-        for (ItemStack soul : souls) {
-            if (!player.getInventory().add(soul)) {
-                player.drop(soul, false);
+        return souls;
+    }
+
+    // The last player of the fight is gone: a partner who fell before the win gets the soul at home, then the arena
+    // is cleared for the next fight.
+    private static void closeIfEmpty(MinecraftServer server, Session session) {
+        if (anyoneIn(session)) {
+            return;
+        }
+        List<ItemStack> souls = souls(server, session, true);
+        if (session.state == State.DONE) {
+            for (UUID id : session.members) {
+                ServerPlayer member = server.getPlayerList().getPlayer(id);
+                if (member != null) {
+                    paySouls(member, session, souls);
+                }
             }
         }
+        removeBoss(server, session);
     }
 
     private static void removeBoss(MinecraftServer server, Session session) {
-        ServerLevel arena = server.getLevel(ARENAS);
+        if (session.build != null) {
+            session.build.release();             // left while the arena was still being put back
+            session.build = null;
+        }
+        ServerLevel arena = session.arena == null ? null : server.getLevel(session.arena);
         if (arena != null && session.boss != null) {
             Entity boss = arena.getEntity(session.boss);
             if (boss != null && boss.isAlive()) {
@@ -278,108 +519,228 @@ public final class ChallengeArenas {
     }
 
     private static void onServerTick(ServerTickEvent.Post event) {
+        ArenaParty.tick(event.getServer());
         if (SESSIONS.isEmpty()) {
             return;
         }
         MinecraftServer server = event.getServer();
-        ServerLevel arena = server.getLevel(ARENAS);
-        for (Map.Entry<UUID, Session> entry : new ArrayList<>(SESSIONS.entrySet())) {
-            Session session = entry.getValue();
-            ServerPlayer player = server.getPlayerList().getPlayer(entry.getKey());
-            if (player == null || arena == null || player.level() != arena) {
-                SESSIONS.remove(entry.getKey());
-                removeBoss(server, session);
+        for (Session session : sessions()) {
+            ServerLevel arena = server.getLevel(session.arena);
+            List<ServerPlayer> players = new ArrayList<>();
+            for (UUID id : session.members) {
+                if (SESSIONS.get(id) != session) {
+                    continue;
+                }
+                ServerPlayer player = server.getPlayerList().getPlayer(id);
+                if (player == null || arena == null || (session.state != State.BUILDING && player.level() != arena)) {
+                    SESSIONS.remove(id);
+                    continue;
+                }
+                players.add(player);
+            }
+            if (players.isEmpty()) {
+                closeIfEmpty(server, session);
                 continue;
             }
             long now = arena.getGameTime();
             switch (session.state) {
+                case BUILDING -> {
+                    long t0 = System.nanoTime();
+                    boolean ready = session.build.step(BUILD_NANOS);
+                    if (!ready && (now - session.buildStart) % 20 == 19) {
+                        for (ServerPlayer player : players) {
+                            player.displayClientMessage(Component.translatable("message.battlegroundsmod.arena_building_pct", name(session.id),
+                                    session.build.percent()), true);
+                        }
+                    }
+                    session.buildNanos += System.nanoTime() - t0;
+                    if (ready) {
+                        // For the tests on Stark's PC: how long the arena took and how much server time it ate.
+                        BattlegroundsMod.LOGGER.info("[arena] {} pronta em {} ticks ({} esperando {} chunks), {} ms de servidor ({} blocos)",
+                                session.id, now - session.buildStart + 1, session.build.chunkWaitTicks, session.build.chunkCount,
+                                session.buildNanos / 1_000_000, session.build.t.blocks);
+                        session.build.release();
+                        session.build = null;
+                        enter(arena, session, players);
+                    }
+                }
                 case COUNTDOWN -> {
                     long left = session.fightAt - now;
-                    if (left == 60 || left == 40 || left == 20) {
-                        title(player, Component.literal(String.valueOf(left / 20)).withStyle(s -> s.withColor(0xF2C94C).withBold(true)), Component.empty());
-                        Fx.sound(arena, player.position(), SoundEvents.NOTE_BLOCK_HAT.value(), 1f, 0.8f);
+                    for (ServerPlayer player : players) {
+                        catchFall(player, arena, session);
+                        if (left == 60 || left == 40 || left == 20) {
+                            title(player, Component.literal(String.valueOf(left / 20)).withStyle(s -> s.withColor(0xF2C94C).withBold(true)), Component.empty());
+                            Fx.sound(arena, player.position(), SoundEvents.NOTE_BLOCK_HAT.value(), 1f, 0.8f);
+                        }
                     }
                     if (left <= 0) {
-                        spawnBoss(player, arena, session);
+                        spawnBoss(arena, session, players);
                     }
                 }
                 case FIGHT -> {
+                    for (ServerPlayer player : players) {
+                        catchFall(player, arena, session);
+                    }
                     Entity boss = session.boss == null ? null : arena.getEntity(session.boss);
                     if (boss == null && !session.bossDied && session.respawns < 3) {
                         // Gone without dying (Stark's test 2026-11-10: he came in flying and Kuririn was "born dead",
                         // a win for nothing): bring the character back instead of counting a win.
                         session.respawns++;
-                        spawnBoss(player, arena, session);
+                        spawnBoss(arena, session, players);
                     } else if (boss == null || !boss.isAlive()) {
-                        win(player, session, now);
+                        win(server, session, now);
                     } else {
                         keepInside(boss, session);
-                        if (now % 20 == 0 && boss instanceof Mob mob && mob.getTarget() != player) {
-                            mob.setTarget(player);
+                        if (now % 20 == 0 && boss instanceof Mob mob && !players.contains(mob.getTarget())) {
+                            mob.setTarget(nearest(boss, players));
                         }
                     }
                 }
                 case DONE -> {
                     if (now >= session.doneAt) {
-                        SESSIONS.remove(entry.getKey());
-                        sendBack(player, session);
+                        for (ServerPlayer player : players) {
+                            SESSIONS.remove(player.getUUID());
+                            sendBack(player, session);
+                        }
+                        closeIfEmpty(server, session);
                     }
                 }
             }
         }
     }
 
+    private static ServerPlayer nearest(Entity from, List<ServerPlayer> players) {
+        ServerPlayer best = players.get(0);
+        for (ServerPlayer player : players) {
+            if (player.distanceToSqr(from) < best.distanceToSqr(from)) {
+                best = player;
+            }
+        }
+        return best;
+    }
+
     // Thrown out of the ring (Stark 2026-11-10: the Shikamaru's shadow walked the Kakashi out of it, and the fight and
     // the soul were lost): back in, at the far side from the player's start.
     private static void keepInside(Entity boss, Session session) {
-        int radius = ChallengeSpec.get().raio();
+        ArenaTemplate.Meta meta = session.meta;
+        int radius = meta.raio();
         double dx = boss.getX() - (session.center.getX() + 0.5);
         double dz = boss.getZ() - (session.center.getZ() + 0.5);
-        boolean out = dx * dx + dz * dz > (radius - 1.0) * (radius - 1.0) || boss.getY() < FLOOR_Y - 4 || boss.getY() > FLOOR_Y + 60;
+        double y = boss.getY() - session.center.getY();
+        boolean out = dx * dx + dz * dz > (radius - 1.0) * (radius - 1.0) || y < -40 || y > meta.altura() + 20;   // the floor is 32 deep now
         if (out) {
-            boss.teleportTo(session.center.getX() + 0.5, FLOOR_Y + 1, session.center.getZ() + radius / 2.0 + 0.5);
+            BlockPos at = spawnPos(session);
+            boss.teleportTo(at.getX() + 0.5, at.getY(), at.getZ() + 0.5);
             boss.setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
             boss.fallDistance = 0;
         }
     }
 
-    private static void spawnBoss(ServerPlayer player, ServerLevel arena, Session session) {
+    // Stark 2026-11-13: with a friend in the arena the challenger has twice the life (three times with three...).
+    private static final ResourceLocation GROUP_HEALTH = ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "arena_group_health");
+
+    private static void spawnBoss(ServerLevel arena, Session session, List<ServerPlayer> players) {
         EntityType<?> type = entityType(session.id);
-        int radius = ChallengeSpec.get().raio();
-        Entity boss = type == null ? null
-                : type.spawn(arena, session.center.offset(0, 1, radius / 2), MobSpawnType.EVENT);
+        Entity boss = type == null ? null : type.spawn(arena, spawnPos(session), MobSpawnType.EVENT);
         if (boss == null) {
-            SESSIONS.remove(player.getUUID());
-            sendBack(player, session);
+            for (ServerPlayer player : players) {
+                SESSIONS.remove(player.getUUID());
+                sendBack(player, session);
+            }
+            closeIfEmpty(arena.getServer(), session);
             return;
         }
+        ServerPlayer first = players.get(0);
         if (boss instanceof Mob mob) {
             mob.setPersistenceRequired();
-            mob.lookAt(player, 360, 360);
-            mob.setTarget(player);
+            mob.lookAt(first, 360, 360);
+            mob.setTarget(nearest(boss, players));
+        }
+        int n = players.size();
+        if (n > 1 && boss instanceof net.minecraft.world.entity.LivingEntity living) {
+            var health = living.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH);
+            if (health != null) {
+                health.addOrReplacePermanentModifier(new net.minecraft.world.entity.ai.attributes.AttributeModifier(GROUP_HEALTH, n - 1,
+                        net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
+                living.setHealth(living.getMaxHealth());
+            }
         }
         session.boss = boss.getUUID();
         session.state = State.FIGHT;
-        title(player, Component.translatable("message.battlegroundsmod.arena_fight").withStyle(s -> s.withColor(0xFF4A3A).withBold(true)), Component.empty());
-        Fx.sound(arena, player.position(), SoundEvents.RAID_HORN.value(), 0.7f, 1.2f);
+        Component sub = n > 1 ? Component.translatable("message.battlegroundsmod.arena_group_health", n, n) : Component.empty();
+        for (ServerPlayer player : players) {
+            title(player, Component.translatable("message.battlegroundsmod.arena_fight").withStyle(s -> s.withColor(0xFF4A3A).withBold(true)), sub);
+            Fx.sound(arena, player.position(), SoundEvents.RAID_HORN.value(), 0.7f, 1.2f);
+        }
     }
 
-    private static void win(ServerPlayer player, Session session, long now) {
+    // Fell through the scenery into the void under it (Stark's PC test 2026-11-13: the Todo forest and the Infinity
+    // Castle, right after arriving): back to the player's spawn, no fall damage. Logged to find the hole.
+    private static void catchFall(ServerPlayer player, ServerLevel arena, Session session) {
+        if (player.getY() >= session.center.getY() - 16 || player.isSpectator()) {
+            return;
+        }
+        int[] j = session.meta.jogador();
+        BlockPos spawn = session.center.offset(j[0], j[1], j[2]);
+        BattlegroundsMod.LOGGER.warn("[arena] {}: jogador caiu em {} {} {} (spawn {}, chão do spawn: {})", session.id,
+                (int) player.getX(), (int) player.getY(), (int) player.getZ(), spawn.toShortString(),
+                arena.getBlockState(spawn.below()));
+        player.teleportTo(arena, spawn.getX() + 0.5, spawn.getY(), spawn.getZ() + 0.5, player.getYRot(), player.getXRot());
+        player.setDeltaMovement(Vec3.ZERO);
+        player.fallDistance = 0;
+    }
+
+    private static BlockPos spawnPos(Session session) {
+        int[] d = session.meta.desafiante();
+        return session.center.offset(d[0], d[1], d[2]);
+    }
+
+    // The win counts for everyone who came in, also a partner who fell before the end (if still online): the stamp in
+    // the book, the items the first time, the Poder of their own tier.
+    private static void win(MinecraftServer server, Session session, long now) {
         session.state = State.DONE;
         session.doneAt = now + RETURN_DELAY;
-        List<String> wins = new ArrayList<>(wins(player));
-        boolean first = !wins.contains(session.id);
-        if (first) {
-            wins.add(session.id);
-            player.setData(ModAttachments.ARENA_WINS, List.copyOf(wins));
-            syncWins(player);
-            giveItems(player, ChallengeSpec.get().challenge(session.id));
+        for (UUID id : session.members) {
+            ServerPlayer player = server.getPlayerList().getPlayer(id);
+            if (player == null) {
+                continue;
+            }
+            List<String> wins = new ArrayList<>(wins(player));
+            boolean first = !wins.contains(session.id);
+            record(player, session.id, (int) Math.max(1, (now - session.fightAt) / 20));
+            if (first) {
+                wins.add(session.id);
+                player.setData(ModAttachments.ARENA_WINS, List.copyOf(wins));
+                syncWins(player);
+                giveItems(player, ChallengeSpec.get().challenge(session.id));
+            }
+            arenaPoder(player, session.id, first);
+            title(player, Component.translatable("message.battlegroundsmod.arena_won").withStyle(s -> s.withColor(0xD8352A).withBold(true)), name(session.id).copy());
+            player.displayClientMessage(Component.translatable(first ? "message.battlegroundsmod.arena_unlocked" : "message.battlegroundsmod.arena_again",
+                    name(session.id), RETURN_DELAY / 20), false);
+            Fx.sound(player.serverLevel(), player.position(), SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, 1f, 1f);
         }
-        arenaPoder(player, session.id, first);
-        title(player, Component.translatable("message.battlegroundsmod.arena_won").withStyle(s -> s.withColor(0xD8352A).withBold(true)), name(session.id).copy());
-        player.displayClientMessage(Component.translatable(first ? "message.battlegroundsmod.arena_unlocked" : "message.battlegroundsmod.arena_again",
-                name(session.id), RETURN_DELAY / 20), false);
-        Fx.sound(player.serverLevel(), player.position(), SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, 1f, 1f);
+    }
+
+    // One more win against this challenger and, when it was faster, the new best time (the book's medals).
+    private static void record(ServerPlayer player, String id, int seconds) {
+        List<String> out = new ArrayList<>();
+        boolean found = false;
+        for (String entry : player.getData(ModAttachments.ARENA_RECORDS)) {
+            String[] p = entry.split(":");
+            if (p.length == 3 && p[0].equals(id)) {
+                int wins = Integer.parseInt(p[1]) + 1, best = Integer.parseInt(p[2]);
+                out.add(id + ":" + wins + ":" + (best <= 0 ? seconds : Math.min(best, seconds)));
+                found = true;
+            } else {
+                out.add(entry);
+            }
+        }
+        if (!found) {
+            out.add(id + ":1:" + seconds);
+        }
+        player.setData(ModAttachments.ARENA_RECORDS, List.copyOf(out));
+        PacketDistributor.sendToPlayer(player, new ModPayloads.SyncArenaRecords(List.copyOf(out)));
     }
 
     // Poder for beating a challenge (Stark 2026-11-10: "os bosses dos desafios darem poder quando você vencer"). The kill
@@ -433,19 +794,34 @@ public final class ChallengeArenas {
         }
     }
 
-    // Dying in the arena ends the fight; the player respawns at home as usual.
+
+    // Dying in the arena: alone, the fight ends and the player respawns at home as usual. In a group the others fight
+    // on; the fallen one still gets the win if they finish it.
     private static void onDeath(LivingDeathEvent event) {
-        for (Session session : SESSIONS.values()) {
+        for (Session session : sessions()) {
             if (event.getEntity().getUUID().equals(session.boss)) {
                 session.bossDied = true;
             }
         }
         if (event.getEntity() instanceof ServerPlayer player) {
             Session session = SESSIONS.remove(player.getUUID());
-            if (session != null) {
-                removeBoss(player.server, session);
+            if (session == null) {
+                return;
+            }
+            if (anyoneIn(session) && session.state != State.DONE) {
+                player.displayClientMessage(Component.translatable("message.battlegroundsmod.arena_down_self"), false);
+                for (UUID id : session.members) {
+                    ServerPlayer mate = SESSIONS.get(id) == session ? player.server.getPlayerList().getPlayer(id) : null;
+                    if (mate != null) {
+                        mate.displayClientMessage(Component.translatable("message.battlegroundsmod.arena_mate_down", player.getDisplayName()), true);
+                    }
+                }
+                return;
+            }
+            if (session.state != State.DONE) {
                 player.displayClientMessage(Component.translatable("message.battlegroundsmod.arena_lost", name(session.id)), false);
             }
+            closeIfEmpty(player.server, session);
         }
     }
 
@@ -453,7 +829,8 @@ public final class ChallengeArenas {
     private static void onLogin(PlayerEvent.PlayerLoggedInEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
             syncWins(player);
-            if (player.level().dimension().equals(ARENAS) && !SESSIONS.containsKey(player.getUUID())) {
+            ArenaParty.sync(player);
+            if (isArena(player.level().dimension()) && !SESSIONS.containsKey(player.getUUID())) {
                 leave(player);
             }
         }
@@ -461,9 +838,11 @@ public final class ChallengeArenas {
 
     private static void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
+            ArenaParty.leaveGroup(player, false);
             Session session = SESSIONS.remove(player.getUUID());
             if (session != null) {
                 sendBack(player, session);
+                closeIfEmpty(player.server, session);
             }
         }
     }
@@ -520,9 +899,257 @@ public final class ChallengeArenas {
         }
     }
 
-    // Builds (or cleans) one arena: a round floor of the universe's blocks over two solid layers and a barrier, broken
-    // pillars around the edge, invisible walls and ceiling, and nothing left inside from the last fight.
-    private static void build(ServerLevel level, BlockPos center, ChallengeSpec spec, ChallengeSpec.Universe universe) {
+    // Puts one generated arena back, a slice per tick (step): 1. every block the generator made (only where the world
+    // differs, so after the first time it is mostly checking); 2. the fight circle and a little past it cleaned of what
+    // the last fight left (holes filled above, blocks that were not there removed); 3. invisible walls round the circle
+    // and a ceiling at its height, only where the scenery leaves air; 4. the arena's own biome (sky, fog, grass).
+    private static final class Build {
+        private final ArenaTemplate t;
+        private final ArenaTemplate.Meta m;
+        private final BlockPos c;
+        private final ServerLevel level;
+        private final int half;
+        private final int[] index;
+        private final BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+        private int phase;
+        private int cursor;
+        private int minCx, maxCx, minCz, maxCz;
+        private final List<net.minecraft.world.level.chunk.ChunkAccess> changed = new ArrayList<>();
+        private final net.minecraft.world.level.ChunkPos ticketAt;
+        private final net.minecraft.world.level.levelgen.structure.BoundingBox fluidBox;
+        private final int ticketRadius;
+        private boolean ticketed;
+        int chunkWaitTicks;
+        int chunkCount;
+
+        Build(ArenaTemplate t, ArenaTemplate.Meta m, BlockPos c, ServerLevel level) {
+            this.t = t;
+            this.m = m;
+            this.c = c;
+            this.level = level;
+            this.half = m.raio() + 3;
+            this.index = t.index(half);
+            int x0 = 0, x1 = 0, z0 = 0, z1 = 0;
+            for (int i = 0; i < t.columns; i++) {
+                x0 = Math.min(x0, t.colX[i]);
+                x1 = Math.max(x1, t.colX[i]);
+                z0 = Math.min(z0, t.colZ[i]);
+                z1 = Math.max(z1, t.colZ[i]);
+            }
+            minCx = (c.getX() + x0) >> 4;
+            maxCx = (c.getX() + x1) >> 4;
+            minCz = (c.getZ() + z0) >> 4;
+            maxCz = (c.getZ() + z1) >> 4;
+            fluidBox = new net.minecraft.world.level.levelgen.structure.BoundingBox(c.getX() + x0, c.getY() + m.minY() - 1,
+                    c.getZ() + z0, c.getX() + x1, c.getY() + m.maxY() + 1, c.getZ() + z1);
+            ticketAt = new net.minecraft.world.level.ChunkPos(c);
+            ticketRadius = Math.min(32, Math.max(Math.max(ticketAt.x - minCx, maxCx - ticketAt.x), Math.max(ticketAt.z - minCz, maxCz - ticketAt.z)) + 1);
+            phase = -1;
+        }
+
+        int percent() {
+            int w = maxCx - minCx + 1;
+            int chunks = w * (maxCz - minCz + 1);
+            return switch (phase) {
+                case -1 -> cursor * 40 / Math.max(1, chunks);
+                case 0 -> 40 + cursor * 50 / Math.max(1, t.columns);
+                default -> 95;
+            };
+        }
+
+        // Stark's PC test 2026-11-13: after 28 arenas in a row the Makima's chunks never loaded and the game then spun
+        // forever in "Saving worlds" (a chunk holder kept a generation claim). What the first missing chunk is doing.
+        private void logStuck(int cx, int cz, int missing) {
+            String info;
+            try {
+                java.lang.reflect.Method m = net.minecraft.server.level.ChunkMap.class.getDeclaredMethod("getUpdatingChunkIfPresent", long.class);
+                m.setAccessible(true);
+                Object h = m.invoke(level.getChunkSource().chunkMap, net.minecraft.world.level.ChunkPos.asLong(cx, cz));
+                if (h instanceof net.minecraft.server.level.ChunkHolder holder) {
+                    info = "status " + holder.getLatestStatus() + ", nível " + holder.getTicketLevel() + ", geração " + holder.getGenerationRefCount()
+                            + ", pendentes " + level.getChunkSource().getPendingTasksCount();
+                } else {
+                    info = "sem holder";
+                }
+            } catch (ReflectiveOperationException | RuntimeException e) {
+                info = "? (" + e + ")";
+            }
+            BattlegroundsMod.LOGGER.warn("[arena] {} esperando chunks há {} ticks: faltam {}, primeiro {} {}: {}", t.id, chunkWaitTicks, missing, cx, cz, info);
+        }
+
+        void release() {
+            if (ticketed) {
+                level.getChunkSource().removeRegionTicket(ARENA_TICKET, ticketAt, ticketRadius, ticketAt);
+                ticketed = false;
+            }
+        }
+
+        private int put(int x, int y, int z, BlockState state) {
+            if (y < level.getMinBuildHeight() || y >= level.getMaxBuildHeight()) {
+                return 0;
+            }
+            pos.set(x, y, z);
+            if (level.getBlockState(pos) != state) {
+                level.setBlock(pos, state, FLAGS);
+            }
+            return 1;
+        }
+
+        private int column(int dx, int dz) {
+            if (dx < -half || dz < -half || dx > half || dz > half) {
+                return -1;
+            }
+            return index[(dx + half) * (half * 2 + 1) + dz + half];
+        }
+
+        // Returns true when the arena is ready. Works until maxNanos of this tick are spent.
+        // Placing water or lava always schedules a fluid tick (LiquidBlock.onPlace ignores the update flags), so the
+        // rivers flowed off their edges and the waterfalls drained away as soon as the arena was built (Stark's PC,
+        // 2026-11-13). The ticks the placing scheduled are dropped at the end of every step: the water stays exactly as
+        // the generator made it until a fight disturbs it.
+        boolean step(long maxNanos) {
+            placing++;
+            try {
+                boolean ready = stepInner(maxNanos);
+                if (phase >= 0) {
+                    level.getFluidTicks().clearArea(fluidBox);
+                }
+                return ready;
+            } finally {
+                placing--;
+            }
+        }
+
+        private boolean stepInner(long maxNanos) {
+            long deadline = System.nanoTime() + maxNanos;
+            int ops = 0;
+            int side = half * 2 + 1;
+            while (true) {
+                if (ops >= 2048) {
+                    ops = 0;
+                    if (System.nanoTime() > deadline) {
+                        return false;
+                    }
+                }
+                switch (phase) {
+                    case -1 -> {
+                        // 0. every chunk of the arena loaded (generated off the main thread) before touching a block
+                        if (!ticketed) {
+                            level.getChunkSource().addRegionTicket(ARENA_TICKET, ticketAt, ticketRadius, ticketAt);
+                            ticketed = true;
+                        }
+                        int w = maxCx - minCx + 1;
+                        int total = w * (maxCz - minCz + 1);
+                        while (cursor < total && level.getChunkSource().getChunkNow(minCx + cursor % w, minCz + cursor / w) != null) {
+                            cursor++;
+                        }
+                        if (cursor < total) {
+                            chunkWaitTicks++;
+                            if (chunkWaitTicks % 200 == 0) {
+                                logStuck(minCx + cursor % w, minCz + cursor / w, total - cursor);
+                            }
+                            return false;            // still loading: try again next tick
+                        }
+                        chunkCount = total;
+                        phase = 0;
+                        cursor = 0;
+                    }
+                    case 0 -> {
+                        if (cursor >= t.columns) {
+                            phase = 1;
+                            cursor = 0;
+                            continue;
+                        }
+                        int x = c.getX() + t.colX[cursor];
+                        int z = c.getZ() + t.colZ[cursor];
+                        for (int r = t.runStart[cursor]; r < t.runStart[cursor + 1]; r++) {
+                            BlockState state = t.palette[t.runBlock[r]];
+                            for (int y = t.runY[r], end = t.runY[r] + t.runLen[r]; y < end; y++) {
+                                ops += put(x, c.getY() + y, z, state);
+                            }
+                        }
+                        cursor++;
+                    }
+                    case 1, 2 -> {
+                        if (cursor >= side * side) {
+                            phase++;
+                            cursor = 0;
+                            continue;
+                        }
+                        int dx = cursor / side - half;
+                        int dz = cursor % side - half;
+                        cursor++;
+                        double d = Math.sqrt(dx * dx + dz * dz);
+                        int col = column(dx, dz);
+                        int low = col >= 0 ? t.lowest(col) : -8;
+                        int top = m.altura() + 1;
+                        if (phase == 1) {
+                            if (d > half) {
+                                continue;
+                            }
+                            BlockState air = Blocks.AIR.defaultBlockState();
+                            for (int y = low; y <= top; y++) {
+                                if (col < 0 || !t.solid(col, y)) {
+                                    ops += put(c.getX() + dx, c.getY() + y, c.getZ() + dz, air);
+                                }
+                            }
+                        } else {
+                            BlockState barrier = Blocks.BARRIER.defaultBlockState();
+                            boolean ring = d > m.raio() + 0.5 && d <= m.raio() + 1.5;
+                            if (ring) {
+                                for (int y = low; y <= top; y++) {
+                                    if (col < 0 || !t.solid(col, y)) {
+                                        ops += put(c.getX() + dx, c.getY() + y, c.getZ() + dz, barrier);
+                                    }
+                                }
+                            } else if (d <= m.raio() + 0.5 && (col < 0 || !t.solid(col, top))) {
+                                ops += put(c.getX() + dx, c.getY() + top, c.getZ() + dz, barrier);
+                            }
+                        }
+                    }
+                    case 3 -> {
+                        int w = maxCx - minCx + 1;
+                        int total = w * (maxCz - minCz + 1);
+                        if (cursor >= total) {
+                            if (!changed.isEmpty()) {
+                                level.getChunkSource().chunkMap.resendBiomesForChunks(changed);
+                            }
+                            phase = 4;
+                            return true;
+                        }
+                        biome(minCx + cursor % w, minCz + cursor / w);
+                        cursor++;
+                        ops += 1500;
+                    }
+                    default -> {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        private void biome(int cx, int cz) {
+            ResourceKey<net.minecraft.world.level.biome.Biome> key = ResourceKey.create(Registries.BIOME,
+                    ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "arena_" + m.id()));
+            var holder = level.registryAccess().registryOrThrow(Registries.BIOME).getHolder(key);
+            if (holder.isEmpty()) {
+                return;
+            }
+            net.minecraft.world.level.chunk.ChunkAccess chunk = level.getChunk(cx, cz);
+            int qy = net.minecraft.core.QuartPos.fromBlock(c.getY());
+            if (chunk.getNoiseBiome(net.minecraft.core.QuartPos.fromBlock(cx << 4), qy, net.minecraft.core.QuartPos.fromBlock(cz << 4)).is(key)) {
+                return;
+            }
+            var biome = holder.get();
+            chunk.fillBiomesFromNoise((x, y, z, sampler) -> biome, level.getChunkSource().randomState().sampler());
+            chunk.setUnsaved(true);
+            changed.add(chunk);
+        }
+    }
+
+    // The fallback for a character with no generated arena: a round floor of the universe's blocks over two solid layers
+    // and a barrier, broken pillars around the edge, invisible walls and ceiling, nothing left from the last fight.
+    private static void buildDisc(ServerLevel level, BlockPos center, ChallengeSpec spec, ChallengeSpec.Universe universe) {
         int radius = spec.raio();
         int height = spec.altura();
         List<BlockState> floor = new ArrayList<>();
@@ -601,7 +1228,8 @@ public final class ChallengeArenas {
     }
 
     // /soul desafios: the Livro dos Desafios (every universe in one book). /soul desafios sair: leave the arena.
-    // /soul desafios liberar <id|todos> [jogador] and /soul desafios zerar [jogador] (ops): for testing.
+    // /soul desafios liberar <id|todos> [jogador], /soul desafios zerar [jogador] and /soul desafios ir <id> (ops): for
+    // testing (ir = the book's button, straight into that arena).
     public static LiteralArgumentBuilder<CommandSourceStack> command() {
         return Commands.literal("desafios")
                 .executes(context -> {
@@ -609,6 +1237,46 @@ public final class ChallengeArenas {
                     player.getInventory().add(new ItemStack(ModItems.CHALLENGE_BOOK.get()));
                     return 1;
                 })
+                .then(Commands.literal("ir").requires(source -> source.hasPermission(2))
+                        .then(Commands.argument("id", StringArgumentType.word())
+                                .suggests((context, builder) -> {
+                                    for (ChallengeSpec.Universe universe : ChallengeSpec.get().universos()) {
+                                        for (ChallengeSpec.Challenge challenge : universe.desafios()) {
+                                            builder.suggest(challenge.id());
+                                        }
+                                    }
+                                    return builder.buildFuture();
+                                })
+                                .executes(context -> {
+                                    ServerPlayer player = context.getSource().getPlayerOrException();
+                                    Session old = SESSIONS.remove(player.getUUID());
+                                    if (old != null) {
+                                        closeIfEmpty(player.server, old);     // tests jump from arena to arena
+                                    }
+                                    start(player, StringArgumentType.getString(context, "id"));
+                                    return 1;
+                                })))
+                .then(Commands.literal("convidar").then(Commands.argument("jogador", EntityArgument.player())
+                        .executes(context -> {
+                            ArenaParty.invite(context.getSource().getPlayerOrException(), EntityArgument.getPlayer(context, "jogador"));
+                            return 1;
+                        })))
+                .then(Commands.literal("aceitar").then(Commands.argument("jogador", StringArgumentType.word())
+                        .executes(context -> {
+                            ServerPlayer player = context.getSource().getPlayerOrException();
+                            ArenaParty.accept(player, player.server.getPlayerList().getPlayerByName(StringArgumentType.getString(context, "jogador")));
+                            return 1;
+                        })))
+                .then(Commands.literal("recusar").then(Commands.argument("jogador", StringArgumentType.word())
+                        .executes(context -> {
+                            ServerPlayer player = context.getSource().getPlayerOrException();
+                            ArenaParty.decline(player, player.server.getPlayerList().getPlayerByName(StringArgumentType.getString(context, "jogador")));
+                            return 1;
+                        })))
+                .then(Commands.literal("grupo").then(Commands.literal("sair").executes(context -> {
+                    ArenaParty.leaveGroup(context.getSource().getPlayerOrException(), true);
+                    return 1;
+                })))
                 .then(Commands.literal("sair").executes(context -> {
                     leave(context.getSource().getPlayerOrException());
                     return 1;

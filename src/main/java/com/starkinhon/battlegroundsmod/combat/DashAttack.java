@@ -36,6 +36,10 @@ public final class DashAttack {
     }
 
     private static boolean use(LivingEntity attacker, ServerLevel level) {
+        if (AirFight.active(attacker)) {
+            // the combat flight: the long homing ki dash
+            return AirFight.dash(attacker, level);
+        }
         if (!Movement.free(attacker)) {
             return false;
         }

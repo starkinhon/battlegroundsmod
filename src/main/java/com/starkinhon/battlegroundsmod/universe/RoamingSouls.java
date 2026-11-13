@@ -23,7 +23,6 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.levelgen.Heightmap;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
@@ -76,8 +75,10 @@ public final class RoamingSouls {
                 continue;
             }
             List<String> homeHere = home(level, at, pool);
-            String first = !homeHere.isEmpty() && random.nextDouble() < HOME_PICK ? homeHere.get(random.nextInt(homeHere.size()))
-                    : pool.get(random.nextInt(pool.size()));
+            String first = pick(player, !homeHere.isEmpty() && random.nextDouble() < HOME_PICK ? homeHere : pool, random);
+            if (first == null) {
+                continue;
+            }
             Entity a = spawn(level, first, at);
             if (a == null || random.nextDouble() >= PAIR_CHANCE) {
                 continue;
@@ -95,7 +96,11 @@ public final class RoamingSouls {
             if (rivals.isEmpty()) {
                 continue;
             }
-            Entity b = spawn(level, rivals.get(random.nextInt(rivals.size())), ground(level, at.getX() + 6, at.getZ() + 3));
+            String second = pick(player, rivals, random);
+            if (second == null) {
+                continue;
+            }
+            Entity b = spawn(level, second, ground(level, at.getX() + 6, at.getZ() + 3));
             if (a instanceof SoulBoss ba && b instanceof SoulBoss bb) {
                 ba.setTarget(bb);
                 bb.setTarget(ba);
@@ -109,7 +114,26 @@ public final class RoamingSouls {
     private static final double HOME_PICK = 0.75;
     private static final java.util.Map<net.minecraft.resources.ResourceKey<net.minecraft.world.level.biome.Biome>, List<String>> HOMES = java.util.Map.of(
             com.starkinhon.battlegroundsmod.world.ModWorldgen.FLORESTA_DA_FOLHA, List.of("naruto", "sasuke", "kakashi", "shikamaru", "ino"),
-            com.starkinhon.battlegroundsmod.world.ModWorldgen.DESERTO_DO_VENTO, List.of("gaara"));
+            com.starkinhon.battlegroundsmod.world.ModWorldgen.DESERTO_DO_VENTO, List.of("gaara"),
+            // the Dragon Ball ones (2026-11-12): Goku where he grew up, the Kame House's sea, Piccolo and Vegeta in the
+            // Dragon's lands
+            com.starkinhon.battlegroundsmod.world.ModWorldgen.MONTANHAS_PAOZU, List.of("goku"),
+            com.starkinhon.battlegroundsmod.world.ModWorldgen.MAR_DO_SUL, List.of("kame", "kuririn"),
+            com.starkinhon.battlegroundsmod.world.ModWorldgen.TERRAS_DO_DRAGAO, List.of("piccolo", "vegeta"));
+
+    // A SubAlma not yet beaten in its challenge comes much less (Stark 2026-11-12): the way to meet Kuririn is his
+    // challenge, and after it he turns up more in the world. A draw that lands on one not beaten only goes through
+    // NOT_BEATEN of the times, else nobody comes this time; null then.
+    private static final double NOT_BEATEN = 0.25;
+
+    private static String pick(ServerPlayer player, List<String> from, RandomSource random) {
+        if (from.isEmpty()) {
+            return null;
+        }
+        String id = from.get(random.nextInt(from.size()));
+        boolean beaten = ChallengeArenas.wins(player).contains(id);
+        return beaten || random.nextDouble() < NOT_BEATEN ? id : null;
+    }
 
     // The SubAlmas of the pool who live in the biome at pos.
     private static List<String> home(ServerLevel level, BlockPos pos, List<String> pool) {
@@ -180,18 +204,9 @@ public final class RoamingSouls {
         return null;
     }
 
-    // Dry, solid ground with room to stand, in a loaded chunk; or null.
+    // Dry, solid ground with room to stand, in a loaded chunk; or null. The same test as the universe mobs (Stark
+    // 2026-11-12: no SubAlma ever seen): its old copy asked for pure air, so grass, flowers and snow failed the spot.
     private static BlockPos ground(ServerLevel level, int x, int z) {
-        if (!level.hasChunkAt(new BlockPos(x, 0, z))) {
-            return null;
-        }
-        int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
-        BlockPos pos = new BlockPos(x, y, z);
-        if (y <= level.getMinBuildHeight() || !level.getFluidState(pos.below()).isEmpty()
-                || !level.getBlockState(pos.below()).isSolidRender(level, pos.below())
-                || !level.getBlockState(pos).isAir() || !level.getBlockState(pos.above()).isAir()) {
-            return null;
-        }
-        return pos;
+        return UniverseSpawns.ground(level, x, z);
     }
 }

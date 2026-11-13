@@ -13,6 +13,13 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 public final class ModBlocks {
     public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(BattlegroundsMod.MODID);
     public static final DeferredRegister.Items BLOCK_ITEMS = DeferredRegister.createItems(BattlegroundsMod.MODID);
+    public static final DeferredRegister<net.minecraft.world.level.block.entity.BlockEntityType<?>> BLOCK_ENTITIES =
+            DeferredRegister.create(net.minecraft.core.registries.Registries.BLOCK_ENTITY_TYPE, BattlegroundsMod.MODID);
+    // Shibuya's Telão (TelaoBlock): its block entity is only there for the client to draw the moving picture.
+    public static final net.neoforged.neoforge.registries.DeferredHolder<net.minecraft.world.level.block.entity.BlockEntityType<?>,
+            net.minecraft.world.level.block.entity.BlockEntityType<TelaoBlockEntity>> TELAO = BLOCK_ENTITIES.register("telao",
+                    () -> net.minecraft.world.level.block.entity.BlockEntityType.Builder.of(TelaoBlockEntity::new,
+                            JujutsuBlocks.BIG_SCREEN.get()).build(null));
 
     // Namek's cliffs and mesas: pale pink-beige rock, and a darker band for the layers.
     public static final DeferredBlock<Block> NAMEK_ROCK = rock("namek_rock", MapColor.TERRACOTTA_WHITE);
@@ -20,6 +27,15 @@ public final class ModBlocks {
     // The tan patches of bare ground between the blue grass.
     public static final DeferredBlock<Block> NAMEK_SAND = BLOCKS.registerSimpleBlock("namek_sand",
             BlockBehaviour.Properties.of().mapColor(MapColor.SAND).strength(0.6f).sound(SoundType.GRAVEL));
+
+    // King Kai's little planet (Stark 2026-11-13, after his anime frames; tools/blocks/kaioh_blocks.py): the lawn one flat
+    // cartoon green on every face so the sphere reads as a smooth ball, the road's pale flagstones, the houses' orange
+    // plaster and its light cap.
+    public static final DeferredBlock<Block> KAIOH_GRASS = BLOCKS.registerSimpleBlock("kaioh_grama",
+            BlockBehaviour.Properties.of().mapColor(MapColor.GRASS).strength(0.6f).sound(SoundType.GRASS));
+    public static final DeferredBlock<Block> KAIOH_ROAD = rock("kaioh_lajota", MapColor.QUARTZ);
+    public static final DeferredBlock<Block> KAIOH_HOUSE = rock("kaioh_casa", MapColor.COLOR_ORANGE);
+    public static final DeferredBlock<Block> KAIOH_HOUSE_LIGHT = rock("kaioh_casa_clara", MapColor.COLOR_YELLOW);
 
     // The Deserto do Diabo (Stark 2026-11-11, after his Sand Land reference): warm orange-yellow sand that falls like sand,
     // and the sandstone rock of its flats and towers, darker and lighter (tools/blocks/desert_blocks.py).
@@ -124,8 +140,51 @@ public final class ModBlocks {
     public static final DeferredBlock<Block> GIANT_PETAL = plant("petala_gigante", MapColor.COLOR_ORANGE, 0, 0.3f);
     public static final DeferredBlock<Block> GIANT_PETAL_TIP = plant("petala_gigante_ponta", MapColor.COLOR_YELLOW, 0, 0.3f);
     public static final DeferredBlock<Block> FLOWER_CORE = plant("miolo_de_flor", MapColor.GOLD, 7, 0.4f);
+    // Templos Antigos (Jujutsu, Stark 2026-11-12): the temples' vermilion lacquered wood (posts and torii), the torii's
+    // black lacquer top beam, the courtyard's raked white gravel, the shoji lattice with its paper, the white plaster,
+    // the stone lantern's lit fire box, the shimenawa rope and its zigzag paper strips (shide); the cedars' leaves in two
+    // greens and the sakuras' in three more tones besides vanilla's cherry (they shed petals like it).
+    public static final DeferredBlock<Block> VERMILION_WOOD = BLOCKS.registerSimpleBlock("madeira_vermelha",
+            BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_RED).strength(2.0f, 3.0f).sound(SoundType.WOOD).ignitedByLava());
+    public static final DeferredBlock<Block> BLACK_LACQUER = BLOCKS.registerSimpleBlock("laca_preta",
+            BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_BLACK).strength(2.0f, 3.0f).sound(SoundType.WOOD).ignitedByLava());
+    public static final DeferredBlock<Block> WHITE_GRAVEL = BLOCKS.registerSimpleBlock("cascalho_branco",
+            BlockBehaviour.Properties.of().mapColor(MapColor.QUARTZ).strength(0.6f).sound(SoundType.GRAVEL));
+    public static final DeferredBlock<Block> SHOJI = BLOCKS.registerSimpleBlock("shoji",
+            BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).strength(1.0f).sound(SoundType.WOOD).ignitedByLava());
+    public static final DeferredBlock<Block> PLASTER = BLOCKS.registerSimpleBlock("reboco",
+            BlockBehaviour.Properties.of().mapColor(MapColor.TERRACOTTA_WHITE).requiresCorrectToolForDrops().strength(1.2f, 4.0f)
+                    .sound(SoundType.STONE));
+    public static final DeferredBlock<Block> STONE_LANTERN_LIGHT = BLOCKS.registerSimpleBlock("lanterna_de_pedra_acesa",
+            BlockBehaviour.Properties.of().mapColor(MapColor.STONE).requiresCorrectToolForDrops().strength(1.5f, 6.0f)
+                    .sound(SoundType.STONE).lightLevel(state -> 15));
+    public static final DeferredBlock<com.starkinhon.battlegroundsmod.world.ThinPlantBlock> SHIMENAWA = BLOCKS.register("shimenawa",
+            () -> new com.starkinhon.battlegroundsmod.world.ThinPlantBlock(BlockBehaviour.Properties.of().mapColor(MapColor.SAND)
+                    .strength(0.8f).sound(SoundType.WOOL).noOcclusion().ignitedByLava(), Block.box(0, 5, 0, 16, 11, 16)));
+    public static final DeferredBlock<com.starkinhon.battlegroundsmod.world.ThinPlantBlock> SHIDE = BLOCKS.register("shide",
+            () -> new com.starkinhon.battlegroundsmod.world.ThinPlantBlock(BlockBehaviour.Properties.of().mapColor(MapColor.SNOW)
+                    .noCollission().noOcclusion().instabreak().sound(SoundType.WOOL).pushReaction(
+                            net.minecraft.world.level.material.PushReaction.DESTROY), Block.box(5, 2, 5, 11, 16, 11)));
+    public static final DeferredBlock<net.minecraft.world.level.block.LeavesBlock> CEDAR_LEAVES = leaves("folhas_de_cedro");
+    public static final DeferredBlock<net.minecraft.world.level.block.LeavesBlock> CEDAR_LEAVES_LIGHT = leaves("folhas_de_cedro_clara");
+    public static final DeferredBlock<net.minecraft.world.level.block.LeavesBlock> SAKURA_LEAVES_DARK = sakura("folhas_de_sakura_escura");
+    public static final DeferredBlock<net.minecraft.world.level.block.LeavesBlock> SAKURA_LEAVES_LIGHT = sakura("folhas_de_sakura_clara");
+    public static final DeferredBlock<net.minecraft.world.level.block.LeavesBlock> SAKURA_LEAVES_WHITE = sakura("folhas_de_sakura_branca");
 
     static {
+        BLOCK_ITEMS.registerSimpleBlockItem(VERMILION_WOOD);
+        BLOCK_ITEMS.registerSimpleBlockItem(BLACK_LACQUER);
+        BLOCK_ITEMS.registerSimpleBlockItem(WHITE_GRAVEL);
+        BLOCK_ITEMS.registerSimpleBlockItem(SHOJI);
+        BLOCK_ITEMS.registerSimpleBlockItem(PLASTER);
+        BLOCK_ITEMS.registerSimpleBlockItem(STONE_LANTERN_LIGHT);
+        BLOCK_ITEMS.registerSimpleBlockItem(SHIMENAWA);
+        BLOCK_ITEMS.registerSimpleBlockItem(SHIDE);
+        BLOCK_ITEMS.registerSimpleBlockItem(CEDAR_LEAVES);
+        BLOCK_ITEMS.registerSimpleBlockItem(CEDAR_LEAVES_LIGHT);
+        BLOCK_ITEMS.registerSimpleBlockItem(SAKURA_LEAVES_DARK);
+        BLOCK_ITEMS.registerSimpleBlockItem(SAKURA_LEAVES_LIGHT);
+        BLOCK_ITEMS.registerSimpleBlockItem(SAKURA_LEAVES_WHITE);
         BLOCK_ITEMS.registerSimpleBlockItem(DEATH_LEAVES);
         BLOCK_ITEMS.registerSimpleBlockItem(DEATH_LEAVES_LIGHT);
         BLOCK_ITEMS.registerSimpleBlockItem(DEATH_LEAVES_DARK);
@@ -178,6 +237,10 @@ public final class ModBlocks {
         BLOCK_ITEMS.registerSimpleBlockItem(DESERT_ROCK_LIGHT);
         BLOCK_ITEMS.registerSimpleBlockItem(NAMEK_ROCK_LAYER);
         BLOCK_ITEMS.registerSimpleBlockItem(NAMEK_SAND);
+        BLOCK_ITEMS.registerSimpleBlockItem(KAIOH_GRASS);
+        BLOCK_ITEMS.registerSimpleBlockItem(KAIOH_ROAD);
+        BLOCK_ITEMS.registerSimpleBlockItem(KAIOH_HOUSE);
+        BLOCK_ITEMS.registerSimpleBlockItem(KAIOH_HOUSE_LIGHT);
     }
 
     private ModBlocks() {
@@ -186,6 +249,12 @@ public final class ModBlocks {
     private static DeferredBlock<net.minecraft.world.level.block.LeavesBlock> leaves(String name) {
         return BLOCKS.register(name, () -> new net.minecraft.world.level.block.LeavesBlock(
                 BlockBehaviour.Properties.ofFullCopy(net.minecraft.world.level.block.Blocks.OAK_LEAVES)));
+    }
+
+    // The sakuras' extra tones: vanilla's cherry leaves (so they shed the same falling petals).
+    private static DeferredBlock<net.minecraft.world.level.block.LeavesBlock> sakura(String name) {
+        return BLOCKS.register(name, () -> new net.minecraft.world.level.block.CherryLeavesBlock(
+                BlockBehaviour.Properties.ofFullCopy(net.minecraft.world.level.block.Blocks.CHERRY_LEAVES)));
     }
 
     private static DeferredBlock<Block> flesh(String name, MapColor color) {
@@ -215,7 +284,9 @@ public final class ModBlocks {
     }
 
     public static void register(IEventBus bus) {
+        JujutsuBlocks.init();
         BLOCKS.register(bus);
         BLOCK_ITEMS.register(bus);
+        BLOCK_ENTITIES.register(bus);
     }
 }

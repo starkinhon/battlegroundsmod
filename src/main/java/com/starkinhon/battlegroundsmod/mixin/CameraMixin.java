@@ -31,6 +31,9 @@ public abstract class CameraMixin {
     @Shadow
     protected abstract void setRotation(float yRot, float xRot);
 
+    @Shadow
+    private boolean detached;
+
     @Inject(method = "setup", at = @At("TAIL"))
     private void battlegroundsmod$cutscene(BlockGetter level, Entity entity, boolean detached, boolean thirdPersonReverse,
             float partialTick, CallbackInfo ci) {
@@ -46,7 +49,16 @@ public abstract class CameraMixin {
                 : EsferaCutscene.active() ? EsferaCutscene.shot(partialTick)
                 : GrabCutscene.active() ? GrabCutscene.shot(partialTick)
                 : BopCutscene.active() ? BopCutscene.shot(partialTick)
-                : ShoulderCutscene.active() ? ShoulderCutscene.shot(partialTick) : FaceCutscene.shot(partialTick);
+                : ShoulderCutscene.active() ? ShoulderCutscene.shot(partialTick)
+                : com.starkinhon.battlegroundsmod.client.TalkScreen.active() ? com.starkinhon.battlegroundsmod.client.TalkScreen.shot(partialTick)
+                : FaceCutscene.shot(partialTick);
+        // The combat flight's locked camera (client/AirFightClient, the approved page's): seen from outside, always.
+        if (shot == null && entity == net.minecraft.client.Minecraft.getInstance().player) {
+            shot = com.starkinhon.battlegroundsmod.client.AirFightClient.shot();
+            if (shot != null) {
+                detached = true;
+            }
+        }
         if (shot != null) {
             setRotation(shot.yaw(), shot.pitch());
             setPosition(shot.position());

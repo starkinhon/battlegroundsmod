@@ -43,6 +43,7 @@ public class BattlegroundsMod {
         ModEntities.ENTITY_TYPES.register(modEventBus);
         ModItems.init();
         ModCreativeTabs.init();
+        com.starkinhon.battlegroundsmod.universe.NarutoGear.register(modEventBus);
         ITEMS.register(modEventBus);
         CREATIVE_MODE_TABS.register(modEventBus);
         ModAttachments.ATTACHMENT_TYPES.register(modEventBus);
@@ -64,10 +65,13 @@ public class BattlegroundsMod {
         com.starkinhon.battlegroundsmod.universe.shenlong.ShenlongServer.register();
         com.starkinhon.battlegroundsmod.universe.DbQuests.register();
         com.starkinhon.battlegroundsmod.universe.Flight.register();
+        com.starkinhon.battlegroundsmod.boss.AirCombat.register();
+        com.starkinhon.battlegroundsmod.universe.SkyPassers.register();
         com.starkinhon.battlegroundsmod.universe.NarutoWorld.register();
         com.starkinhon.battlegroundsmod.universe.SageMode.register();
         com.starkinhon.battlegroundsmod.universe.UniverseSpawns.register();
         com.starkinhon.battlegroundsmod.animal.naruto.NarutoMob.register();
+        com.starkinhon.battlegroundsmod.animal.dbmob.DbMobMoves.register();
         com.starkinhon.battlegroundsmod.universe.UniverseBiomes.register();
         com.starkinhon.battlegroundsmod.universe.RoamingSouls.register();
         com.starkinhon.battlegroundsmod.world.MapBorder.register();
@@ -100,5 +104,6 @@ public class BattlegroundsMod {
         LOGGER.info("Battlegrounds Mod carregado!");
         event.enqueueWork(com.starkinhon.battlegroundsmod.world.DragonRegion::register);
         event.enqueueWork(com.starkinhon.battlegroundsmod.world.NarutoRegion::register);
+        event.enqueueWork(com.starkinhon.battlegroundsmod.world.JujutsuRegion::register);
     }
 }

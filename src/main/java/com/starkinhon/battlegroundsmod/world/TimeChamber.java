@@ -218,6 +218,7 @@ public final class TimeChamber {
         for (Build.Put put : b.puts) {
             room.setBlock(put.pos(), put.state(), Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
         }
+        StructureLoot.fill(room, null, "sala_tempo", b, false);
         for (int[] d : DUMMIES) {
             for (int i = -3; i <= 3; i++) {
                 for (int k = -3; k <= 3; k++) {

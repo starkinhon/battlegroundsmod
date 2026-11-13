@@ -118,6 +118,19 @@ public final class SubCommon {
         return hit.getType() == HitResult.Type.MISS ? at : hit.getLocation();
     }
 
+    // How high it stands over the ground below it (looking up to `max` blocks down; nothing there = max). The combat
+    // flight's rule for the moves that run along the ground (shadows, sand, traps): they reach whoever is low enough
+    // for its shadow to be on the ground under it.
+    public static double aboveGround(ServerLevel level, Vec3 at, double max) {
+        Vec3 from = at.add(0, 0.2, 0);
+        HitResult hit = level.clip(new ClipContext(from, from.add(0, -max, 0), ClipContext.Block.COLLIDER, ClipContext.Fluid.ANY,
+                net.minecraft.world.phys.shapes.CollisionContext.empty()));
+        return hit.getType() == HitResult.Type.MISS ? max : at.y - hit.getLocation().y;
+    }
+
+    // The highest a shadow on the ground still catches someone flying over it.
+    public static final double SHADOW_REACH_UP = 12;
+
     public static boolean solid(ServerLevel level, Vec3 at) {
         BlockPos pos = BlockPos.containing(at);
         return !level.getBlockState(pos).getCollisionShape(level, pos).isEmpty();

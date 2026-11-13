@@ -14,7 +14,22 @@ public class NpcRenderer extends HumanoidMobRenderer<UniverseNpc, PlayerModel<Un
     private final ResourceLocation skin;
 
     public NpcRenderer(EntityRendererProvider.Context context, String skin) {
-        super(context, new PlayerModel<>(context.bakeLayer(ModelLayers.PLAYER), false), 0.5f);
+        super(context, new PlayerModel<UniverseNpc>(context.bakeLayer(ModelLayers.PLAYER), false) {
+            // in the talk scene (client/TalkScreen) the NPC gestures while its line types
+            @Override
+            public void setupAnim(UniverseNpc npc, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch) {
+                super.setupAnim(npc, limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch);
+                float[] g = TalkScreen.gesture(npc.getId(), ageInTicks);
+                if (g != null) {
+                    rightArm.xRot = g[0];
+                    rightArm.zRot = g[1];
+                    leftArm.xRot = g[2];
+                    leftArm.zRot = g[3];
+                    rightSleeve.copyFrom(rightArm);
+                    leftSleeve.copyFrom(leftArm);
+                }
+            }
+        }, 0.5f);
         this.skin = ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "textures/entity/" + skin + ".png");
     }
 

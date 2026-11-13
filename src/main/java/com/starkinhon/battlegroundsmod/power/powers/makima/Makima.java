@@ -51,7 +51,7 @@ public final class Makima {
         return entity != null && entity.hasData(ModAttachments.POWER) && ID.equals(entity.getData(ModAttachments.POWER).power);
     }
 
-    // V: the souls she has killed, or the chains out of the ground when she has none (or is a boss).
+    // V: the souls she has killed, or the chains out of the ground when she has none (the boss too).
     private static boolean ult(LivingEntity caster, ServerLevel level) {
         if (Almas.canSummon(caster)) {
             return Almas.summon(caster, level);

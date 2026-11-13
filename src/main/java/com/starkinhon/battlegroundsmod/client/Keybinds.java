@@ -37,9 +37,11 @@ public final class Keybinds {
     // Kokushibo: stretches his sword (the awakened forms on Z, X, C, B and V, the 16th on Shift + V) or brings it back.
     // H is free in vanilla and in the mod.
     public static final KeyMapping STRETCH_SWORD = key("stretch_sword", GLFW.GLFW_KEY_H);
+    // Opens the Diário de Missões (the map of the structures and their missions).
+    public static final KeyMapping MISSIONS = key("missions", GLFW.GLFW_KEY_J);
 
     public static final List<KeyMapping> ALL = List.of(ABILITIES.get(0), ABILITIES.get(1), ABILITIES.get(2), ABILITIES.get(3),
-            EXTRA_ABILITY, CYCLE_ATTACK, USE_ATTACK, GUARD, DASH, SKILLS_MENU, TOGGLE_COMBAT, STRETCH_SWORD);
+            EXTRA_ABILITY, CYCLE_ATTACK, USE_ATTACK, GUARD, DASH, SKILLS_MENU, TOGGLE_COMBAT, STRETCH_SWORD, MISSIONS);
 
     private Keybinds() {
     }
@@ -107,6 +109,11 @@ public final class Keybinds {
         while (SKILLS_MENU.consumeClick()) {
             if (ready) {
                 PowerSelectScreen.open();
+            }
+        }
+        while (MISSIONS.consumeClick()) {
+            if (minecraft.screen == null) {
+                minecraft.setScreen(new MissionScreen());
             }
         }
         if (pressed(TOGGLE_COMBAT, TOGGLE_INDEX) && hasPower) {

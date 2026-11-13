@@ -1,4 +1,4 @@
-"""Skins of the four bosses of 2026-11-12 (Joy Boy, Saitama, Shigaraki, Makima), painted on the player skin layout
+"""Skins of the four bosses of 2026-11-12 (Joy Boy, Saitama, Shigaraki, Makima) and Hashirama (2026-11-13, plus his Sage Mode), painted on the player skin layout
 (64x64) with a little noise in every colour so no two pixels repeat. Makima uses the slim (3 px) arms.
 python3 tools/mobs/skins_bosses.py"""
 import os
@@ -306,4 +306,159 @@ s.part('jacket', lambda f, x, y, w, h: (36, 36, 44) if f == 'front' and y == 9 e
 both(s, 'rarm', 'larm', lambda f, x, y, w, h: SK if (f == 'bottom' or y >= 11) else SHIRT)
 both(s, 'rleg', 'lleg', lambda f, x, y, w, h: (20, 20, 22) if (f == 'bottom' or y >= 10) else BLACK)
 s.save('makima')
+
+# ---------------------------------------------------------------- Hashirama (and his Sage Mode: red marks round the eyes)
+SK, HAIR, HAIR2, ARMOR, ARMOR2, CLOTH, STRAP = (226, 178, 138), (30, 22, 20), (44, 32, 28), (150, 40, 34), (112, 28, 26), (34, 34, 46), (60, 44, 34)
+MARK = (196, 30, 34)
+
+
+def hashirama(sage):
+    s = Skin(105 + sage)
+
+    def head(f, x, y, w, h):
+        if f == 'top':
+            return HAIR if (x * 3 + y) % 7 else HAIR2
+        if f == 'bottom':
+            return SK
+        if f == 'back':
+            return HAIR if (x + y) % 5 else HAIR2
+        if f in ('right', 'left'):
+            # the long straight hair falls over the ears
+            return HAIR if y < 6 or (f == 'right' and x < 3) or (f == 'left' and x > 4) else SK
+        # parted in the middle, falling at both sides of the face; calm eyes, a faint smile
+        if y < 1 or (y == 1 and x not in (3, 4)) or (y < 7 and x in (0, 7)) or (y == 2 and x in (1, 6)):
+            return HAIR
+        if y == 3 and x in (1, 2, 5, 6):
+            return MARK if sage and x in (1, 6) else (70, 46, 36)
+        if y == 4 and x in (1, 2, 5, 6):
+            return (36, 24, 20) if x in (2, 5) else (240, 236, 228)
+        if sage and ((y == 5 and x in (1, 6)) or (y == 2 and x in (3, 4))):
+            return MARK
+        if y == 6 and x in (3, 4):
+            return (168, 104, 92)
+        return SK
+
+    s.part('head', head)
+    # the hat layer: the hair's volume behind, long down to the back
+    s.part('hat', lambda f, x, y, w, h: (HAIR if (x + y) % 4 else HAIR2) if f in ('back', 'top') or (f in ('right', 'left') and y < 7) else None)
+
+    def body(f, x, y, w, h):
+        if f == 'top':
+            return ARMOR
+        if f == 'bottom':
+            return CLOTH
+        if y >= 10:
+            return ARMOR2 if (x + y) % 2 else ARMOR
+        if f == 'front':
+            # the red armor's breastplate in plates, the dark collar
+            if y < 2 and x in (2, 3, 4, 5):
+                return CLOTH
+            if y in (3, 6, 9):
+                return ARMOR2
+            return ARMOR
+        if f == 'back':
+            # the long hair down the back
+            return HAIR if y < 7 and 1 <= x <= 6 else ARMOR
+        return ARMOR
+
+    s.part('body', body)
+    s.part('jacket', lambda f, x, y, w, h: STRAP if f == 'front' and y == 9 else None)
+    both(s, 'rarm', 'larm', lambda f, x, y, w, h: ARMOR if (f == 'top' or y < 4) else (ARMOR2 if y in (8, 9) else CLOTH) if y < 10 else SK)
+    both(s, 'rleg', 'lleg', lambda f, x, y, w, h: ARMOR2 if y < 3 else ((50, 40, 34) if (f == 'bottom' or y >= 10) else CLOTH))
+    s.save('hashirama_sage' if sage else 'hashirama')
+
+
+hashirama(0)
+hashirama(1)
 print('ok')
+
+# ---------------------------------------------------------------- Freeza Poder Total (final form; at 100% the muscles)
+# The tail's own texture sits in the free corner x 56-63, y 16-31: white at the top (rows 16-23), purple tip below.
+FW, FP, FP2, FE, FL, VEIN = (240, 236, 242), (122, 58, 176), (92, 40, 140), (200, 24, 40), (110, 40, 120), (185, 163, 200)
+SHADE = (214, 208, 222)
+
+
+def freeza_total(full):
+    s = Skin(120 + full)
+
+    def head(f, x, y, w, h):
+        if f == 'top':
+            return FP
+        if f == 'bottom':
+            return FW
+        if f == 'back':
+            return FP if y < 4 else FW
+        if f in ('right', 'left'):
+            return FP if y < 3 else FW
+        # the purple dome over the brow, sharp red eyes with dark lines under them, purple lips
+        if y < 2:
+            return FP
+        if y == 2 and x in (0, 7):
+            return FP
+        if y == 3 and x in (1, 2, 5, 6):
+            return FL if x in (1, 6) else (60, 20, 70)
+        if y == 4 and x in (1, 2, 5, 6):
+            return FE if x in (2, 5) else (250, 246, 250)
+        if y == 5 and x in (1, 6):
+            return FL
+        if y == 6 and x in (3, 4):
+            return (120, 50, 150)
+        return FW
+
+    s.part('head', head)
+
+    def body(f, x, y, w, h):
+        if f in ('top', 'bottom'):
+            return FW
+        if f == 'front':
+            # the purple chest plate, two darker pecs on it
+            if 1 <= y <= 4 and 1 <= x <= 6:
+                return FP2 if y >= 3 and x in (2, 5) else FP
+            if full and y >= 6 and x in (3, 4) and y % 2 == 0:
+                return SHADE
+            if full and y in (5, 7, 9) and 2 <= x <= 5:
+                return SHADE
+            return FW
+        if f == 'back':
+            return SHADE if full and x in (3, 4) else FW
+        return FW
+
+    s.part('body', body)
+
+    def arm(f, x, y, w, h):
+        # the shoulder dome, the band of the forearm
+        if f == 'top' or y < 3:
+            return FP
+        if 7 <= y <= 9:
+            return FP
+        if full and f in ('front', 'right', 'left') and y in (4, 5) and x == 1:
+            return VEIN
+        if full and y == 6 and f == 'front':
+            return SHADE
+        return FW
+
+    both(s, 'rarm', 'larm', arm)
+
+    def leg(f, x, y, w, h):
+        # the knee guard and the purple shin
+        if y in (4, 5):
+            return FP2
+        if 7 <= y <= 11:
+            return FP
+        if f == 'bottom':
+            return FW
+        if full and y in (1, 2) and f == 'front':
+            return SHADE
+        return FW
+
+    both(s, 'rleg', 'lleg', leg)
+    # the tail's corner
+    for y in range(16, 32):
+        for x in range(56, 64):
+            s.px(x, y, (FW if (x + y) % 5 else SHADE) if y < 24 else (FP if (x + y) % 4 else FP2))
+    s.save('freeza_total_100' if full else 'freeza_total')
+
+
+freeza_total(0)
+freeza_total(1)
+print('freeza ok')

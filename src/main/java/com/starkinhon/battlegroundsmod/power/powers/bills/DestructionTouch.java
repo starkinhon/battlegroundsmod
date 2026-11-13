@@ -118,6 +118,11 @@ public final class DestructionTouch {
         if (start.y - land.y > bola.alturaMaxima()) {
             land = new Vec3(land.x, start.y - bola.alturaMaxima(), land.z);
         }
+        // In the combat flight (Stark 2026-11-13: every move thought for the air) the target is up in the sky, far over
+        // the ground the ball was made to crack: it drops onto the target itself and goes off there, around it.
+        if (target != null && target.isAlive() && target.getY() - ground(level, target.position().add(0, 1, 0), caster) > 4) {
+            land = Combat.center(target);
+        }
         double speed = Math.max(0.05, bola.velocidade());
         Vec3 path = land.subtract(start);
         Vec3 dir = path.lengthSqr() < 1.0E-6 ? new Vec3(0, -1, 0) : path.normalize();

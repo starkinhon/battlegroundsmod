@@ -103,6 +103,11 @@ public class PowerSelectScreen extends Screen {
         }
         SkillIcons.reload();
         mc.setScreen(new PowerSelectScreen());
+        // Singleplayer (not open to LAN): the world freezes while the book is open (isPauseScreen), so freeze
+        // the world sounds too, like the ESC menu does. Closing the screen resumes them (Minecraft.setScreen(null)).
+        if (pausesWorld(mc)) {
+            mc.getSoundManager().pause();
+        }
         mc.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.ENCHANTMENT_TABLE_USE, 1.4f, 0.45f));
     }
 
@@ -154,6 +159,14 @@ public class PowerSelectScreen extends Screen {
     private List<Power> orbit() {
         List<Power> list = new ArrayList<>(tab == 0 ? Powers.divine() : Powers.sub().stream().filter(p -> uniId(p).equals(uni)).toList());
         list.sort(Comparator.comparing(PowerSelectScreen::uniId));
+        if (tab == 0 && minecraft != null && minecraft.player != null) {
+            // The techniques a master taught (the Kamehameha from Mestre Kame), so the player can go back to them.
+            for (Power p : Powers.innate()) {
+                if (SoulSync.known(minecraft.player, p.id()) || p.id().equals(current())) {
+                    list.add(0, p);
+                }
+            }
+        }
         return list;
     }
 
@@ -266,7 +279,7 @@ public class PowerSelectScreen extends Screen {
             return;
         }
         int i = 0;
-        for (ChallengeSpec.Universe u : spec.universos()) {
+        for (ChallengeSpec.Universe u : spec.universos().stream().filter(ChallengeSpec.Universe::world).toList()) {
             List<Power> subs = Powers.sub().stream().filter(p -> uniId(p).equals(u.id())).toList();
             Random r = new Random(31 + i * 17L);
             int n = Math.max(4, subs.size());
@@ -771,7 +784,8 @@ public class PowerSelectScreen extends Screen {
         int yy = y + 8;
         GuiDraw.centeredText(g, font, s.name(), x + w / 2f, yy, 1.25f, a(mix(c, WHITE, 0.3f), 1), true);
         yy += 15;
-        String kind = Component.translatable(Powers.isSub(s.id()) ? "screen.battlegroundsmod.soul_book.sub" : "screen.battlegroundsmod.soul_book.divine").getString();
+        String kind = Component.translatable(Powers.isInnate(s.id()) ? "screen.battlegroundsmod.soul_book.inata"
+                : Powers.isSub(s.id()) ? "screen.battlegroundsmod.soul_book.sub" : "screen.battlegroundsmod.soul_book.divine").getString();
         String un = uniName(s);
         GuiDraw.centeredText(g, font, Component.literal(kind + (un.isEmpty() ? "" : " · " + un.toUpperCase())), x + w / 2f, yy, 0.75f, 0xFFAAA0C3, false);
         yy += 10;
@@ -1214,8 +1228,16 @@ public class PowerSelectScreen extends Screen {
         super.removed();
     }
 
+    // Pauses the game in singleplayer so nothing can attack the player while the book is open.
+    // Minecraft itself ignores this in multiplayer and on a LAN world, where the book keeps the world running.
     @Override
     public boolean isPauseScreen() {
-        return false;
+        return true;
+    }
+
+    // Same rule as the ESC menu: only an integrated server that is not published to LAN pauses.
+    private static boolean pausesWorld(net.minecraft.client.Minecraft mc) {
+        return mc.hasSingleplayerServer() && mc.getSingleplayerServer() != null
+                && !mc.getSingleplayerServer().isPublished();
     }
 }

@@ -42,6 +42,7 @@ public final class FxShaders {
     static ShaderInstance kkSus;
     static ShaderInstance kkMist;
     static ShaderInstance sand;
+    public static ShaderInstance wood;
     static ShaderInstance bleach;
     // Bleach's own glow composite (halo only, like the pages).
     static ShaderInstance bleachComp;
@@ -65,6 +66,8 @@ public final class FxShaders {
     static ShaderInstance sdSky;
     // The two skies of the Duelo de Expansões, cyan and red, and the Santuário's cracks in the void (DuelScene).
     static ShaderInstance duelSky;
+    // the combat flight page's screen (PreviewFx)
+    static ShaderInstance pvScreen;
     static ShaderInstance sdFloor;
     static ShaderInstance sdShrine;
     static ShaderInstance sdCol;
@@ -92,6 +95,9 @@ public final class FxShaders {
     static ShaderInstance shenGround;
     static ShaderInstance shenBolt;
 
+    // Shibuya's Telão (client/TelaoRenderer).
+    static ShaderInstance telao;
+
     private static Boolean irisPresent;
 
     private FxShaders() {
@@ -108,6 +114,12 @@ public final class FxShaders {
             register(event, "fx_moonscreen", DefaultVertexFormat.POSITION, s -> moonScreen = s);
         } catch (Exception e) {
             BattlegroundsMod.LOGGER.error("Could not load the Awakened Moon screen shader", e);
+        }
+        // On its own: without it the Telão just shows its dark block.
+        try {
+            register(event, "souls_telao", DefaultVertexFormat.POSITION, s -> telao = s);
+        } catch (Exception e) {
+            BattlegroundsMod.LOGGER.error("Could not load the Telão shader", e);
         }
         try {
             register(event, "souls_ki", DefaultVertexFormat.POSITION, s -> ki = s);
@@ -134,6 +146,11 @@ public final class FxShaders {
             register(event, "souls_sand", DefaultVertexFormat.POSITION_TEX_COLOR_NORMAL, s -> sand = s);
         } catch (Exception e) {
             BattlegroundsMod.LOGGER.error("Could not load Gaara's sand shader", e);
+        }
+        try {
+            register(event, "souls_wood", DefaultVertexFormat.NEW_ENTITY, s -> wood = s);
+        } catch (Exception e) {
+            BattlegroundsMod.LOGGER.error("Could not load Hashirama's wood shader", e);
         }
         // Bleach (Rukia, Byakuya): the same GLSL text as the approved pages (forja/bleach/mod-shaders.sh).
         try {
@@ -237,6 +254,11 @@ public final class FxShaders {
             register(event, "souls_duel_sky", DefaultVertexFormat.POSITION, s -> duelSky = s);
         } catch (Exception e) {
             BattlegroundsMod.LOGGER.error("Could not load the Domain Duel sky shader", e);
+        }
+        try {
+            register(event, "fx_pvscreen", DefaultVertexFormat.POSITION, s -> pvScreen = s);
+        } catch (Exception e) {
+            BattlegroundsMod.LOGGER.error("Could not load the combat flight's screen shader", e);
         }
     }
 

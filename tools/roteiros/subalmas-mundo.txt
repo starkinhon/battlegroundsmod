@@ -1,0 +1,22 @@
+# SubAlmas pelo mundo (PR #309). Copiar pra run/soulsdev/roteiros. Mundo normal Spawn296, floresta de Karin (capim).
+# Todos os desafios liberados (então o sorteio não corta). 5 min de carência + 12 min olhando; a cada 15 s lista os
+# mobs de alma num raio de 160 (dev info vai pro log), pra ver se nascem e quanto tempo ficam.
+espera 60
+difficulty normal
+gamerule doMobSpawning true
+gamerule doDaylightCycle false
+time set 1000
+gamemode creative
+soul desafios liberar todos
+spreadplayers -306 946 1 24 false @s
+espera 40
+dev repetir 300 dev info @e[type=!minecraft:player,type=!minecraft:item,type=!battlegroundsmod:raptor,type=!battlegroundsmod:tiranossauro,type=!battlegroundsmod:soldado_red_ribbon,type=!battlegroundsmod:pterodactilo,type=!battlegroundsmod:bora,distance=..160]
+espera 6000
+devc print subalmas/karin_5min
+espera 7200
+devc print subalmas/karin_11min
+espera 7200
+devc print subalmas/karin_17min
+dev repetir parar
+espera 40
+sair

@@ -7,6 +7,7 @@ import com.starkinhon.battlegroundsmod.power.Tiers;
 
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Mth;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -52,6 +53,8 @@ public final class Combat {
     }
 
     public static List<LivingEntity> inRadius(ServerLevel level, Vec3 center, double radius, Entity owner) {
+        // Freeza Poder Total's island in the air breaks under any blow of his enemies.
+        com.starkinhon.battlegroundsmod.power.powers.freezaboss.FreezaTotal.probeBall(center, radius, owner);
         return level.getEntitiesOfClass(LivingEntity.class, AABB.ofSize(center, radius * 2, radius * 2, radius * 2),
                 e -> isTarget(e, owner) && center(e).distanceToSqr(center) <= radius * radius);
     }
@@ -68,6 +71,7 @@ public final class Combat {
     }
 
     public static List<LivingEntity> alongLine(ServerLevel level, Vec3 start, Vec3 end, double radius, Entity owner) {
+        com.starkinhon.battlegroundsmod.power.powers.freezaboss.FreezaTotal.probeLine(start, end, radius, owner);
         return level.getEntitiesOfClass(LivingEntity.class, new AABB(start, end).inflate(radius),
                 e -> {
                     if (!isTarget(e, owner)) {
@@ -78,8 +82,22 @@ public final class Combat {
                 });
     }
 
+    // In the combat flight the fight keeps 9-12 blocks off the target (the page's orbit), so a skill made for the ground
+    // (the Kaioken rush's 8, a grab's 7) never found it: locked on, every skill reaches it from the whole orbit.
+    private static final double LOCK_REACH = 32;
+
+    private static double lockReach(double range) {
+        return Math.max(range + 1, LOCK_REACH);
+    }
+
     // Where the player's view hits a block, or the point at max range.
     public static Vec3 raycastPoint(LivingEntity player, double range) {
+        LivingEntity locked = AirFight.target(player);
+        if (locked != null && (player instanceof net.minecraft.server.level.ServerPlayer || player instanceof com.starkinhon.battlegroundsmod.boss.SoulBoss)
+                && locked.distanceTo(player) <= lockReach(range)) {
+            // the combat flight aims at whoever it is locked on
+            return center(locked);
+        }
         Vec3 eye = player.getEyePosition();
         Vec3 end = eye.add(player.getLookAngle().scale(range));
         var hit = player.level().clip(new ClipContext(eye, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player));
@@ -88,11 +106,75 @@ public final class Combat {
 
     // The closest target in the player's view, stopped by walls. Slightly generous so moves feel good to land.
     public static LivingEntity raycastTarget(LivingEntity player, double range) {
+        LivingEntity locked = AirFight.target(player);
+        if (locked != null && (player instanceof net.minecraft.server.level.ServerPlayer || player instanceof com.starkinhon.battlegroundsmod.boss.SoulBoss)
+                && locked.distanceTo(player) <= lockReach(range)) {
+            return locked;
+        }
         Vec3 eye = player.getEyePosition();
         Vec3 end = raycastPoint(player, range);
-        return alongLine(level(player), eye, end, 0.6, player).stream()
+        LivingEntity hit = alongLine(level(player), eye, end, 0.6, player).stream()
                 .min(Comparator.comparingDouble(e -> e.distanceToSqr(eye)))
                 .orElse(null);
+        return hit != null ? hit : airAim(player, range);
+    }
+
+    // Someone flying (a Dragon Ball soul, a player on the flight) near where a player aims, or null. Without a Dragon Ball
+    // power there is no combat flight (Stark 2026-11-13): a launched technique still has to land on a flier, so the
+    // player's aim is taken onto it (raycastTarget, and PowerLogic.cast turns the look there with the lead).
+    public static LivingEntity airAim(LivingEntity player, double range) {
+        if (!(player instanceof ServerPlayer) || AirFight.target(player) != null) {
+            return null;
+        }
+        Vec3 eye = player.getEyePosition();
+        Vec3 look = player.getLookAngle();
+        double reach = Math.max(range, 24);
+        LivingEntity best = null;
+        double bestDot = 0.94;
+        for (LivingEntity e : level(player).getEntitiesOfClass(LivingEntity.class, player.getBoundingBox().inflate(reach))) {
+            if (e == player || !e.isAlive() || !isTarget(e, player) || !airborne(e)) {
+                continue;
+            }
+            Vec3 to = center(e).subtract(eye);
+            double d = to.length();
+            if (d > reach || d < 1.0E-3) {
+                continue;
+            }
+            double dot = to.scale(1 / d).dot(look);
+            if (dot > bestDot && player.hasLineOfSight(e)) {
+                bestDot = dot;
+                best = e;
+            }
+        }
+        return best;
+    }
+
+    // Flying: a player on the Dragon Ball flight or a flying soul (boss/AirCombat).
+    public static boolean airborne(LivingEntity entity) {
+        return entity instanceof Player p ? com.starkinhon.battlegroundsmod.universe.Flight.flying(p)
+                : com.starkinhon.battlegroundsmod.boss.AirCombat.flying(entity);
+    }
+
+    // Turns a player's look onto a flier near the aim (airAim), a little ahead of where it flies so a launched technique
+    // meets it (shots fly about 3 blocks a tick).
+    public static void aimAtFlier(LivingEntity player, double range) {
+        LivingEntity flier = airAim(player, range);
+        if (flier == null) {
+            return;
+        }
+        Vec3 eye = player.getEyePosition();
+        Vec3 c = center(flier);
+        Vec3 v = new Vec3(flier.getX() - flier.xo, flier.getY() - flier.yo, flier.getZ() - flier.zo);
+        if (v.lengthSqr() > 4) {
+            v = Vec3.ZERO; // a teleport, not a flight
+        }
+        Vec3 aim = c.add(v.scale(Math.min(20, c.distanceTo(eye) / 3)));
+        Vec3 d = aim.subtract(eye);
+        float yaw = (float) (Mth.atan2(-d.x, d.z) * Mth.RAD_TO_DEG);
+        float pitch = (float) Mth.clamp(-Math.toDegrees(Math.atan2(d.y, Math.hypot(d.x, d.z))), -89, 89);
+        player.setYRot(yaw);
+        player.setYHeadRot(yaw);
+        player.setXRot(pitch);
     }
 
     // Every move of the mod hurts through here or hurtMagic, so the attacker's tier scales them all (see Tiers).
@@ -182,6 +264,12 @@ public final class Combat {
     public static void push(Entity target, Vec3 direction, double strength, double up) {
         Vec3 flat = new Vec3(direction.x, 0, direction.z);
         flat = flat.lengthSqr() < 1.0E-4 ? Vec3.ZERO : flat.normalize().scale(strength);
+        if (target instanceof net.minecraft.server.level.ServerPlayer player && com.starkinhon.battlegroundsmod.universe.Flight.flying(player)) {
+            // A flying player's own client moves them: told to fly off this way (in the air the push is the full 3D one).
+            Vec3 dir = direction.lengthSqr() < 1.0E-4 ? Vec3.ZERO : direction.normalize().scale(strength);
+            com.starkinhon.battlegroundsmod.boss.AirCombat.knock(player, new Vec3(dir.x, dir.y + up, dir.z).scale(20), 6, false);
+            return;
+        }
         target.setDeltaMovement(flat.x, up, flat.z);
         target.hurtMarked = true;
     }

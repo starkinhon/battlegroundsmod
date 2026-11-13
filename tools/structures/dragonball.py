@@ -469,10 +469,10 @@ def capsule_interior(v, RX, RY, ez, rnd):
     for dx in (-9, 8):                                                    # the two orange arched doors
         v.box(dx - 1, 1, 8, dx + 2, 5, 8, 'orange_terracotta')
         v.set(dx - 1, 5, 8, 'white_concrete'); v.set(dx + 2, 5, 8, 'white_concrete')
-        v.set(dx, 1, 8, 'acacia_door[facing=south,half=lower,hinge=left,open=false,powered=false]')
-        v.set(dx, 2, 8, 'acacia_door[facing=south,half=upper,hinge=left,open=false,powered=false]')
-        v.set(dx + 1, 1, 8, 'acacia_door[facing=south,half=lower,hinge=right,open=false,powered=false]')
-        v.set(dx + 1, 2, 8, 'acacia_door[facing=south,half=upper,hinge=right,open=false,powered=false]')
+        v.set(dx, 1, 8, 'acacia_door[facing=south,half=lower,hinge=right,open=false,powered=false]')
+        v.set(dx, 2, 8, 'acacia_door[facing=south,half=upper,hinge=right,open=false,powered=false]')
+        v.set(dx + 1, 1, 8, 'acacia_door[facing=south,half=lower,hinge=left,open=false,powered=false]')
+        v.set(dx + 1, 2, 8, 'acacia_door[facing=south,half=upper,hinge=left,open=false,powered=false]')
         v.set(dx, 3, 8, 'orange_terracotta'); v.set(dx + 1, 3, 8, 'orange_terracotta')
     # ---------------- the hall ----------------
     rug(v, -4, 12, 4, 18, 1, 'purple', border='magenta')

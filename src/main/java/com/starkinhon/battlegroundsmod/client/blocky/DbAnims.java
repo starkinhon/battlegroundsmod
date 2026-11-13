@@ -4,7 +4,6 @@ import com.starkinhon.battlegroundsmod.animal.db.Androide8;
 import com.starkinhon.battlegroundsmod.animal.db.Bora;
 import com.starkinhon.battlegroundsmod.animal.db.LadraoUrso;
 import com.starkinhon.battlegroundsmod.animal.db.Namekiano;
-import com.starkinhon.battlegroundsmod.animal.db.PeixeGigante;
 
 import net.minecraft.util.Mth;
 
@@ -171,36 +170,4 @@ public final class DbAnims {
         }
     }
 
-    // ---------- Peixe gigante ----------
-    public static void peixe(BlockyModel<PeixeGigante> m, PeixeGigante e, float ls, float amt, float age, float hy, float hp) {
-        float t = age / 20f;
-        float fast = Math.min(1f, (float) e.getDeltaMovement().length() * 4f);
-        float f = 2 + fast * 2.6f, amp = 1 + fast * 0.5f, w = t * f;
-        m.rot("corpo", 0, s(w + 0.8f) * 0.05f * amp, 0);
-        m.rot("cabeca", 0, -s(w + 1.2f) * 0.04f * amp, 0);
-        m.rot("cauda1", 0, s(w) * 0.16f * amp, 0);
-        m.rot("cauda2", 0, s(w - 0.9f) * 0.3f * amp, 0);
-        m.rot("caudal", 0, s(w - 1.8f) * 0.4f * amp, 0);
-        m.rot("peitD", 0, s(t * 2.4f) * 0.15f, s(t * 2.4f) * 0.25f);
-        m.rot("peitE", 0, -s(t * 2.4f + 0.5f) * 0.15f, -s(t * 2.4f + 0.5f) * 0.25f);
-        m.rot("mandibula", (s(t * 1.1f) * 0.5f + 0.5f) * 0.12f, 0, 0);
-        m.rot("bigodeD", s(t * 1.6f) * 0.15f, 0, s(t * 1.2f) * 0.1f); m.rot("bigodeD2", s(t * 1.6f - 0.7f) * 0.25f, 0, 0);
-        m.rot("bigodeE", s(t * 1.4f + 1) * 0.15f, 0, -s(t * 1.1f) * 0.1f); m.rot("bigodeE2", s(t * 1.4f + 0.3f) * 0.25f, 0, 0);
-        // nariz segue a direção do movimento (sobe no salto, desce na queda)
-        m.rot("corpo", -hp * DEG, 0, 0);
-        float a = e.attackProgress(age, 2.0f);
-        if (a >= 0) {
-            float arc = Mth.sin(Mth.PI * sm(0.05f, 0.85f, a));
-            float open = a < 0.4f ? sm(0.1f, 0.4f, a) : a < 0.5f ? 1 - sm(0.44f, 0.5f, a) : 0;
-            m.rot("mandibula", 0.85f * open, 0, 0);
-            m.rot("cabeca", -0.18f * open, 0, 0);
-            m.rot("cauda1", 0.3f * arc, s(age * 0.45f) * 0.12f, 0); m.rot("cauda2", 0.35f * arc, 0, 0); m.rot("caudal", 0.2f * arc, 0, 0);
-            m.rot("peitD", 0, 0, -0.6f * arc); m.rot("peitE", 0, 0, 0.6f * arc);
-        }
-        if (!e.isInWater()) {
-            // fora d'água se debate
-            m.rot("corpo", 0, 0, s(age * 0.9f) * 0.25f);
-            m.rot("cauda1", 0, s(age * 0.9f) * 0.35f, 0);
-        }
-    }
 }

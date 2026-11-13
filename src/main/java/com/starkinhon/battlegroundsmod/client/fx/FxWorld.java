@@ -115,6 +115,7 @@ public final class FxWorld {
         CLOCKS.clear();
         BIRTHS.clear();
         DestructionFx.clear();
+        com.starkinhon.battlegroundsmod.client.fx.hs.HsFx.clear();
     }
 
     // Where the mouth was and where it aimed on each tick of a fire stream (world space), so flames already out keep
@@ -146,7 +147,8 @@ public final class FxWorld {
         boolean world = !PIECES.isEmpty() || MeteorRenderer.hasTrails() || Aura.active() || KatonBallRenderer.active() || AshDeath.hasSparks() || SoulCeremonyFx.active()
                 || SpaceScene.active() || EsferaRenderer.active() || HakaiRenderer.active() || EnergyRenderer.active() || BlackBoxRenderer.active() || AzulRenderer.active() || VermelhoRenderer.active() || BlackFlashRenderer.active() || RoxoRenderer.active() || AizenFx.active() || SwordFx.active() || MoonSlashRenderer.active() || MoonFormsRenderer.active() || PunchFxRenderer.active() || SubFx.active() || MakimaFx.active()
                 || SphereRenderer.active() || SusanooArm.active() || DomainScene.active() || VoidFlashScene.active() || FugaRenderer.active() || DismantleRenderer.active() || SukunaCutsRenderer.active() || SukunaDomainScene.active()
-                || ClivarRenderer.active() || CravadaRenderer.active() || FlightFx.active() || OpmFx.active() || com.starkinhon.battlegroundsmod.client.fx.shig.ShigFx.active();
+                || ClivarRenderer.active() || CravadaRenderer.active() || FlightFx.active() || PreviewFx.active() || OpmFx.active() || com.starkinhon.battlegroundsmod.client.fx.shig.ShigFx.active()
+                || com.starkinhon.battlegroundsmod.client.fx.hs.HsFx.active();
         if (!world && !ScreenFx.needsScene()) {
             return;
         }
@@ -217,6 +219,7 @@ public final class FxWorld {
             KatonBallRenderer.render(camera, now, partial);
             Aura.render(event.getCamera(), now, partial);
             FlightFx.render(camera, now, partial);
+            PreviewFx.render(camera, partial);
             AshDeath.sparks(camera, now, partial);
             SoulCeremonyFx.render(camera, now, partial);
             EsferaRenderer.render(camera, now, partial);
@@ -253,6 +256,8 @@ public final class FxWorld {
             LuffyMesh.flush(false);
             KakashiSusanoo.flush(camera, now, false);
             GaaraSand.flush(camera, now, false);
+            com.starkinhon.battlegroundsmod.client.fx.hs.HsFx.render(camera);
+            com.starkinhon.battlegroundsmod.client.fx.hs.HsWood.flush(false);
             BleachMesh.flush(false);
         } else {
             // The Susanoo arm's depth goes in first, so its color only lands on the front surface.
@@ -268,6 +273,8 @@ public final class FxWorld {
             LuffyMesh.flush(false);
             KakashiSusanoo.flush(camera, now, false);
             GaaraSand.flush(camera, now, false);
+            com.starkinhon.battlegroundsmod.client.fx.hs.HsFx.render(camera);
+            com.starkinhon.battlegroundsmod.client.fx.hs.HsWood.flush(false);
             BleachMesh.flush(false);
             boolean outline = !space && Aura.drawMask(event, camera, partial);
             FxPost.beginGlow();
@@ -376,6 +383,8 @@ public final class FxWorld {
             FugaRenderer.render(camera, partial);
             // Freeza's Supernova: the fire dome (DbFx said where this frame).
             NovaRenderer.render(camera);
+            // Freeza Poder Total: the torn-out island's blocks, flying.
+            FzFx.renderBlocks(camera);
             // Sukuna's Expansão de Domínio: the shrine, its cuts and its light, then what it does to the screen.
             SukunaDomainScene.render(camera, partial);
             SukunaDomainScene.screen();

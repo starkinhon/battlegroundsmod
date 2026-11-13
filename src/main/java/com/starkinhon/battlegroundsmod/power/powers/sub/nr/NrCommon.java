@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import com.starkinhon.battlegroundsmod.universe.NarutoGear;
 import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
@@ -119,7 +120,7 @@ public final class NrCommon {
 
     // Every hit of the mod: the copied move hits 20% harder.
     public static float damageMultiplier(LivingEntity attacker) {
-        return SubCommon.hasState(attacker, COPY) ? 1.2f : 1;
+        return (SubCommon.hasState(attacker, COPY) ? 1.2f : 1) * NarutoGear.kusanagiBoost(attacker);
     }
 
     // A punch landed in Sage Mode: the wave in the air shows it reached farther than the arm.
@@ -228,13 +229,18 @@ public final class NrCommon {
         }
         // Gaara's sand: the first shot or hit from the front every 6 s sticks in a wall of sand. A blow that is too strong
         // (an ult) breaks through.
-        if ("gaara".equals(data.power) && (attacker != null || direct != null)) {
+        // The Cabaça de Areia (Stark 2026-11-12, Itens de Naruto): Gaara carrying it guards every 3 s from any side; anyone
+        // else carrying it gets one blow stopped every 20 s.
+        boolean gaara = "gaara".equals(data.power);
+        boolean gourd = NarutoGear.hasGourd(target);
+        if ((gaara || gourd) && (attacker != null || direct != null)) {
             Long last = SAND_GUARD.get(target.getId());
             long now = level.getGameTime();
             Entity from = direct != null ? direct : attacker;
             Vec3 toFrom = SubCommon.flat(from.position().subtract(target.position()));
-            boolean front = direct instanceof Projectile || toFrom.dot(SubCommon.flat(target.getLookAngle())) > -0.2;
-            if (front && (last == null || now - last >= SAND_GUARD_TICKS) && !Gaara.coffining(target)) {
+            boolean front = gourd || direct instanceof Projectile || toFrom.dot(SubCommon.flat(target.getLookAngle())) > -0.2;
+            int every = !gaara ? 400 : gourd ? 60 : SAND_GUARD_TICKS;
+            if (front && (last == null || now - last >= every) && !(gaara && Gaara.coffining(target))) {
                 SAND_GUARD.put(target.getId(), now);
                 SubNet.send(level, SubNet.SAND_WALL, target.getId(), target.position(), toFrom, 0, 0, 0);
                 SubCommon.sound(level, target.position(), SoundEvents.SAND_BREAK, 1.6f, 0.7f);

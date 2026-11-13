@@ -1027,6 +1027,11 @@ def goku_house():
                     else:
                         v.set(x, y, z, 'light_gray_concrete')
     door(v, 0, 0, 8, 'south', block='spruce_door')
+    # the arch is 3 wide and the door 1 (2026-11-12 print: a lone door standing in the middle with holes on both sides):
+    # a light gray frame closes the sides and the top around it, in the plane of the door
+    for (x, y) in ((-1, 0), (-1, 1), (-1, 2), (1, 0), (1, 1), (1, 2), (0, 2), (0, 3)):
+        if v.get(x, y, 8) in (None, 'minecraft:air'):
+            v.set(x, y, 8, 'light_gray_concrete')
     for (x, y) in ((3, 2), (2, 3), (3, 3), (4, 3), (3, 4)):
         for z in range(11, 0, -1):
             if v.get(x, y, z) not in (None, 'minecraft:air'):
@@ -1070,7 +1075,9 @@ def goku_house():
     v.walls(gx - 3, 0, gz - 3, gx + 3, 1, gz + 3, 'bricks')
     v.walls(gx - 3, 2, gz - 3, gx + 3, 4, gz + 3, 'white_concrete')
     v.box(gx - 2, 0, gz - 2, gx + 2, 4, gz + 2, 'air')
-    door(v, gx, 0, gz + 3, 'south', block='warped_door', hinge='left'); door(v, gx + 1, 0, gz + 3, 'south', block='warped_door', hinge='right')
+    # a door facing south pairs with its east neighbour when it is hinge=right and the east one hinge=left (vanilla's own
+    # pairing): both hinges then sit on the outer edges. The other way round (2026-11-12 print) both swung from the middle.
+    door(v, gx, 0, gz + 3, 'south', block='warped_door', hinge='right'); door(v, gx + 1, 0, gz + 3, 'south', block='warped_door', hinge='left')
     v.set(gx - 2, 2, gz + 3, 'cyan_stained_glass_pane'); v.set(gx + 2, 3, gz + 3, 'red_concrete')
     # curved pagoda roof: concave slopes, corners turned up
     for x in range(-6, 7):

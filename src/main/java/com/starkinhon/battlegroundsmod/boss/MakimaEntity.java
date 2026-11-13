@@ -24,7 +24,8 @@ public class MakimaEntity extends SoulBoss {
     @Override
     public void tick() {
         super.tick();
-        if (!level().isClientSide() && tickCount == 2 && isBoss()) {
+        if (!level().isClientSide() && tickCount == 2 && isBoss() && puppetOwner() == null) {
+            // A Makima soul raised by another Makima comes without puppets of her own.
             Fantoche.seed(this, PUPPETS);
         }
     }

@@ -37,6 +37,10 @@ public final class Powers {
     private static final Map<String, Power> BY_ID = new LinkedHashMap<>();
     private static final List<Power> DIVINE = new ArrayList<>();
     private static final List<Power> SUB = new ArrayList<>();
+    // Techniques a master teaches at a structure (Stark 2026-11-12: "o Mestre Kame te ensina um Kamehameha"): a power with
+    // only its own key(s) and the normal punches. Not a soul (no crystal, no boss, not in the universes' lists); the Livro
+    // das Almas shows it on the Divine tab once learned, so the player can go back to it after wearing a soul.
+    private static final Map<String, Power> INNATE = new LinkedHashMap<>();
     // Powers only mobs use (the Fighters' base combat): found by get, but not selectable and without a soul crystal.
     private static final Map<String, Power> HIDDEN = new LinkedHashMap<>();
 
@@ -80,8 +84,16 @@ public final class Powers {
     public static final Power INUMAKI = registerSub(com.starkinhon.battlegroundsmod.power.powers.sub.jj.Inumaki.create());
     public static final Power MIWA = registerSub(com.starkinhon.battlegroundsmod.power.powers.sub.jj.Miwa.create());
 
+    // Taught by Mestre Kame at the Kame House (DbActivities.roshi): Goku's Kamehameha on Z, a bit slower to come back.
+    public static final Power KAMEHAMEHA = registerInnate(new Power("kamehameha", 0x5AB8FF, 1.0f, List.of(
+            new Ability(220, 0, com.starkinhon.battlegroundsmod.power.powers.sub.db.Goku::kamehameha))));
+
     // Mob only.
     public static final Power FIGHTER = registerHidden(Fighter.create());
+    // Hashirama Senju, end-game boss only: never a soul (bosses-fim-de-jogo).
+    public static final Power HASHIRAMA = registerHidden(com.starkinhon.battlegroundsmod.power.powers.hashirama.Hashirama.create());
+    // Freeza Poder Total, end-game boss only: never a soul.
+    public static final Power FREEZA_TOTAL = registerHidden(com.starkinhon.battlegroundsmod.power.powers.freezaboss.FreezaTotal.create());
     // The Dragon World's enemies, two moves each (DbMobs).
     public static final Power DB_SAIBAMAN = registerHidden(com.starkinhon.battlegroundsmod.power.powers.sub.db.DbMobs.saibaman());
     public static final Power DB_BANDIT = registerHidden(com.starkinhon.battlegroundsmod.power.powers.sub.db.DbMobs.bandit());
@@ -106,6 +118,11 @@ public final class Powers {
         return power;
     }
 
+    private static Power registerInnate(Power power) {
+        INNATE.put(power.id(), power);
+        return power;
+    }
+
     private static Power registerHidden(Power power) {
         HIDDEN.put(power.id(), power);
         return power;
@@ -113,7 +130,11 @@ public final class Powers {
 
     public static Power get(String id) {
         Power power = BY_ID.get(id);
-        return power != null || id == null ? power : HIDDEN.get(id);
+        if (power != null || id == null) {
+            return power;
+        }
+        power = INNATE.get(id);
+        return power != null ? power : HIDDEN.get(id);
     }
 
     public static Collection<Power> all() {
@@ -126,6 +147,14 @@ public final class Powers {
 
     public static List<Power> sub() {
         return SUB;
+    }
+
+    public static Collection<Power> innate() {
+        return INNATE.values();
+    }
+
+    public static boolean isInnate(String id) {
+        return INNATE.containsKey(id);
     }
 
     public static boolean isSub(String id) {

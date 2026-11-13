@@ -104,6 +104,9 @@ public final class Npcs {
     }
 
     private static void say(ServerPlayer player, UniverseNpc npc, Component line) {
+        if (Talks.capture(line)) {
+            return;
+        }
         player.sendSystemMessage(Component.empty().append(npc.getType().getDescription().copy().withStyle(s -> s.withColor(0xF2C94C).withBold(true)))
                 .append(Component.literal(": ").withStyle(s -> s.withColor(0xAAAAAA))).append(line.copy().withStyle(s -> s.withColor(0xE6E0EE))));
     }

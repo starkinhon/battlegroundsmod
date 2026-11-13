@@ -19,6 +19,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -57,17 +58,46 @@ public final class FlightClient {
         } else {
             STATES.put(entityId, state);
         }
+        if (minecraft.level == null || minecraft.player == null || entityId == minecraft.player.getId()
+                || !(minecraft.level.getEntity(entityId) instanceof LivingEntity other)) {
+            return;
+        }
+        float[] color = FlightFx.colorOf(other);
         // Someone else lighting the boost: everyone around sees the ring and hears the boom (the local player's own ones
         // go off the moment the key is pressed, see tick).
-        if (minecraft.level != null && minecraft.player != null && entityId != minecraft.player.getId()
-                && (state & Flight.BOOST) != 0 && (old & Flight.BOOST) == 0 && minecraft.level.getEntity(entityId) instanceof Player other) {
+        if ((state & Flight.BOOST) != 0 && (old & Flight.BOOST) == 0) {
             Vec3 dir = other.getDeltaMovement().lengthSqr() > 1.0E-4 ? other.getDeltaMovement().normalize() : other.getLookAngle();
-            FlightFx.burst(other.position().add(0, 1, 0).add(dir.scale(0.6)), dir, 1);
+            FlightFx.burst(other.position().add(0, 1, 0).add(dir.scale(0.6)), dir, 1, color);
             boom(other.position(), true);
+        }
+        // A flying soul (boss/AirCombat) taking off and landing: the players' own take-off is in tick.
+        if (!(other instanceof Player)) {
+            if ((state & Flight.FLYING) != 0 && (old & Flight.FLYING) == 0) {
+                FlightFx.burst(other.position().add(0, 0.15, 0), new Vec3(0, 1, 0), 0.9f, color);
+                boom(other.position(), false);
+            } else if ((state & Flight.FLYING) == 0 && (old & Flight.FLYING) != 0 && other.isAlive()) {
+                FlightFx.burst(other.position().add(0, 0.1, 0), new Vec3(0, 1, 0), 1.3f, color);
+                minecraft.level.playLocalSound(other.getX(), other.getY(), other.getZ(), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE,
+                        0.45f, 1.5f, false);
+            }
         }
     }
 
+    // Who the server says flies (players and the flying souls).
+    public static java.util.Set<Integer> ids() {
+        return STATES.keySet();
+    }
+
     public static int state(Entity entity) {
+        int sim = PreviewFight.stateOf(entity);
+        if (sim >= 0) {
+            return sim;
+        }
+        return STATES.getOrDefault(entity.getId(), 0);
+    }
+
+    // What the server said about it, never the page's own (client/PreviewFight reads Flight.HELD here).
+    static int serverState(Entity entity) {
         return STATES.getOrDefault(entity.getId(), 0);
     }
 
@@ -81,12 +111,21 @@ public final class FlightClient {
 
     public static void clear() {
         STATES.clear();
+        AirFightClient.clear();
+        dodgeT = 0;
         active = false;
+        knockTicks = 0;
+        driveTicks = 0;
+        slam = false;
         boost = false;
     }
 
     // The local player's speed in blocks per second (for the pose), or null when not flying this way.
     public static Vec3 velocity() {
+        Vec3 sim = PreviewFight.playerVelocity();
+        if (sim != null) {
+            return sim;
+        }
         return active ? new Vec3(vx, vy, vz) : null;
     }
 
@@ -95,19 +134,103 @@ public final class FlightClient {
     }
 
     public static float boostAmount() {
+        if (PreviewFight.running()) {
+            return PreviewFight.playerBoost();
+        }
         return boostAmt;
     }
 
-    static float cruise(Player player) {
-        return 11 + (Tiers.HUMANO - Tiers.of(player)) * 1.4f;
+    static float cruise(LivingEntity entity) {
+        if (!(entity instanceof Player)) {
+            // the flying souls (boss/AirCombat): their cruise and the investida's boost
+            return 16;
+        }
+        return 11 + (Tiers.HUMANO - Tiers.of(entity)) * 1.4f;
     }
 
-    static float boostSpeed(Player player) {
-        return cruise(player) * 2.3f;
+    static float boostSpeed(LivingEntity entity) {
+        return entity instanceof Player ? cruise(entity) * 2.3f : 46;
     }
 
-    public static float boostSpeedOf(Player player) {
-        return boostSpeed(player);
+    public static float boostSpeedOf(LivingEntity entity) {
+        return boostSpeed(entity);
+    }
+
+    // Thrown by a flying soul's blow (boss/AirCombat): off at `velocity` without control for `ticks`, the speed dying
+    // out (the page's 2.2) unless it is the Martelo's slam, which goes straight into the ground and lands there.
+    private static int knockTicks;
+    private static boolean slam;
+
+    // A skill of the player's own moving them (a dash: Madara's grab, Sukuna's Clivar, Chidori, Raikiri, Rasengan, Todo,
+    // Shigaraki's touch, Luffy's recoil...): the server sets the speed and the flight, which moves the player itself every
+    // tick, used to wipe it out on the next tick (the dash never went anywhere in the air). Now the server's speed is
+    // taken as it is while the skill keeps sending it, then the flight carries on from there.
+    private static int driveTicks;
+    private static double dvx, dvy, dvz;
+    // Below this (blocks per tick) it is a hit's knockback, not a skill moving the player.
+    private static final double DRIVE_MIN = 0.7;
+
+    // The server set the local player's speed (Minecraft's motion packet, see mixin/EntityMotionMixin).
+    public static void serverMotion(Vec3 v) {
+        if (!active) {
+            return;
+        }
+        double speed = v.length();
+        if (speed < DRIVE_MIN) {
+            if (driveTicks > 0) {
+                // the skill stopping the player (the dash's end)
+                driveTicks = speed < 0.05 ? 0 : 2;
+                dvx = v.x;
+                dvy = v.y;
+                dvz = v.z;
+                vx = v.x * 20;
+                vy = v.y * 20;
+                vz = v.z * 20;
+            }
+            return;
+        }
+        dvx = v.x;
+        dvy = v.y;
+        dvz = v.z;
+        driveTicks = 2;
+        vx = v.x * 20;
+        vy = v.y * 20;
+        vz = v.z * 20;
+        knockTicks = 0;
+        if (boost) {
+            Minecraft minecraft = Minecraft.getInstance();
+            if (minecraft.player != null) {
+                setBoost(minecraft.player, false, boostSpeed(minecraft.player));
+            }
+        }
+        PreviewFight.driven();
+    }
+
+    // Whether a skill of the player's own is moving them right now.
+    public static boolean driving() {
+        return driveTicks > 0;
+    }
+
+    public static void knock(Vec3 velocity, int ticks, boolean slammed) {
+        if (!active) {
+            return;
+        }
+        if (PreviewFight.running()) {
+            // the combat flight's page has the player: thrown off inside it (a skill's push, a soul's technique)
+            PreviewFight.knock(velocity, ticks, slammed);
+            return;
+        }
+        vx = velocity.x;
+        vy = velocity.y;
+        vz = velocity.z;
+        knockTicks = Math.max(knockTicks, ticks);
+        slam = slammed;
+        if (boost) {
+            Minecraft minecraft = Minecraft.getInstance();
+            if (minecraft.player != null) {
+                setBoost(minecraft.player, false, boostSpeed(minecraft.player));
+            }
+        }
     }
 
     private static float damp(float k) {
@@ -124,11 +247,15 @@ public final class FlightClient {
             return false;
         }
         boolean now = player.getAbilities().flying && !player.isCreative() && !player.isSpectator() && !player.isPassenger();
+        AirFightClient.tick(player, now);
         if (!now) {
             if (active) {
                 land();
             }
             active = false;
+            knockTicks = 0;
+            driveTicks = 0;
+            slam = false;
             boostAmt = Math.max(0, boostAmt - 0.15f);
             stopWind();
             return false;
@@ -146,6 +273,64 @@ public final class FlightClient {
             FlightFx.burst(player.position().add(0, 0.2, 0), new Vec3(0, 1, 0), 0.8f);
             boom(player.position(), false);
         }
+        if (driveTicks > 0) {
+            // a skill moving the player (see serverMotion): its speed as it is, a little less each tick once it stops sending
+            driveTicks--;
+            player.setDeltaMovement(dvx, dvy, dvz);
+            dvx *= 0.85;
+            dvy *= 0.85;
+            dvz *= 0.85;
+            vx = dvx * 20;
+            vy = dvy * 20;
+            vz = dvz * 20;
+            player.fallDistance = 0;
+            if (PreviewFight.running() && sprintTap) {
+                PreviewFight.dodgeKey();
+                return true;
+            }
+            return false;
+        }
+        if (PreviewFight.running()) {
+            // the combat flight's page moves the player itself, every frame (PreviewFight); Ctrl is its dodge
+            if (sprintTap) {
+                PreviewFight.dodgeKey();
+            }
+            knockTicks = 0;
+            slam = false;
+            player.setDeltaMovement(Vec3.ZERO);
+            player.fallDistance = 0;
+            return sprintTap;
+        }
+        if (knockTicks > 0) {
+            knockTicks--;
+            if (!slam) {
+                float drag = damp(2.2f);
+                vx -= vx * drag;
+                vy -= vy * drag;
+                vz -= vz * drag;
+            } else if (knockTicks == 0) {
+                slam = false;
+            }
+            if (!Double.isFinite(vx + vy + vz)) {
+                vx = vy = vz = 0;
+            }
+            // thrown against a wall: the speed into it is gone
+            if (player.horizontalCollision) {
+                vx *= 0.2;
+                vz *= 0.2;
+            }
+            // thrown down onto the ground (not the Martelo): it skims over it and keeps flying instead of landing
+            // (2nd scripted test of #318: a ground blow put the player on the ground and the air fight never started)
+            if (!slam && vy < 0 && !player.level().noCollision(player, player.getBoundingBox().move(0, vy * DT - 0.05, 0))) {
+                vy = 0;
+            }
+            player.setDeltaMovement(vx * DT, vy * DT, vz * DT);
+            player.fallDistance = 0;
+            speed01 = (float) Mth.clamp(Math.sqrt(vx * vx + vy * vy + vz * vz) / boostSpeed(player), 0, 1);
+            ScreenFx.sustainFov(speed01 * 18);
+            wind(player);
+            return false;
+        }
         Options options = minecraft.options;
         boolean keys = minecraft.screen == null;
         float forward = keys ? (options.keyUp.isDown() ? 1 : 0) - (options.keyDown.isDown() ? 1 : 0) : 0;
@@ -156,6 +341,17 @@ public final class FlightClient {
         float boostV = boostSpeed(player);
 
         boolean used = false;
+        LivingEntity lock = tired ? null : AirFightClient.target();
+        boolean has;
+        if (lock != null) {
+            // The combat flight (AirFightClient): around the target, no boost; Ctrl is the dodge.
+            if (boost) {
+                setBoost(player, false, boostV);
+            }
+            used = combat(player, lock, sprintTap, forward, right, up, cruise);
+            has = true;
+        } else {
+        dodgeT = 0;
         if (sprintTap) {
             used = true;
             setBoost(player, !boost && !tired, boostV);
@@ -173,7 +369,7 @@ public final class FlightClient {
         double wy = look.y * forward + up * 0.8;
         double wz = look.z * forward + rz * right;
         double wl = Math.sqrt(wx * wx + wy * wy + wz * wz);
-        boolean has = wl > 0.1;
+        has = wl > 0.1;
         if (has) {
             wx /= wl;
             wy /= wl;
@@ -216,6 +412,7 @@ public final class FlightClient {
             // floating: rising and sinking a little
             vy += Math.sin(player.tickCount * DT * 2.1) * 0.4 * DT;
         }
+        }
         boostAmt += ((boost ? 1 : 0) - boostAmt) * damp(boost ? 5 : 2.5f);
         if (!Double.isFinite(vx + vy + vz)) {
             vx = vy = vz = 0;
@@ -249,6 +446,141 @@ public final class FlightClient {
             ScreenFx.sustainBlur(player.getEyePosition().add(dir.scale(50)), blur * 0.35f);
         }
         wind(player);
+        return used;
+    }
+
+    // ---------- the combat flight (AirFightClient; the approved page's combatMove, doDash, doDodge) ----------
+
+    private static int dodgeT, dodgeCd, dodgeSide = 1;
+    private static double lockD = -1;
+    private static Vec3 dodgeVel = Vec3.ZERO;
+
+    // The server started the ki dash (AirFight.dash): the kick and the ring now, the homing in combat.
+    static void dashStart() {
+        Minecraft minecraft = Minecraft.getInstance();
+        LocalPlayer player = minecraft.player;
+        if (player == null || !active) {
+            return;
+        }
+        Vec3 dir = player.getLookAngle();
+        FlightFx.burst(player.position().add(0, 1, 0).add(dir.scale(0.6)), dir, 1);
+        boom(player.position(), true);
+        ScreenFx.fovKick(14, 12);
+        ScreenFx.radialBlur(player.getEyePosition().add(dir.scale(30)), 0.6f, 10);
+    }
+
+    // The page's fight let go of the player: the flight goes on from its speed.
+    static void carry(Vec3 v) {
+        vx = v.x;
+        vy = v.y;
+        vz = v.z;
+    }
+
+    static void dashEnd() {
+        vx *= 0.3;
+        vy *= 0.3;
+        vz *= 0.3;
+    }
+
+    public static boolean dodging() {
+        return dodgeT > 0;
+    }
+
+    // Sets the speed for this tick around the locked target. Returns whether the Ctrl tap was used (the dodge).
+    private static boolean combat(LocalPlayer player, LivingEntity target, boolean sprintTap, float forward, float right, float up, float cruise) {
+        Vec3 me = player.position().add(0, 0.9, 0);
+        Vec3 to = target.position().add(0, target.getBbHeight() / 2, 0).subtract(me);
+        double dist = Math.max(1.0E-3, to.length());
+        Vec3 fwd = to.scale(1 / dist);
+        // The page's combatMove: A/D circle the target (right = across the player-target line, the locked camera sits
+        // on that line, so A is always the screen's left), W/S close in and back off, the circling keeps its distance.
+        Vec3 flat = new Vec3(fwd.x, 0, fwd.z);
+        flat = flat.lengthSqr() < 1.0E-4 ? Vec3.directionFromRotation(0, player.getYRot()) : flat.normalize();
+        Vec3 side = new Vec3(-flat.z, 0, flat.x);
+        if (dodgeCd > 0) {
+            dodgeCd--;
+        }
+        boolean used = false;
+        LivingEntity dash = AirFightClient.dashing();
+        if (sprintTap && dodgeCd <= 0 && dash == null) {
+            // The dodge: 0.22 s at 38 b/s to the side pressed (back with S, alternating sides with nothing), 0.34 s untouchable.
+            used = true;
+            Vec3 dir;
+            if (right != 0) {
+                dir = side.scale(Math.signum(right));
+            } else if (forward < 0) {
+                dir = fwd.scale(-1);
+            } else if (forward > 0) {
+                dir = side.scale(dodgeSide).add(fwd.scale(0.6)).normalize();
+                dodgeSide = -dodgeSide;
+            } else {
+                dir = side.scale(dodgeSide);
+                dodgeSide = -dodgeSide;
+            }
+            dir = dir.add(0, up * 0.5, 0).normalize();
+            dodgeVel = dir.scale(38);
+            dodgeT = 5;
+            dodgeCd = 10;
+            PacketDistributor.sendToServer(new ModPayloads.AirDodge(true));
+            FlightFx.burst(player.position().add(0, 1, 0), dir.scale(-1), 0.55f);
+            Minecraft.getInstance().level.playLocalSound(player.getX(), player.getY(), player.getZ(), SoundEvents.PLAYER_ATTACK_SWEEP,
+                    SoundSource.PLAYERS, 0.8f, 1.7f, false);
+            ScreenFx.fovKick(6, 6);
+        }
+        if (dodgeT > 0) {
+            dodgeT--;
+            vx = dodgeVel.x;
+            vy = dodgeVel.y;
+            vz = dodgeVel.z;
+            strafe = strafe + ((float) Math.signum(dodgeVel.dot(side)) - strafe) * damp(10);
+            return used;
+        }
+        if (dash != null) {
+            // The ki dash: 62 b/s, homing on the target, ends on it. At one on the ground it aims at the chest, a bit
+            // above, so the player stops in front of it still flying.
+            Vec3 tc = dash.position().add(0, Math.max(dash.getBbHeight() / 2, dash.onGround() ? 1.2 : 0), 0).subtract(me);
+            double l = tc.length();
+            if (l < 2.0) {
+                vx *= 0.3;
+                vy *= 0.3;
+                vz *= 0.3;
+            } else {
+                Vec3 want = tc.scale(62 / l);
+                float k = damp(12);
+                vx += (want.x - vx) * k;
+                vy += (want.y - vy) * k;
+                vz += (want.z - vz) * k;
+            }
+            return used;
+        }
+        double top = 18; // the page's speed around the target
+        if (SkillAnimations.guarding(player)) {
+            top *= 0.35;
+        }
+        if (forward != 0 || lockD < 0) {
+            lockD = dist;
+        }
+        Vec3 wish = Vec3.ZERO;
+        if (forward > 0 && dist > 2.4 || forward < 0) {
+            wish = fwd.scale(forward);
+        }
+        wish = wish.add(side.scale(right)).add(0, up, 0);
+        if (right != 0 && forward == 0) {
+            // sideways it circles round without drifting away
+            wish = wish.add(fwd.scale(Mth.clamp((dist - lockD) * 0.25, -0.6, 0.6)));
+        }
+        double wl = wish.length();
+        if (wl > 1) {
+            wish = wish.scale(1 / wl);
+        }
+        float k = damp(wl > 0.1 ? 8 : 6);
+        vx += (wish.x * top - vx) * k;
+        vy += (wish.y * top - vy) * k;
+        vz += (wish.z * top - vz) * k;
+        if (wl < 0.1) {
+            vy += Math.sin(player.tickCount * DT * 2.1) * 0.4 * DT;
+        }
+        strafe = strafe + (right - strafe) * damp(4);
         return used;
     }
 
