@@ -264,6 +264,20 @@ public final class TemploFeature extends Feature<NoneFeatureConfiguration> {
         return biomeAt(generator, random, x, h, z);
     }
 
+    // Is the biome anywhere in the cell (a grid of 24, finer than any courtyard)? Looking for a spot costs about 50
+    // terrain samples, so a cell without the biome skips it (PC profile of 2026-11-13: 5% of the generation).
+    private static boolean biomeInCell(int ci, int cj, int sea, ChunkGenerator generator, RandomState random) {
+        int s = TemploGen.SITE_CELL;
+        for (int x = ci * s; x < (ci + 1) * s; x += 24) {
+            for (int z = cj * s; z < (cj + 1) * s; z += 24) {
+                if (biomeAt(generator, random, x, sea + 8, z)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     private static boolean biomeAt(ChunkGenerator generator, RandomState random, int x, int y, int z) {
         return generator.getBiomeSource().getNoiseBiome(QuartPos.fromBlock(x), QuartPos.fromBlock(y), QuartPos.fromBlock(z),
                 random.sampler()).is(ModWorldgen.TEMPLOS_ANTIGOS);
@@ -276,6 +290,9 @@ public final class TemploFeature extends Feature<NoneFeatureConfiguration> {
         long key = ((long) ci << 36) ^ ((long) (cj & 0xFFFFFFFL) << 8) ^ ((long) worldKey * 0x9E3779B97F4A7C15L);
         try {
             TemploGen.Site site = SITES.get(key, () -> {
+                if (!biomeInCell(ci, cj, sea, generator, random)) {
+                    return NONE; // a temple needs the biome under its whole courtyard; without it no spot is looked for
+                }
                 TemploGen.Site s = TemploGen.siteIn(ci, cj, seed, ground, sea);
                 return s != null && siteGood(s, TemploGen.isEscolaSite(s, seed) ? 60 : 24, generator, random, maxY) ? s : NONE;
             });

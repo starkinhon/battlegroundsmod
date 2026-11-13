@@ -59,7 +59,7 @@ BIOMES = {
         creature=[mob("minecraft:fox", 6, 2, 3), mob("minecraft:rabbit", 4, 2, 3)], ambient=[mob("minecraft:bat", 10, 8, 8)]),
     "colonia_do_jogo_do_abate": dict(
         pt="Colônia do Jogo do Abate", en="Culling Game Colony", temp=0.8, down=0.4, rain=True,
-        sky="#4a4a68", fog="#a89ca0", water="#4a5a6a", water_fog="#1e242a", grass="#6a7040", foliage="#5a6a34",
+        sky="#4a4a68", fog="#6e6276", water="#4a5a6a", water_fog="#1e242a", grass="#6a7040", foliage="#5a6a34",
         particle=("minecraft:white_ash", 0.006),
         creature=[mob("minecraft:cat", 3, 1, 2)], ambient=[mob("minecraft:bat", 10, 8, 8)]),
     "shibuya": dict(

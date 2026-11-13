@@ -307,6 +307,30 @@ public final class FxRenderTypes extends RenderType {
     }
 
     // Scene depth for the soft edges, plus the numbers to read it.
+    // Shibuya's Telão (client/TelaoRenderer): solid, writes depth, its own light; the time and the camera ride in uniforms.
+    private static final ShaderStateShard TELAO_SHADER = new ShaderStateShard(() -> FxShaders.telao);
+    private static final TexturingStateShard TELAO_INPUTS = new TexturingStateShard("battlegroundsmod_telao_inputs", FxRenderTypes::telaoInputs, () -> {
+    });
+    public static final RenderType TELAO = create("battlegroundsmod_telao", DefaultVertexFormat.POSITION, VertexFormat.Mode.QUADS, 65536,
+            false, false, CompositeState.builder()
+                    .setShaderState(TELAO_SHADER)
+                    .setTexturingState(TELAO_INPUTS)
+                    .setCullState(NO_CULL)
+                    .createCompositeState(false));
+
+    private static void telaoInputs() {
+        ShaderInstance shader = FxShaders.telao;
+        Minecraft mc = Minecraft.getInstance();
+        if (shader == null || mc.level == null) {
+            return;
+        }
+        var cam = mc.gameRenderer.getMainCamera().getPosition();
+        shader.safeGetUniform("CamPos").set((float) cam.x, (float) cam.y, (float) cam.z);
+        // seconds, kept small (the preview's clock starts at 0): the day's ticks plus the frame's part of one
+        float ticks = (mc.level.getGameTime() % 72000L) + mc.getTimer().getGameTimeDeltaPartialTick(false);
+        shader.safeGetUniform("Time").set(ticks / 20f);
+    }
+
     private static void vfxInputs() {
         ShaderInstance shader = FxShaders.vfx;
         if (shader == null) {

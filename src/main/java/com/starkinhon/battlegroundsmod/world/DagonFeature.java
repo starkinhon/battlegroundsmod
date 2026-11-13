@@ -35,6 +35,7 @@ import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConf
 //    on the preview's ring of sandbank (the ground rising around it at 66 as in the preview).
 // Writes only inside its own chunk; the coast's ground only where the biome is.
 public final class DagonFeature extends Feature<NoneFeatureConfiguration> {
+    private static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger();
     private static final int SALT = 0xDA60E5;
     private static final int CELL = 480;
     private static final int RING = 84;
@@ -210,33 +211,56 @@ public final class DagonFeature extends Feature<NoneFeatureConfiguration> {
                 random.sampler()).is(ModWorldgen.MAR_DE_DAGON);
     }
 
+    // Out in the water (the bottom 2 to 40 under the sea) with the biome around as far as the tentacles curl (7 of 8).
+    private static boolean nestFits(int cx, int cz, int sea, ChunkGenerator generator, RandomState random, IntBinaryOperator real) {
+        if (!biomeAt(generator, random, cx, sea, cz)) {
+            return false; // the biome first: it is cheap, the ground costs a whole area of terrain
+        }
+        int gy = real.applyAsInt(cx, cz);
+        if (gy > sea - 2 || gy < sea - 40) {
+            return false;
+        }
+        int miss = 0;
+        for (int a = 0; a < 8; a++) {
+            int x = cx + JjkGen.round(Math.cos(a * Math.PI / 4) * DagonGen.NEST_REACH);
+            int z = cz + JjkGen.round(Math.sin(a * Math.PI / 4) * DagonGen.NEST_REACH);
+            if (!biomeAt(generator, random, x, sea, z) && ++miss > 1) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     private static long key(int ci, int cj, int worldKey) {
         return ((long) ci << 36) ^ ((long) (cj & 0xFFFFFFFL) << 8) ^ ((long) worldKey * 0x9E3779B97F4A7C15L);
     }
 
     // A cell's Nest spot, well inside the cell: good only out in the water (the bottom at least 2 under the sea) with the
-    // biome all around as far as the tentacles curl. {cx, cz, nestSeed} or NONE.
+    // biome around as far as the tentacles curl (7 of 8 points). {cx, cz, nestSeed} or NONE.
     private static int[] site(int ci, int cj, int worldKey, int seed, int sea, ChunkGenerator generator, RandomState random,
             IntBinaryOperator real) {
         try {
             return SITES.get(key(ci, cj, worldKey), () -> {
-                if (JjkGen.hash3(ci, 81, cj, seed) > 0.4) {
+                if (JjkGen.hash3(ci, 81, cj, seed) > 0.6) {
                     return NONE;
                 }
-                int cx = ci * CELL + 120 + JjkGen.floor(JjkGen.hash3(ci, 82, cj, seed) * (CELL - 240));
-                int cz = cj * CELL + 120 + JjkGen.floor(JjkGen.hash3(ci, 83, cj, seed) * (CELL - 240));
-                int gy = real.applyAsInt(cx, cz);
-                if (gy > sea - 2 || gy < sea - 40 || !biomeAt(generator, random, cx, sea, cz)) {
-                    return NONE;
-                }
-                for (int a = 0; a < 8; a++) {
-                    int x = cx + JjkGen.round(Math.cos(a * Math.PI / 4) * DagonGen.NEST_REACH);
-                    int z = cz + JjkGen.round(Math.sin(a * Math.PI / 4) * DagonGen.NEST_REACH);
-                    if (!biomeAt(generator, random, x, sea, z)) {
-                        return NONE;
+                // Tried at 9 spots of the cell (a random one, then the middle pushed to the edges and corners).
+                for (int t = 0; t < 9; t++) {
+                    int cx, cz;
+                    if (t == 0) {
+                        cx = ci * CELL + 120 + JjkGen.floor(JjkGen.hash3(ci, 82, cj, seed) * (CELL - 240));
+                        cz = cj * CELL + 120 + JjkGen.floor(JjkGen.hash3(ci, 83, cj, seed) * (CELL - 240));
+                    } else {
+                        double a = (t - 1) * Math.PI / 4;
+                        cx = ci * CELL + CELL / 2 + JjkGen.round(Math.cos(a) * (CELL / 2 - 120));
+                        cz = cj * CELL + CELL / 2 + JjkGen.round(Math.sin(a) * (CELL / 2 - 120));
+                    }
+                    if (nestFits(cx, cz, sea, generator, random, real)) {
+                        LOGGER.info("[jjk] Ninho de Dagon em {} {}", cx, cz);
+                        return new int[] {cx, cz, JjkGen.hashInt(ci, cj, 81, seed)};
                     }
                 }
-                return new int[] {cx, cz, JjkGen.hashInt(ci, cj, 81, seed)};
+                return NONE;
             });
         } catch (ExecutionException e) {
             return NONE;

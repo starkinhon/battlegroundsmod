@@ -47,10 +47,17 @@ public final class ShibuyaFeature extends Feature<NoneFeatureConfiguration> {
     private static final int SKIRT = 8;
     private static final int CLEAR = 24;
     private static final int STATION_HALF = 110;
-    private static final Cache<Long, int[]> PLANS = CacheBuilder.newBuilder().maximumSize(96).build();
-    private static final Cache<Long, int[]> STATIONS = CacheBuilder.newBuilder().maximumSize(8).build();
+    // Built blocks and stations, and apart from them the keys found empty (cheap to keep, many): a chunk asks for ~16 blocks
+    // and ~28 stations, from several generator threads at once, so a small cache kept throwing them away and building
+    // the same metro stations again and again (the Souls world test of 2026-11-13 fell many seconds behind).
+    private static final Cache<Long, int[]> PLANS = CacheBuilder.newBuilder().maximumSize(256).build();
+    private static final Cache<Long, int[]> STATIONS = CacheBuilder.newBuilder().maximumSize(48).build();
+    private static final Cache<Long, Boolean> EMPTY = CacheBuilder.newBuilder().maximumSize(16384).build();
     private static final Cache<Long, Boolean> QUARTS = CacheBuilder.newBuilder().maximumSize(65536).build();
+    private static final Cache<Long, int[]> FOOTPRINTS = CacheBuilder.newBuilder().maximumSize(1024).build();
     private static final int[] NONE = {};
+    // The feature's own types for the overgrown blocks at the city's edge (ShibuyaGen's types end at 111).
+    private static final int WILD_GRASS = 200, WILD_TALL = 201, WILD_FLOWER = 202, WILD_BUSH = 203;
 
     public ShibuyaFeature(Codec<NoneFeatureConfiguration> codec) {
         super(codec);
@@ -93,7 +100,7 @@ public final class ShibuyaFeature extends Feature<NoneFeatureConfiguration> {
             for (int z = z0; z <= z1; z++) {
                 int h = ground.applyAsInt(x, z);
                 if (city.at(x, z)) {
-                    clear(level, pos, x, z, cityY + 1, Math.max(h, cityY) + CLEAR, maxY);
+                    clear(level, pos, x, z, cityY + 1, Math.max(Math.max(h, cityY) + CLEAR, surface(level, x, z)), maxY);
                     for (int y = Math.max(minY, h + 1); y <= cityY - 3; y++) {
                         level.setBlock(pos.set(x, y, z), Blocks.STONE.defaultBlockState(), 2);
                     }
@@ -109,7 +116,7 @@ public final class ShibuyaFeature extends Feature<NoneFeatureConfiguration> {
                 double k = 1 - d / (double) (SKIRT + 1);
                 k = k * k * (3 - 2 * k);
                 int top = JjkGen.round(h + (cityY - h) * k);
-                clear(level, pos, x, z, top + 1, Math.max(h, top) + CLEAR, maxY);
+                clear(level, pos, x, z, top + 1, Math.max(Math.max(h, top) + CLEAR, surface(level, x, z)), maxY);
                 for (int y = Math.max(minY, h + 1); y < top; y++) {
                     level.setBlock(pos.set(x, y, z), (top - y > 3 ? Blocks.STONE : Blocks.DIRT).defaultBlockState(), 2);
                 }
@@ -153,6 +160,8 @@ public final class ShibuyaFeature extends Feature<NoneFeatureConfiguration> {
                 int[] p = plan(i, j, seed, worldKey, city);
                 if (p != NONE) {
                     apply(w, p);
+                } else {
+                    overgrown(w, i, j, seed, worldKey, city);
                 }
             }
         }
@@ -189,16 +198,70 @@ public final class ShibuyaFeature extends Feature<NoneFeatureConfiguration> {
         return true;
     }
 
+    // A block the city doesn't cover whole (at the biome's edge) is not built: instead of a bare lot it is an overgrown
+    // empty block, grass with tall grass, flowers and bushes, so the city's edge reads as a quiet outskirt, not a car park.
+    private static void overgrown(ShibuyaGen.Vox w, int i, int j, int seed, int worldKey, City city) {
+        int[] f = footprint(i, j, seed, worldKey);
+        int x0 = Math.max(f[0], w.lx), x1 = Math.min(f[1], w.hx), z0 = Math.max(f[2], w.lz), z1 = Math.min(f[3], w.hz);
+        for (int x = x0; x <= x1; x++) {
+            for (int z = z0; z <= z1; z++) {
+                if (w.get(x, 0, z) != ShibuyaGen.LOT || !city.at(x, z)) {
+                    continue;
+                }
+                w.force(x, 0, z, WILD_GRASS);
+                double r = JjkGen.hash3(x, 7, z, seed);
+                if (r < 0.35) {
+                    w.force(x, 1, z, WILD_TALL);
+                } else if (r < 0.38) {
+                    w.force(x, 1, z, WILD_FLOWER);
+                } else if (r < 0.395) {
+                    w.force(x, 1, z, WILD_BUSH);
+                }
+            }
+        }
+    }
+
+    // A block's ground footprint {x0, x1, z0, z1}, kept.
+    private static int[] footprint(int i, int j, int seed, int worldKey) {
+        long k = ((long) i << 36) ^ ((long) (j & 0xFFFFFFFL) << 8) ^ ((long) worldKey * 0x9E3779B97F4A7C15L) ^ 0xF0;
+        try {
+            return FOOTPRINTS.get(k, () -> {
+                ShibuyaGen.Plan plan = ShibuyaGen.blockPlan(i, j, seed);
+                return new int[] {plan.x0, plan.x1, plan.z0, plan.z1};
+            });
+        } catch (ExecutionException e) {
+            return new int[] {0, -1, 0, -1};
+        }
+    }
+
     private static void apply(ShibuyaGen.Vox w, int[] v) {
         for (int i = 0; i < v.length; i += 4) {
             w.force(v[i], v[i + 1], v[i + 2], v[i + 3] == ShibuyaGen.CARVE ? ShibuyaGen.AIR : v[i + 3]);
         }
     }
 
+    // The real top of a column (overhangs, arches and floating bits above the noise's ground included), so the cut takes
+    // everything over the city and nothing is left hanging in the air.
+    private static int surface(WorldGenLevel level, int x, int z) {
+        return level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE_WG, x, z);
+    }
+
     private static void clear(WorldGenLevel level, BlockPos.MutableBlockPos pos, int x, int z, int y0, int y1, int maxY) {
         for (int y = y0; y <= Math.min(y1, maxY); y++) {
             BlockState b = level.getBlockState(pos.set(x, y, z));
             if (!b.isAir() && !b.is(Blocks.BEDROCK)) {
+                level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2);
+            }
+        }
+        // The heightmap can miss what a neighbour chunk's feature put here (a Dragon World pillar left floating over
+        // the city, 2026-11-13), so the cut goes on up while it still finds something, until 8 blocks of air in a row.
+        int air = 0;
+        for (int y = Math.max(y0, y1 + 1); y <= maxY && air < 8; y++) {
+            BlockState b = level.getBlockState(pos.set(x, y, z));
+            if (b.isAir()) {
+                air++;
+            } else if (!b.is(Blocks.BEDROCK)) {
+                air = 0;
                 level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2);
             }
         }
@@ -231,16 +294,25 @@ public final class ShibuyaFeature extends Feature<NoneFeatureConfiguration> {
             return quart(x >> 2, z >> 2);
         }
 
+        // The answer is the same for the 16 columns of a quart: kept per quart for this chunk's work (a chunk asks it
+        // for every column of its box and of the skirt around, tens of thousands of times).
+        private final java.util.HashMap<Long, Boolean> cityQuarts = new java.util.HashMap<>();
+
         boolean at(int x, int z) {
             int qx = x >> 2, qz = z >> 2;
-            for (int a = -2; a <= 2; a++) {
-                for (int b = -2; b <= 2; b++) {
-                    if (!quart(qx + a, qz + b)) {
-                        return false;
-                    }
+            long k = ((long) qx << 32) ^ (qz & 0xFFFFFFFFL);
+            Boolean known = cityQuarts.get(k);
+            if (known != null) {
+                return known;
+            }
+            boolean all = true;
+            for (int a = -2; a <= 2 && all; a++) {
+                for (int b = -2; b <= 2 && all; b++) {
+                    all = quart(qx + a, qz + b);
                 }
             }
-            return true;
+            cityQuarts.put(k, all);
+            return all;
         }
 
         // The distance (in blocks, square) to the nearest city column, up to max (more is max + 1).
@@ -263,8 +335,11 @@ public final class ShibuyaFeature extends Feature<NoneFeatureConfiguration> {
             return NONE;
         }
         long k = ((long) i << 36) ^ ((long) (j & 0xFFFFFFFL) << 8) ^ ((long) worldKey * 0x9E3779B97F4A7C15L) ^ 0x5A;
+        if (EMPTY.getIfPresent(k) != null) {
+            return NONE;
+        }
         try {
-            return STATIONS.get(k, () -> {
+            int[] out = STATIONS.get(k, () -> {
                 int c = ShibuyaGen.street('x', i, seed).c(), ox = ShibuyaGen.street('z', j, seed).c();
                 for (int a = -STATION_HALF; a <= STATION_HALF; a += 22) {
                     if (!city.at(ox + a, c - 12) || !city.at(ox + a, c + 12)) {
@@ -275,6 +350,11 @@ public final class ShibuyaFeature extends Feature<NoneFeatureConfiguration> {
                 ShibuyaGen.metro(v, seed, STATION_HALF, i, ox);
                 return v.pack();
             });
+            if (out == NONE) {
+                EMPTY.put(k, Boolean.TRUE);
+                STATIONS.invalidate(k);
+            }
+            return out;
         } catch (ExecutionException e) {
             return NONE;
         }
@@ -307,8 +387,11 @@ public final class ShibuyaFeature extends Feature<NoneFeatureConfiguration> {
     // whole. The street's ground around it is there while building (the drink machines look at it) but is not kept.
     private static int[] plan(int i, int j, int seed, int worldKey, City city) {
         long k = ((long) i << 36) ^ ((long) (j & 0xFFFFFFFL) << 8) ^ ((long) worldKey * 0x9E3779B97F4A7C15L);
+        if (EMPTY.getIfPresent(k) != null) {
+            return NONE;
+        }
         try {
-            return PLANS.get(k, () -> {
+            int[] built = PLANS.get(k, () -> {
                 ShibuyaGen.Plan plan = ShibuyaGen.blockPlan(i, j, seed);
                 int cx = (plan.x0 + plan.x1) >> 1, cz = (plan.z0 + plan.z1) >> 1;
                 if (!city.at(plan.x0 - 4, plan.z0 - 4) || !city.at(plan.x1 + 4, plan.z0 - 4) || !city.at(plan.x0 - 4, plan.z1 + 4)
@@ -363,6 +446,11 @@ public final class ShibuyaFeature extends Feature<NoneFeatureConfiguration> {
                 }
                 return out;
             });
+            if (built == NONE) {
+                EMPTY.put(k, Boolean.TRUE);
+                PLANS.invalidate(k);
+            }
+            return built;
         } catch (ExecutionException e) {
             return NONE;
         }
@@ -394,6 +482,10 @@ public final class ShibuyaFeature extends Feature<NoneFeatureConfiguration> {
         }
         return switch (t) {
             case ShibuyaGen.STONE -> Blocks.STONE.defaultBlockState();
+            case WILD_GRASS -> Blocks.GRASS_BLOCK.defaultBlockState();
+            case WILD_TALL -> Blocks.SHORT_GRASS.defaultBlockState();
+            case WILD_FLOWER -> Blocks.CORNFLOWER.defaultBlockState();
+            case WILD_BUSH -> Blocks.AZALEA_LEAVES.defaultBlockState().setValue(LeavesBlock.PERSISTENT, true);
             case ShibuyaGen.SOIL -> Blocks.DIRT.defaultBlockState();
             case ShibuyaGen.ASPHALT -> JujutsuBlocks.SHIBUYA_ASPHALT.get().defaultBlockState();
             case ShibuyaGen.LANE, ShibuyaGen.ZEBRA, ShibuyaGen.PARK_LINE -> JujutsuBlocks.WHITE_LINE.get().defaultBlockState();

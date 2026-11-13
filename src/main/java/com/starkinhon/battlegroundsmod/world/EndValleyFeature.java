@@ -46,7 +46,8 @@ import net.minecraft.world.level.material.Fluids;
 public final class EndValleyFeature extends Feature<NoneFeatureConfiguration> {
     private static final int SALT = 0x0E7DA1;
     private static final int MID = (ValeGen.UMIN + ValeGen.UMAX) / 2;
-    private static final Cache<Long, Optional<ValeGen.Frame>> FRAMES = CacheBuilder.newBuilder().maximumSize(64).build();
+    private static final Cache<Long, Optional<ValeGen.Frame>> FRAMES = CacheBuilder.newBuilder().maximumSize(256).build();
+    private static final java.util.Set<Long> PENDING = java.util.concurrent.ConcurrentHashMap.newKeySet();
     private static final Cache<Long, Map<Long, int[]>> STATUES = CacheBuilder.newBuilder().maximumSize(16).build();
     private static final Cache<Long, int[]> PIECES = CacheBuilder.newBuilder().maximumSize(400).build();
     private static final ValeGen.Kind[] FILLERS = {ValeGen.Kind.CRATER, ValeGen.Kind.CUT, ValeGen.Kind.OUTCROP,
@@ -256,6 +257,44 @@ public final class EndValleyFeature extends Feature<NoneFeatureConfiguration> {
         int worldKey = (int) (worldSeed ^ (worldSeed >>> 32));
         IntBinaryOperator natural = (x, z) -> LeafForestFeature.height(generator, level, random, worldKey, x, z) - 1;
         return framesNear(bx0, bz0, bx1, bz1, worldKey ^ SALT, generator.getSeaLevel(), generator, random, natural);
+    }
+
+    // The same, for the server's tick: only the valleys already worked out. A cell not known yet is worked out on a
+    // background thread and shows up on a later call. Finding a valley costs a lot of terrain samples, and done on the
+    // tick it froze the server for seconds (PC profile of 2026-11-13: 15% of the server thread, on top in 4 freezes).
+    public static List<ValeGen.Frame> knownFramesNear(ServerLevel level, int bx0, int bz0, int bx1, int bz1) {
+        ChunkGenerator generator = level.getChunkSource().getGenerator();
+        RandomState random = level.getChunkSource().randomState();
+        long worldSeed = level.getSeed();
+        int worldKey = (int) (worldSeed ^ (worldSeed >>> 32));
+        int seed = worldKey ^ SALT, sea = generator.getSeaLevel();
+        IntBinaryOperator natural = (x, z) -> LeafForestFeature.height(generator, level, random, worldKey, x, z) - 1;
+        List<ValeGen.Frame> out = new ArrayList<>();
+        int size = ValeGen.Kind.VALE.size;
+        for (int i = Math.floorDiv(bx0, size) - 1; i <= Math.floorDiv(bx1, size) + 1; i++) {
+            for (int j = Math.floorDiv(bz0, size) - 1; j <= Math.floorDiv(bz1, size) + 1; j++) {
+                long key = (((long) i << 32) | (j & 0xFFFFFFFFL)) ^ ((long) seed * 0x9E3779B97F4A7C15L);
+                Optional<ValeGen.Frame> known = FRAMES.getIfPresent(key);
+                if (known == null) {
+                    if (PENDING.add(key)) {
+                        int ci = i, cj = j;
+                        net.minecraft.Util.backgroundExecutor().execute(() -> {
+                            try {
+                                frame(ci, cj, seed, sea, generator, random, natural);
+                            } finally {
+                                PENDING.remove(key);
+                            }
+                        });
+                    }
+                    continue;
+                }
+                ValeGen.Frame F = known.orElse(null);
+                if (F != null && touches(F, bx0, bz0, bx1, bz1)) {
+                    out.add(F);
+                }
+            }
+        }
+        return out;
     }
 
     // The valleys whose footprint (with its blending margin) touches the box.

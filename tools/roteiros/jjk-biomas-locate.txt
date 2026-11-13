@@ -1,0 +1,22 @@
+# Biomas de Jujutsu (PR #315), passo 1: achar os 9 biomas. Coordenadas saem no log ([CHAT]).
+# gradlew runClient -Pmundo=JJKBiomas -PmundoTipo=normal -Proteiro=jjk-biomas-locate
+espera 100
+locate biome battlegroundsmod:templos_antigos
+espera 60
+locate biome battlegroundsmod:floresta_negra
+espera 60
+locate biome battlegroundsmod:aldeia_amaldicoada
+espera 60
+locate biome battlegroundsmod:mar_de_dagon
+espera 60
+locate biome battlegroundsmod:floresta_de_hanami
+espera 60
+locate biome battlegroundsmod:terras_do_jogo
+espera 60
+locate biome battlegroundsmod:outono_de_kyoto
+espera 60
+locate biome battlegroundsmod:colonia_do_jogo_do_abate
+espera 60
+locate biome battlegroundsmod:shibuya
+espera 100
+sair

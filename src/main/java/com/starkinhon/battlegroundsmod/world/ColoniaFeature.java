@@ -31,18 +31,21 @@ import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConf
 // - the colony: the preview's "Colônia com a barreira" (half 120), with the big fight crater and the toppled building
 //   in the middle; the dark dome over it is drawn by the client;
 // - the ruins: the preview's "Pedaço das ruínas" (half 96), the same broken city without the crater.
-// One piece per cell of 300 (30% a colony, 45% ruins), on a spot with the biome all around and terrain flat enough.
+// One piece per cell of 360 (30% try the colony first, every cell ruins), on a spot with the biome around it.
 // The piece sits on its own level (the terrain's average there): above it the terrain is cut away, below it filled with
-// stone, and a skirt of 8 blends the land around into the city's level. Built once per piece and kept, split by chunk.
+// stone, and a skirt of 16 blends the land around into the city's level. Built once per piece and kept, split by chunk.
 // Writes only inside its own chunk.
 public final class ColoniaFeature extends Feature<NoneFeatureConfiguration> {
+    private static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger();
     private static final int SALT = 0x6A0800;
-    private static final int CELL = 300;
-    private static final int SKIRT = 8;
+    private static final int CELL = 360;
+    private static final int SKIRT = 16;
     private static final int CLEAR = 24; // how high above the old ground the cut goes (trees, hills' tops)
-    private static final Cache<Long, Built> PIECES = CacheBuilder.newBuilder().maximumSize(6).build();
+    private static final Cache<Long, Built> PIECES = CacheBuilder.newBuilder().maximumSize(12).build();
     private static final Cache<Long, int[]> SITES = CacheBuilder.newBuilder().maximumSize(4096).build();
     private static final int[] NONE = {};
+    // The biome at each chunk's middle (everyChunkRuns: the nine spots of a cell overlap, so most are asked again).
+    private static final Cache<Long, Boolean> CHUNK_BIOME = CacheBuilder.newBuilder().maximumSize(65536).build();
 
     // A built piece already moved to its place, its voxels split by chunk.
     private record Built(Map<Long, int[]> byChunk) {
@@ -94,7 +97,7 @@ public final class ColoniaFeature extends Feature<NoneFeatureConfiguration> {
                     }
                     int h = ground.applyAsInt(x, z);
                     if (d <= 0) {
-                        clear(level, pos, x, z, cityY + 1, Math.max(h, cityY) + CLEAR, maxY);
+                        clear(level, pos, x, z, cityY + 1, Math.max(Math.max(h, cityY) + CLEAR, surface(level, x, z)), maxY);
                         for (int y = Math.max(minY, h + 1); y <= cityY - 4; y++) {
                             level.setBlock(pos.set(x, y, z), Blocks.STONE.defaultBlockState(), 2);
                         }
@@ -102,7 +105,7 @@ public final class ColoniaFeature extends Feature<NoneFeatureConfiguration> {
                         double k = 1 - d / (double) (SKIRT + 1);
                         k = k * k * (3 - 2 * k);
                         int top = JjkGen.round(h + (cityY - h) * k);
-                        clear(level, pos, x, z, top + 1, Math.max(h, top) + CLEAR, maxY);
+                        clear(level, pos, x, z, top + 1, Math.max(Math.max(h, top) + CLEAR, surface(level, x, z)), maxY);
                         for (int y = Math.max(minY, h + 1); y < top; y++) {
                             level.setBlock(pos.set(x, y, z), (top - y > 3 ? Blocks.STONE : Blocks.DIRT).defaultBlockState(), 2);
                         }
@@ -163,11 +166,29 @@ public final class ColoniaFeature extends Feature<NoneFeatureConfiguration> {
         return true;
     }
 
+    // The real top of a column (overhangs, arches and floating bits above the noise's ground included), so the cut takes
+    // everything over the city and nothing is left hanging in the air.
+    private static int surface(WorldGenLevel level, int x, int z) {
+        return level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE_WG, x, z);
+    }
+
     // Cuts the land away from y0 to y1 (whatever is there: hills, trees, water).
     private static void clear(WorldGenLevel level, BlockPos.MutableBlockPos pos, int x, int z, int y0, int y1, int maxY) {
         for (int y = y0; y <= Math.min(y1, maxY); y++) {
             BlockState b = level.getBlockState(pos.set(x, y, z));
             if (!b.isAir() && !b.is(Blocks.BEDROCK)) {
+                level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2);
+            }
+        }
+        // The heightmap can miss what a neighbour chunk's feature put here (a Dragon World pillar left floating over
+        // the city, 2026-11-13), so the cut goes on up while it still finds something, until 8 blocks of air in a row.
+        int air = 0;
+        for (int y = Math.max(y0, y1 + 1); y <= maxY && air < 8; y++) {
+            BlockState b = level.getBlockState(pos.set(x, y, z));
+            if (b.isAir()) {
+                air++;
+            } else if (!b.is(Blocks.BEDROCK)) {
+                air = 0;
                 level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2);
             }
         }
@@ -189,45 +210,156 @@ public final class ColoniaFeature extends Feature<NoneFeatureConfiguration> {
             IntBinaryOperator ground, int maxY) {
         try {
             return SITES.get(key(ci, cj, worldKey), () -> {
-                double roll = JjkGen.hash3(ci, 111, cj, seed);
-                boolean dome = roll < 0.3;
-                if (!dome && roll >= 0.75) {
-                    return NONE;
-                }
-                int half = dome ? ColoniaGen.HALF : 96;
-                int slack = CELL / 2 - half - SKIRT;
-                int cx = ci * CELL + CELL / 2 - slack + JjkGen.floor(JjkGen.hash3(ci, 112, cj, seed) * (2 * slack + 1));
-                int cz = cj * CELL + CELL / 2 - slack + JjkGen.floor(JjkGen.hash3(ci, 113, cj, seed) * (2 * slack + 1));
-                int lo = Integer.MAX_VALUE, hi = Integer.MIN_VALUE, sum = 0, n = 0;
-                for (int a = -2; a <= 2; a++) {
-                    for (int b = -2; b <= 2; b++) {
-                        int x = cx + a * (half - 4) / 2, z = cz + b * (half - 4) / 2;
-                        int h = ground.applyAsInt(x, z);
-                        lo = Math.min(lo, h);
-                        hi = Math.max(hi, h);
-                        sum += h;
-                        n++;
+                boolean dome = JjkGen.hash3(ci, 111, cj, seed) < 0.3;
+                // The biggest piece that fits (the colony, or ruins of 96, then of 64), each tried at 9 spots of the
+                // cell, so a patch of the biome smaller than the cell still gets its piece.
+                for (int half : dome ? new int[] {ColoniaGen.HALF, 96, 64} : new int[] {96, 64}) {
+                    for (int t = 0; t < 9; t++) {
+                        int[] s = fit(ci, cj, t, half, half == ColoniaGen.HALF, seed, sea, generator, random, ground, maxY);
+                        if (s != NONE) {
+                            return s;
+                        }
                     }
                 }
-                int cityY = JjkGen.round(sum / (double) n);
-                if (hi - cityY > 16 || cityY - lo > 16 || cityY < sea + 2 || cityY + 80 > maxY) {
-                    return NONE;
-                }
-                for (int a = 0; a < 8; a++) {
-                    int x = cx + JjkGen.round(Math.cos(a * Math.PI / 4) * (half + SKIRT));
-                    int z = cz + JjkGen.round(Math.sin(a * Math.PI / 4) * (half + SKIRT));
-                    if (!biomeAt(generator, random, x, cityY, z)) {
-                        return NONE;
-                    }
-                }
-                if (!biomeAt(generator, random, cx, cityY, cz)) {
-                    return NONE;
-                }
-                return new int[] {cx, cz, half, cityY, JjkGen.hashInt(ci, cj, 111, seed), dome ? 1 : 0};
+                return NONE;
             });
         } catch (ExecutionException e) {
             return NONE;
         }
+    }
+
+    // A piece of the given half in a cell: good with the biome at its middle and at 7 of 8 points around it, and the
+    // terrain under it within 40 of its average (the city's level). {cx, cz, half, cityY, pieceSeed, dome} or NONE.
+    // Spot t: 0 is a random spot of the cell, 1-8 the cell's middle pushed to its edges and corners.
+    private static int[] fit(int ci, int cj, int t, int half, boolean dome, int seed, int sea, ChunkGenerator generator,
+            RandomState random, IntBinaryOperator ground, int maxY) {
+        int slack = CELL / 2 - half - SKIRT;
+        int cx, cz;
+        if (t == 0) {
+            cx = ci * CELL + CELL / 2 - slack + JjkGen.floor(JjkGen.hash3(ci, 112, cj, seed) * (2 * slack + 1));
+            cz = cj * CELL + CELL / 2 - slack + JjkGen.floor(JjkGen.hash3(ci, 113, cj, seed) * (2 * slack + 1));
+        } else {
+            double a = (t - 1) * Math.PI / 4;
+            cx = ci * CELL + CELL / 2 + JjkGen.round(Math.cos(a) * slack);
+            cz = cj * CELL + CELL / 2 + JjkGen.round(Math.sin(a) * slack);
+        }
+        // The biome first, at a fixed height (cheap), then the ground (25 terrain samples, each a whole area: the PC
+        // profile of 2026-11-13 had this function at a quarter of all the generation, mostly in cells where no piece fit).
+        int y0 = sea + 8;
+        if (!biomeAt(generator, random, cx, y0, cz)) {
+            return NONE;
+        }
+        int miss0 = 0;
+        for (int a = 0; a < 8; a++) {
+            int x = cx + JjkGen.round(Math.cos(a * Math.PI / 4) * half);
+            int z = cz + JjkGen.round(Math.sin(a * Math.PI / 4) * half);
+            if (!biomeAt(generator, random, x, y0, z) && ++miss0 > 1) {
+                return NONE;
+            }
+        }
+        if (!everyChunkRuns(cx, cz, half, y0, generator, random)) {
+            return NONE;
+        }
+        int lo = Integer.MAX_VALUE, hi = Integer.MIN_VALUE, sum = 0, n = 0;
+        for (int a = -2; a <= 2; a++) {
+            for (int b = -2; b <= 2; b++) {
+                int x = cx + a * (half - 4) / 2, z = cz + b * (half - 4) / 2;
+                int h = ground.applyAsInt(x, z);
+                lo = Math.min(lo, h);
+                hi = Math.max(hi, h);
+                sum += h;
+                n++;
+            }
+        }
+        int cityY = JjkGen.round(sum / (double) n);
+        if (hi - cityY > 40 || cityY - lo > 40 || cityY < sea + 2 || cityY + 80 > maxY) {
+            return NONE;
+        }
+        if (!biomeAt(generator, random, cx, cityY, cz)) {
+            return NONE;
+        }
+        int miss = 0;
+        for (int a = 0; a < 8; a++) {
+            int x = cx + JjkGen.round(Math.cos(a * Math.PI / 4) * half);
+            int z = cz + JjkGen.round(Math.sin(a * Math.PI / 4) * half);
+            if (!biomeAt(generator, random, x, cityY, z) && ++miss > 1) {
+                return NONE;
+            }
+        }
+        return new int[] {cx, cz, half, cityY, JjkGen.hashInt(ci, cj, 111, seed), dome ? 1 : 0};
+    }
+
+    // The game runs this feature only in chunks with the biome in them or in a chunk next to them. A piece over a patch
+    // of another biome (Picos do Dragão in the middle of a colony, 2026-11-13) left a whole chunk of that patch standing
+    // uncut in the city. So a piece is good only if every chunk under it and its skirt has the biome at the middle of
+    // itself or of a chunk next to it (a stricter test than the game's, which looks at the whole chunk).
+    private static boolean everyChunkRuns(int cx, int cz, int half, int y, ChunkGenerator generator, RandomState random) {
+        int c0x = (cx - half - SKIRT) >> 4, c1x = (cx + half - 1 + SKIRT) >> 4;
+        int c0z = (cz - half - SKIRT) >> 4, c1z = (cz + half - 1 + SKIRT) >> 4;
+        int w = c1x - c0x + 3, d = c1z - c0z + 3;
+        boolean[] has = new boolean[w * d];
+        for (int i = 0; i < w; i++) {
+            for (int j = 0; j < d; j++) {
+                int qx = c0x - 1 + i, qz = c0z - 1 + j;
+                long k = (((long) qx << 32) | (qz & 0xFFFFFFFFL)) ^ ((long) System.identityHashCode(random) * 0x9E3779B97F4A7C15L);
+                Boolean b = CHUNK_BIOME.getIfPresent(k);
+                if (b == null) {
+                    b = biomeAt(generator, random, (qx << 4) + 8, y, (qz << 4) + 8);
+                    CHUNK_BIOME.put(k, b);
+                }
+                has[i * d + j] = b;
+            }
+        }
+        for (int i = 1; i < w - 1; i++) {
+            for (int j = 1; j < d - 1; j++) {
+                boolean ok = false;
+                for (int a = -1; a <= 1 && !ok; a++) {
+                    for (int b = -1; b <= 1 && !ok; b++) {
+                        ok = has[(i + a) * d + j + b];
+                    }
+                }
+                if (!ok) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    // Whether a column is on a Colony piece or its skirt, give or take a margin. Other features ask this so they never put
+    // anything on the city: a patch of another biome can sit inside a piece (the piece only needs its biome at 7 of 8
+    // points of its ring), and a Dragon World pillar there was cut by the city and left floating (Stark, 2026-11-13).
+    public static boolean covers(WorldGenLevel level, ChunkGenerator generator, int x, int z, int margin) {
+        RandomState random = ((ServerLevel) level.getLevel()).getChunkSource().randomState();
+        long worldSeed = level.getSeed();
+        int worldKey = (int) (worldSeed ^ (worldSeed >>> 32));
+        int seed = worldKey ^ SALT;
+        int sea = generator.getSeaLevel() - 1;
+        int maxY = level.getMaxBuildHeight() - 1;
+        IntBinaryOperator ground = (gx, gz) -> LeafForestFeature.height(generator, level, random, worldKey, gx, gz) - 1;
+        int reach = ColoniaGen.HALF + SKIRT + margin;
+        // Cheap test first: a piece is only where the biome is, and every piece is over 120 wide, so a grid of 48
+        // around the spot finds it. Without the biome near, no cell's site is worked out (that costs terrain samples).
+        boolean near = false;
+        int y = sea + 1;
+        for (int dx = -reach; dx <= reach && !near; dx += 48) {
+            for (int dz = -reach; dz <= reach && !near; dz += 48) {
+                near = biomeAt(generator, random, x + dx, y, z + dz);
+            }
+        }
+        if (!near) {
+            return false;
+        }
+        for (int ci = Math.floorDiv(x - reach, CELL); ci <= Math.floorDiv(x + reach, CELL); ci++) {
+            for (int cj = Math.floorDiv(z - reach, CELL); cj <= Math.floorDiv(z + reach, CELL); cj++) {
+                int[] s = site(ci, cj, worldKey, seed, sea, generator, random, ground, maxY);
+                int r = s == NONE ? -1 : s[2] + SKIRT + margin;
+                if (s != NONE && x >= s[0] - r && x <= s[0] + r - 1 && z >= s[1] - r && z <= s[1] + r - 1) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     // The colony's centers near a spot (for the client's dome and the ambience): {cx, cz, cityY} of each colony whose
@@ -252,7 +384,8 @@ public final class ColoniaFeature extends Feature<NoneFeatureConfiguration> {
         try {
             return PIECES.get(k, () -> {
                 // The preview's colonyPiece(seed) and ruinsPiece(seed) = colony(seed + 1, 96, false).
-                TemploGen.Vox v = s[5] == 1 ? ColoniaGen.colony(s[4], ColoniaGen.HALF, true) : ColoniaGen.colony(s[4] + 1, 96, false);
+                LOGGER.info("[jjk] Colônia: {} de meio {} em {} {} {}", s[5] == 1 ? "colônia" : "ruínas", s[2], s[0], s[3], s[1]);
+                TemploGen.Vox v = s[5] == 1 ? ColoniaGen.colony(s[4], ColoniaGen.HALF, true) : ColoniaGen.colony(s[4] + 1, s[2], false);
                 int[] p = v.pack();
                 int dx = s[0], dy = s[3] - ColoniaGen.GROUND, dz = s[1];
                 Map<Long, int[]> count = new HashMap<>();
