@@ -230,7 +230,10 @@ public final class JujutsuBlocks {
     public static final DeferredBlock<Block> SIGN_7 = stone("letreiro_branco", MapColor.COLOR_RED, 9);
     public static final DeferredBlock<Block> SIGN_GLYPH = stone("letra_de_letreiro", MapColor.SNOW, 12);
     public static final DeferredBlock<Block> SIGN_FRAME = stone("moldura_de_letreiro", MapColor.COLOR_BLACK, 0);
-    public static final DeferredBlock<Block> BIG_SCREEN = stone("telao", MapColor.COLOR_BLACK, 10);
+    // The Telão: its moving picture is drawn by the client over its open faces (TelaoBlock).
+    public static final DeferredBlock<TelaoBlock> BIG_SCREEN = add(ModBlocks.BLOCKS.registerBlock("telao", TelaoBlock::new,
+            BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_BLACK).requiresCorrectToolForDrops().strength(1.5f, 6.0f)
+                    .sound(SoundType.STONE).lightLevel(state -> 10)));
     public static final DeferredBlock<Block> LIGHT_METAL = stone("metal_claro", MapColor.METAL, 0);
     public static final DeferredBlock<Block> DARK_METAL = stone("metal_escuro", MapColor.COLOR_GRAY, 0);
     public static final DeferredBlock<Block> WATER_TANK = stone("caixa_dagua", MapColor.METAL, 0);

@@ -13,6 +13,13 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 public final class ModBlocks {
     public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(BattlegroundsMod.MODID);
     public static final DeferredRegister.Items BLOCK_ITEMS = DeferredRegister.createItems(BattlegroundsMod.MODID);
+    public static final DeferredRegister<net.minecraft.world.level.block.entity.BlockEntityType<?>> BLOCK_ENTITIES =
+            DeferredRegister.create(net.minecraft.core.registries.Registries.BLOCK_ENTITY_TYPE, BattlegroundsMod.MODID);
+    // Shibuya's Telão (TelaoBlock): its block entity is only there for the client to draw the moving picture.
+    public static final net.neoforged.neoforge.registries.DeferredHolder<net.minecraft.world.level.block.entity.BlockEntityType<?>,
+            net.minecraft.world.level.block.entity.BlockEntityType<TelaoBlockEntity>> TELAO = BLOCK_ENTITIES.register("telao",
+                    () -> net.minecraft.world.level.block.entity.BlockEntityType.Builder.of(TelaoBlockEntity::new,
+                            JujutsuBlocks.BIG_SCREEN.get()).build(null));
 
     // Namek's cliffs and mesas: pale pink-beige rock, and a darker band for the layers.
     public static final DeferredBlock<Block> NAMEK_ROCK = rock("namek_rock", MapColor.TERRACOTTA_WHITE);
@@ -267,5 +274,6 @@ public final class ModBlocks {
         JujutsuBlocks.init();
         BLOCKS.register(bus);
         BLOCK_ITEMS.register(bus);
+        BLOCK_ENTITIES.register(bus);
     }
 }

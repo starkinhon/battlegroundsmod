@@ -92,6 +92,9 @@ public final class FxShaders {
     static ShaderInstance shenGround;
     static ShaderInstance shenBolt;
 
+    // Shibuya's Telão (client/TelaoRenderer).
+    static ShaderInstance telao;
+
     private static Boolean irisPresent;
 
     private FxShaders() {
@@ -108,6 +111,12 @@ public final class FxShaders {
             register(event, "fx_moonscreen", DefaultVertexFormat.POSITION, s -> moonScreen = s);
         } catch (Exception e) {
             BattlegroundsMod.LOGGER.error("Could not load the Awakened Moon screen shader", e);
+        }
+        // On its own: without it the Telão just shows its dark block.
+        try {
+            register(event, "souls_telao", DefaultVertexFormat.POSITION, s -> telao = s);
+        } catch (Exception e) {
+            BattlegroundsMod.LOGGER.error("Could not load the Telão shader", e);
         }
         try {
             register(event, "souls_ki", DefaultVertexFormat.POSITION, s -> ki = s);
