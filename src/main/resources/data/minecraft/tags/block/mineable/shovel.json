@@ -3,6 +3,21 @@
   "values": [
     "battlegroundsmod:namek_sand",
     "battlegroundsmod:deserto_areia",
-    "battlegroundsmod:camada_de_areia"
+    "battlegroundsmod:camada_de_areia",
+    "battlegroundsmod:cascalho_branco",
+    "battlegroundsmod:terra_negra",
+    "battlegroundsmod:capim_morto",
+    "battlegroundsmod:capim_encharcado",
+    "battlegroundsmod:dique_de_barro",
+    "battlegroundsmod:areia_de_dagon",
+    "battlegroundsmod:areia_molhada",
+    "battlegroundsmod:cinza_vulcanica",
+    "battlegroundsmod:escoria",
+    "battlegroundsmod:chao_de_folhas_vermelhas",
+    "battlegroundsmod:chao_de_folhas_laranjas",
+    "battlegroundsmod:chao_de_folhas_douradas",
+    "battlegroundsmod:entulho",
+    "battlegroundsmod:canteiro",
+    "battlegroundsmod:brita"
   ]
 }

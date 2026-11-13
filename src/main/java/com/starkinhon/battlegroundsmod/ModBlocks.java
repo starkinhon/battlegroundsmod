@@ -124,8 +124,51 @@ public final class ModBlocks {
     public static final DeferredBlock<Block> GIANT_PETAL = plant("petala_gigante", MapColor.COLOR_ORANGE, 0, 0.3f);
     public static final DeferredBlock<Block> GIANT_PETAL_TIP = plant("petala_gigante_ponta", MapColor.COLOR_YELLOW, 0, 0.3f);
     public static final DeferredBlock<Block> FLOWER_CORE = plant("miolo_de_flor", MapColor.GOLD, 7, 0.4f);
+    // Templos Antigos (Jujutsu, Stark 2026-11-12): the temples' vermilion lacquered wood (posts and torii), the torii's
+    // black lacquer top beam, the courtyard's raked white gravel, the shoji lattice with its paper, the white plaster,
+    // the stone lantern's lit fire box, the shimenawa rope and its zigzag paper strips (shide); the cedars' leaves in two
+    // greens and the sakuras' in three more tones besides vanilla's cherry (they shed petals like it).
+    public static final DeferredBlock<Block> VERMILION_WOOD = BLOCKS.registerSimpleBlock("madeira_vermelha",
+            BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_RED).strength(2.0f, 3.0f).sound(SoundType.WOOD).ignitedByLava());
+    public static final DeferredBlock<Block> BLACK_LACQUER = BLOCKS.registerSimpleBlock("laca_preta",
+            BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_BLACK).strength(2.0f, 3.0f).sound(SoundType.WOOD).ignitedByLava());
+    public static final DeferredBlock<Block> WHITE_GRAVEL = BLOCKS.registerSimpleBlock("cascalho_branco",
+            BlockBehaviour.Properties.of().mapColor(MapColor.QUARTZ).strength(0.6f).sound(SoundType.GRAVEL));
+    public static final DeferredBlock<Block> SHOJI = BLOCKS.registerSimpleBlock("shoji",
+            BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).strength(1.0f).sound(SoundType.WOOD).ignitedByLava());
+    public static final DeferredBlock<Block> PLASTER = BLOCKS.registerSimpleBlock("reboco",
+            BlockBehaviour.Properties.of().mapColor(MapColor.TERRACOTTA_WHITE).requiresCorrectToolForDrops().strength(1.2f, 4.0f)
+                    .sound(SoundType.STONE));
+    public static final DeferredBlock<Block> STONE_LANTERN_LIGHT = BLOCKS.registerSimpleBlock("lanterna_de_pedra_acesa",
+            BlockBehaviour.Properties.of().mapColor(MapColor.STONE).requiresCorrectToolForDrops().strength(1.5f, 6.0f)
+                    .sound(SoundType.STONE).lightLevel(state -> 15));
+    public static final DeferredBlock<com.starkinhon.battlegroundsmod.world.ThinPlantBlock> SHIMENAWA = BLOCKS.register("shimenawa",
+            () -> new com.starkinhon.battlegroundsmod.world.ThinPlantBlock(BlockBehaviour.Properties.of().mapColor(MapColor.SAND)
+                    .strength(0.8f).sound(SoundType.WOOL).noOcclusion().ignitedByLava(), Block.box(0, 5, 0, 16, 11, 16)));
+    public static final DeferredBlock<com.starkinhon.battlegroundsmod.world.ThinPlantBlock> SHIDE = BLOCKS.register("shide",
+            () -> new com.starkinhon.battlegroundsmod.world.ThinPlantBlock(BlockBehaviour.Properties.of().mapColor(MapColor.SNOW)
+                    .noCollission().noOcclusion().instabreak().sound(SoundType.WOOL).pushReaction(
+                            net.minecraft.world.level.material.PushReaction.DESTROY), Block.box(5, 2, 5, 11, 16, 11)));
+    public static final DeferredBlock<net.minecraft.world.level.block.LeavesBlock> CEDAR_LEAVES = leaves("folhas_de_cedro");
+    public static final DeferredBlock<net.minecraft.world.level.block.LeavesBlock> CEDAR_LEAVES_LIGHT = leaves("folhas_de_cedro_clara");
+    public static final DeferredBlock<net.minecraft.world.level.block.LeavesBlock> SAKURA_LEAVES_DARK = sakura("folhas_de_sakura_escura");
+    public static final DeferredBlock<net.minecraft.world.level.block.LeavesBlock> SAKURA_LEAVES_LIGHT = sakura("folhas_de_sakura_clara");
+    public static final DeferredBlock<net.minecraft.world.level.block.LeavesBlock> SAKURA_LEAVES_WHITE = sakura("folhas_de_sakura_branca");
 
     static {
+        BLOCK_ITEMS.registerSimpleBlockItem(VERMILION_WOOD);
+        BLOCK_ITEMS.registerSimpleBlockItem(BLACK_LACQUER);
+        BLOCK_ITEMS.registerSimpleBlockItem(WHITE_GRAVEL);
+        BLOCK_ITEMS.registerSimpleBlockItem(SHOJI);
+        BLOCK_ITEMS.registerSimpleBlockItem(PLASTER);
+        BLOCK_ITEMS.registerSimpleBlockItem(STONE_LANTERN_LIGHT);
+        BLOCK_ITEMS.registerSimpleBlockItem(SHIMENAWA);
+        BLOCK_ITEMS.registerSimpleBlockItem(SHIDE);
+        BLOCK_ITEMS.registerSimpleBlockItem(CEDAR_LEAVES);
+        BLOCK_ITEMS.registerSimpleBlockItem(CEDAR_LEAVES_LIGHT);
+        BLOCK_ITEMS.registerSimpleBlockItem(SAKURA_LEAVES_DARK);
+        BLOCK_ITEMS.registerSimpleBlockItem(SAKURA_LEAVES_LIGHT);
+        BLOCK_ITEMS.registerSimpleBlockItem(SAKURA_LEAVES_WHITE);
         BLOCK_ITEMS.registerSimpleBlockItem(DEATH_LEAVES);
         BLOCK_ITEMS.registerSimpleBlockItem(DEATH_LEAVES_LIGHT);
         BLOCK_ITEMS.registerSimpleBlockItem(DEATH_LEAVES_DARK);
@@ -188,6 +231,12 @@ public final class ModBlocks {
                 BlockBehaviour.Properties.ofFullCopy(net.minecraft.world.level.block.Blocks.OAK_LEAVES)));
     }
 
+    // The sakuras' extra tones: vanilla's cherry leaves (so they shed the same falling petals).
+    private static DeferredBlock<net.minecraft.world.level.block.LeavesBlock> sakura(String name) {
+        return BLOCKS.register(name, () -> new net.minecraft.world.level.block.CherryLeavesBlock(
+                BlockBehaviour.Properties.ofFullCopy(net.minecraft.world.level.block.Blocks.CHERRY_LEAVES)));
+    }
+
     private static DeferredBlock<Block> flesh(String name, MapColor color) {
         return BLOCKS.registerSimpleBlock(name, BlockBehaviour.Properties.of().mapColor(color).strength(0.4f).sound(SoundType.WART_BLOCK));
     }
@@ -215,6 +264,7 @@ public final class ModBlocks {
     }
 
     public static void register(IEventBus bus) {
+        JujutsuBlocks.init();
         BLOCKS.register(bus);
         BLOCK_ITEMS.register(bus);
     }

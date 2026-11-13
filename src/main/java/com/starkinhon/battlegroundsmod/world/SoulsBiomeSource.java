@@ -52,7 +52,11 @@ import net.minecraft.world.level.levelgen.DensityFunction;
 //
 // The high peaks: the Norte Gelado in the cold bands, the Picos do Dragão elsewhere. The seas and beaches: the Mar da
 // Névoa in the cold and mild bands, the Mar do Sul in the warm ones (the far mushroom islands too: it has the tropical
-// islands).
+// islands), or the Mar de Dagon where the warm sea is humid (humidity >= 0.1).
+//
+// The Jujutsu biomes (2026-11-13) went into the bands of their climate: Outono de Kyoto in the cold one, Templos Antigos,
+// Floresta Negra and Aldeia Amaldiçoada in the cool one, Colônia do Jogo do Abate and Shibuya in the mild one, Terras do
+// Jogo and Floresta de Hanami in the hot one.
 public final class SoulsBiomeSource extends BiomeSource {
     public static final MapCodec<SoulsBiomeSource> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             RegistryOps.retrieveGetter(Registries.BIOME)).apply(instance, instance.stable(SoulsBiomeSource::new)));
@@ -67,10 +71,13 @@ public final class SoulsBiomeSource extends BiomeSource {
     // The land biomes from the coldest band to the hottest. A new universe biome goes into the band of its climate.
     static final List<List<ResourceKey<Biome>>> BANDS = List.of(
             List.of(ModWorldgen.NORTE_GELADO),
-            List.of(ModWorldgen.MONTE_MYOBOKU, ModWorldgen.VILA_DA_CHUVA),
-            List.of(ModWorldgen.MONTANHAS_PAOZU, ModWorldgen.VALE_DO_FIM, ModWorldgen.TERRA_SAGRADA),
-            List.of(ModWorldgen.DESERTO_DO_VENTO, ModWorldgen.FLORESTA_DA_FOLHA, ModWorldgen.FLORESTA_DA_MORTE),
-            List.of(ModWorldgen.DESERTO_VERMELHO, ModWorldgen.TERRAS_DO_DRAGAO));
+            List.of(ModWorldgen.MONTE_MYOBOKU, ModWorldgen.OUTONO_DE_KYOTO, ModWorldgen.VILA_DA_CHUVA),
+            List.of(ModWorldgen.MONTANHAS_PAOZU, ModWorldgen.VALE_DO_FIM, ModWorldgen.TEMPLOS_ANTIGOS, ModWorldgen.FLORESTA_NEGRA,
+                    ModWorldgen.ALDEIA_AMALDICOADA, ModWorldgen.TERRA_SAGRADA),
+            List.of(ModWorldgen.DESERTO_DO_VENTO, ModWorldgen.COLONIA_DO_JOGO_DO_ABATE, ModWorldgen.SHIBUYA,
+                    ModWorldgen.FLORESTA_DA_FOLHA, ModWorldgen.FLORESTA_DA_MORTE),
+            List.of(ModWorldgen.DESERTO_VERMELHO, ModWorldgen.TERRAS_DO_JOGO, ModWorldgen.TERRAS_DO_DRAGAO,
+                    ModWorldgen.FLORESTA_DE_HANAMI));
     // Bands up to this one are cold: their peaks are the Norte Gelado. Up to MILD_BANDS the seas are the Mar da Névoa.
     private static final int COLD_BANDS = 2;
     private static final int MILD_BANDS = 3;
@@ -106,6 +113,7 @@ public final class SoulsBiomeSource extends BiomeSource {
         holder(biomes, ModWorldgen.PICOS_DO_DRAGAO);
         holder(biomes, ModWorldgen.MAR_DA_NEVOA);
         holder(biomes, ModWorldgen.MAR_DO_SUL);
+        holder(biomes, ModWorldgen.MAR_DE_DAGON);
     }
 
     private Holder<Biome> holder(HolderGetter<Biome> biomes, ResourceKey<Biome> key) {
@@ -251,7 +259,8 @@ public final class SoulsBiomeSource extends BiomeSource {
 
     @Override
     public Holder<Biome> getNoiseBiome(int x, int y, int z, Climate.Sampler sampler) {
-        Holder<Biome> found = vanilla.findValue(sampler.sample(x, y, z));
+        Climate.TargetPoint target = sampler.sample(x, y, z);
+        Holder<Biome> found = vanilla.findValue(target);
         ResourceKey<Biome> key = found.unwrapKey().orElseThrow();
         if (CAVES.contains(key)) {
             return found;
@@ -262,7 +271,11 @@ public final class SoulsBiomeSource extends BiomeSource {
             return holders.get(ModWorldgen.MAR_DO_SUL);
         }
         if (SEAS.contains(key)) {
-            return holders.get(band < MILD_BANDS ? ModWorldgen.MAR_DA_NEVOA : ModWorldgen.MAR_DO_SUL);
+            if (band < MILD_BANDS) {
+                return holders.get(ModWorldgen.MAR_DA_NEVOA);
+            }
+            // warm seas: the Mar de Dagon where it is humid (the Jujutsu biomes, 2026-11-13), the Mar do Sul otherwise
+            return holders.get(Climate.unquantizeCoord(target.humidity()) >= 0.1f ? ModWorldgen.MAR_DE_DAGON : ModWorldgen.MAR_DO_SUL);
         }
         if (PEAKS.contains(key)) {
             return holders.get(band < COLD_BANDS ? ModWorldgen.NORTE_GELADO : ModWorldgen.PICOS_DO_DRAGAO);
