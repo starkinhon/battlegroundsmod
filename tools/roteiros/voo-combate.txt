@@ -20,8 +20,8 @@
 espera 30
 
 # Decola (pulo duplo) e sobe
+# toque duplo do vanilla: os dois espaços têm que caber em 7 ticks
 /devc tecla espaco 2
-espera 4
 espera 4
 /devc tecla espaco 2
 espera 4
