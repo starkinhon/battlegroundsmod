@@ -267,7 +267,40 @@ public final class ColoniaFeature extends Feature<NoneFeatureConfiguration> {
                 return NONE;
             }
         }
+        if (!everyChunkRuns(cx, cz, half, cityY, generator, random)) {
+            return NONE;
+        }
         return new int[] {cx, cz, half, cityY, JjkGen.hashInt(ci, cj, 111, seed), dome ? 1 : 0};
+    }
+
+    // The game runs this feature only in chunks with the biome in them or in a chunk next to them. A piece over a patch
+    // of another biome (Picos do Dragão in the middle of a colony, 2026-11-13) left a whole chunk of that patch standing
+    // uncut in the city. So a piece is good only if every chunk under it and its skirt has the biome at the middle of
+    // itself or of a chunk next to it (a stricter test than the game's, which looks at the whole chunk).
+    private static boolean everyChunkRuns(int cx, int cz, int half, int y, ChunkGenerator generator, RandomState random) {
+        int c0x = (cx - half - SKIRT) >> 4, c1x = (cx + half - 1 + SKIRT) >> 4;
+        int c0z = (cz - half - SKIRT) >> 4, c1z = (cz + half - 1 + SKIRT) >> 4;
+        int w = c1x - c0x + 3, d = c1z - c0z + 3;
+        boolean[] has = new boolean[w * d];
+        for (int i = 0; i < w; i++) {
+            for (int j = 0; j < d; j++) {
+                has[i * d + j] = biomeAt(generator, random, ((c0x - 1 + i) << 4) + 8, y, ((c0z - 1 + j) << 4) + 8);
+            }
+        }
+        for (int i = 1; i < w - 1; i++) {
+            for (int j = 1; j < d - 1; j++) {
+                boolean ok = false;
+                for (int a = -1; a <= 1 && !ok; a++) {
+                    for (int b = -1; b <= 1 && !ok; b++) {
+                        ok = has[(i + a) * d + j + b];
+                    }
+                }
+                if (!ok) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     // Whether a column is on a Colony piece or its skirt, give or take a margin. Other features ask this so they never put
