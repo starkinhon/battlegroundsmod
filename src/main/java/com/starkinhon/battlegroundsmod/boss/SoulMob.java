@@ -29,9 +29,15 @@ public class SoulMob extends SoulBoss {
         return net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(getType()).getPath();
     }
 
+    // Natural ones come and go, but not before they can be found (PR #309 test, 2026-11-12: SubAlmas spawned 40-72
+    // blocks away vanished within 15-45 s, before anyone could walk there; in daylight a monster's idle time climbs
+    // fast and vanilla's random despawn past 32 blocks took them). The first LINGER ticks only leaving (past 128 blocks,
+    // vanilla's hard limit) removes them.
+    private static final int LINGER = 20 * 150;
+
     @Override
-    public boolean removeWhenFarAway(double distance) {
-        return true;
+    public boolean removeWhenFarAway(double distanceSqr) {
+        return distanceSqr > 128 * 128 || tickCount > LINGER;
     }
 
     // One placed with a spawn egg stays (for testing and videos); natural ones come and go.
