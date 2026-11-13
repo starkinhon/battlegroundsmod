@@ -103,7 +103,12 @@ public final class DbQuests {
     // Talking to Bulma for the first time starts the chain (DbActivities.bulma).
     public static void start(ServerPlayer player) {
         if (Progression.on(player)) {
-            player.getPersistentData().putBoolean(STARTED, true);
+            var tag = player.getPersistentData();
+            if (!tag.getBoolean(STARTED) && tag.getInt(STEP) == 0) {
+                // a new chain, not an old save: nothing to migrate (else Bulma's step came back right after she gave the radar)
+                tag.putBoolean(NO_RADITZ, true);
+            }
+            tag.putBoolean(STARTED, true);
         }
     }
 
@@ -285,9 +290,14 @@ public final class DbQuests {
         player.sendSystemMessage(Component.translatable("npc.battlegroundsmod.gohan.esfera").withStyle(s -> s.withColor(0xF2C94C)));
     }
 
-    // What the HUD shows: an activity going on (Roshi's milk run, the gravity machine...) comes first.
+    // What the HUD shows: an activity going on (Roshi's milk run, the gravity machine...) comes first, then the mission
+    // of the structure the player is in, then the chain's step.
     public static void sync(ServerPlayer player) {
         DbActivities.Hud over = DbActivities.hud(player);
+        if (over == null) {
+            // the mission of the structure the player is in (StructureMissions)
+            over = StructureMissions.hud(player);
+        }
         if (over != null) {
             send(player, over.id(), over.count(), over.goal(), over.x(), over.z(), over.way());
             return;

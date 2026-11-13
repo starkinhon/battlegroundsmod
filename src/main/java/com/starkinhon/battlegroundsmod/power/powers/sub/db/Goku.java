@@ -52,7 +52,8 @@ public final class Goku {
 
     // ---------- Z: Kamehameha ----------
 
-    private static boolean kamehameha(LivingEntity caster, ServerLevel level) {
+    // Public: Mestre Kame teaches this same Kamehameha as a starting technique (Powers.KAMEHAMEHA).
+    public static boolean kamehameha(LivingEntity caster, ServerLevel level) {
         SubCommon.Guard guard = SubCommon.guard(caster);
         boolean kaioken = SubCommon.hasState(caster, DbCommon.KAIOKEN);
         int color = kaioken ? Db.RED : Db.KAME;

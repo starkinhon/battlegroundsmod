@@ -39,7 +39,10 @@ public final class QuestHud {
             return;
         }
         Font font = minecraft.font;
-        Component head = Component.translatable("message.battlegroundsmod.missao");
+        // A structure's mission (universe/StructureMissions) shows the place's name over it instead of "Missão".
+        String own = "quest.battlegroundsmod." + id + ".titulo";
+        Component head = net.minecraft.client.resources.language.I18n.exists(own) ? Component.translatable(own)
+                : Component.translatable("message.battlegroundsmod.missao");
         Component text = Component.translatable("quest.battlegroundsmod." + id, count, goal);
         Component far = null;
         if (way) {
