@@ -538,8 +538,10 @@ public final class AirCombat {
                 start(Act.PERSEGUE);
             } else {
                 // facing it from a distance, circling slowly (leaning into the curve)
-                orbit += DT * 0.35;
-                Vec3 want = target.position().add(Math.cos(orbit) * 7.5, 1.2, Math.sin(orbit) * 7.5);
+                // the approved page's combat scene: round the target at 9 +- 3.5 blocks, rising and sinking a little
+                orbit += DT * 0.55;
+                double rad = 9 + Math.sin(t * 0.7) * 3.5;
+                Vec3 want = target.position().add(Math.cos(orbit) * rad, 1.5 + Math.sin(t * 0.9) * 2.5, Math.sin(orbit) * rad);
                 Vec3 wish = want.subtract(boss.position()).scale(0.35);
                 if (wish.length() > 1) {
                     wish = wish.normalize();
