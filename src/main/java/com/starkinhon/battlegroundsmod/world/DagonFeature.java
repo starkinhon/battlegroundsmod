@@ -35,6 +35,7 @@ import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConf
 //    on the preview's ring of sandbank (the ground rising around it at 66 as in the preview).
 // Writes only inside its own chunk; the coast's ground only where the biome is.
 public final class DagonFeature extends Feature<NoneFeatureConfiguration> {
+    private static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger();
     private static final int SALT = 0xDA60E5;
     private static final int CELL = 480;
     private static final int RING = 84;
@@ -215,7 +216,7 @@ public final class DagonFeature extends Feature<NoneFeatureConfiguration> {
     }
 
     // A cell's Nest spot, well inside the cell: good only out in the water (the bottom at least 2 under the sea) with the
-    // biome all around as far as the tentacles curl. {cx, cz, nestSeed} or NONE.
+    // biome around as far as the tentacles curl (7 of 8 points). {cx, cz, nestSeed} or NONE.
     private static int[] site(int ci, int cj, int worldKey, int seed, int sea, ChunkGenerator generator, RandomState random,
             IntBinaryOperator real) {
         try {
@@ -229,13 +230,15 @@ public final class DagonFeature extends Feature<NoneFeatureConfiguration> {
                 if (gy > sea - 2 || gy < sea - 40 || !biomeAt(generator, random, cx, sea, cz)) {
                     return NONE;
                 }
+                int miss = 0;
                 for (int a = 0; a < 8; a++) {
                     int x = cx + JjkGen.round(Math.cos(a * Math.PI / 4) * DagonGen.NEST_REACH);
                     int z = cz + JjkGen.round(Math.sin(a * Math.PI / 4) * DagonGen.NEST_REACH);
-                    if (!biomeAt(generator, random, x, sea, z)) {
+                    if (!biomeAt(generator, random, x, sea, z) && ++miss > 1) {
                         return NONE;
                     }
                 }
+                LOGGER.info("[jjk] Ninho de Dagon em {} {}", cx, cz);
                 return new int[] {cx, cz, JjkGen.hashInt(ci, cj, 81, seed)};
             });
         } catch (ExecutionException e) {
