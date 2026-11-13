@@ -113,7 +113,7 @@ public final class JujutsuAirFx {
                 new Air(Kind.EMBER, 160, cs("#ff8a2a", "#ff9a3a", "#ff6a1a"), 0.03, 0.06),
                 new Air(Kind.ASH, 240, cs("#8a8690", "#6a6670", "#a8a4ac"), 0.04, 0.07),
                 new Air(Kind.PAPER, 40, cs("#3a3230", "#c8b898", "#8a7a64"), 0.12, 0.2)),
-                c("#4a2a5a"), 0.45f, 0.6f, 0.55f, 10, false)),
+                c("#4a2a5a"), 0.35f, 0.6f, 0.85f, 10, false)),
         new State(new Mood("shibuya", ModWorldgen.SHIBUYA, List.of(
                 new Air(Kind.PAPER, 50, cs("#f4f1ea", "#e8e2d0", "#ffd23a", "#ff8ab0", "#9ad8ff"), 0.12, 0.2)),
                 c("#c87a5a"), 0.15f, 0.65f, 0.75f, 14, false)),
