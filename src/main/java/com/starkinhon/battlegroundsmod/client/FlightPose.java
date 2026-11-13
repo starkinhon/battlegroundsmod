@@ -443,10 +443,10 @@ public final class FlightPose {
         q[4] += flut * 0.5f;
         q[7] -= flut * 0.5f;
         if (s.cw > 0.001f) {
-            float[] c = combatLimbs(s, t);
+            float[] cl = combatLimbs(s, t);
             float w = s.cw;
             for (int i = 0; i < 13; i++) {
-                q[i] = Mth.lerp(w, q[i], Mth.lerp(fi, c[i], BOOST[i]));
+                q[i] = Mth.lerp(w, q[i], Mth.lerp(fi, cl[i], BOOST[i]));
             }
         }
         // waving at you (Goku and Kuririn passing by): the right hand up, swinging side to side
