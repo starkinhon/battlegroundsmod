@@ -77,6 +77,9 @@ public final class StructureMissions {
     // Korin's tower: climbing from the base without flying (the base height), and the Sacred Water once.
     private static final Map<UUID, Integer> CLIMB = new HashMap<>();
     private static final String KORIN_DONE = "souls_korin_subiu";
+    // reached Korin's floor: the room's floor sits a few blocks under WorldSites.KORIN_FLOOR (in the test the climb stood
+    // at 157 of 161 inside the room)
+    private static final int KORIN_DONE_AT = WorldSites.KORIN_FLOOR - 8;
     private static final String GURU_DONE = "souls_guru_despertou";
 
     // Babidi's ship: seconds crouched in a row (3 = the mark is let go or taken back).
@@ -301,7 +304,7 @@ public final class StructureMissions {
             }
             Integer from = CLIMB.get(player.getUUID());
             if (from != null) {
-                int top = s.y() + WorldSites.KORIN_FLOOR;
+                int top = s.y() + KORIN_DONE_AT;
                 return new Here(key(s), "est_karin_subindo", Math.max(0, player.getBlockY() - from), Math.max(1, top - from), 0xE6D27A);
             }
             return new Here(key(s), "est_karin", 0, 0, 0xE6D27A);
@@ -418,7 +421,7 @@ public final class StructureMissions {
             Fx.sound(level, player.position(), SoundEvents.VILLAGER_NO, 1f, 0.8f);
             return;
         }
-        if (player.getBlockY() >= s.y() + WorldSites.KORIN_FLOOR) {
+        if (player.getBlockY() >= s.y() + KORIN_DONE_AT) {
             CLIMB.remove(player.getUUID());
             player.getPersistentData().putBoolean(KORIN_DONE, true);
             DbActivities.title(player, Component.translatable("message.battlegroundsmod.korin_agua"),

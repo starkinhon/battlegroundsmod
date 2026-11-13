@@ -41,7 +41,7 @@ espera 30
 devc print missoes/03_cell_titulo
 espera 90
 devc print missoes/03_cell_onda
-spreadplayers ~36 ~ 0 1 false @s
+spreadplayers ~42 ~ 0 1 false @s
 espera 30
 devc print missoes/03_cell_ringout
 # ---- Nave do Babidi: guardiões, Marca Majin, soltar agachando
@@ -164,6 +164,9 @@ espera 40
 damage @e[tag=souls_kame_treino,limit=1] 500 minecraft:player_attack by @p
 espera 50
 devc print missoes/09_kame_aprendeu
+# acima das palmeiras pra ver o feixe
+tp @s ~ ~8 ~ ~ 0
+espera 10
 devc tecla z 40
 espera 10
 devc print missoes/09_kamehameha

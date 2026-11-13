@@ -196,7 +196,15 @@ public final class DbActivities {
     }
 
     static void reward(ServerPlayer player, double tierPart, ItemStack... items) {
+        int tier = Tiers.of(player);
         Progression.add(player, Progression.cost(Tiers.of(player)) * tierPart);
+        Component[] last = LAST_TITLE.get(player.getUUID());
+        if (Tiers.of(player) != tier && last != null && player.serverLevel().getGameTime() - lastTitleAt(player) <= 1) {
+            // the tier-up title just took the screen over this one (the test: Buu's gift and the Grand Elder went unseen):
+            // say it in the chat instead
+            player.sendSystemMessage(Component.empty().append(last[0]).append(Component.literal(": ").withStyle(s -> s.withColor(0xAAAAAA)))
+                    .append(last[1].copy().withStyle(s -> s.withColor(0xE6E0EE))));
+        }
         for (ItemStack stack : items) {
             if (!player.getInventory().add(stack)) {
                 player.drop(stack, false);
@@ -206,9 +214,20 @@ public final class DbActivities {
     }
 
     static void title(ServerPlayer player, Component title, Component sub, int color) {
+        Component head = title.copy().withStyle(s -> s.withColor(color).withBold(true));
         player.connection.send(new ClientboundSetTitlesAnimationPacket(6, 40, 12));
-        player.connection.send(new ClientboundSetTitleTextPacket(title.copy().withStyle(s -> s.withColor(color).withBold(true))));
+        player.connection.send(new ClientboundSetTitleTextPacket(head));
         player.connection.send(new ClientboundSetSubtitleTextPacket(sub));
+        LAST_TITLE.put(player.getUUID(), new Component[] {head, sub});
+        LAST_TITLE_AT.put(player.getUUID(), player.serverLevel().getGameTime());
+    }
+
+    // The last title each player got and when (reward() moves it to the chat when a tier-up covers it).
+    private static final Map<UUID, Component[]> LAST_TITLE = new HashMap<>();
+    private static final Map<UUID, Long> LAST_TITLE_AT = new HashMap<>();
+
+    private static long lastTitleAt(ServerPlayer player) {
+        return LAST_TITLE_AT.getOrDefault(player.getUUID(), Long.MIN_VALUE / 2);
     }
 
     // A dry block to stand on near (x, z), searching outwards up to radius, or null.
@@ -790,7 +809,7 @@ public final class DbActivities {
         player.getPersistentData().putBoolean("souls_kame_feito", true);
         dailyUse(player, "souls_kame_dia");
         player.connection.send(new ClientboundSetTitlesAnimationPacket(8, 70, 20));
-        player.connection.send(new ClientboundSetTitleTextPacket(Component.translatable("message.battlegroundsmod.technique_learned")
+        player.connection.send(new ClientboundSetTitleTextPacket(Component.translatable("message.battlegroundsmod.kame_aprendeu")
                 .withStyle(s -> s.withColor(0x5AB8FF).withBold(true))));
         player.connection.send(new ClientboundSetSubtitleTextPacket(Component.translatable("message.battlegroundsmod.kame_ensinou")));
         Fx.burst(level, Fx.dust(0x5AB8FF, 1.8f), player.position().add(0, 1, 0), 70, 0.7, 0.08);
