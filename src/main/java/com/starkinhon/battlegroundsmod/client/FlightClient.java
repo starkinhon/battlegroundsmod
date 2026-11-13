@@ -351,6 +351,7 @@ public final class FlightClient {
     // ---------- the combat flight (AirFightClient; the approved page's combatMove, doDash, doDodge) ----------
 
     private static int dodgeT, dodgeCd, dodgeSide = 1;
+    private static double lockD = -1;
     private static Vec3 dodgeVel = Vec3.ZERO;
 
     // The server started the ki dash (AirFight.dash): the kick and the ring now, the homing in combat.
@@ -383,11 +384,11 @@ public final class FlightClient {
         Vec3 to = target.position().add(0, target.getBbHeight() / 2, 0).subtract(me);
         double dist = Math.max(1.0E-3, to.length());
         Vec3 fwd = to.scale(1 / dist);
-        // A/D and the dodge go to the CAMERA's sides, not the target's (Stark 2026-11-13, first play: holding A the
-        // direction kept changing, "apertando pra fazer uma coisa e ele fazendo outra"). The camera turns to the target
-        // smoothly (AirFightClient.onFrame), so holding A still circles it, but never flips when it zips past or over.
-        double yaw = Math.toRadians(player.getYRot());
-        Vec3 side = new Vec3(-Math.cos(yaw), 0, -Math.sin(yaw));
+        // The page's combatMove: A/D circle the target (right = across the player-target line, the locked camera sits
+        // on that line, so A is always the screen's left), W/S close in and back off, the circling keeps its distance.
+        Vec3 flat = new Vec3(fwd.x, 0, fwd.z);
+        flat = flat.lengthSqr() < 1.0E-4 ? Vec3.directionFromRotation(0, player.getYRot()) : flat.normalize();
+        Vec3 side = new Vec3(-flat.z, 0, flat.x);
         if (dodgeCd > 0) {
             dodgeCd--;
         }
@@ -444,16 +445,21 @@ public final class FlightClient {
             }
             return used;
         }
-        double top = Math.max(16, cruise * 1.1);
+        double top = 18; // the page's speed around the target
         if (SkillAnimations.guarding(player)) {
             top *= 0.35;
         }
-        // W/S along where the CAMERA looks (Stark's 2nd play: still "the game playing for me"); the lock only helps
-        // the aim. W stops short of the target instead of flying into it.
-        Vec3 look = player.getLookAngle();
-        Vec3 wish = side.scale(right).add(0, up, 0);
-        if (forward < 0 || !(dist < 2.4 && look.dot(fwd) > 0.5)) {
-            wish = wish.add(look.scale(forward));
+        if (forward != 0 || lockD < 0) {
+            lockD = dist;
+        }
+        Vec3 wish = Vec3.ZERO;
+        if (forward > 0 && dist > 2.4 || forward < 0) {
+            wish = fwd.scale(forward);
+        }
+        wish = wish.add(side.scale(right)).add(0, up, 0);
+        if (right != 0 && forward == 0) {
+            // sideways it circles round without drifting away
+            wish = wish.add(fwd.scale(Mth.clamp((dist - lockD) * 0.25, -0.6, 0.6)));
         }
         double wl = wish.length();
         if (wl > 1) {

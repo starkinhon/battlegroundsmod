@@ -53,7 +53,7 @@ public final class AirFight {
     // who is in a punch exchange right now (until the game time)
     private static final Map<LivingEntity, Long> EXCHANGE = new HashMap<>();
 
-    public static final int MOVE_DASH = 0, MOVE_STOP = 1;
+    public static final int MOVE_DASH = 0, MOVE_STOP = 1, MOVE_EXCHANGE = 2;
 
     private AirFight() {
     }
@@ -541,6 +541,13 @@ public final class AirFight {
         Vec3 c0 = new Vec3(mid.x, Math.max(mid.y, ground + 6), mid.z);
         hold(a, total);
         hold(b, total);
+        // the players in it see it from the page's exchange camera (low, from the side)
+        if (a instanceof ServerPlayer pa) {
+            move(pa, MOVE_EXCHANGE, b.getId(), total);
+        }
+        if (b instanceof ServerPlayer pb) {
+            move(pb, MOVE_EXCHANGE, a.getId(), total);
+        }
         int ca = colorOf(a), cb = colorOf(b);
         for (int i = 0; i <= hits; i++) {
             int k = i;

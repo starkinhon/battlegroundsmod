@@ -31,9 +31,6 @@ public final class AirFightClient {
     private static int dashTarget = -1;
     private static int dashTicks;
     private static long lastFrame;
-    // what the assist set last frame (NaN: nothing), to tell the player's own mouse from it
-    private static float setYaw = Float.NaN, setPitch;
-    private static float mouseHold;
 
     private AirFightClient() {
     }
@@ -51,6 +48,7 @@ public final class AirFightClient {
         if (dashTicks > 0) {
             dashTicks--;
         }
+        exchangeTick();
         if (sent != targetId) {
             sent = targetId;
             PacketDistributor.sendToServer(new ModPayloads.AirLock(targetId));
@@ -61,6 +59,8 @@ public final class AirFightClient {
         targetId = -1;
         sent = -2;
         dashTicks = 0;
+        exTicks = 0;
+        camPos = null;
     }
 
     private static LivingEntity entity(int id) {
@@ -123,6 +123,13 @@ public final class AirFightClient {
             dashTarget = target;
             dashTicks = ticks;
             FlightClient.dashStart();
+        } else if (kind == AirFight.MOVE_EXCHANGE) {
+            exOther = target;
+            exTicks = ticks;
+            if (dashTicks > 0) {
+                FlightClient.dashEnd();
+            }
+            dashTicks = 0;
         } else if (kind == AirFight.MOVE_STOP) {
             if (dashTicks > 0) {
                 FlightClient.dashEnd();
@@ -136,7 +143,17 @@ public final class AirFightClient {
         return dashTicks > 0 ? entity(dashTarget) : null;
     }
 
-    // ------------------------------------------------------------------ the camera: turned to the target
+    // ------------------------------------------------------------------ the camera: the approved page's, line by line
+
+    // Stark's 3rd play (2026-11-13): "a prévia tá tão mais fluida... recria a prévia dentro do jogo". The page never
+    // turned the player's aim: its locked camera is its own, behind the player on the player-target line, over the
+    // shoulder, opening to the side when close so the player never covers the target, looking between the two
+    // (placeCam, camKey 'jogador' + combatOn). The player itself just faces the target (look.yaw = the line).
+    private static Vec3 camPos, camLook;
+    // the punch exchange (AirFight.MOVE_EXCHANGE): seen from below and from the side, like the page's EX camera
+    private static int exOther = -1;
+    private static int exTicks;
+    private static Vec3 exDir;
 
     public static void onFrame(RenderFrameEvent.Pre event) {
         Minecraft minecraft = Minecraft.getInstance();
@@ -145,50 +162,87 @@ public final class AirFightClient {
         float dt = lastFrame == 0 ? 0.016f : (float) Mth.clamp((now - lastFrame) / 1.0E9, 0, 0.1);
         lastFrame = now;
         if (player == null || minecraft.isPaused() || !active()) {
+            camPos = null;
             return;
         }
         LivingEntity t = target();
         float partial = event.getPartialTick().getGameTimeDeltaPartialTick(true);
-        Vec3 eye = player.getEyePosition(partial);
-        Vec3 at = t.getPosition(partial).add(0, t.getBbHeight() * 0.55, 0);
-        Vec3 to = at.subtract(eye);
-        double flat = Math.sqrt(to.x * to.x + to.z * to.z);
-        if (to.lengthSqr() < 0.04) {
-            return;
+        Vec3 head = player.getPosition(partial).add(0, 1.6, 0);
+        Vec3 mc = t.getPosition(partial).add(0, t.getBbHeight() * 0.55, 0);
+        Vec3 dv = mc.subtract(head);
+        double dl = dv.length(), hz = Math.sqrt(dv.x * dv.x + dv.z * dv.z);
+        // the player faces the target (the aim of every skill goes there too)
+        if (dl > 0.2) {
+            float yaw = (float) (Mth.atan2(-dv.x, dv.z) * Mth.RAD_TO_DEG);
+            float pitch = Mth.clamp((float) (-Mth.atan2(dv.y, hz) * Mth.RAD_TO_DEG), -80, 80);
+            player.setYRot(yaw);
+            player.setXRot(pitch);
+            player.yRotO = yaw;
+            player.xRotO = pitch;
+            player.setYHeadRot(yaw);
+            player.yHeadRotO = yaw;
         }
-        float yaw = (float) (Mth.atan2(-to.x, to.z) * Mth.RAD_TO_DEG);
-        // the elevation held in a band (72°: at 50° a target well below fell out of the shot in the 4th scripted test)
-        float pitch = Mth.clamp((float) (-Mth.atan2(to.y, flat) * Mth.RAD_TO_DEG), -72, 72);
-        // A LIGHT aim assist, not a camera grab (Stark's 2nd play: "parece que é o jogo que tá jogando pra mim"; the
-        // preview felt "no controle, com leve auxílio"). The mouse always wins: moving it pauses the assist for a moment;
-        // the assist itself is slow, capped, and leaves alone a target already near the middle of the screen.
-        if (setYaw == setYaw && (Math.abs(Mth.wrapDegrees(player.getYRot() - setYaw)) > 0.05 || Math.abs(player.getXRot() - setPitch) > 0.05)) {
-            mouseHold = 0.6f;
+        Vec3 want, at;
+        LivingEntity other = exTicks > 0 ? entity(exOther) : null;
+        if (other != null) {
+            Vec3 c = head.add(other.getPosition(partial).add(0, 1, 0)).scale(0.5);
+            if (exDir == null) {
+                Vec3 line = other.position().subtract(player.position());
+                Vec3 side = new Vec3(-line.z, 0, line.x);
+                exDir = side.lengthSqr() < 1.0E-4 ? new Vec3(1, 0, 0) : side.normalize();
+                if (camPos != null && camPos.subtract(c).dot(exDir) < 0) {
+                    exDir = exDir.scale(-1);
+                }
+            }
+            want = c.add(exDir.scale(24));
+            want = new Vec3(want.x, c.y - 8, want.z);
+            at = c;
+        } else {
+            exDir = null;
+            Vec3 flat = hz > 0.8 ? new Vec3(dv.x / hz, 0, dv.z / hz) : Vec3.directionFromRotation(0, player.getYRot());
+            Vec3 right = new Vec3(-flat.z, 0, flat.x);
+            double el = Mth.clamp(Math.atan2(dv.y, Math.max(hz, 0.01)), -0.5, 0.5);
+            Vec3 back = flat.scale(Math.cos(el)).add(0, Math.sin(el), 0);
+            double side = 1.3 + 1.6 * Mth.clamp((7 - dl) / 5, 0, 1);
+            want = head.add(back.scale(-5.4)).add(0, 0.9, 0).add(right.scale(-side));
+            at = head.lerp(mc, Mth.clamp(1 - 2.5 / Math.max(dl, 0.1), 0.45, 0.8));
         }
-        mouseHold = Math.max(0, mouseHold - dt);
-        if (mouseHold > 0) {
-            setYaw = Float.NaN;
-            return;
+        if (camPos == null) {
+            camPos = want;
+            camLook = at;
         }
-        float k = 1 - (float) Math.exp(-2.6 * dt);
-        float cap = 110 * dt;
-        float ey = soft(Mth.wrapDegrees(yaw - player.getYRot()), 7);
-        float ep = soft(pitch - player.getXRot(), 7);
-        float y = player.getYRot() + Mth.clamp(ey * k, -cap, cap);
-        float x = player.getXRot() + Mth.clamp(ep * k, -cap, cap);
-        setYaw = y;
-        setPitch = x;
-        player.setYRot(y);
-        player.setXRot(x);
-        player.yRotO = y;
-        player.xRotO = x;
-        player.setYHeadRot(y);
-        player.yHeadRotO = y;
+        camPos = camPos.lerp(want, 1 - Math.exp(-(other != null ? 4 : 12) * dt));
+        camLook = camLook.lerp(at, 1 - Math.exp(-14 * dt));
+        // never inside a block: pulled in towards the player's head
+        if (minecraft.level != null) {
+            var hit = minecraft.level.clip(new net.minecraft.world.level.ClipContext(head, camPos,
+                    net.minecraft.world.level.ClipContext.Block.VISUAL, net.minecraft.world.level.ClipContext.Fluid.NONE, player));
+            if (hit.getType() != net.minecraft.world.phys.HitResult.Type.MISS) {
+                camPos = hit.getLocation().add(head.subtract(hit.getLocation()).normalize().scale(0.3));
+            }
+        }
     }
 
-    // The error minus a dead zone in the middle of the screen.
-    private static float soft(float err, float dead) {
-        return Math.abs(err) <= dead ? 0 : err - Math.signum(err) * dead;
+    // The locked camera for CameraMixin, or null (vanilla camera).
+    public static FaceCutscene.Shot shot() {
+        if (camPos == null || camLook == null || !active()) {
+            return null;
+        }
+        Vec3 d = camLook.subtract(camPos);
+        double h = Math.sqrt(d.x * d.x + d.z * d.z);
+        if (d.lengthSqr() < 1.0E-4) {
+            return null;
+        }
+        float yaw = (float) (Mth.atan2(-d.x, d.z) * Mth.RAD_TO_DEG);
+        float pitch = (float) (-Mth.atan2(d.y, h) * Mth.RAD_TO_DEG);
+        return new FaceCutscene.Shot(camPos, yaw, pitch);
+    }
+
+    // Client tick: the exchange camera runs down.
+    static void exchangeTick() {
+        if (exTicks > 0) {
+            exTicks--;
+        }
     }
 
     // Others: whether that player flies in the combat stance (Flight.COMBAT from the server).
