@@ -103,6 +103,9 @@ public final class ModWorldgen {
     // The Colônia do Jogo do Abate's pieces of destroyed city: the colonies under the dome and the ruins.
     public static final Supplier<ColoniaFeature> COLONIA_FEATURE = FEATURES.register("colonia_do_jogo_do_abate",
             () -> new ColoniaFeature(NoneFeatureConfiguration.CODEC));
+    // Shibuya's city: streets, buildings, skyscrapers, shrines, the metro and the street furniture.
+    public static final Supplier<ShibuyaFeature> SHIBUYA_FEATURE = FEATURES.register("shibuya",
+            () -> new ShibuyaFeature(NoneFeatureConfiguration.CODEC));
 
     // The Naruto biomes of the normal overworld (put there by NarutoRegion).
     public static final ResourceKey<Biome> FLORESTA_DA_FOLHA = biome("floresta_da_folha");
@@ -124,6 +127,7 @@ public final class ModWorldgen {
     public static final ResourceKey<Biome> TERRAS_DO_JOGO = biome("terras_do_jogo");
     public static final ResourceKey<Biome> OUTONO_DE_KYOTO = biome("outono_de_kyoto");
     public static final ResourceKey<Biome> COLONIA_DO_JOGO_DO_ABATE = biome("colonia_do_jogo_do_abate");
+    public static final ResourceKey<Biome> SHIBUYA = biome("shibuya");
     public static final TagKey<Biome> JUJUTSU_BIOMES = TagKey.create(Registries.BIOME,
             ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "universe_jujutsu"));
 

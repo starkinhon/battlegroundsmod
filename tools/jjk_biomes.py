@@ -62,6 +62,11 @@ BIOMES = {
         sky="#4a4a68", fog="#a89ca0", water="#4a5a6a", water_fog="#1e242a", grass="#6a7040", foliage="#5a6a34",
         particle=("minecraft:white_ash", 0.006),
         creature=[mob("minecraft:cat", 3, 1, 2)], ambient=[mob("minecraft:bat", 10, 8, 8)]),
+    "shibuya": dict(
+        pt="Shibuya", en="Shibuya", temp=0.7, down=0.5, rain=True,
+        sky="#6a88b8", fog="#b8bcc8", water="#3a5a6a", water_fog="#1a2a34", grass="#6a8a4a", foliage="#4f7a3a",
+        particle=None,
+        creature=[mob("minecraft:cat", 4, 1, 2)], ambient=[mob("minecraft:bat", 10, 8, 8)]),
 }
 
 

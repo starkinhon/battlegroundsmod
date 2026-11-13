@@ -163,20 +163,137 @@ public final class JujutsuBlocks {
     public static final DeferredBlock<Block> COLONY_WINDOW = stone("janela_da_colonia", MapColor.COLOR_BLUE, 0);
     public static final DeferredBlock<Block> COLONY_WINDOW_LIT = stone("janela_acesa_da_colonia", MapColor.COLOR_ORANGE, 10);
     public static final DeferredBlock<Block> FLOOR_SLAB = stone("laje", MapColor.STONE, 0);
-    public static final DeferredBlock<ThinPlantBlock> REBAR = post("vergalhao", MapColor.TERRACOTTA_BROWN, SoundType.METAL,
+    public static final DeferredBlock<ThinPlantBlock> REBAR = post("vergalhao", MapColor.TERRACOTTA_BROWN, SoundType.METAL, 0,
             Block.box(7, 0, 7, 9, 16, 9));
     public static final DeferredBlock<Block> RUBBLE = cube("entulho", MapColor.STONE, 0.8f, SoundType.GRAVEL, 0);
     public static final DeferredBlock<Block> EMBERS = stone("brasa", MapColor.COLOR_ORANGE, 8);
     public static final DeferredBlock<Block> TIRE = cube("pneu", MapColor.COLOR_BLACK, 1.0f, SoundType.WOOL, 0);
-    public static final DeferredBlock<ThinPlantBlock> TRAFFIC_CONE = post("cone_de_transito", MapColor.COLOR_ORANGE, SoundType.WOOL,
+    public static final DeferredBlock<ThinPlantBlock> TRAFFIC_CONE = post("cone_de_transito", MapColor.COLOR_ORANGE, SoundType.WOOL, 0,
             Block.box(4, 0, 4, 12, 13, 12));
-    public static final DeferredBlock<ThinPlantBlock> WORK_FENCE = post("grade_de_obra", MapColor.METAL, SoundType.METAL,
+    public static final DeferredBlock<ThinPlantBlock> WORK_FENCE = post("grade_de_obra", MapColor.METAL, SoundType.METAL, 0,
             Block.box(5, 0, 5, 11, 16, 11));
-    public static final DeferredBlock<ThinPlantBlock> WARNING_SIGN = post("placa_de_aviso", MapColor.COLOR_YELLOW, SoundType.METAL,
+    public static final DeferredBlock<ThinPlantBlock> WARNING_SIGN = post("placa_de_aviso", MapColor.COLOR_YELLOW, SoundType.METAL, 0,
             Block.box(2, 3, 2, 14, 14, 14));
     public static final DeferredBlock<ThinPlantBlock> STREET_WEEDS = plant("mato_de_rua", MapColor.PLANT, 0, SoundType.GRASS,
             Block.box(4, 0, 4, 12, 9, 12));
 
+    // ---- Shibuya: the streets (asphalt, white and yellow paint, the sidewalks, tactile paving, curb, lots, alleys), the
+    // buildings' eight facades, four glasses, windows (dark and lit warm or cool), mullions, slabs, corners, roofs and
+    // parapets, the lit shop windows and glass doors, four awnings, eight signs with their letters and frames, the big
+    // screens, rooftop metal and tanks, aviation lights, poles, wires, lamps, traffic lights, guard rails, the avenue
+    // trees, the vending machines, the cursed buildings (stains, purple windows, abandoned floors, boards, tape,
+    // talismans, dead signs), the metro (tiles, orange stripe, floor, ceiling and its lights, pillars, turnstiles,
+    // platform edge, steps, benches, signs, ballast, rails, tunnel concrete and lights), the skyscraper's LED crown,
+    // white fins and louvers, and the train.
+    public static final DeferredBlock<Block> SHIBUYA_ASPHALT = stone("asfalto_de_shibuya", MapColor.COLOR_GRAY, 0);
+    public static final DeferredBlock<Block> WHITE_LINE = stone("faixa_branca", MapColor.SNOW, 0);
+    public static final DeferredBlock<Block> YELLOW_LINE = stone("faixa_amarela", MapColor.COLOR_YELLOW, 0);
+    public static final DeferredBlock<Block> SHIBUYA_SIDEWALK = stone("calcada_de_shibuya", MapColor.STONE, 0);
+    public static final DeferredBlock<Block> SHIBUYA_SIDEWALK_DARK = stone("calcada_escura_de_shibuya", MapColor.STONE, 0);
+    public static final DeferredBlock<Block> TACTILE_PAVING = stone("piso_tatil", MapColor.COLOR_YELLOW, 0);
+    public static final DeferredBlock<Block> CURB = stone("meio_fio", MapColor.QUARTZ, 0);
+    public static final DeferredBlock<Block> LOT_GROUND = stone("chao_de_lote", MapColor.COLOR_GRAY, 0);
+    public static final DeferredBlock<Block> ALLEY_GROUND = stone("chao_de_beco", MapColor.COLOR_GRAY, 0);
+    public static final DeferredBlock<Block> FACADE_0 = stone("fachada_creme", MapColor.STONE, 0);
+    public static final DeferredBlock<Block> FACADE_1 = stone("fachada_cinza", MapColor.STONE, 0);
+    public static final DeferredBlock<Block> FACADE_2 = stone("fachada_areia", MapColor.STONE, 0);
+    public static final DeferredBlock<Block> FACADE_3 = stone("fachada_marrom", MapColor.STONE, 0);
+    public static final DeferredBlock<Block> FACADE_4 = stone("fachada_branca", MapColor.STONE, 0);
+    public static final DeferredBlock<Block> FACADE_5 = stone("fachada_grafite", MapColor.STONE, 0);
+    public static final DeferredBlock<Block> FACADE_6 = stone("fachada_caramelo", MapColor.STONE, 0);
+    public static final DeferredBlock<Block> FACADE_7 = stone("fachada_azulada", MapColor.STONE, 0);
+    public static final DeferredBlock<Block> TOWER_GLASS_0 = stone("vidro_de_predio_azul", MapColor.COLOR_LIGHT_BLUE, 0);
+    public static final DeferredBlock<Block> TOWER_GLASS_1 = stone("vidro_de_predio_petroleo", MapColor.COLOR_LIGHT_BLUE, 0);
+    public static final DeferredBlock<Block> TOWER_GLASS_2 = stone("vidro_de_predio_verde", MapColor.COLOR_LIGHT_BLUE, 0);
+    public static final DeferredBlock<Block> TOWER_GLASS_3 = stone("vidro_de_predio_escuro", MapColor.COLOR_LIGHT_BLUE, 0);
+    public static final DeferredBlock<Block> BUILDING_WINDOW = stone("janela_de_predio", MapColor.COLOR_GRAY, 0);
+    public static final DeferredBlock<Block> WINDOW_WARM = stone("janela_acesa_quente", MapColor.COLOR_ORANGE, 9);
+    public static final DeferredBlock<Block> WINDOW_COOL = stone("janela_acesa_fria", MapColor.SNOW, 9);
+    public static final DeferredBlock<Block> MULLION = stone("montante", MapColor.METAL, 0);
+    public static final DeferredBlock<Block> BUILDING_SLAB = stone("laje_de_predio", MapColor.STONE, 0);
+    public static final DeferredBlock<Block> DARK_CORNER = stone("quina_escura", MapColor.COLOR_GRAY, 0);
+    public static final DeferredBlock<Block> BUILDING_ROOF = stone("telhado_de_predio", MapColor.STONE, 0);
+    public static final DeferredBlock<Block> PARAPET = stone("parapeito", MapColor.STONE, 0);
+    public static final DeferredBlock<Block> SHOP_WINDOW = stone("vitrine_acesa", MapColor.COLOR_LIGHT_BLUE, 11);
+    public static final DeferredBlock<Block> GLASS_DOOR = stone("porta_de_vidro", MapColor.COLOR_GRAY, 8);
+    public static final DeferredBlock<Block> AWNING_0 = cube("toldo_vermelho", MapColor.WOOL, 0.8f, SoundType.WOOL, 0);
+    public static final DeferredBlock<Block> AWNING_1 = cube("toldo_azul", MapColor.WOOL, 0.8f, SoundType.WOOL, 0);
+    public static final DeferredBlock<Block> AWNING_2 = cube("toldo_verde", MapColor.WOOL, 0.8f, SoundType.WOOL, 0);
+    public static final DeferredBlock<Block> AWNING_3 = cube("toldo_laranja", MapColor.WOOL, 0.8f, SoundType.WOOL, 0);
+    public static final DeferredBlock<Block> SIGN_0 = stone("letreiro_vermelho", MapColor.COLOR_RED, 9);
+    public static final DeferredBlock<Block> SIGN_1 = stone("letreiro_laranja", MapColor.COLOR_RED, 9);
+    public static final DeferredBlock<Block> SIGN_2 = stone("letreiro_amarelo", MapColor.COLOR_RED, 9);
+    public static final DeferredBlock<Block> SIGN_3 = stone("letreiro_verde", MapColor.COLOR_RED, 9);
+    public static final DeferredBlock<Block> SIGN_4 = stone("letreiro_ciano", MapColor.COLOR_RED, 9);
+    public static final DeferredBlock<Block> SIGN_5 = stone("letreiro_azul", MapColor.COLOR_RED, 9);
+    public static final DeferredBlock<Block> SIGN_6 = stone("letreiro_rosa", MapColor.COLOR_RED, 9);
+    public static final DeferredBlock<Block> SIGN_7 = stone("letreiro_branco", MapColor.COLOR_RED, 9);
+    public static final DeferredBlock<Block> SIGN_GLYPH = stone("letra_de_letreiro", MapColor.SNOW, 12);
+    public static final DeferredBlock<Block> SIGN_FRAME = stone("moldura_de_letreiro", MapColor.COLOR_BLACK, 0);
+    public static final DeferredBlock<Block> BIG_SCREEN = stone("telao", MapColor.COLOR_BLACK, 10);
+    public static final DeferredBlock<Block> LIGHT_METAL = stone("metal_claro", MapColor.METAL, 0);
+    public static final DeferredBlock<Block> DARK_METAL = stone("metal_escuro", MapColor.COLOR_GRAY, 0);
+    public static final DeferredBlock<Block> WATER_TANK = stone("caixa_dagua", MapColor.METAL, 0);
+    public static final DeferredBlock<ThinPlantBlock> AVIATION_LIGHT = post("luz_de_aviao", MapColor.COLOR_RED, SoundType.GLASS, 10, Block.box(4, 0, 4, 12, 8, 12));
+    public static final DeferredBlock<ThinPlantBlock> STREET_POLE = post("poste_de_rua", MapColor.METAL, SoundType.METAL, 0, Block.box(6, 0, 6, 10, 16, 10));
+    public static final DeferredBlock<ThinPlantBlock> WIRE = post("fio_de_poste", MapColor.COLOR_BLACK, SoundType.WOOL, 0, Block.box(7, 7, 7, 9, 9, 9));
+    public static final DeferredBlock<Block> STREET_LAMP = stone("luminaria_de_rua", MapColor.SNOW, 15);
+    public static final DeferredBlock<Block> TRAFFIC_BOX = stone("caixa_de_semaforo", MapColor.COLOR_BLACK, 0);
+    public static final DeferredBlock<ThinPlantBlock> TRAFFIC_RED = post("luz_vermelha_de_semaforo", MapColor.COLOR_RED, SoundType.GLASS, 9, Block.box(2, 2, 2, 14, 14, 14));
+    public static final DeferredBlock<ThinPlantBlock> TRAFFIC_GREEN = post("luz_verde_de_semaforo", MapColor.COLOR_GREEN, SoundType.GLASS, 9, Block.box(2, 2, 2, 14, 14, 14));
+    public static final DeferredBlock<ThinPlantBlock> GUARD_RAIL = post("grade_de_protecao", MapColor.METAL, SoundType.METAL, 0, Block.box(1, 0, 1, 15, 10, 15));
+    public static final DeferredBlock<Block> PLANTER = cube("canteiro", MapColor.DIRT, 0.6f, SoundType.ROOTED_DIRT, 0);
+    public static final DeferredBlock<Block> STREET_TRUNK = cube("tronco_de_rua", MapColor.WOOD, 2.0f, SoundType.WOOD, 0);
+    public static final DeferredBlock<LeavesBlock> STREET_LEAVES = leaves("folhas_de_rua");
+    public static final DeferredBlock<LeavesBlock> STREET_LEAVES_DARK = leaves("folhas_de_rua_escuras");
+    public static final DeferredBlock<Block> VENDING_TOP = stone("maquina_de_bebida_painel", MapColor.SNOW, 10);
+    public static final DeferredBlock<Block> VENDING_0 = stone("maquina_de_bebida_vermelha", MapColor.COLOR_RED, 4);
+    public static final DeferredBlock<Block> VENDING_1 = stone("maquina_de_bebida_azul", MapColor.COLOR_RED, 4);
+    public static final DeferredBlock<Block> VENDING_2 = stone("maquina_de_bebida_branca", MapColor.COLOR_RED, 4);
+    public static final DeferredBlock<Block> VENDING_3 = stone("maquina_de_bebida_preta", MapColor.COLOR_RED, 4);
+    public static final DeferredBlock<Block> CURSE_STAIN = stone("mancha_amaldicoada", MapColor.COLOR_BLACK, 0);
+    public static final DeferredBlock<Block> CURSE_WINDOW = stone("janela_amaldicoada", MapColor.COLOR_PURPLE, 6);
+    public static final DeferredBlock<Block> ABANDONED_FLOOR = stone("piso_abandonado", MapColor.COLOR_GRAY, 0);
+    public static final DeferredBlock<Block> NAILED_BOARDS = cube("tabuas_pregadas", MapColor.WOOD, 2.0f, SoundType.WOOD, 0);
+    public static final DeferredBlock<Block> CAUTION_TAPE = stone("fita_de_isolamento", MapColor.COLOR_YELLOW, 0);
+    public static final DeferredBlock<Block> STUCK_TALISMAN = cube("talisma_colado", MapColor.SAND, 0.8f, SoundType.WOOD, 0);
+    public static final DeferredBlock<Block> DEAD_SIGN = stone("letreiro_apagado", MapColor.COLOR_BLACK, 0);
+    public static final DeferredBlock<Block> METRO_TILE = stone("azulejo_do_metro", MapColor.QUARTZ, 0);
+    public static final DeferredBlock<Block> ORANGE_STRIPE = stone("faixa_laranja", MapColor.COLOR_ORANGE, 0);
+    public static final DeferredBlock<Block> METRO_FLOOR = stone("piso_do_metro", MapColor.SAND, 0);
+    public static final DeferredBlock<Block> METRO_CEILING = stone("teto_do_metro", MapColor.QUARTZ, 0);
+    public static final DeferredBlock<Block> METRO_LIGHT = stone("luz_do_metro", MapColor.SNOW, 15);
+    public static final DeferredBlock<Block> METRO_PILLAR = stone("pilar_do_metro", MapColor.QUARTZ, 0);
+    public static final DeferredBlock<ThinPlantBlock> TURNSTILE = post("catraca", MapColor.METAL, SoundType.METAL, 0, Block.box(2, 0, 1, 14, 14, 15));
+    public static final DeferredBlock<Block> PLATFORM_EDGE = stone("borda_da_plataforma", MapColor.QUARTZ, 0);
+    public static final DeferredBlock<Block> METRO_STEP = stone("degrau_do_metro", MapColor.STONE, 0);
+    public static final DeferredBlock<ThinPlantBlock> METRO_BENCH = post("banco_do_metro", MapColor.COLOR_BLUE, SoundType.METAL, 0, Block.box(1, 0, 2, 15, 7, 14));
+    public static final DeferredBlock<Block> METRO_SIGN = stone("placa_do_metro", MapColor.SNOW, 10);
+    public static final DeferredBlock<Block> METRO_SIGN_LETTER = stone("letra_da_placa_do_metro", MapColor.COLOR_BLUE, 0);
+    public static final DeferredBlock<Block> BALLAST = cube("brita", MapColor.STONE, 0.6f, SoundType.GRAVEL, 0);
+    public static final DeferredBlock<ThinPlantBlock> RAIL = post("trilho", MapColor.METAL, SoundType.METAL, 0, Block.box(1, 0, 1, 15, 2, 15));
+    public static final DeferredBlock<Block> TUNNEL_CONCRETE = stone("concreto_de_tunel", MapColor.STONE, 0);
+    public static final DeferredBlock<Block> TUNNEL_LIGHT = stone("luz_de_tunel", MapColor.SAND, 14);
+    public static final DeferredBlock<Block> LED_CROWN = stone("coroa_de_led", MapColor.COLOR_LIGHT_BLUE, 12);
+    public static final DeferredBlock<Block> WHITE_FIN = stone("aleta_branca", MapColor.SNOW, 0);
+    public static final DeferredBlock<Block> LOUVER = stone("veneziana", MapColor.COLOR_GRAY, 0);
+    public static final DeferredBlock<Block> TRAIN_BODY = stone("lataria_do_trem", MapColor.METAL, 0);
+    public static final DeferredBlock<Block> TRAIN_WINDOW = stone("janela_do_trem", MapColor.SNOW, 8);
+    public static final DeferredBlock<Block> TRAIN_DOOR = stone("porta_do_trem", MapColor.METAL, 0);
+    public static final DeferredBlock<Block> TRAIN_ROOF = stone("teto_do_trem", MapColor.METAL, 0);
+    public static final DeferredBlock<Block> TRAIN_END = stone("ponta_do_trem", MapColor.METAL, 0);
+    public static final DeferredBlock<Block> TRAIN_UNDER = stone("chassi_do_trem", MapColor.COLOR_BLACK, 0);
+    public static final DeferredBlock<Block> TRAIN_WINDSHIELD = stone("para_brisa_do_trem", MapColor.COLOR_BLACK, 0);
+    public static final DeferredBlock<Block> TRAIN_HEADLIGHT = stone("farol_do_trem", MapColor.SNOW, 15);
+
+    // The families the Shibuya generator picks from by index (its WALL0..7, GLASS0..3, AWNING0..3, SIGN0..7, VEND0..3).
+    public static final List<DeferredBlock<Block>> FACADES = List.of(FACADE_0, FACADE_1, FACADE_2, FACADE_3, FACADE_4, FACADE_5,
+            FACADE_6, FACADE_7);
+    public static final List<DeferredBlock<Block>> TOWER_GLASSES = List.of(TOWER_GLASS_0, TOWER_GLASS_1, TOWER_GLASS_2,
+            TOWER_GLASS_3);
+    public static final List<DeferredBlock<Block>> AWNINGS = List.of(AWNING_0, AWNING_1, AWNING_2, AWNING_3);
+    public static final List<DeferredBlock<Block>> SIGNS = List.of(SIGN_0, SIGN_1, SIGN_2, SIGN_3, SIGN_4, SIGN_5, SIGN_6, SIGN_7);
+    public static final List<DeferredBlock<Block>> VENDINGS = List.of(VENDING_0, VENDING_1, VENDING_2, VENDING_3);
     private JujutsuBlocks() {
     }
 
@@ -212,10 +329,10 @@ public final class JujutsuBlocks {
     }
 
     // A thin solid thing (rebar, a cone, a fence post, a sign): its own box for the outline and the collision.
-    private static DeferredBlock<ThinPlantBlock> post(String name, MapColor color, SoundType sound,
+    private static DeferredBlock<ThinPlantBlock> post(String name, MapColor color, SoundType sound, int light,
             net.minecraft.world.phys.shapes.VoxelShape shape) {
         return add(ModBlocks.BLOCKS.register(name, () -> new ThinPlantBlock(BlockBehaviour.Properties.of().mapColor(color)
-                .requiresCorrectToolForDrops().strength(1.5f, 6.0f).noOcclusion().sound(sound), shape)));
+                .requiresCorrectToolForDrops().strength(1.5f, 6.0f).noOcclusion().sound(sound).lightLevel(state -> light), shape)));
     }
 
     private static DeferredBlock<ThinPlantBlock> plant(String name, MapColor color, int light, SoundType sound,
