@@ -35,7 +35,7 @@ BIOMES = {
         creature=[mob("minecraft:frog", 10, 2, 5)], ambient=[mob("minecraft:bat", 10, 8, 8)]),
     "mar_de_dagon": dict(
         pt="Mar de Dagon", en="Dagon's Sea", temp=0.95, down=0.6, rain=True,
-        sky="#3c8cdc", fog="#c4e4ee", water="#40e0c8", water_fog="#2a9e9a", grass="#6aa040", foliage="#3e8a2e",
+        sky="#3c8cdc", fog="#c4e4ee", water="#2ac8c8", water_fog="#0e6a8a", grass="#6aa040", foliage="#3e8a2e",
         particle=("minecraft:white_ash", 0.0008),
         creature=[mob("minecraft:turtle", 5, 2, 5)], ambient=[mob("minecraft:bat", 10, 8, 8)],
         water_ambient=[mob("minecraft:tropical_fish", 25, 8, 8)], water_creature=[mob("minecraft:dolphin", 2, 1, 2)]),
