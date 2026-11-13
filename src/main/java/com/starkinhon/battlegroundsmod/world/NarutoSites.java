@@ -506,7 +506,7 @@ public final class NarutoSites {
 
     private static void valleys(ServerLevel level, Data data, ServerPlayer player) {
         int px = player.getBlockX(), pz = player.getBlockZ();
-        for (ValeGen.Frame F : EndValleyFeature.framesNear(level, px - 200, pz - 200, px + 200, pz + 200)) {
+        for (ValeGen.Frame F : EndValleyFeature.knownFramesNear(level, px - 200, pz - 200, px + 200, pz + 200)) {
             if (F.statues.size() < 2) {
                 continue;
             }

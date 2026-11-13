@@ -213,8 +213,11 @@ public final class DagonFeature extends Feature<NoneFeatureConfiguration> {
 
     // Out in the water (the bottom 2 to 40 under the sea) with the biome around as far as the tentacles curl (7 of 8).
     private static boolean nestFits(int cx, int cz, int sea, ChunkGenerator generator, RandomState random, IntBinaryOperator real) {
+        if (!biomeAt(generator, random, cx, sea, cz)) {
+            return false; // the biome first: it is cheap, the ground costs a whole area of terrain
+        }
         int gy = real.applyAsInt(cx, cz);
-        if (gy > sea - 2 || gy < sea - 40 || !biomeAt(generator, random, cx, sea, cz)) {
+        if (gy > sea - 2 || gy < sea - 40) {
             return false;
         }
         int miss = 0;

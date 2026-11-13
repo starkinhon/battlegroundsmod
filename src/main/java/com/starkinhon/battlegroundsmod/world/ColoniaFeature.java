@@ -44,6 +44,8 @@ public final class ColoniaFeature extends Feature<NoneFeatureConfiguration> {
     private static final Cache<Long, Built> PIECES = CacheBuilder.newBuilder().maximumSize(12).build();
     private static final Cache<Long, int[]> SITES = CacheBuilder.newBuilder().maximumSize(4096).build();
     private static final int[] NONE = {};
+    // The biome at each chunk's middle (everyChunkRuns: the nine spots of a cell overlap, so most are asked again).
+    private static final Cache<Long, Boolean> CHUNK_BIOME = CacheBuilder.newBuilder().maximumSize(65536).build();
 
     // A built piece already moved to its place, its voxels split by chunk.
     private record Built(Map<Long, int[]> byChunk) {
@@ -241,6 +243,23 @@ public final class ColoniaFeature extends Feature<NoneFeatureConfiguration> {
             cx = ci * CELL + CELL / 2 + JjkGen.round(Math.cos(a) * slack);
             cz = cj * CELL + CELL / 2 + JjkGen.round(Math.sin(a) * slack);
         }
+        // The biome first, at a fixed height (cheap), then the ground (25 terrain samples, each a whole area: the PC
+        // profile of 2026-11-13 had this function at a quarter of all the generation, mostly in cells where no piece fit).
+        int y0 = sea + 8;
+        if (!biomeAt(generator, random, cx, y0, cz)) {
+            return NONE;
+        }
+        int miss0 = 0;
+        for (int a = 0; a < 8; a++) {
+            int x = cx + JjkGen.round(Math.cos(a * Math.PI / 4) * half);
+            int z = cz + JjkGen.round(Math.sin(a * Math.PI / 4) * half);
+            if (!biomeAt(generator, random, x, y0, z) && ++miss0 > 1) {
+                return NONE;
+            }
+        }
+        if (!everyChunkRuns(cx, cz, half, y0, generator, random)) {
+            return NONE;
+        }
         int lo = Integer.MAX_VALUE, hi = Integer.MIN_VALUE, sum = 0, n = 0;
         for (int a = -2; a <= 2; a++) {
             for (int b = -2; b <= 2; b++) {
@@ -267,9 +286,6 @@ public final class ColoniaFeature extends Feature<NoneFeatureConfiguration> {
                 return NONE;
             }
         }
-        if (!everyChunkRuns(cx, cz, half, cityY, generator, random)) {
-            return NONE;
-        }
         return new int[] {cx, cz, half, cityY, JjkGen.hashInt(ci, cj, 111, seed), dome ? 1 : 0};
     }
 
@@ -284,7 +300,14 @@ public final class ColoniaFeature extends Feature<NoneFeatureConfiguration> {
         boolean[] has = new boolean[w * d];
         for (int i = 0; i < w; i++) {
             for (int j = 0; j < d; j++) {
-                has[i * d + j] = biomeAt(generator, random, ((c0x - 1 + i) << 4) + 8, y, ((c0z - 1 + j) << 4) + 8);
+                int qx = c0x - 1 + i, qz = c0z - 1 + j;
+                long k = (((long) qx << 32) | (qz & 0xFFFFFFFFL)) ^ ((long) System.identityHashCode(random) * 0x9E3779B97F4A7C15L);
+                Boolean b = CHUNK_BIOME.getIfPresent(k);
+                if (b == null) {
+                    b = biomeAt(generator, random, (qx << 4) + 8, y, (qz << 4) + 8);
+                    CHUNK_BIOME.put(k, b);
+                }
+                has[i * d + j] = b;
             }
         }
         for (int i = 1; i < w - 1; i++) {
