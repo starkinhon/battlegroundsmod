@@ -121,7 +121,12 @@ public final class Combat {
         if (mult > 0 && damage > 0 && damage * mult < floor) {
             damage = floor / mult;
         }
-        return hurtBase(attacker, target, damage);
+        boolean landed = hurtBase(attacker, target, damage);
+        if (landed) {
+            // Shigaraki's fists leave the Decadência on the body, piling up (Esfarelar)
+            com.starkinhon.battlegroundsmod.power.powers.shigaraki.Esfarelar.onFist(attacker, target);
+        }
+        return landed;
     }
 
     // The base attacks (combo, Forte, Barragem, sword arts): already on the new scale for everyone, SubAlmas too.
