@@ -1737,5 +1737,21 @@
   "block.battlegroundsmod.folhas_de_sakura_escura": "Dark Sakura Leaves",
   "block.battlegroundsmod.folhas_de_sakura_clara": "Light Sakura Leaves",
   "block.battlegroundsmod.folhas_de_sakura_branca": "White Sakura Leaves",
-  "biome.battlegroundsmod.templos_antigos": "Ancient Temples"
+  "biome.battlegroundsmod.templos_antigos": "Ancient Temples",
+  "block.battlegroundsmod.madeira_negra": "Black Wood",
+  "block.battlegroundsmod.madeira_negra_escura": "Dark Black Wood",
+  "block.battlegroundsmod.raiz_negra": "Black Root",
+  "block.battlegroundsmod.folhas_negras": "Black Leaves",
+  "block.battlegroundsmod.folhas_negras_musgo": "Mossy Black Leaves",
+  "block.battlegroundsmod.folhas_violeta": "Violet Leaves",
+  "block.battlegroundsmod.terra_negra": "Black Soil",
+  "block.battlegroundsmod.capim_morto": "Dead Grass",
+  "block.battlegroundsmod.olho_amaldicoado": "Cursed Eye",
+  "block.battlegroundsmod.veio_amaldicoado": "Cursed Vein",
+  "block.battlegroundsmod.carne_amaldicoada": "Cursed Flesh",
+  "block.battlegroundsmod.carne_escura": "Maw",
+  "block.battlegroundsmod.madeira_vermelha_podre": "Rotten Red Wood",
+  "block.battlegroundsmod.cipo_negro": "Black Vine",
+  "block.battlegroundsmod.fungo_amaldicoado": "Cursed Fungus",
+  "biome.battlegroundsmod.floresta_negra": "Black Forest"
 }

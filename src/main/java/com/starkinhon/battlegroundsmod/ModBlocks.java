@@ -264,6 +264,7 @@ public final class ModBlocks {
     }
 
     public static void register(IEventBus bus) {
+        JujutsuBlocks.init();
         BLOCKS.register(bus);
         BLOCK_ITEMS.register(bus);
     }

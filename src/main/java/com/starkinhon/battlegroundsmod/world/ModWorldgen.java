@@ -81,6 +81,9 @@ public final class ModWorldgen {
     // The Templos Antigos' temples, stairways with torii, cedars, sakuras and hokoras (TemploFeature).
     public static final Supplier<TemploFeature> TEMPLOS_ANTIGOS_FEATURE = FEATURES.register("templos_antigos",
             () -> new TemploFeature(NoneFeatureConfiguration.CODEC));
+    // The Floresta Negra's black trees, rotten shrines, broken torii and the lair of the Árvore Matriz.
+    public static final Supplier<FlorestaNegraFeature> FLORESTA_NEGRA_FEATURE = FEATURES.register("floresta_negra",
+            () -> new FlorestaNegraFeature(NoneFeatureConfiguration.CODEC));
 
     // The Naruto biomes of the normal overworld (put there by NarutoRegion).
     public static final ResourceKey<Biome> FLORESTA_DA_FOLHA = biome("floresta_da_folha");
@@ -95,6 +98,7 @@ public final class ModWorldgen {
 
     // The Jujutsu biomes of the normal overworld (put there by JujutsuRegion).
     public static final ResourceKey<Biome> TEMPLOS_ANTIGOS = biome("templos_antigos");
+    public static final ResourceKey<Biome> FLORESTA_NEGRA = biome("floresta_negra");
     public static final TagKey<Biome> JUJUTSU_BIOMES = TagKey.create(Registries.BIOME,
             ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "universe_jujutsu"));
 
