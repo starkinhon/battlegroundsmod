@@ -147,6 +147,10 @@ public class NarutoMobRenderer extends MobRenderer<NarutoMob, BlockyModel<Naruto
         loopAnim = loop == null ? null : a.mode(loop);
         if (loopAnim != null) {
             BakedAnim.root(loopAnim, age, true, rest, tmp);
+            // the loop's own height off the ground (the dragon's flight is drawn high in the preview) goes: the
+            // entity is already in the air, and its rider sits where the entity is (test 2026-11-13: the rider hung
+            // under the belly)
+            tmp[1] -= (a.minY(loop) - a.minY("parado")) * rest;
         } else {
             BakedAnim.root(a.mode("parado"), age, true, rest * (1 - walkW), tmp);
             BakedAnim.root(a.mode("andar"), age, true, rest * walkW, tmp);

@@ -267,13 +267,25 @@ public class DbMob extends NarutoMob {
         }
     }
 
+    private int rideCool;
+
+    @Override
+    public void tick() {
+        super.tick();
+        if (rideCool > 0) {
+            rideCool--;
+        }
+    }
+
     // Ridden: left click breathes fire where the rider looks (PunchInput / the Punch payload).
     public boolean rideFire(Player player) {
-        if (!isDragon() || getControllingPassenger() != player || attacking() || !ready(0)) {
+        // its own pace when ridden (2.5 s), not the wild cooldown of 8 s (test 2026-11-13: the rider's clicks fell on it)
+        if (!isDragon() || getControllingPassenger() != player || attacking() || rideCool > 0) {
             return isDragon() && getControllingPassenger() == player;
         }
         LivingEntity aim = com.starkinhon.battlegroundsmod.power.powers.sub.SubCommon.aimed(player, 12);
         DbMobMoves.rideFire(this, player, aim);
+        rideCool = 50;
         return true;
     }
 
