@@ -10,10 +10,13 @@
 /gamemode survival
 /effect give @s resistance 99999 3 true
 /effect give @s saturation 99999 0 true
+# a alma pode ter trocado numa rodada anterior (Vegeta morto = alma dele tomada): volta pro Goku tier 6
+/soul escolher goku
+/soul tier 6
 /soul semcooldown
 /gamerule sendCommandFeedback false
-# área nova (a de 0 -400 ficou cheia de crateras das rodadas anteriores)
-/tp @s 600 -40 -600 0 0
+# área nova (as de 0 -400 e 600 -600 ficaram cheia de crateras das rodadas anteriores)
+/tp @s 1400 -40 -1400 0 0
 /devc vista terceira
 /devc janela 1280 720
 /devc chat off
@@ -31,10 +34,9 @@ espera 27
 espera 10
 
 # Vegeta na frente; o Dash Attack (G) começa a briga
-/summon battlegroundsmod:vegeta 600 -58 -588
+/summon battlegroundsmod:vegeta 1400 -58 -1388
 # imortal: com as bolas de ki acertando de verdade ele morria na rajada e a cerimônia da alma tomava a cena 09 (r5)
 /dev imortal @e[type=battlegroundsmod:vegeta]
-/dev imortal @s
 # ele decola sozinho quando vê o alvo no ar (AirCombat: alvo no ar por 0,35 s)
 espera 80
 /devc print voo-combate/00-vegeta-decolou
