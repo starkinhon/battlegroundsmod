@@ -1,0 +1,132 @@
+# Voo de combate (PR #318): K + voando trava no Vegeta; golpes de base no ar, defesa, esquiva, IA (feixe), troca de socos.
+# Pré-requisito: mundo SoulsDev dos testes do voo (técnica voo aprendida, alma Goku tier 6 = mesmo tier do Vegeta).
+# Rodar: gradlew runClient -Pmundo=SoulsDev -Proteiro=voo-combate
+/devc fechar
+/dev soltar
+/kill @e[type=!player]
+/time set day
+/weather clear
+/gamemode survival
+/effect give @s resistance 99999 3 true
+/effect give @s saturation 99999 0 true
+/soul semcooldown
+/tp @s 0 -40 -400 0 0
+/devc vista terceira
+espera 30
+
+# Decola (pulo duplo) e sobe
+/devc tecla espaco 2
+espera 4
+/devc tecla espaco 2
+espera 10
+/devc tecla espaco 25
+espera 10
+
+# Vegeta na frente; o Dash Attack (G) começa a briga
+/summon battlegroundsmod:vegeta 0 -58 -388
+espera 20
+/devc tecla k
+espera 10
+/devc gravar voo-combate/01-trava-decola 3
+/devc tecla g
+espera 70
+/devc gravar parar
+/devc print voo-combate/01-fim
+
+# Andando em volta dele: D, A, S, W (pose de cada direção)
+/devc gravar voo-combate/02-strafe 3
+/devc tecla direita 40
+/devc tecla esquerda 40
+/devc tecla tras 25
+/devc tecla frente 30
+espera 10
+/devc gravar parar
+
+# Combo no ar (avanço), depois Forte (R) = Martelo com o alvo atordoado
+/devc gravar voo-combate/03-combo-martelo 3
+/devc tecla ataque
+espera 7
+/devc tecla ataque
+espera 8
+/devc tecla ataque
+espera 8
+/devc tecla r
+/devc tecla g
+espera 80
+/devc gravar parar
+
+# Rajada (R de novo) segurada: bolas de ki teleguiadas
+/devc tecla espaco 25
+/devc tecla r
+/devc gravar voo-combate/04-rajada 3
+/devc tecla g 40
+espera 40
+/devc gravar parar
+/devc tecla r
+
+# IA: recua e solta o feixe (deixa acertar uma vez)
+/soul aereo recua
+/devc gravar voo-combate/05-feixe 3
+espera 110
+/devc gravar parar
+
+# Feixe de novo, esquivando com Ctrl várias vezes (a esquiva tem que atravessar)
+/soul aereo recua
+/devc gravar voo-combate/06-feixe-esquiva 3
+espera 45
+/devc tecla ctrl 1
+espera 12
+/devc tecla ctrl 1
+espera 12
+/devc tecla ctrl 1
+espera 12
+/devc tecla ctrl 1
+espera 40
+/devc gravar parar
+
+# Defesa (F segurado) contra a Investida: ele fica aberto
+/soul aereo investida
+/devc gravar voo-combate/07-defesa-investida 3
+/devc tecla f 40
+espera 20
+/devc gravar parar
+
+# Defesa contra a Rajada do Vegeta (bolas sobem; no tempo certo voltam)
+/soul aereo rajada
+/devc gravar voo-combate/08-defesa-rajada 3
+espera 6
+/devc tecla f 40
+espera 20
+/devc gravar parar
+
+# Dash contra dash: troca de socos pelo céu
+/soul aereo persegue
+/devc gravar voo-combate/09-troca 3
+espera 3
+/devc tecla g
+espera 80
+/devc gravar parar
+
+# Sumiço por trás e Martelo do Vegeta
+/soul aereo sumico
+/devc gravar voo-combate/10-sumico 3
+espera 40
+/devc gravar parar
+/soul aereo martelo
+/devc gravar voo-combate/11-martelo-vegeta 3
+espera 80
+/devc gravar parar
+
+# K desliga: voo livre com arrancada
+/devc tecla k
+/devc gravar voo-combate/12-k-desliga 3
+/devc tecla frente 30
+/devc tecla ctrl 1
+/devc tecla frente 30
+espera 10
+/devc gravar parar
+
+/dev soltar
+/kill @e[type=battlegroundsmod:vegeta]
+espera 20
+sair
