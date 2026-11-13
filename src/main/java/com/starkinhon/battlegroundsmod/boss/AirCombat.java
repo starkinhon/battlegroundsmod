@@ -72,6 +72,8 @@ public final class AirCombat {
     private Vec3 tVel = Vec3.ZERO;
     // whoever the Martelo slammed, until it hits the ground
     private LivingEntity slammed;
+    // whoever it fought last tick (see step)
+    private LivingEntity chase;
     private int slamT;
     // flown by SkyPassers (not fighting): extra pose flags for the clients
     boolean passer;
@@ -189,9 +191,17 @@ public final class AirCombat {
             return;
         }
         LivingEntity target = boss.getTarget();
-        if (target != null && (!target.isAlive() || target.level() != level || target.distanceToSqr(boss) > 96 * 96)) {
+        // In the air it keeps after whoever it fights even past its sight (the target goals let go at 32-48 blocks, and
+        // it landed far off instead of catching a player fleeing on the boost, in the second test).
+        if (target == null && st != St.CHAO && !passer && chase != null && chase.isAlive() && chase.level() == level
+                && chase.distanceToSqr(boss) < 160 * 160 && !(chase instanceof Player p && (p.isCreative() || p.isSpectator()))) {
+            target = chase;
+            boss.setTarget(chase);
+        }
+        if (target != null && (!target.isAlive() || target.level() != level || target.distanceToSqr(boss) > 160 * 160)) {
             target = null;
         }
+        chase = target;
         trackTarget(target);
         watchSlam(level);
         boolean wasPushed = pushed();
@@ -752,7 +762,9 @@ public final class AirCombat {
             return;
         }
         double above = s.getY() - DbCommon.groundY(level, s.position());
-        boolean down = s.onGround() || above < 0.6 || s instanceof Player p && !Flight.flying(p) && slamT > 2;
+        // On the ground for real: the blow itself already takes a player's flight away, so that is no sign (the crater
+        // used to open in the air, in the second test).
+        boolean down = s.onGround() || above < 0.6;
         if (!down) {
             return;
         }
