@@ -887,8 +887,8 @@ public final class FreezaTotal {
             return false;
         }
         Vec3 c = SubCommon.ground(level, caster.position());
-        Vec3 f = SubCommon.flat(caster.getLookAngle());
-        f = f.lengthSqr() < 1.0E-6 ? new Vec3(0, 0, 1) : f.normalize();
+        Vec3 look = SubCommon.flat(caster.getLookAngle());
+        Vec3 f = look.lengthSqr() < 1.0E-6 ? new Vec3(0, 0, 1) : look.normalize();
         Vec3 hole = SubCommon.ground(level, c.add(f.scale(7)));
         int ball = SubNet.newId();
         SubCommon.pose(caster, "db.flex");
