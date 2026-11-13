@@ -254,6 +254,37 @@ public final class ModPayloads {
         }
     }
 
+    // Client -> server: the book's group buttons (challenge/ArenaParty): 0 invite name, 1 accept name's invite, 2 decline
+    // it, 3 leave the group.
+    public record ArenaPartyAction(int action, String name) implements CustomPacketPayload {
+        public static final Type<ArenaPartyAction> TYPE = payloadType("arena_party_action");
+        public static final StreamCodec<ByteBuf, ArenaPartyAction> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, ArenaPartyAction::action, ByteBufCodecs.STRING_UTF8, ArenaPartyAction::name, ArenaPartyAction::new);
+
+        @Override
+        public Type<ArenaPartyAction> type() {
+            return TYPE;
+        }
+    }
+
+    // Server -> client: the others in this player's arena group, and who invited it ("" = nobody).
+    public record SyncArenaParty(List<String> party, String invite) implements CustomPacketPayload {
+        public static final Type<SyncArenaParty> TYPE = payloadType("sync_arena_party");
+        public static final StreamCodec<ByteBuf, SyncArenaParty> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.STRING_UTF8.apply(ByteBufCodecs.list()), SyncArenaParty::party, ByteBufCodecs.STRING_UTF8, SyncArenaParty::invite,
+                SyncArenaParty::new);
+
+        void applyTo() {
+            com.starkinhon.battlegroundsmod.challenge.ArenaParty.clientParty = List.copyOf(party);
+            com.starkinhon.battlegroundsmod.challenge.ArenaParty.clientInvite = invite;
+        }
+
+        @Override
+        public Type<SyncArenaParty> type() {
+            return TYPE;
+        }
+    }
+
     // Server -> client: the characters this player beat in their arenas (stamps in the Livros dos Desafios).
     public record SyncArenaWins(List<String> wins) implements CustomPacketPayload {
         public static final Type<SyncArenaWins> TYPE = payloadType("sync_arena_wins");
@@ -1767,6 +1798,12 @@ public final class ModPayloads {
                 com.starkinhon.battlegroundsmod.challenge.ChallengeArenas.start(player, payload.id());
             }
         }));
+        registrar.playToServer(ArenaPartyAction.TYPE, ArenaPartyAction.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
+            if (context.player() instanceof ServerPlayer player) {
+                com.starkinhon.battlegroundsmod.challenge.ArenaParty.action(player, payload.action(), payload.name());
+            }
+        }));
+        registrar.playToClient(SyncArenaParty.TYPE, SyncArenaParty.STREAM_CODEC, (payload, context) -> context.enqueueWork(payload::applyTo));
         registrar.playToServer(ChallengeLeave.TYPE, ChallengeLeave.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer player) {
                 com.starkinhon.battlegroundsmod.challenge.ChallengeArenas.leave(player);

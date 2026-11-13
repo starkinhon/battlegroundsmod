@@ -15,6 +15,8 @@ import com.starkinhon.battlegroundsmod.skill.ChallengeSpec;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.multiplayer.PlayerInfo;
+import com.starkinhon.battlegroundsmod.challenge.ArenaParty;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
@@ -47,6 +49,18 @@ public class ChallengeScreen extends Screen {
     private int scroll;
     private int contentHeight;
     private int backX1, backY1, backX2, backY2;
+
+    // The group corner (top left, outside the arenas): Convidar opens the list of the world's players; an invite
+    // received shows Aceitar / Recusar under it (challenge/ArenaParty).
+    private record Hit(int action, String name, int x1, int y1, int x2, int y2) {
+        boolean in(double mx, double my) {
+            return mx >= x1 && mx < x2 && my >= y1 && my < y2;
+        }
+    }
+
+    private static final int TOGGLE = -1;
+    private final List<Hit> hits = new ArrayList<>();
+    private boolean inviteOpen;
 
     public ChallengeScreen(String universe) {
         super(Component.translatable("screen.battlegroundsmod.challenges"));
@@ -164,6 +178,11 @@ public class ChallengeScreen extends Screen {
                 contentHeight - 22, 0.9f, MUTED, false);
         graphics.pose().popPose();
 
+        hits.clear();
+        if (!inArena()) {
+            drawGroup(graphics, mouseX, mouseY, accent);
+        }
+
         backX1 = backX2 = 0;
         if (inArena()) {
             Component back = Component.translatable("screen.battlegroundsmod.challenges.back");
@@ -176,6 +195,93 @@ public class ChallengeScreen extends Screen {
             graphics.fill(backX1, backY1, backX2, backY2, hover ? 0xF0402030 : 0xD0201018);
             GuiDraw.frame(graphics, backX1, backY1, backX2, backY2, GuiDraw.argb(220, accent));
             graphics.drawString(font, back, backX1 + 8, backY1 + 4, TEXT, true);
+        }
+    }
+
+    private List<String> worldPlayers() {
+        List<String> names = new ArrayList<>();
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.getConnection() == null || mc.player == null) {
+            return names;
+        }
+        String me = mc.player.getGameProfile().getName();
+        for (PlayerInfo info : mc.getConnection().getOnlinePlayers()) {
+            String name = info.getProfile().getName();
+            if (!name.equals(me)) {
+                names.add(name);
+            }
+        }
+        names.sort(String.CASE_INSENSITIVE_ORDER);
+        return names;
+    }
+
+    private int button(GuiGraphics graphics, Component text, int x, int y, int color, int action, String name, int mouseX, int mouseY) {
+        int w = font.width(text) + 12;
+        boolean hover = mouseX >= x && mouseX < x + w && mouseY >= y && mouseY < y + 15;
+        graphics.fill(x, y, x + w, y + 15, hover ? 0xF0402030 : 0xE0201018);
+        GuiDraw.frame(graphics, x, y, x + w, y + 15, GuiDraw.argb(hover ? 255 : 200, color));
+        graphics.drawString(font, text, x + 6, y + 4, hover ? 0xFF000000 | GuiDraw.mix(color, 0xFFFFFF, 0.5f) : TEXT, true);
+        hits.add(new Hit(action, name, x, y, x + w, y + 15));
+        return x + w;
+    }
+
+    private void drawGroup(GuiGraphics graphics, int mouseX, int mouseY, int accent) {
+        List<String> party = ArenaParty.clientParty;
+        int x = 8, y = 8;
+        button(graphics, Component.translatable("screen.battlegroundsmod.challenges.invite").append(inviteOpen ? " \u25B4" : " \u25BE"),
+                x, y, accent, TOGGLE, "", mouseX, mouseY);
+        y += 19;
+        if (!party.isEmpty()) {
+            Component line = Component.translatable("screen.battlegroundsmod.challenges.party", String.join(", ", party));
+            graphics.fill(x, y - 2, x + font.width(line) + 8, y + 10, 0xC0100A16);
+            graphics.drawString(font, line, x + 4, y, 0xFF7FE08A, true);
+            y += 14;
+        }
+        String invite = ArenaParty.clientInvite;
+        if (!invite.isEmpty()) {
+            Component line = Component.translatable("screen.battlegroundsmod.challenges.invite_from", invite);
+            graphics.fill(x, y - 2, x + font.width(line) + 8, y + 10, 0xC0100A16);
+            graphics.drawString(font, line, x + 4, y, 0xFFF2C94C, true);
+            y += 12;
+            int nx = button(graphics, Component.translatable("screen.battlegroundsmod.challenges.accept"), x, y, 0x5BD16A, 1, invite, mouseX, mouseY);
+            button(graphics, Component.translatable("screen.battlegroundsmod.challenges.decline"), nx + 4, y, 0xD8352A, 2, invite, mouseX, mouseY);
+            y += 19;
+        }
+        if (!inviteOpen) {
+            return;
+        }
+        List<String> players = worldPlayers();
+        int w = 190;
+        int rows = Math.max(1, players.size()) + (party.isEmpty() ? 0 : 1);
+        int top = 27, bottom = top + 6 + rows * 16 + (players.isEmpty() ? 12 : 0);
+        graphics.fill(x, top, x + w, bottom, 0xF0140E1C);
+        GuiDraw.frame(graphics, x, top, x + w, bottom, GuiDraw.argb(220, accent));
+        int ry = top + 4;
+        if (players.isEmpty()) {
+            for (FormattedCharSequence seq : font.split(Component.translatable("screen.battlegroundsmod.challenges.invite_none"), w - 10)) {
+                graphics.drawString(font, seq, x + 5, ry, MUTED, false);
+                ry += 10;
+            }
+        }
+        for (String name : players) {
+            boolean in = party.contains(name);
+            boolean hover = !in && mouseX >= x + 2 && mouseX < x + w - 2 && mouseY >= ry - 1 && mouseY < ry + 14;
+            if (hover) {
+                graphics.fill(x + 2, ry - 1, x + w - 2, ry + 14, 0x40D8B471);
+            }
+            graphics.drawString(font, name, x + 6, ry + 3, TEXT, true);
+            Component tag = Component.translatable(in ? "screen.battlegroundsmod.challenges.invite_in" : "screen.battlegroundsmod.challenges.invite_send");
+            GuiDraw.rightText(graphics, font, tag, x + w - 6, ry + 4, 0.75f, in ? 0xFF7FE08A : hover ? 0xFF000000 | accent : MUTED, false);
+            if (!in) {
+                hits.add(new Hit(0, name, x + 2, ry - 1, x + w - 2, ry + 14));
+            }
+            ry += 16;
+        }
+        if (!party.isEmpty()) {
+            boolean hover = mouseX >= x + 2 && mouseX < x + w - 2 && mouseY >= ry - 1 && mouseY < ry + 14;
+            graphics.drawString(font, Component.translatable("screen.battlegroundsmod.challenges.invite_leave"), x + 6, ry + 3,
+                    hover ? 0xFFFF7060 : 0xFFB0505A, true);
+            hits.add(new Hit(3, "", x + 2, ry - 1, x + w - 2, ry + 14));
         }
     }
 
@@ -224,6 +330,25 @@ public class ChallengeScreen extends Screen {
             if (backX2 > backX1 && mouseX >= backX1 && mouseX < backX2 && mouseY >= backY1 && mouseY < backY2) {
                 PacketDistributor.sendToServer(new ModPayloads.ChallengeLeave());
                 onClose();
+                return true;
+            }
+            for (Hit hit : new ArrayList<>(hits)) {
+                if (hit.in(mouseX, mouseY)) {
+                    if (hit.action() == TOGGLE) {
+                        inviteOpen = !inviteOpen;
+                    } else {
+                        PacketDistributor.sendToServer(new ModPayloads.ArenaPartyAction(hit.action(), hit.name()));
+                        if (hit.action() != 0) {
+                            ArenaParty.clientInvite = "";
+                        }
+                    }
+                    Minecraft.getInstance().getSoundManager().play(net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
+                            net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK, 1f));
+                    return true;
+                }
+            }
+            if (inviteOpen) {
+                inviteOpen = false;              // a click elsewhere closes the list
                 return true;
             }
             double my = mouseY + scroll;
