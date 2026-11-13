@@ -171,7 +171,8 @@ espera 30
 /kill @e[type=!player]
 /dev invocar minecraft:zombie 3
 /dev travar @e[type=zombie]
-/effect give @e[type=zombie] minecraft:instant_damage 1 0
+# instant_damage CURA zumbi (morto-vivo); /damage tira 14 de 20 e deixa abaixo dos 40%
+/damage @e[type=zombie,limit=1,sort=nearest] 14 minecraft:generic
 espera 10
 /devc mirar
 /devc tecla 9 2
