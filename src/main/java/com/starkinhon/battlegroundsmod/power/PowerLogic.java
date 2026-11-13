@@ -239,6 +239,8 @@ public final class PowerLogic {
         // In combat mode before the move runs, so the move starts with everything that comes with it already on (the
         // aura, Kokushibo's sword out of the sheath on the first frame, the ult bar). Bosses come through here too.
         enterCombat(caster);
+        // A launched technique at someone flying lands on them (no combat flight without Dragon Ball): the look goes there.
+        Combat.aimAtFlier(caster, 64);
         if (!ability(caster, power, slot).action().use(caster, level)) {
             return false;
         }

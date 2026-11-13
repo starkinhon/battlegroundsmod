@@ -598,7 +598,9 @@ public final class AirCombat {
     // In the air for the fight: flying with the technique (players), another soul flying, or well off the ground.
     static boolean airborne(LivingEntity target) {
         if (target instanceof Player player) {
-            return Flight.flying(player);
+            // A player without a Dragon Ball power is fought on the ground even while flying (Stark 2026-11-13): the soul
+            // comes down to them, the air fight is Dragon Ball's.
+            return Flight.flying(player) && Flight.dbPower(player);
         }
         if (target instanceof SoulBoss other && other.air != null) {
             return flying(other);
