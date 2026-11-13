@@ -17,12 +17,13 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
 
 // Passive, Toque da Decadência acumulado (Stark, 2026-11-13): every fist of Shigaraki's that lands (combo, Dash Attack,
-// Forte, Barragem) leaves the Decadência on the body. Each HITS_PER_LEVEL hits it goes up a level (up to MAX_LEVEL): the
+// Forte, Barragem) leaves the Decadência on the body (Stark asked for 20 hits a level; 30 after the retest, where 20 made
+// Madara lose every fight 8.6 x 3.3 DPS). Each HITS_PER_LEVEL hits it goes up a level (up to MAX_LEVEL): the
 // body greys from the touch (the Toque's own crumbling), takes more damage from everything and crumbles a share of its
 // health every second, more each level, until at the last level it is falling to dust and dies of it. Without a new
 // touch for FADE ticks it all goes away. The share is of the victim's own health, so it bites a boss the same way.
 public final class Esfarelar {
-    static final int HITS_PER_LEVEL = 20, MAX_LEVEL = 5, FADE = 400;
+    static final int HITS_PER_LEVEL = 30, MAX_LEVEL = 5, FADE = 400;
     // the health crumbled each second at each level, and the extra damage taken from everything
     private static final float[] PER_SECOND = {0, 0.005f, 0.01f, 0.02f, 0.035f, 0.06f};
     private static final float VULNERABLE_PER_LEVEL = 0.08f;
