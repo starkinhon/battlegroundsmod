@@ -61,6 +61,7 @@ public final class AirFightClient {
         dashTicks = 0;
         exTicks = 0;
         camPos = null;
+        PreviewFight.clear();
     }
 
     private static LivingEntity entity(int id) {
@@ -158,6 +159,12 @@ public final class AirFightClient {
     public static void onFrame(RenderFrameEvent.Pre event) {
         Minecraft minecraft = Minecraft.getInstance();
         LocalPlayer player = minecraft.player;
+        PreviewFight.frame();
+        if (PreviewFight.running()) {
+            camPos = null;
+            lastFrame = System.nanoTime();
+            return;
+        }
         long now = System.nanoTime();
         float dt = lastFrame == 0 ? 0.016f : (float) Mth.clamp((now - lastFrame) / 1.0E9, 0, 0.1);
         lastFrame = now;
@@ -226,6 +233,9 @@ public final class AirFightClient {
 
     // The locked camera for CameraMixin, or null (vanilla camera).
     public static FaceCutscene.Shot shot() {
+        if (PreviewFight.running()) {
+            return PreviewFight.shot();
+        }
         if (camPos == null || camLook == null || !active()) {
             return null;
         }

@@ -618,6 +618,46 @@ void main() {
         float edge = 1. - smoothstep(0.7, 1.0, r + fbm3(vec3(p * 3.4, 2.)) * 0.18);
         float al = edge * Alpha; if (al < 0.003) discard;
         emit(col * al, al);
+    } else if (kind == 19) {                                           // combat flight page (forja db-voo-mobs): hit star
+        float a = (1. - smoothstep(0., 1., Life)) * (.55 + .45 * smoothstep(.2, 1.4, vD)) * Alpha;
+        float core = smoothstep(.9, .2, Life + vD * .15);
+        if (a < 0.003) discard;
+        vec3 c = mix(Color, vec3(1.), .6 + core * .4);
+        emit(c * a, a * .8);
+    } else if (kind == 20) {                                           // its dust ring on the ground
+        vec2 p = vUv * 2. - 1.; float r = length(p); float ang = atan(p.y, p.x); vec2 cs = vec2(cos(ang), sin(ang));
+        float n = fbm4(vec3(cs * 3., r * 4. - Life * 3. + Seed)) * .5 + .5;
+        float front = .55 + Life * .45;
+        float band = smoothstep(front - .55, front - .1, r) * (1. - smoothstep(front - .05, front + .05 + n * .1, r));
+        float a = band * smoothstep(.3, .65, n) * pow(1. - Life, 1.5) * .9 * Alpha;
+        if (a < .004 || GlowPass > 0.5) discard;
+        vec3 c = mix(vec3(.62, .55, .45), vec3(.95, .92, .86), smoothstep(.5, .9, n));
+        emit(c * a, a);
+    } else if (kind == 21) {                                           // its ki ball: the core (normal blending there)
+        float n = fbm3(vO * 3. + vec3(0., -Time * 6., Seed)) * .5 + .5;
+        float core = smoothstep(.45, .95, f + n * .25);
+        vec3 c = mix(Color * .85, vec3(1.), core);
+        float a = smoothstep(0., .35, f + n * .2) * Alpha;
+        if (a < 0.003) discard;
+        emit(c * a, a);
+    } else if (kind == 22) {                                           // its ki ball: the halo (back faces, 1.9x)
+        float n = fbm3(vO * 2.2 + vec3(0., -Time * 5., Seed)) * .5 + .5;
+        float a = pow(f, 1.6) * (.35 + .5 * n) * .55 * Alpha;
+        if (a < 0.002) discard;
+        emit(Color * a, a * .6);
+    } else if (kind == 23) {                                           // its beam (Pulse = the page's uK: 1 the body, 0 the halo)
+        float n = fbm3(vec3(vUv.y * 60. - Time * 40., vUv.x * 7., Seed)) * .5 + .5;
+        float core = smoothstep(.55, .95, f + (n - .5) * .35) * Pulse;
+        float a = smoothstep(0., .5, f + (n - .5) * .3) * Alpha * mix(.45, 1., Pulse);
+        if (a < 0.003) discard;
+        emit(mix(Color, vec3(1.), core) * a, a);
+    } else if (kind == 24) {                                           // its crater where someone was slammed
+        vec2 p = vUv * 2. - 1.; float r = length(p), n = fbm3(vec3(p * 3.2, Seed)) * .5 + .5, rr = r + (n - .5) * .28;
+        float rim = smoothstep(.6, .78, rr) * (1. - smoothstep(.84, 1., rr)), pit = 1. - smoothstep(.5, .72, rr);
+        vec3 c = mix(vec3(.16, .13, .1) * (.7 + .5 * rr), vec3(.45, .37, .26), rim);
+        float a = max(pit * .9, rim * .95) * (1. - smoothstep(.8, 1., Life)) * Alpha;
+        if (a < 0.003 || GlowPass > 0.5) discard;
+        emit(c * a, a);
     } else {
         discard;
     }

@@ -213,7 +213,7 @@ public final class ScreenFx {
     }
 
     static boolean needsScene() {
-        return Realismo.active() || impact != null || !WARPS.isEmpty() || ticks - heldAt <= 1 || radial != null && radial.k(ticks) > 0 || heldBlur() > 0;
+        return PreviewFx.screenOn() || Realismo.active() || impact != null || !WARPS.isEmpty() || ticks - heldAt <= 1 || radial != null && radial.k(ticks) > 0 || heldBlur() > 0;
     }
 
     // The level's camera for this frame, so world positions can be found on screen later (also from the GUI).
@@ -234,7 +234,8 @@ public final class ScreenFx {
         boolean warp = FxConfig.on(FxConfig.DISTORTION) && warping();
         float blur = FxConfig.on(FxConfig.RADIAL_BLUR) ? blurAt(now) : 0;
         boolean real = Realismo.active();
-        if (!warp && blur <= 0 && !real) {
+        boolean preview = PreviewFx.screenOn();
+        if (!warp && blur <= 0 && !real && !preview) {
             return;
         }
         FxPost.beginPasses();
@@ -247,6 +248,14 @@ public final class ScreenFx {
         }
         if (blur > 0) {
             radialPass(blur, blurPos(now));
+        }
+        if (preview) {
+            // the combat flight page's screen (shockwave, speed lines, impact frame), last like on the page
+            Vec3 at = PreviewFx.shockPos();
+            Vector4f clip = new Vector4f(at.subtract(camera).toVector3f(), 1);
+            VIEW.transform(clip);
+            PROJ.transform(clip);
+            PreviewFx.screenPass(toScreen(at), clip.w > 0.01f);
         }
         FxPost.endPasses();
     }
@@ -322,6 +331,13 @@ public final class ScreenFx {
     }
 
     public static void onComputeFov(ViewportEvent.ComputeFov event) {
+        float page = com.starkinhon.battlegroundsmod.client.PreviewFight.fov();
+        if (page > 0 && event.usedConfiguredFov()) {
+            // the combat flight's page: its own FOV, 70 plus the speed's kick (Stark's own is much wider: the target
+            // was a dot far off, 2026-11-13)
+            event.setFOV(page);
+            return;
+        }
         if (ticks - holdFovAt <= 1 && event.usedConfiguredFov()) {
             event.setFOV(Mth.clamp(event.getFOV() + holdFov, 10, 150));
         }

@@ -96,6 +96,21 @@ public final class AirCombat {
     // whom it faces in the air (the stance looks at the target, not along the way it flies)
     private LivingEntity facing;
 
+    // flown by the page's fight on a client (combat/AirFight.sim): who, until when, where, facing, flags (1 flying, 2 boost, 4 gone)
+    private ServerPlayer pilot;
+    private long pilotUntil;
+    private Vec3 pilotPos = Vec3.ZERO;
+    private float pilotYaw;
+    private int pilotFlags;
+
+    public void pilot(ServerPlayer player, Vec3 pos, float yaw, int flags) {
+        pilot = player;
+        pilotUntil = player.level().getGameTime() + 6;
+        pilotPos = pos;
+        pilotYaw = yaw;
+        pilotFlags = flags;
+    }
+
     private record Hit(boolean big, boolean slam, double knock, double reach, boolean finisher, float damage) {
     }
 
@@ -205,6 +220,41 @@ public final class AirCombat {
             }
             send();
             return;
+        }
+        if (pilot != null) {
+            if (pilot.isAlive() && pilot.level() == level && level.getGameTime() <= pilotUntil) {
+                // flown by the page's fight on that player's client (combat/AirFight.sim): it only goes where it is told
+                st = St.AR;
+                act = Act.NONE;
+                phase = 0;
+                falling = false;
+                knocked = 0;
+                pending = null;
+                facing = pilot;
+                chase = pilot;
+                if (boss.getTarget() != pilot) {
+                    boss.setTarget(pilot);
+                }
+                boss.getNavigation().stop();
+                boss.setNoGravity(true);
+                boss.fallDistance = 0;
+                vel = pilotPos.subtract(boss.position()).scale(1 / DT);
+                boss.setPos(pilotPos);
+                boss.setYRot(pilotYaw);
+                boss.yRotO = pilotYaw;
+                boss.setYHeadRot(pilotYaw);
+                boss.yBodyRot = pilotYaw;
+                boss.setDeltaMovement(Vec3.ZERO);
+                lastSet = Vec3.ZERO;
+                boost = (pilotFlags & 2) != 0;
+                boss.setInvisible((pilotFlags & 4) != 0);
+                send();
+                return;
+            }
+            pilot = null;
+            vel = Vec3.ZERO;
+            lastSet = null;
+            boss.setInvisible(false);
         }
         LivingEntity target = boss.getTarget();
         // In the air it keeps after whoever it fights even past its sight (the target goals let go at 32-48 blocks, and
@@ -892,6 +942,9 @@ public final class AirCombat {
     // ------------------------------------------------------------------ the clients
 
     int state() {
+        if (pilot != null) {
+            return (pilotFlags & 1) != 0 ? Flight.FLYING | Flight.COMBAT | (boost ? Flight.BOOST : 0) : 0;
+        }
         boolean fly = st == St.AR || st == St.MERGULHO;
         boolean stance = st == St.AR && !passer && act != Act.PERSEGUE && !(act == Act.RECUA && phase == 0) && boss.getTarget() != null;
         return fly ? Flight.FLYING | (boost ? Flight.BOOST : 0) | (stance ? Flight.COMBAT : 0) | flags : 0;

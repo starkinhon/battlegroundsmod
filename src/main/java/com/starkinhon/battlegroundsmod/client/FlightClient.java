@@ -89,6 +89,10 @@ public final class FlightClient {
     }
 
     public static int state(Entity entity) {
+        int sim = PreviewFight.stateOf(entity);
+        if (sim >= 0) {
+            return sim;
+        }
         return STATES.getOrDefault(entity.getId(), 0);
     }
 
@@ -112,6 +116,10 @@ public final class FlightClient {
 
     // The local player's speed in blocks per second (for the pose), or null when not flying this way.
     public static Vec3 velocity() {
+        Vec3 sim = PreviewFight.playerVelocity();
+        if (sim != null) {
+            return sim;
+        }
         return active ? new Vec3(vx, vy, vz) : null;
     }
 
@@ -120,6 +128,9 @@ public final class FlightClient {
     }
 
     public static float boostAmount() {
+        if (PreviewFight.running()) {
+            return PreviewFight.playerBoost();
+        }
         return boostAmt;
     }
 
@@ -199,6 +210,17 @@ public final class FlightClient {
             boost = false;
             FlightFx.burst(player.position().add(0, 0.2, 0), new Vec3(0, 1, 0), 0.8f);
             boom(player.position(), false);
+        }
+        if (PreviewFight.running()) {
+            // the combat flight's page moves the player itself, every frame (PreviewFight); Ctrl is its dodge
+            if (sprintTap) {
+                PreviewFight.dodgeKey();
+            }
+            knockTicks = 0;
+            slam = false;
+            player.setDeltaMovement(Vec3.ZERO);
+            player.fallDistance = 0;
+            return sprintTap;
         }
         if (knockTicks > 0) {
             knockTicks--;
@@ -366,6 +388,13 @@ public final class FlightClient {
         boom(player.position(), true);
         ScreenFx.fovKick(14, 12);
         ScreenFx.radialBlur(player.getEyePosition().add(dir.scale(30)), 0.6f, 10);
+    }
+
+    // The page's fight let go of the player: the flight goes on from its speed.
+    static void carry(Vec3 v) {
+        vx = v.x;
+        vy = v.y;
+        vz = v.z;
     }
 
     static void dashEnd() {

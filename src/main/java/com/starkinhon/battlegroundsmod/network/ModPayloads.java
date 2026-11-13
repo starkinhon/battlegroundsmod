@@ -447,6 +447,32 @@ public final class ModPayloads {
         }
     }
 
+    // Client -> server: the combat flight runs the approved page on the client (client/PreviewFight); where it has the
+    // soul it fights now (feet, yaw) and flags: 1 flying, 2 on the boost, 4 gone (a Zanzoken).
+    public record AirSim(int entityId, double x, double y, double z, float yaw, int flags) implements CustomPacketPayload {
+        public static final Type<AirSim> TYPE = payloadType("air_sim");
+        public static final StreamCodec<ByteBuf, AirSim> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.INT, AirSim::entityId, ByteBufCodecs.DOUBLE, AirSim::x, ByteBufCodecs.DOUBLE, AirSim::y,
+                ByteBufCodecs.DOUBLE, AirSim::z, ByteBufCodecs.FLOAT, AirSim::yaw, ByteBufCodecs.INT, AirSim::flags, AirSim::new);
+
+        @Override
+        public Type<AirSim> type() {
+            return TYPE;
+        }
+    }
+
+    // Client -> server: a blow landed in the page's fight (combat/AirFight.simHit says which kinds).
+    public record AirSimHit(int kind, int entityId) implements CustomPacketPayload {
+        public static final Type<AirSimHit> TYPE = payloadType("air_sim_hit");
+        public static final StreamCodec<ByteBuf, AirSimHit> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.INT, AirSimHit::kind, ByteBufCodecs.INT, AirSimHit::entityId, AirSimHit::new);
+
+        @Override
+        public Type<AirSimHit> type() {
+            return TYPE;
+        }
+    }
+
     // Client -> server: the combat flight's dodge (Ctrl), the client already moved the player.
     public record AirDodge(boolean on) implements CustomPacketPayload {
         public static final Type<AirDodge> TYPE = payloadType("air_dodge");
@@ -1861,6 +1887,17 @@ public final class ModPayloads {
         registrar.playToServer(AirLock.TYPE, AirLock.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
             if (context.player() instanceof net.minecraft.server.level.ServerPlayer sp) {
                 com.starkinhon.battlegroundsmod.combat.AirFight.lock(sp, payload.entityId());
+            }
+        }));
+        registrar.playToServer(AirSim.TYPE, AirSim.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
+            if (context.player() instanceof net.minecraft.server.level.ServerPlayer sp) {
+                com.starkinhon.battlegroundsmod.combat.AirFight.sim(sp, payload.entityId(), new net.minecraft.world.phys.Vec3(payload.x(), payload.y(), payload.z()),
+                        payload.yaw(), payload.flags());
+            }
+        }));
+        registrar.playToServer(AirSimHit.TYPE, AirSimHit.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
+            if (context.player() instanceof net.minecraft.server.level.ServerPlayer sp) {
+                com.starkinhon.battlegroundsmod.combat.AirFight.simHit(sp, payload.kind(), payload.entityId());
             }
         }));
         registrar.playToServer(AirDodge.TYPE, AirDodge.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {

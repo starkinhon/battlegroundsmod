@@ -65,6 +65,8 @@ public final class FxShaders {
     static ShaderInstance sdSky;
     // The two skies of the Duelo de Expansões, cyan and red, and the Santuário's cracks in the void (DuelScene).
     static ShaderInstance duelSky;
+    // the combat flight page's screen (PreviewFx)
+    static ShaderInstance pvScreen;
     static ShaderInstance sdFloor;
     static ShaderInstance sdShrine;
     static ShaderInstance sdCol;
@@ -237,6 +239,11 @@ public final class FxShaders {
             register(event, "souls_duel_sky", DefaultVertexFormat.POSITION, s -> duelSky = s);
         } catch (Exception e) {
             BattlegroundsMod.LOGGER.error("Could not load the Domain Duel sky shader", e);
+        }
+        try {
+            register(event, "fx_pvscreen", DefaultVertexFormat.POSITION, s -> pvScreen = s);
+        } catch (Exception e) {
+            BattlegroundsMod.LOGGER.error("Could not load the combat flight's screen shader", e);
         }
     }
 
