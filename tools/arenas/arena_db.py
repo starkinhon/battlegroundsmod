@@ -811,7 +811,7 @@ def planeta_do_kaioh():
     meta = dict(universo='dragonball', personagem='Goku', lugar='Planeta do Senhor Kaioh', nome='Planeta do Senhor Kaioh',
                 canon='O planetinha do Senhor Kaioh no fim do Caminho da Serpente, onde o Goku treinou: a bola verde lisinha, a estrada de lajotas que dá a volta no planeta inteiro, a casa em domo laranja e a cabana, as árvores redondas, o céu rosado e as nuvens amarelas do Outro Mundo lá embaixo.',
                 R=R, altura=60, ceu=['#e58ad0', '#f7c4e4'], neblina=[90, 240],
-                jogador=[0, 1, 20], desafiante=[0, 1, -8], camLado=[50, 26, 62], alvoY=-2,
+                jogador=[0, 1, 13], desafiante=[0, 1, -4], camLado=[50, 26, 62], alvoY=-2,
                 tints={'grass': (138, 206, 72), 'foliage': (90, 180, 70)})
     return v, meta
 

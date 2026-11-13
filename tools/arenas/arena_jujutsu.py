@@ -79,7 +79,7 @@ def plataforma_do_metro():
     meta = dict(universo='jujutsu', personagem='Choso', lugar='Metrô de Shibuya', nome='Plataforma do metrô',
                 canon='A plataforma do metrô embaixo de Shibuya: o trem parado, a plataforma no meio, os trilhos e os túneis seguindo pros dois lados.',
                 R=26, altura=7, ceu=['#05060c', '#14161c'], neblina=[30, 110], skyLight=4,
-                jogador=[-18, 1, 0], desafiante=[18, 1, 0], camLado=[-34, 4, 2], alvoY=2)
+                jogador=[-18, 1, 3], desafiante=[18, 1, 3], camLado=[-34, 4, 2], alvoY=2)
     return v, meta
 
 def ruin(v, n, rng, R0, fire=True, cuts=0, trench=None):

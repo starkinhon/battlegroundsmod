@@ -49,12 +49,12 @@
   "jogador": [
    -18,
    0,
-   0
+   3
   ],
   "desafiante": [
    18,
    0,
-   0
+   3
   ],
   "neblina": [
    30,
@@ -136,13 +136,13 @@
   "altura": 60,
   "jogador": [
    0,
-   -3,
-   20
+   -1,
+   13
   ],
   "desafiante": [
    0,
    0,
-   -8
+   -4
   ],
   "neblina": [
    90,
