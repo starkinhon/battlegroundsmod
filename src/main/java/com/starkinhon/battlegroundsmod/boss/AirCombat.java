@@ -86,7 +86,8 @@ public final class AirCombat {
     private Vec3 aim;
     private int ballId, beamId;
     private boolean beamHit;
-    private double beamCd = 3;
+    private double beamCd = 6;
+    private static final double CALM = 1.6;
     // the guard held up against a dash coming, ticks left
     private int guardT;
     // thrown straight down by the Martelo (combat/AirFight.slam): no control until the ground
@@ -505,7 +506,9 @@ public final class AirCombat {
     private void endAct(double cooldown) {
         act = Act.NONE;
         phase = 0;
-        cd = cooldown + boss.getRandom().nextDouble() * 0.8;
+        // calmer than the page (Stark's 4th play: "deixa o Vegeta mais calmo, deixa ele apanhar mais"): a longer
+        // breather between its moves, where it stays close and can be punched
+        cd = CALM * cooldown + 0.6 + boss.getRandom().nextDouble() * 1.0;
         boost = false;
         boss.setInvisible(false);
     }
@@ -519,7 +522,7 @@ public final class AirCombat {
         Vec3 pc = center(target), mc = center(boss);
         beamCd -= DT;
         if (act == Act.NONE && guardT <= 0 && AirFight.dashing(target) && comingAtMe(target, toP, dist) && dist < 14
-                && boss.getRandom().nextDouble() < 0.3) {
+                && boss.getRandom().nextDouble() < 0.15) {
             // a dash coming at it: the guard up (the dash bounces off and leaves the player open, AirFight.guardPunish)
             com.starkinhon.battlegroundsmod.combat.CombatMode.enter(boss);
             Defense.setGuard(boss, true);
@@ -538,15 +541,15 @@ public final class AirCombat {
                 start(Act.PERSEGUE);
             } else {
                 // facing it from a distance, circling slowly (leaning into the curve)
-                // the approved page's combat scene: round the target at 9 +- 3.5 blocks, rising and sinking a little
-                orbit += DT * 0.55;
-                double rad = 9 + Math.sin(t * 0.7) * 3.5;
-                Vec3 want = target.position().add(Math.cos(orbit) * rad, 1.5 + Math.sin(t * 0.9) * 2.5, Math.sin(orbit) * rad);
+                // close to the target, at fist range a few steps away (Stark: "voar menos, se movimentar mais, briga mais sincera")
+                orbit += DT * 0.4;
+                double rad = 5.5 + Math.sin(t * 0.7) * 1.5;
+                Vec3 want = target.position().add(Math.cos(orbit) * rad, 0.6 + Math.sin(t * 0.9) * 1.0, Math.sin(orbit) * rad);
                 Vec3 wish = want.subtract(boss.position()).scale(0.35);
                 if (wish.length() > 1) {
                     wish = wish.normalize();
                 }
-                steer(wish, 16, 3);
+                steer(wish, 10, 3);
                 cd -= DT;
                 if (forced != null) {
                     start(forced);
@@ -556,15 +559,15 @@ public final class AirCombat {
                     // high over the ground, now and then the Martelo straight away (in the first test it only came after
                     // a whole Investida with the target stunned, and never showed in a minute of fight)
                     double above = target.getY() - DbCommon.groundY(level, target.position());
-                    if (above > 6 && r < 0.14) {
+                    if (above > 6 && r < 0.07) {
                         start(Act.MARTELO);
                     } else {
                         r = boss.getRandom().nextDouble();
-                        if (beamCd <= 0 && (r < 0.3 || dist > 16 && r < 0.55)) {
+                        if (beamCd <= 0 && (r < 0.15 || dist > 16 && r < 0.35)) {
                             start(Act.RECUA);
                         } else {
                             r = boss.getRandom().nextDouble();
-                            start(r < 0.45 ? Act.INVESTIDA : r < 0.73 ? Act.RAJADA : Act.SUMICO);
+                            start(r < 0.6 ? Act.INVESTIDA : r < 0.82 ? Act.RAJADA : Act.SUMICO);
                         }
                     }
                 }
@@ -1009,7 +1012,7 @@ public final class AirCombat {
         }
         if (end) {
             DbCommon.boom(level, to, 3.2f, color, 4);
-            beamCd = 7 + boss.getRandom().nextDouble() * 4;
+            beamCd = 13 + boss.getRandom().nextDouble() * 6;
             endAct(1.2);
         }
     }
@@ -1081,7 +1084,7 @@ public final class AirCombat {
 
     // How many air combo hits in a row it has taken: a long combo, it slips out (Zanzoken) instead of eating all of it.
     public void comboTaken(int hits) {
-        if (hits >= 7 || hits >= 5 && boss.getRandom().nextDouble() < 0.3) {
+        if (hits >= 10 || hits >= 8 && boss.getRandom().nextDouble() < 0.25) {
             LivingEntity target = boss.getTarget();
             if (target != null && zanzoken(target)) {
                 cd = 0.3;
