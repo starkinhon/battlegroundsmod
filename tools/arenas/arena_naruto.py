@@ -627,7 +627,7 @@ def estadio_do_chunin():
             hx, hz = wx - k, wz - k
             for dx in range(-hx, hx + 1):
                 for dz in range(-hz, hz + 1):
-                    rim = abs(dx) >= hx - 1 or abs(dz) >= hz - 1 or k == layers - 1
+                    rim = abs(dx) >= hx - 1 or abs(dz) >= hz - 1 or k == layers - 1 or k == 0   # a ceiling under it: it rests on what is below
                     if rim:
                         v.set(bx + dx, y0 + k, bz + dz, 'red_terracotta' if k < layers - 1 else 'red_nether_bricks')
         if under:

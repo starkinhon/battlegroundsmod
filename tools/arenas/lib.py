@@ -735,6 +735,10 @@ def settle(v, flutua=(), small=400, gap=3):
         changed = False
         for comp, box in groups:
             if len(comp) <= small:
+                if len(comp) >= 40:                   # big enough to be a roof or a tree: say so, someone must look
+                    from collections import Counter
+                    top = Counter(_name(v.b[k]) for k in comp).most_common(2)
+                    print('  removido solto: %d blocos em %s (%s)' % (len(comp), box, ', '.join('%s x%d' % t for t in top)))
                 for k in comp:
                     del v.b[k]
                 removed += len(comp); changed = True

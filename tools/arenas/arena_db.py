@@ -667,7 +667,9 @@ def ilha_kame_house():
     for k in range(0, 5):
         for dx in range(-8 + k, 9 - k):
             for dz in range(-7 + k, 8 - k):
-                if abs(dx) == 8 - k or abs(dz) == 7 - k or k == 4:
+                # the first course is a solid ceiling resting on the walls (Stark 2026-11-13: the eaves alone did not
+                # touch them, so the whole roof was taken for a loose piece and removed)
+                if abs(dx) == 8 - k or abs(dz) == 7 - k or k == 4 or k == 0:
                     v.set(hx + dx, 9 + k, hz + dz, 'red_terracotta')
     for dx in range(-3, 4):
         v.set(hx + dx, 7, hz + 6, 'white_concrete')

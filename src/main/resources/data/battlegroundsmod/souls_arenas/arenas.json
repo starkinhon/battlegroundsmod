@@ -282,7 +282,7 @@
   ],
   "noite": false,
   "minY": -39,
-  "maxY": 11,
+  "maxY": 13,
   "nome": "Ilha da Kame House"
  },
  "kokushibo": {
@@ -436,7 +436,7 @@
   ],
   "noite": false,
   "minY": -33,
-  "maxY": 45,
+  "maxY": 51,
   "nome": "Estádio das finais"
  },
  "nobara": {
