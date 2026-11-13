@@ -172,6 +172,21 @@ public final class ModItems {
                     () -> new DeferredSpawnEggItem(ModEntities.NARUTO_MOBS.get(id), c[0], c[1], new Item.Properties())));
         }
     }
+    // The Dragon Ball creatures new with the remake (animal/dbmob); the old ids keep their eggs above.
+    public static final Map<String, DeferredItem<DeferredSpawnEggItem>> DB_EGGS = new LinkedHashMap<>();
+
+    static {
+        Map<String, int[]> colors = Map.ofEntries(
+                Map.entry("dino_chifrudo", new int[] {0x7A6A4A, 0xE0D0A0}), Map.entry("dragao", new int[] {0x3A7A3A, 0xE8C060}),
+                Map.entry("tigre_sabre", new int[] {0xD8902A, 0xF0E8D8}), Map.entry("androide_gero", new int[] {0xE8E4DA, 0x2A2A30}),
+                Map.entry("tao_pai_pai", new int[] {0xE070A0, 0x2A2A2A}), Map.entry("spopovich", new int[] {0xD8B8A0, 0x3A2A6A}),
+                Map.entry("yamu", new int[] {0x5A4A8A, 0xE8D8C0}), Map.entry("babidi", new int[] {0xE8C8A0, 0x7A3A9A}));
+        for (String id : colors.keySet()) {
+            int[] c = colors.get(id);
+            DB_EGGS.put(id, BattlegroundsMod.ITEMS.register(id + "_spawn_egg",
+                    () -> new DeferredSpawnEggItem(ModEntities.DB_MOBS.get(id), c[0], c[1], new Item.Properties())));
+        }
+    }
     public static final DeferredItem<DeferredSpawnEggItem> ANBU_RAIZ_SPAWN_EGG = BattlegroundsMod.ITEMS.register("anbu_raiz_spawn_egg",
             () -> new DeferredSpawnEggItem(ModEntities.ANBU_RAIZ, 0x2A2A30, 0xE8E8E8, new Item.Properties()));
     public static final DeferredItem<DeferredSpawnEggItem> NPC_JIRAIYA_SPAWN_EGG = BattlegroundsMod.ITEMS.register("npc_jiraiya_spawn_egg",

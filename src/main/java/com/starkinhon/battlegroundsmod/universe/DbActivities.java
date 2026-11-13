@@ -569,11 +569,16 @@ public final class DbActivities {
         Waves w = WAVES.get(player.getUUID());
         if (w == null) {
             if (nearPlace(player, WorldSites.CELL_RING, 0, 0, 5) && dailyFree(player, "souls_cell_dia")) {
-                start(player, "cell", List.of(List.of(ModEntities.CELL_JR.get(), ModEntities.CELL_JR.get()),
-                        List.of(ModEntities.CELL_JR.get(), ModEntities.CELL_JR.get(), ModEntities.CELL_JR.get()),
-                        List.of(ModEntities.CELL_JR.get(), ModEntities.CELL_JR.get(), ModEntities.CELL_JR.get(), ModEntities.CELL_JR.get())));
+                // the Cell Games (mobs-db 2026-11-12): seven Cell Jr. at once around the ring
+                List<EntityType<?>> seven = new java.util.ArrayList<>();
+                for (int i = 0; i < 7; i++) {
+                    seven.add(ModEntities.CELL_JR.get());
+                }
+                start(player, "cell", List.of(seven));
             } else if (nearPlace(player, WorldSites.BABIDI, 0, 0, 14) && dailyFree(player, "souls_babidi_dia")) {
-                start(player, "babidi", List.of(List.of(ModEntities.PUI_PUI.get()), List.of(ModEntities.YAKON.get()), List.of(ModEntities.DABURA.get())));
+                // the ship's floors (mobs-db 2026-11-12): Pui Pui, Yakon, Spopovich with Yamu, Dabura, and Babidi himself
+                start(player, "babidi", List.of(List.of(ModEntities.PUI_PUI.get()), List.of(ModEntities.YAKON.get()),
+                        List.of(ModEntities.db("spopovich"), ModEntities.db("yamu")), List.of(ModEntities.DABURA.get()), List.of(ModEntities.db("babidi"))));
             } else if (level.dimension() == NamekWorld.LEVEL && StructureMissions.near(player, StructureMissions.VILLAGE, 12)
                     && dailyFree(player, "souls_namek_dia")) {
                 // Namek's village: Freeza's soldiers land to take the Dragon Balls
@@ -638,7 +643,8 @@ public final class DbActivities {
         Vec3 look = player.getLookAngle();
         double base = Math.atan2(look.z, look.x);
         for (int i = 0; i < wave.size(); i++) {
-            double a = base + (i - (wave.size() - 1) / 2.0) * 0.6;
+            // a big wave all round the player (the seven Cell Jr.), a small one in front
+            double a = wave.size() >= 5 ? base + i * Math.PI * 2 / wave.size() : base + (i - (wave.size() - 1) / 2.0) * 0.6;
             BlockPos at = dryGround(level, (int) Math.floor(player.getX() + Math.cos(a) * 8), (int) Math.floor(player.getZ() + Math.sin(a) * 8), 5);
             if (at == null) {
                 at = player.blockPosition();

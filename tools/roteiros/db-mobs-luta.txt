@@ -1,0 +1,425 @@
+# Criaturas Dragon Ball (PR #317). Rodar: gradlew runClient -Pmundo=SoulsDev -Proteiro=db-mobs-luta
+/devc fechar
+/dev preparar
+/devc hud off
+/devc fov 70
+/dev soltar
+/kill @e[type=!player]
+/tp @s 0.5 -60 0.5 180 0
+espera 20
+
+/gamemode survival
+/dev imortal @s
+/effect give @s minecraft:resistance 100000 2 true
+/effect give @s minecraft:regeneration 100000 3 true
+/effect give @s minecraft:saturation 100000 1 true
+espera 10
+
+# saibaman
+/fill -16 -61 -24 16 -61 8 minecraft:grass_block
+/fill -16 -60 -24 16 -50 8 minecraft:air
+/tp @s 0.5 -60 0.5 180 0
+/dev invocar battlegroundsmod:saibaman 7 solto
+espera 5
+/damage @e[type=battlegroundsmod:saibaman,limit=1,sort=nearest] 1 minecraft:player_attack by @s
+/devc camera duelo 11 1.8
+/devc marca luta saibaman
+/devc gravar db-mobs/luta/saibaman 6
+espera 300
+/devc gravar parar
+/dev info @e[type=battlegroundsmod:saibaman,limit=1,sort=nearest]
+/kill @e[type=!player]
+/effect give @s minecraft:instant_health 1 5 true
+/effect clear @s
+/effect give @s minecraft:resistance 100000 2 true
+/effect give @s minecraft:regeneration 100000 3 true
+espera 20
+
+# bandido_deserto
+/fill -16 -61 -24 16 -61 8 minecraft:grass_block
+/fill -16 -60 -24 16 -50 8 minecraft:air
+/tp @s 0.5 -60 0.5 180 0
+/dev invocar battlegroundsmod:bandido_deserto 7 solto
+espera 5
+/damage @e[type=battlegroundsmod:bandido_deserto,limit=1,sort=nearest] 1 minecraft:player_attack by @s
+/devc camera duelo 11 1.8
+/devc marca luta bandido_deserto
+/devc gravar db-mobs/luta/bandido_deserto 6
+espera 300
+/devc gravar parar
+/dev info @e[type=battlegroundsmod:bandido_deserto,limit=1,sort=nearest]
+/kill @e[type=!player]
+/effect give @s minecraft:instant_health 1 5 true
+/effect clear @s
+/effect give @s minecraft:resistance 100000 2 true
+/effect give @s minecraft:regeneration 100000 3 true
+espera 20
+
+# soldado_red_ribbon
+/fill -16 -61 -24 16 -61 8 minecraft:grass_block
+/fill -16 -60 -24 16 -50 8 minecraft:air
+/tp @s 0.5 -60 0.5 180 0
+/dev invocar battlegroundsmod:soldado_red_ribbon 7 solto
+espera 5
+/damage @e[type=battlegroundsmod:soldado_red_ribbon,limit=1,sort=nearest] 1 minecraft:player_attack by @s
+/devc camera duelo 11 1.8
+/devc marca luta soldado_red_ribbon
+/devc gravar db-mobs/luta/soldado_red_ribbon 6
+espera 300
+/devc gravar parar
+/dev info @e[type=battlegroundsmod:soldado_red_ribbon,limit=1,sort=nearest]
+/kill @e[type=!player]
+/effect give @s minecraft:instant_health 1 5 true
+/effect clear @s
+/effect give @s minecraft:resistance 100000 2 true
+/effect give @s minecraft:regeneration 100000 3 true
+espera 20
+
+# pirata
+/fill -16 -61 -24 16 -61 8 minecraft:grass_block
+/fill -16 -60 -24 16 -50 8 minecraft:air
+/tp @s 0.5 -60 0.5 180 0
+/dev invocar battlegroundsmod:pirata 7 solto
+espera 5
+/damage @e[type=battlegroundsmod:pirata,limit=1,sort=nearest] 1 minecraft:player_attack by @s
+/devc camera duelo 11 1.8
+/devc marca luta pirata
+/devc gravar db-mobs/luta/pirata 6
+espera 300
+/devc gravar parar
+/dev info @e[type=battlegroundsmod:pirata,limit=1,sort=nearest]
+/kill @e[type=!player]
+/effect give @s minecraft:instant_health 1 5 true
+/effect clear @s
+/effect give @s minecraft:resistance 100000 2 true
+/effect give @s minecraft:regeneration 100000 3 true
+espera 20
+
+# yeti
+/fill -16 -61 -24 16 -61 8 minecraft:grass_block
+/fill -16 -60 -24 16 -50 8 minecraft:air
+/tp @s 0.5 -60 0.5 180 0
+/dev invocar battlegroundsmod:yeti 9 solto
+espera 5
+/damage @e[type=battlegroundsmod:yeti,limit=1,sort=nearest] 1 minecraft:player_attack by @s
+/devc camera duelo 13 1.8
+/devc marca luta yeti
+/devc gravar db-mobs/luta/yeti 6
+espera 300
+/devc gravar parar
+/dev info @e[type=battlegroundsmod:yeti,limit=1,sort=nearest]
+/kill @e[type=!player]
+/effect give @s minecraft:instant_health 1 5 true
+/effect clear @s
+/effect give @s minecraft:resistance 100000 2 true
+/effect give @s minecraft:regeneration 100000 3 true
+espera 20
+
+# raptor
+/fill -16 -61 -24 16 -61 8 minecraft:grass_block
+/fill -16 -60 -24 16 -50 8 minecraft:air
+/tp @s 0.5 -60 0.5 180 0
+/dev invocar battlegroundsmod:raptor 7 solto
+espera 5
+/damage @e[type=battlegroundsmod:raptor,limit=1,sort=nearest] 1 minecraft:player_attack by @s
+/devc camera duelo 11 1.8
+/devc marca luta raptor
+/devc gravar db-mobs/luta/raptor 6
+espera 300
+/devc gravar parar
+/dev info @e[type=battlegroundsmod:raptor,limit=1,sort=nearest]
+/kill @e[type=!player]
+/effect give @s minecraft:instant_health 1 5 true
+/effect clear @s
+/effect give @s minecraft:resistance 100000 2 true
+/effect give @s minecraft:regeneration 100000 3 true
+espera 20
+
+# dino_chifrudo
+/fill -16 -61 -24 16 -61 8 minecraft:grass_block
+/fill -16 -60 -24 16 -50 8 minecraft:air
+/tp @s 0.5 -60 0.5 180 0
+/dev invocar battlegroundsmod:dino_chifrudo 7 solto
+espera 5
+/damage @e[type=battlegroundsmod:dino_chifrudo,limit=1,sort=nearest] 1 minecraft:player_attack by @s
+/devc camera duelo 11 1.8
+/devc marca luta dino_chifrudo
+/devc gravar db-mobs/luta/dino_chifrudo 6
+espera 300
+/devc gravar parar
+/dev info @e[type=battlegroundsmod:dino_chifrudo,limit=1,sort=nearest]
+/kill @e[type=!player]
+/effect give @s minecraft:instant_health 1 5 true
+/effect clear @s
+/effect give @s minecraft:resistance 100000 2 true
+/effect give @s minecraft:regeneration 100000 3 true
+espera 20
+
+# tiranossauro
+/fill -16 -61 -24 16 -61 8 minecraft:grass_block
+/fill -16 -60 -24 16 -50 8 minecraft:air
+/tp @s 0.5 -60 0.5 180 0
+/dev invocar battlegroundsmod:tiranossauro 12 solto
+espera 5
+/damage @e[type=battlegroundsmod:tiranossauro,limit=1,sort=nearest] 1 minecraft:player_attack by @s
+/devc camera duelo 16 1.8
+/devc marca luta tiranossauro
+/devc gravar db-mobs/luta/tiranossauro 6
+espera 300
+/devc gravar parar
+/dev info @e[type=battlegroundsmod:tiranossauro,limit=1,sort=nearest]
+/kill @e[type=!player]
+/effect give @s minecraft:instant_health 1 5 true
+/effect clear @s
+/effect give @s minecraft:resistance 100000 2 true
+/effect give @s minecraft:regeneration 100000 3 true
+espera 20
+
+# pterodactilo
+/fill -16 -61 -24 16 -61 8 minecraft:grass_block
+/fill -16 -60 -24 16 -50 8 minecraft:air
+/tp @s 0.5 -60 0.5 180 0
+/dev invocar battlegroundsmod:pterodactilo 7 solto
+espera 5
+/damage @e[type=battlegroundsmod:pterodactilo,limit=1,sort=nearest] 1 minecraft:player_attack by @s
+/devc camera duelo 11 1.8
+/devc marca luta pterodactilo
+/devc gravar db-mobs/luta/pterodactilo 6
+espera 300
+/devc gravar parar
+/dev info @e[type=battlegroundsmod:pterodactilo,limit=1,sort=nearest]
+/kill @e[type=!player]
+/effect give @s minecraft:instant_health 1 5 true
+/effect clear @s
+/effect give @s minecraft:resistance 100000 2 true
+/effect give @s minecraft:regeneration 100000 3 true
+espera 20
+
+# dragao
+/fill -16 -61 -24 16 -61 8 minecraft:grass_block
+/fill -16 -60 -24 16 -50 8 minecraft:air
+/tp @s 0.5 -60 0.5 180 0
+/dev invocar battlegroundsmod:dragao 12 solto
+espera 5
+/damage @e[type=battlegroundsmod:dragao,limit=1,sort=nearest] 1 minecraft:player_attack by @s
+/devc camera duelo 16 1.8
+/devc marca luta dragao
+/devc gravar db-mobs/luta/dragao 6
+espera 300
+/devc gravar parar
+/dev info @e[type=battlegroundsmod:dragao,limit=1,sort=nearest]
+/kill @e[type=!player]
+/effect give @s minecraft:instant_health 1 5 true
+/effect clear @s
+/effect give @s minecraft:resistance 100000 2 true
+/effect give @s minecraft:regeneration 100000 3 true
+espera 20
+
+# soldado_freeza
+/fill -16 -61 -24 16 -61 8 minecraft:grass_block
+/fill -16 -60 -24 16 -50 8 minecraft:air
+/tp @s 0.5 -60 0.5 180 0
+/dev invocar battlegroundsmod:soldado_freeza 7 solto
+espera 5
+/damage @e[type=battlegroundsmod:soldado_freeza,limit=1,sort=nearest] 1 minecraft:player_attack by @s
+/devc camera duelo 11 1.8
+/devc marca luta soldado_freeza
+/devc gravar db-mobs/luta/soldado_freeza 6
+espera 300
+/devc gravar parar
+/dev info @e[type=battlegroundsmod:soldado_freeza,limit=1,sort=nearest]
+/kill @e[type=!player]
+/effect give @s minecraft:instant_health 1 5 true
+/effect clear @s
+/effect give @s minecraft:resistance 100000 2 true
+/effect give @s minecraft:regeneration 100000 3 true
+espera 20
+
+# cell_jr
+/fill -16 -61 -24 16 -61 8 minecraft:grass_block
+/fill -16 -60 -24 16 -50 8 minecraft:air
+/tp @s 0.5 -60 0.5 180 0
+/dev invocar battlegroundsmod:cell_jr 7 solto
+espera 5
+/damage @e[type=battlegroundsmod:cell_jr,limit=1,sort=nearest] 1 minecraft:player_attack by @s
+/devc camera duelo 11 1.8
+/devc marca luta cell_jr
+/devc gravar db-mobs/luta/cell_jr 6
+espera 300
+/devc gravar parar
+/dev info @e[type=battlegroundsmod:cell_jr,limit=1,sort=nearest]
+/kill @e[type=!player]
+/effect give @s minecraft:instant_health 1 5 true
+/effect clear @s
+/effect give @s minecraft:resistance 100000 2 true
+/effect give @s minecraft:regeneration 100000 3 true
+espera 20
+
+# yakon
+/fill -16 -61 -24 16 -61 8 minecraft:grass_block
+/fill -16 -60 -24 16 -50 8 minecraft:air
+/tp @s 0.5 -60 0.5 180 0
+/dev invocar battlegroundsmod:yakon 9 solto
+espera 5
+/damage @e[type=battlegroundsmod:yakon,limit=1,sort=nearest] 1 minecraft:player_attack by @s
+/devc camera duelo 13 1.8
+/devc marca luta yakon
+/devc gravar db-mobs/luta/yakon 6
+espera 300
+/devc gravar parar
+/dev info @e[type=battlegroundsmod:yakon,limit=1,sort=nearest]
+/kill @e[type=!player]
+/effect give @s minecraft:instant_health 1 5 true
+/effect clear @s
+/effect give @s minecraft:resistance 100000 2 true
+/effect give @s minecraft:regeneration 100000 3 true
+espera 20
+
+# tigre_sabre
+/fill -16 -61 -24 16 -61 8 minecraft:grass_block
+/fill -16 -60 -24 16 -50 8 minecraft:air
+/tp @s 0.5 -60 0.5 180 0
+/dev invocar battlegroundsmod:tigre_sabre 7 solto
+espera 5
+/damage @e[type=battlegroundsmod:tigre_sabre,limit=1,sort=nearest] 1 minecraft:player_attack by @s
+/devc camera duelo 11 1.8
+/devc marca luta tigre_sabre
+/devc gravar db-mobs/luta/tigre_sabre 6
+espera 300
+/devc gravar parar
+/dev info @e[type=battlegroundsmod:tigre_sabre,limit=1,sort=nearest]
+/kill @e[type=!player]
+/effect give @s minecraft:instant_health 1 5 true
+/effect clear @s
+/effect give @s minecraft:resistance 100000 2 true
+/effect give @s minecraft:regeneration 100000 3 true
+espera 20
+
+# peixe_gigante
+/fill -8 -61 -14 8 -59 -2 minecraft:water
+espera 10
+/fill -16 -61 -24 16 -61 8 minecraft:grass_block
+/fill -16 -60 -24 16 -50 8 minecraft:air
+/tp @s 0.5 -60 0.5 180 0
+/dev invocar battlegroundsmod:peixe_gigante 9 solto
+espera 5
+/damage @e[type=battlegroundsmod:peixe_gigante,limit=1,sort=nearest] 1 minecraft:player_attack by @s
+/devc camera duelo 13 1.8
+/devc marca luta peixe_gigante
+/devc gravar db-mobs/luta/peixe_gigante 6
+espera 300
+/devc gravar parar
+/dev info @e[type=battlegroundsmod:peixe_gigante,limit=1,sort=nearest]
+/kill @e[type=!player]
+/fill -8 -61 -14 8 -59 -2 minecraft:air
+/effect give @s minecraft:instant_health 1 5 true
+/effect clear @s
+/effect give @s minecraft:resistance 100000 2 true
+/effect give @s minecraft:regeneration 100000 3 true
+espera 20
+
+# androide_gero
+/fill -16 -61 -24 16 -61 8 minecraft:grass_block
+/fill -16 -60 -24 16 -50 8 minecraft:air
+/tp @s 0.5 -60 0.5 180 0
+/dev invocar battlegroundsmod:androide_gero 7 solto
+espera 5
+/damage @e[type=battlegroundsmod:androide_gero,limit=1,sort=nearest] 1 minecraft:player_attack by @s
+/devc camera duelo 11 1.8
+/devc marca luta androide_gero
+/devc gravar db-mobs/luta/androide_gero 6
+espera 300
+/devc gravar parar
+/dev info @e[type=battlegroundsmod:androide_gero,limit=1,sort=nearest]
+/kill @e[type=!player]
+/effect give @s minecraft:instant_health 1 5 true
+/effect clear @s
+/effect give @s minecraft:resistance 100000 2 true
+/effect give @s minecraft:regeneration 100000 3 true
+espera 20
+
+# tao_pai_pai
+/fill -16 -61 -24 16 -61 8 minecraft:grass_block
+/fill -16 -60 -24 16 -50 8 minecraft:air
+/tp @s 0.5 -60 0.5 180 0
+/dev invocar battlegroundsmod:tao_pai_pai 7 solto
+espera 5
+/damage @e[type=battlegroundsmod:tao_pai_pai,limit=1,sort=nearest] 1 minecraft:player_attack by @s
+/devc camera duelo 11 1.8
+/devc marca luta tao_pai_pai
+/devc gravar db-mobs/luta/tao_pai_pai 6
+espera 300
+/devc gravar parar
+/dev info @e[type=battlegroundsmod:tao_pai_pai,limit=1,sort=nearest]
+/kill @e[type=!player]
+/effect give @s minecraft:instant_health 1 5 true
+/effect clear @s
+/effect give @s minecraft:resistance 100000 2 true
+/effect give @s minecraft:regeneration 100000 3 true
+espera 20
+
+# spopovich
+/fill -16 -61 -24 16 -61 8 minecraft:grass_block
+/fill -16 -60 -24 16 -50 8 minecraft:air
+/tp @s 0.5 -60 0.5 180 0
+/dev invocar battlegroundsmod:spopovich 7 solto
+espera 5
+/damage @e[type=battlegroundsmod:spopovich,limit=1,sort=nearest] 1 minecraft:player_attack by @s
+/devc camera duelo 11 1.8
+/devc marca luta spopovich
+/devc gravar db-mobs/luta/spopovich 6
+espera 300
+/devc gravar parar
+/dev info @e[type=battlegroundsmod:spopovich,limit=1,sort=nearest]
+/kill @e[type=!player]
+/effect give @s minecraft:instant_health 1 5 true
+/effect clear @s
+/effect give @s minecraft:resistance 100000 2 true
+/effect give @s minecraft:regeneration 100000 3 true
+espera 20
+
+# yamu
+/fill -16 -61 -24 16 -61 8 minecraft:grass_block
+/fill -16 -60 -24 16 -50 8 minecraft:air
+/tp @s 0.5 -60 0.5 180 0
+/dev invocar battlegroundsmod:yamu 7 solto
+espera 5
+/damage @e[type=battlegroundsmod:yamu,limit=1,sort=nearest] 1 minecraft:player_attack by @s
+/devc camera duelo 11 1.8
+/devc marca luta yamu
+/devc gravar db-mobs/luta/yamu 6
+espera 300
+/devc gravar parar
+/dev info @e[type=battlegroundsmod:yamu,limit=1,sort=nearest]
+/kill @e[type=!player]
+/effect give @s minecraft:instant_health 1 5 true
+/effect clear @s
+/effect give @s minecraft:resistance 100000 2 true
+/effect give @s minecraft:regeneration 100000 3 true
+espera 20
+
+# babidi
+/fill -16 -61 -24 16 -61 8 minecraft:grass_block
+/fill -16 -60 -24 16 -50 8 minecraft:air
+/tp @s 0.5 -60 0.5 180 0
+/dev invocar battlegroundsmod:babidi 7 solto
+espera 5
+/damage @e[type=battlegroundsmod:babidi,limit=1,sort=nearest] 1 minecraft:player_attack by @s
+/devc camera duelo 11 1.8
+/devc marca luta babidi
+/devc gravar db-mobs/luta/babidi 6
+espera 300
+/devc gravar parar
+/dev info @e[type=battlegroundsmod:babidi,limit=1,sort=nearest]
+/kill @e[type=!player]
+/effect give @s minecraft:instant_health 1 5 true
+/effect clear @s
+/effect give @s minecraft:resistance 100000 2 true
+/effect give @s minecraft:regeneration 100000 3 true
+espera 20
+
+/devc camera jogador
+/devc hud on
+/gamemode creative
+espera 20
+sair

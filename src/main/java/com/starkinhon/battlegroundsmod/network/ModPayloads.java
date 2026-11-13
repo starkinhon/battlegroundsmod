@@ -1719,6 +1719,11 @@ public final class ModPayloads {
             }
         }));
         registrar.playToServer(Punch.TYPE, Punch.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
+            // Riding a tamed dragon: the click breathes its fire (animal/dbmob/DbMob)
+            if (context.player() instanceof ServerPlayer rider && !payload.key()
+                    && rider.getVehicle() instanceof com.starkinhon.battlegroundsmod.animal.dbmob.DbMob dragon && dragon.rideFire(rider)) {
+                return;
+            }
             if (!(context.player() instanceof ServerPlayer player) || !CombatMode.fighter(player) || player.isSpectator()) {
                 return;
             }

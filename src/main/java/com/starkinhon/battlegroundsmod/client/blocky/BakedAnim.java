@@ -143,10 +143,18 @@ public final class BakedAnim {
 
     // Adds w times this mode's pose at frame f onto the model.
     public static void apply(BlockyModel<?> model, Mode m, float f, boolean loop, float w) {
+        apply(model, m, f, loop, w, null);
+    }
+
+    // Same, only on the parts the filter takes (null: all).
+    public static void apply(BlockyModel<?> model, Mode m, float f, boolean loop, float w, @org.jetbrains.annotations.Nullable java.util.function.Predicate<String> only) {
         if (m == null || w <= 0) {
             return;
         }
         for (Channel c : m.channels) {
+            if (only != null && !only.test(c.part)) {
+                continue;
+            }
             ModelPart p = model.part(c.part);
             if (p == null) {
                 continue;

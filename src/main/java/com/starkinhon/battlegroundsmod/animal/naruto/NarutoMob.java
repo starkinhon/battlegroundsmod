@@ -70,15 +70,139 @@ public class NarutoMob extends DbCreature {
     // the blow now playing: the target and the body's yaw when it started, and the preview's path for it
     private float[][] travel;
     private float travelYaw;
-    LivingEntity blowTarget;
-    Vec3 blowSpot = Vec3.ZERO;
+    public LivingEntity blowTarget;
+    public Vec3 blowSpot = Vec3.ZERO;
     // a few moves keep something between ticks (a hold to release, the clones out)
-    Runnable release;
-    int heldId = -1;
-    int lifeLeft = -1;
-    final java.util.List<Integer> spawned = new java.util.ArrayList<>();
-    int sleep;
+    public Runnable release;
+    public int heldId = -1;
+    public int lifeLeft = -1;
+    public final java.util.List<Integer> spawned = new java.util.ArrayList<>();
+    public int sleep;
     private int alertCooldown;
+
+    // What a kind of creature does with this body: its blows, gates and voice. The Naruto creatures' kit is NarutoMoves;
+    // the Dragon Ball creatures (animal/dbmob) bring their own and share everything else (AI, travel, baked animation).
+    public interface Kit {
+        Spec spec(String id);
+
+        @Nullable
+        float[][] travel(String id, String mode);
+
+        boolean canUse(NarutoMob m, String mode, LivingEntity t);
+
+        @Nullable
+        Vec3 fleeFrom(NarutoMob m);
+
+        void start(NarutoMob m, String mode, @Nullable LivingEntity t);
+
+        void tick(NarutoMob m, String mode, int tick, @Nullable LivingEntity t);
+
+        void impact(NarutoMob m, String mode, @Nullable LivingEntity t);
+
+        void end(NarutoMob m, String mode, @Nullable LivingEntity t);
+
+        void teleport(NarutoMob m, String mode, @Nullable LivingEntity t);
+
+        boolean answer(NarutoMob m, LivingEntity attacker, DamageSource source, float amount);
+
+        void hurtBy(NarutoMob m, LivingEntity attacker, float amount);
+
+        void died(NarutoMob m);
+
+        void idle(NarutoMob m);
+
+        void drop(NarutoMob m, ServerLevel level, boolean byPlayer);
+
+        @Nullable
+        SoundEvent ambient(NarutoMob m);
+
+        @Nullable
+        SoundEvent hurtSound(NarutoMob m);
+
+        @Nullable
+        SoundEvent deathSound(NarutoMob m);
+
+        float pitch(NarutoMob m);
+    }
+
+    private static final Kit NARUTO = new Kit() {
+        public Spec spec(String id) {
+            return NarutoSpec.get(id);
+        }
+
+        public float[][] travel(String id, String mode) {
+            return NarutoTravel.of(id, mode);
+        }
+
+        public boolean canUse(NarutoMob m, String mode, LivingEntity t) {
+            return NarutoMoves.canUse(m, mode, t);
+        }
+
+        public Vec3 fleeFrom(NarutoMob m) {
+            return NarutoMoves.fleeFrom(m);
+        }
+
+        public void start(NarutoMob m, String mode, LivingEntity t) {
+            NarutoMoves.start(m, mode, t);
+        }
+
+        public void tick(NarutoMob m, String mode, int tick, LivingEntity t) {
+            NarutoMoves.tick(m, mode, tick, t);
+        }
+
+        public void impact(NarutoMob m, String mode, LivingEntity t) {
+            NarutoMoves.impact(m, mode, t);
+        }
+
+        public void end(NarutoMob m, String mode, LivingEntity t) {
+            NarutoMoves.end(m, mode, t);
+        }
+
+        public void teleport(NarutoMob m, String mode, LivingEntity t) {
+            NarutoMoves.teleport(m, mode, t);
+        }
+
+        public boolean answer(NarutoMob m, LivingEntity attacker, DamageSource source, float amount) {
+            return NarutoMoves.answer(m, attacker, source, amount);
+        }
+
+        public void hurtBy(NarutoMob m, LivingEntity attacker, float amount) {
+            NarutoMoves.hurtBy(m, attacker, amount);
+        }
+
+        public void died(NarutoMob m) {
+            NarutoMoves.died(m);
+        }
+
+        public void idle(NarutoMob m) {
+            NarutoMoves.idle(m);
+        }
+
+        public void drop(NarutoMob m, ServerLevel level, boolean byPlayer) {
+            NarutoDrops.drop(m, level, byPlayer);
+        }
+
+        public SoundEvent ambient(NarutoMob m) {
+            return NarutoMoves.ambient(m);
+        }
+
+        public SoundEvent hurtSound(NarutoMob m) {
+            return NarutoMoves.hurtSound(m);
+        }
+
+        public SoundEvent deathSound(NarutoMob m) {
+            return NarutoMoves.deathSound(m);
+        }
+
+        public float pitch(NarutoMob m) {
+            return NarutoMoves.pitch(m);
+        }
+    };
+
+    // the kind's kit (a subclass for another universe overrides this)
+    public Kit kit() {
+        return NARUTO;
+    }
 
     public NarutoMob(EntityType<? extends NarutoMob> type, Level level) {
         super(type, level);
@@ -96,13 +220,19 @@ public class NarutoMob extends DbCreature {
 
     public Spec spec() {
         if (spec == null) {
-            spec = NarutoSpec.get(BuiltInRegistries.ENTITY_TYPE.getKey(getType()).getPath());
+            spec = kit().spec(BuiltInRegistries.ENTITY_TYPE.getKey(getType()).getPath());
         }
         return spec;
     }
 
     public String id() {
         return spec().id;
+    }
+
+    // a mode the client loops instead of standing and walking (the ridden dragon's flight), null for none
+    @Nullable
+    public String loopMode() {
+        return null;
     }
 
     // the creatures' own events (the spores ticking on whoever carries them)
@@ -260,7 +390,7 @@ public class NarutoMob extends DbCreature {
         cooldowns[kind] = a.cooldown() + random.nextInt(20);
         blowTarget = target;
         blowSpot = target != null ? target.position() : position();
-        travel = NarutoTravel.of(id(), a.mode());
+        travel = kit().travel(id(), a.mode());
         if (target != null) {
             double dx = target.getX() - getX(), dz = target.getZ() - getZ();
             if (dx * dx + dz * dz > 1.0E-4) {
@@ -271,7 +401,7 @@ public class NarutoMob extends DbCreature {
             }
         }
         travelYaw = getYRot();
-        NarutoMoves.start(this, a.mode(), target);
+        kit().start(this, a.mode(), target);
         return true;
     }
 
@@ -279,7 +409,7 @@ public class NarutoMob extends DbCreature {
     protected void impact(int kind) {
         Attack a = spec().attack(kind);
         if (a != null) {
-            NarutoMoves.impact(this, a.mode(), blowTarget);
+            kit().impact(this, a.mode(), blowTarget);
         }
     }
 
@@ -304,11 +434,11 @@ public class NarutoMob extends DbCreature {
             move(MoverType.SELF, step);
         }
         if (frame == spec().teleportFrame(a.mode())) {
-            NarutoMoves.teleport(this, a.mode(), blowTarget);
+            kit().teleport(this, a.mode(), blowTarget);
         }
-        NarutoMoves.tick(this, a.mode(), tick, blowTarget);
+        kit().tick(this, a.mode(), tick, blowTarget);
         if (tick >= attackLength) {
-            NarutoMoves.end(this, a.mode(), blowTarget);
+            kit().end(this, a.mode(), blowTarget);
         }
     }
 
@@ -330,6 +460,14 @@ public class NarutoMob extends DbCreature {
     // the yaw the blow started facing (travel and teleports are relative to it)
     public float blowYaw() {
         return travelYaw;
+    }
+
+    // turns the blow under way (a ridden dragon breathes where its rider looks)
+    public void faceBlow(float yaw) {
+        travelYaw = yaw;
+        setYRot(yaw);
+        yBodyRot = yaw;
+        yHeadRot = yaw;
     }
 
     public Vec3 forward() {
@@ -356,7 +494,7 @@ public class NarutoMob extends DbCreature {
             }
         }
         Entity attacker = source.getEntity();
-        if (attacker instanceof LivingEntity living && NarutoMoves.answer(this, living, source, amount)) {
+        if (attacker instanceof LivingEntity living && kit().answer(this, living, source, amount)) {
             // the Substituição: the blow hits a log
             return false;
         }
@@ -365,7 +503,7 @@ public class NarutoMob extends DbCreature {
         }
         boolean hurt = super.hurt(source, amount);
         if (hurt && attacker instanceof LivingEntity living && !(attacker instanceof NarutoMob)) {
-            NarutoMoves.hurtBy(this, living, amount);
+            kit().hurtBy(this, living, amount);
             alertPack(living);
         }
         return hurt;
@@ -387,7 +525,7 @@ public class NarutoMob extends DbCreature {
 
     @Override
     public void die(DamageSource source) {
-        NarutoMoves.died(this);
+        kit().died(this);
         super.die(source);
     }
 
@@ -415,7 +553,7 @@ public class NarutoMob extends DbCreature {
             NarutoMoves.burstClone(this);
             return;
         }
-        NarutoMoves.idle(this);
+        kit().idle(this);
     }
 
     // canBreatheUnderwater is final under NeoForge: the shark breathes in water through the fluid-type hook
@@ -467,33 +605,33 @@ public class NarutoMob extends DbCreature {
     protected void dropCustomDeathLoot(ServerLevel level, DamageSource source, boolean recentlyHit) {
         super.dropCustomDeathLoot(level, source, recentlyHit);
         if (!isClone()) {
-            NarutoDrops.drop(this, level, recentlyHit);
+            kit().drop(this, level, recentlyHit);
         }
     }
 
     @Override
     protected SoundEvent getAmbientSound() {
-        return NarutoMoves.ambient(this);
+        return kit().ambient(this);
     }
 
     @Override
     protected SoundEvent getHurtSound(DamageSource source) {
-        return NarutoMoves.hurtSound(this);
+        return kit().hurtSound(this);
     }
 
     @Override
     protected SoundEvent getDeathSound() {
-        return NarutoMoves.deathSound(this);
+        return kit().deathSound(this);
     }
 
     @Override
     public float getVoicePitch() {
-        return NarutoMoves.pitch(this) + (random.nextFloat() - 0.5f) * 0.1f;
+        return kit().pitch(this) + (random.nextFloat() - 0.5f) * 0.1f;
     }
 
     // ---------- AI ----------
 
-    double gap(LivingEntity target) {
+    public double gap(LivingEntity target) {
         return Math.max(0, distanceTo(target) - (getBbWidth() + target.getBbWidth()) * 0.5);
     }
 
@@ -542,7 +680,7 @@ public class NarutoMob extends DbCreature {
                 for (int k = 0; k < list.length; k++) {
                     int i = (first + k) % list.length;
                     Attack a = list[i];
-                    if (a.reactive() || !ready(i) || gap < a.min() || gap > a.max() || !NarutoMoves.canUse(NarutoMob.this, a.mode(), t)) {
+                    if (a.reactive() || !ready(i) || gap < a.min() || gap > a.max() || !kit().canUse(NarutoMob.this, a.mode(), t)) {
                         continue;
                     }
                     if (blow(i, t)) {
@@ -595,7 +733,7 @@ public class NarutoMob extends DbCreature {
             if (attacking()) {
                 return false;
             }
-            from = NarutoMoves.fleeFrom(NarutoMob.this);
+            from = kit().fleeFrom(NarutoMob.this);
             return from != null;
         }
 
@@ -646,7 +784,7 @@ public class NarutoMob extends DbCreature {
         }
     }
 
-    static List<LivingEntity> around(NarutoMob mob, Vec3 at, double r) {
+    public static List<LivingEntity> around(NarutoMob mob, Vec3 at, double r) {
         return com.starkinhon.battlegroundsmod.combat.Combat.inRadius((ServerLevel) mob.level(), at, r, mob);
     }
 }

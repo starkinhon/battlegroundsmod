@@ -1,0 +1,450 @@
+# Criaturas Dragon Ball (PR #317): galeria de perto e low poly de longe. Rodar: gradlew runClient -Pmundo=SoulsDev -Proteiro=db-mobs-galeria
+/devc fechar
+/dev preparar
+/devc hud off
+/devc fov 70
+/dev soltar
+/kill @e[type=!player]
+/tp @s 0.5 -60 0.5 180 0
+espera 20
+
+/gamemode creative
+
+# saibaman
+/dev invocar battlegroundsmod:saibaman 6
+espera 15
+/devc camera duelo 7 1.2
+espera 10
+/devc print db-mobs/galeria/saibaman_perto
+/devc camera jogador
+/devc vista primeira
+/dev soltar
+/tp @e[type=battlegroundsmod:saibaman,limit=1,sort=nearest] 0 -200 0
+espera 25
+/dev invocar battlegroundsmod:saibaman 30
+/devc fov 20
+espera 15
+/devc print db-mobs/galeria/saibaman_longe_lowpoly
+/devc fov 70
+/dev soltar
+/kill @e[type=!player]
+espera 5
+
+# bandido_deserto
+/dev invocar battlegroundsmod:bandido_deserto 6
+espera 15
+/devc camera duelo 7 1.2
+espera 10
+/devc print db-mobs/galeria/bandido_deserto_perto
+/devc camera jogador
+/devc vista primeira
+/dev soltar
+/tp @e[type=battlegroundsmod:bandido_deserto,limit=1,sort=nearest] 0 -200 0
+espera 25
+/dev invocar battlegroundsmod:bandido_deserto 30
+/devc fov 20
+espera 15
+/devc print db-mobs/galeria/bandido_deserto_longe_lowpoly
+/devc fov 70
+/dev soltar
+/kill @e[type=!player]
+espera 5
+
+# soldado_red_ribbon
+/dev invocar battlegroundsmod:soldado_red_ribbon 6
+espera 15
+/devc camera duelo 7 1.2
+espera 10
+/devc print db-mobs/galeria/soldado_red_ribbon_perto
+/devc camera jogador
+/devc vista primeira
+/dev soltar
+/tp @e[type=battlegroundsmod:soldado_red_ribbon,limit=1,sort=nearest] 0 -200 0
+espera 25
+/dev invocar battlegroundsmod:soldado_red_ribbon 30
+/devc fov 20
+espera 15
+/devc print db-mobs/galeria/soldado_red_ribbon_longe_lowpoly
+/devc fov 70
+/dev soltar
+/kill @e[type=!player]
+espera 5
+
+# pirata
+/dev invocar battlegroundsmod:pirata 6
+espera 15
+/devc camera duelo 7 1.2
+espera 10
+/devc print db-mobs/galeria/pirata_perto
+/devc camera jogador
+/devc vista primeira
+/dev soltar
+/tp @e[type=battlegroundsmod:pirata,limit=1,sort=nearest] 0 -200 0
+espera 25
+/dev invocar battlegroundsmod:pirata 30
+/devc fov 20
+espera 15
+/devc print db-mobs/galeria/pirata_longe_lowpoly
+/devc fov 70
+/dev soltar
+/kill @e[type=!player]
+espera 5
+
+# yeti
+/dev invocar battlegroundsmod:yeti 9
+espera 15
+/devc camera duelo 10 1.2
+espera 10
+/devc print db-mobs/galeria/yeti_perto
+/devc camera jogador
+/devc vista primeira
+/dev soltar
+/tp @e[type=battlegroundsmod:yeti,limit=1,sort=nearest] 0 -200 0
+espera 25
+/dev invocar battlegroundsmod:yeti 30
+/devc fov 20
+espera 15
+/devc print db-mobs/galeria/yeti_longe_lowpoly
+/devc fov 70
+/dev soltar
+/kill @e[type=!player]
+espera 5
+
+# raptor
+/dev invocar battlegroundsmod:raptor 6
+espera 15
+/devc camera duelo 7 1.2
+espera 10
+/devc print db-mobs/galeria/raptor_perto
+/devc camera jogador
+/devc vista primeira
+/dev soltar
+/tp @e[type=battlegroundsmod:raptor,limit=1,sort=nearest] 0 -200 0
+espera 25
+/dev invocar battlegroundsmod:raptor 30
+/devc fov 20
+espera 15
+/devc print db-mobs/galeria/raptor_longe_lowpoly
+/devc fov 70
+/dev soltar
+/kill @e[type=!player]
+espera 5
+
+# dino_chifrudo
+/dev invocar battlegroundsmod:dino_chifrudo 6
+espera 15
+/devc camera duelo 7 1.2
+espera 10
+/devc print db-mobs/galeria/dino_chifrudo_perto
+/devc camera jogador
+/devc vista primeira
+/dev soltar
+/tp @e[type=battlegroundsmod:dino_chifrudo,limit=1,sort=nearest] 0 -200 0
+espera 25
+/dev invocar battlegroundsmod:dino_chifrudo 30
+/devc fov 20
+espera 15
+/devc print db-mobs/galeria/dino_chifrudo_longe_lowpoly
+/devc fov 70
+/dev soltar
+/kill @e[type=!player]
+espera 5
+
+# tiranossauro
+/dev invocar battlegroundsmod:tiranossauro 12
+espera 15
+/devc camera duelo 13 1.2
+espera 10
+/devc print db-mobs/galeria/tiranossauro_perto
+/devc camera jogador
+/devc vista primeira
+/dev soltar
+/tp @e[type=battlegroundsmod:tiranossauro,limit=1,sort=nearest] 0 -200 0
+espera 25
+/dev invocar battlegroundsmod:tiranossauro 30
+/devc fov 20
+espera 15
+/devc print db-mobs/galeria/tiranossauro_longe_lowpoly
+/devc fov 70
+/dev soltar
+/kill @e[type=!player]
+espera 5
+
+# pterodactilo
+/dev invocar battlegroundsmod:pterodactilo 6
+espera 15
+/devc camera duelo 7 1.2
+espera 10
+/devc print db-mobs/galeria/pterodactilo_perto
+/devc camera jogador
+/devc vista primeira
+/dev soltar
+/tp @e[type=battlegroundsmod:pterodactilo,limit=1,sort=nearest] 0 -200 0
+espera 25
+/dev invocar battlegroundsmod:pterodactilo 30
+/devc fov 20
+espera 15
+/devc print db-mobs/galeria/pterodactilo_longe_lowpoly
+/devc fov 70
+/dev soltar
+/kill @e[type=!player]
+espera 5
+
+# dragao
+/dev invocar battlegroundsmod:dragao 12
+espera 15
+/devc camera duelo 13 1.2
+espera 10
+/devc print db-mobs/galeria/dragao_perto
+/devc camera jogador
+/devc vista primeira
+/dev soltar
+/tp @e[type=battlegroundsmod:dragao,limit=1,sort=nearest] 0 -200 0
+espera 25
+/dev invocar battlegroundsmod:dragao 30
+/devc fov 20
+espera 15
+/devc print db-mobs/galeria/dragao_longe_lowpoly
+/devc fov 70
+/dev soltar
+/kill @e[type=!player]
+espera 5
+
+# soldado_freeza
+/dev invocar battlegroundsmod:soldado_freeza 6
+espera 15
+/devc camera duelo 7 1.2
+espera 10
+/devc print db-mobs/galeria/soldado_freeza_perto
+/devc camera jogador
+/devc vista primeira
+/dev soltar
+/tp @e[type=battlegroundsmod:soldado_freeza,limit=1,sort=nearest] 0 -200 0
+espera 25
+/dev invocar battlegroundsmod:soldado_freeza 30
+/devc fov 20
+espera 15
+/devc print db-mobs/galeria/soldado_freeza_longe_lowpoly
+/devc fov 70
+/dev soltar
+/kill @e[type=!player]
+espera 5
+
+# cell_jr
+/dev invocar battlegroundsmod:cell_jr 6
+espera 15
+/devc camera duelo 7 1.2
+espera 10
+/devc print db-mobs/galeria/cell_jr_perto
+/devc camera jogador
+/devc vista primeira
+/dev soltar
+/tp @e[type=battlegroundsmod:cell_jr,limit=1,sort=nearest] 0 -200 0
+espera 25
+/dev invocar battlegroundsmod:cell_jr 30
+/devc fov 20
+espera 15
+/devc print db-mobs/galeria/cell_jr_longe_lowpoly
+/devc fov 70
+/dev soltar
+/kill @e[type=!player]
+espera 5
+
+# yakon
+/dev invocar battlegroundsmod:yakon 9
+espera 15
+/devc camera duelo 10 1.2
+espera 10
+/devc print db-mobs/galeria/yakon_perto
+/devc camera jogador
+/devc vista primeira
+/dev soltar
+/tp @e[type=battlegroundsmod:yakon,limit=1,sort=nearest] 0 -200 0
+espera 25
+/dev invocar battlegroundsmod:yakon 30
+/devc fov 20
+espera 15
+/devc print db-mobs/galeria/yakon_longe_lowpoly
+/devc fov 70
+/dev soltar
+/kill @e[type=!player]
+espera 5
+
+# tigre_sabre
+/dev invocar battlegroundsmod:tigre_sabre 6
+espera 15
+/devc camera duelo 7 1.2
+espera 10
+/devc print db-mobs/galeria/tigre_sabre_perto
+/devc camera jogador
+/devc vista primeira
+/dev soltar
+/tp @e[type=battlegroundsmod:tigre_sabre,limit=1,sort=nearest] 0 -200 0
+espera 25
+/dev invocar battlegroundsmod:tigre_sabre 30
+/devc fov 20
+espera 15
+/devc print db-mobs/galeria/tigre_sabre_longe_lowpoly
+/devc fov 70
+/dev soltar
+/kill @e[type=!player]
+espera 5
+
+# peixe_gigante
+/dev invocar battlegroundsmod:peixe_gigante 9
+espera 15
+/devc camera duelo 10 1.2
+espera 10
+/devc print db-mobs/galeria/peixe_gigante_perto
+/devc camera jogador
+/devc vista primeira
+/dev soltar
+/tp @e[type=battlegroundsmod:peixe_gigante,limit=1,sort=nearest] 0 -200 0
+espera 25
+/dev invocar battlegroundsmod:peixe_gigante 30
+/devc fov 20
+espera 15
+/devc print db-mobs/galeria/peixe_gigante_longe_lowpoly
+/devc fov 70
+/dev soltar
+/kill @e[type=!player]
+espera 5
+
+# androide_gero
+/dev invocar battlegroundsmod:androide_gero 6
+espera 15
+/devc camera duelo 7 1.2
+espera 10
+/devc print db-mobs/galeria/androide_gero_perto
+/devc camera jogador
+/devc vista primeira
+/dev soltar
+/tp @e[type=battlegroundsmod:androide_gero,limit=1,sort=nearest] 0 -200 0
+espera 25
+/dev invocar battlegroundsmod:androide_gero 30
+/devc fov 20
+espera 15
+/devc print db-mobs/galeria/androide_gero_longe_lowpoly
+/devc fov 70
+/dev soltar
+/kill @e[type=!player]
+espera 5
+
+# tao_pai_pai
+/dev invocar battlegroundsmod:tao_pai_pai 6
+espera 15
+/devc camera duelo 7 1.2
+espera 10
+/devc print db-mobs/galeria/tao_pai_pai_perto
+/devc camera jogador
+/devc vista primeira
+/dev soltar
+/tp @e[type=battlegroundsmod:tao_pai_pai,limit=1,sort=nearest] 0 -200 0
+espera 25
+/dev invocar battlegroundsmod:tao_pai_pai 30
+/devc fov 20
+espera 15
+/devc print db-mobs/galeria/tao_pai_pai_longe_lowpoly
+/devc fov 70
+/dev soltar
+/kill @e[type=!player]
+espera 5
+
+# spopovich
+/dev invocar battlegroundsmod:spopovich 6
+espera 15
+/devc camera duelo 7 1.2
+espera 10
+/devc print db-mobs/galeria/spopovich_perto
+/devc camera jogador
+/devc vista primeira
+/dev soltar
+/tp @e[type=battlegroundsmod:spopovich,limit=1,sort=nearest] 0 -200 0
+espera 25
+/dev invocar battlegroundsmod:spopovich 30
+/devc fov 20
+espera 15
+/devc print db-mobs/galeria/spopovich_longe_lowpoly
+/devc fov 70
+/dev soltar
+/kill @e[type=!player]
+espera 5
+
+# yamu
+/dev invocar battlegroundsmod:yamu 6
+espera 15
+/devc camera duelo 7 1.2
+espera 10
+/devc print db-mobs/galeria/yamu_perto
+/devc camera jogador
+/devc vista primeira
+/dev soltar
+/tp @e[type=battlegroundsmod:yamu,limit=1,sort=nearest] 0 -200 0
+espera 25
+/dev invocar battlegroundsmod:yamu 30
+/devc fov 20
+espera 15
+/devc print db-mobs/galeria/yamu_longe_lowpoly
+/devc fov 70
+/dev soltar
+/kill @e[type=!player]
+espera 5
+
+# babidi
+/dev invocar battlegroundsmod:babidi 6
+espera 15
+/devc camera duelo 7 1.2
+espera 10
+/devc print db-mobs/galeria/babidi_perto
+/devc camera jogador
+/devc vista primeira
+/dev soltar
+/tp @e[type=battlegroundsmod:babidi,limit=1,sort=nearest] 0 -200 0
+espera 25
+/dev invocar battlegroundsmod:babidi 30
+/devc fov 20
+espera 15
+/devc print db-mobs/galeria/babidi_longe_lowpoly
+/devc fov 70
+/dev soltar
+/kill @e[type=!player]
+espera 5
+
+# dragao montado: domar com carne, montar e voar
+/gamemode survival
+/dev imortal @s
+/dev invocar battlegroundsmod:dragao 4
+/dev soltar
+espera 10
+/item replace entity @s weapon.mainhand with minecraft:cooked_beef 8
+/devc olhar 180 25
+espera 5
+/devc camera jogador
+/devc vista terceira
+/devc gravar db-mobs/dragao-montado 6
+/devc tecla usar 2
+espera 10
+/devc tecla usar 2
+espera 10
+/devc tecla usar 2
+espera 10
+/devc tecla usar 2
+espera 10
+/devc tecla usar 2
+espera 20
+/devc tecla usar 2
+espera 30
+/devc tecla espaco 40
+/devc tecla frente 60
+/devc olhar 180 10
+/devc tecla ataque 2
+espera 60
+/devc tecla shift 20
+espera 40
+/devc gravar parar
+/devc print db-mobs/dragao-montado-fim
+/kill @e[type=!player]
+/gamemode creative
+/devc hud on
+espera 20
+sair
