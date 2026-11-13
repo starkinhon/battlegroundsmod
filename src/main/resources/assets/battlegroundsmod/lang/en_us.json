@@ -882,6 +882,7 @@
   "message.battlegroundsmod.arena_title": "Arena: %s",
   "message.battlegroundsmod.arena_ready": "Get ready...",
   "message.battlegroundsmod.arena_building": "Preparing the arena of %s...",
+  "message.battlegroundsmod.arena_building_pct": "Preparing the arena of %s... %s%%",
   "message.battlegroundsmod.arena_fight": "FIGHT!",
   "message.battlegroundsmod.arena_won": "DEFEATED",
   "message.battlegroundsmod.arena_unlocked": "%s now spawns in the world. Going back in %s s.",

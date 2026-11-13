@@ -390,11 +390,16 @@ public final class ChallengeArenas {
                 case BUILDING -> {
                     long t0 = System.nanoTime();
                     boolean ready = session.build.step(BUILD_NANOS);
+                    if (!ready && (now - session.buildStart) % 20 == 19) {
+                        player.displayClientMessage(Component.translatable("message.battlegroundsmod.arena_building_pct", name(session.id),
+                                session.build.percent()), true);
+                    }
                     session.buildNanos += System.nanoTime() - t0;
                     if (ready) {
                         // For the tests on Stark's PC: how long the arena took and how much server time it ate.
-                        BattlegroundsMod.LOGGER.info("[arena] {} pronta em {} ticks, {} ms de servidor ({} blocos)", session.id,
-                                now - session.buildStart + 1, session.buildNanos / 1_000_000, session.build.t.blocks);
+                        BattlegroundsMod.LOGGER.info("[arena] {} pronta em {} ticks ({} esperando {} chunks), {} ms de servidor ({} blocos)",
+                                session.id, now - session.buildStart + 1, session.build.chunkWaitTicks, session.build.chunkCount,
+                                session.buildNanos / 1_000_000, session.build.t.blocks);
                         session.build.release();
                         session.build = null;
                         enter(player, arena, session);
@@ -652,6 +657,8 @@ public final class ChallengeArenas {
         private final net.minecraft.world.level.ChunkPos ticketAt;
         private final int ticketRadius;
         private boolean ticketed;
+        int chunkWaitTicks;
+        int chunkCount;
 
         Build(ArenaTemplate t, ArenaTemplate.Meta m, BlockPos c, ServerLevel level) {
             this.t = t;
@@ -674,6 +681,16 @@ public final class ChallengeArenas {
             ticketAt = new net.minecraft.world.level.ChunkPos(c);
             ticketRadius = Math.min(32, Math.max(Math.max(ticketAt.x - minCx, maxCx - ticketAt.x), Math.max(ticketAt.z - minCz, maxCz - ticketAt.z)) + 1);
             phase = -1;
+        }
+
+        int percent() {
+            int w = maxCx - minCx + 1;
+            int chunks = w * (maxCz - minCz + 1);
+            return switch (phase) {
+                case -1 -> cursor * 40 / Math.max(1, chunks);
+                case 0 -> 40 + cursor * 50 / Math.max(1, t.columns);
+                default -> 95;
+            };
         }
 
         void release() {
@@ -726,8 +743,10 @@ public final class ChallengeArenas {
                             cursor++;
                         }
                         if (cursor < total) {
+                            chunkWaitTicks++;
                             return false;            // still loading: try again next tick
                         }
+                        chunkCount = total;
                         phase = 0;
                         cursor = 0;
                     }

@@ -27,6 +27,10 @@ def main():
     for aid in want:
         t = time.time()
         v, m = ARENAS[aid]()
+        from lib import support_gravity, safe_spawn
+        fixed = support_gravity(v)
+        for k in ('jogador', 'desafiante'):
+            m[k] = safe_spawn(v, m[k])
         from furni import finish
         finish(v)                         # panes/fences connect the way the game will show them
         o, tr = mesher.build(v, atlas, m.get('tints'), m.get('skyLight', 15))

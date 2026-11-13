@@ -890,6 +890,7 @@
   "message.battlegroundsmod.arena_title": "Arena: %s",
   "message.battlegroundsmod.arena_ready": "Prepare-se...",
   "message.battlegroundsmod.arena_building": "Preparando a arena de %s...",
+  "message.battlegroundsmod.arena_building_pct": "Preparando a arena de %s... %s%%",
   "message.battlegroundsmod.arena_fight": "LUTE!",
   "message.battlegroundsmod.arena_won": "DERROTADO",
   "message.battlegroundsmod.arena_unlocked": "%s agora aparece no mundo. Voltando em %s s.",

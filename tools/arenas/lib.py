@@ -426,3 +426,66 @@ def konoha_house(v, x, y, z, w, d, h, rng, facing=0, roof='red_terracotta'):
         tx, tz = x + int(rng.integers(-w + 1, w)), z + int(rng.integers(-d + 1, d))
         for dy in range(0, 3):
             v.set(tx, y + h + 3 + dy, tz, 'spruce_fence' if dy == 0 else 'cauldron' if dy == 1 else 'spruce_slab[type=bottom]')
+
+# ---- what the game needs that the eye does not --------------------------------------------------------------------
+GRAVITY = {'sand': 'sandstone', 'red_sand': 'red_sandstone', 'gravel': 'andesite', 'suspicious_sand': 'sandstone',
+           'suspicious_gravel': 'andesite'}
+for _c in ('white', 'orange', 'magenta', 'light_blue', 'yellow', 'lime', 'pink', 'gray', 'light_gray', 'cyan', 'purple',
+           'blue', 'brown', 'green', 'red', 'black'):
+    GRAVITY[_c + '_concrete_powder'] = _c + '_concrete'
+PASSABLE = ('short_grass', 'tall_grass', 'fern', 'large_fern', 'dead_bush', 'moss_carpet', 'snow', 'dandelion', 'poppy',
+            'cornflower', 'azure_bluet', 'oxeye_daisy', 'allium', 'lily_of_the_valley', 'pink_petals', 'sweet_berry_bush',
+            'rail', 'redstone_wire', 'torch', 'fire')
+
+def _name(b):
+    return b.split(':', 1)[-1].split('[')[0]
+
+def support_gravity(v):
+    """Sand, gravel and concrete powder fall when anything touches them. Placed without updates they hang, but the
+    first block update under an overhang (or the sea's own fluid ticks) drops whole columns into the void: Stark's PC
+    test 2026-11-13, the Kame island and Las Noches stalled the server 24 s and 54 s. Any such block without a solid
+    block under it becomes its stable twin (sandstone, andesite, concrete), so the arena never falls apart."""
+    n = 0
+    for (x, y, z), b in list(v.b.items()):
+        name = _name(b)
+        if name not in GRAVITY:
+            continue
+        below = v.b.get((x, y - 1, z))
+        bn = _name(below) if below else None
+        if bn is None or bn == 'air' or 'water' in bn or 'lava' in bn or bn in PASSABLE or 'leaves' in bn:
+            v.b[(x, y, z)] = 'minecraft:' + GRAVITY[name]
+            n += 1
+    return n
+
+def _free(v, x, y, z):
+    b = v.b.get((x, y, z))
+    return b is None or _name(b) in ('air',) + PASSABLE
+
+def _ground(v, x, y, z):
+    b = v.b.get((x, y, z))
+    if b is None:
+        return False
+    nm = _name(b)
+    return nm not in ('air', 'water', 'lava') + PASSABLE and 'leaves' not in nm and 'water' not in b
+
+def safe_spawn(v, p, reach=10):
+    """The nearest place to p where someone can stand: ground under the feet, two free blocks (no water) above it.
+    Stark's PC test 2026-11-13: players spawned inside the Todo forest floor and in the river under the Yasohachi
+    bridge."""
+    x0, y0, z0 = p
+    best = None
+    for r in range(0, reach + 1):
+        for dx in range(-r, r + 1):
+            for dz in range(-r, r + 1):
+                if max(abs(dx), abs(dz)) != r:
+                    continue
+                for dy in sorted(range(-4, 25), key=abs):
+                    x, y, z = x0 + dx, y0 + dy, z0 + dz
+                    if _free(v, x, y, z) and _free(v, x, y + 1, z) and _ground(v, x, y - 1, z):
+                        cost = dx * dx + dz * dz + dy * dy * 0.5
+                        if best is None or cost < best[0]:
+                            best = (cost, [x, y, z])
+                        break
+        if best is not None and best[0] <= (r + 1) ** 2:
+            return best[1]
+    return best[1] if best else list(p)

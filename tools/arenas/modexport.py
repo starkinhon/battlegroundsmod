@@ -54,7 +54,7 @@ def export(res, aid, v, m):
         out.write(struct.pack('>hhh', x, z, len(runs)))
         for y0, n, p in runs:
             out.write(struct.pack('>hhh', y0, n, p))
-    with gzip.open(os.path.join(base, aid + '.bin'), 'wb', 9) as f:
+    with gzip.GzipFile(os.path.join(base, aid + '.bin'), 'wb', 9, mtime=0) as f:      # same bytes when nothing changed
         f.write(out.getvalue())
     ys = [k[1] for k in blocks]
     meta_path = os.path.join(base, 'arenas.json')

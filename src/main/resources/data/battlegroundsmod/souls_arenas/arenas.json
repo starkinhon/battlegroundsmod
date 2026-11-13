@@ -31,7 +31,7 @@
   ],
   "desafiante": [
    0,
-   1,
+   0,
    -18
   ],
   "neblina": [
@@ -48,12 +48,12 @@
   "altura": 7,
   "jogador": [
    -18,
-   1,
+   0,
    0
   ],
   "desafiante": [
    18,
-   1,
+   0,
    0
   ],
   "neblina": [
@@ -136,12 +136,12 @@
   "altura": 60,
   "jogador": [
    0,
-   1,
+   -3,
    20
   ],
   "desafiante": [
    0,
-   1,
+   0,
    -8
   ],
   "neblina": [
@@ -268,7 +268,7 @@
   "altura": 40,
   "jogador": [
    0,
-   3,
+   2,
    18
   ],
   "desafiante": [
@@ -443,14 +443,14 @@
   "R": 38,
   "altura": 13,
   "jogador": [
-   -20,
+   -11,
    1,
-   18
+   15
   ],
   "desafiante": [
-   20,
+   13,
    1,
-   -18
+   -21
   ],
   "neblina": [
    60,
@@ -466,7 +466,7 @@
   "altura": 60,
   "jogador": [
    0,
-   1,
+   2,
    28
   ],
   "desafiante": [
@@ -488,12 +488,12 @@
   "altura": 44,
   "jogador": [
    0,
-   1,
+   2,
    26
   ],
   "desafiante": [
    0,
-   1,
+   2,
    -24
   ],
   "neblina": [
@@ -537,7 +537,7 @@
   ],
   "desafiante": [
    0,
-   4,
+   3,
    -38
   ],
   "neblina": [
@@ -554,13 +554,13 @@
   "altura": 40,
   "jogador": [
    0,
-   1,
+   0,
    22
   ],
   "desafiante": [
+   -1,
    0,
-   1,
-   -20
+   -19
   ],
   "neblina": [
    40,
@@ -619,7 +619,7 @@
   "R": 36,
   "altura": 34,
   "jogador": [
-   0,
+   1,
    1,
    24
   ],
@@ -642,12 +642,12 @@
   "altura": 60,
   "jogador": [
    0,
-   1,
+   0,
    28
   ],
   "desafiante": [
    0,
-   1,
+   2,
    -24
   ],
   "neblina": [
