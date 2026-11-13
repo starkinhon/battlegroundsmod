@@ -34,7 +34,7 @@ import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 //   curtains of green light with violet tops waving slowly across the sky, rays running along them;
 // - in the Montanhas Paozu: mist lying in the valleys between the stone spires, sheets of it at a few heights drifting
 //   slowly, thick and thin by a moving pattern of its own, thicker at dawn and at night; the spires rise through it;
-// - on Namek (Stark: "uma neblina leve verde, o céu de Namek"): a light green haze, a green grade, and the planet's
+// - on Namek (Stark: "uma neblina leve verde, o céu de Namek"; 2026-11-13 "um verde mais água"): a light aqua-green haze, a green grade, and the planet's
 //   three suns, each with its glowing halo.
 public final class DragonWind {
     private static final int MAX_GUSTS = 46;
@@ -249,7 +249,7 @@ public final class DragonWind {
             float planet = namek;
             r = Mth.lerp(planet, r, 0.86f);
             gg = Mth.lerp(planet, gg, 1f);
-            b = Mth.lerp(planet, b, 0.8f + 0.06f * g.warm());
+            b = Mth.lerp(planet, b, 0.9f + 0.05f * g.warm());
             float sand = desert;
             gg = Mth.lerp(sand, gg, 0.74f - 0.1f * g.warm());
             b = Mth.lerp(sand, b, 0.46f - 0.12f * g.warm());
@@ -564,9 +564,9 @@ public final class DragonWind {
         float lush = Mth.lerp(partial, lastHills, hills);
         float nk = Mth.lerp(partial, lastNamek, namek);
         int wash = mix(mix(mix(mix(mix(mix(0xFF9A30, 0xC8EC6A, green), 0xFF5E1A, dry), 0xFFE07A, sunny), 0xA2B2C6, chill), 0x86E2CC, lush),
-                0xA8F07A, nk);
+                0x9CF0CC, nk);
         int edge = mix(mix(mix(mix(mix(mix(0xB0480E, 0x4E8A20, green), 0x7A2006, dry), 0xC88A30, sunny), 0xD8E2EC, chill), 0x1E6A60, lush),
-                0x2E6E1E, nk);
+                0x1E6E5C, nk);
         graphics.fill(0, 0, w, h, argb((0.07f - 0.015f * green + 0.035f * dry - 0.025f * sunny + 0.03f * chill + 0.02f * lush) * fade, wash));
         // The glare of the tropical sun when the player looks toward it.
         Minecraft mc = Minecraft.getInstance();
@@ -639,9 +639,9 @@ public final class DragonWind {
         if (haze > 0.001f) {
             float lum = Mth.clamp((event.getRed() + event.getGreen() + event.getBlue()) / 3f / 0.7f, 0.08f, 1.2f);
             float k = 0.55f * haze;
-            event.setRed(Mth.lerp(k, event.getRed(), 0.66f * lum));
-            event.setGreen(Mth.lerp(k, event.getGreen(), 0.9f * lum));
-            event.setBlue(Mth.lerp(k, event.getBlue(), 0.52f * lum));
+            event.setRed(Mth.lerp(k, event.getRed(), 0.62f * lum));
+            event.setGreen(Mth.lerp(k, event.getGreen(), 0.92f * lum));
+            event.setBlue(Mth.lerp(k, event.getBlue(), 0.8f * lum));
         }
         if (white > 0.001f && haze < 0.5f) {
             float lum = Mth.clamp((event.getRed() + event.getGreen() + event.getBlue()) / 3f / 0.7f, 0.08f, 1.2f);
