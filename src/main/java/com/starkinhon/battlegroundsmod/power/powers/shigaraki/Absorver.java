@@ -145,6 +145,12 @@ public final class Absorver {
             if (age == STEAL) {
                 s.element = element;
                 stealTechnique(caster, victim, s);
+                // A boss's "absorver" and "usar" share slot 7: the AI put the Absorver's 20-27 s recharge on it, longer
+                // than the 15 s he keeps the power, so "usar" never went off (retest 2026-11-13). Free it now; the
+                // recharge goes back on when the power is gone.
+                if (caster instanceof net.minecraft.world.entity.Mob) {
+                    data.cooldowns[PowerData.SLOT_EXTRA] = 0;
+                }
                 s.until = level.getGameTime() + KEEP;
                 s.nextUse = 0;
                 SubNet.send(level, Shigaraki.ABSORB, caster.getId(), caster.position(), dir, 2, KEEP, element);
@@ -166,6 +172,9 @@ public final class Absorver {
                 s.ability = null;
                 s.name = null;
                 SubNet.send(level, Shigaraki.ABSORB, caster.getId(), caster.position(), Vec3.ZERO, 3, 0, 0);
+                if (caster instanceof net.minecraft.world.entity.Mob) {
+                    data.cooldowns[PowerData.SLOT_EXTRA] = Math.max(data.cooldowns[PowerData.SLOT_EXTRA], 160);
+                }
             }
         });
         return true;

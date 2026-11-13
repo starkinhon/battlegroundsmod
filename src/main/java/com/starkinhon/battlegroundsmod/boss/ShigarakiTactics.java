@@ -113,7 +113,8 @@ final class ShigarakiTactics extends TacticsBase {
                 m *= distance <= 12 ? 1.3 : 0.8;
             }
             case "absorver" -> {
-                if (Absorver.holding(boss) || !Absorver.ready(boss)) {
+                // out of its 18 blocks or out of sight it only whiffs (b_miss: 10 of 12 casts in the 2026-11-13 retest)
+                if (Absorver.holding(boss) || !Absorver.ready(boss) || distance > 16 || target == null || !boss.hasLineOfSight(target)) {
                     return 0;
                 }
                 m *= strongFoe ? 1.6 : 1;
@@ -123,7 +124,8 @@ final class ShigarakiTactics extends TacticsBase {
                 if (!Absorver.holding(boss) || !Absorver.ready(boss)) {
                     return 0;
                 }
-                m = 2.2;
+                // a stolen technique is the point of the steal: use it while it lasts (only 2 uses in 6 steals before)
+                m = 4.0;
             }
             case "tentaculos" -> {
                 m *= enemies >= 2 ? 1.5 : 1;
