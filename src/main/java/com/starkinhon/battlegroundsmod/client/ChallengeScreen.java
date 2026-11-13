@@ -758,7 +758,9 @@ public class ChallengeScreen extends Screen {
         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.client.event.ScreenEvent.Opening e) -> {
             if (e.getNewScreen() instanceof net.minecraft.client.gui.screens.ReceivingLevelScreen
                     && e.getCurrentScreen() instanceof ChallengeScreen cs && cs.vs != null) {
-                holding = cs;
+                // the VS stays on instead of the terrain screen (the level's loading is ticked by the connection, not by
+                // that screen); the flash waits for the chunks under the player
+                e.setCanceled(true);
             }
         });
         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.client.event.ScreenEvent.Render.Post e) -> {
@@ -794,6 +796,19 @@ public class ChallengeScreen extends Screen {
     }
 
     private boolean vsWhite;
+    private float vsReadyFirst = -1;
+
+    // The arena around the player is drawn (its chunks compiled), or 3 s passed since it said it was ready.
+    private boolean arenaShown() {
+        Minecraft mc = Minecraft.getInstance();
+        if (vsReadyFirst < 0) {
+            vsReadyFirst = vsT;
+        }
+        if (vsT - vsReadyFirst > 3) {
+            return true;
+        }
+        return mc.player != null && mc.level != null && mc.levelRenderer.isSectionCompiled(mc.player.blockPosition());
+    }
 
     private void startVS(Ch c) {
         vs = c;
@@ -801,6 +816,7 @@ public class ChallengeScreen extends Screen {
         vsSent = false;
         vsReady = 0;
         vsReadyAt = -1;
+        vsReadyFirst = -1;
         down = false;
         Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.ENDER_DRAGON_GROWL, 1.4f, 0.35f));
     }
@@ -925,7 +941,7 @@ public class ChallengeScreen extends Screen {
             vsSent = true;
             PacketDistributor.sendToServer(new ModPayloads.ChallengeStart(c.id()));
         }
-        if (vsReady == 1 && vsReadyAt < 0 && t >= 2.4f) {
+        if (vsReady == 1 && vsReadyAt < 0 && t >= 2.4f && arenaShown()) {
             vsReadyAt = t;
         }
         if (vsReadyAt < 0 && t > 2.4f) {
