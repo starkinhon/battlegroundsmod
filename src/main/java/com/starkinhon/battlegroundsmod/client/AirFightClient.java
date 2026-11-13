@@ -154,8 +154,8 @@ public final class AirFightClient {
             return;
         }
         float yaw = (float) (Mth.atan2(-to.x, to.z) * Mth.RAD_TO_DEG);
-        // the elevation held in a band, so a target right under or over does not turn the camera upside down
-        float pitch = Mth.clamp((float) (-Mth.atan2(to.y, flat) * Mth.RAD_TO_DEG), -50, 50);
+        // the elevation held in a band (72°: at 50° a target well below fell out of the shot in the 4th scripted test)
+        float pitch = Mth.clamp((float) (-Mth.atan2(to.y, flat) * Mth.RAD_TO_DEG), -72, 72);
         float k = 1 - (float) Math.exp(-14 * dt);
         float y = player.getYRot() + Mth.wrapDegrees(yaw - player.getYRot()) * k;
         float x = player.getXRot() + (pitch - player.getXRot()) * k;
