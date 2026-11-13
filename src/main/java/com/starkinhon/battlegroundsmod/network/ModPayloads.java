@@ -232,6 +232,18 @@ public final class ModPayloads {
     }
 
     // Client -> server: go to this character's challenge arena (Livro dos Desafios).
+    // Server -> client: the arena asked for in the book is ready and the player is in it (ok), or it was refused.
+    public record ChallengeStatus(boolean ok) implements CustomPacketPayload {
+        public static final Type<ChallengeStatus> TYPE = payloadType("challenge_status");
+        public static final StreamCodec<ByteBuf, ChallengeStatus> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.BOOL, ChallengeStatus::ok, ChallengeStatus::new);
+
+        @Override
+        public Type<ChallengeStatus> type() {
+            return TYPE;
+        }
+    }
+
     public record ChallengeStart(String id) implements CustomPacketPayload {
         public static final Type<ChallengeStart> TYPE = payloadType("challenge_start");
         public static final StreamCodec<ByteBuf, ChallengeStart> STREAM_CODEC = StreamCodec.composite(
@@ -1925,6 +1937,8 @@ public final class ModPayloads {
         }));
         registrar.playToClient(TalkReply.TYPE, TalkReply.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> com.starkinhon.battlegroundsmod.client.TalkScreen.reply(payload.lines(), payload.accepted())));
+        registrar.playToClient(ChallengeStatus.TYPE, ChallengeStatus.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> com.starkinhon.battlegroundsmod.client.ChallengeScreen.status(payload.ok())));
         registrar.playToServer(ChallengeStart.TYPE, ChallengeStart.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer player) {
                 com.starkinhon.battlegroundsmod.challenge.ChallengeArenas.start(player, payload.id());

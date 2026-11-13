@@ -269,6 +269,13 @@ public final class ChallengeArenas {
 
     // From the book: go to that character's arena.
     public static void start(ServerPlayer player, String id) {
+        if (!begin(player, id)) {
+            // the book's VS screen waits for the arena: it closes so the reason (action bar) shows
+            PacketDistributor.sendToPlayer(player, new ModPayloads.ChallengeStatus(false));
+        }
+    }
+
+    private static boolean begin(ServerPlayer player, String id) {
         ChallengeSpec spec = ChallengeSpec.get();
         int slot = spec.slot(id);
         ChallengeSpec.Universe universe = spec.universeOf(id);
@@ -280,28 +287,28 @@ public final class ChallengeArenas {
         ResourceKey<Level> key = meta.noite() && player.server.getLevel(ARENAS_NIGHT) != null ? ARENAS_NIGHT : ARENAS;
         ServerLevel arena = player.server.getLevel(key);
         if (slot < 0 || universe == null) {
-            return;
+            return false;
         }
         if (arena == null) {
             player.displayClientMessage(Component.translatable("message.battlegroundsmod.arena_missing"), false);
-            return;
+            return false;
         }
         if (SESSIONS.containsKey(player.getUUID())) {
             player.displayClientMessage(Component.translatable("message.battlegroundsmod.arena_busy"), true);
-            return;
+            return false;
         }
         if (locked(wins(player), id, !Progression.on(player))) {
             player.displayClientMessage(Component.translatable("message.battlegroundsmod.arena_locked", subsNeeded(universe), universe.nome()), true);
-            return;
+            return false;
         }
         if (entityType(id) == null) {
             player.displayClientMessage(Component.translatable("message.battlegroundsmod.arena_no_entity", id), false);
-            return;
+            return false;
         }
         for (Session other : SESSIONS.values()) {
             if (other.id.equals(id)) {
                 player.displayClientMessage(Component.translatable("message.battlegroundsmod.arena_taken"), true);
-                return;
+                return false;
             }
         }
         Session session = new Session();
@@ -322,13 +329,14 @@ public final class ChallengeArenas {
                 placing--;
             }
             enter(player, arena, session);
-            return;
+            return true;
         }
         // Put the arena back over the next ticks; the player goes in when it is ready (about a second).
         session.state = State.BUILDING;
         session.build = new Build(template, meta, session.center, arena);
         session.buildStart = arena.getGameTime();
         player.displayClientMessage(Component.translatable("message.battlegroundsmod.arena_building", name(id)), true);
+        return true;
     }
 
     // The arena is ready: the player comes in at their side, facing the challenger's, and the countdown starts.
@@ -347,6 +355,8 @@ public final class ChallengeArenas {
         session.state = State.COUNTDOWN;
         player.teleportTo(arena, px, py, pz, yaw, 0);
         player.fallDistance = 0;
+        // the book's VS screen held on while the arena loaded: now it flashes and opens on the arena
+        PacketDistributor.sendToPlayer(player, new ModPayloads.ChallengeStatus(true));
         ChallengeSpec.Universe universe = ChallengeSpec.get().universeOf(session.id);
         int color = universe == null ? 0xFFFFFF : universe.color();
         title(player, Component.translatable("message.battlegroundsmod.arena_title", name(session.id))

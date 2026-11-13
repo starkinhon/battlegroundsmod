@@ -129,7 +129,9 @@ public class ChallengeScreen extends Screen {
         Px.begin(graphics, mouseX, mouseY);
         Px.hits.clear();
         try {
-            if (vs != null) {
+            if (vsWhite) {
+                R(0, 0, GW, GH, WHITE, 1);
+            } else if (vs != null) {
                 drawVS(dt);
             } else {
                 drawLivro(dt);
@@ -720,10 +722,73 @@ public class ChallengeScreen extends Screen {
 
     // ------------------------------------------------------------------------------------------------ the VS
 
+    // The arena is ready (the player is in it) or was refused (ChallengeArenas.start). Stark 2026-11-13: the VS stays on
+    // while the arena loads and opens straight onto it, instead of closing into the world with "Arena carregando".
+    private int vsReady;
+    private float vsReadyAt = -1;
+
+    public static void status(boolean ok) {
+        ChallengeScreen screen = Minecraft.getInstance().screen instanceof ChallengeScreen open ? open : holding;
+        if (screen != null && screen.vs != null) {
+            if (ok) {
+                screen.vsReady = 1;
+            } else {
+                screen.finishVS();
+            }
+        }
+    }
+
+    // Changing dimension opens the game's "loading terrain" screen over this one: the VS is drawn over it while it is up,
+    // and comes back after it if the arena is not ready yet.
+    private static ChallengeScreen holding;
+
+    public static void register() {
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.client.event.ScreenEvent.Opening e) -> {
+            if (e.getNewScreen() instanceof net.minecraft.client.gui.screens.ReceivingLevelScreen
+                    && e.getCurrentScreen() instanceof ChallengeScreen cs && cs.vs != null) {
+                holding = cs;
+            }
+        });
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.client.event.ScreenEvent.Render.Post e) -> {
+            if (holding != null && e.getScreen() instanceof net.minecraft.client.gui.screens.ReceivingLevelScreen) {
+                holding.render(e.getGuiGraphics(), e.getMouseX(), e.getMouseY(), e.getPartialTick());
+            }
+        });
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.client.event.ScreenEvent.Closing e) -> {
+            if (holding != null && e.getScreen() instanceof net.minecraft.client.gui.screens.ReceivingLevelScreen) {
+                ChallengeScreen h = holding;
+                holding = null;
+                h.vsWhite = false;
+                if (h.vs != null) {
+                    Minecraft mc = Minecraft.getInstance();
+                    mc.tell(() -> {
+                        if (mc.screen == null && h.vs != null) {
+                            mc.setScreen(h);
+                        }
+                    });
+                }
+            }
+        });
+    }
+
+    private void finishVS() {
+        vs = null;
+        if (Minecraft.getInstance().screen == this) {
+            onClose();
+        } else if (holding == this) {
+            // the terrain screen is still up: stay white over it until it goes (no flash of the dirt screen)
+            vsWhite = true;
+        }
+    }
+
+    private boolean vsWhite;
+
     private void startVS(Ch c) {
         vs = c;
         vsT = 0;
         vsSent = false;
+        vsReady = 0;
+        vsReadyAt = -1;
         down = false;
         Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.ENDER_DRAGON_GROWL, 1.4f, 0.35f));
     }
@@ -843,21 +908,35 @@ public class ChallengeScreen extends Screen {
             T(c.lugar(), GW / 2f, GH * 0.92f - 9, rgb(255, 236, 180), 10, true, 0, true, lt);
         }
         Px.g.pose().popPose();
+        // the arena starts loading while the VS plays; the screen holds until it is ready
+        if (t > 1.6f && !vsSent) {
+            vsSent = true;
+            PacketDistributor.sendToServer(new ModPayloads.ChallengeStart(c.id()));
+        }
+        if (vsReady == 1 && vsReadyAt < 0 && t >= 2.4f) {
+            vsReadyAt = t;
+        }
+        if (vsReadyAt < 0 && t > 2.4f) {
+            // still loading: a quiet line at the bottom, the VS keeps going
+            String dots = ".".repeat(1 + (int) (Px.time * 3) % 3);
+            T(tr("arena_carregando") + dots, GW / 2f, GH - 10, rgb(200, 190, 220), 6, false, 0, true, clamp((t - 2.4f) * 3, 0, 1));
+        }
+        if (vsSent && vsReadyAt < 0 && t > 45) {
+            // the server never answered (the arena failed to build): back to the world
+            finishVS();
+            return;
+        }
         // the white flash takes you to the arena
-        if (t > 2.4f) {
-            float f = t < 2.6f ? (t - 2.4f) / 0.2f : 1 - (t - 2.6f) / 0.5f;
+        if (vsReadyAt >= 0) {
+            float ft = t - vsReadyAt;
+            float f = ft < 0.2f ? ft / 0.2f : 1 - (ft - 0.2f) / 0.5f;
             Px.g.pose().pushPose();
             Px.g.pose().translate(0, 0, 500);
             R(0, 0, GW, GH, WHITE, clamp(f, 0, 1));
             Px.g.pose().popPose();
-        }
-        if (t > 2.5f && !vsSent) {
-            vsSent = true;
-            PacketDistributor.sendToServer(new ModPayloads.ChallengeStart(c.id()));
-        }
-        if (t > 3.1f) {
-            vs = null;
-            onClose();
+            if (ft > 0.3f) {
+                finishVS();
+            }
         }
     }
 

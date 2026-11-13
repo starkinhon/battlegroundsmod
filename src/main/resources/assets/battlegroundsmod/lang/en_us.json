@@ -1970,5 +1970,6 @@
   "screen.battlegroundsmod.conversa.falta": "Missing %s",
   "screen.battlegroundsmod.conversa.nova": "NEW MISSION",
   "screen.battlegroundsmod.conversa.entregue": "DELIVERED",
-  "screen.battlegroundsmod.livro.alma": "Soul"
+  "screen.battlegroundsmod.livro.alma": "Soul",
+  "screen.battlegroundsmod.livro.arena_carregando": "Arena loading"
 }
