@@ -37,6 +37,9 @@ public final class DragonPillarFeature extends Feature<NoneFeatureConfiguration>
         if (ground <= level.getMinBuildHeight() + 4 || !level.getFluidState(new BlockPos(origin.getX(), ground, origin.getZ())).isEmpty()) {
             return false;
         }
+        if (nearOtherUniverse(level, origin, ground)) {
+            return false;
+        }
         boolean mesa = random.nextInt(4) == 0;
         double base = mesa ? 5.5 + random.nextDouble() * 2.0 : 2.6 + random.nextDouble() * 3.0;
         int height = mesa ? 14 + random.nextInt(14) : 22 + random.nextInt(34);
@@ -98,6 +101,23 @@ public final class DragonPillarFeature extends Feature<NoneFeatureConfiguration>
                     (int) Math.round(origin.getZ() + leanZ * height)));
         }
         return true;
+    }
+
+    // A pillar whose center is in the Dragon World can still reach 9 blocks into the next chunk, and that chunk may
+    // already hold a Shibuya city, a Colony of the Culling Game or a Naruto village (Stark 2026-11-13: "as pedras da
+    // terra dos dragoes tao por cima de algumas cidades"). If any column the pillar may touch belongs to another
+    // universe, the pillar is not placed at all, so it never lands on a building and is never cut in half.
+    private static boolean nearOtherUniverse(WorldGenLevel level, BlockPos origin, int ground) {
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+        for (int dx = -REACH; dx <= REACH; dx += 3) {
+            for (int dz = -REACH; dz <= REACH; dz += 3) {
+                var biome = level.getBiome(pos.set(origin.getX() + dx, ground, origin.getZ() + dz));
+                if (biome.is(ModWorldgen.JUJUTSU_BIOMES) || biome.is(ModWorldgen.NARUTO_BIOMES)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     // The lowest ground under the pillar's foot, so it never floats on a slope.
