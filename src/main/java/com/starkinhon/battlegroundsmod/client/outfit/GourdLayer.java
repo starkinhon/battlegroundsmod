@@ -49,12 +49,14 @@ public class GourdLayer<T extends LivingEntity> extends RenderLayer<T, PlayerMod
         poseStack.pushPose();
         // model space: +y down, +z the back; the body's pivot is at the neck
         getParentModel().body.translateAndRotate(poseStack);
-        // conferido fora do jogo (scratchpad gourd.js, mesmo encadeamento de transformações): rolha acima do ombro
-        // direito, fundo na cintura esquerda, encostada nas costas
-        poseStack.translate(0, 0.3, 0.27);
-        poseStack.mulPose(Axis.ZP.rotationDegrees(180 - 28));
+        // In game (2026-11-13 prints) 180-28 put the cork over the LEFT shoulder and z 0.27 sank the gourd's front half
+        // into the body (it is ~9.5 px deep), so it looked small and off to one side. Mirrored tilt puts the cork over the
+        // right shoulder; z = torso half depth (2 px) + armour layer (1 px) + half the gourd's depth, so it rests on the back.
+        float scale = 0.95f;
+        poseStack.translate(0, 0.4, (3.0 + 4.75 * scale) / 16.0);
+        poseStack.mulPose(Axis.ZP.rotationDegrees(180 + 28));
         poseStack.mulPose(Axis.YP.rotationDegrees(180));
-        poseStack.scale(0.85f, 0.85f, 0.85f);
+        poseStack.scale(scale, scale, scale);
         Minecraft.getInstance().getItemRenderer().renderStatic(stack, ItemDisplayContext.NONE, light, OverlayTexture.NO_OVERLAY,
                 poseStack, buffer, entity.level(), entity.getId());
         poseStack.popPose();
