@@ -190,16 +190,15 @@ public final class ColoniaFeature extends Feature<NoneFeatureConfiguration> {
             IntBinaryOperator ground, int maxY) {
         try {
             return SITES.get(key(ci, cj, worldKey), () -> {
-                double roll = JjkGen.hash3(ci, 111, cj, seed);
-                boolean dome = roll < 0.3;
-                if (!dome && roll >= 0.75) {
-                    return NONE;
-                }
-                // The biggest piece that fits: the colony (or, where it doesn't fit, ruins), then ruins of 96, then 64.
+                boolean dome = JjkGen.hash3(ci, 111, cj, seed) < 0.3;
+                // The biggest piece that fits (the colony, or ruins of 96, then of 64), each tried at 9 spots of the
+                // cell, so a patch of the biome smaller than the cell still gets its piece.
                 for (int half : dome ? new int[] {ColoniaGen.HALF, 96, 64} : new int[] {96, 64}) {
-                    int[] s = fit(ci, cj, half, half == ColoniaGen.HALF, seed, sea, generator, random, ground, maxY);
-                    if (s != NONE) {
-                        return s;
+                    for (int t = 0; t < 9; t++) {
+                        int[] s = fit(ci, cj, t, half, half == ColoniaGen.HALF, seed, sea, generator, random, ground, maxY);
+                        if (s != NONE) {
+                            return s;
+                        }
                     }
                 }
                 return NONE;
@@ -211,11 +210,19 @@ public final class ColoniaFeature extends Feature<NoneFeatureConfiguration> {
 
     // A piece of the given half in a cell: good with the biome at its middle and at 7 of 8 points around it, and the
     // terrain under it within 24 of its average (the city's level). {cx, cz, half, cityY, pieceSeed, dome} or NONE.
-    private static int[] fit(int ci, int cj, int half, boolean dome, int seed, int sea, ChunkGenerator generator,
+    // Spot t: 0 is a random spot of the cell, 1-8 the cell's middle pushed to its edges and corners.
+    private static int[] fit(int ci, int cj, int t, int half, boolean dome, int seed, int sea, ChunkGenerator generator,
             RandomState random, IntBinaryOperator ground, int maxY) {
         int slack = CELL / 2 - half - SKIRT;
-        int cx = ci * CELL + CELL / 2 - slack + JjkGen.floor(JjkGen.hash3(ci, 112, cj, seed) * (2 * slack + 1));
-        int cz = cj * CELL + CELL / 2 - slack + JjkGen.floor(JjkGen.hash3(ci, 113, cj, seed) * (2 * slack + 1));
+        int cx, cz;
+        if (t == 0) {
+            cx = ci * CELL + CELL / 2 - slack + JjkGen.floor(JjkGen.hash3(ci, 112, cj, seed) * (2 * slack + 1));
+            cz = cj * CELL + CELL / 2 - slack + JjkGen.floor(JjkGen.hash3(ci, 113, cj, seed) * (2 * slack + 1));
+        } else {
+            double a = (t - 1) * Math.PI / 4;
+            cx = ci * CELL + CELL / 2 + JjkGen.round(Math.cos(a) * slack);
+            cz = cj * CELL + CELL / 2 + JjkGen.round(Math.sin(a) * slack);
+        }
         int lo = Integer.MAX_VALUE, hi = Integer.MIN_VALUE, sum = 0, n = 0;
         for (int a = -2; a <= 2; a++) {
             for (int b = -2; b <= 2; b++) {
