@@ -31,15 +31,15 @@ import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConf
 // - the colony: the preview's "Colônia com a barreira" (half 120), with the big fight crater and the toppled building
 //   in the middle; the dark dome over it is drawn by the client;
 // - the ruins: the preview's "Pedaço das ruínas" (half 96), the same broken city without the crater.
-// One piece per cell of 300 (30% a colony, 45% ruins), on a spot with the biome all around and terrain flat enough.
+// One piece per cell of 360 (30% try the colony first, every cell ruins), on a spot with the biome around it.
 // The piece sits on its own level (the terrain's average there): above it the terrain is cut away, below it filled with
-// stone, and a skirt of 8 blends the land around into the city's level. Built once per piece and kept, split by chunk.
+// stone, and a skirt of 16 blends the land around into the city's level. Built once per piece and kept, split by chunk.
 // Writes only inside its own chunk.
 public final class ColoniaFeature extends Feature<NoneFeatureConfiguration> {
     private static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger();
     private static final int SALT = 0x6A0800;
-    private static final int CELL = 300;
-    private static final int SKIRT = 12;
+    private static final int CELL = 360;
+    private static final int SKIRT = 16;
     private static final int CLEAR = 24; // how high above the old ground the cut goes (trees, hills' tops)
     private static final Cache<Long, Built> PIECES = CacheBuilder.newBuilder().maximumSize(6).build();
     private static final Cache<Long, int[]> SITES = CacheBuilder.newBuilder().maximumSize(4096).build();
@@ -209,7 +209,7 @@ public final class ColoniaFeature extends Feature<NoneFeatureConfiguration> {
     }
 
     // A piece of the given half in a cell: good with the biome at its middle and at 7 of 8 points around it, and the
-    // terrain under it within 24 of its average (the city's level). {cx, cz, half, cityY, pieceSeed, dome} or NONE.
+    // terrain under it within 40 of its average (the city's level). {cx, cz, half, cityY, pieceSeed, dome} or NONE.
     // Spot t: 0 is a random spot of the cell, 1-8 the cell's middle pushed to its edges and corners.
     private static int[] fit(int ci, int cj, int t, int half, boolean dome, int seed, int sea, ChunkGenerator generator,
             RandomState random, IntBinaryOperator ground, int maxY) {
@@ -235,7 +235,7 @@ public final class ColoniaFeature extends Feature<NoneFeatureConfiguration> {
             }
         }
         int cityY = JjkGen.round(sum / (double) n);
-        if (hi - cityY > 24 || cityY - lo > 24 || cityY < sea + 2 || cityY + 80 > maxY) {
+        if (hi - cityY > 40 || cityY - lo > 40 || cityY < sea + 2 || cityY + 80 > maxY) {
             return NONE;
         }
         if (!biomeAt(generator, random, cx, cityY, cz)) {
