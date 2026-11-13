@@ -406,6 +406,7 @@ public final class ChallengeArenas {
                     }
                 }
                 case COUNTDOWN -> {
+                    catchFall(player, arena, session);
                     long left = session.fightAt - now;
                     if (left == 60 || left == 40 || left == 20) {
                         title(player, Component.literal(String.valueOf(left / 20)).withStyle(s -> s.withColor(0xF2C94C).withBold(true)), Component.empty());
@@ -416,6 +417,7 @@ public final class ChallengeArenas {
                     }
                 }
                 case FIGHT -> {
+                    catchFall(player, arena, session);
                     Entity boss = session.boss == null ? null : arena.getEntity(session.boss);
                     if (boss == null && !session.bossDied && session.respawns < 3) {
                         // Gone without dying (Stark's test 2026-11-10: he came in flying and Kuririn was "born dead",
@@ -475,6 +477,22 @@ public final class ChallengeArenas {
         session.state = State.FIGHT;
         title(player, Component.translatable("message.battlegroundsmod.arena_fight").withStyle(s -> s.withColor(0xFF4A3A).withBold(true)), Component.empty());
         Fx.sound(arena, player.position(), SoundEvents.RAID_HORN.value(), 0.7f, 1.2f);
+    }
+
+    // Fell through the scenery into the void under it (Stark's PC test 2026-11-13: the Todo forest and the Infinity
+    // Castle, right after arriving): back to the player's spawn, no fall damage. Logged to find the hole.
+    private static void catchFall(ServerPlayer player, ServerLevel arena, Session session) {
+        if (player.getY() >= session.center.getY() - 16 || player.isSpectator()) {
+            return;
+        }
+        int[] j = session.meta.jogador();
+        BlockPos spawn = session.center.offset(j[0], j[1], j[2]);
+        BattlegroundsMod.LOGGER.warn("[arena] {}: jogador caiu em {} {} {} (spawn {}, chão do spawn: {})", session.id,
+                (int) player.getX(), (int) player.getY(), (int) player.getZ(), spawn.toShortString(),
+                arena.getBlockState(spawn.below()));
+        player.teleportTo(arena, spawn.getX() + 0.5, spawn.getY(), spawn.getZ() + 0.5, player.getYRot(), player.getXRot());
+        player.setDeltaMovement(Vec3.ZERO);
+        player.fallDistance = 0;
     }
 
     private static BlockPos spawnPos(Session session) {
