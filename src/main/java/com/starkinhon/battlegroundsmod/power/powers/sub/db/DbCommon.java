@@ -42,9 +42,22 @@ public final class DbCommon {
     private DbCommon() {
     }
 
+    // Where a beam goes: at whoever the combat flight is locked on (the look of a flying player reaches the server a tick
+    // late and the beam went off to the side in the 2026-11-13 test), else along the look.
+    public static Vec3 aim(LivingEntity caster) {
+        LivingEntity locked = com.starkinhon.battlegroundsmod.combat.AirFight.target(caster);
+        if (locked != null && locked.isAlive() && locked.distanceTo(caster) <= 48) {
+            Vec3 d = com.starkinhon.battlegroundsmod.combat.Combat.center(locked).subtract(caster.getEyePosition());
+            if (d.lengthSqr() > 1.0E-4) {
+                return d.normalize();
+            }
+        }
+        return caster.getLookAngle();
+    }
+
     // Both hands brought together in front of the chest (Kamehameha, Final Flash).
     public static Vec3 hands(LivingEntity caster) {
-        Vec3 look = caster.getLookAngle();
+        Vec3 look = aim(caster);
         return caster.position().add(0, caster.getBbHeight() * 0.58, 0).add(look.scale(0.55));
     }
 
