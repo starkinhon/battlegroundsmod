@@ -50,7 +50,10 @@ public final class ShibuyaFeature extends Feature<NoneFeatureConfiguration> {
     private static final Cache<Long, int[]> PLANS = CacheBuilder.newBuilder().maximumSize(96).build();
     private static final Cache<Long, int[]> STATIONS = CacheBuilder.newBuilder().maximumSize(8).build();
     private static final Cache<Long, Boolean> QUARTS = CacheBuilder.newBuilder().maximumSize(65536).build();
+    private static final Cache<Long, int[]> FOOTPRINTS = CacheBuilder.newBuilder().maximumSize(1024).build();
     private static final int[] NONE = {};
+    // The feature's own types for the overgrown blocks at the city's edge (ShibuyaGen's types end at 111).
+    private static final int WILD_GRASS = 200, WILD_TALL = 201, WILD_FLOWER = 202, WILD_BUSH = 203;
 
     public ShibuyaFeature(Codec<NoneFeatureConfiguration> codec) {
         super(codec);
@@ -153,6 +156,8 @@ public final class ShibuyaFeature extends Feature<NoneFeatureConfiguration> {
                 int[] p = plan(i, j, seed, worldKey, city);
                 if (p != NONE) {
                     apply(w, p);
+                } else {
+                    overgrown(w, i, j, seed, worldKey, city);
                 }
             }
         }
@@ -187,6 +192,42 @@ public final class ShibuyaFeature extends Feature<NoneFeatureConfiguration> {
             level.setBlock(pos, block(t), 2);
         });
         return true;
+    }
+
+    // A block the city doesn't cover whole (at the biome's edge) is not built: instead of a bare lot it is an overgrown
+    // empty block, grass with tall grass, flowers and bushes, so the city's edge reads as a quiet outskirt, not a car park.
+    private static void overgrown(ShibuyaGen.Vox w, int i, int j, int seed, int worldKey, City city) {
+        int[] f = footprint(i, j, seed, worldKey);
+        int x0 = Math.max(f[0], w.lx), x1 = Math.min(f[1], w.hx), z0 = Math.max(f[2], w.lz), z1 = Math.min(f[3], w.hz);
+        for (int x = x0; x <= x1; x++) {
+            for (int z = z0; z <= z1; z++) {
+                if (w.get(x, 0, z) != ShibuyaGen.LOT || !city.at(x, z)) {
+                    continue;
+                }
+                w.force(x, 0, z, WILD_GRASS);
+                double r = JjkGen.hash3(x, 7, z, seed);
+                if (r < 0.35) {
+                    w.force(x, 1, z, WILD_TALL);
+                } else if (r < 0.38) {
+                    w.force(x, 1, z, WILD_FLOWER);
+                } else if (r < 0.395) {
+                    w.force(x, 1, z, WILD_BUSH);
+                }
+            }
+        }
+    }
+
+    // A block's ground footprint {x0, x1, z0, z1}, kept.
+    private static int[] footprint(int i, int j, int seed, int worldKey) {
+        long k = ((long) i << 36) ^ ((long) (j & 0xFFFFFFFL) << 8) ^ ((long) worldKey * 0x9E3779B97F4A7C15L) ^ 0xF0;
+        try {
+            return FOOTPRINTS.get(k, () -> {
+                ShibuyaGen.Plan plan = ShibuyaGen.blockPlan(i, j, seed);
+                return new int[] {plan.x0, plan.x1, plan.z0, plan.z1};
+            });
+        } catch (ExecutionException e) {
+            return new int[] {0, -1, 0, -1};
+        }
     }
 
     private static void apply(ShibuyaGen.Vox w, int[] v) {
@@ -394,6 +435,10 @@ public final class ShibuyaFeature extends Feature<NoneFeatureConfiguration> {
         }
         return switch (t) {
             case ShibuyaGen.STONE -> Blocks.STONE.defaultBlockState();
+            case WILD_GRASS -> Blocks.GRASS_BLOCK.defaultBlockState();
+            case WILD_TALL -> Blocks.SHORT_GRASS.defaultBlockState();
+            case WILD_FLOWER -> Blocks.CORNFLOWER.defaultBlockState();
+            case WILD_BUSH -> Blocks.AZALEA_LEAVES.defaultBlockState().setValue(LeavesBlock.PERSISTENT, true);
             case ShibuyaGen.SOIL -> Blocks.DIRT.defaultBlockState();
             case ShibuyaGen.ASPHALT -> JujutsuBlocks.SHIBUYA_ASPHALT.get().defaultBlockState();
             case ShibuyaGen.LANE, ShibuyaGen.ZEBRA, ShibuyaGen.PARK_LINE -> JujutsuBlocks.WHITE_LINE.get().defaultBlockState();

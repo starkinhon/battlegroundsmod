@@ -36,9 +36,10 @@ import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConf
 // stone, and a skirt of 8 blends the land around into the city's level. Built once per piece and kept, split by chunk.
 // Writes only inside its own chunk.
 public final class ColoniaFeature extends Feature<NoneFeatureConfiguration> {
+    private static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger();
     private static final int SALT = 0x6A0800;
     private static final int CELL = 300;
-    private static final int SKIRT = 8;
+    private static final int SKIRT = 12;
     private static final int CLEAR = 24; // how high above the old ground the cut goes (trees, hills' tops)
     private static final Cache<Long, Built> PIECES = CacheBuilder.newBuilder().maximumSize(6).build();
     private static final Cache<Long, int[]> SITES = CacheBuilder.newBuilder().maximumSize(4096).build();
@@ -194,40 +195,54 @@ public final class ColoniaFeature extends Feature<NoneFeatureConfiguration> {
                 if (!dome && roll >= 0.75) {
                     return NONE;
                 }
-                int half = dome ? ColoniaGen.HALF : 96;
-                int slack = CELL / 2 - half - SKIRT;
-                int cx = ci * CELL + CELL / 2 - slack + JjkGen.floor(JjkGen.hash3(ci, 112, cj, seed) * (2 * slack + 1));
-                int cz = cj * CELL + CELL / 2 - slack + JjkGen.floor(JjkGen.hash3(ci, 113, cj, seed) * (2 * slack + 1));
-                int lo = Integer.MAX_VALUE, hi = Integer.MIN_VALUE, sum = 0, n = 0;
-                for (int a = -2; a <= 2; a++) {
-                    for (int b = -2; b <= 2; b++) {
-                        int x = cx + a * (half - 4) / 2, z = cz + b * (half - 4) / 2;
-                        int h = ground.applyAsInt(x, z);
-                        lo = Math.min(lo, h);
-                        hi = Math.max(hi, h);
-                        sum += h;
-                        n++;
+                // The biggest piece that fits: the colony (or, where it doesn't fit, ruins), then ruins of 96, then 64.
+                for (int half : dome ? new int[] {ColoniaGen.HALF, 96, 64} : new int[] {96, 64}) {
+                    int[] s = fit(ci, cj, half, half == ColoniaGen.HALF, seed, sea, generator, random, ground, maxY);
+                    if (s != NONE) {
+                        return s;
                     }
                 }
-                int cityY = JjkGen.round(sum / (double) n);
-                if (hi - cityY > 16 || cityY - lo > 16 || cityY < sea + 2 || cityY + 80 > maxY) {
-                    return NONE;
-                }
-                for (int a = 0; a < 8; a++) {
-                    int x = cx + JjkGen.round(Math.cos(a * Math.PI / 4) * (half + SKIRT));
-                    int z = cz + JjkGen.round(Math.sin(a * Math.PI / 4) * (half + SKIRT));
-                    if (!biomeAt(generator, random, x, cityY, z)) {
-                        return NONE;
-                    }
-                }
-                if (!biomeAt(generator, random, cx, cityY, cz)) {
-                    return NONE;
-                }
-                return new int[] {cx, cz, half, cityY, JjkGen.hashInt(ci, cj, 111, seed), dome ? 1 : 0};
+                return NONE;
             });
         } catch (ExecutionException e) {
             return NONE;
         }
+    }
+
+    // A piece of the given half in a cell: good with the biome at its middle and at 7 of 8 points around it, and the
+    // terrain under it within 24 of its average (the city's level). {cx, cz, half, cityY, pieceSeed, dome} or NONE.
+    private static int[] fit(int ci, int cj, int half, boolean dome, int seed, int sea, ChunkGenerator generator,
+            RandomState random, IntBinaryOperator ground, int maxY) {
+        int slack = CELL / 2 - half - SKIRT;
+        int cx = ci * CELL + CELL / 2 - slack + JjkGen.floor(JjkGen.hash3(ci, 112, cj, seed) * (2 * slack + 1));
+        int cz = cj * CELL + CELL / 2 - slack + JjkGen.floor(JjkGen.hash3(ci, 113, cj, seed) * (2 * slack + 1));
+        int lo = Integer.MAX_VALUE, hi = Integer.MIN_VALUE, sum = 0, n = 0;
+        for (int a = -2; a <= 2; a++) {
+            for (int b = -2; b <= 2; b++) {
+                int x = cx + a * (half - 4) / 2, z = cz + b * (half - 4) / 2;
+                int h = ground.applyAsInt(x, z);
+                lo = Math.min(lo, h);
+                hi = Math.max(hi, h);
+                sum += h;
+                n++;
+            }
+        }
+        int cityY = JjkGen.round(sum / (double) n);
+        if (hi - cityY > 24 || cityY - lo > 24 || cityY < sea + 2 || cityY + 80 > maxY) {
+            return NONE;
+        }
+        if (!biomeAt(generator, random, cx, cityY, cz)) {
+            return NONE;
+        }
+        int miss = 0;
+        for (int a = 0; a < 8; a++) {
+            int x = cx + JjkGen.round(Math.cos(a * Math.PI / 4) * half);
+            int z = cz + JjkGen.round(Math.sin(a * Math.PI / 4) * half);
+            if (!biomeAt(generator, random, x, cityY, z) && ++miss > 1) {
+                return NONE;
+            }
+        }
+        return new int[] {cx, cz, half, cityY, JjkGen.hashInt(ci, cj, 111, seed), dome ? 1 : 0};
     }
 
     // The colony's centers near a spot (for the client's dome and the ambience): {cx, cz, cityY} of each colony whose
@@ -252,7 +267,8 @@ public final class ColoniaFeature extends Feature<NoneFeatureConfiguration> {
         try {
             return PIECES.get(k, () -> {
                 // The preview's colonyPiece(seed) and ruinsPiece(seed) = colony(seed + 1, 96, false).
-                TemploGen.Vox v = s[5] == 1 ? ColoniaGen.colony(s[4], ColoniaGen.HALF, true) : ColoniaGen.colony(s[4] + 1, 96, false);
+                LOGGER.info("[jjk] Colônia: {} de meio {} em {} {} {}", s[5] == 1 ? "colônia" : "ruínas", s[2], s[0], s[3], s[1]);
+                TemploGen.Vox v = s[5] == 1 ? ColoniaGen.colony(s[4], ColoniaGen.HALF, true) : ColoniaGen.colony(s[4] + 1, s[2], false);
                 int[] p = v.pack();
                 int dx = s[0], dy = s[3] - ColoniaGen.GROUND, dz = s[1];
                 Map<Long, int[]> count = new HashMap<>();
