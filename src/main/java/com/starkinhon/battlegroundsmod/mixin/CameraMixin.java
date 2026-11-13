@@ -49,7 +49,9 @@ public abstract class CameraMixin {
                 : EsferaCutscene.active() ? EsferaCutscene.shot(partialTick)
                 : GrabCutscene.active() ? GrabCutscene.shot(partialTick)
                 : BopCutscene.active() ? BopCutscene.shot(partialTick)
-                : ShoulderCutscene.active() ? ShoulderCutscene.shot(partialTick) : FaceCutscene.shot(partialTick);
+                : ShoulderCutscene.active() ? ShoulderCutscene.shot(partialTick)
+                : com.starkinhon.battlegroundsmod.client.TalkScreen.active() ? com.starkinhon.battlegroundsmod.client.TalkScreen.shot(partialTick)
+                : FaceCutscene.shot(partialTick);
         // The combat flight's locked camera (client/AirFightClient, the approved page's): seen from outside, always.
         if (shot == null && entity == net.minecraft.client.Minecraft.getInstance().player) {
             shot = com.starkinhon.battlegroundsmod.client.AirFightClient.shot();

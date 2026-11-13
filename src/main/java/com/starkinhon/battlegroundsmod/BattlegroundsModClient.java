@@ -84,6 +84,7 @@ public class BattlegroundsModClient {
         modContainer.registerConfig(ModConfig.Type.CLIENT, FxConfig.SPEC);
         modContainer.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
         NeoForge.EVENT_BUS.addListener(MeteorRenderer::onRenderLevel);
+        com.starkinhon.battlegroundsmod.client.ChallengeScreen.register();
         // Respawning keeps the entity id with a new body (clock back to 0): drop the poses of the move it died in.
         NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent.Clone e) -> {
             com.starkinhon.battlegroundsmod.client.SkillAnimations.forget(e.getOldPlayer().getId());

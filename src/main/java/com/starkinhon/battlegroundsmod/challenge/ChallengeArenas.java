@@ -214,6 +214,8 @@ public final class ChallengeArenas {
 
     // The client's copy of its own wins (ModPayloads.SyncArenaWins), for the book.
     public static volatile List<String> clientWins = List.of();
+    // The client's copy of its records (ModPayloads.SyncArenaRecords): id -> {wins, best seconds}.
+    public static volatile java.util.Map<String, int[]> clientRecords = java.util.Map.of();
 
     public static List<String> wins(Player player) {
         return player.getData(ModAttachments.ARENA_WINS);
@@ -221,6 +223,7 @@ public final class ChallengeArenas {
 
     public static void syncWins(ServerPlayer player) {
         PacketDistributor.sendToPlayer(player, new ModPayloads.SyncArenaWins(List.copyOf(wins(player))));
+        PacketDistributor.sendToPlayer(player, new ModPayloads.SyncArenaRecords(List.copyOf(player.getData(ModAttachments.ARENA_RECORDS))));
     }
 
     private static Component name(String id) {
@@ -273,6 +276,13 @@ public final class ChallengeArenas {
     // From the book: go to that character's arena. The player's group (ArenaParty, Stark 2026-11-13: "eu e um amigo
     // fazer uma arena junto") comes along: everyone in it who is online, alive and not in another fight.
     public static void start(ServerPlayer player, String id) {
+        if (!begin(player, id)) {
+            // the book's VS screen waits for the arena: it closes so the reason (action bar) shows
+            PacketDistributor.sendToPlayer(player, new ModPayloads.ChallengeStatus(false));
+        }
+    }
+
+    private static boolean begin(ServerPlayer player, String id) {
         ChallengeSpec spec = ChallengeSpec.get();
         int slot = spec.slot(id);
         ChallengeSpec.Universe universe = spec.universeOf(id);
@@ -284,28 +294,28 @@ public final class ChallengeArenas {
         ResourceKey<Level> key = meta.noite() && player.server.getLevel(ARENAS_NIGHT) != null ? ARENAS_NIGHT : ARENAS;
         ServerLevel arena = player.server.getLevel(key);
         if (slot < 0 || universe == null) {
-            return;
+            return false;
         }
         if (arena == null) {
             player.displayClientMessage(Component.translatable("message.battlegroundsmod.arena_missing"), false);
-            return;
+            return false;
         }
         if (SESSIONS.containsKey(player.getUUID())) {
             player.displayClientMessage(Component.translatable("message.battlegroundsmod.arena_busy"), true);
-            return;
+            return false;
         }
         if (locked(wins(player), id, !Progression.on(player))) {
             player.displayClientMessage(Component.translatable("message.battlegroundsmod.arena_locked", subsNeeded(universe), universe.nome()), true);
-            return;
+            return false;
         }
         if (entityType(id) == null) {
             player.displayClientMessage(Component.translatable("message.battlegroundsmod.arena_no_entity", id), false);
-            return;
+            return false;
         }
         for (Session other : sessions()) {
             if (other.id.equals(id)) {
                 player.displayClientMessage(Component.translatable("message.battlegroundsmod.arena_taken"), true);
-                return;
+                return false;
             }
         }
         List<ServerPlayer> team = new ArrayList<>();
@@ -340,7 +350,7 @@ public final class ChallengeArenas {
                 placing--;
             }
             enter(arena, session, team);
-            return;
+            return true;
         }
         // Put the arena back over the next ticks; the players go in when it is ready (about a second).
         session.state = State.BUILDING;
@@ -349,6 +359,7 @@ public final class ChallengeArenas {
         for (ServerPlayer p : team) {
             p.displayClientMessage(Component.translatable("message.battlegroundsmod.arena_building", name(id)), true);
         }
+        return true;
     }
 
     // Every fight once, though each of its players maps to it.
@@ -394,6 +405,8 @@ public final class ChallengeArenas {
             }
             player.teleportTo(arena, at.getX() + 0.5, at.getY(), at.getZ() + 0.5, yaw, 0);
             player.fallDistance = 0;
+            // the book's VS screen held on while the arena loaded: now it flashes and opens on the arena
+            PacketDistributor.sendToPlayer(player, new ModPayloads.ChallengeStatus(true));
             title(player, Component.translatable("message.battlegroundsmod.arena_title", name(session.id))
                     .withStyle(s -> s.withColor(color).withBold(true)), Component.translatable("message.battlegroundsmod.arena_ready"));
         }
@@ -694,6 +707,7 @@ public final class ChallengeArenas {
             }
             List<String> wins = new ArrayList<>(wins(player));
             boolean first = !wins.contains(session.id);
+            record(player, session.id, (int) Math.max(1, (now - session.fightAt) / 20));
             if (first) {
                 wins.add(session.id);
                 player.setData(ModAttachments.ARENA_WINS, List.copyOf(wins));
@@ -706,6 +720,27 @@ public final class ChallengeArenas {
                     name(session.id), RETURN_DELAY / 20), false);
             Fx.sound(player.serverLevel(), player.position(), SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, 1f, 1f);
         }
+    }
+
+    // One more win against this challenger and, when it was faster, the new best time (the book's medals).
+    private static void record(ServerPlayer player, String id, int seconds) {
+        List<String> out = new ArrayList<>();
+        boolean found = false;
+        for (String entry : player.getData(ModAttachments.ARENA_RECORDS)) {
+            String[] p = entry.split(":");
+            if (p.length == 3 && p[0].equals(id)) {
+                int wins = Integer.parseInt(p[1]) + 1, best = Integer.parseInt(p[2]);
+                out.add(id + ":" + wins + ":" + (best <= 0 ? seconds : Math.min(best, seconds)));
+                found = true;
+            } else {
+                out.add(entry);
+            }
+        }
+        if (!found) {
+            out.add(id + ":1:" + seconds);
+        }
+        player.setData(ModAttachments.ARENA_RECORDS, List.copyOf(out));
+        PacketDistributor.sendToPlayer(player, new ModPayloads.SyncArenaRecords(List.copyOf(out)));
     }
 
     // Poder for beating a challenge (Stark 2026-11-10: "os bosses dos desafios darem poder quando você vencer"). The kill
