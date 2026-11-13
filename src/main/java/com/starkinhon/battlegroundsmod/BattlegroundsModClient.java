@@ -294,6 +294,9 @@ public class BattlegroundsModClient {
         // Kakashi's Sennen Goroshi title (over the world, under the HUD).
         event.registerBelowAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "kakashi_title"),
                 com.starkinhon.battlegroundsmod.client.fx.KakashiTitle::render);
+        // Hashirama's flowers: the sleep closing in.
+        event.registerBelowAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "hashirama_sleep"),
+                com.starkinhon.battlegroundsmod.client.fx.hs.HsFx::renderGui);
         event.registerBelowAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "domain_void"),
                 com.starkinhon.battlegroundsmod.client.fx.DomainScene::renderGui);
         // Inside Aizen's Black Box the dark closes in over the view (below the HUD).
@@ -361,6 +364,7 @@ public class BattlegroundsModClient {
         });
         event.registerEntityRenderer(ModEntities.SAITAMA.get(), context -> new SoulBossRenderer<>(context, "saitama", false));
         event.registerEntityRenderer(ModEntities.SHIGARAKI.get(), context -> new SoulBossRenderer<>(context, "shigaraki", false));
+        event.registerEntityRenderer(ModEntities.HASHIRAMA.get(), com.starkinhon.battlegroundsmod.client.HashiramaRenderer::new);
         event.registerEntityRenderer(ModEntities.MAKIMA.get(), context -> new SoulBossRenderer<>(context, "makima", true));
         event.registerEntityRenderer(ModEntities.DUMMY.get(), context -> new DummyRenderer<>(context, "steve"));
         event.registerEntityRenderer(ModEntities.DUMMY_ATTACKER.get(), context -> new DummyRenderer<>(context, "kai"));

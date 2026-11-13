@@ -89,6 +89,15 @@ public final class ModEntities {
                     .clientTrackingRange(16)
                     .build("saitama"));
 
+    // Hashirama boss (2026-11-13, end game, Vale do Fim): player sized.
+    public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.boss.HashiramaEntity>> HASHIRAMA = ENTITY_TYPES.register("hashirama",
+            () -> EntityType.Builder.of(com.starkinhon.battlegroundsmod.boss.HashiramaEntity::new, MobCategory.MONSTER)
+                    .sized(0.6f, 1.8f)
+                    .eyeHeight(1.62f)
+                    .fireImmune()
+                    .clientTrackingRange(16)
+                    .build("hashirama"));
+
     // Shigaraki boss (2026-11-12): player sized.
     public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.boss.ShigarakiEntity>> SHIGARAKI = ENTITY_TYPES.register("shigaraki",
             () -> EntityType.Builder.of(com.starkinhon.battlegroundsmod.boss.ShigarakiEntity::new, MobCategory.MONSTER)
@@ -343,6 +352,7 @@ public final class ModEntities {
         event.put(JOY_BOY.get(), SoulBoss.createAttributes().build());
         event.put(SAITAMA.get(), SoulBoss.createAttributes().build());
         event.put(SHIGARAKI.get(), SoulBoss.createAttributes().build());
+        event.put(HASHIRAMA.get(), SoulBoss.createAttributes().build());
         event.put(MAKIMA.get(), SoulBoss.createAttributes().build());
         event.put(DUMMY.get(), TrainingDummy.createAttributes().build());
         event.put(DUMMY_ATTACKER.get(), TrainingDummy.createAttributes().build());

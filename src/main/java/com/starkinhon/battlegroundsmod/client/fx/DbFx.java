@@ -153,6 +153,10 @@ public final class DbFx {
     }
 
     static void receive(int kind, int id, Vec3 pos, Vec3 dir, float a, float b, float c) {
+        if (com.starkinhon.battlegroundsmod.client.fx.hs.HsFx.handles(kind)) {
+            com.starkinhon.battlegroundsmod.client.fx.hs.HsFx.receive(kind, id, pos, dir, a, b, c);
+            return;
+        }
         if (NmFx.handles(kind)) {
             NmFx.receive(kind, id, pos, dir, a, b, c);
             return;

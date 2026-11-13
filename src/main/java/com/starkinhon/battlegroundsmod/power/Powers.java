@@ -82,6 +82,8 @@ public final class Powers {
 
     // Mob only.
     public static final Power FIGHTER = registerHidden(Fighter.create());
+    // Hashirama Senju, end-game boss only: never a soul (bosses-fim-de-jogo).
+    public static final Power HASHIRAMA = registerHidden(com.starkinhon.battlegroundsmod.power.powers.hashirama.Hashirama.create());
     // The Dragon World's enemies, two moves each (DbMobs).
     public static final Power DB_SAIBAMAN = registerHidden(com.starkinhon.battlegroundsmod.power.powers.sub.db.DbMobs.saibaman());
     public static final Power DB_BANDIT = registerHidden(com.starkinhon.battlegroundsmod.power.powers.sub.db.DbMobs.bandit());

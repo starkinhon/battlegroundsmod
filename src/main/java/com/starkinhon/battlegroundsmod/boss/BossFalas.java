@@ -116,6 +116,7 @@ public final class BossFalas {
             case "rubber_boy" -> new int[] {0x9E1B12, 0xFFD36B};
             case "one_punch" -> new int[] {0xB07A10, 0xFFF3B0};
             case "shigaraki" -> new int[] {0x5A0E0E, 0xDADCE4};
+            case "hashirama" -> new int[] {0x3E5A2C, 0xF2D49A};
             case "strongest" -> new int[] {0x1E5FD0, 0x8FE0FF};
             case "uchiha_ghost" -> new int[] {0x8A1A14, 0xFF5A3C};
             case "destruction_god" -> new int[] {0x6A2AC0, 0xE2B4FF};
@@ -152,6 +153,7 @@ public final class BossFalas {
                     case "one_punch" -> "fala.battlegroundsmod.saitama.inicio";
                     case "shigaraki" -> "fala.battlegroundsmod.shigaraki.inicio";
                     case "makima" -> "fala.battlegroundsmod.makima.inicio";
+                    case "hashirama" -> "fala.battlegroundsmod.hashirama.inicio";
                     default -> null;
                 };
                 if (opening != null) {
