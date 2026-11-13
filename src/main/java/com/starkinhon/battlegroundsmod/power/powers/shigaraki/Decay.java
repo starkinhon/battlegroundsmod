@@ -254,7 +254,7 @@ public final class Decay {
         SubNet.send(level, Shigaraki.BODY, target.getId(), touch, new Vec3(speed, ticks, 0), 0, 0, 0);
         Stun.apply(target, Math.max(stun, ticks));
         int id = target.getId();
-        float per = total / ticks;
+        float per = total * Shigaraki.DAMAGE_MULT / ticks;
         // The damage goes in a few blows (every CHUNK ticks), not a tiny one each tick: the Escudo de tier takes a flat
         // part off every blow, so 39 blows of 0.1 against a higher tier did nothing at all (#291's test: Madara 225 ->
         // 225 even at the same tier only 8.6 of it went in).

@@ -28,7 +28,7 @@ import net.minecraft.world.phys.Vec3;
 public final class Onda {
     static final double SPEED = 34, RANGE = 46, PUSH_R = 26, HALF = 0.5, STUN_R = 14;
     private static final int BREATH = 6, LENGTH = 52;
-    private static final float DAMAGE = 22;
+    private static final float DAMAGE = 30;
 
     private Onda() {
     }
@@ -71,7 +71,7 @@ public final class Onda {
                 }
                 pushed.add(t.getId());
                 double k = 1 - dist / PUSH_R;
-                Combat.hurt(caster, t, (float) (DAMAGE * (0.4 + 0.6 * k)));
+                Combat.hurt(caster, t, (float) (DAMAGE * Shigaraki.DAMAGE_MULT * (0.4 + 0.6 * k)));
                 Combat.push(t, to, 0.5 + 1.6 * k, 0.45 + 0.5 * k);
                 Stun.apply(t, dist < STUN_R ? 50 : 25);
             }

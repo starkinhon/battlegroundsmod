@@ -38,9 +38,12 @@ public final class TentacleFx {
         final double start;
         final Vec3 feet;
         final float yaw;
+        // the entity the tentacles follow (+1; 0 = none)
+        final int mark;
         double cutAt = -1;
 
-        Cast(int caster, double start, Vec3 feet, float yaw) {
+        Cast(int caster, double start, Vec3 feet, float yaw, int mark) {
+            this.mark = mark;
             this.caster = caster;
             this.start = start;
             this.feet = feet;
@@ -81,12 +84,12 @@ public final class TentacleFx {
     }
 
     // Shigaraki.TENTACLES: a = 0 starts (pos = feet, dir = facing), 1 cut short.
-    static void receive(int id, Vec3 pos, Vec3 dir, float a) {
+    static void receive(int id, Vec3 pos, Vec3 dir, float a, float b) {
         prepare();
         if (a < 0.5f) {
             CASTS.removeIf(c -> c.caster == id);
             float yaw = (float) Math.toDegrees(Math.atan2(-dir.x, dir.z));
-            CASTS.add(new Cast(id, ShigFx.clock(), pos, yaw));
+            CASTS.add(new Cast(id, ShigFx.clock(), pos, yaw, Math.round(b)));
         } else {
             for (Cast c : CASTS) {
                 if (c.caster == id && c.cutAt < 0) {
@@ -276,13 +279,20 @@ public final class TentacleFx {
                 double yr = Math.toRadians(c.yaw);
                 float cs = (float) Math.cos(yr), sn = (float) Math.sin(yr);
                 float fx = (float) (c.feet.x - camera.x), fy = (float) (c.feet.y - camera.y), fz = (float) (c.feet.z - camera.z);
+                float[] aim = null;
+                var lvl = net.minecraft.client.Minecraft.getInstance().level;
+                if (c.mark > 0 && lvl != null && lvl.getEntity(c.mark - 1) instanceof net.minecraft.world.entity.LivingEntity m && m.isAlive()) {
+                    float pt = net.minecraft.client.Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(true);
+                    Vec3 mp = m.getPosition(pt);
+                    aim = TentacleSpine.toFrame(mp.x, mp.y + 0.4, mp.z, c.feet.x, c.feet.y, c.feet.z, c.yaw);
+                }
                 for (int i = 0; i < TentacleSpine.DEFS.length; i++) {
                     TentacleSpine.Def d = TentacleSpine.DEFS[i];
                     float g = d.grow(t) * cut;
                     if (g <= 0.001f) {
                         continue;
                     }
-                    TentacleSpine.spine(d, t, S);
+                    TentacleSpine.spine(d, t, aim, S);
                     TentacleSpine.frames(S, N, B);
                     P.clear();
                     NB.clear();

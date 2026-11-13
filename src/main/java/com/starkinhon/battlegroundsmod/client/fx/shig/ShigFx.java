@@ -57,7 +57,7 @@ public final class ShigFx {
                 }
             }
             case Shigaraki.REGEN -> RegenFx.receive(id, b);
-            case Shigaraki.TENTACLES -> TentacleFx.receive(id, pos, dir, a);
+            case Shigaraki.TENTACLES -> TentacleFx.receive(id, pos, dir, a, b);
             case Shigaraki.END -> EndFx.receive(id, pos, dir, a, b, c);
             default -> {
             }

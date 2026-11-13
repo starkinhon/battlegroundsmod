@@ -7,6 +7,7 @@ package com.starkinhon.battlegroundsmod.power.powers.shigaraki;
 public final class TentacleSpine {
     public static final int KK = 40;
     public static final float CAST_LEN = 9.2f;
+    public static final float THICK = 1.35f;
     private static final int DENSE = 140;
 
     public record Key(float t, float[] apex, float[] mid, float[] tgt) {
@@ -19,7 +20,9 @@ public final class TentacleSpine {
         public final int seed;
         public final float[] root, dir;
         public final Key[] keys;
-        public final float delay, Rr = 0.45f, Rm, tipK = 0.5f, handK = 1;
+        // THICK: thicker than the preview's (Stark, 2026-11-13: "Aumentar os Tentaculos"), the hands with it; the hitbox
+        // (Tentaculos) reads the same radius, so it grows too.
+        public final float delay, Rr = 0.45f * THICK, Rm, tipK = 0.5f, handK = 1.25f;
         public float L;
 
         Def(String name, int seed, float[] root, float[] dir, Key[] keys, float delay, float Rm) {
@@ -30,7 +33,7 @@ public final class TentacleSpine {
             this.dir = new float[] {dir[0] / n, dir[1] / n, dir[2] / n};
             this.keys = keys;
             this.delay = delay;
-            this.Rm = Rm;
+            this.Rm = Rm * THICK;
         }
 
         // The tentacle's radius d blocks along it (RadF).
@@ -73,7 +76,7 @@ public final class TentacleSpine {
         float[][] dense = new float[DENSE + 1][3];
         float[] cum = new float[DENSE + 1];
         for (Def d : DEFS) {
-            d.L = Math.round(sample(d, 0, false, dense, cum));
+            d.L = Math.round(sample(d, 0, false, null, dense, cum));
         }
     }
 
@@ -102,12 +105,27 @@ public final class TentacleSpine {
 
     // The KK points of the spine at t (preview frame), the ground flattening included, into out[KK][3].
     public static void spine(Def d, float t, float[][] out) {
+        spine(d, t, null, out);
+    }
+
+    // The same, homing on aim (the target in the preview frame, or null): Stark 2026-11-13, "os tentáculos teleguiados
+    // no alvo que ele tá lutando". From the strike on, every tentacle's target, middle and apex move with the target
+    // (each keeps its own spread around it), so the hands bend after them instead of hitting the preview's fixed spot.
+    public static void spine(Def d, float t, float[] aim, float[][] out) {
         float[][] dense = new float[DENSE + 1][3];
         float[] cum = new float[DENSE + 1];
-        sample(d, t, true, dense, cum);
+        sample(d, t, true, aim, dense, cum);
+        // homing stretches or shrinks the curve: the drawn length follows it, so the hands still end on the target
+        float stretch = 1;
+        if (aim != null) {
+            float[][] base = new float[DENSE + 1][3];
+            float[] baseCum = new float[DENSE + 1];
+            float bl = sample(d, t, true, null, base, baseCum);
+            stretch = bl > 1e-3f ? clamp(cum[DENSE] / bl, 0.5f, 2f) : 1;
+        }
         int j = 0;
         for (int k = 0; k < KK; k++) {
-            float dd = k / (float) (KK - 1) * d.L;
+            float along = k / (float) (KK - 1) * d.L, dd = along * stretch;
             while (j < DENSE - 1 && cum[j + 1] < dd) {
                 j++;
             }
@@ -123,7 +141,7 @@ public final class TentacleSpine {
                     out[k][c] = dense[DENSE][c] + tn[c] * (dd - cum[DENSE]);
                 }
             }
-            out[k][1] = Math.max(out[k][1], d.radius(dd) * 0.5f); // flattens on the ground instead of going through
+            out[k][1] = Math.max(out[k][1], d.radius(along) * 0.5f); // flattens on the ground instead of going through
         }
     }
 
@@ -172,9 +190,12 @@ public final class TentacleSpine {
 
     // sampleCurve: a centripetal Catmull-Rom through root, root + 2.5 dir, apex, mid, target, sampled at DENSE + 1
     // points (with the slow writhing wave when wave), and the arc length up to each.
-    private static float sample(Def d, float t, boolean wave, float[][] dense, float[] cum) {
+    private static float sample(Def d, float t, boolean wave, float[] aim, float[][] dense, float[] cum) {
         float[][] k = new float[3][3];
         at(d, t, k);
+        if (aim != null) {
+            home(t, aim, k);
+        }
         float[][] P = {d.root.clone(), v(d.root[0] + d.dir[0] * 2.5f, d.root[1] + d.dir[1] * 2.5f, d.root[2] + d.dir[2] * 2.5f), k[0], k[1], k[2]};
         for (int i = 0; i <= DENSE; i++) {
             float p = i / (float) DENSE;
@@ -188,6 +209,34 @@ public final class TentacleSpine {
             cum[i] = i == 0 ? 0 : cum[i - 1] + dist(dense[i], dense[i - 1]);
         }
         return cum[DENSE];
+    }
+
+    // Where the preview's tentacles all strike at (the dummy, about 20 blocks ahead on the ground).
+    private static final float[] REF = {0, 0.4f, 20};
+
+    // Moves the keys (apex, middle, target) after the aim: nothing while they rise (before 2.2 s), all of it from 3.4 s.
+    // The aim is kept in front and within the tentacles' reach.
+    private static void home(float t, float[] aim, float[][] k) {
+        float w = smooth((t - 2.2f) / 1.2f);
+        if (w <= 0) {
+            return;
+        }
+        // as far as the Tentáculos' shockwave throws them (some 30-40 blocks)
+        float ax = clamp(aim[0], -30, 30), ay = clamp(aim[1], 0, 10), az = clamp(aim[2], 6, 38);
+        float dx = (ax - REF[0]) * w, dy = (ay - REF[1]) * w, dz = (az - REF[2]) * w;
+        float[] share = {0.25f, 0.55f, 1};
+        for (int i = 0; i < 3; i++) {
+            k[i][0] += dx * share[i];
+            k[i][1] += dy * share[i];
+            k[i][2] += dz * share[i];
+        }
+    }
+
+    // A world point into the preview frame of feet + yaw (toWorld's inverse).
+    public static float[] toFrame(double x, double y, double z, double fx, double fy, double fz, float yawDeg) {
+        double yr = Math.toRadians(yawDeg), c = Math.cos(yr), s = Math.sin(yr);
+        double dx = x - fx, dz = z - fz;
+        return new float[] {(float) (dx * c + dz * s), (float) (y - fy), (float) (-dx * s + dz * c)};
     }
 
     // three.js CatmullRomCurve3.getPoint, curveType 'centripetal', not closed.

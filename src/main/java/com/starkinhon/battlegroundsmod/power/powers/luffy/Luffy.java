@@ -193,7 +193,10 @@ public final class Luffy {
         SubCommon.pose(caster, "luffy.carga" + (startGear + 1));
         int[] shown = {startGear};
         Tasks.add(age -> {
-            if (guard.broken() || data.interrupts != stunAt || Stun.is(caster)) {
+            // A boss holds through a plain stun (armor while charging: the Madara stunned the Joy Boy out of 20 Pistols and
+            // 11 Bazookas a fight); a real interrupt still cuts it.
+            boolean armored = caster instanceof com.starkinhon.battlegroundsmod.boss.SoulBoss;
+            if (guard.broken() || data.interrupts != stunAt || !armored && Stun.is(caster)) {
                 HOLDING.remove(caster);
                 SubNet.send(level, SubNet.LUFFY_CHARGE, caster.getId(), caster.position(), Vec3.ZERO, key, shown[0], 2);
                 return true;

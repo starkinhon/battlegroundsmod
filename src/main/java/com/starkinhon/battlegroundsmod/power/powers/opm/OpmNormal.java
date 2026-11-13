@@ -85,6 +85,9 @@ public final class OpmNormal {
         SubCommon.busy(caster, 28);
         SubNet.send(level, SubNet.OPM_SOCOS, caster.getId(), caster.position(), caster.getLookAngle(), first == null ? -1 : first.getId(), 0, 0);
         SubCommon.sound(level, caster.position(), SoundEvents.PLAYER_ATTACK_SWEEP, 0.8f, 1.6f);
+        // The small punches' damage lands every 4th punch and with the last (the Escudo de tier takes a flat part off every
+        // blow: thirteen 3s did nothing against a higher tier).
+        java.util.Map<LivingEntity, Float> owed = new java.util.HashMap<>();
         Tasks.add(age -> {
             if (guard.broken()) {
                 return true;
@@ -98,7 +101,13 @@ public final class OpmNormal {
                 }
                 boolean last = i == NSN - 1;
                 for (LivingEntity target : Combat.inCone(caster, REACH, 0.5)) {
-                    Combat.hurt(caster, target, last ? 8f : 3f);
+                    float due = owed.getOrDefault(target, 0f) + (last ? 10f : 3.5f);
+                    if (last || i % 4 == 3) {
+                        owed.remove(target);
+                        Combat.hurt(caster, target, due);
+                    } else {
+                        owed.put(target, due);
+                    }
                     if (last) {
                         launch(level, caster, target, flatFrom(caster, target).scale(0.9).add(0, 0.25, 0));
                         SubNet.send(level, SubNet.OPM_FLASH, target.getId(), Combat.center(target), Vec3.ZERO, 0.95f, 1, 0);
@@ -143,7 +152,7 @@ public final class OpmNormal {
             if (data != null && (data.busyTicks > 0 || Stamina.holding(target))) {
                 PowerLogic.interrupt(target);
             }
-            Combat.hurt(caster, target, 9f);
+            Combat.hurt(caster, target, 14f);
             Stun.apply(target, 30);
             launch(level, caster, target, flatFrom(caster, target).scale(0.03).add(0, 1.05, 0));
             Vec3 c = target.position().add(0, 1.6, 0).subtract(flatFrom(caster, target).scale(0.35));
@@ -175,7 +184,7 @@ public final class OpmNormal {
                 return true;
             }
             Defense.breakGuard(target, caster);
-            Combat.hurt(caster, target, 8f);
+            Combat.hurt(caster, target, 12f);
             // (bosses take half: 25 left, still a real stun)
             Stun.apply(target, 50);
             Vec3 dir = flatFrom(caster, target);
@@ -222,7 +231,7 @@ public final class OpmNormal {
                 return false;
             }
             Vec3 head = enemy.position().add(0, enemy.getBbHeight() * 0.92, 0).subtract(dir.scale(0.3));
-            Combat.hurt(caster, enemy, 12f);
+            Combat.hurt(caster, enemy, 18f);
             boolean boss = enemy instanceof SoulBoss b && b.isBoss();
             if (boss) {
                 // Against a boss the flick only pushes (and a real stun).

@@ -142,6 +142,16 @@ abstract class TacticsBase implements BossTactics {
         return data.hasPower() && slot >= 0 && slot < data.cooldowns.length && data.cooldowns[slot] <= 0;
     }
 
+    // A counter of theirs is ready (the Madara's Susanoo, the Saitama's flick): a big slow blow only feeds it (test
+    // 2026-11-12: the Forte of Joy Boy and Saitama did 0 twelve times a fight, the Susanoo 6-8 ticks later).
+    protected static boolean counterReady(LivingEntity target) {
+        if (target == null || !target.hasData(ModAttachments.POWER)) {
+            return false;
+        }
+        String power = target.getData(ModAttachments.POWER).power;
+        return "uchiha_ghost".equals(power) && theirReady(target, 2) || "one_punch".equals(power) && theirReady(target, 7);
+    }
+
     // A weighted pick among the styles (each weight already set for the situation), rarely the same one twice in a row.
     protected int pick(double[] weights, int current) {
         if (current >= 0 && current < weights.length) {

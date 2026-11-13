@@ -121,8 +121,12 @@ public final class LuffyMoves {
     // when each target last showed the haki (a gatling lands many times a second: one burst every 2 ticks)
     private static final java.util.Map<LivingEntity, Long> HAKI_SHOWN = new java.util.WeakHashMap<>();
 
+    // Every punch of the kit (Stark 2026-11-12: in the same tier the Madara out-damaged him ~1.6x in 6 recorded fights, DPS
+    // 2.8-3.1 against 4.1-5.3, with the movement already equal).
+    private static final float DAMAGE_MULT = 1.4f;
+
     private static void hit(LivingEntity caster, LivingEntity target, float damage, int stun) {
-        Combat.hurt(caster, target, k(caster) > 1.5 ? damage * 3 : damage);
+        Combat.hurt(caster, target, (k(caster) > 1.5 ? damage * 3 : damage) * DAMAGE_MULT);
         if (stun > 0) {
             Stun.apply(target, stun);
         }
@@ -303,16 +307,28 @@ public final class LuffyMoves {
         SubCommon.busy(caster, end + 6);
         Freeze.holdLookFree(caster, end + 4);
         double reach = REACH[1][gear] * k(caster);
+        // The small punches' damage lands in blows every 4 ticks (the Escudo de tier takes a flat part off every blow, so
+        // a dozen 1-2 damage punches did nothing against a higher tier; armor also eats small blows more).
+        java.util.Map<LivingEntity, Float> owed = new java.util.HashMap<>();
         Tasks.add(age -> {
             if (guard.broken()) {
                 return true;
             }
             LivingEntity t = target != null && target.isAlive() ? target : null;
+            if (age < end && age % 4 == 3 || age >= end) {
+                owed.forEach((e, amount) -> {
+                    if (e.isAlive()) {
+                        hit(caster, e, amount, 0);
+                    }
+                });
+                owed.clear();
+            }
             if (age < end) {
                 if (age % every[gear] == 0) {
                     List<LivingEntity> in = t != null ? struck(caster, level, t, aim, gear == 2 ? 2.2 : 1.4) : Combat.inCone(caster, reach, 0.85);
                     for (LivingEntity e : in) {
-                        hit(caster, e, per[gear], 8);
+                        owed.merge(e, per[gear], Float::sum);
+                        Stun.apply(e, 8);
                         // held in front of the fists (no knockback: they don't fall out of the barrage); G4 holds them up
                         double up = gear == 3 ? Math.min(0.12, 2.5 - (e.getY() - caster.getY()) * 0.05) : gear == 1 ? 0.04 : Math.min(0, e.getDeltaMovement().y);
                         e.setDeltaMovement(dir.scale(gear == 0 ? 0.04 : 0.02).add(0, up, 0));

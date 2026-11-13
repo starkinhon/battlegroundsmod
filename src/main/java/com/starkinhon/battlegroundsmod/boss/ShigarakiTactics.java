@@ -97,6 +97,9 @@ final class ShigarakiTactics extends TacticsBase {
                 return 0;
             }
             case "toque" -> {
+                if (!com.starkinhon.battlegroundsmod.power.powers.shigaraki.Toque.ready(boss)) {
+                    return 0;
+                }
                 m *= held || ai.stunned() ? 2.5 : 1;
                 m *= distance <= 10 ? 1.2 : 1;
             }
@@ -110,17 +113,19 @@ final class ShigarakiTactics extends TacticsBase {
                 m *= distance <= 12 ? 1.3 : 0.8;
             }
             case "absorver" -> {
-                if (Absorver.holding(boss)) {
+                // out of its 18 blocks or out of sight it only whiffs (b_miss: 10 of 12 casts in the 2026-11-13 retest)
+                if (Absorver.holding(boss) || !Absorver.ready(boss) || distance > 16 || target == null || !boss.hasLineOfSight(target)) {
                     return 0;
                 }
                 m *= strongFoe ? 1.6 : 1;
                 m *= distance <= 14 ? 1.2 : 0.6;
             }
             case "usar" -> {
-                if (!Absorver.holding(boss)) {
+                if (!Absorver.holding(boss) || !Absorver.ready(boss)) {
                     return 0;
                 }
-                m = 2.2;
+                // a stolen technique is the point of the steal: use it while it lasts (only 2 uses in 6 steals before)
+                m = 4.0;
             }
             case "tentaculos" -> {
                 m *= enemies >= 2 ? 1.5 : 1;
@@ -130,14 +135,25 @@ final class ShigarakiTactics extends TacticsBase {
             default -> {
             }
         }
+        if ("forte".equals(name) && counterReady(ai.target())) {
+            m *= 0.15;
+        }
         m *= jitter();
         return score * m;
     }
 
     @Override
     public BossOrder.Order order(SoulBossAI ai, String name) {
+        ShigarakiEntity me = (ShigarakiEntity) boss;
+        long now = boss.level().getGameTime();
         if ("fim".equals(name)) {
             BossFalas.sayNow(boss, "fala.battlegroundsmod.shigaraki.fim");
+            // armored once the fingers touch (the kneel stays open to the blow that cuts it)
+            me.armorFrom = me.kneelUntil;
+            me.armorUntil = now + 10 + 192;
+        } else if ("tentaculos".equals(name)) {
+            me.armorFrom = now;
+            me.armorUntil = now + 14 + 184;
         }
         return null;
     }

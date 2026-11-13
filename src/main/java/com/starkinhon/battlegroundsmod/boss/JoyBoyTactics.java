@@ -144,6 +144,9 @@ final class JoyBoyTactics extends TacticsBase {
         } else {
             m *= "forte".equals(name) || "barragem".equals(name) ? 0.8 : 1.15;
         }
+        if ("forte".equals(name) && counterReady(ai.target())) {
+            m *= 0.15;
+        }
         m *= jitter();
         return score * m;
     }

@@ -48,7 +48,7 @@ final class Usar {
                 Vec3 at = t != null && t.isAlive() ? Combat.center(t) : to;
                 SubCommon.sound(level, at, SoundEvents.GENERIC_EXPLODE.value(), 2f, 0.8f);
                 for (LivingEntity e : Combat.inRadius(level, at, 4.4, caster)) {
-                    Combat.hurt(caster, e, e == t ? 42 : 26);
+                    Combat.hurt(caster, e, (e == t ? 42 : 26) * Shigaraki.DAMAGE_MULT);
                     Combat.pushFrom(e, caster.position(), 0.9, 0.5);
                     e.igniteForSeconds(6);
                     Stun.apply(e, 25);
@@ -59,7 +59,7 @@ final class Usar {
             Tasks.later(2, () -> {
                 if (t != null && t.isAlive()) {
                     SubCommon.sound(level, t.position(), SoundEvents.LIGHTNING_BOLT_IMPACT, 1.5f, 1.2f);
-                    Combat.hurt(caster, t, 34);
+                    Combat.hurt(caster, t, 34 * Shigaraki.DAMAGE_MULT);
                     Stun.apply(t, 48);
                 }
             });
@@ -74,7 +74,7 @@ final class Usar {
                     SubCommon.sound(level, p, SoundEvents.AMETHYST_BLOCK_BREAK, 0.6f, 1.3f);
                     for (LivingEntity e : Combat.inRadius(level, p.add(0, 0.8, 0), 1.3, caster)) {
                         if (e != t && hit.add(e.getId())) {
-                            Combat.hurt(caster, e, 14);
+                            Combat.hurt(caster, e, 14 * Shigaraki.DAMAGE_MULT);
                             Stun.apply(e, 25);
                         }
                     }
@@ -83,7 +83,7 @@ final class Usar {
             Tasks.later(12, () -> {
                 if (t != null && t.isAlive()) {
                     SubCommon.sound(level, t.position(), SoundEvents.GLASS_BREAK, 1.5f, 0.5f);
-                    Combat.hurt(caster, t, 30);
+                    Combat.hurt(caster, t, 30 * Shigaraki.DAMAGE_MULT);
                     Stun.apply(t, 60);
                     Freeze.hold(t, 60);
                 }
