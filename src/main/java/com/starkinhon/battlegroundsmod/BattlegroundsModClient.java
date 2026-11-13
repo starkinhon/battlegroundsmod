@@ -183,6 +183,9 @@ public class BattlegroundsModClient {
                 com.starkinhon.battlegroundsmod.client.FlightPose::onRenderPre);
         NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.client.event.RenderPlayerEvent.Post.class,
                 com.starkinhon.battlegroundsmod.client.FlightPose::onRenderPost);
+        // The combat flight: the camera stays turned to the locked target.
+        NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.client.event.RenderFrameEvent.Pre.class,
+                com.starkinhon.battlegroundsmod.client.AirFightClient::onFrame);
         NeoForge.EVENT_BUS.addListener(BattlegroundsModClient::onClientTick);
         // Shenlong's summoning (the world dims, the dragon rises, the wish menu).
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.ShenlongScene::onRenderLevel);

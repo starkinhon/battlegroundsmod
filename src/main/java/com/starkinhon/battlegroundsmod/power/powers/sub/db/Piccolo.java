@@ -216,8 +216,13 @@ public final class Piccolo {
                     // and full on bosses too: halved (45 -> 22 ticks) it fell under Stun.INTERRUPT_TICKS, so it never
                     // counted as a stun and the C refused ("the X's stun is tiny").
                     Stun.apply(target, 60, true);
-                    // Up, but not out of sight: the C has to find it (it flew 1.0 up and was hard to aim at).
-                    Combat.push(target, target.position().subtract(caster.position()), 0.6, 0.6);
+                    if (com.starkinhon.battlegroundsmod.combat.AirFight.slamsDown(caster, target)) {
+                        // In the air (Stark 2026-11-13): the grab drives it into the ground, from any height.
+                        com.starkinhon.battlegroundsmod.combat.AirFight.slam(level, caster, target);
+                    } else {
+                        // Up, but not out of sight: the C has to find it (it flew 1.0 up and was hard to aim at).
+                        Combat.push(target, target.position().subtract(caster.position()), 0.6, 0.6);
+                    }
                     Vec3 c = Combat.center(target);
                     DbCommon.hit(level, c, 0.8f, Db.WHITE);
                     SubNet.send(level, SubNet.KI_BOOM, 0, c, new Vec3(DbCommon.groundY(level, c), 0, 0), 0.5f, Db.WHITE, 1000 + SubCommon.RANDOM.nextInt(100));

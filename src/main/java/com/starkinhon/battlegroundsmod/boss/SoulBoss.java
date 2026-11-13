@@ -159,6 +159,11 @@ public abstract class SoulBoss extends Monster {
         builder.define(DATA_PHASE, 0);
     }
 
+    // Its air fight (null until it first flies, or for souls that don't fly).
+    public AirCombat air() {
+        return air;
+    }
+
     // While AirCombat flies it, no goal may walk or jump it (the stroll would steer it on the ground's way).
     void airControl(boolean owned) {
         if (owned) {

@@ -111,6 +111,17 @@ public final class Melee {
     // Runs at the target for up to ticksMax ticks, then throws the punch.
     private static void chase(LivingEntity attacker, LivingEntity target, ComboSpec spec) {
         PowerData data = attacker.getData(ModAttachments.POWER);
+        if (AirFight.lunge(attacker, target)) {
+            // the combat flight: a lunge through the air, then the punch
+            data.punchDelay = 6;
+            Tasks.later(4, () -> {
+                data.punchDelay = 0;
+                if (attacker.isAlive() && !Stun.is(attacker)) {
+                    swing(attacker, target.isAlive() ? target : null, spec);
+                }
+            });
+            return;
+        }
         ComboSpec.Passo passo = spec.passo();
         data.punchDelay = passo.ticksMax() + 1;
         SkillSounds.play(Combat.level(attacker), spec.sons(), "passo", 0, 0, onde -> attacker.position(), List.of());
@@ -212,6 +223,7 @@ public final class Melee {
         Stamina.gain(attacker, StaminaSpec.get().ganhoAcertoPct());
         LivingEntity hit = target;
         markHit(attacker, hit);
+        AirFight.onMeleeHit(attacker, hit);
         com.starkinhon.battlegroundsmod.power.powers.sub.nr.NrCommon.onPunchLanded(attacker, hit);
         // Guarded: the defense already played its effects; no stun, no hitstop.
         if (Defense.blockedThisTick(hit)) {
@@ -299,6 +311,10 @@ public final class Melee {
     // Short wind-up, then a heavy punch that sends the target flying. Holding the base attack key charges it: up to
     // STRONG_CHARGE_TICKS more, for up to STRONG_CHARGE_BONUS more damage and a harder throw. Bosses never hold it.
     private static boolean strong(LivingEntity player, ServerLevel level) {
+        if (AirFight.active(player)) {
+            // the combat flight: behind the target, or the Martelo
+            return AirFight.strong(player, level);
+        }
         if (SwordArts.held(player)) {
             return SwordArts.strong(player, level);
         }
@@ -383,6 +399,10 @@ public final class Melee {
     }
 
     private static boolean barrageMove(LivingEntity player, ServerLevel level) {
+        if (AirFight.active(player)) {
+            // the combat flight: homing ki balls
+            return AirFight.barrage(player, level);
+        }
         if (SwordArts.held(player)) {
             return SwordArts.barrage(player, level);
         }

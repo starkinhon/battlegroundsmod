@@ -102,6 +102,8 @@ public final class FlightClient {
 
     public static void clear() {
         STATES.clear();
+        AirFightClient.clear();
+        dodgeT = 0;
         active = false;
         knockTicks = 0;
         slam = false;
@@ -173,6 +175,7 @@ public final class FlightClient {
             return false;
         }
         boolean now = player.getAbilities().flying && !player.isCreative() && !player.isSpectator() && !player.isPassenger();
+        AirFightClient.tick(player, now);
         if (!now) {
             if (active) {
                 land();
@@ -232,6 +235,17 @@ public final class FlightClient {
         float boostV = boostSpeed(player);
 
         boolean used = false;
+        LivingEntity lock = tired ? null : AirFightClient.target();
+        boolean has;
+        if (lock != null) {
+            // The combat flight (AirFightClient): around the target, no boost; Ctrl is the dodge.
+            if (boost) {
+                setBoost(player, false, boostV);
+            }
+            used = combat(player, lock, sprintTap, forward, right, up, cruise);
+            has = true;
+        } else {
+        dodgeT = 0;
         if (sprintTap) {
             used = true;
             setBoost(player, !boost && !tired, boostV);
@@ -249,7 +263,7 @@ public final class FlightClient {
         double wy = look.y * forward + up * 0.8;
         double wz = look.z * forward + rz * right;
         double wl = Math.sqrt(wx * wx + wy * wy + wz * wz);
-        boolean has = wl > 0.1;
+        has = wl > 0.1;
         if (has) {
             wx /= wl;
             wy /= wl;
@@ -292,6 +306,7 @@ public final class FlightClient {
             // floating: rising and sinking a little
             vy += Math.sin(player.tickCount * DT * 2.1) * 0.4 * DT;
         }
+        }
         boostAmt += ((boost ? 1 : 0) - boostAmt) * damp(boost ? 5 : 2.5f);
         if (!Double.isFinite(vx + vy + vz)) {
             vx = vy = vz = 0;
@@ -325,6 +340,135 @@ public final class FlightClient {
             ScreenFx.sustainBlur(player.getEyePosition().add(dir.scale(50)), blur * 0.35f);
         }
         wind(player);
+        return used;
+    }
+
+    // ---------- the combat flight (AirFightClient; the approved page's combatMove, doDash, doDodge) ----------
+
+    private static int dodgeT, dodgeCd, dodgeSide = 1;
+    private static Vec3 dodgeVel = Vec3.ZERO;
+    private static double lockD = -1;
+
+    // The server started the ki dash (AirFight.dash): the kick and the ring now, the homing in combat.
+    static void dashStart() {
+        Minecraft minecraft = Minecraft.getInstance();
+        LocalPlayer player = minecraft.player;
+        if (player == null || !active) {
+            return;
+        }
+        Vec3 dir = player.getLookAngle();
+        FlightFx.burst(player.position().add(0, 1, 0).add(dir.scale(0.6)), dir, 1);
+        boom(player.position(), true);
+        ScreenFx.fovKick(14, 12);
+        ScreenFx.radialBlur(player.getEyePosition().add(dir.scale(30)), 0.6f, 10);
+    }
+
+    static void dashEnd() {
+        vx *= 0.3;
+        vy *= 0.3;
+        vz *= 0.3;
+    }
+
+    public static boolean dodging() {
+        return dodgeT > 0;
+    }
+
+    // Sets the speed for this tick around the locked target. Returns whether the Ctrl tap was used (the dodge).
+    private static boolean combat(LocalPlayer player, LivingEntity target, boolean sprintTap, float forward, float right, float up, float cruise) {
+        Vec3 me = player.position().add(0, 0.9, 0);
+        Vec3 to = target.position().add(0, target.getBbHeight() / 2, 0).subtract(me);
+        double dist = Math.max(1.0E-3, to.length());
+        Vec3 fwd = to.scale(1 / dist);
+        Vec3 flat = new Vec3(fwd.x, 0, fwd.z);
+        flat = flat.lengthSqr() < 1.0E-4 ? new Vec3(0, 0, 1) : flat.normalize();
+        Vec3 side = new Vec3(-flat.z, 0, flat.x);
+        if (dodgeCd > 0) {
+            dodgeCd--;
+        }
+        boolean used = false;
+        LivingEntity dash = AirFightClient.dashing();
+        if (sprintTap && dodgeCd <= 0 && dash == null) {
+            // The dodge: 0.22 s at 38 b/s to the side pressed (back with S, alternating sides with nothing), 0.34 s untouchable.
+            used = true;
+            Vec3 dir;
+            if (right != 0) {
+                dir = side.scale(Math.signum(right));
+            } else if (forward < 0) {
+                dir = fwd.scale(-1);
+            } else if (forward > 0) {
+                dir = side.scale(dodgeSide).add(fwd.scale(0.6)).normalize();
+                dodgeSide = -dodgeSide;
+            } else {
+                dir = side.scale(dodgeSide);
+                dodgeSide = -dodgeSide;
+            }
+            dir = dir.add(0, up * 0.5, 0).normalize();
+            dodgeVel = dir.scale(38);
+            dodgeT = 5;
+            dodgeCd = 10;
+            PacketDistributor.sendToServer(new ModPayloads.AirDodge(true));
+            FlightFx.burst(player.position().add(0, 1, 0), dir.scale(-1), 0.55f);
+            Minecraft.getInstance().level.playLocalSound(player.getX(), player.getY(), player.getZ(), SoundEvents.PLAYER_ATTACK_SWEEP,
+                    SoundSource.PLAYERS, 0.8f, 1.7f, false);
+            ScreenFx.fovKick(6, 6);
+        }
+        if (dodgeT > 0) {
+            dodgeT--;
+            vx = dodgeVel.x;
+            vy = dodgeVel.y;
+            vz = dodgeVel.z;
+            strafe = strafe + ((float) Math.signum(dodgeVel.dot(side)) - strafe) * damp(10);
+            return used;
+        }
+        if (dash != null) {
+            // The ki dash: 62 b/s, homing on the target, ends on it.
+            Vec3 tc = dash.position().add(0, dash.getBbHeight() / 2, 0).subtract(me);
+            double l = tc.length();
+            if (l < 2.0) {
+                vx *= 0.3;
+                vy *= 0.3;
+                vz *= 0.3;
+            } else {
+                Vec3 want = tc.scale(62 / l);
+                float k = damp(12);
+                vx += (want.x - vx) * k;
+                vy += (want.y - vy) * k;
+                vz += (want.z - vz) * k;
+            }
+            return used;
+        }
+        double top = Math.max(16, cruise * 1.1);
+        if (SkillAnimations.guarding(player)) {
+            top *= 0.35;
+        }
+        Vec3 wish = side.scale(right).add(0, up, 0);
+        if (forward > 0 && dist > 2.4 || forward < 0) {
+            wish = wish.add(fwd.scale(forward));
+        }
+        if (right != 0) {
+            // circling: the distance it had when the circling started is kept
+            if (lockD < 0) {
+                lockD = dist;
+            }
+            if (forward != 0) {
+                lockD = dist;
+            }
+            wish = wish.add(fwd.scale(Mth.clamp((dist - lockD) * 0.25, -0.6, 0.6)));
+        } else {
+            lockD = -1;
+        }
+        double wl = wish.length();
+        if (wl > 1) {
+            wish = wish.scale(1 / wl);
+        }
+        float k = damp(wl > 0.1 ? 8 : 6);
+        vx += (wish.x * top - vx) * k;
+        vy += (wish.y * top - vy) * k;
+        vz += (wish.z * top - vz) * k;
+        if (wl < 0.1) {
+            vy += Math.sin(player.tickCount * DT * 2.1) * 0.4 * DT;
+        }
+        strafe = strafe + (right - strafe) * damp(4);
         return used;
     }
 

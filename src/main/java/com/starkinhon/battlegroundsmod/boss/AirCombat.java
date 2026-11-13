@@ -2,7 +2,10 @@ package com.starkinhon.battlegroundsmod.boss;
 
 import java.util.Set;
 
+import com.starkinhon.battlegroundsmod.combat.AirFight;
 import com.starkinhon.battlegroundsmod.combat.Combat;
+import com.starkinhon.battlegroundsmod.combat.Defense;
+import com.starkinhon.battlegroundsmod.combat.Intangible;
 import com.starkinhon.battlegroundsmod.combat.Stun;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
@@ -43,12 +46,14 @@ import net.neoforged.neoforge.network.PacketDistributor;
 // draw the flight's pose, shell, trail and rings on it like on a player (client/FlightPose, FlightFx).
 // It also flies the sky passers (universe/SkyPassers) while they pass: they only follow the speed it is given.
 public final class AirCombat {
-    public static final Set<String> FLIERS = Set.of("goku", "vegeta", "piccolo", "kuririn", "freeza");
+    // Bills too (Stark 2026-11-13: "o Bills também faz isso"), the only boss among them.
+    public static final Set<String> FLIERS = Set.of("goku", "vegeta", "piccolo", "kuririn", "freeza", "bills");
     private static final double DT = 0.05;
 
     enum St { CHAO, DECOLA, AR, MERGULHO }
 
-    enum Act { NONE, INVESTIDA, MARTELO, RAJADA, SUMICO, PERSEGUE, CHOQUE }
+    // RECUA: off to a distance, then the long-range beam (the combat flight's prévia v2: Vegeta backs off for the Final Flash)
+    enum Act { NONE, INVESTIDA, MARTELO, RAJADA, SUMICO, PERSEGUE, CHOQUE, RECUA }
 
     private final SoulBoss boss;
     St st = St.CHAO;
@@ -70,15 +75,24 @@ public final class AirCombat {
     // the target's speed in blocks per second (from how it moved: the server doesn't move a flying player)
     private Vec3 tPrev;
     private Vec3 tVel = Vec3.ZERO;
-    // whoever the Martelo slammed, until it hits the ground
-    private LivingEntity slammed;
     // whoever it fought last tick (see step)
     private LivingEntity chase;
-    private int slamT;
     // flown by SkyPassers (not fighting): extra pose flags for the clients
     boolean passer;
     int flags;
     private int sent;
+
+    // the beam: where it aims (locked 0.35 s before it fires), its stream ids, whether it hit already
+    private Vec3 aim;
+    private int ballId, beamId;
+    private boolean beamHit;
+    private double beamCd = 3;
+    // the guard held up against a dash coming, ticks left
+    private int guardT;
+    // thrown straight down by the Martelo (combat/AirFight.slam): no control until the ground
+    private boolean falling;
+    // whom it faces in the air (the stance looks at the target, not along the way it flies)
+    private LivingEntity facing;
 
     private record Hit(boolean big, boolean slam, double knock, double reach, boolean finisher, float damage) {
     }
@@ -113,7 +127,7 @@ public final class AirCombat {
                                 act = Act.NONE;
                             }
                             if (act == Act.NONE) {
-                                context.getSource().sendFailure(net.minecraft.network.chat.Component.literal("Golpes: investida, martelo, rajada, sumico, persegue, choque"));
+                                context.getSource().sendFailure(net.minecraft.network.chat.Component.literal("Golpes: investida, martelo, rajada, sumico, persegue, choque, recua"));
                                 return 0;
                             }
                             Vec3 at = context.getSource().getPosition();
@@ -137,7 +151,7 @@ public final class AirCombat {
     }
 
     public static boolean flier(SoulBoss boss) {
-        return !boss.isBoss() && FLIERS.contains(boss.bossId());
+        return FLIERS.contains(boss.bossId()) && (!boss.isBoss() || "bills".equals(boss.bossId()));
     }
 
     // The mob's own (made on its first tick), or null for anyone else.
@@ -203,7 +217,6 @@ public final class AirCombat {
         }
         chase = target;
         trackTarget(target);
-        watchSlam(level);
         boolean wasPushed = pushed();
         if (passer) {
             // SkyPassers set the speed; it only flies along it.
@@ -220,7 +233,7 @@ public final class AirCombat {
             return;
         }
         boolean up = airborne(target);
-        airT = up && slammed != target ? airT + DT : 0;
+        airT = up ? airT + DT : 0;
         gndT = !up ? gndT + DT : 0;
         t += DT;
         if (st == St.CHAO) {
@@ -232,6 +245,26 @@ public final class AirCombat {
         }
         Vec3 toP = center(target).subtract(center(boss));
         double dist = toP.length();
+        if (falling) {
+            // slammed by the Martelo: straight into the ground, and there it stops flying
+            double above = boss.getY() - DbCommon.groundY(level, boss.position());
+            if (boss.onGround() || above < 0.6 || knocked <= 0) {
+                falling = false;
+                knocked = 0;
+                land(level, false);
+                send();
+                return;
+            }
+            knocked--;
+            vel = new Vec3(0, -42, 0);
+            lastSet = vel.scale(DT);
+            boss.setDeltaMovement(lastSet);
+            send();
+            return;
+        }
+        if (guardT > 0 && --guardT == 0) {
+            Defense.stop(boss);
+        }
         if (wasPushed || knocked > 0 || Stun.is(boss)) {
             // thrown or stunned: no control, the speed dies out (the page's 2.5)
             knocked = Math.max(0, knocked - 1);
@@ -244,6 +277,7 @@ public final class AirCombat {
             return;
         }
         boss.getLookControl().setLookAt(target, 30, 30);
+        facing = target;
         switch (st) {
             case DECOLA -> {
                 vel = vel.scale(0.8);
@@ -438,7 +472,16 @@ public final class AirCombat {
         lastSet = vel.scale(DT);
         boss.setDeltaMovement(lastSet);
         double h = vel.horizontalDistance();
-        if (h > 1.5) {
+        boolean stance = facing != null && facing.isAlive() && st == St.AR && !passer && act != Act.PERSEGUE
+                && !(act == Act.RECUA && phase == 0);
+        if (stance) {
+            // the fighting stance: always facing the target (it circles round it, it guards facing it)
+            Vec3 to = facing.position().subtract(boss.position());
+            float yaw = (float) Math.toDegrees(Math.atan2(-to.x, to.z));
+            boss.setYRot(yaw);
+            boss.yBodyRot = yaw;
+            boss.setYHeadRot(yaw);
+        } else if (h > 1.5) {
             float yaw = (float) Math.toDegrees(Math.atan2(-vel.x, vel.z));
             boss.setYRot(yaw);
             boss.yBodyRot = yaw;
@@ -468,15 +511,28 @@ public final class AirCombat {
     }
 
     private boolean comingAtMe(LivingEntity target, Vec3 toP, double dist) {
-        return boosting(target) && tVel.length() > 15 && tVel.normalize().dot(toP.scale(-1 / Math.max(1.0E-4, dist))) > 0.5 && dist < 18;
+        return (boosting(target) || AirFight.dashing(target)) && tVel.length() > 15 && tVel.normalize().dot(toP.scale(-1 / Math.max(1.0E-4, dist))) > 0.5 && dist < 18;
     }
 
     private void tactics(ServerLevel level, LivingEntity target, Vec3 toP, double dist) {
         at += DT;
         Vec3 pc = center(target), mc = center(boss);
+        beamCd -= DT;
+        if (act == Act.NONE && guardT <= 0 && AirFight.dashing(target) && comingAtMe(target, toP, dist) && dist < 14
+                && boss.getRandom().nextDouble() < 0.3) {
+            // a dash coming at it: the guard up (the dash bounces off and leaves the player open, AirFight.guardPunish)
+            com.starkinhon.battlegroundsmod.combat.CombatMode.enter(boss);
+            Defense.setGuard(boss, true);
+            guardT = 24;
+            SubCommon.pose(boss, "");
+        }
+        if (act == Act.NONE && guardT > 0) {
+            vel = vel.scale(1 - damp(6));
+            return;
+        }
         if (act == Act.NONE) {
             boost = false;
-            if (comingAtMe(target, toP, dist)) {
+            if (comingAtMe(target, toP, dist) && !AirFight.dashing(target)) {
                 start(Act.CHOQUE);
             } else if (dist > 26) {
                 start(Act.PERSEGUE);
@@ -502,7 +558,12 @@ public final class AirCombat {
                         start(Act.MARTELO);
                     } else {
                         r = boss.getRandom().nextDouble();
-                        start(r < 0.45 ? Act.INVESTIDA : r < 0.73 ? Act.RAJADA : Act.SUMICO);
+                        if (beamCd <= 0 && (r < 0.3 || dist > 16 && r < 0.55)) {
+                            start(Act.RECUA);
+                        } else {
+                            r = boss.getRandom().nextDouble();
+                            start(r < 0.45 ? Act.INVESTIDA : r < 0.73 ? Act.RAJADA : Act.SUMICO);
+                        }
                     }
                 }
             }
@@ -518,6 +579,7 @@ public final class AirCombat {
             case MARTELO -> hammer(level, target, pc);
             case RAJADA -> volley(level, target, toP, dist, pc, mc);
             case SUMICO -> vanishKick(level, target);
+            case RECUA -> beam(level, target, toP, dist, pc, mc);
             default -> {
             }
         }
@@ -674,6 +736,13 @@ public final class AirCombat {
 
     // Both on the boost into each other: the fists meet.
     private void clash(ServerLevel level, LivingEntity target) {
+        if (target instanceof Player || target instanceof SoulBoss) {
+            // the punch exchange across the sky (combat/AirFight)
+            boost = false;
+            endAct(1.2);
+            AirFight.exchange(level, boss, target);
+            return;
+        }
         Vec3 mid = center(boss).add(center(target)).scale(0.5);
         SubCommon.pose(boss, "soco.forte_golpe");
         DbCommon.hit(level, mid, 1.5f, Db.WHITE);
@@ -713,6 +782,17 @@ public final class AirCombat {
     }
 
     private void hurt(ServerLevel level, LivingEntity target, Hit h) {
+        if (AirFight.dodging(target) || Intangible.untouchableBy(target, boss)) {
+            // dodged (the combat flight's iframes): the blow goes through air
+            return;
+        }
+        if ((act == Act.INVESTIDA || act == Act.MARTELO || h.slam()) && AirFight.guardPunish(level, target, boss, h.slam() ? "martelo" : "investida")) {
+            // guarded: it is left open (stunned and pushed back)
+            Combat.hurtBasic(boss, target, h.damage() * 0.15f);
+            pending = null;
+            endAct(1.0);
+            return;
+        }
         Vec3 away = target.position().subtract(boss.position());
         away = away.lengthSqr() < 0.01 ? flat(boss.getLookAngle()) : away.normalize();
         Vec3 c = center(target).subtract(away.scale(0.4));
@@ -720,11 +800,8 @@ public final class AirCombat {
         SubCommon.sound(level, c, h.big() ? SoundEvents.PLAYER_ATTACK_STRONG : SoundEvents.PLAYER_ATTACK_WEAK, 1f, h.big() ? 0.8f : 1.2f);
         Combat.hurtBasic(boss, target, h.damage());
         if (h.slam()) {
-            knock(target, new Vec3(away.x * 4, -40, away.z * 4), 30, true);
-            Stun.apply(target, 30);
             DbCommon.screen(level, c, 1);
-            slammed = target;
-            slamT = 0;
+            AirFight.slam(level, boss, target);
             return;
         }
         if (airborne(target)) {
@@ -750,40 +827,14 @@ public final class AirCombat {
         target.hurtMarked = true;
     }
 
-    // The slammed one hits the ground: a crater, the shake, the second blow, and a player stops flying.
-    private void watchSlam(ServerLevel level) {
-        if (slammed == null) {
-            return;
-        }
-        slamT++;
-        LivingEntity s = slammed;
-        if (!s.isAlive() || s.level() != level || slamT > 80) {
-            slammed = null;
-            return;
-        }
-        double above = s.getY() - DbCommon.groundY(level, s.position());
-        // On the ground for real: the blow itself already takes a player's flight away, so that is no sign (the crater
-        // used to open in the air, in the second test).
-        boolean down = s.onGround() || above < 0.6;
-        if (!down) {
-            return;
-        }
-        slammed = null;
-        Vec3 feet = s.position();
-        if (s instanceof ServerPlayer player && player.getAbilities().flying) {
-            player.getAbilities().flying = false;
-            player.onUpdateAbilities();
-        }
-        DbCommon.hit(level, feet.add(0, 0.3, 0), 1.3f, Db.WHITE);
-        DbCommon.screen(level, feet, 4);
-        DbCommon.bigCrater(level, feet.add(0, -0.5, 0), 3.5, 2, 4);
-        SubCommon.sound(level, feet, SoundEvents.GENERIC_EXPLODE.value(), 1.3f, 0.8f);
-        Combat.hurtBasic(boss, s, 14);
-        Stun.apply(s, 25);
-    }
-
     // One ki ball, flown by the server tick by tick along the line the client draws (like Vegeta's Renzoku).
     private void shoot(ServerLevel level, Vec3 from, Vec3 to) {
+        LivingEntity target = boss.getTarget();
+        if (target != null) {
+            // homing a little (dodgeable), and the guard sends it up, or back on a parry (AirFight.kiBall)
+            AirFight.kiBall(level, boss, from, to.subtract(from), target, color(), 42, 2.2, 7, false);
+            return;
+        }
         Vec3 dir = to.subtract(from);
         if (dir.lengthSqr() < 1.0E-4) {
             dir = boss.getLookAngle();
@@ -820,8 +871,13 @@ public final class AirCombat {
         });
     }
 
+    public int kiColor() {
+        return color();
+    }
+
     private int color() {
         return switch (boss.bossId()) {
+            case "bills" -> Db.PURPLE;
             case "goku" -> Db.BLUE;
             case "vegeta" -> Db.GOLD;
             case "piccolo" -> Db.GREEN;
@@ -835,7 +891,8 @@ public final class AirCombat {
 
     int state() {
         boolean fly = st == St.AR || st == St.MERGULHO;
-        return fly ? Flight.FLYING | (boost ? Flight.BOOST : 0) | flags : 0;
+        boolean stance = st == St.AR && !passer && act != Act.PERSEGUE && !(act == Act.RECUA && phase == 0) && boss.getTarget() != null;
+        return fly ? Flight.FLYING | (boost ? Flight.BOOST : 0) | (stance ? Flight.COMBAT : 0) | flags : 0;
     }
 
     private void send() {
@@ -851,6 +908,191 @@ public final class AirCombat {
         if (event.getTarget() instanceof SoulBoss boss && boss.air != null && boss.air.sent != 0 && event.getEntity() instanceof ServerPlayer viewer) {
             PacketDistributor.sendToPlayer(viewer, new ModPayloads.FlightState(boss.getId(), boss.air.sent));
         }
+    }
+
+    // ------------------------------------------------------------------ the beam (RECUA)
+
+    // Off to ~34 blocks and up, then the charge (1.05 s, the ball growing in the hands), the aim locks 0.35 s before it
+    // fires (a white flash: the moment to dodge), and the beam: 80 blocks, one big hit; a dodge (iframes) goes through.
+    private void beam(ServerLevel level, LivingEntity target, Vec3 toP, double dist, Vec3 pc, Vec3 mc) {
+        int color = color();
+        float width = beamWidth();
+        if (phase == 0) {
+            boost = true;
+            Vec3 away = flat(toP.scale(-1));
+            Vec3 spot = target.position().add(away.scale(34)).add(0, 8, 0);
+            double ground = DbCommon.groundY(level, spot);
+            spot = new Vec3(spot.x, Math.max(spot.y, ground + 6), spot.z);
+            steer(spot.subtract(boss.position()).normalize(), 34, 6);
+            if (dist > 27 || at > 2.4) {
+                phase = 1;
+                at = 0;
+                boost = false;
+                ballId = SubNet.newId();
+                beamId = SubNet.newId();
+                aim = null;
+                beamHit = false;
+                SubCommon.pose(boss, "voo.feixe");
+                SubCommon.sound(level, boss.position(), SoundEvents.BEACON_ACTIVATE, 1.4f, 1.3f);
+            }
+            return;
+        }
+        Vec3 hands = beamHands(target);
+        if (phase == 1) {
+            vel = vel.scale(1 - damp(6));
+            float k = (float) Math.min(1, at / 1.05);
+            SubNet.send(level, SubNet.KI_BALL, ballId, hands, Vec3.ZERO, (0.12f + 1.1f * k * k) * width / 1.15f * 0.8f + 0.06f, color + 16, 0);
+            if (boss.tickCount % 6 == 0) {
+                SubCommon.sound(level, hands, SoundEvents.BEACON_AMBIENT, 1.2f, 0.8f + k);
+            }
+            if (aim == null && at >= 0.7) {
+                // the aim locks: from here it fires where the target WAS (a dodge now makes it miss)
+                aim = pc;
+                DbCommon.hit(level, hands, 0.9f, Db.WHITE);
+                SubCommon.sound(level, hands, SoundEvents.AMETHYST_BLOCK_CHIME, 1.6f, 1.8f);
+                SubCommon.sound(level, hands, SoundEvents.EXPERIENCE_ORB_PICKUP, 1.2f, 0.5f);
+            }
+            if (at >= 1.05) {
+                SubNet.send(level, SubNet.KI_BALL, ballId, hands, Vec3.ZERO, 0, color, 1);
+                phase = 2;
+                at = 0;
+                SubCommon.pose(boss, "voo.feixe_solta");
+                DbCommon.screen(level, hands, 45);
+                SubCommon.sound(level, hands, SoundEvents.WARDEN_SONIC_BOOM, 1.4f, 1.2f);
+                SubCommon.sound(level, hands, SoundEvents.BEACON_POWER_SELECT, 1.5f, 0.7f);
+            }
+            return;
+        }
+        // phase 2: the beam
+        vel = vel.scale(1 - damp(8)).add(aimDir(hands).scale(-0.6));
+        boolean end = at >= 1.05;
+        Vec3 dir = aimDir(hands);
+        Vec3 far = DbCommon.beamEnd(boss, level, hands, dir, 80, width, true);
+        Vec3 to = hands.add(far.subtract(hands).scale(Math.min(1, at / 0.22)));
+        SubNet.send(level, SubNet.KI_BEAM, beamId, hands, to.subtract(hands), width, color, end ? 1 : 0);
+        if (!beamHit) {
+            for (LivingEntity e : Combat.alongLine(level, hands, to, width * 0.9, boss)) {
+                if (Intangible.untouchableBy(e, boss) || AirFight.dodging(e)) {
+                    continue;
+                }
+                beamHit = true;
+                Vec3 c = Combat.center(e);
+                if (Defense.check(e, boss) != Defense.Result.NONE) {
+                    // guarded: chip damage, shoved far back
+                    Combat.hurtMagic(boss, e, 4);
+                    AirFight.throwAway(e, dir.scale(16), 8);
+                    DbCommon.hit(level, c, 1.0f, color);
+                } else {
+                    Combat.hurtMagic(boss, e, 24);
+                    AirFight.throwAway(e, dir.scale(30).add(0, 3, 0), 14);
+                    Stun.apply(e, 14);
+                    DbCommon.hit(level, c, 1.6f, color);
+                    DbCommon.screen(level, c, 1);
+                }
+                SubCommon.sound(level, c, SoundEvents.GENERIC_EXPLODE.value(), 1.3f, 0.9f);
+                break;
+            }
+        }
+        if (boss.tickCount % 6 == 0) {
+            SubCommon.sound(level, to, SoundEvents.FIREWORK_ROCKET_BLAST, 1.2f, 0.6f);
+        }
+        if (end) {
+            DbCommon.boom(level, to, 3.2f, color, 4);
+            beamCd = 7 + boss.getRandom().nextDouble() * 4;
+            endAct(1.2);
+        }
+    }
+
+    private Vec3 aimDir(Vec3 hands) {
+        Vec3 d = (aim == null ? hands.add(boss.getLookAngle()) : aim).subtract(hands);
+        return d.lengthSqr() < 1.0E-4 ? boss.getLookAngle() : d.normalize();
+    }
+
+    private Vec3 beamHands(LivingEntity target) {
+        Vec3 look = (aim != null ? aim : Combat.center(target)).subtract(center(boss));
+        look = look.lengthSqr() < 1.0E-4 ? boss.getLookAngle() : look.normalize();
+        return center(boss).add(0, 0.25, 0).add(look.scale(0.8));
+    }
+
+    // Final Flash and Kamehameha wide, the Makankosappo and the Death Beam thin.
+    private float beamWidth() {
+        return switch (boss.bossId()) {
+            case "vegeta" -> 1.25f;
+            case "goku" -> 1.1f;
+            case "piccolo" -> 0.45f;
+            case "freeza" -> 0.32f;
+            case "kuririn" -> 0.8f;
+            default -> 0.95f;
+        };
+    }
+
+    // ------------------------------------------------------------------ the player's combat flight (combat/AirFight)
+
+    // The player started a ki dash at it: it answers with its own, they meet halfway (the exchange).
+    public void answerDash(LivingEntity player) {
+        if (st == St.AR && !Stun.is(boss) && (act == Act.NONE || act == Act.RAJADA) && boss.getTarget() == player) {
+            start(Act.CHOQUE);
+        }
+    }
+
+    // On its own boost straight at `who` (the exchange starts when the player dashes into that).
+    public boolean rushingAt(LivingEntity who) {
+        return st == St.AR && boss.getTarget() == who && boost && phase == 0
+                && (act == Act.INVESTIDA || act == Act.PERSEGUE || act == Act.CHOQUE);
+    }
+
+    // Zanzoken away from `from` (a dash about to land, a long combo): gone, and back aside and above. False when it can't.
+    public boolean zanzoken(LivingEntity from) {
+        if (st != St.AR || Stun.real(boss) || !(boss.level() instanceof ServerLevel level)) {
+            return false;
+        }
+        Vec3 to = boss.position().subtract(from.position());
+        Vec3 f = flat(to);
+        Vec3 side = new Vec3(-f.z, 0, f.x).scale(boss.getRandom().nextBoolean() ? 1 : -1);
+        vanish(level, boss.position());
+        appear(level, boss.position().add(side.scale(4.5)).add(f.scale(1.5)).add(0, 1.5, 0));
+        act = Act.NONE;
+        pending = null;
+        knocked = 0;
+        cd = 0.6;
+        return true;
+    }
+
+    // How many air combo hits in a row it has taken: a long combo, it slips out (Zanzoken) instead of eating all of it.
+    public void comboTaken(int hits) {
+        if (hits >= 7 || hits >= 5 && boss.getRandom().nextDouble() < 0.3) {
+            LivingEntity target = boss.getTarget();
+            if (target != null && zanzoken(target)) {
+                cd = 0.3;
+            }
+        }
+    }
+
+    // Slammed down (the Martelo, a grab): straight into the ground, it lands there (AirFight.slam opens the crater).
+    public void slammed() {
+        falling = true;
+        knocked = 60;
+        act = Act.NONE;
+        pending = null;
+        boost = false;
+        boss.setInvisible(false);
+    }
+
+    // Held still for the exchange (AirFight moves it from clash to clash).
+    public void hold(int ticks) {
+        thrown(Vec3.ZERO, ticks);
+    }
+
+    // Thrown at `velocity` without control for `ticks`.
+    public void thrown(Vec3 velocity, int ticks) {
+        vel = velocity;
+        knocked = Math.max(knocked, ticks);
+        act = Act.NONE;
+        pending = null;
+        boost = false;
+        lastSet = vel.scale(DT);
+        boss.setDeltaMovement(lastSet);
+        boss.setInvisible(false);
     }
 
     // ------------------------------------------------------------------ SkyPassers

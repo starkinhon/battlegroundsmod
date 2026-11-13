@@ -435,6 +435,45 @@ public final class ModPayloads {
         }
     }
 
+    // Client -> server: who the combat flight locks on (combat/AirFight), -1 for nobody.
+    public record AirLock(int entityId) implements CustomPacketPayload {
+        public static final Type<AirLock> TYPE = payloadType("air_lock");
+        public static final StreamCodec<ByteBuf, AirLock> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.INT, AirLock::entityId, AirLock::new);
+
+        @Override
+        public Type<AirLock> type() {
+            return TYPE;
+        }
+    }
+
+    // Client -> server: the combat flight's dodge (Ctrl), the client already moved the player.
+    public record AirDodge(boolean on) implements CustomPacketPayload {
+        public static final Type<AirDodge> TYPE = payloadType("air_dodge");
+        public static final StreamCodec<ByteBuf, AirDodge> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.BOOL, AirDodge::on, AirDodge::new);
+
+        @Override
+        public Type<AirDodge> type() {
+            return TYPE;
+        }
+    }
+
+    // Server -> client: a move of the combat flight the client flies (AirFight.MOVE_*): the ki dash at target for ticks.
+    public record AirMove(int kind, int target, int ticks) implements CustomPacketPayload {
+        public static final Type<AirMove> TYPE = payloadType("air_move");
+        public static final StreamCodec<ByteBuf, AirMove> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, AirMove::kind,
+                ByteBufCodecs.INT, AirMove::target,
+                ByteBufCodecs.VAR_INT, AirMove::ticks,
+                AirMove::new);
+
+        @Override
+        public Type<AirMove> type() {
+            return TYPE;
+        }
+    }
+
     // Server -> client: the Dragon Ball mission on the HUD (universe/DbQuests): its id, progress, the place it points to.
     public record QuestSync(String id, int count, int goal, int x, int z, int flags) implements CustomPacketPayload {
         public static final Type<QuestSync> TYPE = payloadType("quest_sync");
@@ -1819,6 +1858,18 @@ public final class ModPayloads {
                 () -> ClientHooks.quest(payload.id(), payload.count(), payload.goal(), payload.x(), payload.z(), payload.flags())));
         registrar.playToClient(FlightState.TYPE, FlightState.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.flightState(payload.entityId(), payload.state())));
+        registrar.playToServer(AirLock.TYPE, AirLock.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
+            if (context.player() instanceof net.minecraft.server.level.ServerPlayer sp) {
+                com.starkinhon.battlegroundsmod.combat.AirFight.lock(sp, payload.entityId());
+            }
+        }));
+        registrar.playToServer(AirDodge.TYPE, AirDodge.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
+            if (context.player() instanceof net.minecraft.server.level.ServerPlayer sp) {
+                com.starkinhon.battlegroundsmod.combat.AirFight.dodge(sp);
+            }
+        }));
+        registrar.playToClient(AirMove.TYPE, AirMove.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.airMove(payload.kind(), payload.target(), payload.ticks())));
         registrar.playToClient(FlightKnock.TYPE, FlightKnock.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.flightKnock(payload.velocity(), payload.ticks(), payload.slam())));
         registrar.playToClient(SyncStamina.TYPE, SyncStamina.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> payload.applyTo(context.player())));

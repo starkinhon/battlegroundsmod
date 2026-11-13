@@ -45,6 +45,8 @@ public final class Flight {
     // only for the flying Dragon Ball souls (boss/AirCombat, universe/SkyPassers): arms crossed, standing up while it
     // moves (Freeza floating by), the right hand waving
     public static final int CROSSED = 8, UPRIGHT = 16, WAVE = 32;
+    // the combat flight (combat/AirFight): standing up in the fighting stance, facing the target
+    public static final int COMBAT = 64;
 
     private static final Map<UUID, Integer> SENT = new HashMap<>();
     private static final Map<UUID, Boolean> BOOSTING = new HashMap<>();
@@ -166,7 +168,8 @@ public final class Flight {
                 boosting = false;
             }
             TIRED_NOW.put(player.getUUID(), tired);
-            state = FLYING | (boosting ? BOOST : 0) | (tired ? TIRED : 0);
+            state = FLYING | (boosting ? BOOST : 0) | (tired ? TIRED : 0)
+                    | (com.starkinhon.battlegroundsmod.combat.AirFight.active(player) ? COMBAT : 0);
         } else {
             BOOSTING.remove(player.getUUID());
             TIRED_NOW.remove(player.getUUID());
