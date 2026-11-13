@@ -1,5 +1,6 @@
 # Voo de combate (PR #318): K + voando trava no Vegeta; golpes de base no ar, defesa, esquiva, IA (feixe), troca de socos.
 # Pré-requisito: mundo SoulsDev dos testes do voo (técnica voo aprendida, alma Goku tier 6 = mesmo tier do Vegeta).
+# /devc tecla X N não espera os N ticks: cada tecla segurada vem com espera.
 # Rodar: gradlew runClient -Pmundo=SoulsDev -Proteiro=voo-combate
 /devc fechar
 /dev soltar
@@ -17,9 +18,12 @@ espera 30
 # Decola (pulo duplo) e sobe
 /devc tecla espaco 2
 espera 4
+espera 4
 /devc tecla espaco 2
+espera 4
 espera 10
 /devc tecla espaco 25
+espera 27
 espera 10
 
 # Vegeta na frente; o Dash Attack (G) começa a briga
@@ -36,9 +40,13 @@ espera 70
 # Andando em volta dele: D, A, S, W (pose de cada direção)
 /devc gravar voo-combate/02-strafe 3
 /devc tecla direita 40
+espera 42
 /devc tecla esquerda 40
+espera 42
 /devc tecla tras 25
+espera 27
 /devc tecla frente 30
+espera 32
 espera 10
 /devc gravar parar
 
@@ -57,9 +65,11 @@ espera 80
 
 # Rajada (R de novo) segurada: bolas de ki teleguiadas
 /devc tecla espaco 25
+espera 27
 /devc tecla r
 /devc gravar voo-combate/04-rajada 3
 /devc tecla g 40
+espera 42
 espera 40
 /devc gravar parar
 /devc tecla r
@@ -75,12 +85,16 @@ espera 110
 /devc gravar voo-combate/06-feixe-esquiva 3
 espera 45
 /devc tecla ctrl 1
+espera 3
 espera 12
 /devc tecla ctrl 1
+espera 3
 espera 12
 /devc tecla ctrl 1
+espera 3
 espera 12
 /devc tecla ctrl 1
+espera 3
 espera 40
 /devc gravar parar
 
@@ -88,6 +102,7 @@ espera 40
 /soul aereo investida
 /devc gravar voo-combate/07-defesa-investida 3
 /devc tecla f 40
+espera 42
 espera 20
 /devc gravar parar
 
@@ -96,6 +111,7 @@ espera 20
 /devc gravar voo-combate/08-defesa-rajada 3
 espera 6
 /devc tecla f 40
+espera 42
 espera 20
 /devc gravar parar
 
@@ -121,8 +137,11 @@ espera 80
 /devc tecla k
 /devc gravar voo-combate/12-k-desliga 3
 /devc tecla frente 30
+espera 32
 /devc tecla ctrl 1
+espera 3
 /devc tecla frente 30
+espera 32
 espera 10
 /devc gravar parar
 

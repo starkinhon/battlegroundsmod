@@ -256,6 +256,18 @@ public final class FlightPose {
         return true;
     }
 
+    // The whole body's turn in the world as push draws it (vanilla's body yaw plus the flight's), or null when not flying.
+    public static Quaternionf bodyTurn(LivingEntity entity, float partial) {
+        S s = update(entity, partial);
+        if (s == null || s.weight < 0.001f) {
+            return null;
+        }
+        float body = Mth.rotLerp(partial, entity.yBodyRotO, entity.yBodyRot);
+        Quaternionf vanilla = new Quaternionf().rotateY((float) Math.toRadians(180f - body));
+        Quaternionf full = new Quaternionf(s.world).mul(new Quaternionf(vanilla).invert());
+        return new Quaternionf().slerp(full, s.weight).mul(vanilla);
+    }
+
     public static void onRenderPost(RenderPlayerEvent.Post event) {
         if (pushed) {
             event.getPoseStack().popPose();
