@@ -105,16 +105,24 @@ public final class AirCombat {
     private int pilotFlags;
 
     // A skill has it right now (a real stun or a hold): the page's fight lets go of it until then.
+    // Staged too: a boss's entrance, phase change or final ult holds it still for its cutscene.
     private boolean held() {
-        return Stun.real(boss) || Freeze.isFrozen(boss);
+        return Stun.real(boss) || Freeze.isFrozen(boss) || boss.staged();
     }
 
-    public void pilot(ServerPlayer player, Vec3 pos, float yaw, int flags) {
+    // False when another player flies it right now (two clients pulling one soul two ways in multiplayer): only the
+    // first keeps it until its packets stop.
+    public boolean pilot(ServerPlayer player, Vec3 pos, float yaw, int flags) {
+        if (pilot != null && pilot != player && pilot.isAlive() && pilot.level() == player.level()
+                && player.level().getGameTime() <= pilotUntil) {
+            return false;
+        }
         pilot = player;
         pilotUntil = player.level().getGameTime() + 6;
         pilotPos = pos;
         pilotYaw = yaw;
         pilotFlags = flags;
+        return true;
     }
 
     private record Hit(boolean big, boolean slam, double knock, double reach, boolean finisher, float damage) {
@@ -221,6 +229,10 @@ public final class AirCombat {
 
     private void step(ServerLevel level) {
         if (!boss.isAlive()) {
+            // killed while the page had it hidden (the punch exchange): it dies in sight
+            if (pilot != null && boss.isInvisible()) {
+                boss.setInvisible(false);
+            }
             if (st != St.CHAO) {
                 land(level, false);
             }

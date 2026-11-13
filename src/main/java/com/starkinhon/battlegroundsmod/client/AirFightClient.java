@@ -131,6 +131,8 @@ public final class AirFightClient {
                 FlightClient.dashEnd();
             }
             dashTicks = 0;
+        } else if (kind == AirFight.MOVE_DENY) {
+            PreviewFight.deny(target);
         } else if (kind == AirFight.MOVE_STOP) {
             if (dashTicks > 0) {
                 FlightClient.dashEnd();
@@ -160,7 +162,8 @@ public final class AirFightClient {
         Minecraft minecraft = Minecraft.getInstance();
         LocalPlayer player = minecraft.player;
         PreviewFight.frame();
-        if (PreviewFight.running()) {
+        if (PreviewFight.running() || PreviewFight.scene()) {
+            // the page's fight, or a cutscene that has the camera (the lock must not turn the player under it)
             camPos = null;
             lastFrame = System.nanoTime();
             return;
