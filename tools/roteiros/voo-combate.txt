@@ -32,6 +32,9 @@ espera 10
 
 # Vegeta na frente; o Dash Attack (G) começa a briga
 /summon battlegroundsmod:vegeta 600 -58 -588
+# imortal: com as bolas de ki acertando de verdade ele morria na rajada e a cerimônia da alma tomava a cena 09 (r5)
+/dev imortal @e[type=battlegroundsmod:vegeta]
+/dev imortal @s
 # ele decola sozinho quando vê o alvo no ar (AirCombat: alvo no ar por 0,35 s)
 espera 80
 /devc print voo-combate/00-vegeta-decolou
