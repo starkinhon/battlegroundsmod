@@ -1,0 +1,139 @@
+# PR #314: tamanho dos biomas no tipo de mundo Souls (rodar num mundo NOVO: -PmundoTipo=battlegroundsmod:souls)
+# Distância do spawn até cada bioma (sai no log como [CHAT]), depois um voo em L: 6000 blocos pro leste e 6000 pro norte,
+# com um print a cada 400 blocos, de cima (260 de altura, olhando 45 graus pra frente). Os chunks do voo ficam no save
+# pra medir os biomas de verdade depois (região .mca).
+dev preparar
+gamemode creative
+devc hud off
+devc fov 70
+effect give @s minecraft:night_vision infinite 0 true
+effect give @s minecraft:resistance infinite 4 true
+espera 40
+devc marca locate
+locate biome battlegroundsmod:terras_do_dragao
+espera 20
+locate biome battlegroundsmod:deserto_vermelho
+espera 20
+locate biome battlegroundsmod:terra_sagrada_de_karin
+espera 20
+locate biome battlegroundsmod:montanhas_paozu
+espera 20
+locate biome battlegroundsmod:picos_do_dragao
+espera 20
+locate biome battlegroundsmod:norte_gelado
+espera 20
+locate biome battlegroundsmod:mar_do_sul
+espera 20
+locate biome battlegroundsmod:floresta_da_folha
+espera 20
+locate biome battlegroundsmod:floresta_da_morte
+espera 20
+locate biome battlegroundsmod:deserto_do_vento
+espera 20
+locate biome battlegroundsmod:mar_da_nevoa
+espera 20
+locate biome battlegroundsmod:vila_da_chuva
+espera 20
+locate biome battlegroundsmod:vale_do_fim
+espera 20
+locate biome battlegroundsmod:monte_myoboku
+espera 20
+devc marca voo
+tp @s ~ 260 ~ -90 45
+espera 160
+devc print biomas314/leste_00
+tp @s ~400 260 ~ -90 45
+espera 140
+devc print biomas314/leste_01
+tp @s ~400 260 ~ -90 45
+espera 140
+devc print biomas314/leste_02
+tp @s ~400 260 ~ -90 45
+espera 140
+devc print biomas314/leste_03
+tp @s ~400 260 ~ -90 45
+espera 140
+devc print biomas314/leste_04
+tp @s ~400 260 ~ -90 45
+espera 140
+devc print biomas314/leste_05
+tp @s ~400 260 ~ -90 45
+espera 140
+devc print biomas314/leste_06
+tp @s ~400 260 ~ -90 45
+espera 140
+devc print biomas314/leste_07
+tp @s ~400 260 ~ -90 45
+espera 140
+devc print biomas314/leste_08
+tp @s ~400 260 ~ -90 45
+espera 140
+devc print biomas314/leste_09
+tp @s ~400 260 ~ -90 45
+espera 140
+devc print biomas314/leste_10
+tp @s ~400 260 ~ -90 45
+espera 140
+devc print biomas314/leste_11
+tp @s ~400 260 ~ -90 45
+espera 140
+devc print biomas314/leste_12
+tp @s ~400 260 ~ -90 45
+espera 140
+devc print biomas314/leste_13
+tp @s ~400 260 ~ -90 45
+espera 140
+devc print biomas314/leste_14
+tp @s ~400 260 ~ -90 45
+espera 140
+devc print biomas314/leste_15
+tp @s ~ 260 ~ 180 45
+espera 100
+tp @s ~ 260 ~-400 180 45
+espera 140
+devc print biomas314/norte_01
+tp @s ~ 260 ~-400 180 45
+espera 140
+devc print biomas314/norte_02
+tp @s ~ 260 ~-400 180 45
+espera 140
+devc print biomas314/norte_03
+tp @s ~ 260 ~-400 180 45
+espera 140
+devc print biomas314/norte_04
+tp @s ~ 260 ~-400 180 45
+espera 140
+devc print biomas314/norte_05
+tp @s ~ 260 ~-400 180 45
+espera 140
+devc print biomas314/norte_06
+tp @s ~ 260 ~-400 180 45
+espera 140
+devc print biomas314/norte_07
+tp @s ~ 260 ~-400 180 45
+espera 140
+devc print biomas314/norte_08
+tp @s ~ 260 ~-400 180 45
+espera 140
+devc print biomas314/norte_09
+tp @s ~ 260 ~-400 180 45
+espera 140
+devc print biomas314/norte_10
+tp @s ~ 260 ~-400 180 45
+espera 140
+devc print biomas314/norte_11
+tp @s ~ 260 ~-400 180 45
+espera 140
+devc print biomas314/norte_12
+tp @s ~ 260 ~-400 180 45
+espera 140
+devc print biomas314/norte_13
+tp @s ~ 260 ~-400 180 45
+espera 140
+devc print biomas314/norte_14
+tp @s ~ 260 ~-400 180 45
+espera 140
+devc print biomas314/norte_15
+devc marca fim
+espera 40
+sair
