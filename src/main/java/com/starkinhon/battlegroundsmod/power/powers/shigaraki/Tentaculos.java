@@ -66,7 +66,19 @@ public final class Tentaculos {
         SubCommon.busy(caster, LENGTH);
         SubCommon.pose(caster, "shig.tentaculos");
         // the one he fights (a boss's target, else who he locks on): the tentacles follow it (TentacleSpine.home)
-        LivingEntity mark = caster instanceof net.minecraft.world.entity.Mob mob && mob.getTarget() != null ? mob.getTarget() : Toque.lock(caster);
+        LivingEntity found = caster instanceof net.minecraft.world.entity.Mob mob && mob.getTarget() != null ? mob.getTarget() : Toque.lock(caster);
+        if (found == null) {
+            // nobody in front: the closest one around (the shockwave is about to throw them), so the hands still chase
+            double bd = BLAST_RADIUS + 4;
+            for (LivingEntity e : Combat.inRadius(level, feet, BLAST_RADIUS + 4, caster)) {
+                double d = e.distanceTo(caster);
+                if (d < bd) {
+                    bd = d;
+                    found = e;
+                }
+            }
+        }
+        LivingEntity mark = found;
         SubNet.send(level, Shigaraki.TENTACLES, caster.getId(), feet, face, 0, mark == null ? 0 : mark.getId() + 1, 0);
         SubCommon.sound(level, feet, SoundEvents.WARDEN_EMERGE, 1.4f, 0.7f);
         Runnable release = Freeze.holdLookFree(caster, LENGTH);
