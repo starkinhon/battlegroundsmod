@@ -250,7 +250,11 @@ public class ChallengeScreen extends Screen {
         // ---- the panel on the right: the challenger ----
         int top = 38, ladderY = GH - 60;
         int pw = Math.min(196, Math.round(GW * 0.4f)), px = GW - pw - 10, py = top + 6;
-        int nL = u.desafios.size();
+        // the longest ladder of all the universes sets the layout, so the squares are the same size in every tab
+        int nL = 1;
+        for (Uni other : BookData.unis()) {
+            nL = Math.max(nL, other.desafios.size());
+        }
         int availL = px - 36 - 14 - 38, fitL = availL / nL - 4;
         boolean under = fitL < 24;
         int ladW = under ? GW - 60 : Math.min(availL, nL * 46), ph = ladderY - py - (under ? 20 : 8);
