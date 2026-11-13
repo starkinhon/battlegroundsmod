@@ -352,7 +352,6 @@ public final class FlightClient {
 
     private static int dodgeT, dodgeCd, dodgeSide = 1;
     private static Vec3 dodgeVel = Vec3.ZERO;
-    private static double lockD = -1;
 
     // The server started the ki dash (AirFight.dash): the kick and the ring now, the homing in combat.
     static void dashStart() {
@@ -384,9 +383,11 @@ public final class FlightClient {
         Vec3 to = target.position().add(0, target.getBbHeight() / 2, 0).subtract(me);
         double dist = Math.max(1.0E-3, to.length());
         Vec3 fwd = to.scale(1 / dist);
-        Vec3 flat = new Vec3(fwd.x, 0, fwd.z);
-        flat = flat.lengthSqr() < 1.0E-4 ? new Vec3(0, 0, 1) : flat.normalize();
-        Vec3 side = new Vec3(-flat.z, 0, flat.x);
+        // A/D and the dodge go to the CAMERA's sides, not the target's (Stark 2026-11-13, first play: holding A the
+        // direction kept changing, "apertando pra fazer uma coisa e ele fazendo outra"). The camera turns to the target
+        // smoothly (AirFightClient.onFrame), so holding A still circles it, but never flips when it zips past or over.
+        double yaw = Math.toRadians(player.getYRot());
+        Vec3 side = new Vec3(-Math.cos(yaw), 0, -Math.sin(yaw));
         if (dodgeCd > 0) {
             dodgeCd--;
         }
@@ -450,18 +451,6 @@ public final class FlightClient {
         Vec3 wish = side.scale(right).add(0, up, 0);
         if (forward > 0 && dist > 2.4 || forward < 0) {
             wish = wish.add(fwd.scale(forward));
-        }
-        if (right != 0) {
-            // circling: the distance it had when the circling started is kept
-            if (lockD < 0) {
-                lockD = dist;
-            }
-            if (forward != 0) {
-                lockD = dist;
-            }
-            wish = wish.add(fwd.scale(Mth.clamp((dist - lockD) * 0.25, -0.6, 0.6)));
-        } else {
-            lockD = -1;
         }
         double wl = wish.length();
         if (wl > 1) {

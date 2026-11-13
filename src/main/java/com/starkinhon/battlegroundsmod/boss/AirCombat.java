@@ -591,6 +591,13 @@ public final class AirCombat {
             Vec3 lead = pc.add(tVel.scale(Mth.clamp(dist / 50, 0, 0.5)));
             boost = true;
             steer(lead.subtract(mc).normalize(), act == Act.PERSEGUE ? 62 : 46, 7);
+            // Its run and the player's ki dash into each other: the exchange. Checked here, before its own hit range
+            // (1.8 + the closing speed, about 7 blocks at 110 b/s), which used to turn the meeting into its plain combo
+            // (Stark's first play: both dashed and no exchange).
+            if (AirFight.dashing(target) && dist < 10 && !AirFight.exchanging(target)) {
+                clash(level, target);
+                return;
+            }
             if (act == Act.CHOQUE && dist < 9) {
                 // locks on at the end of the run
                 vel = pc.subtract(mc).normalize().scale(46);

@@ -160,7 +160,7 @@ public final class AirFight {
             double dist = center(player).distanceTo(center(target));
             PunchFx.follow(level, PunchFx.TRAIL, player, center(target).subtract(center(player)).normalize(), Melee.fistColor(player), 0);
             // Both on the boost into each other: the exchange.
-            if (dist < 7 && target instanceof SoulBoss boss && boss.air() != null && boss.air().rushingAt(player)) {
+            if (dist < 10 && target instanceof SoulBoss boss && boss.air() != null && boss.air().rushingAt(player)) {
                 end(player, data);
                 exchange(level, player, target);
                 return true;
@@ -359,8 +359,9 @@ public final class AirFight {
                 Vec3 side = look.cross(new Vec3(0, 1, 0));
                 side = side.lengthSqr() < 1.0E-4 ? Vec3.ZERO : side.normalize().scale(right ? 0.38 : -0.38);
                 Vec3 from = player.getEyePosition().add(0, -0.45, 0).add(side).add(look.scale(0.6));
-                Vec3 jitter = new Vec3(level.random.nextGaussian(), level.random.nextGaussian() * 0.6, level.random.nextGaussian()).scale(0.35);
-                kiBall(level, player, from, look.add(jitter).normalize(), target, color, 44, 4.5, damage, false);
+                // a small spread and a quick turn (at 0.35 / 4.5 rad/s they scattered wide, Stark's first play)
+                Vec3 jitter = new Vec3(level.random.nextGaussian(), level.random.nextGaussian() * 0.6, level.random.nextGaussian()).scale(0.07);
+                kiBall(level, player, from, center(target).subtract(from).normalize().add(jitter).normalize(), target, color, 46, 9, damage, false);
                 shots[0]++;
             }
             return false;

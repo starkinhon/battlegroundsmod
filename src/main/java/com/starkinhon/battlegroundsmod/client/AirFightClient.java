@@ -156,9 +156,12 @@ public final class AirFightClient {
         float yaw = (float) (Mth.atan2(-to.x, to.z) * Mth.RAD_TO_DEG);
         // the elevation held in a band (72°: at 50° a target well below fell out of the shot in the 4th scripted test)
         float pitch = Mth.clamp((float) (-Mth.atan2(to.y, flat) * Mth.RAD_TO_DEG), -72, 72);
-        float k = 1 - (float) Math.exp(-14 * dt);
-        float y = player.getYRot() + Mth.wrapDegrees(yaw - player.getYRot()) * k;
-        float x = player.getXRot() + (pitch - player.getXRot()) * k;
+        // Smooth and capped (Stark's first play: at 14 the view snapped round whenever the target zipped past, and
+        // with A/D on the camera's sides the direction felt out of control): eases in, at most 260 deg/s.
+        float k = 1 - (float) Math.exp(-6 * dt);
+        float cap = 260 * dt;
+        float y = player.getYRot() + Mth.clamp(Mth.wrapDegrees(yaw - player.getYRot()) * k, -cap, cap);
+        float x = player.getXRot() + Mth.clamp((pitch - player.getXRot()) * k, -cap, cap);
         player.setYRot(y);
         player.setXRot(x);
         player.yRotO = y;
