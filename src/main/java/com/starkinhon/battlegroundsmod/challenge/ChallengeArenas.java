@@ -99,9 +99,11 @@ public final class ChallengeArenas {
         ResourceKey<Level> arena;
         ArenaTemplate.Meta meta;
         Build build;
-        ResourceKey<Level> backLevel;
-        Vec3 backPos;
-        float backYaw;
+        // Everyone who came in (also those who fell since: the win counts for them), where each goes back to, and
+        // who already took the soul home.
+        final List<UUID> members = new ArrayList<>();
+        final Map<UUID, Back> back = new HashMap<>();
+        final java.util.Set<UUID> paid = new java.util.HashSet<>();
         long fightAt;
         long buildStart;
         long buildNanos;
@@ -112,6 +114,10 @@ public final class ChallengeArenas {
         State state = State.COUNTDOWN;
     }
 
+    private record Back(ResourceKey<Level> level, Vec3 pos, float yaw) {
+    }
+
+    // Each player in a fight maps to it; a group's players share one.
     private static final Map<UUID, Session> SESSIONS = new HashMap<>();
 
     private ChallengeArenas() {
@@ -264,7 +270,8 @@ public final class ChallengeArenas {
         return !free && universe != null && isBoss(id) && subsBeaten(wins, universe) < subsNeeded(universe);
     }
 
-    // From the book: go to that character's arena.
+    // From the book: go to that character's arena. The player's group (ArenaParty, Stark 2026-11-13: "eu e um amigo
+    // fazer uma arena junto") comes along: everyone in it who is online, alive and not in another fight.
     public static void start(ServerPlayer player, String id) {
         ChallengeSpec spec = ChallengeSpec.get();
         int slot = spec.slot(id);
@@ -295,22 +302,36 @@ public final class ChallengeArenas {
             player.displayClientMessage(Component.translatable("message.battlegroundsmod.arena_no_entity", id), false);
             return;
         }
-        for (Session other : SESSIONS.values()) {
+        for (Session other : sessions()) {
             if (other.id.equals(id)) {
                 player.displayClientMessage(Component.translatable("message.battlegroundsmod.arena_taken"), true);
                 return;
             }
+        }
+        List<ServerPlayer> team = new ArrayList<>();
+        team.add(player);
+        for (ServerPlayer mate : ArenaParty.others(player)) {
+            if (SESSIONS.containsKey(mate.getUUID()) || !mate.isAlive() || mate.isSpectator()) {
+                player.displayClientMessage(Component.translatable("message.battlegroundsmod.arena_mate_busy", mate.getDisplayName()), false);
+                continue;
+            }
+            team.add(mate);
         }
         Session session = new Session();
         session.id = id;
         session.meta = meta;
         session.arena = key;
         session.center = new BlockPos(slot * SPACING, template == null ? FLOOR_Y : floorY(meta), ROW_Z);
-        boolean fromArena = isArena(player.level().dimension());
-        session.backLevel = fromArena ? Universes.homeLevel(player).dimension() : player.level().dimension();
-        session.backPos = fromArena ? Universes.homePos(player) : player.position();
-        session.backYaw = player.getYRot();
-        SESSIONS.put(player.getUUID(), session);
+        for (ServerPlayer p : team) {
+            boolean fromArena = isArena(p.level().dimension());
+            session.back.put(p.getUUID(), new Back(fromArena ? Universes.homeLevel(p).dimension() : p.level().dimension(),
+                    fromArena ? Universes.homePos(p) : p.position(), p.getYRot()));
+            session.members.add(p.getUUID());
+            SESSIONS.put(p.getUUID(), session);
+            if (p != player) {
+                p.displayClientMessage(Component.translatable("message.battlegroundsmod.arena_mate_took", player.getDisplayName(), name(id)), false);
+            }
+        }
         if (template == null) {
             placing++;
             try {
@@ -318,18 +339,36 @@ public final class ChallengeArenas {
             } finally {
                 placing--;
             }
-            enter(player, arena, session);
+            enter(arena, session, team);
             return;
         }
-        // Put the arena back over the next ticks; the player goes in when it is ready (about a second).
+        // Put the arena back over the next ticks; the players go in when it is ready (about a second).
         session.state = State.BUILDING;
         session.build = new Build(template, meta, session.center, arena);
         session.buildStart = arena.getGameTime();
-        player.displayClientMessage(Component.translatable("message.battlegroundsmod.arena_building", name(id)), true);
+        for (ServerPlayer p : team) {
+            p.displayClientMessage(Component.translatable("message.battlegroundsmod.arena_building", name(id)), true);
+        }
     }
 
-    // The arena is ready: the player comes in at their side, facing the challenger's, and the countdown starts.
-    private static void enter(ServerPlayer player, ServerLevel arena, Session session) {
+    // Every fight once, though each of its players maps to it.
+    private static List<Session> sessions() {
+        List<Session> list = new ArrayList<>();
+        for (Session s : SESSIONS.values()) {
+            if (!list.contains(s)) {
+                list.add(s);
+            }
+        }
+        return list;
+    }
+
+    private static boolean anyoneIn(Session session) {
+        return SESSIONS.containsValue(session);
+    }
+
+    // The arena is ready: the players come in at their side, facing the challenger's, and the countdown starts. The
+    // first stands on the arena's spot, the others two blocks to each side of it.
+    private static void enter(ServerLevel arena, Session session, List<ServerPlayer> players) {
         ArenaTemplate.Meta meta = session.meta;
         int r = meta.raio();
         AABB box = new AABB(session.center).inflate(r + 3, 0, r + 3).expandTowards(0, meta.altura() + 4, 0).expandTowards(0, -16, 0);
@@ -337,23 +376,39 @@ public final class ChallengeArenas {
             entity.discard();
         }
         BlockPos c = session.center;
-        double px = c.getX() + meta.jogador()[0] + 0.5, py = c.getY() + meta.jogador()[1], pz = c.getZ() + meta.jogador()[2] + 0.5;
         double dx = meta.desafiante()[0] - meta.jogador()[0], dz = meta.desafiante()[2] - meta.jogador()[2];
         float yaw = (float) (Mth.atan2(dz, dx) * Mth.RAD_TO_DEG) - 90f;
+        double len = Math.max(1e-3, Math.sqrt(dx * dx + dz * dz));
+        double sideX = -dz / len, sideZ = dx / len;
         session.fightAt = arena.getGameTime() + COUNTDOWN;
         session.state = State.COUNTDOWN;
-        player.teleportTo(arena, px, py, pz, yaw, 0);
-        player.fallDistance = 0;
         ChallengeSpec.Universe universe = ChallengeSpec.get().universeOf(session.id);
         int color = universe == null ? 0xFFFFFF : universe.color();
-        title(player, Component.translatable("message.battlegroundsmod.arena_title", name(session.id))
-                .withStyle(s -> s.withColor(color).withBold(true)), Component.translatable("message.battlegroundsmod.arena_ready"));
+        BlockPos spot = c.offset(meta.jogador()[0], meta.jogador()[1], meta.jogador()[2]);
+        for (int i = 0; i < players.size(); i++) {
+            ServerPlayer player = players.get(i);
+            int step = (i + 1) / 2 * 2 * (i % 2 == 1 ? 1 : -1);          // 0, +2, -2, +4
+            BlockPos at = BlockPos.containing(spot.getX() + 0.5 + sideX * step, spot.getY(), spot.getZ() + 0.5 + sideZ * step);
+            if (step != 0 && !standable(arena, at)) {
+                at = spot;
+            }
+            player.teleportTo(arena, at.getX() + 0.5, at.getY(), at.getZ() + 0.5, yaw, 0);
+            player.fallDistance = 0;
+            title(player, Component.translatable("message.battlegroundsmod.arena_title", name(session.id))
+                    .withStyle(s -> s.withColor(color).withBold(true)), Component.translatable("message.battlegroundsmod.arena_ready"));
+        }
         Fx.sound(arena, Vec3.atCenterOf(session.center), SoundEvents.END_PORTAL_SPAWN, 0.6f, 1.4f);
     }
 
-    // From the book's "back" button or the end of a fight: home again.
+    private static boolean standable(ServerLevel level, BlockPos at) {
+        return level.getBlockState(at).getCollisionShape(level, at).isEmpty()
+                && level.getBlockState(at.above()).getCollisionShape(level, at.above()).isEmpty()
+                && !level.getBlockState(at.below()).getCollisionShape(level, at.below()).isEmpty();
+    }
+
+    // From the book's "back" button or the end of a fight: home again. The others of the group stay.
     public static void leave(ServerPlayer player) {
-        Session session = SESSIONS.remove(player.getUUID());
+        Session session = SESSIONS.get(player.getUUID());
         if (session == null) {
             if (isArena(player.level().dimension())) {
                 Vec3 home = Universes.homePos(player);
@@ -363,35 +418,72 @@ public final class ChallengeArenas {
         }
         if (session.state == State.FIGHT) {
             player.displayClientMessage(Component.translatable("message.battlegroundsmod.arena_no_escape"), true);
-            SESSIONS.put(player.getUUID(), session);
             return;
         }
+        SESSIONS.remove(player.getUUID());
         sendBack(player, session);
+        closeIfEmpty(player.server, session);
     }
 
+    // Home, with a copy of every soul lying in the arena: each player of the group takes the prize home.
     private static void sendBack(ServerPlayer player, Session session) {
-        removeBoss(player.server, session);
-        ServerLevel level = player.server.getLevel(session.backLevel);
+        Back back = session.back.get(player.getUUID());
+        ServerLevel level = back == null ? null : player.server.getLevel(back.level());
         if (level == null) {
             level = player.server.overworld();
         }
-        // A soul still lying in the arena goes home with the player: it is the prize of the fight.
+        Vec3 pos = back == null ? Vec3.atBottomCenterOf(level.getSharedSpawnPos()) : back.pos();
+        float yaw = back == null ? player.getYRot() : back.yaw();
+        List<ItemStack> souls = souls(player.server, session, false);
+        player.teleportTo(level, pos.x, pos.y, pos.z, yaw, 0);
+        paySouls(player, session, souls);
+    }
+
+    private static void paySouls(ServerPlayer player, Session session, List<ItemStack> souls) {
+        if (souls.isEmpty() || !session.paid.add(player.getUUID())) {
+            return;
+        }
+        for (ItemStack soul : souls) {
+            ItemStack copy = soul.copy();
+            if (!player.getInventory().add(copy)) {
+                player.drop(copy, false);
+            }
+        }
+    }
+
+    // The soul crystals lying in the arena (copies); take = also remove them from the arena.
+    private static List<ItemStack> souls(MinecraftServer server, Session session, boolean take) {
         List<ItemStack> souls = new ArrayList<>();
-        ServerLevel arena = session.arena == null ? null : player.server.getLevel(session.arena);
+        ServerLevel arena = session.arena == null ? null : server.getLevel(session.arena);
         if (arena != null && session.center != null) {
             AABB box = new AABB(session.center).inflate(80, 64, 80);
             for (net.minecraft.world.entity.item.ItemEntity item : arena.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, box,
                     e -> e.getItem().getItem() instanceof com.starkinhon.battlegroundsmod.item.SoulItem)) {
                 souls.add(item.getItem().copy());
-                item.discard();
+                if (take) {
+                    item.discard();
+                }
             }
         }
-        player.teleportTo(level, session.backPos.x, session.backPos.y, session.backPos.z, session.backYaw, 0);
-        for (ItemStack soul : souls) {
-            if (!player.getInventory().add(soul)) {
-                player.drop(soul, false);
+        return souls;
+    }
+
+    // The last player of the fight is gone: a partner who fell before the win gets the soul at home, then the arena
+    // is cleared for the next fight.
+    private static void closeIfEmpty(MinecraftServer server, Session session) {
+        if (anyoneIn(session)) {
+            return;
+        }
+        List<ItemStack> souls = souls(server, session, true);
+        if (session.state == State.DONE) {
+            for (UUID id : session.members) {
+                ServerPlayer member = server.getPlayerList().getPlayer(id);
+                if (member != null) {
+                    paySouls(member, session, souls);
+                }
             }
         }
+        removeBoss(server, session);
     }
 
     private static void removeBoss(MinecraftServer server, Session session) {
@@ -414,17 +506,27 @@ public final class ChallengeArenas {
     }
 
     private static void onServerTick(ServerTickEvent.Post event) {
+        ArenaParty.tick(event.getServer());
         if (SESSIONS.isEmpty()) {
             return;
         }
         MinecraftServer server = event.getServer();
-        for (Map.Entry<UUID, Session> entry : new ArrayList<>(SESSIONS.entrySet())) {
-            Session session = entry.getValue();
-            ServerPlayer player = server.getPlayerList().getPlayer(entry.getKey());
+        for (Session session : sessions()) {
             ServerLevel arena = server.getLevel(session.arena);
-            if (player == null || arena == null || (session.state != State.BUILDING && player.level() != arena)) {
-                SESSIONS.remove(entry.getKey());
-                removeBoss(server, session);
+            List<ServerPlayer> players = new ArrayList<>();
+            for (UUID id : session.members) {
+                if (SESSIONS.get(id) != session) {
+                    continue;
+                }
+                ServerPlayer player = server.getPlayerList().getPlayer(id);
+                if (player == null || arena == null || (session.state != State.BUILDING && player.level() != arena)) {
+                    SESSIONS.remove(id);
+                    continue;
+                }
+                players.add(player);
+            }
+            if (players.isEmpty()) {
+                closeIfEmpty(server, session);
                 continue;
             }
             long now = arena.getGameTime();
@@ -433,8 +535,10 @@ public final class ChallengeArenas {
                     long t0 = System.nanoTime();
                     boolean ready = session.build.step(BUILD_NANOS);
                     if (!ready && (now - session.buildStart) % 20 == 19) {
-                        player.displayClientMessage(Component.translatable("message.battlegroundsmod.arena_building_pct", name(session.id),
-                                session.build.percent()), true);
+                        for (ServerPlayer player : players) {
+                            player.displayClientMessage(Component.translatable("message.battlegroundsmod.arena_building_pct", name(session.id),
+                                    session.build.percent()), true);
+                        }
                     }
                     session.buildNanos += System.nanoTime() - t0;
                     if (ready) {
@@ -444,45 +548,62 @@ public final class ChallengeArenas {
                                 session.buildNanos / 1_000_000, session.build.t.blocks);
                         session.build.release();
                         session.build = null;
-                        enter(player, arena, session);
+                        enter(arena, session, players);
                     }
                 }
                 case COUNTDOWN -> {
-                    catchFall(player, arena, session);
                     long left = session.fightAt - now;
-                    if (left == 60 || left == 40 || left == 20) {
-                        title(player, Component.literal(String.valueOf(left / 20)).withStyle(s -> s.withColor(0xF2C94C).withBold(true)), Component.empty());
-                        Fx.sound(arena, player.position(), SoundEvents.NOTE_BLOCK_HAT.value(), 1f, 0.8f);
+                    for (ServerPlayer player : players) {
+                        catchFall(player, arena, session);
+                        if (left == 60 || left == 40 || left == 20) {
+                            title(player, Component.literal(String.valueOf(left / 20)).withStyle(s -> s.withColor(0xF2C94C).withBold(true)), Component.empty());
+                            Fx.sound(arena, player.position(), SoundEvents.NOTE_BLOCK_HAT.value(), 1f, 0.8f);
+                        }
                     }
                     if (left <= 0) {
-                        spawnBoss(player, arena, session);
+                        spawnBoss(arena, session, players);
                     }
                 }
                 case FIGHT -> {
-                    catchFall(player, arena, session);
+                    for (ServerPlayer player : players) {
+                        catchFall(player, arena, session);
+                    }
                     Entity boss = session.boss == null ? null : arena.getEntity(session.boss);
                     if (boss == null && !session.bossDied && session.respawns < 3) {
                         // Gone without dying (Stark's test 2026-11-10: he came in flying and Kuririn was "born dead",
                         // a win for nothing): bring the character back instead of counting a win.
                         session.respawns++;
-                        spawnBoss(player, arena, session);
+                        spawnBoss(arena, session, players);
                     } else if (boss == null || !boss.isAlive()) {
-                        win(player, session, now);
+                        win(server, session, now);
                     } else {
                         keepInside(boss, session);
-                        if (now % 20 == 0 && boss instanceof Mob mob && mob.getTarget() != player) {
-                            mob.setTarget(player);
+                        if (now % 20 == 0 && boss instanceof Mob mob && !players.contains(mob.getTarget())) {
+                            mob.setTarget(nearest(boss, players));
                         }
                     }
                 }
                 case DONE -> {
                     if (now >= session.doneAt) {
-                        SESSIONS.remove(entry.getKey());
-                        sendBack(player, session);
+                        for (ServerPlayer player : players) {
+                            SESSIONS.remove(player.getUUID());
+                            sendBack(player, session);
+                        }
+                        closeIfEmpty(server, session);
                     }
                 }
             }
         }
+    }
+
+    private static ServerPlayer nearest(Entity from, List<ServerPlayer> players) {
+        ServerPlayer best = players.get(0);
+        for (ServerPlayer player : players) {
+            if (player.distanceToSqr(from) < best.distanceToSqr(from)) {
+                best = player;
+            }
+        }
+        return best;
     }
 
     // Thrown out of the ring (Stark 2026-11-10: the Shikamaru's shadow walked the Kakashi out of it, and the fight and
@@ -502,23 +623,42 @@ public final class ChallengeArenas {
         }
     }
 
-    private static void spawnBoss(ServerPlayer player, ServerLevel arena, Session session) {
+    // Stark 2026-11-13: with a friend in the arena the challenger has twice the life (three times with three...).
+    private static final ResourceLocation GROUP_HEALTH = ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "arena_group_health");
+
+    private static void spawnBoss(ServerLevel arena, Session session, List<ServerPlayer> players) {
         EntityType<?> type = entityType(session.id);
         Entity boss = type == null ? null : type.spawn(arena, spawnPos(session), MobSpawnType.EVENT);
         if (boss == null) {
-            SESSIONS.remove(player.getUUID());
-            sendBack(player, session);
+            for (ServerPlayer player : players) {
+                SESSIONS.remove(player.getUUID());
+                sendBack(player, session);
+            }
+            closeIfEmpty(arena.getServer(), session);
             return;
         }
+        ServerPlayer first = players.get(0);
         if (boss instanceof Mob mob) {
             mob.setPersistenceRequired();
-            mob.lookAt(player, 360, 360);
-            mob.setTarget(player);
+            mob.lookAt(first, 360, 360);
+            mob.setTarget(nearest(boss, players));
+        }
+        int n = players.size();
+        if (n > 1 && boss instanceof net.minecraft.world.entity.LivingEntity living) {
+            var health = living.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH);
+            if (health != null) {
+                health.addOrReplacePermanentModifier(new net.minecraft.world.entity.ai.attributes.AttributeModifier(GROUP_HEALTH, n - 1,
+                        net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
+                living.setHealth(living.getMaxHealth());
+            }
         }
         session.boss = boss.getUUID();
         session.state = State.FIGHT;
-        title(player, Component.translatable("message.battlegroundsmod.arena_fight").withStyle(s -> s.withColor(0xFF4A3A).withBold(true)), Component.empty());
-        Fx.sound(arena, player.position(), SoundEvents.RAID_HORN.value(), 0.7f, 1.2f);
+        Component sub = n > 1 ? Component.translatable("message.battlegroundsmod.arena_group_health", n, n) : Component.empty();
+        for (ServerPlayer player : players) {
+            title(player, Component.translatable("message.battlegroundsmod.arena_fight").withStyle(s -> s.withColor(0xFF4A3A).withBold(true)), sub);
+            Fx.sound(arena, player.position(), SoundEvents.RAID_HORN.value(), 0.7f, 1.2f);
+        }
     }
 
     // Fell through the scenery into the void under it (Stark's PC test 2026-11-13: the Todo forest and the Infinity
@@ -542,22 +682,30 @@ public final class ChallengeArenas {
         return session.center.offset(d[0], d[1], d[2]);
     }
 
-    private static void win(ServerPlayer player, Session session, long now) {
+    // The win counts for everyone who came in, also a partner who fell before the end (if still online): the stamp in
+    // the book, the items the first time, the Poder of their own tier.
+    private static void win(MinecraftServer server, Session session, long now) {
         session.state = State.DONE;
         session.doneAt = now + RETURN_DELAY;
-        List<String> wins = new ArrayList<>(wins(player));
-        boolean first = !wins.contains(session.id);
-        if (first) {
-            wins.add(session.id);
-            player.setData(ModAttachments.ARENA_WINS, List.copyOf(wins));
-            syncWins(player);
-            giveItems(player, ChallengeSpec.get().challenge(session.id));
+        for (UUID id : session.members) {
+            ServerPlayer player = server.getPlayerList().getPlayer(id);
+            if (player == null) {
+                continue;
+            }
+            List<String> wins = new ArrayList<>(wins(player));
+            boolean first = !wins.contains(session.id);
+            if (first) {
+                wins.add(session.id);
+                player.setData(ModAttachments.ARENA_WINS, List.copyOf(wins));
+                syncWins(player);
+                giveItems(player, ChallengeSpec.get().challenge(session.id));
+            }
+            arenaPoder(player, session.id, first);
+            title(player, Component.translatable("message.battlegroundsmod.arena_won").withStyle(s -> s.withColor(0xD8352A).withBold(true)), name(session.id).copy());
+            player.displayClientMessage(Component.translatable(first ? "message.battlegroundsmod.arena_unlocked" : "message.battlegroundsmod.arena_again",
+                    name(session.id), RETURN_DELAY / 20), false);
+            Fx.sound(player.serverLevel(), player.position(), SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, 1f, 1f);
         }
-        arenaPoder(player, session.id, first);
-        title(player, Component.translatable("message.battlegroundsmod.arena_won").withStyle(s -> s.withColor(0xD8352A).withBold(true)), name(session.id).copy());
-        player.displayClientMessage(Component.translatable(first ? "message.battlegroundsmod.arena_unlocked" : "message.battlegroundsmod.arena_again",
-                name(session.id), RETURN_DELAY / 20), false);
-        Fx.sound(player.serverLevel(), player.position(), SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, 1f, 1f);
     }
 
     // Poder for beating a challenge (Stark 2026-11-10: "os bosses dos desafios darem poder quando você vencer"). The kill
@@ -611,19 +759,34 @@ public final class ChallengeArenas {
         }
     }
 
-    // Dying in the arena ends the fight; the player respawns at home as usual.
+
+    // Dying in the arena: alone, the fight ends and the player respawns at home as usual. In a group the others fight
+    // on; the fallen one still gets the win if they finish it.
     private static void onDeath(LivingDeathEvent event) {
-        for (Session session : SESSIONS.values()) {
+        for (Session session : sessions()) {
             if (event.getEntity().getUUID().equals(session.boss)) {
                 session.bossDied = true;
             }
         }
         if (event.getEntity() instanceof ServerPlayer player) {
             Session session = SESSIONS.remove(player.getUUID());
-            if (session != null) {
-                removeBoss(player.server, session);
+            if (session == null) {
+                return;
+            }
+            if (anyoneIn(session) && session.state != State.DONE) {
+                player.displayClientMessage(Component.translatable("message.battlegroundsmod.arena_down_self"), false);
+                for (UUID id : session.members) {
+                    ServerPlayer mate = SESSIONS.get(id) == session ? player.server.getPlayerList().getPlayer(id) : null;
+                    if (mate != null) {
+                        mate.displayClientMessage(Component.translatable("message.battlegroundsmod.arena_mate_down", player.getDisplayName()), true);
+                    }
+                }
+                return;
+            }
+            if (session.state != State.DONE) {
                 player.displayClientMessage(Component.translatable("message.battlegroundsmod.arena_lost", name(session.id)), false);
             }
+            closeIfEmpty(player.server, session);
         }
     }
 
@@ -631,6 +794,7 @@ public final class ChallengeArenas {
     private static void onLogin(PlayerEvent.PlayerLoggedInEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
             syncWins(player);
+            ArenaParty.sync(player);
             if (isArena(player.level().dimension()) && !SESSIONS.containsKey(player.getUUID())) {
                 leave(player);
             }
@@ -639,9 +803,11 @@ public final class ChallengeArenas {
 
     private static void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
+            ArenaParty.leaveGroup(player, false);
             Session session = SESSIONS.remove(player.getUUID());
             if (session != null) {
                 sendBack(player, session);
+                closeIfEmpty(player.server, session);
             }
         }
     }
@@ -1050,11 +1216,32 @@ public final class ChallengeArenas {
                                     ServerPlayer player = context.getSource().getPlayerOrException();
                                     Session old = SESSIONS.remove(player.getUUID());
                                     if (old != null) {
-                                        removeBoss(player.server, old);       // tests jump from arena to arena
+                                        closeIfEmpty(player.server, old);     // tests jump from arena to arena
                                     }
                                     start(player, StringArgumentType.getString(context, "id"));
                                     return 1;
                                 })))
+                .then(Commands.literal("convidar").then(Commands.argument("jogador", EntityArgument.player())
+                        .executes(context -> {
+                            ArenaParty.invite(context.getSource().getPlayerOrException(), EntityArgument.getPlayer(context, "jogador"));
+                            return 1;
+                        })))
+                .then(Commands.literal("aceitar").then(Commands.argument("jogador", StringArgumentType.word())
+                        .executes(context -> {
+                            ServerPlayer player = context.getSource().getPlayerOrException();
+                            ArenaParty.accept(player, player.server.getPlayerList().getPlayerByName(StringArgumentType.getString(context, "jogador")));
+                            return 1;
+                        })))
+                .then(Commands.literal("recusar").then(Commands.argument("jogador", StringArgumentType.word())
+                        .executes(context -> {
+                            ServerPlayer player = context.getSource().getPlayerOrException();
+                            ArenaParty.decline(player, player.server.getPlayerList().getPlayerByName(StringArgumentType.getString(context, "jogador")));
+                            return 1;
+                        })))
+                .then(Commands.literal("grupo").then(Commands.literal("sair").executes(context -> {
+                    ArenaParty.leaveGroup(context.getSource().getPlayerOrException(), true);
+                    return 1;
+                })))
                 .then(Commands.literal("sair").executes(context -> {
                     leave(context.getSource().getPlayerOrException());
                     return 1;
