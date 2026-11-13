@@ -1,0 +1,127 @@
+# Voo de combate = a prévia rodando no cliente (client/PreviewFight, PR #318): K + voando trava no Vegeta; teclas 1/2/3,
+# soco, esquiva, defesa e a IA da prévia (aleatória: os trechos longos deixam ela passar por tudo).
+# Pré-requisito: mundo SoulsDev dos testes do voo (técnica voo aprendida, alma Goku tier 6 = mesmo tier do Vegeta).
+# /devc tecla X N não espera os N ticks: cada tecla segurada vem com espera.
+# Rodar: gradlew runClient -Pmundo=SoulsDev -Proteiro=voo-combate
+/devc fechar
+/dev soltar
+/kill @e[type=!player]
+/time set day
+/weather clear
+/gamemode survival
+/effect give @s resistance 99999 3 true
+/effect give @s saturation 99999 0 true
+# a alma pode ter trocado numa rodada anterior (Vegeta morto = alma dele tomada): volta pro Goku tier 6
+/soul escolher goku
+/soul tier 6
+/soul semcooldown
+/gamerule sendCommandFeedback false
+# área nova (as de 0 -400 e 600 -600 ficaram cheia de crateras das rodadas anteriores)
+/tp @s 1400 -40 -1400 0 0
+/devc vista terceira
+/devc janela 1280 720
+/devc chat off
+espera 30
+
+# Decola (pulo duplo) e sobe
+# toque duplo do vanilla: os dois espaços têm que caber em 7 ticks
+/devc tecla espaco 2
+espera 4
+/devc tecla espaco 2
+espera 4
+espera 10
+# sobe só um pouco (com 25 ticks ia a 48 blocos do Vegeta, fora do alcance dele)
+/devc tecla espaco 8
+espera 10
+espera 10
+
+# Vegeta na frente; o Dash Attack (G) começa a briga
+/summon battlegroundsmod:vegeta 1400 -58 -1388
+# imortal: com as bolas de ki acertando de verdade ele morria na rajada e a cerimônia da alma tomava a cena 09 (r5)
+/dev imortal @e[type=battlegroundsmod:vegeta]
+# ele decola sozinho quando vê o alvo no ar (AirCombat: alvo no ar por 0,35 s)
+espera 80
+/devc print voo-combate/00-vegeta-decolou
+/devc tecla k
+espera 10
+# 1 = Arrancada (a hotbar não pode trocar)
+/devc gravar voo-previa/01-trava-arrancada 3
+espera 20
+/devc tecla 1
+espera 60
+/devc gravar parar
+/devc print voo-previa/01-fim
+
+# Em volta dele: D, A, S, W
+/devc gravar voo-previa/02-strafe 3
+/devc tecla direita 40
+espera 42
+/devc tecla esquerda 40
+espera 42
+/devc tecla tras 20
+espera 22
+/devc tecla frente 30
+espera 32
+/devc gravar parar
+
+# Combo de 4 socos, depois 2 = Forte (aparece atrás / martelo)
+/devc gravar voo-previa/03-combo-forte 3
+/devc tecla frente 15
+espera 16
+/devc tecla ataque
+espera 6
+/devc tecla ataque
+espera 6
+/devc tecla ataque
+espera 6
+/devc tecla ataque
+espera 6
+/devc tecla 2
+espera 50
+/devc gravar parar
+
+# 3 segurado = Rajada teleguiada
+/devc gravar voo-previa/04-rajada 3
+/devc tecla 3 40
+espera 42
+espera 20
+/devc gravar parar
+
+# A IA da prévia solta: esquivas e defesas no meio
+/devc gravar voo-previa/05-ia 3
+espera 60
+/devc tecla ctrl 1
+espera 30
+/devc tecla f 30
+espera 32
+espera 60
+/devc tecla ctrl 1
+espera 20
+/devc tecla 1
+espera 60
+/devc tecla f 40
+espera 42
+espera 60
+/devc gravar parar
+
+# Mais IA (feixe, sumiço, investida), com socos
+/devc gravar voo-previa/06-ia2 3
+espera 40
+/devc tecla ataque
+espera 6
+/devc tecla ataque
+espera 6
+/devc tecla ataque
+espera 40
+/devc tecla 1
+espera 80
+/devc tecla direita 30
+espera 32
+espera 80
+/devc gravar parar
+/devc print voo-previa/06-fim
+
+/dev soltar
+/kill @e[type=battlegroundsmod:vegeta]
+espera 20
+sair

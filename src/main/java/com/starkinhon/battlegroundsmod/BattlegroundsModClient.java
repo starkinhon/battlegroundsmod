@@ -208,6 +208,7 @@ public class BattlegroundsModClient {
         // the combat flight is the approved page run on the client (PreviewFight): the hotbar's numbers are its moves,
         // and its afterimages are taken from the bodies as drawn
         NeoForge.EVENT_BUS.addListener(InputEvent.Key.class, com.starkinhon.battlegroundsmod.client.PreviewFight::onKey);
+        NeoForge.EVENT_BUS.addListener(ClientTickEvent.Pre.class, com.starkinhon.battlegroundsmod.client.PreviewFight::tickPre);
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, true, RenderLivingEvent.Post.class,
                 com.starkinhon.battlegroundsmod.client.fx.PreviewFx::onRenderLiving);
         NeoForge.EVENT_BUS.addListener(InputEvent.MouseScrollingEvent.class, com.starkinhon.battlegroundsmod.client.fx.AzulRenderer::onScroll);

@@ -253,6 +253,24 @@ public final class PreviewFight {
         }
     }
 
+    // Every client tick, before Minecraft reads the hotbar keys: clicks that came some other way (a held key repeating, the
+    // test scripts' keys) are eaten too.
+    public static void tickPre(net.neoforged.neoforge.client.event.ClientTickEvent.Pre event) {
+        if (!running) {
+            return;
+        }
+        var slots = Minecraft.getInstance().options.keyHotbarSlots;
+        for (int i = 0; i < slots.length; i++) {
+            while (slots[i].consumeClick()) {
+                if (i == 0) {
+                    qDash = true;
+                } else if (i == 1) {
+                    qStrong = true;
+                }
+            }
+        }
+    }
+
     private static boolean barrageHeld(Minecraft mc) {
         return mc.screen == null && (mc.options.keyHotbarSlots[2].isDown() || Keybinds.USE_ATTACK.isDown() && BaseAttacks.selectedIndex() == 2);
     }
