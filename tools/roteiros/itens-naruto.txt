@@ -142,6 +142,7 @@ espera 30
 /item replace entity @s hotbar.4 with battlegroundsmod:kunai 16
 /dev invocar minecraft:zombie 6
 /dev imortal @e[type=zombie]
+espera 10
 /devc mirar
 /devc hud on
 espera 10
@@ -171,6 +172,7 @@ espera 30
 /dev invocar minecraft:zombie 3
 /dev travar @e[type=zombie]
 /effect give @e[type=zombie] minecraft:instant_damage 1 0
+espera 10
 /devc mirar
 /devc tecla 9 2
 espera 10

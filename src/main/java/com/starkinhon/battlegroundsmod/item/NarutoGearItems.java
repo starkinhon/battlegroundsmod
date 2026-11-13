@@ -72,9 +72,10 @@ public final class NarutoGearItems {
     }
 
     // Kunai: a quick knife in the hand, and right click throws it (14 on the mod's scale).
-    public static class Kunai extends SwordItem {
+    // Plain Item (not SwordItem): a sword tier adds durability, which forces the stack to 1.
+    public static class Kunai extends Item {
         public Kunai(Properties properties) {
-            super(Tiers.IRON, properties.attributes(SwordItem.createAttributes(Tiers.IRON, 0, -1.8f)));
+            super(properties.attributes(SwordItem.createAttributes(Tiers.IRON, 0, -1.8f)));
         }
 
         @Override
