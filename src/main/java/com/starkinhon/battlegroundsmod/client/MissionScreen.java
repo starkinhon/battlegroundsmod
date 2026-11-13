@@ -414,11 +414,12 @@ public class MissionScreen extends Screen {
         }
         if (pan > 0.01f && shownSel != null) {
             float px = GW - (panelW + 8) * Px.easeOut(pan), py = 30, ph = GH - py - 22;
+            // the panel takes the clicks off the map under it; registered first so its buttons (Rastrear, rewards) win
+            Px.hit(px, py, panelW, ph, null);
             drawMissionPage(shownSel, px, py, panelW, ph, u.cor());
             float bx = px + panelW - 10, by = py - 1;
             boolean ov = Px.over(bx - 2, by - 2, 12, 12);
             Px.cross(bx + 1, by + 1, ov ? WHITE : rgb(170, 164, 190), 1);
-            Px.hit(px, py, panelW, ph, null);
             Px.hit(bx - 2, by - 2, 12, 12, () -> {
                 mapSel = null;
                 click();
