@@ -104,7 +104,12 @@ def vale_do_fim():
             dp = math.hypot((x - pool_c[0]) / 1.25, z - pool_c[1])
             in_pool = dp < 13 + n.f2(x, z, 6) * 1.5 and z >= LIP_Z - 1
             in_river = abs(dx) < wr and z > LIP_Z
-            in_upper = abs(x - cxr(z)) < 6.5 and z < LIP_Z and h >= TOP - 2
+            # the upper river runs all the way to the lip whatever the terrain does there (Stark 2026-11-13: a strip of
+            # rock between it and the fall left the curtain unfed, so in the game it ran dry)
+            in_upper = abs(x - cxr(z)) < 6.5 and z < LIP_Z
+            if z < LIP_Z and 6.5 <= abs(x - cxr(z)) < 9.5:
+                for y in range(h + 1, TOP):          # banks high enough to hold it
+                    v.set(x, y, z, rock.at(x, y, z))
             if in_pool or in_river:
                 depth = 3 if in_pool else (2 if abs(dx) < wr - 4 and n.f2(x, z, 7) > -0.1 else 1)
                 for y in range(-depth, 2):
@@ -114,6 +119,8 @@ def vale_do_fim():
                 for y in range(-depth, 1):
                     v.set(x, y, z, 'water')
             elif in_upper:
+                for y in range(h + 1, TOP - 3):            # raise the bed where the ground dips
+                    v.set(x, y, z, rock.at(x, y, z))
                 for y in range(TOP - 2, TOP + 6):
                     v.set(x, y, z, None)
                 v.set(x, TOP - 3, z, 'gravel')

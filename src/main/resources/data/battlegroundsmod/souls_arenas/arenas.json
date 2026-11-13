@@ -127,7 +127,7 @@
    220
   ],
   "noite": false,
-  "minY": -41,
+  "minY": -42,
   "maxY": 65,
   "nome": "Shinjuku"
  },
@@ -171,7 +171,7 @@
    280
   ],
   "noite": false,
-  "minY": -33,
+  "minY": -34,
   "maxY": 31,
   "nome": "Salão das preliminares"
  },
@@ -193,7 +193,7 @@
    210
   ],
   "noite": false,
-  "minY": -33,
+  "minY": -34,
   "maxY": 46,
   "nome": "Escola Jujutsu de Tóquio"
  },
@@ -215,7 +215,7 @@
    190
   ],
   "noite": true,
-  "minY": -41,
+  "minY": -42,
   "maxY": 81,
   "nome": "Cruzamento de Shibuya"
  },
@@ -237,7 +237,7 @@
    280
   ],
   "noite": false,
-  "minY": -80,
+  "minY": -106,
   "maxY": 86,
   "nome": "Telhado do Domo da Caveira"
  },
@@ -282,7 +282,7 @@
   ],
   "noite": false,
   "minY": -39,
-  "maxY": 13,
+  "maxY": 11,
   "nome": "Ilha da Kame House"
  },
  "kokushibo": {
@@ -303,7 +303,7 @@
    150
   ],
   "noite": true,
-  "minY": -98,
+  "minY": -95,
   "maxY": 96,
   "nome": "Castelo Infinito"
  },
@@ -325,7 +325,7 @@
    240
   ],
   "noite": false,
-  "minY": -33,
+  "minY": -34,
   "maxY": 17,
   "nome": "Torneio de Artes Marciais"
  },
@@ -391,7 +391,7 @@
    210
   ],
   "noite": false,
-  "minY": -33,
+  "minY": -34,
   "maxY": 46,
   "nome": "Escola Jujutsu de Kyoto"
  },
@@ -436,7 +436,7 @@
   ],
   "noite": false,
   "minY": -33,
-  "maxY": 51,
+  "maxY": 45,
   "nome": "Estádio das finais"
  },
  "nobara": {
@@ -479,7 +479,7 @@
    230
   ],
   "noite": false,
-  "minY": -34,
+  "minY": -36,
   "maxY": 57,
   "nome": "Planalto rochoso"
  },
@@ -501,7 +501,7 @@
    260
   ],
   "noite": false,
-  "minY": -35,
+  "minY": -34,
   "maxY": 134,
   "nome": "Las Noches"
  },
@@ -545,7 +545,7 @@
    160
   ],
   "noite": false,
-  "minY": -33,
+  "minY": -34,
   "maxY": 22,
   "nome": "Esconderijo Uchiha"
  },
@@ -567,7 +567,7 @@
    170
   ],
   "noite": false,
-  "minY": -38,
+  "minY": -39,
   "maxY": 52,
   "nome": "Cidade Jaku em pó"
  },
@@ -589,7 +589,7 @@
    130
   ],
   "noite": false,
-  "minY": -33,
+  "minY": -35,
   "maxY": 41,
   "nome": "Floresta dos Nara"
  },
@@ -611,7 +611,7 @@
    180
   ],
   "noite": true,
-  "minY": -41,
+  "minY": -42,
   "maxY": 64,
   "nome": "Shibuya destruída"
  },
@@ -633,7 +633,7 @@
    120
   ],
   "noite": false,
-  "minY": -35,
+  "minY": -36,
   "maxY": 50,
   "nome": "Floresta do intercâmbio"
  },

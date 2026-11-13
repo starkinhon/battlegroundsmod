@@ -470,9 +470,8 @@ def torneio_de_artes_marciais():
                     v.set(x, y, z, 'white_terracotta' if y < 3 else 'red_terracotta')
             elif 47 <= m <= 60:
                 t = (m - 47) // 2
-                for y in range(1, 4 + t * 2):
-                    if y > 1 + t * 2:
-                        v.set(x, y, z, 'smooth_sandstone' if (m - 47) % 2 == 0 else 'cut_sandstone')
+                for y in range(1, 4 + t * 2):          # solid steps: nothing grows under them, nothing shows through
+                    v.set(x, y, z, 'smooth_sandstone' if (m - 47) % 2 == 0 or y <= 1 + t * 2 else 'cut_sandstone')
             elif m == 61:
                 for y in range(1, 18):
                     v.set(x, y, z, 'white_terracotta' if y % 6 else 'red_terracotta')
@@ -496,10 +495,19 @@ def torneio_de_artes_marciais():
             if k == 0:
                 v.set(cx, y + 1, cz, 'orange_terracotta')
     v.set(0, 16, hz - 2, 'gold_block')
+    # inside the hall: a wooden floor and darkness behind the doorway (Stark 2026-11-13: no grass through the door)
+    for x in range(-11, 12):
+        for z in range(hz - 7, hz + 4):
+            v.set(x, 0, z, 'spruce_planks')
+    for x in range(-4, 5):
+        for y in range(1, 8):
+            v.set(x, y, hz + 1, 'black_concrete')
     # palm trees and the town of Papaya island
     for i in range(40):
         a = rng.uniform(0, 2 * math.pi); d = rng.uniform(64, 98)
         x, z = int(math.cos(a) * d), int(math.sin(a) * d)
+        if max(abs(x), abs(z)) < 66:
+            continue                          # the square wall and the stands reach out to 61: the town is past them
         if i % 2:
             palm(v, x, 1, z, rng)
         else:
@@ -520,18 +528,43 @@ def torneio_de_artes_marciais():
     return v, meta
 
 def palm(v, x, y, z, rng):
+    """A coconut palm: a curved trunk that is one piece (each step sideways keeps a block under the new column, never
+    two blocks touching by a corner), a round crown and drooping fronds that stay attached to it all the way out."""
     h = int(rng.integers(8, 14)); a = rng.uniform(0, 2 * math.pi); bend = rng.uniform(0.05, 0.18)
     px, pz = float(x), float(z)
+    cx, cz = x, z
     for i in range(h):
         px += math.cos(a) * bend * i / h * 2; pz += math.sin(a) * bend * i / h * 2
-        v.set(int(round(px)), y + i, int(round(pz)), 'jungle_log[axis=y]')
-    tx, ty, tz = int(round(px)), y + h, int(round(pz))
-    v.set(tx, ty, tz, 'jungle_leaves[persistent=true]')
-    for k in range(6):
-        b = k / 6 * 2 * math.pi + rng.uniform(-0.2, 0.2)
-        for j in range(1, 6):
-            dy = 0 if j < 3 else -(j - 2)
-            v.set(tx + int(round(math.cos(b) * j)), ty + dy, tz + int(round(math.sin(b) * j)), 'jungle_leaves[persistent=true]')
+        nx, nz = int(round(px)), int(round(pz))
+        if nx != cx:                          # one axis at a time, with a joint block on the old level
+            cx = nx; v.set(cx, y + i - 1, cz, 'jungle_log[axis=y]')
+        if nz != cz:
+            cz = nz; v.set(cx, y + i - 1, cz, 'jungle_log[axis=y]')
+        v.set(cx, y + i, cz, 'jungle_log[axis=y]')
+    tx, ty, tz = cx, y + h, cz
+    for dx in (-1, 0, 1):
+        for dz in (-1, 0, 1):
+            v.set(tx + dx, ty, tz + dz, 'jungle_leaves[persistent=true]')
+    v.set(tx, ty + 1, tz, 'jungle_leaves[persistent=true]')
+    for k in range(7):
+        b = k / 7 * 2 * math.pi + rng.uniform(-0.2, 0.2)
+        L = int(rng.integers(5, 8))
+        last = (tx, ty, tz)
+        for j in range(1, L + 1):
+            fx, fz = tx + int(round(math.cos(b) * j)), tz + int(round(math.sin(b) * j))
+            fy = ty - max(0, j - 3) // 2
+            # walk from the last leaf to this one a block at a time (x, then z, then y): always face to face
+            lx, ly, lz = last
+            while (lx, lz) != (fx, fz) or ly != fy:
+                if lx != fx:
+                    lx += 1 if fx > lx else -1
+                elif lz != fz:
+                    lz += 1 if fz > lz else -1
+                else:
+                    ly += 1 if fy > ly else -1
+                if v.get(lx, ly, lz) is None:
+                    v.set(lx, ly, lz, 'jungle_leaves[persistent=true]')
+            last = (fx, fy, fz)
 
 @arena('piccolo')
 def planalto_rochoso():
@@ -643,9 +676,16 @@ def ilha_kame_house():
     for dx in range(-7, 8):
         for dz in range(6, 9):
             v.set(hx + dx, 2, hz + dz, 'smooth_quartz_slab[type=top]' if dz < 8 else 'birch_planks')
-    for dx in (-7, 7):
-        for y in range(3, 6):
-            v.set(hx + dx, y, hz + 8, 'birch_fence')
+    # porch railing along the front, open in the middle (Stark 2026-11-13: two lone posts looked like sticks)
+    for dx in range(-7, 8):
+        if abs(dx) > 2:
+            v.set(hx + dx, 3, hz + 8, 'birch_fence')
+    for dz in range(6, 9):
+        v.set(hx - 7, 3, hz + dz, 'birch_fence'); v.set(hx + 7, 3, hz + dz, 'birch_fence')
+    # a dark room behind the open door
+    for dx in range(-5, 6):
+        for y in range(3, 8):
+            v.set(hx + dx, y, hz + 3, 'black_concrete')
     palm(v, 12, 2, -8, rng)
     palm(v, 15, 1, 6, rng)
     # the beach chair and umbrella

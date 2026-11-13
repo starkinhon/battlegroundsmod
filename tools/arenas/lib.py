@@ -513,6 +513,9 @@ def _fill_block(b):
         return 'minecraft:stone'
     return b
 
+_NOT_FLOOR = ('_log', '_wood', 'leaves', 'folha', 'planks', 'fence', '_wall', 'slab', 'stairs', 'pane', 'glass', 'wool',
+              'terracotta', 'concrete', 'bricks')
+
 def underlay(v, R, depth=32, reach=6):
     """The arenas are destructible (Stark 2026-11-13): a technique that digs the floor must hit more ground, never open
     a hole into the void. Under every column of the fight circle (and a few blocks past it) the first ground at or below
@@ -527,9 +530,15 @@ def underlay(v, R, depth=32, reach=6):
     n = 0
     for (x, z), c in cols.items():
         ys = sorted((y for y in c if y <= 2), reverse=True)
-        top = next((y for y in ys if _ground(v, x, y, z)), None)
+        # the ground is earth or stone, never a tree, a roof edge or a fence hanging over a slope (Stark 2026-11-13:
+        # stone pillars grew under the trees of Kaioh's planet down to its curved side)
+        top = next((y for y in ys if _ground(v, x, y, z) and not any(t in _name(c[y]) for t in _NOT_FLOOR)), None)
         if top is None:
             continue
+        low = min(c)
+        if any(c.get(y) is None or _name(c[y]) == 'air' for y in range(low, top)):
+            continue                          # air under this ground before the column's bottom: an overhang or a
+                                              # sphere's side, not a floor to thicken
         mat = None
         for y in range(top, top - depth - 1, -1):
             b = c.get(y)
@@ -576,6 +585,12 @@ def illuminate(v, R, altura, target=11, level=14, step=6, reach=12, open_sky=Fal
 
 _SEE = ('glass', 'pane', 'bars', 'door', 'trapdoor', 'fence', 'chain', 'lantern', 'torch')
 
+_NATURAL = {'grass_block', 'dirt', 'coarse_dirt', 'rooted_dirt', 'gravel', 'stone', 'andesite', 'diorite', 'granite',
+            'sand', 'red_sand', 'podzol', 'moss_block', 'mud', 'clay', 'deepslate', 'tuff', 'basalt', 'calcite',
+            'white_wool', 'yellow_wool', 'namek_rock', 'namek_rock_layer', 'namek_sand', 'kaioh_grama', 'snow_block',
+            'ice', 'packed_ice', 'netherrack', 'magma_block', 'obsidian', 'blackstone', 'dripstone_block', 'terracotta',
+            'brown_terracotta', 'mycelium'}
+
 def dark_interiors(v, R, reach=16, roof=14):
     """Stark 2026-11-13: through the doors and windows of the scenery's houses and buildings one saw straight through to
     the sky behind or into a lit empty box. Every empty cell inside a building (a roof above within `roof`, walls on at
@@ -601,7 +616,10 @@ def dark_interiors(v, R, reach=16, roof=14):
             see[i] = True
             solid[i] = True
         elif mesher.is_full(b) or 'stairs' in nm or 'slab' in nm or 'wall' in nm:
-            solid[i] = True
+            # rock, earth, sand, leaves and clouds are not a building (Stark 2026-11-13: black spots in the holes of
+            # Vegeta's rock spires and between the clouds under Kaioh's planet)
+            if not (nm in _NATURAL or 'leaves' in nm or nm.startswith('folha')):
+                solid[i] = True
     big = 10 ** 6
     def dist(axis, rev):
         d = np.full(S, big, np.int32)
