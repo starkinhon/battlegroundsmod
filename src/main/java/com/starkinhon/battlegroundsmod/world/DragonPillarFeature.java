@@ -37,7 +37,8 @@ public final class DragonPillarFeature extends Feature<NoneFeatureConfiguration>
         if (ground <= level.getMinBuildHeight() + 4 || !level.getFluidState(new BlockPos(origin.getX(), ground, origin.getZ())).isEmpty()) {
             return false;
         }
-        if (nearOtherUniverse(level, origin, ground)) {
+        if (nearOtherUniverse(level, origin, ground)
+                || ColoniaFeature.covers(level, context.chunkGenerator(), origin.getX(), origin.getZ(), REACH)) {
             return false;
         }
         boolean mesa = random.nextInt(4) == 0;

@@ -270,6 +270,42 @@ public final class ColoniaFeature extends Feature<NoneFeatureConfiguration> {
         return new int[] {cx, cz, half, cityY, JjkGen.hashInt(ci, cj, 111, seed), dome ? 1 : 0};
     }
 
+    // Whether a column is on a Colony piece or its skirt, give or take a margin. Other features ask this so they never put
+    // anything on the city: a patch of another biome can sit inside a piece (the piece only needs its biome at 7 of 8
+    // points of its ring), and a Dragon World pillar there was cut by the city and left floating (Stark, 2026-11-13).
+    public static boolean covers(WorldGenLevel level, ChunkGenerator generator, int x, int z, int margin) {
+        RandomState random = ((ServerLevel) level.getLevel()).getChunkSource().randomState();
+        long worldSeed = level.getSeed();
+        int worldKey = (int) (worldSeed ^ (worldSeed >>> 32));
+        int seed = worldKey ^ SALT;
+        int sea = generator.getSeaLevel() - 1;
+        int maxY = level.getMaxBuildHeight() - 1;
+        IntBinaryOperator ground = (gx, gz) -> LeafForestFeature.height(generator, level, random, worldKey, gx, gz) - 1;
+        int reach = ColoniaGen.HALF + SKIRT + margin;
+        // Cheap test first: a piece is only where the biome is, and every piece is over 120 wide, so a grid of 48
+        // around the spot finds it. Without the biome near, no cell's site is worked out (that costs terrain samples).
+        boolean near = false;
+        int y = sea + 1;
+        for (int dx = -reach; dx <= reach && !near; dx += 48) {
+            for (int dz = -reach; dz <= reach && !near; dz += 48) {
+                near = biomeAt(generator, random, x + dx, y, z + dz);
+            }
+        }
+        if (!near) {
+            return false;
+        }
+        for (int ci = Math.floorDiv(x - reach, CELL); ci <= Math.floorDiv(x + reach, CELL); ci++) {
+            for (int cj = Math.floorDiv(z - reach, CELL); cj <= Math.floorDiv(z + reach, CELL); cj++) {
+                int[] s = site(ci, cj, worldKey, seed, sea, generator, random, ground, maxY);
+                int r = s == NONE ? -1 : s[2] + SKIRT + margin;
+                if (s != NONE && x >= s[0] - r && x <= s[0] + r - 1 && z >= s[1] - r && z <= s[1] + r - 1) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     // The colony's centers near a spot (for the client's dome and the ambience): {cx, cz, cityY} of each colony whose
     // cell is within one of the spot's cell. Only cells already looked at by the generator are known.
     public static List<int[]> knownColonies(int x, int z, long worldSeed) {
