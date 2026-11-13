@@ -674,65 +674,131 @@ def ilha_kame_house():
 
 @arena('goku')
 def planeta_do_kaioh():
-    """King Kai's tiny planet at the end of Snake Way: a small round world with heavy gravity, green lawn, the domed
-    house, his round car, one tree, the clouds of Other World below and the yellow sky."""
+    """King Kai's tiny planet at the end of Snake Way, as in the anime (Stark's frames 2026-11-13): a smooth bright green
+    ball (its own flat cartoon lawn block), the wide road of pale flagstones that goes all the way round the planet, the
+    orange domed house with its light cap and round windows, the orange hut beside it, puffy round trees (some growing out
+    of the planet's sides), the pink sky and the yellow clouds of Other World below."""
     v = Vox(); n = Noise(6401); rng = np.random.default_rng(6401)
     R = 36
     PR = 58                                   # planet radius: the lawn curves away round the fight
     cy = -PR
+    GR = 'battlegroundsmod:kaioh_grama'; RD = 'battlegroundsmod:kaioh_lajota'
+    HO = 'battlegroundsmod:kaioh_casa'; HL = 'battlegroundsmod:kaioh_casa_clara'
+    # the road: a great circle tilted so it crosses the top a little in front of the houses (z = -PR tan b), 9 wide
+    b = math.radians(9); rn = (0.0, math.sin(b), math.cos(b)); RW = 4.6
+    def road_d(x, y, z):
+        return x * rn[0] + (y - cy) * rn[1] + z * rn[2]
     for x in range(-PR - 2, PR + 3):
         for z in range(-PR - 2, PR + 3):
             for y in range(-2 * PR - 2, 2):
-                d = math.sqrt(x * x + (y - cy) ** 2 + z * z)
+                d = math.sqrt(x * x + (y - cy) ** 2 + z * z) + 0.3     # no lone block on the very top
                 if d <= PR:
                     if y < cy + PR - 6 and d < PR - 3:
                         continue        # hollow
-                    v.set(x, y, z, 'grass_block[snowy=false]' if d > PR - 1 else ('dirt' if d > PR - 3 else 'stone'))
+                    rd = abs(road_d(x, y, z))
+                    if d > PR - 1.6 and rd <= RW:
+                        blk = RD
+                    elif d > PR - 1:
+                        blk = GR
+                    else:
+                        blk = 'dirt' if d > PR - 3 else 'stone'
+                    v.set(x, y, z, blk)
     def surf(x, z):
         q = PR * PR - x * x - z * z
         return int(math.floor(cy + math.sqrt(q))) if q > 0 else None
-    # the house: white dome with a red band, door and round windows
-    hx, hz = 0, -22
+    # the domed house: orange dome, light yellow cap on top, a ring of round windows with lavender frames, a door
+    hx, hz = -7, -27
     sy = surf(hx, hz)
-    for dx in range(-8, 9):
-        for dz in range(-8, 9):
-            for dy in range(0, 10):
-                q = (dx / 7.5) ** 2 + (dz / 7.5) ** 2 + (dy / 9.0) ** 2
-                if 0.78 <= q <= 1.0:
-                    b = 'white_concrete' if dy != 3 else 'red_concrete'
-                    if dy in (2, 3, 4) and abs(dx) < 2 and dz > 5:
-                        b = None
-                    v.set(hx + dx, sy + 1 + dy, hz + dz, b)
-    for dy in range(9, 13):
-        v.set(hx, sy + dy, hz, 'white_concrete' if dy < 12 else 'red_concrete')
-    # the car (round red body) and the tree
-    cx_, cz_ = 18, -10
-    s2 = surf(cx_, cz_)
-    for dx in range(-3, 4):
-        for dz in range(-2, 3):
-            for dy in range(0, 3):
-                if (dx / 3.2) ** 2 + (dz / 2.2) ** 2 + (dy / 2.6) ** 2 <= 1:
-                    v.set(cx_ + dx, s2 + 2 + dy, cz_ + dz, 'red_concrete' if dy < 2 else 'light_blue_stained_glass')
-    for (dx, dz) in ((-2, -2), (2, -2), (-2, 2), (2, 2)):
-        v.set(cx_ + dx, s2 + 1, cz_ + dz, 'black_concrete')
-    tree(v, -18, surf(-18, -6) + 1, -6, rng, 'oak', height=9, crown=4)
-    # the road that goes all the way round the little planet (a great circle, past the house and the car), and Snake
-    # Way leaving it tangent to the lawn, yellow, out into the sky
-    a = math.radians(30); nx, nz = math.cos(a), math.sin(a)
-    for (x, y, z), b in list(v.b.items()):
-        if b and 'grass_block' in b and abs(x * nx + z * nz) <= 1.6:
-            v.set(x, y, z, 'dirt_path')
-    tx, tz = -nz, nx
-    y0 = surf(int(tx * 30), int(tz * 30))
-    for i in range(0, 90):
-        d = 30 + i * 0.5
-        y = int(round(y0 - i * 0.15))
-        for k in (-1.0, -0.5, 0.0, 0.5, 1.0):
-            x, z = int(round(tx * d + nx * k)), int(round(tz * d + nz * k))
-            s0 = surf(x, z)
-            if s0 is not None and s0 >= y:
-                continue
-            v.set(x, y, z, 'yellow_terracotta' if abs(k) < 0.6 else 'orange_terracotta')
+    for dx in range(-9, 10):
+        for dz in range(-9, 10):
+            for dy in range(-3, 11):
+                q = (dx / 7.8) ** 2 + (dz / 7.8) ** 2 + (max(dy, 0) / 8.5) ** 2
+                if dy < 0:
+                    if dx * dx + dz * dz <= 7.8 * 7.8:
+                        v.set(hx + dx, sy + 1 + dy, hz + dz, HO)   # foundation into the curved lawn
+                    continue
+                if q <= 1.0 and (q >= 0.72 or dy == 0):
+                    blk = HL if dy >= 7 else HO
+                    v.set(hx + dx, sy + 1 + dy, hz + dz, blk)
+                elif q < 0.72 and dy > 0:
+                    v.set(hx + dx, sy + 1 + dy, hz + dz, None)
+    for a in (45, 135, 215, 325):                                 # round windows
+        ca, sa = math.cos(math.radians(a)), math.sin(math.radians(a))
+        wx, wz = hx + ca * 7.2, hz + sa * 7.2
+        for ox in range(-2, 3):
+            for oy in range(-2, 3):
+                if ox * ox + oy * oy > 5:
+                    continue
+                px, pz = int(round(wx - sa * ox)), int(round(wz + ca * ox))
+                y = sy + 4 + oy
+                v.set(px, y, pz, None if ox * ox + oy * oy <= 2 else 'purpur_block')
+    for oy in range(0, 4):                                        # the door, facing the road
+        for ox in (-1, 0, 1):
+            v.set(hx + ox, sy + 1 + oy, hz + 7, None if oy < 3 else 'purpur_block')
+            v.set(hx + ox, sy + 1 + oy, hz + 8, None)
+    v.set(hx, sy + 10, hz, HL); v.set(hx, sy + 11, hz, 'lightning_rod')
+    # the hut beside it: a half cylinder lying along x, orange, white double door at its front
+    ux, uz, ur, ul = 9, -30, 5.2, 10
+    su = surf(ux, uz)
+    for dx in range(-ul // 2, ul // 2 + 1):
+        for dz in range(-6, 7):
+            for dy in range(-3, 7):
+                q = math.hypot(dz, max(dy, 0))
+                if dy < 0:
+                    if abs(dz) <= ur:
+                        v.set(ux + dx, su + 1 + dy, uz + dz, HO)
+                    continue
+                end = abs(dx) == ul // 2
+                if q <= ur and (q >= ur - 1.0 or end):
+                    v.set(ux + dx, su + 1 + dy, uz + dz, HO if not (end and q < ur - 1.0) else HL)
+                elif q < ur - 1.0:
+                    v.set(ux + dx, su + 1 + dy, uz + dz, None)
+    for dz in (-1, 0, 1):
+        for dy in range(0, 3):
+            v.set(ux + ul // 2, su + 1 + dy, uz + dz, 'white_concrete' if dz else 'light_gray_concrete')
+    v.set(ux + ul // 2, su + 4, uz, 'white_concrete')
+    for dy in range(0, 3):                                         # the little antenna on the roof
+        v.set(ux - 2, su + 7 + dy, uz, 'lightning_rod' if dy == 2 else 'iron_bars')
+    # puffy cartoon trees: a dark trunk along the planet's normal, crowns of round lobes, light on top, dark under
+    LV = ('battlegroundsmod:folhas_da_folha_clara[persistent=true]', 'battlegroundsmod:folhas_da_folha[persistent=true]',
+          'battlegroundsmod:folhas_da_folha_escura[persistent=true]')
+    def cartoon_tree(px, py, pz, h, r):
+        nrm = np.array([px, py - cy, pz], float); nrm /= np.linalg.norm(nrm)
+        base = np.array([px, py, pz], float)
+        for i in range(h):
+            q = base + nrm * i
+            v.set(int(round(q[0])), int(round(q[1])), int(round(q[2])), 'dark_oak_log[axis=y]')
+        top = base + nrm * h
+        side = np.cross(nrm, [0.3, 0.2, 0.9]); side /= np.linalg.norm(side)
+        side2 = np.cross(nrm, side)
+        lobes = [(top + nrm * r * 0.4, r)]
+        for k in range(int(rng.integers(3, 5))):
+            a = rng.uniform(0, 2 * math.pi)
+            lobes.append((top + (side * math.cos(a) + side2 * math.sin(a)) * r * 0.75 + nrm * rng.uniform(-0.2, 0.5) * r,
+                          r * rng.uniform(0.62, 0.8)))
+        Rb = int(r * 2.2)
+        for dx in range(-Rb, Rb + 1):
+            for dy in range(-Rb, Rb + 1):
+                for dz in range(-Rb, Rb + 1):
+                    p = top + np.array([dx, dy, dz], float)
+                    inside = any(np.sum((p - c) ** 2) <= rr * rr for c, rr in lobes)
+                    if not inside:
+                        continue
+                    cell = (int(round(p[0])), int(round(p[1])), int(round(p[2])))
+                    if v.get(*cell) is not None:
+                        continue
+                    t = np.dot(p - top, nrm) / r
+                    v.set(*cell, LV[0] if t > 0.55 else LV[1] if t > -0.2 else LV[2])
+    cartoon_tree(-21, surf(-21, -27) + 1, -27, 5, 4.2)
+    cartoon_tree(23, surf(23, -24) + 1, -24, 4, 3.6)
+    for (ax, az) in ((-50, 12), (44, 30), (8, 52), (-30, 45)):        # on the planet's sides, sticking out sideways
+        q = PR * PR - ax * ax - az * az
+        if q <= 0:
+            continue
+        sy2 = cy + math.sqrt(q)
+        d = math.sqrt(ax * ax + (sy2 - cy) ** 2 + az * az)
+        k = (PR + 0.5) / d
+        cartoon_tree(int(round(ax * k)), int(round(cy + (sy2 - cy) * k)), int(round(az * k)), 4, 3.6)
     # the yellow clouds of Other World far below
     for i in range(160):
         x, z = (int(a) for a in rng.uniform(-120, 120, 2))
@@ -743,10 +809,10 @@ def planeta_do_kaioh():
                 if dx * dx + dz * dz <= r * r * (1 + n.f2(x + dx, z + dz, 3) * 0.3):
                     v.set(x + dx, y, z + dz, 'yellow_wool' if rng.random() < 0.7 else 'white_wool')
     meta = dict(universo='dragonball', personagem='Goku', lugar='Planeta do Senhor Kaioh', nome='Planeta do Senhor Kaioh',
-                canon='O planetinha do Senhor Kaioh no fim do Caminho da Serpente, onde o Goku treinou: gramado curvo com a estradinha que dá a volta no planeta inteiro, a casa redonda, o carro, a árvore, o céu rosado e as nuvens amarelas do Outro Mundo lá embaixo.',
-                R=R, altura=60, ceu=['#e48fb6', '#fbd3e2'], neblina=[90, 240],
+                canon='O planetinha do Senhor Kaioh no fim do Caminho da Serpente, onde o Goku treinou: a bola verde lisinha, a estrada de lajotas que dá a volta no planeta inteiro, a casa em domo laranja e a cabana, as árvores redondas, o céu rosado e as nuvens amarelas do Outro Mundo lá embaixo.',
+                R=R, altura=60, ceu=['#e58ad0', '#f7c4e4'], neblina=[90, 240],
                 jogador=[0, 1, 20], desafiante=[0, 1, -8], camLado=[50, 26, 62], alvoY=-2,
-                tints={'grass': (110, 200, 90), 'foliage': (80, 170, 60)})
+                tints={'grass': (138, 206, 72), 'foliage': (90, 180, 70)})
     return v, meta
 
 @arena('vegeta')
