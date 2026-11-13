@@ -56,6 +56,7 @@ public final class QuestHud {
     private static String doneMission = "", doneQuest = "";
     private static long doneAt = -1;
     private static List<String> doneRewards = List.of();
+    private static boolean doneSeen, arriveSeen;
 
     private QuestHud() {
     }
@@ -83,11 +84,13 @@ public final class QuestHud {
             doneQuest = quest;
             doneRewards = List.copyOf(rewards);
             doneAt = System.currentTimeMillis();
+            doneSeen = false;
             Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, 1f, 0.8f));
         } else {
             arriveMission = mission;
             arriveColor = color;
             arriveAt = System.currentTimeMillis();
+            arriveSeen = false;
             Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_TOAST_IN, 1f, 1f));
         }
     }
@@ -116,14 +119,21 @@ public final class QuestHud {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.player == null || minecraft.options.hideGui || CutsceneHud.hidden() || minecraft.screen != null) {
             // held at their start while something covers the HUD (the talk scene, a menu): seen when it closes
+            // (only until it starts: one already on screen runs out, it does not play again after the next talk)
             long now = System.currentTimeMillis();
-            if (doneAt >= 0) {
+            if (doneAt >= 0 && !doneSeen) {
                 doneAt = now;
             }
-            if (arriveAt >= 0) {
+            if (arriveAt >= 0 && !arriveSeen) {
                 arriveAt = now;
             }
             return;
+        }
+        if (doneAt >= 0) {
+            doneSeen = true;
+        }
+        if (arriveAt >= 0) {
+            arriveSeen = true;
         }
         Px.begin(graphics, -1, -1);
         try {

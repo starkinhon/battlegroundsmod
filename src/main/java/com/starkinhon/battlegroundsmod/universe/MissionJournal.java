@@ -96,7 +96,7 @@ public final class MissionJournal {
     }
 
     // The player walked into a structure: its pin shows on the map from now on.
-    static void found(ServerPlayer player, String mission, BlockPos at) {
+    public static void found(ServerPlayer player, String mission, BlockPos at) {
         if (mission == null) {
             return;
         }

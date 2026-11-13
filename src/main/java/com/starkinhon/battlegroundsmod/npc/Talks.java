@@ -49,8 +49,16 @@ public final class Talks {
         return Component.Serializer.toJson(c, player.registryAccess());
     }
 
+    // The mission each NPC gives: talking to it puts the pin on the Diário's map too (an NPC met away from its structure).
+    private static final java.util.Map<String, String> MISSIONS = java.util.Map.of("bulma", "capsula", "mestre_kame", "kame", "boo", "buu",
+            "gohan", "goku", "korin", "karin");
+
     public static void open(ServerPlayer player, UniverseNpc npc) {
         npc.hold(player);
+        String own = MISSIONS.get(npc.npcId());
+        if (own != null) {
+            MissionJournal.found(player, own, npc.blockPosition());
+        }
         String name = json(player, npc.getType().getDescription());
         String mission = DbActivities.talkMission(player, npc.npcId());
         if (mission != null) {

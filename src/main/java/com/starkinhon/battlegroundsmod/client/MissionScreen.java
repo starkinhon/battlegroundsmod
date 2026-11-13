@@ -181,6 +181,8 @@ public class MissionScreen extends Screen {
             float z = Math.max(1.7f, cam[2]);
             float sc = fit() * z;
             tgt = new float[] {sp[0] + (panelW / 2 + 6) / (MAP_W * sc), sp[1] + 10 / (MAP_H * sc), z};
+            // a pin near the edge: the map's end never shows (the pin just sits off the middle)
+            clampCam(tgt);
         }
         float k = 1 - (float) Math.pow(0.004, dt);
         view[0] = lerp(view[0], tgt[0], k);
@@ -588,8 +590,13 @@ public class MissionScreen extends Screen {
         int nr = Math.max(1, m.rec().size());
         float rowH = Math.max(22, Math.min(26, (float) Math.floor(availR / nr)));
         boolean showSub = rowH >= 23;
+        // not room for one row each (Kame's three rewards on a small window ran into the footer): the tiles side by
+        // side, the names in their tooltips
+        boolean compact = availR < nr * 22;
+        int ri = 0;
         for (Journal.Reward r : m.rec()) {
-            float tx = cx, ty = yy;
+            float tx = compact ? cx + ri * 24 : cx, ty = yy;
+            ri++;
             boolean special = m.tipo().startsWith("ÚNICA") || UiIcons.special(r.id());
             int gc = special ? GOLD : rgb(120, 190, 255);
             Px.glow(tx + 10, ty + 10, 14, gc, 0.38f + 0.1f * (float) Math.sin(Px.time * 2.5f));
@@ -622,12 +629,18 @@ public class MissionScreen extends Screen {
                 tip.add(r.desc());
             }
             Px.hit(tx, ty, 20, 20, null, tip, List.of(WHITE, MUTED));
+            if (compact) {
+                continue;
+            }
             float nw = cw - 26;
             T(Px.fit(name + (r.n() > 1 ? " x" + r.n() : ""), nw, 7), tx + 26, ty + 2, rgb(255, 246, 226), 7, true);
             if (showSub) {
                 T(Px.fit(sub, nw, 6), tx + 26, ty + 11, dim, 6);
             }
             yy += rowH;
+        }
+        if (compact) {
+            yy += 24;
         }
         // ---- footer: when it comes back, the distance and Rastrear ----
         for (float i = cx; i < x + w - 6; i++) {

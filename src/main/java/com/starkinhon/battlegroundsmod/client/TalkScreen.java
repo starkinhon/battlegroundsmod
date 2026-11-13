@@ -347,7 +347,14 @@ public class TalkScreen extends Screen {
                     R(GW / 2f - w2 / 2 + x, 56, 1, 1, GOLD, 0.8f * clamp(e, 0, 1) * a);
                 }
             }
-            if (delivered && t > 0.2f) {
+            if (delivered && m.escolha() && pick >= 0 && pick < sweets.size() && t > 0.2f) {
+                // the sweet picked goes up to the NPC (what it gave comes in MISSÃO CONCLUÍDA)
+                float p = clamp(Px.easeOut((t - 0.2f) / 0.6f), 0, 1);
+                if (p < 1) {
+                    UiIcons.slot(lerp(GW - 120, GW * 0.42f, p), lerp(GH * 0.5f, GH * 0.38f, p) - (float) Math.sin(p * Math.PI) * 16, sweets.get(pick),
+                            Journal.stack(sweets.get(pick), 1), 0, -1, false);
+                }
+            } else if (delivered && t > 0.2f) {
                 float p = clamp(Px.easeOut((t - 0.2f) / 0.5f), 0, 1);
                 List<Journal.Reward> rec = m.rec();
                 for (int i = 0; i < rec.size(); i++) {
@@ -567,10 +574,9 @@ public class TalkScreen extends Screen {
         mc.options.hideGui = true;
     }
 
+    // A cut back to the player's own view: a glide out passed through their head (the face filled the screen).
     private static void camStop() {
-        if (camNpc >= 0 && camOut < 0) {
-            camOut = Util.getMillis();
-        }
+        camFinish();
     }
 
     private static void camFinish() {
@@ -624,7 +630,8 @@ public class TalkScreen extends Screen {
         float yaw = (float) (Mth.atan2(look.z, look.x) * Mth.RAD_TO_DEG) - 90;
         float pitch = (float) (-Mth.atan2(look.y, look.horizontalDistance()) * Mth.RAD_TO_DEG);
         if (blend < 1) {
-            Vec3 own = p.getEyePosition(partialTick);
+            // from beside the head, not from inside it (the eyes): the glide never crosses the player's face
+            Vec3 own = eyes.subtract(flat.scale(0.45)).add(right.scale(SIDE)).add(0, UP, 0);
             float ownYaw = p.getViewYRot(partialTick), ownPitch = p.getViewXRot(partialTick);
             position = own.lerp(position, blend);
             yaw = ownYaw + (float) (Mth.wrapDegrees(yaw - ownYaw) * blend);
