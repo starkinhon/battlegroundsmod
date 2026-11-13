@@ -148,6 +148,35 @@ public final class JujutsuBlocks {
     public static final DeferredBlock<Block> BRIDGE_WOOD = cube("madeira_de_ponte", MapColor.COLOR_BROWN, 2.0f, SoundType.WOOD, 0);
     public static final DeferredBlock<Block> TATAMI = cube("tatame", MapColor.SAND, 0.8f, SoundType.GRASS, 0);
 
+    // ---- Colônia do Jogo do Abate: the streets (asphalt, cracked asphalt, the lane line, the sidewalk, the lots'
+    // tiles), the buildings' three concretes, the dark and the lit windows, the floor slabs, the rebar sticking out of
+    // the broken floors, the rubble, the embers under the fires (they never burn out), the cars' tires, the traffic
+    // cones, the work fences and the warning signs of the barricades, and the weeds born in the cracks.
+    public static final DeferredBlock<Block> ASPHALT = stone("asfalto", MapColor.COLOR_GRAY, 0);
+    public static final DeferredBlock<Block> ASPHALT_CRACKED = stone("asfalto_rachado", MapColor.COLOR_GRAY, 0);
+    public static final DeferredBlock<Block> ROAD_LINE = stone("faixa_de_rua", MapColor.SAND, 0);
+    public static final DeferredBlock<Block> SIDEWALK = stone("calcada", MapColor.STONE, 0);
+    public static final DeferredBlock<Block> LOT_TILES = stone("piso_de_lote", MapColor.STONE, 0);
+    public static final DeferredBlock<Block> COLONY_CONCRETE = stone("concreto_da_colonia", MapColor.STONE, 0);
+    public static final DeferredBlock<Block> COLONY_CONCRETE_DARK = stone("concreto_escuro_da_colonia", MapColor.COLOR_GRAY, 0);
+    public static final DeferredBlock<Block> COLONY_CONCRETE_LIGHT = stone("concreto_claro_da_colonia", MapColor.QUARTZ, 0);
+    public static final DeferredBlock<Block> COLONY_WINDOW = stone("janela_da_colonia", MapColor.COLOR_BLUE, 0);
+    public static final DeferredBlock<Block> COLONY_WINDOW_LIT = stone("janela_acesa_da_colonia", MapColor.COLOR_ORANGE, 10);
+    public static final DeferredBlock<Block> FLOOR_SLAB = stone("laje", MapColor.STONE, 0);
+    public static final DeferredBlock<ThinPlantBlock> REBAR = post("vergalhao", MapColor.TERRACOTTA_BROWN, SoundType.METAL,
+            Block.box(7, 0, 7, 9, 16, 9));
+    public static final DeferredBlock<Block> RUBBLE = cube("entulho", MapColor.STONE, 0.8f, SoundType.GRAVEL, 0);
+    public static final DeferredBlock<Block> EMBERS = stone("brasa", MapColor.COLOR_ORANGE, 8);
+    public static final DeferredBlock<Block> TIRE = cube("pneu", MapColor.COLOR_BLACK, 1.0f, SoundType.WOOL, 0);
+    public static final DeferredBlock<ThinPlantBlock> TRAFFIC_CONE = post("cone_de_transito", MapColor.COLOR_ORANGE, SoundType.WOOL,
+            Block.box(4, 0, 4, 12, 13, 12));
+    public static final DeferredBlock<ThinPlantBlock> WORK_FENCE = post("grade_de_obra", MapColor.METAL, SoundType.METAL,
+            Block.box(5, 0, 5, 11, 16, 11));
+    public static final DeferredBlock<ThinPlantBlock> WARNING_SIGN = post("placa_de_aviso", MapColor.COLOR_YELLOW, SoundType.METAL,
+            Block.box(2, 3, 2, 14, 14, 14));
+    public static final DeferredBlock<ThinPlantBlock> STREET_WEEDS = plant("mato_de_rua", MapColor.PLANT, 0, SoundType.GRASS,
+            Block.box(4, 0, 4, 12, 9, 12));
+
     private JujutsuBlocks() {
     }
 
@@ -180,6 +209,13 @@ public final class JujutsuBlocks {
 
     private static DeferredBlock<LeavesBlock> leaves(String name) {
         return add(ModBlocks.BLOCKS.register(name, () -> new LeavesBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.OAK_LEAVES))));
+    }
+
+    // A thin solid thing (rebar, a cone, a fence post, a sign): its own box for the outline and the collision.
+    private static DeferredBlock<ThinPlantBlock> post(String name, MapColor color, SoundType sound,
+            net.minecraft.world.phys.shapes.VoxelShape shape) {
+        return add(ModBlocks.BLOCKS.register(name, () -> new ThinPlantBlock(BlockBehaviour.Properties.of().mapColor(color)
+                .requiresCorrectToolForDrops().strength(1.5f, 6.0f).noOcclusion().sound(sound), shape)));
     }
 
     private static DeferredBlock<ThinPlantBlock> plant(String name, MapColor color, int light, SoundType sound,

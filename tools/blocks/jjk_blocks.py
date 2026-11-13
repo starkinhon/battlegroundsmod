@@ -266,7 +266,23 @@ def glowing(seed, base, glint):
     return opaque(np.clip(c, 0, 255))
 
 
-STYLES = {"speckle": speckle, "bark": bark, "leaves": leaves, "grass_top": grass_top, "glow": glow, "eye": eye,
+def tiles(seed, base, size=4, grout=None, cracks=0.0):
+    # slabs and paving: a grid of squares with grout, each square its own shade; the old ones cracked
+    rng = np.random.default_rng(seed)
+    c = shade(base, 0.9 + 0.1 * noise(seed, 5) + rng.uniform(-0.03, 0.03, (N, N)))
+    cell = (X // size) * 31 + (Y // size) * 17
+    c *= (0.93 + 0.12 * ((cell * 2654435761 + seed) % 97) / 97.0)[..., None]
+    g = (X % size == 0) | (Y % size == 0)
+    c[g] = np.array(grout if grout is not None else np.array(base, float) * 0.7, float)
+    if cracks:
+        n = noise(seed + 3, 6)
+        crack = np.exp(-((n - 0.5) ** 2) / 0.002) > 0.6
+        crack &= noise(seed + 4, 3) < cracks
+        c[crack] = c[crack] * 0.55
+    return opaque(np.clip(c, 0, 255))
+
+
+STYLES = {"tiles": tiles, "speckle": speckle, "bark": bark, "leaves": leaves, "grass_top": grass_top, "glow": glow, "eye": eye,
           "flesh": flesh, "planks": planks, "cross_plant": cross_plant,
           "thatch": thatch, "paper": paper, "blades": blades, "beach": beach, "glowing": glowing}
 
@@ -384,6 +400,27 @@ BIOMES = {
         ("madeira_de_ponte", "cube", "axe", ("planks", 3635, rgb("#8a5a34"), 0.1), "Madeira de Ponte", "Bridge Wood"),
         ("tatame", "cube", "hoe", ("thatch", 3637, rgb("#c8b878")), "Tatame", "Tatami"),
     ],
+    "colonia": [
+        ("asfalto", "cube", "pickaxe", ("speckle", 3701, rgb("#3a3a40"), 0.12), "Asfalto", "Asphalt"),
+        ("asfalto_rachado", "cube", "pickaxe", ("glow", 3703, rgb("#3e3e44"), rgb("#1e1e22")), "Asfalto Rachado", "Cracked Asphalt"),
+        ("faixa_de_rua", "cube", "pickaxe", ("speckle", 3705, rgb("#d8d0b0"), 0.1), "Faixa de Rua", "Road Line"),
+        ("calcada", "cube", "pickaxe", ("tiles", 3707, rgb("#7a787e"), 8, None, 0.3), "Calçada", "Sidewalk"),
+        ("piso_de_lote", "cube", "pickaxe", ("tiles", 3709, rgb("#86827c"), 4), "Piso de Lote", "Lot Tiles"),
+        ("concreto_da_colonia", "cube", "pickaxe", ("speckle", 3711, rgb("#8e8c90"), 0.1), "Concreto da Colônia", "Colony Concrete"),
+        ("concreto_escuro_da_colonia", "cube", "pickaxe", ("speckle", 3713, rgb("#5e5c64"), 0.12), "Concreto Escuro da Colônia", "Colony Dark Concrete"),
+        ("concreto_claro_da_colonia", "cube", "pickaxe", ("speckle", 3715, rgb("#b0aeb0"), 0.08), "Concreto Claro da Colônia", "Colony Light Concrete"),
+        ("janela_da_colonia", "cube", "pickaxe", ("paper", 3717, rgb("#3a4a5a"), rgb("#5e5c64")), "Janela da Colônia", "Colony Window"),
+        ("janela_acesa_da_colonia", "cube", "pickaxe", ("paper", 3719, rgb("#ffc878"), rgb("#5e5c64")), "Janela Acesa da Colônia", "Colony Lit Window"),
+        ("laje", "cube", "pickaxe", ("tiles", 3721, rgb("#6e6a68"), 16, None, 0.5), "Laje", "Floor Slab"),
+        ("vergalhao", "post:7,0,7,9,16,9", "pickaxe", ("speckle", 3723, rgb("#6a4a3a"), 0.22), "Vergalhão", "Rebar"),
+        ("entulho", "cube", "shovel", ("speckle", 3725, rgb("#7a7674"), 0.26), "Entulho", "Rubble"),
+        ("brasa", "cube", "pickaxe", ("glow", 3727, rgb("#2a2624"), rgb("#ff8a2a")), "Brasa", "Embers"),
+        ("pneu", "cube", "pickaxe", ("speckle", 3729, rgb("#141414"), 0.2), "Pneu", "Tire"),
+        ("cone_de_transito", "post:4,0,4,12,13,12", "pickaxe", ("speckle", 3731, rgb("#e8782a"), 0.1), "Cone de Trânsito", "Traffic Cone"),
+        ("grade_de_obra", "post:5,0,5,11,16,11", "pickaxe", ("speckle", 3733, rgb("#a8a8a0"), 0.14), "Grade de Obra", "Work Fence"),
+        ("placa_de_aviso", "post:2,3,2,14,14,14", "pickaxe", ("speckle", 3735, rgb("#e8c830"), 0.1), "Placa de Aviso", "Warning Sign"),
+        ("mato_de_rua", "cross", None, ("blades", 3737, rgb("#52702e")), "Mato de Rua", "Street Weeds"),
+    ],
 }
 
 
@@ -431,6 +468,14 @@ def emit():
             if kind == "flat":
                 write(A + "models/block/" + name + ".json", {"parent": "minecraft:block/carpet", "render_type": "minecraft:cutout", "textures": {"wool": tx, "particle": tx}})
                 write(A + "models/item/" + name + ".json", {"parent": "minecraft:item/generated", "textures": {"layer0": tx}})
+            elif kind.startswith("post:"):
+                # a thin box (rebar, a post, a cone, a sign) with the texture on every face
+                b = [float(v) for v in kind[5:].split(",")]
+                el = {"from": b[:3], "to": b[3:], "faces": {f: {"texture": "#all", **({"cullface": f} if (f == "down" and b[1] == 0) or (f == "up" and b[4] == 16) else {})}
+                      for f in ("north", "south", "east", "west", "up", "down")}}
+                write(A + "models/block/" + name + ".json", {"parent": "minecraft:block/block", "render_type": "minecraft:cutout",
+                      "textures": {"all": tx, "particle": tx}, "elements": [el]})
+                write(A + "models/item/" + name + ".json", {"parent": "battlegroundsmod:block/" + name})
             elif kind == "cross":
                 write(A + "models/block/" + name + ".json", {"parent": "minecraft:block/cross", "render_type": "minecraft:cutout", "textures": {"cross": tx}})
                 write(A + "models/item/" + name + ".json", {"parent": "minecraft:item/generated", "textures": {"layer0": tx}})

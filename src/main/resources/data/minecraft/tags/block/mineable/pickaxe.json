@@ -41,6 +41,23 @@
     "battlegroundsmod:rocha_derretida",
     "battlegroundsmod:faixa_de_ferro",
     "battlegroundsmod:folha_de_ouro",
-    "battlegroundsmod:ouro_escuro"
+    "battlegroundsmod:ouro_escuro",
+    "battlegroundsmod:asfalto",
+    "battlegroundsmod:asfalto_rachado",
+    "battlegroundsmod:faixa_de_rua",
+    "battlegroundsmod:calcada",
+    "battlegroundsmod:piso_de_lote",
+    "battlegroundsmod:concreto_da_colonia",
+    "battlegroundsmod:concreto_escuro_da_colonia",
+    "battlegroundsmod:concreto_claro_da_colonia",
+    "battlegroundsmod:janela_da_colonia",
+    "battlegroundsmod:janela_acesa_da_colonia",
+    "battlegroundsmod:laje",
+    "battlegroundsmod:vergalhao",
+    "battlegroundsmod:brasa",
+    "battlegroundsmod:pneu",
+    "battlegroundsmod:cone_de_transito",
+    "battlegroundsmod:grade_de_obra",
+    "battlegroundsmod:placa_de_aviso"
   ]
 }

@@ -53,7 +53,8 @@ public final class UniverseBiomes {
             Map.entry("mar_de_dagon", 0x2AC8C8),
             Map.entry("floresta_de_hanami", 0x7AD04A),
             Map.entry("terras_do_jogo", 0xFF7A2A),
-            Map.entry("outono_de_kyoto", 0xE0682A));
+            Map.entry("outono_de_kyoto", 0xE0682A),
+            Map.entry("colonia_do_jogo_do_abate", 0x6A5A7A));
 
     private UniverseBiomes() {
     }
