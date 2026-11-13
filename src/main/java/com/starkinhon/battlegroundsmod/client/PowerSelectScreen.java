@@ -103,6 +103,11 @@ public class PowerSelectScreen extends Screen {
         }
         SkillIcons.reload();
         mc.setScreen(new PowerSelectScreen());
+        // Singleplayer (not open to LAN): the world freezes while the book is open (isPauseScreen), so freeze
+        // the world sounds too, like the ESC menu does. Closing the screen resumes them (Minecraft.setScreen(null)).
+        if (pausesWorld(mc)) {
+            mc.getSoundManager().pause();
+        }
         mc.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.ENCHANTMENT_TABLE_USE, 1.4f, 0.45f));
     }
 
@@ -1214,8 +1219,16 @@ public class PowerSelectScreen extends Screen {
         super.removed();
     }
 
+    // Pauses the game in singleplayer so nothing can attack the player while the book is open.
+    // Minecraft itself ignores this in multiplayer and on a LAN world, where the book keeps the world running.
     @Override
     public boolean isPauseScreen() {
-        return false;
+        return true;
+    }
+
+    // Same rule as the ESC menu: only an integrated server that is not published to LAN pauses.
+    private static boolean pausesWorld(net.minecraft.client.Minecraft mc) {
+        return mc.hasSingleplayerServer() && mc.getSingleplayerServer() != null
+                && !mc.getSingleplayerServer().isPublished();
     }
 }
