@@ -89,6 +89,28 @@ public final class JujutsuBlocks {
     public static final DeferredBlock<Block> SUCKER = cube("ventosa", MapColor.TERRACOTTA_WHITE, 1.0f, SoundType.SLIME_BLOCK, 0);
     public static final DeferredBlock<Block> ABYSS = stone("abismo", MapColor.COLOR_BLACK, 0);
 
+    // ---- Floresta de Hanami: the ancient bark (bare and mossy), the three greens of the canopy and the canopy in bloom,
+    // the giant flowers (petals in four colors, the stem, the golden pollen that glows), the wooden stakes of Hanami's
+    // attack, the cursed buds with their glowing pink tips, the dark hollows of the colossal tree's eyes, the vines.
+    public static final DeferredBlock<Block> ANCIENT_BARK = cube("casca_ancestral", MapColor.COLOR_BROWN, 2.0f, SoundType.WOOD, 0);
+    public static final DeferredBlock<Block> ANCIENT_BARK_MOSS = cube("casca_ancestral_musgo", MapColor.COLOR_GREEN, 2.0f, SoundType.WOOD, 0);
+    public static final DeferredBlock<LeavesBlock> HANAMI_LEAVES = leaves("folhas_de_hanami");
+    public static final DeferredBlock<LeavesBlock> HANAMI_LEAVES_LUSH = leaves("folhas_de_hanami_vivas");
+    public static final DeferredBlock<LeavesBlock> HANAMI_LEAVES_LIGHT = leaves("folhas_de_hanami_claras");
+    public static final DeferredBlock<LeavesBlock> BLOOMING_CANOPY = leaves("copa_florida");
+    public static final DeferredBlock<Block> PETAL_WHITE = cube("petala_gigante_branca", MapColor.SNOW, 0.4f, SoundType.AZALEA_LEAVES, 0);
+    public static final DeferredBlock<Block> PETAL_PINK = cube("petala_gigante_rosa", MapColor.COLOR_PINK, 0.4f, SoundType.AZALEA_LEAVES, 0);
+    public static final DeferredBlock<Block> PETAL_YELLOW = cube("petala_gigante_amarela", MapColor.COLOR_YELLOW, 0.4f, SoundType.AZALEA_LEAVES, 0);
+    public static final DeferredBlock<Block> PETAL_RED = cube("petala_gigante_vermelha", MapColor.COLOR_RED, 0.4f, SoundType.AZALEA_LEAVES, 0);
+    public static final DeferredBlock<Block> GIANT_FLOWER_STEM = cube("caule_de_flor_gigante", MapColor.PLANT, 1.0f, SoundType.STEM, 0);
+    public static final DeferredBlock<Block> GOLDEN_POLLEN = cube("polen_dourado", MapColor.GOLD, 0.4f, SoundType.MOSS, 10);
+    public static final DeferredBlock<Block> WOODEN_STAKE = cube("estaca_de_madeira", MapColor.WOOD, 2.0f, SoundType.WOOD, 0);
+    public static final DeferredBlock<Block> CURSED_BUD = cube("botao_amaldicoado", MapColor.COLOR_LIGHT_GREEN, 0.8f, SoundType.SLIME_BLOCK, 4);
+    public static final DeferredBlock<Block> BUD_TIP = cube("ponta_do_botao", MapColor.COLOR_PINK, 0.8f, SoundType.SLIME_BLOCK, 9);
+    public static final DeferredBlock<Block> HANAMI_HOLLOW = cube("oco_de_hanami", MapColor.COLOR_BLACK, 2.0f, SoundType.WOOD, 3);
+    public static final DeferredBlock<ThinPlantBlock> HANAMI_VINE = plant("cipo_de_hanami", MapColor.PLANT, 0, SoundType.VINE,
+            Block.box(2, 0, 2, 14, 16, 14));
+
     private JujutsuBlocks() {
     }
 

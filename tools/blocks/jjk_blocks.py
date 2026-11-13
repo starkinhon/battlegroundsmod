@@ -332,6 +332,25 @@ BIOMES = {
         ("ventosa", "cube", "pickaxe", ("flesh", 3329, rgb("#f0c8b8")), "Ventosa", "Sucker"),
         ("abismo", "cube", "pickaxe", ("speckle", 3331, rgb("#0a0812"), 0.3), "Abismo", "Abyss"),
     ],
+    "hanami": [
+        ("casca_ancestral", "cube", "axe", ("bark", 3401, rgb("#6a4e36"), 0.28), "Casca Ancestral", "Ancient Bark"),
+        ("casca_ancestral_musgo", "cube", "axe", ("bark", 3403, rgb("#4e6a32"), 0.24), "Casca Ancestral com Musgo", "Mossy Ancient Bark"),
+        ("folhas_de_hanami", "leaves", "hoe", ("leaves", 3405, rgb("#2a6a28"), 0.14), "Folhas de Hanami", "Hanami Leaves"),
+        ("folhas_de_hanami_vivas", "leaves", "hoe", ("leaves", 3407, rgb("#367f2e"), 0.14), "Folhas Vivas de Hanami", "Lush Hanami Leaves"),
+        ("folhas_de_hanami_claras", "leaves", "hoe", ("leaves", 3409, rgb("#4f9636"), 0.16, rgb("#7ab84a")), "Folhas Claras de Hanami", "Light Hanami Leaves"),
+        ("copa_florida", "leaves", "hoe", ("leaves", 3411, rgb("#f4b8d0"), 0.16, rgb("#fff0f6")), "Copa Florida", "Blooming Canopy"),
+        ("petala_gigante_branca", "cube", "hoe", ("flesh", 3413, rgb("#f6f2ec")), "Pétala Gigante Branca", "White Giant Petal"),
+        ("petala_gigante_rosa", "cube", "hoe", ("flesh", 3415, rgb("#f28ab4")), "Pétala Gigante Rosa", "Pink Giant Petal"),
+        ("petala_gigante_amarela", "cube", "hoe", ("flesh", 3417, rgb("#f4cc40")), "Pétala Gigante Amarela", "Yellow Giant Petal"),
+        ("petala_gigante_vermelha", "cube", "hoe", ("flesh", 3419, rgb("#e2483e")), "Pétala Gigante Vermelha", "Red Giant Petal"),
+        ("caule_de_flor_gigante", "cube", "axe", ("bark", 3421, rgb("#4a9a38"), 0.12), "Caule de Flor Gigante", "Giant Flower Stem"),
+        ("polen_dourado", "cube", "hoe", ("glowing", 3423, rgb("#ffd040"), rgb("#fff4b0")), "Pólen Dourado", "Golden Pollen"),
+        ("estaca_de_madeira", "cube", "axe", ("bark", 3425, rgb("#8a6a44"), 0.2), "Estaca de Madeira", "Wooden Stake"),
+        ("botao_amaldicoado", "cube", "hoe", ("flesh", 3427, rgb("#5aa040")), "Botão Amaldiçoado", "Cursed Bud"),
+        ("ponta_do_botao", "cube", "hoe", ("glow", 3429, rgb("#c04a80"), rgb("#ff9ad0")), "Ponta do Botão", "Bud Tip"),
+        ("oco_de_hanami", "cube", "axe", ("glowing", 3431, rgb("#0c0806"), rgb("#2a4a1a")), "Oco de Hanami", "Hanami's Hollow"),
+        ("cipo_de_hanami", "cross", None, ("cross_plant", 3433, rgb("#3a8a2e"), "vine"), "Cipó de Hanami", "Hanami Vine"),
+    ],
 }
 
 

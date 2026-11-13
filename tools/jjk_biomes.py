@@ -39,6 +39,11 @@ BIOMES = {
         particle=("minecraft:white_ash", 0.0008),
         creature=[mob("minecraft:turtle", 5, 2, 5)], ambient=[mob("minecraft:bat", 10, 8, 8)],
         water_ambient=[mob("minecraft:tropical_fish", 25, 8, 8)], water_creature=[mob("minecraft:dolphin", 2, 1, 2)]),
+    "floresta_de_hanami": dict(
+        pt="Floresta de Hanami", en="Hanami's Forest", temp=0.85, down=0.9, rain=True,
+        sky="#5a9ad8", fog="#cfe2c6", water="#3a7a8a", water_fog="#1a3a40", grass="#4e8a34", foliage="#367f2e",
+        particle=("minecraft:spore_blossom_air", 0.004),
+        creature=[mob("minecraft:rabbit", 6, 2, 3), mob("minecraft:fox", 4, 2, 3)], ambient=[mob("minecraft:bat", 10, 8, 8)]),
 }
 
 

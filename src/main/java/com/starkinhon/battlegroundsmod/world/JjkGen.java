@@ -70,6 +70,15 @@ public final class JjkGen {
     // A tube of blocks between two points, its radius going from r0 to r1 (branches, roots, bent trunks). soft: set
     // instead of force (only where nothing is yet).
     public static void tube(TemploGen.Vox w, double[] a, double[] b, double r0, double r1, byte t, boolean soft) {
+        tube(w, a, b, r0, r1, (x, y, z) -> t, soft);
+    }
+
+    // The type of block a tube puts at each place (bark with moss on the lower part, a log's mossy top...).
+    public interface TypeAt {
+        byte at(int x, int y, int z);
+    }
+
+    public static void tube(TemploGen.Vox w, double[] a, double[] b, double r0, double r1, TypeAt t, boolean soft) {
         double dx = b[0] - a[0], dy = b[1] - a[1], dz = b[2] - a[2];
         double len = hypot(dx, dy, dz);
         int steps = Math.max(1, (int) Math.ceil(len * 2));
@@ -84,10 +93,11 @@ public final class JjkGen {
                             continue;
                         }
                         int x = floor(cx + ox), y = floor(cy + oy), z = floor(cz + oz);
+                        byte tt = t.at(x, y, z);
                         if (soft) {
-                            w.set(x, y, z, t);
+                            w.set(x, y, z, tt);
                         } else {
-                            w.force(x, y, z, t);
+                            w.force(x, y, z, tt);
                         }
                     }
                 }
@@ -96,6 +106,10 @@ public final class JjkGen {
     }
 
     public static void tube(TemploGen.Vox w, double[] a, double[] b, double r0, double r1, byte t) {
+        tube(w, a, b, r0, r1, t, false);
+    }
+
+    public static void tube(TemploGen.Vox w, double[] a, double[] b, double r0, double r1, TypeAt t) {
         tube(w, a, b, r0, r1, t, false);
     }
 }
