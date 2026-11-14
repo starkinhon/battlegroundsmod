@@ -252,6 +252,8 @@
       r('clava', -1.0 * fall, 0, 0);
       if (fall > 0.35 && P.clava) P.clava.obj.visible = false;
       eyes(Math.max(0, 1 - T));
+      // nenhum membro escora o morto: o corpo encosta no chão (teste R5)
+      JJFX.floorLimbs(obj, P, ['tronco', 'cabeca'], ['bracoD', 'bracoE', 'pernaD', 'pernaE'], fall);
     }
   }
 

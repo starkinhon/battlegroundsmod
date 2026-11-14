@@ -262,6 +262,8 @@
       obj.rotation.x = ang;
       r('pernaD', 0.9 * fall, 0, 0); r('pernaE', 0.9 * fall, 0, 0); r('canelaD', -0.4 * fall, 0, 0); r('canelaE', -0.4 * fall, 0, 0);
       r('bracoD', -0.3 * fall, 0, 0.35 * fall); r('bracoE', -0.3 * fall, 0, -0.35 * fall); r('cabeca', 0.2 * fall, 0.3 * fall, 0);
+      // nenhum membro escora o morto: o corpo encosta no chão (teste R5)
+      JJFX.floorLimbs(obj, P, ['tronco'], ['bracoD', 'bracoE', 'pernaD', 'pernaE'], fall);
       JJFX.noSlide(obj, P.tronco.obj, 'z', () => { obj.rotation.x = 0; }, () => { obj.rotation.x = ang; }, 0.7 * fall);
       if (T > 0.88 && T < 1.05) ctx.shake(0.6);
       if (T > 1.68 && T < 1.95) { ctx.shake(1.2); }

@@ -201,9 +201,11 @@
     if (mode === 'morte') {
       // tomba de lado, as pernas esticam e as flores das costas caem; vira cinza com o musgo por último
       const { T, fall } = JJFX.exorcize(t, obj, e, ctx, { h: 1.4, refZ: -2.6, rotX: 0.0, back: 0.2, ashY: 0.4, ashZ: 0, n: 170 });
-      r('corpo', 0, 0, 1.45 * fall); obj.position.y -= 0.05 * fall; obj.position.x += 0.0;
+      r('corpo', 0, 0, 1.57 * fall); obj.position.y -= 0.05 * fall; obj.position.x += 0.0;
       for (const n of ['DF', 'EF', 'DT', 'ET']) { r('perna' + n, 0.3 * Math.sin(T * 25) * Math.max(0, 1 - T) * fall, 0, 0); }
       r('cabeca', 0.2 * fall, 0, 0);
+      // de lado o corpo encosta no chão: as pernas de baixo não escoram (antes sobrava uma folga, teste R5)
+      JJFX.floorLimbs(obj, P, ['corpo'], ['pernaDF', 'pernaEF', 'pernaDT', 'pernaET', 'cabeca'], fall);
     }
   }
 

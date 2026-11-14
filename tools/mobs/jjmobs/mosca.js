@@ -300,7 +300,9 @@
       return;
     }
 
-    if (mode === 'morte') { const { fall } = JJFX.exorcize(t, obj, e, ctx, { h: 1.6, rotX: 0, back: 0.5, drop: 0.1, ashY: 0.5, n: 90 }); obj.position.y += 0.7 * (1 - fall) - 0.55 * fall; obj.rotation.z = 1.4 * fall; if (fall < 0.05) flap(r, t); r('boca', 0.7 * fall, 0, 0); }
+    if (mode === 'morte') { const { fall } = JJFX.exorcize(t, obj, e, ctx, { h: 1.6, rotX: 0, back: 0.5, drop: 0.1, ashY: 0.5, n: 90 }); obj.position.y += 0.7 * (1 - fall) - 0.55 * fall; P.raiz.obj.rotation.z = 1.4 * fall; /* na peça 'raiz': o jogo gira a raiz do corpo num quadro espelhado */ if (fall < 0.05) flap(r, t); r('boca', 0.7 * fall, 0, 0);
+      // nenhum membro escora o morto (teste R5)
+      JJFX.floorLimbs(obj, P, ['corpo', 'cabeca', 'abdomen'], ['asaD', 'asaE', 'pernaD0', 'pernaD1', 'pernaD2', 'pernaE0', 'pernaE1', 'pernaE2'], fall); }
   }
 
 

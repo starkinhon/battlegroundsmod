@@ -241,6 +241,8 @@
       if (fall < 0.1) fly(1); else { fold(); for (let i = 0; i < 3; i++) for (const sd of ['D', 'E']) r('perna' + sd + i, 0.5 * Math.sin(t * 14 + i) * Math.max(0, 1 - (T - 0.7)), 0, 0); }
       const cool = FX.clamp01((T - 0.7) / 0.8);
       belly(1 - cool);
+      // nenhum membro escora o morto: o corpo encosta no chão (teste R5)
+      JJFX.floorLimbs(obj, P, ['corpo'], ['cabeca', 'antenaD', 'antenaE', 'asaD', 'asaE', 'elitroD', 'elitroE'], fall);
       ctx.get('fumaca', FX.volume).set(new THREE.Vector3(0, 0.3, 0.4), 0.35, FX.clamp01((T - 0.8) / 2.2), { seed: 2.2, dens: 4, rise: 1.2, squash: 1.2, smoke: [0.4, 0.38, 0.38] });
       const dis = FX.clamp01((T - 1.5) / 1.5);
       JJFX.dissolve(e, dis, 0, 1.4);
