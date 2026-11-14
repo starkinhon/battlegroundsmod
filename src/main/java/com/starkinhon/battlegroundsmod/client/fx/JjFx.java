@@ -293,8 +293,8 @@ final class JjFx {
                 }
                 case SubNet.SUPERNOVA_BURST -> supernovaBurst(f, age);
                 case SubNet.BLOOD_SPLASH -> {
+                    // Blood gives off no light: drops only, no glowing ring (Stark, 2026-11-14).
                     bloodSplash(rel(f.pos), age, 11, 16, f.a, vec(f.dir).normalize());
-                    DbFx.nrHit(rel(f.pos), age, RED, 0.6f * f.a, 3, 8);
                 }
                 case SubNet.RATIO_CRIT -> ratioCrit(f, age);
                 case SubNet.SLAM -> slam(f, age);
@@ -1049,7 +1049,8 @@ final class JjFx {
     private record BloodQuad(Vector3f a, Vector3f b, Vector3f c, Vector3f d, float[] ca, float[] cb, float[] cc, float[] cd, float dist) {
     }
 
-    // The light where the blood is: block light or daylight (0.25 in the dark, 1 in the sun).
+    // The light where the blood is, close to how vanilla lights a block there: block light on the vanilla curve, daylight
+    // times the time of day (about 0.4 under the night sky), almost black in a closed cave.
     private static void bloodLight(Vector3f at) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null) {
@@ -1058,8 +1059,10 @@ final class JjFx {
         }
         BlockPos bp = BlockPos.containing(DbFx.cam.x + at.x, DbFx.cam.y + at.y, DbFx.cam.z + at.z);
         float block = mc.level.getBrightness(LightLayer.BLOCK, bp) / 15f;
-        float sky = mc.level.getBrightness(LightLayer.SKY, bp) / 15f * mc.level.getSkyDarken(1);
-        bloodK = 0.25f + 0.75f * Math.min(1, Math.max(block, sky));
+        float sky = mc.level.getBrightness(LightLayer.SKY, bp) / 15f;
+        float fromBlock = 0.05f + 0.95f * block / (4 - 3 * block);
+        float fromSky = sky * (0.25f + 0.75f * mc.level.getSkyDarken(1));
+        bloodK = Math.min(1, Math.max(fromBlock, fromSky));
     }
 
     private static float[] dim(float[] col) {
@@ -1119,6 +1122,14 @@ final class JjFx {
             return;
         }
         bloodLight(pts[m / 2]);
+        // Right next to the camera (first person) the sides would show: round it off more.
+        float near = Float.MAX_VALUE;
+        for (Vector3f p : pts) {
+            near = Math.min(near, p.lengthSquared());
+        }
+        if (near < 9) {
+            sides = Math.max(sides, 16);
+        }
         Vector3f[] tan = new Vector3f[m];
         for (int i = 0; i < m; i++) {
             Vector3f t = new Vector3f(pts[Math.min(m - 1, i + 1)]).sub(pts[Math.max(0, i - 1)]);
@@ -1343,9 +1354,9 @@ final class JjFx {
             p = at(p, lat, Mth.sin(s * 1.6f - age * 0.75f) * 0.07f * (1 - k) * sstep(0, 0.15f, u));
             p.y += Mth.sin(s * 2.3f - age * 0.55f) * 0.03f * (1 - k);
             float pulse = (float) Math.pow(Math.max(0, Mth.sin(s * 2.2f - age * 0.9f)), 4);
-            float r = 0.065f * (0.6f + 0.4f * sstep(0, 0.12f, u)) * (1 + 0.32f * pulse);
+            float r = 0.08f * (0.6f + 0.4f * sstep(0, 0.12f, u)) * (1 + 0.32f * pulse);
             if (!wrapped) {
-                r = Math.max(r, 0.11f * sstep(1 - 0.35f / Math.max(len, 0.4f), 1, u));
+                r = Math.max(r, 0.13f * sstep(1 - 0.35f / Math.max(len, 0.4f), 1, u));
             }
             if (broken < 1) {
                 r *= broken * (0.55f + 0.45f * (float) Math.sqrt(Math.abs(Mth.sin(s * 5.5f))));
@@ -1361,7 +1372,7 @@ final class JjFx {
                 float u = i / 48f, a = a0 - u * 3 * Mth.TWO_PI;
                 float y = (1.25f - u * 0.55f) * sc + 0.02f * Mth.sin(u * 40);
                 pts.add(add(at(at(tip, side, Mth.cos(a) * rx * sq), front, Mth.sin(a) * rz * sq), 0, y, 0));
-                rad.add(0.058f * sc * (1 + 0.12f * Mth.sin(u * 23)) * (broken < 1 ? broken * (0.55f + 0.45f * Math.abs(Mth.sin(u * 60))) : 1));
+                rad.add(0.066f * sc * (1 + 0.12f * Mth.sin(u * 23)) * (broken < 1 ? broken * (0.55f + 0.45f * Math.abs(Mth.sin(u * 60))) : 1));
                 cl.add(vn(u * 30, 13));
             }
         }
@@ -1433,7 +1444,7 @@ final class JjFx {
         Vector3f dir = new Vector3f(d).div(len);
         Vector3f[] bs = basis(dir);
         boolean big = f.a > 0.5f;
-        float R = f.a * 0.56f * (0.6f + 0.4f * out);
+        float R = (big ? f.a * 0.56f : 0.05f + f.a * 0.4f) * (0.6f + 0.4f * out);
         float amp = 0.08f * f.a;
         int n = big ? 64 : 32;
         Vector3f[] pts = new Vector3f[n + 1];
@@ -1565,8 +1576,13 @@ final class JjFx {
             return;
         }
         float k = smooth(age / 10) * out;
-        for (Vector3f eye : eyesOf(e, partial)) {
-            bb(add(eye, 0, -0.1f, 0), 0.14f, 0, FxDraw.SOFT, 0.6f, RED, 0.7f * k, true);
+        Minecraft mc = Minecraft.getInstance();
+        // In his own first person the eyes sit on the camera: the glow would cover the screen.
+        boolean own = e == mc.getCameraEntity() && mc.options.getCameraType().isFirstPerson();
+        if (!own) {
+            for (Vector3f eye : eyesOf(e, partial)) {
+                bb(add(eye, 0, -0.1f, 0), 0.14f, 0, FxDraw.SOFT, 0.6f, RED, 0.7f * k, true);
+            }
         }
         Body b = body(e, partial);
         Vector3f feet = rel(b.feet);
