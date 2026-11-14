@@ -2331,5 +2331,6 @@
   "screen.battlegroundsmod.conversa.nova": "NEW MISSION",
   "screen.battlegroundsmod.conversa.entregue": "DELIVERED",
   "screen.battlegroundsmod.livro.alma": "Soul",
-  "screen.battlegroundsmod.livro.arena_carregando": "Arena loading"
+  "screen.battlegroundsmod.livro.arena_carregando": "Arena loading",
+  "block.battlegroundsmod.bueiro": "Manhole"
 }

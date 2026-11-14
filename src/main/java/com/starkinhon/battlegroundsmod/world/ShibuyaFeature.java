@@ -493,6 +493,7 @@ public final class ShibuyaFeature extends Feature<NoneFeatureConfiguration> {
             case ShibuyaGen.SIDEWALK -> JujutsuBlocks.SHIBUYA_SIDEWALK.get().defaultBlockState();
             case ShibuyaGen.SIDEWALK2 -> JujutsuBlocks.SHIBUYA_SIDEWALK_DARK.get().defaultBlockState();
             case ShibuyaGen.TACTILE -> JujutsuBlocks.TACTILE_PAVING.get().defaultBlockState();
+            case ShibuyaGen.MANHOLE -> JujutsuBlocks.MANHOLE.get().defaultBlockState();
             case ShibuyaGen.CURB -> JujutsuBlocks.CURB.get().defaultBlockState();
             case ShibuyaGen.LOT -> JujutsuBlocks.LOT_GROUND.get().defaultBlockState();
             case ShibuyaGen.ALLEY -> JujutsuBlocks.ALLEY_GROUND.get().defaultBlockState();

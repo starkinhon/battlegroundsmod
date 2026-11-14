@@ -43,7 +43,7 @@ public final class ShibuyaGen {
             EDGE = 90, STAIR = 91, BENCH = 92, METRO_SIGN = 93, SIGN_DARK = 94, BALLAST = 95, RAIL = 96, TUNNEL = 97,
             TUNNEL_LIGHT = 98, CROWN_LED = 99, FIN = 100, DECK_GLASS = 101, LOUVER = 102, TRAIN = 103,
             TRAIN_STRIPE = 104, TRAIN_WIN = 105, TRAIN_DOOR = 106, TRAIN_ROOF = 107, TRAIN_END = 108,
-            TRAIN_UNDER = 109, TRAIN_FRONT = 110, HEADLIGHT = 111;
+            TRAIN_UNDER = 109, TRAIN_FRONT = 110, HEADLIGHT = 111, MANHOLE = 112;
     public static final int LIT = 256, COOL = 512;
     public static final int CARVE = -1;
     public static final int CELL = 64;
@@ -1298,37 +1298,7 @@ public final class ShibuyaGen {
                 w.force(ox + x, CEIL_C - 1, z, METRO_SIGN);
             }
         }
-        // a train stopped on the north track: 3 cars of 20 with 1 between
-        int[] tz = {c - TRACK1, c - TRACK1 + 1, c - TRACK0};
-        int[] doors = {3, 4, 9, 10, 15, 16};
-        for (int car = 0; car < 3; car++) {
-            int x0 = -48 + car * 21;
-            for (int k = 0; k < 20; k++) {
-                int x = x0 + k;
-                boolean end = k == 0 || k == 19, door = has(doors, k);
-                for (int z : tz) {
-                    boolean outer = z != tz[1];
-                    w.force(ox + x, BED + 1, z, TRAIN_UNDER);
-                    for (int y = BED + 2; y <= BED + 5; y++) {
-                        int t = TRAIN;
-                        if (!outer && !end) {
-                            t = TRAIN;
-                        } else if (end) {
-                            t = car == 0 && k == 0 ? ((y == BED + 4 || y == BED + 3) && z == tz[1] ? TRAIN_FRONT
-                                    : y == BED + 2 && z != tz[1] ? HEADLIGHT : TRAIN_END) : TRAIN_END;
-                        } else if (y == BED + 2) {
-                            t = door ? TRAIN_DOOR : TRAIN_STRIPE;
-                        } else if (y == BED + 3 || y == BED + 4) {
-                            t = door ? (y == BED + 4 ? TRAIN_WIN : TRAIN_DOOR) : TRAIN_WIN;
-                        } else {
-                            t = TRAIN;
-                        }
-                        w.force(ox + x, y, z, t);
-                    }
-                    w.force(ox + x, BED + 6, z, TRAIN_ROOF);
-                }
-            }
-        }
+        // (no parked train any more: the train runs, drawn by the client (client/fx/ShibuyaMetro), Stark 2026-11-14)
         // the east tunnel's lights; the west one (x < PX0) belongs to the curses
         for (int x = -half; x <= half; x++) {
             if (x >= PX0 && x <= PX1) {
@@ -1456,6 +1426,29 @@ public final class ShibuyaGen {
                             lastPole = a;
                         }
                     }
+                }
+            }
+        }
+        // manholes in the asphalt, one about every 22 blocks of road, in a lane 2 in from the curb, never in a crossing
+        // (the ambience preview's findVents, on a fixed grid so any window of the world places the same ones); the
+        // client sends steam out of half of them (client/fx/ShibuyaAirFx)
+        for (char axis : new char[] {'x', 'z'}) {
+            char other = axis == 'x' ? 'z' : 'x';
+            int lo = axis == 'x' ? i0 : j0, hi = axis == 'x' ? i1 : j1;
+            int a0 = axis == 'x' ? x0 : z0, a1 = axis == 'x' ? x1 : z1;
+            for (int i = lo; i <= hi; i++) {
+                Street s = street(axis, i, seed);
+                for (int n = Math.floorDiv(a0, 22) - 1; n <= Math.floorDiv(a1, 22) + 1; n++) {
+                    int a = n * 22 + floor(hash3(i, n, 31, seed) * 12);
+                    if (a < a0 || a > a1) {
+                        continue;
+                    }
+                    int lane = hash3(a, i, 33, seed) < 0.5 ? s.r0() + 2 : s.r1() - 2;
+                    int x = axis == 'x' ? a : s.c() + lane, z = axis == 'x' ? s.c() + lane : a;
+                    if (streetAt(other, axis == 'x' ? x : z, seed) != null || base(w.get(x, 0, z)) != ASPHALT) {
+                        continue;
+                    }
+                    w.force(x, 0, z, MANHOLE);
                 }
             }
         }

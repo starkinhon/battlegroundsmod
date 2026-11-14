@@ -2341,5 +2341,6 @@
   "screen.battlegroundsmod.conversa.nova": "NOVA MISSÃO",
   "screen.battlegroundsmod.conversa.entregue": "ENTREGUE",
   "screen.battlegroundsmod.livro.alma": "Alma",
-  "screen.battlegroundsmod.livro.arena_carregando": "Arena carregando"
+  "screen.battlegroundsmod.livro.arena_carregando": "Arena carregando",
+  "block.battlegroundsmod.bueiro": "Bueiro"
 }
