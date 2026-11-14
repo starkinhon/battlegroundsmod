@@ -24,7 +24,11 @@ import org.joml.Vector3f;
 
 import com.starkinhon.battlegroundsmod.power.powers.sub.SubNet;
 
+import net.minecraft.client.Minecraft;
+import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
+import net.minecraft.world.level.LightLayer;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
@@ -53,9 +57,8 @@ final class JjFx {
     private static final float[] GOLD_W = FxDraw.rgb(0xFFF0C8);
     private static final float[] BLOOD = {0.6f, 0, 0.035f};
     private static final float[] BLOOD_D = {0.22f, 0, 0.02f};
-    private static final float[] BLOOD_HI = FxDraw.rgb(0xFF5A5A);
-    private static final float[] BLOOD_R = FxDraw.rgb(0xC8000F);
     private static final float[] GLOSS = {1, 0.5f, 0.48f};
+    private static final float[] STEAM_RED = {0.5f, 0.12f, 0.13f};
     private static final float[] VIOLET = FxDraw.rgb(0xA070FF);
     private static final float[] LILAC = FxDraw.rgb(0xE2D4FF);
     private static final float[] STEEL = {0.82f, 0.86f, 0.9f};
@@ -1034,45 +1037,179 @@ final class JjFx {
     }
 
     // ---------- Choso: blood ----------
+    // Blood with body (Stark, 2026-11-14, preview forja/choso-sangue): no flat ribbon, no light stripe, nothing additive.
+    // Every thread, drop and ball is a round mesh of quads with a color per vertex: a fixed scene light from above, a
+    // darker rim where it turns away, a small wet glint only where the surface sends that light back, all times the light
+    // of the place, so it darkens at night and in caves like any block. Alpha pass only, the half that faces the camera,
+    // far quads first.
+
+    private static final Vector3f LIGHT = new Vector3f(0.35f, 0.9f, 0.25f).normalize();
+    private static float bloodK = 1;
+
+    private record BloodQuad(Vector3f a, Vector3f b, Vector3f c, Vector3f d, float[] ca, float[] cb, float[] cc, float[] cd, float dist) {
+    }
+
+    // The light where the blood is: block light or daylight (0.25 in the dark, 1 in the sun).
+    private static void bloodLight(Vector3f at) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null) {
+            bloodK = 1;
+            return;
+        }
+        BlockPos bp = BlockPos.containing(DbFx.cam.x + at.x, DbFx.cam.y + at.y, DbFx.cam.z + at.z);
+        float block = mc.level.getBrightness(LightLayer.BLOCK, bp) / 15f;
+        float sky = mc.level.getBrightness(LightLayer.SKY, bp) / 15f * mc.level.getSkyDarken(1);
+        bloodK = 0.25f + 0.75f * Math.min(1, Math.max(block, sky));
+    }
+
+    private static float[] dim(float[] col) {
+        return new float[] {col[0] * bloodK, col[1] * bloodK, col[2] * bloodK};
+    }
+
+    // Value noise along a thread (clots, lumps).
+    private static float vn(float x, int seed) {
+        int i = Mth.floor(x);
+        float fr = x - i, u = fr * fr * (3 - 2 * fr);
+        return hash(seed, i, 7) * (1 - u) + hash(seed, i + 1, 7) * u;
+    }
+
+    private static float sstep(float a, float b, float x) {
+        return smooth((x - a) / (b - a));
+    }
+
+    // The color of one vertex (n its normal, p where it is, relative to the camera). dry: 0 liquid, 1 hardened (dull,
+    // darker, no glint).
+    private static float[] bloodShade(Vector3f n, Vector3f p, float clot, float dry) {
+        float il = 1 / Math.max(1.0E-4f, p.length());
+        float vx = -p.x * il, vy = -p.y * il, vz = -p.z * il;
+        float nl = n.dot(LIGHT);
+        float d = 0.28f + 0.72f * Math.max(nl, 0);
+        float br = 0.4f + 0.2f * clot, bg = 0.01f + 0.016f * clot, bl = 0.026f + 0.018f * clot;
+        float r = 0.1f + (br - 0.1f) * d, g = bg * d, b = 0.012f + (bl - 0.012f) * d;
+        float rim = 0.42f + 0.58f * smooth(Math.abs(n.x * vx + n.y * vy + n.z * vz) / 0.6f);
+        float rx = 2 * nl * n.x - LIGHT.x, ry = 2 * nl * n.y - LIGHT.y, rz = 2 * nl * n.z - LIGHT.z;
+        float sp = (float) Math.pow(Math.max(rx * vx + ry * vy + rz * vz, 0), 22) * 0.22f * (1 - dry);
+        float wet = 1 - 0.45f * dry;
+        return new float[] {(r * rim * wet + 0.04f * dry + 0.8f * sp) * bloodK, (g * rim * wet + 0.32f * sp) * bloodK,
+                (b * rim * wet + 0.3f * sp) * bloodK};
+    }
+
+    private static void bloodRing(List<Vector3f[]> rp, List<Vector3f[]> rn, List<float[][]> rc, Vector3f c, Vector3f t, Vector3f n, Vector3f b,
+            float r, float tilt, float clot, int sides, float dry) {
+        Vector3f[] ps = new Vector3f[sides + 1];
+        Vector3f[] ns = new Vector3f[sides + 1];
+        float[][] cs = new float[sides + 1][];
+        float ct = Mth.cos(tilt), st = Mth.sin(tilt);
+        for (int j = 0; j <= sides; j++) {
+            float a = j / (float) sides * Mth.TWO_PI, ca = Mth.cos(a), sa = Mth.sin(a);
+            Vector3f dir = new Vector3f(n).mul(ca).add(b.x * sa, b.y * sa, b.z * sa);
+            ps[j] = new Vector3f(c).add(dir.x * r, dir.y * r, dir.z * r);
+            ns[j] = new Vector3f(dir).mul(ct).add(t.x * st, t.y * st, t.z * st).normalize();
+            cs[j] = bloodShade(ns[j], ps[j], clot, dry);
+        }
+        rp.add(ps);
+        rn.add(ns);
+        rc.add(cs);
+    }
+
+    // A tube of blood through pts (relative to the camera), its own radius and clot at each point, rounded ends.
+    static void bloodTube(Vector3f[] pts, float[] radii, float[] clots, int sides, float op, float dry, boolean capStart, boolean capEnd) {
+        int m = pts.length;
+        if (DbFx.pass || op <= 0.002f || m < 2) {
+            return;
+        }
+        bloodLight(pts[m / 2]);
+        Vector3f[] tan = new Vector3f[m];
+        for (int i = 0; i < m; i++) {
+            Vector3f t = new Vector3f(pts[Math.min(m - 1, i + 1)]).sub(pts[Math.max(0, i - 1)]);
+            tan[i] = t.lengthSquared() < 1.0E-10f ? (i > 0 ? new Vector3f(tan[i - 1]) : v(0, 0, 1)) : t.normalize();
+        }
+        List<Vector3f[]> rp = new ArrayList<>();
+        List<Vector3f[]> rn = new ArrayList<>();
+        List<float[][]> rc = new ArrayList<>();
+        Vector3f n = Math.abs(tan[0].y) < 0.9f ? v(0, 1, 0) : v(1, 0, 0);
+        int caps = 2;
+        for (int i = 0; i < m; i++) {
+            Vector3f t = tan[i];
+            n.sub(new Vector3f(t).mul(n.dot(t)));
+            if (n.lengthSquared() < 1.0E-8f) {
+                n = Math.abs(t.y) < 0.9f ? v(0, 1, 0) : v(1, 0, 0);
+                n.sub(new Vector3f(t).mul(n.dot(t)));
+            }
+            n.normalize();
+            Vector3f b = new Vector3f(t).cross(n).normalize();
+            if (i == 0 && capStart) {
+                for (int k = caps; k >= 1; k--) {
+                    float th = k / (float) caps * Mth.HALF_PI;
+                    bloodRing(rp, rn, rc, at(pts[0], t, -radii[0] * Mth.sin(th)), t, n, b, radii[0] * Mth.cos(th), -th, clots[0], sides, dry);
+                }
+            }
+            bloodRing(rp, rn, rc, pts[i], t, n, b, radii[i], 0, clots[i], sides, dry);
+            if (i == m - 1 && capEnd) {
+                for (int k = 1; k <= caps; k++) {
+                    float th = k / (float) caps * Mth.HALF_PI;
+                    bloodRing(rp, rn, rc, at(pts[i], t, radii[i] * Mth.sin(th)), t, n, b, radii[i] * Mth.cos(th), th, clots[i], sides, dry);
+                }
+            }
+        }
+        List<BloodQuad> qs = new ArrayList<>();
+        for (int i = 0; i + 1 < rp.size(); i++) {
+            Vector3f[] p0 = rp.get(i), p1 = rp.get(i + 1), n0 = rn.get(i), n1 = rn.get(i + 1);
+            float[][] c0 = rc.get(i), c1 = rc.get(i + 1);
+            for (int j = 0; j < sides; j++) {
+                Vector3f mid = new Vector3f(p0[j]).add(p0[j + 1]).add(p1[j + 1]).add(p1[j]).mul(0.25f);
+                Vector3f nn = new Vector3f(n0[j]).add(n0[j + 1]).add(n1[j + 1]).add(n1[j]);
+                // The half turned away from the camera is never drawn (the alpha pass writes no depth).
+                if (nn.dot(mid) > 0.6f * mid.length()) {
+                    continue;
+                }
+                qs.add(new BloodQuad(p0[j], p0[j + 1], p1[j + 1], p1[j], c0[j], c0[j + 1], c1[j + 1], c1[j], mid.lengthSquared()));
+            }
+        }
+        qs.sort((x, y) -> Float.compare(y.dist(), x.dist()));
+        for (BloodQuad q : qs) {
+            FxDraw.quad(q.a(), q.b(), q.c(), q.d(), FxDraw.SOLID, 0, q.ca(), q.cb(), q.cc(), q.cd(), op, false);
+        }
+    }
+
+    // A drop: a little capsule stretched along where it moves.
+    static void bloodDrop(Vector3f c, Vector3f dir, float len, float r, float op) {
+        Vector3f d = dir.lengthSquared() < 1.0E-8f ? v(0, -1, 0) : new Vector3f(dir).normalize();
+        bloodTube(new Vector3f[] {at(c, d, -len / 2), at(c, d, len / 2)}, new float[] {r, r}, new float[] {0.4f, 0.4f}, 6, op, 0, true, true);
+    }
+
+    // A ball of blood that wobbles; dry hardens it (the Meteorite).
+    static void bloodSphere(Vector3f c, float r, float t, float op, float dry, int seed) {
+        int n = 6;
+        Vector3f[] pts = new Vector3f[n + 1];
+        float[] rad = new float[n + 1];
+        float[] cl = new float[n + 1];
+        for (int i = 0; i <= n; i++) {
+            float u = i / (float) n - 0.5f;
+            pts[i] = add(c, u * r * 0.25f, 0.02f * r * Mth.sin(t * 1.5f + i) * (1 - dry), 0);
+            rad[i] = r * (float) Math.sqrt(1 - u * u * 0.0625f) * (1 + 0.06f * (1 - dry) * Mth.sin(t * 1.35f + i * 2));
+            cl[i] = 0.3f + 0.4f * hash(seed, i, 1);
+        }
+        bloodTube(pts, rad, cl, 12, op, dry, true, true);
+    }
 
     static void bloodBall(Vector3f at, float r, float t, float a, int seed) {
         if (a <= 0) {
             return;
         }
-        bb(at, r * 3.4f, 0, FxDraw.SOFT, 0.1f, RED, 0.25f * a, true);
-        bb(at, r * 2.1f, t * 0.05f, FxDraw.SOFT, 0.95f, BLOOD, a, false);
-        bb(at, r * 1.4f, 0, FxDraw.SOFT, 0.95f, BLOOD_D, 0.6f * a, false);
-        bb(add(at(at, FxDraw.left(), r * 0.3f), 0, r * 0.35f, 0), r * 0.6f, 0, FxDraw.SOFT, 0.6f, BLOOD_HI, 0.55f * a, true);
-        for (int i = 0; i < 5; i++) {
-            Vector3f ax = sphere(seed + 40, i);
-            Vector3f u = safe(new Vector3f(ax).cross(0, 1, 0.3f));
-            Vector3f w = new Vector3f(ax).cross(u);
-            float th = t * 0.3f + i;
-            rib(at(at(at, u, Mth.cos(th) * r * 1.05f), w, Mth.sin(th) * r * 1.05f),
-                    at(at(at, u, Mth.cos(th + 0.8f) * r * 1.05f), w, Mth.sin(th + 0.8f) * r * 1.05f), r * 0.16f, FxDraw.STREAK, 0.6f, BLOOD, 0.9f * a, false);
-        }
-    }
-
-    // A thread of blood that looks liquid: dark edge, strong red core, a thin light gloss (no neon glow) and a very faint
-    // red halo so it shows in the dark.
-    static void bloodLine(Vector3f a, Vector3f b, float w, float op, float halo) {
-        rib(a, b, w * 1.25f, FxDraw.BEAM, 0.9f, BLOOD_D, op, false);
-        rib(a, b, w, FxDraw.BEAM, 0.9f, BLOOD_R, op, false);
-        rib(a, b, w * 0.28f, FxDraw.BEAM, 0.9f, GLOSS, 0.85f * op, false);
-        if (halo > 0) {
-            rib(a, b, w * 3, FxDraw.BEAM, 0.05f, RED, halo * op, true);
-        }
+        bloodSphere(at, r * (0.4f + 0.6f * a), t, Math.min(1, a * 1.5f), 0, seed);
     }
 
     static void bloodDrips(List<Vector3f> pts, float t, int seed, float op, float ground) {
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 14; i++) {
             Vector3f p0 = pts.get(Math.min(pts.size() - 1, (int) Math.floor(hash(seed, i, 1) * pts.size())));
-            float ph = DbFx.fract(t * 0.05f + hash(seed, i, 2));
-            Vector3f p = add(p0, 0, -ph * ph * 1.6f, 0);
+            float life = 11 * (0.8f + 0.4f * hash(seed, i, 4));
+            float a = DbFx.fract(t / life + hash(seed, i, 2)) * life;
+            Vector3f p = add(p0, 0, -0.06f - 0.01225f * a * a, 0);
             if (p.y < ground) {
                 continue;
             }
-            bb(p, 0.05f + 0.03f * hash(seed, i, 3), 0, FxDraw.SOFT, 0.95f, BLOOD_R, op * (1 - ph * 0.5f), false);
+            bloodDrop(p, v(0, -1, 0), 0.05f + Math.min(0.16f, 0.0147f * a), 0.028f + 0.016f * hash(seed, i, 3), op);
         }
     }
 
@@ -1084,7 +1221,9 @@ final class JjFx {
             Vector3f d = sphere(seed, i).add(new Vector3f(dir).mul(0.8f)).normalize();
             float sp = (0.05f + 0.08f * hash(seed, i, 1)) * s;
             Vector3f p = add(at(at, d, sp * age), 0, -0.005f * age * age, 0);
-            bb(p, (0.07f + 0.08f * hash(seed, i, 2)) * s, 0, FxDraw.SOFT, 0.9f, BLOOD, 1 - age / 26, false);
+            Vector3f vel = new Vector3f(d).mul(sp).add(0, -0.01f * age, 0);
+            float size = (0.07f + 0.08f * hash(seed, i, 2)) * s;
+            bloodDrop(p, vel, size * 1.2f, size * 0.42f, 1 - age / 26);
         }
     }
 
@@ -1092,27 +1231,39 @@ final class JjFx {
         Vector3f hm = rel(f.pos);
         float k = f.b;
         bloodBall(hm, f.a, age * (1 + 3 * k), smooth(age / 6) * out, 3);
-        Vector3f n = safe(vec(f.dir));
-        for (int i = 0; i < 3; i++) {
-            float ph = DbFx.fract(age * 0.04f * (1 + 2 * k) + i / 3f);
-            dsk(hm, n, (0.9f - ph * 0.7f) * 2, FxDraw.RING, 0.05f, RED, 0.4f * k * out, true);
-        }
     }
 
-    // The Piercing Blood: too fast to see travelling, a thin line that fades, droplets falling off it.
+    // The Piercing Blood: too fast to see travelling, a thin round thread of blood that thins and breaks into beads as it
+    // fades, drops falling off it.
     private static void bloodBeam(Fx f, float age) {
         if (age >= 14) {
             return;
         }
         float fo = 1 - age / 14;
         Vector3f from = rel(f.pos);
-        Vector3f to = at(from, vec(f.dir), 1);
-        bloodLine(from, to, 0.16f * fo + 0.03f, fo, 0.14f);
-        rib(from, to, 0.05f * fo, FxDraw.BEAM, 0.9f, RED, 0.6f * fo, true);
+        Vector3f d = vec(f.dir);
+        float len = d.length();
+        if (len < 0.1f) {
+            return;
+        }
+        Vector3f dir = new Vector3f(d).div(len);
+        int n = 40;
+        Vector3f[] pts = new Vector3f[n + 1];
+        float[] rad = new float[n + 1];
+        float[] cl = new float[n + 1];
+        for (int i = 0; i <= n; i++) {
+            float u = i / (float) n, s = u * len;
+            pts[i] = add(at(from, dir, s), 0, -0.004f * age * age * u, 0);
+            float beads = fo > 0.5f ? 1 : 0.55f + 0.45f * (float) Math.pow(Math.abs(Mth.sin(s * 3.1f + age * 0.4f)), 0.6f * (1 - fo) + 0.01f);
+            rad[i] = (0.075f * fo + 0.018f) * beads * smooth((s + 0.1f) / 0.4f);
+            cl[i] = vn(s * 2, 51);
+        }
+        bloodTube(pts, rad, cl, 8, 1, 0, true, true);
+        Vector3f to = at(from, dir, len);
         for (int i = 0; i < 18; i++) {
             float u = hash(i, 4, 1);
             Vector3f p = add(lerp(from, to, u * 0.6f), 0, -0.01f * age * age * hash(i, 4, 2), 0);
-            bb(p, 0.07f, 0, FxDraw.SOFT, 0.9f, BLOOD, fo, false);
+            bloodDrop(p, v(0, -1, 0), 0.06f + 0.01f * age, 0.03f * (0.5f + fo), 1);
         }
     }
 
@@ -1142,54 +1293,105 @@ final class JjFx {
                 continue;
             }
             Vector3f o = orb(c, i, f.b, 1, 0);
-            if (a < 6) {
-                bb(o, 1 - a / 6, 0, FxDraw.SOFT, 0.5f, RED, 1 - a / 6, true);
-            }
             if (a < 14) {
                 for (int j = 0; j < 12; j++) {
                     Vector3f d = sphere(i * 13 + 3, j);
                     d.y *= 0.5f;
                     d.normalize();
                     Vector3f p = at(o, d, Math.min(4.5f, a * 0.5f));
-                    rib(at(p, d, -0.8f), p, 0.09f, FxDraw.STREAK, 0.9f, BLOOD, 1 - a / 14, false);
-                    rib(at(p, d, -0.4f), p, 0.03f, FxDraw.STREAK, 0.9f, BLOOD_HI, 1 - a / 14, true);
+                    bloodTube(new Vector3f[] {at(p, d, -0.8f), p}, new float[] {0.045f, 0.005f}, new float[] {0.4f, 0.4f}, 6, 1 - a / 14, 0.3f,
+                            true, false);
                 }
             }
         }
     }
 
-    // The blood rope: flying (a = 0) with a sag, or wrapped round the bound one (a = 1), coiling up the body.
+    // The blood rope (preview forja/choso-sangue): one thick round cord, pulses of blood running down it to the tip, a heavy
+    // drop leading it in flight, dripping all the time. Wrapped (a = 1, b = the bound one's height) the same cord goes on in
+    // tight turns round the body with the arms inside; when it ends it breaks into beads.
     private static void rope(Fx f, double now, float age, float out) {
         Vector3f hand = rel(f.pos);
-        Vector3f end = at(hand, vec(f.dir), 1);
+        Vector3f tip = at(hand, vec(f.dir), 1);
         boolean wrapped = f.a >= 1;
-        int n = 30;
-        List<Vector3f> pts = new ArrayList<>();
-        Vector3f last = new Vector3f(hand);
-        Vector3f body = add(end, 0, f.b * 0.55f, 0);
-        for (int i = 1; i <= n; i++) {
-            float u = i / (float) n;
-            Vector3f p = lerp(hand, wrapped ? body : end, u);
-            p.y += Mth.sin(u * Mth.PI) * (wrapped ? 0.05f : 0.25f);
-            bloodLine(last, p, 0.1f, out, 0.08f);
-            pts.add(p);
-            last = p;
+        float sc = Math.max(0.6f, f.b) / 1.8f;
+        float k = wrapped ? smooth((float) (now - f.changed) / 5) : 0;
+        float broken = f.endAt >= 0 ? out : 1;
+        Vector3f toHand = new Vector3f(hand).sub(tip);
+        toHand.y = 0;
+        toHand = toHand.lengthSquared() < 1.0E-6f ? v(0, 0, 1) : toHand.normalize();
+        Vector3f front = new Vector3f(toHand);
+        float yaw = wrapped ? bodyYawNear(tip) : Float.NaN;
+        if (!Float.isNaN(yaw)) {
+            front = v(-Mth.sin(yaw), 0, Mth.cos(yaw));
         }
-        bloodDrips(pts, age, 7, out, end.y - 0.2f);
+        Vector3f side = v(front.z, 0, -front.x);
+        float rx = 0.56f * sc, rz = 0.2f * sc;
+        float a0 = (float) Math.atan2(toHand.dot(front), toHand.dot(side));
+        Vector3f end = wrapped ? add(at(at(tip, side, Mth.cos(a0) * rx), front, Mth.sin(a0) * rz), 0, 1.25f * sc, 0) : tip;
+        float len = hand.distance(end);
+        int n = Mth.clamp(Math.round(len * 3.2f), 8, 60);
+        Vector3f lat = new Vector3f(end).sub(hand);
+        lat.set(lat.z, 0, -lat.x);
+        lat = lat.lengthSquared() < 1.0E-6f ? v(1, 0, 0) : lat.normalize();
+        List<Vector3f> pts = new ArrayList<>();
+        List<Float> rad = new ArrayList<>();
+        List<Float> cl = new ArrayList<>();
+        for (int i = 0; i <= n; i++) {
+            float u = i / (float) n, s = u * len;
+            Vector3f p = lerp(hand, end, u);
+            p.y += Mth.sin(u * Mth.PI) * (0.35f * (1 - k) + 0.06f);
+            p = at(p, lat, Mth.sin(s * 1.6f - age * 0.75f) * 0.07f * (1 - k) * sstep(0, 0.15f, u));
+            p.y += Mth.sin(s * 2.3f - age * 0.55f) * 0.03f * (1 - k);
+            float pulse = (float) Math.pow(Math.max(0, Mth.sin(s * 2.2f - age * 0.9f)), 4);
+            float r = 0.065f * (0.6f + 0.4f * sstep(0, 0.12f, u)) * (1 + 0.32f * pulse);
+            if (!wrapped) {
+                r = Math.max(r, 0.11f * sstep(1 - 0.35f / Math.max(len, 0.4f), 1, u));
+            }
+            if (broken < 1) {
+                r *= broken * (0.55f + 0.45f * (float) Math.sqrt(Math.abs(Mth.sin(s * 5.5f))));
+            }
+            pts.add(p);
+            rad.add(r);
+            cl.add(vn(s * 2.4f - age * 0.15f, 11));
+        }
         if (wrapped) {
-            float k = smooth((float) (now - f.changed) / 8);
-            Vector3f prev = null;
-            float h = Math.max(0.6f, f.b);
-            for (int i = 0; i <= 40; i++) {
-                float u = i / 40f;
-                float th = u * 22 + age * 0.02f;
-                Vector3f p = add(end, Mth.cos(th) * 0.42f * h / 1.8f, (0.45f + u * 1.15f * k) * h / 1.8f, Mth.sin(th) * 0.42f * h / 1.8f);
-                if (prev != null) {
-                    bloodLine(prev, p, 0.11f, out, 0.08f);
-                }
-                prev = p;
+            int m = Math.round(48 * k);
+            float sq = 1 - 0.06f * smooth((float) (now - f.changed - 3) / 4);
+            for (int i = 1; i <= m; i++) {
+                float u = i / 48f, a = a0 - u * 3 * Mth.TWO_PI;
+                float y = (1.25f - u * 0.55f) * sc + 0.02f * Mth.sin(u * 40);
+                pts.add(add(at(at(tip, side, Mth.cos(a) * rx * sq), front, Mth.sin(a) * rz * sq), 0, y, 0));
+                rad.add(0.058f * sc * (1 + 0.12f * Mth.sin(u * 23)) * (broken < 1 ? broken * (0.55f + 0.45f * Math.abs(Mth.sin(u * 60))) : 1));
+                cl.add(vn(u * 30, 13));
             }
         }
+        float[] ra = new float[rad.size()];
+        float[] ca = new float[cl.size()];
+        for (int i = 0; i < ra.length; i++) {
+            ra[i] = rad.get(i);
+            ca[i] = cl.get(i);
+        }
+        bloodTube(pts.toArray(new Vector3f[0]), ra, ca, 8, Math.min(1, out * 1.5f), 0, true, true);
+        bloodDrips(pts, age, 7, out, wrapped ? tip.y + 0.02f : tip.y - 1.2f);
+    }
+
+    // The body yaw (radians) of the living thing standing at a point (relative to the camera), NaN if none.
+    private static float bodyYawNear(Vector3f at) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null) {
+            return Float.NaN;
+        }
+        Vec3 w = DbFx.cam.add(at.x, at.y, at.z);
+        LivingEntity best = null;
+        double bd = 0.8;
+        for (LivingEntity e : mc.level.getEntitiesOfClass(LivingEntity.class, new AABB(w, w).inflate(1.2))) {
+            double d = e.position().distanceTo(w);
+            if (d < bd) {
+                bd = d;
+                best = e;
+            }
+        }
+        return best == null ? Float.NaN : best.yBodyRot * Mth.DEG_TO_RAD;
     }
 
     // ---------- Choso (kit of 2026-11-11) ----------
@@ -1205,19 +1407,22 @@ final class JjFx {
         if (r <= 0.02f) {
             return;
         }
+        bloodLight(c);
+        float[] dark = dim(BLOOD_D), body = dim(BLOOD), gloss = dim(GLOSS);
         for (int i = 0; i < 4; i++) {
             float ang = hash(f.id, i, 1) * Mth.TWO_PI;
             float d = i == 0 ? 0 : r * (0.35f + 0.3f * hash(f.id, i, 2));
             float s = r * (i == 0 ? 1 : 0.45f + 0.35f * hash(f.id, i, 3));
             Vector3f p = add(c, Mth.cos(ang) * d, 0.001f * i, Mth.sin(ang) * d);
-            dsk(p, UP, s * 2.15f, FxDraw.SOFT, 0.95f, BLOOD_D, out, false);
-            dsk(add(p, 0, 0.004f, 0), UP, s * 1.8f, FxDraw.SOFT, 0.95f, BLOOD, out, false);
+            dsk(p, UP, s * 2.15f, FxDraw.SOFT, 0.95f, dark, out, false);
+            dsk(add(p, 0, 0.004f, 0), UP, s * 1.8f, FxDraw.SOFT, 0.95f, body, out, false);
         }
-        dsk(add(c, r * 0.2f, 0.01f, -r * 0.15f), UP, r * 0.5f, FxDraw.SOFT, 0.5f, GLOSS, 0.35f * out * dry, false);
+        dsk(add(c, r * 0.2f, 0.01f, -r * 0.15f), UP, r * 0.5f, FxDraw.SOFT, 0.5f, gloss, 0.35f * out * dry, false);
     }
 
-    // A Piercing Blood that pours for a while and sweeps: one wavy line of liquid blood, thin at the palms, droplets falling
-    // off it and a spray where it ends. Thick (a > 0.5) is the Perfurante Maximo.
+    // A Piercing Blood that pours for a while and sweeps: a round jet of blood under pressure, lumps running out along it,
+    // wider where it bursts from the palms (only the big one), drops coming off it and a spray of dark drops where it ends.
+    // Thick (a > 0.5) is the Perfurante Maximo.
     private static void bloodSweep(Fx f, float age, float out) {
         Vector3f from = rel(f.pos);
         Vector3f d = vec(f.dir);
@@ -1227,31 +1432,37 @@ final class JjFx {
         }
         Vector3f dir = new Vector3f(d).div(len);
         Vector3f[] bs = basis(dir);
-        float w = f.a * (0.85f + 0.15f * Mth.sin(age * 2.1f));
         boolean big = f.a > 0.5f;
-        int n = big ? 28 : 16;
-        Vector3f last = new Vector3f(from);
-        for (int i = 1; i <= n; i++) {
-            float u = i / (float) n;
-            float s = u * len;
-            float wob = (big ? 0.12f : 0.03f) * Mth.sin(s * 0.9f - age * 1.7f) + (big ? 0.06f : 0.015f) * Mth.sin(s * 2.3f + age * 2.6f + 1);
-            Vector3f p = at(at(at(from, dir, s), bs[0], wob), bs[1], wob * 0.6f);
-            float wi = w * Math.min(1, u * (big ? 10 : 6) + 0.25f);
-            bloodLine(last, p, wi, out, big ? 0.12f : 0.1f);
-            last = p;
+        float R = f.a * 0.56f * (0.6f + 0.4f * out);
+        float amp = 0.08f * f.a;
+        int n = big ? 64 : 32;
+        Vector3f[] pts = new Vector3f[n + 1];
+        float[] rad = new float[n + 1];
+        float[] cl = new float[n + 1];
+        for (int i = 0; i <= n; i++) {
+            float u = i / (float) n, s = u * len;
+            float lump = vn(s * 0.9f - age * 1.3f, 41) * 0.6f + vn(s * 2.6f - age * 2f, 43) * 0.4f;
+            float flare = big ? 1 + 0.55f * (float) Math.exp(-s * 1.4f) : 1;
+            float w = smooth(s / 3);
+            pts[i] = at(at(at(from, dir, s), bs[0], amp * Mth.sin(s * 0.7f - age * 1.1f) * w), bs[1], amp * 0.8f * Mth.sin(s * 0.55f - age * 0.85f + 1) * w);
+            rad[i] = R * (0.82f + 0.36f * lump) * flare * smooth((s + 0.25f) / 0.6f);
+            cl[i] = lump;
         }
+        bloodTube(pts, rad, cl, big ? 12 : 8, Math.min(1, out * 1.5f), 0, true, true);
         int drops = big ? 26 : 10;
         for (int i = 0; i < drops; i++) {
             float ph = DbFx.fract(age * (0.05f + 0.04f * hash(f.id, i, 2)) + hash(f.id, i, 3));
             Vector3f p = add(at(from, dir, len * hash(f.id, i, 1)), 0, -ph * ph * 2.2f, 0);
-            bb(p, (0.05f + 0.06f * hash(f.id, i, 4)) * (big ? 2 : 1), 0, FxDraw.SOFT, 0.95f, BLOOD, out * (1 - ph * 0.6f), false);
+            float r = (0.025f + 0.03f * hash(f.id, i, 4)) * (big ? 2 : 1);
+            bloodDrop(p, v(0, -1, 0), r * 2 + ph * 0.25f, r, out * (1 - ph * 0.6f));
         }
         Vector3f end = at(from, dir, len);
         for (int i = 0; i < (big ? 12 : 6); i++) {
             float ph = DbFx.fract(age * 0.09f + hash(f.id + 7, i, 1));
             Vector3f sd = sphere(f.id + (int) Math.floor(age * 0.09f + hash(f.id + 7, i, 1)) * 13, i).add(new Vector3f(dir).mul(-0.6f)).normalize();
             Vector3f p = add(at(end, sd, ph * (big ? 2.4f : 1.2f)), 0, -ph * ph * 0.8f, 0);
-            bb(p, (big ? 0.18f : 0.08f) * (1 - ph * 0.5f), 0, FxDraw.SOFT, 0.95f, BLOOD, out * (1 - ph), false);
+            float r = (big ? 0.08f : 0.035f) * (1 - ph * 0.5f);
+            bloodDrop(p, new Vector3f(sd).add(0, -ph * 1.6f, 0), r * 2.6f, r, out * (1 - ph));
         }
         if (big && DbFx.pass) {
             warp(at(from, dir, 1.2f), 1.4f, 0.4f * out, 0, age, null);
@@ -1279,10 +1490,16 @@ final class JjFx {
             float y0 = (0.5f + 1.3f * hash(f.id, i, 4)) * (float) b.s();
             float r0 = (0.35f + 0.4f * hash(f.id, i, 5)) * (float) b.s();
             float turn = (hash(f.id, i, 6) < 0.5f ? -1 : 1) * (1.2f + 1.6f * hash(f.id, i, 7));
-            Vector3f p0 = dropAt(base, c, a0, y0, r0, turn, s0);
-            Vector3f p1 = dropAt(base, c, a0, y0, r0, turn, Math.max(0, s0 - 0.05f));
-            float wd = (0.03f + 0.03f * hash(f.id, i, 8)) * (1 - 0.5f * s0 * s0);
-            bloodLine(p1, p0, wd, k, 0);
+            float wd = (0.022f + 0.02f * hash(f.id, i, 8)) * (1 - 0.5f * s0 * s0);
+            Vector3f[] pts = new Vector3f[5];
+            float[] rad = new float[5];
+            float[] cl = new float[5];
+            for (int j = 0; j < 5; j++) {
+                pts[j] = dropAt(base, c, a0, y0, r0, turn, Math.max(0, s0 - 0.08f * (4 - j) / 4));
+                rad[j] = wd * (0.4f + 0.6f * j / 4);
+                cl[j] = 0.4f;
+            }
+            bloodTube(pts, rad, cl, 5, k, 0, true, true);
         }
     }
 
@@ -1314,31 +1531,30 @@ final class JjFx {
             Vector3f ax = v(Mth.cos(ang) * 0.5f * hash(f.id, i, 6), 1, Mth.sin(ang) * 0.5f * hash(f.id, i, 6)).normalize();
             Vector3f mid = at(p, ax, h * 0.5f);
             Vector3f tip = at(p, ax, h);
-            FxDraw.strip(new Vector3f[] {p, mid, tip}, new float[] {w * 1.25f, w * 0.7f, 0}, new float[] {0, 0.5f, 1}, FxDraw.SOLID, 0, BLOOD_D, 1, false);
-            FxDraw.strip(new Vector3f[] {p, mid, tip}, new float[] {w, w * 0.55f, 0}, new float[] {0, 0.5f, 1}, FxDraw.SOLID, 0, BLOOD_R, 1, false);
-            FxDraw.strip(new Vector3f[] {at(p, FxDraw.left(), w * 0.2f), at(mid, FxDraw.left(), w * 0.12f), tip}, new float[] {w * 0.2f, w * 0.1f, 0},
-                    new float[] {0, 0.5f, 1}, FxDraw.SOLID, 0, GLOSS, 0.8f, false);
+            bloodTube(new Vector3f[] {p, mid, tip}, new float[] {w * 0.55f, w * 0.32f, 0.004f}, new float[] {0.3f, 0.5f, 0.6f}, 7, 1, 0.25f, true, false);
         }
         if (age < 10) {
             bloodSplash(add(base, 0, 0.2f, 0), age, f.id, 10, f.a / 1.4f, UP);
         }
     }
 
-    // The Blood Meteorite: a ball of hardened blood (dark, dull, a few cracks of red) with a short dark trail.
+    // The Blood Meteorite: a ball of hardened blood (dark, dull, no glint) with a short dark trail.
     private static void meteor(Fx f, float age, float out) {
         Vector3f p = rel(f.pos);
         float r = f.a;
-        bb(p, r * 2.3f, age * 0.03f, FxDraw.SOFT, 0.97f, BLOOD_D, out, false);
-        bb(p, r * 1.7f, -age * 0.02f, FxDraw.SOFT, 0.95f, new float[] {0.3f, 0.02f, 0.04f}, out, false);
-        for (int i = 0; i < 4; i++) {
-            Vector3f a = at(p, sphere(f.id, i), r * 0.55f);
-            Vector3f b = at(p, sphere(f.id + 5, i), r * 0.6f);
-            rib(a, b, 0.03f, FxDraw.BEAM, 0.9f, BLOOD_R, 0.7f * out, false);
-        }
+        bloodSphere(p, r, age, out, 1, f.id);
         Vec3[] tr = f.trail.toArray(new Vec3[0]);
-        for (int i = 1; i < tr.length; i++) {
-            float u = i / (float) tr.length;
-            bloodLine(rel(tr[i - 1]), rel(tr[i]), r * 0.5f * u, out * u, 0);
+        if (tr.length >= 2) {
+            Vector3f[] pts = new Vector3f[tr.length];
+            float[] rad = new float[tr.length];
+            float[] cl = new float[tr.length];
+            for (int i = 0; i < tr.length; i++) {
+                float u = (i + 1) / (float) tr.length;
+                pts[i] = rel(tr[i]);
+                rad[i] = r * 0.25f * u;
+                cl[i] = 0.3f;
+            }
+            bloodTube(pts, rad, cl, 8, out, 0.5f, false, true);
         }
     }
 
@@ -1357,14 +1573,14 @@ final class JjFx {
         for (int i = 0; i < 10; i++) {
             float ph = DbFx.fract(age * 0.04f + hash(i, 6, 1));
             bb(add(feet, (hash(i, 6, 2) - 0.5f) * 0.7f, 0.4f + ph * 1.8f, (hash(i, 6, 3) - 0.5f) * 0.5f), 0.5f + ph * 0.5f, i + age * 0.01f, FxDraw.SMOKE,
-                    0.4f, RED, 0.25f * k * (1 - ph), true);
+                    0.4f, STEAM_RED, 0.2f * k * (1 - ph), false);
         }
         for (int side = -1; side <= 1; side += 2) {
             Vector3f sh = rel(b.point(0, -0.37 * side, 1.38));
             Vector3f hand = rel(b.point(0.05, -0.4 * side, 0.75));
             for (int j = 0; j < 3; j++) {
                 Vector3f off = vec(b.fwd).mul(0.13f).add(vec(b.right).mul((j - 1) * 0.05f));
-                rib(new Vector3f(sh).add(off), new Vector3f(hand).add(off), 0.02f, FxDraw.BEAM, 0.9f, RED, 0.8f * k, true);
+                rib(new Vector3f(sh).add(off), new Vector3f(hand).add(off), 0.02f, FxDraw.BEAM, 0.9f, BLOOD_D, 0.8f * k, false);
             }
         }
     }
