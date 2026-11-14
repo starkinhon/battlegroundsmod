@@ -169,6 +169,33 @@ public final class DagonFeature extends Feature<NoneFeatureConfiguration> {
             }
         }
 
+        // Inside a Nest the sea is open: any bit of natural land left over the bottom (a sandbank, a patch of grass) is
+        // cut down under the water before the Nest goes in.
+        for (int x = x0; x <= x1; x++) {
+            for (int z = z0; z <= z1; z++) {
+                if (!near(x, z, nests, DagonGen.NEST_KEEP)) {
+                    continue;
+                }
+                int h = real.applyAsInt(x, z);
+                if (h <= sea - 3) {
+                    continue;
+                }
+                for (int y = sea - 2; y <= Math.min(maxY, h + 12); y++) {
+                    BlockState there = level.getBlockState(pos.set(x, y, z));
+                    if (there.is(Blocks.BEDROCK)) {
+                        continue;
+                    }
+                    BlockState want = y <= sea ? Blocks.WATER.defaultBlockState() : Blocks.AIR.defaultBlockState();
+                    if (there != want) {
+                        level.setBlock(pos, want, 2);
+                    }
+                }
+                if (sea - 3 >= minY) {
+                    level.setBlock(pos.set(x, sea - 3, z), Blocks.SAND.defaultBlockState(), 2);
+                }
+            }
+        }
+
         // Into the world.
         w.each((x, y, z, t) -> {
             if (y < minY || y > maxY || x < x0 || x > x1 || z < z0 || z > z1) {
@@ -226,6 +253,17 @@ public final class DagonFeature extends Feature<NoneFeatureConfiguration> {
             int z = cz + JjkGen.round(Math.sin(a * Math.PI / 4) * DagonGen.NEST_REACH);
             if (!biomeAt(generator, random, x, sea, z) && ++miss > 1) {
                 return false;
+            }
+        }
+        // open water all around the Nest's sand ring too, not a shore or an island inside it (Stark 2026-11-14: a strip
+        // of grass and dirt between the tentacles)
+        for (int a = 0; a < 8; a++) {
+            for (int r : new int[] {DagonGen.NEST_KEEP / 2, DagonGen.NEST_KEEP}) {
+                int x = cx + JjkGen.round(Math.cos(a * Math.PI / 4) * r);
+                int z = cz + JjkGen.round(Math.sin(a * Math.PI / 4) * r);
+                if (real.applyAsInt(x, z) > sea - 2) {
+                    return false;
+                }
             }
         }
         return true;
