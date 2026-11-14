@@ -472,15 +472,15 @@
    "quem": "Mist Swordsmen",
    "tipo": "ONCE",
    "nome": "The sword in the grave",
-   "fala": "Pull the sword from the grave and the mist closes in. Three waves of swordsmen.",
+   "fala": "In the middle of the island there is a grave with a giant sword stuck in it (it glints). Right-click it to pull it out: the mist closes in and three waves of swordsmen come.",
    "passos": [
     [
-     "Pull the sword",
+     "Right-click the sword in the grave",
      0,
      1
     ],
     [
-     "Beat the 3 waves",
+     "Beat the 3 waves of swordsmen",
      0,
      3
     ]

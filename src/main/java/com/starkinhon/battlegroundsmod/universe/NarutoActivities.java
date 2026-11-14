@@ -720,6 +720,25 @@ public final class NarutoActivities {
         return true;
     }
 
+    // The sword still in the grave glints for whoever comes near, with a line saying what to do (Stark 2026-11-13: "que
+    // espada? onde tá essa espada?").
+    private static void swordHint(ServerPlayer player, ServerLevel level) {
+        NarutoSites.Site site = NarutoSites.near(level, NarutoStructGen.NEVOA, player.blockPosition(), 48);
+        if (site == null || state(level, site).getBoolean("tirada")) {
+            return;
+        }
+        for (BlockPos p : site.mark("blade")) {
+            if (level.random.nextInt(3) == 0) {
+                player.connection.send(new net.minecraft.network.protocol.game.ClientboundLevelParticlesPacket(ParticleTypes.END_ROD, false,
+                        p.getX() + 0.5, p.getY() + 0.5, p.getZ() + 0.5, 0.4f, 0.4f, 0.4f, 0.01f, 1));
+            }
+        }
+        BlockPos grave = site.first("grave");
+        if (nearFlat(player, grave == null ? new BlockPos(site.x(), site.y(), site.z()) : grave, 20)) {
+            player.displayClientMessage(msg("espada_dica"), true);
+        }
+    }
+
     private static void restoreSword(ServerLevel level, NarutoSites.Site site) {
         setAll(level, site.mark("blade"), Blocks.IRON_BLOCK.defaultBlockState(), false);
         setAll(level, site.mark("spine"), ModBlocks.RAIN_METAL.get().defaultBlockState(), false);
@@ -1046,6 +1065,9 @@ public final class NarutoActivities {
             return;
         }
         Run run = RUNS.get(player.getUUID());
+        if (run == null && now % 20 == 0) {
+            swordHint(player, level);
+        }
         if (run != null) {
             NarutoSites.Site site = null;
             for (NarutoSites.Site s : NarutoSites.known(level)) {

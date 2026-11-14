@@ -472,15 +472,15 @@
    "quem": "Espadachins da Névoa",
    "tipo": "ÚNICA",
    "nome": "A espada do túmulo",
-   "fala": "Puxe a espada do túmulo e a névoa fecha. Três ondas de espadachins.",
+   "fala": "No meio da ilha tem um túmulo com uma espada gigante cravada (ela brilha). Clique com o botão direito nela pra puxar: a névoa fecha e vêm três ondas de espadachins.",
    "passos": [
     [
-     "Puxe a espada",
+     "Clique com o botão direito na espada do túmulo",
      0,
      1
     ],
     [
-     "Vença as 3 ondas",
+     "Vença as 3 ondas de espadachins",
      0,
      3
     ]
