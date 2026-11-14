@@ -73,7 +73,7 @@ public final class DbQuests {
             new Step("cell", 1, WorldSites.CELL_RING, 0.6, items(() -> new ItemStack(ModItems.SENZU.get(), 3))),
             new Step("babidi", 1, WorldSites.BABIDI, 0.8, items(() -> new ItemStack(ModItems.SENZU.get(), 3))),
             new Step("boo", 1, WorldSites.BUU, 0.3, items()),
-            new Step("freeza", 1, null, 1.0, items(() -> new ItemStack(ModItems.MULTIVERSAL_CRYSTAL.get(), 2))));
+            new Step("freeza", 1, null, 1.0, items(() -> new ItemStack(ModItems.SENZU.get(), 2))));
 
     private DbQuests() {
     }

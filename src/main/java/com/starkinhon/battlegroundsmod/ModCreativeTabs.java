@@ -29,6 +29,8 @@ public final class ModCreativeTabs {
     // Items of characters taken out of the game: never shown, even while their code still exists.
     // When Sukuna comes back as a Divine Soul, take his ids out of this list.
     private static final Set<String> REMOVED = Set.of(
+            // gone from the game (Stark 2026-11-13); still registered so old worlds keep loading
+            "cristal_multiversal",
             "ichigo_spawn_egg", "soul_ichigo",
             "urahara_spawn_egg", "soul_urahara",
             "soul_sukuna_cuts",

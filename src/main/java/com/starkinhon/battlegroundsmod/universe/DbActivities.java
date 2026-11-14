@@ -580,7 +580,7 @@ public final class DbActivities {
 
     // Buu's gift: a rare item of any universe of the mod (Stark 2026-11-12: "ele te dá um item raro, qualquer item do jogo").
     private static final List<Supplier<? extends Item>> RARE = List.of(
-            ModItems.MULTIVERSAL_CRYSTAL, ModItems.SCOUTER, ModItems.DRAGON_RADAR, ModItems.HIRAISHIN_KUNAI, ModItems.SAMEHADA,
+            ModItems.SCOUTER, ModItems.DRAGON_RADAR, ModItems.HIRAISHIN_KUNAI, ModItems.SAMEHADA,
             ModItems.KUSANAGI, ModItems.KUBIKIRIBOCHO, ModItems.PAPER_WINGS, ModItems.HASHIRAMA_CELL, ModItems.TOAD_SCROLL,
             ModItems.SHARINGAN, ModItems.GOJO_BLINDFOLD, ModItems.PLAYFUL_CLOUD, ModItems.INVERTED_SPEAR, ModItems.CURSED_DOLL,
             ModItems.HOLLOW_MASK, ModItems.ZANPAKUTO, ModItems.SOUL_CANDY, ModItems.NICHIRIN_SWORD, ModItems.WISTERIA,
@@ -704,7 +704,7 @@ public final class DbActivities {
                 case "cell" -> reward(player, "cell", 0.4, new ItemStack(ModItems.SENZU.get(), 2));
                 case "namek" -> reward(player, "vila", 0.5, new ItemStack(ModItems.SENZU.get(), 3));
                 default -> {
-                    reward(player, "babidi", 0.6, new ItemStack(ModItems.MULTIVERSAL_CRYSTAL.get()));
+                    reward(player, "babidi", 0.6);
                     // the first time the guardians fall, Babidi marks you (StructureMissions, MajinMark)
                     MajinMark.grant(player);
                 }
