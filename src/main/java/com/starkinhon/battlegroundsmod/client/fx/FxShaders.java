@@ -13,6 +13,9 @@ import net.neoforged.neoforge.client.event.RegisterShadersEvent;
 // The mod's own shaders (assets/battlegroundsmod/shaders/core). Screen passes use fx_blit for the full-screen quad.
 public final class FxShaders {
     static ShaderInstance radial;
+    // Colônia do Jogo do Abate: the dome and sky (ColoniaAirFx), and the Jujutsu screen grade.
+    static ShaderInstance colonia;
+    static ShaderInstance jjGrade;
     static ShaderInstance impact;
     static ShaderInstance moonScreen;
     static ShaderInstance warp;
@@ -259,6 +262,17 @@ public final class FxShaders {
             register(event, "fx_pvscreen", DefaultVertexFormat.POSITION, s -> pvScreen = s);
         } catch (Exception e) {
             BattlegroundsMod.LOGGER.error("Could not load the combat flight's screen shader", e);
+        }
+        // On their own: without them the Colônia still has its smoke, ash and fog, just no dome, sky or screen grade.
+        try {
+            register(event, "souls_colonia", DefaultVertexFormat.POSITION, s -> colonia = s);
+        } catch (Exception e) {
+            BattlegroundsMod.LOGGER.error("Could not load the Colonia dome shader", e);
+        }
+        try {
+            register(event, "fx_jjgrade", DefaultVertexFormat.POSITION, s -> jjGrade = s);
+        } catch (Exception e) {
+            BattlegroundsMod.LOGGER.error("Could not load the Jujutsu screen grade shader", e);
         }
     }
 

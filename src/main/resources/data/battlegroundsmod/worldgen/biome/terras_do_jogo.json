@@ -9,12 +9,6 @@
     "water_fog_color": 3828336,
     "grass_color": 5918784,
     "foliage_color": 4866096,
-    "particle": {
-      "options": {
-        "type": "minecraft:white_ash"
-      },
-      "probability": 0.02
-    },
     "ambient_sound": "minecraft:ambient.basalt_deltas.loop",
     "additions_sound": {
       "sound": "minecraft:ambient.basalt_deltas.additions",

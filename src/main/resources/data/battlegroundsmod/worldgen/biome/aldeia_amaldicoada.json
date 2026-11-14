@@ -9,12 +9,6 @@
     "water_fog_color": 1712152,
     "grass_color": 5925434,
     "foliage_color": 4608570,
-    "particle": {
-      "options": {
-        "type": "minecraft:spore_blossom_air"
-      },
-      "probability": 0.0015
-    },
     "additions_sound": {
       "sound": "minecraft:ambient.cave",
       "tick_chance": 0.0011
