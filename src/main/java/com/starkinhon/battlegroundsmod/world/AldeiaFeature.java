@@ -150,6 +150,7 @@ public final class AldeiaFeature extends Feature<NoneFeatureConfiguration> {
 
         // Into the world: only the chunk's own columns, the swamp's ground only where the biome is (a village is written
         // whole, its site has the biome all around).
+        FluidEdges edges = new FluidEdges(); // water and lava spill over their steps (FluidEdges)
         w.each((x, y, z, t) -> {
             if (y < minY || y > maxY || x < x0 || x > x1 || z < z0 || z > z1) {
                 return;
@@ -172,8 +173,9 @@ public final class AldeiaFeature extends Feature<NoneFeatureConfiguration> {
             if (soft(t) && !open) {
                 return; // leaves and plants only grow into the air, as the preview's set
             }
-            level.setBlock(pos, block(t), 2);
+            edges.set(level, pos, block(t), 2);
         });
+        edges.apply(level, 2);
         return true;
     }
 

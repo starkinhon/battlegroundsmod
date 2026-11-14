@@ -902,7 +902,8 @@ public final class ChallengeArenas {
     // Puts one generated arena back, a slice per tick (step): 1. every block the generator made (only where the world
     // differs, so after the first time it is mostly checking); 2. the fight circle and a little past it cleaned of what
     // the last fight left (holes filled above, blocks that were not there removed); 3. invisible walls round the circle
-    // and a ceiling at its height, only where the scenery leaves air; 4. the arena's own biome (sky, fog, grass).
+    // and a ceiling at its height, only where the scenery leaves air; then the water and lava spill over their steps
+    // (FluidEdges); 4. the arena's own biome (sky, fog, grass).
     private static final class Build {
         private final ArenaTemplate t;
         private final ArenaTemplate.Meta m;
@@ -919,6 +920,9 @@ public final class ChallengeArenas {
         private final net.minecraft.world.level.levelgen.structure.BoundingBox fluidBox;
         private final int ticketRadius;
         private boolean ticketed;
+        // the water and lava sources placed, for their spill over the steps (phase 3, FluidEdges)
+        private final it.unimi.dsi.fastutil.longs.LongArrayList fluids = new it.unimi.dsi.fastutil.longs.LongArrayList();
+        private final BlockPos.MutableBlockPos edgePos = new BlockPos.MutableBlockPos();
         int chunkWaitTicks;
         int chunkCount;
 
@@ -940,8 +944,9 @@ public final class ChallengeArenas {
             maxCx = (c.getX() + x1) >> 4;
             minCz = (c.getZ() + z0) >> 4;
             maxCz = (c.getZ() + z1) >> 4;
-            fluidBox = new net.minecraft.world.level.levelgen.structure.BoundingBox(c.getX() + x0, c.getY() + m.minY() - 1,
-                    c.getZ() + z0, c.getX() + x1, c.getY() + m.maxY() + 1, c.getZ() + z1);
+            // one block wider than the scenery: a fluid's spill (FluidEdges) can land just past the last column
+            fluidBox = new net.minecraft.world.level.levelgen.structure.BoundingBox(c.getX() + x0 - 1, c.getY() + m.minY() - 1,
+                    c.getZ() + z0 - 1, c.getX() + x1 + 1, c.getY() + m.maxY() + 1, c.getZ() + z1 + 1);
             ticketAt = new net.minecraft.world.level.ChunkPos(c);
             ticketRadius = Math.min(32, Math.max(Math.max(ticketAt.x - minCx, maxCx - ticketAt.x), Math.max(ticketAt.z - minCz, maxCz - ticketAt.z)) + 1);
             phase = -1;
@@ -991,6 +996,9 @@ public final class ChallengeArenas {
             pos.set(x, y, z);
             if (level.getBlockState(pos) != state) {
                 level.setBlock(pos, state, FLAGS);
+            }
+            if (phase == 0 && state.getFluidState().isSource()) {
+                fluids.add(pos.asLong());
             }
             return 1;
         }
@@ -1108,13 +1116,24 @@ public final class ChallengeArenas {
                         }
                     }
                     case 3 -> {
+                        // the rivers and lava paths spill over their steps (one stream, not a row of puddles). After the
+                        // clearing, so its air is the real air; still no tick, so nothing floods.
+                        if (cursor >= fluids.size()) {
+                            phase = 4;
+                            cursor = 0;
+                            continue;
+                        }
+                        long p = fluids.getLong(cursor++);
+                        ops += 1 + com.starkinhon.battlegroundsmod.world.FluidEdges.edge(level, edgePos, BlockPos.getX(p), BlockPos.getY(p), BlockPos.getZ(p), FLAGS);
+                    }
+                    case 4 -> {
                         int w = maxCx - minCx + 1;
                         int total = w * (maxCz - minCz + 1);
                         if (cursor >= total) {
                             if (!changed.isEmpty()) {
                                 level.getChunkSource().chunkMap.resendBiomesForChunks(changed);
                             }
-                            phase = 4;
+                            phase = 5;
                             return true;
                         }
                         biome(minCx + cursor % w, minCz + cursor / w);

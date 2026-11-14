@@ -170,6 +170,7 @@ public final class DagonFeature extends Feature<NoneFeatureConfiguration> {
         }
 
         // Into the world.
+        FluidEdges edges = new FluidEdges(); // water and lava spill over their steps (FluidEdges)
         w.each((x, y, z, t) -> {
             if (y < minY || y > maxY || x < x0 || x > x1 || z < z0 || z > z1) {
                 return;
@@ -192,8 +193,9 @@ public final class DagonFeature extends Feature<NoneFeatureConfiguration> {
             if (soft(t) && !open) {
                 return; // fronds and things lying on the sand only go into the air, as the preview's set
             }
-            level.setBlock(pos, block(t), 2);
+            edges.set(level, pos, block(t), 2);
         });
+        edges.apply(level, 2);
         return true;
     }
 

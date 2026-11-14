@@ -203,6 +203,7 @@ public final class TemploFeature extends Feature<NoneFeatureConfiguration> {
         }
 
         // Into the world.
+        FluidEdges edges = new FluidEdges(); // water and lava spill over their steps (FluidEdges)
         w.each((x, y, z, t) -> {
             if (y < minY || y > maxY) {
                 return;
@@ -227,8 +228,9 @@ public final class TemploFeature extends Feature<NoneFeatureConfiguration> {
                 level.setBlock(pos, door(w, x, y, z), 2);
                 return;
             }
-            level.setBlock(pos, block(t, x, y, z), 2);
+            edges.set(level, pos, block(t, x, y, z), 2);
         });
+        edges.apply(level, 2);
         return true;
     }
 

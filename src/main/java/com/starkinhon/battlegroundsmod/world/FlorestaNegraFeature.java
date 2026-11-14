@@ -184,6 +184,7 @@ public final class FlorestaNegraFeature extends Feature<NoneFeatureConfiguration
         }
 
         // Into the world.
+        FluidEdges edges = new FluidEdges(); // water and lava spill over their steps (FluidEdges)
         w.each((x, y, z, t) -> {
             if (y < minY || y > maxY) {
                 return;
@@ -203,8 +204,9 @@ public final class FlorestaNegraFeature extends Feature<NoneFeatureConfiguration
             if (soft(t) && !open) {
                 return; // leaves and plants only grow into the air, as the preview's set
             }
-            level.setBlock(pos, block(t), 2);
+            edges.set(level, pos, block(t), 2);
         });
+        edges.apply(level, 2);
         return true;
     }
 
