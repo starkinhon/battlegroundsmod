@@ -328,9 +328,10 @@ final class JjMobMoves {
     // with the break effect. Every destruction of the curses goes through here, so the gamerules are checked once.
     static void carve(NarutoMob m, Vec3 at, double r, int down, int up, float maxHard, int thrown) {
         ServerLevel level = lvl(m);
-        // never in the challenge arenas (their floor is the fight), nor with the destruction gamerules off
-        if (!com.starkinhon.battlegroundsmod.combat.BlockRules.canBreak(level)
-                || com.starkinhon.battlegroundsmod.challenge.ChallengeArenas.isArena(level.dimension())) {
+        // the same rules as the DB and Naruto creatures (MobGrief.allowed): never in the challenge arenas (their floor
+        // is the fight), never up in an expansion (no blocks there, #261), never at a mission building nor near a
+        // teaching NPC, nor with the destruction gamerules off
+        if (!com.starkinhon.battlegroundsmod.animal.MobGrief.allowed(m, at)) {
             return;
         }
         net.minecraft.core.BlockPos mid = net.minecraft.core.BlockPos.containing(at);
