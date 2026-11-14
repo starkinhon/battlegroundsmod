@@ -155,9 +155,12 @@ public final class ColoniaAirFx {
         return 0.2 + 0.8 * Math.pow(0.5 + 0.5 * Math.sin(t * 0.31 + Math.sin(t * 0.09) * 2.4), 4);
     }
 
+    // An integer hash (the preview's sin hash cost ~5 ms a tick here: the low smoke asks for ~115 thousand of them).
     private static double hsh(int x, int z) {
-        double s = Math.sin(x * 127.1 + z * 311.7) * 43758.5453;
-        return s - Math.floor(s);
+        int h = x * 374761393 + z * 668265263;
+        h = (h ^ (h >>> 13)) * 1274126177;
+        h ^= h >>> 16;
+        return (h & 0xffffff) / 16777216.0;
     }
 
     private static double vnoise(double x, double z) {
@@ -984,11 +987,13 @@ public final class ColoniaAirFx {
             double hgt = y - f.c.y;
             float n = night;
             // the base takes the fire (orange, more at night), the top lightens to the sky's grey
-            float fireLit = (float) Math.max(0, 1 - hgt / Mth.lerp(n, 6, 14));
+            // (at night the fire lights the column higher up, so from the street it still stands out against the dark
+            // violet sky: in the first test on the PC it was only a light haze there)
+            float fireLit = (float) Math.max(0, 1 - hgt / Mth.lerp(n, 6, 22));
             float tn = (float) (f.tone + Math.min(0.18, hgt * 0.004));
-            float r = Mth.lerp(n, tn, tn * 0.5f) + fireLit * Mth.lerp(n, 0.2f, 0.55f);
-            float g = Mth.lerp(n, tn * 0.97f, tn * 0.42f) + fireLit * Mth.lerp(n, 0.07f, 0.2f);
-            float b = Mth.lerp(n, tn * 1.02f, tn * 0.45f) + fireLit * 0.02f;
+            float r = Mth.lerp(n, tn, tn * 0.75f) + fireLit * Mth.lerp(n, 0.2f, 0.62f);
+            float g = Mth.lerp(n, tn * 0.97f, tn * 0.6f) + fireLit * Mth.lerp(n, 0.07f, 0.24f);
+            float b = Mth.lerp(n, tn * 1.02f, tn * 0.7f) + fireLit * 0.03f;
             double px = 0, py = 0, pz = 0;
             for (int q = 0; q <= 9; q++) {
                 double ang = f.rot + (q % 9) / 9.0 * Math.PI * 2;
