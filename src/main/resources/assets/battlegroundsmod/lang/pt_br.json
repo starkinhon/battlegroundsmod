@@ -2339,5 +2339,10 @@
   "screen.battlegroundsmod.conversa.nova": "NOVA MISSÃO",
   "screen.battlegroundsmod.conversa.entregue": "ENTREGUE",
   "screen.battlegroundsmod.livro.alma": "Alma",
-  "screen.battlegroundsmod.livro.arena_carregando": "Arena carregando"
+  "screen.battlegroundsmod.livro.arena_carregando": "Arena carregando",
+  "screen.battlegroundsmod.livro.modo_normal": "NORMAL",
+  "screen.battlegroundsmod.livro.modo_dificil": "DIFÍCIL",
+  "screen.battlegroundsmod.livro.modo_dificil_vs": "MODO DIFÍCIL",
+  "screen.battlegroundsmod.livro.modo_normal_dica": "Cada desafiante luta no tier dele",
+  "screen.battlegroundsmod.livro.modo_dificil_dica": "Todo desafiante vem no seu tier (no do mais forte do grupo): vida, força, defesa e escudo"
 }

@@ -200,6 +200,7 @@ public class ChallengeScreen extends Screen {
         UiIcons.crystal(null, rgb(0xb0, 0x7a, 0xff), 14, 24, 7, 1, false, false, 0);
         String taken = tr("almas", won, all.size());
         T(taken, 22, 20, SOUL_C, 7);
+        drawMode(10, 34);
         float segW = Math.min(140, GW * 0.28f);
         for (int i = 0; i < all.size(); i++) {
             float sx = 10 + (float) Math.floor(i * segW / all.size());
@@ -528,9 +529,10 @@ public class ChallengeScreen extends Screen {
         float yy = y + 8;
         T(lk ? "???" : c.nome(), x + w / 2f, yy, lk ? MUTED : mix(ink(col), WHITE, 0.15f), 10, true, 0, true, 1);
         yy += 13;
-        String chip = ("Tier " + c.tier() + " · " + BookData.tierName(c.tier())).toUpperCase();
+        int ct = fightTier(c);
+        String chip = ("Tier " + ct + " · " + BookData.tierName(ct)).toUpperCase();
         int cw = tw(chip, 7) + 8;
-        tierChip(Math.round(x + w / 2f - cw / 2f), yy, c.tier(), col);
+        tierChip(Math.round(x + w / 2f - cw / 2f), yy, ct, col);
         yy += 16;
         {
             String place = lk ? tr("arena_escondida") : c.lugar().isEmpty() ? tr("arena") : c.lugar();
@@ -844,6 +846,40 @@ public class ChallengeScreen extends Screen {
         RenderSystem.setShaderColor(1, 1, 1, 1);
     }
 
+    // Modo Difícil: the challenger comes at the player's tier when it was weaker (ChallengeArenas.fightTier).
+    private static int fightTier(Ch c) {
+        Minecraft mc = Minecraft.getInstance();
+        int mine = mc.player == null ? Tiers.HUMANO : Tiers.of(mc.player);
+        return ChallengeArenas.clientHard ? Math.min(c.tier(), mine) : c.tier();
+    }
+
+    // The Normal / Difícil switch under the title (Stark 2026-11-14).
+    private void drawMode(float x, float y) {
+        boolean hard = ChallengeArenas.clientHard;
+        String[] labels = {tr("modo_normal"), tr("modo_dificil")};
+        float bx = x;
+        for (int i = 0; i < 2; i++) {
+            boolean on = (i == 1) == hard;
+            int w = tw(labels[i], 7, true) + 12;
+            boolean over = Px.over(bx, y, w, 12);
+            int col = i == 1 ? RED : GOLD;
+            R(bx, y, w, 12, on ? mix(col, Px.BLACK, 0.7f) : rgb(10, 9, 16), on ? 0.9f : over ? 0.8f : 0.6f);
+            R(bx, y, w, 1, on ? col : WHITE, on ? 1 : 0.15f);
+            R(bx, y + 11, w, 1, on ? col : Px.BLACK, on ? 1 : 0.4f);
+            T(labels[i], bx + w / 2f, y + 3, on ? (i == 1 ? rgb(255, 160, 150) : rgb(255, 236, 180)) : over ? WHITE : MUTED, 7, true, 0, true, 1);
+            final boolean pickHard = i == 1;
+            List<String> tip = List.of(labels[i], tr(i == 1 ? "modo_dificil_dica" : "modo_normal_dica"));
+            Px.hit(bx, y, w, 12, () -> {
+                if (ChallengeArenas.clientHard != pickHard) {
+                    ChallengeArenas.clientHard = pickHard;
+                    PacketDistributor.sendToServer(new ModPayloads.ArenaHard(pickHard));
+                    click();
+                }
+            }, tip, List.of(i == 1 ? rgb(255, 150, 140) : GOLD, MUTED));
+            bx += w + 2;
+        }
+    }
+
     private static void click() {
         Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1f));
     }
@@ -1043,8 +1079,19 @@ public class ChallengeScreen extends Screen {
         T(tr("voce"), GW * 0.06f - (1 - nt) * 80, GH * 0.1f, me, 16, true);
         T("Tier " + myTier + " · " + BookData.tierName(myTier), GW * 0.06f - (1 - nt) * 80, GH * 0.1f + 20, rgb(180, 210, 255), 8);
         T(c.nome().toUpperCase(), GW * 0.94f + (1 - nt) * 80, GH * 0.1f, ink(col), 16, true, 1, true, 1);
-        T("Tier " + c.tier() + " · " + BookData.tierName(c.tier()), GW * 0.94f + (1 - nt) * 80, GH * 0.1f + 20, mix(ink(col), WHITE, 0.3f), 8, false, 1,
+        int ct = fightTier(c);
+        T("Tier " + ct + " · " + BookData.tierName(ct), GW * 0.94f + (1 - nt) * 80, GH * 0.1f + 20, mix(ink(col), WHITE, 0.3f), 8, false, 1,
                 true, 1);
+        if (ChallengeArenas.clientHard) {
+            // the mode of this fight, under the challenger's tier
+            String hm = tr("modo_dificil_vs");
+            int hw = tw(hm, 7, true) + 10;
+            float hx = GW * 0.94f + (1 - nt) * 80 - hw;
+            R(hx, GH * 0.1f + 31, hw, 11, rgb(60, 8, 8), 0.85f);
+            R(hx, GH * 0.1f + 31, hw, 1, RED, 1);
+            R(hx, GH * 0.1f + 41, hw, 1, RED, 1);
+            T(hm, hx + hw / 2f, GH * 0.1f + 33, rgb(255, 150, 140), 7, true, 0, true, 1);
+        }
         float lt = Px.easeOut((t - 1.1f) / 0.3f);
         if (lt > 0 && !c.lugar().isEmpty()) {
             int lw = tw(c.lugar(), 10, true) + 30;

@@ -2329,5 +2329,10 @@
   "screen.battlegroundsmod.conversa.nova": "NEW MISSION",
   "screen.battlegroundsmod.conversa.entregue": "DELIVERED",
   "screen.battlegroundsmod.livro.alma": "Soul",
-  "screen.battlegroundsmod.livro.arena_carregando": "Arena loading"
+  "screen.battlegroundsmod.livro.arena_carregando": "Arena loading",
+  "screen.battlegroundsmod.livro.modo_normal": "NORMAL",
+  "screen.battlegroundsmod.livro.modo_dificil": "HARD",
+  "screen.battlegroundsmod.livro.modo_dificil_vs": "HARD MODE",
+  "screen.battlegroundsmod.livro.modo_normal_dica": "Each challenger fights at its own tier",
+  "screen.battlegroundsmod.livro.modo_dificil_dica": "Every challenger comes at your tier (the strongest in the group's): health, strength, defense and shield"
 }
