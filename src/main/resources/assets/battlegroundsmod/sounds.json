@@ -40,5 +40,33 @@
     "sounds": [
       "battlegroundsmod:hakaizinho_pulverizar"
     ]
+  },
+  "colonia_vento": {
+    "sounds": [
+      {
+        "name": "battlegroundsmod:colonia_vento",
+        "stream": true
+      }
+    ]
+  },
+  "colonia_fogo": {
+    "sounds": [
+      {
+        "name": "battlegroundsmod:colonia_fogo",
+        "stream": true
+      }
+    ]
+  },
+  "colonia_desabamento": {
+    "subtitle": "subtitles.battlegroundsmod.colonia_desabamento",
+    "sounds": [
+      "battlegroundsmod:colonia_desabamento"
+    ]
+  },
+  "colonia_estrondo": {
+    "subtitle": "subtitles.battlegroundsmod.colonia_estrondo",
+    "sounds": [
+      "battlegroundsmod:colonia_estrondo"
+    ]
   }
 }

@@ -362,6 +362,31 @@ public final class ColoniaFeature extends Feature<NoneFeatureConfiguration> {
         return false;
     }
 
+    // The barriers near a spot, worked out from the seed (not only the cells the generator already looked at, so a world
+    // loaded again still has them): {cx, cz, cityY, half} of each domed colony within one cell. ColoniaAirFx draws the
+    // barrier fixed over each one (Stark, 2026-11-14: the barrier following the player "ficou bem bugado").
+    public static List<int[]> domes(ServerLevel level, int x, int z) {
+        ChunkGenerator generator = level.getChunkSource().getGenerator();
+        RandomState random = level.getChunkSource().randomState();
+        long worldSeed = level.getSeed();
+        int worldKey = (int) (worldSeed ^ (worldSeed >>> 32));
+        int seed = worldKey ^ SALT;
+        int sea = generator.getSeaLevel() - 1;
+        int maxY = level.getMaxBuildHeight() - 1;
+        IntBinaryOperator ground = (gx, gz) -> LeafForestFeature.height(generator, level, random, worldKey, gx, gz) - 1;
+        List<int[]> out = new ArrayList<>();
+        int ci0 = Math.floorDiv(x, CELL), cj0 = Math.floorDiv(z, CELL);
+        for (int ci = ci0 - 1; ci <= ci0 + 1; ci++) {
+            for (int cj = cj0 - 1; cj <= cj0 + 1; cj++) {
+                int[] s = site(ci, cj, worldKey, seed, sea, generator, random, ground, maxY);
+                if (s != NONE && s[5] == 1) {
+                    out.add(new int[] {s[0], s[1], s[3], s[2]});
+                }
+            }
+        }
+        return out;
+    }
+
     // The colony's centers near a spot (for the client's dome and the ambience): {cx, cz, cityY} of each colony whose
     // cell is within one of the spot's cell. Only cells already looked at by the generator are known.
     public static List<int[]> knownColonies(int x, int z, long worldSeed) {
