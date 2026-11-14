@@ -189,16 +189,16 @@ public final class TemploFeature extends Feature<NoneFeatureConfiguration> {
                 if (h < sea + 1 || !biomeAt(generator, random, x, h, z)) {
                     continue;
                 }
-                for (int a = -3; a <= 3; a++) {
-                    for (int b = -3; b <= 3; b++) {
-                        for (int y = h + 1; y < h + 8; y++) {
-                            if (TemploGen.clearedByHokora(w.get(x + a, y, z + b))) {
-                                w.force(x + a, y, z + b, TemploGen.AIR);
-                            }
+                // the space over the shrine is cleared of everything, also the world's own trees (Stark 2026-11-13: a
+                // cherry grove's crowns grew through the torii)
+                for (int a = -4; a <= 4; a++) {
+                    for (int b = -4; b <= 4; b++) {
+                        for (int y = Math.min(h, ground.applyAsInt(x + a, z + b)) + 1; y < h + 9; y++) {
+                            w.force(x + a, y, z + b, TemploGen.CARVE);
                         }
                     }
                 }
-                TemploGen.hokora(w, x, h, z, TemploGen.hashInt(x, 0, z, seed + 27));
+                TemploGen.hokora(w, x, h, z, TemploGen.hashInt(x, 0, z, seed + 27), ground);
             }
         }
 

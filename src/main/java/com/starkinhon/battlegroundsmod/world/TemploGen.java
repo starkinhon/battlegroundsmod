@@ -1079,8 +1079,25 @@ public final class TemploGen {
     }
 
     // A small shrine of the woods (hokora): a little wooden house on a stone plinth, with a small torii in front.
-    public static void hokora(Vox w, int x, int y, int z, int seed) {
+    public static void hokora(Vox w, int x, int y, int z, int seed, IntBinaryOperator ground) {
         Rng rng = new Rng(seed);
+        int s0 = new Rng(seed).next() < 0.5 ? 1 : -1;
+        // a footing down to the ground under the plinth, the torii's posts and the lantern (Stark 2026-11-13: on a slope
+        // the torii and the lantern hung in the air)
+        java.util.List<int[]> feet = new java.util.ArrayList<>();
+        for (int a = -1; a <= 1; a++) {
+            for (int b = -1; b <= 1; b++) {
+                feet.add(new int[] {x + a, z + b, y});
+            }
+        }
+        feet.add(new int[] {x - 1, z + 3 * s0, y + 1});
+        feet.add(new int[] {x + 1, z + 3 * s0, y + 1});
+        feet.add(new int[] {x + 2 * s0, z + 2 * s0, y + 1});
+        for (int[] f : feet) {
+            for (int yy = ground.applyAsInt(f[0], f[1]) + 1; yy < f[2]; yy++) {
+                w.force(f[0], yy, f[1], MOSSY_STONE);
+            }
+        }
         for (int a = -1; a <= 1; a++) {
             for (int b = -1; b <= 1; b++) {
                 w.force(x + a, y, z + b, MOSSY_STONE);
