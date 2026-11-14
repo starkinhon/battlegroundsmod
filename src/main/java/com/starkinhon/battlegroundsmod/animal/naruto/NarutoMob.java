@@ -700,8 +700,21 @@ public class NarutoMob extends DbCreature {
                 }
             }
             if (s.move == Move.FLYER) {
-                // hovers a little above and to the side of its target
-                Vec3 want = t.position().add(0, t.getBbHeight() + 1.2, 0).add(t.position().subtract(position()).normalize().scale(-2.5));
+                // hovers a little above and to the side of its target. The step back is flat: straight over the
+                // target it pointed up and the flier parked 5 blocks over the head, out of its own reach (the
+                // Jujutsu flies and fish never bit, test 2026-11-14). A flier whose shortest blow reaches less than 3
+                // blocks hovers at head height, 1.2 blocks off.
+                Vec3 flat = t.position().subtract(position()).multiply(1, 0, 1);
+                flat = flat.lengthSqr() < 1.0E-4 ? forward() : flat.normalize();
+                double shortest = 99;
+                for (Attack a : s.attacks) {
+                    if (!a.reactive()) {
+                        shortest = Math.min(shortest, a.max());
+                    }
+                }
+                boolean close = shortest < 3;
+                Vec3 want = close ? t.position().add(0, t.getBbHeight() * 0.8, 0).add(flat.scale(-1.2))
+                        : t.position().add(0, t.getBbHeight() + 1.2, 0).add(flat.scale(-2.5));
                 getMoveControl().setWantedPosition(want.x, want.y, want.z, 1.1);
                 return;
             }
