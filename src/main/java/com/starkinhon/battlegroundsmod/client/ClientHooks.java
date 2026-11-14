@@ -253,6 +253,11 @@ public final class ClientHooks {
         com.starkinhon.battlegroundsmod.client.fx.DomainScene.event(casterId, center, awakened, mode, other);
     }
 
+    // The Colônia's barriers near the player (ColoniaDomeSync).
+    public static void coloniaDomes(int[] flat) {
+        com.starkinhon.battlegroundsmod.client.fx.ColoniaAirFx.setDomes(flat);
+    }
+
     public static void soulCeremony(int entityId, int killerId, String power, int color, boolean full) {
         com.starkinhon.battlegroundsmod.client.fx.SoulCeremonyFx.start(entityId, killerId, power, color, full);
     }

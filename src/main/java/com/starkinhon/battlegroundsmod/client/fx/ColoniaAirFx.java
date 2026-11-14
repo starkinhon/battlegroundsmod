@@ -45,7 +45,8 @@ import net.neoforged.neoforge.client.event.ViewportEvent;
 // and the Deserto do Diabo; doc "Ambientação dos biomas de Jujutsu", preview forja/jujutsu-colonia-ambiente approved to
 // be seen in the game). amb.js there is the source of truth and this is its line-by-line port; the same names where it
 // helps. Fades in when the player walks into the biome and out when the player leaves (BiomeAura).
-// - the barrier: a dark see-through dome over the player's part of the colony, veins of energy running over it
+// - the barrier: a dark see-through dome fixed over each domed colony (the server tells where: ColoniaDomeSync), veins
+//   of energy running over it
 //   (souls_colonia mode 0); from inside it the top of the sky goes violet, the fires' orange glows low on the horizon at
 //   night (mode 1, behind everything);
 // - smoke columns: every building on fire (embers with fire on top) near the player sends up its own column, leaning
@@ -117,9 +118,11 @@ public final class ColoniaAirFx {
     private static long groundAt;
     private static float cityY;
 
-    // the barrier's middle, following the player slowly
-    private static double domeX, domeZ, domeY;
-    private static boolean domeSet;
+    // the barriers near the player, {cx, cz, cityY, half} each, from the server; the nearest is drawn, fixed in the world
+    private static int[] domes = new int[0];
+    private static double domeX, domeZ, domeY, domeR = DOME_R;
+    private static boolean hasDome;
+    private static float inside;
 
     // the far blast
     private static double flashT = -1, flashDist, flashX, flashZ, flashH, flashAmt;
@@ -192,6 +195,7 @@ public final class ColoniaAirFx {
         Minecraft mc = Minecraft.getInstance();
         lastStrength = strength;
         if (mc.level == null || mc.player == null) {
+            domes = new int[0];
             reset();
             return;
         }
@@ -221,14 +225,7 @@ public final class ColoniaAirFx {
             measureGround(level, bx, bz, Mth.floor(p.y));
         }
         scanFires(level, p);
-        if (!domeSet) {
-            domeX = p.x;
-            domeZ = p.z;
-            domeSet = true;
-        }
-        domeX += (p.x - domeX) * 0.002;
-        domeZ += (p.z - domeZ) * 0.002;
-        domeY = cityY - 2;
+        pickDome(p);
 
         // the columns: clouds born at the rhythm of their strength and the gust (which feeds the fire)
         for (Col c : COLS) {
@@ -351,7 +348,8 @@ public final class ColoniaAirFx {
         scanRow = -SCAN;
         groundX = Integer.MIN_VALUE;
         veilFresh = true;
-        domeSet = false;
+        hasDome = false;
+        inside = 0;
         flashT = -1;
         flashAmt = 0;
         shake = 0;
@@ -363,6 +361,31 @@ public final class ColoniaAirFx {
             fireLoop.end();
             fireLoop = null;
         }
+    }
+
+    // Called with what the server sent (ClientHooks.coloniaDomes).
+    public static void setDomes(int[] flat) {
+        domes = flat == null ? new int[0] : flat;
+    }
+
+    // The nearest barrier stays where the server says it is; the violet of its sky comes in as the player walks under it.
+    private static void pickDome(Vec3 p) {
+        double best = Double.MAX_VALUE;
+        hasDome = false;
+        for (int i = 0; i + 3 < domes.length; i += 4) {
+            double r = DOME_R * domes[i + 3] / 120.0, dx = p.x - (domes[i] + 0.5), dz = p.z - (domes[i + 1] + 0.5);
+            double d = Math.sqrt(dx * dx + dz * dz);
+            if (d < r * 1.6 + 64 && d < best) {
+                best = d;
+                hasDome = true;
+                domeX = domes[i] + 0.5;
+                domeZ = domes[i + 1] + 0.5;
+                domeY = domes[i + 2] - 2;
+                domeR = r;
+            }
+        }
+        float target = hasDome ? (float) Mth.clamp((domeR - best) / 12 + 0.5, 0, 1) : 0;
+        inside += Mth.clamp(target - inside, -0.03f, 0.03f);
     }
 
     private static void triggerFlash(Vec3 p, double ang) {
@@ -779,6 +802,40 @@ public final class ColoniaAirFx {
         }
     }
 
+    // A flat piece's two axes, turned to face the camera's POSITION (not its looking direction): turning the head doesn't
+    // turn the smoke with it, only walking around it does, so it stays in the world instead of stuck on the screen
+    // (Stark, 2026-11-14: "todos os efeitos parecem estar na minha tela").
+    private static final double[] BR = new double[3], BU = new double[3];
+
+    private static void face(Vec3 cam, double x, double y, double z) {
+        double fx = x - cam.x, fy = y - cam.y, fz = z - cam.z, l = Math.sqrt(fx * fx + fy * fy + fz * fz);
+        if (l < 1e-4) {
+            fx = lookX;
+            fy = lookY;
+            fz = lookZ;
+            l = Math.max(1e-4, Math.sqrt(fx * fx + fy * fy + fz * fz));
+        }
+        fx /= l;
+        fy /= l;
+        fz /= l;
+        // right = forward x world up; straight above or below, any horizontal axis
+        double rx = -fz, rz = fx, rl = Math.sqrt(rx * rx + rz * rz);
+        if (rl < 1e-3) {
+            rx = 1;
+            rz = 0;
+            rl = 1;
+        }
+        rx /= rl;
+        rz /= rl;
+        BR[0] = rx;
+        BR[1] = 0;
+        BR[2] = rz;
+        // up = right x forward
+        BU[0] = -rz * fy;
+        BU[1] = rz * fx - rx * fz;
+        BU[2] = rx * fy;
+    }
+
     // In front of the camera, give or take r (what is behind it isn't built at all).
     private static boolean seen(Vec3 cam, double x, double y, double z, double r) {
         return (x - cam.x) * lookX + (y - cam.y) * lookY + (z - cam.z) * lookZ > -r;
@@ -788,7 +845,7 @@ public final class ColoniaAirFx {
     private static void shaded(RenderLevelStageEvent event, int mode, float fade, float partial) {
         ShaderInstance sh = FxShaders.colonia;
         // (with a shader pack on, the frame isn't ours to draw custom shaders into: the Colônia keeps its smoke and fog)
-        if (sh == null || FxShaders.flat()) {
+        if (sh == null || FxShaders.flat() || mode == 0 && !hasDome) {
             return;
         }
         Minecraft mc = Minecraft.getInstance();
@@ -806,7 +863,7 @@ public final class ColoniaAirFx {
             sh.safeGetUniform("Fade").set(fade);
             sh.safeGetUniform("Cam").set((float) camera.x, (float) camera.y, (float) camera.z);
             sh.safeGetUniform("Center").set((float) domeX, (float) domeY, (float) domeZ);
-            sh.safeGetUniform("Inside").set(1f);
+            sh.safeGetUniform("Inside").set(inside);
             sh.safeGetUniform("Fire").set(Mth.lerp(night, 0.18f, 1f));
             sh.safeGetUniform("FDir").set((float) flashDir.x, (float) flashDir.y, (float) flashDir.z);
             sh.safeGetUniform("FAmt").set((float) flashAmt);
@@ -822,7 +879,7 @@ public final class ColoniaAirFx {
             } else {
                 RenderSystem.enableDepthTest();
                 RenderSystem.defaultBlendFunc();
-                sphere(b, domeX - camera.x, domeY - camera.y, domeZ - camera.z, DOME_R, 0, 48, 96);
+                sphere(b, domeX - camera.x, domeY - camera.y, domeZ - camera.z, domeR, 0, 48, 96);
             }
             MeshData mesh = b.build();
             if (mesh != null) {
@@ -994,12 +1051,13 @@ public final class ColoniaAirFx {
             float r = Mth.lerp(n, tn, tn * 0.75f) + fireLit * Mth.lerp(n, 0.2f, 0.62f);
             float g = Mth.lerp(n, tn * 0.97f, tn * 0.6f) + fireLit * Mth.lerp(n, 0.07f, 0.24f);
             float b = Mth.lerp(n, tn * 1.02f, tn * 0.7f) + fireLit * 0.03f;
+            face(cam, x, y, z);
             double px = 0, py = 0, pz = 0;
             for (int q = 0; q <= 9; q++) {
                 double ang = f.rot + (q % 9) / 9.0 * Math.PI * 2;
                 double rr = f.r[q % 9] * (1 + 0.12 * Math.sin(age * 0.9 + q * 1.7)) * s;
                 double ox = Math.cos(ang) * rr, oy = Math.sin(ang) * rr;
-                double tx = x + left.x() * ox + up.x() * oy, ty = y + left.y() * ox + up.y() * oy, tz = z + left.z() * ox + up.z() * oy;
+                double tx = x + BR[0] * ox + BU[0] * oy, ty = y + BR[1] * ox + BU[1] * oy, tz = z + BR[2] * ox + BU[2] * oy;
                 if (q > 0) {
                     quads++;
                     v(out, last, cam, x, y, z, r, g, b, (float) a);
@@ -1030,7 +1088,8 @@ public final class ColoniaAirFx {
             }
             double s = e.s * (1 + d * 0.02);
             float r = 1, g = (float) (0.45 + e.hue * 0.35 * (1 - k)), b = (float) (0.12 * (1 - k));
-            double lx = left.x() * s, ly = left.y() * s, lz = left.z() * s, ux = up.x() * s, uy = up.y() * s, uz = up.z() * s;
+            face(cam, x, y, z);
+            double lx = BR[0] * s, ly = BR[1] * s, lz = BR[2] * s, ux = BU[0] * s, uy = BU[1] * s, uz = BU[2] * s;
             v(out, last, cam, x + lx, y + ly, z + lz, r, g, b, (float) a * 0.4f);
             v(out, last, cam, x + ux, y + uy, z + uz, r, g, b, (float) a);
             v(out, last, cam, x - lx, y - ly, z - lz, r, g, b, (float) a * 0.4f);
@@ -1142,7 +1201,8 @@ public final class ColoniaAirFx {
         v(out, last, cam, flashX + sx * 0.3, G + flashH, flashZ + sz * 0.3, 0.6f, 0.3f, 1, 0);
         v(out, last, cam, flashX - sx * 0.3, G + flashH, flashZ - sz * 0.3, 0.6f, 0.3f, 1, 0);
         double s = 18 + flashT * 30, cy = G + 4;
-        double lx = left.x() * s, ly = left.y() * s, lz = left.z() * s, ux = up.x() * s, uy = up.y() * s, uz = up.z() * s;
+        face(cam, flashX, cy, flashZ);
+        double lx = BR[0] * s, ly = BR[1] * s, lz = BR[2] * s, ux = BU[0] * s, uy = BU[1] * s, uz = BU[2] * s;
         for (int q = 0; q < 4; q++) {
             double ax = q < 2 ? lx : -lx, ay = q < 2 ? ly : -ly, az = q < 2 ? lz : -lz;
             double bx = q % 2 == 0 ? ux : -ux, by = q % 2 == 0 ? uy : -uy, bz = q % 2 == 0 ? uz : -uz;

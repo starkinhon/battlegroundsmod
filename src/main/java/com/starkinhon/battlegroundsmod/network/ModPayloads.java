@@ -1185,6 +1185,31 @@ public final class ModPayloads {
     // Server -> client: a boss killed by a player gives up its soul (boss/SoulCeremony): it leaves the body slowly, takes
     // the shape of the soul item's icon and falls to the ground as the item. full: the whole ceremony (first time this
     // killer steals that soul) or the short one. killerId: whose HUD hides while it plays.
+    // Server -> client: the Colônia's barriers near the player, {cx, cz, cityY, half} each (ColoniaDomeSync).
+    public record ColoniaDomes(int[] flat) implements CustomPacketPayload {
+        public static final Type<ColoniaDomes> TYPE = payloadType("colonia_domes");
+        public static final StreamCodec<ByteBuf, ColoniaDomes> STREAM_CODEC = StreamCodec.of(
+                (buf, p) -> {
+                    ByteBufCodecs.VAR_INT.encode(buf, p.flat().length);
+                    for (int v : p.flat()) {
+                        ByteBufCodecs.VAR_INT.encode(buf, v);
+                    }
+                },
+                buf -> {
+                    int n = Math.min(ByteBufCodecs.VAR_INT.decode(buf), 4 * 64);
+                    int[] f = new int[n];
+                    for (int i = 0; i < n; i++) {
+                        f[i] = ByteBufCodecs.VAR_INT.decode(buf);
+                    }
+                    return new ColoniaDomes(f);
+                });
+
+        @Override
+        public Type<ColoniaDomes> type() {
+            return TYPE;
+        }
+    }
+
     public record SoulCeremony(int entityId, int killerId, String power, int color, boolean full) implements CustomPacketPayload {
         public static final Type<SoulCeremony> TYPE = payloadType("soul_ceremony");
         public static final StreamCodec<ByteBuf, SoulCeremony> STREAM_CODEC = StreamCodec.composite(
@@ -2186,6 +2211,8 @@ public final class ModPayloads {
                 () -> ClientHooks.hideEntity(payload.entityId(), payload.ticks())));
         registrar.playToClient(AshDeath.TYPE, AshDeath.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.ashDeath(payload.entityId())));
+        registrar.playToClient(ColoniaDomes.TYPE, ColoniaDomes.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.coloniaDomes(payload.flat())));
         registrar.playToClient(SoulCeremony.TYPE, SoulCeremony.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.soulCeremony(payload.entityId(), payload.killerId(), payload.power(), payload.color(), payload.full())));
         registrar.playToClient(SoulCeremonyDrop.TYPE, SoulCeremonyDrop.STREAM_CODEC, (payload, context) -> context.enqueueWork(
