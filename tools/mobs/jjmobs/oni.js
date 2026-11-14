@@ -155,6 +155,7 @@
   }
 
   function anim(P, t, mode, a, obj, e, ctx) {
+    if (P.clava) P.clava.obj.visible = true;
     const r = (n, x, y, z) => { if (!P[n]) return; const o = P[n].obj.rotation; o.x += x; o.y += y; o.z += z; };
     const s = e.v.size; e.obj.children[0].scale.set(s, s, s); obj.position.y += 1.5 * (s - 1);
     JJFX.dissolve(e, 0);
@@ -247,7 +248,9 @@
       // cambaleia, solta a clava (que cai e quica), cai sentado e tomba de costas; vira cinza
       const { T, fall } = JJFX.exorcize(t, obj, e, ctx, { h: 2.8, refZ: -2.6, rotX: 1.35, back: 0.7, drop: -0.95, ashY: 0.3, ashZ: 1.8, n: 240 });
       r('bracoD', 0.5 * fall, 0, 0.9 * fall); r('bracoE', 0.5 * fall, 0, -0.9 * fall);
+      // a clava escapa da mão no tombo (Stark 2026-11-14: escorada nela, o corpo ficava deitado no ar)
       r('clava', -1.0 * fall, 0, 0);
+      if (fall > 0.35 && P.clava) P.clava.obj.visible = false;
       eyes(Math.max(0, 1 - T));
     }
   }

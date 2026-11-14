@@ -46,7 +46,10 @@ public class JjMobRenderer extends NarutoMobRenderer {
         pose.mulPose(entityRenderDispatcher.cameraOrientation());
         pose.scale(0.025f, -0.025f, 0.025f);
         float x = -font.width(text) / 2f;
+        // the card, then the letters again over it with a polygon offset: drawn in one pass the letters share the card's
+        // depth and lose to it (test 2026-11-14: the Kogane's paper showed blank)
         font.drawInBatch(text, x, 0, color, false, pose.last().pose(), buffers, Font.DisplayMode.NORMAL, back, 0xF000F0);
+        font.drawInBatch(text, x, 0, color, false, pose.last().pose(), buffers, Font.DisplayMode.POLYGON_OFFSET, 0, 0xF000F0);
         pose.popPose();
     }
 }

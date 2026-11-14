@@ -1012,8 +1012,10 @@ const JJFX = (() => {
     if (i >= 0) { const blk = src.slice(i, i + 1500), a = /t % ([\d.]+)/.exec(blk), b = /dur: ([\d.]+)/.exec(blk); d = a ? +a[1] : b ? +b[1] : 3.4; }
     return (DUR[m.id] = d);
   }
+  // quem morre entrando num buraco (a Mulher do Poço volta pro poço) não é empurrada pra cima do chão
+  const SINKS = { poco: 1 };
   function settle(m, mode, t, obj) {
-    if (mode !== 'morte') return;
+    if (mode !== 'morte' || SINKS[m.id]) return;
     const lo = lowest(obj);
     if (!isFinite(lo)) return;
     const T = t % deathDur(m), k = clamp01((T - 0.2) / 0.8);
@@ -4737,7 +4739,8 @@ const JJFX = (() => {
       return;
     }
     if (mode === 'morte') {
-      well(false);
+      // o poço fica: ela cai de volta dentro dele (e não sai do chão)
+      well(true, 0.35);
       // grita sem som, se dobra pra trás e cai de volta no poço; o cabelo é a última coisa a sumir
       const { T, fall } = JJFX.exorcize(t, obj, e, ctx, { h: 2.4, refZ: -2.4, rotX: 0, back: 0, ashY: 1.0, ashZ: 0, n: 160 });
       r('cabeca', -0.7 * fall, 0, 0); r('bracoD', -0.3 * fall, 0, 0.9 * fall); r('bracoE', -0.3 * fall, 0, -0.9 * fall);
@@ -8700,6 +8703,7 @@ const JJFX = (() => {
   }
 
   function anim(P, t, mode, a, obj, e, ctx) {
+    if (P.clava) P.clava.obj.visible = true;
     const r = (n, x, y, z) => { if (!P[n]) return; const o = P[n].obj.rotation; o.x += x; o.y += y; o.z += z; };
     const s = e.v.size; e.obj.children[0].scale.set(s, s, s); obj.position.y += 1.5 * (s - 1);
     JJFX.dissolve(e, 0);
@@ -8792,7 +8796,9 @@ const JJFX = (() => {
       // cambaleia, solta a clava (que cai e quica), cai sentado e tomba de costas; vira cinza
       const { T, fall } = JJFX.exorcize(t, obj, e, ctx, { h: 2.8, refZ: -2.6, rotX: 1.35, back: 0.7, drop: -0.95, ashY: 0.3, ashZ: 1.8, n: 240 });
       r('bracoD', 0.5 * fall, 0, 0.9 * fall); r('bracoE', 0.5 * fall, 0, -0.9 * fall);
+      // a clava escapa da mão no tombo (Stark 2026-11-14: escorada nela, o corpo ficava deitado no ar)
       r('clava', -1.0 * fall, 0, 0);
+      if (fall > 0.35 && P.clava) P.clava.obj.visible = false;
       eyes(Math.max(0, 1 - T));
     }
   }

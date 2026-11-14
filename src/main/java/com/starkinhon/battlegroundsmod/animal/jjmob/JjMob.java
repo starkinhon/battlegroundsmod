@@ -52,6 +52,30 @@ public class JjMob extends NarutoMob {
     // then 1.7 s of crumbling)
     public static final int ASH_START = 19;
     public static final int ASH_TICKS = 34;
+
+    // when the ash starts and how long it takes, as each preview's 'morte' has it (the ones with their own death, not
+    // JJFX.exorcize: test 2026-11-14, the golem and the Solta turned to ash still standing, before their fall)
+    public int ashStart() {
+        return switch (kind()) {
+            case "golem", "mechamaru" -> 40;
+            case "inseto" -> 30;
+            case "lanterna" -> 8;
+            case "larva" -> 26;
+            case "peixe" -> 39;
+            case "solta" -> 32;
+            default -> ASH_START;
+        };
+    }
+
+    public int ashTicks() {
+        return switch (kind()) {
+            case "golem", "solta" -> 36;
+            case "inseto", "larva", "mechamaru" -> 30;
+            case "lanterna" -> 32;
+            case "peixe" -> 14;
+            default -> ASH_TICKS;
+        };
+    }
     // ticks since it died (both sides: the client plays the 'morte' from it), -1 = alive
     public int dying = -1;
     // the Kogane's player
@@ -232,7 +256,7 @@ public class JjMob extends NarutoMob {
         if ("jj_boneco".equals(id())) {
             return 70;
         }
-        return ASH_START + ASH_TICKS + 3;
+        return ashStart() + ashTicks() + 3;
     }
 
     // The renderer plays the baked 'morte' while it dies (null: vanilla's death).

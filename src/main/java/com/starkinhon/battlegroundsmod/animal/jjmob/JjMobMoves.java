@@ -105,18 +105,22 @@ final class JjMobMoves {
     // start until it lands, a close blow that walks no path of its own steps the body in to touching distance and keeps
     // it turned to the target, so the bite, the claw and the punch land in contact on the frame the animation shows.
     private static final double MELEE = 4.0;
+    private static final double LUNGE = 6.0;
     // close blows that reach by themselves (a tongue, the train's doors, roots, the bell's trap, a school of fish)
     private static final Set<String> REACHES = Set.of("lingua", "portas", "enraizar", "prender", "cardume");
     private static final double TOUCH = 0.15;
 
     static void closeIn(JjMob m, String mode, int tick, LivingEntity t) {
-        if (!alive(t) || m.isKogane() || m.caught >= 0 || m.heldId >= 0 || REACHES.contains(mode) || JjTravel.of(m.id(), mode) != null) {
+        if (!alive(t) || m.isKogane() || m.caught >= 0 || m.heldId >= 0 || REACHES.contains(mode)) {
             return;
         }
         Spec s = m.spec();
         int kind = s.kindOf(mode);
         NarutoSpec.Attack a = s.attack(kind);
-        if (a == null || a.max() > MELEE || tick >= a.impact()) {
+        float[][] path = JjTravel.of(m.id(), mode);
+        // a lunge on its own path (the Abate's cut, the boar's charge) walks it, and only what the path leaves short of
+        // the target is made up (test 2026-11-14: the Abate swung at 3-4 blocks and never landed)
+        if (a == null || a.max() > (path != null ? LUNGE : MELEE) || tick >= a.impact()) {
             return;
         }
         Vec3 to = t.position().subtract(m.position()).multiply(1, 0, 1);
@@ -127,6 +131,11 @@ final class JjMobMoves {
         float yaw = (float) (Mth.atan2(to.z, to.x) * Mth.RAD_TO_DEG) - 90f;
         m.faceBlow(yaw);
         double gap = m.gap(t);
+        if (path != null) {
+            int now = Math.min(tick - 1, path[1].length - 1), hit = Math.min(a.impact() - 1, path[1].length - 1);
+            // the path's z runs back (-z is forward)
+            gap -= Math.max(0, path[1][now] - path[1][hit]);
+        }
         if (gap <= TOUCH) {
             return;
         }
@@ -722,8 +731,8 @@ final class JjMobMoves {
             }
             return;
         }
-        if (dying == JjMob.ASH_START) {
-            SubNet.send(level, JmNet.EXORCIZE, m.getId(), m.position(), Vec3.ZERO, JjMob.ASH_TICKS, 0, 0);
+        if (dying == m.ashStart()) {
+            SubNet.send(level, JmNet.EXORCIZE, m.getId(), m.position(), Vec3.ZERO, m.ashTicks(), 0, 0);
             sound(m, SoundEvents.SOUL_ESCAPE.value(), 1.4f, 0.6f);
             sound(m, SoundEvents.SAND_BREAK, 1.2f, 0.5f);
         }

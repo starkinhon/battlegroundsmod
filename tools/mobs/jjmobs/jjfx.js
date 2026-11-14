@@ -291,8 +291,10 @@ const JJFX = (() => {
     if (i >= 0) { const blk = src.slice(i, i + 1500), a = /t % ([\d.]+)/.exec(blk), b = /dur: ([\d.]+)/.exec(blk); d = a ? +a[1] : b ? +b[1] : 3.4; }
     return (DUR[m.id] = d);
   }
+  // quem morre entrando num buraco (a Mulher do Poço volta pro poço) não é empurrada pra cima do chão
+  const SINKS = { poco: 1 };
   function settle(m, mode, t, obj) {
-    if (mode !== 'morte') return;
+    if (mode !== 'morte' || SINKS[m.id]) return;
     const lo = lowest(obj);
     if (!isFinite(lo)) return;
     const T = t % deathDur(m), k = clamp01((T - 0.2) / 0.8);

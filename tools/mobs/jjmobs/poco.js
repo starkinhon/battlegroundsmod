@@ -267,7 +267,8 @@
       return;
     }
     if (mode === 'morte') {
-      well(false);
+      // o poço fica: ela cai de volta dentro dele (e não sai do chão)
+      well(true, 0.35);
       // grita sem som, se dobra pra trás e cai de volta no poço; o cabelo é a última coisa a sumir
       const { T, fall } = JJFX.exorcize(t, obj, e, ctx, { h: 2.4, refZ: -2.4, rotX: 0, back: 0, ashY: 1.0, ashZ: 0, n: 160 });
       r('cabeca', -0.7 * fall, 0, 0); r('bracoD', -0.3 * fall, 0, 0.9 * fall); r('bracoE', -0.3 * fall, 0, -0.9 * fall);
