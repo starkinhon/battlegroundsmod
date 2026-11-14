@@ -188,6 +188,12 @@ public final class SwordFx {
                 tip = new Vector3f(0, stretch >= com.starkinhon.battlegroundsmod.client.outfit.SwordStretch.LENGTH * 0.4f
                         ? com.starkinhon.battlegroundsmod.client.outfit.KokushiboSwordRenderer.LONG_TIP
                         : com.starkinhon.battlegroundsmod.client.outfit.KokushiboSwordRenderer.TIP, 0);
+            } else if (standingBlade(stack) != null) {
+                // The Naruto weapons are 3D models standing on +y (made in forja/itens-naruto); their blade runs up the
+                // model, from the guard to the tip, in the model's own pixels.
+                float[] b = standingBlade(stack);
+                base = new Vector3f(b[0] / 16, b[1] / 16, 0.5f);
+                tip = new Vector3f(b[0] / 16, b[2] / 16, 0.5f);
             } else {
                 // A sword sprite: the blade on the diagonal, from past the guard to the tip.
                 base = new Vector3f(0.42f, 0.42f, 0.5f);
@@ -200,6 +206,27 @@ public final class SwordFx {
         } finally {
             pose.popPose();
         }
+    }
+
+    // {x, guard y, tip y} of the blade of the Naruto weapons, in model pixels (their *_3d.json); null for anything else.
+    private static float[] standingBlade(ItemStack stack) {
+        net.minecraft.world.item.Item item = stack.getItem();
+        if (item == com.starkinhon.battlegroundsmod.ModItems.KUSANAGI.get()) {
+            return new float[] {8, 7.3f, 24.9f};
+        }
+        if (item == com.starkinhon.battlegroundsmod.ModItems.SAMEHADA.get()) {
+            return new float[] {8, 6.1f, 27.6f};
+        }
+        if (item == com.starkinhon.battlegroundsmod.ModItems.KUBIKIRIBOCHO.get()) {
+            return new float[] {8.6f, 7, 27.8f};
+        }
+        if (item == com.starkinhon.battlegroundsmod.ModItems.KUNAI.get()) {
+            return new float[] {8, 8.5f, 17};
+        }
+        if (item == com.starkinhon.battlegroundsmod.ModItems.HIRAISHIN_KUNAI.get()) {
+            return new float[] {8, 8.4f, 16.8f};
+        }
+        return null;
     }
 
     private static void record(LivingEntity entity, Vec3 base, Vec3 tip) {
