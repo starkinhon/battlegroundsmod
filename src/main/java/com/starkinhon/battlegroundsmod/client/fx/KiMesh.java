@@ -48,6 +48,8 @@ public final class KiMesh {
     // spirit's trail, the Teatro Mental's dome and sky, a lit solid (flowers).
     public static final int INO_GHOST = 60, INO_THREAD = 61, INO_SEAL = 62, INO_SPIRAL = 63, INO_WAVE = 64, INO_TAIL = 65, INO_DOME = 66, INO_SKY = 67,
             INO_SOLID = 68;
+    // 70-71 the aura remake (forja/auras-db-v2, Stark 2026-11-14): its light leaking over the ground, its birth shockwave.
+    public static final int AURA_GROUND = 70, AURA_SHOCK = 71;
     public static final int FRONT = 1, BACK = 2, BOTH = 3;
 
     // Everything souls_ki reads; queue() keeps a copy, so one P can be reused for the next piece.
@@ -59,6 +61,9 @@ public final class KiMesh {
         public float[] size = {0.62f, 1.12f, 0.5f};
         public float ringR, ringMax = 1, rot, teeth = 26, pitch = 1.05f, twist;
         public float r0 = 0.3f, r1 = 1, flare = 1, bend;
+        // the aura remake (kind 5 with style 1; see souls_ki.vsh)
+        public float style, comet, pullAmt, burst, flicker, outline = 2.5f;
+        public float[] tailDir = {0, 1, 0}, pullPos = {0, 0, 0}, blow = {0, 0, 0};
         // false: never drawn into the glow layer (smoke, dust)
         public boolean glow = true;
         // true: an opaque ball (the Genki Dama's core, the Supernova's sun), drawn first and writing depth like the
@@ -72,6 +77,8 @@ public final class KiMesh {
             p.phase = phase; p.growth = growth; p.flashAmt = flashAmt; p.tongue = tongue; p.spike = spike; p.spikeFreq = spikeFreq; p.spikeSharp = spikeSharp;
             p.crown = crown; p.up = up; p.thresh = thresh; p.size = size.clone(); p.ringR = ringR; p.ringMax = ringMax; p.rot = rot; p.teeth = teeth;
             p.pitch = pitch; p.twist = twist; p.r0 = r0; p.r1 = r1; p.flare = flare; p.bend = bend; p.glow = glow; p.solid = solid;
+            p.style = style; p.comet = comet; p.pullAmt = pullAmt; p.burst = burst; p.flicker = flicker; p.outline = outline;
+            p.tailDir = tailDir.clone(); p.pullPos = pullPos.clone(); p.blow = blow.clone();
             return p;
         }
     }
@@ -284,6 +291,15 @@ public final class KiMesh {
         s.safeGetUniform("R1").set(p.r1);
         s.safeGetUniform("Flare").set(p.flare);
         s.safeGetUniform("Bend").set(p.bend);
+        s.safeGetUniform("Style").set(p.style);
+        s.safeGetUniform("Comet").set(p.comet);
+        s.safeGetUniform("PullAmt").set(p.pullAmt);
+        s.safeGetUniform("Burst").set(p.burst);
+        s.safeGetUniform("Flicker").set(p.flicker);
+        s.safeGetUniform("Outline").set(p.outline);
+        s.safeGetUniform("TailDir").set(p.tailDir[0], p.tailDir[1], p.tailDir[2]);
+        s.safeGetUniform("PullPos").set(p.pullPos[0], p.pullPos[1], p.pullPos[2]);
+        s.safeGetUniform("Blow").set(p.blow[0], p.blow[1], p.blow[2]);
         s.safeGetUniform("GlowPass").set(glow ? 1f : 0f);
         boolean highPass = p.kind == BLAST || p.kind == GENKI || p.kind == HALO || p.kind == SUN || p.kind == SUN_HALO
                 || p.kind == KATON || p.kind == KATON_RING || p.kind == 19 || p.kind == 21 || p.kind == 22;

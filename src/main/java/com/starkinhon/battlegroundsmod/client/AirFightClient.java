@@ -143,7 +143,7 @@ public final class AirFightClient {
     }
 
     // The ki dash's target while it flies, or null.
-    static LivingEntity dashing() {
+    public static LivingEntity dashing() {
         return dashTicks > 0 ? entity(dashTarget) : null;
     }
 
