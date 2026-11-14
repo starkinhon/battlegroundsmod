@@ -3,42 +3,127 @@
 'use strict';
 const JJFX = (() => {
   const clamp01 = v => Math.max(0, Math.min(1, v));
-  // ---------- desfazer: remenda o material do modelo (um por entidade) com um corte por texel ----------
+  // ---------- exorcizar: o corpo escurece e evapora (como a morte por Katon do Madara, sem fogo) ----------
+  // Primeiro a energia sai: o couro escurece pro preto-índigo da maldição, com veios mais claros (frios, sem brilho).
+  // Depois uma borda irregular desce de cima pra baixo pelo corpo do jeito que ele está (deitado ou em pé); logo antes
+  // dela os texels vão se soltando um a um, e da borda sobe vapor escuro em volume (não partícula).
+  const NOISE = `
+  float jh(vec3 p){ p=fract(p*0.3183+vec3(.71,.11,.42)); p*=17.0; return fract(p.x*p.y*p.z*(p.x+p.y+p.z)); }
+  float jn(vec3 x){ vec3 i=floor(x), f=fract(x); f=f*f*(3.0-2.0*f);
+    return mix(mix(mix(jh(i),jh(i+vec3(1,0,0)),f.x),mix(jh(i+vec3(0,1,0)),jh(i+vec3(1,1,0)),f.x),f.y),
+               mix(mix(jh(i+vec3(0,0,1)),jh(i+vec3(1,0,1)),f.x),mix(jh(i+vec3(0,1,1)),jh(i+vec3(1,1,1)),f.x),f.y),f.z); }
+  float jf(vec3 p){ float a=0.5, s=0.0; for(int i=0;i<4;i++){ s+=a*jn(p); p=p*2.03+vec3(1.7,9.2,3.1); a*=0.5; } return s; }`;
+  // progresso total k (0..1) dividido em: escurecer (0..0.22) e evaporar (0.22..1)
+  const burnOf = k => clamp01(k / 0.22), frontOf = k => clamp01((k - 0.22) / 0.78);
   function patch(e) {
     if (e._dis) return e._dis;
-    const U = { uDis: { value: 0 }, uY0: { value: 0 }, uY1: { value: 2 } };
+    const U = { uDis: { value: 0 }, uFr: { value: 0 }, uBurn: { value: 0 }, uY0: { value: 0 }, uY1: { value: 2 }, uT: { value: 0 } };
     e.obj.traverse(o => {
-      if (!o.material || o.material._jj) return;
+      if (!o.material || o.material._jj || o._vap) return;
       o.material._jj = true;
       o.material.onBeforeCompile = sh => {
         Object.assign(sh.uniforms, U);
         sh.vertexShader = 'varying vec3 vWp;\n' + sh.vertexShader.replace('#include <project_vertex>', '#include <project_vertex>\n vWp = (modelMatrix*vec4(transformed,1.0)).xyz;');
-        sh.fragmentShader = 'varying vec3 vWp; uniform float uDis, uY0, uY1;\nfloat jh(vec3 p){ p=fract(p*0.3183+vec3(.71,.11,.42)); p*=17.0; return fract(p.x*p.y*p.z*(p.x+p.y+p.z)); }\n' +
+        sh.fragmentShader = 'varying vec3 vWp; uniform float uFr, uBurn, uY0, uY1, uT;\n' + NOISE + '\n' +
           sh.fragmentShader.replace('#include <map_fragment>', `#include <map_fragment>
-          if (uDis > 0.0) {
-            vec3 c = floor(vWp*16.0+0.001);
-            float hy = clamp((vWp.y-uY0)/(uY1-uY0), 0.0, 1.0);
-            float v = jh(c)*0.62 + (1.0-hy)*0.38;            // de cima pra baixo, mas cada texel no seu tempo
-            float edge = v - (uDis*1.25 - 0.12);
-            if (edge < 0.0) discard;
-            if (edge < 0.05) diffuseColor.rgb = vec3(0.02,0.01,0.03);
-            else if (edge < 0.1) diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.05,0.03,0.07), 0.7);
+          if (uBurn > 0.0) {
+            // a energia saindo: escurece pro preto-índigo; veios frios mais claros correndo pra cima
+            float vein = 1.0 - smoothstep(0.0, 0.07, abs(jn(vWp*5.0 + vec3(0.0, -uT*0.6, 0.0)) - 0.5));
+            vec3 dark = vec3(0.05, 0.04, 0.07) + diffuseColor.rgb * 0.08;
+            diffuseColor.rgb = mix(diffuseColor.rgb, dark, uBurn * 0.88) + vec3(0.16, 0.13, 0.22) * vein * uBurn * 0.6;
+          }
+          if (uFr > 0.0) {
+            float h = clamp((vWp.y - uY0) / max(uY1 - uY0, 0.05), 0.0, 1.0);
+            float n = jn(vWp*6.0)*0.6 + jn(vWp*17.0)*0.4;
+            float d = h + (n - 0.5)*0.4 - (1.08 - uFr*1.4);   // > 0: já evaporou
+            if (d > 0.0) discard;
+            vec3 c = floor(vWp*16.0 + 0.001);
+            if (d > -0.18 && jh(c) < smoothstep(-0.18, 0.0, d)) discard;   // texels se soltando antes da borda
+            float rim = smoothstep(-0.07, 0.0, d);
+            diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.30, 0.27, 0.36), rim * 0.75);   // borda cor de vapor, sem brilho
           }`);
       };
       o.material.needsUpdate = true;
     });
     e._dis = U;
+    vapor(e, U);
     return U;
   }
-  function dissolve(e, k, y0 = 0, y1 = 2) { const U = patch(e); U.uDis.value = k; U.uY0.value = y0; U.uY1.value = y1; }
-
-  // cinza preta subindo: cada floco com tamanho, giro de caminho e tempo próprios
-  function ash(seed = 3, n = 140) {
-    return DBFX.grains({
-      n, seed, palette: [[12, 8, 16], [26, 20, 30], [40, 30, 46], [8, 6, 10], [70, 40, 90]], size: [0.02, 0.07], drag: 1.4, grav: -1.1, life: 1.6, spread: 1.2,
-      cone: R => { const a = R() * Math.PI * 2, o = 0.2 + R() * 0.9; return [Math.cos(a) * o, 0.3 + R() * 1.2, Math.sin(a) * o]; },
+  // vapor em volume (raymarch numa caixa que cobre o corpo): sobe da borda, se abre e some; cinza-índigo escuro
+  function vapor(e, U) {
+    const VU = { uFront: { value: 0 }, uK: { value: 0 }, uT: { value: 0 }, uC: { value: new THREE.Vector3() }, uH: { value: new THREE.Vector3(1, 1, 1) },
+      uLo: { value: new THREE.Vector3() }, uHi: { value: new THREE.Vector3(1, 1, 1) }, uTop: { value: 1 } };
+    const mat = new THREE.ShaderMaterial({
+      uniforms: VU, transparent: true, depthWrite: false, side: THREE.BackSide,
+      vertexShader: 'varying vec3 vW; void main(){ vec4 w = modelMatrix*vec4(position,1.0); vW = w.xyz; gl_Position = projectionMatrix*viewMatrix*w; }',
+      fragmentShader: `varying vec3 vW; uniform float uFront, uK, uT, uTop; uniform vec3 uC, uH, uLo, uHi;
+      ${NOISE}
+      void main(){
+        vec3 ro = cameraPosition, rd = normalize(vW - ro);
+        vec3 t0 = (uLo - ro)/rd, t1 = (uHi - ro)/rd; vec3 tn = min(t0,t1), tf = max(t0,t1);
+        float a = max(max(max(tn.x,tn.y),tn.z), 0.0), b = min(min(tf.x,tf.y),tf.z);
+        if (b <= a) discard;
+        const int N = 40; float st = (b - a)/float(N);
+        vec4 acc = vec4(0.0);
+        for (int i = 0; i < N; i++) {
+          vec3 p = ro + rd*(a + st*(float(i) + jh(vW*91.0 + float(i))));
+          float rel = p.y - uFront;
+          vec2 q = (p.xz - uC.xz) / (uH.xz * (1.0 + max(rel, 0.0)*0.5));
+          float foot = 1.0 - smoothstep(0.45, 1.0, length(q));
+          vec3 dw = min(p - uLo, uHi - p); foot *= smoothstep(0.0, 0.25, min(min(dw.x, dw.z), dw.y));
+          float band = smoothstep(-0.1, 0.03, rel) * exp(-max(rel, 0.0)*2.6);
+          vec3 w = vec3(p.x*2.6, p.y*1.8 - uT*1.3, p.z*2.6);
+          w += 0.6*vec3(jn(w*0.7 + 3.1), 0.0, jn(w*0.7 + 7.7));
+          float den = max(jf(w) - 0.44, 0.0) * 1.7 * band * foot * uK;
+          if (den > 0.001) {
+            vec3 col = mix(vec3(0.44, 0.41, 0.52), vec3(0.12, 0.10, 0.16), clamp(den*2.0, 0.0, 1.0));
+            float al = 1.0 - exp(-den * st * 7.0);
+            acc.rgb += (1.0 - acc.a) * col * al; acc.a += (1.0 - acc.a) * al;
+            if (acc.a > 0.97) break;
+          }
+        }
+        if (acc.a < 0.004) discard;
+        gl_FragColor = vec4(acc.rgb / max(acc.a, 0.001), acc.a * 0.85);
+      }`,
     });
+    const box = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), mat);
+    box._vap = true; box.frustumCulled = false; box.matrixAutoUpdate = false; box.visible = false;
+    // ajudante invisível que roda antes de tudo (opaco, ordem -1e4): mede o corpo do jeito que ele está nesse quadro
+    const probe = new THREE.Mesh(new THREE.BoxGeometry(0.001, 0.001, 0.001), new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false }));
+    probe._vap = true; probe.frustumCulled = false; probe.renderOrder = -1e4;
+    const bb = new THREE.Box3(), tmp = new THREE.Box3(), inv = new THREE.Matrix4(), M = new THREE.Matrix4();
+    probe.onBeforeRender = () => {
+      const k = U.uDis.value, on = k > 0;
+      U.uT.value = VU.uT.value = window.__T != null ? window.__T : performance.now() / 1000;
+      if (!on) { U.uBurn.value = 0; U.uFr.value = 0; box.visible = false; return; }
+      bb.makeEmpty();
+      e.obj.traverse(o => { if (o.isMesh && !o._vap && o.geometry) { if (!o.geometry.boundingBox) o.geometry.computeBoundingBox(); let v = true; for (let q = o; q; q = q.parent) if (!q.visible) { v = false; break; } if (v) bb.union(tmp.copy(o.geometry.boundingBox).applyMatrix4(o.matrixWorld)); } });
+      if (bb.isEmpty()) return;
+      const burn = burnOf(k), fr = frontOf(k);
+      U.uBurn.value = burn; U.uY0.value = bb.min.y; U.uY1.value = bb.max.y;
+      U.uFr.value = fr;
+      const H = bb.max.y - bb.min.y;
+      VU.uFront.value = bb.min.y + H * Math.max(0, Math.min(1, 1.08 - fr * 1.4));   // a mesma borda do corpo
+      VU.uK.value = clamp01(fr / 0.06) * (1 - clamp01((fr - 0.88) / 0.12));
+      bb.getCenter(VU.uC.value); bb.getSize(VU.uH.value).multiplyScalar(0.5).addScalar(0.05);
+      VU.uLo.value.set(bb.min.x - 0.5, bb.min.y - 0.1, bb.min.z - 0.5);
+      VU.uHi.value.set(bb.max.x + 0.5, bb.max.y + 1.0, bb.max.z + 0.5); VU.uTop.value = VU.uHi.value.y;
+      const sz = new THREE.Vector3().subVectors(VU.uHi.value, VU.uLo.value), c = new THREE.Vector3().addVectors(VU.uHi.value, VU.uLo.value).multiplyScalar(0.5);
+      M.compose(c, new THREE.Quaternion(), sz);
+      box.matrixWorld.copy(M);
+      box.visible = fr > 0;
+    };
+    // o box é filho do corpo só pra aparecer/sumir junto; a matriz de mundo é escrita direto acima
+    box.updateMatrixWorld = () => {};
+    e.obj.add(probe); e.obj.add(box);
   }
+  function dissolve(e, k) {
+    const U = patch(e);
+    U.uDis.value = k;
+  }
+  // a cinza em partícula saiu (Stark, 2026-11-14): o vapor em volume do dissolve() faz esse papel
+  function ash() { const g = new THREE.Group(); g.at = () => {}; return g; }
+
   // morte de maldição (todas usam): leva o golpe, cai, vira cinza preta de cima pra baixo. Devolve {T, fall} pro mob posar.
   function exorcize(t, obj, e, ctx, o = {}) {
     const { seq } = FX, h = o.h || 1.6, dur = o.dur || 3.4;
@@ -301,5 +386,14 @@ const JJFX = (() => {
     const e2 = k * k * (3 - 2 * k);
     obj.position.y -= (lo - (REST[m.id] || 0) * (1 - e2)) * (FLY[m.id] ? e2 : 1);
   }
-  return { settle, lowest, dissolve, ash, exorcize, tube, clamp01, drops, wet, column, posable, magma, crack, basalt };
+  // tombo sem escorregar: compara onde o tronco (part) fica sem e com a rotação da queda e puxa o corpo de volta,
+  // deixando só 'max' de deslocamento pro lado da queda (como um bicho de verdade que desaba onde estava)
+  function noSlide(obj, part, ax, unset, set, max) {
+    const V = THREE.Vector3;
+    unset(); obj.updateMatrixWorld(true); const a = part.getWorldPosition(new V());
+    set(); obj.updateMatrixWorld(true); const b = part.getWorldPosition(new V());
+    const d = b[ax] - a[ax], keep = Math.sign(d) * Math.min(Math.abs(d), max);
+    obj.position[ax] += keep - d;
+  }
+  return { noSlide, settle, lowest, dissolve, ash, exorcize, tube, clamp01, drops, wet, column, posable, magma, crack, basalt };
 })();

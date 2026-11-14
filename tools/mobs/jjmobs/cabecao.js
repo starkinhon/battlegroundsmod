@@ -288,10 +288,29 @@
     }
 
     if (mode === 'morte') {
-      const { T, fall } = JJFX.exorcize(t, obj, e, ctx, { h: 2.6, refZ: -2.6, rotX: -1.45, back: 0.6, ashY: 0.4, ashZ: 1.0, n: 220 });
-      hunch(r, P, 1 - fall);
-      r('mandibula', 0.6 * fall + pant * (1 - fall), 0, 0);
-      r('bracoD', -1.2 * fall, 0, 0.5 * fall); r('bracoE', -1.2 * fall, 0, -0.5 * fall);
+      // leva o golpe e recua o tronco; os joelhos cedem (ajoelha), e a cabeça pesada puxa tudo de cara no chão,
+      // com um quique; braços e boca moles. Nada fica de pé em cima das pernas.
+      const { T } = JJFX.exorcize(t, obj, e, ctx, { h: 2.0, refZ: -2.6, rotX: 0, back: 0.25, ashY: 0.4, ashZ: -0.9, n: 220 });
+      const { seq } = FX;
+      const recoil = seq([[0.2, 0], [0.32, 1, 'snap'], [0.6, 0.35], [0.85, 0]], T);
+      const buckle = seq([[0.32, 0], [0.7, 1, 'in']], T);
+      const tip = seq([[0.55, 0], [1.0, 1, 'in'], [1.1, 0.9], [1.2, 1]], T);
+      const limp = seq([[0.8, 0], [1.3, 1]], T);
+      hunch(r, P, 1 - 0.6 * buckle);
+      r('tronco', -0.55 * recoil + 0.35 * buckle - 0.25 * tip, 0, 0);
+      r('cabeca', 0.35 * recoil + 0.15 * tip, 0.25 * limp, 0.15 * limp);
+      r('mandibula', 0.25 + 0.4 * recoil + 0.3 * limp, 0, 0);
+      for (const [sd, sg] of [['D', 1], ['E', -1]]) {
+        r('perna' + sd, -1.35 * buckle + 0.5 * tip, 0, 0.12 * sg * buckle);
+        r('canela' + sd, 2.3 * buckle - 0.7 * tip, 0, 0);
+        r('pe' + sd, -0.9 * buckle + 0.5 * tip, 0, 0);
+        // braços: jogam pra trás no golpe, depois caem moles pra frente e espalham no chão
+        r('braco' + sd, -0.7 * recoil + 0.4 * buckle - 0.35 * tip, 0, sg * (0.25 * recoil + 0.3 * limp));
+        r('ante' + sd, 0.3 * limp, 0, 0);
+      }
+      const ang = -1.3 * tip;
+      obj.rotation.x = ang;
+      JJFX.noSlide(obj, P.tronco.obj, 'z', () => { obj.rotation.x = 0; }, () => { obj.rotation.x = ang; }, 0.6 * tip);
     }
   }
 

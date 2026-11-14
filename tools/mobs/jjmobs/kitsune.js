@@ -328,16 +328,33 @@
       return;
     }
     if (mode === 'morte') {
-      const { T, fall } = JJFX.exorcize(t, obj, e, ctx, { h: 1.2, refZ: -2.2, rotX: 0, back: 0.4, ashY: 0.4, ashZ: 0.2, n: 140 });
-      // tomba de lado; os talismãs se soltam e voam antes do corpo virar cinza
-      obj.rotation.z = 1.35 * fall; obj.position.y -= 0.15 * fall;
-      r('cabeca', 0.3 * fall, 0, 0.2 * fall);
-      for (let k = 0; k < n; k++) r('cauda' + k + '_0', 0.6 * fall, 0, 0);
+      const { T, fall } = JJFX.exorcize(t, obj, e, ctx, { h: 1.2, refZ: -2.2, rotX: 0, back: 0.12, ashY: 0.25, ashZ: 0.2, n: 140 });
+      // morte com peso: as pernas cedem primeiro (deita de barriga), depois rola pro lado sobre a borda das patas
+      // e quica uma vez; cabeça, pernas e caudas ficam moles e caem no chão, nada fica duro no ar
+      const { seq } = FX;
+      const buckle = seq([[0.25, 0], [0.55, 1, 'in']], T);
+      const roll = seq([[0.48, 0], [0.92, 1, 'in'], [1.02, 0.9], [1.12, 1]], T);
+      const limp = seq([[0.6, 0], [1.2, 1]], T);
+      const ang = 1.5 * roll;
+      obj.rotation.z = ang;
+      for (const sd of ['D', 'E']) {
+        r('pernaF' + sd, 1.1 * buckle - 0.5 * limp, 0, 0);
+        r('pernaT' + sd, -1.0 * buckle + 0.4 * limp, 0, 0);
+      }
+      // de lado, as pernas de cima caem por cima das de baixo
+      r('pernaFE', 0, 0, -0.35 * limp); r('pernaTE', 0, 0, -0.3 * limp);
+      r('pernaFD', 0, 0, 0.1 * limp); r('pernaTD', 0, 0, 0.15 * limp);
+      r('pescoco', 0.35 * buckle, 0, 0);
+      r('cabeca', 0.25 * buckle, 0, 0.45 * limp);
+      r('mandibula', 0.35 * limp, 0, 0);
+      r('orelhaD', 0, 0, 0.3 * limp); r('orelhaE', 0, 0, -0.3 * limp);
+      for (let k = 0; k < n; k++) {
+        r('cauda' + k + '_0', -0.62 * buckle, 0, 0.9 * limp);
+        for (let j = 1; j < 4; j++) r('cauda' + k + '_' + j, 0.06 * j * limp, 0.05 * Math.sin(k * 2 + j), 0.25 * limp);
+      }
+      // o tronco cai quase reto pra baixo: no máximo 0,2 bloco pro lado, sem escorregar
+      JJFX.noSlide(obj, P.corpo.obj, 'x', () => { obj.rotation.z = 0; }, () => { obj.rotation.z = ang; }, 0.2 * roll);
       flutter(1 - fall);
-      if (T > 0.3) ctx.get('papelMorte', () => DBFX.grains({
-        n: 50, seed: 61, palette: [[240, 230, 200], [190, 30, 36], [250, 246, 230], [30, 24, 26]], size: [0.05, 0.12], drag: 1.6, grav: -0.3, life: 2.4, spread: 0.6,
-        cone: R2 => { const a2 = R2() * 6.28; return [Math.cos(a2) * 0.8, 1.2 + R2() * 1.4, Math.sin(a2) * 0.8]; },
-      })).at(new THREE.Vector3(0, 0.5, 0.2), T - 0.3, 0.02);
       const tp = tips(P, obj, n);
       tp.forEach((p, i) => fire(ctx, 'chama' + i, FC, p, 0.07, 1 - FX.clamp01((T - 0.3) / 0.6), t + i));
     }
