@@ -162,6 +162,16 @@ public final class DragonRegion extends Region {
                 SurfaceRules.ifTrue(SurfaceRules.UNDER_FLOOR, SurfaceRules.sequence(SurfaceRules.ifTrue(SurfaceRules.steep(), sandstone), white)),
                 SurfaceRules.ifTrue(SurfaceRules.stoneDepthCheck(0, true, 6, net.minecraft.world.level.levelgen.placement.CaveSurface.FLOOR),
                         sandstone)));
-        return SurfaceRules.ifTrue(SurfaceRules.abovePreliminarySurface(), SurfaceRules.sequence(peaks, desert, lands, sea, north, wind));
+        // The Jujutsu Colônia do Jogo do Abate (Stark 2026-11-14: no generic grass around the city): wasted ground of
+        // coarse dirt and gravel with patches of dead grass, where the city and its skirt don't reach.
+        SurfaceRules.RuleSource coarse = SurfaceRules.state(Blocks.COARSE_DIRT.defaultBlockState());
+        SurfaceRules.RuleSource gravel = SurfaceRules.state(Blocks.GRAVEL.defaultBlockState());
+        SurfaceRules.RuleSource colony = SurfaceRules.ifTrue(SurfaceRules.isBiome(ModWorldgen.COLONIA_DO_JOGO_DO_ABATE), SurfaceRules.sequence(
+                SurfaceRules.ifTrue(SurfaceRules.ON_FLOOR, SurfaceRules.ifTrue(water, SurfaceRules.sequence(
+                        SurfaceRules.ifTrue(SurfaceRules.noiseCondition(Noises.SURFACE, 0.25, Double.MAX_VALUE), grass),
+                        SurfaceRules.ifTrue(SurfaceRules.noiseCondition(Noises.SURFACE, -0.15, 0.05), gravel), coarse))),
+                SurfaceRules.ifTrue(SurfaceRules.UNDER_FLOOR, SurfaceRules.state(Blocks.DIRT.defaultBlockState()))));
+        return SurfaceRules.ifTrue(SurfaceRules.abovePreliminarySurface(),
+                SurfaceRules.sequence(peaks, desert, lands, sea, north, wind, colony));
     }
 }

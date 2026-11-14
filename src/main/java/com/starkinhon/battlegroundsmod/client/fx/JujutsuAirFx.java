@@ -95,7 +95,7 @@ public final class JujutsuAirFx {
                 new Air(Kind.FIREFLY, 90, cs("#d8ff6a", "#f0ff9a", "#b8ff4a"), 0.05, 0.08)),
                 c("#d8dcd8"), 0.25f, 0.1f, 0.7f, 6, false)),
         new State(new Mood("mar_de_dagon", ModWorldgen.MAR_DE_DAGON, List.of(
-                new Air(Kind.SPRAY, 160, cs("#e8f4f8", "#ffffff", "#c8e8f0"), 0.03, 0.06)),
+                new Air(Kind.SPRAY, 70, cs("#e8f4f8", "#ffffff", "#c8e8f0"), 0.03, 0.05)),
                 null, 0, 0, 1, 0, false)),
         new State(new Mood("floresta_de_hanami", ModWorldgen.FLORESTA_DE_HANAMI, List.of(
                 new Air(Kind.LEAF, 220, cs("#f6f2ec", "#f28ab4", "#f4cc40", "#e2483e", "#fff0f6"), 0.06, 0.11),
@@ -211,6 +211,11 @@ public final class JujutsuAirFx {
         m[9] = ay / l;
         m[10] = az / l;
         m[11] = air.size0() + RANDOM.nextDouble() * (air.size1() - air.size0());
+        // The sea spray only rises off open water: on the sand and the grass the white specks read as a rendering bug
+        // (Stark 2026-11-14), so there the mote is left without size until it is spawned again.
+        if (air.kind() == Kind.SPRAY && !level.getFluidState(BlockPos.containing(m[0], ground - 1, m[2])).is(net.minecraft.tags.FluidTags.WATER)) {
+            m[11] = 0;
+        }
         m[12] = RANDOM.nextInt(air.tones().length);
         m[13] = RANDOM.nextDouble() * 6.283;
         m[15] = anywhere ? RANDOM.nextDouble() * 4 : 0;

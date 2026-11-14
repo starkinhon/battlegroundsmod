@@ -68,6 +68,12 @@ public final class ShibuyaFeature extends Feature<NoneFeatureConfiguration> {
         return generator.getSeaLevel() + 1;
     }
 
+    // The generator's seed for a world (the same the streets were drawn with): the pedestrians walk on these streets.
+    public static int seed(long worldSeed) {
+        int worldKey = (int) (worldSeed ^ (worldSeed >>> 32));
+        return worldKey ^ SALT;
+    }
+
     @Override
     public boolean place(FeaturePlaceContext<NoneFeatureConfiguration> context) {
         WorldGenLevel level = context.level();
@@ -93,6 +99,23 @@ public final class ShibuyaFeature extends Feature<NoneFeatureConfiguration> {
         }
         if (!any) {
             return false;
+        }
+
+        // The blocks reaching the box: a block at the biome's edge is built whole when the biome is under its middle,
+        // its corners and the middles of its sides, and the city then takes its whole footprint (Stark 2026-11-14: the
+        // city must fill the biome, not stop at a line of empty lots).
+        int li = Math.floorDiv(bz0 - 20, ShibuyaGen.CELL) - 1, hi = Math.floorDiv(bz1 + 20, ShibuyaGen.CELL) + 1;
+        int lj = Math.floorDiv(bx0 - 20, ShibuyaGen.CELL) - 1, hj = Math.floorDiv(bx1 + 20, ShibuyaGen.CELL) + 1;
+        int[][] plans = new int[(hi - li + 1) * (hj - lj + 1)][];
+        for (int i = li; i <= hi; i++) {
+            for (int j = lj; j <= hj; j++) {
+                int[] p = plan(i, j, seed, worldKey, city);
+                plans[(i - li) * (hj - lj + 1) + j - lj] = p;
+                if (p != NONE) {
+                    int[] f = footprint(i, j, seed, worldKey);
+                    city.extra.add(new int[] {f[0] - 4, f[1] + 4, f[2] - 4, f[3] + 4});
+                }
+            }
         }
 
         // 0. The land under the city and the skirt around it (this chunk only).
@@ -142,8 +165,6 @@ public final class ShibuyaFeature extends Feature<NoneFeatureConfiguration> {
         }
 
         // 2. The metro stations reaching the box.
-        int li = Math.floorDiv(bz0 - 20, ShibuyaGen.CELL) - 1, hi = Math.floorDiv(bz1 + 20, ShibuyaGen.CELL) + 1;
-        int lj = Math.floorDiv(bx0 - 20, ShibuyaGen.CELL) - 1, hj = Math.floorDiv(bx1 + 20, ShibuyaGen.CELL) + 1;
         int sj0 = Math.floorDiv(bx0 - STATION_HALF, ShibuyaGen.CELL) - 1, sj1 = Math.floorDiv(bx1 + STATION_HALF, ShibuyaGen.CELL) + 1;
         for (int i = li; i <= hi; i++) {
             for (int j = sj0; j <= sj1; j++) {
@@ -157,7 +178,7 @@ public final class ShibuyaFeature extends Feature<NoneFeatureConfiguration> {
         // 3. The blocks.
         for (int i = li; i <= hi; i++) {
             for (int j = lj; j <= hj; j++) {
-                int[] p = plan(i, j, seed, worldKey, city);
+                int[] p = plans[(i - li) * (hj - lj + 1) + j - lj];
                 if (p != NONE) {
                     apply(w, p);
                 } else {
@@ -298,7 +319,22 @@ public final class ShibuyaFeature extends Feature<NoneFeatureConfiguration> {
         // for every column of its box and of the skirt around, tens of thousands of times).
         private final java.util.HashMap<Long, Boolean> cityQuarts = new java.util.HashMap<>();
 
+        // The footprints of the blocks built at the biome's edge (this chunk's work), city too.
+        final List<int[]> extra = new ArrayList<>();
+
         boolean at(int x, int z) {
+            if (core(x, z)) {
+                return true;
+            }
+            for (int[] r : extra) {
+                if (x >= r[0] && x <= r[1] && z >= r[2] && z <= r[3]) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        boolean core(int x, int z) {
             int qx = x >> 2, qz = z >> 2;
             long k = ((long) qx << 32) ^ (qz & 0xFFFFFFFFL);
             Boolean known = cityQuarts.get(k);
@@ -342,7 +378,7 @@ public final class ShibuyaFeature extends Feature<NoneFeatureConfiguration> {
             int[] out = STATIONS.get(k, () -> {
                 int c = ShibuyaGen.street('x', i, seed).c(), ox = ShibuyaGen.street('z', j, seed).c();
                 for (int a = -STATION_HALF; a <= STATION_HALF; a += 22) {
-                    if (!city.at(ox + a, c - 12) || !city.at(ox + a, c + 12)) {
+                    if (!city.core(ox + a, c - 12) || !city.core(ox + a, c + 12)) {
                         return NONE;
                     }
                 }
@@ -394,9 +430,16 @@ public final class ShibuyaFeature extends Feature<NoneFeatureConfiguration> {
             int[] built = PLANS.get(k, () -> {
                 ShibuyaGen.Plan plan = ShibuyaGen.blockPlan(i, j, seed);
                 int cx = (plan.x0 + plan.x1) >> 1, cz = (plan.z0 + plan.z1) >> 1;
-                if (!city.at(plan.x0 - 4, plan.z0 - 4) || !city.at(plan.x1 + 4, plan.z0 - 4) || !city.at(plan.x0 - 4, plan.z1 + 4)
-                        || !city.at(plan.x1 + 4, plan.z1 + 4) || !city.at(cx, cz)) {
+                if (!city.core(cx, cz)) {
                     return NONE;
+                }
+                int[] xs = {plan.x0 - 4, cx, plan.x1 + 4}, zs = {plan.z0 - 4, cz, plan.z1 + 4};
+                for (int px : xs) {
+                    for (int pz : zs) {
+                        if (!city.biome(px, pz)) {
+                            return NONE;
+                        }
+                    }
                 }
                 Set<Long> holes = holes(i, j, seed, worldKey, city);
                 ShibuyaGen.Vox v = new ShibuyaGen.Vox();
@@ -460,11 +503,19 @@ public final class ShibuyaFeature extends Feature<NoneFeatureConfiguration> {
         return b.setValue(LeavesBlock.PERSISTENT, true);
     }
 
-    static BlockState block(int t0) {
+    public static BlockState block(int t0) {
         if ((t0 & ShibuyaGen.LIT) != 0) {
             return ((t0 & ShibuyaGen.COOL) != 0 ? JujutsuBlocks.WINDOW_COOL : JujutsuBlocks.WINDOW_WARM).get().defaultBlockState();
         }
         int t = ShibuyaGen.base(t0);
+        if (t >= ShibuyaGen.ARM && t < ShibuyaGen.ARM + 16) {
+            int a = t - ShibuyaGen.ARM;
+            net.minecraft.core.Direction f = net.minecraft.core.Direction.from2DDataValue((a & 3) + 2 & 3);
+            return JujutsuBlocks.POWER_LINE.get().defaultBlockState()
+                    .setValue(com.starkinhon.battlegroundsmod.PowerLineBlock.FACING, f)
+                    .setValue(com.starkinhon.battlegroundsmod.PowerLineBlock.CABLE, (a & 4) != 0)
+                    .setValue(com.starkinhon.battlegroundsmod.PowerLineBlock.REACH, (a & 8) != 0);
+        }
         if (t >= ShibuyaGen.WALL0 && t <= ShibuyaGen.WALL7) {
             return JujutsuBlocks.FACADES.get(t - ShibuyaGen.WALL0).get().defaultBlockState();
         }

@@ -1,0 +1,42 @@
+{
+ "parent": "minecraft:block/block",
+ "render_type": "minecraft:cutout",
+ "textures": {
+  "bar": "battlegroundsmod:block/poste_de_rua",
+  "particle": "battlegroundsmod:block/poste_de_rua"
+ },
+ "elements": [
+  {
+   "from": [
+    7,
+    11,
+    0
+   ],
+   "to": [
+    9,
+    13,
+    16
+   ],
+   "faces": {
+    "north": {
+     "texture": "#bar"
+    },
+    "south": {
+     "texture": "#bar"
+    },
+    "east": {
+     "texture": "#bar"
+    },
+    "west": {
+     "texture": "#bar"
+    },
+    "up": {
+     "texture": "#bar"
+    },
+    "down": {
+     "texture": "#bar"
+    }
+   }
+  }
+ ]
+}

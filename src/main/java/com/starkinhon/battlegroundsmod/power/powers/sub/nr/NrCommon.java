@@ -85,7 +85,7 @@ public final class NrCommon {
         double bestD = range;
         for (LivingEntity e : Combat.inCone(caster, range, 0.75)) {
             double d = e.distanceTo(caster);
-            if (d < bestD) {
+            if (d < bestD && Combat.lockable(e)) {
                 bestD = d;
                 best = e;
             }

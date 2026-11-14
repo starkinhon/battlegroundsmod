@@ -332,7 +332,7 @@ public final class JjCommon {
         double bestD = range;
         for (LivingEntity e : Combat.inCone(caster, range, 0.8)) {
             double d = e.distanceTo(caster);
-            if (d < bestD) {
+            if (d < bestD && Combat.lockable(e)) {
                 bestD = d;
                 best = e;
             }

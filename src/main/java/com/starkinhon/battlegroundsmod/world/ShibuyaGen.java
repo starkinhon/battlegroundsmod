@@ -44,6 +44,9 @@ public final class ShibuyaGen {
             TUNNEL_LIGHT = 98, CROWN_LED = 99, FIN = 100, DECK_GLASS = 101, LOUVER = 102, TRAIN = 103,
             TRAIN_STRIPE = 104, TRAIN_WIN = 105, TRAIN_DOOR = 106, TRAIN_ROOF = 107, TRAIN_END = 108,
             TRAIN_UNDER = 109, TRAIN_FRONT = 110, HEADLIGHT = 111;
+    // The power line (a crossarm, PowerLineBlock): ARM + facing toward its pole (0 north, 1 east, 2 south, 3 west),
+    // + 4 with a cable, + 8 when it reaches into the pole's block. Stark 2026-11-14: the wires were blocks and fences.
+    public static final int ARM = 112;
     public static final int LIT = 256, COOL = 512;
     public static final int CARVE = -1;
     public static final int CELL = 64;
@@ -1389,7 +1392,6 @@ public final class ShibuyaGen {
                 int[][] curbs = {{s.c() + s.r1() + 1, 1}, {s.c() + s.r0() - 1, -1}};
                 for (int[] cb : curbs) {
                     int b = cb[0], out = cb[1];
-                    int lastPole = Integer.MIN_VALUE;
                     for (int a = a0; a <= a1; a++) {
                         int x = axis == 'x' ? a : b, z = axis == 'x' ? b : a;
                         if (w.get(x, 0, z) != CURB) {
@@ -1406,7 +1408,7 @@ public final class ShibuyaGen {
                                 for (int y = 1; y <= 7; y++) {
                                     putEmpty(w, x, y, z, POLE);
                                 }
-                                putEmpty(w, px(axis, a, b - out), 7, pz(axis, a, b - out), POLE);
+                                putEmpty(w, px(axis, a, b - out), 7, pz(axis, a, b - out), arm(axis, out, false, true));
                                 putEmpty(w, px(axis, a, b - out * 2), 7, pz(axis, a, b - out * 2), LAMP);
                             } else if (m == 8) {
                                 w.force(x, 0, z, PLANTER);
@@ -1440,20 +1442,12 @@ public final class ShibuyaGen {
                             for (int y = 1; y <= 9; y++) {
                                 putEmpty(w, x, y, z, POLE);
                             }
-                            putEmpty(w, px(axis, a, b - 1), 8, pz(axis, a, b - 1), METAL_DARK);
-                            putEmpty(w, px(axis, a, b + 1), 8, pz(axis, a, b + 1), METAL_DARK);
+                            // the crossarm, each side with its insulator; the client draws the cables to the next pole
+                            putEmpty(w, px(axis, a, b - 1), 8, pz(axis, a, b - 1), arm(axis, 1, true, true));
+                            putEmpty(w, px(axis, a, b + 1), 8, pz(axis, a, b + 1), arm(axis, -1, true, true));
                             putEmpty(w, px(axis, a, b + 1), 6, pz(axis, a, b + 1), METAL);
                             putEmpty(w, px(axis, a, b - 1), 5, pz(axis, a, b - 1), LAMP);
-                            if (lastPole != Integer.MIN_VALUE && a - lastPole <= 24) {
-                                for (int k = lastPole + 1; k < a; k++) {
-                                    double t = (k - lastPole) / (double) (a - lastPole);
-                                    int sag = round(sin(Math.PI * t) * 1.3);
-                                    for (int bb : new int[] {b - 1, b + 1}) {
-                                        putEmpty(w, px(axis, k, bb), 8 - sag, pz(axis, k, bb), CABLE);
-                                    }
-                                }
-                            }
-                            lastPole = a;
+
                         }
                     }
                 }
@@ -1474,13 +1468,19 @@ public final class ShibuyaGen {
                         putEmpty(w, x, y, z, POLE);
                     }
                     for (int k = 1; k <= 3; k++) {
-                        putEmpty(w, x, 6, z - sz * k, POLE);
+                        putEmpty(w, x, 6, z - sz * k, ARM + (sz > 0 ? 2 : 0) + (k == 1 ? 8 : 0));
                     }
                     putEmpty(w, x, 5, z - sz * 3, TRAFFIC_BOX);
                     putEmpty(w, x - sx, 5, z - sz * 3, ((i + j) & 1) != 0 ? TRAFFIC_R : TRAFFIC_G);
                 }
             }
         }
+    }
+
+    // A crossarm on a street along the axis, with its pole toward +across (side 1) or -across (side -1).
+    private static int arm(char axis, int side, boolean cable, boolean reach) {
+        int facing = axis == 'x' ? (side > 0 ? 2 : 0) : (side > 0 ? 1 : 3);
+        return ARM + facing + (cable ? 4 : 0) + (reach ? 8 : 0);
     }
 
     private static int px(char axis, int a, int b) {

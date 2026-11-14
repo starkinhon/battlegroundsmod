@@ -377,6 +377,7 @@ public class BattlegroundsModClient {
     // The Madara skin uses slim (3 pixel) arms.
     private static void onRegisterRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerBlockEntityRenderer(ModBlocks.TELAO.get(), com.starkinhon.battlegroundsmod.client.TelaoRenderer::new);
+        event.registerBlockEntityRenderer(ModBlocks.POWER_LINE.get(), com.starkinhon.battlegroundsmod.client.PowerLineRenderer::new);
         event.registerEntityRenderer(ModEntities.NINJA_THROWN.get(), net.minecraft.client.renderer.entity.ThrownItemRenderer::new);
         event.registerEntityRenderer(ModEntities.MADARA.get(), context -> new SoulBossRenderer<>(context, "madara", true));
         event.registerEntityRenderer(ModEntities.BILLS.get(), context -> new SoulBossRenderer<>(context, "bills", true));
@@ -422,6 +423,7 @@ public class BattlegroundsModClient {
         event.registerEntityRenderer(ModEntities.MIWA.get(), context -> new SoulBossRenderer<>(context, "miwa", true));
         event.registerEntityRenderer(ModEntities.NARUTO_CLONE.get(), com.starkinhon.battlegroundsmod.client.NarutoCloneRenderer::new);
         // the Dragon Ball biomes' creatures, box models from the approved preview (client/blocky)
+        event.registerEntityRenderer(ModEntities.PEDESTRE.get(), com.starkinhon.battlegroundsmod.client.pedestre.PedestreRenderer::new);
         event.registerEntityRenderer(ModEntities.NAMEKIANO.get(), context -> new com.starkinhon.battlegroundsmod.client.blocky.BlockyRenderer<>(context,
                 java.util.stream.IntStream.range(0, com.starkinhon.battlegroundsmod.animal.db.Namekiano.VARIANTS).mapToObj(i -> "namekiano_" + i).toList(),
                 com.starkinhon.battlegroundsmod.client.blocky.DbAnims::namek, 0.6f));
