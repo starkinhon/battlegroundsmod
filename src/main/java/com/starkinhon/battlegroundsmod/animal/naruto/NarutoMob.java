@@ -299,6 +299,44 @@ public class NarutoMob extends DbCreature {
         return super.createNavigation(level);
     }
 
+    // The pterodactyls soar over the land (Stark 2026-11-13: they hung in one spot in the sky, flapping): the vanilla
+    // random flight looks for spots near the ground and finds none up there. A far point ahead every so often, 16-44
+    // blocks away and high over the ground under it, flown to straight.
+    private final class SoarGoal extends Goal {
+        private Vec3 to;
+
+        SoarGoal() {
+            setFlags(EnumSet.of(Goal.Flag.MOVE));
+        }
+
+        @Override
+        public boolean canUse() {
+            return getTarget() == null && !isPassenger();
+        }
+
+        @Override
+        public void start() {
+            pick();
+        }
+
+        @Override
+        public void tick() {
+            if (to == null || position().distanceToSqr(to) < 16 || horizontalCollision || getRandom().nextInt(300) == 0) {
+                pick();
+            }
+            getMoveControl().setWantedPosition(to.x, to.y, to.z, 1.0);
+        }
+
+        private void pick() {
+            double a = Math.toRadians(getYRot() + 90) + (getRandom().nextDouble() - 0.5) * 2.4;
+            double d = 16 + getRandom().nextDouble() * 28;
+            int x = Mth.floor(getX() + Math.cos(a) * d), z = Mth.floor(getZ() + Math.sin(a) * d);
+            int ground = level().getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, x, z);
+            double y = Mth.clamp(ground + 18 + getRandom().nextInt(16), level().getMinBuildHeight() + 8, level().getMaxBuildHeight() - 8);
+            to = new Vec3(x + 0.5, y, z + 0.5);
+        }
+    }
+
     @Override
     protected void registerGoals() {
         Spec s = spec();
@@ -311,7 +349,7 @@ public class NarutoMob extends DbCreature {
             goalSelector.addGoal(3, new BehindPuppetGoal());
         }
         switch (s.move) {
-            case FLYER -> goalSelector.addGoal(5, new WaterAvoidingRandomFlyingGoal(this, 0.8));
+            case FLYER -> goalSelector.addGoal(5, s.id.equals("pterodactilo") ? new SoarGoal() : new WaterAvoidingRandomFlyingGoal(this, 0.8));
             case WATER -> goalSelector.addGoal(5, new RandomSwimmingGoal(this, 0.8, 20));
             default -> goalSelector.addGoal(5, new WaterAvoidingRandomStrollGoal(this, 0.7));
         }

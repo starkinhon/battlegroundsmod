@@ -414,7 +414,7 @@ public class TalkScreen extends Screen {
         R(cx, cy, cw, 1, uc, 0.9f * a);
         float yy = cy + 5;
         T(m.lugar().toUpperCase(), cx + 7, yy, mix(ink(uc), WHITE, 0.2f), 6, false, -1, true, a);
-        T(m.tipo(), cx + cw - 7, yy, m.tipo().startsWith("DIÁRIA") ? rgb(140, 205, 255) : GOLD, 6, false, 1, true, a);
+        T(m.tipo(), cx + cw - 7, yy, com.starkinhon.battlegroundsmod.client.ui.Journal.dailyFirst(m) ? rgb(140, 205, 255) : GOLD, 6, false, 1, true, a);
         yy += 9;
         T(m.nome(), cx + 7, yy, WHITE, 9, true, -1, true, a);
         yy += 13;

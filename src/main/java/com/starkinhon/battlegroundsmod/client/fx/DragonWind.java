@@ -68,6 +68,10 @@ public final class DragonWind {
     // 1 on Namek.
     private static float namek;
     private static float lastNamek;
+    // 0 under a roof, 1 in the open: the gusts and the valley mist stay outside (Stark 2026-11-13: the wind ran
+    // through the rooms of Goku's house and the Kame House).
+    private static float open = 1;
+    private static float lastOpen = 1;
 
     private DragonWind() {
     }
@@ -80,6 +84,7 @@ public final class DragonWind {
         lastCold = cold;
         lastHills = hills;
         lastNamek = namek;
+        lastOpen = open;
         if (mc.level == null || mc.player == null) {
             GUSTS.clear();
             strength = 0;
@@ -100,6 +105,8 @@ public final class DragonWind {
         cold = Mth.clamp(cold + (inside && BiomeAura.in("norte_gelado", b -> b.is(ModWorldgen.NORTE_GELADO)) ? 0.01f : -0.015f), 0, 1);
         hills = Mth.clamp(hills + (inside && BiomeAura.in("montanhas_paozu", b -> b.is(ModWorldgen.MONTANHAS_PAOZU)) ? 0.01f : -0.015f), 0, 1);
         strength = Mth.clamp(strength + (inside ? 0.012f : -0.02f), 0, 1);
+        boolean sky = mc.level.canSeeSky(net.minecraft.core.BlockPos.containing(mc.player.getEyePosition()).above());
+        open = Mth.clamp(open + (sky ? 0.05f : -0.1f), 0, 1);
         long now = mc.level.getGameTime();
         GUSTS.removeIf(g -> now - g.born() > g.life());
         if (strength <= 0) {
@@ -110,6 +117,7 @@ public final class DragonWind {
         float blizzard = cold * storm(now);
         int max = MAX_GUSTS + (int) (60 * desert) + (int) (110 * blizzard);
         float rate = 0.55f * strength * (float) swell * (1 + 2.2f * desert) * (1 - 0.45f * sea) * (1 + 4.5f * blizzard);
+        rate *= open;
         while (rate > 0 && GUSTS.size() < max) {
             if (RANDOM.nextFloat() < Math.min(1, rate)) {
                 GUSTS.add(newGust(mc, now));
@@ -210,7 +218,10 @@ public final class DragonWind {
             return;
         }
         float partial = event.getPartialTick().getGameTimeDeltaPartialTick(false);
-        float fade = Mth.lerp(partial, lastStrength, strength);
+        float fade = Mth.lerp(partial, lastStrength, strength) * Mth.lerp(partial, lastOpen, open) * BiomeAura.nightDim(partial);
+        if (fade <= 0.001f) {
+            return;
+        }
         Vec3 camera = event.getCamera().getPosition();
         PoseStack pose = event.getPoseStack();
         MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
@@ -397,17 +408,19 @@ public final class DragonWind {
             return;
         }
         float partial = event.getPartialTick().getGameTimeDeltaPartialTick(false);
-        float power = Mth.lerp(partial, lastHills, hills) * Mth.lerp(partial, lastStrength, strength);
+        float power = Mth.lerp(partial, lastHills, hills) * Mth.lerp(partial, lastStrength, strength) * Mth.lerp(partial, lastOpen, open);
         if (power <= 0.001f) {
             return;
         }
         double now = mc.level.getGameTime() + partial;
         Vec3 sun = sunDir(mc, partial);
-        // thick at dawn (sun low in the east) and at night, thinner at noon
+        // thick at dawn (sun low in the east), thinner at noon, faint and dark at night (Stark 2026-11-13: at night the
+        // pale sheets read as a see-through picture over the screen)
         float day = Mth.clamp((float) sun.y * 2.5f, 0, 1);
         float dawn = (float) Math.max(0, 1 - Math.abs(sun.y) * 4) * (sun.x > 0 ? 1 : 0.4f);
-        float thick = power * (0.55f + 0.45f * (1 - day) + 0.5f * dawn);
-        float light = 0.35f + 0.65f * Mth.clamp((float) sun.y * 4 + 0.4f, 0, 1);
+        float night = Mth.clamp((float) -sun.y * 4, 0, 1);
+        float thick = power * (0.55f + 0.2f * (1 - day) + 0.5f * dawn) * (1 - 0.7f * night) * (1 - 0.5f * mc.level.getRainLevel(partial));
+        float light = 0.12f + 0.88f * Mth.clamp((float) sun.y * 4 + 0.4f, 0, 1);
         float r = 0.93f * light, g = 0.97f * light, b = 1f * light;
         Vec3 camera = event.getCamera().getPosition();
         PoseStack.Pose last = event.getPoseStack().last();
@@ -567,6 +580,11 @@ public final class DragonWind {
                 0x9CF0CC, nk);
         int edge = mix(mix(mix(mix(mix(mix(0xB0480E, 0x4E8A20, green), 0x7A2006, dry), 0xC88A30, sunny), 0xD8E2EC, chill), 0x1E6A60, lush),
                 0x1E6E5C, nk);
+        // the wash mostly by day: at night a light tint over the dark screen read as a faded picture on top of it (Stark
+        // 2026-11-13 in the Montanhas Paozu)
+        Minecraft mcw = Minecraft.getInstance();
+        float daylight = mcw.level == null ? 1 : Mth.clamp((float) sunDir(mcw, partial).y * 3 + 0.3f, 0, 1);
+        fade *= 0.2f + 0.8f * daylight;
         graphics.fill(0, 0, w, h, argb((0.07f - 0.015f * green + 0.035f * dry - 0.025f * sunny + 0.03f * chill + 0.02f * lush) * fade, wash));
         // The glare of the tropical sun when the player looks toward it.
         Minecraft mc = Minecraft.getInstance();

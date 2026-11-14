@@ -26,7 +26,7 @@
     {
       "id": "naruto", "nome": "Naruto", "cor": "#F28C28",
       "descricao": "Florestas fechadas, planícies com vilas e taigas no frio.",
-      "mobs": ["ninja_renegado", "ninja_som", "anbu_raiz"],
+      "mobs": ["ninja_renegado", "ninja_som"],
       "piso": ["minecraft:grass_block", "minecraft:moss_block", "minecraft:grass_block", "minecraft:coarse_dirt"],
       "pilar": "minecraft:oak_log",
       "desafios": [

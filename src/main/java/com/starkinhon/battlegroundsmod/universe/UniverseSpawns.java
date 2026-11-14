@@ -389,7 +389,7 @@ public final class UniverseSpawns {
     // walk through (Stark 2026-11-12: no new mob anywhere): grass, ferns, flowers and a thin snow layer are fine. Asking
     // for pure air there failed almost every green or snowy column, so only the desert ever got its mobs.
     static BlockPos ground(ServerLevel level, int x, int z) {
-        if (!level.hasChunkAt(new BlockPos(x, 0, z))) {
+        if (!level.hasChunkAt(new BlockPos(x, 0, z)) || inStructure(level, x, z)) {
             return null;
         }
         int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
@@ -404,6 +404,32 @@ public final class UniverseSpawns {
             return null;
         }
         return pos;
+    }
+
+    // Inside a mission's or a special place (Stark 2026-11-13: pirates in the Kame House, dinosaurs in Goku's house, a
+    // crowd in the bell test): no creature of the world comes in there. The missions bring their own enemies.
+    public static boolean inStructure(ServerLevel level, int x, int z) {
+        if (level.dimension() == net.minecraft.world.level.Level.OVERWORLD) {
+            for (com.starkinhon.battlegroundsmod.world.WorldSites.Site s : com.starkinhon.battlegroundsmod.world.WorldSites.known(level)) {
+                int r = structureRadius(s.kind());
+                double dx = s.x() - x, dz = s.z() - z;
+                if (dx * dx + dz * dz < r * r) {
+                    return true;
+                }
+            }
+        }
+        return com.starkinhon.battlegroundsmod.world.NarutoSites.near(level, null, new BlockPos(x, 0, z), 56) != null;
+    }
+
+    // How far around a Dragon Ball place nothing spawns: its footprint and a margin. Korin's tower is thin (Bora guards
+    // it from 16 blocks out) and Kami's lookout floats in the sky.
+    private static int structureRadius(String kind) {
+        return switch (kind) {
+            case com.starkinhon.battlegroundsmod.world.WorldSites.KARIN -> 12;
+            case com.starkinhon.battlegroundsmod.world.WorldSites.LOOKOUT -> 0;
+            case com.starkinhon.battlegroundsmod.world.WorldSites.CAPSULE, com.starkinhon.battlegroundsmod.world.WorldSites.BABIDI -> 56;
+            default -> 44;
+        };
     }
 
     private static boolean walkable(ServerLevel level, BlockPos pos) {
@@ -448,6 +474,10 @@ public final class UniverseSpawns {
             return;
         }
         ServerLevel level = event.getLevel().getLevel();
+        if (inStructure(level, event.getEntity().getBlockX(), event.getEntity().getBlockZ())) {
+            event.setSpawnCancelled(true);
+            return;
+        }
         if (!DragonBallWorld.UNIVERSE.equals(UniverseBiomes.universeAt(level, event.getEntity().blockPosition())) || !Progression.on(level.getServer())) {
             return;
         }

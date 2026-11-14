@@ -192,6 +192,7 @@ public final class Combat {
     // The fists (combo punches, Dash Attack, Forte, Barragem): at least 1 damage a hit for a human (Stark 2026-11-10: a
     // Tier 10's punches did 0.3-0.4), the floor growing with the tier's health up to MAX_FLOOR.
     private static final float MAX_FLOOR = 6f;
+    private static final float FLOOR_JAB = 8f;
     public static boolean hurtBasic(LivingEntity attacker, LivingEntity target, float damage) {
         float mult = Tiers.damageMultiplier(attacker) * com.starkinhon.battlegroundsmod.power.powers.sub.nr.NrCommon.damageMultiplier(attacker)
                 * com.starkinhon.battlegroundsmod.power.powers.sub.jj.JjCommon.damageMultiplier(attacker)
@@ -200,6 +201,11 @@ public final class Combat {
         // Tier 4 up the tier's own scale is about there already). Stark's test 2026-11-10: at Tier 7 a zombie still
         // took 1 per punch.
         float floor = (float) Math.min(MAX_FLOOR, Tiers.health(Tiers.of(attacker)) / Tiers.health(Tiers.HUMANO));
+        // The floor is a jab's: heavier blows keep their weight over it (Stark 2026-11-13: at low tiers the Strong Attack,
+        // 25 against the jab's 8, landed on the same floor and did about what a jab did).
+        if (attacker instanceof Player) {
+            floor *= Math.max(1f, damage / FLOOR_JAB);
+        }
         if (mult > 0 && damage > 0 && damage * mult < floor) {
             damage = floor / mult;
         }

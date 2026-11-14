@@ -82,6 +82,7 @@ public final class DbActivities {
     // The Turtle Training: the milk run with the shell (slow) and then the sparring.
     private static final int TRAINING_TICKS = 20 * 90;
     private static final int SPAR_TICKS = 20 * 180;
+    private static final int SPAR_WAIT = 20 * 3;
     private static final String SPAR_TAG = "souls_kame_treino";
     private static final net.minecraft.resources.ResourceLocation SPAR_HEALTH = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(
             com.starkinhon.battlegroundsmod.BattlegroundsMod.MODID, "kame_treino");
@@ -806,6 +807,11 @@ public final class DbActivities {
         kame.setCustomName(Component.translatable("message.battlegroundsmod.kame_nome_treino"));
         kame.setCustomNameVisible(true);
         kame.setTarget(player);
+        // A training for the player's tier (Stark 2026-11-13: tier 7 against a tier 9 took no damage even with Strength
+        // 255, the Escudo ate every blow, and his Kamehameha ended it): he fights at the player's tier. And he waits 3 s
+        // before the first blow, so the player can step back.
+        kame.getData(com.starkinhon.battlegroundsmod.ModAttachments.POWER).tier = com.starkinhon.battlegroundsmod.power.Tiers.of(player);
+        com.starkinhon.battlegroundsmod.combat.Stun.cooldown(kame, SPAR_WAIT);
         Spar spar = new Spar();
         spar.kame = kame.getUUID();
         spar.home = home;
@@ -839,13 +845,15 @@ public final class DbActivities {
         }
         LivingEntity kame = sparKame(player);
         if (kame == null || !player.isAlive() || player.serverLevel().getGameTime() > spar.until
-                || player.distanceToSqr(Vec3.atCenterOf(spar.home)) > 40 * 40) {
+                || player.distanceToSqr(Vec3.atCenterOf(spar.home)) > 56 * 56) {
             sparEnd(player, false);
             return;
         }
         if (kame instanceof Mob mob && mob.getTarget() != player) {
             mob.setTarget(player);
         }
+        // the player's tier, every tick (his own stats would put his file's tier back)
+        kame.getData(com.starkinhon.battlegroundsmod.ModAttachments.POWER).tier = com.starkinhon.battlegroundsmod.power.Tiers.of(player);
         // a sparring for a beginner: about twice the player's life, not the SubAlma's whole tier (set once he has his
         // stats, after his first tick)
         var health = kame.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH);

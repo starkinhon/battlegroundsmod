@@ -402,10 +402,15 @@
    "quem": "Teste dos Guizos",
    "tipo": "DIÁRIA",
    "nome": "Teste dos Guizos",
-   "fala": "Pegue um guizo no toco do meio e segure 60 s. Ninjas Renegados e Ninken vêm tomar. Dois guizos = prêmio dobrado.",
+   "fala": "Pegue um guizo no toco do meio do campo e fique com ele por 60 s. Alguns ninjas renegados vão tentar tomar de você.",
    "passos": [
     [
-     "Segure um guizo por 60 s",
+     "Pegue um guizo no toco do meio",
+     0,
+     1
+    ],
+    [
+     "Fique com o guizo 60 s dentro do campo",
      0,
      60
     ]
@@ -424,7 +429,7 @@
      1
     ]
    ],
-   "mais": "Fica dentro do campo. Se te acertarem, o guizo pode cair da sua mão!"
+   "mais": "O tempo só conta com o guizo no inventário e você dentro do campo. Se um ninja te acertar, o guizo pode cair: pegue de volta. Dois guizos = prêmio dobrado."
   },
   {
    "id": "morte",

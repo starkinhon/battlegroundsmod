@@ -21,12 +21,6 @@
       "maxCount": 2
     },
     {
-      "type": "battlegroundsmod:anbu_raiz",
-      "weight": 5,
-      "minCount": 1,
-      "maxCount": 2
-    },
-    {
       "type": "battlegroundsmod:maldicao_menor",
       "weight": 14,
       "minCount": 1,

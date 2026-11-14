@@ -149,6 +149,11 @@ public final class MissionJournal {
                 for (int i = 0; i < steps.length; i++) {
                     sb.append(i > 0 ? "," : "").append(steps[i]);
                 }
+                // a tracked mission done for good leaves the tracker (Stark 2026-11-13: "Fale com o Gohan" stayed on
+                // after he had learned to fly)
+                if ("concluida".equals(state) && id.equals(player.getPersistentData().getString(TRACKED))) {
+                    player.getPersistentData().putString(TRACKED, "");
+                }
                 out.add(id + "|" + (found ? state : "oculta") + "|" + sb + "|" + (found ? 1 : 0) + "|" + one.getInt("x") + "|" + one.getInt("z") + "|"
                         + one.getString("d"));
             }
@@ -231,9 +236,9 @@ public final class MissionJournal {
             }
             case "folha" -> {
                 if ("guizo".equals(NarutoActivities.runType(player))) {
-                    return of("andamento", 0);
+                    return of("andamento", 1, NarutoActivities.bellSeconds(player));
                 }
-                return NarutoActivities.journalFree(player, "souls_guizo_dia") ? of("pronta", 0) : of("feita", 60);
+                return NarutoActivities.journalFree(player, "souls_guizo_dia") ? of("pronta", 0, 0) : of("feita", 1, 60);
             }
             case "morte" -> {
                 NarutoSites.Site site = foundAt == null ? null : NarutoSites.near(level, com.starkinhon.battlegroundsmod.world.NarutoStructGen.MORTE, foundAt, 96);

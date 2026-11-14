@@ -390,7 +390,7 @@ public final class WindDesertFx {
 
     // A dusty warmth over the screen when the gust presses.
     public static void renderGrade(GuiGraphics graphics, DeltaTracker delta) {
-        float fade = Mth.lerp(delta.getGameTimeDeltaPartialTick(false), lastStrength, strength);
+        float fade = Mth.lerp(delta.getGameTimeDeltaPartialTick(false), lastStrength, strength) * BiomeAura.nightDim(delta.getGameTimeDeltaPartialTick(false));
         Minecraft mc = Minecraft.getInstance();
         if (fade <= 0.001f || mc.level == null) {
             return;
