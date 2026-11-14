@@ -37,6 +37,16 @@ public final class FxRenderTypes extends RenderType {
                     .setCullState(NO_CULL)
                     .createCompositeState(false));
 
+    // AREA drawn in the order written, without sorting every quad each frame (for big batches that sort their own pieces,
+    // like the Colônia's smoke clouds).
+    public static final RenderType AREA_FLAT = create("battlegroundsmod_fx_area_flat", DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS, 262144,
+            false, false, CompositeState.builder()
+                    .setShaderState(POSITION_COLOR_SHADER)
+                    .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                    .setWriteMaskState(COLOR_WRITE)
+                    .setCullState(NO_CULL)
+                    .createCompositeState(false));
+
     // Seen through everything: the red ghosts of Makima's rats' vision (MakimaFx), the bodies' own shape over the world.
     public static final RenderType GHOST = create("battlegroundsmod_fx_ghost", DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS, 262144,
             false, true, CompositeState.builder()

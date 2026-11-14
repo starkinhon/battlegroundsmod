@@ -1,0 +1,65 @@
+{
+    "vertex": "battlegroundsmod:fx_blit",
+    "fragment": "battlegroundsmod:fx_jjgrade",
+    "samplers": [
+        {
+            "name": "DiffuseSampler"
+        }
+    ],
+    "uniforms": [
+        {
+            "name": "Sat",
+            "type": "float",
+            "count": 1,
+            "values": [
+                1.0
+            ]
+        },
+        {
+            "name": "Contrast",
+            "type": "float",
+            "count": 1,
+            "values": [
+                1.0
+            ]
+        },
+        {
+            "name": "Wash",
+            "type": "float",
+            "count": 4,
+            "values": [
+                0,
+                0,
+                0,
+                0
+            ]
+        },
+        {
+            "name": "Warm",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0.0
+            ]
+        },
+        {
+            "name": "Vig",
+            "type": "float",
+            "count": 4,
+            "values": [
+                0,
+                0,
+                0,
+                0
+            ]
+        },
+        {
+            "name": "Flash",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0.0
+            ]
+        }
+    ]
+}

@@ -213,7 +213,7 @@ public final class ScreenFx {
     }
 
     static boolean needsScene() {
-        return PreviewFx.screenOn() || Realismo.active() || impact != null || !WARPS.isEmpty() || ticks - heldAt <= 1 || radial != null && radial.k(ticks) > 0 || heldBlur() > 0;
+        return PreviewFx.screenOn() || ColoniaAirFx.gradeOn() || Realismo.active() || impact != null || !WARPS.isEmpty() || ticks - heldAt <= 1 || radial != null && radial.k(ticks) > 0 || heldBlur() > 0;
     }
 
     // The level's camera for this frame, so world positions can be found on screen later (also from the GUI).
@@ -235,7 +235,8 @@ public final class ScreenFx {
         float blur = FxConfig.on(FxConfig.RADIAL_BLUR) ? blurAt(now) : 0;
         boolean real = Realismo.active();
         boolean preview = PreviewFx.screenOn();
-        if (!warp && blur <= 0 && !real && !preview) {
+        boolean colonia = ColoniaAirFx.gradeOn();
+        if (!warp && blur <= 0 && !real && !preview && !colonia) {
             return;
         }
         FxPost.beginPasses();
@@ -248,6 +249,10 @@ public final class ScreenFx {
         }
         if (blur > 0) {
             radialPass(blur, blurPos(now));
+        }
+        if (colonia) {
+            // the Colônia's screen grade (desaturated, violet edges, the fires' warmth from below)
+            ColoniaAirFx.gradePass(levelPartial);
         }
         if (preview) {
             // the combat flight page's screen (shockwave, speed lines, impact frame), last like on the page

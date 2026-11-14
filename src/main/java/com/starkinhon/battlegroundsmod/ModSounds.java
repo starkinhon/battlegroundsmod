@@ -25,6 +25,13 @@ public final class ModSounds {
     public static final Supplier<SoundEvent> HAKAIZINHO = register("hakaizinho");
     public static final Supplier<SoundEvent> HAKAIZINHO_PULVERIZAR = register("hakaizinho_pulverizar");
 
+    // The Colônia do Jogo do Abate's air (client/fx/ColoniaAirFx), built from noise by tools/sounds/colonia_sounds.py: the
+    // wind through the ruins and a burning building's roar (both looped), a far collapse and the far cursed-energy blast.
+    public static final Supplier<SoundEvent> COLONIA_VENTO = register("colonia_vento");
+    public static final Supplier<SoundEvent> COLONIA_FOGO = register("colonia_fogo");
+    public static final Supplier<SoundEvent> COLONIA_DESABAMENTO = register("colonia_desabamento");
+    public static final Supplier<SoundEvent> COLONIA_ESTRONDO = register("colonia_estrondo");
+
     private ModSounds() {
     }
 

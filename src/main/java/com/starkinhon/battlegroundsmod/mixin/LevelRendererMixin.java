@@ -31,7 +31,8 @@ public abstract class LevelRendererMixin {
     // Under Shenlong's storm the Mine's flat clouds would hang in front of the storm sky (it is drawn at the far plane).
     @Inject(method = "renderClouds", at = @At("HEAD"), cancellable = true, require = 0)
     private void battlegroundsmod$noCloudsInStorm(CallbackInfo ci) {
-        if (com.starkinhon.battlegroundsmod.client.fx.ShenlongScene.stormNow() > 0.15) {
+        // (and under the Colônia's barrier, which has its own smoky sky)
+        if (com.starkinhon.battlegroundsmod.client.fx.ShenlongScene.stormNow() > 0.15 || com.starkinhon.battlegroundsmod.client.fx.ColoniaAirFx.hidesClouds()) {
             ci.cancel();
         }
     }

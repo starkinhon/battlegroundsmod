@@ -122,6 +122,11 @@ public class BattlegroundsModClient {
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.JujutsuAirFx::onClientTick);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.JujutsuAirFx::onFogColor);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.JujutsuAirFx::onFog);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.ColoniaAirFx::onRenderLevel);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.ColoniaAirFx::onClientTick);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.ColoniaAirFx::onFogColor);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.ColoniaAirFx::onFog);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.ColoniaAirFx::onCameraAngles);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.CreativeSubTabs::onInit);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.CreativeSubTabs::onRenderPre);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.CreativeSubTabs::onRenderPost);

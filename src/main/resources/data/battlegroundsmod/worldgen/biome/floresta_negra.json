@@ -9,12 +9,6 @@
     "water_fog_color": 328968,
     "grass_color": 4867638,
     "foliage_color": 1581083,
-    "particle": {
-      "options": {
-        "type": "minecraft:ash"
-      },
-      "probability": 0.012
-    },
     "ambient_sound": "minecraft:ambient.soul_sand_valley.loop",
     "additions_sound": {
       "sound": "minecraft:ambient.soul_sand_valley.additions",
