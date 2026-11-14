@@ -191,6 +191,8 @@ public final class JujutsuBlocks {
     public static final DeferredBlock<Block> SHIBUYA_SIDEWALK = stone("calcada_de_shibuya", MapColor.STONE, 0);
     public static final DeferredBlock<Block> SHIBUYA_SIDEWALK_DARK = stone("calcada_escura_de_shibuya", MapColor.STONE, 0);
     public static final DeferredBlock<Block> TACTILE_PAVING = stone("piso_tatil", MapColor.COLOR_YELLOW, 0);
+    // Manhole in Shibuya's asphalt: the steam of the street comes out of it (client/fx/ShibuyaAirFx).
+    public static final DeferredBlock<Block> MANHOLE = stone("bueiro", MapColor.COLOR_GRAY, 0);
     public static final DeferredBlock<Block> CURB = stone("meio_fio", MapColor.QUARTZ, 0);
     public static final DeferredBlock<Block> LOT_GROUND = stone("chao_de_lote", MapColor.COLOR_GRAY, 0);
     public static final DeferredBlock<Block> ALLEY_GROUND = stone("chao_de_beco", MapColor.COLOR_GRAY, 0);

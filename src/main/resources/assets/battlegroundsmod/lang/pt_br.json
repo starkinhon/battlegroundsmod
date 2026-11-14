@@ -2349,5 +2349,22 @@
   "screen.battlegroundsmod.livro.modo_dificil": "DIFÍCIL",
   "screen.battlegroundsmod.livro.modo_dificil_vs": "MODO DIFÍCIL",
   "screen.battlegroundsmod.livro.modo_normal_dica": "Cada desafiante luta no tier dele",
-  "screen.battlegroundsmod.livro.modo_dificil_dica": "Todo desafiante vem no seu tier (no do mais forte do grupo): vida, força, defesa e escudo"
+  "screen.battlegroundsmod.livro.modo_dificil_dica": "Todo desafiante vem no seu tier (no do mais forte do grupo): vida, força, defesa e escudo",
+  "block.battlegroundsmod.bueiro": "Bueiro",
+  "subtitles.battlegroundsmod.shibuya_cidade": "Cidade zumbindo",
+  "subtitles.battlegroundsmod.shibuya_neon": "Neon zumbindo",
+  "subtitles.battlegroundsmod.shibuya_estalo": "Letreiro estala",
+  "subtitles.battlegroundsmod.shibuya_vapor": "Vapor chiando",
+  "subtitles.battlegroundsmod.shibuya_carro": "Carro passa",
+  "subtitles.battlegroundsmod.shibuya_sirene": "Sirene da viatura",
+  "subtitles.battlegroundsmod.shibuya_sirene_longe": "Sirene ao longe",
+  "subtitles.battlegroundsmod.metro_ronco": "Metrô roncando",
+  "subtitles.battlegroundsmod.metro_motor": "Motor do metrô",
+  "subtitles.battlegroundsmod.metro_freio": "Freio chia",
+  "subtitles.battlegroundsmod.metro_trilho": "Rodas no trilho",
+  "subtitles.battlegroundsmod.metro_porta": "Portas do metrô",
+  "subtitles.battlegroundsmod.metro_aviso": "Aviso de trem chegando",
+  "subtitles.battlegroundsmod.metro_chegada": "Portas abrem",
+  "subtitles.battlegroundsmod.metro_pinpon": "Portas fechando",
+  "subtitles.battlegroundsmod.metro_melodia": "Melodia de partida"
 }

@@ -2399,5 +2399,22 @@
   "screen.battlegroundsmod.livro.modo_dificil": "HARD",
   "screen.battlegroundsmod.livro.modo_dificil_vs": "HARD MODE",
   "screen.battlegroundsmod.livro.modo_normal_dica": "Each challenger fights at its own tier",
-  "screen.battlegroundsmod.livro.modo_dificil_dica": "Every challenger comes at your tier (the strongest in the group's): health, strength, defense and shield"
+  "screen.battlegroundsmod.livro.modo_dificil_dica": "Every challenger comes at your tier (the strongest in the group's): health, strength, defense and shield",
+  "block.battlegroundsmod.bueiro": "Manhole",
+  "subtitles.battlegroundsmod.shibuya_cidade": "City hum",
+  "subtitles.battlegroundsmod.shibuya_neon": "Neon buzzes",
+  "subtitles.battlegroundsmod.shibuya_estalo": "Sign crackles",
+  "subtitles.battlegroundsmod.shibuya_vapor": "Steam hisses",
+  "subtitles.battlegroundsmod.shibuya_carro": "Car passes",
+  "subtitles.battlegroundsmod.shibuya_sirene": "Police siren",
+  "subtitles.battlegroundsmod.shibuya_sirene_longe": "Far siren",
+  "subtitles.battlegroundsmod.metro_ronco": "Train rumbles",
+  "subtitles.battlegroundsmod.metro_motor": "Train motor",
+  "subtitles.battlegroundsmod.metro_freio": "Brakes squeal",
+  "subtitles.battlegroundsmod.metro_trilho": "Wheels clack",
+  "subtitles.battlegroundsmod.metro_porta": "Train doors",
+  "subtitles.battlegroundsmod.metro_aviso": "Train approaching chime",
+  "subtitles.battlegroundsmod.metro_chegada": "Doors open chime",
+  "subtitles.battlegroundsmod.metro_pinpon": "Doors closing chime",
+  "subtitles.battlegroundsmod.metro_melodia": "Departure melody"
 }

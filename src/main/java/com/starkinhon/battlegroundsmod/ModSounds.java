@@ -31,6 +31,23 @@ public final class ModSounds {
     public static final Supplier<SoundEvent> COLONIA_FOGO = register("colonia_fogo");
     public static final Supplier<SoundEvent> COLONIA_DESABAMENTO = register("colonia_desabamento");
     public static final Supplier<SoundEvent> COLONIA_ESTRONDO = register("colonia_estrondo");
+    // Shibuya's air and metro (client/fx/ShibuyaAirFx, ShibuyaMetro), built from noise by tools/sounds/shibuya_sounds.py.
+    public static final Supplier<SoundEvent> SHIBUYA_CIDADE = register("shibuya_cidade");
+    public static final Supplier<SoundEvent> SHIBUYA_NEON = register("shibuya_neon");
+    public static final Supplier<SoundEvent> SHIBUYA_ESTALO = register("shibuya_estalo");
+    public static final Supplier<SoundEvent> SHIBUYA_VAPOR = register("shibuya_vapor");
+    public static final Supplier<SoundEvent> SHIBUYA_CARRO = register("shibuya_carro");
+    public static final Supplier<SoundEvent> SHIBUYA_SIRENE = register("shibuya_sirene");
+    public static final Supplier<SoundEvent> SHIBUYA_SIRENE_LONGE = register("shibuya_sirene_longe");
+    public static final Supplier<SoundEvent> METRO_RONCO = register("metro_ronco");
+    public static final Supplier<SoundEvent> METRO_MOTOR = register("metro_motor");
+    public static final Supplier<SoundEvent> METRO_FREIO = register("metro_freio");
+    public static final Supplier<SoundEvent> METRO_TRILHO = register("metro_trilho");
+    public static final Supplier<SoundEvent> METRO_PORTA = register("metro_porta");
+    public static final Supplier<SoundEvent> METRO_AVISO = register("metro_aviso");
+    public static final Supplier<SoundEvent> METRO_CHEGADA = register("metro_chegada");
+    public static final Supplier<SoundEvent> METRO_PINPON = register("metro_pinpon");
+    public static final Supplier<SoundEvent> METRO_MELODIA = register("metro_melodia");
 
     private ModSounds() {
     }

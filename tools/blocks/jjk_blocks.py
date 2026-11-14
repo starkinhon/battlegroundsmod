@@ -282,7 +282,26 @@ def tiles(seed, base, size=4, grout=None, cracks=0.0):
     return opaque(np.clip(c, 0, 255))
 
 
-STYLES = {"tiles": tiles, "speckle": speckle, "bark": bark, "leaves": leaves, "grass_top": grass_top, "glow": glow, "eye": eye,
+def manhole(seed, base, iron):
+    # Shibuya's manhole (ambience port, Stark 2026-11-14): the asphalt round it, a cast-iron lid with a raised rim and
+    # the city's pattern of rings and spokes in relief; the steam comes out of it (client/fx/ShibuyaAirFx)
+    rng = np.random.default_rng(seed)
+    c = shade(base, 0.9 + 0.12 * noise(seed, 4) + rng.uniform(-0.05, 0.05, (N, N)))
+    dx, dy = X + 0.5 - N / 2, Y + 0.5 - N / 2
+    r = np.sqrt(dx * dx + dy * dy)
+    ang = np.arctan2(dy, dx)
+    lid = r < 7.2
+    k = 0.85 + 0.1 * noise(seed + 1, 8) + rng.uniform(-0.04, 0.04, (N, N))
+    raised = (r > 6.0) | ((r > 3.2) & (r < 4.2)) | (r < 1.3) | ((r < 6.0) & (np.abs(((ang / (2 * math.pi) * 8) % 1) - 0.5) < 0.09))
+    k = np.where(raised, k * 1.35, k * 0.8)
+    ic = shade(iron, k)
+    c[lid] = ic[lid]
+    edge = (r >= 7.2) & (r < 7.9)
+    c[edge] = c[edge] * 0.55
+    return opaque(np.clip(c, 0, 255))
+
+
+STYLES = {"manhole": manhole, "tiles": tiles, "speckle": speckle, "bark": bark, "leaves": leaves, "grass_top": grass_top, "glow": glow, "eye": eye,
           "flesh": flesh, "planks": planks, "cross_plant": cross_plant,
           "thatch": thatch, "paper": paper, "blades": blades, "beach": beach, "glowing": glowing}
 
@@ -457,15 +476,16 @@ BIOMES = {
         ("toldo_azul", "cube", "axe", ("planks", 3867, rgb("#2f6db3"), 0.0), "Toldo Azul", "Blue Awning"),
         ("toldo_verde", "cube", "axe", ("planks", 3869, rgb("#2f8a55"), 0.0), "Toldo Verde", "Green Awning"),
         ("toldo_laranja", "cube", "axe", ("planks", 3871, rgb("#d9822b"), 0.0), "Toldo Laranja", "Orange Awning"),
-        ("letreiro_vermelho", "cube", "pickaxe", ("speckle", 3873, rgb("#e8423c"), 0.05), "Letreiro Vermelho", "Red Sign"),
-        ("letreiro_laranja", "cube", "pickaxe", ("speckle", 3875, rgb("#ff8a1e"), 0.05), "Letreiro Laranja", "Orange Sign"),
-        ("letreiro_amarelo", "cube", "pickaxe", ("speckle", 3877, rgb("#ffd23a"), 0.05), "Letreiro Amarelo", "Yellow Sign"),
-        ("letreiro_verde", "cube", "pickaxe", ("speckle", 3879, rgb("#38d16a"), 0.05), "Letreiro Verde", "Green Sign"),
-        ("letreiro_ciano", "cube", "pickaxe", ("speckle", 3881, rgb("#2fd6e6"), 0.05), "Letreiro Ciano", "Cyan Sign"),
-        ("letreiro_azul", "cube", "pickaxe", ("speckle", 3883, rgb("#3a6cff"), 0.05), "Letreiro Azul", "Blue Sign"),
-        ("letreiro_rosa", "cube", "pickaxe", ("speckle", 3885, rgb("#ff4fb0"), 0.05), "Letreiro Rosa", "Pink Sign"),
-        ("letreiro_branco", "cube", "pickaxe", ("speckle", 3887, rgb("#f4f1ea"), 0.05), "Letreiro Branco", "White Sign"),
-        ("letra_de_letreiro", "cube", "pickaxe", ("speckle", 3889, rgb("#ffffff"), 0.02), "Letra de Letreiro", "Sign Letter"),
+        ("bueiro", "cube", "pickaxe", ("manhole", 3895, rgb("#3a3b3e"), rgb("#4a4a50")), "Bueiro", "Manhole"),
+        ("letreiro_vermelho", "neon", "pickaxe", ("speckle", 3873, rgb("#e8423c"), 0.05), "Letreiro Vermelho", "Red Sign"),
+        ("letreiro_laranja", "neon", "pickaxe", ("speckle", 3875, rgb("#ff8a1e"), 0.05), "Letreiro Laranja", "Orange Sign"),
+        ("letreiro_amarelo", "neon", "pickaxe", ("speckle", 3877, rgb("#ffd23a"), 0.05), "Letreiro Amarelo", "Yellow Sign"),
+        ("letreiro_verde", "neon", "pickaxe", ("speckle", 3879, rgb("#38d16a"), 0.05), "Letreiro Verde", "Green Sign"),
+        ("letreiro_ciano", "neon", "pickaxe", ("speckle", 3881, rgb("#2fd6e6"), 0.05), "Letreiro Ciano", "Cyan Sign"),
+        ("letreiro_azul", "neon", "pickaxe", ("speckle", 3883, rgb("#3a6cff"), 0.05), "Letreiro Azul", "Blue Sign"),
+        ("letreiro_rosa", "neon", "pickaxe", ("speckle", 3885, rgb("#ff4fb0"), 0.05), "Letreiro Rosa", "Pink Sign"),
+        ("letreiro_branco", "neon", "pickaxe", ("speckle", 3887, rgb("#f4f1ea"), 0.05), "Letreiro Branco", "White Sign"),
+        ("letra_de_letreiro", "neon", "pickaxe", ("speckle", 3889, rgb("#ffffff"), 0.02), "Letra de Letreiro", "Sign Letter"),
         ("moldura_de_letreiro", "cube", "pickaxe", ("speckle", 3891, rgb("#2a2c30"), 0.08), "Moldura de Letreiro", "Sign Frame"),
         ("telao", "cube", "pickaxe", ("glowing", 3893, rgb("#202326"), rgb("#7fd0ff")), "Telão", "Big Screen"),
         ("metal_claro", "cube", "pickaxe", ("speckle", 3895, rgb("#9aa0a5"), 0.08), "Metal Claro", "Light Metal"),
@@ -581,6 +601,13 @@ def emit():
             elif kind == "cross":
                 write(A + "models/block/" + name + ".json", {"parent": "minecraft:block/cross", "render_type": "minecraft:cutout", "textures": {"cross": tx}})
                 write(A + "models/item/" + name + ".json", {"parent": "minecraft:item/generated", "textures": {"layer0": tx}})
+            elif kind == "neon":
+                # a lit sign: the faces drawn at full light and without the side shading (NeoForge's element data), so
+                # the neon reads as lit at night instead of a colored block lit by its own light 9
+                el = {"from": [0, 0, 0], "to": [16, 16, 16], "shade": False, "neoforge_data": {"block_light": 15, "sky_light": 15, "ambient_occlusion": False},
+                      "faces": {f: {"texture": "#all", "cullface": f} for f in ("north", "south", "east", "west", "up", "down")}}
+                write(A + "models/block/" + name + ".json", {"parent": "minecraft:block/block", "textures": {"all": tx, "particle": tx}, "elements": [el]})
+                write(A + "models/item/" + name + ".json", {"parent": "battlegroundsmod:block/" + name})
             else:
                 m = {"parent": "minecraft:block/cube_all", "textures": {"all": tx}}
                 if kind == "leaves":
