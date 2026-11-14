@@ -250,7 +250,8 @@ public class JjMob extends NarutoMob {
     @Override
     public void onSyncedDataUpdated(EntityDataAccessor<?> key) {
         super.onSyncedDataUpdated(key);
-        if (DATA_HEALTH_ID.equals(key) && level().isClientSide && getHealth() <= 0 && dying < 0) {
+        // the health accessor is private: any synced change will do (the health one is among them)
+        if (level().isClientSide && getHealth() <= 0 && dying < 0) {
             dying = 0;
         }
     }
