@@ -216,7 +216,8 @@ public final class MoonFormSkill {
             this.shape = shape;
             this.basis = basis;
             this.tune = tune;
-            this.carve = BlockRules.canBreak(level);
+            // not in the challenge arenas (Stark 2026-11-13: in his arena he wore the whole floor away fast)
+            this.carve = BlockRules.canBreak(level) && !com.starkinhon.battlegroundsmod.challenge.ChallengeArenas.isArena(level.dimension());
         }
 
         void tick(int age) {
