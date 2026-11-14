@@ -15,7 +15,7 @@
 // thread (forja/nobara-kit/nobara.js); 46-50 Miwa's sword arc, the cut that opens on the body, the Simple Domain on the
 // ground, its wall of streaks and the Line Cut's trail (forja/miwa-kit/miwa.js), 60-68 Ino (forja/ino-kit/ino.js):
 // a box of her spirit's body, a mind thread, the diamond seal, the scrambled mind's spiral, the Shinranshin's cone, a piece
-// of the spirit's trail, the Teatro Mental's dome, its sky, a lit solid (the flowers).
+// of the spirit's trail, the Teatro Mental's dome, its sky, a lit solid (the flowers); 70 the aura's light on the ground (flat square) and 71 the aura's birth shockwave (forja/auras-db-v2).
 in vec3 Position;
 
 uniform mat4 ModelViewMat;
@@ -69,29 +69,59 @@ float gn(vec3 p) {
 const mat3 ROT = mat3(0.00, 0.80, 0.60, -0.80, 0.36, -0.48, -0.60, -0.48, 0.64);
 float fbm3(vec3 p) { float s = 0., w = 0.5; for (int o = 0; o < 3; o++) { s += w * gn(p); p = ROT * p * 2.03; w *= 0.5; } return s; }
 
-// ---- aura shell (the approved "casca") ----
+// ---- aura shell (the approved "casca"; Style 1 = the 2026-11-14 remake, forja/auras-db-v2) ----
+// Style 0 is the shell exactly as before. Style 1 adds: born all at once (no front rising from the feet), Burst (the
+// explosion it is born in: thicker tongues and spikes), aggressive crests running along the flames, Pulse (the
+// Kamehameha's syllables, the Kaioken's heart), TailDir (where the flames run, in the shell's own space: the sky when
+// still, against the velocity in flight), Comet (the tail behind the body in flight), PullPos/PullAmt (flames bent to the
+// cupped hands while charging), Blow (the recoil of the release).
+uniform float Style;
+uniform float Comet;
+uniform float PullAmt;
+uniform float Burst;
+uniform vec3 TailDir;
+uniform vec3 PullPos;
+uniform vec3 Blow;
 float hgt(vec3 p) { return clamp(p.y * 0.5 + 0.5, 0., 1.); }
-vec3 egg(vec3 p) { float h = hgt(p), k = 0.9 + 0.28 * pow(1. - h, 1.4); return vec3(p.x * k, p.y, p.z * k); }
+vec3 egg(vec3 p) { float h = hgt(p), k = 0.9 + 0.28 * pow(1. - h, 1.4) * (1. - min(Comet, 1.)); return vec3(p.x * k, p.y, p.z * k); }
 vec3 shape(vec3 p, out float disp) {
     float h = hgt(p); vec3 base = egg(p) * Size;
-    float swell = Growth * Growth * (3. - 2. * Growth); base.xz *= mix(0.35, 1.0, swell);
-    float front = Growth * 1.5, lit = 1. - smoothstep(front - 0.35, front, h), grow = Growth * Growth * lit;
-    vec3 q = vec3(p.x * 1.7, p.y * 1.25 - Phase, p.z * 1.7) + Seed;
+    vec3 T = TailDir; float cm = min(Comet, 1.);
+    float c = dot(p, T), hN = clamp(-c * 0.5 + 0.5, 0., 1.), hU = c * 0.5 + 0.5, tb = clamp(c, 0., 1.);
+    float alongS = dot(abs(T), Size);
+    float bt = dot(base, T); vec3 perp = base - T * bt;
+    base = T * bt + perp * (1. - 0.68 * cm * pow(tb, 1.8));
+    base += T * (tb * tb * Comet * 1.7 * alongS + max(-c, 0.) * 0.22 * max(Comet - 1., 0.) * alongS);
+    float swell = Growth * Growth * (3. - 2. * Growth); base.xz *= mix(0.35, 1.0, swell) * (1. + 0.1 * Pulse); base.y *= 1. + 0.05 * Pulse;
+    float front = Growth * 1.5, lit = mix(1. - smoothstep(front - 0.35, front, h), 1., Style), grow = Growth * Growth * lit;
+    vec3 q = vec3(p.x * 1.7, c * 1.25 * (1. + 0.6 * Comet) - Phase, p.z * 1.7) + Seed;
     vec2 w = vec2(fbm3(q * 0.7 + 3.1), fbm3(q * 0.7 + 7.7)) * 0.7;
-    float tongues = smoothstep(0.38, 0.95, fbm3(q + vec3(w.x, 0., w.y)) * 0.5 + 0.5);
-    vec3 sq = vec3(p.x * SpikeFreq, p.y * SpikeFreq * 0.55 - Phase * 1.8, p.z * SpikeFreq) + vec3(Time * 0.83, 0., -Time * 0.61) + Seed * 2.;
-    float spikes = pow(min(max(gn(sq) * 0.9 + 0.1 * gn(sq * 2.7 + 5.), 0.) * 1.7, 1.), SpikeSharp) * (1. + 1.4 * FlashAmt);
+    float n = fbm3(q + vec3(w.x, 0., w.y)) * 0.5 + 0.5;
+    float tongues = smoothstep(0.38, 0.95, n) * (1. + 0.9 * Pulse + 1.6 * Burst);
+    float lag = gn(vec3(p.x * 2.2, 0.37, p.z * 2.2) + Seed) * 5.0 + gn(vec3(p.x * 4.1, 1.9, p.z * 4.1)) * 1.2;
+    tongues += pow(0.5 + 0.5 * sin(c * 7.5 - Time * 9. + lag), 6.) * Style * (0.35 + 0.65 * n);
+    vec3 sq = vec3(p.x * SpikeFreq, c * SpikeFreq * 0.55 - Phase * 1.8, p.z * SpikeFreq) + vec3(Time * 0.83, 0., -Time * 0.61) + Seed * 2.;
+    float spikes = pow(min(max(gn(sq) * 0.9 + 0.1 * gn(sq * 2.7 + 5.), 0.) * 1.7, 1.), SpikeSharp) * (1. + 1.4 * FlashAmt + 0.8 * Pulse + 2. * Burst);
     float env = smoothstep(0.02, 0.22, h) * (1. - 0.25 * smoothstep(0.92, 1., h));
+    env = mix(env, 0.35 + 0.65 * (1. - smoothstep(0.75, 1., hN)), cm);
     float spikeEnv = smoothstep(0.18, 0.5, h) * (1. - 0.5 * smoothstep(0.85, 1., h));
-    float crown = smoothstep(0.55, 1., h);
+    spikeEnv = mix(spikeEnv, smoothstep(0.85, 0.35, hN), cm);
+    float crown = smoothstep(0.55, 1., hU) * (1. - cm);
     disp = tongues * Tongue * env + spikes * Spike * spikeEnv;
     vec3 out1 = normalize(vec3(p.x, p.y * 0.35, p.z) + 1e-4);
-    vec3 dir = normalize(mix(out1, vec3(0., 1., 0.), clamp(Up * smoothstep(0.1, 0.7, h) + crown * 0.55, 0., 0.95)));
-    vec3 sdir = normalize(mix(out1, vec3(0., 1., 0.), 0.62 + 0.3 * h));
+    vec3 dir = normalize(mix(out1, T, clamp(Up * smoothstep(0.1, 0.7, hU) + crown * 0.55, 0., 0.95)));
+    vec3 sdir = normalize(mix(out1, T, 0.62 + 0.3 * hU));
+    float back = cm * (0.55 + 0.4 * (1. - hN));
+    dir = normalize(mix(dir, normalize(out1 * 0.35 + T), back));
+    sdir = normalize(mix(sdir, normalize(out1 * 0.25 + T), back));
     vec3 pos = base + (dir * tongues * Tongue * env + sdir * spikes * Spike * spikeEnv) * grow;
-    pos.xz *= 1. - 0.38 * crown * crown * (0.4 + 0.6 * tongues);
-    pos.y += crown * crown * (0.22 + 0.6 * tongues) * Crown * grow;
-    pos.xz += vec2(gn(vec3(0.3, h * 0.6 - Phase * 0.18, 1.7)), gn(vec3(2.1, h * 0.6 - Phase * 0.16, 0.4))) * 0.12 * h * h * grow;
+    float pt = dot(pos, T); vec3 pp = pos - T * pt;
+    pos = T * pt + pp * (1. - 0.38 * crown * crown * (0.4 + 0.6 * tongues));
+    pos += T * crown * crown * (0.22 + 0.6 * tongues) * Crown * grow;
+    pos.xz += vec2(gn(vec3(0.3, h * 0.6 - Phase * 0.18, 1.7)), gn(vec3(2.1, h * 0.6 - Phase * 0.16, 0.4))) * (0.12 + 0.1 * Style) * h * h * grow;
+    vec3 toP = PullPos - pos; float dd = dot(toP, toP);
+    pos += toP * min(0.55, PullAmt * exp(-dd * 1.8) * (0.35 + 2.2 * disp)) * grow;
+    pos += Blow * (0.25 + 2.4 * disp) * (0.4 + 0.6 * h) * grow;
     disp *= grow; return pos;
 }
 
@@ -122,7 +152,7 @@ void main() {
         vU = along; vD = tg; vQ = vec2(tw, along);
     } else if (kind == 31) {                                           // Rasengan: the shell of wind round the core, swelling a little
         n = normalize(Position); P = n * (1. + gn(n * 3. + vec3(Time * 2., 0., -Time * 1.6)) * 0.08); vO = n;
-    } else if (kind == 4 || kind == 20 || kind == 24 || kind == 9 || kind == 10 || kind == 15 || kind == 16 || kind == 18 || kind == 32 || kind == 34 || kind == 35 || kind == 46 || kind == 47 || kind == 48 || kind == 50) {   // flat square: dust ring, discs, shadows, Rasenshuriken, Miwa's cuts
+    } else if (kind == 4 || kind == 20 || kind == 24 || kind == 9 || kind == 10 || kind == 15 || kind == 16 || kind == 18 || kind == 32 || kind == 34 || kind == 35 || kind == 46 || kind == 47 || kind == 48 || kind == 50 || kind == 70) {   // (70: the aura's light on the ground)   // flat square: dust ring, discs, shadows, Rasenshuriken, Miwa's cuts
         P = Position; n = vec3(0., 1., 0.); vUv = Position.xz * 0.5 + 0.5;
         vQ = Position.xz * vec2(length(Model[0].xyz), length(Model[2].xyz));   // in blocks, across and along the square
     } else if (kind == 5) {                                            // aura shell
@@ -132,6 +162,9 @@ void main() {
         n = normalize(cross(Pa - P, Pb - P));
         if (dot(n, P - vec3(0., P.y, 0.) + vec3(0., 0.001, 0.)) < 0. && hgt(p) > 0.05 && hgt(p) < 0.95) n = -n;
         vO = p; vH = hgt(p); vD = d0;
+    } else if (kind == 71) {                                           // the aura's birth: one bent shockwave (taller than wide)
+        vec3 p = normalize(Position); float k = gn(p * 2.6 + Seed + Time * 3.) * 0.5 + gn(p * 6.1 - Seed) * 0.2;
+        P = p * vec3(1., 1.25, 1.) * (1. + 0.22 * k); n = p; vO = p; vD = k;
     } else if (kind == 11) {                                           // Makankosappo: the tube the two spirals ride on
         float along = Position.y * Len; vec2 d = normalize(Position.xz + 1e-5);
         float r = W * (0.55 + 0.45 * smoothstep(0., 0.7, along)) * (1. + 0.06 * sin(along * 5. - Time * 30.));

@@ -1,5 +1,0 @@
--d
-/tmp/claude-0/jc
--XDshould-stop.at=ATTR
-com/starkinhon/battlegroundsmod/world/EndValleyFeature.java
-com/starkinhon/battlegroundsmod/client/fx/EndValleyFx.java

@@ -243,7 +243,11 @@ public final class FlightFx {
             boolean self = p == minecraft.player && firstPerson;
             Vec3 center = p.getPosition(partial).add(0, FlightPose.pivot(), 0);
             float weight = FlightPose.weight(p, partial);
-            if (!self) {
+            if (KiMesh.ready()) {
+                // the aura remake (client/fx/AuraFx): the flames run against the velocity, a comet in the cruise,
+                // upright in the combat flight, a strong comet on the ki dash; it replaces the boost cone and the trail
+                AuraFx.flight(p, now, partial, self, colorOf(p));
+            } else if (!self) {
                 shell(p, center, up, camera, t, partial);
                 trail(p, center, up, camera, weight, partial);
             }
