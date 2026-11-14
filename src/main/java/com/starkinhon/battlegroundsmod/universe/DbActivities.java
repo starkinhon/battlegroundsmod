@@ -82,6 +82,7 @@ public final class DbActivities {
     // The Turtle Training: the milk run with the shell (slow) and then the sparring.
     private static final int TRAINING_TICKS = 20 * 90;
     private static final int SPAR_TICKS = 20 * 180;
+    private static final int SPAR_WAIT = 20 * 3;
     private static final String SPAR_TAG = "souls_kame_treino";
     private static final net.minecraft.resources.ResourceLocation SPAR_HEALTH = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(
             com.starkinhon.battlegroundsmod.BattlegroundsMod.MODID, "kame_treino");
@@ -524,7 +525,9 @@ public final class DbActivities {
             DbQuests.sync(player);
             return;
         }
-        if (!milk.delivered && player.blockPosition().closerThan(milk.spot, 3)) {
+        // on the spot's column, a few blocks up or down still counts (Stark 2026-11-13 stood on it and climbed around it)
+        double sdx = player.getX() - (milk.spot.getX() + 0.5), sdz = player.getZ() - (milk.spot.getZ() + 0.5);
+        if (!milk.delivered && sdx * sdx + sdz * sdz < 3.5 * 3.5 && Math.abs(player.getY() - milk.spot.getY()) < 6) {
             int slot = player.getInventory().findSlotMatchingItem(new ItemStack(Items.MILK_BUCKET));
             if (slot < 0) {
                 player.displayClientMessage(Component.translatable("message.battlegroundsmod.kame_sem_leite"), true);
@@ -577,7 +580,7 @@ public final class DbActivities {
 
     // Buu's gift: a rare item of any universe of the mod (Stark 2026-11-12: "ele te dá um item raro, qualquer item do jogo").
     private static final List<Supplier<? extends Item>> RARE = List.of(
-            ModItems.MULTIVERSAL_CRYSTAL, ModItems.SCOUTER, ModItems.DRAGON_RADAR, ModItems.HIRAISHIN_KUNAI, ModItems.SAMEHADA,
+            ModItems.SCOUTER, ModItems.DRAGON_RADAR, ModItems.HIRAISHIN_KUNAI, ModItems.SAMEHADA,
             ModItems.KUSANAGI, ModItems.KUBIKIRIBOCHO, ModItems.PAPER_WINGS, ModItems.HASHIRAMA_CELL, ModItems.TOAD_SCROLL,
             ModItems.SHARINGAN, ModItems.GOJO_BLINDFOLD, ModItems.PLAYFUL_CLOUD, ModItems.INVERTED_SPEAR, ModItems.CURSED_DOLL,
             ModItems.HOLLOW_MASK, ModItems.ZANPAKUTO, ModItems.SOUL_CANDY, ModItems.NICHIRIN_SWORD, ModItems.WISTERIA,
@@ -701,7 +704,7 @@ public final class DbActivities {
                 case "cell" -> reward(player, "cell", 0.4, new ItemStack(ModItems.SENZU.get(), 2));
                 case "namek" -> reward(player, "vila", 0.5, new ItemStack(ModItems.SENZU.get(), 3));
                 default -> {
-                    reward(player, "babidi", 0.6, new ItemStack(ModItems.MULTIVERSAL_CRYSTAL.get()));
+                    reward(player, "babidi", 0.6);
                     // the first time the guardians fall, Babidi marks you (StructureMissions, MajinMark)
                     MajinMark.grant(player);
                 }
@@ -806,6 +809,11 @@ public final class DbActivities {
         kame.setCustomName(Component.translatable("message.battlegroundsmod.kame_nome_treino"));
         kame.setCustomNameVisible(true);
         kame.setTarget(player);
+        // A training for the player's tier (Stark 2026-11-13: tier 7 against a tier 9 took no damage even with Strength
+        // 255, the Escudo ate every blow, and his Kamehameha ended it): he fights at the player's tier. And he waits 3 s
+        // before the first blow, so the player can step back.
+        kame.getData(com.starkinhon.battlegroundsmod.ModAttachments.POWER).tier = com.starkinhon.battlegroundsmod.power.Tiers.of(player);
+        com.starkinhon.battlegroundsmod.combat.Stun.cooldown(kame, SPAR_WAIT);
         Spar spar = new Spar();
         spar.kame = kame.getUUID();
         spar.home = home;
@@ -839,13 +847,15 @@ public final class DbActivities {
         }
         LivingEntity kame = sparKame(player);
         if (kame == null || !player.isAlive() || player.serverLevel().getGameTime() > spar.until
-                || player.distanceToSqr(Vec3.atCenterOf(spar.home)) > 40 * 40) {
+                || player.distanceToSqr(Vec3.atCenterOf(spar.home)) > 56 * 56) {
             sparEnd(player, false);
             return;
         }
         if (kame instanceof Mob mob && mob.getTarget() != player) {
             mob.setTarget(player);
         }
+        // the player's tier, every tick (his own stats would put his file's tier back)
+        kame.getData(com.starkinhon.battlegroundsmod.ModAttachments.POWER).tier = com.starkinhon.battlegroundsmod.power.Tiers.of(player);
         // a sparring for a beginner: about twice the player's life, not the SubAlma's whole tier (set once he has his
         // stats, after his first tick)
         var health = kame.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH);

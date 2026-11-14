@@ -179,6 +179,12 @@ public final class NarutoActivities {
         return run == null ? "" : run.type;
     }
 
+    // The bell test's seconds gone of its 60.
+    static int bellSeconds(ServerPlayer player) {
+        Run run = RUNS.get(player.getUUID());
+        return run == null ? 0 : (int) Math.max(0, 60 - (run.end - player.level().getGameTime()) / 20);
+    }
+
     static int runWave(ServerPlayer player) {
         Run run = RUNS.get(player.getUUID());
         return run == null ? 0 : run.wave;
@@ -597,7 +603,9 @@ public final class NarutoActivities {
             return;
         }
         int left = (int) Math.max(0, (run.end - now) / 20);
-        player.displayClientMessage(msg(held > 0 ? "guizo_tempo" : "guizo_sem", left), true);
+        // with the bell: how long to go; without it: how long to get it back before failing (Stark 2026-11-13: the
+        // test was confusing, the same countdown ran either way)
+        player.displayClientMessage(held > 0 ? msg("guizo_tempo", left) : msg("guizo_sem", Math.max(0, 20 - run.noBell)), true);
         if (now < run.end) {
             return;
         }
@@ -710,6 +718,25 @@ public final class NarutoActivities {
         title(player, "espada_titulo", "espada_sub", 0xB9C8D6);
         level.playSound(null, pos, SoundEvents.ANVIL_LAND, SoundSource.BLOCKS, 1f, 0.5f);
         return true;
+    }
+
+    // The sword still in the grave glints for whoever comes near, with a line saying what to do (Stark 2026-11-13: "que
+    // espada? onde tá essa espada?").
+    private static void swordHint(ServerPlayer player, ServerLevel level) {
+        NarutoSites.Site site = NarutoSites.near(level, NarutoStructGen.NEVOA, player.blockPosition(), 48);
+        if (site == null || state(level, site).getBoolean("tirada")) {
+            return;
+        }
+        for (BlockPos p : site.mark("blade")) {
+            if (level.random.nextInt(3) == 0) {
+                player.connection.send(new net.minecraft.network.protocol.game.ClientboundLevelParticlesPacket(ParticleTypes.END_ROD, false,
+                        p.getX() + 0.5, p.getY() + 0.5, p.getZ() + 0.5, 0.4f, 0.4f, 0.4f, 0.01f, 1));
+            }
+        }
+        BlockPos grave = site.first("grave");
+        if (nearFlat(player, grave == null ? new BlockPos(site.x(), site.y(), site.z()) : grave, 20)) {
+            player.displayClientMessage(msg("espada_dica"), true);
+        }
     }
 
     private static void restoreSword(ServerLevel level, NarutoSites.Site site) {
@@ -1038,6 +1065,9 @@ public final class NarutoActivities {
             return;
         }
         Run run = RUNS.get(player.getUUID());
+        if (run == null && now % 20 == 0) {
+            swordHint(player, level);
+        }
         if (run != null) {
             NarutoSites.Site site = null;
             for (NarutoSites.Site s : NarutoSites.known(level)) {

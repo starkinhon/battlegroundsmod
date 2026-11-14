@@ -1,0 +1,114 @@
+# Correções do playtest da progressão (Stark 2026-11-13): Kame justo e com um rastreador só, idioma em inglês,
+# sem mobs nas estruturas, casas sem alçapão solto, noite sem véu, Mar da Névoa sem chuva e com píer, pterodáctilos
+# voando, Livro dos Desafios em inglês, teste dos guizos.
+# gradlew runClient -Pmundo=ProgStark -PmundoTipo=battlegroundsmod:souls -Proteiro=progressao-stark
+espera 200
+dev preparar
+gamemode survival
+gamerule keepInventory true
+effect give @s minecraft:resistance infinite 4 true
+effect give @s minecraft:slow_falling infinite 0 true
+effect give @s minecraft:saturation infinite 0 true
+soul tier 9
+devc fov 70
+devc hud on
+# ---- Kame House: sem piratas, um rastreador, luta no tier do jogador
+devc marca kame
+soul estruturadb kame
+espera 600
+soul estruturadb kame centro
+espera 200
+devc print prog/01_kame_chegada
+item replace entity @s weapon.mainhand with minecraft:air
+execute as @e[type=battlegroundsmod:npc_mestre_kame,limit=1,sort=nearest] at @s run tp @p ^ ^ ^2 facing entity @s eyes
+espera 10
+soul falar
+espera 30
+devc print prog/02_kame_fala
+devc fechar
+espera 40
+devc print prog/03_kame_hud_leite
+soul missaoponto
+espera 60
+execute as @e[type=battlegroundsmod:npc_mestre_kame,limit=1,sort=nearest] at @s run tp @p ^ ^ ^2 facing entity @s eyes
+espera 10
+soul falar
+espera 5
+devc fechar
+dev info @s
+espera 50
+devc marca kame_3s
+dev info @s
+devc print prog/04_kame_luta
+damage @e[tag=souls_kame_treino,limit=1] 6 minecraft:player_attack by @p
+espera 5
+dev info @e[tag=souls_kame_treino,limit=1]
+damage @e[tag=souls_kame_treino,limit=1] 6 minecraft:player_attack by @p
+espera 5
+dev info @e[tag=souls_kame_treino,limit=1]
+espera 200
+dev info @s
+devc print prog/05_kame_luta_depois
+execute if entity @e[type=battlegroundsmod:pirata,distance=..40] run devc marca PIRATAS_PERTO
+kill @e[tag=souls_kame_treino]
+# ---- interior da Kame House: a mesinha (laje) e a sala
+execute as @e[type=battlegroundsmod:npc_mestre_kame,limit=1,sort=nearest] at @s run tp @p ~ ~ ~
+espera 40
+# ---- Casa do Goku: alçapão virou laje; sem dinossauros dentro
+devc marca goku
+soul estruturadb goku
+espera 600
+soul estruturadb goku centro
+espera 200
+devc print prog/06_goku_casa
+execute if entity @e[type=battlegroundsmod:raptor,distance=..30] run devc marca RAPTOR_PERTO
+execute if entity @e[type=battlegroundsmod:tiranossauro,distance=..30] run devc marca TREX_PERTO
+# ---- Montanhas Paozu de noite: sem véu
+time set 18000
+espera 100
+tp @s ~ ~30 ~ ~ 20
+espera 60
+devc print prog/07_paozu_noite
+tp @s ~ ~ ~ ~180 20
+espera 20
+devc print prog/08_paozu_noite_2
+time set 6000
+tp @s ~ ~ ~ ~ 10
+espera 60
+devc print prog/09_paozu_dia
+# ---- pterodáctilos: devem andar pelo céu
+dev info @e[type=battlegroundsmod:pterodactilo,limit=3,sort=nearest]
+espera 200
+dev info @e[type=battlegroundsmod:pterodactilo,limit=3,sort=nearest]
+devc print prog/10_ceu
+# ---- Livro dos Desafios em inglês
+give @s battlegroundsmod:livro_desafios
+espera 10
+devc tecla usar 2
+espera 40
+devc print prog/11_livro
+devc fechar
+espera 10
+# ---- Mar da Névoa: píer em volta do túmulo, espada brilhando, sem chuva
+devc marca nevoa
+weather rain
+soul estrutura nevoa
+espera 700
+soul estrutura nevoa center
+espera 200
+devc print prog/12_nevoa_chuva
+tp @s ~ ~25 ~ ~ 60
+espera 60
+devc print prog/13_nevoa_pier
+tp @s ~ ~-25 ~ ~ 10
+espera 20
+weather clear
+# ---- Campo de treino 3: teste dos guizos
+devc marca folha
+soul estrutura folha
+espera 700
+soul estrutura folha center
+espera 200
+devc print prog/14_folha
+espera 20
+sair

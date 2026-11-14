@@ -1,0 +1,581 @@
+{
+ "dragonball": [
+  {
+   "id": "kame",
+   "lugar": "Kame House",
+   "npc": "npc_mestre_kame",
+   "quem": "Master Roshi",
+   "tipo": "ONCE → DAILY",
+   "nome": "Turtle Training",
+   "fala": "Ho ho! Want to learn the Kamehameha? First you carry this shell on your back and deliver the milk. No flying, huh!",
+   "passos": [
+    [
+     "Get the shell and the milk from Master Roshi",
+     0,
+     1
+    ],
+    [
+     "Take the milk to the spot, no flying",
+     0,
+     1
+    ],
+    [
+     "Go back to Master Roshi",
+     0,
+     1
+    ],
+    [
+     "Bring the old man down to half his life",
+     0,
+     1
+    ]
+   ],
+   "rec": [
+    [
+     "__tecnica",
+     1,
+     "Kamehameha",
+     "Innate technique (works with any soul)"
+    ],
+    [
+     "__poder",
+     1
+    ],
+    [
+     "milk_bucket",
+     1
+    ]
+   ],
+   "passos2": [
+    [
+     "Get the milk from Master Roshi",
+     0,
+     1
+    ],
+    [
+     "Take the milk to the spot",
+     0,
+     1
+    ],
+    [
+     "Go back to Master Roshi",
+     0,
+     1
+    ]
+   ],
+   "mais": "No flying! The shell is heavy, so go slow. Come back before time runs out and then we train for real: bring me down to half my life."
+  },
+  {
+   "id": "capsula",
+   "lugar": "Capsule Corp",
+   "npc": "npc_bulma",
+   "quem": "Bulma",
+   "tipo": "DAILY",
+   "nome": "Hoi-Poi Capsule",
+   "fala": "Bring me some parts and I'll build you a Hoi-Poi Capsule. Just throw it on the ground and done: a whole house!",
+   "entrega": [
+    [
+     "iron_ingot",
+     6
+    ],
+    [
+     "redstone",
+     3
+    ]
+   ],
+   "passos": [
+    [
+     "Bring 6 iron ingots and 3 redstone",
+     0,
+     1
+    ]
+   ],
+   "rec": [
+    [
+     "capsula_hoipoi",
+     1
+    ],
+    [
+     "__poder",
+     1
+    ]
+   ],
+   "mais": "Iron for the casing and redstone for the circuits. One a day, I need to sleep too!"
+  },
+  {
+   "id": "goku",
+   "lugar": "Goku's House",
+   "npc": "npc_gohan",
+   "quem": "Gohan",
+   "tipo": "ONCE",
+   "nome": "Learn to fly",
+   "fala": "You want to fly? Dad taught me: you just gather your ki under your feet. But you need to be at least Tier 9!",
+   "passos": [
+    [
+     "Reach Tier 9",
+     0,
+     1
+    ],
+    [
+     "Talk to Gohan",
+     0,
+     1
+    ]
+   ],
+   "rec": [
+    [
+     "__voo",
+     1,
+     "Flight",
+     "Double tap jump"
+    ],
+    [
+     "esfera_dragao_4",
+     1
+    ]
+   ],
+   "mais": "Gather the ki under your feet and push. Double tap jump and that's it! But only from Tier 9."
+  },
+  {
+   "id": "karin",
+   "lugar": "Korin Tower",
+   "npc": "npc_korin",
+   "quem": "Master Korin",
+   "tipo": "ONCE",
+   "nome": "Climb the tower",
+   "fala": "You climbed all the way up without flying? Then you've earned the Sacred Water. And take a Senzu, there's one a day up here.",
+   "passos": [
+    [
+     "Climb the tower without flying (161 blocks)",
+     0,
+     161
+    ],
+    [
+     "Talk to Master Korin",
+     0,
+     1
+    ]
+   ],
+   "rec": [
+    [
+     "__poder",
+     1,
+     "Sacred Water",
+     "Power: half a tier"
+    ],
+    [
+     "senzu",
+     2
+    ]
+   ],
+   "mais": "There are 161 blocks of tower down there. No flying, just climbing. Whoever makes it up here deserves it."
+  },
+  {
+   "id": "nave",
+   "lugar": "Crashed Ship",
+   "npc": null,
+   "mob": "saibaman",
+   "quem": "Gravity machine",
+   "tipo": "DAILY",
+   "nome": "50x Gravity",
+   "fala": "The ship's gravity machine still works. Last 120 seconds at 50x and your body comes out stronger.",
+   "passos": [
+    [
+     "Train in the gravity machine",
+     0,
+     120
+    ]
+   ],
+   "rec": [
+    [
+     "__poder",
+     1
+    ]
+   ]
+  },
+  {
+   "id": "cell",
+   "lugar": "Cell's Ring",
+   "npc": null,
+   "mob": "cell_jr",
+   "quem": "Cell Jr.",
+   "tipo": "DAILY",
+   "nome": "Cell Games",
+   "fala": "Three waves of Cell Jr. in the ring. Fall off the ring and you lose.",
+   "passos": [
+    [
+     "Beat the 3 waves without falling",
+     0,
+     3
+    ]
+   ],
+   "rec": [
+    [
+     "senzu",
+     2
+    ],
+    [
+     "__poder",
+     1
+    ]
+   ]
+  },
+  {
+   "id": "raditz",
+   "lugar": "Raditz's Crater",
+   "npc": null,
+   "mob": "saibaman",
+   "quem": "Raditz's Pod",
+   "tipo": "ONCE",
+   "nome": "The scouter beeps",
+   "fala": "The pod's scouter is beeping... three Saibamen come out of the ground when you get close.",
+   "passos": [
+    [
+     "Defeat the Saibamen",
+     0,
+     3
+    ],
+    [
+     "Open the pod",
+     0,
+     1
+    ]
+   ],
+   "rec": [
+    [
+     "scouter",
+     1,
+     "Pod chest",
+     "The pod's loot"
+    ]
+   ],
+   "dica": "They say a small ship fell in a dirt field..."
+  },
+  {
+   "id": "babidi",
+   "lugar": "Babidi's Ship",
+   "npc": null,
+   "mob": "dabura",
+   "quem": "Babidi",
+   "tipo": "ONCE + DAILY",
+   "nome": "The Majin Mark",
+   "fala": "Pui Pui, Yakon and Dabura guard the ship. Beat all three and Babidi offers you the Majin Mark.",
+   "passos": [
+    [
+     "Beat Pui Pui",
+     0,
+     1
+    ],
+    [
+     "Beat Yakon",
+     0,
+     1
+    ],
+    [
+     "Beat Dabura",
+     0,
+     1
+    ]
+   ],
+   "rec": [
+    [
+     "__marca",
+     1,
+     "Majin Mark",
+     "+20% damage, no regeneration in combat"
+    ]
+   ]
+  },
+  {
+   "id": "buu",
+   "lugar": "Majin Buu's House",
+   "npc": "npc_boo",
+   "quem": "Majin Buu",
+   "tipo": "DAILY",
+   "nome": "Candy for Buu",
+   "fala": "Buu wants candy! Give Buu candy and Buu gives a present!",
+   "entrega": [
+    [
+     "cake",
+     1
+    ],
+    [
+     "cookie",
+     1
+    ],
+    [
+     "pumpkin_pie",
+     1
+    ],
+    [
+     "honey_bottle",
+     1
+    ]
+   ],
+   "escolha": true,
+   "passos": [
+    [
+     "Give Majin Buu a sweet",
+     0,
+     1
+    ]
+   ],
+   "rec": [
+    [
+     "__rare",
+     1,
+     "Rare item",
+     "Any rare item from any universe"
+    ],
+    [
+     "__poder",
+     1
+    ]
+   ],
+   "mais": "Buu likes cake, cookies, pie and honey! Buu doesn't like people who bring no candy."
+  },
+  {
+   "id": "guru",
+   "lugar": "Grand Elder's House",
+   "npc": null,
+   "mob": "namekiano_7",
+   "quem": "Grand Elder Guru",
+   "tipo": "ONCE",
+   "nome": "Hidden power",
+   "fala": "Come closer... I see a great power asleep inside you.",
+   "passos": [
+    [
+     "Enter the Grand Elder's house",
+     0,
+     1
+    ]
+   ],
+   "rec": [
+    [
+     "__poder",
+     1,
+     "Hidden power",
+     "Power: 80% of a tier"
+    ]
+   ],
+   "dica": "On Namek, a house on top of a rock..."
+  },
+  {
+   "id": "vila",
+   "lugar": "Namekian Village",
+   "npc": null,
+   "mob": "namekiano_0",
+   "quem": "Village elder",
+   "tipo": "DAILY",
+   "nome": "Defend the village",
+   "fala": "Frieza's soldiers are coming for the dragon balls! Help us!",
+   "passos": [
+    [
+     "Defend the village: 3 waves",
+     0,
+     3
+    ]
+   ],
+   "rec": [
+    [
+     "senzu",
+     3
+    ],
+    [
+     "__poder",
+     1
+    ]
+   ],
+   "dica": "On Namek, round houses near the water..."
+  }
+ ],
+ "naruto": [
+  {
+   "id": "folha",
+   "lugar": "Training Ground 3",
+   "npc": null,
+   "mob": "ninja_renegado_0",
+   "quem": "Bell Test",
+   "tipo": "DAILY",
+   "nome": "Bell Test",
+   "fala": "Take a bell from the stump in the middle of the field and keep it with you for 60 s. A few rogue ninjas will try to take it from you.",
+   "passos": [
+    [
+     "Take a bell from the middle stump",
+     0,
+     1
+    ],
+    [
+     "Keep the bell for 60 s inside the field",
+     0,
+     60
+    ]
+   ],
+   "rec": [
+    [
+     "pilula_soldado",
+     2
+    ],
+    [
+     "bandana_ninja",
+     1
+    ],
+    [
+     "guizo",
+     1
+    ]
+   ],
+   "mais": "The timer only runs while the bell is in your inventory and you are inside the field. If a ninja hits you the bell can drop: pick it back up. Two bells = double reward."
+  },
+  {
+   "id": "morte",
+   "lugar": "Chunin Exam Tower",
+   "npc": null,
+   "mob": "ninja_som_0",
+   "quem": "Chunin Exam",
+   "tipo": "DAILY",
+   "nome": "Heaven and Earth",
+   "fala": "Take the Heaven and Earth scrolls from the Sound ninjas and open both at the altar.",
+   "passos": [
+    [
+     "Heaven Scroll",
+     0,
+     1
+    ],
+    [
+     "Earth Scroll",
+     0,
+     1
+    ],
+    [
+     "Open them at the altar",
+     0,
+     1
+    ]
+   ],
+   "rec": [
+    [
+     "pilula_soldado",
+     2
+    ],
+    [
+     "kunai_hiraishin",
+     1
+    ]
+   ]
+  },
+  {
+   "id": "nevoa",
+   "lugar": "Swordsman's Grave",
+   "npc": null,
+   "mob": "espadachim_nevoa_0",
+   "quem": "Mist Swordsmen",
+   "tipo": "ONCE",
+   "nome": "The sword in the grave",
+   "fala": "In the middle of the island there is a grave with a giant sword stuck in it (it glints). Right-click it to pull it out: the mist closes in and three waves of swordsmen come.",
+   "passos": [
+    [
+     "Right-click the sword in the grave",
+     0,
+     1
+    ],
+    [
+     "Beat the 3 waves of swordsmen",
+     0,
+     3
+    ]
+   ],
+   "rec": [
+    [
+     "kubikiribocho",
+     1
+    ]
+   ]
+  },
+  {
+   "id": "chuva",
+   "lugar": "Angel Tower",
+   "npc": null,
+   "mob": "ninja_chuva_0",
+   "quem": "Angel Tower",
+   "tipo": "DAILY",
+   "nome": "The paper flower",
+   "fala": "Take the paper flower from the statue's tongue and get down with it in 90 s.",
+   "passos": [
+    [
+     "Take the flower",
+     0,
+     1
+    ],
+    [
+     "Get down and out in 90 s",
+     0,
+     90
+    ]
+   ],
+   "rec": [
+    [
+     "asas_de_papel",
+     1
+    ]
+   ],
+   "dica": "They say it never stops raining in a village of towers..."
+  },
+  {
+   "id": "vale",
+   "lugar": "Valley of the End",
+   "npc": null,
+   "mob": "zetsu_branco_0",
+   "quem": "Valley of the End",
+   "tipo": "DAILY",
+   "nome": "Senju or Uchiha",
+   "fala": "At sunset, touch a seal on top of a statue: Senju or Uchiha.",
+   "passos": [
+    [
+     "Touch a seal at sunset",
+     0,
+     1
+    ]
+   ],
+   "rec": [
+    [
+     "celula_hashirama",
+     1
+    ],
+    [
+     "sharingan",
+     1
+    ]
+   ]
+  },
+  {
+   "id": "myoboku",
+   "lugar": "Sage Peak",
+   "npc": null,
+   "mob": "sapo_ninja_0",
+   "quem": "Warrior toad",
+   "tipo": "ONCE",
+   "nome": "The warrior toad",
+   "fala": "Climb the needle and beat the warrior toad at the top.",
+   "passos": [
+    [
+     "Climb the needle",
+     0,
+     1
+    ],
+    [
+     "Beat the warrior toad",
+     0,
+     1
+    ]
+   ],
+   "rec": [
+    [
+     "pergaminho_sapo",
+     1
+    ]
+   ],
+   "dica": "Talking toads guard a mountain full of needles..."
+  }
+ ]
+}

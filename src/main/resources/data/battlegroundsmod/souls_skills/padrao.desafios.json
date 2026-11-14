@@ -15,7 +15,7 @@
       "pilar": "minecraft:terracotta",
       "desafios": [
         {"id": "kuririn", "foco": "Truques. O Kienzan corta qualquer coisa e o Taiyoken cega. Fraco de perto, perigoso de longe.", "itens": ["battlegroundsmod:senzu 3"]},
-        {"id": "piccolo", "foco": "Controle. O Makankosappo perfura, o braço esticado puxa e o Hellzone cerca você.", "itens": ["battlegroundsmod:cristal_multiversal"]},
+        {"id": "piccolo", "foco": "Controle. O Makankosappo perfura, o braço esticado puxa e o Hellzone cerca você."},
         {"id": "kame", "foco": "Selamento. O Mafuba prende o alvo no pote e o Punho Bêbado esquiva de tudo.", "itens": ["battlegroundsmod:radar_dragao"]},
         {"id": "goku", "foco": "Equilíbrio. Kamehameha, teleporte nas suas costas, Kaioken e a Genki Dama.", "itens": ["battlegroundsmod:senzu 5"]},
         {"id": "vegeta", "foco": "Explosão. Rajadas que cobrem o alvo de fumaça, Big Bang e Final Flash.", "itens": ["battlegroundsmod:scouter"]},
@@ -26,13 +26,13 @@
     {
       "id": "naruto", "nome": "Naruto", "cor": "#F28C28",
       "descricao": "Florestas fechadas, planícies com vilas e taigas no frio.",
-      "mobs": ["ninja_renegado", "ninja_som", "anbu_raiz"],
+      "mobs": ["ninja_renegado", "ninja_som"],
       "piso": ["minecraft:grass_block", "minecraft:moss_block", "minecraft:grass_block", "minecraft:coarse_dirt"],
       "pilar": "minecraft:oak_log",
       "desafios": [
         {"id": "shikamaru", "foco": "Prender. A sombra dele segura você no lugar.", "itens": []},
         {"id": "ino", "foco": "Mente. Entra na sua cabeça e troca de corpo.", "itens": ["battlegroundsmod:pergaminho_selamento"]},
-        {"id": "kakashi", "foco": "Técnica. Raikiri e jutsus copiados com o Sharingan.", "itens": ["battlegroundsmod:cristal_multiversal"]},
+        {"id": "kakashi", "foco": "Técnica. Raikiri e jutsus copiados com o Sharingan."},
         {"id": "gaara", "foco": "Defesa. A areia bloqueia tudo e esmaga quem chega perto.", "itens": ["battlegroundsmod:bandana_ninja"]},
         {"id": "naruto", "foco": "Pressão. Clones por todo lado e Rasengan.", "itens": ["battlegroundsmod:kunai_hiraishin"]},
         {"id": "sasuke", "foco": "Velocidade. Chidori, e o Sharingan esquiva dos seus golpes.", "itens": ["battlegroundsmod:kusanagi"]},
@@ -48,7 +48,7 @@
       "desafios": [
         {"id": "nobara", "foco": "Ressonância. Pregos e martelo que machucam à distância.", "itens": ["battlegroundsmod:boneco_palha 8"]},
         {"id": "miwa", "foco": "Contra-ataque. O Batto corta quem entra no Domínio Simples dela.", "itens": ["battlegroundsmod:boneco_amaldicoado 2"]},
-        {"id": "nanami", "foco": "Proporção 7:3. Cada corte procura o seu ponto fraco.", "itens": ["battlegroundsmod:cristal_multiversal"]},
+        {"id": "nanami", "foco": "Proporção 7:3. Cada corte procura o seu ponto fraco."},
         {"id": "inumaki", "foco": "Fala Amaldiçoada. Uma palavra e você para."},
         {"id": "itadori", "foco": "Corpo a corpo. Punho Divergente e Black Flash.", "itens": ["battlegroundsmod:dedo_sukuna 2"]},
         {"id": "choso", "foco": "Sangue. Perfura de longe e prende você."},
@@ -65,7 +65,7 @@
       "pilar": "minecraft:quartz_pillar",
       "desafios": [
         {"id": "rukia", "foco": "Gelo. Congela você e o chão em volta.", "itens": ["battlegroundsmod:pilula_alma 3"]},
-        {"id": "byakuya", "foco": "Pétalas. Mil lâminas da Senbonzakura.", "itens": ["battlegroundsmod:cristal_multiversal", "battlegroundsmod:zanpakuto"]}
+        {"id": "byakuya", "foco": "Pétalas. Mil lâminas da Senbonzakura.", "itens": ["battlegroundsmod:zanpakuto"]}
       ]
     },
     {
@@ -75,7 +75,7 @@
       "piso": ["minecraft:podzol", "minecraft:coarse_dirt", "minecraft:podzol", "minecraft:moss_block"],
       "pilar": "minecraft:spruce_log",
       "desafios": [
-        {"id": "kokushibo", "foco": "Luas. A Respiração da Lua corta em leque. A Lua Superior Um.", "itens": ["battlegroundsmod:cristal_multiversal", "battlegroundsmod:espada_nichirin"]}
+        {"id": "kokushibo", "foco": "Luas. A Respiração da Lua corta em leque. A Lua Superior Um.", "itens": ["battlegroundsmod:espada_nichirin"]}
       ]
     },
     {
@@ -85,7 +85,7 @@
       "piso": ["minecraft:gravel", "minecraft:light_gray_concrete_powder", "minecraft:tuff"],
       "pilar": "minecraft:polished_andesite",
       "desafios": [
-        {"id": "shigaraki", "foco": "Decadência. Tudo que a mão dele toca vira pó, até o chão. Não deixe ele encostar.", "itens": ["battlegroundsmod:cristal_multiversal"]}
+        {"id": "shigaraki", "foco": "Decadência. Tudo que a mão dele toca vira pó, até o chão. Não deixe ele encostar."}
       ]
     },
     {
@@ -95,7 +95,7 @@
       "piso": ["minecraft:deepslate_tiles", "minecraft:polished_blackstone_bricks"],
       "pilar": "minecraft:dark_oak_log",
       "desafios": [
-        {"id": "joy_boy", "foco": "Gear 5. Borracha, risada e o cenário virando desenho. Quando ele cansa e fica faminto, é a hora.", "itens": ["battlegroundsmod:cristal_multiversal"]}
+        {"id": "joy_boy", "foco": "Gear 5. Borracha, risada e o cenário virando desenho. Quando ele cansa e fica faminto, é a hora."}
       ]
     },
     {
@@ -105,7 +105,7 @@
       "piso": ["minecraft:light_gray_concrete", "minecraft:smooth_stone"],
       "pilar": "minecraft:light_gray_concrete",
       "desafios": [
-        {"id": "makima", "foco": "Controle. Ela luta de longe e faz os outros lutarem por ela. Encurte a distância.", "itens": ["battlegroundsmod:cristal_multiversal"]}
+        {"id": "makima", "foco": "Controle. Ela luta de longe e faz os outros lutarem por ela. Encurte a distância."}
       ]
     },
     {
@@ -115,7 +115,7 @@
       "piso": ["minecraft:gray_concrete", "minecraft:smooth_stone"],
       "pilar": "minecraft:smooth_sandstone",
       "desafios": [
-        {"id": "saitama", "foco": "Um soco. Ele brinca até ficar sério. Quando ficar sério, não esteja na frente.", "itens": ["battlegroundsmod:cristal_multiversal"]}
+        {"id": "saitama", "foco": "Um soco. Ele brinca até ficar sério. Quando ficar sério, não esteja na frente."}
       ]
     }
   ]

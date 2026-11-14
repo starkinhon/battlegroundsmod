@@ -8,10 +8,6 @@
           "type": "minecraft:item",
           "name": "battlegroundsmod:senzu",
           "weight": 6
-        },
-        {
-          "type": "minecraft:item",
-          "name": "battlegroundsmod:cristal_multiversal"
         }
       ]
     },
@@ -37,21 +33,6 @@
         {
           "condition": "minecraft:random_chance",
           "chance": 0.5
-        }
-      ]
-    },
-    {
-      "rolls": 1,
-      "entries": [
-        {
-          "type": "minecraft:item",
-          "name": "battlegroundsmod:cristal_multiversal"
-        }
-      ],
-      "conditions": [
-        {
-          "condition": "minecraft:random_chance",
-          "chance": 0.1
         }
       ]
     },

@@ -147,7 +147,8 @@ public final class YoruNoMiya {
         SubCommon.sound(level, centre, SoundEvents.TRIDENT_RIPTIDE_3.value(), 1.2f, 1.6f);
         SubCommon.sound(level, centre, SoundEvents.AMETHYST_BLOCK_CHIME, 2.0f, 0.7f);
         SubCommon.sound(level, centre, SoundEvents.GENERIC_EXPLODE.value(), 1.1f, 1.5f);
-        if (BlockRules.canBreak(level)) {
+        // not in the challenge arenas (Stark 2026-11-13: in his arena he wore the whole floor away fast)
+        if (BlockRules.canBreak(level) && !com.starkinhon.battlegroundsmod.challenge.ChallengeArenas.isArena(level.dimension())) {
             carve(level, fr, caster.position());
         }
         // The hitbox fills the whole shape the slash sweeps (inside of the arc included, the open gap behind him left

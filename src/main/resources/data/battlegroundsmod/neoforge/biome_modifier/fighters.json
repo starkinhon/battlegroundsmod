@@ -4,27 +4,21 @@
   "spawners": [
     {
       "type": "battlegroundsmod:fighter_humano",
-      "weight": 12,
+      "weight": 3,
       "minCount": 1,
-      "maxCount": 3
+      "maxCount": 1
     },
     {
       "type": "battlegroundsmod:fighter_rua",
-      "weight": 8,
+      "weight": 2,
       "minCount": 1,
-      "maxCount": 2
+      "maxCount": 1
     },
     {
       "type": "battlegroundsmod:fighter_quarteirao",
-      "weight": 5,
+      "weight": 1,
       "minCount": 1,
-      "maxCount": 2
-    },
-    {
-      "type": "battlegroundsmod:anbu_raiz",
-      "weight": 5,
-      "minCount": 1,
-      "maxCount": 2
+      "maxCount": 1
     },
     {
       "type": "battlegroundsmod:maldicao_menor",

@@ -18,11 +18,6 @@
           "type": "minecraft:item",
           "name": "battlegroundsmod:radar_dragao",
           "weight": 2
-        },
-        {
-          "type": "minecraft:item",
-          "name": "battlegroundsmod:cristal_multiversal",
-          "weight": 2
         }
       ]
     },
@@ -78,21 +73,6 @@
         {
           "condition": "minecraft:random_chance",
           "chance": 0.35
-        }
-      ]
-    },
-    {
-      "rolls": 1,
-      "entries": [
-        {
-          "type": "minecraft:item",
-          "name": "battlegroundsmod:cristal_multiversal"
-        }
-      ],
-      "conditions": [
-        {
-          "condition": "minecraft:random_chance",
-          "chance": 0.15
         }
       ]
     },

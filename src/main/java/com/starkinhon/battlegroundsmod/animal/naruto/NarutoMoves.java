@@ -321,7 +321,15 @@ final class NarutoMoves {
             case "ninja_renegado/papelbomba" -> {
                 if (f == 12) {
                     // the kunai stuck by the target's feet, its tag starting to burn
-                    m.blowSpot = ground(m, alive(t) ? t.position() : ahead(m, 3.3));
+                    // on the ground under the target: someone flying high had the kunai stuck in the air beside him
+                    // (Stark 2026-11-13), the short look down found no ground and kept the spot in the sky
+                    Vec3 aim = alive(t) ? t.position() : ahead(m, 3.3);
+                    m.blowSpot = ground(m, aim);
+                    if (m.blowSpot == aim) {
+                        int y = lvl(m).getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING,
+                                net.minecraft.util.Mth.floor(aim.x), net.minecraft.util.Mth.floor(aim.z));
+                        m.blowSpot = new Vec3(aim.x, Math.min(aim.y, y), aim.z);
+                    }
                     Vec3 hand = m.position().add(0, 1.3, 0);
                     SubNet.send(level, SubNet.KUNAI, 0, hand, m.blowSpot.subtract(hand), 4, 0, 0);
                 }

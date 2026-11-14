@@ -211,7 +211,9 @@ public final class QuestHud {
         }
         Journal.Mission m = Journal.mission(t);
         Journal.Mission here = missionOf(id);
-        if (m == null || m == here) {
+        // the corner panel already runs this mission (the Kame's milk: "kame_casco_leite"), with its own arrow to the
+        // spot: a second line pointing at the structure sent Stark the wrong way (2026-11-13)
+        if (m == null || m == here || !id.isEmpty() && (id.equals(t) || id.startsWith(t + "_"))) {
             return;
         }
         int pw = 148;
@@ -260,7 +262,7 @@ public final class QuestHud {
         Px.diamond(GW / 2f - lw / 2f - 8, cy + 35, 2, GOLD, a);
         Px.diamond(GW / 2f + lw / 2f + 8, cy + 35, 2, GOLD, a);
         T(line, GW / 2f, cy + 31, WHITE, 9, false, 0, true, a);
-        String kind = m.tipo().startsWith("DIÁRIA") ? tr("diaria") : m.tipo().startsWith("ÚNICA") ? tr("unica") : tr("missao");
+        String kind = com.starkinhon.battlegroundsmod.client.ui.Journal.dailyFirst(m) ? tr("diaria") : com.starkinhon.battlegroundsmod.client.ui.Journal.onceFirst(m) ? tr("unica") : tr("missao");
         String reward = m.rec().isEmpty() ? "" : rewardName(m.rec().get(0));
         T(reward.isEmpty() ? kind : tr("recompensa", kind, reward), GW / 2f, cy + 44, rgb(200, 190, 220), 7, false, 0, true, a);
     }

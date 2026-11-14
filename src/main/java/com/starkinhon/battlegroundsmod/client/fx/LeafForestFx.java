@@ -175,7 +175,7 @@ public final class LeafForestFx {
 
     // The sun through the leaves: a light golden wash, and a soft deep green toward the screen's edges.
     public static void renderGrade(GuiGraphics graphics, DeltaTracker delta) {
-        float fade = Mth.lerp(delta.getGameTimeDeltaPartialTick(false), lastStrength, strength);
+        float fade = Mth.lerp(delta.getGameTimeDeltaPartialTick(false), lastStrength, strength) * BiomeAura.nightDim(delta.getGameTimeDeltaPartialTick(false));
         if (fade <= 0.001f) {
             return;
         }

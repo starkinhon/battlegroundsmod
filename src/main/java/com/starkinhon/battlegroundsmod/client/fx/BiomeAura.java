@@ -60,4 +60,15 @@ public final class BiomeAura {
         }
         return false;
     }
+
+    // How much of a light screen grade to keep: all of it by day, a fifth at night. A pale tint over the dark night
+    // screen read as a faded picture lying on top of it (Stark 2026-11-13, in every biome with its own ambience).
+    public static float nightDim(float partial) {
+        net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+        if (mc.level == null) {
+            return 1;
+        }
+        float sunY = net.minecraft.util.Mth.cos(mc.level.getSunAngle(partial));
+        return 0.2f + 0.8f * net.minecraft.util.Mth.clamp(sunY * 3 + 0.3f, 0, 1);
+    }
 }

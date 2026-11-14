@@ -14,7 +14,9 @@ import net.minecraft.world.item.Items;
 // Ramen do Ichiraku (Naruto): a full meal that keeps healing for a while. Teuchi gives one a day.
 public class RamenItem extends Item {
     public RamenItem(Properties properties) {
-        super(properties.stacksTo(16).food(new FoodProperties.Builder().nutrition(12).saturationModifier(1.2f)
+        super(properties.stacksTo(16).food(new FoodProperties.Builder().nutrition(12).saturationModifier(1.2f).alwaysEdible()
+                // Naruto's Senzu: eaten for the healing, full or not (Stark 2026-11-13: the Inseto de Alma keeps the
+                // hunger full and the ramen could not be eaten)
                 .effect(new MobEffectInstance(MobEffects.REGENERATION, 300, 1), 1f).usingConvertsTo(Items.BOWL).build()));
     }
 

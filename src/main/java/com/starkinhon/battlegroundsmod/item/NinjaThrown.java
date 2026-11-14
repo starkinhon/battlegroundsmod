@@ -31,6 +31,9 @@ import net.minecraft.world.phys.Vec3;
 // landed, to be picked up again; the Papel-Bomba sticks to the block or the body it hit and blows 2 s later.
 public class NinjaThrown extends ThrowableItemProjectile {
     private static final EntityDataAccessor<Integer> STUCK = SynchedEntityData.defineId(NinjaThrown.class, EntityDataSerializers.INT);
+    // where on the body it stuck, for the client too: it only knew the body, kept flying on its own and hung in the air
+    // next to someone flying (Stark 2026-11-13)
+    private static final EntityDataAccessor<org.joml.Vector3f> STUCK_AT = SynchedEntityData.defineId(NinjaThrown.class, EntityDataSerializers.VECTOR3);
     private Vec3 stuckOffset;
     private boolean stuckBlock;
     private int fuse = -1;
@@ -48,6 +51,7 @@ public class NinjaThrown extends ThrowableItemProjectile {
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
         super.defineSynchedData(builder);
         builder.define(STUCK, -1);
+        builder.define(STUCK_AT, new org.joml.Vector3f());
     }
 
     @Override
@@ -66,6 +70,18 @@ public class NinjaThrown extends ThrowableItemProjectile {
 
     @Override
     public void tick() {
+        if (level().isClientSide && entityData.get(STUCK) >= 0) {
+            // on the client: ride on the body it stuck to
+            Entity host = level().getEntity(entityData.get(STUCK));
+            setDeltaMovement(Vec3.ZERO);
+            if (host != null) {
+                org.joml.Vector3f off = entityData.get(STUCK_AT);
+                Vec3 at = host.position().add(off.x, off.y, off.z);
+                setOldPosAndRot();
+                setPos(at);
+            }
+            return;
+        }
         if (fuse >= 0) {
             // stuck: follow the body it is on, or stay on the block, until the fuse ends
             setDeltaMovement(Vec3.ZERO);
@@ -138,6 +154,7 @@ public class NinjaThrown extends ThrowableItemProjectile {
         }
         entityData.set(STUCK, target.getId());
         stuckOffset = at.subtract(target.position());
+        entityData.set(STUCK_AT, new org.joml.Vector3f((float) stuckOffset.x, (float) stuckOffset.y, (float) stuckOffset.z));
         fuse = 40;
         setNoGravity(true);
     }

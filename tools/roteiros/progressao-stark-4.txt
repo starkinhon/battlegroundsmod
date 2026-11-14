@@ -1,0 +1,19 @@
+espera 200
+dev preparar
+gamemode creative
+summon battlegroundsmod:pterodactilo ~10 ~40 ~
+summon battlegroundsmod:pterodactilo ~-10 ~12 ~5
+summon battlegroundsmod:pterodactilo ~ ~3 ~-8
+espera 20
+dev info @e[type=battlegroundsmod:pterodactilo]
+espera 100
+dev info @e[type=battlegroundsmod:pterodactilo]
+espera 100
+dev info @e[type=battlegroundsmod:pterodactilo]
+espera 200
+dev info @e[type=battlegroundsmod:pterodactilo]
+devc vista terceira
+devc olhar 0 -30
+espera 20
+devc print prog3/ceu_ptero
+sair

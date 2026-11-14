@@ -283,10 +283,6 @@
      1,
      "Marca Majin",
      "+20% de dano, sem regenerar em combate"
-    ],
-    [
-     "cristal_multiversal",
-     1
     ]
    ]
   },
@@ -402,10 +398,15 @@
    "quem": "Teste dos Guizos",
    "tipo": "DIÁRIA",
    "nome": "Teste dos Guizos",
-   "fala": "Pegue um guizo no toco do meio e segure 60 s. Ninjas Renegados e Ninken vêm tomar. Dois guizos = prêmio dobrado.",
+   "fala": "Pegue um guizo no toco do meio do campo e fique com ele por 60 s. Alguns ninjas renegados vão tentar tomar de você.",
    "passos": [
     [
-     "Segure um guizo por 60 s",
+     "Pegue um guizo no toco do meio",
+     0,
+     1
+    ],
+    [
+     "Fique com o guizo 60 s dentro do campo",
      0,
      60
     ]
@@ -424,7 +425,7 @@
      1
     ]
    ],
-   "mais": "Fica dentro do campo. Se te acertarem, o guizo pode cair da sua mão!"
+   "mais": "O tempo só conta com o guizo no inventário e você dentro do campo. Se um ninja te acertar, o guizo pode cair: pegue de volta. Dois guizos = prêmio dobrado."
   },
   {
    "id": "morte",
@@ -471,15 +472,15 @@
    "quem": "Espadachins da Névoa",
    "tipo": "ÚNICA",
    "nome": "A espada do túmulo",
-   "fala": "Puxe a espada do túmulo e a névoa fecha. Três ondas de espadachins.",
+   "fala": "No meio da ilha tem um túmulo com uma espada gigante cravada (ela brilha). Clique com o botão direito nela pra puxar: a névoa fecha e vêm três ondas de espadachins.",
    "passos": [
     [
-     "Puxe a espada",
+     "Clique com o botão direito na espada do túmulo",
      0,
      1
     ],
     [
-     "Vença as 3 ondas",
+     "Vença as 3 ondas de espadachins",
      0,
      3
     ]

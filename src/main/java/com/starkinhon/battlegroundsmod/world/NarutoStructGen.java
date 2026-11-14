@@ -1272,6 +1272,39 @@ public final class NarutoStructGen {
         w.force(X0 + 44, DY + 1, 2, BARREL);
         w.force(X0 + 45, DY + 1, 2, BARREL);
         w.force(X0 + 44, DY + 2, 2, BARREL);
+        // the fighting deck around the grave's islet (Stark 2026-11-13: the swordsmen's waves ended up fought in the water):
+        // a round wooden pier of the Mist's docks one block over the sea, on log piles down to the seabed, with a rope rail
+        // and lantern posts on the rim and an opening facing the bridge
+        int deckY = SL + 1;
+        for (int x = 54 - 24; x <= 54 + 24; x++) {
+            for (int z = 24 - 24; z <= 24 + 24; z++) {
+                double d = hyp(x - 54, z - 24);
+                int g = ground.at(x, z);
+                if (d > 23.5 || g >= deckY) {
+                    continue;
+                }
+                w.force(x, deckY, z, (Math.floorMod(x + z, 7) == 0) ? LOG : PLANK);
+                if (Math.floorMod(x, 5) == 0 && Math.floorMod(z, 5) == 0 || d > 22.5 && Math.floorMod(x + z, 4) == 0) {
+                    for (int y = g + 1; y < deckY; y++) {
+                        w.force(x, y, z, LOG);
+                    }
+                }
+            }
+        }
+        double gate = Math.atan2(0 - 24, (XEND - 2) - 54);
+        for (int i = 0; i < 180; i++) {
+            double a = i * Math.PI * 2 / 180;
+            double off = Math.abs(Math.atan2(Math.sin(a - gate), Math.cos(a - gate)));
+            int x = (int) Math.round(54 + Math.cos(a) * 23), z = (int) Math.round(24 + Math.sin(a) * 23);
+            if (off < 0.16 || ground.at(x, z) >= deckY) {
+                continue;
+            }
+            boolean post = i % 12 == 0 || Math.abs(off - 0.16) < 0.04;
+            w.force(x, deckY + 1, z, post ? LOG : FENCE);
+            if (post) {
+                w.force(x, deckY + 2, z, LANTERN);
+            }
+        }
         // the swordsman's grave
         int tx = 54, tz = 24, tg = ground.at(tx, tz);
         for (int x = tx - 2; x <= tx + 2; x++) {

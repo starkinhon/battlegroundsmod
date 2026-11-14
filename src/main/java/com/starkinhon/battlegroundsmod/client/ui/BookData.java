@@ -49,8 +49,12 @@ public final class BookData {
     private BookData() {
     }
 
+    private static String unisLang = "";
+
     public static List<Uni> unis() {
-        if (unis == null) {
+        String lang = net.minecraft.client.Minecraft.getInstance().getLanguageManager().getSelected();
+        if (unis == null || !unisLang.equals(lang)) {
+            unisLang = lang;
             List<Uni> out = new ArrayList<>();
             for (ChallengeSpec.Universe u : ChallengeSpec.get().universos()) {
                 if (u.desafios().isEmpty()) {
@@ -112,6 +116,12 @@ public final class BookData {
         }
         ArenaTemplate.Meta meta = ArenaTemplate.meta(c.id());
         String lugar = meta != null && meta.nome() != null && !meta.nome().equals(c.id()) ? meta.nome() : "";
+        // the arena's name and the challenger's line in the game's language (the data files are in Portuguese; Stark
+        // 2026-11-13: the book mixed both languages with the game in English)
+        if (!lugar.isEmpty()) {
+            lugar = Component.translatableWithFallback("arena.battlegroundsmod." + c.id(), lugar).getString();
+        }
+        String foco = c.foco() == null ? "" : Component.translatableWithFallback("challenge.battlegroundsmod." + c.id() + ".foco", c.foco()).getString();
         ItemStack soul = ItemStack.EMPTY;
         if (powerId != null) {
             var holder = ModItems.SOULS.get(powerId);
@@ -120,7 +130,7 @@ public final class BookData {
             }
         }
         boolean boss = ChallengeArenas.isBoss(c.id());
-        return new Ch(c.id(), nome, nome, boss, tier, c.foco(), itens, cor, lugar, c.id(), soul, skills, uni);
+        return new Ch(c.id(), nome, nome, boss, tier, foco, itens, cor, lugar, c.id(), soul, skills, uni);
     }
 
     public static String tierName(int tier) {

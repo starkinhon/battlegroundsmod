@@ -68,10 +68,37 @@ public final class Journal {
         return new ItemStack(item, n);
     }
 
+    // The game's language when the catalog was read: Portuguese reads missoes.json, any other language the English
+    // missoes_en_us.json (Stark 2026-11-13: game in English, the missions and the NPC lines came in Portuguese).
+    private static String catalogLang = "";
+
+    private static String file() {
+        String lang = Minecraft.getInstance().getLanguageManager().getSelected();
+        return lang.startsWith("pt") ? "ui/missoes.json" : "ui/missoes_en_us.json";
+    }
+
+    // The mission's kind, in either language's file (ÚNICA / ONCE, DIÁRIA / DAILY).
+    public static boolean daily(Mission m) {
+        return m.tipo().contains("DIÁRIA") || m.tipo().contains("DAILY");
+    }
+
+    public static boolean dailyFirst(Mission m) {
+        return m.tipo().startsWith("DIÁRIA") || m.tipo().startsWith("DAILY");
+    }
+
+    public static boolean onceFirst(Mission m) {
+        return m.tipo().startsWith("ÚNICA") || m.tipo().startsWith("ONCE");
+    }
+
     public static Map<String, List<Mission>> catalog() {
+        if (catalog != null && !catalogLang.equals(file())) {
+            catalog = null;
+            BY_ID.clear();
+        }
         if (catalog == null) {
             catalog = new LinkedHashMap<>();
-            try (var in = Minecraft.getInstance().getResourceManager().open(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "ui/missoes.json"))) {
+            catalogLang = file();
+            try (var in = Minecraft.getInstance().getResourceManager().open(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, catalogLang))) {
                 JsonObject root = JsonParser.parseReader(new InputStreamReader(in, StandardCharsets.UTF_8)).getAsJsonObject();
                 for (var e : root.entrySet()) {
                     List<Mission> list = new ArrayList<>();

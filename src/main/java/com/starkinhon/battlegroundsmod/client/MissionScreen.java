@@ -463,7 +463,7 @@ public class MissionScreen extends Screen {
         return switch (state) {
             case "feita" -> tr("volta_amanhecer", min);
             case "concluida" -> tr("pra_sempre");
-            default -> m.tipo().contains("DIÁRIA") ? tr("diaria_hoje") : tr("uma_vez");
+            default -> com.starkinhon.battlegroundsmod.client.ui.Journal.daily(m) ? tr("diaria_hoje") : tr("uma_vez");
         };
     }
 
@@ -597,7 +597,7 @@ public class MissionScreen extends Screen {
         for (Journal.Reward r : m.rec()) {
             float tx = compact ? cx + ri * 24 : cx, ty = yy;
             ri++;
-            boolean special = m.tipo().startsWith("ÚNICA") || UiIcons.special(r.id());
+            boolean special = com.starkinhon.battlegroundsmod.client.ui.Journal.onceFirst(m) || UiIcons.special(r.id());
             int gc = special ? GOLD : rgb(120, 190, 255);
             Px.glow(tx + 10, ty + 10, 14, gc, 0.38f + 0.1f * (float) Math.sin(Px.time * 2.5f));
             R(tx, ty, 20, 20, rgb(14, 12, 26), 0.92f);
@@ -622,7 +622,7 @@ public class MissionScreen extends Screen {
                 Px.g.pose().popPose();
             }
             String name = !r.name().isEmpty() ? r.name() : r.id().equals(UiIcons.PODER) ? tr("poder") : stack.isEmpty() ? r.id() : stack.getHoverName().getString();
-            String sub = !r.desc().isEmpty() ? r.desc() : r.id().equals(UiIcons.PODER) ? tr("poder_sub") : m.tipo().contains("DIÁRIA") ? tr("toda_vez") : tr("uma_vez_r");
+            String sub = !r.desc().isEmpty() ? r.desc() : r.id().equals(UiIcons.PODER) ? tr("poder_sub") : com.starkinhon.battlegroundsmod.client.ui.Journal.daily(m) ? tr("toda_vez") : tr("uma_vez_r");
             List<String> tip = new ArrayList<>();
             tip.add(name);
             if (!r.desc().isEmpty()) {

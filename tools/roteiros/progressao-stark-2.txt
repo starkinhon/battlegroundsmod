@@ -1,0 +1,67 @@
+# Segunda parte: mobs perto das estruturas (spawn ligado, de noite), pterodáctilos voando, dentro das casas.
+# gradlew runClient -Pmundo=ProgStark -Proteiro=progressao-stark-2
+espera 200
+dev preparar
+gamerule doMobSpawning true
+gamerule doDaylightCycle false
+time set 18000
+gamemode creative
+effect give @s minecraft:resistance infinite 4 true
+devc hud on
+# ---- pterodáctilos: dois soltos no céu, posição agora e 5 s depois
+summon battlegroundsmod:pterodactilo ~10 ~25 ~
+summon battlegroundsmod:pterodactilo ~-10 ~28 ~5
+espera 20
+dev info @e[type=battlegroundsmod:pterodactilo]
+espera 100
+dev info @e[type=battlegroundsmod:pterodactilo]
+espera 100
+dev info @e[type=battlegroundsmod:pterodactilo]
+# ---- Kame House de noite com spawn ligado: 90 s parado na ilha
+soul estruturadb kame
+espera 600
+soul estruturadb kame centro
+espera 1800
+say KAME_MOBS
+say @e[type=!minecraft:player,type=!minecraft:item,type=!minecraft:experience_orb,distance=..44]
+devc print prog2/01_kame_noite
+# ---- dentro da Kame House
+execute as @e[type=battlegroundsmod:npc_mestre_kame,limit=1,sort=nearest] at @s run tp @p ~ ~1 ~
+espera 20
+devc vista primeira
+devc olhar 0 35
+espera 10
+devc print prog2/02_kame_dentro_n
+devc olhar 90 35
+espera 10
+devc print prog2/03_kame_dentro_l
+devc olhar 180 35
+espera 10
+devc print prog2/04_kame_dentro_s
+devc olhar 270 35
+espera 10
+devc print prog2/05_kame_dentro_o
+# ---- Casa do Goku de noite com spawn ligado
+soul estruturadb goku
+espera 600
+soul estruturadb goku centro
+espera 1800
+say GOKU_MOBS
+say @e[type=!minecraft:player,type=!minecraft:item,type=!minecraft:experience_orb,distance=..44]
+devc print prog2/06_goku_noite
+execute as @e[type=battlegroundsmod:npc_gohan,limit=1,sort=nearest] at @s run tp @p ~ ~1 ~
+espera 20
+devc olhar 0 35
+espera 10
+devc print prog2/07_goku_dentro_n
+devc olhar 90 35
+espera 10
+devc print prog2/08_goku_dentro_l
+devc olhar 180 35
+espera 10
+devc print prog2/09_goku_dentro_s
+devc olhar 270 35
+espera 10
+devc print prog2/10_goku_dentro_o
+gamerule doDaylightCycle true
+sair
