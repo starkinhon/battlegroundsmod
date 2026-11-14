@@ -1,0 +1,125 @@
+{
+ "parent": "minecraft:block/block",
+ "textures": {
+  "bar": "battlegroundsmod:block/poste_de_rua",
+  "ins": "minecraft:block/white_terracotta",
+  "particle": "battlegroundsmod:block/poste_de_rua"
+ },
+ "elements": [
+  {
+   "from": [
+    7,
+    11,
+    0
+   ],
+   "to": [
+    9,
+    13,
+    16
+   ],
+   "faces": {
+    "north": {
+     "texture": "#bar"
+    },
+    "south": {
+     "texture": "#bar"
+    },
+    "east": {
+     "texture": "#bar"
+    },
+    "west": {
+     "texture": "#bar"
+    },
+    "up": {
+     "texture": "#bar"
+    },
+    "down": {
+     "texture": "#bar"
+    }
+   }
+  },
+  {
+   "from": [
+    6.5,
+    13,
+    6.5
+   ],
+   "to": [
+    9.5,
+    14,
+    9.5
+   ],
+   "faces": {
+    "north": {
+     "texture": "#ins"
+    },
+    "south": {
+     "texture": "#ins"
+    },
+    "east": {
+     "texture": "#ins"
+    },
+    "west": {
+     "texture": "#ins"
+    },
+    "up": {
+     "texture": "#ins"
+    },
+    "down": {
+     "texture": "#ins"
+    }
+   }
+  },
+  {
+   "from": [
+    7,
+    14,
+    7
+   ],
+   "to": [
+    9,
+    16,
+    9
+   ],
+   "faces": {
+    "north": {
+     "texture": "#ins"
+    },
+    "south": {
+     "texture": "#ins"
+    },
+    "east": {
+     "texture": "#ins"
+    },
+    "west": {
+     "texture": "#ins"
+    },
+    "up": {
+     "texture": "#ins"
+    },
+    "down": {
+     "texture": "#ins"
+    }
+   }
+  }
+ ],
+ "display": {
+  "gui": {
+   "rotation": [
+    30,
+    45,
+    0
+   ],
+   "translation": [
+    0,
+    -3,
+    0
+   ],
+   "scale": [
+    0.9,
+    0.9,
+    0.9
+   ]
+  }
+ }
+}

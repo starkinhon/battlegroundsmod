@@ -76,7 +76,7 @@ public final class Byakuya {
         for (LivingEntity e : Combat.inRadius((ServerLevel) caster.level(), caster.getEyePosition(), range, caster)) {
             Vec3 to = Combat.center(e).subtract(caster.getEyePosition());
             double d = to.length();
-            if (d < 0.5 || to.normalize().dot(look) < 0.55 || !caster.hasLineOfSight(e)) {
+            if (d < 0.5 || to.normalize().dot(look) < 0.55 || !Combat.lockable(e) || !caster.hasLineOfSight(e)) {
                 continue;
             }
             if (d < bestD) {

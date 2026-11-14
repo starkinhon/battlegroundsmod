@@ -215,6 +215,7 @@ public final class SubFx {
         TRACKED.clear();
         IceShell.clear();
         DbFx.clear();
+        AuraFx.clear();
         OpmFx.clear();
         BleachFx.clear();
     }

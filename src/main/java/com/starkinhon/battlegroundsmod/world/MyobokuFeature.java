@@ -95,6 +95,7 @@ public final class MyobokuFeature extends Feature<NoneFeatureConfiguration> {
                 .thenComparingInt(MyobokuGen.Obj::z));
         // the vines go in last, once the walls they hang on are there
         List<BlockPos> vines = new ArrayList<>();
+        FluidEdges edges = new FluidEdges(); // water spills over its steps (FluidEdges)
         for (MyobokuGen.Obj o : mine) {
             int[] vox = piece(o, ground.applyAsInt(o.x(), o.z()), ground);
             boolean plant = o.kind().plant;
@@ -117,9 +118,10 @@ public final class MyobokuFeature extends Feature<NoneFeatureConfiguration> {
                     vines.add(pos.immutable());
                     continue;
                 }
-                level.setBlock(pos, block(t), 2);
+                edges.set(level, pos, block(t), 2);
             }
         }
+        edges.apply(level, 2);
         for (BlockPos p : vines) {
             if (level.getBlockState(p).isAir() || level.getBlockState(p).canBeReplaced() && level.getBlockState(p).getFluidState().isEmpty()) {
                 level.setBlock(p, vine(level, p), 2);

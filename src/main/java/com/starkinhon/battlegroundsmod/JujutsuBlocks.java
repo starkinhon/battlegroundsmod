@@ -191,6 +191,8 @@ public final class JujutsuBlocks {
     public static final DeferredBlock<Block> SHIBUYA_SIDEWALK = stone("calcada_de_shibuya", MapColor.STONE, 0);
     public static final DeferredBlock<Block> SHIBUYA_SIDEWALK_DARK = stone("calcada_escura_de_shibuya", MapColor.STONE, 0);
     public static final DeferredBlock<Block> TACTILE_PAVING = stone("piso_tatil", MapColor.COLOR_YELLOW, 0);
+    // Manhole in Shibuya's asphalt: the steam of the street comes out of it (client/fx/ShibuyaAirFx).
+    public static final DeferredBlock<Block> MANHOLE = stone("bueiro", MapColor.COLOR_GRAY, 0);
     public static final DeferredBlock<Block> CURB = stone("meio_fio", MapColor.QUARTZ, 0);
     public static final DeferredBlock<Block> LOT_GROUND = stone("chao_de_lote", MapColor.COLOR_GRAY, 0);
     public static final DeferredBlock<Block> ALLEY_GROUND = stone("chao_de_beco", MapColor.COLOR_GRAY, 0);
@@ -239,6 +241,9 @@ public final class JujutsuBlocks {
     public static final DeferredBlock<Block> WATER_TANK = stone("caixa_dagua", MapColor.METAL, 0);
     public static final DeferredBlock<ThinPlantBlock> AVIATION_LIGHT = post("luz_de_aviao", MapColor.COLOR_RED, SoundType.GLASS, 10, Block.box(4, 0, 4, 12, 8, 12));
     public static final DeferredBlock<ThinPlantBlock> STREET_POLE = post("poste_de_rua", MapColor.METAL, SoundType.METAL, 0, Block.box(6, 0, 6, 10, 16, 10));
+    // The power line: a crossarm whose cable to the next pole is drawn by the client (PowerLineBlock).
+    public static final DeferredBlock<PowerLineBlock> POWER_LINE = add(ModBlocks.BLOCKS.registerBlock("fio_de_rede", PowerLineBlock::new,
+            BlockBehaviour.Properties.of().mapColor(MapColor.METAL).strength(1.0f, 3.0f).sound(SoundType.METAL).noOcclusion()));
     public static final DeferredBlock<ThinPlantBlock> WIRE = post("fio_de_poste", MapColor.COLOR_BLACK, SoundType.WOOL, 0, Block.box(7, 7, 7, 9, 9, 9));
     public static final DeferredBlock<Block> STREET_LAMP = stone("luminaria_de_rua", MapColor.SNOW, 15);
     public static final DeferredBlock<Block> TRAFFIC_BOX = stone("caixa_de_semaforo", MapColor.COLOR_BLACK, 0);

@@ -111,6 +111,8 @@ public final class ChallengeArenas {
         UUID boss;
         boolean bossDied;
         int respawns;
+        // Modo Difícil: the strongest player's tier when the fight was asked for (-1 = Normal)
+        int hardTier = -1;
         State state = State.COUNTDOWN;
     }
 
@@ -217,12 +219,33 @@ public final class ChallengeArenas {
     // The client's copy of its records (ModPayloads.SyncArenaRecords): id -> {wins, best seconds}.
     public static volatile java.util.Map<String, int[]> clientRecords = java.util.Map.of();
 
+    // Modo Difícil (Stark 2026-11-14: "vai deixar os mobs sempre no mesmo tier que você"): every challenger comes at the
+    // tier of the strongest player of the group, if it was weaker than that; Normal is the book as it was. Saved per player
+    // (and kept on death); the one who starts the fight decides it for the group.
+    private static final String HARD = "souls_desafio_dificil";
+    public static volatile boolean clientHard;
+
+    public static boolean hard(ServerPlayer player) {
+        return player.getPersistentData().getBoolean(HARD);
+    }
+
+    public static void setHard(ServerPlayer player, boolean hard) {
+        player.getPersistentData().putBoolean(HARD, hard);
+        PacketDistributor.sendToPlayer(player, new ModPayloads.ArenaHard(hard));
+    }
+
+    // The challenger's tier in this fight: its own, or in Modo Difícil the strongest player's when that is above it.
+    private static int fightTier(Session session, int own) {
+        return session.hardTier >= 0 ? Math.min(own, session.hardTier) : own;
+    }
+
     public static List<String> wins(Player player) {
         return player.getData(ModAttachments.ARENA_WINS);
     }
 
     public static void syncWins(ServerPlayer player) {
         PacketDistributor.sendToPlayer(player, new ModPayloads.SyncArenaWins(List.copyOf(wins(player))));
+        PacketDistributor.sendToPlayer(player, new ModPayloads.ArenaHard(hard(player)));
         PacketDistributor.sendToPlayer(player, new ModPayloads.SyncArenaRecords(List.copyOf(player.getData(ModAttachments.ARENA_RECORDS))));
     }
 
@@ -332,6 +355,13 @@ public final class ChallengeArenas {
         session.meta = meta;
         session.arena = key;
         session.center = new BlockPos(slot * SPACING, template == null ? FLOOR_Y : floorY(meta), ROW_Z);
+        if (hard(player)) {
+            int best = com.starkinhon.battlegroundsmod.power.Tiers.HUMANO;
+            for (ServerPlayer p : team) {
+                best = Math.min(best, com.starkinhon.battlegroundsmod.power.Tiers.of(p));
+            }
+            session.hardTier = best;
+        }
         for (ServerPlayer p : team) {
             boolean fromArena = isArena(p.level().dimension());
             session.back.put(p.getUUID(), new Back(fromArena ? Universes.homeLevel(p).dimension() : p.level().dimension(),
@@ -665,6 +695,9 @@ public final class ChallengeArenas {
                 living.setHealth(living.getMaxHealth());
             }
         }
+        if (session.hardTier >= 0 && boss instanceof SoulBoss soul) {
+            soul.arenaTier(session.hardTier);
+        }
         session.boss = boss.getUUID();
         session.state = State.FIGHT;
         Component sub = n > 1 ? Component.translatable("message.battlegroundsmod.arena_group_health", n, n) : Component.empty();
@@ -714,7 +747,7 @@ public final class ChallengeArenas {
                 syncWins(player);
                 giveItems(player, ChallengeSpec.get().challenge(session.id));
             }
-            arenaPoder(player, session.id, first);
+            arenaPoder(player, session, first);
             title(player, Component.translatable("message.battlegroundsmod.arena_won").withStyle(s -> s.withColor(0xD8352A).withBold(true)), name(session.id).copy());
             player.displayClientMessage(Component.translatable(first ? "message.battlegroundsmod.arena_unlocked" : "message.battlegroundsmod.arena_again",
                     name(session.id), RETURN_DELAY / 20), false);
@@ -746,10 +779,11 @@ public final class ChallengeArenas {
     // Poder for beating a challenge (Stark 2026-11-10: "os bosses dos desafios darem poder quando você vencer"). The kill
     // in the arena pays nothing by itself (Progression skips the arenas), this does: the first win a good part of the
     // player's tier (a whole tier for a book boss like Freeza), a rematch a little, nothing once 3+ tiers above it.
-    private static void arenaPoder(ServerPlayer player, String id, boolean first) {
+    private static void arenaPoder(ServerPlayer player, Session session, boolean first) {
         if (!Progression.on(player)) {
             return;
         }
+        String id = session.id;
         int tier = com.starkinhon.battlegroundsmod.power.Tiers.of(player);
         int bossTier = tier;
         try {
@@ -757,6 +791,8 @@ public final class ChallengeArenas {
             bossTier = t == null ? tier : t;
         } catch (RuntimeException ignored) {
         }
+        // Modo Difícil: the challenger was at the group's tier, and pays like one of that tier
+        bossTier = fightTier(session, bossTier);
         var spec = com.starkinhon.battlegroundsmod.skill.ProgressionSpec.get();
         double worth = Progression.value(bossTier) * spec.multSubAlma();
         double gain;
@@ -902,7 +938,8 @@ public final class ChallengeArenas {
     // Puts one generated arena back, a slice per tick (step): 1. every block the generator made (only where the world
     // differs, so after the first time it is mostly checking); 2. the fight circle and a little past it cleaned of what
     // the last fight left (holes filled above, blocks that were not there removed); 3. invisible walls round the circle
-    // and a ceiling at its height, only where the scenery leaves air; 4. the arena's own biome (sky, fog, grass).
+    // and a ceiling at its height, only where the scenery leaves air; then the water and lava spill over their steps
+    // (FluidEdges); 4. the arena's own biome (sky, fog, grass).
     private static final class Build {
         private final ArenaTemplate t;
         private final ArenaTemplate.Meta m;
@@ -919,6 +956,9 @@ public final class ChallengeArenas {
         private final net.minecraft.world.level.levelgen.structure.BoundingBox fluidBox;
         private final int ticketRadius;
         private boolean ticketed;
+        // the water and lava sources placed, for their spill over the steps (phase 3, FluidEdges)
+        private final it.unimi.dsi.fastutil.longs.LongArrayList fluids = new it.unimi.dsi.fastutil.longs.LongArrayList();
+        private final BlockPos.MutableBlockPos edgePos = new BlockPos.MutableBlockPos();
         int chunkWaitTicks;
         int chunkCount;
 
@@ -940,8 +980,9 @@ public final class ChallengeArenas {
             maxCx = (c.getX() + x1) >> 4;
             minCz = (c.getZ() + z0) >> 4;
             maxCz = (c.getZ() + z1) >> 4;
-            fluidBox = new net.minecraft.world.level.levelgen.structure.BoundingBox(c.getX() + x0, c.getY() + m.minY() - 1,
-                    c.getZ() + z0, c.getX() + x1, c.getY() + m.maxY() + 1, c.getZ() + z1);
+            // one block wider than the scenery: a fluid's spill (FluidEdges) can land just past the last column
+            fluidBox = new net.minecraft.world.level.levelgen.structure.BoundingBox(c.getX() + x0 - 1, c.getY() + m.minY() - 1,
+                    c.getZ() + z0 - 1, c.getX() + x1 + 1, c.getY() + m.maxY() + 1, c.getZ() + z1 + 1);
             ticketAt = new net.minecraft.world.level.ChunkPos(c);
             ticketRadius = Math.min(32, Math.max(Math.max(ticketAt.x - minCx, maxCx - ticketAt.x), Math.max(ticketAt.z - minCz, maxCz - ticketAt.z)) + 1);
             phase = -1;
@@ -991,6 +1032,9 @@ public final class ChallengeArenas {
             pos.set(x, y, z);
             if (level.getBlockState(pos) != state) {
                 level.setBlock(pos, state, FLAGS);
+            }
+            if (phase == 0 && state.getFluidState().isSource()) {
+                fluids.add(pos.asLong());
             }
             return 1;
         }
@@ -1108,13 +1152,24 @@ public final class ChallengeArenas {
                         }
                     }
                     case 3 -> {
+                        // the rivers and lava paths spill over their steps (one stream, not a row of puddles). After the
+                        // clearing, so its air is the real air; still no tick, so nothing floods.
+                        if (cursor >= fluids.size()) {
+                            phase = 4;
+                            cursor = 0;
+                            continue;
+                        }
+                        long p = fluids.getLong(cursor++);
+                        ops += 1 + com.starkinhon.battlegroundsmod.world.FluidEdges.edge(level, edgePos, BlockPos.getX(p), BlockPos.getY(p), BlockPos.getZ(p), FLAGS);
+                    }
+                    case 4 -> {
                         int w = maxCx - minCx + 1;
                         int total = w * (maxCz - minCz + 1);
                         if (cursor >= total) {
                             if (!changed.isEmpty()) {
                                 level.getChunkSource().chunkMap.resendBiomesForChunks(changed);
                             }
-                            phase = 4;
+                            phase = 5;
                             return true;
                         }
                         biome(minCx + cursor % w, minCz + cursor / w);

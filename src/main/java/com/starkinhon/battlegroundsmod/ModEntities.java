@@ -242,6 +242,10 @@ public final class ModEntities {
 
     // The Dragon Ball biomes' own creatures (Stark 2026-11-11, prévia mobs-db aprovada; animal/db): the Namekians of
     // Namek, the giant fish of the Mar do Sul, Android 8 in the Norte Gelado, the Bear Thief in Paozu, Bora by Karin.
+    // Shibuya's pedestrians (npc/Pedestre, PedestreCrowd): the player's size, never saved.
+    public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.npc.Pedestre>> PEDESTRE = ENTITY_TYPES.register("pedestre",
+            () -> EntityType.Builder.<com.starkinhon.battlegroundsmod.npc.Pedestre>of(com.starkinhon.battlegroundsmod.npc.Pedestre::new, MobCategory.MISC)
+                    .sized(0.6f, 1.8f).eyeHeight(1.62f).clientTrackingRange(8).updateInterval(2).noSave().build("pedestre"));
     public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.animal.db.Namekiano>> NAMEKIANO = ENTITY_TYPES.register("namekiano",
             () -> EntityType.Builder.<com.starkinhon.battlegroundsmod.animal.db.Namekiano>of(com.starkinhon.battlegroundsmod.animal.db.Namekiano::new, MobCategory.MONSTER)
                     .sized(0.85f, 2.2f).eyeHeight(1.95f).clientTrackingRange(10).build("namekiano"));
@@ -291,6 +295,19 @@ public final class ModEntities {
     public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.animal.naruto.NarutoMob>> NINJA_RENEGADO = NARUTO_MOBS.get("ninja_renegado");
     public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.animal.naruto.NarutoMob>> NINJA_SOM = NARUTO_MOBS.get("ninja_som");
     public static final Supplier<EntityType<SoulMob>> ANBU_RAIZ = mob("anbu_raiz");
+
+    // The Jujutsu biomes' curses (Stark 2026-11-14, preview tools/mobs/jjmobs approved: "porta"): one entity type per kind
+    // ("jj_" + the preview's id), all one class (animal/jjmob/JjMob, its kind from the id), on the Naruto creatures' body.
+    public static final Map<String, Supplier<EntityType<com.starkinhon.battlegroundsmod.animal.jjmob.JjMob>>> JJ_MOBS = new LinkedHashMap<>();
+
+    static {
+        for (com.starkinhon.battlegroundsmod.animal.naruto.NarutoSpec.Spec spec : com.starkinhon.battlegroundsmod.animal.jjmob.JjMobSpec.all()) {
+            final float fw = spec.width, fh = spec.height;
+            JJ_MOBS.put(spec.id, ENTITY_TYPES.register(spec.id, () -> EntityType.Builder
+                    .<com.starkinhon.battlegroundsmod.animal.jjmob.JjMob>of(com.starkinhon.battlegroundsmod.animal.jjmob.JjMob::new, MobCategory.MONSTER)
+                    .sized(fw, fh).eyeHeight(fh * 0.85f).clientTrackingRange(spec.height > 3 || spec.width > 1.5f ? 12 : 10).build(spec.id)));
+        }
+    }
 
     // Common enemies of Jujutsu.
     public static final Supplier<EntityType<SoulMob>> MALDICAO_MENOR = mob("maldicao_menor");
@@ -392,6 +409,7 @@ public final class ModEntities {
         for (Supplier<EntityType<SoulMob>> type : FIGHTERS) {
             event.put(type.get(), SoulBoss.createAttributes().build());
         }
+        event.put(PEDESTRE.get(), com.starkinhon.battlegroundsmod.npc.Pedestre.createAttributes().build());
         event.put(NAMEKIANO.get(), com.starkinhon.battlegroundsmod.animal.db.Namekiano.attributes().build());
         event.put(ANDROIDE_8.get(), com.starkinhon.battlegroundsmod.animal.db.Androide8.attributes().build());
         event.put(LADRAO_URSO.get(), com.starkinhon.battlegroundsmod.animal.db.LadraoUrso.attributes().build());
@@ -403,6 +421,10 @@ public final class ModEntities {
         for (var e : NARUTO_MOBS.entrySet()) {
             event.put(e.getValue().get(), com.starkinhon.battlegroundsmod.animal.naruto.NarutoMob
                     .attributes(com.starkinhon.battlegroundsmod.animal.naruto.NarutoSpec.get(e.getKey())).build());
+        }
+        for (var e : JJ_MOBS.entrySet()) {
+            event.put(e.getValue().get(), com.starkinhon.battlegroundsmod.animal.jjmob.JjMob
+                    .attributes(com.starkinhon.battlegroundsmod.animal.jjmob.JjMobSpec.get(e.getKey())).build());
         }
         event.put(NPC_GOHAN.get(), com.starkinhon.battlegroundsmod.npc.UniverseNpc.createAttributes().build());
         event.put(NPC_KORIN.get(), com.starkinhon.battlegroundsmod.npc.UniverseNpc.createAttributes().build());

@@ -340,7 +340,9 @@
             "name": "HighPass",
             "type": "float",
             "count": 1,
-            "values": [0.0]
+            "values": [
+                0.0
+            ]
         },
         {
             "name": "GlowPass",
@@ -398,6 +400,84 @@
                 0.8,
                 0.74,
                 0.62
+            ]
+        },
+        {
+            "name": "Style",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0
+            ]
+        },
+        {
+            "name": "Comet",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0
+            ]
+        },
+        {
+            "name": "PullAmt",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0
+            ]
+        },
+        {
+            "name": "Burst",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0
+            ]
+        },
+        {
+            "name": "Flicker",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0
+            ]
+        },
+        {
+            "name": "Outline",
+            "type": "float",
+            "count": 1,
+            "values": [
+                2.5
+            ]
+        },
+        {
+            "name": "TailDir",
+            "type": "float",
+            "count": 3,
+            "values": [
+                0,
+                1,
+                0
+            ]
+        },
+        {
+            "name": "PullPos",
+            "type": "float",
+            "count": 3,
+            "values": [
+                0,
+                0,
+                0
+            ]
+        },
+        {
+            "name": "Blow",
+            "type": "float",
+            "count": 3,
+            "values": [
+                0,
+                0,
+                0
             ]
         }
     ]

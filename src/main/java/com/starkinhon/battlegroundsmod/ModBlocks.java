@@ -20,6 +20,11 @@ public final class ModBlocks {
             net.minecraft.world.level.block.entity.BlockEntityType<TelaoBlockEntity>> TELAO = BLOCK_ENTITIES.register("telao",
                     () -> net.minecraft.world.level.block.entity.BlockEntityType.Builder.of(TelaoBlockEntity::new,
                             JujutsuBlocks.BIG_SCREEN.get()).build(null));
+    // The power line (PowerLineBlock): its block entity only keeps, on the client, where its cable runs to.
+    public static final net.neoforged.neoforge.registries.DeferredHolder<net.minecraft.world.level.block.entity.BlockEntityType<?>,
+            net.minecraft.world.level.block.entity.BlockEntityType<PowerLineBlockEntity>> POWER_LINE = BLOCK_ENTITIES.register("fio_de_rede",
+                    () -> net.minecraft.world.level.block.entity.BlockEntityType.Builder.of(PowerLineBlockEntity::new,
+                            JujutsuBlocks.POWER_LINE.get()).build(null));
 
     // Namek's cliffs and mesas: pale pink-beige rock, and a darker band for the layers.
     public static final DeferredBlock<Block> NAMEK_ROCK = rock("namek_rock", MapColor.TERRACOTTA_WHITE);

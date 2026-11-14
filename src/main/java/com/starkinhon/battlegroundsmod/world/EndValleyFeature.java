@@ -59,6 +59,7 @@ public final class EndValleyFeature extends Feature<NoneFeatureConfiguration> {
 
     @Override
     public boolean place(FeaturePlaceContext<NoneFeatureConfiguration> context) {
+        FluidEdges edges = new FluidEdges(); // the river spills over its steps instead of sitting in puddles (FluidEdges)
         WorldGenLevel level = context.level();
         ChunkGenerator generator = context.chunkGenerator();
         RandomState random = ((ServerLevel) level.getLevel()).getChunkSource().randomState();
@@ -127,6 +128,7 @@ public final class EndValleyFeature extends Feature<NoneFeatureConfiguration> {
                         if (!level.getBlockState(pos.set(x, y, z)).equals(st)) {
                             level.setBlock(pos, st, 2);
                         }
+                        edges.note(pos, st);
                     }
                 }
             }
@@ -234,6 +236,7 @@ public final class EndValleyFeature extends Feature<NoneFeatureConfiguration> {
                 level.setBlock(pos, block(t), 2);
             }
         }
+        edges.apply(level, 2);
         return true;
     }
 

@@ -16,6 +16,8 @@ public final class FxShaders {
     // Colônia do Jogo do Abate: the dome and sky (ColoniaAirFx), and the Jujutsu screen grade.
     static ShaderInstance colonia;
     static ShaderInstance jjGrade;
+    // Shibuya's screen grade (ShibuyaAirFx).
+    static ShaderInstance shibuyaGrade;
     static ShaderInstance impact;
     static ShaderInstance moonScreen;
     static ShaderInstance warp;
@@ -59,6 +61,8 @@ public final class FxShaders {
     static ShaderInstance fugaOrb;
     // Freeza's Supernova fire dome (NovaRenderer); without it the landing keeps its rings, flash and shake.
     static ShaderInstance novaVol;
+    // The vapour off an exorcised curse (CurseVapor); without it the body still darkens and evaporates.
+    static ShaderInstance jjVapor;
     // Sukuna's thrown Dismantle (DismantleRenderer); without it the cuts still hit, they just don't show.
     static ShaderInstance dismantle;
     // Sukuna's technique cuts (SukunaCutsRenderer: the Z, the chant, the World Cutting Slash, the Shift+Z lines).
@@ -180,6 +184,12 @@ public final class FxShaders {
         } catch (Exception e) {
             BattlegroundsMod.LOGGER.error("Could not load the Fuga shaders", e);
         }
+        // On its own: a problem here only hides the vapour of the exorcised curses.
+        try {
+            register(event, "souls_jj_vapor", DefaultVertexFormat.POSITION, s -> jjVapor = s);
+        } catch (Exception e) {
+            BattlegroundsMod.LOGGER.error("Could not load the curse vapour shader", e);
+        }
         // On its own: a problem here only hides the Supernova's fire dome.
         try {
             register(event, "souls_nova_vol", DefaultVertexFormat.POSITION, s -> novaVol = s);
@@ -273,6 +283,12 @@ public final class FxShaders {
             register(event, "fx_jjgrade", DefaultVertexFormat.POSITION, s -> jjGrade = s);
         } catch (Exception e) {
             BattlegroundsMod.LOGGER.error("Could not load the Jujutsu screen grade shader", e);
+        }
+        // On its own: without it Shibuya keeps its neon, steam and fog, just no screen grade.
+        try {
+            register(event, "fx_shibuyagrade", DefaultVertexFormat.POSITION, s -> shibuyaGrade = s);
+        } catch (Exception e) {
+            BattlegroundsMod.LOGGER.error("Could not load the Shibuya screen grade shader", e);
         }
     }
 

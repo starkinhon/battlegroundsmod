@@ -29,6 +29,12 @@ uniform float Twist;
 uniform float GlowPass;
 uniform float W;
 uniform vec3 Size;
+uniform float Style;
+uniform float Comet;
+uniform float Burst;
+uniform float Flicker;
+uniform float Outline;
+uniform vec3 TailDir;
 
 in vec3 vN;
 in vec3 vV;
@@ -455,20 +461,65 @@ void main() {
         vec3 col = mix(Dust, Color, smoothstep(0.4, 1., -band) * (1. - Life));
         if (GlowPass > 0.5) discard;
         emit(col * a, a);
-    } else if (kind == 5) {                                            // aura shell
-        float face = f;
-        vec3 q = vec3(vO.x * 2.3, vO.y * 1.7 - Phase * 1.35, vO.z * 2.3) + Seed * 3.;
-        float warp = fbm3(q * 0.8 + 11.) * 0.9; float big = fbm4(q + vec3(warp, 0., -warp)); float fine = gn(q * 3.3 + vec3(0., -Phase * 1.9, 0.));
-        float fire = (0.68 * big + 0.32 * fine) * 0.5 + 0.5;
-        float dens = fire + 0.42 * smoothstep(0.25, 0.85, rim) + 0.6 * clamp(vD * 1.6, 0., 1.) + 0.18 * (1. - smoothstep(0., 0.3, vH)) - 0.22 * vH * vH;
-        float front = Growth * 1.4; dens -= 0.7 * smoothstep(front - 0.3, front, vH);
+    } else if (kind == 5) {                                            // aura shell (Style 1: the remake, see souls_ki.vsh)
+        float face = f, cm = min(Comet, 1.);
+        float c = dot(vO, TailDir), hU = c * 0.5 + 0.5, hN = 1. - hU;
+        vec3 q = vec3(vO.x * 2.3, c * 1.7 * (1. + 0.6 * Comet) - Phase * 1.35, vO.z * 2.3) + Seed * 3.;
+        float warp = fbm3(q * 0.8 + 11.) * 0.9; float big = fbm4(q + vec3(warp, 0., -warp));
+        float fine = gn(q * (3.3 + 1.6 * Flicker) + vec3(0., -Phase * (1.9 + 1.5 * Flicker), 0.));
+        float fire = (mix(0.68, 0.5, Flicker) * big + mix(0.32, 0.5, Flicker) * fine) * 0.5 + 0.5;
+        float lagF = gn(vec3(vO.x * 2.2, 0.37, vO.z * 2.2) + Seed) * 5.0 + gn(vec3(vO.x * 4.1, 1.9, vO.z * 4.1)) * 1.2;
+        fire += 0.12 * pow(0.5 + 0.5 * sin(c * 7.5 - Time * 9. + lagF), 6.) * Style;
+        float hb = mix(hU, 1. - hN, cm);                               // in flight "low" is the nose
+        float dens = fire + 0.42 * smoothstep(0.25, 0.85, rim) + 0.6 * clamp(vD * 1.6, 0., 1.) + 0.18 * (1. - smoothstep(0., 0.3, hb)) - 0.22 * hb * hb
+                   + 0.07 * Pulse + 0.08 * Burst;
+        float front = Growth * 1.4; dens -= 0.7 * smoothstep(front - 0.3, front, vH) * (1. - Style);
         float aa = max(fwidth(dens), 1e-3), flame = smoothstep(Thresh - aa, Thresh + aa, dens), edge = 1. - smoothstep(Thresh, Thresh + 0.09, dens);
-        float heat = clamp(0.25 + 1.2 * (fire - 0.5) + 0.45 * face - 0.3 * vH + 0.35 * clamp(vD, 0., 1.) - 0.25 * edge, 0., 1.);
+        float heat = clamp(0.25 + 1.2 * (fire - 0.5) + 0.45 * face - 0.3 * hb + 0.35 * clamp(vD, 0., 1.) - 0.25 * edge + 0.1 * Pulse, 0., 1.);
         vec3 b = bright(Color);
-        vec3 col = mix(Color * 0.55, Color, smoothstep(0.08, 0.45, heat)); col = mix(col, mix(b, vec3(1.), 0.42), smoothstep(0.5, 0.95, heat));
-        float a = flame * mix(0.10, 1.0, pow(rim, 1.3)); a = max(a, 0.22 * flame * clamp(vD * 2., 0., 1.)); a = max(a, 0.05 * Growth);
-        a *= smoothstep(0., 0.08, vH) * (1. - 0.55 * smoothstep(0.82, 1., vH)) * Alpha; if (a < 0.003) discard;
-        emit(col * a * (0.75 + 0.9 * heat), a * 0.55);
+        vec3 hot = mix(b, vec3(1.), 0.42 - 0.24 * Style);
+        vec3 col; float a;
+        if (Style < 0.5) {
+            col = mix(Color * 0.55, Color, smoothstep(0.08, 0.45, heat)); col = mix(col, hot, smoothstep(0.5, 0.95, heat));
+            a = flame * mix(0.10, 1.0, pow(rim, 1.3));
+        } else {
+            // anime: 3 hard bands, denser color (less white, more saturated), an outline a few pixels wide on the
+            // silhouette only (holes inside get no line: no thin neon strings), Color2 = the outline's color
+            float ah = max(fwidth(heat), 1e-3);
+            float b1 = smoothstep(0.34 - ah, 0.34 + ah, heat), b2 = smoothstep(0.66 - ah, 0.66 + ah, heat);
+            col = mix(mix(Color * 0.8, b * 0.95, b1), hot, b2 * 0.65);
+            float lum = dot(col, vec3(0.299, 0.587, 0.114));
+            col = max(mix(vec3(lum), col, 1.6), 0.);
+            float ol = (1. - smoothstep(0., Outline * aa, dens - Thresh)) * flame * smoothstep(0.45, 0.8, rim);
+            col = mix(col, Color2, ol);
+            a = flame * mix(0.23 + 0.15 * cm, 0.97, pow(rim, 1.15 - 0.6 * cm));
+            a = max(a, ol * 0.95);
+        }
+        a = max(a, 0.22 * flame * clamp(vD * 2., 0., 1.)); a = max(a, 0.05 * Growth);
+        float lo = mix(smoothstep(0., 0.08, hU), smoothstep(0., 0.02, hN), cm);
+        a *= lo * (1. - 0.55 * smoothstep(0.82, 1., hU) * (1. - cm)) * Alpha;
+        a *= smoothstep(0., 0.15, Growth);                             // off is really off (no thin sliver before the burst)
+        if (a < 0.003) discard;
+        emit(col * a * (0.75 + 0.9 * heat) * (1. - 0.18 * Style), a * mix(0.55, 0.55, Style));
+    } else if (kind == 70) {                                           // the aura's light leaking over the ground (forja/auras-db-v2 GROUND_F)
+        vec2 p = (vUv - 0.5) * 8.; float r = length(p), ang = atan(p.y, p.x);
+        vec2 dv = vec2(cos(ang), sin(ang));
+        float streak = gn(vec3(dv * 7. + 3., r * 0.45 - Phase * 0.9 - Time * 2.6)) * 0.5 + 0.5;
+        streak = smoothstep(0.66, 0.92, streak) * smoothstep(0.45, 0.9, r) * (1. - smoothstep(1.2, 3.3, r));
+        float jet = smoothstep(0.5, 0.85, gn(vec3(dv * 2.6 + 7., Time * 3.2)) * 0.5 + 0.5);
+        streak *= 0.35 + 1.9 * jet;
+        float pool = exp(-r * r * 1.6) * (0.75 + 0.25 * gn(vec3(p * 2., Time * 3.5)));
+        float rr = (1. - pow(1. - RingR, 3.)) * 3.9;
+        float ring = exp(-pow((r - rr) * 5., 2.)) * (1. - RingR) * (0.6 + 0.4 * (gn(vec3(dv * 3., Time)) * 0.5 + 0.5));
+        float a = (pool * 0.55 + streak * 0.45 + ring * 0.9) * Growth * Alpha;
+        if (a < 0.003) discard;
+        vec3 c = mix(Color, vec3(1.), 0.25 + 0.35 * ring);
+        emit(c * a, a * 0.25);
+    } else if (kind == 71) {                                           // the aura's birth shockwave: a rim that flies out and fades
+        float band = smoothstep(0.55, 0.95, rim) * (0.7 + 0.6 * vD);
+        float a = band * Alpha; if (a < 0.003) discard;
+        vec3 c = mix(Color, vec3(1.), 0.3 + 0.4 * band);
+        emit(c * a, a * 0.5);
     } else if (kind == 6) {                                            // hit flash: a fresnel shell, one per hit
         float n = fbm3(vO * 2.5 + Seed) * 0.5 + 0.5;
         float core = pow(f, 3.) * (0.6 + 0.8 * n); vec3 c = mix(Color, vec3(1.), core); float a = (core * 0.9 + 0.15 * pow(1. - f, 2.)) * Alpha;

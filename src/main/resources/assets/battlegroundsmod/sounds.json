@@ -68,5 +68,101 @@
     "sounds": [
       "battlegroundsmod:colonia_estrondo"
     ]
+  },
+  "shibuya_cidade": {
+    "subtitle": "subtitles.battlegroundsmod.shibuya_cidade",
+    "sounds": [
+      "battlegroundsmod:shibuya_cidade"
+    ]
+  },
+  "shibuya_neon": {
+    "subtitle": "subtitles.battlegroundsmod.shibuya_neon",
+    "sounds": [
+      "battlegroundsmod:shibuya_neon"
+    ]
+  },
+  "shibuya_estalo": {
+    "subtitle": "subtitles.battlegroundsmod.shibuya_estalo",
+    "sounds": [
+      "battlegroundsmod:shibuya_estalo"
+    ]
+  },
+  "shibuya_vapor": {
+    "subtitle": "subtitles.battlegroundsmod.shibuya_vapor",
+    "sounds": [
+      "battlegroundsmod:shibuya_vapor"
+    ]
+  },
+  "shibuya_carro": {
+    "subtitle": "subtitles.battlegroundsmod.shibuya_carro",
+    "sounds": [
+      "battlegroundsmod:shibuya_carro"
+    ]
+  },
+  "shibuya_sirene": {
+    "subtitle": "subtitles.battlegroundsmod.shibuya_sirene",
+    "sounds": [
+      "battlegroundsmod:shibuya_sirene"
+    ]
+  },
+  "shibuya_sirene_longe": {
+    "subtitle": "subtitles.battlegroundsmod.shibuya_sirene_longe",
+    "sounds": [
+      "battlegroundsmod:shibuya_sirene_longe"
+    ]
+  },
+  "metro_ronco": {
+    "subtitle": "subtitles.battlegroundsmod.metro_ronco",
+    "sounds": [
+      "battlegroundsmod:metro_ronco"
+    ]
+  },
+  "metro_motor": {
+    "subtitle": "subtitles.battlegroundsmod.metro_motor",
+    "sounds": [
+      "battlegroundsmod:metro_motor"
+    ]
+  },
+  "metro_freio": {
+    "subtitle": "subtitles.battlegroundsmod.metro_freio",
+    "sounds": [
+      "battlegroundsmod:metro_freio"
+    ]
+  },
+  "metro_trilho": {
+    "subtitle": "subtitles.battlegroundsmod.metro_trilho",
+    "sounds": [
+      "battlegroundsmod:metro_trilho"
+    ]
+  },
+  "metro_porta": {
+    "subtitle": "subtitles.battlegroundsmod.metro_porta",
+    "sounds": [
+      "battlegroundsmod:metro_porta"
+    ]
+  },
+  "metro_aviso": {
+    "subtitle": "subtitles.battlegroundsmod.metro_aviso",
+    "sounds": [
+      "battlegroundsmod:metro_aviso"
+    ]
+  },
+  "metro_chegada": {
+    "subtitle": "subtitles.battlegroundsmod.metro_chegada",
+    "sounds": [
+      "battlegroundsmod:metro_chegada"
+    ]
+  },
+  "metro_pinpon": {
+    "subtitle": "subtitles.battlegroundsmod.metro_pinpon",
+    "sounds": [
+      "battlegroundsmod:metro_pinpon"
+    ]
+  },
+  "metro_melodia": {
+    "subtitle": "subtitles.battlegroundsmod.metro_melodia",
+    "sounds": [
+      "battlegroundsmod:metro_melodia"
+    ]
   }
 }

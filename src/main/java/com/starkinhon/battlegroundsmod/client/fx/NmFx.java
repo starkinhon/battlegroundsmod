@@ -322,6 +322,27 @@ final class NmFx {
                 ScreenFx.flash(0x1A5AA0, 0.32f * k, 3);
                 ScreenFx.vignette(0x0A2A5A, 0.85f * k, 4);
             }
+            // the Jujutsu curses (animal/jjmob, JjMobMoves): 4 the nine eyes' stare, purple closing in from the edges
+            case 4 -> {
+                ScreenFx.flash(0x3A0A5A, 0.3f * k, 3);
+                ScreenFx.vignette(0x12021E, 0.95f * k, 4);
+            }
+            // 5 hot ash in the eyes: grey-black, nearly blind
+            case 5 -> {
+                ScreenFx.flash(0x1C1A18, 0.86f * k, 3);
+                ScreenFx.vignette(0x050404, 0.95f * k, 4);
+            }
+            // 6 crows pecking at the face: dark, blinking with each peck
+            case 6 -> {
+                float blink = 0.55f + 0.35f * Math.abs(net.minecraft.util.Mth.sin((float) now * 0.9f));
+                ScreenFx.flash(0x060406, blink * k, 3);
+                ScreenFx.vignette(0x000000, 0.9f * k, 4);
+            }
+            // 7 a curse clinging to the face (the fly): half dark, a dim flesh edge
+            case 7 -> {
+                ScreenFx.flash(0x0A0608, 0.55f * k, 3);
+                ScreenFx.vignette(0x2A0A10, 0.92f * k, 4);
+            }
             default -> {
             }
         }

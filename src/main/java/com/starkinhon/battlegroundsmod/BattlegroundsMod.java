@@ -70,7 +70,9 @@ public class BattlegroundsMod {
         com.starkinhon.battlegroundsmod.universe.NarutoWorld.register();
         com.starkinhon.battlegroundsmod.universe.SageMode.register();
         com.starkinhon.battlegroundsmod.universe.UniverseSpawns.register();
+        com.starkinhon.battlegroundsmod.npc.PedestreCrowd.register();
         com.starkinhon.battlegroundsmod.animal.naruto.NarutoMob.register();
+        com.starkinhon.battlegroundsmod.animal.jjmob.JjMob.registerJj();
         com.starkinhon.battlegroundsmod.animal.dbmob.DbMobMoves.register();
         com.starkinhon.battlegroundsmod.universe.UniverseBiomes.register();
         com.starkinhon.battlegroundsmod.universe.RoamingSouls.register();

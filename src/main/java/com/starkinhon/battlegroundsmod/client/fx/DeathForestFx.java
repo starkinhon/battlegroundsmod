@@ -322,8 +322,10 @@ public final class DeathForestFx {
                 float base = (band == 0 ? 0.07f : 0.1f) * day * fade;
                 for (int i = 0; i < steps; i++) {
                     double t0 = (double) i / steps, t1 = (double) (i + 1) / steps;
-                    float a0 = base * along(t0), a1 = base * along(t1);
                     Vec3 p0 = s.add(sun.scale(len * t0)).subtract(camera), p1 = s.add(sun.scale(len * t1)).subtract(camera);
+                    // fades out around the camera: flying through a shaft drew the ribbon right on the lens, a flash of
+                    // pale light over the whole screen for a frame (Stark 2026-11-14, flying under the canopy)
+                    float a0 = base * along(t0) * nearFade(p0, half), a1 = base * along(t1) * nearFade(p1, half);
                     double h0 = half * (1 + 0.3 * t0), h1 = half * (1 + 0.3 * t1);
                     out.addVertex(last, (float) (p0.x - side.x * h0), (float) (p0.y - side.y * h0), (float) (p0.z - side.z * h0))
                             .setColor(0.95f, 0.93f, 0.7f, a0);
@@ -336,6 +338,12 @@ public final class DeathForestFx {
                 }
             }
         }
+    }
+
+    // 0 within the ribbon's width of the camera, 1 from a few blocks past it.
+    private static float nearFade(Vec3 p, double half) {
+        double d = p.length() - half * 1.3;
+        return (float) Mth.clamp((d - 2) / 6, 0, 1);
     }
 
     private static float along(double t) {

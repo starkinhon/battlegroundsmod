@@ -6,6 +6,9 @@
 // Style 3: Shigaraki's Decadência (client/fx/shig), the preview's look on the voxels: from Touch the body dries to a
 // pale grey and cracks (Front = how far it has got, in blocks); Recover brings the colour back; Progress crumbles it to
 // dust from the touch out, bit by bit.
+// Style 4: a curse exorcised (animal/jjmob, the preview's JJFX.patch): it darkens, then evaporates from the top down
+// along a ragged edge (see main); the vapour is CurseVapor's.
+// Bright is the light where it lies (no lightmap here).
 // Style 1 (the Hakai): instead of charring, the body lights up white with purple veins, and the edge breaks into
 // pixel-sized bits (1/16 of a block, like the skins) burning white in the middle and purple outside.
 uniform sampler2D Sampler0;
@@ -19,6 +22,7 @@ uniform vec3 EdgeColor;
 uniform vec3 Touch;
 uniform float Front;
 uniform float Recover;
+uniform float Bright;
 
 in vec2 texCoord;
 in vec4 vertexColor;
@@ -73,6 +77,37 @@ void main() {
     vec4 tex = texture(Sampler0, texCoord);
     if (tex.a < 0.1) {
         discard;
+    }
+    if (Style > 3.5) {
+        // A curse exorcised (Stark 2026-11-14, like the Katon's death without fire; the preview's JJFX.patch): the energy
+        // leaves first (Progress 0..0.22: the skin darkens to the curse's indigo black, cold veins running up), then a
+        // ragged edge goes down the body as it lies (AshHeight = the lying body's height), the texels just before it
+        // coming loose one by one, the edge itself the colour of the vapour that rises from it (CurseVapor).
+        vec3 skin = tex.rgb * vertexColor.rgb;
+        float lit = (0.6 + 0.4 * max(dot(normalize(normal), normalize(vec3(0.3, 1.0, 0.2))), 0.0)) * Bright;
+        float burn = clamp(Progress / 0.22, 0.0, 1.0);
+        float fr = clamp((Progress - 0.22) / 0.78, 0.0, 1.0);
+        if (burn > 0.0) {
+            float t2 = GameTime * 1200.0;
+            float vein = 1.0 - smoothstep(0.0, 0.07, abs(noise(local * 5.0 + vec3(0.0, -t2 * 0.6, 0.0)) - 0.5));
+            vec3 dark = vec3(0.05, 0.04, 0.07) + skin * 0.08;
+            skin = mix(skin, dark, burn * 0.88) + vec3(0.16, 0.13, 0.22) * vein * burn * 0.6;
+        }
+        if (fr > 0.0) {
+            float hy = clamp(local.y / max(AshHeight, 0.05), 0.0, 1.0);
+            float n = noise(local * 6.0) * 0.6 + noise(local * 17.0) * 0.4;
+            float d = hy + (n - 0.5) * 0.4 - (1.08 - fr * 1.4);
+            if (d > 0.0) {
+                discard;
+            }
+            vec3 cell = floor(local * 16.0 + 0.001);
+            if (d > -0.18 && hash(cell + vec3(0.71, 0.11, 0.42)) < smoothstep(-0.18, 0.0, d)) {
+                discard;
+            }
+            skin = mix(skin, vec3(0.30, 0.27, 0.36), smoothstep(-0.07, 0.0, d) * 0.75);
+        }
+        fragColor = vec4(skin * lit, 1.0);
+        return;
     }
     if (Style > 2.5) {
         vec3 skin = tex.rgb * vertexColor.rgb;

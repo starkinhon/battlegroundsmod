@@ -1,0 +1,120 @@
+{
+ "multipart": [
+  {
+   "when": {
+    "facing": "north"
+   },
+   "apply": {
+    "model": "battlegroundsmod:block/fio_de_rede_barra",
+    "y": 0
+   }
+  },
+  {
+   "when": {
+    "facing": "north",
+    "alcanca": "true"
+   },
+   "apply": {
+    "model": "battlegroundsmod:block/fio_de_rede_ponta",
+    "y": 0
+   }
+  },
+  {
+   "when": {
+    "facing": "north",
+    "cabo": "true"
+   },
+   "apply": {
+    "model": "battlegroundsmod:block/fio_de_rede_isolador",
+    "y": 0
+   }
+  },
+  {
+   "when": {
+    "facing": "east"
+   },
+   "apply": {
+    "model": "battlegroundsmod:block/fio_de_rede_barra",
+    "y": 90
+   }
+  },
+  {
+   "when": {
+    "facing": "east",
+    "alcanca": "true"
+   },
+   "apply": {
+    "model": "battlegroundsmod:block/fio_de_rede_ponta",
+    "y": 90
+   }
+  },
+  {
+   "when": {
+    "facing": "east",
+    "cabo": "true"
+   },
+   "apply": {
+    "model": "battlegroundsmod:block/fio_de_rede_isolador",
+    "y": 90
+   }
+  },
+  {
+   "when": {
+    "facing": "south"
+   },
+   "apply": {
+    "model": "battlegroundsmod:block/fio_de_rede_barra",
+    "y": 180
+   }
+  },
+  {
+   "when": {
+    "facing": "south",
+    "alcanca": "true"
+   },
+   "apply": {
+    "model": "battlegroundsmod:block/fio_de_rede_ponta",
+    "y": 180
+   }
+  },
+  {
+   "when": {
+    "facing": "south",
+    "cabo": "true"
+   },
+   "apply": {
+    "model": "battlegroundsmod:block/fio_de_rede_isolador",
+    "y": 180
+   }
+  },
+  {
+   "when": {
+    "facing": "west"
+   },
+   "apply": {
+    "model": "battlegroundsmod:block/fio_de_rede_barra",
+    "y": 270
+   }
+  },
+  {
+   "when": {
+    "facing": "west",
+    "alcanca": "true"
+   },
+   "apply": {
+    "model": "battlegroundsmod:block/fio_de_rede_ponta",
+    "y": 270
+   }
+  },
+  {
+   "when": {
+    "facing": "west",
+    "cabo": "true"
+   },
+   "apply": {
+    "model": "battlegroundsmod:block/fio_de_rede_isolador",
+    "y": 270
+   }
+  }
+ ]
+}

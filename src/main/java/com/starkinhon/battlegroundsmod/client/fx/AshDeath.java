@@ -55,6 +55,8 @@ public final class AshDeath {
     }
 
     private static final Map<Integer, Ash> ASHES = new HashMap<>();
+    // the bodies exorcised (the Jujutsu curses, style 4): darken, then evaporate from the top down (CurseVapor)
+    private static final java.util.Set<Integer> EXORCISED = new java.util.HashSet<>();
     private static MultiBufferSource.BufferSource buffers;
     private static final java.util.Set<Integer> BROKEN = new java.util.HashSet<>();
     private static boolean drawing;
@@ -134,6 +136,20 @@ public final class AshDeath {
         ASHES.put(entityId, new Ash(a.entity(), a.start(), a.windYaw(), a.burn(), a.crumbleStart(), a.crumbleEnd(), age + 20, null, false, a.decay()));
     }
 
+    // A curse exorcised (animal/jjmob): its body, already fallen (the 'morte' keeps playing through its renderer),
+    // darkens to the curse's indigo black and evaporates from the top down along a ragged edge over ticks, vapour
+    // rising off the edge (CurseVapor), as the approved preview's JJFX.patch / JJFX.vapor.
+    public static void startExorcize(int entityId, int ticks) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level == null || FxShaders.ash == null || FxShaders.flat() || ASHES.containsKey(entityId)
+                || !(minecraft.level.getEntity(entityId) instanceof LivingEntity living)) {
+            return;
+        }
+        int t = Math.max(4, ticks);
+        ASHES.put(entityId, new Ash(living, ScreenFx.now(), 0, 1, 0, t, t + 4, null, false, null));
+        EXORCISED.add(entityId);
+    }
+
     static boolean hasSparks() {
         for (Ash ash : ASHES.values()) {
             if (ash.hakai() != null) {
@@ -155,6 +171,9 @@ public final class AshDeath {
         long now = ScreenFx.now();
         ASHES.values().removeIf(a -> {
             boolean gone = now - a.start() > a.end() || a.entity().level() != level;
+            if (gone) {
+                EXORCISED.remove(a.entity().getId());
+            }
             if (gone && a.stone() && a.entity().level() == level) {
                 burst(level, a.entity());
             }
@@ -163,6 +182,8 @@ public final class AshDeath {
         for (Ash ash : ASHES.values()) {
             if (ash.decay() != null) {
                 decayDust(level, ash, (int) (now - ash.start()));
+            } else if (EXORCISED.contains(ash.entity().getId())) {
+                // no particles: the vapour is CurseVapor's volume (Stark 2026-11-14)
             } else if (ash.hakai() == null && !ash.stone()) {
                 emit(level, ash, (int) (now - ash.start()));
             }
@@ -383,10 +404,20 @@ public final class AshDeath {
                 }
                 Vec3 rel = at.subtract(camera);
                 shader.safeGetUniform("AshOrigin").set((float) rel.x, (float) rel.y, (float) rel.z);
-                shader.safeGetUniform("AshHeight").set(entity.getBbHeight());
+                boolean exorcised = EXORCISED.contains(entity.getId());
+                // an exorcised curse lies on the ground by then: its edge runs over the body as it lies
+                shader.safeGetUniform("AshHeight").set(exorcised ? CurseVapor.lyingHeight(entity.getBbHeight()) : entity.getBbHeight());
                 shader.safeGetUniform("Burn").set(burn);
                 shader.safeGetUniform("Progress").set(progress);
-                shader.safeGetUniform("Style").set(ash.decay() != null ? 3f : ash.stone() ? 2f : ash.hakai() != null ? 1f : 0f);
+                shader.safeGetUniform("Style").set(exorcised ? 4f : ash.decay() != null ? 3f : ash.stone() ? 2f : ash.hakai() != null ? 1f : 0f);
+                if (exorcised) {
+                    // its light where it lies, so a curse dying at night is not lit up (the shader has no lightmap)
+                    int packed = dispatcher.getPackedLightCoords(entity, partial);
+                    float sky = net.minecraft.client.renderer.LightTexture.sky(packed) / 15f;
+                    float block = net.minecraft.client.renderer.LightTexture.block(packed) / 15f;
+                    float bright = Math.max(block, sky * minecraft.level.getSkyDarken(partial));
+                    shader.safeGetUniform("Bright").set(0.08f + 0.92f * bright);
+                }
                 if (ash.decay() != null) {
                     Decay d = ash.decay();
                     float front = (float) (age / 20.0 * d.speed());
@@ -403,6 +434,9 @@ public final class AshDeath {
                 }
                 draw(dispatcher, entity, rel, partial);
                 buffers.endBatch();
+                if (exorcised) {
+                    CurseVapor.draw(rel, entity.getBbWidth(), entity.getBbHeight(), progress, now / 20.0);
+                }
             }
         } finally {
             drawing = false;
