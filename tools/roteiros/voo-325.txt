@@ -57,13 +57,16 @@ espera 100
 /devc gravar parar
 /devc print voo-325/02-fim
 /devc tecla k
+# o /dev imortal segura o kill: solta antes
+/dev soltar
 /kill @e[type=battlegroundsmod:vegeta]
 espera 20
 
 # 3) Rasante na água: um lago raso e largo, voo baixo e rápido por cima (frente + impulso)
 /fill 1790 -59 -1780 1810 -59 -1620 minecraft:water
 /fill 1811 -59 -1780 1830 -59 -1620 minecraft:water
-/tp @s 1810 -56 -1785 0 10
+# olhando um pouco pra cima: com 10 graus pra baixo ele mergulhava no lago
+/tp @s 1810 -57 -1785 0 -3
 espera 10
 /devc gravar voo-325/03-agua 3
 /devc tecla frente 70
