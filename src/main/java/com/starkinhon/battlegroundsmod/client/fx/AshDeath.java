@@ -55,6 +55,8 @@ public final class AshDeath {
     }
 
     private static final Map<Integer, Ash> ASHES = new HashMap<>();
+    // the bodies exorcised (the Jujutsu curses, style 4): black ash from the head down, texel by texel
+    private static final java.util.Set<Integer> EXORCISED = new java.util.HashSet<>();
     private static MultiBufferSource.BufferSource buffers;
     private static final java.util.Set<Integer> BROKEN = new java.util.HashSet<>();
     private static boolean drawing;
@@ -134,6 +136,20 @@ public final class AshDeath {
         ASHES.put(entityId, new Ash(a.entity(), a.start(), a.windYaw(), a.burn(), a.crumbleStart(), a.crumbleEnd(), age + 20, null, false, a.decay()));
     }
 
+    // A curse exorcised (animal/jjmob): its body, already fallen (the 'morte' keeps playing through its renderer),
+    // comes apart texel by texel from the head down into black ash over ticks, as the preview's JJFX.exorcize: each
+    // texel its own moment, the edge going black first.
+    public static void startExorcize(int entityId, int ticks) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level == null || FxShaders.ash == null || FxShaders.flat() || ASHES.containsKey(entityId)
+                || !(minecraft.level.getEntity(entityId) instanceof LivingEntity living)) {
+            return;
+        }
+        int t = Math.max(4, ticks);
+        ASHES.put(entityId, new Ash(living, ScreenFx.now(), 0, 1, 0, t, t + 4, null, false, null));
+        EXORCISED.add(entityId);
+    }
+
     static boolean hasSparks() {
         for (Ash ash : ASHES.values()) {
             if (ash.hakai() != null) {
@@ -155,6 +171,9 @@ public final class AshDeath {
         long now = ScreenFx.now();
         ASHES.values().removeIf(a -> {
             boolean gone = now - a.start() > a.end() || a.entity().level() != level;
+            if (gone) {
+                EXORCISED.remove(a.entity().getId());
+            }
             if (gone && a.stone() && a.entity().level() == level) {
                 burst(level, a.entity());
             }
@@ -163,6 +182,8 @@ public final class AshDeath {
         for (Ash ash : ASHES.values()) {
             if (ash.decay() != null) {
                 decayDust(level, ash, (int) (now - ash.start()));
+            } else if (EXORCISED.contains(ash.entity().getId())) {
+                exorcizeAsh(level, ash, (int) (now - ash.start()));
             } else if (ash.hakai() == null && !ash.stone()) {
                 emit(level, ash, (int) (now - ash.start()));
             }
@@ -208,6 +229,34 @@ public final class AshDeath {
             int color = g << 16 | (int) (g * 0.94f) << 8 | (int) (g * 0.86f);
             level.addParticle(ModParticles.dust(color, 0.9f + random.nextFloat() * 1.3f, 26 + random.nextInt(30), 0.94f), at.x, at.y, at.z,
                     0.03 + (random.nextDouble() - 0.5) * 0.04, 0.02 + random.nextDouble() * 0.05, (random.nextDouble() - 0.5) * 0.04);
+        }
+    }
+
+    // The exorcism's ash: black and dark purple flakes off the edge as it goes down the body, rising and spreading, each
+    // its own size and path (the preview's JJFX.ash: rising, slowed by the air, a few tinted purple).
+    private static void exorcizeAsh(ClientLevel level, Ash ash, int age) {
+        if (age > ash.crumbleEnd()) {
+            return;
+        }
+        LivingEntity entity = ash.entity();
+        var random = level.getRandom();
+        float height = entity.getBbHeight();
+        float width = Math.max(0.4f, entity.getBbWidth());
+        Vec3 feet = entity.position();
+        float progress = age / (float) Math.max(1, ash.crumbleEnd());
+        double front = feet.y + height * Mth.clamp(1.0 - progress * 1.1, 0.05, 1);
+        int n = 6 + (int) (width * height * 1.5f);
+        for (int i = 0; i < Math.min(n, 18); i++) {
+            double a = random.nextDouble() * Math.PI * 2;
+            double r = width * 0.55 * Math.sqrt(random.nextDouble());
+            double x = feet.x + Math.cos(a) * r;
+            double y = front - random.nextDouble() * height * 0.3;
+            double z = feet.z + Math.sin(a) * r;
+            int[] palette = {0x0C0810, 0x1A141E, 0x281E2E, 0x08060A, 0x46285A};
+            int color = palette[random.nextFloat() < 0.12f ? 4 : random.nextInt(4)];
+            double out = 0.01 + random.nextDouble() * 0.03;
+            level.addParticle(ModParticles.dust(color, 0.5f + random.nextFloat() * 1.0f, 24 + random.nextInt(18), 0.93f), x, y, z,
+                    Math.cos(a) * out, 0.03 + random.nextDouble() * 0.05, Math.sin(a) * out);
         }
     }
 
@@ -386,7 +435,16 @@ public final class AshDeath {
                 shader.safeGetUniform("AshHeight").set(entity.getBbHeight());
                 shader.safeGetUniform("Burn").set(burn);
                 shader.safeGetUniform("Progress").set(progress);
-                shader.safeGetUniform("Style").set(ash.decay() != null ? 3f : ash.stone() ? 2f : ash.hakai() != null ? 1f : 0f);
+                boolean exorcised = EXORCISED.contains(entity.getId());
+                shader.safeGetUniform("Style").set(exorcised ? 4f : ash.decay() != null ? 3f : ash.stone() ? 2f : ash.hakai() != null ? 1f : 0f);
+                if (exorcised) {
+                    // its light where it lies, so a curse dying at night is not lit up (the shader has no lightmap)
+                    int packed = dispatcher.getPackedLightCoords(entity, partial);
+                    float sky = net.minecraft.client.renderer.LightTexture.sky(packed) / 15f;
+                    float block = net.minecraft.client.renderer.LightTexture.block(packed) / 15f;
+                    float bright = Math.max(block, sky * minecraft.level.getSkyDarken(partial));
+                    shader.safeGetUniform("Bright").set(0.08f + 0.92f * bright);
+                }
                 if (ash.decay() != null) {
                     Decay d = ash.decay();
                     float front = (float) (age / 20.0 * d.speed());

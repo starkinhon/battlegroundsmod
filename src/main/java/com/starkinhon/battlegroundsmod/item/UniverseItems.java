@@ -102,6 +102,9 @@ public final class UniverseItems {
         if (character != null && com.starkinhon.battlegroundsmod.animal.naruto.NarutoSpec.get(character) != null) {
             return "naruto";
         }
+        if (character != null && com.starkinhon.battlegroundsmod.animal.jjmob.JjMobSpec.has(character)) {
+            return "jujutsu";
+        }
         String universe = character == null ? null : CHARACTERS.get(character);
         return universe == null || universe.isEmpty() ? null : universe;
     }

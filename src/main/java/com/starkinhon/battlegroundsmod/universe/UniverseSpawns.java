@@ -73,6 +73,12 @@ public final class UniverseSpawns {
                 NarutoMobSpawns.tick(level, player);
                 continue;
             }
+            if (JujutsuWorld.UNIVERSE.equals(id) && level.dimension() == net.minecraft.world.level.Level.OVERWORLD) {
+                // The Jujutsu biomes have their own curses, each in its biome (JjMobSpawns), in place of the old common
+                // enemies.
+                JjMobSpawns.tick(level, player);
+                continue;
+            }
             if (DemonSlayerWorld.UNIVERSE.equals(id) && level.isDay()) {
                 // The demons hide from the sun.
                 continue;

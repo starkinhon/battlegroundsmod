@@ -27,6 +27,7 @@ public final class ServerReset {
         com.starkinhon.battlegroundsmod.power.powers.sub.db.DbCommon.resetStatics();
         com.starkinhon.battlegroundsmod.power.powers.sub.db.DbMobs.resetStatics();
         com.starkinhon.battlegroundsmod.animal.dbmob.DbMobMoves.resetStatics();
+        com.starkinhon.battlegroundsmod.animal.jjmob.JjMob.resetJj();
         com.starkinhon.battlegroundsmod.power.powers.gojo.Azul.resetStatics();
         com.starkinhon.battlegroundsmod.power.powers.shigaraki.Decay.resetStatics();
         com.starkinhon.battlegroundsmod.power.powers.shigaraki.Esfarelar.resetStatics();

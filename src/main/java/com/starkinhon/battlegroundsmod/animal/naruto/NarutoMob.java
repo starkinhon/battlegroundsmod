@@ -235,6 +235,17 @@ public class NarutoMob extends DbCreature {
         return null;
     }
 
+    // a mode the client plays while it dies instead of vanilla's tipping over (the Jujutsu curses' exorcism), null for
+    // vanilla's, and the frame of it now
+    @Nullable
+    public String deathMode() {
+        return null;
+    }
+
+    public float deathFrame(float partial) {
+        return 0;
+    }
+
     // the creatures' own events (the spores ticking on whoever carries them)
     public static void register() {
         NarutoMoves.register();

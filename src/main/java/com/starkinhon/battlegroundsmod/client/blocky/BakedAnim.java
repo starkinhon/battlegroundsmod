@@ -12,7 +12,7 @@ import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.util.Mth;
 
 // The approved preview's animation, baked frame by frame (tools/mobs/naruto/export.js: 20 frames a second, every
-// channel that moves): each part's position, rotation and scale added to its rest pose, and the whole body's offset,
+// channel that moves): each part's position, rotation and scale added to its rest pose (and whether it shows), and the whole body's offset,
 // turn and visibility ('@'). Played back here instead of rewriting each animation by hand, so the game moves exactly
 // like the preview. Idle and walk loop (the 8 s bakes cross-fade their seam), the attacks play once.
 public final class BakedAnim {
@@ -91,7 +91,9 @@ public final class BakedAnim {
                     case "rz" -> 5;
                     case "sx" -> 6;
                     case "sy" -> 7;
-                    default -> 8;
+                    case "sz" -> 8;
+                    // a part the preview hides on this frame (the well, a folded wing)
+                    default -> 9;
                 };
                 mode.channels.add(new Channel(part, k, v));
             }
@@ -169,7 +171,12 @@ public final class BakedAnim {
                 case 5 -> p.zRot += d;
                 case 6 -> p.xScale += d;
                 case 7 -> p.yScale += d;
-                default -> p.zScale += d;
+                case 8 -> p.zScale += d;
+                default -> {
+                    if (w > 0.5f && d > 0.5f * w) {
+                        p.visible = false;
+                    }
+                }
             }
         }
     }

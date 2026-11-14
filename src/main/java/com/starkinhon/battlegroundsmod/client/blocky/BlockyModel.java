@@ -106,6 +106,7 @@ public class BlockyModel<T extends DbCreature> extends HierarchicalModel<T> {
             p.xScale = 1;
             p.yScale = 1;
             p.zScale = 1;
+            p.visible = true;
         });
         anim.apply(this, entity, limbSwing, Math.min(1f, amount), age, headYaw, headPitch);
     }

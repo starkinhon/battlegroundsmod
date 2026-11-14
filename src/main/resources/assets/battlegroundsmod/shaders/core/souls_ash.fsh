@@ -6,6 +6,9 @@
 // Style 3: Shigaraki's Decadência (client/fx/shig), the preview's look on the voxels: from Touch the body dries to a
 // pale grey and cracks (Front = how far it has got, in blocks); Recover brings the colour back; Progress crumbles it to
 // dust from the touch out, bit by bit.
+// Style 4: a curse exorcised (animal/jjmob, the preview's JJFX.dissolve): Progress takes the body apart texel by texel
+// (1/16 of a block), from the head down but each texel at its own moment; the texels about to go turn black first.
+// Bright is the light where it lies (no lightmap here).
 // Style 1 (the Hakai): instead of charring, the body lights up white with purple veins, and the edge breaks into
 // pixel-sized bits (1/16 of a block, like the skins) burning white in the middle and purple outside.
 uniform sampler2D Sampler0;
@@ -19,6 +22,7 @@ uniform vec3 EdgeColor;
 uniform vec3 Touch;
 uniform float Front;
 uniform float Recover;
+uniform float Bright;
 
 in vec2 texCoord;
 in vec4 vertexColor;
@@ -73,6 +77,26 @@ void main() {
     vec4 tex = texture(Sampler0, texCoord);
     if (tex.a < 0.1) {
         discard;
+    }
+    if (Style > 3.5) {
+        vec3 skin = tex.rgb * vertexColor.rgb;
+        float lit = (0.6 + 0.4 * max(dot(normalize(normal), normalize(vec3(0.3, 1.0, 0.2))), 0.0)) * Bright;
+        if (Progress > 0.0) {
+            vec3 cell = floor(local * 16.0 + 0.001);
+            float hy = clamp(local.y / max(AshHeight, 0.1), 0.0, 1.0);
+            float v = hash(cell + vec3(0.71, 0.11, 0.42)) * 0.62 + (1.0 - hy) * 0.38;
+            float edge = v - (Progress * 1.25 - 0.12);
+            if (edge < 0.0) {
+                discard;
+            }
+            if (edge < 0.05) {
+                skin = vec3(0.02, 0.01, 0.03);
+            } else if (edge < 0.1) {
+                skin = mix(skin, vec3(0.05, 0.03, 0.07), 0.7);
+            }
+        }
+        fragColor = vec4(skin * lit, 1.0);
+        return;
     }
     if (Style > 2.5) {
         vec3 skin = tex.rgb * vertexColor.rgb;

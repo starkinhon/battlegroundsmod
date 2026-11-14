@@ -176,6 +176,33 @@ public final class ModItems {
                     () -> new DeferredSpawnEggItem(ModEntities.NARUTO_MOBS.get(id), c[0], c[1], new Item.Properties())));
         }
     }
+    // The Jujutsu biomes' curses (animal/jjmob).
+    public static final Map<String, DeferredItem<DeferredSpawnEggItem>> JJ_EGGS = new LinkedHashMap<>();
+
+    static {
+        Map<String, int[]> colors = Map.ofEntries(
+                Map.entry("jj_mosca", new int[] {0x2A2A30, 0x9A3A5A}), Map.entry("jj_cabecao", new int[] {0xC8B8A0, 0x5A2A2A}),
+                Map.entry("jj_transfigurado", new int[] {0x8A8A7A, 0x3A2A3A}), Map.entry("jj_metro", new int[] {0x8A9AA0, 0x6A1A2A}),
+                Map.entry("jj_rastejante", new int[] {0x2A2228, 0x8A2A4A}), Map.entry("jj_verme", new int[] {0xC88A8A, 0x4A2A2A}),
+                Map.entry("jj_olhos", new int[] {0x4A3A2A, 0xE8D8A0}), Map.entry("jj_utero", new int[] {0xA04A5A, 0x3A1A22}),
+                Map.entry("jj_boneco", new int[] {0xD8C080, 0x6A2A2A}), Map.entry("jj_kitsune", new int[] {0xE8E0D0, 0xC02A2A}),
+                Map.entry("jj_sino", new int[] {0xB08A3A, 0x2A2A2A}), Map.entry("jj_espantalho", new int[] {0xC8A860, 0x3A3A4A}),
+                Map.entry("jj_poco", new int[] {0xE8E8E8, 0x1A1A2A}), Map.entry("jj_kuchisake", new int[] {0xD8D0C8, 0x8A1A1A}),
+                Map.entry("jj_peixe", new int[] {0x4A6A8A, 0xB0402A}), Map.entry("jj_caranguejo", new int[] {0xA04A2A, 0xE8D8B0}),
+                Map.entry("jj_embriao", new int[] {0x6A8A9A, 0xE8B0A0}), Map.entry("jj_afogado", new int[] {0x5A7A7A, 0x2A3A4A}),
+                Map.entry("jj_broto", new int[] {0x6A9A3A, 0xF0B0C8}), Map.entry("jj_javali", new int[] {0x5A3A2A, 0xE8E0C8}),
+                Map.entry("jj_guardiao", new int[] {0x6A5A3A, 0xF0A0C0}), Map.entry("jj_inseto", new int[] {0x3A2A2A, 0xFF8A2A}),
+                Map.entry("jj_vulcaozinho", new int[] {0x3A3030, 0xFF5A1A}), Map.entry("jj_golem", new int[] {0x2A2A2E, 0xFF6A1A}),
+                Map.entry("jj_lanterna", new int[] {0xE8D8B0, 0x4A8AFF}), Map.entry("jj_mechamaru", new int[] {0x8A8A90, 0x3A5AA0}),
+                Map.entry("jj_oni", new int[] {0xB03A2A, 0x2A2A2A}), Map.entry("jj_larva", new int[] {0xE8E0C0, 0x8A6A3A}),
+                Map.entry("jj_abate", new int[] {0x2A2A3A, 0x4AA0FF}), Map.entry("jj_solta", new int[] {0x4A2A3A, 0xD8C0A0}),
+                Map.entry("jj_kogane", new int[] {0xF0C030, 0x2A2A2A}));
+        for (String id : ModEntities.JJ_MOBS.keySet()) {
+            int[] c = colors.getOrDefault(id, new int[] {0x3A2A4A, 0x8A5AC0});
+            JJ_EGGS.put(id, BattlegroundsMod.ITEMS.register(id + "_spawn_egg",
+                    () -> new DeferredSpawnEggItem(ModEntities.JJ_MOBS.get(id), c[0], c[1], new Item.Properties())));
+        }
+    }
     // The Dragon Ball creatures new with the remake (animal/dbmob); the old ids keep their eggs above.
     public static final Map<String, DeferredItem<DeferredSpawnEggItem>> DB_EGGS = new LinkedHashMap<>();
 
