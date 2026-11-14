@@ -1,0 +1,89 @@
+# PR #325: o combate aéreo travado não pode travar em mob comum (playtest do Stark 2026-11-14: travou em dinossauro),
+# só em alma DB voadora; e o rasante sobre a água vira espuma.
+# Rodar: gradlew runClient -Pmundo=SoulsDev -Proteiro=voo-325
+/devc fechar
+/dev soltar
+/kill @e[type=!player]
+/time set day
+/weather clear
+/gamemode survival
+/effect give @s resistance 99999 3 true
+/effect give @s saturation 99999 0 true
+/soul escolher kuririn
+/soul tier 6
+/soul semcooldown
+/gamerule sendCommandFeedback false
+/gamerule doMobSpawning false
+/tp @s 1800 -40 -1800 0 0
+/devc vista terceira
+/devc janela 1280 720
+/devc chat off
+espera 30
+
+# Decola e sobe um pouco
+/devc tecla espaco 2
+espera 4
+/devc tecla espaco 2
+espera 14
+/devc tecla espaco 8
+espera 20
+
+# 1) Mobs comuns perto, combate ligado: NÃO pode travar (câmera normal, jogador continua no voo normal)
+/summon minecraft:zombie 1800 -58 -1790
+/summon minecraft:skeleton 1804 -58 -1792
+/summon minecraft:spider 1796 -58 -1790
+/dev imortal @e[type=!player]
+espera 20
+/devc gravar voo-325/01-mobs-comuns 3
+/devc tecla k
+espera 40
+/devc tecla z
+espera 40
+/devc tecla frente 30
+espera 40
+/devc gravar parar
+/devc print voo-325/01-fim
+/devc tecla k
+/kill @e[type=!player]
+espera 20
+
+# 2) Vegeta (alma DB voadora): aqui TEM que travar
+/summon battlegroundsmod:vegeta 1800 -58 -1788
+/dev imortal @e[type=battlegroundsmod:vegeta]
+espera 80
+/devc tecla k
+/devc gravar voo-325/02-vegeta 3
+espera 100
+/devc gravar parar
+/devc print voo-325/02-fim
+/devc tecla k
+# o /dev imortal segura o kill: solta antes
+/dev soltar
+/kill @e[type=battlegroundsmod:vegeta]
+espera 20
+
+# 3) Rasante na água: um lago raso e largo, voo baixo e rápido por cima (frente + impulso)
+/fill 1790 -59 -1780 1810 -59 -1620 minecraft:water
+/fill 1811 -59 -1780 1830 -59 -1620 minecraft:water
+# olhando um pouco pra cima: com 10 graus pra baixo ele mergulhava no lago
+/tp @s 1810 -57 -1785 0 -3
+espera 10
+/devc gravar voo-325/03-agua 3
+/devc tecla frente 70
+espera 2
+/devc tecla ctrl
+espera 75
+/devc gravar parar
+/devc print voo-325/03-fim
+# de lado, olhando o rastro
+/tp @s 1820 -54 -1700 90 25
+/devc tecla frente 50
+espera 2
+/devc tecla ctrl
+espera 20
+/devc print voo-325/04-rastro
+espera 40
+/devc print voo-325/04-fim
+/dev soltar
+espera 20
+sair
