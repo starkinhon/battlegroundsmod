@@ -618,9 +618,17 @@ public final class TemploGen {
         while (stairs.size() < 90) {
             int[] c = along(cx, cz, F, k, 0);
             int gg = ground.applyAsInt(c[0], c[1]);
-            if (gg > sy + 1 || gg < sea + 1) {
+            if (gg > sy + 1) {
                 break;
             }
+                // a cliff over the sea: the stairway keeps going down over the water to the shore
+                // (Stark 2026-11-13: it stopped at the top, no way down)
+                if (gg < sea + 1) {
+                    if (sy <= sea + 1) {
+                        break;
+                    }
+                    gg = sea + 1;
+                }
             int ny = Math.max(Math.min(gg, sy), sy - 1);
             flat = ny == sy ? flat + 1 : 0;
             if (flat > 5 && stairs.size() > 8) {
@@ -659,6 +667,9 @@ public final class TemploGen {
             for (int a = -3; a <= 3; a++) {
                 for (int bb = 0; bb <= 3; bb++) {
                     int[] p = along(cx, cz, F, last[0] + 1 + bb, a);
+                    for (int yy = Math.min(ground.applyAsInt(p[0], p[1]), last[1]) - 2; yy < last[1]; yy++) {
+                        w.force(p[0], yy, p[1], WALL_STONE);
+                    }
                     w.force(p[0], last[1], p[1], PATH);
                     for (int yy = last[1] + 1; yy < last[1] + 5; yy++) {
                         w.force(p[0], yy, p[1], AIR);
@@ -1035,9 +1046,17 @@ public final class TemploGen {
         while (stairs.size() < 120) {
             int[] c = along(cx, cz, F, k, 0);
             int g = ground.applyAsInt(c[0], c[1]);
-            if (g > sy + 1 || g < sea + 1) {
+            if (g > sy + 1) {
                 break;
             }
+                // a cliff over the sea: the stairway keeps going down over the water to the shore
+                // (Stark 2026-11-13: it stopped at the top, no way down)
+                if (g < sea + 1) {
+                    if (sy <= sea + 1) {
+                        break;
+                    }
+                    g = sea + 1;
+                }
             int ny = Math.max(Math.min(g, sy), sy - 1);
             flat = ny == sy ? flat + 1 : 0;
             if (flat > 5 && stairs.size() > 8) {
@@ -1067,6 +1086,9 @@ public final class TemploGen {
             for (int a = -5; a <= 5; a++) {
                 for (int bb = 0; bb <= 3; bb++) {
                     int[] p = along(cx, cz, F, last[0] + 1 + bb, a);
+                    for (int yy = Math.min(ground.applyAsInt(p[0], p[1]), last[1]) - 2; yy < last[1]; yy++) {
+                        w.force(p[0], yy, p[1], WALL_STONE);
+                    }
                     w.force(p[0], last[1], p[1], PATH);
                     for (int yy = last[1] + 1; yy < last[1] + 5; yy++) {
                         w.force(p[0], yy, p[1], AIR);
