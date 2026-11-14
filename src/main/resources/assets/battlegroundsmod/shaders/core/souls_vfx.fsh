@@ -66,7 +66,8 @@
 //  41 fz lava    a lava geyser on a camera-facing ribbon (u from the ground up), crust boiling up it; param = how high
 //                it stands (0..1)
 //  42 flight wake  the wake a fast flier skims over the ground (forja db-voo-mobs, Kuririn's rasante): a strip lying
-//             on the ground, u from the flier (0) back, two bands of torn dust/spray opening out to the sides
+//             on the ground, u from the flier (0) back, two bands of torn dust/spray opening out to the sides; param 1 =
+//             over water: foam arms, a churned white trail and chevron ripples
 // A very dark color never burns white (dark rims and lines stay dark).
 // Near walls and the ground the effect fades out instead of cutting a hard line (soft particles).
 uniform sampler2D Sampler1;
@@ -1220,9 +1221,30 @@ void main() {
         float spread = 0.25 + along * 0.75;
         float sideBand = smoothstep(spread, spread - 0.35, abs(across)) * smoothstep(spread - 0.7, spread - 0.3, abs(across) + 0.15);
         float n = fbm(vec2(across * 4.0, along * 9.0 - time * 1.5) + vec2(3.1, 0.7));
-        alpha = sideBand * smoothstep(0.25, 0.6, n) * pow(max(0.0, 1.0 - along), 1.2);
-        base = vec3(0.93, 0.9, 0.82);
-        core = 0.0;
+        if (param > 0.5) {
+            // Over water (Stark 2026-11-14): the two arms of the wake are foam with a hard cel edge, a churned white
+            // trail right behind the flier, and chevron ripples running out across the open water between them.
+            float fade = pow(max(0.0, 1.0 - along), 1.1) * smoothstep(0.0, 0.04, along);
+            float arm = abs(abs(across) - spread * 0.82);
+            float foamN = fbm(vec2(across * 6.0, along * 14.0 - time * 2.2) + vec2(7.3, 1.9));
+            float foam = 1.0 - smoothstep(0.08, 0.16, arm - (foamN - 0.5) * 0.18);
+            float trailW = 0.08 + along * 0.22;
+            float churn = 1.0 - smoothstep(trailW * 0.6, trailW, abs(across) + (foamN - 0.5) * 0.12);
+            churn *= smoothstep(0.3, 0.55, fbm(vec2(across * 9.0, along * 20.0 - time * 3.0)));
+            float inside = 1.0 - smoothstep(spread * 0.75, spread * 0.85, abs(across));
+            float chev = abs(fract(along * 7.0 - abs(across) * 2.2 - time * 0.9) - 0.5);
+            float fwc = max(fwidth(chev), 1.0e-4);
+            float ripple = (1.0 - smoothstep(0.03, 0.03 + 1.5 * fwc, chev)) * inside * smoothstep(0.35, 0.6, n) * 0.45;
+            float a = max(max(foam, churn), ripple);
+            alpha = a * fade;
+            // light blue-white foam, whiter where it churns most
+            base = mix(vec3(0.62, 0.86, 0.98), vec3(1.0), clamp(max(churn, foam * smoothstep(0.45, 0.7, foamN)), 0.0, 1.0));
+            core = 0.0;
+        } else {
+            alpha = sideBand * smoothstep(0.25, 0.6, n) * pow(max(0.0, 1.0 - along), 1.2);
+            base = vec3(0.93, 0.9, 0.82);
+            core = 0.0;
+        }
     } else if (shape == 34) {
         // Same text as the Visualizador's shape 29 (BRUSH): the Divergent Fist's aura (Stark's ref). A flat opaque blot of
         // color with a black brush outline only in parts of the edge, scratchy ink hairs, one tip of flame on top; the

@@ -43,7 +43,7 @@ public final class FlightFx {
     // per player: the feet over the last ticks (newest first)
     private static final Map<Integer, ArrayDeque<Vec3>> TRAILS = new HashMap<>();
     // per flier skimming low and fast: the ground under it and how strong the wake was there (newest first)
-    private record Wake(Vec3 at, float strength) {
+    private record Wake(Vec3 at, float strength, boolean water) {
     }
 
     private static final Map<Integer, ArrayDeque<Wake>> WAKES = new HashMap<>();
@@ -141,7 +141,7 @@ public final class FlightFx {
             }
             // the flier is gone or landed: what is on the ground fades by itself
             ArrayDeque<Wake> w = en.getValue();
-            w.addFirst(w.isEmpty() ? new Wake(Vec3.ZERO, 0) : new Wake(w.peekFirst().at(), 0));
+            w.addFirst(w.isEmpty() ? new Wake(Vec3.ZERO, 0, false) : new Wake(w.peekFirst().at(), 0, w.peekFirst().water()));
             while (w.size() > WAKE) {
                 w.removeLast();
             }
@@ -167,7 +167,9 @@ public final class FlightFx {
             w = new ArrayDeque<>();
             WAKES.put(p.getId(), w);
         }
-        w.addFirst(new Wake(new Vec3(p.getX(), floor + 0.08, p.getZ()), low));
+        // Over water (Stark 2026-11-14): the same rasante as foam on the surface (shape 42, param 1), a bit stronger.
+        boolean water = minecraft.level.getFluidState(new BlockPos(below.getX(), floor - 1, below.getZ())).is(net.minecraft.tags.FluidTags.WATER);
+        w.addFirst(new Wake(new Vec3(p.getX(), water ? floor - 0.06 : floor + 0.08, p.getZ()), water ? Math.min(1, low * 1.2f) : low, water));
         while (w.size() > WAKE) {
             w.removeLast();
         }
@@ -188,18 +190,38 @@ public final class FlightFx {
             Vector3f[] pts = new Vector3f[n];
             float[] widths = new float[n];
             float[] us = new float[n];
+            boolean[] wet = new boolean[n];
             float strongest = 0;
+            boolean anyWet = false, anyDry = false;
             int i = 0;
             for (Wake k : history) {
                 pts[i] = k.at().subtract(camera).toVector3f();
                 us[i] = i / (float) (n - 1);
                 // the page's side: 1.4 + 2.5 boost each way, opening as it ages; how strong it was there scales it
                 widths[i] = 2 * (1.4f + 2.5f * boost) * (k.strength() < 0.01f ? 0 : 0.55f + 0.45f * k.strength());
+                wet[i] = k.water();
+                anyWet |= k.water();
+                anyDry |= !k.water();
                 strongest = Math.max(strongest, k.strength());
                 i++;
             }
-            FxDraw.stripFlat(pts, widths, us, 42, 0, AURA, Math.min(1, strongest * 1.5f), false);
+            float o = Math.min(1, strongest * 1.5f);
+            // dust over the ground, foam over the water (a shore crossed: each part of the strip its own)
+            if (anyDry) {
+                FxDraw.stripFlat(pts, masked(widths, wet, false), us, 42, 0, AURA, o, false);
+            }
+            if (anyWet) {
+                FxDraw.stripFlat(pts, masked(widths, wet, true), us, 42, 1, AURA, o, false);
+            }
         }
+    }
+
+    private static float[] masked(float[] widths, boolean[] wet, boolean keepWet) {
+        float[] out = new float[widths.length];
+        for (int i = 0; i < widths.length; i++) {
+            out[i] = wet[i] == keepWet ? widths[i] : 0;
+        }
+        return out;
     }
 
     static void render(Vec3 camera, double now, float partial) {
