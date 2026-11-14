@@ -68,6 +68,12 @@ public final class ShibuyaFeature extends Feature<NoneFeatureConfiguration> {
         return generator.getSeaLevel() + 1;
     }
 
+    // The generator's seed for a world (the same the streets were drawn with): the pedestrians walk on these streets.
+    public static int seed(long worldSeed) {
+        int worldKey = (int) (worldSeed ^ (worldSeed >>> 32));
+        return worldKey ^ SALT;
+    }
+
     @Override
     public boolean place(FeaturePlaceContext<NoneFeatureConfiguration> context) {
         WorldGenLevel level = context.level();
@@ -497,7 +503,7 @@ public final class ShibuyaFeature extends Feature<NoneFeatureConfiguration> {
         return b.setValue(LeavesBlock.PERSISTENT, true);
     }
 
-    static BlockState block(int t0) {
+    public static BlockState block(int t0) {
         if ((t0 & ShibuyaGen.LIT) != 0) {
             return ((t0 & ShibuyaGen.COOL) != 0 ? JujutsuBlocks.WINDOW_COOL : JujutsuBlocks.WINDOW_WARM).get().defaultBlockState();
         }

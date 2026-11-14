@@ -34,6 +34,12 @@ public final class Combat {
                 && !Intangible.is(entity);
     }
 
+    // Someone the aim may lock onto. Shibuya's pedestrians (npc/Pedestre) can be hit and killed by any blow, but the aim
+    // never picks them: a technique aimed at an enemy behind a crowd goes to the enemy.
+    public static boolean lockable(Entity entity) {
+        return !(entity instanceof com.starkinhon.battlegroundsmod.npc.Pedestre);
+    }
+
     // The server level an entity lives in. Only call this for server-side entities.
     public static ServerLevel level(Entity entity) {
         return (ServerLevel) entity.level();
@@ -114,6 +120,7 @@ public final class Combat {
         Vec3 eye = player.getEyePosition();
         Vec3 end = raycastPoint(player, range);
         LivingEntity hit = alongLine(level(player), eye, end, 0.6, player).stream()
+                .filter(Combat::lockable)
                 .min(Comparator.comparingDouble(e -> e.distanceToSqr(eye)))
                 .orElse(null);
         return hit != null ? hit : airAim(player, range);

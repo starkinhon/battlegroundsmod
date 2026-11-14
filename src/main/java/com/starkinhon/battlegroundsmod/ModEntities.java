@@ -242,6 +242,10 @@ public final class ModEntities {
 
     // The Dragon Ball biomes' own creatures (Stark 2026-11-11, prévia mobs-db aprovada; animal/db): the Namekians of
     // Namek, the giant fish of the Mar do Sul, Android 8 in the Norte Gelado, the Bear Thief in Paozu, Bora by Karin.
+    // Shibuya's pedestrians (npc/Pedestre, PedestreCrowd): the player's size, never saved.
+    public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.npc.Pedestre>> PEDESTRE = ENTITY_TYPES.register("pedestre",
+            () -> EntityType.Builder.<com.starkinhon.battlegroundsmod.npc.Pedestre>of(com.starkinhon.battlegroundsmod.npc.Pedestre::new, MobCategory.MISC)
+                    .sized(0.6f, 1.8f).eyeHeight(1.62f).clientTrackingRange(8).updateInterval(2).noSave().build("pedestre"));
     public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.animal.db.Namekiano>> NAMEKIANO = ENTITY_TYPES.register("namekiano",
             () -> EntityType.Builder.<com.starkinhon.battlegroundsmod.animal.db.Namekiano>of(com.starkinhon.battlegroundsmod.animal.db.Namekiano::new, MobCategory.MONSTER)
                     .sized(0.85f, 2.2f).eyeHeight(1.95f).clientTrackingRange(10).build("namekiano"));
@@ -392,6 +396,7 @@ public final class ModEntities {
         for (Supplier<EntityType<SoulMob>> type : FIGHTERS) {
             event.put(type.get(), SoulBoss.createAttributes().build());
         }
+        event.put(PEDESTRE.get(), com.starkinhon.battlegroundsmod.npc.Pedestre.createAttributes().build());
         event.put(NAMEKIANO.get(), com.starkinhon.battlegroundsmod.animal.db.Namekiano.attributes().build());
         event.put(ANDROIDE_8.get(), com.starkinhon.battlegroundsmod.animal.db.Androide8.attributes().build());
         event.put(LADRAO_URSO.get(), com.starkinhon.battlegroundsmod.animal.db.LadraoUrso.attributes().build());
