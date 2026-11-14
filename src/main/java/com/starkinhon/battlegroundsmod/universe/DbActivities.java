@@ -525,7 +525,9 @@ public final class DbActivities {
             DbQuests.sync(player);
             return;
         }
-        if (!milk.delivered && player.blockPosition().closerThan(milk.spot, 3)) {
+        // on the spot's column, a few blocks up or down still counts (Stark 2026-11-13 stood on it and climbed around it)
+        double sdx = player.getX() - (milk.spot.getX() + 0.5), sdz = player.getZ() - (milk.spot.getZ() + 0.5);
+        if (!milk.delivered && sdx * sdx + sdz * sdz < 3.5 * 3.5 && Math.abs(player.getY() - milk.spot.getY()) < 6) {
             int slot = player.getInventory().findSlotMatchingItem(new ItemStack(Items.MILK_BUCKET));
             if (slot < 0) {
                 player.displayClientMessage(Component.translatable("message.battlegroundsmod.kame_sem_leite"), true);
