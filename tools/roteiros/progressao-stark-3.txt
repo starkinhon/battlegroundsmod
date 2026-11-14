@@ -1,0 +1,31 @@
+# Terceira parte: pterod?ctilos planando mais r?pido, Casa do Goku de noite com spawn ligado (raio maior).
+espera 200
+dev preparar
+gamerule doMobSpawning true
+gamerule doDaylightCycle false
+gamemode creative
+summon battlegroundsmod:pterodactilo ~10 ~25 ~
+summon battlegroundsmod:pterodactilo ~-10 ~28 ~5
+espera 20
+dev info @e[type=battlegroundsmod:pterodactilo]
+espera 100
+dev info @e[type=battlegroundsmod:pterodactilo]
+espera 100
+dev info @e[type=battlegroundsmod:pterodactilo]
+devc vista terceira
+devc olhar 0 -35
+devc gravar prog3/ptero 4
+espera 120
+devc gravar parar
+devc camera jogador
+time set 18000
+soul estruturadb goku
+espera 600
+soul estruturadb goku centro
+kill @e[type=battlegroundsmod:raptor]
+kill @e[type=battlegroundsmod:saibaman]
+espera 2400
+say GOKU_MOBS
+say @e[type=!minecraft:player,type=!minecraft:item,type=!minecraft:experience_orb,distance=..44]
+gamerule doDaylightCycle true
+sair

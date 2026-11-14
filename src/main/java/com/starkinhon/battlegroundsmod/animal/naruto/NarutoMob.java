@@ -324,7 +324,20 @@ public class NarutoMob extends DbCreature {
             if (to == null || position().distanceToSqr(to) < 16 || horizontalCollision || getRandom().nextInt(300) == 0) {
                 pick();
             }
-            getMoveControl().setWantedPosition(to.x, to.y, to.z, 1.0);
+            // glided straight: the flying move control crawled at ~1 block/s up there (2026-11-13 test), ~5 now
+            Vec3 dir = to.subtract(position()).normalize();
+            // never down in the trees, the hills or the water on the way: climb first (one got stuck in a crown,
+            // another floated on the sea in the 2026-11-13 test)
+            int under = level().getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, getBlockX(), getBlockZ());
+            if (getY() < under + 10 || horizontalCollision || isInWater()) {
+                dir = new Vec3(dir.x * 0.5, 0.9, dir.z * 0.5).normalize();
+            }
+            setDeltaMovement(getDeltaMovement().lerp(dir.scale(0.55), 0.08));
+            Vec3 v = getDeltaMovement();
+            float yaw = (float) (Mth.atan2(v.z, v.x) * Mth.RAD_TO_DEG) - 90f;
+            setYRot(Mth.rotLerp(0.15f, getYRot(), yaw));
+            yBodyRot = getYRot();
+            yHeadRot = getYRot();
         }
 
         private void pick() {

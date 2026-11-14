@@ -418,7 +418,7 @@ public final class UniverseSpawns {
                 }
             }
         }
-        return com.starkinhon.battlegroundsmod.world.NarutoSites.near(level, null, new BlockPos(x, 0, z), 56) != null;
+        return com.starkinhon.battlegroundsmod.world.NarutoSites.near(level, null, new BlockPos(x, 0, z), 80) != null;
     }
 
     // How far around a Dragon Ball place nothing spawns: its footprint and a margin. Korin's tower is thin (Bora guards
@@ -427,8 +427,11 @@ public final class UniverseSpawns {
         return switch (kind) {
             case com.starkinhon.battlegroundsmod.world.WorldSites.KARIN -> 12;
             case com.starkinhon.battlegroundsmod.world.WorldSites.LOOKOUT -> 0;
-            case com.starkinhon.battlegroundsmod.world.WorldSites.CAPSULE, com.starkinhon.battlegroundsmod.world.WorldSites.BABIDI -> 56;
-            default -> 44;
+            // Freeza's soldiers camp around the crashed ship (earthMobs), just not on it
+            case com.starkinhon.battlegroundsmod.world.WorldSites.WRECK -> 30;
+            case com.starkinhon.battlegroundsmod.world.WorldSites.CAPSULE, com.starkinhon.battlegroundsmod.world.WorldSites.BABIDI -> 90;
+            // past the spawner's reach from a player standing in the middle (24-52 blocks), so nothing comes walking in
+            default -> 80;
         };
     }
 
