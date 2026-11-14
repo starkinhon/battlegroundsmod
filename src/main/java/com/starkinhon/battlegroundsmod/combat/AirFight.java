@@ -63,7 +63,8 @@ public final class AirFight {
     // ------------------------------------------------------------------ the lock
 
     public static void lock(ServerPlayer player, int id) {
-        if (id < 0 || !Flight.dbPower(player)) {
+        if (id < 0 || !Flight.dbPower(player)
+                || !(player.level().getEntity(id) instanceof SoulBoss soul && com.starkinhon.battlegroundsmod.boss.AirCombat.flier(soul))) {
             LOCK.remove(player.getUUID());
         } else {
             LOCK.put(player.getUUID(), id);

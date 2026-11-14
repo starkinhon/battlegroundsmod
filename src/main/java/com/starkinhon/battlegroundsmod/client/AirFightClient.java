@@ -11,7 +11,6 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.client.event.RenderFrameEvent;
@@ -93,8 +92,9 @@ public final class AirFightClient {
                 continue;
             }
             boolean flier = FlightClient.flying(living);
-            boolean hostile = living instanceof SoulBoss || living instanceof Enemy || living instanceof Player && flier;
-            if (!hostile) {
+            // Only a Dragon Ball soul that flies (Goku, Vegeta, Piccolo, Kuririn, Freeza, Bills): the combat flight locked on
+            // common mobs, even dinosaurs that never fly, as soon as the combat mode came on (Stark 2026-11-14).
+            if (!(living instanceof SoulBoss soul) || !com.starkinhon.battlegroundsmod.boss.AirCombat.flier(soul)) {
                 continue;
             }
             Vec3 to = living.position().add(0, living.getBbHeight() / 2, 0).subtract(eye);
