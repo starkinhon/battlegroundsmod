@@ -158,6 +158,7 @@ public final class PowerLogic {
         }
         if (skill) {
             com.starkinhon.battlegroundsmod.combat.Stamina.spend(player, ultimate);
+            fightSync(player, ability);
         } else {
             com.starkinhon.battlegroundsmod.combat.Stamina.gain(player,
                     com.starkinhon.battlegroundsmod.skill.StaminaSpec.get().ganhoAtaqueBasePct());
@@ -169,6 +170,21 @@ public final class PowerLogic {
             }
         }
         sync(player);
+    }
+
+    // A skill used in a fight fills the soul's Sincronia, blow or not (Stark 2026-11-13: Mestre Kame's soul starts with
+    // only the Suiken, a stance, and never got anywhere). Only with an enemy close by, so it can't be farmed alone, and a
+    // longer cooldown is worth more: 1/40 of a kill of the player's tier per second of cooldown, at most half a kill.
+    private static void fightSync(ServerPlayer player, Ability ability) {
+        if (player.isCreative() || ability.cooldown() <= 0) {
+            return;
+        }
+        boolean fight = !player.serverLevel().getEntitiesOfClass(net.minecraft.world.entity.Mob.class, player.getBoundingBox().inflate(16),
+                m -> m.isAlive() && (m.getTarget() == player || m instanceof net.minecraft.world.entity.monster.Enemy)).isEmpty();
+        if (fight) {
+            double kill = Progression.value(Tiers.of(player));
+            SoulSync.gain(player, kill * Math.min(0.5, ability.cooldown() / 20.0 / 40.0));
+        }
     }
 
     // Forte, Barragem and Dash Attack: the base fighting, which gives stamina back instead of spending it.
