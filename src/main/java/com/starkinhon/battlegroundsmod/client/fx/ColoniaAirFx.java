@@ -373,7 +373,8 @@ public final class ColoniaAirFx {
         double best = Double.MAX_VALUE;
         hasDome = false;
         for (int i = 0; i + 3 < domes.length; i += 4) {
-            double r = DOME_R * domes[i + 3] / 120.0, dx = p.x - (domes[i] + 0.5), dz = p.z - (domes[i + 1] + 0.5);
+            // (wide enough to hold the colony's corners, which stuck out of the wall in the 4th test)
+            double r = domes[i + 3] * 1.3, dx = p.x - (domes[i] + 0.5), dz = p.z - (domes[i + 1] + 0.5);
             double d = Math.sqrt(dx * dx + dz * dz);
             if (d < r * 1.6 + 64 && d < best) {
                 best = d;
@@ -879,7 +880,8 @@ public final class ColoniaAirFx {
             } else {
                 RenderSystem.enableDepthTest();
                 RenderSystem.defaultBlendFunc();
-                sphere(b, domeX - camera.x, domeY - camera.y, domeZ - camera.z, domeR, 0, 48, 96);
+                // (from a little under the ground: seen from outside, its foot cut flat at the city's level showed as a lid)
+                sphere(b, domeX - camera.x, domeY - camera.y, domeZ - camera.z, domeR, -0.22, 48, 96);
             }
             MeshData mesh = b.build();
             if (mesh != null) {
