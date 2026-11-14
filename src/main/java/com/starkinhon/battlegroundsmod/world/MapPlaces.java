@@ -148,6 +148,23 @@ public final class MapPlaces {
         pads.add(pad);
     }
 
+    // A place of this level's map (or of the normal world) whose center is within radius blocks (horizontal) of (x, z):
+    // the mobs' blows leave the buildings alone (animal/MobGrief).
+    public static boolean nearPlace(ServerLevel level, double x, double z, double radius) {
+        String map = mapOf(level);
+        List<Place> places = map != null ? PLACES.get(map) : level.dimension() == Level.OVERWORLD ? PLACES.get(WORLD) : null;
+        if (places == null) {
+            return false;
+        }
+        for (Place p : places) {
+            double dx = p.x() - x, dz = p.z() - z;
+            if (dx * dx + dz * dz < radius * radius) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public static void addWorldPlace(Place place) {
         List<Place> places = PLACES.computeIfAbsent(WORLD, k -> new ArrayList<>());
         for (Place p : places) {

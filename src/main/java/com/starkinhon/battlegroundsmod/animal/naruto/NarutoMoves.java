@@ -7,6 +7,7 @@ import java.util.Set;
 import javax.annotation.Nullable;
 
 import com.starkinhon.battlegroundsmod.ModEntities;
+import com.starkinhon.battlegroundsmod.animal.MobGrief;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Defense;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
@@ -339,6 +340,10 @@ final class NarutoMoves {
                 }
                 if (f >= 14 && f <= 28) {
                     SubNet.send(level, NmNet.DRILL, m.getId(), Combat.center(m), m.forward(), 1, 0, 0);
+                    if (f % 2 == 0) {
+                        // the drill ploughs a trench through the earth (never the stone)
+                        MobGrief.bore(m, Combat.center(m).add(m.forward().scale(0.6)), 0.95, MobGrief.EARTH);
+                    }
                     // goes through whoever is on the line
                     for (LivingEntity o : Combat.inRadius(level, Combat.center(m), 1.3, m)) {
                         if (o instanceof NarutoMob || !hitOnce(m, o)) {
@@ -488,6 +493,7 @@ final class NarutoMoves {
             case "ninja_renegado/substituicao" -> {
                 SubNet.send(level, SubNet.SLASH, 0, ahead(m, 1.2).add(0, 1.2, 0), right(m).add(0, -0.4, 0).normalize(), 1.1f, 0.18f, SubNet.STYLE_SUKUNA);
                 sound(m, SoundEvents.PLAYER_ATTACK_SWEEP, 1.2f, 1.3f);
+                MobGrief.mow(m, m.position(), m.forward(), 2.4, 1.2, 2);
                 if (front(m, t, 2.2, 0.2)) {
                     hit(m, t, 80, 0.6f, 10);
                     Combat.push(t, m.forward(), 0.35, 0.15);
@@ -498,6 +504,8 @@ final class NarutoMoves {
                 SubNet.send(level, SubNet.FIRE_BOOM, 0, m.blowSpot.add(0, 0.4, 0), new Vec3(m.blowSpot.y, 0, 0), 2.2f, 0, m.getRandom().nextInt(50));
                 sound(m, m.blowSpot, SoundEvents.GENERIC_EXPLODE.value(), 1.6f, 1.1f);
                 wave(m, m.blowSpot.add(0, 0.5, 0), 2.8, 120, 0.9, 0.45, null);
+                MobGrief.crater(m, m.blowSpot, 1.5, MobGrief.ROCK);
+                MobGrief.scorch(m, m.blowSpot, 2.3, 1);
             }
             // ---------- Ninken ----------
             case "ninken/pinca" -> {
@@ -517,6 +525,9 @@ final class NarutoMoves {
             // ---------- Cobra Gigante ----------
             case "cobra_gigante/bote" -> {
                 sound(m, SoundEvents.EVOKER_FANGS_ATTACK, 1.6f, 0.6f);
+                // the huge body lunging flattens the plants in its way, the head slams into the ground
+                MobGrief.mow(m, m.position(), m.forward(), 10, 1.4, 2.5);
+                MobGrief.heave(m, ahead(m, Math.min(10, alive(t) ? m.gap(t) + 1 : 8)), 1.6, 3, MobGrief.EARTH);
                 if (front(m, t, 11, 0.75)) {
                     hit(m, t, 180, 0.9f, 10);
                     Combat.push(t, m.forward(), 1.1, 0.4);
@@ -538,6 +549,7 @@ final class NarutoMoves {
             case "tigre/salto" -> {
                 SubNet.send(level, SubNet.SLASH, 0, ahead(m, 1.6).add(0, 1, 0), right(m).add(0, -0.7, 0).normalize(), 1.3f, 0.2f, SubNet.STYLE_CRIMSON);
                 sound(m, SoundEvents.PLAYER_ATTACK_SWEEP, 1.3f, 0.8f);
+                MobGrief.mow(m, m.position(), m.forward(), 2.6, 1.2, 2);
                 if (front(m, t, 2.4, 0.3)) {
                     Defense.breakGuard(t, m);
                     hit(m, t, 120, 0.8f, 10);
@@ -547,6 +559,7 @@ final class NarutoMoves {
             case "tigre/rugido" -> {
                 sound(m, SoundEvents.RAVAGER_ROAR, 2f, 1.2f);
                 SubNet.send(level, NmNet.SHOCK, 0, m.position().add(0, 0.1, 0), Vec3.ZERO, 6, 0, 1);
+                MobGrief.shatter(m, m.position().add(0, 0.5, 0), 3.2);
                 for (LivingEntity o : Combat.inRadius(level, m.position(), 9, m)) {
                     if (o instanceof NarutoMob n) {
                         // the dogs and the weak run from it
@@ -564,6 +577,8 @@ final class NarutoMoves {
             case "ninja_som/onda" -> {
                 Vec3 hand = m.position().add(0, 1.4, 0);
                 Vec3 dir = alive(t) ? Combat.center(t).subtract(hand).normalize() : m.forward();
+                // the sound shatters the glass and the leaves along it
+                MobGrief.shatterLine(m, hand, hand.add(dir.scale(8)), 1.1);
                 for (LivingEntity o : Combat.alongLine(level, hand, hand.add(dir.scale(8)), 1.4, m)) {
                     if (o instanceof NarutoMob) {
                         continue;
@@ -576,6 +591,7 @@ final class NarutoMoves {
                 Vec3 hand = m.position().add(0, 1.0, 0);
                 SubNet.send(level, SubNet.GALE, m.getId(), hand, hand.add(m.forward().scale(7)), 0, 0, 1);
                 sound(m, SoundEvents.BREEZE_SHOOT, 1.6f, 0.7f);
+                MobGrief.mow(m, m.position(), m.forward(), 7, 1.6, 2.5);
                 for (LivingEntity o : Combat.alongLine(level, hand, hand.add(m.forward().scale(7)), 1.5, m)) {
                     if (o instanceof NarutoMob) {
                         continue;
@@ -607,6 +623,8 @@ final class NarutoMoves {
                 Vec3 from = m.position().add(0, 1.1, 0);
                 SubNet.send(level, NmNet.WIND, m.getId(), from, m.forward().scale(range), 0.55f, 0, 0);
                 sound(m, SoundEvents.BREEZE_SHOOT, 1.6f, 1.3f);
+                // the wind blades cut the grass, the flowers and the leaves in the fan
+                MobGrief.mow(m, m.position(), m.forward(), range, 2.6, 3);
                 for (LivingEntity o : Combat.inRadius(level, m.position(), range, m)) {
                     Vec3 to = o.position().subtract(m.position()).multiply(1, 0, 1);
                     if (o instanceof NarutoMob || to.lengthSqr() < 0.01 || to.normalize().dot(m.forward()) < 0.82) {
@@ -619,6 +637,7 @@ final class NarutoMoves {
             case "ninja_leque/fechado" -> {
                 sound(m, SoundEvents.PLAYER_ATTACK_STRONG, 1.3f, 0.7f);
                 SubNet.send(level, SubNet.SLASH, 0, ahead(m, 1.2).add(0, 0.6, 0), new Vec3(0, 1, 0).add(m.forward().scale(0.3)).normalize(), 1.2f, 0.2f, SubNet.STYLE_SUKUNA);
+                MobGrief.mow(m, m.position(), m.forward(), 2.2, 0.9, 2);
                 if (front(m, t, 2.3, 0.3)) {
                     hit(m, t, 80, 0.6f, 10);
                     // three blocks up
@@ -629,6 +648,7 @@ final class NarutoMoves {
             case "escorpiao_areia/emboscada" -> {
                 SubNet.send(level, SubNet.DUST, 0, m.position(), Vec3.ZERO, 1.4f, 0, 0);
                 sound(m, SoundEvents.SAND_BREAK, 1.6f, 0.5f);
+                MobGrief.heave(m, m.position(), 1.6, 3, MobGrief.EARTH);
                 if (front(m, t, 1.8, -1) && hold(m, t, 30)) {
                     slow(t, m, 30, 4);
                     hit(m, t, 60, 0.5f, 10);
@@ -646,6 +666,7 @@ final class NarutoMoves {
                 SubNet.send(level, SubNet.SLASH, 0, ahead(m, 1.4).add(0, 1.3, 0), right(m).add(0, 0.8, 0).normalize(), 1.4f, 0.16f, SubNet.STYLE_SUKUNA);
                 SubNet.send(level, SubNet.SLASH, 0, ahead(m, 1.4).add(0, 1.3, 0), right(m).add(0, -0.8, 0).normalize(), 1.4f, 0.16f, SubNet.STYLE_SUKUNA);
                 sound(m, SoundEvents.PLAYER_ATTACK_SWEEP, 1.3f, 1.4f);
+                MobGrief.mow(m, m.position(), m.forward(), 2.8, 1.3, 2.5);
                 if (front(m, t, 2.6, 0.3)) {
                     hit(m, t, 100, 0.6f, 10);
                     poison(t, m, 80, 0);
@@ -670,6 +691,7 @@ final class NarutoMoves {
                     SubNet.send(level, SubNet.SENBON, 0, sleeve, d.normalize().scale(4.5), 0, 0, 0);
                 }
                 sound(m, SoundEvents.ARROW_SHOOT, 1.2f, 1.7f);
+                MobGrief.shatterLine(m, sleeve, sleeve.add(m.forward().scale(4.5)), 0.7);
                 if (front(m, t, 3.4, 0.5)) {
                     hit(m, t, 40, 0.4f, 10);
                     Combat.push(t, m.forward(), 0.4, 0.1);
@@ -679,6 +701,7 @@ final class NarutoMoves {
             case "espadachim_nevoa/silencioso" -> {
                 SubNet.send(level, SubNet.SLASH, 0, ahead(m, 1.5).add(0, 1.1, 0), right(m).add(0, -0.3, 0).normalize(), 1.7f, 0.22f, SubNet.STYLE_SUKUNA);
                 sound(m, SoundEvents.PLAYER_ATTACK_SWEEP, 1.4f, 0.8f);
+                MobGrief.mow(m, m.position(), m.forward(), 3.0, 1.8, 2.5);
                 if (front(m, t, 2.6, 0.2)) {
                     hit(m, t, 140, 0.8f, 10);
                     Combat.push(t, m.forward(), 0.5, 0.2);
@@ -688,6 +711,7 @@ final class NarutoMoves {
                 // the original comes in from the side while the clones are being hit
                 SubNet.send(level, SubNet.SLASH, 0, ahead(m, 1.5).add(0, 1.1, 0), right(m).add(0, 0.3, 0).normalize(), 1.7f, 0.22f, SubNet.STYLE_SUKUNA);
                 sound(m, SoundEvents.PLAYER_ATTACK_SWEEP, 1.4f, 0.9f);
+                MobGrief.mow(m, m.position(), m.forward(), 3.0, 1.8, 2.5);
                 if (front(m, t, 2.8, 0.2)) {
                     hit(m, t, 120, 0.8f, 10);
                     Combat.push(t, m.forward(), 0.4, 0.2);
@@ -697,6 +721,7 @@ final class NarutoMoves {
             case "tubarao_agua/salto" -> {
                 sound(m, SoundEvents.PLAYER_SPLASH_HIGH_SPEED, 1.6f, 0.7f);
                 SubNet.send(level, NmNet.SPLASH, 0, m.position(), Vec3.ZERO, 1.6f, 0, 0);
+                MobGrief.soak(m, m.position(), 2.0);
                 if (front(m, t, 2.6, 0.2)) {
                     hit(m, t, 120, 0.7f, 10);
                     // dragged one block toward the water
@@ -707,6 +732,8 @@ final class NarutoMoves {
                 Vec3 from = m.position().add(0, 0.5, 0);
                 SubNet.send(level, NmNet.WATER_BALL, 0, from, m.forward().scale(7), 0.6f, 6, 1);
                 sound(m, SoundEvents.TRIDENT_RIPTIDE_2.value(), 1.4f, 1f);
+                MobGrief.shatterLine(m, from, from.add(m.forward().scale(7)), 0.9);
+                MobGrief.soak(m, from.add(m.forward().scale(7)), 1.8);
                 for (LivingEntity o : Combat.alongLine(level, from, from.add(m.forward().scale(7)), 1.3, m)) {
                     if (o instanceof NarutoMob) {
                         continue;
@@ -785,6 +812,8 @@ final class NarutoMoves {
                 SubNet.send(level, SubNet.FIRE_BOOM, 0, at, new Vec3(ground(m, at).y, 0, 0), 1.3f, 0, m.getRandom().nextInt(50));
                 sound(m, at, SoundEvents.GENERIC_EXPLODE.value(), 1.2f, 1.4f);
                 wave(m, at, 2.4, 80, 0.6, 0.35, null);
+                MobGrief.crater(m, at, 1.2, MobGrief.ROCK);
+                MobGrief.scorch(m, at, 1.8, 1);
                 m.discard();
             }
             case "garca_papel/corte" -> {
@@ -798,9 +827,13 @@ final class NarutoMoves {
                 Vec3 c = m.position().add(m.forward().scale(2.5));
                 SubNet.send(level, NmNet.GAS, m.getId(), c, m.forward(), 7, 60, 0);
                 sound(m, SoundEvents.FIRE_EXTINGUISH, 2f, 0.4f);
+                // the poison kills the grass and the plants under the cloud
+                MobGrief.blight(m, c, 4.5);
             }
             case "salamandra_venenosa/rabada" -> {
                 sound(m, SoundEvents.PLAYER_ATTACK_STRONG, 1.6f, 0.5f);
+                MobGrief.mow(m, m.position(), m.forward().scale(-1), 3.6, 2.4, 2);
+                MobGrief.heave(m, m.position().subtract(m.forward().scale(2.4)), 1.6, 2, MobGrief.EARTH);
                 for (LivingEntity o : Combat.inRadius(level, m.position(), 3.8, m)) {
                     Vec3 to = o.position().subtract(m.position()).multiply(1, 0, 1).normalize();
                     if (o instanceof NarutoMob || to.dot(m.forward()) > 0.35) {
@@ -814,6 +847,7 @@ final class NarutoMoves {
             case "zetsu_branco/agarrao" -> {
                 SubNet.send(level, SubNet.DUST, 0, m.position(), Vec3.ZERO, 1.2f, 0, 0);
                 sound(m, SoundEvents.ROOTED_DIRT_BREAK, 1.4f, 0.6f);
+                MobGrief.heave(m, m.position(), 1.4, 3, MobGrief.EARTH);
                 if (front(m, t, 1.6, -0.2) && hold(m, t, 32)) {
                     hit(m, t, 40, 0.5f, 10);
                     dizzy(m, t, 30);
@@ -853,6 +887,8 @@ final class NarutoMoves {
                 }
                 SubNet.send(level, NmNet.STAKES, m.getId(), from, line, 7, 0, 0);
                 sound(m, SoundEvents.WOOD_BREAK, 1.6f, 0.5f);
+                // the stakes tear the ground up along the line
+                MobGrief.heaveLine(m, from, from.add(line), 1.1, MobGrief.EARTH);
                 for (LivingEntity o : Combat.alongLine(level, from.add(0, 0.5, 0), from.add(line).add(0, 0.5, 0), 1.0, m)) {
                     if (o instanceof NarutoMob) {
                         continue;
@@ -869,6 +905,7 @@ final class NarutoMoves {
                 Vec3 spot = ground(m, t.position());
                 SubNet.send(level, NmNet.CAGE, m.getId(), spot, Vec3.ZERO, 40, 0, 0);
                 sound(m, spot, SoundEvents.WOOD_PLACE, 2f, 0.4f);
+                MobGrief.heave(m, spot, 2.2, 4, MobGrief.EARTH);
                 if (hold(m, t, 40)) {
                     hit(m, t, 40, 0.5f, 10);
                     m.blowSpot = spot;
@@ -880,6 +917,11 @@ final class NarutoMoves {
                 Vec3 to = alive(t) ? Combat.center(t) : ahead(m, 5).add(0, 0.8, 0);
                 SubNet.send(level, NmNet.WATER_BALL, 0, mouth, to.subtract(mouth), 0.3f, Math.max(3, (int) (to.distanceTo(mouth) * 1.4)), 0);
                 sound(m, SoundEvents.FROG_TONGUE, 1.2f, 0.6f);
+                Vec3 splash = to;
+                com.starkinhon.battlegroundsmod.combat.Tasks.later(Math.max(3, (int) (to.distanceTo(mouth) * 1.4)), () -> {
+                    MobGrief.shatter(m, splash, 0.6);
+                    MobGrief.soak(m, splash, 1.0);
+                });
                 if (alive(t) && m.gap(t) < 6.5 && m.hasLineOfSight(t)) {
                     hit(m, t, 40, 0.4f, 4);
                     Combat.push(t, t.position().subtract(m.position()), 0.55, 0.2);
@@ -904,6 +946,9 @@ final class NarutoMoves {
                 sound(m, at, SoundEvents.GENERIC_EXPLODE.value(), 2f, 0.5f);
                 sound(m, at, SoundEvents.ANVIL_LAND, 1.4f, 0.4f);
                 wave(m, at.add(0, 0.5, 0), 5, 200, 1.4, 0.6, null);
+                // the landing sinks the ground under it and throws the earth around
+                MobGrief.crater(m, at, 2.0, MobGrief.ROCK);
+                MobGrief.heave(m, at, 4.5, 7, MobGrief.EARTH);
             }
             case "sapo_gigante/canhao" -> {
                 Vec3 mouth = ahead(m, 1.8).add(0, 2.2, 0);
@@ -922,6 +967,10 @@ final class NarutoMoves {
                     }
                     SubNet.send(level, NmNet.SPLASH, 0, burst, Vec3.ZERO, 3f, 0, 0);
                     SubCommon.sound(level, burst, SoundEvents.GENERIC_SPLASH, 2f, 0.6f);
+                    // the water hits like a wall: a dent of earth, mud all around
+                    MobGrief.shatter(m, burst, 1.2);
+                    MobGrief.crater(m, burst, 1.3, MobGrief.EARTH);
+                    MobGrief.soak(m, burst, 3.0);
                     for (LivingEntity o : Combat.inRadius(level, burst, 3.2, m)) {
                         if (o instanceof NarutoMob) {
                             continue;
@@ -942,6 +991,7 @@ final class NarutoMoves {
             }
             case "inseto_gigante/voo" -> {
                 sound(m, SoundEvents.ARMADILLO_SCUTE_DROP, 1.4f, 0.7f);
+                MobGrief.mow(m, m.position(), m.forward(), 2.2, 1.0, 2);
                 if (front(m, t, 2.0, 0)) {
                     hit(m, t, 60, 0.5f, 10);
                     Combat.push(t, m.forward(), 0.5, 0.3);

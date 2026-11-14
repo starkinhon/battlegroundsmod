@@ -10,6 +10,7 @@ import java.util.Set;
 
 import javax.annotation.Nullable;
 
+import com.starkinhon.battlegroundsmod.animal.MobGrief;
 import com.starkinhon.battlegroundsmod.animal.naruto.NarutoMob;
 import com.starkinhon.battlegroundsmod.animal.naruto.NarutoSpec.Spec;
 import com.starkinhon.battlegroundsmod.animal.naruto.NmNet;
@@ -385,19 +386,17 @@ public final class DbMobMoves {
         }
     }
 
-    // a small hole of soft blocks, only with the destruction gamerule
-    // a crater, only for the android's self-destruct (the common mobs' bombs and shots never dig: test 2026-11-13,
-    // they holed the ground and the houses), only with the destruction gamerule and mobGriefing
-    private static void dent(DbMob m, Vec3 at, double radius) {
-        if (BlockRules.canBreak(lvl(m)) && lvl(m).getGameRules().getBoolean(net.minecraft.world.level.GameRules.RULE_MOBGRIEFING)) {
-            DbCommon.bigCrater(lvl(m), at, radius, radius * 0.6, 3);
-        }
+    // A blast's small bowl (MobGrief: the destruction gamerule, never at a mission building nor in an expansion). The
+    // common blows stay small (test 2026-11-13: the old big craters holed the ground and the houses); Stark 2026-11-14
+    // asked for them back, light and true to each blow.
+    private static void dent(DbMob m, Vec3 at, double radius, float maxHard) {
+        MobGrief.crater(m, at, radius, maxHard);
     }
 
-    // weak blocks (plants, leaves, logs, glass) in the way of a charge, only with the destruction gamerule
+    // weak blocks (plants, leaves, glass, and the logs for the big ones) in the way of a charge
     private static void smash(DbMob m, Vec3 at, double r, boolean logs) {
         ServerLevel level = lvl(m);
-        if (!BlockRules.canBreak(level) || !level.getGameRules().getBoolean(net.minecraft.world.level.GameRules.RULE_MOBGRIEFING)) {
+        if (!MobGrief.allowed(m, at)) {
             return;
         }
         BlockPos c = BlockPos.containing(at);
@@ -407,13 +406,11 @@ public final class DbMobMoves {
                 continue;
             }
             BlockState s = level.getBlockState(p);
-            if (s.isAir() || s.getDestroySpeed(level, p) < 0) {
+            if (s.isAir() || s.getDestroySpeed(level, p) < 0 || s.hasBlockEntity() || !s.getFluidState().isEmpty()) {
                 continue;
             }
-            boolean weak = s.is(BlockTags.LEAVES) || s.is(BlockTags.FLOWERS) || s.is(BlockTags.REPLACEABLE) || s.is(Blocks.GLASS)
-                    || s.is(BlockTags.SAPLINGS) || logs && s.is(BlockTags.LOGS) || s.getDestroySpeed(level, p) <= 0.3f;
-            if (weak) {
-                level.setBlock(p, Blocks.AIR.defaultBlockState(), 2 | 16);
+            if (MobGrief.soft(s) || logs && s.is(BlockTags.LOGS)) {
+                com.starkinhon.battlegroundsmod.combat.BlockBreakFx.erase(level, p.immutable(), s, 2 | 16);
             }
         }
     }
@@ -598,6 +595,7 @@ public final class DbMobMoves {
                     boolean leftSide = (tick / 6) % 2 == 0;
                     Vec3 at = body(m, 1.3, leftSide ? -0.3 : 0.3, 1.2);
                     SubNet.send(level, SubNet.SLASH, 0, at, right(m).scale(leftSide ? 1 : -1).add(0, -0.6, 0).normalize(), 0.7f, 0.12f, SubNet.STYLE_CRIMSON);
+                    MobGrief.mow(m, m.position(), m.forward(), 2.0, 0.8, 2);
                     sound(m, SoundEvents.PLAYER_ATTACK_SWEEP, 1f, 1.3f + 0.05f * tick / 6);
                     if (front(m, t, 1.8, 0.2)) {
                         owe(m, t, 16);
@@ -642,6 +640,7 @@ public final class DbMobMoves {
                 }
                 SubNet.send(level, SubNet.STREAK, 0, from, end.subtract(from), 0.06f, Db.GOLD_W, 2);
                 DbCommon.hit(level, end, 0.18f, Db.GOLD);
+                MobGrief.shatter(m, end, 0.6);
                 sound(m, from, SoundEvents.IRON_GOLEM_STEP, 0.7f, 1.9f);
                 int shot = (tick - 10) / 2 + 1;
                 if (shot % 4 == 0 || shot == 14) {
@@ -717,6 +716,7 @@ public final class DbMobMoves {
                 if (tick == 30) {
                     SubNet.send(level, SubNet.SLASH, 0, body(m, 1.6, 0.2, 1.4), right(m).scale(-1).add(0, -0.7, 0).normalize(), 1.2f, 0.2f, SubNet.STYLE_CRIMSON);
                     sound(m, SoundEvents.PLAYER_ATTACK_SWEEP, 1.3f, 0.7f);
+                    MobGrief.mow(m, m.position(), m.forward(), 3.0, 1.4, 2.5);
                     if (front(m, t, 2.8, 0.2)) {
                         owe(m, t, 45);
                     }
@@ -726,6 +726,7 @@ public final class DbMobMoves {
                     // the roar: everything around backs off
                     sound(m, SoundEvents.RAVAGER_ROAR, 1.8f, 1.3f);
                     SubNet.send(level, NmNet.SHOCK, 0, m.position().add(0, 0.1, 0), Vec3.ZERO, 6, 0, 1);
+                    MobGrief.shatter(m, m.position().add(0, 0.5, 0), 3.2);
                     for (LivingEntity o : Combat.inRadius(level, m.position(), 6, m)) {
                         if (!ally(m, o)) {
                             Combat.pushFrom(o, m.position(), 0.7, 0.2);
@@ -752,6 +753,10 @@ public final class DbMobMoves {
                     if (tick % 4 == 0) {
                         sound(m, SoundEvents.RAVAGER_STEP, 2f, 0.5f);
                         SubNet.send(level, SubNet.DUST, 0, m.position(), Vec3.ZERO, 1.4f, 0, 0);
+                    }
+                    if (tick % 8 == 2) {
+                        // the feet tear clods out of the ground as it runs
+                        MobGrief.heave(m, m.position().add(right(m).scale(tick % 16 == 2 ? 0.9 : -0.9)), 1.0, 1, MobGrief.EARTH);
                     }
                     for (LivingEntity o : Combat.inRadius(level, ahead(m, 2.4).add(0, 1, 0), 2.2, m)) {
                         if (!ally(m, o) && once(m, o)) {
@@ -800,12 +805,10 @@ public final class DbMobMoves {
                         magic(m, o, 30);
                         o.igniteForSeconds(4);
                     }
-                    if (BlockRules.canBreak(level) && tick % 14 == 0) {
+                    if (tick % 14 == 0) {
+                        // the ground under the jet burns: grass to earth, leaves gone, a flame or two
                         Vec3 spot = ground(m, mouth.add(dir.scale(4 + m.getRandom().nextDouble() * 3)));
-                        BlockPos p = BlockPos.containing(spot);
-                        if (level.getBlockState(p).isAir() && level.getBlockState(p.below()).isFaceSturdy(level, p.below(), net.minecraft.core.Direction.UP)) {
-                            level.setBlock(p, Blocks.FIRE.defaultBlockState(), 3);
-                        }
+                        MobGrief.scorch(m, spot, 1.8, 1);
                     }
                     sound(m, mouth, SoundEvents.BLAZE_SHOOT, 1.4f, 0.6f);
                 }
@@ -831,6 +834,13 @@ public final class DbMobMoves {
                     if (got != null) {
                         owe(m, got, big ? 40 : 12);
                     }
+                    Vec3 hitAt = end;
+                    DbCommon.later(flight, () -> {
+                        MobGrief.shatter(m, hitAt, 0.6);
+                        if (big) {
+                            MobGrief.crater(m, hitAt, 1.1, MobGrief.EARTH);
+                        }
+                    });
                     if (tick == 24 || tick == 34 || big) {
                         LivingEntity paid = got;
                         DbCommon.later(flight, () -> pay(m, true));
@@ -855,6 +865,8 @@ public final class DbMobMoves {
                     int flight = Math.max(2, (int) (from.distanceTo(end) / 2));
                     SubNet.send(level, SubNet.SHOT, SubNet.newId(), from, end.subtract(from), flight, Db.PINK, 0);
                     sound(m, from, SoundEvents.BEACON_DEACTIVATE, 0.9f, 1.7f);
+                    Vec3 hitAt = end;
+                    DbCommon.later(flight, () -> MobGrief.shatter(m, hitAt, 0.7));
                     if (tick == 26) {
                         DbCommon.later(flight, () -> pay(m, true));
                     }
@@ -887,10 +899,15 @@ public final class DbMobMoves {
                             magic(m, o, 30);
                             Combat.push(o, dir, 0.4, 0.1);
                         }
+                        // the beam's body tears a thin furrow where it runs low over the ground
+                        if (MobGrief.allowed(m, end)) {
+                            com.starkinhon.battlegroundsmod.power.powers.sub.db.DbScar.along(m, level, from, end, 0.3);
+                        }
                     }
                     if (tick == 50) {
                         STREAM.remove(m.getId());
                         DbCommon.boom(level, end, 1.4f, Db.KAME, 1000 + m.getRandom().nextInt(100));
+                        MobGrief.crater(m, end, 1.6, MobGrief.ROCK);
                     }
                 }
             }
@@ -966,16 +983,24 @@ public final class DbMobMoves {
                         for (LivingEntity o : Combat.alongLine(level, from, end, 0.75, m)) {
                             magic(m, o, 38);
                         }
+                        if (MobGrief.allowed(m, end)) {
+                            com.starkinhon.battlegroundsmod.power.powers.sub.db.DbScar.along(m, level, from, end, 0.35);
+                        }
                     }
                     if (tick == 46) {
                         STREAM.remove(m.getId());
                         DbCommon.boom(level, end, 1.8f, Db.GOLD, 1000 + m.getRandom().nextInt(100));
                         DbCommon.hurtRadius(m, level, end, 2, 20, 0.6, 0.3);
+                        MobGrief.crater(m, end, 1.9, MobGrief.ROCK);
                     }
                 }
             }
             // ---------- Tao Pai Pai: riding the pillar ----------
             case "tao_pai_pai/pilar" -> {
+                if (tick == 6) {
+                    // the pillar tears out of the ground in front of him
+                    MobGrief.heave(m, ahead(m, 1), 1.1, 3, MobGrief.ROCK);
+                }
                 if (tick >= 6 && tick < 58) {
                     // the pillar under him: rises out of the ground, then flies with him on it
                     Vec3 foot = tick < 20 ? ground(m, ahead(m, 1)) : m.position().add(0, -0.4, 0);
@@ -999,6 +1024,8 @@ public final class DbMobMoves {
                     Combat.push(t, m.forward(), 0.6, -0.4);
                     hit(m, t, 20, 0.8f, 10);
                     SubNet.send(level, SubNet.CRACKS, 0, ground(m, t.position()), Vec3.ZERO, 1.6f, 6, 1);
+                    // thrown down hard: the ground gives
+                    MobGrief.heave(m, t.position(), 1.3, 3, MobGrief.EARTH);
                 }
             }
             case "spopovich/investida" -> {
@@ -1006,6 +1033,7 @@ public final class DbMobMoves {
                     if (tick % 3 == 0) {
                         SubNet.send(level, SubNet.DASH_TRAIL, m.getId(), Combat.center(m), Vec3.ZERO, 1, 0, 0);
                     }
+                    smash(m, ahead(m, 1.3).add(0, 0.4, 0), 1.1, true);
                     for (LivingEntity o : Combat.inRadius(level, ahead(m, 1.1).add(0, 1, 0), 1.6, m)) {
                         if (!ally(m, o) && once(m, o)) {
                             hit(m, o, 120, 0.9f, 10);
@@ -1066,6 +1094,8 @@ public final class DbMobMoves {
                 int flight = 7;
                 DmNet.send(level, DmNet.ACID, m.getId(), mouth, at.subtract(mouth), 1.7f, 46, flight);
                 sound(m, SoundEvents.LLAMA_SPIT, 1.4f, 0.6f);
+                // the acid eats the grass and the plants where it lands
+                DbCommon.later(flight + 4, () -> MobGrief.blight(m, at, 1.7));
                 ZONES.add(new LevelZone(level) {
                     boolean tick(ServerLevel l) {
                         if (age > flight + 46) {
@@ -1118,6 +1148,8 @@ public final class DbMobMoves {
                     DbCommon.boom(level, boom, 3f, Db.RED_W, 1000 + level.getRandom().nextInt(100));
                     DbCommon.screen(level, boom, 8);
                     SubNet.send(level, SubNet.CRACKS, 0, boom, Vec3.ZERO, 2.4f, 8, 1);
+                    MobGrief.crater(m, boom, 2.1, MobGrief.HEAVY);
+                    MobGrief.scorch(m, boom, 2.8, 1);
                     for (LivingEntity o : Combat.inRadius(level, boom, 3.4, m)) {
                         if (!ally(m, o)) {
                             double k = 1 - 0.5 * Math.min(1, Combat.center(o).distanceTo(boom) / 3.4);
@@ -1131,6 +1163,7 @@ public final class DbMobMoves {
             case "pirata/sabre" -> {
                 SubNet.send(level, SubNet.ARC, 0, body(m, 1.1, 0, 1.2), m.forward(), 2.2f, Db.WHITE, 0);
                 sound(m, SoundEvents.PLAYER_ATTACK_SWEEP, 1.4f, 0.9f);
+                MobGrief.mow(m, m.position(), m.forward(), 3.2, 1.6, 2);
                 for (LivingEntity o : cone(m, m.position(), m.forward(), 3.4, -0.15)) {
                     hit(m, o, 70, 0.7f, 10);
                     Combat.push(o, o.position().subtract(m.position()), 0.5, 0.2);
@@ -1143,6 +1176,8 @@ public final class DbMobMoves {
                 sound(m, at, SoundEvents.GENERIC_EXPLODE.value(), 1.6f, 1.1f);
                 wave(m, at.add(0, 0.5, 0), 3, 95, 1.0, 0.45, false);
                 SubNet.send(level, SubNet.CRACKS, 0, at, Vec3.ZERO, 1.8f, 7, 1);
+                MobGrief.crater(m, at, 1.6, MobGrief.ROCK);
+                MobGrief.scorch(m, at, 2.4, 1);
             }
             // ---------- Yeti ----------
             case "yeti/rugido" -> {
@@ -1150,6 +1185,7 @@ public final class DbMobMoves {
                 Vec3 dir = m.forward();
                 for (int i = 1; i <= 4; i++) {
                     SubNet.send(level, SubNet.FROST, 0, ground(m, m.position().add(dir.scale(i * 1.8))), Vec3.ZERO, 1.2f + i * 0.45f, 60, 0);
+                    MobGrief.frost(m, ground(m, m.position().add(dir.scale(i * 1.8))), 0.8 + i * 0.35);
                 }
                 DbCommon.screen(level, m.position(), 4);
                 for (LivingEntity o : cone(m, m.position(), dir, 7.5, 0.55)) {
@@ -1171,6 +1207,9 @@ public final class DbMobMoves {
                 sound(m, SoundEvents.GLASS_BREAK, 2f, 0.6f);
                 SubNet.send(level, SubNet.CRACKS, 0, at, Vec3.ZERO, 3f, 9, 1);
                 SubNet.send(level, SubNet.FROST, 0, at, Vec3.ZERO, 3.6f, 80, 0);
+                MobGrief.crater(m, at, 1.4, MobGrief.ROCK);
+                MobGrief.heave(m, at, 2.6, 3, MobGrief.EARTH);
+                MobGrief.frost(m, at, 3.4);
                 for (int ring = 0; ring < 3; ring++) {
                     int n = 6 + ring * 4;
                     double r = 1.2 + ring * 1.1;
@@ -1199,6 +1238,7 @@ public final class DbMobMoves {
                 SubNet.send(level, SubNet.SLASH, 0, at, right(m).add(0, 0.8, 0).normalize(), 0.8f, 0.14f, SubNet.STYLE_CRIMSON);
                 SubNet.send(level, SubNet.SLASH, 0, at, right(m).add(0, -0.8, 0).normalize(), 0.8f, 0.14f, SubNet.STYLE_CRIMSON);
                 sound(m, SoundEvents.PLAYER_ATTACK_SWEEP, 1.2f, 1.4f);
+                MobGrief.mow(m, m.position(), m.forward(), 2.4, 1.0, 1.6);
                 if (front(m, t, 2.4, 0.2)) {
                     hit(m, t, 60, 0.6f, 10);
                     SubNet.send(level, SubNet.BLOOD_SPLASH, 0, Combat.center(t), m.forward(), 0.6f, 0, 0);
@@ -1206,7 +1246,11 @@ public final class DbMobMoves {
                 }
             }
             // ---------- Chifrudo ----------
-            case "dino_chifrudo/chifrada" -> SubNet.send(level, SubNet.DUST, 0, m.position(), Vec3.ZERO, 1.6f, 0, 0);
+            case "dino_chifrudo/chifrada" -> {
+                SubNet.send(level, SubNet.DUST, 0, m.position(), Vec3.ZERO, 1.6f, 0, 0);
+                // the horns dug into the ground where it stopped
+                MobGrief.heave(m, ahead(m, 1.8), 1.4, 3, MobGrief.EARTH);
+            }
             case "dino_chifrudo/clava" -> {
                 // the tail sweeps round on the side the target stands
                 Vec3 tail = body(m, -2.2, 0, 0.9);
@@ -1219,6 +1263,7 @@ public final class DbMobMoves {
                     }
                 }
                 smash(m, tail, 2.2, false);
+                MobGrief.heave(m, tail, 1.6, 2, MobGrief.EARTH);
             }
             // ---------- T-rex ----------
             case "tiranossauro/investida" -> {
@@ -1228,6 +1273,9 @@ public final class DbMobMoves {
                 sound(m, SoundEvents.GENERIC_EXPLODE.value(), 1.4f, 0.5f);
                 SubNet.send(level, SubNet.CRACKS, 0, at, Vec3.ZERO, 4.5f, 12, 1);
                 SubNet.send(level, NmNet.SHOCK, 0, at.add(0, 0.1, 0), Vec3.ZERO, 6, 0, 0);
+                // the foot sinks in and the ground around jumps
+                MobGrief.crater(m, at, 1.8, MobGrief.ROCK);
+                MobGrief.heave(m, at, 4.0, 6, MobGrief.EARTH);
                 DbCommon.screen(level, at, 4);
                 wave(m, at, 6, 110, 0.6, 0.7, true);
             }
@@ -1242,6 +1290,8 @@ public final class DbMobMoves {
                 Vec3 at = body(m, 1.2, 0, 0.3);
                 SubNet.send(level, NmNet.WIND, 0, at, m.forward().scale(8), 0.7f, 0, 0);
                 DmNet.send(level, DmNet.SAND, m.getId() + 1, ground(m, ahead(m, 2)), m.forward().scale(7), 0.8f, 1, 0);
+                // the gust strips the flowers, the grass and the leaves in its way
+                MobGrief.mow(m, m.position(), m.forward(), 7.5, 2.4, 3);
                 for (LivingEntity o : cone(m, m.position(), m.forward(), 8.5, 0.4)) {
                     boolean flying = !o.onGround();
                     Combat.push(o, m.forward(), flying ? 2.2 : 1.1, flying ? 0.5 : 0.2);
@@ -1260,6 +1310,7 @@ public final class DbMobMoves {
                 DbCommon.later(flight, () -> {
                     DbCommon.boom(level, at, 2.6f, Db.PURPLE, 1000 + level.getRandom().nextInt(100));
                     SubNet.send(level, SubNet.CRACKS, 0, at, Vec3.ZERO, 2.2f, 8, 1);
+                    MobGrief.crater(m, at, 1.9, MobGrief.ROCK);
                     for (LivingEntity o : Combat.inRadius(level, at, 3.2, m)) {
                         if (!ally(m, o)) {
                             double k = 1 - 0.5 * Math.min(1, Combat.center(o).distanceTo(at) / 3.2);
@@ -1293,6 +1344,7 @@ public final class DbMobMoves {
                 SubNet.send(level, SubNet.SLASH, 0, body(m, 1.4, 0, 1.6), right(m).add(0, -0.8, 0).normalize(), 1.4f, 0.22f, SubNet.STYLE_CRIMSON);
                 SubNet.send(level, SubNet.SLASH, 0, body(m, 1.4, 0, 1.4), right(m).scale(-1).add(0, -0.8, 0).normalize(), 1.4f, 0.22f, SubNet.STYLE_CRIMSON);
                 sound(m, SoundEvents.PLAYER_ATTACK_SWEEP, 1.6f, 0.5f);
+                MobGrief.mow(m, m.position(), m.forward(), 3.0, 1.4, 3);
                 if (front(m, t, 2.8, 0.1)) {
                     hit(m, t, 150, 1f, 10);
                     Combat.push(t, m.forward(), 0.7, 0.3);
@@ -1305,6 +1357,7 @@ public final class DbMobMoves {
                 if (took >= 60) {
                     sound(m, SoundEvents.GENERIC_EXPLODE.value(), 1.6f, 1.4f);
                     DbCommon.boom(level, body(m, 0.5, 0, 2), 2.4f, Db.GOLD, 1000 + m.getRandom().nextInt(100));
+                    MobGrief.crater(m, m.position(), 1.8, MobGrief.ROCK);
                     m.hurt(m.damageSources().magic(), m.getMaxHealth() * 0.35f);
                     Stun.apply(m, 50, true);
                     return;
@@ -1331,6 +1384,9 @@ public final class DbMobMoves {
                 SubNet.send(level, NmNet.SHOCK, 0, at.add(0, 0.1, 0), Vec3.ZERO, 3.4f, 0, 0);
                 sound(m, SoundEvents.GENERIC_SPLASH, 2f, 0.5f);
                 wave(m, at, 3.4, 90, 1.0, 0.5, false);
+                // the belly flop on the shore: the ground wet and torn
+                MobGrief.soak(m, at, 3.0);
+                MobGrief.heave(m, at, 2.4, 2, MobGrief.EARTH);
             }
             case "peixe_gigante/abocanhar" -> {
                 sound(m, SoundEvents.FOX_BITE, 1.8f, 0.4f);
@@ -1348,6 +1404,8 @@ public final class DbMobMoves {
                     Vec3 end = DbCommon.beamEnd(m, level, from, dir, 16, 0.4, true);
                     SubNet.send(level, SubNet.BEAM, 0, from, end.subtract(from), 0.06f, SubNet.COLOR_RED, 0);
                     SubNet.send(level, SubNet.SCAR, 0, ground(m, end), dir, 0.3f, 80, 0);
+                    MobGrief.shatter(m, end, 0.6);
+                    MobGrief.scorch(m, end, 0.9, eye > 0 ? 1 : 0);
                     for (LivingEntity o : Combat.alongLine(level, from, end, 0.55, m)) {
                         if (once(m, o)) {
                             magic(m, o, 90);
@@ -1366,6 +1424,8 @@ public final class DbMobMoves {
                 SubNet.send(level, SubNet.BEAM, 0, from, end.subtract(from), 0.05f, SubNet.COLOR_GOLD, 0);
                 DbCommon.hit(level, end, 0.5f, Db.GOLD);
                 sound(m, from, SoundEvents.TRIDENT_THUNDER.value(), 0.8f, 2f);
+                MobGrief.shatter(m, end, 0.7);
+                MobGrief.crater(m, end, 0.9, MobGrief.ROCK);
                 for (LivingEntity o : Combat.alongLine(level, from, end, 0.4, m)) {
                     // pierces: magic damage goes through armor
                     magic(m, o, 110);
@@ -1380,6 +1440,7 @@ public final class DbMobMoves {
                     Combat.push(t, m.forward(), 1.3, 0.4);
                 }
                 SubNet.send(level, SubNet.DUST, 0, ahead(m, 2), Vec3.ZERO, 1.2f, 0, 0);
+                MobGrief.heave(m, ahead(m, 2), 1.3, 2, MobGrief.EARTH);
             }
             // ---------- Spopovich ----------
             case "spopovich/abraco" -> {
@@ -1413,6 +1474,7 @@ public final class DbMobMoves {
                 Vec3 boom = end;
                 DbCommon.later(flight, () -> {
                     DbCommon.boom(level, boom, 1.6f, Db.RED, 1000 + level.getRandom().nextInt(100));
+                    MobGrief.crater(m, boom, 1.3, MobGrief.ROCK);
                     for (LivingEntity o : Combat.inRadius(level, boom, 1.8, m)) {
                         if (!ally(m, o)) {
                             Combat.hurtMagic(m.isAlive() ? m : o, o, 100);
@@ -1428,6 +1490,7 @@ public final class DbMobMoves {
                 }
                 DmNet.send(level, DmNet.CIRCLE, m.getId(), at, Vec3.ZERO, 2.4f, 0, 1);
                 DbCommon.boom(level, at.add(0, 1, 0), 1.8f, Db.PINK, 1000 + m.getRandom().nextInt(100));
+                MobGrief.crater(m, at, 1.4, MobGrief.ROCK);
                 for (LivingEntity o : Combat.inRadius(level, at.add(0, 0.8, 0), 2.6, m)) {
                     if (!ally(m, o) && Math.abs(o.getY() - at.y) < 2.5) {
                         // the inside bursts: two packets
@@ -1516,6 +1579,7 @@ public final class DbMobMoves {
         letGo(m);
         DbCommon.boom(level, at, 2.4f * k, Db.GREEN, 1000 + m.getRandom().nextInt(100));
         DbCommon.screen(level, at, 8);
+        MobGrief.crater(m, at, 1.9 * k, MobGrief.ROCK);
         for (LivingEntity o : Combat.inRadius(level, at, 2.8, m)) {
             if (!ally(m, o)) {
                 Combat.hurtMagic(m, o, (o == t ? 110 : 50) * k);
@@ -1711,7 +1775,7 @@ public final class DbMobMoves {
                                 Combat.pushFrom(o, at, 1.4 * k, 0.6);
                             }
                         }
-                        dent(m, at, 3);
+                        dent(m, at, 3, MobGrief.HEAVY);
                         m.hurt(m.damageSources().generic(), m.getMaxHealth() * 4);
                     }
                 }
