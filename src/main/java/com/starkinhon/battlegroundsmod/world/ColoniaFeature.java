@@ -16,6 +16,7 @@ import com.starkinhon.battlegroundsmod.world.LeafTreeGen.Rng;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.QuartPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.Mth;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.block.Blocks;
@@ -532,6 +533,49 @@ public final class ColoniaFeature extends Feature<NoneFeatureConfiguration> {
         }
         return out;
     }
+
+    // The barriers (Stark's Colony domes) near a spot, for the client: {cx, cz, cityY, half} of each big fight crater
+    // whose cell is within one cell of the spot. Worked out from the seed and the biome source alone (the caches only
+    // speed it up), so it is the same after the world is reloaded. The dome sits on the crater, the heart of that piece
+    // of the colony, and its half size reaches the biome's edge: the middle of how far the biome goes in 8 directions
+    // (60 to 180), so on a big biome the city under it is covered and on a small one it does not spill over the land.
+    public static List<int[]> domes(ServerLevel level, int x, int z) {
+        ChunkGenerator generator = level.getChunkSource().getGenerator();
+        RandomState random = level.getChunkSource().randomState();
+        long worldSeed = level.getSeed();
+        int worldKey = (int) (worldSeed ^ (worldSeed >>> 32));
+        Mask mask = new Mask(generator, random, worldKey);
+        int cityY = cityY(generator);
+        List<int[]> out = new ArrayList<>();
+        int ci0 = Math.floorDiv(x, CELL), cj0 = Math.floorDiv(z, CELL);
+        for (int ci = ci0 - 1; ci <= ci0 + 1; ci++) {
+            for (int cj = cj0 - 1; cj <= cj0 + 1; cj++) {
+                int[] d = mask.district(ci, cj);
+                if (d == NONE) {
+                    continue;
+                }
+                long k = ((long) ci << 36) ^ ((long) (cj & 0xFFFFFFFL) << 8) ^ ((long) worldKey * 0x9E3779B97F4A7C15L);
+                Integer half = DOME_HALF.getIfPresent(k);
+                if (half == null) {
+                    int[] reach = new int[8];
+                    for (int a = 0; a < 8; a++) {
+                        double ang = a * Math.PI / 4;
+                        int r = 16;
+                        while (r < 180 && mask.biome(d[0] + (int) Math.round(Math.cos(ang) * (r + 16)), d[1] + (int) Math.round(Math.sin(ang) * (r + 16)))) {
+                            r += 16;
+                        }
+                        reach[a] = r;
+                    }
+                    java.util.Arrays.sort(reach);
+                    half = Mth.clamp((reach[3] + reach[4]) / 2, 60, 180);
+                    DOME_HALF.put(k, half);
+                }
+                out.add(new int[] {d[0], d[1], cityY, half});
+            }
+        }
+        return out;
+    }
+    private static final Cache<Long, Integer> DOME_HALF = CacheBuilder.newBuilder().maximumSize(256).build();
 
     static BlockState block(int t) {
         return switch (t) {
