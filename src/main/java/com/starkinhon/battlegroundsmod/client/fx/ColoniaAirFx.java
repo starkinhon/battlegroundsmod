@@ -80,7 +80,7 @@ public final class ColoniaAirFx {
     private static final class Puff {
         Col c;
         double x, y, z, vy, age, life, s0, grow, tone, spin, rot;
-        double lx, ly, lz;
+        double lx, ly, lz, dist;
         final double[] r = new double[9];
     }
 
@@ -129,6 +129,21 @@ public final class ColoniaAirFx {
     private static float shake;
     private static double nextFall = 8;
 
+    // the low smoke's pattern, worked out each tick (and blended between ticks), not each frame
+    private static final float[][][] VEIL = new float[LAYERS.length][CELLS + 1][CELLS + 1];
+    private static final float[][][] VEIL_LAST = new float[LAYERS.length][CELLS + 1][CELLS + 1];
+    private static final float[][] WARM = new float[CELLS + 1][CELLS + 1];
+    private static boolean veilFresh;
+
+    private static double lookX, lookY = 0, lookZ = 1;
+    private static int quads;
+    private static final List<Puff> DRAW = new ArrayList<>();
+
+    // -Dsouls.coloniaPerf=true: logs what the Colônia costs every 200 frames (for testing on the PC)
+    private static final boolean PERF = Boolean.getBoolean("souls.coloniaPerf");
+    private static long perfDome, perfBuild, perfDraw, perfQuads, perfTick;
+    private static int perfFrames, perfTicks;
+
     private static WindLoop windLoop;
     private static FireLoop fireLoop;
 
@@ -159,6 +174,11 @@ public final class ColoniaAirFx {
         return RANDOM.nextDouble();
     }
 
+    // The Mine's flat clouds don't belong under the barrier's smoky sky (at night the fog turned them a flat salmon).
+    public static boolean hidesClouds() {
+        return strength > 0.5f;
+    }
+
     public static boolean active() {
         return strength > 0.001f || lastStrength > 0.001f;
     }
@@ -181,6 +201,7 @@ public final class ColoniaAirFx {
             reset();
             return;
         }
+        long perfStart = PERF ? System.nanoTime() : 0;
         ClientLevel level = mc.level;
         Vec3 p = mc.player.position();
         double dt = 0.05, t = level.getGameTime() / 20.0;
@@ -308,6 +329,11 @@ public final class ColoniaAirFx {
         }
         shake = Math.max(0, shake - (float) dt * 1.2f);
         sounds(mc, level, p, g);
+        tickVeils(t, g);
+        if (PERF) {
+            perfTick += System.nanoTime() - perfStart;
+            perfTicks++;
+        }
     }
 
     private static void reset() {
@@ -321,6 +347,7 @@ public final class ColoniaAirFx {
         CELLS_FOUND.clear();
         scanRow = -SCAN;
         groundX = Integer.MIN_VALUE;
+        veilFresh = true;
         domeSet = false;
         flashT = -1;
         flashAmt = 0;
@@ -379,6 +406,7 @@ public final class ColoniaAirFx {
         groundZ = bz;
         groundY = py;
         groundAt = level.getGameTime();
+        veilFresh = true;
     }
 
     // The fires: an ember block with the fire burning on it at the top of a column. One row per tick; when the square
@@ -705,20 +733,52 @@ public final class ColoniaAirFx {
         Vector3f left = cam.getLeftVector(), up = cam.getUpVector();
         PoseStack.Pose last = event.getPoseStack().last();
         float light = Mth.lerp(night, 1f, 0.32f);
-        double t = (mc.level.getGameTime() + partial) / 20.0;
+        Vector3f look = cam.getLookVector();
+        lookX = look.x();
+        lookY = look.y();
+        lookZ = look.z();
+        long t0 = PERF ? System.nanoTime() : 0;
+        // the barrier first: it is the farthest thing, and drawn after the smoke its wall would cover the columns
+        // (nothing here writes depth, so only the order decides)
+        shaded(event, 0, fade, partial);
+        long t1 = PERF ? System.nanoTime() : 0;
+        // one buffer drawn in the order written (no sorting of every quad each frame, which cost most of the frame):
+        // the low smoke, then the clouds far to near (sorted here, per cloud), then the small pieces
         MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
-        VertexConsumer out = buffers.getBuffer(FxRenderTypes.AREA);
+        VertexConsumer out = buffers.getBuffer(FxRenderTypes.AREA_FLAT);
+        quads = 0;
+        renderVeils(out, last, camera, partial, fade);
         renderSmoke(out, last, camera, left, up, partial, fade);
-        renderVeils(out, last, camera, t, fade);
         renderAsh(out, last, camera, partial, fade, light);
         renderStreaks(out, last, camera, partial, fade, light);
         renderPaper(out, last, camera, partial, fade, light);
-        buffers.endBatch(FxRenderTypes.AREA);
+        long t2 = PERF ? System.nanoTime() : 0;
+        buffers.endBatch(FxRenderTypes.AREA_FLAT);
         VertexConsumer glow = buffers.getBuffer(FxRenderTypes.GLOW);
         renderEmbers(glow, last, camera, left, up, partial, fade);
         renderFlashBeam(glow, last, camera, left, up, fade);
         buffers.endBatch(FxRenderTypes.GLOW);
-        shaded(event, 0, fade, partial);
+        if (PERF) {
+            long t3 = System.nanoTime();
+            perfDome += t1 - t0;
+            perfBuild += t2 - t1;
+            perfDraw += t3 - t2;
+            perfQuads += quads;
+            if (++perfFrames >= 200) {
+                com.starkinhon.battlegroundsmod.BattlegroundsMod.LOGGER.info(
+                        "[colonia] per frame: dome {} ms, build {} ms, draw {} ms, {} quads; per tick {} ms; {} columns, {} clouds",
+                        String.format("%.2f", perfDome / 1e6 / perfFrames), String.format("%.2f", perfBuild / 1e6 / perfFrames),
+                        String.format("%.2f", perfDraw / 1e6 / perfFrames), perfQuads / perfFrames,
+                        String.format("%.2f", perfTick / 1e6 / Math.max(1, perfTicks)), COLS.size(), PUFFS.size());
+                perfDome = perfBuild = perfDraw = perfQuads = perfTick = 0;
+                perfFrames = perfTicks = 0;
+            }
+        }
+    }
+
+    // In front of the camera, give or take r (what is behind it isn't built at all).
+    private static boolean seen(Vec3 cam, double x, double y, double z, double r) {
+        return (x - cam.x) * lookX + (y - cam.y) * lookY + (z - cam.z) * lookZ > -r;
     }
 
     // The barrier (mode 0) and the sky behind everything (mode 1), through souls_colonia, relative to the camera.
@@ -813,63 +873,79 @@ public final class ColoniaAirFx {
         return k * (0.35 + 0.65 * g) * (0.45 + wave);
     }
 
-    private static void renderVeils(VertexConsumer out, PoseStack.Pose last, Vec3 cam, double t, float fade) {
+    // The sheets' strength at each corner of the grid: the moving pattern, the edge of the square, the street, and the
+    // fires' warmth at night. Each tick; the frame blends the last two.
+    private static void tickVeils(double t, double g) {
         if (groundX == Integer.MIN_VALUE) {
             return;
         }
-        double g = gust, half = CELLS * SIZE / 2.0;
-        // low smoke: lead grey by day, almost black at night, warming to orange near the columns
-        float[] base = {Mth.lerp(night, 0.42f, 0.13f), Mth.lerp(night, 0.4f, 0.09f), Mth.lerp(night, 0.42f, 0.1f)};
-        float[][] warm = new float[CELLS + 1][CELLS + 1];
-        if (night > 0.01f) {
-            for (int i = 0; i <= CELLS; i++) {
-                for (int j = 0; j <= CELLS; j++) {
-                    double x = groundX + i * SIZE, z = groundZ + j * SIZE;
-                    float w = 0;
+        double half = CELLS * SIZE / 2.0;
+        for (int i = 0; i <= CELLS; i++) {
+            for (int j = 0; j <= CELLS; j++) {
+                double x = groundX + i * SIZE, z = groundZ + j * SIZE;
+                float w = 0;
+                if (night > 0.01f) {
                     for (Col c : COLS) {
                         double dd = Math.sqrt((x - c.x) * (x - c.x) + (z - c.z) * (z - c.z));
                         if (dd < 26) {
                             w = Math.max(w, (float) (1 - dd / 26));
                         }
                     }
-                    warm[i][j] = w * night;
+                }
+                WARM[i][j] = w * night;
+                float far = (float) Mth.clamp((half - Math.sqrt((x - (groundX + half)) * (x - (groundX + half)) + (z - (groundZ + half)) * (z - (groundZ + half))))
+                        / (half * 0.35), 0, 1);
+                for (int layer = 0; layer < LAYERS.length; layer++) {
+                    VEIL_LAST[layer][i][j] = VEIL[layer][i][j];
+                    VEIL[layer][i][j] = Float.isNaN(GROUND[i][j]) ? 0
+                            : (float) (LAYERS[layer][1] * veil(x, z, layer, t, g)) * far * (0.35f + 0.65f * STREET[i][j]);
+                    if (veilFresh) {
+                        VEIL_LAST[layer][i][j] = VEIL[layer][i][j];
+                    }
                 }
             }
         }
+        veilFresh = false;
+    }
+
+    private static void renderVeils(VertexConsumer out, PoseStack.Pose last, Vec3 cam, float partial, float fade) {
+        if (groundX == Integer.MIN_VALUE) {
+            return;
+        }
+        // low smoke: lead grey by day, almost black at night, warming to orange near the columns
+        float[] base = {Mth.lerp(night, 0.42f, 0.13f), Mth.lerp(night, 0.4f, 0.09f), Mth.lerp(night, 0.42f, 0.1f)};
         float[][] al = new float[CELLS + 1][CELLS + 1];
-        float[][] ys = new float[CELLS + 1][CELLS + 1];
         for (int layer = 0; layer < LAYERS.length; layer++) {
+            float h = LAYERS[layer][0];
             for (int i = 0; i <= CELLS; i++) {
                 for (int j = 0; j <= CELLS; j++) {
-                    float gy = GROUND[i][j];
-                    if (Float.isNaN(gy)) {
+                    float k = Mth.lerp(partial, VEIL_LAST[layer][i][j], VEIL[layer][i][j]);
+                    if (k <= 0 || Float.isNaN(GROUND[i][j])) {
                         al[i][j] = 0;
                         continue;
                     }
-                    double x = groundX + i * SIZE, z = groundZ + j * SIZE, y = gy + LAYERS[layer][0];
-                    double dx = x - cam.x, dy = y - cam.y, dz = z - cam.z;
-                    double d = Math.sqrt(dx * dx + dy * dy + dz * dz);
-                    float near = (float) Mth.clamp((d - 1) / 6, 0, 1);
-                    near = near * near * (3 - 2 * near);
-                    float far = (float) Mth.clamp((half - Math.sqrt((x - (groundX + half)) * (x - (groundX + half)) + (z - (groundZ + half)) * (z - (groundZ + half))))
-                            / (half * 0.35), 0, 1);
-                    al[i][j] = (float) (LAYERS[layer][1] * veil(x, z, layer, t, g)) * near * far * (0.35f + 0.65f * STREET[i][j]) * fade;
-                    ys[i][j] = (float) y;
+                    double dx = groundX + i * SIZE - cam.x, dy = GROUND[i][j] + h - cam.y, dz = groundZ + j * SIZE - cam.z;
+                    float near = (float) Mth.clamp((Math.sqrt(dx * dx + dy * dy + dz * dz) - 1) / 6, 0, 1);
+                    al[i][j] = k * near * near * (3 - 2 * near) * fade;
                 }
             }
             for (int i = 0; i < CELLS; i++) {
                 for (int j = 0; j < CELLS; j++) {
-                    if (Float.isNaN(GROUND[i][j]) || Float.isNaN(GROUND[i + 1][j]) || Float.isNaN(GROUND[i][j + 1]) || Float.isNaN(GROUND[i + 1][j + 1])) {
-                        continue;
-                    }
                     if (al[i][j] + al[i + 1][j] + al[i + 1][j + 1] + al[i][j + 1] < 0.004f) {
                         continue;
                     }
+                    if (Float.isNaN(GROUND[i][j]) || Float.isNaN(GROUND[i + 1][j]) || Float.isNaN(GROUND[i][j + 1]) || Float.isNaN(GROUND[i + 1][j + 1])) {
+                        continue;
+                    }
                     double x0 = groundX + i * SIZE, x1 = x0 + SIZE, z0 = groundZ + j * SIZE, z1 = z0 + SIZE;
-                    veilV(out, last, cam, x0, ys[i][j], z0, base, warm[i][j], al[i][j]);
-                    veilV(out, last, cam, x1, ys[i + 1][j], z0, base, warm[i + 1][j], al[i + 1][j]);
-                    veilV(out, last, cam, x1, ys[i + 1][j + 1], z1, base, warm[i + 1][j + 1], al[i + 1][j + 1]);
-                    veilV(out, last, cam, x0, ys[i][j + 1], z1, base, warm[i][j + 1], al[i][j + 1]);
+                    if (!seen(cam, x0 + SIZE * 0.5, GROUND[i][j] + h, z0 + SIZE * 0.5, SIZE * 2)) {
+                        continue;
+                    }
+                    veilV(out, last, cam, x0, GROUND[i][j] + h, z0, base, WARM[i][j], al[i][j]);
+                    veilV(out, last, cam, x1, GROUND[i + 1][j] + h, z0, base, WARM[i + 1][j], al[i + 1][j]);
+                    veilV(out, last, cam, x1, GROUND[i + 1][j + 1] + h, z1, base, WARM[i + 1][j + 1], al[i + 1][j + 1]);
+                    veilV(out, last, cam, x0, GROUND[i][j + 1] + h, z1, base, WARM[i][j + 1], al[i][j + 1]);
+                    quads++;
                 }
             }
         }
@@ -882,7 +958,16 @@ public final class ColoniaAirFx {
     // A cloud: a fan of 9 rays with its own outline, solid in the middle and gone at the edge; it grows and lightens as it
     // rises. Each wedge is a quad with its last corner doubled.
     private static void renderSmoke(VertexConsumer out, PoseStack.Pose last, Vec3 cam, Vector3f left, Vector3f up, float partial, float fade) {
+        DRAW.clear();
         for (Puff f : PUFFS) {
+            double s = (f.s0 + f.age * f.grow * 1.5) * f.c.power;
+            if (seen(cam, f.x, f.y, f.z, s * 1.6 + 2)) {
+                f.dist = (f.x - cam.x) * (f.x - cam.x) + (f.y - cam.y) * (f.y - cam.y) + (f.z - cam.z) * (f.z - cam.z);
+                DRAW.add(f);
+            }
+        }
+        DRAW.sort((a, b) -> Double.compare(b.dist, a.dist));
+        for (Puff f : DRAW) {
             double age = f.age + 0.05 * partial;
             double k = age / f.life;
             if (k >= 1) {
@@ -911,6 +996,7 @@ public final class ColoniaAirFx {
                 double ox = Math.cos(ang) * rr, oy = Math.sin(ang) * rr;
                 double tx = x + left.x() * ox + up.x() * oy, ty = y + left.y() * ox + up.y() * oy, tz = z + left.z() * ox + up.z() * oy;
                 if (q > 0) {
+                    quads++;
                     v(out, last, cam, x, y, z, r, g, b, (float) a);
                     v(out, last, cam, px, py, pz, r, g, b, 0);
                     v(out, last, cam, tx, ty, tz, r, g, b, 0);
@@ -932,6 +1018,9 @@ public final class ColoniaAirFx {
             double d = Math.sqrt((x - cam.x) * (x - cam.x) + (y - cam.y) * (y - cam.y) + (z - cam.z) * (z - cam.z));
             a *= Mth.clamp((d - 0.5) / 2, 0, 1) * Mth.clamp((120 - d) / 30, 0, 1) * fade;
             if (a < 0.01) {
+                continue;
+            }
+            if (!seen(cam, x, y, z, 1)) {
                 continue;
             }
             double s = e.s * (1 + d * 0.02);
@@ -965,9 +1054,10 @@ public final class ColoniaAirFx {
             double x = Mth.lerp(partial, a.lx, a.x), y = Mth.lerp(partial, a.ly, a.y), z = Mth.lerp(partial, a.lz, a.z);
             double d = Math.sqrt((x - cam.x) * (x - cam.x) + (y - cam.y) * (y - cam.y) + (z - cam.z) * (z - cam.z));
             float al = (float) (Mth.clamp((36 - d) / 10, 0, 1) * Mth.clamp((d - 1.5) / 2.5, 0, 1) * 0.9) * fade;
-            if (al < 0.01f) {
+            if (al < 0.01f || !seen(cam, x, y, z, 1)) {
                 continue;
             }
+            quads++;
             double[] T = tumble(a, Mth.lerp(partial, a.lang, a.ang), a.s, 1.1, 0.9);
             float tone = (float) (0.42 + a.tone * 0.3), kk = (float) (0.7 + 0.3 * T[6]) * light;
             float r = tone * kk, g = tone * kk * 0.98f, b = tone * kk * 1.04f;
@@ -987,9 +1077,10 @@ public final class ColoniaAirFx {
             double x = Mth.lerp(partial, r.lx, r.x), y = Mth.lerp(partial, r.ly, r.y), z = Mth.lerp(partial, r.lz, r.z);
             double cx = cam.x - x, cy = cam.y - y, cz = cam.z - z, dist = Math.sqrt(cx * cx + cy * cy + cz * cz);
             float a = (float) (0.42 * Mth.clamp((60 - dist) / 40, 0, 1) * Mth.clamp((dist - 2.5) / 4, 0, 1) * (0.25 + 0.75 * g)) * fade;
-            if (a < 0.004f) {
+            if (a < 0.004f || !seen(cam, x, y, z, 4)) {
                 continue;
             }
+            quads++;
             double len = (5 + 11 * g) * r.s * 0.22;
             double sx = wz * cy, sy = wx * cz - wz * cx, sz = -wx * cy;
             double sl = Math.sqrt(sx * sx + sy * sy + sz * sz);
@@ -1014,9 +1105,10 @@ public final class ColoniaAirFx {
             double x = Mth.lerp(partial, f.lx, f.x), y = Mth.lerp(partial, f.ly, f.y), z = Mth.lerp(partial, f.lz, f.z);
             double d = Math.sqrt((x - cam.x) * (x - cam.x) + (y - cam.y) * (y - cam.y) + (z - cam.z) * (z - cam.z));
             float al = (float) (Mth.clamp((30 - d) / 8, 0, 1) * Mth.clamp((d - 3) / 3, 0, 1)) * fade;
-            if (al < 0.01f) {
+            if (al < 0.01f || !seen(cam, x, y, z, 1)) {
                 continue;
             }
+            quads++;
             double[] T = tumble(f, Mth.lerp(partial, f.lang, f.ang), f.s * 0.45, 1.0, 0.72);
             float kk = (float) (0.75 + 0.25 * T[6]) * light;
             float mr = 0.78f * kk, mg = 0.72f * kk, mb = 0.6f * kk;
