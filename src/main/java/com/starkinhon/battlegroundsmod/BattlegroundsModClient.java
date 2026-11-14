@@ -445,6 +445,11 @@ public class BattlegroundsModClient {
             String id = e.getKey();
             event.registerEntityRenderer(e.getValue().get(), context -> new com.starkinhon.battlegroundsmod.client.blocky.NarutoMobRenderer(context, id));
         }
+        // the Jujutsu curses (animal/jjmob): the preview's models and baked animation, the Abate's plate, the Kogane's bubble
+        for (var e : ModEntities.JJ_MOBS.entrySet()) {
+            String id = e.getKey();
+            event.registerEntityRenderer(e.getValue().get(), context -> new com.starkinhon.battlegroundsmod.client.blocky.JjMobRenderer(context, id));
+        }
         event.registerEntityRenderer(ModEntities.ANBU_RAIZ.get(), context -> new SoulBossRenderer<>(context, "anbu_raiz", false));
         event.registerEntityRenderer(ModEntities.NPC_JIRAIYA.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_jiraiya"));
         event.registerEntityRenderer(ModEntities.NPC_TEUCHI.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_teuchi"));

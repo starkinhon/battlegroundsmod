@@ -140,6 +140,17 @@ public class NarutoMobRenderer extends MobRenderer<NarutoMob, BlockyModel<Naruto
                 }
             }
         }
+        String dyingMode = e.deathMode();
+        if (dyingMode != null) {
+            // dying its own way (the Jujutsu curses' exorcism): the 'morte' plays whole, from the tick it died
+            BakedAnim.Mode m = a.mode(dyingMode);
+            if (m != null) {
+                attack = m;
+                attackFrame = Math.min(e.deathFrame(partial), m.frames - 1);
+                attackW = 1;
+                at = new NarutoSpec.Attack(dyingMode, m.frames, 0, 0, 0, 0, true);
+            }
+        }
         java.util.Arrays.fill(root, 0);
         // a blow in flight (the ridden dragon's fire): the flight goes on and only the neck and head blow
         airBlow = attack != null && e.loopMode() != null && e instanceof com.starkinhon.battlegroundsmod.animal.dbmob.DbMob d && d.isDragon();

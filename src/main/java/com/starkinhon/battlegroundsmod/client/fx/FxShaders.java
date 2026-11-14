@@ -61,6 +61,8 @@ public final class FxShaders {
     static ShaderInstance fugaOrb;
     // Freeza's Supernova fire dome (NovaRenderer); without it the landing keeps its rings, flash and shake.
     static ShaderInstance novaVol;
+    // The vapour off an exorcised curse (CurseVapor); without it the body still darkens and evaporates.
+    static ShaderInstance jjVapor;
     // Sukuna's thrown Dismantle (DismantleRenderer); without it the cuts still hit, they just don't show.
     static ShaderInstance dismantle;
     // Sukuna's technique cuts (SukunaCutsRenderer: the Z, the chant, the World Cutting Slash, the Shift+Z lines).
@@ -181,6 +183,12 @@ public final class FxShaders {
             register(event, "souls_fuga_orb", DefaultVertexFormat.POSITION, s -> fugaOrb = s);
         } catch (Exception e) {
             BattlegroundsMod.LOGGER.error("Could not load the Fuga shaders", e);
+        }
+        // On its own: a problem here only hides the vapour of the exorcised curses.
+        try {
+            register(event, "souls_jj_vapor", DefaultVertexFormat.POSITION, s -> jjVapor = s);
+        } catch (Exception e) {
+            BattlegroundsMod.LOGGER.error("Could not load the curse vapour shader", e);
         }
         // On its own: a problem here only hides the Supernova's fire dome.
         try {

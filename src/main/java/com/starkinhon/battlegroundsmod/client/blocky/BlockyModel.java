@@ -11,6 +11,7 @@ import com.starkinhon.battlegroundsmod.animal.db.DbCreature;
 import net.minecraft.client.model.HierarchicalModel;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.model.geom.PartPose;
+import net.minecraft.client.model.geom.builders.CubeDeformation;
 import net.minecraft.client.model.geom.builders.CubeListBuilder;
 import net.minecraft.client.model.geom.builders.LayerDefinition;
 import net.minecraft.client.model.geom.builders.MeshDefinition;
@@ -47,7 +48,13 @@ public class BlockyModel<T extends DbCreature> extends HierarchicalModel<T> {
         CubeListBuilder cubes = CubeListBuilder.create();
         for (JsonElement e : d.getAsJsonArray("boxes")) {
             JsonArray b = e.getAsJsonArray();
-            cubes.texOffs(b.get(6).getAsInt(), b.get(7).getAsInt()).addBox(f(b, 0), f(b, 1), f(b, 2), f(b, 3), f(b, 4), f(b, 5));
+            cubes.texOffs(b.get(6).getAsInt(), b.get(7).getAsInt());
+            if (b.size() > 8) {
+                // grown a little (the preview's b.g): over a face it would share with another box and flicker
+                cubes.addBox(f(b, 0), f(b, 1), f(b, 2), f(b, 3), f(b, 4), f(b, 5), new CubeDeformation(f(b, 8)));
+            } else {
+                cubes.addBox(f(b, 0), f(b, 1), f(b, 2), f(b, 3), f(b, 4), f(b, 5));
+            }
         }
         JsonArray p = d.getAsJsonArray("pivot"), r = d.getAsJsonArray("rot");
         PartDefinition part = parent.addOrReplaceChild(d.get("name").getAsString(), cubes,
@@ -106,6 +113,7 @@ public class BlockyModel<T extends DbCreature> extends HierarchicalModel<T> {
             p.xScale = 1;
             p.yScale = 1;
             p.zScale = 1;
+            p.visible = true;
         });
         anim.apply(this, entity, limbSwing, Math.min(1f, amount), age, headYaw, headPitch);
     }

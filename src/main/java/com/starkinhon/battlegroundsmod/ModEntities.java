@@ -296,6 +296,19 @@ public final class ModEntities {
     public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.animal.naruto.NarutoMob>> NINJA_SOM = NARUTO_MOBS.get("ninja_som");
     public static final Supplier<EntityType<SoulMob>> ANBU_RAIZ = mob("anbu_raiz");
 
+    // The Jujutsu biomes' curses (Stark 2026-11-14, preview tools/mobs/jjmobs approved: "porta"): one entity type per kind
+    // ("jj_" + the preview's id), all one class (animal/jjmob/JjMob, its kind from the id), on the Naruto creatures' body.
+    public static final Map<String, Supplier<EntityType<com.starkinhon.battlegroundsmod.animal.jjmob.JjMob>>> JJ_MOBS = new LinkedHashMap<>();
+
+    static {
+        for (com.starkinhon.battlegroundsmod.animal.naruto.NarutoSpec.Spec spec : com.starkinhon.battlegroundsmod.animal.jjmob.JjMobSpec.all()) {
+            final float fw = spec.width, fh = spec.height;
+            JJ_MOBS.put(spec.id, ENTITY_TYPES.register(spec.id, () -> EntityType.Builder
+                    .<com.starkinhon.battlegroundsmod.animal.jjmob.JjMob>of(com.starkinhon.battlegroundsmod.animal.jjmob.JjMob::new, MobCategory.MONSTER)
+                    .sized(fw, fh).eyeHeight(fh * 0.85f).clientTrackingRange(spec.height > 3 || spec.width > 1.5f ? 12 : 10).build(spec.id)));
+        }
+    }
+
     // Common enemies of Jujutsu.
     public static final Supplier<EntityType<SoulMob>> MALDICAO_MENOR = mob("maldicao_menor");
     public static final Supplier<EntityType<SoulMob>> MALDICAO_GRAU2 = mob("maldicao_grau2");
@@ -408,6 +421,10 @@ public final class ModEntities {
         for (var e : NARUTO_MOBS.entrySet()) {
             event.put(e.getValue().get(), com.starkinhon.battlegroundsmod.animal.naruto.NarutoMob
                     .attributes(com.starkinhon.battlegroundsmod.animal.naruto.NarutoSpec.get(e.getKey())).build());
+        }
+        for (var e : JJ_MOBS.entrySet()) {
+            event.put(e.getValue().get(), com.starkinhon.battlegroundsmod.animal.jjmob.JjMob
+                    .attributes(com.starkinhon.battlegroundsmod.animal.jjmob.JjMobSpec.get(e.getKey())).build());
         }
         event.put(NPC_GOHAN.get(), com.starkinhon.battlegroundsmod.npc.UniverseNpc.createAttributes().build());
         event.put(NPC_KORIN.get(), com.starkinhon.battlegroundsmod.npc.UniverseNpc.createAttributes().build());

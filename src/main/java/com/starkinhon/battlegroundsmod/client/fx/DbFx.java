@@ -157,6 +157,10 @@ public final class DbFx {
             DmFx.receive(kind, id, pos, dir, a, b, c);
             return;
         }
+        if (JmFx.handles(kind)) {
+            JmFx.receive(kind, id, pos, dir, a, b, c);
+            return;
+        }
         if (com.starkinhon.battlegroundsmod.client.fx.hs.HsFx.handles(kind)) {
             com.starkinhon.battlegroundsmod.client.fx.hs.HsFx.receive(kind, id, pos, dir, a, b, c);
             return;
@@ -326,7 +330,7 @@ public final class DbFx {
     }
 
     static boolean active() {
-        return !SHOTS.isEmpty() || !TRACKED.isEmpty() || NrFx.active() || JjFx.active() || InoFx.active() || NmFx.active() || DmFx.active() || FzFx.active();
+        return !SHOTS.isEmpty() || !TRACKED.isEmpty() || NrFx.active() || JjFx.active() || InoFx.active() || NmFx.active() || DmFx.active() || JmFx.active() || FzFx.active();
     }
 
     static void clear() {
@@ -338,6 +342,7 @@ public final class DbFx {
         InoFx.clear();
         NmFx.clear();
         DmFx.clear();
+        JmFx.clear();
         FzFx.clear();
     }
 
@@ -465,6 +470,7 @@ public final class DbFx {
         InoFx.draw(now, partial);
         NmFx.draw(now, partial);
         DmFx.draw(now, partial);
+        JmFx.draw(now, partial);
         FzFx.draw(now, partial);
     }
 
