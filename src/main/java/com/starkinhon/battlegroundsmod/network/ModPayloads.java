@@ -419,6 +419,18 @@ public final class ModPayloads {
         }
     }
 
+    // Both ways: the Livro dos Desafios' Modo Difícil (Stark 2026-11-14: every challenger comes at the player's own tier).
+    // Client -> server: the toggle; server -> client: what is saved.
+    public record ArenaHard(boolean hard) implements CustomPacketPayload {
+        public static final Type<ArenaHard> TYPE = payloadType("arena_hard");
+        public static final StreamCodec<ByteBuf, ArenaHard> STREAM_CODEC = StreamCodec.composite(ByteBufCodecs.BOOL, ArenaHard::hard, ArenaHard::new);
+
+        @Override
+        public Type<ArenaHard> type() {
+            return TYPE;
+        }
+    }
+
     // Server -> client: the player's arena records ("id:wins:best seconds"), for the book's best time and medals.
     public record SyncArenaRecords(List<String> records) implements CustomPacketPayload {
         public static final Type<SyncArenaRecords> TYPE = payloadType("sync_arena_records");
@@ -2060,6 +2072,13 @@ public final class ModPayloads {
         registrar.playToClient(SyncPower.TYPE, SyncPower.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> payload.applyTo(context.player())));
         registrar.playToClient(SyncArenaWins.TYPE, SyncArenaWins.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> payload.applyTo(context.player())));
         registrar.playToClient(SyncArenaRecords.TYPE, SyncArenaRecords.STREAM_CODEC, (payload, context) -> context.enqueueWork(payload::apply));
+        registrar.playBidirectional(ArenaHard.TYPE, ArenaHard.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
+            if (context.player() instanceof ServerPlayer player) {
+                com.starkinhon.battlegroundsmod.challenge.ChallengeArenas.setHard(player, payload.hard());
+            } else {
+                com.starkinhon.battlegroundsmod.challenge.ChallengeArenas.clientHard = payload.hard();
+            }
+        }));
         registrar.playToClient(SyncJournal.TYPE, SyncJournal.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> com.starkinhon.battlegroundsmod.client.ui.Journal.apply(payload.entries(), payload.tracked())));
         registrar.playToServer(TrackMission.TYPE, TrackMission.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {

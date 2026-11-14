@@ -2392,5 +2392,10 @@
   "challenge.battlegroundsmod.shigaraki.foco": "Decay. Everything his hand touches turns to dust, even the ground. Don't let him touch you.",
   "challenge.battlegroundsmod.joy_boy.foco": "Gear 5. Rubber, laughter and the scenery turning into a cartoon. When he gets tired and hungry, that's your chance.",
   "challenge.battlegroundsmod.makima.foco": "Control. She fights from afar and makes others fight for her. Close the distance.",
-  "challenge.battlegroundsmod.saitama.foco": "One punch. He plays around until he gets serious. When he does, don't be in front of him."
+  "challenge.battlegroundsmod.saitama.foco": "One punch. He plays around until he gets serious. When he does, don't be in front of him.",
+  "screen.battlegroundsmod.livro.modo_normal": "NORMAL",
+  "screen.battlegroundsmod.livro.modo_dificil": "HARD",
+  "screen.battlegroundsmod.livro.modo_dificil_vs": "HARD MODE",
+  "screen.battlegroundsmod.livro.modo_normal_dica": "Each challenger fights at its own tier",
+  "screen.battlegroundsmod.livro.modo_dificil_dica": "Every challenger comes at your tier (the strongest in the group's): health, strength, defense and shield"
 }

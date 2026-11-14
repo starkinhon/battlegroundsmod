@@ -573,7 +573,7 @@ public final class StructureMissions {
 
     // The player's persistent data is lost on respawn: what the structures remember (done once, used today) is carried
     // over, so dying neither resets a daily reward nor gives a once-only one again.
-    private static final List<String> KEEP = List.of(PODS_DONE, KORIN_DONE, GURU_DONE, MissionJournal.FOUND, MissionJournal.TRACKED, "souls_majin_solta", DbActivities.CAPSULE_DAY,
+    private static final List<String> KEEP = List.of(PODS_DONE, "souls_desafio_dificil", KORIN_DONE, GURU_DONE, MissionJournal.FOUND, MissionJournal.TRACKED, "souls_majin_solta", DbActivities.CAPSULE_DAY,
             "souls_boo_dia", "souls_cell_dia", "souls_babidi_dia", "souls_namek_dia", "souls_kame_dia", "souls_kame_feito",
             "souls_gravidade_dia", "souls_gravidade_s");
 
