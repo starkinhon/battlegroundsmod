@@ -85,8 +85,13 @@ final class JjHanami {
                     if (f == 20) {
                         JmNet.send(level, JmNet.MOUND, 0, from, spot.subtract(from), 20, 0, 0);
                     }
+                    if (f > 20 && f <= 40) {
+                        // the ground bulges and breaks over it as it digs forward
+                        trench(m, from, spot, (f - 21) / 20.0, (f - 20) / 20.0, 0.8, 1, 0);
+                    }
                     if (f == 40) {
                         SubNet.send(level, SubNet.DUST, 0, spot, Vec3.ZERO, 1f, 0, 0);
+                        carve(m, spot, 1.5, 1, 2, 3f, 4);
                         sound(m, spot, SoundEvents.ROOTED_DIRT_BREAK, 1.6f, 0.6f);
                         for (LivingEntity o : around(m, spot.add(0, 0.5, 0), 1.4)) {
                             hit(m, o, 50, 0.7f, 9);
@@ -96,6 +101,8 @@ final class JjHanami {
                 }
                 case "javali/investida" -> {
                     if (f >= 30 && f <= 50) {
+                        // tramples and tusks through what is in its way
+                        plow(m, 0.4, 0.9, 1.3);
                         for (LivingEntity o : around(m, body(m, 0.8, 0, 0.6), 1.3)) {
                             if (once(m, o)) {
                                 hit(m, o, 70, 0.8f, 10);
@@ -127,7 +134,12 @@ final class JjHanami {
                         NmNet.send(level, NmNet.STAKES, 0, from, m.mark.subtract(from), 8, 0, 0);
                         sound(m, SoundEvents.ROOTS_BREAK, 1.6f, 0.6f);
                     }
+                    if (f > 27 && f <= 45 && m.mark != null) {
+                        // the row of roots tears the ground open as it runs to the spot
+                        trench(m, ground(m, body(m, 0.9, 0, 0)), m.mark, (f - 28) / 18.0, (f - 27) / 18.0, 0.9, 1, 1);
+                    }
                     if (f == 45) {
+                        carve(m, m.mark, 1.4, 1, 2, 3f, 4);
                         for (LivingEntity o : around(m, m.mark.add(0, 0.5, 0), 1.3)) {
                             hit(m, o, 55, 0.7f, 9);
                             Combat.push(o, m.forward(), 0.2, 0.9);
@@ -155,6 +167,8 @@ final class JjHanami {
                     }
                     if (f == 31) {
                         NmNet.send(level, NmNet.CAGE, 0, m.mark, Vec3.ZERO, 42, 0, 0);
+                        // the stakes burst up through the ground round the spot
+                        carve(m, m.mark, 1.6, 0, 2, 3f, 4);
                         sound(m, m.mark, SoundEvents.WOOD_PLACE, 1.8f, 0.5f);
                         for (LivingEntity o : around(m, m.mark.add(0, 0.8, 0), 1.3)) {
                             hit(m, o, 40, 0.6f, 9);

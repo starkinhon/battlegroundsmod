@@ -218,12 +218,14 @@
       const T = t % 4.0;
       const R = ctx.ref; R.place(0, -3.0, 0); R.spin(Math.PI);
       R.punch(seq([[0.15, 0], [0.25, 1, 'snap'], [0.6, 1], [0.9, 0]], T));
+      // os braços (que são as pernas dela) cedem um por um e se abrem chapados no chão; a massa desce até o chão
+      // e cai pra frente, sem nada escorando
       for (let i = 0; i < 3; i++) for (const sd of ['D', 'E']) {
-        const t0 = 0.4 + (i * 2 + (sd === 'D' ? 0 : 1)) * 0.12, g = seq([[t0, 0], [t0 + 0.25, 1, 'in']], T), sg = sd === 'D' ? -1 : 1;
-        r('braco' + sd + i, 0, 0, sg * 0.9 * g); r('ante' + sd + i, 0, 0, -sg * 0.8 * g);
+        const t0 = 0.4 + (i * 2 + (sd === 'D' ? 0 : 1)) * 0.12, g = seq([[t0, 0], [t0 + 0.3, 1, 'in'], [t0 + 0.38, 0.92], [t0 + 0.46, 1]], T), sg = sd === 'D' ? -1 : 1;
+        r('braco' + sd + i, 0, 0, sg * 0.15 * g); r('ante' + sd + i, 0, 0, -sg * 1.5 * g);
       }
       const fall = seq([[0.6, 0], [1.3, 1, 'in']], T);
-      obj.position.y -= 0.45 * fall; r('cabeca', 0.5 * fall, 0, 0.2 * fall);
+      r('corpo', 0.35 * fall, 0, 0); r('cabeca', 0.5 * fall, 0, 0.2 * fall);
       if (T > 1.25 && T < 1.45) ctx.shake(0.8);
       if (T > 0.22 && T < 0.4) ctx.flash(new THREE.Vector3(0, 1.2, -1.6), 1 - (T - 0.22) / 0.18);
       const dis = FX.clamp01((T - 1.6) / 1.8);

@@ -320,17 +320,28 @@ final class JjMobMoves {
     // wood, leaves, glass; never what has a block entity or is unbreakable), some thrown out. Only with
     // soulsBlockDestruction and mobGriefing.
     static void smash(NarutoMob m, Vec3 at, double r) {
+        carve(m, at, r, 1, (int) Math.ceil(r), 3f, 6);
+    }
+
+    // The blocks in an ellipsoid round at (down blocks under it, up over it) no harder than maxHard, never what has a
+    // block entity, a fluid or cannot be broken; up to thrown of them fly out as falling blocks, the rest are erased
+    // with the break effect. Every destruction of the curses goes through here, so the gamerules are checked once.
+    static void carve(NarutoMob m, Vec3 at, double r, int down, int up, float maxHard, int thrown) {
         ServerLevel level = lvl(m);
-        if (!com.starkinhon.battlegroundsmod.combat.BlockRules.canBreak(level)) {
+        // never in the challenge arenas (their floor is the fight), nor with the destruction gamerules off
+        if (!com.starkinhon.battlegroundsmod.combat.BlockRules.canBreak(level)
+                || com.starkinhon.battlegroundsmod.challenge.ChallengeArenas.isArena(level.dimension())) {
             return;
         }
         net.minecraft.core.BlockPos mid = net.minecraft.core.BlockPos.containing(at);
         int n = (int) Math.ceil(r);
-        int thrown = 0;
+        double rr = r * r;
         for (int dx = -n; dx <= n; dx++) {
-            for (int dy = -1; dy <= n; dy++) {
+            for (int dy = -down; dy <= up; dy++) {
                 for (int dz = -n; dz <= n; dz++) {
-                    if (dx * dx + dy * dy * 1.5 + dz * dz > r * r) {
+                    // under it a bowl, over it a dome as tall as up
+                    double yy = 0.5 * rr * dy * dy / Math.max(1, dy < 0 ? down * down : up * up);
+                    if (dx * dx + dz * dz + yy > rr) {
                         continue;
                     }
                     net.minecraft.core.BlockPos p = mid.offset(dx, dy, dz);
@@ -339,11 +350,11 @@ final class JjMobMoves {
                     }
                     var state = level.getBlockState(p);
                     float hard = state.getDestroySpeed(level, p);
-                    if (state.isAir() || !state.getFluidState().isEmpty() || state.hasBlockEntity() || hard < 0 || hard > 3) {
+                    if (state.isAir() || !state.getFluidState().isEmpty() || state.hasBlockEntity() || hard < 0 || hard > maxHard) {
                         continue;
                     }
-                    if (thrown < 6 && dy >= 0 && m.getRandom().nextInt(5) == 0) {
-                        thrown++;
+                    if (thrown > 0 && dy >= 0 && m.getRandom().nextInt(5) == 0) {
+                        thrown--;
                         var fly = net.minecraft.world.entity.item.FallingBlockEntity.fall(level, p, state);
                         fly.dropItem = false;
                         Vec3 out = new Vec3(dx, 0, dz);
@@ -354,6 +365,66 @@ final class JjMobMoves {
                         com.starkinhon.battlegroundsmod.combat.BlockBreakFx.erase(level, p, state, net.minecraft.world.level.block.Block.UPDATE_CLIENTS);
                     }
                 }
+            }
+        }
+    }
+
+    // Destruction that walks with the effect (Stark 2026-11-14: "os efeitos levam consigo a destruição"): of the line
+    // from a to b along the ground, the stretch between fractions k0 and k1, a block wide trench r round, down blocks
+    // deep. Called every tick of the effect with the stretch it covered in that tick, so the work is spread out.
+    static void trench(NarutoMob m, Vec3 a, Vec3 b, double k0, double k1, double r, int down, int up) {
+        double len = a.distanceTo(b);
+        int steps = Math.max(1, (int) Math.ceil(len * (k1 - k0) / 0.8));
+        for (int i = 0; i <= steps; i++) {
+            double k = k0 + (k1 - k0) * i / steps;
+            carve(m, ground(m, a.lerp(b, Math.max(0, Math.min(1, k)))), r, down, up, 3f, 1);
+        }
+    }
+
+    // The ground a body plows through this tick (a charge): what stands in its way at its height is broken, the plants
+    // and the loose top of the ground under it churned up.
+    static void plow(NarutoMob m, double reach, double r, double height) {
+        Vec3 nose = ahead(m, m.getBbWidth() * 0.5 + reach);
+        carve(m, nose.add(0, height * 0.5, 0), r, 0, (int) Math.ceil(height * 0.5), 2f, 1);
+        carve(m, ground(m, nose), r * 0.8, 0, 0, 0.7f, 0);
+    }
+
+    // A cut that sweeps an arc round centre (radius r, from yaw a0 to yaw a1, degrees, at heights y0..y1 over it):
+    // what it passes through is sliced (leaves, plants, wood, glass, wool, the loose ground), nothing behind it.
+    static void arc(NarutoMob m, Vec3 centre, double r, double a0, double a1, double y0, double y1) {
+        int steps = Math.max(2, (int) Math.ceil(Math.abs(a1 - a0) * Math.PI / 180 * r / 0.6));
+        for (int i = 0; i <= steps; i++) {
+            double a = Math.toRadians(a0 + (a1 - a0) * i / steps);
+            for (double y = y0; y <= y1 + 1.0E-3; y += 0.8) {
+                Vec3 p = centre.add(-Math.sin(a) * r, y, Math.cos(a) * r);
+                carve(m, p, 0.5, 0, 0, 2.5f, 0);
+            }
+        }
+    }
+
+    // The yaw (degrees) the body faces, for arc()
+    static double yaw(NarutoMob m) {
+        return m.getYRot();
+    }
+
+    // A thing in flight bores through what it meets (a beam, a blade of energy, a jet): a tunnel r round at at.
+    static void bore(NarutoMob m, Vec3 at, double r) {
+        carve(m, at, r, (int) Math.ceil(r), (int) Math.ceil(r), 2.5f, 0);
+    }
+
+    // A wave over the ground (a scream, a shockwave): the ring between radius r0 and r1 round c, in front of the body
+    // within halfAngle degrees (180 = all round), knocks down what stands on the ground (plants, leaves, glass,
+    // fences, loose top blocks) up to height h; the ground itself stays.
+    static void sweepGround(NarutoMob m, Vec3 c, double r0, double r1, double halfAngle, double h) {
+        Vec3 fwd = m.forward();
+        double mid = (r0 + r1) * 0.5;
+        int steps = Math.max(3, (int) Math.ceil(2 * Math.toRadians(halfAngle) * mid / 0.8));
+        double base = Math.atan2(fwd.z, fwd.x);
+        for (int i = 0; i <= steps; i++) {
+            double a = base + Math.toRadians(halfAngle) * (2.0 * i / steps - 1);
+            for (double rr = r0; rr <= r1 + 1.0E-3; rr += 0.8) {
+                Vec3 g = ground(m, c.add(Math.cos(a) * rr, 0, Math.sin(a) * rr));
+                carve(m, g.add(0, 0.5, 0), 0.5, 0, (int) Math.ceil(h), 0.9f, 0);
             }
         }
     }

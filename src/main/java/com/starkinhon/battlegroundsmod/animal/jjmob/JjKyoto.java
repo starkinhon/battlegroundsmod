@@ -75,6 +75,8 @@ final class JjKyoto {
                     if (k >= 0 && m.marks.length == 3 && m.marks[k] != null) {
                         sound(m, m.marks[k], SoundEvents.FIRECHARGE_USE, 1f, 1.5f);
                         impact(m, m.marks[k], 0.8f, JmNet.FLESH);
+                        // the flame lands and burns a small pit where it falls
+                        carve(m, ground(m, m.marks[k]), 0.9, 1, 1, 0.9f, 0);
                         for (LivingEntity o : around(m, m.marks[k], 1.3)) {
                             magic(m, o, 40);
                             o.igniteForSeconds(2);
@@ -84,6 +86,8 @@ final class JjKyoto {
                 case "mechamaru/canhao" -> cannon(m, f, t);
                 case "mechamaru/espada" -> {
                     if (f >= 22 && f <= 27) {
+                        // the dash cuts through what is in its way
+                        plow(m, 0.3, 0.8, 1.8);
                         for (LivingEntity o : around(m, body(m, 0.6, 0, 0.8), 1.4)) {
                             if (once(m, o)) {
                                 hit(m, o, 60, 0.7f, 12);
@@ -108,6 +112,11 @@ final class JjKyoto {
                             }
                         }
                         wave(m, imp, 3, 90, 1.1, 0.5);
+                    }
+                    if (f >= 34 && f <= 36) {
+                        // the shockwave runs out over the ground from the crater, a ring a tick
+                        Vec3 imp = ground(m, body(m, 2.6, 0.1, 0));
+                        sweepGround(m, imp, 1.8 + (f - 34) * 0.7, 2.5 + (f - 34) * 0.7, 180, 1.5);
                     }
                 }
                 case "oni/agarrao" -> {
@@ -221,6 +230,10 @@ final class JjKyoto {
         Integer id = BEAM.get(m.getId());
         if (f >= 40 && f <= 60 && id != null) {
             Vec3 end = clip(m, muzzle, muzzle.add(m.mark.scale(7)));
+            if (f % 2 == 0 && end.distanceTo(muzzle) < 6.9) {
+                // the beam drills into the wall it meets, a little further every other tick
+                bore(m, end.add(m.mark.scale(0.3)), 0.8);
+            }
             SubNet.send(level, SubNet.KI_BEAM, id, muzzle, end.subtract(muzzle), 0.55f, Db.BLUE, f == 60 ? 1 : 0);
             if (f == 60) {
                 BEAM.remove(m.getId());

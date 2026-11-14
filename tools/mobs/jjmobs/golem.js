@@ -256,9 +256,13 @@
       const knee = seq([[0.3, 0], [0.9, 1, 'in']], T), fall = seq([[1.1, 0], [1.7, 1, 'in']], T);
       r('pernaD', -1.3 * knee, 0, 0); r('pernaE', -1.3 * knee, 0, 0); r('canelaD', 1.6 * knee, 0, 0); r('canelaE', 1.6 * knee, 0, 0);
       obj.position.y -= 0.62 * knee;
-      P.tronco.obj.rotation.x += 1.25 * fall + 0.15 * knee;
-      obj.position.y -= 0.35 * fall; obj.position.z -= 0.6 * fall;
-      r('bracoD', -1.4 * fall, 0, 0.2); r('bracoE', -1.4 * fall, 0, -0.2); r('cabeca', 0.4 * fall, 0, 0);
+      // de joelhos, o peso do tronco leva o corpo inteiro de cara no chão (gira em volta dos joelhos, sem escorregar)
+      P.tronco.obj.rotation.x += 0.15 * knee;
+      const ang = 1.35 * fall;
+      obj.rotation.x = ang;
+      r('pernaD', 0.9 * fall, 0, 0); r('pernaE', 0.9 * fall, 0, 0); r('canelaD', -0.4 * fall, 0, 0); r('canelaE', -0.4 * fall, 0, 0);
+      r('bracoD', -0.3 * fall, 0, 0.35 * fall); r('bracoE', -0.3 * fall, 0, -0.35 * fall); r('cabeca', 0.2 * fall, 0.3 * fall, 0);
+      JJFX.noSlide(obj, P.tronco.obj, 'z', () => { obj.rotation.x = 0; }, () => { obj.rotation.x = ang; }, 0.7 * fall);
       if (T > 0.88 && T < 1.05) ctx.shake(0.6);
       if (T > 1.68 && T < 1.95) { ctx.shake(1.2); }
       if (T > 1.7) dust('queda', new THREE.Vector3(0, 0.02, -1.4), T - 1.7, 50);

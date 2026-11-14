@@ -70,6 +70,11 @@ final class JjColonia {
                     if (f == 4) {
                         JmNet.send(level, JmNet.ENERGY, m.getId(), body(m, 0.5, 0.35, 1.1), body(m, 0.5, 0.35, 1.1).subtract(m.position()), 14, 1, 0);
                     }
+                    if (f == 19 || f == 29) {
+                        // the blade's arc slices what it passes through: right to left, then back
+                        double y = yaw(m);
+                        arc(m, m.position(), 1.9, f == 19 ? y - 70 : y + 70, f == 19 ? y + 70 : y - 70, 0.6, 1.6);
+                    }
                     if ((f == 19 || f == 29) && front(m, t, 2.2, 0.3)) {
                         hit(m, t, 45, 0.6f, 12);
                         rip(m, Combat.center(t), 0.8f);
@@ -81,6 +86,10 @@ final class JjColonia {
                         Vec3 fist = body(m, 0.3, -0.3, 1.2);
                         JmNet.send(level, JmNet.ENERGY, m.getId(), fist, fist.subtract(m.position()), 20, 1, 0);
                     }
+                    if (f == 30) {
+                        // the punch goes through the wall in front
+                        carve(m, body(m, 1.4, 0, 1.1), 1.0, 1, 1, 2.5f, 2);
+                    }
                     if (f == 30 && front(m, t, 1.8, 0.3)) {
                         hit(m, t, 70, 0.9f, 12);
                         Combat.push(t, m.forward(), 1.3, 0.4);
@@ -90,6 +99,11 @@ final class JjColonia {
                 }
                 case "solta/garras" -> {
                     int j = (f - 21) / 6;
+                    if (f >= 21 && (f - 21) % 6 == 0 && j < 6) {
+                        // every claw rakes an arc in front, one side then the other, high and low
+                        double y = yaw(m), s = j % 2 == 0 ? 1 : -1;
+                        arc(m, m.position(), 2.2, y - 55 * s, y + 55 * s, j < 3 ? 1.2 : 0.4, j < 3 ? 2.4 : 1.4);
+                    }
                     if (f >= 21 && (f - 21) % 6 == 0 && j < 6 && front(m, t, 2.6, 0.2)) {
                         hit(m, t, 25, 0.5f, 4);
                         rip(m, Combat.center(t), 0.7f);
@@ -103,6 +117,10 @@ final class JjColonia {
                     if (f == 28) {
                         NmNet.send(level, NmNet.SOUND, 0, body(m, 0.5, 0, 1.4), m.forward().scale(8), 0, 0, 0);
                         sound(m, SoundEvents.WARDEN_ROAR, 2f, 1.2f);
+                    }
+                    if (f >= 28 && f <= 33) {
+                        // the scream flattens what stands in front, a ring further each tick
+                        sweepGround(m, m.position(), 0.8 + (f - 28) * 1.3, 0.8 + (f - 27) * 1.3, 45, 2.5);
                     }
                     if (f >= 28 && f <= 72 && f % 10 == 8) {
                         for (LivingEntity o : around(m, m.position(), 8)) {

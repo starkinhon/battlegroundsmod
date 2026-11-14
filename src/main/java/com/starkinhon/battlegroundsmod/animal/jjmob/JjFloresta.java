@@ -75,8 +75,14 @@ final class JjFloresta {
                         Vec3 p = ground(m, body(m, 2.2, 0, 0).lerp(m.mark, k));
                         SubNet.send(level, SubNet.CRACKS, 0, p, Vec3.ZERO, 1.2f, 4, 1);
                     }
+                    if (f > 20 && f <= 32) {
+                        // the ground splits open along the cracks as they run
+                        trench(m, ground(m, body(m, 2.2, 0, 0)), m.mark, (f - 21) / 12.0, (f - 20) / 12.0, 0.8, 1, 0);
+                    }
                     if (f == 32) {
                         JmNet.send(level, JmNet.HANDS, 0, m.mark, Vec3.ZERO, 1.6f, 58, 6);
+                        // the arms burst up through the ground
+                        carve(m, m.mark, 1.8, 0, 2, 3f, 5);
                         sound(m, m.mark, SoundEvents.ROOTS_BREAK, 2f, 0.5f);
                         for (LivingEntity o : around(m, m.mark, 1.7)) {
                             if (o.onGround() && hold(m, o, 58)) {
@@ -94,6 +100,10 @@ final class JjFloresta {
                     if (f == 42) {
                         JmNet.send(level, JmNet.WAVE, 0, body(m, 1.6, 0, 0), m.forward().scale(9), 3, 0, 0);
                         sound(m, SoundEvents.WARDEN_ROAR, 2.5f, 0.7f);
+                    }
+                    if (f >= 42 && f <= 49) {
+                        // the scream goes out over the ground in front: flattens what stands, a ring further each tick
+                        sweepGround(m, m.position(), (f - 42) * 1.45, (f - 41) * 1.45, 60, 2.5);
                     }
                     if (f == 49) {
                         for (LivingEntity o : around(m, m.position(), 11)) {
@@ -135,6 +145,13 @@ final class JjFloresta {
                         m.mark = ground(m, alive(t) ? t.position() : ahead(m, 6));
                         Vec3 from = ground(m, body(m, 0.8, 0, 0));
                         NmNet.send(level, NmNet.STAKES, 0, from, m.mark.subtract(from), 7, 0, 0);
+                    }
+                    if (f > 16 && f <= 26 && m.mark != null) {
+                        // the roots tear the ground up along the row as they come
+                        trench(m, ground(m, body(m, 0.8, 0, 0)), m.mark, (f - 17) / 10.0, (f - 16) / 10.0, 0.9, 1, 1);
+                    }
+                    if (f == 26 && m.mark != null) {
+                        carve(m, m.mark, 1.3, 0, 2, 3f, 3);
                     }
                     if (f == 26) {
                         boolean held = false;

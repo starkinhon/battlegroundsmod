@@ -59,6 +59,8 @@ final class JjShibuya {
                         SubNet.send(level, SubNet.DUST, 0, at, Vec3.ZERO, 1.2f, 0, 0);
                         SubNet.send(level, SubNet.CRACKS, 0, at, Vec3.ZERO, 2.2f, 7, 1);
                         smash(m, ahead(m, 1.2), 1.6);
+                        // the landing's shock flattens what stands round it
+                        sweepGround(m, at, 1.6, 2.8, 180, 1.5);
                         sound(m, SoundEvents.GENERIC_EXPLODE.value(), 0.8f, 1.3f);
                         for (LivingEntity o : around(m, at, 1.3)) {
                             // right under the head: pinned
@@ -72,6 +74,7 @@ final class JjShibuya {
                 }
                 case "transfigurado/investida" -> {
                     if (f >= 16 && f <= 34) {
+                        plow(m, 0.3, 0.8, 1.8);
                         for (LivingEntity o : around(m, body(m, 0.5, 0, 0.9), 1.2)) {
                             if (once(m, o)) {
                                 hit(m, o, 50, 0.7f, 10);
@@ -102,6 +105,8 @@ final class JjShibuya {
                         SubNet.send(lvl(m), SubNet.HIT, 0, body(m, 1.3, 0, 0.9), Vec3.ZERO, 1.4f, 2, 7);
                     }
                     if (f >= 19 && f <= 33) {
+                        // the train runs through what is in its way
+                        plow(m, 0.3, 1.4, 2.6);
                         for (LivingEntity o : around(m, body(m, 0.9, 0, 0.9), 1.7)) {
                             if (once(m, o)) {
                                 hit(m, o, 120, 1.0f, 10);

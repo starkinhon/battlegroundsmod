@@ -83,6 +83,15 @@ final class JjAldeia {
                 case "poco/puxar" -> hair(m, f, t);
                 case "kuchisake/pergunta" -> question(m, f, t);
                 case "kuchisake/tesouradas" -> {
+                    if (f == 6 || f == 16 || f == 36) {
+                        // the scissors cut what they close on in front
+                        double y = yaw(m);
+                        if (f == 36) {
+                            carve(m, body(m, 1.6, 0, 1.0), 0.7, 0, 1, 2.5f, 0);
+                        } else {
+                            arc(m, m.position(), 1.6, y + (f == 6 ? -40 : 40), y + (f == 6 ? 40 : -40), 0.8, 1.6);
+                        }
+                    }
                     if ((f == 6 || f == 16) && front(m, t, 2.2, 0.3)) {
                         hit(m, t, 30, 0.5f, 4);
                         rip(m, Combat.center(t), 0.7f);
@@ -140,6 +149,8 @@ final class JjAldeia {
         if (land >= 0 && land % 10 == 0 && land / 10 < 8 && m.marks[land / 10] != null) {
             Vec3 at = m.marks[land / 10];
             sound(m, at, SoundEvents.GLASS_BREAK, 1f, 1.2f);
+            // the plate shatters what is brittle where it hits (glass, leaves, plants)
+            carve(m, at, 0.7, 0, 0, 0.6f, 0);
             for (LivingEntity o : around(m, at, 0.9)) {
                 hit(m, o, 22, 0.4f, 10);
             }

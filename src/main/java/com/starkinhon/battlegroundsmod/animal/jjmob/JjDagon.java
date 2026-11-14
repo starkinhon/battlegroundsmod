@@ -187,6 +187,12 @@ final class JjDagon {
         }
         if (f >= a && f <= b && (f - a) % 4 == 0) {
             Vec3 end = clip(m, mouth, mouth.add(dir));
+            // the water tears off what is soft along its way (plants, leaves, sand, loose dirt) and digs where it hits
+            double l = mouth.distanceTo(end);
+            for (double d = 0.8; d < l; d += 0.8) {
+                carve(m, mouth.lerp(end, d / l), 0.6, 0, 0, 0.9f, 0);
+            }
+            carve(m, end, 0.9, 1, 0, 0.9f, 0);
             for (LivingEntity o : line(m, mouth, end, 1.0)) {
                 hit(m, o, look == 1 ? 8 : 10, 0.3f, 12);
                 Combat.push(o, m.forward(), 0.35, 0.05);

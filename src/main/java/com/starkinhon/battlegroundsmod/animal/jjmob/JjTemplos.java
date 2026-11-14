@@ -110,6 +110,10 @@ final class JjTemplos {
                     }
                 }
                 case "sino/badalada" -> {
+                    if (f >= 28 && f <= 31) {
+                        // the toll's rings go out in front over the ground, a ring a tick
+                        sweepGround(m, m.position(), 0.8 + (f - 28) * 1.4, 0.8 + (f - 27) * 1.4, 50, 2.5);
+                    }
                     if (f == 28) {
                         Vec3 from = body(m, 0.5, 0, 1.2);
                         NmNet.send(level, NmNet.SOUND, 0, from, m.forward().scale(6), 0, 0, 0);
@@ -127,6 +131,8 @@ final class JjTemplos {
                 }
                 case "sino/prender" -> {
                     if (f == 21) {
+                        // the bell comes down and breaks what stands round where it lands
+                        sweepGround(m, m.position(), 0.9, 1.8, 180, 1.5);
                         SubNet.send(level, SubNet.DUST, 0, m.position(), Vec3.ZERO, 1f, 0, 0);
                         sound(m, SoundEvents.ANVIL_LAND, 1.4f, 0.5f);
                         for (LivingEntity o : around(m, m.position().add(0, 0.8, 0), 1.6)) {
@@ -180,6 +186,8 @@ final class JjTemplos {
         if (f == 42 || f == 51 || f == 60) {
             sound(m, m.mark, SoundEvents.FIRECHARGE_USE, 1f, 1.4f);
             impact(m, m.mark, 0.8f, JmNet.FLESH);
+            // the flame burns a small pit where it falls
+            carve(m, ground(m, m.mark), 0.9, 1, 1, 0.9f, 0);
             for (LivingEntity o : around(m, m.mark, 1.3)) {
                 magic(m, o, 30);
                 o.igniteForSeconds(2);

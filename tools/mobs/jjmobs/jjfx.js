@@ -12,7 +12,7 @@ const JJFX = (() => {
   float jn(vec3 x){ vec3 i=floor(x), f=fract(x); f=f*f*(3.0-2.0*f);
     return mix(mix(mix(jh(i),jh(i+vec3(1,0,0)),f.x),mix(jh(i+vec3(0,1,0)),jh(i+vec3(1,1,0)),f.x),f.y),
                mix(mix(jh(i+vec3(0,0,1)),jh(i+vec3(1,0,1)),f.x),mix(jh(i+vec3(0,1,1)),jh(i+vec3(1,1,1)),f.x),f.y),f.z); }
-  float jf(vec3 p){ float a=0.5, s=0.0; for(int i=0;i<4;i++){ s+=a*jn(p); p=p*2.03+vec3(1.7,9.2,3.1); a*=0.5; } return s; }`;
+  float jf(vec3 p){ float a=0.5, s=0.0; for(int i=0;i<3;i++){ s+=a*jn(p); p=p*2.03+vec3(1.7,9.2,3.1); a*=0.5; } return s; }`;
   // progresso total k (0..1) dividido em: escurecer (0..0.22) e evaporar (0.22..1)
   const burnOf = k => clamp01(k / 0.22), frontOf = k => clamp01((k - 0.22) / 0.78);
   function patch(e) {
@@ -63,7 +63,7 @@ const JJFX = (() => {
         vec3 t0 = (uLo - ro)/rd, t1 = (uHi - ro)/rd; vec3 tn = min(t0,t1), tf = max(t0,t1);
         float a = max(max(max(tn.x,tn.y),tn.z), 0.0), b = min(min(tf.x,tf.y),tf.z);
         if (b <= a) discard;
-        const int N = 40; float st = (b - a)/float(N);
+        const int N = 22; float st = (b - a)/float(N);
         vec4 acc = vec4(0.0);
         for (int i = 0; i < N; i++) {
           vec3 p = ro + rd*(a + st*(float(i) + jh(vW*91.0 + float(i))));
@@ -73,7 +73,7 @@ const JJFX = (() => {
           vec3 dw = min(p - uLo, uHi - p); foot *= smoothstep(0.0, 0.25, min(min(dw.x, dw.z), dw.y));
           float band = smoothstep(-0.1, 0.03, rel) * exp(-max(rel, 0.0)*2.6);
           vec3 w = vec3(p.x*2.6, p.y*1.8 - uT*1.3, p.z*2.6);
-          w += 0.6*vec3(jn(w*0.7 + 3.1), 0.0, jn(w*0.7 + 7.7));
+          w.xz += 0.5*vec2(sin(w.y*1.7 + w.z), cos(w.y*1.3 + w.x));
           float den = max(jf(w) - 0.44, 0.0) * 1.7 * band * foot * uK;
           if (den > 0.001) {
             vec3 col = mix(vec3(0.44, 0.41, 0.52), vec3(0.12, 0.10, 0.16), clamp(den*2.0, 0.0, 1.0));
@@ -115,6 +115,8 @@ const JJFX = (() => {
     };
     // o box é filho do corpo só pra aparecer/sumir junto; a matriz de mundo é escrita direto acima
     box.updateMatrixWorld = () => {};
+    // cópias do corpo (eco do poço, ilusões da kitsune) não levam o vapor nem o medidor
+    probe.clone = box.clone = () => { const g = new THREE.Object3D(); g._vap = true; return g; };
     e.obj.add(probe); e.obj.add(box);
   }
   function dissolve(e, k) {
@@ -361,7 +363,7 @@ const JJFX = (() => {
     obj.updateMatrixWorld(true);
     let lo = Infinity;
     obj.traverse(o => {
-      if (!o.isMesh || !o.visible || !o.geometry) return;
+      if (!o.isMesh || !o.visible || !o.geometry || o._vap) return;
       for (let p = o.parent; p; p = p.parent) if (!p.visible) return;
       const pos = o.geometry.attributes.position;
       for (let i = 0; i < pos.count; i++) { _v.fromBufferAttribute(pos, i).applyMatrix4(o.matrixWorld); if (_v.y < lo) lo = _v.y; }
@@ -384,7 +386,7 @@ const JJFX = (() => {
     if (!isFinite(lo)) return;
     const T = t % deathDur(m), k = clamp01((T - 0.2) / 0.8);
     const e2 = k * k * (3 - 2 * k);
-    obj.position.y -= (lo - (REST[m.id] || 0) * (1 - e2)) * (FLY[m.id] ? e2 : 1);
+    obj.position.y -= (lo - (REST[m.id] || 0) * (1 - e2)) * e2;   // entra aos poucos: sem pulos quando um membro troca de lugar com outro como ponto mais baixo
   }
   // tombo sem escorregar: compara onde o tronco (part) fica sem e com a rotação da queda e puxa o corpo de volta,
   // deixando só 'max' de deslocamento pro lado da queda (como um bicho de verdade que desaba onde estava)

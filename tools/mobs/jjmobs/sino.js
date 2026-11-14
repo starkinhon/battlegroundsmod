@@ -227,8 +227,11 @@
       return;
     }
     if (mode === 'morte') {
-      // racha de cima a baixo: as duas metades caem pros lados e o olho fecha; depois vira cinza
-      const { T, fall } = JJFX.exorcize(t, obj, e, ctx, { h: 2.2, refZ: -2.4, rotX: 0.35, back: 0.25, ashY: 0.6, ashZ: 0, n: 200 });
+      // o sino pesado tomba de costas e fica deitado de lado, o olho fecha; depois evapora
+      const { T, fall } = JJFX.exorcize(t, obj, e, ctx, { h: 2.2, refZ: -2.4, rotX: 0, back: 0.1, ashY: 0.6, ashZ: 0, n: 200 });
+      const ang = 1.5 * fall;
+      obj.rotation.x = ang;
+      JJFX.noSlide(obj, P.sino.obj, 'z', () => { obj.rotation.x = 0; }, () => { obj.rotation.x = ang; }, 0.5 * fall);
       lids(Math.min(1, 0.2 + fall));
       hum(Math.max(0, 1 - T / 1.2));
       if (T > 0.25 && T < 1.1) rings(T - 0.25, 0.6);

@@ -71,6 +71,8 @@ final class JjJogo {
                             o.igniteForSeconds(4);
                         }
                         magma(m, at, 2, 100);
+                        // the blast leaves a crater
+                        carve(m, ground(m, at), 2.0, 1, 2, 3f, 5);
                         // gone in its own blast
                         m.discard();
                     }
@@ -137,6 +139,8 @@ final class JjJogo {
                 return;
             }
             sound(m, aim, SoundEvents.LAVA_POP, 1.4f, 0.6f);
+            // the bomb digs in where it lands, the magma pools in the pit
+            carve(m, aim, 1.1, 1, 1, 3f, 2);
             magma(m, aim, 1.2f, 80);
             for (LivingEntity o : around(m, aim.add(0, 0.5, 0), 1.3)) {
                 hit(m, o, 40, 0.6f, 11);
@@ -165,8 +169,17 @@ final class JjJogo {
             sound(m, SoundEvents.GENERIC_EXPLODE.value(), 1.4f, 0.5f);
             wave(m, imp, 2, 50, 0.6, 0.3);
         }
+        if (f > 34 && f <= 43 && m.marks.length == 5) {
+            // the five cracks split the ground open as the magma runs out along them
+            for (int i = 0; i < 5; i++) {
+                trench(m, imp, m.marks[i], (f - 35) / 9.0, (f - 34) / 9.0, i == 2 ? 0.8 : 0.6, 1, 0);
+            }
+        }
         if (f == 43 && m.marks.length == 5) {
             sound(m, m.marks[2], SoundEvents.LAVA_POP, 2f, 0.5f);
+            for (int i = 0; i < 5; i++) {
+                carve(m, m.marks[i], i == 2 ? 1.8 : 1.2, 1, 2, 3f, i == 2 ? 4 : 1);
+            }
             for (int i = 0; i < 5; i++) {
                 double r = i == 2 ? 2 : 1.3;
                 for (LivingEntity o : around(m, m.marks[i].add(0, 0.5, 0), r)) {
@@ -207,6 +220,10 @@ final class JjJogo {
             Vec3 from = ground(m, body(m, 1.5, 0, 0));
             Vec3 p = ground(m, from.lerp(m.mark, (i + 1) / 6.0));
             JmNet.send(level, JmNet.BASALT, 0, p, Vec3.ZERO, 1.0f + 0.4f * i, i == 5 ? 0.7f : 0.45f, 88 - f);
+            // each column breaks up through the ground and what stands over it, and the ground between splits
+            Vec3 prev = i == 0 ? from : ground(m, from.lerp(m.mark, i / 6.0));
+            trench(m, prev, p, 0, 1, 0.6, 1, 0);
+            carve(m, p, i == 5 ? 1.3 : 0.9, 0, 2 + i / 2, 3f, i == 5 ? 3 : 1);
             SubNet.send(level, SubNet.DUST, 0, p, Vec3.ZERO, 0.7f, 0, 0);
             sound(m, p, SoundEvents.BASALT_BREAK, 1.6f, 0.6f);
             for (LivingEntity o : around(m, p.add(0, 0.5, 0), i == 5 ? 1.3 : 0.9)) {

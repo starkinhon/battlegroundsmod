@@ -191,7 +191,12 @@
       return;
     }
     if (mode === 'morte') {
-      const { fall } = JJFX.exorcize(t, obj, e, ctx, { h: 3.4, refZ: -2.4, rotX: 1.2, back: 0.6, ashY: 0.6, ashZ: 1.4, n: 240 });
+      // a árvore tomba de costas e fica deitada; as raízes de trás dobram contra o chão em vez de escorar o tronco
+      const { fall } = JJFX.exorcize(t, obj, e, ctx, { h: 3.4, refZ: -2.4, rotX: 0, back: 0.2, ashY: 0.6, ashZ: 1.4, n: 240 });
+      const ang = 1.52 * fall;
+      obj.rotation.x = ang;
+      for (let i = 0; i < 4; i++) { r('raiz' + i, -0.5 * fall, 0, 0); r('raizP' + i, 0.7 * fall, 0, 0); }
+      JJFX.noSlide(obj, P.tronco.obj, 'z', () => { obj.rotation.x = 0; }, () => { obj.rotation.x = ang; }, 1.2 * fall);
       for (let i = 0; i < EYES.length; i++) lid(i, 1 - 0.8 * Math.max(0, 1 - fall * 2));
       branches(1 + 2 * fall);
     }
