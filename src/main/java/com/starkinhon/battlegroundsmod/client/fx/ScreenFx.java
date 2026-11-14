@@ -213,7 +213,7 @@ public final class ScreenFx {
     }
 
     static boolean needsScene() {
-        return PreviewFx.screenOn() || ColoniaAirFx.gradeOn() || Realismo.active() || impact != null || !WARPS.isEmpty() || ticks - heldAt <= 1 || radial != null && radial.k(ticks) > 0 || heldBlur() > 0;
+        return PreviewFx.screenOn() || ColoniaAirFx.gradeOn() || ShibuyaAirFx.gradeOn() || Realismo.active() || impact != null || !WARPS.isEmpty() || ticks - heldAt <= 1 || radial != null && radial.k(ticks) > 0 || heldBlur() > 0;
     }
 
     // The level's camera for this frame, so world positions can be found on screen later (also from the GUI).
@@ -236,7 +236,8 @@ public final class ScreenFx {
         boolean real = Realismo.active();
         boolean preview = PreviewFx.screenOn();
         boolean colonia = ColoniaAirFx.gradeOn();
-        if (!warp && blur <= 0 && !real && !preview && !colonia) {
+        boolean shibuya = ShibuyaAirFx.gradeOn();
+        if (!warp && blur <= 0 && !real && !preview && !colonia && !shibuya) {
             return;
         }
         FxPost.beginPasses();
@@ -253,6 +254,10 @@ public final class ScreenFx {
         if (colonia) {
             // the Colônia's screen grade (desaturated, violet edges, the fires' warmth from below)
             ColoniaAirFx.gradePass(levelPartial);
+        }
+        if (shibuya) {
+            // Shibuya's screen grade (smog by day, neon edges at night, cool light in the metro)
+            ShibuyaAirFx.gradePass(levelPartial);
         }
         if (preview) {
             // the combat flight page's screen (shockwave, speed lines, impact frame), last like on the page

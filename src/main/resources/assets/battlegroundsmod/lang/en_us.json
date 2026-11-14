@@ -2332,5 +2332,21 @@
   "screen.battlegroundsmod.conversa.entregue": "DELIVERED",
   "screen.battlegroundsmod.livro.alma": "Soul",
   "screen.battlegroundsmod.livro.arena_carregando": "Arena loading",
-  "block.battlegroundsmod.bueiro": "Manhole"
+  "block.battlegroundsmod.bueiro": "Manhole",
+  "subtitles.battlegroundsmod.shibuya_cidade": "City hum",
+  "subtitles.battlegroundsmod.shibuya_neon": "Neon buzzes",
+  "subtitles.battlegroundsmod.shibuya_estalo": "Sign crackles",
+  "subtitles.battlegroundsmod.shibuya_vapor": "Steam hisses",
+  "subtitles.battlegroundsmod.shibuya_carro": "Car passes",
+  "subtitles.battlegroundsmod.shibuya_sirene": "Police siren",
+  "subtitles.battlegroundsmod.shibuya_sirene_longe": "Far siren",
+  "subtitles.battlegroundsmod.metro_ronco": "Train rumbles",
+  "subtitles.battlegroundsmod.metro_motor": "Train motor",
+  "subtitles.battlegroundsmod.metro_freio": "Brakes squeal",
+  "subtitles.battlegroundsmod.metro_trilho": "Wheels clack",
+  "subtitles.battlegroundsmod.metro_porta": "Train doors",
+  "subtitles.battlegroundsmod.metro_aviso": "Train approaching chime",
+  "subtitles.battlegroundsmod.metro_chegada": "Doors open chime",
+  "subtitles.battlegroundsmod.metro_pinpon": "Doors closing chime",
+  "subtitles.battlegroundsmod.metro_melodia": "Departure melody"
 }

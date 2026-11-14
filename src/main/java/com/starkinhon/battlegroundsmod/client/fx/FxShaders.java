@@ -16,6 +16,8 @@ public final class FxShaders {
     // Colônia do Jogo do Abate: the dome and sky (ColoniaAirFx), and the Jujutsu screen grade.
     static ShaderInstance colonia;
     static ShaderInstance jjGrade;
+    // Shibuya's screen grade (ShibuyaAirFx).
+    static ShaderInstance shibuyaGrade;
     static ShaderInstance impact;
     static ShaderInstance moonScreen;
     static ShaderInstance warp;
@@ -273,6 +275,12 @@ public final class FxShaders {
             register(event, "fx_jjgrade", DefaultVertexFormat.POSITION, s -> jjGrade = s);
         } catch (Exception e) {
             BattlegroundsMod.LOGGER.error("Could not load the Jujutsu screen grade shader", e);
+        }
+        // On its own: without it Shibuya keeps its neon, steam and fog, just no screen grade.
+        try {
+            register(event, "fx_shibuyagrade", DefaultVertexFormat.POSITION, s -> shibuyaGrade = s);
+        } catch (Exception e) {
+            BattlegroundsMod.LOGGER.error("Could not load the Shibuya screen grade shader", e);
         }
     }
 

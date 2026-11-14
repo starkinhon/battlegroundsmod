@@ -35,6 +35,7 @@ import net.neoforged.neoforge.client.event.ViewportEvent;
 // - Terras do Jogo: embers rising, dark ash falling like snow; a red fog that burns redder at night; vultures.
 // - Outono de Kyoto: maple leaves (red, crimson, orange, gold) and ginkgo leaves falling and tumbling in the wind.
 // - Colônia do Jogo do Abate: not here any more, it has its own full ambience in ColoniaAirFx.
+// - Shibuya: not here any more either, its own ambience is ShibuyaAirFx (neon, steam, smog, metro).
 // - Shibuya: leaflets flying between the buildings; by day a yellowish smog, by night the light pollution (the fog
 //   glows orange-violet from below, never black); crows circling the towers.
 public final class JujutsuAirFx {
@@ -109,9 +110,6 @@ public final class JujutsuAirFx {
         new State(new Mood("outono_de_kyoto", ModWorldgen.OUTONO_DE_KYOTO, List.of(
                 new Air(Kind.LEAF, 340, cs("#c8301e", "#9a1e18", "#e0682a", "#e8a830", "#f0c838", "#d8401e"), 0.07, 0.12)),
                 c("#e8d0b4"), 0.12f, 0.0f, 0.85f, 0, false)),
-        new State(new Mood("shibuya", ModWorldgen.SHIBUYA, List.of(
-                new Air(Kind.PAPER, 50, cs("#f4f1ea", "#e8e2d0", "#ffd23a", "#ff8ab0", "#9ad8ff"), 0.12, 0.2)),
-                c("#c87a5a"), 0.15f, 0.65f, 0.75f, 14, false)),
     };
 
     private JujutsuAirFx() {
