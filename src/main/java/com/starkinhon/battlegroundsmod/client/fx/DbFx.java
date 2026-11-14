@@ -231,9 +231,11 @@ public final class DbFx {
                 if (a <= 0) {
                     if (f != null && f.endAt < 0) {
                         f.endAt = now;
+                        AuraFx.off(id, now);
                     }
                     return;
                 }
+                AuraFx.lit(id, (int) b, (float) dir.x, now);
                 TRACKED.put(key(kind, id), new Fx(kind, id, pos, dir, a, b, c, now));
             }
             case SubNet.DIZZY -> {
@@ -447,7 +449,7 @@ public final class DbFx {
                 case SubNet.KI_BEAM -> kiBeam(rel(f.pos), rel(f.pos.add(f.dir)), f.a + (f.b == Db.KAME ? 0.08f * Mth.sin(age * 1.3f) : 0),
                         color(f.b), age, out, f.id % 7 + 1, f.endAt < 0 ? -1 : (float) (now - f.endAt) * 1.3f);
                 case SubNet.KI_BALL -> ball(f, age, out);
-                case SubNet.KI_AURA -> aura(f, age, partial, out);
+                case SubNet.KI_AURA -> aura(f, age, partial, out, now);
                 case SubNet.SAW -> saw(f, age, out);
                 case SubNet.GENKI -> genki(f, age, out);
                 case SubNet.DEATH_BALL -> deathBall(f, age, out);
@@ -1228,9 +1230,48 @@ public final class DbFx {
         return new Quaternionf(drag).mul(body);
     }
 
-    private static void aura(Fx f, float age, float partial, float out) {
+    // The per-color look of the shell (the same numbers the approved shell had): golden ki spiky and taller, Mestre
+    // Kame's Max Power wide and blue, gathering everything (Final Flash, Explosao Final) with a crown.
+    private static AuraFx.Params auraLook(float[] col, float s) {
+        AuraFx.Params p = new AuraFx.Params();
+        boolean sup = col == COLORS[Db.GOLD] || col == COLORS[Db.GOLD_W];
+        p.tongue = sup ? 0.4f : 0.36f;
+        p.spike = sup ? 0.34f : 0.1f;
+        p.spikeFreq = sup ? 7.5f : 4.5f;
+        p.spikeSharp = sup ? 2.6f : 2.2f;
+        p.crown = sup ? 0.85f : 0.55f;
+        if (col == COLORS[Db.KAME_W] && s > 1.2f) {
+            p.color = MAX_AURA;
+            p.tongue = 0.45f;
+            p.spike = 0.35f;
+            p.spikeFreq = 6;
+            p.spikeSharp = 2.4f;
+            p.crown = 0.9f;
+        }
+        if ((sup || col == COLORS[Db.PURPLE]) && s > 1.2f) {
+            boolean peak = s > 1.35f;
+            p.tongue = peak ? 0.55f : 0.5f;
+            p.spike = peak ? 0.45f : 0.42f;
+            p.crown = peak ? 1.1f : 1f;
+        }
+        return p;
+    }
+
+    private static void aura(Fx f, float age, float partial, float out, double now) {
         Entity e = FxAnchor.entity(f.id);
         if (e == null) {
+            return;
+        }
+        if (KiMesh.ready()) {
+            // The aura remake (client/fx/AuraFx): born as an explosion, then the dense anime shell. Its own lit time,
+            // not this Fx's age: a refreshed aura is a new Fx and must not burst again.
+            float s = Math.max(0.3f, f.c);
+            float[] col = color(f.b);
+            float a = (float) f.dir.x * out;
+            if (pass) {
+                AuraFx.ki(e, f.id, col, a, s, now, partial, FxAnchor.firstPersonSelf(f.id), out, auraLook(col, s));
+            }
+            pebbles(rel(e.getPosition(partial)), age, a, s, f.id % 7 + 1);
             return;
         }
         float in = smooth(age / 4) * out;
