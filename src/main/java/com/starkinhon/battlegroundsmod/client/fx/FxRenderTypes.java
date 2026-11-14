@@ -318,6 +318,15 @@ public final class FxRenderTypes extends RenderType {
                     .setCullState(NO_CULL)
                     .createCompositeState(false));
 
+    // The power lines' cables (client/PowerLineRenderer): flat dark color lit by the world's light, like a lead.
+    public static final RenderType CABLE = create("battlegroundsmod_cable", DefaultVertexFormat.POSITION_COLOR_LIGHTMAP,
+            VertexFormat.Mode.QUADS, 4096, false, false, CompositeState.builder()
+                    .setShaderState(RENDERTYPE_LEASH_SHADER)
+                    .setTextureState(NO_TEXTURE)
+                    .setCullState(NO_CULL)
+                    .setLightmapState(LIGHTMAP)
+                    .createCompositeState(false));
+
     private static void telaoInputs() {
         ShaderInstance shader = FxShaders.telao;
         Minecraft mc = Minecraft.getInstance();

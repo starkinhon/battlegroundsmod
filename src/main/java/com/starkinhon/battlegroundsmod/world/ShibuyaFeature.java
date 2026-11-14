@@ -502,6 +502,14 @@ public final class ShibuyaFeature extends Feature<NoneFeatureConfiguration> {
             return ((t0 & ShibuyaGen.COOL) != 0 ? JujutsuBlocks.WINDOW_COOL : JujutsuBlocks.WINDOW_WARM).get().defaultBlockState();
         }
         int t = ShibuyaGen.base(t0);
+        if (t >= ShibuyaGen.ARM && t < ShibuyaGen.ARM + 16) {
+            int a = t - ShibuyaGen.ARM;
+            net.minecraft.core.Direction f = net.minecraft.core.Direction.from2DDataValue((a & 3) + 2 & 3);
+            return JujutsuBlocks.POWER_LINE.get().defaultBlockState()
+                    .setValue(com.starkinhon.battlegroundsmod.PowerLineBlock.FACING, f)
+                    .setValue(com.starkinhon.battlegroundsmod.PowerLineBlock.CABLE, (a & 4) != 0)
+                    .setValue(com.starkinhon.battlegroundsmod.PowerLineBlock.REACH, (a & 8) != 0);
+        }
         if (t >= ShibuyaGen.WALL0 && t <= ShibuyaGen.WALL7) {
             return JujutsuBlocks.FACADES.get(t - ShibuyaGen.WALL0).get().defaultBlockState();
         }
