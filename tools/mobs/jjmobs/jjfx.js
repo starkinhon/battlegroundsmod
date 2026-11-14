@@ -390,12 +390,64 @@ const JJFX = (() => {
   }
   // tombo sem escorregar: compara onde o tronco (part) fica sem e com a rotação da queda e puxa o corpo de volta,
   // deixando só 'max' de deslocamento pro lado da queda (como um bicho de verdade que desaba onde estava)
-  function noSlide(obj, part, ax, unset, set, max) {
+  function noSlide(obj, part, ax, unset, set, max, mover) {
     const V = THREE.Vector3;
     unset(); obj.updateMatrixWorld(true); const a = part.getWorldPosition(new V());
     set(); obj.updateMatrixWorld(true); const b = part.getWorldPosition(new V());
     const d = b[ax] - a[ax], keep = Math.sign(d) * Math.min(Math.abs(d), max);
-    obj.position[ax] += keep - d;
+    if (!mover || mover === obj) { obj.position[ax] += keep - d; return; }
+    // uma peça se move em vez do corpo todo (o jogo gira e desliza a raiz num quadro espelhado, as peças não):
+    // o deslocamento do mundo vai pro espaço do pai da peça
+    const par = mover.parent, w0 = mover.getWorldPosition(new V()), w1 = w0.clone();
+    w1[ax] += keep - d;
+    par.worldToLocal(w0); par.worldToLocal(w1);
+    mover.position.add(w1.sub(w0));
   }
-  return { noSlide, settle, lowest, dissolve, ash, exorcize, tube, clamp01, drops, wet, column, posable, magma, crack, basalt };
+  // membro que escora o corpo morto: um morto não fica de pé na ponta de um rabo ou de uma mão. Cada membro (a peça
+  // raiz da cadeia) gira aos poucos pro lado que mais o levanta, até não passar do fundo do corpo ('core'); w é o
+  // quanto a queda já andou (no começo o membro pode descer à vontade, no fim nada fica abaixo do corpo)
+  const _q = new THREE.Vector3();
+  function chainLow(o) {
+    let lo = Infinity;
+    o.updateMatrixWorld(true);
+    o.traverse(c => {
+      if (!c.isMesh || !c.visible || !c.geometry || c._vap) return;
+      const pos = c.geometry.attributes.position;
+      for (let i = 0; i < pos.count; i++) { _q.fromBufferAttribute(pos, i).applyMatrix4(c.matrixWorld); if (_q.y < lo) lo = _q.y; }
+    });
+    return lo;
+  }
+  function floorLimbs(obj, P, core, limbs, w, slack = 0.01) {
+    if (w <= 0) return;
+    obj.updateMatrixWorld(true);
+    let base = Infinity;
+    for (const n of core) if (P[n]) {
+      const o = P[n].obj;
+      o.children.forEach(c => {
+        if (!c.isMesh || !c.visible || !c.geometry) return;
+        const pos = c.geometry.attributes.position;
+        for (let i = 0; i < pos.count; i++) { _q.fromBufferAttribute(pos, i).applyMatrix4(c.matrixWorld); if (_q.y < base) base = _q.y; }
+      });
+    }
+    if (!isFinite(base)) return;
+    for (const n of limbs) {
+      if (!P[n]) continue;
+      const o = P[n].obj;
+      let lo = chainLow(o);
+      const need = base - slack - (1 - w) * 1.2;
+      for (let k = 0; k < 60 && lo < need; k++) {
+        let best = null, bestLo = lo;
+        for (const [ax, sg] of [['x', 1], ['x', -1], ['z', 1], ['z', -1]]) {
+          o.rotation[ax] += sg * 0.03;
+          const l = chainLow(o);
+          if (l > bestLo + 1e-5) { bestLo = l; best = [ax, sg]; }
+          o.rotation[ax] -= sg * 0.03;
+        }
+        if (!best) break;
+        o.rotation[best[0]] += best[1] * 0.03;
+        lo = bestLo;
+      }
+    }
+  }
+  return { noSlide, floorLimbs, settle, lowest, dissolve, ash, exorcize, tube, clamp01, drops, wet, column, posable, magma, crack, basalt };
 })();

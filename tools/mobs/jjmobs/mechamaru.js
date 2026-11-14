@@ -243,6 +243,8 @@
       obj.position.y -= 0.15 * fall; obj.position.z -= 0.25 * fall;
       r('bracoD', 0.3 * fall, 0, 0.4); r('bracoE', 0.3 * fall, 0, -0.4); r('cabeca', 0, 0, 0.3 * knee);
       fold();
+      // nenhum membro escora o morto: o corpo encosta no chão (teste R5)
+      JJFX.floorLimbs(obj, P, ['tronco'], ['bracoD', 'bracoE', 'pernaD', 'pernaE'], fall);
       const blinkE = fr(t * 7) < 0.5 ? 1 : 0.2;
       eyes(Math.max(0, 1 - T * 0.5) * blinkE);
       if (T > 0.25 && T < 2.4) ctx.get('faisca', () => DBFX.grains({ n: 36, seed: 95, add: true, palette: [e.v.light, [255, 240, 200], [255, 255, 255]], size: [0.012, 0.028], drag: 1, grav: 7, life: 0.5, spread: 1.6, cone: R2 => [(R2() - 0.5) * 2.4, 1 + R2() * 2, (R2() - 0.5) * 2.4] })).at(W('tronco', 0, -6, 0), T - 0.25, 0.02);

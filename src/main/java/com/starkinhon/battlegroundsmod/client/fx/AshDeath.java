@@ -70,6 +70,11 @@ public final class AshDeath {
             return;
         }
         if (minecraft.level.getEntity(entityId) instanceof LivingEntity living) {
+            if (living instanceof com.starkinhon.battlegroundsmod.animal.jjmob.JjMob) {
+                // a curse has its own death (it falls, then evaporates: startExorcize); a fire kill burning it to ash
+                // took its place and blocked it, so three curses killed by a Katon crumbled standing (test R5)
+                return;
+            }
             ASHES.put(entityId, new Ash(living, ScreenFx.now(), (float) (FxWorld.hash(entityId, 1, 3) * Math.PI * 2), BURN_TICKS, CRUMBLE_START,
                     CRUMBLE_END, END, null, false, null));
         }
