@@ -51,6 +51,14 @@ public final class JmNet {
     public static final int STUFFING = 496;
     // cursed energy gathering on a blade or a fist: id = the one, pos = the point, a = ticks, b = 1 fire (a fist)
     public static final int ENERGY = 497;
+    // a blow landing on a body, the curses' own (Stark 2026-11-14: no neon streaks, the "linhazinha" he hates): no
+    // light, only what the blow knocks out of it. pos = where, dir = the blow's way; a = size, b = what flies (0 flesh
+    // and cursed black, 1 splinters and stone, 2 water, 3 a rip: blood sprayed along the cut), c = seed
+    public static final int IMPACT = 498;
+    public static final int FLESH = 0;
+    public static final int HARD = 1;
+    public static final int WATER = 2;
+    public static final int RIP = 3;
     public static final int LAST = 499;
 
     private JmNet() {

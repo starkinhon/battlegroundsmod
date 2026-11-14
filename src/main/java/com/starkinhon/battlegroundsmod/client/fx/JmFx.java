@@ -82,6 +82,10 @@ final class JmFx {
     private static final float[] ENERGY = FxDraw.rgb(0x3A7CFF);
     private static final float[] ENERGY_CORE = FxDraw.rgb(0xCFE4FF);
     private static final float[] SMOKE = FxDraw.rgb(0x4A4440);
+    private static final float[] BLOOD = FxDraw.rgb(0x7A0E12);
+    private static final float[] BLOOD_DARK = FxDraw.rgb(0x420608);
+    private static final float[] SPLINTER = FxDraw.rgb(0x6E5236);
+    private static final float[] STONE = FxDraw.rgb(0x6A6466);
     private static final Vector3f UP = new Vector3f(0, 1, 0);
 
     private static final class Fx {
@@ -192,6 +196,7 @@ final class JmFx {
             case JmNet.PAPER -> 34;
             case JmNet.STUFFING -> 50;
             case JmNet.ENERGY -> f.a + 8;
+            case JmNet.IMPACT -> 22;
             default -> 20;
         };
     }
@@ -236,6 +241,7 @@ final class JmFx {
                 case JmNet.PAPER -> paper(f, age);
                 case JmNet.STUFFING -> stuffing(f, age);
                 case JmNet.ENERGY -> energy(f, age, partial);
+                case JmNet.IMPACT -> impact(f, age);
                 default -> {
                 }
             }
@@ -329,7 +335,8 @@ final class JmFx {
         float sag = look == 3 ? 0.05f : Math.min(0.5f, len * 0.06f);
         float pulse = look == 1 ? (age * 0.07f) % 1f : look == 0 ? 1 - (age * 0.05f) % 1f : -1;
         int n = 14;
-        int strands = look == 2 ? 5 : look == 3 ? 3 : 1;
+        // the silk is one thick rope of it (Stark 2026-11-14: no thin glowing threads)
+        int strands = look == 2 ? 5 : 1;
         for (int s = 0; s < strands; s++) {
             float so = strands == 1 ? 0 : (s - (strands - 1) / 2f) * r0 * 0.9f;
             Vector3f prev = null;
@@ -995,5 +1002,65 @@ final class JmFx {
         }
         bb(p, 0.9f * k, age, FxDraw.FLARE, 6 / 32f, ENERGY, 0.6f * out, true);
         bb(p, 0.35f, 0, FxDraw.SOFT, 0.85f, ENERGY_CORE, 0.8f * out * k, true);
+    }
+
+    // ---------- a blow landing ----------
+
+    // What a blow knocks out of a body, solid and lit where it is (nothing glows, no streaks): little cubes thrown along
+    // the blow and falling, a puff of dust; a rip sprays its blood in a fan across the cut. Each bit its own path.
+    private static void impact(Fx f, float age) {
+        if (DbFx.pass) {
+            return;
+        }
+        Vector3f c = rel(f.pos);
+        float s = Math.max(0.3f, f.a);
+        int what = (int) f.b;
+        int seed = (int) f.c + f.id * 7;
+        float l = light(f.pos);
+        Vector3f d = vec(f.dir);
+        if (d.lengthSquared() < 1.0E-4f) {
+            d.set(0, 0, 1);
+        }
+        d.normalize();
+        Vector3f[] fr = frame(d);
+        int n = what == JmNet.RIP ? 16 : 12;
+        float t = age / 20f;
+        for (int i = 0; i < n; i++) {
+            float h1 = hash(seed, i, 1), h2 = hash(seed, i, 2), h3 = hash(seed, i, 3);
+            Vector3f v;
+            if (what == JmNet.RIP) {
+                // a fan across the cut, out of the wound
+                float a = (h1 - 0.5f) * 2.2f;
+                v = new Vector3f(d).mul(0.8f + 0.6f * h2).add(new Vector3f(fr[1]).mul(Mth.sin(a) * 1.6f)).add(new Vector3f(fr[2]).mul(Mth.cos(a) * 0.5f));
+            } else {
+                v = sphere(seed, i).mul(0.9f).add(new Vector3f(d).mul(1.1f));
+                v.y = Math.abs(v.y) * 0.8f + 0.4f;
+            }
+            float sp = (what == JmNet.WATER ? 3.2f : 2.6f) * s * (0.6f + 0.7f * h3);
+            Vector3f q = new Vector3f(c).add(new Vector3f(v).mul(sp * t));
+            q.y -= 9f * t * t;
+            float op = 1 - smooth((age - 12) / 10);
+            if (op <= 0.01f) {
+                continue;
+            }
+            float size = (what == JmNet.WATER ? 0.07f : 0.09f) * s * (0.6f + 0.8f * h2) * (1 - 0.4f * Mth.clamp(t * 1.5f, 0, 1));
+            float[] col = switch (what) {
+                case JmNet.HARD -> i % 3 == 0 ? STONE : SPLINTER;
+                case JmNet.WATER -> i % 3 == 0 ? FOAM : SEA;
+                case JmNet.RIP -> i % 2 == 0 ? BLOOD : BLOOD_DARK;
+                default -> i % 3 == 0 ? BLOOD_DARK : i % 3 == 1 ? CURSE_DARK : CURSE;
+            };
+            Vector3f tail = new Vector3f(v).normalize().mul(size);
+            bar(new Vector3f(q).sub(tail), q, size * 1.4f, col, what == JmNet.WATER ? 1 : l, op);
+        }
+        // the dust knocked off it
+        if (what != JmNet.WATER) {
+            for (int i = 0; i < 4; i++) {
+                Vector3f o = sphere(seed + 9, i).mul(0.25f * s * easeOut(Math.min(1, age / 10)));
+                float op = 0.55f * (1 - smooth(age / 16));
+                bb(new Vector3f(c).add(o), (0.35f + 0.5f * easeOut(Math.min(1, age / 12))) * s, i + age * 0.03f, FxDraw.SMOKE, 0.3f,
+                        lit(what == JmNet.HARD ? STONE : SMOKE, l), op, false);
+            }
+        }
     }
 }

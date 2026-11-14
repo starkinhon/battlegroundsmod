@@ -114,7 +114,7 @@ final class JjJogo {
         ServerLevel level = lvl(m);
         Vec3 crater = body(m, 0, 0, m.getBbHeight());
         if (f == 24) {
-            DbCommon.hit(level, crater, 1.4f, 11);
+            impact(m, crater, 1.4f, JmNet.HARD);
             sound(m, SoundEvents.GENERIC_EXPLODE.value(), 1.2f, 0.7f);
         }
         int i = -1;
@@ -160,6 +160,7 @@ final class JjJogo {
                 JmNet.send(level, JmNet.MAGMA_CRACK, 0, imp, m.marks[i].subtract(imp), 9, i == 2 ? 1 : 0, 0);
             }
             SubNet.send(level, SubNet.CRACKS, 0, imp, Vec3.ZERO, 2.5f, 8, 1);
+            smash(m, imp, 2.2);
             NmNet.send(level, NmNet.SHOCK, 0, imp, Vec3.ZERO, 2.4f, 0, 0);
             sound(m, SoundEvents.GENERIC_EXPLODE.value(), 1.4f, 0.5f);
             wave(m, imp, 2, 50, 0.6, 0.3);

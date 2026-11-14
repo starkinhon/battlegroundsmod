@@ -13,6 +13,7 @@ import javax.annotation.Nullable;
 
 import com.starkinhon.battlegroundsmod.ModEntities;
 import com.starkinhon.battlegroundsmod.animal.naruto.NarutoMob;
+import com.starkinhon.battlegroundsmod.animal.naruto.NarutoSpec;
 import com.starkinhon.battlegroundsmod.animal.naruto.NarutoSpec.Spec;
 import com.starkinhon.battlegroundsmod.animal.naruto.NmNet;
 import com.starkinhon.battlegroundsmod.boss.SoulBoss;
@@ -20,12 +21,12 @@ import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.power.powers.sub.SubCommon;
 import com.starkinhon.battlegroundsmod.power.powers.sub.SubNet;
-import com.starkinhon.battlegroundsmod.power.powers.sub.db.DbCommon;
 
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.tags.DamageTypeTags;
+import net.minecraft.util.Mth;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -98,6 +99,42 @@ final class JjMobMoves {
         };
     }
 
+    // ---------- closing in ----------
+
+    // A blow from up close lands ON the body (Stark 2026-11-14: "they don't even touch me, too artificial"): from its
+    // start until it lands, a close blow that walks no path of its own steps the body in to touching distance and keeps
+    // it turned to the target, so the bite, the claw and the punch land in contact on the frame the animation shows.
+    private static final double MELEE = 4.0;
+    // close blows that reach by themselves (a tongue, the train's doors, roots, the bell's trap, a school of fish)
+    private static final Set<String> REACHES = Set.of("lingua", "portas", "enraizar", "prender", "cardume");
+    private static final double TOUCH = 0.15;
+
+    static void closeIn(JjMob m, String mode, int tick, LivingEntity t) {
+        if (!alive(t) || m.isKogane() || m.caught >= 0 || m.heldId >= 0 || REACHES.contains(mode) || JjTravel.of(m.id(), mode) != null) {
+            return;
+        }
+        Spec s = m.spec();
+        int kind = s.kindOf(mode);
+        NarutoSpec.Attack a = s.attack(kind);
+        if (a == null || a.max() > MELEE || tick >= a.impact()) {
+            return;
+        }
+        Vec3 to = t.position().subtract(m.position()).multiply(1, 0, 1);
+        double len = to.length();
+        if (len < 1.0E-3) {
+            return;
+        }
+        float yaw = (float) (Mth.atan2(to.z, to.x) * Mth.RAD_TO_DEG) - 90f;
+        m.faceBlow(yaw);
+        double gap = m.gap(t);
+        if (gap <= TOUCH) {
+            return;
+        }
+        int left = Math.max(1, a.impact() - tick);
+        double step = Math.min(0.6, (gap - TOUCH) / left);
+        m.move(net.minecraft.world.entity.MoverType.SELF, to.scale(step / len));
+    }
+
     // ---------- the kit ----------
 
     static final NarutoMob.Kit KIT = new NarutoMob.Kit() {
@@ -140,6 +177,7 @@ final class JjMobMoves {
 
         public void tick(NarutoMob n, String mode, int tick, LivingEntity t) {
             JjMob m = (JjMob) n;
+            closeIn(m, mode, tick, t);
             moves(m).tick(m, mode, tick - 1, t);
         }
 
@@ -254,13 +292,78 @@ final class JjMobMoves {
     }
 
     static void hit(NarutoMob m, LivingEntity t, float dmg, float size, int color) {
-        Combat.hurt(m, t, dmg);
-        DbCommon.hit(lvl(m), Combat.center(t), size, color);
+        Combat.hurt(m, t, dmg * power(m));
+        impact(m, Combat.center(t), size, splash(m));
+    }
+
+    // the curse's tier in its blows (Combat.hurt takes them down to a plain creature's, Tier 10)
+    static float power(NarutoMob m) {
+        return JjMobSpec.power(m.id());
+    }
+
+    // a blow's impact (JmNet.IMPACT: no glowing streaks, only what the blow knocks out), along the body's facing
+    static void impact(NarutoMob m, Vec3 at, float size, int what) {
+        JmNet.send(lvl(m), JmNet.IMPACT, m.getId(), at, m.forward(), size, what, m.getRandom().nextInt(64));
+    }
+
+    // A heavy blow breaks the ground and what stands where it lands (Stark 2026-11-14: they must wreck the place like
+    // the other fighters): the blocks in radius r of at, down to one under it, that a hand could break (dirt, stone,
+    // wood, leaves, glass; never what has a block entity or is unbreakable), some thrown out. Only with
+    // soulsBlockDestruction and mobGriefing.
+    static void smash(NarutoMob m, Vec3 at, double r) {
+        ServerLevel level = lvl(m);
+        if (!com.starkinhon.battlegroundsmod.combat.BlockRules.canBreak(level)) {
+            return;
+        }
+        net.minecraft.core.BlockPos mid = net.minecraft.core.BlockPos.containing(at);
+        int n = (int) Math.ceil(r);
+        int thrown = 0;
+        for (int dx = -n; dx <= n; dx++) {
+            for (int dy = -1; dy <= n; dy++) {
+                for (int dz = -n; dz <= n; dz++) {
+                    if (dx * dx + dy * dy * 1.5 + dz * dz > r * r) {
+                        continue;
+                    }
+                    net.minecraft.core.BlockPos p = mid.offset(dx, dy, dz);
+                    if (!level.isLoaded(p)) {
+                        continue;
+                    }
+                    var state = level.getBlockState(p);
+                    float hard = state.getDestroySpeed(level, p);
+                    if (state.isAir() || !state.getFluidState().isEmpty() || state.hasBlockEntity() || hard < 0 || hard > 3) {
+                        continue;
+                    }
+                    if (thrown < 6 && dy >= 0 && m.getRandom().nextInt(5) == 0) {
+                        thrown++;
+                        var fly = net.minecraft.world.entity.item.FallingBlockEntity.fall(level, p, state);
+                        fly.dropItem = false;
+                        Vec3 out = new Vec3(dx, 0, dz);
+                        out = out.lengthSqr() < 1.0E-4 ? m.forward() : out.normalize();
+                        fly.setDeltaMovement(out.scale(0.3 + 0.4 * m.getRandom().nextDouble()).add(0, 0.5 + 0.4 * m.getRandom().nextDouble(), 0));
+                        fly.hurtMarked = true;
+                    } else {
+                        com.starkinhon.battlegroundsmod.combat.BlockBreakFx.erase(level, p, state, net.minecraft.world.level.block.Block.UPDATE_CLIENTS);
+                    }
+                }
+            }
+        }
+    }
+
+    // a cut: blood sprayed across it
+    static void rip(NarutoMob m, Vec3 at, float size) {
+        impact(m, at, size, JmNet.RIP);
+    }
+
+    private static int splash(NarutoMob m) {
+        return switch (((JjMob) m).kind()) {
+            case "peixe", "embriao", "afogado" -> JmNet.WATER;
+            default -> JmNet.FLESH;
+        };
     }
 
     // cursed energy (through armor)
     static void magic(NarutoMob m, LivingEntity t, float dmg) {
-        Combat.hurtMagic(m, t, dmg);
+        Combat.hurtMagic(m, t, dmg * power(m));
     }
 
     // in front of the body (cone) and within reach blocks of its edge
@@ -460,7 +563,7 @@ final class JjMobMoves {
                 }
                 BLEEDING.put(t.getId(), left - 1);
                 if (left % 20 == 0) {
-                    Combat.hurtMagic(m.isAlive() ? m : t, t, 8);
+                    Combat.hurtMagic(m.isAlive() ? m : t, t, 8 * power(m));
                     SubNet.send(level, SubNet.BLOOD_SPLASH, 0, Combat.center(t), new Vec3(0, -1, 0), 0.4f, 0, 0);
                 }
                 return false;
@@ -483,7 +586,7 @@ final class JjMobMoves {
                             continue;
                         }
                         t.igniteForSeconds(2);
-                        Combat.hurtMagic(m.isAlive() ? m : t, t, 10);
+                        Combat.hurtMagic(m.isAlive() ? m : t, t, 10 * power(m));
                     }
                 }
                 return false;
@@ -582,6 +685,9 @@ final class JjMobMoves {
     // ---------- the exorcism ----------
 
     static void dyingStart(JjMob m, DamageSource source) {
+        // a dead body falls (the flies, fish, insects and lanterns stop flying; the baked 'morte' lays it on the ground)
+        m.setNoGravity(false);
+        m.caught = -1;
         if (!m.stolen.isEmpty()) {
             ItemEntity item = new ItemEntity(lvl(m), m.getX(), m.getY() + 0.4, m.getZ(), m.stolen.copy());
             item.setDefaultPickUpDelay();

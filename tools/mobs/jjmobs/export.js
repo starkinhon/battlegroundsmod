@@ -29,7 +29,7 @@ const EXTRA = { mosca: 3, cabecao: 3, transfigurado: 5, verme: 2, olhos: 2, kits
     const FAKES = new WeakMap();
     const safe = parts => new Proxy(parts, { get: (o, k) => { if (k in o || typeof k !== 'string') return o[k]; let f = FAKES.get(o); if (!f) FAKES.set(o, f = {}); return f[k] = f[k] || fake(); } });
     function ser(d) {
-      return { name: d.name, pivot: d.pivot, rot: d.rot || [0, 0, 0], boxes: (d.boxes || []).map(bx => [bx.x, bx.y, bx.z, bx.w, bx.h, bx.d, bx.u, bx.v]), kids: (d.kids || []).filter(Boolean).map(ser) };
+      return { name: d.name, pivot: d.pivot, rot: d.rot || [0, 0, 0], boxes: (d.boxes || []).map(bx => bx.g ? [bx.x, bx.y, bx.z, bx.w, bx.h, bx.d, bx.u, bx.v, r3(bx.g)] : [bx.x, bx.y, bx.z, bx.w, bx.h, bx.d, bx.u, bx.v]), kids: (d.kids || []).filter(Boolean).map(ser) };
     }
     function height(model) { let lo = 1e9; for (const bx of model.allBoxes) lo = Math.min(lo, bx.oy + bx.y); return (24 - lo) / 16; }
     function width(model) { let lo = 1e9, hi = -1e9; for (const bx of model.allBoxes) { lo = Math.min(lo, bx.ox + bx.x, bx.oz + bx.z); hi = Math.max(hi, bx.ox + bx.x + bx.w, bx.oz + bx.z + bx.d); } return (hi - lo) / 16; }
@@ -80,6 +80,7 @@ const EXTRA = { mosca: 3, cabecao: 3, transfigurado: 5, verme: 2, olhos: 2, kits
         e.obj.visible = true; e.obj.position.set(0, 1.5, 0); e.obj.rotation.set(0, 0, 0);
         REF.reset(99);
         b.m.anim(safe(e.model.parts), t, md, 0, e.obj, e, ctx);
+        JJFX.settle(b.m, md, t, e.obj);
         let parts = e.model.parts, obj = e.obj, base = [0, 1.5 * kObj, 0];
         if (side) {
           const key = Object.keys(cache).find(k => /marionetista/.test(k) && cache[k].visible && cache[k].model);

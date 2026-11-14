@@ -33,6 +33,20 @@ public final class JjMobSpec {
         return ALL.containsKey(id);
     }
 
+    // the curses' tiers, from the preview's labels (Grau 4 = tier 9-10 ... Grau especial = 4); the Kogane never fights
+    private static final Map<String, Integer> TIER = Map.ofEntries(
+            Map.entry("mosca", 10), Map.entry("cabecao", 8), Map.entry("transfigurado", 8), Map.entry("metro", 5),
+            Map.entry("rastejante", 4), Map.entry("verme", 9), Map.entry("olhos", 7), Map.entry("utero", 5),
+            Map.entry("boneco", 9), Map.entry("kitsune", 8), Map.entry("sino", 7),
+            Map.entry("espantalho", 9), Map.entry("poco", 6), Map.entry("kuchisake", 6),
+            Map.entry("peixe", 10), Map.entry("caranguejo", 8), Map.entry("embriao", 7), Map.entry("afogado", 6),
+            Map.entry("broto", 9), Map.entry("javali", 7), Map.entry("guardiao", 5),
+            Map.entry("inseto", 10), Map.entry("vulcaozinho", 7), Map.entry("golem", 5),
+            Map.entry("lanterna", 9), Map.entry("mechamaru", 9), Map.entry("oni", 6),
+            Map.entry("larva", 8), Map.entry("abate", 7), Map.entry("solta", 5));
+    // the tiers' health (power/Tiers' defaults; read here before the tier file loads)
+    private static final double[] TIER_HEALTH = {400, 300, 220, 165, 120, 90, 66, 49, 36, 27, 20};
+
     static {
         // ---------- Shibuya ----------
         add("mosca").hp(6).speed(0.32).size(0.5f, 0.45f).xp(2).flyer().variants(6).shadow(0.25f).attacks(
@@ -147,6 +161,25 @@ public final class JjMobSpec {
                 new Attack("anuncio", 100, 0, 99, 99, 0, true),
                 new Attack("pontos", 84, 0, 99, 99, 0, true),
                 new Attack("some", 68, 0, 99, 99, 0, true));
+
+        // Stark 2026-11-14 (the first test): "too slow, too easy to kill, the high tiers most of all". The preview's Vida
+        // and speed are the base; each curse's tier (the preview's grade label) makes it tougher and quicker, and its
+        // blows hit as hard as that tier's (JjMobMoves.power).
+        for (Spec s : ALL.values()) {
+            int tier = tier(s.id);
+            s.health = Math.round(s.health * (float) Math.pow(TIER_HEALTH[tier] / TIER_HEALTH[10], 0.6));
+            s.speed *= 1.15 + 0.04 * (10 - tier);
+        }
+    }
+
+    public static int tier(String id) {
+        Integer t = TIER.get(id.startsWith("jj_") ? id.substring(3) : id);
+        return t == null ? 10 : t;
+    }
+
+    // how much harder than a plain creature (Tier 10) its blows land: its tier's health over a human's
+    public static float power(String id) {
+        return (float) (TIER_HEALTH[tier(id)] / TIER_HEALTH[10]);
     }
 
     private JjMobSpec() {

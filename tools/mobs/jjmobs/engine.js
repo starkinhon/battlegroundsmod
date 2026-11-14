@@ -107,6 +107,52 @@ const ENG = (() => {
 
   // ---------- montagem ----------
   // def: { name, pivot:[x,y,z], rot:[x,y,z], boxes:[{x,y,z,w,h,d,p,g?}], kids:[...] }
+  // Faces que coincidem piscam (z-fighting: Stark 2026-11-14 viu "faces sobrepostas piscando" no jogo). Duas caixas
+  // na mesma parte (ou em partes sem giro nenhum até a raiz) com uma face no mesmo plano, virada pro mesmo lado e
+  // cobrindo a mesma área: a menor cresce 0,03 px (b.g, o mesmo inflar do jogo: CubeDeformation), até não sobrar par.
+  function antiZ(def) {
+    const groups = [];
+    const flat = [];
+    (function walk(d, ox, oy, oz, still) {
+      const px = ox + d.pivot[0], py = oy + d.pivot[1], pz = oz + d.pivot[2];
+      const r = d.rot || [0, 0, 0], st = still && !r[0] && !r[1] && !r[2];
+      const own = (d.boxes || []).map(b => ({ b, o: st ? [px, py, pz] : [0, 0, 0] }));
+      if (st) flat.push(...own); else groups.push(own);
+      for (const k of d.kids || []) walk(k, px, py, pz, st);
+    })(def, 0, 0, 0, true);
+    groups.push(flat);
+    const E = 1e-3;
+    const box = ({ b, o }) => {
+      const g = b.g || 0;
+      return [Math.min(b.x, b.x + b.w) - g + o[0], Math.min(b.y, b.y + b.h) - g + o[1], Math.min(b.z, b.z + b.d) - g + o[2],
+        Math.max(b.x, b.x + b.w) + g + o[0], Math.max(b.y, b.y + b.h) + g + o[1], Math.max(b.z, b.z + b.d) + g + o[2]];
+    };
+    const vol = ({ b }) => Math.abs(b.w * b.h * b.d);
+    function clash(A, B) {
+      for (let ax = 0; ax < 3; ax++) {
+        const u = (ax + 1) % 3, v = (ax + 2) % 3;
+        const ou = Math.min(A[u + 3], B[u + 3]) - Math.max(A[u], B[u]), ov = Math.min(A[v + 3], B[v + 3]) - Math.max(A[v], B[v]);
+        if (ou <= E || ov <= E) continue;
+        if (Math.abs(A[ax] - B[ax]) < E || Math.abs(A[ax + 3] - B[ax + 3]) < E) return true;
+      }
+      return false;
+    }
+    for (const list of groups) {
+      for (let pass = 0; pass < 4; pass++) {
+        let any = false;
+        for (let i = 0; i < list.length; i++) for (let j = i + 1; j < list.length; j++) {
+          const A = list[i], B = list[j];
+          if (!A.b.w || !A.b.h || !A.b.d || !B.b.w || !B.b.h || !B.b.d) continue;
+          if (!clash(box(A), box(B))) continue;
+          const small = vol(A) <= vol(B) ? A : B;
+          small.b.g = (small.b.g || 0) + 0.03;
+          any = true;
+        }
+        if (!any) break;
+      }
+    }
+  }
+
   function build(def) {
     const parts = {}, allBoxes = [];
     function walk(d, ox, oy, oz) {
@@ -116,6 +162,7 @@ const ENG = (() => {
       for (const k of d.kids || []) walk(k, px, py, pz);
     }
     walk(def, 0, 0, 0);
+    antiZ(def);
     const [W, H] = pack(allBoxes);
     return { def, parts, allBoxes, W, H };
   }

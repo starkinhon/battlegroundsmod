@@ -392,6 +392,7 @@ function frame(now) {
   e.obj.position.set(0, 1.5, 0);
   e.obj.rotation.set(0, 0, 0);
   b.m.anim(e.model.parts, t, mode, 0, e.obj, e, ctx);
+  JJFX.settle(b.m, mode, t, e.obj);
   rainStep(t);
   placeCam(t);
   if (dizzyK > 0) { camera.rotateZ(Math.sin(t * 3.1) * 0.06 * dizzyK); camera.rotateX(Math.sin(t * 2.3 + 1) * 0.025 * dizzyK); }

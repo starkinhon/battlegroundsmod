@@ -5,7 +5,6 @@ import static com.starkinhon.battlegroundsmod.animal.jjmob.JjMobMoves.*;
 import com.starkinhon.battlegroundsmod.animal.naruto.NmNet;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.power.powers.sub.SubNet;
-import com.starkinhon.battlegroundsmod.power.powers.sub.db.DbCommon;
 
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
@@ -143,7 +142,7 @@ final class JjTemplos {
                         LivingEntity v = victim(m);
                         if (v != null && holding(m, v)) {
                             magic(m, v, 40);
-                            DbCommon.hit(level, Combat.center(v), 0.6f, 2);
+                            impact(m, Combat.center(v), 0.6f, JmNet.FLESH);
                             if (f == 64) {
                                 dizzy(m, v, 60);
                             }
@@ -180,7 +179,7 @@ final class JjTemplos {
         }
         if (f == 42 || f == 51 || f == 60) {
             sound(m, m.mark, SoundEvents.FIRECHARGE_USE, 1f, 1.4f);
-            DbCommon.hit(lvl(m), m.mark, 0.8f, 12);
+            impact(m, m.mark, 0.8f, JmNet.FLESH);
             for (LivingEntity o : around(m, m.mark, 1.3)) {
                 magic(m, o, 30);
                 o.igniteForSeconds(2);

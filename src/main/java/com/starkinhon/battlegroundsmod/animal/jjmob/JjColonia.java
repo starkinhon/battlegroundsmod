@@ -5,7 +5,6 @@ import static com.starkinhon.battlegroundsmod.animal.jjmob.JjMobMoves.*;
 import com.starkinhon.battlegroundsmod.animal.naruto.NmNet;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Stun;
-import com.starkinhon.battlegroundsmod.power.powers.sub.SubNet;
 
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
@@ -50,7 +49,7 @@ final class JjColonia {
                 case "larva/casulo" -> {
                     Vec3 mouth = body(m, 0.5, 0, 0.4);
                     if (f >= 20 && f < 26 && alive(t)) {
-                        tube(m, mouth, mouth.lerp(Combat.center(t), (f - 19) / 6f), 0.05f, 3);
+                        tube(m, mouth, mouth.lerp(Combat.center(t), (f - 19) / 6f), 0.13f, 3);
                     }
                     if (f == 26) {
                         if (alive(t) && m.gap(t) < 6 && m.hasLineOfSight(t) && hold(m, t, 40)) {
@@ -61,7 +60,7 @@ final class JjColonia {
                         }
                     }
                     if (f > 26 && f <= 66 && holding(m, t)) {
-                        tube(m, mouth, Combat.center(t), 0.05f, 3);
+                        tube(m, mouth, Combat.center(t), 0.13f, 3);
                     }
                     if (f == 67) {
                         endTube(m);
@@ -69,12 +68,11 @@ final class JjColonia {
                 }
                 case "abate/corte" -> {
                     if (f == 4) {
-                        JmNet.send(level, JmNet.ENERGY, m.getId(), body(m, 0.5, 0.35, 1.1), body(m, 0.5, 0.35, 1.1).subtract(m.position()), 14, 0, 0);
+                        JmNet.send(level, JmNet.ENERGY, m.getId(), body(m, 0.5, 0.35, 1.1), body(m, 0.5, 0.35, 1.1).subtract(m.position()), 14, 1, 0);
                     }
                     if ((f == 19 || f == 29) && front(m, t, 2.2, 0.3)) {
                         hit(m, t, 45, 0.6f, 12);
-                        Vec3 cut = f == 19 ? right(m).add(0, -0.8, 0) : right(m).scale(-1);
-                        SubNet.send(level, SubNet.SLASH, 0, Combat.center(t), cut, 0.8f, 0.12f, SubNet.STYLE_BLUE);
+                        rip(m, Combat.center(t), 0.8f);
                         sound(m, SoundEvents.PLAYER_ATTACK_SWEEP, 1.2f, 1f);
                     }
                 }
@@ -94,8 +92,7 @@ final class JjColonia {
                     int j = (f - 21) / 6;
                     if (f >= 21 && (f - 21) % 6 == 0 && j < 6 && front(m, t, 2.6, 0.2)) {
                         hit(m, t, 25, 0.5f, 4);
-                        Vec3 cut = right(m).scale(j % 2 == 0 ? 1 : -1).add(0, -0.7, 0);
-                        SubNet.send(level, SubNet.SLASH, 0, Combat.center(t), cut, 0.7f, 0.1f, SubNet.STYLE_CRIMSON);
+                        rip(m, Combat.center(t), 0.7f);
                         if (j == 5) {
                             Combat.push(t, m.forward(), 0.8, 0.3);
                         }

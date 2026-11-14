@@ -6,7 +6,6 @@ import com.starkinhon.battlegroundsmod.animal.naruto.NmNet;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.power.powers.sub.SubNet;
-import com.starkinhon.battlegroundsmod.power.powers.sub.db.DbCommon;
 
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
@@ -67,6 +66,7 @@ final class JjFloresta {
                     if (f == 20) {
                         m.mark = ground(m, alive(t) ? t.position() : ahead(m, 6));
                         SubNet.send(level, SubNet.CRACKS, 0, body(m, 2.2, 0, 0), Vec3.ZERO, 2.4f, 8, 1);
+                        smash(m, ground(m, body(m, 2.2, 0, 0)), 2.2);
                         sound(m, SoundEvents.GENERIC_EXPLODE.value(), 1f, 0.6f);
                     }
                     if (f > 20 && f < 32 && f % 3 == 0) {
@@ -104,7 +104,7 @@ final class JjFloresta {
                             magic(m, o, 120);
                             Combat.push(o, m.forward(), 1.4, 0.6);
                             dizzy(m, o, 32);
-                            DbCommon.hit(level, Combat.center(o), 0.9f, 6);
+                            impact(m, Combat.center(o), 0.9f, JmNet.FLESH);
                         }
                     }
                 }

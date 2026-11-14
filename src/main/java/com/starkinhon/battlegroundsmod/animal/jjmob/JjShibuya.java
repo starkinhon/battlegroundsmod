@@ -58,6 +58,7 @@ final class JjShibuya {
                         NmNet.send(level, NmNet.SHOCK, 0, at, Vec3.ZERO, 2.4f, 0, 0);
                         SubNet.send(level, SubNet.DUST, 0, at, Vec3.ZERO, 1.2f, 0, 0);
                         SubNet.send(level, SubNet.CRACKS, 0, at, Vec3.ZERO, 2.2f, 7, 1);
+                        smash(m, ahead(m, 1.2), 1.6);
                         sound(m, SoundEvents.GENERIC_EXPLODE.value(), 0.8f, 1.3f);
                         for (LivingEntity o : around(m, at, 1.3)) {
                             // right under the head: pinned

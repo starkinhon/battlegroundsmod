@@ -10,7 +10,6 @@ import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Stun;
 import com.starkinhon.battlegroundsmod.power.powers.sub.SubNet;
 import com.starkinhon.battlegroundsmod.power.powers.sub.db.Db;
-import com.starkinhon.battlegroundsmod.power.powers.sub.db.DbCommon;
 
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
@@ -75,7 +74,7 @@ final class JjKyoto {
                     int k = f == 59 ? 0 : f == 66 ? 1 : f == 73 ? 2 : -1;
                     if (k >= 0 && m.marks.length == 3 && m.marks[k] != null) {
                         sound(m, m.marks[k], SoundEvents.FIRECHARGE_USE, 1f, 1.5f);
-                        DbCommon.hit(level, m.marks[k], 0.8f, 12);
+                        impact(m, m.marks[k], 0.8f, JmNet.FLESH);
                         for (LivingEntity o : around(m, m.marks[k], 1.3)) {
                             magic(m, o, 40);
                             o.igniteForSeconds(2);
@@ -88,7 +87,7 @@ final class JjKyoto {
                         for (LivingEntity o : around(m, body(m, 0.6, 0, 0.8), 1.4)) {
                             if (once(m, o)) {
                                 hit(m, o, 60, 0.7f, 12);
-                                SubNet.send(level, SubNet.SLASH, 0, Combat.center(o), right(m).add(0, 0.6, 0), 0.8f, 0.1f, SubNet.STYLE_BLUE);
+                                rip(m, Combat.center(o), 0.8f);
                                 sound(m, SoundEvents.PLAYER_ATTACK_SWEEP, 1.4f, 1.2f);
                             }
                         }
@@ -98,6 +97,7 @@ final class JjKyoto {
                     if (f == 33) {
                         Vec3 imp = ground(m, body(m, 2.6, 0.1, 0));
                         SubNet.send(level, SubNet.CRACKS, 0, imp, Vec3.ZERO, 2.5f, 8, 1);
+                        smash(m, imp, 1.8);
                         NmNet.send(level, NmNet.SHOCK, 0, imp, Vec3.ZERO, 3f, 0, 0);
                         SubNet.send(level, SubNet.DUST, 0, imp, Vec3.ZERO, 1.3f, 0, 0);
                         sound(m, SoundEvents.GENERIC_EXPLODE.value(), 1.2f, 0.6f);
@@ -208,7 +208,7 @@ final class JjKyoto {
         ServerLevel level = lvl(m);
         Vec3 muzzle = body(m, 0.7, -0.35, 1.0);
         if (f == 20) {
-            JmNet.send(level, JmNet.ENERGY, m.getId(), muzzle, muzzle.subtract(m.position()), 20, 0, 0);
+            JmNet.send(level, JmNet.ENERGY, m.getId(), muzzle, muzzle.subtract(m.position()), 20, 1, 0);
         }
         if (f == 40) {
             Vec3 aim = alive(t) ? Combat.center(t).subtract(muzzle) : m.forward();
@@ -221,7 +221,7 @@ final class JjKyoto {
         Integer id = BEAM.get(m.getId());
         if (f >= 40 && f <= 60 && id != null) {
             Vec3 end = clip(m, muzzle, muzzle.add(m.mark.scale(7)));
-            SubNet.send(level, SubNet.KI_BEAM, id, muzzle, end.subtract(muzzle), 0.35f, Db.BLUE, f == 60 ? 1 : 0);
+            SubNet.send(level, SubNet.KI_BEAM, id, muzzle, end.subtract(muzzle), 0.55f, Db.BLUE, f == 60 ? 1 : 0);
             if (f == 60) {
                 BEAM.remove(m.getId());
             }

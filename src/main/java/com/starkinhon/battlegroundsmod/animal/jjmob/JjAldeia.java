@@ -85,8 +85,7 @@ final class JjAldeia {
                 case "kuchisake/tesouradas" -> {
                     if ((f == 6 || f == 16) && front(m, t, 2.2, 0.3)) {
                         hit(m, t, 30, 0.5f, 4);
-                        Vec3 cut = right(m).scale(f == 6 ? 1 : -1).add(0, f == 6 ? -0.5 : 0.4, 0);
-                        SubNet.send(level, SubNet.SLASH, 0, Combat.center(t), cut, 0.7f, 0.1f, SubNet.STYLE_CRIMSON);
+                        rip(m, Combat.center(t), 0.7f);
                         sound(m, SoundEvents.SHEEP_SHEAR, 1.4f, 0.9f);
                     }
                     if (f == 36 && front(m, t, 2.5, 0.3)) {
@@ -231,7 +230,7 @@ final class JjAldeia {
         if (f == 98 && holding(m, t)) {
             hit(m, t, 110, 1.0f, 4);
             bleed(m, t, 80);
-            SubNet.send(level, SubNet.SLASH, 0, t.getEyePosition().subtract(0, 0.2, 0), right(m), 0.5f, 0.12f, SubNet.STYLE_CRIMSON);
+            rip(m, t.getEyePosition().subtract(0, 0.2, 0), 0.6f);
             SubNet.send(level, SubNet.BLOOD_SPLASH, 0, t.getEyePosition(), m.forward(), 1f, 0, 0);
             sound(m, SoundEvents.SHEEP_SHEAR, 2f, 0.6f);
             letGo(m);

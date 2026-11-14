@@ -105,7 +105,8 @@ final class JjHanami {
                             }
                         }
                         if (m.horizontalCollision && f > 32) {
-                            // ran into a tree or a wall
+                            // ran into a tree or a wall: breaks into it and is stunned
+                            smash(m, ahead(m, 1.0).add(0, 0.6, 0), 1.3);
                             Stun.apply(m, 40, true);
                             SubNet.send(level, SubNet.DUST, 0, ahead(m, 0.8), Vec3.ZERO, 0.8f, 0, 0);
                             sound(m, SoundEvents.WOOD_BREAK, 1.6f, 0.6f);
