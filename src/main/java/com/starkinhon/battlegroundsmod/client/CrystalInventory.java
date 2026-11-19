@@ -619,7 +619,7 @@ public final class CrystalInventory {
             for (int x = 0; x < cw; x++) {
                 if (layer[y * cw + x] == 0
                         && (get(layer, x + 1, y) != 0 || get(layer, x - 1, y) != 0 || get(layer, x, y + 1) != 0 || get(layer, x, y - 1) != 0)) {
-                    pts.add(y * W + x);
+                    pts.add(y * cw + x);
                 }
             }
         }
