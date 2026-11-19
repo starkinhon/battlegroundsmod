@@ -56,6 +56,20 @@ public final class JjkGen {
     }
 
     // JavaScript's Math.round (half up).
+    // How wide the ramp at a leveled place's edge must be (Stark 2026-11-19: a clearing cut into a hill left walls of
+    // steps, the terrain dropping 3-5 blocks per block over a ramp of 10-12). The terrain around the edge (radius r
+    // around (cx, cz), z squeezed by zk for an oval) is compared with the level gy: the ramp gets 1.5 blocks per block
+    // of height, at least min and at most max, so it reads as a slope and not a wall.
+    public static int rampWidth(java.util.function.IntBinaryOperator ground, int cx, int cz, double r, double zk, int gy, int min, int max) {
+        int diff = 0;
+        for (int i = 0; i < 32; i++) {
+            double a = i * Math.PI / 16;
+            int g = ground.applyAsInt((int) Math.round(cx + Math.cos(a) * r), (int) Math.round(cz + Math.sin(a) * r / zk));
+            diff = Math.max(diff, Math.abs(g - gy));
+        }
+        return Math.max(min, Math.min(max, (int) Math.ceil(diff * 1.5)));
+    }
+
     public static int round(double a) {
         return (int) Math.floor(a + 0.5);
     }
