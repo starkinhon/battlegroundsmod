@@ -73,6 +73,17 @@ public final class EpicFx {
     private static final List<Vol> VOLS = new ArrayList<>();
     private static final List<Wave> WAVES = new ArrayList<>();
     private static final List<Deb> DEBRIS = new ArrayList<>();
+    private static final List<ShipFx> SHIPS = new ArrayList<>();
+
+    // Freeza's ship on its way down or up (RuinNet.SHIP): the very blocks the server sets when it lands (FzShipShape).
+    private static final class ShipFx {
+        Vec3 at;
+        double from;
+        float dur;
+        boolean down;
+        double born;
+        List<com.starkinhon.battlegroundsmod.power.powers.freezaboss.FzShipShape.Piece> pieces;
+    }
     private static double lastFrame = -1;
 
     private EpicFx() {
@@ -83,13 +94,14 @@ public final class EpicFx {
     }
 
     public static boolean active() {
-        return !VOLS.isEmpty() || !WAVES.isEmpty() || !DEBRIS.isEmpty();
+        return !VOLS.isEmpty() || !WAVES.isEmpty() || !DEBRIS.isEmpty() || !SHIPS.isEmpty();
     }
 
     public static void clear() {
         VOLS.clear();
         WAVES.clear();
         DEBRIS.clear();
+        SHIPS.clear();
     }
 
     private static double now() {
@@ -149,6 +161,18 @@ public final class EpicFx {
             case RuinNet.QUAKE -> quake(pos, a, b > 0.5f, (int) c);
             case RuinNet.DEBRIS -> crater(pos, (float) dir.x, (float) dir.y, (float) dir.z, (int) a, b);
             case RuinNet.DEBRIS_LINE -> line(pos, dir, (int) a, b);
+            case RuinNet.SHIP -> {
+                ShipFx ship = new ShipFx();
+                ship.at = pos;
+                ship.from = dir.y;
+                ship.dur = Math.max(1, a);
+                ship.down = b > 0;
+                ship.born = now;
+                double l = Math.max(1e-3, Math.sqrt(dir.x * dir.x + dir.z * dir.z));
+                ship.pieces = com.starkinhon.battlegroundsmod.power.powers.freezaboss.FzShipShape.build(dir.x / l, dir.z / l);
+                SHIPS.clear();
+                SHIPS.add(ship);
+            }
             default -> {
             }
         }
@@ -351,6 +375,9 @@ public final class EpicFx {
         stepDebris(level, dt);
         WAVES.removeIf(w -> (now - w.born) / 20 * w.speed > w.reach + 12);
         VOLS.removeIf(v -> now - v.born > v.life);
+        // coming down it stays a few ticks after touching the ground, until the real blocks are there
+        SHIPS.removeIf(sh -> now - sh.born > sh.dur + (sh.down ? 4 : 0));
+        ships(level, camera, now);
         blocks(level, camera, now);
         volumes(camera, now);
     }
@@ -433,6 +460,33 @@ public final class EpicFx {
     }
 
     private static final int LightTexture_FULL = 0xF000F0;
+
+    private static void ships(Level level, Vec3 camera, double now) {
+        if (SHIPS.isEmpty()) {
+            return;
+        }
+        Minecraft mc = Minecraft.getInstance();
+        MultiBufferSource.BufferSource source = mc.renderBuffers().bufferSource();
+        BlockRenderDispatcher br = mc.getBlockRenderer();
+        PoseStack pose = new PoseStack();
+        BlockPos.MutableBlockPos at = new BlockPos.MutableBlockPos();
+        for (ShipFx sh : SHIPS) {
+            float u = Mth.clamp((float) ((now - sh.born) / sh.dur), 0, 1);
+            // slow at the ground: it settles down and lifts off gently, fast high up
+            double h = sh.from * (sh.down ? Math.pow(1 - u, 2.4) : Math.pow(u, 2.4));
+            int bx = Mth.floor(sh.at.x), by = Mth.floor(sh.at.y), bz = Mth.floor(sh.at.z);
+            for (var p : sh.pieces) {
+                double y = by + p.y() + h;
+                pose.pushPose();
+                pose.translate(bx + p.x() - camera.x, y - camera.y, bz + p.z() - camera.z);
+                at.set(bx + p.x(), Mth.floor(y) + 1, bz + p.z());
+                int light = p.state().getLightEmission() > 0 ? LightTexture_FULL : LevelRenderer.getLightColor(level, at);
+                br.renderSingleBlock(p.state(), pose, source, light, OverlayTexture.NO_OVERLAY);
+                pose.popPose();
+            }
+        }
+        source.endBatch();
+    }
 
     private static void volumes(Vec3 camera, double now) {
         ShaderInstance sh = FxShaders.boomVol;

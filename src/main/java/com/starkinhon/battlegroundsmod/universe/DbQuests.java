@@ -82,6 +82,7 @@ public final class DbQuests {
         NeoForge.EVENT_BUS.addListener(DbQuests::onTick);
         NeoForge.EVENT_BUS.addListener(DbQuests::onDeath);
         DbActivities.register();
+        com.starkinhon.battlegroundsmod.power.powers.freezaboss.FzShip.register();
     }
 
     static boolean inDragonBall(ServerPlayer player) {

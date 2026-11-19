@@ -24,6 +24,9 @@ public final class RuinNet {
     public static final int DEBRIS = 524;
     // Blocks flying up off a line (a furrow, a crack): pos = from, dir = to - from, a = how many, b = speed.
     public static final int DEBRIS_LINE = 525;
+    // Freeza's ship (FzShipShape) coming down (b = 1) to pos or going up (b = -1) from it: dir = (door x, height, door z),
+    // a = how long in ticks.
+    public static final int SHIP = 526;
     public static final int LAST = 539;
 
     public static final int MODE_FIRE = 0, MODE_DUST = 1, MODE_SMOKE = 2;
