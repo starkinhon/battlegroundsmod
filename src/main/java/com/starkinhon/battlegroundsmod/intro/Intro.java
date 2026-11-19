@@ -94,6 +94,15 @@ public final class Intro {
             return;
         }
         player.setData(ModAttachments.INTRO_DONE, true);
+        // one Inseto de Alma at the end (Stark 2026-11-19): eat it for a hunger bar always full, or keep it. Once per player
+        // (INTRO_DONE is set just above), not for one who already ate one.
+        if (!player.getData(ModAttachments.SOUL_FED)) {
+            net.minecraft.world.item.ItemStack insect = new net.minecraft.world.item.ItemStack(
+                    com.starkinhon.battlegroundsmod.ModItems.SOUL_INSECT.get());
+            if (!player.getInventory().add(insect)) {
+                player.drop(insect, false);
+            }
+        }
         NeoForge.EVENT_BUS.post(new IntroDoneEvent(player, skipped));
     }
 
