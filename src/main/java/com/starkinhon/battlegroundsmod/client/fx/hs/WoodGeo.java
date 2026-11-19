@@ -94,6 +94,27 @@ public final class WoodGeo {
         Vector3d[] side;
         boolean dirty = true;
         Object gpu;
+        // HsAssets' pieces: their GPU buffers are kept for good (not given back after 3 s), so a second cast doesn't
+        // build and upload the Buddha's 200 thousand triangles again (issue #387)
+        public boolean resident;
+        private org.joml.Vector3f mid;
+
+        // the middle of its bounding box (page units), to sort the pieces nearest first
+        public org.joml.Vector3f middle() {
+            if (mid == null || dirty) {
+                float x0 = Float.MAX_VALUE, y0 = x0, z0 = x0, x1 = -x0, y1 = -x0, z1 = -x0;
+                for (int i = 0; i + 2 < p.length; i += 3) {
+                    x0 = Math.min(x0, p[i]);
+                    x1 = Math.max(x1, p[i]);
+                    y0 = Math.min(y0, p[i + 1]);
+                    y1 = Math.max(y1, p[i + 1]);
+                    z0 = Math.min(z0, p[i + 2]);
+                    z1 = Math.max(z1, p[i + 2]);
+                }
+                mid = p.length < 3 ? new org.joml.Vector3f() : new org.joml.Vector3f((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2);
+            }
+            return mid;
+        }
 
         Geo(int nv, int ni, boolean tube) {
             this.nv = nv;

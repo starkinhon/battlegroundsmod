@@ -98,6 +98,7 @@ public final class HsWood {
 
         public void set(org.joml.Vector3d[] pts) {
             RenderSystem.assertOnRenderThread();
+            int was = n;
             n = pts.length;
             org.joml.Vector3d[][] F = WoodGeo.tubeFrames(pts);
             if (buf == null || buf.capacity() < n * 12) {
@@ -124,7 +125,12 @@ public final class HsWood {
             com.mojang.blaze3d.platform.GlStateManager._pixelStore(GL11.GL_UNPACK_SKIP_PIXELS, 0);
             com.mojang.blaze3d.platform.GlStateManager._pixelStore(GL11.GL_UNPACK_SKIP_ROWS, 0);
             com.mojang.blaze3d.platform.GlStateManager._pixelStore(GL11.GL_UNPACK_ALIGNMENT, 4);
-            GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, org.lwjgl.opengl.GL30.GL_RGBA32F, n, 3, 0, GL11.GL_RGBA, GL11.GL_FLOAT, buf);
+            // same size as last frame: only the texels change, the texture is not made again (#387)
+            if (fresh || was != n) {
+                GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, org.lwjgl.opengl.GL30.GL_RGBA32F, n, 3, 0, GL11.GL_RGBA, GL11.GL_FLOAT, buf);
+            } else {
+                GL11.glTexSubImage2D(GL11.GL_TEXTURE_2D, 0, 0, 0, n, 3, GL11.GL_RGBA, GL11.GL_FLOAT, buf);
+            }
         }
 
         public void close() {
@@ -313,39 +319,53 @@ public final class HsWood {
             RenderSystem.disableBlend();
             RenderSystem.disableCull();
             Matrix4f view = RenderSystem.getModelViewMatrix(), proj = RenderSystem.getProjectionMatrix();
-            sh.safeGetUniform("Light").set(LX, LY, LZ);
-            sh.safeGetUniform("Amb").set(0.58f);
-            for (Cmd c : QUEUE) {
+            ShaderInstance solid = FxShaders.woodSolid;
+            for (ShaderInstance s : solid != null ? new ShaderInstance[] {sh, solid} : new ShaderInstance[] {sh}) {
+                s.safeGetUniform("Light").set(LX, LY, LZ);
+                s.safeGetUniform("Amb").set(0.58f);
+            }
+            // Nearest first (issue #387): with the solid shader the GPU's early depth test then skips every hidden layer
+            // (the Buddha's fan of hands, the dragons' coils) before the wood is worked out for it.
+            List<Cmd> order = new ArrayList<>(QUEUE);
+            IdentityHashMap<Cmd, Float> by = new IdentityHashMap<>();
+            for (Cmd c : order) {
+                by.put(c, c.model().transformPosition(c.g().middle(), new org.joml.Vector3f()).lengthSquared());
+            }
+            order.sort((p, q) -> Float.compare(by.get(p), by.get(q)));
+            for (Cmd c : order) {
                 VertexBuffer vb = upload(c.g());
                 if (vb == null) {
                     continue;
                 }
                 Mat m = c.m();
-                sh.safeGetUniform("Model").set(c.model());
-                sh.safeGetUniform("Mode").set((float) m.mode);
-                sh.safeGetUniform("Grow").set(c.grow());
-                sh.safeGetUniform("Tip").set(m.tip);
-                sh.safeGetUniform("Bright").set(c.bright());
-                sh.safeGetUniform("Seed").set(m.seed);
-                sh.safeGetUniform("Fresh").set(m.fresh);
-                sh.safeGetUniform("Dis").set(c.dis());
-                sh.safeGetUniform("Gr").set(m.gr);
-                sh.safeGetUniform("Fine").set(m.fine);
-                sh.safeGetUniform("Ring").set(m.ring);
-                sh.safeGetUniform("Cav").set(m.cav);
-                sh.safeGetUniform("Grain").set(m.grain);
-                sh.safeGetUniform("Wood").set(m.wood[0], m.wood[1], m.wood[2]);
-                sh.safeGetUniform("Dark").set(m.dark[0], m.dark[1], m.dark[2]);
-                sh.safeGetUniform("Tint").set(m.tint[0], m.tint[1], m.tint[2]);
+                // the pieces that can't cut pixels out (not splintering, fully grown) take the shader without discard
+                boolean whole = c.dis() <= 0 && (m.mode != 0 || c.grow() >= 2);
+                ShaderInstance ws = whole && solid != null ? solid : sh;
+                ws.safeGetUniform("Model").set(c.model());
+                ws.safeGetUniform("Mode").set((float) m.mode);
+                ws.safeGetUniform("Grow").set(c.grow());
+                ws.safeGetUniform("Tip").set(m.tip);
+                ws.safeGetUniform("Bright").set(c.bright());
+                ws.safeGetUniform("Seed").set(m.seed);
+                ws.safeGetUniform("Fresh").set(m.fresh);
+                ws.safeGetUniform("Dis").set(c.dis());
+                ws.safeGetUniform("Gr").set(m.gr);
+                ws.safeGetUniform("Fine").set(m.fine);
+                ws.safeGetUniform("Ring").set(m.ring);
+                ws.safeGetUniform("Cav").set(m.cav);
+                ws.safeGetUniform("Grain").set(m.grain);
+                ws.safeGetUniform("Wood").set(m.wood[0], m.wood[1], m.wood[2]);
+                ws.safeGetUniform("Dark").set(m.dark[0], m.dark[1], m.dark[2]);
+                ws.safeGetUniform("Tint").set(m.tint[0], m.tint[1], m.tint[2]);
                 Rail r = c.rail();
-                sh.safeGetUniform("Skin").set(r != null ? 1f : 0f);
+                ws.safeGetUniform("Skin").set(r != null ? 1f : 0f);
                 if (r != null) {
-                    sh.safeGetUniform("RailN").set((float) r.n);
-                    sh.safeGetUniform("BodyLen").set(c.bodyLen());
+                    ws.safeGetUniform("RailN").set((float) r.n);
+                    ws.safeGetUniform("BodyLen").set(c.bodyLen());
                     RenderSystem.setShaderTexture(0, r.tex);
                 }
                 vb.bind();
-                vb.drawWithShader(view, proj, sh);
+                vb.drawWithShader(view, proj, ws);
                 VertexBuffer.unbind();
             }
             for (Imm im : IMM) {
@@ -378,12 +398,13 @@ public final class HsWood {
         }
     }
 
-    // Meshes not drawn for 3 s give their buffers back.
+    // Meshes not drawn for 3 s give their buffers back; the fixed ones from the files (the Buddha, the dragon, the forest)
+    // keep theirs for 60 s, so a skill used again soon does not upload them again (#387).
     private static void collect() {
         Iterator<Map.Entry<WoodGeo.Geo, int[]>> it = LIVE.entrySet().iterator();
         while (it.hasNext()) {
             Map.Entry<WoodGeo.Geo, int[]> e = it.next();
-            if (frame - e.getValue()[0] > 180) {
+            if (frame - e.getValue()[0] > (e.getKey().resident ? 3600 : 180)) {
                 if (e.getKey().gpu instanceof VertexBuffer vb) {
                     vb.close();
                 }

@@ -52,6 +52,8 @@ public final class FxShaders {
     static ShaderInstance kkMist;
     static ShaderInstance sand;
     public static ShaderInstance wood;
+    // the same wood without discard (tools/shaders/wood_solid.py): early depth on for the pieces that can't splinter
+    public static ShaderInstance woodSolid;
     static ShaderInstance bleach;
     // Bleach's own glow composite (halo only, like the pages).
     static ShaderInstance bleachComp;
@@ -166,6 +168,11 @@ public final class FxShaders {
             register(event, "souls_wood", DefaultVertexFormat.NEW_ENTITY, s -> wood = s);
         } catch (Exception e) {
             BattlegroundsMod.LOGGER.error("Could not load Hashirama's wood shader", e);
+        }
+        try {
+            register(event, "souls_wood_solid", DefaultVertexFormat.NEW_ENTITY, s -> woodSolid = s);
+        } catch (Exception e) {
+            BattlegroundsMod.LOGGER.error("Could not load Hashirama's solid wood shader", e);
         }
         // Bleach (Rukia, Byakuya): the same GLSL text as the approved pages (forja/bleach/mod-shaders.sh).
         try {

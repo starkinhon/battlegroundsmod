@@ -411,11 +411,18 @@ public final class EpicFx {
         BlockRenderDispatcher br = mc.getBlockRenderer();
         PoseStack pose = new PoseStack();
         BlockPos.MutableBlockPos at = new BlockPos.MutableBlockPos();
+        // behind the camera nothing shows: skip it before building its model (#387). A block is cut only when it is all
+        // behind the camera's plane (1.5 of margin for its size).
+        Vector3f look = mc.gameRenderer.getMainCamera().getLookVector();
+        float lx = look.x(), ly = look.y(), lz = look.z();
+        // a lifted column's height is not known before it is looked up: take the height that is most in front (from 48
+        // under the camera to 8 over it), so no column that can be seen is cut
+        float liftY = ly > 0 ? 8 : -48;
         for (Deb d : DEBRIS) {
             float s = d.size * (d.resting ? 1 - smooth((d.rest - 2.8f) / 0.7f) : 1);
             double ex = d.x - camera.x, ey = d.y - camera.y, ez = d.z - camera.z;
             // a block flying 140 blocks away is a dot: not worth its model
-            if (s <= 0.02f || ex * ex + ey * ey + ez * ez > 140 * 140) {
+            if (s <= 0.02f || ex * ex + ey * ey + ez * ez > 140 * 140 || ex * lx + ey * ly + ez * lz < -1.5) {
                 continue;
             }
             pose.pushPose();
@@ -463,6 +470,9 @@ public final class EpicFx {
                     }
                     float rx = x + 0.5f - (float) w.at.x, dist = Mth.sqrt(rx * rx + (float) fz2);
                     if (dist < r0 || dist > r1) {
+                        continue;
+                    }
+                    if ((x + 0.5 - camera.x) * lx + liftY * ly + (z + 0.5 - camera.z) * lz < -1.5) {
                         continue;
                     }
                     float q = (dist - pr) / width;
