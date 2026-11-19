@@ -594,7 +594,7 @@ final class IntroScript {
                 }
                 return false;
             }
-            boolean started = air.move().equalsIgnoreCase(move) && (!"rajada".equals(move) || air.shotsFired() >= 1);
+            boolean started = air.currentMove().equalsIgnoreCase(move) && (!"rajada".equals(move) || air.shotsFired() >= 1);
             if (s.stepCard < 0 && (started || t - s.stepCast > 60)) {
                 s.stepCard = t;
                 s.card = true;

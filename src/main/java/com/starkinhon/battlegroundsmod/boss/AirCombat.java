@@ -635,7 +635,7 @@ public final class AirCombat {
         return st == St.AR && !passer;
     }
 
-    public String move() {
+    public String currentMove() {
         return act.name();
     }
 
