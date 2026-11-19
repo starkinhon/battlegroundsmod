@@ -290,5 +290,27 @@
     "sounds": [
       "battlegroundsmod:aldeia_bolha"
     ]
+  },
+  "dagon_vento": {
+    "sounds": [
+      {
+        "name": "battlegroundsmod:dagon_vento",
+        "stream": true
+      }
+    ]
+  },
+  "dagon_abismo": {
+    "sounds": [
+      {
+        "name": "battlegroundsmod:dagon_abismo",
+        "stream": true
+      }
+    ]
+  },
+  "dagon_onda": {
+    "subtitle": "subtitles.battlegroundsmod.dagon_onda",
+    "sounds": [
+      "battlegroundsmod:dagon_onda"
+    ]
   }
 }

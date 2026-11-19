@@ -148,6 +148,10 @@ public class BattlegroundsModClient {
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.AldeiaAirFx::onClientTick);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.AldeiaAirFx::onFogColor);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.AldeiaAirFx::onFog);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.DagonAirFx::onRenderLevel);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.DagonAirFx::onClientTick);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.DagonAirFx::onFogColor);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.DagonAirFx::onFog);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.ShibuyaAirFx::onRenderLevel);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.ShibuyaAirFx::onClientTick);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.ShibuyaAirFx::onFogColor);

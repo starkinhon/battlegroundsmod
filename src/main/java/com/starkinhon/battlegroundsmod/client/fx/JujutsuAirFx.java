@@ -31,7 +31,7 @@ import net.neoforged.neoforge.client.event.ViewportEvent;
 // - Floresta Negra: dead leaves, dark spores, purple wisps of cursed energy rising; a short dark green fog.
 // - Aldeia Amaldiçoada: only the crows overhead stay here; the fireflies, lanterns, gas, will-o'-wisps, fog and grade are
 //   AldeiaAirFx.
-// - Mar de Dagon: sea spray thrown up and falling back.
+// - Mar de Dagon: not here any more, its own full ambience is DagonAirFx (surf, caustics, glints, the whirlpool).
 // - Floresta de Hanami: only the golden pollen and the fireflies at night stay here (Stark: "eram bem bonitas"); the
 //   petals, sun flecks, pollen clouds, the Heart's beat, its fog and grade are HanamiAirFx.
 // - Terras do Jogo: embers rising, dark ash falling like snow; a red fog that burns redder at night; vultures.
@@ -95,9 +95,6 @@ public final class JujutsuAirFx {
                 c("#1e2a1e"), 0.35f, 0.5f, 0.55f, 0, false)),
         new State(new Mood("aldeia_amaldicoada", ModWorldgen.ALDEIA_AMALDICOADA, List.of(),
                 null, 0, 0, 1, 6, false)),
-        new State(new Mood("mar_de_dagon", ModWorldgen.MAR_DE_DAGON, List.of(
-                new Air(Kind.SPRAY, 70, cs("#e8f4f8", "#ffffff", "#c8e8f0"), 0.03, 0.05)),
-                null, 0, 0, 1, 0, false)),
         new State(new Mood("floresta_de_hanami", ModWorldgen.FLORESTA_DE_HANAMI, List.of(
                 new Air(Kind.GLOW_MOTE, 160, cs("#ffd040", "#fff4b0", "#ffe070"), 0.025, 0.05),
                 new Air(Kind.FIREFLY, 60, cs("#c8ff8a", "#e8ffb0"), 0.05, 0.08)),
