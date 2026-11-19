@@ -67,6 +67,8 @@ public final class FxShaders {
     static ShaderInstance novaVol;
     // the end-game bosses' fire, dust and smoke (client/fx/epic/EpicFx)
     public static ShaderInstance boomVol;
+    // puts the half-size volume layer back onto the frame (premultiplied); without it the volumes draw at full size
+    public static ShaderInstance volComp;
     // The vapour off an exorcised curse (CurseVapor); without it the body still darkens and evaporates.
     static ShaderInstance jjVapor;
     // Sukuna's thrown Dismantle (DismantleRenderer); without it the cuts still hit, they just don't show.
@@ -207,6 +209,11 @@ public final class FxShaders {
             register(event, "souls_boom_vol", DefaultVertexFormat.POSITION, s -> boomVol = s);
         } catch (Exception e) {
             BattlegroundsMod.LOGGER.error("Could not load the end-game volume shader", e);
+        }
+        try {
+            register(event, "souls_vol_comp", DefaultVertexFormat.POSITION, s -> volComp = s);
+        } catch (Exception e) {
+            BattlegroundsMod.LOGGER.error("Could not load the volume compose shader", e);
         }
         // On its own: a problem here only hides Sukuna's thrown Dismantle.
         try {

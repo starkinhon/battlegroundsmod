@@ -75,6 +75,8 @@ public final class EpicFx {
     private static final List<Wave> WAVES = new ArrayList<>();
     private static final List<Deb> DEBRIS = new ArrayList<>();
     private static final List<ShipFx> SHIPS = new ArrayList<>();
+    // the volumes' half-size layer
+    private static com.mojang.blaze3d.pipeline.TextureTarget halfLayer;
 
     // Freeza's ship on its way down or up (RuinNet.SHIP): the very blocks the server sets when it lands (FzShipShape).
     private static final class ShipFx {
@@ -547,6 +549,24 @@ public final class EpicFx {
         if (sh == null || VOLS.isEmpty()) {
             return;
         }
+        // Raymarched at half size into a layer of their own, with the scene's depth so walls and bodies still hide them,
+        // then put back smoothed (Stark 2026-11-19: GPU at 95% inside the Buddha's dust; a quarter of the pixels).
+        com.mojang.blaze3d.pipeline.RenderTarget main = Minecraft.getInstance().getMainRenderTarget();
+        boolean half = FxShaders.volComp != null;
+        if (half) {
+            int w = Math.max(1, main.width / 2), h = Math.max(1, main.height / 2);
+            if (halfLayer == null) {
+                halfLayer = new com.mojang.blaze3d.pipeline.TextureTarget(w, h, true, Minecraft.ON_OSX);
+                halfLayer.setFilterMode(org.lwjgl.opengl.GL11.GL_LINEAR);
+            } else if (halfLayer.width != w || halfLayer.height != h) {
+                halfLayer.resize(w, h, Minecraft.ON_OSX);
+                halfLayer.setFilterMode(org.lwjgl.opengl.GL11.GL_LINEAR);
+            }
+            halfLayer.setClearColor(0, 0, 0, 0);
+            halfLayer.clear(Minecraft.ON_OSX);
+            halfLayer.copyDepthFrom(main);
+            halfLayer.bindWrite(true);
+        }
         RenderSystem.enableBlend();
         RenderSystem.blendFuncSeparate(GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE,
                 GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
@@ -599,6 +619,20 @@ public final class EpicFx {
             sh.safeGetUniform("Shape").set((float) v.shape);
             sh.safeGetUniform("Ground").set(v.shape == 3 ? -1.0E4f : e.y - 0.5f);
             box(sh, mn, mx);
+        }
+        if (half) {
+            main.bindWrite(true);
+            RenderSystem.disableDepthTest();
+            ShaderInstance comp = FxShaders.volComp;
+            comp.setSampler("DiffuseSampler", halfLayer.getColorTextureId());
+            RenderSystem.setShader(() -> comp);
+            BufferBuilder q = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION);
+            q.addVertex(0, 0, 0);
+            q.addVertex(1, 0, 0);
+            q.addVertex(1, 1, 0);
+            q.addVertex(0, 1, 0);
+            BufferUploader.drawWithShader(q.buildOrThrow());
+            RenderSystem.enableDepthTest();
         }
         RenderSystem.depthMask(true);
         RenderSystem.defaultBlendFunc();
