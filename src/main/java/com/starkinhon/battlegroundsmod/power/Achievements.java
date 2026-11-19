@@ -15,6 +15,7 @@ import com.starkinhon.battlegroundsmod.BattlegroundsMod;
 import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.boss.SoulBoss;
 import com.starkinhon.battlegroundsmod.challenge.ChallengeArenas;
+import com.starkinhon.battlegroundsmod.challenge.Dungeon;
 import com.starkinhon.battlegroundsmod.universe.DbQuests;
 import com.starkinhon.battlegroundsmod.world.TimeChamber;
 
@@ -123,9 +124,10 @@ public final class Achievements {
     }
 
     // Whether what the player does now counts for the achievements: not in the introduction, where the soul, its
-    // Sincronia and the tier are lent for the scenes (Stark 2026-11-19: it gave every Madara achievement).
+    // Sincronia and the tier are lent for the scenes (Stark 2026-11-19: it gave every Madara achievement), and not
+    // in a Dungeon run, which also plays with a borrowed character.
     private static boolean counts(ServerPlayer player) {
-        return Progression.on(player) && !com.starkinhon.battlegroundsmod.intro.Intro.active(player);
+        return Progression.on(player) && !com.starkinhon.battlegroundsmod.intro.Intro.active(player) && !Dungeon.inRun(player);
     }
 
     // A soul crystal absorbed (item/SoulItem): its branch opens right away.
