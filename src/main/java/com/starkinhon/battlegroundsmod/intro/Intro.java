@@ -178,8 +178,10 @@ public final class Intro {
         // only in a world to live in: the Souls world type or the normal one (Stark 2026-11-19). Never in a superflat
         // world (the test/fight mode); /soul intro still plays it anywhere.
         if (!done(player) && !com.starkinhon.battlegroundsmod.power.Progression.flatWorld(player.server)) {
-            // a moment for the world to show up before the screen goes dark
+            // dark right away (Stark 2026-11-19: the world and its biome title showed for a moment first); a moment
+            // for the world to show up behind it, then the scenes
             pendingStart.put(player.getUUID(), player.server.getTickCount() + 60);
+            ui(player, "black", "", 1, 0);
         }
     }
 
@@ -205,6 +207,7 @@ public final class Intro {
                 }
                 ServerPlayer player = server.getPlayerList().getPlayer(e.getKey());
                 if (player != null && !done(player) && !active(player) && !start(player)) {
+                    ui(player, "black", "", 0, 0);
                     return false;       // busy (a Dungeon, an arena): tries again
                 }
                 return true;

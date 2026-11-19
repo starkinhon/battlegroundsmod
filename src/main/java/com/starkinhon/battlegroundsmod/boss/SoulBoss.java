@@ -324,7 +324,10 @@ public abstract class SoulBoss extends Monster {
         // A new phase (and its scene) waits until nobody's move has the boss (held, in a cutscene, in a trap): the Kokushibo
         // used to awaken while a Gojo pulled him, and his scene broke (Stark, 2026-11-08). Its life stops at the phase's
         // line meanwhile (phaseFloor).
-        if (bossfight && want > phase && isAlive() && sceneFree()) {
+        // The introduction's enemies (introMoves set by intro/IntroScript) never change phase nor fire their final ult on
+        // their own: the script is the whole fight (Stark 2026-11-19: Vegeta's Final Flash came by itself, and homing).
+        boolean scenes = bossfight && introMoves == null;
+        if (scenes && want > phase && isAlive() && sceneFree()) {
             phase = want;
             startPhase(level, spec.fase(phase));
         }
@@ -332,7 +335,7 @@ public abstract class SoulBoss extends Monster {
         // As a plain mob it has everything from the start, the sharingan's eye trail too (clients read the last phase).
         entityData.set(DATA_PHASE, bossfight ? phase : spec.fases().size() - 1);
         BossSpec.UltFinal ult = spec.ultFinal();
-        ultPending = bossfight && ult != null && ult.ativa() && !ultUsed && isAlive() && getHealth() / getMaxHealth() <= ult.vida();
+        ultPending = scenes && ult != null && ult.ativa() && !ultUsed && isAlive() && getHealth() / getMaxHealth() <= ult.vida();
         // It finishes whatever move it is in first, so nothing else is flying when the meteor comes.
         if (ultPending && stagedTicks == 0 && data.busyTicks <= 0 && !Freeze.isFrozen(this) && !PowerLogic.sealed(this) && Stun.canAttack(this)) {
             ultPending = false;

@@ -180,23 +180,38 @@ public final class IntroHud {
                 drawTitle(now);
                 drawSay(now);
             }
+        } finally {
+            Px.end();
+        }
+    }
+
+    // The flash, the black and the logo: a layer of their own over every other one (BattlegroundsModClient registers it
+    // last), so nothing of the HUD (the base attack's name, the bars) shows through a fade (Stark 2026-11-19 video).
+    // No "loading" bar on the black either: only the fade (Stark: "tira esses carregando o terreno").
+    public static void renderCover(GuiGraphics graphics, DeltaTracker deltaTracker) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.player == null || flash <= 0 && black <= 0 && logoAt < 0) {
+            return;
+        }
+        long now = System.currentTimeMillis();
+        Px.begin(graphics, -1, -1);
+        try {
             if (flash > 0) {
                 R(0, 0, GW, GH, WHITE, flash);
                 T(flashText, GW / 2f, GH / 2f - 10, rgb(60, 44, 10), 18, true, 0, false, flash);
             }
             if (black > 0) {
                 R(0, 0, GW, GH, BLACK, black);
-                if (loading >= 0 && black > 0.9f) {
-                    float w = 120, x = GW / 2f - w / 2, y = GH / 2f;
-                    R(x, y, w, 1, WHITE, 0.12f);
-                    R(x, y, Math.round(w * loading / 100f), 1, GOLD, 0.9f);
-                    Px.diamond(x + Math.round(w * loading / 100f), y, 2, GOLD, 1);
-                }
             }
             drawLogo(now);
         } finally {
             Px.end();
         }
+    }
+
+    // Covering the screen right now (black or white): the world's "loading terrain" screen is not shown over it.
+    public static boolean covering() {
+        return blackTo > 0 || black > 0.5f || flashTo > 0 || logoAt >= 0;
     }
 
     private static float approach(float v, float to, float step) {
