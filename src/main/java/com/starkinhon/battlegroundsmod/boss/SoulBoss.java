@@ -180,6 +180,17 @@ public abstract class SoulBoss extends Monster {
         }
     }
 
+    // Flying (the sky passers, the air fight) they are drawn from up to 192 blocks, not the 64 of a player-sized mob
+    // (Stark 2026-11-19: the ones going by in the sky were barely seen). No gravity is synced by vanilla.
+    @Override
+    public boolean shouldRenderAtSqrDistance(double distance) {
+        if (!isNoGravity()) {
+            return super.shouldRenderAtSqrDistance(distance);
+        }
+        double d = 192 * getViewScale();
+        return distance < d * d;
+    }
+
     @Override
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
         super.defineSynchedData(builder);
