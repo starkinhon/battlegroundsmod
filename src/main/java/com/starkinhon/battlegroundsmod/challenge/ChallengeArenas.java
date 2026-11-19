@@ -938,6 +938,7 @@ public final class ChallengeArenas {
                 player.setData(ModAttachments.ARENA_WINS, List.copyOf(wins));
                 syncWins(player);
                 giveItems(player, ChallengeSpec.get().challenge(session.id));
+                com.starkinhon.battlegroundsmod.movement.Movement.teleportProgress(player, wins.size() - 1, wins.size());
             }
             arenaPoder(player, session, first);
             title(player, Component.translatable("message.battlegroundsmod.arena_won").withStyle(s -> s.withColor(0xD8352A).withBold(true)), name(session.id).copy());
@@ -1634,6 +1635,7 @@ public final class ChallengeArenas {
 
     private static int unlock(CommandSourceStack source, ServerPlayer player, String id) {
         List<String> wins = new ArrayList<>(wins(player));
+        int before = wins.size();
         for (ChallengeSpec.Universe universe : ChallengeSpec.get().universos()) {
             for (ChallengeSpec.Challenge challenge : universe.desafios()) {
                 if ((id.equals("todos") || id.equals(challenge.id())) && !wins.contains(challenge.id())) {
@@ -1643,6 +1645,7 @@ public final class ChallengeArenas {
         }
         player.setData(ModAttachments.ARENA_WINS, List.copyOf(wins));
         syncWins(player);
+        com.starkinhon.battlegroundsmod.movement.Movement.teleportProgress(player, before, wins.size());
         source.sendSuccess(() -> Component.translatable("message.battlegroundsmod.arena_wins", player.getDisplayName(), wins.size()), true);
         return 1;
     }
