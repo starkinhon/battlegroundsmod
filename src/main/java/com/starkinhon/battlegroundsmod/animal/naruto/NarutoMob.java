@@ -90,6 +90,11 @@ public class NarutoMob extends DbCreature {
 
         boolean canUse(NarutoMob m, String mode, LivingEntity t);
 
+        // a blow it throws even without seeing its target: a charge that breaks through the wall in between
+        default boolean throughWalls(NarutoMob m, String mode, LivingEntity t) {
+            return false;
+        }
+
         @Nullable
         Vec3 fleeFrom(NarutoMob m);
 
@@ -741,13 +746,17 @@ public class NarutoMob extends DbCreature {
             getLookControl().setLookAt(t, 30f, 30f);
             double gap = gap(t);
             Spec s = spec();
-            if (!isClone() && !Stun.real(NarutoMob.this) && hasLineOfSight(t)) {
+            if (!isClone() && !Stun.real(NarutoMob.this)) {
+                // without sight only a blow made to go through the wall (the Javali's charge: before, it pushed at a
+                // wall with the player behind it for 30 s, test R5 2026-11-14)
+                boolean sees = hasLineOfSight(t);
                 Attack[] list = s.attacks;
                 int first = random.nextInt(list.length);
                 for (int k = 0; k < list.length; k++) {
                     int i = (first + k) % list.length;
                     Attack a = list[i];
-                    if (a.reactive() || !ready(i) || gap < a.min() || gap > a.max() || !kit().canUse(NarutoMob.this, a.mode(), t)) {
+                    if (a.reactive() || !ready(i) || gap < a.min() || gap > a.max() || !kit().canUse(NarutoMob.this, a.mode(), t)
+                            || !sees && !kit().throughWalls(NarutoMob.this, a.mode(), t)) {
                         continue;
                     }
                     if (blow(i, t)) {
