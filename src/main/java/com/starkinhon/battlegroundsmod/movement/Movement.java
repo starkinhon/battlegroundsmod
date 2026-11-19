@@ -197,12 +197,51 @@ public final class Movement {
         }
     }
 
+    // Teleporte trancado no começo (Stark 2026-11-19: um amigo achou forte demais logo no Tier 10). Abre quando o jogador
+    // conclui esta quantidade de desafios do Livro dos Desafios (cada desafiante vencido conta uma vez). Mudar aqui.
+    public static final int TELEPORTE_DESAFIOS = 5;
+
+    // Challenges of the book this player has beaten (each one once).
+    public static int teleportWins(ServerPlayer player) {
+        return com.starkinhon.battlegroundsmod.challenge.ChallengeArenas.wins(player).size();
+    }
+
+    // Free with progression off or in a flat (test) world, like the rest of the book, and during the introduction (its
+    // card teaches the double tap with the borrowed kit).
+    public static boolean teleportUnlocked(ServerPlayer player) {
+        return teleportWins(player) >= TELEPORTE_DESAFIOS
+                || !com.starkinhon.battlegroundsmod.power.Progression.on(player)
+                || com.starkinhon.battlegroundsmod.intro.Intro.active(player);
+    }
+
+    // After the book's wins changed (before -> after): the progress line, or the unlock message on the win that opens it.
+    public static void teleportProgress(ServerPlayer player, int before, int after) {
+        if (after <= before || before >= TELEPORTE_DESAFIOS || !com.starkinhon.battlegroundsmod.power.Progression.on(player)) {
+            return;
+        }
+        if (after >= TELEPORTE_DESAFIOS) {
+            player.sendSystemMessage(Component.translatable("message.battlegroundsmod.teleport_unlocked")
+                    .withStyle(s -> s.withColor(0xFFC83D).withBold(true)));
+            player.sendSystemMessage(Component.translatable("message.battlegroundsmod.teleport_unlocked_how")
+                    .withStyle(s -> s.withColor(0xE8E8E8)));
+            player.playNotifySound(net.minecraft.sounds.SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, net.minecraft.sounds.SoundSource.PLAYERS, 1f, 1f);
+        } else {
+            player.sendSystemMessage(Component.translatable("message.battlegroundsmod.teleport_progress", after, TELEPORTE_DESAFIOS)
+                    .withStyle(s -> s.withColor(0xB8B8B8)));
+        }
+    }
+
     // Server: double tap of the sprint key (Ctrl). Appears in front of the target, facing it, and starts combat mode.
     public static void teleport(ServerPlayer player) {
         TeleporteSpec spec = TeleporteSpec.get();
         MovementData data = data(player);
         long now = player.level().getGameTime();
         if (!free(player) || Freeze.isFrozen(player)) {
+            return;
+        }
+        if (!teleportUnlocked(player)) {
+            player.displayClientMessage(Component.translatable("message.battlegroundsmod.teleport_locked",
+                    TELEPORTE_DESAFIOS, Math.min(teleportWins(player), TELEPORTE_DESAFIOS), TELEPORTE_DESAFIOS), true);
             return;
         }
         // Says on the action bar why it didn't go, so a miss doesn't look like a broken key.
