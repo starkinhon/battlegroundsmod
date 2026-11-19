@@ -112,6 +112,7 @@ public final class Intro {
         player.setData(ModAttachments.INTRO_GAMEMODE, player.gameMode.getGameModeForPlayer().getId());
         IntroScript run = new IntroScript(player, row);
         RUNS.put(player.getUUID(), run);
+        ui(player, "run", "", 1, 0);
         BattlegroundsMod.LOGGER.info("[intro] {} começou (fileira {})", player.getGameProfile().getName(), row);
         return true;
     }
@@ -193,7 +194,8 @@ public final class Intro {
             // dark right away (Stark 2026-11-19: the world and its biome title showed for a moment first); a moment
             // for the world to show up behind it, then the scenes
             pendingStart.put(player.getUUID(), player.server.getTickCount() + 60);
-            ui(player, "black", "", 1, 0);
+            ui(player, "black", "", 1, 1);
+            ui(player, "run", "", 1, 0);
         }
     }
 
@@ -220,6 +222,7 @@ public final class Intro {
                 ServerPlayer player = server.getPlayerList().getPlayer(e.getKey());
                 if (player != null && !done(player) && !active(player) && !start(player)) {
                     ui(player, "black", "", 0, 0);
+                    ui(player, "run", "", 0, 0);
                     return false;       // busy (a Dungeon, an arena): tries again
                 }
                 return true;
