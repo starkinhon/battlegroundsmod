@@ -177,6 +177,16 @@ adv("alvos", "multiverso", "root", B + "cristal_multiversal", "challenge", impos
     ("Senhor do Multiverso", "Lord of the Multiverse"), ("Feche a fileira de todos os universos", "Close every universe's row"))
 adv("alvos", "devorador_de_deuses", "multiverso", "minecraft:dragon_egg", "challenge", impossible(DIVINE_TARGETS),
     ("Devorador de Deuses", "Devourer of Gods"), ("Derrote todas as Almas Divinas. Você zerou o Souls", "Defeat every Divine Soul. You beat Souls"))
+# The two end-game bosses of the open world (Stark 2026-11-19): Hashirama at the Valley of the End, Freeza's ship.
+END_BOSSES = [("hashirama", "battlegroundsmod:hashirama_spawn_egg",
+               ("Vença o Deus Shinobi no Vale do Fim", "Beat the God of Shinobi at the Valley of the End")),
+              ("freeza_total", "battlegroundsmod:freeza_total_spawn_egg",
+               ("Vença o Imperador quando a nave dele pousar", "Beat the Emperor when his ship lands"))]
+adv("alvos", "fim_de_jogo", "devorador_de_deuses", "minecraft:nether_star", "challenge", impossible([b[0] for b in END_BOSSES]),
+    ("Os Dois Mais Fortes", "The Two Strongest"), ("Derrote Hashirama e Freeza no Poder Total", "Defeat Hashirama and Full Power Freeza"))
+for c, icon, desc in END_BOSSES:
+    adv("alvos", c, "fim_de_jogo", icon, "challenge", J, tr(BEAT_TITLE, entity_name(c)), desc)
+ALVOS["fim_de_jogo"] = [b[0] for b in END_BOSSES]
 
 # ======================= Técnicas =======================
 TIER_NAMES = [("Deus", "God"), ("Multiversal", "Multiversal"), ("Universal", "Universal"), ("Galáctico", "Galactic"),
