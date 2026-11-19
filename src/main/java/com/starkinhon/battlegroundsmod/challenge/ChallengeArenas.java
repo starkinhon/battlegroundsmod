@@ -583,6 +583,10 @@ public final class ChallengeArenas {
                     .withStyle(s -> s.withColor(color).withBold(true)), Component.translatable("message.battlegroundsmod.arena_ready"));
         }
         Fx.sound(arena, Vec3.atCenterOf(session.center), SoundEvents.END_PORTAL_SPAWN, 0.6f, 1.4f);
+        if (session.dungeon) {
+            // on the first arena of a run: Normal or Caos (the countdown waits for the answer, see COUNTDOWN)
+            Dungeon.arrived(players);
+        }
     }
 
     private static boolean standable(ServerLevel level, BlockPos at) {
@@ -740,6 +744,17 @@ public final class ChallengeArenas {
                     }
                 }
                 case COUNTDOWN -> {
+                    if (session.dungeon && Dungeon.waitingMode(players)) {
+                        // a player of the run is still picking Normal or Caos: the countdown stands still
+                        session.fightAt++;
+                        for (ServerPlayer player : players) {
+                            catchFall(player, arena, session);
+                            if (now % 20 == 0) {
+                                player.displayClientMessage(Component.literal("Esperando todos escolherem o modo..."), true);
+                            }
+                        }
+                        break;
+                    }
                     long left = session.fightAt - now;
                     for (ServerPlayer player : players) {
                         catchFall(player, arena, session);

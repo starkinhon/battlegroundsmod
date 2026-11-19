@@ -39,6 +39,7 @@ public final class PowerHud {
     private static final int[] LAST = new int[PowerData.SLOT_COUNT];
     private static final long[] FLASH = new long[PowerData.SLOT_COUNT];
     private static String lastPower = "";
+    private static int lastSwaps;
     private static boolean lastShift;
     private static long namesUntil;
 
@@ -65,7 +66,8 @@ public final class PowerHud {
         Font font = minecraft.font;
         boolean shiftHeld = minecraft.options.keyShift.isDown();
         boolean shift = shiftHeld && !power.shiftSlots().isEmpty();
-        if (!power.id().equals(lastPower) || shiftHeld != lastShift) {
+        if (!power.id().equals(lastPower) || shiftHeld != lastShift || lastSwaps != com.starkinhon.battlegroundsmod.power.SkillSwap.clientVersion) {
+            lastSwaps = com.starkinhon.battlegroundsmod.power.SkillSwap.clientVersion;
             namesUntil = now + NAMES_MS;
             lastPower = power.id();
             lastShift = shiftHeld;
@@ -74,7 +76,9 @@ public final class PowerHud {
         // The slots shown, in key order with the ult last: each key's Shift variant while Shift is held.
         List<Integer> slots = new ArrayList<>();
         for (int slot : power.slots()) {
-            slots.add(shift ? power.shiftSlot(power.slotKey(slot)) : slot);
+            // a key holding another soul's skill (the Dungeon's Modo Caos, SkillSwap) shows that skill with Shift too
+            boolean swapped = com.starkinhon.battlegroundsmod.power.SkillSwap.ref(minecraft.player, slot) != null;
+            slots.add(shift && !swapped ? power.shiftSlot(power.slotKey(slot)) : slot);
         }
         for (int slot = 0; slot < PowerData.SLOT_COUNT; slot++) {
             int cooldown = data.cooldowns[slot];
@@ -175,7 +179,10 @@ public final class PowerHud {
         boolean spent = cooldown >= PowerData.SPENT / 2;
         boolean cooling = cooldown > 0;
         boolean waitingUlt = ult && !ultReady;
-        int color = power.color();
+        // another soul's skill on this key (SkillSwap): its own icon, name and color
+        com.starkinhon.battlegroundsmod.power.SkillSwap.Ref swap = com.starkinhon.battlegroundsmod.power.SkillSwap.ref(
+                net.minecraft.client.Minecraft.getInstance().player, slot);
+        int color = swap != null ? swap.power().color() : power.color();
         float pulse = 0.5f + 0.5f * Mth.sin(now / 260f);
 
         int ix = x + (SLOT - ICON) / 2;
@@ -184,8 +191,9 @@ public final class PowerHud {
             GuiDraw.glow(graphics, x + SLOT / 2f, y + SLOT / 2f, SLOT * 1.15f, ULT_COLOR, 0.35f + 0.3f * pulse);
         }
         graphics.fill(x, y, x + SLOT, y + SLOT, 0xF0100A14);
-        boolean locked = !com.starkinhon.battlegroundsmod.power.SoulSync.awake(net.minecraft.client.Minecraft.getInstance().player, power, slot);
-        SkillIcons.draw(graphics, font, power, slot, ix, iy, ICON, locked ? 0.22f : cooling || waitingUlt ? 0.42f : 1f);
+        boolean locked = swap == null && !com.starkinhon.battlegroundsmod.power.SoulSync.awake(net.minecraft.client.Minecraft.getInstance().player, power, slot);
+        SkillIcons.draw(graphics, font, swap != null ? swap.power() : power, swap != null ? swap.slot() : slot, ix, iy, ICON,
+                locked ? 0.22f : cooling || waitingUlt ? 0.42f : 1f);
         if (locked) {
             // Not awakened yet (Sincronia, Livro das Almas): a small padlock instead of the cooldown.
             SoulBookDraw.padlock(graphics, x + SLOT / 2 - 4, y + SLOT / 2 - 5);
@@ -236,6 +244,12 @@ public final class PowerHud {
         GuiDraw.frame(graphics, kx, ky, kx + keyWidth, ky + 10, frame);
         graphics.drawString(font, key, kx + 2, ky + 1, cooling ? 0xFFAAAAAA : 0xFFFFFFFF, false);
 
+        if (swap != null) {
+            // stolen: a small mark in the other corner, in the owner's color
+            GuiDraw.diamond(graphics, x + SLOT - 2, y + SLOT - 2, 3.5f, 0xFF000000 | GuiDraw.mix(color, 0xFFFFFF, 0.3f));
+            GuiDraw.diamond(graphics, x + SLOT - 2, y + SLOT - 2, 1.5f, 0xFF000000 | 0xD8352A);
+            graphics.flush();
+        }
         if (variant) {
             GuiDraw.diamond(graphics, x + SLOT - 2, y + 2, 3.5f, 0xFF000000 | GuiDraw.mix(color, 0xFFFFFF, 0.5f));
             GuiDraw.diamond(graphics, x + SLOT - 2, y + 2, 1.5f, 0xFFFFFFFF);
@@ -244,7 +258,10 @@ public final class PowerHud {
     }
 
     private static void name(GuiGraphics graphics, Font font, Power power, int slot, int right, int y, boolean ult, float alpha) {
-        Component name = com.starkinhon.battlegroundsmod.power.powers.MoonDemon.abilityName(power, net.minecraft.client.Minecraft.getInstance().player, slot);
+        net.minecraft.world.entity.player.Player who = net.minecraft.client.Minecraft.getInstance().player;
+        Component name = com.starkinhon.battlegroundsmod.power.SkillSwap.ref(who, slot) != null
+                ? com.starkinhon.battlegroundsmod.power.SkillSwap.name(who, power, slot)
+                : com.starkinhon.battlegroundsmod.power.powers.MoonDemon.abilityName(power, who, slot);
         int width = font.width(name);
         int a = Math.round(alpha * 255);
         graphics.fillGradient(right - width - 8, y - 2, right + 2, y + 10, GuiDraw.argb(Math.round(alpha * 150), 0x050308),

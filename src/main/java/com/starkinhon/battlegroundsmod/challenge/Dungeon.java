@@ -18,6 +18,8 @@ import com.starkinhon.battlegroundsmod.network.ModPayloads;
 import com.starkinhon.battlegroundsmod.power.Power;
 import com.starkinhon.battlegroundsmod.power.PowerData;
 import com.starkinhon.battlegroundsmod.power.PowerLogic;
+import com.starkinhon.battlegroundsmod.power.SkillSwap;
+import com.starkinhon.battlegroundsmod.combat.Fx;
 import com.starkinhon.battlegroundsmod.power.Powers;
 import com.starkinhon.battlegroundsmod.power.SoulSync;
 import com.starkinhon.battlegroundsmod.power.Tiers;
@@ -34,6 +36,11 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.item.ItemStack;
@@ -55,9 +62,16 @@ import net.neoforged.neoforge.network.PacketDistributor;
 // A run climbs padrao.dungeon.json's etapas: one fight after another against the characters from the weakest (Kuririn) to the
 // strongest (Bills), each in a new random arena (the SubAlmas in a new random order every run, the divine souls at the end in order,
 // DungeonSpec.sorteio), at an ADAPTED tier (the same for the player and the boss: Tier 10 down to
-// Tier 0). Winning offers the boss's soul, which the player may absorb (its whole kit awake) or refuse, and then 3 of the
-// OPTIONS to pick one of (trade the soul, more Sementes, an extra life, ...). The player has "vidas" deaths for the whole run; a
-// death heals everything and restarts that fight. Block destruction is off in the arenas while a run is on (protectsBlocks).
+// Tier 0). The player has "vidas" deaths for the whole run; a death heals everything and restarts that fight. Block destruction is
+// off in the arenas while a run is on (protectsBlocks).
+//
+// Two modes (Stark 2026-11-19), picked by each player on arriving in the first arena (the countdown waits for everyone):
+// - Normal, "no seco": no stat cards at all. A win offers the boss's soul (absorb or refuse), then always the same 3 cards:
+//   Semente dos Deuses, Alma Aleatoria and Alma Escolhida (any soul already beaten in this run).
+// - Caos: the same soul offer, then 3 crazy cards (CHAOS): above all "Roubar Tecnica", one of the beaten boss's Z, X or C on the same
+//   key of the player's own soul (power/SkillSwap: the skills mix, the soul itself is never touched), plus the Roleta (Z/X/C drawn
+//   from any soul every fight), the Troca de Corpos (the next boss's soul for its own fight), the Edo Tensei (the next fall gets back
+//   up with a blast, no life lost), Dobro ou Nada (a clean win = two cards, a fall = two lives) and Tita (giant until the end).
 //
 // A run is shared by a GROUP: the party of the challenge book (ArenaParty) comes in by itself when one of them starts it, all
 // fight the same boss in the same arena, and the boss's health grows with the number of fighters like in any group fight
@@ -70,8 +84,14 @@ import net.neoforged.neoforge.network.PacketDistributor;
 public final class Dungeon {
     // The choices after a win. 3 of them are drawn each time (DungeonSpec.opcoesPorEscolha). The names and texts are on the
     // client (DungeonChoiceScreen).
-    public static final List<String> OPTIONS = List.of("manter", "sacrificar", "acaso", "senzu", "vida", "resistencia", "forca",
-            "ult", "ascensao");
+    // The Normal mode's cards: always these three ("escolhida" turns into "vida" or "manter" while no other soul was beaten yet).
+    public static final List<String> NORMAL = List.of("senzu", "acaso", "escolhida");
+    // The Caos mode's cards ("roubar" comes first whenever it can, the others are drawn).
+    public static final List<String> CHAOS = List.of("roubar", "roleta", "ginyu", "edo", "aposta", "tita", "acaso");
+
+    // Tita: the player's size while the card lasts (transient, so it never outlives the session).
+    private static final ResourceLocation TITAN = ResourceLocation.fromNamespaceAndPath("battlegroundsmod", "dungeon_tita");
+    private static final double TITAN_SCALE = 0.75;
 
     // The real character, kept while a run is on. Saved with the player (attachment), also after a death.
     public record Backup(boolean active, List<ItemStack> items, PowerData power, List<String> stolen, List<String> techniques,
@@ -109,11 +129,23 @@ public final class Dungeon {
         List<String> offer = List.of();
         // the power id of the boss's soul while the player has not answered absorb/refuse yet, "" otherwise
         String pendingSoul = "";
-        int strength;
-        int resistance;
-        int ascend;
-        boolean ult;
         Origin origin;
+        // the mode: answered once, on arriving in the first arena
+        boolean modeChosen;
+        boolean chaos;
+        // the soul of the character just beaten (Roubar Tecnica takes from it) and the souls Alma Escolhida offers now
+        String boss = "";
+        List<String> souls = List.of();
+        // Caos: the keys holding a stolen skill (the Roleta never draws over them)
+        final java.util.Set<Integer> stolen = new java.util.HashSet<>();
+        boolean roulette;
+        boolean ginyu;
+        boolean edo;
+        boolean bet;
+        boolean titan;
+        // fell in the current fight (Dobro ou Nada), cards still to pick after this one (won with Dobro ou Nada)
+        boolean fell;
+        int bonus;
     }
 
     // One run (memory only: a restart ends it and the Backup puts the character back at the next login). Shared by its players.
@@ -123,6 +155,8 @@ public final class Dungeon {
         // the etapas of THIS run, in the order drawn at its start (DungeonSpec.sorteio)
         List<DungeonSpec.Etapa> etapas = List.of();
         String lastArena = "";
+        // the souls (power ids) of the characters beaten so far, in order
+        final List<String> beaten = new ArrayList<>();
         // true from a won fight until the next one starts (everyone is choosing, or waiting for the others)
         boolean between;
         final Map<UUID, Member> members = new LinkedHashMap<>();
@@ -195,7 +229,7 @@ public final class Dungeon {
             RUNS.put(p.getUUID(), run);
             reset(p, spec);
             title(p, Component.literal("DUNGEON").withStyle(s -> s.withColor(0xD8352A).withBold(true)),
-                    Component.literal("Do mais fraco ao mais forte. " + spec.vidas() + " vidas."));
+                    Component.literal("Do mais fraco ao mais forte."));
             if (p != player) {
                 say(p, player.getDisplayName().getString() + " começou uma dungeon e levou você junto (sua party do livro).");
             }
@@ -303,6 +337,8 @@ public final class Dungeon {
         player.setData(ModAttachments.TECHNIQUES, List.of());
         player.setData(ModAttachments.SOUL_SYNC, Map.of());
         player.setData(ModAttachments.SOUL_FED, false);
+        SkillSwap.clear(player);
+        titan(player, false);
         player.getInventory().clearContent();
         player.removeAllEffects();
         player.setExperienceLevels(0);
@@ -329,6 +365,9 @@ public final class Dungeon {
     // The saved character back on the player (inventory, soul, Sincronia, tier, where it was). Also the introduction's.
     public static void putBack(ServerPlayer player, Backup b) {
         CombatMode.leave(player);
+        // nothing of a run's Caos stays on the real character
+        SkillSwap.clear(player);
+        titan(player, false);
         player.removeAllEffects();
         player.getInventory().clearContent();
         for (int i = 0; i < Math.min(b.items().size(), player.getInventory().getContainerSize()); i++) {
@@ -369,9 +408,24 @@ public final class Dungeon {
         Map<UUID, Origin> origins = new HashMap<>();
         for (ServerPlayer player : team) {
             Member member = run.members.get(player.getUUID());
+            member.fell = false;
+            if (member.ginyu) {
+                // Troca de Corpos: this fight with the soul of the one about to be fought
+                member.ginyu = false;
+                Power body = Powers.get(etapa.alma());
+                if (body != null) {
+                    PowerLogic.select(player, body);
+                    SoulSync.completeAll(player, body);
+                    title(player, Component.literal("TROCA DE CORPOS").withStyle(s -> s.withColor(0xB04CFF).withBold(true)),
+                            Component.literal("Agora você é " + body.name().getString() + "."));
+                }
+            }
+            if (member.roulette) {
+                spinRoulette(player, member);
+            }
             PowerData data = player.getData(ModAttachments.POWER);
-            data.tier = Math.max(0, etapa.tier() - member.ascend);
-            data.ult = member.ult && data.hasPower() ? PowerData.MAX_ULT : 0f;
+            data.tier = etapa.tier();
+            data.ult = 0f;
             data.stamina = -1;
             data.exhaustedUntil = 0;
             Tiers.apply(player);
@@ -379,7 +433,6 @@ public final class Dungeon {
             player.getFoodData().setFoodLevel(20);
             player.clearFire();
             player.fallDistance = 0;
-            applyBuffs(player, member);
             origins.put(player.getUUID(), member.origin);
         }
         String arena = pickArena(team.get(0), run);
@@ -394,16 +447,6 @@ public final class Dungeon {
                     + etapa.tier() + ")");
         }
         return true;
-    }
-
-    private static void applyBuffs(ServerPlayer player, Member member) {
-        int duration = 20 * 60 * 60;
-        if (member.strength > 0) {
-            player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, duration, member.strength - 1, false, false, true));
-        }
-        if (member.resistance > 0) {
-            player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, duration, member.resistance - 1, false, false, true));
-        }
     }
 
     // A random arena of the 30 that is free and is not the last one.
@@ -452,44 +495,169 @@ public final class Dungeon {
             return;
         }
         run.between = true;
-        // The soul is an offer, not a gift: each player absorbs it or refuses it (soul()), then picks a card (pick()).
         boolean offered = Powers.get(etapa.alma()) != null;
+        if (offered && !run.beaten.contains(etapa.alma())) {
+            run.beaten.add(etapa.alma());
+        }
+        // The soul is an offer, not a gift: each player absorbs it or refuses it (soul()), then gets the cards (pick()).
         for (ServerPlayer player : team) {
             Member member = run.members.get(player.getUUID());
             member.pendingSoul = offered ? etapa.alma() : "";
-            member.offer = draw(member, spec);
+            member.boss = offered ? etapa.alma() : "";
+            member.offer = List.of();
             member.choosing = true;
+            if (member.bet) {
+                member.bet = false;
+                if (!member.fell) {
+                    member.bonus++;
+                    say(player, "Dobro ou Nada: vitória limpa. Você escolhe duas cartas.");
+                }
+            }
             title(player, Component.literal("VITÓRIA").withStyle(s -> s.withColor(0xF2C94C).withBold(true)),
                     Component.literal(offered ? "A alma de " + bossName(etapa).getString() + " está disponível." : "Escolha."));
-            PacketDistributor.sendToPlayer(player, new ModPayloads.DungeonChoices(member.offer, member.lives, run.stage,
-                    spec.etapas().size(), currentSoulName(player), offered ? bossName(etapa).getString() : ""));
+            if (offered) {
+                send(player, run, member, false);
+            } else {
+                deal(player, run, member, false);
+            }
         }
     }
 
-    // 3 different choices that still make sense (no extra life at the limit, no more Ascensao than allowed...).
-    private static List<String> draw(Member member, DungeonSpec spec) {
-        List<String> pool = new ArrayList<>(OPTIONS);
-        if (member.lives >= spec.vidasMax()) {
-            pool.remove("vida");
+    // The screen's state for this player: the soul to answer (offer) or the cards (bonus: another card comes after this one).
+    private static void send(ServerPlayer player, Run run, Member member, boolean bonus) {
+        DungeonSpec spec = DungeonSpec.get();
+        PacketDistributor.sendToPlayer(player, new ModPayloads.DungeonChoices(member.chaos, member.offer, member.lives, run.stage,
+                spec.etapas().size(), player.getData(ModAttachments.POWER).power, member.pendingSoul, member.boss, member.souls,
+                member.bonus > 0 && member.pendingSoul.isEmpty()));
+    }
+
+    // Draws this player's cards (after the soul's answer) and shows them.
+    private static void deal(ServerPlayer player, Run run, Member member, boolean bonus) {
+        DungeonSpec spec = DungeonSpec.get();
+        String current = player.getData(ModAttachments.POWER).power;
+        List<String> souls = new ArrayList<>();
+        for (String id : run.beaten) {
+            if (!id.equals(current) && Powers.get(id) != null) {
+                souls.add(id);
+            }
         }
-        if (member.ascend >= spec.ascensaoMax()) {
-            pool.remove("ascensao");
+        member.souls = List.copyOf(souls);
+        member.offer = member.chaos ? drawChaos(player, run, member, spec) : drawNormal(member, spec);
+        send(player, run, member, bonus);
+    }
+
+    // Normal: Semente, Alma Aleatoria and Alma Escolhida (a life, or nothing, while no other soul was beaten yet).
+    private static List<String> drawNormal(Member member, DungeonSpec spec) {
+        List<String> cards = new ArrayList<>(NORMAL);
+        if (member.souls.isEmpty()) {
+            cards.set(2, member.lives < spec.vidasMax() ? "vida" : "manter");
         }
-        if (member.strength >= spec.efeitoMax()) {
-            pool.remove("forca");
+        return cards;
+    }
+
+    // Caos: Roubar Tecnica first whenever it can, the others drawn among the ones that still make sense.
+    private static List<String> drawChaos(ServerPlayer player, Run run, Member member, DungeonSpec spec) {
+        int count = Math.max(1, spec.opcoesPorEscolha());
+        Power own = Powers.get(player.getData(ModAttachments.POWER).power);
+        List<String> cards = new ArrayList<>();
+        if (canSteal(own, member)) {
+            cards.add("roubar");
         }
-        if (member.resistance >= spec.efeitoMax()) {
-            pool.remove("resistencia");
+        List<String> pool = new ArrayList<>();
+        for (String id : CHAOS) {
+            boolean ok = switch (id) {
+                case "roubar" -> false;
+                case "roleta" -> own != null && !member.roulette && member.stolen.size() < SkillSwap.KEYS;
+                case "ginyu" -> !member.ginyu && run.stage < run.etapas.size()
+                        && Powers.get(run.etapas.get(run.stage).alma()) != null
+                        && !run.etapas.get(run.stage).alma().equals(own == null ? "" : own.id());
+                case "edo" -> !member.edo;
+                case "aposta" -> !member.bet && member.lives >= 2;
+                case "tita" -> !member.titan;
+                default -> true;
+            };
+            if (ok) {
+                pool.add(id);
+            }
         }
         Collections.shuffle(pool);
-        return new ArrayList<>(pool.subList(0, Math.min(spec.opcoesPorEscolha(), pool.size())));
+        for (String id : pool) {
+            if (cards.size() >= count) {
+                break;
+            }
+            cards.add(id);
+        }
+        while (cards.size() < count) {
+            cards.add(cards.contains("senzu") ? "manter" : "senzu");
+        }
+        return cards;
+    }
+
+    // Roubar Tecnica makes sense: the player has a soul and the one just beaten is another one with a Z, X or C.
+    private static boolean canSteal(Power own, Member member) {
+        Power boss = Powers.get(member.boss);
+        if (own == null || boss == null || boss.id().equals(own.id())) {
+            return false;
+        }
+        for (int k = 0; k < SkillSwap.KEYS; k++) {
+            if (PowerLogic.ability(boss, k) != null) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // From the client, once, on arriving in the first arena: Normal or Caos. The countdown starts when every player answered.
+    public static void mode(ServerPlayer player, boolean chaos) {
+        Member member = member(player);
+        if (member == null || member.modeChosen) {
+            return;
+        }
+        member.modeChosen = true;
+        member.chaos = chaos;
+        title(player, Component.literal(chaos ? "MODO CAOS" : "MODO NORMAL").withStyle(s -> s.withColor(chaos ? 0xB04CFF : 0xF2C94C)
+                .withBold(true)), Component.literal(chaos ? "Que comece a bagunça." : "No seco. Só você e a alma."));
+        Fx.sound(player.serverLevel(), player.position(), chaos ? SoundEvents.WITHER_SPAWN : SoundEvents.BEACON_ACTIVATE, 0.5f,
+                chaos ? 1.6f : 1.2f);
+        Run run = RUNS.get(player.getUUID());
+        if (run != null && run.members.size() > 1) {
+            for (ServerPlayer other : online(run)) {
+                if (other != player) {
+                    say(other, player.getDisplayName().getString() + " escolheu o modo " + (chaos ? "Caos." : "Normal."));
+                }
+            }
+        }
+    }
+
+    // ChallengeArenas: the players were just put in the arena. The ones who have not picked the mode yet get the screen for it.
+    static void arrived(List<ServerPlayer> players) {
+        DungeonSpec spec = DungeonSpec.get();
+        for (ServerPlayer player : players) {
+            Run run = RUNS.get(player.getUUID());
+            Member member = member(player);
+            if (run != null && member != null && !member.modeChosen) {
+                PacketDistributor.sendToPlayer(player, new ModPayloads.DungeonModeAsk(member.lives, spec.etapas().size(), run.members.size()));
+            }
+        }
+    }
+
+    // ChallengeArenas: the countdown of a run's fight waits while one of its players is still picking the mode.
+    static boolean waitingMode(List<ServerPlayer> players) {
+        for (ServerPlayer player : players) {
+            Member member = member(player);
+            if (member != null && !member.modeChosen) {
+                return true;
+            }
+        }
+        return false;
     }
 
     // From the client: absorb the boss's soul (take) or refuse it. Absorbing puts it in with the whole kit awake and replaces the
-    // soul the player carried; refusing keeps the one they have (or none, if they have none yet).
+    // soul the player carried; refusing keeps the one they have (or none, if they have none yet). Then the cards.
     public static void soul(ServerPlayer player, boolean take) {
+        Run run = RUNS.get(player.getUUID());
         Member member = member(player);
-        if (member == null || !member.choosing || member.pendingSoul.isEmpty()) {
+        if (run == null || member == null || !member.choosing || member.pendingSoul.isEmpty()) {
             return;
         }
         Power soul = Powers.get(member.pendingSoul);
@@ -501,22 +669,32 @@ public final class Dungeon {
         } else if (soul != null) {
             say(player, "Você recusou a alma de " + soul.name().getString() + ".");
         }
+        deal(player, run, member, false);
     }
 
-    // From the client: the card picked (an index of the offer). The next fight starts when every player of the run has picked.
-    public static void pick(ServerPlayer player, int index) {
+    // From the client: the card picked (an index of the offer) and its second choice (arg: the key stolen, the soul chosen). The
+    // next fight starts when every player of the run has picked.
+    public static void pick(ServerPlayer player, int index, int arg) {
         Run run = RUNS.get(player.getUUID());
         Member member = member(player);
-        if (run == null || member == null || !member.choosing || index < 0 || index >= member.offer.size()) {
+        if (run == null || member == null || !member.choosing || !member.pendingSoul.isEmpty() || index < 0
+                || index >= member.offer.size()) {
             return;
         }
         DungeonSpec spec = DungeonSpec.get();
         String id = member.offer.get(index);
-        // a card picked without answering the soul counts as refusing it (so the run can never wait forever)
-        member.pendingSoul = "";
+        if (!apply(player, run, member, spec, id, arg)) {
+            // a second choice that does not hold (an old screen): the same cards again
+            send(player, run, member, member.bonus > 0);
+            return;
+        }
+        if (member.bonus > 0) {
+            member.bonus--;
+            deal(player, run, member, true);
+            return;
+        }
         member.choosing = false;
         member.offer = List.of();
-        apply(player, member, spec, id);
         for (Member other : run.members.values()) {
             if (other.choosing) {
                 say(player, "Aguardando os outros jogadores escolherem...");
@@ -546,14 +724,11 @@ public final class Dungeon {
         return run == null ? null : run.members.get(player.getUUID());
     }
 
-    private static void apply(ServerPlayer player, Member member, DungeonSpec spec, String id) {
+    // False when the card's second choice is not valid (nothing happens then).
+    private static boolean apply(ServerPlayer player, Run run, Member member, DungeonSpec spec, String id, int arg) {
         switch (id) {
-            case "sacrificar" -> {
-                // the soul in hand for a random SubAlma (never the same one)
-                trade(player, Powers.sub());
-            }
             case "acaso" -> {
-                // a gamble: any soul of the game, SubAlma or divine
+                // any soul of the game, SubAlma or divine
                 List<Power> all = new ArrayList<>(Powers.sub());
                 all.addAll(Powers.divine());
                 trade(player, all);
@@ -566,24 +741,124 @@ public final class Dungeon {
                 member.lives = Math.min(spec.vidasMax(), member.lives + 1);
                 say(player, "Vida extra! Vidas: " + member.lives);
             }
-            case "resistencia" -> {
-                member.resistance = Math.min(spec.efeitoMax(), member.resistance + 1);
-                say(player, "Resistência nível " + member.resistance + " até o fim da dungeon.");
+            case "escolhida" -> {
+                if (arg < 0 || arg >= member.souls.size()) {
+                    return false;
+                }
+                Power chosen = Powers.get(member.souls.get(arg));
+                if (chosen == null) {
+                    return false;
+                }
+                PowerLogic.select(player, chosen);
+                SoulSync.completeAll(player, chosen);
+                say(player, "Você escolheu a alma de " + chosen.name().getString() + ".");
             }
-            case "forca" -> {
-                member.strength = Math.min(spec.efeitoMax(), member.strength + 1);
-                say(player, "Força nível " + member.strength + " até o fim da dungeon.");
+            case "roubar" -> {
+                Power boss = Powers.get(member.boss);
+                if (!SkillSwap.swappable(arg) || boss == null || !canSteal(Powers.get(player.getData(ModAttachments.POWER).power), member)
+                        || !SkillSwap.set(player, arg, boss, arg)) {
+                    return false;
+                }
+                member.stolen.add(arg);
+                Fx.burst(player.serverLevel(), Fx.dust(boss.color(), 2f), player.position().add(0, 1, 0), 70, 0.7, 0.05);
+                Fx.burst(player.serverLevel(), ParticleTypes.REVERSE_PORTAL, player.position().add(0, 1, 0), 50, 0.5, 0.2);
+                Fx.sound(player.serverLevel(), player.position(), SoundEvents.ILLUSIONER_MIRROR_MOVE, 1f, 0.7f);
+                title(player, Component.literal("ROUBADO").withStyle(s -> s.withColor(boss.color()).withBold(true)),
+                        Component.literal(boss.abilityName(arg).getString() + " agora é seu " + KEY_NAMES[arg] + "."));
             }
-            case "ult" -> {
-                member.ult = true;
-                say(player, "Você começa cada luta com a ult carregada.");
+            case "roleta" -> {
+                member.roulette = true;
+                say(player, "Roleta: a cada luta seu Z, X e C mudam. As técnicas roubadas ficam.");
             }
-            case "ascensao" -> {
-                member.ascend = Math.min(spec.ascensaoMax(), member.ascend + 1);
-                say(player, "Ascensão: você luta " + member.ascend + " tier(s) acima do tier da luta.");
+            case "ginyu" -> {
+                member.ginyu = true;
+                say(player, "Troca de Corpos: na próxima luta você entra com a alma de quem vai enfrentar.");
+            }
+            case "edo" -> {
+                member.edo = true;
+                say(player, "Edo Tensei: na próxima vez que cair, você levanta na hora.");
+            }
+            case "aposta" -> {
+                member.bet = true;
+                say(player, "Dobro ou Nada: vença sem cair e escolha duas cartas. Se cair, perde duas vidas.");
+            }
+            case "tita" -> {
+                member.titan = true;
+                titan(player, true);
+                Fx.burst(player.serverLevel(), ParticleTypes.EXPLOSION, player.position().add(0, 1, 0), 6, 0.8, 0);
+                Fx.sound(player.serverLevel(), player.position(), SoundEvents.RAVAGER_ROAR, 1f, 0.6f);
+                say(player, "Titã: você ficou gigante até o fim da dungeon.");
             }
             default -> say(player, "Você seguiu em frente.");
         }
+        return true;
+    }
+
+    private static final String[] KEY_NAMES = {"Z", "X", "C"};
+
+    // Roleta: every key that does not hold a stolen skill gets a skill of a random soul (never the player's own).
+    private static void spinRoulette(ServerPlayer player, Member member) {
+        Power own = Powers.get(player.getData(ModAttachments.POWER).power);
+        if (own == null) {
+            return;
+        }
+        List<Power> all = new ArrayList<>(Powers.sub());
+        all.addAll(Powers.divine());
+        all.removeIf(p -> p.id().equals(own.id()));
+        if (all.isEmpty()) {
+            return;
+        }
+        StringBuilder line = new StringBuilder("Roleta:");
+        for (int key = 0; key < SkillSwap.KEYS; key++) {
+            if (member.stolen.contains(key)) {
+                continue;
+            }
+            for (int tries = 0; tries < 12; tries++) {
+                Power p = all.get(player.getRandom().nextInt(all.size()));
+                int from = player.getRandom().nextInt(SkillSwap.KEYS);
+                if (PowerLogic.ability(p, from) != null && SkillSwap.set(player, key, p, from)) {
+                    line.append("  ").append(KEY_NAMES[key]).append(" ").append(p.abilityName(from).getString());
+                    break;
+                }
+            }
+        }
+        say(player, line.toString());
+    }
+
+    // Tita on or off (a transient size: it never outlives the session, and putBack takes it off).
+    private static void titan(ServerPlayer player, boolean on) {
+        AttributeInstance scale = player.getAttribute(Attributes.SCALE);
+        if (scale == null) {
+            return;
+        }
+        scale.removeModifier(TITAN);
+        if (on) {
+            scale.addTransientModifier(new AttributeModifier(TITAN, TITAN_SCALE, AttributeModifier.Operation.ADD_MULTIPLIED_BASE));
+        }
+    }
+
+    // Edo Tensei: up again on the spot, full health, and a blast that throws back everything around but the run's players.
+    private static void edoTensei(ServerPlayer player, Run run) {
+        ServerLevel level = player.serverLevel();
+        Vec3 at = player.position();
+        Fx.burst(level, ParticleTypes.EXPLOSION_EMITTER, at.add(0, 1, 0), 2, 0.4, 0);
+        Fx.burst(level, ParticleTypes.SOUL, at.add(0, 1, 0), 120, 1.6, 0.12);
+        Fx.burst(level, ParticleTypes.LARGE_SMOKE, at.add(0, 0.3, 0), 90, 2.4, 0.08);
+        Fx.burst(level, ParticleTypes.SCULK_SOUL, at.add(0, 1.5, 0), 40, 0.6, 0.15);
+        Fx.sound(level, at, SoundEvents.GENERIC_EXPLODE.value(), 1.4f, 0.6f);
+        Fx.sound(level, at, SoundEvents.WARDEN_SONIC_BOOM, 1f, 0.8f);
+        for (net.minecraft.world.entity.LivingEntity hit : level.getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class,
+                player.getBoundingBox().inflate(8), e -> e != player && e.isAlive() && !(e instanceof ServerPlayer p && run.members.containsKey(p.getUUID())))) {
+            Vec3 push = hit.position().subtract(at);
+            double d = Math.max(0.5, push.length());
+            push = push.normalize().scale(2.4 * (1 - Math.min(1, d / 9)) + 0.6);
+            hit.hurt(player.damageSources().playerAttack(player), Math.max(8f, hit.getMaxHealth() * 0.06f));
+            hit.setDeltaMovement(push.x, 0.7, push.z);
+            hit.hurtMarked = true;
+        }
+        player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 60, 4, false, false, false));
+        title(player, Component.literal("EDO TENSEI").withStyle(s -> s.withColor(0x8FE3FF).withBold(true)),
+                Component.literal("Você voltou."));
     }
 
     private static void trade(ServerPlayer player, List<Power> pool) {
@@ -624,7 +899,20 @@ public final class Dungeon {
             // between fights there is nothing to lose
             return;
         }
+        if (member.edo) {
+            // Edo Tensei: no life lost, the fight goes on right there
+            member.edo = false;
+            edoTensei(player, run);
+            return;
+        }
+        member.fell = true;
         member.lives--;
+        if (member.bet) {
+            // Dobro ou Nada lost: a second life goes with the first
+            member.bet = false;
+            member.lives--;
+            say(player, "Dobro ou Nada: você caiu e perdeu duas vidas.");
+        }
         if (member.lives <= 0) {
             leave(player, run.members.size() > 1 ? "Suas vidas acabaram. O grupo segue sem você." : "Suas vidas acabaram.");
             return;
@@ -650,6 +938,10 @@ public final class Dungeon {
 
     // A player whose game closed in the middle of a run gets the real character back.
     private static void onLogin(PlayerEvent.PlayerLoggedInEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) {
+            // the client's copy of the stolen keys starts from the server's (empty outside a run)
+            SkillSwap.sync(player);
+        }
         if (event.getEntity() instanceof ServerPlayer player && !RUNS.containsKey(player.getUUID())
                 && player.getData(ModAttachments.DUNGEON_BACKUP).active()) {
             restore(player);
@@ -687,7 +979,7 @@ public final class Dungeon {
             }
             Member member = run.members.get(entry.getKey());
             if (member != null && !member.choosing && !run.between && ChallengeArenas.isArena(player.level().dimension())) {
-                player.displayClientMessage(Component.literal("Dungeon " + (run.stage + 1) + "/" + total + "   Vidas: "
+                player.displayClientMessage(Component.literal((member.chaos ? "Caos " : "Dungeon ") + (run.stage + 1) + "/" + total + "   Vidas: "
                         + "♥".repeat(Math.max(0, member.lives)) + (run.members.size() > 1 ? "   Grupo: " + run.members.size() : "")), true);
             }
         }
