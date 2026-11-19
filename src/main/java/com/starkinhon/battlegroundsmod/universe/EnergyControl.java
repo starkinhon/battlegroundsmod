@@ -69,7 +69,18 @@ public final class EnergyControl {
 
     // LiquidBlock's collision (mixin/LiquidBlockMixin): the water's top is ground for a player who knows it, standing over it.
     public static VoxelShape waterShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        if (!(context instanceof EntityCollisionContext ec) || !(ec.getEntity() instanceof Player player)) {
+        if (!(context instanceof EntityCollisionContext ec)) {
+            return null;
+        }
+        // the introduction's enemies (SoulBoss.introMoves set by the script) stand on the water like the player
+        if (ec.getEntity() instanceof com.starkinhon.battlegroundsmod.boss.SoulBoss boss && boss.introMoves != null) {
+            if (!state.getFluidState().is(FluidTags.WATER) || !level.getFluidState(pos.above()).isEmpty()
+                    || boss.isUnderWater() || !context.isAbove(SURFACE, pos, true)) {
+                return null;
+            }
+            return SURFACE;
+        }
+        if (!(ec.getEntity() instanceof Player player)) {
             return null;
         }
         if (!state.getFluidState().is(FluidTags.WATER) || !level.getFluidState(pos.above()).isEmpty()) {
