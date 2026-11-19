@@ -43,7 +43,7 @@ final class HsBuddha extends HsFx.Fx {
         Vector3d hPos;
         Quaternionf hQ, iq = new Quaternionf(), handQ = new Quaternionf();
         Vector3d anchor = new Vector3d(), idle = new Vector3d(), from = new Vector3d(), to = new Vector3d(), handPos = new Vector3d();
-        double scale = 1, rs = 1, t, hs = 1;
+        double scale = 1, rs = 1, t, handNow = 1;
         String state = "idle";
         boolean big;
         Geo geo;
@@ -258,8 +258,8 @@ final class HsBuddha extends HsFx.Fx {
             }
             stepArm(a, dt, now, t, m);
             // the hand grows out of the fan as it leaves and shrinks back into it at rest
-            a.hs += (("idle".equals(a.state) ? a.rs : a.scale) - a.hs) * ("idle".equals(a.state) ? 0.15 : 0.35);
-            Matrix4f hm = new Matrix4f(bm).translate((float) a.handPos.x, (float) a.handPos.y, (float) a.handPos.z).rotate(a.handQ).scale((float) a.hs);
+            a.handNow += (("idle".equals(a.state) ? a.rs : a.scale) - a.handNow) * ("idle".equals(a.state) ? 0.15 : 0.35);
+            Matrix4f hm = new Matrix4f(bm).translate((float) a.handPos.x, (float) a.handPos.y, (float) a.handPos.z).rotate(a.handQ).scale((float) a.handNow);
             HsWood.draw(a.geo, a.mat, bm, 2, dis, bright);
             HsWood.draw(a.hand.g(), a.hand.m(), hm, 2, dis, bright);
         }
@@ -299,7 +299,7 @@ final class HsBuddha extends HsFx.Fx {
             }
         } else if ("drop".equals(a.state)) {
             double D = a.big ? 0.26 : 0.15, k = WoodGeo.clamp(a.t / D, 0, 1);
-            Vector3d w = new Vector3d(a.from).lerp(new Vector3d(W2.x, W2.y + 0.45 * a.hs / 1.8, W2.z), k * k);
+            Vector3d w = new Vector3d(a.from).lerp(new Vector3d(W2.x, W2.y + 0.45 * a.handNow / 1.8, W2.z), k * k);
             layArm(a, w);
             if (k >= 1) {
                 a.state = "hold";
