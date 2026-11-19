@@ -36,6 +36,10 @@ public final class FxConfig {
             .comment("Kokushibo's form names in kanji beside him when he uses a Moon Breathing form (/souls kanji desativar).")
             .define("formKanji", true);
 
+    public static final ModConfigSpec.IntValue INVENTORY_STYLE = BUILDER
+            .comment("Survival inventory look: 0 crystals with dark slots, 1 crystals with light slots, 2 Minecraft's default.")
+            .defineInRange("inventoryStyle", 0, 0, 2);
+
     public static final ModConfigSpec SPEC = BUILDER.build();
 
     private FxConfig() {
@@ -58,6 +62,24 @@ public final class FxConfig {
     public static void setFormKanji(boolean value) {
         try {
             FORM_KANJI.set(value);
+            SPEC.save();
+        } catch (IllegalStateException e) {
+            // the file isn't loaded yet: it stays for this session only
+        }
+    }
+
+    public static int inventoryStyle() {
+        try {
+            return INVENTORY_STYLE.get();
+        } catch (IllegalStateException e) {
+            return INVENTORY_STYLE.getDefault();
+        }
+    }
+
+    // Picked with the buttons under the inventory (CrystalInventory); saved in the client config file.
+    public static void setInventoryStyle(int value) {
+        try {
+            INVENTORY_STYLE.set(value);
             SPEC.save();
         } catch (IllegalStateException e) {
             // the file isn't loaded yet: it stays for this session only

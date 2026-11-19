@@ -1,4 +1,8 @@
 {
+  "gui.battlegroundsmod.inventory_style.0": "Escuro",
+  "gui.battlegroundsmod.inventory_style.1": "Claro",
+  "gui.battlegroundsmod.inventory_style.2": "Minecraft",
+  "battlegroundsmod.configuration.inventoryStyle": "Aparência do inventário",
   "itemGroup.battlegroundsmod": "Souls: Essenciais",
   "generator.battlegroundsmod.souls": "Souls",
   "item.battlegroundsmod.power_book": "Livro das Almas",
