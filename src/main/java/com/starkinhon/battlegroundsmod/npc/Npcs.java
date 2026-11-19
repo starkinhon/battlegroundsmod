@@ -33,7 +33,7 @@ import net.minecraft.world.phys.AABB;
 //   not by the arrival point;
 // - Korin (Dragon Ball) gives one Senzu per day and hints about the universe; he lives on top of the Torre do Karin
 //   (world/DragonBallPlaces), not by the arrival point;
-// - Jiraiya (Naruto) teaches Modo Sábio once the player reaches Tier 8;
+// - Jiraiya (Naruto) teaches the Rasengan (universe/MasterTraining; he taught the Modo Sábio before 2026-11-19);
 // - Teuchi (Naruto, Ichiraku) gives one Ramen per day and hints.
 public final class Npcs {
     private Npcs() {
@@ -91,7 +91,8 @@ public final class Npcs {
             case "bulma" -> com.starkinhon.battlegroundsmod.universe.DbActivities.bulma(player, npc);
             case "mestre_kame" -> com.starkinhon.battlegroundsmod.universe.DbActivities.roshi(player, npc);
             case "boo" -> com.starkinhon.battlegroundsmod.universe.DbActivities.boo(player, npc);
-            case "jiraiya" -> jiraiya(player, npc);
+            case "jiraiya" -> com.starkinhon.battlegroundsmod.universe.MasterTraining.jiraiya(player, npc, line -> say(player, npc, line));
+            case "kakashi" -> com.starkinhon.battlegroundsmod.universe.MasterTraining.kakashi(player, npc, line -> say(player, npc, line));
             case "shoko" -> shoko(player, npc);
             case "yoruichi" -> teach(player, npc, "yoruichi", com.starkinhon.battlegroundsmod.universe.BleachWorld.SHUNPO);
             case "urahara" -> daily(player, npc, "souls_urahara_dia", new ItemStack(ModItems.SOUL_CANDY.get()), "urahara", 4);
@@ -133,24 +134,6 @@ public final class Npcs {
                 .withStyle(s -> s.withColor(0xF2C94C).withBold(true))));
         player.connection.send(new ClientboundSetSubtitleTextPacket(Component.translatable("technique.battlegroundsmod.voo")));
         Fx.burst(player.serverLevel(), ParticleTypes.CLOUD, player.position(), 60, 0.8, 0.1);
-        Fx.sound(player.serverLevel(), player.position(), SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, 1f, 1.2f);
-    }
-
-    private static void jiraiya(ServerPlayer player, UniverseNpc npc) {
-        if (com.starkinhon.battlegroundsmod.universe.SageMode.knows(player)) {
-            say(player, npc, pick(player, "npc.battlegroundsmod.jiraiya.after", 3));
-            return;
-        }
-        if (Tiers.of(player) > Tiers.HUMANO - 2) {
-            say(player, npc, Component.translatable("npc.battlegroundsmod.jiraiya.weak"));
-            return;
-        }
-        learn(player, com.starkinhon.battlegroundsmod.universe.SageMode.TECHNIQUE);
-        say(player, npc, Component.translatable("npc.battlegroundsmod.jiraiya.teach"));
-        player.connection.send(new ClientboundSetTitlesAnimationPacket(8, 60, 20));
-        player.connection.send(new ClientboundSetTitleTextPacket(Component.translatable("message.battlegroundsmod.technique_learned")
-                .withStyle(s -> s.withColor(0xF2C94C).withBold(true))));
-        player.connection.send(new ClientboundSetSubtitleTextPacket(Component.translatable("technique.battlegroundsmod.modo_sabio")));
         Fx.sound(player.serverLevel(), player.position(), SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, 1f, 1.2f);
     }
 

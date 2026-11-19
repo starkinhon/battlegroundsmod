@@ -343,6 +343,11 @@ public final class ModEntities {
     public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.npc.UniverseNpc>> NPC_TEUCHI = npc("npc_teuchi");
     public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.npc.UniverseNpc>> NPC_SHOKO = npc("npc_shoko");
     public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.npc.UniverseNpc>> NPC_YAGA = npc("npc_yaga");
+    // The masters added 2026-11-19 (universe/MasterTraining): Kakashi (Controle de Energia), Maki (the Matador de
+    // Demônios), Senhor Kaioh (Goku's Kaioken levels and Mini Genki Dama).
+    public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.npc.UniverseNpc>> NPC_KAKASHI = npc("npc_kakashi");
+    public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.npc.UniverseNpc>> NPC_MAKI = npc("npc_maki");
+    public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.npc.UniverseNpc>> NPC_KAIOH = npc("npc_kaioh");
     public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.npc.UniverseNpc>> NPC_YORUICHI = npc("npc_yoruichi");
     public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.npc.UniverseNpc>> NPC_URAHARA = npc("npc_urahara");
     public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.npc.UniverseNpc>> NPC_UROKODAKI = npc("npc_urokodaki");
@@ -441,6 +446,9 @@ public final class ModEntities {
         event.put(NPC_TEUCHI.get(), com.starkinhon.battlegroundsmod.npc.UniverseNpc.createAttributes().build());
         event.put(NPC_SHOKO.get(), com.starkinhon.battlegroundsmod.npc.UniverseNpc.createAttributes().build());
         event.put(NPC_YAGA.get(), com.starkinhon.battlegroundsmod.npc.UniverseNpc.createAttributes().build());
+        event.put(NPC_KAKASHI.get(), com.starkinhon.battlegroundsmod.npc.UniverseNpc.createAttributes().build());
+        event.put(NPC_MAKI.get(), com.starkinhon.battlegroundsmod.npc.UniverseNpc.createAttributes().build());
+        event.put(NPC_KAIOH.get(), com.starkinhon.battlegroundsmod.npc.UniverseNpc.createAttributes().build());
         event.put(NPC_YORUICHI.get(), com.starkinhon.battlegroundsmod.npc.UniverseNpc.createAttributes().build());
         event.put(NPC_URAHARA.get(), com.starkinhon.battlegroundsmod.npc.UniverseNpc.createAttributes().build());
         event.put(NPC_UROKODAKI.get(), com.starkinhon.battlegroundsmod.npc.UniverseNpc.createAttributes().build());

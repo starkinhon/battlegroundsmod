@@ -98,7 +98,7 @@ public final class Naruto {
 
     // ---------- Z: Rasengan ----------
 
-    private static boolean rasengan(LivingEntity caster, ServerLevel level) {
+    public static boolean rasengan(LivingEntity caster, ServerLevel level) {
         SubCommon.Guard guard = SubCommon.guard(caster);
         int id = SubNet.newId();
         boolean big = !clones(caster, level).isEmpty();

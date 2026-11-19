@@ -628,6 +628,8 @@ public final class NarutoActivities {
         run.despawn(level);
         RUNS.remove(player.getUUID());
         dailyUse(player, "souls_guizo_dia");
+        // passed once: Kakashi teaches the Controle de Energia (MasterTraining)
+        player.getPersistentData().putBoolean(MasterTraining.BELLS_DONE, true);
         title(player, "guizo_passou", both ? "guizo_passou_dois" : null, 0xE8B93A);
         level.playSound(null, player.blockPosition(), SoundEvents.PLAYER_LEVELUP, SoundSource.PLAYERS, 1f, 1.2f);
     }
