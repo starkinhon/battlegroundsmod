@@ -1,8 +1,10 @@
 package com.starkinhon.battlegroundsmod.power.powers.sub.db;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import com.starkinhon.battlegroundsmod.combat.Charge;
 import com.starkinhon.battlegroundsmod.combat.Combat;
@@ -11,10 +13,13 @@ import com.starkinhon.battlegroundsmod.combat.Stun;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
 import com.starkinhon.battlegroundsmod.power.Ability;
 import com.starkinhon.battlegroundsmod.power.Power;
+import com.starkinhon.battlegroundsmod.power.PowerData;
 import com.starkinhon.battlegroundsmod.power.powers.sub.SubCommon;
 import com.starkinhon.battlegroundsmod.power.powers.sub.SubNet;
 import com.starkinhon.battlegroundsmod.power.powers.sub.jj.JjCommon;
 
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -23,6 +28,7 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 
 // Goku (SubAlma of Dragon Ball, tier 6), the Visualizador's Goku tab.
@@ -33,11 +39,22 @@ import net.minecraft.world.phys.Vec3;
 // V Genki Dama: hands to the sky, the light of everything gathers in a glass ball over him (held up to 60 s; full = it
 //   can kill in one hit); thrown, it is guided onto the target (or the crosshair) and blows up into a crater from about
 //   7 blocks wide (2 s) to 52 (the full minute), the damage growing with it.
+// Taught by Senhor Kaioh in Goku's arena (universe/KaiohTraining; Stark 2026-11-19, only for Goku's soul; SoulSync.TAUGHT
+// keeps them locked for a player until then, mobs and bosses wearing Goku use them freely):
+// B Kaioken x3 / x10 / x20: each press goes up a level (faster, harder punches, more life drained); x10 leaves the body
+//   heavy when it ends and x20 locks it for a moment. C stays the same Kaioken (and its rush).
+// Shift+V Mini Genki Dama: the energy of the ground rises in a spiral to the open hand (up to 2.2 s), the ball is thrown
+//   guided onto the target, sinks in pulling the dust and bursts into a column of light (mestres/mini-genki.html v3).
 public final class Goku {
     private static final int TELE_RANGE = 30;
     private static final int KAIOKEN_TICKS = 200;
     private static final int GENKI_FULL = 1200;
     private static final int GENKI_RANGE = 80;
+    private static final int LEVEL_TICKS = 160;
+    private static final int[] TIMES = {1, 3, 10, 20};
+    private static final Map<UUID, Integer> LEVELS = new HashMap<>();
+    private static final int MINI_CHARGE = 44;
+    private static final int MINI_RANGE = 60;
 
     private Goku() {
     }
@@ -47,7 +64,9 @@ public final class Goku {
                 new Ability(160, 0, Goku::kamehameha),
                 new Ability(140, 0, Goku::teleport),
                 new Ability(400, 0, Goku::kaioken),
-                new Ability(1200, 0, Goku::genki)));
+                new Ability(1200, 0, Goku::genki),
+                new Ability(600, 0, Goku::kaiokenUp)),
+                Arrays.asList(null, null, null, new Ability(500, 0, Goku::miniGenki)));
     }
 
     // ---------- Z: Kamehameha ----------
@@ -210,6 +229,10 @@ public final class Goku {
                 SubNet.send(level, SubNet.KI_AURA, caster.getId(), caster.position(), Vec3.ZERO, 0, Db.RED, 1);
                 DbCommon.cooldown(caster, 2, 400);
                 return true;
+            }
+            if (kaiokenLevel(caster) > 0) {
+                // B raised it to x3 or more: that loop drives the speed and the drain now.
+                return false;
             }
             caster.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 6, 1, false, false));
             // One heart a second; it never kills: at two hearts it switches off on its own.
@@ -458,5 +481,255 @@ public final class Goku {
         if (low || at.y - ground < radius * 0.5) {
             DbCommon.bigCrater(level, new Vec3(c.x, ground, c.z), radius * 0.85, Math.max(2, radius * 0.35), (int) Math.max(4, radius / 2));
         }
+    }
+
+    // ---------- B: Kaioken x3 / x10 / x20 (Senhor Kaioh) ----------
+
+    // The Kaioken level B raised it to (1 x3, 2 x10, 3 x20), 0 when it is off or only the plain one (C).
+    public static int kaiokenLevel(LivingEntity entity) {
+        Integer lv = LEVELS.get(entity.getUUID());
+        return lv == null || !SubCommon.hasState(entity, DbCommon.KAIOKEN) ? 0 : lv;
+    }
+
+    // Each press goes one level up and refreshes the time (8 s). The key stays free until x20; the wait (30 s) starts
+    // when it ends. Approved by Stark 2026-11-19: "levemente mais forte", each level with more consequence.
+    private static boolean kaiokenUp(LivingEntity caster, ServerLevel level) {
+        int lv = kaiokenLevel(caster);
+        if (lv >= 3) {
+            SubCommon.warn(caster, "goku.kaioken_max");
+            return false;
+        }
+        boolean running = lv > 0;
+        lv++;
+        LEVELS.put(caster.getUUID(), lv);
+        SubCommon.setState(caster, DbCommon.KAIOKEN, LEVEL_TICKS);
+        SubCommon.pose(caster, "db.kaioken_nivel");
+        SubCommon.busy(caster, 8);
+        float scale = lv == 1 ? 1.15f : lv == 2 ? 1.35f : 1.6f;
+        SubNet.send(level, SubNet.KI_AURA, caster.getId(), caster.position(), new Vec3(1, 0, 0), LEVEL_TICKS, Db.RED, scale);
+        Vec3 c = Combat.center(caster);
+        DbCommon.screen(level, c, 2);
+        DbCommon.hit(level, c, 0.8f + 0.4f * lv, Db.RED);
+        SubCommon.sound(level, caster.position(), SoundEvents.BLAZE_SHOOT, 1.2f + 0.3f * lv, 0.75f - 0.1f * lv);
+        SubCommon.sound(level, caster.position(), SoundEvents.FIRECHARGE_USE, 1.2f + 0.3f * lv, 0.6f - 0.05f * lv);
+        if (lv == 3) {
+            SubCommon.sound(level, caster.position(), SoundEvents.GENERIC_EXPLODE.value(), 1.2f, 0.7f);
+        }
+        if (caster instanceof ServerPlayer player) {
+            player.displayClientMessage(Component.translatable("message.battlegroundsmod.goku.kaioken_x", TIMES[lv])
+                    .withStyle(ChatFormatting.RED, ChatFormatting.BOLD), true);
+        }
+        if (!running) {
+            kaiokenLoop(caster, level);
+        }
+        DbCommon.cooldown(caster, PowerData.SLOT_EXTRA, 12);
+        return false;
+    }
+
+    private static void kaiokenLoop(LivingEntity caster, ServerLevel level) {
+        SubCommon.Guard guard = SubCommon.guard(caster);
+        int[] peak = {0};
+        Tasks.add(age -> {
+            boolean on = SubCommon.hasState(caster, DbCommon.KAIOKEN);
+            int lv = kaiokenLevel(caster);
+            if (guard.broken() || !on || lv == 0) {
+                kaiokenEnd(caster, level, Math.max(peak[0], lv));
+                return true;
+            }
+            peak[0] = Math.max(peak[0], lv);
+            caster.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 6, lv, false, false));
+            // x3 drains 2 a second, x10 3, x20 4; never kills: near the floor it switches off on its own.
+            float drain = 1 + lv;
+            if (age > 0 && age % 20 == 0) {
+                if (caster.getHealth() <= drain + 2.5f) {
+                    SubCommon.clearState(caster, DbCommon.KAIOKEN);
+                    SubCommon.warn(caster, "goku.kaioken_limit");
+                } else {
+                    caster.setHealth(Math.max(4, caster.getHealth() - drain));
+                }
+            }
+            if (age % 40 == 20) {
+                SubCommon.sound(level, caster.position(), SoundEvents.FIRE_AMBIENT, 1f, 0.7f - 0.08f * lv);
+            }
+            if (!(caster instanceof Player) && age >= 30 && age % 10 == 0 && SubCommon.aimed(caster, 7) != null) {
+                rush(caster, level);
+            }
+            return false;
+        });
+    }
+
+    // The price when it ends (by time, by the rush, by a hit that breaks it): x10 leaves the body heavy, x20 locks it.
+    private static void kaiokenEnd(LivingEntity caster, ServerLevel level, int peak) {
+        LEVELS.remove(caster.getUUID());
+        SubCommon.clearState(caster, DbCommon.KAIOKEN);
+        SubNet.send(level, SubNet.KI_AURA, caster.getId(), caster.position(), Vec3.ZERO, 0, Db.RED, 1);
+        DbCommon.cooldown(caster, PowerData.SLOT_EXTRA, 600);
+        if (!caster.isAlive()) {
+            return;
+        }
+        if (peak >= 2) {
+            caster.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, peak >= 3 ? 100 : 60, peak >= 3 ? 2 : 1, false, true));
+            caster.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, peak >= 3 ? 100 : 60, 0, false, true));
+        }
+        if (peak >= 3) {
+            Stun.apply(caster, 30);
+            SubCommon.warn(caster, "goku.kaioken_x20_fim");
+            SubCommon.sound(level, caster.position(), SoundEvents.PLAYER_HURT, 1f, 0.6f);
+        }
+    }
+
+    // ---------- Shift+V: Mini Genki Dama (Senhor Kaioh) ----------
+
+    private static boolean miniGenki(LivingEntity caster, ServerLevel level) {
+        SubCommon.Guard guard = SubCommon.guard(caster);
+        int id = SubNet.newId();
+        int bossHold = 24 + SubCommon.RANDOM.nextInt(20);
+        SubCommon.pose(caster, "db.mini_genki");
+        SubCommon.sound(level, caster.position(), SoundEvents.BEACON_ACTIVATE, 1.2f, 1.3f);
+        int[] thrown = {-1};
+        Vec3[] at = {null};
+        Vec3[] from = {null};
+        Vec3[] vel = {Vec3.ZERO};
+        LivingEntity[] locked = {null};
+        float[] charge = {0};
+        float[] size = {0};
+        Tasks.add(age -> {
+            if (thrown[0] < 0) {
+                Vec3 hand = DbCommon.hand(caster);
+                Vec3 ground = new Vec3(hand.x, DbCommon.groundY(level, hand), hand.z);
+                if (guard.broken()) {
+                    // Hit while charging: it is lost.
+                    SubNet.send(level, KaiohNet.MINI_GENKI, id, hand, ground, size[0], 2, 0);
+                    SubCommon.sound(level, hand, SoundEvents.BEACON_DEACTIVATE, 1f, 1.4f);
+                    return true;
+                }
+                SubCommon.busy(caster, 3);
+                caster.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 4, 2, false, false));
+                float k = Math.min(1, age / (float) MINI_CHARGE);
+                float u = 1 - k;
+                charge[0] = k;
+                size[0] = 0.12f + 0.6f * (1 - u * u * u);
+                boolean held = SubCommon.held(caster, age, bossHold);
+                if (held) {
+                    Charge.report(caster, k);
+                }
+                if (age % 8 == 0) {
+                    SubCommon.sound(level, hand, SoundEvents.BEACON_AMBIENT, 1f, 1.1f + 0.6f * k);
+                }
+                if (age == MINI_CHARGE) {
+                    SubCommon.sound(level, hand, SoundEvents.BEACON_POWER_SELECT, 1f, 1.6f);
+                }
+                // Full, it can be held 3 s more before it goes on its own.
+                if ((held || age < 10) && age < MINI_CHARGE + 60) {
+                    SubNet.send(level, KaiohNet.MINI_GENKI, id, hand, ground, size[0], 0, 1);
+                    return false;
+                }
+                thrown[0] = age;
+                at[0] = hand;
+                from[0] = hand;
+                locked[0] = miniTarget(caster, level);
+                vel[0] = genkiGoal(caster, locked[0]).subtract(hand).normalize().scale(0.9);
+                SubCommon.pose(caster, "db.empurra");
+                SubCommon.sound(level, hand, SoundEvents.FIREWORK_ROCKET_LAUNCH, 1.4f, 0.7f);
+                SubCommon.sound(level, hand, SoundEvents.BLAZE_SHOOT, 1f, 1.4f);
+            }
+            int t = age - thrown[0];
+            // Guided (Stark 2026-11-19: "continua teleguiada"): it leaves towards where the target was and bends after
+            // it, faster and tighter than the big one.
+            if (locked[0] != null && !locked[0].isAlive()) {
+                locked[0] = null;
+            }
+            Vec3 goal = genkiGoal(caster, locked[0]);
+            double speed = 0.9 + 0.7 * SubCommon.smooth(t / 12f);
+            Vec3 want = goal.subtract(at[0]);
+            if (want.lengthSqr() > 1.0E-4) {
+                vel[0] = vel[0].lerp(want.normalize().scale(speed), 0.3);
+            }
+            Vec3 next = at[0].add(vel[0]);
+            float r = size[0];
+            boolean touch = !Combat.inRadius(level, next, r + 0.7, caster).isEmpty();
+            Vec3 ahead = next.add(vel[0].lengthSqr() > 1.0E-4 ? vel[0].normalize().scale(r) : Vec3.ZERO);
+            boolean wall = SubCommon.solid(level, next) || SubCommon.solid(level, ahead);
+            boolean arrived = locked[0] == null && caster instanceof Mob && next.distanceTo(goal) < r + 0.5;
+            boolean far = next.distanceTo(from[0]) > MINI_RANGE + 20;
+            at[0] = next;
+            if (!touch && !wall && !arrived && !far && t < 100) {
+                SubNet.send(level, KaiohNet.MINI_GENKI, id, next, caster.position(), r, 1, 0);
+                if (t % 6 == 0) {
+                    SubCommon.sound(level, next, SoundEvents.BEACON_AMBIENT, 1.2f, 1.2f);
+                }
+                return false;
+            }
+            SubNet.send(level, KaiohNet.MINI_GENKI, id, next, caster.position(), r, 2, 0);
+            miniBlast(caster, level, next, charge[0]);
+            return true;
+        });
+        return true;
+    }
+
+    // Who the thrown ball locks on: the aimed one, the nearest in front, a mob's own target, or whoever the player fights.
+    private static LivingEntity miniTarget(LivingEntity caster, ServerLevel level) {
+        LivingEntity target = SubCommon.aimed(caster, MINI_RANGE);
+        if (target == null) {
+            double best = Double.MAX_VALUE;
+            for (LivingEntity e : Combat.inCone(caster, MINI_RANGE, 0.93)) {
+                double d = e.distanceToSqr(caster);
+                if (d < best) {
+                    best = d;
+                    target = e;
+                }
+            }
+        }
+        if (target == null && caster instanceof Mob mob && mob.getTarget() != null && mob.getTarget().isAlive()) {
+            target = mob.getTarget();
+        }
+        if (target == null && caster instanceof Player
+                && caster.getData(com.starkinhon.battlegroundsmod.ModAttachments.POWER).foughtId >= 0
+                && level.getEntity(caster.getData(com.starkinhon.battlegroundsmod.ModAttachments.POWER).foughtId) instanceof LivingEntity fought
+                && fought.isAlive() && Combat.isTarget(fought, caster) && fought.distanceTo(caster) <= MINI_RANGE) {
+            target = fought;
+        }
+        return target;
+    }
+
+    // The landing (preview v3): 4 ticks sinking in, pulling the dust (whoever is touched is held there), then the column
+    // of light: what is round it and in the column takes the hit, a real stun, thrown up and out, and a small crater.
+    private static void miniBlast(LivingEntity caster, ServerLevel level, Vec3 at, float charge) {
+        double ground = DbCommon.groundY(level, at);
+        boolean low = at.y - ground < 4;
+        Vec3 c = low ? new Vec3(at.x, ground, at.z) : at;
+        float size = 0.7f + 0.5f * charge;
+        SubNet.send(level, KaiohNet.MINI_GENKI_BOOM, 0, c, new Vec3(low ? ground : at.y - 1, at.y, 0), size, SubCommon.RANDOM.nextInt(1000), 0);
+        SubCommon.sound(level, at, SoundEvents.BEACON_DEACTIVATE, 1.4f, 0.6f);
+        for (LivingEntity e : Combat.inRadius(level, at, 2.5, caster)) {
+            Stun.apply(e, 30);
+        }
+        Tasks.later(4, () -> {
+            double radius = 3.5 + 1.5 * charge;
+            double column = 2.2 * size;
+            double top = c.y + 14 * size;
+            float dmg = 10 + 22 * charge;
+            DbCommon.screen(level, c, 60);
+            SubCommon.sound(level, c, SoundEvents.GENERIC_EXPLODE.value(), 2.6f, 0.7f);
+            SubCommon.sound(level, c, SoundEvents.WARDEN_SONIC_BOOM, 1.8f, 1.1f);
+            SubCommon.sound(level, c, SoundEvents.BEACON_POWER_SELECT, 2f, 0.6f);
+            java.util.Set<LivingEntity> hit = new java.util.HashSet<>(Combat.inRadius(level, at, radius, caster));
+            // The column hits whoever is in it, up to its top (a flier over the blast too).
+            for (LivingEntity e : Combat.inRadius(level, new Vec3(c.x, (c.y + top) / 2, c.z), (top - c.y) / 2 + column, caster)) {
+                Vec3 ec = Combat.center(e);
+                if (Math.hypot(ec.x - c.x, ec.z - c.z) <= column + e.getBbWidth() / 2 && ec.y >= c.y - 1 && ec.y <= top) {
+                    hit.add(e);
+                }
+            }
+            for (LivingEntity e : hit) {
+                double kk = 1 - 0.5 * Math.min(1, Combat.center(e).distanceTo(at) / radius);
+                Combat.hurtMagic(caster, e, (float) (dmg * kk));
+                Stun.apply(e, 30);
+                Combat.pushFrom(e, c, 1.1 + 0.6 * charge, 0.9);
+            }
+            if (low) {
+                JjCommon.crater(level, c, 2.6 + 1.6 * charge, 1.4 + 1.2 * charge, 16);
+            }
+        });
     }
 }

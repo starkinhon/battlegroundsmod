@@ -512,6 +512,7 @@ public class BattlegroundsModClient {
         event.registerEntityRenderer(ModEntities.NPC_KAKASHI.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_kakashi"));
         event.registerEntityRenderer(ModEntities.NPC_MAKI.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_maki"));
         event.registerEntityRenderer(ModEntities.NPC_KAIOH.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_kaioh"));
+        event.registerEntityRenderer(ModEntities.NPC_BUBBLES.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_bubbles", false, 0.68f));
         event.registerEntityRenderer(ModEntities.HOLLOW.get(), context -> new SoulBossRenderer<>(context, "hollow", false));
         event.registerEntityRenderer(ModEntities.ARRANCAR.get(), context -> new SoulBossRenderer<>(context, "arrancar", false));
         event.registerEntityRenderer(ModEntities.MENOS_GRANDE.get(), context -> new SoulBossRenderer<>(context, "menos_grande", false));

@@ -366,6 +366,68 @@ void main() {
         float l = 0.62 + 0.38 * N.y + 0.5 * max(dot(N, normalize(vec3(4., 8., 3.))), 0.);
         fragColor = vec4(Color * l * 0.75, 1.); return;
     }
+    if (kind >= 25 && kind <= 29 || kind >= 36 && kind <= 38) {       // the Mini Genki Dama (mestres/mini-genki.html v3, shader by shader)
+        vec3 RIM = vec3(0.18, 0.47, 1.0), BODY = vec3(0.55, 0.86, 1.0), WHT = vec3(1.);
+        float ux = atan(vDir.y, vDir.x) / 6.2831853 + 0.5;             // round a tube, measured per pixel (no seam)
+        vec3 c = RIM; float a;
+        if (kind == 25) {                                              // the spiral: wide wisps, not threads (Life = how strong)
+            float v = vH, s = fract(ux * 2. + v * 3. - Time * 1.6), wisp = 1. - abs(s - 0.5) * 2.;
+            float n = fbm4(vec3(vDir * 1.1 + vec2(Time * 0.5, 0.), v * 5. - Time * 2.4)) * 0.62;
+            float d = wisp * 0.9 + n * 1.1 - 0.7 - (1. - Life) * 1.2;
+            float fw = clamp(fwidth(d), 1e-4, 0.08);
+            a = smoothstep(0., 1.25 * fw, d) * smoothstep(0., 0.18, v) * (1. - smoothstep(0.93, 1., v)) * Alpha * 0.7;
+            c = mix(c, BODY, smoothstep(0.05, 0.08, d)); c = mix(c, WHT, smoothstep(0.3, 0.34, d + v * 0.25));
+        } else if (kind == 26) {                                       // the floor: pixel waves of light running in (vQ in blocks)
+            vec2 q = floor(vQ * 16.) / 16.; float r = length(q);
+            float n = fbm4(vec3(q * 0.9, Time * 0.6)) * 0.62;
+            float wave = fract(r / 2.4 + Time * 1.3 + n * 0.6);
+            float lit = smoothstep(0.72, 0.78, wave) * (1. - smoothstep(0.92, 1., wave));
+            float cell = fract(sin(dot(floor(vQ), vec2(12.9, 78.2))) * 43758.5);
+            a = lit * (0.35 + 0.65 * cell) * smoothstep(3.6, 2.2, r) * smoothstep(0.2, 1., r) * Life * Alpha * 0.85;
+            c = mix(BODY, WHT, smoothstep(0.82, 0.9, wave));
+        } else if (kind == 27) {                                       // the trail: twisted bands, white at the head
+            float u = 1. - vH, tw = fract(ux * 2. + u * 4. - Time * 6.);
+            float n = fbm4(vec3(vDir * 0.95, u * 8. - Time * 10.)) * 0.62;
+            float d = u * 1.1 + (1. - abs(tw - 0.5) * 2.) * 0.35 + n * 0.5 - 0.55;
+            a = smoothstep(0., 0.05, d) * Alpha * 0.85;
+            c = mix(c, BODY, smoothstep(0.2, 0.24, d)); c = mix(c, WHT, smoothstep(0.5, 0.54, d));
+        } else if (kind == 28) {                                       // a ring on the ground (RingR, W; Smoke 1 = dust, 0 = light)
+            if (Smoke > 0.5 && GlowPass > 0.5) discard;
+            float r = length(vQ), n = fbm4(vec3(vQ * 0.9, Time * 2.)) * 0.62;
+            float d = 1. - abs(r - RingR) / max(W, 0.01) + n * 0.5;
+            a = smoothstep(0., 0.08, d) * Alpha;
+            vec3 dust = mix(vec3(0.62, 0.5, 0.36), vec3(0.86, 0.78, 0.62), smoothstep(0.45, 0.5, d));
+            c = mix(mix(BODY, WHT, smoothstep(0.5, 0.55, d)), dust, Smoke);
+        } else if (kind == 29) {                                       // the column: tears from the top as it rises (Life = age)
+            float n = fbm4(vec3(vDir * 1.27 + vec2(Time * 0.37, 0.), vH * 3. - Time * 4.)) * 0.62;
+            float d = 0.75 - vH * 0.55 + n * 0.7 - Life * 1.1;
+            float fw = clamp(fwidth(d), 1e-4, 0.08);
+            a = smoothstep(0., 1.25 * fw, d) * Alpha * 0.92;
+            c = mix(c, BODY, smoothstep(0.1, 0.13, d)); c = mix(c, WHT, smoothstep(0.32, 0.35, d));
+        } else if (kind == 36) {                                       // the ball: light body, veins of plasma
+            float ndv = facing();
+            float vein = 1. - abs(fbm4(vO * 2.6 + vec3(0., Time * 1.5, Time)) * 0.62);
+            float heat = ndv * 0.9 + pow(vein, 6.) * 0.5;
+            c = mix(c, BODY, smoothstep(0.32, 0.36, heat)); c = mix(c, WHT, smoothstep(0.7, 0.74, heat));
+            a = Alpha * (0.75 + 0.25 * ndv);
+        } else if (kind == 37) {                                       // its halo with rays (view space)
+            vec3 Nv = normalize(vNv); float ang = atan(Nv.y, Nv.x), g = pow(f, 1.6);
+            float rays = pow(abs(sin(ang * 5. + Time * 0.9)) * abs(sin(ang * 3. - Time * 1.3)), 3.);
+            a = (g * 0.45 + rays * g * 0.5) * Alpha * 0.6;
+            c = mix(BODY, WHT, g * 0.6);
+        } else {                                                       // the smoke: three bands of light, torn as it ages (Life)
+            if (GlowPass > 0.5) discard;
+            float n = fbm4(vO * 1.3 + vec3(0., -Time * 0.7, Time * 0.2)) * 0.62;
+            float d = 0.3 + n * 1.5 - Life;
+            float fw = clamp(fwidth(d), 1e-4, 0.08);
+            a = smoothstep(0., 1.25 * fw, d) * Alpha * 0.8;
+            float l = dot(N, normalize(vec3(-0.45, 0.8, -0.35)));
+            c = vec3(0.52, 0.46, 0.4); c = mix(c, vec3(0.72, 0.66, 0.56), step(0., l)); c = mix(c, vec3(0.9, 0.86, 0.76), step(0.55, l));
+        }
+        if (a < 0.01) discard;
+        emit(c * a, a);
+        return;
+    }
     if (kind == 13 || kind == 14) {                                    // Sasuke's Katon (RingR = the ground's height, camera-relative)
         if (-vV.y < RingR) discard;
         float fz = kind == 13 ? facing() : f, edge = 1. - fz;

@@ -247,7 +247,7 @@ public final class MasterTraining {
 
     // ----------------------------------------------------------------
 
-    private static void title(ServerPlayer player, String title, String sub) {
+    static void title(ServerPlayer player, String title, String sub) {
         player.connection.send(new ClientboundSetTitlesAnimationPacket(6, 50, 14));
         player.connection.send(new ClientboundSetTitleTextPacket(Component.translatable(title).withStyle(s -> s.withColor(0x6FC3FF).withBold(true))));
         player.connection.send(new ClientboundSetSubtitleTextPacket(Component.translatable(sub)));

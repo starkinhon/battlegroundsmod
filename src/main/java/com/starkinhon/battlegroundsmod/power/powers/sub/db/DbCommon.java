@@ -220,11 +220,12 @@ public final class DbCommon {
 
     // ---------- the base fighting under a buff ----------
 
-    // Damage of the base punches: Kaioken +50%, Max Power +40%.
+    // Damage of the base punches: Kaioken +50% (its levels up to +90%), Max Power +40%.
     public static float meleeMultiplier(LivingEntity attacker) {
         float k = 1;
         if (SubCommon.hasState(attacker, KAIOKEN)) {
-            k *= 1.5f;
+            // B's levels (Senhor Kaioh): x3 1.6, x10 1.75, x20 1.9
+            k *= new float[] {1.5f, 1.6f, 1.75f, 1.9f}[Goku.kaiokenLevel(attacker)];
         }
         if (SubCommon.hasState(attacker, MAX_POWER)) {
             k *= 1.4f;
@@ -232,9 +233,9 @@ public final class DbCommon {
         return k;
     }
 
-    // How much faster the punches come (Kaioken 1.5x).
+    // How much faster the punches come (Kaioken 1.5x, its levels up to 1.8x).
     public static float punchSpeed(LivingEntity attacker) {
-        return SubCommon.hasState(attacker, KAIOKEN) ? 1.5f : 1;
+        return SubCommon.hasState(attacker, KAIOKEN) ? 1.5f + 0.1f * Goku.kaiokenLevel(attacker) : 1;
     }
 
     // Every hit: Suiken lets most punches slip past (and slaps back), a frontal hit wakes whoever the Taiyoken blinded.

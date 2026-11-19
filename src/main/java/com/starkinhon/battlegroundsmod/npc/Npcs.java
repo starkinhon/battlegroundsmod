@@ -93,6 +93,8 @@ public final class Npcs {
             case "boo" -> com.starkinhon.battlegroundsmod.universe.DbActivities.boo(player, npc);
             case "jiraiya" -> com.starkinhon.battlegroundsmod.universe.MasterTraining.jiraiya(player, npc, line -> say(player, npc, line));
             case "kakashi" -> com.starkinhon.battlegroundsmod.universe.MasterTraining.kakashi(player, npc, line -> say(player, npc, line));
+            case "kaioh" -> com.starkinhon.battlegroundsmod.universe.KaiohTraining.talk(player, npc, line -> say(player, npc, line));
+            case "bubbles" -> com.starkinhon.battlegroundsmod.universe.KaiohTraining.touch(player, npc);
             case "shoko" -> shoko(player, npc);
             case "yoruichi" -> teach(player, npc, "yoruichi", com.starkinhon.battlegroundsmod.universe.BleachWorld.SHUNPO);
             case "urahara" -> daily(player, npc, "souls_urahara_dia", new ItemStack(ModItems.SOUL_CANDY.get()), "urahara", 4);

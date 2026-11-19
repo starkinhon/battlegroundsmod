@@ -1,5 +1,5 @@
 # Skins (64x64, player layout) of the master NPCs added on 2026-11-19: Kakashi, Maki, Senhor Kaioh.
-# python3 tools/npcs/skins.py <out dir>   (writes npc_kakashi.png, npc_maki.png, npc_kaioh.png)
+# python3 tools/npcs/skins.py <out dir>   (writes npc_kakashi.png, npc_maki.png, npc_kaioh.png, npc_bubbles.png)
 import sys, random
 from PIL import Image
 
@@ -109,9 +109,29 @@ def kaioh():
         s.box(*leg[:2], 4, 12, 4, dark); s.rect(leg[0], leg[1] + 4 + 10, 16, 2, '#6A4A2A', 3)
     return s.im
 
+def bubbles():
+    # Senhor Kaioh's monkey: brown fur, a light tan face and belly, round black eyes, big ears on the hat layer
+    s = Skin(41); fur = '#7A5232'; tan = '#E2B98A'; dark = '#4E321C'
+    s.box(*HEAD[:2], 8, 8, 8, fur, 10)
+    hx, hy = s.face(*HEAD, 'front')
+    s.rect(hx + 1, hy + 2, 6, 6, tan, 5); s.rect(hx + 2, hy + 1, 4, 1, tan, 5)
+    s.rect(hx + 2, hy + 3, 1, 2, '#111111', 0); s.rect(hx + 5, hy + 3, 1, 2, '#111111', 0)
+    s.px(hx + 2, hy + 3, '#F0F0F0', 0); s.px(hx + 5, hy + 3, '#F0F0F0', 0)
+    s.px(hx + 3, hy + 5, dark, 0); s.px(hx + 4, hy + 5, dark, 0)          # nostrils
+    s.rect(hx + 2, hy + 6, 4, 1, '#B07A55', 3)                             # mouth
+    for side in ('left', 'right'):                                         # ears on the hat layer
+        x0, y0 = s.face(*HAT, side); s.rect(x0 + 2, y0 + 2, 3, 3, tan, 5); s.px(x0 + 3, y0 + 3, '#C08F66', 2)
+    s.box(*BODY[:2], 8, 12, 4, fur, 10)
+    fx, fy = s.face(*BODY, 'front'); s.rect(fx + 2, fy + 2, 4, 8, tan, 5)
+    for arm in (RARM, LARM):
+        s.box(*arm[:2], 4, 12, 4, fur, 10); s.rect(arm[0], arm[1] + 4 + 10, 16, 2, tan, 5)
+    for leg in (RLEG, LLEG):
+        s.box(*leg[:2], 4, 12, 4, fur, 10); s.rect(leg[0], leg[1] + 4 + 10, 16, 2, tan, 5)
+    return s.im
+
 if __name__ == '__main__':
     out = sys.argv[1] if len(sys.argv) > 1 else '.'
-    for name, f in (('npc_kakashi', kakashi), ('npc_maki', maki), ('npc_kaioh', kaioh)):
+    for name, f in (('npc_kakashi', kakashi), ('npc_maki', maki), ('npc_kaioh', kaioh), ('npc_bubbles', bubbles)):
         f().save(f'{out}/{name}.png')
 
 # The training balloon's icon (16x16): a water balloon with its knot, light from the top left.

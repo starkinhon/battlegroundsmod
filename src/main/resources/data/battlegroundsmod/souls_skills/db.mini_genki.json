@@ -1,0 +1,37 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "db.mini_genki",
+  "nome": "Mini Genki Dama na palma",
+  "tempo": {
+    "atrasoTicks": 3,
+    "duracaoTicks": 52
+  },
+  "animacao": {
+    "transicaoTicks": 4,
+    "preparo": {
+      "cabeca": 6,
+      "tronco": 3,
+      "bracoDir": {
+        "frente": 62,
+        "abrir": -8
+      },
+      "bracoEsq": {
+        "frente": 34,
+        "abrir": 14
+      }
+    },
+    "sopro": {
+      "cabeca": 10,
+      "tronco": 6,
+      "bracoDir": {
+        "frente": 78,
+        "abrir": -12
+      },
+      "bracoEsq": {
+        "frente": 46,
+        "abrir": 22
+      }
+    },
+    "retornoTicks": 6
+  }
+}
