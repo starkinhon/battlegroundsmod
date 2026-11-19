@@ -196,7 +196,7 @@ public final class KyotoAirFx {
     }
 
     private static List<Crow> crows;
-    private static double nextCrows = 4, crowLife;
+    private static double nextCrows = 30, crowLife;
     private static boolean crowCall;
 
     private static final class Shishi {
@@ -285,7 +285,7 @@ public final class KyotoAirFx {
         if (!level.hasChunk(ix >> 4, iz >> 4)) {
             return -999;
         }
-        int h = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, ix, iz) - 1;
+        int h = ClientHeights.noLeaves(level, ix, iz) - 1;
         return h <= level.getMinBuildHeight() ? -999 : h;
     }
 
@@ -433,7 +433,7 @@ public final class KyotoAirFx {
             if (!level.hasChunk(x >> 4, z >> 4)) {
                 continue;
             }
-            int g = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z) - 1;
+            int g = ClientHeights.noLeaves(level, x, z) - 1;
             int surf = level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z) - 1;
             if (g <= level.getMinBuildHeight()) {
                 continue;
@@ -1940,7 +1940,8 @@ public final class KyotoAirFx {
             double x0 = F.x + Math.cos(a) * R + (rnd() - 0.5) * 20, z0 = F.z + Math.sin(a) * R + (rnd() - 0.5) * 20;
             int g = top(level, F.x, F.z);
             double y0 = (g < -900 ? F.y : g) + 22 + rnd() * 14;
-            int n = 3 + (int) (rnd() * 4);
+            // (Stark's test, 2026-11-19: flocks of up to 6 every half minute were too many; a pair or three now and then)
+            int n = 2 + (int) (rnd() * 2);
             crows = new ArrayList<>();
             for (int i = 0; i < n; i++) {
                 Crow c = new Crow();
@@ -1953,7 +1954,7 @@ public final class KyotoAirFx {
                 crows.add(c);
             }
             crowLife = 2 * R / 7 + 8;
-            nextCrows = 25 + rnd() * 25;
+            nextCrows = 60 + rnd() * 60;
             crowCall = true;
         }
         if (crows == null) {

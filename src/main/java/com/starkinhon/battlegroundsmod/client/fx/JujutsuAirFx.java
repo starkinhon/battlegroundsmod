@@ -28,11 +28,14 @@ import net.neoforged.neoforge.client.event.ViewportEvent;
 // "pétalas de sakura... poluição de luz... corvos... pode usar a criatividade, pra deixar bem vivo"), in TemploFx's
 // way: no textures, every mote its own size, tone, spin and path, easing in when the player walks in (BiomeAura) and out
 // when he leaves.
-// - Floresta Negra: dead leaves, dark spores, purple wisps of cursed energy rising; a short dark green fog.
-// - Aldeia Amaldiçoada: gnats in clouds by day, fireflies blinking by night, a white humid haze; crows overhead.
-// - Mar de Dagon: sea spray thrown up and falling back.
-// - Floresta de Hanami: petals of the giant flowers' five colors, golden pollen, fireflies at night.
-// - Terras do Jogo: embers rising, dark ash falling like snow; a red fog that burns redder at night; vultures.
+// - Floresta Negra: not here any more, its own full ambience is FlorestaAirFx (mist, drips, light shafts, fungi, eyes).
+// - Aldeia Amaldiçoada: only the crows overhead stay here; the fireflies, lanterns, gas, will-o'-wisps, fog and grade are
+//   AldeiaAirFx.
+// - Mar de Dagon: not here any more, its own full ambience is DagonAirFx (surf, caustics, glints, the whirlpool).
+// - Floresta de Hanami: only the golden pollen and the fireflies at night stay here (Stark: "eram bem bonitas"); the
+//   petals, sun flecks, pollen clouds, the Heart's beat, its fog and grade are HanamiAirFx.
+// - Terras do Jogo: only the vultures stay here; the volcano's column, bombs, lava, fumaroles, gas, fog and grade are
+//   JogoAirFx.
 // - Outono de Kyoto: not here any more, its own full ambience is KyotoAirFx (mirror pond, koi, leaves, light-up).
 // - Colônia do Jogo do Abate: not here any more, it has its own full ambience in ColoniaAirFx.
 // - Shibuya: not here any more either, its own ambience is ShibuyaAirFx (neon, steam, smog, metro).
@@ -86,27 +89,16 @@ public final class JujutsuAirFx {
     }
 
     private static final State[] STATES = {
-        new State(new Mood("floresta_negra", ModWorldgen.FLORESTA_NEGRA, List.of(
-                new Air(Kind.LEAF, 150, cs("#4a3a2a", "#3a2e22", "#5a4630", "#2e2a1c"), 0.07, 0.12),
-                new Air(Kind.MOTE, 220, cs("#2a3a2a", "#1e2a1e", "#3a4430"), 0.025, 0.05),
-                new Air(Kind.WISP, 40, cs("#9b4dff", "#7a3cc8", "#b46bff"), 0.08, 0.16)),
-                c("#1e2a1e"), 0.35f, 0.5f, 0.55f, 0, false)),
-        new State(new Mood("aldeia_amaldicoada", ModWorldgen.ALDEIA_AMALDICOADA, List.of(
-                new Air(Kind.GNAT, 140, cs("#1a1a14", "#2a2a20"), 0.02, 0.03),
-                new Air(Kind.FIREFLY, 90, cs("#d8ff6a", "#f0ff9a", "#b8ff4a"), 0.05, 0.08)),
-                c("#d8dcd8"), 0.25f, 0.1f, 0.7f, 6, false)),
-        new State(new Mood("mar_de_dagon", ModWorldgen.MAR_DE_DAGON, List.of(
-                new Air(Kind.SPRAY, 70, cs("#e8f4f8", "#ffffff", "#c8e8f0"), 0.03, 0.05)),
+        new State(new Mood("floresta_negra", ModWorldgen.FLORESTA_NEGRA, List.of(),
                 null, 0, 0, 1, 0, false)),
+        new State(new Mood("aldeia_amaldicoada", ModWorldgen.ALDEIA_AMALDICOADA, List.of(),
+                null, 0, 0, 1, 6, false)),
         new State(new Mood("floresta_de_hanami", ModWorldgen.FLORESTA_DE_HANAMI, List.of(
-                new Air(Kind.LEAF, 220, cs("#f6f2ec", "#f28ab4", "#f4cc40", "#e2483e", "#fff0f6"), 0.06, 0.11),
                 new Air(Kind.GLOW_MOTE, 160, cs("#ffd040", "#fff4b0", "#ffe070"), 0.025, 0.05),
                 new Air(Kind.FIREFLY, 60, cs("#c8ff8a", "#e8ffb0"), 0.05, 0.08)),
-                c("#cfe2c6"), 0.15f, 0.1f, 0.8f, 0, false)),
-        new State(new Mood("terras_do_jogo", ModWorldgen.TERRAS_DO_JOGO, List.of(
-                new Air(Kind.EMBER, 220, cs("#ff8a2a", "#ffb040", "#ff5a14", "#ffd070"), 0.03, 0.06),
-                new Air(Kind.ASH, 260, cs("#5a5452", "#7a7270", "#3e3a38"), 0.04, 0.08)),
-                c("#8a3a1a"), 0.3f, 0.55f, 0.6f, 5, true)),
+                null, 0, 0, 1, 0, false)),
+        new State(new Mood("terras_do_jogo", ModWorldgen.TERRAS_DO_JOGO, List.of(),
+                null, 0, 0, 1, 5, true)),
     };
 
     private JujutsuAirFx() {

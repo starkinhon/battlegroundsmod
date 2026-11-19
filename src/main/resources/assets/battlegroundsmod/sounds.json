@@ -200,5 +200,191 @@
     "sounds": [
       "battlegroundsmod:kyoto_shishi"
     ]
+  },
+  "templo_vento": {
+    "sounds": [
+      {
+        "name": "battlegroundsmod:templo_vento",
+        "stream": true
+      }
+    ]
+  },
+  "templo_sino": {
+    "subtitle": "subtitles.battlegroundsmod.templo_sino",
+    "sounds": [
+      "battlegroundsmod:templo_sino"
+    ]
+  },
+  "templo_asas": {
+    "subtitle": "subtitles.battlegroundsmod.templo_asas",
+    "sounds": [
+      "battlegroundsmod:templo_asas"
+    ]
+  },
+  "templo_tobi": {
+    "subtitle": "subtitles.battlegroundsmod.templo_tobi",
+    "sounds": [
+      "battlegroundsmod:templo_tobi"
+    ]
+  },
+  "templo_uguisu": {
+    "sounds": [
+      "battlegroundsmod:templo_uguisu"
+    ]
+  },
+  "templo_coruja": {
+    "sounds": [
+      "battlegroundsmod:templo_coruja"
+    ]
+  },
+  "hanami_folhas": {
+    "sounds": [
+      {
+        "name": "battlegroundsmod:hanami_folhas",
+        "stream": true
+      }
+    ]
+  },
+  "hanami_passaro": {
+    "sounds": [
+      "battlegroundsmod:hanami_passaro1",
+      "battlegroundsmod:hanami_passaro2",
+      "battlegroundsmod:hanami_passaro3"
+    ]
+  },
+  "hanami_grilo": {
+    "sounds": [
+      {
+        "name": "battlegroundsmod:hanami_grilo",
+        "stream": true
+      }
+    ]
+  },
+  "hanami_coracao": {
+    "subtitle": "subtitles.battlegroundsmod.hanami_coracao",
+    "sounds": [
+      "battlegroundsmod:hanami_coracao"
+    ]
+  },
+  "aldeia_arroz": {
+    "sounds": [
+      {
+        "name": "battlegroundsmod:aldeia_arroz",
+        "stream": true
+      }
+    ]
+  },
+  "aldeia_sapo": {
+    "sounds": [
+      "battlegroundsmod:aldeia_sapo1",
+      "battlegroundsmod:aldeia_sapo2",
+      "battlegroundsmod:aldeia_sapo3"
+    ]
+  },
+  "aldeia_higurashi": {
+    "sounds": [
+      "battlegroundsmod:aldeia_higurashi"
+    ]
+  },
+  "aldeia_bolha": {
+    "sounds": [
+      "battlegroundsmod:aldeia_bolha"
+    ]
+  },
+  "dagon_vento": {
+    "sounds": [
+      {
+        "name": "battlegroundsmod:dagon_vento",
+        "stream": true
+      }
+    ]
+  },
+  "dagon_abismo": {
+    "sounds": [
+      {
+        "name": "battlegroundsmod:dagon_abismo",
+        "stream": true
+      }
+    ]
+  },
+  "dagon_onda": {
+    "subtitle": "subtitles.battlegroundsmod.dagon_onda",
+    "sounds": [
+      "battlegroundsmod:dagon_onda"
+    ]
+  },
+  "jogo_ronco": {
+    "sounds": [
+      {
+        "name": "battlegroundsmod:jogo_ronco",
+        "stream": true
+      }
+    ]
+  },
+  "jogo_chiado": {
+    "sounds": [
+      {
+        "name": "battlegroundsmod:jogo_chiado",
+        "stream": true
+      }
+    ]
+  },
+  "jogo_borbulha": {
+    "sounds": [
+      {
+        "name": "battlegroundsmod:jogo_borbulha",
+        "stream": true
+      }
+    ]
+  },
+  "jogo_plop": {
+    "sounds": [
+      "battlegroundsmod:jogo_plop"
+    ]
+  },
+  "jogo_baque": {
+    "sounds": [
+      "battlegroundsmod:jogo_baque"
+    ]
+  },
+  "jogo_explosao": {
+    "subtitle": "subtitles.battlegroundsmod.jogo_explosao",
+    "sounds": [
+      "battlegroundsmod:jogo_explosao"
+    ]
+  },
+  "jogo_trovao": {
+    "subtitle": "subtitles.battlegroundsmod.jogo_trovao",
+    "sounds": [
+      "battlegroundsmod:jogo_trovao"
+    ]
+  },
+  "floresta_drone": {
+    "sounds": [
+      {
+        "name": "battlegroundsmod:floresta_drone",
+        "stream": true
+      }
+    ]
+  },
+  "floresta_rangido": {
+    "sounds": [
+      "battlegroundsmod:floresta_rangido1",
+      "battlegroundsmod:floresta_rangido2",
+      "battlegroundsmod:floresta_rangido3"
+    ]
+  },
+  "floresta_gota": {
+    "sounds": [
+      "battlegroundsmod:floresta_gota1",
+      "battlegroundsmod:floresta_gota2",
+      "battlegroundsmod:floresta_gota3"
+    ]
+  },
+  "floresta_sopro": {
+    "subtitle": "subtitles.battlegroundsmod.floresta_sopro",
+    "sounds": [
+      "battlegroundsmod:floresta_sopro"
+    ]
   }
 }
