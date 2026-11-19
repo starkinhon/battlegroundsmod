@@ -358,5 +358,33 @@
     "sounds": [
       "battlegroundsmod:jogo_trovao"
     ]
+  },
+  "floresta_drone": {
+    "sounds": [
+      {
+        "name": "battlegroundsmod:floresta_drone",
+        "stream": true
+      }
+    ]
+  },
+  "floresta_rangido": {
+    "sounds": [
+      "battlegroundsmod:floresta_rangido1",
+      "battlegroundsmod:floresta_rangido2",
+      "battlegroundsmod:floresta_rangido3"
+    ]
+  },
+  "floresta_gota": {
+    "sounds": [
+      "battlegroundsmod:floresta_gota1",
+      "battlegroundsmod:floresta_gota2",
+      "battlegroundsmod:floresta_gota3"
+    ]
+  },
+  "floresta_sopro": {
+    "subtitle": "subtitles.battlegroundsmod.floresta_sopro",
+    "sounds": [
+      "battlegroundsmod:floresta_sopro"
+    ]
   }
 }
