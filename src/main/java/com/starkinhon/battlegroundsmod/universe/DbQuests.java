@@ -91,9 +91,10 @@ public final class DbQuests {
 
     // Born in the old Dragon Ball dimension, or in the normal world (where Dragon Ball is the first universe met), and
     // the chain started by talking to Bulma. Saves already past the first mission count as started.
+    // The chain was replaced by the Caminho (universe/GuidedPath, Stark 2026-11-19): it no longer moves; its steps stay only
+    // for old saves (done/total) and the HUD now shows the path's step.
     private static boolean on(ServerPlayer player) {
-        String home = player.getData(com.starkinhon.battlegroundsmod.ModAttachments.UNIVERSE);
-        return Progression.on(player) && ("dragonball".equals(home) || Universes.WORLD.equals(home)) && started(player);
+        return false;
     }
 
     private static boolean started(ServerPlayer player) {
@@ -209,40 +210,10 @@ public final class DbQuests {
         if (!(event.getEntity() instanceof ServerPlayer player) || player.tickCount % 20 != 0) {
             return;
         }
-        if (!on(player)) {
+        if (!Progression.on(player)) {
             return;
         }
-        migrate(player);
-        boolean here = shown(player);
-        Step step = current(player);
-        if (step != null) {
-            switch (step.id()) {
-                case "esfera" -> {
-                    if (DragonBallWorld.hasAnyBall(player)) {
-                        advance(player, "esfera", 1);
-                    }
-                }
-                case "livro" -> set(player, "livro", ChallengeArenas.wins(player).size());
-                case "gohan" -> {
-                    if (Flight.knows(player)) {
-                        advance(player, "gohan", 1);
-                    }
-                }
-                case "sala" -> {
-                    if (player.level().dimension().equals(TimeChamber.LEVEL)) {
-                        advance(player, "sala", 1);
-                    }
-                }
-                case "freeza" -> {
-                    if (ChallengeArenas.wins(player).contains("freeza")) {
-                        advance(player, "freeza", 1);
-                    }
-                }
-                default -> {
-                }
-            }
-        }
-        if (here) {
+        if (shown(player)) {
             sync(player);
             SHOWN.add(player.getUUID());
         } else if (SHOWN.remove(player.getUUID())) {
@@ -306,14 +277,13 @@ public final class DbQuests {
             send(player, over.id(), over.count(), over.goal(), over.x(), over.z(), over.way());
             return;
         }
-        Step step = current(player);
-        if (step == null || !on(player)) {
+        // the Caminho's step (universe/GuidedPath)
+        GuidedPath.Hud path = GuidedPath.hud(player);
+        if (path == null) {
             send(player, "", 0, 0, 0, 0, false);
             return;
         }
-        BlockPos to = shown(player) ? way(player, step) : null;
-        send(player, step.id(), player.getPersistentData().getInt(COUNT), step.goal(), to == null ? 0 : to.getX(),
-                to == null ? 0 : to.getZ(), to != null);
+        send(player, path.id(), path.count(), path.goal(), path.x(), path.z(), path.way());
     }
 
     private static void send(ServerPlayer player, String id, int count, int goal, int x, int z, boolean way) {

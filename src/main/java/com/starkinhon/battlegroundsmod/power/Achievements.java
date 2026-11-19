@@ -181,7 +181,7 @@ public final class Achievements {
                 award(player, "alvos/multiverso", universe);
             }
         }
-        if (DbQuests.done(player) >= DbQuests.total()) {
+        if (DbQuests.done(player) >= DbQuests.total() || com.starkinhon.battlegroundsmod.universe.GuidedPath.finished(player, "dragonball")) {
             grant(player, "exploracao/missoes_bulma");
         }
         if (TimeChamber.yearDone(player)) {

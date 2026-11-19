@@ -780,6 +780,34 @@ public final class ModPayloads {
         }
     }
 
+    // Server -> client: the Caminho (universe/GuidedPath): the path the corner shows ("" = none yet), each path's step
+    // (Dragon Ball, Naruto, Jujutsu, then the last one: 0 closed, 1 open, 2 done) and who the corner sends you to.
+    public record PathSync(String active, List<Integer> steps, String npc) implements CustomPacketPayload {
+        public static final Type<PathSync> TYPE = payloadType("path_sync");
+        public static final StreamCodec<ByteBuf, PathSync> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.STRING_UTF8, PathSync::active,
+                ByteBufCodecs.VAR_INT.apply(ByteBufCodecs.list()), PathSync::steps,
+                ByteBufCodecs.STRING_UTF8, PathSync::npc,
+                PathSync::new);
+
+        @Override
+        public Type<PathSync> type() {
+            return TYPE;
+        }
+    }
+
+    // Client -> server: the path the corner shows, picked in the Diário (aba Caminho).
+    public record PathPick(String uni) implements CustomPacketPayload {
+        public static final Type<PathPick> TYPE = payloadType("path_pick");
+        public static final StreamCodec<ByteBuf, PathPick> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.STRING_UTF8, PathPick::uni, PathPick::new);
+
+        @Override
+        public Type<PathPick> type() {
+            return TYPE;
+        }
+    }
+
     // Server -> client: the Dragon Ball mission on the HUD (universe/DbQuests): its id, progress, the place it points to.
     public record QuestSync(String id, int count, int goal, int x, int z, int flags) implements CustomPacketPayload {
         public static final Type<QuestSync> TYPE = payloadType("quest_sync");
@@ -2269,6 +2297,13 @@ public final class ModPayloads {
         registrar.playToServer(FlightBoost.TYPE, FlightBoost.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
             if (context.player() instanceof net.minecraft.server.level.ServerPlayer sp) {
                 com.starkinhon.battlegroundsmod.universe.Flight.boost(sp, payload.on());
+            }
+        }));
+        registrar.playToClient(PathSync.TYPE, PathSync.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.path(payload.active(), payload.steps(), payload.npc())));
+        registrar.playToServer(PathPick.TYPE, PathPick.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
+            if (context.player() instanceof ServerPlayer player) {
+                com.starkinhon.battlegroundsmod.universe.GuidedPath.pick(player, payload.uni());
             }
         }));
         registrar.playToClient(QuestSync.TYPE, QuestSync.STREAM_CODEC, (payload, context) -> context.enqueueWork(
