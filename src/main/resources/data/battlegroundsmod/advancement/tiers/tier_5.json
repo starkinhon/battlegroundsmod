@@ -1,14 +1,14 @@
 {
-  "parent": "battlegroundsmod:tecnicas/tier_6",
+  "parent": "battlegroundsmod:tiers/tier_6",
   "display": {
     "icon": {
       "id": "minecraft:diamond"
     },
     "title": {
-      "translate": "advancements.battlegroundsmod.tecnicas.tier_5.title"
+      "translate": "advancements.battlegroundsmod.tiers.tier_5.title"
     },
     "description": {
-      "translate": "advancements.battlegroundsmod.tecnicas.tier_5.description"
+      "translate": "advancements.battlegroundsmod.tiers.tier_5.description"
     },
     "frame": "challenge",
     "show_toast": true,

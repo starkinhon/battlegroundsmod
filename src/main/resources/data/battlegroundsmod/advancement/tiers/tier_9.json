@@ -1,16 +1,16 @@
 {
-  "parent": "battlegroundsmod:tecnicas/tier_8",
+  "parent": "battlegroundsmod:tiers/root",
   "display": {
     "icon": {
-      "id": "minecraft:gold_ingot"
+      "id": "minecraft:iron_ingot"
     },
     "title": {
-      "translate": "advancements.battlegroundsmod.tecnicas.tier_7.title"
+      "translate": "advancements.battlegroundsmod.tiers.tier_9.title"
     },
     "description": {
-      "translate": "advancements.battlegroundsmod.tecnicas.tier_7.description"
+      "translate": "advancements.battlegroundsmod.tiers.tier_9.description"
     },
-    "frame": "goal",
+    "frame": "task",
     "show_toast": true,
     "announce_to_chat": false,
     "hidden": false

@@ -1,14 +1,14 @@
 {
-  "parent": "battlegroundsmod:tecnicas/tier_1",
+  "parent": "battlegroundsmod:tiers/tier_1",
   "display": {
     "icon": {
       "id": "minecraft:dragon_egg"
     },
     "title": {
-      "translate": "advancements.battlegroundsmod.tecnicas.tier_0.title"
+      "translate": "advancements.battlegroundsmod.tiers.tier_0.title"
     },
     "description": {
-      "translate": "advancements.battlegroundsmod.tecnicas.tier_0.description"
+      "translate": "advancements.battlegroundsmod.tiers.tier_0.description"
     },
     "frame": "challenge",
     "show_toast": true,
