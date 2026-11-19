@@ -616,10 +616,12 @@ public final class DragonWind {
     // The sand haze of the desert: the fog comes closer (not thick: the far hills still show) and takes the dust's color,
     // darker at night with the sky.
     public static void onFog(net.neoforged.neoforge.client.event.ViewportEvent.RenderFog event) {
-        float d = (float) Mth.lerp(event.getPartialTick(), lastDesert, desert) * strength;
+        // (strength eased between ticks like the rest: taken as it was at the tick, the haze moved in steps)
+        float st = Mth.lerp((float) event.getPartialTick(), lastStrength, strength);
+        float d = (float) Mth.lerp(event.getPartialTick(), lastDesert, desert) * st;
         // a light cold haze over the Norte Gelado all the time, the blizzard on top of it
         float white = Math.max(whiteout((float) event.getPartialTick()),
-                Mth.lerp((float) event.getPartialTick(), lastCold, cold) * strength * 0.18f);
+                Mth.lerp((float) event.getPartialTick(), lastCold, cold) * st * 0.18f);
         // Namek's light green haze, a bit closer than the cold's
         white = Math.max(white, Mth.lerp((float) event.getPartialTick(), lastNamek, namek) * 0.4f);
         if ((d <= 0.001f && white <= 0.001f) || event.getMode() != net.minecraft.client.renderer.FogRenderer.FogMode.FOG_TERRAIN) {
@@ -640,13 +642,13 @@ public final class DragonWind {
         if (mc.level == null) {
             return 0;
         }
-        return Mth.lerp(partial, lastCold, cold) * strength * storm(mc.level.getGameTime() + partial);
+        return Mth.lerp(partial, lastCold, cold) * Mth.lerp(partial, lastStrength, strength) * storm(mc.level.getGameTime() + partial);
     }
 
     public static void onFogColor(net.neoforged.neoforge.client.event.ViewportEvent.ComputeFogColor event) {
         float white = whiteout((float) event.getPartialTick());
         // the Norte Gelado's grey: the icy wind dulls the light even when calm
-        float grey = Mth.lerp((float) event.getPartialTick(), lastCold, cold) * strength * 0.35f;
+        float grey = Mth.lerp((float) event.getPartialTick(), lastCold, cold) * Mth.lerp((float) event.getPartialTick(), lastStrength, strength) * 0.35f;
         if (grey > 0.001f) {
             float lum = Mth.clamp((event.getRed() + event.getGreen() + event.getBlue()) / 3f / 0.7f, 0.08f, 1.2f);
             event.setRed(Mth.lerp(grey, event.getRed(), 0.7f * lum));
@@ -668,7 +670,7 @@ public final class DragonWind {
             event.setGreen(Mth.lerp(k, event.getGreen(), 0.9f * lum));
             event.setBlue(Mth.lerp(k, event.getBlue(), 0.97f * lum));
         }
-        float d = (float) Mth.lerp(event.getPartialTick(), lastDesert, desert) * strength;
+        float d = (float) Mth.lerp(event.getPartialTick(), lastDesert, desert) * Mth.lerp((float) event.getPartialTick(), lastStrength, strength);
         if (d <= 0.001f) {
             return;
         }

@@ -35,7 +35,15 @@ public final class BiomeAura {
             IN.clear();
         }
         boolean was = IN.contains(id);
-        boolean now = near(mc.level, mc.player.blockPosition(), is, was ? EXIT : ENTER);
+        BlockPos at = mc.player.blockPosition();
+        // Flying fast the player can get ahead of the chunks the server has sent. The client reads an unloaded chunk as
+        // plains, so the ambience started fading out there and came back once the chunk arrived: a stop and a jump back
+        // in the middle of the blend (Stark 2026-11-19, "para do nada e volta, como se tivesse lagado"). Over a chunk
+        // not here yet the ambience keeps going as it was.
+        if (!loaded(mc.level, at)) {
+            return was;
+        }
+        boolean now = near(mc.level, at, is, was ? EXIT : ENTER);
         if (now) {
             IN.add(id);
         } else {
@@ -53,12 +61,18 @@ public final class BiomeAura {
             int r = radius * ring / 2;
             for (int i = 0; i < 8; i++) {
                 double a = i * Math.PI / 4;
-                if (is.test(level.getBiome(pos.offset((int) Math.round(Math.cos(a) * r), 0, (int) Math.round(Math.sin(a) * r))))) {
+                BlockPos at = pos.offset((int) Math.round(Math.cos(a) * r), 0, (int) Math.round(Math.sin(a) * r));
+                // (a spot in a chunk not loaded yet says nothing: it would read as plains)
+                if (loaded(level, at) && is.test(level.getBiome(at))) {
                     return true;
                 }
             }
         }
         return false;
+    }
+
+    private static boolean loaded(Level level, BlockPos pos) {
+        return level.hasChunk(pos.getX() >> 4, pos.getZ() >> 4);
     }
 
     // The flat colored wash the biomes lay over the whole screen (the "grade": orange in the Dragon Ball lands, green on
