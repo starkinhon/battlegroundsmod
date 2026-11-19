@@ -263,6 +263,8 @@ public final class HanamiGen {
     public static void heartClearing(Vox w, int cx, int cz, IntBinaryOperator ground, int seed) {
         final int R = HEART_R;
         int gy = ground.applyAsInt(cx, cz);
+        // the ramp at the edge widens with the hills around (12 on flat land, up to 20), so it is a slope, not steps
+        int ramp = JjkGen.rampWidth(ground, cx, cz, R, 1, gy, 12, 20);
         for (int x = cx - R - 4; x <= cx + R + 4; x++) {
             for (int z = cz - R - 4; z <= cz + R + 4; z++) {
                 double d = hypot(x - cx, z - cz) + (valueNoise(x, z, seed + 1, 9) - 0.5) * 6;
@@ -270,7 +272,7 @@ public final class HanamiGen {
                     continue;
                 }
                 int g = ground.applyAsInt(x, z);
-                double t = Math.min(1, Math.max(0, (R - d) / 12));
+                double t = Math.min(1, Math.max(0, (R - d) / ramp));
                 int y = round(g + (gy - g) * t);
                 for (int yy = Math.min(g, y) - 3; yy <= Math.max(g, y) + 30; yy++) {
                     w.force(x, yy, z, yy < y ? DIRT : AIR);
