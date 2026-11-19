@@ -8,7 +8,12 @@
       "translate": "advancements.battlegroundsmod.tecnicas.tecnica_reversao.title"
     },
     "description": {
-      "translate": "advancements.battlegroundsmod.tecnicas.tecnica_reversao.description"
+      "translate": "advancements.battlegroundsmod.tecnicas.tecnica_reversao.description",
+      "with": [
+        {
+          "keybind": "key.battlegroundsmod.reverse"
+        }
+      ]
     },
     "frame": "goal",
     "show_toast": true,

@@ -77,6 +77,8 @@ public class PowerData {
     public boolean attackHeld = false;
     // Players: a skill key is held down (a charged skill like the giant Katon is thrown when it comes up).
     public boolean abilityHeld = false;
+    // Players: the Reversão key is held down (universe/ReverseCurse heals while it is). Only the client changes it.
+    public boolean reverseHeld = false;
     // Players: attack stamina (combat/Stamina). -1 = not set yet (starts full). Not saved: a relog starts full.
     public float stamina = -1;
     // Players: exhausted (stamina ran out) until this game time: no skills, open to stun-only skills.

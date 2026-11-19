@@ -114,6 +114,25 @@ public final class Stamina {
         }
     }
 
+    // A cost that never exhausts (the Reversão): takes percent of the max and returns true, or takes nothing and returns
+    // false when that would leave the bar empty or the player is exhausted. Free (true) in the creative and no-cooldown
+    // freebies and for anyone without stamina.
+    public static boolean pay(LivingEntity entity, double percent) {
+        if (!drains(entity)) {
+            return true;
+        }
+        if (exhausted(entity)) {
+            return false;
+        }
+        float cost = (float) (max(entity) * percent / 100.0);
+        float now = get(entity);
+        if (now <= cost) {
+            return false;
+        }
+        entity.getData(ModAttachments.POWER).stamina = now - cost;
+        return true;
+    }
+
     // Gives back percent of the max (a punch, a hit, a dash, a base attack). Nothing while exhausted.
     public static void gain(LivingEntity entity, double percent) {
         if (!uses(entity) || exhausted(entity) || percent <= 0) {
