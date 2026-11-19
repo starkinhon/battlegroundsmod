@@ -120,7 +120,11 @@ public final class OniBody {
                 // No healing during his entrance or the awakening scene (he can't be hit then).
                 rate = boss.staged() ? 0 : BOSS_REGEN[phase] * (now - data.oniRegenCutUntil >= BOSS_IDLE ? 2 : 1);
             }
-            entity.heal((float) (entity.getMaxHealth() * rate / 2));
+            // Nichirin wounds slow it, all of them (or the neck cut) stop it (universe/NichirinWounds).
+            rate *= com.starkinhon.battlegroundsmod.universe.NichirinWounds.regenFactor(entity);
+            if (rate > 0) {
+                entity.heal((float) (entity.getMaxHealth() * rate / 2));
+            }
         }
         if (phase != data.oniPhaseSent) {
             boolean first = data.oniPhaseSent < 0;
