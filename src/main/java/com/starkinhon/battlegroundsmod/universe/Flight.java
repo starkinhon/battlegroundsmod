@@ -214,6 +214,24 @@ public final class Flight {
     // spectator in the air the player could not move at all). The technique keeps Minecraft's flying push at zero
     // (onTick) and changing the game mode never resets it, so the creative and the spectator flight had no push left.
     // Only a zero push is put back, so a spectator's own speed (mouse wheel) is left alone.
+    // Takes away the flight the technique gave (Minecraft keeps mayfly saved with the player, so losing the technique
+    // alone left them flying: Stark 2026-11-19, after the intro lent it for the desert). Only for a survival or
+    // adventure player who does not know it; creative and spectator keep their own.
+    public static void revoke(ServerPlayer player) {
+        if (player.isCreative() || player.isSpectator() || knows(player)) {
+            return;
+        }
+        release(player);
+        Abilities abilities = player.getAbilities();
+        if (abilities.mayfly || abilities.flying) {
+            abilities.mayfly = false;
+            abilities.flying = false;
+            abilities.setFlyingSpeed(VANILLA_SPEED);
+            player.onUpdateAbilities();
+        }
+        send(player, 0);
+    }
+
     private static void release(ServerPlayer player) {
         UUID id = player.getUUID();
         BOOSTING.remove(id);
