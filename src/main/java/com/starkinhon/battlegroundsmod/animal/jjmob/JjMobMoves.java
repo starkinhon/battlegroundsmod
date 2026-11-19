@@ -170,6 +170,12 @@ final class JjMobMoves {
             return moves(m).canUse(m, mode, t);
         }
 
+        public boolean throughWalls(NarutoMob n, String mode, LivingEntity t) {
+            // a charge breaks the wall between it and you (the wall check in the blow smashes it and stuns it)
+            return n instanceof JjMob m && mode.equals("investida") && (m.kind().equals("javali") || m.kind().equals("transfigurado"))
+                    && Math.abs(t.getY() - m.getY()) < 2.5;
+        }
+
         public Vec3 fleeFrom(NarutoMob n) {
             return moves((JjMob) n).fleeFrom((JjMob) n);
         }
