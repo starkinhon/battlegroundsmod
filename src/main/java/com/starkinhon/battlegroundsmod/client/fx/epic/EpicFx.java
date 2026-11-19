@@ -256,7 +256,7 @@ public final class EpicFx {
             }
             double sp = speed * (0.55 + 0.45 * (1 - u)) * (0.3 + 0.7 * RNG.nextDouble());
             spawn(x + 0.5, y[0] + 0.6, z + 0.5, Math.cos(a) * sp, speed * (1 - u * 0.5) * (0.6 + RNG.nextDouble() * 0.8), Math.sin(a) * sp,
-                    size * (0.5 + RNG.nextFloat() * 0.7), chunk(s), heat * RNG.nextFloat());
+                    size * (0.5f + RNG.nextFloat() * 0.7f), chunk(s), heat * RNG.nextFloat());
         }
     }
 
