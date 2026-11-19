@@ -198,7 +198,7 @@ public final class TemploAirFx {
         if (!level.hasChunk(ix >> 4, iz >> 4)) {
             return -999;
         }
-        int h = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, ix, iz) - 1;
+        int h = ClientHeights.noLeaves(level, ix, iz) - 1;
         return h <= level.getMinBuildHeight() ? -999 : h;
     }
 
@@ -286,7 +286,7 @@ public final class TemploAirFx {
             if (!level.hasChunk(x >> 4, z >> 4)) {
                 continue;
             }
-            int g = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z) - 1;
+            int g = ClientHeights.noLeaves(level, x, z) - 1;
             if (g <= level.getMinBuildHeight()) {
                 continue;
             }

@@ -166,7 +166,7 @@ public final class DagonAirFx {
         if (!level.hasChunk(ix >> 4, iz >> 4)) {
             return -999;
         }
-        int h = level.getHeight(Heightmap.Types.OCEAN_FLOOR, ix, iz) - 1;
+        int h = ClientHeights.oceanFloor(level, ix, iz) - 1;
         return h <= level.getMinBuildHeight() ? -999 : h;
     }
 

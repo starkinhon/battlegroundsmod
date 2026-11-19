@@ -194,7 +194,7 @@ public final class HanamiAirFx {
         if (!level.hasChunk(ix >> 4, iz >> 4)) {
             return -999;
         }
-        int h = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, ix, iz) - 1;
+        int h = ClientHeights.noLeaves(level, ix, iz) - 1;
         return h <= level.getMinBuildHeight() ? -999 : h;
     }
 
