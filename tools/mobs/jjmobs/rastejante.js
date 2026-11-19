@@ -259,10 +259,16 @@
     if (mode === 'morte') {
       const { fall } = JJFX.exorcize(t, obj, e, ctx, { h: 3.4, refZ: -4.0, rotX: 0, back: 0, ashY: 0.8, ashZ: 0, n: 360, dur: 4.2 });
       // as pernas cedem, o bolo cai no chão, as máscaras se soltam
-      P.corpo.obj.position.y += 7 * fall;
-      for (let i = 0; i < 4; i++) for (const sd of ['D', 'E']) { const sg = sd === 'D' ? -1 : 1; r('braco' + i + sd, 0, 0, sg * 0.5 * fall); r('ante' + i + sd, 0, 0, -sg * 0.35 * fall); }
+      // os braços abrem até deitar no chão (antes o cotovelo dobrava mais e o bolo morria 2,6 blocos no alto, em pé
+      // nas mãos): o braço vai pra quase horizontal e o antebraço estica pra fora, a mão espalmada
+      for (let i = 0; i < 4; i++) for (const sd of ['D', 'E']) {
+        const sg = sd === 'D' ? -1 : 1, g = JJFX.clamp01(fall * 1.15 - i * 0.05);
+        r('braco' + i + sd, 0, 0, sg * 0.85 * g); r('ante' + i + sd, 0, 0, sg * 1.05 * g); r('mao' + i + sd, 0, 0, sg * 0.45 * g);
+      }
       for (let k = 0; k < 5; k++) { r('mascara' + k, 0.6 * fall * (k % 2 ? 1 : -1), 0, 0.4 * fall); }
       little(1 - fall);
+      // os bracinhos de baixo do bolo deitam espalmados (antes ficavam em pé e seguravam o bolo no alto)
+      for (let i = 0; i < 9; i++) r('bracinho' + i, (i % 2 ? 1 : -1) * 1.5 * fall, 0, 0);
     }
   }
 

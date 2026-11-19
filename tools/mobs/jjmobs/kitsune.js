@@ -335,8 +335,10 @@
       const buckle = seq([[0.25, 0], [0.55, 1, 'in']], T);
       const roll = seq([[0.48, 0], [0.92, 1, 'in'], [1.02, 0.9], [1.12, 1]], T);
       const limp = seq([[0.6, 0], [1.2, 1]], T);
-      const ang = 1.5 * roll;
-      obj.rotation.z = ang;
+      // a rolagem vai na peça 'raiz', não na raiz do corpo: o jogo gira a raiz num quadro espelhado, e lá a raposa
+      // deitava do lado errado, flutuando meio bloco (teste R5, 2026-11-14)
+      const ang = 1.5 * roll, rz = P.raiz.obj;
+      rz.rotation.z = ang;
       for (const sd of ['D', 'E']) {
         r('pernaF' + sd, 1.1 * buckle - 0.5 * limp, 0, 0);
         r('pernaT' + sd, -1.0 * buckle + 0.4 * limp, 0, 0);
@@ -353,7 +355,12 @@
         for (let j = 1; j < 4; j++) r('cauda' + k + '_' + j, 0.06 * j * limp, 0.05 * Math.sin(k * 2 + j), 0.25 * limp);
       }
       // o tronco cai quase reto pra baixo: no máximo 0,2 bloco pro lado, sem escorregar
-      JJFX.noSlide(obj, P.corpo.obj, 'x', () => { obj.rotation.z = 0; }, () => { obj.rotation.z = ang; }, 0.2 * roll);
+      JJFX.noSlide(obj, P.corpo.obj, 'x', () => { rz.rotation.z = 0; }, () => { rz.rotation.z = ang; }, 0.2 * roll, rz);
+      // nada escora o corpo deitado: caudas, pescoço e pernas deitam no chão junto com ele (antes uma cauda ficava
+      // por baixo e a raposa morria 0,3 bloco no ar, teste R5)
+      const limbs = ['pescoco', 'pernaFD', 'pernaFE', 'pernaTD', 'pernaTE', 'ofuda0', 'ofuda1', 'ofuda2', 'ofuda3', 'ofuda4', 'ofuda5'];
+      for (let k = 0; k < n; k++) limbs.push('cauda' + k + '_0');
+      JJFX.floorLimbs(obj, P, ['corpo'], limbs, roll);
       flutter(1 - fall);
       const tp = tips(P, obj, n);
       tp.forEach((p, i) => fire(ctx, 'chama' + i, FC, p, 0.07, 1 - FX.clamp01((T - 0.3) / 0.6), t + i));

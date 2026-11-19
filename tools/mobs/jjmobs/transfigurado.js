@@ -240,6 +240,8 @@
       const { fall } = JJFX.exorcize(t, obj, e, ctx, { h: 2.2, refZ: -2.0, rotX: -1.45, back: 0.5, ashY: 0.3, ashZ: 1.0, n: 180 });
       slouch(r, P, v, 1 - fall);
       r('bracoD', -0.6 * fall, 0, 0.6 * fall); r('bracoE', -0.6 * fall, 0, -0.6 * fall); r('cabeca', 0, 0.5 * fall, 0);
+      // nenhum membro escora o morto: o corpo encosta no chão (teste R5)
+      JJFX.floorLimbs(obj, P, ['tronco', 'quadril'], ['bracoD', 'bracoE', 'pernaD', 'pernaE', 'pescoco'], fall);
     }
   }
 

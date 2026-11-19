@@ -302,10 +302,12 @@
     if (mode === 'morte') {
       const { T, fall } = JJFX.exorcize(t, obj, e, ctx, { h: 1.8, refZ: -2.4, rotX: 0, back: 0.3, ashY: 0.5, ashZ: 3.0, n: 320, dur: 3.8 });
       // tomba de lado, vagão a vagão
-      for (let i = 0; i < NC; i++) { const k = FX.clamp01(fall * 1.6 - i * 0.15); r('vagao' + i, 0, 0, (i === 0 ? 1.4 : 0.12) * k); }
+      for (let i = 0; i < NC; i++) { const k = FX.clamp01(fall * 1.6 - i * 0.15); r('vagao' + i, 0, 0, (i === 0 ? 1.5 : 0.02) * k); }
       for (let i = 0; i < NC; i++) legWalk(r, i, t * 3, 1 - fall);
       obj.position.y -= 0.3 * fall;
       r('mandibula', 0.8 * fall, 0, 0);
+      // nenhum membro escora o morto: o corpo encosta no chão (teste R5)
+      { const L = []; for (let i = 0; i < NC; i++) for (const j of [0, 1]) for (const sd of ['D', 'E']) L.push('perna' + i + '_' + j + sd); const core = []; for (let i = 0; i < NC; i++) core.push('vagao' + i); JJFX.floorLimbs(obj, P, core, L, fall); }
       if (T < 1) lamps(lampK * (1 - fall));
     }
   }

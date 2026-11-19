@@ -200,6 +200,8 @@
       obj.position.y -= 0.38 * knee;
       P.tronco.obj.rotation.x += 1.4 * fall; obj.position.y -= 0.2 * fall; obj.position.z -= 0.3 * fall;
       r('bracoD', -0.4 * fall, 0, 0.2); r('bracoE', -0.4 * fall, 0, -0.2); r('arma', 0.5 * knee, 0, 0);
+      // nenhum membro escora o morto: o corpo encosta no chão (teste R5)
+      JJFX.floorLimbs(obj, P, ['tronco', 'cabeca'], ['bracoD', 'bracoE', 'pernaD', 'pernaE'], fall);
       if (T > 1.85 && T < 2.0) ctx.shake(0.4);
       label(1 - FX.clamp01((T - 0.8) / 0.3));
       if (T > 1.1) {

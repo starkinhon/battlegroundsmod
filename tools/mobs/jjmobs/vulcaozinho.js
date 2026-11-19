@@ -262,6 +262,11 @@
       craterGlow(off);
       P.palpebra.obj.scale.y = 1 + 2.6 * fall;
       r('corpo', 0, 0, 0.25 * fall); r('bracoD', 0, 0, 0.6 * fall); r('bracoE', 0, 0, -0.6 * fall); r('queixo', 0.4 * fall, 0, 0);
+      // nenhum membro escora o morto: o corpo encosta no chão (teste R5)
+      // as pernas tocos cedem pros lados e o cone senta no chão (antes ficava em pé nelas)
+      r('pernaD', 0, 0, 1.5 * fall); r('pernaE', 0, 0, -1.5 * fall);
+      P.pernaD.obj.position.y -= 2.6 * fall; P.pernaE.obj.position.y -= 2.6 * fall;
+      JJFX.floorLimbs(obj, P, ['corpo'], ['bracoD', 'bracoE'], fall);
       P.corpo.obj.scale.y = 1 - 0.18 * fall;
       ctx.get('ultimo', FX.volume).set(crater().add(new THREE.Vector3(0, 0.5, 0)), 0.5, FX.clamp01((T - 0.3) / 2.4), { seed: 31, dens: 6, rise: 1.0, squash: 1.4, smoke: [0.16, 0.15, 0.15] });
     }

@@ -279,6 +279,8 @@
         if (k > 0 && k < 1) { obj.position.y += hgt * Math.sin(Math.PI * k); r('corpo', 0, 0, -0.25 * Math.sin(Math.PI * k)); r('cauda', 0, 0.8 * Math.sin(k * 9), 0); r('barbatana', 0, -0.8 * Math.sin(k * 9), 0); }
       }
       r('corpo', 0, 0, side);
+      // a barbatana não escora o peixe deitado (teste R5)
+      JJFX.floorLimbs(obj, P, ['corpo'], ['peitD', 'peitE'], fall);
       r('mandibula', 0.6 * fall * (0.6 + 0.4 * Math.sin(T * 6)), 0, 0);
       const dis = FX.clamp01((T - 1.95) / 0.7);
       JJFX.dissolve(e, dis, 0, 0.45);

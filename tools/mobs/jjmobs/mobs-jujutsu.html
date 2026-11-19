@@ -1111,14 +1111,66 @@ const JJFX = (() => {
   }
   // tombo sem escorregar: compara onde o tronco (part) fica sem e com a rotação da queda e puxa o corpo de volta,
   // deixando só 'max' de deslocamento pro lado da queda (como um bicho de verdade que desaba onde estava)
-  function noSlide(obj, part, ax, unset, set, max) {
+  function noSlide(obj, part, ax, unset, set, max, mover) {
     const V = THREE.Vector3;
     unset(); obj.updateMatrixWorld(true); const a = part.getWorldPosition(new V());
     set(); obj.updateMatrixWorld(true); const b = part.getWorldPosition(new V());
     const d = b[ax] - a[ax], keep = Math.sign(d) * Math.min(Math.abs(d), max);
-    obj.position[ax] += keep - d;
+    if (!mover || mover === obj) { obj.position[ax] += keep - d; return; }
+    // uma peça se move em vez do corpo todo (o jogo gira e desliza a raiz num quadro espelhado, as peças não):
+    // o deslocamento do mundo vai pro espaço do pai da peça
+    const par = mover.parent, w0 = mover.getWorldPosition(new V()), w1 = w0.clone();
+    w1[ax] += keep - d;
+    par.worldToLocal(w0); par.worldToLocal(w1);
+    mover.position.add(w1.sub(w0));
   }
-  return { noSlide, settle, lowest, dissolve, ash, exorcize, tube, clamp01, drops, wet, column, posable, magma, crack, basalt };
+  // membro que escora o corpo morto: um morto não fica de pé na ponta de um rabo ou de uma mão. Cada membro (a peça
+  // raiz da cadeia) gira aos poucos pro lado que mais o levanta, até não passar do fundo do corpo ('core'); w é o
+  // quanto a queda já andou (no começo o membro pode descer à vontade, no fim nada fica abaixo do corpo)
+  const _q = new THREE.Vector3();
+  function chainLow(o) {
+    let lo = Infinity;
+    o.updateMatrixWorld(true);
+    o.traverse(c => {
+      if (!c.isMesh || !c.visible || !c.geometry || c._vap) return;
+      const pos = c.geometry.attributes.position;
+      for (let i = 0; i < pos.count; i++) { _q.fromBufferAttribute(pos, i).applyMatrix4(c.matrixWorld); if (_q.y < lo) lo = _q.y; }
+    });
+    return lo;
+  }
+  function floorLimbs(obj, P, core, limbs, w, slack = 0.01) {
+    if (w <= 0) return;
+    obj.updateMatrixWorld(true);
+    let base = Infinity;
+    for (const n of core) if (P[n]) {
+      const o = P[n].obj;
+      o.children.forEach(c => {
+        if (!c.isMesh || !c.visible || !c.geometry) return;
+        const pos = c.geometry.attributes.position;
+        for (let i = 0; i < pos.count; i++) { _q.fromBufferAttribute(pos, i).applyMatrix4(c.matrixWorld); if (_q.y < base) base = _q.y; }
+      });
+    }
+    if (!isFinite(base)) return;
+    for (const n of limbs) {
+      if (!P[n]) continue;
+      const o = P[n].obj;
+      let lo = chainLow(o);
+      const need = base - slack - (1 - w) * 1.2;
+      for (let k = 0; k < 60 && lo < need; k++) {
+        let best = null, bestLo = lo;
+        for (const [ax, sg] of [['x', 1], ['x', -1], ['z', 1], ['z', -1]]) {
+          o.rotation[ax] += sg * 0.03;
+          const l = chainLow(o);
+          if (l > bestLo + 1e-5) { bestLo = l; best = [ax, sg]; }
+          o.rotation[ax] -= sg * 0.03;
+        }
+        if (!best) break;
+        o.rotation[best[0]] += best[1] * 0.03;
+        lo = bestLo;
+      }
+    }
+  }
+  return { noSlide, floorLimbs, settle, lowest, dissolve, ash, exorcize, tube, clamp01, drops, wet, column, posable, magma, crack, basalt };
 })();
 
 </script>
@@ -1425,7 +1477,9 @@ const JJFX = (() => {
       return;
     }
 
-    if (mode === 'morte') { const { fall } = JJFX.exorcize(t, obj, e, ctx, { h: 1.6, rotX: 0, back: 0.5, drop: 0.1, ashY: 0.5, n: 90 }); obj.position.y += 0.7 * (1 - fall) - 0.55 * fall; obj.rotation.z = 1.4 * fall; if (fall < 0.05) flap(r, t); r('boca', 0.7 * fall, 0, 0); }
+    if (mode === 'morte') { const { fall } = JJFX.exorcize(t, obj, e, ctx, { h: 1.6, rotX: 0, back: 0.5, drop: 0.1, ashY: 0.5, n: 90 }); obj.position.y += 0.7 * (1 - fall) - 0.55 * fall; P.raiz.obj.rotation.z = 1.4 * fall; /* na peça 'raiz': o jogo gira a raiz do corpo num quadro espelhado */ if (fall < 0.05) flap(r, t); r('boca', 0.7 * fall, 0, 0);
+      // nenhum membro escora o morto (teste R5)
+      JJFX.floorLimbs(obj, P, ['corpo', 'cabeca', 'abdomen'], ['asaD', 'asaE', 'pernaD0', 'pernaD1', 'pernaD2', 'pernaE0', 'pernaE1', 'pernaE2'], fall); }
   }
 
 
@@ -2051,6 +2105,8 @@ const JJFX = (() => {
       const { fall } = JJFX.exorcize(t, obj, e, ctx, { h: 2.2, refZ: -2.0, rotX: -1.45, back: 0.5, ashY: 0.3, ashZ: 1.0, n: 180 });
       slouch(r, P, v, 1 - fall);
       r('bracoD', -0.6 * fall, 0, 0.6 * fall); r('bracoE', -0.6 * fall, 0, -0.6 * fall); r('cabeca', 0, 0.5 * fall, 0);
+      // nenhum membro escora o morto: o corpo encosta no chão (teste R5)
+      JJFX.floorLimbs(obj, P, ['tronco', 'quadril'], ['bracoD', 'bracoE', 'pernaD', 'pernaE', 'pescoco'], fall);
     }
   }
 
@@ -2385,10 +2441,12 @@ const JJFX = (() => {
     if (mode === 'morte') {
       const { T, fall } = JJFX.exorcize(t, obj, e, ctx, { h: 1.8, refZ: -2.4, rotX: 0, back: 0.3, ashY: 0.5, ashZ: 3.0, n: 320, dur: 3.8 });
       // tomba de lado, vagão a vagão
-      for (let i = 0; i < NC; i++) { const k = FX.clamp01(fall * 1.6 - i * 0.15); r('vagao' + i, 0, 0, (i === 0 ? 1.4 : 0.12) * k); }
+      for (let i = 0; i < NC; i++) { const k = FX.clamp01(fall * 1.6 - i * 0.15); r('vagao' + i, 0, 0, (i === 0 ? 1.5 : 0.02) * k); }
       for (let i = 0; i < NC; i++) legWalk(r, i, t * 3, 1 - fall);
       obj.position.y -= 0.3 * fall;
       r('mandibula', 0.8 * fall, 0, 0);
+      // nenhum membro escora o morto: o corpo encosta no chão (teste R5)
+      { const L = []; for (let i = 0; i < NC; i++) for (const j of [0, 1]) for (const sd of ['D', 'E']) L.push('perna' + i + '_' + j + sd); const core = []; for (let i = 0; i < NC; i++) core.push('vagao' + i); JJFX.floorLimbs(obj, P, core, L, fall); }
       if (T < 1) lamps(lampK * (1 - fall));
     }
   }
@@ -2698,10 +2756,16 @@ const JJFX = (() => {
     if (mode === 'morte') {
       const { fall } = JJFX.exorcize(t, obj, e, ctx, { h: 3.4, refZ: -4.0, rotX: 0, back: 0, ashY: 0.8, ashZ: 0, n: 360, dur: 4.2 });
       // as pernas cedem, o bolo cai no chão, as máscaras se soltam
-      P.corpo.obj.position.y += 7 * fall;
-      for (let i = 0; i < 4; i++) for (const sd of ['D', 'E']) { const sg = sd === 'D' ? -1 : 1; r('braco' + i + sd, 0, 0, sg * 0.5 * fall); r('ante' + i + sd, 0, 0, -sg * 0.35 * fall); }
+      // os braços abrem até deitar no chão (antes o cotovelo dobrava mais e o bolo morria 2,6 blocos no alto, em pé
+      // nas mãos): o braço vai pra quase horizontal e o antebraço estica pra fora, a mão espalmada
+      for (let i = 0; i < 4; i++) for (const sd of ['D', 'E']) {
+        const sg = sd === 'D' ? -1 : 1, g = JJFX.clamp01(fall * 1.15 - i * 0.05);
+        r('braco' + i + sd, 0, 0, sg * 0.85 * g); r('ante' + i + sd, 0, 0, sg * 1.05 * g); r('mao' + i + sd, 0, 0, sg * 0.45 * g);
+      }
       for (let k = 0; k < 5; k++) { r('mascara' + k, 0.6 * fall * (k % 2 ? 1 : -1), 0, 0.4 * fall); }
       little(1 - fall);
+      // os bracinhos de baixo do bolo deitam espalmados (antes ficavam em pé e seguravam o bolo no alto)
+      for (let i = 0; i < 9; i++) r('bracinho' + i, (i % 2 ? 1 : -1) * 1.5 * fall, 0, 0);
     }
   }
 
@@ -3160,6 +3224,8 @@ const JJFX = (() => {
       JJFX.noSlide(obj, P.tronco.obj, 'z', () => { obj.rotation.x = 0; }, () => { obj.rotation.x = ang; }, 1.2 * fall);
       for (let i = 0; i < EYES.length; i++) lid(i, 1 - 0.8 * Math.max(0, 1 - fall * 2));
       branches(1 + 2 * fall);
+      // nenhum membro escora o morto: o corpo encosta no chão (teste R5)
+      JJFX.floorLimbs(obj, P, ['tronco'], ['raiz0', 'raiz1', 'raiz2', 'raiz3', 'galho0', 'galho1', 'galho2', 'galho3'], fall);
     }
   }
 
@@ -4027,8 +4093,10 @@ const JJFX = (() => {
       const buckle = seq([[0.25, 0], [0.55, 1, 'in']], T);
       const roll = seq([[0.48, 0], [0.92, 1, 'in'], [1.02, 0.9], [1.12, 1]], T);
       const limp = seq([[0.6, 0], [1.2, 1]], T);
-      const ang = 1.5 * roll;
-      obj.rotation.z = ang;
+      // a rolagem vai na peça 'raiz', não na raiz do corpo: o jogo gira a raiz num quadro espelhado, e lá a raposa
+      // deitava do lado errado, flutuando meio bloco (teste R5, 2026-11-14)
+      const ang = 1.5 * roll, rz = P.raiz.obj;
+      rz.rotation.z = ang;
       for (const sd of ['D', 'E']) {
         r('pernaF' + sd, 1.1 * buckle - 0.5 * limp, 0, 0);
         r('pernaT' + sd, -1.0 * buckle + 0.4 * limp, 0, 0);
@@ -4045,7 +4113,12 @@ const JJFX = (() => {
         for (let j = 1; j < 4; j++) r('cauda' + k + '_' + j, 0.06 * j * limp, 0.05 * Math.sin(k * 2 + j), 0.25 * limp);
       }
       // o tronco cai quase reto pra baixo: no máximo 0,2 bloco pro lado, sem escorregar
-      JJFX.noSlide(obj, P.corpo.obj, 'x', () => { obj.rotation.z = 0; }, () => { obj.rotation.z = ang; }, 0.2 * roll);
+      JJFX.noSlide(obj, P.corpo.obj, 'x', () => { rz.rotation.z = 0; }, () => { rz.rotation.z = ang; }, 0.2 * roll, rz);
+      // nada escora o corpo deitado: caudas, pescoço e pernas deitam no chão junto com ele (antes uma cauda ficava
+      // por baixo e a raposa morria 0,3 bloco no ar, teste R5)
+      const limbs = ['pescoco', 'pernaFD', 'pernaFE', 'pernaTD', 'pernaTE', 'ofuda0', 'ofuda1', 'ofuda2', 'ofuda3', 'ofuda4', 'ofuda5'];
+      for (let k = 0; k < n; k++) limbs.push('cauda' + k + '_0');
+      JJFX.floorLimbs(obj, P, ['corpo'], limbs, roll);
       flutter(1 - fall);
       const tp = tips(P, obj, n);
       tp.forEach((p, i) => fire(ctx, 'chama' + i, FC, p, 0.07, 1 - FX.clamp01((T - 0.3) / 0.6), t + i));
@@ -5520,6 +5593,8 @@ const JJFX = (() => {
         if (k > 0 && k < 1) { obj.position.y += hgt * Math.sin(Math.PI * k); r('corpo', 0, 0, -0.25 * Math.sin(Math.PI * k)); r('cauda', 0, 0.8 * Math.sin(k * 9), 0); r('barbatana', 0, -0.8 * Math.sin(k * 9), 0); }
       }
       r('corpo', 0, 0, side);
+      // a barbatana não escora o peixe deitado (teste R5)
+      JJFX.floorLimbs(obj, P, ['corpo'], ['peitD', 'peitE'], fall);
       r('mandibula', 0.6 * fall * (0.6 + 0.4 * Math.sin(T * 6)), 0, 0);
       const dis = FX.clamp01((T - 1.95) / 0.7);
       JJFX.dissolve(e, dis, 0, 0.45);
@@ -6940,9 +7015,11 @@ const JJFX = (() => {
     if (mode === 'morte') {
       // tomba de lado, as pernas esticam e as flores das costas caem; vira cinza com o musgo por último
       const { T, fall } = JJFX.exorcize(t, obj, e, ctx, { h: 1.4, refZ: -2.6, rotX: 0.0, back: 0.2, ashY: 0.4, ashZ: 0, n: 170 });
-      r('corpo', 0, 0, 1.45 * fall); obj.position.y -= 0.05 * fall; obj.position.x += 0.0;
+      r('corpo', 0, 0, 1.57 * fall); obj.position.y -= 0.05 * fall; obj.position.x += 0.0;
       for (const n of ['DF', 'EF', 'DT', 'ET']) { r('perna' + n, 0.3 * Math.sin(T * 25) * Math.max(0, 1 - T) * fall, 0, 0); }
       r('cabeca', 0.2 * fall, 0, 0);
+      // de lado o corpo encosta no chão: as pernas de baixo não escoram (antes sobrava uma folga, teste R5)
+      JJFX.floorLimbs(obj, P, ['corpo'], ['pernaDF', 'pernaEF', 'pernaDT', 'pernaET', 'cabeca'], fall);
     }
   }
 
@@ -7512,6 +7589,8 @@ const JJFX = (() => {
       if (fall < 0.1) fly(1); else { fold(); for (let i = 0; i < 3; i++) for (const sd of ['D', 'E']) r('perna' + sd + i, 0.5 * Math.sin(t * 14 + i) * Math.max(0, 1 - (T - 0.7)), 0, 0); }
       const cool = FX.clamp01((T - 0.7) / 0.8);
       belly(1 - cool);
+      // nenhum membro escora o morto: o corpo encosta no chão (teste R5)
+      JJFX.floorLimbs(obj, P, ['corpo'], ['cabeca', 'antenaD', 'antenaE', 'asaD', 'asaE', 'elitroD', 'elitroE'], fall);
       ctx.get('fumaca', FX.volume).set(new THREE.Vector3(0, 0.3, 0.4), 0.35, FX.clamp01((T - 0.8) / 2.2), { seed: 2.2, dens: 4, rise: 1.2, squash: 1.2, smoke: [0.4, 0.38, 0.38] });
       const dis = FX.clamp01((T - 1.5) / 1.5);
       JJFX.dissolve(e, dis, 0, 1.4);
@@ -7808,6 +7887,11 @@ const JJFX = (() => {
       craterGlow(off);
       P.palpebra.obj.scale.y = 1 + 2.6 * fall;
       r('corpo', 0, 0, 0.25 * fall); r('bracoD', 0, 0, 0.6 * fall); r('bracoE', 0, 0, -0.6 * fall); r('queixo', 0.4 * fall, 0, 0);
+      // nenhum membro escora o morto: o corpo encosta no chão (teste R5)
+      // as pernas tocos cedem pros lados e o cone senta no chão (antes ficava em pé nelas)
+      r('pernaD', 0, 0, 1.5 * fall); r('pernaE', 0, 0, -1.5 * fall);
+      P.pernaD.obj.position.y -= 2.6 * fall; P.pernaE.obj.position.y -= 2.6 * fall;
+      JJFX.floorLimbs(obj, P, ['corpo'], ['bracoD', 'bracoE'], fall);
       P.corpo.obj.scale.y = 1 - 0.18 * fall;
       ctx.get('ultimo', FX.volume).set(crater().add(new THREE.Vector3(0, 0.5, 0)), 0.5, FX.clamp01((T - 0.3) / 2.4), { seed: 31, dens: 6, rise: 1.0, squash: 1.4, smoke: [0.16, 0.15, 0.15] });
     }
@@ -8101,6 +8185,8 @@ const JJFX = (() => {
       obj.rotation.x = ang;
       r('pernaD', 0.9 * fall, 0, 0); r('pernaE', 0.9 * fall, 0, 0); r('canelaD', -0.4 * fall, 0, 0); r('canelaE', -0.4 * fall, 0, 0);
       r('bracoD', -0.3 * fall, 0, 0.35 * fall); r('bracoE', -0.3 * fall, 0, -0.35 * fall); r('cabeca', 0.2 * fall, 0.3 * fall, 0);
+      // nenhum membro escora o morto: o corpo encosta no chão (teste R5)
+      JJFX.floorLimbs(obj, P, ['tronco'], ['bracoD', 'bracoE', 'pernaD', 'pernaE'], fall);
       JJFX.noSlide(obj, P.tronco.obj, 'z', () => { obj.rotation.x = 0; }, () => { obj.rotation.x = ang; }, 0.7 * fall);
       if (T > 0.88 && T < 1.05) ctx.shake(0.6);
       if (T > 1.68 && T < 1.95) { ctx.shake(1.2); }
@@ -8656,6 +8742,8 @@ const JJFX = (() => {
       obj.position.y -= 0.15 * fall; obj.position.z -= 0.25 * fall;
       r('bracoD', 0.3 * fall, 0, 0.4); r('bracoE', 0.3 * fall, 0, -0.4); r('cabeca', 0, 0, 0.3 * knee);
       fold();
+      // nenhum membro escora o morto: o corpo encosta no chão (teste R5)
+      JJFX.floorLimbs(obj, P, ['tronco'], ['bracoD', 'bracoE', 'pernaD', 'pernaE'], fall);
       const blinkE = fr(t * 7) < 0.5 ? 1 : 0.2;
       eyes(Math.max(0, 1 - T * 0.5) * blinkE);
       if (T > 0.25 && T < 2.4) ctx.get('faisca', () => DBFX.grains({ n: 36, seed: 95, add: true, palette: [e.v.light, [255, 240, 200], [255, 255, 255]], size: [0.012, 0.028], drag: 1, grav: 7, life: 0.5, spread: 1.6, cone: R2 => [(R2() - 0.5) * 2.4, 1 + R2() * 2, (R2() - 0.5) * 2.4] })).at(W('tronco', 0, -6, 0), T - 0.25, 0.02);
@@ -8944,6 +9032,8 @@ const JJFX = (() => {
       r('clava', -1.0 * fall, 0, 0);
       if (fall > 0.35 && P.clava) P.clava.obj.visible = false;
       eyes(Math.max(0, 1 - T));
+      // nenhum membro escora o morto: o corpo encosta no chão (teste R5)
+      JJFX.floorLimbs(obj, P, ['tronco', 'cabeca'], ['bracoD', 'bracoE', 'pernaD', 'pernaE'], fall);
     }
   }
 
@@ -9389,6 +9479,8 @@ const JJFX = (() => {
       obj.position.y -= 0.38 * knee;
       P.tronco.obj.rotation.x += 1.4 * fall; obj.position.y -= 0.2 * fall; obj.position.z -= 0.3 * fall;
       r('bracoD', -0.4 * fall, 0, 0.2); r('bracoE', -0.4 * fall, 0, -0.2); r('arma', 0.5 * knee, 0, 0);
+      // nenhum membro escora o morto: o corpo encosta no chão (teste R5)
+      JJFX.floorLimbs(obj, P, ['tronco', 'cabeca'], ['bracoD', 'bracoE', 'pernaD', 'pernaE'], fall);
       if (T > 1.85 && T < 2.0) ctx.shake(0.4);
       label(1 - FX.clamp01((T - 0.8) / 0.3));
       if (T > 1.1) {

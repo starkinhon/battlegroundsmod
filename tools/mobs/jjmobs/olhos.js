@@ -199,6 +199,8 @@
       JJFX.noSlide(obj, P.tronco.obj, 'z', () => { obj.rotation.x = 0; }, () => { obj.rotation.x = ang; }, 1.2 * fall);
       for (let i = 0; i < EYES.length; i++) lid(i, 1 - 0.8 * Math.max(0, 1 - fall * 2));
       branches(1 + 2 * fall);
+      // nenhum membro escora o morto: o corpo encosta no chão (teste R5)
+      JJFX.floorLimbs(obj, P, ['tronco'], ['raiz0', 'raiz1', 'raiz2', 'raiz3', 'galho0', 'galho1', 'galho2', 'galho3'], fall);
     }
   }
 
