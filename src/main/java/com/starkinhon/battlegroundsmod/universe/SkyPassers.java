@@ -51,6 +51,9 @@ import net.neoforged.neoforge.event.tick.ServerTickEvent;
 // Flying up to them (24 blocks) they brake and look (Stark 2026-11-12): Goku and Kuririn wave, Piccolo crosses his
 // arms and goes, Freeza threatens you, and Vegeta tells a weaker one (a worse tier) to go and train, while one of his
 // tier or stronger is challenged to prove who is stronger: the air fight (boss/AirCombat).
+// None of them starts the fight on his own (Stark 2026-11-19: Vegeta coming out of nowhere to beat you up was a pain):
+// Vegeta's challenge only calls you out and he waits a few seconds more, pointing at you; the fight starts only when
+// the player hits one of them first.
 // Hitting one of them starts the fight too. /soul passagem <tipo> brings one now (tests and videos).
 // Lower and closer (Stark 2026-11-19: only Freeza got noticed): a player-sized mob is not drawn past 64 blocks, so the
 // paths now pass 25-45 blocks away (SoulBoss draws them up to 192 while flying), slower, with a rush of air as they go
@@ -81,6 +84,8 @@ public final class SkyPassers {
         double react = -1;
         ServerPlayer seen;
         boolean leaving;
+        // Vegeta challenged: they wait longer for the player to hit him
+        boolean challenged;
         // the duel
         Vec3 center;
         Vec3 axis = new Vec3(1, 0, 0);
@@ -306,6 +311,12 @@ public final class SkyPassers {
             if (b.isRemoved() || !b.isAlive() || air == null || !air.passing()) {
                 return true;
             }
+            // hit by a player just now, even if nothing set it as the target
+            if (b.getLastHurtByMob() instanceof net.minecraft.world.entity.player.Player hitter && hitter.isAlive()
+                    && !hitter.isCreative() && !hitter.isSpectator() && b.tickCount - b.getLastHurtByMobTimestamp() < 10) {
+                air.fight(hitter);
+                return true;
+            }
             if (b.getTarget() != null) {
                 if (b.getLastHurtByMob() == b.getTarget()) {
                     air.fight(b.getTarget());
@@ -468,7 +479,6 @@ public final class SkyPassers {
             }
         }
         if (before < 0.8 && e.react >= 0.8 && p != null) {
-            List<SoulBoss> fighters = new ArrayList<>();
             for (SoulBoss b : e.ents) {
                 AirCombat air = AirCombat.of(b);
                 switch (b.bossId()) {
@@ -485,21 +495,12 @@ public final class SkyPassers {
                         } else {
                             BossFalas.line(b, "fala.battlegroundsmod.ceu.vegeta_desafio", BossFalas.colors("vegeta"));
                             SubCommon.pose(b, "db.apontar");
-                            fighters.add(b);
+                            e.challenged = true;
                         }
                     }
                     default -> {
                     }
                 }
-            }
-            for (SoulBoss b : fighters) {
-                // a moment for the line, then he comes
-                com.starkinhon.battlegroundsmod.combat.Tasks.later(24, () -> {
-                    AirCombat air = AirCombat.of(b);
-                    if (b.isAlive() && air != null && p.isAlive()) {
-                        air.fight(p);
-                    }
-                });
             }
         }
         if (before < 2.2 && e.react >= 2.2) {
@@ -510,7 +511,7 @@ public final class SkyPassers {
                 }
             }
         }
-        if (e.react > 4) {
+        if (e.react > (e.challenged ? 9 : 4)) {
             e.react = -1;
             e.leaving = true;
             for (SoulBoss b : e.ents) {
