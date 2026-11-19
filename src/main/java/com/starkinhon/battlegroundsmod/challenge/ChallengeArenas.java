@@ -880,6 +880,9 @@ public final class ChallengeArenas {
                 living.setHealth(living.getMaxHealth());
             }
         }
+        if (!session.dungeon && boss instanceof SoulBoss soul) {
+            soul.challengeFight();
+        }
         if (session.hardTier >= 0 && boss instanceof SoulBoss soul) {
             soul.arenaTier(session.hardTier);
         }
