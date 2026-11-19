@@ -1,7 +1,9 @@
 package com.starkinhon.battlegroundsmod;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import com.starkinhon.battlegroundsmod.world.ThinPlantBlock;
 
@@ -16,9 +18,10 @@ import net.neoforged.neoforge.registries.DeferredBlock;
 
 // The blocks of the new Jujutsu biomes (Stark 2026-11-13, "pode portar tudo"), in the colors of the approved previews
 // (forja/jujutsu-<bioma>). Textures, models, names and tags come from tools/blocks/jjk_blocks.py. Registered in
-// ModBlocks' registers (loaded from ModBlocks.register), and like those their items are in no creative tab.
+// ModBlocks' registers (loaded from ModBlocks.register); their items show in the "Blocos e Decoração" tab.
 public final class JujutsuBlocks {
     private static final List<DeferredBlock<? extends Block>> ALL = new ArrayList<>();
+    private static final Set<String> IDS = new HashSet<>();
 
     // ---- Floresta Negra: the black trees (bark, dark bark, roots, leaves in three tones), the black soil, the dead
     // grass, the eyes in the trunks, the cursed energy's veins, the Árvore Matriz's flesh and maw, the rotten torii's
@@ -312,8 +315,13 @@ public final class JujutsuBlocks {
         }
     }
 
+    public static boolean has(String id) {
+        return IDS.contains(id);
+    }
+
     private static <T extends Block> DeferredBlock<T> add(DeferredBlock<T> b) {
         ALL.add(b);
+        IDS.add(b.getId().getPath());
         return b;
     }
 

@@ -8,7 +8,7 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
-// Blocks for the look of the universes that vanilla has no color for (Stark, 2026-11-10: Namek's pink-beige cliffs).
+// Their items have their own register; the "Blocos e Decoração" creative tab lists them (ModCreativeTabs).
 // Their items have their own register, so no creative tab lists them: they are for building the worlds, not for players.
 public final class ModBlocks {
     public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(BattlegroundsMod.MODID);
