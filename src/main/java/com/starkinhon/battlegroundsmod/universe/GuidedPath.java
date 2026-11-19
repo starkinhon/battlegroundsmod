@@ -106,28 +106,10 @@ public final class GuidedPath {
 
     // ---------------------------------------------------------------- start
 
-    // The intro (another thread, "Criar luta de introdução do mod") posts intro.IntroDoneEvent(player, skipped) when it
-    // ends or is skipped. It is looked up by name so this works before and after it is in the game: with it, the path
-    // starts there; without it, on the first walk in the world (the old way a game started).
-    private static boolean introExists;
-
-    @SuppressWarnings({"unchecked", "rawtypes"})
+    // The intro (intro.Intro) posts IntroDoneEvent when it ends or is skipped: the path starts there. The tick also starts
+    // it once the intro is marked done, for a save that went through the intro before this was in the game.
     private static void introHook() {
-        try {
-            Class event = Class.forName("com.starkinhon.battlegroundsmod.intro.IntroDoneEvent");
-            java.lang.reflect.Method who = event.getMethod("player");
-            NeoForge.EVENT_BUS.addListener(EventPriority.NORMAL, false, event, e -> {
-                try {
-                    if (who.invoke(e) instanceof ServerPlayer player) {
-                        begin(player);
-                    }
-                } catch (ReflectiveOperationException ignored) {
-                }
-            });
-            introExists = true;
-        } catch (ReflectiveOperationException | LinkageError ignored) {
-            introExists = false;
-        }
+        NeoForge.EVENT_BUS.addListener((com.starkinhon.battlegroundsmod.intro.IntroDoneEvent e) -> begin(e.getPlayer()));
     }
 
     private static boolean here(ServerPlayer player) {
@@ -329,8 +311,7 @@ public final class GuidedPath {
             return;
         }
         if (!started(player)) {
-            // no intro in the game yet: the path starts on the first walk in the world
-            if (!introExists && player.tickCount > 200) {
+            if (com.starkinhon.battlegroundsmod.intro.Intro.done(player)) {
                 begin(player);
             }
             return;
@@ -707,7 +688,7 @@ public final class GuidedPath {
         ServerLevel level = player.serverLevel();
         if (!player.isAlive() || player.level().dimension() != Level.OVERWORLD || player.blockPosition().distSqr(f.at) > 40 * 40) {
             stopInterview(player.getUUID(), level);
-            player.displayClientMessage(line("yaga.falhou"), false);
+            say(player, "yaga", line("yaga.falhou"));
             return;
         }
         if (f.wait > 0) {
@@ -742,7 +723,7 @@ public final class GuidedPath {
             DbQuests.sync(player);
         }
         if (f.ticks == 400) {
-            player.displayClientMessage(line("yaga.meio"), false);
+            say(player, "yaga", line("yaga.meio"));
         }
         if (f.ticks >= INTERVIEW_TICKS) {
             stopInterview(player.getUUID(), level);
