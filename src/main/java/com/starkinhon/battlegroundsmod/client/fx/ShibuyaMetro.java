@@ -26,7 +26,7 @@ import net.minecraft.world.phys.Vec3;
 // The tunnel is carved only 110 blocks each way (ShibuyaFeature.STATION_HALF): past the platform it goes dark, a few
 // thin black veils across it, each taking a little light (only the ones ahead of the player), and a black cap at its end;
 // the train is cut at the cap, so it comes out of the dark and goes into it. Its lights still shine in the dark.
-// (The passengers getting off and on wait for the pedestrians' model, the "Biomas de Jujutsu" thread's port.)
+// The passengers getting off and on, and the ones waiting at the doors: ShibuyaRiders.
 final class ShibuyaMetro {
     private static final RandomSource RANDOM = RandomSource.createThreadSafe();
     // ShibuyaGen.metro: BED = -17 (the train's floor on the rail at -16), the platform PX1 = 52, the tunnel 110 each way
@@ -55,6 +55,7 @@ final class ShibuyaMetro {
     }
 
     static void reset() {
+        ShibuyaRiders.reset();
         on = false;
         SPARKS.clear();
         for (ShibuyaAirFx.Loop l : new ShibuyaAirFx.Loop[] {rumble, motor, squeal}) {
@@ -64,6 +65,23 @@ final class ShibuyaMetro {
         }
         rumble = motor = squeal = null;
         lastPhase = -1;
+    }
+
+    // ---- for the passengers (ShibuyaRiders): where the train of track k stands at the platform, its doors, its side
+    static final int DOOR_COUNT = 9;
+
+    static double doorX(int k, int i) {
+        double lx = (i / 3) * 21 + DOORS[i % 3];
+        double stop = ShibuyaScan.stOx + dir(k) * STOP;
+        return k == 0 ? stop + lx : stop - lx;
+    }
+
+    static double edgeZ(int k) {
+        return edge(k);
+    }
+
+    static int sideOf(int k) {
+        return side(k);
     }
 
     // north track (0): z from c - 7 to c - 4, runs toward -x; south (1): z from c + 7 to c + 4, runs toward +x
@@ -107,7 +125,9 @@ final class ShibuyaMetro {
         int k = cyc < RUN ? 0 : 1;
         double rt = cyc - k * RUN;
         int d = dir(k);
-        double stop = ox - d * STOP, start = ox - d * START;
+        // the nose stops 31 short of the middle (the 62 of the train centred on the platform), coming START from there
+        // (it was ox - d * STOP: the train stopped 62 blocks off, two cars in the tunnel, and jumped 31 when braking)
+        double stop = ox + d * STOP, start = stop - d * START;
         lastF = f;
         if (k != lastTrack) {
             lastF = Double.NaN;
@@ -224,6 +244,7 @@ final class ShibuyaMetro {
         }
         SPARKS.removeIf(s -> s.age >= s.life);
         sounds(level, player, ox, d);
+        ShibuyaRiders.tick(level, player);
     }
 
     private static void play(ClientLevel level, SoundEvent ev, double x, double y, double z, float vol) {

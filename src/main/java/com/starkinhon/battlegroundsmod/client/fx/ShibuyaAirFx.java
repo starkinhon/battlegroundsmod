@@ -132,6 +132,13 @@ public final class ShibuyaAirFx {
 
     // ---------------------------------------------------------------- tick
 
+    // (from LevelRendererMixin.blockChanged: the street's light follows what was destroyed)
+    public static void blockChanged(net.minecraft.core.BlockPos pos) {
+        if (strength > 0) {
+            ShibuyaScan.blockChanged(pos.getX(), pos.getZ());
+        }
+    }
+
     public static void onClientTick(ClientTickEvent.Post event) {
         Minecraft mc = Minecraft.getInstance();
         lastStrength = strength;
@@ -715,6 +722,10 @@ public final class ShibuyaAirFx {
         if (fade <= 0.001f) {
             return;
         }
+        if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_ENTITIES) {
+            ShibuyaRiders.render(event, partial);
+            return;
+        }
         Camera cam = event.getCamera();
         Vec3 camera = cam.getPosition();
         PoseStack.Pose last = event.getPoseStack().last();
@@ -875,6 +886,9 @@ public final class ShibuyaAirFx {
         }
     }
 
+    // (Stark 2026-11-19: at night the street's lights were too strong, burnt and running into each other; same look, about
+    // a third less: the panel, its bloom, veil and disc, the sweep, the reflection, the lamps, the haze's color, and a soft
+    // knee on the ground's light (ShibuyaScan.fieldAt))
     // a lit sign: the panel livelier over the block, the glow leaking round it on the facade (9 quads, gone at the edge)
     // and a wider veil a little in front (the air lights up); the disc of lit air seen from any side
     private static void renderSigns(VertexConsumer out, PoseStack.Pose last, Vec3 cam, float fade, double t) {
@@ -889,19 +903,19 @@ public final class ShibuyaAirFx {
             float[] c = s.col;
             float f = s.f * fade;
             if (s.f >= 0.5f) {
-                float a = 0.22f * f;
+                float a = 0.16f * f;
                 panelQuad(out, last, cam, s, s.u0, s.u1 + 1, s.y0, s.y1 + 1, 0.025, c[0], c[1], c[2], a, a, a, a);
             }
             double big = Math.min(3.2, 0.9 + Math.sqrt(s.n) * 0.28);
-            bloom(out, last, cam, s, 0.06, big, big * 0.8, c, (float) (0.7 * f * Math.min(1.4, s.in)));
-            bloom(out, last, cam, s, 0.7, big * 2.6, big * 2.0, c, 0.18f * f);
-            disc(out, last, cam, s.cx + s.nx * 1.0, s.cy, s.cz + s.nz * 1.0, Math.min(9, 1.5 + Math.sqrt(s.n) * 0.7), c, 0.13f * f);
+            bloom(out, last, cam, s, 0.06, big, big * 0.8, c, (float) (0.45 * f * Math.min(1.4, s.in)));
+            bloom(out, last, cam, s, 0.7, big * 2.6, big * 2.0, c, 0.11f * f);
+            disc(out, last, cam, s.cx + s.nx * 1.0, s.cy, s.cz + s.nz * 1.0, Math.min(9, 1.5 + Math.sqrt(s.n) * 0.7), c, 0.08f * f);
             if (s.mode == 2) {
                 // the sweep: a clear band running along the sign
                 double len = s.u1 + 1 - s.u0, pp = s.u0 - 2 + ((t * (4 + s.rate * 3) + s.ph * 3) % (len + 4));
                 double a0 = Math.max(s.u0, pp - 1.2), b0 = Math.min(s.u1 + 1, pp + 1.2);
                 if (b0 > a0) {
-                    float a = 0.5f * fade;
+                    float a = 0.35f * fade;
                     panelQuad(out, last, cam, s, a0, b0, s.y0, s.y1 + 1, 0.04, c[0] * 0.5f + 0.5f, c[1] * 0.5f + 0.5f, c[2] * 0.5f + 0.5f, a, a, a, a);
                 }
             }
@@ -945,7 +959,7 @@ public final class ShibuyaAirFx {
             if (d > 90) {
                 continue;
             }
-            float a = (float) (0.1 * s.f * Math.min(1, 5 / Math.max(1, s.y0 - gy)) * near01(90 - d, 0, 30) * near01(d, 4, 14)) * fade;
+            float a = (float) (0.065 * s.f * Math.min(1, 5 / Math.max(1, s.y0 - gy)) * near01(90 - d, 0, 30) * near01(d, 4, 14)) * fade;
             if (a < 0.004f) {
                 continue;
             }
@@ -974,7 +988,7 @@ public final class ShibuyaAirFx {
                 continue;
             }
             double s = new double[] {1.5, 2.4, 0.8, 0.8, 1.1}[l.k];
-            float a = new float[] {0.5f, 0.8f, 0.45f, 0.45f, 0.35f}[l.k];
+            float a = new float[] {0.33f, 0.8f, 0.3f, 0.3f, 0.23f}[l.k];
             // the aviation light on top of the towers blinks slowly
             if (l.k == 1) {
                 a *= Math.sin(t * 2.4 + l.ph * 6) > 0.2 ? 1 : 0.05f;
@@ -1025,7 +1039,7 @@ public final class ShibuyaAirFx {
                         vc[o] = c[0];
                         vc[o + 1] = c[1];
                         vc[o + 2] = c[2];
-                        vc[o + 3] = (float) (pat * 0.14) * fade;
+                        vc[o + 3] = (float) (pat * 0.09) * fade;
                     } else {
                         vc[o] = 0.86f;
                         vc[o + 1] = 0.82f;

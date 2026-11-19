@@ -35,8 +35,8 @@ import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConf
 // the land back. Per chunk, in the preview's order, on a box of the chunk and 26 around it (so the wires between poles
 // and the trees across the chunk's edge come out the same from both sides):
 // 1. the ground of the streets and lots (only where the city is: the biome all around for 8);
-// 2. the metro stations: one under each big scramble crossing (60% of them, and always at the grid's middle) with the
-//    city all along it, built once and kept (concourse, platform, train, tunnels of 110 each way);
+// 2. the metro stations: one under each big scramble crossing (kept 4 crossings apart on an avenue: hasStation) with
+//    the city all along it, built once and kept (concourse, platform, train, tunnels of 110 each way);
 // 3. the blocks: alleys, buildings, skyscrapers, shrines and parking lots, each block built once and kept, only when
 //    the city covers it whole;
 // 4. the street furniture (poles, wires, lamps, avenue trees, guard rails, traffic lights).
@@ -364,10 +364,10 @@ public final class ShibuyaFeature extends Feature<NoneFeatureConfiguration> {
         }
     }
 
-    // A metro station under the scramble crossing of 'x' i and 'z' j: 60% of them (always the grid's middle), only with
-    // the city all along it. Built once, packed (local y), or NONE.
+    // A metro station under the scramble crossing of 'x' i and 'z' j, only with the city all along it. Built once, packed
+    // (local y), or NONE.
     private static int[] station(int i, int j, int seed, int worldKey, City city) {
-        if (!ShibuyaGen.scramble(i, j, seed) || !(i == 0 && j == 0) && JjkGen.hash3(i, j, 61, seed) >= 0.6) {
+        if (!hasStation(i, j, seed)) {
             return NONE;
         }
         long k = ((long) i << 36) ^ ((long) (j & 0xFFFFFFFL) << 8) ^ ((long) worldKey * 0x9E3779B97F4A7C15L) ^ 0x5A;
@@ -394,6 +394,31 @@ public final class ShibuyaFeature extends Feature<NoneFeatureConfiguration> {
         } catch (ExecutionException e) {
             return NONE;
         }
+    }
+
+    // Which scramble crossings get a station (Stark 2026-11-19: "aumentar a taxa de spawn do metrô"; it was 60% of them).
+    // Now every one, except that a station's tunnels run 110 each way along its avenue: two stations on one avenue less
+    // than 4 crossings (256 blocks) apart would cut into each other (each fills its whole length with stone first, and the
+    // client finds no station between them), so of the scramble crossings within 3 on the same avenue only the one with
+    // the smallest draw gets one (the grid's middle always).
+    static boolean hasStation(int i, int j, int seed) {
+        if (!ShibuyaGen.scramble(i, j, seed)) {
+            return false;
+        }
+        if (i == 0 && j == 0) {
+            return true;
+        }
+        double h = JjkGen.hash3(i, j, 61, seed);
+        for (int dj = -3; dj <= 3; dj++) {
+            int j2 = j + dj;
+            if (dj == 0 || !ShibuyaGen.scramble(i, j2, seed)) {
+                continue;
+            }
+            if (i == 0 && j2 == 0 || JjkGen.hash3(i, j2, 61, seed) < h) {
+                return false;
+            }
+        }
+        return true;
     }
 
     // The holes the station entrances open in the sidewalk (y = 0) near a block, as column keys.
