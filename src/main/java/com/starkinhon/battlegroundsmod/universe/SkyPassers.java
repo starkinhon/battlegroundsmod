@@ -313,7 +313,7 @@ public final class SkyPassers {
             }
             // hit by a player just now, even if nothing set it as the target
             if (b.getLastHurtByMob() instanceof net.minecraft.world.entity.player.Player hitter && hitter.isAlive()
-                    && !hitter.isCreative() && !hitter.isSpectator() && b.tickCount - b.getLastHurtByMobTimestamp() < 10) {
+                    && !hitter.isSpectator() && b.tickCount - b.getLastHurtByMobTimestamp() < 10) {
                 air.fight(hitter);
                 return true;
             }
