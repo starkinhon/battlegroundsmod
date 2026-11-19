@@ -66,6 +66,10 @@ public final class IntroHud {
     private static int loading = -1;
     // Act 3 in the real Shibuya: night on this player's screen only (the world's own time goes on for everyone else)
     private static boolean night;
+    // the scene's domains spare this player's screen (the duel at the end: no Brain Damage on it, Stark 2026-11-19)
+    private static boolean spared;
+    // the station empty and still while the scene is down there (no train, no passengers: Stark 2026-11-19)
+    private static boolean quiet;
     private static long last = System.currentTimeMillis();
 
     private IntroHud() {
@@ -139,6 +143,8 @@ public final class IntroHud {
             }
             case "loading" -> loading = a;
             case "night" -> night = a > 0;
+            case "spared" -> spared = a > 0;
+            case "quiet" -> quiet = a > 0;
             case "logo" -> {
                 logoAt = now;
                 goal = "";
@@ -158,6 +164,8 @@ public final class IntroHud {
         logoAt = -1;
         loading = -1;
         night = false;
+        spared = false;
+        quiet = false;
         if (Minecraft.getInstance().screen instanceof CardScreen) {
             Minecraft.getInstance().setScreen(null);
         }
@@ -170,6 +178,14 @@ public final class IntroHud {
         if (night && mc.level != null) {
             mc.level.setDayTime(18000L);
         }
+    }
+
+    public static boolean quiet() {
+        return quiet;
+    }
+
+    public static boolean spared() {
+        return spared;
     }
 
     public static boolean active() {

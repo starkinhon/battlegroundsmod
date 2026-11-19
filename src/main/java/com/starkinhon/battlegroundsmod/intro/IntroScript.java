@@ -305,7 +305,7 @@ final class IntroScript {
         if (boss.getTarget() != player) {
             boss.setTarget(player);
         }
-        if (boss.introHold) {
+        if (boss.introHold && boss.introFace == null) {
             boss.getNavigation().stop();
             boss.getLookControl().setLookAt(player, 30, 30);
         }
@@ -690,6 +690,8 @@ final class IntroScript {
         return (s, p, t) -> {
             s.dispose();
             Intro.ui(p, "night", "", 0, 0);
+            Intro.ui(p, "spared", "", 0, 0);
+            Intro.ui(p, "quiet", "", 0, 0);
             CombatMode.leave(p);
             if (p.getAbilities().flying) {
                 p.getAbilities().flying = false;
@@ -710,6 +712,13 @@ final class IntroScript {
         add(build(1));
         add(enter(1, "goku", all("goku"), 0));
         add(spawn(() -> ModEntities.VEGETA.get(), 1f));
+        add((s, p, t) -> {
+            SoulBoss vegeta = s.boss();
+            if (vegeta != null) {
+                vegeta.introPlain = true;   // the preview's Vegeta: no skill of his own kit, only the air fight's moves
+            }
+            return true;
+        });
         add(ui("flash", "", 0, 0));
         add(ui("title", "deserto", 70, 0));
         add(wait(20));
@@ -854,6 +863,7 @@ final class IntroScript {
         add(route("siga_gojo"));
         add(ui("goal", "", 0, 0));
         add(ui("black", "", 1, 0));
+        add(ui("quiet", "", 1, 0));
         add(wait(12));
         add(realPlatform());
         add(ui("black", "", 0, 0));
@@ -1014,12 +1024,23 @@ final class IntroScript {
 
     // Down there: the talk, the Duelo de Expansões, the cut on the tunnel's white and the logo.
     private void ending() {
+        // Gojo and Sukuna stand where they are, face to face, through the talk and the duel (Stark 2026-11-19: Gojo walked
+        // off, up the stairs, and cast his domain from there, looking elsewhere)
+        add((s, p, t) -> {
+            SoulBoss gojo = s.ally(), sukuna = s.boss();
+            if (gojo != null && sukuna != null) {
+                gojo.introFace = sukuna;
+                sukuna.introFace = gojo;
+            }
+            return true;
+        });
         add(ui("say", "coincidencia", 70, 0));
         add(wait(75));
         add(ui("say", "licao", 70, 0));
         add(wait(75));
         add(ui("say", "so_eu", 70, 0));
         add(wait(70));
+        add(ui("spared", "", 1, 0));
         add(duel());
         // corta no branco do túnel, antes do Vazio Infinito aparecer
         add(ui("flash", "", 1, 0));

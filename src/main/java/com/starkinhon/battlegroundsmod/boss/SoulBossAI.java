@@ -785,7 +785,7 @@ public class SoulBossAI extends Goal {
     // Only the skill's own cooldown: the defenses (counter, hakaizinho on an attack) don't wait for the gap.
     private boolean off(BossSpec spec, String name) {
         BossSpec.Skill skill = spec.skills().get(name);
-        if (skill != null && boss.introMoves != null && !boss.introMoves.contains(name) && !basic(skill)) {
+        if (skill != null && boss.introMoves != null && !boss.introMoves.contains(name) && (!basic(skill) || boss.introPlain)) {
             return false;   // the introduction's free fight: only what the script allows
         }
         return skill != null && boss.powerData().cooldowns[skill.slot()] <= 0;
