@@ -79,7 +79,9 @@ public final class PowerLogic {
         }
         if (power != null && !SoulSync.awake(player, power, slot)) {
             // Not awakened yet: the Sincronia opens it in the Livro das Almas (or a master teaches it).
-            player.displayClientMessage(SoulSync.taught(power, slot)
+            player.displayClientMessage(power == Powers.INATA
+                    ? Component.translatable("message.battlegroundsmod.inata_falta." + slot)
+                    : SoulSync.taught(power, slot)
                     ? Component.translatable("message.battlegroundsmod.goku.kaioh_falta", power.abilityName(slot))
                     : Component.translatable("message.battlegroundsmod.sync_locked", power.abilityName(slot)), true);
             return;
@@ -320,7 +322,8 @@ public final class PowerLogic {
         // The Livro das Almas also opens on U (it replaced the old constellation screen), so no book in hand is needed.
         // With universes and progression souls come only from beating their characters (creative still picks freely);
         // a soul already worn once can be put back on from the book, with its own Sincronia (SoulSync).
-        if (Progression.on(player) && !player.isCreative() && !SoulSync.known(player, id)) {
+        boolean known = Powers.INATA.id().equals(id) ? SoulSync.innateAny(player) : SoulSync.known(player, id);
+        if (Progression.on(player) && !player.isCreative() && !known) {
             player.displayClientMessage(Component.translatable("message.battlegroundsmod.book_locked"), true);
             return;
         }

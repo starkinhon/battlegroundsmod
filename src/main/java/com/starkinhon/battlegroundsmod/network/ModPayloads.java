@@ -472,6 +472,19 @@ public final class ModPayloads {
         }
     }
 
+    // Both ways: the Controle de Energia's run up a wall or a tree (client/WallRun). Client -> server: the local player
+    // started (dir = the wall's Direction 2D value) or stopped (-1); server -> the players around: that player's state.
+    public record WallRun(int entity, int dir) implements CustomPacketPayload {
+        public static final Type<WallRun> TYPE = payloadType("wall_run");
+        public static final StreamCodec<ByteBuf, WallRun> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, WallRun::entity, ByteBufCodecs.VAR_INT, WallRun::dir, WallRun::new);
+
+        @Override
+        public Type<WallRun> type() {
+            return TYPE;
+        }
+    }
+
     public record SyncArenaWins(List<String> wins) implements CustomPacketPayload {
         public static final Type<SyncArenaWins> TYPE = payloadType("sync_arena_wins");
         public static final StreamCodec<ByteBuf, SyncArenaWins> STREAM_CODEC = StreamCodec.composite(
@@ -2150,6 +2163,16 @@ public final class ModPayloads {
         registrar.playToClient(SyncPower.TYPE, SyncPower.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> payload.applyTo(context.player())));
         registrar.playToClient(SyncTechniques.TYPE, SyncTechniques.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> com.starkinhon.battlegroundsmod.universe.EnergyControl.clientKnown = List.copyOf(payload.known())));
+        registrar.playBidirectional(WallRun.TYPE, WallRun.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
+            if (context.player() instanceof ServerPlayer player) {
+                boolean on = payload.dir() >= 0 && com.starkinhon.battlegroundsmod.universe.EnergyControl.knows(player);
+                com.starkinhon.battlegroundsmod.universe.EnergyControl.setRunning(player, on);
+                net.neoforged.neoforge.network.PacketDistributor.sendToPlayersTrackingEntity(player,
+                        new WallRun(player.getId(), on ? Math.floorMod(payload.dir(), 4) : -1));
+            } else {
+                com.starkinhon.battlegroundsmod.client.WallRun.remote(payload.entity(), payload.dir());
+            }
+        }));
         registrar.playToClient(SyncArenaWins.TYPE, SyncArenaWins.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> payload.applyTo(context.player())));
         registrar.playToClient(SyncArenaRecords.TYPE, SyncArenaRecords.STREAM_CODEC, (payload, context) -> context.enqueueWork(payload::apply));
         registrar.playBidirectional(ArenaHard.TYPE, ArenaHard.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {

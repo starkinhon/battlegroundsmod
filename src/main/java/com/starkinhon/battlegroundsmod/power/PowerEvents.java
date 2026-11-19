@@ -125,6 +125,14 @@ public final class PowerEvents {
                 player.getInventory().add(new ItemStack(ModItems.POWER_BOOK.get()));
                 player.displayClientMessage(Component.translatable("message.battlegroundsmod.welcome"), false);
             }
+            // a save from before the taught techniques lived together: the lone Kamehameha or Rasengan becomes the
+            // player's own kit (Powers.INATA), with what was learned still open there
+            for (com.starkinhon.battlegroundsmod.power.Power p : com.starkinhon.battlegroundsmod.power.Powers.TAUGHT_TECHNIQUES) {
+                if (p.id().equals(data.power)) {
+                    data.power = com.starkinhon.battlegroundsmod.power.Powers.INATA.id();
+                    com.starkinhon.battlegroundsmod.power.SoulSync.touch(player, data.power);
+                }
+            }
             com.starkinhon.battlegroundsmod.power.powers.gojo.InfiniteVoid.onLogin(player);
             com.starkinhon.battlegroundsmod.power.powers.sukuna.ShrineDomain.onLogin(player);
             PowerLogic.sync(player);

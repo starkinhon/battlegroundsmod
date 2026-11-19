@@ -84,14 +84,20 @@ public final class Powers {
     public static final Power INUMAKI = registerSub(com.starkinhon.battlegroundsmod.power.powers.sub.jj.Inumaki.create());
     public static final Power MIWA = registerSub(com.starkinhon.battlegroundsmod.power.powers.sub.jj.Miwa.create());
 
-    // Taught by Mestre Kame at the Kame House (DbActivities.roshi): Goku's Kamehameha on Z, a bit slower to come back.
-    public static final Power KAMEHAMEHA = registerInnate(new Power("kamehameha", 0x5AB8FF, 1.0f, List.of(
+    // The techniques the masters teach (Stark 2026-11-19: one per universe). They all live together in ONE kit, the
+    // player's own (Powers.INATA): each one learned opens its key there, and putting on a soul and coming back keeps them.
+    // KAMEHAMEHA and RASENGAN are only the "learned" marks now (SoulSync.known), and the id an old save may still wear.
+    // Mestre Kame at the Kame House (DbActivities.roshi): Goku's Kamehameha, a bit slower to come back.
+    public static final Power KAMEHAMEHA = registerHidden(new Power("kamehameha", 0x5AB8FF, 1.0f, List.of(
             new Ability(220, 0, com.starkinhon.battlegroundsmod.power.powers.sub.db.Goku::kamehameha))));
-
-    // Taught by Jiraiya at the Sages' Spring (universe/MasterTraining): Naruto's Rasengan on Z, a bit slower to come back
-    // (Stark 2026-11-19: each universe teaches one technique; Naruto's is the Rasengan).
-    public static final Power RASENGAN = registerInnate(new Power("rasengan", 0x6FC3FF, 1.0f, List.of(
+    // Jiraiya at the Sages' Spring (universe/MasterTraining): Naruto's Rasengan, a bit slower to come back.
+    public static final Power RASENGAN = registerHidden(new Power("rasengan", 0x6FC3FF, 1.0f, List.of(
             new Ability(220, 0, com.starkinhon.battlegroundsmod.power.powers.sub.nr.Naruto::rasengan))));
+    // The taught techniques by key: Z Kamehameha (Dragon Ball), X Rasengan (Naruto). Jujutsu's (Maki's Nuvem
+    // Brincalhona) goes on C when it is made.
+    public static final List<Power> TAUGHT_TECHNIQUES = List.of(KAMEHAMEHA, RASENGAN);
+    public static final Power INATA = registerInnate(new Power("inata", 0xE8E2F4, 1.0f,
+            TAUGHT_TECHNIQUES.stream().map(p -> p.abilities().get(0)).toList()));
 
     // Mob only.
     public static final Power FIGHTER = registerHidden(Fighter.create());
