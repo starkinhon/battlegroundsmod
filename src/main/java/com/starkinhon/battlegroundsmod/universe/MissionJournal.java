@@ -24,6 +24,8 @@ import net.neoforged.neoforge.network.PacketDistributor;
 public final class MissionJournal {
     static final String FOUND = "souls_descobertas";
     static final String TRACKED = "souls_rastreio";
+    // the Kamehameha already known when the Kame House was tracked (then it is its daily milk that is followed)
+    private static final String TRACKED_KNEW = "souls_rastreio_kame";
 
     public static final List<String> DB = List.of("kame", "capsula", "goku", "karin", "nave", "cell", "raditz", "babidi", "buu", "guru", "vila");
     public static final List<String> NARUTO = List.of("folha", "morte", "nevoa", "chuva", "vale", "myoboku");
@@ -125,6 +127,7 @@ public final class MissionJournal {
 
     public static void track(ServerPlayer player, String mission) {
         player.getPersistentData().putString(TRACKED, mission == null ? "" : mission);
+        player.getPersistentData().putBoolean(TRACKED_KNEW, DbActivities.knowsKamehameha(player));
         send(player);
     }
 
@@ -151,7 +154,11 @@ public final class MissionJournal {
                 }
                 // a tracked mission done for good leaves the tracker (Stark 2026-11-13: "Fale com o Gohan" stayed on
                 // after he had learned to fly)
-                if ("concluida".equals(state) && id.equals(player.getPersistentData().getString(TRACKED))) {
+                // Stark 2026-11-19: the same with any mission once it is done, also the daily ones (FEITA HOJE), and the
+                // Kame House once its training is over ("Fale com o Mestre Kame" came back every time he walked away)
+                boolean over = "concluida".equals(state) || "feita".equals(state)
+                        || id.equals("kame") && DbActivities.knowsKamehameha(player) && !player.getPersistentData().getBoolean(TRACKED_KNEW);
+                if (over && id.equals(player.getPersistentData().getString(TRACKED))) {
                     player.getPersistentData().putString(TRACKED, "");
                 }
                 out.add(id + "|" + (found ? state : "oculta") + "|" + sb + "|" + (found ? 1 : 0) + "|" + one.getInt("x") + "|" + one.getInt("z") + "|"
