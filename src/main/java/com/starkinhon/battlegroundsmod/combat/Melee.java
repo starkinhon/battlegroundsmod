@@ -54,6 +54,10 @@ public final class Melee {
         if (com.starkinhon.battlegroundsmod.power.powers.luffy.Luffy.size(player) > 1.5) {
             buff *= 3;
         }
+        // Playful Cloud (a special grade cursed tool) hits harder than a bare fist in every melee move.
+        if (com.starkinhon.battlegroundsmod.item.PlayfulCloudItem.held(player)) {
+            buff *= com.starkinhon.battlegroundsmod.item.PlayfulCloudItem.DAMAGE_MULT;
+        }
         return power == null ? buff : power.meleeMultiplier() * buff;
     }
 
@@ -62,9 +66,11 @@ public final class Melee {
         return Math.max(1, attacker.getScale());
     }
 
-    // How far a punch reaches: the combo's reach, plus the Sage Mode's 2 blocks (Kawazu Kumite).
+    // How far a punch reaches: the combo's reach (2x with Playful Cloud), plus the Sage Mode's 2 blocks (Kawazu Kumite).
     static double reach(LivingEntity attacker, ComboSpec spec) {
-        return spec.alcance() * size(attacker) + com.starkinhon.battlegroundsmod.power.powers.sub.nr.NrCommon.extraReach(attacker);
+        double mult = com.starkinhon.battlegroundsmod.item.PlayfulCloudItem.held(attacker)
+                ? com.starkinhon.battlegroundsmod.item.PlayfulCloudItem.REACH_MULT : 1.0;
+        return spec.alcance() * size(attacker) * mult + com.starkinhon.battlegroundsmod.power.powers.sub.nr.NrCommon.extraReach(attacker);
     }
 
     static int fistColor(LivingEntity player) {
@@ -382,9 +388,11 @@ public final class Melee {
                 return false;
             }
             float power = 1 + STRONG_CHARGE_BONUS * charge;
+            double rMult = com.starkinhon.battlegroundsmod.item.PlayfulCloudItem.held(player)
+                    ? com.starkinhon.battlegroundsmod.item.PlayfulCloudItem.REACH_MULT : 1.0;
             Vec3 look = player.getLookAngle();
-            Vec3 front = player.getEyePosition().add(look.scale(2.5 * size(player)));
-            LivingEntity target = Combat.raycastTarget(player, 4.5 * size(player));
+            Vec3 front = player.getEyePosition().add(look.scale(2.5 * size(player) * rMult));
+            LivingEntity target = Combat.raycastTarget(player, 4.5 * size(player) * rMult);
             if (target == null) {
                 PunchFx.swing(level, front, look, color, 1 + 0.5f * charge, size(player));
             }
@@ -413,7 +421,9 @@ public final class Melee {
         if (SwordArts.held(player)) {
             return SwordArts.barrage(player, level);
         }
-        barrage(player, 20, BARRAGE_HELD_TICKS, 4.0, 3.75f * multiplier(player), 10f * multiplier(player), fistColor(player), true);
+        double barrageRange = 4.0 * (com.starkinhon.battlegroundsmod.item.PlayfulCloudItem.held(player)
+                ? com.starkinhon.battlegroundsmod.item.PlayfulCloudItem.REACH_MULT : 1.0);
+        barrage(player, 20, BARRAGE_HELD_TICKS, barrageRange, 3.75f * multiplier(player), 10f * multiplier(player), fistColor(player), true);
         return true;
     }
 

@@ -89,17 +89,21 @@ public final class FirstPersonAnimation {
             sleeve.visible = true;
             sleeve.render(pose, buffers.getBuffer(RenderType.entityTranslucent(skin)), light, OverlayTexture.NO_OVERLAY);
         }
-        // What the hand holds (the sword moves), the way the third person body holds it, turned about the wrist.
+        // What the hand holds (the sword moves / two-handed Playful Cloud), the way the third person body holds it.
         ItemStack held = player.getMainHandItem();
         if (right && event.getHand() == InteractionHand.MAIN_HAND && !held.isEmpty() && !hidden) {
-            pose.pushPose();
-            arm.translateAndRotate(pose);
-            toHand(pose, player);
-            mc.getEntityRenderDispatcher().getItemInHandRenderer().renderItem(player, held, ItemDisplayContext.THIRD_PERSON_RIGHT_HAND, false,
-                    pose, buffers, light);
-            pose.popPose();
-            if (SkillAnimations.swordMove(player, age)) {
-                trail(player, arm, held, partial, bodyYaw);
+            if (held.getItem() instanceof com.starkinhon.battlegroundsmod.item.PlayfulCloudItem) {
+                com.starkinhon.battlegroundsmod.client.outfit.PlayfulCloudRenderer.renderBetweenHands(player, model, pose, buffers, light);
+            } else {
+                pose.pushPose();
+                arm.translateAndRotate(pose);
+                toHand(pose, player);
+                mc.getEntityRenderDispatcher().getItemInHandRenderer().renderItem(player, held, ItemDisplayContext.THIRD_PERSON_RIGHT_HAND, false,
+                        pose, buffers, light);
+                pose.popPose();
+                if (SkillAnimations.swordMove(player, age)) {
+                    trail(player, arm, held, partial, bodyYaw);
+                }
             }
         }
         pose.popPose();

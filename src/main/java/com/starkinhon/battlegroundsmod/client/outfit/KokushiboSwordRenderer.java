@@ -35,7 +35,10 @@ public class KokushiboSwordRenderer extends BlockEntityWithoutLevelRenderer {
                 || stack.getItem() instanceof com.starkinhon.battlegroundsmod.item.SenbonzakuraItem
                 || stack.getItem() instanceof com.starkinhon.battlegroundsmod.item.MiwaSwordItem
                 || stack.getItem() instanceof com.starkinhon.battlegroundsmod.item.NobaraHammerItem
-                || stack.getItem() instanceof com.starkinhon.battlegroundsmod.item.NanamiBladeItem) {
+                || stack.getItem() instanceof com.starkinhon.battlegroundsmod.item.NanamiBladeItem
+                || stack.getItem() instanceof com.starkinhon.battlegroundsmod.item.InvertedSpearItem
+                || stack.getItem() instanceof com.starkinhon.battlegroundsmod.item.PlayfulCloudItem
+                || stack.getItem() instanceof com.starkinhon.battlegroundsmod.item.NichirinSwordItem) {
             pose.translate(GRIP_PIVOT.x, GRIP_PIVOT.y, GRIP_PIVOT.z);
             pose.mulPose(turn);
             pose.translate(-GRIP_PIVOT.x, -GRIP_PIVOT.y, -GRIP_PIVOT.z);

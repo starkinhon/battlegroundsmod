@@ -58,6 +58,8 @@ public final class SkillAnimations {
     // The bare-fist base moves (combo, Forte, Barragem, Dash Attack) are the keyframe animations named "soco.<move>"
     // (made with tools/poses).
     public static final String FIST_PREFIX = "soco.";
+    // Playful Cloud (Nuvem Brincalhona) two-handed staff moves: "nuvem.<move>".
+    public static final String NUVEM_PREFIX = "nuvem.";
     // Sukuna's techniques, baked frame by frame from their 3D previews (forja/sukuna-*): they run to their own end and
     // keep the body square with the aim (the arrow of the Fuga flies where he looks).
     public static final String SUKUNA_PREFIX = "sukuna.";
@@ -94,12 +96,22 @@ public final class SkillAnimations {
             PLAYING.remove(entityId);
             return;
         }
+        Entity who = entity(entityId);
+        // When holding Playful Cloud, redirect bare-fist moves (soco.*) to its dedicated two-handed staff animations (nuvem.*).
+        if (who instanceof LivingEntity living
+                && com.starkinhon.battlegroundsmod.item.PlayfulCloudItem.held(living)
+                && skill.startsWith(FIST_PREFIX)) {
+            String nuvemSkill = NUVEM_PREFIX + skill.substring(FIST_PREFIX.length());
+            if (KeyframeAnimation.of(nuvemSkill).isPresent()) {
+                skill = nuvemSkill;
+            }
+        }
         var keyframes = skill.contains("#") || !net.minecraft.resources.ResourceLocation.isValidPath(skill)
                 ? java.util.Optional.<KeyframeAnimation>empty() : KeyframeAnimation.of(skill);
-        Entity who = entity(entityId);
         if (keyframes.isPresent() && who != null) {
             KEYFRAMED.put(entityId, new Keyframed(keyframes.get(), who.tickCount, keyframeEnd(skill, awakened), skill, -1));
-            if (skill.startsWith(SWORD_PREFIX) || skill.startsWith(FIST_PREFIX) || skill.startsWith(SUKUNA_PREFIX) || keyframes.get().followLook()) {
+            if (skill.startsWith(SWORD_PREFIX) || skill.startsWith(FIST_PREFIX) || skill.startsWith(NUVEM_PREFIX)
+                    || skill.startsWith(SUKUNA_PREFIX) || keyframes.get().followLook()) {
                 // The cuts and punches are made facing ahead: the body turns with the aim, or they would go off to the side.
                 SQUARE.add(entityId);
                 return;
@@ -173,7 +185,7 @@ public final class SkillAnimations {
 
     // How long a hand-made animation runs, the last pose held to the end. Gojo's domain: until the tunnel is over.
     private static int keyframeEnd(String skill, boolean awakened) {
-        if (skill.startsWith(SWORD_PREFIX) || skill.startsWith(FIST_PREFIX) || skill.startsWith(SUKUNA_PREFIX)) {
+        if (skill.startsWith(SWORD_PREFIX) || skill.startsWith(FIST_PREFIX) || skill.startsWith(NUVEM_PREFIX) || skill.startsWith(SUKUNA_PREFIX)) {
             return KeyframeAnimation.of(skill).map(a -> (int) Math.ceil(a.length() * 20)).orElse(0);
         }
         if (com.starkinhon.battlegroundsmod.skill.DominioSpec.SKILL.equals(skill)) {
@@ -246,6 +258,12 @@ public final class SkillAnimations {
         return keyframed == null || !keyframed.skill().startsWith(SWORD_PREFIX) ? null : keyframed.skill();
     }
 
+    // Any keyframe animation currently active on the entity (null when none).
+    public static String activeKeyframeName(Entity entity) {
+        Keyframed keyframed = KEYFRAMED.get(entity.getId());
+        return keyframed == null ? null : keyframed.skill();
+    }
+
     public static int swordMoveStart(Entity entity) {
         Keyframed keyframed = KEYFRAMED.get(entity.getId());
         return keyframed == null ? 0 : keyframed.startTick();
@@ -292,9 +310,11 @@ public final class SkillAnimations {
                 float weight = (float) (raw <= end ? 1 : 1 - (raw - end) / KEYFRAME_OUT);
                 float seconds = (float) seconds(keyframed, raw);
                 keyframed.animation().apply(model, seconds, weight);
-                // As the move blends out, the character's own stance blends in (not Minecraft's plain standing pose).
+                // As the move blends out, blend smoothly back into StancePoses or Playful Cloud's two-handed hold.
                 if (weight < 1 && StancePoses.wants(entity, model, ageInTicks)) {
                     StancePoses.pose(entity, model, ageInTicks, 1 - weight);
+                } else if (weight < 1 && wantsPlayfulCloudIdle(entity, model, ageInTicks)) {
+                    blendPlayfulCloudTwoHandIdle(entity, model, ageInTicks, 1 - weight);
                 }
                 if (keyframed.animation().followLook()) {
                     model.head.xRot += lookX;
@@ -332,9 +352,16 @@ public final class SkillAnimations {
         }
         if (!animating && !guard && cut == null) {
             if (StancePoses.wants(entity, model, ageInTicks)) {
+                WRIST.remove(entity.getId());
                 stance(entity, model, ageInTicks);
                 return;
             }
+            if (wantsPlayfulCloudIdle(entity, model, ageInTicks)) {
+                unshift(model);
+                applyPlayfulCloudTwoHandIdle(entity, model, ageInTicks);
+                return;
+            }
+            WRIST.remove(entity.getId());
             unshift(model);
             return;
         }
@@ -502,6 +529,55 @@ public final class SkillAnimations {
         if (model.attackTime <= 0) {
             model.rightArm.z = 0;
             model.leftArm.z = 0;
+        }
+    }
+
+    // Two-handed idle/walk hold for Playful Cloud: Staff 2 is held across the front of the body with both hands.
+    private static boolean wantsPlayfulCloudIdle(LivingEntity entity, HumanoidModel<?> model, float ageInTicks) {
+        return ageInTicks != 0
+                && com.starkinhon.battlegroundsmod.item.PlayfulCloudItem.held(entity)
+                && entity.isAlive()
+                && !entity.isPassenger()
+                && !entity.isUsingItem()
+                && !entity.isFallFlying()
+                && !entity.isVisuallySwimming()
+                && !entity.isSleeping()
+                && model.attackTime <= 0;
+    }
+
+    private static void applyPlayfulCloudTwoHandIdle(LivingEntity entity, HumanoidModel<?> model, float ageInTicks) {
+        float breathe = (float) Math.sin(ageInTicks * 0.09f) * 0.03f;
+        float walk = Math.min(1f, entity.walkAnimation.speed(ageInTicks - entity.tickCount));
+        float walkBob = (float) Math.sin(entity.walkAnimation.position(ageInTicks - entity.tickCount) * 0.6662f) * 0.08f * walk;
+
+        model.rightArm.xRot = -48f * DEG + breathe + walkBob;
+        model.rightArm.yRot = -22f * DEG;
+        model.rightArm.zRot = -6f * DEG;
+
+        model.leftArm.xRot = -48f * DEG + breathe + walkBob;
+        model.leftArm.yRot = 22f * DEG;
+        model.leftArm.zRot = 6f * DEG;
+
+        if (model instanceof net.minecraft.client.model.PlayerModel<?> pm) {
+            pm.rightSleeve.copyFrom(model.rightArm);
+            pm.leftSleeve.copyFrom(model.leftArm);
+        }
+        WRIST.remove(entity.getId());
+    }
+
+    private static void blendPlayfulCloudTwoHandIdle(LivingEntity entity, HumanoidModel<?> model, float ageInTicks, float weight) {
+        float breathe = (float) Math.sin(ageInTicks * 0.09f) * 0.03f;
+        model.rightArm.xRot += (-48f * DEG + breathe) * weight;
+        model.rightArm.yRot += (-22f * DEG) * weight;
+        model.rightArm.zRot += (-6f * DEG) * weight;
+
+        model.leftArm.xRot += (-48f * DEG + breathe) * weight;
+        model.leftArm.yRot += (22f * DEG) * weight;
+        model.leftArm.zRot += (6f * DEG) * weight;
+
+        if (model instanceof net.minecraft.client.model.PlayerModel<?> pm) {
+            pm.rightSleeve.copyFrom(model.rightArm);
+            pm.leftSleeve.copyFrom(model.leftArm);
         }
     }
 }

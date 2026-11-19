@@ -377,6 +377,36 @@ public class BattlegroundsModClient {
                 return nobaraHammer[0];
             }
         }, ModItems.NOBARA_HAMMER.get());
+        com.starkinhon.battlegroundsmod.client.outfit.InvertedSpearRenderer[] invertedSpear = new com.starkinhon.battlegroundsmod.client.outfit.InvertedSpearRenderer[1];
+        event.registerItem(new IClientItemExtensions() {
+            @Override
+            public BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                if (invertedSpear[0] == null) {
+                    invertedSpear[0] = new com.starkinhon.battlegroundsmod.client.outfit.InvertedSpearRenderer();
+                }
+                return invertedSpear[0];
+            }
+        }, ModItems.INVERTED_SPEAR.get());
+        com.starkinhon.battlegroundsmod.client.outfit.PlayfulCloudRenderer[] playfulCloud = new com.starkinhon.battlegroundsmod.client.outfit.PlayfulCloudRenderer[1];
+        event.registerItem(new IClientItemExtensions() {
+            @Override
+            public BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                if (playfulCloud[0] == null) {
+                    playfulCloud[0] = new com.starkinhon.battlegroundsmod.client.outfit.PlayfulCloudRenderer();
+                }
+                return playfulCloud[0];
+            }
+        }, ModItems.PLAYFUL_CLOUD.get());
+        com.starkinhon.battlegroundsmod.client.outfit.NichirinSwordRenderer[] nichirinSword = new com.starkinhon.battlegroundsmod.client.outfit.NichirinSwordRenderer[1];
+        event.registerItem(new IClientItemExtensions() {
+            @Override
+            public BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                if (nichirinSword[0] == null) {
+                    nichirinSword[0] = new com.starkinhon.battlegroundsmod.client.outfit.NichirinSwordRenderer();
+                }
+                return nichirinSword[0];
+            }
+        }, ModItems.NICHIRIN_SWORD.get());
     }
 
     private static void onClientSetup(FMLClientSetupEvent event) {
