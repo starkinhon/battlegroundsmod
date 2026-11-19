@@ -21,7 +21,10 @@ import net.neoforged.neoforge.network.PacketDistributor;
 // energia... e aí você pode andar na água, você pode subir nas árvores"; general, not called chakra, so it fits any soul).
 // Taught by Kakashi at Training Ground 3 after the bell test (universe/MasterTraining). Once learned, in any universe:
 // - water holds you up like ground (the top of a water block with air over it is solid for you); crouch to sink in;
-// - walking into a tree, a wall or any block side climbs it like a ladder; crouch holds you still on it.
+// - walking into a tree, a wall or any block side RUNS up it, the body turned flat with the feet on it (Stark 2026-11-19:
+//   "não é pra escalar, é pra correr na árvore"): forward runs up, back slides down, the sides run along it, crouch
+//   holds still, jump kicks off it (client/WallRun moves and draws it; the server only knows it is on and keeps the
+//   fall from hurting).
 // The movement is the client's (the player moves itself), so the learned techniques are sent to the client (Sync).
 public final class EnergyControl {
     public static final String TECHNIQUE = "controle_energia";
@@ -36,7 +39,11 @@ public final class EnergyControl {
     }
 
     public static void register() {
-        NeoForge.EVENT_BUS.addListener((PlayerEvent.PlayerLoggedInEvent e) -> sync(e.getEntity()));
+        NeoForge.EVENT_BUS.addListener((PlayerEvent.PlayerLoggedInEvent e) -> {
+            RUN_SERVER.remove(e.getEntity().getUUID());
+            sync(e.getEntity());
+        });
+        NeoForge.EVENT_BUS.addListener((PlayerEvent.PlayerLoggedOutEvent e) -> RUN_SERVER.remove(e.getEntity().getUUID()));
         NeoForge.EVENT_BUS.addListener((PlayerEvent.PlayerRespawnEvent e) -> sync(e.getEntity()));
         NeoForge.EVENT_BUS.addListener((PlayerEvent.PlayerChangedDimensionEvent e) -> sync(e.getEntity()));
     }
@@ -75,8 +82,26 @@ public final class EnergyControl {
     }
 
     // LivingEntity.onClimbable (mixin/ClimbMixin): pushing against a block's side climbs it.
+    // On while running on a wall (client/WallRun): the ladder rules keep the fall from hurting and the player on it.
     public static boolean climbs(Player player) {
-        return player.horizontalCollision && !player.isSpectator() && !player.getAbilities().flying && !player.isPassenger()
+        return running(player) && !player.isSpectator() && !player.getAbilities().flying && !player.isPassenger()
                 && !player.isInWater() && knows(player);
+    }
+
+    // Who is running on a wall now, per side (the integrated server shares this class with its client).
+    private static final java.util.Set<java.util.UUID> RUN_CLIENT = java.util.concurrent.ConcurrentHashMap.newKeySet();
+    private static final java.util.Set<java.util.UUID> RUN_SERVER = java.util.concurrent.ConcurrentHashMap.newKeySet();
+
+    public static boolean running(Player player) {
+        return (player.level().isClientSide() ? RUN_CLIENT : RUN_SERVER).contains(player.getUUID());
+    }
+
+    public static void setRunning(Player player, boolean on) {
+        java.util.Set<java.util.UUID> set = player.level().isClientSide() ? RUN_CLIENT : RUN_SERVER;
+        if (on) {
+            set.add(player.getUUID());
+        } else {
+            set.remove(player.getUUID());
+        }
     }
 }

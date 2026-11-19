@@ -20,6 +20,7 @@ public abstract class PlayerModelMixin {
         PlayerModel<?> model = (PlayerModel<?>) (Object) this;
         SkillAnimations.apply(entity, model, ageInTicks);
         com.starkinhon.battlegroundsmod.client.FlightPose.apply(entity, model);
+        com.starkinhon.battlegroundsmod.client.WallRun.apply(entity, model, ageInTicks);
         com.starkinhon.battlegroundsmod.client.outfit.KokushiboSheathLayer.holdArm(entity, model, ageInTicks);
         model.leftSleeve.copyFrom(model.leftArm);
         model.rightSleeve.copyFrom(model.rightArm);
