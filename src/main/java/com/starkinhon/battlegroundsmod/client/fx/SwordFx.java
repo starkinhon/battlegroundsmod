@@ -188,6 +188,26 @@ public final class SwordFx {
                 tip = new Vector3f(0, stretch >= com.starkinhon.battlegroundsmod.client.outfit.SwordStretch.LENGTH * 0.4f
                         ? com.starkinhon.battlegroundsmod.client.outfit.KokushiboSwordRenderer.LONG_TIP
                         : com.starkinhon.battlegroundsmod.client.outfit.KokushiboSwordRenderer.TIP, 0);
+            } else if (stack.getItem() instanceof com.starkinhon.battlegroundsmod.item.NanamiBladeItem) {
+                com.starkinhon.battlegroundsmod.client.outfit.NanamiBladeRenderer.toThirdPerson(pose);
+                base = new Vector3f(0.04f, 0f, 0f);
+                tip = new Vector3f(0.62f, 0f, 0f);
+            } else if (stack.getItem() instanceof com.starkinhon.battlegroundsmod.item.SodeNoShirayukiItem) {
+                com.starkinhon.battlegroundsmod.client.outfit.SodeNoShirayukiRenderer.toThirdPerson(pose);
+                base = new Vector3f(0.04f, 0f, 0f);
+                tip = new Vector3f(0.74f, 0f, 0f);
+            } else if (stack.getItem() instanceof com.starkinhon.battlegroundsmod.item.SenbonzakuraItem) {
+                com.starkinhon.battlegroundsmod.client.outfit.SenbonzakuraRenderer.toThirdPerson(pose);
+                base = new Vector3f(0.04f, 0f, 0f);
+                tip = new Vector3f(0.74f, 0f, 0f);
+            } else if (stack.getItem() instanceof com.starkinhon.battlegroundsmod.item.MiwaSwordItem) {
+                com.starkinhon.battlegroundsmod.client.outfit.MiwaSwordRenderer.toThirdPerson(pose);
+                base = new Vector3f(0.04f, 0f, 0f);
+                tip = new Vector3f(0.745f, 0f, 0f);
+            } else if (stack.getItem() instanceof com.starkinhon.battlegroundsmod.item.NobaraHammerItem) {
+                com.starkinhon.battlegroundsmod.client.outfit.NobaraHammerRenderer.toThirdPerson(pose);
+                base = new Vector3f(0f, -0.05f, 0f);
+                tip = new Vector3f(0f, 0.09f, 0f);
             } else if (standingBlade(stack) != null) {
                 // The Naruto weapons are 3D models standing on +y (made in forja/itens-naruto); their blade runs up the
                 // model, from the guard to the tip, in the model's own pixels.

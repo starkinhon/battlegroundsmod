@@ -126,7 +126,7 @@ public final class Keybinds {
             BaseAttacks.cycle(minecraft.options.keyShift.isDown());
         }
         // Down before the use, so the server already knows the key is held when the attack starts.
-        BaseAttacks.holdKey(hasPower && USE_ATTACK.isDown());
+        BaseAttacks.holdKey(hasPower && (USE_ATTACK.isDown() || AirFightClient.barrageKeyHeld()));
         if (pressed(USE_ATTACK, USE_INDEX) && hasPower) {
             BaseAttacks.use();
         }

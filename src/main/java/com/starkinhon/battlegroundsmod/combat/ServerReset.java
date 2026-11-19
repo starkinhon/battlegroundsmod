@@ -31,5 +31,20 @@ public final class ServerReset {
         com.starkinhon.battlegroundsmod.power.powers.gojo.Azul.resetStatics();
         com.starkinhon.battlegroundsmod.power.powers.shigaraki.Decay.resetStatics();
         com.starkinhon.battlegroundsmod.power.powers.shigaraki.Esfarelar.resetStatics();
+        com.starkinhon.battlegroundsmod.power.powers.opm.OpmSerious.resetStatics();
+        com.starkinhon.battlegroundsmod.power.powers.sub.SubDefense.clear();
+        com.starkinhon.battlegroundsmod.power.powers.makima.Corrente.clear();
+        com.starkinhon.battlegroundsmod.power.powers.makima.Puppets.clear();
+        com.starkinhon.battlegroundsmod.power.powers.makima.Ratos.clear();
+        com.starkinhon.battlegroundsmod.power.powers.makima.Ritual.clear();
+        RepeatHits.resetStatics();
+        AirFight.resetStatics();
+        com.starkinhon.battlegroundsmod.universe.Flight.resetStatics();
+        com.starkinhon.battlegroundsmod.universe.SkyPassers.resetStatics();
+        com.starkinhon.battlegroundsmod.universe.StructureMissions.resetStatics();
+        com.starkinhon.battlegroundsmod.universe.shenlong.ShenlongServer.resetStatics();
+        com.starkinhon.battlegroundsmod.universe.DbActivities.resetStatics();
+        com.starkinhon.battlegroundsmod.universe.NarutoActivities.resetStatics();
+        com.starkinhon.battlegroundsmod.universe.UniverseBiomes.resetStatics();
     }
 }

@@ -22,11 +22,16 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.server.ServerStoppedEvent;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 // The combat flight (forja db-voo-mobs/combate.html, prévia v2 approved by Stark 2026-11-13: "insanamente perfeito"),
@@ -60,17 +65,54 @@ public final class AirFight {
     private AirFight() {
     }
 
+    public static void register() {
+        NeoForge.EVENT_BUS.addListener((PlayerEvent.PlayerLoggedOutEvent event) -> {
+            if (event.getEntity() instanceof ServerPlayer player) {
+                clear(player);
+            }
+        });
+        NeoForge.EVENT_BUS.addListener((PlayerEvent.PlayerChangedDimensionEvent event) -> {
+            if (event.getEntity() instanceof ServerPlayer player) {
+                clear(player);
+            }
+        });
+        NeoForge.EVENT_BUS.addListener((ServerTickEvent.Post event) -> {
+            if (event.getServer().getTickCount() % 100 == 0) {
+                prune();
+            }
+        });
+        NeoForge.EVENT_BUS.addListener((ServerStoppedEvent event) -> {
+            LOCK.clear();
+            COMBO.clear();
+            DASHING.clear();
+            EXCHANGE.clear();
+        });
+    }
+
     // ------------------------------------------------------------------ the lock
 
+    public static boolean validTarget(ServerPlayer player, Entity entity) {
+        if (!(entity instanceof LivingEntity living) || !Combat.isTarget(living, player) || !Combat.lockable(living)) {
+            return false;
+        }
+        if (living instanceof Player p && p.isCreative()) {
+            return false;
+        }
+        if (living instanceof SoulBoss soul) {
+            return AirCombat.flier(soul);
+        }
+        return living instanceof Player other && (Flight.flying(other) || Flight.dbPower(other));
+    }
+
     public static void lock(ServerPlayer player, int id) {
-        if (id < 0 || !Flight.dbPower(player)
-                || !(player.level().getEntity(id) instanceof SoulBoss soul && com.starkinhon.battlegroundsmod.boss.AirCombat.flier(soul))) {
+        Entity entity = id < 0 ? null : player.level().getEntity(id);
+        if (id < 0 || !Flight.dbPower(player) || !validTarget(player, entity)) {
             LOCK.remove(player.getUUID());
         } else {
             LOCK.put(player.getUUID(), id);
             // Locking on a soul from the sky calls it out: it takes the player as its target even past its follow
             // range (a Vegeta on the ground 48 blocks under a flying player never noticed him, so never took off).
-            if (Flight.flying(player) && player.level().getEntity(id) instanceof SoulBoss boss && boss.air() != null
+            if (Flight.flying(player) && entity instanceof SoulBoss boss && boss.air() != null
                     && boss.isAlive() && boss.getTarget() == null && Combat.isTarget(player, boss)) {
                 boss.setTarget(player);
             }
@@ -84,7 +126,8 @@ public final class AirFight {
             if (id == null || !Flight.flying(player) || !CombatMode.in(player)) {
                 return null;
             }
-            if (player.level().getEntity(id) instanceof LivingEntity t && Combat.isTarget(t, player) && t.distanceToSqr(player) < 80 * 80) {
+            if (player.level().getEntity(id) instanceof LivingEntity t && Combat.isTarget(t, player)
+                    && !(t instanceof Player p && p.isCreative()) && t.distanceToSqr(player) < 80 * 80) {
                 return t;
             }
             return null;
@@ -134,14 +177,11 @@ public final class AirFight {
         return null;
     }
 
+    private static final long SIM_HIT_EVERY = 3;
+    private static final long SIM_HIT_BURST = 2 * SIM_HIT_EVERY;
+
     public static void sim(ServerPlayer player, int id, Vec3 pos, float yaw, int flags) {
-        if (!(simTarget(player, id) instanceof SoulBoss boss) || boss.air() == null || pos.distanceToSqr(player.position()) > 64 * 64
-                || !Double.isFinite(pos.x + pos.y + pos.z)) {
-            return;
-        }
-        if (!boss.air().pilot(player, pos, yaw, flags)) {
-            move(player, MOVE_DENY, id, 0);
-        }
+        // Server-authoritative AirCombat owns SoulBoss movement in multiplayer.
     }
 
     // kinds: the player's blows 0 punch, 1 heavy (the 4th punch, the dash, the kick from behind), 2 the Martelo,
@@ -156,14 +196,16 @@ public final class AirFight {
             return;
         }
         if (kind <= 4) {
-            // The client says when its blows land: never faster than the page can (punches, clashes and balls come
-            // 3 ticks apart at the quickest), so a changed client can't rain blows (multiplayer).
+            // The client says when its blows land, and the quickest come 3 ticks apart (punches, clashes, balls): a changed client
+            // must not rain them (multiplayer). Two packets can arrive in the same tick through network jitter, so this lets
+            // a short burst through (up to 2 blows early) and only holds a steady rate above one blow every 3 ticks.
             PowerData data = player.getData(ModAttachments.POWER);
             long now = player.level().getGameTime();
-            if (now - data.airSimHitAt < 2) {
+            long due = Math.max(data.airSimHitAt, now);
+            if (due - now > SIM_HIT_BURST) {
                 return;
             }
-            data.airSimHitAt = now;
+            data.airSimHitAt = due + SIM_HIT_EVERY;
         }
         float punch = (float) ComboSpec.get().golpe(0).dano() * Melee.multiplier(player);
         // The page already threw the player (its own knockback): Minecraft's own from this hurt is undone, or the client
@@ -231,6 +273,8 @@ public final class AirFight {
         Fx.sound(level, player.position(), SoundEvents.FIREWORK_ROCKET_LARGE_BLAST, 1.2f, 0.6f);
         DbCommon.screen(level, center(player), 4);
         boolean[] dodged = {false};
+        Vec3[] prevA = {center(player)};
+        Vec3[] prevT = {center(target)};
         // The soul answers a third of the dashes with its own: they meet halfway, the exchange.
         if (target instanceof SoulBoss boss && boss.air() != null && level.random.nextDouble() < 0.3) {
             boss.air().answerDash(player);
@@ -240,10 +284,16 @@ public final class AirFight {
                 end(player, data);
                 return true;
             }
-            double dist = center(player).distanceTo(center(target));
-            PunchFx.follow(level, PunchFx.TRAIL, player, center(target).subtract(center(player)).normalize(), Melee.fistColor(player), 0);
-            // Both on the boost into each other: the exchange.
-            if (dist < 10 && target instanceof SoulBoss boss && boss.air() != null && boss.air().rushingAt(player)) {
+            Vec3 curA = center(player);
+            Vec3 curT = center(target);
+            double dist = curA.distanceTo(curT);
+            double segDist = segmentDistance(prevA[0], curA, prevT[0], curT);
+            double closing = curA.subtract(prevA[0]).subtract(curT.subtract(prevT[0])).length();
+            prevA[0] = curA;
+            prevT[0] = curT;
+            PunchFx.follow(level, PunchFx.TRAIL, player, curT.subtract(curA).normalize(), Melee.fistColor(player), 0);
+            // Both on the boost into each other: the exchange (PvE with a rushing boss, or PvP with another dashing player).
+            if ((dist < 10 || segDist < 10) && ((target instanceof SoulBoss boss && boss.air() != null && boss.air().rushingAt(player)) || dashing(target))) {
                 end(player, data);
                 exchange(level, player, target);
                 return true;
@@ -255,7 +305,8 @@ public final class AirFight {
                     return true;
                 }
             }
-            if (dist < 2.4) {
+            double hitRadius = 2.6 + Math.min(3.0, closing * 0.65);
+            if (!dodged[0] && segDist <= hitRadius && !dodging(target) && !Intangible.untouchableBy(target, player)) {
                 end(player, data);
                 dashHit(level, player, target);
                 return true;
@@ -267,6 +318,14 @@ public final class AirFight {
             return false;
         });
         return true;
+    }
+
+    private static double segmentDistance(Vec3 a0, Vec3 a1, Vec3 b0, Vec3 b1) {
+        Vec3 r0 = a0.subtract(b0);
+        Vec3 dr = a1.subtract(a0).subtract(b1.subtract(b0));
+        double lenSq = dr.lengthSqr();
+        double s = lenSq < 1.0E-6 ? 0 : Mth.clamp(-r0.dot(dr) / lenSq, 0, 1);
+        return r0.add(dr.scale(s)).length();
     }
 
     private static void end(ServerPlayer player, PowerData data) {
@@ -306,57 +365,103 @@ public final class AirFight {
         PowerData data = player.getData(ModAttachments.POWER);
         int interrupts = data.interrupts;
         boolean hammer = Stun.is(target) && comboCount(player, target) >= 2;
-        data.busyTicks = hammer ? 14 : 10;
+        int appearTick = 3;
+        int hitTick = appearTick + (hammer ? 5 : 2);
+        data.busyTicks = hitTick + 3;
         Vec3 from = player.position();
         SubNet.send(level, SubNet.VANISH, 0, from.add(0, 1, 0), Vec3.ZERO, 0, 0, 0);
         Fx.sound(level, from, SoundEvents.ENDERMAN_TELEPORT, 0.6f, 1.8f);
         player.setInvisible(true);
         // A moment hold so the client does not fly off meanwhile.
-        AirCombat.knock(player, Vec3.ZERO, hammer ? 10 : 6, false);
-        Tasks.later(3, () -> {
-            player.setInvisible(false);
+        AirCombat.knock(player, Vec3.ZERO, appearTick + 1, false);
+        Vec3[] tPrev = {target.position()};
+        Vec3[] tVel = {Vec3.ZERO};
+        Vec3[] fdRef = {Combat.flatLook(player)};
+        Tasks.add(age -> {
             if (!player.isAlive() || data.interrupts != interrupts || !target.isAlive()) {
-                return;
+                player.setInvisible(false);
+                data.busyTicks = 0;
+                return true;
             }
-            Vec3 fd = target.position().subtract(from);
-            fd = fd.lengthSqr() < 1.0E-4 ? Combat.flatLook(player) : fd.normalize();
-            Vec3 spot = hammer ? target.position().add(0, 1.7, 0) : target.position().add(fd.scale(1.5));
-            if (!level.noCollision(player, player.getBoundingBox().move(spot.subtract(player.position())))) {
-                spot = target.position().add(fd.scale(-1.6));
+            Vec3 tNow = target.position();
+            Vec3 seen = tNow.subtract(tPrev[0]).scale(20);
+            if (seen.lengthSqr() < 150 * 150) {
+                tVel[0] = tVel[0].lerp(seen, 0.7);
             }
-            Vec3 look = center(target).subtract(spot.add(0, player.getEyeHeight(), 0));
-            float yRot = (float) (Mth.atan2(-look.x, look.z) * Mth.RAD_TO_DEG);
-            float xRot = (float) (-Mth.atan2(look.y, Math.sqrt(look.x * look.x + look.z * look.z)) * Mth.RAD_TO_DEG);
-            player.connection.teleport(spot.x, spot.y, spot.z, yRot, xRot);
-            SubNet.send(level, SubNet.VANISH, 0, spot.add(0, 1, 0), Vec3.ZERO, 0, 0, 0);
-            SubCommon.pose(player, hammer ? "voo.martelo" : "voo.chute_atras");
-            Tasks.later(hammer ? 5 : 2, () -> {
-                if (!player.isAlive() || data.interrupts != interrupts || !target.isAlive() || player.distanceTo(target) > 4.5) {
-                    return;
+            tPrev[0] = tNow;
+            if (age < appearTick) {
+                return false;
+            }
+            if (age == appearTick) {
+                player.setInvisible(false);
+                Vec3 fd = tNow.subtract(from);
+                fd = fd.lengthSqr() < 1.0E-4 ? Combat.flatLook(player) : fd.normalize();
+                fdRef[0] = fd;
+                Vec3 spot = strongSpot(level, player, target, fd, hammer);
+                teleportFacing(player, spot, target);
+                SubNet.send(level, SubNet.VANISH, 0, spot.add(0, 1, 0), Vec3.ZERO, 0, 0, 0);
+                SubCommon.pose(player, hammer ? "voo.martelo" : "voo.chute_atras");
+                AirCombat.knock(player, tVel[0], (hitTick - appearTick) + 1, false);
+                return false;
+            }
+            if (age < hitTick) {
+                // Keep tracking a moving target during the short wind-up (like AirCombat.hammer / vanishKick).
+                if (player.distanceTo(target) > 3.6 && player.distanceTo(target) < 14) {
+                    Vec3 spot = strongSpot(level, player, target, fdRef[0], hammer);
+                    teleportFacing(player, spot, target);
                 }
-                if (guardPunish(level, target, player, hammer ? "martelo" : "forte")) {
-                    return;
-                }
-                Defense.breakGuard(target, player);
-                float damage = 25f * Melee.multiplier(player) * (hammer ? 1.1f : 0.9f);
-                Combat.hurtBasic(player, target, damage);
-                Melee.hitFx(player, target, "final", PunchFx.FORTE, hammer ? 1 : 0.5f);
-                Vec3 c = center(target);
-                DbCommon.screen(level, c, 1);
-                Fx.sound(level, c, SoundEvents.PLAYER_ATTACK_KNOCKBACK, 1.5f, 0.6f);
-                Fx.sound(level, c, SoundEvents.GENERIC_EXPLODE.value(), 0.7f, 1.5f);
-                if (hammer) {
-                    slam(level, player, target);
-                } else {
-                    Vec3 away = target.position().subtract(player.position());
-                    throwAway(target, (away.lengthSqr() < 1.0E-4 ? fdOf(player) : away.normalize()).scale(22), 12);
-                    Stun.apply(target, 16);
-                    combo(player, target, 1);
-                }
-                Stamina.gain(player, StaminaSpec.get().ganhoAcertoPct());
-            });
+                AirCombat.knock(player, tVel[0], 2, false);
+                return false;
+            }
+            if (player.distanceTo(target) > 5.5 && player.distanceTo(target) < 12) {
+                Vec3 spot = strongSpot(level, player, target, fdRef[0], hammer);
+                teleportFacing(player, spot, target);
+            }
+            if (player.distanceTo(target) > 5.5 || dodging(target) || Intangible.untouchableBy(target, player)) {
+                return true;
+            }
+            if (guardPunish(level, target, player, hammer ? "martelo" : "forte")) {
+                return true;
+            }
+            Defense.breakGuard(target, player);
+            float damage = 25f * Melee.multiplier(player) * (hammer ? 1.1f : 0.9f);
+            Combat.hurtBasic(player, target, damage);
+            Melee.hitFx(player, target, "final", PunchFx.FORTE, hammer ? 1 : 0.5f);
+            Vec3 c = center(target);
+            DbCommon.screen(level, c, 1);
+            Fx.sound(level, c, SoundEvents.PLAYER_ATTACK_KNOCKBACK, 1.5f, 0.6f);
+            Fx.sound(level, c, SoundEvents.GENERIC_EXPLODE.value(), 0.7f, 1.5f);
+            if (hammer) {
+                slam(level, player, target);
+            } else {
+                Vec3 away = target.position().subtract(player.position());
+                throwAway(target, (away.lengthSqr() < 1.0E-4 ? fdOf(player) : away.normalize()).scale(22), 12);
+                Stun.apply(target, 16);
+                combo(player, target, 1);
+            }
+            Stamina.gain(player, StaminaSpec.get().ganhoAcertoPct());
+            return true;
         });
         return true;
+    }
+
+    private static Vec3 strongSpot(ServerLevel level, ServerPlayer player, LivingEntity target, Vec3 fd, boolean hammer) {
+        Vec3 spot = hammer ? target.position().add(0, 1.7, 0) : target.position().add(fd.scale(1.5));
+        if (level.noCollision(player, player.getBoundingBox().move(spot.subtract(player.position())))) {
+            return spot;
+        }
+        Vec3 alt = target.position().add(fd.scale(-1.6));
+        if (level.noCollision(player, player.getBoundingBox().move(alt.subtract(player.position())))) {
+            return alt;
+        }
+        return target.position().add(0, 1.0, 0);
+    }
+
+    private static void teleportFacing(ServerPlayer player, Vec3 spot, LivingEntity target) {
+        Vec3 look = center(target).subtract(spot.add(0, player.getEyeHeight(), 0));
+        float yRot = (float) (Mth.atan2(-look.x, look.z) * Mth.RAD_TO_DEG);
+        float xRot = (float) (-Mth.atan2(look.y, Math.sqrt(look.x * look.x + look.z * look.z)) * Mth.RAD_TO_DEG);
+        player.connection.teleport(spot.x, spot.y, spot.z, yRot, xRot);
     }
 
     private static Vec3 fdOf(LivingEntity e) {
@@ -420,7 +525,8 @@ public final class AirFight {
         PowerData data = player.getData(ModAttachments.POWER);
         int interrupts = data.interrupts;
         int color = Melee.fistColor(player);
-        float damage = 3.2f * Melee.multiplier(player);
+        // the Barragem's share of what it paid before (Combat.BARRAGE_SCALE), like the fists' and the sword's
+        float damage = 2.6f * Melee.multiplier(player) * Combat.BARRAGE_SCALE;
         data.busyTicks = 14;
         int[] shots = {0};
         Tasks.add(age -> {
@@ -430,6 +536,7 @@ public final class AirFight {
             }
             boolean holding = age < 12 || data.attackHeld && age < 70;
             if (!holding) {
+                SubCommon.pose(player, "");
                 data.busyTicks = 2;
                 return true;
             }
@@ -493,6 +600,9 @@ public final class AirFight {
             }
             if (!deflected[0]) {
                 for (LivingEntity e : Combat.alongLine(level, a, end, 0.55, owner)) {
+                    if (dodging(e) || Intangible.untouchableBy(e, owner)) {
+                        continue;
+                    }
                     Defense.Result guard = Defense.check(e, owner);
                     if (guard == Defense.Result.PARRY && !reflected) {
                         // back to the thrower, homing
@@ -630,6 +740,10 @@ public final class AirFight {
             int k = i;
             Tasks.later(i * every + 1, () -> {
                 if (!a.isAlive() || !b.isAlive()) {
+                    EXCHANGE.remove(a);
+                    EXCHANGE.remove(b);
+                    a.setInvisible(false);
+                    b.setInvisible(false);
                     return;
                 }
                 boolean last = k == hits;
@@ -729,9 +843,23 @@ public final class AirFight {
         LOCK.remove(player.getUUID());
         COMBO.remove(player.getUUID());
         DASHING.remove(player.getUUID());
+        EXCHANGE.remove(player);
+        if (player.isInvisible()) {
+            player.setInvisible(false);
+        }
+        player.getData(ModAttachments.POWER).busyTicks = 0;
     }
 
     public static void prune() {
-        EXCHANGE.keySet().removeIf(e -> e.isRemoved() || !exchanging(e));
+        EXCHANGE.keySet().removeIf(e -> e.isRemoved() || !e.isAlive() || !exchanging(e));
+        DASHING.entrySet().removeIf(e -> e.getValue() < 0);
+        COMBO.entrySet().removeIf(e -> e.getValue()[1] < 0);
+    }
+
+    public static void resetStatics() {
+        LOCK.clear();
+        COMBO.clear();
+        DASHING.clear();
+        EXCHANGE.clear();
     }
 }

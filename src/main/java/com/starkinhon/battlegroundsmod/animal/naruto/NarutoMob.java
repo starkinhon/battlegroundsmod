@@ -317,7 +317,7 @@ public class NarutoMob extends DbCreature {
         private Vec3 to;
 
         SoarGoal() {
-            setFlags(EnumSet.of(Goal.Flag.MOVE));
+            setFlags(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.LOOK));
         }
 
         @Override
@@ -343,7 +343,7 @@ public class NarutoMob extends DbCreature {
             if (getY() < under + 10 || horizontalCollision || isInWater()) {
                 dir = new Vec3(dir.x * 0.5, 0.9, dir.z * 0.5).normalize();
             }
-            setDeltaMovement(getDeltaMovement().lerp(dir.scale(0.55), 0.08));
+            setDeltaMovement(getDeltaMovement().lerp(dir.scale(0.85), 0.12));
             Vec3 v = getDeltaMovement();
             float yaw = (float) (Mth.atan2(v.z, v.x) * Mth.RAD_TO_DEG) - 90f;
             setYRot(Mth.rotLerp(0.15f, getYRot(), yaw));
@@ -631,6 +631,11 @@ public class NarutoMob extends DbCreature {
 
     @Override
     public void travel(Vec3 input) {
+        if (id().equals("pterodactilo") && isEffectiveAi() && !isVehicle() && getTarget() == null && !attacking()) {
+            move(MoverType.SELF, getDeltaMovement());
+            calculateEntityAnimation(false);
+            return;
+        }
         if (spec().move == Move.WATER && isControlledByLocalInstance() && isInWater() && !attacking()) {
             moveRelative(getSpeed(), input);
             move(MoverType.SELF, getDeltaMovement());

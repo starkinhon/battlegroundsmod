@@ -328,13 +328,60 @@ public final class PowerLogic {
         }
     }
 
+    // The weapon a soul carries (the 3D ones: Nanami, Rukia, Byakuya, Miwa, Nobara), or null.
+    public static net.minecraft.world.item.Item soulWeapon(String power) {
+        return switch (power) {
+            case "nanami" -> com.starkinhon.battlegroundsmod.ModItems.NANAMI_BLADE.get();
+            case "rukia" -> com.starkinhon.battlegroundsmod.ModItems.SODE_NO_SHIRAYUKI.get();
+            case "byakuya" -> com.starkinhon.battlegroundsmod.ModItems.SENBONZAKURA.get();
+            case "miwa" -> com.starkinhon.battlegroundsmod.ModItems.MIWA_SWORD.get();
+            case "nobara" -> com.starkinhon.battlegroundsmod.ModItems.NOBARA_HAMMER.get();
+            default -> null;
+        };
+    }
+
+    private static final String[] WEAPON_SOULS = {"nanami", "rukia", "byakuya", "miwa", "nobara"};
+
+    // The soul's weapon comes with it and goes with it: picking a soul takes every soul weapon out of the inventory and the ender
+    // chest (one of the new soul's own is kept) and gives the new soul's if there is none. Picking the soul again never adds a
+    // second one, and switching souls back and forth never piles them up (each pick used to hand out a new unbreakable sword).
+    private static void giveSoulWeapon(ServerPlayer player, String power) {
+        net.minecraft.world.item.Item own = soulWeapon(power);
+        boolean kept = false;
+        for (net.minecraft.world.Container box : new net.minecraft.world.Container[] {player.getInventory(), player.getEnderChestInventory()}) {
+            for (int i = 0; i < box.getContainerSize(); i++) {
+                net.minecraft.world.item.ItemStack stack = box.getItem(i);
+                boolean weapon = false;
+                for (String soul : WEAPON_SOULS) {
+                    weapon |= stack.is(soulWeapon(soul));
+                }
+                if (!weapon) {
+                    continue;
+                }
+                if (!kept && own != null && stack.is(own) && box == player.getInventory()) {
+                    kept = true;
+                    continue;
+                }
+                box.setItem(i, net.minecraft.world.item.ItemStack.EMPTY);
+            }
+        }
+        if (own != null && !kept) {
+            net.minecraft.world.item.ItemStack weaponStack = new net.minecraft.world.item.ItemStack(own);
+            if (!player.getInventory().add(weaponStack)) {
+                player.drop(weaponStack, false);
+            }
+        }
+    }
+
     public static void select(ServerPlayer player, Power power) {
         PowerData data = player.getData(ModAttachments.POWER);
         data.power = power.id();
         SoulSync.touch(player, power.id());
+        giveSoulWeapon(player, power.id());
         data.ult = 0;
         data.outfit = true;
         data.resetCombat();
+        PacketDistributor.sendToPlayer(player, new ModPayloads.SyncCharge(-1));
         Vec3 pos = player.position().add(0, 1, 0);
         Fx.burst(player.serverLevel(), Fx.dust(power.color(), 2f), pos, 60, 0.6, 0);
         Fx.burst(player.serverLevel(), ParticleTypes.TOTEM_OF_UNDYING, pos, 40, 0.5, 0.4);
@@ -349,6 +396,7 @@ public final class PowerLogic {
         data.power = "";
         data.ult = 0;
         data.resetCombat();
+        PacketDistributor.sendToPlayer(player, new ModPayloads.SyncCharge(-1));
         CombatMode.leave(player);
         sync(player);
     }

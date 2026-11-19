@@ -142,6 +142,7 @@ public final class PowerEvents {
         if (event.getEntity() instanceof ServerPlayer player) {
             player.getData(ModAttachments.POWER).resetCombat();
             PowerLogic.sync(player);
+            PacketDistributor.sendToPlayer(player, new ModPayloads.SyncCharge(-1));
             // The new body keeps the dead one's entity id: no pose or guard of the move they died in carries over.
             PacketDistributor.sendToPlayersTrackingEntityAndSelf(player, new ModPayloads.PlaySkillAnimation(player.getId(), "", false));
             PacketDistributor.sendToPlayersTrackingEntityAndSelf(player, new ModPayloads.GuardPose(player.getId(), false));

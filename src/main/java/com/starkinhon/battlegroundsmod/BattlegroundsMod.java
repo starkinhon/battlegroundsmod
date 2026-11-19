@@ -34,6 +34,7 @@ public class BattlegroundsMod {
     // The creative tabs themselves live in ModCreativeTabs.
 
     public BattlegroundsMod(IEventBus modEventBus, ModContainer modContainer) {
+        raiseHealthCap();
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(ModPayloads::register);
         modEventBus.addListener(ModEntities::onAttributes);
@@ -65,6 +66,7 @@ public class BattlegroundsMod {
         com.starkinhon.battlegroundsmod.universe.shenlong.ShenlongServer.register();
         com.starkinhon.battlegroundsmod.universe.DbQuests.register();
         com.starkinhon.battlegroundsmod.universe.Flight.register();
+        com.starkinhon.battlegroundsmod.combat.AirFight.register();
         com.starkinhon.battlegroundsmod.boss.AirCombat.register();
         com.starkinhon.battlegroundsmod.universe.SkyPassers.register();
         com.starkinhon.battlegroundsmod.universe.NarutoWorld.register();
@@ -108,5 +110,16 @@ public class BattlegroundsMod {
         event.enqueueWork(com.starkinhon.battlegroundsmod.world.DragonRegion::register);
         event.enqueueWork(com.starkinhon.battlegroundsmod.world.NarutoRegion::register);
         event.enqueueWork(com.starkinhon.battlegroundsmod.world.JujutsuRegion::register);
+    }
+
+    // Max health past vanilla's 1024 (the attribute clamps to it on both sides): the tiers go up to 1800 (padrao.tiers.json) and
+    // a boss in a group fight to several times its own life. Runs on the client too, which clamps the synced value as well.
+    public static final double MAX_HEALTH_CAP = 100000;
+
+    private static void raiseHealthCap() {
+        if (net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH.value()
+                instanceof net.minecraft.world.entity.ai.attributes.RangedAttribute ranged) {
+            ((com.starkinhon.battlegroundsmod.mixin.RangedAttributeAccessor) ranged).battlegrounds$setMaxValue(MAX_HEALTH_CAP);
+        }
     }
 }

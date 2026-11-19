@@ -304,8 +304,7 @@ public final class RainVillageFx {
         if (fade <= 0.001f) {
             return;
         }
-        int alpha = Mth.clamp((int) (255 * 0.1 * fade), 0, 255);
-        graphics.fill(0, 0, graphics.guiWidth(), graphics.guiHeight(), (alpha << 24) | 0x3A4248);
+        BiomeAura.wash(graphics, 0x3A4248, 0.1f * fade);
         float fl = flashAt(partial);
         if (fl > 0.01f) {
             int fa = Mth.clamp((int) (255 * 0.32 * fl * fade), 0, 255);

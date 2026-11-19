@@ -112,13 +112,19 @@ public final class Melee {
     private static void chase(LivingEntity attacker, LivingEntity target, ComboSpec spec) {
         PowerData data = attacker.getData(ModAttachments.POWER);
         if (AirFight.lunge(attacker, target)) {
-            // the combat flight: a lunge through the air, then the punch
-            data.punchDelay = 6;
-            Tasks.later(4, () -> {
-                data.punchDelay = 0;
-                if (attacker.isAlive() && !Stun.is(attacker)) {
-                    swing(attacker, target.isAlive() ? target : null, spec);
+            // the combat flight: wait for the client's lunge position to reach the target (up to 10 ticks for RTT)
+            data.punchDelay = 10;
+            Tasks.add(age -> {
+                if (!attacker.isAlive() || Stun.is(attacker) || Freeze.isFrozen(attacker)) {
+                    data.punchDelay = 0;
+                    return true;
                 }
+                if (!target.isAlive() || attacker.distanceTo(target) <= reach(attacker, spec) + 1.0 || age >= 10) {
+                    data.punchDelay = 0;
+                    swing(attacker, target.isAlive() ? target : null, spec);
+                    return true;
+                }
+                return false;
             });
             return;
         }
@@ -213,7 +219,8 @@ public final class Melee {
             return false;
         }
         ServerLevel level = Combat.level(attacker);
-        if (target == null || !Combat.isTarget(target, attacker) || attacker.distanceTo(target) > reach(attacker, spec) + 1.2) {
+        double extra = AirFight.active(attacker) ? 2.0 : 1.2;
+        if (target == null || !Combat.isTarget(target, attacker) || attacker.distanceTo(target) > reach(attacker, spec) + extra) {
             target = closestInFront(attacker, reach(attacker, spec), 0.55);
         }
         if (target == null || !Combat.hurtBasic(attacker, target, (float) golpe.dano() * multiplier(attacker))) {
@@ -406,7 +413,7 @@ public final class Melee {
         if (SwordArts.held(player)) {
             return SwordArts.barrage(player, level);
         }
-        barrage(player, 20, BARRAGE_HELD_TICKS, 4.0, 3.75f * multiplier(player), 15f * multiplier(player), fistColor(player), true);
+        barrage(player, 20, BARRAGE_HELD_TICKS, 4.0, 3.75f * multiplier(player), 10f * multiplier(player), fistColor(player), true);
         return true;
     }
 
@@ -451,7 +458,7 @@ public final class Melee {
                     Vec3 offset = new Vec3(level.random.nextDouble() - 0.5, level.random.nextDouble() - 0.5, level.random.nextDouble() - 0.5).scale(0.9);
                     PunchFx.swing(level, eye.add(look.scale(range * 0.4)).add(offset.scale(scale)), look, fistColor, 0.4f, scale);
                     for (LivingEntity target : Combat.inCone(player, range, 0.55)) {
-                        if (Combat.hurtBasic(player, target, hitDamage)) {
+                        if (Combat.hurtBarrage(player, target, hitDamage)) {
                             hitFx(player, target, "golpe", PunchFx.BARRAGEM, 0);
                             Stamina.gain(player, StaminaSpec.get().ganhoAcertoBarragemPct());
                             shake(target, 0.15f, 4);
@@ -474,10 +481,11 @@ public final class Melee {
             if (sukuna) {
                 // Sukuna: with the right fist still out, the left hand throws one more Dismantle at whoever flies away.
                 com.starkinhon.battlegroundsmod.power.powers.sukuna.SukunaMelee.barrageCut(player,
-                        finished.stream().min(Comparator.comparingDouble(e -> e.distanceTo(player))).orElse(null), finisherDamage);
+                        finished.stream().min(Comparator.comparingDouble(e -> e.distanceTo(player))).orElse(null),
+                        finisherDamage * Combat.BARRAGE_SCALE);
             }
             for (LivingEntity target : finished) {
-                if (Combat.hurtBasic(player, target, finisherDamage)) {
+                if (Combat.hurtBarrage(player, target, finisherDamage)) {
                     hitFx(player, target, "final");
                     Stamina.gain(player, StaminaSpec.get().ganhoAcertoPct());
                     shake(target, 0.6f, 8);

@@ -776,13 +776,13 @@ public class ChallengeScreen extends Screen {
             float lift = isSel ? -3 : over ? -2 : 0;
             Px.smallFrame(cx, y + lift, cell, cell + 8, lk ? rgb(70, 64, 80) : won && !isSel && !over ? rgb(96, 96, 100) : col, isSel || over, 0.92f);
             // the portrait's background: its arena
-            Px.g.enableScissor(Math.round(cx + 1), Math.round(y + lift + 1), Math.round(cx + cell - 1), Math.round(y + lift + cell + 7));
+            Px.scissor(Math.round(cx + 1), Math.round(y + lift + 1), Math.round(cx + cell - 1), Math.round(y + lift + cell + 7));
             arenaBg(c, cx - cell * 0.4f, y + lift - 2, cell * 1.8f, cell * 1.1f, lk ? 0.15f : 0.45f, won);
             // head and chest framed in the square: the head's top 3 px under the edge, the waist at the name bar
             SkinDraw.Pose bp = new SkinDraw.Pose(-0.45f, 0.18f);
             float bk = cell / 22f;
             SkinDraw.draw(c.skin(), cx + cell / 2f, y + lift + 4 + 32 * bk, bk, bp, SkinDraw.BUST, lk ? 0xF2080610 : won ? 0xFF6E6E72 : 0xFFFFFFFF);
-            Px.g.disableScissor();
+            Px.endScissor();
             if (won) {
                 // defeated: gray (the mob and its background)
                 R(cx + 1, y + lift + 1, cell - 2, cell + 6, rgb(58, 58, 62), 0.42f);
@@ -1026,24 +1026,24 @@ public class ChallengeScreen extends Screen {
         float leftEdge = GW * 0.42f - GW * (1 - slide), rightEdge = GW * 0.58f + GW * (1 - slide);
         Minecraft mc = Minecraft.getInstance();
         if (leftEdge > 0 && mc.player != null) {
-            Px.g.enableScissor(0, 0, Math.round(Math.max(1, leftEdge)), GH);
+            Px.scissor(0, 0, Math.round(Math.max(1, leftEdge)), GH);
             SkinDraw.Pose p = new SkinDraw.Pose(0.55f, 0.1f);
             p.rarm = new float[] {-1.2f, -0.3f};
             p.larm = new float[] {-0.4f, 0.2f};
             p.rleg = new float[] {0.3f, 0};
             p.lleg = new float[] {-0.3f, 0};
             SkinDraw.draw(mc.player.getSkin().texture(), GW * 0.24f, GH * 0.86f, GH / 52f, p, SkinDraw.ALL, 0xFFFFFFFF);
-            Px.g.disableScissor();
+            Px.endScissor();
         }
         if (rightEdge < GW) {
-            Px.g.enableScissor(Math.round(rightEdge), 0, GW, GH);
+            Px.scissor(Math.round(rightEdge), 0, GW, GH);
             SkinDraw.Pose p = new SkinDraw.Pose(-0.55f, 0.1f);
             p.rarm = new float[] {-1.4f, 0.4f};
             p.larm = new float[] {-0.3f, -0.2f};
             p.rleg = new float[] {-0.3f, 0};
             p.lleg = new float[] {0.3f, 0};
             SkinDraw.draw(c.skin(), GW * 0.76f, GH * 0.86f, GH / 52f, p, SkinDraw.ALL, 0xFFFFFFFF);
-            Px.g.disableScissor();
+            Px.endScissor();
         }
         // the white stripe on the diagonal
         float k = Px.easeOut((t - 0.3f) / 0.2f);

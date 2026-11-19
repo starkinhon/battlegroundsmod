@@ -19,6 +19,7 @@
   },
   "mixins": [
     "ChunkMapUnloadMixin",
-    "LevelMixin"
+    "LevelMixin",
+    "RangedAttributeAccessor"
   ]
 }

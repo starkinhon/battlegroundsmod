@@ -85,6 +85,11 @@ public final class UniverseBiomes {
         return biome.is(ModWorldgen.NARUTO_BIOMES) ? NarutoWorld.UNIVERSE : null;
     }
 
+    public static void resetStatics() {
+        LAST.clear();
+        SHOWN.clear();
+    }
+
     private static void onTick(PlayerTickEvent.Post event) {
         if (!(event.getEntity() instanceof ServerPlayer player) || player.tickCount % 20 != 0
                 || player.level().dimension() != Level.OVERWORLD) {

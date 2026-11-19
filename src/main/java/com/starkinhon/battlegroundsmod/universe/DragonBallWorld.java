@@ -14,8 +14,11 @@ import com.starkinhon.battlegroundsmod.power.Progression;
 
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -27,6 +30,7 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
@@ -51,7 +55,7 @@ public final class DragonBallWorld {
     }
 
     private static boolean here(Entity entity) {
-        return UNIVERSE.equals(Universes.universeOf(entity.level().dimension()));
+        return UNIVERSE.equals(UniverseBiomes.universeAt(entity.level(), entity.blockPosition()));
     }
 
     private static void onDeath(LivingDeathEvent event) {
@@ -68,11 +72,20 @@ public final class DragonBallWorld {
         double ball = (sub ? BALL_CHANCE_SUB : BALL_CHANCE) * (has(player, ModItems.DRAGON_RADAR.get()) ? 3 : 1);
         if (level.getRandom().nextDouble() < ball) {
             List<Item> missing = missing(player);
-            if (!missing.isEmpty()) {
-                Item item = missing.get(level.getRandom().nextInt(missing.size()));
-                drop(level, victim, item);
-                Fx.burst(level, ParticleTypes.END_ROD, victim.position().add(0, 1, 0), 30, 0.4, 0.1);
-                Fx.sound(level, victim.position(), SoundEvents.AMETHYST_BLOCK_CHIME, 1.2f, 1.4f);
+            List<Integer> available = new ArrayList<>();
+            for (Item item : missing) {
+                int star = ModItems.DRAGON_BALLS.indexOf(ModItems.DRAGON_BALLS.stream().filter(b -> b.get() == item).findFirst().orElse(null)) + 1;
+                if (star >= 1 && !isClaimed(level, star)) {
+                    available.add(star);
+                }
+            }
+            if (!available.isEmpty()) {
+                int star = available.get(level.getRandom().nextInt(available.size()));
+                if (tryClaim(level, star)) {
+                    drop(level, victim, ModItems.DRAGON_BALLS.get(star - 1).get());
+                    Fx.burst(level, ParticleTypes.END_ROD, victim.position().add(0, 1, 0), 30, 0.4, 0.1);
+                    Fx.sound(level, victim.position(), SoundEvents.AMETHYST_BLOCK_CHIME, 1.2f, 1.4f);
+                }
             }
         }
     }
@@ -86,6 +99,80 @@ public final class DragonBallWorld {
 
     private static boolean has(ServerPlayer player, Item item) {
         return player.getInventory().contains(new ItemStack(item));
+    }
+
+    public static boolean isClaimed(ServerLevel level, int star) {
+        if (star < 1 || star > 7) {
+            return true;
+        }
+        return BallRegistry.get(level.getServer()).claimed[star - 1];
+    }
+
+    public static boolean tryClaim(ServerLevel level, int star) {
+        if (star < 1 || star > 7) {
+            return false;
+        }
+        BallRegistry reg = BallRegistry.get(level.getServer());
+        if (reg.claimed[star - 1]) {
+            return false;
+        }
+        reg.claimed[star - 1] = true;
+        reg.setDirty();
+        return true;
+    }
+
+    public static int claimRandom(ServerLevel level) {
+        BallRegistry reg = BallRegistry.get(level.getServer());
+        List<Integer> free = new ArrayList<>();
+        for (int i = 0; i < 7; i++) {
+            if (!reg.claimed[i]) {
+                free.add(i + 1);
+            }
+        }
+        if (free.isEmpty()) {
+            return -1;
+        }
+        int star = free.get(level.getRandom().nextInt(free.size()));
+        reg.claimed[star - 1] = true;
+        reg.setDirty();
+        return star;
+    }
+
+    public static void releaseAll(MinecraftServer server) {
+        BallRegistry reg = BallRegistry.get(server);
+        java.util.Arrays.fill(reg.claimed, false);
+        reg.setDirty();
+    }
+
+    // Global per-world registry so only one Dragon Ball of each star (1..7) exists at any time.
+    private static final class BallRegistry extends SavedData {
+        final boolean[] claimed = new boolean[7];
+
+        static BallRegistry get(MinecraftServer server) {
+            return server.overworld().getDataStorage().computeIfAbsent(
+                    new Factory<>(BallRegistry::new, BallRegistry::load, null), "battlegroundsmod_esferas_unicas");
+        }
+
+        static BallRegistry load(CompoundTag tag, HolderLookup.Provider registries) {
+            BallRegistry reg = new BallRegistry();
+            int mask = tag.getInt("mask");
+            for (int i = 0; i < 7; i++) {
+                reg.claimed[i] = (mask & (1 << i)) != 0;
+            }
+            return reg;
+        }
+
+        @Override
+        public CompoundTag save(CompoundTag tag, HolderLookup.Provider registries) {
+            int mask = 0;
+            for (int i = 0; i < 7; i++) {
+                if (claimed[i]) {
+                    mask |= (1 << i);
+                }
+            }
+            tag.putInt("mask", mask);
+            return tag;
+        }
     }
 
     // The Esferas the player doesn't carry yet.

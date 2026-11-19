@@ -587,6 +587,11 @@ public class TalkScreen extends Screen {
         }
     }
 
+    public static void clear() {
+        talkingNow = false;
+        camFinish();
+    }
+
     // Behind the player's right shoulder, looking past them at the NPC (a bit left of the middle), pushing in slowly.
     public static FaceCutscene.Shot shot(float partialTick) {
         Minecraft mc = Minecraft.getInstance();
@@ -612,6 +617,17 @@ public class TalkScreen extends Screen {
         }
         Vec3 eyes = p.getEyePosition(partialTick);
         Vec3 face = npc.getPosition(partialTick).add(0, npc.getBbHeight() * 0.62, 0);
+        // Keep the player's body/head steady toward the NPC so camera mods (e.g. Shoulder Surfing) don't jitter them.
+        Vec3 toNpc = face.subtract(eyes);
+        if (toNpc.lengthSqr() > 1.0E-4) {
+            float faceYaw = (float) (Mth.atan2(-toNpc.x, toNpc.z) * Mth.RAD_TO_DEG);
+            p.setYRot(faceYaw);
+            p.yRotO = faceYaw;
+            p.setYHeadRot(faceYaw);
+            p.yHeadRotO = faceYaw;
+            p.yBodyRot = faceYaw;
+            p.yBodyRotO = faceYaw;
+        }
         Vec3 flat = new Vec3(face.x - eyes.x, 0, face.z - eyes.z);
         flat = flat.lengthSqr() < 1.0E-4 ? Vec3.directionFromRotation(0, p.getViewYRot(partialTick)) : flat.normalize();
         Vec3 right = new Vec3(-flat.z, 0, flat.x);

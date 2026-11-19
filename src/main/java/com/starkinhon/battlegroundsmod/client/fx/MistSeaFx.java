@@ -282,8 +282,7 @@ public final class MistSeaFx {
             return;
         }
         double m = mist(now(mc.level, delta.getGameTimeDeltaPartialTick(false)));
-        int alpha = Mth.clamp((int) (255 * 0.08 * m * fade), 0, 255);
-        graphics.fill(0, 0, graphics.guiWidth(), graphics.guiHeight(), (alpha << 24) | 0xB7C1C4);
+        BiomeAura.wash(graphics, 0xB7C1C4, (float) (0.08 * m * fade));
     }
 
     // The preview's fog: 30 to 170 blocks with the mist open, down to 2 to 34 when it closes.

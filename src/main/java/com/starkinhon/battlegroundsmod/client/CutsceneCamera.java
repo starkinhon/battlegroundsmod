@@ -34,8 +34,23 @@ public final class CutsceneCamera {
             return;
         }
         Minecraft minecraft = Minecraft.getInstance();
-        minecraft.options.setCameraType(savedType);
-        minecraft.options.hideGui = savedHideGui;
+        if (minecraft.options != null) {
+            minecraft.options.setCameraType(savedType);
+            minecraft.options.hideGui = savedHideGui;
+        }
+    }
+
+    // Logout / disconnect cleanup: restores camera and HUD if any cutscene was open.
+    public static void reset() {
+        if (OPEN.isEmpty()) {
+            return;
+        }
+        OPEN.clear();
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.options != null) {
+            minecraft.options.setCameraType(savedType);
+            minecraft.options.hideGui = savedHideGui;
+        }
     }
 
     // The player's own camera, from before the first cutscene opened.

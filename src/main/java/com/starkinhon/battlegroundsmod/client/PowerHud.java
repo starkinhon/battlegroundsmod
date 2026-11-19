@@ -63,11 +63,12 @@ public final class PowerHud {
         }
         long now = Util.getMillis();
         Font font = minecraft.font;
-        boolean shift = minecraft.options.keyShift.isDown() && !power.shiftSlots().isEmpty();
-        if (!power.id().equals(lastPower) || shift != lastShift) {
+        boolean shiftHeld = minecraft.options.keyShift.isDown();
+        boolean shift = shiftHeld && !power.shiftSlots().isEmpty();
+        if (!power.id().equals(lastPower) || shiftHeld != lastShift) {
             namesUntil = now + NAMES_MS;
             lastPower = power.id();
-            lastShift = shift;
+            lastShift = shiftHeld;
         }
 
         // The slots shown, in key order with the ult last: each key's Shift variant while Shift is held.

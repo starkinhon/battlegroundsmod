@@ -595,4 +595,8 @@ public final class OpmSerious {
         });
         return true;
     }
+
+    public static void resetStatics() {
+        DIGS.clear();
+    }
 }

@@ -15,6 +15,13 @@ import net.minecraft.world.level.ServerLevelAccessor;
 public class SoulMob extends SoulBoss {
     public SoulMob(EntityType<? extends SoulMob> type, Level level) {
         super(type, level);
+        if (!level.isClientSide) {
+            net.minecraft.world.item.Item weapon = com.starkinhon.battlegroundsmod.power.PowerLogic.soulWeapon(bossId());
+            if (weapon != null) {
+                setItemSlot(net.minecraft.world.entity.EquipmentSlot.MAINHAND, new net.minecraft.world.item.ItemStack(weapon));
+                setDropChance(net.minecraft.world.entity.EquipmentSlot.MAINHAND, 0f);
+            }
+        }
     }
 
     @Override

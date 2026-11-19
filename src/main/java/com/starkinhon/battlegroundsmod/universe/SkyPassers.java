@@ -558,4 +558,9 @@ public final class SkyPassers {
         e.pt = 0;
         e.axis = new Vec3(RANDOM.nextDouble() - 0.5, (RANDOM.nextDouble() - 0.5) * 0.8, RANDOM.nextDouble() - 0.5).normalize();
     }
+
+    public static void resetStatics() {
+        EVENTS.clear();
+        NEXT.clear();
+    }
 }

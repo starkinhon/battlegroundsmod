@@ -60,6 +60,12 @@ public final class ModAttachments {
             () -> AttachmentType.<java.util.Map<String, com.starkinhon.battlegroundsmod.power.SoulSync.Entry>>builder(() -> java.util.Map.of())
                     .serialize(com.starkinhon.battlegroundsmod.power.SoulSync.MAP_CODEC).copyOnDeath().build());
 
+    // The Dungeon (challenge/Dungeon): the real character while a run is on (inventory, soul, tier, where it was), put back at the end
+    // of the run or, after a crash, at the next login. Saved and kept on death.
+    public static final Supplier<AttachmentType<com.starkinhon.battlegroundsmod.challenge.Dungeon.Backup>> DUNGEON_BACKUP = ATTACHMENT_TYPES.register("dungeon_backup",
+            () -> AttachmentType.builder(() -> com.starkinhon.battlegroundsmod.challenge.Dungeon.Backup.EMPTY)
+                    .serialize(com.starkinhon.battlegroundsmod.challenge.Dungeon.Backup.CODEC).copyOnDeath().build());
+
     private ModAttachments() {
     }
 }

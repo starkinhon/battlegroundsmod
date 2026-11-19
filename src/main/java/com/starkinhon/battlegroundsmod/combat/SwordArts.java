@@ -315,8 +315,9 @@ public final class SwordArts {
         float mult = Melee.multiplier(player);
         int color = color(player);
         int interrupts = data.interrupts;
-        float hitDamage = 3.75f * mult;
-        float finisherDamage = 15f * mult;
+        // the Barragem's share of what it paid before (Combat.BARRAGE_SCALE), like the fists' and the flight's
+        float hitDamage = 3.75f * mult * Combat.BARRAGE_SCALE;
+        float finisherDamage = 10f * mult * Combat.BARRAGE_SCALE;
         data.busyTicks = ROUND * BARRAGE_MIN_ROUNDS + 4;
         int[] finishAt = {-1};
         Tasks.add(age -> {

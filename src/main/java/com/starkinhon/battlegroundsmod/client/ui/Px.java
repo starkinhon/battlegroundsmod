@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.mojang.blaze3d.platform.Window;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.starkinhon.battlegroundsmod.client.GuiDraw;
 
 import net.minecraft.Util;
@@ -70,6 +71,23 @@ public final class Px {
     // A GUI coordinate (mouse events) to grid pixels.
     public static float toGrid(double gui) {
         return (float) (gui * Minecraft.getInstance().getWindow().getGuiScale() / S);
+    }
+
+    // Clips the drawing to a box given in GRID pixels. GuiGraphics.enableScissor wants GUI coordinates (1 unit = guiScale
+    // real pixels), not grid pixels (1 unit = S real pixels), so passing grid numbers to it cuts the wrong rectangle
+    // whenever the GUI scale is not the same as S (the busts of the ladder and the fighters of the VS showed cut or in
+    // the wrong place). This goes straight to the real pixels of the window instead. Always pair with endScissor().
+    public static void scissor(float x0, float y0, float x1, float y1) {
+        g.flush();
+        int wh = Minecraft.getInstance().getWindow().getHeight();
+        int rx0 = Math.round(x0 * S), ry0 = Math.round(y0 * S), rx1 = Math.round(x1 * S), ry1 = Math.round(y1 * S);
+        // OpenGL's origin is the bottom left corner of the window
+        RenderSystem.enableScissor(rx0, wh - ry1, Math.max(0, rx1 - rx0), Math.max(0, ry1 - ry0));
+    }
+
+    public static void endScissor() {
+        g.flush();
+        RenderSystem.disableScissor();
     }
 
     // ---------------------------------------------------------------- colors

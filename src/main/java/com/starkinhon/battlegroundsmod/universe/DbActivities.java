@@ -589,7 +589,10 @@ public final class DbActivities {
     private static ItemStack rare(ServerPlayer player) {
         int roll = player.getRandom().nextInt(100);
         if (roll < 15 && !ModItems.DRAGON_BALLS.isEmpty()) {
-            return new ItemStack(ModItems.DRAGON_BALLS.get(player.getRandom().nextInt(ModItems.DRAGON_BALLS.size())).get());
+            int star = DragonBallWorld.claimRandom(player.serverLevel());
+            if (star >= 1 && star <= ModItems.DRAGON_BALLS.size()) {
+                return new ItemStack(ModItems.DRAGON_BALLS.get(star - 1).get());
+            }
         }
         if (roll < 25) {
             return new ItemStack(ModItems.SENZU.get(), 3);
@@ -965,5 +968,12 @@ public final class DbActivities {
             return new Hud(w.kind + "_luta", w.stage, w.waves.size(), 0, 0, false);
         }
         return null;
+    }
+
+    public static void resetStatics() {
+        IN_GRAVITY.clear();
+        SPAR.clear();
+        LAST_TITLE.clear();
+        LAST_TITLE_AT.clear();
     }
 }

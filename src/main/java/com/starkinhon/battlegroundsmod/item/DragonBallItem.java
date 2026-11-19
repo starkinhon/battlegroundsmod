@@ -8,7 +8,9 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
@@ -34,6 +36,26 @@ public class DragonBallItem extends Item {
             DragonBallWorld.summon(server);
         }
         return InteractionResultHolder.sidedSuccess(player.getItemInHand(hand), level.isClientSide);
+    }
+
+    // Only one ball of each star exists in a world (DragonBallWorld.BallRegistry) and its star is freed only when Shenlong is
+    // called: a ball on the ground must never be lost, or that star could never drop again and Shenlong never come. It never
+    // despawns, nothing hurts it (lava, fire, explosion, cactus) and one that falls under the world comes back up on top.
+    @Override
+    public boolean onEntityItemUpdate(ItemStack stack, ItemEntity entity) {
+        if (!entity.level().isClientSide()) {
+            if (!entity.isInvulnerable()) {
+                entity.setUnlimitedLifetime();
+                entity.setInvulnerable(true);
+            }
+            Level level = entity.level();
+            if (entity.getY() < level.getMinBuildHeight() + 1) {
+                int top = level.getHeight(Heightmap.Types.MOTION_BLOCKING, entity.getBlockX(), entity.getBlockZ());
+                entity.teleportTo(entity.getX(), Math.max(top, level.getMinBuildHeight() + 1) + 1, entity.getZ());
+                entity.setDeltaMovement(0, 0, 0);
+            }
+        }
+        return false;
     }
 
     @Override

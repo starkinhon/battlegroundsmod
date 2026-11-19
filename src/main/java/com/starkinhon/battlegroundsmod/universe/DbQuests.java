@@ -277,9 +277,12 @@ public final class DbQuests {
         DbActivities.onKill(player, event.getEntity());
     }
 
-    // Gohan, after teaching the flight: his grandfather's four-star ball, once.
+    // Gohan, after teaching the flight: his grandfather's four-star ball, once globally.
     public static void grandpaBall(ServerPlayer player) {
         if (player.getPersistentData().getBoolean(GRANDPA_BALL) || ModItems.DRAGON_BALLS.size() < 4) {
+            return;
+        }
+        if (!DragonBallWorld.tryClaim(player.serverLevel(), 4)) {
             return;
         }
         player.getPersistentData().putBoolean(GRANDPA_BALL, true);

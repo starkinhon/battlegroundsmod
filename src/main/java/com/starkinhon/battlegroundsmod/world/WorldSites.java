@@ -110,6 +110,9 @@ public final class WorldSites {
                         continue;
                     }
                     String kind = kindAt(level, spot[0], spot[1], spot[2]);
+                    if (KARIN.equals(kind) && near(level, KARIN, new BlockPos(spot[0], 64, spot[1]), 1200) != null) {
+                        kind = GOKU;
+                    }
                     if (kind == null) {
                         data.cells.put(key, "-");
                         data.setDirty();

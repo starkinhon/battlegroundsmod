@@ -106,17 +106,25 @@ public final class WorldMap {
 
     // How many columns the piece of land under (x, z) has (0 on water): small ones are the islands (the spawns tell
     // them from the continent). Counted once, the first time it is asked.
-    private int[] landSize;
+    private volatile int[] landSize;
+    private final Object landLock = new Object();
 
     public int landSize(int x, int z) {
         int i = index(x, z);
         if (i < 0 || water(x, z)) {
             return 0;
         }
-        if (landSize == null) {
-            landSize = countLand();
+        int[] sizes = this.landSize;
+        if (sizes == null) {
+            synchronized (landLock) {
+                sizes = this.landSize;
+                if (sizes == null) {
+                    sizes = countLand();
+                    this.landSize = sizes;
+                }
+            }
         }
-        return landSize[i];
+        return sizes[i];
     }
 
     private int[] countLand() {

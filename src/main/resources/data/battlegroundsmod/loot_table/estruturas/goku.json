@@ -8,25 +8,6 @@
           "type": "minecraft:item",
           "name": "battlegroundsmod:senzu",
           "weight": 6
-        },
-        {
-          "type": "minecraft:item",
-          "name": "battlegroundsmod:esfera_dragao_4"
-        }
-      ]
-    },
-    {
-      "rolls": 1,
-      "entries": [
-        {
-          "type": "minecraft:item",
-          "name": "battlegroundsmod:esfera_dragao_4"
-        }
-      ],
-      "conditions": [
-        {
-          "condition": "minecraft:random_chance",
-          "chance": 0.25
         }
       ]
     },

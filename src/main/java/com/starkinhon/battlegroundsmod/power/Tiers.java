@@ -63,18 +63,27 @@ public final class Tiers {
         return Component.translatableWithFallback("tier.battlegroundsmod." + tier, fallback);
     }
 
-    private static final double[] DEFAULT_HEALTH = {400, 300, 220, 165, 120, 90, 66, 49, 36, 27, 20};
+    private static final double[] DEFAULT_HEALTH = {1800, 1300, 940, 680, 490, 355, 255, 185, 135, 95, 65};
+    // Reference health for move damage scaling so TTK stays consistent (~30-45s) across all tiers.
+    private static final double DAMAGE_HEALTH_REF = 850.0;
 
-    // Max health of this tier (Tier 10 = 20, a plain human).
+    // The curve before 2026-11-17, that the bosses' files (souls_bosses/*.json "vida") were written against.
+    private static final double[] LEGACY_HEALTH = {400, 300, 220, 165, 120, 90, 66, 49, 36, 27, 20};
+
+    public static double legacyHealth(int tier) {
+        return LEGACY_HEALTH[clamp(tier)];
+    }
+
+    // Max health of this tier (Tier 10 = 65, a plain human).
     public static double health(int tier) {
         var list = TierSpec.get().vida();
         tier = clamp(tier);
         return list != null && tier < list.size() ? list.get(tier) : DEFAULT_HEALTH[tier];
     }
 
-    // The share of a move's maximum (Tier 0) damage this attacker deals: its tier's health over a god's.
+    // The share of a move's damage this attacker deals: scales linearly with its tier's health.
     public static float damageMultiplier(LivingEntity attacker) {
-        return (float) (health(of(attacker)) / Math.max(1, health(DEUS)));
+        return (float) (health(of(attacker)) / DAMAGE_HEALTH_REF);
     }
 
     // Escudo points: 10 at Tier 0, none for a human.
@@ -82,18 +91,18 @@ public final class Tiers {
         return HUMANO - of(entity);
     }
 
-    // What is left of a blow of this amount from the attacker after the target's Escudo and Resistencia de escudo. Only
-    // a target of a higher tier than the attacker shields: each point of difference keeps (1 - escudoCorte) of the blow,
-    // then resistenciaEscudo of the target's max health per point is taken off it. Never below zero.
+    // What is left of a blow of this amount from the attacker after the target's Escudo. Only a target of a higher tier
+    // than the attacker shields: each point of difference keeps (1 - escudoCorte) of the blow, with a 5% minimum floor
+    // so multi-hit techniques are never zeroed out completely.
     public static float shield(LivingEntity attacker, LivingEntity target, float amount) {
         int gap = shield(target) - shield(attacker);
         if (gap <= 0 || amount <= 0) {
             return amount;
         }
         TierSpec spec = TierSpec.get();
-        double kept = amount * Math.pow(1 - spec.escudoCorte(), gap);
-        kept -= target.getMaxHealth() * spec.resistenciaEscudo() * gap;
-        return (float) Math.max(0, kept);
+        double factor = Math.max(0.05, Math.pow(1 - spec.escudoCorte(), gap));
+        double kept = amount * factor - target.getMaxHealth() * spec.resistenciaEscudo() * gap;
+        return (float) Math.max(amount * 0.05, kept);
     }
 
     // Armadura points of this tier: armaduraPorTier per tier above human (Tier 0 = 20, a full bar).

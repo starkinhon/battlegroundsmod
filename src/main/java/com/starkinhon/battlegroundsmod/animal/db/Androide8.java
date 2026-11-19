@@ -35,6 +35,7 @@ import net.minecraft.world.phys.Vec3;
 // 3 blocks for 1.5 s. The yetis he fights on sight (he looks after whoever walks the snow).
 public class Androide8 extends DbCreature {
     private static final double RADIUS = 3;
+    private int slamCd;
 
     public Androide8(EntityType<? extends Androide8> type, Level level) {
         super(type, level);
@@ -74,9 +75,21 @@ public class Androide8 extends DbCreature {
     }
 
     @Override
+    protected void customServerAiStep() {
+        super.customServerAiStep();
+        if (slamCd > 0) {
+            slamCd--;
+        }
+    }
+
+    @Override
     public boolean doHurtTarget(Entity target) {
-        if (startAttack(0, 40, 21)) {
+        if (slamCd <= 0 && startAttack(0, 40, 21)) {
+            slamCd = 100;
             SubCommon.sound((ServerLevel) level(), position(), SoundEvents.IRON_GOLEM_REPAIR, 1.2f, 0.5f);
+            return true;
+        }
+        if (startAttack(1, 20, 10)) {
             return true;
         }
         return false;
@@ -85,15 +98,26 @@ public class Androide8 extends DbCreature {
     @Override
     protected void impact(int kind) {
         ServerLevel server = (ServerLevel) level();
+        if (kind == 1) {
+            LivingEntity target = getTarget();
+            if (inReach(target, 2.8)) {
+                Vec3 at = Combat.center(target);
+                DbCommon.hit(server, at, 0.45f, Db.WHITE);
+                SubCommon.sound(server, at, SoundEvents.PLAYER_ATTACK_STRONG, 1.2f, 0.7f);
+                Combat.hurt(this, target, 28f);
+                Combat.pushFrom(target, position(), 0.35, 0.2);
+            }
+            return;
+        }
         Vec3 g = slamPoint();
         SubCommon.sound(server, g, SoundEvents.GENERIC_EXPLODE.value(), 1.4f, 0.6f);
         SubCommon.sound(server, g, SoundEvents.IRON_GOLEM_ATTACK, 1.6f, 0.5f);
-        DbCommon.boom(server, g.add(0, 0.1, 0), 2.4f, Db.WHITE, 2000 + SubCommon.RANDOM.nextInt(100));
+        DbCommon.boom(server, g.add(0, 0.1, 0), 2.4f, Db.WHITE, 100 + SubCommon.RANDOM.nextInt(100));
         float turn = SubCommon.RANDOM.nextFloat() * Mth.TWO_PI;
         for (int i = 0; i < 4; i++) {
             double a = turn + i * Mth.TWO_PI / 4 + SubCommon.RANDOM.nextGaussian() * 0.35;
             Vec3 dir = new Vec3(Math.cos(a), 0, Math.sin(a));
-            SubNet.send(server, SubNet.SCAR, 0, g.add(0, 0.05, 0), dir.scale(3.2 + SubCommon.RANDOM.nextDouble() * 1.8), 0.5f, 100, 0);
+            SubNet.send(server, SubNet.SCAR, 0, g.add(0, 0.05, 0), dir.scale(3.2 + SubCommon.RANDOM.nextDouble() * 1.8), 0.5f, 40, 0);
         }
         DbCommon.screen(server, g, 10);
         for (LivingEntity t : Combat.inRadius(server, g, RADIUS, this)) {

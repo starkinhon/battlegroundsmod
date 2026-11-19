@@ -378,7 +378,7 @@ public final class DeathForestFx {
             return;
         }
         int w = graphics.guiWidth(), h = graphics.guiHeight();
-        graphics.fill(0, 0, w, h, argb(0.06f * fade, 0x1E2A18));
+        BiomeAura.wash(graphics, 0x1E2A18, 0.06f * fade);
         int bands = 18;
         int depthX = Math.max(1, w / 4), depthY = Math.max(1, h / 3);
         for (int i = 0; i < bands; i++) {

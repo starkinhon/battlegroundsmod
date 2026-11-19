@@ -61,6 +61,21 @@ public final class BiomeAura {
         return false;
     }
 
+    // The flat colored wash the biomes lay over the whole screen (the "grade": orange in the Dragon Ball lands, green on
+    // Namek, grey in the mist and the rain...). A veil of even a few percent over the entire image lowers its contrast
+    // and makes it look softly blurred, like a photo edited with a filter, in the day as at night (Stark 2026-11-14). The
+    // fog, the sky, the wind and the vignette at the edges keep each biome's atmosphere, so the wash is off (0). 1 = as it
+    // was before, 0.3 = a faint trace of it. Every biome's wash goes through wash() below.
+    public static final float WASH_STRENGTH = 0f;
+
+    // A flat wash of rgb over the whole screen, alpha 0..1 before WASH_STRENGTH.
+    public static void wash(net.minecraft.client.gui.GuiGraphics graphics, int rgb, float alpha) {
+        int a = net.minecraft.util.Mth.clamp((int) (alpha * WASH_STRENGTH * 255), 0, 255);
+        if (a > 0) {
+            graphics.fill(0, 0, graphics.guiWidth(), graphics.guiHeight(), (a << 24) | (rgb & 0xFFFFFF));
+        }
+    }
+
     // How much of a light screen grade to keep: all of it by day, a fifth at night. A pale tint over the dark night
     // screen read as a faded picture lying on top of it (Stark 2026-11-13, in every biome with its own ambience).
     public static float nightDim(float partial) {
