@@ -99,6 +99,8 @@ public class BattlegroundsModClient {
             // a black screen, a flash or a goal of a scene left in the middle never follows into the next world (#379)
             com.starkinhon.battlegroundsmod.client.IntroHud.clear();
         });
+        NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.client.event.RenderFrameEvent.Pre e) ->
+                com.starkinhon.battlegroundsmod.client.IntroHud.holdNight());
         // The intro's own fade covers its dimension changes: no "Carregando terreno" screen over it (Stark 2026-11-19).
         // The player does not move meanwhile anyway (LocalPlayer only ticks over a loaded chunk).
         NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.client.event.ScreenEvent.Opening e) -> {

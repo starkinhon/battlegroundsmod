@@ -67,8 +67,20 @@ public final class Intro {
     }
 
     // The arenas keep their blocks while a scene is on in them (combat/BlockRules): no hole to fall through.
+    // And the real Shibuya while a scene is played there (its last act): the duel's domains leave the city standing.
     public static boolean protectsBlocks(net.minecraft.world.level.Level level) {
-        return !RUNS.isEmpty() && ChallengeArenas.isArena(level.dimension());
+        if (RUNS.isEmpty()) {
+            return false;
+        }
+        if (ChallengeArenas.isArena(level.dimension())) {
+            return true;
+        }
+        for (IntroScript run : RUNS.values()) {
+            if (run.protects(level)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     static IntroScript run(ServerPlayer player) {
