@@ -18,18 +18,15 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.renderer.texture.DynamicTexture;
-import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
-import net.minecraft.world.item.ItemStack;
 
 // The player inventory drawn as a crystal cluster in the color of the soul the player is wearing (Stark 2026-11-19,
 // approved in the web preview "Teste brisado"): no box, a fan of crystals whose root hides behind the slots, a giant soul
-// gem behind the player, dark glass slots with a soul colored rim, a faint soul colored outline around each item (it
-// follows the item's own pixels), a band of light sweeping the crystals, motes rising and little stars blinking.
+// gem behind the player, dark glass slots with a soul colored rim (no outline around the items anymore, Stark
+// 2026-11-19: the Escuro/Claro/Minecraft styles cover readability), a band of light sweeping the crystals, motes rising and little stars blinking.
 // Slot positions are vanilla's, so every mod that adds buttons or reads the menu keeps working. The crystal picture is
 // built once per soul into a texture; the moving parts are plain fills each frame. Anything that fails turns the whole
 // thing off and the vanilla inventory comes back.
@@ -56,10 +53,6 @@ public final class CrystalInventory {
     private static int[] brightSpots;
 
     static final Map<String, Float> SOUL_HUES = new HashMap<>();
-    private static final Map<ResourceLocation, Glow> GLOWS = new HashMap<>();
-
-    record Glow(ResourceLocation tex, int size, int texels) {
-    }
 
     private CrystalInventory() {
     }
@@ -171,24 +164,6 @@ public final class CrystalInventory {
         g.fill(left + 136, top + 31, left + 146, top + 35, arrow);
         for (int k = 0; k < 5; k++) {
             g.fill(left + 146 + k, top + 28 + k, left + 147 + k, top + 38 - k, arrow);
-        }
-
-        // Outline glowing around each item, following its pixels.
-        int n = 0;
-        for (Slot slot : menu.slots) {
-            if (!slot.isActive() || !slot.hasItem()) {
-                continue;
-            }
-            Glow glow = glowFor(slot.getItem(), player);
-            n++;
-            if (glow == null) {
-                continue;
-            }
-            float alpha = 0.7f + 0.25f * (float) Math.sin(t * 2.2 + n * 0.6);
-            int off = (glow.size - 16) / 2;
-            g.setColor(r(R[5]), gr(R[5]), b(R[5]), alpha);
-            g.blit(glow.tex, left + slot.x - off, top + slot.y - off, glow.size, glow.size, 0, 0, glow.texels, glow.texels, glow.texels, glow.texels);
-            g.setColor(1, 1, 1, 1);
         }
 
         // Motes rising.
@@ -317,85 +292,20 @@ public final class CrystalInventory {
         }
     }
 
-    // ---------------------------------------------------------------- item outline
-
-    // A white mask two pixels around the item's own pixels (1 strong ring, 1 faint ring), read from the item's texture.
-    // Only flat items (generated models); blocks and 3D items get none.
-    static Glow glowFor(ItemStack stack, Player player) {
-        Minecraft mc = Minecraft.getInstance();
-        BakedModel model = mc.getItemRenderer().getModel(stack, player.level(), player, 0);
-        if (model == null || model.isGui3d()) {
-            return null;
-        }
-        @SuppressWarnings("deprecation")
-        TextureAtlasSprite sprite = model.getParticleIcon();
-        if (sprite == null) {
-            return null;
-        }
-        ResourceLocation name = sprite.contents().name();
-        if (GLOWS.containsKey(name)) {
-            return GLOWS.get(name);
-        }
-        Glow glow = null;
-        ResourceLocation file = ResourceLocation.fromNamespaceAndPath(name.getNamespace(), "textures/" + name.getPath() + ".png");
-        try (InputStream in = mc.getResourceManager().open(file); NativeImage src = NativeImage.read(in)) {
-            int w = src.getWidth();
-            int s = w <= 16 ? 16 : 32;
-            boolean[] on = new boolean[s * s];
-            for (int y = 0; y < s; y++) {
-                for (int x = 0; x < s; x++) {
-                    int sx = x * w / s;
-                    int sy = y * w / s;
-                    if (sy < src.getHeight()) {
-                        on[y * s + x] = (src.getPixelRGBA(sx, sy) >>> 24) > 40;
-                    }
-                }
-            }
-            int texels = s + 4;
-            NativeImage mask = new NativeImage(texels, texels, true);
-            for (int y = -2; y < s + 2; y++) {
-                for (int x = -2; x < s + 2; x++) {
-                    if (at(on, s, x, y)) {
-                        continue;
-                    }
-                    int d = 9;
-                    for (int j = -2; j <= 2; j++) {
-                        for (int i = -2; i <= 2; i++) {
-                            if (at(on, s, x + i, y + j)) {
-                                d = Math.min(d, Math.max(Math.abs(i), Math.abs(j)) + (Math.abs(i) + Math.abs(j) > 2 ? 1 : 0));
-                            }
-                        }
-                    }
-                    int alpha = d == 1 ? 255 : d == 2 ? 110 : 0;
-                    mask.setPixelRGBA(x + 2, y + 2, alpha << 24 | 0xFFFFFF);
-                }
-            }
-            String id = "dyn/item_glow_" + Integer.toHexString(name.hashCode());
-            ResourceLocation tex = ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, id);
-            mc.getTextureManager().register(tex, new DynamicTexture(mask));
-            glow = new Glow(tex, texels * 16 / s, texels);
-        } catch (Exception e) {
-            // No texture to read (made up models etc.): that item just has no outline.
-        }
-        GLOWS.put(name, glow);
-        return glow;
-    }
-
-    private static boolean at(boolean[] on, int s, int x, int y) {
-        return x >= 0 && y >= 0 && x < s && y < s && on[y * s + x];
-    }
-
     // ---------------------------------------------------------------- building the crystal picture
 
     // The soul's hue (purple with no soul), read once per soul from its icon.
     static float hueFor(String soul) {
+        if (NEUTRAL_SOULS.contains(soul)) {
+            return 220;
+        }
         return soul.isEmpty() ? NO_SOUL_HUE : SOUL_HUES.computeIfAbsent(soul, CrystalInventory::readHue);
     }
 
     private static void build(String soul) {
         Minecraft mc = Minecraft.getInstance();
         hue = hueFor(soul);
-        ramp = ramp(hue);
+        ramp = rampFor(soul);
         int[] R = ramp;
         int[] Rb = { R[0], R[0], R[1], R[1], R[2], R[3], R[4] };
         cw = W;
@@ -725,6 +635,19 @@ public final class CrystalInventory {
     }
 
     // Seven shades, darkest to lightest; darks lean toward blue/purple and lights toward yellow (pixel art hue shift).
+    // The soul's shades. "inata" (Técnicas Inatas, no soul of its own) is light gray/white like its techniques panel,
+    // not the purple fallback (Stark 2026-11-19).
+    static int[] rampFor(String soul) {
+        if (NEUTRAL_SOULS.contains(soul)) {
+            float h = 220;
+            return new int[] { hsl(h, 0.08f, 0.07f), hsl(h, 0.08f, 0.17f), hsl(h, 0.08f, 0.31f), hsl(h, 0.07f, 0.47f), hsl(h, 0.06f, 0.65f),
+                    hsl(h, 0.05f, 0.81f), hsl(h, 0.04f, 0.94f) };
+        }
+        return ramp(hueFor(soul));
+    }
+
+    private static final java.util.Set<String> NEUTRAL_SOULS = java.util.Set.of("inata");
+
     static int[] ramp(float h) {
         float toward = (h > 200 && h < 300) ? 1 : -1;
         return new int[] { hsl(h + 14 * toward, 0.45f, 0.07f), hsl(h + 10 * toward, 0.5f, 0.16f), hsl(h + 6 * toward, 0.5f, 0.27f),

@@ -100,7 +100,7 @@ public final class StatusBars {
     static int[] soulRamp(String power) {
         if (!power.equals(ultSoul)) {
             ultSoul = power;
-            ultRamp = CrystalInventory.ramp(CrystalInventory.hueFor(power));
+            ultRamp = CrystalInventory.rampFor(power);
         }
         return ultRamp;
     }

@@ -72,7 +72,6 @@ public final class CrystalHotbar {
         int[] R = ramp;
         int hx = g.guiWidth() / 2 - 91;
         int hy = g.guiHeight() - 22;
-        float t = (net.minecraft.Util.getMillis() % 3_600_000L) / 1000f;
 
         RenderSystem.enableBlend();
         g.blit(tex, hx - PAD_X, hy - PAD_Y, 0, 0, W, H, W, H);
@@ -100,7 +99,8 @@ public final class CrystalHotbar {
             CrystalInventory.slotFrame(g, offX, hy + 3, 16, R, glass, light);
         }
 
-        // Glowing outline around each item, then the items (with vanilla's pop when one is picked up).
+        // The items (with vanilla's pop when one is picked up). No outline: the Escuro/Claro/Minecraft styles cover
+        // readability now (Stark 2026-11-19).
         for (int i = 0; i < 10; i++) {
             ItemStack stack = i < 9 ? player.getInventory().items.get(i) : offhand;
             if (stack.isEmpty()) {
@@ -108,14 +108,6 @@ public final class CrystalHotbar {
             }
             int x = i < 9 ? hx + 3 + i * 20 : offX;
             int y = hy + 3;
-            CrystalInventory.Glow glow = CrystalInventory.glowFor(stack, player);
-            if (glow != null) {
-                int c = R[5];
-                int off = (glow.size() - 16) / 2;
-                g.setColor(CrystalInventory.r(c), CrystalInventory.gr(c), CrystalInventory.b(c), 0.7f + 0.25f * (float) Math.sin(t * 2.2 + i * 0.6));
-                g.blit(glow.tex(), x - off, y - off, glow.size(), glow.size(), 0, 0, glow.texels(), glow.texels(), glow.texels(), glow.texels());
-                g.setColor(1, 1, 1, 1);
-            }
             item(g, mc, player, stack, x, y, i + 1, partialTick);
         }
     }
@@ -140,7 +132,7 @@ public final class CrystalHotbar {
     // The plate and the crystal clusters at both ends, built once per soul.
     private static void build(String soul) {
         hue = CrystalInventory.hueFor(soul);
-        ramp = CrystalInventory.ramp(hue);
+        ramp = CrystalInventory.rampFor(soul);
         int[] R = ramp;
         CrystalInventory.cw = W;
         CrystalInventory.ch = H;
