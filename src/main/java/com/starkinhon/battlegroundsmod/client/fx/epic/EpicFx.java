@@ -1,10 +1,8 @@
 package com.starkinhon.battlegroundsmod.client.fx.epic;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
@@ -46,7 +44,10 @@ import net.minecraft.world.phys.Vec3;
 // camera shaking by distance, with the manga impact frame on the big hits.
 public final class EpicFx {
     private static final RandomSource RNG = RandomSource.createThreadSafe();
-    private static final int MAX_VOLUMES = 14, MAX_DEBRIS = 900, MAX_LIFTED = 4200;
+    private static final int MAX_VOLUMES = 14, MAX_DEBRIS = 600, MAX_LIFTED = 1800;
+    // the tremors are drawn block by block only this far from the camera (blocks, on each axis)
+    private static final double LIFT_VIEW = 72;
+    private static final it.unimi.dsi.fastutil.longs.Long2FloatOpenHashMap LIFT = new it.unimi.dsi.fastutil.longs.Long2FloatOpenHashMap();
 
     private static final class Vol {
         Vec3 at;
@@ -83,6 +84,16 @@ public final class EpicFx {
         boolean down;
         double born;
         List<com.starkinhon.battlegroundsmod.power.powers.freezaboss.FzShipShape.Piece> pieces;
+        BakedBlocks mesh;
+    }
+
+    private static void closeShips() {
+        for (ShipFx sh : SHIPS) {
+            if (sh.mesh != null) {
+                sh.mesh.close();
+            }
+        }
+        SHIPS.clear();
     }
     private static double lastFrame = -1;
 
@@ -101,7 +112,7 @@ public final class EpicFx {
         VOLS.clear();
         WAVES.clear();
         DEBRIS.clear();
-        SHIPS.clear();
+        closeShips();
     }
 
     private static double now() {
@@ -170,7 +181,7 @@ public final class EpicFx {
                 ship.born = now;
                 double l = Math.max(1e-3, Math.sqrt(dir.x * dir.x + dir.z * dir.z));
                 ship.pieces = com.starkinhon.battlegroundsmod.power.powers.freezaboss.FzShipShape.build(dir.x / l, dir.z / l);
-                SHIPS.clear();
+                closeShips();
                 SHIPS.add(ship);
             }
             default -> {
@@ -376,7 +387,13 @@ public final class EpicFx {
         WAVES.removeIf(w -> (now - w.born) / 20 * w.speed > w.reach + 12);
         VOLS.removeIf(v -> now - v.born > v.life);
         // coming down it stays a few ticks after touching the ground, until the real blocks are there
-        SHIPS.removeIf(sh -> now - sh.born > sh.dur + (sh.down ? 4 : 0));
+        SHIPS.removeIf(sh -> {
+            boolean done = now - sh.born > sh.dur + (sh.down ? 4 : 0);
+            if (done && sh.mesh != null) {
+                sh.mesh.close();
+            }
+            return done;
+        });
         ships(level, camera, now);
         blocks(level, camera, now);
         volumes(camera, now);
@@ -394,11 +411,13 @@ public final class EpicFx {
         BlockPos.MutableBlockPos at = new BlockPos.MutableBlockPos();
         for (Deb d : DEBRIS) {
             float s = d.size * (d.resting ? 1 - smooth((d.rest - 2.8f) / 0.7f) : 1);
-            if (s <= 0.02f) {
+            double ex = d.x - camera.x, ey = d.y - camera.y, ez = d.z - camera.z;
+            // a block flying 140 blocks away is a dot: not worth its model
+            if (s <= 0.02f || ex * ex + ey * ey + ez * ez > 140 * 140) {
                 continue;
             }
             pose.pushPose();
-            pose.translate(d.x - camera.x, d.y - camera.y, d.z - camera.z);
+            pose.translate(ex, ey, ez);
             pose.mulPose(new Quaternionf().rotationXYZ(d.rx, d.ry, d.rz));
             pose.scale(s, s, s);
             pose.translate(-0.5, -0.5, -0.5);
@@ -408,32 +427,74 @@ public final class EpicFx {
             pose.popPose();
         }
         int drawn = 0;
-        Map<Long, float[]> lift = new HashMap<>();
+        // Every column a wave lifts, the highest wave wins (no block drawn twice). The band of each wave is walked row by
+        // row (exact, no holes, no column twice) and only near the camera: a far tremor can't be seen block by block.
+        LIFT.clear();
         for (Wave w : WAVES) {
             float pr = (float) ((now - w.born) / 20 * w.speed), width = 2.6f + w.amp * 0.6f;
-            float r0 = Math.max(2, pr - width * 2.2f), r1 = Math.min(w.reach, pr + width * 2.2f);
-            for (float rr = r0; rr <= r1; rr += 0.7f) {
-                float step = 0.7f / rr;
-                for (float a = 0; a < Mth.TWO_PI; a += step) {
-                    int x = Mth.floor(w.at.x + Mth.cos(a) * rr), z = Mth.floor(w.at.z + Mth.sin(a) * rr);
-                    float rx = x + 0.5f - (float) w.at.x, rz = z + 0.5f - (float) w.at.z, dist = Mth.sqrt(rx * rx + rz * rz);
-                    float b = (float) Math.exp(-Math.pow((dist - pr) / width, 2)) * w.amp * (1 - smooth((dist - w.reach * 0.7f) / (w.reach * 0.3f)));
-                    float[] v = lift.computeIfAbsent(((long) x << 32) ^ (z & 0xFFFFFFFFL), q -> new float[1]);
-                    if (b > v[0]) {
-                        v[0] = b;
+            float r0 = Math.max(2, pr - width * 1.9f), r1 = Math.min(w.reach, pr + width * 1.9f);
+            if (r1 <= r0) {
+                continue;
+            }
+            double cdx = camera.x - w.at.x, cdz = camera.z - w.at.z;
+            if (Math.sqrt(cdx * cdx + cdz * cdz) > r1 + LIFT_VIEW) {
+                continue;
+            }
+            int cx = Mth.floor(w.at.x), cz = Mth.floor(w.at.z), R1 = Mth.ceil(r1);
+            for (int dz = -R1; dz <= R1; dz++) {
+                int z = cz + dz;
+                if (Math.abs(z + 0.5 - camera.z) > LIFT_VIEW) {
+                    continue;
+                }
+                double fz = z + 0.5 - w.at.z, fz2 = fz * fz;
+                if (fz2 > r1 * r1) {
+                    continue;
+                }
+                int xOut = Mth.ceil(Math.sqrt(r1 * r1 - fz2)), xIn = fz2 < r0 * r0 ? Mth.floor(Math.sqrt(r0 * r0 - fz2)) : -1;
+                for (int dx = -xOut; dx <= xOut; dx++) {
+                    if (dx > -xIn && dx < xIn) {
+                        dx = xIn;
+                    }
+                    int x = cx + dx;
+                    if (Math.abs(x + 0.5 - camera.x) > LIFT_VIEW) {
+                        continue;
+                    }
+                    float rx = x + 0.5f - (float) w.at.x, dist = Mth.sqrt(rx * rx + (float) fz2);
+                    if (dist < r0 || dist > r1) {
+                        continue;
+                    }
+                    float q = (dist - pr) / width;
+                    float b = (float) Math.exp(-q * q) * w.amp * (1 - smooth((dist - w.reach * 0.7f) / (w.reach * 0.3f)));
+                    long key = ((long) x << 32) ^ (z & 0xFFFFFFFFL);
+                    if (b > LIFT.get(key)) {
+                        LIFT.put(key, b);
                     }
                 }
             }
         }
-        for (Map.Entry<Long, float[]> en : lift.entrySet()) {
-            if (drawn > MAX_LIFTED) {
-                break;
+        // more columns than we draw: the nearest ones (a radius cut, never random holes that flicker)
+        double cut = Double.MAX_VALUE;
+        if (LIFT.size() > MAX_LIFTED) {
+            double[] d2 = new double[LIFT.size()];
+            int i = 0;
+            for (long key : LIFT.keySet()) {
+                double ex = (int) (key >> 32) + 0.5 - camera.x, ez = (int) key + 0.5 - camera.z;
+                d2[i++] = ex * ex + ez * ez;
             }
-            int x = (int) (en.getKey() >> 32), z = (int) (long) en.getKey();
-            float b = en.getValue()[0];
+            java.util.Arrays.sort(d2);
+            cut = d2[MAX_LIFTED - 1];
+        }
+        for (var en : LIFT.long2FloatEntrySet()) {
+            long key = en.getLongKey();
+            int x = (int) (key >> 32), z = (int) key;
+            double ex = x + 0.5 - camera.x, ez = z + 0.5 - camera.z;
+            if (ex * ex + ez * ez > cut) {
+                continue;
+            }
+            float b = en.getFloatValue();
             float s3 = hash(x, z, 3);
             float dy = b * (0.35f + 1.4f * s3);
-            if (dy < 0.08f) {
+            if (dy < 0.12f) {
                 continue;
             }
             int[] y = {0};
@@ -461,31 +522,24 @@ public final class EpicFx {
 
     private static final int LightTexture_FULL = 0xF000F0;
 
+    // The ship's ~1800 blocks are built into GPU buffers once and moved with one matrix (BakedBlocks).
     private static void ships(Level level, Vec3 camera, double now) {
-        if (SHIPS.isEmpty()) {
-            return;
-        }
-        Minecraft mc = Minecraft.getInstance();
-        MultiBufferSource.BufferSource source = mc.renderBuffers().bufferSource();
-        BlockRenderDispatcher br = mc.getBlockRenderer();
-        PoseStack pose = new PoseStack();
-        BlockPos.MutableBlockPos at = new BlockPos.MutableBlockPos();
         for (ShipFx sh : SHIPS) {
+            int bx = Mth.floor(sh.at.x), by = Mth.floor(sh.at.y), bz = Mth.floor(sh.at.z);
+            if (sh.mesh == null) {
+                // lit as it will be on the ground under the open sky (it is high up and moving: no per-frame light)
+                int sky = LevelRenderer.getLightColor(level, new BlockPos(bx, by + 24, bz));
+                sh.mesh = BakedBlocks.bake(sink -> {
+                    for (var p : sh.pieces) {
+                        sink.add(p.state(), p.x(), p.y(), p.z(), p.state().getLightEmission() > 0 ? LightTexture_FULL : sky);
+                    }
+                });
+            }
             float u = Mth.clamp((float) ((now - sh.born) / sh.dur), 0, 1);
             // slow at the ground: it settles down and lifts off gently, fast high up
             double h = sh.from * (sh.down ? Math.pow(1 - u, 2.4) : Math.pow(u, 2.4));
-            int bx = Mth.floor(sh.at.x), by = Mth.floor(sh.at.y), bz = Mth.floor(sh.at.z);
-            for (var p : sh.pieces) {
-                double y = by + p.y() + h;
-                pose.pushPose();
-                pose.translate(bx + p.x() - camera.x, y - camera.y, bz + p.z() - camera.z);
-                at.set(bx + p.x(), Mth.floor(y) + 1, bz + p.z());
-                int light = p.state().getLightEmission() > 0 ? LightTexture_FULL : LevelRenderer.getLightColor(level, at);
-                br.renderSingleBlock(p.state(), pose, source, light, OverlayTexture.NO_OVERLAY);
-                pose.popPose();
-            }
+            sh.mesh.draw(new org.joml.Matrix4f().translation((float) (bx - camera.x), (float) (by + h - camera.y), (float) (bz - camera.z)));
         }
-        source.endBatch();
     }
 
     private static void volumes(Vec3 camera, double now) {
