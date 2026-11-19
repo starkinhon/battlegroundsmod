@@ -44,7 +44,8 @@ import net.neoforged.neoforge.event.tick.LevelTickEvent;
 //   taken away 64 blocks from every player (they are never saved).
 public final class PedestreCrowd {
     private static final double DT = 0.05;
-    private static final int CAP_DAY = 30, CAP_NIGHT = 20;
+    // (Stark 2026-11-19: "dá pra colocar mais um pouco": 30/20 to 40/27)
+    private static final int CAP_DAY = 40, CAP_NIGHT = 27;
     private static final double NEAR = 48, GONE = 64, FIGHT = 34;
     private static final double MIN = 0.66;
     // The lanes: the body (0.56 wide for the checks) stays on the sidewalk rows 1+, never on the curb (railings, posts

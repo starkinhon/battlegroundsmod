@@ -88,6 +88,11 @@ public final class Powers {
     public static final Power KAMEHAMEHA = registerInnate(new Power("kamehameha", 0x5AB8FF, 1.0f, List.of(
             new Ability(220, 0, com.starkinhon.battlegroundsmod.power.powers.sub.db.Goku::kamehameha))));
 
+    // Taught by Jiraiya at the Sages' Spring (universe/MasterTraining): Naruto's Rasengan on Z, a bit slower to come back
+    // (Stark 2026-11-19: each universe teaches one technique; Naruto's is the Rasengan).
+    public static final Power RASENGAN = registerInnate(new Power("rasengan", 0x6FC3FF, 1.0f, List.of(
+            new Ability(220, 0, com.starkinhon.battlegroundsmod.power.powers.sub.nr.Naruto::rasengan))));
+
     // Mob only.
     public static final Power FIGHTER = registerHidden(Fighter.create());
     // Hashirama Senju, end-game boss only: never a soul (bosses-fim-de-jogo).

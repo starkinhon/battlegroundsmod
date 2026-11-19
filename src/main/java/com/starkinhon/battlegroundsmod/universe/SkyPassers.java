@@ -352,6 +352,17 @@ public final class SkyPassers {
                 }
             }
         }
+        // Only the duel's Zanzoken hides them, and only while it runs: anything that stops it halfway (a player flying
+        // up, the duel ending) brings them back at once (Stark 2026-11-19: once Goku and Vegeta stayed invisible and went).
+        boolean vanishing = "duelo".equals(e.kind) && !e.leaving && e.react < 0 && e.phase == SOME;
+        if (!vanishing) {
+            for (SoulBoss b : e.ents) {
+                if (b.isInvisible()) {
+                    b.setInvisible(false);
+                    SubNet.send(e.level, SubNet.VANISH, 0, b.position().add(0, 1, 0), Vec3.ZERO, 0, 0, 0);
+                }
+            }
+        }
         whoosh(e);
         if (e.react >= 0) {
             react(e);

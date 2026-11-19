@@ -79,11 +79,38 @@ public final class SoulSync {
         player.setData(ModAttachments.SOUL_SYNC, Map.copyOf(map));
     }
 
+    // Skills a master teaches on top of a soul (Senhor Kaioh: Goku's B and Shift+V, universe/KaiohTraining): they are
+    // not awakened with Sincronia points nor counted for the ult, and the skill itself checks it was taught.
+    private static final Map<String, java.util.Set<Integer>> TAUGHT = Map.of("goku", java.util.Set.of(PowerData.SLOT_EXTRA, PowerData.SLOT_SHIFT + 3));
+
+    public static List<Integer> taughtSlots(Power power) {
+        java.util.Set<Integer> set = TAUGHT.get(power.id());
+        return set == null ? List.of() : set.stream().sorted().toList();
+    }
+
+    public static boolean taught(Power power, int slot) {
+        java.util.Set<Integer> set = TAUGHT.get(power.id());
+        return set != null && set.contains(slot);
+    }
+
+    // The technique the masters' training leaves in the player's list (ModAttachments.TECHNIQUES, synced to its client).
+    public static final String KAIOH = "kaioh";
+
+    public static boolean knowsTaught(Player player) {
+        if (player.level().isClientSide()) {
+            return com.starkinhon.battlegroundsmod.universe.EnergyControl.clientKnown.contains(KAIOH);
+        }
+        return player.getData(ModAttachments.TECHNIQUES).contains(KAIOH);
+    }
+
     // Every skill of the power, in awakening order: Z X C B, the Shift variants, then the ult(s) last.
     public static List<Integer> skills(Power power) {
         LinkedHashSet<Integer> out = new LinkedHashSet<>();
         List<Integer> ults = new ArrayList<>();
         for (int slot : power.slots()) {
+            if (taught(power, slot)) {
+                continue;
+            }
             if (PowerData.isUlt(slot)) {
                 ults.add(slot);
             } else {
@@ -92,7 +119,7 @@ public final class SoulSync {
         }
         for (int key = 0; key <= 4; key++) {
             int slot = power.shiftSlot(key);
-            if (slot < PowerData.SLOT_SHIFT || (key == 4 && power.abilities().size() <= 4)) {
+            if (slot < PowerData.SLOT_SHIFT || (key == 4 && power.abilities().size() <= 4) || taught(power, slot)) {
                 continue;
             }
             if (PowerData.isUlt(slot)) {
@@ -117,6 +144,9 @@ public final class SoulSync {
     public static boolean awake(Player player, Power power, int slot) {
         if (power == null || PowerLogic.isBaseAttack(slot) || !gated(player)) {
             return true;
+        }
+        if (taught(power, slot)) {
+            return knowsTaught(player);
         }
         if (!skills(power).contains(slot)) {
             return true;
@@ -210,7 +240,21 @@ public final class SoulSync {
     public static void completeAll(ServerPlayer player, Power power) {
         Entry e = get(player, power.id());
         put(player, power.id(), new Entry(Math.max(e.level(), skills(power).size() - 1), 1f, 0, skills(power)));
+        if (!taughtSlots(power).isEmpty()) {
+            learnTaught(player);
+        }
         sync(player);
+    }
+
+    // The masters' training done (universe/KaiohTraining, or /soul skillcompleta for testing).
+    public static void learnTaught(ServerPlayer player) {
+        List<String> known = player.getData(ModAttachments.TECHNIQUES);
+        if (!known.contains(KAIOH)) {
+            List<String> next = new ArrayList<>(known);
+            next.add(KAIOH);
+            player.setData(ModAttachments.TECHNIQUES, List.copyOf(next));
+            com.starkinhon.battlegroundsmod.universe.EnergyControl.sync(player);
+        }
     }
 
     public static void sync(ServerPlayer player) {

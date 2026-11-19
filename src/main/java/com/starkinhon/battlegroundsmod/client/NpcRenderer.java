@@ -12,12 +12,18 @@ import net.minecraft.resources.ResourceLocation;
 // The universes' NPCs: the player model with a skin (textures/entity/<id>.png).
 public class NpcRenderer extends HumanoidMobRenderer<UniverseNpc, PlayerModel<UniverseNpc>> {
     private final ResourceLocation skin;
+    private final float size;
 
     public NpcRenderer(EntityRendererProvider.Context context, String skin) {
         this(context, skin, false);
     }
 
     public NpcRenderer(EntityRendererProvider.Context context, String skin, boolean slim) {
+        this(context, skin, slim, 1f);
+    }
+
+    // size: drawn smaller or bigger (Bubbles, Senhor Kaioh's monkey, is 0.68)
+    public NpcRenderer(EntityRendererProvider.Context context, String skin, boolean slim, float size) {
         super(context, new PlayerModel<UniverseNpc>(context.bakeLayer(slim ? ModelLayers.PLAYER_SLIM : ModelLayers.PLAYER), slim) {
             // in the talk scene (client/TalkScreen) the NPC gestures while its line types
             @Override
@@ -33,8 +39,16 @@ public class NpcRenderer extends HumanoidMobRenderer<UniverseNpc, PlayerModel<Un
                     leftSleeve.copyFrom(leftArm);
                 }
             }
-        }, 0.5f);
+        }, 0.5f * size);
+        this.size = size;
         this.skin = ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "textures/entity/" + skin + ".png");
+    }
+
+    @Override
+    protected void scale(UniverseNpc npc, com.mojang.blaze3d.vertex.PoseStack pose, float partial) {
+        if (size != 1f) {
+            pose.scale(size, size, size);
+        }
     }
 
     @Override

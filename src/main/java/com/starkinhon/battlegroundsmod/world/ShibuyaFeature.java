@@ -31,27 +31,26 @@ import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConf
 
 // Shibuya (Stark 2026-11-12; port released 2026-11-13): the city covers the biome on the preview's world grid
 // (ShibuyaGen is its line-by-line port, checked block for block against the preview in 4 pieces), at one level for the
-// whole city (just above the sea), the land cut above it and filled below it; at the biome's edge a skirt of 8 blends
-// the land back. Per chunk, in the preview's order, on a box of the chunk and 26 around it (so the wires between poles
+// whole city (just above the sea), the land cut above it and filled below it; around it a skirt (CitySkirt, as wide as
+// the hills are tall) blends the land back. Per chunk, in the preview's order, on a box of the chunk and 26 around it (so the wires between poles
 // and the trees across the chunk's edge come out the same from both sides):
 // 1. the ground of the streets and lots (only where the city is: the biome all around for 8);
-// 2. the metro stations: one under each big scramble crossing (kept 4 crossings apart on an avenue: hasStation) with
+// 2. the metro stations: one under the crossings of two avenues (kept 4 crossings apart on an avenue: hasStation) with
 //    the city all along it, built once and kept (concourse, platform, train, tunnels of 110 each way);
 // 3. the blocks: alleys, buildings, skyscrapers, shrines and parking lots, each block built once and kept, only when
 //    the city covers it whole;
 // 4. the street furniture (poles, wires, lamps, avenue trees, guard rails, traffic lights).
-// Writes only inside its own chunk.
+// Writes only inside its own chunk (but for the leaves CitySkirt drops when it cuts the tree that held them).
 public final class ShibuyaFeature extends Feature<NoneFeatureConfiguration> {
     private static final int SALT = 0x6A0900;
     private static final int M = 26;
     private static final int SKIRT = 8;
-    private static final int CLEAR = 24;
     private static final int STATION_HALF = 110;
     // Built blocks and stations, and apart from them the keys found empty (cheap to keep, many): a chunk asks for ~16 blocks
     // and ~28 stations, from several generator threads at once, so a small cache kept throwing them away and building
     // the same metro stations again and again (the Souls world test of 2026-11-13 fell many seconds behind).
     private static final Cache<Long, int[]> PLANS = CacheBuilder.newBuilder().maximumSize(256).build();
-    private static final Cache<Long, int[]> STATIONS = CacheBuilder.newBuilder().maximumSize(48).build();
+    private static final Cache<Long, int[]> STATIONS = CacheBuilder.newBuilder().maximumSize(96).build();
     private static final Cache<Long, Boolean> EMPTY = CacheBuilder.newBuilder().maximumSize(16384).build();
     private static final Cache<Long, Boolean> QUARTS = CacheBuilder.newBuilder().maximumSize(65536).build();
     private static final Cache<Long, int[]> FOOTPRINTS = CacheBuilder.newBuilder().maximumSize(1024).build();
@@ -118,36 +117,24 @@ public final class ShibuyaFeature extends Feature<NoneFeatureConfiguration> {
             }
         }
 
-        // 0. The land under the city and the skirt around it (this chunk only).
-        for (int x = x0; x <= x1; x++) {
-            for (int z = z0; z <= z1; z++) {
-                int h = ground.applyAsInt(x, z);
-                if (city.at(x, z)) {
-                    clear(level, pos, x, z, cityY + 1, Math.max(Math.max(h, cityY) + CLEAR, surface(level, x, z)), maxY);
-                    for (int y = Math.max(minY, h + 1); y <= cityY - 3; y++) {
-                        level.setBlock(pos.set(x, y, z), Blocks.STONE.defaultBlockState(), 2);
-                    }
-                    continue;
-                }
-                if (!city.biome(x, z)) {
-                    continue;
-                }
-                int d = city.distance(x, z, SKIRT);
-                if (d > SKIRT) {
-                    continue;
-                }
-                double k = 1 - d / (double) (SKIRT + 1);
-                k = k * k * (3 - 2 * k);
-                int top = JjkGen.round(h + (cityY - h) * k);
-                clear(level, pos, x, z, top + 1, Math.max(Math.max(h, top) + CLEAR, surface(level, x, z)), maxY);
-                for (int y = Math.max(minY, h + 1); y < top; y++) {
-                    level.setBlock(pos.set(x, y, z), (top - y > 3 ? Blocks.STONE : Blocks.DIRT).defaultBlockState(), 2);
-                }
-                if (top != h && top >= minY && top <= maxY) {
-                    level.setBlock(pos.set(x, top, z), Blocks.GRASS_BLOCK.defaultBlockState(), 2);
-                }
+        // 0. The land under the city and the skirt around it (this chunk only): CitySkirt (as wide as the hills around
+        // are tall, past the biome's edge into the plain biomes; caves and lava filled under it and under the street).
+        CitySkirt.level(level, generator, random, worldKey, chunk, ground, cityY, SKIRT, cityY - 3, new CitySkirt.Plan() {
+            @Override
+            public boolean city(int x, int z) {
+                return city.at(x, z);
             }
-        }
+
+            @Override
+            public boolean own(int qx, int qz) {
+                return city.quart(qx, qz);
+            }
+
+            @Override
+            public BlockState ground(int x, int z, int top, int h, double d) {
+                return top != h ? Blocks.GRASS_BLOCK.defaultBlockState() : null;
+            }
+        });
 
         ShibuyaGen.Vox w = new ShibuyaGen.Vox(bx0, bz0, bx1, bz1);
 
@@ -261,33 +248,6 @@ public final class ShibuyaFeature extends Feature<NoneFeatureConfiguration> {
         }
     }
 
-    // The real top of a column (overhangs, arches and floating bits above the noise's ground included), so the cut takes
-    // everything over the city and nothing is left hanging in the air.
-    private static int surface(WorldGenLevel level, int x, int z) {
-        return level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE_WG, x, z);
-    }
-
-    private static void clear(WorldGenLevel level, BlockPos.MutableBlockPos pos, int x, int z, int y0, int y1, int maxY) {
-        for (int y = y0; y <= Math.min(y1, maxY); y++) {
-            BlockState b = level.getBlockState(pos.set(x, y, z));
-            if (!b.isAir() && !b.is(Blocks.BEDROCK)) {
-                level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2);
-            }
-        }
-        // The heightmap can miss what a neighbour chunk's feature put here (a Dragon World pillar left floating over
-        // the city, 2026-11-13), so the cut goes on up while it still finds something, until 8 blocks of air in a row.
-        int air = 0;
-        for (int y = Math.max(y0, y1 + 1); y <= maxY && air < 8; y++) {
-            BlockState b = level.getBlockState(pos.set(x, y, z));
-            if (b.isAir()) {
-                air++;
-            } else if (!b.is(Blocks.BEDROCK)) {
-                air = 0;
-                level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2);
-            }
-        }
-    }
-
     // Where the city is: a column is city when the biome covers its quart and every quart within 2 (8 blocks).
     private static final class City {
         final ChunkGenerator generator;
@@ -396,29 +356,33 @@ public final class ShibuyaFeature extends Feature<NoneFeatureConfiguration> {
         }
     }
 
-    // Which scramble crossings get a station (Stark 2026-11-19: "aumentar a taxa de spawn do metrô"; it was 60% of them).
-    // Now every one, except that a station's tunnels run 110 each way along its avenue: two stations on one avenue less
-    // than 4 crossings (256 blocks) apart would cut into each other (each fills its whole length with stone first, and the
-    // client finds no station between them), so of the scramble crossings within 3 on the same avenue only the one with
-    // the smallest draw gets one (the grid's middle always).
+    // Which crossings get a station (Stark 2026-11-19: "aumentar a taxa de spawn do metrô"; it was 60% of the scramble
+    // ones). Every candidate, except that a station's tunnels run 110 each way along its avenue: two stations on one
+    // avenue less than 4 crossings (256 blocks) apart would cut into each other (each fills its whole length with stone first, and the
+    // client finds no station between them), so of the candidates within 3 on the same avenue only the first by
+    // priority gets one (the grid's middle always).
+    // 2026-11-19 (second test, "ainda tá baixo... é uma estrutura muito foda pra ficar tão escondida"): every crossing of
+    // two avenues is a candidate, the scramble ones first (about 70% more stations than scrambles only).
     static boolean hasStation(int i, int j, int seed) {
-        if (!ShibuyaGen.scramble(i, j, seed)) {
+        if (!candidate(i, j, seed)) {
             return false;
         }
-        if (i == 0 && j == 0) {
-            return true;
-        }
-        double h = JjkGen.hash3(i, j, 61, seed);
+        double h = priority(i, j, seed);
         for (int dj = -3; dj <= 3; dj++) {
             int j2 = j + dj;
-            if (dj == 0 || !ShibuyaGen.scramble(i, j2, seed)) {
-                continue;
-            }
-            if (i == 0 && j2 == 0 || JjkGen.hash3(i, j2, 61, seed) < h) {
+            if (dj != 0 && candidate(i, j2, seed) && priority(i, j2, seed) < h) {
                 return false;
             }
         }
         return true;
+    }
+
+    private static boolean candidate(int i, int j, int seed) {
+        return ShibuyaGen.scramble(i, j, seed) || ShibuyaGen.street('x', i, seed).avenue() && ShibuyaGen.street('z', j, seed).avenue();
+    }
+
+    private static double priority(int i, int j, int seed) {
+        return JjkGen.hash3(i, j, 61, seed) - (ShibuyaGen.scramble(i, j, seed) ? 1 : 0) - (i == 0 && j == 0 ? 5 : 0);
     }
 
     // The holes the station entrances open in the sidewalk (y = 0) near a block, as column keys.

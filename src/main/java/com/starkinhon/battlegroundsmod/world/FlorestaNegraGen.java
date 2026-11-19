@@ -277,6 +277,8 @@ public final class FlorestaNegraGen {
         Rng rng = new Rng(seed);
         int R = LAIR_R;
         int gy = ground.applyAsInt(cx, cz);
+        // the ramp at the edge widens with the hills around (12 on flat land, up to 20), so it is a slope, not steps
+        int ramp = JjkGen.rampWidth(ground, cx, cz, R, 1, gy, 12, 20);
         // the clearing's floor: levels gently toward the center and turns to cracked black stone with veins
         for (int x = cx - R - 4; x <= cx + R + 4; x++) {
             for (int z = cz - R - 4; z <= cz + R + 4; z++) {
@@ -285,7 +287,7 @@ public final class FlorestaNegraGen {
                     continue;
                 }
                 int g = ground.applyAsInt(x, z);
-                double t = Math.min(1, Math.max(0, (R - d) / 12));
+                double t = Math.min(1, Math.max(0, (R - d) / ramp));
                 int y = round(g + (gy - g) * t);
                 for (int yy = y + 1; yy <= Math.max(g, y) + 2; yy++) {
                     w.force(x, yy, z, AIR);

@@ -39,7 +39,7 @@ public final class KiMesh {
 
     public static final int BLAST = 0, GENKI = 1, HALO = 2, BEAM = 3, RING = 4, SHELL = 5, FLASH = 6, SUN = 7, SUN_HALO = 8, SAW = 9, KIEN = 10,
             SPIRAL = 11, WIND = 12, KATON = 13, KATON_RING = 14, SHADOW_PATH = 15, SHADOW_SEA = 16, FLIGHT_SHELL = 17, FLIGHT_RING = 18,
-            // 17-18 the Dragon Ball flight; 19-29 free; 30-32 the Naruto kit (forja/naruto-kit); 33-34 Kakashi, 35 Gaara
+            // 17-18 the Dragon Ball flight; 19-24 the combat flight page; 25-29 and 36-38 the Mini Genki Dama (client/fx/KaiohFx); 30-32 the Naruto kit (forja/naruto-kit); 33-34 Kakashi, 35 Gaara
             RASEN = 30, RASEN_WIND = 31, RASENSHURIKEN = 32, KAMUI_VORTEX = 33, NINKEN_SEAL = 34, SAND_QUICK = 35,
             // 40-59 the Jujutsu kits (Inumaki, Nobara, Miwa)
             VOICE = 40, BIND = 41, NAIL_TRAIL = 42, THORN = 43, NB_BURST = 44, NB_LINK = 45,
@@ -302,7 +302,7 @@ public final class KiMesh {
         s.safeGetUniform("Blow").set(p.blow[0], p.blow[1], p.blow[2]);
         s.safeGetUniform("GlowPass").set(glow ? 1f : 0f);
         boolean highPass = p.kind == BLAST || p.kind == GENKI || p.kind == HALO || p.kind == SUN || p.kind == SUN_HALO
-                || p.kind == KATON || p.kind == KATON_RING || p.kind == 19 || p.kind == 21 || p.kind == 22;
+                || p.kind == KATON || p.kind == KATON_RING || p.kind == 19 || p.kind == 21 || p.kind == 22 || p.kind == 29 || p.kind == 36 || p.kind == 37;
         s.safeGetUniform("HighPass").set(highPass ? 1f : 0f);
     }
 
