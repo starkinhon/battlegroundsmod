@@ -18,7 +18,7 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.InventoryMenu;
 
 // The survival inventory drawn as the crystal cluster in the soul's color (CrystalInventory). If that fails it returns
-// false and vanilla draws its own background. A row of buttons under it picks dark slots, light slots or Minecraft's
+// false and vanilla draws its own background. A row of buttons in the screen's top right corner picks dark slots, light slots or Minecraft's
 // default look. require = 0: if the methods ever change, the vanilla inventory stays.
 @Mixin(InventoryScreen.class)
 public abstract class InventoryScreenMixin extends EffectRenderingInventoryScreen<InventoryMenu> {
@@ -29,11 +29,11 @@ public abstract class InventoryScreenMixin extends EffectRenderingInventoryScree
     @Unique
     private List<CrystalInventory.StyleButton> battlegrounds$styleButtons;
 
-    // The "Escuro / Claro / Minecraft" buttons under the inventory.
+    // The "Escuro / Claro / Minecraft" buttons, top right corner of the screen.
     @Inject(method = "init", at = @At("TAIL"), require = 0)
     private void battlegrounds$addStyleButtons(CallbackInfo ci) {
         this.battlegrounds$styleButtons = CrystalInventory.makeButtons();
-        CrystalInventory.placeButtons(this.battlegrounds$styleButtons, this.leftPos, this.topPos);
+        CrystalInventory.placeButtons(this.battlegrounds$styleButtons, this.width);
         for (CrystalInventory.StyleButton button : this.battlegrounds$styleButtons) {
             this.addRenderableWidget(button);
         }
@@ -42,7 +42,7 @@ public abstract class InventoryScreenMixin extends EffectRenderingInventoryScree
     @Inject(method = "renderBg", at = @At("HEAD"), cancellable = true, require = 0)
     private void battlegrounds$crystalBackground(GuiGraphics graphics, float partialTick, int mouseX, int mouseY, CallbackInfo ci) {
         if (this.battlegrounds$styleButtons != null) {
-            CrystalInventory.placeButtons(this.battlegrounds$styleButtons, this.leftPos, this.topPos);
+            CrystalInventory.placeButtons(this.battlegrounds$styleButtons, this.width);
         }
         if (CrystalInventory.renderBg(graphics, this.leftPos, this.topPos, mouseX, mouseY, this.menu)) {
             ci.cancel();
