@@ -46,28 +46,45 @@ const mat3 ROT = mat3(0.00, 0.80, 0.60, -0.80, 0.36, -0.48, -0.60, -0.48, 0.64);
 float fbm3(vec3 p) { float s = 0.0, w = 0.5; for (int o = 0; o < 3; o++) { s += w * gn(p); p = ROT * p * 2.03; w *= 0.5; } return s; }
 float fbm4(vec3 p) { float s = 0.0, w = 0.5; for (int o = 0; o < 4; o++) { s += w * gn(p); p = ROT * p * 2.03; w *= 0.5; } return s; }
 
-float field(vec3 p, out float temp) {
-    vec3 q = p - E;
-    float rise = Shape > 0.5 ? 0.0 : Life * Life * H * (Mode < 0.5 ? 0.4 : 0.25);
-    q.y -= rise;
-    float r = length(q.xz);
-    vec2 dir = q.xz / max(r, 1e-3);
-    float yy = max(q.y, 0.0);
-    float d;
+// The shape alone, 0 at the middle, 1 at the edge (no noise): how far a point is out of the volume.
+float shapeD(vec3 q, float r, float yy) {
     if (Shape < 0.5) {
-        d = length(vec3(q.x / R, yy / H, q.z / R));
+        return length(vec3(q.x / R, yy / H, q.z / R));
     } else if (Shape < 1.5) {
         // a column whose top opens into a mushroom
         float capY = H * (0.55 + 0.45 * Life);
         float stem = r / (R * 0.42) + smoothstep(capY * 0.7, capY, q.y) * 3.0;
         float cap = length(vec3(q.x / R, (q.y - capY) / (H * 0.32), q.z / R));
-        d = min(max(stem, step(capY + H * 0.1, q.y) * 9.0), cap);
-        if (q.y < 0.0) d = 9.0;
+        return q.y < 0.0 ? 9.0 : min(max(stem, step(capY + H * 0.1, q.y) * 9.0), cap);
     } else if (Shape < 2.5) {
-        d = length(vec2((r - R) / max(R * 0.22, 1.5), yy / H));
-    } else {
-        d = length(vec2((r - R) / max(H * 2.2, 1.0), q.y / H));
+        return length(vec2((r - R) / max(R * 0.22, 1.5), yy / H));
     }
+    return length(vec2((r - R) / max(H * 2.2, 1.0), q.y / H));
+}
+
+float rise() {
+    return Shape > 0.5 ? 0.0 : Life * Life * H * (Mode < 0.5 ? 0.4 : 0.25);
+}
+
+// The density without the noise, for the dust's light (cheap: no second noisy sample towards the sun).
+float shapeAt(vec3 p) {
+    vec3 q = p - E;
+    q.y -= rise();
+    return shapeD(q, length(q.xz), max(q.y, 0.0));
+}
+
+float field(vec3 p, out float temp, out float nOut) {
+    vec3 q = p - E;
+    q.y -= rise();
+    float r = length(q.xz);
+    vec2 dir = q.xz / max(r, 1e-3);
+    float yy = max(q.y, 0.0);
+    float d = shapeD(q, r, yy);
+    temp = 0.0;
+    nOut = 0.0;
+    float skirt0 = Shape < 0.5 && Mode < 0.5 ? exp(-pow(yy / (H * 0.16), 2.0)) * (1.0 - smoothstep(0.9, 1.5, r / R)) : 0.0;
+    // too far out of the shape for any noise to reach the threshold: empty, and the noise is never computed
+    if (q.y < -0.6 || (d > 1.95 && skirt0 < 0.01)) return 0.0;
     float sc = Shape > 1.5 ? max(H * 3.0, 4.0) : max(R, 1.0);
     vec3 np = vec3(q.x, q.y * (Mode < 0.5 ? 1.4 : 1.0), q.z) / sc * (Mode < 0.5 ? 3.2 : 2.2);
     np -= vec3(dir.x, 0.0, dir.y) * Phase * 0.22;
@@ -79,8 +96,10 @@ float field(vec3 p, out float temp) {
     float skirt = Shape < 0.5 && Mode < 0.5 ? exp(-pow(yy / (H * 0.16), 2.0)) * (1.0 - smoothstep(0.9, 1.25 + n * 0.2, r / R)) : 0.0;
     float f = max(1.0 - d + n * (Mode < 0.5 ? 0.55 : 0.95), skirt * 0.85 + n * 0.35 - 0.05);
     f -= Life * 0.55 * (1.0 - smoothstep(0.25, 0.9, d)) * (Mode < 0.5 ? 1.0 : 0.0);
-    float lick = gn(np * 3.1 + vec3(0.0, -Phase * 1.3, 0.0) + Seed);
+    // the flames licking: only fire and smoke have a temperature to draw
+    float lick = Mode > 0.5 && Mode < 1.5 ? 0.0 : gn(np * 3.1 + vec3(0.0, -Phase * 1.3, 0.0) + Seed);
     temp = clamp(Heat * (1.2 - d * 0.6) + n * 0.8 + lick * 0.25 - Life * 0.75, 0.0, 1.0);
+    nOut = n;
     float th = 0.02 + Life * 0.3;
     return q.y < -0.6 ? 0.0 : smoothstep(th, th + (Mode < 0.5 ? 0.22 : 0.55), f) * Fade;
 }
@@ -100,15 +119,18 @@ void main() {
     float t0 = max(max(max(tmn.x, tmn.y), tmn.z), 0.0), t1 = min(min(tmx.x, tmx.y), tmx.z);
     if (rd.y < 0.0) t1 = min(t1, (Ground - 0.0) / rd.y);
     if (t1 <= t0) discard;
-    const int STEPS = 52;
-    float dt = (t1 - t0) / float(STEPS);
+    // 36 steps through the long rays (a cloud filling the screen), fewer through the short ones
+    const int STEPS = 36;
+    int steps = int(clamp((t1 - t0) / max(max(R, H), 2.0) * 22.0, 10.0, float(STEPS)));
+    float dt = (t1 - t0) / float(steps);
     float t = t0 + dt * fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453);
     vec3 acc = vec3(0.0);
     float T = 1.0, hitT = -1.0;
     for (int i = 0; i < STEPS; i++) {
+        if (i >= steps) break;
         vec3 p = rd * t;
-        float temp;
-        float dn = field(p, temp);
+        float temp, nz;
+        float dn = field(p, temp, nz);
         if (dn > 0.002) {
             if (hitT < 0.0 && dn > 0.25) hitT = t;
             vec3 col;
@@ -120,9 +142,10 @@ void main() {
                 float sm = smoothstep(0.3, 0.06, temp) * smoothstep(0.15, 0.5, Life);
                 col = mix(col, vec3(0.16, 0.14, 0.13) * (0.6 + 0.6 * smoothstep(0.0, 1.0, (p.y - E.y) / (H * 1.5))), sm);
             } else {
-                // lit by the sun: how dense it is a little way towards the sun
-                float tl;
-                float up = field(p + SUN * max(R, 4.0) * 0.12, tl);
+                // lit by the sun: the shape (no second full noisy sample, the old cost x2) a little way towards it,
+                // with this sample's lumps and one noise of its own so the shading isn't flat
+                vec3 po = p + SUN * max(R, 4.0) * 0.12;
+                float up = clamp(1.4 - shapeAt(po) + nz * 0.7 + 0.75 * gn((po - E) / max(R, 1.0) * 2.2 + Seed * 1.7), 0.0, 1.0);
                 float lit = clamp(1.0 - up * 1.4, 0.2, 1.0);
                 k = 0.55;
                 col = Dust * mix(0.42, 1.15, lit) * mix(0.75, 1.0, smoothstep(0.05, 0.6, dn));

@@ -88,6 +88,15 @@ public final class FzFx {
         final Vec3 origin;
         final List<Piece> pieces = new ArrayList<>();
         final float radius;
+        // its blocks built into GPU buffers once (epic.BakedBlocks), drawn with the island's matrix every frame
+        com.starkinhon.battlegroundsmod.client.fx.epic.BakedBlocks mesh;
+
+        void close() {
+            if (mesh != null) {
+                mesh.close();
+                mesh = null;
+            }
+        }
         Vec3 prev;
         Vec3 pos;
         float prevYaw;
@@ -136,6 +145,7 @@ public final class FzFx {
 
     static void clear() {
         SHOTS.clear();
+        ISLANDS.values().forEach(Island::close);
         ISLANDS.clear();
         CHUNKS.clear();
         DOOMS.clear();
@@ -183,6 +193,7 @@ public final class FzFx {
                 is.endAt = now;
             }
             if (is.endAt >= 0) {
+                is.close();
                 it.remove();
             }
         }
@@ -394,7 +405,10 @@ public final class FzFx {
             Island is = new Island(pos, b);
             snapshot(is, pos, b, c);
             is.updated = now;
-            ISLANDS.put(id, is);
+            Island old = ISLANDS.put(id, is);
+            if (old != null) {
+                old.close();
+            }
             return;
         }
         Island is = ISLANDS.get(id);
@@ -519,12 +533,15 @@ public final class FzFx {
             pose.pushPose();
             pose.translate(w.x - camera.x, w.y - camera.y, w.z - camera.z);
             pose.mulPose(new Quaternionf().rotationY(yaw).rotateX(is.tilt));
-            for (Piece p : is.pieces) {
-                pose.pushPose();
-                pose.translate(p.x(), p.y(), p.z());
-                blocks.renderSingleBlock(p.state(), pose, source, light, OverlayTexture.NO_OVERLAY);
-                pose.popPose();
+            if (is.mesh == null) {
+                // lit once, where it was torn out: thousands of block models are built a single time, not every frame
+                is.mesh = com.starkinhon.battlegroundsmod.client.fx.epic.BakedBlocks.bake(sink -> {
+                    for (Piece p : is.pieces) {
+                        sink.add(p.state(), p.x(), p.y(), p.z(), light);
+                    }
+                });
             }
+            is.mesh.draw(pose.last().pose());
             pose.popPose();
         }
         for (Chunk ch : CHUNKS) {

@@ -32,12 +32,19 @@ import net.minecraft.world.phys.Vec3;
 // The client draws the flying blocks, the dust and the tremors on its own (client/fx/epic, RuinNet).
 public final class Ruin {
     private static final int FLAGS = Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE;
-    // block changes per tick, every job together
-    private static final int BUDGET = 4500;
+    // block changes per pulse, every job together
+    private static final int BUDGET = 9000;
+    // Every job changes its blocks on the same ticks, one in PULSE (Stark 2026-11-19: the dragon and the Buddha took him
+    // from 90 to 10-20 FPS): each chunk section the client has to re-mesh is re-meshed once a pulse instead of every tick.
+    private static final int PULSE = 3;
     private static long budgetTick = Long.MIN_VALUE;
     private static int spent;
 
     private Ruin() {
+    }
+
+    private static void job(ServerLevel level, Tasks.Task task) {
+        Tasks.addSystem(age -> level.getGameTime() % PULSE == 0 && task.tick(age));
     }
 
     private static boolean spend(ServerLevel level) {
@@ -254,7 +261,7 @@ public final class Ruin {
         int x0 = Mth.floor(cx), z0 = Mth.floor(cz);
         int[] k = {0};
         double[] ref = {o.base};
-        Tasks.addSystem(age -> {
+        job(level, age -> {
             int t = age - delay;
             if (t < 0) {
                 return false;
@@ -324,7 +331,7 @@ public final class Ruin {
         int[][] cells = list.toArray(new int[0][]);
         Arrays.sort(cells, (p, q) -> Integer.compare(p[2], q[2]));
         int[] k = {0};
-        Tasks.addSystem(age -> {
+        job(level, age -> {
             int t = age - delay;
             if (t < 0) {
                 return false;
@@ -382,7 +389,7 @@ public final class Ruin {
         double[][] cells = list.toArray(new double[0][]);
         Arrays.sort(cells, (p, q) -> Double.compare(p[2], q[2]));
         int[] k = {0};
-        Tasks.addSystem(age -> {
+        job(level, age -> {
             int t = age - delay;
             if (t < 0) {
                 return false;
@@ -452,7 +459,7 @@ public final class Ruin {
         Arrays.sort(cells, (p, q) -> Double.compare(p[3], q[3]));
         int[] k = {0};
         double[] ref = {Double.NaN};
-        Tasks.addSystem(age -> {
+        job(level, age -> {
             int t = age - delay;
             if (t < 0) {
                 return false;
@@ -496,7 +503,7 @@ public final class Ruin {
         int[][] cells = disk(R);
         int x0 = Mth.floor(cx), z0 = Mth.floor(cz);
         int[] k = {0};
-        Tasks.addSystem(age -> {
+        job(level, age -> {
             int t = age - delay;
             if (t < 0) {
                 return false;
@@ -558,7 +565,7 @@ public final class Ruin {
             List<BlockPos> placed = new ArrayList<>();
             Set<Long> done = new HashSet<>();
             int[] k = {0};
-            Tasks.addSystem(age -> {
+            job(level, age -> {
                 BlockPos.MutableBlockPos p = new BlockPos.MutableBlockPos();
                 while (k[0] < cells.length && cells[k[0]][1] <= age && spend(level)) {
                     long[] c = cells[k[0]++];
@@ -594,7 +601,7 @@ public final class Ruin {
                 mine.add(level.getBlockState(p));
             }
             int[] k = {placed.size() - 1};
-            Tasks.addSystem(age -> {
+            job(level, age -> {
                 if (age < after) {
                     return false;
                 }
