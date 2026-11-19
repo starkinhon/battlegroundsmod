@@ -26,6 +26,7 @@ public class PowerBookItem extends Item {
 
     @Override
     public boolean isFoil(ItemStack stack) {
-        return true;
+        // The book has its own icon now (Stark 2026-11-19): no enchant glint washing over it.
+        return false;
     }
 }
