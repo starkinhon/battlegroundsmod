@@ -92,17 +92,19 @@ public final class Tiers {
     }
 
     // What is left of a blow of this amount from the attacker after the target's Escudo. Only a target of a higher tier
-    // than the attacker shields: each point of difference keeps (1 - escudoCorte) of the blow, with a 5% minimum floor
-    // so multi-hit techniques are never zeroed out completely.
+    // than the attacker shields: each point of difference keeps (1 - escudoCorte) of the blow, never less than escudoPiso
+    // of it (Stark, 2026-11-19: never zero). The tier gap already weighs through health and damageMultiplier (a human vs
+    // a god takes ~34x the blows of an even fight with no Escudo at all), so the Escudo is only the extra on top.
     public static float shield(LivingEntity attacker, LivingEntity target, float amount) {
         int gap = shield(target) - shield(attacker);
         if (gap <= 0 || amount <= 0) {
             return amount;
         }
         TierSpec spec = TierSpec.get();
-        double factor = Math.max(0.05, Math.pow(1 - spec.escudoCorte(), gap));
+        double floor = spec.escudoPiso() > 0 ? spec.escudoPiso() : 0.05;
+        double factor = Math.max(floor, Math.pow(1 - spec.escudoCorte(), gap));
         double kept = amount * factor - target.getMaxHealth() * spec.resistenciaEscudo() * gap;
-        return (float) Math.max(amount * 0.05, kept);
+        return (float) Math.max(amount * floor, kept);
     }
 
     // Armadura points of this tier: armaduraPorTier per tier above human (Tier 0 = 20, a full bar).
