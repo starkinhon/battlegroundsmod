@@ -236,5 +236,34 @@
     "sounds": [
       "battlegroundsmod:templo_coruja"
     ]
+  },
+  "hanami_folhas": {
+    "sounds": [
+      {
+        "name": "battlegroundsmod:hanami_folhas",
+        "stream": true
+      }
+    ]
+  },
+  "hanami_passaro": {
+    "sounds": [
+      "battlegroundsmod:hanami_passaro1",
+      "battlegroundsmod:hanami_passaro2",
+      "battlegroundsmod:hanami_passaro3"
+    ]
+  },
+  "hanami_grilo": {
+    "sounds": [
+      {
+        "name": "battlegroundsmod:hanami_grilo",
+        "stream": true
+      }
+    ]
+  },
+  "hanami_coracao": {
+    "subtitle": "subtitles.battlegroundsmod.hanami_coracao",
+    "sounds": [
+      "battlegroundsmod:hanami_coracao"
+    ]
   }
 }

@@ -213,7 +213,7 @@ public final class ScreenFx {
     }
 
     static boolean needsScene() {
-        return PreviewFx.screenOn() || ColoniaAirFx.gradeOn() || ShibuyaAirFx.gradeOn() || KyotoAirFx.gradeOn() || TemploAirFx.gradeOn() || Realismo.active() || impact != null || !WARPS.isEmpty() || ticks - heldAt <= 1 || radial != null && radial.k(ticks) > 0 || heldBlur() > 0;
+        return PreviewFx.screenOn() || ColoniaAirFx.gradeOn() || ShibuyaAirFx.gradeOn() || KyotoAirFx.gradeOn() || TemploAirFx.gradeOn() || HanamiAirFx.gradeOn() || Realismo.active() || impact != null || !WARPS.isEmpty() || ticks - heldAt <= 1 || radial != null && radial.k(ticks) > 0 || heldBlur() > 0;
     }
 
     // The level's camera for this frame, so world positions can be found on screen later (also from the GUI).
@@ -239,7 +239,8 @@ public final class ScreenFx {
         boolean shibuya = ShibuyaAirFx.gradeOn();
         boolean kyoto = KyotoAirFx.gradeOn();
         boolean templo = TemploAirFx.gradeOn();
-        if (!warp && blur <= 0 && !real && !preview && !colonia && !shibuya && !kyoto && !templo) {
+        boolean hanami = HanamiAirFx.gradeOn();
+        if (!warp && blur <= 0 && !real && !preview && !colonia && !shibuya && !kyoto && !templo && !hanami) {
             return;
         }
         FxPost.beginPasses();
@@ -268,6 +269,10 @@ public final class ScreenFx {
         if (templo) {
             // the Templo da Montanha's screen grade (cold clear air, gold at dusk)
             TemploAirFx.gradePass(levelPartial);
+        }
+        if (hanami) {
+            // the Floresta de Hanami's screen grade (green and gold by day, teal edges at night)
+            HanamiAirFx.gradePass(levelPartial);
         }
         if (preview) {
             // the combat flight page's screen (shockwave, speed lines, impact frame), last like on the page
