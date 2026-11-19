@@ -1285,6 +1285,8 @@ public final class AirCombat {
 
     // From passing by to the fight (Vegeta's challenge, or hit by the player): it is already in the air.
     public void fight(LivingEntity target) {
+        // never into a fight hidden by a passing Zanzoken
+        boss.setInvisible(false);
         passer = false;
         flags = 0;
         st = St.AR;
