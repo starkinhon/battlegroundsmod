@@ -12,7 +12,6 @@ import com.starkinhon.battlegroundsmod.ModItems;
 import com.starkinhon.battlegroundsmod.combat.Fx;
 import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.npc.UniverseNpc;
-import com.starkinhon.battlegroundsmod.power.PowerLogic;
 import com.starkinhon.battlegroundsmod.power.Powers;
 import com.starkinhon.battlegroundsmod.power.SoulSync;
 import com.starkinhon.battlegroundsmod.power.Progression;
@@ -892,12 +891,8 @@ public final class DbActivities {
             DbQuests.sync(player);
             return;
         }
-        // he teaches the Kamehameha: the player's own technique (Powers.KAMEHAMEHA), worn now if no soul is
-        boolean soulless = !player.getData(ModAttachments.POWER).hasPower();
-        if (soulless) {
-            PowerLogic.select(player, Powers.KAMEHAMEHA);
-        } else {
-            SoulSync.touch(player, Powers.KAMEHAMEHA.id());
+        // he teaches the Kamehameha: it joins the player's own kit (Powers.INATA), worn now if no soul is
+        if (!SoulSync.learnInnate(player, Powers.KAMEHAMEHA)) {
             player.displayClientMessage(Component.translatable("message.battlegroundsmod.kame_livro"), false);
         }
         player.getPersistentData().putBoolean("souls_kame_feito", true);
