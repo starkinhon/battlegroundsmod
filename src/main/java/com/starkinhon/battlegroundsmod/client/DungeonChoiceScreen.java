@@ -127,7 +127,7 @@ public final class DungeonChoiceScreen extends Screen {
     }
 
     // Client tick: the mode screen waits for the terrain screen after the teleport.
-    public static void tick() {
+    public static void clientTick() {
         Minecraft mc = Minecraft.getInstance();
         if (pendingMode != null && mc.player != null && !(mc.screen instanceof ReceivingLevelScreen)) {
             ModPayloads.DungeonModeAsk ask = pendingMode;
@@ -138,7 +138,7 @@ public final class DungeonChoiceScreen extends Screen {
 
     public static void register() {
         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(
-                (net.neoforged.neoforge.client.event.ClientTickEvent.Post e) -> tick());
+                (net.neoforged.neoforge.client.event.ClientTickEvent.Post e) -> clientTick());
     }
 
     private void go(Step next) {
