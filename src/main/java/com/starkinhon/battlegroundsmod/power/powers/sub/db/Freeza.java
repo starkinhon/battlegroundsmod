@@ -621,7 +621,7 @@ public final class Freeza {
     }
 
     private static boolean breakable(ServerLevel level, BlockPos p, BlockState st) {
-        return !st.isAir() && st.getFluidState().isEmpty() && !st.hasBlockEntity() && st.getDestroySpeed(level, p) >= 0;
+        return !st.isAir() && st.getFluidState().isEmpty() && !com.starkinhon.battlegroundsmod.combat.BlockRules.keeps(st) && st.getDestroySpeed(level, p) >= 0;
     }
 
     // One point of a crack: the columns across it dug down (magma at the bottom, or in the last dug block when the one

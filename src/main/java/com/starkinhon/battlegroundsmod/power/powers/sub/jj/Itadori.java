@@ -650,7 +650,7 @@ public final class Itadori {
                 }
                 BlockPos p = base.offset(dx, 0, dz);
                 BlockState s = level.getBlockState(p);
-                if (!s.isAir() && s.getFluidState().isEmpty() && !s.hasBlockEntity() && s.getDestroySpeed(level, p) >= 0) {
+                if (!s.isAir() && s.getFluidState().isEmpty() && !com.starkinhon.battlegroundsmod.combat.BlockRules.keeps(s) && s.getDestroySpeed(level, p) >= 0) {
                     cutRow.add(p);
                 }
             }
@@ -664,7 +664,7 @@ public final class Itadori {
             for (int y = 1; y <= 10 && fallen < 60; y++) {
                 BlockPos q = p.above(y);
                 BlockState s = level.getBlockState(q);
-                if (s.isAir() || !s.getFluidState().isEmpty() || s.hasBlockEntity() || s.getDestroySpeed(level, q) < 0) {
+                if (s.isAir() || !s.getFluidState().isEmpty() || com.starkinhon.battlegroundsmod.combat.BlockRules.keeps(s) || s.getDestroySpeed(level, q) < 0) {
                     break;
                 }
                 FallingBlockEntity block = FallingBlockEntity.fall(level, q, s);

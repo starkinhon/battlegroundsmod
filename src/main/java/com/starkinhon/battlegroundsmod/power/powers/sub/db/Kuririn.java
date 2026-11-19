@@ -171,7 +171,7 @@ public final class Kuririn {
                     }
                     BlockState state = level.getBlockState(pos);
                     float hard = state.getDestroySpeed(level, pos);
-                    if (state.isAir() || hard < 0 || hard >= 10 || state.hasBlockEntity() || !state.getFluidState().isEmpty()) {
+                    if (state.isAir() || hard < 0 || hard >= 10 || com.starkinhon.battlegroundsmod.combat.BlockRules.keeps(state) || !state.getFluidState().isEmpty()) {
                         continue;
                     }
                     level.destroyBlock(pos, false);
@@ -179,7 +179,7 @@ public final class Kuririn {
                     for (int h = 1; h <= 10 && slid[0] < max; h++) {
                         BlockPos up = pos.above(h);
                         BlockState above = level.getBlockState(up);
-                        if (above.isAir() || above.hasBlockEntity() || !above.getFluidState().isEmpty() || above.getDestroySpeed(level, up) < 0) {
+                        if (above.isAir() || com.starkinhon.battlegroundsmod.combat.BlockRules.keeps(above) || !above.getFluidState().isEmpty() || above.getDestroySpeed(level, up) < 0) {
                             break;
                         }
                         slid[0]++;

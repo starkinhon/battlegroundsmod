@@ -511,7 +511,7 @@ public final class FreezaTotal {
             for (int y = top + FzIsland.ABOVE; y > top - col.depth(); y--) {
                 at.set(cx + col.dx(), y, cz + col.dz());
                 BlockState st = level.getBlockState(at);
-                if (st.isAir() || !st.getFluidState().isEmpty() || st.hasBlockEntity() || st.getDestroySpeed(level, at) < 0) {
+                if (st.isAir() || !st.getFluidState().isEmpty() || com.starkinhon.battlegroundsmod.combat.BlockRules.keeps(st) || st.getDestroySpeed(level, at) < 0) {
                     continue;
                 }
                 if (torn.size() < 400 && RNG.nextFloat() < 0.5f) {

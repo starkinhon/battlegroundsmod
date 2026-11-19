@@ -103,6 +103,16 @@ public class Pedestre extends PathfinderMob {
         }
     }
 
+    // for the metro's passengers (client/fx/ShibuyaRiders): a body that only the client keeps and draws, with a look
+    // and a pose set from there
+    public void clientLook(int look) {
+        setLook(look);
+    }
+
+    public void clientPose(int pose) {
+        setPoseId(pose);
+    }
+
     // the client's stride speed (the model breathes when standing)
     public float walkSpeed() {
         return walkAnimation.speed();

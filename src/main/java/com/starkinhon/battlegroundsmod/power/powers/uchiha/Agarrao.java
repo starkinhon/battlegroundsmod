@@ -325,7 +325,7 @@ public final class Agarrao {
             Runnable dig = () -> {
                 for (BlockPos block : wave) {
                     BlockState state = level.getBlockState(block);
-                    if (!state.isAir() && state.getDestroySpeed(level, block) >= 0 && !state.hasBlockEntity()) {
+                    if (!state.isAir() && state.getDestroySpeed(level, block) >= 0 && !com.starkinhon.battlegroundsmod.combat.BlockRules.keeps(state)) {
                         level.destroyBlock(block, false);
                     }
                 }

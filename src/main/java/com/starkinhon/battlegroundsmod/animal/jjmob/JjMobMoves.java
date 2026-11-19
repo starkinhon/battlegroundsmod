@@ -351,7 +351,7 @@ final class JjMobMoves {
                     }
                     var state = level.getBlockState(p);
                     float hard = state.getDestroySpeed(level, p);
-                    if (state.isAir() || !state.getFluidState().isEmpty() || state.hasBlockEntity() || hard < 0 || hard > maxHard) {
+                    if (state.isAir() || !state.getFluidState().isEmpty() || com.starkinhon.battlegroundsmod.combat.BlockRules.keeps(state) || hard < 0 || hard > maxHard) {
                         continue;
                     }
                     if (thrown > 0 && dy >= 0 && m.getRandom().nextInt(5) == 0) {

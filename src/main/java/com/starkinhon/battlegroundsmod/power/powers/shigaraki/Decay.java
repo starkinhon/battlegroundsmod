@@ -165,7 +165,7 @@ public final class Decay {
 
     // What the Decadência can take: solid things, not liquids, chests and other blocks that keep things, nor bedrock.
     public static boolean decays(BlockGetter level, BlockPos pos, BlockState st) {
-        return !st.isAir() && st.getFluidState().isEmpty() && !st.hasBlockEntity() && st.getDestroySpeed(level, pos) >= 0;
+        return !st.isAir() && st.getFluidState().isEmpty() && !com.starkinhon.battlegroundsmod.combat.BlockRules.keeps(st) && st.getDestroySpeed(level, pos) >= 0;
     }
 
     // A seed of Decadência in the blocks at p (see walk). caster: whose ground is safe (null: none).

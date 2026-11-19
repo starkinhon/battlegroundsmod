@@ -28,6 +28,15 @@ public abstract class LevelRendererMixin {
         return mc.level != null && mc.level.dimension() == NamekWorld.LEVEL ? BATTLEGROUNDSMOD$NO_SUN : texture;
     }
 
+    // Shibuya's street light is read from the blocks once: a block changed reads its chunk again (no light left floating
+    // over a destroyed street, sign or lamp).
+    @Inject(method = "blockChanged", at = @At("HEAD"), require = 0)
+    private void battlegroundsmod$shibuyaBlockChanged(net.minecraft.world.level.BlockGetter level, net.minecraft.core.BlockPos pos,
+            net.minecraft.world.level.block.state.BlockState oldState, net.minecraft.world.level.block.state.BlockState newState, int flags,
+            CallbackInfo ci) {
+        com.starkinhon.battlegroundsmod.client.fx.ShibuyaAirFx.blockChanged(pos);
+    }
+
     // Under Shenlong's storm the Mine's flat clouds would hang in front of the storm sky (it is drawn at the far plane).
     @Inject(method = "renderClouds", at = @At("HEAD"), cancellable = true, require = 0)
     private void battlegroundsmod$noCloudsInStorm(CallbackInfo ci) {

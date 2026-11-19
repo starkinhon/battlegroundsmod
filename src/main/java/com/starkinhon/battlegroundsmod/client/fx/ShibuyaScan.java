@@ -158,6 +158,33 @@ final class ShibuyaScan {
                 || b == JujutsuBlocks.MANHOLE.get();
     }
 
+    // A block changed on the client (LevelRendererMixin): its chunk (and the neighbor across an edge, where a face may
+    // open) is read again next tick and everything built again within a second, so a light never stays floating where
+    // the street, a sign or a lamp was destroyed (Stark 2026-11-19: "destruí o chão de noite... a luz ficava flutuando").
+    static void blockChanged(int x, int z) {
+        if (CHUNKS.isEmpty()) {
+            return;
+        }
+        int cx = x >> 4, cz = z >> 4, lx = x & 15, lz = z & 15;
+        forget(cx, cz);
+        if (lx == 0) {
+            forget(cx - 1, cz);
+        } else if (lx == 15) {
+            forget(cx + 1, cz);
+        }
+        if (lz == 0) {
+            forget(cx, cz - 1);
+        } else if (lz == 15) {
+            forget(cx, cz + 1);
+        }
+    }
+
+    private static void forget(int cx, int cz) {
+        if (CHUNKS.remove(((long) cx << 32) | (cz & 0xFFFFFFFFL)) != null) {
+            dirty = true;
+        }
+    }
+
     static void clear() {
         CHUNKS.clear();
         panels = new ArrayList<>();
@@ -307,6 +334,7 @@ final class ShibuyaScan {
         List<Lamp> ls = new ArrayList<>();
         List<Vent> vs = new ArrayList<>();
         int railMinZ = Integer.MAX_VALUE, railMaxZ = Integer.MIN_VALUE, railY = 0, stepMin = Integer.MAX_VALUE, stepMax = Integer.MIN_VALUE;
+        List<int[]> near = new ArrayList<>();
         for (Map.Entry<Long, Data> e : CHUNKS.entrySet()) {
             Data dt = e.getValue();
             faces.putAll(dt.faces());
@@ -332,14 +360,26 @@ final class ShibuyaScan {
             }
             for (int[] r : dt.rails()) {
                 if (Math.abs(r[0] - px) < 140) {
-                    railMinZ = Math.min(railMinZ, r[2]);
-                    railMaxZ = Math.max(railMaxZ, r[2]);
-                    railY = r[1];
+                    near.add(r);
                 }
             }
             for (int[] s : dt.steps()) {
                 stepMin = Math.min(stepMin, s[0]);
                 stepMax = Math.max(stepMax, s[0]);
+            }
+        }
+        // only the metro line nearest the player (two lines in reach, under parallel avenues, made it find none)
+        int nearZ = Integer.MAX_VALUE;
+        for (int[] r : near) {
+            if (nearZ == Integer.MAX_VALUE || Math.abs(r[2] - pz) < Math.abs(nearZ - pz)) {
+                nearZ = r[2];
+            }
+        }
+        for (int[] r : near) {
+            if (Math.abs(r[2] - nearZ) <= 13) {
+                railMinZ = Math.min(railMinZ, r[2]);
+                railMaxZ = Math.max(railMaxZ, r[2]);
+                railY = r[1];
             }
         }
         // the station: the rails run at c - 7, c - 5, c + 4, c + 6 (ShibuyaGen.metro), the platform stairs from ox - 11 to
@@ -586,6 +626,15 @@ final class ShibuyaScan {
                 out[1] += g.col[1] * f;
                 out[2] += g.col[2] * f;
             }
+        }
+        // a soft knee (Stark 2026-11-19: the street's light "muito forte, ficava estourado, se misturavam"): where signs
+        // overlap the sum runs over 1 and burns white; squeezed by its brightest channel the color keeps its hue
+        float m = Math.max(out[0], Math.max(out[1], out[2]));
+        if (m > 0) {
+            float k = 1f / (1f + 0.75f * m);
+            out[0] *= k;
+            out[1] *= k;
+            out[2] *= k;
         }
     }
 

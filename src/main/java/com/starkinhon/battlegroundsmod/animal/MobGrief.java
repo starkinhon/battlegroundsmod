@@ -96,7 +96,7 @@ public final class MobGrief {
 
     // Never touched: air, liquids, block entities, unbreakable blocks, doors and beds (a half left floating).
     private static boolean keep(ServerLevel level, BlockPos pos, BlockState s) {
-        return s.isAir() || !s.getFluidState().isEmpty() || s.hasBlockEntity() || s.getDestroySpeed(level, pos) < 0
+        return s.isAir() || !s.getFluidState().isEmpty() || com.starkinhon.battlegroundsmod.combat.BlockRules.keeps(s) || s.getDestroySpeed(level, pos) < 0
                 || s.is(BlockTags.DOORS) || s.is(BlockTags.BEDS) || s.is(Blocks.FARMLAND) || s.is(BlockTags.CROPS);
     }
 
@@ -125,7 +125,7 @@ public final class MobGrief {
         }
         BlockPos up = pos.above();
         BlockState over = level.getBlockState(up);
-        if (!over.isAir() && over.getFluidState().isEmpty() && !over.hasBlockEntity() && over.getCollisionShape(level, up).isEmpty()
+        if (!over.isAir() && over.getFluidState().isEmpty() && !com.starkinhon.battlegroundsmod.combat.BlockRules.keeps(over) && over.getCollisionShape(level, up).isEmpty()
                 && over.getDestroySpeed(level, up) >= 0) {
             erase(level, up, over);
         }

@@ -99,7 +99,7 @@ public final class SukunaCarve {
             return false;
         }
         BlockState state = level.getBlockState(pos);
-        if (state.isAir() || !state.getFluidState().isEmpty() || state.hasBlockEntity() || state.getDestroySpeed(level, pos) < 0) {
+        if (state.isAir() || !state.getFluidState().isEmpty() || com.starkinhon.battlegroundsmod.combat.BlockRules.keeps(state) || state.getDestroySpeed(level, pos) < 0) {
             return false;
         }
         com.starkinhon.battlegroundsmod.combat.BlockBreakFx.erase(level, pos, state, Block.UPDATE_ALL);

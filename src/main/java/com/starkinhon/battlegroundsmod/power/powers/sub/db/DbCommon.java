@@ -178,7 +178,7 @@ public final class DbCommon {
                             continue;
                         }
                         BlockState state = level.getBlockState(block);
-                        if (state.isAir() || !state.getFluidState().isEmpty() || state.hasBlockEntity() || state.getDestroySpeed(level, block) < 0) {
+                        if (state.isAir() || !state.getFluidState().isEmpty() || com.starkinhon.battlegroundsmod.combat.BlockRules.keeps(state) || state.getDestroySpeed(level, block) < 0) {
                             continue;
                         }
                         if (dy <= 1 && dy >= bottom - 1 && flown[0] < flyMax && SubCommon.RANDOM.nextInt(40) == 0) {

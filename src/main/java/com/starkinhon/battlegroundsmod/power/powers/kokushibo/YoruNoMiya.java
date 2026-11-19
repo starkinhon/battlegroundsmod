@@ -279,7 +279,7 @@ public final class YoruNoMiya {
             return;
         }
         BlockState state = level.getBlockState(pos);
-        if (state.isAir() || !state.getFluidState().isEmpty() || state.hasBlockEntity() || state.getDestroySpeed(level, pos) < 0) {
+        if (state.isAir() || !state.getFluidState().isEmpty() || com.starkinhon.battlegroundsmod.combat.BlockRules.keeps(state) || state.getDestroySpeed(level, pos) < 0) {
             return;
         }
         if (debris[0] < 40 && SubCommon.RANDOM.nextInt(5) == 0) {
