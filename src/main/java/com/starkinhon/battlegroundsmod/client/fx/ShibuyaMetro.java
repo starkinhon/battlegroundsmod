@@ -84,17 +84,18 @@ final class ShibuyaMetro {
         return side(k);
     }
 
-    // north track (0): z from c - 7 to c - 4, runs toward -x; south (1): z from c + 7 to c + 4, runs toward +x
+    // north track (0): z from c - 8 to c - 5, runs toward -x; south (1): z from c + 8 to c + 5, runs toward +x (an island
+    // of 5 each side; the old chunks' stations have 4, everything 1 nearer)
     private static int dir(int k) {
         return k == 0 ? -1 : 1;
     }
 
     private static double z0(int k) {
-        return k == 0 ? ShibuyaScan.stC - 7 : ShibuyaScan.stC + 7;
+        return k == 0 ? ShibuyaScan.stC - ShibuyaScan.stIsland - 3 : ShibuyaScan.stC + ShibuyaScan.stIsland + 3;
     }
 
     private static double edge(int k) {
-        return k == 0 ? ShibuyaScan.stC - 4 : ShibuyaScan.stC + 4;
+        return k == 0 ? ShibuyaScan.stC - ShibuyaScan.stIsland : ShibuyaScan.stC + ShibuyaScan.stIsland;
     }
 
     private static int side(int k) {
@@ -344,7 +345,7 @@ final class ShibuyaMetro {
     // thin black veils across the tunnel past the platform (each takes a little light: together a dark that swallows rail,
     // wall and train), only the ones ahead of the player, and an opaque cap at the tunnel's end
     private static void drawDark(VertexConsumer out, PoseStack.Pose last, Vec3 cam, int ox, double yb, float fade) {
-        double c = ShibuyaScan.stC, y0 = yb, y1 = ShibuyaScan.stCity - 9, z0 = c - 7, z1 = c + 7;
+        double c = ShibuyaScan.stC, y0 = yb, y1 = ShibuyaScan.stCity - 9, z0 = z0(0), z1 = z0(1);
         double x0 = PX1 + 6, x1 = TUN + 0.98;
         int n = 36;
         double pr = Math.abs(cam.x - ox);
@@ -588,7 +589,7 @@ final class ShibuyaMetro {
                 ShibuyaAirFx.v(out, last, cam, sg[0], sg[2], zin, 1, 0.9f, 0.7f, 0);
             }
             // the tunnel wall on the outer side
-            double zw = track == 0 ? c - 7 + 0.03 : c + 7 - 0.03;
+            double zw = track == 0 ? z0(0) + 0.03 : z0(1) - 0.03;
             float aw = 0.1f * fade;
             ShibuyaAirFx.v(out, last, cam, x0, yb + 1.6, zw, 1, 0.9f, 0.7f, aw);
             ShibuyaAirFx.v(out, last, cam, x1, yb + 1.6, zw, 1, 0.9f, 0.7f, aw);

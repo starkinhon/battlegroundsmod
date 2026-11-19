@@ -241,10 +241,10 @@ final class JjMobSpawns {
         for (int k = 0; k < 24; k++) {
             int x, z;
             if (place == Place.TUNNEL) {
-                // along the tunnel the player is in (the tracks run along x, 14 wide)
+                // along the tunnel the player is in (the tracks run along x, 16 wide)
                 int d = MIN_DIST + random.nextInt(MAX_DIST - MIN_DIST + 1);
                 x = player.getBlockX() + (random.nextBoolean() ? d : -d);
-                z = player.getBlockZ() + random.nextInt(17) - 8;
+                z = player.getBlockZ() + random.nextInt(19) - 9;
             } else {
                 double angle = random.nextDouble() * Math.PI * 2;
                 int d = MIN_DIST + random.nextInt(MAX_DIST - MIN_DIST + 1);
@@ -290,7 +290,7 @@ final class JjMobSpawns {
             if (!level.getBlockState(m.set(x, y + 1, z)).isAir() || !level.getBlockState(m.set(x, y + 2, z)).isAir()) {
                 continue;
             }
-            for (int dz = -8; dz <= 8; dz++) {
+            for (int dz = -9; dz <= 9; dz++) {
                 for (int dy = 0; dy <= 6; dy++) {
                     net.minecraft.world.level.block.state.BlockState b = level.getBlockState(m.set(x, y + dy, z + dz));
                     if (b.is(com.starkinhon.battlegroundsmod.JujutsuBlocks.CURSED_VEIN.get())

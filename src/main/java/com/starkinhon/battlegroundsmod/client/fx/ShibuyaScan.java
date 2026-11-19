@@ -100,6 +100,8 @@ final class ShibuyaScan {
     // the metro station seen (from the rails and the platform stairs): its middle x, the avenue's middle z, the city's y
     static boolean station;
     static int stOx, stC, stCity;
+    // the island platform's half width: 5 since 2026-11-19 (ShibuyaGen.ISLAND), 4 in the chunks made before
+    static int stIsland = 5;
 
     private ShibuyaScan() {
     }
@@ -376,17 +378,18 @@ final class ShibuyaScan {
             }
         }
         for (int[] r : near) {
-            if (Math.abs(r[2] - nearZ) <= 13) {
+            if (Math.abs(r[2] - nearZ) <= 15) {
                 railMinZ = Math.min(railMinZ, r[2]);
                 railMaxZ = Math.max(railMaxZ, r[2]);
                 railY = r[1];
             }
         }
-        // the station: the rails run at c - 7, c - 5, c + 4, c + 6 (ShibuyaGen.metro), the platform stairs from ox - 11 to
+        // the station: the rails run at c - 8, c - 6, c + 5, c + 7 (ShibuyaGen.metro; c - 7, c - 5, c + 4, c + 6 in the old chunks), the platform stairs from ox - 11 to
         // ox + 11 (the entrance stairs, at 22 to 29 out, are filtered by z below)
         station = false;
-        if (railMaxZ - railMinZ == 13) {
-            int c = railMinZ + 7;
+        int span = railMaxZ - railMinZ;
+        if (span == 13 || span == 15) {
+            int isl = span == 15 ? 5 : 4, c = railMinZ + isl + 3;
             int lo = Integer.MAX_VALUE, hi = Integer.MIN_VALUE;
             for (Data dt : CHUNKS.values()) {
                 for (int[] s : dt.steps()) {
@@ -400,6 +403,7 @@ final class ShibuyaScan {
                 station = true;
                 stOx = (lo + hi) / 2;
                 stC = c;
+                stIsland = isl;
                 stCity = railY + 16;
             }
         }

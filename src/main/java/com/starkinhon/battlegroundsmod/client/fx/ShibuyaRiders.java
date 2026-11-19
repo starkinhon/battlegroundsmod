@@ -39,7 +39,8 @@ import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 // on the street past the entrance, or inside the train behind the doors. The ones near the stairs' doors (2.5 to 14 from
 // the middle) don't use those doors (the stairs are right there), like in the preview.
 final class ShibuyaRiders {
-    private static final int POOL = 40, LOOKS = 160;
+    // (Stark 2026-11-19: "coloca bastante gente dentro do metrô": 96 bodies, fuller queues and more getting off)
+    private static final int POOL = 96, LOOKS = 160;
     private static final double RAD = 0.62, DT = 0.05;
     private static final int AFTER_FREE = 0, AFTER_WAIT = 1;
     private static final Random RANDOM = new Random();
@@ -119,7 +120,9 @@ final class ShibuyaRiders {
     }
 
     private static double lane(int k) {
-        return ShibuyaMetro.sideOf(k) > 0 ? ShibuyaScan.stC - 1.5 : ShibuyaScan.stC + 1.5;
+        // (between the stairs and the queues; the wider island of 2026-11-19 leaves room for a third row in the queue)
+        double o = ShibuyaScan.stIsland >= 5 ? 1.6 : 1.5;
+        return ShibuyaMetro.sideOf(k) > 0 ? ShibuyaScan.stC - o : ShibuyaScan.stC + o;
     }
 
     private static double platY() {
@@ -226,15 +229,19 @@ final class ShibuyaRiders {
         return n;
     }
 
-    // the ones who'll take the next train of track k (1 to 3 at each door, up to 3 there)
+    // the ones who'll take the next train of track k (3 to 6 at each door: three rows of the two columns on the wide
+    // island; 2 to 4 on an old chunk's narrow one, where a third row would stand in the walking lane)
     private static void callWaiters(int k, boolean already) {
         for (int i = 0; i < ShibuyaMetro.DOOR_COUNT; i++) {
             double xd = ShibuyaMetro.doorX(k, i);
             if (!usable(xd)) {
                 continue;
             }
-            int m = 1 + (RANDOM.nextDouble() < 0.5 ? 1 : 0) + (RANDOM.nextDouble() < 0.2 ? 1 : 0);
-            for (int j = 0; j < m && slotsAt(k, xd) < 3; j++) {
+            boolean wide = ShibuyaScan.stIsland >= 5;
+            int cap = wide ? 6 : 4;
+            int m = (wide ? 3 : 2) + (RANDOM.nextDouble() < 0.6 ? 1 : 0) + (RANDOM.nextDouble() < 0.45 ? 1 : 0)
+                    + (wide && RANDOM.nextDouble() < 0.3 ? 1 : 0);
+            for (int j = 0; j < m && slotsAt(k, xd) < cap; j++) {
                 spawnWaiter(k, xd, already);
             }
         }
@@ -269,7 +276,7 @@ final class ShibuyaRiders {
             }
         }
         r.fromStair = sg;
-        r.delay = queued * 1.6 + RANDOM.nextDouble() * 0.8;
+        r.delay = queued * 0.9 + RANDOM.nextDouble() * 0.6;
         r.spawn = streetStart(sg, 6);
         r.path.add(streetStart(sg, 0));
         r.path.addAll(concourseDown(sg));
@@ -304,7 +311,7 @@ final class ShibuyaRiders {
                 continue;
             }
             int sg = xd >= ShibuyaScan.stOx ? 1 : -1;
-            int m = (RANDOM.nextDouble() < 0.15 ? 0 : 1) + (RANDOM.nextDouble() < 0.45 ? 1 : 0);
+            int m = 1 + (RANDOM.nextDouble() < 0.7 ? 1 : 0) + (RANDOM.nextDouble() < 0.4 ? 1 : 0) + (RANDOM.nextDouble() < 0.15 ? 1 : 0);
             for (int j = 0; j < m; j++) {
                 Rider r = take();
                 if (r == null) {
@@ -314,7 +321,7 @@ final class ShibuyaRiders {
                 r.z = edge - side * 1.0;
                 r.y = platY();
                 r.body.setPos(r.x, r.y, r.z);
-                r.delay = 1.3 + j * 0.7 + RANDOM.nextDouble() * 0.4;
+                r.delay = 1.1 + j * 0.6 + RANDOM.nextDouble() * 0.3;
                 r.speed = r.speed * (1.0 + RANDOM.nextDouble() * 0.15);
                 r.path.add(new double[] {r.x, edge + side * 1.3});
                 r.path.add(new double[] {r.x + sg * 2, L});
@@ -333,7 +340,7 @@ final class ShibuyaRiders {
         // the ones waiting get in after them: the front row first, the two columns alternating
         for (Rider r : RIDERS) {
             if (r.busy && r.waitFor == k && r.path.isEmpty() && r.shown) {
-                r.boardAt = 3.4 + (r.slot / 2) * 0.75 + (r.slot % 2) * 0.35 + RANDOM.nextDouble() * 0.15;
+                r.boardAt = 3.9 + (r.slot / 2) * 0.75 + (r.slot % 2) * 0.35 + RANDOM.nextDouble() * 0.15;
             }
         }
     }
@@ -564,12 +571,13 @@ final class ShibuyaRiders {
     }
 
     private static void push(Rider p, double mx, double mz, double c) {
-        boolean island = p.y < concY() - 2 && Math.abs(p.z - c) <= 3.55;
+        double half = ShibuyaScan.stIsland - 0.45;
+        boolean island = p.y < concY() - 2 && Math.abs(p.z - c) <= half;
         boolean stair = Math.abs(p.x - ShibuyaScan.stOx - 0.5) <= 12 && p.z >= c - 1.0 && p.z <= c + 1.0 && p.y < concY() - 0.5;
         p.x += mx;
         p.z += mz;
         if (island) {
-            p.z = Mth.clamp(p.z, c - 3.55, c + 3.55);
+            p.z = Mth.clamp(p.z, c - half, c + half);
         }
         if (stair) {
             p.z = Mth.clamp(p.z, c - 0.7, c + 0.7);
@@ -580,7 +588,7 @@ final class ShibuyaRiders {
     // time, a little smoothed); inside the train (past the platform's edge, down at the platform) its floor
     private static double ground(ClientLevel level, double x, double z, double y) {
         double c = ShibuyaScan.stC;
-        if (Math.abs(z - c) > 4 && y < concY() - 2) {
+        if (Math.abs(z - c) > ShibuyaScan.stIsland && y < concY() - 2) {
             return platY();
         }
         BlockPos.MutableBlockPos m = new BlockPos.MutableBlockPos();
