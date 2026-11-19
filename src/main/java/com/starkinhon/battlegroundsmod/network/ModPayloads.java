@@ -2138,7 +2138,13 @@ public final class ModPayloads {
         }));
         registrar.playToServer(SelectPower.TYPE, SelectPower.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer player) {
-                PowerLogic.selectFromBook(player, payload.power());
+                if (payload.power().isEmpty()) {
+                    // "Soltar a alma" in the Livro das Almas: no soul, only the base moves (dash, barrage...)
+                    PowerLogic.clear(player);
+                    player.displayClientMessage(net.minecraft.network.chat.Component.translatable("message.battlegroundsmod.soul_released"), false);
+                } else {
+                    PowerLogic.selectFromBook(player, payload.power());
+                }
             }
         }));
         registrar.playToClient(SyncPower.TYPE, SyncPower.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> payload.applyTo(context.player())));

@@ -395,10 +395,17 @@ public class PowerSelectScreen extends Screen {
                     }
                 }
             }
-            if (holding && sel != null && !sel.id().equals(current()) && absorbing == null && owned(sel)) {
+            if (holding && sel != null && absorbing == null && (sel.id().equals(current()) || owned(sel))) {
                 hold = Math.min(1, hold + dt / 0.8f);
                 if (hold >= 1) {
-                    startAbsorb(sel);
+                    if (sel.id().equals(current())) {
+                        // the soul worn: let it go and fight with the base moves only (Stark 2026-11-19)
+                        hold = 0;
+                        holding = false;
+                        PacketDistributor.sendToServer(new ModPayloads.SelectPower(""));
+                    } else {
+                        startAbsorb(sel);
+                    }
                 }
             } else if (absorbing == null) {
                 hold = Math.max(0, hold - dt * 3);
@@ -944,13 +951,13 @@ public class PowerSelectScreen extends Screen {
 
         // hold-to-absorb button
         int bw2 = w - 24, bx2 = x + 12, by = yy + 10;
-        boolean can = !isCur && owned(s);
+        boolean can = isCur || owned(s);
         boolean hv = can && mx >= bx2 && mx < bx2 + bw2 && my >= by && my < by + 17;
         SoulBookDraw.smallFrame(g, bx2, by, bw2, 17, can ? c : 0x5A546E, hv || hold > 0);
         if (hold > 0) {
             r(g, bx2 + 2, by + 2, Math.round((bw2 - 4) * hold), 13, a(mix(c, WHITE, 0.2f), 0.55f));
         }
-        Component label = Component.translatable(isCur ? "screen.battlegroundsmod.soul_book.yours"
+        Component label = Component.translatable(isCur ? (hold > 0 ? "screen.battlegroundsmod.soul_book.releasing" : "screen.battlegroundsmod.soul_book.release")
                 : !owned(s) ? "screen.battlegroundsmod.soul_book.not_owned_short"
                 : hold > 0 ? "screen.battlegroundsmod.soul_book.absorbing" : "screen.battlegroundsmod.soul_book.hold");
         int lw = font.width(label);

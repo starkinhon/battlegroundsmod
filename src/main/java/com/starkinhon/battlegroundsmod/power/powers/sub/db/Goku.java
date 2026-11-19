@@ -39,7 +39,7 @@ import net.minecraft.world.phys.Vec3;
 // V Genki Dama: hands to the sky, the light of everything gathers in a glass ball over him (held up to 60 s; full = it
 //   can kill in one hit); thrown, it is guided onto the target (or the crosshair) and blows up into a crater from about
 //   7 blocks wide (2 s) to 52 (the full minute), the damage growing with it.
-// Taught by Senhor Kaioh in Goku's arena (universe/KaiohTraining; Stark 2026-11-19, only for Goku's soul; SoulSync.TAUGHT
+// Taught by Senhor Kaioh on his planet (universe/KaiohTraining: Goku's soul, ~500 blocks up; Stark 2026-11-19; SoulSync.TAUGHT
 // keeps them locked for a player until then, mobs and bosses wearing Goku use them freely):
 // B Kaioken x3 / x10 / x20: each press goes up a level (faster, harder punches, more life drained); x10 leaves the body
 //   heavy when it ends and x20 locks it for a moment. C stays the same Kaioken (and its rush).

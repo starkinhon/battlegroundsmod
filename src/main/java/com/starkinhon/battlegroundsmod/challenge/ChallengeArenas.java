@@ -80,6 +80,8 @@ public final class ChallengeArenas {
     // stay behind, out of sight, on their own row.
     public static final int SPACING = 1024;
     public static final int ROW_Z = 8192;
+    // Senhor Kaioh's planet (universe/KaiohPlanet): the Goku arena's build, on a row of its own (no fight ever there).
+    public static final int KAIOH_Z = ROW_Z + SPACING;
     private static final int FLOOR_Y = 64;
     // Server time per tick spent putting an arena back (the tick has 50 ms). Stark's PC test 2026-11-13: a fixed 40k
     // blocks per tick ate 200-460 ms per tick, mostly generating the void chunks on the main thread; now the chunks are
@@ -174,6 +176,9 @@ public final class ChallengeArenas {
 
     // Which arena a position in the arena dimensions belongs to (the client's fog, Fx), or null.
     public static String arenaAt(double x, double z) {
+        if (Math.abs(z - KAIOH_Z) <= SPACING / 2.0 && Math.abs(x) <= SPACING / 2.0) {
+            return "goku";   // Senhor Kaioh's planet (the Goku arena's build on its own spot)
+        }
         if (Math.abs(z - ROW_Z) > SPACING / 2.0) {
             return null;
         }
@@ -910,32 +915,50 @@ public final class ChallengeArenas {
                     name(session.id), RETURN_DELAY / 20), false);
             Fx.sound(player.serverLevel(), player.position(), SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, 1f, 1f);
         }
-        // Goku's arena (the Kaioh planet): Senhor Kaioh comes to train whoever won wearing Goku's soul; the return waits.
-        ServerLevel arena = server.getLevel(session.arena);
-        if (arena != null && "goku".equals(session.id)) {
-            List<ServerPlayer> winners = new ArrayList<>();
-            for (UUID id : session.members) {
-                ServerPlayer player = server.getPlayerList().getPlayer(id);
-                if (player != null && player.level() == arena) {
-                    winners.add(player);
-                }
-            }
-            int hold = com.starkinhon.battlegroundsmod.universe.KaiohTraining.arenaWon(arena, spawnPos(session), winners);
-            if (hold > 0) {
-                session.doneAt = Math.max(session.doneAt, now + hold);
-            }
-        }
     }
 
-    // A won arena's wait before going back (Senhor Kaioh's training): at least ticks from now, or (shorten) exactly that.
-    public static void holdReturn(ServerPlayer player, int ticks, boolean shorten) {
-        Session session = SESSIONS.get(player.getUUID());
-        if (session == null || session.state != State.DONE) {
-            return;
+    // ---------- Senhor Kaioh's planet (universe/KaiohPlanet) ----------
+
+    private static Build planetBuild;
+    private static boolean planetReady;
+
+    // Where the planet's fight floor centre is (the arena's own spots are offsets from it).
+    public static BlockPos kaiohPlanet() {
+        ArenaTemplate.Meta meta = ArenaTemplate.meta("goku");
+        return new BlockPos(0, meta == null ? FLOOR_Y : floorY(meta), KAIOH_Z);
+    }
+
+    // Puts the planet up (once per server run, which also mends what was broken there) a bit each call; true when ready.
+    public static boolean buildKaiohPlanet(net.minecraft.server.MinecraftServer server) {
+        if (planetReady) {
+            return true;
         }
-        ServerLevel arena = player.server.getLevel(session.arena);
-        long now = arena != null ? arena.getGameTime() : player.server.overworld().getGameTime();
-        session.doneAt = shorten ? Math.min(session.doneAt, now + ticks) : Math.max(session.doneAt, now + ticks);
+        ServerLevel arena = server.getLevel(ARENAS);
+        ArenaTemplate.Meta meta = ArenaTemplate.meta("goku");
+        ArenaTemplate template = meta == null ? null : ArenaTemplate.get("goku");
+        if (arena == null || template == null) {
+            return false;
+        }
+        if (planetBuild == null) {
+            planetBuild = new Build(template, meta, kaiohPlanet(), arena);
+        }
+        if (planetBuild.step(BUILD_NANOS)) {
+            planetBuild.release();
+            planetBuild = null;
+            planetReady = true;
+        }
+        return planetReady;
+    }
+
+    public static int kaiohPlanetPercent() {
+        return planetReady ? 100 : planetBuild == null ? 0 : planetBuild.percent();
+    }
+
+    // The planet's spots: the player's arrival and the challenger's spot (Senhor Kaioh stands there).
+    public static BlockPos kaiohSpot(boolean kaioh) {
+        ArenaTemplate.Meta meta = ArenaTemplate.meta("goku");
+        int[] d = meta == null ? new int[] {0, 1, 0} : kaioh ? meta.desafiante() : meta.jogador();
+        return kaiohPlanet().offset(d[0], d[1], d[2]);
     }
 
     // One more win against this challenger and, when it was faster, the new best time (the book's medals).
