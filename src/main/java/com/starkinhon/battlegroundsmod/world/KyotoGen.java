@@ -35,8 +35,8 @@ public final class KyotoGen {
 
     // How far a tree's blocks reach from its column: a pine's lean (4), branch (4.5) and pad (4).
     public static final int TREE_REACH = 14;
-    // The pond garden: the leveled ground reaches R + 20 (in x; z stretched by 1.25), the tea house R + 8 + 4, the
-    // maples R + 15 and their crowns.
+    // The pond garden: the leveled ground reaches R + 30 (in x; z stretched by 1.25; the ramp down to the hills is as
+    // wide as they are tall, 10 to 20, and flat inside it), the tea house R + 8 + 4, the maples R + 15 and their crowns.
     public static final int GARDEN_R = 34;
     public static final int GARDEN_REACH = 66;
 
@@ -340,15 +340,17 @@ public final class KyotoGen {
             }
             return false;
         };
-        for (int x = cx - R - 20; x <= cx + R + 20; x++) {
-            for (int z = cz - R - 20; z <= cz + R + 20; z++) {
+        // the ramp to the hills around: 1.5 blocks out for each block up or down (Stark 2026-11-19: no walls at the edge)
+        int ramp = JjkGen.rampWidth(ground, cx, cz, R + 30, 1.25, gy, 10, 20);
+        for (int x = cx - R - 30; x <= cx + R + 30; x++) {
+            for (int z = cz - R - 30; z <= cz + R + 30; z++) {
                 int g = ground.applyAsInt(x, z);
                 double d = hypot(x - cx, (z - cz) * 1.25);
-                if (d > R + 20) {
+                if (d > R + 30) {
                     continue;
                 }
                 // the garden on one level (leveled near the pond)
-                double t = Math.min(1, Math.max(0, (R + 20 - d) / 10));
+                double t = Math.min(1, Math.max(0, (R + 30 - d) / ramp));
                 int y = round(g + (gy - g) * t);
                 for (int yy = Math.min(g, y) - 3; yy <= Math.max(g, y) + 25; yy++) {
                     w.force(x, yy, z, yy < y ? DIRT : AIR);
@@ -441,7 +443,7 @@ public final class KyotoGen {
     }
 
     public static boolean gardenKeep(int x, int z, int cx, int cz) {
-        return hypot(x - cx, (z - cz) * 1.25) < GARDEN_R + 20;
+        return hypot(x - cx, (z - cz) * 1.25) < GARDEN_R + 30;
     }
 
     // ---------------------------------------------------------------- terrain and the hills, piece by piece

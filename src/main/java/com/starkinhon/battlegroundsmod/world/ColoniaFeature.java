@@ -35,7 +35,7 @@ import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConf
 // - a block is city when the biome is under it and 12 blocks around it (16 spots), so the city ends at a street and the
 //   game runs this feature in every chunk the city and its skirt touch (it runs only near the biome);
 // - one level for the whole city (just above the sea, as Shibuya): the land cut above, filled below;
-// - around the city a skirt of 16 blends the land back, its ground a waste of rubble, gravel and coarse dirt;
+// - around the city a skirt (CitySkirt: 16 at least, as wide as the hills are tall) blends the land back, its ground a waste of rubble, gravel and coarse dirt;
 // - blocks at the city's edge are lower and more broken, so the skyline falls off instead of stopping;
 // - each cell of 360 may hold the big fight crater (the preview's colony middle) where the city is 5 blocks wide.
 // Blocks and craters are built once and kept, split by chunk. Writes only inside its own chunk.
@@ -45,7 +45,6 @@ public final class ColoniaFeature extends Feature<NoneFeatureConfiguration> {
     private static final int B = ColoniaGen.BLOCK, ROAD = ColoniaGen.ROAD;
     private static final int CELL = 360;
     private static final int SKIRT = 16;
-    private static final int CLEAR = 24; // how high above the old ground the cut goes (trees, hills' tops)
     private static final int CR = 20; // the big crater's radius, as the preview's
     private static final Cache<Long, Boolean> QUARTS = CacheBuilder.newBuilder().maximumSize(65536).build();
     private static final Cache<Long, Boolean> BLOCKS_IN = CacheBuilder.newBuilder().maximumSize(16384).build();
@@ -186,60 +185,43 @@ public final class ColoniaFeature extends Feature<NoneFeatureConfiguration> {
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
         int minY = level.getMinBuildHeight() + 1, maxY = level.getMaxBuildHeight() - 1;
 
-        // The city around the chunk, for the skirt's distances.
-        int w0x = x0 - SKIRT, w0z = z0 - SKIRT, n = 16 + 2 * SKIRT;
-        boolean[] city = new boolean[n * n];
-        boolean any = false;
-        for (int a = 0; a < n; a++) {
-            for (int b = 0; b < n; b++) {
-                boolean c = mask.at(w0x + a, w0z + b);
-                city[a * n + b] = c;
-                any |= c;
+        // 1. The land: cut above the city's level and filled below it (caves and lava too), blended around it by
+        // CitySkirt (as wide as the hills around are tall, past the biome's edge into the plain biomes).
+        boolean near = CitySkirt.level(level, generator, random, worldKey, chunk, ground, cityY, SKIRT, cityY - 4, new CitySkirt.Plan() {
+            @Override
+            public boolean city(int x, int z) {
+                return mask.at(x, z);
             }
-        }
-        if (!any) {
+
+            @Override
+            public boolean own(int qx, int qz) {
+                return mask.biome(qx << 2, qz << 2);
+            }
+
+            @Override
+            public BlockState ground(int x, int z, int top, int h, double d) {
+                // the skirt's ground: a waste near the city, grass coming back further out (none under water)
+                return level.getFluidState(pos.set(x, top + 1, z)).isEmpty() ? waste(x, z, d, seed) : null;
+            }
+
+            @Override
+            public void after(WorldGenLevel level, BlockPos.MutableBlockPos pos, int x, int top, int z, double d) {
+                // rubble spilled out of the city, thinner further out
+                double r = JjkGen.hash3(x, 21, z, seed);
+                if (r < 0.18 * (1 - d / (SKIRT + 1)) && top + 1 <= maxY && level.getBlockState(pos.set(x, top + 1, z)).isAir()
+                        && level.getFluidState(pos).isEmpty()) {
+                    level.setBlock(pos, JujutsuBlocks.RUBBLE.get().defaultBlockState(), 2);
+                }
+            }
+        });
+        if (!near) {
             return false;
         }
-
-        // 1. The land: cut above the city's level and filled below it, blended around it.
-        for (int x = x0; x <= x1; x++) {
-            for (int z = z0; z <= z1; z++) {
-                int a = x - w0x, b = z - w0z;
-                int h = ground.applyAsInt(x, z);
-                if (city[a * n + b]) {
-                    clear(level, pos, x, z, cityY + 1, Math.max(Math.max(h, cityY) + CLEAR, surface(level, x, z)), maxY);
-                    for (int y = Math.max(minY, h + 1); y <= cityY - 4; y++) {
-                        level.setBlock(pos.set(x, y, z), Blocks.STONE.defaultBlockState(), 2);
-                    }
-                    continue;
-                }
-                int d = SKIRT + 1;
-                for (int da = -SKIRT; da <= SKIRT; da++) {
-                    for (int db = -SKIRT; db <= SKIRT; db++) {
-                        int m = Math.max(Math.abs(da), Math.abs(db));
-                        if (m < d && city[(a + da) * n + b + db]) {
-                            d = m;
-                        }
-                    }
-                }
-                if (d > SKIRT) {
-                    continue;
-                }
-                double k = 1 - d / (double) (SKIRT + 1);
-                k = k * k * (3 - 2 * k);
-                int top = JjkGen.round(h + (cityY - h) * k);
-                clear(level, pos, x, z, top + 1, Math.max(Math.max(h, top) + CLEAR, surface(level, x, z)), maxY);
-                for (int y = Math.max(minY, h + 1); y < top; y++) {
-                    level.setBlock(pos.set(x, y, z), (top - y > 3 ? Blocks.STONE : Blocks.DIRT).defaultBlockState(), 2);
-                }
-                if (top >= minY && top <= maxY && level.getFluidState(pos.set(x, top + 1, z)).isEmpty()) {
-                    level.setBlock(pos.set(x, top, z), waste(x, z, d, seed), 2);
-                    // rubble spilled out of the city, thinner further out
-                    double r = JjkGen.hash3(x, 21, z, seed);
-                    if (r < 0.18 * (1 - d / (double) (SKIRT + 1)) && top + 1 <= maxY) {
-                        level.setBlock(pos.set(x, top + 1, z), JujutsuBlocks.RUBBLE.get().defaultBlockState(), 2);
-                    }
-                }
+        int w0x = x0, w0z = z0, n = 16;
+        boolean[] city = new boolean[n * n];
+        for (int a = 0; a < n; a++) {
+            for (int b = 0; b < n; b++) {
+                city[a * n + b] = mask.at(w0x + a, w0z + b);
             }
         }
 
@@ -316,7 +298,7 @@ public final class ColoniaFeature extends Feature<NoneFeatureConfiguration> {
     }
 
     // The skirt's ground: a waste of rubble, gravel and coarse dirt near the city, grass coming back further out.
-    private static BlockState waste(int x, int z, int d, int seed) {
+    private static BlockState waste(int x, int z, double d, int seed) {
         double r = JjkGen.hash3(x, 20, z, seed) + (JjkGen.valueNoise(x, z, seed + 3, 9) - 0.5) * 0.5;
         double far = d / (double) (SKIRT + 1);
         if (r < 0.25 - 0.15 * far) {
@@ -471,41 +453,13 @@ public final class ColoniaFeature extends Feature<NoneFeatureConfiguration> {
         return by;
     }
 
-    // The real top of a column (overhangs, arches and floating bits above the noise's ground included), so the cut takes
-    // everything over the city and nothing is left hanging in the air.
-    private static int surface(WorldGenLevel level, int x, int z) {
-        return level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE_WG, x, z);
-    }
-
-    // Cuts the land away from y0 to y1 (whatever is there: hills, trees, water).
-    private static void clear(WorldGenLevel level, BlockPos.MutableBlockPos pos, int x, int z, int y0, int y1, int maxY) {
-        for (int y = y0; y <= Math.min(y1, maxY); y++) {
-            BlockState b = level.getBlockState(pos.set(x, y, z));
-            if (!b.isAir() && !b.is(Blocks.BEDROCK)) {
-                level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2);
-            }
-        }
-        // The heightmap can miss what a neighbour chunk's feature put here (a Dragon World pillar left floating over
-        // the city, 2026-11-13), so the cut goes on up while it still finds something, until 8 blocks of air in a row.
-        int air = 0;
-        for (int y = Math.max(y0, y1 + 1); y <= maxY && air < 8; y++) {
-            BlockState b = level.getBlockState(pos.set(x, y, z));
-            if (b.isAir()) {
-                air++;
-            } else if (!b.is(Blocks.BEDROCK)) {
-                air = 0;
-                level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2);
-            }
-        }
-    }
-
     // Whether a column is on the city or its skirt, give or take a margin. Other features ask this so they never put
     // anything on the city (a Dragon World pillar there was cut by the city and left floating, Stark 2026-11-13).
     public static boolean covers(WorldGenLevel level, ChunkGenerator generator, int x, int z, int margin) {
         RandomState random = ((ServerLevel) level.getLevel()).getChunkSource().randomState();
         long worldSeed = level.getSeed();
         Mask mask = new Mask(generator, random, (int) (worldSeed ^ (worldSeed >>> 32)));
-        int reach = SKIRT + margin;
+        int reach = CitySkirt.MAX + margin;
         for (int dx = -reach; dx <= reach; dx += 4) {
             for (int dz = -reach; dz <= reach; dz += 4) {
                 if (mask.at(x + dx, z + dz)) {
