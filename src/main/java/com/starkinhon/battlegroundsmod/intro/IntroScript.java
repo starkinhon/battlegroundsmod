@@ -144,7 +144,10 @@ final class IntroScript {
             return;
         }
         long now = hurt.level().getGameTime();
-        hits++;
+        // a skill that hits every tick (the Katon's flames) counts as one blow, not a whole "acerte" goal at once
+        if (now - lastHit >= 6) {
+            hits++;
+        }
         streak = now - lastHit <= 30 ? streak + 1 : 1;
         bestStreak = Math.max(bestStreak, streak);
         lastHit = now;
@@ -489,6 +492,22 @@ final class IntroScript {
     private int used;
     private long seenCast;
 
+    // Waits until the player's own move is over (PowerData.busyTicks), and at least `ticks` more (at most 10 s).
+    private static Step settle(int ticks) {
+        return new Step() {
+            private int free;
+
+            @Override
+            public boolean tick(IntroScript s, ServerPlayer p, int t) {
+                if (t == 0) {
+                    free = 0;
+                }
+                free = p.getData(ModAttachments.POWER).busyTicks > 0 ? 0 : free + 1;
+                return free >= ticks || t >= 200;
+            }
+        };
+    }
+
     // Waits for the skills to be awakened in the Livro das Almas (U).
     private Step awaken(String goalId, String power, List<Integer> slots) {
         return (s, p, t) -> {
@@ -538,12 +557,16 @@ final class IntroScript {
         // o Katon numa janela livre, depois a Lança
         add(card("katon"));
         add(useSkill("use_katon", Set.of(0, PowerData.SLOT_SHIFT), 1));
+        // the next card only once the Katon is over (Stark 2026-11-19: the "dash pro lado" card came while the fire
+        // still held him, when no dash works, and then the soul card right on top of the flames)
+        add(settle(30));
         add(life(0.66f));
         add(technique(HS_LANCE, 6, "lanca"));
         add(wait(50));
         // luta, a alma no U, e o Dragão de Madeira
         add(fight("acerte_hashirama", 4));
         add(life(0.6f));
+        add(settle(20));
         add(card("alma"));
         add(awaken("desperte", MADARA, open));
         add(life(0.58f));
@@ -851,7 +874,9 @@ final class IntroScript {
             if (s.stepCard < 0 && t - s.stepCast > 200) {
                 return true;             // no duel came: the scene ends here
             }
-            return s.stepCard > 0 && t - s.stepCard >= 56;
+            // the cut on the tunnel's white as the Santuário falls, before the Vazio Infinito shows (Stark 2026-11-19
+            // video: at 56 ticks the void was already on screen)
+            return s.stepCard > 0 && t - s.stepCard >= 6;
         };
     }
 }

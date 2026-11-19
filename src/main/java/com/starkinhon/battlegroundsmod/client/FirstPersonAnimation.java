@@ -40,7 +40,9 @@ public final class FirstPersonAnimation {
             return;
         }
         // Sukuna's domain: no arm over the black, the eyes and the pink of the fast version (test 2026-11-09).
-        if (com.starkinhon.battlegroundsmod.client.fx.SukunaDomainScene.hidesHud()) {
+        // The combat flight's camera (PreviewFight / AirFightClient) sits behind the shoulder even in first person: the
+        // first-person arm would hang in front of it (Stark 2026-11-19, intro's desert).
+        if (com.starkinhon.battlegroundsmod.client.fx.SukunaDomainScene.hidesHud() || PreviewFight.running() || AirFightClient.active()) {
             event.setCanceled(true);
             return;
         }

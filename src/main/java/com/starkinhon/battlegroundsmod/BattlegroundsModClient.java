@@ -99,6 +99,14 @@ public class BattlegroundsModClient {
             // a black screen, a flash or a goal of a scene left in the middle never follows into the next world (#379)
             com.starkinhon.battlegroundsmod.client.IntroHud.clear();
         });
+        // The intro's own fade covers its dimension changes: no "Carregando terreno" screen over it (Stark 2026-11-19).
+        // The player does not move meanwhile anyway (LocalPlayer only ticks over a loaded chunk).
+        NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.client.event.ScreenEvent.Opening e) -> {
+            if (e.getNewScreen() instanceof net.minecraft.client.gui.screens.ReceivingLevelScreen
+                    && com.starkinhon.battlegroundsmod.client.IntroHud.covering()) {
+                e.setCanceled(true);
+            }
+        });
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.DragonWind::onRenderLevel);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.DragonWind::onClientTick);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.DragonWind::onFog);
@@ -486,6 +494,9 @@ public class BattlegroundsModClient {
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "hakai_cutscene"), HakaiCutscene::renderGui);
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "esfera_cutscene"), EsferaCutscene::renderGui);
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "editor_cutscene"), CutscenePlayer::renderGui);
+        // the intro's fades over everything (last)
+        event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "intro_cover"),
+                com.starkinhon.battlegroundsmod.client.IntroHud::renderCover);
     }
 
     private static void onRegisterParticles(RegisterParticleProvidersEvent event) {
