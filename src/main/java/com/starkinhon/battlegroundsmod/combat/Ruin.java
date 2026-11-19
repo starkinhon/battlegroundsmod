@@ -150,7 +150,7 @@ public final class Ruin {
         return ((h ^ (h >>> 16)) & 0xFFFF) / 65535f;
     }
 
-    static float noise(double x, double y, double z, int seed) {
+    public static float noise(double x, double y, double z, int seed) {
         int ix = Mth.floor(x), iy = Mth.floor(y), iz = Mth.floor(z);
         float fx = (float) (x - ix), fy = (float) (y - iy), fz = (float) (z - iz);
         fx = fx * fx * (3 - 2 * fx);
