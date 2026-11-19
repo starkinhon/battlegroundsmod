@@ -39,7 +39,7 @@ public final class CrystalInventory {
     private static final int PAD_Y = 60;
     private static final int W = 176 + PAD_X * 2;
     private static final int H = 166 + PAD_Y + 44;
-    private static final float NO_SOUL_HUE = 265f;
+    static final float NO_SOUL_HUE = 265f;
 
     private static boolean broken;
     private static String builtFor;
@@ -52,10 +52,10 @@ public final class CrystalInventory {
     // Light crystal pixels where the little stars may blink.
     private static int[] brightSpots;
 
-    private static final Map<String, Float> SOUL_HUES = new HashMap<>();
+    static final Map<String, Float> SOUL_HUES = new HashMap<>();
     private static final Map<ResourceLocation, Glow> GLOWS = new HashMap<>();
 
-    private record Glow(ResourceLocation tex, int size, int texels) {
+    record Glow(ResourceLocation tex, int size, int texels) {
     }
 
     private CrystalInventory() {
@@ -224,7 +224,7 @@ public final class CrystalInventory {
 
     // A slot of inner size s at (x, y): soul colored halo, dark edge, dark glass with a light top/left and a shaded
     // bottom/right.
-    private static void slotFrame(GuiGraphics g, int x, int y, int s, int[] R, int glass, boolean light) {
+    static void slotFrame(GuiGraphics g, int x, int y, int s, int[] R, int glass, boolean light) {
         g.fill(x - 2, y - 2, x + s + 2, y + s + 2, argb(R[4], 0.55f));
         g.fill(x - 1, y - 1, x + s + 1, y + s + 1, argb(R[0], 0.95f));
         g.fill(x, y, x + s, y + s, argb(glass, 0.94f));
@@ -306,7 +306,7 @@ public final class CrystalInventory {
 
     // A white mask two pixels around the item's own pixels (1 strong ring, 1 faint ring), read from the item's texture.
     // Only flat items (generated models); blocks and 3D items get none.
-    private static Glow glowFor(ItemStack stack, Player player) {
+    static Glow glowFor(ItemStack stack, Player player) {
         Minecraft mc = Minecraft.getInstance();
         BakedModel model = mc.getItemRenderer().getModel(stack, player.level(), player, 0);
         if (model == null || model.isGui3d()) {
@@ -372,12 +372,19 @@ public final class CrystalInventory {
 
     // ---------------------------------------------------------------- building the crystal picture
 
+    // The soul's hue (purple with no soul), read once per soul from its icon.
+    static float hueFor(String soul) {
+        return soul.isEmpty() ? NO_SOUL_HUE : SOUL_HUES.computeIfAbsent(soul, CrystalInventory::readHue);
+    }
+
     private static void build(String soul) {
         Minecraft mc = Minecraft.getInstance();
-        hue = soul.isEmpty() ? NO_SOUL_HUE : SOUL_HUES.computeIfAbsent(soul, CrystalInventory::readHue);
+        hue = hueFor(soul);
         ramp = ramp(hue);
         int[] R = ramp;
         int[] Rb = { R[0], R[0], R[1], R[1], R[2], R[3], R[4] };
+        cw = W;
+        ch = H;
         int[] buf = new int[W * H];
         int ox = PAD_X;
         int oy = PAD_Y;
@@ -455,7 +462,11 @@ public final class CrystalInventory {
     }
 
     // A crystal: base at (x, y), length, half width, angle (0 = up, + = right), tip fraction, apex offset (-1..1).
-    private static void crystal(int[] buf, int[] R, double x, double y, double len, double w, double angDeg, double tf, double apexK) {
+    // Size of the picture the crystal/gem helpers draw into (the inventory's or the hotbar's).
+    static int cw = W;
+    static int ch = H;
+
+    static void crystal(int[] buf, int[] R, double x, double y, double len, double w, double angDeg, double tf, double apexK) {
         double a = Math.toRadians(angDeg);
         double ap = apexK * w;
         double dx = Math.sin(a);
@@ -463,7 +474,7 @@ public final class CrystalInventory {
         double nx = -Math.cos(a);
         double ny = -Math.sin(a);
         boolean leftLit = (Math.cos(a) + Math.sin(a)) > -0.2;
-        int[] layer = new int[W * H];
+        int[] layer = new int[cw * ch];
         double r = len + w + 2;
         double ts = 1 - tf;
         for (int py = (int) Math.floor(y - r); py <= y + r; py++) {
@@ -511,7 +522,7 @@ public final class CrystalInventory {
     // glints, and a three faced tip.
     private static void gem(int[] buf, int[] R, double x, double y, double len, double w, double tf) {
         double ts = 1 - tf;
-        int[] layer = new int[W * H];
+        int[] layer = new int[cw * ch];
         int[][] pals = { { R[4], R[3] }, { R[5], R[4] }, { R[4], R[3] }, { R[2], R[1] } };
         double[] edges = { -0.62, -0.12, 0.4 };
         for (int py = (int) Math.floor(y - len); py <= y; py++) {
@@ -592,21 +603,21 @@ public final class CrystalInventory {
     }
 
     private static void set(int[] layer, int x, int y, int c) {
-        if (x >= 0 && y >= 0 && x < W && y < H) {
-            layer[y * W + x] = c;
+        if (x >= 0 && y >= 0 && x < cw && y < ch) {
+            layer[y * cw + x] = c;
         }
     }
 
     private static int get(int[] layer, int x, int y) {
-        return x >= 0 && y >= 0 && x < W && y < H ? layer[y * W + x] : 0;
+        return x >= 0 && y >= 0 && x < cw && y < ch ? layer[y * cw + x] : 0;
     }
 
     // Dark outline around the layer's shape, then the layer pasted over the picture.
     private static void outlineOver(int[] buf, int[] layer, int outline) {
         List<Integer> pts = new ArrayList<>();
-        for (int y = 0; y < H; y++) {
-            for (int x = 0; x < W; x++) {
-                if (layer[y * W + x] == 0
+        for (int y = 0; y < ch; y++) {
+            for (int x = 0; x < cw; x++) {
+                if (layer[y * cw + x] == 0
                         && (get(layer, x + 1, y) != 0 || get(layer, x - 1, y) != 0 || get(layer, x, y + 1) != 0 || get(layer, x, y - 1) != 0)) {
                     pts.add(y * W + x);
                 }
@@ -625,7 +636,7 @@ public final class CrystalInventory {
     // ---------------------------------------------------------------- colors
 
     // The soul's hue, from the average of the saturated mid tone pixels of its item icon.
-    private static float readHue(String soul) {
+    static float readHue(String soul) {
         ResourceLocation location = ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "textures/item/soul_" + soul + ".png");
         try (InputStream in = Minecraft.getInstance().getResourceManager().open(location); NativeImage image = NativeImage.read(in)) {
             long rs = 0;
@@ -678,14 +689,14 @@ public final class CrystalInventory {
     }
 
     // Seven shades, darkest to lightest; darks lean toward blue/purple and lights toward yellow (pixel art hue shift).
-    private static int[] ramp(float h) {
+    static int[] ramp(float h) {
         float toward = (h > 200 && h < 300) ? 1 : -1;
         return new int[] { hsl(h + 14 * toward, 0.45f, 0.07f), hsl(h + 10 * toward, 0.5f, 0.16f), hsl(h + 6 * toward, 0.5f, 0.27f),
                 hsl(h, 0.5f, 0.40f), hsl(h - 6 * toward, 0.55f, 0.56f), hsl(h - 12 * toward, 0.65f, 0.73f), hsl(h - 18 * toward, 0.7f, 0.89f) };
     }
 
     // HSL to opaque ARGB.
-    private static int hsl(float h, float s, float l) {
+    static int hsl(float h, float s, float l) {
         h = ((h % 360) + 360) % 360;
         float a = s * Math.min(l, 1 - l);
         int r = Math.round(hslF(0, h, l, a) * 255);
@@ -699,24 +710,24 @@ public final class CrystalInventory {
         return l - a * Math.max(-1, Math.min(Math.min(k - 3, 9 - k), 1));
     }
 
-    private static int argb(int rgb, float alpha) {
+    static int argb(int rgb, float alpha) {
         int a = Math.max(0, Math.min(255, Math.round(alpha * 255)));
         return a << 24 | (rgb & 0xFFFFFF);
     }
 
-    private static int abgr(int argb) {
+    static int abgr(int argb) {
         return (argb & 0xFF00FF00) | (argb >> 16 & 0xFF) | (argb & 0xFF) << 16;
     }
 
-    private static float r(int argb) {
+    static float r(int argb) {
         return (argb >> 16 & 0xFF) / 255f;
     }
 
-    private static float gr(int argb) {
+    static float gr(int argb) {
         return (argb >> 8 & 0xFF) / 255f;
     }
 
-    private static float b(int argb) {
+    static float b(int argb) {
         return (argb & 0xFF) / 255f;
     }
 }
