@@ -6,7 +6,6 @@ import com.starkinhon.battlegroundsmod.ModItems;
 import com.starkinhon.battlegroundsmod.combat.Charge;
 import com.starkinhon.battlegroundsmod.combat.Fx;
 import com.starkinhon.battlegroundsmod.npc.UniverseNpc;
-import com.starkinhon.battlegroundsmod.power.PowerLogic;
 import com.starkinhon.battlegroundsmod.power.Powers;
 import com.starkinhon.battlegroundsmod.power.Progression;
 import com.starkinhon.battlegroundsmod.power.SoulSync;
@@ -209,11 +208,7 @@ public final class MasterTraining {
     }
 
     private static void teachRasengan(ServerPlayer player) {
-        boolean soulless = !player.getData(ModAttachments.POWER).hasPower();
-        if (soulless) {
-            PowerLogic.select(player, Powers.RASENGAN);
-        } else {
-            SoulSync.touch(player, Powers.RASENGAN.id());
+        if (!SoulSync.learnInnate(player, Powers.RASENGAN)) {
             player.displayClientMessage(Component.translatable("message.battlegroundsmod.rasengan_livro"), false);
         }
         player.getPersistentData().putBoolean(RASENGAN_DONE, true);

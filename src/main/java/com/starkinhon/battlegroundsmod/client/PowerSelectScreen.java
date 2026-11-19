@@ -153,6 +153,9 @@ public class PowerSelectScreen extends Screen {
 
     // The soul can be put on from here: outside progression all are free; with it, souls already worn (or creative).
     private boolean owned(Power p) {
+        if (p == Powers.INATA) {
+            return SoulSync.innateAny(minecraft.player) || p.id().equals(current());
+        }
         return !Progression.clientOn || minecraft.player.isCreative() || SoulSync.known(minecraft.player, p.id()) || p.id().equals(current());
     }
 
@@ -160,9 +163,9 @@ public class PowerSelectScreen extends Screen {
         List<Power> list = new ArrayList<>(tab == 0 ? Powers.divine() : Powers.sub().stream().filter(p -> uniId(p).equals(uni)).toList());
         list.sort(Comparator.comparing(PowerSelectScreen::uniId));
         if (tab == 0 && minecraft != null && minecraft.player != null) {
-            // The techniques a master taught (the Kamehameha from Mestre Kame), so the player can go back to them.
+            // The player's own kit with every technique a master taught (Kamehameha, Rasengan), to go back to it.
             for (Power p : Powers.innate()) {
-                if (SoulSync.known(minecraft.player, p.id()) || p.id().equals(current())) {
+                if (SoulSync.innateAny(minecraft.player) || p.id().equals(current())) {
                     list.add(0, p);
                 }
             }
@@ -650,9 +653,9 @@ public class PowerSelectScreen extends Screen {
                 List<Component> ls = new ArrayList<>();
                 ls.add(hover.name().copy().withStyle(s -> s.withColor(ink(hover))));
                 ls.add(Component.literal(uniName(hover)).withStyle(s -> s.withColor(0xA096B9)));
-                for (int slot : SoulSync.skills(hover)) {
+                for (int slot : hover == Powers.INATA ? SoulSync.taughtSlots(hover) : SoulSync.skills(hover)) {
                     boolean awake = SoulSync.awake(minecraft.player, hover, slot) && (hover.id().equals(current()) || !Progression.clientOn
-                            || SoulSync.get(minecraft.player, hover.id()).has(slot) || slot == 0);
+                            || SoulSync.get(minecraft.player, hover.id()).has(slot) || slot == 0 || hover == Powers.INATA);
                     ls.add(Component.literal((slot >= PowerData.SLOT_SHIFT ? "Shift+" : "") + keyLabel(hover, slot) + "  ").append(hover.abilityName(slot))
                             .withStyle(s -> s.withColor(awake ? 0xFFFFFF : 0x6E6882)));
                 }
@@ -807,7 +810,10 @@ public class PowerSelectScreen extends Screen {
         boolean gated = Progression.clientOn;
         boolean isCur = s.id().equals(current());
         int bw = w - 40, bx = x + w / 2 - bw / 2;
-        if (gated) {
+        if (s == Powers.INATA) {
+            // no Sincronia: each key opens when a master teaches it
+            GuiDraw.centeredText(g, font, Component.translatable("screen.battlegroundsmod.soul_book.inata_info"), x + w / 2f, yy + 6, 0.75f, 0xFFAAA0C3, false);
+        } else if (gated) {
             GuiDraw.text(g, font, Component.translatable("screen.battlegroundsmod.soul_book.sync"), bx, yy, 0.75f, 0xFFAAA0C3, false);
             GuiDraw.rightText(g, font, Component.translatable("screen.battlegroundsmod.soul_book.level", e.level()), bx + bw, yy, 0.75f, 0xFF80FF20, false);
             yy += 8;
@@ -857,8 +863,9 @@ public class PowerSelectScreen extends Screen {
             int slot = skills.get(i);
             int sx = gx + (i % per) * sw, sy = yy + (i / per) * (sw + 8);
             boolean master = SoulSync.taught(s, slot);
-            boolean awake = master ? !gated || SoulSync.knowsTaught(minecraft.player) : !gated || slot == 0 || e.has(slot);
-            if (awake && !master) {
+            boolean awake = s == Powers.INATA ? SoulSync.taughtKnown(minecraft.player, s, slot)
+                    : master ? !gated || SoulSync.knowsTaught(minecraft.player) : !gated || slot == 0 || e.has(slot);
+            if (awake && (!master || s == Powers.INATA)) {
                 awakeCount++;
             }
             boolean next = gated && !awake && isCur && SoulSync.canAwaken(minecraft.player, s, slot);
@@ -930,7 +937,10 @@ public class PowerSelectScreen extends Screen {
                     });
                     tip.add(Component.literal(sb.toString()).withStyle(st -> st.withColor(0xCDC6DC)));
                 }
-                if (master) {
+                if (s == Powers.INATA) {
+                    tip.add(Component.translatable((awake ? "screen.battlegroundsmod.soul_book.taught_inata." : "screen.battlegroundsmod.soul_book.locked_inata.") + slot)
+                            .withStyle(st -> st.withColor(awake ? 0xFFD84A : 0xFF6060)));
+                } else if (master) {
                     tip.add(Component.translatable(awake ? "screen.battlegroundsmod.soul_book.taught_kaioh" : "screen.battlegroundsmod.soul_book.locked_kaioh")
                             .withStyle(st -> st.withColor(awake ? 0xFFD84A : 0xFF6060)));
                 } else if (!awake) {
@@ -946,7 +956,7 @@ public class PowerSelectScreen extends Screen {
             }
         }
         yy += rows * (sw + 8) + 2;
-        GuiDraw.centeredText(g, font, Component.translatable("screen.battlegroundsmod.soul_book.awake_count", awakeCount, counted),
+        GuiDraw.centeredText(g, font, Component.translatable("screen.battlegroundsmod.soul_book.awake_count", awakeCount, s == Powers.INATA ? skills.size() : counted),
                 x + w / 2f, yy, 0.75f, 0xFF9C93B4, false);
 
         // hold-to-absorb button

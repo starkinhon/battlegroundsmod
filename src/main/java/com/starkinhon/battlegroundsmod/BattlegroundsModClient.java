@@ -212,6 +212,12 @@ public class BattlegroundsModClient {
                 com.starkinhon.battlegroundsmod.client.FlightPose::onRenderPre);
         NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.client.event.RenderPlayerEvent.Post.class,
                 com.starkinhon.battlegroundsmod.client.FlightPose::onRenderPost);
+        // The Controle de Energia's run on walls and trees (laid flat with the feet on it).
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, false, net.neoforged.neoforge.client.event.RenderPlayerEvent.Pre.class,
+                com.starkinhon.battlegroundsmod.client.WallRun::onRenderPre);
+        NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.client.event.RenderPlayerEvent.Post.class,
+                com.starkinhon.battlegroundsmod.client.WallRun::onRenderPost);
+        NeoForge.EVENT_BUS.addListener(ClientTickEvent.Post.class, com.starkinhon.battlegroundsmod.client.WallRun::tick);
         // The combat flight: the camera stays turned to the locked target.
         NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.client.event.RenderFrameEvent.Pre.class,
                 com.starkinhon.battlegroundsmod.client.AirFightClient::onFrame);

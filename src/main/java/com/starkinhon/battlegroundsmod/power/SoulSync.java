@@ -84,11 +84,17 @@ public final class SoulSync {
     private static final Map<String, java.util.Set<Integer>> TAUGHT = Map.of("goku", java.util.Set.of(PowerData.SLOT_EXTRA, PowerData.SLOT_SHIFT + 3));
 
     public static List<Integer> taughtSlots(Power power) {
+        if (power == Powers.INATA) {
+            return power.slots();
+        }
         java.util.Set<Integer> set = TAUGHT.get(power.id());
         return set == null ? List.of() : set.stream().sorted().toList();
     }
 
     public static boolean taught(Power power, int slot) {
+        if (power == Powers.INATA) {
+            return slot >= 0 && slot < power.abilities().size();
+        }
         java.util.Set<Integer> set = TAUGHT.get(power.id());
         return set != null && set.contains(slot);
     }
@@ -101,6 +107,44 @@ public final class SoulSync {
             return com.starkinhon.battlegroundsmod.universe.EnergyControl.clientKnown.contains(KAIOH);
         }
         return player.getData(ModAttachments.TECHNIQUES).contains(KAIOH);
+    }
+
+    // Was the skill a master teaches learned? The player's own kit (Powers.INATA): that key's technique; Goku's: Kaioh.
+    public static boolean taughtKnown(Player player, Power power, int slot) {
+        if (power == Powers.INATA) {
+            return slot >= 0 && slot < Powers.TAUGHT_TECHNIQUES.size() && known(player, Powers.TAUGHT_TECHNIQUES.get(slot).id());
+        }
+        return knowsTaught(player);
+    }
+
+    // Any technique learned from a master: the player's own kit shows in the book.
+    public static boolean innateAny(Player player) {
+        if (known(player, Powers.INATA.id())) {
+            return true;
+        }
+        for (Power p : Powers.TAUGHT_TECHNIQUES) {
+            if (known(player, p.id())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // A master taught a technique (Mestre Kame, Jiraiya): it joins the player's own kit with the others learned. Worn
+    // right away when the player has no soul or already wears that kit; returns whether it is worn now.
+    public static boolean learnInnate(ServerPlayer player, Power technique) {
+        if (!known(player, technique.id())) {
+            put(player, technique.id(), Entry.NEW);
+        }
+        PowerData data = player.getData(ModAttachments.POWER);
+        boolean wear = !data.hasPower() || Powers.INATA.id().equals(data.power);
+        if (wear) {
+            PowerLogic.select(player, Powers.INATA);
+        } else {
+            touch(player, Powers.INATA.id());
+        }
+        sync(player);
+        return wear;
     }
 
     // Every skill of the power, in awakening order: Z X C B, the Shift variants, then the ult(s) last.
@@ -142,7 +186,14 @@ public final class SoulSync {
 
     // Can this skill be used? Base attacks and anything outside progression always can.
     public static boolean awake(Player player, Power power, int slot) {
-        if (power == null || PowerLogic.isBaseAttack(slot) || !gated(player)) {
+        if (power == null || PowerLogic.isBaseAttack(slot)) {
+            return true;
+        }
+        if (power == Powers.INATA) {
+            // the player's own kit: only the techniques a master taught, with or without progression
+            return taughtKnown(player, power, slot);
+        }
+        if (!gated(player)) {
             return true;
         }
         if (taught(power, slot)) {
@@ -240,7 +291,13 @@ public final class SoulSync {
     public static void completeAll(ServerPlayer player, Power power) {
         Entry e = get(player, power.id());
         put(player, power.id(), new Entry(Math.max(e.level(), skills(power).size() - 1), 1f, 0, skills(power)));
-        if (!taughtSlots(power).isEmpty()) {
+        if (power == Powers.INATA) {
+            for (Power p : Powers.TAUGHT_TECHNIQUES) {
+                if (!known(player, p.id())) {
+                    put(player, p.id(), Entry.NEW);
+                }
+            }
+        } else if (!taughtSlots(power).isEmpty()) {
             learnTaught(player);
         }
         sync(player);
