@@ -205,7 +205,7 @@ public final class JjCommon {
 
     private static void breakOne(ServerLevel level, BlockPos.MutableBlockPos pos, Vec3 from, int[] flown, int flyMax, double up) {
         BlockState state = level.getBlockState(pos);
-        if (state.isAir() || !state.getFluidState().isEmpty() || state.hasBlockEntity() || state.getDestroySpeed(level, pos) < 0) {
+        if (state.isAir() || !state.getFluidState().isEmpty() || com.starkinhon.battlegroundsmod.combat.BlockRules.keeps(state) || state.getDestroySpeed(level, pos) < 0) {
             return;
         }
         if (flown[0] < flyMax && SubCommon.RANDOM.nextInt(3) == 0) {

@@ -167,7 +167,7 @@ public final class CravadaWeb {
                 for (int d = 0; d < depth; d++) {
                     BlockPos q = pos.below(d);
                     BlockState s = level.getBlockState(q);
-                    if (s.isAir() || !s.getFluidState().isEmpty() || s.hasBlockEntity() || s.getDestroySpeed(level, q) < 0) {
+                    if (s.isAir() || !s.getFluidState().isEmpty() || com.starkinhon.battlegroundsmod.combat.BlockRules.keeps(s) || s.getDestroySpeed(level, q) < 0) {
                         break;
                     }
                     out.add(q);

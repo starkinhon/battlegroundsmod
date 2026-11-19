@@ -2,6 +2,7 @@ package com.starkinhon.battlegroundsmod.combat;
 
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
 
 // Whether the mod's skills (players and bosses) may break or change blocks: craters, explosions, fire, the black
 // hole pulling blocks, cuts through terrain. Both rules must be on:
@@ -26,5 +27,14 @@ public final class BlockRules {
             return false;
         }
         return level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING) && level.getGameRules().getBoolean(SOULS_BLOCK_DESTRUCTION);
+    }
+
+    // A block the skills and the mobs leave standing because it holds a block entity (a chest, a sign, a spawner: its
+    // contents would be lost). The mod's own scenery with a block entity breaks like any other block (Stark 2026-11-19:
+    // in Shibuya the base of the buildings stayed whole "como se fosse indestrutível": the big screens (Telão, up to
+    // 22 x 12 on the base's front) and the power lines were skipped by every technique).
+    public static boolean keeps(BlockState state) {
+        return state.hasBlockEntity() && !(state.getBlock() instanceof com.starkinhon.battlegroundsmod.TelaoBlock)
+                && !(state.getBlock() instanceof com.starkinhon.battlegroundsmod.PowerLineBlock);
     }
 }

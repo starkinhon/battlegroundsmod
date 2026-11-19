@@ -948,7 +948,7 @@ public final class DbMobs {
                     BlockPos p = base.offset(x, y, z);
                     BlockState s = level.getBlockState(p);
                     float hard = s.getDestroySpeed(level, p);
-                    if (!s.isAir() && hard >= 0 && hard <= 0.6f && !s.hasBlockEntity() && s.getFluidState().isEmpty()) {
+                    if (!s.isAir() && hard >= 0 && hard <= 0.6f && !com.starkinhon.battlegroundsmod.combat.BlockRules.keeps(s) && s.getFluidState().isEmpty()) {
                         level.destroyBlock(p, false);
                     }
                 }

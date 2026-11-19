@@ -211,7 +211,7 @@ public final class WorldSlash {
             return;
         }
         BlockState state = level.getBlockState(pos);
-        if (state.isAir() || !state.getFluidState().isEmpty() || state.hasBlockEntity() || state.getDestroySpeed(level, pos) < 0) {
+        if (state.isAir() || !state.getFluidState().isEmpty() || com.starkinhon.battlegroundsmod.combat.BlockRules.keeps(state) || state.getDestroySpeed(level, pos) < 0) {
             return;
         }
         budget[0]--;

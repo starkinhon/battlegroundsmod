@@ -813,7 +813,7 @@ public final class Azul {
                 continue;
             }
             BlockState state = level.getBlockState(pos);
-            if (state.isAir() || !state.getFluidState().isEmpty() || state.hasBlockEntity() || state.getDestroySpeed(level, pos) < 0) {
+            if (state.isAir() || !state.getFluidState().isEmpty() || com.starkinhon.battlegroundsmod.combat.BlockRules.keeps(state) || state.getDestroySpeed(level, pos) < 0) {
                 continue;
             }
             FallingBlockEntity block = FallingBlockEntity.fall(level, pos, state);
@@ -873,7 +873,7 @@ public final class Azul {
                 continue;
             }
             BlockState state = level.getBlockState(pos);
-            if (state.isAir() || !state.getFluidState().isEmpty() || state.hasBlockEntity() || state.getDestroySpeed(level, pos) < 0) {
+            if (state.isAir() || !state.getFluidState().isEmpty() || com.starkinhon.battlegroundsmod.combat.BlockRules.keeps(state) || state.getDestroySpeed(level, pos) < 0) {
                 continue;
             }
             eaten[0]++;

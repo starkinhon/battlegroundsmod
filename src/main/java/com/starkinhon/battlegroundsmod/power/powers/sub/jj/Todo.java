@@ -231,7 +231,7 @@ public final class Todo {
     private static BlockState ripState(ServerLevel level, LivingEntity caster) {
         BlockPos under = BlockPos.containing(caster.position().add(SubCommon.flat(caster.getLookAngle()).scale(1.2))).below();
         BlockState state = level.getBlockState(under);
-        if (state.isAir() || state.hasBlockEntity() || state.getDestroySpeed(level, under) < 0 || !state.getFluidState().isEmpty()) {
+        if (state.isAir() || com.starkinhon.battlegroundsmod.combat.BlockRules.keeps(state) || state.getDestroySpeed(level, under) < 0 || !state.getFluidState().isEmpty()) {
             return Blocks.STONE.defaultBlockState();
         }
         if (BlockRules.canBreak(level)) {
@@ -413,7 +413,7 @@ public final class Todo {
     // The ground under a spot as a block he can kick up (taken out when blocks can break), or stone.
     private static BlockState groundState(ServerLevel level, BlockPos under) {
         BlockState state = level.getBlockState(under);
-        if (state.isAir() || state.hasBlockEntity() || state.getDestroySpeed(level, under) < 0 || !state.getFluidState().isEmpty()) {
+        if (state.isAir() || com.starkinhon.battlegroundsmod.combat.BlockRules.keeps(state) || state.getDestroySpeed(level, under) < 0 || !state.getFluidState().isEmpty()) {
             return Blocks.STONE.defaultBlockState();
         }
         if (BlockRules.canBreak(level)) {

@@ -132,7 +132,7 @@ public final class OpmSerious {
     }
 
     static boolean breakable(ServerLevel level, BlockPos p, BlockState st) {
-        return !st.isAir() && st.getFluidState().isEmpty() && !st.hasBlockEntity() && st.getDestroySpeed(level, p) >= 0;
+        return !st.isAir() && st.getFluidState().isEmpty() && !com.starkinhon.battlegroundsmod.combat.BlockRules.keeps(st) && st.getDestroySpeed(level, p) >= 0;
     }
 
     // The world columns whose centers fall in the local rectangle [x0, x1] x [z0, z1] of the frame, by the local center.

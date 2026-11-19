@@ -406,7 +406,7 @@ public final class DbMobMoves {
                 continue;
             }
             BlockState s = level.getBlockState(p);
-            if (s.isAir() || s.getDestroySpeed(level, p) < 0 || s.hasBlockEntity() || !s.getFluidState().isEmpty()) {
+            if (s.isAir() || s.getDestroySpeed(level, p) < 0 || com.starkinhon.battlegroundsmod.combat.BlockRules.keeps(s) || !s.getFluidState().isEmpty()) {
                 continue;
             }
             if (MobGrief.soft(s) || logs && s.is(BlockTags.LOGS)) {
