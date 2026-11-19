@@ -77,6 +77,21 @@ public final class TimeChamber {
     private TimeChamber() {
     }
 
+    // Spot the closest room dummy stands on (feet position), to put back one that got knocked away before dummies
+    // were anchored in place.
+    public static net.minecraft.world.phys.Vec3 dummyHome(net.minecraft.world.phys.Vec3 at) {
+        int[] best = DUMMIES[0];
+        double bestDist = Double.MAX_VALUE;
+        for (int[] d : DUMMIES) {
+            double dist = Math.hypot(at.x - (d[0] + 0.5), at.z - (d[1] + 0.5));
+            if (dist < bestDist) {
+                bestDist = dist;
+                best = d;
+            }
+        }
+        return new net.minecraft.world.phys.Vec3(best[0] + 0.5, FLOOR_Y, best[1] + 0.5);
+    }
+
     private static ResourceLocation id(String path) {
         return ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, path);
     }
