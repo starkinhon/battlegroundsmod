@@ -223,6 +223,23 @@ public final class HanamiAirFx {
                 || s.is(Blocks.GRAVEL) || s.is(Blocks.DEEPSLATE) || s.is(Blocks.BEDROCK);
     }
 
+    // how many of the 8 blocks around (x, y, z) on its layer are leaves: 5 or more = the ray goes through a hole
+    private static int leavesAround(ClientLevel level, BlockPos.MutableBlockPos pos, int x, int y, int z) {
+        int n = 0;
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                if (dx == 0 && dz == 0) {
+                    continue;
+                }
+                BlockState s = level.getBlockState(pos.set(x + dx, y, z + dz));
+                if (isLeaf(s) || s.is(BlockTags.LEAVES)) {
+                    n++;
+                }
+            }
+        }
+        return n;
+    }
+
     // leaves, the canopy's flowers and anything solid hide the sun; thin plants do not
     private static boolean opaque(BlockState s) {
         return !s.isAir() && (s.is(BlockTags.LEAVES) || isLeaf(s) || s.canOcclude());
@@ -458,19 +475,31 @@ public final class HanamiAirFx {
                     continue;
                 }
                 double px = x + 0.15 + hsh(x * 3, z) * 0.7, pz = z + 0.15 + hsh(z * 5, x) * 0.7, py = g + 1.02;
-                boolean ok = true, out = false;
+                boolean ok = true, out = false, hole = false;
                 for (double d = 0.6; d < 70; d += 0.5) {
                     double qx = px + FS[0] * d, qy = py + FS[1] * d, qz = pz + FS[2] * d;
                     if (qy > roof + 14) {
                         out = true;
                         break;
                     }
-                    if (opaque(level.getBlockState(pos.set(Mth.floor(qx), Mth.floor(qy), Mth.floor(qz))))) {
+                    int bx = Mth.floor(qx), by = Mth.floor(qy), bz = Mth.floor(qz);
+                    if (opaque(level.getBlockState(pos.set(bx, by, bz)))) {
                         ok = false;
                         break;
                     }
+                    // the spot is the image of the sun through a HOLE in the canopy: where the ray reaches the canopy's
+                    // height, the blocks around it must be leaves. A ray leaving by the canopy's open side (low sun, the
+                    // edge of the woods, a sparse crown) is plain sunlight, not a fleck: without this, every column near
+                    // an edge got a spot and the ground turned into polka dots.
+                    if (!hole && by >= roof) {
+                        if (leavesAround(level, pos, bx, by, bz) < 5) {
+                            ok = false;
+                            break;
+                        }
+                        hole = true;
+                    }
                 }
-                if (ok && out) {
+                if (ok && out && hole) {
                     flecksNext.add(new double[] {px, py, pz, Math.max(4, roof - g), rnd() * Mth.TWO_PI});
                 }
             }
