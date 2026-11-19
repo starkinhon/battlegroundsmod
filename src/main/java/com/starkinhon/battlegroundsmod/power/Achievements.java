@@ -122,16 +122,22 @@ public final class Achievements {
         return player.server.getAdvancements().get(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, id));
     }
 
+    // Whether what the player does now counts for the achievements: not in the introduction, where the soul, its
+    // Sincronia and the tier are lent for the scenes (Stark 2026-11-19: it gave every Madara achievement).
+    private static boolean counts(ServerPlayer player) {
+        return Progression.on(player) && !com.starkinhon.battlegroundsmod.intro.Intro.active(player);
+    }
+
     // A soul crystal absorbed (item/SoulItem): its branch opens right away.
     public static void soul(ServerPlayer player) {
-        if (Progression.on(player)) {
+        if (counts(player)) {
             souls(player);
         }
     }
 
     // A character or a common mob beaten by a player (or by its projectile, summon...).
     private static void onDeath(LivingDeathEvent event) {
-        if (!(event.getSource().getEntity() instanceof ServerPlayer player) || !Progression.on(player)) {
+        if (!(event.getSource().getEntity() instanceof ServerPlayer player) || !counts(player)) {
             return;
         }
         LivingEntity dead = event.getEntity();
@@ -158,7 +164,7 @@ public final class Achievements {
     }
 
     private static void onTick(PlayerTickEvent.Post event) {
-        if (!(event.getEntity() instanceof ServerPlayer player) || player.tickCount % 40 != 13 || !Progression.on(player)) {
+        if (!(event.getEntity() instanceof ServerPlayer player) || player.tickCount % 40 != 13 || !counts(player)) {
             return;
         }
         int tier = player.getData(ModAttachments.POWER).tier;
