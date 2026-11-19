@@ -200,6 +200,9 @@ public class KokushiboEntity extends SoulBoss {
             if (!drawn()) {
                 draw(level);
             }
+            if (getHealth() < before) {
+                com.starkinhon.battlegroundsmod.power.powers.kokushibo.OniBody.pauseBoss(this);
+            }
             long now = level.getGameTime();
             if (now - bigHitAt > 40) {
                 bigHit = 0;

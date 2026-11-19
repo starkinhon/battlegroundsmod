@@ -35,6 +35,13 @@ public final class OniBody {
     private static final double[] SPEED = {1.0, 1.15, 1.25, 0.9};
     // Night and the full moon healed too fast (Stark, 2026-11-08): half of what they were (0.03 and 0.04).
     private static final double[] REGEN = {0.015, 0.015, 0.02, 0.005};
+    // The boss heals far slower (Stark, 2026-11-19: "imatável"). His life grows with the tier curve (dungeon Tier 4 = 1225),
+    // and 1.5%/s of that (18/s) gave back a whole combo of 200 before the cooldowns came back. Now 0.5%/s (6/s), and any blow
+    // stops it for BOSS_HIT_PAUSE (KokushiboEntity.hurt): pressure keeps him from healing, standing back lets him breathe.
+    private static final double[] BOSS_REGEN = {0.005, 0.006, 0.008, 0.002};
+    // Left alone this long after the pause, the boss heals twice as fast (punishes stalling).
+    public static final int BOSS_HIT_PAUSE = 60;
+    private static final int BOSS_IDLE = 140;
     // At night he sees in the dark (Stark, 2026-11-08): Night Vision kept topped up while it lasts, taken off at dawn.
     // Over 10 s so the vanilla flicker of a running-out Night Vision never shows.
     private static final int NIGHT_VISION = 300, NIGHT_VISION_REFRESH = 220;
@@ -108,7 +115,12 @@ public final class OniBody {
         PowerData data = entity.getData(ModAttachments.POWER);
         long now = entity.level().getGameTime();
         if (entity.isAlive() && now >= data.oniRegenCutUntil && entity.getHealth() < entity.getMaxHealth() && entity.tickCount % 10 == 0) {
-            entity.heal((float) (entity.getMaxHealth() * REGEN[phase] / 2));
+            double rate = REGEN[phase];
+            if (entity instanceof com.starkinhon.battlegroundsmod.boss.SoulBoss boss) {
+                // No healing during his entrance or the awakening scene (he can't be hit then).
+                rate = boss.staged() ? 0 : BOSS_REGEN[phase] * (now - data.oniRegenCutUntil >= BOSS_IDLE ? 2 : 1);
+            }
+            entity.heal((float) (entity.getMaxHealth() * rate / 2));
         }
         if (phase != data.oniPhaseSent) {
             boolean first = data.oniPhaseSent < 0;
@@ -141,8 +153,17 @@ public final class OniBody {
         boolean destruction = attacker.hasData(ModAttachments.POWER) && "destruction_god".equals(attacker.getData(ModAttachments.POWER).power);
         if (sword || destruction) {
             PowerData data = victim.getData(ModAttachments.POWER);
-            data.oniRegenCutUntil = victim.level().getGameTime() + REGEN_CUT;
+            data.oniRegenCutUntil = Math.max(data.oniRegenCutUntil, victim.level().getGameTime() + REGEN_CUT);
         }
+    }
+
+    // Any blow on the boss stops his healing for a moment (never shortens a longer cut, like a sword's).
+    public static void pauseBoss(LivingEntity boss) {
+        if (!is(boss)) {
+            return;
+        }
+        PowerData data = boss.getData(ModAttachments.POWER);
+        data.oniRegenCutUntil = Math.max(data.oniRegenCutUntil, boss.level().getGameTime() + BOSS_HIT_PAUSE);
     }
 
     private static boolean set(LivingEntity entity, Holder<Attribute> attribute, ResourceLocation id, double amount) {
