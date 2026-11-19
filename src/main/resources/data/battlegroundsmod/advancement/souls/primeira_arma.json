@@ -76,16 +76,6 @@
         ]
       }
     },
-    "zanpakuto": {
-      "trigger": "minecraft:inventory_changed",
-      "conditions": {
-        "items": [
-          {
-            "items": "battlegroundsmod:zanpakuto"
-          }
-        ]
-      }
-    },
     "espada_nichirin": {
       "trigger": "minecraft:inventory_changed",
       "conditions": {
@@ -105,7 +95,6 @@
       "dedo_sukuna",
       "venda_gojo",
       "lanca_invertida",
-      "zanpakuto",
       "espada_nichirin"
     ]
   ]
