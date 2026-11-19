@@ -117,11 +117,29 @@ final class IntroScript {
             placer.cancel();
             placer = null;
         }
+        SoulBoss gojo = ally();
+        if (gojo != null) {
+            com.starkinhon.battlegroundsmod.power.powers.duel.DomainDuel.GOJO_WINS.remove(gojo.getUUID());
+            com.starkinhon.battlegroundsmod.power.powers.gojo.InfiniteVoid.cancel(gojo);
+            gojo.discard();
+        }
+        ally = null;
         SoulBoss boss = boss();
         if (boss != null) {
             boss.discard();
         }
         enemy = null;
+    }
+
+    // Gojo, who walks with the player in Shibuya (not an enemy).
+    private UUID ally;
+
+    private SoulBoss ally() {
+        if (ally == null || level == null) {
+            return null;
+        }
+        Entity e = level.getEntity(ally);
+        return e instanceof SoulBoss b && b.isAlive() ? b : null;
     }
 
     // ---------------------------------------------------------------- building blocks
@@ -462,9 +480,7 @@ final class IntroScript {
         add(wait(40));
         add(leaveAct());
         actTwo();
-        // Os atos 3 (Shibuya) e o duelo entram aqui. Por enquanto a intro fecha no fim do Ato 2.
-        add(ui("logo", "", 0, 0));
-        add(wait(120));
+        actThree();
     }
 
     // The scene's enemy gone, the player out of combat (the white of the soul swap still on screen).
@@ -590,4 +606,156 @@ final class IntroScript {
     }
 
     private int stepCard = -1;
+
+    // ---------------------------------------------------------------- Ato 3: Shibuya, e o duelo
+
+    private static final int[] TIPS_AT = {8, 35, 60, 85};
+
+    private void actThree() {
+        add(build(2));
+        add(enter(2, "itadori", all("itadori"), 0));
+        add(spawnGojo());
+        add(ui("flash", "", 0, 0));
+        add(ui("title", "shibuya", 80, 0));
+        add(wait(40));
+        add(follow("siga_gojo"));
+        add(ui("goal", "", 0, 0));
+        add(ui("title", "metro", 60, 0));
+        add(wait(30));
+        add(build(3));
+        add(enter(3, "itadori", all("itadori"), 0));
+        add(intoMetro());
+        add(spawn(() -> ModEntities.SUKUNA.get(), 1f));
+        add(wait(30));
+        add(ui("say", "coincidencia", 70, 0));
+        add(wait(75));
+        add(ui("say", "licao", 70, 0));
+        add(wait(75));
+        add(ui("say", "so_eu", 70, 0));
+        add(wait(70));
+        add(duel());
+        // corta no branco do túnel, antes do Vazio Infinito aparecer
+        add(ui("flash", "", 1, 0));
+        add(wait(8));
+        add(leaveAct());
+        add(ui("logo", "", 0, 0));
+        add(wait(10));
+        add(ui("flash", "", 0, 0));
+        add(wait(130));
+    }
+
+    // Gojo a few steps ahead of the player, on the way to the far end of the crossing.
+    private Step spawnGojo() {
+        return (s, p, t) -> {
+            ArenaTemplate.Meta meta = ArenaTemplate.meta(ChallengeArenas.INTRO_ACTS.get(s.act));
+            int[] j = meta.jogador(), d = meta.desafiante();
+            Vec3 dir = new Vec3(d[0] - j[0], 0, d[2] - j[2]).normalize();
+            BlockPos at = BlockPos.containing(s.center.getX() + j[0] + 0.5 + dir.x * 4, s.center.getY() + j[1], s.center.getZ() + j[2] + 0.5 + dir.z * 4);
+            Entity e = ModEntities.GOJO.get().spawn(s.level, at, MobSpawnType.EVENT);
+            if (e instanceof SoulBoss gojo) {
+                gojo.setPersistenceRequired();
+                gojo.introHold = true;
+                gojo.introMoves = Set.of();
+                gojo.introFloor = 1f;
+                s.ally = gojo.getUUID();
+            }
+            return true;
+        };
+    }
+
+    // "Siga o Gojo": he walks to the far end, waiting whenever the player falls behind, and gives his tips on the way.
+    private Step follow(String goalId) {
+        return (s, p, t) -> {
+            SoulBoss gojo = s.ally();
+            if (gojo == null) {
+                return true;
+            }
+            ArenaTemplate.Meta meta = ArenaTemplate.meta(ChallengeArenas.INTRO_ACTS.get(s.act));
+            int[] j = meta.jogador(), d = meta.desafiante();
+            Vec3 from = Vec3.atBottomCenterOf(s.center.offset(j[0], j[1], j[2]));
+            Vec3 to = Vec3.atBottomCenterOf(s.center.offset(d[0], d[1], d[2]));
+            if (t == 0) {
+                s.used = 0;
+                Intro.ui(p, "goal", goalId, 0, 1);
+            }
+            double total = Math.max(1, from.distanceTo(to));
+            int pct = (int) Math.round(100 * Math.min(1, gojo.position().subtract(from).dot(to.subtract(from)) / (total * total)));
+            if (s.used < TIPS_AT.length && pct >= TIPS_AT[s.used]) {
+                Intro.ui(p, "say", "dica" + (s.used + 1), 110, 0);
+                s.used++;
+            }
+            boolean there = gojo.position().distanceTo(to) < 2.5;
+            if (p.distanceTo(gojo) > 9) {
+                gojo.getNavigation().stop();
+                gojo.getLookControl().setLookAt(p, 30, 30);
+            } else if (!there && (t % 10 == 0 || gojo.getNavigation().isDone())) {
+                gojo.getNavigation().moveTo(to.x, to.y, to.z, 0.55);
+            }
+            if (t > 2400 && !there) {
+                gojo.teleportTo(to.x, to.y, to.z);     // stuck on something: the scene goes on
+                return true;
+            }
+            return there && p.distanceTo(gojo) < 9;
+        };
+    }
+
+    // Down in the station: Gojo next to the player, facing Sukuna's side.
+    private Step intoMetro() {
+        return (s, p, t) -> {
+            SoulBoss gojo = s.ally();
+            if (gojo != null) {
+                ArenaTemplate.Meta meta = ArenaTemplate.meta(ChallengeArenas.INTRO_ACTS.get(s.act));
+                int[] j = meta.jogador(), d = meta.desafiante();
+                Vec3 dir = new Vec3(d[0] - j[0], 0, d[2] - j[2]).normalize();
+                Vec3 at = Vec3.atBottomCenterOf(s.center.offset(j[0], j[1], j[2])).add(dir.scale(6));
+                gojo.getNavigation().stop();
+                gojo.teleportTo(at.x, at.y, at.z);
+            }
+            return true;
+        };
+    }
+
+    // The Duelo de Expansões, Gojo against Sukuna (both held: only the domains). Gojo always wins it here; done a
+    // moment after the result, with the Santuário falling and the tunnel going white.
+    private Step duel() {
+        return (s, p, t) -> {
+            SoulBoss gojo = s.ally(), sukuna = s.boss();
+            if (gojo == null || sukuna == null || t > 1800) {
+                return true;
+            }
+            boolean fighting = com.starkinhon.battlegroundsmod.power.powers.duel.DomainDuel.fighting(gojo);
+            if (t == 0) {
+                com.starkinhon.battlegroundsmod.power.powers.duel.DomainDuel.GOJO_WINS.add(gojo.getUUID());
+                s.stepCast = -1;
+                s.stepCard = -1;
+                for (SoulBoss b : List.of(gojo, sukuna)) {
+                    PowerData data = b.powerData();
+                    data.ult = PowerData.MAX_ULT;
+                    data.cooldowns[PowerData.SLOT_ULT] = 0;
+                    data.busyTicks = 0;
+                }
+            }
+            if (s.stepCast < 0) {
+                if (PowerLogic.cast(gojo, PowerData.SLOT_ULT)) {
+                    s.stepCast = t;
+                }
+                return false;
+            }
+            // Sukuna answers on his own (a boss always does); if he hasn't by now, he does
+            if (!fighting && s.stepCard < 0 && t - s.stepCast == 30) {
+                sukuna.powerData().cooldowns[PowerData.SLOT_ULT] = 0;
+                PowerLogic.cast(sukuna, PowerData.SLOT_ULT);
+            }
+            if (fighting && s.stepCard < 0) {
+                s.stepCard = 0;          // the duel is on
+            }
+            if (s.stepCard == 0 && !fighting) {
+                s.stepCard = t;          // decided: Gojo won
+            }
+            if (s.stepCard < 0 && t - s.stepCast > 200) {
+                return true;             // no duel came: the scene ends here
+            }
+            return s.stepCard > 0 && t - s.stepCard >= 56;
+        };
+    }
 }
