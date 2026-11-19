@@ -34,11 +34,12 @@ import net.minecraft.world.phys.Vec3;
 // techniques: punches and dashes), and when the enemy uses a technique the card comes up on its warning, so the
 // player has time to read and then really react (Stark 2026-11-19).
 final class IntroScript {
-    // Madara's kit in the intro: only the Katon; the U opens the rest with these points (X, C, B, then the Meteoro).
-    // The Shift variants come awake with the soul (Stark: "shift" only changes a skill), so the Meteoro can open last.
+    // Madara's kit in the intro: only the Katon awake; the U opens all the rest, one point per skill, in the book's
+    // own order (X, C, B, the Shift variants, then the Meteoro and the Meteoro Duplo last). Nothing else comes awake
+    // already (Stark 2026-11-19: the Shift skills showed up open, and the B was counted on the wrong slot, so the goal
+    // stopped at 3 of 4 and the Meteoro Duplo never opened).
     private static final String MADARA = "uchiha_ghost";
-    private static final List<Integer> MADARA_START = List.of(0, PowerData.SLOT_SHIFT, PowerData.SLOT_SHIFT + 1, PowerData.SLOT_SHIFT + 2);
-    private static final List<Integer> MADARA_OPEN = List.of(1, 2, 4, PowerData.SLOT_ULT);
+    private static final List<Integer> MADARA_START = List.of(0);
     // Hashirama's slots (power/powers/hashirama/Hashirama)
     private static final int HS_STAKES = 1, HS_PRISON = 2, HS_DRAGON = 3, HS_LANCE = 4, HS_BUDDHA = PowerData.SLOT_SHIFT_ULT;
 
@@ -430,7 +431,8 @@ final class IntroScript {
 
     private void actOne() {
         add(build(0));
-        add(enter(0, MADARA, MADARA_START, MADARA_OPEN.size()));
+        List<Integer> open = all(MADARA).stream().filter(slot -> !MADARA_START.contains(slot)).toList();
+        add(enter(0, MADARA, MADARA_START, open.size()));
         add(spawnHashirama(1f));
         add(ui("title", "vale", 70, 0));
         add(wait(50));
@@ -459,11 +461,11 @@ final class IntroScript {
         add(fight("acerte_hashirama", 4));
         add(life(0.6f));
         add(card("alma"));
-        add(awaken("desperte", MADARA, MADARA_OPEN));
+        add(awaken("desperte", MADARA, open));
         add(life(0.58f));
         add(technique(HS_DRAGON, 12, "com_tudo"));
         add(wait(60));
-        add(useSkill("use_skills", Set.of(1, 2, 4, PowerData.SLOT_SHIFT + 1, PowerData.SLOT_SHIFT + 2), 2));
+        add(useSkill("use_skills", Set.of(1, 2, PowerData.SLOT_EXTRA, PowerData.SLOT_SHIFT, PowerData.SLOT_SHIFT + 1, PowerData.SLOT_SHIFT + 2), 2));
         // o Buda de Mil Mãos, e a troca de alma
         add(life(0.5f));
         add(technique(HS_BUDDHA, 0, null));
