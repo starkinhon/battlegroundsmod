@@ -265,5 +265,30 @@
     "sounds": [
       "battlegroundsmod:hanami_coracao"
     ]
+  },
+  "aldeia_arroz": {
+    "sounds": [
+      {
+        "name": "battlegroundsmod:aldeia_arroz",
+        "stream": true
+      }
+    ]
+  },
+  "aldeia_sapo": {
+    "sounds": [
+      "battlegroundsmod:aldeia_sapo1",
+      "battlegroundsmod:aldeia_sapo2",
+      "battlegroundsmod:aldeia_sapo3"
+    ]
+  },
+  "aldeia_higurashi": {
+    "sounds": [
+      "battlegroundsmod:aldeia_higurashi"
+    ]
+  },
+  "aldeia_bolha": {
+    "sounds": [
+      "battlegroundsmod:aldeia_bolha"
+    ]
   }
 }

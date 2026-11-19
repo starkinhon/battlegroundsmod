@@ -29,7 +29,8 @@ import net.neoforged.neoforge.client.event.ViewportEvent;
 // way: no textures, every mote its own size, tone, spin and path, easing in when the player walks in (BiomeAura) and out
 // when he leaves.
 // - Floresta Negra: dead leaves, dark spores, purple wisps of cursed energy rising; a short dark green fog.
-// - Aldeia Amaldiçoada: gnats in clouds by day, fireflies blinking by night, a white humid haze; crows overhead.
+// - Aldeia Amaldiçoada: only the crows overhead stay here; the fireflies, lanterns, gas, will-o'-wisps, fog and grade are
+//   AldeiaAirFx.
 // - Mar de Dagon: sea spray thrown up and falling back.
 // - Floresta de Hanami: only the golden pollen and the fireflies at night stay here (Stark: "eram bem bonitas"); the
 //   petals, sun flecks, pollen clouds, the Heart's beat, its fog and grade are HanamiAirFx.
@@ -92,10 +93,8 @@ public final class JujutsuAirFx {
                 new Air(Kind.MOTE, 220, cs("#2a3a2a", "#1e2a1e", "#3a4430"), 0.025, 0.05),
                 new Air(Kind.WISP, 40, cs("#9b4dff", "#7a3cc8", "#b46bff"), 0.08, 0.16)),
                 c("#1e2a1e"), 0.35f, 0.5f, 0.55f, 0, false)),
-        new State(new Mood("aldeia_amaldicoada", ModWorldgen.ALDEIA_AMALDICOADA, List.of(
-                new Air(Kind.GNAT, 140, cs("#1a1a14", "#2a2a20"), 0.02, 0.03),
-                new Air(Kind.FIREFLY, 90, cs("#d8ff6a", "#f0ff9a", "#b8ff4a"), 0.05, 0.08)),
-                c("#d8dcd8"), 0.25f, 0.1f, 0.7f, 6, false)),
+        new State(new Mood("aldeia_amaldicoada", ModWorldgen.ALDEIA_AMALDICOADA, List.of(),
+                null, 0, 0, 1, 6, false)),
         new State(new Mood("mar_de_dagon", ModWorldgen.MAR_DE_DAGON, List.of(
                 new Air(Kind.SPRAY, 70, cs("#e8f4f8", "#ffffff", "#c8e8f0"), 0.03, 0.05)),
                 null, 0, 0, 1, 0, false)),

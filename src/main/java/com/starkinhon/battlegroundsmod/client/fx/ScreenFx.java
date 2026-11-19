@@ -213,7 +213,7 @@ public final class ScreenFx {
     }
 
     static boolean needsScene() {
-        return PreviewFx.screenOn() || ColoniaAirFx.gradeOn() || ShibuyaAirFx.gradeOn() || KyotoAirFx.gradeOn() || TemploAirFx.gradeOn() || HanamiAirFx.gradeOn() || Realismo.active() || impact != null || !WARPS.isEmpty() || ticks - heldAt <= 1 || radial != null && radial.k(ticks) > 0 || heldBlur() > 0;
+        return PreviewFx.screenOn() || ColoniaAirFx.gradeOn() || ShibuyaAirFx.gradeOn() || KyotoAirFx.gradeOn() || TemploAirFx.gradeOn() || HanamiAirFx.gradeOn() || AldeiaAirFx.gradeOn() || Realismo.active() || impact != null || !WARPS.isEmpty() || ticks - heldAt <= 1 || radial != null && radial.k(ticks) > 0 || heldBlur() > 0;
     }
 
     // The level's camera for this frame, so world positions can be found on screen later (also from the GUI).
@@ -240,7 +240,8 @@ public final class ScreenFx {
         boolean kyoto = KyotoAirFx.gradeOn();
         boolean templo = TemploAirFx.gradeOn();
         boolean hanami = HanamiAirFx.gradeOn();
-        if (!warp && blur <= 0 && !real && !preview && !colonia && !shibuya && !kyoto && !templo && !hanami) {
+        boolean aldeia = AldeiaAirFx.gradeOn();
+        if (!warp && blur <= 0 && !real && !preview && !colonia && !shibuya && !kyoto && !templo && !hanami && !aldeia) {
             return;
         }
         FxPost.beginPasses();
@@ -273,6 +274,10 @@ public final class ScreenFx {
         if (hanami) {
             // the Floresta de Hanami's screen grade (green and gold by day, teal edges at night)
             HanamiAirFx.gradePass(levelPartial);
+        }
+        if (aldeia) {
+            // the Aldeia Amaldiçoada's screen grade (dull olive by day, cold teal edges at night)
+            AldeiaAirFx.gradePass(levelPartial);
         }
         if (preview) {
             // the combat flight page's screen (shockwave, speed lines, impact frame), last like on the page
