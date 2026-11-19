@@ -337,6 +337,10 @@
       "oni_comum",
       "oni_lua_inferior",
       "oni_espadachim"
+    ],
+    "fim_de_jogo": [
+      "hashirama",
+      "freeza_total"
     ]
   },
   "divinas": [

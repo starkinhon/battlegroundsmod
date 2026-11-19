@@ -1,0 +1,33 @@
+{
+  "parent": "battlegroundsmod:alvos/fim_de_jogo",
+  "display": {
+    "icon": {
+      "id": "battlegroundsmod:freeza_total_spawn_egg"
+    },
+    "title": {
+      "translate": "advancements.battlegroundsmod.alvos.vencer",
+      "with": [
+        {
+          "translate": "entity.battlegroundsmod.freeza_total"
+        }
+      ]
+    },
+    "description": {
+      "translate": "advancements.battlegroundsmod.alvos.freeza_total.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ]
+}

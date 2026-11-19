@@ -62,10 +62,10 @@ public final class Hashirama {
 
     public static Power create() {
         return new Power(ID, COLOR, 1.4f, List.of(
-                new Ability(240, 0, Hashirama::forest),
+                new Ability(900, 0, HsEpic::forest),
                 new Ability(150, 0, Hashirama::stakes),
                 new Ability(300, 0, Hashirama::prison),
-                new Ability(700, 0, Hashirama::dragon),
+                new Ability(900, 0, HsEpic::dragons),
                 new Ability(200, 0, Hashirama::lance)),
                 Arrays.asList(new Ability(520, 0, Hashirama::flowers), new Ability(320, 0, Hashirama::dome), null, new Ability(1300, 0, HsBuddha::summon), null));
     }

@@ -10,9 +10,11 @@ import java.util.UUID;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.starkinhon.battlegroundsmod.BattlegroundsMod;
 import com.starkinhon.battlegroundsmod.ModBlocks;
+import com.starkinhon.battlegroundsmod.ModEntities;
 import com.starkinhon.battlegroundsmod.ModItems;
 import com.starkinhon.battlegroundsmod.command.SoulCommand;
 import com.starkinhon.battlegroundsmod.item.NarutoLootItems;
+import com.starkinhon.battlegroundsmod.power.Tiers;
 import com.starkinhon.battlegroundsmod.power.powers.sub.SubCommon;
 import com.starkinhon.battlegroundsmod.world.NarutoSites;
 import com.starkinhon.battlegroundsmod.world.NarutoStructGen;
@@ -868,6 +870,9 @@ public final class NarutoActivities {
         if (side == null) {
             return false;
         }
+        if ("senju".equals(side) && Tiers.of(player) <= HASHIRAMA_TIER) {
+            return valeHashirama(player, level, site);
+        }
         long t = level.getDayTime() % 24000L;
         if (t < 11000 || t > 14000) {
             say(player, "selo_por_do_sol");
@@ -910,6 +915,42 @@ public final class NarutoActivities {
             title(player, "uchiha_titulo", "uchiha_sub", 0xD22A22);
         }
         level.playSound(null, pos, SoundEvents.BEACON_ACTIVATE, SoundSource.BLOCKS, 1f, 0.6f);
+        return true;
+    }
+
+    // Hashirama, the end-game boss (Stark 2026-11-19): a player of tier Universal or above who touches the Senju crest
+    // wakes the God of Shinobi himself instead of the wood clones. One at a time per valley, once a day per player; beaten
+    // there he drops the rare loot (boss/EndBossLoot) and the Alvos advancement.
+    private static final int HASHIRAMA_TIER = 2;
+
+    private static boolean valeHashirama(ServerPlayer player, ServerLevel level, NarutoSites.Site site) {
+        CompoundTag st = state(level, site);
+        if (st.hasUUID("hashirama") && level.getEntity(st.getUUID("hashirama")) instanceof LivingEntity alive && alive.isAlive()) {
+            say(player, "hashirama_ja");
+            return true;
+        }
+        if (!dailyFree(player, "souls_hashirama_dia")) {
+            say(player, "hashirama_amanha");
+            return true;
+        }
+        BlockPos lake = new BlockPos(site.x(), level.getHeight(Heightmap.Types.MOTION_BLOCKING, site.x(), site.z()), site.z());
+        BlockPos at = spotNear(level, lake, 3, 9);
+        Entity e = ModEntities.HASHIRAMA.get().spawn(level, at, MobSpawnType.EVENT);
+        if (e == null) {
+            return true;
+        }
+        dailyUse(player, "souls_hashirama_dia");
+        st.putUUID("hashirama", e.getUUID());
+        e.getPersistentData().putBoolean(com.starkinhon.battlegroundsmod.boss.EndBossLoot.WORLD_TAG, true);
+        if (e instanceof Mob mob) {
+            mob.setPersistenceRequired();
+            mob.setTarget(player);
+        }
+        level.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, e.getX(), e.getY(0.5), e.getZ(), 40, 1.2, 1.5, 1.2, 0.03);
+        level.sendParticles(ParticleTypes.HAPPY_VILLAGER, e.getX(), e.getY(0.5), e.getZ(), 60, 2.5, 2.0, 2.5, 0.1);
+        level.playSound(null, e.blockPosition(), SoundEvents.WARDEN_EMERGE, SoundSource.HOSTILE, 3f, 0.6f);
+        level.playSound(null, player.blockPosition(), SoundEvents.BEACON_ACTIVATE, SoundSource.BLOCKS, 1f, 0.5f);
+        title(player, "hashirama_titulo", "hashirama_sub", 0x7FD67A);
         return true;
     }
 

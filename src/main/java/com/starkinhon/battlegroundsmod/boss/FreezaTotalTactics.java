@@ -8,7 +8,8 @@ import net.minecraft.world.entity.LivingEntity;
 
 // How Freeza Poder Total fights (the approved page). Arrogant and cruel, he plays with whoever fights him:
 // - The Onda Imperial on whoever stays glued to him hitting (3 blows in 1.2 s): it is what stops "glue and beat" him.
-// - The Kienzan and the Rajada at mid range, the island on runners far off, the Blitz to punish whoever stands still.
+// - The Kienzan and the Rajada at mid range, the Ilha Colossal on runners far off, the Blitz to punish whoever stands still.
+// - From far off the Corte do Planeta and the Dois Dedos; at 100% the Death Ball (FzEpic, the end-game scale).
 // - At half his life: the Poder Total right away (muscles, Namek falling apart, the geysers); the Chuva de Ki only then.
 // - Tired (the clock running down) he skips turns and pants: patience is paid back.
 final class FreezaTotalTactics extends TacticsBase {
@@ -81,6 +82,21 @@ final class FreezaTotalTactics extends TacticsBase {
                 m *= isHeld ? 0.4 : 1;
             }
             case "chuva" -> m *= distance >= 6 ? 1.5 : 0.8;
+            // the end-game moves (FzEpic): the Death Ball only at 100%, the others from far enough to be dodged
+            case "death_ball" -> {
+                if (!FreezaTotal.inTotal(boss)) {
+                    return 0;
+                }
+                m *= distance >= 14 ? 1.8 : 0.4;
+            }
+            case "corte" -> {
+                m *= distance >= 12 ? 1.4 : 0.4;
+                m *= enemies >= 2 ? 1.3 : 1;
+            }
+            case "dedos" -> {
+                m *= distance >= 10 ? 1.3 : 0.3;
+                m *= isHeld || !fleeing ? 1.3 : 1;
+            }
             default -> {
             }
         }

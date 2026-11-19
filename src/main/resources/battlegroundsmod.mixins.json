@@ -9,6 +9,7 @@
     "CreativeScreenAccessor",
     "CreativeScreenMixin",
     "ItemInHandLayerMixin",
+    "InventoryScreenMixin",
     "ItemInHandRendererMixin",
     "LevelRendererMixin",
     "LivingEntityRendererMixin",
