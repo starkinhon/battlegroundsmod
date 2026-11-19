@@ -54,6 +54,10 @@ public final class Melee {
         if (com.starkinhon.battlegroundsmod.power.powers.luffy.Luffy.size(player) > 1.5) {
             buff *= 3;
         }
+        // Playful Cloud (a special grade cursed tool) hits harder than a bare fist in every melee move.
+        if (com.starkinhon.battlegroundsmod.item.PlayfulCloudItem.held(player)) {
+            buff *= com.starkinhon.battlegroundsmod.item.PlayfulCloudItem.DAMAGE_MULT;
+        }
         return power == null ? buff : power.meleeMultiplier() * buff;
     }
 

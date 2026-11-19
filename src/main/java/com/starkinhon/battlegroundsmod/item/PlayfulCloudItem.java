@@ -20,6 +20,8 @@ import net.minecraft.world.phys.Vec3;
 // Not a sword: fights with hand-to-hand "golpes" moves at 2x normal reach, and each hit throws the target far back.
 public class PlayfulCloudItem extends Item {
     public static final double REACH_MULT = 2.0;
+    // Melee damage over the bare fist (Melee.multiplier): a good weapon, held back by the 2x reach.
+    public static final float DAMAGE_MULT = 1.4f;
     private static final ResourceLocation REACH_MODIFIER_ID = ResourceLocation.fromNamespaceAndPath(
             BattlegroundsMod.MODID, "playful_cloud_reach");
 
