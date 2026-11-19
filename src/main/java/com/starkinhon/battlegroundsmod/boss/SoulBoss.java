@@ -58,6 +58,18 @@ public abstract class SoulBoss extends Monster {
     // and never drops its soul: the run puts the soul in the player itself.
     private int forcedTier = -1;
     private boolean dungeonFight;
+    // A fight of the Livro dos Desafios (challenge/ChallengeArenas, not the Dungeon): life against the player's curve.
+    private boolean challengeFight;
+    // How much more life a common challenger has than a player of the same tier: a small edge, the fight stays winnable.
+    private static final double CHALLENGE_EDGE = 1.15;
+
+    public void challengeFight() {
+        challengeFight = true;
+        if (configured && level() instanceof ServerLevel server) {
+            applyStats(server, spec());
+            setHealth(getMaxHealth());
+        }
+    }
 
     public void dungeonTier(int tier) {
         forcedTier = tier;
@@ -458,6 +470,16 @@ public abstract class SoulBoss extends Monster {
         if (!tier0Applied && !dungeonFight) {
             lifeScale *= com.starkinhon.battlegroundsmod.power.Tiers.health(ownTier) / com.starkinhon.battlegroundsmod.power.Tiers.legacyHealth(ownTier);
         }
+        // Livro dos Desafios: a common challenger (file life = its tier's old share, everyone but the chefes) has the life a
+        // PLAYER of the fight's tier has, times CHALLENGE_EDGE. The rescale above followed the tier curve, but a player gets
+        // only 20 + (curve - Tier 10's 65), so Kuririn at Tier 8 had 135 against the player's 90 (Stark, 2026-11-19). Damage
+        // already matches at the same tier (both sides scale by the tier; multDano 1). The chefes keep the life above:
+        // being 2,5x a fighter of their tier is what makes them chefes.
+        if (challengeFight && !tier0Applied && !dungeonFight
+                && atributos.vida() <= com.starkinhon.battlegroundsmod.power.Tiers.legacyHealth(ownTier) + 0.5) {
+            lifeScale = com.starkinhon.battlegroundsmod.power.Tiers.playerHealth(tier)
+                    / com.starkinhon.battlegroundsmod.power.Tiers.legacyHealth(ownTier) * CHALLENGE_EDGE;
+        }
         double maxLife = atributos.vida() * lifeScale;
         if (dungeonFight) {
             maxLife = Math.max(maxLife, Math.round(com.starkinhon.battlegroundsmod.power.Tiers.health(tier) * 0.50));
@@ -721,6 +743,7 @@ public abstract class SoulBoss extends Monster {
         tag.putInt("ArenaTier", arenaTier);
         tag.putInt("ForcedTier", forcedTier);
         tag.putBoolean("DungeonFight", dungeonFight);
+        tag.putBoolean("ChallengeFight", challengeFight);
     }
 
     @Override
@@ -732,6 +755,7 @@ public abstract class SoulBoss extends Monster {
         arenaTier = tag.contains("ArenaTier") ? tag.getInt("ArenaTier") : -1;
         forcedTier = tag.contains("ForcedTier") ? tag.getInt("ForcedTier") : -1;
         dungeonFight = tag.getBoolean("DungeonFight");
+        challengeFight = tag.getBoolean("ChallengeFight");
         if (configured && !level().isClientSide()) {
             // The bar's color is set when a phase starts: after a reload it was back to red until the next phase.
             try {

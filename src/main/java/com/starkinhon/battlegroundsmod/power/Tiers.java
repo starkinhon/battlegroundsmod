@@ -84,6 +84,13 @@ public final class Tiers {
         return list != null && tier < list.size() ? list.get(tier) : DEFAULT_HEALTH[tier];
     }
 
+    // A player's max health at this tier: vanilla's 20 plus what the tier adds over a human (apply). Tier 10 = 20, Tier 8 = 90.
+    public static double playerHealth(int tier) {
+        return PLAYER_BASE_HEALTH + health(tier) - health(HUMANO);
+    }
+
+    private static final double PLAYER_BASE_HEALTH = 20.0;
+
     // The share of a move's damage this attacker deals: scales linearly with its tier's health.
     public static float damageMultiplier(LivingEntity attacker) {
         return (float) (health(of(attacker)) / DAMAGE_HEALTH_REF);
