@@ -1,9 +1,0 @@
--Xmaxerrs
-100000
--d
-/tmp/claude-0/jc
--proc:none
--implicit:none
--sourcepath
-.
-com/starkinhon/battlegroundsmod/client/fx/KyotoAirFx.java
