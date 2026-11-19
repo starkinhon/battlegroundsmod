@@ -80,6 +80,10 @@ public final class SoulsBiomeSource extends BiomeSource {
                     ModWorldgen.FLORESTA_DE_HANAMI));
     // Bands up to this one are cold: their peaks are the Norte Gelado. Up to MILD_BANDS the seas are the Mar da Névoa.
     private static final int COLD_BANDS = 2;
+    // The rare ones (Stark 2026-11-19, "quero que ele apareça menos do que os outros"): the share of the Terras do
+    // Jogo's patches it keeps, and the humidity a warm sea needs to be the Mar de Dagon.
+    private static final double TERRAS_KEPT = 0.3;
+    private static final float DAGON_HUMIDITY = 0.3f;
     private static final int MILD_BANDS = 3;
 
     // The land's temperature (vanilla's noise) at every 5% of it, from 0% to 100%: the mean of six seeds, sampled over
@@ -198,7 +202,14 @@ public final class SoulsBiomeSource extends BiomeSource {
         double scale = CELL * TEMPERATURE_SCALE;
         int band = band(at(sampler.temperature(), (i + 0.5) * scale, (j + 0.5) * scale));
         long h = hash(salt, i, j, 3);
-        return new long[] {band, Long.remainderUnsigned(h, BANDS.get(band).size()), h};
+        List<ResourceKey<Biome>> list = BANDS.get(band);
+        int pick = (int) Long.remainderUnsigned(h, list.size());
+        if (list.get(pick) == ModWorldgen.TERRAS_DO_JOGO && unit(hash(salt, i, j, 11)) >= TERRAS_KEPT) {
+            // Rare (Stark 2026-11-19): most of the Terras do Jogo's patches go to another biome of the band; the other
+            // patches keep their pick, so nothing else moves
+            pick = (pick + 1 + (int) Long.remainderUnsigned(hash(salt, i, j, 12), list.size() - 1)) % list.size();
+        }
+        return new long[] {band, pick, h};
     }
 
     // The patch a block column belongs to: the nearest cell point to the column, the column bent by the weirdness noise.
@@ -275,7 +286,8 @@ public final class SoulsBiomeSource extends BiomeSource {
                 return holders.get(ModWorldgen.MAR_DA_NEVOA);
             }
             // warm seas: the Mar de Dagon where it is humid (the Jujutsu biomes, 2026-11-13), the Mar do Sul otherwise
-            return holders.get(Climate.unquantizeCoord(target.humidity()) >= 0.1f ? ModWorldgen.MAR_DE_DAGON : ModWorldgen.MAR_DO_SUL);
+            // (rare, Stark 2026-11-19: only the most humid warm seas; it took humidity 0.1 and up)
+            return holders.get(Climate.unquantizeCoord(target.humidity()) >= DAGON_HUMIDITY ? ModWorldgen.MAR_DE_DAGON : ModWorldgen.MAR_DO_SUL);
         }
         if (PEAKS.contains(key)) {
             return holders.get(band < COLD_BANDS ? ModWorldgen.NORTE_GELADO : ModWorldgen.PICOS_DO_DRAGAO);

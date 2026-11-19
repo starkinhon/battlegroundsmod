@@ -59,8 +59,8 @@ public final class JujutsuRegion extends Region {
     }
 
     // Each Jujutsu biome takes the vanilla biome it is the Japanese version of (2026-11-13, all ported): the swamps
-    // become the Aldeia Amaldiçoada, the warm seas and the hot beaches the Mar de Dagon, the dark forests the Floresta
-    // Negra, the jungles the Floresta de Hanami, the deserts, badlands and high savannas the Terras do Jogo, the low
+    // become the Aldeia Amaldiçoada, the warm seas and the hottest beaches the Mar de Dagon, the dark forests the Floresta
+    // Negra, the jungles the Floresta de Hanami, the badlands and windswept savannas the Terras do Jogo, the low
     // savannas the Colônia do Jogo do Abate, the plains Shibuya, the taigas the Outono de Kyoto, and the rest of the
     // temperate band (forests, birch woods, meadows) the Templos Antigos.
     private static ResourceKey<Biome> choose(Climate.ParameterPoint point, ResourceKey<Biome> vanilla) {
@@ -69,8 +69,8 @@ public final class JujutsuRegion extends Region {
         if (vanilla == Biomes.SWAMP || vanilla == Biomes.MANGROVE_SWAMP) {
             return ModWorldgen.ALDEIA_AMALDICOADA;
         }
-        if (vanilla == Biomes.WARM_OCEAN || vanilla == Biomes.LUKEWARM_OCEAN || vanilla == Biomes.DEEP_LUKEWARM_OCEAN
-                || vanilla == Biomes.BEACH && t >= 3) {
+        // Rare (Stark 2026-11-19): only the hottest seas and their beaches; the lukewarm seas stay vanilla.
+        if (vanilla == Biomes.WARM_OCEAN || vanilla == Biomes.BEACH && t >= 4) {
             return ModWorldgen.MAR_DE_DAGON;
         }
         if (NOT_LAND.contains(vanilla) || MOUNTAINS.contains(vanilla)) {
@@ -82,8 +82,10 @@ public final class JujutsuRegion extends Region {
         if (vanilla == Biomes.JUNGLE || vanilla == Biomes.SPARSE_JUNGLE || vanilla == Biomes.BAMBOO_JUNGLE) {
             return ModWorldgen.FLORESTA_DE_HANAMI;
         }
-        if (vanilla == Biomes.DESERT || vanilla == Biomes.BADLANDS || vanilla == Biomes.ERODED_BADLANDS
-                || vanilla == Biomes.WOODED_BADLANDS || vanilla == Biomes.SAVANNA_PLATEAU || vanilla == Biomes.WINDSWEPT_SAVANNA) {
+        // Rare (Stark 2026-11-19): only the badlands and the windswept savannas; the deserts and the savanna plateaus
+        // (most of what it took) stay vanilla.
+        if (vanilla == Biomes.BADLANDS || vanilla == Biomes.ERODED_BADLANDS || vanilla == Biomes.WOODED_BADLANDS
+                || vanilla == Biomes.WINDSWEPT_SAVANNA) {
             return ModWorldgen.TERRAS_DO_JOGO;
         }
         if (vanilla == Biomes.SAVANNA) {
