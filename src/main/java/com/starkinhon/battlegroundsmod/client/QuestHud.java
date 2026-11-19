@@ -261,6 +261,11 @@ public final class QuestHud {
         if (m == null || m == here || !id.isEmpty() && (id.equals(t) || id.startsWith(t + "_"))) {
             return;
         }
+        // done (for good or for today): gone at once, the server drops the tracking on its next sync
+        String state = Journal.entry(t).state();
+        if (state.equals("concluida") || state.equals("feita")) {
+            return;
+        }
         int pw = 148;
         Px.hudVeil(4, y, pw, 22, rgb(90, 80, 110), 0.6f, true);
         SkinDraw.head(m.skin(), 14, y + 11, 1, 0xFFFFFFFF);
