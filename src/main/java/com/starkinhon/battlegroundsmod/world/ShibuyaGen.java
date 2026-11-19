@@ -1149,6 +1149,16 @@ public final class ShibuyaGen {
                 }
             }
         }
+        // the station's post at each entrance (Stark 2026-11-19: the metro was too hard to find): a pole of 4 with the
+        // lit metro sign on top, on the sidewalk row between the opening and the curb, seen down the avenue day and night
+        for (int q = 0; q < 2; q++) {
+            int x = q == 0 ? 30 : -30, z = q == 0 ? c + 7 : c - 8;
+            for (int y = 1; y <= 4; y++) {
+                w.force(ox + x, y, z, POLE);
+            }
+            w.force(ox + x, 5, z, METRO_SIGN);
+            w.force(ox + x, 6, z, METRO_SIGN);
+        }
 
         // the lining: all stone touching the void becomes tile, floor, ceiling or tunnel concrete
         List<int[]> lining = new ArrayList<>();
