@@ -161,20 +161,34 @@ public final class MistSeaFx {
                 b.lx = b.x;
             }
             b.x += b.v * 0.05;
-            // a bank over the neighbor biome's land melts away (and comes back over the sea)
-            b.sea = Mth.clamp(b.sea + (overSea(mc.level, Mth.floor(b.x), Mth.floor(b.z)) > 0 ? 0.02 : -0.02), 0, 1);
-            // keep them around the player: the ones left behind come back on the other side
+            // a bank over the neighbor biome's land melts away (and comes back over the sea); over a chunk not loaded yet
+            // it stays as it is (it used to melt there and come back once the chunk arrived)
+            int over = overSea(mc.level, Mth.floor(b.x), Mth.floor(b.z));
+            if (over >= 0) {
+                b.sea = Mth.clamp(b.sea + (over > 0 ? 0.02 : -0.02), 0, 1);
+            }
+            // keep them around the player: the ones left behind come back on the other side. They come back unseen
+            // (sea 0, and edge() is 0 out there), then show slowly: a bank used to jump from one side to the other at
+            // full strength, a big white cloud popping in and out of the horizon in one frame (Stark 2026-11-19, "a
+            // transição é cortada... parece que tá lagado").
+            boolean moved = false;
             if (b.x - p.x > SPAN) {
                 b.x -= SPAN * 2;
-                b.lx = b.x;
+                moved = true;
             } else if (p.x - b.x > SPAN) {
                 b.x += SPAN * 2;
-                b.lx = b.x;
+                moved = true;
             }
             if (b.z - p.z > SPAN) {
                 b.z -= SPAN * 2;
+                moved = true;
             } else if (p.z - b.z > SPAN) {
                 b.z += SPAN * 2;
+                moved = true;
+            }
+            if (moved) {
+                b.lx = b.x;
+                b.sea = 0;
             }
         }
     }
@@ -195,7 +209,10 @@ public final class MistSeaFx {
         Camera cam = event.getCamera();
         Vec3 camera = cam.getPosition();
         double sea = water(mc.level);
-        if (camera.y < sea - 6 || camera.y > sea + 120) {
+        // high over the sea (or down in it) the mist thins out over some blocks: it used to vanish all at once at 120
+        // blocks up, which flying over the sea looked like a cut
+        fade *= (float) (Mth.clamp((sea + 120 - camera.y) / 40, 0, 1) * Mth.clamp((camera.y - (sea - 6)) / 4, 0, 1));
+        if (fade <= 0.001f) {
             return;
         }
         float light = 0.3f + 0.7f * mc.level.getSkyDarken(partial);
@@ -301,7 +318,7 @@ public final class MistSeaFx {
             double x = Mth.lerp(partial, k.lx, k.x), y = sea + k.y, z = k.z;
             double dx = x - camera.x, dy = y - camera.y, dz = z - camera.z;
             double d = Math.sqrt(dx * dx + dy * dy + dz * dz);
-            float a = (float) (k.a * k.sea * (0.15 + 0.85 * m) * Mth.clamp((d - 8) / 20, 0, 1)) * fade;
+            float a = (float) (k.a * k.sea * edge(x - camera.x, z - camera.z) * (0.15 + 0.85 * m) * Mth.clamp((d - 8) / 20, 0, 1)) * fade;
             if (a <= 0.003f) {
                 continue;
             }
@@ -323,6 +340,13 @@ public final class MistSeaFx {
                 out.addVertex(last, cx + p1[0], cy + p1[1], cz + p1[2]).setColor(r, g, b, a * 0.45f);
             }
         }
+    }
+
+    // How much of a bank shows by how far it is in the square it lives in around the player: all of it inside, nothing
+    // at the edge, where it goes over to the other side.
+    private static double edge(double dx, double dz) {
+        double out = Math.max(Math.abs(dx), Math.abs(dz));
+        return smoothstep(SPAN, SPAN - 40, out);
     }
 
     private static float[] ring(org.joml.Vector3f l, org.joml.Vector3f u, double ang, double hw, double hh, double k) {

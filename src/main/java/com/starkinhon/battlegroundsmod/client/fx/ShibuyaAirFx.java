@@ -58,6 +58,9 @@ public final class ShibuyaAirFx {
     static float night;
     private static double gust, wx = 1, wz, time;
     static boolean underground;
+    // underground eased: 0 in the street, 1 down in the station. The fog and the screen used to switch from the street's to
+    // the metro's in one frame on the stairs (a cut).
+    private static float under, lastUnder;
 
     private static final class Puff {
         ShibuyaScan.Vent v;
@@ -142,6 +145,7 @@ public final class ShibuyaAirFx {
     public static void onClientTick(ClientTickEvent.Post event) {
         Minecraft mc = Minecraft.getInstance();
         lastStrength = strength;
+        lastUnder = under;
         if (mc.level == null || mc.player == null) {
             reset();
             ShibuyaScan.clear();
@@ -171,6 +175,7 @@ public final class ShibuyaAirFx {
         ShibuyaScan.tick(level, p.x, p.z);
         underground = ShibuyaScan.station && mc.player.getEyeY() < ShibuyaScan.stCity - 2.5
                 && Math.abs(p.z - ShibuyaScan.stC) < 16 && Math.abs(p.x - ShibuyaScan.stOx) < 120;
+        under = Mth.clamp(under + (underground ? 0.06f : -0.06f), 0, 1);
         ShibuyaMetro.tick(level, mc.player);
         double t = time, g = gust;
         // each sign's flicker
@@ -1292,9 +1297,8 @@ public final class ShibuyaAirFx {
         if (sh == null || fade <= 0.001f) {
             return;
         }
-        // 0 day, 1 night, 2 metro
-        float mode = underground ? 2 : night > 0.5f ? 1 : 0;
-        sh.safeGetUniform("Mode").set(mode);
+        // Mode: how far down in the metro, 0 to 1 (the shader blends day, night and metro: no switch at dusk or on the stairs)
+        sh.safeGetUniform("Mode").set(Mth.lerp(partial, lastUnder, under));
         sh.safeGetUniform("Night").set(night);
         sh.safeGetUniform("Fade").set(fade);
         FxPost.pass(sh);
@@ -1307,16 +1311,10 @@ public final class ShibuyaAirFx {
         if (fade <= 0.001f) {
             return;
         }
-        float r, g, b;
-        if (underground) {
-            r = 0x1c / 255f;
-            g = 0x1f / 255f;
-            b = 0x24 / 255f;
-        } else {
-            r = Mth.lerp(night, 0xc9 / 255f, 0x2c / 255f);
-            g = Mth.lerp(night, 0xc3 / 255f, 0x20 / 255f);
-            b = Mth.lerp(night, 0xab / 255f, 0x38 / 255f);
-        }
+        float u = Mth.lerp((float) event.getPartialTick(), lastUnder, under);
+        float r = Mth.lerp(u, Mth.lerp(night, 0xc9 / 255f, 0x2c / 255f), 0x1c / 255f);
+        float g = Mth.lerp(u, Mth.lerp(night, 0xc3 / 255f, 0x20 / 255f), 0x1f / 255f);
+        float b = Mth.lerp(u, Mth.lerp(night, 0xab / 255f, 0x38 / 255f), 0x24 / 255f);
         event.setRed(Mth.lerp(fade, event.getRed(), r));
         event.setGreen(Mth.lerp(fade, event.getGreen(), g));
         event.setBlue(Mth.lerp(fade, event.getBlue(), b));
@@ -1327,7 +1325,8 @@ public final class ShibuyaAirFx {
         if (fade <= 0.001f || event.getMode() != FogRenderer.FogMode.FOG_TERRAIN) {
             return;
         }
-        float near = underground ? 40 : Mth.lerp(night, 40f, 34f), far = underground ? 190 : Mth.lerp(night, 260f, 240f);
+        float u = Mth.lerp((float) event.getPartialTick(), lastUnder, under);
+        float near = Mth.lerp(u, Mth.lerp(night, 40f, 34f), 40f), far = Mth.lerp(u, Mth.lerp(night, 260f, 240f), 190f);
         event.setNearPlaneDistance(Mth.lerp(fade, event.getNearPlaneDistance(), Math.min(event.getNearPlaneDistance(), near)));
         event.setFarPlaneDistance(Mth.lerp(fade, event.getFarPlaneDistance(), Math.min(event.getFarPlaneDistance(), far)));
         event.setCanceled(true);
