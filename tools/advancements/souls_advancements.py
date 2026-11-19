@@ -72,7 +72,6 @@ WEAPONS = [
     ("dedo_sukuna", "dedo_sukuna", "Um dos Vinte", "Consiga um Dedo do Sukuna", "One of Twenty", "Get one of Sukuna's Fingers"),
     ("venda_gojo", "venda_gojo", "Olhos Vendados", "Consiga a Venda do Gojo", "Blindfolded", "Get Gojo's Blindfold"),
     ("lanca_invertida", "lanca_invertida", "Lança Celestial Invertida", "Consiga a Lança Invertida", "Inverted Spear of Heaven", "Get the Inverted Spear of Heaven"),
-    ("zanpakuto", "zanpakuto", "Desperte, Zanpakutō", "Consiga uma Zanpakutō", "Awaken, Zanpakuto", "Get a Zanpakuto"),
     ("espada_nichirin", "espada_nichirin", "Lâmina Nichirin", "Consiga uma Espada Nichirin", "Nichirin Blade", "Get a Nichirin Sword"),
 ]
 adv("primeira_arma", "root", B + "espada_z", "task",

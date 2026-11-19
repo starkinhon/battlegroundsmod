@@ -382,8 +382,6 @@ public final class ModItems {
             com.starkinhon.battlegroundsmod.item.SoulCandyItem::new, new Item.Properties().rarity(Rarity.UNCOMMON));
     public static final DeferredItem<com.starkinhon.battlegroundsmod.item.HollowMaskItem> HOLLOW_MASK = BattlegroundsMod.ITEMS.registerItem("mascara_hollow",
             com.starkinhon.battlegroundsmod.item.HollowMaskItem::new, new Item.Properties().rarity(Rarity.RARE));
-    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.ZanpakutoItem> ZANPAKUTO = BattlegroundsMod.ITEMS.registerItem("zanpakuto",
-            com.starkinhon.battlegroundsmod.item.ZanpakutoItem::new, new Item.Properties().rarity(Rarity.EPIC));
     public static final DeferredItem<com.starkinhon.battlegroundsmod.item.NichirinSwordItem> NICHIRIN_SWORD = BattlegroundsMod.ITEMS.registerItem("espada_nichirin",
             com.starkinhon.battlegroundsmod.item.NichirinSwordItem::new, new Item.Properties().rarity(Rarity.EPIC));
     public static final DeferredItem<com.starkinhon.battlegroundsmod.item.WisteriaItem> WISTERIA = BattlegroundsMod.ITEMS.registerItem("flor_glicinia",

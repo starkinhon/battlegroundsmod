@@ -52,7 +52,6 @@ public final class BleachWorld {
         switch (BuiltInRegistries.ENTITY_TYPE.getKey(victim.getType()).getPath()) {
             case "hollow" -> chance(level, victim, new ItemStack(ModItems.SOUL_CANDY.get()), 0.06);
             case "arrancar" -> chance(level, victim, new ItemStack(ModItems.HOLLOW_MASK.get()), 0.03);
-            case "menos_grande" -> chance(level, victim, new ItemStack(ModItems.ZANPAKUTO.get()), 0.02);
             default -> {
             }
         }
