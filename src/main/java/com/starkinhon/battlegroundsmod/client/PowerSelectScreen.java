@@ -775,7 +775,12 @@ public class PowerSelectScreen extends Screen {
         List<Component> tip = null;
         List<FormattedCharSequence> desc = font.split(s.description(), w - 16);
         int dl = Math.min(6, desc.size());
-        List<Integer> skills = SoulSync.skills(s);
+        List<Integer> skills = new ArrayList<>(SoulSync.skills(s));
+        int counted = skills.size();
+        // what a master teaches on top of the soul (Senhor Kaioh: Goku's B and Shift+V), shown after the rest
+        for (int slot : SoulSync.taughtSlots(s)) {
+            skills.add(slot);
+        }
         int per = Math.min(5, skills.size());
         int rows = (skills.size() + per - 1) / per;
         int h = 66 + dl * 9 + rows * 32 + 48;
@@ -844,8 +849,9 @@ public class PowerSelectScreen extends Screen {
         for (int i = 0; i < skills.size(); i++) {
             int slot = skills.get(i);
             int sx = gx + (i % per) * sw, sy = yy + (i / per) * (sw + 8);
-            boolean awake = !gated || slot == 0 || e.has(slot);
-            if (awake) {
+            boolean master = SoulSync.taught(s, slot);
+            boolean awake = master ? !gated || SoulSync.knowsTaught(minecraft.player) : !gated || slot == 0 || e.has(slot);
+            if (awake && !master) {
                 awakeCount++;
             }
             boolean next = gated && !awake && isCur && SoulSync.canAwaken(minecraft.player, s, slot);
@@ -917,7 +923,10 @@ public class PowerSelectScreen extends Screen {
                     });
                     tip.add(Component.literal(sb.toString()).withStyle(st -> st.withColor(0xCDC6DC)));
                 }
-                if (!awake) {
+                if (master) {
+                    tip.add(Component.translatable(awake ? "screen.battlegroundsmod.soul_book.taught_kaioh" : "screen.battlegroundsmod.soul_book.locked_kaioh")
+                            .withStyle(st -> st.withColor(awake ? 0xFFD84A : 0xFF6060)));
+                } else if (!awake) {
                     String key = next ? "screen.battlegroundsmod.soul_book.click_awaken"
                             : !isCur ? "screen.battlegroundsmod.soul_book.locked_wear"
                             : PowerData.isUlt(slot) ? "screen.battlegroundsmod.soul_book.locked_ult"
@@ -930,7 +939,7 @@ public class PowerSelectScreen extends Screen {
             }
         }
         yy += rows * (sw + 8) + 2;
-        GuiDraw.centeredText(g, font, Component.translatable("screen.battlegroundsmod.soul_book.awake_count", awakeCount, skills.size()),
+        GuiDraw.centeredText(g, font, Component.translatable("screen.battlegroundsmod.soul_book.awake_count", awakeCount, counted),
                 x + w / 2f, yy, 0.75f, 0xFF9C93B4, false);
 
         // hold-to-absorb button

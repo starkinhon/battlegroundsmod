@@ -910,6 +910,32 @@ public final class ChallengeArenas {
                     name(session.id), RETURN_DELAY / 20), false);
             Fx.sound(player.serverLevel(), player.position(), SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, 1f, 1f);
         }
+        // Goku's arena (the Kaioh planet): Senhor Kaioh comes to train whoever won wearing Goku's soul; the return waits.
+        ServerLevel arena = server.getLevel(session.arena);
+        if (arena != null && "goku".equals(session.id)) {
+            List<ServerPlayer> winners = new ArrayList<>();
+            for (UUID id : session.members) {
+                ServerPlayer player = server.getPlayerList().getPlayer(id);
+                if (player != null && player.level() == arena) {
+                    winners.add(player);
+                }
+            }
+            int hold = com.starkinhon.battlegroundsmod.universe.KaiohTraining.arenaWon(arena, spawnPos(session), winners);
+            if (hold > 0) {
+                session.doneAt = Math.max(session.doneAt, now + hold);
+            }
+        }
+    }
+
+    // A won arena's wait before going back (Senhor Kaioh's training): at least ticks from now, or (shorten) exactly that.
+    public static void holdReturn(ServerPlayer player, int ticks, boolean shorten) {
+        Session session = SESSIONS.get(player.getUUID());
+        if (session == null || session.state != State.DONE) {
+            return;
+        }
+        ServerLevel arena = player.server.getLevel(session.arena);
+        long now = arena != null ? arena.getGameTime() : player.server.overworld().getGameTime();
+        session.doneAt = shorten ? Math.min(session.doneAt, now + ticks) : Math.max(session.doneAt, now + ticks);
     }
 
     // One more win against this challenger and, when it was faster, the new best time (the book's medals).
