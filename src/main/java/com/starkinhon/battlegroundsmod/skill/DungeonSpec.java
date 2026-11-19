@@ -12,7 +12,7 @@ import java.util.Random;
 // vidas: deaths a run can take (a death restarts the fight); vidasMax: the most the "Vida extra" choice can raise it to.
 // contagemSegundos: the wait before each fight. efeitoMax: the most levels the Forca and Resistencia choices stack.
 // ascensaoMax: the most tiers the "Ascensao" choice can put the player above the fight's tier. opcoesPorEscolha: how many
-// choices are offered after each win (the pool is in challenge/Dungeon.OPTIONS).
+// choices are offered after each win (the pool is in challenge/Dungeon.NORMAL and CHAOS; efeitoMax and ascensaoMax are no longer used: the stat cards are gone).
 // embaralhar (per etapa): the characters of all the etapas that have it are drawn again, at random, at the start of every run, so
 // no two runs have the same order (the SubAlmas are marked, the divine souls are not and stay at the end, in order). The tier
 // belongs to the POSITION, not to the character: whoever falls on an etapa fights there at that etapa's tier (sorteio()).

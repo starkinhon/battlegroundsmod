@@ -311,10 +311,11 @@ public final class ModPayloads {
         }
     }
 
-    public record DungeonPick(int index) implements CustomPacketPayload {
+    // index: the card picked of the offer; arg: its second choice (the key stolen, the soul chosen), -1 when it has none.
+    public record DungeonPick(int index, int arg) implements CustomPacketPayload {
         public static final Type<DungeonPick> TYPE = payloadType("dungeon_pick");
         public static final StreamCodec<ByteBuf, DungeonPick> STREAM_CODEC = StreamCodec.composite(
-                ByteBufCodecs.VAR_INT, DungeonPick::index, DungeonPick::new);
+                ByteBufCodecs.VAR_INT, DungeonPick::index, ByteBufCodecs.VAR_INT, DungeonPick::arg, DungeonPick::new);
 
         @Override
         public Type<DungeonPick> type() {
@@ -322,18 +323,68 @@ public final class ModPayloads {
         }
     }
 
-    // Server -> client: after a win, the cards to pick from (ids of Dungeon.OPTIONS), the lives left, the fights won of total, the
-    // name of the soul the player carries now, and the name of the boss's soul on offer ("" when there is none: then only the cards).
-    public record DungeonChoices(List<String> ids, int lives, int won, int total, String soul, String offer) implements CustomPacketPayload {
+    // Client -> server: the mode of the run for this player (Normal or Caos), answered once on arriving in the first arena.
+    public record DungeonMode(boolean chaos) implements CustomPacketPayload {
+        public static final Type<DungeonMode> TYPE = payloadType("dungeon_mode");
+        public static final StreamCodec<ByteBuf, DungeonMode> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.BOOL, DungeonMode::chaos, DungeonMode::new);
+
+        @Override
+        public Type<DungeonMode> type() {
+            return TYPE;
+        }
+    }
+
+    // Server -> client: pick the mode (opens the screen on the arena): the run's lives, fights and players.
+    public record DungeonModeAsk(int lives, int total, int group) implements CustomPacketPayload {
+        public static final Type<DungeonModeAsk> TYPE = payloadType("dungeon_mode_ask");
+        public static final StreamCodec<ByteBuf, DungeonModeAsk> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, DungeonModeAsk::lives, ByteBufCodecs.VAR_INT, DungeonModeAsk::total, ByteBufCodecs.VAR_INT,
+                DungeonModeAsk::group, DungeonModeAsk::new);
+
+        @Override
+        public Type<DungeonModeAsk> type() {
+            return TYPE;
+        }
+    }
+
+    // Server -> client: after a win, what this player chooses now. offer = the soul (power id) to absorb or refuse first ("" none:
+    // then ids are the cards, from Dungeon.NORMAL / Dungeon.CHAOS). soul = the soul the player carries (power id, "" none),
+    // boss = the soul of the character just beaten (the Caos card that steals a skill takes from it), beaten = the souls the
+    // "Alma Escolhida" card offers, bonus = an extra card won with "Dobro ou Nada".
+    public record DungeonChoices(boolean chaos, List<String> ids, int lives, int won, int total, String soul, String offer, String boss,
+            List<String> beaten, boolean bonus) implements CustomPacketPayload {
         public static final Type<DungeonChoices> TYPE = payloadType("dungeon_choices");
-        public static final StreamCodec<ByteBuf, DungeonChoices> STREAM_CODEC = StreamCodec.composite(
-                ByteBufCodecs.STRING_UTF8.apply(ByteBufCodecs.list()), DungeonChoices::ids, ByteBufCodecs.VAR_INT, DungeonChoices::lives,
-                ByteBufCodecs.VAR_INT, DungeonChoices::won, ByteBufCodecs.VAR_INT, DungeonChoices::total,
-                ByteBufCodecs.STRING_UTF8, DungeonChoices::soul, ByteBufCodecs.STRING_UTF8, DungeonChoices::offer,
-                DungeonChoices::new);
+        public static final StreamCodec<ByteBuf, DungeonChoices> STREAM_CODEC = StreamCodec.of((buf, p) -> {
+            ByteBufCodecs.BOOL.encode(buf, p.chaos());
+            ByteBufCodecs.STRING_UTF8.apply(ByteBufCodecs.list()).encode(buf, p.ids());
+            ByteBufCodecs.VAR_INT.encode(buf, p.lives());
+            ByteBufCodecs.VAR_INT.encode(buf, p.won());
+            ByteBufCodecs.VAR_INT.encode(buf, p.total());
+            ByteBufCodecs.STRING_UTF8.encode(buf, p.soul());
+            ByteBufCodecs.STRING_UTF8.encode(buf, p.offer());
+            ByteBufCodecs.STRING_UTF8.encode(buf, p.boss());
+            ByteBufCodecs.STRING_UTF8.apply(ByteBufCodecs.list()).encode(buf, p.beaten());
+            ByteBufCodecs.BOOL.encode(buf, p.bonus());
+        }, buf -> new DungeonChoices(ByteBufCodecs.BOOL.decode(buf), ByteBufCodecs.STRING_UTF8.apply(ByteBufCodecs.list()).decode(buf),
+                ByteBufCodecs.VAR_INT.decode(buf), ByteBufCodecs.VAR_INT.decode(buf), ByteBufCodecs.VAR_INT.decode(buf),
+                ByteBufCodecs.STRING_UTF8.decode(buf), ByteBufCodecs.STRING_UTF8.decode(buf), ByteBufCodecs.STRING_UTF8.decode(buf),
+                ByteBufCodecs.STRING_UTF8.apply(ByteBufCodecs.list()).decode(buf), ByteBufCodecs.BOOL.decode(buf)));
 
         @Override
         public Type<DungeonChoices> type() {
+            return TYPE;
+        }
+    }
+
+    // Server -> client: the keys of this player that run another soul's skill (power/SkillSwap), "slot:power:slot".
+    public record SyncSkillSwaps(List<String> entries) implements CustomPacketPayload {
+        public static final Type<SyncSkillSwaps> TYPE = payloadType("sync_skill_swaps");
+        public static final StreamCodec<ByteBuf, SyncSkillSwaps> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.STRING_UTF8.apply(ByteBufCodecs.list()), SyncSkillSwaps::entries, SyncSkillSwaps::new);
+
+        @Override
+        public Type<SyncSkillSwaps> type() {
             return TYPE;
         }
     }
@@ -2312,7 +2363,7 @@ public final class ModPayloads {
         }));
         registrar.playToServer(DungeonPick.TYPE, DungeonPick.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer player) {
-                com.starkinhon.battlegroundsmod.challenge.Dungeon.pick(player, payload.index());
+                com.starkinhon.battlegroundsmod.challenge.Dungeon.pick(player, payload.index(), payload.arg());
             }
         }));
         registrar.playToServer(DungeonSoul.TYPE, DungeonSoul.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
@@ -2321,8 +2372,16 @@ public final class ModPayloads {
             }
         }));
         registrar.playToClient(DungeonChoices.TYPE, DungeonChoices.STREAM_CODEC, (payload, context) -> context.enqueueWork(
-                () -> com.starkinhon.battlegroundsmod.client.DungeonChoiceScreen.open(payload.ids(), payload.lives(), payload.won(),
-                        payload.total(), payload.soul(), payload.offer())));
+                () -> com.starkinhon.battlegroundsmod.client.DungeonChoiceScreen.choices(payload)));
+        registrar.playToClient(DungeonModeAsk.TYPE, DungeonModeAsk.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> com.starkinhon.battlegroundsmod.client.DungeonChoiceScreen.mode(payload)));
+        registrar.playToServer(DungeonMode.TYPE, DungeonMode.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
+            if (context.player() instanceof ServerPlayer player) {
+                com.starkinhon.battlegroundsmod.challenge.Dungeon.mode(player, payload.chaos());
+            }
+        }));
+        registrar.playToClient(SyncSkillSwaps.TYPE, SyncSkillSwaps.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> com.starkinhon.battlegroundsmod.power.SkillSwap.receive(payload.entries())));
         registrar.playToClient(OpenUniverses.TYPE, OpenUniverses.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.openUniverses(payload.first())));
         registrar.playToServer(PickUniverse.TYPE, PickUniverse.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {

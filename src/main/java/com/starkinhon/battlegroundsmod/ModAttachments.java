@@ -82,6 +82,12 @@ public final class ModAttachments {
             () -> AttachmentType.builder(() -> com.starkinhon.battlegroundsmod.challenge.Dungeon.Backup.EMPTY)
                     .serialize(com.starkinhon.battlegroundsmod.challenge.Dungeon.Backup.CODEC).copyOnDeath().build());
 
+    // The Dungeon's Modo Caos (power/SkillSwap): the keys of this player that run a skill of ANOTHER soul ("slot:power:slot").
+    // Only while a run is on: cleared when it starts and when the real character comes back (Dungeon.putBack). Saved, so a
+    // crash in the middle of a run still clears them at the next login with the rest of the run.
+    public static final Supplier<AttachmentType<java.util.List<String>>> SKILL_SWAPS = ATTACHMENT_TYPES.register("dungeon_skill_swaps",
+            () -> AttachmentType.<java.util.List<String>>builder(() -> java.util.List.of()).serialize(Codec.STRING.listOf()).copyOnDeath().build());
+
     private ModAttachments() {
     }
 }

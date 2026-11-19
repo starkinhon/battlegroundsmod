@@ -11,7 +11,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 // /souls: the player's own options, client only (saved in the client config file).
 // /souls kanji desativar | ativar: the kanji of Kokushibo's forms beside him (FormKanji). Stark, 2026-11-08.
-// /souls dungeon | dungeon sair: the roguelike mode (challenge/Dungeon), asked of the server.
+// /souls dungeon | dungeon sair: the roguelike mode (challenge/Dungeon), asked of the server. /dungeons | /dungeons sair: the same.
 public final class SoulsCommand {
     private SoulsCommand() {
     }
@@ -40,5 +40,15 @@ public final class SoulsCommand {
                             PacketDistributor.sendToServer(new ModPayloads.DungeonQuit());
                             return 1;
                         }))));
+        // /dungeons: the short way to the same run (Stark 2026-11-19 calls it that)
+        event.getDispatcher().register(Commands.literal("dungeons")
+                .executes(c -> {
+                    PacketDistributor.sendToServer(new ModPayloads.DungeonStart());
+                    return 1;
+                })
+                .then(Commands.literal("sair").executes(c -> {
+                    PacketDistributor.sendToServer(new ModPayloads.DungeonQuit());
+                    return 1;
+                })));
     }
 }
