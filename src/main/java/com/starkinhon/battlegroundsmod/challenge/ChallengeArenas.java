@@ -742,6 +742,12 @@ public final class ChallengeArenas {
                         if (session.respawns < 10) {
                             session.respawns++;
                             spawnBoss(arena, session, players);
+                        } else {
+                            // It keeps vanishing: the fight ends with no win instead of standing still forever.
+                            for (ServerPlayer player : players) {
+                                player.displayClientMessage(Component.literal("O desafiante sumiu da arena. A luta foi cancelada."), false);
+                            }
+                            abandon(server, session, players);
                         }
                     } else if (session.bossDied || !boss.isAlive()) {
                         win(server, session, now);
@@ -802,15 +808,26 @@ public final class ChallengeArenas {
     // Stark 2026-11-13: with a friend in the arena the challenger has twice the life (three times with three...).
     private static final ResourceLocation GROUP_HEALTH = ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "arena_group_health");
 
+    // A fight that cannot go on (the character could not be spawned, or kept vanishing): no win, everyone goes back. A Dungeon run
+    // gives the real character back (Dungeon.fightBroken), or its players would be left in the world as the run's character.
+    private static void abandon(MinecraftServer server, Session session, List<ServerPlayer> players) {
+        for (ServerPlayer player : players) {
+            SESSIONS.remove(player.getUUID());
+            if (!session.dungeon) {
+                sendBack(player, session);
+            }
+        }
+        closeIfEmpty(server, session);
+        if (session.dungeon && !players.isEmpty()) {
+            Dungeon.fightBroken(players);
+        }
+    }
+
     private static void spawnBoss(ServerLevel arena, Session session, List<ServerPlayer> players) {
         EntityType<?> type = entityType(session.dungeon ? session.bossId : session.id);
         Entity boss = type == null ? null : type.spawn(arena, spawnPos(session), MobSpawnType.EVENT);
         if (boss == null) {
-            for (ServerPlayer player : players) {
-                SESSIONS.remove(player.getUUID());
-                sendBack(player, session);
-            }
-            closeIfEmpty(arena.getServer(), session);
+            abandon(arena.getServer(), session, players);
             return;
         }
         ServerPlayer first = players.get(0);

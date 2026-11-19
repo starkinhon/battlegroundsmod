@@ -177,6 +177,9 @@ public final class AirFight {
         return null;
     }
 
+    private static final long SIM_HIT_EVERY = 3;
+    private static final long SIM_HIT_BURST = 2 * SIM_HIT_EVERY;
+
     public static void sim(ServerPlayer player, int id, Vec3 pos, float yaw, int flags) {
         // Server-authoritative AirCombat owns SoulBoss movement in multiplayer.
     }
@@ -191,6 +194,18 @@ public final class AirFight {
         }
         if (kind < 0 || kind > 16) {
             return;
+        }
+        if (kind <= 4) {
+            // The client says when its blows land, and the quickest come 3 ticks apart (punches, clashes, balls): a changed client
+            // must not rain them (multiplayer). Two packets can arrive in the same tick through network jitter, so this lets
+            // a short burst through (up to 2 blows early) and only holds a steady rate above one blow every 3 ticks.
+            PowerData data = player.getData(ModAttachments.POWER);
+            long now = player.level().getGameTime();
+            long due = Math.max(data.airSimHitAt, now);
+            if (due - now > SIM_HIT_BURST) {
+                return;
+            }
+            data.airSimHitAt = due + SIM_HIT_EVERY;
         }
         float punch = (float) ComboSpec.get().golpe(0).dano() * Melee.multiplier(player);
         // The page already threw the player (its own knockback): Minecraft's own from this hurt is undone, or the client

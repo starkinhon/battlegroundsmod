@@ -441,18 +441,19 @@ public class BattlegroundsModClient {
         event.registerEntityRenderer(ModEntities.BILLS.get(), context -> new SoulBossRenderer<>(context, "bills", true));
         event.registerEntityRenderer(ModEntities.GOJO.get(), context -> new SoulBossRenderer<>(context, "gojo", true));
         event.registerEntityRenderer(ModEntities.KOKUSHIBO.get(), com.starkinhon.battlegroundsmod.client.KokushiboRenderer::new);
-        event.registerEntityRenderer(ModEntities.SUKUNA.get(), context -> new SoulBossRenderer<>(context, "sukuna", false));
+        event.registerEntityRenderer(ModEntities.SUKUNA.get(), context -> new SoulBossRenderer<>(context, "sukuna", true));
         event.registerEntityRenderer(ModEntities.JOY_BOY.get(), com.starkinhon.battlegroundsmod.client.JoyBoyRenderer::new);
         event.registerEntityRenderer(ModEntities.SAITAMA.get(), com.starkinhon.battlegroundsmod.client.SaitamaRenderer::new);
         event.registerEntityRenderer(ModEntities.SHIGARAKI.get(), context -> new SoulBossRenderer<>(context, "shigaraki", false));
         event.registerEntityRenderer(ModEntities.HASHIRAMA.get(), com.starkinhon.battlegroundsmod.client.HashiramaRenderer::new);
         event.registerEntityRenderer(ModEntities.FREEZA_TOTAL.get(), com.starkinhon.battlegroundsmod.client.FreezaTotalRenderer::new);
-        event.registerEntityRenderer(ModEntities.MAKIMA.get(), context -> new SoulBossRenderer<>(context, "makima", false));
+        event.registerEntityRenderer(ModEntities.MAKIMA.get(), context -> new SoulBossRenderer<>(context, "makima", true));
         event.registerEntityRenderer(ModEntities.DUMMY.get(), context -> new DummyRenderer<>(context, "steve"));
         event.registerEntityRenderer(ModEntities.DUMMY_ATTACKER.get(), context -> new DummyRenderer<>(context, "kai"));
         event.registerEntityRenderer(ModEntities.AIZEN_ILLUSION.get(), AizenIllusionRenderer::new);
         event.registerEntityRenderer(ModEntities.MALEVOLENT_SHRINE.get(), com.starkinhon.battlegroundsmod.client.fx.MalevolentShrineRenderer::new);
-        // SubAlma mobs (improvised skins; the girls with slim arms) and the Fighters (three looks per tier).
+        // SubAlma mobs and the Fighters (three looks per tier). The arms follow each skin's own layout (slim = 3 px arms): a slim skin on
+        // the wide model shows holes down the arms, a wide one on the slim model loses a column.
         event.registerEntityRenderer(ModEntities.BYAKUYA.get(), context -> new SoulBossRenderer<>(context, "byakuya", false));
         event.registerEntityRenderer(ModEntities.RUKIA.get(), context -> new SoulBossRenderer<>(context, "rukia", false));
         event.registerEntityRenderer(ModEntities.GOKU.get(), context -> new SoulBossRenderer<>(context, "goku", false));
@@ -460,20 +461,20 @@ public class BattlegroundsModClient {
         event.registerEntityRenderer(ModEntities.FREEZA.get(), context -> new SoulBossRenderer<>(context, "freeza", false));
         event.registerEntityRenderer(ModEntities.PICCOLO.get(), context -> new SoulBossRenderer<>(context, "piccolo", false));
         event.registerEntityRenderer(ModEntities.KAME.get(), context -> new SoulBossRenderer<>(context, "kame", false));
-        event.registerEntityRenderer(ModEntities.KURIRIN.get(), context -> new SoulBossRenderer<>(context, "kuririn", false));
-        event.registerEntityRenderer(ModEntities.NARUTO.get(), context -> new SoulBossRenderer<>(context, "naruto", false));
-        event.registerEntityRenderer(ModEntities.SASUKE.get(), context -> new SoulBossRenderer<>(context, "sasuke", false));
-        event.registerEntityRenderer(ModEntities.KAKASHI.get(), context -> new SoulBossRenderer<>(context, "kakashi", false));
+        event.registerEntityRenderer(ModEntities.KURIRIN.get(), context -> new SoulBossRenderer<>(context, "kuririn", true));
+        event.registerEntityRenderer(ModEntities.NARUTO.get(), context -> new SoulBossRenderer<>(context, "naruto", true));
+        event.registerEntityRenderer(ModEntities.SASUKE.get(), context -> new SoulBossRenderer<>(context, "sasuke", true));
+        event.registerEntityRenderer(ModEntities.KAKASHI.get(), context -> new SoulBossRenderer<>(context, "kakashi", true));
         event.registerEntityRenderer(ModEntities.GAARA.get(), context -> new SoulBossRenderer<>(context, "gaara", false));
-        event.registerEntityRenderer(ModEntities.SHIKAMARU.get(), context -> new SoulBossRenderer<>(context, "shikamaru", false));
+        event.registerEntityRenderer(ModEntities.SHIKAMARU.get(), context -> new SoulBossRenderer<>(context, "shikamaru", true));
         event.registerEntityRenderer(ModEntities.INO.get(), context -> new SoulBossRenderer<>(context, "ino", false));
-        event.registerEntityRenderer(ModEntities.ITADORI.get(), context -> new SoulBossRenderer<>(context, "itadori", false));
-        event.registerEntityRenderer(ModEntities.CHOSO.get(), context -> new SoulBossRenderer<>(context, "choso", false));
-        event.registerEntityRenderer(ModEntities.NANAMI.get(), context -> new SoulBossRenderer<>(context, "nanami", false));
-        event.registerEntityRenderer(ModEntities.NOBARA.get(), context -> new SoulBossRenderer<>(context, "nobara", false));
+        event.registerEntityRenderer(ModEntities.ITADORI.get(), context -> new SoulBossRenderer<>(context, "itadori", true));
+        event.registerEntityRenderer(ModEntities.CHOSO.get(), context -> new SoulBossRenderer<>(context, "choso", true));
+        event.registerEntityRenderer(ModEntities.NANAMI.get(), context -> new SoulBossRenderer<>(context, "nanami", true));
+        event.registerEntityRenderer(ModEntities.NOBARA.get(), context -> new SoulBossRenderer<>(context, "nobara", true));
         event.registerEntityRenderer(ModEntities.TODO.get(), context -> new SoulBossRenderer<>(context, "todo", false));
-        event.registerEntityRenderer(ModEntities.INUMAKI.get(), context -> new SoulBossRenderer<>(context, "inumaki", false));
-        event.registerEntityRenderer(ModEntities.MIWA.get(), context -> new SoulBossRenderer<>(context, "miwa", false));
+        event.registerEntityRenderer(ModEntities.INUMAKI.get(), context -> new SoulBossRenderer<>(context, "inumaki", true));
+        event.registerEntityRenderer(ModEntities.MIWA.get(), context -> new SoulBossRenderer<>(context, "miwa", true));
         event.registerEntityRenderer(ModEntities.NARUTO_CLONE.get(), com.starkinhon.battlegroundsmod.client.NarutoCloneRenderer::new);
         // the Dragon Ball biomes' creatures, box models from the approved preview (client/blocky)
         event.registerEntityRenderer(ModEntities.PEDESTRE.get(), com.starkinhon.battlegroundsmod.client.pedestre.PedestreRenderer::new);
@@ -522,7 +523,7 @@ public class BattlegroundsModClient {
         event.registerEntityRenderer(ModEntities.RADITZ.get(), context -> new SoulBossRenderer<>(context, "raditz", false));
         event.registerEntityRenderer(ModEntities.PUI_PUI.get(), context -> new SoulBossRenderer<>(context, "pui_pui", false));
         event.registerEntityRenderer(ModEntities.DABURA.get(), context -> new SoulBossRenderer<>(context, "dabura", false));
-        event.registerEntityRenderer(ModEntities.NPC_BULMA.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_bulma", true));
+        event.registerEntityRenderer(ModEntities.NPC_BULMA.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_bulma"));
         event.registerEntityRenderer(ModEntities.NPC_MESTRE_KAME.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_mestre_kame"));
         event.registerEntityRenderer(ModEntities.NPC_BOO.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_boo"));
         event.registerEntityRenderer(ModEntities.NPC_KORIN.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_korin"));

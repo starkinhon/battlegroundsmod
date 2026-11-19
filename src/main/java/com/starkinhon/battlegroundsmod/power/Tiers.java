@@ -67,6 +67,13 @@ public final class Tiers {
     // Reference health for move damage scaling so TTK stays consistent (~30-45s) across all tiers.
     private static final double DAMAGE_HEALTH_REF = 850.0;
 
+    // The curve before 2026-11-17, that the bosses' files (souls_bosses/*.json "vida") were written against.
+    private static final double[] LEGACY_HEALTH = {400, 300, 220, 165, 120, 90, 66, 49, 36, 27, 20};
+
+    public static double legacyHealth(int tier) {
+        return LEGACY_HEALTH[clamp(tier)];
+    }
+
     // Max health of this tier (Tier 10 = 65, a plain human).
     public static double health(int tier) {
         var list = TierSpec.get().vida();

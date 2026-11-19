@@ -66,6 +66,10 @@ public abstract class SoulBoss extends Monster {
         }
     }
 
+    public boolean dungeonFight() {
+        return dungeonFight;
+    }
+
     public void arenaTier(int tier) {
         arenaTier = tier;
         if (configured && level() instanceof ServerLevel server) {
@@ -367,6 +371,12 @@ public abstract class SoulBoss extends Monster {
         int tier = forcedTier >= 0 ? forcedTier : arenaTier >= 0 ? Math.min(ownTier, arenaTier) : ownTier;
         // raised to a higher tier: its life grows as much as a tier's life does (the same share of a fighter of that tier)
         double lifeScale = com.starkinhon.battlegroundsmod.power.Tiers.health(tier) / com.starkinhon.battlegroundsmod.power.Tiers.health(ownTier);
+        // The bosses' files were written for the old tier curve (Tier 0 = 400 ... Tier 10 = 20): their life follows the curve
+        // in padrao.tiers.json as much as a player's of their tier did (Stark's rebalance 2026-11-17 raised the players' only,
+        // and the bosses fell 3 to 4 times faster). The shared Tier 0 of /gamerule allbossestier0 is already on the new curve.
+        if (!tier0Applied) {
+            lifeScale *= com.starkinhon.battlegroundsmod.power.Tiers.health(ownTier) / com.starkinhon.battlegroundsmod.power.Tiers.legacyHealth(ownTier);
+        }
         double maxLife = atributos.vida() * lifeScale;
         if (dungeonFight) {
             maxLife = Math.max(maxLife, Math.round(com.starkinhon.battlegroundsmod.power.Tiers.health(tier) * 0.50));

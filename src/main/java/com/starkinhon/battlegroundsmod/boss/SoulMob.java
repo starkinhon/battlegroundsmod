@@ -16,14 +16,7 @@ public class SoulMob extends SoulBoss {
     public SoulMob(EntityType<? extends SoulMob> type, Level level) {
         super(type, level);
         if (!level.isClientSide) {
-            net.minecraft.world.item.Item weapon = switch (bossId()) {
-                case "nanami" -> com.starkinhon.battlegroundsmod.ModItems.NANAMI_BLADE.get();
-                case "rukia" -> com.starkinhon.battlegroundsmod.ModItems.SODE_NO_SHIRAYUKI.get();
-                case "byakuya" -> com.starkinhon.battlegroundsmod.ModItems.SENBONZAKURA.get();
-                case "miwa" -> com.starkinhon.battlegroundsmod.ModItems.MIWA_SWORD.get();
-                case "nobara" -> com.starkinhon.battlegroundsmod.ModItems.NOBARA_HAMMER.get();
-                default -> null;
-            };
+            net.minecraft.world.item.Item weapon = com.starkinhon.battlegroundsmod.power.PowerLogic.soulWeapon(bossId());
             if (weapon != null) {
                 setItemSlot(net.minecraft.world.entity.EquipmentSlot.MAINHAND, new net.minecraft.world.item.ItemStack(weapon));
                 setDropChance(net.minecraft.world.entity.EquipmentSlot.MAINHAND, 0f);

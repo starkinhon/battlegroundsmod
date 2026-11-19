@@ -230,6 +230,16 @@ public final class Dungeon {
         }
     }
 
+    // ChallengeArenas: the fight could not go on (the boss could not be spawned or kept vanishing). The run ends for these players
+    // with their real character back, never with them left in the world as the run's character.
+    static void fightBroken(List<ServerPlayer> players) {
+        for (ServerPlayer player : players) {
+            if (RUNS.containsKey(player.getUUID())) {
+                leave(player, "A luta da dungeon não pôde continuar.");
+            }
+        }
+    }
+
     private static void endAll(Run run, String reason) {
         run.between = false;
         for (ServerPlayer p : online(run)) {

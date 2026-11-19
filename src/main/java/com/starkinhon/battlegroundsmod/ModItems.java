@@ -396,7 +396,7 @@ public final class ModItems {
         for (int stars = 1; stars <= 7; stars++) {
             int n = stars;
             DRAGON_BALLS.add(BattlegroundsMod.ITEMS.registerItem("esfera_dragao_" + n,
-                    properties -> new com.starkinhon.battlegroundsmod.item.DragonBallItem(n, properties), new Item.Properties().rarity(Rarity.EPIC)));
+                    properties -> new com.starkinhon.battlegroundsmod.item.DragonBallItem(n, properties), new Item.Properties().rarity(Rarity.EPIC).fireResistant()));
         }
     }
 

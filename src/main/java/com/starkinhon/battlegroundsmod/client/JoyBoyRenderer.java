@@ -15,7 +15,8 @@ public class JoyBoyRenderer extends SoulBossRenderer<JoyBoyEntity> {
             "textures/entity/joy_boy_g5.png");
 
     public JoyBoyRenderer(EntityRendererProvider.Context context) {
-        super(context, "joy_boy", false);
+        // both skins (joy_boy and joy_boy_g5) are slim
+        super(context, "joy_boy", true);
         addLayer(new LuffyFx.Layer<>(this));
     }
 
