@@ -11,6 +11,7 @@ import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.starkinhon.battlegroundsmod.BattlegroundsMod;
 import com.starkinhon.battlegroundsmod.ModAttachments;
+import com.starkinhon.battlegroundsmod.client.fx.FxConfig;
 
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
@@ -61,7 +62,7 @@ public final class CrystalInventory {
     }
 
     public static boolean active() {
-        return !broken && builtFor != null;
+        return !broken && builtFor != null && FxConfig.inventoryStyle() != 2;
     }
 
     // Light text color for the "Crafting" title (vanilla's dark gray would vanish on the crystals).
@@ -71,7 +72,7 @@ public final class CrystalInventory {
 
     // Called from InventoryScreen.renderBg (mixin). Returns false to let vanilla draw its own background.
     public static boolean renderBg(GuiGraphics g, int left, int top, int mouseX, int mouseY, AbstractContainerMenu menu) {
-        if (broken) {
+        if (broken || FxConfig.inventoryStyle() == 2) {
             return false;
         }
         Minecraft mc = Minecraft.getInstance();
@@ -139,8 +140,9 @@ public final class CrystalInventory {
         }
         InventoryScreen.renderEntityInInventoryFollowsMouse(g, left + 26, top + 8, left + 75, top + 78, 30, 0.0625f, mouseX, mouseY, player);
 
-        // Slots: dark glass with a soul colored rim. The crafting result (slot 0) gets a bigger frame.
-        int glass = hsl(hue, 0.12f, 0.17f);
+        // Slots: dark (or light) glass with a soul colored rim. The crafting result (slot 0) gets a bigger frame.
+        boolean light = FxConfig.inventoryStyle() == 1;
+        int glass = light ? hsl(hue, 0.1f, 0.6f) : hsl(hue, 0.12f, 0.17f);
         for (Slot slot : menu.slots) {
             if (!slot.isActive()) {
                 continue;
@@ -148,9 +150,9 @@ public final class CrystalInventory {
             int x = left + slot.x;
             int y = top + slot.y;
             if (slot.index == 0) {
-                slotFrame(g, x - 2, y - 2, 20, R, glass);
+                slotFrame(g, x - 2, y - 2, 20, R, glass, light);
             } else {
-                slotFrame(g, x, y, 16, R, glass);
+                slotFrame(g, x, y, 16, R, glass, light);
             }
         }
         // Arrow between the crafting grid and the result.
@@ -222,18 +224,82 @@ public final class CrystalInventory {
 
     // A slot of inner size s at (x, y): soul colored halo, dark edge, dark glass with a light top/left and a shaded
     // bottom/right.
-    private static void slotFrame(GuiGraphics g, int x, int y, int s, int[] R, int glass) {
+    private static void slotFrame(GuiGraphics g, int x, int y, int s, int[] R, int glass, boolean light) {
         g.fill(x - 2, y - 2, x + s + 2, y + s + 2, argb(R[4], 0.55f));
         g.fill(x - 1, y - 1, x + s + 1, y + s + 1, argb(R[0], 0.95f));
         g.fill(x, y, x + s, y + s, argb(glass, 0.94f));
-        g.fill(x, y, x + s, y + 1, argb(R[4], 0.5f));
-        g.fill(x, y, x + 1, y + s, argb(R[4], 0.35f));
+        int edge = light ? 0xFFFFFFFF : R[4];
+        g.fill(x, y, x + s, y + 1, argb(edge, 0.5f));
+        g.fill(x, y, x + 1, y + s, argb(edge, 0.35f));
         g.fill(x, y + s - 1, x + s, y + s, 0x40000000);
         g.fill(x + s - 1, y, x + s, y + s, 0x40000000);
     }
 
     private static void px(GuiGraphics g, int x, int y, int color) {
         g.fill(x, y, x + 1, y + 1, color);
+    }
+
+    // ---------------------------------------------------------------- style buttons
+
+    // Width of one style button and the gap between them; the row sits centered under the inventory.
+    private static final int BUTTON_W = 50;
+    private static final int BUTTON_H = 14;
+    private static final int BUTTON_GAP = 4;
+
+    public static List<StyleButton> makeButtons() {
+        List<StyleButton> list = new ArrayList<>();
+        for (int i = 0; i < 3; i++) {
+            list.add(new StyleButton(i));
+        }
+        return list;
+    }
+
+    // Puts the row under the inventory (called every frame: the recipe book moves the inventory sideways).
+    public static void placeButtons(List<StyleButton> buttons, int left, int top) {
+        int total = BUTTON_W * 3 + BUTTON_GAP * 2;
+        int x = left + (176 - total) / 2;
+        for (StyleButton button : buttons) {
+            button.setPosition(x + button.style * (BUTTON_W + BUTTON_GAP), top + 170);
+        }
+    }
+
+    // "Escuro", "Claro", "Minecraft": the look of the survival inventory, saved in the client config. Crystal styled
+    // (soul colors) while the crystal inventory is on, plain gray glass on Minecraft's default.
+    public static final class StyleButton extends net.minecraft.client.gui.components.AbstractButton {
+        final int style;
+
+        StyleButton(int style) {
+            super(0, 0, BUTTON_W, BUTTON_H, net.minecraft.network.chat.Component.translatable("gui.battlegroundsmod.inventory_style." + style));
+            this.style = style;
+        }
+
+        @Override
+        public void onPress() {
+            FxConfig.setInventoryStyle(style);
+        }
+
+        @Override
+        protected void renderWidget(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+            boolean picked = FxConfig.inventoryStyle() == style;
+            boolean crystal = active() && ramp != null;
+            int rim = crystal ? ramp[4] : 0xFFA0A0A0;
+            int dark = crystal ? ramp[0] : 0xFF202020;
+            int fill = crystal ? (picked ? ramp[2] : hsl(hue, 0.12f, 0.17f)) : (picked ? 0xFF6E6E6E : 0xFF3A3A3A);
+            int x = getX();
+            int y = getY();
+            RenderSystem.enableBlend();
+            g.fill(x - 1, y - 1, x + width + 1, y + height + 1, argb(rim, picked || isHoveredOrFocused() ? 0.9f : 0.45f));
+            g.fill(x, y, x + width, y + height, argb(dark, 0.95f));
+            g.fill(x + 1, y + 1, x + width - 1, y + height - 1, argb(fill, 0.95f));
+            g.fill(x + 1, y + 1, x + width - 1, y + 2, argb(crystal ? ramp[5] : 0xFFFFFFFF, picked ? 0.6f : 0.25f));
+            int text = picked ? 0xFFFFFFFF : crystal ? ramp[5] : 0xFFC8C8C8;
+            g.drawCenteredString(Minecraft.getInstance().font, getMessage(), x + width / 2, y + 3, text);
+        }
+
+        @Override
+        protected void updateWidgetNarration(net.minecraft.client.gui.narration.NarrationElementOutput output) {
+            defaultButtonNarrationText(output);
+        }
     }
 
     // ---------------------------------------------------------------- item outline

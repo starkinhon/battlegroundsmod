@@ -1,4 +1,8 @@
 {
+  "gui.battlegroundsmod.inventory_style.0": "Dark",
+  "gui.battlegroundsmod.inventory_style.1": "Light",
+  "gui.battlegroundsmod.inventory_style.2": "Minecraft",
+  "battlegroundsmod.configuration.inventoryStyle": "Inventory look",
   "itemGroup.battlegroundsmod": "Souls: Essentials",
   "generator.battlegroundsmod.souls": "Souls",
   "item.battlegroundsmod.power_book": "Book of Souls",
