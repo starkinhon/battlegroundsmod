@@ -61,9 +61,16 @@ final class OutfitDefs {
 
         Def build() {
             List<Piece> pieces = new ArrayList<>();
+            List<Rig.Bone> pieceBones = new ArrayList<>();
+            List<float[]> baked = new ArrayList<>();
             for (String key : geos.keySet()) {
-                pieces.add(new Piece(bones.get(key), texs.get(key), geos.get(key).bake()));
+                float[] tris = geos.get(key).bake();
+                pieces.add(new Piece(bones.get(key), texs.get(key), tris));
+                pieceBones.add(bones.get(key));
+                baked.add(tris);
             }
+            // no two faces left on the same plane (they would flicker): moves the baked triangles in place
+            AntiZ.fix(pieceBones, baked);
             return new Def(pieces, sheets, plates, colliders);
         }
     }
@@ -480,13 +487,34 @@ final class OutfitDefs {
 
     private static Map<String, Def> defs;
 
-    static Def get(String power) {
+    static synchronized Def get(String power) {
         if (defs == null) {
-            defs = new LinkedHashMap<>();
-            defs.put("destruction_god", bills());
-            defs.put("uchiha_ghost", madara());
+            Map<String, Def> built = new LinkedHashMap<>();
+            built.put("destruction_god", bills());
+            built.put("uchiha_ghost", madara());
+            defs = built;
         }
         return defs.get(power);
+    }
+
+    private static boolean prebuilding;
+
+    // Builds the outfits on a side thread when the renderers are made (AntiZ takes a few tenths of a second), so the
+    // first player seen in one doesn't stall a frame. Pure geometry, no game state touched.
+    static synchronized void prebuild() {
+        if (defs != null || prebuilding) {
+            return;
+        }
+        prebuilding = true;
+        Thread t = new Thread(() -> {
+            try {
+                get("destruction_god");
+            } catch (RuntimeException e) {
+                BattlegroundsMod.LOGGER.error("Outfits failed to build", e);
+            }
+        }, "Souls outfits");
+        t.setDaemon(true);
+        t.start();
     }
 
     static boolean has(String power) {

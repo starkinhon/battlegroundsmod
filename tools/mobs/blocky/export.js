@@ -49,4 +49,6 @@ const DIR = __dirname, ROOT = path.join(DIR, '..', '..', '..', 'src/main/resourc
   fs.writeFileSync(path.join(ROOT, 'blocky', 'namekiano_index.json'), JSON.stringify(index));
   console.log('exported', out.length);
   await b.close();
+  // Faces no mesmo plano piscam no jogo (z-fighting): o verificador afasta o mínimo e confere que zerou.
+  require('child_process').execFileSync('python3', [path.join(__dirname, '..', '..', 'zfight', 'zfight.py'), 'blocky', '--corrigir'], { stdio: 'inherit' });
 })();
