@@ -389,13 +389,16 @@ public final class CrystalInventory {
 
     // The soul's hue (purple with no soul), read once per soul from its icon.
     static float hueFor(String soul) {
+        if (NEUTRAL_SOULS.contains(soul)) {
+            return 220;
+        }
         return soul.isEmpty() ? NO_SOUL_HUE : SOUL_HUES.computeIfAbsent(soul, CrystalInventory::readHue);
     }
 
     private static void build(String soul) {
         Minecraft mc = Minecraft.getInstance();
         hue = hueFor(soul);
-        ramp = ramp(hue);
+        ramp = rampFor(soul);
         int[] R = ramp;
         int[] Rb = { R[0], R[0], R[1], R[1], R[2], R[3], R[4] };
         cw = W;
@@ -725,6 +728,19 @@ public final class CrystalInventory {
     }
 
     // Seven shades, darkest to lightest; darks lean toward blue/purple and lights toward yellow (pixel art hue shift).
+    // The soul's shades. "inata" (Técnicas Inatas, no soul of its own) is light gray/white like its techniques panel,
+    // not the purple fallback (Stark 2026-11-19).
+    static int[] rampFor(String soul) {
+        if (NEUTRAL_SOULS.contains(soul)) {
+            float h = 220;
+            return new int[] { hsl(h, 0.08f, 0.07f), hsl(h, 0.08f, 0.17f), hsl(h, 0.08f, 0.31f), hsl(h, 0.07f, 0.47f), hsl(h, 0.06f, 0.65f),
+                    hsl(h, 0.05f, 0.81f), hsl(h, 0.04f, 0.94f) };
+        }
+        return ramp(hueFor(soul));
+    }
+
+    private static final java.util.Set<String> NEUTRAL_SOULS = java.util.Set.of("inata");
+
     static int[] ramp(float h) {
         float toward = (h > 200 && h < 300) ? 1 : -1;
         return new int[] { hsl(h + 14 * toward, 0.45f, 0.07f), hsl(h + 10 * toward, 0.5f, 0.16f), hsl(h + 6 * toward, 0.5f, 0.27f),

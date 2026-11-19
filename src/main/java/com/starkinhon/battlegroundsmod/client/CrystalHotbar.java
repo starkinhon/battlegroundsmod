@@ -140,7 +140,7 @@ public final class CrystalHotbar {
     // The plate and the crystal clusters at both ends, built once per soul.
     private static void build(String soul) {
         hue = CrystalInventory.hueFor(soul);
-        ramp = CrystalInventory.ramp(hue);
+        ramp = CrystalInventory.rampFor(soul);
         int[] R = ramp;
         CrystalInventory.cw = W;
         CrystalInventory.ch = H;
