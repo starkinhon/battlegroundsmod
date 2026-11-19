@@ -169,6 +169,10 @@ public final class DbFx {
             FzFx.receive(kind, id, pos, dir, a, b, c);
             return;
         }
+        if (com.starkinhon.battlegroundsmod.client.fx.epic.EpicFx.handles(kind)) {
+            com.starkinhon.battlegroundsmod.client.fx.epic.EpicFx.receive(kind, id, pos, dir, a, b, c);
+            return;
+        }
         if (KaiohFx.handles(kind)) {
             KaiohFx.receive(kind, id, pos, dir, a, b, c);
             return;
