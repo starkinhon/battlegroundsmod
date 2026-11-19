@@ -152,12 +152,23 @@ public class MissionScreen extends Screen {
         Px.begin(graphics, mouseX, mouseY);
         Px.hits.clear();
         try {
-            // the Caminho tab (universe/GuidedPath) over the map; its button is registered first so it wins the click
-            float bx = GW / 2f - 34, by = 5, bw = 68, bh = 18;
-            Px.hit(bx, by, bw, bh, () -> {
-                showPath = !showPath;
-                lastPath = showPath;
-                click();
+            // two tabs side by side at the top, CAMINHO | MAPA (Stark: with one toggle he thought the map was gone);
+            // registered first so they win the click
+            float tw = 64, th = 18, by = 5, gap = 4;
+            float cx = GW / 2f - tw - gap / 2f, mx = GW / 2f + gap / 2f;
+            Px.hit(cx, by, tw, th, () -> {
+                if (!showPath) {
+                    showPath = true;
+                    lastPath = true;
+                    click();
+                }
+            });
+            Px.hit(mx, by, tw, th, () -> {
+                if (showPath) {
+                    showPath = false;
+                    lastPath = false;
+                    click();
+                }
             });
             if (showPath) {
                 drawPath(dt);
@@ -165,13 +176,18 @@ public class MissionScreen extends Screen {
                 Uni u = UNIS.get(dUni);
                 drawMap(dt, u, list(u.id()));
             }
-            boolean hot = Px.over(bx, by, bw, bh);
-            Px.smallFrame(bx, by, bw, bh, GOLD, showPath || hot, 0.9f);
-            T(tr(showPath ? "mapa" : "caminho"), GW / 2f, by + 5, showPath || hot ? rgb(255, 236, 180) : WHITE, 7, true, 0, true, 1);
+            tab(cx, by, tw, th, tr("caminho"), showPath);
+            tab(mx, by, tw, th, tr("mapa"), !showPath);
             Px.drawTip();
         } finally {
             Px.end();
         }
+    }
+
+    private void tab(float x, float y, float w, float h, String label, boolean on) {
+        boolean hot = Px.over(x, y, w, h);
+        Px.smallFrame(x, y, w, h, GOLD, on || hot, on ? 0.95f : 0.7f);
+        T(label, x + w / 2f, y + 5, on ? rgb(255, 236, 180) : hot ? WHITE : MUTED, 7, true, 0, true, 1);
     }
 
     // ------------------------------------------------------------------------------------------------ the map
