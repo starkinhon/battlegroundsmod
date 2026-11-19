@@ -28,7 +28,7 @@ import net.neoforged.neoforge.client.event.ViewportEvent;
 // "pétalas de sakura... poluição de luz... corvos... pode usar a criatividade, pra deixar bem vivo"), in TemploFx's
 // way: no textures, every mote its own size, tone, spin and path, easing in when the player walks in (BiomeAura) and out
 // when he leaves.
-// - Floresta Negra: dead leaves, dark spores, purple wisps of cursed energy rising; a short dark green fog.
+// - Floresta Negra: not here any more, its own full ambience is FlorestaAirFx (mist, drips, light shafts, fungi, eyes).
 // - Aldeia Amaldiçoada: only the crows overhead stay here; the fireflies, lanterns, gas, will-o'-wisps, fog and grade are
 //   AldeiaAirFx.
 // - Mar de Dagon: not here any more, its own full ambience is DagonAirFx (surf, caustics, glints, the whirlpool).
@@ -89,11 +89,8 @@ public final class JujutsuAirFx {
     }
 
     private static final State[] STATES = {
-        new State(new Mood("floresta_negra", ModWorldgen.FLORESTA_NEGRA, List.of(
-                new Air(Kind.LEAF, 150, cs("#4a3a2a", "#3a2e22", "#5a4630", "#2e2a1c"), 0.07, 0.12),
-                new Air(Kind.MOTE, 220, cs("#2a3a2a", "#1e2a1e", "#3a4430"), 0.025, 0.05),
-                new Air(Kind.WISP, 40, cs("#9b4dff", "#7a3cc8", "#b46bff"), 0.08, 0.16)),
-                c("#1e2a1e"), 0.35f, 0.5f, 0.55f, 0, false)),
+        new State(new Mood("floresta_negra", ModWorldgen.FLORESTA_NEGRA, List.of(),
+                null, 0, 0, 1, 0, false)),
         new State(new Mood("aldeia_amaldicoada", ModWorldgen.ALDEIA_AMALDICOADA, List.of(),
                 null, 0, 0, 1, 6, false)),
         new State(new Mood("floresta_de_hanami", ModWorldgen.FLORESTA_DE_HANAMI, List.of(

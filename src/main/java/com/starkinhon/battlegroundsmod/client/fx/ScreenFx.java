@@ -213,7 +213,7 @@ public final class ScreenFx {
     }
 
     static boolean needsScene() {
-        return PreviewFx.screenOn() || ColoniaAirFx.gradeOn() || ShibuyaAirFx.gradeOn() || KyotoAirFx.gradeOn() || TemploAirFx.gradeOn() || HanamiAirFx.gradeOn() || AldeiaAirFx.gradeOn() || DagonAirFx.gradeOn() || JogoAirFx.gradeOn() || Realismo.active() || impact != null || !WARPS.isEmpty() || ticks - heldAt <= 1 || radial != null && radial.k(ticks) > 0 || heldBlur() > 0;
+        return PreviewFx.screenOn() || ColoniaAirFx.gradeOn() || ShibuyaAirFx.gradeOn() || KyotoAirFx.gradeOn() || TemploAirFx.gradeOn() || HanamiAirFx.gradeOn() || AldeiaAirFx.gradeOn() || DagonAirFx.gradeOn() || JogoAirFx.gradeOn() || FlorestaAirFx.gradeOn() || Realismo.active() || impact != null || !WARPS.isEmpty() || ticks - heldAt <= 1 || radial != null && radial.k(ticks) > 0 || heldBlur() > 0;
     }
 
     // The level's camera for this frame, so world positions can be found on screen later (also from the GUI).
@@ -243,7 +243,8 @@ public final class ScreenFx {
         boolean aldeia = AldeiaAirFx.gradeOn();
         boolean dagon = DagonAirFx.gradeOn();
         boolean jogo = JogoAirFx.gradeOn();
-        if (!warp && blur <= 0 && !real && !preview && !colonia && !shibuya && !kyoto && !templo && !hanami && !aldeia && !dagon && !jogo) {
+        boolean floresta = FlorestaAirFx.gradeOn();
+        if (!warp && blur <= 0 && !real && !preview && !colonia && !shibuya && !kyoto && !templo && !hanami && !aldeia && !dagon && !jogo && !floresta) {
             return;
         }
         FxPost.beginPasses();
@@ -288,6 +289,10 @@ public final class ScreenFx {
         if (jogo) {
             // the Terras do Jogo's screen grade (sulfur haze by day, the lava's glow from below at night, lightning flash)
             JogoAirFx.gradePass(levelPartial);
+        }
+        if (floresta) {
+            // the Floresta Negra's screen grade (less color and violet edges by day, violet edges at night)
+            FlorestaAirFx.gradePass(levelPartial);
         }
         if (preview) {
             // the combat flight page's screen (shockwave, speed lines, impact frame), last like on the page

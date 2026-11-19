@@ -65,6 +65,10 @@ public final class ModSounds {
     public static final Supplier<SoundEvent> JOGO_BAQUE = register("jogo_baque");
     public static final Supplier<SoundEvent> JOGO_EXPLOSAO = register("jogo_explosao");
     public static final Supplier<SoundEvent> JOGO_TROVAO = register("jogo_trovao");
+    public static final Supplier<SoundEvent> FLORESTA_DRONE = register("floresta_drone");
+    public static final Supplier<SoundEvent> FLORESTA_RANGIDO = register("floresta_rangido");
+    public static final Supplier<SoundEvent> FLORESTA_GOTA = register("floresta_gota");
+    public static final Supplier<SoundEvent> FLORESTA_SOPRO = register("floresta_sopro");
     // Shibuya's air and metro (client/fx/ShibuyaAirFx, ShibuyaMetro), built from noise by tools/sounds/shibuya_sounds.py.
     public static final Supplier<SoundEvent> SHIBUYA_CIDADE = register("shibuya_cidade");
     public static final Supplier<SoundEvent> SHIBUYA_NEON = register("shibuya_neon");
