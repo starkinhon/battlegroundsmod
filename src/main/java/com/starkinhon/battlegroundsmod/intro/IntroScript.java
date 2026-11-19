@@ -17,6 +17,7 @@ import com.starkinhon.battlegroundsmod.power.PowerData;
 import com.starkinhon.battlegroundsmod.power.PowerLogic;
 import com.starkinhon.battlegroundsmod.power.SoulSync;
 import com.starkinhon.battlegroundsmod.power.Tiers;
+import com.starkinhon.battlegroundsmod.universe.EnergyControl;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -39,6 +40,8 @@ final class IntroScript {
     // already (Stark 2026-11-19: the Shift skills showed up open, and the B was counted on the wrong slot, so the goal
     // stopped at 3 of 4 and the Meteoro Duplo never opened).
     private static final String MADARA = "uchiha_ghost";
+    // The player's tier in every scene (Tiers: 0 is a god, 10 a human).
+    private static final int INTRO_TIER = 1;
     private static final List<Integer> MADARA_START = List.of(0);
     // Hashirama's slots (power/powers/hashirama/Hashirama)
     private static final int HS_STAKES = 1, HS_PRISON = 2, HS_DRAGON = 3, HS_LANCE = 4, HS_BUDDHA = PowerData.SLOT_SHIFT_ULT;
@@ -154,7 +157,24 @@ final class IntroScript {
     }
 
     // The enemy keeps its target, stays on its floor and, while held by the script, stands facing the player.
+    // A scene left behind by a closed game (an enemy saved in the row's chunks) never shows up twice
+    // (Stark 2026-11-19: two Hashiramas): any character in this act's arena that is not this scene's goes away.
+    private static void sweep(IntroScript s) {
+        if (s.level == null || s.center == null || s.act < 0) {
+            return;
+        }
+        int r = ArenaTemplate.meta(ChallengeArenas.INTRO_ACTS.get(s.act)).raio() + 16;
+        for (SoulBoss other : s.level.getEntitiesOfClass(SoulBoss.class, new net.minecraft.world.phys.AABB(s.center).inflate(r, 96, r))) {
+            if (!other.getUUID().equals(s.enemy) && !other.getUUID().equals(s.ally)) {
+                other.discard();
+            }
+        }
+    }
+
     private void keepEnemy(ServerPlayer player) {
+        if (player.tickCount % 20 == 7) {
+            sweep(this);
+        }
         SoulBoss boss = boss();
         if (boss == null) {
             return;
@@ -246,9 +266,13 @@ final class IntroScript {
         PowerData data = new PowerData();
         data.receivedBook = true;
         data.power = power;
-        data.tier = p.getData(ModAttachments.POWER).tier;
+        // a strong body for the scenes, whatever the real tier (Stark 2026-11-19: at Tier 10 the Hashirama crumbled the bar)
+        data.tier = Math.min(p.getData(ModAttachments.POWER).tier, INTRO_TIER);
         data.outfit = true;
         p.setData(ModAttachments.POWER, data);
+        // the Controle de Energia: the river of the Vale do Fim (and any water on the way) is ground, not a trap
+        p.setData(ModAttachments.TECHNIQUES, List.of(EnergyControl.TECHNIQUE));
+        EnergyControl.sync(p);
         p.setData(ModAttachments.SOUL_SYNC, Map.of(power, new SoulSync.Entry(points, 0f, points, List.copyOf(awake))));
         Tiers.apply(p);
         p.setHealth(p.getMaxHealth());
@@ -257,22 +281,42 @@ final class IntroScript {
         SoulSync.sync(p);
     }
 
+    // The Hashirama comes in close and already fighting (Stark 2026-11-19: he stood still far across the river).
     private Step spawnHashirama(float life) {
-        return spawn(() -> ModEntities.HASHIRAMA.get(), life);
+        return spawn(() -> ModEntities.HASHIRAMA.get(), life, 5);
     }
 
     private Step spawn(java.util.function.Supplier<? extends net.minecraft.world.entity.EntityType<?>> type, float life) {
+        return spawn(type, life, 0);
+    }
+
+    // near > 0: that many blocks in front of the player, towards the challenger's spot, and fighting from the start
+    // (back to the challenger's spot if that place is inside a block). 0: on the challenger's spot, held.
+    private Step spawn(java.util.function.Supplier<? extends net.minecraft.world.entity.EntityType<?>> type, float life, int near) {
         return (s, p, t) -> {
             ArenaTemplate.Meta meta = ArenaTemplate.meta(ChallengeArenas.INTRO_ACTS.get(s.act));
             int[] d = meta.desafiante();
             BlockPos at = s.center.offset(d[0], d[1], d[2]);
+            sweep(s);
             Entity e = type.get().spawn(s.level, at, MobSpawnType.EVENT);
             if (!(e instanceof SoulBoss boss)) {
                 BattlegroundsMod.LOGGER.error("[intro] o inimigo do ato {} não nasceu", s.act);
                 return true;
             }
+            if (near > 0) {
+                Vec3 toward = Vec3.atBottomCenterOf(at).subtract(p.position()).multiply(1, 0, 1);
+                if (toward.lengthSqr() > near * near) {
+                    Vec3 spot = p.position().add(toward.normalize().scale(near));
+                    float yaw = (float) (Mth.atan2(p.getZ() - spot.z, p.getX() - spot.x) * Mth.RAD_TO_DEG) - 90;
+                    Vec3 back = boss.position();
+                    boss.moveTo(spot.x, p.getY(), spot.z, yaw, 0);
+                    if (!s.level.noCollision(boss)) {
+                        boss.moveTo(back.x, back.y, back.z, yaw, 0);
+                    }
+                }
+            }
             boss.setPersistenceRequired();
-            boss.introHold = true;
+            boss.introHold = near <= 0;
             boss.introMoves = Set.of();
             boss.introFloor = life;
             boss.setHealth(boss.getMaxHealth() * life);
@@ -327,7 +371,7 @@ final class IntroScript {
                 s.bestStreak = 0;
                 SoulBoss boss = s.boss();
                 if (boss != null) {
-                    boss.introHold = true;      // he takes it: the first combo is on a still target
+                    boss.introHold = false;     // he keeps fighting (punches and dashes): the combo is on a real fight
                 }
                 Intro.ui(p, "goal", goalId, 0, 1);
             }

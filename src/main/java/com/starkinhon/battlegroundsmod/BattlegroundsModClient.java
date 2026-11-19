@@ -544,6 +544,7 @@ public class BattlegroundsModClient {
         event.registerEntityRenderer(ModEntities.INUMAKI.get(), context -> new SoulBossRenderer<>(context, "inumaki", true));
         event.registerEntityRenderer(ModEntities.MIWA.get(), context -> new SoulBossRenderer<>(context, "miwa", true));
         event.registerEntityRenderer(ModEntities.NARUTO_CLONE.get(), com.starkinhon.battlegroundsmod.client.NarutoCloneRenderer::new);
+        event.registerEntityRenderer(ModEntities.CURSED_PLUSH.get(), com.starkinhon.battlegroundsmod.client.CursedPlushRenderer::new);
         // the Dragon Ball biomes' creatures, box models from the approved preview (client/blocky)
         event.registerEntityRenderer(ModEntities.PEDESTRE.get(), com.starkinhon.battlegroundsmod.client.pedestre.PedestreRenderer::new);
         event.registerEntityRenderer(ModEntities.NAMEKIANO.get(), context -> new com.starkinhon.battlegroundsmod.client.blocky.BlockyRenderer<>(context,

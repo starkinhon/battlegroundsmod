@@ -116,6 +116,8 @@ public final class Intro {
         player.setData(ModAttachments.INTRO_BACKUP, Dungeon.Backup.EMPTY);
         player.setData(ModAttachments.INTRO_GAMEMODE, -1);
         Dungeon.putBack(player, b);
+        // the lent Controle de Energia off the client too (it moves the player on the water itself)
+        com.starkinhon.battlegroundsmod.universe.EnergyControl.sync(player);
         if (mode >= 0) {
             player.setGameMode(GameType.byId(mode));
         }

@@ -123,9 +123,11 @@ public final class Achievements {
         return player.server.getAdvancements().get(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, id));
     }
 
-    // A Dungeon run plays with a borrowed character: nothing it does counts.
+    // Whether what the player does now counts for the achievements: not in the introduction, where the soul, its
+    // Sincronia and the tier are lent for the scenes (Stark 2026-11-19: it gave every Madara achievement), and not
+    // in a Dungeon run, which also plays with a borrowed character.
     private static boolean counts(ServerPlayer player) {
-        return Progression.on(player) && !Dungeon.inRun(player);
+        return Progression.on(player) && !com.starkinhon.battlegroundsmod.intro.Intro.active(player) && !Dungeon.inRun(player);
     }
 
     // A soul crystal absorbed (item/SoulItem): its branch opens right away.

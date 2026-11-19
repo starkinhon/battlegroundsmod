@@ -582,7 +582,7 @@ public final class DbActivities {
             ModItems.SCOUTER, ModItems.DRAGON_RADAR, ModItems.HIRAISHIN_KUNAI, ModItems.SAMEHADA,
             ModItems.KUSANAGI, ModItems.KUBIKIRIBOCHO, ModItems.PAPER_WINGS, ModItems.HASHIRAMA_CELL, ModItems.TOAD_SCROLL,
             ModItems.SHARINGAN, ModItems.GOJO_BLINDFOLD, ModItems.PLAYFUL_CLOUD, ModItems.INVERTED_SPEAR, ModItems.CURSED_DOLL,
-            ModItems.HOLLOW_MASK, ModItems.SOUL_CANDY, ModItems.NICHIRIN_SWORD, ModItems.WISTERIA,
+            ModItems.SOUL_CANDY, ModItems.NICHIRIN_SWORD, ModItems.WISTERIA,
             ModItems.TAMAYO_MEDICINE, ModItems.SOLDIER_PILL);
 
     private static ItemStack rare(ServerPlayer player) {
