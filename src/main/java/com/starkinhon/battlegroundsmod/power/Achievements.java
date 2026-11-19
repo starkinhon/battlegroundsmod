@@ -15,6 +15,7 @@ import com.starkinhon.battlegroundsmod.BattlegroundsMod;
 import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.boss.SoulBoss;
 import com.starkinhon.battlegroundsmod.challenge.ChallengeArenas;
+import com.starkinhon.battlegroundsmod.challenge.Dungeon;
 import com.starkinhon.battlegroundsmod.universe.DbQuests;
 import com.starkinhon.battlegroundsmod.world.TimeChamber;
 
@@ -122,16 +123,21 @@ public final class Achievements {
         return player.server.getAdvancements().get(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, id));
     }
 
+    // A Dungeon run plays with a borrowed character: nothing it does counts.
+    private static boolean counts(ServerPlayer player) {
+        return Progression.on(player) && !Dungeon.inRun(player);
+    }
+
     // A soul crystal absorbed (item/SoulItem): its branch opens right away.
     public static void soul(ServerPlayer player) {
-        if (Progression.on(player)) {
+        if (counts(player)) {
             souls(player);
         }
     }
 
     // A character or a common mob beaten by a player (or by its projectile, summon...).
     private static void onDeath(LivingDeathEvent event) {
-        if (!(event.getSource().getEntity() instanceof ServerPlayer player) || !Progression.on(player)) {
+        if (!(event.getSource().getEntity() instanceof ServerPlayer player) || !counts(player)) {
             return;
         }
         LivingEntity dead = event.getEntity();
@@ -158,7 +164,7 @@ public final class Achievements {
     }
 
     private static void onTick(PlayerTickEvent.Post event) {
-        if (!(event.getEntity() instanceof ServerPlayer player) || player.tickCount % 40 != 13 || !Progression.on(player)) {
+        if (!(event.getEntity() instanceof ServerPlayer player) || player.tickCount % 40 != 13 || !counts(player)) {
             return;
         }
         int tier = player.getData(ModAttachments.POWER).tier;
