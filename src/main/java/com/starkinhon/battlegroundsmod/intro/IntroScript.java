@@ -82,6 +82,7 @@ final class IntroScript {
             t = 0;
             hits = 0;
             stepCast = -1;
+            stepCard = -1;
             if (index >= steps.size()) {
                 Intro.end(player, true, false);
                 return;
@@ -238,13 +239,17 @@ final class IntroScript {
     }
 
     private Step spawnHashirama(float life) {
+        return spawn(() -> ModEntities.HASHIRAMA.get(), life);
+    }
+
+    private Step spawn(java.util.function.Supplier<? extends net.minecraft.world.entity.EntityType<?>> type, float life) {
         return (s, p, t) -> {
             ArenaTemplate.Meta meta = ArenaTemplate.meta(ChallengeArenas.INTRO_ACTS.get(s.act));
             int[] d = meta.desafiante();
             BlockPos at = s.center.offset(d[0], d[1], d[2]);
-            Entity e = ModEntities.HASHIRAMA.get().spawn(s.level, at, MobSpawnType.EVENT);
+            Entity e = type.get().spawn(s.level, at, MobSpawnType.EVENT);
             if (!(e instanceof SoulBoss boss)) {
-                BattlegroundsMod.LOGGER.error("[intro] Hashirama não nasceu");
+                BattlegroundsMod.LOGGER.error("[intro] o inimigo do ato {} não nasceu", s.act);
                 return true;
             }
             boss.setPersistenceRequired();
@@ -455,13 +460,134 @@ final class IntroScript {
         });
         add(ui("flash", "goku", 1, 0));
         add(wait(40));
-        add((s, p, t) -> {
-            s.dispose();
-            CombatMode.leave(p);
-            return true;
-        });
-        // Os outros atos (Goku x Vegeta, Shibuya, o duelo) entram aqui. Por enquanto a intro fecha no fim do Ato 1.
+        add(leaveAct());
+        actTwo();
+        // Os atos 3 (Shibuya) e o duelo entram aqui. Por enquanto a intro fecha no fim do Ato 2.
         add(ui("logo", "", 0, 0));
         add(wait(120));
     }
+
+    // The scene's enemy gone, the player out of combat (the white of the soul swap still on screen).
+    private Step leaveAct() {
+        return (s, p, t) -> {
+            s.dispose();
+            CombatMode.leave(p);
+            if (p.getAbilities().flying) {
+                p.getAbilities().flying = false;
+                p.onUpdateAbilities();
+            }
+            return true;
+        };
+    }
+
+    // ---------------------------------------------------------------- Ato 2: Deserto dos Saiyajins
+
+    // Goku's whole kit is awake (the lesson here is the air, not the soul).
+    private static List<Integer> all(String power) {
+        return SoulSync.skills(com.starkinhon.battlegroundsmod.power.Powers.get(power));
+    }
+
+    private void actTwo() {
+        add(build(1));
+        add(enter(1, "goku", all("goku"), 0));
+        add(spawn(() -> ModEntities.VEGETA.get(), 1f));
+        add(ui("flash", "", 0, 0));
+        add(ui("title", "deserto", 70, 0));
+        add(wait(20));
+        add(ui("say", "kakarotto", 50, 0));
+        add(wait(40));
+        // voa: ele vem atrás no ar
+        add(card("voo"));
+        add(fly("voe"));
+        add(airborne(160));
+        add(card("aereo"));
+        // luta um pouco no ar
+        add(life(0.85f));
+        add(fight("acerte_vegeta", 5));
+        // ele abre a Rajada de ki: pausa com a primeira bola vindo
+        add(life(0.7f));
+        add(airMove("rajada", "devolver"));
+        add(wait(60));
+        // de novo; ele vem na Investida: pausa na arrancada
+        add(fight("acerte_vegeta", 4));
+        add(life(0.55f));
+        add(airMove("investida", "ele_vem"));
+        add(wait(50));
+        add(life(0.3f));
+        add(fight("derrube_vegeta", 6));
+        add(hold());
+        add(ui("flash", "itadori", 1, 0));
+        add(wait(40));
+        add(leaveAct());
+    }
+
+    private Step hold() {
+        return (s, p, t) -> {
+            SoulBoss boss = s.boss();
+            if (boss != null) {
+                boss.introHold = true;
+            }
+            return true;
+        };
+    }
+
+    // The player takes off (Espaço 2x). The enemy chases on the ground meanwhile, and follows it up.
+    private Step fly(String goalId) {
+        return (s, p, t) -> {
+            if (t == 0) {
+                SoulBoss boss = s.boss();
+                if (boss != null) {
+                    boss.introHold = false;
+                    boss.introMoves = Set.of();
+                }
+                Intro.ui(p, "goal", goalId, 0, 1);
+            }
+            if (com.starkinhon.battlegroundsmod.universe.Flight.flying(p)) {
+                Intro.ui(p, "goal", goalId, 1, 1);
+                return true;
+            }
+            return false;
+        };
+    }
+
+    // Waits for the enemy to be up in the air with the player (or gives up after max ticks).
+    private Step airborne(int max) {
+        return (s, p, t) -> {
+            SoulBoss boss = s.boss();
+            return boss == null || t >= max || boss.air() != null && boss.air().fightingInAir();
+        };
+    }
+
+    // The enemy's air move, forced; the card comes up when it really starts (the first ki ball, the boost).
+    private Step airMove(String move, String cardId) {
+        return (s, p, t) -> {
+            SoulBoss boss = s.boss();
+            if (boss == null || boss.air() == null || t > 300) {
+                return true;
+            }
+            var air = boss.air();
+            if (t == 0) {
+                heal(p);
+                boss.introHold = true;
+                s.stepCast = -1;
+            }
+            if (s.stepCast < 0) {
+                if (air.fightingInAir()) {
+                    air.force(move);
+                    s.stepCast = t;
+                }
+                return false;
+            }
+            boolean started = air.move().equalsIgnoreCase(move) && (!"rajada".equals(move) || air.shotsFired() >= 1);
+            if (s.stepCard < 0 && (started || t - s.stepCast > 60)) {
+                s.stepCard = t;
+                s.card = true;
+                Intro.ui(p, "card", cardId, 0, 0);
+                return false;
+            }
+            return s.stepCard >= 0;
+        };
+    }
+
+    private int stepCard = -1;
 }

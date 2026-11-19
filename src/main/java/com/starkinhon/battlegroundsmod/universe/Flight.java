@@ -108,7 +108,8 @@ public final class Flight {
     }
 
     private static boolean inArena(ServerPlayer player) {
-        return ChallengeArenas.isArena(player.level().dimension());
+        // the introduction's desert is an arena build, and its Goku x Vegeta is a fight in the air (intro/IntroScript)
+        return ChallengeArenas.isArena(player.level().dimension()) && !com.starkinhon.battlegroundsmod.intro.Intro.active(player);
     }
 
     // The client asks for the boost (Ctrl while flying) or lets it go.
