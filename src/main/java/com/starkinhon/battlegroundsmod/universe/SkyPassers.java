@@ -580,9 +580,9 @@ public final class SkyPassers {
                 }
                 if (e.pt > 0.32) {
                     e.center = e.center.add(e.dir.scale(22)).add(0, (RANDOM.nextDouble() - 0.5) * 8, 0);
-                    double floor = clearAt(e.level, e.center, 14);
-                    if (e.center.y < floor) {
-                        e.center = new Vec3(e.center.x, floor, e.center.z);
+                    double over = clearAt(e.level, e.center, 14);
+                    if (e.center.y < over) {
+                        e.center = new Vec3(e.center.x, over, e.center.z);
                     }
                     for (int i = 0; i < 2; i++) {
                         SoulBoss m = e.ents.get(i);
