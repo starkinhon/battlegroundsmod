@@ -346,7 +346,7 @@ public final class ChallengeArenas {
             player.displayClientMessage(Component.translatable("message.battlegroundsmod.arena_missing"), false);
             return false;
         }
-        if (SESSIONS.containsKey(player.getUUID())) {
+        if (SESSIONS.containsKey(player.getUUID()) || com.starkinhon.battlegroundsmod.intro.Intro.active(player)) {
             player.displayClientMessage(Component.translatable("message.battlegroundsmod.arena_busy"), true);
             return false;
         }
@@ -367,7 +367,8 @@ public final class ChallengeArenas {
         List<ServerPlayer> team = new ArrayList<>();
         team.add(player);
         for (ServerPlayer mate : ArenaParty.others(player)) {
-            if (SESSIONS.containsKey(mate.getUUID()) || !mate.isAlive() || mate.isSpectator()) {
+            if (SESSIONS.containsKey(mate.getUUID()) || !mate.isAlive() || mate.isSpectator()
+                    || com.starkinhon.battlegroundsmod.intro.Intro.active(mate)) {
                 player.displayClientMessage(Component.translatable("message.battlegroundsmod.arena_mate_busy", mate.getDisplayName()), false);
                 continue;
             }
@@ -593,6 +594,9 @@ public final class ChallengeArenas {
     // From the book's "back" button or the end of a fight: home again. The others of the group stay.
     public static void leave(ServerPlayer player) {
         Session session = SESSIONS.get(player.getUUID());
+        if (session == null && com.starkinhon.battlegroundsmod.intro.Intro.active(player)) {
+            return;     // the introduction's arenas have no session: its end (or /soul intro pular) takes the player home
+        }
         if (session == null) {
             if (isArena(player.level().dimension())) {
                 Vec3 home = Universes.homePos(player);
@@ -1083,7 +1087,9 @@ public final class ChallengeArenas {
         if (event.getEntity() instanceof ServerPlayer player) {
             syncWins(player);
             ArenaParty.sync(player);
-            if (isArena(player.level().dimension()) && !SESSIONS.containsKey(player.getUUID())) {
+            // a player who left in the middle of the introduction goes back by its own backup (intro/Intro.onLogin)
+            if (isArena(player.level().dimension()) && !SESSIONS.containsKey(player.getUUID())
+                    && !player.getData(com.starkinhon.battlegroundsmod.ModAttachments.INTRO_BACKUP).active()) {
                 leave(player);
             }
         }

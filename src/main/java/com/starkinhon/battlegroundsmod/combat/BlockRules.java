@@ -26,6 +26,10 @@ public final class BlockRules {
         if (com.starkinhon.battlegroundsmod.challenge.Dungeon.protectsBlocks(level)) {
             return false;
         }
+        // nor the arenas of an introduction (intro/Intro.protectsBlocks)
+        if (com.starkinhon.battlegroundsmod.intro.Intro.protectsBlocks(level)) {
+            return false;
+        }
         return level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING) && level.getGameRules().getBoolean(SOULS_BLOCK_DESTRUCTION);
     }
 

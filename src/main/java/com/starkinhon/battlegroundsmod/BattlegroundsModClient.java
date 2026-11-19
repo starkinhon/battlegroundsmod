@@ -96,6 +96,8 @@ public class BattlegroundsModClient {
             com.starkinhon.battlegroundsmod.client.CutsceneCamera.reset();
             com.starkinhon.battlegroundsmod.client.fx.SkillEffects.clear();
             com.starkinhon.battlegroundsmod.client.FlightClient.clear();
+            // a black screen, a flash or a goal of a scene left in the middle never follows into the next world (#379)
+            com.starkinhon.battlegroundsmod.client.IntroHud.clear();
         });
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.DragonWind::onRenderLevel);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.DragonWind::onClientTick);

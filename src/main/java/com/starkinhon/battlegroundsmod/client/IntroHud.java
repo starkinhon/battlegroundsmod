@@ -274,14 +274,23 @@ public final class IntroHud {
             }
             return;
         }
-        float cx = GW / 2f, y = GH - 92;
-        for (int i = 0; i < 46; i += 2) {
+        String shown = line.substring(0, Math.min(line.length(), (int) (age * 45)));
+        List<String> lines = Px.wrap(shown, 330, 9);
+        // over the whole bottom stack: the base attack's name (BaseAttacks), and the action bar message StatusBars lifts
+        // above it, with room for two lines of it (Stark 2026-11-19: the line sat on top of "Ataque de Barragem")
+        int full = Math.max(1, Px.wrap(line, 330, 9).size());
+        float bottom = GH - 64;
+        if (BaseAttacks.stackTop != Integer.MIN_VALUE) {
+            net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+            float perGui = (float) (mc.getWindow().getGuiScale() / Px.S);
+            bottom = Math.min(bottom, BaseAttacks.stackTop * perGui - 2 * (mc.font.lineHeight + 3) * perGui - 6);
+        }
+        float cx = GW / 2f, y = bottom - 8 - full * 12;
+        for (int i = 0; i < 34 + full * 12; i += 2) {
             R(0, y - 14 + i, GW, 2, VEIL, 0.5f * a * Math.min(1, i / 16f));
         }
         T(who, cx, y - 10, rgb(255, 214, 110), 10, true, 0, true, a);
         goldRule(cx - 120, cx + 120, y + 3, a);
-        String shown = line.substring(0, Math.min(line.length(), (int) (age * 45)));
-        List<String> lines = Px.wrap(shown, 330, 9);
         for (int i = 0; i < lines.size(); i++) {
             T(lines.get(i), cx, y + 8 + i * 12, CREAM, 9, false, 0, true, a);
         }
@@ -471,7 +480,10 @@ public final class IntroHud {
         public void removed() {
             if (!sent) {
                 sent = true;
-                PacketDistributor.sendToServer(new ModPayloads.IntroAck("card"));
+                // closed by a disconnect (clear() on LoggingOut): nobody to tell
+                if (Minecraft.getInstance().getConnection() != null) {
+                    PacketDistributor.sendToServer(new ModPayloads.IntroAck("card"));
+                }
             }
             super.removed();
         }
