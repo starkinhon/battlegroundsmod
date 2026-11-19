@@ -180,7 +180,7 @@ public final class LeafForestFx {
             return;
         }
         int w = graphics.guiWidth(), h = graphics.guiHeight();
-        graphics.fill(0, 0, w, h, argb(0.055f * fade, 0xFFD27A));
+        BiomeAura.wash(graphics, 0xFFD27A, 0.055f * fade);
         int bands = 18;
         int depthX = Math.max(1, w / 5), depthY = Math.max(1, h / 4);
         for (int i = 0; i < bands; i++) {

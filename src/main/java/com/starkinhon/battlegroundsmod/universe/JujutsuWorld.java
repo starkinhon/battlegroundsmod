@@ -1,7 +1,6 @@
 package com.starkinhon.battlegroundsmod.universe;
 
 import com.starkinhon.battlegroundsmod.ModItems;
-import com.starkinhon.battlegroundsmod.challenge.Universes;
 
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerLevel;
@@ -44,7 +43,7 @@ public final class JujutsuWorld {
 
     private static void onDeath(LivingDeathEvent event) {
         LivingEntity victim = event.getEntity();
-        if (victim.level().isClientSide || !UNIVERSE.equals(Universes.universeOf(victim.level().dimension()))
+        if (victim.level().isClientSide || !UNIVERSE.equals(UniverseBiomes.universeAt(victim.level(), victim.blockPosition()))
                 || !(event.getSource().getEntity() instanceof ServerPlayer player)) {
             return;
         }

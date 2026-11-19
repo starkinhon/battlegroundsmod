@@ -52,6 +52,19 @@ public abstract class SoulBoss extends Monster {
     private boolean tier0Applied;
     // The Livro dos Desafios' Modo Difícil (challenge/ChallengeArenas): fights at this tier when it is above its own (-1 = its own)
     private int arenaTier = -1;
+    // The Dungeon (challenge/Dungeon): fights at EXACTLY this tier, weaker or stronger than its own (arenaTier only ever raises it),
+    // and never drops its soul: the run puts the soul in the player itself.
+    private int forcedTier = -1;
+    private boolean dungeonFight;
+
+    public void dungeonTier(int tier) {
+        forcedTier = tier;
+        dungeonFight = true;
+        if (configured && level() instanceof ServerLevel server) {
+            applyStats(server, spec());
+            setHealth(getMaxHealth());
+        }
+    }
 
     public void arenaTier(int tier) {
         arenaTier = tier;
@@ -351,10 +364,14 @@ public abstract class SoulBoss extends Monster {
         BossSpec.Atributos atributos = atributos();
         int ownTier = isBoss() ? BossRules.tier(level, spec)
                 : spec.tier() != null ? com.starkinhon.battlegroundsmod.power.Tiers.clamp(spec.tier()) : com.starkinhon.battlegroundsmod.power.Tiers.HUMANO;
-        int tier = arenaTier >= 0 ? Math.min(ownTier, arenaTier) : ownTier;
+        int tier = forcedTier >= 0 ? forcedTier : arenaTier >= 0 ? Math.min(ownTier, arenaTier) : ownTier;
         // raised to a higher tier: its life grows as much as a tier's life does (the same share of a fighter of that tier)
         double lifeScale = com.starkinhon.battlegroundsmod.power.Tiers.health(tier) / com.starkinhon.battlegroundsmod.power.Tiers.health(ownTier);
-        setBase(Attributes.MAX_HEALTH, atributos.vida() * lifeScale);
+        double maxLife = atributos.vida() * lifeScale;
+        if (dungeonFight) {
+            maxLife = Math.max(maxLife, Math.round(com.starkinhon.battlegroundsmod.power.Tiers.health(tier) * 0.50));
+        }
+        setBase(Attributes.MAX_HEALTH, maxLife);
         // Armor 0 counts too (the Escudo replaced the bosses' armor on 2026-11-08), so an old save loses its 20.
         AttributeInstance armor = getAttribute(Attributes.ARMOR);
         if (armor != null) {
@@ -522,6 +539,10 @@ public abstract class SoulBoss extends Monster {
             // A soul Makima raised: it is already hers.
             return;
         }
+        if (dungeonFight) {
+            // The Dungeon gives the soul straight to the player (challenge/Dungeon.bossBeaten): no item, no ceremony.
+            return;
+        }
         var soul = ModItems.SOULS.get(spec().poder());
         if (soul != null && dropsSoul(level, source)) {
             ServerPlayer killer = SoulCeremony.killer(source);
@@ -603,6 +624,8 @@ public abstract class SoulBoss extends Monster {
         tag.putInt("BossPhase", phase);
         tag.putBoolean("BossUltUsed", ultUsed);
         tag.putInt("ArenaTier", arenaTier);
+        tag.putInt("ForcedTier", forcedTier);
+        tag.putBoolean("DungeonFight", dungeonFight);
     }
 
     @Override
@@ -612,6 +635,8 @@ public abstract class SoulBoss extends Monster {
         phase = tag.getInt("BossPhase");
         ultUsed = tag.getBoolean("BossUltUsed");
         arenaTier = tag.contains("ArenaTier") ? tag.getInt("ArenaTier") : -1;
+        forcedTier = tag.contains("ForcedTier") ? tag.getInt("ForcedTier") : -1;
+        dungeonFight = tag.getBoolean("DungeonFight");
         if (configured && !level().isClientSide()) {
             // The bar's color is set when a phase starts: after a reload it was back to red until the next phase.
             try {

@@ -878,6 +878,32 @@ public final class InfiniteVoid {
         ACTIVE.clear();
     }
 
+    // Aborts any active domain involving entity (e.g. Dungeon stage reset) without teleporting back to old coordinates.
+    public static void abortFor(LivingEntity entity) {
+        if (ACTIVE.isEmpty() || entity == null) {
+            return;
+        }
+        for (Active active : List.copyOf(ACTIVE)) {
+            if (active.caster == entity || active.target == entity || active.caught.contains(entity) || active.back.containsKey(entity)) {
+                active.inside = false;
+                for (LivingEntity e : active.back.keySet()) {
+                    if (e instanceof ServerPlayer p) {
+                        p.getPersistentData().remove(BACK_TAG);
+                        if (active.granted.contains(p)) {
+                            p.getAbilities().mayfly = p.isCreative() || p.isSpectator();
+                            p.getAbilities().flying = false;
+                            p.onUpdateAbilities();
+                        }
+                    }
+                }
+                active.back.clear();
+                active.granted.clear();
+                send(active.level, active.center, new ModPayloads.GojoDomain(active.caster.getId(), active.center, active.awakened, 3, -1));
+                ACTIVE.remove(active);
+            }
+        }
+    }
+
     private static void send(ServerLevel level, Vec3 center, ModPayloads.GojoDomain payload) {
         Vec3 arena = DominioSpec.arena(level, center);
         for (ServerPlayer player : level.players()) {

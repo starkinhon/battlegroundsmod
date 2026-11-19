@@ -74,6 +74,7 @@ public final class AirCombat {
     private Hit pending;
     private int pendT;
     // the target's speed in blocks per second (from how it moved: the server doesn't move a flying player)
+    private LivingEntity trackedTarget;
     private Vec3 tPrev;
     private Vec3 tVel = Vec3.ZERO;
     // whoever it fought last tick (see step)
@@ -97,14 +98,7 @@ public final class AirCombat {
     // whom it faces in the air (the stance looks at the target, not along the way it flies)
     private LivingEntity facing;
 
-    // flown by the page's fight on a client (combat/AirFight.sim): who, until when, where, facing, flags (1 flying, 2 boost, 4 gone)
-    private ServerPlayer pilot;
-    private long pilotUntil;
-    private Vec3 pilotPos = Vec3.ZERO;
-    private float pilotYaw;
-    private int pilotFlags;
-
-    // A skill has it right now (a real stun or a hold): the page's fight lets go of it until then.
+    // A skill has it right now (a real stun or a hold): the air AI waits until it ends.
     // Staged too: a boss's entrance, phase change or final ult holds it still for its cutscene.
     private boolean held() {
         return Stun.real(boss) || Freeze.isFrozen(boss) || boss.staged() || casting();
@@ -219,21 +213,6 @@ public final class AirCombat {
         }
     }
 
-    // False when another player flies it right now (two clients pulling one soul two ways in multiplayer): only the
-    // first keeps it until its packets stop.
-    public boolean pilot(ServerPlayer player, Vec3 pos, float yaw, int flags) {
-        if (pilot != null && pilot != player && pilot.isAlive() && pilot.level() == player.level()
-                && player.level().getGameTime() <= pilotUntil) {
-            return false;
-        }
-        pilot = player;
-        pilotUntil = player.level().getGameTime() + 6;
-        pilotPos = pos;
-        pilotYaw = yaw;
-        pilotFlags = flags;
-        return true;
-    }
-
     private record Hit(boolean big, boolean slam, double knock, double reach, boolean finisher, float damage) {
     }
 
@@ -338,8 +317,7 @@ public final class AirCombat {
 
     private void step(ServerLevel level) {
         if (!boss.isAlive()) {
-            // killed while the page had it hidden (the punch exchange): it dies in sight
-            if (pilot != null && boss.isInvisible()) {
+            if (boss.isInvisible()) {
                 boss.setInvisible(false);
             }
             if (st != St.CHAO) {
@@ -347,68 +325,6 @@ public final class AirCombat {
             }
             send();
             return;
-        }
-        if (pilot != null) {
-            if (pilot.isAlive() && pilot.level() == level && level.getGameTime() <= pilotUntil && held()) {
-                // Taken by one of the player's skills (a real stun, a hold: Kaioken rush, Piccolo's grab, the
-                // Kamehameha's push...): the skill moves it, the page's fight on the client follows (Flight.HELD) and
-                // takes it back when it lets go (Stark 2026-11-13: the techniques must work in the combat flight).
-                st = St.AR;
-                act = Act.NONE;
-                phase = 0;
-                pending = null;
-                boss.getNavigation().stop();
-                if (!Freeze.isFrozen(boss)) {
-                    boss.setNoGravity(true);
-                    boss.setDeltaMovement(boss.getDeltaMovement().scale(0.8));
-                }
-                boss.fallDistance = 0;
-                vel = Vec3.ZERO;
-                lastSet = null;
-                boss.setInvisible(false);
-                if (casting()) {
-                    hoverCasting(pilot);
-                }
-                send();
-                return;
-            }
-            if (pilot.isAlive() && pilot.level() == level && level.getGameTime() <= pilotUntil) {
-                // flown by the page's fight on that player's client (combat/AirFight.sim): it only goes where it is told
-                st = St.AR;
-                act = Act.NONE;
-                phase = 0;
-                falling = false;
-                knocked = 0;
-                pending = null;
-                facing = pilot;
-                chase = pilot;
-                if (boss.getTarget() != pilot) {
-                    boss.setTarget(pilot);
-                }
-                boss.getNavigation().stop();
-                boss.setNoGravity(true);
-                boss.fallDistance = 0;
-                vel = pilotPos.subtract(boss.position()).scale(1 / DT);
-                boss.setPos(pilotPos);
-                boss.setYRot(pilotYaw);
-                boss.yRotO = pilotYaw;
-                boss.setYHeadRot(pilotYaw);
-                boss.yBodyRot = pilotYaw;
-                boss.setDeltaMovement(Vec3.ZERO);
-                lastSet = Vec3.ZERO;
-                boost = (pilotFlags & 2) != 0;
-                boss.setInvisible((pilotFlags & 4) != 0);
-                if ((pilotFlags & 4) == 0 && (pilotFlags & 1) != 0 && kit(pilot)) {
-                    // its own technique: held from the next tick on, the page follows it
-                    boss.setInvisible(false);
-                }
-                send();
-                return;
-            }
-            pilot = null;
-            vel = Vec3.ZERO;
-            lastSet = null;
-            boss.setInvisible(false);
         }
         LivingEntity target = boss.getTarget();
         // In the air it keeps after whoever it fights even past its sight (the target goals let go at 32-48 blocks, and
@@ -610,7 +526,14 @@ public final class AirCombat {
 
     private void trackTarget(LivingEntity target) {
         if (target == null) {
+            trackedTarget = null;
             tPrev = null;
+            tVel = Vec3.ZERO;
+            return;
+        }
+        if (target != trackedTarget) {
+            trackedTarget = target;
+            tPrev = target.position();
             tVel = Vec3.ZERO;
             return;
         }
@@ -1104,10 +1027,6 @@ public final class AirCombat {
     // ------------------------------------------------------------------ the clients
 
     int state() {
-        if (pilot != null) {
-            int held = held() ? Flight.HELD : 0;
-            return (pilotFlags & 1) != 0 ? Flight.FLYING | Flight.COMBAT | (boost ? Flight.BOOST : 0) | held : held;
-        }
         boolean fly = st == St.AR || st == St.MERGULHO;
         boolean stance = st == St.AR && !passer && act != Act.PERSEGUE && !(act == Act.RECUA && phase == 0) && boss.getTarget() != null;
         return fly ? Flight.FLYING | (boost ? Flight.BOOST : 0) | (stance ? Flight.COMBAT : 0) | flags : 0;

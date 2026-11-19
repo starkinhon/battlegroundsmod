@@ -1,9 +1,14 @@
 package com.starkinhon.battlegroundsmod.client;
 
+import org.lwjgl.glfw.GLFW;
+
 import com.starkinhon.battlegroundsmod.ModAttachments;
+import com.starkinhon.battlegroundsmod.boss.AirCombat;
 import com.starkinhon.battlegroundsmod.boss.SoulBoss;
 import com.starkinhon.battlegroundsmod.combat.AirFight;
+import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
+import com.starkinhon.battlegroundsmod.power.PowerData;
 import com.starkinhon.battlegroundsmod.universe.Flight;
 
 import net.minecraft.client.Minecraft;
@@ -13,6 +18,8 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.client.event.RenderFrameEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 
@@ -41,7 +48,7 @@ public final class AirFightClient {
         LivingEntity current = entity(targetId);
         if (!wants) {
             targetId = -1;
-        } else if (current == null || !valid(player, current, KEEP)) {
+        } else if (current == null || !valid(player, current, KEEP) || !targetable(current, true)) {
             LivingEntity best = pick(player);
             targetId = best == null ? -1 : best.getId();
         }
@@ -74,10 +81,20 @@ public final class AirFightClient {
 
     private static boolean valid(LocalPlayer player, LivingEntity e, double reach) {
         return e.isAlive() && !e.isRemoved() && e != player && !e.isSpectator() && e.distanceToSqr(player) < reach * reach
-                && !(e instanceof Player p && p.isCreative());
+                && !(e instanceof Player p && p.isCreative()) && Combat.lockable(e);
     }
 
-    // Who to fight: a flying soul first, then whoever is hostile (a player flying too counts), the closest one in front.
+    private static boolean targetable(LivingEntity living, boolean keep) {
+        if (living instanceof SoulBoss soul) {
+            return AirCombat.flier(soul);
+        }
+        if (living instanceof Player other) {
+            return FlightClient.flying(other) || Flight.dbPower(other) || (keep && !other.onGround());
+        }
+        return false;
+    }
+
+    // Who to fight: flying Dragon Ball souls or flying/DB players, prioritizing those flying and in front of the aim.
     private static LivingEntity pick(LocalPlayer player) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level == null) {
@@ -88,15 +105,10 @@ public final class AirFightClient {
         LivingEntity best = null;
         double bestScore = Double.MAX_VALUE;
         for (Entity e : minecraft.level.getEntities(player, player.getBoundingBox().inflate(REACH))) {
-            if (!(e instanceof LivingEntity living) || !valid(player, living, REACH)) {
+            if (!(e instanceof LivingEntity living) || !valid(player, living, REACH) || !targetable(living, false)) {
                 continue;
             }
             boolean flier = FlightClient.flying(living);
-            // Only a Dragon Ball soul that flies (Goku, Vegeta, Piccolo, Kuririn, Freeza, Bills): the combat flight locked on
-            // common mobs, even dinosaurs that never fly, as soon as the combat mode came on (Stark 2026-11-14).
-            if (!(living instanceof SoulBoss soul) || !com.starkinhon.battlegroundsmod.boss.AirCombat.flier(soul)) {
-                continue;
-            }
             Vec3 to = living.position().add(0, living.getBbHeight() / 2, 0).subtract(eye);
             double d = to.length();
             double front = d < 1.0E-3 ? 1 : to.scale(1 / d).dot(look);
@@ -159,12 +171,76 @@ public final class AirFightClient {
     private static int exTicks;
     private static Vec3 exDir;
 
+    private static boolean cutscene(Minecraft mc) {
+        float partial = mc.getTimer().getGameTimeDeltaPartialTick(true);
+        return com.starkinhon.battlegroundsmod.client.fx.DuelScene.cutscene() || com.starkinhon.battlegroundsmod.client.fx.ShenlongScene.cutscene()
+                || com.starkinhon.battlegroundsmod.client.fx.SukunaDomainScene.cutscene() || com.starkinhon.battlegroundsmod.client.cutscene.CutscenePlayer.active()
+                || BossCutscene.active() || HakaiCutscene.active() || EsferaCutscene.active() || GrabCutscene.active() || BopCutscene.active()
+                || ShoulderCutscene.active() || FaceCutscene.shot(partial) != null || CutsceneHud.hidden();
+    }
+
+    public static void onKey(InputEvent.Key event) {
+        if (!active() || event.getAction() != GLFW.GLFW_PRESS && event.getAction() != GLFW.GLFW_REPEAT) {
+            return;
+        }
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.screen != null) {
+            return;
+        }
+        var slots = mc.options.keyHotbarSlots;
+        for (int i = 0; i < 3 && i < slots.length; i++) {
+            if (slots[i].matches(event.getKey(), event.getScanCode())) {
+                while (slots[i].consumeClick()) {
+                    // keep current hotbar slot
+                }
+                if (event.getAction() == GLFW.GLFW_PRESS) {
+                    sendHotbarMove(i);
+                }
+            }
+        }
+    }
+
+    public static void tickPre(ClientTickEvent.Pre event) {
+        if (!active()) {
+            return;
+        }
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.screen != null) {
+            return;
+        }
+        var slots = mc.options.keyHotbarSlots;
+        for (int i = 0; i < 3 && i < slots.length; i++) {
+            while (slots[i].consumeClick()) {
+                sendHotbarMove(i);
+            }
+        }
+    }
+
+    public static boolean barrageKeyHeld() {
+        Minecraft mc = Minecraft.getInstance();
+        return active() && mc.screen == null && mc.options.keyHotbarSlots.length > 2 && mc.options.keyHotbarSlots[2].isDown();
+    }
+
+    private static void sendHotbarMove(int index) {
+        int slot = switch (index) {
+            case 0 -> PowerData.SLOT_DASH_ATTACK;
+            case 1 -> PowerData.SLOT_STRONG;
+            case 2 -> PowerData.SLOT_BARRAGE;
+            default -> -1;
+        };
+        if (slot >= 0) {
+            if (index == 2) {
+                BaseAttacks.holdKey(true);
+            }
+            PacketDistributor.sendToServer(new ModPayloads.UseAbility(slot));
+        }
+    }
+
     public static void onFrame(RenderFrameEvent.Pre event) {
         Minecraft minecraft = Minecraft.getInstance();
         LocalPlayer player = minecraft.player;
-        PreviewFight.frame();
-        if (PreviewFight.running() || PreviewFight.scene()) {
-            // the page's fight, or a cutscene that has the camera (the lock must not turn the player under it)
+        if (cutscene(minecraft)) {
+            // a cutscene has the camera (the lock must not turn the player under it)
             camPos = null;
             lastFrame = System.nanoTime();
             return;

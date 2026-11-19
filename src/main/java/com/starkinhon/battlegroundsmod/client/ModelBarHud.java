@@ -35,6 +35,10 @@ public final class ModelBarHud {
         value = Mth.clamp(v, 0, 1);
     }
 
+    public static boolean full() {
+        return value >= 1f;
+    }
+
     // Whether the bar takes its row this frame (also while it fades out).
     static boolean showing(PowerData data) {
         return Sukuna.ID.equals(data.power) && (value > 0.001f || data.combat || alpha > 0.01f);

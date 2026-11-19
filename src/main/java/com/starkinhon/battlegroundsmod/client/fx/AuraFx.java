@@ -48,6 +48,10 @@ public final class AuraFx {
 
     private static final Map<Integer, St> STATES = new HashMap<>();
 
+    // How fast the flight's aura goes out per tick once the boost ends (the share of what is left that goes away): lower =
+    // a longer, softer fade, higher = quicker.
+    private static final float FLIGHT_FADE_OUT = 0.1f;
+
     private AuraFx() {
     }
 
@@ -161,9 +165,11 @@ public final class AuraFx {
         float sp = (float) v.length();
         boolean combat = AirFightClient.combat(e);
         float boost = FlightPose.shell(e, partial);
-        float want = weight * Math.max(boost, Math.max(Mth.clamp((sp - 4) / 8, 0, 1), combat ? 1 : 0));
+        // Only the boost (Ctrl) and the combat flight's ki dash / rush light it: cruising or floating in the combat stance
+        // shows no aura (it was on by speed alone, and the cruise is always faster than that, and on all the time in combat).
+        float want = weight * boost;
         if (now != s.flySeen) {
-            s.show += (want - s.show) * (want > s.show ? 0.5f : 0.08f);
+            s.show += (want - s.show) * (want > s.show ? 0.5f : FLIGHT_FADE_OUT);
             s.flySeen = now;
         }
         boolean on = s.show > 0.3f;
@@ -290,7 +296,10 @@ public final class AuraFx {
         k.flashAmt = 0;
         k.burst = burst;
         k.pulse = p.pulse;
-        k.alpha = Mth.clamp(0.45f + 0.55f * a, 0, 1);
+        // The flight's aura fades out with its strength: alpha used to keep a floor of 0.45 and the aura was cut when the
+        // strength reached ~0, so it vanished at almost half opacity. Everything of it (shell and comet) goes down together.
+        float fade = ground ? 1 : smoothstep(0, 0.45f, a);
+        k.alpha = Mth.clamp(0.45f + 0.55f * a, 0, 1) * fade;
         k.color = col;
         k.color2 = p.edge != null ? p.edge : edge(col);
         k.seed = 0.37f * (e.getId() % 7 + 1);
@@ -306,7 +315,7 @@ public final class AuraFx {
         k.size = new float[] {0.62f * K, 1.12f * K, 0.5f * K};
         Vector3f td = inv.transformDirection(new Vector3f(s.tail)).normalize();
         k.tailDir = new float[] {td.x, td.y, td.z};
-        k.comet = s.comet;
+        k.comet = s.comet * fade;
         if (p.pullWorld != null && p.pullAmt > 0) {
             Vector3f hp = inv.transformPosition(DbFx.rel(p.pullWorld));
             k.pullPos = new float[] {hp.x, hp.y, hp.z};

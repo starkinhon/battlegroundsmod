@@ -56,6 +56,14 @@ public final class SkillIcons {
 
     // The icon to show for a skill, or null for the placeholder.
     public static ResourceLocation icon(Power power, int slot) {
+        if (com.starkinhon.battlegroundsmod.power.powers.Sukuna.ID.equals(power.id())
+                && slot == 0 && ModelBarHud.full()) {
+            ResourceLocation worldSlash = ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID,
+                    "textures/gui/skills/sukuna/0_mundo.png");
+            if (exists(worldSlash)) {
+                return worldSlash;
+            }
+        }
         ResourceLocation own = location(power, slot);
         if (exists(own)) {
             return own;

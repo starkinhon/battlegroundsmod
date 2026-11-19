@@ -21,9 +21,9 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.phys.Vec3;
 
-// Places the cutscene camera after vanilla is done, so the third person pull back can't move it again.
+// Places the cutscene camera after vanilla (and camera mods like Shoulder Surfing) are done, so third-person pull-back can't move it again.
 // Screen shake is added on top.
-@Mixin(Camera.class)
+@Mixin(value = Camera.class, priority = 2000)
 public abstract class CameraMixin {
     @Shadow
     protected abstract void setPosition(Vec3 pos);
@@ -60,6 +60,7 @@ public abstract class CameraMixin {
             }
         }
         if (shot != null) {
+            this.detached = true;
             setRotation(shot.yaw(), shot.pitch());
             setPosition(shot.position());
         } else if (detached && entity != null) {

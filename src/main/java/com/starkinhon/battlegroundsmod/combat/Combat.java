@@ -196,25 +196,31 @@ public final class Combat {
         return effect == null ? 1f : 1f + 0.3f * (effect.getAmplifier() + 1);
     }
 
-    // The fists (combo punches, Dash Attack, Forte, Barragem): at least 1 damage a hit for a human (Stark 2026-11-10: a
-    // Tier 10's punches did 0.3-0.4), the floor growing with the tier's health up to MAX_FLOOR.
-    private static final float MAX_FLOOR = 6f;
-    private static final float FLOOR_JAB = 8f;
+    // The Barragem (the punches', the sword's and the flight's ki balls) is a pressure tool, never higher DPS than
+    // real techniques like Kamehameha.
+    public static final float BARRAGE_SCALE = 0.28f;
+
     public static boolean hurtBasic(LivingEntity attacker, LivingEntity target, float damage) {
+        return hurtBasic(attacker, target, damage, 1f);
+    }
+
+    // A blow of the fists' Barragem: scaled by BARRAGE_SCALE.
+    public static boolean hurtBarrage(LivingEntity attacker, LivingEntity target, float damage) {
+        return hurtBasic(attacker, target, damage, BARRAGE_SCALE);
+    }
+
+    private static boolean hurtBasic(LivingEntity attacker, LivingEntity target, float damage, float scale) {
         float mult = Tiers.damageMultiplier(attacker) * com.starkinhon.battlegroundsmod.power.powers.sub.nr.NrCommon.damageMultiplier(attacker)
                 * com.starkinhon.battlegroundsmod.power.powers.sub.jj.JjCommon.damageMultiplier(attacker)
                 * com.starkinhon.battlegroundsmod.power.powers.kokushibo.OniBody.damageMultiplier(attacker);
-        // 1 at Tier 10, growing like the tiers grow (their health): Tier 9 1.35, Tier 7 ~2.5, Tier 5 4.5, at most 6 (from
-        // Tier 4 up the tier's own scale is about there already). Stark's test 2026-11-10: at Tier 7 a zombie still
-        // took 1 per punch.
-        float floor = (float) Math.min(MAX_FLOOR, Tiers.health(Tiers.of(attacker)) / Tiers.health(Tiers.HUMANO));
-        // The floor is a jab's: heavier blows keep their weight over it (Stark 2026-11-13: at low tiers the Strong Attack,
-        // 25 against the jab's 8, landed on the same floor and did about what a jab did).
-        if (attacker instanceof Player) {
-            floor *= Math.max(1f, damage / FLOOR_JAB);
-        }
-        if (mult > 0 && damage > 0 && damage * mult < floor) {
-            damage = floor / mult;
+        damage *= scale;
+        // Against vanilla mobs (non-Player, non-SoulBoss), keep a modest 2.0 floor for normal hits so low-tier players
+        // don't take forever to kill zombies/skeletons, without inflating Barragem or PvP/Boss damage.
+        if (attacker instanceof Player && !(target instanceof Player) && !(target instanceof com.starkinhon.battlegroundsmod.boss.SoulBoss)) {
+            float vanillaFloor = 2.0f * scale;
+            if (mult > 0 && damage > 0 && damage * mult < vanillaFloor) {
+                damage = vanillaFloor / mult;
+            }
         }
         boolean landed = hurtBase(attacker, target, damage);
         if (landed) {

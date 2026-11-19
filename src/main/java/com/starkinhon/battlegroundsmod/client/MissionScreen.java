@@ -517,11 +517,11 @@ public class MissionScreen extends Screen {
         Px.glow(bx + bw / 2, by0 + bh * 0.55f, bw * 0.47f, uc, 0.4f);
         {
             float k = 2.1f;
-            Px.g.enableScissor(Math.round(bx), Math.round(by0), Math.round(bx + bw), Math.round(by0 + bh));
+            Px.scissor(Math.round(bx), Math.round(by0), Math.round(bx + bw), Math.round(by0 + bh));
             SkinDraw.Pose p = new SkinDraw.Pose(-0.35f, 0.08f);
             p.head = (float) Math.sin(Px.time * 0.8f) * 0.04f;
             SkinDraw.draw(m.skin(), bx + bw / 2, by0 + 6 + k * 31, k, p, SkinDraw.BUST, 0xFFFFFFFF);
-            Px.g.disableScissor();
+            Px.endScissor();
             for (int i = 0; i < 18; i += 2) {
                 R(bx, by0 + bh - 18 + i, bw, 2, Px.VEIL, (i / 18f) * 0.95f);
             }

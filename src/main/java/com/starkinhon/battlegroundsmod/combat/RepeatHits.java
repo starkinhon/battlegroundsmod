@@ -33,4 +33,8 @@ public final class RepeatHits {
         c[1] = now;
         return (float) Math.pow(NEXT, c[0] - 1);
     }
+
+    public static void resetStatics() {
+        COUNTS.clear();
+    }
 }

@@ -90,8 +90,13 @@ public class BattlegroundsModClient {
             com.starkinhon.battlegroundsmod.client.SkillAnimations.forget(e.getOldPlayer().getId());
             com.starkinhon.battlegroundsmod.client.SkillAnimations.forget(e.getNewPlayer().getId());
         });
-        NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent.LoggingOut e) ->
-                com.starkinhon.battlegroundsmod.client.SkillAnimations.clear());
+        NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent.LoggingOut e) -> {
+            com.starkinhon.battlegroundsmod.client.SkillAnimations.clear();
+            com.starkinhon.battlegroundsmod.client.TalkScreen.clear();
+            com.starkinhon.battlegroundsmod.client.CutsceneCamera.reset();
+            com.starkinhon.battlegroundsmod.client.fx.SkillEffects.clear();
+            com.starkinhon.battlegroundsmod.client.FlightClient.clear();
+        });
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.DragonWind::onRenderLevel);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.DragonWind::onClientTick);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.DragonWind::onFog);
@@ -225,10 +230,9 @@ public class BattlegroundsModClient {
                 InoClient::onCameraAngles);
         NeoForge.EVENT_BUS.addListener(ClientTickEvent.Post.class, InoClient::tick);
         NeoForge.EVENT_BUS.addListener(InputEvent.InteractionKeyMappingTriggered.class, PunchInput::onInteraction);
-        // the combat flight is the approved page run on the client (PreviewFight): the hotbar's numbers are its moves,
-        // and its afterimages are taken from the bodies as drawn
-        NeoForge.EVENT_BUS.addListener(InputEvent.Key.class, com.starkinhon.battlegroundsmod.client.PreviewFight::onKey);
-        NeoForge.EVENT_BUS.addListener(ClientTickEvent.Pre.class, com.starkinhon.battlegroundsmod.client.PreviewFight::tickPre);
+        // the combat flight hotbar shortcuts (1/2/3) and afterimages from rendered bodies
+        NeoForge.EVENT_BUS.addListener(InputEvent.Key.class, com.starkinhon.battlegroundsmod.client.AirFightClient::onKey);
+        NeoForge.EVENT_BUS.addListener(ClientTickEvent.Pre.class, com.starkinhon.battlegroundsmod.client.AirFightClient::tickPre);
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, true, RenderLivingEvent.Post.class,
                 com.starkinhon.battlegroundsmod.client.fx.PreviewFx::onRenderLiving);
         NeoForge.EVENT_BUS.addListener(InputEvent.MouseScrollingEvent.class, com.starkinhon.battlegroundsmod.client.fx.AzulRenderer::onScroll);
@@ -288,6 +292,56 @@ public class BattlegroundsModClient {
                 return kokushibo[0];
             }
         }, ModItems.KOKUSHIBO_SWORD.get());
+        com.starkinhon.battlegroundsmod.client.outfit.NanamiBladeRenderer[] nanamiBlade = new com.starkinhon.battlegroundsmod.client.outfit.NanamiBladeRenderer[1];
+        event.registerItem(new IClientItemExtensions() {
+            @Override
+            public BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                if (nanamiBlade[0] == null) {
+                    nanamiBlade[0] = new com.starkinhon.battlegroundsmod.client.outfit.NanamiBladeRenderer();
+                }
+                return nanamiBlade[0];
+            }
+        }, ModItems.NANAMI_BLADE.get());
+        com.starkinhon.battlegroundsmod.client.outfit.SodeNoShirayukiRenderer[] sode = new com.starkinhon.battlegroundsmod.client.outfit.SodeNoShirayukiRenderer[1];
+        event.registerItem(new IClientItemExtensions() {
+            @Override
+            public BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                if (sode[0] == null) {
+                    sode[0] = new com.starkinhon.battlegroundsmod.client.outfit.SodeNoShirayukiRenderer();
+                }
+                return sode[0];
+            }
+        }, ModItems.SODE_NO_SHIRAYUKI.get());
+        com.starkinhon.battlegroundsmod.client.outfit.SenbonzakuraRenderer[] senbonzakura = new com.starkinhon.battlegroundsmod.client.outfit.SenbonzakuraRenderer[1];
+        event.registerItem(new IClientItemExtensions() {
+            @Override
+            public BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                if (senbonzakura[0] == null) {
+                    senbonzakura[0] = new com.starkinhon.battlegroundsmod.client.outfit.SenbonzakuraRenderer();
+                }
+                return senbonzakura[0];
+            }
+        }, ModItems.SENBONZAKURA.get());
+        com.starkinhon.battlegroundsmod.client.outfit.MiwaSwordRenderer[] miwaSword = new com.starkinhon.battlegroundsmod.client.outfit.MiwaSwordRenderer[1];
+        event.registerItem(new IClientItemExtensions() {
+            @Override
+            public BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                if (miwaSword[0] == null) {
+                    miwaSword[0] = new com.starkinhon.battlegroundsmod.client.outfit.MiwaSwordRenderer();
+                }
+                return miwaSword[0];
+            }
+        }, ModItems.MIWA_SWORD.get());
+        com.starkinhon.battlegroundsmod.client.outfit.NobaraHammerRenderer[] nobaraHammer = new com.starkinhon.battlegroundsmod.client.outfit.NobaraHammerRenderer[1];
+        event.registerItem(new IClientItemExtensions() {
+            @Override
+            public BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                if (nobaraHammer[0] == null) {
+                    nobaraHammer[0] = new com.starkinhon.battlegroundsmod.client.outfit.NobaraHammerRenderer();
+                }
+                return nobaraHammer[0];
+            }
+        }, ModItems.NOBARA_HAMMER.get());
     }
 
     private static void onClientSetup(FMLClientSetupEvent event) {
@@ -388,24 +442,19 @@ public class BattlegroundsModClient {
         event.registerEntityRenderer(ModEntities.GOJO.get(), context -> new SoulBossRenderer<>(context, "gojo", true));
         event.registerEntityRenderer(ModEntities.KOKUSHIBO.get(), com.starkinhon.battlegroundsmod.client.KokushiboRenderer::new);
         event.registerEntityRenderer(ModEntities.SUKUNA.get(), context -> new SoulBossRenderer<>(context, "sukuna", false));
-        event.registerEntityRenderer(ModEntities.JOY_BOY.get(), context -> {
-            SoulBossRenderer<com.starkinhon.battlegroundsmod.boss.JoyBoyEntity> r = new SoulBossRenderer<>(context, "joy_boy", false);
-            // His Gears drawn on the boss as on a player (pink G2, Boundman, the Nika clothes).
-            r.addLayer(new com.starkinhon.battlegroundsmod.client.fx.LuffyFx.Layer<>(r));
-            return r;
-        });
-        event.registerEntityRenderer(ModEntities.SAITAMA.get(), context -> new SoulBossRenderer<>(context, "saitama", false));
+        event.registerEntityRenderer(ModEntities.JOY_BOY.get(), com.starkinhon.battlegroundsmod.client.JoyBoyRenderer::new);
+        event.registerEntityRenderer(ModEntities.SAITAMA.get(), com.starkinhon.battlegroundsmod.client.SaitamaRenderer::new);
         event.registerEntityRenderer(ModEntities.SHIGARAKI.get(), context -> new SoulBossRenderer<>(context, "shigaraki", false));
         event.registerEntityRenderer(ModEntities.HASHIRAMA.get(), com.starkinhon.battlegroundsmod.client.HashiramaRenderer::new);
         event.registerEntityRenderer(ModEntities.FREEZA_TOTAL.get(), com.starkinhon.battlegroundsmod.client.FreezaTotalRenderer::new);
-        event.registerEntityRenderer(ModEntities.MAKIMA.get(), context -> new SoulBossRenderer<>(context, "makima", true));
+        event.registerEntityRenderer(ModEntities.MAKIMA.get(), context -> new SoulBossRenderer<>(context, "makima", false));
         event.registerEntityRenderer(ModEntities.DUMMY.get(), context -> new DummyRenderer<>(context, "steve"));
         event.registerEntityRenderer(ModEntities.DUMMY_ATTACKER.get(), context -> new DummyRenderer<>(context, "kai"));
         event.registerEntityRenderer(ModEntities.AIZEN_ILLUSION.get(), AizenIllusionRenderer::new);
         event.registerEntityRenderer(ModEntities.MALEVOLENT_SHRINE.get(), com.starkinhon.battlegroundsmod.client.fx.MalevolentShrineRenderer::new);
         // SubAlma mobs (improvised skins; the girls with slim arms) and the Fighters (three looks per tier).
         event.registerEntityRenderer(ModEntities.BYAKUYA.get(), context -> new SoulBossRenderer<>(context, "byakuya", false));
-        event.registerEntityRenderer(ModEntities.RUKIA.get(), context -> new SoulBossRenderer<>(context, "rukia", true));
+        event.registerEntityRenderer(ModEntities.RUKIA.get(), context -> new SoulBossRenderer<>(context, "rukia", false));
         event.registerEntityRenderer(ModEntities.GOKU.get(), context -> new SoulBossRenderer<>(context, "goku", false));
         event.registerEntityRenderer(ModEntities.VEGETA.get(), context -> new SoulBossRenderer<>(context, "vegeta", false));
         event.registerEntityRenderer(ModEntities.FREEZA.get(), context -> new SoulBossRenderer<>(context, "freeza", false));
@@ -417,14 +466,14 @@ public class BattlegroundsModClient {
         event.registerEntityRenderer(ModEntities.KAKASHI.get(), context -> new SoulBossRenderer<>(context, "kakashi", false));
         event.registerEntityRenderer(ModEntities.GAARA.get(), context -> new SoulBossRenderer<>(context, "gaara", false));
         event.registerEntityRenderer(ModEntities.SHIKAMARU.get(), context -> new SoulBossRenderer<>(context, "shikamaru", false));
-        event.registerEntityRenderer(ModEntities.INO.get(), context -> new SoulBossRenderer<>(context, "ino", true));
+        event.registerEntityRenderer(ModEntities.INO.get(), context -> new SoulBossRenderer<>(context, "ino", false));
         event.registerEntityRenderer(ModEntities.ITADORI.get(), context -> new SoulBossRenderer<>(context, "itadori", false));
         event.registerEntityRenderer(ModEntities.CHOSO.get(), context -> new SoulBossRenderer<>(context, "choso", false));
         event.registerEntityRenderer(ModEntities.NANAMI.get(), context -> new SoulBossRenderer<>(context, "nanami", false));
-        event.registerEntityRenderer(ModEntities.NOBARA.get(), context -> new SoulBossRenderer<>(context, "nobara", true));
+        event.registerEntityRenderer(ModEntities.NOBARA.get(), context -> new SoulBossRenderer<>(context, "nobara", false));
         event.registerEntityRenderer(ModEntities.TODO.get(), context -> new SoulBossRenderer<>(context, "todo", false));
         event.registerEntityRenderer(ModEntities.INUMAKI.get(), context -> new SoulBossRenderer<>(context, "inumaki", false));
-        event.registerEntityRenderer(ModEntities.MIWA.get(), context -> new SoulBossRenderer<>(context, "miwa", true));
+        event.registerEntityRenderer(ModEntities.MIWA.get(), context -> new SoulBossRenderer<>(context, "miwa", false));
         event.registerEntityRenderer(ModEntities.NARUTO_CLONE.get(), com.starkinhon.battlegroundsmod.client.NarutoCloneRenderer::new);
         // the Dragon Ball biomes' creatures, box models from the approved preview (client/blocky)
         event.registerEntityRenderer(ModEntities.PEDESTRE.get(), com.starkinhon.battlegroundsmod.client.pedestre.PedestreRenderer::new);
@@ -473,7 +522,7 @@ public class BattlegroundsModClient {
         event.registerEntityRenderer(ModEntities.RADITZ.get(), context -> new SoulBossRenderer<>(context, "raditz", false));
         event.registerEntityRenderer(ModEntities.PUI_PUI.get(), context -> new SoulBossRenderer<>(context, "pui_pui", false));
         event.registerEntityRenderer(ModEntities.DABURA.get(), context -> new SoulBossRenderer<>(context, "dabura", false));
-        event.registerEntityRenderer(ModEntities.NPC_BULMA.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_bulma"));
+        event.registerEntityRenderer(ModEntities.NPC_BULMA.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_bulma", true));
         event.registerEntityRenderer(ModEntities.NPC_MESTRE_KAME.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_mestre_kame"));
         event.registerEntityRenderer(ModEntities.NPC_BOO.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_boo"));
         event.registerEntityRenderer(ModEntities.NPC_KORIN.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_korin"));

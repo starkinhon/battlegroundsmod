@@ -146,15 +146,38 @@ public class PowerData {
 
     public void resetCombat() {
         cooldowns = new int[SLOT_COUNT];
+        noFallTicks = 0;
         comboStep = 0;
         comboResetTicks = 0;
         punchDelay = 0;
         punchQueued = false;
         busyTicks = 0;
+        lastCastSlot = -1;
+        lastCastTime = -1;
+        combatUntil = 0;
+        combatLocked = false;
+        foughtId = -1;
+        foughtAt = -1;
+        combat = false;
+        sealedUntil = 0;
+        interrupts++;
+        attackHeld = false;
+        abilityHeld = false;
         stamina = -1;
         exhaustedUntil = 0;
         realStunUntil = 0;
+        swingStart = 0;
+        hitBySwing = -1;
+        airDodgeAt = -100;
+        airSimHitAt = -100;
+        hitAt = -1;
         chargeLeft = 0;
-        combatLocked = false;
+        exhaustedTicks = 0;
+        chargeProgress = 0;
+        chargeReportedAt = -10;
+        chargeSent = -1;
+        oniRegenCutUntil = 0;
+        moonSword = false;
+        moonSwordAt = -100;
     }
 }

@@ -266,6 +266,66 @@ public final class ModPayloads {
         }
     }
 
+    // The Dungeon (challenge/Dungeon, /souls dungeon). Client -> server: start a run, abandon it, pick card index of the offer.
+    public record DungeonStart() implements CustomPacketPayload {
+        public static final Type<DungeonStart> TYPE = payloadType("dungeon_start");
+        public static final StreamCodec<ByteBuf, DungeonStart> STREAM_CODEC = StreamCodec.unit(new DungeonStart());
+
+        @Override
+        public Type<DungeonStart> type() {
+            return TYPE;
+        }
+    }
+
+    public record DungeonQuit() implements CustomPacketPayload {
+        public static final Type<DungeonQuit> TYPE = payloadType("dungeon_quit");
+        public static final StreamCodec<ByteBuf, DungeonQuit> STREAM_CODEC = StreamCodec.unit(new DungeonQuit());
+
+        @Override
+        public Type<DungeonQuit> type() {
+            return TYPE;
+        }
+    }
+
+    // Client -> server: the answer about the boss's soul on offer: true absorbs it, false refuses it.
+    public record DungeonSoul(boolean take) implements CustomPacketPayload {
+        public static final Type<DungeonSoul> TYPE = payloadType("dungeon_soul");
+        public static final StreamCodec<ByteBuf, DungeonSoul> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.BOOL, DungeonSoul::take, DungeonSoul::new);
+
+        @Override
+        public Type<DungeonSoul> type() {
+            return TYPE;
+        }
+    }
+
+    public record DungeonPick(int index) implements CustomPacketPayload {
+        public static final Type<DungeonPick> TYPE = payloadType("dungeon_pick");
+        public static final StreamCodec<ByteBuf, DungeonPick> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, DungeonPick::index, DungeonPick::new);
+
+        @Override
+        public Type<DungeonPick> type() {
+            return TYPE;
+        }
+    }
+
+    // Server -> client: after a win, the cards to pick from (ids of Dungeon.OPTIONS), the lives left, the fights won of total, the
+    // name of the soul the player carries now, and the name of the boss's soul on offer ("" when there is none: then only the cards).
+    public record DungeonChoices(List<String> ids, int lives, int won, int total, String soul, String offer) implements CustomPacketPayload {
+        public static final Type<DungeonChoices> TYPE = payloadType("dungeon_choices");
+        public static final StreamCodec<ByteBuf, DungeonChoices> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.STRING_UTF8.apply(ByteBufCodecs.list()), DungeonChoices::ids, ByteBufCodecs.VAR_INT, DungeonChoices::lives,
+                ByteBufCodecs.VAR_INT, DungeonChoices::won, ByteBufCodecs.VAR_INT, DungeonChoices::total,
+                ByteBufCodecs.STRING_UTF8, DungeonChoices::soul, ByteBufCodecs.STRING_UTF8, DungeonChoices::offer,
+                DungeonChoices::new);
+
+        @Override
+        public Type<DungeonChoices> type() {
+            return TYPE;
+        }
+    }
+
     // Client -> server: the book's group buttons (challenge/ArenaParty): 0 invite name, 1 accept name's invite, 2 decline
     // it, 3 leave the group.
     public record ArenaPartyAction(int action, String name) implements CustomPacketPayload {
@@ -2119,6 +2179,29 @@ public final class ModPayloads {
                 com.starkinhon.battlegroundsmod.challenge.ChallengeArenas.leave(player);
             }
         }));
+        registrar.playToServer(DungeonStart.TYPE, DungeonStart.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
+            if (context.player() instanceof ServerPlayer player) {
+                com.starkinhon.battlegroundsmod.challenge.Dungeon.start(player);
+            }
+        }));
+        registrar.playToServer(DungeonQuit.TYPE, DungeonQuit.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
+            if (context.player() instanceof ServerPlayer player) {
+                com.starkinhon.battlegroundsmod.challenge.Dungeon.quit(player);
+            }
+        }));
+        registrar.playToServer(DungeonPick.TYPE, DungeonPick.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
+            if (context.player() instanceof ServerPlayer player) {
+                com.starkinhon.battlegroundsmod.challenge.Dungeon.pick(player, payload.index());
+            }
+        }));
+        registrar.playToServer(DungeonSoul.TYPE, DungeonSoul.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
+            if (context.player() instanceof ServerPlayer player) {
+                com.starkinhon.battlegroundsmod.challenge.Dungeon.soul(player, payload.take());
+            }
+        }));
+        registrar.playToClient(DungeonChoices.TYPE, DungeonChoices.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> com.starkinhon.battlegroundsmod.client.DungeonChoiceScreen.open(payload.ids(), payload.lives(), payload.won(),
+                        payload.total(), payload.soul(), payload.offer())));
         registrar.playToClient(OpenUniverses.TYPE, OpenUniverses.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.openUniverses(payload.first())));
         registrar.playToServer(PickUniverse.TYPE, PickUniverse.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {

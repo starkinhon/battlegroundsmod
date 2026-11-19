@@ -115,6 +115,7 @@ public final class ShenlongServer {
             }
         }
         ServerLevel level = player.serverLevel();
+        DragonBallWorld.releaseAll(level.getServer());
         Call call = new Call(player, player.position(), player.getYRot(), level.getGameTime());
         CALLS.put(player.getUUID(), call);
         broadcast(level, call);
@@ -524,5 +525,9 @@ public final class ShenlongServer {
             tag.put("balls", list);
             return tag;
         }
+    }
+
+    public static void resetStatics() {
+        CALLS.clear();
     }
 }

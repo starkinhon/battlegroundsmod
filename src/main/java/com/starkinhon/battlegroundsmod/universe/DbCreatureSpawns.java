@@ -99,13 +99,13 @@ final class DbCreatureSpawns {
         if (!level.getEntitiesOfClass(Bora.class, new net.minecraft.world.phys.AABB(tower).inflate(64, 128, 64)).isEmpty()) {
             return;
         }
-        // not before the player's eyes: he's already there when they arrive
-        for (int attempt = 0; attempt < 6; attempt++) {
+        // not directly on top of the player
+        for (int attempt = 0; attempt < 12; attempt++) {
             double angle = random.nextDouble() * Math.PI * 2;
-            int dist = 16 + random.nextInt(20);
+            int dist = 10 + random.nextInt(26);
             int x = tower.getX() + (int) Math.round(Math.cos(angle) * dist);
             int z = tower.getZ() + (int) Math.round(Math.sin(angle) * dist);
-            if (player.distanceToSqr(x, player.getY(), z) < 20 * 20) {
+            if (player.distanceToSqr(x, player.getY(), z) < 8 * 8) {
                 continue;
             }
             BlockPos pos = UniverseSpawns.ground(level, x, z);

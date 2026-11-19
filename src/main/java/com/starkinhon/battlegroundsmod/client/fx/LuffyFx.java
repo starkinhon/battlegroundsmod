@@ -2135,6 +2135,11 @@ public final class LuffyFx {
 
     // What he holds is drawn at the vanilla hand, which neither Boundman's fists nor the sitting G5 arms are: there it
     // floated by his knee or hip (the Power Book, seen in the scripted test). Those poses hold nothing.
+    public static boolean isGear5(LivingEntity entity) {
+        Body bd = entity == null ? null : BODIES.get(entity.getId());
+        return bd != null && bd.lookLv == 4 && bd.lookK > 0.3;
+    }
+
     public static boolean hidesHeld(AbstractClientPlayer player) {
         Body bd = BODIES.get(player.getId());
         return bd != null && (boundman(bd) || sitting(bd));

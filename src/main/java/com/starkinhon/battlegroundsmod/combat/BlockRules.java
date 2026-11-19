@@ -21,6 +21,10 @@ public final class BlockRules {
     }
 
     public static boolean canBreak(Level level) {
+        // the arenas of a Dungeon run never lose a block (challenge/Dungeon.protectsBlocks)
+        if (com.starkinhon.battlegroundsmod.challenge.Dungeon.protectsBlocks(level)) {
+            return false;
+        }
         return level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING) && level.getGameRules().getBoolean(SOULS_BLOCK_DESTRUCTION);
     }
 }

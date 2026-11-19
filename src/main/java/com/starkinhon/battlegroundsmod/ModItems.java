@@ -35,6 +35,16 @@ public final class ModItems {
     // Kokushibo's sword (Kyokokukamusari): the 3D model Stark sent, with its sheath on the hip.
     public static final DeferredItem<KokushiboSwordItem> KOKUSHIBO_SWORD = BattlegroundsMod.ITEMS.registerItem("kokushibo_sword",
             KokushiboSwordItem::new, new Item.Properties().rarity(Rarity.EPIC).fireResistant().component(DataComponents.UNBREAKABLE, new Unbreakable(true)));
+    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.NanamiBladeItem> NANAMI_BLADE = BattlegroundsMod.ITEMS.registerItem("nanami_blade",
+            com.starkinhon.battlegroundsmod.item.NanamiBladeItem::new, new Item.Properties().rarity(Rarity.EPIC).fireResistant().component(DataComponents.UNBREAKABLE, new Unbreakable(true)));
+    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.SodeNoShirayukiItem> SODE_NO_SHIRAYUKI = BattlegroundsMod.ITEMS.registerItem("sode_no_shirayuki",
+            com.starkinhon.battlegroundsmod.item.SodeNoShirayukiItem::new, new Item.Properties().rarity(Rarity.EPIC).fireResistant().component(DataComponents.UNBREAKABLE, new Unbreakable(true)));
+    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.SenbonzakuraItem> SENBONZAKURA = BattlegroundsMod.ITEMS.registerItem("senbonzakura",
+            com.starkinhon.battlegroundsmod.item.SenbonzakuraItem::new, new Item.Properties().rarity(Rarity.EPIC).fireResistant().component(DataComponents.UNBREAKABLE, new Unbreakable(true)));
+    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.MiwaSwordItem> MIWA_SWORD = BattlegroundsMod.ITEMS.registerItem("miwa_sword",
+            com.starkinhon.battlegroundsmod.item.MiwaSwordItem::new, new Item.Properties().rarity(Rarity.EPIC).fireResistant().component(DataComponents.UNBREAKABLE, new Unbreakable(true)));
+    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.NobaraHammerItem> NOBARA_HAMMER = BattlegroundsMod.ITEMS.registerItem("nobara_hammer",
+            com.starkinhon.battlegroundsmod.item.NobaraHammerItem::new, new Item.Properties().rarity(Rarity.EPIC).fireResistant().component(DataComponents.UNBREAKABLE, new Unbreakable(true)));
 
     // Eaten once: hunger bar always full from then on (item/SoulInsectItem).
     public static final DeferredItem<SoulInsectItem> SOUL_INSECT = BattlegroundsMod.ITEMS.registerItem("soul_insect",

@@ -1579,4 +1579,11 @@ public final class NarutoActivities {
         ALLIES.put(e.getUUID(), new long[] {level.getGameTime() + ticks});
         level.sendParticles(ParticleTypes.CLOUD, e.getX(), e.getY(0.5), e.getZ(), 60, 1, 1, 1, 0.05);
     }
+
+    public static void resetStatics() {
+        GIVEN.clear();
+        GIVEN_AT.clear();
+        RUNS.clear();
+        ALLIES.clear();
+    }
 }

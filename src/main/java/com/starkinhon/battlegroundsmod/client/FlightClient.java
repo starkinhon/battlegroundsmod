@@ -537,13 +537,14 @@ public final class FlightClient {
         }
         if (dash != null) {
             // The ki dash: 62 b/s, homing on the target, ends on it. At one on the ground it aims at the chest, a bit
-            // above, so the player stops in front of it still flying.
+            // above, so the player stops in front of it still flying. Don't brake prematurely at 2.0 blocks so lag doesn't
+            // leave the player short of the server's hit check (the server sends MOVE_STOP on impact).
             Vec3 tc = dash.position().add(0, Math.max(dash.getBbHeight() / 2, dash.onGround() ? 1.2 : 0), 0).subtract(me);
             double l = tc.length();
-            if (l < 2.0) {
-                vx *= 0.3;
-                vy *= 0.3;
-                vz *= 0.3;
+            if (l < 1.2) {
+                vx *= 0.65;
+                vy *= 0.65;
+                vz *= 0.65;
             } else {
                 Vec3 want = tc.scale(62 / l);
                 float k = damp(12);

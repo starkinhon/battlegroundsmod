@@ -4,7 +4,6 @@ import org.joml.Vector3f;
 
 import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.ModItems;
-import com.starkinhon.battlegroundsmod.challenge.Universes;
 
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -45,7 +44,7 @@ public final class BleachWorld {
 
     private static void onDeath(LivingDeathEvent event) {
         LivingEntity victim = event.getEntity();
-        if (victim.level().isClientSide || !UNIVERSE.equals(Universes.universeOf(victim.level().dimension()))
+        if (victim.level().isClientSide || !UNIVERSE.equals(UniverseBiomes.universeAt(victim.level(), victim.blockPosition()))
                 || !(event.getSource().getEntity() instanceof ServerPlayer player)) {
             return;
         }

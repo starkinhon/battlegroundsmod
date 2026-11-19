@@ -4,7 +4,6 @@ import java.util.Set;
 
 import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.ModItems;
-import com.starkinhon.battlegroundsmod.challenge.Universes;
 import com.starkinhon.battlegroundsmod.combat.Fx;
 
 import net.minecraft.core.particles.ParticleTypes;
@@ -63,7 +62,7 @@ public final class DemonSlayerWorld {
 
     private static void onDeath(LivingDeathEvent event) {
         LivingEntity victim = event.getEntity();
-        if (victim.level().isClientSide || !UNIVERSE.equals(Universes.universeOf(victim.level().dimension()))
+        if (victim.level().isClientSide || !UNIVERSE.equals(UniverseBiomes.universeAt(victim.level(), victim.blockPosition()))
                 || !(event.getSource().getEntity() instanceof ServerPlayer player)) {
             return;
         }

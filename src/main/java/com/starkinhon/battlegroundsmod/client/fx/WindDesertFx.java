@@ -396,8 +396,7 @@ public final class WindDesertFx {
             return;
         }
         double g = gust(now(mc.level, delta.getGameTimeDeltaPartialTick(false)));
-        int alpha = Mth.clamp((int) (255 * 0.07 * g * fade), 0, 255);
-        graphics.fill(0, 0, graphics.guiWidth(), graphics.guiHeight(), (alpha << 24) | 0xD9BC90);
+        BiomeAura.wash(graphics, 0xD9BC90, (float) (0.07 * g * fade));
     }
 
     // The preview's fog: 40 to 260 blocks, closing by up to a third in a gust.

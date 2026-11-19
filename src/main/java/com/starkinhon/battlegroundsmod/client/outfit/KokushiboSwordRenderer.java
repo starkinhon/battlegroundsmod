@@ -30,7 +30,12 @@ public class KokushiboSwordRenderer extends BlockEntityWithoutLevelRenderer {
     // Turns the held item about the wrist by a sword move's wrist angles (SkillAnimations.wrist).
     public static void turnWrist(PoseStack pose, float[] wrist, ItemStack stack) {
         org.joml.Quaternionf turn = new org.joml.Quaternionf().rotationZYX(wrist[2], wrist[1], wrist[0]);
-        if (isKokushibo(stack)) {
+        if (isKokushibo(stack)
+                || stack.getItem() instanceof com.starkinhon.battlegroundsmod.item.SodeNoShirayukiItem
+                || stack.getItem() instanceof com.starkinhon.battlegroundsmod.item.SenbonzakuraItem
+                || stack.getItem() instanceof com.starkinhon.battlegroundsmod.item.MiwaSwordItem
+                || stack.getItem() instanceof com.starkinhon.battlegroundsmod.item.NobaraHammerItem
+                || stack.getItem() instanceof com.starkinhon.battlegroundsmod.item.NanamiBladeItem) {
             pose.translate(GRIP_PIVOT.x, GRIP_PIVOT.y, GRIP_PIVOT.z);
             pose.mulPose(turn);
             pose.translate(-GRIP_PIVOT.x, -GRIP_PIVOT.y, -GRIP_PIVOT.z);

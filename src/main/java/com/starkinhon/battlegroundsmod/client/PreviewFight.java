@@ -207,31 +207,19 @@ public final class PreviewFight {
     }
 
     public static boolean running() {
-        return running;
+        return false;
     }
 
     // ------------------------------------------------------------------ hooks
 
-    // The punch key (PunchInput): the page's doPunch.
+    // The punch key (PunchInput): handled server-authoritatively via Melee/AirFight.
     public static boolean punch() {
-        if (!running) {
-            return false;
-        }
-        qPunch = true;
-        return true;
+        return false;
     }
 
-    // The base attack key (BaseAttacks.use): Dash Attack, Forte (the Barragem is held, see barrageHeld).
+    // The base attack key (BaseAttacks.use): handled server-authoritatively via AirFight.
     public static boolean baseAttack(int selected) {
-        if (!running) {
-            return false;
-        }
-        if (selected == 0) {
-            qDash = true;
-        } else if (selected == 1) {
-            qStrong = true;
-        }
-        return true;
+        return false;
     }
 
     // Thrown by the server while the page runs (AirCombat.knock: a skill's push, a soul technique's blast): off this way
@@ -513,127 +501,8 @@ public final class PreviewFight {
     // ------------------------------------------------------------------ every frame (AirFightClient.onFrame)
 
     static void frame() {
-        Minecraft mc = Minecraft.getInstance();
-        long now = System.nanoTime();
-        double dtReal = lastFrame == 0 ? 0.016 : (now - lastFrame) / 1.0E9;
-        lastFrame = now;
-        LocalPlayer player = mc.player;
-        if (player == null || mc.level == null) {
+        if (running) {
             stop();
-            return;
-        }
-        if (mc.isPaused()) {
-            return;
-        }
-        double dt = Math.min(dtReal, 0.05);
-        // A cutscene has the camera (a boss's entrance or phase, Hakai, Bop, a domain, a skill's face shot, the soul
-        // ceremony): the page lets go and the cutscene plays as it does on the ground; it takes the fight back after.
-        scene = cutscene(mc);
-        if (scene) {
-            stop();
-            PreviewFx.step(dt, dt);
-            return;
-        }
-        LivingEntity target = AirFightClient.target();
-        boolean flying = FlightClient.velocity() != null || running;
-        boolean want = flying && target instanceof SoulBoss && target.isAlive() && !target.isRemoved() && !player.isSpectator() && player.isAlive()
-                && !player.isCreative() && player.getAbilities().flying && !denied(target) && hasGround(player.position());
-        if (parked && player.getY() - ground(player.position()) > 2.5) {
-            parked = false;
-        }
-        if (running && (!want || target != M.ent)) {
-            stop();
-        }
-        if (!running) {
-            if (want && !parked && FlightClient.flying(target) && player.getY() - ground(player.position()) > 1) {
-                start(player, target);
-            } else {
-                PreviewFx.step(dt, dt);
-                return;
-            }
-        }
-        double camDt = dt;
-        if (hitstop > 0) {
-            hitstop -= dt;
-            dt *= 0.05;
-        }
-        clock += dt;
-        if (placed != null && player.position().distanceToSqr(placed) > 0.09) {
-            // a skill moved the player (Goku's teleport, the Kaioken rush, Freeza's, a grab's hold): the page goes on
-            // from there, after the server is done with it
-            pHeldUntil = now + 400_000_000L;
-        }
-        // The server has the player: stunned for real (a boss's skill, another player's), held, teleported by a skill.
-        // Both stand still (no input, no blows from the soul) and the page follows the player where the server puts it.
-        pHeld = now < pHeldUntil || FlightClient.driving() || player.hasEffect(com.starkinhon.battlegroundsmod.ModEffects.ATORDOADO)
-                || player.hasEffect(com.starkinhon.battlegroundsmod.ModEffects.BRAIN_DAMAGE);
-        if (pHeld) {
-            P.pos = player.position();
-            P.vel = Vec3.ZERO;
-            P.boost = false;
-            pact = null;
-            setGuard(false);
-            qPunch = qDash = qStrong = qDodge = false;
-            if (EX != null) {
-                EX = null;
-                setVisible(P, true);
-                setVisible(M, true);
-                P.boost = M.boost = false;
-            }
-        } else {
-            playerCombat(mc, dt);
-        }
-        if (!running) {
-            PreviewFx.step(dt, camDt);
-            return;
-        }
-        // One of the player's skills has it (Flight.HELD from the server: a real stun, a hold): the skill moves it
-        // there, the page only follows and takes it back when it lets go.
-        held = (FlightClient.serverState(M.ent) & Flight.HELD) != 0;
-        if (pHeld && !held) {
-            // the player is the server's right now: the soul waits where it is (no blows on someone who can't move)
-            M.vel = Vec3.ZERO;
-            M.boost = false;
-            act = null;
-        } else if (held) {
-            M.pos = M.ent.getPosition(mc.getTimer().getGameTimeDeltaPartialTick(true));
-            M.vel = Vec3.ZERO;
-            M.slam = false;
-            M.flying = true;
-            M.visible = true;
-            M.boost = false;
-            act = null;
-            if (!"ar".equals(st)) {
-                st = "ar";
-            }
-        } else {
-            mobUpdate(dt);
-        }
-        physicsHits(dt);
-        if (!running) {
-            PreviewFx.step(dt, camDt);
-            return;
-        }
-        blasts(dt);
-        updateBeams(dt);
-        if (EX != null) {
-            exchangeStep(dt);
-        }
-        face(P, dt);
-        face(M, dt);
-        PreviewFx.step(dt, camDt);
-        placeCam(Math.max(camDt, 1.0E-4));
-        shake = Math.max(0, shake - camDt * 1.6);
-        PreviewFx.boostView = P.boostAmt * clamp(P.vel.length() / 42, 0, 1) * 0.4;
-        place(P, true);
-        if (!held) {
-            place(M, false);
-        }
-        sendAcc += camDt;
-        if (sendAcc >= 0.05) {
-            sendAcc = 0;
-            int flags = (M.flying ? 1 : 0) | (M.boost ? 2 : 0) | (M.visible ? 0 : 4);
-            PacketDistributor.sendToServer(new ModPayloads.AirSim(M.ent.getId(), M.pos.x, M.pos.y, M.pos.z, (float) -Math.toDegrees(M.yaw), flags));
         }
     }
 

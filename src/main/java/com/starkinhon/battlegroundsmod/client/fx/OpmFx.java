@@ -23,6 +23,7 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
@@ -1169,5 +1170,20 @@ public final class OpmFx {
                 graphics.drawString(font, text, w / 2 - font.width(text) / 2, h / 2 + 18, blink ? 0xFFFFFFFF : 0xFFF2C94C, true);
             }
         }
+    }
+
+    public static boolean isSerious(LivingEntity entity) {
+        if (entity == null) {
+            return false;
+        }
+        Double end = SERIO.get(entity.getId());
+        if (end == null) {
+            return false;
+        }
+        if (end <= ScreenFx.now()) {
+            SERIO.remove(entity.getId());
+            return false;
+        }
+        return true;
     }
 }

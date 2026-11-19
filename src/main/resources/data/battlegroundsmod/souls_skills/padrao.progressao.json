@@ -2,7 +2,7 @@
   "formato": "souls-skill/1",
   "skill": "padrao.progressao",
   "nome": "Progressão de tier",
-  "custo": [0, 64000, 32000, 16000, 8000, 4000, 2000, 1000, 500, 250, 100],
+  "custo": [0, 64000, 32000, 16000, 8000, 4000, 2000, 1000, 500, 150, 40],
   "valor": [5120, 2560, 1280, 640, 320, 160, 80, 40, 20, 10, 5],
   "abaixoZera": 3,
   "multSubAlma": 5,

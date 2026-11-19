@@ -219,7 +219,9 @@ public final class ModEntities {
             final float fw = w, fh = h;
             DB_MOBS.put(spec.id, ENTITY_TYPES.register(spec.id, () -> EntityType.Builder
                     .<com.starkinhon.battlegroundsmod.animal.dbmob.DbMob>of(com.starkinhon.battlegroundsmod.animal.dbmob.DbMob::new, MobCategory.MONSTER)
-                    .sized(fw, fh).eyeHeight(fh * 0.85f).clientTrackingRange(spec.height > 3 || spec.width > 1.5f ? 12 : 10).build(spec.id)));
+                    .sized(fw, fh).eyeHeight(fh * 0.85f).clientTrackingRange(spec.height > 3 || spec.width > 1.5f ? 12 : 10)
+                    .updateInterval(spec.move == com.starkinhon.battlegroundsmod.animal.naruto.NarutoSpec.Move.FLYER ? 1 : 3)
+                    .build(spec.id)));
         }
     }
 
@@ -284,7 +286,9 @@ public final class ModEntities {
             NARUTO_MOBS.put(spec.id, ENTITY_TYPES.register(spec.id, () -> EntityType.Builder
                     .<com.starkinhon.battlegroundsmod.animal.naruto.NarutoMob>of(com.starkinhon.battlegroundsmod.animal.naruto.NarutoMob::new,
                             MobCategory.MONSTER)
-                    .sized(fw, fh).eyeHeight(fh * 0.85f).clientTrackingRange(spec.height > 3 || spec.width > 1.5f ? 12 : 10).build(spec.id)));
+                    .sized(fw, fh).eyeHeight(fh * 0.85f).clientTrackingRange(spec.height > 3 || spec.width > 1.5f ? 12 : 10)
+                    .updateInterval(spec.move == com.starkinhon.battlegroundsmod.animal.naruto.NarutoSpec.Move.FLYER ? 1 : 3)
+                    .build(spec.id)));
         }
     }
 
@@ -305,7 +309,9 @@ public final class ModEntities {
             final float fw = spec.width, fh = spec.height;
             JJ_MOBS.put(spec.id, ENTITY_TYPES.register(spec.id, () -> EntityType.Builder
                     .<com.starkinhon.battlegroundsmod.animal.jjmob.JjMob>of(com.starkinhon.battlegroundsmod.animal.jjmob.JjMob::new, MobCategory.MONSTER)
-                    .sized(fw, fh).eyeHeight(fh * 0.85f).clientTrackingRange(spec.height > 3 || spec.width > 1.5f ? 12 : 10).build(spec.id)));
+                    .sized(fw, fh).eyeHeight(fh * 0.85f).clientTrackingRange(spec.height > 3 || spec.width > 1.5f ? 12 : 10)
+                    .updateInterval(spec.move == com.starkinhon.battlegroundsmod.animal.naruto.NarutoSpec.Move.FLYER ? 1 : 3)
+                    .build(spec.id)));
         }
     }
 

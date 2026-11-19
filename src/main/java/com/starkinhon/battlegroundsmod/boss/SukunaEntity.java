@@ -42,6 +42,9 @@ public class SukunaEntity extends SoulBoss {
     // Every tick of an Itadori mob: low on life, once, a chance Sukuna takes over the body. The Itadori is gone and the
     // Sukuna boss stands in its place, looking the same way, after the same target.
     public static void takeOver(SoulBoss itadori, ServerLevel level) {
+        if (com.starkinhon.battlegroundsmod.challenge.ChallengeArenas.isArena(level.dimension())) {
+            return;
+        }
         if (!itadori.isAlive() || itadori.getPersistentData().getBoolean("SukunaRolled")
                 || itadori.getHealth() / itadori.getMaxHealth() > TAKE_OVER_LIFE) {
             return;

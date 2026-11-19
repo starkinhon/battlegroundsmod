@@ -113,6 +113,12 @@ public final class ChallengeArenas {
         int respawns;
         // Modo Difícil: the strongest player's tier when the fight was asked for (-1 = Normal)
         int hardTier = -1;
+        // The Dungeon (Dungeon.java): the arena is id, the character that fights in it is bossId at bossTier (exactly), and the
+        // wait before the fight is countdown ticks.
+        boolean dungeon;
+        String bossId;
+        int bossTier = -1;
+        int countdown = COUNTDOWN;
         State state = State.COUNTDOWN;
     }
 
@@ -212,6 +218,7 @@ public final class ChallengeArenas {
         });
         NeoForge.EVENT_BUS.addListener(ChallengeArenas::onLogout);
         NeoForge.EVENT_BUS.addListener(ChallengeArenas::onFinalizeSpawn);
+        Dungeon.register();
     }
 
     // The client's copy of its own wins (ModPayloads.SyncArenaWins), for the book.
@@ -392,6 +399,124 @@ public final class ChallengeArenas {
         return true;
     }
 
+    // ---- The Dungeon (Dungeon.java drives the run; this only builds the arena, spawns the character and reports the end).
+
+    // Whether some fight already holds this arena.
+    static boolean arenaTaken(String arenaId) {
+        for (Session other : sessions()) {
+            if (other.id.equals(arenaId)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Whether the player is in a fight (or its build) right now.
+    static boolean inFight(ServerPlayer player) {
+        return SESSIONS.containsKey(player.getUUID());
+    }
+
+    // One fight of a run for the whole team (the run's players: one, or the party of the challenge book): arena arenaId, the character
+    // bossId at EXACTLY bossTier, the countdown in ticks and where each player came from. Nothing of the book's rules applies (no
+    // universe lock, no Modo Dificil). The boss's health grows with the team like in any group fight (spawnBoss: x2 with two players).
+    static boolean beginDungeon(List<ServerPlayer> team, String arenaId, String bossId, int bossTier, int countdownTicks,
+            Map<UUID, Dungeon.Origin> origins) {
+        if (team.isEmpty()) {
+            return false;
+        }
+        ServerPlayer lead = team.get(0);
+        ChallengeSpec spec = ChallengeSpec.get();
+        int slot = spec.slot(arenaId);
+        ChallengeSpec.Universe universe = spec.universeOf(arenaId);
+        ArenaTemplate.Meta meta = ArenaTemplate.meta(arenaId);
+        ArenaTemplate template = meta == null ? null : ArenaTemplate.get(arenaId);
+        if (template == null) {
+            meta = discMeta(arenaId, spec);
+        }
+        ResourceKey<Level> key = meta.noite() && lead.server.getLevel(ARENAS_NIGHT) != null ? ARENAS_NIGHT : ARENAS;
+        ServerLevel arena = lead.server.getLevel(key);
+        if (slot < 0 || universe == null || arena == null || entityType(bossId) == null || arenaTaken(arenaId)) {
+            return false;
+        }
+        for (ServerPlayer player : team) {
+            dungeonStop(player);
+        }
+        Session session = new Session();
+        session.id = arenaId;
+        session.dungeon = true;
+        session.bossId = bossId;
+        session.bossTier = bossTier;
+        session.countdown = countdownTicks;
+        session.meta = meta;
+        session.arena = key;
+        session.center = new BlockPos(slot * SPACING, template == null ? FLOOR_Y : floorY(meta), ROW_Z);
+        for (ServerPlayer player : team) {
+            Dungeon.Origin origin = origins.get(player.getUUID());
+            session.back.put(player.getUUID(), new Back(origin.level(), origin.pos(), origin.yaw()));
+            session.members.add(player.getUUID());
+            SESSIONS.put(player.getUUID(), session);
+        }
+        if (template == null) {
+            placing++;
+            try {
+                buildDisc(arena, session.center, spec, universe);
+            } finally {
+                placing--;
+            }
+            enter(arena, session, team);
+            return true;
+        }
+        session.state = State.BUILDING;
+        session.build = new Build(template, meta, session.center, arena);
+        session.buildStart = arena.getGameTime();
+        for (ServerPlayer player : team) {
+            player.displayClientMessage(Component.literal("Preparando a arena..."), true);
+        }
+        return true;
+    }
+
+    // A player of a run who fell while the group fights on: back at the arena's start (the same spot the fight began at).
+    static void revive(ServerPlayer player) {
+        Session session = SESSIONS.get(player.getUUID());
+        ServerLevel arena = session == null ? null : player.server.getLevel(session.arena);
+        if (arena == null) {
+            return;
+        }
+        ArenaTemplate.Meta meta = session.meta;
+        BlockPos spot = session.center.offset(meta.jogador()[0], meta.jogador()[1], meta.jogador()[2]);
+        double dx = meta.desafiante()[0] - meta.jogador()[0], dz = meta.desafiante()[2] - meta.jogador()[2];
+        float yaw = (float) (Mth.atan2(dz, dx) * Mth.RAD_TO_DEG) - 90f;
+        player.teleportTo(arena, spot.getX() + 0.5, spot.getY(), spot.getZ() + 0.5, yaw, 0);
+        player.fallDistance = 0;
+    }
+
+    // Takes the player out of their fight without sending them anywhere: the boss and the arena's leftovers are cleared.
+    static void dungeonStop(ServerPlayer player) {
+        Session session = SESSIONS.remove(player.getUUID());
+        if (session != null) {
+            closeIfEmpty(player.server, session);
+        }
+    }
+
+    // The character died: no stamp, no items, no soul item (SoulBoss drops none in a dungeon). The run takes over.
+    private static void dungeonWin(MinecraftServer server, Session session) {
+        List<ServerPlayer> players = new ArrayList<>();
+        for (UUID id : session.members) {
+            ServerPlayer player = SESSIONS.get(id) == session ? server.getPlayerList().getPlayer(id) : null;
+            if (player != null) {
+                players.add(player);
+            }
+        }
+        for (ServerPlayer player : players) {
+            SESSIONS.remove(player.getUUID());
+        }
+        session.state = State.DONE;
+        closeIfEmpty(server, session);
+        if (!players.isEmpty()) {
+            Dungeon.stageWon(players);
+        }
+    }
+
     // Every fight once, though each of its players maps to it.
     private static List<Session> sessions() {
         List<Session> list = new ArrayList<>();
@@ -421,9 +546,9 @@ public final class ChallengeArenas {
         float yaw = (float) (Mth.atan2(dz, dx) * Mth.RAD_TO_DEG) - 90f;
         double len = Math.max(1e-3, Math.sqrt(dx * dx + dz * dz));
         double sideX = -dz / len, sideZ = dx / len;
-        session.fightAt = arena.getGameTime() + COUNTDOWN;
+        session.fightAt = arena.getGameTime() + session.countdown;
         session.state = State.COUNTDOWN;
-        ChallengeSpec.Universe universe = ChallengeSpec.get().universeOf(session.id);
+        ChallengeSpec.Universe universe = ChallengeSpec.get().universeOf(session.dungeon ? session.bossId : session.id);
         int color = universe == null ? 0xFFFFFF : universe.color();
         BlockPos spot = c.offset(meta.jogador()[0], meta.jogador()[1], meta.jogador()[2]);
         for (int i = 0; i < players.size(); i++) {
@@ -437,7 +562,7 @@ public final class ChallengeArenas {
             player.fallDistance = 0;
             // the book's VS screen held on while the arena loaded: now it flashes and opens on the arena
             PacketDistributor.sendToPlayer(player, new ModPayloads.ChallengeStatus(true));
-            title(player, Component.translatable("message.battlegroundsmod.arena_title", name(session.id))
+            title(player, Component.translatable("message.battlegroundsmod.arena_title", name(session.dungeon ? session.bossId : session.id))
                     .withStyle(s -> s.withColor(color).withBold(true)), Component.translatable("message.battlegroundsmod.arena_ready"));
         }
         Fx.sound(arena, Vec3.atCenterOf(session.center), SoundEvents.END_PORTAL_SPAWN, 0.6f, 1.4f);
@@ -598,7 +723,7 @@ public final class ChallengeArenas {
                     long left = session.fightAt - now;
                     for (ServerPlayer player : players) {
                         catchFall(player, arena, session);
-                        if (left == 60 || left == 40 || left == 20) {
+                        if (left > 0 && left % 20 == 0 && (left <= 60 || session.dungeon)) {
                             title(player, Component.literal(String.valueOf(left / 20)).withStyle(s -> s.withColor(0xF2C94C).withBold(true)), Component.empty());
                             Fx.sound(arena, player.position(), SoundEvents.NOTE_BLOCK_HAT.value(), 1f, 0.8f);
                         }
@@ -612,12 +737,13 @@ public final class ChallengeArenas {
                         catchFall(player, arena, session);
                     }
                     Entity boss = session.boss == null ? null : arena.getEntity(session.boss);
-                    if (boss == null && !session.bossDied && session.respawns < 3) {
-                        // Gone without dying (Stark's test 2026-11-10: he came in flying and Kuririn was "born dead",
-                        // a win for nothing): bring the character back instead of counting a win.
-                        session.respawns++;
-                        spawnBoss(arena, session, players);
-                    } else if (boss == null || !boss.isAlive()) {
+                    if (boss == null && !session.bossDied) {
+                        // Gone without dying (never award a free win if the boss wasn't actually killed).
+                        if (session.respawns < 10) {
+                            session.respawns++;
+                            spawnBoss(arena, session, players);
+                        }
+                    } else if (session.bossDied || !boss.isAlive()) {
                         win(server, session, now);
                     } else {
                         keepInside(boss, session);
@@ -652,6 +778,13 @@ public final class ChallengeArenas {
     // Thrown out of the ring (Stark 2026-11-10: the Shikamaru's shadow walked the Kakashi out of it, and the fight and
     // the soul were lost): back in, at the far side from the player's start.
     private static void keepInside(Entity boss, Session session) {
+        // Up in the space of an expansion (Gojo's Vazio Infinito, Sukuna's Santuário): that space is above the build height,
+        // so this check threw the challenger back down into the arena while the player stayed up there alone (or, when it
+        // was the challenger's own expansion, brought it back out of it). It is the expansion that brings it back when it ends.
+        if (boss instanceof net.minecraft.world.entity.LivingEntity living
+                && com.starkinhon.battlegroundsmod.power.powers.DomainSpace.inside(living)) {
+            return;
+        }
         ArenaTemplate.Meta meta = session.meta;
         int radius = meta.raio();
         double dx = boss.getX() - (session.center.getX() + 0.5);
@@ -670,7 +803,7 @@ public final class ChallengeArenas {
     private static final ResourceLocation GROUP_HEALTH = ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "arena_group_health");
 
     private static void spawnBoss(ServerLevel arena, Session session, List<ServerPlayer> players) {
-        EntityType<?> type = entityType(session.id);
+        EntityType<?> type = entityType(session.dungeon ? session.bossId : session.id);
         Entity boss = type == null ? null : type.spawn(arena, spawnPos(session), MobSpawnType.EVENT);
         if (boss == null) {
             for (ServerPlayer player : players) {
@@ -697,6 +830,9 @@ public final class ChallengeArenas {
         }
         if (session.hardTier >= 0 && boss instanceof SoulBoss soul) {
             soul.arenaTier(session.hardTier);
+        }
+        if (session.dungeon && boss instanceof SoulBoss soul) {
+            soul.dungeonTier(session.bossTier);
         }
         session.boss = boss.getUUID();
         session.state = State.FIGHT;
@@ -731,6 +867,10 @@ public final class ChallengeArenas {
     // The win counts for everyone who came in, also a partner who fell before the end (if still online): the stamp in
     // the book, the items the first time, the Poder of their own tier.
     private static void win(MinecraftServer server, Session session, long now) {
+        if (session.dungeon) {
+            dungeonWin(server, session);
+            return;
+        }
         session.state = State.DONE;
         session.doneAt = now + RETURN_DELAY;
         for (UUID id : session.members) {

@@ -14,7 +14,11 @@ public class NpcRenderer extends HumanoidMobRenderer<UniverseNpc, PlayerModel<Un
     private final ResourceLocation skin;
 
     public NpcRenderer(EntityRendererProvider.Context context, String skin) {
-        super(context, new PlayerModel<UniverseNpc>(context.bakeLayer(ModelLayers.PLAYER), false) {
+        this(context, skin, false);
+    }
+
+    public NpcRenderer(EntityRendererProvider.Context context, String skin, boolean slim) {
+        super(context, new PlayerModel<UniverseNpc>(context.bakeLayer(slim ? ModelLayers.PLAYER_SLIM : ModelLayers.PLAYER), slim) {
             // in the talk scene (client/TalkScreen) the NPC gestures while its line types
             @Override
             public void setupAnim(UniverseNpc npc, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch) {

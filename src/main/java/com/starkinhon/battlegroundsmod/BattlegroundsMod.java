@@ -65,6 +65,7 @@ public class BattlegroundsMod {
         com.starkinhon.battlegroundsmod.universe.shenlong.ShenlongServer.register();
         com.starkinhon.battlegroundsmod.universe.DbQuests.register();
         com.starkinhon.battlegroundsmod.universe.Flight.register();
+        com.starkinhon.battlegroundsmod.combat.AirFight.register();
         com.starkinhon.battlegroundsmod.boss.AirCombat.register();
         com.starkinhon.battlegroundsmod.universe.SkyPassers.register();
         com.starkinhon.battlegroundsmod.universe.NarutoWorld.register();

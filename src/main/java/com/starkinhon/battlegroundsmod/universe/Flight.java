@@ -194,7 +194,9 @@ public final class Flight {
                 boosting = false;
             }
             TIRED_NOW.put(player.getUUID(), tired);
-            state = FLYING | (boosting ? BOOST : 0) | (tired ? TIRED : 0)
+            // the combat flight's ki dash (rush) counts as a boost for whoever watches: the aura only lights on it
+            boolean rush = com.starkinhon.battlegroundsmod.combat.AirFight.dashing(player);
+            state = FLYING | (boosting || rush ? BOOST : 0) | (tired ? TIRED : 0)
                     | (com.starkinhon.battlegroundsmod.combat.AirFight.active(player) ? COMBAT : 0);
         } else {
             BOOSTING.remove(player.getUUID());
@@ -247,5 +249,12 @@ public final class Flight {
         BOOSTING.remove(id);
         TIRED_NOW.remove(id);
         PAYING.remove(id);
+    }
+
+    public static void resetStatics() {
+        SENT.clear();
+        BOOSTING.clear();
+        TIRED_NOW.clear();
+        PAYING.clear();
     }
 }

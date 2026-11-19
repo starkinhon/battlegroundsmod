@@ -605,4 +605,12 @@ public final class StructureMissions {
             MajinMark.toggle(player);
         }
     }
+
+    public static void resetStatics() {
+        HERE.clear();
+        GREETED.clear();
+        PODS.clear();
+        CLIMB.clear();
+        CROUCH.clear();
+    }
 }

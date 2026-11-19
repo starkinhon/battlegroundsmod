@@ -585,7 +585,7 @@ public final class DragonWind {
         Minecraft mcw = Minecraft.getInstance();
         float daylight = mcw.level == null ? 1 : Mth.clamp((float) sunDir(mcw, partial).y * 3 + 0.3f, 0, 1);
         fade *= 0.2f + 0.8f * daylight;
-        graphics.fill(0, 0, w, h, argb((0.07f - 0.015f * green + 0.035f * dry - 0.025f * sunny + 0.03f * chill + 0.02f * lush) * fade, wash));
+        BiomeAura.wash(graphics, wash, (0.07f - 0.015f * green + 0.035f * dry - 0.025f * sunny + 0.03f * chill + 0.02f * lush) * fade);
         // The glare of the tropical sun when the player looks toward it.
         Minecraft mc = Minecraft.getInstance();
         if (sunny > 0.001f && mc.level != null && mc.player != null && !mc.level.isRaining()) {

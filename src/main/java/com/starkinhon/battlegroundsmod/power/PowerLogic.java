@@ -332,9 +332,33 @@ public final class PowerLogic {
         PowerData data = player.getData(ModAttachments.POWER);
         data.power = power.id();
         SoulSync.touch(player, power.id());
+        net.minecraft.world.item.Item soulWeapon = switch (power.id()) {
+            case "nanami" -> com.starkinhon.battlegroundsmod.ModItems.NANAMI_BLADE.get();
+            case "rukia" -> com.starkinhon.battlegroundsmod.ModItems.SODE_NO_SHIRAYUKI.get();
+            case "byakuya" -> com.starkinhon.battlegroundsmod.ModItems.SENBONZAKURA.get();
+            case "miwa" -> com.starkinhon.battlegroundsmod.ModItems.MIWA_SWORD.get();
+            case "nobara" -> com.starkinhon.battlegroundsmod.ModItems.NOBARA_HAMMER.get();
+            default -> null;
+        };
+        if (soulWeapon != null) {
+            boolean hasWeapon = false;
+            for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+                if (player.getInventory().getItem(i).is(soulWeapon)) {
+                    hasWeapon = true;
+                    break;
+                }
+            }
+            if (!hasWeapon) {
+                net.minecraft.world.item.ItemStack weaponStack = new net.minecraft.world.item.ItemStack(soulWeapon);
+                if (!player.getInventory().add(weaponStack)) {
+                    player.drop(weaponStack, false);
+                }
+            }
+        }
         data.ult = 0;
         data.outfit = true;
         data.resetCombat();
+        PacketDistributor.sendToPlayer(player, new ModPayloads.SyncCharge(-1));
         Vec3 pos = player.position().add(0, 1, 0);
         Fx.burst(player.serverLevel(), Fx.dust(power.color(), 2f), pos, 60, 0.6, 0);
         Fx.burst(player.serverLevel(), ParticleTypes.TOTEM_OF_UNDYING, pos, 40, 0.5, 0.4);
@@ -349,6 +373,7 @@ public final class PowerLogic {
         data.power = "";
         data.ult = 0;
         data.resetCombat();
+        PacketDistributor.sendToPlayer(player, new ModPayloads.SyncCharge(-1));
         CombatMode.leave(player);
         sync(player);
     }
