@@ -111,7 +111,7 @@ public final class BaseAttacks {
         }
     }
 
-    // In combat mode, the red ult bar's title, just over the hearts and food (the gap right above the bar is too
+    // In combat mode, the ult bar's title, just over the hearts and food (the gap right above the bar is too
     // narrow for it): "Ultimate", plus the soul's name for the Uchiha ghost. Blinks when the ult is ready.
     // Returns where the selector goes, above it.
     private static int ultTitle(GuiGraphics graphics, Font font, PowerData data, int tick, int center, int top) {
@@ -121,7 +121,9 @@ public final class BaseAttacks {
             title = title.copy().append(" | ").append(power.name());
         }
         boolean ready = data.ult >= PowerData.MAX_ULT;
-        int color = ready && (tick / 5) % 2 == 0 ? 0xFFFFD0C8 : 0xFFFF4A3D;
+        // In the soul's color, like the bar (Stark 2026-11-19); blinks to the lightest shade when ready.
+        int[] shades = StatusBars.soulRamp(data.power);
+        int color = ready && (tick / 5) % 2 == 0 ? shades[6] : shades[5];
         int y = top - font.lineHeight;
         graphics.drawString(font, title, center - font.width(title) / 2, y, color, true);
         return y - 3;
