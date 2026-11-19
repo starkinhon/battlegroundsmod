@@ -1,0 +1,34 @@
+{
+  "parent": "battlegroundsmod:alvos/devorador_de_deuses",
+  "display": {
+    "icon": {
+      "id": "minecraft:nether_star"
+    },
+    "title": {
+      "translate": "advancements.battlegroundsmod.alvos.fim_de_jogo.title"
+    },
+    "description": {
+      "translate": "advancements.battlegroundsmod.alvos.fim_de_jogo.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "hashirama": {
+      "trigger": "minecraft:impossible"
+    },
+    "freeza_total": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "hashirama"
+    ],
+    [
+      "freeza_total"
+    ]
+  ]
+}

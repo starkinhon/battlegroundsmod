@@ -21,7 +21,7 @@ import net.minecraft.world.phys.Vec3;
 // Strike's giant palm) send one of the fan's own arms: it lifts out of its row, stretches (thickening) round the statue's
 // shoulder, its shadow closes on the ground, it slams, holds, and goes back into its place. a = 2: it dissolves.
 final class HsBuddha extends HsFx.Fx {
-    static final double BZ = 6.5, RISE = 2.4;
+    static final double BZ = 6.5, RISE = 3.2;
     static final String[] ROWC = {"#ad8659", "#9a734a", "#a77f52", "#94704a", "#a47c51", "#8f6b45", "#9e784e"};
 
     // one row of the fan: its pose this frame
@@ -43,7 +43,7 @@ final class HsBuddha extends HsFx.Fx {
         Vector3d hPos;
         Quaternionf hQ, iq = new Quaternionf(), handQ = new Quaternionf();
         Vector3d anchor = new Vector3d(), idle = new Vector3d(), from = new Vector3d(), to = new Vector3d(), handPos = new Vector3d();
-        double scale = 1, rs = 1, t;
+        double scale = 1, rs = 1, t, handNow = 1;
         String state = "idle";
         boolean big;
         Geo geo;
@@ -55,6 +55,8 @@ final class HsBuddha extends HsFx.Fx {
     int[] order;
     double y = -27, fanU, lastT, finalAt = -1, disAt = -1;
     double top = 17.2, headZ = -0.65;
+    // the end-game size (HsBuddha.SB on the server, sent with the rise): the whole frame scales
+    double size = 1;
     final float seed = HsFx.RNG.nextFloat() * 30;
 
     HsBuddha() {
@@ -162,7 +164,7 @@ final class HsBuddha extends HsFx.Fx {
             Vector3d fanP = new Vector3d(a.idleCurve[k]).fma(Math.pow(u, 1.5), off);
             a.pts[k].set(fanP.lerp(arc, e));
         }
-        double th = 1 + 0.55 * e;
+        double th = (1 + 0.55 * e) * ("idle".equals(a.state) ? 1 : a.big ? 3.4 : 1.6);
         for (int k = 0; k < 16; k++) {
             a.radT[k] = a.rad[k] * th;
         }
@@ -193,6 +195,9 @@ final class HsBuddha extends HsFx.Fx {
     void event(int kind, Vec3 p, Vec3 d, float a, float b, float c, double now) {
         double t = now - born;
         if (kind == HsNet.BUDDHA) {
+            if (a == 0 && c > 0) {
+                size = c;
+            }
             if (a == 2 && disAt < 0) {
                 disAt = t;
             }
@@ -204,15 +209,17 @@ final class HsBuddha extends HsFx.Fx {
             if (ar == null) {
                 return;
             }
-            Vector3d at = new Vector3d((p.x - pos.x) / HsWood.PU, (p.y - pos.y) / HsWood.PU, (p.z - pos.z) / HsWood.PU);
+            double u = HsWood.PU * size;
+            Vector3d at = new Vector3d((p.x - pos.x) / u, (p.y - pos.y) / u, (p.z - pos.z) / u);
             // into the page frame (turned by yaw)
             double cs = Math.cos(-yaw), sn = Math.sin(-yaw);
             ar.to.set(at.x * cs + at.z * sn, Math.max(0, at.y), -at.x * sn + at.z * cs);
             ar.state = "warn";
             ar.t = 0;
             ar.big = big;
+            // the page's hands: ~11 blocks for the rain, ~50 for the Top Strike
+            ar.scale = big ? 8.0 : 2.2;
             if (big) {
-                ar.scale = 3.0;
                 finalAt = t;
             }
         }
@@ -228,8 +235,8 @@ final class HsBuddha extends HsFx.Fx {
         double now = HsFx.now();
         double rise = WoodGeo.easeOut3(t / RISE);
         y = -27 + 27 * rise;
-        setFan(WoodGeo.clamp((t - 0.8) / 2.0, 0, 1), now);
-        Matrix4f m = frame(cam);
+        setFan(WoodGeo.clamp((t - 1.2) / 2.4, 0, 1), now);
+        Matrix4f m = frame(cam).scale((float) size);
         Matrix4f bm = new Matrix4f(m).translate(0, (float) y, (float) BZ);
         float dis = disAt >= 0 ? (float) WoodGeo.smooth((t - disAt) / 1.5) : 0;
         List<Part> parts = HsAssets.get("buddha");
@@ -250,7 +257,9 @@ final class HsBuddha extends HsFx.Fx {
                 continue;
             }
             stepArm(a, dt, now, t, m);
-            Matrix4f hm = new Matrix4f(bm).translate((float) a.handPos.x, (float) a.handPos.y, (float) a.handPos.z).rotate(a.handQ).scale((float) (a.big ? a.scale * a.rs : a.rs));
+            // the hand grows out of the fan as it leaves and shrinks back into it at rest
+            a.handNow += (("idle".equals(a.state) ? a.rs : a.scale) - a.handNow) * ("idle".equals(a.state) ? 0.15 : 0.35);
+            Matrix4f hm = new Matrix4f(bm).translate((float) a.handPos.x, (float) a.handPos.y, (float) a.handPos.z).rotate(a.handQ).scale((float) a.handNow);
             HsWood.draw(a.geo, a.mat, bm, 2, dis, bright);
             HsWood.draw(a.hand.g(), a.hand.m(), hm, 2, dis, bright);
         }
@@ -271,11 +280,12 @@ final class HsBuddha extends HsFx.Fx {
         }
         a.t += dt;
         Vector3d W2 = new Vector3d(a.to).sub(0, y, BZ);
-        double warnT = a.big ? 1.3 : 0.75;
+        double warnT = a.big ? 1.6 : 0.75;
         if ("warn".equals(a.state)) {
-            double k = WoodGeo.clamp(a.t / warnT, 0, 1), R = a.big ? 6 : 2.3;
+            // the shadow: 9 and 30 blocks wide in the world, in this frame's units
+            double k = WoodGeo.clamp(a.t / warnT, 0, 1), R = (a.big ? 30 : 9) / (HsWood.PU * size);
             HsFx.shadow(m, (float) a.to.x, (float) a.to.z, (float) R, (float) k, (float) (seed + a.th * 10));
-            Vector3d lift = new Vector3d(a.idle).lerp(new Vector3d(W2.x, W2.y + (a.big ? 13 : 8), W2.z), WoodGeo.smooth(k));
+            Vector3d lift = new Vector3d(a.idle).lerp(new Vector3d(W2.x, W2.y + (a.big ? 16 : 8), W2.z), WoodGeo.smooth(k));
             layArm(a, lift);
             Vector3d dir = new Vector3d(W2).sub(a.anchor).setComponent(1, 0);
             if (dir.lengthSquared() > 1.0E-6) {
@@ -288,24 +298,23 @@ final class HsBuddha extends HsFx.Fx {
                 a.from.set(lift);
             }
         } else if ("drop".equals(a.state)) {
-            double D = a.big ? 0.22 : 0.14, k = WoodGeo.clamp(a.t / D, 0, 1);
-            double hs = (a.big ? a.scale : 1) * a.rs;
-            Vector3d w = new Vector3d(a.from).lerp(new Vector3d(W2.x, W2.y + 0.45 * hs / 1.8, W2.z), k * k);
+            double D = a.big ? 0.26 : 0.15, k = WoodGeo.clamp(a.t / D, 0, 1);
+            Vector3d w = new Vector3d(a.from).lerp(new Vector3d(W2.x, W2.y + 0.45 * a.handNow / 1.8, W2.z), k * k);
             layArm(a, w);
             if (k >= 1) {
                 a.state = "hold";
                 a.t = 0;
-                Vec3 at = toWorld(a.to.x, a.to.y + 0.2, a.to.z);
-                HsFx.Debris.splinters(at, new Vec3(0, (a.big ? 9 : 5) * HsWood.PU, 0), a.big ? 22 : 7);
+                Vec3 at = toWorld(a.to.x * size, (a.to.y + 0.2) * size, a.to.z * size);
+                HsFx.Debris.splinters(at, new Vec3(0, (a.big ? 20 : 9) * HsWood.PU, 0), a.big ? 40 : 12);
             }
         } else if ("hold".equals(a.state)) {
-            if (a.t > (a.big ? 1.6 : 0.6)) {
+            if (a.t > (a.big ? 3 : 0.6)) {
                 a.state = "back";
                 a.t = 0;
                 a.from.set(a.handPos);
             }
         } else if ("back".equals(a.state)) {
-            double k = WoodGeo.smooth(a.t / 0.7);
+            double k = WoodGeo.smooth(a.t / 0.9);
             layArm(a, new Vector3d(a.from).lerp(a.idle, k).add(0, Math.sin(k * Math.PI) * 3, 0));
             a.handQ.slerp(idleQ, 0.08f);
             if (k >= 1) {

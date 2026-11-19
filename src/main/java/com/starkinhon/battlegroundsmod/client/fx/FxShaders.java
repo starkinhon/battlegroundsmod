@@ -65,6 +65,8 @@ public final class FxShaders {
     static ShaderInstance fugaOrb;
     // Freeza's Supernova fire dome (NovaRenderer); without it the landing keeps its rings, flash and shake.
     static ShaderInstance novaVol;
+    // the end-game bosses' fire, dust and smoke (client/fx/epic/EpicFx)
+    public static ShaderInstance boomVol;
     // The vapour off an exorcised curse (CurseVapor); without it the body still darkens and evaporates.
     static ShaderInstance jjVapor;
     // Sukuna's thrown Dismantle (DismantleRenderer); without it the cuts still hit, they just don't show.
@@ -199,6 +201,12 @@ public final class FxShaders {
             register(event, "souls_nova_vol", DefaultVertexFormat.POSITION, s -> novaVol = s);
         } catch (Exception e) {
             BattlegroundsMod.LOGGER.error("Could not load the Supernova shader", e);
+        }
+        // On its own: a problem here only hides the end-game bosses' fire and dust volumes.
+        try {
+            register(event, "souls_boom_vol", DefaultVertexFormat.POSITION, s -> boomVol = s);
+        } catch (Exception e) {
+            BattlegroundsMod.LOGGER.error("Could not load the end-game volume shader", e);
         }
         // On its own: a problem here only hides Sukuna's thrown Dismantle.
         try {

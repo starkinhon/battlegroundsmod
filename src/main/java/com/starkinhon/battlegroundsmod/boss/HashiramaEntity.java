@@ -86,6 +86,17 @@ public class HashiramaEntity extends SoulBoss {
         return tactics;
     }
 
+    // The rare loot, only for the world fight (EndBossLoot).
+    @Override
+    protected void dropCustomDeathLoot(net.minecraft.server.level.ServerLevel level, DamageSource source, boolean recentlyHit) {
+        super.dropCustomDeathLoot(level, source, recentlyHit);
+        EndBossLoot.drop(this, level, source, 1500,
+                new net.minecraft.world.item.ItemStack(com.starkinhon.battlegroundsmod.ModItems.HASHIRAMA_CELL.get(), 3),
+                new net.minecraft.world.item.ItemStack(com.starkinhon.battlegroundsmod.ModItems.SOLDIER_PILL.get(), 4),
+                new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.TOTEM_OF_UNDYING),
+                new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.ENCHANTED_GOLDEN_APPLE, 2));
+    }
+
     @Override
     public String bossId() {
         return "hashirama";
