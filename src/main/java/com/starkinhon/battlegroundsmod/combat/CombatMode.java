@@ -20,12 +20,12 @@ public final class CombatMode {
     private CombatMode() {
     }
 
-    // The punch combo runs with an empty main hand; with any sword in hand it's the sword combo (SwordArts). Anything
-    // else in hand is the vanilla hit. Without this a plain sword's left click fell to the vanilla attack, with its
-    // sweep, crit and damage indicator particles.
+    // The punch combo runs with an empty main hand (or Playful Cloud, which fights with extended-reach melee "golpes");
+    // with any sword in hand it's the sword combo (SwordArts). Anything else in hand is the vanilla hit.
     public static boolean freeHand(LivingEntity entity) {
         ItemStack held = entity.getMainHandItem();
-        return held.isEmpty() || held.getItem() instanceof SwordItem;
+        return held.isEmpty() || held.getItem() instanceof SwordItem
+                || held.getItem() instanceof com.starkinhon.battlegroundsmod.item.PlayfulCloudItem;
     }
 
     public static boolean in(LivingEntity entity) {

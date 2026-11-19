@@ -36,6 +36,12 @@ public final class ClientHooks {
             if (KeyframeAnimation.of(air).isPresent()) {
                 keyframes = air;
             }
+        } else if (who instanceof net.minecraft.world.entity.LivingEntity living
+                && com.starkinhon.battlegroundsmod.item.PlayfulCloudItem.held(living)) {
+            String nuvem = SkillAnimations.NUVEM_PREFIX + "combo" + (Math.floorMod(step, ComboSpec.get().golpes().size()) + 1);
+            if (KeyframeAnimation.of(nuvem).isPresent()) {
+                keyframes = nuvem;
+            }
         }
         if (KeyframeAnimation.of(keyframes).isPresent()) {
             SkillAnimations.play(entityId, keyframes, false);

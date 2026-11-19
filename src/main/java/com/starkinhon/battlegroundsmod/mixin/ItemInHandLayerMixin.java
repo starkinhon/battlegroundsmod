@@ -29,6 +29,14 @@ public abstract class ItemInHandLayerMixin {
             PoseStack pose, MultiBufferSource buffers, int light, CallbackInfo ci) {
         if (arm == HumanoidArm.RIGHT && KokushiboSheathLayer.hidesHand(entity)) {
             ci.cancel();
+            return;
+        }
+        // Lock Playful Cloud's middle section (Staff 2) mathematically between BOTH hands in 3rd person.
+        if (stack.getItem() instanceof com.starkinhon.battlegroundsmod.item.PlayfulCloudItem
+                && arm == entity.getMainArm()
+                && ((ItemInHandLayer<?, ?>) (Object) this).getParentModel() instanceof net.minecraft.client.model.HumanoidModel<?> model) {
+            com.starkinhon.battlegroundsmod.client.outfit.PlayfulCloudRenderer.renderBetweenHands(entity, model, pose, buffers, light);
+            ci.cancel();
         }
     }
 
