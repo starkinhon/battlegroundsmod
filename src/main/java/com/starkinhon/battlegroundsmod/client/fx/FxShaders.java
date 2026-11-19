@@ -19,6 +19,7 @@ public final class FxShaders {
     // The Outono de Kyoto's pond: the mirrored garden and the water's surface over it (KyotoAirFx).
     static ShaderInstance kyotoMirror;
     static ShaderInstance kyotoPond;
+    static ShaderInstance temploCloud;
     // Shibuya's screen grade (ShibuyaAirFx).
     static ShaderInstance shibuyaGrade;
     static ShaderInstance impact;
@@ -293,6 +294,12 @@ public final class FxShaders {
             register(event, "souls_kyoto_pond", DefaultVertexFormat.POSITION, s -> kyotoPond = s);
         } catch (Exception e) {
             BattlegroundsMod.LOGGER.error("Could not load the Kyoto pond shaders", e);
+        }
+        // On its own: without it the Templo has no sea of clouds below the mountain (the rest stays).
+        try {
+            register(event, "souls_templo_cloud", DefaultVertexFormat.POSITION, s -> temploCloud = s);
+        } catch (Exception e) {
+            BattlegroundsMod.LOGGER.error("Could not load the Templo cloud shader", e);
         }
         // On its own: without it Shibuya keeps its neon, steam and fog, just no screen grade.
         try {

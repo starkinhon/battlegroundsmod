@@ -200,5 +200,41 @@
     "sounds": [
       "battlegroundsmod:kyoto_shishi"
     ]
+  },
+  "templo_vento": {
+    "sounds": [
+      {
+        "name": "battlegroundsmod:templo_vento",
+        "stream": true
+      }
+    ]
+  },
+  "templo_sino": {
+    "subtitle": "subtitles.battlegroundsmod.templo_sino",
+    "sounds": [
+      "battlegroundsmod:templo_sino"
+    ]
+  },
+  "templo_asas": {
+    "subtitle": "subtitles.battlegroundsmod.templo_asas",
+    "sounds": [
+      "battlegroundsmod:templo_asas"
+    ]
+  },
+  "templo_tobi": {
+    "subtitle": "subtitles.battlegroundsmod.templo_tobi",
+    "sounds": [
+      "battlegroundsmod:templo_tobi"
+    ]
+  },
+  "templo_uguisu": {
+    "sounds": [
+      "battlegroundsmod:templo_uguisu"
+    ]
+  },
+  "templo_coruja": {
+    "sounds": [
+      "battlegroundsmod:templo_coruja"
+    ]
   }
 }

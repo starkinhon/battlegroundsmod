@@ -39,6 +39,14 @@ public final class ModSounds {
     public static final Supplier<SoundEvent> KYOTO_SUZUMUSHI = register("kyoto_suzumushi");
     public static final Supplier<SoundEvent> KYOTO_BAMBU = register("kyoto_bambu");
     public static final Supplier<SoundEvent> KYOTO_SHISHI = register("kyoto_shishi");
+    // The Templos Antigos' air (client/fx/TemploAirFx), built by tools/sounds/templo_sounds.py: the wind in the cedars
+    // (looped), the big bell, the doves taking off, the black kite, the bush warbler by day and the owl at night.
+    public static final Supplier<SoundEvent> TEMPLO_VENTO = register("templo_vento");
+    public static final Supplier<SoundEvent> TEMPLO_SINO = register("templo_sino");
+    public static final Supplier<SoundEvent> TEMPLO_ASAS = register("templo_asas");
+    public static final Supplier<SoundEvent> TEMPLO_TOBI = register("templo_tobi");
+    public static final Supplier<SoundEvent> TEMPLO_UGUISU = register("templo_uguisu");
+    public static final Supplier<SoundEvent> TEMPLO_CORUJA = register("templo_coruja");
     // Shibuya's air and metro (client/fx/ShibuyaAirFx, ShibuyaMetro), built from noise by tools/sounds/shibuya_sounds.py.
     public static final Supplier<SoundEvent> SHIBUYA_CIDADE = register("shibuya_cidade");
     public static final Supplier<SoundEvent> SHIBUYA_NEON = register("shibuya_neon");
