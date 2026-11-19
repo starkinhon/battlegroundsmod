@@ -51,7 +51,13 @@ import net.neoforged.neoforge.event.tick.ServerTickEvent;
 // Flying up to them (24 blocks) they brake and look (Stark 2026-11-12): Goku and Kuririn wave, Piccolo crosses his
 // arms and goes, Freeza threatens you, and Vegeta tells a weaker one (a worse tier) to go and train, while one of his
 // tier or stronger is challenged to prove who is stronger: the air fight (boss/AirCombat).
+// None of them starts the fight on his own (Stark 2026-11-19: Vegeta coming out of nowhere to beat you up was a pain):
+// Vegeta's challenge only calls you out and he waits a few seconds more, pointing at you; the fight starts only when
+// the player hits one of them first.
 // Hitting one of them starts the fight too. /soul passagem <tipo> brings one now (tests and videos).
+// Lower and closer (Stark 2026-11-19: only Freeza got noticed): a player-sized mob is not drawn past 64 blocks, so the
+// paths now pass 25-45 blocks away (SoulBoss draws them up to 192 while flying), slower, with a rush of air as they go
+// by, and they keep clear of the hills, trees and buildings on their way (clear()).
 public final class SkyPassers {
     private static final RandomSource RANDOM = RandomSource.createThreadSafe();
     private static final double DT = 0.05;
@@ -72,10 +78,14 @@ public final class SkyPassers {
         final double speed;
         final double low;
         double t;
+        // the ones that already made their rush of air
+        final java.util.Set<SoulBoss> whooshed = new java.util.HashSet<>();
         // reacting to a player flying up (seconds since, or -1)
         double react = -1;
         ServerPlayer seen;
         boolean leaving;
+        // Vegeta challenged: they wait longer for the player to hit him
+        boolean challenged;
         // the duel
         Vec3 center;
         Vec3 axis = new Vec3(1, 0, 0);
@@ -198,19 +208,19 @@ public final class SkyPassers {
         double h, lateral, speed;
         switch (kind) {
             case "solo" -> {
-                h = 48 + RANDOM.nextDouble() * 10;
-                lateral = 40 + RANDOM.nextDouble() * 30;
-                speed = 58;
+                h = 20 + RANDOM.nextDouble() * 8;
+                lateral = 24 + RANDOM.nextDouble() * 12;
+                speed = 40;
             }
             case "cruzeiro" -> {
-                h = 34 + RANDOM.nextDouble() * 8;
-                lateral = 26 + RANDOM.nextDouble() * 14;
-                speed = 26;
+                h = 15 + RANDOM.nextDouble() * 6;
+                lateral = 18 + RANDOM.nextDouble() * 8;
+                speed = 16;
             }
             case "rasante" -> {
                 h = 4.5;
-                lateral = 14 + RANDOM.nextDouble() * 6;
-                speed = 44;
+                lateral = 12 + RANDOM.nextDouble() * 6;
+                speed = 34;
             }
             case "freeza" -> {
                 h = 11 + RANDOM.nextDouble() * 4;
@@ -218,20 +228,26 @@ public final class SkyPassers {
                 speed = 9;
             }
             default -> {
-                h = 70 + RANDOM.nextDouble() * 10;
-                lateral = 50 + RANDOM.nextDouble() * 30;
+                h = 22 + RANDOM.nextDouble() * 6;
+                lateral = 28 + RANDOM.nextDouble() * 10;
                 speed = 55;
             }
         }
         Vec3 mid = player.position().add(look.scale(lateral));
-        double ground = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mth.floor(mid.x), Mth.floor(mid.z));
-        mid = new Vec3(mid.x, Math.max(player.getY(), ground) + h, mid.z);
+        double ground = top(level, mid.x, mid.z);
+        // the rasante follows the ground; the others go by over the player's head height, never under the hills
+        mid = new Vec3(mid.x, ("rasante".equals(kind) ? ground : Math.max(player.getY(), ground)) + h, mid.z);
         // born far off, but where mobs still move (inside the simulation distance)
-        double back = "freeza".equals(kind) ? 55 : "duelo".equals(kind) ? 80 : 230;
+        double back = "freeza".equals(kind) ? 55 : "duelo".equals(kind) ? 60 : 200;
         Vec3 start = mid.subtract(dir.scale(back));
         while (back > 30 && !level.isPositionEntityTicking(BlockPos.containing(start))) {
             back -= 16;
             start = mid.subtract(dir.scale(back));
+        }
+        // never born inside a hill or a building
+        double floor = clearAt(level, start, "rasante".equals(kind) ? 4.5 : CLEAR);
+        if (start.y < floor) {
+            start = new Vec3(start.x, floor, start.z);
         }
         Event e = new Event(kind, level, dir, look, speed, ground + h);
         if ("duelo".equals(kind)) {
@@ -295,6 +311,12 @@ public final class SkyPassers {
             if (b.isRemoved() || !b.isAlive() || air == null || !air.passing()) {
                 return true;
             }
+            // hit by a player just now, even if nothing set it as the target
+            if (b.getLastHurtByMob() instanceof net.minecraft.world.entity.player.Player hitter && hitter.isAlive()
+                    && !hitter.isSpectator() && b.tickCount - b.getLastHurtByMobTimestamp() < 10) {
+                air.fight(hitter);
+                return true;
+            }
             if (b.getTarget() != null) {
                 if (b.getLastHurtByMob() == b.getTarget()) {
                     air.fight(b.getTarget());
@@ -330,6 +352,7 @@ public final class SkyPassers {
                 }
             }
         }
+        whoosh(e);
         if (e.react >= 0) {
             react(e);
         } else if ("duelo".equals(e.kind) && !e.leaving) {
@@ -364,8 +387,11 @@ public final class SkyPassers {
                 d = new Vec3(d.x, Math.sin(e.t * 0.7) * 0.06, d.z);
             }
             if ("rasante".equals(e.kind)) {
-                double ground = e.level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, b.getBlockX(), b.getBlockZ());
-                d = new Vec3(d.x, Mth.clamp((ground + 4.5 - b.getY()) * 0.1, -1, 1), d.z);
+                // skims the ground (and the treetops), looking ahead so a slope never catches him
+                double ground = ahead(e.level, b, air.velocity(), 0);
+                d = new Vec3(d.x, Mth.clamp((ground + 4.5 - b.getY()) * 0.15, -1, 1), d.z);
+            } else {
+                d = clear(e.level, b, air.velocity(), d);
             }
             if (e.leaving) {
                 int i = e.ents.indexOf(b);
@@ -375,6 +401,58 @@ public final class SkyPassers {
                 }
             }
             air.steerTo(d, e.leaving ? ("duelo".equals(e.kind) ? 60 : 50) : e.speed, 2);
+        }
+    }
+
+    // ------------------------------------------------------------------ keeping clear of the ground
+
+    // how far over the hills, trees and buildings they keep while going by
+    private static final double CLEAR = 7;
+
+    // The top of what stands at x, z: ground, treetops, roofs.
+    private static double top(ServerLevel level, double x, double z) {
+        return level.getHeight(Heightmap.Types.MOTION_BLOCKING, Mth.floor(x), Mth.floor(z));
+    }
+
+    // The highest top under it and along where it is going in the next second and a half.
+    private static double ahead(ServerLevel level, SoulBoss b, Vec3 vel, double pad) {
+        Vec3 h = new Vec3(vel.x, 0, vel.z);
+        double best = top(level, b.getX(), b.getZ());
+        for (int i = 1; i <= 6; i++) {
+            Vec3 at = b.position().add(h.scale(0.25 * i));
+            best = Math.max(best, top(level, at.x, at.z));
+        }
+        return best + pad;
+    }
+
+    private static double clearAt(ServerLevel level, Vec3 at, double pad) {
+        double best = 0;
+        for (int dx = -2; dx <= 2; dx += 2) {
+            for (int dz = -2; dz <= 2; dz += 2) {
+                best = Math.max(best, top(level, at.x + dx, at.z + dz));
+            }
+        }
+        return best + pad;
+    }
+
+    // Climbs over what is ahead (hills, trees, a building), and only climbs: they never dive towards the ground here.
+    private static Vec3 clear(ServerLevel level, SoulBoss b, Vec3 vel, Vec3 d) {
+        double need = ahead(level, b, vel, CLEAR) - b.getY();
+        if (need <= 0) {
+            return d;
+        }
+        return new Vec3(d.x, Math.max(d.y, Mth.clamp(need * 0.2, 0.15, 1.2)), d.z);
+    }
+
+    // A rush of air as each one goes by the player (the first time it comes within 45 blocks), from where it is.
+    private static void whoosh(Event e) {
+        for (SoulBoss b : e.ents) {
+            if (e.whooshed.contains(b) || b.isInvisible() || e.level.getNearestPlayer(b, 45) == null) {
+                continue;
+            }
+            e.whooshed.add(b);
+            SubCommon.sound(e.level, b.position(), SoundEvents.TRIDENT_RIPTIDE_3.value(), 3f, 0.7f);
+            SubCommon.sound(e.level, b.position(), SoundEvents.FIREWORK_ROCKET_LAUNCH, 3f, 0.5f);
         }
     }
 
@@ -401,7 +479,6 @@ public final class SkyPassers {
             }
         }
         if (before < 0.8 && e.react >= 0.8 && p != null) {
-            List<SoulBoss> fighters = new ArrayList<>();
             for (SoulBoss b : e.ents) {
                 AirCombat air = AirCombat.of(b);
                 switch (b.bossId()) {
@@ -418,21 +495,12 @@ public final class SkyPassers {
                         } else {
                             BossFalas.line(b, "fala.battlegroundsmod.ceu.vegeta_desafio", BossFalas.colors("vegeta"));
                             SubCommon.pose(b, "db.apontar");
-                            fighters.add(b);
+                            e.challenged = true;
                         }
                     }
                     default -> {
                     }
                 }
-            }
-            for (SoulBoss b : fighters) {
-                // a moment for the line, then he comes
-                com.starkinhon.battlegroundsmod.combat.Tasks.later(24, () -> {
-                    AirCombat air = AirCombat.of(b);
-                    if (b.isAlive() && air != null && p.isAlive()) {
-                        air.fight(p);
-                    }
-                });
             }
         }
         if (before < 2.2 && e.react >= 2.2) {
@@ -443,7 +511,7 @@ public final class SkyPassers {
                 }
             }
         }
-        if (e.react > 4) {
+        if (e.react > (e.challenged ? 9 : 4)) {
             e.react = -1;
             e.leaving = true;
             for (SoulBoss b : e.ents) {
@@ -471,6 +539,11 @@ public final class SkyPassers {
         AirCombat aa = AirCombat.of(a), ab = AirCombat.of(b);
         e.pt += DT;
         e.center = e.center.add(e.dir.scale(10 * DT));
+        // the fight drifts on over the land: always well over the hills, trees and buildings under it
+        double floor = clearAt(e.level, e.center, 14);
+        if (e.center.y < floor) {
+            e.center = new Vec3(e.center.x, floor, e.center.z);
+        }
         switch (e.phase) {
             case SEPARA -> {
                 for (int i = 0; i < 2; i++) {
@@ -508,6 +581,10 @@ public final class SkyPassers {
                 }
                 if (e.pt > 0.32) {
                     e.center = e.center.add(e.dir.scale(22)).add(0, (RANDOM.nextDouble() - 0.5) * 8, 0);
+                    double over = clearAt(e.level, e.center, 14);
+                    if (e.center.y < over) {
+                        e.center = new Vec3(e.center.x, over, e.center.z);
+                    }
                     for (int i = 0; i < 2; i++) {
                         SoulBoss m = e.ents.get(i);
                         Vec3 to = e.center.add(e.axis.scale(i == 1 ? 7 : -7));
