@@ -1,0 +1,33 @@
+{
+  "parent": "battlegroundsmod:alvos/freeza",
+  "display": {
+    "icon": {
+      "id": "battlegroundsmod:soul_destruction_god"
+    },
+    "title": {
+      "translate": "advancements.battlegroundsmod.alvos.vencer",
+      "with": [
+        {
+          "translate": "entity.battlegroundsmod.bills"
+        }
+      ]
+    },
+    "description": {
+      "translate": "advancements.battlegroundsmod.alvos.vencer.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ]
+}

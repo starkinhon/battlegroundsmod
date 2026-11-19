@@ -1,0 +1,64 @@
+{
+  "parent": "battlegroundsmod:alvos/root",
+  "display": {
+    "icon": {
+      "id": "battlegroundsmod:soul_destruction_god"
+    },
+    "title": {
+      "translate": "advancements.battlegroundsmod.alvos.dragonball.title"
+    },
+    "description": {
+      "translate": "advancements.battlegroundsmod.alvos.dragonball.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "kuririn": {
+      "trigger": "minecraft:impossible"
+    },
+    "piccolo": {
+      "trigger": "minecraft:impossible"
+    },
+    "kame": {
+      "trigger": "minecraft:impossible"
+    },
+    "goku": {
+      "trigger": "minecraft:impossible"
+    },
+    "vegeta": {
+      "trigger": "minecraft:impossible"
+    },
+    "freeza": {
+      "trigger": "minecraft:impossible"
+    },
+    "bills": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "kuririn"
+    ],
+    [
+      "piccolo"
+    ],
+    [
+      "kame"
+    ],
+    [
+      "goku"
+    ],
+    [
+      "vegeta"
+    ],
+    [
+      "freeza"
+    ],
+    [
+      "bills"
+    ]
+  ]
+}

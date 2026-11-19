@@ -1,0 +1,52 @@
+{
+  "parent": "battlegroundsmod:alvos/multiverso",
+  "display": {
+    "icon": {
+      "id": "minecraft:dragon_egg"
+    },
+    "title": {
+      "translate": "advancements.battlegroundsmod.alvos.devorador_de_deuses.title"
+    },
+    "description": {
+      "translate": "advancements.battlegroundsmod.alvos.devorador_de_deuses.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "bills": {
+      "trigger": "minecraft:impossible"
+    },
+    "madara": {
+      "trigger": "minecraft:impossible"
+    },
+    "gojo": {
+      "trigger": "minecraft:impossible"
+    },
+    "sukuna": {
+      "trigger": "minecraft:impossible"
+    },
+    "kokushibo": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "bills"
+    ],
+    [
+      "madara"
+    ],
+    [
+      "gojo"
+    ],
+    [
+      "sukuna"
+    ],
+    [
+      "kokushibo"
+    ]
+  ]
+}

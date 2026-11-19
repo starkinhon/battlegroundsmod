@@ -1,0 +1,34 @@
+{
+  "parent": "battlegroundsmod:almas/naruto_9",
+  "display": {
+    "icon": {
+      "id": "battlegroundsmod:soul_naruto"
+    },
+    "title": {
+      "translate": "advancements.battlegroundsmod.almas.skill",
+      "with": [
+        "V",
+        {
+          "translate": "ability.battlegroundsmod.naruto.3"
+        }
+      ]
+    },
+    "description": {
+      "translate": "ability.battlegroundsmod.naruto.3.desc"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ]
+}

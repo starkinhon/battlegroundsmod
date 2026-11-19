@@ -1,0 +1,33 @@
+{
+  "parent": "battlegroundsmod:almas/moon_demon_8",
+  "display": {
+    "icon": {
+      "id": "battlegroundsmod:soul_moon_demon"
+    },
+    "title": {
+      "translate": "advancements.battlegroundsmod.almas.total",
+      "with": [
+        {
+          "translate": "power.battlegroundsmod.moon_demon"
+        }
+      ]
+    },
+    "description": {
+      "translate": "advancements.battlegroundsmod.almas.total.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ]
+}

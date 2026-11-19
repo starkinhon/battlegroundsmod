@@ -1,0 +1,33 @@
+{
+  "parent": "battlegroundsmod:almas/root",
+  "display": {
+    "icon": {
+      "id": "battlegroundsmod:soul_freeza"
+    },
+    "title": {
+      "translate": "advancements.battlegroundsmod.almas.alma",
+      "with": [
+        {
+          "translate": "power.battlegroundsmod.freeza"
+        }
+      ]
+    },
+    "description": {
+      "translate": "power.battlegroundsmod.freeza.desc"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": true
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ]
+}

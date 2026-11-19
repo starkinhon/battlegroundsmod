@@ -1,0 +1,33 @@
+{
+  "parent": "battlegroundsmod:alvos/gaara",
+  "display": {
+    "icon": {
+      "id": "battlegroundsmod:soul_naruto"
+    },
+    "title": {
+      "translate": "advancements.battlegroundsmod.alvos.vencer",
+      "with": [
+        {
+          "translate": "entity.battlegroundsmod.naruto"
+        }
+      ]
+    },
+    "description": {
+      "translate": "advancements.battlegroundsmod.alvos.vencer.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ]
+}

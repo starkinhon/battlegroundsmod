@@ -1,0 +1,34 @@
+{
+  "parent": "battlegroundsmod:almas/strongest_6",
+  "display": {
+    "icon": {
+      "id": "battlegroundsmod:soul_strongest"
+    },
+    "title": {
+      "translate": "advancements.battlegroundsmod.almas.skill",
+      "with": [
+        "V",
+        {
+          "translate": "ability.battlegroundsmod.strongest.3"
+        }
+      ]
+    },
+    "description": {
+      "translate": "ability.battlegroundsmod.strongest.3.desc"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ]
+}

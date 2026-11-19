@@ -198,7 +198,7 @@ public final class ShenlongServer {
                     if (since >= END_TICKS) {
                         end(server, call);
                         // after the scene, so its toast does not cover the cutscene
-                        com.starkinhon.battlegroundsmod.power.Achievements.grant(player, "shenlong");
+                        com.starkinhon.battlegroundsmod.power.Achievements.grant(player, "exploracao/shenlong");
                         it.remove();
                     }
                 }

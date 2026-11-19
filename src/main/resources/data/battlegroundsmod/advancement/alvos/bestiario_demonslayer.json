@@ -1,0 +1,40 @@
+{
+  "parent": "battlegroundsmod:alvos/demonslayer",
+  "display": {
+    "icon": {
+      "id": "minecraft:skeleton_skull"
+    },
+    "title": {
+      "translate": "advancements.battlegroundsmod.alvos.bestiario_demonslayer.title"
+    },
+    "description": {
+      "translate": "advancements.battlegroundsmod.alvos.bestiario.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "oni_comum": {
+      "trigger": "minecraft:impossible"
+    },
+    "oni_lua_inferior": {
+      "trigger": "minecraft:impossible"
+    },
+    "oni_espadachim": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "oni_comum"
+    ],
+    [
+      "oni_lua_inferior"
+    ],
+    [
+      "oni_espadachim"
+    ]
+  ]
+}

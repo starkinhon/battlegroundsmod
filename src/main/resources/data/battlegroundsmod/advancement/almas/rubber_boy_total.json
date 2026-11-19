@@ -1,0 +1,33 @@
+{
+  "parent": "battlegroundsmod:almas/rubber_boy_3",
+  "display": {
+    "icon": {
+      "id": "battlegroundsmod:soul_rubber_boy"
+    },
+    "title": {
+      "translate": "advancements.battlegroundsmod.almas.total",
+      "with": [
+        {
+          "translate": "power.battlegroundsmod.rubber_boy"
+        }
+      ]
+    },
+    "description": {
+      "translate": "advancements.battlegroundsmod.almas.total.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ]
+}

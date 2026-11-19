@@ -1,0 +1,208 @@
+{
+  "parent": "battlegroundsmod:almas/root",
+  "display": {
+    "icon": {
+      "id": "battlegroundsmod:soul_destruction_god"
+    },
+    "title": {
+      "translate": "advancements.battlegroundsmod.almas.colecionador.title"
+    },
+    "description": {
+      "translate": "advancements.battlegroundsmod.almas.colecionador.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "kuririn": {
+      "trigger": "minecraft:impossible"
+    },
+    "piccolo": {
+      "trigger": "minecraft:impossible"
+    },
+    "kame": {
+      "trigger": "minecraft:impossible"
+    },
+    "goku": {
+      "trigger": "minecraft:impossible"
+    },
+    "vegeta": {
+      "trigger": "minecraft:impossible"
+    },
+    "freeza": {
+      "trigger": "minecraft:impossible"
+    },
+    "destruction_god": {
+      "trigger": "minecraft:impossible"
+    },
+    "shikamaru": {
+      "trigger": "minecraft:impossible"
+    },
+    "ino": {
+      "trigger": "minecraft:impossible"
+    },
+    "kakashi": {
+      "trigger": "minecraft:impossible"
+    },
+    "gaara": {
+      "trigger": "minecraft:impossible"
+    },
+    "naruto": {
+      "trigger": "minecraft:impossible"
+    },
+    "sasuke": {
+      "trigger": "minecraft:impossible"
+    },
+    "uchiha_ghost": {
+      "trigger": "minecraft:impossible"
+    },
+    "nobara": {
+      "trigger": "minecraft:impossible"
+    },
+    "miwa": {
+      "trigger": "minecraft:impossible"
+    },
+    "nanami": {
+      "trigger": "minecraft:impossible"
+    },
+    "inumaki": {
+      "trigger": "minecraft:impossible"
+    },
+    "itadori": {
+      "trigger": "minecraft:impossible"
+    },
+    "choso": {
+      "trigger": "minecraft:impossible"
+    },
+    "todo": {
+      "trigger": "minecraft:impossible"
+    },
+    "strongest": {
+      "trigger": "minecraft:impossible"
+    },
+    "sukuna": {
+      "trigger": "minecraft:impossible"
+    },
+    "rukia": {
+      "trigger": "minecraft:impossible"
+    },
+    "byakuya": {
+      "trigger": "minecraft:impossible"
+    },
+    "moon_demon": {
+      "trigger": "minecraft:impossible"
+    },
+    "makima": {
+      "trigger": "minecraft:impossible"
+    },
+    "manipulator": {
+      "trigger": "minecraft:impossible"
+    },
+    "one_punch": {
+      "trigger": "minecraft:impossible"
+    },
+    "rubber_boy": {
+      "trigger": "minecraft:impossible"
+    },
+    "shigaraki": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "kuririn"
+    ],
+    [
+      "piccolo"
+    ],
+    [
+      "kame"
+    ],
+    [
+      "goku"
+    ],
+    [
+      "vegeta"
+    ],
+    [
+      "freeza"
+    ],
+    [
+      "destruction_god"
+    ],
+    [
+      "shikamaru"
+    ],
+    [
+      "ino"
+    ],
+    [
+      "kakashi"
+    ],
+    [
+      "gaara"
+    ],
+    [
+      "naruto"
+    ],
+    [
+      "sasuke"
+    ],
+    [
+      "uchiha_ghost"
+    ],
+    [
+      "nobara"
+    ],
+    [
+      "miwa"
+    ],
+    [
+      "nanami"
+    ],
+    [
+      "inumaki"
+    ],
+    [
+      "itadori"
+    ],
+    [
+      "choso"
+    ],
+    [
+      "todo"
+    ],
+    [
+      "strongest"
+    ],
+    [
+      "sukuna"
+    ],
+    [
+      "rukia"
+    ],
+    [
+      "byakuya"
+    ],
+    [
+      "moon_demon"
+    ],
+    [
+      "makima"
+    ],
+    [
+      "manipulator"
+    ],
+    [
+      "one_punch"
+    ],
+    [
+      "rubber_boy"
+    ],
+    [
+      "shigaraki"
+    ]
+  ]
+}

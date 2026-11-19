@@ -1,0 +1,28 @@
+{
+  "parent": "battlegroundsmod:alvos/root",
+  "display": {
+    "icon": {
+      "id": "battlegroundsmod:soul_moon_demon"
+    },
+    "title": {
+      "translate": "advancements.battlegroundsmod.alvos.demonslayer.title"
+    },
+    "description": {
+      "translate": "advancements.battlegroundsmod.alvos.demonslayer.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "kokushibo": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "kokushibo"
+    ]
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "parent": "battlegroundsmod:almas/root",
+  "display": {
+    "icon": {
+      "id": "battlegroundsmod:soul_sukuna"
+    },
+    "title": {
+      "translate": "advancements.battlegroundsmod.almas.alma_divina",
+      "with": [
+        {
+          "translate": "power.battlegroundsmod.sukuna"
+        }
+      ]
+    },
+    "description": {
+      "translate": "power.battlegroundsmod.sukuna.desc"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ]
+}

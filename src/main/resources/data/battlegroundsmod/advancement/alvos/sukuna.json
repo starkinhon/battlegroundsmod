@@ -1,0 +1,33 @@
+{
+  "parent": "battlegroundsmod:alvos/gojo",
+  "display": {
+    "icon": {
+      "id": "battlegroundsmod:soul_sukuna"
+    },
+    "title": {
+      "translate": "advancements.battlegroundsmod.alvos.vencer",
+      "with": [
+        {
+          "translate": "entity.battlegroundsmod.sukuna"
+        }
+      ]
+    },
+    "description": {
+      "translate": "advancements.battlegroundsmod.alvos.vencer.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ]
+}

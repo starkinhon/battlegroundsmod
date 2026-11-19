@@ -1,0 +1,34 @@
+{
+  "parent": "battlegroundsmod:alvos/root",
+  "display": {
+    "icon": {
+      "id": "battlegroundsmod:soul_byakuya"
+    },
+    "title": {
+      "translate": "advancements.battlegroundsmod.alvos.bleach.title"
+    },
+    "description": {
+      "translate": "advancements.battlegroundsmod.alvos.bleach.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "rukia": {
+      "trigger": "minecraft:impossible"
+    },
+    "byakuya": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "rukia"
+    ],
+    [
+      "byakuya"
+    ]
+  ]
+}

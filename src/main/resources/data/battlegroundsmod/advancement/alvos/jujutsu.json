@@ -1,0 +1,76 @@
+{
+  "parent": "battlegroundsmod:alvos/root",
+  "display": {
+    "icon": {
+      "id": "battlegroundsmod:soul_sukuna"
+    },
+    "title": {
+      "translate": "advancements.battlegroundsmod.alvos.jujutsu.title"
+    },
+    "description": {
+      "translate": "advancements.battlegroundsmod.alvos.jujutsu.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "nobara": {
+      "trigger": "minecraft:impossible"
+    },
+    "miwa": {
+      "trigger": "minecraft:impossible"
+    },
+    "nanami": {
+      "trigger": "minecraft:impossible"
+    },
+    "inumaki": {
+      "trigger": "minecraft:impossible"
+    },
+    "itadori": {
+      "trigger": "minecraft:impossible"
+    },
+    "choso": {
+      "trigger": "minecraft:impossible"
+    },
+    "todo": {
+      "trigger": "minecraft:impossible"
+    },
+    "gojo": {
+      "trigger": "minecraft:impossible"
+    },
+    "sukuna": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "nobara"
+    ],
+    [
+      "miwa"
+    ],
+    [
+      "nanami"
+    ],
+    [
+      "inumaki"
+    ],
+    [
+      "itadori"
+    ],
+    [
+      "choso"
+    ],
+    [
+      "todo"
+    ],
+    [
+      "gojo"
+    ],
+    [
+      "sukuna"
+    ]
+  ]
+}

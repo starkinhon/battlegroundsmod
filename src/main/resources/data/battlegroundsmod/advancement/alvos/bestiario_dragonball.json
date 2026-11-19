@@ -1,0 +1,88 @@
+{
+  "parent": "battlegroundsmod:alvos/dragonball",
+  "display": {
+    "icon": {
+      "id": "minecraft:skeleton_skull"
+    },
+    "title": {
+      "translate": "advancements.battlegroundsmod.alvos.bestiario_dragonball.title"
+    },
+    "description": {
+      "translate": "advancements.battlegroundsmod.alvos.bestiario.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "soldado_red_ribbon": {
+      "trigger": "minecraft:impossible"
+    },
+    "saibaman": {
+      "trigger": "minecraft:impossible"
+    },
+    "soldado_freeza": {
+      "trigger": "minecraft:impossible"
+    },
+    "bandido_deserto": {
+      "trigger": "minecraft:impossible"
+    },
+    "pirata": {
+      "trigger": "minecraft:impossible"
+    },
+    "yeti": {
+      "trigger": "minecraft:impossible"
+    },
+    "raptor": {
+      "trigger": "minecraft:impossible"
+    },
+    "tiranossauro": {
+      "trigger": "minecraft:impossible"
+    },
+    "dino_chifrudo": {
+      "trigger": "minecraft:impossible"
+    },
+    "tigre_sabre": {
+      "trigger": "minecraft:impossible"
+    },
+    "androide_gero": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "soldado_red_ribbon"
+    ],
+    [
+      "saibaman"
+    ],
+    [
+      "soldado_freeza"
+    ],
+    [
+      "bandido_deserto"
+    ],
+    [
+      "pirata"
+    ],
+    [
+      "yeti"
+    ],
+    [
+      "raptor"
+    ],
+    [
+      "tiranossauro"
+    ],
+    [
+      "dino_chifrudo"
+    ],
+    [
+      "tigre_sabre"
+    ],
+    [
+      "androide_gero"
+    ]
+  ]
+}

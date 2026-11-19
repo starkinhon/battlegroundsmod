@@ -1,0 +1,40 @@
+{
+  "parent": "battlegroundsmod:alvos/jujutsu",
+  "display": {
+    "icon": {
+      "id": "minecraft:skeleton_skull"
+    },
+    "title": {
+      "translate": "advancements.battlegroundsmod.alvos.bestiario_jujutsu.title"
+    },
+    "description": {
+      "translate": "advancements.battlegroundsmod.alvos.bestiario.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "maldicao_menor": {
+      "trigger": "minecraft:impossible"
+    },
+    "maldicao_grau2": {
+      "trigger": "minecraft:impossible"
+    },
+    "feiticeiro_renegado": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "maldicao_menor"
+    ],
+    [
+      "maldicao_grau2"
+    ],
+    [
+      "feiticeiro_renegado"
+    ]
+  ]
+}

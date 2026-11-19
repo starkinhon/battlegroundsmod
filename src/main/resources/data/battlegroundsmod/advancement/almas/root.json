@@ -1,0 +1,28 @@
+{
+  "display": {
+    "icon": {
+      "id": "battlegroundsmod:soul_kuririn"
+    },
+    "title": {
+      "translate": "advancements.battlegroundsmod.almas.root.title"
+    },
+    "description": {
+      "translate": "advancements.battlegroundsmod.almas.root.description"
+    },
+    "frame": "task",
+    "show_toast": false,
+    "announce_to_chat": false,
+    "hidden": false,
+    "background": "minecraft:textures/block/crying_obsidian.png"
+  },
+  "criteria": {
+    "tick": {
+      "trigger": "minecraft:tick"
+    }
+  },
+  "requirements": [
+    [
+      "tick"
+    ]
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "parent": "battlegroundsmod:almas/shigaraki_3",
+  "display": {
+    "icon": {
+      "id": "battlegroundsmod:soul_shigaraki"
+    },
+    "title": {
+      "translate": "advancements.battlegroundsmod.almas.skill",
+      "with": [
+        "Shift+V",
+        {
+          "translate": "ability.battlegroundsmod.shigaraki.8"
+        }
+      ]
+    },
+    "description": {
+      "translate": "ability.battlegroundsmod.shigaraki.8.desc"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ]
+}

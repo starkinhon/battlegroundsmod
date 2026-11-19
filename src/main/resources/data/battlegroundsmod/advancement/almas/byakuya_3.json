@@ -1,0 +1,34 @@
+{
+  "parent": "battlegroundsmod:almas/byakuya_4",
+  "display": {
+    "icon": {
+      "id": "battlegroundsmod:soul_byakuya"
+    },
+    "title": {
+      "translate": "advancements.battlegroundsmod.almas.skill",
+      "with": [
+        "V",
+        {
+          "translate": "ability.battlegroundsmod.byakuya.3"
+        }
+      ]
+    },
+    "description": {
+      "translate": "ability.battlegroundsmod.byakuya.3.desc"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ]
+}
