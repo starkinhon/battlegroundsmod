@@ -1,0 +1,28 @@
+{
+  "parent": "battlegroundsmod:tecnicas/root",
+  "display": {
+    "icon": {
+      "id": "minecraft:grass_block"
+    },
+    "title": {
+      "translate": "advancements.battlegroundsmod.tecnicas.tecnica_kaioh.title"
+    },
+    "description": {
+      "translate": "advancements.battlegroundsmod.tecnicas.tecnica_kaioh.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ]
+}

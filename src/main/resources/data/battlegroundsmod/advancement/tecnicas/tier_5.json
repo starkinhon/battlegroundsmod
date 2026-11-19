@@ -1,0 +1,28 @@
+{
+  "parent": "battlegroundsmod:tecnicas/tier_6",
+  "display": {
+    "icon": {
+      "id": "minecraft:diamond"
+    },
+    "title": {
+      "translate": "advancements.battlegroundsmod.tecnicas.tier_5.title"
+    },
+    "description": {
+      "translate": "advancements.battlegroundsmod.tecnicas.tier_5.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "parent": "battlegroundsmod:alvos/bleach",
+  "display": {
+    "icon": {
+      "id": "minecraft:skeleton_skull"
+    },
+    "title": {
+      "translate": "advancements.battlegroundsmod.alvos.bestiario_bleach.title"
+    },
+    "description": {
+      "translate": "advancements.battlegroundsmod.alvos.bestiario.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "hollow": {
+      "trigger": "minecraft:impossible"
+    },
+    "arrancar": {
+      "trigger": "minecraft:impossible"
+    },
+    "menos_grande": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "hollow"
+    ],
+    [
+      "arrancar"
+    ],
+    [
+      "menos_grande"
+    ]
+  ]
+}

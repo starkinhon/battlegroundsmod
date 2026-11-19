@@ -1,0 +1,34 @@
+{
+  "parent": "battlegroundsmod:almas/one_punch",
+  "display": {
+    "icon": {
+      "id": "battlegroundsmod:soul_one_punch"
+    },
+    "title": {
+      "translate": "advancements.battlegroundsmod.almas.skill",
+      "with": [
+        "Z",
+        {
+          "translate": "ability.battlegroundsmod.one_punch.0"
+        }
+      ]
+    },
+    "description": {
+      "translate": "ability.battlegroundsmod.one_punch.0"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ]
+}

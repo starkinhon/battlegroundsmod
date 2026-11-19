@@ -1,0 +1,28 @@
+{
+  "parent": "battlegroundsmod:exploracao/root",
+  "display": {
+    "icon": {
+      "id": "battlegroundsmod:radar_dragao"
+    },
+    "title": {
+      "translate": "advancements.battlegroundsmod.exploracao.missoes_bulma.title"
+    },
+    "description": {
+      "translate": "advancements.battlegroundsmod.exploracao.missoes_bulma.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ]
+}

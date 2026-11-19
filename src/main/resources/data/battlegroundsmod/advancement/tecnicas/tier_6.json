@@ -1,0 +1,28 @@
+{
+  "parent": "battlegroundsmod:tecnicas/tier_7",
+  "display": {
+    "icon": {
+      "id": "minecraft:gold_block"
+    },
+    "title": {
+      "translate": "advancements.battlegroundsmod.tecnicas.tier_6.title"
+    },
+    "description": {
+      "translate": "advancements.battlegroundsmod.tecnicas.tier_6.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ]
+}

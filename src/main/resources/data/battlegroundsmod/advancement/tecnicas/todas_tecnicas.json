@@ -1,0 +1,70 @@
+{
+  "parent": "battlegroundsmod:tecnicas/tecnica_reversao",
+  "display": {
+    "icon": {
+      "id": "minecraft:totem_of_undying"
+    },
+    "title": {
+      "translate": "advancements.battlegroundsmod.tecnicas.todas_tecnicas.title"
+    },
+    "description": {
+      "translate": "advancements.battlegroundsmod.tecnicas.todas_tecnicas.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "voo": {
+      "trigger": "minecraft:impossible"
+    },
+    "kaioh": {
+      "trigger": "minecraft:impossible"
+    },
+    "marca_majin": {
+      "trigger": "minecraft:impossible"
+    },
+    "modo_sabio": {
+      "trigger": "minecraft:impossible"
+    },
+    "controle_energia": {
+      "trigger": "minecraft:impossible"
+    },
+    "reversao": {
+      "trigger": "minecraft:impossible"
+    },
+    "shunpo": {
+      "trigger": "minecraft:impossible"
+    },
+    "marca_cacador": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "voo"
+    ],
+    [
+      "kaioh"
+    ],
+    [
+      "marca_majin"
+    ],
+    [
+      "modo_sabio"
+    ],
+    [
+      "controle_energia"
+    ],
+    [
+      "reversao"
+    ],
+    [
+      "shunpo"
+    ],
+    [
+      "marca_cacador"
+    ]
+  ]
+}

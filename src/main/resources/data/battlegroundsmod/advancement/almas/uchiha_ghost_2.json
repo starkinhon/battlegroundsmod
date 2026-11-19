@@ -1,0 +1,34 @@
+{
+  "parent": "battlegroundsmod:almas/uchiha_ghost_1",
+  "display": {
+    "icon": {
+      "id": "battlegroundsmod:soul_uchiha_ghost"
+    },
+    "title": {
+      "translate": "advancements.battlegroundsmod.almas.skill",
+      "with": [
+        "C",
+        {
+          "translate": "ability.battlegroundsmod.uchiha_ghost.2"
+        }
+      ]
+    },
+    "description": {
+      "translate": "ability.battlegroundsmod.uchiha_ghost.2.desc"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ]
+}
