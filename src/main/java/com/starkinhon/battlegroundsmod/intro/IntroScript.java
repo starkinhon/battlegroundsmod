@@ -270,8 +270,14 @@ final class IntroScript {
         data.tier = Math.min(p.getData(ModAttachments.POWER).tier, INTRO_TIER);
         data.outfit = true;
         p.setData(ModAttachments.POWER, data);
-        // the Controle de Energia: the river of the Vale do Fim (and any water on the way) is ground, not a trap
-        p.setData(ModAttachments.TECHNIQUES, List.of(EnergyControl.TECHNIQUE));
+        // lent techniques (the real ones are in the backup; nothing here counts as learned, Achievements.counts):
+        // the Controle de Energia, so the river of the Vale do Fim (and any water on the way) is ground, not a trap,
+        // and the flight only for the desert's Goku (Stark 2026-11-19: "Voe" with no way to fly before the Gohan teaches
+        // it); the Madara and the Itadori stay on the ground, where their scenes are
+        boolean flies = com.starkinhon.battlegroundsmod.power.Powers.GOKU.id().equals(power);
+        p.setData(ModAttachments.TECHNIQUES, flies
+                ? List.of(EnergyControl.TECHNIQUE, com.starkinhon.battlegroundsmod.universe.Flight.TECHNIQUE)
+                : List.of(EnergyControl.TECHNIQUE));
         EnergyControl.sync(p);
         p.setData(ModAttachments.SOUL_SYNC, Map.of(power, new SoulSync.Entry(points, 0f, points, List.copyOf(awake))));
         Tiers.apply(p);
