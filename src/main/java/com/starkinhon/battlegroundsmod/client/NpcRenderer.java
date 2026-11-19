@@ -74,9 +74,12 @@ public class NpcRenderer extends HumanoidMobRenderer<UniverseNpc, PlayerModel<Un
         org.joml.Matrix4f m = pose.last().pose();
         net.minecraft.client.gui.Font font = getFont();
         String mark = "\u25C6";
+        // SEE_THROUGH: no depth test, so the shadow and the diamond (drawn in this order, same buffer) can't z-fight each
+        // other, and leaves, logs or the NPC's own model never cut the marker.
         font.drawInBatch(mark, -font.width(mark) / 2f + 0.6f, 0.6f, 0x80000000 | 0x3A2A08, false, m, buffers,
-                net.minecraft.client.gui.Font.DisplayMode.NORMAL, 0, 0xF000F0);
-        font.drawInBatch(mark, -font.width(mark) / 2f, 0, 0xFFF2C94C, false, m, buffers, net.minecraft.client.gui.Font.DisplayMode.NORMAL, 0, 0xF000F0);
+                net.minecraft.client.gui.Font.DisplayMode.SEE_THROUGH, 0, 0xF000F0);
+        font.drawInBatch(mark, -font.width(mark) / 2f, 0, 0xFFF2C94C, false, m, buffers,
+                net.minecraft.client.gui.Font.DisplayMode.SEE_THROUGH, 0, 0xF000F0);
         pose.popPose();
         if (d < 6 * 6) {
             pose.pushPose();
@@ -84,8 +87,10 @@ public class NpcRenderer extends HumanoidMobRenderer<UniverseNpc, PlayerModel<Un
             pose.mulPose(entityRenderDispatcher.cameraOrientation());
             pose.scale(0.016f, -0.016f, 0.016f);
             String hint = net.minecraft.network.chat.Component.translatable("hud.battlegroundsmod.caminho.conversar").getString();
+            // SEE_THROUGH and full bright: the hint used to vanish in pieces behind a log or leaves between the camera
+            // and the NPC. It's only drawn within 6 blocks, so always reading it is right.
             font.drawInBatch(hint, -font.width(hint) / 2f, 0, 0xFFE6E0EE, false, pose.last().pose(), buffers,
-                    net.minecraft.client.gui.Font.DisplayMode.NORMAL, 0x60000000, light);
+                    net.minecraft.client.gui.Font.DisplayMode.SEE_THROUGH, 0x60000000, 0xF000F0);
             pose.popPose();
         }
     }
