@@ -31,6 +31,8 @@ import com.starkinhon.battlegroundsmod.client.ui.Journal.Mission;
 import com.starkinhon.battlegroundsmod.client.ui.Px;
 import com.starkinhon.battlegroundsmod.client.ui.SkinDraw;
 import com.starkinhon.battlegroundsmod.client.ui.UiIcons;
+import com.starkinhon.battlegroundsmod.network.ModPayloads;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -87,6 +89,10 @@ public class MissionScreen extends Screen {
     private static final int[] ST_C = {GOLD, rgb(120, 200, 255), rgb(120, 230, 120), rgb(200, 170, 255), rgb(110, 100, 130)};
     private static final String[] ST_K = {"pronta", "andamento", "feita", "concluida", "oculta"};
     private static int lastUni;
+    // the Caminho tab open (the first time the Diário opens with the path on, it opens there)
+    private static Boolean lastPath;
+    private boolean showPath = lastPath != null ? lastPath : PathClient.on();
+    private float pathT;
 
     private int dUni = lastUni;
     private Mission mapSel;
@@ -146,8 +152,22 @@ public class MissionScreen extends Screen {
         Px.begin(graphics, mouseX, mouseY);
         Px.hits.clear();
         try {
-            Uni u = UNIS.get(dUni);
-            drawMap(dt, u, list(u.id()));
+            // the Caminho tab (universe/GuidedPath) over the map; its button is registered first so it wins the click
+            float bx = GW / 2f - 34, by = 5, bw = 68, bh = 18;
+            Px.hit(bx, by, bw, bh, () -> {
+                showPath = !showPath;
+                lastPath = showPath;
+                click();
+            });
+            if (showPath) {
+                drawPath(dt);
+            } else {
+                Uni u = UNIS.get(dUni);
+                drawMap(dt, u, list(u.id()));
+            }
+            boolean hot = Px.over(bx, by, bw, bh);
+            Px.smallFrame(bx, by, bw, bh, GOLD, showPath || hot, 0.9f);
+            T(tr(showPath ? "mapa" : "caminho"), GW / 2f, by + 5, showPath || hot ? rgb(255, 236, 180) : WHITE, 7, true, 0, true, 1);
             Px.drawTip();
         } finally {
             Px.end();
@@ -683,6 +703,94 @@ public class MissionScreen extends Screen {
             P(i, yy + 3, GOLD, 0.35f * (1 - (i - s0) / (right - s0)));
         }
         return yy + 11;
+    }
+
+    // ------------------------------------------------------------------------------------------------ the Caminho
+
+    private static final String[] PATH_FACE = {"npc_mestre_kame", "npc_kakashi", "npc_yaga"};
+    private static final int[] PATH_COLOR = {0xFF9A2E, 0xF28C28, 0x7A5CFF};
+    private static final String[] PATH_SHORT = {"db", "nr", "jj"};
+
+    // The three paths side by side, each a line of 7 diamonds: the done ones with a check, the current one lit (with
+    // what to do), the next ones "???". Clicking a path's head makes it the one the corner shows. Under them, the last one.
+    private void drawPath(float dt) {
+        pathT += dt;
+        R(0, 0, GW, GH, rgb(8, 7, 14), 0.94f);
+        for (int i = 0; i < 30; i += 2) {
+            R(0, i, GW, 2, rgb(6, 7, 14), 0.6f * (1 - i / 30f));
+        }
+        T(tr("caminho.titulo"), 10, 7, mix(GOLD, WHITE, 0.25f), 12, true);
+        T(tr("caminho.sub"), 10, 21, rgb(190, 186, 206), 6);
+        if (!PathClient.on()) {
+            T(tr("caminho.vazio"), GW / 2f, GH / 2f - 4, MUTED, 8, false, 0, true, 1);
+            return;
+        }
+        float colW = Math.min(150, (GW - 40) / 3f), gap = (GW - colW * 3) / 4f;
+        float top = 38;
+        for (int u = 0; u < 3; u++) {
+            String uni = PathClient.UNIS.get(u);
+            float x = gap + u * (colW + gap);
+            int col = PATH_COLOR[u];
+            int step = PathClient.step(u);
+            boolean done = step >= PathClient.STEPS, act = uni.equals(PathClient.active);
+            // the head: the master who opens it, its name, ACOMPANHANDO on the one the corner shows
+            boolean over = Px.over(x, top, colW, 22);
+            Px.smallFrame(x, top, colW, 22, col, act || over, 0.9f);
+            SkinDraw.head(PATH_FACE[u], x + 11, top + 11, 1.1f, 0xFFFFFFFF);
+            T(tr("caminho." + uni), x + 22, top + 4, act ? ink(col) : WHITE, 8, true);
+            T(done ? tr("caminho.completo") : act ? tr("caminho.seguindo") : tr("caminho.passo", Math.min(step + 1, PathClient.STEPS), PathClient.STEPS),
+                    x + 22, top + 13, act ? GOLD : MUTED, 6);
+            if (!act && !done) {
+                final String pick = uni;
+                Px.hit(x, top, colW, 22, () -> {
+                    PacketDistributor.sendToServer(new ModPayloads.PathPick(pick));
+                    PathClient.active = pick;
+                    click();
+                }, List.of(tr("caminho.seguir")), List.of(WHITE));
+            }
+            // the line of steps
+            float y = top + 32, lineX = x + 9;
+            for (int i = 0; i < PathClient.STEPS; i++) {
+                String id = "cam_" + PATH_SHORT[u] + (i + 1);
+                boolean ok = i < step, now = i == step;
+                float rowH = now ? 30 : 19;
+                if (i < PathClient.STEPS - 1) {
+                    R(lineX, y + 5, 1, rowH, ok ? col : rgb(70, 64, 86), ok ? 0.8f : 0.6f);
+                }
+                if (ok) {
+                    diamond(lineX, y + 4, 4, mix(col, Px.BLACK, 0.2f), 1);
+                    Px.check(lineX - 2, y + 2, WHITE, 1);
+                    String nm = Px.fit(Component.translatable("quest.battlegroundsmod." + id + ".titulo").getString(), colW - 20, 7);
+                    T(nm, x + 18, y + 1, rgb(150, 145, 170), 7);
+                    R(x + 18, y + 4, tw(nm, 7), 1, rgb(150, 145, 170), 0.7f);
+                } else if (now) {
+                    float pulse = 0.5f + 0.5f * (float) Math.sin(pathT * 4);
+                    Px.glow(lineX, y + 4, 9, col, 0.35f + 0.25f * pulse);
+                    diamond(lineX, y + 4, 5, col, 1);
+                    diamond(lineX, y + 4, 5, mix(col, WHITE, 0.5f), 1, false);
+                    String nm = Px.fit(Component.translatable("quest.battlegroundsmod." + id + ".titulo").getString(), colW - 20, 8);
+                    T(nm, x + 18, y, WHITE, 8, true);
+                    List<String> w = Px.wrap(Component.translatable("quest.battlegroundsmod." + id).getString(), colW - 20, 6);
+                    for (int k = 0; k < Math.min(2, w.size()); k++) {
+                        T(w.get(k), x + 18, y + 11 + k * 8, rgb(200, 196, 214), 6);
+                    }
+                } else {
+                    diamond(lineX, y + 4, 3, rgb(60, 56, 76), 1);
+                    diamond(lineX, y + 4, 3, rgb(110, 100, 130), 0.8f, false);
+                    T("???", x + 18, y + 1, rgb(110, 100, 130), 7);
+                }
+                y += rowH;
+            }
+        }
+        // the last one: Os mais fortes
+        int last = PathClient.last();
+        float fy = GH - 30, fw = Math.min(260, GW - 40), fx = GW / 2f - fw / 2f;
+        Px.smallFrame(fx, fy, fw, 20, last == 0 ? rgb(70, 64, 80) : 0xD8352A, last == 1, 0.9f);
+        String nm = last == 0 ? tr("caminho.fim_fechado") : Component.translatable("quest.battlegroundsmod.cam_fim.titulo").getString();
+        T(nm, GW / 2f, fy + 3, last == 0 ? MUTED : WHITE, 8, true, 0, true, 1);
+        String sub = last == 0 ? tr("caminho.fim_dica") : last == 2 ? tr("caminho.completo")
+                : Component.translatable("quest.battlegroundsmod.cam_fim").getString();
+        T(Px.fit(sub, fw - 12, 6), GW / 2f, fy + 12, last == 1 ? GOLD : MUTED, 6, false, 0, true, 1);
     }
 
     // ------------------------------------------------------------------------------------------------ input
