@@ -57,7 +57,11 @@ public final class ModCreativeTabs {
             () -> CreativeModeTab.builder()
                     .title(Component.translatable("itemGroup.battlegroundsmod.souls_books"))
                     .withTabsBefore(CreativeModeTabs.COMBAT)
-                    .icon(() -> ModItems.POWER_BOOK.get().getDefaultInstance())
+                    // Bills' soul (Stark 2026-11-19).
+                    .icon(() -> {
+                        var bills = ModItems.SOULS.get("destruction_god");
+                        return bills != null ? bills.get().getDefaultInstance() : ModItems.POWER_BOOK.get().getDefaultInstance();
+                    })
                     .displayItems((parameters, output) -> {
                         Set<Item> added = new LinkedHashSet<>();
                         acceptUnique(output, added, ModItems.POWER_BOOK.get());
@@ -80,7 +84,7 @@ public final class ModCreativeTabs {
             () -> CreativeModeTab.builder()
                     .title(Component.translatable("itemGroup.battlegroundsmod.weapons"))
                     .withTabsBefore(key("souls_books_tab"))
-                    .icon(() -> ModItems.NICHIRIN_SWORD.get().getDefaultInstance())
+                    .icon(() -> ModItems.KOKUSHIBO_SWORD.get().getDefaultInstance())
                     .displayItems((parameters, output) -> acceptAll(output,
                             item -> !isDev(item) && !isSoulOrBook(item) && isWeapon(item)))
                     .build());
