@@ -1080,9 +1080,12 @@ public final class ShibuyaGen {
     // sidewalks, the concourse with gates, the island platform with stairs, the tracks on both sides with a train
     // stopped on one, and the tunnels going on along the avenue for half on each side; the west tunnel is taken by the
     // curses (no light, stains and veins on the walls). Everything inside is measured from ox (local x).
-    public static final int FLOOR_C = -8, CEIL_C = -3, FLOOR_P = -16, CEIL_P = -9, BED = -17;
+    // (Stark 2026-11-19, "um espaçozinho lá dentro maiorzinho" for the bigger crowd: the concourse one block taller, the
+    // island platform one block wider on each side, 10 instead of 8; the tracks and the walls moved out with it. The
+    // client reads the island's width from the rails (ShibuyaScan.stIsland), so the stations of old chunks still work.)
+    public static final int FLOOR_C = -8, CEIL_C = -2, FLOOR_P = -16, CEIL_P = -9, BED = -17;
     public static final int CZ0 = -11, CZ1 = 10, CX0 = -38, CX1 = 38, PX0 = -52, PX1 = 52;
-    public static final int WALL = 8, TRACK0 = 5, TRACK1 = 7, ISLAND = 4;
+    public static final int WALL = 9, TRACK0 = 6, TRACK1 = 8, ISLAND = 5;
 
     // The two sidewalk rows' z of the entrances (south, north), for the station on avenue 'x' i.
     public static int[][] entrances(int c) {
@@ -1233,7 +1236,7 @@ public final class ShibuyaGen {
             }
         }
         for (int x = PX0; x <= PX1; x++) {
-            for (int z : new int[] {c - 3, c + 2}) {
+            for (int z : new int[] {c - 4, c + 3}) {
                 if ((((x % 6) + 6) % 6) < 4 && w.get(ox + x, CEIL_P, z) == CEIL) {
                     w.force(ox + x, CEIL_P, z, CEIL_LIGHT);
                 }
