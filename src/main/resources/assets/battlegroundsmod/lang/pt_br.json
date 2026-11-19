@@ -2504,5 +2504,8 @@
   "npc.battlegroundsmod.kaioh.so_goku": "Hmm... só ensino quem carrega a alma do Goku.",
   "npc.battlegroundsmod.kaioh.after.0": "Kaioken demais estoura o corpo. Use o x20 só no fim da luta.",
   "npc.battlegroundsmod.kaioh.after.1": "A Mini Genki Dama segue o alvo. Mire e solte.",
-  "npc.battlegroundsmod.kaioh.after.2": "Por que a vaca atravessou a rua? ... Ninguém nunca ri."
+  "npc.battlegroundsmod.kaioh.after.2": "Por que a vaca atravessou a rua? ... Ninguém nunca ri.",
+  "screen.battlegroundsmod.soul_book.release": "Segure pra soltar a alma",
+  "screen.battlegroundsmod.soul_book.releasing": "Soltando...",
+  "message.battlegroundsmod.soul_released": "Você soltou a alma. Só os golpes básicos agora (dash, barragem). A alma continua no Livro."
 }

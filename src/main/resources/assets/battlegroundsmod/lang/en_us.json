@@ -2554,5 +2554,8 @@
   "npc.battlegroundsmod.kaioh.so_goku": "Hmm... I only teach whoever carries Goku's soul.",
   "npc.battlegroundsmod.kaioh.after.0": "Too much Kaioken tears the body. Save x20 for the end of a fight.",
   "npc.battlegroundsmod.kaioh.after.1": "The Mini Spirit Bomb follows the target. Aim and let go.",
-  "npc.battlegroundsmod.kaioh.after.2": "Why did the cow cross the road? ... Nobody ever laughs."
+  "npc.battlegroundsmod.kaioh.after.2": "Why did the cow cross the road? ... Nobody ever laughs.",
+  "screen.battlegroundsmod.soul_book.release": "Hold to release the soul",
+  "screen.battlegroundsmod.soul_book.releasing": "Releasing...",
+  "message.battlegroundsmod.soul_released": "You released the soul. Only the base moves now (dash, barrage). The soul stays in the Book."
 }
