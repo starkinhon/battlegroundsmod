@@ -113,6 +113,18 @@ public final class ModPayloads {
         }
     }
 
+    // Client -> server: the Reversão key went down or up (universe/ReverseCurse heals while it is held).
+    public record ReverseHold(boolean down) implements CustomPacketPayload {
+        public static final Type<ReverseHold> TYPE = payloadType("reverse_hold");
+        public static final StreamCodec<ByteBuf, ReverseHold> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.BOOL, ReverseHold::down, ReverseHold::new);
+
+        @Override
+        public Type<ReverseHold> type() {
+            return TYPE;
+        }
+    }
+
     // Server -> client: the giant fireball. mode 0: growing over the caster's head, from radius to maxRadius over
     // ticks; 1: flying from pos at velocity per tick for ticks; 2: gone (it blew up).
     public record KatonBall(int id, int casterId, int mode, Vec3 pos, Vec3 velocity, float radius, float maxRadius, int ticks)
@@ -387,6 +399,32 @@ public final class ModPayloads {
 
     // Server -> client: the player walked into a structure (its name comes down on screen with its mission), or a
     // mission there was done (MISSÃO CONCLUÍDA with what it gave: "__poder", "item_id count").
+    // Server -> client: the playable introduction's screen (intro/IntroUi, client/IntroHud). kind: card (id = which
+    // teaching card; the game pauses on it), goal (id = the mission, a/b = count/needed, b = 0 hides it), title, say
+    // (a = ticks on screen), flash (a = 1 white in with the id's text, 0 out), black (a = 1 in, 0 out), logo, clear.
+    public record IntroUi(String kind, String id, int a, int b) implements CustomPacketPayload {
+        public static final Type<IntroUi> TYPE = payloadType("intro_ui");
+        public static final StreamCodec<ByteBuf, IntroUi> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.STRING_UTF8, IntroUi::kind, ByteBufCodecs.STRING_UTF8, IntroUi::id, ByteBufCodecs.VAR_INT, IntroUi::a,
+                ByteBufCodecs.VAR_INT, IntroUi::b, IntroUi::new);
+
+        @Override
+        public Type<IntroUi> type() {
+            return TYPE;
+        }
+    }
+
+    // Client -> server: the introduction's teaching card was closed.
+    public record IntroAck(String kind) implements CustomPacketPayload {
+        public static final Type<IntroAck> TYPE = payloadType("intro_ack");
+        public static final StreamCodec<ByteBuf, IntroAck> STREAM_CODEC = StreamCodec.composite(ByteBufCodecs.STRING_UTF8, IntroAck::kind, IntroAck::new);
+
+        @Override
+        public Type<IntroAck> type() {
+            return TYPE;
+        }
+    }
+
     public record MissionEvent(String mission, String quest, int color, boolean done, List<String> rewards) implements CustomPacketPayload {
         public static final Type<MissionEvent> TYPE = payloadType("mission_event");
         public static final StreamCodec<ByteBuf, MissionEvent> STREAM_CODEC = StreamCodec.composite(
@@ -2172,6 +2210,11 @@ public final class ModPayloads {
                 player.getData(ModAttachments.POWER).abilityHeld = payload.down();
             }
         }));
+        registrar.playToServer(ReverseHold.TYPE, ReverseHold.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
+            if (context.player() instanceof ServerPlayer player) {
+                player.getData(ModAttachments.POWER).reverseHeld = payload.down();
+            }
+        }));
         registrar.playToServer(Teleport.TYPE, Teleport.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer player) {
                 Tasks.as(player, () -> Movement.teleport(player));
@@ -2219,6 +2262,13 @@ public final class ModPayloads {
                 } else {
                     com.starkinhon.battlegroundsmod.universe.MissionJournal.track(player, payload.id());
                 }
+            }
+        }));
+        registrar.playToClient(IntroUi.TYPE, IntroUi.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> com.starkinhon.battlegroundsmod.client.IntroHud.receive(payload.kind(), payload.id(), payload.a(), payload.b())));
+        registrar.playToServer(IntroAck.TYPE, IntroAck.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
+            if (context.player() instanceof ServerPlayer player) {
+                com.starkinhon.battlegroundsmod.intro.Intro.ack(player, payload.kind());
             }
         }));
         registrar.playToClient(MissionEvent.TYPE, MissionEvent.STREAM_CODEC, (payload, context) -> context.enqueueWork(

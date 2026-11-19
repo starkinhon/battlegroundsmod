@@ -421,6 +421,8 @@ public class BattlegroundsModClient {
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "power_hud"), PowerHud::render);
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "quest_hud"),
                 com.starkinhon.battlegroundsmod.client.QuestHud::render);
+        event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "intro_hud"),
+                com.starkinhon.battlegroundsmod.client.IntroHud::render);
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "scouter"),
                 com.starkinhon.battlegroundsmod.client.ScouterHud::render);
         // After every vanilla bar, so it knows how tall the hearts, armor and food stand.

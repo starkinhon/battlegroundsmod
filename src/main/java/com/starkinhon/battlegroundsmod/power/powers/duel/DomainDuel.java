@@ -51,6 +51,8 @@ import net.neoforged.neoforge.network.PacketDistributor;
 // Bots answer an enemy's domain too: a Gojo or Sukuna mob near the other's domain opens its own after a human delay.
 public final class DomainDuel {
     public static final int WINDOW = 40;
+    // The playable introduction's duel ends like the manga's (intro/IntroScript): these Gojos always win it.
+    public static final java.util.Set<java.util.UUID> GOJO_WINS = java.util.concurrent.ConcurrentHashMap.newKeySet();
     // How far into the tunnel the duel starts (the tunnel open and the two face to face, as in the preview).
     // The tunnel takes ~30 ticks to tear open: stopping earlier froze the white over the whole duel (in-game test
     // 2026-11-09).
@@ -374,6 +376,9 @@ public final class DomainDuel {
             }
         }
         if (t == end) {
+            if (GOJO_WINS.contains(d.gojo.getUUID()) && d.score[GOJO] <= d.score[SUKUNA]) {
+                d.score[GOJO] = d.score[SUKUNA] + 1;
+            }
             d.result = d.score[GOJO] > d.score[SUKUNA] ? GOJO : d.score[SUKUNA] > d.score[GOJO] ? SUKUNA : TIE;
             send(d, M_RESULT, d.result, d.score[GOJO], d.score[SUKUNA]);
         }

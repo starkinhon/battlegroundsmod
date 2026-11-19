@@ -82,6 +82,11 @@ public final class ChallengeArenas {
     public static final int ROW_Z = 8192;
     // Senhor Kaioh's planet (universe/KaiohPlanet): the Goku arena's build, on a row of its own (no fight ever there).
     public static final int KAIOH_Z = ROW_Z + SPACING;
+    // The playable introduction (intro/Intro): each player in it gets a row of their own from here (one row every SPACING
+    // on z), with its acts side by side on x (INTRO_ACTS, one arena build each). Nothing else is ever built there.
+    public static final int INTRO_Z = ROW_Z + 2 * SPACING;
+    public static final int INTRO_ROWS = 64;
+    public static final List<String> INTRO_ACTS = List.of("madara", "vegeta", "itadori", "choso");
     private static final int FLOOR_Y = 64;
     // Server time per tick spent putting an arena back (the tick has 50 ms). Stark's PC test 2026-11-13: a fixed 40k
     // blocks per tick ate 200-460 ms per tick, mostly generating the void chunks on the main thread; now the chunks are
@@ -179,6 +184,11 @@ public final class ChallengeArenas {
         if (Math.abs(z - KAIOH_Z) <= SPACING / 2.0 && Math.abs(x) <= SPACING / 2.0) {
             return "goku";   // Senhor Kaioh's planet (the Goku arena's build on its own spot)
         }
+        int introRow = (int) Math.round((z - INTRO_Z) / SPACING);
+        if (introRow >= 0 && introRow < INTRO_ROWS && Math.abs(z - INTRO_Z - introRow * (double) SPACING) <= SPACING / 2.0) {
+            int act = (int) Math.round(x / SPACING);
+            return act >= 0 && act < INTRO_ACTS.size() && Math.abs(x - act * (double) SPACING) <= SPACING / 2.0 ? INTRO_ACTS.get(act) : null;
+        }
         if (Math.abs(z - ROW_Z) > SPACING / 2.0) {
             return null;
         }
@@ -224,6 +234,7 @@ public final class ChallengeArenas {
         NeoForge.EVENT_BUS.addListener(ChallengeArenas::onLogout);
         NeoForge.EVENT_BUS.addListener(ChallengeArenas::onFinalizeSpawn);
         Dungeon.register();
+        com.starkinhon.battlegroundsmod.intro.Intro.register();
     }
 
     // The client's copy of its own wins (ModPayloads.SyncArenaWins), for the book.
@@ -1146,6 +1157,51 @@ public final class ChallengeArenas {
     // the last fight left (holes filled above, blocks that were not there removed); 3. invisible walls round the circle
     // and a ceiling at its height, only where the scenery leaves air; then the water and lava spill over their steps
     // (FluidEdges); 4. the arena's own biome (sky, fog, grass).
+    // ---- The playable introduction (intro/Intro): an arena's build put somewhere else, over the ticks, like a fight's.
+
+    // Where an introduction row's act stands (its fight floor in the middle), and in which of the two arena dimensions.
+    public static BlockPos introCenter(int row, int act) {
+        ArenaTemplate.Meta meta = ArenaTemplate.meta(INTRO_ACTS.get(act));
+        return new BlockPos(act * SPACING, meta == null ? FLOOR_Y : floorY(meta), INTRO_Z + row * SPACING);
+    }
+
+    public static ResourceKey<Level> introLevel(net.minecraft.server.MinecraftServer server, int act) {
+        ArenaTemplate.Meta meta = ArenaTemplate.meta(INTRO_ACTS.get(act));
+        return meta != null && meta.noite() && server.getLevel(ARENAS_NIGHT) != null ? ARENAS_NIGHT : ARENAS;
+    }
+
+    public static final class Placer {
+        private final Build build;
+
+        private Placer(Build build) {
+            this.build = build;
+        }
+
+        // true when the arena is ready (then the chunk ticket is let go: the player keeps its chunks loaded)
+        public boolean step() {
+            boolean ready = build.step(BUILD_NANOS);
+            if (ready) {
+                build.release();
+            }
+            return ready;
+        }
+
+        public int percent() {
+            return build.percent();
+        }
+
+        public void cancel() {
+            build.release();
+        }
+    }
+
+    // null when the arena has no saved build
+    public static Placer place(String id, ServerLevel level, BlockPos center) {
+        ArenaTemplate.Meta meta = ArenaTemplate.meta(id);
+        ArenaTemplate template = meta == null ? null : ArenaTemplate.get(id);
+        return template == null ? null : new Placer(new Build(template, meta, center, level));
+    }
+
     private static final class Build {
         private final ArenaTemplate t;
         private final ArenaTemplate.Meta m;

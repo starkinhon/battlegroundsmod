@@ -25,6 +25,19 @@ public final class ModAttachments {
     public static final Supplier<AttachmentType<Boolean>> BOSS_BAR_OFF = ATTACHMENT_TYPES.register("boss_bar_off",
             () -> AttachmentType.builder(() -> false).serialize(Codec.BOOL).copyOnDeath().build());
 
+    // The player already went through the playable introduction (intro/Intro), or skipped it. Saved and kept on death.
+    public static final Supplier<AttachmentType<Boolean>> INTRO_DONE = ATTACHMENT_TYPES.register("souls_intro_feita",
+            () -> AttachmentType.builder(() -> false).serialize(Codec.BOOL).copyOnDeath().build());
+
+    // The real character while the introduction runs (intro/Intro): the soul, Sincronia, inventory and place are lent to
+    // the scenes and put back at the end, or at the next login after a crash. Same snapshot as the Dungeon's.
+    public static final Supplier<AttachmentType<com.starkinhon.battlegroundsmod.challenge.Dungeon.Backup>> INTRO_BACKUP = ATTACHMENT_TYPES.register("intro_backup",
+            () -> AttachmentType.builder(() -> com.starkinhon.battlegroundsmod.challenge.Dungeon.Backup.EMPTY)
+                    .serialize(com.starkinhon.battlegroundsmod.challenge.Dungeon.Backup.CODEC).copyOnDeath().build());
+    // ... and its game mode (-1 = none saved).
+    public static final Supplier<AttachmentType<Integer>> INTRO_GAMEMODE = ATTACHMENT_TYPES.register("intro_gamemode",
+            () -> AttachmentType.builder(() -> -1).serialize(Codec.INT).copyOnDeath().build());
+
     // Ate an Inseto de Alma: hunger bar always full (item/SoulInsectItem). Saved and kept on death.
     public static final Supplier<AttachmentType<Boolean>> SOUL_FED = ATTACHMENT_TYPES.register("soul_fed",
             () -> AttachmentType.builder(() -> false).serialize(Codec.BOOL).copyOnDeath().build());
