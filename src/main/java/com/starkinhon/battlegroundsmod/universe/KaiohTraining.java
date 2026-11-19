@@ -32,11 +32,12 @@ import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
-// Senhor Kaioh's training (Stark 2026-11-19: he teaches only Goku's soul, in Goku's arena, the Kaioh planet, no new
-// structure). Win Goku's arena wearing Goku's soul and Senhor Kaioh comes out; talk to him: catch Bubbles, his monkey,
-// in 60 s under the planet's heavy gravity (the manga's first test). Hit him or grab him (right click) and he teaches the
-// Kaioken x3/x10/x20 (B) and the Mini Genki Dama (Shift+V): SoulSync.learnTaught, kept on death. Missed: talk again.
-// The arena's return waits while he is there (ChallengeArenas.holdReturn).
+// Senhor Kaioh's planet and training (Stark 2026-11-19: he teaches only Goku's soul; the planet is the Goku arena's
+// build, not the challenge itself). Wearing Goku's soul, fly about 500 blocks up and you reach his planet (the build on a
+// spot of its own in the arenas' void, ChallengeArenas.kaiohPlanet). Talk to him: catch Bubbles, his monkey, in 60 s under
+// the planet's heavy gravity (the manga's first test). Hit him or grab him (right click) and he teaches the Kaioken
+// x3/x10/x20 (B) and the Mini Genki Dama (Shift+V): SoulSync.learnTaught, kept on death. Missed: talk again. Done (or
+// talking to him again after), he sends you back where you flew up from.
 public final class KaiohTraining {
     private static final int TALK_WAIT = 1200;
     private static final int CHASE_TICKS = 1200;
@@ -57,6 +58,15 @@ public final class KaiohTraining {
     }
 
     private static final Map<UUID, Chase> CHASES = new HashMap<>();
+    // Where each player flew up from (dimension, position), to go back to.
+    private record Back(net.minecraft.resources.ResourceKey<net.minecraft.world.level.Level> level, Vec3 pos) {
+    }
+
+    private static final Map<UUID, Back> BACK = new HashMap<>();
+    // Players flying up to the planet while it is being put up, and when each is sent home (after learning).
+    private static final java.util.Set<UUID> GOING = new java.util.HashSet<>();
+    private static final Map<UUID, Long> HOME_AT = new HashMap<>();
+    private static final double TRIGGER_Y = 500;
 
     private KaiohTraining() {
     }
@@ -75,32 +85,6 @@ public final class KaiohTraining {
         });
     }
 
-    // ChallengeArenas.win in Goku's arena: Senhor Kaioh comes out if a winner wears Goku's soul and has not learned yet.
-    // Returns how long the return should wait (0: nobody to train).
-    public static int arenaWon(ServerLevel arena, BlockPos spot, List<ServerPlayer> winners) {
-        boolean anyone = false;
-        for (ServerPlayer player : winners) {
-            if (wearsGoku(player) && !SoulSync.knowsTaught(player)) {
-                anyone = true;
-                player.displayClientMessage(Component.translatable("message.battlegroundsmod.kaioh.chegou").withStyle(s -> s.withColor(0x6FC3FF)), false);
-            }
-        }
-        if (!anyone) {
-            return 0;
-        }
-        BlockPos at = stand(arena, spot);
-        UniverseNpc kaioh = ModEntities.NPC_KAIOH.get().spawn(arena, at, MobSpawnType.EVENT);
-        if (kaioh == null) {
-            return 0;
-        }
-        kaioh.restrictTo(at, 4);
-        kaioh.setCustomName(kaioh.getType().getDescription());
-        kaioh.setCustomNameVisible(true);
-        Fx.burst(arena, ParticleTypes.CLOUD, Vec3.atBottomCenterOf(at).add(0, 1, 0), 14, 0.5, 0.03);
-        Fx.sound(arena, Vec3.atCenterOf(at), SoundEvents.ILLUSIONER_MIRROR_MOVE, 1f, 1.2f);
-        return TALK_WAIT;
-    }
-
     private static boolean wearsGoku(ServerPlayer player) {
         return "goku".equals(player.getData(ModAttachments.POWER).power);
     }
@@ -109,6 +93,8 @@ public final class KaiohTraining {
     public static void talk(ServerPlayer player, UniverseNpc npc, MasterTraining.Talker say) {
         if (SoulSync.knowsTaught(player)) {
             say.line(Component.translatable("npc.battlegroundsmod.kaioh.after." + player.getRandom().nextInt(3)));
+            say.line(Component.translatable("npc.battlegroundsmod.kaioh.volta"));
+            HOME_AT.put(player.getUUID(), player.serverLevel().getGameTime() + 60);
             return;
         }
         if (!wearsGoku(player)) {
@@ -129,7 +115,6 @@ public final class KaiohTraining {
         bubbles.setCustomNameVisible(true);
         CHASES.put(player.getUUID(), new Chase(player.getUUID(), bubbles, level.getGameTime() + CHASE_TICKS));
         gravity(player, true);
-        ChallengeArenas.holdReturn(player, CHASE_TICKS + 400, false);
         say.line(Component.translatable("npc.battlegroundsmod.kaioh.teste"));
         MasterTraining.title(player, "message.battlegroundsmod.kaioh.pegue", "message.battlegroundsmod.kaioh.gravidade");
         Fx.sound(level, bubbles.position(), SoundEvents.FOX_SCREECH, 1f, 1.6f);
@@ -153,7 +138,7 @@ public final class KaiohTraining {
         Fx.sound(level, player.position(), SoundEvents.PLAYER_LEVELUP, 1f, 1.2f);
         MasterTraining.title(player, "message.battlegroundsmod.kaioh.aprendeu", "message.battlegroundsmod.kaioh.ensinou");
         player.displayClientMessage(Component.translatable("message.battlegroundsmod.kaioh.teclas").withStyle(s -> s.withColor(0xFFD84A)), false);
-        ChallengeArenas.holdReturn(player, 200, true);
+        HOME_AT.put(player.getUUID(), level.getGameTime() + 200);
         return true;
     }
 
@@ -166,6 +151,7 @@ public final class KaiohTraining {
     }
 
     private static void onTick(ServerTickEvent.Post event) {
+        travel(event.getServer());
         if (CHASES.isEmpty()) {
             return;
         }
@@ -211,6 +197,75 @@ public final class KaiohTraining {
                 }
             }
         }
+    }
+
+    // Up to the planet (Goku's soul, ~500 blocks up) and back home (after learning, or falling off it).
+    private static void travel(net.minecraft.server.MinecraftServer server) {
+        long now = server.overworld().getGameTime();
+        for (ServerPlayer player : List.copyOf(server.getPlayerList().getPlayers())) {
+            UUID id = player.getUUID();
+            boolean onPlanet = player.level().dimension().equals(ChallengeArenas.ARENAS)
+                    && "goku".equals(ChallengeArenas.arenaAt(player.getX(), player.getZ())) && Math.abs(player.getZ() - ChallengeArenas.KAIOH_Z) < 600;
+            if (onPlanet) {
+                Long at = HOME_AT.get(id);
+                if (at != null && now >= at || player.getY() < ChallengeArenas.kaiohPlanet().getY() - 170) {
+                    sendHome(player);
+                }
+                continue;
+            }
+            HOME_AT.remove(id);
+            if (ChallengeArenas.isArena(player.level().dimension()) || player.isSpectator() || !wearsGoku(player) || player.getY() < TRIGGER_Y) {
+                GOING.remove(id);
+                continue;
+            }
+            GOING.add(id);
+            if (!ChallengeArenas.buildKaiohPlanet(server)) {
+                if (now % 10 == 0) {
+                    player.displayClientMessage(Component.translatable("message.battlegroundsmod.kaioh.subindo", ChallengeArenas.kaiohPlanetPercent()), true);
+                }
+                continue;
+            }
+            GOING.remove(id);
+            ServerLevel arena = server.getLevel(ChallengeArenas.ARENAS);
+            if (arena == null) {
+                continue;
+            }
+            BACK.put(id, new Back(player.level().dimension(), player.position()));
+            BlockPos spot = stand(arena, ChallengeArenas.kaiohSpot(false));
+            player.teleportTo(arena, spot.getX() + 0.5, spot.getY(), spot.getZ() + 0.5, 180, 0);
+            player.fallDistance = 0;
+            ensureKaioh(arena);
+            MasterTraining.title(player, "message.battlegroundsmod.kaioh.planeta", "message.battlegroundsmod.kaioh.planeta_sub");
+        }
+    }
+
+    // Senhor Kaioh stands at the planet's challenger spot, once.
+    private static void ensureKaioh(ServerLevel arena) {
+        BlockPos at = stand(arena, ChallengeArenas.kaiohSpot(true));
+        if (!arena.getEntities(ModEntities.NPC_KAIOH.get(), new net.minecraft.world.phys.AABB(at).inflate(80), e -> e.isAlive()).isEmpty()) {
+            return;
+        }
+        UniverseNpc kaioh = ModEntities.NPC_KAIOH.get().spawn(arena, at, MobSpawnType.EVENT);
+        if (kaioh != null) {
+            kaioh.restrictTo(at, 4);
+            kaioh.setCustomName(kaioh.getType().getDescription());
+            kaioh.setCustomNameVisible(true);
+            kaioh.setPersistenceRequired();
+        }
+    }
+
+    private static void sendHome(ServerPlayer player) {
+        stop(player);
+        HOME_AT.remove(player.getUUID());
+        Back back = BACK.remove(player.getUUID());
+        ServerLevel level = back == null ? null : player.server.getLevel(back.level());
+        if (level == null) {
+            ChallengeArenas.leave(player);
+            return;
+        }
+        BlockPos top = level.getHeightmapPos(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, BlockPos.containing(back.pos()));
+        player.teleportTo(level, back.pos().x, top.getY() + 1, back.pos().z, player.getYRot(), 0);
+        player.fallDistance = 0;
     }
 
     // The Kaioh planet's gravity while chasing (the manga's 10x, made playable): heavier falls, a slower step, low jumps.

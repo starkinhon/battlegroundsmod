@@ -2484,14 +2484,13 @@
   "ability.battlegroundsmod.goku.8": "Mini Genki Dama",
   "ability.battlegroundsmod.goku.8.desc": "Ensinada pelo Senhor Kaioh. A energia do chão sobe em espiral até a mão aberta (até 2,2 s). Solte: a bola vai teleguiada no alvo, afunda puxando a poeira e estoura numa coluna de luz.",
   "ability.battlegroundsmod.goku.8.tags": "Carregável,Teleguiada,Área,Ensinada",
-  "message.battlegroundsmod.goku.kaioh_falta": "%s: o Senhor Kaioh ainda não te ensinou. Vença a arena do Goku com a alma dele.",
+  "message.battlegroundsmod.goku.kaioh_falta": "%s: o Senhor Kaioh ainda não te ensinou. Com a alma do Goku, voe uns 500 blocos pra cima até o planeta dele.",
   "message.battlegroundsmod.goku.kaioken_max": "Kaioken já está no x20.",
   "message.battlegroundsmod.goku.kaioken_x": "KAIOKEN x%s!",
   "message.battlegroundsmod.goku.kaioken_x20_fim": "O corpo não aguentou o Kaioken x20.",
   "screen.battlegroundsmod.soul_book.taught_kaioh": "Ensinada pelo Senhor Kaioh.",
-  "screen.battlegroundsmod.soul_book.locked_kaioh": "O Senhor Kaioh ensina na arena do Goku.",
+  "screen.battlegroundsmod.soul_book.locked_kaioh": "Com a alma do Goku, voe uns 500 blocos pra cima até o planeta do Senhor Kaioh.",
   "entity.battlegroundsmod.npc_bubbles": "Bubbles",
-  "message.battlegroundsmod.kaioh.chegou": "O Senhor Kaioh apareceu na arena. Fale com ele antes de voltar.",
   "message.battlegroundsmod.kaioh.pegue": "Pegue o Bubbles!",
   "message.battlegroundsmod.kaioh.gravidade": "Gravidade pesada do planeta. Você tem 60 s.",
   "message.battlegroundsmod.kaioh.tempo": "Pegue o Bubbles: %s s (acerte ou clique nele)",
@@ -2507,5 +2506,9 @@
   "npc.battlegroundsmod.kaioh.after.2": "Por que a vaca atravessou a rua? ... Ninguém nunca ri.",
   "screen.battlegroundsmod.soul_book.release": "Segure pra soltar a alma",
   "screen.battlegroundsmod.soul_book.releasing": "Soltando...",
-  "message.battlegroundsmod.soul_released": "Você soltou a alma. Só os golpes básicos agora (dash, barragem). A alma continua no Livro."
+  "message.battlegroundsmod.soul_released": "Você soltou a alma. Só os golpes básicos agora (dash, barragem). A alma continua no Livro.",
+  "npc.battlegroundsmod.kaioh.volta": "Agora volta lá pra baixo. Te mando de volta!",
+  "message.battlegroundsmod.kaioh.subindo": "Subindo pro planeta do Senhor Kaioh... %s%%",
+  "message.battlegroundsmod.kaioh.planeta": "Planeta do Senhor Kaioh",
+  "message.battlegroundsmod.kaioh.planeta_sub": "Fale com o Senhor Kaioh"
 }
