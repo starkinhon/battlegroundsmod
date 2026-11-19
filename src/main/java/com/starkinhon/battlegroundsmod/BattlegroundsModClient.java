@@ -101,6 +101,11 @@ public class BattlegroundsModClient {
         });
         NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.client.event.RenderFrameEvent.Pre e) ->
                 com.starkinhon.battlegroundsmod.client.IntroHud.holdNight());
+        // and before each tick too: the level's sky darkness is worked out in its tick, and a time packet from the server
+        // (day) landing just before it lit the whole city up for a tick, every second (the colour flashes in Shibuya,
+        // Stark 2026-11-19)
+        NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.client.event.ClientTickEvent.Pre e) ->
+                com.starkinhon.battlegroundsmod.client.IntroHud.holdNight());
         // The intro's own fade covers its dimension changes: no "Carregando terreno" screen over it (Stark 2026-11-19).
         // The player does not move meanwhile anyway (LocalPlayer only ticks over a loaded chunk).
         NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.client.event.ScreenEvent.Opening e) -> {

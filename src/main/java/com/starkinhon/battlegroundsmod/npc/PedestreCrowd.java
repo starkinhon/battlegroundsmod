@@ -895,6 +895,9 @@ public final class PedestreCrowd {
             if (Math.abs(pl.getY() - cityY) > 40) {
                 continue; // deep in the metro or high on a roof: the street isn't around
             }
+            if (pl.getY() < cityY - 3 && com.starkinhon.battlegroundsmod.intro.Intro.active(pl)) {
+                continue; // the introduction's scene in the station below: nobody comes down to it (Stark 2026-11-19)
+            }
             boolean night = level.isNight();
             int cap = night ? CAP_NIGHT : CAP_DAY;
             int near = level.getEntitiesOfClass(Pedestre.class, pl.getBoundingBox().inflate(NEAR, 24, NEAR)).size();

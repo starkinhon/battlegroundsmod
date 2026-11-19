@@ -22,6 +22,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.BossEvent;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.util.Mth;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
@@ -220,6 +222,12 @@ public abstract class SoulBoss extends Monster {
     public boolean introHold;
     public java.util.Set<String> introMoves;
     public float introFloor = -1;
+    // Who it faces, standing still, while the script keeps it so (Gojo on the platform looking at Sukuna through the talk
+    // and the duel: Stark 2026-11-19, he walked off up the stairs and cast from there). null = free.
+    public Entity introFace;
+    // Not even its strong blow and barrage (they are its real skills): only what the page's fight has, punches, dashes and
+    // the air combat's own moves (Stark 2026-11-19: Vegeta in Act 2 as in the preview, to teach).
+    public boolean introPlain;
 
     public boolean staged() {
         return stagedTicks > 0 || ultPending;
@@ -251,9 +259,41 @@ public abstract class SoulBoss extends Monster {
         ai = new SoulBossAI(this);
         goalSelector.addGoal(0, new FloatGoal(this));
         goalSelector.addGoal(1, ai);
-        goalSelector.addGoal(7, new WaterAvoidingRandomStrollGoal(this, 0.8));
-        goalSelector.addGoal(8, new LookAtPlayerGoal(this, Player.class, 16f));
-        goalSelector.addGoal(8, new RandomLookAroundGoal(this));
+        // No wandering while the introduction holds it (it walked off on its own, behind the player and up the stairs),
+        // and no looking around while it faces someone for the script.
+        goalSelector.addGoal(7, new WaterAvoidingRandomStrollGoal(this, 0.8) {
+            @Override
+            public boolean canUse() {
+                return !introHold && super.canUse();
+            }
+
+            @Override
+            public boolean canContinueToUse() {
+                return !introHold && super.canContinueToUse();
+            }
+        });
+        goalSelector.addGoal(8, new LookAtPlayerGoal(this, Player.class, 16f) {
+            @Override
+            public boolean canUse() {
+                return introFace == null && super.canUse();
+            }
+
+            @Override
+            public boolean canContinueToUse() {
+                return introFace == null && super.canContinueToUse();
+            }
+        });
+        goalSelector.addGoal(8, new RandomLookAroundGoal(this) {
+            @Override
+            public boolean canUse() {
+                return introFace == null && super.canUse();
+            }
+
+            @Override
+            public boolean canContinueToUse() {
+                return introFace == null && super.canContinueToUse();
+            }
+        });
         targetSelector.addGoal(1, new HurtByTargetGoal(this));
         // Bosses of different souls fight each other on sight (Bills against the Uchiha Ghost), before players.
         // The mobs leave each other alone (unless one hits the other).
@@ -274,6 +314,23 @@ public abstract class SoulBoss extends Monster {
             return false;
         }
         return com.starkinhon.battlegroundsmod.skill.ChallengeSpec.get().universeOf(bossId()) != null;
+    }
+
+    @Override
+    protected void customServerAiStep() {
+        super.customServerAiStep();
+        if (introFace != null) {
+            if (!introFace.isAlive() || introFace.level() != level()) {
+                introFace = null;
+                return;
+            }
+            getNavigation().stop();
+            float yaw = (float) (Mth.atan2(introFace.getZ() - getZ(), introFace.getX() - getX()) * Mth.RAD_TO_DEG) - 90f;
+            setYRot(yaw);
+            setYBodyRot(yaw);
+            setYHeadRot(yaw);
+            getLookControl().setLookAt(introFace, 30f, 30f);
+        }
     }
 
     @Override

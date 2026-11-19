@@ -167,7 +167,8 @@ public final class DomainScene {
         boolean spared() {
             Minecraft minecraft = Minecraft.getInstance();
             return minecraft.player != null && minecraft.player.getId() != caster
-                    && (minecraft.player.isCreative() || DuelScene.spares(caster, minecraft.player.getId()));
+                    && (minecraft.player.isCreative() || DuelScene.spares(caster, minecraft.player.getId())
+                            || com.starkinhon.battlegroundsmod.client.IntroHud.spared());
         }
 
         // The domain's middle nearest pos: up inside, or out in the world.

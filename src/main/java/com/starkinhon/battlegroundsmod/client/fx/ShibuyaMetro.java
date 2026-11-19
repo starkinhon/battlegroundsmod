@@ -120,6 +120,24 @@ final class ShibuyaMetro {
             return;
         }
         on = true;
+        if (com.starkinhon.battlegroundsmod.client.IntroHud.quiet()) {
+            // the introduction's scene on the platform (Stark 2026-11-19): no train going by, nobody waiting or getting off;
+            // the station keeps its lights and its dark tunnels
+            phase = 3;
+            lastPhase = 3;
+            door = 0;
+            vel = 0;
+            lastF = Double.NaN;
+            SPARKS.clear();
+            for (ShibuyaAirFx.Loop l : new ShibuyaAirFx.Loop[] {rumble, motor, squeal}) {
+                if (l != null) {
+                    l.end();
+                }
+            }
+            rumble = motor = squeal = null;
+            ShibuyaRiders.reset();
+            return;
+        }
         int ox = ShibuyaScan.stOx;
         double t = level.getGameTime() / 20.0 + ShibuyaScan.ih(ox, ShibuyaScan.stC, 71) * RUN * 2;
         double cyc = t % (RUN * 2);
