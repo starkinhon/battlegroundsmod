@@ -151,7 +151,7 @@ public final class QuestHud {
 
     public static void render(GuiGraphics graphics, DeltaTracker deltaTracker) {
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.player == null || minecraft.options.hideGui || CutsceneHud.hidden() || minecraft.screen != null || IntroHud.active()) {
+        if (minecraft.player == null || minecraft.options.hideGui || CutsceneHud.hidden() || minecraft.screen != null || IntroHud.active() || IntroHud.running()) {
             // held at their start while something covers the HUD (the talk scene, a menu): seen when it closes
             // (only until it starts: one already on screen runs out, it does not play again after the next talk)
             long now = System.currentTimeMillis();

@@ -44,7 +44,7 @@ final class IntroScript {
     private static final int INTRO_TIER = 1;
     private static final List<Integer> MADARA_START = List.of(0);
     // Hashirama's slots (power/powers/hashirama/Hashirama)
-    private static final int HS_STAKES = 1, HS_PRISON = 2, HS_DRAGON = 3, HS_LANCE = 4, HS_BUDDHA = PowerData.SLOT_SHIFT_ULT;
+    private static final int HS_STAKES = 1, HS_PRISON = 2, HS_DRAGON = 3, HS_LANCE = PowerData.SLOT_EXTRA, HS_BUDDHA = PowerData.SLOT_SHIFT_ULT;
 
     final UUID playerId;
     final int row;
@@ -426,7 +426,7 @@ final class IntroScript {
         return spawn(type, life, 0);
     }
 
-    // near > 0: that many blocks in front of the player, towards the challenger's spot, and fighting from the start
+    // near > 0: that many blocks in front of the player, towards the challenger's spot
     // (back to the challenger's spot if that place is inside a block). 0: on the challenger's spot, held.
     private Step spawn(java.util.function.Supplier<? extends net.minecraft.world.entity.EntityType<?>> type, float life, int near) {
         return (s, p, t) -> {
@@ -452,7 +452,9 @@ final class IntroScript {
                 }
             }
             boss.setPersistenceRequired();
-            boss.introHold = near <= 0;
+            // held at first either way: a moment to take the scene in before he comes (Stark 2026-11-19: "já começa
+            // apanhando"); the first free step lets him go
+            boss.introHold = true;
             boss.introMoves = Set.of();
             boss.introFloor = life;
             boss.setHealth(boss.getMaxHealth() * life);
@@ -505,11 +507,13 @@ final class IntroScript {
             if (t == 0) {
                 s.streak = 0;
                 s.bestStreak = 0;
-                SoulBoss boss = s.boss();
-                if (boss != null) {
-                    boss.introHold = false;     // he keeps fighting (punches and dashes): the combo is on a real fight
-                }
                 Intro.ui(p, "goal", goalId, 0, 1);
+            }
+            // he keeps fighting (punches and dashes): the combo is on a real fight, but only after 3 s still in front of
+            // the player, or as soon as the player hits him
+            SoulBoss boss = s.boss();
+            if (boss != null && boss.introHold && (t >= 60 || s.streak > 0)) {
+                boss.introHold = false;
             }
             if (s.bestStreak >= 3) {
                 Intro.ui(p, "goal", goalId, 1, 1);

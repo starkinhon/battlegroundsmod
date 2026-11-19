@@ -70,6 +70,9 @@ public final class IntroHud {
     private static boolean spared;
     // the station empty and still while the scene is down there (no train, no passengers: Stark 2026-11-19)
     private static boolean quiet;
+    // the introduction is on for this player (from its first black to its end): the other HUDs (the quest panel) stay
+    // out of it, even in the moments with no goal on screen
+    private static boolean running;
     private static long last = System.currentTimeMillis();
 
     private IntroHud() {
@@ -136,7 +139,8 @@ public final class IntroHud {
             case "black" -> {
                 blackTo = a > 0 ? 1 : 0;
                 if (a > 0) {
-                    black = Math.max(black, 0.01f);
+                    // b > 0: black at once, no fade in (entering the world: nothing of it shows before the intro)
+                    black = b > 0 ? 1f : Math.max(black, 0.01f);
                 } else {
                     loading = -1;
                 }
@@ -145,6 +149,7 @@ public final class IntroHud {
             case "night" -> night = a > 0;
             case "spared" -> spared = a > 0;
             case "quiet" -> quiet = a > 0;
+            case "run" -> running = a > 0;
             case "logo" -> {
                 logoAt = now;
                 goal = "";
@@ -166,6 +171,7 @@ public final class IntroHud {
         night = false;
         spared = false;
         quiet = false;
+        running = false;
         if (Minecraft.getInstance().screen instanceof CardScreen) {
             Minecraft.getInstance().setScreen(null);
         }
@@ -178,6 +184,10 @@ public final class IntroHud {
         if (night && mc.level != null) {
             mc.level.setDayTime(18000L);
         }
+    }
+
+    public static boolean running() {
+        return running;
     }
 
     public static boolean quiet() {
