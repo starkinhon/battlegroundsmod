@@ -28,8 +28,7 @@ public final class CrystalHotbar {
     private static final int PAD_X = 44;
     private static final int PAD_Y = 40;
     private static final int W = 182 + PAD_X * 2;
-    // Ends at the hotbar's bottom, which is the screen's bottom: nothing drawn below it would show.
-    private static final int H = PAD_Y + 22;
+    private static final int H = PAD_Y + 22 + 4;
 
     private static boolean broken;
     private static String builtFor;
@@ -151,10 +150,16 @@ public final class CrystalHotbar {
         double mirror = W / 2.0 - 0.5;
         // x, y, length, half width, angle, apex
         double[][] ends = { { hx + 10, hy + 14, 40, 9, -52, 0 }, { hx + 14, hy + 10, 30, 7, -20, 0.4 }, { hx + 10, hy + 16, 30, 7, -92, 0.3 },
-                { hx + 8, hy + 12, 26, 7, -108, 0 }, { hx + 6, hy + 17, 16, 5, -98, 0.3 } };
-        for (double[] e : ends) {
-            CrystalInventory.crystal(buf, R, e[0], e[1], e[2], e[3], e[4], 0.32, e[5]);
-            CrystalInventory.crystal(buf, R, 2 * mirror - e[0], e[1], e[2], e[3], -e[4], 0.32, -e[5]);
+                { hx + 12, hy + 20, 28, 8, -130, 0 }, { hx + 24, hy + 20, 18, 6, -160, 0 } };
+        // The first look (Stark 2026-11-19: "esse jeito aqui tava tão lindo"): the lower crystals run off the screen.
+        CrystalInventory.fitToPicture = false;
+        try {
+            for (double[] e : ends) {
+                CrystalInventory.crystal(buf, R, e[0], e[1], e[2], e[3], e[4], 0.32, e[5]);
+                CrystalInventory.crystal(buf, R, 2 * mirror - e[0], e[1], e[2], e[3], -e[4], 0.32, -e[5]);
+            }
+        } finally {
+            CrystalInventory.fitToPicture = true;
         }
         plate(buf, R, hx - 3, hy - 2, 188, 25);
 

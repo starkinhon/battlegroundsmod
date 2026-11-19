@@ -481,6 +481,8 @@ public final class CrystalInventory {
     static int cw = W;
     static int ch = H;
 
+    static boolean fitToPicture = true;
+
     static void crystal(int[] buf, int[] R, double x, double y, double len, double w, double angDeg, double tf, double apexK) {
         double a = Math.toRadians(angDeg);
         double ap = apexK * w;
@@ -489,8 +491,12 @@ public final class CrystalInventory {
         double nx = -Math.cos(a);
         double ny = -Math.sin(a);
         boolean leftLit = (Math.cos(a) + Math.sin(a)) > -0.2;
-        // Never cut flat by the picture's edge: a crystal that would poke out gets shorter, keeping its point.
+        // Never cut flat by the picture's edge: a crystal that would poke out gets shorter, keeping its point. (The hotbar
+        // turns this off: its lower crystals run off the bottom of the screen on purpose, Stark liked them that way.)
         double m = 3;
+        if (!fitToPicture) {
+            m = -1e9;
+        }
         if (dx > 1e-6) {
             len = Math.min(len, (cw - m - x) / dx);
         } else if (dx < -1e-6) {
