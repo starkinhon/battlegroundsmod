@@ -16,7 +16,7 @@ import net.minecraft.client.Minecraft;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 // The power's skills (Z, X, C, V: index in ABILITIES = ability slot, with Shift held the Shift variant; B for a fifth skill) and the base fighting keys: R cycles the base
-// attack selector (Shift + R goes back), G uses the selected base attack, F holds the guard, Left Alt dashes U opens the skill constellation and K turns combat mode on or off. All can be changed in Controls.
+// attack selector (Shift + R goes back), G uses the selected base attack, F holds the guard, Left Alt dashes U opens the skill constellation, K turns combat mode on or off and N (held) heals with the Reversão. All can be changed in Controls.
 public final class Keybinds {
     private static final String CATEGORY = "key.categories.battlegroundsmod";
 
@@ -39,15 +39,19 @@ public final class Keybinds {
     public static final KeyMapping STRETCH_SWORD = key("stretch_sword", GLFW.GLFW_KEY_H);
     // Opens the Diário de Missões (the map of the structures and their missions).
     public static final KeyMapping MISSIONS = key("missions", GLFW.GLFW_KEY_J);
+    // Hold to heal with the Reversão (universe/ReverseCurse, taught by the Shoko). N is free in vanilla and in the mod.
+    public static final KeyMapping REVERSE = key("reverse", GLFW.GLFW_KEY_N);
 
     public static final List<KeyMapping> ALL = List.of(ABILITIES.get(0), ABILITIES.get(1), ABILITIES.get(2), ABILITIES.get(3),
-            EXTRA_ABILITY, CYCLE_ATTACK, USE_ATTACK, GUARD, DASH, SKILLS_MENU, TOGGLE_COMBAT, STRETCH_SWORD, MISSIONS);
+            EXTRA_ABILITY, CYCLE_ATTACK, USE_ATTACK, GUARD, DASH, SKILLS_MENU, TOGGLE_COMBAT, STRETCH_SWORD, MISSIONS, REVERSE);
 
     private Keybinds() {
     }
 
     // Whether the server was last told a skill key is down.
     private static boolean abilityHeld;
+    // Whether the server was last told the Reversão key is down.
+    private static boolean reverseHeld;
     // Whether each skill key (the 4 slots, then the extra one) was down last tick. Holding a key makes the system repeat
     // its press (like holding Q drops item after item); only a press of a key that was up counts as a new use, so
     // holding a key is one use, never many.
@@ -90,6 +94,15 @@ public final class Keybinds {
         if (held != abilityHeld) {
             abilityHeld = held;
             PacketDistributor.sendToServer(new ModPayloads.AbilityHold(held));
+        }
+        // Only sent with a connection: logged out, the server is told again (key up) as soon as the next world starts.
+        boolean reverse = ready && REVERSE.isDown();
+        if (reverse != reverseHeld && minecraft.getConnection() != null) {
+            reverseHeld = reverse;
+            PacketDistributor.sendToServer(new ModPayloads.ReverseHold(reverse));
+        }
+        while (REVERSE.consumeClick()) {
+            // held, never pressed: only isDown counts
         }
         Power power = ready ? Powers.get(minecraft.player.getData(ModAttachments.POWER).power) : null;
         boolean shift = power != null && !power.shiftSlots().isEmpty() && minecraft.options.keyShift.isDown();

@@ -113,6 +113,18 @@ public final class ModPayloads {
         }
     }
 
+    // Client -> server: the Reversão key went down or up (universe/ReverseCurse heals while it is held).
+    public record ReverseHold(boolean down) implements CustomPacketPayload {
+        public static final Type<ReverseHold> TYPE = payloadType("reverse_hold");
+        public static final StreamCodec<ByteBuf, ReverseHold> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.BOOL, ReverseHold::down, ReverseHold::new);
+
+        @Override
+        public Type<ReverseHold> type() {
+            return TYPE;
+        }
+    }
+
     // Server -> client: the giant fireball. mode 0: growing over the caster's head, from radius to maxRadius over
     // ticks; 1: flying from pos at velocity per tick for ticks; 2: gone (it blew up).
     public record KatonBall(int id, int casterId, int mode, Vec3 pos, Vec3 velocity, float radius, float maxRadius, int ticks)
@@ -2142,6 +2154,11 @@ public final class ModPayloads {
         registrar.playToServer(AbilityHold.TYPE, AbilityHold.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer player) {
                 player.getData(ModAttachments.POWER).abilityHeld = payload.down();
+            }
+        }));
+        registrar.playToServer(ReverseHold.TYPE, ReverseHold.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
+            if (context.player() instanceof ServerPlayer player) {
+                player.getData(ModAttachments.POWER).reverseHeld = payload.down();
             }
         }));
         registrar.playToServer(Teleport.TYPE, Teleport.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
