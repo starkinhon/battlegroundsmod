@@ -128,6 +128,8 @@ public final class Intro {
         Dungeon.putBack(player, b);
         // the lent Controle de Energia off the client too (it moves the player on the water itself)
         com.starkinhon.battlegroundsmod.universe.EnergyControl.sync(player);
+        // and the desert's lent flight off, unless the Gohan had already taught it (the backup's techniques)
+        com.starkinhon.battlegroundsmod.universe.Flight.revoke(player);
         if (mode >= 0) {
             player.setGameMode(GameType.byId(mode));
         }
@@ -168,6 +170,11 @@ public final class Intro {
         }
         // a crash or a closed game in the middle: the character back first
         restore(player);
+        // a save from before the fix (Stark 2026-11-19): the intro is done but the desert's flight stayed with the
+        // player without the technique
+        if (done(player)) {
+            com.starkinhon.battlegroundsmod.universe.Flight.revoke(player);
+        }
         // only in a world to live in: the Souls world type or the normal one (Stark 2026-11-19). Never in a superflat
         // world (the test/fight mode); /soul intro still plays it anywhere.
         if (!done(player) && !com.starkinhon.battlegroundsmod.power.Progression.flatWorld(player.server)) {

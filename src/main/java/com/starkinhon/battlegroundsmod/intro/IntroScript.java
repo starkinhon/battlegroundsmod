@@ -315,6 +315,8 @@ final class IntroScript {
         p.setData(ModAttachments.TECHNIQUES, flies
                 ? List.of(EnergyControl.TECHNIQUE, com.starkinhon.battlegroundsmod.universe.Flight.TECHNIQUE)
                 : List.of(EnergyControl.TECHNIQUE));
+        // the desert's flight never carries to the next scene (the Itadori on the ground)
+        com.starkinhon.battlegroundsmod.universe.Flight.revoke(p);
         EnergyControl.sync(p);
         p.setData(ModAttachments.SOUL_SYNC, Map.of(power, new SoulSync.Entry(points, 0f, points, List.copyOf(awake))));
         Tiers.apply(p);
