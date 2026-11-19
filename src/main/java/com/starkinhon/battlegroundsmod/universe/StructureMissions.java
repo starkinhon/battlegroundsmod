@@ -575,7 +575,9 @@ public final class StructureMissions {
     // over, so dying neither resets a daily reward nor gives a once-only one again.
     private static final List<String> KEEP = List.of(PODS_DONE, "souls_desafio_dificil", KORIN_DONE, GURU_DONE, MissionJournal.FOUND, MissionJournal.TRACKED, "souls_majin_solta", DbActivities.CAPSULE_DAY,
             "souls_boo_dia", "souls_cell_dia", "souls_babidi_dia", "souls_namek_dia", "souls_kame_dia", "souls_kame_feito",
-            "souls_gravidade_dia", "souls_gravidade_s");
+            "souls_gravidade_dia", "souls_gravidade_s",
+            // the masters (universe/MasterTraining, KaiohTraining): what they taught stays taught
+            "souls_jiraiya_etapa", "souls_rasengan_feito", "souls_guizo_feito");
 
     private static void onClone(net.neoforged.neoforge.event.entity.player.PlayerEvent.Clone event) {
         var from = event.getOriginal().getPersistentData();

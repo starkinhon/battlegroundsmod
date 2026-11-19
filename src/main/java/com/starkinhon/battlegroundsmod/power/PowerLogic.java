@@ -78,8 +78,10 @@ public final class PowerLogic {
             return;
         }
         if (power != null && !SoulSync.awake(player, power, slot)) {
-            // Not awakened yet: the Sincronia opens it in the Livro das Almas.
-            player.displayClientMessage(Component.translatable("message.battlegroundsmod.sync_locked", power.abilityName(slot)), true);
+            // Not awakened yet: the Sincronia opens it in the Livro das Almas (or a master teaches it).
+            player.displayClientMessage(SoulSync.taught(power, slot)
+                    ? Component.translatable("message.battlegroundsmod.goku.kaioh_falta", power.abilityName(slot))
+                    : Component.translatable("message.battlegroundsmod.sync_locked", power.abilityName(slot)), true);
             return;
         }
         if (slot >= 0 && slot < PowerData.SLOT_COUNT && player.isAlive() && !player.isSpectator()) {

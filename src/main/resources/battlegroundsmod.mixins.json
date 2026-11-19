@@ -19,6 +19,8 @@
   },
   "mixins": [
     "ChunkMapUnloadMixin",
+    "ClimbMixin",
+    "LiquidBlockMixin",
     "LevelMixin",
     "RangedAttributeAccessor"
   ]

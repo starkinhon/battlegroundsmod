@@ -244,6 +244,12 @@ public final class ModItems {
             () -> new DeferredSpawnEggItem(ModEntities.NPC_SHOKO, 0x2A2A2A, 0x6A4A3A, new Item.Properties()));
     public static final DeferredItem<DeferredSpawnEggItem> NPC_YAGA_SPAWN_EGG = BattlegroundsMod.ITEMS.register("npc_yaga_spawn_egg",
             () -> new DeferredSpawnEggItem(ModEntities.NPC_YAGA, 0x1A1A1A, 0xC8A070, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> NPC_KAKASHI_SPAWN_EGG = BattlegroundsMod.ITEMS.register("npc_kakashi_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.NPC_KAKASHI, 0x5E7046, 0xD8DCE2, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> NPC_MAKI_SPAWN_EGG = BattlegroundsMod.ITEMS.register("npc_maki_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.NPC_MAKI, 0x22252E, 0x2F5D3E, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> NPC_KAIOH_SPAWN_EGG = BattlegroundsMod.ITEMS.register("npc_kaioh_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.NPC_KAIOH, 0x3D7FD8, 0x1E2433, new Item.Properties()));
     public static final DeferredItem<DeferredSpawnEggItem> HOLLOW_SPAWN_EGG = BattlegroundsMod.ITEMS.register("hollow_spawn_egg",
             () -> new DeferredSpawnEggItem(ModEntities.HOLLOW, 0xF0F0F0, 0x1A1A1A, new Item.Properties()));
     public static final DeferredItem<DeferredSpawnEggItem> ARRANCAR_SPAWN_EGG = BattlegroundsMod.ITEMS.register("arrancar_spawn_egg",
@@ -318,6 +324,9 @@ public final class ModItems {
             com.starkinhon.battlegroundsmod.item.HiraishinKunaiItem::new, new Item.Properties().rarity(Rarity.RARE));
     public static final DeferredItem<com.starkinhon.battlegroundsmod.item.SoldierPillItem> SOLDIER_PILL = BattlegroundsMod.ITEMS.registerItem("pilula_soldado",
             com.starkinhon.battlegroundsmod.item.SoldierPillItem::new, new Item.Properties().rarity(Rarity.UNCOMMON));
+    // Jiraiya's Rasengan training (universe/MasterTraining).
+    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.TrainingBalloonItem> TRAINING_BALLOON = BattlegroundsMod.ITEMS.registerItem("balao_treino",
+            com.starkinhon.battlegroundsmod.item.TrainingBalloonItem::new, new Item.Properties().rarity(Rarity.UNCOMMON));
     public static final DeferredItem<com.starkinhon.battlegroundsmod.item.RamenItem> RAMEN = BattlegroundsMod.ITEMS.registerItem("ramen",
             com.starkinhon.battlegroundsmod.item.RamenItem::new, new Item.Properties().rarity(Rarity.COMMON));
     public static final DeferredItem<com.starkinhon.battlegroundsmod.item.NinjaHeadbandItem> NINJA_HEADBAND = BattlegroundsMod.ITEMS.registerItem("bandana_ninja",

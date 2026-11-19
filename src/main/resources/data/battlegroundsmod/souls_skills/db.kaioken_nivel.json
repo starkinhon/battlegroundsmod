@@ -1,0 +1,37 @@
+{
+  "formato": "souls-skill/1",
+  "skill": "db.kaioken_nivel",
+  "nome": "Kaioken: sobe o nível",
+  "tempo": {
+    "atrasoTicks": 2,
+    "duracaoTicks": 16
+  },
+  "animacao": {
+    "transicaoTicks": 2,
+    "preparo": {
+      "cabeca": 8,
+      "tronco": 6,
+      "bracoDir": {
+        "frente": 18,
+        "abrir": 26
+      },
+      "bracoEsq": {
+        "frente": 18,
+        "abrir": -26
+      }
+    },
+    "sopro": {
+      "cabeca": -22,
+      "tronco": -10,
+      "bracoDir": {
+        "frente": -12,
+        "abrir": 34
+      },
+      "bracoEsq": {
+        "frente": -12,
+        "abrir": -34
+      }
+    },
+    "retornoTicks": 6
+  }
+}

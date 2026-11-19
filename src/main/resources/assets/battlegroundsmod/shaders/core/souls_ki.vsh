@@ -15,7 +15,10 @@
 // thread (forja/nobara-kit/nobara.js); 46-50 Miwa's sword arc, the cut that opens on the body, the Simple Domain on the
 // ground, its wall of streaks and the Line Cut's trail (forja/miwa-kit/miwa.js), 60-68 Ino (forja/ino-kit/ino.js):
 // a box of her spirit's body, a mind thread, the diamond seal, the scrambled mind's spiral, the Shinranshin's cone, a piece
-// of the spirit's trail, the Teatro Mental's dome, its sky, a lit solid (the flowers); 70 the aura's light on the ground (flat square) and 71 the aura's birth shockwave (forja/auras-db-v2).
+// of the spirit's trail, the Teatro Mental's dome, its sky, a lit solid (the flowers); 70 the aura's light on the ground (flat square) and 71 the aura's birth shockwave (forja/auras-db-v2);
+// 25-29 and 36-38 the Mini Genki Dama Senhor Kaioh teaches Goku (mestres/mini-genki.html v3): 25 the spiral of the ground's
+// energy rising to the hand (tube), 26 the floor of light waves under it (flat), 27 the guided throw's trail (tube), 28 a ring
+// on the ground (flat: the dust closing in, the shock), 29 the column of light (tube), 36 the ball, 37 its halo, 38 the cel smoke.
 in vec3 Position;
 
 uniform mat4 ModelViewMat;
@@ -152,7 +155,7 @@ void main() {
         vU = along; vD = tg; vQ = vec2(tw, along);
     } else if (kind == 31) {                                           // Rasengan: the shell of wind round the core, swelling a little
         n = normalize(Position); P = n * (1. + gn(n * 3. + vec3(Time * 2., 0., -Time * 1.6)) * 0.08); vO = n;
-    } else if (kind == 4 || kind == 20 || kind == 24 || kind == 9 || kind == 10 || kind == 15 || kind == 16 || kind == 18 || kind == 32 || kind == 34 || kind == 35 || kind == 46 || kind == 47 || kind == 48 || kind == 50 || kind == 70) {   // (70: the aura's light on the ground)   // flat square: dust ring, discs, shadows, Rasenshuriken, Miwa's cuts
+    } else if (kind == 4 || kind == 20 || kind == 24 || kind == 9 || kind == 10 || kind == 15 || kind == 16 || kind == 18 || kind == 32 || kind == 34 || kind == 35 || kind == 46 || kind == 47 || kind == 48 || kind == 50 || kind == 70 || kind == 26 || kind == 28) {   // (70: the aura's light on the ground)   // flat square: dust ring, discs, shadows, Rasenshuriken, Miwa's cuts
         P = Position; n = vec3(0., 1., 0.); vUv = Position.xz * 0.5 + 0.5;
         vQ = Position.xz * vec2(length(Model[0].xyz), length(Model[2].xyz));   // in blocks, across and along the square
     } else if (kind == 5) {                                            // aura shell
@@ -253,6 +256,25 @@ void main() {
         P = d * (.35 + sp * (.4 + Life * .9)); n = d; vD = sp;
     } else if (kind == 21 || kind == 22) {                             // the page's ki ball core / its halo (plain spheres; vO = the page's vP)
         n = normalize(Position); P = Position; vO = Position;
+    } else if (kind == 25) {                                           // Mini Genki: the spiral rising from the ground to the hand (Len = the hand's height)
+        float v = Position.y; vec2 d = normalize(Position.xz + 1e-5);
+        float ang = atan(d.y, d.x) + v * 5.5 - Time * 3.2, rad = mix(3.0, 0.16, pow(v, 0.6));
+        P = vec3(cos(ang) * rad, mix(0.05, Len, pow(v, 1.25)), sin(ang) * rad);
+        P += vec3(gn(P * 0.8 + Time), gn(P * 0.8 - Time + 4.) * 0.5, gn(P * 0.8 + 9.)) * 0.19 * (1. - v);
+        n = vec3(cos(ang), 0., sin(ang)); vDir = d; vH = v;
+    } else if (kind == 27) {                                           // Mini Genki: the trail, head (W wide) at y 0 thinning to the tail at Len
+        float h = Position.y; vec2 d = normalize(Position.xz + 1e-5); float r = W * mix(1., 0.15, h);
+        P = vec3(d.x * r, h * Len, d.y * r); n = vec3(d.x, 0., d.y); vDir = d; vH = h;
+    } else if (kind == 29) {                                           // Mini Genki: the column of light (1.35 at the foot, 1 at the top; Model = its size)
+        float h = Position.y; vec2 d = normalize(Position.xz + 1e-5);
+        vec3 p = vec3(d * mix(1.35, 1., h), h).xzy;
+        p.xz *= 1. + 0.16 * gn(vec3(p.xz * 2., p.y * 0.4 - Time * 3.));
+        P = p; n = vec3(d.x, 0., d.y); vDir = d; vH = h;
+    } else if (kind == 36 || kind == 37) {                             // Mini Genki: the ball (breathing) / its halo (back faces)
+        n = normalize(Position); P = kind == 36 ? n * (1. + 0.04 * gn(n * 3. + Time * 2.)) : Position; vO = n;
+    } else if (kind == 38) {                                           // Mini Genki: the smoke, a squashed lumpy dome sitting on the ground
+        vec3 p = normalize(Position); float k = gn(p * 1.6 + vec3(0., -Time * 0.8, 0.)) * 0.62;
+        P = p * (1. + 0.35 * k); P.y *= 0.55; P.y = max(P.y, -0.05); n = p; vO = P; vD = k;
     } else if (kind == 23) {                                           // the page's beam: an open tube (y 0..1), vUv = the cylinder's uv
         vec2 d = normalize(Position.xz + 1e-5); P = Position; n = vec3(d.x, 0., d.y);
         vUv = vec2(atan(d.x, d.y) / 6.2831853 + .5, Position.y);

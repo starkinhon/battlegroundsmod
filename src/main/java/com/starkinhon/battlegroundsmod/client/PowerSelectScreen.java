@@ -395,10 +395,17 @@ public class PowerSelectScreen extends Screen {
                     }
                 }
             }
-            if (holding && sel != null && !sel.id().equals(current()) && absorbing == null && owned(sel)) {
+            if (holding && sel != null && absorbing == null && (sel.id().equals(current()) || owned(sel))) {
                 hold = Math.min(1, hold + dt / 0.8f);
                 if (hold >= 1) {
-                    startAbsorb(sel);
+                    if (sel.id().equals(current())) {
+                        // the soul worn: let it go and fight with the base moves only (Stark 2026-11-19)
+                        hold = 0;
+                        holding = false;
+                        PacketDistributor.sendToServer(new ModPayloads.SelectPower(""));
+                    } else {
+                        startAbsorb(sel);
+                    }
                 }
             } else if (absorbing == null) {
                 hold = Math.max(0, hold - dt * 3);
@@ -775,7 +782,12 @@ public class PowerSelectScreen extends Screen {
         List<Component> tip = null;
         List<FormattedCharSequence> desc = font.split(s.description(), w - 16);
         int dl = Math.min(6, desc.size());
-        List<Integer> skills = SoulSync.skills(s);
+        List<Integer> skills = new ArrayList<>(SoulSync.skills(s));
+        int counted = skills.size();
+        // what a master teaches on top of the soul (Senhor Kaioh: Goku's B and Shift+V), shown after the rest
+        for (int slot : SoulSync.taughtSlots(s)) {
+            skills.add(slot);
+        }
         int per = Math.min(5, skills.size());
         int rows = (skills.size() + per - 1) / per;
         int h = 66 + dl * 9 + rows * 32 + 48;
@@ -844,8 +856,9 @@ public class PowerSelectScreen extends Screen {
         for (int i = 0; i < skills.size(); i++) {
             int slot = skills.get(i);
             int sx = gx + (i % per) * sw, sy = yy + (i / per) * (sw + 8);
-            boolean awake = !gated || slot == 0 || e.has(slot);
-            if (awake) {
+            boolean master = SoulSync.taught(s, slot);
+            boolean awake = master ? !gated || SoulSync.knowsTaught(minecraft.player) : !gated || slot == 0 || e.has(slot);
+            if (awake && !master) {
                 awakeCount++;
             }
             boolean next = gated && !awake && isCur && SoulSync.canAwaken(minecraft.player, s, slot);
@@ -917,7 +930,10 @@ public class PowerSelectScreen extends Screen {
                     });
                     tip.add(Component.literal(sb.toString()).withStyle(st -> st.withColor(0xCDC6DC)));
                 }
-                if (!awake) {
+                if (master) {
+                    tip.add(Component.translatable(awake ? "screen.battlegroundsmod.soul_book.taught_kaioh" : "screen.battlegroundsmod.soul_book.locked_kaioh")
+                            .withStyle(st -> st.withColor(awake ? 0xFFD84A : 0xFF6060)));
+                } else if (!awake) {
                     String key = next ? "screen.battlegroundsmod.soul_book.click_awaken"
                             : !isCur ? "screen.battlegroundsmod.soul_book.locked_wear"
                             : PowerData.isUlt(slot) ? "screen.battlegroundsmod.soul_book.locked_ult"
@@ -930,18 +946,18 @@ public class PowerSelectScreen extends Screen {
             }
         }
         yy += rows * (sw + 8) + 2;
-        GuiDraw.centeredText(g, font, Component.translatable("screen.battlegroundsmod.soul_book.awake_count", awakeCount, skills.size()),
+        GuiDraw.centeredText(g, font, Component.translatable("screen.battlegroundsmod.soul_book.awake_count", awakeCount, counted),
                 x + w / 2f, yy, 0.75f, 0xFF9C93B4, false);
 
         // hold-to-absorb button
         int bw2 = w - 24, bx2 = x + 12, by = yy + 10;
-        boolean can = !isCur && owned(s);
+        boolean can = isCur || owned(s);
         boolean hv = can && mx >= bx2 && mx < bx2 + bw2 && my >= by && my < by + 17;
         SoulBookDraw.smallFrame(g, bx2, by, bw2, 17, can ? c : 0x5A546E, hv || hold > 0);
         if (hold > 0) {
             r(g, bx2 + 2, by + 2, Math.round((bw2 - 4) * hold), 13, a(mix(c, WHITE, 0.2f), 0.55f));
         }
-        Component label = Component.translatable(isCur ? "screen.battlegroundsmod.soul_book.yours"
+        Component label = Component.translatable(isCur ? (hold > 0 ? "screen.battlegroundsmod.soul_book.releasing" : "screen.battlegroundsmod.soul_book.release")
                 : !owned(s) ? "screen.battlegroundsmod.soul_book.not_owned_short"
                 : hold > 0 ? "screen.battlegroundsmod.soul_book.absorbing" : "screen.battlegroundsmod.soul_book.hold");
         int lw = font.width(label);

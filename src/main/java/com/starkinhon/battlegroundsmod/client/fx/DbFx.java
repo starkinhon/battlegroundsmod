@@ -169,6 +169,10 @@ public final class DbFx {
             FzFx.receive(kind, id, pos, dir, a, b, c);
             return;
         }
+        if (KaiohFx.handles(kind)) {
+            KaiohFx.receive(kind, id, pos, dir, a, b, c);
+            return;
+        }
         if (NmFx.handles(kind)) {
             NmFx.receive(kind, id, pos, dir, a, b, c);
             return;
@@ -332,7 +336,7 @@ public final class DbFx {
     }
 
     static boolean active() {
-        return !SHOTS.isEmpty() || !TRACKED.isEmpty() || NrFx.active() || JjFx.active() || InoFx.active() || NmFx.active() || DmFx.active() || JmFx.active() || FzFx.active();
+        return !SHOTS.isEmpty() || !TRACKED.isEmpty() || NrFx.active() || JjFx.active() || InoFx.active() || NmFx.active() || DmFx.active() || JmFx.active() || FzFx.active() || KaiohFx.active();
     }
 
     static void clear() {
@@ -346,6 +350,7 @@ public final class DbFx {
         DmFx.clear();
         JmFx.clear();
         FzFx.clear();
+        KaiohFx.clear();
     }
 
     private static double life(Fx f) {
@@ -474,6 +479,7 @@ public final class DbFx {
         DmFx.draw(now, partial);
         JmFx.draw(now, partial);
         FzFx.draw(now, partial);
+        KaiohFx.draw(now, partial);
     }
 
     // ---------- drawing in the right pass ----------
@@ -2834,6 +2840,13 @@ public final class DbFx {
                 ScreenFx.impactFrame(new int[] {4, 3, 4, 3, 4, 3}, 1, 0xFFFFFF, pos, 0);
                 ScreenShake.start(3.2f * near, 90);
                 ScreenFx.radialBlur(pos, near, 18);
+            }
+            // The Mini Genki Dama bursting into its column of light: four manga frames (negative, positive) and a short quake.
+            case 60 -> {
+                ScreenFx.flash(0xE8F6FF, 0.45f * near, 6);
+                ScreenFx.impactFrame(new int[] {4, 3, 4, 3}, 1, 0xFFFFFF, pos, 0);
+                ScreenShake.start(1.4f * near, 14);
+                ScreenFx.radialBlur(pos, 0.6f * near, 8);
             }
             // Realista+Anime: the Genki Dama landing, three manga frames (negative, positive, negative).
             case 47 -> {

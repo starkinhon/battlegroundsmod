@@ -460,6 +460,18 @@ public final class ModPayloads {
     }
 
     // Server -> client: the characters this player beat in their arenas (stamps in the Livros dos Desafios).
+    // Server -> client: the universe techniques the player learned (universe/EnergyControl moves the player by them).
+    public record SyncTechniques(List<String> known) implements CustomPacketPayload {
+        public static final Type<SyncTechniques> TYPE = payloadType("sync_techniques");
+        public static final StreamCodec<ByteBuf, SyncTechniques> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.STRING_UTF8.apply(ByteBufCodecs.list()), SyncTechniques::known, SyncTechniques::new);
+
+        @Override
+        public Type<SyncTechniques> type() {
+            return TYPE;
+        }
+    }
+
     public record SyncArenaWins(List<String> wins) implements CustomPacketPayload {
         public static final Type<SyncArenaWins> TYPE = payloadType("sync_arena_wins");
         public static final StreamCodec<ByteBuf, SyncArenaWins> STREAM_CODEC = StreamCodec.composite(
@@ -2126,10 +2138,18 @@ public final class ModPayloads {
         }));
         registrar.playToServer(SelectPower.TYPE, SelectPower.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer player) {
-                PowerLogic.selectFromBook(player, payload.power());
+                if (payload.power().isEmpty()) {
+                    // "Soltar a alma" in the Livro das Almas: no soul, only the base moves (dash, barrage...)
+                    PowerLogic.clear(player);
+                    player.displayClientMessage(net.minecraft.network.chat.Component.translatable("message.battlegroundsmod.soul_released"), false);
+                } else {
+                    PowerLogic.selectFromBook(player, payload.power());
+                }
             }
         }));
         registrar.playToClient(SyncPower.TYPE, SyncPower.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> payload.applyTo(context.player())));
+        registrar.playToClient(SyncTechniques.TYPE, SyncTechniques.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> com.starkinhon.battlegroundsmod.universe.EnergyControl.clientKnown = List.copyOf(payload.known())));
         registrar.playToClient(SyncArenaWins.TYPE, SyncArenaWins.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> payload.applyTo(context.player())));
         registrar.playToClient(SyncArenaRecords.TYPE, SyncArenaRecords.STREAM_CODEC, (payload, context) -> context.enqueueWork(payload::apply));
         registrar.playBidirectional(ArenaHard.TYPE, ArenaHard.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
