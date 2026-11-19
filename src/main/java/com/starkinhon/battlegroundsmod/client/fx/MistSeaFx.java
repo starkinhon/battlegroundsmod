@@ -4,12 +4,15 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.starkinhon.battlegroundsmod.world.ModWorldgen;
 
+import it.unimi.dsi.fastutil.longs.Long2ByteOpenHashMap;
+
 import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.phys.Vec3;
@@ -24,6 +27,8 @@ import net.neoforged.neoforge.client.event.ViewportEvent;
 //   above, thicker and wider when the mist closes;
 // - the banks: low wide clouds drifting slowly between the pillars, 3 to 19 blocks over the water;
 // - the horizon comes close when the mist closes: the fog from 30-170 blocks down to 2-34.
+// The sheets and the banks stay over the Mar da Névoa itself (Stark's Kyoto test, 2026-11-19): next to the sea they
+// used to lie over the neighbor biome's low ground too, hiding it, and its trees looked like floating over the white.
 public final class MistSeaFx {
     private static final RandomSource RANDOM = RandomSource.createThreadSafe();
     // height over the water and strength of each sheet
@@ -37,8 +42,13 @@ public final class MistSeaFx {
     private static float lastStrength;
 
     private static final class Bank {
-        double x, y, z, w, h, v, a, lx;
+        double x, y, z, w, h, v, a, lx, sea;
     }
+
+    // which grid points are over the Mar da Névoa (1) or not (0), read once per column; MASK is that, softened
+    private static final Long2ByteOpenHashMap OVER_SEA = new Long2ByteOpenHashMap();
+    private static final float[][] MASK = new float[CELLS + 1][CELLS + 1];
+    private static ClientLevel maskLevel;
 
     private static final Bank[] BANK = new Bank[BANKS];
     // the sheets' pattern on a grid around the player, worked out each tick (it drifts slowly)
@@ -46,6 +56,49 @@ public final class MistSeaFx {
     private static int gridX = Integer.MIN_VALUE, gridZ;
 
     private MistSeaFx() {
+    }
+
+    // Is the column over the Mar da Névoa: 1 yes, 0 no, -1 not loaded yet (asked again later).
+    private static int overSea(ClientLevel level, int x, int z) {
+        if (level != maskLevel) {
+            OVER_SEA.clear();
+            maskLevel = level;
+        }
+        long k = ((long) x << 32) ^ (z & 0xFFFFFFFFL);
+        if (OVER_SEA.containsKey(k)) {
+            return OVER_SEA.get(k);
+        }
+        if (!level.hasChunk(x >> 4, z >> 4)) {
+            return -1;
+        }
+        byte v = (byte) (level.getBiome(new BlockPos(x, level.getSeaLevel(), z)).is(ModWorldgen.MAR_DA_NEVOA) ? 1 : 0);
+        if (OVER_SEA.size() > 60000) {
+            OVER_SEA.clear();
+        }
+        OVER_SEA.put(k, v);
+        return v;
+    }
+
+    // The sheets' mask on the grid: the mean of the 5 by 5 points around (a soft edge about 6 blocks wide at the shore).
+    private static void mask(ClientLevel level) {
+        int n = CELLS + 1;
+        float[][] raw = new float[n + 4][n + 4];
+        for (int i = 0; i < n + 4; i++) {
+            for (int j = 0; j < n + 4; j++) {
+                raw[i][j] = overSea(level, gridX + (i - 2) * SIZE, gridZ + (j - 2) * SIZE) > 0 ? 1 : 0;
+            }
+        }
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                float sum = 0;
+                for (int a = 0; a < 5; a++) {
+                    for (int b = 0; b < 5; b++) {
+                        sum += raw[i + a][j + b];
+                    }
+                }
+                MASK[i][j] = sum / 25f;
+            }
+        }
     }
 
     // The mist from 0 (open) to 1 (closed), t in seconds.
@@ -86,6 +139,7 @@ public final class MistSeaFx {
         double t = mc.level.getGameTime() / 20.0, m = mist(t);
         gridX = Mth.floor(p.x / SIZE) * SIZE - CELLS * SIZE / 2;
         gridZ = Mth.floor(p.z / SIZE) * SIZE - CELLS * SIZE / 2;
+        mask(mc.level);
         for (int layer = 0; layer < SHEETS.length; layer++) {
             for (int i = 0; i <= CELLS; i++) {
                 for (int j = 0; j <= CELLS; j++) {
@@ -107,6 +161,8 @@ public final class MistSeaFx {
                 b.lx = b.x;
             }
             b.x += b.v * 0.05;
+            // a bank over the neighbor biome's land melts away (and comes back over the sea)
+            b.sea = Mth.clamp(b.sea + (overSea(mc.level, Mth.floor(b.x), Mth.floor(b.z)) > 0 ? 0.02 : -0.02), 0, 1);
             // keep them around the player: the ones left behind come back on the other side
             if (b.x - p.x > SPAN) {
                 b.x -= SPAN * 2;
@@ -206,7 +262,7 @@ public final class MistSeaFx {
                     double dx = x - camera.x, dz = z - camera.z, ex = x - mx, ez = z - mz;
                     double d = Math.sqrt(dx * dx + dz * dz + ry * ry), edge = Math.sqrt(ex * ex + ez * ez);
                     double near = smoothstep(1.5, 10, d), far = Mth.clamp((half - edge) / (half * 0.35), 0, 1);
-                    alpha[i][j] = pat[i][j] * (float) (near * far) * fade;
+                    alpha[i][j] = pat[i][j] * MASK[i][j] * (float) (near * far) * fade;
                 }
             }
             for (int i = 0; i < CELLS; i++) {
@@ -245,7 +301,7 @@ public final class MistSeaFx {
             double x = Mth.lerp(partial, k.lx, k.x), y = sea + k.y, z = k.z;
             double dx = x - camera.x, dy = y - camera.y, dz = z - camera.z;
             double d = Math.sqrt(dx * dx + dy * dy + dz * dz);
-            float a = (float) (k.a * (0.15 + 0.85 * m) * Mth.clamp((d - 8) / 20, 0, 1)) * fade;
+            float a = (float) (k.a * k.sea * (0.15 + 0.85 * m) * Mth.clamp((d - 8) / 20, 0, 1)) * fade;
             if (a <= 0.003f) {
                 continue;
             }
