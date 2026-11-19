@@ -75,6 +75,8 @@ public final class EpicFx {
     private static final List<Wave> WAVES = new ArrayList<>();
     private static final List<Deb> DEBRIS = new ArrayList<>();
     private static final List<ShipFx> SHIPS = new ArrayList<>();
+    // the volumes' half-size layer
+    private static com.mojang.blaze3d.pipeline.TextureTarget halfLayer;
 
     // Freeza's ship on its way down or up (RuinNet.SHIP): the very blocks the server sets when it lands (FzShipShape).
     private static final class ShipFx {
@@ -409,11 +411,18 @@ public final class EpicFx {
         BlockRenderDispatcher br = mc.getBlockRenderer();
         PoseStack pose = new PoseStack();
         BlockPos.MutableBlockPos at = new BlockPos.MutableBlockPos();
+        // behind the camera nothing shows: skip it before building its model (#387). A block is cut only when it is all
+        // behind the camera's plane (1.5 of margin for its size).
+        Vector3f look = mc.gameRenderer.getMainCamera().getLookVector();
+        float lx = look.x(), ly = look.y(), lz = look.z();
+        // a lifted column's height is not known before it is looked up: take the height that is most in front (from 48
+        // under the camera to 8 over it), so no column that can be seen is cut
+        float liftY = ly > 0 ? 8 : -48;
         for (Deb d : DEBRIS) {
             float s = d.size * (d.resting ? 1 - smooth((d.rest - 2.8f) / 0.7f) : 1);
             double ex = d.x - camera.x, ey = d.y - camera.y, ez = d.z - camera.z;
             // a block flying 140 blocks away is a dot: not worth its model
-            if (s <= 0.02f || ex * ex + ey * ey + ez * ez > 140 * 140) {
+            if (s <= 0.02f || ex * ex + ey * ey + ez * ez > 140 * 140 || ex * lx + ey * ly + ez * lz < -1.5) {
                 continue;
             }
             pose.pushPose();
@@ -461,6 +470,9 @@ public final class EpicFx {
                     }
                     float rx = x + 0.5f - (float) w.at.x, dist = Mth.sqrt(rx * rx + (float) fz2);
                     if (dist < r0 || dist > r1) {
+                        continue;
+                    }
+                    if ((x + 0.5 - camera.x) * lx + liftY * ly + (z + 0.5 - camera.z) * lz < -1.5) {
                         continue;
                     }
                     float q = (dist - pr) / width;
@@ -547,6 +559,24 @@ public final class EpicFx {
         if (sh == null || VOLS.isEmpty()) {
             return;
         }
+        // Raymarched at half size into a layer of their own, with the scene's depth so walls and bodies still hide them,
+        // then put back smoothed (Stark 2026-11-19: GPU at 95% inside the Buddha's dust; a quarter of the pixels).
+        com.mojang.blaze3d.pipeline.RenderTarget main = Minecraft.getInstance().getMainRenderTarget();
+        boolean half = FxShaders.volComp != null;
+        if (half) {
+            int w = Math.max(1, main.width / 2), h = Math.max(1, main.height / 2);
+            if (halfLayer == null) {
+                halfLayer = new com.mojang.blaze3d.pipeline.TextureTarget(w, h, true, Minecraft.ON_OSX);
+                halfLayer.setFilterMode(org.lwjgl.opengl.GL11.GL_LINEAR);
+            } else if (halfLayer.width != w || halfLayer.height != h) {
+                halfLayer.resize(w, h, Minecraft.ON_OSX);
+                halfLayer.setFilterMode(org.lwjgl.opengl.GL11.GL_LINEAR);
+            }
+            halfLayer.setClearColor(0, 0, 0, 0);
+            halfLayer.clear(Minecraft.ON_OSX);
+            halfLayer.copyDepthFrom(main);
+            halfLayer.bindWrite(true);
+        }
         RenderSystem.enableBlend();
         RenderSystem.blendFuncSeparate(GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE,
                 GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
@@ -599,6 +629,20 @@ public final class EpicFx {
             sh.safeGetUniform("Shape").set((float) v.shape);
             sh.safeGetUniform("Ground").set(v.shape == 3 ? -1.0E4f : e.y - 0.5f);
             box(sh, mn, mx);
+        }
+        if (half) {
+            main.bindWrite(true);
+            RenderSystem.disableDepthTest();
+            ShaderInstance comp = FxShaders.volComp;
+            comp.setSampler("DiffuseSampler", halfLayer.getColorTextureId());
+            RenderSystem.setShader(() -> comp);
+            BufferBuilder q = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION);
+            q.addVertex(0, 0, 0);
+            q.addVertex(1, 0, 0);
+            q.addVertex(1, 1, 0);
+            q.addVertex(0, 1, 0);
+            BufferUploader.drawWithShader(q.buildOrThrow());
+            RenderSystem.enableDepthTest();
         }
         RenderSystem.depthMask(true);
         RenderSystem.defaultBlendFunc();

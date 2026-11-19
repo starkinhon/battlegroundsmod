@@ -52,6 +52,8 @@ public final class FxShaders {
     static ShaderInstance kkMist;
     static ShaderInstance sand;
     public static ShaderInstance wood;
+    // the same wood without discard (tools/shaders/wood_solid.py): early depth on for the pieces that can't splinter
+    public static ShaderInstance woodSolid;
     static ShaderInstance bleach;
     // Bleach's own glow composite (halo only, like the pages).
     static ShaderInstance bleachComp;
@@ -67,6 +69,8 @@ public final class FxShaders {
     static ShaderInstance novaVol;
     // the end-game bosses' fire, dust and smoke (client/fx/epic/EpicFx)
     public static ShaderInstance boomVol;
+    // puts the half-size volume layer back onto the frame (premultiplied); without it the volumes draw at full size
+    public static ShaderInstance volComp;
     // The vapour off an exorcised curse (CurseVapor); without it the body still darkens and evaporates.
     static ShaderInstance jjVapor;
     // Sukuna's thrown Dismantle (DismantleRenderer); without it the cuts still hit, they just don't show.
@@ -165,6 +169,11 @@ public final class FxShaders {
         } catch (Exception e) {
             BattlegroundsMod.LOGGER.error("Could not load Hashirama's wood shader", e);
         }
+        try {
+            register(event, "souls_wood_solid", DefaultVertexFormat.NEW_ENTITY, s -> woodSolid = s);
+        } catch (Exception e) {
+            BattlegroundsMod.LOGGER.error("Could not load Hashirama's solid wood shader", e);
+        }
         // Bleach (Rukia, Byakuya): the same GLSL text as the approved pages (forja/bleach/mod-shaders.sh).
         try {
             register(event, "souls_bleach", DefaultVertexFormat.POSITION, s -> bleach = s);
@@ -207,6 +216,11 @@ public final class FxShaders {
             register(event, "souls_boom_vol", DefaultVertexFormat.POSITION, s -> boomVol = s);
         } catch (Exception e) {
             BattlegroundsMod.LOGGER.error("Could not load the end-game volume shader", e);
+        }
+        try {
+            register(event, "souls_vol_comp", DefaultVertexFormat.POSITION, s -> volComp = s);
+        } catch (Exception e) {
+            BattlegroundsMod.LOGGER.error("Could not load the volume compose shader", e);
         }
         // On its own: a problem here only hides Sukuna's thrown Dismantle.
         try {
