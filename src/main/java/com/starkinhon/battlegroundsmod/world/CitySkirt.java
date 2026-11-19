@@ -31,7 +31,9 @@ import net.minecraft.world.level.levelgen.structure.Structure;
 // - A chunk without the city's biome never runs the city's feature, so it keeps its land: the skirt fades to nothing
 //   before it (and before another mod biome). Every number here is a function of the column alone (the city mask, the
 //   biome quarts, the noise's ground), so two chunks always agree along their edge.
-// - Outside the biome it only moves the land: water below the sea stays (no hole in the ocean), trees on lowered
+// - Water below the sea's level always stays, and what the skirt leaves under that level is water again (no hole in
+//   the ocean, no wall of water); at the water's edge the skirt is a beach of sand.
+// - Outside the biome it only moves the land: trees on lowered
 //   ground go and the leaves they held go with them (no leaves left hanging), plants on raised ground that can no
 //   longer stand there go, and a chunk with a village or another building on the surface is left as it is.
 // - Under the skirt's new top, 20 blocks of caves and fluids are filled; under the city, from 3 below the street down to
@@ -188,8 +190,10 @@ final class CitySkirt {
                 if (in) {
                     sub = Blocks.DIRT.defaultBlockState();
                 }
+                // the sea's water stays and fills what is below its level (Stark 2026-11-19: the water was cut off at the
+                // city's edge, walls of water over holes of air, "como se alguém tivesse tentado remover")
                 if (mode[i] == 2) {
-                    clear(level, pos, x, z, top + 1, Math.max(Math.max(h, top) + CLEAR, surface(level, x, z)), maxY, Integer.MIN_VALUE);
+                    clear(level, pos, x, z, top + 1, Math.max(Math.max(h, top) + CLEAR, surface(level, x, z)), maxY, sea);
                 } else if (mode[i] == 3) {
                     clear(level, pos, x, z, top + 1, Math.max(h + CLEAR, surface(level, x, z)), maxY, sea);
                 }
@@ -199,10 +203,18 @@ final class CitySkirt {
                 }
                 fill(level, pos, x, z, Math.max(minY, top - CAVES), Math.min(h, top - 1),
                         y -> top - y > 3 ? Blocks.STONE.defaultBlockState() : under);
+                for (int y = Math.max(minY, top + 1); y < sea; y++) {
+                    if (level.getBlockState(pos.set(x, y, z)).isAir()) {
+                        level.setBlock(pos, Blocks.WATER.defaultBlockState(), 2);
+                    }
+                }
                 if (top < minY || top > maxY) {
                     continue;
                 }
-                BlockState t = in ? plan.ground(x, z, top, h, d) : top != h ? surf : null;
+                // at the water's edge and under it a beach (the sea floor's own sand or gravel further down)
+                BlockState t = top < sea - 1 ? (top != h ? surf : null)
+                        : top <= sea ? Blocks.SAND.defaultBlockState()
+                        : in ? plan.ground(x, z, top, h, d) : top != h ? surf : null;
                 if (t != null) {
                     level.setBlock(pos.set(x, top, z), t, 2);
                 }
