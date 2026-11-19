@@ -164,5 +164,41 @@
     "sounds": [
       "battlegroundsmod:metro_melodia"
     ]
+  },
+  "kyoto_folhas": {
+    "sounds": [
+      {
+        "name": "battlegroundsmod:kyoto_folhas",
+        "stream": true
+      }
+    ]
+  },
+  "kyoto_sino": {
+    "subtitle": "subtitles.battlegroundsmod.kyoto_sino",
+    "sounds": [
+      "battlegroundsmod:kyoto_sino"
+    ]
+  },
+  "kyoto_corvo": {
+    "subtitle": "subtitles.battlegroundsmod.kyoto_corvo",
+    "sounds": [
+      "battlegroundsmod:kyoto_corvo"
+    ]
+  },
+  "kyoto_suzumushi": {
+    "sounds": [
+      "battlegroundsmod:kyoto_suzumushi"
+    ]
+  },
+  "kyoto_bambu": {
+    "sounds": [
+      "battlegroundsmod:kyoto_bambu"
+    ]
+  },
+  "kyoto_shishi": {
+    "subtitle": "subtitles.battlegroundsmod.kyoto_shishi",
+    "sounds": [
+      "battlegroundsmod:kyoto_shishi"
+    ]
   }
 }

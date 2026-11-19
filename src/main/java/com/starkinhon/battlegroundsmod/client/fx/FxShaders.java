@@ -16,6 +16,9 @@ public final class FxShaders {
     // Colônia do Jogo do Abate: the dome and sky (ColoniaAirFx), and the Jujutsu screen grade.
     static ShaderInstance colonia;
     static ShaderInstance jjGrade;
+    // The Outono de Kyoto's pond: the mirrored garden and the water's surface over it (KyotoAirFx).
+    static ShaderInstance kyotoMirror;
+    static ShaderInstance kyotoPond;
     // Shibuya's screen grade (ShibuyaAirFx).
     static ShaderInstance shibuyaGrade;
     static ShaderInstance impact;
@@ -283,6 +286,13 @@ public final class FxShaders {
             register(event, "fx_jjgrade", DefaultVertexFormat.POSITION, s -> jjGrade = s);
         } catch (Exception e) {
             BattlegroundsMod.LOGGER.error("Could not load the Jujutsu screen grade shader", e);
+        }
+        // On their own: without them the Outono de Kyoto's pond is vanilla water (its leaves, koi and the rest stay).
+        try {
+            register(event, "souls_kyoto_mirror", DefaultVertexFormat.POSITION_COLOR_NORMAL, s -> kyotoMirror = s);
+            register(event, "souls_kyoto_pond", DefaultVertexFormat.POSITION, s -> kyotoPond = s);
+        } catch (Exception e) {
+            BattlegroundsMod.LOGGER.error("Could not load the Kyoto pond shaders", e);
         }
         // On its own: without it Shibuya keeps its neon, steam and fog, just no screen grade.
         try {

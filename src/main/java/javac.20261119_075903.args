@@ -1,0 +1,4 @@
+-d
+/tmp/claude-0/jc
+-proc:none
+com/starkinhon/battlegroundsmod/client/fx/KyotoAirFx.java

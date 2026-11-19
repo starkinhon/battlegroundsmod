@@ -28,6 +28,15 @@ public final class FxRenderTypes extends RenderType {
                     .setWriteMaskState(COLOR_WRITE)
                     .setCullState(NO_CULL)
                     .createCompositeState(false));
+    // GLOW drawn in the order written, without sorting every quad each frame (big additive batches, like the Outono de
+    // Kyoto's gold glints and light-up: added light doesn't care about order).
+    public static final RenderType GLOW_FLAT = create("battlegroundsmod_fx_glow_flat", DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS, 262144,
+            false, false, CompositeState.builder()
+                    .setShaderState(RENDERTYPE_LIGHTNING_SHADER)
+                    .setTransparencyState(LIGHTNING_TRANSPARENCY)
+                    .setWriteMaskState(COLOR_WRITE)
+                    .setCullState(NO_CULL)
+                    .createCompositeState(false));
     // See-through color, like the Forja's floor markers.
     public static final RenderType AREA = create("battlegroundsmod_fx_area", DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS, 1536,
             false, true, CompositeState.builder()

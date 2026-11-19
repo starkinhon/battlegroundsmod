@@ -31,6 +31,14 @@ public final class ModSounds {
     public static final Supplier<SoundEvent> COLONIA_FOGO = register("colonia_fogo");
     public static final Supplier<SoundEvent> COLONIA_DESABAMENTO = register("colonia_desabamento");
     public static final Supplier<SoundEvent> COLONIA_ESTRONDO = register("colonia_estrondo");
+    // The Outono de Kyoto's air (client/fx/KyotoAirFx), built from noise and tones by tools/sounds/kyoto_sounds.py: the
+    // leaves in the wind (looped), a far temple bell, crows, the bell cricket at night, bamboo knocking and the shishi-odoshi.
+    public static final Supplier<SoundEvent> KYOTO_FOLHAS = register("kyoto_folhas");
+    public static final Supplier<SoundEvent> KYOTO_SINO = register("kyoto_sino");
+    public static final Supplier<SoundEvent> KYOTO_CORVO = register("kyoto_corvo");
+    public static final Supplier<SoundEvent> KYOTO_SUZUMUSHI = register("kyoto_suzumushi");
+    public static final Supplier<SoundEvent> KYOTO_BAMBU = register("kyoto_bambu");
+    public static final Supplier<SoundEvent> KYOTO_SHISHI = register("kyoto_shishi");
     // Shibuya's air and metro (client/fx/ShibuyaAirFx, ShibuyaMetro), built from noise by tools/sounds/shibuya_sounds.py.
     public static final Supplier<SoundEvent> SHIBUYA_CIDADE = register("shibuya_cidade");
     public static final Supplier<SoundEvent> SHIBUYA_NEON = register("shibuya_neon");
