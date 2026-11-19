@@ -62,10 +62,81 @@ final class IntroScript {
     private ServerLevel level;
     private int act = -1;
 
+    // Act 3 in this world's real Shibuya (Stark 2026-11-19 video: "faz no bioma de Shibuya, não nas arenas", the
+    // pedestrians and the lights): the metro station found for it ({ox, c, cityY}: ShibuyaFeature.introStation),
+    // searched off the server thread from the start of the intro; null when the world has none near (the arenas then).
+    private final java.util.concurrent.CompletableFuture<int[]> shibuya;
+    // in the real world now (the overworld's Shibuya), not on the intro's own arena row
+    private boolean real;
+    // Gojo's walk in Shibuya: the waypoints, the one he heads for, and since when he has not got closer to it
+    private List<Vec3> path = List.of();
+    private int wp, wpSince;
+    private double wpBest;
+
     IntroScript(ServerPlayer player, int row) {
         this.playerId = player.getUUID();
         this.row = row;
+        this.shibuya = searchShibuya(player);
         actOne();
+    }
+
+    // The nearest Shibuya with a metro station to the player's place (or the world's spawn), out to ~6400 blocks.
+    private static java.util.concurrent.CompletableFuture<int[]> searchShibuya(ServerPlayer player) {
+        ServerLevel level = player.server.overworld();
+        BlockPos from = player.level() == level ? player.blockPosition() : level.getSharedSpawnPos();
+        return java.util.concurrent.CompletableFuture.supplyAsync(() -> {
+            try {
+                return findShibuya(level, from.getX(), from.getZ());
+            } catch (RuntimeException e) {
+                BattlegroundsMod.LOGGER.warn("[intro] busca de Shibuya falhou, ato 3 na arena", e);
+                return null;
+            }
+        }, net.minecraft.Util.backgroundExecutor());
+    }
+
+    // Rings of 64 blocks around (x0, z0): the first Shibuya biome samples, each tried for a station near it.
+    private static int[] findShibuya(ServerLevel level, int x0, int z0) {
+        final int step = 64, rings = 100;
+        List<int[]> tried = new ArrayList<>();
+        for (int r = 0; r <= rings; r++) {
+            for (int a = -r; a <= r; a++) {
+                for (int side = 0; side < 4; side++) {
+                    if (r == 0 && side > 0) {
+                        break;
+                    }
+                    int dx = side == 0 || side == 1 ? a : side == 2 ? -r : r;
+                    int dz = side == 0 ? -r : side == 1 ? r : a;
+                    int x = x0 + dx * step, z = z0 + dz * step;
+                    if (!com.starkinhon.battlegroundsmod.world.ShibuyaFeature.shibuyaAt(level, x, z)) {
+                        continue;
+                    }
+                    boolean near = false;
+                    for (int[] done : tried) {
+                        if (Math.abs(done[0] - x) < 512 && Math.abs(done[1] - z) < 512) {
+                            near = true;
+                            break;
+                        }
+                    }
+                    if (near) {
+                        continue;
+                    }
+                    tried.add(new int[] {x, z});
+                    int[] station = com.starkinhon.battlegroundsmod.world.ShibuyaFeature.introStation(level, x, z, 7);
+                    if (station != null) {
+                        return station;
+                    }
+                    if (tried.size() >= 10) {
+                        return null;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    // Whether this scene keeps that level's blocks now (intro/Intro.protectsBlocks): its real Shibuya while it is there.
+    boolean protects(net.minecraft.world.level.Level l) {
+        return real && level == l;
     }
 
     private interface Step {
@@ -73,8 +144,22 @@ final class IntroScript {
         boolean tick(IntroScript s, ServerPlayer p, int t);
     }
 
+    // where add() puts the steps: the script, or a list being made (collect) to go in later
+    private List<Step> sink;
+
     private void add(Step step) {
-        steps.add(step);
+        (sink != null ? sink : steps).add(step);
+    }
+
+    private List<Step> collect(Runnable build) {
+        List<Step> out = new ArrayList<>();
+        sink = out;
+        try {
+            build.run();
+        } finally {
+            sink = null;
+        }
+        return out;
     }
 
     void tick(ServerPlayer player) {
@@ -117,7 +202,7 @@ final class IntroScript {
 
     // Out of the arena (thrown off the edge, or under the floor): back on the act's spot (issue #379).
     private void rescue(ServerPlayer p) {
-        if (act < 0 || level == null || center == null || p.level() != level) {
+        if (act < 0 || level == null || center == null || p.level() != level || real) {
             return;
         }
         ArenaTemplate.Meta meta = ArenaTemplate.meta(ChallengeArenas.INTRO_ACTS.get(act));
@@ -170,6 +255,7 @@ final class IntroScript {
             boss.discard();
         }
         enemy = null;
+        real = false;
     }
 
     // Gojo, who walks with the player in Shibuya (not an enemy).
@@ -197,8 +283,8 @@ final class IntroScript {
     // A scene left behind by a closed game (an enemy saved in the row's chunks) never shows up twice
     // (Stark 2026-11-19: two Hashiramas): any character in this act's arena that is not this scene's goes away.
     private static void sweep(IntroScript s) {
-        if (s.level == null || s.center == null || s.act < 0) {
-            return;
+        if (s.level == null || s.center == null || s.act < 0 || s.real) {
+            return;     // in the real world nothing is the scene's to clear
         }
         int r = ArenaTemplate.meta(ChallengeArenas.INTRO_ACTS.get(s.act)).raio() + 16;
         for (SoulBoss other : s.level.getEntitiesOfClass(SoulBoss.class, new net.minecraft.world.phys.AABB(s.center).inflate(r, 96, r))) {
@@ -283,19 +369,24 @@ final class IntroScript {
             int[] j = meta.jogador(), d = meta.desafiante();
             double yaw = Mth.atan2(d[2] - j[2], d[0] - j[0]) * Mth.RAD_TO_DEG - 90;
             BlockPos at = s.center.offset(j[0], j[1], j[2]);
-            if (p.gameMode.getGameModeForPlayer() != GameType.SURVIVAL && p.gameMode.getGameModeForPlayer() != GameType.ADVENTURE) {
-                p.setGameMode(GameType.SURVIVAL);
-            }
-            p.getInventory().clearContent();
-            p.removeAllEffects();
             p.teleportTo(s.level, at.getX() + 0.5, at.getY(), at.getZ() + 0.5, (float) yaw, 0);
-            p.fallDistance = 0;
-            p.setDeltaMovement(Vec3.ZERO);
-            lend(p, power, awake, points);
+            prepare(p, power, awake, points);
             s.act = act;
             Intro.ui(p, "black", "", 0, 0);
             return true;
         };
+    }
+
+    // Survival, empty hands, no effects, still, and the scene's soul.
+    private static void prepare(ServerPlayer p, String power, List<Integer> awake, int points) {
+        if (p.gameMode.getGameModeForPlayer() != GameType.SURVIVAL && p.gameMode.getGameModeForPlayer() != GameType.ADVENTURE) {
+            p.setGameMode(GameType.SURVIVAL);
+        }
+        p.getInventory().clearContent();
+        p.removeAllEffects();
+        p.fallDistance = 0;
+        p.setDeltaMovement(Vec3.ZERO);
+        lend(p, power, awake, points);
     }
 
     // The soul of the scene, lent: its own Sincronia entry (the real one is in the backup) and a fresh fight state.
@@ -598,6 +689,7 @@ final class IntroScript {
     private Step leaveAct() {
         return (s, p, t) -> {
             s.dispose();
+            Intro.ui(p, "night", "", 0, 0);
             CombatMode.leave(p);
             if (p.getAbilities().flying) {
                 p.getAbilities().flying = false;
@@ -722,7 +814,186 @@ final class IntroScript {
 
     private static final int[] TIPS_AT = {8, 35, 60, 85};
 
+    // Act 3 goes to this world's real Shibuya when one with a metro station was found (searched since the start), else
+    // to the arenas: the steps of either come in here, once the search is over (behind the white of Act 2's end).
     private void actThree() {
+        add((s, p, t) -> {
+            if (!s.shibuya.isDone() && t < 400) {
+                return false;
+            }
+            int[] station = s.shibuya.getNow(null);
+            if (station != null) {
+                BattlegroundsMod.LOGGER.info("[intro] ato 3 em Shibuya: estação em x={} z={}", station[0], station[1]);
+            }
+            s.steps.addAll(s.index + 1, s.collect(station != null ? () -> s.realThree(station) : s::arenaThree));
+            return true;
+        });
+    }
+
+    // Shibuya for real: night on the street (for this player's eyes only: IntroHud), Gojo walking the avenue's south
+    // sidewalk with the pedestrians to the metro entrance and down its stairs, then on the island platform, where Sukuna
+    // waits at the far end. No loading in between: one place, the same world.
+    private void realThree(int[] station) {
+        add(realEnter(station));
+        add((s, p, t) -> {
+            int ox = s.center.getX(), c = s.center.getZ();
+            newGojo(s, sidewalk(s.level, ox + 92, c + 8, s.center.getY()));
+            SoulBoss gojo = s.ally();
+            if (gojo != null) {
+                gojo.setYRot(90);
+                gojo.setYHeadRot(90);
+            }
+            return true;
+        });
+        add(ui("night", "", 1, 0));
+        add(wait(4));
+        add(ui("black", "", 0, 0));
+        add(ui("flash", "", 0, 0));
+        add(ui("title", "shibuya", 80, 0));
+        add(wait(40));
+        add(route("siga_gojo"));
+        add(ui("goal", "", 0, 0));
+        add(ui("black", "", 1, 0));
+        add(wait(12));
+        add(realPlatform());
+        add(ui("black", "", 0, 0));
+        add(ui("title", "metro", 60, 0));
+        add(wait(30));
+        ending();
+    }
+
+    // The player on the avenue's south sidewalk, 96 blocks east of the station, facing it (west), once the chunk is
+    // there (a city chunk may take a moment to generate: the black stays up meanwhile, 30 s at most).
+    private Step realEnter(int[] station) {
+        return (s, p, t) -> {
+            ServerLevel overworld = p.server.overworld();
+            int ox = station[0], c = station[1], y = station[2];
+            if (t == 0) {
+                s.act = -1;
+                s.level = overworld;
+                s.center = new BlockPos(ox, y, c);
+                s.real = true;
+                Intro.ui(p, "black", "", 1, 0);
+                p.teleportTo(overworld, ox + 96.5, y + 2, c + 8.5, 90, 0);
+                p.setDeltaMovement(Vec3.ZERO);
+                p.fallDistance = 0;
+                return false;
+            }
+            BlockPos start = new BlockPos(ox + 96, y, c + 8);
+            if (!overworld.hasChunkAt(start) && t < 600) {
+                return false;
+            }
+            BlockPos ground = sidewalk(overworld, ox + 96, c + 8, y);
+            p.teleportTo(overworld, ground.getX() + 0.5, ground.getY(), ground.getZ() + 0.5, 90, 0);
+            prepare(p, "itadori", all("itadori"), 0);
+            s.act = 2;
+            return true;
+        };
+    }
+
+    // Where to stand on the sidewalk at (x, z): on top of it, or just over the street's level when something tall stands
+    // in that column (a lamp, a tree, a sign).
+    private static BlockPos sidewalk(ServerLevel level, int x, int z, int cityY) {
+        int top = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
+        if (top < cityY - 2 || top > cityY + 3) {
+            top = cityY + 1;
+        }
+        return new BlockPos(x, top, z);
+    }
+
+    // "Siga o Gojo" in the real Shibuya: he walks the sidewalk west to the metro entrance and down its stairs into the
+    // concourse, waiting whenever the player falls behind, with his tips on the way. Stuck on something (a pedestrian
+    // crowd, a stair he cannot path) for 8 s, he steps to the next point.
+    private Step route(String goalId) {
+        return (s, p, t) -> {
+            SoulBoss gojo = s.ally();
+            if (gojo == null) {
+                return true;
+            }
+            int ox = s.center.getX(), c = s.center.getZ(), y = s.center.getY();
+            if (t == 0) {
+                s.used = 0;
+                s.wp = 0;
+                s.wpSince = 0;
+                s.wpBest = Double.MAX_VALUE;
+                s.path = List.of(Vec3.atBottomCenterOf(sidewalk(s.level, ox + 32, c + 9, y)),
+                        new Vec3(ox + 20.5, y + com.starkinhon.battlegroundsmod.world.ShibuyaGen.FLOOR_C + 1, c + 9.5));
+                Intro.ui(p, "goal", goalId, 0, 1);
+            }
+            Vec3 to = s.path.get(s.wp);
+            double left = gojo.position().distanceTo(to);
+            for (int k = s.wp + 1; k < s.path.size(); k++) {
+                left += s.path.get(k - 1).distanceTo(s.path.get(k));
+            }
+            double total = 64 + s.path.get(0).distanceTo(s.path.get(1));
+            int pct = (int) Math.round(100 * Mth.clamp(1 - left / total, 0, 1));
+            if (s.used < TIPS_AT.length && pct >= TIPS_AT[s.used]) {
+                Intro.ui(p, "say", "dica" + (s.used + 1), 110, 0);
+                s.used++;
+            }
+            double d = gojo.position().distanceTo(to);
+            boolean last = s.wp == s.path.size() - 1;
+            if (d < 1.6 && !last) {
+                s.wp++;
+                s.wpSince = t;
+                s.wpBest = Double.MAX_VALUE;
+                return false;
+            }
+            boolean there = last && d < 1.6;
+            if (p.distanceTo(gojo) > 9) {
+                gojo.getNavigation().stop();
+                gojo.getLookControl().setLookAt(p, 30, 30);
+                s.wpSince = t;
+            } else if (!there && (t % 10 == 0 || gojo.getNavigation().isDone())) {
+                gojo.getNavigation().moveTo(to.x, to.y, to.z, 0.55);
+            }
+            if (d < s.wpBest - 1) {
+                s.wpBest = d;
+                s.wpSince = t;
+            } else if (!there && t - s.wpSince > 160) {
+                gojo.getNavigation().stop();
+                gojo.teleportTo(to.x, to.y, to.z);
+                s.wpSince = t;
+            }
+            return there && p.distanceTo(gojo) < 9 || t > 6000;
+        };
+    }
+
+    // Behind a short black: the player and Gojo on the island platform below, Sukuna at its far end (west, past the
+    // platform's stairs), all on the platform's floor.
+    private Step realPlatform() {
+        return (s, p, t) -> {
+            int ox = s.center.getX(), c = s.center.getZ();
+            double py = s.center.getY() + com.starkinhon.battlegroundsmod.world.ShibuyaGen.FLOOR_P + 1;
+            p.teleportTo(s.level, ox + 19.5, py, c - 1.5, 90, 0);
+            p.fallDistance = 0;
+            p.setDeltaMovement(Vec3.ZERO);
+            SoulBoss gojo = s.ally();
+            if (gojo != null) {
+                gojo.getNavigation().stop();
+                gojo.teleportTo(ox + 16.5, py, c - 1.5);
+                gojo.setYRot(90);
+                gojo.setYHeadRot(90);
+            }
+            Entity e = ModEntities.SUKUNA.get().spawn(s.level, BlockPos.containing(ox - 16.5, py, c - 1.5), MobSpawnType.EVENT);
+            if (e instanceof SoulBoss boss) {
+                boss.setPersistenceRequired();
+                boss.introHold = true;
+                boss.introMoves = Set.of();
+                boss.introFloor = 1f;
+                boss.setYRot(-90);
+                boss.setYHeadRot(-90);
+                boss.setTarget(p);
+                s.enemy = boss.getUUID();
+            } else {
+                BattlegroundsMod.LOGGER.error("[intro] o Sukuna não nasceu na estação");
+            }
+            return true;
+        };
+    }
+
+    // Act 3 on the arenas (a world with no Shibuya near): the crossing, then the station.
+    private void arenaThree() {
         add(build(2));
         add(enter(2, "itadori", all("itadori"), 0));
         add(spawnGojo());
@@ -738,6 +1009,11 @@ final class IntroScript {
         add(enter(3, "itadori", all("itadori"), 0));
         add(spawn(() -> ModEntities.SUKUNA.get(), 1f));
         add(wait(30));
+        ending();
+    }
+
+    // Down there: the talk, the Duelo de Expansões, the cut on the tunnel's white and the logo.
+    private void ending() {
         add(ui("say", "coincidencia", 70, 0));
         add(wait(75));
         add(ui("say", "licao", 70, 0));

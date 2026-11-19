@@ -56,7 +56,8 @@ public final class UniverseSpawns {
             return;
         }
         for (ServerPlayer player : event.getServer().getPlayerList().getPlayers()) {
-            if (player.isSpectator() || !player.isAlive()) {
+            // the introduction's scenes (Shibuya's real streets in its last act) bring no creatures of their own
+            if (player.isSpectator() || !player.isAlive() || com.starkinhon.battlegroundsmod.intro.Intro.active(player)) {
                 continue;
             }
             ServerLevel level = player.serverLevel();

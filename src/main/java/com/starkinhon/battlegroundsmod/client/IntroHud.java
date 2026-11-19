@@ -64,6 +64,8 @@ public final class IntroHud {
     private static String flashText = "";
     private static long logoAt = -1;
     private static int loading = -1;
+    // Act 3 in the real Shibuya: night on this player's screen only (the world's own time goes on for everyone else)
+    private static boolean night;
     private static long last = System.currentTimeMillis();
 
     private IntroHud() {
@@ -136,6 +138,7 @@ public final class IntroHud {
                 }
             }
             case "loading" -> loading = a;
+            case "night" -> night = a > 0;
             case "logo" -> {
                 logoAt = now;
                 goal = "";
@@ -154,8 +157,18 @@ public final class IntroHud {
         black = blackTo = 0;
         logoAt = -1;
         loading = -1;
+        night = false;
         if (Minecraft.getInstance().screen instanceof CardScreen) {
             Minecraft.getInstance().setScreen(null);
+        }
+    }
+
+    // Every frame (BattlegroundsModClient): the client's clock held at night while the scene asks for it (the server's
+    // time packets would move it back between frames).
+    public static void holdNight() {
+        Minecraft mc = Minecraft.getInstance();
+        if (night && mc.level != null) {
+            mc.level.setDayTime(18000L);
         }
     }
 

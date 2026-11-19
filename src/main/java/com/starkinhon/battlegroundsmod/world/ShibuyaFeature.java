@@ -356,6 +356,53 @@ public final class ShibuyaFeature extends Feature<NoneFeatureConfiguration> {
         }
     }
 
+    // The introduction's last act (intro/IntroScript) walks this world's real Shibuya down into a metro station: the
+    // station nearest (x, z) among the crossings within `cells` of it whose station is really built (the city all along
+    // it) and whose avenue's south sidewalk runs in the city for the walk east of it: {ox, c, cityY} (ox the station's x,
+    // c its avenue's z, cityY the street's level), or null. Safe off the server thread (the generator threads call the
+    // same caches).
+    public static int[] introStation(ServerLevel level, int x, int z, int cells) {
+        ChunkGenerator generator = level.getChunkSource().getGenerator();
+        RandomState random = level.getChunkSource().randomState();
+        long worldSeed = level.getSeed();
+        int worldKey = (int) (worldSeed ^ (worldSeed >>> 32));
+        int seed = worldKey ^ SALT;
+        int cityY = cityY(generator);
+        City city = new City(generator, random, worldKey, cityY);
+        int ci = Math.round(z / (float) ShibuyaGen.CELL), cj = Math.round(x / (float) ShibuyaGen.CELL);
+        int[] best = null;
+        long bestD = Long.MAX_VALUE;
+        for (int i = ci - cells; i <= ci + cells; i++) {
+            for (int j = cj - cells; j <= cj + cells; j++) {
+                if (!hasStation(i, j, seed)) {
+                    continue;
+                }
+                int c = ShibuyaGen.street('x', i, seed).c(), ox = ShibuyaGen.street('z', j, seed).c();
+                long d = (long) (ox - x) * (ox - x) + (long) (c - z) * (c - z);
+                if (d >= bestD) {
+                    continue;
+                }
+                boolean walk = true;
+                for (int a = 24; a <= 104 && walk; a += 8) {
+                    walk = city.core(ox + a, c + 8);
+                }
+                if (!walk || station(i, j, seed, worldKey, city) == NONE) {
+                    continue;
+                }
+                best = new int[] {ox, c, cityY};
+                bestD = d;
+            }
+        }
+        return best;
+    }
+
+    // Whether the biome at (x, z) on the city's level is Shibuya (the introduction's search for it).
+    public static boolean shibuyaAt(ServerLevel level, int x, int z) {
+        ChunkGenerator generator = level.getChunkSource().getGenerator();
+        return generator.getBiomeSource().getNoiseBiome(x >> 2, QuartPos.fromBlock(cityY(generator)), z >> 2,
+                level.getChunkSource().randomState().sampler()).is(ModWorldgen.SHIBUYA);
+    }
+
     // Which crossings get a station (Stark 2026-11-19: "aumentar a taxa de spawn do metrô"; it was 60% of the scramble
     // ones). Every candidate, except that a station's tunnels run 110 each way along its avenue: two stations on one
     // avenue less than 4 crossings (256 blocks) apart would cut into each other (each fills its whole length with stone first, and the
