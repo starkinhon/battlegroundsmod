@@ -312,5 +312,51 @@
     "sounds": [
       "battlegroundsmod:dagon_onda"
     ]
+  },
+  "jogo_ronco": {
+    "sounds": [
+      {
+        "name": "battlegroundsmod:jogo_ronco",
+        "stream": true
+      }
+    ]
+  },
+  "jogo_chiado": {
+    "sounds": [
+      {
+        "name": "battlegroundsmod:jogo_chiado",
+        "stream": true
+      }
+    ]
+  },
+  "jogo_borbulha": {
+    "sounds": [
+      {
+        "name": "battlegroundsmod:jogo_borbulha",
+        "stream": true
+      }
+    ]
+  },
+  "jogo_plop": {
+    "sounds": [
+      "battlegroundsmod:jogo_plop"
+    ]
+  },
+  "jogo_baque": {
+    "sounds": [
+      "battlegroundsmod:jogo_baque"
+    ]
+  },
+  "jogo_explosao": {
+    "subtitle": "subtitles.battlegroundsmod.jogo_explosao",
+    "sounds": [
+      "battlegroundsmod:jogo_explosao"
+    ]
+  },
+  "jogo_trovao": {
+    "subtitle": "subtitles.battlegroundsmod.jogo_trovao",
+    "sounds": [
+      "battlegroundsmod:jogo_trovao"
+    ]
   }
 }

@@ -213,7 +213,7 @@ public final class ScreenFx {
     }
 
     static boolean needsScene() {
-        return PreviewFx.screenOn() || ColoniaAirFx.gradeOn() || ShibuyaAirFx.gradeOn() || KyotoAirFx.gradeOn() || TemploAirFx.gradeOn() || HanamiAirFx.gradeOn() || AldeiaAirFx.gradeOn() || DagonAirFx.gradeOn() || Realismo.active() || impact != null || !WARPS.isEmpty() || ticks - heldAt <= 1 || radial != null && radial.k(ticks) > 0 || heldBlur() > 0;
+        return PreviewFx.screenOn() || ColoniaAirFx.gradeOn() || ShibuyaAirFx.gradeOn() || KyotoAirFx.gradeOn() || TemploAirFx.gradeOn() || HanamiAirFx.gradeOn() || AldeiaAirFx.gradeOn() || DagonAirFx.gradeOn() || JogoAirFx.gradeOn() || Realismo.active() || impact != null || !WARPS.isEmpty() || ticks - heldAt <= 1 || radial != null && radial.k(ticks) > 0 || heldBlur() > 0;
     }
 
     // The level's camera for this frame, so world positions can be found on screen later (also from the GUI).
@@ -242,7 +242,8 @@ public final class ScreenFx {
         boolean hanami = HanamiAirFx.gradeOn();
         boolean aldeia = AldeiaAirFx.gradeOn();
         boolean dagon = DagonAirFx.gradeOn();
-        if (!warp && blur <= 0 && !real && !preview && !colonia && !shibuya && !kyoto && !templo && !hanami && !aldeia && !dagon) {
+        boolean jogo = JogoAirFx.gradeOn();
+        if (!warp && blur <= 0 && !real && !preview && !colonia && !shibuya && !kyoto && !templo && !hanami && !aldeia && !dagon && !jogo) {
             return;
         }
         FxPost.beginPasses();
@@ -283,6 +284,10 @@ public final class ScreenFx {
         if (dagon) {
             // the Mar de Dagon's screen grade (too vivid and warm by day, blue edges at night)
             DagonAirFx.gradePass(levelPartial);
+        }
+        if (jogo) {
+            // the Terras do Jogo's screen grade (sulfur haze by day, the lava's glow from below at night, lightning flash)
+            JogoAirFx.gradePass(levelPartial);
         }
         if (preview) {
             // the combat flight page's screen (shockwave, speed lines, impact frame), last like on the page

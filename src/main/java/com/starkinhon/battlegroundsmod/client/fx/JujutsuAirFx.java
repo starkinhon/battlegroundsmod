@@ -34,7 +34,8 @@ import net.neoforged.neoforge.client.event.ViewportEvent;
 // - Mar de Dagon: not here any more, its own full ambience is DagonAirFx (surf, caustics, glints, the whirlpool).
 // - Floresta de Hanami: only the golden pollen and the fireflies at night stay here (Stark: "eram bem bonitas"); the
 //   petals, sun flecks, pollen clouds, the Heart's beat, its fog and grade are HanamiAirFx.
-// - Terras do Jogo: embers rising, dark ash falling like snow; a red fog that burns redder at night; vultures.
+// - Terras do Jogo: only the vultures stay here; the volcano's column, bombs, lava, fumaroles, gas, fog and grade are
+//   JogoAirFx.
 // - Outono de Kyoto: not here any more, its own full ambience is KyotoAirFx (mirror pond, koi, leaves, light-up).
 // - Colônia do Jogo do Abate: not here any more, it has its own full ambience in ColoniaAirFx.
 // - Shibuya: not here any more either, its own ambience is ShibuyaAirFx (neon, steam, smog, metro).
@@ -99,10 +100,8 @@ public final class JujutsuAirFx {
                 new Air(Kind.GLOW_MOTE, 160, cs("#ffd040", "#fff4b0", "#ffe070"), 0.025, 0.05),
                 new Air(Kind.FIREFLY, 60, cs("#c8ff8a", "#e8ffb0"), 0.05, 0.08)),
                 null, 0, 0, 1, 0, false)),
-        new State(new Mood("terras_do_jogo", ModWorldgen.TERRAS_DO_JOGO, List.of(
-                new Air(Kind.EMBER, 220, cs("#ff8a2a", "#ffb040", "#ff5a14", "#ffd070"), 0.03, 0.06),
-                new Air(Kind.ASH, 260, cs("#5a5452", "#7a7270", "#3e3a38"), 0.04, 0.08)),
-                c("#8a3a1a"), 0.3f, 0.55f, 0.6f, 5, true)),
+        new State(new Mood("terras_do_jogo", ModWorldgen.TERRAS_DO_JOGO, List.of(),
+                null, 0, 0, 1, 5, true)),
     };
 
     private JujutsuAirFx() {
