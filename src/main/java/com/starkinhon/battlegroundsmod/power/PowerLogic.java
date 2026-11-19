@@ -168,7 +168,7 @@ public final class PowerLogic {
                     com.starkinhon.battlegroundsmod.skill.StaminaSpec.get().ganhoAtaqueBasePct());
         }
         if (!data.noCooldown) {
-            data.cooldowns[slot] = ability.cooldown();
+            data.cooldowns[slot] = com.starkinhon.battlegroundsmod.item.GojoBlindfoldItem.cooldown(player, power, ability.cooldown());
             if (skill && power != null) {
                 com.starkinhon.battlegroundsmod.power.powers.MoonDemon.lockOthers(player, power, slot);
             }

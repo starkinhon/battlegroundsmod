@@ -547,7 +547,8 @@ public abstract class SoulBoss extends Monster {
         if (!target.isAlive() || target.isRemoved() || target.level() != level()) {
             return false;
         }
-        return !(target instanceof Player player) || !(player.isCreative() || player.isSpectator());
+        return !(target instanceof Player player) || !(player.isCreative() || player.isSpectator()
+                || com.starkinhon.battlegroundsmod.item.SoulCandyItem.outOfBody(player));
     }
 
     @Override

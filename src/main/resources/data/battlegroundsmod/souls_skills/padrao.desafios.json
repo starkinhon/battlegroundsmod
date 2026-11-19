@@ -65,7 +65,7 @@
       "pilar": "minecraft:quartz_pillar",
       "desafios": [
         {"id": "rukia", "foco": "Gelo. Congela você e o chão em volta.", "itens": ["battlegroundsmod:pilula_alma 3"]},
-        {"id": "byakuya", "foco": "Pétalas. Mil lâminas da Senbonzakura.", "itens": ["battlegroundsmod:mascara_hollow"]}
+        {"id": "byakuya", "foco": "Pétalas. Mil lâminas da Senbonzakura.", "itens": ["battlegroundsmod:pilula_alma 3"]}
       ]
     },
     {

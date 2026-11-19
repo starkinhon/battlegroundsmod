@@ -161,6 +161,15 @@ public final class ModEntities {
                     .clientTrackingRange(16)
                     .build("naruto_clone"));
 
+    // Principal Yaga's cursed plush, summoned by the Boneco Amaldiçoado (item/CursedPlush, 2026-11-19).
+    public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.item.CursedPlush>> CURSED_PLUSH = ENTITY_TYPES.register("boneco_amaldicoado",
+            () -> EntityType.Builder.<com.starkinhon.battlegroundsmod.item.CursedPlush>of(com.starkinhon.battlegroundsmod.item.CursedPlush::new, MobCategory.MISC)
+                    .sized(0.8f, 1.25f)
+                    .eyeHeight(1f)
+                    .noSummon()
+                    .clientTrackingRange(10)
+                    .build("boneco_amaldicoado"));
+
     // What a ninja throws: Shuriken, Kunai, Papel-Bomba (item/NinjaThrown, Itens de Naruto 2026-11-12).
     public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.item.NinjaThrown>> NINJA_THROWN = ENTITY_TYPES.register("ninja_thrown",
             () -> EntityType.Builder.<com.starkinhon.battlegroundsmod.item.NinjaThrown>of(com.starkinhon.battlegroundsmod.item.NinjaThrown::new, MobCategory.MISC)
@@ -418,6 +427,7 @@ public final class ModEntities {
         event.put(DUMMY_ATTACKER.get(), TrainingDummy.createAttributes().build());
         event.put(AIZEN_ILLUSION.get(), AizenIllusion.createAttributes().build());
         event.put(NARUTO_CLONE.get(), NarutoClone.createAttributes().build());
+        event.put(CURSED_PLUSH.get(), com.starkinhon.battlegroundsmod.item.CursedPlush.createAttributes().build());
         for (Supplier<EntityType<SoulMob>> type : SUB_MOBS) {
             event.put(type.get(), SoulBoss.createAttributes().build());
         }
