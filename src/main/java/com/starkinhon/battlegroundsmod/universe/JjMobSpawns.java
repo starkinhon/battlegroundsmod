@@ -21,7 +21,7 @@ import net.minecraft.world.phys.AABB;
 
 // The Jujutsu biomes' curses out in the world (Stark 2026-11-14, preview tools/mobs/jjmobs approved: "porta"), each
 // biome with its own, replacing the old Maldição Menor, Maldição de Grau 2 and Feiticeiro Renegado there: the flies in
-// swarms, the big heads and the transfigured in Shibuya's streets, and once in a while the cursed train; the worms, the
+// swarms, the big heads and the transfigured in Shibuya's cursed buildings, and the cursed train in its tunnel; the worms, the
 // trees of eyes and the womb in the Floresta Negra, and at night the Rastejante; the straw corpses, the kitsune and the
 // bells in the Templos; the scarecrows, the Okiku and, at night, the Kuchisake in the Aldeia; the fish in schools in the
 // air, the crabs on the shore, the embryos and the drowned in the Mar de Dagon; the sprouts, the boars and the
@@ -47,7 +47,12 @@ final class JjMobSpawns {
     private enum Place {
         GROUND,
         AIR,
-        SHORE
+        SHORE,
+        // Shibuya (Stark 2026-11-19: "os prédios roxos... é para as maldições estarem neles, não pelas ruas"): on the
+        // floors of the cursed buildings (the abandoned floor every 4 storeys, under the purple smoke)
+        CURSED,
+        // the cursed train in the metro's cursed tunnel (the stained west one), only when the player is down there
+        TUNNEL
     }
 
     private static Entry e(String id, int weight, int min, int max) {
@@ -58,14 +63,17 @@ final class JjMobSpawns {
         return new Entry("jj_" + id, weight, min, max, place);
     }
 
-    private static List<Entry> table(ServerLevel level, Holder<Biome> biome) {
+    private static List<Entry> table(ServerLevel level, Holder<Biome> biome, boolean under) {
         boolean day = level.isDay();
         List<Entry> list = new ArrayList<>();
         if (biome.is(ModWorldgen.SHIBUYA)) {
-            list.add(e("mosca", 5, 2, 4, Place.AIR));
-            list.add(e("cabecao", 2, 1, 1));
-            list.add(e("transfigurado", day ? 3 : 5, 2, 3));
-            list.add(e("metro", 1, 1, 1));
+            if (under) {
+                list.add(e("metro", 1, 1, 1, Place.TUNNEL));
+            } else {
+                list.add(e("mosca", 5, 2, 4, Place.CURSED));
+                list.add(e("cabecao", 2, 1, 1, Place.CURSED));
+                list.add(e("transfigurado", day ? 3 : 5, 2, 3, Place.CURSED));
+            }
         } else if (biome.is(ModWorldgen.FLORESTA_NEGRA)) {
             list.add(e("verme", 4, 2, 3));
             list.add(e("olhos", 3, 1, 2));
@@ -124,7 +132,8 @@ final class JjMobSpawns {
                 continue;
             }
             Holder<Biome> biome = level.getBiome(level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, column));
-            List<Entry> table = table(level, biome);
+            boolean under = player.getY() < level.getSeaLevel() - 3;
+            List<Entry> table = table(level, biome, under);
             if (table.isEmpty()) {
                 continue;
             }
@@ -134,6 +143,15 @@ final class JjMobSpawns {
                 continue;
             }
             EntityType<JjMob> type = supplier.get();
+            if (pick.place() == Place.CURSED || pick.place() == Place.TUNNEL) {
+                // a column that has the spot (a random one rarely does): looked for around the player
+                int[] col = findColumn(level, player, pick.place(), random);
+                if (col == null) {
+                    continue;
+                }
+                x = col[0];
+                z = col[1];
+            }
             boolean big = com.starkinhon.battlegroundsmod.animal.jjmob.JjMobSpec.get(pick.id()).exclusive;
             double r = big ? 96 : 24;
             // the same kind not crowding one place; the big ones alone in a wide area
@@ -141,7 +159,8 @@ final class JjMobSpawns {
                     m -> m.getType() == type).size() >= (big ? 1 : pick.max())) {
                 continue;
             }
-            if (spawnGroup(level, type, pick, x, z, biome.unwrapKey().orElse(null), random)) {
+            // (deep under the city the biome may be a cave's: the tunnel's train keeps to its tunnel instead)
+            if (spawnGroup(level, type, pick, x, z, pick.place() == Place.TUNNEL ? null : biome.unwrapKey().orElse(null), random)) {
                 return;
             }
         }
@@ -176,6 +195,10 @@ final class JjMobSpawns {
             if (pos == null || biome != null && !level.getBiome(pos).is(biome)) {
                 continue;
             }
+            // (inside a building's floor or a tunnel the body must fit: the big head is 1.2 wide and 2.5 tall)
+            if (!level.noCollision(type.getSpawnAABB(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5))) {
+                continue;
+            }
             if (type.spawn(level, pos, MobSpawnType.EVENT) != null) {
                 done++;
             }
@@ -184,6 +207,12 @@ final class JjMobSpawns {
     }
 
     private static BlockPos place(ServerLevel level, Place place, int x, int z) {
+        if (place == Place.CURSED) {
+            return UniverseSpawns.inStructure(level, x, z) ? null : cursedSpot(level, x, z, level.getRandom());
+        }
+        if (place == Place.TUNNEL) {
+            return tunnelSpot(level, x, z);
+        }
         BlockPos ground = UniverseSpawns.ground(level, x, z);
         if (ground == null) {
             return null;
@@ -206,5 +235,72 @@ final class JjMobSpawns {
                 return ground;
             }
         }
+    }
+
+    private static int[] findColumn(ServerLevel level, ServerPlayer player, Place place, RandomSource random) {
+        for (int k = 0; k < 24; k++) {
+            int x, z;
+            if (place == Place.TUNNEL) {
+                // along the tunnel the player is in (the tracks run along x, 14 wide)
+                int d = MIN_DIST + random.nextInt(MAX_DIST - MIN_DIST + 1);
+                x = player.getBlockX() + (random.nextBoolean() ? d : -d);
+                z = player.getBlockZ() + random.nextInt(17) - 8;
+            } else {
+                double angle = random.nextDouble() * Math.PI * 2;
+                int d = MIN_DIST + random.nextInt(MAX_DIST - MIN_DIST + 1);
+                x = player.getBlockX() + (int) Math.round(Math.cos(angle) * d);
+                z = player.getBlockZ() + (int) Math.round(Math.sin(angle) * d);
+            }
+            if (!level.hasChunkAt(new BlockPos(x, 0, z)) || UniverseSpawns.inStructure(level, x, z)) {
+                continue;
+            }
+            if ((place == Place.TUNNEL ? tunnelSpot(level, x, z) : cursedSpot(level, x, z, random)) != null) {
+                return new int[] {x, z};
+            }
+        }
+        return null;
+    }
+
+    // a spot on an abandoned floor of a cursed building in this column (a random one of its floors), 3 free above
+    private static BlockPos cursedSpot(ServerLevel level, int x, int z, RandomSource random) {
+        List<BlockPos> floors = new ArrayList<>();
+        BlockPos.MutableBlockPos m = new BlockPos.MutableBlockPos();
+        int y0 = level.getSeaLevel() + 2, y1 = Math.min(level.getMaxBuildHeight() - 4, level.getSeaLevel() + 120);
+        for (int y = y0; y <= y1; y++) {
+            if (!level.getBlockState(m.set(x, y, z)).is(com.starkinhon.battlegroundsmod.JujutsuBlocks.ABANDONED_FLOOR.get())) {
+                continue;
+            }
+            if (level.getBlockState(m.set(x, y + 1, z)).isAir() && level.getBlockState(m.set(x, y + 2, z)).isAir()
+                    && level.getBlockState(m.set(x, y + 3, z)).isAir()) {
+                floors.add(new BlockPos(x, y + 1, z));
+            }
+        }
+        return floors.isEmpty() ? null : floors.get(random.nextInt(floors.size()));
+    }
+
+    // a spot on the rails of the cursed tunnel in this column: a rail with room above and the curse's stains or veins
+    // on the tunnel's walls beside it
+    private static BlockPos tunnelSpot(ServerLevel level, int x, int z) {
+        BlockPos.MutableBlockPos m = new BlockPos.MutableBlockPos();
+        int sea = level.getSeaLevel();
+        for (int y = sea - 20; y <= sea - 8; y++) {
+            if (!level.getBlockState(m.set(x, y, z)).is(com.starkinhon.battlegroundsmod.JujutsuBlocks.RAIL.get())) {
+                continue;
+            }
+            if (!level.getBlockState(m.set(x, y + 1, z)).isAir() || !level.getBlockState(m.set(x, y + 2, z)).isAir()) {
+                continue;
+            }
+            for (int dz = -8; dz <= 8; dz++) {
+                for (int dy = 0; dy <= 6; dy++) {
+                    net.minecraft.world.level.block.state.BlockState b = level.getBlockState(m.set(x, y + dy, z + dz));
+                    if (b.is(com.starkinhon.battlegroundsmod.JujutsuBlocks.CURSED_VEIN.get())
+                            || b.is(com.starkinhon.battlegroundsmod.JujutsuBlocks.CURSE_STAIN.get())) {
+                        return new BlockPos(x, y + 1, z);
+                    }
+                }
+            }
+            return null;
+        }
+        return null;
     }
 }

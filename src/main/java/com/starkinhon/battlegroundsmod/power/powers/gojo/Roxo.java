@@ -401,7 +401,10 @@ public final class Roxo {
             int surface = level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z) - 1;
             int top = (int) Math.min(surface, Math.min(cy + span, cy + irr.altura()));
             int dig = (int) Math.round(irr.profundidade() * Math.sqrt(Math.max(0, 1 - k * k)) * (0.85 + 0.3 * hash(x, 7, z)));
-            int bottom = (int) Math.max(Math.max(cy - span, ground - dig), level.getMinBuildHeight());
+            // (the bowl is dug from the lower of the ground and the blast's middle: under a building the heightmap's ground is
+            // its roof, and the bowl stopped there, leaving the building's lower part standing in neat squares, Stark
+            // 2026-11-19)
+            int bottom = (int) Math.max(Math.max(cy - span, Math.min(ground, cy) - dig), level.getMinBuildHeight());
             for (int y = top; y >= bottom; y--) {
                 pos.set(x, y, z);
                 if (eraseBlock(level, pos)) {

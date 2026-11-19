@@ -35,7 +35,7 @@ import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConf
 // the land back. Per chunk, in the preview's order, on a box of the chunk and 26 around it (so the wires between poles
 // and the trees across the chunk's edge come out the same from both sides):
 // 1. the ground of the streets and lots (only where the city is: the biome all around for 8);
-// 2. the metro stations: one under each big scramble crossing (kept 4 crossings apart on an avenue: hasStation) with
+// 2. the metro stations: one under the crossings of two avenues (kept 4 crossings apart on an avenue: hasStation) with
 //    the city all along it, built once and kept (concourse, platform, train, tunnels of 110 each way);
 // 3. the blocks: alleys, buildings, skyscrapers, shrines and parking lots, each block built once and kept, only when
 //    the city covers it whole;
@@ -51,7 +51,7 @@ public final class ShibuyaFeature extends Feature<NoneFeatureConfiguration> {
     // and ~28 stations, from several generator threads at once, so a small cache kept throwing them away and building
     // the same metro stations again and again (the Souls world test of 2026-11-13 fell many seconds behind).
     private static final Cache<Long, int[]> PLANS = CacheBuilder.newBuilder().maximumSize(256).build();
-    private static final Cache<Long, int[]> STATIONS = CacheBuilder.newBuilder().maximumSize(48).build();
+    private static final Cache<Long, int[]> STATIONS = CacheBuilder.newBuilder().maximumSize(96).build();
     private static final Cache<Long, Boolean> EMPTY = CacheBuilder.newBuilder().maximumSize(16384).build();
     private static final Cache<Long, Boolean> QUARTS = CacheBuilder.newBuilder().maximumSize(65536).build();
     private static final Cache<Long, int[]> FOOTPRINTS = CacheBuilder.newBuilder().maximumSize(1024).build();
@@ -396,29 +396,33 @@ public final class ShibuyaFeature extends Feature<NoneFeatureConfiguration> {
         }
     }
 
-    // Which scramble crossings get a station (Stark 2026-11-19: "aumentar a taxa de spawn do metrô"; it was 60% of them).
-    // Now every one, except that a station's tunnels run 110 each way along its avenue: two stations on one avenue less
-    // than 4 crossings (256 blocks) apart would cut into each other (each fills its whole length with stone first, and the
-    // client finds no station between them), so of the scramble crossings within 3 on the same avenue only the one with
-    // the smallest draw gets one (the grid's middle always).
+    // Which crossings get a station (Stark 2026-11-19: "aumentar a taxa de spawn do metrô"; it was 60% of the scramble
+    // ones). Every candidate, except that a station's tunnels run 110 each way along its avenue: two stations on one
+    // avenue less than 4 crossings (256 blocks) apart would cut into each other (each fills its whole length with stone first, and the
+    // client finds no station between them), so of the candidates within 3 on the same avenue only the first by
+    // priority gets one (the grid's middle always).
+    // 2026-11-19 (second test, "ainda tá baixo... é uma estrutura muito foda pra ficar tão escondida"): every crossing of
+    // two avenues is a candidate, the scramble ones first (about 70% more stations than scrambles only).
     static boolean hasStation(int i, int j, int seed) {
-        if (!ShibuyaGen.scramble(i, j, seed)) {
+        if (!candidate(i, j, seed)) {
             return false;
         }
-        if (i == 0 && j == 0) {
-            return true;
-        }
-        double h = JjkGen.hash3(i, j, 61, seed);
+        double h = priority(i, j, seed);
         for (int dj = -3; dj <= 3; dj++) {
             int j2 = j + dj;
-            if (dj == 0 || !ShibuyaGen.scramble(i, j2, seed)) {
-                continue;
-            }
-            if (i == 0 && j2 == 0 || JjkGen.hash3(i, j2, 61, seed) < h) {
+            if (dj != 0 && candidate(i, j2, seed) && priority(i, j2, seed) < h) {
                 return false;
             }
         }
         return true;
+    }
+
+    private static boolean candidate(int i, int j, int seed) {
+        return ShibuyaGen.scramble(i, j, seed) || ShibuyaGen.street('x', i, seed).avenue() && ShibuyaGen.street('z', j, seed).avenue();
+    }
+
+    private static double priority(int i, int j, int seed) {
+        return JjkGen.hash3(i, j, 61, seed) - (ShibuyaGen.scramble(i, j, seed) ? 1 : 0) - (i == 0 && j == 0 ? 5 : 0);
     }
 
     // The holes the station entrances open in the sidewalk (y = 0) near a block, as column keys.
