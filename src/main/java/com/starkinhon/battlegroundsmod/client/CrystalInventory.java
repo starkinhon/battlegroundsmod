@@ -34,15 +34,18 @@ import net.minecraft.world.item.ItemStack;
 // built once per soul into a texture; the moving parts are plain fills each frame. Anything that fails turns the whole
 // thing off and the vanilla inventory comes back.
 public final class CrystalInventory {
-    // Room around the 176x166 vanilla box for the crystals.
-    private static final int PAD_X = 56;
-    private static final int PAD_Y = 60;
+    // Room around the 176x166 vanilla box for the crystals (big enough that no crystal is cut flat by the picture's edge;
+    // crystal() also shortens any that would still poke out, so the tips stay pointed).
+    private static final int PAD_X = 72;
+    private static final int PAD_Y = 84;
     private static final int W = 176 + PAD_X * 2;
     private static final int H = 166 + PAD_Y + 44;
     static final float NO_SOUL_HUE = 265f;
 
     private static boolean broken;
     private static String builtFor;
+    // True while the crystal inventory is the one on screen (set every frame by renderBg).
+    private static boolean drawing;
     private static int[] ramp;
     private static float hue;
     private static ResourceLocation baseTex;
@@ -62,7 +65,13 @@ public final class CrystalInventory {
     }
 
     public static boolean active() {
-        return !broken && builtFor != null && FxConfig.inventoryStyle() != 2;
+        return drawing && !broken && ramp != null;
+    }
+
+    // The player's soul id, or "" without one (Humano). No soul = Minecraft's own inventory and hotbar (Stark 2026-11-19).
+    static String soulOf(Player player) {
+        com.starkinhon.battlegroundsmod.power.PowerData data = player.getData(ModAttachments.POWER);
+        return data.hasPower() ? data.power : "";
     }
 
     // Light text color for the "Crafting" title (vanilla's dark gray would vanish on the crystals).
@@ -72,6 +81,7 @@ public final class CrystalInventory {
 
     // Called from InventoryScreen.renderBg (mixin). Returns false to let vanilla draw its own background.
     public static boolean renderBg(GuiGraphics g, int left, int top, int mouseX, int mouseY, AbstractContainerMenu menu) {
+        drawing = false;
         if (broken || FxConfig.inventoryStyle() == 2) {
             return false;
         }
@@ -81,14 +91,15 @@ public final class CrystalInventory {
             return false;
         }
         try {
-            String soul = player.getData(ModAttachments.POWER).power;
-            if (soul == null) {
-                soul = "";
+            String soul = soulOf(player);
+            if (soul.isEmpty()) {
+                return false;
             }
             if (!soul.equals(builtFor)) {
                 build(soul);
             }
             draw(g, left, top, mouseX, mouseY, menu, player);
+            drawing = true;
             return true;
         } catch (Exception e) {
             broken = true;
@@ -254,12 +265,16 @@ public final class CrystalInventory {
         return list;
     }
 
-    // Puts the row under the inventory (called every frame: the recipe book moves the inventory sideways).
-    public static void placeButtons(List<StyleButton> buttons, int left, int top) {
+    // Puts the row in the screen's top right corner (Stark 2026-11-19), called every frame. Hidden without a soul: the
+    // inventory is Minecraft's own then and the buttons would change nothing.
+    public static void placeButtons(List<StyleButton> buttons, int screenWidth) {
+        Player player = Minecraft.getInstance().player;
+        boolean show = player != null && !soulOf(player).isEmpty();
         int total = BUTTON_W * 3 + BUTTON_GAP * 2;
-        int x = left + (176 - total) / 2;
+        int x = screenWidth - total - 6;
         for (StyleButton button : buttons) {
-            button.setPosition(x + button.style * (BUTTON_W + BUTTON_GAP), top + 170);
+            button.setPosition(x + button.style * (BUTTON_W + BUTTON_GAP), 6);
+            button.visible = show;
         }
     }
 
@@ -474,6 +489,21 @@ public final class CrystalInventory {
         double nx = -Math.cos(a);
         double ny = -Math.sin(a);
         boolean leftLit = (Math.cos(a) + Math.sin(a)) > -0.2;
+        // Never cut flat by the picture's edge: a crystal that would poke out gets shorter, keeping its point.
+        double m = 3;
+        if (dx > 1e-6) {
+            len = Math.min(len, (cw - m - x) / dx);
+        } else if (dx < -1e-6) {
+            len = Math.min(len, (x - m) / -dx);
+        }
+        if (dy > 1e-6) {
+            len = Math.min(len, (ch - m - y) / dy);
+        } else if (dy < -1e-6) {
+            len = Math.min(len, (y - m) / -dy);
+        }
+        if (len < 4) {
+            return;
+        }
         int[] layer = new int[cw * ch];
         double r = len + w + 2;
         double ts = 1 - tf;
