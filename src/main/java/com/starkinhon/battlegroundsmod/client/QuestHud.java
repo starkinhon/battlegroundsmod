@@ -99,9 +99,18 @@ public final class QuestHud {
         return Component.translatable("hud.battlegroundsmod.missao." + key, args).getString();
     }
 
-    // The mission of a quest id (est_<place>[_state] = a structure's).
+    // The mission of a quest id (est_<place>[_state] = a structure's; the activities of universe/DbActivities run in a
+    // structure too: kame_*, gravidade, <waves>_luta). Without it the panel fell back to Bulma's face (Stark 2026-11-19:
+    // the Kame's milk run showed Bulma).
     private static Journal.Mission missionOf(String quest) {
-        if (quest == null || !quest.startsWith("est_")) {
+        if (quest == null) {
+            return null;
+        }
+        String activity = activityPlace(quest);
+        if (activity != null) {
+            return Journal.mission(activity);
+        }
+        if (!quest.startsWith("est_")) {
             return null;
         }
         String rest = quest.substring(4);
@@ -113,6 +122,31 @@ public final class QuestHud {
             }
         }
         return rest.equals("pico") ? Journal.mission("myoboku") : null;
+    }
+
+    // The structure an activity of universe/DbActivities belongs to (its Hud ids), or null.
+    private static String activityPlace(String quest) {
+        if (quest.startsWith("kame_")) {
+            return "kame";
+        }
+        return switch (quest) {
+            case "gravidade" -> "nave";
+            case "cell_luta" -> "cell";
+            case "babidi_luta" -> "babidi";
+            case "namek_luta" -> "vila";
+            default -> null;
+        };
+    }
+
+    // The face of a Naruto structure with no mission in the journal (est_covil, est_deserto): who lives there.
+    private static String narutoFace(String quest) {
+        if (quest.startsWith("est_covil")) {
+            return "ninja_som_0";
+        }
+        if (quest.startsWith("est_deserto")) {
+            return "marionetista_0";
+        }
+        return null;
     }
 
     public static void render(GuiGraphics graphics, DeltaTracker deltaTracker) {
@@ -161,6 +195,11 @@ public final class QuestHud {
         String text = Component.translatable("quest.battlegroundsmod." + id, count, goal).getString();
         String skin = m != null ? m.skin() : "npc_bulma";
         int uc = m != null && m.uni().equals("naruto") ? 0xF28C28 : 0xFF9A2E;
+        String naruto = m == null ? narutoFace(id) : null;
+        if (naruto != null) {
+            skin = naruto;
+            uc = 0xF28C28;
+        }
         if (m == null && id.startsWith("cam_")) {
             // the Caminho (universe/GuidedPath): who sends you there, in the path's color
             String face = "quest.battlegroundsmod." + id + ".rosto";
