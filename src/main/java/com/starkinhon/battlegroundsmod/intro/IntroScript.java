@@ -79,8 +79,24 @@ final class IntroScript {
 
     void tick(ServerPlayer player) {
         if (card) {
+            // the card pauses the game only in single player; on a LAN the server goes on, so the enemy at least
+            // stands still while it is open (issue #379)
+            SoulBoss boss = boss();
+            if (boss != null && !boss.introHold) {
+                boss.introHold = true;
+                heldForCard = true;
+            }
+            keepEnemy(player);
             return;
         }
+        if (heldForCard) {
+            heldForCard = false;
+            SoulBoss boss = boss();
+            if (boss != null) {
+                boss.introHold = false;
+            }
+        }
+        rescue(player);
         if (index < 0 || steps.get(index).tick(this, player, t)) {
             index++;
             t = 0;
@@ -95,6 +111,24 @@ final class IntroScript {
             t++;
         }
         keepEnemy(player);
+    }
+
+    private boolean heldForCard;
+
+    // Out of the arena (thrown off the edge, or under the floor): back on the act's spot (issue #379).
+    private void rescue(ServerPlayer p) {
+        if (act < 0 || level == null || center == null || p.level() != level) {
+            return;
+        }
+        ArenaTemplate.Meta meta = ArenaTemplate.meta(ChallengeArenas.INTRO_ACTS.get(act));
+        if (p.getY() > center.getY() + Math.min(0, meta.minY()) - 16) {
+            return;
+        }
+        int[] j = meta.jogador();
+        BlockPos at = center.offset(j[0], j[1], j[2]);
+        p.teleportTo(level, at.getX() + 0.5, at.getY(), at.getZ() + 0.5, p.getYRot(), 0);
+        p.fallDistance = 0;
+        p.setDeltaMovement(Vec3.ZERO);
     }
 
     boolean vulnerable() {
@@ -675,8 +709,8 @@ final class IntroScript {
         add(ui("title", "metro", 60, 0));
         add(wait(30));
         add(build(3));
-        add(enter(3, "itadori", all("itadori"), 0));
         add(intoMetro());
+        add(enter(3, "itadori", all("itadori"), 0));
         add(spawn(() -> ModEntities.SUKUNA.get(), 1f));
         add(wait(30));
         add(ui("say", "coincidencia", 70, 0));
@@ -703,16 +737,20 @@ final class IntroScript {
             int[] j = meta.jogador(), d = meta.desafiante();
             Vec3 dir = new Vec3(d[0] - j[0], 0, d[2] - j[2]).normalize();
             BlockPos at = BlockPos.containing(s.center.getX() + j[0] + 0.5 + dir.x * 4, s.center.getY() + j[1], s.center.getZ() + j[2] + 0.5 + dir.z * 4);
-            Entity e = ModEntities.GOJO.get().spawn(s.level, at, MobSpawnType.EVENT);
-            if (e instanceof SoulBoss gojo) {
-                gojo.setPersistenceRequired();
-                gojo.introHold = true;
-                gojo.introMoves = Set.of();
-                gojo.introFloor = 1f;
-                s.ally = gojo.getUUID();
-            }
+            newGojo(s, at);
             return true;
         };
+    }
+
+    private static void newGojo(IntroScript s, BlockPos at) {
+        Entity e = ModEntities.GOJO.get().spawn(s.level, at, MobSpawnType.EVENT);
+        if (e instanceof SoulBoss gojo) {
+            gojo.setPersistenceRequired();
+            gojo.introHold = true;
+            gojo.introMoves = Set.of();
+            gojo.introFloor = 1f;
+            s.ally = gojo.getUUID();
+        }
     }
 
     // "Siga o Gojo": he walks to the far end, waiting whenever the player falls behind, and gives his tips on the way.
@@ -751,18 +789,24 @@ final class IntroScript {
         };
     }
 
-    // Down in the station: Gojo next to the player, facing Sukuna's side.
+    // Gojo goes down to the metro ahead of the player: the Shibuya one (still loaded, the player is still there behind
+    // the black screen) goes away and a new one waits in the tunnel, 6 blocks ahead of the player's spot. Moving the
+    // same entity 1024 blocks after the player could find his chunk already unloaded and skip the duel (issue #379).
     private Step intoMetro() {
         return (s, p, t) -> {
-            SoulBoss gojo = s.ally();
-            if (gojo != null) {
-                ArenaTemplate.Meta meta = ArenaTemplate.meta(ChallengeArenas.INTRO_ACTS.get(s.act));
-                int[] j = meta.jogador(), d = meta.desafiante();
-                Vec3 dir = new Vec3(d[0] - j[0], 0, d[2] - j[2]).normalize();
-                Vec3 at = Vec3.atBottomCenterOf(s.center.offset(j[0], j[1], j[2])).add(dir.scale(6));
-                gojo.getNavigation().stop();
-                gojo.teleportTo(at.x, at.y, at.z);
+            if (s.ally != null) {
+                Entity old = p.serverLevel().getEntity(s.ally);
+                if (old != null) {
+                    com.starkinhon.battlegroundsmod.power.powers.duel.DomainDuel.GOJO_WINS.remove(old.getUUID());
+                    old.discard();
+                }
+                s.ally = null;
             }
+            ArenaTemplate.Meta meta = ArenaTemplate.meta(ChallengeArenas.INTRO_ACTS.get(3));
+            int[] j = meta.jogador(), d = meta.desafiante();
+            Vec3 dir = new Vec3(d[0] - j[0], 0, d[2] - j[2]).normalize();
+            Vec3 at = Vec3.atBottomCenterOf(s.center.offset(j[0], j[1], j[2])).add(dir.scale(6));
+            newGojo(s, BlockPos.containing(at));
             return true;
         };
     }

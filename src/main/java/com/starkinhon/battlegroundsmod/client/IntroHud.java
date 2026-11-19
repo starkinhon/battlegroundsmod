@@ -480,7 +480,10 @@ public final class IntroHud {
         public void removed() {
             if (!sent) {
                 sent = true;
-                PacketDistributor.sendToServer(new ModPayloads.IntroAck("card"));
+                // closed by a disconnect (clear() on LoggingOut): nobody to tell
+                if (Minecraft.getInstance().getConnection() != null) {
+                    PacketDistributor.sendToServer(new ModPayloads.IntroAck("card"));
+                }
             }
             super.removed();
         }

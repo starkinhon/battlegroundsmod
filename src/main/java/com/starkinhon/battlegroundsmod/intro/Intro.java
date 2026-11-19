@@ -48,6 +48,11 @@ public final class Intro {
         NeoForge.EVENT_BUS.addListener(Intro::onServerTick);
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, Intro::onIncomingDamage);
         NeoForge.EVENT_BUS.addListener(Intro::onDamage);
+        // nothing of one world's scenes carries to the next one opened in the same game (issue #379)
+        NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.event.server.ServerStoppedEvent e) -> {
+            RUNS.clear();
+            pendingStart.clear();
+        });
         SoulCommand.addSubcommand(Intro::command);
     }
 
@@ -59,6 +64,11 @@ public final class Intro {
     // In the introduction right now (its soul's skills are gated even without progression: SoulSync).
     public static boolean active(ServerPlayer player) {
         return RUNS.containsKey(player.getUUID());
+    }
+
+    // The arenas keep their blocks while a scene is on in them (combat/BlockRules): no hole to fall through.
+    public static boolean protectsBlocks(net.minecraft.world.level.Level level) {
+        return !RUNS.isEmpty() && ChallengeArenas.isArena(level.dimension());
     }
 
     static IntroScript run(ServerPlayer player) {
@@ -250,12 +260,16 @@ public final class Intro {
     // ---- /soul intro [jogador], /soul intro pular [jogador]
 
     private static LiteralArgumentBuilder<CommandSourceStack> command() {
-        return Commands.literal("intro").requires(s -> s.hasPermission(2))
-                .executes(c -> replay(c.getSource(), c.getSource().getPlayerOrException()))
-                .then(Commands.argument("jogador", EntityArgument.player()).executes(c -> replay(c.getSource(), EntityArgument.getPlayer(c, "jogador"))))
+        // anyone may skip their own intro (a LAN guest without cheats too); replaying it, or acting on someone else, is
+        // for operators (issue #379)
+        return Commands.literal("intro")
+                .executes(c -> c.getSource().hasPermission(2) ? replay(c.getSource(), c.getSource().getPlayerOrException()) : 0)
+                .then(Commands.argument("jogador", EntityArgument.player()).requires(s -> s.hasPermission(2))
+                        .executes(c -> replay(c.getSource(), EntityArgument.getPlayer(c, "jogador"))))
                 .then(Commands.literal("pular")
                         .executes(c -> skip(c.getSource(), c.getSource().getPlayerOrException()))
-                        .then(Commands.argument("jogador", EntityArgument.player()).executes(c -> skip(c.getSource(), EntityArgument.getPlayer(c, "jogador")))));
+                        .then(Commands.argument("jogador", EntityArgument.player()).requires(s -> s.hasPermission(2))
+                                .executes(c -> skip(c.getSource(), EntityArgument.getPlayer(c, "jogador")))));
     }
 
     private static int replay(CommandSourceStack source, ServerPlayer player) {

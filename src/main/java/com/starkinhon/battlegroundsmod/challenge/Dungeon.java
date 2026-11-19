@@ -162,7 +162,8 @@ public final class Dungeon {
         if (!player.isAlive() || player.isSpectator()) {
             return;
         }
-        if (ChallengeArenas.isArena(player.level().dimension()) || ChallengeArenas.inFight(player)) {
+        if (ChallengeArenas.isArena(player.level().dimension()) || ChallengeArenas.inFight(player)
+                || com.starkinhon.battlegroundsmod.intro.Intro.active(player)) {
             say(player, "Saia da arena antes de começar uma dungeon.");
             return;
         }
@@ -170,7 +171,8 @@ public final class Dungeon {
         team.add(player);
         for (ServerPlayer mate : ArenaParty.others(player)) {
             if (RUNS.containsKey(mate.getUUID()) || !mate.isAlive() || mate.isSpectator()
-                    || ChallengeArenas.isArena(mate.level().dimension()) || ChallengeArenas.inFight(mate)) {
+                    || ChallengeArenas.isArena(mate.level().dimension()) || ChallengeArenas.inFight(mate)
+                    || com.starkinhon.battlegroundsmod.intro.Intro.active(mate)) {
                 say(player, mate.getDisplayName().getString() + " está ocupado e não entrou na dungeon.");
                 continue;
             }
