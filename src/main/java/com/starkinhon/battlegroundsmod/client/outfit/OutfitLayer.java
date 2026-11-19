@@ -58,6 +58,7 @@ public class OutfitLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<A
 
     public OutfitLayer(RenderLayerParent<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> parent) {
         super(parent);
+        OutfitDefs.prebuild();
     }
 
     // Set when drawing an outfit failed once: outfits stop drawing instead of taking the game down every frame.

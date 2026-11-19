@@ -141,4 +141,6 @@ const EXTRA = { mosca: 3, cabecao: 3, transfigurado: 5, verme: 2, olhos: 2, kits
   for (const a of out.anims) fs.writeFileSync(path.join(OUT_M, a.name + '.anim.json'), JSON.stringify(a.json));
   console.log('modelos', out.files.length, 'animações', out.anims.length);
   await b.close();
+  // Faces no mesmo plano piscam no jogo (z-fighting): o verificador afasta o mínimo e confere que zerou.
+  require('child_process').execFileSync('python3', [path.join(__dirname, '..', '..', 'zfight', 'zfight.py'), 'blocky', '--corrigir'], { stdio: 'inherit' });
 })();

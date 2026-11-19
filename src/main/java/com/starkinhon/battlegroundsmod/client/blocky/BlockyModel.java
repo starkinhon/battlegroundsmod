@@ -49,7 +49,12 @@ public class BlockyModel<T extends DbCreature> extends HierarchicalModel<T> {
         for (JsonElement e : d.getAsJsonArray("boxes")) {
             JsonArray b = e.getAsJsonArray();
             cubes.texOffs(b.get(6).getAsInt(), b.get(7).getAsInt());
-            if (b.size() > 8) {
+            if (b.size() > 8 && b.get(8).isJsonArray()) {
+                // grown per axis [gx, gy, gz] (tools/zfight/zfight.py): only along the faces that would flicker
+                JsonArray g = b.get(8).getAsJsonArray();
+                cubes.addBox(f(b, 0), f(b, 1), f(b, 2), f(b, 3), f(b, 4), f(b, 5),
+                        new CubeDeformation(f(g, 0), f(g, 1), f(g, 2)));
+            } else if (b.size() > 8) {
                 // grown a little (the preview's b.g): over a face it would share with another box and flicker
                 cubes.addBox(f(b, 0), f(b, 1), f(b, 2), f(b, 3), f(b, 4), f(b, 5), new CubeDeformation(f(b, 8)));
             } else {

@@ -128,4 +128,6 @@ const EXTRA = { saibaman: 5, bandido_deserto: 5, soldado_red_ribbon: 5, pirata: 
   for (const a of out.anims) fs.writeFileSync(path.join(OUT_M, a.name + '.anim.json'), JSON.stringify(a.json));
   console.log('modelos', out.files.length, 'animações', out.anims.length);
   await b.close();
+  // Faces no mesmo plano piscam no jogo (z-fighting): o verificador afasta o mínimo e confere que zerou.
+  require('child_process').execFileSync('python3', [path.join(__dirname, '..', '..', 'zfight', 'zfight.py'), 'blocky', '--corrigir'], { stdio: 'inherit' });
 })();

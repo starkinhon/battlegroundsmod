@@ -23,6 +23,17 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      # Faces sobrepostas piscando (z-fighting) nos modelos: falha se algum modelo tiver par (tools/zfight).
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Verificador de z-fighting
+        run: |
+          pip install --quiet numpy
+          python3 tools/zfight/zfight.py
+
       - name: Build with Gradle
         run: ./gradlew build
       - name: Check dev-only mods resolve
