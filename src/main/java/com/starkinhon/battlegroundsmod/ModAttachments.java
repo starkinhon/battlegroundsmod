@@ -39,6 +39,9 @@ public final class ModAttachments {
             () -> AttachmentType.builder(() -> -1).serialize(Codec.INT).copyOnDeath().build());
 
     // Ate an Inseto de Alma: hunger bar always full (item/SoulInsectItem). Saved and kept on death.
+    // Dedos do Sukuna the player has eaten; the 20th wakes his soul (item/SukunaFingerItem, Stark 2026-11-19).
+    public static final Supplier<AttachmentType<Integer>> SUKUNA_FINGERS = ATTACHMENT_TYPES.register("sukuna_fingers",
+            () -> AttachmentType.builder(() -> 0).serialize(Codec.INT).copyOnDeath().build());
     public static final Supplier<AttachmentType<Boolean>> SOUL_FED = ATTACHMENT_TYPES.register("soul_fed",
             () -> AttachmentType.builder(() -> false).serialize(Codec.BOOL).copyOnDeath().build());
 

@@ -66,7 +66,7 @@ public final class UniverseItems {
             Map.entry("dedo_sukuna", "jujutsu"), Map.entry("venda_gojo", "jujutsu"), Map.entry("boneco_palha", "jujutsu"),
             Map.entry("boneco_amaldicoado", "jujutsu"), Map.entry("nuvem_brincalhona", "jujutsu"), Map.entry("lanca_invertida", "jujutsu"),
             Map.entry("nanami_blade", "jujutsu"), Map.entry("miwa_sword", "jujutsu"), Map.entry("nobara_hammer", "jujutsu"),
-            Map.entry("aizen_sword", "bleach"), Map.entry("pilula_alma", "bleach"), Map.entry("mascara_hollow", "bleach"),
+            Map.entry("aizen_sword", "bleach"), Map.entry("pilula_alma", "bleach"),
             Map.entry("sode_no_shirayuki", "bleach"), Map.entry("senbonzakura", "bleach"),
             Map.entry("kokushibo_sword", "demonslayer"), Map.entry("espada_nichirin", "demonslayer"),
             Map.entry("flor_glicinia", "demonslayer"), Map.entry("remedio_tamayo", "demonslayer"));
