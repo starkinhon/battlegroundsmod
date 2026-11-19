@@ -399,6 +399,32 @@ public final class ModPayloads {
 
     // Server -> client: the player walked into a structure (its name comes down on screen with its mission), or a
     // mission there was done (MISSÃO CONCLUÍDA with what it gave: "__poder", "item_id count").
+    // Server -> client: the playable introduction's screen (intro/IntroUi, client/IntroHud). kind: card (id = which
+    // teaching card; the game pauses on it), goal (id = the mission, a/b = count/needed, b = 0 hides it), title, say
+    // (a = ticks on screen), flash (a = 1 white in with the id's text, 0 out), black (a = 1 in, 0 out), logo, clear.
+    public record IntroUi(String kind, String id, int a, int b) implements CustomPacketPayload {
+        public static final Type<IntroUi> TYPE = payloadType("intro_ui");
+        public static final StreamCodec<ByteBuf, IntroUi> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.STRING_UTF8, IntroUi::kind, ByteBufCodecs.STRING_UTF8, IntroUi::id, ByteBufCodecs.VAR_INT, IntroUi::a,
+                ByteBufCodecs.VAR_INT, IntroUi::b, IntroUi::new);
+
+        @Override
+        public Type<IntroUi> type() {
+            return TYPE;
+        }
+    }
+
+    // Client -> server: the introduction's teaching card was closed.
+    public record IntroAck(String kind) implements CustomPacketPayload {
+        public static final Type<IntroAck> TYPE = payloadType("intro_ack");
+        public static final StreamCodec<ByteBuf, IntroAck> STREAM_CODEC = StreamCodec.composite(ByteBufCodecs.STRING_UTF8, IntroAck::kind, IntroAck::new);
+
+        @Override
+        public Type<IntroAck> type() {
+            return TYPE;
+        }
+    }
+
     public record MissionEvent(String mission, String quest, int color, boolean done, List<String> rewards) implements CustomPacketPayload {
         public static final Type<MissionEvent> TYPE = payloadType("mission_event");
         public static final StreamCodec<ByteBuf, MissionEvent> STREAM_CODEC = StreamCodec.composite(
@@ -2208,6 +2234,13 @@ public final class ModPayloads {
                 } else {
                     com.starkinhon.battlegroundsmod.universe.MissionJournal.track(player, payload.id());
                 }
+            }
+        }));
+        registrar.playToClient(IntroUi.TYPE, IntroUi.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> com.starkinhon.battlegroundsmod.client.IntroHud.receive(payload.kind(), payload.id(), payload.a(), payload.b())));
+        registrar.playToServer(IntroAck.TYPE, IntroAck.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
+            if (context.player() instanceof ServerPlayer player) {
+                com.starkinhon.battlegroundsmod.intro.Intro.ack(player, payload.kind());
             }
         }));
         registrar.playToClient(MissionEvent.TYPE, MissionEvent.STREAM_CODEC, (payload, context) -> context.enqueueWork(

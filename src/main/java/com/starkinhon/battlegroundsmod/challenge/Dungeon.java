@@ -280,7 +280,8 @@ public final class Dungeon {
 
     // ---- the real character: save, reset, put back
 
-    private static Backup capture(ServerPlayer player) {
+    // Also the playable introduction's (intro/Intro): the same snapshot of the real character.
+    public static Backup capture(ServerPlayer player) {
         List<ItemStack> items = new ArrayList<>();
         for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
             items.add(player.getInventory().getItem(i).copy());
@@ -319,8 +320,13 @@ public final class Dungeon {
         if (!b.active()) {
             return;
         }
-        CombatMode.leave(player);
         player.setData(ModAttachments.DUNGEON_BACKUP, Backup.EMPTY);
+        putBack(player, b);
+    }
+
+    // The saved character back on the player (inventory, soul, Sincronia, tier, where it was). Also the introduction's.
+    public static void putBack(ServerPlayer player, Backup b) {
+        CombatMode.leave(player);
         player.removeAllEffects();
         player.getInventory().clearContent();
         for (int i = 0; i < Math.min(b.items().size(), player.getInventory().getContainerSize()); i++) {

@@ -179,7 +179,7 @@ public final class SoulSync {
     // Gating on? Server: progression; client: the synced flag.
     private static boolean gated(Player player) {
         if (player instanceof ServerPlayer sp) {
-            return Progression.on(sp);
+            return Progression.on(sp) || com.starkinhon.battlegroundsmod.intro.Intro.active(sp);
         }
         return clientOn;
     }
@@ -317,7 +317,7 @@ public final class SoulSync {
     public static void sync(ServerPlayer player) {
         Tag tag = MAP_CODEC.encodeStart(NbtOps.INSTANCE, player.getData(ModAttachments.SOUL_SYNC)).result().orElse(new CompoundTag());
         PacketDistributor.sendToPlayer(player, new ModPayloads.SyncSoulSync(tag instanceof CompoundTag c ? c : new CompoundTag(),
-                Progression.on(player), player.getData(ModAttachments.POWER).tier));
+                Progression.on(player) || com.starkinhon.battlegroundsmod.intro.Intro.active(player), player.getData(ModAttachments.POWER).tier));
     }
 
     // Client: apply the synced map.

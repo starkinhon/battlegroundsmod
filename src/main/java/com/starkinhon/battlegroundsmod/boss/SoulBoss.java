@@ -214,6 +214,13 @@ public abstract class SoulBoss extends Monster {
     }
 
     // Entrance, phase change, final ult, or waiting to start it: the AI holds still.
+    // The playable introduction (intro/IntroScript) drives this boss by hand: introHold turns its AI off (it only does
+    // what the script casts), introMoves limits the AI to these moves (empty = punches and dashes only) and introFloor is
+    // the life fraction it can't drop under (the script moves the bar step by step).
+    public boolean introHold;
+    public java.util.Set<String> introMoves;
+    public float introFloor = -1;
+
     public boolean staged() {
         return stagedTicks > 0 || ultPending;
     }
@@ -474,6 +481,9 @@ public abstract class SoulBoss extends Monster {
     // The life (as a fraction) it can't drop under right now, -1 for none: the next phase's line, while that phase has to
     // wait for the boss to be free (sceneFree). Damage that bypasses everything (the Hakai) still goes through.
     protected float phaseFloor() {
+        if (introFloor >= 0) {
+            return introFloor;
+        }
         if (!bossfight() || sceneFree()) {
             return -1;
         }
