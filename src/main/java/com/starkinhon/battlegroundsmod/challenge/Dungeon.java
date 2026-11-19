@@ -337,6 +337,9 @@ public final class Dungeon {
         player.setData(ModAttachments.TECHNIQUES, List.of());
         player.setData(ModAttachments.SOUL_SYNC, Map.of());
         player.setData(ModAttachments.SOUL_FED, false);
+        // the run has no Voo: Minecraft keeps mayfly saved with the player, so the real character's flight stayed on (Stark
+        // 2026-11-19, "to conseguindo voar no modo dungeons") once the technique was cleared above
+        com.starkinhon.battlegroundsmod.universe.Flight.revoke(player);
         SkillSwap.clear(player);
         titan(player, false);
         player.getInventory().clearContent();
@@ -378,6 +381,8 @@ public final class Dungeon {
         player.setData(ModAttachments.TECHNIQUES, b.techniques());
         player.setData(ModAttachments.SOUL_SYNC, b.sync());
         player.setData(ModAttachments.SOUL_FED, b.fed());
+        // a real character without the Voo leaves with no flight; one who knows it gets it back from Flight's own tick
+        com.starkinhon.battlegroundsmod.universe.Flight.revoke(player);
         player.setExperienceLevels(b.xpLevel());
         player.experienceProgress = b.xpProgress();
         Tiers.apply(player);
@@ -978,6 +983,11 @@ public final class Dungeon {
                 continue;
             }
             Member member = run.members.get(entry.getKey());
+            if (!player.isCreative() && !player.isSpectator() && player.getAbilities().mayfly
+                    && !com.starkinhon.battlegroundsmod.power.powers.sub.nr.Gaara.flying(player)) {
+                // no flight in a run, whatever left it on (Gaara's sand platform is a skill of the soul and keeps its own)
+                com.starkinhon.battlegroundsmod.universe.Flight.revoke(player);
+            }
             if (member != null && !member.choosing && !run.between && ChallengeArenas.isArena(player.level().dimension())) {
                 player.displayClientMessage(Component.literal((member.chaos ? "Caos " : "Dungeon ") + (run.stage + 1) + "/" + total + "   Vidas: "
                         + "♥".repeat(Math.max(0, member.lives)) + (run.members.size() > 1 ? "   Grupo: " + run.members.size() : "")), true);
