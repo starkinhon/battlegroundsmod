@@ -385,7 +385,10 @@ public abstract class SoulBoss extends Monster {
         // The bosses' files were written for the old tier curve (Tier 0 = 400 ... Tier 10 = 20): their life follows the curve
         // in padrao.tiers.json as much as a player's of their tier did (Stark's rebalance 2026-11-17 raised the players' only,
         // and the bosses fell 3 to 4 times faster). The shared Tier 0 of /gamerule allbossestier0 is already on the new curve.
-        if (!tier0Applied) {
+        // Not in the Dungeon: there the fight's tier is the same for both sides and its own floor below (half the tier's life)
+        // is the balance Stark played with; the rescale doubled every boss there (Kakashi at Tier 10: 32 -> 65 vs the
+        // player's 20) and the first etapa became unwinnable (Stark, 2026-11-19).
+        if (!tier0Applied && !dungeonFight) {
             lifeScale *= com.starkinhon.battlegroundsmod.power.Tiers.health(ownTier) / com.starkinhon.battlegroundsmod.power.Tiers.legacyHealth(ownTier);
         }
         double maxLife = atributos.vida() * lifeScale;
