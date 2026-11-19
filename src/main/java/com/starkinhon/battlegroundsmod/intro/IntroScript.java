@@ -256,10 +256,46 @@ final class IntroScript {
         }
         enemy = null;
         real = false;
+        faceOff = false;
     }
 
     // Gojo, who walks with the player in Shibuya (not an enemy).
     private UUID ally;
+    // Gojo and Sukuna face to face (the talk and the duel at the end): both held, each facing the other.
+    private boolean faceOff;
+
+    // The script's hold lives on the entity only (not saved): a character whose chunk was saved and loaded again comes
+    // back free, with its whole kit and its own lines. Put it back every tick. Gojo is never free in the intro (the
+    // script casts his moves); the enemy keeps the script's limits (punches and dashes) and, in the face-off, the hold.
+    private void keepScripted() {
+        SoulBoss gojo = ally(), sukuna = boss();
+        if (gojo != null) {
+            if (gojo.introMoves == null || !gojo.introHold) {
+                gojo.introHold = true;
+                gojo.introMoves = Set.of();
+                gojo.introFloor = 1f;
+                gojo.getNavigation().stop();
+            }
+        }
+        if (sukuna != null && sukuna.introMoves == null) {
+            sukuna.introMoves = Set.of();
+            if (sukuna.introFloor < 0) {
+                sukuna.introFloor = sukuna.getHealth() / sukuna.getMaxHealth();
+            }
+        }
+        if (faceOff && gojo != null && sukuna != null) {
+            if (!sukuna.introHold) {
+                sukuna.introHold = true;
+                sukuna.getNavigation().stop();
+            }
+            if (gojo.introFace == null) {
+                gojo.introFace = sukuna;
+            }
+            if (sukuna.introFace == null) {
+                sukuna.introFace = gojo;
+            }
+        }
+    }
 
     private SoulBoss ally() {
         if (ally == null || level == null) {
@@ -298,6 +334,7 @@ final class IntroScript {
         if (player.tickCount % 20 == 7) {
             sweep(this);
         }
+        keepScripted();
         SoulBoss boss = boss();
         if (boss == null) {
             return;
@@ -1019,8 +1056,9 @@ final class IntroScript {
         add(ui("title", "metro", 60, 0));
         add(wait(30));
         add(build(3));
-        add(intoMetro());
+        add(leaveCrossing());
         add(enter(3, "itadori", all("itadori"), 0));
+        add(metroGojo());
         add(spawn(() -> ModEntities.SUKUNA.get(), 1f));
         add(wait(30));
         ending();
@@ -1036,6 +1074,7 @@ final class IntroScript {
                 gojo.introFace = sukuna;
                 sukuna.introFace = gojo;
             }
+            s.faceOff = true;
             return true;
         });
         add(ui("say", "coincidencia", 70, 0));
@@ -1116,9 +1155,12 @@ final class IntroScript {
     }
 
     // Gojo goes down to the metro ahead of the player: the Shibuya one (still loaded, the player is still there behind
-    // the black screen) goes away and a new one waits in the tunnel, 6 blocks ahead of the player's spot. Moving the
-    // same entity 1024 blocks after the player could find his chunk already unloaded and skip the duel (issue #379).
-    private Step intoMetro() {
+    // the black screen) goes away, and once the player stands in the station a new one waits in the tunnel, 6 blocks
+    // ahead of the player's spot. Moving the same entity 1024 blocks after the player could find his chunk already
+    // unloaded and skip the duel (issue #379). Spawned before the player got there, the new one sat in a chunk nobody
+    // held: it was saved and loaded again, and a loaded Gojo comes back without the script's hold (Stark 2026-11-19:
+    // he walked around, cast Vermelho and Azul and hit Sukuna in the middle of the talk).
+    private Step leaveCrossing() {
         return (s, p, t) -> {
             if (s.ally != null) {
                 Entity old = p.serverLevel().getEntity(s.ally);
@@ -1128,6 +1170,12 @@ final class IntroScript {
                 }
                 s.ally = null;
             }
+            return true;
+        };
+    }
+
+    private Step metroGojo() {
+        return (s, p, t) -> {
             ArenaTemplate.Meta meta = ArenaTemplate.meta(ChallengeArenas.INTRO_ACTS.get(3));
             int[] j = meta.jogador(), d = meta.desafiante();
             Vec3 dir = new Vec3(d[0] - j[0], 0, d[2] - j[2]).normalize();
