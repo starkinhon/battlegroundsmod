@@ -126,6 +126,8 @@ public final class Izanami {
         final Set<LivingEntity> ghosts = new HashSet<>();
         int tick;
         boolean recording = true;
+        // The caster was taken out of it (sent to another fight, back home): it ends on the spot, nothing turns back.
+        boolean dropped;
         // When the recording stops (gravacaoTicks, or sooner if the caster dies in it: see onDeath).
         int end;
         int scene;
@@ -187,6 +189,9 @@ public final class Izanami {
         Fx.sound(level, caster.position(), SoundEvents.BEACON_POWER_SELECT, 1.5f, 0.6f);
 
         Tasks.addSystem(age -> {
+            if (r.dropped) {
+                return true;
+            }
             // r.end can move up while it records (the caster died: 5 s left), so it is read every tick.
             int end = r.end;
             if (age < end) {
@@ -223,11 +228,35 @@ public final class Izanami {
                 e -> !e.isSpectator() && r.near(e.position()))) {
             r.tracks.computeIfAbsent(entity, e -> new Track(e, Math.max(1, r.spec.gravacaoTicks())));
         }
+        List<LivingEntity> gone = new ArrayList<>();
         for (Track track : r.tracks.values()) {
-            if (!track.entity.isRemoved()) {
+            LivingEntity entity = track.entity;
+            if (entity.isRemoved()) {
+                continue;
+            }
+            if (entity.level() != r.level) {
+                gone.add(entity);
+            } else if (entity != r.caster && far(r, entity)) {
+                // the caster who only went far stays in it and is carried back as always
+                gone.add(entity);
+            } else {
                 track.record(r.tick);
             }
         }
+        for (LivingEntity entity : gone) {
+            if (entity == r.caster) {
+                drop(r);
+                return;
+            }
+            forget(r, entity);
+        }
+    }
+
+    // Out of this Izanami for good: taken far from the area (teleported into the next Dungeon fight) or into another
+    // dimension (another arena). Carrying them back dragged a whole group out of their new arena (Stark 2026-11-20).
+    private static boolean far(Recording r, LivingEntity entity) {
+        double far = r.spec.raio() * 4.0;
+        return entity.position().distanceToSqr(r.center) > far * far;
     }
 
     // Time stops: everyone is frozen and untouchable, what was going on is cut off, and the camera goes to the eyes.
@@ -501,6 +530,69 @@ public final class Izanami {
             player.displayClientMessage(Component.literal("Izanami 5s").withStyle(ChatFormatting.DARK_RED), true);
         }
         Fx.sound(r.level, r.caster.position(), SoundEvents.ELDER_GUARDIAN_CURSE, 1.5f, 0.4f);
+    }
+
+    // Someone is being sent somewhere else on purpose (into a Dungeon/arena fight, back home from one): whatever Izanami
+    // has them lets go now, before the teleport. A rewind used to pull the whole group back to the arena they had already
+    // won, and with nobody left near the new fight its boss unloaded until the run gave up and sent everyone home.
+    public static void release(LivingEntity entity) {
+        if (ACTIVE.isEmpty() || entity.level().isClientSide()) {
+            return;
+        }
+        for (Recording r : new ArrayList<>(ACTIVE)) {
+            if (entity == r.caster) {
+                drop(r);
+            } else if (r.tracks.containsKey(entity) || r.ghosts.contains(entity)) {
+                forget(r, entity);
+            }
+        }
+    }
+
+    // One entity stops being part of it: not carried back, not held, seen again if it was a ghost.
+    private static void forget(Recording r, LivingEntity entity) {
+        Track track = r.tracks.remove(entity);
+        boolean ghost = r.ghosts.remove(entity);
+        if (ghost || !r.recording) {
+            Freeze.free(entity);
+            Intangible.free(entity);
+        }
+        if (ghost) {
+            PacketDistributor.sendToPlayersTrackingEntityAndSelf(entity, new ModPayloads.HideEntity(entity.getId(), 0));
+            if (track != null && entity.isAlive()) {
+                entity.setHealth(Math.max(1, Math.min(track.health, entity.getMaxHealth())));
+            }
+        }
+    }
+
+    // The caster is gone from it: everyone it had is let go, nothing turns back, and the caster can use skills again
+    // (the Izanami itself stays spent).
+    private static void drop(Recording r) {
+        if (r.dropped) {
+            return;
+        }
+        r.dropped = true;
+        ACTIVE.remove(r);
+        for (LivingEntity entity : new ArrayList<>(r.tracks.keySet())) {
+            if (entity != r.caster) {
+                forget(r, entity);
+            }
+        }
+        for (LivingEntity ghost : new ArrayList<>(r.ghosts)) {
+            forget(r, ghost);
+        }
+        if (!r.recording) {
+            Freeze.free(r.caster);
+            Intangible.free(r.caster);
+        }
+        PowerData data = r.caster.getData(ModAttachments.POWER);
+        data.sealedUntil = 0;
+        for (int i = 0; i < data.cooldowns.length; i++) {
+            data.cooldowns[i] = i == PowerData.SLOT_SHIFT + 1 && !data.noCooldown ? PowerData.SPENT : 0;
+        }
+        data.busyTicks = 0;
+        if (r.caster instanceof ServerPlayer player) {
+            PowerLogic.sync(player);
+        }
     }
 
     public static void clear() {
