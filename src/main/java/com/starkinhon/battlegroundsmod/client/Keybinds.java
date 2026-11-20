@@ -84,6 +84,17 @@ public final class Keybinds {
         return key == 4 ? EXTRA_ABILITY : ABILITIES.get(key);
     }
 
+    // Shift + a key whose Shift variant holds another soul's skill (the Dungeon's Montar Kit, SkillSwap) sends that variant, also on a
+    // soul with no Shift skills of its own (the Shift key is otherwise ignored there).
+    private static int kitShift(Minecraft minecraft, int key, int slot) {
+        int variant = com.starkinhon.battlegroundsmod.power.SkillSwap.shiftOf(key);
+        if (variant >= 0 && minecraft.player != null && minecraft.options.keyShift.isDown()
+                && com.starkinhon.battlegroundsmod.power.SkillSwap.ref(minecraft.player, variant) != null) {
+            return variant;
+        }
+        return slot;
+    }
+
     private static KeyMapping key(String name, int defaultKey) {
         return new KeyMapping("key.battlegroundsmod." + name, InputConstants.Type.KEYSYM, defaultKey, CATEGORY);
     }
@@ -111,13 +122,15 @@ public final class Keybinds {
         for (int slot = 0; slot < ABILITIES.size(); slot++) {
             if (pressed(ABILITIES.get(slot), slot)) {
                 if (ready) {
-                    PacketDistributor.sendToServer(new ModPayloads.UseAbility(power == null ? slot : power.keySlot(slot, shift)));
+                    PacketDistributor.sendToServer(new ModPayloads.UseAbility(kitShift(minecraft, slot,
+                            power == null ? slot : power.keySlot(slot, shift))));
                 }
             }
         }
         if (pressed(EXTRA_ABILITY, 4)) {
             if (ready) {
-                PacketDistributor.sendToServer(new ModPayloads.UseAbility(power == null ? PowerData.SLOT_EXTRA : power.keySlot(4, shift)));
+                PacketDistributor.sendToServer(new ModPayloads.UseAbility(kitShift(minecraft, PowerData.SLOT_EXTRA,
+                        power == null ? PowerData.SLOT_EXTRA : power.keySlot(4, shift))));
             }
         }
         boolean hasPower = ready && com.starkinhon.battlegroundsmod.combat.CombatMode.fighter(minecraft.player);

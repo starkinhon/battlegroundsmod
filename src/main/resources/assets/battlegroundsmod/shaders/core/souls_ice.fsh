@@ -55,19 +55,21 @@ float iceField(vec3 p) {
 
 void main() {
     vec4 tex = texture(Sampler0, texCoord);
-    if (tex.a < 0.1) {
-        discard;
-    }
     // The skin pixel this fragment is in, and where its middle is in the world: the ice goes pixel by pixel.
     vec2 size = vec2(textureSize(Sampler0, 0));
     vec2 px = texCoord * size;
     vec2 cellUv = floor(px);
     vec2 toMiddle = (cellUv + 0.5) - px;
     mat2 duv = mat2(dFdx(px), dFdy(px));
+    vec3 localX = dFdx(local), localY = dFdy(local);
     vec3 middle = local;
     if (abs(determinant(duv)) > 1.0e-8) {
         vec2 k = inverse(duv) * toMiddle;
-        middle = local + dFdx(local) * k.x + dFdy(local) * k.y;
+        middle = local + localX * k.x + localY * k.y;
+    }
+    // Derivatives first, discards after: past a discard the 2x2 quad's derivatives are undefined on some cards.
+    if (tex.a < 0.1) {
+        discard;
     }
     vec3 cell = vec3(cellUv, floor(dot(normal, vec3(1.0, 2.0, 3.0)) * 4.0));
     float n = hash3(cell);

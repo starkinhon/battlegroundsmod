@@ -213,7 +213,8 @@ public final class DbCommon {
     public static void cooldown(LivingEntity caster, int slot, int ticks) {
         PowerData data = caster.getData(ModAttachments.POWER);
         if (!data.noCooldown && !(caster instanceof Player p && p.isCreative())) {
-            data.cooldowns[slot] = Math.max(data.cooldowns[slot], ticks);
+            // slot is the move's key in its own kit: on a swapped key (Roleta, Roubar Tecnica) the key it really sits on
+            com.starkinhon.battlegroundsmod.power.SkillSwap.raiseCooldown(caster, null, slot, ticks);
         }
         if (caster instanceof net.minecraft.server.level.ServerPlayer player) {
             com.starkinhon.battlegroundsmod.power.PowerLogic.sync(player);

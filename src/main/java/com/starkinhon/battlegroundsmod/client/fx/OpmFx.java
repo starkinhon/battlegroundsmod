@@ -156,6 +156,7 @@ public final class OpmFx {
                 Move m = find(kind, id, seed);
                 if (b >= 1.5f) {
                     if (m != null) {
+                        drop(m);
                         MOVES.remove(m);
                     }
                     return;
@@ -186,6 +187,7 @@ public final class OpmFx {
                 Move m = find(kind, id, seed);
                 if (c >= 1.5f) {
                     if (m != null) {
+                        drop(m);
                         MOVES.remove(m);
                     }
                     return;
@@ -207,6 +209,7 @@ public final class OpmFx {
                 Move m = find(kind, id, seed);
                 if (c >= 1.5f) {
                     if (m != null) {
+                        drop(m);
                         MOVES.remove(m);
                         OpmBlocks.SLAB.close();
                     }
@@ -259,6 +262,22 @@ public final class OpmFx {
             default -> {
             }
         }
+    }
+
+    // A move ended or cut short: whatever of it still floats drops now (it would wait for a push that never comes).
+    private static void drop(Move m) {
+        for (OpmBlocks.Deb d : m.pebbles) {
+            if (d.flt) {
+                OpmBlocks.release(d, new Vec3((rnd() - 0.5) * 2, 0, (rnd() - 0.5) * 2), 0.2, 1);
+            }
+        }
+        for (OpmBlocks.Deb d : m.lev) {
+            if (d.flt) {
+                OpmBlocks.release(d, new Vec3((rnd() - 0.5) * 2, 0, (rnd() - 0.5) * 2), 0.2, 1);
+            }
+        }
+        m.pebbles.clear();
+        m.lev.clear();
     }
 
     private static Move find(int kind, int id, int seed) {
@@ -469,6 +488,7 @@ public final class OpmFx {
                 if (m.kind == SubNet.OPM_MESA) {
                     OpmBlocks.SLAB.close();
                 }
+                drop(m);
                 it.remove();
                 continue;
             }

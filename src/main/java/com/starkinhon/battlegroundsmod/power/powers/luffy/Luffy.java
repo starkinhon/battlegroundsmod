@@ -193,6 +193,10 @@ public final class Luffy {
         int stunAt = data.interrupts;
         SubNet.send(level, SubNet.LUFFY_CHARGE, caster.getId(), caster.position(), caster.getLookAngle(), key, startGear, 0);
         SubCommon.pose(caster, "luffy.carga" + (startGear + 1));
+        // a kept Gear still costs its step (it chained G4 into G4 for free, forever)
+        if (startGear > 0 && Stamina.drains(caster)) {
+            Stamina.drain(caster, COST[startGear]);
+        }
         int[] shown = {startGear};
         Tasks.add(age -> {
             // A boss holds through a plain stun (armor while charging: the Madara stunned the Joy Boy out of 20 Pistols and
@@ -221,7 +225,8 @@ public final class Luffy {
             if (!held || exhausted || t >= TH[top] + MAX_HOLD) {
                 HOLDING.remove(caster);
                 SubNet.send(level, SubNet.LUFFY_CHARGE, caster.getId(), caster.position(), Vec3.ZERO, key, gear, 2);
-                if (gear >= 1 && gear != 2) {
+                // only a Gear reached by holding is kept: a move fired from a kept Gear doesn't keep it again
+                if (gear >= 1 && gear != 2 && gear > startGear) {
                     KEEP.put(caster, new Keep(gear, level.getGameTime() + KEEP_TICKS));
                 } else {
                     KEEP.remove(caster);

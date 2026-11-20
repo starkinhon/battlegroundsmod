@@ -3,7 +3,10 @@
 package com.starkinhon.battlegroundsmod.universe;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 import com.starkinhon.battlegroundsmod.BattlegroundsMod;
 import com.starkinhon.battlegroundsmod.boss.BossSpec;
@@ -25,7 +28,11 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.Level;
+import net.neoforged.bus.api.EventPriority;
 import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
 // The SubAlmas out in the normal world (Stark 2026-11-11): any of them can turn up anywhere, in any biome, rare, and
@@ -41,26 +48,103 @@ public final class RoamingSouls {
     private static final int MIN_DIST = 40;
     private static final int MAX_DIST = 72;
 
+    // After a SubAlma out in the world is beaten (Stark 2026-11-20: "as subalmas tao spawnando dps d derrotar?"): with
+    // a draw every 75 s and the home biome picking its own 75% of the time, Goku in the Montanhas Paozu or Gaara in the
+    // Deserto do Vento came back a minute or two after the kill, and it looked like the same one respawning. Now the
+    // players who were there get a rest (QUIET, no roaming SubAlma for them) and that same one keeps away from them for
+    // longer (SAME_AWAY). In memory, by the server's tick count: a restart or another world starts clean.
+    private static final int QUIET = 20 * 60 * 5;
+    private static final int SAME_AWAY = 20 * 60 * 20;
+    private static final Map<UUID, Integer> QUIET_UNTIL = new HashMap<>();
+    private static final Map<UUID, Map<String, Integer>> AWAY_UNTIL = new HashMap<>();
+
     private RoamingSouls() {
     }
 
     public static void register() {
         NeoForge.EVENT_BUS.addListener(RoamingSouls::onServerTick);
+        // LOWEST and not when cancelled: a death another listener takes back (a revive) is no kill
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, false, LivingDeathEvent.class, RoamingSouls::onDeath);
+        NeoForge.EVENT_BUS.addListener((PlayerEvent.PlayerLoggedOutEvent event) -> forget(event.getEntity().getUUID()));
+        NeoForge.EVENT_BUS.addListener((ServerStoppedEvent event) -> {
+            QUIET_UNTIL.clear();
+            AWAY_UNTIL.clear();
+        });
+    }
+
+    private static void forget(UUID id) {
+        QUIET_UNTIL.remove(id);
+        AWAY_UNTIL.remove(id);
+    }
+
+    // A SubAlma of the world killed by a player: the rest for every player near it (the party that fought it too).
+    private static void onDeath(LivingDeathEvent event) {
+        if (!(event.getEntity() instanceof SoulBoss boss) || boss.level().isClientSide || boss.isBoss()
+                || boss.puppetOwner() != null || boss.dungeonFight() || boss.level().dimension() != Level.OVERWORLD
+                || !(event.getSource().getEntity() instanceof ServerPlayer)) {
+            return;
+        }
+        ChallengeSpec spec = ChallengeSpec.get();
+        String id = boss.bossId();
+        if (spec == null || spec.universeOf(id) == null || ChallengeArenas.isBoss(id)) {
+            return;
+        }
+        ServerLevel level = (ServerLevel) boss.level();
+        int now = level.getServer().getTickCount();
+        for (ServerPlayer player : level.getEntitiesOfClass(ServerPlayer.class, boss.getBoundingBox().inflate(NEARBY))) {
+            QUIET_UNTIL.put(player.getUUID(), now + QUIET);
+            AWAY_UNTIL.computeIfAbsent(player.getUUID(), k -> new HashMap<>()).put(id, now + SAME_AWAY);
+        }
+    }
+
+    // True while that player rests after a kill.
+    private static boolean resting(ServerPlayer player, int now) {
+        Integer until = QUIET_UNTIL.get(player.getUUID());
+        if (until == null) {
+            return false;
+        }
+        if (now >= until) {
+            QUIET_UNTIL.remove(player.getUUID());
+            return false;
+        }
+        return true;
+    }
+
+    // The pool without the ones that player beat out in the world a short while ago.
+    private static List<String> withoutRecent(ServerPlayer player, List<String> pool, int now) {
+        Map<String, Integer> away = AWAY_UNTIL.get(player.getUUID());
+        if (away == null) {
+            return pool;
+        }
+        away.values().removeIf(until -> now >= until);
+        if (away.isEmpty()) {
+            AWAY_UNTIL.remove(player.getUUID());
+            return pool;
+        }
+        List<String> out = new ArrayList<>();
+        for (String id : pool) {
+            if (!away.containsKey(id)) {
+                out.add(id);
+            }
+        }
+        return out;
     }
 
     private static void onServerTick(ServerTickEvent.Post event) {
         if (event.getServer().getTickCount() % INTERVAL != 37 || !Progression.on(event.getServer())) {
             return;
         }
+        int now = event.getServer().getTickCount();
         for (ServerPlayer player : event.getServer().getPlayerList().getPlayers()) {
             ServerLevel level = player.serverLevel();
             if (player.isSpectator() || !player.isAlive() || level.dimension() != Level.OVERWORLD
                     || player.tickCount < GRACE_TICKS || level.getDifficulty() == Difficulty.PEACEFUL
-                    || !level.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING)) {
+                    || !level.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING) || resting(player, now)) {
                 continue;
             }
             RandomSource random = level.getRandom();
-            List<String> pool = pool(Tiers.of(player));
+            List<String> all = pool(Tiers.of(player));
+            List<String> pool = withoutRecent(player, all, now);
             // in their own biome they turn up more, and more of them are the ones who live there (Stark 2026-11-12:
             // the Leaf's ninja in the Floresta da Folha, Gaara in the Deserto do Vento)
             List<String> home = home(level, player.blockPosition(), pool);
@@ -68,7 +152,7 @@ public final class RoamingSouls {
                 continue;
             }
             boolean someone = !level.getEntitiesOfClass(SoulBoss.class, player.getBoundingBox().inflate(NEARBY),
-                    boss -> pool.contains(boss.bossId())).isEmpty();
+                    boss -> all.contains(boss.bossId())).isEmpty();
             if (pool.isEmpty() || someone) {
                 continue;
             }

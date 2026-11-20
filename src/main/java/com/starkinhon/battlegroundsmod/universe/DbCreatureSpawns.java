@@ -98,6 +98,10 @@ final class DbCreatureSpawns {
             return;
         }
         BlockPos tower = karin.pos();
+        if (!com.starkinhon.battlegroundsmod.npc.NpcGuard.settled(level, tower.getX(), tower.getZ(), 48)) {
+            // the tower's entities are not in yet: the Bora already there would not be found
+            return;
+        }
         if (!level.getEntitiesOfClass(Bora.class, new net.minecraft.world.phys.AABB(tower).inflate(64, 128, 64)).isEmpty()) {
             return;
         }
@@ -111,7 +115,8 @@ final class DbCreatureSpawns {
                 continue;
             }
             BlockPos pos = UniverseSpawns.ground(level, x, z);
-            if (pos != null && ModEntities.BORA.get().spawn(level, pos, MobSpawnType.EVENT) != null) {
+            if (pos != null && com.starkinhon.battlegroundsmod.npc.NpcGuard.spawn(level, ModEntities.BORA.get(), pos,
+                    "bora@" + tower.getX() + "," + tower.getZ()) != null) {
                 return;
             }
         }

@@ -1159,7 +1159,7 @@ void main() {
         col = mix(col, cC, corpo * pele * aro);
         col = mix(col, cM, miolo * corpo * pele * aro);
         float sw = fbm(vec2(x * 1.5 + sd, y * 2.0 - tq * 0.8)) * 6.0;
-        float linha = 1.0 - smoothstep(0.0, fwidth(sw) * 1.4, abs(fract(sw) - 0.5) - 0.06);
+        float linha = 1.0 - smoothstep(0.0, max(fwidth(sw) * 1.4, 1.0e-4), abs(fract(sw) - 0.5) - 0.06);
         col = mix(col, cT, linha * pele * aro * (1.0 - miolo) * (1.0 - corpo * 0.5) * step(0.15, y) * 0.8);
         float soot = step(0.93, hash(floor(vec2(x * 9.0, y * 13.0)) + floor(tq * 12.0))) * (1.0 - aro) * out0;
         col = mix(col, cB * 0.4, soot);

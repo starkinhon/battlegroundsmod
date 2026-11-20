@@ -100,9 +100,35 @@ public final class Esfera {
         // the two screens in the cutscene), so when the cutscene ends it is already in the sky and nobody sees it
         // standing on the ground for a moment first.
         EsferaSpec.Queda queda = spec.queda();
-        Vec3 spot = home.add(forward.scale(queda.distancia()));
-        double groundY = ground(level, new Vec3(spot.x, home.y + 40, spot.z), 120);
-        Vec3 top = new Vec3(spot.x, groundY + queda.altura(), spot.z);
+        Vec3 ahead = home.add(forward.scale(queda.distancia()));
+        double floorY;
+        Vec3 high;
+        // Stark 2026-11-20: in the Livro dos Desafios arena the target came down on top of the barrier ceiling (the ground
+        // was looked for from 40 over Bills, which hit the ceiling, and it fell from 150 over that) and was stuck up there.
+        // In an arena: the spot is pulled inside the ring, the ground is looked for under the ceiling, and the fall starts
+        // just under it. Out in the world it falls from queda.altura as always.
+        com.starkinhon.battlegroundsmod.challenge.ChallengeArenas.Bounds box =
+                com.starkinhon.battlegroundsmod.challenge.ChallengeArenas.bounds(level, home);
+        if (box != null) {
+            double cx = box.center().getX() + 0.5, cz = box.center().getZ() + 0.5;
+            double dx = ahead.x - cx, dz = ahead.z - cz;
+            double d = Math.sqrt(dx * dx + dz * dz);
+            double keep = Math.max(1, box.radius() - 4.0);
+            if (d > keep) {
+                ahead = new Vec3(cx + dx * keep / d, ahead.y, cz + dz * keep / d);
+            }
+            double under = box.ceilingY() - 1.0;
+            floorY = ground(level, new Vec3(ahead.x, under, ahead.z), under - (box.center().getY() - 40));
+            floorY = Math.min(floorY, box.ceilingY() - 4.0);
+            high = new Vec3(ahead.x, Math.max(floorY + 1, Math.min(floorY + queda.altura(), box.ceilingY() - 3.0)), ahead.z);
+        } else {
+            floorY = ground(level, new Vec3(ahead.x, home.y + 40, ahead.z), 120);
+            high = new Vec3(ahead.x, floorY + queda.altura(), ahead.z);
+        }
+        final Vec3 spot = ahead;
+        final double groundY = floorY;
+        final Vec3 top = high;
+        double drop = Math.max(1, top.y - groundY);
         Vec3 stood = victim.position();
         int moveUp = Math.max(tp + 2, blast);
         Freeze.hold(victim, end - 1, age -> age < moveUp ? stood : top);
@@ -165,7 +191,7 @@ public final class Esfera {
             }
             // Still lying adrift and stunned while the sun carries it down.
             PacketDistributor.sendToPlayersTrackingEntityAndSelf(victim, new ModPayloads.PlaySkillAnimation(victim.getId(), SKILL + "#queda", awakened));
-            Stun.apply(victim, (int) Math.ceil(queda.altura() / Math.max(0.2, queda.velocidade())) + 20);
+            Stun.apply(victim, (int) Math.ceil(drop / Math.max(0.2, queda.velocidade())) + 20);
             Vec3 from = caster.isAlive() ? caster.position() : home;
             float yaw = (float) (Mth.atan2(spot.z - from.z, spot.x - from.x) * Mth.RAD_TO_DEG) - 90;
             if (caster instanceof ServerPlayer player) {
@@ -180,22 +206,22 @@ public final class Esfera {
             } else {
                 victim.teleportTo(top.x, top.y, top.z);
             }
-            fall(caster, level, spec, victim, groundY, awakened, screen);
+            fall(caster, level, spec, victim, groundY, drop, awakened, screen);
         });
         return true;
     }
 
     // The target coming down from the sky, straight, into a crater.
-    private static void fall(LivingEntity caster, ServerLevel level, EsferaSpec spec, LivingEntity victim, double groundY, boolean awakened,
-            List<ServerPlayer> screen) {
+    private static void fall(LivingEntity caster, ServerLevel level, EsferaSpec spec, LivingEntity victim, double groundY, double drop,
+            boolean awakened, List<ServerPlayer> screen) {
         EsferaSpec.Queda queda = spec.queda();
         double speed = Math.max(0.2, queda.velocidade());
-        int max = (int) Math.ceil(queda.altura() / speed) + 60;
+        int max = (int) Math.ceil(drop / speed) + 60;
         Fx.effects(level, SKILL, awakened, "queda", victim, max);
         // The sun comes down with it, on top of it.
         Vec3 head = victim.position().add(0, victim.getBbHeight(), 0);
         PacketDistributor.sendToPlayersTrackingEntityAndSelf(victim, new ModPayloads.EsferaFall(victim.getId(), head, head, awakened));
-        SkillSounds.play(level, spec.sons(), "queda", 0, (int) Math.ceil(queda.altura() / speed), onde -> victim.position(), screen);
+        SkillSounds.play(level, spec.sons(), "queda", 0, (int) Math.ceil(drop / speed), onde -> victim.position(), screen);
         Tasks.add(age -> {
             if (!victim.isAlive() || victim.isRemoved()) {
                 return true;

@@ -102,8 +102,13 @@ void emit(vec3 c, float a, float g) {
     }
 }
 
+// Normal da face pelas derivadas. Chamar ANTES de qualquer discard do tipo: depois de um discard as derivadas do
+// quadrado 2x2 ficam indefinidas (placa NVIDIA devolve zero) e normalize(0) vira NaN = pixel preto pontilhado na borda.
 vec3 facetN(vec3 V) {
-    vec3 N = normalize(cross(dFdx(vW), dFdy(vW)));
+    vec3 X = cross(dFdx(vW), dFdy(vW));
+    float l = length(X);
+    if (!(l > 1e-12)) return V;
+    vec3 N = X / l;
     return dot(N, V) < 0. ? -N : N;
 }
 
@@ -178,15 +183,18 @@ void main() {
         vec2 q = vQ;
         float d = length(vec2(q.x * (1.05 + 0.25 * fract(vD * 13.)), q.y));
         float notch = q.y > 0.55 ? smoothstep(0.0, 0.2, abs(q.x) - (q.y - 0.55) * 0.55) : 1.;
-        if (d > 1. || notch < 0.5) discard;
         vec3 N = facetN(V);
+        // borda suave de 1 pixel (antes cortava seco e serrilhava); derivadas tiradas antes do discard
+        float cov = clamp((1. - d) / max(fwidth(d), 1e-4) + 0.5, 0., 1.)
+                  * clamp((notch - 0.5) / max(fwidth(notch), 1e-4) + 0.5, 0., 1.);
+        if (cov <= 0.) discard;
         float glint = pow(max(0., dot(reflect(-V, N), normalize(BL_LIGHT))), 10.);
         float rim = smoothstep(0.72, 1., d);
         vec3 base = mix(vec3(0.86, 0.32, 0.55), vec3(0.98, 0.7, 0.84), smoothstep(-1., 0.6, q.y));
         vec3 c = mix(base, vec3(1., 0.95, 0.98), rim * 0.7);
         c *= 0.75 + 0.35 * abs(dot(N, normalize(BL_LIGHT)));
         c += glint * 1.2;
-        emit(c, 0.96 * (1. - smoothstep(0.85, 1., Life * step(2.5, B.w))), glint);
+        emit(c, 0.96 * cov * (1. - smoothstep(0.85, 1., Life * step(2.5, B.w))), glint * cov);
         return;
     }
     if (isK(K_BLADES)) {
@@ -400,9 +408,9 @@ void main() {
         float h = h13(cell + Seed);
         float field = A.y < 0.5 ? local.y / A.z : length(local) / A.z;
         float d = A.x * 1.12 - (field + (h - 0.5) * 0.1 + 0.05);
+        vec3 N = facetN(V);
         if (d <= 0.) discard;
         if (A.w > 0. && h13(cell + 7.7) < A.w) discard;
-        vec3 N = facetN(V);
         vec4 ic = iceLook(N, V, (cell + 0.5) / 16. * 1.5, g);
         float edge = 1. - smoothstep(0., 0.07, d);
         ic.rgb = mix(ic.rgb, vec3(1.2, 1.35, 1.45), edge);

@@ -54,6 +54,7 @@ public class BattlegroundsMod {
         ModSounds.SOUND_EVENTS.register(modEventBus);
         ModEffects.MOB_EFFECTS.register(modEventBus);
         com.starkinhon.battlegroundsmod.world.ModWorldgen.register(modEventBus);
+        com.starkinhon.battlegroundsmod.world.RareChestWeapons.register(modEventBus);
 
         BossRules.init();
         com.starkinhon.battlegroundsmod.power.powers.kokushibo.OniBody.init();
@@ -77,6 +78,7 @@ public class BattlegroundsMod {
         com.starkinhon.battlegroundsmod.universe.EnergyControl.register();
         com.starkinhon.battlegroundsmod.universe.MasterTraining.register();
         com.starkinhon.battlegroundsmod.universe.KaiohTraining.register();
+        com.starkinhon.battlegroundsmod.npc.NpcGuard.register();
         com.starkinhon.battlegroundsmod.universe.UniverseSpawns.register();
         com.starkinhon.battlegroundsmod.npc.PedestreCrowd.register();
         com.starkinhon.battlegroundsmod.animal.naruto.NarutoMob.register();

@@ -17,11 +17,15 @@ import com.starkinhon.battlegroundsmod.combat.SkillSounds;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
 import com.starkinhon.battlegroundsmod.power.BossOrder;
+import com.starkinhon.battlegroundsmod.power.Power;
 import com.starkinhon.battlegroundsmod.power.PowerData;
+import com.starkinhon.battlegroundsmod.power.Powers;
+import com.starkinhon.battlegroundsmod.power.SoulSync;
 import com.starkinhon.battlegroundsmod.skill.AzulSpec;
 import com.starkinhon.battlegroundsmod.skill.RoxoSpec;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
@@ -55,6 +59,9 @@ public final class Roxo {
     // Arms open while the spheres come round, then the hands brought together in front of the chest, held.
     public static final String HOLD_ANIMATION = "gojo.roxo_segurando";
     public static final int COOLDOWN = 300;
+    // Players: the Unlimited Purple only with the Roxo (C) awake and once a minute (Stark 2026-11-20: it had no cooldown).
+    public static final int IRRESTRITO_COOLDOWN = 1200;
+    public static final int ROXO_SLOT = 2;
     public static final int ALIVE = 0;
     public static final int GONE = 2;
     private static final double VIEW_DISTANCE = 192;
@@ -208,6 +215,36 @@ public final class Roxo {
         });
     }
 
+    // Can this caster make the Unlimited Purple now? Bosses always (they have their own timings); players only with the
+    // Gojo soul's Roxo awake (SoulSync, the same rule as pressing C) and the minute since the last one gone (or
+    // /soul semcooldown). Creative counts the cooldown too, so it can be tested.
+    public static boolean irrestritoAllowed(LivingEntity caster) {
+        if (!(caster instanceof ServerPlayer player)) {
+            return true;
+        }
+        PowerData data = player.getData(ModAttachments.POWER);
+        Power power = Powers.get(data.power);
+        if (power == null || !"strongest".equals(power.id()) || !SoulSync.awake(player, power, ROXO_SLOT)) {
+            return false;
+        }
+        return data.noCooldown || player.level().getGameTime() >= data.irrestritoUntil;
+    }
+
+    // Why a full Red into a parked full Blue did not make the Unlimited Purple, on the action bar.
+    public static void irrestritoRefused(LivingEntity caster) {
+        if (!(caster instanceof ServerPlayer player)) {
+            return;
+        }
+        PowerData data = player.getData(ModAttachments.POWER);
+        Power power = Powers.get(data.power);
+        if (power == null || !"strongest".equals(power.id()) || !SoulSync.awake(player, power, ROXO_SLOT)) {
+            player.displayClientMessage(Component.translatable("message.battlegroundsmod.roxo_irrestrito_trancado"), true);
+            return;
+        }
+        long left = data.irrestritoUntil - player.level().getGameTime();
+        player.displayClientMessage(Component.translatable("message.battlegroundsmod.roxo_irrestrito_recarga", (left + 19) / 20), true);
+    }
+
     // The Unlimited Purple at center: the Red and the Blue implode into it, it grows fast, then blows up in every
     // direction. Called when a full Red reaches his own parked full Blue (Vermelho.fire).
     public static void irrestrito(ServerLevel level, LivingEntity caster, Vec3 center, boolean awakened) {
@@ -215,6 +252,9 @@ public final class Roxo {
         RoxoSpec.Irrestrito irr = spec.irrestrito();
         if (irr == null) {
             return;
+        }
+        if (caster instanceof ServerPlayer player) {
+            player.getData(ModAttachments.POWER).irrestritoUntil = level.getGameTime() + IRRESTRITO_COOLDOWN;
         }
         int implode = Math.max(1, irr.implodirTicks());
         int growTicks = Math.max(1, irr.crescerTicks());

@@ -52,12 +52,13 @@ public final class Rukia {
     }
 
     public static Power create() {
+        // cooldowns raised a little on 2026-11-20 (Stark: too strong in playtest); was 160/150/100/420/140
         return new Power("rukia", 0xBFE8FF, 1.0f, List.of(
-                new Ability(160, 0, Rukia::tsukishiro),
-                new Ability(150, 0, Rukia::hakuren),
-                new Ability(100, 0, Rukia::shirafune),
-                new Ability(420, 0, Rukia::bankai),
-                new Ability(140, 0, Rukia::kido)));
+                new Ability(200, 0, Rukia::tsukishiro),
+                new Ability(190, 0, Rukia::hakuren),
+                new Ability(130, 0, Rukia::shirafune),
+                new Ability(520, 0, Rukia::bankai),
+                new Ability(190, 0, Rukia::kido)));
     }
 
     // ---------- ice over a body ----------

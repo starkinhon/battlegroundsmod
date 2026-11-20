@@ -134,7 +134,7 @@ public final class Vermelho {
             // Players let it go only when they let go of X, however long that is; bosses after their charge.
             if (!held) {
                 if (!now.noCooldown) {
-                    now.cooldowns[1] = Math.max(now.cooldowns[1], HELD_COOLDOWN - age);
+                    com.starkinhon.battlegroundsmod.power.SkillSwap.raiseCooldown(caster, "strongest", 1, HELD_COOLDOWN - age);
                     if (caster instanceof net.minecraft.server.level.ServerPlayer player) {
                         com.starkinhon.battlegroundsmod.power.PowerLogic.sync(player);
                     }
@@ -243,7 +243,13 @@ public final class Vermelho {
         // the Unlimited Purple (Roxo.irrestrito) when the front gets there.
         RoxoSpec roxo = RoxoSpec.get(awakened);
         double irrMin = roxo.irrestrito() != null ? roxo.irrestrito().cargaMin() : 2;
-        Azul.Live azul = shift == null && c >= irrMin ? Azul.claimParked(caster, from, dir, range, radius, irrMin) : null;
+        boolean full = shift == null && c >= irrMin;
+        boolean allowed = full && Roxo.irrestritoAllowed(caster);
+        if (full && !allowed && Azul.parkedBlue(caster, irrMin) != null) {
+            // Not awake or still on its minute: a normal Red, and the reason on the action bar.
+            Roxo.irrestritoRefused(caster);
+        }
+        Azul.Live azul = allowed ? Azul.claimParked(caster, from, dir, range, radius, irrMin) : null;
         if (azul != null) {
             range = Math.max(1, azul.pos().subtract(from).dot(dir) - azul.radius() * 0.5);
         }

@@ -98,6 +98,16 @@ public final class KaiohTraining {
         return "goku".equals(player.getData(ModAttachments.POWER).power);
     }
 
+    // A Bubbles of a chase that is on (one left from before a restart is not: NpcGuard drops it).
+    public static boolean isChaseBubbles(net.minecraft.world.entity.Entity e) {
+        for (Chase chase : CHASES.values()) {
+            if (chase.bubbles != null && chase.bubbles.getUUID().equals(e.getUUID())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     // Right click on Senhor Kaioh (Npcs.talk).
     public static void talk(ServerPlayer player, UniverseNpc npc, MasterTraining.Talker say) {
         if (SoulSync.knowsTaught(player)) {
@@ -216,6 +226,10 @@ public final class KaiohTraining {
             boolean onPlanet = player.level().dimension().equals(ChallengeArenas.ARENAS)
                     && "goku".equals(ChallengeArenas.arenaAt(player.getX(), player.getZ())) && Math.abs(player.getZ() - ChallengeArenas.KAIOH_Z) < 600;
             if (onPlanet) {
+                if (now % 20 == 0 && player.level() instanceof ServerLevel arena) {
+                    // checked again while someone is there: right after the trip his chunk's entities are not in yet
+                    ensureKaioh(arena);
+                }
                 Long at = HOME_AT.get(id);
                 if (at != null && now >= at || player.getY() < ChallengeArenas.kaiohPlanet().getY() - 170) {
                     sendHome(player);
@@ -248,13 +262,18 @@ public final class KaiohTraining {
         }
     }
 
-    // Senhor Kaioh stands at the planet's challenger spot, once.
+    // Senhor Kaioh stands at the planet's challenger spot, once (NpcGuard: only looked for once his chunks are in, so
+    // a trip up never makes another one).
     private static void ensureKaioh(ServerLevel arena) {
-        BlockPos at = stand(arena, ChallengeArenas.kaiohSpot(true));
+        BlockPos spot = ChallengeArenas.kaiohSpot(true);
+        if (!com.starkinhon.battlegroundsmod.npc.NpcGuard.settled(arena, spot.getX(), spot.getZ(), 32)) {
+            return;
+        }
+        BlockPos at = stand(arena, spot);
         if (!arena.getEntities(ModEntities.NPC_KAIOH.get(), new net.minecraft.world.phys.AABB(at).inflate(80), e -> e.isAlive()).isEmpty()) {
             return;
         }
-        UniverseNpc kaioh = ModEntities.NPC_KAIOH.get().spawn(arena, at, MobSpawnType.EVENT);
+        UniverseNpc kaioh = com.starkinhon.battlegroundsmod.npc.NpcGuard.spawn(arena, ModEntities.NPC_KAIOH.get(), at, "kaioh");
         if (kaioh != null) {
             kaioh.restrictTo(at, 4);
             kaioh.setCustomName(kaioh.getType().getDescription());

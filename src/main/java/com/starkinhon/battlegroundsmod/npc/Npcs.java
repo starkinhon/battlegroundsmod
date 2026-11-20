@@ -54,8 +54,13 @@ public final class Npcs {
             new Home("demonslayer", ModEntities.NPC_UROKODAKI, 6, 3),
             new Home("demonslayer", ModEntities.NPC_TAMAYO, -5, 4));
 
-    // Makes sure this universe's NPCs stand around its arrival point.
+    // Makes sure this universe's NPCs stand around its arrival point (NpcGuard: once the point's chunks have their
+    // entities in, so the ones already there are found and never made again).
     public static void ensure(ServerLevel level, String universe, BlockPos arrival) {
+        NpcGuard.later(level, arrival, 32, l -> ensureNow(l, universe, arrival));
+    }
+
+    private static void ensureNow(ServerLevel level, String universe, BlockPos arrival) {
         for (Home home : HOMES) {
             if (!home.universe().equals(universe)) {
                 continue;
@@ -69,7 +74,7 @@ public final class Npcs {
             if (at.getY() <= level.getMinBuildHeight() + 1) {
                 at = arrival;
             }
-            UniverseNpc npc = type.spawn(level, at, MobSpawnType.EVENT);
+            UniverseNpc npc = NpcGuard.spawn(level, type, at, "chegada/" + universe + "/" + EntityType.getKey(type).getPath());
             if (npc != null) {
                 npc.restrictTo(at, 10);
                 npc.setCustomName(npc.getType().getDescription());
@@ -98,6 +103,7 @@ public final class Npcs {
             case "kaioh" -> com.starkinhon.battlegroundsmod.universe.KaiohTraining.talk(player, npc, line -> say(player, npc, line));
             case "bubbles" -> com.starkinhon.battlegroundsmod.universe.KaiohTraining.touch(player, npc);
             case "shoko" -> shoko(player, npc);
+            case "maki" -> maki(player, npc);
             case "yoruichi" -> teach(player, npc, "yoruichi", com.starkinhon.battlegroundsmod.universe.BleachWorld.SHUNPO);
             case "urahara" -> daily(player, npc, "souls_urahara_dia", new ItemStack(ModItems.SOUL_CANDY.get()), "urahara", 4);
             case "urokodaki" -> teach(player, npc, "urokodaki", com.starkinhon.battlegroundsmod.universe.DemonSlayerWorld.MARK);
@@ -139,6 +145,16 @@ public final class Npcs {
         player.connection.send(new ClientboundSetSubtitleTextPacket(Component.translatable("technique.battlegroundsmod.voo")));
         Fx.burst(player.serverLevel(), ParticleTypes.CLOUD, player.position(), 60, 0.8, 0.1);
         Fx.sound(player.serverLevel(), player.position(), SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, 1f, 1.2f);
+    }
+
+    // Maki off the path (the path's own talk comes first, universe/GuidedPath): the Nuvem Brincalhona once, then tips.
+    private static void maki(ServerPlayer player, UniverseNpc npc) {
+        if (com.starkinhon.battlegroundsmod.universe.GuidedPath.makiGives(player)) {
+            say(player, npc, Component.translatable("npc.battlegroundsmod.maki.gift"));
+            Fx.sound(player.serverLevel(), player.position(), SoundEvents.ITEM_PICKUP, 0.8f, 1.2f);
+            return;
+        }
+        say(player, npc, pick(player, "npc.battlegroundsmod.maki.hint", 3));
     }
 
     private static void shoko(ServerPlayer player, UniverseNpc npc) {

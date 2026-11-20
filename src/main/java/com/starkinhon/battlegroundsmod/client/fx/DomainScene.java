@@ -560,7 +560,7 @@ public final class DomainScene {
             if (!FxConfig.on(FxConfig.REDUCED_FLASH)) {
                 ScreenFx.impactFrame(new int[] {2}, 1, 0x7FD8FF, d.hub(minecraft.player.position()).add(0, 1, 0), 0);
             }
-            d.nextStutter = t + 40 + 40 * FxWorld.hash((int) t, 3, 1);
+            d.nextStutter = t + 90 + 60 * FxWorld.hash((int) t, 3, 1);
         }
     }
 

@@ -869,13 +869,15 @@ public final class ModPayloads {
     }
 
     // Server -> client: the Caminho (universe/GuidedPath): the path the corner shows ("" = none yet), each path's step
-    // (Dragon Ball, Naruto, Jujutsu, then the last one: 0 closed, 1 open, 2 done) and who the corner sends you to.
-    public record PathSync(String active, List<Integer> steps, String npc) implements CustomPacketPayload {
+    // (Dragon Ball, Naruto, Jujutsu, then the last one: 0 closed, 1 open, 2 done), who the corner sends you to and
+    // whether the player took the path off the screen.
+    public record PathSync(String active, List<Integer> steps, String npc, boolean hidden) implements CustomPacketPayload {
         public static final Type<PathSync> TYPE = payloadType("path_sync");
         public static final StreamCodec<ByteBuf, PathSync> STREAM_CODEC = StreamCodec.composite(
                 ByteBufCodecs.STRING_UTF8, PathSync::active,
                 ByteBufCodecs.VAR_INT.apply(ByteBufCodecs.list()), PathSync::steps,
                 ByteBufCodecs.STRING_UTF8, PathSync::npc,
+                ByteBufCodecs.BOOL, PathSync::hidden,
                 PathSync::new);
 
         @Override
@@ -892,6 +894,18 @@ public final class ModPayloads {
 
         @Override
         public Type<PathPick> type() {
+            return TYPE;
+        }
+    }
+
+    // Client -> server: show (true) or hide (false) the path on the screen, from the Diário (aba Caminho).
+    public record PathTrack(boolean show) implements CustomPacketPayload {
+        public static final Type<PathTrack> TYPE = payloadType("path_track");
+        public static final StreamCodec<ByteBuf, PathTrack> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.BOOL, PathTrack::show, PathTrack::new);
+
+        @Override
+        public Type<PathTrack> type() {
             return TYPE;
         }
     }
@@ -2403,10 +2417,15 @@ public final class ModPayloads {
             }
         }));
         registrar.playToClient(PathSync.TYPE, PathSync.STREAM_CODEC, (payload, context) -> context.enqueueWork(
-                () -> ClientHooks.path(payload.active(), payload.steps(), payload.npc())));
+                () -> ClientHooks.path(payload.active(), payload.steps(), payload.npc(), payload.hidden())));
         registrar.playToServer(PathPick.TYPE, PathPick.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer player) {
                 com.starkinhon.battlegroundsmod.universe.GuidedPath.pick(player, payload.uni());
+            }
+        }));
+        registrar.playToServer(PathTrack.TYPE, PathTrack.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
+            if (context.player() instanceof ServerPlayer player) {
+                com.starkinhon.battlegroundsmod.universe.GuidedPath.track(player, payload.show());
             }
         }));
         registrar.playToClient(QuestSync.TYPE, QuestSync.STREAM_CODEC, (payload, context) -> context.enqueueWork(

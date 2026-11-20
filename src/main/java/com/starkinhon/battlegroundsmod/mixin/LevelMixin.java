@@ -16,7 +16,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
 // Every block change goes through here: the arenas keep their invisible wall and bedrock floor whatever a skill
-// destroys, and the Izanami keeps the old block so it can put it back.
+// destroys, a challenge keeps the old block to put the arena back when someone falls, and the Izanami keeps the old block so it can put it back.
 @Mixin(Level.class)
 public abstract class LevelMixin {
     @ModifyVariable(method = "setBlock(Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/state/BlockState;II)Z", at = @At("HEAD"), argsOnly = true)
@@ -30,6 +30,7 @@ public abstract class LevelMixin {
             cir.setReturnValue(false);
             return;
         }
+        ChallengeArenas.beforeSetBlock((Level) (Object) this, pos);
         Izanami.beforeSetBlock((Level) (Object) this, pos);
     }
 }
