@@ -79,6 +79,9 @@ public final class Freeze {
     }
 
     public static boolean isFrozen(Entity entity) {
+        if (entity == null || entity.level().isClientSide()) {
+            return false;
+        }
         return HELD.containsKey(entity);
     }
 
