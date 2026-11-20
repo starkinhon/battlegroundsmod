@@ -248,8 +248,13 @@ public final class JujutsuBlocks {
     public static final DeferredBlock<PowerLineBlock> POWER_LINE = add(ModBlocks.BLOCKS.registerBlock("fio_de_rede", PowerLineBlock::new,
             BlockBehaviour.Properties.of().mapColor(MapColor.METAL).strength(1.0f, 3.0f).sound(SoundType.METAL).noOcclusion()));
     public static final DeferredBlock<ThinPlantBlock> WIRE = post("fio_de_poste", MapColor.COLOR_BLACK, SoundType.WOOL, 0, Block.box(7, 7, 7, 9, 9, 9));
-    public static final DeferredBlock<Block> STREET_LAMP = stone("luminaria_de_rua", MapColor.SNOW, 15);
-    public static final DeferredBlock<Block> TRAFFIC_BOX = stone("caixa_de_semaforo", MapColor.COLOR_BLACK, 0);
+    // The lamp's head and the traffic light (Stark 2026-11-20: they were plain cubes): models of their own.
+    public static final DeferredBlock<StreetLampBlock> STREET_LAMP = add(ModBlocks.BLOCKS.registerBlock("luminaria_de_rua",
+            StreetLampBlock::new, BlockBehaviour.Properties.of().mapColor(MapColor.SNOW).requiresCorrectToolForDrops()
+                    .strength(1.5f, 6.0f).sound(SoundType.METAL).noOcclusion().lightLevel(state -> 15)));
+    public static final DeferredBlock<TrafficLightBlock> TRAFFIC_BOX = add(ModBlocks.BLOCKS.registerBlock("caixa_de_semaforo",
+            TrafficLightBlock::new, BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GRAY).requiresCorrectToolForDrops()
+                    .strength(1.5f, 6.0f).sound(SoundType.METAL).noOcclusion().lightLevel(state -> 7)));
     public static final DeferredBlock<ThinPlantBlock> TRAFFIC_RED = post("luz_vermelha_de_semaforo", MapColor.COLOR_RED, SoundType.GLASS, 9, Block.box(2, 2, 2, 14, 14, 14));
     public static final DeferredBlock<ThinPlantBlock> TRAFFIC_GREEN = post("luz_verde_de_semaforo", MapColor.COLOR_GREEN, SoundType.GLASS, 9, Block.box(2, 2, 2, 14, 14, 14));
     public static final DeferredBlock<ThinPlantBlock> GUARD_RAIL = post("grade_de_protecao", MapColor.METAL, SoundType.METAL, 0, Block.box(1, 0, 1, 15, 10, 15));

@@ -18,7 +18,9 @@ public final class SeaGen {
     public static final byte AIR = 0, STONE = 1, ANDESITE = 2, TUFF = 3, MOSSY = 4, GRASS = 5, DIRT = 6, MOSS = 7, LOG = 8, PINE = 9,
             PINE_DARK = 10, VINE = 11, PLANK = 12, ROPE = 13, POST = 14, GRAVEL = 15, SAND = 16, CLAY = 17,
             // the game's rope runs along one axis per block (ROPE is along x)
-            ROPE_Z = 18, ROPE_Y = 19;
+            ROPE_Z = 18, ROPE_Y = 19,
+            // the top of a bridge's post, the rope wound round it (the rope is drawn by the client)
+            ANCHOR = 20;
 
     private SeaGen() {
     }
@@ -309,71 +311,64 @@ public final class SeaGen {
     public record End(int x, int z, int H, double R) {
     }
 
-    // A rope bridge between two pillars: planks on a curve (catenary) that sags in the middle, rope on both sides tied to
-    // posts at the ends.
-    static void bridge(Vox w, End a0, End b0, int sea) {
+    // A rope bridge's line: its two ends near the rim of each top (not the middle, where a pine usually stands), their
+    // decks' heights, and the deck's curve between them (flat over each top out to past its rim, the sag only over the
+    // water between).
+    public record Span(double ax, double az, double bx, double bz, int ya, int yb, double L, double sx, double sz,
+            double sag, double da, double db) {
+    }
+
+    public static Span span(End a0, End b0, int sea) {
         double L0 = Math.hypot(b0.x - a0.x, b0.z - a0.z), ux = (b0.x - a0.x) / L0, uz = (b0.z - a0.z) / L0;
-        // the ends start near the rim of each top, not the middle (where a pine usually stands)
         double ax = a0.x + ux * a0.R * 0.45, az = a0.z + uz * a0.R * 0.45;
         double bx = b0.x - ux * b0.R * 0.45, bz = b0.z - uz * b0.R * 0.45;
         int ya = sea + a0.H + 1, yb = sea + b0.H + 1;
         double L = Math.hypot(bx - ax, bz - az);
-        int n = (int) Math.ceil(L * 2.5);
-        double dx = (bx - ax) / L, dz = (bz - az) / L, sx = -dz, sz = dx;
-        double sag = 1 + L * 0.08;
-        // flat over each top out to past its rim, the sag only over the water between (it used to start sagging on the
-        // top, so the deck went down into the pillar's own dirt and came out as loose steps beside the cliff)
+        double dx = (bx - ax) / L, dz = (bz - az) / L;
+        // (it used to start sagging on the top, so the deck went down into the pillar's own dirt and came out as loose
+        // steps beside the cliff)
         double da = a0.R * 0.65, db = b0.R * 0.65;
         if (L - da - db < 6) {
             da = db = 0;
         }
-        // the posts first, so the rope tied to them doesn't take their middle block (it left the top block floating)
+        return new Span(ax, az, bx, bz, ya, yb, L, -dz, dx, 1 + L * 0.08, da, db);
+    }
+
+    // The rope on each side (Stark 2026-11-20: one curved rope, not blocks in steps): from the top of the post at one end
+    // (ANCHOR) to the top of the post at the other; the client draws it over the deck's curve (client/RopeRenderer). Each
+    // is {from x, y, z, to x, y, z}.
+    public static int[][] ropes(Span b) {
+        int[][] out = new int[2][];
+        int k = 0;
+        for (int s = -2; s <= 2; s += 4) {
+            out[k++] = new int[] {round(b.ax + b.sx * s), b.ya + 2, round(b.az + b.sz * s), round(b.bx + b.sx * s), b.yb + 2,
+                    round(b.bz + b.sz * s)};
+        }
+        return out;
+    }
+
+    // A rope bridge between two pillars: planks on a curve (catenary) that sags in the middle, a post at each corner with
+    // the rope wound round its top (the rope itself is drawn by the client between the two ends' posts).
+    static void bridge(Vox w, End a0, End b0, int sea) {
+        Span b = span(a0, b0, sea);
+        double ax = b.ax, az = b.az, bx = b.bx, bz = b.bz, L = b.L, sx = b.sx, sz = b.sz;
+        int ya = b.ya, yb = b.yb;
+        int n = (int) Math.ceil(L * 2.5);
         double[][] ends = {{ax, az, ya}, {bx, bz, yb}};
         for (double[] p : ends) {
             for (int s = -2; s <= 2; s += 4) {
                 for (int k = 0; k <= 2; k++) {
-                    w.force(round(p[0] + sx * s), (int) p[2] + k, round(p[1] + sz * s), POST);
+                    w.force(round(p[0] + sx * s), (int) p[2] + k, round(p[1] + sz * s), k == 2 ? ANCHOR : POST);
                 }
             }
         }
         for (int i = 0; i <= n; i++) {
             double t = i / (double) n;
             double x = ax + (bx - ax) * t, z = az + (bz - az) * t;
-            double y = deckY(t, L, da, db, ya, yb, sag);
+            double y = deckY(t, L, b.da, b.db, ya, yb, b.sag);
             for (int s = -1; s <= 1; s++) {
-                w.set(round(x + sx * s), round(y) - 1 + 1, round(z + sz * s), PLANK);
+                w.set(round(x + sx * s), round(y), round(z + sz * s), PLANK);
             }
-        }
-        // The rope on each side: the preview draws a line through its blocks, diagonals too; a block of rope in the game is
-        // straight along one axis, so the line goes block to block along the axes (a step in x, then in z, then in y),
-        // each block turned the way the rope leaves it, and it reads as one rope instead of loose sticks (Stark's print
-        // of 2026-11-12).
-        for (int s = -2; s <= 2; s += 4) {
-            int cx = 0, cy = 0, cz = 0;
-            for (int i = 0; i <= n; i++) {
-                double t = i / (double) n;
-                double x = ax + (bx - ax) * t, z = az + (bz - az) * t;
-                double y = deckY(t, L, da, db, ya, yb, sag);
-                int rx = round(x + sx * s), ry = round(y) + 1, rz = round(z + sz * s);
-                if (i == 0) {
-                    cx = rx;
-                    cy = ry;
-                    cz = rz;
-                    continue;
-                }
-                while (cx != rx || cz != rz || cy != ry) {
-                    byte type = cx != rx ? ROPE : cz != rz ? ROPE_Z : ROPE_Y;
-                    w.set(cx, cy, cz, type);
-                    if (cx != rx) {
-                        cx += Integer.signum(rx - cx);
-                    } else if (cz != rz) {
-                        cz += Integer.signum(rz - cz);
-                    } else {
-                        cy += Integer.signum(ry - cy);
-                    }
-                }
-            }
-            w.set(cx, cy, cz, Math.abs(bx - ax) >= Math.abs(bz - az) ? ROPE : ROPE_Z);
         }
     }
 

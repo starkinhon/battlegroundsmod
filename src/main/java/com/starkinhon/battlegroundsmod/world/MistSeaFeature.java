@@ -10,6 +10,7 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.mojang.serialization.Codec;
 import com.starkinhon.battlegroundsmod.ModBlocks;
+import com.starkinhon.battlegroundsmod.RopeAnchorBlockEntity;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -86,8 +87,27 @@ public final class MistSeaFeature extends Feature<NoneFeatureConfiguration> {
                 }
                 put(level, pos.set(x, y, z), state, rock(t));
             }
+            if (o.kind() == SeaGen.Kind.BRIDGE) {
+                ropes(level, o, sea, x0, z0, x1, z1);
+            }
         }
         return true;
+    }
+
+    // The bridge's two ropes: the post at its first end (when it is in this chunk) learns where the other end's post is
+    // and the deck's curve between, and the client draws the rope (client/RopeRenderer).
+    private static void ropes(WorldGenLevel level, SeaGen.Obj o, int sea, int x0, int z0, int x1, int z1) {
+        SeaGen.Span span = SeaGen.span(o.a(), o.b(), sea);
+        for (int[] r : SeaGen.ropes(span)) {
+            if (r[0] < x0 || r[0] > x1 || r[2] < z0 || r[2] > z1) {
+                continue;
+            }
+            BlockPos from = new BlockPos(r[0], r[1], r[2]);
+            if (level.getBlockEntity(from) instanceof RopeAnchorBlockEntity be) {
+                be.link(new BlockPos(r[3], r[4], r[5]), (float) span.sag(), (float) (span.da() / span.L()),
+                        (float) (span.db() / span.L()));
+            }
+        }
     }
 
     private static int order(SeaGen.Obj o) {
@@ -161,6 +181,7 @@ public final class MistSeaFeature extends Feature<NoneFeatureConfiguration> {
             case SeaGen.PINE_DARK -> ModBlocks.PINE_LEAVES_DARK.get().defaultBlockState().setValue(LeavesBlock.PERSISTENT, true);
             case SeaGen.PLANK -> Blocks.SPRUCE_PLANKS.defaultBlockState();
             case SeaGen.POST -> Blocks.STRIPPED_DARK_OAK_LOG.defaultBlockState();
+            case SeaGen.ANCHOR -> ModBlocks.ROPE_ANCHOR.get().defaultBlockState();
             case SeaGen.GRAVEL -> Blocks.GRAVEL.defaultBlockState();
             case SeaGen.SAND -> Blocks.SAND.defaultBlockState();
             case SeaGen.CLAY -> Blocks.CLAY.defaultBlockState();
