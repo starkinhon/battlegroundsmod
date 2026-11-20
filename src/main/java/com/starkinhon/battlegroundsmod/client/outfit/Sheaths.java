@@ -14,6 +14,12 @@ public final class Sheaths {
     private Sheaths() {
     }
 
+    public static void clear() {
+        CARRYING.clear();
+        DRAWN.clear();
+        STRETCHED.clear();
+    }
+
     public static void set(int entityId, boolean carrying, boolean drawn, boolean stretched) {
         if (stretched) {
             STRETCHED.add(entityId);

@@ -103,6 +103,10 @@ public final class EnergyControl {
     private static final java.util.Set<java.util.UUID> RUN_CLIENT = java.util.concurrent.ConcurrentHashMap.newKeySet();
     private static final java.util.Set<java.util.UUID> RUN_SERVER = java.util.concurrent.ConcurrentHashMap.newKeySet();
 
+    public static void resetStatics() {
+        RUN_SERVER.clear();
+    }
+
     public static boolean running(Player player) {
         return (player.level().isClientSide() ? RUN_CLIENT : RUN_SERVER).contains(player.getUUID());
     }

@@ -99,6 +99,20 @@ public class BattlegroundsModClient {
             com.starkinhon.battlegroundsmod.client.FlightClient.clear();
             // a black screen, a flash or a goal of a scene left in the middle never follows into the next world (#379)
             com.starkinhon.battlegroundsmod.client.IntroHud.clear();
+            com.starkinhon.battlegroundsmod.client.ClientHooks.rewind();
+            com.starkinhon.battlegroundsmod.client.outfit.Outfits.clear();
+            com.starkinhon.battlegroundsmod.client.outfit.Sheaths.clear();
+            com.starkinhon.battlegroundsmod.client.outfit.GourdLayer.clear();
+            com.starkinhon.battlegroundsmod.client.outfit.SwordStretch.clear();
+            com.starkinhon.battlegroundsmod.client.fx.MajinMarkLayer.clear();
+            com.starkinhon.battlegroundsmod.client.FalaRender.clear();
+            com.starkinhon.battlegroundsmod.client.fx.hs.HsWood.clear();
+            com.starkinhon.battlegroundsmod.client.fx.ScreenFx.clear();
+            com.starkinhon.battlegroundsmod.client.ScreenShake.clear();
+            com.starkinhon.battlegroundsmod.client.BossBars.clear();
+            com.starkinhon.battlegroundsmod.client.fx.ShenlongScene.clear();
+            com.starkinhon.battlegroundsmod.power.SkillSwap.clearClient();
+            com.starkinhon.battlegroundsmod.challenge.ArenaParty.clearClient();
         });
         NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.client.event.RenderFrameEvent.Pre e) ->
                 com.starkinhon.battlegroundsmod.client.IntroHud.holdNight());

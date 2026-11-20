@@ -59,6 +59,10 @@ public final class Goku {
     private Goku() {
     }
 
+    public static void resetStatics() {
+        LEVELS.clear();
+    }
+
     public static Power create() {
         return new Power("goku", 0x5AB8FF, 1.1f, List.of(
                 new Ability(160, 0, Goku::kamehameha),

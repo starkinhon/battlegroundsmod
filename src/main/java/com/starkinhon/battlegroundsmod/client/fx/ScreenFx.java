@@ -85,6 +85,24 @@ public final class ScreenFx {
     private ScreenFx() {
     }
 
+    public static void clear() {
+        impact = null;
+        flash = null;
+        radial = null;
+        fov = null;
+        vignette = null;
+        WARPS.clear();
+        HELD.clear();
+        heldAt = -10;
+        holdBlur = 0;
+        holdBlurAt = -10;
+        holdFov = 0;
+        holdFovAt = -10;
+        gradeMode = 0;
+        gradeAmount = 0;
+        gradeAt = -10;
+    }
+
     public static long now() {
         return ticks;
     }

@@ -956,6 +956,14 @@ public final class ChallengeArenas {
     private static Build planetBuild;
     private static boolean planetReady;
 
+    public static void resetStatics() {
+        if (planetBuild != null) {
+            planetBuild.release();
+            planetBuild = null;
+        }
+        planetReady = false;
+    }
+
     // Where the planet's fight floor centre is (the arena's own spots are offsets from it).
     public static BlockPos kaiohPlanet() {
         ArenaTemplate.Meta meta = ArenaTemplate.meta("goku");

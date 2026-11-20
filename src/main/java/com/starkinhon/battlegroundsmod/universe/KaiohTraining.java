@@ -71,6 +71,13 @@ public final class KaiohTraining {
     private KaiohTraining() {
     }
 
+    public static void resetStatics() {
+        CHASES.clear();
+        BACK.clear();
+        GOING.clear();
+        HOME_AT.clear();
+    }
+
     public static void register() {
         NeoForge.EVENT_BUS.addListener(KaiohTraining::onTick);
         NeoForge.EVENT_BUS.addListener((AttackEntityEvent e) -> {
