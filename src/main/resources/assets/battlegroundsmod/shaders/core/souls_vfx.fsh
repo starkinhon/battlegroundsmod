@@ -1336,12 +1336,12 @@ void main() {
         float v = uv.y * 2.0 - 1.0;
         float u = uv.x * 22.0;
         float n = fbm(vec2(u * 0.8 - time * 2.0, v * 2.0));
-        float band = 1.0 - smoothstep(0.5, 1.0, abs(v) + (n - 0.5) * 0.5);
-        float chev = fract(u * 0.5 - abs(v) * 0.6 - time * (1.0 - param) * 2.5);
-        float arrow = smoothstep(0.0, 0.08, chev) * (1.0 - smoothstep(0.25, 0.4, chev)) * (1.0 - smoothstep(0.6, 0.95, abs(v)));
+        float band = 1.0 - smoothstep(0.35, 1.0, abs(v) + (n - 0.5) * 0.6);
+        float chev = fract(u * 0.35 - abs(v) * 0.5 - time * (1.0 - param) * 1.8);
+        float arrow = smoothstep(0.0, 0.1, chev) * (1.0 - smoothstep(0.4, 0.55, chev)) * (1.0 - smoothstep(0.55, 0.9, abs(v))) * (0.6 + 0.4 * n);
         float heat = smoothstep(0.45, 0.75, fbm(vec2(u * 1.3 - time * 3.0, v * 3.0) + 4.0));
         float ends = (1.0 - smoothstep(0.85, 1.0, uv.x)) * smoothstep(0.0, 0.03, uv.x);
-        alpha = (band * (0.22 + 0.3 * param) + arrow * 0.8 * (1.0 - 0.6 * param) + heat * band * param * 0.6) * ends;
+        alpha = (band * (0.4 + 0.3 * param) + arrow * 0.7 * (1.0 - 0.6 * param) + heat * band * param * 0.6) * ends;
         base = mix(vec3(0.4, 0.04, 0.3), vec3(1.0, 0.4, 0.88), clamp(arrow + heat * param, 0.0, 1.0));
         core = 0.0;
     } else if (shape == 41) {
@@ -1452,12 +1452,12 @@ void main() {
         } else {
             // Cursed energy leaking out of split rock.
             float shards = 1.0 - smoothstep(0.0, 0.5, dist + (n - 0.5) * 0.45);
-            float leak = exp(-dist * dist / (open * open * 4.0)) * (0.55 + 0.45 * sin(time * 4.0 + u * 3.0));
+            float leak = exp(-dist * dist / (open * open * 6.0)) * (0.65 + 0.35 * sin(time * 4.0 + u * 3.0));
             vec3 rock = vec3(0.22, 0.19, 0.15) * (0.8 + 0.4 * n);
             col = mix(rock, color.rgb, leak);
             col = mix(col, vec3(1.0, 0.95, 0.75), leak * gap * 0.6);
             col = mix(col, rock * 0.4, branch);
-            a = max(max(gap, branch * 0.8), max(leak, shards * 0.6));
+            a = max(max(gap, branch * 0.8), max(leak, shards * 0.35));
         }
         base = col;
         alpha = a * (1.0 - smoothstep(0.8, 1.0, abs(x)));
@@ -1471,20 +1471,22 @@ void main() {
         vec3 pale = mix(color.rgb, vec3(1.0), 0.55);
         if (style < 0.5) {
             // Ki: a body that swells and pinches as it runs, twisting, shaded like a tube, wisps tearing off it.
-            float swell = 0.42 + 0.22 * noise(vec2(u * 1.6 - time * 3.0, sd)) + 0.1 * sin(u * 5.0 - time * 9.0);
+            float swell = 0.42 + 0.16 * noise(vec2(u * 1.6 - time * 3.0, sd)) + 0.05 * sin(u * 3.0 - time * 7.0);
             float rr = abs(x) / swell;
             float edgeN = (noise(vec2(u * 10.0 - time * 6.0, x * 2.0 + sd)) - 0.5) * 0.3;
             float fw = max(fwidth(rr), 1.0e-4);
             float body = 1.0 - smoothstep(1.0 - 2.0 * fw, 1.0, rr + edgeN);
             float nz = sqrt(max(0.0, 1.0 - rr * rr));
             float ang = asin(clamp(x / swell, -1.0, 1.0));
-            float twist = pow(0.5 + 0.5 * sin(u * 6.0 + ang * 2.0 - time * 14.0), 3.0);
+            // Tongues of energy wound round it, running forward (not a flat ribbon turning over).
+            float twist = smoothstep(0.55, 0.9, noise(vec2(u * 4.0 + ang * 1.3 - time * 10.0, ang * 2.0 + sd)));
             vec3 col = mix(color.rgb * 0.5, color.rgb, smoothstep(0.0, 0.6, nz));
             col = mix(col, pale, twist * nz * 0.8);
             col = mix(col, color.rgb * 0.35, smoothstep(0.75, 1.0, rr) * 0.6);
             float wisp = smoothstep(0.62, 0.85, fbm(vec2(u * 3.0 - time * 4.0, x * 2.5) + sd)) * step(1.0, rr) * (1.0 - smoothstep(1.0, 2.2, rr));
+            float halo = exp(-max(0.0, rr - 1.0) * 2.5) * step(1.0, rr + edgeN) * 0.35;
             base = mix(color.rgb, col, body);
-            alpha = max(body * 0.95, wisp * 0.6);
+            alpha = max(max(body * 0.95, wisp * 0.6), halo);
         } else if (style < 1.5) {
             // Spirit column: tongues rising up it, holes opening and closing, lighter inside.
             float n = fbm(vec2(x * 2.5 + sd, u * 0.9 - time * 2.5));
@@ -1501,8 +1503,8 @@ void main() {
             float n2 = fbm(vec2(u * 4.0 - time * 3.0, x * 5.0) + sd * 2.0);
             float prof = 1.0 - smoothstep(0.25, 1.0, abs(x) + (n - 0.5) * 0.6);
             float curl = smoothstep(0.5, 0.8, n2);
-            base = mix(color.rgb, vec3(1.0), 0.3 * curl);
-            alpha = prof * (0.2 + 0.6 * curl);
+            base = mix(color.rgb, vec3(1.0), 0.4 * curl);
+            alpha = prof * (0.35 + 0.6 * curl);
         } else {
             // Rift: a black tear with ragged lit lips and flakes breaking off it.
             float n = fbm(vec2(u * 5.0, x * 1.5) + sd);

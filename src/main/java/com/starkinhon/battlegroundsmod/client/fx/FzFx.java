@@ -279,7 +279,7 @@ public final class FzFx {
         float lock = age < f.b ? 0 : age < f.b + 2.6f ? 0.8f + 0.2f * Mth.sin(age * 2.5f) : 1;
         float out = age < f.b + 3 ? 1 : (float) Math.exp(-(age - f.b - 3) * 0.4f);
         Vector3f from = rel(f.pos), to = rel(f.pos.add(f.dir));
-        Vec3 side = new Vec3(-f.dir.z, 0, f.dir.x).normalize().scale(0.21);
+        Vec3 side = new Vec3(-f.dir.z, 0, f.dir.x).normalize().scale(0.45);
         Vector3f s = new Vector3f((float) side.x, 0, (float) side.z);
         FxDraw.quad(new Vector3f(from).sub(s), new Vector3f(to).sub(s), new Vector3f(to).add(s), new Vector3f(from).add(s), AIM, lock, PINK, show * out, true);
     }
