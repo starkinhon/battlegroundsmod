@@ -133,13 +133,18 @@ final class DomainScreen {
             int c = k % 3 == 0 ? 0x9FE8FF : 0xFFFFFF;
             line(b, m, cx + Mth.cos(ang) * r0, cy + Mth.sin(ang) * r0, cx + Mth.cos(ang) * r1, cy + Mth.sin(ang) * r1, 1.2f, argb(0, c), argb(a, c));
         }
-        // Lines of data flickering across, new ones every tick.
-        int tick = (int) t;
-        for (int k = 0; k < 30; k++) {
-            float y = FxWorld.hash(tick, k, 1) * h;
-            float x = FxWorld.hash(tick, k, 2) * w;
-            float len = (0.05f + 0.3f * FxWorld.hash(tick, k, 3)) * w;
-            quad(b, m, x, y, Math.min(w, x + len), y + 1, argb(s * (0.06f + 0.18f * FxWorld.hash(tick, k, 4)), k % 3 == 0 ? 0x9FE8FF : 0xFFFFFF));
+        // Lines of data across the view, each fading in and out over a few ticks (they used to jump every tick: a strobe
+        // that hurt the eyes, Stark 2026-11-20).
+        for (int k = 0; k < 24; k++) {
+            float life = 10 + 8 * FxWorld.hash(1501, k, 1);
+            double cycle = (t + FxWorld.hash(1501, k, 2) * life) / life;
+            int round = (int) Math.floor(cycle);
+            float p = (float) (cycle - round);
+            float y = FxWorld.hash(1501 + round, k, 3) * h;
+            float x = FxWorld.hash(1501 + round, k, 4) * w;
+            float len = (0.05f + 0.3f * FxWorld.hash(1501 + round, k, 5)) * w;
+            float fade = Mth.sin(p * Mth.PI);
+            quad(b, m, x, y, Math.min(w, x + len), y + 1, argb(s * fade * (0.05f + 0.12f * FxWorld.hash(1501 + round, k, 6)), k % 3 == 0 ? 0x9FE8FF : 0xFFFFFF));
         }
         end(b);
 
@@ -168,21 +173,23 @@ final class DomainScreen {
         // A slow white pulse, the mind overloading.
         float pulse = (float) Math.pow(Math.max(0, Mth.sin((float) t * 0.12f)), 8);
         if (inVoid && pulse > 0.01f) {
-            graphics.fill(0, 0, w, h, argb(s * 0.18f * pulse, 0xFFFFFF));
+            graphics.fill(0, 0, w, h, argb(s * 0.1f * pulse, 0xFFFFFF));
         }
     }
 
     // Flashes of nature and senses, each for a moment, coming faster and faster.
     private static void scenes(GuiGraphics graphics, double t, float u, float s, int seed) {
-        double period = Mth.lerp(u, 46, 7);
+        // Never faster than one every 1.3 s, and each fades in and out over a few ticks: full-screen cuts between dark and
+        // light every 7 ticks hurt the eyes for real (Stark 2026-11-20).
+        double period = Mth.lerp(u, 50, 26);
         double phase = (t + 13) / period;
         int index = (int) Math.floor(phase);
         double into = (phase - index) * period;
-        double show = Math.min(4, period * 0.55);
+        double show = Math.min(12, period * 0.45);
         if (into > show || t < 30) {
             return;
         }
-        float a = s * 0.9f * (float) Math.min(1, Math.min(into / 0.6, (show - into) / 0.8));
+        float a = s * 0.6f * (float) Math.min(1, Math.min(into / 3, (show - into) / 4));
         if (a <= 0.01f) {
             return;
         }
@@ -251,7 +258,7 @@ final class DomainScreen {
 
     // Branches of a tree, mirrored four ways, like the senses seen through glass.
     private static void branches(BufferBuilder b, Matrix4f m, int w, int h, float a, int id) {
-        quad(b, m, 0, 0, w, h, argb(a * 0.85f, 0xE6E2DA));
+        quad(b, m, 0, 0, w, h, argb(a * 0.7f, 0xB8B4AC));
         float cx = w / 2f;
         float cy = h / 2f;
         for (int mirror = 0; mirror < 4; mirror++) {

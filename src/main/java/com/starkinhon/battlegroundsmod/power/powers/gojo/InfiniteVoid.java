@@ -72,6 +72,8 @@ public final class InfiniteVoid {
     // How far past the edge (or above or below the inside's floor) Gojo can be before he counts as gone from it.
     private static final double LEAVE_SLACK = 6;
     private static final double LEAVE_UP = 48;
+    // How far past the domain's reach a caught player still resisting must get to be free of it.
+    private static final double ESCAPE_SLACK = 1.0;
 
     // A domain open right now: for the kills inside it and Gojo's Infinity.
     private static final class Active {
@@ -259,6 +261,12 @@ public final class InfiniteVoid {
                         // Walked into the black ball later: taken inside too.
                         takeInside(active, victim);
                     }
+                }
+                if (!active.inside) {
+                    // Still in the world (before the tunnel takes everyone up, or after they are back): whoever walked
+                    // out of the domain's reach while resisting with stamina is free of it. Not drained, not held, not
+                    // taken up into the inside later (Stark 2026-11-20: it pulled them back from outside).
+                    caught.removeIf(victim -> escaped(active, victim));
                 }
                 for (LivingEntity victim : caught) {
                     if (!victim.isAlive() || victim.isRemoved() || victim.level() != level) {
@@ -691,6 +699,27 @@ public final class InfiniteVoid {
             }
         }
         put(entity, new Vec3(from.x, active.arena.y, from.z));
+    }
+
+    // A caught victim who is out of the domain's reach in the world (or in another dimension) and still resisting with
+    // stamina: they got away. Those paralyzed never get this far (Freeze.holdLoose keeps them within).
+    private static boolean escaped(Active active, LivingEntity victim) {
+        if (!victim.isAlive() || victim.isRemoved() || !Stamina.resists(victim)) {
+            return false;
+        }
+        if (com.starkinhon.battlegroundsmod.power.powers.duel.DomainDuel.foe(active.caster) == victim) {
+            return false;
+        }
+        boolean out = victim.level() != active.level
+                || Combat.center(victim).distanceToSqr(active.center) > (active.spec.radius() + ESCAPE_SLACK) * (active.spec.radius() + ESCAPE_SLACK);
+        if (out) {
+            victim.removeEffect(MobEffects.MOVEMENT_SLOWDOWN);
+            if (victim instanceof ServerPlayer player) {
+                player.displayClientMessage(Component.translatable("message.battlegroundsmod.domain_escaped")
+                        .withStyle(st -> st.withColor(0x8FE6FF)), true);
+            }
+        }
+        return out;
     }
 
     // spot, put back within the barrier when past it (where a hit can throw someone paralyzed, Freeze.holdLoose).

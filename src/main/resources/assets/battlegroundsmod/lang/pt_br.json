@@ -298,6 +298,7 @@
   "message.battlegroundsmod.stamina_out": "Sem estamina! Vulnerável por %s s",
   "message.battlegroundsmod.needs_stun": "O alvo precisa estar stunado (acerte um stun ou zere a estamina dele).",
   "message.battlegroundsmod.domain_resist": "Informação infinita! Sua estamina está segurando o Domínio...",
+  "message.battlegroundsmod.domain_escaped": "Você escapou do Domínio!",
   "message.battlegroundsmod.shrine_resist": "O Santuário te pegou! Sua estamina está resistindo aos cortes...",
   "message.battlegroundsmod.technique_burnout": "Técnica queimada: sem técnicas por %s s",
   "message.battlegroundsmod.duel_tie_gojo": "Empate! O Santuário está rachando sua barreira por fora. V reabre (estamina pesada)",
