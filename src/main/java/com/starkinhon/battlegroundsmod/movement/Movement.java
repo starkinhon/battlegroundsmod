@@ -200,6 +200,8 @@ public final class Movement {
     // Teleporte trancado no começo (Stark 2026-11-19: um amigo achou forte demais logo no Tier 10). Abre quando o jogador
     // conclui esta quantidade de desafios do Livro dos Desafios (cada desafiante vencido conta uma vez). Mudar aqui.
     public static final int TELEPORTE_DESAFIOS = 5;
+    // Intervalo mínimo entre dois avisos de teleporte trancado (3 minutos).
+    private static final long TELEPORTE_AVISO_TICKS = 3 * 60 * 20;
 
     // Challenges of the book this player has beaten (each one once).
     public static int teleportWins(ServerPlayer player) {
@@ -240,6 +242,12 @@ public final class Movement {
             return;
         }
         if (!teleportUnlocked(player)) {
+            // Ctrl 2x happens by accident while sprinting: the warning shows at most once every 3 minutes (Stark
+            // 2026-11-19: "não ficar sendo spamado"), and in between the teleport just doesn't go.
+            if (now < data.teleportLockedWarnAt) {
+                return;
+            }
+            data.teleportLockedWarnAt = now + TELEPORTE_AVISO_TICKS;
             player.displayClientMessage(Component.translatable("message.battlegroundsmod.teleport_locked",
                     TELEPORTE_DESAFIOS, Math.min(teleportWins(player), TELEPORTE_DESAFIOS), TELEPORTE_DESAFIOS), true);
             return;
