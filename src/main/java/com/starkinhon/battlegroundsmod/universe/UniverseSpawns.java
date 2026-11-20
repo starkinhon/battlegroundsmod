@@ -144,6 +144,9 @@ public final class UniverseSpawns {
         if (level.getChunkSource().getGenerator() instanceof com.starkinhon.battlegroundsmod.world.MapChunkGenerator) {
             return earthMobs(x, z);
         }
+        if (!level.hasChunk(x >> 4, z >> 4)) {
+            return null;
+        }
         var biome = level.getBiome(new BlockPos(x, level.getSeaLevel(), z));
         if (!DragonBallWorld.UNIVERSE.equals(UniverseBiomes.universeOf(biome))) {
             return null;
@@ -246,6 +249,9 @@ public final class UniverseSpawns {
         int z = player.getBlockZ() + (int) Math.round(Math.sin(angle) * dist);
         boolean drawn = level.getChunkSource().getGenerator() instanceof com.starkinhon.battlegroundsmod.world.MapChunkGenerator;
         if (drawn && com.starkinhon.battlegroundsmod.world.DragonBallPlaces.safe(x, z)) {
+            return false;
+        }
+        if (!level.hasChunk(x >> 4, z >> 4)) {
             return false;
         }
         List<String> mobs = earthMobs(level, x, z);
