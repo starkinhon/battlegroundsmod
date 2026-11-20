@@ -123,7 +123,7 @@ public final class Progression {
         if (victimTier == null) {
             return;
         }
-        add(killer, gain(victim, victimTier, Tiers.of(killer)));
+        pay(killer, victim, victimTier);
         shareWithParty(killer, victim, victimTier);
     }
 
@@ -167,7 +167,41 @@ public final class Progression {
         }
         for (ServerPlayer mate : mates) {
             double amount = gain(victim, victimTier, Tiers.of(mate));
-            add(mate, PARTY_SPLIT ? amount / (mates.size() + 1) : amount);
+            if (amount > 0) {
+                add(mate, PARTY_SPLIT ? amount / (mates.size() + 1) : amount);
+            } else {
+                weakSync(mate);
+            }
+        }
+    }
+
+    // A weak enemy (3+ tiers below, so no Poder) still trains the worn soul (Stark 2026-11-20: "só faz elas uparem as
+    // skills, pra ganhar sincronia"): it fills WEAK_SYNC of what an enemy of the player's own tier gives the Sincronia,
+    // so a level 0 takes 16 of them. The kit is finite, so farming weak mobs only ever wakes the skills, never a tier.
+    public static final double WEAK_SYNC = 0.25;
+
+    private static void pay(ServerPlayer player, LivingEntity victim, int victimTier) {
+        double amount = gain(victim, victimTier, Tiers.of(player));
+        if (amount > 0) {
+            add(player, amount);
+        } else if (!(victim instanceof Player)) { // a much weaker friend in PvP is never a Sincronia farm
+            weakSync(player);
+        }
+    }
+
+    private static void weakSync(ServerPlayer player) {
+        PowerData data = player.getData(ModAttachments.POWER);
+        Power power = Powers.get(data.power);
+        if (power == null) {
+            return;
+        }
+        SoulSync.Entry before = SoulSync.get(player, power.id());
+        SoulSync.gain(player, value(Tiers.of(player)) * WEAK_SYNC);
+        SoulSync.Entry after = SoulSync.get(player, power.id());
+        // a level up already says so in the chat; otherwise a short line over the hotbar shows the bar moving
+        if (after.level() == before.level() && after.xp() > before.xp()) {
+            player.displayClientMessage(Component.translatable("message.battlegroundsmod.sync_gain",
+                    power.name().copy().withStyle(st -> st.withColor(power.color())), Math.round(after.xp() * 100)), true);
         }
     }
 

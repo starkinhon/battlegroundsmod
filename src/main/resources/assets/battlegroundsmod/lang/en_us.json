@@ -1554,6 +1554,7 @@
   "screen.battlegroundsmod.soul_book.absorbing": "Absorbing...",
   "screen.battlegroundsmod.soul_book.absorbed": "SOUL ABSORBED",
   "message.battlegroundsmod.sync_level": "Sync with %s reached level %s! Open the Book of Souls (U) and pick a skill to awaken.",
+  "message.battlegroundsmod.sync_gain": "+Sync with %s (%s%%)",
   "message.battlegroundsmod.sync_awake": "%s awakened!",
   "message.battlegroundsmod.sync_locked": "%s is not awake yet. Raise the Sync and awaken it in the Book of Souls (U).",
   "message.battlegroundsmod.sync_no_soul": "No soul to complete.",

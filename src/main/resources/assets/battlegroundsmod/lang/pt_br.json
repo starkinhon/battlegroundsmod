@@ -1564,6 +1564,7 @@
   "screen.battlegroundsmod.soul_book.absorbing": "Absorvendo...",
   "screen.battlegroundsmod.soul_book.absorbed": "ALMA ABSORVIDA",
   "message.battlegroundsmod.sync_level": "Sincronia com %s subiu pro nível %s! Abra o Livro das Almas (U) e escolha uma skill pra despertar.",
+  "message.battlegroundsmod.sync_gain": "+Sincronia com %s (%s%%)",
   "message.battlegroundsmod.sync_awake": "%s despertou!",
   "message.battlegroundsmod.sync_locked": "%s ainda não despertou. Suba a Sincronia e desperte no Livro das Almas (U).",
   "message.battlegroundsmod.sync_no_soul": "Nenhuma alma pra completar.",
