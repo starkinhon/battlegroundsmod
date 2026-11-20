@@ -1326,6 +1326,49 @@ public final class ChallengeArenas {
             return 1;
         }
 
+        // The top of column col when its highest block is lava, else Integer.MIN_VALUE.
+        private int lavaTop(int col) {
+            int last = t.runStart[col + 1] - 1;
+            if (last < t.runStart[col]) {
+                return Integer.MIN_VALUE;
+            }
+            int best = last;
+            for (int r = t.runStart[col]; r <= last; r++) {
+                if (t.runY[r] + t.runLen[r] > t.runY[best] + t.runLen[best]) {
+                    best = r;
+                }
+            }
+            BlockState state = t.palette[t.runBlock[best]];
+            return state.getFluidState().is(net.minecraft.tags.FluidTags.LAVA) ? t.runY[best] + t.runLen[best] - 1 : Integer.MIN_VALUE;
+        }
+
+        // The ground beside a lava pit: the highest top of the nearest columns that are not lava (rings of 1 to 6 blocks).
+        private int groundAround(int dx, int dz) {
+            for (int k = 1; k <= 6; k++) {
+                int best = Integer.MIN_VALUE;
+                for (int ox = -k; ox <= k; ox++) {
+                    for (int oz = -k; oz <= k; oz++) {
+                        if (Math.max(Math.abs(ox), Math.abs(oz)) != k) {
+                            continue;
+                        }
+                        int col = column(dx + ox, dz + oz);
+                        if (col < 0 || lavaTop(col) != Integer.MIN_VALUE || t.runStart[col] >= t.runStart[col + 1]) {
+                            continue;
+                        }
+                        int top = Integer.MIN_VALUE;
+                        for (int r = t.runStart[col]; r < t.runStart[col + 1]; r++) {
+                            top = Math.max(top, t.runY[r] + t.runLen[r] - 1);
+                        }
+                        best = Math.max(best, top);
+                    }
+                }
+                if (best != Integer.MIN_VALUE) {
+                    return best;
+                }
+            }
+            return Integer.MIN_VALUE;
+        }
+
         private int column(int dx, int dz) {
             if (dx < -half || dz < -half || dx > half || dz > half) {
                 return -1;
@@ -1435,6 +1478,19 @@ public final class ChallengeArenas {
                                 }
                             } else if (d <= m.raio() + 0.5 && (col < 0 || !t.solid(col, top))) {
                                 ops += put(c.getX() + dx, c.getY() + top, c.getZ() + dz, barrier);
+                            }
+                            if (d <= m.raio() + 0.5 && col >= 0) {
+                                // a lava pit inside the fight (Namek explodindo): an invisible floor over it at the height of
+                                // the ground around, so nobody falls in and the lava still shows (Stark 2026-11-20)
+                                int lava = lavaTop(col);
+                                if (lava != Integer.MIN_VALUE) {
+                                    int ground = groundAround(dx, dz);
+                                    for (int y = lava + 1; y <= ground; y++) {
+                                        if (!t.solid(col, y)) {
+                                            ops += put(c.getX() + dx, c.getY() + y, c.getZ() + dz, barrier);
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
