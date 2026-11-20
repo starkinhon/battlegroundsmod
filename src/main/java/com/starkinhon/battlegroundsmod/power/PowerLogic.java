@@ -178,7 +178,10 @@ public final class PowerLogic {
                     com.starkinhon.battlegroundsmod.skill.StaminaSpec.get().ganhoAtaqueBasePct());
         }
         if (!data.noCooldown) {
-            data.cooldowns[slot] = com.starkinhon.battlegroundsmod.item.GojoBlindfoldItem.cooldown(player, power, ability.cooldown());
+            // Max, never overwrite: a move that sets its own cooldown by hand while it runs (Makima's, all on 0 here) kept
+            // being reset to the key's 0 right after, so a player's Makima had no cooldown at all (tournament 2026-11-20).
+            data.cooldowns[slot] = Math.max(data.cooldowns[slot],
+                    com.starkinhon.battlegroundsmod.item.GojoBlindfoldItem.cooldown(player, power, ability.cooldown()));
             if (skill && power != null && !swapped) {
                 com.starkinhon.battlegroundsmod.power.powers.MoonDemon.lockOthers(player, power, slot);
             }
