@@ -2,7 +2,6 @@ package com.starkinhon.battlegroundsmod.item;
 
 import java.util.List;
 
-import com.starkinhon.battlegroundsmod.network.ModPayloads;
 import com.starkinhon.battlegroundsmod.power.Progression;
 
 import net.minecraft.network.chat.Component;
@@ -14,10 +13,9 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
-import net.neoforged.neoforge.network.PacketDistributor;
 
-// Cristal Multiversal: right click opens the universe screen (client/UniverseScreen); choosing one takes the player
-// there and spends the crystal (challenge/Universes.pick). Crafted, or given by some challenges the first time.
+// Cristal Multiversal: it opened the universe screen back when each universe was its own world; with the universes as
+// biomes of the player's world it only says so (the screen and Universes.pick are gone). Crafted, or given by some challenges the first time.
 // A simple item for now (Stark 2026-11-10); the Fenda, a wormhole with its own scene, comes later.
 public class MultiversalCrystalItem extends Item {
     public MultiversalCrystalItem(Properties properties) {

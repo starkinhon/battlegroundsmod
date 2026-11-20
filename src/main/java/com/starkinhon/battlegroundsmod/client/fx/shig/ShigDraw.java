@@ -24,10 +24,6 @@ public final class ShigDraw {
         return Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.NEW_ENTITY);
     }
 
-    public static BufferBuilder beginPos() {
-        return Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION);
-    }
-
     // One vertex: position, colour (0..1), uv0 (floats), uv1 and uv2 (whole numbers), normal.
     public static void v(BufferBuilder b, float x, float y, float z, float r, float g, float bl, float a, float u, float vv, int u1, int v1, int u2,
             int v2, float nx, float ny, float nz) {

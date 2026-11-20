@@ -89,15 +89,6 @@ public final class FlightClient {
     }
 
     public static int state(Entity entity) {
-        int sim = PreviewFight.stateOf(entity);
-        if (sim >= 0) {
-            return sim;
-        }
-        return STATES.getOrDefault(entity.getId(), 0);
-    }
-
-    // What the server said about it, never the page's own (client/PreviewFight reads Flight.HELD here).
-    static int serverState(Entity entity) {
         return STATES.getOrDefault(entity.getId(), 0);
     }
 
@@ -122,10 +113,6 @@ public final class FlightClient {
 
     // The local player's speed in blocks per second (for the pose), or null when not flying this way.
     public static Vec3 velocity() {
-        Vec3 sim = PreviewFight.playerVelocity();
-        if (sim != null) {
-            return sim;
-        }
         return active ? new Vec3(vx, vy, vz) : null;
     }
 
@@ -134,9 +121,6 @@ public final class FlightClient {
     }
 
     public static float boostAmount() {
-        if (PreviewFight.running()) {
-            return PreviewFight.playerBoost();
-        }
         return boostAmt;
     }
 
@@ -203,7 +187,6 @@ public final class FlightClient {
                 setBoost(minecraft.player, false, boostSpeed(minecraft.player));
             }
         }
-        PreviewFight.driven();
     }
 
     // Whether a skill of the player's own is moving them right now.
@@ -213,11 +196,6 @@ public final class FlightClient {
 
     public static void knock(Vec3 velocity, int ticks, boolean slammed) {
         if (!active) {
-            return;
-        }
-        if (PreviewFight.running()) {
-            // the combat flight's page has the player: thrown off inside it (a skill's push, a soul's technique)
-            PreviewFight.knock(velocity, ticks, slammed);
             return;
         }
         vx = velocity.x;
@@ -284,22 +262,7 @@ public final class FlightClient {
             vy = dvy * 20;
             vz = dvz * 20;
             player.fallDistance = 0;
-            if (PreviewFight.running() && sprintTap) {
-                PreviewFight.dodgeKey();
-                return true;
-            }
             return false;
-        }
-        if (PreviewFight.running()) {
-            // the combat flight's page moves the player itself, every frame (PreviewFight); Ctrl is its dodge
-            if (sprintTap) {
-                PreviewFight.dodgeKey();
-            }
-            knockTicks = 0;
-            slam = false;
-            player.setDeltaMovement(Vec3.ZERO);
-            player.fallDistance = 0;
-            return sprintTap;
         }
         if (knockTicks > 0) {
             knockTicks--;

@@ -329,10 +329,6 @@ public final class PowerLogic {
         }
     }
 
-    public static boolean hasBook(ServerPlayer player) {
-        return player.isCreative() || player.getInventory().contains(new ItemStack(ModItems.POWER_BOOK.get()));
-    }
-
     public static void selectFromBook(ServerPlayer player, String id) {
         // The Livro das Almas also opens on U (it replaced the old constellation screen), so no book in hand is needed.
         // With universes and progression souls come only from beating their characters (creative still picks freely);

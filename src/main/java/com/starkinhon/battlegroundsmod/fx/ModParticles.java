@@ -102,10 +102,6 @@ public final class ModParticles {
         return new SoulParticleOptions(FLAME.get(), 0xFFFFFF, baseQuad(), vanillaLife() + 4, 0.96f, 0);
     }
 
-    public static SoulParticleOptions soulFlame() {
-        return new SoulParticleOptions(SOUL_FLAME.get(), 0xFFFFFF, baseQuad(), vanillaLife() + 4, 0.96f, 0);
-    }
-
     // Like vanilla dust: scale 0.01 to 4 makes it bigger and last longer, and the color is shaded a little each time.
     public static SoulParticleOptions dust(int color, float scale) {
         scale = Mth.clamp(scale, 0.01f, 4);
