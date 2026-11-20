@@ -154,6 +154,15 @@ public final class ChallengeArenas {
         return old.is(Blocks.BARRIER) || old.is(Blocks.BEDROCK);
     }
 
+    // Stark 2026-11-20: further on in the progression the player's techniques opened holes in the arena floor, and the
+    // player, the friend and the challenger fell, came back on their spot and fell again, in a loop. While a challenge is
+    // on, the arena dimensions keep every block (combat/BlockRules, the same as a Dungeon run and the introduction): the
+    // effects, sounds and damage stay, only the blocks are left alone. The arena is placed again for every fight, and the
+    // normal world keeps its destruction.
+    public static boolean protectsBlocks(Level level) {
+        return !SESSIONS.isEmpty() && isArena(level.dimension());
+    }
+
     // A building that crosses the invisible wall is part of the wall (the barrier only fills the air around it). When a
     // technique blows a hole in it, the hole becomes barrier, so the fight never leaks out through the rubble.
     public static BlockState ringFill(Level level, BlockPos pos, BlockState state) {
@@ -235,6 +244,13 @@ public final class ChallengeArenas {
         });
         NeoForge.EVENT_BUS.addListener(ChallengeArenas::onLogout);
         NeoForge.EVENT_BUS.addListener(ChallengeArenas::onFinalizeSpawn);
+        // nor dug out by hand during a fight (a hole under the friend is the same loop, and no hiding in the floor)
+        NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.event.level.BlockEvent.BreakEvent e) -> {
+            if (e.getLevel() instanceof Level level && !level.isClientSide() && protectsBlocks(level)
+                    && !e.getPlayer().getAbilities().instabuild) {
+                e.setCanceled(true);
+            }
+        });
         Dungeon.register();
         com.starkinhon.battlegroundsmod.intro.Intro.register();
     }
@@ -835,7 +851,7 @@ public final class ChallengeArenas {
         double y = boss.getY() - session.center.getY();
         boolean out = dx * dx + dz * dz > (radius - 1.0) * (radius - 1.0) || y < -40 || y > meta.altura() + 20;   // the floor is 32 deep now
         if (out) {
-            BlockPos at = spawnPos(session);
+            BlockPos at = boss.level() instanceof ServerLevel level ? safeSpot(level, session, spawnPos(session)) : spawnPos(session);
             boss.teleportTo(at.getX() + 0.5, at.getY(), at.getZ() + 0.5);
             boss.setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
             boss.fallDistance = 0;
@@ -907,13 +923,58 @@ public final class ChallengeArenas {
             return;
         }
         int[] j = session.meta.jogador();
-        BlockPos spawn = session.center.offset(j[0], j[1], j[2]);
-        BattlegroundsMod.LOGGER.warn("[arena] {}: jogador caiu em {} {} {} (spawn {}, chão do spawn: {})", session.id,
-                (int) player.getX(), (int) player.getY(), (int) player.getZ(), spawn.toShortString(),
-                arena.getBlockState(spawn.below()));
+        BlockPos want = session.center.offset(j[0], j[1], j[2]);
+        BlockPos spawn = safeSpot(arena, session, want);
+        BattlegroundsMod.LOGGER.warn("[arena] {}: jogador caiu em {} {} {} (spawn {}, chão do spawn: {}, volta em {})", session.id,
+                (int) player.getX(), (int) player.getY(), (int) player.getZ(), want.toShortString(),
+                arena.getBlockState(want.below()), spawn.toShortString());
         player.teleportTo(arena, spawn.getX() + 0.5, spawn.getY(), spawn.getZ() + 0.5, player.getYRot(), player.getXRot());
         player.setDeltaMovement(Vec3.ZERO);
+        player.hurtMarked = true;
         player.fallDistance = 0;
+    }
+
+    // Where someone who fell (a player, the friend, the challenger) is put back: the spot asked for while it still has
+    // ground; else the nearest spot inside the ring that has; else the spot itself on a 3 x 3 barrier tile put under it.
+    // Never back over the same hole (Stark 2026-11-20: fell, came back, fell again, in a loop).
+    private static BlockPos safeSpot(ServerLevel level, Session session, BlockPos want) {
+        if (standable(level, want)) {
+            return want;
+        }
+        int ring = session.meta.raio() - 2;
+        for (int r = 1; r <= 10; r++) {
+            for (int dx = -r; dx <= r; dx++) {
+                for (int dz = -r; dz <= r; dz++) {
+                    if (Math.max(Math.abs(dx), Math.abs(dz)) != r) {
+                        continue;
+                    }
+                    double cx = want.getX() + dx - session.center.getX(), cz = want.getZ() + dz - session.center.getZ();
+                    if (cx * cx + cz * cz > (double) ring * ring) {
+                        continue;
+                    }
+                    for (int dy = 3; dy >= -3; dy--) {
+                        BlockPos p = want.offset(dx, dy, dz);
+                        if (standable(level, p)) {
+                            return p;
+                        }
+                    }
+                }
+            }
+        }
+        placing++;
+        try {
+            for (int dx = -1; dx <= 1; dx++) {
+                for (int dz = -1; dz <= 1; dz++) {
+                    BlockPos under = want.offset(dx, -1, dz);
+                    if (level.getBlockState(under).getCollisionShape(level, under).isEmpty()) {
+                        level.setBlock(under, Blocks.BARRIER.defaultBlockState(), FLAGS);
+                    }
+                }
+            }
+        } finally {
+            placing--;
+        }
+        return want;
     }
 
     private static BlockPos spawnPos(Session session) {

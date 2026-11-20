@@ -28,6 +28,10 @@ public final class BlockRules {
         if (com.starkinhon.battlegroundsmod.challenge.Dungeon.protectsBlocks(level)) {
             return false;
         }
+        // nor the arenas of a challenge of the book while it is on (challenge/ChallengeArenas.protectsBlocks)
+        if (com.starkinhon.battlegroundsmod.challenge.ChallengeArenas.protectsBlocks(level)) {
+            return false;
+        }
         // nor the arenas of an introduction (intro/Intro.protectsBlocks)
         if (com.starkinhon.battlegroundsmod.intro.Intro.protectsBlocks(level)) {
             return false;
