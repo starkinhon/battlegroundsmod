@@ -27,10 +27,10 @@
     "decidirTicks": 6,
     "carregarTicks": 40,
     "maxSegurarTicks": 60,
-    "duracaoTicks": 200,
+    "duracaoTicks": 120,
     "mira": 10,
     "miraMax": 30,
-    "raioPuxar": 32,
+    "raioPuxar": 20,
     "puxar": 0.9,
     "maxPuxar": 2.4,
     "raioBlocos": 6.5,
@@ -692,8 +692,8 @@
       "dano": 3
     },
     "segurado": {
-      "duracaoTicks": 260,
-      "raioPuxar": 40,
+      "duracaoTicks": 160,
+      "raioPuxar": 25,
       "raioBlocos": 8,
       "maxBlocos": 160,
       "dano": 5,

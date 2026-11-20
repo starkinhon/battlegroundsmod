@@ -57,7 +57,7 @@ public final class Cravada {
     private static final double[] WEB_R = {5.0, 8.6, 13.2};
     private static final double BURST_R = 13.4;
     private static final float UPPERCUT = 12, SLAM = 25, STOMP = 15, WEB = 8, BOOM = 20, BURST = 10;
-    private static final int COOLDOWN = 500, MISS_COOLDOWN = 50, BROKEN_COOLDOWN = 100;
+    private static final int COOLDOWN = 800, MISS_COOLDOWN = 50, BROKEN_COOLDOWN = 100;
 
     // Who is in the middle of one, and until when at the latest (game time): a B that never got to its end (its task
     // dropped, an error) used to leave him marked busy for good, and the key did nothing from then on (Stark

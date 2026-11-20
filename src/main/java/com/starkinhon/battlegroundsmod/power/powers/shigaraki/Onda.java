@@ -75,7 +75,7 @@ public final class Onda {
                 double k = 1 - dist / PUSH_R;
                 Combat.hurt(caster, t, (float) (DAMAGE * Shigaraki.DAMAGE_MULT * (0.4 + 0.6 * k)));
                 Combat.push(t, to, 0.5 + 1.6 * k, 0.45 + 0.5 * k);
-                Stun.apply(t, dist < STUN_R ? 50 : 25);
+                Stun.apply(t, dist < STUN_R ? 30 : 15); // 1.5 s close, 0.75 s far (rebalance 2026-11-20; was 2.5 / 1.25)
             }
             // the glass bursts when the front gets to it (once)
             if (BlockRules.canBreak(level)) {

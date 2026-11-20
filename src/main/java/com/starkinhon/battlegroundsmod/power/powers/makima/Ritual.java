@@ -36,7 +36,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 // (with her eyes, through the rats, by hitting them). Then she joins her hands and says the name; the world goes gray;
 // her puppets behind her repeat it one after the other and each one is crushed flat, and the one named with it, from up
 // to 60 blocks away and through walls: one blow kneels them (~12% of their life), two puts them on all fours (~22%),
-// three crushes them flat (~40%; a plain mob dies, a boss takes a heavy blow). Without puppets: signed with her own blood, 20% of her life, one
+// three crushes them flat (~50%; a plain mob dies, a boss takes a heavy blow). Without puppets: signed with her own blood, 20% of her life, one
 // blow. A name she doesn't know is struck out, warned about, and nothing is spent.
 public final class Ritual {
     private static final double RANGE = 60;
@@ -46,9 +46,9 @@ public final class Ritual {
     private static final int GAP = 19;
     private static final int DELAY = 6;
     // Share of the target's max health each level takes BEFORE its defenses (Resistencia/armor at Tier 0 leave ~2/3:
-    // about 12%, 22% and 40% of the life). It was 25/45/100% and then multiplied by the caster's tier again in
+    // about 12%, 22% and 50% of the life; the full one raised to 50% by Stark 2026-11-20). It was 25/45/100% and then multiplied by the caster's tier again in
     // Combat.hurt (x2.1 at Tier 0): one name took ~37%, three killed from full life (tournament 2026-11-20).
-    private static final float[] SHARE = {0, 0.18f, 0.33f, 0.6f};
+    private static final float[] SHARE = {0, 0.18f, 0.33f, 0.75f};
     private static final float[] BOSS_DAMAGE = {0, 60, 90, 160};
 
     record Known(UUID id, String name, String origin, long time) {

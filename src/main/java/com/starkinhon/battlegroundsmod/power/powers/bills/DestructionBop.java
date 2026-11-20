@@ -47,6 +47,9 @@ public final class DestructionBop {
     // Longest the glide down after the slap may take (Slow Falling keeps him safe all the way).
     private static final int GLIDE_MAX_TICKS = 400;
 
+    // From showing up in front of the target to freezing it: 0.4 s to guard (rebalance 2026-11-20).
+    private static final int TELL = 8;
+
     private DestructionBop() {
     }
 
@@ -62,6 +65,32 @@ public final class DestructionBop {
             return false;
         }
 
+        // He shows up in front of them and only freezes them TELL ticks later: that is the window to raise the guard
+        // (rebalance 2026-11-20). Guarded from the front, the finger meets the guard and Bills is the one left open.
+        Vec3 seen = flatTo(caster, target);
+        Vec3 spot = standSpot(level, caster, floor(level, target.position(), target)
+                .subtract(seen.scale(Math.max(0.8, spec.alvo().distancia()))), caster.position());
+        smoke(level, caster.position(), caster.getBbHeight());
+        Fx.effects(level, SKILL, awakened, "sumir", caster, 0);
+        place(caster, spot, yaw(seen), 0);
+        Freeze.hold(caster, TELL);
+        data.busyTicks = TELL + 2;
+        Fx.effects(level, SKILL, awakened, "aparecer", caster, 0);
+        SkillSounds.play(level, spec.sons(), "aparecer", 0, 0, onde -> caster.position(), screens(caster, target));
+        Tasks.later(TELL, () -> {
+            if (!caster.isAlive() || !target.isAlive() || target.isRemoved() || target.level() != level) {
+                return;
+            }
+            if (com.starkinhon.battlegroundsmod.combat.Defense.blockGrab(target, caster)) {
+                return;
+            }
+            bop(caster, level, data, awakened, spec, target);
+        });
+        return true;
+    }
+
+    private static void bop(LivingEntity caster, ServerLevel level, PowerData data, boolean awakened, DestructionBopSpec spec,
+            LivingEntity target) {
         // Out of the hakai ball (or any trap) first: one grab at a time (it blows up on them now).
         Capture.take(target);
         int flick = spec.flickTick();
@@ -90,14 +119,10 @@ public final class DestructionBop {
         Vec3 front = standSpot(level, caster, floor.subtract(forward.scale(Math.max(0.8, spec.alvo().distancia()))), caster.position());
         Vec3 air = high.add(forward.scale(spec.tapa().atras())).add(0, spec.tapa().acima(), 0);
 
-        smoke(level, caster.position(), caster.getBbHeight());
-        Fx.effects(level, SKILL, awakened, "sumir", caster, 0);
         place(caster, front, faceTarget, 0);
         Freeze.hold(caster, vanish);
-        Fx.effects(level, SKILL, awakened, "aparecer", caster, 0);
         Fx.effects(level, SKILL, awakened, "uso", caster, flick);
         SkillSounds.play(level, spec.sons(), "uso", 0, flick, onde -> caster.position(), screens(caster, target));
-        SkillSounds.play(level, spec.sons(), "aparecer", 0, 0, onde -> caster.position(), screens(caster, target));
 
         // The target faces him, frozen where it stood, then flies up, hangs there and is slapped down.
         float faceCaster = faceTarget + 180;
@@ -249,7 +274,6 @@ public final class DestructionBop {
                 return false;
             });
         });
-        return true;
     }
 
     // Whoever he is fighting, if close enough and in front; else whoever he aims at.

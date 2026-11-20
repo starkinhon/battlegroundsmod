@@ -36,7 +36,9 @@ public final class OniBody {
     private static final double[] STATS = {1.0, 1.25, 1.4, 0.85};
     private static final double[] SPEED = {1.0, 1.15, 1.25, 0.9};
     // Night and the full moon healed too fast (Stark, 2026-11-08): half of what they were (0.03 and 0.04).
-    private static final double[] REGEN = {0.015, 0.015, 0.02, 0.005};
+    // Rebalance 2026-11-20 (tournament: +224 life in 10 s while being hit): 0.8%/s normal and at night, full moon and day
+    // scaled the same way (were 1.5 / 1.5 / 2 / 0.5%).
+    private static final double[] REGEN = {0.008, 0.008, 0.011, 0.003};
     // The boss heals far slower (Stark, 2026-11-19: "imatável"). His life grows with the tier curve (dungeon Tier 4 = 1225),
     // and 1.5%/s of that (18/s) gave back a whole combo of 200 before the cooldowns came back. Now 0.5%/s (6/s), and any blow
     // stops it for BOSS_HIT_PAUSE (KokushiboEntity.hurt): pressure keeps him from healing, standing back lets him breathe.

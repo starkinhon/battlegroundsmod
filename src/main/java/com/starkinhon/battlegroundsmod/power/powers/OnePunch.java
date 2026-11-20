@@ -20,10 +20,10 @@ public final class OnePunch {
 
     public static Power create() {
         return new Power(Opm.ID, 0xF2C94C, 1.35f, List.of(
-                new Ability(60, 0, OpmMoves::z),
-                new Ability(90, 0, OpmMoves::x),
-                new Ability(110, 0, OpmMoves::c),
+                new Ability(160, 0, OpmMoves::z),
+                new Ability(200, 0, OpmMoves::x),
+                new Ability(240, 0, OpmMoves::c),
                 new Ability(20, 0, OpmMoves::v),
-                new Ability(100, 0, OpmMoves::b).asBeatenCounter()));
+                new Ability(300, 0, OpmMoves::b).asBeatenCounter()));
     }
 }

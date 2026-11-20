@@ -190,8 +190,8 @@ public final class LuffyMoves {
 
     // Recharge in ticks by the Gear the move went off in (Stark 2026-11-20: a flat key cooldown let G4/G5 moves go off back
     // to back; a Shigaraki fell in ~10 s). Z: tap, Jet Pistol, Gigant Pistol, Kong Gun, Bajrang Gun. X: the Gatlings. C: the
-    // Bazookas. V keeps its own 12 s.
-    static final int[] PISTOL_CD = {30, 60, 90, 100, 120}, GATLING_CD = {70, 70, 80, 100, 120}, BAZOOKA_CD = {60, 60, 80, 100, 120};
+    // Bazookas. V keeps its own 30 s (rebalance 2026-11-20: all four slower).
+    static final int[] PISTOL_CD = {80, 160, 240, 300, 360}, GATLING_CD = {160, 160, 240, 300, 360}, BAZOOKA_CD = {160, 160, 240, 300, 360};
 
     static boolean fire(LivingEntity caster, ServerLevel level, int key, int gear) {
         double reach = REACH[key][gear] * k(caster);

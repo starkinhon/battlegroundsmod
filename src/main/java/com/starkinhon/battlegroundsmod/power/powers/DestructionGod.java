@@ -27,13 +27,13 @@ public final class DestructionGod {
 
     public static Power create() {
         return new Power("destruction_god", 0x9B30FF, 1.3f, List.of(
-                new Ability(80, 0, DestructionEnergy::use),
-                new Ability(300, 0, DestructionBop::use),
-                new Ability(400, 0, DestructionSphere::use),
-                new Ability(600, 0, Hakai::use),
-                new Ability(500, 0, DestructionTouch::use)),
+                new Ability(200, 0, DestructionEnergy::use),
+                new Ability(700, 0, DestructionBop::use),
+                new Ability(900, 0, DestructionSphere::use),
+                new Ability(1600, 0, Hakai::use),
+                new Ability(1200, 0, DestructionTouch::use)),
                 // Z, C and the ult have a Shift variant; Shift + X or B still use the normal skill.
-                Arrays.asList(new Ability(500, 0, DestructionEnergy::rain), null, new Ability(400, 0, Esfera::use),
-                        new Ability(600, 0, Hakaizinho::use)));
+                Arrays.asList(new Ability(800, 0, DestructionEnergy::rain), null, new Ability(900, 0, Esfera::use),
+                        new Ability(1200, 0, Hakaizinho::use)));
     }
 }

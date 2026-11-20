@@ -49,7 +49,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 // is below Gojo (Stark's rule). With nobody in reach it does not go off (a warning shows).
 public final class VazioRelampago {
     public static final String SKILL = "gojo.dominio_relampago";
-    public static final int COOLDOWN = 800;
+    public static final int COOLDOWN = 1800;
     // The client's guess of the reach (the server reads the Expansão's own radius, 40 by default).
     public static final double RADIUS = 40;
     // The tick the void snaps open (the hand sign before it), and how long the X takes to close after.

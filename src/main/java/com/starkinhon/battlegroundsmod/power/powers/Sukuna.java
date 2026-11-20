@@ -29,10 +29,10 @@ public final class Sukuna {
         return new Power(ID, 0xC8321E, 1.2f, List.of(
                 new Ability(0, 0, Desmantelar::use),
                 new Ability(0, 0, Clivar::use),
-                new Ability(900, 0, Fuga::use),
-                new Ability(900, 0, ShrineDomain::use),
+                new Ability(1800, 0, Fuga::use),
+                new Ability(3000, 0, ShrineDomain::use),
                 new Ability(0, 0, Cravada::use)),
-                Arrays.asList(new Ability(240, 0, DesmantelarShift::use), null, null, null, null));
+                Arrays.asList(new Ability(500, 0, DesmantelarShift::use), null, null, null, null));
     }
 
 }

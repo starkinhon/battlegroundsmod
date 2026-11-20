@@ -292,8 +292,8 @@ public final class OpmNormal {
             }
             Defense.breakGuard(target, caster);
             Combat.hurt(caster, target, 12f);
-            // (bosses take half: 25 left, still a real stun)
-            Stun.apply(target, 50);
+            // 1.5 s (rebalance 2026-11-20; was 2.5 s). Bosses take half.
+            Stun.apply(target, 30);
             Vec3 dir = flatFrom(caster, target);
             launch(level, caster, target, dir.scale(1.3).add(0, 0.22, 0));
             plow(level, target, 22, true);
