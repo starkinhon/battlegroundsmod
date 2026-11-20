@@ -32,6 +32,10 @@ public final class BlockRules {
         if (com.starkinhon.battlegroundsmod.intro.Intro.protectsBlocks(level)) {
             return false;
         }
+        // nor the Sala do Tempo (Stark 2026-11-20: the training there broke the room; StructureRegen stays as a backup)
+        if (level.dimension() == com.starkinhon.battlegroundsmod.world.TimeChamber.LEVEL) {
+            return false;
+        }
         return level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING) && level.getGameRules().getBoolean(SOULS_BLOCK_DESTRUCTION);
     }
 
