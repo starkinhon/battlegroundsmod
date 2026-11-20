@@ -498,6 +498,11 @@ public final class WorldSites {
     }
 
     // The pad in front of the Time Chamber's door of a lookout near this spot (world/TimeChamber), or null.
+    // The pad of the Sala do Tempo's door on the lookout over a Korin tower (the tower's position from locate).
+    public static BlockPos timeChamberDoor(BlockPos karin) {
+        return new BlockPos(karin.getX(), LOOKOUT_Y, karin.getZ() - LOOKOUT_OFFSET - 49);
+    }
+
     public static BlockPos doorPadNear(ServerLevel level, BlockPos from) {
         Site karin = near(level, KARIN, from.offset(0, 0, LOOKOUT_OFFSET), 120);
         if (karin == null) {
