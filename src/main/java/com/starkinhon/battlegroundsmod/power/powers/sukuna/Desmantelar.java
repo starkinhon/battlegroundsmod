@@ -102,7 +102,7 @@ public final class Desmantelar {
         boolean[] gesture = {false, false};
         Tasks.add(age -> {
             if (!caster.isAlive() || caster.isRemoved() || data.interrupts != interrupts || Freeze.isFrozen(caster)
-                    || !Sukuna.ID.equals(caster.getData(ModAttachments.POWER).power)) {
+                    || !com.starkinhon.battlegroundsmod.power.SkillSwap.has(caster, Sukuna.ID, 0)) {
                 broken(caster, st, chant[0] >= 0);
                 return true;
             }

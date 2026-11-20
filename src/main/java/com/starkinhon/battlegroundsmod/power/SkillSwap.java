@@ -116,6 +116,22 @@ public final class SkillSwap {
         return java.util.Arrays.copyOf(keys, n);
     }
 
+    // The caster still has that skill: its own soul's, or a key holding it. A move that runs over several ticks stops when its
+    // owner changes soul; a Desmantelar drawn by the Roleta was cut on its first tick because the player's soul is not Sukuna's
+    // (Stark 2026-11-20, "Desmantelar não sai quando vem pela roleta").
+    public static boolean has(LivingEntity caster, String ownerId, int ownerSlot) {
+        if (ownerId.equals(caster.getData(ModAttachments.POWER).power)) {
+            return true;
+        }
+        for (int key : TARGETS) {
+            Ref ref = ref(caster, key);
+            if (ref != null && ref.slot() == ownerSlot && ref.power().id().equals(ownerId)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     // Sets a hand-made cooldown on the right keys (see cooldownKeys): never lowers one already longer.
     public static void raiseCooldown(LivingEntity caster, String ownerId, int ownerSlot, int ticks) {
         PowerData data = caster.getData(ModAttachments.POWER);

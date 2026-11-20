@@ -585,7 +585,8 @@ public final class Dungeon {
         for (String id : CHAOS) {
             boolean ok = switch (id) {
                 case "roubar" -> false;
-                case "roleta" -> own != null && !member.roulette && stolenZxc(member) < SkillSwap.KEYS;
+                // picking it again wipes the stolen keys and draws everything again (Stark 2026-11-20)
+                case "roleta" -> own != null && !member.roulette;
                 case "ginyu" -> !member.ginyu && run.stage < run.etapas.size()
                         && Powers.get(run.etapas.get(run.stage).alma()) != null
                         && !run.etapas.get(run.stage).alma().equals(own == null ? "" : own.id());
@@ -802,10 +803,8 @@ public final class Dungeon {
                     return false;
                 }
                 member.stolen.add(arg);
-                if (stolenZxc(member) >= SkillSwap.KEYS) {
-                    // every key holds a stolen skill: nothing left for the Roleta to draw
-                    endRoulette(player, member);
-                }
+                // taking a skill ends the Roleta (Stark 2026-11-20: "aleatoriza tudo até você roubar técnica")
+                endRoulette(player, member);
                 Fx.burst(player.serverLevel(), Fx.dust(boss.color(), 2f), player.position().add(0, 1, 0), 70, 0.7, 0.05);
                 Fx.burst(player.serverLevel(), ParticleTypes.REVERSE_PORTAL, player.position().add(0, 1, 0), 50, 0.5, 0.2);
                 Fx.sound(player.serverLevel(), player.position(), SoundEvents.ILLUSIONER_MIRROR_MOVE, 1f, 0.7f);
@@ -832,8 +831,11 @@ public final class Dungeon {
                         Component.literal(boss.abilityName(from).getString() + " agora é seu " + keyLabel(to) + "."));
             }
             case "roleta" -> {
+                // the Roleta takes over every key again: the stolen ones (Roubar, Montar Kit) go back into the draw (Stark
+                // 2026-11-20: "se escolher roleta de novo, ela força a trocar tudo de novo")
+                member.stolen.clear();
                 member.roulette = true;
-                say(player, "Roleta: a cada luta seu Z, X e C mudam, até você cair.");
+                say(player, "Roleta: a cada luta todas as suas técnicas mudam, até você cair ou roubar uma técnica.");
             }
             case "ginyu" -> {
                 member.ginyu = true;
@@ -879,9 +881,8 @@ public final class Dungeon {
         return slot >= PowerData.SLOT_SHIFT ? "Shift+" + key : key;
     }
 
-    // The Roleta stops (Stark 2026-11-20): a fall ends it. A change of soul or a stolen skill no longer does (Stark later the same
-    // day: while it is on it changes the keys every fight; a stolen key just stays out of the draw). The skills it drew last stay
-    // on the keys for good; the card can come again later.
+    // The Roleta stops (Stark 2026-11-20): a fall, or taking a skill (Roubar Tecnica, Montar Kit). A change of soul does not stop
+    // it any more. The skills it drew last stay on the keys for good; picking the card again draws every key again.
     private static void endRoulette(ServerPlayer player, Member member) {
         if (!member.roulette) {
             return;
@@ -890,8 +891,8 @@ public final class Dungeon {
         say(player, "A Roleta parou. As técnicas que ela sorteou ficam com você.");
     }
 
-    // Roleta: every key that does not hold a stolen skill gets a skill of a random soul (never the player's own), and never the one
-    // that key held in the last fight (Stark 2026-11-20: "força ela a trocar toda rodada"): each fight really changes Z, X and C.
+    // Roleta: every key that does not hold a stolen skill (Z, X, C, and B when the soul has none) gets a skill of a random soul
+    // (never the player's own), and never the one that key held in the last fight (Stark 2026-11-20: "força ela a trocar toda rodada"): each fight really changes Z, X and C.
     private static void spinRoulette(ServerPlayer player, Member member) {
         Power own = Powers.get(player.getData(ModAttachments.POWER).power);
         if (own == null) {
@@ -915,8 +916,16 @@ public final class Dungeon {
         Collections.shuffle(pool, new java.util.Random(player.getRandom().nextLong()));
         Map<Integer, SkillSwap.Ref> before = SkillSwap.all(player);
         java.util.Set<SkillSwap.Ref> taken = new java.util.HashSet<>(before.values());
+        // Z, X, C and, for a soul without a fifth skill, the B too (Stark 2026-11-20: "pode te dar 5 skills, pra quem não tem B");
+        // a soul with its own B keeps it (a B the Roleta drew for an earlier soul comes off)
+        List<Integer> keys = new ArrayList<>(List.of(0, 1, 2));
+        if (PowerLogic.ability(own, PowerData.SLOT_EXTRA) == null) {
+            keys.add(PowerData.SLOT_EXTRA);
+        } else if (!member.stolen.contains(PowerData.SLOT_EXTRA)) {
+            SkillSwap.remove(player, PowerData.SLOT_EXTRA);
+        }
         StringBuilder line = new StringBuilder("Roleta:");
-        for (int key = 0; key < SkillSwap.KEYS; key++) {
+        for (int key : keys) {
             if (member.stolen.contains(key)) {
                 continue;
             }
@@ -934,7 +943,7 @@ public final class Dungeon {
             }
             if (SkillSwap.set(player, key, pickRef.power(), pickRef.slot())) {
                 taken.add(pickRef);
-                line.append("  ").append(KEY_NAMES[key]).append(" ").append(pickRef.power().abilityName(pickRef.slot()).getString());
+                line.append("  ").append(keyLabel(key)).append(" ").append(pickRef.power().abilityName(pickRef.slot()).getString());
             }
         }
         say(player, line.toString());
