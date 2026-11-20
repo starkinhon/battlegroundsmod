@@ -89,7 +89,7 @@ void main() {
         P = vec3(cs.x * r, y0 + cs.y * r * 0.7, z);
         Nl = normalize(vec3(cs.x, cs.y / 0.7, kk * 1.4 - 0.4));
         vZ = z; vK = kk; vA = a;
-        vLife = clamp((TP - 1.10 * (1. - sqrt(max(1. - z / 150.0, 0.)))) / 1.3, 0., 1.);
+        vLife = clamp((TP - 1.60 * (1. - sqrt(max(1. - z / 300.0, 0.)))) / 1.3, 0., 1.);
     } else if (k == 2) {
         // the steam cone (THREE.ConeGeometry(1, 1) laid out the same way: apex up at y = 0.5)
         vUv = vec2(0., Position.y + 0.5);

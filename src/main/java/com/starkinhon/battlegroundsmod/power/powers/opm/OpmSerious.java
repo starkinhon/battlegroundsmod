@@ -30,9 +30,11 @@ import net.minecraft.world.phys.Vec3;
 // same timeline as the page (in ticks: 20 a second), hits what the drawn shape covers, and digs exactly the shape the client
 // draws (OpmShape). The client plays the rest from the one message sent at the start (OpmFx).
 // Z Soco Serio: 2 s of silence, the punch, and a tube of air 200 blocks long that opens a trench up to 12 deep.
-// X Saltos Laterais Serios: 15 hops round the target (it can't find him), the ground torn up and floating, a punch from behind.
+// X Saltos Laterais Serios: 15 hops round the target (it can't find him), the ground torn up and floating and sinking in a ring,
+// a punch from behind that opens a crater 25 across and sends a dome of air 62 out, felling the trees.
 // C Virada de Mesa Seria: his hands in the ground, a 72 x 66 slab (12 deep) turned over like a table onto the far side.
-// V Espirro Serio: "Ha... ha...!" and the sneeze, a fan 150 blocks long that blows the ground away.
+// V Espirro Serio: "Ha... ha...!" and the sneeze, a fan 300 blocks long that blows the ground away (20 deep at the end), the
+// trees in it whole, and the water (what stands at the fan's edge stays up as a wall: it is taken out without neighbor updates).
 public final class OpmSerious {
     // Blocks changed without neighbor updates or drops (the look of the breaking is the client's flying blocks).
     private static final int QUIET = 2 | 16;
@@ -47,9 +49,10 @@ public final class OpmSerious {
     }
 
     // Every serious move: the mode is spent, the pose, the silence must not be a free hit (armor while it winds up).
+    // The Soco Serio is always the last of the mode (and a boss's Modo Serio is still one move).
     private static void begin(LivingEntity caster, ServerLevel level, String pose, int busy, int armor) {
         Opm.track(caster);
-        Opm.spend(caster, level);
+        Opm.spend(caster, level, "opm.soco_serio".equals(pose) || !(caster instanceof net.minecraft.world.entity.player.Player));
         SubCommon.pose(caster, pose);
         SubCommon.busy(caster, busy);
         SubCommon.setState(caster, Opm.ARMOR, armor);
@@ -68,6 +71,8 @@ public final class OpmSerious {
         private final Set<Long> seen = new HashSet<>();
         private final boolean on;
         private boolean closed;
+        // the Espirro blows the water away too
+        boolean water;
 
         Dig(ServerLevel level) {
             this.level = level;
@@ -115,13 +120,17 @@ public final class OpmSerious {
             }
             while (budget[0] > 0 && budget[1] > 0 && !dig.columns.isEmpty()) {
                 int[] c = dig.columns.poll();
+                // never a chunk nobody has loaded (reading it would load or even generate it)
+                if (!dig.level.hasChunk(c[0] >> 4, c[1] >> 4)) {
+                    continue;
+                }
                 int surface = dig.level.getHeight(Heightmap.Types.MOTION_BLOCKING, c[0], c[1]) - 1;
                 int top = Math.min(c[3], surface + 1);
                 for (int y = top; y >= c[2]; y--) {
                     budget[1]--;
                     pos.set(c[0], y, c[1]);
                     BlockState st = dig.level.getBlockState(pos);
-                    if (breakable(dig.level, pos, st)) {
+                    if (breakable(dig.level, pos, st) || dig.water && !st.getFluidState().isEmpty() && !BlockRules.keeps(st)) {
                         dig.level.setBlock(pos, Blocks.AIR.defaultBlockState(), QUIET);
                         budget[0]--;
                     }
@@ -129,6 +138,139 @@ public final class OpmSerious {
             }
         }
         DIGS.removeIf(d -> d.done() || d.level.getServer() == null);
+        runScans(level);
+    }
+
+    // ---------- the trees (OpmTree): found ahead of time, a few columns a tick, then taken out whole ----------
+
+    // The columns of an area, nearest first, looked at a few thousand a tick: each trunk's lowest log, with its local spot.
+    static final class Scan {
+        private final ServerLevel level;
+        private final int[] cols;
+        private int next;
+        final List<double[]> found = new java.util.ArrayList<>();
+        private final Set<Long> bases = new HashSet<>();
+
+        // cols: world x, z, and the distance (x100) that sorts them
+        Scan(ServerLevel level, int[] cols) {
+            this.level = level;
+            this.cols = cols;
+            SCANS.add(this);
+        }
+
+        boolean done() {
+            return next * 3 >= cols.length;
+        }
+    }
+
+    private static final List<Scan> SCANS = new java.util.ArrayList<>();
+    private static final int SCAN_BUDGET = 4000;
+
+    private static void runScans(ServerLevel level) {
+        int budget = SCAN_BUDGET;
+        for (Scan sc : SCANS) {
+            if (sc.level != level) {
+                continue;
+            }
+            while (budget > 0 && !sc.done()) {
+                int x = sc.cols[sc.next * 3], z = sc.cols[sc.next * 3 + 1], d = sc.cols[sc.next * 3 + 2];
+                sc.next++;
+                budget--;
+                if (!level.hasChunk(x >> 4, z >> 4)) {
+                    continue;
+                }
+                int top = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z) - 1;
+                BlockPos base = OpmTree.trunkAt(level, x, top, z);
+                if (base != null && sc.bases.add(base.asLong())) {
+                    sc.found.add(new double[] {base.getX(), base.getY(), base.getZ(), d / 100.0});
+                }
+            }
+        }
+        SCANS.removeIf(sc -> sc.done() || sc.level.getServer() == null);
+    }
+
+    // The columns round c out to r (nearest first).
+    private static int[] disc(Vec3 c, double r) {
+        List<int[]> l = new java.util.ArrayList<>();
+        for (int x = Mth.floor(c.x - r); x <= Mth.floor(c.x + r); x++) {
+            for (int z = Mth.floor(c.z - r); z <= Mth.floor(c.z + r); z++) {
+                double d = Math.hypot(x + 0.5 - c.x, z + 0.5 - c.z);
+                if (d <= r) {
+                    l.add(new int[] {x, z, (int) (d * 100)});
+                }
+            }
+        }
+        return flat(l);
+    }
+
+    private static int[] flat(List<int[]> l) {
+        l.sort((a, b) -> Integer.compare(a[2], b[2]));
+        int[] out = new int[l.size() * 3];
+        for (int i = 0; i < l.size(); i++) {
+            out[i * 3] = l.get(i)[0];
+            out[i * 3 + 1] = l.get(i)[1];
+            out[i * 3 + 2] = l.get(i)[2];
+        }
+        return out;
+    }
+
+    // Takes a tree out whole: the clients near hear first (they read its blocks and fly them), then its blocks go.
+    // mode 0: it falls along dir with strength; 1: it flies with velocity dir (blocks a second). False if it is not a tree
+    // (logs with hardly any leaves are a house's frame).
+    static boolean fell(ServerLevel level, LivingEntity caster, BlockPos base, Vec3 dir, int mode, float strength) {
+        List<BlockPos> blocks = OpmTree.blocks(level, base);
+        int leaves = 0;
+        for (BlockPos p : blocks) {
+            if (OpmTree.leaf(level.getBlockState(p))) {
+                leaves++;
+            }
+        }
+        if (leaves < 6) {
+            return false;
+        }
+        Vec3 at = new Vec3(base.getX() + 0.5, base.getY(), base.getZ() + 0.5);
+        com.starkinhon.battlegroundsmod.network.ModPayloads.SubFx payload = new com.starkinhon.battlegroundsmod.network.ModPayloads.SubFx(SubNet.OPM_TREE,
+                caster.getId(), at, dir, mode, strength, SubCommon.RANDOM.nextInt(1 << 16));
+        for (net.minecraft.server.level.ServerPlayer player : level.players()) {
+            if (player.distanceToSqr(at) < 220 * 220) {
+                net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player, payload);
+            }
+        }
+        for (BlockPos p : blocks) {
+            BlockState st = level.getBlockState(p);
+            if (breakable(level, p, st)) {
+                level.setBlock(p, Blocks.AIR.defaultBlockState(), QUIET);
+            }
+        }
+        return true;
+    }
+
+    // ---------- the serious mode turning on: the ground cracks round his feet ----------
+
+    public static void wake(LivingEntity caster, ServerLevel level) {
+        if (!BlockRules.canBreak(level) || !caster.onGround()) {
+            return;
+        }
+        crack(level, caster.position(), OpmShape.WAKE_R);
+    }
+
+    // The jagged cracks (one block of the top taken out) round at, out to r.
+    static void crack(ServerLevel level, Vec3 at, double r) {
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+        double scale = OpmShape.WAKE_R / r;
+        int top = Mth.floor(at.y) - 1;
+        for (int x = Mth.floor(at.x - r); x <= Mth.floor(at.x + r); x++) {
+            for (int z = Mth.floor(at.z - r); z <= Mth.floor(at.z + r); z++) {
+                if (!OpmShape.wakeCrack(x, z, (x + 0.5 - at.x) * scale, (z + 0.5 - at.z) * scale)) {
+                    continue;
+                }
+                pos.set(x, top, z);
+                BlockState st = level.getBlockState(pos);
+                if (breakable(level, pos, st)) {
+                    level.setBlock(pos, Blocks.AIR.defaultBlockState(), QUIET);
+                }
+            }
+        }
     }
 
     static boolean breakable(ServerLevel level, BlockPos p, BlockState st) {
@@ -279,6 +421,8 @@ public final class OpmSerious {
         double[] start = f.local(caster.position());
         double[][] hops = OpmShape.hops(start[0], start[2], seed);
         SubNet.send(level, SubNet.OPM_SALTOS, caster.getId(), c, f.forward(), seed, t.getId(), BlockRules.canBreak(level) ? 1 : 0);
+        // the trees the dome will reach, found while he hops
+        Scan trees = BlockRules.canBreak(level) ? new Scan(level, disc(c, OpmShape.DOME_R)) : null;
         // It looks for him and can't find him: held where it stands until the punch.
         Runnable holdTarget = Freeze.hold(t, SL_HIT + 1);
         Runnable holdSelf = Freeze.hold(caster, SL_HIT + 4, age -> {
@@ -306,8 +450,12 @@ public final class OpmSerious {
                 if (i != landed[0] && i >= 1) {
                     // Each landing digs a little crater (they get deeper as he goes).
                     double[] a = hops[i];
-                    double w = 0.55 + 0.5 * ((i - 1) / (double) OpmShape.SLN);
+                    double w = OpmShape.dentW(i - 1);
                     dent(level, f.world(a[0], 0, a[1]), 1.1 + 1.2 * w, 0.9 * w);
+                    // and every 5th the whole ground round the target sinks a little more (the ring and its cracks)
+                    if (i % 5 == 0) {
+                        sink(level, c, OpmShape.sink(i / (double) OpmShape.SLN));
+                    }
                     SubCommon.sound(level, f.world(a[0], 0, a[1]), SoundEvents.GENERIC_EXPLODE.value(), 0.5f, 1.4f + 0.02f * i);
                 }
                 landed[0] = i;
@@ -327,16 +475,97 @@ public final class OpmSerious {
             if (age >= SL_HIT) {
                 holdTarget.run();
                 Vec3 dir = SubCommon.flat(t.position().subtract(caster.position()));
+                Vec3 h = t.position();
                 hit(caster, t, 280f, 60, dir.scale(6).add(0, 0.5, 0), level);
-                dent(level, t.position(), 4.2, 2.3);
+                crater(level, h);
                 SubCommon.sound(level, c, SoundEvents.GENERIC_EXPLODE.value(), 3f, 0.6f);
                 SubCommon.sound(level, c, SoundEvents.WARDEN_SONIC_BOOM, 2f, 1.2f);
+                SubCommon.sound(level, c, SoundEvents.GENERIC_EXPLODE.value(), 4f, 0.4f);
                 Tasks.later(4, holdSelf);
+                dome(level, caster, new Vec3(h.x, c.y, h.z), trees, t);
                 return true;
             }
             return false;
         });
         return true;
+    }
+
+    // The ring round the target sunk to {radius, depth}: the top of each column taken down that far (the cracks deeper).
+    private static void sink(ServerLevel level, Vec3 c, double[] rd) {
+        Dig dig = new Dig(level);
+        if (!dig.on()) {
+            return;
+        }
+        int top = Mth.floor(c.y) - 1;
+        double R = rd[0];
+        for (int x = Mth.floor(c.x - R); x <= Mth.floor(c.x + R); x++) {
+            for (int z = Mth.floor(c.z - R); z <= Mth.floor(c.z + R); z++) {
+                double d = OpmShape.sinkDepth(x + 0.5 - c.x, z + 0.5 - c.z, R, rd[1]) * (0.85 + 0.3 * OpmShape.hash(x, z, 9));
+                int n = (int) Math.round(d);
+                if (n > 0) {
+                    dig.add(x, z, top - n + 1, top + 1);
+                }
+            }
+        }
+        dig.close();
+    }
+
+    // The final punch's crater: 25 across, 7 deep at the middle.
+    private static void crater(ServerLevel level, Vec3 h) {
+        Dig dig = new Dig(level);
+        if (!dig.on()) {
+            return;
+        }
+        int top = Mth.floor(h.y) - 1;
+        double R = OpmShape.CRATER_R;
+        for (int x = Mth.floor(h.x - R); x <= Mth.floor(h.x + R); x++) {
+            for (int z = Mth.floor(h.z - R); z <= Mth.floor(h.z + R); z++) {
+                double r = Math.hypot(x + 0.5 - h.x, z + 0.5 - h.z);
+                if (r >= R) {
+                    continue;
+                }
+                int n = (int) Math.round(OpmShape.CRATER_D * (1 - r * r / (R * R)) * (0.85 + 0.3 * OpmShape.hash(x, z, 4)));
+                if (n > 0) {
+                    dig.add(x, z, top - n + 1, top + 3);
+                }
+            }
+        }
+        dig.close();
+    }
+
+    // The dome of air out of the punch: 62 blocks in 0.9 s. The trees it reaches fall away from it (a few a tick), and whoever
+    // stands in the first 40 is thrown out.
+    private static void dome(ServerLevel level, LivingEntity caster, Vec3 h, Scan trees, LivingEntity target) {
+        Set<LivingEntity> pushed = new HashSet<>();
+        pushed.add(target);
+        int[] nextTree = {0};
+        Tasks.add(age -> {
+            double R = OpmShape.domeAt(age / 20.0);
+            for (LivingEntity e : Combat.inRadius(level, h, Math.min(R, 40), caster)) {
+                if (pushed.add(e)) {
+                    Vec3 out = SubCommon.flat(e.position().subtract(h));
+                    double k = 1 - Math.min(1, e.position().distanceTo(h) / 40);
+                    hit(caster, e, (float) (10 + 20 * k), 20, out.scale(0.6 + 1.6 * k).add(0, 0.35 + 0.4 * k, 0), level);
+                }
+            }
+            if (trees != null) {
+                int felled = 0;
+                while (nextTree[0] < trees.found.size() && felled < 6) {
+                    double[] tr = trees.found.get(nextTree[0]);
+                    double d = Math.hypot(tr[0] + 0.5 - h.x, tr[2] + 0.5 - h.z);
+                    if (d > R) {
+                        break;
+                    }
+                    nextTree[0]++;
+                    Vec3 out = SubCommon.flat(new Vec3(tr[0] + 0.5 - h.x, 0, tr[2] + 0.5 - h.z));
+                    if (fell(level, caster, BlockPos.containing(tr[0], tr[1], tr[2]), out, 0, (float) (1 - d / OpmShape.DOME_R))) {
+                        felled++;
+                    }
+                }
+                // (the list is nearest first from the target's spot at the start: close enough to the punch's)
+            }
+            return age / 20.0 > OpmShape.DOME_T + 0.6 && (trees == null || nextTree[0] >= trees.found.size() || trees.done() && age > 60);
+        });
     }
 
     // A small bowl where a foot or a fist came down: R wide, deep at the middle.
@@ -529,8 +758,11 @@ public final class OpmSerious {
         SubNet.send(level, SubNet.OPM_ESPIRRO, caster.getId(), caster.position(), SubCommon.flat(caster.getLookAngle()), seed, 0, breaks ? 1 : 0);
         Frame[] frame = {null};
         Dig dig = new Dig(level);
+        dig.water = true;
         Set<LivingEntity> done = new HashSet<>();
         double[] dug = {2};
+        Scan[] trees = {null};
+        int[] nextTree = {0};
         Tasks.add(age -> {
             if (frame[0] == null && guard.broken()) {
                 release.run();
@@ -547,6 +779,19 @@ public final class OpmSerious {
             if (frame[0] == null) {
                 frame[0] = Frame.of(caster.position(), caster.getLookAngle());
                 SubNet.send(level, SubNet.OPM_ESPIRRO, caster.getId(), caster.position(), frame[0].forward(), seed, 1, breaks ? 1 : 0);
+                if (breaks) {
+                    // the trees of the fan, nearest first, found ahead of the front
+                    Frame ff = frame[0];
+                    List<int[]> cols = new java.util.ArrayList<>();
+                    double half = Math.sin(OpmShape.FAN + 0.05) * OpmShape.SN_L + 1;
+                    columns(ff, -half, half, 0, OpmShape.SN_L, (wx, wz, lx, lz) -> {
+                        double r = Math.hypot(lx, lz - 0.5);
+                        if (r > 3 && r < OpmShape.SN_L && Math.abs(Math.atan2(lx, lz)) < OpmShape.FAN + 0.03) {
+                            cols.add(new int[] {wx, wz, (int) (r * 100)});
+                        }
+                    });
+                    trees[0] = new Scan(level, flat(cols));
+                }
                 SubCommon.sound(level, caster.getEyePosition(), SoundEvents.PANDA_SNEEZE, 3f, 0.5f);
                 SubCommon.sound(level, caster.getEyePosition(), SoundEvents.GENERIC_EXPLODE.value(), 3f, 0.5f);
                 return false;
@@ -566,6 +811,23 @@ public final class OpmSerious {
                 }
                 Vec3 out = f.dir(l[0], 0, l[2]).normalize();
                 hit(caster, e, 160f, 40, out.scale(3.75).add(0, 0.8, 0), level);
+            }
+            // The trees the front reaches fly off whole (before the dig gets to their trunks), a few a tick.
+            if (trees[0] != null) {
+                int felled = 0;
+                while (nextTree[0] < trees[0].found.size() && felled < 5) {
+                    double[] tr = trees[0].found.get(nextTree[0]);
+                    if (tr[3] > front) {
+                        break;
+                    }
+                    nextTree[0]++;
+                    double[] l = f.local(new Vec3(tr[0] + 0.5, tr[1], tr[2] + 0.5));
+                    Vec3 out = f.dir(l[0], 0, l[2]).normalize();
+                    double sp = 48 + SubCommon.RANDOM.nextDouble() * 34 - tr[3] * 0.06;
+                    if (fell(level, caster, BlockPos.containing(tr[0], tr[1], tr[2]), out.scale(sp).add(0, 12 + SubCommon.RANDOM.nextDouble() * 14, 0), 1, 1)) {
+                        felled++;
+                    }
+                }
             }
             // The fan of ground goes once the front is 6 past (its full depth there), and what stood on it.
             double to = Math.min(front - 6, OpmShape.SN_L);
@@ -587,7 +849,7 @@ public final class OpmSerious {
                 });
                 dug[0] = end;
             }
-            if (tp > OpmShape.SN_T + 0.5) {
+            if (tp > OpmShape.SN_T + 0.5 && (trees[0] == null || nextTree[0] >= trees[0].found.size() && trees[0].done())) {
                 dig.close();
                 return true;
             }
@@ -598,5 +860,6 @@ public final class OpmSerious {
 
     public static void resetStatics() {
         DIGS.clear();
+        SCANS.clear();
     }
 }

@@ -36,6 +36,10 @@ public final class FxConfig {
             .comment("Kokushibo's form names in kanji beside him when he uses a Moon Breathing form (/souls kanji desativar).")
             .define("formKanji", true);
 
+    public static final ModConfigSpec.BooleanValue SAITAMA_CUTS = BUILDER
+            .comment("Saitama's serious moves cut the camera to a short shot of his face and of the blow (your own moves only).")
+            .define("saitamaCameraCuts", true);
+
     public static final ModConfigSpec.IntValue INVENTORY_STYLE = BUILDER
             .comment("Survival inventory look: 0 crystals with dark slots, 1 crystals with light slots, 2 Minecraft's default.")
             .defineInRange("inventoryStyle", 0, 0, 2);
@@ -52,6 +56,10 @@ public final class FxConfig {
         } catch (IllegalStateException e) {
             return value.getDefault();
         }
+    }
+
+    public static boolean saitamaCuts() {
+        return on(SAITAMA_CUTS);
     }
 
     public static boolean formKanji() {
