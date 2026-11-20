@@ -433,6 +433,7 @@ public final class Dungeon {
                 Power body = Powers.get(etapa.alma());
                 if (body != null) {
                     PowerLogic.select(player, body);
+                    freshKit(player, member);
                     SoulSync.completeAll(player, body);
                     title(player, Component.literal("TROCA DE CORPOS").withStyle(s -> s.withColor(0xB04CFF).withBold(true)),
                             Component.literal("Agora você é " + body.name().getString() + "."));
@@ -707,6 +708,7 @@ public final class Dungeon {
         member.pendingSoul = "";
         if (take && soul != null) {
             PowerLogic.select(player, soul);
+            freshKit(player, member);
             SoulSync.completeAll(player, soul);
             say(player, "Você absorveu a alma de " + soul.name().getString() + ".");
         } else if (soul != null) {
@@ -775,6 +777,7 @@ public final class Dungeon {
                 List<Power> all = new ArrayList<>(Powers.sub());
                 all.addAll(Powers.divine());
                 trade(player, all);
+                freshKit(player, member);
             }
             case "senzu" -> {
                 giveSeeds(player, spec.sementesPremio());
@@ -793,6 +796,7 @@ public final class Dungeon {
                     return false;
                 }
                 PowerLogic.select(player, chosen);
+                freshKit(player, member);
                 SoulSync.completeAll(player, chosen);
                 say(player, "Você escolheu a alma de " + chosen.name().getString() + ".");
             }
@@ -879,6 +883,14 @@ public final class Dungeon {
         int base = PowerData.baseSlot(slot);
         String key = base == PowerData.SLOT_EXTRA ? "B" : base >= 0 && base < KEY_NAMES.length ? KEY_NAMES[base] : "?";
         return slot >= PowerData.SLOT_SHIFT ? "Shift+" + key : key;
+    }
+
+    // A new soul (Troca de Corpos, absorbing or choosing a soul, Acaso) comes with its own kit: the drawn and stolen keys of the old
+    // one go (Stark 2026-11-20: after the Troca de Corpos the Freeza still had the Roleta's and the stolen skills, "fica em
+    // definitivo"). A Roleta still on draws the new soul's keys again at the start of the next fight.
+    private static void freshKit(ServerPlayer player, Member member) {
+        member.stolen.clear();
+        SkillSwap.clear(player);
     }
 
     // The Roleta stops (Stark 2026-11-20): a fall, or taking a skill (Roubar Tecnica, Montar Kit). A change of soul does not stop
