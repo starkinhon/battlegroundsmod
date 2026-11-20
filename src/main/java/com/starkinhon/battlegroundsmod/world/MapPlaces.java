@@ -82,6 +82,7 @@ public final class MapPlaces {
         NamekWorld.register();
         WorldSites.register();
         NarutoSites.register();
+        StructureRegen.register();
     }
 
     public static void add(String map, Place place) {
@@ -163,6 +164,24 @@ public final class MapPlaces {
             }
         }
         return false;
+    }
+
+    // The places of this level (its map's, or the normal world's in the overworld): StructureRegen.
+    static List<Place> placesOf(ServerLevel level) {
+        String map = mapOf(level);
+        List<Place> places = map != null ? PLACES.get(map) : level.dimension() == Level.OVERWORLD ? PLACES.get(WORLD) : null;
+        return places == null ? List.of() : places;
+    }
+
+    // A place's build made again without placing anything (it comes out the same every time): StructureRegen.
+    static Build buildOf(ServerLevel level, Place place) {
+        return place.build().apply(level.getChunkSource().getGenerator() instanceof MapChunkGenerator ? map(level) : null);
+    }
+
+    // Places whose build depends on the world as it is when built (the Valley of the End sits its statues on the
+    // ground found there): made again later they would not match, so they are never regenerated.
+    static boolean noRegen(String id) {
+        return id.startsWith("naruto/" + NarutoSites.VALE + "@");
     }
 
     public static void addWorldPlace(Place place) {
@@ -303,6 +322,7 @@ public final class MapPlaces {
         if (data.built.add(job.place().id())) {
             data.setDirty();
         }
+        StructureRegen.built(level, job.place().id(), job.build());
         if (job.place().done() != null) {
             job.place().done().accept(level, job.build());
         }

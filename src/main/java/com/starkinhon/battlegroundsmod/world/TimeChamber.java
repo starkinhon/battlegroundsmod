@@ -224,9 +224,13 @@ public final class TimeChamber {
     }
 
     // The platform and the house, put up the first time anyone comes in (the room's floor itself is the dimension's).
+    static final String REGEN_ID = "sala_tempo";
+
     private static void build(ServerLevel room) {
         BlockPos marker = new BlockPos(0, FLOOR_Y + 2, 0);
         if (!room.getBlockState(marker).isAir()) {
+            // already up: what the training broke comes back when nobody is inside (StructureRegen)
+            StructureRegen.restoreNow(room, REGEN_ID, () -> new Build(0, FLOOR_Y, 0, 365).template("dragonball/time_chamber", 0, 0, 0));
             return;
         }
         Build b = new Build(0, FLOOR_Y, 0, 365).template("dragonball/time_chamber", 0, 0, 0);
