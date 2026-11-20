@@ -132,7 +132,7 @@ public final class Bang {
                 }
             });
         }
-        DbCommon.cooldown(caster, 0, n > 1 ? 140 : 60);
+        DbCommon.cooldown(caster, 0, n > 1 ? 170 : 80);
     }
 
     private static void fire(LivingEntity caster, ServerLevel level, LivingEntity t, int index, int total) {
