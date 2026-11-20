@@ -195,7 +195,8 @@ public final class Naruto {
         SubNet.send(level, SubNet.RASENGAN, id, cp, Vec3.ZERO, 0, 0, 1);
         Freeze.free(t);
         Combat.hurtMagic(owner, t, big ? 13 : 9);
-        Stun.apply(t, 52);
+        // 2.4 s: with the grind, 3 s held (rebalance 2026-11-20, it was 2.6 s)
+        Stun.apply(t, 48);
         Combat.push(t, look, big ? 2.0 : 1.6, 0.6);
         DbCommon.hit(level, cp, 1.6f, Db.KAME);
         DbCommon.screen(level, cp, 18);
@@ -322,10 +323,12 @@ public final class Naruto {
             return false;
         }
         SubCommon.Guard guard = SubCommon.guard(caster);
-        int[] kicks = {30, 38, 46, 54};
-        int jump = 52;
-        int heel = 70;
-        int land = 76;
+        // A faster choreography: the whole Rendan holds the target ~3 s with the stun after the heel, the ceiling of a
+        // SubAlma's control (rebalance 2026-11-20; it was 30/38/46/54, 52, 70, 76 and a 2.6 s stun, 6.4 s in all).
+        int[] kicks = {20, 26, 32, 38};
+        int jump = 36;
+        int heel = 48;
+        int land = 54;
         Vec3 base = target.position();
         Vec3 start = caster.position();
         Vec3 face = SubCommon.flat(base.subtract(start));
@@ -401,7 +404,7 @@ public final class Naruto {
             }
             if (age == land) {
                 Combat.hurt(caster, target, 11);
-                Stun.apply(target, 52);
+                Stun.apply(target, 8);
                 SubNet.send(level, SubNet.DUST, 0, base, Vec3.ZERO, 1.3f, 0, 0);
                 DbCommon.screen(level, base, 20);
                 SubCommon.sound(level, base, SoundEvents.GENERIC_EXPLODE.value(), 1f, 1.3f);

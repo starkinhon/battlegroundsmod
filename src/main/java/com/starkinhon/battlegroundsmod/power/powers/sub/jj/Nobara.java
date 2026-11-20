@@ -607,7 +607,10 @@ public final class Nobara {
         });
     }
 
-    // Called on every hit she takes (JjCommon): during the ult it comes back doubled to everyone tied, along the thread.
+    // The most one reflected blow takes off a tied target: this share of its max health.
+    private static final float REFLECT_CAP = 0.08f;
+
+    // Called on every hit she takes (JjCommon): during the ult it comes back to everyone tied, along the thread.
     public static void onHurt(LivingEntity nobara, ServerLevel level, float amount) {
         if (reflecting || !SubCommon.hasState(nobara, SHARED)) {
             return;
@@ -616,7 +619,10 @@ public final class Nobara {
         if (links == null || links.isEmpty()) {
             return;
         }
-        float back = Math.min(30, amount * 2);
+        // The blow she took is already a finished number (its attacker's tier counted): it goes back as it is, never
+        // through Combat.hurtMagic again (that multiplied it by the tier a second time, 27% of a life per blow; rebalance
+        // 2026-11-20). At most 8% of the tied one's max health per blow.
+        float taken = amount;
         for (Map.Entry<LivingEntity, int[]> l : links.entrySet()) {
             l.getValue()[0]++;
             LivingEntity t = l.getKey();
@@ -627,7 +633,9 @@ public final class Nobara {
                 }
                 reflecting = true;
                 try {
-                    Combat.hurtMagic(nobara, t, back);
+                    float back = Math.min(taken, t.getMaxHealth() * REFLECT_CAP);
+                    t.invulnerableTime = 0;
+                    com.starkinhon.battlegroundsmod.combat.DamageDebug.hurt(nobara, t, nobara.damageSources().indirectMagic(nobara, nobara), back);
                 } finally {
                     reflecting = false;
                 }

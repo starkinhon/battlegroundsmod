@@ -52,7 +52,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 //   which lands again a moment later, through the back. Holding Z keeps the delay stored on the target (a blue mark):
 //   letting go sets it off wherever the target went. Weaker on a guard, but it breaks it.
 // X Black Flash: a ring closes on his fist; press again right when it closes and the cursed energy meets the blow: black
-//   lightning, a lot of damage. Then the zone for 5 s: the window doubles and he can chain up to 4 (the 4th sinks the ground).
+//   lightning, a lot of damage. Then the zone for 5 s: the window doubles and he can chain up to 2 (the last sinks the ground).
 // C Chute Manji: he guards for a second; a blow from the front is caught and answered with a high kick, and a shot from
 //   afar is kicked back at whoever threw it.
 // V Corte de Tesoura (his Dismantle, as in the manga): his palm touches something and a dashed "cut here" line with white
@@ -63,6 +63,10 @@ import net.neoforged.neoforge.network.PacketDistributor;
 public final class Itadori {
     private static final int RING = 18;
     private static final int ZONE_TICKS = 100;
+    // Black Flashes in a row in the zone and the wait between them (rebalance 2026-11-20: 4 with 1.5 s between took 69% of
+    // a life; now 2 with 4 s).
+    private static final int ZONE_CHAIN = 2;
+    private static final int ZONE_COOLDOWN = 80;
     private static final int B = PowerData.SLOT_EXTRA;
     // The Black Flash ring of each Itadori: when it started, and how many he chained in this zone.
     private static final Map<UUID, long[]> RINGS = new HashMap<>();
@@ -319,16 +323,16 @@ public final class Itadori {
         Combat.hurt(caster, target, 10);
         SubCommon.sound(level, contact, SoundEvents.LIGHTNING_BOLT_THUNDER, 0.8f, 1.6f);
         SubCommon.sound(level, contact, SoundEvents.PLAYER_ATTACK_CRIT, 1.6f, 0.6f);
-        // The zone: the window doubles and he can chain; the 4th ends it and sinks the ground.
+        // The zone: the window doubles and he can chain; the last one (ZONE_CHAIN) ends it and sinks the ground.
         r[1]++;
-        boolean last = r[1] >= 4;
+        boolean last = r[1] >= ZONE_CHAIN;
         if (last) {
             SubCommon.clearState(caster, JjCommon.ZONE);
             r[1] = 0;
             DbCommon.cooldown(caster, 1, 300);
         } else {
             SubCommon.setState(caster, JjCommon.ZONE, ZONE_TICKS);
-            DbCommon.cooldown(caster, 1, 30);
+            DbCommon.cooldown(caster, 1, ZONE_COOLDOWN);
             if (caster instanceof Player player) {
                 SubCommon.warn(player, "itadori.zone", (int) r[1]);
             }

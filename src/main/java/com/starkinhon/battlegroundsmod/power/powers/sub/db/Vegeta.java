@@ -23,6 +23,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 
 // Vegeta (SubAlma of Dragon Ball, tier 6), the Visualizador's Vegeta tab.
@@ -32,7 +33,8 @@ import net.minecraft.world.phys.Vec3;
 //   flies fast, homing on the target, and bursts into tongues that open and die torn (radius 6.4).
 // C Explosao Final (the strongest attack of the mod): he rises with the golden aura at its peak and blows up: a golden
 //   dome of radius 20 with a white one inside that burns for 3 s, a deep crater, everyone round thrown at the end. The
-//   price: 1 heart left and turned to stone for 20 s (still, no skills, nothing gets through the stone); then the stone bursts.
+//   price: a PLAYER dies in it, turned to stone that crumbles (Stark 2026-11-20: "pode matar o usuario", like Vegeta's own
+//   in the manga); a boss is left with 1 heart and stone for 20 s (still, no skills, nothing gets through the stone).
 // V Final Flash: arms open, the yellow ki gathers in both palms with the golden aura rising; hands together, a huge
 //   yellow beam goes through everything and tears the ground up under it.
 public final class Vegeta {
@@ -43,7 +45,7 @@ public final class Vegeta {
         return new Power("vegeta", 0xFFD84A, 1.1f, List.of(
                 new Ability(140, 0, Vegeta::rajada),
                 new Ability(200, 0, Vegeta::bigBang),
-                new Ability(1600, 0, Vegeta::explosaoFinal),
+                new Ability(2400, 0, Vegeta::explosaoFinal),
                 new Ability(1000, 0, Vegeta::finalFlash)));
     }
 
@@ -331,6 +333,8 @@ public final class Vegeta {
 
     private static final int FINAL_CHARGE = 52;
     private static final int STONE_TICKS = 400;
+    // A player's stone before it crumbles and he dies (the sacrifice).
+    private static final int SACRIFICE_TICKS = 40;
     // Radius of the dome (it was 12), its big hit (95 before: a low-life Madara walked away) and the burning after it.
     private static final double FINAL_RADIUS = 20;
     private static final float FINAL_DAMAGE = 170;
@@ -396,21 +400,33 @@ public final class Vegeta {
             Vec3 floor = new Vec3(start.x, ground, start.z);
             JjCommon.crater(level, floor, FINAL_RADIUS * 0.5, 5, 60);
             Tasks.later(8, () -> JjCommon.crater(level, floor, FINAL_RADIUS * 0.72, 7, 90));
-            // The price: 1 heart and stone for 20 s. Nothing gets through the stone, and he can't move or use anything.
+            // The price: 1 heart and stone. Nothing gets through the stone, and he can't move or use anything. A player dies
+            // when the stone crumbles (2 s); a boss stays 20 s in it, then the stone bursts.
             caster.setHealth(Math.min(caster.getHealth(), 1));
+            boolean sacrifice = caster instanceof Player;
+            int stoneTicks = sacrifice ? SACRIFICE_TICKS : STONE_TICKS;
             // He comes down into the bottom of his own crater and stays there.
             Vec3 top = caster.position();
             Vec3 rest = new Vec3(start.x, DbCommon.groundY(level, start.add(0, 1, 0)), start.z);
-            Freeze.hold(caster, STONE_TICKS, a -> top.lerp(rest, SubCommon.smooth(a / 12f)));
-            Intangible.hold(caster, STONE_TICKS);
-            PowerLogic.seal(caster, STONE_TICKS);
-            SubNet.send(level, SubNet.SCREEN, caster.getId(), caster.position(), Vec3.ZERO, 48, STONE_TICKS, 0);
-            Tasks.later(STONE_TICKS, () -> {
+            Freeze.hold(caster, stoneTicks, a -> top.lerp(rest, SubCommon.smooth(a / 12f)));
+            Intangible.hold(caster, stoneTicks);
+            PowerLogic.seal(caster, stoneTicks);
+            SubNet.send(level, SubNet.SCREEN, caster.getId(), caster.position(), Vec3.ZERO, 48, stoneTicks, 0);
+            Tasks.later(stoneTicks, () -> {
                 if (caster.isAlive()) {
                     SubCommon.sound(level, caster.position(), SoundEvents.STONE_BREAK, 1.6f, 0.7f);
                     SubCommon.sound(level, caster.position(), SoundEvents.DEEPSLATE_BREAK, 1.6f, 0.8f);
                 }
             });
+            if (sacrifice) {
+                // One tick after the stone (and its intangibility) is gone, so nothing of the mod holds the blow back.
+                Tasks.later(stoneTicks + 1, () -> {
+                    if (caster.isAlive()) {
+                        caster.invulnerableTime = 0;
+                        caster.hurt(level.damageSources().genericKill(), Float.MAX_VALUE);
+                    }
+                });
+            }
             return true;
         });
         return true;

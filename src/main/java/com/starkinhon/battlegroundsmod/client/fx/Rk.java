@@ -522,7 +522,7 @@ final class Rk {
                 pc.q.identity().lookAlong(new Vector3f(dirIn).negate(), new Vector3f(0, 1, 0)).conjugate();
                 pc.q.rotateZ((i % 2 == 1 ? 0.7f : -0.7f) + b[1]);
                 pc.p.a(b[3], b[4], 0, 0);
-                pc.p.alpha = (s < 0 ? (s + 0.15f) / 0.15f : 1) * (t > 3.4f ? (0.5f + 0.5f * Mth.sin(t * 60)) * (1 - (t - 3.4f) / 0.5f) : 1);
+                pc.p.alpha = (s < 0 ? (s + 0.15f) / 0.15f : 1) * (t > 2.4f ? (0.5f + 0.5f * Mth.sin(t * 60)) * (1 - (t - 2.4f) / 0.5f) : 1);
             }
             if (t >= 0.18f + 0.14f + 0.175f && !slam) {
                 slam = true;
@@ -539,7 +539,7 @@ final class Rk {
                 flash.show(fl < 1).scale(0.6f + 1.2f * (float) Math.sqrt(Math.min(1, fl)));
                 flash.p.alpha = 1 - Math.min(1, fl);
             }
-            if (t > 3.95f) {
+            if (t > 2.95f) {
                 done = true;
             }
         }

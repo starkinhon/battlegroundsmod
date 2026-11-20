@@ -42,13 +42,17 @@ public final class Byakuya {
     private static final String REST = "byakuya_bankai_rest";
     private static final int BANKAI_TICKS = 400;
     private static final int REST_TICKS = 400;
+    // The Gokei's sphere closing (and the longest it holds), and the wait between two Senkei in one Bankai (rebalance
+    // 2026-11-20: 3 s let it land every 3 s).
+    private static final int GOKEI_CLOSE = 44;
+    private static final int SENKEI_WAIT = 200;
 
     private Byakuya() {
     }
 
     public static Power create() {
         return new Power("byakuya", 0xF4A6C6, 1.0f, List.of(
-                new Ability(90, 0, Byakuya::senbonzakura),
+                new Ability(200, 0, Byakuya::senbonzakura),
                 new Ability(200, 0, Byakuya::gokei),
                 new Ability(160, 0, Byakuya::senka),
                 new Ability(40, 0, Byakuya::bankai),
@@ -94,7 +98,8 @@ public final class Byakuya {
     private static boolean senbonzakura(LivingEntity caster, ServerLevel level) {
         SubCommon.Guard guard = SubCommon.guard(caster);
         boolean big = inBankai(caster);
-        float damage = big ? 3f : 2f;
+        // The Bankai's petals cut 20% harder (rebalance 2026-11-20: it was 50%, 47% of a life in one river).
+        float damage = big ? 2.4f : 2f;
         int most = big ? 80 : 60;
         int bossHold = 20 + SubCommon.RANDOM.nextInt(30);
         SubCommon.pose(caster, "sub.apontar");
@@ -172,9 +177,10 @@ public final class Byakuya {
                 return true;
             }
             SubCommon.busy(caster, 2);
-            // caught inside: it can't get out while the sphere closes (the page: 3 s to close)
+            // caught inside: it can't get out while the sphere closes (2.2 s now: with the crush's stun the whole Gokei holds
+            // ~3 s, the ceiling of a SubAlma's control; rebalance 2026-11-20, it was up to 5.3 s)
             Freeze.hold(target, 2, a -> spot);
-            float closed = SubCommon.smooth(age / 60f);
+            float closed = SubCommon.smooth(age / (float) GOKEI_CLOSE);
             boolean held = SubCommon.held(caster, age, bossHold);
             if (held) {
                 com.starkinhon.battlegroundsmod.combat.Charge.report(caster, closed);
@@ -182,7 +188,7 @@ public final class Byakuya {
             if (age % 6 == 0) {
                 SubCommon.sound(level, center, SoundEvents.AMETHYST_BLOCK_CHIME, 0.8f, 1.2f + closed);
             }
-            if ((held || age < 6) && age < 80) {
+            if ((held || age < 6) && age < GOKEI_CLOSE) {
                 return false;
             }
             SubNet.send(level, SubNet.BL_GOKEI, id, center, Vec3.ZERO, 0, 0, 1);
@@ -194,7 +200,7 @@ public final class Byakuya {
                 if (target.isAlive() && caster.isAlive()) {
                     target.invulnerableTime = 0;
                     Combat.hurt(caster, target, damage);
-                    Stun.apply(target, 26);
+                    Stun.apply(target, 14);
                 }
             });
             return true;
@@ -385,7 +391,7 @@ public final class Byakuya {
             return false;
         }
         SubCommon.Guard guard = SubCommon.guard(caster);
-        SubCommon.setState(caster, SENKEI, 60);
+        SubCommon.setState(caster, SENKEI, SENKEI_WAIT);
         Vec3 spot = target.position();
         SubCommon.pose(caster, "sub.erguer");
         SubCommon.busy(caster, 12);
@@ -400,7 +406,7 @@ public final class Byakuya {
             if (!guard.broken() && target.isAlive()) {
                 target.invulnerableTime = 0;
                 Combat.hurt(caster, target, 30);
-                Stun.apply(target, 30);
+                Stun.apply(target, 22);
             }
         });
         return true;

@@ -268,8 +268,12 @@ public final class Combat {
     // value a Tier 0 maximum): this brings them to the new one.
     public static float subScale(LivingEntity attacker) {
         String power = attacker.getData(com.starkinhon.battlegroundsmod.ModAttachments.POWER).power;
-        return power != null && com.starkinhon.battlegroundsmod.power.Powers.isSub(power)
-                ? (float) com.starkinhon.battlegroundsmod.skill.TierSpec.get().multSubAlmas() : 1f;
+        if (power == null || !com.starkinhon.battlegroundsmod.power.Powers.isSub(power)) {
+            return 1f;
+        }
+        var spec = com.starkinhon.battlegroundsmod.skill.TierSpec.get();
+        // A player wearing a SubAlma hits softer than the SubAlma bosses (rebalance 2026-11-20).
+        return (float) (attacker instanceof Player && spec.multSubAlmasJogador() > 0 ? spec.multSubAlmasJogador() : spec.multSubAlmas());
     }
 
     // Magic damage ignores armor. The same multipliers as hurtBase (Nanami's Overtime and the Strength effect were left out

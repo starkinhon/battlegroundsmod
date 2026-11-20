@@ -49,7 +49,7 @@ public final class Freeza {
 
     public static Power create() {
         return new Power("freeza", 0xC050FF, 1.0f, List.of(
-                new Ability(70, 0, Freeza::deathBeam),
+                new Ability(160, 0, Freeza::deathBeam),
                 new Ability(220, 0, Freeza::telekinesis),
                 new Ability(260, 0, Freeza::saucer),
                 new Ability(1100, 0, Freeza::deathBall)));
@@ -134,7 +134,8 @@ public final class Freeza {
             return false;
         }
         SubCommon.Guard guard = SubCommon.guard(caster);
-        int most = 60;
+        // Up to 1.8 s in the air, then the throw: 3 s at most with the stun (rebalance 2026-11-20, it was 4.7 s).
+        int most = 36;
         int bossHold = 20 + SubCommon.RANDOM.nextInt(30);
         int id = SubNet.newId();
         Vec3 start = target.position();
@@ -191,7 +192,7 @@ public final class Freeza {
             target.getData(com.starkinhon.battlegroundsmod.ModAttachments.POWER).sealedUntil = 0;
             if (target.isAlive()) {
                 Combat.hurt(caster, target, 13);
-                Stun.apply(target, 24);
+                Stun.apply(target, 12);
             }
             DbCommon.hit(level, goal[0].add(0, 0.5, 0), 1.2f, Db.WHITE);
             DbCommon.screen(level, goal[0], 10);

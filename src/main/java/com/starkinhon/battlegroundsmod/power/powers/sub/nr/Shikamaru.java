@@ -42,7 +42,7 @@ import net.minecraft.world.phys.Vec3;
 //   Kubishibari, the shadow climbs the body into a hand on the neck, damage while held; letting go ends it all.
 // X Kage Nui: the shadow splits toward up to 4 enemies (20 blocks) and rises in a needle into each, pinned while the
 //   stamina lasts. X again lets go.
-// C Paper bomb: only throws. A tap throws one where he aims (22 blocks); held, a fan opens one by one up to 10 at once.
+// C Paper bomb: only throws. A tap throws one where he aims (22 blocks); held, a fan opens one by one up to 6 at once.
 //   10 armed at most; 10 in the pouch, one back every 3 s; they last 60 s. One goes off when an enemy steps on it and
 //   lights its neighbours (4.6 blocks) one after the other. Shift+C sets them all off. The strategy is the Z: walk a
 //   caught target into the field. Held by his shadow through 4 or more blasts: the pit, buried and stunned 3 s.
@@ -53,14 +53,17 @@ import net.minecraft.world.phys.Vec3;
 public final class Shikamaru {
     static final double RANGE = 24;
     static final double NUI_RANGE = 20;
+    // The longest the shadows hold anyone, stamina or not (rebalance 2026-11-20: a SubAlma's control tops at 4 s; they held
+    // ~10 s, 20 with the flare). The flare now gives reach, not time.
+    static final int HOLD_MAX = 80;
     static final double DRAIN_STRONGER = 20;
     static final double DRAIN_SAME = 10;
     static final double DRAIN_WEAKER = 5;
     static final double CHOKE_DRAIN = 1.5;
-    static final int MAX_TAGS = 10;
+    static final int MAX_TAGS = 6;
     static final double TAG_RANGE = 22;
     static final int TAG_LIFE = 1200;
-    static final int TAG_REFILL = 60;
+    static final int TAG_REFILL = 100;
     static final double CHAIN = 4.6;
     static final float TAG_DAMAGE = 8;
     static final int PIT_HITS = 4;
@@ -118,7 +121,7 @@ public final class Shikamaru {
         return new Power("shikamaru", 0x5F6B3A, 0.9f, List.of(
                 new Ability(200, 0, Shikamaru::kagemane),
                 new Ability(200, 0, Shikamaru::kageNui),
-                new Ability(8, 0, Shikamaru::paperBomb),
+                new Ability(20, 0, Shikamaru::paperBomb),
                 new Ability(1100, 0, Shikamaru::xeque),
                 new Ability(800, 0, Shikamaru::flare)),
                 Arrays.asList(null, null, new Ability(20, 0, Shikamaru::detonate), null, null));
@@ -251,6 +254,11 @@ public final class Shikamaru {
                 old.run();
             }
             SubNet.send(level, SubNet.SHADOW, id, from, target.position().subtract(from), 1 + SubCommon.smooth(held / 4f), 0.3f, 0);
+            if (held >= HOLD_MAX) {
+                // The ceiling of a SubAlma's control, whatever stamina is left.
+                stop(level, caster, hold, id, 200);
+                return true;
+            }
             if (spend(caster, budget, drain(caster, target) * (chokeAt[0] >= 0 ? CHOKE_DRAIN : 1))) {
                 stop(level, caster, hold, id, 200);
                 SubCommon.warn(caster, "shikamaru.out_of_breath");
@@ -416,7 +424,7 @@ public final class Shikamaru {
                 if (out) {
                     SubCommon.warn(caster, "shikamaru.out_of_breath");
                 }
-                if (nui.release || out || d == 0 || guard.broken()) {
+                if (nui.release || out || d == 0 || guard.broken() || held >= HOLD_MAX) {
                     relAt[0] = age;
                     for (int i = 0; i < n; i++) {
                         if (releases[i] != null) {
@@ -459,7 +467,7 @@ public final class Shikamaru {
         return tags;
     }
 
-    // Papers left in the pouch (10 at most, one back every 3 s).
+    // Papers left in the pouch (6 at most, one back every 5 s; rebalance 2026-11-20, it was 10 and 3 s).
     private static int pouch(LivingEntity caster) {
         long now = caster.level().getGameTime();
         long[] p = POUCH.computeIfAbsent(caster.getId(), k -> new long[] {MAX_TAGS, now});

@@ -46,7 +46,8 @@ public final class Kuririn {
     private static final double DISC_RANGE = 34;
     private static final float DISC_RADIUS = 0.65f;
     private static final float BIG_RADIUS = 0.9f;
-    private static final int BLIND_TICKS = 120;
+    // 3 s, the ceiling of a SubAlma's control (rebalance 2026-11-20, it was 6 s)
+    private static final int BLIND_TICKS = 60;
     private static final double RAIN_AREA = 7;
     private static final int RAYS = 14;
 

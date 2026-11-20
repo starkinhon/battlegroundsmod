@@ -39,29 +39,33 @@ import net.minecraft.world.phys.Vec3;
 // Passive Leitura Mental: an enemy within 16 blocks starting a skill pulses on her screen only (a seal over his head, a
 //   thread to her forehead), so she can dodge or cut it.
 // Z Shintenshin: diamond seal, her body drops, the spirit flies straight at 11 blocks/s along the ground (20 blocks; its
-//   hitbox is its body). Caught: YOU drive the body (WASD, click hits, space jumps): 10 s on someone weaker, 7 s on the same
-//   tier, 5 s on someone stronger, 4 s on a boss. Only the eyes turn purple (no aura, Stark). Z again: Exit, the body she
+//   hitbox is its body). Caught: YOU drive the body (WASD, click hits, space jumps): 3 s on someone weaker or of the same
+//   tier, 2.5 s on someone stronger or a boss. Only the eyes turn purple (no aura, Stark). Z again: Exit, the body she
 //   leaves hurts itself. Her body lies there: a hit on it snaps the spirit back and she is dizzy 1 s; so is a miss.
 // X Shinranshin: a purple cone from her forehead (12 blocks): mobs attack whoever is closest, players get their controls
-//   inverted (walk and look), 7 s (3 s on a boss).
+//   inverted (walk and look), 4 s (3 s on a boss).
 // C Mind Link: threads tie up to 3 enemies for 6 s; half the damage one takes runs along to the others; snaps past 12 blocks.
 // B Campo de Flores: seeds thrown where she aims (20 blocks) grow a bed of flowers (2.5 blocks, 30 s, 2 at most). Whoever
 //   steps in is covered in pollen and marked 8 s: her next Shintenshin homes in on him.
 // V Teatro Mental: kneeling, her mind fills 20 blocks (a dome, the sky turns into her mind); everyone inside gets puppet
-//   strings and they beat each other for 10 s (5 s on a boss), then the strings pull them up and each mind bursts (high
-//   damage + stun 2 s). A strong hit on her ends it.
+//   strings and they beat each other for 1.5 s, then the strings pull them up and each mind bursts (high damage + a short
+//   stun): 4 s held in all. A strong hit on her ends it.
 public final class Ino {
     private static final double SPIRIT_SPEED = 0.55;
     private static final double SPIRIT_RANGE = 20;
     private static final int SEAL_TICKS = 9;
     private static final int RISE_TICKS = 6;
-    private static final int CONTROL_WEAKER = 200, CONTROL_SAME = 140, CONTROL_STRONGER = 100, CONTROL_BOSS = 80;
-    private static final int INVERT_TICKS = 140, INVERT_BOSS = 60;
+    // Rebalance 2026-11-20: a SubAlma holds 3 s at most (4 s an ult). The Shintenshin (+1 s stun on the way out) was 7 s,
+    // the Shinranshin 7 s and the Teatro Mental 12.9 s.
+    private static final int CONTROL_WEAKER = 60, CONTROL_SAME = 60, CONTROL_STRONGER = 50, CONTROL_BOSS = 50;
+    private static final int INVERT_TICKS = 80, INVERT_BOSS = 60;
     private static final double READ_RANGE = 16;
     private static final double FIELD_RADIUS = 2.5;
     private static final int FIELD_TICKS = 600, MARK_TICKS = 160;
     private static final double THEATER_RADIUS = 20;
-    private static final int THEATER_FIGHT = 200;
+    private static final int THEATER_FIGHT = 30;
+    // The stun after each mind bursts in the Teatro (with the strings and the pull, 4 s in all).
+    private static final int THEATER_STUN = 14;
 
     // Spirits out, by caster id.
     private static final Map<Integer, Spirit> SPIRITS = new HashMap<>();
@@ -312,6 +316,15 @@ public final class Ino {
                     }
                 }
                 if (bodyHit[0]) {
+                    state[0] = 5;
+                    mark[0] = age;
+                    from[0] = spirit[0];
+                    return false;
+                }
+                // The spirit walks up to you: a guard from the front turns it away, like a miss (rebalance 2026-11-20,
+                // the divines' rule).
+                if (hit != null && com.starkinhon.battlegroundsmod.combat.Defense.blockGrab(hit, caster)) {
+                    miss[0] = true;
                     state[0] = 5;
                     mark[0] = age;
                     from[0] = spirit[0];
@@ -866,7 +879,7 @@ public final class Ino {
                     SubNet.send(level, SubNet.INO_STRINGS, e.getId(), e.position(), Vec3.ZERO, 1, 1, 1);
                     SubNet.send(level, SubNet.EYES, e.getId(), e.getEyePosition(), Vec3.ZERO, 0, 0, 0);
                     Combat.hurtMagic(caster, e, 36);
-                    Stun.apply(e, 40);
+                    Stun.apply(e, THEATER_STUN);
                     SubNet.send(level, SubNet.INO_SPIRAL, e.getId(), e.position(), Vec3.ZERO, 40, 0, 0);
                 }
                 SubCommon.pose(caster, "");

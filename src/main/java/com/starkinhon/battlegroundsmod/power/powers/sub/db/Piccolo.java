@@ -174,6 +174,14 @@ public final class Piccolo {
                     caught[0] = t;
                     break;
                 }
+                // The arm comes at you: a guard from the front stops it, Piccolo is stunned and the arm comes back empty
+                // (rebalance 2026-11-20, the divines' rule).
+                if (caught[0] != null && com.starkinhon.battlegroundsmod.combat.Defense.blockGrab(caught[0], caster)) {
+                    grabAt[0] = age;
+                    caught[0] = null;
+                    from[0] = tip;
+                    return false;
+                }
                 if (caught[0] != null) {
                     grabAt[0] = age;
                     from[0] = caught[0].position();
@@ -217,7 +225,7 @@ public final class Piccolo {
                     // A real stun (Stark, 2026-11-09): the knee opens the Hellzone, which only lands on a stunned target. 3 s
                     // and full on bosses too: halved (45 -> 22 ticks) it fell under Stun.INTERRUPT_TICKS, so it never
                     // counted as a stun and the C refused ("the X's stun is tiny").
-                    Stun.apply(target, 60, true);
+                    Stun.apply(target, 40, true);
                     if (com.starkinhon.battlegroundsmod.combat.AirFight.slamsDown(caster, target)) {
                         // In the air (Stark 2026-11-13): the grab drives it into the ground, from any height.
                         com.starkinhon.battlegroundsmod.combat.AirFight.slam(level, caster, target);
