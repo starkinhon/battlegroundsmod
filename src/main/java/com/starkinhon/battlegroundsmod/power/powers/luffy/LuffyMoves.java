@@ -187,6 +187,9 @@ public final class LuffyMoves {
 
     // ---------- a move goes off ----------
 
+    // Pistol recharge in ticks by Gear: tap, Jet Pistol (G2), Gigant Pistol (G3), Kong Gun (G4), Bajrang Gun (G5).
+    static final int[] PISTOL_CD = {30, 60, 90, 100, 120};
+
     static boolean fire(LivingEntity caster, ServerLevel level, int key, int gear) {
         double reach = REACH[key][gear] * k(caster);
         LivingEntity target = key == 3 && gear == 2 ? null : front(caster, reach);
@@ -203,6 +206,11 @@ public final class LuffyMoves {
             case 1 -> gatling(caster, level, gear, target, aim, dir, guard);
             case 2 -> bazooka(caster, level, gear, target, aim, dir, guard);
             default -> ult(caster, level, gear, target, aim, dir, guard);
+        }
+        if (key == 0 && caster instanceof net.minecraft.world.entity.player.Player) {
+            // The Pistol's own recharge by the Gear it went off in (Stark 2026-11-20: 1 s flat let a G4/G5 Pistol go off every
+            // second). Counted from the release. Bosses keep their own pacing.
+            com.starkinhon.battlegroundsmod.power.powers.sub.db.DbCommon.cooldown(caster, 0, PISTOL_CD[gear]);
         }
         if (key != 3) {
             // (the Gigant Pistol shrinks him when the page does: after the arm has gone down)
