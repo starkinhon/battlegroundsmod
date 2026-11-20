@@ -251,9 +251,8 @@ public final class KatonGigante {
     }
 
     private static void send(ServerLevel level, ModPayloads.KatonBall payload) {
-        for (ServerPlayer viewer : level.players()) {
-            PacketDistributor.sendToPlayer(viewer, payload);
-        }
+        Vec3 p = payload.pos();
+        PacketDistributor.sendToPlayersNear(level, null, p.x, p.y, p.z, 160.0, payload);
     }
 
     private static double smooth(double x) {
