@@ -823,9 +823,8 @@ public final class Dungeon {
                 // out of the Roleta's draw, like a stolen key (any kit key, B and Shifts too: the Roleta must skip every key in
                 // member.stolen)
                 member.stolen.add(to);
-                if (stolenZxc(member) >= SkillSwap.KEYS) {
-                    endRoulette(player, member);
-                }
+                // taking a skill ends the Roleta (Stark 2026-11-20: "aleatoriza tudo até você roubar técnica")
+                endRoulette(player, member);
                 Fx.burst(player.serverLevel(), Fx.dust(boss.color(), 2f), player.position().add(0, 1, 0), 70, 0.7, 0.05);
                 Fx.burst(player.serverLevel(), ParticleTypes.REVERSE_PORTAL, player.position().add(0, 1, 0), 50, 0.5, 0.2);
                 Fx.sound(player.serverLevel(), player.position(), SoundEvents.ILLUSIONER_MIRROR_MOVE, 1f, 0.7f);
