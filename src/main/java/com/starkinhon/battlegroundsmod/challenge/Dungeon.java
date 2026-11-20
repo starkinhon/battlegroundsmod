@@ -419,6 +419,7 @@ public final class Dungeon {
                 member.ginyu = false;
                 Power body = Powers.get(etapa.alma());
                 if (body != null) {
+                    endRoulette(player, member);
                     PowerLogic.select(player, body);
                     SoulSync.completeAll(player, body);
                     title(player, Component.literal("TROCA DE CORPOS").withStyle(s -> s.withColor(0xB04CFF).withBold(true)),
@@ -668,6 +669,7 @@ public final class Dungeon {
         Power soul = Powers.get(member.pendingSoul);
         member.pendingSoul = "";
         if (take && soul != null) {
+            endRoulette(player, member);
             PowerLogic.select(player, soul);
             SoulSync.completeAll(player, soul);
             say(player, "Você absorveu a alma de " + soul.name().getString() + ".");
@@ -736,6 +738,7 @@ public final class Dungeon {
                 // any soul of the game, SubAlma or divine
                 List<Power> all = new ArrayList<>(Powers.sub());
                 all.addAll(Powers.divine());
+                endRoulette(player, member);
                 trade(player, all);
             }
             case "senzu" -> {
@@ -754,6 +757,7 @@ public final class Dungeon {
                 if (chosen == null) {
                     return false;
                 }
+                endRoulette(player, member);
                 PowerLogic.select(player, chosen);
                 SoulSync.completeAll(player, chosen);
                 say(player, "Você escolheu a alma de " + chosen.name().getString() + ".");
@@ -765,6 +769,7 @@ public final class Dungeon {
                     return false;
                 }
                 member.stolen.add(arg);
+                endRoulette(player, member);
                 Fx.burst(player.serverLevel(), Fx.dust(boss.color(), 2f), player.position().add(0, 1, 0), 70, 0.7, 0.05);
                 Fx.burst(player.serverLevel(), ParticleTypes.REVERSE_PORTAL, player.position().add(0, 1, 0), 50, 0.5, 0.2);
                 Fx.sound(player.serverLevel(), player.position(), SoundEvents.ILLUSIONER_MIRROR_MOVE, 1f, 0.7f);
@@ -773,7 +778,7 @@ public final class Dungeon {
             }
             case "roleta" -> {
                 member.roulette = true;
-                say(player, "Roleta: a cada luta seu Z, X e C mudam. As técnicas roubadas ficam.");
+                say(player, "Roleta: a cada luta seu Z, X e C mudam, até você cair ou trocar de alma ou técnica.");
             }
             case "ginyu" -> {
                 member.ginyu = true;
@@ -800,6 +805,16 @@ public final class Dungeon {
     }
 
     private static final String[] KEY_NAMES = {"Z", "X", "C"};
+
+    // The Roleta stops (Stark 2026-11-20): a fall, or a change of soul or skill, ends it. The skills it drew last stay on the keys
+    // for good; the card can come again later.
+    private static void endRoulette(ServerPlayer player, Member member) {
+        if (!member.roulette) {
+            return;
+        }
+        member.roulette = false;
+        say(player, "A Roleta parou. As técnicas que ela sorteou ficam com você.");
+    }
 
     // Roleta: every key that does not hold a stolen skill gets a skill of a random soul (never the player's own).
     private static void spinRoulette(ServerPlayer player, Member member) {
@@ -907,10 +922,12 @@ public final class Dungeon {
         if (member.edo) {
             // Edo Tensei: no life lost, the fight goes on right there
             member.edo = false;
+            endRoulette(player, member);
             edoTensei(player, run);
             return;
         }
         member.fell = true;
+        endRoulette(player, member);
         member.lives--;
         if (member.bet) {
             // Dobro ou Nada lost: a second life goes with the first
