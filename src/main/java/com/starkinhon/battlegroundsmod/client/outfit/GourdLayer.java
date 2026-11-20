@@ -37,6 +37,10 @@ public class GourdLayer<T extends LivingEntity> extends RenderLayer<T, PlayerMod
         }
     }
 
+    public static void clear() {
+        CARRYING.clear();
+    }
+
     @Override
     public void render(PoseStack poseStack, MultiBufferSource buffer, int light, T entity, float limbSwing, float limbSwingAmount,
             float partialTick, float ageInTicks, float netHeadYaw, float headPitch) {

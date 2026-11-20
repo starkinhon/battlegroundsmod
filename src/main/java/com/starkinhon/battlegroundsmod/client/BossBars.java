@@ -37,6 +37,11 @@ public final class BossBars {
     private BossBars() {
     }
 
+    public static void clear() {
+        STYLES.clear();
+        SHOWN.clear();
+    }
+
     static void style(UUID barId, String texture, int frames, int width, int height, int glow) {
         STYLES.put(barId, new Style(texture, Math.max(1, frames), width, height, glow));
     }

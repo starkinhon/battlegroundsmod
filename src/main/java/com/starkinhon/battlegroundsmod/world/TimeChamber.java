@@ -77,6 +77,12 @@ public final class TimeChamber {
     private TimeChamber() {
     }
 
+    public static void resetStatics() {
+        ON_PAD.clear();
+        LAST.clear();
+        LAST_HIT.clear();
+    }
+
     // Spot the closest room dummy stands on (feet position), to put back one that got knocked away before dummies
     // were anchored in place.
     public static net.minecraft.world.phys.Vec3 dummyHome(net.minecraft.world.phys.Vec3 at) {

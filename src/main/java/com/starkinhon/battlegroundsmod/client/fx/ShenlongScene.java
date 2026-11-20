@@ -62,6 +62,12 @@ public final class ShenlongScene {
     private ShenlongScene() {
     }
 
+    public static void clear() {
+        stop();
+        wish = "";
+        lastT = -1;
+    }
+
     // ---------------- state from the server ----------------
 
     public static void state(ModPayloads.ShenlongState s) {

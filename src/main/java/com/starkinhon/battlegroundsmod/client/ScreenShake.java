@@ -17,6 +17,11 @@ public final class ScreenShake {
     private ScreenShake() {
     }
 
+    public static void clear() {
+        strength = 0;
+        remaining = 0;
+    }
+
     public static void start(float newStrength, int duration) {
         newStrength *= FxConfig.shake();
         if (newStrength <= 0) {

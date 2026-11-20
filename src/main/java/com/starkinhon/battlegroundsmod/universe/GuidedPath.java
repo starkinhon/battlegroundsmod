@@ -776,6 +776,11 @@ public final class GuidedPath {
 
     private static final Map<UUID, Way> WAYS = new HashMap<>();
 
+    public static void resetStatics() {
+        FIGHTS.clear();
+        WAYS.clear();
+    }
+
     // The place the step sends the player (null: none, like the Livro dos Desafios).
     private static BlockPos target(ServerPlayer player, String sid) {
         ServerLevel level = player.serverLevel();

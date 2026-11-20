@@ -47,5 +47,12 @@ public final class ServerReset {
         com.starkinhon.battlegroundsmod.universe.DbActivities.resetStatics();
         com.starkinhon.battlegroundsmod.universe.NarutoActivities.resetStatics();
         com.starkinhon.battlegroundsmod.universe.UniverseBiomes.resetStatics();
+        com.starkinhon.battlegroundsmod.challenge.ChallengeArenas.resetStatics();
+        com.starkinhon.battlegroundsmod.power.powers.sub.db.Goku.resetStatics();
+        com.starkinhon.battlegroundsmod.world.TimeChamber.resetStatics();
+        com.starkinhon.battlegroundsmod.universe.KaiohTraining.resetStatics();
+        com.starkinhon.battlegroundsmod.universe.GuidedPath.resetStatics();
+        com.starkinhon.battlegroundsmod.world.ColoniaDomeSync.resetStatics();
+        com.starkinhon.battlegroundsmod.universe.EnergyControl.resetStatics();
     }
 }

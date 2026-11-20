@@ -36,6 +36,12 @@ public final class ColoniaDomeSync {
     private ColoniaDomeSync() {
     }
 
+    public static void resetStatics() {
+        SENT.clear();
+        BUSY.clear();
+        READY.clear();
+    }
+
     public static void register() {
         NeoForge.EVENT_BUS.addListener(ColoniaDomeSync::onTick);
         NeoForge.EVENT_BUS.addListener(ColoniaDomeSync::onLogout);

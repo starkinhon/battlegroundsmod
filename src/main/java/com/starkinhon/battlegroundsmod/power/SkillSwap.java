@@ -39,6 +39,10 @@ public final class SkillSwap {
     private SkillSwap() {
     }
 
+    public static void clearClient() {
+        CLIENT.clear();
+    }
+
     public static boolean swappable(int slot) {
         return slot >= 0 && slot < KEYS;
     }

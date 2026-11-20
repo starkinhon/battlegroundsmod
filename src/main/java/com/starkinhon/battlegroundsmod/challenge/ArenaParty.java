@@ -42,6 +42,11 @@ public final class ArenaParty {
     private ArenaParty() {
     }
 
+    public static void clearClient() {
+        clientParty = List.of();
+        clientInvite = "";
+    }
+
     // The others of the player's group who are online.
     public static List<ServerPlayer> others(ServerPlayer player) {
         List<ServerPlayer> list = new ArrayList<>();
