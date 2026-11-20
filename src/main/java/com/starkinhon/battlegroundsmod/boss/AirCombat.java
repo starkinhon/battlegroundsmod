@@ -1068,7 +1068,7 @@ public final class AirCombat {
     }
 
     private static void onStartTracking(PlayerEvent.StartTracking event) {
-        if (event.getTarget() instanceof SoulBoss boss && boss.air != null && boss.air.sent != 0 && event.getEntity() instanceof ServerPlayer viewer) {
+        if (event.getTarget() instanceof SoulBoss boss && boss.air != null && event.getEntity() instanceof ServerPlayer viewer) {
             PacketDistributor.sendToPlayer(viewer, new ModPayloads.FlightState(boss.getId(), boss.air.sent));
         }
     }

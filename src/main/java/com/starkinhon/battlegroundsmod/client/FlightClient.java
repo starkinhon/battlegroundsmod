@@ -99,7 +99,22 @@ public final class FlightClient {
         if (entity == minecraft.player) {
             return active;
         }
-        return (state(entity) & Flight.FLYING) != 0;
+        if ((state(entity) & Flight.FLYING) == 0) {
+            return false;
+        }
+        // Another player standing on the ground does not fly, whatever the last word from the server was: Minecraft
+        // ends a survival flight the moment the feet touch the ground (on their own client), so FLYING with the feet on
+        // the ground is an old state that never got its 0 (Stark 2026-11-20: the friend drawn flying while walking).
+        return !(entity instanceof Player) || !entity.onGround();
+    }
+
+    // An entity left this client's world (out of sight, other dimension, dead): its flight is forgotten, the server
+    // tells it again when it comes back into sight (Flight/AirCombat StartTracking). The local player keeps its own.
+    public static void forget(Entity entity) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (!(entity instanceof LocalPlayer) && (minecraft.player == null || entity.getId() != minecraft.player.getId())) {
+            STATES.remove(entity.getId());
+        }
     }
 
     public static void clear() {
