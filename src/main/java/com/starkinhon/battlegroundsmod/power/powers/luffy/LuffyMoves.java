@@ -98,7 +98,8 @@ public final class LuffyMoves {
         return d.lengthSqr() < 1.0E-4 ? SubCommon.flat(caster.getLookAngle()) : d.normalize();
     }
 
-    // The Giant (10x) reaches and breaks with his size, hits 3x as hard and throws twice as far.
+    // The Giant (10x) reaches and breaks with his size, hits 2x as hard (3x with the 10x reach flattened anyone in seconds,
+    // Stark 2026-11-20) and throws twice as far.
     private static double k(LivingEntity caster) {
         return Luffy.size(caster);
     }
@@ -128,7 +129,7 @@ public final class LuffyMoves {
     private static final float DAMAGE_MULT = 1.4f;
 
     private static void hit(LivingEntity caster, LivingEntity target, float damage, int stun) {
-        Combat.hurt(caster, target, (k(caster) > 1.5 ? damage * 3 : damage) * DAMAGE_MULT);
+        Combat.hurt(caster, target, (k(caster) > 1.5 ? damage * 2 : damage) * DAMAGE_MULT);
         if (stun > 0) {
             Stun.apply(target, stun);
         }
@@ -187,8 +188,10 @@ public final class LuffyMoves {
 
     // ---------- a move goes off ----------
 
-    // Pistol recharge in ticks by Gear: tap, Jet Pistol (G2), Gigant Pistol (G3), Kong Gun (G4), Bajrang Gun (G5).
-    static final int[] PISTOL_CD = {30, 60, 90, 100, 120};
+    // Recharge in ticks by the Gear the move went off in (Stark 2026-11-20: a flat key cooldown let G4/G5 moves go off back
+    // to back; a Shigaraki fell in ~10 s). Z: tap, Jet Pistol, Gigant Pistol, Kong Gun, Bajrang Gun. X: the Gatlings. C: the
+    // Bazookas. V keeps its own 12 s.
+    static final int[] PISTOL_CD = {30, 60, 90, 100, 120}, GATLING_CD = {70, 70, 80, 100, 120}, BAZOOKA_CD = {60, 60, 80, 100, 120};
 
     static boolean fire(LivingEntity caster, ServerLevel level, int key, int gear) {
         double reach = REACH[key][gear] * k(caster);
@@ -207,10 +210,10 @@ public final class LuffyMoves {
             case 2 -> bazooka(caster, level, gear, target, aim, dir, guard);
             default -> ult(caster, level, gear, target, aim, dir, guard);
         }
-        if (key == 0 && caster instanceof net.minecraft.world.entity.player.Player) {
-            // The Pistol's own recharge by the Gear it went off in (Stark 2026-11-20: 1 s flat let a G4/G5 Pistol go off every
-            // second). Counted from the release. Bosses keep their own pacing.
-            com.starkinhon.battlegroundsmod.power.powers.sub.db.DbCommon.cooldown(caster, 0, PISTOL_CD[gear]);
+        if (key != 3 && caster instanceof net.minecraft.world.entity.player.Player) {
+            // The move's own recharge by the Gear it went off in, counted from the release. Bosses keep their own pacing.
+            int[] cd = key == 0 ? PISTOL_CD : key == 1 ? GATLING_CD : BAZOOKA_CD;
+            com.starkinhon.battlegroundsmod.power.powers.sub.db.DbCommon.cooldown(caster, key, cd[gear]);
         }
         if (key != 3) {
             // (the Gigant Pistol shrinks him when the page does: after the arm has gone down)
@@ -266,7 +269,7 @@ public final class LuffyMoves {
                 }
                 case 2 -> {
                     for (LivingEntity e : struck(caster, level, target, aim, 3.4)) {
-                        hit(caster, e, e == target ? 40f : 24f, 46);
+                        hit(caster, e, e == target ? 40f : 24f, 32);
                         Freeze.hold(e, 18);
                     }
                     dent(caster, level, new Vec3(p.x, p.y, p.z), 3.4, 2.2, 380, 0);
@@ -274,7 +277,7 @@ public final class LuffyMoves {
                 }
                 case 3 -> {
                     for (LivingEntity e : struck(caster, level, target, aim, 1.8)) {
-                        hit(caster, e, 58f, 48);
+                        hit(caster, e, 58f, 34);
                         launch(level, caster, e, dir.scale(5.5).add(0, 0.9, 0));
                     }
                     caster.setDeltaMovement(dir.scale(-0.55).add(0, 0.05, 0));
@@ -288,7 +291,7 @@ public final class LuffyMoves {
                 default -> {
                     Set<LivingEntity> hitSet = new HashSet<>();
                     for (LivingEntity e : struck(caster, level, target, aim, 2.4)) {
-                        hit(caster, e, 72f, 52);
+                        hit(caster, e, 72f, 36);
                         Freeze.hold(e, 18);
                         hitSet.add(e);
                         Tasks.later(18, () -> {
@@ -363,7 +366,7 @@ public final class LuffyMoves {
             Vec3 p = t != null ? t.position() : aim;
             Set<LivingEntity> hitSet = new HashSet<>(in);
             for (LivingEntity e : in) {
-                hit(caster, e, last[gear], new int[] {14, 26, 46, 50, 52}[gear]);
+                hit(caster, e, last[gear], new int[] {14, 26, 32, 34, 36}[gear]);
                 switch (gear) {
                     case 0 -> launch(level, caster, e, dir.scale(1.1).add(0, 0.3, 0));
                     case 1 -> launch(level, caster, e, dir.scale(2.4).add(0, 0.55, 0));
@@ -410,15 +413,15 @@ public final class LuffyMoves {
                         launch(level, caster, e, dir.scale(3.2).add(0, 0.5, 0));
                     }
                     case 2 -> {
-                        hit(caster, e, 46f, 50);
+                        hit(caster, e, 46f, 32);
                         launch(level, caster, e, dir.scale(2.0).add(0, 0.18, 0));
                     }
                     case 3 -> {
-                        hit(caster, e, 66f, 54);
+                        hit(caster, e, 66f, 34);
                         launch(level, caster, e, dir.scale(5.5).add(0, 0.9, 0));
                     }
                     default -> {
-                        hit(caster, e, 76f, 56);
+                        hit(caster, e, 76f, 36);
                         Freeze.hold(e, 10);
                         Tasks.later(10, () -> {
                             if (e.isAlive()) {
