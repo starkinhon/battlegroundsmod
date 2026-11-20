@@ -785,6 +785,12 @@ public final class GuidedPath {
             case "cam_db3", "cam_nr3", "cam_jj3" -> WorldSites.locate(level, WorldSites.GOKU, from, 6);
             case "cam_db4" -> flag(player, RADAR) ? null : WorldSites.locate(level, WorldSites.CAPSULE, from, 6);
             case "cam_db6" -> WorldSites.locate(level, WorldSites.KARIN, from, 6);
+            case "cam_db6b" -> {
+                // the tower climbed: the arrow goes on to the Sala do Tempo's door, behind Kami's palace (Stark
+                // 2026-11-20: up at the palace the arrow still pointed back down at Korin)
+                BlockPos tower = WorldSites.locate(level, WorldSites.KARIN, from, 6);
+                yield tower == null ? null : WorldSites.timeChamberDoor(tower);
+            }
             case "cam_nr1", "cam_nr2" -> NarutoSites.locate(level, NarutoStructGen.FOLHA, from, 5);
             case "cam_nr4", "cam_nr6" -> NarutoSites.locate(level, NarutoStructGen.MYOBOKU, from, 5);
             case "cam_jj1", "cam_jj2", "cam_jj5" -> {
@@ -887,6 +893,8 @@ public final class GuidedPath {
         // Bulma's step tells you to come first, then to find a ball; Maki's the same
         if (sid.equals("cam_db4") && flag(player, RADAR)) {
             sid = "cam_db4b";
+        } else if (sid.equals("cam_db6") && StructureMissions.korinDone(player)) {
+            sid = "cam_db6b";
         } else if (sid.equals("cam_jj6") && flag(player, MAKI)) {
             sid = "cam_jj6b";
         } else if (sid.equals("cam_fim") && Tiers.of(player) > 2) {
@@ -897,7 +905,7 @@ public final class GuidedPath {
         if (!finished(player, uni)) {
             b = bar(player, uni, step(player, uni));
         }
-        String base = sid.replace("cam_db4b", "cam_db4").replace("cam_jj6b", "cam_jj6").replace("cam_fim_tier", "cam_fim");
+        String base = sid.equals("cam_db6b") ? sid : sid.replace("cam_db4b", "cam_db4").replace("cam_jj6b", "cam_jj6").replace("cam_fim_tier", "cam_fim");
         BlockPos to = way(player, base);
         return new Hud(sid, b[0], b[1], to == null ? 0 : to.getX(), to == null ? 0 : to.getZ(), to != null);
     }
@@ -909,7 +917,7 @@ public final class GuidedPath {
             case "cam_db1", "cam_db2" -> "mestre_kame";
             case "cam_db3", "cam_nr3", "cam_jj3" -> Flight.knows(player) ? "" : "gohan";
             case "cam_db4" -> flag(player, RADAR) ? "" : "bulma";
-            case "cam_db6" -> "korin";
+            case "cam_db6" -> StructureMissions.korinDone(player) ? "" : "korin";
             case "cam_nr1", "cam_nr2" -> "kakashi";
             case "cam_nr4", "cam_nr6" -> "jiraiya";
             case "cam_jj1", "cam_jj2" -> FIGHTS.containsKey(player.getUUID()) ? "" : "yaga";
