@@ -182,6 +182,22 @@ public final class ArenaParty {
         });
     }
 
+    // Same group (server side). The air combat lock and the air aim skip a mate (Stark 2026-11-20: playing together, the
+    // DB air combat kept locking on the friend). Blows aimed straight at a mate still land; to fight a friend in the
+    // air, leave the group in the book.
+    public static boolean mates(net.minecraft.world.entity.Entity a, net.minecraft.world.entity.Entity b) {
+        if (!(a instanceof ServerPlayer) || !(b instanceof ServerPlayer) || a == b) {
+            return false;
+        }
+        List<UUID> group = GROUPS.get(a.getUUID());
+        return group != null && group.contains(b.getUUID());
+    }
+
+    // Same check on the client, from the synced names of the group (never reads GROUPS, which is the server's).
+    public static boolean clientMate(net.minecraft.world.entity.Entity e) {
+        return e instanceof net.minecraft.world.entity.player.Player p && clientParty.contains(p.getGameProfile().getName());
+    }
+
     private static List<String> names(ServerPlayer player) {
         List<String> names = new ArrayList<>();
         for (ServerPlayer mate : others(player)) {
