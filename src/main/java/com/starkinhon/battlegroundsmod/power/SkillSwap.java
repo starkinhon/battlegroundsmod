@@ -77,6 +77,35 @@ public final class SkillSwap {
         return slot;
     }
 
+    // The keys whose cooldown a skill that sets its own cooldown by hand (Clivar, Desmantelar, the DB/JJ moves that wait for a second
+    // press...) must touch. Those skills write the slot they have in their OWN soul's kit; on a key holding another soul's skill
+    // (Roleta, Roubar Tecnica) that slot is the wrong key: the Clivar drawn on Z wrote X, and Z never got a cooldown (Stark
+    // 2026-11-20, "Cleave do Sukuna sem cooldown na roleta"). So: every swapped key running that skill (ownerId: its soul, or null
+    // when the caller doesn't know it, then any swapped key with that source slot), plus ownerSlot itself while that key still
+    // runs the caster's own skill. Bosses, players without swaps and slots beyond Z/X/C keep ownerSlot exactly as before.
+    public static int[] cooldownKeys(LivingEntity caster, String ownerId, int ownerSlot) {
+        if (!(caster instanceof Player) || !swappable(ownerSlot)) {
+            return new int[] {ownerSlot};
+        }
+        int[] keys = new int[KEYS];
+        int n = 0;
+        for (int key = 0; key < KEYS; key++) {
+            Ref ref = ref(caster, key);
+            if (ref == null ? key == ownerSlot : ref.slot() == ownerSlot && (ownerId == null || ref.power().id().equals(ownerId))) {
+                keys[n++] = key;
+            }
+        }
+        return java.util.Arrays.copyOf(keys, n);
+    }
+
+    // Sets a hand-made cooldown on the right keys (see cooldownKeys): never lowers one already longer.
+    public static void raiseCooldown(LivingEntity caster, String ownerId, int ownerSlot, int ticks) {
+        PowerData data = caster.getData(ModAttachments.POWER);
+        for (int key : cooldownKeys(caster, ownerId, ownerSlot)) {
+            data.cooldowns[key] = Math.max(data.cooldowns[key], ticks);
+        }
+    }
+
     // Server: puts power's skill at fromSlot on the player's key toSlot. False when it can't (not Z/X/C, no such skill).
     public static boolean set(ServerPlayer player, int toSlot, Power power, int fromSlot) {
         if (!swappable(toSlot) || power == null || !swappable(fromSlot) || PowerLogic.ability(power, fromSlot) == null) {

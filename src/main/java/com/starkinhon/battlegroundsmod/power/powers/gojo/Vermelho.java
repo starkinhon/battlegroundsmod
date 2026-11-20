@@ -134,7 +134,7 @@ public final class Vermelho {
             // Players let it go only when they let go of X, however long that is; bosses after their charge.
             if (!held) {
                 if (!now.noCooldown) {
-                    now.cooldowns[1] = Math.max(now.cooldowns[1], HELD_COOLDOWN - age);
+                    com.starkinhon.battlegroundsmod.power.SkillSwap.raiseCooldown(caster, "strongest", 1, HELD_COOLDOWN - age);
                     if (caster instanceof net.minecraft.server.level.ServerPlayer player) {
                         com.starkinhon.battlegroundsmod.power.PowerLogic.sync(player);
                     }

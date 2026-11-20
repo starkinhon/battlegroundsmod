@@ -84,7 +84,10 @@ public final class JjCommon {
     // A move that missed: its cooldown comes down to ticks (never up).
     public static void shorten(LivingEntity caster, int slot, int ticks) {
         PowerData data = caster.getData(ModAttachments.POWER);
-        data.cooldowns[slot] = Math.min(data.cooldowns[slot], ticks);
+        // slot is the move's key in its own kit: on a swapped key (Roleta, Roubar Tecnica) the key it really sits on
+        for (int key : com.starkinhon.battlegroundsmod.power.SkillSwap.cooldownKeys(caster, null, slot)) {
+            data.cooldowns[key] = Math.min(data.cooldowns[key], ticks);
+        }
         if (caster instanceof net.minecraft.server.level.ServerPlayer player) {
             com.starkinhon.battlegroundsmod.power.PowerLogic.sync(player);
         }

@@ -379,7 +379,9 @@ public final class Clivar {
         if (data.noCooldown) {
             return;
         }
-        data.cooldowns[1] = Math.max(data.cooldowns[1], ticks);
+        // the key it really sits on (a Clivar drawn by the Roleta on Z/C), not always X
+        com.starkinhon.battlegroundsmod.power.SkillSwap.raiseCooldown(caster,
+                com.starkinhon.battlegroundsmod.power.powers.Sukuna.ID, 1, ticks);
         if (caster instanceof ServerPlayer player) {
             PowerLogic.sync(player);
         }
