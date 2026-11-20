@@ -153,12 +153,23 @@ public final class Flight {
         boolean changed = false;
         boolean stamina = Stamina.drains(player);
         boolean arena = inArena(player);
+        // Freeza Poder Total and Hashirama keep whoever fights them on the ground (BossAura).
+        String aura = com.starkinhon.battlegroundsmod.boss.BossAura.holder(player);
         // Taking off needs some stamina left (or food without a power); never in an arena.
-        boolean may = !arena && (abilities.flying || (stamina ? pct(player) >= TAKEOFF_PCT : player.getFoodData().getFoodLevel() > MIN_FOOD));
+        boolean may = !arena && aura == null
+                && (abilities.flying || (stamina ? pct(player) >= TAKEOFF_PCT : player.getFoodData().getFoodLevel() > MIN_FOOD));
         if (abilities.mayfly != may) {
             abilities.mayfly = may;
+            boolean wasFlying = abilities.flying;
             if (!may && abilities.flying) {
                 abilities.flying = false;
+            }
+            if (!may && aura != null) {
+                if (wasFlying) {
+                    com.starkinhon.battlegroundsmod.boss.BossAura.bringDown(player, aura);
+                } else {
+                    com.starkinhon.battlegroundsmod.boss.BossAura.say(player, aura);
+                }
             }
             changed = true;
         }
@@ -270,9 +281,11 @@ public final class Flight {
         BOOSTING.remove(id);
         TIRED_NOW.remove(id);
         PAYING.remove(id);
+        com.starkinhon.battlegroundsmod.boss.BossAura.forget(id);
     }
 
     public static void resetStatics() {
+        com.starkinhon.battlegroundsmod.boss.BossAura.resetStatics();
         SENT.clear();
         BOOSTING.clear();
         TIRED_NOW.clear();

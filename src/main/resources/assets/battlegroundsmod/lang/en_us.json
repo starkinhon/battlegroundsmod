@@ -974,6 +974,8 @@
   "message.battlegroundsmod.shenlong_done": "Shenron: Your wish has been granted. Farewell!",
   "message.battlegroundsmod.flight_tired": "No energy to fly: eat something.",
   "message.battlegroundsmod.flight_tired_stamina": "Out of breath: gliding down to land. Standing still in the air or on the ground brings it back.",
+  "message.battlegroundsmod.aura_sem_voo.freeza_total": "Freeza's aura won't let you fly.",
+  "message.battlegroundsmod.aura_sem_voo.hashirama": "Hashirama's aura won't let you fly.",
   "message.battlegroundsmod.air_reflect": "Perfect guard: the ki ball goes back!",
   "message.battlegroundsmod.air_guard_investida": "Rush guarded: they are open!",
   "message.battlegroundsmod.air_guard_martelo": "Hammer guarded: they are open!",

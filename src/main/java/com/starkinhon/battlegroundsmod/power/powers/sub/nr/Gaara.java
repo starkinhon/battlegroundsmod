@@ -485,6 +485,12 @@ public final class Gaara {
             double v = vel.length() * 20 / PU;
             if (landAt[0] < 0) {
                 boolean stop = guard.broken() || !SubCommon.hasState(caster, PLATFORM) || Stun.is(caster) || Freeze.isFrozen(caster);
+                String aura = com.starkinhon.battlegroundsmod.boss.BossAura.holder(caster);
+                if (aura != null && caster instanceof ServerPlayer sp) {
+                    // Freeza Poder Total and Hashirama keep whoever fights them on the ground (BossAura)
+                    stop = true;
+                    com.starkinhon.battlegroundsmod.boss.BossAura.say(sp, aura);
+                }
                 if (player != null && age > gather + 8 && !player.getAbilities().flying) {
                     // Touched down or let go of the flight.
                     stop = true;
