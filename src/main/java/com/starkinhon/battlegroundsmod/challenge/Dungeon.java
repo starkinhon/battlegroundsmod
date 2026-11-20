@@ -145,7 +145,7 @@ public final class Dungeon {
         // the soul of the character just beaten (Roubar Tecnica takes from it) and the souls Alma Escolhida offers now
         String boss = "";
         List<String> souls = List.of();
-        // Caos: the keys holding a stolen skill (the Roleta never draws over them)
+        // Caos: the keys holding a stolen skill (Roubar Tecnica, Montar Kit: any SkillSwap.TARGETS key); the Roleta never draws over them
         final java.util.Set<Integer> stolen = new java.util.HashSet<>();
         boolean roulette;
         boolean ginyu;
@@ -585,7 +585,7 @@ public final class Dungeon {
         for (String id : CHAOS) {
             boolean ok = switch (id) {
                 case "roubar" -> false;
-                case "roleta" -> own != null && !member.roulette && member.stolen.size() < SkillSwap.KEYS;
+                case "roleta" -> own != null && !member.roulette && stolenZxc(member) < SkillSwap.KEYS;
                 case "ginyu" -> !member.ginyu && run.stage < run.etapas.size()
                         && Powers.get(run.etapas.get(run.stage).alma()) != null
                         && !run.etapas.get(run.stage).alma().equals(own == null ? "" : own.id());
@@ -802,7 +802,7 @@ public final class Dungeon {
                     return false;
                 }
                 member.stolen.add(arg);
-                if (member.stolen.size() >= SkillSwap.KEYS) {
+                if (stolenZxc(member) >= SkillSwap.KEYS) {
                     // every key holds a stolen skill: nothing left for the Roleta to draw
                     endRoulette(player, member);
                 }
@@ -820,12 +820,11 @@ public final class Dungeon {
                         || !canKit(Powers.get(player.getData(ModAttachments.POWER).power), member) || !SkillSwap.set(player, to, boss, from)) {
                     return false;
                 }
-                if (to < SkillSwap.KEYS) {
-                    // out of the Roleta's draw, like a stolen key
-                    member.stolen.add(to);
-                    if (member.stolen.size() >= SkillSwap.KEYS) {
-                        endRoulette(player, member);
-                    }
+                // out of the Roleta's draw, like a stolen key (any kit key, B and Shifts too: the Roleta must skip every key in
+                // member.stolen)
+                member.stolen.add(to);
+                if (stolenZxc(member) >= SkillSwap.KEYS) {
+                    endRoulette(player, member);
                 }
                 Fx.burst(player.serverLevel(), Fx.dust(boss.color(), 2f), player.position().add(0, 1, 0), 70, 0.7, 0.05);
                 Fx.burst(player.serverLevel(), ParticleTypes.REVERSE_PORTAL, player.position().add(0, 1, 0), 50, 0.5, 0.2);
@@ -862,6 +861,17 @@ public final class Dungeon {
     }
 
     private static final String[] KEY_NAMES = {"Z", "X", "C"};
+
+    // How many of Z, X, C hold a stolen/kit skill (B and the Shifts in member.stolen don't count for the Roleta's card).
+    private static int stolenZxc(Member member) {
+        int n = 0;
+        for (int k = 0; k < SkillSwap.KEYS; k++) {
+            if (member.stolen.contains(k)) {
+                n++;
+            }
+        }
+        return n;
+    }
 
     // "Z", "B", "Shift+X"... for a TARGETS key.
     public static String keyLabel(int slot) {
