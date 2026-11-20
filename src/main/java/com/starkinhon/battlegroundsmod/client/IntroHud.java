@@ -74,6 +74,8 @@ public final class IntroHud {
     // out of it, even in the moments with no goal on screen
     private static boolean running;
     private static long last = System.currentTimeMillis();
+    // the server asked "Deseja fazer o Tutorial de Souls?" and the screen is not open yet
+    private static boolean askPending;
 
     private IntroHud() {
     }
@@ -150,6 +152,8 @@ public final class IntroHud {
             case "spared" -> spared = a > 0;
             case "quiet" -> quiet = a > 0;
             case "run" -> running = a > 0;
+            // the question before the scenes: opened once the world is on screen (holdNight), never over the loading one
+            case "ask" -> askPending = a > 0;
             case "logo" -> {
                 logoAt = now;
                 goal = "";
@@ -172,7 +176,8 @@ public final class IntroHud {
         spared = false;
         quiet = false;
         running = false;
-        if (Minecraft.getInstance().screen instanceof CardScreen) {
+        askPending = false;
+        if (Minecraft.getInstance().screen instanceof CardScreen || Minecraft.getInstance().screen instanceof AskScreen) {
             Minecraft.getInstance().setScreen(null);
         }
     }
@@ -181,6 +186,10 @@ public final class IntroHud {
     // time packets would move it back between frames).
     public static void holdNight() {
         Minecraft mc = Minecraft.getInstance();
+        if (askPending && mc.screen == null && mc.player != null && mc.level != null) {
+            askPending = false;
+            mc.setScreen(new AskScreen());
+        }
         if (night && mc.level != null) {
             mc.level.setDayTime(18000L);
         }
@@ -401,6 +410,96 @@ public final class IntroHud {
             out.add(i < 0 ? new String[] {row, ""} : new String[] {row.substring(0, i), row.substring(i + 1)});
         }
         return out;
+    }
+
+    // "Deseja fazer o Tutorial de Souls?" Sim | Não (pular) (Stark 2026-11-20), the first time in a world to live in.
+    // The card's frame and buttons. Esc and the keys do not answer: only a click on one of the two.
+    static final class AskScreen extends Screen {
+        private final long at = System.currentTimeMillis();
+        private boolean sent;
+        private float yx, nx, by, yw, nw, bh = 16;
+
+        AskScreen() {
+            super(Component.translatable("intro.battlegroundsmod.ask.title"));
+        }
+
+        @Override
+        public boolean isPauseScreen() {
+            return true;
+        }
+
+        @Override
+        public boolean shouldCloseOnEsc() {
+            return false;
+        }
+
+        @Override
+        public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        }
+
+        @Override
+        public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+            Px.begin(graphics, mouseX, mouseY);
+            try {
+                float t = ease((System.currentTimeMillis() - at) / 250f);
+                String yes = tr("ask.sim"), no = tr("ask.nao");
+                List<String> lines = Px.wrap(tr("ask.text"), 200 - 24, 8);
+                int w = 210, h = 26 + lines.size() * 11 + 32;
+                float x = Math.round(GW / 2f - w / 2f), y = Math.round(GH / 2f - h / 2f);
+                R(0, 0, GW, GH, VEIL, 0.55f * t);
+                Px.frame(x, y, w, h, rgb(180, 140, 255), t, true, true, null);
+                float yy = y + 8;
+                T(getTitle().getString(), x + w / 2f, yy, CREAM, 13, true, 0, true, t);
+                yy += 18;
+                for (String l : lines) {
+                    T(l, x + w / 2f, yy, SOFT, 8, false, 0, true, t);
+                    yy += 11;
+                }
+                yw = tw(yes, 8, true) + 30;
+                nw = tw(no, 8, true) + 30;
+                float gap = 10;
+                yx = Math.round(x + w / 2f - (yw + gap + nw) / 2f);
+                nx = yx + yw + gap;
+                by = yy + 6;
+                Px.button(yx, by, yw, bh, GOLD, Px.over(yx, by, yw, bh));
+                T(yes, yx + yw / 2f, by + 4, CREAM, 8, true, 0, true, 1);
+                Px.button(nx, by, nw, bh, 0x5A5068, Px.over(nx, by, nw, bh));
+                T(no, nx + nw / 2f, by + 4, CREAM, 8, true, 0, true, 1);
+            } finally {
+                Px.end();
+            }
+        }
+
+        @Override
+        public boolean mouseClicked(double mouseX, double mouseY, int button) {
+            float gx = Px.toGrid(mouseX), gy = Px.toGrid(mouseY);
+            if (System.currentTimeMillis() - at > 300 && gy >= by && gy <= by + bh) {
+                if (gx >= yx && gx <= yx + yw) {
+                    pick("sim");
+                    return true;
+                }
+                if (gx >= nx && gx <= nx + nw) {
+                    pick("nao");
+                    return true;
+                }
+            }
+            return super.mouseClicked(mouseX, mouseY, button);
+        }
+
+        @Override
+        public boolean keyPressed(int key, int scan, int mods) {
+            return true;
+        }
+
+        private void pick(String answer) {
+            if (sent) {
+                return;
+            }
+            sent = true;
+            Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1f));
+            PacketDistributor.sendToServer(new ModPayloads.IntroAck(answer));
+            onClose();
+        }
     }
 
     static final class CardScreen extends Screen {
