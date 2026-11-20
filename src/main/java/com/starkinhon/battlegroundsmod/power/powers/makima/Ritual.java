@@ -215,7 +215,7 @@ public final class Ritual {
         SubCommon.pose(caster, blood ? "makima.ritual_sangue" : "makima.ritual");
         Makima.eyes(caster, T_FIRST + Math.max(1, n) * GAP + 40);
         SubCommon.busy(caster, T_SAY + 4);
-        DbCommon.cooldown(caster, PowerData.SLOT_EXTRA, 600);
+        DbCommon.cooldown(caster, PowerData.SLOT_EXTRA, 1800);
         SubCommon.Guard guard = SubCommon.guard(caster);
         if (blood) {
             // Signed with her own blood: a fifth of her life, never the last of it.

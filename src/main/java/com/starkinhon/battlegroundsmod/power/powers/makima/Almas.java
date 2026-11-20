@@ -194,7 +194,7 @@ public final class Almas {
         if (made == 0) {
             return Corrente.ground(caster, level);
         }
-        DbCommon.cooldown(caster, PowerData.SLOT_ULT, 1800);
+        DbCommon.cooldown(caster, PowerData.SLOT_ULT, 2000);
         return true;
     }
 
@@ -253,7 +253,7 @@ public final class Almas {
                 }
             });
         }
-        DbCommon.cooldown(caster, PowerData.SLOT_ULT, 1800);
+        DbCommon.cooldown(caster, PowerData.SLOT_ULT, 2000);
         return true;
     }
 

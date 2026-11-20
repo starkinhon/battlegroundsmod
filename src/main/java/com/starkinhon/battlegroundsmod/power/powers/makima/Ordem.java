@@ -29,7 +29,7 @@ public final class Ordem {
     private static final int HIT = 15;
 
     enum Kind {
-        VENHA(104, 240), AJOELHE(84, 300), WOOF(100, 360), MORRA(104, 400);
+        VENHA(104, 400), AJOELHE(84, 400), WOOF(100, 600), MORRA(104, 800);
 
         final int length;
         final int cooldown;

@@ -81,13 +81,13 @@ public final class Corrente {
             // Missed: the chain flies to where she pointed and goes back.
             Vec3 end = Combat.raycastPoint(caster, X_RANGE);
             MkNet.send(level, MkNet.X_CHAIN, caster.getId(), end, new Vec3(-1, 0, 0), 20, 0, 0);
-            DbCommon.cooldown(caster, 1, 120);
+            DbCommon.cooldown(caster, 1, 200);
             SubCommon.warn(caster, "makima.x_miss");
             return true;
         }
         MkNet.send(level, MkNet.X_CHAIN, caster.getId(), target.position(), new Vec3(target.getId(), 0, 0), X_RELEASE, 0, 0);
-        // 22 s (was 12): the hold plus an Ordem last about 10 s, so 12 s let her grab again right away.
-        DbCommon.cooldown(caster, 1, 440);
+        // 50 s (rebalance 2026-11-20): one divine grab is worth five of a sub soul, so it comes once a fight's opening.
+        DbCommon.cooldown(caster, 1, 1000);
         SubCommon.Guard guard = SubCommon.guard(caster);
         Runnable[] hold = new Runnable[1];
         Tasks.add(age -> {
@@ -97,6 +97,12 @@ public final class Corrente {
                     hold[0].run();
                 }
                 MkNet.send(level, MkNet.X_CHAIN, caster.getId(), target.position(), new Vec3(target.getId(), 0, 0), 0, 0, 1);
+                return true;
+            }
+            if (age == X_ARRIVE && com.starkinhon.battlegroundsmod.combat.Defense.blockGrab(target, caster)) {
+                // Guarded from the front: the chain bounces off and she is the one left open.
+                MkNet.send(level, MkNet.X_CHAIN, caster.getId(), target.position(), new Vec3(target.getId(), 0, 0), 0, 0, 1);
+                SubCommon.sound(level, target.position(), SoundEvents.CHAIN_BREAK, 1.2f, 1.4f);
                 return true;
             }
             if (age == X_ARRIVE) {
@@ -260,7 +266,7 @@ public final class Corrente {
             }
         });
         Tasks.later(15, () -> end(level, g));
-        DbCommon.cooldown(caster, PowerData.SLOT_ULT, 200);
+        DbCommon.cooldown(caster, PowerData.SLOT_ULT, 2000);
     }
 
     // A blow meant to kill: the common mobs just die; players and bosses take the damage.

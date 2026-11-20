@@ -209,7 +209,7 @@ public final class Ratos {
             SubCommon.pose(caster, "makima.sobe");
             Tasks.later(RISE + 6, () -> end(level, caster, pack));
         });
-        DbCommon.cooldown(caster, SLOT, 400);
+        DbCommon.cooldown(caster, SLOT, 500);
         return true;
     }
 
