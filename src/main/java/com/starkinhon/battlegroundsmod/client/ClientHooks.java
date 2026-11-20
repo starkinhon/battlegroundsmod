@@ -56,8 +56,8 @@ public final class ClientHooks {
         }
     }
 
-    public static void path(String active, java.util.List<Integer> steps, String npc) {
-        PathClient.set(active, steps, npc);
+    public static void path(String active, java.util.List<Integer> steps, String npc, boolean hidden) {
+        PathClient.set(active, steps, npc, hidden);
     }
 
     public static void quest(String id, int count, int goal, int x, int z, int flags) {

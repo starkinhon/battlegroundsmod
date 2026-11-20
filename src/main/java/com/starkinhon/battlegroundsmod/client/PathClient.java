@@ -12,11 +12,14 @@ public final class PathClient {
     public static String active = "";
     public static List<Integer> steps = List.of(0, 0, 0, 0);
     public static String npc = "";
+    // the player took the path off the screen (Diário, aba Caminho): the corner and the diamond stay off
+    public static boolean hidden;
 
     private PathClient() {
     }
 
-    static void set(String active, List<Integer> steps, String npc) {
+    static void set(String active, List<Integer> steps, String npc, boolean hidden) {
+        PathClient.hidden = hidden;
         PathClient.active = active;
         PathClient.steps = List.copyOf(steps);
         PathClient.npc = npc;
