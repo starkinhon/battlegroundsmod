@@ -28,10 +28,10 @@ public final class Strongest {
 
     public static Power create() {
         return new Power("strongest", 0x4FC3FF, 1.25f, List.of(
-                new Ability(160, 0, Azul::use),
+                new Ability(500, 0, Azul::use),
                 new Ability(Vermelho.COOLDOWN, 0, Vermelho::use),
                 new Ability(Roxo.COOLDOWN, 0, Roxo::use),
-                new Ability(900, 0, InfiniteVoid::use)),
+                new Ability(3000, 0, InfiniteVoid::use)),
                 // Shift: Z (the Blue pulls them in for a Black Flash), X (the Red point blank, behind the target) and V (the
                 // Expansão de 0,2 s).
                 Arrays.asList(new Ability(AzulFlash.COOLDOWN, 0, AzulFlash::use), new Ability(Vermelho.SHIFT_COOLDOWN, 0, Vermelho::useShift), null,

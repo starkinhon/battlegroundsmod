@@ -102,7 +102,10 @@ public final class Toque {
                 // the reach to the body's box, not its middle: a wide boss counts from its skin
                 boolean reach = target != null && (target.distanceTo(caster) < 3.2
                         || target.getBoundingBox().distanceToSqr(caster.getBoundingBox().getCenter()) < 2.4 * 2.4);
-                if (hit && Combat.isTarget(target, caster) && reach) {
+                if (hit && Combat.isTarget(target, caster) && reach
+                        && com.starkinhon.battlegroundsmod.combat.Defense.blockGrab(target, caster)) {
+                    // Guarded from the front: the hand stops on the guard and he is left open (rebalance 2026-11-20).
+                } else if (hit && Combat.isTarget(target, caster) && reach) {
                     grab(caster, target, level, way[0]);
                 } else {
                     slam(caster, level, way[0]);

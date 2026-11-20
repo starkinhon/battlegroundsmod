@@ -72,12 +72,12 @@ public final class Shigaraki {
 
     public static Power create() {
         return new Power(ID, COLOR, 1.3f, List.of(
-                new Ability(80, 0, Toque::use),
-                new Ability(200, 0, Onda::use),
-                new Ability(240, 0, MaosDoChao::use),
-                new Ability(1200, 0, Tentaculos::use),
+                new Ability(200, 0, Toque::use),
+                new Ability(500, 0, Onda::use),
+                new Ability(400, 0, MaosDoChao::use),
+                new Ability(1800, 0, Tentaculos::use),
                 new Ability(0, 0, Absorver::use)),
-                Arrays.asList(new Ability(700, 0, Regeneracao::use), null, null, new Ability(3600, 0, FimDoMundo::use), null));
+                Arrays.asList(new Ability(12000, 0, Regeneracao::use), null, null, new Ability(4800, 0, FimDoMundo::use), null));
     }
 
     // The block under the feet (the preview's ground seeds sit on a block's centre, y = -0.5).

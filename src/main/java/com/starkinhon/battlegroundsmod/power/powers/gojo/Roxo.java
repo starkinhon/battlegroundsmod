@@ -58,7 +58,7 @@ public final class Roxo {
     public static final String SKILL = RoxoSpec.SKILL;
     // Arms open while the spheres come round, then the hands brought together in front of the chest, held.
     public static final String HOLD_ANIMATION = "gojo.roxo_segurando";
-    public static final int COOLDOWN = 300;
+    public static final int COOLDOWN = 900;
     // Players: the Unlimited Purple only with the Roxo (C) awake and once a minute (Stark 2026-11-20: it had no cooldown).
     public static final int IRRESTRITO_COOLDOWN = 1200;
     public static final int ROXO_SLOT = 2;

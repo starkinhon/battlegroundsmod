@@ -102,6 +102,11 @@ public final class Agarrao {
             Vec3 from = Combat.center(caster);
             LivingEntity caught = caught(level, caster, from, from.add(dir[0].scale(Math.max(0, step) + dash.distanciaAgarrar())),
                     dash.raioPegar(), locked);
+            if (caught != null && com.starkinhon.battlegroundsmod.combat.Defense.blockGrab(caught, caster)) {
+                // Guarded from the front: the hand meets the guard and Madara is left open (rebalance 2026-11-20).
+                miss(caster, level, spec, awakened, data);
+                return true;
+            }
             if (caught != null) {
                 grab(caster, caught, level, spec, awakened, data);
                 return true;

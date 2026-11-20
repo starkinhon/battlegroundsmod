@@ -41,23 +41,23 @@ public final class MoonDemon {
     // was, 14th 30 s, 16th 40 s; and any of them locks all the others for AWAKENED_LOCK, so they can't be chained.
     // The 14th (plain V) also gets him out of a beating, a big defence as much as an attack, as the 2nd and 5th do.
     public static final int AWAKENED_LOCK = 30;
-    private static final Ability SEVENTH = new Ability(300, 0, MoonFormSkill::seventh);
-    private static final Ability EIGHTH = new Ability(200, 0, MoonFormSkill::eighth);
-    private static final Ability NINTH = new Ability(300, 0, MoonFormSkill::ninth);
-    private static final Ability FOURTEENTH = new Ability(600, 0, MoonFormSkill::fourteenth).asBeatenCounter();
-    private static final Ability TENTH = new Ability(300, 0, MoonFormSkill::tenth);
-    private static final Ability SIXTEENTH = new Ability(800, 0, MoonFormSkill::sixteenth);
+    private static final Ability SEVENTH = new Ability(600, 0, MoonFormSkill::seventh);
+    private static final Ability EIGHTH = new Ability(500, 0, MoonFormSkill::eighth);
+    private static final Ability NINTH = new Ability(600, 0, MoonFormSkill::ninth);
+    private static final Ability FOURTEENTH = new Ability(1200, 0, MoonFormSkill::fourteenth).asBeatenCounter();
+    private static final Ability TENTH = new Ability(600, 0, MoonFormSkill::tenth);
+    private static final Ability SIXTEENTH = new Ability(1800, 0, MoonFormSkill::sixteenth);
 
     private MoonDemon() {
     }
 
     public static Power create() {
         return new Power(ID, 0x9B4DCA, 1.1f, List.of(
-                new Ability(80, 0, YoruNoMiya::use),
-                new Ability(120, 0, MoonFormSkill::second).asBeatenCounter(),
-                new Ability(160, 0, MoonFormSkill::third),
-                new Ability(400, 0, MoonFormSkill::sixth),
-                new Ability(240, 0, MoonFormSkill::fifth).asBeatenCounter()),
+                new Ability(200, 0, YoruNoMiya::use),
+                new Ability(300, 0, MoonFormSkill::second).asBeatenCounter(),
+                new Ability(400, 0, MoonFormSkill::third),
+                new Ability(900, 0, MoonFormSkill::sixth),
+                new Ability(500, 0, MoonFormSkill::fifth).asBeatenCounter()),
                 // Shift + V: the 16th with the sword stretched (see swap)
                 Arrays.asList(null, null, null, SIXTEENTH));
     }

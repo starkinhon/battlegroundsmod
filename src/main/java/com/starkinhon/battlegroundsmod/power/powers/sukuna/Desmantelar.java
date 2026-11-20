@@ -52,7 +52,7 @@ public final class Desmantelar {
     private static final float DAMAGE = 30, BURST_TOTAL = 1.3f;
     private static final double[] SCALE = {1, 1.75, 2.5, 3.5}, THROW = {1, 1, 1.6, 2.2};
     // COMBO_COOLDOWN 50 -> 90 (Stark 2026-11-09): the combo alone out-damaged Gojo's whole kit in a 1v1.
-    private static final int COMBO_COOLDOWN = 90, WORLD_COOLDOWN = 400, BROKEN_COOLDOWN = 30;
+    private static final int COMBO_COOLDOWN = 240, WORLD_COOLDOWN = 1200, BROKEN_COOLDOWN = 30;
     // The Sukuna boss's World Cutting Slash (Stark 2026-11-20, "mal usa corte que corta o mundo"): any hit broke his
     // 2.5 s chant and halved the bar, so in a real fight it almost never came out. Ordered by his tactics (plan MUNDO),
     // the chant takes this many hits before it breaks (a stun or interrupt still breaks it at once), and the Z waits

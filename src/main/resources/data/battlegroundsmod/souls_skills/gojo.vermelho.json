@@ -39,7 +39,7 @@
     "carga": 0.65,
     "dano": 80,
     "empurrao": 6.5,
-    "stunTicks": 40
+    "stunTicks": 20
   },
   "animacao": {
     "transicaoTicks": 2,

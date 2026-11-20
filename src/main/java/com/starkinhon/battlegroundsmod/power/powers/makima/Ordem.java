@@ -93,7 +93,10 @@ public final class Ordem {
     }
 
     private static Kind pick(LivingEntity caster, LivingEntity target) {
-        if (target.getHealth() <= target.getMaxHealth() * DIE_LIFE) {
+        // "Morra" only lands on someone already stunned or out of stamina, e.g. right after the Corrente
+        // (rebalance 2026-11-20); otherwise she picks another word.
+        if (target.getHealth() <= target.getMaxHealth() * DIE_LIFE
+                && com.starkinhon.battlegroundsmod.combat.Stamina.stunnable(target)) {
             return Kind.MORRA;
         }
         if (target.distanceTo(caster) > NEAR) {

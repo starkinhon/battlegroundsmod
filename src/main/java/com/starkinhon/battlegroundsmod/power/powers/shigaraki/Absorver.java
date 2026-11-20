@@ -102,6 +102,15 @@ public final class Absorver {
             SubCommon.warn(caster, "shigaraki.b_miss");
             return false;
         }
+        if (!com.starkinhon.battlegroundsmod.combat.Stamina.stunnable(victim)) {
+            // Only a stunned (or exhausted) target can be robbed, e.g. right after the Onda: told on screen, nothing
+            // spent (rebalance 2026-11-20, the Bills Shift+C rule).
+            if (caster instanceof net.minecraft.server.level.ServerPlayer player) {
+                player.displayClientMessage(net.minecraft.network.chat.Component.translatable("message.battlegroundsmod.needs_stun")
+                        .withStyle(st -> st.withColor(0xFF5555)), true);
+            }
+            return false;
+        }
         int element = elementOf(victim);
         PowerData data = Shigaraki.data(caster);
         int interrupts = data.interrupts;
@@ -130,6 +139,12 @@ public final class Absorver {
                 caster.setDeltaMovement(Vec3.ZERO);
                 caster.hurtMarked = true;
                 Shigaraki.landOn(caster, new Vec3(victim.getX(), caster.getY(), victim.getZ()).subtract(dir.scale(1.9)));
+                if (victim.distanceTo(caster) <= 4.5 && com.starkinhon.battlegroundsmod.combat.Defense.blockGrab(victim, caster)) {
+                    // Guarded from the front: the hand stops on the guard and he is left open (rebalance 2026-11-20).
+                    s.busyUntil = 0;
+                    SubNet.send(level, Shigaraki.ABSORB, caster.getId(), caster.position(), Vec3.ZERO, 3, 0, 0);
+                    return true;
+                }
                 if (victim.distanceTo(caster) > 4.5) {
                     s.busyUntil = 0;
                     SubCommon.warn(caster, "shigaraki.b_miss");

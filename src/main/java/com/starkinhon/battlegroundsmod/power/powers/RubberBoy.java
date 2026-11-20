@@ -20,10 +20,10 @@ public final class RubberBoy {
 
     public static Power create() {
         return new Power(Luffy.ID, 0xC0392B, 1.15f, List.of(
-                new Ability(30, 0, LuffyMoves::z), // the tap; a held Pistol recharges by its Gear (LuffyMoves.PISTOL_CD)
-                new Ability(70, 0, LuffyMoves::x),
-                new Ability(60, 0, LuffyMoves::c),
-                new Ability(240, 0, LuffyMoves::v),
+                new Ability(80, 0, LuffyMoves::z), // the tap; a held Pistol recharges by its Gear (LuffyMoves.PISTOL_CD)
+                new Ability(160, 0, LuffyMoves::x),
+                new Ability(160, 0, LuffyMoves::c),
+                new Ability(600, 0, LuffyMoves::v),
                 new Ability(20, 0, LuffyMoves::b)));
     }
 }

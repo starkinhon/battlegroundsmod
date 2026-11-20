@@ -55,9 +55,9 @@ public final class Vermelho {
     // The finger raised for as long as it is held (a pose with a very long wind-up, stopped when it fires).
     public static final String HOLD_ANIMATION = "gojo.vermelho_segurando";
     // The Ability's cooldown is the tap's (Stark 2026-11-09, balance against Sukuna: 7 s -> 5 s, so Gojo has an answer at
-    // range); the held one keeps its 7 s, counted from the press as before (HELD_COOLDOWN, raised when it fires).
-    public static final int COOLDOWN = 100, HELD_COOLDOWN = 140;
-    public static final int SHIFT_COOLDOWN = 300;
+    // range); the held one keeps its 15 s (rebalance 2026-11-20), counted from the press as before (HELD_COOLDOWN, raised when it fires).
+    public static final int COOLDOWN = 240, HELD_COOLDOWN = 300;
+    public static final int SHIFT_COOLDOWN = 600;
     private static final double VIEW_DISTANCE = 160;
     private static final RandomSource RANDOM = RandomSource.createThreadSafe();
     public static final int ALIVE = 0;

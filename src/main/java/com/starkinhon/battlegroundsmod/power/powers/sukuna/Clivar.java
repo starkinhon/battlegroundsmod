@@ -65,7 +65,7 @@ public final class Clivar {
     // health made it worse (Stark 2026-11-20: "700 de dano num ataque"). 100 sits with the other grabs (Shigaraki's
     // Toque 70+45, Tentaculos 90) for a 13 s cooldown.
     private static final float DAMAGE = 100, GRAB_DAMAGE = 4;
-    private static final int COOLDOWN = 260, MISS_COOLDOWN = 50, BROKEN_COOLDOWN = 80;
+    private static final int COOLDOWN = 600, MISS_COOLDOWN = 50, BROKEN_COOLDOWN = 80;
     private static final float MODEL_WEIGHT = 1.5f;
     // How fast he can turn with the target in his hand, degrees a tick.
     private static final double TURN = 24;
@@ -116,6 +116,18 @@ public final class Clivar {
             double step = Math.min(SPEED, DISTANCE - traveled[0]);
             Vec3 from = Combat.center(caster);
             LivingEntity caught = caught(level, caster, from, from.add(dir[0].scale(Math.max(0, step) + GRAB_REACH)), locked);
+            if (caught != null && com.starkinhon.battlegroundsmod.combat.Defense.blockGrab(caught, caster)) {
+                // Guarded from the front: the hand meets the guard, the full cooldown goes and he is left open
+                // (rebalance 2026-11-20).
+                BUSY.remove(caster);
+                data.busyTicks = 0;
+                Vec3 v = caster.getDeltaMovement();
+                caster.setDeltaMovement(v.x * 0.2, v.y, v.z * 0.2);
+                caster.hurtMarked = true;
+                anim(caster, "");
+                cooldown(caster, COOLDOWN);
+                return true;
+            }
             if (caught != null) {
                 grab(caster, caught, level, data);
                 return true;

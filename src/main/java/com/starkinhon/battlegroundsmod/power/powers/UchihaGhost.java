@@ -24,14 +24,14 @@ public final class UchihaGhost {
 
     public static Power create() {
         return new Power("uchiha_ghost", 0xD12F2F, 1.1f, List.of(
-                new Ability(300, 30, Katon::use),
-                new Ability(400, 35, Mangekyo::use),
-                new Ability(300, 30, Susanoo::use).asCounter(),
-                new Ability(100, 0, Meteoro::use),
-                new Ability(240, 0, Agarrao::use)), List.of(
-                new Ability(1000, 0, KatonGigante::use),
+                new Ability(500, 30, Katon::use),
+                new Ability(800, 35, Mangekyo::use),
+                new Ability(500, 30, Susanoo::use).asCounter(),
+                new Ability(1200, 0, Meteoro::use),
+                new Ability(600, 0, Agarrao::use)), List.of(
+                new Ability(700, 0, KatonGigante::use),
                 new Ability(PowerData.SPENT, 0, Izanami::use),
-                new Ability(1000, 0, SusanooCorte::use),
-                new Ability(3000, 0, Meteoro::useDouble)));
+                new Ability(1400, 0, SusanooCorte::use),
+                new Ability(3600, 0, Meteoro::useDouble)));
     }
 }
