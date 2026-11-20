@@ -911,6 +911,47 @@ public final class InfiniteVoid {
         ACTIVE.clear();
     }
 
+    // The arenas are taking entity somewhere else (the next fight of a Dungeon, home) or the fight it was in is over: it is
+    // out of every domain of Gojo's it is caught in or up in, for good, so the domain's end (comeBack) never puts it back
+    // where it was taken in from, in an arena it has already left (the same as ShrineDomain.release; Stark 2026-11-20).
+    // putBack: put it down now where it was taken in from; false when the caller moves it anyway. If entity opened one,
+    // that one shatters (everyone else comes back as usual). True when entity was in one.
+    public static boolean release(LivingEntity entity, boolean putBack) {
+        boolean any = cancel(entity);
+        for (Active active : ACTIVE) {
+            if (active.handed) {
+                continue;
+            }
+            boolean caught = active.caught.remove(entity) | active.free.remove(entity);
+            Vec3 from = active.back.remove(entity);
+            if (from == null && !caught) {
+                continue;
+            }
+            any = true;
+            if (entity != active.caster) {
+                // the paralysis of this domain lets go (holds of other moves stay)
+                Tasks.as(active.caster, () -> Freeze.free(entity));
+            }
+            if (entity instanceof ServerPlayer player) {
+                player.getPersistentData().remove(BACK_TAG);
+                if (active.granted.remove(player)) {
+                    player.getAbilities().mayfly = player.isCreative() || player.isSpectator();
+                    player.getAbilities().flying = false;
+                    player.onUpdateAbilities();
+                }
+                if (player != active.caster) {
+                    // its screen drops the domain without the shatter (as when Sukuna takes it over), the others' goes on
+                    PacketDistributor.sendToPlayer(player, new ModPayloads.GojoDomain(active.caster.getId(), active.center, active.awakened, 7, 0));
+                }
+            }
+            if (from != null && putBack && entity.isAlive() && !entity.isRemoved() && entity.level() == active.level) {
+                entity.resetFallDistance();
+                put(entity, from);
+            }
+        }
+        return any;
+    }
+
     // Aborts any active domain involving entity (e.g. Dungeon stage reset) without teleporting back to old coordinates.
     public static void abortFor(LivingEntity entity) {
         if (ACTIVE.isEmpty() || entity == null) {
