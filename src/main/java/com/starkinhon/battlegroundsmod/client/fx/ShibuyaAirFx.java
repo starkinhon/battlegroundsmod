@@ -6,10 +6,12 @@ import java.util.List;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.starkinhon.battlegroundsmod.ModSounds;
+import com.starkinhon.battlegroundsmod.TrafficLightBlock;
 import com.starkinhon.battlegroundsmod.world.ModWorldgen;
 
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
+import net.minecraft.core.Direction;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.FogRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -52,6 +54,8 @@ public final class ShibuyaAirFx {
     private static final RandomSource RANDOM = RandomSource.createThreadSafe();
     private static final double WIND = 0.6;
     private static final float[][] LC = {c(0xfff1c8), c(0xff2a2a), c(0xff3a2a), c(0x3affb4), c(0x7fe6ff)};
+    // the traffic light's glow: green, yellow, red (TrafficLightBlock.light)
+    private static final float[][] SIGNAL_C = {c(0x3affb4), c(0xffb21a), c(0xff3a2a)};
     private static final float[][] FLY = {c(0xff4fb0), c(0xffd23a), c(0x2fd6e6), c(0xe8423c), c(0x3a6cff), c(0x38d16a)};
 
     private static float strength, lastStrength;
@@ -987,18 +991,31 @@ public final class ShibuyaAirFx {
     }
 
     private static void renderLamps(VertexConsumer out, PoseStack.Pose last, Vec3 cam, float fade, double t) {
+        long gameTime = Minecraft.getInstance().level == null ? 0 : Minecraft.getInstance().level.getGameTime();
         for (ShibuyaScan.Lamp l : ShibuyaScan.lamps) {
             double d = Math.sqrt((l.x - cam.x) * (l.x - cam.x) + (l.y - cam.y) * (l.y - cam.y) + (l.z - cam.z) * (l.z - cam.z));
             if (d > 220 || d < 1) {
                 continue;
             }
-            double s = new double[] {1.5, 2.4, 0.8, 0.8, 1.1}[l.k];
-            float a = new float[] {0.33f, 0.8f, 0.3f, 0.3f, 0.23f}[l.k];
+            double s = new double[] {1.5, 2.4, 0.8, 0.8, 1.1, 0.7}[l.k];
+            float a = new float[] {0.33f, 0.8f, 0.3f, 0.3f, 0.23f, 0.32f}[l.k];
             // the aviation light on top of the towers blinks slowly
             if (l.k == 1) {
                 a *= Math.sin(t * 2.4 + l.ph * 6) > 0.2 ? 1 : 0.05f;
             }
             s *= 1 + d * 0.006;
+            if (l.k == 5) {
+                // the traffic light: the glow on the lens that is lit now (TrafficLightBlock's clock), a bit out in front
+                Direction f = Direction.from2DDataValue((int) l.ph);
+                int on = TrafficLightBlock.light(gameTime, f);
+                double across = (TrafficLightBlock.LENS_X[2 - on] - 8) / 16.0;
+                // the model faces north: its x across turns with the facing like the blockstate (clockwise)
+                double ox = f == Direction.EAST ? 0 : f == Direction.WEST ? 0 : f == Direction.SOUTH ? -across : across;
+                double oz = f == Direction.EAST ? across : f == Direction.WEST ? -across : 0;
+                disc(out, last, cam, l.x + 0.5 + ox + f.getStepX() * 0.25, l.y + 7 / 16.0, l.z + 0.5 + oz + f.getStepZ() * 0.25, s,
+                        SIGNAL_C[on], a * fade);
+                continue;
+            }
             disc(out, last, cam, l.x, l.y, l.z, s, LC[l.k], a * fade);
         }
     }

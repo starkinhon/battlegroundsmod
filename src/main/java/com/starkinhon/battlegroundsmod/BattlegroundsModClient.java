@@ -525,6 +525,8 @@ public class BattlegroundsModClient {
     private static void onRegisterRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerBlockEntityRenderer(ModBlocks.TELAO.get(), com.starkinhon.battlegroundsmod.client.TelaoRenderer::new);
         event.registerBlockEntityRenderer(ModBlocks.POWER_LINE.get(), com.starkinhon.battlegroundsmod.client.PowerLineRenderer::new);
+        event.registerBlockEntityRenderer(ModBlocks.TRAFFIC_LIGHT.get(), com.starkinhon.battlegroundsmod.client.TrafficLightRenderer::new);
+        event.registerBlockEntityRenderer(ModBlocks.ROPE_ANCHOR_BE.get(), com.starkinhon.battlegroundsmod.client.RopeRenderer::new);
         event.registerEntityRenderer(ModEntities.NINJA_THROWN.get(), net.minecraft.client.renderer.entity.ThrownItemRenderer::new);
         event.registerEntityRenderer(ModEntities.MADARA.get(), context -> new SoulBossRenderer<>(context, "madara", true));
         event.registerEntityRenderer(ModEntities.BILLS.get(), context -> new SoulBossRenderer<>(context, "bills", true));

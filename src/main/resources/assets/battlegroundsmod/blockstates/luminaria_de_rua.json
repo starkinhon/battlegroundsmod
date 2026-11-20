@@ -1,1 +1,19 @@
-{"variants": {"": {"model": "battlegroundsmod:block/luminaria_de_rua"}}}
+{
+ "variants": {
+  "facing=north": {
+   "model": "battlegroundsmod:block/luminaria_de_rua"
+  },
+  "facing=east": {
+   "model": "battlegroundsmod:block/luminaria_de_rua",
+   "y": 90
+  },
+  "facing=south": {
+   "model": "battlegroundsmod:block/luminaria_de_rua",
+   "y": 180
+  },
+  "facing=west": {
+   "model": "battlegroundsmod:block/luminaria_de_rua",
+   "y": 270
+  }
+ }
+}

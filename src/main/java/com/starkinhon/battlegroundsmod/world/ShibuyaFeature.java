@@ -552,6 +552,14 @@ public final class ShibuyaFeature extends Feature<NoneFeatureConfiguration> {
                     .setValue(com.starkinhon.battlegroundsmod.PowerLineBlock.CABLE, (a & 4) != 0)
                     .setValue(com.starkinhon.battlegroundsmod.PowerLineBlock.REACH, (a & 8) != 0);
         }
+        if (t >= ShibuyaGen.SIGNAL && t < ShibuyaGen.SIGNAL + 4) {
+            return JujutsuBlocks.TRAFFIC_BOX.get().defaultBlockState().setValue(com.starkinhon.battlegroundsmod.TrafficLightBlock.FACING,
+                    net.minecraft.core.Direction.from2DDataValue((t - ShibuyaGen.SIGNAL) + 2 & 3));
+        }
+        if (t >= ShibuyaGen.LAMP_HEAD && t < ShibuyaGen.LAMP_HEAD + 4) {
+            return JujutsuBlocks.STREET_LAMP.get().defaultBlockState().setValue(com.starkinhon.battlegroundsmod.StreetLampBlock.FACING,
+                    net.minecraft.core.Direction.from2DDataValue((t - ShibuyaGen.LAMP_HEAD) + 2 & 3));
+        }
         if (t >= ShibuyaGen.WALL0 && t <= ShibuyaGen.WALL7) {
             return JujutsuBlocks.FACADES.get(t - ShibuyaGen.WALL0).get().defaultBlockState();
         }

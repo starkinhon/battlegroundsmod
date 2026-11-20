@@ -25,6 +25,16 @@ public final class ModBlocks {
             net.minecraft.world.level.block.entity.BlockEntityType<PowerLineBlockEntity>> POWER_LINE = BLOCK_ENTITIES.register("fio_de_rede",
                     () -> net.minecraft.world.level.block.entity.BlockEntityType.Builder.of(PowerLineBlockEntity::new,
                             JujutsuBlocks.POWER_LINE.get()).build(null));
+    // Shibuya's traffic light (TrafficLightBlock): its block entity is only there for the client to draw the lit lens.
+    public static final net.neoforged.neoforge.registries.DeferredHolder<net.minecraft.world.level.block.entity.BlockEntityType<?>,
+            net.minecraft.world.level.block.entity.BlockEntityType<TrafficLightBlockEntity>> TRAFFIC_LIGHT = BLOCK_ENTITIES.register("caixa_de_semaforo",
+                    () -> net.minecraft.world.level.block.entity.BlockEntityType.Builder.of(TrafficLightBlockEntity::new,
+                            JujutsuBlocks.TRAFFIC_BOX.get()).build(null));
+    // The Mar da Névoa's bridge post (RopeAnchorBlock): keeps the other end of its rope.
+    public static final net.neoforged.neoforge.registries.DeferredHolder<net.minecraft.world.level.block.entity.BlockEntityType<?>,
+            net.minecraft.world.level.block.entity.BlockEntityType<RopeAnchorBlockEntity>> ROPE_ANCHOR_BE = BLOCK_ENTITIES.register("amarra_de_corda",
+                    () -> net.minecraft.world.level.block.entity.BlockEntityType.Builder.of(RopeAnchorBlockEntity::new,
+                            ModBlocks.ROPE_ANCHOR.get()).build(null));
 
     // Namek's cliffs and mesas: pale pink-beige rock, and a darker band for the layers.
     public static final DeferredBlock<Block> NAMEK_ROCK = rock("namek_rock", MapColor.TERRACOTTA_WHITE);
@@ -107,6 +117,10 @@ public final class ModBlocks {
     public static final DeferredBlock<net.minecraft.world.level.block.ChainBlock> ROPE = BLOCKS.register("corda",
             () -> new net.minecraft.world.level.block.ChainBlock(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD)
                     .strength(0.8f).sound(SoundType.WOOL).noOcclusion().ignitedByLava()));
+    // The top of a rope bridge's post, the rope wound round it; the client draws the rope to the other end (RopeAnchorBlock).
+    public static final DeferredBlock<RopeAnchorBlock> ROPE_ANCHOR = BLOCKS.register("amarra_de_corda",
+            () -> new RopeAnchorBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_BROWN).strength(2.0f)
+                    .sound(SoundType.WOOD).ignitedByLava()));
 
     // The Naruto structures (Stark 2026-11-12, world/NarutoSites): the paper seals stuck on rocks and altars, and the
     // chakra threads the puppets of the Puppeteer's Workshop hang from (a faint blue glow, nothing to bump into).
@@ -207,6 +221,7 @@ public final class ModBlocks {
         BLOCK_ITEMS.registerSimpleBlockItem(PINE_LEAVES);
         BLOCK_ITEMS.registerSimpleBlockItem(PINE_LEAVES_DARK);
         BLOCK_ITEMS.registerSimpleBlockItem(ROPE);
+        BLOCK_ITEMS.registerSimpleBlockItem(ROPE_ANCHOR);
         BLOCK_ITEMS.registerSimpleBlockItem(PAPER_SEAL);
         BLOCK_ITEMS.registerSimpleBlockItem(CHAKRA_THREAD);
         BLOCK_ITEMS.registerSimpleBlockItem(RAIN_METAL);
