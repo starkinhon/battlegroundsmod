@@ -98,6 +98,6 @@ file="META-INF/accesstransformer.cfg"
 [[dependencies.${mod_id}]]
     modId="terrablender"
     type="required"
-    versionRange="[4.1.0.0,)"
+    versionRange="[4.1.0.0,5)"
     ordering="NONE"
     side="BOTH"
