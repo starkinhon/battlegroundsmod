@@ -47,14 +47,7 @@ public final class BaseAttacks {
         switchedAt = player == null ? 0 : player.tickCount;
     }
 
-    public static int selectedIndex() {
-        return selected;
-    }
-
     public static void use() {
-        if (PreviewFight.baseAttack(selected)) {
-            return;
-        }
         PacketDistributor.sendToServer(new ModPayloads.UseAbility(SLOTS[selected]));
     }
 

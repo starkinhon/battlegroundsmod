@@ -163,20 +163,6 @@ public final class AirFight {
 
     // ------------------------------------------------------------------ the page's fight on the client
 
-    // Stark 2026-11-13, after the server's copy still felt "muito inferior à prévia": the client runs the approved page
-    // itself (client/PreviewFight: its AI, blows, dash, exchange, balls, beam, effects and camera, 60 times a second, no
-    // lag), flying the soul it fights; here the soul goes where the page has it and the blows land.
-    private static LivingEntity simTarget(ServerPlayer player, int id) {
-        Integer locked = LOCK.get(player.getUUID());
-        if (locked == null || locked != id || !Flight.flying(player)) {
-            return null;
-        }
-        if (player.level().getEntity(id) instanceof LivingEntity t && t.isAlive() && t.distanceToSqr(player) < 64 * 64) {
-            return t;
-        }
-        return null;
-    }
-
     private static final long SIM_HIT_EVERY = 3;
     private static final long SIM_HIT_BURST = 2 * SIM_HIT_EVERY;
 

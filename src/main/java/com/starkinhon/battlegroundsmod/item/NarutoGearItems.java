@@ -2,7 +2,6 @@ package com.starkinhon.battlegroundsmod.item;
 
 import java.util.List;
 
-import com.starkinhon.battlegroundsmod.ModItems;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.power.powers.sub.SubCommon;
 import com.starkinhon.battlegroundsmod.universe.NarutoGear;
@@ -222,8 +221,4 @@ public final class NarutoGearItems {
         }
     }
 
-    // Used by NarutoGear.
-    static boolean isGourd(ItemStack s) {
-        return s.is(ModItems.SAND_GOURD.get());
-    }
 }

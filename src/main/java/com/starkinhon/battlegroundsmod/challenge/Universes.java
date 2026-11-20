@@ -10,7 +10,6 @@ import com.starkinhon.battlegroundsmod.BattlegroundsMod;
 import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.ModItems;
 import com.starkinhon.battlegroundsmod.combat.Fx;
-import com.starkinhon.battlegroundsmod.network.ModPayloads;
 import com.starkinhon.battlegroundsmod.power.PowerData;
 import com.starkinhon.battlegroundsmod.power.PowerLogic;
 import com.starkinhon.battlegroundsmod.power.Progression;
@@ -45,12 +44,11 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 // The universes as worlds (plan "Souls: Multiverso e Progressão", Stark 2026-11-10). Each universe of the Livros dos
 // Desafios (padrao.desafios.json) is its own dimension, battlegroundsmod:<id>, with its own biomes
 // (data/battlegroundsmod/dimension/<id>.json). There is no first universe: the first time a player joins a normal world
-// a screen asks where to live (client/UniverseScreen); the player is born there, human, Tier 10, with that universe's
+// a screen asked where to live (gone since the universes became biomes); the player is born there, human, Tier 10, with that universe's
 // Livro dos Desafios. The Cristal Multiversal (item/MultiversalCrystalItem) takes them to another one; each universe
 // remembers where the player was, so going back lands them there.
 // A flat world is the fight/test mode: no universes, nothing asked (Progression.on).
@@ -132,43 +130,6 @@ public final class Universes {
         bornHuman(player);
         giveBook(player, "dragonball");
         Progression.sync(player);
-    }
-
-    // From the screen: the player chose a universe (first time, or with a Cristal Multiversal in hand).
-    public static void pick(ServerPlayer player, String universe) {
-        ChallengeSpec.Universe picked = ChallengeSpec.get().universe(universe);
-        if (!Progression.on(player) || picked == null || !picked.world()) {
-            return;
-        }
-        if (WORLD.equals(home(player))) {
-            player.displayClientMessage(Component.translatable("message.battlegroundsmod.universe_no_mundo"), true);
-            return;
-        }
-        if (home(player).isEmpty()) {
-            travel(player, universe, true);
-            return;
-        }
-        if (universe.equals(universeOf(player.level().dimension()))) {
-            return;
-        }
-        ItemStack crystal = crystalInHand(player);
-        if (crystal == null) {
-            player.displayClientMessage(Component.translatable("message.battlegroundsmod.universe_need_crystal"), true);
-            return;
-        }
-        if (travel(player, universe, false) && !player.getAbilities().instabuild) {
-            crystal.shrink(1);
-        }
-    }
-
-    private static ItemStack crystalInHand(ServerPlayer player) {
-        Item crystal = ModItems.MULTIVERSAL_CRYSTAL.get();
-        for (ItemStack stack : new ItemStack[] {player.getMainHandItem(), player.getOffhandItem()}) {
-            if (stack.is(crystal)) {
-                return stack;
-            }
-        }
-        return null;
     }
 
     // Takes the player to that universe: where they left it, or its arrival point the first time. That becomes their

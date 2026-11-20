@@ -402,13 +402,6 @@ final class IntroScript {
         };
     }
 
-    private static Step goal(String id, int need) {
-        return (s, p, t) -> {
-            Intro.ui(p, "goal", id, 0, need);
-            return true;
-        };
-    }
-
     // Build the act's arena on the row (black screen while it goes up), then bring the player in.
     private Step build(int act) {
         return (s, p, t) -> {

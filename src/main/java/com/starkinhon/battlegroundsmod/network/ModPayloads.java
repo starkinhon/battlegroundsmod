@@ -629,19 +629,6 @@ public final class ModPayloads {
         }
     }
 
-    // Server -> client: open the universe screen. first = the player has none yet (can't be closed); otherwise a
-    // Cristal Multiversal was used.
-    public record OpenUniverses(boolean first) implements CustomPacketPayload {
-        public static final Type<OpenUniverses> TYPE = payloadType("open_universes");
-        public static final StreamCodec<ByteBuf, OpenUniverses> STREAM_CODEC = StreamCodec.composite(
-                ByteBufCodecs.BOOL, OpenUniverses::first, OpenUniverses::new);
-
-        @Override
-        public Type<OpenUniverses> type() {
-            return TYPE;
-        }
-    }
-
     // Server -> client: a Shenlong cutscene (universe/shenlong/ShenlongServer): who called him, where (the scene's
     // origin and the way he faced), the game time it started, the wish once picked ("" before) and the game time it
     // was picked (0 before). Sent at the start and again when the wish is picked; summoner -1 ends it.
@@ -676,18 +663,6 @@ public final class ModPayloads {
 
         @Override
         public Type<ShenlongWish> type() {
-            return TYPE;
-        }
-    }
-
-    // Client -> server: the universe chosen on that screen (challenge/Universes.pick).
-    public record PickUniverse(String id) implements CustomPacketPayload {
-        public static final Type<PickUniverse> TYPE = payloadType("pick_universe");
-        public static final StreamCodec<ByteBuf, PickUniverse> STREAM_CODEC = StreamCodec.composite(
-                ByteBufCodecs.STRING_UTF8, PickUniverse::id, PickUniverse::new);
-
-        @Override
-        public Type<PickUniverse> type() {
             return TYPE;
         }
     }
@@ -816,8 +791,8 @@ public final class ModPayloads {
         }
     }
 
-    // Client -> server: the combat flight runs the approved page on the client (client/PreviewFight); where it has the
-    // soul it fights now (feet, yaw) and flags: 1 flying, 2 on the boost, 4 gone (a Zanzoken).
+    // Client -> server (no longer sent: the client page, client/PreviewFight, is gone; kept registered for protocol
+    // compatibility): the combat flight ran the approved page on the client; where it has the soul it fights now (feet, yaw) and flags: 1 flying, 2 on the boost, 4 gone (a Zanzoken).
     public record AirSim(int entityId, double x, double y, double z, float yaw, int flags) implements CustomPacketPayload {
         public static final Type<AirSim> TYPE = payloadType("air_sim");
         public static final StreamCodec<ByteBuf, AirSim> STREAM_CODEC = StreamCodec.composite(
@@ -2383,13 +2358,6 @@ public final class ModPayloads {
         }));
         registrar.playToClient(SyncSkillSwaps.TYPE, SyncSkillSwaps.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> com.starkinhon.battlegroundsmod.power.SkillSwap.receive(payload.entries())));
-        registrar.playToClient(OpenUniverses.TYPE, OpenUniverses.STREAM_CODEC, (payload, context) -> context.enqueueWork(
-                () -> ClientHooks.openUniverses(payload.first())));
-        registrar.playToServer(PickUniverse.TYPE, PickUniverse.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
-            if (context.player() instanceof ServerPlayer player) {
-                com.starkinhon.battlegroundsmod.challenge.Universes.pick(player, payload.id());
-            }
-        }));
         registrar.playToClient(ShenlongState.TYPE, ShenlongState.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> com.starkinhon.battlegroundsmod.client.fx.ShenlongScene.state(payload)));
         registrar.playToServer(ShenlongWish.TYPE, ShenlongWish.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {

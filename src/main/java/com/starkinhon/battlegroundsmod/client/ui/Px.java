@@ -282,13 +282,6 @@ public final class Px {
         R(bx + 2, by + 1, bw - 4, 1, WHITE, 0.25f);
     }
 
-    // A gold hairline that fades out to the right, from x to x + w.
-    public static void fadeLine(float x, float y, float w, int rgb, float a) {
-        for (int i = 0; i < w; i++) {
-            P(x + i, y, rgb, a * (1 - i / w));
-        }
-    }
-
     // A hairline bright in the middle and gone at both ends.
     public static void centerLine(float x, float y, float w, int rgb, float a, float edge) {
         for (int i = 0; i < w; i++) {
@@ -343,10 +336,6 @@ public final class Px {
 
     public static int T(String text, float x, float y, int rgb, float px, boolean bold) {
         return T(text, x, y, rgb, px, bold, -1, true, 1);
-    }
-
-    public static int Tc(String text, float x, float y, int rgb, float px, boolean bold) {
-        return T(text, x, y, rgb, px, bold, 0, true, 1);
     }
 
     public static int Tr(String text, float x, float y, int rgb, float px, boolean bold) {
